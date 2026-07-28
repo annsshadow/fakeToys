@@ -28,5 +28,40 @@ go.work.sum
 .env
 
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+*.iml
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.*
+*.coverprofile
+profile.cov
+go.work
+go.work.sum
+
+# Go module cache
+csv2sql/pkg/mod/
+csv2sql/pkg/sumdb/
+
+# Logs and temp files
+*.log
+*.tmp
+*.temp
+train/*.log
+csv2sql/*.log
+
+# Build outputs
+cool/target/
+oa/target/
+oa/node_modules/
+oa/dist/
+
+# env file
+.env
