@@ -24,8 +24,14 @@ func main() {
 	log.SetOutput(logFile)
 
 	// OBS配置
-	ak := os.Getenv("OBS_AK", "<YOUR_ACCESS_KEY_ID>")
-	sk := os.Getenv("OBS_SK", "<YOUR_SECRET_ACCESS_KEY>")
+	ak := os.Getenv("OBS_AK")
+	if ak == "" {
+		ak = "<YOUR_ACCESS_KEY_ID>"
+	}
+	sk := os.Getenv("OBS_SK")
+	if sk == "" {
+		sk = "<YOUR_SECRET_ACCESS_KEY>"
+	}
 	endpoint := "your-obs-endpoint"
 	bucketName := "your-bucket-name"
 	objectKey := "your-object-key"
@@ -37,7 +43,9 @@ func main() {
 	}
 
 	// 下载CSV文件并流式读取
-	input := &obs.GetObjectInput{Bucket: bucketName, Key: objectKey}
+	input := &obs.GetObjectInput{
+		GetObjectMetadataInput: obs.GetObjectMetadataInput{Bucket: bucketName, Key: objectKey},
+	}
 	output, err := obsClient.GetObject(input)
 	if err != nil {
 		log.Fatalf("Failed to get object: %v", err)
