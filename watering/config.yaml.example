@@ -1,0 +1,10 @@
+app:
+  dingtalk_app_key: "YOUR_APP_KEY"
+  dingtalk_app_secret: "YOUR_APP_SECRET"
+  group_conversation_id: "YOUR_GROUP_CONVERSATION_ID"
+
+batches:
+  - message: "1"
+    account_ids: ["worker001", "worker002"]
+  - message: "2"
+    account_ids: ["worker003", "worker004"]
