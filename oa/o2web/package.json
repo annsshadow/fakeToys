@@ -5,7 +5,8 @@
     "main": "o2.js",
     "scripts": {
         "build": "gulp",
-        "test": "karma start source/x_test/karma.FindDesigner.js --auto-watch"
+        "test": "karma start source/x_test/karma.FindDesigner.js --auto-watch",
+        "xform": "gulp x_component_process_Xform --ev devp"
     },
     "repository": {
         "type": "git",
@@ -28,10 +29,7 @@
     "homepage": "https://github.com/huqi1980/o2oa_client_web#readme",
     "devDependencies": {
         "@o2oa/language-tools": "^1.0.15",
-        "@o2oa/react-scripts": "^5.0.7",
         "@o2oa/tidy-jsdoc-o2": "latest",
-        "@vue/cli-service": "^5.0.9",
-        "cross-env": "^10.1.0",
         "del": "5.1.0",
         "glob": "^10.3.10",
         "gulp": "^4.0.0",
@@ -62,8 +60,7 @@
         "merge-stream": "^1.0.1",
         "minimist": "^1.2.0",
         "readline-sync": "^1.4.10",
-        "through2": "^4.0.2",
-        "vite": "^6.4.3",
-        "webpack": "^5.109.2"
+        "ssh2-streams": "^0.4.10",
+        "through2": "^4.0.2"
     }
 }

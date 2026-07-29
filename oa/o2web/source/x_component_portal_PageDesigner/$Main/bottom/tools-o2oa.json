@@ -24,6 +24,11 @@
     "text": MWF.xApplication.process.FormDesigner.LP.modules.oo_select,
     "className": "OOSelect"
   },
+  "OOCascade": {
+    "fontIcon": "ooicon-arrow_right",
+    "text": MWF.xApplication.process.FormDesigner.LP.modules.oo_cascade,
+    "className": "OOCascade"
+  },
   "OOTextarea": {
     "fontIcon": "ooicon-multiline",
     "text": MWF.xApplication.process.FormDesigner.LP.modules.oo_textarea,
@@ -43,6 +48,11 @@
     "fontIcon": "ooicon-gprs",
     "text": MWF.xApplication.process.FormDesigner.LP.modules.Address,
     "className": "OOAddress"
+  },
+  "OOFiles": {
+    "fontIcon": "ooicon-file_upload",
+    "text": MWF.xApplication.process.FormDesigner.LP.modules.oo_files,
+    "className": "OOFiles"
   },
   "OOCurrency": {
     "fontIcon": "ooicon-currency",

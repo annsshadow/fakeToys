@@ -1,7 +1,7 @@
 /* 所有表单和页面的主容器 */
 .form-layout {
     height: 100%;
-    overflow: auto;
+    /* overflow: auto; */
     grid-template-rows: 3.8em 1fr;
     background-color: #f7f7f7;
     display: flex;
@@ -13,6 +13,14 @@
 .form-layout * {
     box-sizing: border-box !important;
 }
+
+.content-box{
+	box-sizing: content-box!important;
+}
+.content-box *{
+	box-sizing: content-box!important;
+}
+
 .form-layout .start-process-area {
     box-sizing: content-box !important;
 }
@@ -123,6 +131,10 @@
     display: none;
 }
 
+.form-layout .index-top-action-search.open > .ooicon-close {
+    display: block;
+}
+
 .form-layout .index-top-action-search.open {
     background-color: #ffffff;
     color: var(--oo-color-main);
@@ -156,14 +168,10 @@
     display: flex !important;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: default;
     transition: background-color 0.3s, color 0.3s;
 }
 
-.form-layout .index-navi-index:hover {
-    background-color: var(--oo-color-main);
-    color: var(--oo-color-text-white);
-}
 
 .form-layout .index-navi-content {
     overflow: auto;
@@ -399,7 +407,7 @@
 
 .form-layout .index-start-item {
     display: flex !important;
-    padding: 0.15em 1em;
+    padding: 0 1em;
     align-items: center;
     justify-content: space-between;
     border-radius: 0.25em;
@@ -412,8 +420,8 @@
 }
 
 .form-layout .index-start-item > div:first-child {
-    display: flex !important;
-    padding: 0.3em 0;
+    display: flex;
+    padding: 0.45em 0;
     align-items: center;
 }
 

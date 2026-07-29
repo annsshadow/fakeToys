@@ -900,6 +900,9 @@ MWF.xApplication.portal.PageDesigner.Module.Page = MWF.PCPage = new Class({
 	},
 	_getPageData: function(callback){
 		this.fireEvent("queryGetPageData");
+
+		//this._preprocessingModuleData();
+
 		var copy = this.node.clone(true, true);
 		copy.clearStyles(true);
 		this.fireEvent("postGetPageData");
@@ -924,8 +927,22 @@ MWF.xApplication.portal.PageDesigner.Module.Page = MWF.PCPage = new Class({
 			);
 		}
 
+		//this._recoveryModuleData();
+
 		return this.data;
 	},
+	// _preprocessingModuleData: function(){
+	// 	this.moduleList.each(function(module){
+	// 		if(module._preprocessingModuleData)module._preprocessingModuleData();
+	// 	});
+	// },
+	// _recoveryModuleData: function(){
+	// 	this.moduleList.each(function(module){
+	// 		if(module.setCustomStyles)module.setCustomStyles();
+	// 		if (module.setCustomInputStyles) module.setCustomInputStyles();
+	// 	});
+	// },
+
 	preview: function(){
 		if( this.designer.currentDesignerMode === "Mobile" ){
 			var url = "../x_desktop/portalmobile.html?id="+this.json.application+"&page="+this.json.id;
@@ -1233,7 +1250,10 @@ MWF.xApplication.portal.PageDesigner.Module.Page = MWF.PCPage = new Class({
 		if (cssText){
 
 			//删除注释
-			cssText = cssText.replace(/\/\*[\s\S]*?\*\/\n|([^:]|^)\/\/.*\n$/g, '').replace(/\\n/, '');
+			//cssText = cssText.replace(/\/\*[\s\S]*?\*\/\n|([^:]|^)\/\/.*\n$/g, '').replace(/\\n/, '');
+
+			cssText = cssText.replace(/\/\*[\s\S]*?\*\//g, '')  // 移除多行注释
+				.replace(/\\n/g, '');             // 移除\n
 
 			cssText = this.parseCSS(cssText);
 			var rex = new RegExp("(.+)(?=\\{)", "g");

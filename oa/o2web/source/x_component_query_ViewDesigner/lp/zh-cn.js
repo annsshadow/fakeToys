@@ -76,6 +76,8 @@ MWF.xApplication.query.ViewDesigner.LP = {
     "actionbar": {
         "readhide": "设置阅读时是否显示",
         "edithide": "设置编辑时是否显示",
+        "pchide": "设置PC端是否显示",
+        "mobilehide": "设置移动端是否显示",
         "hideCondition": "设置隐藏条件",
         "title": "标题",
         "img": "图标",
@@ -198,6 +200,8 @@ MWF.xApplication.query.ViewDesigner.LP = {
         "org":"组织对象",
         "htmlValue":"HTML值",
         "showScript":"显示脚本",
+        "mobileTemplate":"移动端模板",
+        "mobileCss": "移动端CSS",
         "titleStyles":"标题单元格样式",
         "titleProperties":"标题单元格属性",
         "contentStyles":"内容单元格样式",

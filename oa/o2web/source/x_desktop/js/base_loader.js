@@ -13,6 +13,9 @@ if (!layout.isReady) {
         layout.desktop.addEvents = function (e) {
             window.addEvents(e);
         };
+        layout.desktop.fireEvent = function (type, data) {
+            window.fireEvent(type, data);
+        };
 
         var loadingNode = (window.$) ? $("loaddingArea") : null;
         var loadeds = 0;
@@ -132,32 +135,15 @@ if (!layout.isReady) {
                 if (layout.config && layout.config.sessionStorageEnable && window.sessionStorage) window.sessionStorage.setItem("o2LayoutSessionToken", options[o2.tokenName]);
             }
 
-            layout.sessionPromise = new Promise(function (resolve, reject) {
-                o2.Actions.get("x_organization_assemble_authentication").getAuthentication(function (json) {
-                    if (json.data.language && (json.data.language !== o2.languageName)) {
-                        o2.language = json.data.language.toLowerCase();
-                        o2.languageName = json.data.language;
-                        var lp = "../x_desktop/js/base_lp_" + o2.language + ((o2.session.isDebugger) ? "" : ".min") + ".js?v="+o2.version.v;;
-                        o2.load(lp, {"reload": true}, function () {
-                            if (resolve) resolve(json.data);
-                        });
-                    } else {
-                        if (resolve) resolve(json.data);
-                    }
-                }.bind(this), function (xhr, text, error) {
-                    if (reject) reject({"xhr": xhr, "text": text, "error": error});
-                }.bind(this));
-            });
-
-            layout.sessionPromise.then(function (data) {
-                //已经登录
+            var recordUserData = (data, cb)=>{
                 layout.user = data;
                 layout.session = layout.session || {};
-                layout.session.user = data;
-                layout.session.token = data.token;
-                layout.desktop.session = layout.session;
 
-                return o2.Actions.load("x_organization_assemble_express").PersonAction.detail(layout.session.user.distinguishedName, null, function (json) {
+                o2.Actions.load("x_organization_assemble_express").PersonAction.detail(data.distinguishedName, null, function (json) {
+                    layout.session.user = data;
+                    layout.session.token = data.token;
+                    layout.desktop.session = layout.session;
+
                     layout.session.userDetail = json.data;
                     layout.session.userDetail.list = [].concat(
                         layout.session.userDetail.groupList || [], 
@@ -167,8 +153,49 @@ if (!layout.isReady) {
                         layout.session.userDetail.unitDutyList || [],
                         layout.session.userDetail.unitList || []
                     )
+                    if (cb) cb(json);
                 });
-                //_loadApp();
+            }
+
+            layout.sessionPromise = new Promise(function (resolve, reject) {
+                o2.Actions.get("x_organization_assemble_authentication").getAuthentication(function (json) {
+                    if (json.data.language && (json.data.language !== o2.languageName)) {
+                        o2.language = json.data.language.toLowerCase();
+                        o2.languageName = json.data.language;
+                        var lp = "../x_desktop/js/base_lp_" + o2.language + ((o2.session.isDebugger) ? "" : ".min") + ".js?v="+o2.version.v;;
+                        o2.load(lp, {"reload": true}, function () {
+                            recordUserData(json.data, resolve);
+                            // if (resolve) resolve(json.data);
+                        });
+                    } else {
+                        recordUserData(json.data, resolve);
+                        // if (resolve) resolve(json.data);
+                    }
+                }.bind(this), function (xhr, text, error) {
+                    if (reject) reject({"xhr": xhr, "text": text, "error": error});
+                }.bind(this));
+            });
+
+            layout.sessionPromise.then(function (data) {
+                //已经登录
+                // layout.user = data;
+                // layout.session = layout.session || {};
+                // layout.session.user = data;
+                // layout.session.token = data.token;
+                // layout.desktop.session = layout.session;
+
+                // return o2.Actions.load("x_organization_assemble_express").PersonAction.detail(layout.session.user.distinguishedName, null, function (json) {
+                //     layout.session.userDetail = json.data;
+                //     layout.session.userDetail.list = [].concat(
+                //         layout.session.userDetail.groupList || [], 
+                //         layout.session.userDetail.identityList || [],
+                //         layout.session.userDetail.personAttributeList || [],
+                //         layout.session.userDetail.roleList || [],
+                //         layout.session.userDetail.unitDutyList || [],
+                //         layout.session.userDetail.unitList || []
+                //     )
+                // });
+                // _loadApp();
             }, function () {
                 //允许匿名访问
                 if (layout.anonymous) {
@@ -372,5 +399,13 @@ if (!layout.isReady) {
                 }
             }
         }, 1000 * 30);
+
+        layout.addReady(()=>{
+            //判断是否在微信内置浏览器，钉钉内置浏览器中打开，O2OA APP内置浏览器中打开
+            //如果是，给body加上相应的class
+            if (o2.thirdparty.isWeiXinMobile() || o2.thirdparty.isQywxMobile() || o2.thirdparty.isDingdingMobile() || window.o2android || window.flutter_inappwebview) {
+                document.body.addClass("o2_thirdparty_mobile_browser");
+            }
+        })
     });
 }

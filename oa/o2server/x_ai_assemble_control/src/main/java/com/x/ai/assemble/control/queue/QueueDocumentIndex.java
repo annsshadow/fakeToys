@@ -57,12 +57,14 @@ public class QueueDocumentIndex extends AbstractQueue<String> {
 				DocIndex docIndex = new DocIndex();
 				docIndex.setTitle(document.getTitle());
 				docIndex.setContent(content);
-				docIndex.setReferenceId(document.getId());
-				docIndex.setCatalogId(document.getAppId());
-				docIndex.setCatalogName(document.getAppName());
-				docIndex.setReferenceCreateDateTime(document.getCreateTime());
-				docIndex.setReferenceCreatorPerson(document.getCreatorPerson());
-				docIndex.setReferenceCreatorUnit(document.getCreatorUnitName());
+				docIndex.setId(document.getId());
+				docIndex.setSourceId(document.getId());
+				docIndex.setProcessId(document.getAppId());
+				docIndex.setProcessName(document.getAppName());
+				docIndex.setCreateDateTime(document.getCreateTime());
+				docIndex.setUpdateDateTime(document.getUpdateTime());
+				docIndex.setCreatorPerson(document.getCreatorPerson());
+				docIndex.setCreatorUnit(document.getCreatorUnitName());
 				if(StringUtils.join(aiConfig.getQuestionsIndexAppList()).contains(document.getAppId())){
 					docIndex.setQuestionEnable(true);
 				}
@@ -80,11 +82,11 @@ public class QueueDocumentIndex extends AbstractQueue<String> {
 					permissionList.addAll(set);
 				}
 				docIndex.setPermissionList(permissionList);
-				String url = aiConfig.getO2AiBaseUrl() + "/index-gateway-doc/update";
+				String url = aiConfig.getO2AiBaseUrl() + "/idx-gateway-doc/update";
 				List<NameValuePair> heads = List.of(new NameValuePair("Authorization", "Bearer " + aiConfig.getO2AiToken()));
 				ActionResponse response = ConnectionAction.post(url, heads, docIndex);
 				uploadFile(emc, document, aiConfig);
-				logger.info("ai documentIndex:{}-{} , resp: {}", docIndex.getReferenceId(), docIndex.getTitle(), XGsonBuilder.toJson(response));
+				logger.info("ai documentIndex:{}-{} , resp: {}", docIndex.getId(), docIndex.getTitle(), XGsonBuilder.toJson(response));
 			}
 		}catch (Exception e){
 			logger.error(e);
@@ -104,7 +106,7 @@ public class QueueDocumentIndex extends AbstractQueue<String> {
 			}
 		});
 		if(!filePartList.isEmpty()){
-			String url = aiConfig.getO2AiBaseUrl() + "/gateway-doc/upload/reference-id/"+document.getId()+"/mode/replace";
+			String url = aiConfig.getO2AiBaseUrl() + "/gateway-doc/upload/"+document.getId()+"/mode/replace";
 			List<NameValuePair> heads = List.of(new NameValuePair("Authorization", "Bearer " + aiConfig.getO2AiToken()));
 			ActionResponse response = HttpUtil.postMultiPartBinary(url, heads, null, filePartList);
 			logger.debug("ai document {} file index resp: {}", document.getId(), XGsonBuilder.toJson(response));

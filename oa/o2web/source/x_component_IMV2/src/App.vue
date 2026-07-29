@@ -130,6 +130,7 @@ const updateOrDeleteConversation = ( conv ) => {
   currentConversation.value = conv
   eventBus.publish( EventName.refreshMyConversation ) // 刷新列表
 }
+
 provide('im-app', {
   openConversation,
   updateOrDeleteConversation
@@ -194,8 +195,14 @@ const openMsg = (msg) => {
             || body.fileExtension.toLowerCase() === "ppt" || body.fileExtension.toLowerCase() === "pptx"
             || body.fileExtension.toLowerCase() === "pdf" || body.fileExtension.toLowerCase() === "csv"
             || body.fileExtension.toLowerCase() === "txt")) {
-      const onlyOfficeUrl = "../o2_lib/onlyoffice/index.html?fileName=" + body.fileName + "&file=" + getImFileDownloadUrl(body.fileId)
-      window.open(onlyOfficeUrl)
+      const options = {
+        "mode":"view",
+        "jars" : "x_message_assemble_communicate",
+        "fileName" : encodeURIComponent(body.fileName),
+        "url" : encodeURIComponent(o2.filterUrl(`${getImFileDownloadUrl(body.fileId)}?${o2.tokenName}=${layout.session.token}`)),
+        "appId":  "OnlyOfficeEditor" + body.fileId
+      }
+      layout.openApplication(null, "OnlyOfficeEditor", options);
       return;
     } else if (body.fileExtension && (body.fileExtension.toLowerCase() === "mp4" || body.fileExtension.toLowerCase() === "avi" || body.fileExtension.toLowerCase() === "ogg")) {
       console.log('视频文件无需下载！')
@@ -289,7 +296,7 @@ const openMyCollectionPage = () => {
 </script>
 
 <template>
-  <div class="im-app im-container">
+  <div class="im-app im-container" :class=" windowStateInstance.isMobile ? 'im-app-s' : '' ">
     <div class="im-aside" :class="{ hidden: windowStateInstance.isMobile && currentConversation, w100:  windowStateInstance.isMobile}" v-if="!hideSide" >
       <IMAside @clickImConfig="openImConfigPage" @clickMyCollectionPage="openMyCollectionPage"/>
     </div>

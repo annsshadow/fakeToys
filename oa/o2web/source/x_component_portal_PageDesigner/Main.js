@@ -143,83 +143,103 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
             }
         }
     },
-    pasteModule: function(){
-        if (this.shortcut) {
-            if (this.page) {
-                if (MWF.clipboard.data) {
-                    if (MWF.clipboard.data.type == "page") {
-                        var datatemplateJsons = [];
-                        var idMap = {};
-                        var html = MWF.clipboard.data.data.html;
-                        var json = Object.clone(MWF.clipboard.data.data.json);
-                        var tmpNode = new Element("div", {
-                            "styles": {"display": "none"},
-                            "html": html
-                        }).inject(this.content);
-
-                        var originalIds = {};
-                        Object.each(json, function (moduleJson){
-                            originalIds[moduleJson.id] = true;
-                        });
-
-                        Object.each(json, function (moduleJson) {
-                            var oid = moduleJson.id;
-                            var id = moduleJson.id;
-                            var idx = 1;
-                            while (this.page.json.moduleList[id] || ( originalIds[id] && idx > 1 ) ) {
-                                id = oid + "_" + idx;
-                                idx++;
-                            }
-                            if (oid != id) {
-                                idMap[oid] = id;
-                                moduleJson.id = id;
-                                var moduleNode = tmpNode.getElementById(oid);
-                                if (moduleNode) moduleNode.set("id", id);
-                            }
-                            if( moduleJson.type === "Datatemplate" )datatemplateJsons.push(moduleJson);
-                            this.page.json.moduleList[moduleJson.id] = moduleJson;
-                        }.bind(this));
-                        json = null;
-
-                        datatemplateJsons.each(function (json) {
-                            this.checkDatatemplateRelativeId(json, idMap);
-                        }.bind(this));
-
-                        var injectNode = this.page.node;
-                        var where = "bottom";
-                        var parent = this.page;
-                        if (this.page.currentSelectedModule) {
-                            var toModule = this.page.currentSelectedModule;
-                            injectNode = toModule.node;
-                            parent = toModule;
-
-                            if (toModule.moduleType != "container" && toModule.moduleType != "page") {
-                                where = "after";
-                                parent = toModule.parentContainer;
-                            }
-                        }
-
-                        var moduleList = [];
-                        var copyModuleNode = tmpNode.getFirst();
-                        while (copyModuleNode) {
-                            copyModuleNode.inject(injectNode, where);
-                            var copyModuleJson = this.page.getDomjson(copyModuleNode);
-                            var module = this.page.loadModule(copyModuleJson, copyModuleNode, parent);
-                            module._setEditStyle_custom("id");
-                            module.selected();
-                            moduleList.push( module );
-
-                            copyModuleNode = tmpNode.getFirst();
-                        }
-                        tmpNode.destroy();
-                        tmpNode = null;
-
-                        if( this.page.history && moduleList.length){
-                            moduleList[0].addHistoryLog("paste", moduleList);
-                        }
+    pasteModule: function() {
+        if (this.shortcut && this.page && MWF.clipboard.data) {
+            if (MWF.clipboard.data.type === "page") {
+                this._pasteModule();
+            }else if(MWF.clipboard.data.type === "form"){
+                var classNames = [], jsons = [];
+                var callback =  (responseJSON)=>{
+                    jsons.push(responseJSON);
+                    if(jsons.length === 2){
+                        jsons.forEach(function(json){
+                             classNames.push(...Object.values(json).map((obj)=>{
+                                return obj.className;
+                            }));
+                        })
+                        this._pasteModule(classNames);
                     }
-                }
+                };
+                MWF.getJSON('../x_component_portal_PageDesigner/$Main/default/tools-o2oa.json', {"onSuccess": callback} );
+                MWF.getJSON('../x_component_portal_PageDesigner/$Main/default/tools.json', {"onSuccess": callback});
             }
+        }
+    },
+    _pasteModule: function(classNames){
+        var datatemplateJsons = [];
+        var idMap = {};
+        var html = MWF.clipboard.data.data.html;
+        var json = Object.clone(MWF.clipboard.data.data.json);
+        var tmpNode = new Element("div", {
+            "styles": {"display": "none"},
+            "html": html
+        }).inject(this.content);
+
+        var originalIds = {};
+        Object.each(json, function (moduleJson){
+            originalIds[moduleJson.id] = true;
+        });
+
+        Object.each(json, function (moduleJson) {
+            if((classNames && !classNames.includes(moduleJson.type) && moduleJson.type.indexOf("$") === -1)) {
+                moduleJson.type = 'Div';
+            }
+            if(moduleJson.preprocessing){
+                delete moduleJson.preprocessing;
+            }
+            var oid = moduleJson.id;
+            var id = moduleJson.id;
+            var idx = 1;
+            while (this.page.json.moduleList[id] || ( originalIds[id] && idx > 1 ) ) {
+                id = oid + "_" + idx;
+                idx++;
+            }
+            if (oid != id) {
+                idMap[oid] = id;
+                moduleJson.id = id;
+                var moduleNode = tmpNode.getElementById(oid);
+                if (moduleNode) moduleNode.set("id", id);
+            }
+            if( moduleJson.type === "Datatemplate" )datatemplateJsons.push(moduleJson);
+            this.page.json.moduleList[moduleJson.id] = moduleJson;
+        }.bind(this));
+        json = null;
+
+        datatemplateJsons.each(function (json) {
+            this.checkDatatemplateRelativeId(json, idMap);
+        }.bind(this));
+
+        var injectNode = this.page.node;
+        var where = "bottom";
+        var parent = this.page;
+        if (this.page.currentSelectedModule) {
+            var toModule = this.page.currentSelectedModule;
+            injectNode = toModule.node;
+            parent = toModule;
+
+            if (toModule.moduleType != "container" && toModule.moduleType != "page") {
+                where = "after";
+                parent = toModule.parentContainer;
+            }
+        }
+
+        var moduleList = [];
+        var copyModuleNode = tmpNode.getFirst();
+        while (copyModuleNode) {
+            copyModuleNode.inject(injectNode, where);
+            var copyModuleJson = this.page.getDomjson(copyModuleNode);
+            var module = this.page.loadModule(copyModuleJson, copyModuleNode, parent);
+            module._setEditStyle_custom("id");
+            module.selected();
+            moduleList.push( module );
+
+            copyModuleNode = tmpNode.getFirst();
+        }
+        tmpNode.destroy();
+        tmpNode = null;
+
+        if( this.page.history && moduleList.length){
+            moduleList[0].addHistoryLog("paste", moduleList);
         }
     },
 	createNode: function(){
@@ -469,7 +489,36 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
         this.currentHistoryNode = this.historyArea;
     },
 
-    changeDesignerModeToMobile: function(){
+    changeDesignerModeToMobile: function (){
+        this._checkMobileFormData(function (){
+            this._changeDesignerModeToMobile();
+        }.bind(this))
+    },
+    _checkMobileFormData: function( callback ){
+        var _self = this;
+        if (!this.mobilePage && !Object.keys(this.pageMobileData.json.moduleList).length){
+            var p = MWF.getCenterPosition(this.content, 460, 120);
+            var event = {
+                "event": {
+                    "x": p.x,
+                    "y": p.y - 200,
+                    "clientX": p.x,
+                    "clientY": p.y - 200
+                }
+            }
+            this.confirm("warn", event,  MWF.APPPOD.LP.copyFormDataTitle, MWF.APPPOD.LP.copyFormDataContent, 460, 120, function(){
+                _self.pageMobileData = Object.clone(_self.pageData);
+                this.close();
+                callback();
+            }, function(){
+                this.close();
+                callback();
+            }, null, this.content);
+        }else{
+            callback();
+        }
+    },
+    _changeDesignerModeToMobile: function(){
         this.pcDesignerActionNode.setStyles(this.css.designerActionNode);
         this.mobileDesignerActionNode.setStyles(this.css.designerActionNode_current);
 
@@ -495,9 +544,9 @@ MWF.xApplication.portal.PageDesigner.Main = new Class({
         if (!this.mobilePage){
             this.designMobileNode.set("id", "designMobileNode");
             this.mobilePage = new MWF.PCPage(this, this.designMobileNode, {"mode": "Mobile"});
-            if (!Object.keys(this.pageMobileData.json.moduleList).length){
-                this.pageMobileData = Object.clone(this.pageData);
-            }
+            // if (!Object.keys(this.pageMobileData.json.moduleList).length){
+            //     this.pageMobileData = Object.clone(this.pageData);
+            // }
             this.mobilePage.load(this.pageMobileData);
 
             // this.mobilePage = new MWF.PCPage(this, this.designMobileNode, {"mode": "Mobile"});

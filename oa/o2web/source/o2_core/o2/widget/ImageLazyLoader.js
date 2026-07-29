@@ -22,7 +22,6 @@ o2.widget.ImageLazyLoader = o2.ImageLazyLoader = new Class({
         this.fireEvent("init");
     },
     load: function(callback){
-
         if( Browser.name === 'ie' && !this.isIE11 ){
             this.parseOnerror();
             this.node.set("html", this.html_new);
@@ -49,7 +48,7 @@ o2.widget.ImageLazyLoader = o2.ImageLazyLoader = new Class({
     parseOnerror: function(){
         var html = this.replaceOnAttribute(this.html);
         var regexp_all = /(i?)(<img)([^>]+>)/gmi;
-        var images = this.html.match(regexp_all);
+        var images = html.match(regexp_all);
         if(images){
             if (images.length){
                 for (var i=0; i<images.length; i++){
@@ -68,7 +67,7 @@ o2.widget.ImageLazyLoader = o2.ImageLazyLoader = new Class({
     parseHtml: function(){
         var html = this.replaceOnAttribute(this.html);
         var regexp_all = /(i?)(<img)([^>]+>)/gmi;
-        var images = this.html.match(regexp_all);
+        var images = html.match(regexp_all);
         if(images){
             if (images.length){
                 for (var i=0; i<images.length; i++){
@@ -106,6 +105,34 @@ o2.widget.ImageLazyLoader = o2.ImageLazyLoader = new Class({
 
         this.html_new = html;
     },
+    clearHtml: function(){
+        var html = this.replaceOnAttribute(this.html);
+        var regexp_all = /(i?)(<img)([^>]+>)/gmi;
+        var images = html.match(regexp_all);
+        if(images){
+            if (images.length){
+                for (var i=0; i<images.length; i++){
+                    var image = images[i];
+                    var image1 = this.removeAttribute(image, "onerror");
+                    // var src =  this.getAttributeValue(image, "src");
+                    // if( src.substr(0, 5) !== "data:" ){ //不是base64位
+                    //     var size = this.getSize(image);
+                    //     if( size ){
+                    //         image1 = this.replaceStyles(image1, {
+                    //             "height": size.y+"px",
+                    //             "width": size.x+"px"
+                    //         });
+                    //     }
+                    // }
+                    html = html.replace(image, image1);
+                }
+            }
+        }
+        html = this.replaceHrefJavascriptStr( html );
+        html = this.replaceIframeJavascriptStr( html );
+
+        return html;
+    },
     replaceOnAttribute: function (htmlString){
 
         var tempDiv = document.createElement('div');
@@ -136,7 +163,7 @@ o2.widget.ImageLazyLoader = o2.ImageLazyLoader = new Class({
                 for (var i=0; i<as.length; i++){
                     var a = as[i];
                     var href =  this.getAttributeValue(a, "href");
-                    if( href.indexOf('javascript:') > -1 ){
+                    if( href.toLowerCase().indexOf('javascript:') > -1 ){
                         var a1 = this.removeAttribute(a, "href");
                         html = html.replace(a, a1);
                     }

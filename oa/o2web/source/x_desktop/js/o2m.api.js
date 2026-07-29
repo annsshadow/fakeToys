@@ -177,7 +177,7 @@
      * @static
      * @param {String} callback 操作按钮点击执行函数
      * @param {String} iconClassName 操作按钮 icon className
-     * @param {[object]} menuList 操作按钮列表 [{"title": "菜单名称", "callback": "回调函数名称"}]
+     * @param {Object[]} menuList 操作按钮列表 [{"title": "菜单名称", "callback": "回调函数名称"}]
      * @example
      * window.o2m.portalLoaded('callbackName'); //添加操作按钮
      */
@@ -212,6 +212,49 @@
         } else {
             console.error('portalLoaded 执行失败，环境读取失败')
         }
+    }
+
+    this.o2m._uploadFileCallback = function (result) {
+        console.log("o2m _uploadFileCallback ", result);
+    };
+
+    /**
+     * 上传文件，并返回文件 id
+     * @method uploadFile
+     * @memberOf o2m
+     * @static
+     * @param {Object} args 传入对象
+     * <pre><code class='language-js'>{
+     *  "callback": function,  // 上传结果返回函数
+     *  "onlyTakePhoto": false // 只能拍照
+     * }</code></pre>
+     * @example
+     * o2m.uploadFile({
+     *  callback : function(result) {//callback将在点击button之后回调}
+     * });
+     *
+     */
+    this.o2m.uploadFile = function (args) {
+        if (!args) {
+            console.error("o2m.uploadFile， 参数错误！")
+            return;
+        }
+        const callback = args.callback ? args.callback : null;
+        if (callback && typeof callback === "function") {
+            o2m._uploadFileCallback  = callback;
+        } else {
+            console.error("o2m.uploadFile 缺少参数 callback")
+            return;
+        }
+        const onlyTakePhoto = args.onlyTakePhoto || false;
+        const body = {
+            type: "uploadFile",
+            data: {
+                callback: "o2m._uploadFileCallback",
+                onlyTakePhoto: onlyTakePhoto
+            }
+        };
+        window.o2android.postMessage(JSON.stringify(body));
     }
 
     /** ***** BEGIN NOTIFICATION BLOCK *****
@@ -1693,6 +1736,77 @@
      */
     this.o2m.biz.workClose = _o2m_b_work_close;
 
+    // o2m.biz.createDocument
+    const _o2m_b_createDocument = function (columnOrOptions, category, data, latest,  ignoreTitle) {
+        let column = columnOrOptions;
+        if (typeOf(columnOrOptions) == "object") {
+            column = columnOrOptions.column;
+            category = columnOrOptions.category;
+            data = columnOrOptions.data;
+            latest = columnOrOptions.latest;
+            ignoreTitle = columnOrOptions.ignoreTitle;
+        }
+        const options = {};
+        if (column) {
+            options["column"] = column
+        }
+        if (category) {
+            options["category"] = category
+        }
+        if (data) {
+            options["data"] = data
+        }
+
+        if (latest) {
+            options["latest"] = (latest === 'true' || latest === true)
+        }
+        if (ignoreTitle) {
+            options["ignoreTitle"] = (ignoreTitle === 'true' || ignoreTitle === true)
+        }
+        const body = {
+            type: "createO2CmsDocument",
+            data: options
+        }
+        if (window.o2android && window.o2android.postMessage) {
+            window.o2android.postMessage(JSON.stringify(body));
+        } else if (window.o2android && window.o2android.createO2CmsDocument){
+            window.o2android.createO2CmsDocument(JSON.stringify(options));
+        } else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.createO2CmsDocument) {
+            window.webkit.messageHandlers.createO2CmsDocument.postMessage(options);
+        }
+    }
+    /**
+     * 创建一条内容管理文档。
+     * @method createDocument
+     * @memberOf o2m
+     * @o2membercategory biz
+     * @static
+     * @param {(String|Object)} [columnOrOptions]
+     * 如果不传参数，则弹出范围为平台所有栏目的选择界面。<br/>
+     * 当使用String时为内容管理应用（栏目）的名称、别名或ID。<br/>
+     * 当使用Object时，本参数后面的参数省略，传入如下格式的内容:
+     * <pre><code class="language-js">{
+     *   "column" : column, //（string）可选，内容管理应用（栏目）的名称、别名或ID
+     *   "category" : category, //（string）可选，要创建的文档所属的分类的名称、别名或ID
+     *   "data" : data, //（json object）可选，创建文档时默认的业务数据
+     *   "latest" : latest, //（boolean）可选，为true时，如果当前用户已经创建了此分类的文档，并且没有发布过，直接调用此文档为新文档；否则创建一个新文档。默认true。
+     *   "ignoreTitle" : ignoreTitle //（boolean）可选，值为false时，创建的时候需要强制填写标题，默认为false。
+     * }</code></pre>
+     * @param {String} [category] - 要创建的文档所属的分类的名称、别名或ID
+     * @param {Object} [data] - 创建文档时默认的业务数据
+     * @param {Boolean} [latest] - 为true时，如果当前用户已经创建了此分类的文档，并且没有发布过，直接调用此文档为新文档；否则创建一个新文档。默认true。
+     * @param {Boolean} [ignoreTitle] - 值为false时，创建的时候需要强制填写标题，默认为false。
+     * @example
+     * //启动一个通知公告
+     * o2m.biz.createDocument("", "通知公告");
+     * @example
+     *          //启动一个通知公告，标题为：关于XX的通知，启动后提示
+     *          o2m.biz.createDocument({
+     *             category : "通知公告",
+     *             data : {"subject": "关于XX的通知"}
+     *          });
+     */
+    this.o2m.biz.createDocument = _o2m_b_createDocument;
 
     //o2m.biz.contact.departmentsPicker
     this.o2m.biz.contact.departmentsPickerSuccess = function (result) {

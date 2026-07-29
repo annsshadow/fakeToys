@@ -40,7 +40,9 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
     _loadNode: function(){
 		if (!this.isReadable && !!this.isHideUnreadable){
             this.node?.addClass('hide');
-        }else{
+        }else if(this.downloading){
+			this._loadOONodeDownloading();
+		}else{
             this._loadNodeEdit();
         }
 
@@ -114,7 +116,8 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
     },
     _loadNodeEdit: function(){
 		this._resetNodeEdit();
-		this.node.setAttribute('value', undefined);
+		//this.node.setAttribute('value', undefined);
+		this.node.removeAttribute("value");
 		this.node.removeAttribute("placeholder");
 
 		if (o2.isMediaMobile() && !this.json.inDatatable){
@@ -179,6 +182,18 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
             this.node.setAttribute('allow-input', 'true');
         }else{
 			this.node.removeAttribute('allow-input');
+		}
+
+		if (this.json.maxTags) {
+			this.node.setAttribute('max-tags', this.json.maxTags);
+		}else{
+			this.node.removeAttribute('max-tags');
+		}
+
+		if (this.json.multiple) {
+			this.node.setAttribute('multiple', 'true');
+		}else{
+			this.node.setAttribute('multiple', 'false');
 		}
 
 		if (this.json.innerHTML){
@@ -271,6 +286,7 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
             "text": text
         }).inject(this.node);
 		option.setAttribute('value', value || text);
+		option.setAttribute('text', text || value);
 		this.fireEvent("addOption", [text, value])
 	},
 
@@ -303,8 +319,9 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 	// },
 
 	__setValue: function(value){
+		debugger;
 		this._setBusinessData(value);
-		this.node.value = value;
+		this.node.value = Array.isArray(value) ? JSON.stringify(value) : value;
 		this.fieldModuleLoaded = true;
 		this.moduleValueAG = null;
 	},
@@ -317,13 +334,17 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 		return null;
 	},
 	_getInputTextData: function(){
-		return {"value": this.node.value , "text": this.node.text};
+		return {"value": this.node.value , "text": this.getText()};
 	},
 	getText: function(){
-		return this.node.text || '';
+		if( this.fieldModuleLoaded ){
+			return this.node.text || '';
+		}else{
+			return this.getBusinessDataById(null, `${this.json.id}$text`) || '';
+		}
 	},
     getInputData: function(){
-		return this.node.value;
+		return this.node.value || '';
 	},
     resetData: function(){
         this.setData(this.getValue());
@@ -344,13 +365,31 @@ MWF.xApplication.process.Xform.OOSelect = MWF.APPOOSelect =  new Class({
 	},
 
 	notValidationMode: function (text) {
-		this.validationText = text;
-		this.node.checkValidity();
+        if(!this.isNotValidationMode){
+            this.isNotValidationMode = true;
+            this.validationText = text;
+            this.node.checkValidity();
+        }
 	},
 	validationMode: function () {
-		this.validationText = '';
-		this.node.unInvalidStyle();
-	}
+        if(this.isNotValidationMode){
+            this.isNotValidationMode = false;
+            this.validationText = '';
+            this.node.unInvalidStyle();
+        }
+    },
+	_afterLoadOONodeDownloading: function (){
+		let value = this.getBusinessDataById(null, `${this.json.id}$text`) || '';
+		if(!value){
+			value = this._getBusinessData();
+		}
+		if(Array.isArray(value)){
+			value = value.map(v=>{
+				return Array.isArray(v) ? v.join(' /') : v;
+			}).join(' ,');
+		}
+		this.downloadingValueNode.set('text', value || '-');
+	},
 });
 
 function mergeUniqueArrays(arr1, arr2) {

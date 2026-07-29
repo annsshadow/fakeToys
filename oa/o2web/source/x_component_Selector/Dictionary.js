@@ -32,23 +32,23 @@ MWF.xApplication.Selector.Dictionary = new Class({
             // }
             switch (type) {
                 case "process":
-                    action = o2.Actions.load("x_processplatform_assemble_designer").ApplicationDictAction.listPaging;
+                    action = o2.Actions.load("x_processplatform_assemble_designer").ApplicationDictAction.listPaging(1, 1000, {});
                     break;
                 case "cms":
-                    action = o2.Actions.load("x_cms_assemble_control").AppDictDesignAction.listPaging;
+                    action = o2.Actions.load("x_cms_assemble_control").AppDictDesignAction.listPaging(1, 1000, {});
                     break;
                 case "portal":
-                    action = o2.Actions.load("x_portal_assemble_designer").DictAction.listPaging;
+                    action = o2.Actions.load("x_portal_assemble_designer").DictAction.listPaging(1, 1000, {});
                     break;
                 case "service":
-                    action = o2.Actions.load("x_program_center").DictAction.listPaging;
+                    action = o2.Actions.load("x_program_center").DictAction.list();
                     break;
 
             }
 
             var json = {};
             var array = [];
-            action(1, 1000, {}, function( dictionaryJson ) {
+            action.then(function( dictionaryJson ) {
                 dictionaryJson.data.each(function (dictionary) {
                     var appName, appId, appAlias;
                     if( type === "service" ){
@@ -76,7 +76,7 @@ MWF.xApplication.Selector.Dictionary = new Class({
                     dictionary.appAlias = appAlias;
                     dictionary.appType = type;
                     dictionary.type = "dictionary";
-                    json[appId].dictionaryList.push(dictionary)
+                    json[appId].dictionaryList.push(dictionary);
                 }.bind(this));
                 for (var application in json) {
                     if (json[application].dictionaryList && json[application].dictionaryList.length) {
@@ -105,7 +105,7 @@ MWF.xApplication.Selector.Dictionary = new Class({
                         var category = this._newItemCategory({
                             name: MWF.xApplication.Selector.LP.appType[type],
                             id: type,
-                            dictionaryList: array[0].dictionaryList
+                            dictionaryList: array.length > 0 ? array[0].dictionaryList : []
                         }, this, container);
                     }else{
                         var category = this._newItemCategory({
@@ -145,7 +145,10 @@ MWF.xApplication.Selector.Dictionary = new Class({
     },
     _newItem: function(data, selector, container, level){
         return new MWF.xApplication.Selector.Dictionary.Item(data, selector, container, level);
-    }
+    },
+    _newItemSearch: function(data, selector, container, level){
+        return new MWF.xApplication.Selector.Dictionary.SearchItem(data, selector, container, level);
+    },
 });
 MWF.xApplication.Selector.Dictionary.Item = new Class({
     Extends: MWF.xApplication.Selector.Person.Item,
@@ -186,9 +189,22 @@ MWF.xApplication.Selector.Dictionary.Item = new Class({
             //selectedItem[0].item = this;
             selectedItem[0].addItem(this);
             this.selectedItem = selectedItem[0];
+            this.selectedItem._setText(this);
             this.setSelected();
         }
     }
+});
+
+MWF.xApplication.Selector.Dictionary.SearchItem = new Class({
+    Extends: MWF.xApplication.Selector.Dictionary.Item,
+    _getShowName: function(){
+        return this.data.name+((this.data.appName) ? "("+this.data.appName+")" : "");
+    },
+    _getTtiteText: function(){
+        return `${MWF.xApplication.Selector.LP.application}:${this.data.appName}
+${MWF.xApplication.Selector.LP.name}:${this.data.name}
+${MWF.xApplication.Selector.LP.alias}:${this.data.alias}`;
+    },
 });
 
 MWF.xApplication.Selector.Dictionary.ItemSelected = new Class({
@@ -198,6 +214,9 @@ MWF.xApplication.Selector.Dictionary.ItemSelected = new Class({
     },
     _setIcon: function(){
         this.iconNode.setStyle("background-image", "url("+"../x_component_Selector/$Selector/default/icon/attr.png)");
+    },
+    _setText: function(item){
+        this.textNode.set("text", item.data.name+((item.data.appName) ? "("+item.data.appName+")" : ""));
     },
     check: function(){
         if (this.selector.items.length){
@@ -209,6 +228,7 @@ MWF.xApplication.Selector.Dictionary.ItemSelected = new Class({
             }.bind(this));
             this.items = items;
             if (items.length){
+                this._setText(items[0]);
                 items.each(function(item){
                     item.selectedItem = this;
                     item.setSelected();

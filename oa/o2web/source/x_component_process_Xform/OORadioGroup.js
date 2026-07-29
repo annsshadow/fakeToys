@@ -14,6 +14,8 @@ MWF.xApplication.process.Xform.OORadioGroup = MWF.APPOORadioGroup = new Class({
         // }else{
             if (!this.isReadable && !!this.isHideUnreadable){
                 this.node?.addClass('hide');
+            }else if(this.downloading){
+                this._loadOONodeDownloading();
             }else{
                 this._loadNodeEdit();
             }
@@ -200,14 +202,17 @@ MWF.xApplication.process.Xform.OORadioGroup = MWF.APPOORadioGroup = new Class({
         this.fieldModuleLoaded = true;
     },
     getTextData: function () {
-        return {"value": this.node.value , "text": this.node.text};
+        return {"value": this.node.value , "text": this.getText()};
     },
     _getInputTextData: function(){
-        return {"value": this.node.value , "text": this.node.text};
+        return {"value": this.node.value , "text": this.getText()};
     },
-
     getText: function(){
-        return this.node.text || '';
+        if( this.fieldModuleLoaded ){
+            return this.node.text || '';
+        }else{
+            return this.getBusinessDataById(null, `${this.json.id}$text`) || '';
+        }
     },
     getInputData: function(){
         return this.node.value;
@@ -227,8 +232,13 @@ MWF.xApplication.process.Xform.OORadioGroup = MWF.APPOORadioGroup = new Class({
         this.fieldModuleLoaded = true;
         this.fireEvent("setData");
     },
-
-
+    _afterLoadOONodeDownloading: function (){
+        let value = this.getBusinessDataById(null, `${this.json.id}$text`) || '';
+        if(!value){
+            value = this._getBusinessData();
+        }
+        this.downloadingValueNode.set('text', value || '-');
+    },
     //
     // createModelNode: function () {
     //     this.modelNode = new Element('div', {'styles': this.form.css.modelNode}).inject(this.node, 'after');
@@ -250,11 +260,17 @@ MWF.xApplication.process.Xform.OORadioGroup = MWF.APPOORadioGroup = new Class({
     // },
 
     notValidationMode: function (text) {
-        this.validationText = text;
-        this.node.checkValidity();
+        if(!this.isNotValidationMode){
+            this.isNotValidationMode = true;
+            this.validationText = text;
+            this.node.checkValidity();
+        }
     },
     validationMode: function () {
-        this.validationText = '';
-        this.node.unInvalidStyle();
+        if(this.isNotValidationMode){
+            this.isNotValidationMode = false;
+            this.validationText = '';
+            this.node.unInvalidStyle();
+        }
     }
 });

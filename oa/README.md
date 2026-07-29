@@ -49,57 +49,6 @@ Windows 64Bit, Linux 64Bit[CentOS, RedHat, Ubuntu等], MacOS, AIX, Raspberrypi(�
 
 
 
-# 支持数据库：
-
-O2OA通过openjpa默认支持以下数据库:
-
-| Database Name                     | Database Version            | JDBC Driver Name                  | JDBC Driver Version |
-| --------------------------------- | --------------------------- | --------------------------------- | ------------------- |
-| Apache Derby                      | 10.1.2.1                    | Apache Derby Embedded JDBC Driver | 10.1.2.1            |
-| Borland Interbase                 | 7.1.0.202                   | Interclient                       | 4.5.1               |
-| Borland JDataStore                | 6.0                         | Borland JDataStore                | 6.0                 |
-| DB2                               | 8.1                         | IBM DB2 JDBC Universal Driver     | 1.0.581             |
-| Empress                           | 8.62                        | Empress Category 2 JDBC Driver    | 8.62                |
-| Firebird                          | 1.5                         | JayBird JCA/JDBC driver           | 1.0.1               |
-| H2 Database Engine                | 1.0                         | H2                                | 1.0                 |
-| Hypersonic Database Engine        | 1.8.0                       | Hypersonic                        | 1.8.0               |
-| Informix Dynamic Server           | 9.30.UC10                   | Informix JDBC driver              | 2.21.JC2            |
-| InterSystems Cache                | 5.0                         | Cache JDBC Driver                 | 5.0                 |
-| Microsoft Access                  | 9.0 (a.k.a. "2000")         | DataDirect SequeLink              | 5.4.0038            |
-| Microsoft SQL Server              | 9.00.1399 (SQL Server 2005) | SQLServer                         | 1.0.809.102         |
-| Microsoft Visual FoxPro           | 7.0                         | DataDirect SequeLink              | 5.4.0038            |
-| MySQL                             | 3.23.43-log                 | MySQL Driver                      | 3.0.14              |
-| MySQL                             | 5.0.26                      | MySQL Driver                      | 3.0.14              |
-| Oracle                            | 8.1,9.2,10.1                | Oracle JDBC driver                | 10.2.0.1.0          |
-| Pointbase                         | 4.4                         | Pointbase JDBC driver             | 4.4 (4.4)           |
-| PostgreSQL                        | 7.2.1                       | PostgreSQL Native Driver          | 8.1                 |
-| PostgreSQL                        | 8.1.5                       | PostgreSQL Native Driver          | 8.1                 |
-| Sybase Adaptive Server Enterprise | 12.5                        | jConnect                          | 5.5 (5.5)           |
-
-主流数据库都包含在内.
-
-
-
-# 国产数据库支持
-
-对与国产数据库的支持是对不同的数据库编写不同的适配方言来实现的，也就是通过定制DBDictionary来实现对接。
-
-目前我们已经成功适配的国产数据库如下：
-
-| 数据库                 | 方言                                                   |
-| ---------------------- | ------------------------------------------------------ |
-| 达梦                   | com.x.base.core.openjpa.jdbc.sql.DMDictionary          |
-| 南大通用8s             | com.x.base.core.openjpa.jdbc.sql.GBaseDictionary       |
-| 南大通用华库(mysql5)   | com.x.base.core.openjpa.jdbc.sql.GBaseMySQL5Dictionary |
-| 南大通用华库(mysql8)   | com.x.base.core.openjpa.jdbc.sql.GBaseMySQLDictionary  |
-| 人大金仓V7             | com.x.base.core.openjpa.jdbc.sql.KingbaseDictionary    |
-| 人大金仓V8             | com.x.base.core.openjpa.jdbc.sql.Kingbase8Dictionary   |
-| 人大金仓V8R6           | com.x.base.core.openjpa.jdbc.sql.Kingbase8R6Dictionary |
-| 神通数据库             | com.x.base.core.openjpa.jdbc.sql.OscarDictionary       |
-| 各种PostgreSQL改造版本 | org.apache.openjpa.jdbc.sql.PostgresDictionary         |
-
-
-
 # 平台使用手册：
 
 https://www.o2oa.net/handbook.html
@@ -136,7 +85,6 @@ Linux环境：https://www.o2oa.net/cms/serverdeployment/468.html
 
 6.自动完成后打开浏览器访问http://127.0.0.1。
 
-7.输入用户名xadmin密码o2oa@2022登陆系统。
 
 ## linux
 
@@ -155,8 +103,6 @@ Linux环境：https://www.o2oa.net/cms/serverdeployment/468.html
 7.启动服务,等待相关服务自动完成。
 
 8.自动完成后打开浏览器访问http://127.0.0.1。
-
-9.输入用户名xadmin密码o2oa@2022登陆系统。
 
 
 

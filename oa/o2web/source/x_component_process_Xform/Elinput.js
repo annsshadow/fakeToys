@@ -136,6 +136,7 @@ MWF.xApplication.process.Xform.Elinput = MWF.APPElinput =  new Class(
         _createEventFunction: function(methods, k){
             methods["$loadElEvent_"+k.camelCase()] = function(){
                 var flag = true;
+                debugger;
                 if (k==="change"){
                     if(this.json.inputType === "number"  ){
                         if( this.json.resultType === "number" ){
@@ -205,7 +206,7 @@ MWF.xApplication.process.Xform.Elinput = MWF.APPElinput =  new Class(
         if (this.isReadonly()) {
             this.node.set("text", data);
             if( this.json.inputType === "textarea"){
-                this.node.setStyle('white-space', 'pre');
+                this.node.setStyle('white-space', 'pre-wrap');
             }
             if( this.json.elProperties ){
                 this.node.set(this.json.elProperties );

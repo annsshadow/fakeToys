@@ -4,7 +4,7 @@ MWF.xApplication.Profile.Main = new Class({
     Implements: [Options, Events],
 
     options: {
-        "style": "newVersion",
+        "style": "v10",
         "name": "Profile",
         "icon": "icon.png",
         "width": "1100",
@@ -363,7 +363,7 @@ MWF.xApplication.Profile.Main = new Class({
             this.ideasSaveDefaultAction.addEvent("click", function(){
                 MWF.require("MWF.widget.UUID", function(){
                     var data = {};
-                    data.ideas = this.ideasArea.get("value").split("\n");
+                    data.ideas = this.ideasArea.get("value").split("\n").filter(v=>!!v);
                     MWF.UD.putPublicData("idea", data, function(){
                         this.notice(this.lp.ideaSaveOk, "success");
                     }.bind(this));
@@ -382,7 +382,7 @@ MWF.xApplication.Profile.Main = new Class({
         this.ideasSaveAction.addEvent("click", function(){
             MWF.require("MWF.widget.UUID", function(){
                 var data = {};
-                data.ideas = this.ideasArea.get("value").split("\n");
+                data.ideas = this.ideasArea.get("value").split("\n").filter(v=>!!v);
                 MWF.UD.putData("idea", data, function(){
                     this.notice(this.lp.ideaSaveOk, "success");
                 }.bind(this));
@@ -906,7 +906,7 @@ MWF.xApplication.Profile.Main = new Class({
                 }.bind(this));
             }.bind(this));
         }
-        
+
     },
 
     changeIcon: function(){

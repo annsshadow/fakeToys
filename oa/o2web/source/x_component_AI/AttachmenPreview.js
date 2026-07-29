@@ -17,8 +17,8 @@ MWF.xApplication.AI.AttachmenPreview = new Class({
         }else if(extension === "pdf"){
             this.previewPdf();
         }else if(["doc","docx","xls","xlsx","ppt","pptx"].contains(extension)){
-            // this.previewOffice();
-            window.open(this.fileUrl);
+            this.previewOffice();
+            //window.open(this.fileUrl);
         }else if(["png","jpg","bmp","jpeg","gif"].contains(extension)){
             this.previewImage();
         }else{
@@ -30,32 +30,41 @@ MWF.xApplication.AI.AttachmenPreview = new Class({
         if(layout.mobile){
             location.href = "../o2_lib/pdfjs/web/viewer.html?file=" + this.fileUrl;
         }else{
-            window.open("../o2_lib/pdfjs/web/viewer.html?file=" + this.fileUrl);
+
+            const url = "../o2_lib/pdfjs/web/viewer.html?file=" + encodeURIComponent(this.fileUrl);
+            const options = {
+                "fileUrl": url,
+                "fileName" : this.att.name,
+                "appId": "PdfViewer" + this.att.id
+            };
+            layout.openApplication(null, "PdfViewer", options);
+
+
         }
     },
     previewOffice : function(){
 
-
-        switch (this.app.json.officeTool) {
-            case "LibreOffice":
-                this.previewLibreOffice();
-                break;
-            case "OfficeOnline":
-                this.previewOfficeOnline();
-                break;
-            case "OnlyOffice":
-                this.previewOnlyOffice();
-                break;
-            case "YozoOffice":
-                this.previewYozoOffice();
-                break;
-            case "WpsOffice":
-                this.previewWpsOffice();
-                break;
-            default :
-                this.previewLibreOffice();
-
-        }
+        this.previewOnlyOffice();
+        // switch (this.app.json.officeTool) {
+        //     case "LibreOffice":
+        //         this.previewLibreOffice();
+        //         break;
+        //     case "OfficeOnline":
+        //         this.previewOfficeOnline();
+        //         break;
+        //     case "OnlyOffice":
+        //         this.previewOnlyOffice();
+        //         break;
+        //     case "YozoOffice":
+        //         this.previewYozoOffice();
+        //         break;
+        //     case "WpsOffice":
+        //         this.previewWpsOffice();
+        //         break;
+        //     default :
+        //         this.previewLibreOffice();
+        //
+        // }
 
 
     },
@@ -80,17 +89,14 @@ MWF.xApplication.AI.AttachmenPreview = new Class({
     previewOnlyOffice : function (){
         var att = this.att;
         var jars ;
-        if(att.data.activity){
-            jars = "x_processplatform_assemble_surface";
-        }
-        if(att.data.categoryId){
-            jars = "x_cms_assemble_control";
-        }
+        jars = "x_ai_assemble_control";
+        var xtoken = layout.session.token;
 
         var options = {
-            "documentId": att.id,
             "mode":"view",
             "jars" : jars,
+            "fileName" : encodeURIComponent(att.name),
+            "url" : encodeURIComponent(o2.filterUrl(this.fileUrl + "?"+o2.tokenName+"=" + xtoken) ),
             "appId":  "OnlyOfficeEditor" + att.id
         };
         layout.openApplication(null, "OnlyOfficeEditor", options);

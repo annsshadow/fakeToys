@@ -22,10 +22,10 @@
 //
 //		// 2. 配置两个数据源，一个为主库，一个为从库
 //		DataSource masterDataSource = createDataSource("mysql1",
-//				"jdbc:mysql://localhost:4006/test_ray?autoReconnect=true&allowPublicKeyRetrieval=true&useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&serverTimezone=GMT%2B8",
+//				"jdbc:mysql://172.16.98.230:4006/test_ray?autoReconnect=true&allowPublicKeyRetrieval=true&useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&serverTimezone=GMT%2B8",
 //				"admin", "password");
 //		DataSource slaveDataSource = createDataSource("mysql2",
-//				"jdbc:mysql://localhost:4006/test_ray_55?autoReconnect=true&allowPublicKeyRetrieval=true&useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&serverTimezone=GMT%2B8",
+//				"jdbc:mysql://172.16.98.230:4006/test_ray_55?autoReconnect=true&allowPublicKeyRetrieval=true&useSSL=false&useUnicode=true&characterEncoding=UTF-8&useLegacyDatetimeCode=false&serverTimezone=GMT%2B8",
 //				"admin", "password");
 //
 //		// 3. 配置Bitronix事务管理器

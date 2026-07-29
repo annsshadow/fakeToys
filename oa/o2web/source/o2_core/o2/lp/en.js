@@ -462,11 +462,16 @@ o2.LP={
 			"Emotions": "regular_smile|smile，teeth_smile|laugh,angry_smile|angry,confused_smile|confuse,cry_smile|cry,embaressed_smile|awkward,omg_smile|Surprised,sad_smile|sad,shades_smile|cool,tounge_smile|Tongue out,wink_smile|wink,angel_smile|angel,devil_smile|devil,heart|heart,broken_heart|Broken heart,thumbs_up|up,thumbs_down|down,cake|cake,lightbulb|light,envelope|envelope"
 		},
 		"previewAtt": "preview",
+		"aiAtt": "AI",
 		"notUploadNotice": "The current status does not allow uploading attachments",
 		"unit": "organization",
 		"duty": "post",
 		"selectIdentity": "Choose Identity",
-		"selectFromDriver": "Choose from enterprise cloud storage"
+		"selectFromDriver": "Choose from enterprise cloud storage",
+		"collect": "Collect",
+		"noCollect": "No files are currently in the Favorites folder",
+		"deleteCollectTitle": "Delete Confirmation",
+		"deleteCollectInfor": "Are you sure you want to delete this handwritten file?"
 	},
 	"authentication": {
 		"LoginFormTitle": "Welcome",

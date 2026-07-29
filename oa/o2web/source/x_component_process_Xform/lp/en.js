@@ -310,6 +310,7 @@ MWF.xApplication.process.Xform.LP={
 		"resumeTitle": "Resume the task from pending",
 		"downloadAll": "Download",
 		"downloadAllTitle": "Download the form and all attachments",
+		"downloadAllText": "The form needs to be saved first. Do you want to continue?",
 		"monitor": "Process Monitor",
 		"monitorTitle": "Process Monitor",
 		"addTask": "Add Task",
@@ -420,6 +421,9 @@ MWF.xApplication.process.Xform.LP={
 	"requiredHintField": "this",
 	"editDatatable": "Edit data table",
 	"editOk": "Editing completed",
-	"associatedFailureMessage": "{count} documents failed to be associated."
+	"associatedFailureMessage": "{count} documents failed to be associated.",
+	"empty": "clear",
+	"associatedCount": "Associated with {count} items",
+	"associatedDocumentCompleted": "Association completed"
 }
 MWF.xApplication.process.Xform["lp."+o2.language] = MWF.xApplication.process.Xform.LP

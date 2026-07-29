@@ -20,6 +20,12 @@ MWF.xApplication.query.Query.LP = {
     "or": "或者",
     "searchNavTitle": "请输入关键字搜索",
     "searchNavPlaceholder": "请输入关键字搜索",
+    "beginDate": "开始时间",
+    "endDate": "结束时间",
+    "begin": "开始",
+    "end": "结束",
+    "max": "最大",
+    "min": "最小",
     "form": {
         "exportExcel": "导出Excel"
     },
@@ -159,9 +165,9 @@ MWF.xApplication.query.Query.LP = {
     "firstPage": "第一页",
     "lastPage": "最后一页",
     "viewExport" : {
-        "exportByPaging": "按分页导出",
+        "exportByPaging": "按范围导出",
         "exportAll": "导出全部",
-        "description" : "注：有{count}条符合条件的数据，分页导出每次最多2000条。",
+        "description" : "注：有{count}条符合条件的数据，按范围导出每次最多2000条。",
         "exportRange" : "导出范围",
         "fileName": "文件名",
         "to" : "到",

@@ -340,6 +340,7 @@ o2.LP={
 		"delete": "Eliminar",
 		"previewAtt": "Previsualización",
 		"editAtt": "Editar",
+		"aiAtt": "IA",
 		"replace": "Reemplazar",
 		"select": "Seleccionar",
 		"download": "Descargar",
@@ -466,7 +467,11 @@ o2.LP={
 		"unit": "Organización",
 		"duty": "Cargo",
 		"selectIdentity": "Elegir identidad",
-		"selectFromDriver": "Selección del disco de red de la empresa"
+		"selectFromDriver": "Selección del disco de red de la empresa",
+		"collect": "recolectar",
+		"noCollect": "Actualmente no hay archivos en la carpeta Favoritos",
+		"deleteCollectTitle": "Eliminar confirmación",
+		"deleteCollectInfor": "¿¿ estás seguro de que quieres eliminar el archivo escrito a mano?"
 	},
 	"authentication": {
 		"LoginFormTitle": "Bienvenido al inicio de sesión",

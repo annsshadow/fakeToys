@@ -270,6 +270,48 @@ MWF.xApplication.process.Application.Main = new Class({
 	},
 	recordStatus: function(){
 		return { "id": this.options.id};
+	},
+	createStartWorkResault: function(workInfors, title, processName, isopen){
+		var content = "";
+		workInfors.each(function(infor){
+			var users = [];
+			infor.users.each(function(uname){
+				users.push(MWF.name.cn(uname));
+			});
+
+			content += "<div><b>"+this.lp.nextActivity+"<font style=\"color: #ea621f\">"+infor.activity+"</font>, "+this.lp.nextUser+"<font style=\"color: #ea621f\">"+users.join(", ")+"</font></b>";
+			if (infor.currentTask && isopen){
+				content += "&nbsp;&nbsp;&nbsp;&nbsp;<span value=\""+infor.currentTask+"\">"+this.lp.deal+"</span></div>";
+			}else{
+				content += "</div>";
+			}
+		}.bind(this));
+
+		var msg = {
+			"subject": this.lp.processStarted,
+			"content": "<div>"+this.lp.processStartedMessage+"“["+processName+"]"+title+"”</div>"+content
+		};
+		var tooltip = layout.desktop.message.addTooltip(msg);
+		var item = layout.desktop.message.addMessage(msg);
+
+		this.setStartWorkResaultAction(tooltip);
+		this.setStartWorkResaultAction(item);
+	},
+	setStartWorkResaultAction: function(item){
+		var node = item.node.getElements("span.dealStartedWorkAction");
+		var _self = this;
+		node.addEvent("click", function(e){
+			var options = {"taskId": this.get("value"), "appId": this.get("value"),
+				"onPostClose": function(){
+					try{
+						if (_self.currentList.refresh) _self.currentList.refresh();
+					}catch (e) {
+
+					}
+				}
+			};
+			_self.app.desktop.openApplication(e, "process.Work", options);
+		});
 	}
 });
 MWF.xApplication.process.Application.List = new Class({
@@ -579,6 +621,7 @@ MWF.xApplication.process.Application.List = new Class({
 		}
 	},
 	refresh: function(){
+		this.page = 1;
 		this.hide();
 		this.load();
 		this.app.loadCount();
@@ -619,6 +662,14 @@ MWF.xApplication.process.Application.List = new Class({
 			}).inject(this.pageNode);
 			if (i==this.page) node.addClass("mainColor_bg");
 		}
+
+		var pageInfo = this.lp.pageInfo;
+		pageInfo = pageInfo
+			.replace("{total}", this.total)
+			.replace("{perPage}",this.size)
+			.replace("{totalPage}", this.pageCount);
+
+		this.pageInfoNode.set("html",pageInfo);
 	},
 	nextPage: function(){
 		this.page++;
@@ -1111,15 +1162,14 @@ MWF.xApplication.process.Application.WorkList = new Class({
 		layout.desktop.openApplication(null, "process.Work", options);
 
 	},
-	manage : function (id,ev,dataList){
+	manage : function (id,ev){
 		var data ;
-		for(var i = 0 ; i < dataList.length;i++){
-			if(dataList[i].id === id){
-				data = dataList[i];
+		for(var i = 0 ; i < this.dataList.length;i++){
+			if(this.dataList[i].id === id){
+				data = this.dataList[i];
 				break ;
 			}
 		}
-
 		this._manage(data);
 	},
 	_manage : function (data){
@@ -4382,7 +4432,7 @@ MWF.xApplication.process.Application.ManageWorkForm = new Class({
 							workData[fieldName] = (fieldType === "object" ? JSON.parse(fieldValue) : fieldValue);
 
 							if(fieldType === "number"){
-								workData[fieldName] = parseInt(fieldValue);
+								workData[fieldName] = parseFloat(fieldValue);
 							}
 
 							_self = this;

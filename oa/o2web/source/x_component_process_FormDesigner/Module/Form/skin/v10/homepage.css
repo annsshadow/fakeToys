@@ -29,7 +29,7 @@
     /*aspect-ratio: 1 / 1;*/
     min-width: 30em;
     flex: 1;
-    min-height: 30em;
+    min-height: 26em;
     /* background-color: #2e9ad0; */
 }
 
@@ -338,6 +338,12 @@
     .page-widget-title > div:first-child > div {
         display: none;
     }
+    .page-widget-title > .page-widget-drag-area{
+        display: none;
+    }
+    .page-widget-title > .page-widget-tab-line{
+        display: none;
+    }
     .page-index-content {
         min-width: 100% !important;
     }
@@ -386,6 +392,10 @@
 
     .form-layout .page-widget-text-item {
         gap: 0.5em !important;
+    }
+
+    .form-layout .page-widget-text-item-activity {
+        display: none !important;
     }
 
     .form-layout .page-widget-text-item > .line-text.processName,

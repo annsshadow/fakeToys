@@ -104,11 +104,11 @@ MWF.xApplication.AI.Mcp = new Class({
             const file = e.target.files[0];
             document.body.removeChild(fileInput);
             if (!file) {
-                $OOUI.notice.warn(this.lp.common.tip, this.lp.common.unselectfile);
+                $OOUI.notice.warn(_this.lp.common.tip, this.lp.common.unselectfile);
                 return;
             }
             if (file.type !== 'application/json') {
-                $OOUI.notice.warn(this.lp.common.tip, `The file type is incorrect; expected application/json, but got ${file.type}`);
+                $OOUI.notice.warn(_this.lp.common.tip, `The file type is incorrect; expected application/json, but got ${file.type}`);
                 return;
             }
             const reader = new FileReader();
@@ -116,7 +116,7 @@ MWF.xApplication.AI.Mcp = new Class({
                 try {
                     const jsonData = JSON.parse(e.target.result);
                     _this.action.ConfigAction.updateMcpConfig(jsonData.id,jsonData, function( json ){
-                        $OOUI.notice.success(this.lp.common.tip, "success");
+                        $OOUI.notice.success(_this.lp.common.tip, "success");
                         _this.reload();
                     });
                 } catch (error) {
@@ -124,7 +124,7 @@ MWF.xApplication.AI.Mcp = new Class({
                 }
             };
             reader.onerror = function() {
-                $OOUI.notice.warn(this.lp.common.tip, `File Read Error: ${reader.error.message}`);
+                $OOUI.notice.warn(_this.lp.common.tip, `File Read Error: ${reader.error.message}`);
             };
             reader.readAsText(file);
         });
@@ -178,7 +178,21 @@ MWF.xApplication.AI.Mcp = new Class({
             }.bind(this),null,false);
         }
         node.loadHtml(url, {"bind": {"lp": _self.lp,"data" : data||{}}, "module": this}, function () {
-            let template = "",script = "";
+
+            const icon = this.iconNode;
+            let iconMenu;
+            o2.require("o2.widget.IconMenu", ()=>{
+                iconMenu = new o2.widget.IconMenu({
+                    zIndex: 500001,
+                    onClick: (ev, iconClass)=>{
+                        icon.value = iconClass;
+                        icon.setAttribute('left-icon', iconClass);
+                    }
+                });
+                iconMenu.load(icon, document.body);
+            }, false);
+
+            let template = "",script = "",css = "";
             if(o2.typeOf(data.extra.template) === "object"){
                 template = ""
             }else{
@@ -189,8 +203,15 @@ MWF.xApplication.AI.Mcp = new Class({
             }else{
                 script = data.extra.script;
             }
+            if(o2.typeOf(data.extra.css) === "object"){
+                css = ""
+            }else{
+                css = data.extra.css;
+            }
             const templateEditor = new o2.widget.ScriptArea(this.msgTemplateNode, { "option": { "mode": "markdown" } });
             templateEditor.load({"code":template});
+            const cssEditor = new o2.widget.ScriptArea(this.msgCssNode, { "option": { "mode": "css" } });
+            cssEditor.load({"code":css});
             const scriptEditor = new o2.widget.ScriptArea(this.msgScriptNode, { "option": { "mode": "javascript" } });
             scriptEditor.load({"code":script});
 
@@ -211,10 +232,19 @@ MWF.xApplication.AI.Mcp = new Class({
                         "text": this.lp.common.save,
                         "action": function () {
                             const name = node.querySelector("[name='name']");
+                            const displayName = node.querySelector("[name='displayName']");
                             const category = node.querySelector("[name='category']");
                             const desc = node.querySelector("[name='desc']");
                             const enable = node.querySelector("[name='enable']");
                             const url = node.querySelector("[name='url']");
+
+                            const indexDesc = node.querySelector("[name='indexDesc']");
+                            const indexEnable = node.querySelector("[name='indexEnable']");
+                            const icon = node.querySelector("[name='icon']");
+                            const indexPrompt = node.querySelector("[name='indexPrompt']");
+
+
+
                             let mcpParameterList = [];
                             let bodyMap = {};
 
@@ -252,13 +282,19 @@ MWF.xApplication.AI.Mcp = new Class({
                             })
                             let newData = {
                                 "name" : name.get("value"),
+                                "displayName" : displayName.get("value"),
                                 "category" : category.get("value"),
                                 "desc" : desc.get("value"),
                                 "enable" :enable.get("value"),
                                 "httpOption" :httpOption,
                                 "mcpParameterList" :mcpParameterList,
                                 "extra" :{
+                                    "indexDesc" : indexDesc.get("value"),
+                                    "indexEnable" :indexEnable.get("value"),
+                                    "indexPrompt" :indexPrompt.get("value"),
+                                    "icon" :icon.get("value"),
                                     "template" : o2.typeOf(templateEditor.getData()) === "object"?"" : templateEditor.getData(),
+                                    "css" : o2.typeOf(cssEditor.getData()) === "object"?"" : cssEditor.getData(),
                                     "script" : o2.typeOf(scriptEditor.getData()) === "object"?"" : scriptEditor.getData()
                                 }
                             }

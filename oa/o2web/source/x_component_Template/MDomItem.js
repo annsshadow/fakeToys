@@ -53,6 +53,7 @@ var MDomItem_ClassType = {
     "oo-org": "OOSelector",
     "oo-radiogroup": "OORadioGroup",
     "oo-select": "OOSelect",
+    "oo-cascade": "OOCascade",
     "oo-textarea": "OOTextarea"
 };
 
@@ -145,7 +146,7 @@ var MDomItem = new Class({
         }
 
         //for(var o in options ){	//允许使用 function 来计算设置, on开头的属性被留作 fireEvent
-        //    if( o != "validRule" && o!="validMessage" && o.substr(0,2)!="on" && typeOf( options[o] )== "function" ){
+        //    if( o !== "validRule" && o!=="validMessage" && o.substr(0,2)!=="on" && typeOf( options[o] )=== "function" ){
         //        options[o] = options[o].call();
         //    }
         //}
@@ -155,6 +156,7 @@ var MDomItem = new Class({
         this.mElement = this.container;	//容器
         this.node = this.container;
         this.items = [];
+        this.optionFuns = {};
 
         this.orginalOptions = options;
 
@@ -162,7 +164,20 @@ var MDomItem = new Class({
 
         // this.setOptionList( options );
     },
-    checkOptions: function (opts) {
+    checkOptions: function (opts, callback) {
+        this.optionsReady = false;
+        this._checkOptions(opts, (options, isSync)=>{
+            this.optionsReady = true;
+            this.setOptions(options);
+            if(isSync){
+                if (this.loadFunctionCalled) { //如果外部程序已经执行过load，但是由于options没有设置完成而中断，需要再调用一下load
+                    this.load();
+                }
+            }
+            if(callback)callback();
+        });
+    },
+    _checkOptions: function (opts, callback) {
         var ps = [];
         var keys_ps = [];
         var hasFun = false;
@@ -175,8 +190,7 @@ var MDomItem = new Class({
         }
 
         if (!hasFun) {
-            this.optionsReady = true;
-            this.setOptions(opts);
+            if(callback)callback(opts);
         } else {
             var options = Object.merge({}, opts);
             Object.each(options, (o, key) => {
@@ -191,29 +205,23 @@ var MDomItem = new Class({
                 }
             });
             if (ps.length) {
-                this.optionsReady = false;
                 Promise.all(ps).then((arr) => {
                     arr.forEach((v, i) => {
                         options[keys_ps[i]] = v;
                     });
-                    this.optionsReady = true;
-                    this.setOptions(options);
-                    if (this.loadFunctionCalled) { //如果外部程序已经执行过load，但是由于options没有设置完成而中断，需要再调用一下load
-                        this.load();
-                    }
+                    if (callback) callback(options, true);
                 })
             } else {
-                this.optionsReady = true;
-                this.setOptions(options);
+                if (callback) callback(options);
             }
         }
     },
     // setOptionList : function( options ){  //目的是使用options里的function异步方法通过 function(callback){ ...获取value; callback( value );  } 来回调设置option
     //     var callbackNameList = [];
     //     for(var o in options ){	//允许使用 function 来计算设置, on开头的属性被留作 fireEvent
-    //         if( o != "validRule" && o!="validMessage" && o.substr(0,2)!="on" && typeOf( options[o] )== "function" ){
+    //         if( o !== "validRule" && o!=="validMessage" && o.substr(0,2)!=="on" && typeOf( options[o] )== "function" ){
     //             var fun = options[o];
-    //             if( fun.length && /\(\s*([\s\S]*?)\s*\)/.exec(fun)[1].split(/\s*,\s*/)[0] == "callback" ){ //如果有行参(fun.length!=0),并且第一形参是callback，注意，funciont不能bind(this),否则不能判断
+    //             if( fun.length && /\(\s*([\s\S]*?)\s*\)/.exec(fun)[1].split(/\s*,\s*/)[0] == "callback" ){ //如果有行参(fun.length!==0),并且第一形参是callback，注意，funciont不能bind(this),否则不能判断
     //                 callbackNameList.push( o );
     //             }else{
     //                 options[o] = fun( options, this ); //执行fun
@@ -241,10 +249,16 @@ var MDomItem = new Class({
     //     }
     // },
     reload: function () {
+        this.optionsReady = false;
+        this._checkOptions(this.orginalOptions, (options)=>{
+            this.setOptions(options);
+            this.optionsReady = true;
+            this._reload();
+        });
+    },
+    _reload: function (){
         this.mElement.empty();
         this.items = [];
-        this.optionsReady = false;
-        this.checkOptions(this.orginalOptions);
         this.load();
     },
     load: function () {
@@ -269,7 +283,7 @@ var MDomItem = new Class({
         if (!reload && o2.widget.css[key]) {
             this.css = !this.css ? o2.widget.css[key] : Object.merge({}, o2.widget.css[key], this.css);
         } else {
-            this.cssPath = (this.cssPath.indexOf("?") != -1) ? this.cssPath + "&v=" + o2.version.v : this.cssPath + "?v=" + o2.version.v;
+            this.cssPath = (this.cssPath.indexOf("?") !== -1) ? this.cssPath + "&v=" + o2.version.v : this.cssPath + "?v=" + o2.version.v;
             var r = new Request.JSON({
                 url: o2.filterUrl(this.cssPath),
                 secure: false,
@@ -351,7 +365,7 @@ var MDomItem = new Class({
     },
     getValue: function (separator, name) {
         var result = this.get(null, name).value;
-        if (separator && typeOf(result) == "array") {
+        if (separator && typeOf(result) === "array") {
             return result.join(separator);
         } else {
             return result;
@@ -359,7 +373,7 @@ var MDomItem = new Class({
     },
     getText: function (separator, name) {
         var result = this.get(null, name).text;
-        if (separator && typeOf(result) == "array") {
+        if (separator && typeOf(result) === "array") {
             return result.join(separator);
         } else {
             return result;
@@ -367,11 +381,11 @@ var MDomItem = new Class({
     },
     getModifiedValue: function (separator) {
         var value = this.getValue(separator);
-        return value == this.options.value ? null : value;
+        return value === this.options.value ? null : value;
     },
     getModifiedText: function () {
-        var value = this.getText();
-        return text == this.options.text ? null : text;
+        var text = this.getText();
+        return text === this.options.text ? null : text;
     },
     getVaildValue: function (verify, separator, isHiddenWarming, onlyModified) {
         if (!verify || this.verify(!isHiddenWarming)) {
@@ -392,11 +406,28 @@ var MDomItem = new Class({
             }
         }
         var availTypes = "radio,checkbox,select,multiselect".split(",");
-        if (!availTypes.contains(this.options.type)) return;
-        this.dispose();
-        this.options.selectValue = selectValue;
-        this.options.selectText = selectText;
-        this.createElement();
+        if (availTypes.contains(this.options.type)) {
+            this.options.selectValue = selectValue;
+            this.options.selectText = selectText;
+            this._reload();
+        }
+    },
+    reloadItemOptions: function () {
+        var availTypes = "radio,checkbox,select,multiselect,oo-radio-group,oo-checkbox-group,oo-select".split(",");
+        if (!availTypes.contains(this.options.type))return;
+        var opts = {};
+        ['selectGroup', 'selectOption', 'selectValue', 'selectText'].forEach( (key)=> {
+            if( this.orginalOptions[key] ) {
+                opts[key] = this.orginalOptions[key];
+            }
+        });
+
+        this.optionsReady = false;
+        this._checkOptions(opts, (options)=>{
+            this.setOptions(options);
+            this.optionsReady = true;
+            this._reload();
+        });
     },
     reset: function () {
         if (typeOf(this.dom.reset) === "function") {
@@ -426,7 +457,7 @@ var MDomItem = new Class({
         if (!this.options.isEdited) return flag;
         if (this.options.disable) return flag;
 
-        if (this.options.warningType == "batch") {
+        if (this.options.warningType === "batch") {
             if (!this.isNotEmpty(isShowWarning)) flag = false;
             if (!this.checkValid(isShowWarning)) flag = false;
         } else {
@@ -439,7 +470,7 @@ var MDomItem = new Class({
     isNotEmpty: function (isShowWarning) {
         if (!this.options.isEdited) return true;
         if (this.options.disable) return true;
-        if (this.options.notEmpty == true || this.options.notEmpty == "yes") {
+        if (this.options.notEmpty === true || this.options.notEmpty === "yes") {
             if (!this.checkNotEmpty(isShowWarning)) {
                 return false;
             }
@@ -449,9 +480,9 @@ var MDomItem = new Class({
     checkNotEmpty: function (isShowWarning) {
         if (this.options.disable) return true;
         var value = this.getValue();
-        var isEmpty = (typeOf(value) === "array" ? (value.length == 0) : (value == "" || value == " "));
+        var isEmpty = typeOf(value) === "array" ? (value.length === 0) : (value === null || value === undefined || value === "" || value === " ");
         if (!isEmpty && this.options.defaultValueAsEmpty) {
-            isEmpty = (typeOf(value) === "array" ? (value.length == 1 && value[0] == this.options.defaultValue) : (value == this.options.defaultValue));
+            isEmpty = typeOf(value) === "array" ? (value.length === 1 && value[0] === this.options.defaultValue) : value === this.options.defaultValue;
         }
         if (!isEmpty) {
             this.clearWarning("empty");
@@ -460,44 +491,60 @@ var MDomItem = new Class({
         if (!isShowWarning) return false;
         var text = this.options.text || this.options.label;
         var items = this.mElement.getElements("[name='" + this.options.name + "']");
-        var warningText = "";
         var focus = false;
         try {
-            warningText = this.options.emptyTip || (this.dom && this.dom.getErrorText()) || MWF.xApplication.Template.LP.MDomItem.emptyTip.replace("{text}", text);
-            if (this.options.warningType == "batch") {
-                this.setWarning(warningText, "empty");
-            } else if (this.options.warningType == "single") {
-                this.setWarning(warningText, "empty");
-            } else {
-                if (this.app && this.app.notice) {
+            var warningText = this.options.emptyTip ||
+                (this.dom && this.dom.getErrorText()) ||
+                MWF.xApplication.Template.LP.MDomItem.emptyTip.replace("{text}", text);
 
-                    if (!this.container.isIntoView()) {
-                        var pNode = this.container.getParent();
-                        while (pNode && ((pNode.getScrollSize().y - (pNode.getComputedSize().height + 1) <= 0) || pNode.getStyle("overflow") === "visible")) pNode = pNode.getParent();
-                        if (!pNode) pNode = document.body;
-                        pNode.scrollToNode(this.container, "bottom");
+            switch (this.options.warningType) {
+                case 'batch':
+                case "single":
+                    this.setWarning(warningText, "empty");
+                    break;
+                default:
+                    if (this.app && this.app.notice) {
+
+                        if (!this.container.isIntoView()) {
+                            this.container.scrollIntoView({ behavior: "smooth", block: "center" });
+                            // var pNode = this.container.getParent();
+                            // while (pNode && ((pNode.getScrollSize().y - (pNode.getComputedSize().height + 1) <= 0) || pNode.getStyle("overflow") === "visible")) {
+                            //     pNode = pNode.getParent();
+                            // }
+                            // if (!pNode) pNode = document.body;
+                            // pNode.scrollToNode(this.container, "bottom");
+                        }
+                        var y = this.container.getSize().y;
+                        this.app.notice(warningText, "error", this.container, {"x": "right", "y": "top"}, {x: 10, y: y});
                     }
-                    var y = this.container.getSize().y;
-                    this.app.notice(warningText, "error", this.container, {"x": "right", "y": "top"}, {x: 10, y: y});
-                }
-                if (!this.options.validImmediately) {
-                    if (["text", "password", "textarea", "select", "multiselect"].contains(this.options.type)) {
-                        items[0].focus();
+                    if (!this.options.validImmediately) {
+                        if (["text", "password", "textarea", "select", "multiselect"].contains(this.options.type)) {
+                            items[0].focus();
+                        }
                     }
-                }
             }
             this.fireEvent("empty", this);
         } catch (e) {
         }
         return false;
     },
-    clearWarning: function (type) {
+    clearWarning: function (type){
+        this.options.type.startsWith('oo-') ?
+            this._clearOOElWarning(type) :
+            this._clearElWarning(type);
+    },
+    _clearOOElWarning: function (type){
+        var node = this.mElement.querySelector("[name='" + this.options.name + "']");
+        this.validationText = '';
+        node && node.unInvalidStyle && node.unInvalidStyle();
+    },
+    _clearElWarning: function (type) {
         if (this.tipNode && this.setedEmpty) {
             this.fireEvent("unempty", this);
             this.tipNode.empty();
             this.setedEmpty = false;
         }
-        if (type == "empty") {
+        if (type === "empty") {
             if (this.warningEmptyNode) {
                 this.fireEvent("unempty", this);
                 this.warningEmptyNode.destroy();
@@ -513,8 +560,18 @@ var MDomItem = new Class({
         this.warningStatus = false;
     },
     setWarning: function (msg, type) {
+        this.options.type.startsWith('oo-') ?
+            this._setOOElWarning(msg, type) :
+            this._setElWarning(msg, type);
+    },
+    _setOOElWarning: function (msg, type) {
+        var node = this.mElement.querySelector("[name='" + this.options.name + "']");
+        this.validationText = msg;
+        node && node.checkValidity && node.checkValidity();
+    },
+    _setElWarning: function (msg, type) {
         var div;
-        if (type == "empty") {
+        if (type === "empty") {
             if (this.tipNode) {
                 this.setedEmpty = true;
                 div = this.tipNode;
@@ -542,7 +599,7 @@ var MDomItem = new Class({
 
         this.warningStatus = true;
 
-        if (typeOf(msg) != "array") {
+        if (typeOf(msg) !== "array") {
             msg = [msg];
         }
 
@@ -555,7 +612,7 @@ var MDomItem = new Class({
                 "text": m,
                 "styles": this.css.warningMessageNode
             }).inject(div)
-        }.bind(this))
+        }.bind(this));
 
     },
     checkValid: function (isShowWarning) {
@@ -568,14 +625,14 @@ var MDomItem = new Class({
         var msgs = [];
         var flag = true;
 
-        //if( value && value != "" && value != " " ){
+        //if( value && value !== "" && value !== " " ){
         var rule, msg, method, valid;
         if (typeOf(rules) === "object") {
             for (var r in rules) {
                 valid = true;
                 rule = rules[r];
 
-                if (typeof rule == "function") {
+                if (typeof rule === "function") {
                     valid = rule.call(this, value, this);
                 } else if (this.validMethod[r]) {
                     method = this.validMethod[r];
@@ -584,14 +641,14 @@ var MDomItem = new Class({
 
                 if (!valid && isShowWarning) {
                     msg = this.getValidMessage(r, rule);
-                    if (msg != "") msgs.push(msg);
+                    if (msg !== "") msgs.push(msg);
                 }
 
                 if (!valid) flag = false;
             }
         } else if (typeOf(rules) === "array") {
             for (var i = 0; i < rules.length; i++) {
-                if (typeof rules[i] == "function") {
+                if (typeof rules[i] === "function") {
                     msg = rules[i].call(this, value, this);
                     if (msg && typeof msg === "string") {
                         flag = false;
@@ -609,24 +666,26 @@ var MDomItem = new Class({
         //}
 
         if (msgs.length > 0) {
-            if (this.options.warningType == "batch") {
-                this.setWarning(msgs, "invaild");
-            } else if (this.options.warningType == "single") {
-                this.setWarning(msgs, "invaild");
-            } else {
-                if (this.app && this.app.notice) {
-                    if (!this.container.isIntoView()) {
-                        var pNode = this.container.getParent();
-                        while (pNode && ((pNode.getScrollSize().y - (pNode.getComputedSize().height + 1) <= 0) || pNode.getStyle("overflow") === "visible")) pNode = pNode.getParent();
-                        if (!pNode) pNode = document.body;
-                        pNode.scrollToNode(this.container, "bottom");
+            switch (this.options.warningType){
+                case 'batch':
+                case 'single':
+                    this.setWarning(msgs, "invaild");
+                    break;
+                default:
+                    if (this.app && this.app.notice) {
+                        if (!this.container.isIntoView()) {
+                            this.container.scrollIntoView({ behavior: "smooth", block: "center" });
+                            // var pNode = this.container.getParent();
+                            // while (pNode && ((pNode.getScrollSize().y - (pNode.getComputedSize().height + 1) <= 0) || pNode.getStyle("overflow") === "visible")) pNode = pNode.getParent();
+                            // if (!pNode) pNode = document.body;
+                            // pNode.scrollToNode(this.container, "bottom");
+                        }
+                        var y = this.container.getSize().y;
+                        this.app.notice(msgs.join("\n"), "error", this.container, {"x": "right", "y": "top"}, {
+                            x: 10,
+                            y: y
+                        });
                     }
-                    var y = this.container.getSize().y;
-                    this.app.notice(msgs.join("\n"), "error", this.container, {"x": "right", "y": "top"}, {
-                        x: 10,
-                        y: y
-                    });
-                }
             }
             this.fireEvent("empty", this);
         } else {
@@ -681,15 +740,15 @@ var MDomItem = new Class({
             return (value >= param[0] && value <= param[1]);
         },
         extension: function (value, param) {
-            param = typeOf(param) == "array" ? param.join("|") : param.replace(/,/g, "|"); //"png|jpe?g|gif";
+            param = typeOf(param) === "array" ? param.join("|") : param.replace(/,/g, "|"); //"png|jpe?g|gif";
             return value.match(new RegExp(".(" + param + ")$", "i"));
         }
     },
     getValidMessage: function (type, param) {
         var msg = this.options.validMessage;
-        if (msg && typeOf(msg) == "object") {
+        if (msg && typeOf(msg) === "object") {
             if (msg[type]) {
-                if (typeof msg[type] == "function") {
+                if (typeof msg[type] === "function") {
                     return (msg[type]).call(this);
                 } else {
                     return msg[type];
@@ -748,8 +807,8 @@ MDomItem.Util = {
         var type = options.type;
         var calendarOptions = {
             "style": "xform",
-            "isTime": type == "time" || type.toLowerCase() == "datetime",
-            "timeOnly": type == "time",
+            "isTime": type === "time" || type.toLowerCase() === "datetime",
+            "timeOnly": type === "time",
             "target": container,
             "onComplate": function (dateString, date) {
                 if (callback) callback(dateString, date);
@@ -812,10 +871,10 @@ MDomItem.Util = {
 
         var selectType = "", selectTypeList = [];
         var type = options.type;
-        if (typeOf(type) == "array") {
+        if (typeOf(type) === "array") {
             if (type.length > 1) {
                 selectTypeList = type;
-            } else if (type.length == 0) {
+            } else if (type.length === 0) {
                 selectType = "person";
             } else {
                 selectType = type[0] || "person";
@@ -847,15 +906,15 @@ MDomItem.Util = {
         var selector = new MWF.O2Selector(container, opt);
     },
     replaceText: function (value, selectValue, selectText, separator) {
-        if (typeOf(value) == "number") value = [value];
-        if (typeOf(selectValue) == "number") selectValue = [selectValue];
-        if (typeOf(selectText) == "number") selectText = [selectText];
-        var vals = typeOf(value) == "array" ? value : value.split(separator);
-        var selectValues = typeOf(selectValue) == "array" ? selectValue : selectValue.split(separator);
-        var selectTexts = typeOf(selectText) == "array" ? selectText : selectText.split(separator);
+        if (typeOf(value) === "number") value = [value];
+        if (typeOf(selectValue) === "number") selectValue = [selectValue];
+        if (typeOf(selectText) === "number") selectText = [selectText];
+        var vals = typeOf(value) === "array" ? value : value.split(separator);
+        var selectValues = typeOf(selectValue) === "array" ? selectValue : selectValue.split(separator);
+        var selectTexts = typeOf(selectText) === "array" ? selectText : selectText.split(separator);
         for (var i = 0; i < vals.length; i++) {
             for (var j = 0; j < selectValues.length; j++) {
-                if (vals[i] == selectValues[j]) {
+                if (vals[i] === selectValues[j]) {
                     vals[i] = selectTexts[j]
                 }
             }
@@ -863,11 +922,11 @@ MDomItem.Util = {
         return vals;
     },
     getEvents: function (events) {
-        if (!events || events == "" || events == "$none") return;
-        if (typeof events == "string") {
+        if (!events || events === "" || events === "$none") return;
+        if (typeof events === "string") {
             if (events.indexOf("^^") > -1) {
                 var eventsArr = events.split("##");
-                if (eventsArr[0].split("^^").length != 2) return;
+                if (eventsArr[0].split("^^").length !== 2) return;
                 events = {};
                 for (var i = 0; i < eventsArr.length; i++) {
                     var ename = eventsArr[i].split("^^")[0];
@@ -883,7 +942,7 @@ MDomItem.Util = {
     },
     bindEvent: function (obj, item, events) {
         events = MDomItem.Util.getEvents(events);
-        if (typeOf(events) == "object") {
+        if (typeOf(events) === "object") {
 
             for (var e in events) {
                 //jquery的写法
@@ -909,10 +968,10 @@ MDomItem.Util = {
             }
 
             //            for( var e in events ){
-            //                if( type && (e=="dblclick" || e=="click") ){
-            //                    if( jQuery.inArray( type , this.unsetClassType) == -1 ){
-            //                        if( !item.attr("title") || item.attr("title") == "" ){
-            //                            item.attr( "title", e=="dblclick" ? "双击选择"+this.options.text : "单击选择"+this.options.text );
+            //                if( type && (e==="dblclick" || e==="click") ){
+            //                    if( jQuery.inArray( type , this.unsetClassType) === -1 ){
+            //                        if( !item.attr("title") || item.attr("title") === "" ){
+            //                            item.attr( "title", e==="dblclick" ? "双击选择"+this.options.text : "单击选择"+this.options.text );
             //                        }
             //                        item.removeClass("inputtext").addClass("inputclick");
             //                        break;
@@ -958,7 +1017,7 @@ MDomItem.Text = new Class({
         });
 
         var tType = this.options.tType;
-        if (tType == "time" || tType == "date" || tType.toLowerCase() == "datetime") {
+        if (tType === "time" || tType === "date" || tType.toLowerCase() === "datetime") {
             item.set("autocomplete", "off");
         }
 
@@ -998,7 +1057,7 @@ MDomItem.Text = new Class({
     },
     get: function (vort) {	//value 和 text 或 空
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -1011,8 +1070,8 @@ MDomItem.Text = new Class({
         } else {
             value = item.get("text");
         }
-        if (vort == "value") return value;
-        if (vort == "text") return value;
+        if (vort === "value") return value;
+        if (vort === "text") return value;
         return {
             value: value,
             text: value
@@ -1035,12 +1094,12 @@ MDomItem.Text = new Class({
     getClassName: function () {
         var tType = this.options.tType;
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
-            if (typeOf(tType) == "array") {
+            if (typeOf(tType) === "array") {
                 if (tType.contains("identity") || tType.contains("person") || tType.contains("unit")) {
                     className = "inputPerson";
                 } else {
@@ -1049,11 +1108,11 @@ MDomItem.Text = new Class({
             } else {
                 if (!tType) {
                     className = "inputText";
-                } else if (tType == "number") {
+                } else if (tType === "number") {
                     className = "inputText";
-                } else if (tType == "time" || tType == "date" || tType.toLowerCase() == "datetime") {
+                } else if (tType === "time" || tType === "date" || tType.toLowerCase() === "datetime") {
                     className = "inputTime";
-                } else if (tType == "identity" || tType == "person" || tType.toLowerCase() == "unit") {
+                } else if (tType === "identity" || tType === "person" || tType.toLowerCase() === "unit") {
                     className = "inputPerson";
                 } else {
                     className = "inputText";
@@ -1066,7 +1125,7 @@ MDomItem.Text = new Class({
         if (this.options.unsetDefaultEvent) return;
         var tType = this.options.tType;
         var type = "text";
-        if (typeOf(tType) == "array" || (tType == "identity" || tType.toLowerCase() == "person" || tType == "unit")) {
+        if (typeOf(tType) === "array" || (tType === "identity" || tType.toLowerCase() === "person" || tType === "unit")) {
             item.addEvent("click", function (ev) {
                 this.module.fireEvent("querySelect", this.module);
                 var options = this.options;
@@ -1093,7 +1152,7 @@ MDomItem.Text = new Class({
                 }.bind(this))
             }.bind(this));
         } else {
-            if (tType == "number") {
+            if (tType === "number") {
                 item.addEvent("keyup", function () {
                     this.value = this.value.replace(/[^\d.]/g, '');
                 });
@@ -1102,7 +1161,7 @@ MDomItem.Text = new Class({
                         this.module.verify(true);
                     }.bind(this))
                 }
-            } else if (tType == "time" || tType.toLowerCase() == "datetime" || tType == "date") {
+            } else if (tType === "time" || tType.toLowerCase() === "datetime" || tType === "date") {
                 item.addEvent("click", function (ev) {
                     this.module.fireEvent("querySelect", this.module);
                     if (this.calendarSelector) {
@@ -1207,7 +1266,7 @@ MDomItem.Textarea = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -1220,8 +1279,8 @@ MDomItem.Textarea = new Class({
         } else {
             value = item.get("text");
         }
-        if (vort == "value") return value;
-        if (vort == "text") return value;
+        if (vort === "value") return value;
+        if (vort === "text") return value;
         return {
             value: value,
             text: value
@@ -1244,8 +1303,8 @@ MDomItem.Textarea = new Class({
     getClassName: function () {
         var tType = this.options.tType;
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -1278,7 +1337,7 @@ MDomItem.Hidden = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -1291,8 +1350,8 @@ MDomItem.Hidden = new Class({
         } else {
             value = item.get("text");
         }
-        if (vort == "value") return value;
-        if (vort == "text") return value;
+        if (vort === "value") return value;
+        if (vort === "text") return value;
         return {
             value: value,
             text: value
@@ -1364,7 +1423,7 @@ MDomItem.Password = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -1377,8 +1436,8 @@ MDomItem.Password = new Class({
         } else {
             value = this.options.value || this.options.defaultValue
         }
-        if (vort == "value") return value;
-        if (vort == "text") return value;
+        if (vort === "value") return value;
+        if (vort === "text") return value;
         return {
             value: value,
             text: value
@@ -1401,8 +1460,8 @@ MDomItem.Password = new Class({
     getClassName: function () {
         var tType = this.options.tType;
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -1448,8 +1507,8 @@ MDomItem.Radio = new Class({
         var attr = this.options.attr || {};
         var parent = this.container;
         var className = this.getClassName();
-        var selectValues = typeOf(selectValue) == "array" ? selectValue : selectValue.split(this.valSeparator);
-        var selectTexts = typeOf(selectText) == "array" ? selectText : selectText.split(this.valSeparator);
+        var selectValues = typeOf(selectValue) === "array" ? selectValue : selectValue.split(this.valSeparator);
+        var selectTexts = typeOf(selectText) === "array" ? selectText : selectText.split(this.valSeparator);
         for (i = 0; i < selectValues.length; i++) {
 
             item = new Element("div");
@@ -1461,7 +1520,7 @@ MDomItem.Radio = new Class({
                 "type": "radio",
                 "name": name,
                 "value": selectValues[i],
-                "checked": selectValues[i] == value
+                "checked": selectValues[i] === value
             }).inject(item);
             input.set(attr);
 
@@ -1473,7 +1532,7 @@ MDomItem.Radio = new Class({
                 if (_self.options.attr && _self.options.attr.disabled) return;
                 this.input.checked = !this.input.checked;
                 var envents = MDomItem.Util.getEvents(_self.options.event);
-                if (typeOf(envents) == "object") {
+                if (typeOf(envents) === "object") {
                     if (envents.change) {
                         envents.change.call(this.input, _self.module, ev);
                     }
@@ -1529,7 +1588,7 @@ MDomItem.Radio = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -1556,8 +1615,8 @@ MDomItem.Radio = new Class({
         }
         if (!value) value = "";
         if (!text) text = value;
-        if (vort == "value") return value;
-        if (vort == "text") return text;
+        if (vort === "value") return value;
+        if (vort === "text") return text;
         var result = {};
         result.value = value;
         result.text = text;
@@ -1570,7 +1629,7 @@ MDomItem.Radio = new Class({
         var items = this.mElement.getElements("[name='" + this.options.name + "']");
         if (this.options.isEdited) {
             items.each(function (el) {
-                if (el.get("value") == value) el.checked = true;
+                if (el.get("value") === value) el.checked = true;
             });
         } else {
             value = MDomItem.Util.replaceText(value, this.options.selectValue, this.options.selectText, this.valSeparator);
@@ -1583,8 +1642,8 @@ MDomItem.Radio = new Class({
     },
     getClassName: function () {
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -1632,10 +1691,10 @@ MDomItem.Checkbox = new Class({
         var isEdited = this.options.isEdited;
         var parent = this.mElement = this.container;
         var className = this.getClassName();
-        values = typeOf(value) == "string" ? value.split(this.valSeparator) : value;
-        values = typeOf(value) == "array" ? value : [value];
-        var selectValues = typeOf(selectValue) == "array" ? selectValue : selectValue.split(this.valSeparator);
-        var selectTexts = typeOf(selectText) == "array" ? selectText : selectText.split(this.valSeparator);
+        values = typeOf(value) === "string" ? value.split(this.valSeparator) : value;
+        values = typeOf(value) === "array" ? value : [value];
+        var selectValues = typeOf(selectValue) === "array" ? selectValue : selectValue.split(this.valSeparator);
+        var selectTexts = typeOf(selectText) === "array" ? selectText : selectText.split(this.valSeparator);
         for (var i = 0; i < selectValues.length; i++) {
 
             item = new Element("div");
@@ -1658,7 +1717,7 @@ MDomItem.Checkbox = new Class({
                 if (_self.options.attr && _self.options.attr.disabled) return;
                 this.input.checked = !this.input.checked;
                 var envents = MDomItem.Util.getEvents(_self.options.event);
-                if (typeOf(envents) == "object") {
+                if (typeOf(envents) === "object") {
                     if (envents.change) {
                         envents.change.call(this.input, _self.module, ev);
                     }
@@ -1714,7 +1773,7 @@ MDomItem.Checkbox = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -1743,8 +1802,8 @@ MDomItem.Checkbox = new Class({
         }
         if (!value) value = "";
         if (!text) text = value;
-        if (vort == "value") return value;
-        if (vort == "text") return text;
+        if (vort === "value") return value;
+        if (vort === "text") return text;
         var result = {};
         result.value = value;
         result.text = text;
@@ -1756,7 +1815,7 @@ MDomItem.Checkbox = new Class({
         }
         var items = this.mElement.getElements("[name='" + this.options.name + "']");
         if (this.options.isEdited) {
-            var values = typeOf(value) == "array" ? value : value.split("^^");
+            var values = typeOf(value) === "array" ? value : value.split("^^");
             items.each(function (el) {
                 if (values.contains(el.get("value"))) {
                     el.checked = true;
@@ -1776,8 +1835,8 @@ MDomItem.Checkbox = new Class({
     getClassName: function () {
         var tType = this.options.tType;
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -1831,13 +1890,13 @@ MDomItem.Select = new Class({
         item.setStyles(styles);
         if (this.options.clazz) item.addClass(this.options.clazz);
 
-        var selectValues = typeOf(selectValue) == "array" ? selectValue : selectValue.split(this.valSeparator);
-        var selectTexts = typeOf(selectText) == "array" ? selectText : selectText.split(this.valSeparator);
+        var selectValues = typeOf(selectValue) === "array" ? selectValue : selectValue.split(this.valSeparator);
+        var selectTexts = typeOf(selectText) === "array" ? selectText : selectText.split(this.valSeparator);
 
         for (i = 0; i < selectValues.length; i++) {
             new Element("option", {
                 "value": selectValues[i],
-                "selected": selectValues[i] == value,
+                "selected": selectValues[i] === value,
                 "text": selectTexts[i]
             }).inject(item)
         }
@@ -1884,7 +1943,7 @@ MDomItem.Select = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -1911,8 +1970,8 @@ MDomItem.Select = new Class({
         }
         if (!value) value = "";
         if (!text) text = value;
-        if (vort == "value") return value;
-        if (vort == "text") return text;
+        if (vort === "value") return value;
+        if (vort === "text") return text;
         var result = {};
         result.value = value;
         result.text = text;
@@ -1925,7 +1984,7 @@ MDomItem.Select = new Class({
         var items = this.mElement.getElements("[name='" + this.options.name + "']");
         if (this.options.isEdited) {
             items[0].getElements("option").each(function (el) {
-                if (el.get("value") == value) el.selected = true;
+                if (el.get("value") === value) el.selected = true;
             });
         } else {
             value = MDomItem.Util.replaceText(value, this.options.selectValue, this.options.selectText, this.valSeparator);
@@ -1939,8 +1998,8 @@ MDomItem.Select = new Class({
     getClassName: function () {
         var tType = this.options.tType;
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -1988,8 +2047,8 @@ MDomItem.Multiselect = new Class({
         var parent = this.container;
         var className = this.getClassName();
 
-        values = typeOf(value) == "string" ? value.split(this.valSeparator) : value;
-        values = typeOf(value) == "array" ? value : [value];
+        values = typeOf(value) === "string" ? value.split(this.valSeparator) : value;
+        values = typeOf(value) === "array" ? value : [value];
 
         item = new Element("select", {
             "name": name,
@@ -2000,8 +2059,8 @@ MDomItem.Multiselect = new Class({
         if (this.options.clazz) item.addClass(this.options.clazz);
         item.setStyles(styles);
 
-        var selectValues = typeOf(selectValue) == "array" ? selectValue : selectValue.split(this.valSeparator);
-        var selectTexts = typeOf(selectText) == "array" ? selectText : selectText.split(this.valSeparator);
+        var selectValues = typeOf(selectValue) === "array" ? selectValue : selectValue.split(this.valSeparator);
+        var selectTexts = typeOf(selectText) === "array" ? selectText : selectText.split(this.valSeparator);
         for (i = 0; i < selectValues.length; i++) {
             new Element("option", {
                 "value": selectValues[i],
@@ -2051,7 +2110,7 @@ MDomItem.Multiselect = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -2080,8 +2139,8 @@ MDomItem.Multiselect = new Class({
         }
         if (!value) value = "";
         if (!text) text = value;
-        if (vort == "value") return value;
-        if (vort == "text") return text;
+        if (vort === "value") return value;
+        if (vort === "text") return text;
         var result = {};
         result.value = value;
         result.text = text;
@@ -2093,7 +2152,7 @@ MDomItem.Multiselect = new Class({
         }
         var items = this.mElement.getElements("[name='" + this.options.name + "']");
         if (this.options.isEdited) {
-            var values = typeOf(value) == "array" ? value : value.split("^^");
+            var values = typeOf(value) === "array" ? value : value.split("^^");
             items[0].getElements("option").each(function (el) {
                 if (values.contains(el.get("value"))) {
                     el.selected = true;
@@ -2113,8 +2172,8 @@ MDomItem.Multiselect = new Class({
     getClassName: function () {
         var tType = this.options.tType;
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -2170,7 +2229,7 @@ MDomItem.Innertext = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -2187,8 +2246,8 @@ MDomItem.Innertext = new Class({
         }
         if (!value) value = "";
         if (!text) text = value;
-        if (vort == "value") return value;
-        if (vort == "text") return text;
+        if (vort === "value") return value;
+        if (vort === "text") return text;
         var result = {};
         result.value = value;
         result.text = text;
@@ -2209,8 +2268,8 @@ MDomItem.Innertext = new Class({
     getClassName: function () {
         var tType = this.options.tType;
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -2265,7 +2324,7 @@ MDomItem.Innerhtml = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -2282,8 +2341,8 @@ MDomItem.Innerhtml = new Class({
         }
         if (!value) value = "";
         if (!text) text = value;
-        if (vort == "value") return value;
-        if (vort == "text") return text;
+        if (vort === "value") return value;
+        if (vort === "text") return text;
         var result = {};
         result.value = value;
         result.text = text;
@@ -2304,8 +2363,8 @@ MDomItem.Innerhtml = new Class({
     getClassName: function () {
         var tType = this.options.tType;
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -2349,7 +2408,7 @@ MDomItem.Img = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -2361,8 +2420,8 @@ MDomItem.Img = new Class({
         value = item.get("src");
         if (!value) value = "";
         if (!text) text = value;
-        if (vort == "value") return value;
-        if (vort == "text") return text;
+        if (vort === "value") return value;
+        if (vort === "text") return text;
         var result = {};
         result.value = value;
         result.text = text;
@@ -2381,8 +2440,8 @@ MDomItem.Img = new Class({
     getClassName: function () {
         var tType = this.options.tType;
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -2436,7 +2495,7 @@ MDomItem.Button = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -2448,8 +2507,8 @@ MDomItem.Button = new Class({
         value = item.get("value");
         if (!value) value = "";
         if (!text) text = value;
-        if (vort == "value") return value;
-        if (vort == "text") return text;
+        if (vort === "value") return value;
+        if (vort === "text") return text;
         var result = {};
         result.value = value;
         result.text = text;
@@ -2467,8 +2526,8 @@ MDomItem.Button = new Class({
     },
     getClassName: function () {
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -2518,7 +2577,7 @@ MDomItem.A = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -2530,8 +2589,8 @@ MDomItem.A = new Class({
         value = item.get("value");
         if (!value) value = "";
         if (!text) text = value;
-        if (vort == "value") return value;
-        if (vort == "text") return text;
+        if (vort === "value") return value;
+        if (vort === "text") return text;
         var result = {};
         result.value = value;
         result.text = text;
@@ -2549,8 +2608,8 @@ MDomItem.A = new Class({
     },
     getClassName: function () {
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -2642,13 +2701,13 @@ MDomItem.MSelector = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
         }
-        if (vort == "value") return this.mSelector.getValue();
-        if (vort == "text") return this.mSelector.getText();
+        if (vort === "value") return this.mSelector.getValue();
+        if (vort === "text") return this.mSelector.getText();
         return this.mSelector.get();
     },
     setValue: function (value) {
@@ -2659,8 +2718,8 @@ MDomItem.MSelector = new Class({
     },
     getClassName: function () {
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -2763,15 +2822,15 @@ MDomItem.ImageClipper = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
         }
         var items;
         var value = this.imageId;
-        if (vort == "value") return value;
-        if (vort == "text") return value;
+        if (vort === "value") return value;
+        if (vort === "text") return value;
         var result = {};
         result.value = value;
         result.text = value;
@@ -2901,6 +2960,33 @@ MDomItem.Rtf = new Class({
                         }
                     }
                 }
+
+                var htmlFilter = e.editor.dataProcessor.htmlFilter;
+
+                htmlFilter.addRules({
+                    a: function(element) {
+                        var href = element.attributes.href;
+                        if (href) {
+                            // 正则匹配：以javascript:开头（不区分大小写）
+                            var jsProtocolReg = /^javascript:/i;
+                            if (jsProtocolReg.test(href)) {
+                                delete element.attributes.href; // 移除危险href属性
+                                // 若需更严格，可直接移除<a>标签：element.remove();
+                            }
+                        }
+                    }
+                });
+
+                // 额外处理：源码模式下的内容过滤（可选，增强防护）
+                e.editor.on('beforeSetData', function(evt) {
+                    evt.data.dataValue = evt.data.dataValue.replace(
+                        /<a\s+[^>]*href\s*=\s*(["']?)javascript:.*?\1[^>]*>/gi,
+                        function(match) {
+                            // 移除href属性或修改标签内容
+                            return match.replace(/href\s*=\s*(["']?)javascript:.*?\1/gi, '');
+                        }
+                    );
+                });
             });
             this.items.push(this.editor);
         }.bind(this));
@@ -3052,7 +3138,7 @@ MDomItem.Rtf = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
@@ -3079,8 +3165,8 @@ MDomItem.Rtf = new Class({
         }
         if (!value) value = "";
         if (!text) text = value;
-        if (vort == "value") return value;
-        if (vort == "text") return text;
+        if (vort === "value") return value;
+        if (vort === "text") return text;
         var result = {};
         result.value = value;
         result.text = text;
@@ -3102,8 +3188,8 @@ MDomItem.Rtf = new Class({
     },
     getClassName: function () {
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -3140,11 +3226,11 @@ MDomItem.Org = new Class({
         var className = this.getClassName();
         if (!value) {
             this.orgData = [];
-        } else if (typeOf(value) == "array") {
+        } else if (typeOf(value) === "array") {
             this.orgData = value;
-        } else if (typeOf(value) == "string") {
+        } else if (typeOf(value) === "string") {
             this.orgData = value.split(this.valSeparator)
-        } else if (typeOf(value) == "object") {
+        } else if (typeOf(value) === "object") {
             this.orgData = [value]
         } else {
             this.orgData = [];
@@ -3172,9 +3258,9 @@ MDomItem.Org = new Class({
         var className = this.getClassName();
         if (!value) {
             this.orgData = [];
-        } else if (typeOf(value) == "array") {
+        } else if (typeOf(value) === "array") {
             this.orgData = value;
-        } else if (typeOf(value) == "string") {
+        } else if (typeOf(value) === "string") {
             this.orgData = value.split(this.valSeparator)
         } else {
             this.orgData = [];
@@ -3204,14 +3290,14 @@ MDomItem.Org = new Class({
     },
     get: function (vort) {
         if (this.options.disable) {
-            return (vort == "value" || vort == "text") ? null : {
+            return (vort === "value" || vort === "text") ? null : {
                 value: null,
                 text: null
             };
         }
         var value = this.orgData;
-        if (vort == "value") return value;
-        if (vort == "text") return value;
+        if (vort === "value") return value;
+        if (vort === "text") return value;
         var result = {};
         result.value = value;
         result.text = value;
@@ -3224,9 +3310,9 @@ MDomItem.Org = new Class({
         var item = this.mElement.getElement("[name='" + this.options.name + "']");
         if (!value) {
             this.orgData = [];
-        } else if (typeOf(value) == "array") {
+        } else if (typeOf(value) === "array") {
             this.orgData = value;
-        } else if (typeOf(value) == "string") {
+        } else if (typeOf(value) === "string") {
             this.orgData = value.split(this.valSeparator);
         } else {
             this.orgData = [];
@@ -3281,7 +3367,7 @@ MDomItem.Org = new Class({
         }.bind(this));
     },
     getValueByType: function (type) {
-        var types = typeOf(type) == "string" ? type.split(",") : type;
+        var types = typeOf(type) === "string" ? type.split(",") : type;
         types = types.map(function (item, index) {
             switch (item.toLowerCase()) {
                 case "person":
@@ -3341,45 +3427,36 @@ MDomItem.Org = new Class({
             var flag = distinguishedName.substr(distinguishedName.length - 1, 1);
             switch (flag.toLowerCase()) {
                 case "i":
-                    var widget = new MWF.widget.O2Identity(data, node, options);
-                    break;
+                    widget = new MWF.widget.O2Identity(data, node, options); break;
                 case "p":
-                    var widget = new MWF.widget.O2Person(data, node, options);
-                    break;
+                    widget = new MWF.widget.O2Person(data, node, options); break;
                 case "u":
-                    var widget = new MWF.widget.O2Unit(data, node, options);
-                    break;
+                    widget = new MWF.widget.O2Unit(data, node, options); break;
                 case "g":
-                    var widget = new MWF.widget.O2Group(data, node, options);
-                    break;
+                    widget = new MWF.widget.O2Group(data, node, options); break;
                 //case "d":
                 //    var widget = new MWF.widget.O2Duty(data, node, options);
                 //    break;
                 default:
                     var orgType = this.options.orgType;
-                    var t = (typeOf(orgType) == "array" && orgType.length == 1) ? orgType[0] : orgType;
-                    t = typeOf(t) == "string" ? t.toLowerCase() : "";
-                    if (t == "identity") {
-                        var widget = new MWF.widget.O2Identity(data, node, options);
-                    } else if (t == "person") {
-                        var widget = new MWF.widget.O2Person(data, node, options);
-                    } else if (t == "unit") {
-                        var widget = new MWF.widget.O2Unit(data, node, options);
-                    } else if (t == "group") {
-                        var widget = new MWF.widget.O2Group(data, node, options);
-                    } else if (t == "process") {
-                        // var d = { id : distinguishedName };
-                        if (data.id === data.name) delete data.name;
-                        var widget = new MWF.widget.O2Process(data, node, options);
-                        //}else if( t == "duty" ){
-                        //    var widget = new MWF.widget.O2Duty(data, node, options);
-                    } else if (t == "CMSView") {
-                        // var d = { id : distinguishedName };
-                        var widget = new MWF.widget.O2CMSView(data, node, options);
-                        //}else if( t == "duty" ){
-                        //    var widget = new MWF.widget.O2Duty(data, node, options);
-                    } else {
-                        var widget = new MWF.widget.O2Other(data, node, options);
+                    var t = (typeOf(orgType) === "array" && orgType.length === 1) ? orgType[0] : orgType;
+                    switch (typeOf(t) === "string" ? t.toLowerCase() : "") {
+                        case "identity":
+                            widget = new MWF.widget.O2Identity(data, node, options); break;
+                        case "person":
+                            widget = new MWF.widget.O2Person(data, node, options); break;
+                        case "unit":
+                            widget = new MWF.widget.O2Unit(data, node, options); break;
+                        case "group":
+                            widget = new MWF.widget.O2Group(data, node, options); break;
+                        case "process":
+                            if (data.id === data.name) delete data.name;
+                            widget = new MWF.widget.O2Process(data, node, options);
+                            break;
+                        case "CMSView":
+                            widget = new MWF.widget.O2CMSView(data, node, options); break;
+                        default:
+                            widget = new MWF.widget.O2Other(data, node, options); break;
                     }
             }
             widget.field = this;
@@ -3393,7 +3470,7 @@ MDomItem.Org = new Class({
         var data = [];
         var index;
         _self.orgData.each(function (d, i) {
-            if (d != dn) data.push(d)
+            if (d !== dn) data.push(d)
         });
         _self.orgData = data;
 
@@ -3402,9 +3479,9 @@ MDomItem.Org = new Class({
             _self.orgObject.each(function (d) {
                 if (d.data) {
                     if (d.data.distinguishedName) {
-                        if (d.data.distinguishedName != dn) data.push(d);
+                        if (d.data.distinguishedName !== dn) data.push(d);
                     } else {
-                        if (d.data.name != dn) data.push(d);
+                        if (d.data.name !== dn) data.push(d);
                     }
                 }
             });
@@ -3415,9 +3492,9 @@ MDomItem.Org = new Class({
             data = [];
             _self.orgObjData.each(function (d) {
                 if (d.distinguishedName) {
-                    if (d.distinguishedName != dn) data.push(d);
+                    if (d.distinguishedName !== dn) data.push(d);
                 } else {
-                    if (d.name != dn) data.push(d);
+                    if (d.name !== dn) data.push(d);
                 }
             });
             _self.orgObjData = data;
@@ -3429,8 +3506,8 @@ MDomItem.Org = new Class({
     },
     getClassName: function () {
         var className = null;
-        if (this.options.className == "none") {
-        } else if (this.options.className != "") {
+        if (this.options.className === "none") {
+        } else if (this.options.className !== "") {
             className = this.options.className
         } else if (!this.options.isEdited) {
         } else {
@@ -3546,7 +3623,6 @@ MDomItem.OOInput = new Class({
         this.items.push(item);
         this.bindDefaultEvent(item);
         MDomItem.Util.bindEvent(this, item, options.event);
-
     },
     createInput: function () {
         var input = new Element("oo-input");
@@ -3565,6 +3641,28 @@ MDomItem.OOInput = new Class({
                 this.module.verify(true);
             }.bind(this))
         }
+        item.addEventListener('validity', (e) => {
+            if (this.validationText) {
+                e.target.setCustomValidity(this.validationText);
+            }
+        });
+        item.addEventListener('invalid', (e)=>{
+            if (item._props.validity){
+                e.target.setCustomValidity(item._props.validity);
+            }else{
+                const o = {
+                    valueMissing: this.getErrorText()
+                };
+                //通过 e.detail 获取 验证有效性状态对象：ValidityState
+                for (const k in o){
+                    if (e.detail[k]){
+                        if (o[k]){
+                            break;
+                        }
+                    }
+                }
+            }
+        });
     },
     get: function (vort) {
         if (this.options.disable) {
@@ -3591,7 +3689,9 @@ MDomItem.OOInput = new Class({
         item.set('value', value || '');
     },
     getErrorText: function () {
-        return MWF.xApplication.Template.LP.MDomItem.emptyTip.replace("{text}", this.options.text || this.options.label);
+        var label = this.options.label || this.options.text;
+        label = !!label ? `“${label.replace(/　/g, '')}”` :  '此字段';
+        return MWF.xApplication.Template.LP.MDomItem.emptyTip.replace("{text}", label);
     },
     getClassName: function () {
         var className = null;
@@ -3622,10 +3722,9 @@ MDomItem.OODatetime = new Class({
     Extends: MDomItem.OOInput,
     createInput: function () {
         var input = new Element("oo-datetime");
-        input.setAttribute('mode', 'datetime');
 
         var options = this.options;
-        if (options.mode && options.mode !== "datetime") {
+        if (options.mode) {
             input.setAttribute('mode', options.mode);
         }
         if(options.view){
@@ -3850,11 +3949,10 @@ MDomItem.OORadioGroup = new Class({
     createInput: function () {
         var input = new Element('oo-radio-group');
         this.itemTag = 'oo-radio';
-        if (this.options.selectOption) {
-            this.renderOption(input);
-        } else {
-            this.renderOption2(input);
-        }
+        this.input = input;
+
+        this.renderOption();
+
         if (this.css?.OORadioGroup) input.setStyles(this.css.OORadioGroup);
 
         var propertyName = this.module.getLabelLength(this.options.label || this.options.text) === 3 ? 'OORadioGroupProperties3' : 'OORadioGroupProperties';
@@ -3862,7 +3960,15 @@ MDomItem.OORadioGroup = new Class({
 
         return input;
     },
-    renderOption: function (input) {
+    renderOption: function () {
+        if (this.options.selectOption) {
+            this._renderOption();
+        } else {
+            this._renderOption2();
+        }
+    },
+    _renderOption: function () {
+        var input = this.input;
         var options = this.options;
         var valueKey = options.valueKey || 'value';
         var labelKey = options.labelKey || 'label';
@@ -3874,13 +3980,14 @@ MDomItem.OORadioGroup = new Class({
                 "text": option[labelKey],
                 "styles": options.buttonStyles || {}
             });
-            if (options.disabled) {
+            if (option.disabled) {
                 optionNode.setAttribute('disabled', true);
             }
             optionNode.inject(input);
         });
     },
-    renderOption2: function (input) {
+    _renderOption2: function () {
+        var input = this.input;
         var options = this.options;
         var selectValue = this.options.selectValue || this.options.selectText;
         var selectText = this.options.selectText || this.options.selectValue;
@@ -3895,9 +4002,9 @@ MDomItem.OORadioGroup = new Class({
                 "text": selectTexts[i],
                 "styles": options.buttonStyles || {}
             });
-            if (options.disabled) {
-                optionNode.setAttribute('disabled', true);
-            }
+            // if (option.disabled) {
+            //     optionNode.setAttribute('disabled', true);
+            // }
             // optionNode.setAttribute('text', selectTexts[i]);
             optionNode.inject(input);
         }
@@ -3909,11 +4016,10 @@ MDomItem.OOCheckGroup = new Class({
     createInput: function () {
         var input = new Element('oo-checkbox-group');
         this.itemTag = 'oo-checkbox';
-        if (this.options.selectOption) {
-            this.renderOption(input);
-        } else {
-            this.renderOption2(input);
-        }
+        this.input = input;
+
+        this.renderOption();
+
         if (this.css?.OOCheckGroup) input.setStyles(this.css.OOCheckGroup);
 
         var propertyName = this.module.getLabelLength(this.options.label || this.options.text) === 3 ? 'OOCheckGroupProperties3' : 'OOCheckGroupProperties';
@@ -3927,13 +4033,8 @@ MDomItem.OOSelect = new Class({
     Extends: MDomItem.OOInput,
     createInput: function () {
         var input = new Element('oo-select');
-        if (this.options.selectGroup) {
-            this.renderGroup(input);
-        } else if (this.options.selectOption) {
-            this.renderOption(input);
-        } else {
-            this.renderOption2(input);
-        }
+        this.input = input;
+        this.renderOption(input);
         if (this.css?.OOSelect) input.setStyles(this.css.OOSelect);
 
         var propertyName = this.module.getLabelLength(this.options.label || this.options.text) === 3 ? 'OOSelectProperties3' : 'OOSelectProperties';
@@ -3941,7 +4042,17 @@ MDomItem.OOSelect = new Class({
 
         return input;
     },
-    renderOption: function (input) {
+    renderOption: function () {
+        var input = this.input;
+        if (this.options.selectGroup) {
+            this._renderGroup(input);
+        } else if (this.options.selectOption) {
+            this._renderOption(input);
+        } else {
+            this._renderOption2(input);
+        }
+    },
+    _renderOption: function (input) {
         var options = this.options;
         var valueKey = options.valueKey || 'value';
         var labelKey = options.labelKey || 'label';
@@ -3949,7 +4060,7 @@ MDomItem.OOSelect = new Class({
             var optionNode = new Element("oo-option", {
                 "value": option[valueKey]
             });
-            if (options.disabled) {
+            if (option.disabled) {
                 optionNode.setAttribute('disabled', true);
             }
             optionNode.setAttribute('value', option[valueKey]);
@@ -3957,7 +4068,7 @@ MDomItem.OOSelect = new Class({
             optionNode.inject(input);
         });
     },
-    renderOption2: function (input) {
+    _renderOption2: function (input) {
         var selectValue = this.options.selectValue || this.options.selectText;
         var selectText = this.options.selectText || this.options.selectValue;
         var selectValues = typeOf(selectValue) === "array" ? selectValue : selectValue.split(this.valSeparator);
@@ -3967,7 +4078,7 @@ MDomItem.OOSelect = new Class({
             var optionNode = new Element("oo-option", {
                 "value": selectValues[i]
             });
-            // if( options.disabled ){
+            // if( option.disabled ){
             //     optionNode.setAttribute('disabled', true);
             // }
             optionNode.setAttribute('value', selectValues[i]);
@@ -3975,7 +4086,7 @@ MDomItem.OOSelect = new Class({
             optionNode.inject(input);
         }
     },
-    renderGroup: function (input) {
+    _renderGroup: function (input) {
         var options = this.options;
         var groupLabelKey = options.grouplabelKey || 'label';
         var valueKey = options.valueKey || 'value';
@@ -3988,7 +4099,7 @@ MDomItem.OOSelect = new Class({
                 var optionNode = new Element("oo-option", {
                     "value": option[valueKey]
                 });
-                if (options.disabled) {
+                if (option.disabled) {
                     optionNode.setAttribute('disabled', true);
                 }
                 optionNode.setAttribute('value', option[valueKey]);
@@ -3996,6 +4107,24 @@ MDomItem.OOSelect = new Class({
                 optionNode.inject(groupNode);
             });
         });
+    }
+});
+
+MDomItem.OOCascade = new Class({
+    Extends: MDomItem.OOInput,
+    createInput: function () {
+        var input = new Element('oo-cascade');
+        this.input = input;
+        this.renderOption(input);
+        if (this.css?.OOCascade) input.setStyles(this.css.OOCascade);
+
+        var propertyName = this.module.getLabelLength(this.options.label || this.options.text) === 3 ? 'OOCascadeProperties3' : 'OOCascadeProperties';
+        if (this.css[propertyName]) input.set(this.css[propertyName]);
+
+        return input;
+    },
+    renderOption: function () {
+
     }
 });
 

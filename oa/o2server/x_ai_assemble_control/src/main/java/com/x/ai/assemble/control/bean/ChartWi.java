@@ -26,17 +26,16 @@ public class ChartWi extends GsonPropertyObject {
 
     private String token;
 
+    private Boolean thinkingEnabled;
+
     @FieldDescribe("ai模式：chat|rag|mcp.")
     private String generateType;
 
     @FieldDescribe("附件标识列表.")
-    private List<String> materialIdList;
-
-    private Map<String, Object> chatOption;
-    private Map<String, Object> ragOption;
-    private Map<String, Object> mcpOption;
+    private List<String> referenceIdList;
 
     private List<String> permissionList;
+    @FieldDescribe("模型名称.")
     private String endpointName;
 
     public String getInput() {
@@ -71,30 +70,6 @@ public class ChartWi extends GsonPropertyObject {
         this.generateType = generateType;
     }
 
-    public Map<String, Object> getChatOption() {
-        return chatOption;
-    }
-
-    public void setChatOption(Map<String, Object> chatOption) {
-        this.chatOption = chatOption;
-    }
-
-    public Map<String, Object> getRagOption() {
-        return ragOption;
-    }
-
-    public void setRagOption(Map<String, Object> ragOption) {
-        this.ragOption = ragOption;
-    }
-
-    public Map<String, Object> getMcpOption() {
-        return mcpOption;
-    }
-
-    public void setMcpOption(Map<String, Object> mcpOption) {
-        this.mcpOption = mcpOption;
-    }
-
     public List<String> getPermissionList() {
         return permissionList;
     }
@@ -111,12 +86,12 @@ public class ChartWi extends GsonPropertyObject {
         this.endpointName = endpointName;
     }
 
-    public List<String> getMaterialIdList() {
-        return materialIdList;
+    public List<String> getReferenceIdList() {
+        return referenceIdList;
     }
 
-    public void setMaterialIdList(List<String> materialIdList) {
-        this.materialIdList = materialIdList;
+    public void setReferenceIdList(List<String> referenceIdList) {
+        this.referenceIdList = referenceIdList;
     }
 
     public String getToken() {
@@ -125,5 +100,13 @@ public class ChartWi extends GsonPropertyObject {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public Boolean getThinkingEnabled() {
+        return thinkingEnabled;
+    }
+
+    public void setThinkingEnabled(Boolean thinkingEnabled) {
+        this.thinkingEnabled = thinkingEnabled;
     }
 }

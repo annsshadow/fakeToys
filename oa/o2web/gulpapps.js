@@ -90,6 +90,7 @@ var apps = [
     { "folder": "x_component_Setting", "tasks": ["move", "min"] },
     { "folder": "x_component_Template", "tasks": ["move", "min"] },
     { "folder": "x_component_ThreeMember", "tasks": ["move", "min"] },
+    { "folder": "x_component_PdfViewer", "tasks": ["move", "min"] },
     { "folder": "x_desktop", "tasks": ["move", "min"] },
     { "folder": "x_component_IMV2", "tasks": [] },
     { "folder": "x_component_ConfigDesigner", "tasks": ["move", "min"] },
@@ -99,6 +100,16 @@ var apps = [
     { "folder": "x_component_appstore_application", "tasks": [] },
     { "folder": "x_component_systemconfig", "tasks": [] },
     { "folder": "x_component_attendancev2", "tasks": [] },
+    { "folder": "x_component_DocumentTool", "tasks": ["move", "min"] },
+    { "folder": "x_component_Drive", "tasks": ["move", "min"] },
+    { "folder": "x_component_Note", "tasks": [] },
+    { "folder": "x_component_OnlyOffice", "tasks": ["move", "min"] },
+    { "folder": "x_component_OnlyOfficeEditor", "tasks": ["move", "min"] },
+    { "folder": "x_component_ProcessTool", "tasks": ["move", "min"] },
+    { "folder": "x_component_StandingBook", "tasks": [] },
+    { "folder": "x_component_TableTool", "tasks": ["move", "min"] },
+    { "folder": "x_component_TeamWork", "tasks": [] },
+    { "folder": "x_component_TeamWork_Task", "tasks": [] },
     { "folder": "x_init", "tasks": [] }
 ];
 

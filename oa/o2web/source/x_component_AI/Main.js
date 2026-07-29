@@ -8,6 +8,11 @@ MWF.xApplication.AI.Main = new Class({
         "name": "AI",
         "mvcStyle": "style.css",
         "icon": "icon.png",
+        "mode" : "pc",
+        "msg" : "",
+        "initMsg" : "",
+        "attId" : "",
+        "jars" : "",
         "title": MWF.xApplication.AI.LP.title
     },
     onQueryLoad:  function () {
@@ -16,14 +21,14 @@ MWF.xApplication.AI.Main = new Class({
     loadApplication: async function (callback) {
         this.lp = MWF.xApplication.AI.LP;
 
-        if(layout.mobile){
+        if(layout.mobile || this.options.mode === "simple"){
             o2.requireApp("AI", "Chat", function(){
-                new MWF.xApplication.AI.Chat(this, this.content);
+                new MWF.xApplication.AI.Chat(this, this.content,this.options);
             }.bind(this));
 
             return;
         }
-
+        this.isThinking = false;
         this.generateType = "auto";
         this.sessionId = "";
         this.action = o2.Actions.load("x_ai_assemble_control");
@@ -31,25 +36,90 @@ MWF.xApplication.AI.Main = new Class({
         this.selectedFiles = {};
         o2.loadCss("../x_component_process_FormDesigner/Module/Form/skin/v10/form.css");
 
+
+        const aiTypeList = await this.action.ConfigAction.listEnableModel();
+        this.aiTypeList = aiTypeList.data;
+
+        this.aiType = this.aiTypeList.find(model => model.asDefault)?.name;
+
         const config = await this.action.ConfigAction.getBaseConfig();
         this.config = config.data;
         this.config.appIconUrl = this.config.appIconUrl || "../x_component_AI/$Main/default/bot.png";
         this.config.appName = this.config.appName || "O2OA";
         this.config.title = this.config.title || this.lp.config.title;
         this.config.desc = this.config.desc || this.lp.config.desc;
+
+        if(this.config.o2AiEnable){
+            const mcpList = await this.action.ConfigAction.listMcpConfigPaging(1,100);
+            this.mcpList = mcpList.data
+                .filter(item => item.extra && item.extra.indexEnable === "true")
+                .slice(0, 20);
+
+            console.log(this.mcpList)
+        }
+
+
         var url = this.path + this.options.style + "/view.html";
         o2.load("../o2_lib/marked/lib/marked.js", function () {
             this.content.loadHtml(url, {"bind": {"lp": this.lp,"config":this.config,"user":layout.user}, "module": this}, function () {
             }.bind(this));
         }.bind(this));
     },
+    setThinking : function (){
+        if(this.isThinking){
+
+            this.isThinking = false;
+            this.thinkingNode.removeClass("chat-think-cur");
+        }else{
+
+            this.isThinking = true;
+            this.thinkingNode.addClass("chat-think-cur");
+        }
+    },
+    expandReasoning : function (){
+        if(this.reasoningTool.getFirst().hasClass("ooicon-zhankai")){
+            this.reasoningTool.getFirst().removeClass("ooicon-zhankai");
+            this.reasoningTool.getFirst().addClass("ooicon-zhedie");
+            this.reasoningContentNode.hide();
+        }else {
+            this.reasoningTool.getFirst().addClass("ooicon-zhankai");
+            this.reasoningTool.getFirst().removeClass("ooicon-zhedie");
+            this.reasoningContentNode.show();
+        }
+    },
     loadNew : function (){
+        debugger
+        if(this.options.jars!==""){
+            this.initMsg();
+            return;
+        }
+
         this.sessionId = "";
         this.rightNode.empty();
-        this.rightNode.loadHtml(this.path + this.options.style + "/new.html", {"bind": {"lp": this.lp,"config":this.config}, "module": this}, function () {
+        this.rightNode.loadHtml(this.path + this.options.style + "/new.html", {"bind": {"lp": this.lp,"config":this.config,"aiType" : this.aiType,"mcpList":this.mcpList}, "module": this}, function () {
             this.bindEvent();
+            if(this.options.initMsg!==""){
+                this.chatNode.set("text",this.options.initMsg);
+            }
         }.bind(this));
     },
+
+    initMsg : function (){
+        const msg = this.options.msg;
+
+        this.selectedFiles[this.options.attName] = {
+            "id" : this.options.attId,
+            "name" : this.options.attName
+        }
+        this.rightNode.empty();
+        this.rightNode.loadHtml(this.path + this.options.style + "/list.html", {"bind": {"lp": this.lp,"generateType":this.generateType,"config":this.config,"aiType" : this.aiType}, "module": this}, function () {
+            this.bindEvent(true);
+            this.chatListNode.empty();
+            this.titleNode.set("text",msg.length>30?msg.substring(0,30):msg);
+            this.send(msg);
+        }.bind(this));
+    },
+
     copyToClipboard: function (text) {
         if (navigator.clipboard) {
             navigator.clipboard.writeText(text)
@@ -80,7 +150,27 @@ MWF.xApplication.AI.Main = new Class({
             }
         }
     },
+
     bindEvent: function (flag) {
+
+        this.chatNode.addEventListener('paste', function (e) {
+            const clipboardData = e.clipboardData || window.clipboardData;
+            // 检查是否包含图片
+            const items = clipboardData.items;
+            let hasImage = false;
+
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    hasImage = true;
+                    break;
+                }
+            }
+
+            if (hasImage) {
+                e.preventDefault(); // 阻止默认粘贴行为
+                this.addAtt("paste",clipboardData);
+            }
+        }.bind(this));
 
         this.chatNode.addEventListener('compositionstart', function (event) {
             this.isComposing = true;
@@ -141,7 +231,7 @@ MWF.xApplication.AI.Main = new Class({
         p.then((json) => {
             const categories = this.categorizeDates(json.data);
             if (json.data.length === 0) {
-                this.chatListNode.empty();
+                //this.chatListNode.empty();
             }
             const renderCategory = (category, title) => {
                 if (category.length > 0) {
@@ -189,7 +279,7 @@ MWF.xApplication.AI.Main = new Class({
     getMcpExtra : function (flag){
         let data = {};
         this.action.ConfigAction.getMcpExt(flag, function( json ){
-                data = json.data.extra;
+            data = json.data.extra;
         }.bind(this),null,false);
         return data;
     },
@@ -210,7 +300,7 @@ MWF.xApplication.AI.Main = new Class({
         const _this = this;
 
         this.rightNode.empty();
-        this.rightNode.loadHtml(this.path + this.options.style + "/list.html", {"bind": {"lp": this.lp,"generateType":this.generateType,"config":this.config}, "module": this}, function () {
+        this.rightNode.loadHtml(this.path + this.options.style + "/list.html", {"bind": {"lp": this.lp,"generateType":this.generateType,"config":this.config,"aiType" : this.aiType}, "module": this}, function () {
 
             this.bindEvent(true);
 
@@ -222,19 +312,30 @@ MWF.xApplication.AI.Main = new Class({
                 json.data.forEach((msg) => {
                     let html;
                     let el;
-                    if(msg.materialIdList){
+                    if(msg.referenceIdList){
                         const chatListAttNode = new Element("div.chat-list-att").inject(_this.chatListNode);
-                        msg.materialIdList.each(function (fileId){
+                        msg.referenceIdList.each(function (fileId){
                             _this.action.FileAction.get(fileId,function (json){
-                                const attItem = new Element("div.chat-att-item").inject(chatListAttNode);
+                                let attItem;
                                 const file = json.data;
-                                const atthtml = `
+
+                                const fileType = _this.getFileIcon(file.name);
+
+                                let atthtml;
+                                if("picture" === fileType){
+                                    attItem = new Element("div.chat-att-img").inject(chatListAttNode);
+                                    atthtml = `<img src="../x_ai_assemble_control/jaxrs/file/${file.id}/download/scale">`;
+                                }else{
+                                    attItem = new Element("div.chat-att-item").inject(chatListAttNode);
+                                    atthtml = `
                                     <div class="chat-att-item-icon ooicon-${_this.getFileIcon(file.name)}"></div>
                                     <div class="chat-att-item-content">
                                         <div class="chat-att-item-title">${file.name}</div>
                                         <div class="chat-att-item-size">${_this.formatBytes(file.length)}</div>
                                     </div>
-                                `
+                                `;
+                                }
+
                                 attItem.set("html",atthtml);
                                 attItem.addEvent("click",function(){
                                     new MWF.xApplication.AI.AttachmenPreview(file,this);
@@ -256,70 +357,102 @@ MWF.xApplication.AI.Main = new Class({
                     msg.icon = _this.getIcon(msg.generateType);
                     msg.typeName = _this.getTypeName(msg.generateType);
 
-                    if ( msg.content.indexOf("$$mcp$$")>-1) {
-                        let mcpData;
-                        let mcpExtra;
-                        try{
-                            mcpData = JSON.parse(msg.content);
-                            console.log(mcpData)
-                            mcpData.data.extra = msg.extra;
+                    try {
+                        msg.content = marked.parse(msg.content);
+                    } catch (e) {}
 
-                            mcpExtra = _this.getMcpExtra(mcpData.name);
-
-                        }catch (e){
-                            mcpExtra = {
-                                template : msg.content
-                            }
-                        }
-                        const template = _this.renderTemplate(mcpExtra.template,mcpData.data);
-                        html = `
+                    html = `
                             <div class="chat-list-l">
-        
                                 <div><img src="${_this.config.appIconUrl}" class="imgicon"></div>
-                                <div style="display: flex;">
-                                    <div class="aitype"><i class = "ooicon-${msg.icon}"> </i></div>
-                                    <div class="markdown-body">
-                                        ${marked.parse(template)}
-                                    </div>
-                                </div>
-                            </div>        
-                    `;
-
-                        el = new Element("div", {"html": html});
-                        answerNode = el.getFirst();
-                        answerNode.inject(_this.chatListNode);
-
-                        markdownBody = answerNode.getElement(".markdown-body");
-
-                        if(mcpExtra.script){
-                            debugger
-                            eval("(function(node,data) { " + (mcpExtra.script + " }.bind(_this))(markdownBody,mcpData.data)"));
-                        }
-
-                    }else {
-                        try {
-                            msg.content = marked.parse(msg.content);
-                        } catch (e) {}
-
-
-                        html = `
-                            <div class="chat-list-l">
-        
-                                <div><img src="${_this.config.appIconUrl}" class="imgicon"></div>
-                                <div style="display: flex;">
-                                    <div class="aitype"><i class = "ooicon-${msg.icon}"> </i></div>
+                                <div class="msg-container">
                                     <div class="markdown-body">
                                         ${msg.content}
+                                    </div> 
+                                    <div class="references-section">
+                                         <div class="references-title">
+                                            <i class="ooicon-canyue"></i>参考资料
+                                         </div>
+                                        <div class="reference-grid">
                                     </div>
-        
+                                  </div>
                                 </div>
                             </div>        
-                    `;
-                        el = new Element("div", {"html": html});
-                        el.getFirst().inject(_this.chatListNode);
+                        `;
+                    el = new Element("div", {"html": html});
+
+                    const msgNode = el.getFirst();
+                    msgNode.inject(_this.chatListNode);
+
+                    const answerNode = msgNode.getElement(".markdown-body");
+                    const referencesNode = msgNode.getElement(".references-section");
+                    const referenceGridNode = msgNode.getElement(".reference-grid");
+                    referencesNode.hide();
+
+
+                    if(msg.extendList && msg.extendList.length>0){
+                        msg.extendList.each(function (extend){
+                            let ragDoc;
+                            if(extend["extend.rag"]){
+                                ragDoc = extend["extend.rag"];
+                                //answerNode.set("id",_this.completionId);
+
+                                referencesNode.show();
+
+                                const referenceItem = new Element("div", {
+                                    "class": "reference-card"
+                                }).inject(referenceGridNode);
+                                const referenceHtml = `
+                                    <div class="ref-favicon hide">W</div>
+                                    <div class="ref-info">
+                                        <div class="ref-title">${ragDoc.title}</div>
+                                        <div class="ref-source">${ragDoc.documentMode === "embed"?"知识库":"问答"}</div>
+                                    </div>`;
+                                referenceItem.set("html",referenceHtml);
+
+                                referenceItem.addEvent("click",function(){
+                                    _this.openRef(ragDoc.sourceId);
+                                });
+                            }
+
+                            if(extend["extend.output"]){
+
+                                //answerNode.set("id",_this.completionId);
+                                const mcpData = JSON.parse(extend["extend.output"]);
+
+                                mcpExtra = _this.getMcpExtra(mcpData.name);
+
+                                mcpData.data.extra = msg.extra;
+
+                                debugger
+
+                                const template = _this.renderTemplate(mcpExtra.template,mcpData.data);
+
+                                const customNode = new Element("div",{"html":marked.parse(template)}).inject(answerNode);
+
+                                //answerNode.set("html", marked.parse(template));
+                                if(mcpExtra.css){
+                                    answerNode.loadCssText(mcpExtra.css);
+                                }
+                                if(mcpExtra.script){
+                                    eval("(function(node,data) { " + (mcpExtra.script + " }.bind(_this))(answerNode,mcpData.data)"));
+                                }
+
+
+
+                            }
+                        })
+
                     }
 
+
+
                 })
+
+
+
+
+
+
                 _this.chatListWrapNode.scrollTop = _this.chatListWrapNode.scrollHeight;
             })
         }.bind(this));
@@ -327,7 +460,7 @@ MWF.xApplication.AI.Main = new Class({
     sendNew : function (){
         const msg = this.chatNode.get("value");
         this.rightNode.empty();
-        this.rightNode.loadHtml(this.path + this.options.style + "/list.html", {"bind": {"lp": this.lp,"generateType":this.generateType,"config":this.config}, "module": this}, function () {
+        this.rightNode.loadHtml(this.path + this.options.style + "/list.html", {"bind": {"lp": this.lp,"generateType":this.generateType,"config":this.config,"aiType" : this.aiType}, "module": this}, function () {
             this.bindEvent(true);
             this.chatListNode.empty();
             this.titleNode.set("text",msg.length>30?msg.substring(0,30):msg);
@@ -335,7 +468,7 @@ MWF.xApplication.AI.Main = new Class({
         }.bind(this));
     },
     send: function (text) {
-
+        this.options.initMsg = "";
         let msg = this.chatNode.get("value");
         const _this = this;
         if (text) msg = text;
@@ -344,30 +477,56 @@ MWF.xApplication.AI.Main = new Class({
         this.attId = [];
         if(Object.keys(this.selectedFiles).length>0){
             Object.keys(this.selectedFiles).each(function(key,index) {
-                const formData = new FormData();
-                formData.append("file", this.selectedFiles[key]);
-                formData.append("fileName", key);
 
-                this.action.FileAction.upload(formData,{},function (json){
+                if(this.selectedFiles[key]  instanceof File){
+                    const formData = new FormData();
+                    formData.append("file", this.selectedFiles[key]);
+                    formData.append("fileName", key);
 
-                    this.attId.push(json.data.id);
+                    this.action.FileAction.upload(formData,{},function (json){
 
-                }.bind(this),null,false);
+                        this.attId.push(json.data.id);
+
+                    }.bind(this),null,false);
+                }else {
+
+                    this.action.FileAction.copyFile({
+                        "id":this.selectedFiles[key].id,
+                        "name":this.selectedFiles[key].name,
+                        "copyFrom" : this.options.jars!==""?this.options.jars:"x_pan_assemble_control"
+                    },function (json){
+
+                        this.attId.push(json.data.id);
+
+                    }.bind(this),null,false);
+
+                }
+
             }.bind(this));
 
 
             const chatListAttNode = new Element("div.chat-list-att").inject(_this.chatListNode);
             this.attId.each(function (fileId){
                 _this.action.FileAction.get(fileId,function (json){
-                    const attItem = new Element("div.chat-att-item").inject(chatListAttNode);
+                    let attItem ;
                     const file = json.data;
-                    const atthtml = `
+
+                    const fileType = _this.getFileIcon(file.name);
+                    let atthtml;
+                    if("picture" === fileType){
+                        attItem = new Element("div.chat-att-img").inject(chatListAttNode);
+                        atthtml = `<img src="../x_ai_assemble_control/jaxrs/file/${file.id}/download/scale">`;
+                    }else{
+                        attItem = new Element("div.chat-att-item").inject(chatListAttNode);
+                        atthtml = `
                                     <div class="chat-att-item-icon ooicon-${_this.getFileIcon(file.name)}"></div>
                                     <div class="chat-att-item-content">
                                         <div class="chat-att-item-title">${file.name}</div>
                                         <div class="chat-att-item-size">${_this.formatBytes(file.length)}</div>
                                     </div>
-                                `
+                                `;
+                    }
+
                     attItem.set("html",atthtml);
 
                     attItem.addEvent("click",function(){
@@ -381,6 +540,7 @@ MWF.xApplication.AI.Main = new Class({
 
         this.attUplodListNode.empty();
         this.selectedFiles = {};
+        this.options.jars = "";
 
         const html = `
             <div class="chat-list-r">
@@ -415,6 +575,35 @@ MWF.xApplication.AI.Main = new Class({
             }.bind(this));
         }.bind(this));
     },
+    openRef: function (documentId) {
+        o2.Actions.load("x_cms_assemble_control").DocumentAction.query_get(documentId, function (json) {
+            const data = json.data;
+
+            if (data.document.categoryId === '83b61716-ed6b-4d60-b0cf-9b3eb7979f7e') {
+                var options = {
+                    "portalId": "a3117a9a-3ced-4dff-bb51-a956bf96930a",
+                    "pageId": "bf90e2d1-05b2-4812-be50-60bea2ff0add",
+                    "parameters": {
+                        "type": "knowledge",
+                        "knowledgeId": data.data.knowledgeId,
+                        "appId": "73d2daa6-42e9-45fa-867b-42b14c64fd5f",
+                        "documentId": documentId
+                    }
+                };
+
+
+                layout.desktop.openApplication(null, "portal.Portal", options);
+            } else {
+                var options = {
+                    "documentId": documentId
+                };
+
+
+                layout.desktop.openApplication(null, "cms.Document", options);
+            }
+        }.bind(this));
+
+    },
     repl: function (msg) {
 
         const _this = this;
@@ -427,9 +616,10 @@ MWF.xApplication.AI.Main = new Class({
             <div>
               <img src="${_this.config.appIconUrl}" class="imgicon">
             </div>
-            <div style="display: flex">
+            <div style="display: flex;flex-direction: column;">
+
               <div class="loading-container">
-                <div style="display:flex; align-items: center; justify-content: center;">
+                <div style="display:flex; align-items: center;">
                   <img src="../x_component_AI/$Main/default/loadding.gif" style="height:1.6rem;margin-top: .8em;">
                   <span class="shining-animation">
                     <span>${_this.lp.thinking}</span>
@@ -441,7 +631,18 @@ MWF.xApplication.AI.Main = new Class({
               </div>
               <div class="aitype"></div>
               <div class="msg-container">
+                  <div class="reasoning">
+                    <div class="reasoning-tool" ><i class="ooicon-zhankai"></i><span>深度思考</span> </div>
+                    <div class="reasoning-content"></div>
+                   </div>
                   <div class="markdown-body"></div>
+                  <div class="references-section">
+                     <div class="references-title">
+                        <i class="ooicon-canyue"></i>参考资料
+                     </div>
+                    <div class="reference-grid">
+                    </div>
+                  </div>
                   <div class="tools-container">
                     <div class="tools">
                       <div class="ooicon-window-max"></div>
@@ -457,10 +658,29 @@ MWF.xApplication.AI.Main = new Class({
         const msgNode = el.getElement(".msg-container");
         const answerNode = el.getElement(".markdown-body");
 
+        const referencesNode = el.getElement(".references-section");
+        const referenceGridNode = el.getElement(".reference-grid");
+
+        referencesNode.hide();
+
+        const reasoningContentNode = el.getElement(".reasoning-content");
+        this.reasoningContentNode = reasoningContentNode;
+
+        const reasoningNode = el.getElement(".reasoning");
+        reasoningNode.hide();
+
         const loadingNode = el.getElement(".loading-container");
         const toolNode = el.getElement(".tools-container");
         const copyNode = el.getElement(".ooicon-window-max");
         const aitypeNode = el.getElement(".aitype");
+        aitypeNode.hide();
+
+        const reasoningTool = el.getElement(".reasoning-tool");
+        this.reasoningTool = reasoningTool;
+
+        reasoningTool.addEvent("click",function(){
+            this.expandReasoning();
+        }.bind(this));
 
 
         this.toolNode = toolNode;
@@ -503,7 +723,9 @@ MWF.xApplication.AI.Main = new Class({
                 "input": msg,
                 "clueId": _this.sessionId,
                 "generateType": _this.generateType,
-                "materialIdList":_this.attId
+                "endpointName" : _this.aiType,
+                "referenceIdList":_this.attId,
+                "thinkingEnabled" : _this.isThinking
             });
 
             fetch(requestOptions.url, requestOptions)
@@ -524,6 +746,7 @@ MWF.xApplication.AI.Main = new Class({
         async function processStandardStream(reader) {
             const decoder = new TextDecoder();
             let fullResponse = "";
+            let fullReasoningResponse = "";
 
             while (true) {
                 const {done, value} = await reader.read();
@@ -532,55 +755,122 @@ MWF.xApplication.AI.Main = new Class({
                 const chunk = decoder.decode(value, {stream: true});
                 const lines = chunk.split('\n').filter(l => l.trim());
 
+                let messageType = "message";
                 for (const line of lines) {
-                    if(line.startsWith("event: status")){
-                        loadingNode.hide();
+
+                    if(line.startsWith("event: ")){
+                        messageType = line.replace("event: ","");
                     }
+
+                    // if(line.startsWith("event: status")){
+                    //     loadingNode.hide();
+                    // }
+
                     if (line.startsWith('data:')) {
                         try {
                             const message = line.replace(/^data: /, '').trim();
+                            //console.log(message)
                             if (message === '[DONE]') {
+                                console.log("DONE")
                                 _this.done(fullResponse);
                                 return;
                             }
 
                             const parsed = JSON.parse(message);
 
-                            if (parsed.choices?.[0]?.delta || parsed.choices?.[0]?.message) {
+                            if(messageType === "extend.status" && parsed.clueId){
+                                _this.completionId = parsed.id;
+                                _this.sessionId = parsed.clueId;
+                                _this.loadHistory();
+                            }
+
+
+                            if(messageType === "extend.toolCall"){
+
+                                loadingNode.getElement(".shining-animation").getFirst().set("text","正在调用工具" + parsed.name)
+                                loadingNode.show();
+
+
+                            }else if(messageType === "extend.rag"){
+
+                                answerNode.set("id",_this.completionId);
+
+                                console.log(parsed)
+                                referencesNode.show();
+
+                                const referenceItem = new Element("div", {
+                                    "class": "reference-card"
+                                }).inject(referenceGridNode);
+                                const referenceHtml = `
+                                    <div class="ref-favicon hide">W</div>
+                                    <div class="ref-info">
+                                        <div class="ref-title">${parsed.title}</div>
+                                        <div class="ref-source">${parsed.documentMode === "embed"?"知识库":"问答"}</div>
+                                    </div>`;
+                                referenceItem.set("html",referenceHtml);
+
+                                referenceItem.addEvent("click",function(){
+                                    _this.openRef(parsed.sourceId);
+                                });
+                                // _this.done(fullResponse);
+                                autoScroll();
+
+                                loadingNode.hide();
+                            }else if(messageType === "extend.output"){
+
+                                answerNode.set("id",_this.completionId);
+                                const mcpData = parsed;
+
+                                mcpExtra = _this.getMcpExtra(mcpData.name);
+
+                                const template = _this.renderTemplate(mcpExtra.template,mcpData.data);
+
+                                const customNode = new Element("div",{"html":marked.parse(template)}).inject(answerNode);
+
+                                //answerNode.set("html", marked.parse(template));
+                                if(mcpExtra.css){
+                                    answerNode.loadCssText(mcpExtra.css);
+                                }
+                                if(mcpExtra.script){
+                                    eval("(function(node,data) { " + (mcpExtra.script + " }.bind(_this))(answerNode,mcpData.data)"));
+                                }
+                                _this.done(fullResponse);
+                                autoScroll();
+
+                                loadingNode.hide();
+                                return;
+                            }else if (parsed.choices?.[0]?.delta || parsed.choices?.[0]?.message) {
 
                                 const content = parsed.choices[0].delta ? parsed.choices[0].delta.content : parsed.choices[0].message.content;
 
+                                const reasoning_content = parsed.choices[0].delta ? parsed.choices[0].delta.reasoning_content : parsed.choices[0].message.reasoning_content;
                                 if (content) {
-
-                                    if (content.indexOf("$$mcp$$")>-1){
-                                        const mcpData = JSON.parse(JSON.parse(content));
-
-                                        console.log(mcpData)
-                                        mcpExtra = _this.getMcpExtra(mcpData.name);
-
-                                        const template = _this.renderTemplate(mcpExtra.template,mcpData.data);
-
-                                        answerNode.set("html", marked.parse(template));
-
-                                        if(mcpExtra.script){
-                                            eval("(function(node,data) { " + (mcpExtra.script + " }.bind(_this))(answerNode,mcpData.data)"));
-                                        }
-                                        _this.done(fullResponse);
-                                        autoScroll();
-                                        return;
-                                    }
-
+                                    loadingNode.hide();
                                     fullResponse += content;
                                     answerNode.set("html", marked.parse(fullResponse));
+                                }
 
+                                if(reasoning_content){
+
+                                    loadingNode.getElement(".shining-animation").getFirst().set("text","深度思考中")
+                                    loadingNode.show();
+
+                                    reasoningNode.show();
+
+                                    fullReasoningResponse += reasoning_content;
+                                    reasoningContentNode.set("html", marked.parse(fullReasoningResponse));
                                 }
+
                             } else {
-                                if (_this.sessionId === "") {
-                                    if (parsed.generateType && parsed.clueId) {
-                                        _this.sessionId = parsed.clueId;
-                                        _this.loadHistory();
-                                    }
-                                }
+                                // if (_this.sessionId === "") {
+                                //     if (parsed.clueId) {
+                                //         _this.sessionId = parsed.clueId;
+                                //
+                                //         _this.loadHistory();
+                                //     }
+                                // }
+
+
                                 if (parsed.generateType){
                                     aitypeNode.set("html",`<div class = "ooicon-${_this.getIcon(parsed.generateType)}"></div>`);
                                     answerNode.set("id",parsed.id);
@@ -621,6 +911,10 @@ MWF.xApplication.AI.Main = new Class({
             new MWF.xApplication.AI.Setting(this, this.content);
         }.bind(this));
     },
+    quickChat : function (msg){
+
+        this.chatNode.set("value",msg);
+    },
     getIcon : function (type){
         let icon ;
         switch (type) {
@@ -633,7 +927,7 @@ MWF.xApplication.AI.Main = new Class({
             case "mcp":
                 icon = "renwu"
                 break
-            case "rag":
+            case "searchKnowledgeBase":
                 icon = "canyue"
                 break
         }
@@ -651,22 +945,57 @@ MWF.xApplication.AI.Main = new Class({
             case "mcp":
                 name = this.lp.types.task
                 break
-            case "rag":
+            case "searchKnowledgeBase":
                 name = this.lp.types.knowledge
                 break
         }
         return name;
+    },
+    showAiType : function (ev){
+        ev.stopPropagation();
+
+        this.action.ConfigAction.listEnableModel(function( json ){
+            data = json.data;
+
+            const node = ev.target.getParent(".chat-ai-type")?ev.target.getParent(".chat-ai-type"):ev.target;
+            let options = [];
+            if (node.menu) return;
+
+            json.data.each(function(d){
+                options.push({
+                    "label" : d.name,
+                    "title" : d.desc
+                })
+            })
+            node.menu = new $OOUI.Menu(node, {
+                area: this.content,
+                styles: {},
+                items: options.map(option => ({
+                    icon: option.icon,
+                    label: option.label,
+                    command: () => this.setAiType(option.label)
+                }))
+            });
+            node.menu.show();
+
+        }.bind(this));
+
+    },
+    setAiType : function (aiType){
+        this.aiType = aiType;
+        this.currentAiNode.set("text",aiType);
     },
     showGenerateType: function(ev) {
         ev.stopPropagation();
         if(!this.config.o2AiEnable) return;
         const node = ev.target;
         if (node.menu) return;
+        // { icon: 'message', label: this.lp.types.chat + " ｜ "+this.lp.types.chat_text, type: "chat", text1: this.lp.types.chat, text2: this.lp.types.chat_text },
+        // { icon: 'renwu', label: this.lp.types.task + " ｜ " + this.lp.types.task_text, type: "mcp", text1: this.lp.types.task, text2: this.lp.types.task_text },
+
         const options = [
             { icon: 'networking_click', label: this.lp.types.auto + " ｜ " + this.lp.types.auto_text, type: "auto", text1: this.lp.types.auto, text2: this.lp.types.auto_text },
-            { icon: 'message', label: this.lp.types.chat + " ｜ "+this.lp.types.chat_text, type: "chat", text1: this.lp.types.chat, text2: this.lp.types.chat_text },
-            { icon: 'renwu', label: this.lp.types.task + " ｜ " + this.lp.types.task_text, type: "mcp", text1: this.lp.types.task, text2: this.lp.types.task_text },
-            { icon: 'canyue', label: this.lp.types.knowledge + " ｜ " + this.lp.types.knowledge_text, type: "rag", text1: this.lp.types.knowledge, text2: this.lp.types.knowledge_text }
+            { icon: 'canyue', label: this.lp.types.knowledge + " ｜ " + this.lp.types.knowledge_text, type: "searchKnowledgeBase", text1: this.lp.types.knowledge, text2: this.lp.types.knowledge_text }
         ];
         node.menu = new $OOUI.Menu(node, {
             area: this.content,
@@ -685,7 +1014,8 @@ MWF.xApplication.AI.Main = new Class({
         this.tool2Node.set("text", text1);
         this.tool3Node.set("text", text2);
     },
-    addAtt : function (){
+
+    addAtt : function (type,clipboardData){
         const _this = this;
         const fileDisplay = this.attUplodListNode;
         const fileInputs = [];
@@ -726,7 +1056,7 @@ MWF.xApplication.AI.Main = new Class({
                 <div class="chat-att-item-icon ooicon-${_this.getFileIcon(file.name)}"></div>
                 <div class="chat-att-item-content">
                     <div class="chat-att-item-title">${file.name}</div>
-                    <div class="chat-att-item-size">${_this.formatBytes(file.size)}</div>
+                    <div class="chat-att-item-size">${_this.formatBytes(file.size ? file.size : file.length)}</div>
                 </div>
                 <div class="chat-att-item-action ooicon-close"></div>
             `;
@@ -745,9 +1075,38 @@ MWF.xApplication.AI.Main = new Class({
                 delete _this.selectedFiles[fileName];
             }
         }
+        if(type === "paste"){
+            const items = clipboardData.items;
 
-        const fileInput = createFileInput();
-        fileInput.click();
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    const blob = items[i].getAsFile();
+                    if (blob) {
+                        handleFileSelection([blob]);
+                    }
+
+                }
+            }
+        } else if(type==="drive"){
+            o2.xDesktop.requireApp('Selector', 'package', function () {
+
+                new MWF.O2Selector( layout.mobile ? $(document.body) : this.content, Object.assign( {
+                    title: "",
+                    type: 'PanFile',
+                    onComplete: function ( selectedItemList ) {
+                        files = selectedItemList.map( function(item){
+                            return item.data;
+                        });
+                        console.log(files)
+                        handleFileSelection(files)
+                    }.bind(this)
+                },  {}));
+            }.bind(this));
+        }else {
+            const fileInput = createFileInput();
+            fileInput.click();
+        }
+
     },
     formatBytes : function (bytes){
         if (bytes === 0) return '0 B';
@@ -758,7 +1117,7 @@ MWF.xApplication.AI.Main = new Class({
     },
     getFileIcon : function(filename){
         const getFileExt = (filename) => filename.split('.').pop() || '';
-        const type = getFileExt(filename);
+        const type = getFileExt(filename).toLowerCase();
         if(["docx","doc"].contains(type)){
             return "word"
         }

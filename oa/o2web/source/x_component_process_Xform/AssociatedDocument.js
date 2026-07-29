@@ -1126,6 +1126,7 @@ MWF.xApplication.process.Xform.AssociatedDocument = MWF.APPAssociatedDocument = 
                 "fromLeft": x-20,
                 "width": width,
                 "height": height,
+                "isClose": !layout.mobile,
                 "html": "",
                 "maskNode": layout.mobile?$(document.body) : this.form.app.content,
                 "container": layout.mobile?$(document.body) : this.form.app.content,
@@ -1353,9 +1354,12 @@ MWF.xApplication.process.Xform.AssociatedDocument = MWF.APPAssociatedDocument = 
             array = array.concat(data);
         }.bind(this));
 
+        this.fireEvent("selectResult", [array]);
+
         this.doResult(array);
 
-        this.fireEvent("selectResult", [array]);
+        this.fireEvent("afterSelectResult", [this.documentList]);
+
         if (callback) callback(array, dlg );
     },
     doResult: function(data){

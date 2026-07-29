@@ -497,8 +497,10 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
     hide: function(){
         var dsp = this.node.getStyle("display");
         if (dsp!=="none") this.node.store("mwf_display", dsp);
-        this.node.setStyle("display", "none");
-        if (this.iconNode) this.iconNode.setStyle("display", "none");
+        //this.node.setStyle("display", "none");
+        this.node.style.setProperty('display', 'none', 'important');
+        //if (this.iconNode) this.iconNode.setStyle("display", "none");
+        if (this.iconNode) this.iconNode.style.setProperty('display', 'none', 'important');
     },
     /**
      * @summary 显示组件.
@@ -506,8 +508,8 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
      * this.form.get("fieldId").show(); //显示组件
      */
     show: function(){
-        var dsp = this.node.retrieve("mwf_display", "block");
-        this.node.setStyle("display", dsp);
+        var dsp = this.node.retrieve("mwf_display");
+        this.node.setStyle("display", dsp || '');
         if (this.iconNode) this.iconNode.setStyle("display", "block");
     },
     load: function(){
@@ -619,8 +621,8 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         return typeof str === "string" && /^-?\d+$/.test(str);
     },
 
-    _getActivityId: function(){
-        if (this.form.businessData.review){
+    _getActivityId: function(review=true){
+        if (review && this.form.businessData.review){
             return {uid: this.form.businessData.review.activityUnique}
         }else{
             return {uid: this.form.businessData.activity?.unique, aid: this.form.businessData.activity?.id}
@@ -685,7 +687,7 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
 
             if (hasByActivity || hasByOrg || hasByScript){
                 if (hasByActivity){
-                    let {uid, aid} = this._getActivityId();
+                    let {uid, aid} = this._getActivityId(false);
                     // let uid = this.form.businessData.activity && this.form.businessData.activity.unique;
                     // let aid = this.form.businessData.activity && this.form.businessData.activity.id;
                     if (!uid){
@@ -1089,6 +1091,9 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
             }
         }
 
+        this._checkAllRelated(id);
+    },
+    _checkAllRelated: function(id){
         const mid = (id || this.json.id);
         // const dataId = mid.split('..').map((s)=>{
         //     return /^\d+$/.test(s) ? '*' : s
@@ -1317,7 +1322,17 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         }
     },
 
-    saveDataById: function(id, data){
+    saveDataById: function(fieldId, data){
+        if(this.form.isReadonly()){
+            return;
+        }
+        var clone = function (data){
+            switch(o2.typeOf(data)){
+                case "object": return Object.clone(data);
+                case "array": return Array.clone(data);
+                default: return data;
+            }
+        };
         var appName = this.form.app.options.name;
         if( !['process.Work', 'cms.Document'].includes(appName) ){
             return;
@@ -1326,20 +1341,20 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
             return;
         }
         var originalData = this.form.businessData.originalData || {};
-        var thisId = id || this.json.id;
+        var thisId = fieldId || this.json.id;
         if(o2.typeOf(data) === "null"){
             data = this.getBusinessDataById();
         }
         if(thisId.indexOf("..") < 1){
             this._saveDataByPath([thisId], data, ()=>{
-                originalData[thisId] = data;
+                originalData[thisId] = clone( data );
             });
         }else{
             var idList = thisId.split("..");
             idList = idList.map( function(d){ return d.test(/^\d+$/) ? d.toInt() : d; });
 
             var lastIndex = idList.length - 1;
-            var preOriginalData;
+            var preOriginalData = originalData;
 
             for(var i=0; i<=lastIndex; i++){
                 var id = idList[i];
@@ -1347,15 +1362,15 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
 
                 var exist = originalData && originalData.hasOwnProperty(id);
                 if( !exist || i === 8 ) { //originalData不包含中间路径，且路径长多最多支持8，多余的获取后续整体数据进行保存
-                    var paths = idList.slice(0, i);
+                    var paths = idList.slice(0, i+1);
                     var pathData = this.getBusinessDataById(null, paths.join('..'));
                     this._saveDataByPath(paths, pathData, ()=>{
-                        !!preOriginalData && (preOriginalData[idList[i-1]] = pathData);
+                        !!preOriginalData && (preOriginalData[idList[i]] = clone(pathData));
                     });
                     return;
                 }else if( i === lastIndex ) {
                     this._saveDataByPath(idList, data, ()=>{
-                        originalData[id] = data;
+                        originalData[id] = clone(data);
                     });
                 }else{
                     preOriginalData = originalData;
@@ -1365,8 +1380,11 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
         }
     },
     _saveDataByPath: function(paths, data, success){
+        if(o2.typeOf(data) === "null"){
+            data = '';
+        }
         if (paths.length > 8) {
-            throw new Error(`路径层级超过限制(8级)，当前: ${paths.length}`);
+            throw new Error(`路径"${paths.join('/')}"层级超过限制(8级)，当前: ${paths.length}`);
         }
         var hasPath = paths.length > 0;
         var action, methodName, args;
@@ -1457,5 +1475,63 @@ MWF.xApplication.process.Xform.$Module = MWF.APP$Module =  new Class(
                 this.node.setStyle('padding-right', '0');
             }
         }
+    },
+    _loadOONodeDownloading: function (){
+        this.node.setStyle('display', 'none');
+        let valueNode, labelNode;
+        const node = new Element('div.oo-node-downloading', {
+            'id': this.json.id,
+            'MWFType': this.json.type
+        }).inject(this.node, 'after');
+        Array.from(this.node.classList).forEach(clazz=>{
+            node.addClass(clazz);
+        })
+        this.node.destroy();
+
+        node.setStyles(this.form.css.OODownloadingNodeStyle);
+
+        if (this.json.styles) {
+            node.setStyles(this.json.styles);
+        }
+
+        if (this.json.label) {
+            labelNode = new Element('div.item-label',{
+                text: this.json.label
+            }).inject(node);
+        }
+
+        valueNode = new Element('div').inject(node);
+
+        if(this.json.properties){
+            if(labelNode) {
+                if(this.json.properties['label-style']){
+                    labelNode.setAttribute('style', this.json.properties['label-style']);
+                }
+                if(this.json.properties['label-Align']){
+                    let justifyContent;
+                    switch (this.json.properties['label-Align']) {
+                        case 'right': justifyContent = 'flex-end'; break;
+                        case 'center': justifyContent = 'center';  break;
+                        default: justifyContent = 'flex-start'; break;
+                    }
+                    labelNode.setStyle('justify-content', justifyContent);
+                }
+            }
+            if(!this.json.inDatatable && this.json.properties['view-style']) {
+                valueNode.setAttribute('style', this.json.properties['view-style']);
+            }
+        }
+        if(labelNode){
+            labelNode.setStyles(this.form.css.OODownloadingLabelNodeStyle);
+        }
+        valueNode.setStyles(this.form.css.OODownloadingValueNodeStyle);
+
+        this.downloadingNode = node;
+        this.downloadingLabelNode = labelNode;
+        this.downloadingValueNode = valueNode;
+
+        this._afterLoadOONodeDownloading();
+    },
+    _afterLoadOONodeDownloading: function (){
     }
 });

@@ -245,8 +245,8 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 			if(iconNode)iconNode.destroy();
 
 			// this.editModules = [];
-			this.node.setStyle("overflow-x", "auto");
-			this.node.setStyle("overflow-y", "hidden");
+			// this.node.setStyle("overflow-x", "auto");
+			// this.node.setStyle("overflow-y", "hidden");
 
 			this.editable = !(this.readonly || (this.json.isReadonly === true) || (this.form.json.isReadonly === true));
 			if( this.isMergeRead )this.editable = false;
@@ -369,7 +369,7 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 			moduleNodes.each(function (node) {
 				if (node.get("MWFtype") !== "form") {
 					var json = this.form._getDomjson(node);
-					this.templateJson[json.id] = json ;
+					if(json)this.templateJson[json.id] = json ;
 				}
 			}.bind(this));
 		},
@@ -430,7 +430,8 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 			this.selectAllList.each( function (module) {
 				// module.setData(""); //默认不选中
 				var addEvent = function (){
-					!module._isDtEventAdded && module.node.addEvents({"click": function(e){
+					!module._isDtEventAdded && module.node.addEvents({"change": function(e){
+						debugger;
 						this._checkSelectAll(e);
 					}.bind(this)});
 					module._isDtEventAdded = true;
@@ -1064,7 +1065,7 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 
 			_self.fireEvent("change", [{"lines":lines, "type":"deletelines"}]);
 
-			if(saveFlag)this.form.saveFormData();
+			if(saveFlag)this.saveFormData();
 		},
 		_deleteLine: function(ev, line){
 			if( this.isMin() ){
@@ -1108,7 +1109,7 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 
 			this.fireEvent("change", [{"lines":[line], "type":"deleteline"}]);
 
-			if(saveFlag)this.form.saveFormData();
+			if(saveFlag)this.saveFormData();
 		},
 		_checkSelectAll: function () {
 			var selectData = this.selectAllSelector.getData();
@@ -1186,7 +1187,7 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 		resetData: function(){
 			// var value = this.getDefaultValue() || [];
 			var value = this.getValue() || [];
-			this.setData(value);
+			this.setData(value, false, 'resetData');
 		},
 		/**当参数为Promise的时候，请查看文档: {@link  https://www.yuque.com/o2oa/ixsnyt/ws07m0|使用Promise处理表单异步}<br/>
 		 * 当表单上没有对应组件的时候，可以使用this.data[fieldId] = data赋值。
@@ -1255,12 +1256,14 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 
 			this._setUnchangedLineMap(data, operation);
 
-			if( !operation ){
+			if( !operation && !this.saving ){
+				this.saving = true;
 				if( this.sectionBy ){
 					this.saveDataById(this.json.id + '..' + this.sectionBy, this._getBusinessData());
 				}else{
 					this.saveDataById();
 				}
+				this.saving = false;
 			}
 
 			this._setBusinessData(data);
@@ -1813,7 +1816,7 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 			return flag;
 		},
 		validation: function(routeName, opinion){
-			if (this.isReadonly() || this.json.showMode!=="disabled" || this.node?.isDisplayNone() || !this.isEditable) return true;
+			if (this.isReadonly() || this.json.showMode==="disabled" || this.node?.isDisplayNone() || !this.isEditable) return true;
 			
 			// if (this.isEdit){
 			// 	if (!this.editValidation()){
@@ -1889,6 +1892,12 @@ MWF.xApplication.process.Xform.Datatemplate = MWF.APPDatatemplate = new Class(
 					}
 				}, null, false
 			);
+		},
+		saveFormData: function(){
+			var appName = this.form.app.options.name;
+			if( ['process.Work', 'cms.Document'].includes(appName) ){
+				this.form.saveFormData();
+			}
 		}
 	});
 
@@ -2304,14 +2313,16 @@ MWF.xApplication.process.Xform.Datatemplate.Line =  new Class({
 
 					if( json.type==="Attachment" || json.type==="AttachmentDg" ){
 						module.addEvent("change", function(){
-							_self.form.saveFormData();
+							_self.template.saveFormData();
 						}.bind(this))
 					}else if( json.type==="Datatemplate" ){
 						this.subDatatemplateModuleList.push(module);
-					}else if( module.field && json.type!=="Datatable" ){
-						module.addEvent("change", function(){
-							this.saveDataById();
-						});
+					}else if( module.field && !["Datatable", "OOFiles"].contains(json.type) ) {
+						if (module.json.originialId !== this.template.selectorId){
+							module.addEvent("change", function () {
+								this.saveDataById();
+							});
+						}
 					}
 
 					this.form.modules.push(module);
@@ -2491,7 +2502,13 @@ MWF.xApplication.process.Xform.Datatemplate.Line =  new Class({
 	},
 	select: function(){
 		this.selected = true;
-		if(this.selector)this.selector.setData(this.template.json.selectorSelectedValue);
+		if(this.selector){
+			if( ["OOCheckGroup", "Checkbox", "Elcheckbox"].contains(this.selector.json.type)){
+				this.selector.setData([this.template.json.selectorSelectedValue]);
+			}else{
+				this.selector.setData(this.template.json.selectorSelectedValue);
+			}
+		}
 	},
 	unselect: function(){
 		this.selected = false;
@@ -3230,13 +3247,18 @@ MWF.xApplication.process.Xform.Datatemplate.Importer = new Class({
 		//this.loadSimulateModule();
 		this.fieldArray = []; //日期格式列下标
 		this.template.json.excelFieldConfig.each(function (config, i) {
+			const fieldJson = this.form.json.moduleList[config.field];
+			if( !fieldJson ){
+				console.warn(`从数据模板中未找到导入导出配置的字段:${config.title}（${ config.field }）`);
+				return;
+			}
 			this.fieldArray.push({
 				"text": config.title,
 				"field": config.field,
 				"index": i,
 				// "module": this.simelateModuleMap[config.field],
-				"json": this.form.json.moduleList[config.field]
-			})
+				"json": fieldJson
+			});
 		}.bind(this));
 	},
 	getDateIndexArray : function(){
@@ -3649,7 +3671,7 @@ MWF.xApplication.process.Xform.Datatemplate.Importer = new Class({
 			this.personMap = {};
 			if( personList.length ){
 				personList = personList.unique();
-				o2.Actions.load("x_organization_assemble_express").PersonAction.listObject({ personList : personList }, function (json) {
+				o2.Actions.load("x_organization_assemble_express").PersonAction.listObject({ personList : personList, useNameFind: true }, function (json) {
 					json.data.each( function (d) { this.personMap[ d.matchKey ] = d; }.bind(this));
 					personLoaded = true;
 					check();
@@ -3662,7 +3684,7 @@ MWF.xApplication.process.Xform.Datatemplate.Importer = new Class({
 			this.unitMap = {};
 			if( unitList.length ){
 				unitList = unitList.unique();
-				o2.Actions.load("x_organization_assemble_express").UnitAction.listObject({ unitList : unitList }, function (json) {
+				o2.Actions.load("x_organization_assemble_express").UnitAction.listObject({ unitList : unitList, useNameFind: true }, function (json) {
 					json.data.each( function (d) { this.unitMap[ d.matchKey ] = d; }.bind(this));
 					unitLoaded = true;
 					check();

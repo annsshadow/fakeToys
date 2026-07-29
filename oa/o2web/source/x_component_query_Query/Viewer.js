@@ -264,7 +264,7 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
          * var node = this.target.view.node;
          */
         this.node = new Element("div.form-content-view", {"styles": this.css.node, mwftype: "view"}).inject(this.container);
-        
+
         //if (this.options.export) this.exportAreaNode = new Element("div", {"styles": this.css.exportAreaNode}).inject(this.node);
         /**
          * @summary 搜索界面容器
@@ -350,6 +350,7 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
 
     },
     setContentHeight: function() {
+        debugger;
         var getMarginHeight = (el) => {
             var top = el.getStyle("margin-top").toFloat() || 0;
             var bottom = el.getStyle("margin-bottom").toFloat() || 0;
@@ -421,7 +422,23 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
             this.actionbar.load();
         }else{ //兼容以前的ExportNode
             this.createExportNode();
-        }        
+        }
+    },
+    createViewNodeMobile: function(data, callback, keepSelected){
+        const css = this.viewJson.mobileCss;
+        if (css && !this.mobileCssLoaded){
+            this.viewAreaNode.loadCssText(css);
+            this.mobileCssLoaded = true;
+        }
+
+        if( this.options.isloadContent )this.createLoadding();
+
+        this.entries = {};
+        this.viewJson.selectList.each(function(column){
+            this.entries[column.column] = column;
+        }.bind(this));
+        if( this.options.isloadContent )this.lookup(data, callback);
+
     },
     createViewNode: function(data, callback, keepSelected){
         this.viewAreaNode.empty();
@@ -435,6 +452,12 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
         }).inject(this.viewAreaNode);
 
         this.loadObserver();
+
+
+        if (o2.isMediaMobile() && this.viewJson.mobileTemplate && this.viewJson.mobileTemplate.trim()!==""){
+            this.createViewNodeMobile(data, callback, keepSelected);
+            return;
+        }
 
         this.viewTable = new Element("table.viewTable", {
             "styles": this.css.viewTitleTableNode,
@@ -829,7 +852,7 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
                 this.requestBody = data;
 
                 this.setOrderList(d);
-                
+
                 // this.lookupAction.bundleView(this.json.id, d, function(json){
                     // this.bundleItems = json.data.valueList;
                     // this.bundleKey = json.data.key;
@@ -907,7 +930,32 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
         // }
     },
 
+    loadSearchFilterItemAreaNode: function(data){
+        if (this.viewSearchFilterItemAreaNode){
+             this.viewSearchFilterItemAreaNode.empty();
+            if (data && data.filterList && data.filterList.length){
+                data.filterList.each(function(filter){
+                    if (filter.value==="") return;
+                    const filterItem = new Element('div.filter-item', {
+                        html: `<div class="filter-item-title">${filter.title}:</div><div class="filter-item-value">${filter.value}</div><div style="margin-left:0.5em" class=ooicon-close></div>`
+                    }).inject(this.viewSearchFilterItemAreaNode);
+                    filterItem.filterData = filter;
+
+                    filterItem.addEventListener('click', (e)=>{
+                        this.currentFilterData.filterList.erase(e.currentTarget.filterData);
+                        e.currentTarget.remove();
+                        this.createViewNode(this.currentFilterData);
+                    });
+                }.bind(this))
+            }
+        }
+    },
+    loadCurrentPageDataMobile: function(data, callback, noDocument ){
+
+    },
     loadCurrentPageData: function(data, callback, noDocument ){
+        this.loadSearchFilterItemAreaNode(data);
+
         //是否需要在翻页的时候清空之前的items ?
 
         if( this.pageloading )return;
@@ -929,11 +977,15 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
 
         this.setOrderList(d);
 
-        while (this.viewTable.rows.length>1){
-            this.viewTable.deleteRow(-1);
-        }
-        if( this.viewTable.rows.length>0 && !this.viewTable.rows[0].hasClass("viewTitleLine") ){
-            this.viewTable.deleteRow(0);
+        if (this.viewTable){
+            while (this.viewTable.rows.length>1){
+                this.viewTable.deleteRow(-1);
+            }
+            if( this.viewTable.rows.length>0 && !this.viewTable.rows[0].hasClass("viewTitleLine") ){
+                this.viewTable.deleteRow(0);
+            }
+        }else{
+            this.contentAreaNode.empty();
         }
 
         this.contentAreaNode.scrollTo(0, 0);
@@ -1085,7 +1137,39 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
             }
         }
     },
+
+    // openCms: function(e, data){
+    //     var options = {"documentId": data.bundle};
+    //     this.fireEvent("openDocument", [options, this]); //options 传入的事件
+    //     layout.desktop.openApplication(e, "cms.Document", options);
+    // },
+    // openWorkAndCompleted: function(e, data){
+    //     var options = {"jobId": data.bundle};
+    //     this.fireEvent("openDocument", [options, this]); //options 传入的事件
+    //     layout.desktop.openApplication(e, "process.Work", options);
+    // },
+    loadDataMobile: function(){
+        const html = this.viewJson.mobileTemplate;
+        const cols = this.viewJson.selectList.map((col)=>{
+            return {
+                id: col.id,
+                name: col.displayName
+            }
+        })
+        if (this.gridJson.length){
+            this.gridJson.each(function(line, i){
+                this.items.push(new MWF.xApplication.query.Query.Viewer.MobileItem(this, line));
+            }.bind(this));
+        }else{
+            if (this.viewPageAreaNode) this.viewPageAreaNode.empty();
+        }
+
+    },
     loadData: function(){
+        if (o2.isMediaMobile() && this.viewJson.mobileTemplate && this.viewJson.mobileTemplate.trim()!==""){
+            this.loadDataMobile();
+            return;
+        }
         if( this.getSelectFlag() === "multi" && this.viewJson.allowSelectAll ) {
             if(this.selectTitleCell && this.selectTitleCell.retrieve("selectAllLoaded")){
                 this.setUnSelectAllStyle();
@@ -1253,7 +1337,7 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
      */
     reload: function( callback, keepSelected ){
         if( this.lookuping || this.pageloading )return;
-        this.node.setStyle("display", "block");
+        this.node.setStyle("display", "");
         if (this.loadingAreaNode) this.loadingAreaNode.setStyle("display", "block");
 
         // this.filterItems.each(function(filter){
@@ -1385,6 +1469,7 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
                 this.loadSimpleSearch();
             }
             this.loadFulltextSearch();
+
         }
         o2.JSON.get(`../x_component_query_ViewDesigner/$View/skin/styles_${this.viewJson.viewStyleType}.json`, {
             'onSuccess': (json)=>{
@@ -1395,7 +1480,7 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
             'onError': ()=>{this.loadViewSearch();},
         });
 
-        
+
     },
     loadSimpleSearch: function(){
         return false;
@@ -1470,32 +1555,62 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
             if( filter.valueScript && filter.valueScript.code ){
                 const result = this.Macro.exec(filter.valueScript.code, this);
                 const arr = typeOf( result ) === "array" ? result : [result];
-                const node = new Element("oo-select");
-                node.setAttribute('label-style', "width: 6rem; min-width:4.3em; max-width:9em");
-                node.setAttribute('label', filter.title);
-                arr.forEach( (item)=>{
-                    const v = item.split(/\s*\|\s*/);
-                    const option = new Element("oo-option");
-                    option.setAttribute('value', v[1] || v[0]);
-                    option.setAttribute('text', v[0]);
-                    node.appendChild(option);
-                });
-                div.appendChild(node);
-                return div;
+                if (arr && arr.length){
+                    const node = new Element("oo-select");
+                    if (!o2.isMediaMobile()){
+                        const title = new Element("div.search-item-title");
+                        title.textContent = filter.title;
+                        div.append(title)
+                        // node.setAttribute('label-style', "width: 6rem; min-width:4.3em; max-width:9em");
+                        // node.setAttribute('label', filter.title);
+                    }
+                    node.setAttribute('placeholder', filter.title);
+                
+                    arr.forEach( (item)=>{
+                        const v = item.split(/\s*\|\s*/);
+                        const option = new Element("oo-option");
+                        option.setAttribute('value', v[1] || v[0]);
+                        option.setAttribute('text', v[0]);
+                        node.appendChild(option);
+                    });
+
+                    div.appendChild(node);
+                    return div;
+                }else{
+                    const node = new Element("oo-input");
+                    if (!o2.isMediaMobile()){
+                        const title = new Element("div.search-item-title");
+                        title.textContent = filter.title;
+                        div.append(title)
+                    }
+                    node.setAttribute('placeholder', filter.title);
+                    div.appendChild(node);
+
+                    div.appendChild(node);
+                    return div;
+                }
             }
         }
         if (filter.valueType==='org'){
             const node = new Element("oo-selector");
             node.setAttribute('right-icon', "person");
             node.setAttribute('data-select-types', filter.orgTypes.join(','));
-            node.setAttribute('label-style', "width: 6rem; min-width:4.3em; max-width:9em");
-            node.setAttribute('label', filter.title);
+            if (!o2.isMediaMobile()){
+                const title = new Element("div.search-item-title");
+                title.textContent = filter.title;
+                div.append(title)
+            }
+            node.setAttribute('placeholder', filter.title);
             div.appendChild(node);
             return div;
         }
         const input = new Element("oo-input");
-        input.setAttribute('label-style', "width: 6rem; min-width:4.3em; max-width:9em");
-        input.setAttribute('label', filter.title);
+        if (!o2.isMediaMobile()){
+            const title = new Element("div.search-item-title");
+            title.textContent = filter.title;
+            div.append(title)
+        }
+        input.setAttribute('placeholder', filter.title);
         div.appendChild(input);
         return div;
     },
@@ -1503,35 +1618,49 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
     createSearchDatetimeNode: function(filter, mode){
         const div = new Element("div.search-item");
 
-        const title = new Element("div.search-item-title");
-        title.textContent = filter.title;
+        if (!o2.isMediaMobile()){
+            const title = new Element("div.search-item-title");
+            title.textContent = filter.title;
+            div.append(title)
+        }
+
         const dateTimeInputL = new Element("oo-datetime");
+        dateTimeInputL.setAttribute('placeholder', filter.title+this.lp.begin);
+
         const toNode = new Element("div.search-item-flag");
         toNode.textContent = '-';
+
         const dateTimeInputU = new Element("oo-datetime");
+        dateTimeInputU.setAttribute('placeholder', filter.title+this.lp.end);
+
         if (mode){
             dateTimeInputL.setAttribute('mode', mode);
             dateTimeInputU.setAttribute('mode', mode);
         }
 
-        div.append(title, dateTimeInputL, toNode, dateTimeInputU)
+        div.append(dateTimeInputL, toNode, dateTimeInputU)
         return div;
     },
     createSearchNumberNode: function(filter){
         const div = new Element("div.search-item");
 
-        const title = new Element("div.search-item-title");
-        title.textContent = filter.title;
-        const numberL = new Element("oo-input");
+        if (!o2.isMediaMobile()){
+            const title = new Element("div.search-item-title");
+            title.textContent = filter.title;
+            div.append(title)
+        }
 
+        const numberL = new Element("oo-input");
         const toNode = new Element("div.search-item-flag");
         toNode.textContent = '-';
-
         const numberU = new Element("oo-input");
         numberL.setAttribute('type', "number");
         numberU.setAttribute('type', "number");
 
-        div.append(title, numberL, toNode, numberU)
+        numberL.setAttribute('placeholder', filter.title+this.lp.min);
+        numberU.setAttribute('placeholder', filter.title+this.lp.max);
+
+        div.append(numberL, toNode, numberU)
         return div;
     },
     createSearchBooleanNode: function(filter){
@@ -1539,8 +1668,15 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
 
         const booleanSelect = new Element("oo-select");
         booleanSelect.setAttribute('data-filter', '');
-        booleanSelect.setAttribute('label-style', "width: 6rem; min-width:4.3em; max-width:9em");
-        booleanSelect.setAttribute('label', filter.title);
+
+        if (!o2.isMediaMobile()){
+            const title = new Element("div.search-item-title");
+            title.textContent = filter.title;
+            div.append(title)
+            // booleanSelect.setAttribute('label-style', "width: 6rem; min-width:4.3em; max-width:9em");
+            // booleanSelect.setAttribute('label', filter.title);
+        }
+        booleanSelect.setAttribute('placeholder', filter.title);
 
         booleanSelect.innerHTML = `
             <oo-option value="" text=""></oo-option>
@@ -1646,17 +1782,25 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
         this.viewSearchFieldArea = new Element("div.page-content-search-fields").inject(this.viewSearchAreaNode);
         this.viewSearchActionArea = new Element("div.page-content-search-actions").inject(this.viewSearchAreaNode);
         const count = this.viewJson.customFilterList.length;
-        if (count<3){
+        if (count<2){
+            this.viewSearchActionArea.addClass("field-count-1");
+            this.viewSearchFieldArea.addClass("field-count-1");
+        }
+        if (count===2){
             this.viewSearchActionArea.addClass("field-count-2");
+            this.viewSearchFieldArea.addClass("field-count-2");
         }
         if (count===3){
             this.viewSearchActionArea.addClass("field-count-3");
+            this.viewSearchFieldArea.addClass("field-count-3");
         }
         if (count===4){
             this.viewSearchActionArea.addClass("field-count-4");
+            this.viewSearchFieldArea.addClass("field-count-4");
         }
         if (count>4){
             this.viewSearchActionArea.addClass("field-count-5");
+            this.viewSearchFieldArea.addClass("field-count-5");
         }
 
         const size = this.viewSearchAreaNode.getSize();
@@ -1685,7 +1829,8 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
                     "values": ev.target.value,
                     "types": types,
                     "style": "v10",
-                    "count": 0,
+                    "tabStyle": 'v10',
+                    "count": 1,
                     "onComplete": function (items) {
                         if (items.length) {
                             ev.target.value = items.map(i => i.data.distinguishedName)
@@ -1697,7 +1842,8 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
                 if (types.length > 1) {
                     options.types = types
                 }else{
-                    options.type = types[0]
+                    options.type = types[0];
+                    options.types = null;
                 }
                 MWF.xDesktop.requireApp("Selector", "package", ()=>{
                     new o2.O2Selector(this.app.content, options);
@@ -1717,28 +1863,39 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
 
         searchButton.addEventListener("click", (ev)=>{
             this.customFilterListData = [];
-            this.searchAreaNode.querySelectorAll(".search-item").forEach( (node)=>{
+            this.viewSearchAreaNode.querySelectorAll(".search-item").forEach( (node)=>{
                 this.getFilterData(node);
             });
+
             const filterData = this.json.filter ? this.json.filter.clone() : [];
             const filter = [...filterData, ...this.customFilterListData];
             this.currentPage = 1;
 
             this.currentFilterData = {"filterList": filter};
             this.createViewNode(this.currentFilterData, null, true);
+
+            if( o2.isMediaMobile() ){
+               this._hideFilterSearch(true);
+            }
         });
         cancelButton.addEventListener("click", (ev)=>{
             this._cancelFilter();
+            if( o2.isMediaMobile() ){
+                this._hideFilterSearch(true);
+            }
         });
+
+        this.viewSearchFilterItemAreaNode = new Element("div.search-item-area").inject(this.searchAreaNode, 'after');
+
     },
     _cancelFilter: function(){
-        this.searchAreaNode.querySelectorAll("oo-input, oo-select, oo-datetime, oo-switch, oo-selector").forEach( (node)=>{
+        this.viewSearchAreaNode.querySelectorAll("oo-input, oo-select, oo-datetime, oo-switch, oo-selector").forEach( (node)=>{
             node.value = "";
-            this.customFilterListData = [];
-            this.currentPage = 1;
-            this.currentFilterData = {"filterList": this.json.filter ? this.json.filter.clone() : null};
-            this.createViewNode(this.currentFilterData, null, true);
         });
+        this.customFilterListData = [];
+        this.currentPage = 1;
+        this.currentFilterData = {"filterList": this.json.filter ? this.json.filter.clone() : null};
+        this.createViewNode(this.currentFilterData, null, true);
     },
     loadFulltextSearch: function(){
         if (this.skinJson && this.skinJson.filterSkin==='v10'){
@@ -1763,10 +1920,16 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
         if (this.viewJson.isFulltextSearch==='yes'){
             this.viewFulltextSearchAreaNode = new Element("div.search-fulltext-area").inject(this.searchAreaNode, 'top');
             this.fulltextSearchInput = new Element("oo-input");
-            this.fulltextSearchInput.setAttribute('left-icon', 'search');
+            // if (!o2.isMediaMobile()){
+                this.fulltextSearchInput.setAttribute('left-icon', 'search');
+            // }else{
+            //     this.fulltextSearchInput.setAttribute('right-icon', 'search');
+            // }
+
+            this.fulltextSearchInput.setAttribute('placeholder', this.lp.searchNavPlaceholder);
             this.fulltextSearchInput.setAttribute('type', 'search');
             this.fulltextSearchInput.setAttribute('label-style', 'width: 6rem; min-width:4.3em; max-width:9em');
-            if (!o2.isMediaMobile()) this.fulltextSearchInput.setAttribute('label', '搜索');
+            // if (!o2.isMediaMobile()) this.fulltextSearchInput.setAttribute('label', '搜索');
             this.viewFulltextSearchAreaNode.appendChild(this.fulltextSearchInput);
 
             this.fulltextSearchButton = new Element("oo-button");
@@ -1783,16 +1946,42 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
                     this._fulltextSearch();
                 }
             });
-            
+            this.fulltextSearchInput.addEventListener('input', (e)=>{
+                if (!this.fulltextSearchInput.value){
+                    this._fulltextSearch();
+                }
+            });
+
             if (this.viewJson.customFilterList && this.viewJson.customFilterList.length){
                 var div = new Element('div.search-fulltext-more', {styles: {'font-size': '1.15rem'}});
                 this.moreSearchButton = new Element("oo-button");
-                this.moreSearchButton.setAttribute('type', 'icon-light');
+                this.moreSearchButton.setAttribute('type', (o2.isMediaMobile()) ? 'icon' : 'icon-light');
                 this.moreSearchButton.setAttribute('title', '更多筛选');
-                this.moreSearchButton.setAttribute('left-icon', 'jiekoupeizhi2');
+                this.moreSearchButton.setAttribute('left-icon', o2.isMediaMobile() ? 'search' : 'jiekoupeizhi2');
                 div.appendChild(this.moreSearchButton);
                 this.viewFulltextSearchAreaNode.appendChild(div);
-                
+
+                this.viewSearchAreaNode?.addClass('hide');
+
+                this.moreSearchButton.addEventListener('click', ()=>{
+                    if (this.viewSearchAreaNode?.hasClass('hide')){
+                        this._showFilterSearch();
+                    }else{
+                        this._hideFilterSearch();
+                    }
+                })
+            }
+        }else if(o2.isMediaMobile()){
+            this.viewFulltextSearchAreaNode = new Element("div.search-fulltext-area").inject(this.searchAreaNode, 'top');
+
+            if (this.viewJson.customFilterList && this.viewJson.customFilterList.length){
+                var div = new Element('div.search-fulltext-more', {styles: {'font-size': '1.15rem'}});
+                this.moreSearchButton = new Element("oo-button");
+                this.moreSearchButton.setAttribute('type', (o2.isMediaMobile()) ? 'icon' : 'icon-light');
+                this.moreSearchButton.setAttribute('left-icon', 'search');
+                div.appendChild(this.moreSearchButton);
+                this.viewFulltextSearchAreaNode.appendChild(div);
+
                 this.viewSearchAreaNode?.addClass('hide');
 
                 this.moreSearchButton.addEventListener('click', ()=>{
@@ -1806,12 +1995,14 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
         }
     },
 
-    _showFilterSearch: function(){
+    _showFilterSearch: function(ignoreAction){
         this.moreSearchButton?.setAttribute('title', '全文检索');
         this.fulltextSearchInput?.addClass('hide');
         this.fulltextSearchButton?.addClass('hide');
         this.viewSearchAreaNode?.removeClass('hide');
-        this.moreSearchButton?.setAttribute('left-icon', 'arrow_back');
+        if( !o2.isMediaMobile() ){
+            this.moreSearchButton?.setAttribute('left-icon', 'arrow_back');
+        }
 
         this.searchAreaNode.addClass('showFilter');
         this.viewFulltextSearchAreaNode.addClass('showFilter');
@@ -1819,22 +2010,24 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
         if (this.viewSearchActionArea.getStyle('display')==='grid'){
             this.viewFulltextSearchAreaNode.addClass('column')
         }
-        
-        this._cancelFilter();
+
+        if(!ignoreAction)this._cancelFilter();
     },
-    _hideFilterSearch: function(){
+    _hideFilterSearch: function( ignoreAction ){
         this.moreSearchButton?.setAttribute('title', '更多筛选');
         this.fulltextSearchInput?.removeClass('hide');
         this.fulltextSearchButton?.removeClass('hide');
         this.viewSearchAreaNode?.addClass('hide');
-        this.moreSearchButton?.setAttribute('left-icon', 'jiekoupeizhi2');
+        if( !o2.isMediaMobile() ) {
+            this.moreSearchButton?.setAttribute('left-icon', 'jiekoupeizhi2');
+        }
 
         this.searchAreaNode.removeClass('showFilter');
         this.viewFulltextSearchAreaNode.removeClass('showFilter');
         this.viewSearchAreaNode.removeClass('showFilter');
         this.viewFulltextSearchAreaNode.removeClass('column')
 
-        this._cancelFilter();
+        if(!ignoreAction)this._cancelFilter();
     },
 
     loadFilterSearch: function(){
@@ -1847,7 +2040,10 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
                 }else{
                     this.loadFilterSearchNode();
                 }
-                this.setContentHeight();
+                if (this.options.resizeNode) {
+                    this.setContentHeight();
+                }
+
         //     },
         //     'onRequestFailure': ()=>{this.loadFilterSearchNode();},
         //     'onError': ()=>{this.loadFilterSearchNode();},
@@ -2589,7 +2785,7 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
         //     "isExpand": "no",
         //     "filter": filter
         // }
-        this.node.setStyle("display", "block");
+        this.node.setStyle("display", "");
         if (this.loadingAreaNode) this.loadingAreaNode.setStyle("display", "block");
 
         this.searchMorph = null;
@@ -2762,12 +2958,12 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
 
             var lp = this.lp.viewExport;
             var node = this.exportExcelDlgNode = new Element("div");
-            var html = "<div style=\"line-height: 30px; height: 30px; color: #333333; overflow: hidden;margin-top:20px;\">" + lp.fileName + "：" +
-                "   <input class='filename' value='' style='margin-left: 14px;width: 350px;'><span>"+
+            var html = "<div style=\"color: #333333; overflow: hidden;margin-top:20px;\">"+
+                `   <oo-input label='${lp.fileName}' class='filename' value='' style='margin-left: 14px;width: ${layout.mobile?"340px":"435px"};'></oo-input><span>`+
                 "</div>";
-            html += "<div style=\"line-height: 30px; height: 30px; color: #333333; overflow: hidden;margin-top:20px;\">" + lp.exportRange + "：" +
-                "   <input class='start' value='" + ( this.exportExcelStart || 1) +  "'><span>"+ lp.to +"</span>" +
-                "   <input class='end' value='"+ ( this.exportExcelEnd || Math.min( total, max ) ) +"' ><span>"+lp.item+"</span>" +
+            html += `<div style="color: #333333; overflow: hidden;margin-top:20px;">`+
+                `   <oo-input style="width:${layout.mobile?'200px':'auto'}" label='${lp.exportRange}' class='start' value='${this.exportExcelStart || 1}'></oo-input>` +
+                `   <oo-input style="width:${layout.mobile?'150px':'auto'}" label='${lp.to}' class='end' value='${this.exportExcelEnd || Math.min( total, max )}'></oo-input><span>${lp.item}</span>` +
                 "</div>";
             html += "<div style=\"clear:both; max-height: 300px; margin-bottom:10px; margin-top:10px; overflow-y:auto;\">"+( lp.description.replace("{count}", total ))+"</div>";
             node.set("html", html);
@@ -2786,11 +2982,11 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
 
             var dlg = o2.DL.open({
                 "title": this.lp.exportExcel,
-                "style": "user",
+                "style": layout.mobile ? 'v10_mobile' : "user",
                 "isResize": false,
                 "content": node,
-                "width": 600,
-                "height" : 260,
+                "width": layout.mobile ? '100%' : 600,
+                "height" : layout.mobile ? '100%' : 260,
                 "buttonList": [
                     {
                         "type": "ok",
@@ -2840,6 +3036,11 @@ MWF.xApplication.query.Query.Viewer = MWF.QViewer = new Class(
             if (this.filterItems.length){
                 this.filterItems.each(function(filter){
                     filterData.push(filter.data);
+                }.bind(this));
+            }
+            if(this.customFilterListData?.length){
+                this.customFilterListData.each(function(filter){
+                    filterData.push(filter);
                 }.bind(this));
             }
             var data = {"filterList": filterData};
@@ -3296,6 +3497,59 @@ MWF.xApplication.query.Query.Viewer.Item = new Class(
         }
 
         //默认选中
+        this._checkSelected();
+        // var selectedFlag;
+        // var defaultSelectedScript = this.view.json.defaultSelectedScript || this.view.viewJson.defaultSelectedScript;
+        // if( !this.isSelected && defaultSelectedScript ){
+        //     // var flag = this.view.json.select || this.view.viewJson.select ||  "none";
+        //     // if ( flag ==="single" || flag==="multi"){
+        //     //
+        //     // }
+        //     switch (typeOf(defaultSelectedScript)) {
+        //         case "string":
+        //             selectedFlag = this.view.Macro.exec( defaultSelectedScript,
+        //                 {"node" : this.node, "data" : this.data, "view": this.view, "row" : this});
+        //             break;
+        //         case "function":
+        //             selectedFlag =  defaultSelectedScript({"node" : this.node, "data" : this.data, "view": this.view, "row" : this});
+        //             break;
+        //     }
+        // }
+        // //判断是不是在selectedItems中，用户手工选择
+        // if( !this.isSelected && this.view.selectedItems.length ){
+        //     for(var i=0; i<this.view.selectedItems.length; i++){
+        //         if( this.view.selectedItems[i].data.bundle === this.data.bundle ){
+        //             selectedFlag = "true";
+        //             break;
+        //         }
+        //     }
+        // }
+
+
+
+        // Object.each(this.data.data, function(cell, k){
+        //     if (this.view.hideColumns.indexOf(k)===-1){
+        //         var td = new Element("td", {"styles": this.css.viewContentTdNode}).inject(this.node);
+        //         if (k!== this.view.viewJson.group.column){
+        //             var v = (this.view.entries[k].code) ? MWF.Macro.exec(this.view.entries[k].code, {"value": cell, "gridData": this.view.gridJson, "data": this.view.viewData, "entry": this.data}) : cell;
+        //             td.set("text", v);
+        //         }
+        //         if (this.view.openColumns.indexOf(k)!==-1){
+        //             this.setOpenWork(td)
+        //         }
+        //         if (this.view.json.itemStyles) td.setStyles(this.view.json.itemStyles);
+        //     }
+        // }.bind(this));
+
+        this.setEvent();
+
+        this.view.fireEvent("postLoadItemRow", [this]);
+
+        this.loading = false;
+        this.loaded = true;
+    },
+
+    _checkSelected: function(){
         var selectedFlag;
         var defaultSelectedScript = this.view.json.defaultSelectedScript || this.view.viewJson.defaultSelectedScript;
         if( !this.isSelected && defaultSelectedScript ){
@@ -3333,28 +3587,8 @@ MWF.xApplication.query.Query.Viewer.Item = new Class(
                 }
             }
         }
-
-        // Object.each(this.data.data, function(cell, k){
-        //     if (this.view.hideColumns.indexOf(k)===-1){
-        //         var td = new Element("td", {"styles": this.css.viewContentTdNode}).inject(this.node);
-        //         if (k!== this.view.viewJson.group.column){
-        //             var v = (this.view.entries[k].code) ? MWF.Macro.exec(this.view.entries[k].code, {"value": cell, "gridData": this.view.gridJson, "data": this.view.viewData, "entry": this.data}) : cell;
-        //             td.set("text", v);
-        //         }
-        //         if (this.view.openColumns.indexOf(k)!==-1){
-        //             this.setOpenWork(td)
-        //         }
-        //         if (this.view.json.itemStyles) td.setStyles(this.view.json.itemStyles);
-        //     }
-        // }.bind(this));
-
-        this.setEvent();
-
-        this.view.fireEvent("postLoadItemRow", [this]);
-
-        this.loading = false;
-        this.loaded = true;
     },
+
     setOpenWork: function(td, column){
         td.setStyle("cursor", "pointer");
         td.addEvents({
@@ -3756,6 +3990,185 @@ MWF.xApplication.query.Query.Viewer.Item = new Class(
         }]); //options 传入的事件
     }
 });
+
+MWF.xApplication.query.Query.Viewer.MobileItem = new Class({
+    Extends: MWF.xApplication.query.Query.Viewer.Item,
+    initialize: function(view, data, prev, i, category){
+        /**
+         * @summary 行所属视图.
+         * @member {Object}
+         */
+        this.view = view;
+        /**
+         * @summary 行数据.
+         * @member {Object}
+         */
+        this.data = data;
+        /**
+         * @summary 行是否被选中.
+         * @member {Boolean}
+         */
+        this.isSelected = false;
+        /**
+         * @summary 如果视图有分类，获取分类对象。
+         * @member {Object}
+         */
+        this.category = category;
+        this.prev = prev;
+        this.idx = i;
+        this.odd = this.view.items.length % 2 === 1;
+
+        this.contentAreaNode = this.category ? this.category.contentAreaNode : this.view.contentAreaNode;
+        this.load();
+    },
+    load: function(){
+        this.loading = true;
+        this.view.fireEvent("queryLoadItemRow", [this]);
+
+        const html = this.view.viewJson.mobileTemplate;
+        const cols = this.view.viewJson.selectList;
+
+        this.node = new Element('div.mobile-view-item');
+        this.selectNode = new Element('div.mobile-view-item-select').inject(this.node);
+        this.contentNode = new Element('label.mobile-view-item-content').inject(this.node);
+        this.flagNode = new Element('div.mobile-view-item-flag.ooicon-arrow_forward').inject(this.node);
+
+        const itemHtml = cols.reduce( (html, col)=>{
+            return html.replace(new RegExp(`\{${col.column}\}`, 'g'), this.data.data[col.column] || '')
+                .replace(new RegExp(`\{${col.displayName}\}`, 'g'), this.data.data[col.column] || '');
+        }, html);
+        this.contentNode.set('html', itemHtml);
+
+        this.contentAreaNode.appendChild(this.node);
+
+        const flag = this.view.isSelectTdHidden() ? 'no' : this.view.getSelectFlag();
+
+        switch( flag ){
+            case 'single':
+                this._createSelectNode('radio');
+                break;
+            case 'multi':
+                this._createSelectNode('checkbox');
+                break;
+            default:
+                this.selectNode.hide();
+                break;
+        }
+
+        this.setOpenWork((flag === 'single' || flag === 'multi') ? this.flagNode : this.node);
+
+        this.view.fireEvent("postLoadItemRow", [this]);
+
+        this.loading = false;
+        this.loaded = true;
+    },
+    _createSelectNode: function(name){
+        const node = new Element('oo-'+name).inject(this.selectNode);
+        this.view.tmpCheckId = this.view.tmpCheckId || (this.view.tmpCheckId = o2.uuid());
+        node.setAttribute('name', `mobile-view-`+name+this.view.tmpCheckId);
+        node.setAttribute('value', this.data.bundle);
+        node.setAttribute('id', 'item'+this.data.bundle);
+
+        node.addEventListener('change', (ev)=>{
+            this.select();
+            ev.stopPropagation();
+        });
+
+        this.contentNode.addEventListener('click', (ev)=>{
+            node._elements.input.click();
+            ev.stopPropagation();
+        });
+
+        this._checkSelected();
+    },
+    selected: function( from ){
+        for(var i=0; i<this.view.selectedItems.length; i++){
+            var item = this.view.selectedItems[i];
+            if( item.data.bundle === this.data.bundle ){
+                this.view.selectedItems.erase(item);
+                break;
+            }
+        }
+        this.view.selectedItems.push(this);
+
+        this.isSelected = true;
+
+        this.view.fireEvent("selectRow", [this]);
+        this.view.fireEvent("select", [{
+            "selected": true,
+            "item": this,
+            "data": this.data
+        }]); //options 传入的事件
+    },
+    unSelected: function( from, isFire ){
+        for(var i=0; i<this.view.selectedItems.length; i++){
+            var item = this.view.selectedItems[i];
+            if( item.data.bundle === this.data.bundle ){
+                this.view.selectedItems.erase(item);
+                break;
+            }
+        }
+
+        this.isSelected = false;
+
+        this.view.fireEvent("unselectRow", [this]);
+        if( isFire !== false ){
+            this.view.fireEvent("unselect", [{
+                "selected": false,
+                "item": this,
+                "data": this.data
+            }]); //options 传入的事件
+        }
+    },
+
+    selectedSingle: function(){
+        if (this.view.currentSelectedItem) this.view.currentSelectedItem.unSelectedSingle();
+        this.view.selectedItems = [this];
+        this.view.currentSelectedItem = this;
+        this.isSelected = true;
+        this.view.fireEvent("selectRow", [this]);
+        this.view.fireEvent("select", [{
+            "selected": true,
+            "item": this,
+            "data": this.data
+        }]); //options 传入的事件
+    },
+    unSelectedSingle: function(){
+        this.view.selectedItems = [];
+        this.view.currentSelectedItem = null;
+
+        this.isSelected = false;
+        this.view.fireEvent("unselectRow", [this]);
+        this.view.fireEvent("unselect", [{
+            "selected": false,
+            "item": this,
+            "data": this.data
+        }]); //options 传入的事件
+    },
+    setOpenWork:function (node){
+        const clickColumn = this.view.viewJson.selectList.find((col)=>{ return !!col.clickCode });
+        if(clickColumn){
+            this._setOpenWork(node, clickColumn);
+        }else{
+            node.addEventListener('click', (ev)=>{
+                if (this.view.json.type==="cms"){
+                    this.openCms(ev)
+                }else{
+                    this.openWorkAndCompleted(ev)
+                }
+                ev.stopPropagation();
+            });
+        }
+    },
+    _setOpenWork(node, clickColumn){
+        node.addEvent("click", function( ev ){
+            var result = this.view.Macro.fire(clickColumn.clickCode, this, ev);
+            ev.stopPropagation();
+            return result;
+        }.bind(this));
+    }
+
+})
 
 
 MWF.xApplication.query.Query.Viewer.ItemCategory = new Class({
@@ -4351,6 +4764,12 @@ MWF.xApplication.query.Query.Viewer.Actionbar = new Class(
                     var hideFlag = this.form.Macro.exec(tool.condition, this);
                     flag = !hideFlag;
                 }
+                if( tool.pcHide === true && !o2.isMediaMobile()){
+                    flag = false;
+                }
+                if( tool.mobileHide === true && o2.isMediaMobile()){
+                    flag = false;
+                }
                 if (flag){
                     var actionNode = new Element("div", {
                         "id": tool.id,
@@ -4391,6 +4810,16 @@ MWF.xApplication.query.Query.Viewer.Actionbar = new Class(
             flag = flag && (!hideFlag);
         }
         if (readonly) if (!tool.read) flag = false;
+
+        if( tool.pcHide === true && !o2.isMediaMobile()){
+            flag = false;
+        }
+
+        if( tool.mobileHide === true && o2.isMediaMobile()){
+            flag = false;
+        }
+
+
 
         var imgUrl, overImgUrl;
         if( tool.customImg ){

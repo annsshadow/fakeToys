@@ -162,7 +162,11 @@ o2.xDesktop.requireApp = function (module, clazz, callback, async) {
         } else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.openO2CmsDocument) {
             window.webkit.messageHandlers.openO2CmsDocument.postMessage({ "docId": options.documentId, "docTitle": title, "options": JSON.stringify(options) });
         } else {
-            window.location = o2.filterUrl("../x_desktop/appMobile.html?" + par + ((layout.debugger) ? "&debugger" : ""));
+            if (options && options.documentId && (options.readonly === false || options.action)) {
+                window.location = o2.filterUrl("../x_desktop/cmsdocmobilewithaction.html?id=" + options.documentId + "&" + par + ((layout.debugger) ? "&debugger" : ""));
+            } else {
+                window.location = o2.filterUrl("../x_desktop/cmsdocMobile.html?id=" + options.documentId + "&" + par + ((layout.debugger) ? "&debugger" : ""));
+            }
         }
     };
     var _openCms = function (appNames, options, statusObj) {
@@ -171,7 +175,7 @@ o2.xDesktop.requireApp = function (module, clazz, callback, async) {
             var body = {
                 type: "openO2CmsApplication",
                 data: {
-                    appId : options.columnId,
+                    appId : options.columnId || options.columnAlias,
                     title: options.title || "",
                     categoryId: options.categoryId || ""
                 }
@@ -240,19 +244,14 @@ o2.xDesktop.requireApp = function (module, clazz, callback, async) {
     };
 
     var _openPortal = function (appNames, options, statusObj) {
-        if (window.o2m) {
-            o2m.util.navigation.openInnerApp({
-                appKey : 'portal',
-                portalFlag: options.portalId,
-                portalPage: options.pageId,
-            });
-        } else if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
+        if (window.flutter_inappwebview && window.flutter_inappwebview.callHandler) {
             const body = {
                 type: "navigation.openInnerApp",
                 data: {
                     appKey: 'portal',
                     portalFlag: options.portalId,
                     portalPage: options.pageId,
+                    parameters: options.parameters,
                 }
             }
             window.flutter_inappwebview.callHandler('o2mUtil', JSON.stringify(body));
@@ -263,6 +262,7 @@ o2.xDesktop.requireApp = function (module, clazz, callback, async) {
                     appKey: 'portal',
                     portalFlag: options.portalId,
                     portalPage: options.pageId,
+                    parameters: options.parameters,
                 }
             }
             window.o2mUtil.postMessage(JSON.stringify(body));
@@ -290,6 +290,7 @@ o2.xDesktop.requireApp = function (module, clazz, callback, async) {
                 _openCalendar(appNames, options, statusObj);
                 break;
             case "process.TaskCenter":
+            case "process.workcenter":
                 _openTaskCenter(appNames, options, statusObj);
                 break;
             case "portal.Portal":

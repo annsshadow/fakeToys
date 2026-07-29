@@ -70,6 +70,7 @@
 .form-layout .form-content-area oo-input,
 .form-layout .form-content-area oo-files,
 .form-layout .form-content-area oo-selector,
+.form-layout .form-content-area oo-cascade,
 .form-layout .form-content-area oo-textarea,
 .form-layout .form-content-area oo-radio-group,
 .form-layout .form-content-area oo-checkbox-group,
@@ -411,25 +412,29 @@
 .form-layout .page-content-section div[mwftype='statement'] > div {
     display: flex;
     flex-direction: column;
+    background-color: #f3f3f3 !important;
+    gap: 1rem !important;
 }
 
-.form-layout .page-content-section div[mwftype='statement'] > div > div:nth-child(3) {
+.form-layout .page-content-section div[mwftype='statement'] > div > div.viewAreaNode {
     height: auto !important;
     flex: 1;
+    padding: 0;
     /* overflow: auto !important;
     padding: 1em; */
 }
-.form-layout .page-content-section div[mwftype='statement'] > div > div:nth-child(3) > div {
+.form-layout .page-content-section div[mwftype='statement'] > div > div.viewAreaNode > div {
     overflow: auto !important;
-    padding: 1em;
+    /*padding: 1em;*/
+    padding: 0 1em 1em 1em;
     font-size: 1rem !important;
 }
 
-.form-layout .page-content-section div[mwftype='statement'] > div > div:nth-child(4) > div {
+.form-layout .page-content-section div[mwftype='statement'] > div > div.viewPageAreaNode > div {
     height: 3em !important;
     margin-top: 0.5em !important;
 }
-.form-layout .page-content-section div[mwftype='statement'] > div > div:nth-child(4) > div > div {
+.form-layout .page-content-section div[mwftype='statement'] > div > div.viewPageAreaNode > div > div {
     margin-top: 0.5em !important;
 }
 .form-layout .page-content-section div[mwftype='statement'] table td {
@@ -466,27 +471,30 @@
     box-sizing: border-box !important;
     height: 100%;
     overflow: hidden;
+    background-color: #f3f3f3 !important;
+    gap: 1rem !important;
 }
 .form-layout .page-content-section div[mwftype='view'] > div {
     display: flex;
     flex-direction: column;
 }
 
-.form-layout .page-content-section div[mwftype='view'] > div > div:nth-child(3) {
+.form-layout .page-content-section div[mwftype='view'] > div > div.viewAreaNode {
     height: auto !important;
     flex: 1;
+    padding: 0;
     /* overflow: auto !important;
     padding: 1em; */
 }
-.form-layout .page-content-section div[mwftype='view'] > div > div:nth-child(3) > div {
+.form-layout .page-content-section div[mwftype='view'] > div > div.viewAreaNode > div {
     overflow: auto !important;
-    padding: 1em;
+    padding: 0 1em 1em 1em !important;
 }
 
-.form-layout .page-content-section div[mwftype='view'] > div > div:nth-child(4) > div {
+.form-layout .page-content-section div[mwftype='view'] > div > div.viewPageAreaNode > div {
     height: 3em !important;
 }
-.form-layout .page-content-section div[mwftype='view'] > div > div:nth-child(4) > div > div {
+.form-layout .page-content-section div[mwftype='view'] > div > div.viewPageAreaNode> div > div {
     margin-top: 0.5em !important;
 }
 .form-layout .page-content-section div[mwftype='view'] table td {
@@ -512,6 +520,21 @@
 }
 
 .form-layout .selector-area * {
+    box-sizing: border-box !important;
+}
+
+.content-box .selector-area {
+    box-sizing: content-box !important;
+}
+.content-box .selector-area * {
+    box-sizing: content-box !important;
+}
+
+.content-box .form-layout .selector-area {
+    box-sizing: border-box !important;
+}
+
+.content-box .form-layout .selector-area * {
     box-sizing: border-box !important;
 }
 
@@ -601,6 +624,68 @@
     display: none !important;
 }
 
+.cms-comment>div[mwftype="log"]{
+    flex: 1;
+}
+.cms-comment>div[mwftype="log"]>div:first-child{
+    border: 0 !important;
+}
+.cms-comment>div[mwftype="log"] .contentConainer{
+    background-color: transparent !important;
+}
+
+.cms-comment>div[mwftype="log"]>div:first-child>div:first-child{
+    display: none;
+}
+
+.cms-commend>div{
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+.cms-commend>div button{
+    width: 2rem !important;
+    height: 2rem !important;
+    cursor: pointer !important;
+}
+.cms-commend>div span{
+    display: block;
+    height: unset !important;
+    line-height: unset !important;
+    font-size: 1rem !important;
+}
+
+
+
+/**一键下载**/
+.downloading.form-layout .form-content-work-status {
+    margin-bottom: 0;
+}
+.downloading.form-layout .form-content > div:first-child {
+    width: 793.7px !important;
+    page-break-inside: avoid;
+    -itext-page-break-inside: avoid;
+    min-height: fit-content;
+}
+
+.downloading.form-layout .form-content > div:first-child > div {
+    page-break-after: avoid;
+    page-break-before: avoid;
+    -itext-page-break-after: avoid;
+    -itext-page-break-before: avoid;
+    overflow: visible;
+    white-space: normal;
+    margin: 0 20px;
+}
+.downloading.form-layout .select-redheader-node {
+    display: none !important;
+}
+.downloading.form-layout [mwftype="documenteditor"]{
+    margin-left: -20px !important;
+    overflow: visible !important;
+}
+
+
 /* 手机 */
 @media only screen and (max-width: 767px) {
     /* :root{
@@ -652,9 +737,24 @@
         max-width: unset !important;
     }
     .form-content-area {
-        padding: 1em 1em !important;
+        padding: 1em 0.5em !important;
         position: static !important;
     }
+    div[mwftype="itmleditor"] img{
+        width: auto !important;
+        height: auto !important;
+    }
+    div[styles="itemLeftNode"]{
+        display: none !important;
+    }
+    div[styles="commentRightNode"]{
+        margin-left: 0 !important;
+        padding: 0 !important;
+    }
+    div.viewConainer div[styles="itemLeftNode"]{
+        display: block !important;
+    }
+    
     .form-description {
         margin: 0;
     }
@@ -803,6 +903,7 @@
     div[mwftype='datatable'] oo-radio-group,
     div[mwftype='datatable'] oo-checkbox-group,
     div[mwftype='datatable'] oo-select,
+    div[mwftype='datatable'] oo-cascade,
     div[mwftype='datatable'] oo-currency,
     div[mwftype='datatable'] oo-datetime {
         white-space: nowrap !important;
@@ -935,6 +1036,7 @@
     div[mwftype='datatable'].datatable_edit_mode oo-radio-group,
     div[mwftype='datatable'].datatable_edit_mode oo-checkbox-group,
     div[mwftype='datatable'].datatable_edit_mode oo-select,
+    div[mwftype='datatable'].datatable_edit_mode oo-cascade,
     div[mwftype='datatable'].datatable_edit_mode oo-currency,
     div[mwftype='datatable'].datatable_edit_mode oo-datetime {
         white-space: normal !important;
@@ -944,6 +1046,7 @@
     div[mwftype='datatable'].datatable_edit_mode oo-selector[readmode='false'],
     div[mwftype='datatable'].datatable_edit_mode oo-textarea[readmode='false'],
     div[mwftype='datatable'].datatable_edit_mode oo-select[readmode='false'],
+    div[mwftype='datatable'].datatable_edit_mode oo-cascade[readmode='false'],
     div[mwftype='datatable'].datatable_edit_mode oo-currency[readmode='false'],
     div[mwftype='datatable'].datatable_edit_mode oo-datetime[readmode='false'] {
         background-color: #ffffff;
@@ -1110,11 +1213,16 @@
         z-index: 100;
         bottom: 0;
         width: 100%;
-        height: 85%;
+        height: 100%;
         transform-origin: bottom;
         transition: height 0.2s, opacity 0.2s, transform 0.2s;
-        display: grid;
-        grid-template-rows: auto 1fr auto;
+        display: flex;
+        flex-direction: column;
+        /*display: grid;*/
+        /*grid-template-rows: auto 1fr auto;*/
+    }
+    .mwf_selectView_content .mwf_selectView_view{
+        flex: 1;
     }
     .mwf_selectView_content.visible {
         transform: scale(1);
@@ -1165,7 +1273,7 @@
         font-weight: bold;
     }
 
-    .mwf_selectView_node .searchAreaNode > div {
+    .mwf_selectView_node .searchAreaNode > .search-fulltext-area {
         height: unset !important;
         border: 0 !important;
         margin: 0 !important;
@@ -1176,7 +1284,8 @@
         background-color: transparent !important;
         gap: 0.5em;
         align-items: center;
-        flex-direction: row-reverse;
+        width: 100%;
+        /*flex-direction: row-reverse;*/
     }
     .mwf_selectView_node .searchAreaNode > div::after {
         /* display: block;
@@ -1187,48 +1296,100 @@
         border-radius: var(--oo-default-radius); */
     }
 
-    .mwf_selectView_node .searchAreaNode > div > div:first-child {
-        float: right;
+    /*.mwf_selectView_node .searchAreaNode > div > div:first-child {*/
+    /*    float: right;*/
+    /*    background-image: none !important;*/
+    /*    display: block;*/
+    /*    content: '搜索';*/
+    /*    background-color: var(--oo-color-main) !important;*/
+    /*    color: rgb(255, 255, 255);*/
+    /*    padding: 0.5em 1.5em;*/
+    /*    border-radius: var(--oo-default-radius);*/
+    /*    display: flex;*/
+    /*    align-items: stretch;*/
+    /*    height: unset !important;*/
+    /*    width: unset !important;*/
+    /*}*/
+    /*.mwf_selectView_node .searchAreaNode > div > div:first-child::after {*/
+    /*    content: '搜索';*/
+    /*}*/
+
+    .mwf_selectView_node .searchAreaNode oo-input[type='search']{
+        flex: 1;
+    }
+    /*.mwf_selectView_node .searchAreaNode .search-fulltext-more{*/
+    /*    margin-right: 0 !important;*/
+    /*    margin-left: 0 !important;*/
+    /*    height: unset !important;*/
+    /*    overflow: hidden;*/
+    /*    padding: 0.25em;*/
+    /*    background-color: #f7f7f7;*/
+    /*    border-radius: var(--oo-default-radius);*/
+    /*    display: flex;*/
+    /*    align-items: center;*/
+    /*    gap: 0.5em;*/
+    /*}*/
+    .mwf_selectView_node .searchAreaNode .search-fulltext-more{
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: block !important;
+    }
+    /*.mwf_selectView_node .searchAreaNode .search-fulltext-area>oo-button {*/
+    /*    background: #f7f7f7;*/
+    /*    display: block !important;*/
+    /*}*/
+
+    .mwf_selectView_node .form-content-view .searchAreaNodeV10{
+        display: flex !important;
+    }
+
+    .mwf_selectView_node .form-content-view .searchAreaNodeV10.showFilter{
+
+    }
+
+    .mwf_selectView_node .form-content-view .search-area.showFilter {
+        position: absolute;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        width: 100%;
+        display: grid !important;
+        align-content: space-between;
+        padding: 1rem 0.5rem 1.5rem 0.5rem !important;
+        box-shadow: 0 0 10px 0 #dedede;
+        height: 100%;
+    }
+
+    .mwf_selectView_node .form-content-view .search-area.showFilter .page-content-search-fields{
         background-image: none !important;
-        display: block;
         content: '搜索';
-        background-color: var(--oo-color-main) !important;
+        background-color: #ffffff !important;
         color: rgb(255, 255, 255);
         padding: 0.5em 1.5em;
         border-radius: var(--oo-default-radius);
-        display: flex;
+        display: grid !important;;
         align-items: stretch;
         height: unset !important;
         width: unset !important;
-    }
-    .mwf_selectView_node .searchAreaNode > div > div:first-child::after {
-        content: '搜索';
+        grid-template-columns: 1fr !important;
     }
 
-    .mwf_selectView_node .searchAreaNode > div > div:last-child {
-        margin-right: 0 !important;
-        margin-left: 0 !important;
-        height: unset !important;
-        overflow: hidden;
-        flex: 1;
-        padding: 0.5em;
-        background-color: #f7f7f7;
-        border-radius: var(--oo-default-radius);
-        display: flex;
-        align-items: center;
-        gap: 0.5em;
+    .mwf_selectView_node .form-content-view .search-area.showFilter .page-content-search-actions{
+        display: flex !important;
     }
 
-    .mwf_selectView_node .searchAreaNode > div > div:last-child::before {
-        font-family: 'ooicon' !important;
-        speak: never;
-        font-style: normal;
-        font-weight: normal;
-        font-variant: normal;
-        text-transform: none;
-        line-height: 1;
-        content: '\e644';
-    }
+
+    /*.mwf_selectView_node .searchAreaNode > div > div:last-child::before {*/
+    /*    font-family: 'ooicon' !important;*/
+    /*    speak: never;*/
+    /*    font-style: normal;*/
+    /*    font-weight: normal;*/
+    /*    font-variant: normal;*/
+    /*    text-transform: none;*/
+    /*    line-height: 1;*/
+    /*    content: '\e644';*/
+    /*}*/
     .mwf_selectView_node .searchAreaNode input {
         width: 99%;
         height: unset !important;
@@ -1237,11 +1398,15 @@
         font-size: 1rem;
         background-color: transparent !important;
     }
+    .mwf_selectView_view .form-content-view {
+        padding-top: 0 !important;
+        /*position: relative;*/
+    }
     .mwf_selectView_node .mwf_selectView_view .contentAreaNode {
-        font-size: 1rem !important;
+        /* font-size: 1rem !important; */
     }
     .mwf_selectView_node .mwf_selectView_view .viewAreaNode {
-        padding: 0.5em 1em !important;
+        padding: 0.5em 0 !important;
         height: unset !important;
     }
     .mwf_selectView_node .mwf_selectView_view table tr:first-child > td {
@@ -1401,6 +1566,11 @@
         z-index: 501 !important;
     }
 
+    .form-layout .page-content-section div[mwftype='view'] > div > div.viewAreaNode > div {
+        overflow: auto !important;
+        padding: 0 !important;
+    }
+    
     /* 继续流转界面 **/
     .flowNode_mobile div.o2flow-quick-select {
         border-radius: var(--oo-default-radius);
@@ -1674,9 +1844,9 @@
         height: 100%;
     }
 
-    .form-layout .page-content-section div[mwftype='statement'] > div > div:nth-child(4) > div {
+    .form-layout .page-content-section div[mwftype='statement'] > div > div.viewPageAreaNode > div {
         height: 2em !important;
-        margin-top: 1em !important;
+        margin-top: 0 !important;
         margin-bottom: 1rem;
     }
 

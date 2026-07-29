@@ -66,7 +66,7 @@ MWF.xApplication.process.Application.LP = {
 	"allFile" : "全部文件",
 
 
-
+	"pageInfo" : "共<span>{total}</span>条数据，每页<span>{perPage}</span>条，共<span>{totalPage}</span>页",
 	"firstPage": "第一页",
 	"lastPage": "最后一页",
 
@@ -101,6 +101,14 @@ MWF.xApplication.process.Application.LP = {
 	"readProcess" : "待阅处理",
 	"editAction" : "维护",
 	"unnamed" : "无标题",
+
+	"processStarted": "文件已启动",
+	"taskProcessed": "文件已提交",
+	"taskProcessedMessage": "您处理了一个待办任务：",
+	"nextActivity": "下一个活动：",
+	"nextUser": "处理人：",
+	"processStartedMessage": "您启动了一个新的工作：",
+	"deal": "处理",
 
 	"fieldName" : "字段名",
 	"op" : "操作",

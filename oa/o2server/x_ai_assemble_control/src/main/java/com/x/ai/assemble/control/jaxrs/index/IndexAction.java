@@ -1,5 +1,6 @@
 package com.x.ai.assemble.control.jaxrs.index;
 
+import com.google.gson.JsonElement;
 import com.x.base.core.project.annotation.JaxrsDescribe;
 import com.x.base.core.project.annotation.JaxrsMethodDescribe;
 import com.x.base.core.project.annotation.JaxrsParameterDescribe;
@@ -14,6 +15,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -83,17 +85,35 @@ public class IndexAction extends StandardJaxrsAction {
 	}
 
 	@JaxrsMethodDescribe(value = "分页列示索引文档.", action = ActionListPaging.class)
-	@GET
+	@POST
 	@Path("list/paging/{page}/size/{size}")
 	@Produces(HttpMediaType.APPLICATION_JSON_UTF_8)
 	@Consumes(MediaType.APPLICATION_JSON)
 	public void listIndexPaging(@Suspended final AsyncResponse asyncResponse, @Context HttpServletRequest request,
 			@JaxrsParameterDescribe("分页") @PathParam("page") Integer page,
-			@JaxrsParameterDescribe("每页数量") @PathParam("size") Integer size) {
+			@JaxrsParameterDescribe("每页数量") @PathParam("size") Integer size,
+			JsonElement jsonElement) {
 		ActionResult<List<ActionListPaging.Wo>> result = new ActionResult<>();
 		EffectivePerson effectivePerson = this.effectivePerson(request);
 		try {
-			result = new ActionListPaging().execute(effectivePerson, page, size);
+			result = new ActionListPaging().execute(effectivePerson, page, size, jsonElement);
+		} catch (Exception e) {
+			LOGGER.error(e, effectivePerson, request, jsonElement);
+			result.error(e);
+		}
+		asyncResponse.resume(ResponseFactory.getEntityTagActionResultResponse(request, result));
+	}
+
+	@JaxrsMethodDescribe(value = "同步到知识库.", action = ActionSync.class)
+	@GET
+	@Path("sync/to/knowledge")
+	@Produces(HttpMediaType.APPLICATION_JSON_UTF_8)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public void syncToKnowledge(@Suspended final AsyncResponse asyncResponse, @Context HttpServletRequest request) {
+		ActionResult<ActionSync.Wo> result = new ActionResult<>();
+		EffectivePerson effectivePerson = this.effectivePerson(request);
+		try {
+			result = new ActionSync().execute(effectivePerson);
 		} catch (Exception e) {
 			LOGGER.error(e, effectivePerson, request, null);
 			result.error(e);

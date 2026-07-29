@@ -214,11 +214,13 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
              * var subjectField = moduleAll["subject"] //获取名称为subject的组件
              */
             this.all = {};
+            this.allForName = {};
             this.forms = {};
 
             //if (!this.personActions) this.personActions = new MWF.xAction.org.express.RestActions();
         },
         load: function (callback) {
+            this.checkDatatableClass();
             if (this.app) {
                 if (this.app.formNode) this.app.formNode.setStyles(this.json.styles);
                 if (this.app.addEvent) this.app.addEvent("resize", function () {
@@ -264,6 +266,10 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 this.node = this.container.getFirst();
                 if (cssClass) this.node.addClass(cssClass);
 
+                if(this.options.downloading){
+                    this.node.addClass("downloading");
+                }
+
                 this._loadEvents();
                 this.loadRelatedScript();
 
@@ -279,6 +285,14 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 }
 
             }.bind(this));
+        },
+        checkDatatableClass: function (){
+            if( (layout.mobile || COMMON.Browser.Platform.isMobile) && this.json.formStyleType === 'v10' ){
+                MWF.xApplication.cms.Xform.Datatable = MWF.CMSDatatable = MWF.xApplication.process.Xform.DatatableV10;
+                MWF.CMSDatatable.implement(MWF.CMSDatatableFeature);
+                MWF.xApplication.cms.Xform.Datatable$Title = MWF.CMSDatatable$Title = MWF.xApplication.process.Xform.DatatablePC$Title;
+                MWF.xApplication.cms.Xform.Datatable$Data = MWF.CMSDatatable$Data = MWF.xApplication.process.Xform.DatatablePC$Data;
+            }
         },
         loadLanguage: function(callback){
             MWF.xDesktop.requireApp("cms.Xform", "lp." + MWF.language, null, false);
@@ -429,7 +443,7 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
             }
             // 移动端表单 展现底部工具栏
             debugger;
-            if (this.json.mode === "Mobile") {
+            if (this.json.mode === "Mobile" || layout.mobile) {
                 var node = document.body.getElement(".o2_form_mobile_actions");
                 if (node) {
                     node.empty();
@@ -487,47 +501,68 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
 
         // 默认的移动端底部工具栏
         _loadMobileDefaultTools: function (callback) {
-            if (this.json.defaultTools) {
+            if (this.json.multiTools) {
+            if (callback) callback();
+        }else if (this.json.defaultTools) {
+            if (callback) callback();
+        } else {
+            this.json.defaultTools = o2.JSON.get("../x_component_cms_FormDesigner/Module/Form/toolbars.json", function (json) {
+                this.json.defaultTools = json;
                 if (callback) callback();
-            } else {
-                this.json.defaultTools = o2.JSON.get("../x_component_process_FormDesigner/Module/Actionbar/toolbars.json", function (json) {
-                    this.json.defaultTools = json;
-                    if (callback) callback();
-                }.bind(this));
-            }
+            }.bind(this));
+        }
         },
         // 移动端生成底部工具栏
         _loadMobileActions: function (node, callback) {
             var tools = [];
+
             this._loadMobileDefaultTools(function () {
-                if (this.json.defaultTools) {
-                    var jsonStr = JSON.stringify(this.json.defaultTools);
+                var jsonStr;
+                if( this.json.multiTools ){
+                    jsonStr = JSON.stringify(this.json.multiTools);
                     jsonStr = o2.bindJson(jsonStr, {"lp": MWF.xApplication.cms.Xform.LP.form});
-                    this.json.defaultTools = JSON.parse(jsonStr);
-                    this.json.defaultTools.each(function (tool) {
-                        var flag = this._checkDefaultMobileActionItem(tool, this.options.readonly);
+                    this.multiToolsJson = JSON.parse(jsonStr);
+                    var json = Array.clone(this.multiToolsJson);
+                    json.each(function (tool) {
+                        var flag;
+                        if( tool.system ){
+                            flag = this._checkDefaultMobileActionItem(tool, this.options.readonly);
+                        }else{
+                            flag = this._checkCustomMobileActionItem(tool, this.options.readonly);
+                        }
                         if (flag) tools.push(tool);
                     }.bind(this));
-                }
-                if (this.json.tools) {
-                    var jsonStr = JSON.stringify(this.json.tools);
-                    jsonStr = o2.bindJson(jsonStr, {"lp": MWF.xApplication.cms.Xform.LP.form});
-                    this.json.tools = JSON.parse(jsonStr);
-                    this.json.tools.each(function (tool) {
-                        var flag = this._checkCustomMobileActionItem(tool, this.options.readonly);
-                        if (flag) tools.push(tool);
-                    }.bind(this));
+                }else {
+                    if (this.json.defaultTools) {
+                        jsonStr = JSON.stringify(this.json.defaultTools);
+                        jsonStr = o2.bindJson(jsonStr, {"lp": MWF.xApplication.cms.Xform.LP.form});
+                        this.json.defaultTools = JSON.parse(jsonStr);
+                        this.json.defaultTools.each(function (tool) {
+                            var flag = this._checkDefaultMobileActionItem(tool, this.options.readonly);
+                            if (flag) tools.push(tool);
+                        }.bind(this));
+                    }
+                    if (this.json.tools) {
+                        jsonStr = JSON.stringify(this.json.tools);
+                        jsonStr = o2.bindJson(jsonStr, {"lp": MWF.xApplication.cms.Xform.LP.form});
+                        this.json.tools = JSON.parse(jsonStr);
+                        this.json.tools.each(function (tool) {
+                            var flag = this._checkCustomMobileActionItem(tool, this.options.readonly);
+                            if (flag) tools.push(tool);
+                        }.bind(this));
+                    }
                 }
                 this.mobileTools = tools;
                 if (tools.length <= 0) {
-                    if (node) node.hide();
-                } else {
-                    // app上用原来的按钮样式
-                    if (window.o2android || window.flutter_inappwebview || (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.o2mLog)) {
-                        if (node) this._createMobileActions(node, tools);
-                    } else {
-                        if (node) this._createMobileActionsDingdingStyle(node, tools);
+                    if (node) {
+                        node.hide();
+                        const prevNode = node.previousElementSibling;
+                        if (prevNode) {
+                            prevNode.style.bottom = '0px';
+                        }
                     }
+                } else {
+                    if (node) this._createMobileActionsDingdingStyle(node, tools);
                 }
                 if (callback) callback();
             }.bind(this));
@@ -582,7 +617,11 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 this.css.html5ActionButton.width = "100%";
                 if (count == 2) this.css.html5ActionButton.width = "49%";
                 tools.each(function (tool) {
-                    var action = new Element("div", { "styles": this.css.html5ActionButton, "text": tool.text }).inject(node);
+                    var action = new Element("div", { "styles": this.css.html5ActionButton, "class": "mainColor_color", "text": tool.text }).inject(node);
+                    if (tool.id && tool.id !== "") {
+                        action.set("id", tool.id);
+                    }
+                    if( o2.typeOf(tool.properties) === "object" && Object.keys(tool.properties).length )action.set(tool.properties);
                     action.store("tool", tool);
                     action.addEvent("click", function (e) {
                         var t = e.target.retrieve("tool");
@@ -600,7 +639,11 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 this.css.html5ActionButton.width = "38%"
                 for (var i = 0; i < 2; i++) {
                     tool = tools[i];
-                    var action = new Element("div", { "styles": this.css.html5ActionButton, "text": tool.text }).inject(node);
+                    var action = new Element("div", { "styles": this.css.html5ActionButton, "class": "mainColor_color", "text": tool.text }).inject(node);
+                    if (tool.id && tool.id !== "") {
+                        action.set("id", tool.id);
+                    }
+                    if( o2.typeOf(tool.properties) === "object" && Object.keys(tool.properties).length )action.set(tool.properties);
                     action.store("tool", tool);
                     action.addEvent("click", function (e) {
                         var t = e.target.retrieve("tool");
@@ -616,7 +659,7 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 new Element("div", { "styles": this.css.html5ActionButtonSplit }).inject(node.getLast(), "before");
                 new Element("div", { "styles": this.css.html5ActionButtonSplit }).inject(node);
                 this.css.html5ActionButton.width = "23%"
-                var action = new Element("div", { "styles": this.css.html5ActionButton, "text": "…" }).inject(node);
+            var action = new Element("div", { "styles": this.css.html5ActionButton, "class": "mainColor_color", "text": "…" }).inject(node);
                 action.addEvent("click", function (e) {
                     this._loadMoreMobileActions(tools, 2, node);
                 }.bind(this));
@@ -701,13 +744,19 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 var buttonWidth = (size.x - splitSize.x * (count + 1) - (count * 2)) / count;
                 tools.each(function (tool) {
                     var actionStyle = this.css.html5ActionButtonDingdingNormal;
+                var classBg = "";
                     if (tool.id === "action_edit" || tool.id === "action_saveData" || tool.id === "action_saveDraftDocument" || tool.id === "action_publishDocument" || tool.id === "action_publishDocumentDelayed") {
                         actionStyle = this.css.html5ActionButtonDingdingPrimary;
+                        classBg = "mainColor_bg mainColor_border";
                     } else if (tool.id === "action_delete") {
                         actionStyle = this.css.html5ActionButtonDingdingDanger;
                     }
                     actionStyle.width = buttonWidth + "px";
-                    var action = new Element("div", { "styles": actionStyle, "text": tool.text }).inject(node);
+                    var action = new Element("div", { "styles": actionStyle, "class": classBg, "text": tool.text }).inject(node);
+                    if (tool.id && tool.id !== "") {
+                        action.set("id", tool.id);
+                    }
+                    if( o2.typeOf(tool.properties) === "object" && Object.keys(tool.properties).length )action.set(tool.properties);
                     action.store("tool", tool);
                     action.addEvent("click", function (e) {
                         var clickFun = function () {
@@ -737,8 +786,10 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 for (var i = 0; i < 3; i++) {
                     tool = tools[i];
                     var actionStyle = this.css.html5ActionButtonDingdingNormal;
+                    var classBg = "";
                     if (tool.id === "action_edit" || tool.id === "action_saveData" || tool.id === "action_saveDraftDocument" || tool.id === "action_publishDocument" || tool.id === "action_publishDocumentDelayed") {
                         actionStyle = this.css.html5ActionButtonDingdingPrimary;
+                        classBg = "mainColor_bg mainColor_border";
                     } else if (tool.id === "action_delete") {
                         actionStyle = this.css.html5ActionButtonDingdingDanger;
                     }
@@ -750,7 +801,11 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                         }.bind(this));
                     } else {
                         actionStyle.width = (buttonWidth * 2) + "px";
-                        var action = new Element("div", { "styles": actionStyle, "text": tool.text }).inject(node);
+                        var action = new Element("div", { "styles": actionStyle, "class": classBg, "text": tool.text }).inject(node);
+                        if (tool.id && tool.id !== "") {
+                            action.set("id", tool.id);
+                        }
+                        if( o2.typeOf(tool.properties) === "object" && Object.keys(tool.properties).length )action.set(tool.properties);
                         action.store("tool", tool);
                         action.addEvent("click", function (e) {
                             var t = e.target.retrieve("tool");
@@ -772,24 +827,39 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 "id": "cms_toolbar_mask_id",
                 "style": {
                     "background-color": "#cccccc",
-                    "opacity": 0.6
+                "opacity": 0.6,
+                "z-index": 300
                 },
                 "hideOnClick": true,
                 "onHide": function () {
-                    if (this.actionMoreArea){
-                        this.actionMoreArea.setStyle("display", "none");
-                    }
+                    this.actionMoreArea.style.scale = '1 0';
+                    this.actionMoreArea.style.opacity = '0';
+                    //if (this.actionMoreArea){
+                    //    this.actionMoreArea.setStyle("display", "none");
+                    //}
                 }.bind(this)
             });
             if (this.actionMoreArea) {
                 this.actionMoreArea.setStyle("display", "block");
+                this.actionMoreArea.style.scale = '1 1';
+                this.actionMoreArea.style.opacity = '1';
             } else {
                 var size = document.body.getSize();
-                this.actionMoreArea = new Element("div", { "styles": this.css.html5ActionOtherArea }).inject(document.body);
+                this.actionMoreArea = new Element("div.mobileMoreArea", { "styles": this.css.html5ActionOtherArea }).inject(document.body);
                 var pl = this.actionMoreArea.getStyle("padding-left").toInt();
                 var pr = this.actionMoreArea.getStyle("padding-right").toInt();
                 var w = size.x - pl - pr;
                 this.actionMoreArea.setStyle("width", "" + w + "px");
+                this.actionMoreArea.style.transition = "scale 0.2s, opacity 0.2s";
+                this.actionMoreArea.style.scale = '1 0';
+                this.actionMoreArea.style.opacity = '0';
+                this.actionMoreArea.style.transformOrigin = 'bottom center';
+
+                requestAnimationFrame(function () {
+                    this.actionMoreArea.style.scale = '1 1';
+                    this.actionMoreArea.style.opacity = '1';
+                }.bind(this));
+
                 for (var i = n; i < tools.length; i++) {
                     tool = tools[i];
                     var actionStyle = this.css.html5ActionButtonDingdingNormal;
@@ -800,12 +870,16 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                     }
                     actionStyle.width = "100%";
                     var action = new Element("div", { "styles": actionStyle, "text": tool.text }).inject(this.actionMoreArea);
+                    if (tool.id && tool.id !== "") {
+                        action.set("id", tool.id);
+                    }
+                    if( o2.typeOf(tool.properties) === "object" && Object.keys(tool.properties).length )action.set(tool.properties);
                     action.store("tool", tool);
                     action.addEvent("click", function (e) {
                         //隐藏更多菜单
-                        var mask = document.id("cms_toolbar_mask_id");
-                        mask.destroy();
-                        this.actionMoreArea.setStyle("display", "none");
+                        //var mask = document.id("cms_toolbar_mask_id");
+                        //mask.destroy();
+                        //this.actionMoreArea.setStyle("display", "none");
 
                         var t = e.target.retrieve("tool");
                         e.setDisable = function () { }
@@ -813,6 +887,11 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                             this._runCustomAction(t.actionScript);
                         } else {
                             if (this[t.action]) this[t.action](e);
+                        }
+                        // 关闭
+                        if (this.actionMoreArea) {
+                            this.actionMoreArea.setStyle("display", "none");
+                            document.body.unmask();
                         }
                     }.bind(this));
                 }
@@ -867,6 +946,7 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 }
                 //移动端去掉操作栏
                 if (layout.mobile && json && json.type === "Actionbar") {
+                    node.hide();
                     return;
                 }
                 var module = this._loadModule(json, node, beforeLoadModule, replace);
@@ -898,6 +978,7 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
                 if (replace || !this.forms[json.id]) this.forms[json.id] = module;
             }
             module.readonly = this.options.readonly;
+            module.downloading = this.options.downloading;
             module.load();
             return module;
         },
@@ -1816,12 +1897,41 @@ MWF.xApplication.cms.Xform.Form = MWF.CMSForm = new Class(
          * @example
          * this.form.getApp().appForm.downloadAll();
          */
-        downloadAll: function () {
+        // downloadAll: function () {
+        //     o2.Actions.load("x_cms_assemble_control").FileInfoAction.uploadWorkInfo(this.businessData.document.id, "pdf", {
+        //         "workHtml": encodeURIComponent(this.app.content.get("html")),
+        //         "pageWidth": 1000
+        //     }, function (json) {
+        //         var htmlFormId = json.data.id;
+        //         htmlFormId = htmlFormId.replace("#", "%23");
+        //         var url = "/x_cms_assemble_control/jaxrs/fileinfo/batch/download/doc/" + this.businessData.document.id + "/site/(0)";
+        //         url = o2.filterUrl(o2.Actions.getHost("x_processplatform_assemble_surface") + url);
+        //         var downloadUrl = o2.filterUrl(url + "?fileName=&flag=" + htmlFormId);
+        //         if ((o2.thirdparty.isDingdingPC() || o2.thirdparty.isQywxPC())) {
+        //             var xtoken = layout.session.token;
+        //             //var xtoken = Cookie.read(o2.tokenName);
+        //             downloadUrl += "&" + o2.tokenName + "=" + xtoken;
+        //         }
+        //         window.open(downloadUrl);
+        //     }.bind(this));
+        // },
+        _downloadAll: function (htmlString, callback) {
+            var htmlFormId = "";
+            var html = htmlString || document.documentElement.outerHTML; //this.app.content.get("html");
+
+            var port = layout.port === "" ? "" : ":" + layout.port;
+            var orginUrl = "http://127.0.0.1" + port;
+            html = html.replace(/\.\.\/(x_|o2_)/g, orginUrl + "/$1");
+            html = html.replaceAll(window.location.origin, orginUrl);
+
+            console.log(html)
+
             o2.Actions.load("x_cms_assemble_control").FileInfoAction.uploadWorkInfo(this.businessData.document.id, "pdf", {
-                "workHtml": encodeURIComponent(this.app.content.get("html")),
-                "pageWidth": 1000
+                "workHtml": encodeURIComponent(html),
+                "pageWidth": 793.7
             }, function (json) {
                 var htmlFormId = json.data.id;
+                if(callback)callback();
                 htmlFormId = htmlFormId.replace("#", "%23");
                 var url = "/x_cms_assemble_control/jaxrs/fileinfo/batch/download/doc/" + this.businessData.document.id + "/site/(0)";
                 url = o2.filterUrl(o2.Actions.getHost("x_processplatform_assemble_surface") + url);

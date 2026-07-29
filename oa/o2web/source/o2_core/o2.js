@@ -726,7 +726,11 @@ if (!window.o2) {
         var _loadSingleCss = function (module, callback, op, uuid) {
             var url = module;
             var uid = _uuid();
-            if (op.noCache) url = (url.indexOf("?") !== -1) ? url + "&v=" + uid : url + "?v=" + uid;
+            if (op.noCache) {
+                url = (url.indexOf("?") !== -1) ? url + "&v=" + uid : url + "?v=" + uid;
+            }else{
+                url = (url.indexOf("?") !== -1) ? url + "&v=" + o2.version.v : url + "?v=" + o2.version.v;
+            }
 
             var key = encodeURIComponent(url + op.doc.unid);
             if (_loadCssRunning[key]) {
@@ -778,7 +782,7 @@ if (!window.o2) {
                     try {
                         if (cssText) {
                             op.uuid = uuid;
-                            var style = _loadCssText(cssText, op);
+                            var style = _loadCssText(cssText, op, null, url);
                         }
                         style.id = uid;
                         var styleObj = {"module": module, "id": uid, "style": style, "doc": op.doc, "class": uuid};
@@ -851,7 +855,7 @@ if (!window.o2) {
             }
         };
 
-        var _loadCssText = function (cssText, options, callback) {
+        var _loadCssText = function (cssText, options, callback, url) {
             var op = (_typeOf(options) === "object") ? _getCssOptions(options) : _getCssOptions(null);
             var cb = (_typeOf(options) === "function") ? options : callback;
             var uuid = options.uuid || "css" + _uuid();
@@ -901,6 +905,7 @@ if (!window.o2) {
                 var style = op.doc.createElement("style");
                 style.setAttribute("type", "text/css");
                 style.setAttribute("id", uuid);
+                style.setAttribute("data-url", url);
                 if (!op.notInject) {
                     var head = (op.doc.head || op.doc.getElementsByTagName("head")[0] || op.doc.documentElement);
                     head.appendChild(style);
@@ -1027,7 +1032,11 @@ if (!window.o2) {
         _loadSingleHtml = function (module, callback, op) {
             var url = module;
             var uid = _uuid();
-            if (op.noCache) url = (url.indexOf("?") !== -1) ? url + "&v=" + uid : url + "?v=" + uid;
+            if (op.noCache) {
+                url = (url.indexOf("?") !== -1) ? url + "&v=" + uid : url + "?v=" + uid;
+            }else{
+                url = (url.indexOf("?") !== -1) ? url + "&v=" + o2.version.v : url + "?v=" + o2.version.v;
+            }
             var key = encodeURIComponent(url + op.doc.unid);
             if (!op.reload) if (_loadedHtml[key]) {
                 Promise.resolve(_loadedHtml[key]).then(function(html){
@@ -3533,7 +3542,8 @@ if (!window.o2) {
         o2.isMediaMobile = function(media){
             const mediaQuery = window.matchMedia(media || 'only screen and (max-width: 767px)');
             // 检查是否满足媒体查询条件
-            return mediaQuery.matches || layout.mobile || o2.thirdparty.isMobile();
+            // return mediaQuery.matches || layout.mobile || o2.thirdparty.isMobile();
+            return mediaQuery.matches;
         }
 
         o2.common = o2.common || {};

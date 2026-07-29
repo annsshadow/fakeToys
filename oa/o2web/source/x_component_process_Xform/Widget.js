@@ -60,7 +60,7 @@ MWF.xApplication.process.Xform.Widget = MWF.APPWidget =  new Class(
             this.form.checkSubformLoaded();
             this.checked = true;
         } else {
-            this.getWidget(function(){
+            this.loadPromise = this.getWidget(function(){
                 this.loadWidget();
             }.bind(this));
         }
@@ -138,7 +138,11 @@ MWF.xApplication.process.Xform.Widget = MWF.APPWidget =  new Class(
             var cssText = this.widgetData.json.css.code;
 
             //删除注释
-            cssText = cssText.replace(/\/\*[\s\S]*?\*\/\n|([^:]|^)\/\/.*\n$/g, '').replace(/\\n/, '');
+            //cssText = cssText.replace(/\/\*[\s\S]*?\*\/\n|([^:]|^)\/\/.*\n$/g, '').replace(/\\n/, '');
+
+            cssText = cssText.replace(/\/\*[\s\S]*?\*\//g, '')  // 移除多行注释
+                .replace(/\\n/g, '');             // 移除\n
+
             cssText = this.form.parseCSS(cssText);
 
             var rex = new RegExp("(.+)(?=\\{)", "g");
@@ -287,6 +291,7 @@ MWF.xApplication.process.Xform.Widget = MWF.APPWidget =  new Class(
         this.form.checkSubformLoaded();
     },
     getWidget: function(callback){
+        let p;
         var method = (this.form.options.mode !== "Mobile" && !layout.mobile) ? "getWidgetByName" : "getWidgetByNameMobile";
         if (this.json.widgetType==="script"){
             if (this.json.widgetScript && this.json.widgetScript.code){
@@ -301,7 +306,7 @@ MWF.xApplication.process.Xform.Widget = MWF.APPWidget =  new Class(
                     }
                     if (widgetName) {
                         if (!app)  app = this.form.businessData.pageInfor.portal;
-                        o2.Actions.get("x_portal_assemble_surface")[method](widgetName, app, function(json){
+                        p = o2.Actions.get("x_portal_assemble_surface")[method](widgetName, app, function(json){
                             this.getWidgetData(json.data);
                             if (callback) callback();
                         }.bind(this));
@@ -329,16 +334,26 @@ MWF.xApplication.process.Xform.Widget = MWF.APPWidget =  new Class(
                     } else {
                         app = this.form.businessData.pageInfor.portal;
                     }
-                    o2.Actions.get("x_portal_assemble_surface")[method](this.json.widgetSelected, app, function(json){
+                    p = o2.Actions.get("x_portal_assemble_surface")[method](this.json.widgetSelected, app, function(json){
                         this.getWidgetData(json.data);
                         if (callback) callback();
-                    }.bind(this));
+                    }.bind(this), function(xhr){
+                        let err = new Error("获取部件设计出错");
+                        if (xhr.responseText){
+                            try{
+                                const json = JSON.parse(xhr.responseText);
+                                err = new Error("获取部件设计出错："+json.message);
+                            }catch(e){}   
+                        }
+                        throw err;
+                    })
                 }
             }else{
                 this.widgetData = null;
                 if (callback) callback();
             }
         }
+        return p;
     },
     getWidgetData: function(data){
         var widgetDataStr = null;

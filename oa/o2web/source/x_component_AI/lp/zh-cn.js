@@ -10,11 +10,11 @@ MWF.xApplication.AI.LP = {
 		"aiModel" : "模型名称",
 		"knowledge": "知识库",
 		"questions" : "问答",
-		"o2AiEnable": "是否启用O2智能体",
-		"o2AiBaseUrl": "o2智能体服务地址",
-		"o2AiToken": "o2智能体服务认证秘钥"
+		"o2AiEnable": "是否启用智能体",
+		"o2AiBaseUrl": "智能体服务地址",
+		"o2AiToken": "智能体服务认证秘钥"
 	},
-	"o2AiEnableTip" : "请先启用O2智能体",
+	"o2AiEnableTip" : "不启用智能体无法使用MCP和支持库功能",
 	"common" : {
 		"yes" : "是",
 		"close" : "关闭",
@@ -23,6 +23,8 @@ MWF.xApplication.AI.LP = {
 		"tip" : "提示",
 		"save" : "保存",
 		"select" : "选择",
+		"uploadLocal" : "本地上传",
+		"uploadDrive" : "从企业网盘中选择",
 		"savesuccess" : "保存成功",
 		"removetitle" : "删除确认",
 		"removeconfirm" : "您确定要删除吗？",
@@ -31,11 +33,11 @@ MWF.xApplication.AI.LP = {
 		"exportconfirm" : "导出确认"
 	},
 	"navi" : {
-		"index" : "首页",
+		"index" : "对话",
 		"newmcp" : "新建MCP",
-		"mcp" : "MCP设置",
+		"mcp" : "工具设置",
 		"model" : "模型设置",
-		"setting" : "对话设置",
+		"setting" : "AI助手设置",
 		"knowledge" : "知识库索引"
 	},
 	"copysuccess" : "已拷贝到剪切板",
@@ -50,7 +52,7 @@ MWF.xApplication.AI.LP = {
 	"thinking" : "正在努力思考中",
 	"types" : {
 		"auto" : "自动",
-		"auto_text" : "AI根据你的问题自动挑最合适的",
+		"auto_text" : "AI根据你的问题自动挑最合适的答案",
 		"chat" : "聊天",
 		"chat_text" : "直接跟AI聊天，有问有答",
 		"task" : "任务",
@@ -71,17 +73,23 @@ MWF.xApplication.AI.LP = {
 		"desc" : "模型描述",
 		"company" : "模型服务商",
 		"ali" : "阿里通义千问",
-		"local" : "本地模型",
+		"local" : "内置模型",
+		"llama" : "私有化模型",
+		"enable" : "是否启用",
 		"version" : "模型版本",
 		"completionUrl" : "模型服务地址",
 		"apiKey" :"模型秘钥",
 		"asDefault" : "是否默认",
 		"proxyHost" : "代理主机",
 		"proxyPort" : "代理端口",
-		"proxyEnable" : "是否启用代理"
+		"proxyEnable" : "是否启用代理",
+		"proxyUser" : "代理认证用户",
+		"proxyPass" : "代理认证密码"
 	},
 	"mcp" : {
 		"name" : "名称",
+		"icon" : "图标",
+		"displayName" : "显示名称",
 		"category" : "分组",
 		"desc" : "说明",
 		"enable" : "是否启用",
@@ -93,7 +101,11 @@ MWF.xApplication.AI.LP = {
 		"fieldtype" : "字段类型",
 		"addmcp" : "添加mcp参数",
 		"returntemplate" : "返回模板",
-		"script" : "执行脚本"
+		"returncss" : "返回CSS",
+		"script" : "执行脚本",
+		"indexEnable" : "推荐到首页",
+		"indexDesc" : "推荐描述",
+		"indexPrompt" : "推荐提示词"
 	},
 	"knowledge" : {
 		"title" : "标题",

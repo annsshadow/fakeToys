@@ -7,7 +7,7 @@
 	<parent>
 		<groupId>net.o2oa</groupId>
 		<artifactId>o2server</artifactId>
-		<version>9.5</version>
+		<version>10.0</version>
 	</parent>
 	<artifactId>x_ai_assemble_control</artifactId>
 	<packaging>war</packaging>
@@ -39,16 +39,6 @@
 		<dependency>
 			<groupId>net.o2oa</groupId>
 			<artifactId>x_ai_core_entity</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.aliyun</groupId>
-			<artifactId>bailian20231229</artifactId>
-			<version>1.11.2</version>
-		</dependency>
-		<dependency>
-			<groupId>com.squareup.okhttp3</groupId>
-			<artifactId>okhttp</artifactId>
-			<version>4.12.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.glassfish.jersey.media</groupId>

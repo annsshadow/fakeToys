@@ -704,6 +704,8 @@ MWF.xApplication.Calendar.MainMobile = new Class({
     },
     createNode: function (){},
     loadLayout: function(){
+        this.content.setStyle('height', '100%');
+
         if( !this.options.baseDate ){
             this.options.baseDate = new Date().format(O2_CALENDAR_FORMAT_DATE);
         }
@@ -711,7 +713,7 @@ MWF.xApplication.Calendar.MainMobile = new Class({
         this.node = new Element("div", {
             "styles": {"width": "100%", "height": "100%", "overflow": "hidden"}
         }).inject(this.content);
-        this.node.loadCss(`/x_component_Calendar/$Main/${this.options.style}/style.css`)
+        this.node.loadCss(`../x_component_Calendar/$Main/${this.options.style}/style.css`)
         this.loadView();
     },
     reload: function(){
@@ -720,7 +722,7 @@ MWF.xApplication.Calendar.MainMobile = new Class({
     },
     loadView: function(){
         this.node.loadHtml(
-            `/x_component_Calendar/$Main/${this.options.style}/main.html`,
+            `../x_component_Calendar/$Main/${this.options.style}/main.html`,
             {
                 module: this,
                 bind: {
@@ -816,7 +818,7 @@ MWF.xApplication.Calendar.MainMobile = new Class({
                     d.statusColor='var(--oo-color-success)';
                     d.status = this.lp.status.wait;
                 }else if (start <= now && now <= end) {
-                    d.statusColor=='var(--oo-color-main)';
+                    d.statusColor='var(--oo-color-main)';
                     d.status = this.lp.status.doing;
                 }else if (end < now) {
                     d.statusColor='var(--oo-color-gray-9)';
@@ -829,7 +831,7 @@ MWF.xApplication.Calendar.MainMobile = new Class({
         p.then( (json) => {
             this.eventArea.empty();
             this.eventArea.loadHtml(
-                `/x_component_Calendar/$Main/${this.options.style}/list.html`,
+                `../x_component_Calendar/$Main/${this.options.style}/list.html`,
                 {
                     module: this,
                     bind: {
@@ -896,7 +898,7 @@ MWF.xApplication.Calendar.CalendarListMobile = new Class({
     load: function(){
         this.app.listCalendar((data)=>{
             this.node.loadHtml(
-                `/x_component_Calendar/$Main/${this.options.style}/calendarList.html`,
+                `../x_component_Calendar/$Main/${this.options.style}/calendarList.html`,
                 {
                     module: this,
                     bind: {
@@ -1659,19 +1661,19 @@ MWF.xApplication.Calendar.Config = new Class({
                 "<div>"+
                 "   <div style='"+ viewStyle +"'>" +
                 "<input type='checkbox' name='configAvailableView' "+( !d.disableViewList.contains( "toMonth" ) ? "checked" : "")+" value='toMonth'>"+this.lp.month+
-                "<input type='text' name='toMonthViewName' value='" + (d.toMonthViewName || "") + "' style='"+ inputTextStyle +"' placeholder='"+ this.lp.config.viewCustomName +"' >"+
+                "<input type='text' name='toMonthViewName' value='" + o2.txt(d.toMonthViewName || "") + "' style='"+ inputTextStyle +"' placeholder='"+ this.lp.config.viewCustomName +"' >"+
                 "   </div>" +
                 "   <div style='"+ viewStyle +"'>" +
                 "<input type='checkbox' name='configAvailableView' "+( !d.disableViewList.contains( "toWeek" ) ? "checked" : "")+" value='toWeek'>"+this.lp.week+
-                "<input type='text' name='toWeekViewName' value='" + (d.toWeekViewName || "") + "' style='"+ inputTextStyle +"' placeholder='"+ this.lp.config.viewCustomName +"' >"+
+                "<input type='text' name='toWeekViewName' value='" + o2.txt(d.toWeekViewName || "") + "' style='"+ inputTextStyle +"' placeholder='"+ this.lp.config.viewCustomName +"' >"+
                 "   </div>" +
                 "   <div style='"+ viewStyle +"'>" +
                 "<input type='checkbox' name='configAvailableView' "+( !d.disableViewList.contains( "toDay" ) ? "checked" : "")+" value='toDay'>"+this.lp.day+
-                "<input type='text' name='toDayViewName' value='" + (d.toDayViewName || "") + "' style='"+ inputTextStyle +"' placeholder='"+ this.lp.config.viewCustomName +"' >"+
+                "<input type='text' name='toDayViewName' value='" + o2.txt(d.toDayViewName || "") + "' style='"+ inputTextStyle +"' placeholder='"+ this.lp.config.viewCustomName +"' >"+
                 "   </div>" +
                 "   <div style='"+ viewStyle +"'>" +
                 "<input type='checkbox' name='configAvailableView' "+( !d.disableViewList.contains( "toList" ) ? "checked" : "")+" value='toList'>"+this.lp.list+
-                "<input type='text' name='toListViewName' value='" + (d.toListViewName || "") + "' style='"+ inputTextStyle +"' placeholder='"+ this.lp.config.viewCustomName +"' >"+
+                "<input type='text' name='toListViewName' value='" + o2.txt(d.toListViewName || "") + "' style='"+ inputTextStyle +"' placeholder='"+ this.lp.config.viewCustomName +"' >"+
                 "   </div>" +
 
                 "</div>" +

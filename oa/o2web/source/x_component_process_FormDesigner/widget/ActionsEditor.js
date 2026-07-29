@@ -3,6 +3,7 @@ MWF.xApplication.process.FormDesigner = MWF.xApplication.process.FormDesigner ||
 MWF.xApplication.process.FormDesigner.widget = MWF.xApplication.process.FormDesigner.widget || {};
 MWF.require("MWF.widget.ScriptArea", null, false);
 MWF.require("MWF.widget.Maplist", null, false);
+MWF.require("MWF.widget.IconMenu", null, false);
 MWF.xApplication.process.FormDesigner.widget.ActionsEditor = new Class({
 	Implements: [Options, Events],
 	Extends: MWF.widget.Common,
@@ -14,7 +15,8 @@ MWF.xApplication.process.FormDesigner.widget.ActionsEditor = new Class({
         "noDelete": false,
         "noCode": false,
         "noHide": false,
-        "systemToolsAddress" : "../x_component_process_FormDesigner/Module/Actionbar/toolbars.json"
+        "systemToolsAddress" : "../x_component_process_FormDesigner/Module/Actionbar/toolbars.json",
+        "checkMedia": false
 	},
 	initialize: function(node, designer, module, options){
 		this.setOptions(options);
@@ -299,6 +301,22 @@ MWF.xApplication.process.FormDesigner.widget.ActionsEditor.ButtonAction = new Cl
             }
         }
 
+        if(this.editor.options.checkMedia){
+            this.pcButton = new Element("div.ooicon-desktop_mac", {"styles": this.css.actionPCButtonNode, "title": this.editor.designer.lp.actionbar.pchide}).inject(this.titleNode);
+            if (this.data.pcHide){
+                this.pcButton.setStyle("color", "#999");
+            }else{
+                this.pcButton.setStyle("color", "#d35400");
+            }
+
+            this.mobileButton = new Element("div.ooicon-phone", {"styles": this.css.actionMobileButtonNode, "title": this.editor.designer.lp.actionbar.mobilehide}).inject(this.titleNode);
+            if (this.data.mobileHide){
+                this.mobileButton.setStyle("color", "#999");
+            }else{
+                this.mobileButton.setStyle("color", "#d35400");
+            }
+        }
+
         if (this.editor.options.iconType==='font'){
             this.iconNode.addClass("ooicon-"+this.data.icon);
             this.iconNode.setStyles({
@@ -381,62 +399,36 @@ MWF.xApplication.process.FormDesigner.widget.ActionsEditor.ButtonAction = new Cl
         return this.data.action || this.data.text;
     },
     setEvent: function(){
-        this.iconMenu = new MWF.widget.Menu(this.iconNode, {
-            "event": "click",
-            "style": "actionbarIcon",
-            "onPostShow" : function (ev) {
-                ev.stopPropagation();
-            }
+        var iconMenu = new MWF.widget.IconMenu({
+            iconType: this.editor.options.iconType || '',
+            pngIconPath: this.editor.path+this.editor.options.style+"/tools/{index}.png",
+            pngIconEndIndex: 136
         });
-        this.iconMenu.load();
-        var _self = this;
-        if (this.editor.options.iconType==='font'){
-            o2.JSON.get("/x_desktop/css/v10/ooicon.json", function(json){
-                const icons = json.glyphs;
-
-                icons.forEach(function(i){
-                    var item = this.iconMenu.addMenuItem("", "click", function(ev){
-                        var icon = this.item.iconName;
-                        _self.iconNode.set("class", "ooicon-"+icon);
-                        _self.data.icon = icon;
-                        _self.iconNode.setStyle("background-image", "none");
-                        _self.editor.fireEvent("change", [{
-                            compareName: "."+icon + ".icon"
-                        }]);
-                        ev.stopPropagation();
-                    });
-                    item.item.addClass("ooicon-"+i.font_class);
-                    item.item.setStyles({
-                        "text-align": "center",
-                        "line-height": "28px",
-                        "font-size": "14px"
-                    });
-                    item.item.iconName = i.font_class;
-
-                }.bind(this));
-            }.bind(this));
-        }else{
-            for (var i=1; i<=136; i++){
-                var icon = this.editor.path+this.editor.options.style+"/tools/"+i+".png";
-                var item = this.iconMenu.addMenuItem("", "click", function(ev){
-                    var src = this.item.getElement("img").get("src");
-                    _self.data.img = src.substr(src.lastIndexOf("/")+1, src.length);
-                    _self.data.customImg = true;
-                    if(_self.data.icon){
-                        if(_self.iconNode.hasClass(_self.data.icon)){
-                            _self.iconNode.removeClass(_self.data.icon);
-                        }
-                        delete _self.data.icon;
+        iconMenu.load(this.iconNode);
+        iconMenu.addEvent('click', (ev, icon) => {
+            if (this.editor.options.iconType === 'font'){
+                this.iconNode.set("class", "ooicon-" + icon);
+                this.data.icon = icon;
+                this.iconNode.setStyle("background-image", "none");
+                this.editor.fireEvent("change", [{
+                    compareName: "." + icon + ".icon"
+                }]);
+            }else{
+                this.data.img = icon.substr(icon.lastIndexOf("/")+1, icon.length);
+                this.data.customImg = true;
+                if(this.data.icon){
+                    if(this.iconNode.hasClass(this.data.icon)){
+                        this.iconNode.removeClass(this.data.icon);
                     }
-                    _self.iconNode.setStyle("background-image", "url("+src+")");
-                    _self.editor.fireEvent("change", [{
-                        compareName: "."+_self.getName() + ".img"
-                    }]);
-                    ev.stopPropagation();
-                }, icon);
-                item.iconName = i+".png";
+                    delete this.data.icon;
+                }
+                this.iconNode.setStyle("background-image", "url("+icon+")");
+                this.editor.fireEvent("change", [{
+                    compareName: "."+this.getName() + ".img"
+                }]);
             }
-        }
+            ev.stopPropagation();
+        });
 
         this.upButton.addEvent("click", function(e){
             var actions = this.editor.actions;
@@ -516,6 +508,34 @@ MWF.xApplication.process.FormDesigner.widget.ActionsEditor.ButtonAction = new Cl
             }
             this.editor.fireEvent("change", [{
                 compareName: "."+this.getName() + ".readShow"
+            }]);
+            e.stopPropagation();
+        }.bind(this));
+
+        if (this.pcButton) this.pcButton.addEvent("click", function(e){
+            if (this.data.pcHide){
+                this.pcButton.setStyle("color", "#d35400");
+                this.data.pcHide = false;
+            }else{
+                this.pcButton.setStyle("color", "#999");
+                this.data.pcHide = true;
+            }
+            this.editor.fireEvent("change", [{
+                compareName: "."+this.getName() + ".pcHide"
+            }]);
+            e.stopPropagation();
+        }.bind(this));
+
+        if (this.mobileButton) this.mobileButton.addEvent("click", function(e){
+            if (this.data.mobileHide){
+                this.mobileButton.setStyle("color", "#d35400");
+                this.data.mobileHide = false;
+            }else{
+                this.mobileButton.setStyle("color", "#999");
+                this.data.mobileHide = true;
+            }
+            this.editor.fireEvent("change", [{
+                compareName: "."+this.getName() + ".mobileHide"
             }]);
             e.stopPropagation();
         }.bind(this));

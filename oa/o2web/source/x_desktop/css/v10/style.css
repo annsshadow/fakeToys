@@ -46,13 +46,13 @@ oo-org {
     line-height: normal;
 }
 
-oo-input, oo-select, oo-textarea, oo-datetime, oo-currency{
+oo-input, oo-select, oo-textarea, oo-datetime, oo-currency, oo-cascade[multiple='false']{
     display: inline-block;
     border-radius: var(--oo-default-radius);
     color: var(--oo-color-text2);
 }
 
-oo-selector {
+oo-selector, oo-cascade[multiple='true'] {
     display: block;
     border-radius: var(--oo-default-radius);
     color: var(--oo-color-text2);
@@ -177,6 +177,37 @@ oo-calendar[mode='time'] {
 
 oo-calendar[mode='time'][second-enable='false'] {
     width: 8rem;
+}
+
+
+oo-calendar-range{
+    width: 40em;
+    height: 24em;
+    display: block;
+    padding: 0.5em;
+    border-radius: 0.25rem;
+    box-shadow: 0 0 0px 1px var(--oo-color-gray-d);
+}
+
+oo-calendar-range[mode='year'],
+oo-calendar-range[mode='years'],
+oo-calendar-range[mode='month'],
+oo-calendar-range[mode='months'],
+oo-calendar-range[mode='date'],
+oo-calendar-range[mode='dates'] {
+    width: 20em;
+}
+
+/*oo-calendar-range[mode='week'] {*/
+/*    width: 21em;*/
+/*}*/
+
+oo-calendar-range[mode='time'] {
+    width: 24em;
+}
+
+oo-calendar-range[mode='time'][second-enable='false'] {
+    width: 16rem;
 }
 
 
@@ -390,6 +421,9 @@ oo-nav{
   -moz-osx-font-smoothing: grayscale;
 }
 
+.ooicon-move:before {
+  content: "\e799";
+}
 .ooempty-wushuju:before {
   content: "\e900";
 }

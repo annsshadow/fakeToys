@@ -1297,7 +1297,9 @@ MWF.xScript.CMSEnvironment = function(ev){
         //         row.node.removeClass('selectedRow');
         //     });
         // });
-         viewerGenerator(o.viewNode, o);
+        window.setTimeout(()=>{
+            viewerGenerator(o.viewNode, o);
+        }, 200);
 
         requestAnimationFrame(()=>{
             o.contentNode.removeClass('invisible');
@@ -1341,8 +1343,8 @@ MWF.xScript.CMSEnvironment = function(ev){
             if(!viewOptions)viewOptions = {"style": "select"};
 
             var options =  dlalogOptions || {};
-            var width = options.width || viewJson.width || "700";
-            var height = options.height || viewJson.height || "400";
+            var width = options.width || viewJson.width || "972";
+            var height = options.height || viewJson.height || "672";
             var style = options.style || "v10_view";
             if (layout.mobile){
                 var size = document.body.getSize();
@@ -1444,7 +1446,9 @@ MWF.xScript.CMSEnvironment = function(ev){
                         viewJson[key] = view[key];
                     }
                 }
-                if (layout.mobile && o2.version.dev===10){
+                //if (layout.mobile && o2.version.dev===10){
+                var styleType = _form.json?.formStyleType || _form.viewJson?.viewStyleType;
+                if (layout.mobile && styleType === 'v10') {
                     selectViewMobile(viewJson, okCallback, dialogOptions, viewOptions, loadedCallback);
                 }else{
                     selectViewPc(viewJson, okCallback, dialogOptions, viewOptions, loadedCallback);
@@ -1474,7 +1478,7 @@ MWF.xScript.CMSEnvironment = function(ev){
                 });
             },
             ()=>{
-                if(callback)callback(viewer.getData());
+                    if(okCallback)okCallback(viewer.getData());
             }
         );
     };
@@ -1483,8 +1487,8 @@ MWF.xScript.CMSEnvironment = function(ev){
         if(!statementOptions)statementOptions = {"style": "select"};
 
         var options =  dialogOptions || {};
-        var width = options.width || statementJson.width || "700";
-        var height = options.height || statementJson.height || "400";
+        var width = options.width || statementJson.width || "972";
+        var height = options.height || statementJson.height || "672";
         var style = options.style || "v10_view";
 
         if (layout.mobile){
@@ -1674,7 +1678,9 @@ MWF.xScript.CMSEnvironment = function(ev){
                         statementJson[key] = statement[key];
                     }
                 }
-                if (layout.mobile && o2.version.dev === 10) {
+                //if (layout.mobile && o2.version.dev === 10) {
+                var styleType = _form.json?.formStyleType || _form.viewJson?.viewStyleType;
+                if (layout.mobile && styleType === 'v10') {
                     selectStatementMobile(statementJson, okCallback, dialogOptions, statementOptions, loadedCallback);
                 } else {
                     selectStatementPc(statementJson, okCallback, dialogOptions, statementOptions, loadedCallback);

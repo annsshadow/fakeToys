@@ -1,15 +1,5 @@
 @charset "UTF-8";
 
-/* @font-face {
-    font-family: 'ooicon';
-    src:
-            url('./ooicon.ttf') format('truetype'),
-            url('.ooicon.woff') format('woff'),
-            url('.ooicon.svg') format('svg');
-    font-weight: normal;
-    font-style: normal;
-    font-display: block;
-} */
 html{
 	overflow: hidden;
 	height: 100%;
@@ -31,10 +21,20 @@ body {
 .layout_main *{
 	box-sizing: content-box!important;
 }
+.borderbox-node{
+	box-sizing: border-box!important;
+}
+
 .o2_vue{
 	box-sizing: border-box!important;
 }
 .o2_vue *{
+	box-sizing: border-box!important;
+}
+.o2_vue.o2_vue{
+	box-sizing: border-box!important;
+}
+.o2_vue.o2_vue *{
 	box-sizing: border-box!important;
 }
 .start-process-area{

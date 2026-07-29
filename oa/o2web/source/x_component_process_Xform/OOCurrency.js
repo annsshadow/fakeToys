@@ -9,6 +9,8 @@ MWF.xApplication.process.Xform.OOCurrency = MWF.APPOOCurrency = new Class({
     _loadNode: function () {
         if (!this.isReadable && !!this.isHideUnreadable){
             this.node?.addClass('hide');
+        }else if(this.downloading){
+            this._loadOONodeDownloading();
         }else{
             this._loadNodeEdit();
         }
@@ -135,6 +137,25 @@ MWF.xApplication.process.Xform.OOCurrency = MWF.APPOOCurrency = new Class({
                 e.target.setCustomValidity(this.validationText);
             }
         });
+        this.node.addEventListener('invalid', (e)=>{
+            if (this.node._props.validity){
+                e.target.setCustomValidity(this.node._props.validity);
+            }else{
+                var label = this.json.label ? `“${this.json.label.replace(/　/g, '')}”` :  MWF.xApplication.process.Xform.LP.requiredHintField;
+                const o = {
+                    valueMissing: MWF.xApplication.process.Xform.LP.requiredHint.replace('{label}', label),
+                }
+                //通过 e.detail 获取 验证有效性状态对象：ValidityState
+                for (const k in o){
+                    if (e.detail[k]){
+                        if (o[k]){
+                            
+                            break;
+                        }
+                    }
+                }
+            }
+        });
     },
     checkCurrencyAttribute: function (){
         var checkAttribute = function (name) {
@@ -163,9 +184,15 @@ MWF.xApplication.process.Xform.OOCurrency = MWF.APPOOCurrency = new Class({
             }
             removeAttribute('currency');
             removeAttribute('prefixuse');
+
+            if(this.json.isPrefix === false)this.json.prefix = '';
             checkAttribute("prefix");
+
             checkAttribute("suffix");
+
+            if(this.json.isThousands === false)this.json.thousands = '';
             checkAttribute('thousands');
+
             checkAttribute('decimal');
         }
 
@@ -200,15 +227,47 @@ MWF.xApplication.process.Xform.OOCurrency = MWF.APPOOCurrency = new Class({
     getInputData: function () {
         return this.node.value;
     },
-
-    notValidationMode: function (text) {
-        this.validationText = text;
-        this.node.checkValidity();
-
-        if ( this.node && !this.node.isIntoView()) this.node.scrollIntoView({ behavior: "smooth", block: "center" });
-    },
-    validationMode: function () {
-        this.validationText = '';
-        this.node.unInvalidStyle();
+    _afterLoadOONodeDownloading: function (){
+        var opt = {}, json = this.json;
+        if( json.preset === 'currency' ){
+            opt.currency = json.currency;
+            opt.prefixuse = json.prefixuse;
+        }else{
+            opt.prefix = (json.isPrefix!==false && json.prefix ) || '';
+            opt.suffix = json.suffix|| '';
+            opt.thousands = (json.isThousands!==false && json.thousands ) || '';
+            opt.decimal = json.decimal || '.';
+        }
+        opt.precision = json.hasOwnProperty('precision') ? json.precision : 2;
+        ['allowblank','disablenegative', 'round'].forEach(function(key){
+            if( json.hasOwnProperty(key) ){
+                opt[key] = json[key];
+            }
+        });
+        ['maximum', 'minimum'].forEach(function(key){
+            if( json.hasOwnProperty(key) && json[key] !== '' ){
+                opt[key] = json[key];
+            }
+        });
+        var OOCurrency = window.customElements.get('oo-currency');
+        var text = OOCurrency.formatCurrency(this._getBusinessData(), opt, opt.currency || '');
+        this.downloadingValueNode.set('text', text || '-');
     }
+    // notValidationMode: function (text) {
+    //     if(!this.isNotValidationMode){
+    //         this.isNotValidationMode = true;
+    //         this.validationText = text;
+    //         this.node.checkValidity();
+
+    //         if ( this.node && !this.node.isIntoView()) this.node.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    //     }
+    // },
+    // validationMode: function () {
+    //     if(this.isNotValidationMode){
+    //         this.isNotValidationMode = false;
+    //         this.validationText = '';
+    //         this.node.unInvalidStyle();
+    //     }
+    // }
 });
