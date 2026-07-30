@@ -159,9 +159,7 @@ public class EncryptUtil {
         return new SecretKeySpec(bs, AES_ALGORITHM);
     }
 
-    public static String oaMd5() {
-        String key = "REDACTED_OA_SECRET";
-        String thirdSecret = "REDACTED_OA_SECRET";
+    public static String oaMd5(String key, String thirdSecret) {
         return MD5(key + thirdSecret);
     }
 
@@ -186,50 +184,36 @@ public class EncryptUtil {
         }
     }
 
-    /**
-     * 根据传入密文完成解码
-     *
-     * @param ssoKey
-     * @return
-     * @throws Exception
-     */
-    public static String decodeTicket(String ssoKey) throws Exception {
-        String key = "REDACTED_OA_SECRET";
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        md.update(key.getBytes());
-        byte[] digest = md.digest();
-        try {
-            return decryptData(URLDecoder.decode(ssoKey, CHARSET), digest
-            );
-        } catch (Exception e) {
-            return decryptData(ssoKey, digest);
-        }
-    }
-
     public static void main(String[] args) {
+        String coolKey = System.getenv("COOL_OA_KEY");
+        String coolSecret = System.getenv("COOL_OA_SECRET");
+        if (coolKey == null || coolKey.isEmpty() || coolSecret == null || coolSecret.isEmpty()) {
+            System.err.println("Error: COOL_OA_KEY and COOL_OA_SECRET environment variables must be set.");
+            System.exit(1);
+        }
 //1.用户UserId免登Token生成
         StringBuffer sb1 = new StringBuffer();
         sb1.append("userId=<YOUR_USER_ID>").append("&").append("enterpriseId=<YOUR_ENTERPRISE_ID>");
         System.out.println("UserId登录加密前str:" + sb1.toString());
-        String userIdToken = aesEncryp(sb1.toString(), oaMd5());
+        String userIdToken = aesEncryp(sb1.toString(), oaMd5(coolKey, coolSecret));
         System.out.println("UserId登录免登token:" + userIdToken);
 //2.用户工号免登Token生成
         StringBuffer sb2 = new StringBuffer();
         sb2.append("userId=<YOUR_USER_ID>").append("&").append("enterpriseId=<YOUR_ENTERPRISE_ID>").append("&").append("type=JOB_NUMBER");
         System.out.println("工号登录加密前str:" + sb2.toString());
-        String jobnumberToken = aesEncryp(sb2.toString(), oaMd5());
+        String jobnumberToken = aesEncryp(sb2.toString(), oaMd5(coolKey, coolSecret));
         System.out.println("工号登录免登token:" + jobnumberToken);
 //3.用户手机号免登Token生成
         StringBuffer sb3 = new StringBuffer();
         sb3.append("userId=<YOUR_MOBILE>").append("&").append("enterpriseId=<YOUR_ENTERPRISE_ID>").append("&").append("type=LOGIN_MOBILE");
         System.out.println("手机号登录加密前str:" + sb3.toString());
-        String mobileToken = aesEncryp(sb3.toString(), oaMd5());
+        String mobileToken = aesEncryp(sb3.toString(), oaMd5(coolKey, coolSecret));
         System.out.println("手机号登录免登token:" + mobileToken);
 //4.用户邮箱免登Token生成
         StringBuffer sb4 = new StringBuffer();
         sb4.append("userId=user@example.com").append("&").append("enterpriseId=<YOUR_ENTERPRISE_ID>").append("&").append("type=LOGIN_EMAIL");
         System.out.println("邮箱登录加密前str:" + sb4.toString());
-        String emailToken = aesEncryp(sb4.toString(), oaMd5());
+        String emailToken = aesEncryp(sb4.toString(), oaMd5(coolKey, coolSecret));
         System.out.println("邮箱登录免登token:" + emailToken);
     }
 }
