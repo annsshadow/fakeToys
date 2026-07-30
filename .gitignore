@@ -1,9 +1,17 @@
-# Java / Maven
+# Binaries (compiled tools)
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Build output
 target/
+build/
+dist/
+.mvn/
 *.class
 *.jar
 *.war
-.mvn/
 
 # Python
 __pycache__/
@@ -13,8 +21,6 @@ __pycache__/
 
 # Node
 node_modules/
-dist/
-build/
 
 # IDE
 .idea/
