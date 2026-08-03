@@ -1,3 +1,0 @@
-o2.component("attendancev2", {
-    js: ["../x_component_attendancev2/$Main/js/main.b1921ac48dc4f2d92172.js"],
-});
