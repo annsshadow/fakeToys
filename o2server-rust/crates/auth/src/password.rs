@@ -29,7 +29,7 @@ fn des_encrypt(plain: &str, key: &str) -> Result<Vec<u8>, ()> {
     }
 
     let key_bytes = &key.as_bytes()[..8];
-    let mut des = Des::new_from_slice(key_bytes).map_err(|_| ())?;
+    let des = Des::new_from_slice(key_bytes).map_err(|_| ())?;
 
     let data = plain.as_bytes();
     let mut padded = data.to_vec();

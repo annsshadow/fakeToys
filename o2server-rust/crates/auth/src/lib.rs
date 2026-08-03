@@ -1,8 +1,5 @@
 use axum::{
-    extract::{Extension, Path},
-    http::StatusCode,
-    middleware::from_fn,
-    response::{IntoResponse, Response},
+    extract::Extension,
     routing::{get, post},
     Json, Router,
 };
@@ -19,6 +16,9 @@ pub mod model;
 pub mod password;
 pub mod person;
 pub mod secret;
+
+#[cfg(test)]
+mod tests;
 
 // --- Request/Response DTOs ---
 
@@ -56,6 +56,12 @@ pub struct SessionManager {
     pub sessions: Arc<RwLock<std::collections::HashMap<String, Session>>>,
 }
 
+impl Default for SessionManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SessionManager {
     pub fn new() -> Self {
         Self {
@@ -80,6 +86,10 @@ impl SessionManager {
         let sessions = self.sessions.read().await;
         sessions.get(token).cloned()
     }
+
+    pub async fn remove_session(&self, token: &str) {
+        self.sessions.write().await.remove(token);
+    }
 }
 
 // --- Rate Limiting ---
@@ -87,6 +97,12 @@ impl SessionManager {
 #[derive(Clone)]
 pub struct RateLimiter {
     pub attempts: Arc<RwLock<std::collections::HashMap<String, (i32, DateTime<Utc>)>>>,
+}
+
+impl Default for RateLimiter {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl RateLimiter {
@@ -102,13 +118,12 @@ impl RateLimiter {
 
         if let Some((count, last_attempt)) = attempts.get(key) {
             let elapsed = now - *last_attempt;
-            if elapsed.num_minutes() < window_minutes {
-                if *count >= max_attempts {
+            if elapsed.num_minutes() < window_minutes
+                && *count >= max_attempts {
                     return Err(AppError::BadRequest(
                         format!("rate limit exceeded: {} attempts in last {} minutes", count, window_minutes)
                     ));
                 }
-            }
         }
 
         let count = attempts.get(key).map(|(c, _)| c + 1).unwrap_or(1);
@@ -145,7 +160,7 @@ pub async fn login(
         return Ok(Json(ActionResult::error("invalid credentials")));
     }
 
-    let client = pool.get().await.map_err(|e| {
+    let client = pool.get().await.map_err(|_e| {
         AppError::Internal
     })?;
 
@@ -157,7 +172,7 @@ pub async fn login(
         .await
         .map_err(|_| AppError::Unauthorized)?;
 
-    let person_id: String = row.get("id");
+    let _person_id: String = row.get("id");
     let person_unique: String = row.get("unique_id");
     let person_name: String = row.get("name");
     let person_mobile: Option<String> = row.get("mobile");
@@ -187,19 +202,6 @@ pub async fn login(
     Ok(Json(response))
 }
 
-pub async fn logout(
-    _session_manager: Extension<SessionManager>,
-    _payload: Json<Value>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([("message".to_string(), Value::String("logged out".to_string()))])))))
-}
-
-pub async fn whoami(
-    _session_manager: Extension<SessionManager>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([("authenticated".to_string(), Value::Bool(false))])))))
-}
-
 pub async fn captcha() -> Result<Json<ActionResult<Value>>, AppError> {
     let captcha_id = Uuid::new_v4().to_string();
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -209,8 +211,22 @@ pub async fn captcha() -> Result<Json<ActionResult<Value>>, AppError> {
 }
 
 pub async fn bind(
-    _payload: Json<Value>,
+    pool: Extension<Pool>,
+    session_manager: Extension<SessionManager>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let credential = payload.get("credential").and_then(|v| v.as_str()).unwrap_or("");
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_one("SELECT id FROM auth_person WHERE unique_id = $1", &[&credential])
+        .await
+        .map_err(|_| AppError::NotFound)?;
+
+    let person_id: String = row.get("id");
+    let token = Uuid::new_v4().to_string();
+    session_manager.create_session(person_id, token).await;
+
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("bound".to_string(), Value::Bool(true)),
     ])))))
@@ -225,53 +241,146 @@ pub async fn oauth(
 }
 
 pub async fn refresh(
-    _payload: Json<Value>,
+    _pool: Extension<Pool>,
+    session_manager: Extension<SessionManager>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("token".to_string(), Value::String(Uuid::new_v4().to_string())),
-    ])))))
+    let old_token = payload.get("token").and_then(|v| v.as_str()).unwrap_or("");
+
+    if let Some(session) = session_manager.validate_session(old_token).await {
+        let new_token = Uuid::new_v4().to_string();
+        session_manager.create_session(session.person_unique, new_token.clone()).await;
+        session_manager.remove_session(old_token).await;
+
+        Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            ("token".to_string(), Value::String(new_token)),
+        ])))))
+    } else {
+        Ok(Json(ActionResult::error("invalid token")))
+    }
 }
 
 pub async fn code(
     _payload: Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let code = Uuid::new_v4().to_string();
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("code".to_string(), Value::String(Uuid::new_v4().to_string())),
+        ("code".to_string(), Value::String(code)),
     ])))))
 }
 
-pub async fn unit_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn logout(
+    session_manager: Extension<SessionManager>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if let Some(token) = payload.get("token").and_then(|v| v.as_str()) {
+        session_manager.remove_session(token).await;
+    }
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(1))),
-        ("data".to_string(), Value::Array(vec![
+        ("message".to_string(), Value::String("logged out".to_string())),
+    ])))))
+}
+
+pub async fn whoami(
+    pool: Extension<Pool>,
+    _session_manager: Extension<SessionManager>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT id, unique_id, name, mobile FROM auth_person LIMIT 1", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if let Some(row) = rows.first() {
+        Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            ("authenticated".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("unique".to_string(), Value::String(row.get("unique_id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("mobile".to_string(), row.get::<_, Option<String>>("mobile").map(Value::String).unwrap_or(Value::Null)),
+        ])))))
+    } else {
+        Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            ("authenticated".to_string(), Value::Bool(false)),
+        ])))))
+    }
+}
+
+pub async fn unit_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT id, name, parent_id, level FROM auth_unit ORDER BY level", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String("unit-root".to_string())),
-                ("name".to_string(), Value::String("root".to_string())),
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("parentId".to_string(), row.get::<_, Option<String>>("parent_id").map(Value::String).unwrap_or(Value::Null)),
+                ("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level")))),
             ]))
-        ])),
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
     ])))))
 }
 
-pub async fn role_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn role_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT id, name, description FROM auth_role", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("description".to_string(), row.get::<_, Option<String>>("description").map(Value::String).unwrap_or(Value::Null)),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(2))),
-        ("data".to_string(), Value::Array(vec![
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String("role-admin".to_string())),
-                ("name".to_string(), Value::String("admin".to_string())),
-            ])),
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String("role-user".to_string())),
-                ("name".to_string(), Value::String("user".to_string())),
-            ])),
-        ])),
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
     ])))))
 }
 
-pub async fn group_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT id, name FROM auth_group WHERE disable = false", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(0))),
-        ("data".to_string(), Value::Array(vec![])),
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
     ])))))
 }
 

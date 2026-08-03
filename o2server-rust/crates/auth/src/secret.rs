@@ -1,12 +1,11 @@
 use axum::{
-    response::{IntoResponse, Response},
     routing::post,
     Json, Router,
 };
 use shared::response::ActionResult;
 
 pub async fn check(
-    axum::extract::Json(payload): axum::extract::Json<serde_json::Value>,
+    axum::extract::Json(_payload): axum::extract::Json<serde_json::Value>,
 ) -> Json<ActionResult<serde_json::Value>> {
     // TODO: Verify password against PostgreSQL
     let result = ActionResult::success(serde_json::json!({
@@ -17,7 +16,7 @@ pub async fn check(
 }
 
 pub async fn set(
-    axum::extract::Json(payload): axum::extract::Json<serde_json::Value>,
+    axum::extract::Json(_payload): axum::extract::Json<serde_json::Value>,
 ) -> Json<ActionResult<serde_json::Value>> {
     // TODO: Update password in PostgreSQL
     let result = ActionResult::success(serde_json::json!({
@@ -27,7 +26,7 @@ pub async fn set(
 }
 
 pub async fn cancel(
-    axum::extract::Json(payload): axum::extract::Json<serde_json::Value>,
+    axum::extract::Json(_payload): axum::extract::Json<serde_json::Value>,
 ) -> Json<ActionResult<serde_json::Value>> {
     // TODO: Cancel password change
     let result = ActionResult::success(serde_json::json!({
