@@ -1,0 +1,35 @@
+# o2server
+
+## Responsibility
+
+
+
+## Core Classes and Interfaces
+
+- com.x.file.assemble.control.AbstractFactory
+- com.x.file.assemble.control.ApplicationServletContextListener
+- com.x.file.assemble.control.Business
+- com.x.file.assemble.control.FileUtil
+- com.x.file.assemble.control.ThisApplication
+- com.x.file.assemble.control.factory.Attachment2Factory
+- com.x.file.assemble.control.factory.AttachmentFactory
+- com.x.file.assemble.control.factory.FileFactory
+- com.x.file.assemble.control.factory.Folder2Factory
+- com.x.file.assemble.control.factory.FolderFactory
+
+## Dependencies
+
+
+
+- x_base_core_project
+- x_organization_core_entity
+- x_organization_core_express
+- x_file_core_entity
+- x_general_core_entity
+- x_cms_core_entity
+
+## REST Endpoints
+
+
+
+- *To be populated from Swagger annotations or action JSON.*

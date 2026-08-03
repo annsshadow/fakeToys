@@ -1,0 +1,31 @@
+# o2server
+
+## Responsibility
+
+
+
+## Core Classes and Interfaces
+
+- com.x.program.init.ApplicationServletContextListener
+- com.x.program.init.ExceptionMissionExecute
+- com.x.program.init.MissionExternalDataSources
+- com.x.program.init.MissionRestore
+- com.x.program.init.Missions
+- com.x.program.init.MissionSetSecret
+- com.x.program.init.ThisApplication
+- com.x.program.init.jaxrs.ActionApplication
+- com.x.program.init.jaxrs.externaldatasources.ActionCheck
+- com.x.program.init.jaxrs.externaldatasources.ActionList
+
+## Dependencies
+
+
+
+- x_base_core_project
+- h2migrationtool
+
+## REST Endpoints
+
+
+
+- *To be populated from Swagger annotations or action JSON.*
