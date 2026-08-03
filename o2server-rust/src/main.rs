@@ -4,6 +4,7 @@ use tracing_subscriber::EnvFilter;
 
 mod shared;
 mod auth;
+mod personal;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -17,7 +18,8 @@ async fn main() -> anyhow::Result<()> {
 
     let app = Router::new()
         .merge(shared::router::router())
-        .merge(auth::router::router(pool.clone()));
+        .merge(auth::router::router(pool.clone()))
+        .merge(personal::router::router(pool.clone()));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     tracing::info!("listening on {}", listener.local_addr()?);
