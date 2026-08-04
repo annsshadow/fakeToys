@@ -65,6 +65,21 @@ members = [
     "crates/calendar_core_entity",
     "crates/component_core_entity",
     "crates/file_core_entity",
+    "crates/ai_core_entity",
+    "crates/attendance_core_entity",
+    "crates/cms_core_express",
+    "crates/correlation_core_entity",
+    "crates/correlation_core_express",
+    "crates/hotpic_core_entity",
+    "crates/jpush_core_entity",
+    "crates/meeting_core_entity",
+    "crates/message_core_entity",
+    "crates/mind_core_entity",
+    "crates/organization_core_express",
+    "crates/processplatform_assemble_bam",
+    "crates/processplatform_assemble_designer",
+    "crates/query_core_express",
+    "crates/query_service_processing",
 ]
 resolver = "2"
 
