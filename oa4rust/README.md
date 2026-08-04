@@ -1,4 +1,4 @@
-# o2server-rust
+# oa4rust
 
 O2OA 后端的 Rust 实现，以认证模块为第一个迁移试点。
 
@@ -17,11 +17,12 @@ O2OA 后端的 Rust 实现，以认证模块为第一个迁移试点。
 ## 项目结构
 
 ```
-o2server-rust/
+oa4rust/
 ├── Cargo.toml              # workspace 根
 ├── crates/
 │   ├── shared/             # 共享基础设施（响应格式、错误处理、数据库）
-│   └── auth/               # 认证模块业务逻辑
+│   ├── auth/               # 认证模块业务逻辑
+│   └── personal/           # 个人设置模块
 ├── src/
 │   └── main.rs             # 入口
 ├── migrations/             # 数据库迁移文件
