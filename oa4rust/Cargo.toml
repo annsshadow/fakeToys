@@ -21,6 +21,10 @@ members = [
     "crates/jpush",
     "crates/meeting",
     "crates/mind",
+    "crates/cms_control",
+    "crates/cms_express",
+    "crates/process_express",
+    "crates/query_express",
 ]
 resolver = "2"
 

@@ -379,6 +379,43 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c9ea0ac24bc397ab3c98583a3c9ba74fa56b09a4449bbe172b9b1ddb016027a"
 
 [[package]]
+name = "cms_control"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "bcrypt",
+ "chrono",
+ "deadpool-postgres",
+ "md5",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "urlencoding",
+ "uuid",
+]
+
+[[package]]
+name = "cms_express"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "serde",
+ "serde_json",
+ "shared",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "component"
 version = "0.1.0"
 dependencies = [
@@ -1768,7 +1805,46 @@ dependencies = [
 ]
 
 [[package]]
+name = "process_express"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "program_init"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "bcrypt",
+ "chrono",
+ "deadpool-postgres",
+ "md5",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "urlencoding",
+ "uuid",
+]
+
+[[package]]
+name = "query_express"
 version = "0.1.0"
 dependencies = [
  "anyhow",
