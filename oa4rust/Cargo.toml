@@ -12,6 +12,15 @@ members = [
     "crates/bbs",
     "crates/calendar",
     "crates/component",
+    "crates/file",
+    "crates/ai",
+    "crates/attendance",
+    "crates/correlation",
+    "crates/general",
+    "crates/hotpic",
+    "crates/jpush",
+    "crates/meeting",
+    "crates/mind",
 ]
 resolver = "2"
 
