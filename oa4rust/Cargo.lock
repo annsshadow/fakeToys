@@ -610,6 +610,7 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
+ "tower",
  "tracing",
  "urlencoding",
  "uuid",
@@ -1660,6 +1661,7 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
+ "tower",
  "tracing",
  "urlencoding",
  "uuid",
@@ -2022,6 +2024,7 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
+ "tower",
  "tracing",
  "urlencoding",
  "uuid",
@@ -2044,8 +2047,26 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
+ "tower",
  "tracing",
  "urlencoding",
+ "uuid",
+]
+
+[[package]]
+name = "portal_core_entity"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
  "uuid",
 ]
 
@@ -2177,6 +2198,40 @@ dependencies = [
 ]
 
 [[package]]
+name = "processplatform_core_entity"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "processplatform_core_express"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "processplatform_service_processing"
 version = "0.1.0"
 dependencies = [
@@ -2193,6 +2248,7 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
+ "tower",
  "tracing",
  "urlencoding",
  "uuid",
@@ -2218,6 +2274,23 @@ dependencies = [
  "tower",
  "tracing",
  "urlencoding",
+ "uuid",
+]
+
+[[package]]
+name = "program_center_core_entity"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
  "uuid",
 ]
 

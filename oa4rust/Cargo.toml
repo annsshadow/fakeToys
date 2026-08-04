@@ -48,6 +48,10 @@ members = [
     "crates/calendar_assemble_control",
     "crates/component_assemble_control",
     "crates/jpush_assemble_control",
+    "crates/processplatform_core_entity",
+    "crates/portal_core_entity",
+    "crates/program_center_core_entity",
+    "crates/processplatform_core_express",
 ]
 resolver = "2"
 
