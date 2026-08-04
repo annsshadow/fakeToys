@@ -7,41 +7,34 @@ use shared::error::AppError;
 use shared::response::ActionResult;
 use std::collections::HashMap;
 
-/// 创建人员请求体
-#[derive(Debug, Deserialize)]
+/// 创建人员请求�?#[derive(Debug, Deserialize)]
 pub struct PersonCreateRequest {
-    /// 唯一标识（如工号）
-    pub unique_id: String,
+    /// 唯一标识（如工号�?    pub unique_id: String,
     /// 姓名
     pub name: String,
     /// 手机号（可选）
     pub mobile: Option<String>,
     /// 邮箱（可选）
     pub email: Option<String>,
-    /// 密码（创建时必填）
-    pub password: String,
+    /// 密码（创建时必填�?    pub password: String,
 }
 
-/// 更新人员请求体
-#[derive(Debug, Deserialize)]
+/// 更新人员请求�?#[derive(Debug, Deserialize)]
 pub struct PersonUpdateRequest {
     /// 姓名
     pub name: Option<String>,
-    /// 手机号
-    pub mobile: Option<String>,
+    /// 手机�?    pub mobile: Option<String>,
     /// 邮箱
     pub email: Option<String>,
-    /// 是否锁定（true=锁定，false=解锁）
-    pub locked: Option<bool>,
+    /// 是否锁定（true=锁定，false=解锁�?    pub locked: Option<bool>,
 }
 
 /// 获取人员详情
 ///
-/// 根据 id 查询 auth_person 表，返回未软删除的人员信息
-///
+/// 根据 id 查询 auth_person 表，返回未软删除的人员信�?///
 /// # 参数
 /// - `pool`: 数据库连接池
-/// - `id`: 路径参数，人员 ID
+/// - `id`: 路径参数，人�?ID
 pub async fn get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -76,7 +69,7 @@ pub async fn get(
 ///
 /// # 参数
 /// - `pool`: 数据库连接池
-/// - `params`: 查询参数，包含 page、size、name
+/// - `params`: 查询参数，包�?page、size、name
 pub async fn list(
     pool: Extension<Pool>,
     Query(_params): Query<HashMap<String, String>>,
@@ -135,9 +128,7 @@ pub async fn list(
 
 /// 创建人员
 ///
-/// 在 auth_person 表中插入新记录，需检查唯一标识唯一性
-/// 密码使用 MD5 哈希存储（兼容旧系统）
-///
+/// �?auth_person 表中插入新记录，需检查唯一标识唯一�?/// 密码使用 MD5 哈希存储（兼容旧系统�?///
 /// # 参数
 /// - `pool`: 数据库连接池
 /// - `req`: 请求体，包含 unique_id, name, mobile, email, password
@@ -151,8 +142,7 @@ pub async fn create(
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    // 检查唯一标识是否已存在
-    let existing = client
+    // 检查唯一标识是否已存�?    let existing = client
         .query_one(
             "SELECT 1 FROM auth_person WHERE unique_id = $1 AND deleted_at IS NULL",
             &[&req.unique_id],
@@ -163,8 +153,7 @@ pub async fn create(
         return Ok(Json(ActionResult::error("unique_id already exists")));
     }
 
-    // 密码哈希（兼容旧系统的 MD5 + DES）
-    let password_hash = auth::password::hash_password(&req.password);
+    // 密码哈希（兼容旧系统�?MD5 + DES�?    let password_hash = crate::hash_password(&req.password);
 
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -190,12 +179,11 @@ pub async fn create(
 
 /// 更新人员信息
 ///
-/// 更新 auth_person 表中指定记录的 name/mobile/email/locked 字段
-/// 仅管理员可调用（需权限检查中间件）
-///
+/// 更新 auth_person 表中指定记录�?name/mobile/email/locked 字段
+/// 仅管理员可调用（需权限检查中间件�?///
 /// # 参数
 /// - `pool`: 数据库连接池
-/// - `id`: 路径参数，人员 ID
+/// - `id`: 路径参数，人�?ID
 /// - `req`: 请求体，包含要更新的字段
 #[axum::debug_handler]
 pub async fn update(
@@ -205,8 +193,7 @@ pub async fn update(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    // 检查记录是否存在且未删除
-    let exists = client
+    // 检查记录是否存在且未删�?    let exists = client
         .query_one(
             "SELECT 1 FROM auth_person WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
@@ -217,7 +204,7 @@ pub async fn update(
         return Ok(Json(ActionResult::error("person not found")));
     }
 
-    // 动态构建 UPDATE 语句
+    // 动态构�?UPDATE 语句
     let mut sets: Vec<String> = Vec::new();
     let mut params: Vec<Box<dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync>> = Vec::new();
     let mut idx = 1;
@@ -264,14 +251,12 @@ pub async fn update(
     Ok(Json(ActionResult::success(Value::Null)))
 }
 
-/// 软删除人员
-///
-/// 将 auth_person 表中指定记录的 deleted_at 设为当前时间，实现软删除
-/// 仅管理员可调用（需权限检查中间件）
-///
+/// 软删除人�?///
+/// �?auth_person 表中指定记录�?deleted_at 设为当前时间，实现软删除
+/// 仅管理员可调用（需权限检查中间件�?///
 /// # 参数
 /// - `pool`: 数据库连接池
-/// - `id`: 路径参数，人员 ID
+/// - `id`: 路径参数，人�?ID
 pub async fn delete(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -292,3 +277,4 @@ pub async fn delete(
 
     Ok(Json(ActionResult::success(Value::Null)))
 }
+
