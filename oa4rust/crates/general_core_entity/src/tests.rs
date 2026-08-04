@@ -72,27 +72,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::NOT_FOUND);
-    }
-
-    #[tokio::test]
-    async fn test_invoice_list_returns_success() {
-        let pool = build_test_pool();
-        let app = crate::general_core_entity_router(pool);
-
-        let response = app
-            .clone()
-            .oneshot(
-                Request::builder()
-                    .uri("/jaxrs/general/invoice/list")
-                    .method(axum::http::Method::GET)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[test]

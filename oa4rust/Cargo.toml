@@ -56,6 +56,10 @@ members = [
     "crates/general_core_entity",
     "crates/organization_core_entity",
     "crates/cms_core_entity",
+    "crates/query_assemble_designer",
+    "crates/query_assemble_surface",
+    "crates/console",
+    "crates/processplatform_assemble_surface",
 ]
 resolver = "2"
 
