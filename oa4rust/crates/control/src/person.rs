@@ -36,8 +36,6 @@ pub struct PersonUpdateRequest {
 }
 
 /// 获取人员详情
-///
-/// 根据 id 查询 auth_person 表，返回未软删除的人员信息
 pub async fn get(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -57,8 +55,8 @@ pub async fn get(
         ("id".to_string(), Value::String(row.get("id"))),
         ("uniqueId".to_string(), Value::String(row.get("unique_id"))),
         ("name".to_string(), Value::String(row.get("name"))),
-        ("mobile".to_string(), row.get::<_, Option<String>>("mobile").map(Value::String).unwrap_or(Value::Null)),
-        ("email".to_string(), row.get::<_, Option<String>>("email").map(Value::String).unwrap_or(Value::Null)),
+        ("mobile".to_string(), Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default())),
+        ("email".to_string(), Value::String(row.get::<_, Option<String>>("email").unwrap_or_default())),
         ("locked".to_string(), Value::Bool(row.get("locked"))),
     ]));
 
@@ -103,8 +101,8 @@ pub async fn list(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("uniqueId".to_string(), Value::String(row.get("unique_id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("mobile".to_string(), row.get::<_, Option<String>>("mobile").map(Value::String).unwrap_or(Value::Null)),
-                ("email".to_string(), row.get::<_, Option<String>>("email").map(Value::String).unwrap_or(Value::Null)),
+                ("mobile".to_string(), Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default())),
+                ("email".to_string(), Value::String(row.get::<_, Option<String>>("email").unwrap_or_default())),
                 ("locked".to_string(), Value::Bool(row.get("locked"))),
             ]))
         })
@@ -146,12 +144,14 @@ pub async fn create(
     let password_hash = format!("{:x}", md5::compute(req.password.as_bytes()));
 
     let id = uuid::Uuid::new_v4().to_string();
+    let mobile = req.mobile.clone().unwrap_or_default();
+    let email = req.email.clone().unwrap_or_default();
 
     client
         .execute(
             "INSERT INTO auth_person (id, unique_id, name, mobile, email, password_hash, locked, created_at) \
              VALUES ($1, $2, $3, $4, $5, $6, false, NOW())",
-            &[&id, &req.unique_id, &req.name, &req.mobile, &req.email, &password_hash],
+            &[&id, &req.unique_id, &req.name, &mobile, &email, &password_hash],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -160,8 +160,8 @@ pub async fn create(
         ("id".to_string(), Value::String(id)),
         ("uniqueId".to_string(), Value::String(req.unique_id)),
         ("name".to_string(), Value::String(req.name)),
-        ("mobile".to_string(), Value::String(req.mobile.unwrap_or_default())),
-        ("email".to_string(), Value::String(req.email.unwrap_or_default())),
+        ("mobile".to_string(), Value::String(mobile)),
+        ("email".to_string(), Value::String(email)),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -187,46 +187,17 @@ pub async fn update(
         return Ok(Json(ActionResult::error("person not found")));
     }
 
-    let mut sets: Vec<String> = Vec::new();
-    let mut params: Vec<Box<dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync>> = Vec::new();
-    let mut idx = 1;
+    let name = req.name.clone().unwrap_or_default();
+    let mobile = req.mobile.clone().unwrap_or_default();
+    let email = req.email.clone().unwrap_or_default();
+    let locked = req.locked.unwrap_or(false);
 
-    if let Some(name) = &req.name {
-        sets.push(format!("name = ${}", idx));
-        params.push(Box::new(name.clone()));
-        idx += 1;
-    }
-    if let Some(mobile) = &req.mobile {
-        sets.push(format!("mobile = ${}", idx));
-        params.push(Box::new(mobile.clone()));
-        idx += 1;
-    }
-    if let Some(email) = &req.email {
-        sets.push(format!("email = ${}", idx));
-        params.push(Box::new(email.clone()));
-        idx += 1;
-    }
-    if let Some(locked) = &req.locked {
-        sets.push(format!("locked = ${}", idx));
-        params.push(Box::new(*locked));
-        idx += 1;
-    }
-    sets.push("updated_at = NOW()".to_string());
-
-    if sets.is_empty() {
-        return Ok(Json(ActionResult::error("no fields to update")));
-    }
-
-    let set_clause = sets.join(", ");
-    let sql = format!(
-        "UPDATE auth_person SET {} WHERE id = ${} AND deleted_at IS NULL",
-        set_clause, idx
-    );
-    params.push(Box::new(id));
-
-    let params_ref: Vec<&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)> = params.iter().map(|p| p.as_ref()).collect();
     client
-        .execute(&sql, &params_ref)
+        .execute(
+            "UPDATE auth_person SET name = $1, mobile = $2, email = $3, locked = $4, updated_at = NOW() \
+             WHERE id = $5 AND deleted_at IS NULL",
+            &[&name, &mobile, &email, &locked, &id],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 

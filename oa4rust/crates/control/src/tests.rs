@@ -8,7 +8,7 @@ mod tests {
     use tokio::runtime::Runtime;
     use deadpool_postgres::tokio_postgres::Config as PgConfig;
 
-    /// 测试 ActionResult 成功响应序列�?    #[test]
+    /// 测试 ActionResult 成功响应序列�?    #[test]
     fn test_action_result_success_serialization() {
         let result: ActionResult<serde_json::Value> =
             ActionResult::success(serde_json::json!({"count": 2, "data": []}));
@@ -18,7 +18,7 @@ mod tests {
         assert!(json["data"].is_object());
     }
 
-    /// 测试 ActionResult 错误响应序列�?    #[test]
+    /// 测试 ActionResult 错误响应序列�?    #[test]
     fn test_action_result_error_serialization() {
         let result: ActionResult<serde_json::Value> = ActionResult::error("test error");
 
@@ -28,7 +28,7 @@ mod tests {
         assert!(json["data"].is_null());
     }
 
-    /// 测试 control_router 能正常构�?    #[test]
+    /// 测试 control_router 能正常构�?    #[test]
     fn test_control_router_builds() {
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
@@ -156,7 +156,7 @@ mod tests {
         });
     }
 
-    /// 测试 person::create 缺少必填字段时返回错�?    #[test]
+    /// 测试 person::create 缺少必填字段时返回错�?    #[test]
     fn test_person_create_missing_fields() {
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
@@ -186,7 +186,7 @@ mod tests {
         });
     }
 
-    /// 测试 unit::create 缺少必填字段时返回错�?    #[test]
+    /// 测试 unit::create 缺少必填字段时返回错�?    #[test]
     fn test_unit_create_missing_fields() {
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
@@ -214,7 +214,7 @@ mod tests {
         });
     }
 
-    /// 测试 role::create 缺少必填字段时返回错�?    #[test]
+    /// 测试 role::create 缺少必填字段时返回错�?    #[test]
     fn test_role_create_missing_fields() {
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
@@ -241,7 +241,7 @@ mod tests {
         });
     }
 
-    /// 测试 group::create 缺少必填字段时返回错�?    #[test]
+    /// 测试 group::create 缺少必填字段时返回错�?    #[test]
     fn test_group_create_missing_fields() {
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
@@ -268,7 +268,7 @@ mod tests {
         });
     }
 
-    /// 测试 person::delete 软删�?    #[test]
+    /// 测试 person::delete 软删�?    #[test]
     fn test_person_delete_without_db() {
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
@@ -283,7 +283,7 @@ mod tests {
                 )
                 .await;
 
-            // 无数据库时应返回 Internal 或错误响�?            match result {
+            // 无数据库时应返回 Internal 或错误响�?            match result {
                 Ok(json) => {
                     assert_eq!(json.0.r#type, Some("error".to_string()));
                 }
@@ -293,7 +293,7 @@ mod tests {
         });
     }
 
-    /// 测试健康检查返回成功响�?    #[test]
+    /// 测试健康检查返回成功响�?    #[test]
     fn test_health_check() {
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
