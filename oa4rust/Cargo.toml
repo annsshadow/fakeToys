@@ -23,6 +23,7 @@ members = [
     "crates/mind",
     "crates/cms_control",
     "crates/cms_express",
+    "crates/cms_assemble_control",
     "crates/process_express",
     "crates/query_express",
     "crates/process_designer",
