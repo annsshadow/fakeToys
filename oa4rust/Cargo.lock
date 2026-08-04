@@ -40,6 +40,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.104"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "330a5ed07fa54e4702c9d6c4174f74427fc0ef6e214bbd677ae50a5099946470"
+
+[[package]]
 name = "async-trait"
 version = "0.1.91"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -317,6 +323,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a6ef517f0926dd24a1582492c791b6a4818a4d94e789a334894aa15b0d12f55c"
 
 [[package]]
+name = "control"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "bcrypt",
+ "chrono",
+ "deadpool-postgres",
+ "md5",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "urlencoding",
+ "uuid",
+]
+
+[[package]]
 name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -533,6 +561,28 @@ name = "event-listener"
 version = "2.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
+
+[[package]]
+name = "express"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "bcrypt",
+ "chrono",
+ "deadpool-postgres",
+ "md5",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "urlencoding",
+ "uuid",
+]
 
 [[package]]
 name = "fallible-iterator"
@@ -1310,6 +1360,28 @@ name = "personal"
 version = "0.1.0"
 dependencies = [
  "auth",
+ "axum",
+ "base64 0.22.1",
+ "bcrypt",
+ "chrono",
+ "deadpool-postgres",
+ "md5",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "urlencoding",
+ "uuid",
+]
+
+[[package]]
+name = "personal_extend"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
  "axum",
  "base64 0.22.1",
  "bcrypt",
