@@ -47,7 +47,7 @@ pub async fn get(
         ("id".to_string(), Value::String(row.get("id"))),
         ("name".to_string(), Value::String(row.get("name"))),
         ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-        ("level".to_string(), Value::Number(serde_json::Number::from(row.get("level")))),
+                ("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level")))),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -74,7 +74,7 @@ pub async fn list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, Ap
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
-                ("level".to_string(), Value::Number(serde_json::Number::from(row.get("level")))),
+        ("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level")))),
             ]))
         })
         .collect();
