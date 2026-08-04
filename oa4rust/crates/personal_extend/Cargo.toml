@@ -6,7 +6,8 @@ rust-version.workspace = true
 
 [dependencies]
 shared = { path = "../shared" }
-axum.workspace = true
+auth = { path = "../auth" }
+axum = { workspace = true, features = ["multipart"] }
 tokio.workspace = true
 sqlx.workspace = true
 deadpool-postgres.workspace = true
