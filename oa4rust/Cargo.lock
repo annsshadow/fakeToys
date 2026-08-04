@@ -201,6 +201,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "base"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "base64"
 version = "0.21.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1805,6 +1822,38 @@ dependencies = [
 ]
 
 [[package]]
+name = "process_bam"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "tokio",
+ "tokio-postgres",
+ "tower",
+ "uuid",
+]
+
+[[package]]
+name = "process_designer"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "process_express"
 version = "0.1.0"
 dependencies = [
@@ -1818,6 +1867,51 @@ dependencies = [
  "tokio",
  "tower",
  "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "process_surface"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "bcrypt",
+ "chrono",
+ "deadpool-postgres",
+ "md5",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "urlencoding",
+ "uuid",
+]
+
+[[package]]
+name = "program_center"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "bcrypt",
+ "chrono",
+ "deadpool-postgres",
+ "md5",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "urlencoding",
  "uuid",
 ]
 
@@ -1862,6 +1956,24 @@ dependencies = [
  "tokio",
  "tracing",
  "urlencoding",
+ "uuid",
+]
+
+[[package]]
+name = "query_service"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tokio-postgres",
+ "tower",
+ "tracing",
  "uuid",
 ]
 

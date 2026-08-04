@@ -25,6 +25,12 @@ members = [
     "crates/cms_express",
     "crates/process_express",
     "crates/query_express",
+    "crates/process_designer",
+    "crates/program_center",
+    "crates/base",
+    "crates/query_service",
+    "crates/process_bam",
+    "crates/process_surface",
 ]
 resolver = "2"
 

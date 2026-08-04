@@ -1,0 +1,19 @@
+[package]
+name = "process_bam"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+axum.workspace = true
+tokio.workspace = true
+deadpool-postgres.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+tower.workspace = true
+
+shared = { path = "../shared" }
+
+[dev-dependencies]
+tokio-postgres = "0.7"
