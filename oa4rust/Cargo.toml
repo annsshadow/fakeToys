@@ -6,6 +6,9 @@ members = [
     "crates/express",
     "crates/personal_extend",
     "crates/control",
+    "crates/program_init",
+    "crates/message",
+    "crates/portal",
 ]
 resolver = "2"
 
