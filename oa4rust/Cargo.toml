@@ -52,6 +52,10 @@ members = [
     "crates/portal_core_entity",
     "crates/program_center_core_entity",
     "crates/processplatform_core_express",
+    "crates/query_core_entity",
+    "crates/general_core_entity",
+    "crates/organization_core_entity",
+    "crates/cms_core_entity",
 ]
 resolver = "2"
 
