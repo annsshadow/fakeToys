@@ -11,7 +11,7 @@ use shared::response::ActionResult;
 pub mod password;
 pub mod reset;
 
-// --- Models ---
+// --- 数据模型 ---
 
 #[derive(Debug, Deserialize)]
 pub struct EditPersonRequest {
@@ -30,8 +30,18 @@ pub struct PersonInfo {
     pub icon: Option<String>,
 }
 
-// --- Handlers ---
+// --- 处理器 ---
 
+/// 查询当前用户个人信息
+///
+/// 从 auth_person 表读取首条未锁定人员记录，返回姓名、手机号、邮箱、头像等基本信息。
+///
+/// # 参数
+/// - `pool`: 数据库连接池
+///
+/// # 返回
+/// - `Ok(Json<ActionResult<PersonInfo>>)` : 查询成功，返回用户信息
+/// - `Err(AppError::NotFound)`: 未找到有效用户记录
 pub async fn get_person(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<PersonInfo>>, AppError> {
@@ -56,6 +66,18 @@ pub async fn get_person(
     Ok(Json(ActionResult::success(info)))
 }
 
+/// 更新当前用户个人信息
+///
+/// 支持部分更新（name、mobile、email 均为可选字段），未提供的字段保留原值。
+/// 更新后同时刷新 updated_at 时间戳。
+///
+/// # 参数
+/// - `pool`: 数据库连接池
+/// - `req`: 更新请求体，包含可选的 `name`、`mobile`、`email` 字段
+///
+/// # 返回
+/// - `Ok(Json<ActionResult<PersonInfo>>)` : 更新成功，返回更新后的完整用户信息
+/// - `Err(AppError)`: 数据库错误
 pub async fn edit_person(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<EditPersonRequest>,
@@ -98,8 +120,18 @@ pub async fn edit_person(
     Ok(Json(ActionResult::success(updated)))
 }
 
-// --- Router ---
+// --- 路由注册 ---
 
+/// 构建个人中心模块路由
+///
+/// 注册个人信息查询/更新、密码修改、密码重置等接口。
+/// 挂载 ResetCodeStore 中间件层用于存储重置验证码。
+///
+/// # 参数
+/// - `pool`: 数据库连接池
+///
+/// # 返回
+/// - `Router`: Axum 路由实例
 pub fn router(pool: Pool) -> Router {
     let reset_store = reset::ResetCodeStore::new();
 
