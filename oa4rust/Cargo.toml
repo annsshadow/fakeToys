@@ -31,6 +31,23 @@ members = [
     "crates/query_service",
     "crates/process_bam",
     "crates/process_surface",
+    "crates/file_assemble_control",
+    "crates/ai_assemble_control",
+    "crates/hotpic_assemble_control",
+    "crates/organization_assemble_express",
+    "crates/mind_assemble_control",
+    "crates/attendance_assemble_control",
+    "crates/general_assemble_control",
+    "crates/meeting_assemble_control",
+    "crates/message_assemble_communicate",
+    "crates/portal_assemble_designer",
+    "crates/correlation_service_processing",
+    "crates/portal_assemble_surface",
+    "crates/processplatform_service_processing",
+    "crates/bbs_assemble_control",
+    "crates/calendar_assemble_control",
+    "crates/component_assemble_control",
+    "crates/jpush_assemble_control",
 ]
 resolver = "2"
 
