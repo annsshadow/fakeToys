@@ -9,6 +9,9 @@ members = [
     "crates/program_init",
     "crates/message",
     "crates/portal",
+    "crates/bbs",
+    "crates/calendar",
+    "crates/component",
 ]
 resolver = "2"
 
@@ -28,6 +31,7 @@ serde_json = "1"
 thiserror = "1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tower = "0.5"
 bcrypt = "0.15"
 base64 = "0.22"
 uuid = { version = "1", features = ["v4"] }
