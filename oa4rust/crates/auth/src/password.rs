@@ -23,7 +23,7 @@ pub fn verify_password(plain: &str, stored: &str, key: &str, _encrypt_type: Opti
     false
 }
 
-fn des_encrypt(plain: &str, key: &str) -> Result<Vec<u8>, ()> {
+pub(crate) fn des_encrypt(plain: &str, key: &str) -> Result<Vec<u8>, ()> {
     if key.len() < 8 {
         return Err(());
     }

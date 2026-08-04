@@ -115,3 +115,6 @@ pub fn router(pool: Pool) -> Router {
         .layer(Extension(pool))
         .layer(Extension(reset_store))
 }
+
+#[cfg(test)]
+mod tests;
