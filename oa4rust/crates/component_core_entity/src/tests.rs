@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::Component;
+    use crate::ComponentInfo as Component;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use deadpool_postgres::{Manager, Pool};
@@ -32,7 +32,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
@@ -90,8 +90,12 @@ mod tests {
         let component = Component {
             id: "comp-001".to_string(),
             name: "测试组件".to_string(),
-            type_: "BUTTON".to_string(),
-            category: "widget".to_string(),
+            title: "测试".to_string(),
+            r#type: "BUTTON".to_string(),
+            visible: true,
+            order_number: Some(1),
+            path: "/test".to_string(),
+            icon_path: "/icon/test.png".to_string(),
         };
         let json = serde_json::to_value(&component).unwrap();
         assert_eq!(json["id"], "comp-001");

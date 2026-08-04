@@ -57,6 +57,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "ai_core_entity"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "allocator-api2"
 version = "0.2.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -122,6 +139,23 @@ dependencies = [
 
 [[package]]
 name = "attendance_assemble_control"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "attendance_core_entity"
 version = "0.1.0"
 dependencies = [
  "axum",
@@ -550,6 +584,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "cms_core_express"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "cms_express"
 version = "0.1.0"
 dependencies = [
@@ -696,6 +747,40 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "correlation_core_entity"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "correlation_core_express"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
  "tracing",
  "uuid",
 ]
@@ -1326,6 +1411,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "hotpic_core_entity"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "http"
 version = "1.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1602,6 +1704,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "jpush_core_entity"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "js-sys"
 version = "0.3.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1758,6 +1877,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "meeting_core_entity"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "memchr"
 version = "2.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1809,6 +1945,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "message_core_entity"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
 name = "mime"
 version = "0.3.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1834,6 +1987,23 @@ dependencies = [
 
 [[package]]
 name = "mind_assemble_control"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "mind_core_entity"
 version = "0.1.0"
 dependencies = [
  "axum",
@@ -1982,6 +2152,23 @@ dependencies = [
 
 [[package]]
 name = "organization_core_entity"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "organization_core_express"
 version = "0.1.0"
 dependencies = [
  "axum",
@@ -2356,6 +2543,52 @@ dependencies = [
 ]
 
 [[package]]
+name = "processplatform_assemble_bam"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "bcrypt",
+ "chrono",
+ "deadpool-postgres",
+ "md5",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "urlencoding",
+ "uuid",
+]
+
+[[package]]
+name = "processplatform_assemble_designer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "bcrypt",
+ "chrono",
+ "deadpool-postgres",
+ "md5",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "urlencoding",
+ "uuid",
+]
+
+[[package]]
 name = "processplatform_assemble_surface"
 version = "0.1.0"
 dependencies = [
@@ -2561,6 +2794,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "query_core_express"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "bcrypt",
+ "chrono",
+ "deadpool-postgres",
+ "md5",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "urlencoding",
+ "uuid",
+]
+
+[[package]]
 name = "query_express"
 version = "0.1.0"
 dependencies = [
@@ -2597,6 +2853,29 @@ dependencies = [
  "tokio-postgres",
  "tower",
  "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "query_service_processing"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "bcrypt",
+ "chrono",
+ "deadpool-postgres",
+ "md5",
+ "serde",
+ "serde_json",
+ "shared",
+ "sqlx",
+ "thiserror",
+ "tokio",
+ "tower",
+ "tracing",
+ "urlencoding",
  "uuid",
 ]
 
