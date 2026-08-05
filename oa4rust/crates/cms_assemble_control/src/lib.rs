@@ -64,3 +64,8 @@ pub async fn update_control_config(
 pub fn cms_assemble_control_router(pool: Pool) -> Router {
     routes::router(pool)
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/cms_assemble_control/health", axum::routing::get(|| async { "TODO: cms_assemble_control - real implementation needed" }))
+}

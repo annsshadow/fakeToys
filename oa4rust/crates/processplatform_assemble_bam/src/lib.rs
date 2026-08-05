@@ -102,3 +102,8 @@ pub fn processplatform_assemble_bam_router() -> Router {
 
 #[cfg(test)]
 mod tests;
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/processplatform_assemble_bam/health", axum::routing::get(|| async { "TODO: processplatform_assemble_bam - real implementation needed" }))
+}

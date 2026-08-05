@@ -93,3 +93,8 @@ pub async fn list_control_categories(
         ]),
     ))))
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/file_assemble_control/health", axum::routing::get(|| async { "TODO: file_assemble_control - real implementation needed" }))
+}

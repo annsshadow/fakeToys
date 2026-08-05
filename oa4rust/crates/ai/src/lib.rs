@@ -60,3 +60,8 @@ pub async fn sync_to_knowledge(
 
     Ok(Json(ActionResult::success(data)))
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/ai/health", axum::routing::get(|| async { "TODO: ai - real implementation needed" }))
+}

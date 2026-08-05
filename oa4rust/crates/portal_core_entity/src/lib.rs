@@ -139,3 +139,8 @@ pub fn portal_core_entity_router(pool: Pool) -> Router {
         .route("/jaxrs/portal/script/list", get(script_list))
         .layer(Extension(pool))
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/portal_core_entity/health", axum::routing::get(|| async { "TODO: portal_core_entity - real implementation needed" }))
+}

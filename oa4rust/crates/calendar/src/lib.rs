@@ -147,3 +147,8 @@ pub async fn calendar_get(
 }
 
 pub use routes::calendar_router;
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/calendar/health", axum::routing::get(|| async { "TODO: calendar - real implementation needed" }))
+}

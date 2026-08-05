@@ -58,3 +58,8 @@ pub fn message_assemble_communicate_router() -> Router {
 
 #[cfg(test)]
 mod tests;
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/message_assemble_communicate/health", axum::routing::get(|| async { "TODO: message_assemble_communicate - real implementation needed" }))
+}

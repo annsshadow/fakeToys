@@ -71,3 +71,8 @@ pub async fn update_control_config(
 pub fn mind_assemble_control_router(pool: Pool) -> Router {
     routes::mind_assemble_control_routes(pool)
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/mind_assemble_control/health", axum::routing::get(|| async { "TODO: mind_assemble_control - real implementation needed" }))
+}

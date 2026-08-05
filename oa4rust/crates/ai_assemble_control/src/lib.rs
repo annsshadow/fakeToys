@@ -90,3 +90,8 @@ pub async fn get_usage_stats(
 
     Ok(Json(ActionResult::success(data)))
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/ai_assemble_control/health", axum::routing::get(|| async { "TODO: ai_assemble_control - real implementation needed" }))
+}

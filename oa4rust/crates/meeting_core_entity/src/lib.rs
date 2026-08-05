@@ -168,3 +168,8 @@ pub fn meeting_core_entity_router(pool: Pool) -> Router {
 
 #[cfg(test)]
 mod tests;
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/meeting_core_entity/health", axum::routing::get(|| async { "TODO: meeting_core_entity - real implementation needed" }))
+}

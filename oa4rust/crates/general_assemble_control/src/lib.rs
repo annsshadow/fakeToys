@@ -105,3 +105,8 @@ pub async fn get_module_permissions(
 pub fn general_assemble_control_router(pool: Pool) -> Router {
     routes::general_assemble_control_routes(pool)
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/general_assemble_control/health", axum::routing::get(|| async { "TODO: general_assemble_control - real implementation needed" }))
+}

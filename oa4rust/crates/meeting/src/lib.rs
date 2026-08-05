@@ -120,3 +120,8 @@ pub async fn openmeeting_list_room(
 }
 
 pub use routes::meeting_router;
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/meeting/health", axum::routing::get(|| async { "TODO: meeting - real implementation needed" }))
+}

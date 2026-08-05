@@ -61,3 +61,8 @@ pub async fn view_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
         ("data".to_string(), Value::Array(data)),
     ])))))
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/cms_express/health", axum::routing::get(|| async { "TODO: cms_express - real implementation needed" }))
+}

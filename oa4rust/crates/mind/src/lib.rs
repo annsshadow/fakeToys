@@ -118,3 +118,8 @@ pub async fn list_versions_with_mind_id(
         ("data".to_string(), Value::Array(data)),
     ])))))
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/mind/health", axum::routing::get(|| async { "TODO: mind - real implementation needed" }))
+}

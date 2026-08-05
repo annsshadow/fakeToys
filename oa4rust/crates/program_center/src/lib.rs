@@ -115,3 +115,8 @@ pub fn program_center_router() -> Router {
 
 #[cfg(test)]
 mod tests;
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/program_center/health", axum::routing::get(|| async { "TODO: program_center - real implementation needed" }))
+}

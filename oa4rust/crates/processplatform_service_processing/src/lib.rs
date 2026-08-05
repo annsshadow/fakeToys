@@ -103,3 +103,8 @@ pub fn processplatform_service_processing_router() -> Router {
 
 #[cfg(test)]
 mod tests;
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/processplatform_service_processing/health", axum::routing::get(|| async { "TODO: processplatform_service_processing - real implementation needed" }))
+}

@@ -108,3 +108,8 @@ pub async fn delete_meeting_control(
 pub fn meeting_assemble_control_router(pool: Pool) -> Router {
     routes::meeting_assemble_control_routes(pool)
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/meeting_assemble_control/health", axum::routing::get(|| async { "TODO: meeting_assemble_control - real implementation needed" }))
+}

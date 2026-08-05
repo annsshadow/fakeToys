@@ -13,3 +13,8 @@ pub async fn query_list() -> Result<Json<ActionResult<Value>>, AppError> {
 pub fn query_express_router() -> Router {
     Router::new().route("/jaxrs/query/list", get(query_list))
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/query_express/health", axum::routing::get(|| async { "TODO: query_express - real implementation needed" }))
+}

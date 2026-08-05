@@ -31,3 +31,8 @@ mod tests {
         assert_eq!(response.status(), axum::http::StatusCode::OK);
     }
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/jpush/health", axum::routing::get(|| async { "TODO: jpush - real implementation needed" }))
+}

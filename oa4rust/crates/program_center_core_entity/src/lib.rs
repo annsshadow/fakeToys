@@ -157,3 +157,8 @@ pub fn program_center_core_entity_router(pool: Pool) -> Router {
         .route("/jaxrs/program_center/structure/list", get(structure_list))
         .layer(Extension(pool))
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/program_center_core_entity/health", axum::routing::get(|| async { "TODO: program_center_core_entity - real implementation needed" }))
+}

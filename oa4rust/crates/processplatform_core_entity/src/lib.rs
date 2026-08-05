@@ -143,3 +143,8 @@ pub fn processplatform_core_entity_router(pool: Pool) -> Router {
         .route("/jaxrs/processplatform/ticket/list", get(ticket_list))
         .layer(Extension(pool))
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/processplatform_core_entity/health", axum::routing::get(|| async { "TODO: processplatform_core_entity - real implementation needed" }))
+}

@@ -76,3 +76,8 @@ pub async fn openapi_info() -> Result<Json<ActionResult<Value>>, AppError> {
 pub fn base_router(pool: Pool) -> Router {
     routes::build_router(pool)
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/base/health", axum::routing::get(|| async { "TODO: base - real implementation needed" }))
+}

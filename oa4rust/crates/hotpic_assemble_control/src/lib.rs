@@ -95,3 +95,8 @@ pub async fn list_control_applications(
         ]),
     ))))
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/hotpic_assemble_control/health", axum::routing::get(|| async { "TODO: hotpic_assemble_control - real implementation needed" }))
+}

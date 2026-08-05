@@ -48,3 +48,8 @@ pub fn portal_router() -> Router {
         .route("/jaxrs/portal/list", get(list_portal))
         .route("/jaxrs/portalcategory/list", get(list_portal_category))
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/portal/health", axum::routing::get(|| async { "TODO: portal - real implementation needed" }))
+}

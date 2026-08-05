@@ -81,3 +81,8 @@ pub async fn toggle_control_rule(
 pub fn attendance_assemble_control_router(pool: Pool) -> Router {
     routes::attendance_assemble_control_routes(pool)
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/attendance_assemble_control/health", axum::routing::get(|| async { "TODO: attendance_assemble_control - real implementation needed" }))
+}

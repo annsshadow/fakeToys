@@ -60,3 +60,8 @@ pub fn message_router() -> Router {
         .route("/jaxrs/message/consume/{id}/type/{type}", get(update_single))
         .route("/jaxrs/message/custom/create", post(custom_create))
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/message/health", axum::routing::get(|| async { "TODO: message - real implementation needed" }))
+}

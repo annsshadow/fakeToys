@@ -147,3 +147,8 @@ pub fn processplatform_core_express_router(pool: Pool) -> Router {
         .route("/jaxrs/processplatform/task/count/with/person/{id}", get(task_count_with_person))
         .layer(Extension(pool))
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/processplatform_core_express/health", axum::routing::get(|| async { "TODO: processplatform_core_express - real implementation needed" }))
+}

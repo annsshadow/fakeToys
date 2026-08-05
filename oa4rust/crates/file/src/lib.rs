@@ -276,3 +276,8 @@ mod tests {
         });
     }
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/file/health", axum::routing::get(|| async { "TODO: file - real implementation needed" }))
+}

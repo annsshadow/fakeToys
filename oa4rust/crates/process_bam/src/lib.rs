@@ -178,3 +178,8 @@ mod tests {
         assert_eq!(orgs[0].get("name").and_then(|v| v.as_str()), Some("研发部"));
     }
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/process_bam/health", axum::routing::get(|| async { "TODO: process_bam - real implementation needed" }))
+}

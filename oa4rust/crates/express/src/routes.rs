@@ -1,11 +1,8 @@
-use axum::{Router, routing::get};
+use axum::Router;
 
 /// 构建快递查询模块路由
 ///
-/// 注册一个 `/health` 健康检查端点，返回简单文本确认服务正常。
-///
-/// # 返回
-/// - `Router`: Axum 路由实例
+/// 注意：/health 已由 shared::router::router() 全局注册，此处不再重复注册。
 pub fn express_router() -> Router {
-    Router::new().route("/health", get(|| async { "express: ok" }))
+    Router::new()
 }

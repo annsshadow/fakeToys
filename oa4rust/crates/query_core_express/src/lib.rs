@@ -91,3 +91,8 @@ pub fn query_core_express_router() -> Router {
 
 #[cfg(test)]
 mod tests;
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/query_core_express/health", axum::routing::get(|| async { "TODO: query_core_express - real implementation needed" }))
+}

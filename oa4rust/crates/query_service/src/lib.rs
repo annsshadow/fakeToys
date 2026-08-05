@@ -49,3 +49,8 @@ mod tests {
         assert!(action.data.is_some());
     }
 }
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/query_service/health", axum::routing::get(|| async { "TODO: query_service - real implementation needed" }))
+}

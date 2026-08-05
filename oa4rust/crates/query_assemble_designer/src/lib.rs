@@ -92,3 +92,8 @@ pub fn query_assemble_designer_router() -> Router {
 
 #[cfg(test)]
 mod tests;
+
+pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    axum::Router::new()
+        .route("/query_assemble_designer/health", axum::routing::get(|| async { "TODO: query_assemble_designer - real implementation needed" }))
+}
