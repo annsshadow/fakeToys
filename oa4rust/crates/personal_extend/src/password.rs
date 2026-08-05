@@ -93,7 +93,7 @@ pub async fn change(
     headers: HeaderMap,
     axum::extract::Json(req): axum::extract::Json<ChangePasswordRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let token = extract_bearer_token(&headers)?;
+    let token = shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let session = session_manager
         .validate_session(&token)
         .await
@@ -195,20 +195,4 @@ pub async fn verify(
     } else {
         Ok(Json(ActionResult::error("密码不正确")))
     }
-}
-
-/// 从 Authorization header 中提取 Bearer token
-pub(crate) fn extract_bearer_token(headers: &HeaderMap) -> Result<String, AppError> {
-    let auth = headers
-        .get(axum::http::header::AUTHORIZATION)
-        .ok_or(AppError::Unauthorized)?
-        .to_str()
-        .map_err(|_| AppError::Unauthorized)?;
-
-    let prefix = "Bearer ";
-    if !auth.starts_with(prefix) {
-        return Err(AppError::Unauthorized);
-    }
-
-    Ok(auth[prefix.len()..].to_string())
 }

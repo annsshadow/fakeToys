@@ -1,5 +1,5 @@
-use chrono::{DateTime, Utc};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 
 use crate::error::AppError;
@@ -14,7 +14,7 @@ use crate::error::AppError;
 
 #[derive(Clone)]
 pub struct RateLimiter {
-    pub attempts: Arc<RwLock<std::collections::HashMap<String, (i32, DateTime<Utc>)>>>,
+    pub attempts: Arc<RwLock<std::collections::HashMap<String, Vec<Instant>>>>,
 }
 
 impl Default for RateLimiter {
@@ -30,34 +30,34 @@ impl RateLimiter {
         }
     }
 
-    /// 检查是否超出频率限制
+    /// 检查是否超出频率限制（滑动窗口）
     ///
-    /// 记录每个 key（如 IP）的尝试次数，在指定时间窗口内超过上限则返回错误。
+    /// 记录每个 key（如 IP）的每次请求时间戳，在指定时间窗口内超过上限则返回错误。
     pub async fn check_rate_limit(&self, key: &str, max_attempts: i32, window_minutes: i64) -> Result<(), AppError> {
         let mut attempts = self.attempts.write().await;
-        let now = Utc::now();
+        let now = Instant::now();
+        let window = Duration::from_secs((window_minutes * 60) as u64);
+        let window_start = now - window;
 
-        if let Some((count, last_attempt)) = attempts.get(key) {
-            let elapsed = now - *last_attempt;
-            if elapsed.num_minutes() < window_minutes
-                && *count >= max_attempts {
-                    return Err(AppError::BadRequest(
-                        format!("rate limit exceeded: {} attempts in last {} minutes", count, window_minutes)
-                    ));
-                }
+        let entry = attempts.entry(key.to_string()).or_insert_with(Vec::new);
+        entry.retain(|&t| t > window_start);
+
+        if entry.len() >= max_attempts as usize {
+            return Err(AppError::BadRequest(
+                format!("rate limit exceeded: {} attempts in last {} minutes", entry.len(), window_minutes)
+            ));
         }
 
-        let count = attempts.get(key).map(|(c, _)| c + 1).unwrap_or(1);
-        attempts.insert(key.to_string(), (count, now));
+        entry.push(now);
         Ok(())
     }
 
     /// 记录一次失败尝试（递增计数器）
     pub async fn record_failure(&self, key: &str) {
         let mut attempts = self.attempts.write().await;
-        let now = Utc::now();
-        let count = attempts.get(key).map(|(c, _)| c + 1).unwrap_or(1);
-        attempts.insert(key.to_string(), (count, now));
+        let now = Instant::now();
+        let entry = attempts.entry(key.to_string()).or_insert_with(Vec::new);
+        entry.push(now);
     }
 
     /// 重置指定 key 的尝试计数（登录成功后调用）

@@ -1,9 +1,10 @@
 use super::avatar;
-use super::personal;
+use super::personal as personal_mod;
 use super::password;
 use crate::routes::personal_extend_router;
 use auth::SessionManager;
 use deadpool_postgres::Pool;
+use shared::middleware::extract_token_from_headers;
 use shared::response::ActionResult;
 
 #[test]
@@ -13,14 +14,14 @@ fn test_extract_bearer_token_valid() {
         axum::http::header::AUTHORIZATION,
         axum::http::HeaderValue::from_static("Bearer test-token-123"),
     );
-    let token = personal::extract_bearer_token(&headers).unwrap();
+    let token = extract_token_from_headers(&headers).unwrap();
     assert_eq!(token, "test-token-123");
 }
 
 #[test]
 fn test_extract_bearer_token_missing() {
     let headers = axum::http::HeaderMap::new();
-    assert!(personal::extract_bearer_token(&headers).is_err());
+    assert!(extract_token_from_headers(&headers).is_none());
 }
 
 #[test]
@@ -30,7 +31,7 @@ fn test_extract_bearer_token_invalid_format() {
         axum::http::header::AUTHORIZATION,
         axum::http::HeaderValue::from_static("InvalidToken"),
     );
-    assert!(personal::extract_bearer_token(&headers).is_err());
+    assert!(extract_token_from_headers(&headers).is_none());
 }
 
 #[test]
@@ -129,7 +130,7 @@ fn test_verify_password_request_deserialize() {
 
 #[test]
 fn test_update_personal_request_partial() {
-    let req: personal::UpdatePersonalRequest =
+    let req: personal_mod::UpdatePersonalRequest =
         serde_json::from_str(r#"{"name":"李四"}"#).unwrap();
     assert_eq!(req.name, Some("李四".to_string()));
     assert_eq!(req.mobile, None);
@@ -138,7 +139,7 @@ fn test_update_personal_request_partial() {
 
 #[test]
 fn test_update_personal_request_full() {
-    let req: personal::UpdatePersonalRequest = serde_json::from_str(
+    let req: personal_mod::UpdatePersonalRequest = serde_json::from_str(
         r#"{"name":"李四","mobile":"13900139000","email":"lisi@example.com"}"#,
     )
     .unwrap();

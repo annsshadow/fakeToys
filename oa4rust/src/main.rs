@@ -1,6 +1,5 @@
 use anyhow::Context as _;
 use axum::middleware;
-use axum::response::IntoResponse;
 use axum::Router;
 use shared::db::create_pool;
 use shared::middleware::{
@@ -196,15 +195,6 @@ async fn main() -> anyhow::Result<()> {
     let app = app
         .layer(middleware::from_fn_with_state(security_state.clone(), authorize_middleware))
         .layer(middleware::from_fn_with_state(security_state.clone(), auth_middleware))
-        .layer(middleware::from_fn(|request: axum::http::Request<axum::body::Body>, next: axum::middleware::Next| async move {
-            let path = request.uri().path();
-            if let Some(crate_name) = path.strip_prefix("/").and_then(|p| p.strip_suffix("/health")) {
-                if !crate_name.is_empty() {
-                    return (axum::http::StatusCode::OK, format!("TODO: {} - real implementation needed", crate_name)).into_response();
-                }
-            }
-            next.run(request).await
-        }))
         .layer(middleware::from_fn_with_state(security_state.clone(), rate_limit_middleware))
         .layer(middleware::from_fn(security_headers_middleware))
         .layer(middleware::from_fn(trace_middleware));

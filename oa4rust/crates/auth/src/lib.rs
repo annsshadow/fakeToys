@@ -24,6 +24,7 @@ pub mod person;
 // 兼容重导出：会话与限流类型已移入 shared，供外部 crate 使用 auth:: 前缀继续引用
 pub use shared::rate_limit::RateLimiter;
 pub use shared::session::{Session, SessionManager};
+pub(crate) use shared::middleware::extract_token_from_headers;
 
 #[cfg(test)]
 mod tests;
@@ -102,52 +103,32 @@ pub async fn login(
     Ok(Json(response))
 }
 
-/// 从请求提取会话令牌：Authorization: Bearer 优先，回退 Cookie 中 `token` 字段
-pub(crate) fn extract_token(headers: &HeaderMap) -> Option<String> {
-    if let Some(auth) = headers
-        .get(axum::http::header::AUTHORIZATION)
-        .and_then(|h| h.to_str().ok())
-    {
-        if let Some(token) = auth.strip_prefix("Bearer ") {
-            let token = token.trim();
-            if !token.is_empty() {
-                return Some(token.to_string());
-            }
-        }
-    }
-    let cookie = headers.get(axum::http::header::COOKIE)?.to_str().ok()?;
-    for part in cookie.split(';') {
-        if let Some(v) = part.trim().strip_prefix("token=") {
-            let v = v.trim().trim_matches('"');
-            if !v.is_empty() {
-                return Some(v.to_string());
-            }
-        }
-    }
-    None
-}
-
 // --- 刷新 / 登出 / 当前用户 ---
 
-/// 刷新会话令牌：用旧 token 换取新 token，旧 token 随即失效
+/// 刷新会话令牌：用旧 token 换取新 token，旧 token 随即失效。
+/// 安全修复：必须从 header 提取有效 token，且与 body 中的 old_token 一致才允许刷新。
 pub async fn refresh(
     _pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
+    headers: HeaderMap,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let header_token = extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let old_token = payload.get("token").and_then(|v| v.as_str()).unwrap_or("");
 
-    if let Some(session) = session_manager.validate_session(old_token).await {
-        let new_token = Uuid::new_v4().to_string();
-        session_manager.create_session(session.person_unique, new_token.clone()).await;
-        session_manager.remove_session(old_token).await;
-
-        Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-            ("token".to_string(), Value::String(new_token)),
-        ])))))
-    } else {
-        Ok(Json(ActionResult::error("invalid token")))
+    if header_token != old_token {
+        return Ok(Json(ActionResult::error("token mismatch")));
     }
+
+    let session = session_manager.validate_session(&header_token).await.ok_or(AppError::Unauthorized)?;
+
+    let new_token = Uuid::new_v4().to_string();
+    session_manager.create_session(session.person_unique, new_token.clone()).await;
+    session_manager.remove_session(old_token).await;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("token".to_string(), Value::String(new_token)),
+    ])))))
 }
 
 /// 用户登出接口（契约路径 DELETE /jaxrs/authentication，兼容自造路径）
@@ -158,7 +139,7 @@ pub async fn logout(
     headers: HeaderMap,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let token = extract_token(&headers)
+    let token = extract_token_from_headers(&headers)
         .or_else(|| payload.get("token").and_then(|v| v.as_str()).map(|s| s.to_string()));
     if let Some(token) = token {
         session_manager.remove_session(&token).await;
@@ -176,7 +157,7 @@ pub async fn whoami(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let token = extract_token(&headers).ok_or(AppError::Unauthorized)?;
+    let token = extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let session = session_manager
         .validate_session(&token)
         .await
@@ -284,12 +265,7 @@ impl CodeStore {
 }
 
 fn rand_code() -> u32 {
-    use std::time::{SystemTime, UNIX_EPOCH};
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.subsec_nanos())
-        .unwrap_or(0);
-    nanos % 1_000_000
+    (uuid::Uuid::new_v4().as_u128() % 1_000_000) as u32
 }
 
 fn code_store() -> &'static CodeStore {

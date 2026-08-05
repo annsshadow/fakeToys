@@ -165,6 +165,10 @@ pub async fn check_credential(
 /// GET /jaxrs/reset/check/password/{password}
 ///
 /// 校验新密码是否符合安全规则（原型规则：长度 6 至 64）。
+///
+/// 注意：密码以明文形式出现在 URL path 中，此端点仅用于开发联调。
+/// 生产环境应通过内部网络或防火墙限制调用来源，避免密码泄露到访问日志或代理服务器日志中。
+/// 密码仅用于本地校验，不存储、不记录日志。
 pub async fn check_password(
     Path(password): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -199,11 +203,9 @@ pub async fn send_code(
         return Ok(Json(ActionResult::error("用户不存在或不可用")));
     }
 
-    let code = store.issue(&credential).await;
+    store.issue(&credential).await;
     Ok(Json(ActionResult::success(json!({
         "sent": true,
-        "code": code,
-        "expiresInSeconds": CODE_TTL_MINUTES * 60,
     }))))
 }
 

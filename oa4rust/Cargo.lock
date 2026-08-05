@@ -2726,6 +2726,7 @@ dependencies = [
  "chrono",
  "deadpool-postgres",
  "md5",
+ "personal",
  "serde",
  "serde_json",
  "shared",

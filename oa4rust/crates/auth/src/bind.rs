@@ -7,6 +7,7 @@ use axum::{
 use chrono::{DateTime, Duration, Utc};
 use serde_json::{json, Value};
 use shared::error::AppError;
+use shared::middleware::extract_token_from_headers;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
 use std::collections::HashMap;
@@ -114,31 +115,6 @@ fn bind_store() -> &'static BindStore {
     STORE.get_or_init(BindStore::new)
 }
 
-/// 从请求提取会话令牌：Authorization: Bearer 优先，回退 Cookie 中 `token` 字段
-fn extract_token(headers: &HeaderMap) -> Option<String> {
-    if let Some(auth) = headers
-        .get(axum::http::header::AUTHORIZATION)
-        .and_then(|h| h.to_str().ok())
-    {
-        if let Some(token) = auth.strip_prefix("Bearer ") {
-            let token = token.trim();
-            if !token.is_empty() {
-                return Some(token.to_string());
-            }
-        }
-    }
-    let cookie = headers.get(axum::http::header::COOKIE)?.to_str().ok()?;
-    for part in cookie.split(';') {
-        if let Some(v) = part.trim().strip_prefix("token=") {
-            let v = v.trim().trim_matches('"');
-            if !v.is_empty() {
-                return Some(v.to_string());
-            }
-        }
-    }
-    None
-}
-
 /// GET /jaxrs/authentication/bind —— 生成扫码登录二维码内容
 pub async fn bind() -> Result<Json<ActionResult<Value>>, AppError> {
     let meta = bind_store().create();
@@ -154,7 +130,7 @@ pub async fn bind_confirm(
     headers: HeaderMap,
     Path(meta): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let token = extract_token(&headers).ok_or(AppError::Unauthorized)?;
+    let token = extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let session = session_manager
         .validate_session(&token)
         .await

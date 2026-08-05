@@ -13,8 +13,6 @@ use auth::SessionManager;
 use base64::Engine;
 use uuid::Uuid;
 
-use crate::personal::extract_bearer_token;
-
 // 允许的 MIME 类型白名单（Java 契约：jpeg/png/webp）
 const ALLOWED_MIME_TYPES: &[&str] = &["image/jpeg", "image/png", "image/webp"];
 
@@ -55,7 +53,7 @@ pub async fn upload(
     headers: HeaderMap,
     mut form: Multipart,
 ) -> Result<Json<ActionResult<AvatarInfo>>, AppError> {
-    let token = extract_bearer_token(&headers)?;
+    let token = shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let session = session_manager
         .validate_session(&token)
         .await
@@ -143,7 +141,7 @@ pub async fn get_current_icon(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let token = extract_bearer_token(&headers)?;
+    let token = shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let session = session_manager
         .validate_session(&token)
         .await
@@ -160,7 +158,7 @@ pub async fn get_icon(
     Path(person): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     // 校验请求方已登录
-    let token = extract_bearer_token(&headers)?;
+    let token = shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let _session = session_manager
         .validate_session(&token)
         .await

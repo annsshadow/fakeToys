@@ -4,22 +4,12 @@ use axum::{
     Json,
 };
 use deadpool_postgres::Pool;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use shared::error::AppError;
 use shared::response::ActionResult;
 
 use auth::SessionManager;
-
-// 个人信息响应 DTO
-#[derive(Debug, Serialize)]
-pub struct PersonInfo {
-    pub id: String,
-    pub unique: String,
-    pub name: String,
-    pub mobile: Option<String>,
-    pub email: Option<String>,
-    pub icon: Option<String>,
-}
+use personal::PersonInfo;
 
 // 更新个人信息请求 DTO
 #[derive(Debug, Deserialize)]
@@ -43,7 +33,7 @@ pub async fn get_info(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
 ) -> Result<Json<ActionResult<PersonInfo>>, AppError> {
-    let token = extract_bearer_token(&headers)?;
+    let token = shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let session = session_manager
         .validate_session(&token)
         .await
@@ -87,7 +77,7 @@ pub async fn update_info(
     headers: HeaderMap,
     axum::extract::Json(req): axum::extract::Json<UpdatePersonalRequest>,
 ) -> Result<Json<ActionResult<PersonInfo>>, AppError> {
-    let token = extract_bearer_token(&headers)?;
+    let token = shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let session = session_manager
         .validate_session(&token)
         .await
@@ -152,7 +142,7 @@ pub async fn get_detail(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<PersonInfo>>, AppError> {
     // 验证当前请求者已登录
-    let token = extract_bearer_token(&headers)?;
+    let token = shared::middleware::extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let _session = session_manager
         .validate_session(&token)
         .await
@@ -178,27 +168,4 @@ pub async fn get_detail(
     };
 
     Ok(Json(ActionResult::success(info)))
-}
-
-/// 从 Authorization header 中提取 Bearer token
-///
-/// # 参数
-/// - `headers`: HTTP 请求头
-///
-/// # 返回
-/// - `Ok(String)`: 提取到的 token
-/// - `Err(AppError::Unauthorized)`: 缺少 token 或格式错误
-pub(crate) fn extract_bearer_token(headers: &HeaderMap) -> Result<String, AppError> {
-    let auth = headers
-        .get(axum::http::header::AUTHORIZATION)
-        .ok_or(AppError::Unauthorized)?
-        .to_str()
-        .map_err(|_| AppError::Unauthorized)?;
-
-    let prefix = "Bearer ";
-    if !auth.starts_with(prefix) {
-        return Err(AppError::Unauthorized);
-    }
-
-    Ok(auth[prefix.len()..].to_string())
 }

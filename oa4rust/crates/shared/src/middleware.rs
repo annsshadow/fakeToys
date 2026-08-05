@@ -1,6 +1,6 @@
 use axum::body::Body;
 use axum::extract::{ConnectInfo, State};
-use axum::http::{header, HeaderValue, Request, StatusCode};
+use axum::http::{header, HeaderMap, HeaderValue, Request, StatusCode};
 use axum::middleware::Next;
 use axum::response::{IntoResponse, Response};
 use deadpool_postgres::Pool;
@@ -64,7 +64,7 @@ const AUTH_EXEMPT_PATHS: &[&str] = &[
     // 系统初始化（仅系统未初始化时；见 system_uninitialized）
     "/jaxrs/secret/check",
     "/jaxrs/secret/set",
-    "/jaxrs/secret/cancel",
+    "/jaxrs/secret/set/cancel",
 ];
 
 // 认证类端点（计入 10 次/分钟/IP 的认证限流）。
@@ -139,8 +139,15 @@ fn path_starts_with_segment(path: &str, prefix: &str) -> bool {
 
 /// 角色授权判定：person/unit/role/group 的写操作（POST/PUT/DELETE）需要 admin 角色。
 /// 豁免路径（登录/验证码/重置等）不会命中这些前缀，天然被排除。
+/// 自服务端点（改密、头像）豁免 admin 检查，避免普通用户更新自身信息时被误伤。
 fn requires_admin(method: &axum::http::Method, path: &str) -> bool {
     if matches!(method.as_str(), "POST" | "PUT" | "DELETE") {
+        if path_starts_with_segment(path, "/jaxrs/person/password")
+            || path_starts_with_segment(path, "/jaxrs/person/icon")
+        {
+            return false;
+        }
+
         ADMIN_WRITE_PREFIXES
             .iter()
             .any(|prefix| path_starts_with_segment(path, prefix))
@@ -224,6 +231,33 @@ pub(crate) fn extract_token(request: &Request<Body>) -> Option<String> {
     None
 }
 
+/// 从 HeaderMap 提取会话令牌：优先 Authorization: Bearer <token>，
+/// 回退 Cookie 中的 `token` 字段。
+pub fn extract_token_from_headers(headers: &HeaderMap) -> Option<String> {
+    if let Some(auth) = headers
+        .get(header::AUTHORIZATION)
+        .and_then(|h| h.to_str().ok())
+    {
+        if let Some(token) = auth.strip_prefix("Bearer ") {
+            let token = token.trim();
+            if !token.is_empty() {
+                return Some(token.to_string());
+            }
+        }
+    }
+
+    let cookie = headers.get(header::COOKIE)?.to_str().ok()?;
+    for part in cookie.split(';') {
+        if let Some(v) = part.trim().strip_prefix("token=") {
+            let v = v.trim().trim_matches('"');
+            if !v.is_empty() {
+                return Some(v.to_string());
+            }
+        }
+    }
+    None
+}
+
 /// 系统是否未初始化：auth_person 中不存在任何未删除（deleted_at IS NULL）且
 /// 未锁定（locked = false）的用户。查询失败时 fail-closed（按已初始化处理，
 /// 要求认证），避免在系统状态未知时放开认证。
@@ -245,13 +279,9 @@ async fn system_uninitialized(pool: &Pool) -> bool {
 }
 
 /// 当前用户是否具备 admin 角色：查 auth_person 关联 auth_role（name = 'admin'），
-/// 或 person id 为 person-admin。person_unique 可能是 unique_id（login 会话）也
-/// 可能是 id（bind 会话），因此按两者匹配。查询失败时 fail-closed（拒绝）。
+/// person_unique 可能是 unique_id（login 会话）也可能是 id（bind 会话），
+/// 因此按两者匹配。查询失败时 fail-closed（拒绝）。
 pub(crate) async fn is_admin(pool: &Pool, person_unique: &str) -> bool {
-    if person_unique == "person-admin" {
-        return true;
-    }
-
     let client = match pool.get().await {
         Ok(c) => c,
         Err(_) => return false,
@@ -263,10 +293,9 @@ pub(crate) async fn is_admin(pool: &Pool, person_unique: &str) -> bool {
                 LEFT JOIN auth_person_role pr ON pr.person_id = p.id
                 LEFT JOIN auth_role r ON r.id = pr.role_id
                 WHERE (p.unique_id = $1 OR p.id = $1)
-                  AND (
-                      (r.name = 'admin' AND r.deleted_at IS NULL AND r.disable = false)
-                      OR p.id = 'person-admin'
-                  )
+                  AND r.name = 'admin'
+                  AND r.deleted_at IS NULL
+                  AND r.disable = false
              ) AS is_admin",
             &[&person_unique],
         )

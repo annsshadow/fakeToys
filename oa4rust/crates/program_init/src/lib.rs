@@ -15,17 +15,12 @@ use shared::{error::AppError, response::ActionResult};
 // 初始化密钥（secret）以 AES-128-GCM 加密后持久化到 `secret_config` 表
 // （migrations/007_secret_config.sql），替换原有内存状态。
 //
-// 加密密钥来源：
-//   1. 环境变量 `SECRET_ENCRYPTION_KEY`（生产环境必须显式配置）
-//   2. 未配置时回退开发默认值 "oa4rust-dev-secret-key-0123456789"
-//      （仅限本地开发，禁止用于生产）
+// 加密密钥来源：环境变量 `SECRET_ENCRYPTION_KEY`（生产环境必须显式配置）
+// 未配置时返回错误，拒绝使用默认密钥。
 //
 // "已初始化"判定（与 Java 侧一致）：auth_person 存在任意启用用户
 // 或 secret_config 存在配置记录。
 // ──────────────────────────────────────────────────────────────────────────────
-
-/// 开发环境默认加密密钥（生产必须通过 SECRET_ENCRYPTION_KEY 显式配置）
-pub const DEV_ENCRYPTION_KEY: &str = "oa4rust-dev-secret-key-0123456789";
 
 /// secret_config 单行逻辑表的固定主键
 const SECRET_ROW_ID: &str = "init-secret";
@@ -39,13 +34,15 @@ impl SecretCipher {
     /// 从环境变量读取加密密钥，经 md5 归一化为 16 字节（AES-128-GCM 密钥长度）。
     /// 轮换机制：更换 SECRET_ENCRYPTION_KEY 并重跑 POST /jaxrs/secret/set
     /// 即可用新密钥重写密文（密文格式 base64(nonce || ciphertext+tag)，含随机 nonce）。
-    fn key() -> [u8; 16] {
-        let raw = std::env::var("SECRET_ENCRYPTION_KEY")
-            .unwrap_or_else(|_| DEV_ENCRYPTION_KEY.to_string());
+    fn key() -> Result<[u8; 16], AppError> {
+        let raw = std::env::var("SECRET_ENCRYPTION_KEY").map_err(|_| {
+            tracing::warn!("SECRET_ENCRYPTION_KEY not configured; refusing to use default fallback");
+            AppError::Internal
+        })?;
         let digest = md5::compute(raw.as_bytes());
         let mut key = [0u8; 16];
         key.copy_from_slice(&digest.0);
-        key
+        Ok(key)
     }
 
     /// 加密明文，返回 `base64(nonce(12B) || ciphertext+tag)`
@@ -55,7 +52,7 @@ impl SecretCipher {
             Aes128Gcm, Nonce,
         };
 
-        let cipher = Aes128Gcm::new_from_slice(&Self::key()).map_err(|_| AppError::Internal)?;
+        let cipher = Aes128Gcm::new_from_slice(&Self::key()?).map_err(|_| AppError::Internal)?;
 
         let uuid = uuid::Uuid::new_v4();
         let mut nonce_bytes = [0u8; 12];
@@ -85,7 +82,7 @@ impl SecretCipher {
         }
 
         let (nonce_bytes, ciphertext) = raw.split_at(12);
-        let cipher = Aes128Gcm::new_from_slice(&Self::key()).map_err(|_| AppError::Internal)?;
+        let cipher = Aes128Gcm::new_from_slice(&Self::key()?).map_err(|_| AppError::Internal)?;
         let plain = cipher
             .decrypt(Nonce::from_slice(nonce_bytes), ciphertext)
             .map_err(|_| AppError::Internal)?;
@@ -183,6 +180,7 @@ mod tests {
 
     #[test]
     fn test_secret_cipher_roundtrip() {
+        std::env::set_var("SECRET_ENCRYPTION_KEY", "test-key-for-unit-tests");
         let plain = "xadmin-initial-password";
         let encoded = SecretCipher::encrypt(plain).unwrap();
         // 密文为 base64 且非明文
@@ -192,7 +190,7 @@ mod tests {
 
     #[test]
     fn test_secret_cipher_random_nonce() {
-        // 相同明文两次加密得到不同密文（随机 nonce）
+        std::env::set_var("SECRET_ENCRYPTION_KEY", "test-key-for-unit-tests");
         let a = SecretCipher::encrypt("same").unwrap();
         let b = SecretCipher::encrypt("same").unwrap();
         assert_ne!(a, b);
@@ -202,6 +200,7 @@ mod tests {
 
     #[test]
     fn test_secret_cipher_invalid_input() {
+        std::env::set_var("SECRET_ENCRYPTION_KEY", "test-key-for-unit-tests");
         assert!(SecretCipher::decrypt("not-base64!!").is_err());
     }
 

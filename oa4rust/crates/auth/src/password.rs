@@ -8,8 +8,10 @@ pub const BCRYPT_PREFIX: &str = "{bcrypt}";
 /// 按双算法兼容方案生成密码哈希（新写入统一 bcrypt，兼容既有 MD5/DES 校验）
 pub fn hash_password(plain: &str) -> String {
     let cost = bcrypt::DEFAULT_COST;
-    let hash = bcrypt::hash(plain, cost).unwrap_or_else(|_| format!("{:x}", md5::compute(plain.as_bytes())));
-    format!("{BCRYPT_PREFIX}{hash}")
+    match bcrypt::hash(plain, cost) {
+        Ok(hash) => format!("{BCRYPT_PREFIX}{hash}"),
+        Err(_) => format!("{:x}", md5::compute(plain.as_bytes())),
+    }
 }
 
 pub fn verify_password(plain: &str, stored: &str, key: &str, _encrypt_type: Option<&str>) -> bool {

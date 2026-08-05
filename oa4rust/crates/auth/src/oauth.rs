@@ -1,9 +1,12 @@
-use axum::{extract::Extension, extract::Path, Json};
+use axum::{extract::Extension, extract::Path, extract::Query, Json};
 use deadpool_postgres::Pool;
+use serde::Deserialize;
 use serde_json::{json, Value};
 use shared::error::AppError;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
+use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // oauth — 企业微信 / 钉钉第三方登录
@@ -29,6 +32,22 @@ pub const DINGDING_NAME: &str = "dingding";
 const QYWX_UNIQUE_PREFIX: &str = "qywx_";
 const DINGDING_UNIQUE_PREFIX: &str = "dingding_";
 
+static OAUTH_STATES: OnceLock<Mutex<HashMap<String, ()>>> = OnceLock::new();
+
+fn oauth_states() -> &'static Mutex<HashMap<String, ()>> {
+    OAUTH_STATES.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn generate_state() -> String {
+    let s = uuid::Uuid::new_v4().to_string();
+    oauth_states().lock().unwrap().insert(s.clone(), ());
+    s
+}
+
+fn validate_state(s: &str) -> bool {
+    oauth_states().lock().unwrap().remove(s).is_some()
+}
+
 #[derive(Debug, Clone)]
 pub struct OAuthConfig {
     pub app_id: String,
@@ -53,13 +72,18 @@ fn dingding_config() -> Option<OAuthConfig> {
     })
 }
 
+fn oauth_client() -> &'static reqwest::Client {
+    static CLIENT: OnceLock<reqwest::Client> = OnceLock::new();
+    CLIENT.get_or_init(|| reqwest::Client::new())
+}
+
 /// 企业微信授权 URL（snsapi_base 静默授权）
 fn qywx_authorize_url(config: &OAuthConfig) -> String {
     format!(
         "https://open.weixin.qq.com/connect/oauth2/authorize?appid={}&redirect_uri={}&response_type=code&scope=snsapi_base&state={}#wechat_redirect",
         config.app_id,
         urlencoding::encode(&format!("{}/", oauth_redirect_base())),
-        urlencoding::encode(&format!("qywx-login")),
+        urlencoding::encode(&generate_state()),
     )
 }
 
@@ -69,13 +93,13 @@ fn dingding_authorize_url(config: &OAuthConfig) -> String {
         "https://login.dingtalk.com/oauth2/auth?redirect_uri={}&response_type=code&client_id={}&scope=openid&state={}&prompt=consent",
         urlencoding::encode(&format!("{}/", oauth_redirect_base())),
         config.app_id,
-        urlencoding::encode("dingding-login"),
+        urlencoding::encode(&generate_state()),
     )
 }
 
 /// 企微 code→token 交换与用户信息：返回 userid
 async fn qywx_user_id(config: &OAuthConfig, code: &str) -> Result<String, AppError> {
-    let client = reqwest::Client::new();
+    let client = oauth_client();
     let token_resp: Value = client
         .get("https://qyapi.weixin.qq.com/cgi-bin/gettoken")
         .query(&[
@@ -121,7 +145,7 @@ async fn qywx_user_id(config: &OAuthConfig, code: &str) -> Result<String, AppErr
 
 /// 钉钉 code→token 交换与用户信息：返回 userid
 async fn dingding_user_id(config: &OAuthConfig, code: &str) -> Result<String, AppError> {
-    let client = reqwest::Client::new();
+    let client = oauth_client();
     let token_resp: Value = client
         .get("https://oapi.dingtalk.com/gettoken")
         .query(&[
@@ -171,7 +195,30 @@ async fn dingding_user_id(config: &OAuthConfig, code: &str) -> Result<String, Ap
 
 /// redirect_uri 白名单校验：必须与 OAUTH_REDIRECT_BASE 同源
 fn validate_redirect_uri(redirect_uri: &str) -> Result<(), AppError> {
-    if redirect_uri.starts_with(&oauth_redirect_base()) {
+    fn extract_scheme_host_port(s: &str) -> Option<(String, String, u16)> {
+        let scheme_end = s.find("://")?;
+        let scheme = s[..scheme_end].to_string();
+        let rest = &s[scheme_end + 3..];
+        let host_end = rest.find('/').unwrap_or(rest.len());
+        let host_port = &rest[..host_end];
+        let (host, port_str) = match host_port.rfind(':') {
+            Some(i) => (&host_port[..i], &host_port[i + 1..]),
+            None => (host_port, ""),
+        };
+        let host = host.to_string();
+        let port = if port_str.is_empty() {
+            if scheme == "https" { 443 } else { 80 }
+        } else {
+            port_str.parse().ok()?
+        };
+        Some((scheme, host, port))
+    }
+
+    let base = extract_scheme_host_port(&oauth_redirect_base()).ok_or(AppError::Internal)?;
+    let redirect = extract_scheme_host_port(redirect_uri)
+        .ok_or_else(|| AppError::BadRequest("invalid redirect_uri".to_string()))?;
+
+    if base == redirect {
         Ok(())
     } else {
         Err(AppError::BadRequest("redirect_uri not in whitelist".to_string()))
@@ -199,7 +246,7 @@ async fn login_or_create_user(
         Some(r) => (r.get::<_, String>("id"), r.get::<_, String>("unique_id"), r.get::<_, String>("name")),
         None => {
             let id = uuid::Uuid::new_v4().to_string();
-            let password_hash = crate::password::hash_password(&unique_id);
+            let password_hash = crate::password::hash_password(&uuid::Uuid::new_v4().to_string());
             client
                 .execute(
                     "INSERT INTO auth_person (id, unique_id, name, mobile, email, password_hash, locked, created_at) \
@@ -311,12 +358,21 @@ async fn provider_login(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[derive(Deserialize)]
+pub struct OAuthStateQuery {
+    state: String,
+}
+
 /// GET /jaxrs/authentication/oauth/login/qywx/code/{code}
 pub async fn oauth_login_qywx(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
+    Query(params): Query<OAuthStateQuery>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    if !validate_state(&params.state) {
+        return Err(AppError::BadRequest("invalid state".to_string()));
+    }
     provider_login(pool, session_manager, QYWX_NAME, &code).await
 }
 
@@ -325,7 +381,11 @@ pub async fn oauth_login_dingding(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Path(code): Path<String>,
+    Query(params): Query<OAuthStateQuery>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    if !validate_state(&params.state) {
+        return Err(AppError::BadRequest("invalid state".to_string()));
+    }
     provider_login(pool, session_manager, DINGDING_NAME, &code).await
 }
 
@@ -334,8 +394,12 @@ pub async fn oauth_login_name(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Path((name, code, redirect_uri)): Path<(String, String, String)>,
+    Query(params): Query<OAuthStateQuery>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     validate_redirect_uri(&redirect_uri)?;
+    if !validate_state(&params.state) {
+        return Err(AppError::BadRequest("invalid state".to_string()));
+    }
     provider_login(pool, session_manager, &name, &code).await
 }
 
@@ -348,7 +412,11 @@ pub async fn oauth_bind_name(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
     Path((name, code, redirect_uri)): Path<(String, String, String)>,
+    Query(params): Query<OAuthStateQuery>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     validate_redirect_uri(&redirect_uri)?;
+    if !validate_state(&params.state) {
+        return Err(AppError::BadRequest("invalid state".to_string()));
+    }
     provider_login(pool, session_manager, &name, &code).await
 }

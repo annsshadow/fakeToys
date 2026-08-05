@@ -6,6 +6,8 @@ use serde_json::Value;
 use shared::error::AppError;
 use shared::response::ActionResult;
 
+use crate::pagination::page_result;
+
 /// 创建用户组请求体（契约路径 POST /jaxrs/group）
 #[derive(Debug, Deserialize)]
 pub struct GroupCreateRequest {
@@ -111,27 +113,6 @@ async fn query_page(
     }
 
     Ok((total, data))
-}
-
-/// 游标分页响应封装
-fn page_result(total: i64, data: Vec<Value>, is_next: bool) -> Json<ActionResult<Value>> {
-    let size = data.len() as i64;
-    let result = Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
-        ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-        ("data".to_string(), Value::Array(data)),
-    ]));
-    Json(ActionResult {
-        data: Some(result),
-        r#type: Some("success".to_string()),
-        message: None,
-        date: None,
-        spent: None,
-        size: Some(size),
-        count: Some(total),
-        position: Some(if is_next { "next" } else { "prev" }.to_string()),
-        prompt: None,
-    })
 }
 
 /// 获取用户组列表（下一批）：GET /jaxrs/group/list/{flag}/next/{count}

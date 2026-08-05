@@ -55,11 +55,16 @@ impl SessionManager {
 
     /// 验证会话令牌是否有效（未过期、存在）
     pub async fn validate_session(&self, token: &str) -> Option<Session> {
-        let sessions = self.sessions.read().await;
-        let session = sessions.get(token).cloned();
-
+        let session = {
+            let sessions = self.sessions.read().await;
+            sessions.get(token).cloned()
+        };
         match session {
             Some(s) if s.expires_at > Utc::now() => Some(s),
+            Some(_) => {
+                self.remove_session(token).await;
+                None
+            }
             _ => None,
         }
     }
