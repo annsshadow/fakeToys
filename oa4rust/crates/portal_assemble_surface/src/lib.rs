@@ -92,3 +92,214 @@ pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
     axum::Router::new()
         .route("/portal_assemble_surface/health", axum::routing::get(|| async { "TODO: portal_assemble_surface - real implementation needed" }))
 }
+
+
+/// Stub handler for /jaxrs/portal/assemble/surface/dict/list/portal/{portalFlag}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_dict_list_portal_portalFlag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/data
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_data() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_data() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data/mockdeletetoget
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data/mockputtopost
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_data_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/file/list/portal/{portalFlag}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_file_list_portal_portalFlag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/file/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_file_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/file/{flag}/download
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_file_flag_download() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/file/{flag}/portal/{portalFlag}/content
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_file_flag_portal_portalFlag_content() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/file/{flag}/portal/{portalFlag}/download
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_file_flag_portal_portalFlag_download() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/page/list/portal/{portal}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_page_list_portal_portal() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/page/v2/{flag}/portal/{portalFlag}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_page_v2_flag_portal_portalFlag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/page/v2/{flag}/portal/{portalFlag}/mobile
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_page_v2_flag_portal_portalFlag_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/page/v2/{id}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_page_v2_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/page/v2/{id}/mobile
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_page_v2_id_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/page/{flag}/portal/{portalFlag}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_page_flag_portal_portalFlag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/page/{flag}/portal/{portalFlag}/mobile
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_page_flag_portal_portalFlag_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/page/{id}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_page_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/page/{id}/mobile
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_page_id_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/portal/list
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_portal_list() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/portal/list/mobile
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_portal_list_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/portal/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_portal_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/portal/{flag}/corner/mark
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_portal_flag_corner_mark() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/portal/{id}/icon
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_portal_id_icon() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/portal/{id}/icon/base64
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_portal_id_icon_base64() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/script/list/portal/{portal}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_script_list_portal_portal() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/script/portal/{portal}/name/{name}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_script_portal_portal_name_name() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/script/portal/{portal}/name/{name}/imported
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_script_portal_portal_name_name_imported() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/script/{id}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_script_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/widget/list/portal/{portal}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_widget_list_portal_portal() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/widget/{flag}/portal/{portalFlag}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_widget_flag_portal_portalFlag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/widget/{flag}/portal/{portalFlag}/mobile
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_widget_flag_portal_portalFlag_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/widget/{id}
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_widget_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/portal/assemble/surface/widget/{id}/mobile
+/// TODO: Implement real business logic
+pub async fn stub_portal_assemble_surface_widget_id_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
