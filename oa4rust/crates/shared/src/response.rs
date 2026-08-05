@@ -66,6 +66,28 @@ impl IntoResponse for AppError {
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// error_response
+//
+// 中间件层（认证/授权/限流）统一生成 ActionResult 格式的错误响应。
+// 与 AppError::IntoResponse 保持相同 JSON 结构，便于前端统一处理。
+// ──────────────────────────────────────────────────────────────────────────────
+pub fn error_response(status: axum::http::StatusCode, message: impl Into<String>) -> axum::response::Response {
+    let body = Json(serde_json::json!({
+        "data": None::<serde_json::Value>,
+        "type": "error",
+        "message": message.into(),
+        "date": None::<Option<String>>,
+        "spent": None::<Option<i64>>,
+        "size": None::<Option<i64>>,
+        "count": None::<Option<i64>>,
+        "position": None::<Option<String>>,
+        "prompt": None::<Option<String>>,
+    }));
+
+    (status, body).into_response()
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // ActionResult<T>
 //
 // 所有 API 响应的统一 JSON 结构。前端据此字段区分成功/错误并读取数据。
