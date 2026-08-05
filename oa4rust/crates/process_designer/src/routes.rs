@@ -16,7 +16,7 @@ pub fn process_designer_router(pool: Pool) -> Router {
             get(super::application_list),
         )
         .route(
-            "/jaxrs/process/designer/route/:id",
+            "/jaxrs/process/designer/route/{id}",
             get(super::designer_get_route),
         )
         .layer(Extension(pool))

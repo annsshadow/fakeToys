@@ -48,8 +48,9 @@ mod tests {
             )
             .await
             .unwrap();
-        // POST route with path param may return 404 in some configurations
-        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+        // 参数化路由 {id} 在 axum 0.8 下可匹配（0.7 的 :param/{param} 混用会导致 404）；
+        // handler 因测试未提供 Extension(pool) 而返回 500，断言 500 证明路由已匹配
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[test]

@@ -83,11 +83,11 @@ pub async fn delete_designer(
 
 pub fn query_assemble_designer_router() -> Router {
     Router::new()
-        .route("/jaxrs/query/assemble/designer/get/:id", get(get_designer))
+        .route("/jaxrs/query/assemble/designer/get/{id}", get(get_designer))
         .route("/jaxrs/query/assemble/designer/create", post(create_designer))
-        .route("/jaxrs/query/assemble/designer/list/:category", get(list_designers))
-        .route("/jaxrs/query/assemble/designer/save/:id", post(save_designer))
-        .route("/jaxrs/query/assemble/designer/delete/:id", post(delete_designer))
+        .route("/jaxrs/query/assemble/designer/list/{category}", get(list_designers))
+        .route("/jaxrs/query/assemble/designer/save/{id}", post(save_designer))
+        .route("/jaxrs/query/assemble/designer/delete/{id}", post(delete_designer))
 }
 
 #[cfg(test)]

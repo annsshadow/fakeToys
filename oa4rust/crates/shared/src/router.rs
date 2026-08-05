@@ -1,7 +1,10 @@
+use axum::middleware;
 use axum::routing::get;
-use axum::{middleware, Router};
+use axum::Router;
 
-use crate::middleware::trace_middleware;
+use crate::middleware::{auth_middleware, rate_limit_middleware, trace_middleware};
+use crate::rate_limit::RateLimiter;
+use crate::session::SessionManager;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // router
@@ -12,12 +15,23 @@ use crate::middleware::trace_middleware;
 //   GET /health  → 健康检查端点，返回 "ok"
 //
 // 中间件层：
-//   trace_middleware  → 记录请求日志并在 5xx 时输出 warning
+//   auth_middleware      → 认证（R12），豁免端点按精确路径匹配
+//   rate_limit_middleware → 速率限制（R14），认证 10 次/分钟/IP、普通 100 次/分钟/IP
+//   trace_middleware      → 记录请求日志并在 5xx 时输出 warning
 //
-// 各二进制 crate 在 main 中调用此函数，再挂载数据库等 AppState 后启动。
+// SessionManager/RateLimiter 由 main.rs 构造单一实例注入，
+// 避免认证与限流状态分裂。
 // ──────────────────────────────────────────────────────────────────────────────
-pub fn router() -> Router {
+pub fn router(session_manager: SessionManager, rate_limiter: RateLimiter) -> Router {
     Router::new()
         .route("/health", get(|| async { "ok" }))
         .layer(middleware::from_fn(trace_middleware))
+        .layer(middleware::from_fn_with_state(
+            rate_limiter,
+            rate_limit_middleware,
+        ))
+        .layer(middleware::from_fn_with_state(
+            session_manager,
+            auth_middleware,
+        ))
 }

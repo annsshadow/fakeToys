@@ -1,19 +1,11 @@
 use axum::{routing::get, Json, Router};
 use deadpool_postgres::Pool;
 
-use auth::SessionManager;
+use shared::session::SessionManager;
 
 use crate::avatar;
 use crate::password;
 use crate::personal;
-
-// 健康检查端点
-async fn health_check() -> Json<serde_json::Value> {
-    Json(serde_json::json!({
-        "service": "personal_extend",
-        "status": "ok"
-    }))
-}
 
 /// 构建 personal_extend 模块路由
 ///
@@ -22,12 +14,11 @@ async fn health_check() -> Json<serde_json::Value> {
 ///
 /// # 参数
 /// - `pool`: 数据库连接池
+/// - `session_manager`: 会话管理器（由 main.rs 注入单一实例）
 ///
 /// # 返回
 /// - `Router`: Axum 路由实例
-pub fn personal_extend_router(pool: Pool) -> Router {
-    let session_manager = SessionManager::new();
-
+pub fn personal_extend_router(pool: Pool, session_manager: SessionManager) -> Router {
     Router::new()
         // 个人信息接口
         .route("/jaxrs/personal/info", get(personal::get_info))
@@ -40,8 +31,6 @@ pub fn personal_extend_router(pool: Pool) -> Router {
         // 头像管理接口
         .route("/jaxrs/personal/avatar/upload", axum::routing::post(avatar::upload))
         .route("/jaxrs/personal/avatar/{id}", get(avatar::get_avatar))
-        // 健康检查（无需认证）
-        .route("/personal_extend/health", get(health_check))
         .layer(axum::extract::Extension(pool))
         .layer(axum::extract::Extension(session_manager))
 }

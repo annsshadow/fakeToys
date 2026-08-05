@@ -93,11 +93,11 @@ pub async fn get_bam_status(
 /// 路由前缀: /jaxrs/processplatform/assemble/bam/*
 pub fn processplatform_assemble_bam_router() -> Router {
     Router::new()
-        .route("/jaxrs/processplatform/assemble/bam/get/:id", get(get_bam_config))
+        .route("/jaxrs/processplatform/assemble/bam/get/{id}", get(get_bam_config))
         .route("/jaxrs/processplatform/assemble/bam/create", post(create_bam))
-        .route("/jaxrs/processplatform/assemble/bam/list/:category", get(list_bams))
-        .route("/jaxrs/processplatform/assemble/bam/delete/:id", post(delete_bam))
-        .route("/jaxrs/processplatform/assemble/bam/status/:id", get(get_bam_status))
+        .route("/jaxrs/processplatform/assemble/bam/list/{category}", get(list_bams))
+        .route("/jaxrs/processplatform/assemble/bam/delete/{id}", post(delete_bam))
+        .route("/jaxrs/processplatform/assemble/bam/status/{id}", get(get_bam_status))
 }
 
 #[cfg(test)]

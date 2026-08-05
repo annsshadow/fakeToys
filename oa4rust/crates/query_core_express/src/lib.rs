@@ -84,9 +84,9 @@ pub async fn get_cache_status(
 pub fn query_core_express_router() -> Router {
     Router::new()
         .route("/jaxrs/query/core/express/execute", post(execute_query))
-        .route("/jaxrs/query/core/express/history/:limit", get(get_query_history))
-        .route("/jaxrs/query/core/express/cache/:queryId", post(cache_query_result))
-        .route("/jaxrs/query/core/express/cache/status/:queryId", get(get_cache_status))
+        .route("/jaxrs/query/core/express/history/{limit}", get(get_query_history))
+        .route("/jaxrs/query/core/express/cache/{queryId}", post(cache_query_result))
+        .route("/jaxrs/query/core/express/cache/status/{queryId}", get(get_cache_status))
 }
 
 #[cfg(test)]

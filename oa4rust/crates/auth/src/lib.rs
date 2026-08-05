@@ -3,19 +3,21 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use chrono::{DateTime, Duration, Utc};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use shared::error::AppError;
+use shared::response::ActionResult;
 use uuid::Uuid;
 
 pub mod model;
 pub mod password;
 pub mod person;
 pub mod secret;
+
+// 兼容重导出：会话与限流类型已移入 shared，供外部 crate 使用 auth:: 前缀继续引用
+pub use shared::rate_limit::RateLimiter;
+pub use shared::session::{Session, SessionManager};
 
 #[cfg(test)]
 mod tests;
@@ -41,149 +43,7 @@ pub struct PersonInfo {
     pub mobile: Option<String>,
 }
 
-// --- 会话管理（纯 Rust 侧实现，独立于服务端 Session） ---
-
-#[derive(Clone, Serialize, Deserialize)]
-pub struct Session {
-    pub token: String,
-    pub person_unique: String,
-    pub created_at: DateTime<Utc>,
-    pub expires_at: DateTime<Utc>,
-}
-
-#[derive(Clone)]
-pub struct SessionManager {
-    pub sessions: Arc<RwLock<std::collections::HashMap<String, Session>>>,
-}
-
-impl Default for SessionManager {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl SessionManager {
-    pub fn new() -> Self {
-        Self {
-            sessions: Arc::new(RwLock::new(std::collections::HashMap::new())),
-        }
-    }
-
-    /// 创建会话
-    ///
-    /// 生成一个新的 Session，有效期 2 小时，存入内存 HashMap。
-    ///
-    /// # 参数
-    /// - `person_unique`: 人员唯一标识（auth_person.unique_id）
-    /// - `token`: 随机生成的会话令牌
-    ///
-    /// # 返回
-    /// - `Session`: 创建好的会话对象
-    pub async fn create_session(&self, person_unique: String, token: String) -> Session {
-        let now = Utc::now();
-        let session = Session {
-            token: token.clone(),
-            person_unique,
-            created_at: now,
-            expires_at: now + Duration::hours(2),
-        };
-
-        self.sessions.write().await.insert(token.clone(), session.clone());
-        session
-    }
-
-    /// 验证会话令牌是否有效（未过期、存在）
-    ///
-    /// # 参数
-    /// - `token`: 会话令牌字符串
-    ///
-    /// # 返回
-    /// - `Some(Session)`: 令牌有效，返回对应会话
-    /// - `None`: 令牌不存在或已过期
-    pub async fn validate_session(&self, token: &str) -> Option<Session> {
-        let sessions = self.sessions.read().await;
-        sessions.get(token).cloned()
-    }
-
-    /// 删除会话（退出登录时使用）
-    ///
-    /// # 参数
-    /// - `token`: 要删除的会话令牌
-    pub async fn remove_session(&self, token: &str) {
-        self.sessions.write().await.remove(token);
-    }
-}
-
-// --- 频率限制 ---
-
-#[derive(Clone)]
-pub struct RateLimiter {
-    pub attempts: Arc<RwLock<std::collections::HashMap<String, (i32, DateTime<Utc>)>>>,
-}
-
-impl Default for RateLimiter {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl RateLimiter {
-    pub fn new() -> Self {
-        Self {
-            attempts: Arc::new(RwLock::new(std::collections::HashMap::new())),
-        }
-    }
-
-    /// 检查是否超出频率限制
-    ///
-    /// 记录每个 key（如 IP）的尝试次数，在指定时间窗口内超过上限则返回错误。
-    ///
-    /// # 参数
-    /// - `key`: 限流键（通常为客户端 IP）
-    /// - `max_attempts`: 时间窗口内允许的最大尝试次数
-    /// - `window_minutes`: 时间窗口（分钟）
-    ///
-    /// # 返回
-    /// - `Ok(())`: 未超出限制，允许继续
-    /// - `Err(AppError::BadRequest)`: 已超出限制，拒绝请求
-    pub async fn check_rate_limit(&self, key: &str, max_attempts: i32, window_minutes: i64) -> Result<(), AppError> {
-        let mut attempts = self.attempts.write().await;
-        let now = Utc::now();
-
-        if let Some((count, last_attempt)) = attempts.get(key) {
-            let elapsed = now - *last_attempt;
-            if elapsed.num_minutes() < window_minutes
-                && *count >= max_attempts {
-                    return Err(AppError::BadRequest(
-                        format!("rate limit exceeded: {} attempts in last {} minutes", count, window_minutes)
-                    ));
-                }
-        }
-
-        let count = attempts.get(key).map(|(c, _)| c + 1).unwrap_or(1);
-        attempts.insert(key.to_string(), (count, now));
-        Ok(())
-    }
-
-    /// 记录一次失败尝试（递增计数器）
-    ///
-    /// # 参数
-    /// - `key`: 限流键
-    pub async fn record_failure(&self, key: &str) {
-        let mut attempts = self.attempts.write().await;
-        let now = Utc::now();
-        let count = attempts.get(key).map(|(c, _)| c + 1).unwrap_or(1);
-        attempts.insert(key.to_string(), (count, now));
-    }
-
-    /// 重置指定 key 的尝试计数（登录成功后调用）
-    ///
-    /// # 参数
-    /// - `key`: 限流键
-    pub async fn reset(&self, key: &str) {
-        self.attempts.write().await.remove(key);
-    }
-}
+// --- 会话管理（由 shared::session 提供，main.rs 构造单一实例注入） ---
 
 // --- 认证处理器 ---
 
@@ -538,10 +398,7 @@ pub async fn group_list(
 ///
 /// # 返回
 /// - `Router`: Axum 路由实例
-pub fn router(pool: Pool) -> Router {
-    let rate_limiter = RateLimiter::new();
-    let session_manager = SessionManager::new();
-
+pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionManager) -> Router {
     Router::new()
         .route("/jaxrs/authentication/login", post(login))
         .route("/jaxrs/authentication/logout", post(logout))
@@ -551,11 +408,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/authentication/oauth", post(oauth))
         .route("/jaxrs/authentication/refresh", post(refresh))
         .route("/jaxrs/authentication/code", post(code))
-        .route("/jaxrs/person/{flag}", get(person::get))
-        .route("/jaxrs/person/list", get(person::list))
-        .route("/jaxrs/unit/list", get(unit_list))
-        .route("/jaxrs/role/list", get(role_list))
-        .route("/jaxrs/group/list", get(group_list))
         .merge(secret::router())
         .layer(Extension(pool))
         .layer(Extension(rate_limiter))

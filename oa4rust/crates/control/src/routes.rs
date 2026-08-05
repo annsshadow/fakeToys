@@ -22,7 +22,6 @@ use crate::{group, person, role, unit};
 pub fn control_router(pool: Pool) -> Router {
     Router::new()
         // 健康检查
-        .route("/health", get(health_check))
         // 人员管理
         .route("/jaxrs/person/list", get(person::list))
         .route("/jaxrs/person/create", post(person::create))

@@ -172,7 +172,7 @@ fn test_router_builds() {
     .build()
     .unwrap();
 
-    let router = personal_extend_router(pool);
+    let router = personal_extend_router(pool, SessionManager::new());
     // 验证路由成功构建
     let _ = router;
 }

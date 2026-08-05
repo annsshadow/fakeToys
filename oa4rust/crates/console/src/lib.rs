@@ -78,10 +78,10 @@ pub async fn get_metric(
 pub fn console_router() -> Router {
     Router::new()
         .route("/jaxrs/console/status", get(get_status))
-        .route("/jaxrs/console/logs/:type", get(get_logs))
+        .route("/jaxrs/console/logs/{type}", get(get_logs))
         .route("/jaxrs/console/send/message", post(send_message))
-        .route("/jaxrs/console/cache/clear/:type", post(clear_cache))
-        .route("/jaxrs/console/metric/:name", get(get_metric))
+        .route("/jaxrs/console/cache/clear/{type}", post(clear_cache))
+        .route("/jaxrs/console/metric/{name}", get(get_metric))
 }
 
 #[cfg(test)]

@@ -112,11 +112,11 @@ pub async fn preview_flow(
 pub fn processplatform_assemble_designer_router() -> Router {
     Router::new()
         .route("/jaxrs/processplatform/assemble/designer/create", post(create_flow))
-        .route("/jaxrs/processplatform/assemble/designer/get/:id", get(get_flow))
-        .route("/jaxrs/processplatform/assemble/designer/list/:category", get(list_flows))
-        .route("/jaxrs/processplatform/assemble/designer/save/:id", post(save_flow))
-        .route("/jaxrs/processplatform/assemble/designer/delete/:id", post(delete_flow))
-        .route("/jaxrs/processplatform/assemble/designer/preview/:id", get(preview_flow))
+        .route("/jaxrs/processplatform/assemble/designer/get/{id}", get(get_flow))
+        .route("/jaxrs/processplatform/assemble/designer/list/{category}", get(list_flows))
+        .route("/jaxrs/processplatform/assemble/designer/save/{id}", post(save_flow))
+        .route("/jaxrs/processplatform/assemble/designer/delete/{id}", post(delete_flow))
+        .route("/jaxrs/processplatform/assemble/designer/preview/{id}", get(preview_flow))
 }
 
 #[cfg(test)]

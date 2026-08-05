@@ -92,12 +92,12 @@ pub async fn delete_surface(
 
 pub fn processplatform_assemble_surface_router() -> Router {
     Router::new()
-        .route("/jaxrs/processplatform/assemble/surface/get/:id", get(get_surface))
+        .route("/jaxrs/processplatform/assemble/surface/get/{id}", get(get_surface))
         .route("/jaxrs/processplatform/assemble/surface/create", post(create_surface))
-        .route("/jaxrs/processplatform/assemble/surface/list/:category", get(list_surfaces))
-        .route("/jaxrs/processplatform/assemble/surface/preview/:id", get(preview_surface))
-        .route("/jaxrs/processplatform/assemble/surface/publish/:id", post(publish_surface))
-        .route("/jaxrs/processplatform/assemble/surface/delete/:id", post(delete_surface))
+        .route("/jaxrs/processplatform/assemble/surface/list/{category}", get(list_surfaces))
+        .route("/jaxrs/processplatform/assemble/surface/preview/{id}", get(preview_surface))
+        .route("/jaxrs/processplatform/assemble/surface/publish/{id}", post(publish_surface))
+        .route("/jaxrs/processplatform/assemble/surface/delete/{id}", post(delete_surface))
 }
 
 #[cfg(test)]

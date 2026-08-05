@@ -14,8 +14,10 @@
 pub mod db;
 pub mod error;
 pub mod middleware;
+pub mod rate_limit;
 pub mod response;
 pub mod router;
+pub mod session;
 
 #[cfg(test)]
 mod tests;

@@ -78,11 +78,11 @@ pub async fn publish_surface(
 
 pub fn portal_assemble_surface_router() -> Router {
     Router::new()
-        .route("/jaxrs/portal/assemble/surface/get/:id", get(get_surface))
+        .route("/jaxrs/portal/assemble/surface/get/{id}", get(get_surface))
         .route("/jaxrs/portal/assemble/surface/create", post(create_surface))
-        .route("/jaxrs/portal/assemble/surface/list/:category", get(list_surfaces))
-        .route("/jaxrs/portal/assemble/surface/preview/:id", get(preview_surface))
-        .route("/jaxrs/portal/assemble/surface/publish/:id", post(publish_surface))
+        .route("/jaxrs/portal/assemble/surface/list/{category}", get(list_surfaces))
+        .route("/jaxrs/portal/assemble/surface/preview/{id}", get(preview_surface))
+        .route("/jaxrs/portal/assemble/surface/publish/{id}", post(publish_surface))
 }
 
 #[cfg(test)]

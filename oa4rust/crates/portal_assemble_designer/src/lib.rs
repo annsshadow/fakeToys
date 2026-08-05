@@ -65,9 +65,9 @@ pub async fn save_design(
 pub fn portal_assemble_designer_router() -> Router {
     Router::new()
         .route("/jaxrs/portal/assemble/designer/create", post(create_design))
-        .route("/jaxrs/portal/assemble/designer/get/:id", get(get_design))
+        .route("/jaxrs/portal/assemble/designer/get/{id}", get(get_design))
         .route("/jaxrs/portal/assemble/designer/list", get(list_designs))
-        .route("/jaxrs/portal/assemble/designer/save/:id", post(save_design))
+        .route("/jaxrs/portal/assemble/designer/save/{id}", post(save_design))
 }
 
 #[cfg(test)]

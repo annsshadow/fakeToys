@@ -96,12 +96,12 @@ pub async fn preview_surface(
 
 pub fn query_assemble_surface_router() -> Router {
     Router::new()
-        .route("/jaxrs/query/assemble/surface/get/:id", get(get_surface))
+        .route("/jaxrs/query/assemble/surface/get/{id}", get(get_surface))
         .route("/jaxrs/query/assemble/surface/create", post(create_surface))
-        .route("/jaxrs/query/assemble/surface/list/:category", get(list_surfaces))
-        .route("/jaxrs/query/assemble/surface/save/:id", post(save_surface))
-        .route("/jaxrs/query/assemble/surface/delete/:id", post(delete_surface))
-        .route("/jaxrs/query/assemble/surface/preview/:id", get(preview_surface))
+        .route("/jaxrs/query/assemble/surface/list/{category}", get(list_surfaces))
+        .route("/jaxrs/query/assemble/surface/save/{id}", post(save_surface))
+        .route("/jaxrs/query/assemble/surface/delete/{id}", post(delete_surface))
+        .route("/jaxrs/query/assemble/surface/preview/{id}", get(preview_surface))
 }
 
 #[cfg(test)]

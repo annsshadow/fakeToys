@@ -52,8 +52,8 @@ pub async fn mark_read(
 pub fn message_assemble_communicate_router() -> Router {
     Router::new()
         .route("/jaxrs/message/assemble/communicate/send", post(send_message))
-        .route("/jaxrs/message/assemble/communicate/receive/:consume", get(receive_list))
-        .route("/jaxrs/message/assemble/communicate/mark_read/:id", post(mark_read))
+        .route("/jaxrs/message/assemble/communicate/receive/{consume}", get(receive_list))
+        .route("/jaxrs/message/assemble/communicate/mark_read/{id}", post(mark_read))
 }
 
 #[cfg(test)]

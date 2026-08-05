@@ -1,11 +1,9 @@
+use anyhow::Context as _;
 use axum::Router;
 use shared::db::create_pool;
+use shared::rate_limit::RateLimiter;
+use shared::session::SessionManager;
 use tracing_subscriber::EnvFilter;
-
-mod shared;
-mod auth;
-mod personal;
-mod cms_control;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -15,13 +13,18 @@ async fn main() -> anyhow::Result<()> {
 
     dotenvy::dotenv().ok();
 
-    let pool = create_pool().await?;
+    let pool = create_pool().await.context("failed to create database pool")?;
+
+    let session_manager = SessionManager::new();
+    let rate_limiter = RateLimiter::new();
 
     let app = Router::new()
-        .merge(shared::router::router())
-        .merge(auth::router::router(pool.clone()))
-        .merge(personal::router::router(pool.clone()))
-        .merge(cms_control::cms_control_router());
+        .merge(shared::router::router(session_manager.clone(), rate_limiter.clone()))
+        .merge(auth::router(pool.clone(), rate_limiter.clone(), session_manager.clone()))
+        .merge(personal::router(pool.clone()))
+        .merge(cms_control::cms_control_router())
+        .merge(control::control_router(pool.clone()))
+        .merge(personal_extend::personal_extend_router(pool.clone(), session_manager));
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     tracing::info!("listening on {}", listener.local_addr()?);

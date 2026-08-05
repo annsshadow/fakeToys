@@ -1,3 +1,24 @@
+[package]
+name = "oa4rust"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+axum.workspace = true
+tokio.workspace = true
+dotenvy.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+shared = { path = "crates/shared" }
+auth = { path = "crates/auth" }
+personal = { path = "crates/personal" }
+personal_extend = { path = "crates/personal_extend" }
+control = { path = "crates/control" }
+cms_control = { path = "crates/cms_control" }
+
 [workspace]
 members = [
     "crates/shared",
@@ -89,7 +110,7 @@ rust-version = "1.75"
 version = "0.1.0"
 
 [workspace.dependencies]
-axum = { version = "0.7", features = ["macros", "json"] }
+axum = { version = "0.8", features = ["macros", "json"] }
 tokio = { version = "1", features = ["full"] }
 sqlx = { version = "0.7", features = ["runtime-tokio-rustls", "postgres", "macros", "chrono"] }
 deadpool-postgres = "0.12"

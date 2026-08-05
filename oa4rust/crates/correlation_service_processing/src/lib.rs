@@ -74,10 +74,10 @@ pub async fn unlink_service(
 
 pub fn correlation_service_processing_router() -> Router {
     Router::new()
-        .route("/jaxrs/correlation/service/processing/list/:sourceType", get(list_links))
-        .route("/jaxrs/correlation/service/processing/link/:sourceType/:sourceId", get(get_link))
+        .route("/jaxrs/correlation/service/processing/list/{sourceType}", get(list_links))
+        .route("/jaxrs/correlation/service/processing/link/{sourceType}/{sourceId}", get(get_link))
         .route("/jaxrs/correlation/service/processing/link", post(link_service))
-        .route("/jaxrs/correlation/service/processing/unlink/:sourceType/:sourceId/:targetType/:targetId", post(unlink_service))
+        .route("/jaxrs/correlation/service/processing/unlink/{sourceType}/{sourceId}/{targetType}/{targetId}", post(unlink_service))
 }
 
 #[cfg(test)]
