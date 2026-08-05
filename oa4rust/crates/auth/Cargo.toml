@@ -23,3 +23,5 @@ md5 = "0.7"
 des = "0.8"
 urlencoding = "2"
 cipher = "0.4"
+captcha.workspace = true
+reqwest.workspace = true

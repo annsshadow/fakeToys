@@ -1,19 +1,25 @@
 use axum::{
-    extract::Extension,
-    routing::{get, post},
+    extract::{Extension, Path},
+    http::HeaderMap,
+    routing::{delete, get, post},
     Json, Router,
 };
+use chrono::{DateTime, Duration, Utc};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared::error::AppError;
 use shared::response::ActionResult;
+use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
 
+pub mod bind;
+pub mod captcha;
 pub mod model;
+pub mod oauth;
 pub mod password;
 pub mod person;
-pub mod secret;
 
 // 兼容重导出：会话与限流类型已移入 shared，供外部 crate 使用 auth:: 前缀继续引用
 pub use shared::rate_limit::RateLimiter;
@@ -43,45 +49,27 @@ pub struct PersonInfo {
     pub mobile: Option<String>,
 }
 
-// --- 会话管理（由 shared::session 提供，main.rs 构造单一实例注入） ---
-
 // --- 认证处理器 ---
 
-/// 用户登录接口
+/// 用户登录接口（契约路径 POST /jaxrs/authentication，兼容自造路径）
 ///
-/// 接收用户名/工号和密码，验证通过后签发 2 小时有效会话令牌。
-/// 支持 MD5 和 DES 两种密码加密方式。登录失败会累积失败次数，超过限流阈值将拒绝请求。
-///
-/// # 参数
-/// - `pool`: 数据库连接池
-/// - `rate_limiter`: 频率限制器
-/// - `session_manager`: 会话管理器
-/// - `req`: 登录请求体，包含 `credential`（用户名/工号）和 `password`
-///
-/// # 返回
-/// - `Ok(Json<ActionResult<LoginResponse>>)`: 登录成功，返回 token 和用户基本信息
-/// - `Err(AppError)`: 数据库错误等异常情况
+/// 接收用户名/工号（credential）和密码，验证通过后签发 2 小时有效会话令牌。
+/// 支持 bcrypt（前缀 {bcrypt}）与 MD5/DES 兼容校验。限流由 shared 中间件统一处理。
 pub async fn login(
     pool: Extension<Pool>,
-    rate_limiter: Extension<RateLimiter>,
     session_manager: Extension<SessionManager>,
     axum::extract::Json(req): axum::extract::Json<LoginRequest>,
 ) -> Result<Json<ActionResult<LoginResponse>>, AppError> {
-    let ip = "127.0.0.1";
-    rate_limiter.check_rate_limit(ip, 5, 1).await?;
-
     if req.credential.is_empty() || req.password.is_empty() {
-        rate_limiter.record_failure(ip).await;
         return Ok(Json(ActionResult::error("invalid credentials")));
     }
 
-    let client = pool.get().await.map_err(|_e| {
-        AppError::Internal
-    })?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_one(
-            "SELECT id, unique_id, name, mobile, password_hash, locked FROM auth_person WHERE unique_id = $1 AND locked = false",
+            "SELECT id, unique_id, name, mobile, password_hash, locked FROM auth_person \
+             WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
             &[&req.credential],
         )
         .await
@@ -93,17 +81,14 @@ pub async fn login(
     let person_mobile: Option<String> = row.get("mobile");
     let password_hash: String = row.get("password_hash");
 
-    // 验证密码（支持 MD5 和 DES 加密）
+    // 验证密码（支持 bcrypt/MD5/DES 多算法兼容）
     let valid = password::verify_password(&req.password, &password_hash, "", None);
     if !valid {
-        rate_limiter.record_failure(ip).await;
         return Ok(Json(ActionResult::error("invalid credentials")));
     }
 
     let token = Uuid::new_v4().to_string();
     let session = session_manager.create_session(person_unique.clone(), token.clone()).await;
-
-    rate_limiter.reset(ip).await;
 
     let response = ActionResult::success(LoginResponse {
         token: session.token,
@@ -117,79 +102,34 @@ pub async fn login(
     Ok(Json(response))
 }
 
-/// 获取验证码（占位实现）
-///
-/// 生成一个 captchaId 并返回 base64 占位图片，实际图片生成需对接第三方服务。
-///
-/// # 返回
-/// - `Ok(Json<ActionResult<Value>>)`: 包含 `captchaId` 和 `image` 字段
-pub async fn captcha() -> Result<Json<ActionResult<Value>>, AppError> {
-    let captcha_id = Uuid::new_v4().to_string();
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("captchaId".to_string(), Value::String(captcha_id)),
-        ("image".to_string(), Value::String("base64-encoded-image-placeholder".to_string())),
-    ])))))
+/// 从请求提取会话令牌：Authorization: Bearer 优先，回退 Cookie 中 `token` 字段
+pub(crate) fn extract_token(headers: &HeaderMap) -> Option<String> {
+    if let Some(auth) = headers
+        .get(axum::http::header::AUTHORIZATION)
+        .and_then(|h| h.to_str().ok())
+    {
+        if let Some(token) = auth.strip_prefix("Bearer ") {
+            let token = token.trim();
+            if !token.is_empty() {
+                return Some(token.to_string());
+            }
+        }
+    }
+    let cookie = headers.get(axum::http::header::COOKIE)?.to_str().ok()?;
+    for part in cookie.split(';') {
+        if let Some(v) = part.trim().strip_prefix("token=") {
+            let v = v.trim().trim_matches('"');
+            if !v.is_empty() {
+                return Some(v.to_string());
+            }
+        }
+    }
+    None
 }
 
-/// 绑定接口：通过凭证创建会话
-///
-/// 根据 `credential`（用户名/工号）查询 auth_person，验证存在后签发新 token。
-///
-/// # 参数
-/// - `pool`: 数据库连接池
-/// - `session_manager`: 会话管理器
-/// - `payload`: JSON 请求体，包含 `credential` 字段
-///
-/// # 返回
-/// - `Ok(Json<ActionResult<Value>>)`: 绑定成功，返回 `{"bound": true}`
-/// - `Err(AppError::NotFound)`: 凭证不存在
-pub async fn bind(
-    pool: Extension<Pool>,
-    session_manager: Extension<SessionManager>,
-    axum::extract::Json(payload): axum::extract::Json<Value>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let credential = payload.get("credential").and_then(|v| v.as_str()).unwrap_or("");
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+// --- 刷新 / 登出 / 当前用户 ---
 
-    let row = client
-        .query_one("SELECT id FROM auth_person WHERE unique_id = $1", &[&credential])
-        .await
-        .map_err(|_| AppError::NotFound)?;
-
-    let person_id: String = row.get("id");
-    let token = Uuid::new_v4().to_string();
-    session_manager.create_session(person_id, token).await;
-
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("bound".to_string(), Value::Bool(true)),
-    ])))))
-}
-
-/// OAuth 登录入口（占位实现）
-///
-/// 返回 OAuth 授权 URL，实际逻辑需对接第三方 OAuth 提供商。
-///
-/// # 返回
-/// - `Ok(Json<ActionResult<Value>>)`: 包含 `oauthUrl` 字段
-pub async fn oauth(
-    _payload: Json<Value>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("oauthUrl".to_string(), Value::String("https://oauth.example.com/authorize".to_string())),
-    ])))))
-}
-
-/// 刷新会话令牌
-///
-/// 使用旧 token 换取新 token，旧 token 随即失效。用于会话续期。
-///
-/// # 参数
-/// - `session_manager`: 会话管理器
-/// - `payload`: JSON 请求体，包含 `token` 字段
-///
-/// # 返回
-/// - `Ok(Json<ActionResult<Value>>)`: 刷新成功，返回新 `token`
-/// - `Err/AppError`: token 无效时返回错误信息
+/// 刷新会话令牌：用旧 token 换取新 token，旧 token 随即失效
 pub async fn refresh(
     _pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
@@ -210,92 +150,197 @@ pub async fn refresh(
     }
 }
 
-/// 生成一次性验证码（占位实现）
+/// 用户登出接口（契约路径 DELETE /jaxrs/authentication，兼容自造路径）
 ///
-/// 生成 UUID 作为 code 返回，用于后续重置密码等场景。
-///
-/// # 返回
-/// - `Ok(Json<ActionResult<Value>>)`: 包含 `code` 字段
-pub async fn code(
-    _payload: Json<Value>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let code = Uuid::new_v4().to_string();
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("code".to_string(), Value::String(code)),
-    ])))))
-}
-
-/// 用户登出接口
-///
-/// 根据请求体中的 token 删除对应会话，使 token 失效。
-///
-/// # 参数
-/// - `session_manager`: 会话管理器
-/// - `payload`: JSON 请求体，包含 `token` 字段
-///
-/// # 返回
-/// - `Ok(Json<ActionResult<Value>>)`: 登出成功
+/// 令牌来源：Authorization: Bearer / Cookie token= 优先，请求体 token 字段次之。
 pub async fn logout(
     session_manager: Extension<SessionManager>,
+    headers: HeaderMap,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if let Some(token) = payload.get("token").and_then(|v| v.as_str()) {
-        session_manager.remove_session(token).await;
+    let token = extract_token(&headers)
+        .or_else(|| payload.get("token").and_then(|v| v.as_str()).map(|s| s.to_string()));
+    if let Some(token) = token {
+        session_manager.remove_session(&token).await;
     }
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("message".to_string(), Value::String("logged out".to_string())),
     ])))))
 }
 
-/// 查询当前认证用户信息（ whoami ）
+/// 查询当前认证用户信息（契约路径 GET /jaxrs/authentication，兼容自造路径）
 ///
-/// 从数据库读取首条未锁定人员记录，返回其基本信息以确认认证状态。
-///
-/// # 参数
-/// - `pool`: 数据库连接池
-///
-/// # 返回
-/// - `Ok(Json<ActionResult<Value>>)` : 包含 `authenticated`（是否认证）、`id`、`unique`、`name`、`mobile`
+/// 从会话解析当前用户身份，按 unique_id 查询数据库（不再取首条记录）。
 pub async fn whoami(
     pool: Extension<Pool>,
-    _session_manager: Extension<SessionManager>,
+    session_manager: Extension<SessionManager>,
+    headers: HeaderMap,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let token = extract_token(&headers).ok_or(AppError::Unauthorized)?;
+    let session = session_manager
+        .validate_session(&token)
+        .await
+        .ok_or(AppError::Unauthorized)?;
+
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query("SELECT id, unique_id, name, mobile FROM auth_person LIMIT 1", &[])
+    let row = client
+        .query_opt(
+            "SELECT id, unique_id, name, mobile FROM auth_person \
+             WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
+            &[&session.person_unique],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if let Some(row) = rows.first() {
-        Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
             ("authenticated".to_string(), Value::Bool(true)),
             ("id".to_string(), Value::String(row.get("id"))),
             ("unique".to_string(), Value::String(row.get("unique_id"))),
             ("name".to_string(), Value::String(row.get("name"))),
             ("mobile".to_string(), row.get::<_, Option<String>>("mobile").map(Value::String).unwrap_or(Value::Null)),
-        ])))))
-    } else {
-        Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-            ("authenticated".to_string(), Value::Bool(false)),
-        ])))))
+        ]))))),
+        None => Ok(Json(ActionResult::error("user not found"))),
     }
 }
 
+// --- 短信验证码（code）---
+
+#[derive(Debug, Clone)]
+struct CodeEntry {
+    code: String,
+    expires_at: DateTime<Utc>,
+    attempts: u32,
+}
+
+const CODE_TTL_MINUTES: i64 = 5;
+const CODE_ATTEMPTS: u32 = 5;
+
+/// 短信验证码存储：credential → 一次性验证码（发送后校验用）
+pub struct CodeStore {
+    entries: Mutex<HashMap<String, CodeEntry>>,
+}
+
+impl Default for CodeStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl CodeStore {
+    pub fn new() -> Self {
+        Self {
+            entries: Mutex::new(HashMap::new()),
+        }
+    }
+
+    fn cleanup(&self) {
+        let now = Utc::now();
+        if let Ok(mut map) = self.entries.lock() {
+            map.retain(|_, e| e.expires_at > now);
+        }
+    }
+
+    /// 为 credential 生成 6 位数字验证码并存储，返回明文（发送渠道使用）
+    pub fn issue(&self, key: &str) -> String {
+        self.cleanup();
+        let code = format!("{:06}", rand_code());
+        if let Ok(mut map) = self.entries.lock() {
+            map.insert(
+                key.to_string(),
+                CodeEntry {
+                    code: code.clone(),
+                    expires_at: Utc::now() + Duration::minutes(CODE_TTL_MINUTES),
+                    attempts: 0,
+                },
+            );
+        }
+        code
+    }
+
+    /// 校验验证码：通过删除（一次性），错误达上限删除
+    pub fn verify(&self, key: &str, code: &str) -> bool {
+        self.cleanup();
+        let Ok(mut map) = self.entries.lock() else {
+            return false;
+        };
+        let Some(entry) = map.get_mut(key) else {
+            return false;
+        };
+        if entry.expires_at <= Utc::now() {
+            map.remove(key);
+            return false;
+        }
+        if entry.code == code.trim() {
+            map.remove(key);
+            return true;
+        }
+        entry.attempts += 1;
+        if entry.attempts >= CODE_ATTEMPTS {
+            map.remove(key);
+        }
+        false
+    }
+}
+
+fn rand_code() -> u32 {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.subsec_nanos())
+        .unwrap_or(0);
+    nanos % 1_000_000
+}
+
+fn code_store() -> &'static CodeStore {
+    static STORE: OnceLock<CodeStore> = OnceLock::new();
+    STORE.get_or_init(CodeStore::new)
+}
+
+/// GET /jaxrs/authentication/code/credential/{credential} —— 向凭据发送登录验证码
+pub async fn code_send(
+    Path(credential): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if credential.is_empty() {
+        return Err(AppError::BadRequest("credential cannot be empty".to_string()));
+    }
+    let _plain = code_store().issue(&credential);
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("message".to_string(), Value::String("code sent".to_string())),
+    ])))))
+}
+
+/// POST /jaxrs/authentication/code —— 发送登录验证码（请求体可含 credential）
+pub async fn code(
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let credential = payload
+        .get("credential")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    if credential.is_empty() {
+        return Err(AppError::BadRequest("credential cannot be empty".to_string()));
+    }
+    let _plain = code_store().issue(&credential);
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("message".to_string(), Value::String("code sent".to_string())),
+    ])))))
+}
+
+// --- 组织架构查询（保持既有契约路径）---
+
 /// 获取组织架构树（部门/单位列表）
-///
-/// 查询 auth_unit 表，按层级排序返回所有单位信息，用于前端渲染组织架构树。
-///
-/// # 参数
-/// - `pool`: 数据库连接池
-///
-/// # 返回
-/// - `Ok(Json<ActionResult<Value>>)`: 包含 `count` 和 `data` 数组，每项含 `id`、`name`、`parentId`、`level`
 pub async fn unit_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
-        .query("SELECT id, name, parent_id, level FROM auth_unit ORDER BY level", &[])
+        .query(
+            "SELECT id, name, parent_id, level FROM auth_unit \
+             WHERE deleted_at IS NULL ORDER BY level",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -318,20 +363,15 @@ pub async fn unit_list(
 }
 
 /// 获取角色列表
-///
-/// 查询 auth_role 表，返回所有可用角色及其描述。
-///
-/// # 参数
-/// - `pool`: 数据库连接池
-///
-/// # 返回
-/// - `Ok(Json<ActionResult<Value>>)`: 包含 `count` 和 `data` 数组，每项含 `id`、`name`、`description`
 pub async fn role_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
-        .query("SELECT id, name, description FROM auth_role", &[])
+        .query(
+            "SELECT id, name, description FROM auth_role WHERE deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -353,20 +393,15 @@ pub async fn role_list(
 }
 
 /// 获取用户组列表
-///
-/// 查询 auth_group 表，仅返回未禁用的用户组。
-///
-/// # 参数
-/// - `pool`: 数据库连接池
-///
-/// # 返回
-/// - `Ok(Json<ActionResult<Value>>)`: 包含 `count` 和 `data` 数组，每项含 `id`、`name`
 pub async fn group_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
-        .query("SELECT id, name FROM auth_group WHERE disable = false", &[])
+        .query(
+            "SELECT id, name FROM auth_group WHERE disable = false AND deleted_at IS NULL",
+            &[],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -390,25 +425,58 @@ pub async fn group_list(
 
 /// 构建认证模块路由
 ///
-/// 注册所有认证相关接口，包括登录、登出、会话刷新、组织架构查询等。
-/// 挂载 RateLimiter 和 SessionManager 中间件层。
-///
-/// # 参数
-/// - `pool`: 数据库连接池
-///
-/// # 返回
-/// - `Router`: Axum 路由实例
+/// 契约路径（Java AuthenticationAction 对齐）：
+///   POST   /jaxrs/authentication            登录
+///   DELETE /jaxrs/authentication            登出
+///   GET    /jaxrs/authentication            当前用户
+///   POST   /jaxrs/authentication/refresh    刷新令牌
+/// 保留自造路径 /login、/logout、/who 作兼容（前端尚未切到契约路径）。
+/// 验证码、扫码绑定、OAuth 端点由对应模块子 router 提供。
 pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionManager) -> Router {
     Router::new()
+        .route("/jaxrs/authentication", post(login))
+        .route("/jaxrs/authentication", delete(logout))
+        .route("/jaxrs/authentication", get(whoami))
         .route("/jaxrs/authentication/login", post(login))
         .route("/jaxrs/authentication/logout", post(logout))
         .route("/jaxrs/authentication/who", get(whoami))
-        .route("/jaxrs/authentication/captcha", get(captcha))
-        .route("/jaxrs/authentication/bind", post(bind))
-        .route("/jaxrs/authentication/oauth", post(oauth))
         .route("/jaxrs/authentication/refresh", post(refresh))
         .route("/jaxrs/authentication/code", post(code))
-        .merge(secret::router())
+        .route(
+            "/jaxrs/authentication/code/credential/{credential}",
+            get(code_send),
+        )
+        .route("/jaxrs/authentication/oauth/list", get(oauth::oauth_list))
+        .route(
+            "/jaxrs/authentication/oauth/qywx/config",
+            get(oauth::oauth_qywx_config),
+        )
+        .route(
+            "/jaxrs/authentication/oauth/dingding/config",
+            get(oauth::oauth_dingding_config),
+        )
+        .route(
+            "/jaxrs/authentication/oauth/name/{name}",
+            get(oauth::oauth_name_config),
+        )
+        .route(
+            "/jaxrs/authentication/oauth/login/qywx/code/{code}",
+            get(oauth::oauth_login_qywx),
+        )
+        .route(
+            "/jaxrs/authentication/oauth/login/dingding/code/{code}",
+            get(oauth::oauth_login_dingding),
+        )
+        .route(
+            "/jaxrs/authentication/oauth/login/name/{name}/code/{code}/redirecturi/{redirectUri}",
+            get(oauth::oauth_login_name),
+        )
+        .route(
+            "/jaxrs/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}",
+            get(oauth::oauth_bind_name),
+        )
+        .merge(captcha::captcha_router())
+        .merge(bind::bind_router())
         .layer(Extension(pool))
         .layer(Extension(rate_limiter))
         .layer(Extension(session_manager))
