@@ -1,5 +1,6 @@
 use axum::{
     extract::Extension,
+    http::HeaderMap,
     routing::{get, post, put},
     Json, Router,
 };
@@ -7,6 +8,8 @@ use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use shared::error::AppError;
 use shared::response::ActionResult;
+
+use auth::SessionManager;
 
 pub mod password;
 pub mod reset;
@@ -30,26 +33,60 @@ pub struct PersonInfo {
     pub icon: Option<String>,
 }
 
+// --- 当前用户身份解析 ---
+
+/// 从 `Authorization: Bearer <token>` 解析当前登录用户唯一标识
+///
+/// 复用认证流程的会话机制（与 personal_extend 一致）：token 由登录接口写入
+/// SessionManager（main.rs 构造单一实例注入），此处按会话唯一标识定位人员，
+/// 禁止按 `WHERE locked = false LIMIT 1` 取首行，避免任意登录用户篡改他人数据。
+pub(crate) async fn resolve_current_person_unique(
+    session_manager: &SessionManager,
+    headers: &HeaderMap,
+) -> Result<String, AppError> {
+    let token = extract_bearer_token(headers)?;
+    session_manager
+        .validate_session(&token)
+        .await
+        .map(|session| session.person_unique)
+        .ok_or(AppError::Unauthorized)
+}
+
+/// 从 Authorization header 中提取 Bearer token
+pub(crate) fn extract_bearer_token(headers: &HeaderMap) -> Result<String, AppError> {
+    let auth = headers
+        .get(axum::http::header::AUTHORIZATION)
+        .ok_or(AppError::Unauthorized)?
+        .to_str()
+        .map_err(|_| AppError::Unauthorized)?;
+
+    let prefix = "Bearer ";
+    if !auth.starts_with(prefix) {
+        return Err(AppError::Unauthorized);
+    }
+
+    Ok(auth[prefix.len()..].to_string())
+}
+
 // --- 处理器 ---
 
-/// 查询当前用户个人信息
+/// 查询当前登录用户个人信息
 ///
-/// 从 auth_person 表读取首条未锁定人员记录，返回姓名、手机号、邮箱、头像等基本信息。
-///
-/// # 参数
-/// - `pool`: 数据库连接池
-///
-/// # 返回
-/// - `Ok(Json<ActionResult<PersonInfo>>)` : 查询成功，返回用户信息
-/// - `Err(AppError::NotFound)`: 未找到有效用户记录
+/// 从会话解析当前用户，按 unique_id 从 auth_person 表读取
+/// 姓名、手机号、邮箱、头像等基本信息。
 pub async fn get_person(
     pool: Extension<Pool>,
+    session_manager: Extension<SessionManager>,
+    headers: HeaderMap,
 ) -> Result<Json<ActionResult<PersonInfo>>, AppError> {
+    let person_unique = resolve_current_person_unique(&session_manager, &headers).await?;
+
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
-            "SELECT id, unique_id, name, mobile, email, icon FROM auth_person WHERE locked = false LIMIT 1",
-            &[],
+            "SELECT id, unique_id, name, mobile, email, icon FROM auth_person \
+             WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
+            &[&person_unique],
         )
         .await
         .map_err(|_| AppError::NotFound)?;
@@ -66,28 +103,25 @@ pub async fn get_person(
     Ok(Json(ActionResult::success(info)))
 }
 
-/// 更新当前用户个人信息
+/// 更新当前登录用户个人信息
 ///
 /// 支持部分更新（name、mobile、email 均为可选字段），未提供的字段保留原值。
 /// 更新后同时刷新 updated_at 时间戳。
-///
-/// # 参数
-/// - `pool`: 数据库连接池
-/// - `req`: 更新请求体，包含可选的 `name`、`mobile`、`email` 字段
-///
-/// # 返回
-/// - `Ok(Json<ActionResult<PersonInfo>>)` : 更新成功，返回更新后的完整用户信息
-/// - `Err(AppError)`: 数据库错误
 pub async fn edit_person(
     pool: Extension<Pool>,
+    session_manager: Extension<SessionManager>,
+    headers: HeaderMap,
     axum::extract::Json(req): axum::extract::Json<EditPersonRequest>,
 ) -> Result<Json<ActionResult<PersonInfo>>, AppError> {
+    let person_unique = resolve_current_person_unique(&session_manager, &headers).await?;
+
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_one(
-            "SELECT id, unique_id, name, mobile, email FROM auth_person WHERE locked = false LIMIT 1",
-            &[],
+            "SELECT id, unique_id, name, mobile, email, icon FROM auth_person \
+             WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
+            &[&person_unique],
         )
         .await
         .map_err(|_| AppError::NotFound)?;
@@ -124,27 +158,37 @@ pub async fn edit_person(
 
 /// 构建个人中心模块路由
 ///
-/// 注册个人信息查询/更新、密码修改、密码重置等接口。
-/// 挂载 ResetCodeStore 中间件层用于存储重置验证码。
+/// 注册个人信息查询/更新、密码修改（Java PasswordAction 契约）、
+/// 密码重置（Java ResetAction 契约）等接口。
 ///
-/// # 参数
-/// - `pool`: 数据库连接池
-///
-/// # 返回
-/// - `Router`: Axum 路由实例
-pub fn router(pool: Pool) -> Router {
+/// 使用 main.rs 注入的共享 SessionManager，确保与 auth crate 登录会话互认。
+pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
     let reset_store = reset::ResetCodeStore::new();
 
     Router::new()
         .route("/jaxrs/person", get(get_person))
         .route("/jaxrs/person", put(edit_person))
         .route("/jaxrs/person/mockputtopost", post(edit_person))
-        .route("/jaxrs/password", put(password::change))
-        .route("/jaxrs/password/mockputtopost", post(password::change))
-        .route("/jaxrs/reset/code", post(reset::send_code))
-        .route("/jaxrs/reset/check", post(reset::check_code))
-        .route("/jaxrs/reset/set", post(reset::reset_password))
+        .route("/jaxrs/person/password", put(password::change))
+        .route(
+            "/jaxrs/reset/check/credential/{credential}",
+            get(reset::check_credential),
+        )
+        .route(
+            "/jaxrs/reset/check/password/{password}",
+            get(reset::check_password),
+        )
+        .route(
+            "/jaxrs/reset/code/credential/{credential}",
+            get(reset::send_code),
+        )
+        .route("/jaxrs/reset", put(reset::reset_password))
+        .route(
+            "/jaxrs/reset/password/anonymous",
+            post(reset::reset_password_anonymous),
+        )
         .layer(Extension(pool))
+        .layer(Extension(session_manager))
         .layer(Extension(reset_store))
 }
 

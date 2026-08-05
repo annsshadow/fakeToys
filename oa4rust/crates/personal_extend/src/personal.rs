@@ -37,10 +37,11 @@ pub struct UpdatePersonalRequest {
 // # 参数
 // - `pool`: 数据库连接池
 // - `session_manager`: 会话管理器，用于验证当前用户身份
+// - `headers`: 请求头，从中提取 Bearer token
 pub async fn get_info(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
-    headers: Extension<HeaderMap>,
+    headers: HeaderMap,
 ) -> Result<Json<ActionResult<PersonInfo>>, AppError> {
     let token = extract_bearer_token(&headers)?;
     let session = session_manager
@@ -51,7 +52,8 @@ pub async fn get_info(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
-            "SELECT id, unique_id, name, mobile, email, icon FROM auth_person WHERE unique_id = $1 AND locked = false",
+            "SELECT id, unique_id, name, mobile, email, icon FROM auth_person \
+             WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
             &[&session.person_unique],
         )
         .await
@@ -77,11 +79,12 @@ pub async fn get_info(
 // # 参数
 // - `pool`: 数据库连接池
 // - `session_manager`: 会话管理器，用于验证当前用户身份
+// - `headers`: 请求头，从中提取 Bearer token
 // - `req`: 更新请求体，包含可选的 name、mobile、email 字段
 pub async fn update_info(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
-    headers: Extension<HeaderMap>,
+    headers: HeaderMap,
     axum::extract::Json(req): axum::extract::Json<UpdatePersonalRequest>,
 ) -> Result<Json<ActionResult<PersonInfo>>, AppError> {
     let token = extract_bearer_token(&headers)?;
@@ -95,7 +98,8 @@ pub async fn update_info(
     // 先查询当前用户信息，用于保留未更新的字段
     let row = client
         .query_one(
-            "SELECT id, unique_id, name, mobile, email, icon FROM auth_person WHERE unique_id = $1 AND locked = false",
+            "SELECT id, unique_id, name, mobile, email, icon FROM auth_person \
+             WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
             &[&session.person_unique],
         )
         .await
@@ -131,7 +135,7 @@ pub async fn update_info(
     Ok(Json(ActionResult::success(updated)))
 }
 
-// 获取指定用户的信息（需权限）
+// 获取指定用户的信息（需登录）
 //
 // 查询 auth_person 表中指定 unique_id 的用户信息。
 // 需要当前用户已登录，且目标用户未被锁定。
@@ -139,24 +143,26 @@ pub async fn update_info(
 // # 参数
 // - `pool`: 数据库连接池
 // - `session_manager`: 会话管理器，用于验证当前用户身份
+// - `headers`: 请求头，从中提取 Bearer token
 // - `id`: 路径参数，目标用户的唯一标识
 pub async fn get_detail(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
-    headers: Extension<HeaderMap>,
+    headers: HeaderMap,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<PersonInfo>>, AppError> {
     // 验证当前请求者已登录
-    let _token = extract_bearer_token(&headers)?;
+    let token = extract_bearer_token(&headers)?;
     let _session = session_manager
-        .validate_session(&_token)
+        .validate_session(&token)
         .await
         .ok_or(AppError::Unauthorized)?;
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
-            "SELECT id, unique_id, name, mobile, email, icon FROM auth_person WHERE unique_id = $1 AND locked = false",
+            "SELECT id, unique_id, name, mobile, email, icon FROM auth_person \
+             WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
             &[&id],
         )
         .await

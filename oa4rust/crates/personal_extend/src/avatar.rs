@@ -5,7 +5,7 @@ use axum::{
 };
 use deadpool_postgres::Pool;
 use serde::Serialize;
-use serde_json::Value;
+use serde_json::{json, Value};
 use shared::error::AppError;
 use shared::response::ActionResult;
 
@@ -13,17 +13,16 @@ use auth::SessionManager;
 use base64::Engine;
 use uuid::Uuid;
 
-// 允许的 MIME 类型白名单
-const ALLOWED_MIME_TYPES: &[&str] = &[
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-    "image/bmp",
-];
+use crate::personal::extract_bearer_token;
+
+// 允许的 MIME 类型白名单（Java 契约：jpeg/png/webp）
+const ALLOWED_MIME_TYPES: &[&str] = &["image/jpeg", "image/png", "image/webp"];
 
 // 最大文件大小（5MB）
-const MAX_FILE_SIZE: u64 = 5 * 1024 * 1024;
+pub const MAX_FILE_SIZE: u64 = 5 * 1024 * 1024;
+
+// 头像存储目录（相对工作目录，不映射为 web 可访问路径）
+pub const AVATAR_DIR: &str = "data/avatar";
 
 // 头像信息响应 DTO
 #[derive(Debug, Serialize)]
@@ -35,19 +34,25 @@ pub struct AvatarInfo {
     pub url: String,
 }
 
-// 上传头像
-//
-// 接收 multipart/form-data 文件，验证 MIME 类型后保存到数据库 avatar 字段。
-// 需要当前用户已登录，且文件符合安全要求。
-//
-// # 参数
-// - `pool`: 数据库连接池
-// - `session_manager`: 会话管理器
-// - `mut form`: multipart 表单，包含 avatar 文件字段
+/// MIME 白名单校验
+pub fn is_supported_mime(mime: &str) -> bool {
+    ALLOWED_MIME_TYPES.contains(&mime)
+}
+
+/// 上传当前登录用户头像（PUT /jaxrs/person/icon）
+///
+/// 接收 multipart/form-data 文件，校验 MIME 白名单与 5MB 大小上限后写入
+/// 本地目录 `data/avatar/{uuid}.{ext}`，DB `auth_person.icon` 存相对文件名。
+///
+/// # 参数
+/// - `pool`: 数据库连接池
+/// - `session_manager`: 会话管理器
+/// - `headers`: 请求头，从中提取 Bearer token
+/// - `mut form`: multipart 表单，包含头像文件字段
 pub async fn upload(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
-    headers: Extension<HeaderMap>,
+    headers: HeaderMap,
     mut form: Multipart,
 ) -> Result<Json<ActionResult<AvatarInfo>>, AppError> {
     let token = extract_bearer_token(&headers)?;
@@ -56,7 +61,7 @@ pub async fn upload(
         .await
         .ok_or(AppError::Unauthorized)?;
 
-    // 从 multipart 中提取文件
+    // 从 multipart 中提取文件字段（按文件名判断，跳过普通表单字段）
     let mut file_data: Option<Vec<u8>> = None;
     let mut mime_type: Option<String> = None;
     let mut filename: Option<String> = None;
@@ -66,57 +71,57 @@ pub async fn upload(
         .await
         .map_err(|_| AppError::BadRequest("表单解析失败".to_string()))?
     {
-        let name = field.name().unwrap_or("").to_string();
-        if name == "avatar" {
-            // 尝试获取 MIME 类型
-            mime_type = field
-                .content_type()
-                .map(|s| s.to_string());
-            filename = field.file_name().map(|f| f.to_string());
-            file_data = Some(
-                field
-                    .bytes()
-                    .await
-                    .map_err(|_| AppError::BadRequest("文件读取失败".to_string()))?
-                    .to_vec(),
-            );
-            break;
+        if field.file_name().is_none() {
+            continue;
         }
+        mime_type = field.content_type().map(|s| s.to_string());
+        filename = field.file_name().map(|f| f.to_string());
+        file_data = Some(
+            field
+                .bytes()
+                .await
+                .map_err(|_| AppError::BadRequest("文件读取失败".to_string()))?
+                .to_vec(),
+        );
+        break;
     }
 
-    let data = file_data.ok_or(AppError::BadRequest("未提供头像文件".to_string()))?;
+    let data = match file_data {
+        Some(d) => d,
+        None => return Ok(Json(ActionResult::error("未提供头像文件"))),
+    };
 
-    // 文件大小校验
+    // 文件大小校验（5MB 上限）
     if data.len() as u64 > MAX_FILE_SIZE {
         return Ok(Json(ActionResult::error("文件大小超过限制（最大 5MB）")));
     }
 
     // MIME 类型白名单校验
     let mime = mime_type.as_deref().unwrap_or("");
-    if !ALLOWED_MIME_TYPES.contains(&mime) {
-        return Ok(Json(
-            ActionResult::error("不支持的文件类型，仅允许: jpg, png, gif, webp, bmp"),
-        ));
+    if !is_supported_mime(mime) {
+        return Ok(Json(ActionResult::error(
+            "不支持的文件类型，仅允许: jpg, png, webp",
+        )));
     }
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    // 生成头像存储路径
+    let ext = get_extension(mime, &filename);
     let avatar_id = Uuid::new_v4().to_string();
-    let file_path = format!(
-        "/uploads/avatars/{}.{}",
-        avatar_id,
-        get_extension(mime, &filename)
-    );
+    let rel_path = format!("{AVATAR_DIR}/{avatar_id}.{ext}");
 
-    // 将头像数据存入数据库（以 base64 存储，实际生产环境应存文件系统/对象存储）
-    let avatar_base64 = base64::engine::general_purpose::STANDARD.encode(&data);
+    // 写入本地存储目录（不接入 file 模块、不承担文件迁移方案）
+    tokio::fs::create_dir_all(AVATAR_DIR)
+        .await
+        .map_err(|_| AppError::Internal)?;
+    tokio::fs::write(&rel_path, &data)
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    // 更新 auth_person 表的 avatar 字段
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
         .execute(
-            "UPDATE auth_person SET avatar = $1, updated_at = NOW() WHERE unique_id = $2 AND locked = false",
-            &[&avatar_base64, &session.person_unique],
+            "UPDATE auth_person SET icon = $1, updated_at = NOW() \
+             WHERE unique_id = $2 AND locked = false AND deleted_at IS NULL",
+            &[&rel_path, &session.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -126,49 +131,118 @@ pub async fn upload(
         person_unique: session.person_unique,
         mime_type: mime.to_string(),
         size: data.len() as i64,
-        url: file_path,
+        url: rel_path,
     };
 
     Ok(Json(ActionResult::success(info)))
 }
 
-// 获取头像
-//
-// 根据用户唯一标识从 auth_person 表读取头像数据（base64 编码）。
-// 返回头像数据和存在标志，供前端直接使用。
-//
-// # 参数
-// - `pool`: 数据库连接池
-// - `id`: 路径参数，用户的唯一标识（unique_id）
-pub async fn get_avatar(
+/// 获取当前登录用户头像（GET /jaxrs/person/icon）
+pub async fn get_current_icon(
     pool: Extension<Pool>,
-    Path(id): Path<String>,
+    session_manager: Extension<SessionManager>,
+    headers: HeaderMap,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let token = extract_bearer_token(&headers)?;
+    let session = session_manager
+        .validate_session(&token)
+        .await
+        .ok_or(AppError::Unauthorized)?;
 
+    load_icon_for_unique(&pool, &session.person_unique).await
+}
+
+/// 获取指定用户头像（GET /jaxrs/icon/{person}，flag 支持 unique_id/name/id）
+pub async fn get_icon(
+    pool: Extension<Pool>,
+    session_manager: Extension<SessionManager>,
+    headers: HeaderMap,
+    Path(person): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // 校验请求方已登录
+    let token = extract_bearer_token(&headers)?;
+    let _session = session_manager
+        .validate_session(&token)
+        .await
+        .ok_or(AppError::Unauthorized)?;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
-        .query_one(
-            "SELECT avatar FROM auth_person WHERE unique_id = $1 AND locked = false",
-            &[&id],
+        .query_opt(
+            "SELECT icon, unique_id FROM auth_person \
+             WHERE (unique_id = $1 OR name = $1 OR id = $1) AND locked = false AND deleted_at IS NULL",
+            &[&person],
         )
         .await
-        .map_err(|_| AppError::NotFound)?;
+        .map_err(|_| AppError::Internal)?;
 
-    let avatar: Option<String> = row.get("avatar");
+    match row {
+        Some(r) => {
+            let icon: Option<String> = r.get("icon");
+            Ok(render_icon(icon).await)
+        }
+        None => Ok(Json(ActionResult::error("用户不存在"))),
+    }
+}
 
-    match avatar {
-        Some(data) => Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("avatar".to_string(), Value::String(data)),
-                ("exists".to_string(), Value::Bool(true)),
-            ],
-        ))))),
-        None => Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("avatar".to_string(), Value::String("".to_string())),
-                ("exists".to_string(), Value::Bool(false)),
-            ],
-        ))))),
+/// 按 unique_id 读取用户头像文件并返回 base64
+async fn load_icon_for_unique(
+    pool: &Pool,
+    person_unique: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT icon FROM auth_person WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
+            &[&person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(r) => {
+            let icon: Option<String> = r.get("icon");
+            Ok(render_icon(icon).await)
+        }
+        None => Ok(Json(ActionResult::error("用户不存在"))),
+    }
+}
+
+/// 读取存储文件并以 base64 返回；无头像或文件缺失时返回 exists=false
+async fn render_icon(icon: Option<String>) -> Json<ActionResult<Value>> {
+    let rel_path = icon.filter(|s| !s.is_empty());
+    match rel_path {
+        Some(rel) => match tokio::fs::read(&rel).await {
+            Ok(bytes) => {
+                let avatar = base64::engine::general_purpose::STANDARD.encode(&bytes);
+                Json(ActionResult::success(json!({
+                    "avatar": avatar,
+                    "mimeType": mime_from_path(&rel),
+                    "exists": true,
+                })))
+            }
+            Err(_) => Json(ActionResult::success(json!({
+                "avatar": "",
+                "exists": false,
+            }))),
+        },
+        None => Json(ActionResult::success(json!({
+            "avatar": "",
+            "exists": false,
+        }))),
+    }
+}
+
+/// 依据存储路径推导 MIME 类型
+fn mime_from_path(rel: &str) -> String {
+    if rel.ends_with(".jpg") || rel.ends_with(".jpeg") {
+        "image/jpeg".to_string()
+    } else if rel.ends_with(".png") {
+        "image/png".to_string()
+    } else if rel.ends_with(".webp") {
+        "image/webp".to_string()
+    } else {
+        "application/octet-stream".to_string()
     }
 }
 
@@ -177,9 +251,7 @@ pub(crate) fn get_extension(mime: &str, filename: &Option<String>) -> String {
     match mime {
         "image/jpeg" => "jpg".to_string(),
         "image/png" => "png".to_string(),
-        "image/gif" => "gif".to_string(),
         "image/webp" => "webp".to_string(),
-        "image/bmp" => "bmp".to_string(),
         _ => {
             // 从文件名推断扩展名
             if let Some(name) = filename {
@@ -190,20 +262,4 @@ pub(crate) fn get_extension(mime: &str, filename: &Option<String>) -> String {
             "bin".to_string()
         }
     }
-}
-
-/// 从 Authorization header 中提取 Bearer token
-pub(crate) fn extract_bearer_token(headers: &HeaderMap) -> Result<String, AppError> {
-    let auth = headers
-        .get(axum::http::header::AUTHORIZATION)
-        .ok_or(AppError::Unauthorized)?
-        .to_str()
-        .map_err(|_| AppError::Unauthorized)?;
-
-    let prefix = "Bearer ";
-    if !auth.starts_with(prefix) {
-        return Err(AppError::Unauthorized);
-    }
-
-    Ok(auth[prefix.len()..].to_string())
 }

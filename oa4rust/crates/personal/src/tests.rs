@@ -1,39 +1,117 @@
 #[cfg(test)]
 mod tests {
-    use crate::reset::ResetCodeStore;
+    use crate::password::ChangePasswordRequest;
+    use crate::reset::{ResetCodeError, ResetCodeStore, MAX_ATTEMPTS};
     use crate::EditPersonRequest;
     use shared::response::ActionResult;
 
     #[test]
-    fn test_reset_code_store() {
+    fn test_reset_code_issue_and_consume() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let store = ResetCodeStore::new();
+            let code = store.issue("user1").await;
+            assert_eq!(code.len(), 6);
+            assert!(code.chars().all(|c| c.is_ascii_digit()));
 
-            store.store("user1".to_string(), "code123".to_string()).await;
-            assert!(store.verify("user1", "code123").await);
-            assert!(!store.verify("user1", "code456").await);
-            assert!(!store.verify("user2", "code123").await);
-
-            store.remove("user1").await;
-            assert!(!store.verify("user1", "code123").await);
+            // 校验通过后立即消费（一次性）
+            assert!(store.verify_and_consume("user1", &code).await.is_ok());
+            assert_eq!(
+                store.verify_and_consume("user1", &code).await,
+                Err(ResetCodeError::NotFound)
+            );
         });
     }
 
     #[test]
-    fn test_reset_code_store_multiple() {
+    fn test_reset_code_wrong_then_right() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let store = ResetCodeStore::new();
+            let code = store.issue("user1").await;
 
-            store.store("user1".to_string(), "code1".to_string()).await;
-            store.store("user2".to_string(), "code2".to_string()).await;
-
-            assert!(store.verify("user1", "code1").await);
-            assert!(store.verify("user2", "code2").await);
-            assert!(!store.verify("user1", "code2").await);
-            assert!(!store.verify("user2", "code1").await);
+            // 错误码不消耗正确尝试次数上限本身，但递减可尝试次数
+            let wrong = if code == "000000" { "000001" } else { "000000" };
+            assert_eq!(
+                store.verify_and_consume("user1", wrong).await,
+                Err(ResetCodeError::WrongCode)
+            );
+            assert!(store.verify_and_consume("user1", &code).await.is_ok());
+            assert_eq!(
+                store.verify_and_consume("user1", &code).await,
+                Err(ResetCodeError::NotFound)
+            );
         });
+    }
+
+    #[test]
+    fn test_reset_code_attempts_exhausted() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let store = ResetCodeStore::new();
+            let code = store.issue("user1").await;
+            let wrong = if code == "000000" { "000001" } else { "000000" };
+
+            for i in 0..(MAX_ATTEMPTS - 1) {
+                let _ = i;
+                assert_eq!(
+                    store.verify_and_consume("user1", wrong).await,
+                    Err(ResetCodeError::WrongCode)
+                );
+            }
+            // 最后一次错误尝试后触达上限
+            assert_eq!(
+                store.verify_and_consume("user1", wrong).await,
+                Err(ResetCodeError::TooManyAttempts)
+            );
+            // 条目已移除
+            assert_eq!(
+                store.verify_and_consume("user1", wrong).await,
+                Err(ResetCodeError::NotFound)
+            );
+        });
+    }
+
+    #[test]
+    fn test_reset_code_expired() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let store = ResetCodeStore::new();
+            store.insert_expired("user1", "123456").await;
+            assert_eq!(
+                store.verify_and_consume("user1", "123456").await,
+                Err(ResetCodeError::Expired)
+            );
+        });
+    }
+
+    #[test]
+    fn test_reset_code_unknown_key() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let store = ResetCodeStore::new();
+            assert_eq!(
+                store.verify_and_consume("nobody", "123456").await,
+                Err(ResetCodeError::NotFound)
+            );
+        });
+    }
+
+    #[test]
+    fn test_is_password_acceptable() {
+        assert!(!crate::reset::is_password_acceptable("12345"));
+        assert!(crate::reset::is_password_acceptable("123456"));
+        let long = "x".repeat(64);
+        assert!(crate::reset::is_password_acceptable(&long));
+        assert!(!crate::reset::is_password_acceptable(&format!("{}x", long)));
+    }
+
+    #[test]
+    fn test_password_hash_roundtrip_bcrypt() {
+        let hash = auth::password::hash_password("new-secret");
+        assert!(hash.starts_with("{bcrypt}"));
+        assert!(auth::password::verify_password("new-secret", &hash, "", None));
+        assert!(!auth::password::verify_password("wrong", &hash, "", None));
     }
 
     #[test]
@@ -60,6 +138,24 @@ mod tests {
         assert_eq!(req.name, None);
         assert_eq!(req.mobile, Some("123456".to_string()));
         assert_eq!(req.email, None);
+    }
+
+    #[test]
+    fn test_change_password_request_deserialize() {
+        let req: ChangePasswordRequest =
+            serde_json::from_str(r#"{"old_password":"old","new_password":"new"}"#).unwrap();
+        assert_eq!(req.old_password, "old");
+        assert_eq!(req.new_password, "new");
+    }
+
+    #[test]
+    fn test_reset_password_request_deserialize() {
+        let req: crate::reset::ResetPasswordRequest =
+            serde_json::from_str(r#"{"credential":"u1","code":"123456","password":"newpass"}"#)
+                .unwrap();
+        assert_eq!(req.credential, "u1");
+        assert_eq!(req.code, "123456");
+        assert_eq!(req.password, "newpass");
     }
 
     #[test]

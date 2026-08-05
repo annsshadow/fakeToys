@@ -1,16 +1,19 @@
-use axum::{routing::get, Json, Router};
+use axum::{routing::get, Router};
 use deadpool_postgres::Pool;
 
 use shared::session::SessionManager;
 
 use crate::avatar;
-use crate::password;
 use crate::personal;
 
 /// 构建 personal_extend 模块路由
 ///
-/// 注册所有个人扩展接口，包括个人信息查询/更新、密码管理、头像上传/获取。
-/// 使用认证中间件确保所有接口需要登录才能访问（health_check 除外）。
+/// 注册个人信息详情查询/更新与头像契约路径（Java PersonAction 契约）。
+/// 头像契约路径：
+/// - `PUT /jaxrs/person/icon`        上传当前用户头像（formData）
+/// - `GET /jaxrs/person/icon`        获取当前用户头像
+/// - `GET /jaxrs/icon/{person}`      获取指定用户头像（flag: unique_id/name/id）
+/// 已移除自造路径：/jaxrs/password/change|reset|verify、/jaxrs/personal/avatar/*。
 ///
 /// # 参数
 /// - `pool`: 数据库连接池
@@ -24,13 +27,10 @@ pub fn personal_extend_router(pool: Pool, session_manager: SessionManager) -> Ro
         .route("/jaxrs/personal/info", get(personal::get_info))
         .route("/jaxrs/personal/update", axum::routing::put(personal::update_info))
         .route("/jaxrs/personal/detail/{id}", get(personal::get_detail))
-        // 密码管理接口
-        .route("/jaxrs/password/change", axum::routing::post(password::change))
-        .route("/jaxrs/password/reset", axum::routing::post(password::reset))
-        .route("/jaxrs/password/verify", axum::routing::post(password::verify))
-        // 头像管理接口
-        .route("/jaxrs/personal/avatar/upload", axum::routing::post(avatar::upload))
-        .route("/jaxrs/personal/avatar/{id}", get(avatar::get_avatar))
+        // 头像接口（契约路径）
+        .route("/jaxrs/person/icon", axum::routing::put(avatar::upload))
+        .route("/jaxrs/person/icon", get(avatar::get_current_icon))
+        .route("/jaxrs/icon/{person}", get(avatar::get_icon))
         .layer(axum::extract::Extension(pool))
         .layer(axum::extract::Extension(session_manager))
 }

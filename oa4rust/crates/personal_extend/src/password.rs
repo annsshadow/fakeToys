@@ -12,7 +12,8 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use uuid::Uuid;
 
-use auth::{password::verify_password, SessionManager};
+use auth::password::{hash_password, verify_password};
+use auth::SessionManager;
 
 // 修改密码请求 DTO
 #[derive(Debug, Deserialize)]
@@ -29,7 +30,7 @@ pub struct ResetPasswordRequest {
     pub password: String,
 }
 
-// 验证码验证请求 DTO
+// 验证密码请求 DTO
 #[derive(Debug, Deserialize)]
 pub struct VerifyPasswordRequest {
     pub credential: String,
@@ -76,19 +77,20 @@ impl ResetCodeStore {
     }
 }
 
-// 修改密码
+// 修改当前登录用户密码
 //
-// 验证旧密码后更新为新密码（MD5 哈希存储）。
-// 需要当前用户已登录并传入 Authorization header。
+// 按会话唯一标识解析当前用户（禁止 LIMIT 1 取首行），
+// 校验旧密码（支持 bcrypt 前缀 + MD5/DES），新密码以 hash_password 写入。
 //
 // # 参数
 // - `pool`: 数据库连接池
 // - `session_manager`: 会话管理器
+// - `headers`: 请求头，从中提取 Bearer token
 // - `req`: 包含 old_password 和 new_password 的请求体
 pub async fn change(
     pool: Extension<Pool>,
     session_manager: Extension<SessionManager>,
-    headers: Extension<HeaderMap>,
+    headers: HeaderMap,
     axum::extract::Json(req): axum::extract::Json<ChangePasswordRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let token = extract_bearer_token(&headers)?;
@@ -101,7 +103,8 @@ pub async fn change(
 
     let row = client
         .query_one(
-            "SELECT id, password_hash FROM auth_person WHERE unique_id = $1 AND locked = false",
+            "SELECT id, password_hash FROM auth_person \
+             WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
             &[&session.person_unique],
         )
         .await
@@ -114,7 +117,7 @@ pub async fn change(
         return Ok(Json(ActionResult::error("旧密码不正确")));
     }
 
-    let new_hash = format!("{:x}", md5::compute(req.new_password.as_bytes()));
+    let new_hash = hash_password(&req.new_password);
     client
         .execute(
             "UPDATE auth_person SET password_hash = $1, updated_at = NOW() WHERE id = $2",
@@ -146,7 +149,7 @@ pub async fn reset(
     // 验证用户存在且未锁定
     let row = client
         .query_one(
-            "SELECT id FROM auth_person WHERE unique_id = $1 AND locked = false",
+            "SELECT id FROM auth_person WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
             &[&req.credential],
         )
         .await
@@ -177,7 +180,7 @@ pub async fn verify(
 
     let row = client
         .query_one(
-            "SELECT id, password_hash FROM auth_person WHERE unique_id = $1 AND locked = false",
+            "SELECT id, password_hash FROM auth_person WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
             &[&req.credential],
         )
         .await
