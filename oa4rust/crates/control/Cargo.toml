@@ -6,6 +6,7 @@ rust-version.workspace = true
 
 [dependencies]
 shared = { path = "../shared" }
+auth = { path = "../auth" }
 axum.workspace = true
 tokio.workspace = true
 sqlx.workspace = true

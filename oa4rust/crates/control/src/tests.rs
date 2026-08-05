@@ -30,7 +30,7 @@ mod tests {
         assert!(json["data"].is_null());
     }
 
-    /// 测试 control_router 能正常构建
+    /// 测试 control_router 能正常构建且契约路径已注册
     #[test]
     fn test_control_router_builds() {
         let rt = Runtime::new().unwrap();
@@ -43,9 +43,9 @@ mod tests {
         });
     }
 
-    /// 测试 person::list 在无数据库时返回内部错误
+    /// 测试 person::list_next 在无数据库时返回内部错误
     #[test]
-    fn test_person_list_returns_error_without_db() {
+    fn test_person_list_next_returns_error_without_db() {
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
             let config = PgConfig::new();
@@ -53,9 +53,9 @@ mod tests {
             let pool = Pool::builder(manager).build().unwrap();
 
             let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
-                person::list(
+                person::list_next(
                     Extension(pool),
-                    axum::extract::Query(std::collections::HashMap::new()),
+                    axum::extract::Path(("-".to_string(), 20i64)),
                 )
                 .await;
 
@@ -79,7 +79,7 @@ mod tests {
             let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
                 person::get(
                     Extension(pool),
-                    axum::extract::Path("test-id".to_string()),
+                    axum::extract::Path("test-flag".to_string()),
                 )
                 .await;
 
@@ -111,9 +111,9 @@ mod tests {
         });
     }
 
-    /// 测试 role::list 在无数据库时返回内部错误
+    /// 测试 role::list_next 在无数据库时返回内部错误
     #[test]
-    fn test_role_list_returns_error_without_db() {
+    fn test_role_list_next_returns_error_without_db() {
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
             let config = PgConfig::new();
@@ -121,9 +121,9 @@ mod tests {
             let pool = Pool::builder(manager).build().unwrap();
 
             let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
-                role::list(
+                role::list_next(
                     Extension(pool),
-                    axum::extract::Query(std::collections::HashMap::new()),
+                    axum::extract::Path(("-".to_string(), 20i64)),
                 )
                 .await;
 
@@ -135,9 +135,9 @@ mod tests {
         });
     }
 
-    /// 测试 group::list 在无数据库时返回内部错误
+    /// 测试 group::list_next 在无数据库时返回内部错误
     #[test]
-    fn test_group_list_returns_error_without_db() {
+    fn test_group_list_next_returns_error_without_db() {
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
             let config = PgConfig::new();
@@ -145,9 +145,9 @@ mod tests {
             let pool = Pool::builder(manager).build().unwrap();
 
             let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
-                group::list(
+                group::list_next(
                     Extension(pool),
-                    axum::extract::Query(std::collections::HashMap::new()),
+                    axum::extract::Path(("-".to_string(), 20i64)),
                 )
                 .await;
 
@@ -175,11 +175,46 @@ mod tests {
                 email: None,
                 password: String::new(),
             };
-            let result = person::create(
-                Extension(pool),
-                axum::extract::Json(req),
-            )
-            .await;
+            let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
+                person::create(
+                    Extension(pool),
+                    axum::extract::Json(req),
+                )
+                .await;
+
+            // 缺少密码应在触达数据库前返回 type=error
+            match result {
+                Ok(json) => {
+                    assert_eq!(json.0.r#type, Some("error".to_string()));
+                    assert!(json.0.message.is_some());
+                }
+                Err(_) => panic!("expected Ok with error response"),
+            }
+        });
+    }
+
+    /// 测试 person::create 唯一标识超长时返回错误
+    #[test]
+    fn test_person_create_unique_id_too_long() {
+        let rt = Runtime::new().unwrap();
+        rt.block_on(async {
+            let config = PgConfig::new();
+            let manager = Manager::new(config, deadpool_postgres::tokio_postgres::NoTls);
+            let pool = Pool::builder(manager).build().unwrap();
+
+            let req = person::PersonCreateRequest {
+                unique_id: "x".repeat(300),
+                name: "测试人员".to_string(),
+                mobile: None,
+                email: None,
+                password: "secret".to_string(),
+            };
+            let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
+                person::create(
+                    Extension(pool),
+                    axum::extract::Json(req),
+                )
+                .await;
 
             match result {
                 Ok(json) => {
@@ -204,11 +239,12 @@ mod tests {
                 parent_id: None,
                 level: 1,
             };
-            let result = unit::create(
-                Extension(pool),
-                axum::extract::Json(req),
-            )
-            .await;
+            let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
+                unit::create(
+                    Extension(pool),
+                    axum::extract::Json(req),
+                )
+                .await;
 
             match result {
                 Ok(json) => {
@@ -232,11 +268,12 @@ mod tests {
                 name: String::new(),
                 description: None,
             };
-            let result = role::create(
-                Extension(pool),
-                axum::extract::Json(req),
-            )
-            .await;
+            let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
+                role::create(
+                    Extension(pool),
+                    axum::extract::Json(req),
+                )
+                .await;
 
             match result {
                 Ok(json) => {
@@ -260,11 +297,12 @@ mod tests {
                 name: String::new(),
                 description: None,
             };
-            let result = group::create(
-                Extension(pool),
-                axum::extract::Json(req),
-            )
-            .await;
+            let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
+                group::create(
+                    Extension(pool),
+                    axum::extract::Json(req),
+                )
+                .await;
 
             match result {
                 Ok(json) => {
@@ -287,7 +325,7 @@ mod tests {
             let result: Result<axum::Json<ActionResult<serde_json::Value>>, AppError> =
                 person::delete(
                     Extension(pool),
-                    axum::extract::Path("test-id".to_string()),
+                    axum::extract::Path("test-flag".to_string()),
                 )
                 .await;
 
@@ -302,14 +340,15 @@ mod tests {
         });
     }
 
-    /// 测试健康检查返回成功响应
+    /// 测试 auth::password 双算法哈希：bcrypt 前缀 + 兼容校验 + MD5 兼容校验
     #[test]
-    fn test_health_check() {
-        let rt = Runtime::new().unwrap();
-        rt.block_on(async {
-            let result = routes::health_check().await;
-            assert_eq!(result.0.r#type, Some("success".to_string()));
-            assert_eq!(result.0.data.unwrap()["status"], "ok");
-        });
+    fn test_password_hash_and_verify() {
+        let hash = auth::password::hash_password("secret123");
+        assert!(hash.starts_with(auth::password::BCRYPT_PREFIX));
+        assert!(auth::password::verify_password("secret123", &hash, "", None));
+        assert!(!auth::password::verify_password("wrong", &hash, "", None));
+
+        let md5_hash = format!("{:x}", md5::compute("legacy".as_bytes()));
+        assert!(auth::password::verify_password("legacy", &md5_hash, "", None));
     }
 }

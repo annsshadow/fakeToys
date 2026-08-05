@@ -2,7 +2,21 @@ use base64::{engine::general_purpose::URL_SAFE, Engine as _};
 use cipher::{Block, BlockEncrypt, KeyInit};
 use des::Des;
 
+/// bcrypt 哈希存储前缀，用于区分 MD5/DES 旧格式
+pub const BCRYPT_PREFIX: &str = "{bcrypt}";
+
+/// 按双算法兼容方案生成密码哈希（新写入统一 bcrypt，兼容既有 MD5/DES 校验）
+pub fn hash_password(plain: &str) -> String {
+    let cost = bcrypt::DEFAULT_COST;
+    let hash = bcrypt::hash(plain, cost).unwrap_or_else(|_| format!("{:x}", md5::compute(plain.as_bytes())));
+    format!("{BCRYPT_PREFIX}{hash}")
+}
+
 pub fn verify_password(plain: &str, stored: &str, key: &str, _encrypt_type: Option<&str>) -> bool {
+    if let Some(bcrypt_hash) = stored.strip_prefix(BCRYPT_PREFIX) {
+        return bcrypt::verify(plain, bcrypt_hash).unwrap_or(false);
+    }
+
     let md5_hash = format!("{:x}", md5::compute(plain.as_bytes()));
     if md5_hash == stored {
         return true;

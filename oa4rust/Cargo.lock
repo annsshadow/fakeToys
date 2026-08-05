@@ -708,6 +708,7 @@ name = "control"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "auth",
  "axum",
  "base64 0.22.1",
  "bcrypt",
