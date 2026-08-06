@@ -4,6 +4,14 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[lib]
+name = "oa4rust"
+path = "src/lib.rs"
+
+[[bin]]
+name = "oa4rust"
+path = "src/main.rs"
+
 [dependencies]
 axum.workspace = true
 tokio.workspace = true
@@ -203,6 +211,8 @@ bcrypt = "0.15"
 base64 = "0.22"
 aes-gcm = "0.10"
 uuid = { version = "1", features = ["v4"] }
+hmac = "0.12"
+sha2 = "0.10"
 anyhow = "1"
 chrono = { version = "0.4", features = ["serde"] }
 md5 = "0.7"

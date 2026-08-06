@@ -19,5 +19,7 @@ pub mod response;
 pub mod router;
 pub mod session;
 
+pub use deadpool_postgres::Pool;
+
 #[cfg(test)]
 mod tests;

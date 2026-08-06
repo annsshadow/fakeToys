@@ -102,8 +102,35 @@ const RATE_LIMIT_WINDOW_MINUTES: i64 = 1;
 // 仅允许 GET/POST/HEAD/OPTIONS 方法，允许 Authorization/Content-Type 头。
 // ──────────────────────────────────────────────────────────────────────────────
 pub fn cors_middleware() -> CorsLayer {
+    use tower_http::cors::AllowOrigin;
+
+    let origins: Vec<String> = env::var("CORS_ALLOW_ORIGIN")
+        .unwrap_or_default()
+        .split(',')
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    let allow_origin = if origins.is_empty() {
+        AllowOrigin::exact(
+            "http://localhost:3000"
+                .parse::<HeaderValue>()
+                .expect("default origin parse"),
+        )
+    } else {
+        let header_values: Vec<HeaderValue> = origins
+            .into_iter()
+            .filter_map(|o| o.parse::<HeaderValue>().ok())
+            .collect();
+        if header_values.len() == 1 {
+            AllowOrigin::exact(header_values.into_iter().next().unwrap())
+        } else {
+            AllowOrigin::list(header_values)
+        }
+    };
+
     CorsLayer::new()
-        .allow_origin(Any)
+        .allow_origin(allow_origin)
         .allow_methods([
             axum::http::Method::GET,
             axum::http::Method::POST,
@@ -381,7 +408,7 @@ fn https_redirect(request: &Request<Body>) -> Option<Response> {
     let location = format!("https://{}{}", host, path);
 
     let mut response = Response::new(Body::empty());
-    *response.status_mut() = StatusCode::MOVED_PERMANENTLY;
+    *response.status_mut() = StatusCode::TEMPORARY_REDIRECT;
     response
         .headers_mut()
         .insert(header::LOCATION, HeaderValue::from_str(&location).ok()?);
@@ -512,6 +539,61 @@ pub async fn rate_limit_middleware(
     }
 
     next.run(request).await
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// module_routing: U9 灰度迁移 Feature Flag
+//
+// 通过环境变量 MODULE_ROUTING 控制每个模块前缀路由到 Rust 还是 Java。
+// 格式: MODULE_ROUTING=attendance:rust,calendar:java,control:rust
+// 未设置或未明确声明的模块默认路由到 Rust（true）。
+// ──────────────────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone)]
+pub struct ModuleRouting {
+    java_prefixes: Vec<String>,
+}
+
+impl ModuleRouting {
+    pub fn from_env() -> Self {
+        let raw = env::var("MODULE_ROUTING").unwrap_or_default();
+        let mut java_prefixes = Vec::new();
+        for part in raw.split(',') {
+            let part = part.trim();
+            if part.is_empty() {
+                continue;
+            }
+            if let Some((module, target)) = part.split_once(':') {
+                let module = module.trim();
+                let target = target.trim().to_lowercase();
+                if target == "java" {
+                    java_prefixes.push(module.to_string());
+                }
+            }
+        }
+        Self { java_prefixes }
+    }
+
+    /// 检查给定路径是否应路由到 Rust。若应路由到 Java 返回 false。
+    pub fn is_rust(&self, path: &str) -> bool {
+        let path_segs: Vec<&str> = path.trim_start_matches('/').split('/').collect();
+        if path_segs.len() >= 2 && path_segs[0] == "jaxrs" {
+            let module = path_segs[1];
+            !self.java_prefixes.iter().any(|p| p == module)
+        } else {
+            true
+        }
+    }
+}
+
+fn module_routing() -> &'static ModuleRouting {
+    static INSTANCE: OnceLock<ModuleRouting> = OnceLock::new();
+    INSTANCE.get_or_init(ModuleRouting::from_env)
+}
+
+/// 如果请求路径属于配置为 Java 的模块，返回 true。
+pub fn should_route_to_java(path: &str) -> bool {
+    !module_routing().is_rust(path)
 }
 
 fn unauthorized_response() -> Response {
