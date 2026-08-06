@@ -76,3 +76,34 @@ pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
     axum::Router::new()
         .route("/mind_assemble_control/health", axum::routing::get(|| async { "TODO: mind_assemble_control - real implementation needed" }))
 }
+
+
+/// Stub handler for /jaxrs/mind/assemble/control/folder/move/{folderId}
+/// TODO: Implement real business logic
+pub async fn stub_mind_assemble_control_folder_move_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/mind/assemble/control/folder/save
+/// TODO: Implement real business logic
+pub async fn stub_mind_assemble_control_folder_save() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/mind/assemble/control/folder/tree/my
+/// TODO: Implement real business logic
+pub async fn stub_mind_assemble_control_folder_tree_my() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/mind/assemble/control/folder/{id}
+/// TODO: Implement real business logic
+pub async fn stub_mind_assemble_control_folder_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/mind/assemble/control/folder/{id}/force
+/// TODO: Implement real business logic
+pub async fn stub_mind_assemble_control_folder_id_force() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}

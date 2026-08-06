@@ -87,3 +87,76 @@ pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
     axum::Router::new()
         .route("/correlation_service_processing/health", axum::routing::get(|| async { "TODO: correlation_service_processing - real implementation needed" }))
 }
+
+
+/// Stub handler for /jaxrs/correlation/service/processing/correlation/delete/type/cms/document/{document}
+/// TODO: Implement real business logic
+pub async fn stub_correlation_service_processing_correlation_delete_type_cms_document_document() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/{job}
+/// TODO: Implement real business logic
+pub async fn stub_correlation_service_processing_correlation_delete_type_processplatform_job_job() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}
+/// TODO: Implement real business logic
+pub async fn stub_correlation_service_processing_correlation_list_type_cms_document_document() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}/site/{site}
+/// TODO: Implement real business logic
+pub async fn stub_correlation_service_processing_correlation_list_type_cms_document_document_site_site() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}
+/// TODO: Implement real business logic
+pub async fn stub_correlation_service_processing_correlation_list_type_processplatform_job_job() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}/site/{site}
+/// TODO: Implement real business logic
+pub async fn stub_correlation_service_processing_correlation_list_type_processplatform_job_job_site_site() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/correlation/service/processing/correlation/readable/type/cms
+/// TODO: Implement real business logic
+pub async fn stub_correlation_service_processing_correlation_readable_type_cms() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/correlation/service/processing/correlation/readable/type/processplatform
+/// TODO: Implement real business logic
+pub async fn stub_correlation_service_processing_correlation_readable_type_processplatform() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/correlation/service/processing/correlation/type/cms/document/{document}
+/// TODO: Implement real business logic
+pub async fn stub_correlation_service_processing_correlation_type_cms_document_document() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/correlation/service/processing/correlation/type/processplatform/job/{job}
+/// TODO: Implement real business logic
+pub async fn stub_correlation_service_processing_correlation_type_processplatform_job_job() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/correlation/service/processing/correlation/update/type/cms/document/{document}
+/// TODO: Implement real business logic
+pub async fn stub_correlation_service_processing_correlation_update_type_cms_document_document() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/{job}
+/// TODO: Implement real business logic
+pub async fn stub_correlation_service_processing_correlation_update_type_processplatform_job_job() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}

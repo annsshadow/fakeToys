@@ -88,6 +88,7 @@ meeting_core_entity = { path = "crates/meeting_core_entity" }
 message_core_entity = { path = "crates/message_core_entity" }
 mind_core_entity = { path = "crates/mind_core_entity" }
 organization_core_express = { path = "crates/organization_core_express" }
+organization_assemble_control = { path = "crates/organization_assemble_control" }
 processplatform_assemble_bam = { path = "crates/processplatform_assemble_bam" }
 processplatform_assemble_designer = { path = "crates/processplatform_assemble_designer" }
 query_core_express = { path = "crates/query_core_express" }
@@ -132,6 +133,7 @@ members = [
     "crates/ai_assemble_control",
     "crates/hotpic_assemble_control",
     "crates/organization_assemble_express",
+    "crates/organization_assemble_control",
     "crates/mind_assemble_control",
     "crates/attendance_assemble_control",
     "crates/general_assemble_control",

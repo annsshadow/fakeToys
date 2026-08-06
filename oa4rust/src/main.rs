@@ -38,6 +38,7 @@ use file_assemble_control;
 use ai_assemble_control;
 use hotpic_assemble_control;
 use organization_assemble_express;
+use organization_assemble_control;
 use mind_assemble_control;
 use attendance_assemble_control;
 use general_assemble_control;
@@ -142,6 +143,7 @@ async fn main() -> anyhow::Result<()> {
         .merge(ai_assemble_control::router(pool.clone()))
         .merge(hotpic_assemble_control::router(pool.clone()))
         .merge(organization_assemble_express::router(pool.clone()))
+.merge(organization_assemble_control::router(pool.clone()))
         .merge(mind_assemble_control::router(pool.clone()))
         .merge(attendance_assemble_control::router(pool.clone()))
         .merge(general_assemble_control::router(pool.clone()))

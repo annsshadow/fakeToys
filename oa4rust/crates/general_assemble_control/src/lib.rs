@@ -110,3 +110,256 @@ pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
     axum::Router::new()
         .route("/general_assemble_control/health", axum::routing::get(|| async { "TODO: general_assemble_control - real implementation needed" }))
 }
+
+
+/// Stub handler for /jaxrs/general/assemble/control/area/list
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_area_list() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/area/list/province/{province}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_area_list_province_province() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/area/list/province/{province}/city/{city}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_area_list_province_province_city_city() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/area/list/province/{province}/city/{city}/district/{district}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_area_list_province_province_city_city_district_district() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/ecnet/check
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_ecnet_check() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/excel/excelName/{excelName}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_excel_excelName_excelName() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/excel/excelName/{excelName}/sheetList
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_excel_excelName_excelName_sheetList() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/excel/result/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_excel_result_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/excel/upload
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_excel_upload() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/excel/upload/with/url
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_excel_upload_with_url() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/generalfile/download/flag/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_generalfile_download_flag_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/generalfile/flag/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_generalfile_flag_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/generalfile/flag/{flag}/binary/base64
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_generalfile_flag_flag_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/invoice/create
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_invoice_create() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/invoice/delete/{id}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_invoice_delete_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/invoice/download/flag/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_invoice_download_flag_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/invoice/get/{id}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_invoice_get_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/invoice/list/paging/{page}/size/{size}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_invoice_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/invoice/update/apply/status/{id}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_invoice_update_apply_status_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/invoice/update/{id}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_invoice_update_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/invoice/upload
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_invoice_upload() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/invoice/upload/for/create
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_invoice_upload_for_create() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/invoice/upload/with/url
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_invoice_upload_with_url() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/office/html/to/word
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_office_html_to_word() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/office/html/to/word/result/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_office_html_to_word_result_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/qrcode/width/{width}/height/{height}/text/{text}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_qrcode_width_width_height_height_text_text() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/securityclearance/enable
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_securityclearance_enable() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/securityclearance/object
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_securityclearance_object() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/securityclearance/subject
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_securityclearance_subject() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/securityclearance/system
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_securityclearance_system() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/upgrade/2021090901
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_upgrade_2021090901() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/upgrade/2021090902
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_upgrade_2021090902() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/worktime/betweenholidaycount/start/{startDate}/end/{endDate}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_worktime_betweenholidaycount_start_startDate_end_endDate() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/worktime/betweenminutes/start/{start}/end/{end}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_worktime_betweenminutes_start_start_end_end() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/worktime/forwarddays/start/{start}/days/{days}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_worktime_forwarddays_start_start_days_days() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/worktime/forwardminutes/start/{start}/minutes/{minutes}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_worktime_forwardminutes_start_start_minutes_minutes() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/worktime/indefinedholiday/{date}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_worktime_indefinedholiday_date() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/worktime/indefinedworkday/{date}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_worktime_indefinedworkday_date() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/worktime/isholiday/{date}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_worktime_isholiday_date() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/worktime/isworkday/{date}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_worktime_isworkday_date() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/worktime/isworktime/{date}
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_worktime_isworktime_date() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/general/assemble/control/worktime/minutesofworkday
+/// TODO: Implement real business logic
+pub async fn stub_general_assemble_control_worktime_minutesofworkday() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}

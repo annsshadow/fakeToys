@@ -165,8 +165,11 @@ def inject_stubs(crate_lib_path, routes_code, handlers_code):
         print(f'  Stubs already exist, skipping')
         return False
     
+    # Ensure axum::routing imports exist
+    if 'use axum::routing::get;' not in content:
+        content = content.replace('use axum::{', 'use axum::{\n    routing::get,\n    routing::post,\n    routing::put,\n    routing::delete,')
+    
     # Find the router function and replace it
-    # Pattern: pub fn router(...) -> Router { ... }
     router_pattern = r'(pub fn router\([^)]*\)\s*->\s*\w+\s*\{)(.*?)(\}\s*)$'
     
     def replace_router(match):
@@ -174,8 +177,6 @@ def inject_stubs(crate_lib_path, routes_code, handlers_code):
         fn_body = match.group(2)
         fn_end = match.group(3)
         
-        # Find where Router::new() is in the body
-        # Replace the body with new routes
         new_body = '\n    Router::new()\n'
         for line in routes_code:
             new_body += line + '\n'
@@ -187,12 +188,12 @@ def inject_stubs(crate_lib_path, routes_code, handlers_code):
     
     if new_content == content:
         # Router pattern not found, append to end
-        new_content = content + '\n\n' + handlers_code
+        new_content = content + '\n\n// AUTO-GENERATED STUBS - DO NOT EDIT\n' + handlers_code
     else:
         # Router replaced, append handlers before the router
         handlers_pos = new_content.rfind('pub fn router')
         if handlers_pos != -1:
-            new_content = new_content[:handlers_pos] + handlers_code + '\n' + new_content[handlers_pos:]
+            new_content = new_content[:handlers_pos] + '// AUTO-GENERATED STUBS - DO NOT EDIT\n' + handlers_code + '\n' + new_content[handlers_pos:]
     
     with open(crate_lib_path, 'w', encoding='utf-8') as fh:
         fh.write(new_content)

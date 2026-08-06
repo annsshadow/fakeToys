@@ -69,3 +69,28 @@ pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
     axum::Router::new()
         .route("/component_assemble_control/health", axum::routing::get(|| async { "TODO: component_assemble_control - real implementation needed" }))
 }
+
+
+/// Stub handler for /jaxrs/component/assemble/control/component/delete/all
+/// TODO: Implement real business logic
+pub async fn stub_component_assemble_control_component_delete_all() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/component/assemble/control/component/list/all
+/// TODO: Implement real business logic
+pub async fn stub_component_assemble_control_component_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/component/assemble/control/component/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_component_assemble_control_component_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/component/assemble/control/status/list
+/// TODO: Implement real business logic
+pub async fn stub_component_assemble_control_status_list() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}

@@ -64,3 +64,58 @@ pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
     axum::Router::new()
         .route("/jpush_assemble_control/health", axum::routing::get(|| async { "TODO: jpush_assemble_control - real implementation needed" }))
 }
+
+
+/// Stub handler for /jaxrs/jpush/assemble/control/device/admin/unbind/all/person
+/// TODO: Implement real business logic
+pub async fn stub_jpush_assemble_control_device_admin_unbind_all_person() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/jpush/assemble/control/device/bind
+/// TODO: Implement real business logic
+pub async fn stub_jpush_assemble_control_device_bind() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/jpush/assemble/control/device/check/{deviceName}/{deviceType}/{pushType}
+/// TODO: Implement real business logic
+pub async fn stub_jpush_assemble_control_device_check_deviceName_deviceType_pushType() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/jpush/assemble/control/device/config/push/type
+/// TODO: Implement real business logic
+pub async fn stub_jpush_assemble_control_device_config_push_type() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/jpush/assemble/control/device/list/{pushType}
+/// TODO: Implement real business logic
+pub async fn stub_jpush_assemble_control_device_list_pushType() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/jpush/assemble/control/device/unbind/new/{deviceName}/{deviceType}/{pushType}
+/// TODO: Implement real business logic
+pub async fn stub_jpush_assemble_control_device_unbind_new_deviceName_deviceType_pushType() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/jpush/assemble/control/device/unbind/{deviceName}/{deviceType}
+/// TODO: Implement real business logic
+pub async fn stub_jpush_assemble_control_device_unbind_deviceName_deviceType() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/jpush/assemble/control/message/send
+/// TODO: Implement real business logic
+pub async fn stub_jpush_assemble_control_message_send() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/jpush/assemble/control/message/test/send
+/// TODO: Implement real business logic
+pub async fn stub_jpush_assemble_control_message_test_send() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}

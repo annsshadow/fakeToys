@@ -113,3 +113,322 @@ pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
     axum::Router::new()
         .route("/meeting_assemble_control/health", axum::routing::get(|| async { "TODO: meeting_assemble_control - real implementation needed" }))
 }
+
+
+/// Stub handler for /jaxrs/meeting/assemble/control/building/list
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_building_list() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/building/list/like/pinyin/{key}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_building_list_like_pinyin_key() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/building/list/like/{key}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_building_list_like_key() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/building/list/pinyininitial/{key}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_building_list_pinyininitial_key() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/building/list/start/{start}/completed/{completed}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_building_list_start_start_completed_completed() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/building/list/start/{start}/completed/{completed}/allmeeting
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_building_list_start_start_completed_completed_allmeeting() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/building/list/start/{start}/completed/{completed}/room/{room}/meeting/{meeting}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_building_list_start_start_completed_completed_room_room_meeting_meeting() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/building/{id}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_building_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/config/system/config
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_config_system_config() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/config/system/config/manage
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_config_system_config_manage() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/applied/completed
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_applied_completed() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/applied/processing
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_applied_processing() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/applied/wait
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_applied_wait() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/apply/{page}/size/{size}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_apply_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/coming/day/{count}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_coming_day_count() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/coming/month/{count}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_coming_month_count() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_forward_monthcount_monthCount() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}/all
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_forward_monthcount_monthCount_all() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/invite/{page}/size/{size}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_invite_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/invited/completed
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_invited_completed() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/invited/processing
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_invited_processing() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/invited/rejected
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_invited_rejected() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/invited/wait
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_invited_wait() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/wait/accept
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_wait_accept() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/wait/confirm
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_wait_confirm() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/year/{year}/month/{month}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/year/{year}/month/{month}/all
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month_all() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/year/{year}/month/{month}/day/{day}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month_day_day() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/year/{year}/month/{month}/day/{day}/all
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month_day_day_all() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/year/{year}/month/{month}/day/{day}/{roomId}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month_day_day_roomId() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/{id}/next/{count}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/{id}/prev/{count}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/{page}/size/{size}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/{page}/size/{size}/manage
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_list_page_size_size_manage() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/accept
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_id_accept() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/add/invite
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_id_add_invite() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/checkin
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_id_checkin() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/checkin/code
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_id_checkin_code() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/confirm/allow
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_id_confirm_allow() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/confirm/deny
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_id_confirm_deny() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/delete/invite
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_id_delete_invite() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/manual/completed
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_id_manual_completed() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/modify/completedtime
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_id_modify_completedtime() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/modify/starttime
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_id_modify_starttime() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/reject
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_meeting_id_reject() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/openmeeting/list/room
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_openmeeting_list_room() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/room/list
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_room_list() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/room/list/like/pinyin/{key}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_room_list_like_pinyin_key() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/room/list/like/{key}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_room_list_like_key() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/room/list/pinyininitial/{key}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_room_list_pinyininitial_key() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/room/{id}
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_room_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/meeting/assemble/control/room/{id}/photo
+/// TODO: Implement real business logic
+pub async fn stub_meeting_assemble_control_room_id_photo() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}

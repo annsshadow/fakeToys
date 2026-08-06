@@ -100,3 +100,58 @@ pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
     axum::Router::new()
         .route("/hotpic_assemble_control/health", axum::routing::get(|| async { "TODO: hotpic_assemble_control - real implementation needed" }))
 }
+
+
+/// Stub handler for /jaxrs/hotpic/assemble/control/cipher/hotpic/bbs/{id}
+/// TODO: Implement real business logic
+pub async fn stub_hotpic_assemble_control_cipher_hotpic_bbs_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/hotpic/assemble/control/cipher/hotpic/cms/{id}
+/// TODO: Implement real business logic
+pub async fn stub_hotpic_assemble_control_cipher_hotpic_cms_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}
+/// TODO: Implement real business logic
+pub async fn stub_hotpic_assemble_control_cipher_hotpic_filter_list_page_page_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/hotpic/assemble/control/cipher/hotpic/{id}
+/// TODO: Implement real business logic
+pub async fn stub_hotpic_assemble_control_cipher_hotpic_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/changeTitle
+/// TODO: Implement real business logic
+pub async fn stub_hotpic_assemble_control_user_hotpic_changeTitle() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/exists/check
+/// TODO: Implement real business logic
+pub async fn stub_hotpic_assemble_control_user_hotpic_exists_check() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/{page}/count/{count}
+/// TODO: Implement real business logic
+pub async fn stub_hotpic_assemble_control_user_hotpic_filter_list_page_page_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/{application}/{infoId}
+/// TODO: Implement real business logic
+pub async fn stub_hotpic_assemble_control_user_hotpic_application_infoId() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/{id}
+/// TODO: Implement real business logic
+pub async fn stub_hotpic_assemble_control_user_hotpic_id() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}

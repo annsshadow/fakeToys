@@ -95,3 +95,166 @@ pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
     axum::Router::new()
         .route("/ai_assemble_control/health", axum::routing::get(|| async { "TODO: ai_assemble_control - real implementation needed" }))
 }
+
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/base/config
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_base_config() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/create/mcp
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_create_mcp() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/create/model
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_create_model() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/delete/mcp/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_delete_mcp_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/delete/model/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_delete_model_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/get/mcp/ext/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_get_mcp_ext_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/get/mcp/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_get_mcp_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/get/model/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_get_model_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/list/enable/model
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_list_enable_model() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/list/mcp/paging/{page}/size/{size}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_list_mcp_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/list/model/paging/{page}/size/{size}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_list_model_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/save
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_save() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/update/mcp/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_update_mcp_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/config/update/model/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_config_update_model_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/file/copy/file
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_file_copy_file() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/file/delete/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_file_delete_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/file/list
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_file_list() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/file/list/paging/{page}/size/{size}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_file_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/file/upload
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_file_upload() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/file/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_file_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/file/{id}/download
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_file_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/file/{id}/download/scale
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_file_id_download_scale() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/index/cms/doc/with/app/{appId}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_index_cms_doc_with_app_appId() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/index/cms/doc/{docId}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_index_cms_doc_docId() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/index/delete/{flag}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_index_delete_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/index/list/paging/{page}/size/{size}
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_index_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}
+
+/// Stub handler for /jaxrs/ai/assemble/control/index/sync/to/knowledge
+/// TODO: Implement real business logic
+pub async fn stub_ai_assemble_control_index_sync_to_knowledge() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Null)))
+}

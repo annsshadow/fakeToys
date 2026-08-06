@@ -2490,6 +2490,7 @@ dependencies = [
  "mind",
  "mind_assemble_control",
  "mind_core_entity",
+ "organization_assemble_control",
  "organization_assemble_express",
  "organization_core_entity",
  "organization_core_express",
@@ -2596,6 +2597,20 @@ dependencies = [
  "libc",
  "pkg-config",
  "vcpkg",
+]
+
+[[package]]
+name = "organization_assemble_control"
+version = "0.1.0"
+dependencies = [
+ "axum",
+ "deadpool-postgres",
+ "serde",
+ "serde_json",
+ "shared",
+ "tokio",
+ "tracing",
+ "uuid",
 ]
 
 [[package]]
