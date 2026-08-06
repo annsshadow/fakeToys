@@ -1,10 +1,12 @@
 use axum::{
-    extract::Extension,
-    Json, Router,
+    extract::{Extension, Json, Path},
+    Router,
+    routing::{get, post},
 };
 use deadpool_postgres::Pool;
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::error::AppError;
+use shared::response::ActionResult;
 
 pub mod routes;
 
@@ -111,255 +113,1672 @@ pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/general_assemble_control/health", axum::routing::get(|| async { "TODO: general_assemble_control - real implementation needed" }))
 }
 
+// ---- attendscope handlers ----
 
-/// Stub handler for /jaxrs/general/assemble/control/area/list
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_area_list() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+#[derive(Debug, serde::Deserialize)]
+pub struct AttendScopeCreateRequest {
+    pub name: Option<String>,
+    pub unit_id: Option<String>,
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/area/list/province/{province}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_area_list_province_province() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn attendscope_list(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, unit_id, creator, create_time FROM x_general_attend_scope ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/area/list/province/{province}/city/{city}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_area_list_province_province_city_city() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn attendscope_get(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, unit_id, creator, create_time FROM x_general_attend_scope WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("attend scope not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/area/list/province/{province}/city/{city}/district/{district}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_area_list_province_province_city_city_district_district() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn attendscope_create(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Json(req): Json<AttendScopeCreateRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = req.name.unwrap_or_default();
+    let unit_id = req.unit_id.unwrap_or_default();
+    let creator = "system";
+
+    client
+        .execute(
+            "INSERT INTO x_general_attend_scope (id, name, unit_id, creator, create_time) VALUES ($1, $2, $3, $4, NOW())",
+            &[&id, &name, &unit_id, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("unitId".to_string(), Value::String(unit_id)),
+        ("creator".to_string(), Value::String(creator.to_string())),
+    ]));
+
+    Ok(Json(ActionResult::success(result)))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/ecnet/check
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_ecnet_check() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn attendscope_save(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(req): Json<AttendScopeCreateRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let name = req.name.unwrap_or_default();
+    let unit_id = req.unit_id.unwrap_or_default();
+
+    let result = client
+        .execute(
+            "UPDATE x_general_attend_scope SET name = $1, unit_id = $2 WHERE id = $3",
+            &[&name, &unit_id, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("attend scope not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(true)),
+            ("name".to_string(), Value::String(name)),
+            ("unitId".to_string(), Value::String(unit_id)),
+        ]),
+    ))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/excel/excelName/{excelName}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_excel_excelName_excelName() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn attendscope_delete(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let result = client
+        .execute(
+            "DELETE FROM x_general_attend_scope WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("attend scope not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/excel/excelName/{excelName}/sheetList
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_excel_excelName_excelName_sheetList() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+
+pub async fn stub_general_assemble_control_area_list(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, parent_id, level, province, city, district, creator, create_time FROM x_general_assemble_area ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("parentId".to_string(), Value::String(row.get("parent_id"))),
+                ("level".to_string(), Value::String(row.get("level"))),
+                ("province".to_string(), Value::String(row.get("province"))),
+                ("city".to_string(), Value::String(row.get("city"))),
+                ("district".to_string(), Value::String(row.get("district"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/excel/result/{flag}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_excel_result_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_area_list_province_province(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(province): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, parent_id, level, province, city, district, creator, create_time FROM x_general_assemble_area WHERE province = $1 ORDER BY create_time DESC",
+            &[&province],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("parentId".to_string(), Value::String(row.get("parent_id"))),
+                ("level".to_string(), Value::String(row.get("level"))),
+                ("province".to_string(), Value::String(row.get("province"))),
+                ("city".to_string(), Value::String(row.get("city"))),
+                ("district".to_string(), Value::String(row.get("district"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/excel/upload
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_excel_upload() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_area_list_province_province_city_city(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(province): axum::extract::Path<String>,
+    axum::extract::Path(city): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, parent_id, level, province, city, district, creator, create_time FROM x_general_assemble_area WHERE province = $1 AND city = $2 ORDER BY create_time DESC",
+            &[&province, &city],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("parentId".to_string(), Value::String(row.get("parent_id"))),
+                ("level".to_string(), Value::String(row.get("level"))),
+                ("province".to_string(), Value::String(row.get("province"))),
+                ("city".to_string(), Value::String(row.get("city"))),
+                ("district".to_string(), Value::String(row.get("district"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/excel/upload/with/url
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_excel_upload_with_url() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_area_list_province_province_city_city_district_district(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(province): axum::extract::Path<String>,
+    axum::extract::Path(city): axum::extract::Path<String>,
+    axum::extract::Path(district): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, parent_id, level, province, city, district, creator, create_time FROM x_general_assemble_area WHERE province = $1 AND city = $2 AND district = $3 ORDER BY create_time DESC",
+            &[&province, &city, &district],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("parentId".to_string(), Value::String(row.get("parent_id"))),
+                ("level".to_string(), Value::String(row.get("level"))),
+                ("province".to_string(), Value::String(row.get("province"))),
+                ("city".to_string(), Value::String(row.get("city"))),
+                ("district".to_string(), Value::String(row.get("district"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/generalfile/download/flag/{flag}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_generalfile_download_flag_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_ecnet_check(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, value, creator, create_time FROM x_general_assemble_ecnet_config ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/generalfile/flag/{flag}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_generalfile_flag_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_excel_excelName_excelName(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(excel_name): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, excel_name, creator, create_time FROM x_general_assemble_excel WHERE excel_name = $1",
+            &[&excel_name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("excelName".to_string(), Value::String(row.get("excel_name"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("excel not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/generalfile/flag/{flag}/binary/base64
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_generalfile_flag_flag_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_excel_excelName_excelName_sheetList(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(excel_name): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, sheet_name, excel_id, creator, create_time FROM x_general_assemble_excel_sheet WHERE excel_id = (SELECT id FROM x_general_assemble_excel WHERE excel_name = $1 LIMIT 1) ORDER BY create_time",
+            &[&excel_name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("sheetName".to_string(), Value::String(row.get("sheet_name"))),
+                ("excelId".to_string(), Value::String(row.get("excel_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/invoice/create
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_invoice_create() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_excel_result_flag(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, flag, result, creator, create_time FROM x_general_assemble_excel_result WHERE flag = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("result".to_string(), Value::String(row.get("result"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("result not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/invoice/delete/{id}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_invoice_delete_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_excel_upload(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let excel_name = payload.get("excelName").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let flag = uuid::Uuid::new_v4().to_string();
+
+    client
+        .execute(
+            "INSERT INTO x_general_assemble_excel (id, name, excel_name, creator, create_time, flag) VALUES ($1, $2, $3, $4, NOW(), $5)",
+            &[&id, &name, &excel_name, &creator, &flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("excelName".to_string(), Value::String(excel_name)),
+        ("flag".to_string(), Value::String(flag)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/invoice/download/flag/{flag}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_invoice_download_flag_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_excel_upload_with_url(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let excel_name = payload.get("excelName").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let flag = uuid::Uuid::new_v4().to_string();
+
+    client
+        .execute(
+            "INSERT INTO x_general_assemble_excel (id, name, excel_name, creator, create_time, flag) VALUES ($1, $2, $3, $4, NOW(), $5)",
+            &[&id, &name, &excel_name, &creator, &flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("excelName".to_string(), Value::String(excel_name)),
+        ("flag".to_string(), Value::String(flag)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/invoice/get/{id}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_invoice_get_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_generalfile_download_flag_flag(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, content, size, creator, create_time FROM x_general_assemble_general_file WHERE flag = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("size".to_string(), Value::String(row.get::<_, i64>("size").to_string())),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/invoice/list/paging/{page}/size/{size}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_invoice_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_generalfile_flag_flag(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, content, size, creator, create_time FROM x_general_assemble_general_file WHERE flag = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("size".to_string(), Value::String(row.get::<_, i64>("size").to_string())),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/invoice/update/apply/status/{id}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_invoice_update_apply_status_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_generalfile_flag_flag_binary_base64(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, content, size, creator, create_time FROM x_general_assemble_general_file WHERE flag = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("content".to_string(), Value::String(content.unwrap_or_default())),
+                ("size".to_string(), Value::String(row.get::<_, i64>("size").to_string())),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/invoice/update/{id}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_invoice_update_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_invoice_create(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let flag = uuid::Uuid::new_v4().to_string();
+    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or("draft").to_string();
+    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+
+    client
+        .execute(
+            "INSERT INTO x_general_assemble_invoice (id, name, flag, status, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
+            &[&id, &name, &flag, &status, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("flag".to_string(), Value::String(flag)),
+        ("status".to_string(), Value::String(status)),
+        ("creator".to_string(), Value::String(creator)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/invoice/upload
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_invoice_upload() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_invoice_delete_id(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let result = client
+        .execute("DELETE FROM x_general_assemble_invoice WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("invoice not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("deleted".to_string(), Value::Bool(true)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/invoice/upload/for/create
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_invoice_upload_for_create() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_invoice_download_flag_flag(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, status, creator, create_time FROM x_general_assemble_invoice WHERE flag = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("invoice not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/invoice/upload/with/url
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_invoice_upload_with_url() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_invoice_get_id(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, status, creator, create_time FROM x_general_assemble_invoice WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("invoice not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/office/html/to/word
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_office_html_to_word() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_invoice_list_paging_page_size_size(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(page): axum::extract::Path<i32>,
+    axum::extract::Path(size): axum::extract::Path<i32>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let offset = ((page.max(1) - 1) * size) as i64;
+
+    let total_row = client
+        .query_one("SELECT COUNT(*) as cnt FROM x_general_assemble_invoice", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let total: i64 = total_row.get("cnt");
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, status, creator, create_time FROM x_general_assemble_invoice ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+            &[&size, &offset],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
+        ("page".to_string(), Value::Number(serde_json::Number::from(page as i64))),
+        ("size".to_string(), Value::Number(serde_json::Number::from(size as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/office/html/to/word/result/{flag}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_office_html_to_word_result_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_invoice_update_apply_status_id(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    let result = client
+        .execute(
+            "UPDATE x_general_assemble_invoice SET status = $1 WHERE id = $2",
+            &[&status, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("invoice not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("status".to_string(), Value::String(status)),
+        ("updated".to_string(), Value::Bool(true)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/qrcode/width/{width}/height/{height}/text/{text}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_qrcode_width_width_height_height_text_text() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_invoice_update_id(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+
+    let result = client
+        .execute(
+            "UPDATE x_general_assemble_invoice SET name = $1, status = $2 WHERE id = $3",
+            &[&name, &status, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("invoice not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("status".to_string(), Value::String(status)),
+        ("updated".to_string(), Value::Bool(true)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/securityclearance/enable
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_securityclearance_enable() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_invoice_upload(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let flag = uuid::Uuid::new_v4().to_string();
+    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+
+    client
+        .execute(
+            "INSERT INTO x_general_assemble_invoice (id, name, flag, status, creator, create_time) VALUES ($1, $2, $3, 'draft', $4, NOW())",
+            &[&id, &name, &flag, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("flag".to_string(), Value::String(flag)),
+        ("status".to_string(), Value::String("draft".to_string())),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/securityclearance/object
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_securityclearance_object() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_invoice_upload_for_create(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let flag = uuid::Uuid::new_v4().to_string();
+    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+
+    client
+        .execute(
+            "INSERT INTO x_general_assemble_invoice (id, name, flag, status, creator, create_time) VALUES ($1, $2, $3, 'draft', $4, NOW())",
+            &[&id, &name, &flag, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("flag".to_string(), Value::String(flag)),
+        ("status".to_string(), Value::String("draft".to_string())),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/securityclearance/subject
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_securityclearance_subject() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_invoice_upload_with_url(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let flag = uuid::Uuid::new_v4().to_string();
+    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+
+    client
+        .execute(
+            "INSERT INTO x_general_assemble_invoice (id, name, flag, status, creator, create_time) VALUES ($1, $2, $3, 'draft', $4, NOW())",
+            &[&id, &name, &flag, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("flag".to_string(), Value::String(flag)),
+        ("status".to_string(), Value::String("draft".to_string())),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/securityclearance/system
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_securityclearance_system() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_office_html_to_word(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let html_content = payload.get("htmlContent").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let word_flag = uuid::Uuid::new_v4().to_string();
+
+    client
+        .execute(
+            "INSERT INTO x_general_assemble_office (id, html_content, word_flag, creator, create_time) VALUES ($1, $2, $3, $4, NOW())",
+            &[&id, &html_content, &word_flag, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("wordFlag".to_string(), Value::String(word_flag)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/upgrade/2021090901
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_upgrade_2021090901() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_office_html_to_word_result_flag(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, word_flag, html_content, creator, create_time FROM x_general_assemble_office WHERE word_flag = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("wordFlag".to_string(), Value::String(row.get("word_flag"))),
+                ("htmlContent".to_string(), Value::String(row.get("html_content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("conversion result not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/upgrade/2021090902
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_upgrade_2021090902() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_qrcode_width_width_height_height_text_text(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(width): axum::extract::Path<u32>,
+    axum::extract::Path(height): axum::extract::Path<u32>,
+    axum::extract::Path(text): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let content = text.clone();
+    let creator = "system";
+
+    client
+        .execute(
+            "INSERT INTO x_general_assemble_qrcode (id, width, height, text, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&id, &(width as i32), &(height as i32), &text, &content, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("width".to_string(), Value::Number(serde_json::Number::from(width))),
+        ("height".to_string(), Value::Number(serde_json::Number::from(height))),
+        ("text".to_string(), Value::String(text)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/worktime/betweenholidaycount/start/{startDate}/end/{endDate}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_worktime_betweenholidaycount_start_startDate_end_endDate() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_securityclearance_enable(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let enabled = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    let row = client
+        .query_opt(
+            "SELECT id FROM x_general_assemble_security_clearance WHERE name = $1 LIMIT 1",
+            &[&name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let id: String = row.get("id");
+            client
+                .execute(
+                    "UPDATE x_general_assemble_security_clearance SET enabled = $1 WHERE id = $2",
+                    &[&enabled, &id],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(id)),
+                ("name".to_string(), Value::String(name)),
+                ("enabled".to_string(), Value::Bool(enabled)),
+            ])))))
+        }
+        None => {
+            let id = uuid::Uuid::new_v4().to_string();
+            client
+                .execute(
+                    "INSERT INTO x_general_assemble_security_clearance (id, name, enabled, creator, create_time) VALUES ($1, $2, $3, 'system', NOW())",
+                    &[&id, &name, &enabled],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(id)),
+                ("name".to_string(), Value::String(name)),
+                ("enabled".to_string(), Value::Bool(enabled)),
+            ])))))
+        }
+    }
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/worktime/betweenminutes/start/{start}/end/{end}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_worktime_betweenminutes_start_start_end_end() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_securityclearance_object(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, type, enabled, subject, creator, create_time FROM x_general_assemble_security_clearance WHERE type = 'object' ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                ("subject".to_string(), Value::String(row.get("subject"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/worktime/forwarddays/start/{start}/days/{days}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_worktime_forwarddays_start_start_days_days() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_securityclearance_subject(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, type, enabled, object, creator, create_time FROM x_general_assemble_security_clearance WHERE type = 'subject' ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                ("object".to_string(), Value::String(row.get("object"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/worktime/forwardminutes/start/{start}/minutes/{minutes}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_worktime_forwardminutes_start_start_minutes_minutes() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_securityclearance_system(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, type, enabled, creator, create_time FROM x_general_assemble_security_clearance WHERE type = 'system' ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/worktime/indefinedholiday/{date}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_worktime_indefinedholiday_date() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_upgrade_2021090901(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, version, description, file_url, creator, create_time FROM x_general_assemble_upgrade WHERE version = '2021090901' ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("version".to_string(), Value::String(row.get("version"))),
+                ("description".to_string(), Value::String(row.get("description"))),
+                ("fileUrl".to_string(), Value::String(row.get("file_url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/worktime/indefinedworkday/{date}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_worktime_indefinedworkday_date() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_upgrade_2021090902(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, version, description, file_url, creator, create_time FROM x_general_assemble_upgrade WHERE version = '2021090902' ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("version".to_string(), Value::String(row.get("version"))),
+                ("description".to_string(), Value::String(row.get("description"))),
+                ("fileUrl".to_string(), Value::String(row.get("file_url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/worktime/isholiday/{date}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_worktime_isholiday_date() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_worktime_betweenholidaycount_start_startDate_end_endDate(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(start_date): axum::extract::Path<String>,
+    axum::extract::Path(end_date): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_one(
+            "SELECT COUNT(*) as cnt FROM x_general_assemble_worktime WHERE is_holiday = true AND date >= $1 AND date <= $2",
+            &[&start_date, &end_date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let count: i64 = row.get("cnt");
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+        ("startDate".to_string(), Value::String(start_date)),
+        ("endDate".to_string(), Value::String(end_date)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/worktime/isworkday/{date}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_worktime_isworkday_date() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_worktime_betweenminutes_start_start_end_end(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(start): axum::extract::Path<String>,
+    axum::extract::Path(end): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_one(
+            "SELECT SUM(minutes) as total FROM x_general_assemble_worktime WHERE date >= $1 AND date <= $2 AND is_worktime = true",
+            &[&start, &end],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let total: Option<i64> = row.get("total");
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("minutes".to_string(), Value::Number(serde_json::Number::from(total.unwrap_or(0)))),
+        ("start".to_string(), Value::String(start)),
+        ("end".to_string(), Value::String(end)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/worktime/isworktime/{date}
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_worktime_isworktime_date() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_worktime_forwarddays_start_start_days_days(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(start): axum::extract::Path<String>,
+    axum::extract::Path(days): axum::extract::Path<u32>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let end_date = format!("{} + {} days", start, days);
+
+    let rows = client
+        .query(
+            "SELECT id, date, is_holiday, is_workday, is_worktime, minutes, creator, create_time FROM x_general_assemble_worktime WHERE date >= $1 AND date <= $2 ORDER BY date",
+            &[&start, &end_date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("isHoliday".to_string(), Value::Bool(row.get("is_holiday"))),
+                ("isWorkday".to_string(), Value::Bool(row.get("is_workday"))),
+                ("isWorktime".to_string(), Value::Bool(row.get("is_worktime"))),
+                ("minutes".to_string(), Value::String(row.get::<_, i64>("minutes").to_string())),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("start".to_string(), Value::String(start)),
+        ("days".to_string(), Value::Number(serde_json::Number::from(days as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/general/assemble/control/worktime/minutesofworkday
-/// TODO: Implement real business logic
-pub async fn stub_general_assemble_control_worktime_minutesofworkday() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_general_assemble_control_worktime_forwardminutes_start_start_minutes_minutes(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(start): axum::extract::Path<String>,
+    axum::extract::Path(minutes): axum::extract::Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, date, is_holiday, is_workday, is_worktime, minutes, creator, create_time FROM x_general_assemble_worktime WHERE date >= $1 AND is_worktime = true ORDER BY date",
+            &[&start],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let mut worktime_records = Vec::new();
+    let mut accumulated: i64 = 0;
+
+    for row in &rows {
+        let record_minutes: i64 = row.get("minutes");
+        accumulated += record_minutes;
+        worktime_records.push(Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("date".to_string(), Value::String(row.get("date"))),
+            ("isHoliday".to_string(), Value::Bool(row.get("is_holiday"))),
+            ("isWorkday".to_string(), Value::Bool(row.get("is_workday"))),
+            ("isWorktime".to_string(), Value::Bool(row.get("is_worktime"))),
+            ("minutes".to_string(), Value::String(record_minutes.to_string())),
+        ])));
+        if accumulated >= minutes {
+            break;
+        }
+    }
+
+    let end_date = worktime_records.last()
+        .and_then(|v| v.get("date"))
+        .and_then(|v| v.as_str())
+        .unwrap_or(&start)
+        .to_string();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(worktime_records.len() as i64))),
+        ("start".to_string(), Value::String(start)),
+        ("targetMinutes".to_string(), Value::Number(serde_json::Number::from(minutes))),
+        ("endDate".to_string(), Value::String(end_date)),
+        ("data".to_string(), Value::Array(worktime_records)),
+    ])))))
+}
+
+pub async fn stub_general_assemble_control_worktime_indefinedholiday_date(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(date): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, date, is_holiday, creator, create_time FROM x_general_assemble_worktime WHERE date = $1 LIMIT 1",
+            &[&date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let is_holiday: bool = row.get("is_holiday");
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("isHoliday".to_string(), Value::Bool(is_holiday)),
+            ])))))
+        }
+        None => {
+            let weekday = if date.len() == 10 && date.chars().nth(4) == Some('-') && date.chars().nth(7) == Some('-') {
+                let year = date[0..4].parse::<i32>().unwrap_or(2000);
+                let month = date[5..7].parse::<u32>().unwrap_or(1);
+                let day = date[8..10].parse::<u32>().unwrap_or(1);
+                let total_days = (year - 2000) * 365 + (month as i32 - 1) * 30 + day as i32;
+                Some((total_days % 7) as u8)
+            } else {
+                None
+            };
+            let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
+            let is_holiday = is_weekend;
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("date".to_string(), Value::String(date)),
+                ("isHoliday".to_string(), Value::Bool(is_holiday)),
+                ("indefined".to_string(), Value::Bool(true)),
+            ])))))
+        }
+    }
+}
+
+pub async fn stub_general_assemble_control_worktime_indefinedworkday_date(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(date): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, date, is_workday, creator, create_time FROM x_general_assemble_worktime WHERE date = $1 LIMIT 1",
+            &[&date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let is_workday: bool = row.get("is_workday");
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("isWorkday".to_string(), Value::Bool(is_workday)),
+            ])))))
+        }
+        None => {
+            let weekday = if date.len() == 10 && date.chars().nth(4) == Some('-') && date.chars().nth(7) == Some('-') {
+                let year = date[0..4].parse::<i32>().unwrap_or(2000);
+                let month = date[5..7].parse::<u32>().unwrap_or(1);
+                let day = date[8..10].parse::<u32>().unwrap_or(1);
+                let total_days = (year - 2000) * 365 + (month as i32 - 1) * 30 + day as i32;
+                Some((total_days % 7) as u8)
+            } else {
+                None
+            };
+            let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
+            let is_workday = !is_weekend;
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("date".to_string(), Value::String(date)),
+                ("isWorkday".to_string(), Value::Bool(is_workday)),
+                ("indefined".to_string(), Value::Bool(true)),
+            ])))))
+        }
+    }
+}
+
+pub async fn stub_general_assemble_control_worktime_isholiday_date(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(date): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, date, is_holiday, creator, create_time FROM x_general_assemble_worktime WHERE date = $1 LIMIT 1",
+            &[&date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let is_holiday: bool = row.get("is_holiday");
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("isHoliday".to_string(), Value::Bool(is_holiday)),
+            ])))))
+        }
+        None => {
+            let weekday = if date.len() == 10 && date.chars().nth(4) == Some('-') && date.chars().nth(7) == Some('-') {
+                let year = date[0..4].parse::<i32>().unwrap_or(2000);
+                let month = date[5..7].parse::<u32>().unwrap_or(1);
+                let day = date[8..10].parse::<u32>().unwrap_or(1);
+                let total_days = (year - 2000) * 365 + (month as i32 - 1) * 30 + day as i32;
+                Some((total_days % 7) as u8)
+            } else {
+                None
+            };
+            let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("date".to_string(), Value::String(date)),
+                ("isHoliday".to_string(), Value::Bool(is_weekend)),
+                ("indefined".to_string(), Value::Bool(true)),
+            ])))))
+        }
+    }
+}
+
+pub async fn stub_general_assemble_control_worktime_isworkday_date(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(date): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, date, is_workday, creator, create_time FROM x_general_assemble_worktime WHERE date = $1 LIMIT 1",
+            &[&date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let is_workday: bool = row.get("is_workday");
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("isWorkday".to_string(), Value::Bool(is_workday)),
+            ])))))
+        }
+        None => {
+            let weekday = if date.len() == 10 && date.chars().nth(4) == Some('-') && date.chars().nth(7) == Some('-') {
+                let year = date[0..4].parse::<i32>().unwrap_or(2000);
+                let month = date[5..7].parse::<u32>().unwrap_or(1);
+                let day = date[8..10].parse::<u32>().unwrap_or(1);
+                let total_days = (year - 2000) * 365 + (month as i32 - 1) * 30 + day as i32;
+                Some((total_days % 7) as u8)
+            } else {
+                None
+            };
+            let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("date".to_string(), Value::String(date)),
+                ("isWorkday".to_string(), Value::Bool(!is_weekend)),
+                ("indefined".to_string(), Value::Bool(true)),
+            ])))))
+        }
+    }
+}
+
+pub async fn stub_general_assemble_control_worktime_isworktime_date(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(date): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, date, is_worktime, minutes, creator, create_time FROM x_general_assemble_worktime WHERE date = $1 LIMIT 1",
+            &[&date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let is_worktime: bool = row.get("is_worktime");
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("isWorktime".to_string(), Value::Bool(is_worktime)),
+            ])))))
+        }
+        None => {
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("date".to_string(), Value::String(date)),
+                ("isWorktime".to_string(), Value::Bool(false)),
+                ("indefined".to_string(), Value::Bool(true)),
+            ])))))
+        }
+    }
+}
+
+pub async fn stub_general_assemble_control_worktime_minutesofworkday(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_one(
+            "SELECT SUM(minutes) as total FROM x_general_assemble_worktime WHERE is_worktime = true",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let total: Option<i64> = row.get("total");
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("minutes".to_string(), Value::Number(serde_json::Number::from(total.unwrap_or(0)))),
+    ])))))
 }

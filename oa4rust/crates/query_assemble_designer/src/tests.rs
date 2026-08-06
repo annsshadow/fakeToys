@@ -66,7 +66,7 @@ fn test_delete_designer_action_result_format() {
 
 #[tokio::test]
 async fn test_get_designer_route_exists() {
-    let app = query_assemble_designer_router();
+    let app = query_assemble_designer_router(None);
 
     use axum::body::Body;
     use axum::http::{Request, Method};
@@ -87,7 +87,7 @@ async fn test_get_designer_route_exists() {
 
 #[tokio::test]
 async fn test_create_designer_route_exists() {
-    let app = query_assemble_designer_router();
+    let app = query_assemble_designer_router(None);
 
     use axum::body::Body;
     use axum::http::{Request, Method};
@@ -115,7 +115,7 @@ async fn test_create_designer_route_exists() {
 
 #[tokio::test]
 async fn test_list_designers_route_exists() {
-    let app = query_assemble_designer_router();
+    let app = query_assemble_designer_router(None);
 
     use axum::body::Body;
     use axum::http::{Request, Method};
@@ -136,7 +136,7 @@ async fn test_list_designers_route_exists() {
 
 #[tokio::test]
 async fn test_save_designer_route_exists() {
-    let app = query_assemble_designer_router();
+    let app = query_assemble_designer_router(None);
 
     use axum::body::Body;
     use axum::http::{Request, Method};
@@ -163,7 +163,7 @@ async fn test_save_designer_route_exists() {
 
 #[tokio::test]
 async fn test_delete_designer_route_exists() {
-    let app = query_assemble_designer_router();
+    let app = query_assemble_designer_router(None);
 
     use axum::body::Body;
     use axum::http::{Request, Method};

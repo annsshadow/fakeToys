@@ -89,7 +89,7 @@ async fn test_update_control_config_route() {
         .oneshot(
             Request::builder()
                 .uri("/jaxrs/cms/assemble/control/config/update")
-                .method(Method::GET)
+                .method(Method::POST)
                 .header("content-type", "application/json")
                 .body(Body::from(req_body))
                 .unwrap(),
@@ -99,3 +99,6 @@ async fn test_update_control_config_route() {
 
     assert_eq!(response.status(), axum::http::StatusCode::OK);
 }
+
+
+

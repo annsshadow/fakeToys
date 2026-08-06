@@ -152,7 +152,7 @@ async fn main() -> anyhow::Result<()> {
         .merge(portal_assemble_designer::router(pool.clone()))
         .merge(correlation_service_processing::router(pool.clone()))
         .merge(portal_assemble_surface::router(pool.clone()))
-        .merge(processplatform_service_processing::router(pool.clone()))
+        .merge(processplatform_service_processing::router(Some(pool.clone())))
         .merge(bbs_assemble_control::router(pool.clone()))
         .merge(calendar_assemble_control::router(pool.clone()))
         .merge(component_assemble_control::router(pool.clone()))
@@ -168,7 +168,7 @@ async fn main() -> anyhow::Result<()> {
         .merge(query_assemble_designer::router(pool.clone()))
         .merge(query_assemble_surface::router(pool.clone()))
         .merge(console::router(pool.clone()))
-        .merge(processplatform_assemble_surface::router(pool.clone()))
+        .merge(processplatform_assemble_surface::router(Some(pool.clone())))
         .merge(bbs_core_entity::router(pool.clone()))
         .merge(calendar_core_entity::router(pool.clone()))
         .merge(component_core_entity::router(pool.clone()))
@@ -185,7 +185,7 @@ async fn main() -> anyhow::Result<()> {
         .merge(mind_core_entity::router(pool.clone()))
         .merge(organization_core_express::router(pool.clone()))
         .merge(processplatform_assemble_bam::router(pool.clone()))
-        .merge(processplatform_assemble_designer::router(pool.clone()))
+        .merge(processplatform_assemble_designer::router(Some(pool.clone())))
         .merge(query_core_express::router(pool.clone()))
         .merge(query_service_processing::router(pool.clone()));
 

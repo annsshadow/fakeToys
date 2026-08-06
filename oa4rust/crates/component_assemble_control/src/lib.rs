@@ -1,7 +1,6 @@
 use axum::{
-    extract::Extension,
-    Json,
-    Router,
+    extract::Extension, Json, Router,
+    routing::get, routing::post,
 };
 use deadpool_postgres::Pool;
 use serde_json::Value;
@@ -63,34 +62,243 @@ pub async fn update_control_config(
 
 pub fn component_assemble_control_router(pool: Pool) -> Router {
     routes::router(pool)
+        .route("/jaxrs/component/assemble/control/component/delete/all", post(stub_component_assemble_control_component_delete_all))
+        .route("/jaxrs/component/assemble/control/status/list", get(stub_component_assemble_control_status_list))
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/component_assemble_control/health", axum::routing::get(|| async { "TODO: component_assemble_control - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    component_assemble_control_router(pool)
+        .route("/component_assemble_control/health", axum::routing::get(|| async { "ok" }))
 }
 
+#[derive(Debug, serde::Deserialize)]
+pub struct ComponentRequest {
+    pub name: Option<String>,
+    #[serde(rename = "type")]
+    pub component_type: Option<String>,
+}
+
+#[axum::debug_handler]
+pub async fn list_components(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, type, creator, create_time FROM x_component WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn get_component(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, type, creator, create_time FROM x_component WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("component not found"))),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn create_component(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Json(req): Json<ComponentRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = req.name.unwrap_or_default();
+    let component_type = req.component_type.unwrap_or_default();
+    let creator = "system";
+
+    client
+        .execute(
+            "INSERT INTO x_component (id, name, type, creator, create_time) VALUES ($1, $2, $3, $4, NOW())",
+            &[&id, &name, &component_type, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("type".to_string(), Value::String(component_type)),
+    ]));
+
+    Ok(Json(ActionResult::success(result)))
+}
+
+#[axum::debug_handler]
+pub async fn save_component(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(req): Json<ComponentRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let name = req.name.unwrap_or_default();
+    let component_type = req.component_type.unwrap_or_default();
+
+    let result = client
+        .execute(
+            "UPDATE x_component SET name = $1, type = $2 WHERE id = $3 AND deleted_at IS NULL",
+            &[&name, &component_type, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("component not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(true)),
+            ("name".to_string(), Value::String(name)),
+            ("type".to_string(), Value::String(component_type)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn delete_component(
+    pool: Option<Extension<Pool>>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let result = client
+        .execute(
+            "UPDATE x_component SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("component not found or already deleted")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
 
 /// Stub handler for /jaxrs/component/assemble/control/component/delete/all
 /// TODO: Implement real business logic
-pub async fn stub_component_assemble_control_component_delete_all() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
-}
+pub async fn stub_component_assemble_control_component_delete_all(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
 
-/// Stub handler for /jaxrs/component/assemble/control/component/list/all
-/// TODO: Implement real business logic
-pub async fn stub_component_assemble_control_component_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
-}
+    let result = client
+        .execute(
+            "UPDATE x_component SET deleted_at = NOW() WHERE deleted_at IS NULL",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-/// Stub handler for /jaxrs/component/assemble/control/component/{flag}
-/// TODO: Implement real business logic
-pub async fn stub_component_assemble_control_component_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("deleted".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(result as i64))),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/component/assemble/control/status/list
 /// TODO: Implement real business logic
-pub async fn stub_component_assemble_control_status_list() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+pub async fn stub_component_assemble_control_status_list(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_one(
+            "SELECT COUNT(*) as total, COUNT(CASE WHEN deleted_at IS NULL THEN 1 END) as active FROM x_component",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let total: i64 = row.get("total");
+    let active: i64 = row.get("active");
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("total".to_string(), Value::Number(serde_json::Number::from(total))),
+            ("active".to_string(), Value::Number(serde_json::Number::from(active))),
+            ("deleted".to_string(), Value::Number(serde_json::Number::from(total - active))),
+        ]),
+    ))))
 }
