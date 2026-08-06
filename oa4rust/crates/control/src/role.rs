@@ -199,7 +199,26 @@ pub async fn update(
         return Ok(Json(ActionResult::error("role not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Null)))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = match client
+        .query_one(
+            "SELECT id, name, description, disable FROM auth_role WHERE (id = $1 OR name = $1) AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+    {
+        Ok(row) => row,
+        Err(_) => return Ok(Json(ActionResult::error("role not found"))),
+    };
+
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("id"))),
+        ("name".to_string(), Value::String(row.get("name"))),
+        ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+        ("disable".to_string(), Value::Bool(row.get("disable"))),
+    ]));
+
+    Ok(Json(ActionResult::success(result)))
 }
 
 /// 软删除角色：DELETE /jaxrs/role/{flag}

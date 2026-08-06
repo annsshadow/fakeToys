@@ -102,6 +102,13 @@ pub async fn upload(
         )));
     }
 
+    // Magic bytes 验证：防止 MIME 伪造
+    if !validate_image_magic_bytes(&data, mime) {
+        return Ok(Json(ActionResult::error(
+            "文件内容与 MIME 类型不匹配",
+        )));
+    }
+
     let ext = get_extension(mime, &filename);
     let avatar_id = Uuid::new_v4().to_string();
     let rel_path = format!("{AVATAR_DIR}/{avatar_id}.{ext}");
@@ -115,7 +122,7 @@ pub async fn upload(
         .map_err(|_| AppError::Internal)?;
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let rows_affected = client
         .execute(
             "UPDATE auth_person SET icon = $1, updated_at = NOW() \
              WHERE unique_id = $2 AND locked = false AND deleted_at IS NULL",
@@ -123,6 +130,11 @@ pub async fn upload(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+
+    if rows_affected == 0 {
+        let _ = tokio::fs::remove_file(&rel_path).await;
+        return Ok(Json(ActionResult::error("user not found or disabled")));
+    }
 
     let info = AvatarInfo {
         id: avatar_id,
@@ -241,6 +253,16 @@ fn mime_from_path(rel: &str) -> String {
         "image/webp".to_string()
     } else {
         "application/octet-stream".to_string()
+    }
+}
+
+/// Magic bytes 验证：检查文件头是否符合常见图像格式
+fn validate_image_magic_bytes(data: &[u8], mime: &str) -> bool {
+    match mime {
+        "image/jpeg" => data.len() >= 2 && data[0] == 0xFF && data[1] == 0xD8,
+        "image/png" => data.len() >= 8 && data.starts_with(&[0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]),
+        "image/webp" => data.len() >= 12 && data.starts_with(b"RIFF") && &data[8..12] == b"WEBP",
+        _ => false,
     }
 }
 

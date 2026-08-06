@@ -85,7 +85,14 @@ pub async fn list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, Ap
         })
         .collect();
 
-    Ok(Json(ActionResult::success(Value::Array(data))))
+    let total = data.len() as i64;
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(total))),
+        ("size".to_string(), Value::Number(serde_json::Number::from(total))),
+        ("data".to_string(), Value::Array(data)),
+    ]));
+
+    Ok(Json(ActionResult::success(result)))
 }
 
 /// 游标分页查询单位；flag 为上一页末条 name（空或 '-' 从头），count 为返回条数
@@ -223,7 +230,26 @@ pub async fn update(
         return Ok(Json(ActionResult::error("unit not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Null)))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = match client
+        .query_one(
+            "SELECT id, name, parent_id, level FROM auth_unit WHERE (id = $1 OR name = $1) AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+    {
+        Ok(row) => row,
+        Err(_) => return Ok(Json(ActionResult::error("unit not found"))),
+    };
+
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("id"))),
+        ("name".to_string(), Value::String(row.get("name"))),
+        ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
+        ("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level")))),
+    ]));
+
+    Ok(Json(ActionResult::success(result)))
 }
 
 /// 软删除单位：DELETE /jaxrs/unit/{flag}

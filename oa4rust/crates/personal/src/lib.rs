@@ -112,11 +112,11 @@ pub async fn edit_person(
 
     let person_id: String = row.get("id");
 
-    let name = req.name.unwrap_or_else(|| row.get("name"));
+    let name = req.name.filter(|s| !s.is_empty()).unwrap_or_else(|| row.get("name"));
     let db_mobile: Option<String> = row.get("mobile");
     let db_email: Option<String> = row.get("email");
-    let mobile = req.mobile.or(db_mobile);
-    let email = req.email.or(db_email);
+    let mobile = req.mobile.filter(|s| !s.is_empty()).or(db_mobile);
+    let email = req.email.filter(|s| !s.is_empty()).or(db_email);
 
     client
         .execute(
@@ -152,7 +152,6 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
     Router::new()
         .route("/jaxrs/person", get(get_person))
         .route("/jaxrs/person", put(edit_person))
-        .route("/jaxrs/person/mockputtopost", post(edit_person))
         .route("/jaxrs/person/password", put(password::change))
         .route(
             "/jaxrs/reset/check/credential/{credential}",

@@ -241,7 +241,26 @@ pub async fn update(
         return Ok(Json(ActionResult::error("person not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Null)))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let where_clause = format!(
+        "SELECT id, unique_id, name, mobile, email, locked FROM auth_person WHERE {} AND deleted_at IS NULL",
+        person_flag_clause(1)
+    );
+    let row = match client.query_one(&where_clause, &[&flag]).await {
+        Ok(row) => row,
+        Err(_) => return Ok(Json(ActionResult::error("person not found"))),
+    };
+
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("id"))),
+        ("uniqueId".to_string(), Value::String(row.get("unique_id"))),
+        ("name".to_string(), Value::String(row.get("name"))),
+        ("mobile".to_string(), Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default())),
+        ("email".to_string(), Value::String(row.get::<_, Option<String>>("email").unwrap_or_default())),
+        ("locked".to_string(), Value::Bool(row.get("locked"))),
+    ]));
+
+    Ok(Json(ActionResult::success(result)))
 }
 
 /// 软删除人员：DELETE /jaxrs/person/{flag}

@@ -21,4 +21,5 @@ uuid.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
 md5.workspace = true
+sha2.workspace = true
 urlencoding.workspace = true

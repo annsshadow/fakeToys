@@ -7,6 +7,7 @@ use base64::Engine;
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
 use shared::{error::AppError, response::ActionResult};
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -37,11 +38,11 @@ impl SecretCipher {
     fn key() -> Result<[u8; 16], AppError> {
         let raw = std::env::var("SECRET_ENCRYPTION_KEY").map_err(|_| {
             tracing::warn!("SECRET_ENCRYPTION_KEY not configured; refusing to use default fallback");
-            AppError::Internal
+            AppError::BadRequest("SECRET_ENCRYPTION_KEY environment variable is not configured".into())
         })?;
-        let digest = md5::compute(raw.as_bytes());
+        let digest = Sha256::digest(raw.as_bytes());
         let mut key = [0u8; 16];
-        key.copy_from_slice(&digest.0);
+        key.copy_from_slice(&digest[..16]);
         Ok(key)
     }
 
@@ -133,16 +134,34 @@ pub async fn set(
     if req.secret.trim().is_empty() {
         return Ok(Json(ActionResult::error("secret cannot be empty")));
     }
-
-    let encrypted = SecretCipher::encrypt(req.secret.as_str())?;
+    if req.secret.len() > 1024 {
+        return Ok(Json(ActionResult::error("secret too long (max 1024 chars)")));
+    }
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let has_person: bool = client
+        .query_one(
+            "SELECT EXISTS(SELECT 1 FROM auth_person WHERE locked = false AND deleted_at IS NULL)",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)
+        .map(|row| row.get("exists"))
+        .unwrap_or(false);
+
+    if has_person {
+        return Ok(Json(ActionResult::error(
+            "cannot set secret when system is already initialized with users",
+        )));
+    }
+
+    let encrypted = SecretCipher::encrypt(req.secret.as_str())?;
     client
         .execute(
             "INSERT INTO secret_config (id, secret_encrypted, created_at, updated_at) \
-             VALUES ($1, $2, NOW(), NOW()) \
-             ON CONFLICT (id) DO UPDATE \
-             SET secret_encrypted = EXCLUDED.secret_encrypted, updated_at = NOW()",
+              VALUES ($1, $2, NOW(), NOW()) \
+              ON CONFLICT (id) DO UPDATE \
+              SET secret_encrypted = EXCLUDED.secret_encrypted, updated_at = NOW()",
             &[&SECRET_ROW_ID, &encrypted],
         )
         .await
@@ -154,10 +173,31 @@ pub async fn set(
 /// 清除已设置的初始化密钥（secret_config 记录删除）
 pub async fn set_cancel(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute("DELETE FROM secret_config", &[])
+
+    let has_person: bool = client
+        .query_one(
+            "SELECT EXISTS(SELECT 1 FROM auth_person WHERE locked = false AND deleted_at IS NULL)",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)
+        .map(|row| row.get("exists"))
+        .unwrap_or(false);
+
+    if has_person {
+        return Ok(Json(ActionResult::error(
+            "cannot cancel secret when system is already initialized with users",
+        )));
+    }
+
+    let rows_affected = client
+        .execute("DELETE FROM secret_config WHERE id = $1", &[&SECRET_ROW_ID])
         .await
         .map_err(|_| AppError::Internal)?;
+
+    if rows_affected == 0 {
+        return Ok(Json(ActionResult::success(json!({ "canceled": false }))));
+    }
 
     Ok(Json(ActionResult::success(json!({ "canceled": true }))))
 }

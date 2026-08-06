@@ -176,9 +176,15 @@ pub async fn check_password(
     Ok(Json(ActionResult::success(json!({ "passed": passed }))))
 }
 
-/// 新密码规则：长度 6 至 64
+/// 新密码规则：长度 6 至 64，且至少包含一个字母和一个数字
 pub fn is_password_acceptable(password: &str) -> bool {
-    (6..=64).contains(&password.chars().count())
+    let len = password.chars().count();
+    if !(6..=64).contains(&len) {
+        return false;
+    }
+    let has_letter = password.chars().any(|c| c.is_alphabetic());
+    let has_digit = password.chars().any(|c| c.is_numeric());
+    has_letter && has_digit
 }
 
 /// GET /jaxrs/reset/code/credential/{credential}
