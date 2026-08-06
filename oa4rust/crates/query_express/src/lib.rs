@@ -15,6 +15,5 @@ pub fn query_express_router() -> Router {
 }
 
 pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/query_express/health", axum::routing::get(|| async { "TODO: query_express - real implementation needed" }))
+    query_express_router()
 }

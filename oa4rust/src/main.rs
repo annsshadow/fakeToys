@@ -7,6 +7,7 @@ use shared::middleware::{
     trace_middleware, SecurityState,
 };
 use shared::rate_limit::RateLimiter;
+use shared::Pool;
 use shared::session::SessionManager;
 use tracing_subscriber::EnvFilter;
 use express;
@@ -95,22 +96,39 @@ async fn main() -> anyhow::Result<()> {
 
     let pool = create_pool().await.context("failed to create database pool")?;
 
-    let session_manager = SessionManager::new();
+    let session_manager = SessionManager::with_pool(pool.clone());
     let rate_limiter = RateLimiter::new();
 
-    // 认证 / 授权 / 限流中间件共享单一状态实例，避免状态分裂。
+    let app = create_app(pool, session_manager, rate_limiter).await?;
+
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    tracing::info!("listening on {}", listener.local_addr()?);
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .await?;
+
+    Ok(())
+}
+
+/// 构建完整应用 Router（供集成测试使用）。
+pub async fn create_app(
+    pool: Pool,
+    session_manager: SessionManager,
+    rate_limiter: RateLimiter,
+) -> anyhow::Result<Router> {
     let security_state = SecurityState {
         session_manager: session_manager.clone(),
         rate_limiter: rate_limiter.clone(),
         pool: pool.clone(),
     };
 
-    // 6 个子 router 只提供业务路由，认证/限流/安全头统一在顶层挂载一次。
     let app = Router::new()
         .merge(shared::router::router())
         .merge(auth::router(pool.clone(), rate_limiter.clone(), session_manager.clone()))
         .merge(personal::router(pool.clone(), session_manager.clone()))
-        .merge(cms_control::cms_control_router())
+        .merge(cms_control::cms_control_router(pool.clone()))
         .merge(control::control_router(pool.clone()))
         .merge(personal_extend::personal_extend_router(pool.clone(), session_manager))
         .merge(program_init::program_init_router(pool.clone()))
@@ -143,7 +161,7 @@ async fn main() -> anyhow::Result<()> {
         .merge(ai_assemble_control::router(pool.clone()))
         .merge(hotpic_assemble_control::router(pool.clone()))
         .merge(organization_assemble_express::router(pool.clone()))
-.merge(organization_assemble_control::router(pool.clone()))
+        .merge(organization_assemble_control::router(pool.clone()))
         .merge(mind_assemble_control::router(pool.clone()))
         .merge(attendance_assemble_control::router(pool.clone()))
         .merge(general_assemble_control::router(pool.clone()))
@@ -152,7 +170,7 @@ async fn main() -> anyhow::Result<()> {
         .merge(portal_assemble_designer::router(pool.clone()))
         .merge(correlation_service_processing::router(pool.clone()))
         .merge(portal_assemble_surface::router(pool.clone()))
-        .merge(processplatform_service_processing::router(Some(pool.clone())))
+        .merge(processplatform_service_processing::router(pool.clone()))
         .merge(bbs_assemble_control::router(pool.clone()))
         .merge(calendar_assemble_control::router(pool.clone()))
         .merge(component_assemble_control::router(pool.clone()))
@@ -168,7 +186,7 @@ async fn main() -> anyhow::Result<()> {
         .merge(query_assemble_designer::router(pool.clone()))
         .merge(query_assemble_surface::router(pool.clone()))
         .merge(console::router(pool.clone()))
-        .merge(processplatform_assemble_surface::router(Some(pool.clone())))
+        .merge(processplatform_assemble_surface::router(pool.clone()))
         .merge(bbs_core_entity::router(pool.clone()))
         .merge(calendar_core_entity::router(pool.clone()))
         .merge(component_core_entity::router(pool.clone()))
@@ -185,15 +203,10 @@ async fn main() -> anyhow::Result<()> {
         .merge(mind_core_entity::router(pool.clone()))
         .merge(organization_core_express::router(pool.clone()))
         .merge(processplatform_assemble_bam::router(pool.clone()))
-        .merge(processplatform_assemble_designer::router(Some(pool.clone())))
+        .merge(processplatform_assemble_designer::router(pool.clone()))
         .merge(query_core_express::router(pool.clone()))
         .merge(query_service_processing::router(pool.clone()));
 
-
-    // 中间件执行顺序（请求流向）：trace → security_headers → cors → rate_limit → auth → authorize → handler。
-    // axum 中后添加的 layer 包裹先添加的 layer，因此按反序添加。
-    // 认证类端点（/jaxrs/authentication、/jaxrs/reset、/jaxrs/secret）统一由
-    // rate_limit 中间件限流（10 次/分钟/IP），auth 各 handler 不再内置独立限流。
     let app = app
         .layer(middleware::from_fn_with_state(security_state.clone(), authorize_middleware))
         .layer(middleware::from_fn_with_state(security_state.clone(), auth_middleware))
@@ -202,14 +215,5 @@ async fn main() -> anyhow::Result<()> {
         .layer(middleware::from_fn(security_headers_middleware))
         .layer(middleware::from_fn(trace_middleware));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
-    tracing::info!("listening on {}", listener.local_addr()?);
-    // 注入 ConnectInfo<SocketAddr>，供 client_ip 在不可信来源时回退 socket 地址
-    axum::serve(
-        listener,
-        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
-    )
-    .await?;
-
-    Ok(())
+    Ok(app)
 }

@@ -50,7 +50,6 @@ mod tests {
     }
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/query_service/health", axum::routing::get(|| async { "TODO: query_service - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    query_service_router(pool)
 }
