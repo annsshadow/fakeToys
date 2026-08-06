@@ -1,6 +1,7 @@
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
+use tokio::time::interval;
 
 use crate::error::AppError;
 
@@ -11,6 +12,8 @@ use crate::error::AppError;
 // 各 router 与速率限制中间件，统一对认证接口（10 次/分钟/IP）与
 // 普通接口（100 次/分钟/IP）限流。
 // ──────────────────────────────────────────────────────────────────────────────
+
+const CLEANUP_INTERVAL_SECONDS: u64 = 60;
 
 #[derive(Clone)]
 pub struct RateLimiter {
@@ -25,9 +28,30 @@ impl Default for RateLimiter {
 
 impl RateLimiter {
     pub fn new() -> Self {
-        Self {
+        let limiter = Self {
             attempts: Arc::new(RwLock::new(std::collections::HashMap::new())),
-        }
+        };
+        let limiter_clone = limiter.clone();
+        tokio::spawn(async move {
+            let mut timer = interval(Duration::from_secs(CLEANUP_INTERVAL_SECONDS));
+            loop {
+                timer.tick().await;
+                limiter_clone.cleanup().await;
+            }
+        });
+        limiter
+    }
+
+    /// 清理过期的滑动窗口条目，防止内存泄漏
+    pub async fn cleanup(&self) {
+        let mut attempts = self.attempts.write().await;
+        let now = Instant::now();
+        let window = Duration::from_secs(60 * 60); // 保留 1 小时的记录
+        let cutoff = now - window;
+        attempts.retain(|_, timestamps| {
+            timestamps.retain(|&t| t > cutoff);
+            !timestamps.is_empty()
+        });
     }
 
     /// 检查是否超出频率限制（滑动窗口）

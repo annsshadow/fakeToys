@@ -3,7 +3,7 @@ use axum::middleware;
 use axum::Router;
 use shared::db::create_pool;
 use shared::middleware::{
-    auth_middleware, authorize_middleware, rate_limit_middleware, security_headers_middleware,
+    auth_middleware, authorize_middleware, cors_middleware, rate_limit_middleware, security_headers_middleware,
     trace_middleware, SecurityState,
 };
 use shared::rate_limit::RateLimiter;
@@ -190,7 +190,7 @@ async fn main() -> anyhow::Result<()> {
         .merge(query_service_processing::router(pool.clone()));
 
 
-    // 中间件执行顺序（请求流向）：trace → security_headers → rate_limit → auth → authorize → handler。
+    // 中间件执行顺序（请求流向）：trace → security_headers → cors → rate_limit → auth → authorize → handler。
     // axum 中后添加的 layer 包裹先添加的 layer，因此按反序添加。
     // 认证类端点（/jaxrs/authentication、/jaxrs/reset、/jaxrs/secret）统一由
     // rate_limit 中间件限流（10 次/分钟/IP），auth 各 handler 不再内置独立限流。
@@ -198,6 +198,7 @@ async fn main() -> anyhow::Result<()> {
         .layer(middleware::from_fn_with_state(security_state.clone(), authorize_middleware))
         .layer(middleware::from_fn_with_state(security_state.clone(), auth_middleware))
         .layer(middleware::from_fn_with_state(security_state.clone(), rate_limit_middleware))
+        .layer(cors_middleware())
         .layer(middleware::from_fn(security_headers_middleware))
         .layer(middleware::from_fn(trace_middleware));
 

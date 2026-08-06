@@ -7,6 +7,7 @@ use deadpool_postgres::Pool;
 use std::env;
 use std::net::SocketAddr;
 use std::sync::OnceLock;
+use tower_http::cors::{Any, CorsLayer};
 use tracing::warn;
 
 use crate::error::AppError;
@@ -93,6 +94,25 @@ const SECRET_INIT_PATHS: &[&str] = &["/jaxrs/secret/check", "/jaxrs/secret/set"]
 const AUTH_RATE_LIMIT: i32 = 10;
 const GENERAL_RATE_LIMIT: i32 = 100;
 const RATE_LIMIT_WINDOW_MINUTES: i64 = 1;
+
+// ──────────────────────────────────────────────────────────────────────────────
+// CORS 中间件
+//
+// 允许 o2web 前端跨域访问，支持凭据（Authorization/Cookie）。
+// 仅允许 GET/POST/HEAD/OPTIONS 方法，允许 Authorization/Content-Type 头。
+// ──────────────────────────────────────────────────────────────────────────────
+pub fn cors_middleware() -> CorsLayer {
+    CorsLayer::new()
+        .allow_origin(Any)
+        .allow_methods([
+            axum::http::Method::GET,
+            axum::http::Method::POST,
+            axum::http::Method::HEAD,
+            axum::http::Method::OPTIONS,
+        ])
+        .allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE])
+        .allow_credentials(true)
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // SecurityState
@@ -385,6 +405,9 @@ pub async fn security_headers_middleware(request: Request<Body>, next: Next) -> 
     response
         .headers_mut()
         .insert(header::CACHE_CONTROL, HeaderValue::from_static("no-store"));
+    response
+        .headers_mut()
+        .insert(header::REFERRER_POLICY, HeaderValue::from_static("strict-origin-when-cross-origin"));
     response
 }
 
