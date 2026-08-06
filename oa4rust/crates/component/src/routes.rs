@@ -1,10 +1,15 @@
-use axum::Router;
+use axum::{
+    routing::get,
+    Router,
+};
+use deadpool_postgres::Pool;
 
-use crate::{count, get_component, list_all};
+use crate::{list_all, count, get_component};
 
-pub fn component_router() -> Router {
+pub fn component_router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/component/list/all", axum::routing::get(list_all))
-        .route("/jaxrs/component/count", axum::routing::get(count))
-        .route("/jaxrs/component/{flag}", axum::routing::get(get_component))
+        .route("/jaxrs/component/list/all", get(list_all))
+        .route("/jaxrs/component/count", get(count))
+        .route("/jaxrs/component/{flag}", get(get_component))
+        .layer(axum::extract::Extension(pool))
 }

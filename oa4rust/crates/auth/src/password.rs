@@ -39,6 +39,16 @@ pub fn verify_password(plain: &str, stored: &str, key: &str, _encrypt_type: Opti
     false
 }
 
+/// 检查密码哈希是否需要升级（MD5/DES -> bcrypt）
+pub fn needs_rehash(stored: &str) -> bool {
+    !stored.starts_with(BCRYPT_PREFIX)
+}
+
+/// 将密码重新哈希为 bcrypt（用于登录成功后自动升级）
+pub fn rehash_password(plain: &str) -> String {
+    hash_password(plain)
+}
+
 pub(crate) fn des_encrypt(plain: &str, key: &str) -> Result<Vec<u8>, ()> {
     if key.len() < 8 {
         return Err(());

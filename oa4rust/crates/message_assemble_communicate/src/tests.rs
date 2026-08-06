@@ -38,7 +38,7 @@ fn test_mark_read_action_result_format() {
 
 #[tokio::test]
 async fn test_send_message_route_exists() {
-    let app = message_assemble_communicate_router();
+    let app = message_assemble_communicate_router(None);
 
     use axum::body::Body;
     use axum::http::{Request, Method};
@@ -66,7 +66,7 @@ async fn test_send_message_route_exists() {
 
 #[tokio::test]
 async fn test_receive_list_route_exists() {
-    let app = message_assemble_communicate_router();
+    let app = message_assemble_communicate_router(None);
 
     use axum::body::Body;
     use axum::http::{Request, Method};
@@ -87,7 +87,7 @@ async fn test_receive_list_route_exists() {
 
 #[tokio::test]
 async fn test_mark_read_route_exists() {
-    let app = message_assemble_communicate_router();
+    let app = message_assemble_communicate_router(None);
 
     use axum::body::Body;
     use axum::http::{Request, Method};

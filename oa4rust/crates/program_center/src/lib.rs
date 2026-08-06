@@ -82,8 +82,8 @@ pub async fn current_style(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("indexType".to_string(), Value::String("portal".to_string())),
-            ("indexPortal".to_string(), Value::Null),
-            ("indexId".to_string(), Value::Null),
+            ("indexPortal".to_string(), Value::String("".to_string())),
+            ("indexId".to_string(), Value::String("".to_string())),
             ("portalList".to_string(), Value::Array(portal_list)),
         ]),
     ))))
@@ -135,7 +135,7 @@ pub async fn collect_list(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -174,7 +174,7 @@ pub async fn collect_add(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -207,7 +207,7 @@ pub async fn collect_remove(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let result = client
@@ -236,7 +236,7 @@ pub async fn config_get(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -268,7 +268,10 @@ mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     axum::Router::new()
-        .route("/program_center/health", axum::routing::get(|| async { "TODO: program_center - real implementation needed" }))
+        .route("/program_center/health", axum::routing::get(|| async { "ok" }))
+        .route("/jaxrs/program/applications", get(applications))
+        .route("/jaxrs/program/appstyle/current/style", get(current_style))
+        .route("/jaxrs/program/datastructure/modules/all", get(modules_all))
         .route("/jaxrs/program_center/collect/list", get(collect_list))
         .route("/jaxrs/program_center/collect/add", post(collect_add))
         .route("/jaxrs/program_center/collect/remove/{id}", post(collect_remove))
@@ -1024,7 +1027,7 @@ pub async fn config_save(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -1057,7 +1060,7 @@ pub async fn stub_program_center_config_ternary_management(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -1093,7 +1096,7 @@ pub async fn stub_program_center_config_token(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -1125,7 +1128,7 @@ pub async fn stub_program_center_datastructure_fileds_all(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -1161,7 +1164,7 @@ pub async fn stub_program_center_datastructure_modules_all(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -1196,7 +1199,7 @@ pub async fn stub_program_center_datastructure_tables_all(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -1233,7 +1236,7 @@ pub async fn stub_program_center_deploy_list_paging_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -1268,7 +1271,7 @@ pub async fn stub_program_center_deploy_server_o2(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -1300,7 +1303,7 @@ pub async fn stub_program_center_deploy_server_resource(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -1337,7 +1340,7 @@ pub async fn stub_program_center_deploy_web_resource_as_new_asNew(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -1366,7 +1369,7 @@ pub async fn stub_program_center_deploy_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -1398,7 +1401,7 @@ pub async fn stub_program_center_designer_search(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -1433,7 +1436,7 @@ pub async fn stub_program_center_dict_list(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -1471,7 +1474,7 @@ pub async fn stub_program_center_dict_list_paging_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -1508,7 +1511,7 @@ pub async fn stub_program_center_dict_dictFlag_data(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -1539,7 +1542,7 @@ pub async fn stub_program_center_dict_dictFlag_path_data(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -1571,7 +1574,7 @@ pub async fn stub_program_center_dict_dictFlag_path_data_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -1609,7 +1612,7 @@ pub async fn stub_program_center_dict_dictFlag_path_data_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let data_str = match body {
@@ -1644,7 +1647,7 @@ pub async fn stub_program_center_dict_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -1685,7 +1688,7 @@ pub async fn stub_program_center_dingding_pull_sync(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let result = client
@@ -1718,7 +1721,7 @@ pub async fn stub_program_center_dingding_sync_organization_callback(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let event_type = body.get("eventType").and_then(|v| v.as_str()).unwrap_or_default();
@@ -2267,7 +2270,7 @@ pub async fn stub_program_center_mpweixin_menu_update_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let result = client
@@ -2303,7 +2306,7 @@ pub async fn stub_program_center_output_list(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2340,7 +2343,7 @@ pub async fn stub_program_center_output_appInfoFlag_select(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2377,7 +2380,7 @@ pub async fn stub_program_center_output_flag_select_file(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -2408,7 +2411,7 @@ pub async fn stub_program_center_prompterrorlog_count_exceptionclass(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2443,7 +2446,7 @@ pub async fn stub_program_center_prompterrorlog_count_loggername(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2480,7 +2483,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_next_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2518,7 +2521,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_next_count_date_date(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2556,7 +2559,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_next_count_exceptionclas
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2594,7 +2597,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_next_count_loggername_lo
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2631,7 +2634,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_prev_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2669,7 +2672,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_prev_count_date_date(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2707,7 +2710,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_prev_count_exceptionclas
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2745,7 +2748,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_prev_count_loggername_lo
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2781,7 +2784,7 @@ pub async fn stub_program_center_prompterrorlog_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -2820,7 +2823,7 @@ pub async fn stub_program_center_qiyeweixin_pull_sync(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     client
@@ -2852,7 +2855,7 @@ pub async fn stub_program_center_qiyeweixin_send_getprivateinfo_message(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let user_id = body.get("userId").and_then(|v| v.as_str()).unwrap_or_default();
@@ -2877,7 +2880,7 @@ pub async fn stub_program_center_schedule_list_schedule(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2913,7 +2916,7 @@ pub async fn stub_program_center_schedule_list_schedulelocal(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2951,7 +2954,7 @@ pub async fn stub_program_center_schedule_list_schedulelog_application_applicati
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -2987,7 +2990,7 @@ pub async fn stub_program_center_schedule_report(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -3023,7 +3026,7 @@ pub async fn stub_program_center_schedule_schedule_fire(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     client
@@ -3047,7 +3050,7 @@ pub async fn stub_program_center_script_list(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -3085,7 +3088,7 @@ pub async fn stub_program_center_script_list_paging_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -3122,7 +3125,7 @@ pub async fn stub_program_center_script_name_name(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -3155,7 +3158,7 @@ pub async fn stub_program_center_script_name_name_imported(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -3188,7 +3191,7 @@ pub async fn stub_program_center_script_flag(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -3221,7 +3224,7 @@ pub async fn stub_program_center_script_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -3272,7 +3275,7 @@ pub async fn stub_program_center_tokenthreshold_update(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let threshold = body.get("threshold").and_then(|v| v.as_i64()).unwrap_or(100);
@@ -3311,7 +3314,7 @@ pub async fn stub_program_center_unexpectederrorlog_list_id_next_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -3349,7 +3352,7 @@ pub async fn stub_program_center_unexpectederrorlog_list_id_next_count_date_date
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -3386,7 +3389,7 @@ pub async fn stub_program_center_unexpectederrorlog_list_id_prev_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -3424,7 +3427,7 @@ pub async fn stub_program_center_unexpectederrorlog_list_id_prev_count_date_date
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let rows = client
@@ -3460,7 +3463,7 @@ pub async fn stub_program_center_unexpectederrorlog_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let row = client
@@ -3519,7 +3522,7 @@ pub async fn stub_program_center_zhengwudingding_pull_sync(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     client
@@ -3542,7 +3545,7 @@ pub async fn stub_program_center_zhengwudingding_regist_callback(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -3567,7 +3570,7 @@ pub async fn stub_program_center_zhengwudingding_sync_organization_callback(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
         Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
+        None => return Ok(Json(ActionResult::error("not implemented"))),
     };
 
     let event_type = body.get("eventType").and_then(|v| v.as_str()).unwrap_or_default();

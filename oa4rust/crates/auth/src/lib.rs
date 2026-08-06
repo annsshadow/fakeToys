@@ -88,6 +88,17 @@ pub async fn login(
         return Ok(Json(ActionResult::error("invalid credentials")));
     }
 
+    // 密码哈希 rehash：检测旧算法（MD5/DES），自动升级为 bcrypt
+    if password::needs_rehash(&password_hash) {
+        let new_hash = password::rehash_password(&req.password);
+        let _ = client
+            .execute(
+                "UPDATE auth_person SET password_hash = $1, updated_at = NOW() WHERE id = $2",
+                &[&new_hash, &_person_id],
+            )
+            .await;
+    }
+
     let token = Uuid::new_v4().to_string();
     let session = session_manager.create_session(person_unique.clone(), token.clone()).await;
 

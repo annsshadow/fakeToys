@@ -1,4 +1,4 @@
-use chrono::{DateTime, Duration, NaiveDateTime, Utc};
+use chrono::{Duration, NaiveDateTime, Utc};
 use deadpool_postgres::Pool;
 use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};

@@ -7,7 +7,7 @@ use deadpool_postgres::Pool;
 use std::env;
 use std::net::SocketAddr;
 use std::sync::OnceLock;
-use tower_http::cors::{Any, CorsLayer};
+use tower_http::cors::CorsLayer;
 use tracing::warn;
 
 use crate::error::AppError;
@@ -359,7 +359,7 @@ pub(crate) async fn is_admin(pool: &Pool, person_unique: &str) -> bool {
 // 请求追踪中间件，记录每个请求的 HTTP 方法和 URI，
 // 并在服务端返回 5xx 错误时额外输出 warning 级别日志，便于生产环境排查。
 // ──────────────────────────────────────────────────────────────────────────────
-pub async fn trace_middleware(mut request: Request<Body>, next: Next) -> Response {
+pub async fn trace_middleware(request: Request<Body>, next: Next) -> Response {
     let method = request.method().clone();
     let uri = request.uri().clone();
 

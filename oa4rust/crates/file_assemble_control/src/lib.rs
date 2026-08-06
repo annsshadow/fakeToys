@@ -108,13 +108,10 @@ pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
 
 #[axum::debug_handler]
 pub async fn list_files(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(folder_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -150,13 +147,10 @@ pub async fn list_files(
 
 #[axum::debug_handler]
 pub async fn get_file(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -186,13 +180,10 @@ pub async fn get_file(
 
 #[axum::debug_handler]
 pub async fn upload_file(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let path = body.get("path").and_then(|v| v.as_str()).unwrap_or_default().to_string();
@@ -225,13 +216,10 @@ pub async fn upload_file(
 
 #[axum::debug_handler]
 pub async fn create_file(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let path = body.get("path").and_then(|v| v.as_str()).unwrap_or_default().to_string();
@@ -259,13 +247,10 @@ pub async fn create_file(
 
 #[axum::debug_handler]
 pub async fn delete_file(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(

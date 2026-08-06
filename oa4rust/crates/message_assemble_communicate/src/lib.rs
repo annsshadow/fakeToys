@@ -1,7 +1,7 @@
 use axum::{
     extract::Extension,
     Json, Router,
-    routing::get, routing::post,
+    routing::get, routing::post, routing::delete,
 };
 use deadpool_postgres::Pool;
 use serde_json::Value;
@@ -55,19 +55,79 @@ pub async fn mark_read(
     ])))))
 }
 
-pub fn message_assemble_communicate_router() -> Router {
-    Router::new()
+pub fn message_assemble_communicate_router(pool: Option<Pool>) -> Router {
+    let mut router = Router::new()
         .route("/jaxrs/message/assemble/communicate/send", post(send_message))
         .route("/jaxrs/message/assemble/communicate/receive/{consume}", get(receive_list))
         .route("/jaxrs/message/assemble/communicate/mark_read/{id}", post(mark_read))
+        .route("/jaxrs/message/assemble/communicate/consume/list/{consume}/count/{count}", get(stub_message_assemble_communicate_consume_list_consume_count_count))
+        .route("/jaxrs/message/assemble/communicate/consume/list/{consume}/currentperson/count/{count}", get(stub_message_assemble_communicate_consume_list_consume_currentperson_count_count))
+        .route("/jaxrs/message/assemble/communicate/consume/list/{consume}/person/{person}/count/{count}", get(stub_message_assemble_communicate_consume_list_consume_person_person_count_count))
+        .route("/jaxrs/message/assemble/communicate/consume/type/{type}", get(stub_message_assemble_communicate_consume_type_type))
+        .route("/jaxrs/message/assemble/communicate/consume/type/{type}/mockputtopost", post(stub_message_assemble_communicate_consume_type_type_mockputtopost))
+        .route("/jaxrs/message/assemble/communicate/consume/{id}/type/{type}", post(stub_message_assemble_communicate_consume_id_type_type))
+        .route("/jaxrs/message/assemble/communicate/im/conversation", post(stub_message_assemble_communicate_im_conversation))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/business/{businessId}", get(stub_message_assemble_communicate_im_conversation_business_businessId))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/list/my", get(stub_message_assemble_communicate_im_conversation_list_my))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/list/with/person", get(stub_message_assemble_communicate_im_conversation_list_with_person))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/mockputtopost", post(stub_message_assemble_communicate_im_conversation_mockputtopost))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}", get(stub_message_assemble_communicate_im_conversation_id))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/group", get(stub_message_assemble_communicate_im_conversation_id_group))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/group/mockdeletetoget", delete(stub_message_assemble_communicate_im_conversation_id_group_mockdeletetoget))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/group/quit/self", post(stub_message_assemble_communicate_im_conversation_id_group_quit_self))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/icon", get(stub_message_assemble_communicate_im_conversation_id_icon))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/read", post(stub_message_assemble_communicate_im_conversation_id_read))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/read/mockputtopost", post(stub_message_assemble_communicate_im_conversation_id_read_mockputtopost))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/single", get(stub_message_assemble_communicate_im_conversation_id_single))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/single/mockdeletetoget", delete(stub_message_assemble_communicate_im_conversation_id_single_mockdeletetoget))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/top/cancel", post(stub_message_assemble_communicate_im_conversation_id_top_cancel))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/top/cancel/mockputtopost", post(stub_message_assemble_communicate_im_conversation_id_top_cancel_mockputtopost))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/top/set", post(stub_message_assemble_communicate_im_conversation_id_top_set))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/top/set/mockputtopost", post(stub_message_assemble_communicate_im_conversation_id_top_set_mockputtopost))
+        .route("/jaxrs/message/assemble/communicate/im/manager/config", get(stub_message_assemble_communicate_im_manager_config))
+        .route("/jaxrs/message/assemble/communicate/im/msg", post(stub_message_assemble_communicate_im_msg))
+        .route("/jaxrs/message/assemble/communicate/im/msg/clear", post(stub_message_assemble_communicate_im_msg_clear))
+        .route("/jaxrs/message/assemble/communicate/im/msg/collection", post(stub_message_assemble_communicate_im_msg_collection))
+        .route("/jaxrs/message/assemble/communicate/im/msg/collection/list/{page}/size/{size}", get(stub_message_assemble_communicate_im_msg_collection_list_page_size_size))
+        .route("/jaxrs/message/assemble/communicate/im/msg/collection/remove", post(stub_message_assemble_communicate_im_msg_collection_remove))
+        .route("/jaxrs/message/assemble/communicate/im/msg/download/{id}", get(stub_message_assemble_communicate_im_msg_download_id))
+        .route("/jaxrs/message/assemble/communicate/im/msg/download/{id}/image/width/{width}/height/{height}", get(stub_message_assemble_communicate_im_msg_download_id_image_width_width_height_height))
+        .route("/jaxrs/message/assemble/communicate/im/msg/list/object", get(stub_message_assemble_communicate_im_msg_list_object))
+        .route("/jaxrs/message/assemble/communicate/im/msg/list/{page}/size/{size}", get(stub_message_assemble_communicate_im_msg_list_page_size_size))
+        .route("/jaxrs/message/assemble/communicate/im/msg/revoke/{id}", post(stub_message_assemble_communicate_im_msg_revoke_id))
+        .route("/jaxrs/message/assemble/communicate/im/msg/upload/{conversationId}/type/{type}", post(stub_message_assemble_communicate_im_msg_upload_conversationId_type_type))
+        .route("/jaxrs/message/assemble/communicate/instant/currentperson/consumed", get(stub_message_assemble_communicate_instant_currentperson_consumed))
+        .route("/jaxrs/message/assemble/communicate/instant/currentperson/consumed/all", get(stub_message_assemble_communicate_instant_currentperson_consumed_all))
+        .route("/jaxrs/message/assemble/communicate/instant/currentperson/consumed/mockputtopost", post(stub_message_assemble_communicate_instant_currentperson_consumed_mockputtopost))
+        .route("/jaxrs/message/assemble/communicate/instant/list/currentperson/consumed/count/{count}/asc", get(stub_message_assemble_communicate_instant_list_currentperson_consumed_count_count_asc))
+        .route("/jaxrs/message/assemble/communicate/instant/list/currentperson/consumed/count/{count}/desc", get(stub_message_assemble_communicate_instant_list_currentperson_consumed_count_count_desc))
+        .route("/jaxrs/message/assemble/communicate/instant/list/currentperson/count/{count}/asc", get(stub_message_assemble_communicate_instant_list_currentperson_count_count_asc))
+        .route("/jaxrs/message/assemble/communicate/instant/list/currentperson/count/{count}/desc", get(stub_message_assemble_communicate_instant_list_currentperson_count_count_desc))
+        .route("/jaxrs/message/assemble/communicate/instant/list/currentperson/noim/count/{count}/desc", get(stub_message_assemble_communicate_instant_list_currentperson_noim_count_count_desc))
+        .route("/jaxrs/message/assemble/communicate/instant/list/currentperson/not/consumed/count/{count}/asc", get(stub_message_assemble_communicate_instant_list_currentperson_not_consumed_count_count_asc))
+        .route("/jaxrs/message/assemble/communicate/instant/list/currentperson/not/consumed/count/{count}/desc", get(stub_message_assemble_communicate_instant_list_currentperson_not_consumed_count_count_desc))
+        .route("/jaxrs/message/assemble/communicate/instant/list/{id}/next/{count}", get(stub_message_assemble_communicate_instant_list_id_next_count))
+        .route("/jaxrs/message/assemble/communicate/instant/list/{id}/prev/{count}", get(stub_message_assemble_communicate_instant_list_id_prev_count))
+        .route("/jaxrs/message/assemble/communicate/mass/enable/type", post(stub_message_assemble_communicate_mass_enable_type))
+        .route("/jaxrs/message/assemble/communicate/mass/list/{id}/next/{count}", get(stub_message_assemble_communicate_mass_list_id_next_count))
+        .route("/jaxrs/message/assemble/communicate/mass/list/{id}/prev/{count}", get(stub_message_assemble_communicate_mass_list_id_prev_count))
+        .route("/jaxrs/message/assemble/communicate/mass/{id}", get(stub_message_assemble_communicate_mass_id))
+        .route("/jaxrs/message/assemble/communicate/mass/{id}/mockdeletetoget", delete(stub_message_assemble_communicate_mass_id_mockdeletetoget))
+        .route("/jaxrs/message/assemble/communicate/message/custom/create", post(stub_message_assemble_communicate_message_custom_create))
+        .route("/jaxrs/message/assemble/communicate/message/list/paging/{page}/size/{size}", get(stub_message_assemble_communicate_message_list_paging_page_size_size));
+
+    if let Some(pool) = pool {
+        router = router.layer(Extension(pool));
+    }
+
+    router
 }
 
 #[cfg(test)]
 mod tests;
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/message_assemble_communicate/health", axum::routing::get(|| async { "TODO: message_assemble_communicate - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    message_assemble_communicate_router(Some(pool))
 }
 
 

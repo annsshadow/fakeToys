@@ -10,7 +10,6 @@ pub fn correlation_router(pool: Pool) -> Router {
     routes::correlation_router(pool)
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/correlation/health", axum::routing::get(|| async { "TODO: correlation - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    correlation_router(pool)
 }

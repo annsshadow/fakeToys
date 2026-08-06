@@ -67,7 +67,6 @@ pub use routes::general_router;
 #[cfg(test)]
 mod tests;
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/general/health", axum::routing::get(|| async { "TODO: general - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    general_router(pool)
 }

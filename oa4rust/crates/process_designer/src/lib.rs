@@ -173,7 +173,6 @@ pub async fn designer_get_route(
 #[cfg(test)]
 mod tests;
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/process_designer/health", axum::routing::get(|| async { "TODO: process_designer - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    routes::process_designer_router(pool)
 }

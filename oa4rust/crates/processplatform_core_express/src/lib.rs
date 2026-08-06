@@ -148,7 +148,6 @@ pub fn processplatform_core_express_router(pool: Pool) -> Router {
         .layer(Extension(pool))
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/processplatform_core_express/health", axum::routing::get(|| async { "TODO: processplatform_core_express - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    processplatform_core_express_router(pool)
 }

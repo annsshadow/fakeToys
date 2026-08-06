@@ -90,12 +90,9 @@ pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
 
 /// GET /jaxrs/attendance/assemble/control/attendanceadmin/list/all
 pub async fn attendanceadmin_list_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -126,13 +123,10 @@ pub async fn attendanceadmin_list_all(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceadmin/{id}
 pub async fn attendanceadmin_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -159,14 +153,11 @@ pub async fn attendanceadmin_id(
 
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/appeal/{id}
 pub async fn attendanceappealInfo_appeal_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let status = payload
         .get("status")
@@ -196,12 +187,9 @@ pub async fn attendanceappealInfo_appeal_id(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceconfig/list
 pub async fn attendanceconfig_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -233,13 +221,10 @@ pub async fn attendanceconfig_list(
 
 /// POST /jaxrs/attendance/assemble/control/attendanceconfig/save
 pub async fn attendanceconfig_save(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or_default();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default();
@@ -287,12 +272,9 @@ pub async fn attendanceconfig_save(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceadmin/list/all
 pub async fn stub_attendance_assemble_control_attendanceadmin_list_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -323,13 +305,10 @@ pub async fn stub_attendance_assemble_control_attendanceadmin_list_all(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceadmin/{id}
 pub async fn stub_attendance_assemble_control_attendanceadmin_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -356,14 +335,11 @@ pub async fn stub_attendance_assemble_control_attendanceadmin_id(
 
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/appeal/{id}
 pub async fn stub_attendance_assemble_control_attendanceappealInfo_appeal_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let status = payload
         .get("status")
@@ -393,13 +369,10 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_appeal_id(
 
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/archive/{id}
 pub async fn stub_attendance_assemble_control_attendanceappealInfo_archive_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -423,13 +396,10 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_archive_id(
 
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/audit
 pub async fn stub_attendance_assemble_control_attendanceappealInfo_audit(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let audit_status = payload.get("auditStatus").and_then(|v| v.as_str()).unwrap_or("approved");
@@ -456,13 +426,10 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_audit(
 
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/check 
 pub async fn stub_attendance_assemble_control_attendanceappealInfo_check(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let checked = payload.get("checked").and_then(|v| v.as_bool()).unwrap_or(true);
@@ -489,13 +456,10 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_check(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/next/{count}
 pub async fn stub_attendance_assemble_control_attendanceappealInfo_filter_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -526,13 +490,10 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_filter_list_i
 
 /// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/prev/{count}
 pub async fn stub_attendance_assemble_control_attendanceappealInfo_filter_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -563,13 +524,10 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_filter_list_i
 
 /// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/manager/list/{id}/next/{count}
 pub async fn stub_attendance_assemble_control_attendanceappealInfo_manager_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -600,13 +558,10 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_manager_list_
 
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/appeal/{id}
 pub async fn stub_attendance_assemble_control_attendanceappealInfo_workflow_appeal_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -630,13 +585,10 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_workflow_appe
 
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/sync
 pub async fn stub_attendance_assemble_control_attendanceappealInfo_workflow_sync(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let appeal_id = payload.get("appealId").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
@@ -661,13 +613,10 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_workflow_sync
 
 /// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/{id}
 pub async fn stub_attendance_assemble_control_attendanceappealInfo_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -693,13 +642,10 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_id(
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse
 pub async fn stub_attendance_assemble_control_attendancedetail_analyse(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let start_date = payload.get("startDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -722,13 +668,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_analyse(
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse/id/{id}
 pub async fn stub_attendance_assemble_control_attendancedetail_analyse_id_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let _ = client
         .execute(
@@ -748,13 +691,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_analyse_id_id(
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse/redo
 pub async fn stub_attendance_assemble_control_attendancedetail_analyse_redo(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
@@ -775,13 +715,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_analyse_redo(
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse/{startDate}/{endDate}
 pub async fn stub_attendance_assemble_control_attendancedetail_analyse_startDate_endDate(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((start_date, end_date)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let _ = client
         .execute(
@@ -800,13 +737,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_analyse_startDate
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/archive/{id}
 pub async fn stub_attendance_assemble_control_attendancedetail_archive_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -830,13 +764,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_archive_id(
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{cycleYear}/{cycleMonth}
 pub async fn stub_attendance_assemble_control_attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((cycle_year, cycle_month)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let _ = client
         .execute(
@@ -855,12 +786,9 @@ pub async fn stub_attendance_assemble_control_attendancedetail_checkDetailWithPe
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list
 pub async fn stub_attendance_assemble_control_attendancedetail_filter_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -892,12 +820,9 @@ pub async fn stub_attendance_assemble_control_attendancedetail_filter_list(
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/topUnit
 pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_topUnit(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -929,12 +854,9 @@ pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_topUn
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/unit
 pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_unit(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -967,12 +889,9 @@ pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_unit(
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/user
 pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_user(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1004,13 +923,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_user(
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/{id}/next/{count}
 pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1042,13 +958,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_id_ne
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/{id}/prev/{count}
 pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1080,12 +993,9 @@ pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_id_pr
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/list/persons/nonesign
 pub async fn stub_attendance_assemble_control_attendancedetail_list_persons_nonesign(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1117,13 +1027,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_list_persons_none
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/list/{file_id}
 pub async fn stub_attendance_assemble_control_attendancedetail_list_file_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(file_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1155,13 +1062,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_list_file_id(
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/filter/list/page/{page}/count/{count}
 pub async fn stub_attendance_assemble_control_attendancedetail_mobile_filter_list_page_page_count_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = (page - 1) * count;
     let rows = client
@@ -1194,13 +1098,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_mobile_filter_lis
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/mobilepreview
 pub async fn stub_attendance_assemble_control_attendancedetail_mobile_mobilepreview(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let date = payload.get("date").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -1229,13 +1130,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_mobile_mobileprev
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/my
 pub async fn stub_attendance_assemble_control_attendancedetail_mobile_my(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
@@ -1269,13 +1167,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_mobile_my(
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/mobile/recive
 pub async fn stub_attendance_assemble_control_attendancedetail_mobile_recive(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let date = payload.get("date").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -1297,13 +1192,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_mobile_recive(
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/{id}
 pub async fn stub_attendance_assemble_control_attendancedetail_mobile_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1329,13 +1221,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_mobile_id(
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/recive
 pub async fn stub_attendance_assemble_control_attendancedetail_recive(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
@@ -1356,13 +1245,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_recive(
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/reciveSingle
 pub async fn stub_attendance_assemble_control_attendancedetail_reciveSingle(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
@@ -1383,13 +1269,10 @@ pub async fn stub_attendance_assemble_control_attendancedetail_reciveSingle(
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/{id}
 pub async fn stub_attendance_assemble_control_attendancedetail_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1415,12 +1298,9 @@ pub async fn stub_attendance_assemble_control_attendancedetail_id(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceemployeeconfig/list/all
 pub async fn stub_attendance_assemble_control_attendanceemployeeconfig_list_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1451,13 +1331,10 @@ pub async fn stub_attendance_assemble_control_attendanceemployeeconfig_list_all(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceemployeeconfig/{id}
 pub async fn stub_attendance_assemble_control_attendanceemployeeconfig_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1482,12 +1359,9 @@ pub async fn stub_attendance_assemble_control_attendanceemployeeconfig_id(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceimportfileinfo/list/all
 pub async fn stub_attendance_assemble_control_attendanceimportfileinfo_list_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1518,13 +1392,10 @@ pub async fn stub_attendance_assemble_control_attendanceimportfileinfo_list_all(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceimportfileinfo/{id}
 pub async fn stub_attendance_assemble_control_attendanceimportfileinfo_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1549,12 +1420,9 @@ pub async fn stub_attendance_assemble_control_attendanceimportfileinfo_id(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/all
 pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1585,13 +1453,10 @@ pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_all
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/topUnit/{name}
 pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_topUnit_name(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1622,13 +1487,10 @@ pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_top
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/unit/{name}
 pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_unit_name(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1660,13 +1522,10 @@ pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_uni
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/{id}
 pub async fn stub_attendance_assemble_control_attendanceschedulesetting_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1691,13 +1550,10 @@ pub async fn stub_attendance_assemble_control_attendanceschedulesetting_id(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/next/{count}
 pub async fn stub_attendance_assemble_control_attendanceselfholiday_filter_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1728,13 +1584,10 @@ pub async fn stub_attendance_assemble_control_attendanceselfholiday_filter_list_
 
 /// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/prev/{count}
 pub async fn stub_attendance_assemble_control_attendanceselfholiday_filter_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1765,12 +1618,9 @@ pub async fn stub_attendance_assemble_control_attendanceselfholiday_filter_list_
 
 /// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/list/all
 pub async fn stub_attendance_assemble_control_attendanceselfholiday_list_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1802,13 +1652,10 @@ pub async fn stub_attendance_assemble_control_attendanceselfholiday_list_all(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/{id}
 pub async fn stub_attendance_assemble_control_attendanceselfholiday_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1834,13 +1681,10 @@ pub async fn stub_attendance_assemble_control_attendanceselfholiday_id(
 
 /// GET /jaxrs/attendance/assemble/control/attendancesetting/code/{code}
 pub async fn stub_attendance_assemble_control_attendancesetting_code_code(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(code): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1866,13 +1710,10 @@ pub async fn stub_attendance_assemble_control_attendancesetting_code_code(
 
 /// POST /jaxrs/attendance/assemble/control/attendancesetting/enable/type
 pub async fn stub_attendance_assemble_control_attendancesetting_enable_type(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let code = payload.get("code").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let enabled = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
@@ -1900,12 +1741,9 @@ pub async fn stub_attendance_assemble_control_attendancesetting_enable_type(
 
 /// GET /jaxrs/attendance/assemble/control/attendancesetting/list/all
 pub async fn stub_attendance_assemble_control_attendancesetting_list_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1937,13 +1775,10 @@ pub async fn stub_attendance_assemble_control_attendancesetting_list_all(
 
 /// GET /jaxrs/attendance/assemble/control/attendancesetting/{id}
 pub async fn stub_attendance_assemble_control_attendancesetting_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1969,13 +1804,10 @@ pub async fn stub_attendance_assemble_control_attendancesetting_id(
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/{year}/{month}
 pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_cycleDetail_year_month(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((year, month)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -2001,12 +1833,9 @@ pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_cycleDe
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/list/all
 pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_list_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2038,13 +1867,10 @@ pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_list_al
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/{id}
 pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -2070,12 +1896,9 @@ pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_id(
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/list/all
 pub async fn stub_attendance_assemble_control_attendancestatisticrequirelog_list_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2106,13 +1929,10 @@ pub async fn stub_attendance_assemble_control_attendancestatisticrequirelog_list
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/{id}
 pub async fn stub_attendance_assemble_control_attendancestatisticrequirelog_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -2137,13 +1957,10 @@ pub async fn stub_attendance_assemble_control_attendancestatisticrequirelog_id(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/filter
 pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_filter(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let start_date = payload.get("startDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let end_date = payload.get("endDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -2177,12 +1994,9 @@ pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_filter(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/list/all
 pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_list_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2213,13 +2027,10 @@ pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_list_all(
 
 /// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/{id}
 pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -2244,13 +2055,10 @@ pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_id(
 
 /// GET /jaxrs/attendance/assemble/control/selfholidaysimple/docId/{docId}
 pub async fn stub_attendance_assemble_control_selfholidaysimple_docId_docId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(doc_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -2276,13 +2084,10 @@ pub async fn stub_attendance_assemble_control_selfholidaysimple_docId_docId(
 
 /// POST /jaxrs/attendance/assemble/control/statistic/do
 pub async fn stub_attendance_assemble_control_statistic_do(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let year = payload.get("year").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -2305,13 +2110,10 @@ pub async fn stub_attendance_assemble_control_statistic_do(
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/next/{count}
 pub async fn stub_attendance_assemble_control_statisticshow_filter_personMonth_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2343,13 +2145,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_personMonth_l
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/prev/{count}
 pub async fn stub_attendance_assemble_control_statisticshow_filter_personMonth_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2381,13 +2180,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_personMonth_l
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{id}/next/{count}
 pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitDay_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2418,13 +2214,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitDay_li
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{id}/prev/{count}
 pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitDay_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2455,13 +2248,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitDay_li
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{id}/next/{count}
 pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitMonth_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2493,13 +2283,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitMonth_
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{id}/prev/{count}
 pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitMonth_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2531,13 +2318,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitMonth_
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/{id}/next/{count}
 pub async fn stub_attendance_assemble_control_statisticshow_filter_unitDay_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2569,13 +2353,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_unitDay_list_
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/{id}/prev/{count}
 pub async fn stub_attendance_assemble_control_statisticshow_filter_unitDay_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2607,13 +2388,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_unitDay_list_
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/next/{count}
 pub async fn stub_attendance_assemble_control_statisticshow_filter_unitMonth_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2646,13 +2424,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_unitMonth_lis
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/prev/{count}
 pub async fn stub_attendance_assemble_control_statisticshow_filter_unitMonth_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2685,13 +2460,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_unitMonth_lis
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/person/{name}/{year}/{month}
 pub async fn stub_attendance_assemble_control_statisticshow_person_name_year_month(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -2718,13 +2490,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_person_name_year_mon
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/persons/unit/subnested/{name}/{year}/{month}
 pub async fn stub_attendance_assemble_control_statisticshow_persons_unit_subnested_name_year_month(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2755,13 +2524,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_persons_unit_subnest
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/persons/unit/{name}/{year}/{month}
 pub async fn stub_attendance_assemble_control_statisticshow_persons_unit_name_year_month(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2792,13 +2558,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_persons_unit_name_ye
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/topUnit/day/{name}/{year}/{month}
 pub async fn stub_attendance_assemble_control_statisticshow_topUnit_day_name_year_month(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2829,13 +2592,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_topUnit_day_name_yea
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/topUnit/{name}/{year}/{month}
 pub async fn stub_attendance_assemble_control_statisticshow_topUnit_name_year_month(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2867,13 +2627,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_topUnit_name_year_mo
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/day/topUnit/{name}/{date}
 pub async fn stub_attendance_assemble_control_statisticshow_unit_day_topUnit_name_date(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((name, date)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2904,13 +2661,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_unit_day_topUnit_nam
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/day/{name}/{date}
 pub async fn stub_attendance_assemble_control_statisticshow_unit_day_name_date(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((name, date)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2942,13 +2696,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_unit_day_name_date(
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/day/{name}/{year}/{month}
 pub async fn stub_attendance_assemble_control_statisticshow_unit_day_name_year_month(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2979,13 +2730,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_unit_day_name_year_m
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/subnested/{name}/{year}/{month}
 pub async fn stub_attendance_assemble_control_statisticshow_unit_subnested_name_year_month(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -3016,13 +2764,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_unit_subnested_name_
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
 pub async fn stub_attendance_assemble_control_statisticshow_unit_sum_name_year_month(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -3047,13 +2792,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_unit_sum_name_year_m
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/topUnit/{name}/{year}/{month}
 pub async fn stub_attendance_assemble_control_statisticshow_unit_topUnit_name_year_month(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -3086,13 +2828,10 @@ pub async fn stub_attendance_assemble_control_statisticshow_unit_topUnit_name_ye
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/{name}/{year}/{month}
 pub async fn stub_attendance_assemble_control_statisticshow_unit_name_year_month(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -3134,12 +2873,9 @@ pub async fn stub_attendance_assemble_control_uuid_random() -> Result<Json<Actio
 
 /// GET /jaxrs/attendance/assemble/control/workplace/list/all
 pub async fn stub_attendance_assemble_control_workplace_list_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -3170,13 +2906,10 @@ pub async fn stub_attendance_assemble_control_workplace_list_all(
 
 /// GET /jaxrs/attendance/assemble/control/workplace/{id}
 pub async fn stub_attendance_assemble_control_workplace_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(

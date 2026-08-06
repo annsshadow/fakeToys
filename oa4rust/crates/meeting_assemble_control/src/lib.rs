@@ -109,21 +109,18 @@ pub fn meeting_assemble_control_router(pool: Pool) -> Router {
     routes::meeting_assemble_control_routes(pool)
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/meeting_assemble_control/health", axum::routing::get(|| async { "TODO: meeting_assemble_control - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    meeting_assemble_control_router(pool)
+        .route("/meeting_assemble_control/health", axum::routing::get(|| async { "ok" }))
 }
 
 
 /// Stub handler for /jaxrs/meeting/assemble/control/building/list
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_building_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -157,13 +154,10 @@ pub async fn stub_meeting_assemble_control_building_list(
 /// Stub handler for /jaxrs/meeting/assemble/control/building/list/like/pinyin/{key}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_building_list_like_pinyin_key(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let pattern = format!("%{}%", key);
     let rows = client
@@ -198,13 +192,10 @@ pub async fn stub_meeting_assemble_control_building_list_like_pinyin_key(
 /// Stub handler for /jaxrs/meeting/assemble/control/building/list/like/{key}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_building_list_like_key(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let pattern = format!("%{}%", key);
     let rows = client
@@ -239,13 +230,10 @@ pub async fn stub_meeting_assemble_control_building_list_like_key(
 /// Stub handler for /jaxrs/meeting/assemble/control/building/list/pinyininitial/{key}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_building_list_pinyininitial_key(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -279,13 +267,10 @@ pub async fn stub_meeting_assemble_control_building_list_pinyininitial_key(
 /// Stub handler for /jaxrs/meeting/assemble/control/building/list/start/{start}/completed/{completed}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_building_list_start_start_completed_completed(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((start, completed)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -319,13 +304,10 @@ pub async fn stub_meeting_assemble_control_building_list_start_start_completed_c
 /// Stub handler for /jaxrs/meeting/assemble/control/building/list/start/{start}/completed/{completed}/allmeeting
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_building_list_start_start_completed_completed_allmeeting(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((start, completed)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -359,13 +341,10 @@ pub async fn stub_meeting_assemble_control_building_list_start_start_completed_c
 /// Stub handler for /jaxrs/meeting/assemble/control/building/list/start/{start}/completed/{completed}/room/{room}/meeting/{meeting}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_building_list_start_start_completed_completed_room_room_meeting_meeting(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((start, completed, room, meeting)): axum::extract::Path<(String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -399,13 +378,10 @@ pub async fn stub_meeting_assemble_control_building_list_start_start_completed_c
 /// Stub handler for /jaxrs/meeting/assemble/control/building/{id}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_building_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -435,12 +411,9 @@ pub async fn stub_meeting_assemble_control_building_id(
 /// Stub handler for /jaxrs/meeting/assemble/control/config/system/config
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_config_system_config(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -472,13 +445,10 @@ pub async fn stub_meeting_assemble_control_config_system_config(
 /// Stub handler for /jaxrs/meeting/assemble/control/config/system/config/manage
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_config_system_config_manage(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let config_key = payload.get("configKey").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("configKey is required".to_string()))?;
     let config_value = payload.get("configValue").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("configValue is required".to_string()))?;
@@ -508,12 +478,9 @@ pub async fn stub_meeting_assemble_control_config_system_config_manage(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/applied/completed
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_applied_completed(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -547,12 +514,9 @@ pub async fn stub_meeting_assemble_control_meeting_list_applied_completed(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/applied/processing
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_applied_processing(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -586,12 +550,9 @@ pub async fn stub_meeting_assemble_control_meeting_list_applied_processing(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/applied/wait
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_applied_wait(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -625,13 +586,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_applied_wait(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/apply/{page}/size/{size}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_apply_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -670,13 +628,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_apply_page_size_size(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/coming/day/{count}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_coming_day_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -710,13 +665,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_coming_day_count(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/coming/month/{count}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_coming_month_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -750,13 +702,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_coming_month_count(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_forward_monthcount_monthCount(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(month_count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -790,13 +739,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_forward_monthcount_month
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/forward/monthcount/{monthCount}/all
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_forward_monthcount_monthCount_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(month_count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -830,13 +776,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_forward_monthcount_month
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/invite/{page}/size/{size}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_invite_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -875,12 +818,9 @@ pub async fn stub_meeting_assemble_control_meeting_list_invite_page_size_size(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/invited/completed
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_invited_completed(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -914,12 +854,9 @@ pub async fn stub_meeting_assemble_control_meeting_list_invited_completed(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/invited/processing
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_invited_processing(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -953,12 +890,9 @@ pub async fn stub_meeting_assemble_control_meeting_list_invited_processing(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/invited/rejected
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_invited_rejected(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -992,12 +926,9 @@ pub async fn stub_meeting_assemble_control_meeting_list_invited_rejected(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/invited/wait
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_invited_wait(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1031,12 +962,9 @@ pub async fn stub_meeting_assemble_control_meeting_list_invited_wait(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/wait/accept
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_wait_accept(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1070,12 +998,9 @@ pub async fn stub_meeting_assemble_control_meeting_list_wait_accept(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/wait/confirm
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_wait_confirm(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1109,13 +1034,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_wait_confirm(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/year/{year}/month/{month}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((year, month)): axum::extract::Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let start_date = format!("{}-{:02}-01", year, month);
     let end_date = if month == 12 {
@@ -1156,13 +1078,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/year/{year}/month/{month}/all
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((year, month)): axum::extract::Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let start_date = format!("{}-{:02}-01", year, month);
     let end_date = if month == 12 {
@@ -1203,13 +1122,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month_al
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/year/{year}/month/{month}/day/{day}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month_day_day(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((year, month, day)): axum::extract::Path<(i32, i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let start_date = format!("{}-{:02}-{:02} 00:00:00", year, month, day);
     let end_date = format!("{}-{:02}-{:02} 23:59:59", year, month, day);
@@ -1246,13 +1162,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month_da
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/year/{year}/month/{month}/day/{day}/all
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month_day_day_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((year, month, day)): axum::extract::Path<(i32, i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let start_date = format!("{}-{:02}-{:02} 00:00:00", year, month, day);
     let end_date = format!("{}-{:02}-{:02} 23:59:59", year, month, day);
@@ -1289,13 +1202,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month_da
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/year/{year}/month/{month}/day/{day}/{roomId}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month_day_day_roomId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((year, month, day, room_id)): axum::extract::Path<(i32, i32, i32, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let start_date = format!("{}-{:02}-{:02} 00:00:00", year, month, day);
     let end_date = format!("{}-{:02}-{:02} 23:59:59", year, month, day);
@@ -1330,13 +1240,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_year_year_month_month_da
 }
 
 pub async fn meeting_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count = count.max(1);
 
@@ -1382,13 +1289,10 @@ pub async fn meeting_list_id_next_count(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/{id}/prev/{count}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count = count.max(1);
 
@@ -1424,13 +1328,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_id_prev_count(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/{page}/size/{size}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -1469,13 +1370,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_page_size_size(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/list/{page}/size/{size}/manage
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_list_page_size_size_manage(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -1512,13 +1410,10 @@ pub async fn stub_meeting_assemble_control_meeting_list_page_size_size_manage(
 }
 
 pub async fn meeting_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1546,13 +1441,10 @@ pub async fn meeting_id(
 }
 
 pub async fn create_meeting(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let title = payload.get("title").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("title is required".to_string()))?;
     let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
@@ -1580,14 +1472,11 @@ pub async fn create_meeting(
 }
 
 pub async fn save_meeting(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or_default();
     let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
@@ -1616,13 +1505,10 @@ pub async fn save_meeting(
 }
 
 pub async fn delete_meeting(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -1647,13 +1533,10 @@ pub async fn delete_meeting(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/accept
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_id_accept(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute(
@@ -1674,14 +1557,11 @@ pub async fn stub_meeting_assemble_control_meeting_id_accept(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/add/invite
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_id_add_invite(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let invitee = payload.get("invitee").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("invitee is required".to_string()))?;
     let invite_id = uuid::Uuid::new_v4().to_string();
@@ -1707,14 +1587,11 @@ pub async fn stub_meeting_assemble_control_meeting_id_add_invite(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/checkin
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_id_checkin(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person = payload.get("person").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("person is required".to_string()))?;
     let checkin_id = uuid::Uuid::new_v4().to_string();
@@ -1740,13 +1617,10 @@ pub async fn stub_meeting_assemble_control_meeting_id_checkin(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/checkin/code
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_id_checkin_code(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1772,13 +1646,10 @@ pub async fn stub_meeting_assemble_control_meeting_id_checkin_code(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/confirm/allow
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_id_confirm_allow(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute(
@@ -1799,13 +1670,10 @@ pub async fn stub_meeting_assemble_control_meeting_id_confirm_allow(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/confirm/deny
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_id_confirm_deny(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute(
@@ -1826,14 +1694,11 @@ pub async fn stub_meeting_assemble_control_meeting_id_confirm_deny(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/delete/invite
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_id_delete_invite(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let invitee = payload.get("invitee").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("invitee is required".to_string()))?;
 
@@ -1857,13 +1722,10 @@ pub async fn stub_meeting_assemble_control_meeting_id_delete_invite(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/manual/completed
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_id_manual_completed(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute(
@@ -1884,14 +1746,11 @@ pub async fn stub_meeting_assemble_control_meeting_id_manual_completed(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/modify/completedtime
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_id_modify_completedtime(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let completed_time = payload.get("completedTime").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("completedTime is required".to_string()))?;
 
@@ -1915,14 +1774,11 @@ pub async fn stub_meeting_assemble_control_meeting_id_modify_completedtime(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/modify/starttime
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_id_modify_starttime(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let start_time = payload.get("startTime").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("startTime is required".to_string()))?;
     let end_time = payload.get("endTime").and_then(|v| v.as_str());
@@ -1957,13 +1813,10 @@ pub async fn stub_meeting_assemble_control_meeting_id_modify_starttime(
 /// Stub handler for /jaxrs/meeting/assemble/control/meeting/{id}/reject
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_meeting_id_reject(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute(
@@ -1984,12 +1837,9 @@ pub async fn stub_meeting_assemble_control_meeting_id_reject(
 /// Stub handler for /jaxrs/meeting/assemble/control/openmeeting/list/room
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_openmeeting_list_room(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2023,12 +1873,9 @@ pub async fn stub_meeting_assemble_control_openmeeting_list_room(
 /// Stub handler for /jaxrs/meeting/assemble/control/room/list
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_room_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2062,13 +1909,10 @@ pub async fn stub_meeting_assemble_control_room_list(
 /// Stub handler for /jaxrs/meeting/assemble/control/room/list/like/pinyin/{key}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_room_list_like_pinyin_key(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let pattern = format!("%{}%", key);
     let rows = client
@@ -2103,13 +1947,10 @@ pub async fn stub_meeting_assemble_control_room_list_like_pinyin_key(
 /// Stub handler for /jaxrs/meeting/assemble/control/room/list/like/{key}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_room_list_like_key(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let pattern = format!("%{}%", key);
     let rows = client
@@ -2144,13 +1985,10 @@ pub async fn stub_meeting_assemble_control_room_list_like_key(
 /// Stub handler for /jaxrs/meeting/assemble/control/room/list/pinyininitial/{key}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_room_list_pinyininitial_key(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2184,13 +2022,10 @@ pub async fn stub_meeting_assemble_control_room_list_pinyininitial_key(
 /// Stub handler for /jaxrs/meeting/assemble/control/room/{id}
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_room_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -2220,13 +2055,10 @@ pub async fn stub_meeting_assemble_control_room_id(
 /// Stub handler for /jaxrs/meeting/assemble/control/room/{id}/photo
 /// TODO: Implement real business logic
 pub async fn stub_meeting_assemble_control_room_id_photo(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(

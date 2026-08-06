@@ -1,8 +1,8 @@
 use axum::Router;
+use deadpool_postgres::Pool;
 
 use crate::processplatform_assemble_designer_router;
 
-/// 创建设计器装配路由
-pub fn router() -> Router {
-    processplatform_assemble_designer_router()
+pub fn router(pool: Pool) -> Router {
+    processplatform_assemble_designer_router().layer(axum::Extension(pool))
 }

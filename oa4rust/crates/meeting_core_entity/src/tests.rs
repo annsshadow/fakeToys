@@ -106,6 +106,7 @@ mod tests {
         let meeting = Meeting {
             id: "meeting-001".to_string(),
             title: "项目评审会".to_string(),
+            content: None,
             room_id: "room-001".to_string(),
             start_time: "2024-01-01T10:00:00Z".to_string(),
             end_time: "2024-01-01T11:00:00Z".to_string(),

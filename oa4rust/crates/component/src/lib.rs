@@ -2,11 +2,11 @@ use axum::{
     extract::Extension, extract::Path,
     Json,
 };
-use serde::{Serialize};
+use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, serde::Serialize, Clone)]
 pub struct ComponentInfo {
     pub id: String,
     pub name: String,
@@ -18,57 +18,30 @@ pub struct ComponentInfo {
     pub icon_path: String,
 }
 
-fn mock_components() -> Vec<ComponentInfo> {
-    vec![
-        ComponentInfo {
-            id: "comp-001".to_string(),
-            name: "desktop".to_string(),
-            title: "工作台".to_string(),
-            r#type: "system".to_string(),
-            visible: true,
-            order_number: Some(1),
-            path: "/desktop".to_string(),
-            icon_path: "/icon/desktop.png".to_string(),
-        },
-        ComponentInfo {
-            id: "comp-002".to_string(),
-            name: "message".to_string(),
-            title: "消息".to_string(),
-            r#type: "system".to_string(),
-            visible: true,
-            order_number: Some(2),
-            path: "/message".to_string(),
-            icon_path: "/icon/message.png".to_string(),
-        },
-        ComponentInfo {
-            id: "comp-003".to_string(),
-            name: "calendar".to_string(),
-            title: "日程".to_string(),
-            r#type: "custom".to_string(),
-            visible: false,
-            order_number: Some(3),
-            path: "/calendar".to_string(),
-            icon_path: "/icon/calendar.png".to_string(),
-        },
-    ]
-}
-
 pub async fn list_all(
-    _pool: Extension<deadpool_postgres::Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let components = mock_components();
-    let data: Vec<Value> = components
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, title, type, visible, order_number, path, icon_path FROM x_component WHERE deleted_at IS NULL ORDER BY order_number ASC LIMIT 50",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
         .iter()
-        .map(|c| {
+        .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(c.id.clone())),
-                ("name".to_string(), Value::String(c.name.clone())),
-                ("title".to_string(), Value::String(c.title.clone())),
-                ("type".to_string(), Value::String(c.r#type.clone())),
-                ("visible".to_string(), Value::Bool(c.visible)),
-                ("orderNumber".to_string(), c.order_number.map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
-                ("path".to_string(), Value::String(c.path.clone())),
-                ("iconPath".to_string(), Value::String(c.icon_path.clone())),
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("visible".to_string(), Value::Bool(row.get("visible"))),
+                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
+                ("path".to_string(), Value::String(row.get("path"))),
+                ("iconPath".to_string(), Value::String(row.get("icon_path"))),
             ]))
         })
         .collect();
@@ -80,23 +53,29 @@ pub async fn list_all(
 }
 
 pub async fn get_component(
-    _pool: Extension<deadpool_postgres::Pool>,
+    pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let components = mock_components();
-    let component = components.iter().find(|c| c.id == flag || c.name == flag);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, title, type, visible, order_number, path, icon_path FROM x_component WHERE (id = $1 OR name = $1) AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    match component {
-        Some(c) => {
+    match row {
+        Some(row) => {
             Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(c.id.clone())),
-                ("name".to_string(), Value::String(c.name.clone())),
-                ("title".to_string(), Value::String(c.title.clone())),
-                ("type".to_string(), Value::String(c.r#type.clone())),
-                ("visible".to_string(), Value::Bool(c.visible)),
-                ("orderNumber".to_string(), c.order_number.map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
-                ("path".to_string(), Value::String(c.path.clone())),
-                ("iconPath".to_string(), Value::String(c.icon_path.clone())),
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("visible".to_string(), Value::Bool(row.get("visible"))),
+                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
+                ("path".to_string(), Value::String(row.get("path"))),
+                ("iconPath".to_string(), Value::String(row.get("icon_path"))),
             ])))))
         }
         None => Err(AppError::NotFound),
@@ -104,11 +83,20 @@ pub async fn get_component(
 }
 
 pub async fn count(
-    _pool: Extension<deadpool_postgres::Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let components = mock_components();
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_one(
+            "SELECT COUNT(*) as cnt FROM x_component WHERE deleted_at IS NULL",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let count: i64 = row.get("cnt");
+
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(components.len() as i64))),
+        ("count".to_string(), Value::Number(serde_json::Number::from(count))),
     ])))))
 }
 
@@ -119,7 +107,7 @@ pub use routes::component_router;
 #[cfg(test)]
 mod tests;
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/component/health", axum::routing::get(|| async { "TODO: component - real implementation needed" }))
+pub fn router(pool: Pool) -> axum::Router {
+    component_router(pool)
+        .route("/component/health", axum::routing::get(|| async { "ok" }))
 }

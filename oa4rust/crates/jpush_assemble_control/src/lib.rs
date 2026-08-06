@@ -58,14 +58,6 @@ pub async fn update_control_config(
 
 pub fn jpush_assemble_control_router(pool: Pool) -> Router {
     routes::router(pool)
-        .route("/jaxrs/jpush/assemble/control/device/admin/unbind/all/person", post(stub_jpush_assemble_control_device_admin_unbind_all_person))
-        .route("/jaxrs/jpush/assemble/control/device/bind", post(stub_jpush_assemble_control_device_bind))
-        .route("/jaxrs/jpush/assemble/control/device/check/{deviceName}/{deviceType}/{pushType}", get(stub_jpush_assemble_control_device_check_deviceName_deviceType_pushType))
-        .route("/jaxrs/jpush/assemble/control/device/config/push/type", get(stub_jpush_assemble_control_device_config_push_type))
-        .route("/jaxrs/jpush/assemble/control/device/list/{pushType}", get(stub_jpush_assemble_control_device_list_pushType))
-        .route("/jaxrs/jpush/assemble/control/device/unbind/new/{deviceName}/{deviceType}/{pushType}", post(stub_jpush_assemble_control_device_unbind_new_deviceName_deviceType_pushType))
-        .route("/jaxrs/jpush/assemble/control/device/unbind/{deviceName}/{deviceType}", post(stub_jpush_assemble_control_device_unbind_deviceName_deviceType))
-        .route("/jaxrs/jpush/assemble/control/message/test/send", post(stub_jpush_assemble_control_message_test_send))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> Router {

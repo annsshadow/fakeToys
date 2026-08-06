@@ -122,12 +122,9 @@ pub struct AttendScopeCreateRequest {
 }
 
 pub async fn attendscope_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -157,13 +154,10 @@ pub async fn attendscope_list(
 }
 
 pub async fn attendscope_get(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -189,13 +183,10 @@ pub async fn attendscope_get(
 }
 
 pub async fn attendscope_create(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): Json<AttendScopeCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -221,14 +212,11 @@ pub async fn attendscope_create(
 }
 
 pub async fn attendscope_save(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<AttendScopeCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.name.unwrap_or_default();
     let unit_id = req.unit_id.unwrap_or_default();
@@ -256,13 +244,10 @@ pub async fn attendscope_save(
 }
 
 pub async fn attendscope_delete(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -286,12 +271,9 @@ pub async fn attendscope_delete(
 
 
 pub async fn stub_general_assemble_control_area_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -325,13 +307,10 @@ pub async fn stub_general_assemble_control_area_list(
 }
 
 pub async fn stub_general_assemble_control_area_list_province_province(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(province): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -365,14 +344,11 @@ pub async fn stub_general_assemble_control_area_list_province_province(
 }
 
 pub async fn stub_general_assemble_control_area_list_province_province_city_city(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(province): axum::extract::Path<String>,
     axum::extract::Path(city): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -406,15 +382,12 @@ pub async fn stub_general_assemble_control_area_list_province_province_city_city
 }
 
 pub async fn stub_general_assemble_control_area_list_province_province_city_city_district_district(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(province): axum::extract::Path<String>,
     axum::extract::Path(city): axum::extract::Path<String>,
     axum::extract::Path(district): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -447,13 +420,133 @@ pub async fn stub_general_assemble_control_area_list_province_province_city_city
     ])))))
 }
 
-pub async fn stub_general_assemble_control_ecnet_check(
-    pool: Option<Extension<Pool>>,
+// ---- area CRUD ----
+
+pub async fn area_create(
+    pool: Extension<Pool>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let parent_id = payload.get("parentId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let level = payload.get("level").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let province = payload.get("province").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let city = payload.get("city").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let district = payload.get("district").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+
+    client
+        .execute(
+            "INSERT INTO x_general_assemble_area (id, name, parent_id, level, province, city, district, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())",
+            &[&id, &name, &parent_id, &level, &province, &city, &district, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("parentId".to_string(), Value::String(parent_id)),
+        ("level".to_string(), Value::String(level)),
+        ("province".to_string(), Value::String(province)),
+        ("city".to_string(), Value::String(city)),
+        ("district".to_string(), Value::String(district)),
+    ])))))
+}
+
+pub async fn area_get(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, parent_id, level, province, city, district, creator, create_time FROM x_general_assemble_area WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("parentId".to_string(), Value::String(row.get("parent_id"))),
+                ("level".to_string(), Value::String(row.get("level"))),
+                ("province".to_string(), Value::String(row.get("province"))),
+                ("city".to_string(), Value::String(row.get("city"))),
+                ("district".to_string(), Value::String(row.get("district"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("area not found"))),
+    }
+}
+
+pub async fn area_update(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let parent_id = payload.get("parentId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let level = payload.get("level").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let province = payload.get("province").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let city = payload.get("city").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let district = payload.get("district").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+
+    let result = client
+        .execute(
+            "UPDATE x_general_assemble_area SET name = $1, parent_id = $2, level = $3, province = $4, city = $5, district = $6 WHERE id = $7",
+            &[&name, &parent_id, &level, &province, &city, &district, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("area not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("saved".to_string(), Value::Bool(true)),
+        ("name".to_string(), Value::String(name)),
+    ])))))
+}
+
+pub async fn area_delete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute("DELETE FROM x_general_assemble_area WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("area not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("deleted".to_string(), Value::Bool(true)),
+    ])))))
+}
+
+pub async fn stub_general_assemble_control_ecnet_check(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -483,13 +576,10 @@ pub async fn stub_general_assemble_control_ecnet_check(
 }
 
 pub async fn stub_general_assemble_control_excel_excelName_excelName(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(excel_name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -515,13 +605,10 @@ pub async fn stub_general_assemble_control_excel_excelName_excelName(
 }
 
 pub async fn stub_general_assemble_control_excel_excelName_excelName_sheetList(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(excel_name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -551,13 +638,10 @@ pub async fn stub_general_assemble_control_excel_excelName_excelName_sheetList(
 }
 
 pub async fn stub_general_assemble_control_excel_result_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -583,13 +667,10 @@ pub async fn stub_general_assemble_control_excel_result_flag(
 }
 
 pub async fn stub_general_assemble_control_excel_upload(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -614,13 +695,10 @@ pub async fn stub_general_assemble_control_excel_upload(
 }
 
 pub async fn stub_general_assemble_control_excel_upload_with_url(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -645,13 +723,10 @@ pub async fn stub_general_assemble_control_excel_upload_with_url(
 }
 
 pub async fn stub_general_assemble_control_generalfile_download_flag_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -678,13 +753,10 @@ pub async fn stub_general_assemble_control_generalfile_download_flag_flag(
 }
 
 pub async fn stub_general_assemble_control_generalfile_flag_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -711,13 +783,10 @@ pub async fn stub_general_assemble_control_generalfile_flag_flag(
 }
 
 pub async fn stub_general_assemble_control_generalfile_flag_flag_binary_base64(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -746,13 +815,10 @@ pub async fn stub_general_assemble_control_generalfile_flag_flag_binary_base64(
 }
 
 pub async fn stub_general_assemble_control_invoice_create(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -778,13 +844,10 @@ pub async fn stub_general_assemble_control_invoice_create(
 }
 
 pub async fn stub_general_assemble_control_invoice_delete_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute("DELETE FROM x_general_assemble_invoice WHERE id = $1", &[&id])
@@ -802,13 +865,10 @@ pub async fn stub_general_assemble_control_invoice_delete_id(
 }
 
 pub async fn stub_general_assemble_control_invoice_download_flag_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -835,13 +895,10 @@ pub async fn stub_general_assemble_control_invoice_download_flag_flag(
 }
 
 pub async fn stub_general_assemble_control_invoice_get_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -868,14 +925,11 @@ pub async fn stub_general_assemble_control_invoice_get_id(
 }
 
 pub async fn stub_general_assemble_control_invoice_list_paging_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(page): axum::extract::Path<i32>,
     axum::extract::Path(size): axum::extract::Path<i32>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = ((page.max(1) - 1) * size) as i64;
 
@@ -916,14 +970,11 @@ pub async fn stub_general_assemble_control_invoice_list_paging_page_size_size(
 }
 
 pub async fn stub_general_assemble_control_invoice_update_apply_status_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
@@ -947,14 +998,11 @@ pub async fn stub_general_assemble_control_invoice_update_apply_status_id(
 }
 
 pub async fn stub_general_assemble_control_invoice_update_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or_default().to_string();
@@ -980,13 +1028,10 @@ pub async fn stub_general_assemble_control_invoice_update_id(
 }
 
 pub async fn stub_general_assemble_control_invoice_upload(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -1010,13 +1055,10 @@ pub async fn stub_general_assemble_control_invoice_upload(
 }
 
 pub async fn stub_general_assemble_control_invoice_upload_for_create(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -1040,13 +1082,10 @@ pub async fn stub_general_assemble_control_invoice_upload_for_create(
 }
 
 pub async fn stub_general_assemble_control_invoice_upload_with_url(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -1070,13 +1109,10 @@ pub async fn stub_general_assemble_control_invoice_upload_with_url(
 }
 
 pub async fn stub_general_assemble_control_office_html_to_word(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let html_content = payload.get("htmlContent").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -1098,13 +1134,10 @@ pub async fn stub_general_assemble_control_office_html_to_word(
 }
 
 pub async fn stub_general_assemble_control_office_html_to_word_result_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1130,15 +1163,12 @@ pub async fn stub_general_assemble_control_office_html_to_word_result_flag(
 }
 
 pub async fn stub_general_assemble_control_qrcode_width_width_height_height_text_text(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(width): axum::extract::Path<u32>,
     axum::extract::Path(height): axum::extract::Path<u32>,
     axum::extract::Path(text): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let content = text.clone();
@@ -1160,14 +1190,98 @@ pub async fn stub_general_assemble_control_qrcode_width_width_height_height_text
     ])))))
 }
 
+// ---- qrcode CRUD ----
+
+pub async fn qrcode_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, width, height, text, content, creator, create_time FROM x_general_assemble_qrcode ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("width".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("width")))),
+                ("height".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("height")))),
+                ("text".to_string(), Value::String(row.get("text"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+pub async fn qrcode_get(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, width, height, text, content, creator, create_time FROM x_general_assemble_qrcode WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("width".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("width")))),
+                ("height".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("height")))),
+                ("text".to_string(), Value::String(row.get("text"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("qrcode not found"))),
+    }
+}
+
+pub async fn qrcode_delete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute("DELETE FROM x_general_assemble_qrcode WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("qrcode not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("deleted".to_string(), Value::Bool(true)),
+    ])))))
+}
+
 pub async fn stub_general_assemble_control_securityclearance_enable(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let enabled = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -1215,12 +1329,9 @@ pub async fn stub_general_assemble_control_securityclearance_enable(
 }
 
 pub async fn stub_general_assemble_control_securityclearance_object(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1252,12 +1363,9 @@ pub async fn stub_general_assemble_control_securityclearance_object(
 }
 
 pub async fn stub_general_assemble_control_securityclearance_subject(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1289,12 +1397,9 @@ pub async fn stub_general_assemble_control_securityclearance_subject(
 }
 
 pub async fn stub_general_assemble_control_securityclearance_system(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1324,13 +1429,127 @@ pub async fn stub_general_assemble_control_securityclearance_system(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_upgrade_2021090901(
-    pool: Option<Extension<Pool>>,
+// ---- securityclearance CRUD ----
+
+pub async fn securityclearance_create(
+    pool: Extension<Pool>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let clearance_type = payload.get("type").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let enabled = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
+    let subject = payload.get("subject").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let object = payload.get("object").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+
+    client
+        .execute(
+            "INSERT INTO x_general_assemble_security_clearance (id, name, type, enabled, subject, object, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            &[&id, &name, &clearance_type, &enabled, &subject, &object, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("type".to_string(), Value::String(clearance_type)),
+        ("enabled".to_string(), Value::Bool(enabled)),
+    ])))))
+}
+
+pub async fn securityclearance_get(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, type, enabled, subject, object, creator, create_time FROM x_general_assemble_security_clearance WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                ("subject".to_string(), Value::String(row.get("subject"))),
+                ("object".to_string(), Value::String(row.get("object"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("security clearance not found"))),
+    }
+}
+
+pub async fn securityclearance_update(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let clearance_type = payload.get("type").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let enabled = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
+    let subject = payload.get("subject").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let object = payload.get("object").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+
+    let result = client
+        .execute(
+            "UPDATE x_general_assemble_security_clearance SET name = $1, type = $2, enabled = $3, subject = $4, object = $5 WHERE id = $6",
+            &[&name, &clearance_type, &enabled, &subject, &object, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("security clearance not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("saved".to_string(), Value::Bool(true)),
+        ("name".to_string(), Value::String(name)),
+    ])))))
+}
+
+pub async fn securityclearance_delete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute("DELETE FROM x_general_assemble_security_clearance WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("security clearance not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("deleted".to_string(), Value::Bool(true)),
+    ])))))
+}
+
+pub async fn stub_general_assemble_control_upgrade_2021090901(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1361,12 +1580,9 @@ pub async fn stub_general_assemble_control_upgrade_2021090901(
 }
 
 pub async fn stub_general_assemble_control_upgrade_2021090902(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1397,14 +1613,11 @@ pub async fn stub_general_assemble_control_upgrade_2021090902(
 }
 
 pub async fn stub_general_assemble_control_worktime_betweenholidaycount_start_startDate_end_endDate(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(start_date): axum::extract::Path<String>,
     axum::extract::Path(end_date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_one(
@@ -1423,14 +1636,11 @@ pub async fn stub_general_assemble_control_worktime_betweenholidaycount_start_st
 }
 
 pub async fn stub_general_assemble_control_worktime_betweenminutes_start_start_end_end(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(start): axum::extract::Path<String>,
     axum::extract::Path(end): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_one(
@@ -1449,14 +1659,11 @@ pub async fn stub_general_assemble_control_worktime_betweenminutes_start_start_e
 }
 
 pub async fn stub_general_assemble_control_worktime_forwarddays_start_start_days_days(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(start): axum::extract::Path<String>,
     axum::extract::Path(days): axum::extract::Path<u32>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let end_date = format!("{} + {} days", start, days);
 
@@ -1493,14 +1700,11 @@ pub async fn stub_general_assemble_control_worktime_forwarddays_start_start_days
 }
 
 pub async fn stub_general_assemble_control_worktime_forwardminutes_start_start_minutes_minutes(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(start): axum::extract::Path<String>,
     axum::extract::Path(minutes): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1545,13 +1749,10 @@ pub async fn stub_general_assemble_control_worktime_forwardminutes_start_start_m
 }
 
 pub async fn stub_general_assemble_control_worktime_indefinedholiday_date(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1591,13 +1792,10 @@ pub async fn stub_general_assemble_control_worktime_indefinedholiday_date(
 }
 
 pub async fn stub_general_assemble_control_worktime_indefinedworkday_date(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1637,13 +1835,10 @@ pub async fn stub_general_assemble_control_worktime_indefinedworkday_date(
 }
 
 pub async fn stub_general_assemble_control_worktime_isholiday_date(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1682,13 +1877,10 @@ pub async fn stub_general_assemble_control_worktime_isholiday_date(
 }
 
 pub async fn stub_general_assemble_control_worktime_isworkday_date(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1727,13 +1919,10 @@ pub async fn stub_general_assemble_control_worktime_isworkday_date(
 }
 
 pub async fn stub_general_assemble_control_worktime_isworktime_date(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1762,12 +1951,9 @@ pub async fn stub_general_assemble_control_worktime_isworktime_date(
 }
 
 pub async fn stub_general_assemble_control_worktime_minutesofworkday(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_one(

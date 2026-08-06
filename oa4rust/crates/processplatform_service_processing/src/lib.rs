@@ -232,17 +232,13 @@ pub fn processplatform_service_processing_router() -> Router {
 #[cfg(test)]
 mod tests;
 
-pub fn router(pool: Option<deadpool_postgres::Pool>) -> axum::Router {
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     let router = processplatform_service_processing_router()
         .route(
             "/processplatform_service_processing/health",
-            axum::routing::get(|| async { "TODO: processplatform_service_processing - real implementation needed" }),
+            axum::routing::get(|| async { "ok" }),
         );
-    if let Some(pool) = pool {
-        router.layer(Extension(pool))
-    } else {
-        router
-    }
+    router.layer(Extension(pool))
 }
 
 

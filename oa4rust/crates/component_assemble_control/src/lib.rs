@@ -80,12 +80,9 @@ pub struct ComponentRequest {
 
 #[axum::debug_handler]
 pub async fn list_components(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -118,13 +115,10 @@ pub async fn list_components(
 
 #[axum::debug_handler]
 pub async fn get_component(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -151,13 +145,10 @@ pub async fn get_component(
 
 #[axum::debug_handler]
 pub async fn create_component(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): Json<ComponentRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -183,14 +174,11 @@ pub async fn create_component(
 
 #[axum::debug_handler]
 pub async fn save_component(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<ComponentRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.name.unwrap_or_default();
     let component_type = req.component_type.unwrap_or_default();
@@ -219,13 +207,10 @@ pub async fn save_component(
 
 #[axum::debug_handler]
 pub async fn delete_component(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -250,12 +235,9 @@ pub async fn delete_component(
 /// Stub handler for /jaxrs/component/assemble/control/component/delete/all
 /// TODO: Implement real business logic
 pub async fn stub_component_assemble_control_component_delete_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -276,12 +258,9 @@ pub async fn stub_component_assemble_control_component_delete_all(
 /// Stub handler for /jaxrs/component/assemble/control/status/list
 /// TODO: Implement real business logic
 pub async fn stub_component_assemble_control_status_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_one(

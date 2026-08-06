@@ -158,7 +158,6 @@ pub fn program_center_core_entity_router(pool: Pool) -> Router {
         .layer(Extension(pool))
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/program_center_core_entity/health", axum::routing::get(|| async { "TODO: program_center_core_entity - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    program_center_core_entity_router(pool)
 }

@@ -167,16 +167,15 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），oa4rust 已将全部 
 - **路由冲突清单**：已识别（control/auth 重复注册、person 路径冲突等）
 - **Axum 版本**：当前 0.7.9，需升级至 0.8
 - **共享基础设施能力**：auth/rate_limit/security_headers 中间件已存在，需加固（CORS、session 持久化）
-
-### Deferred to Implementation
-
-- **首批 20 个高价值 crate 的精确清单**：U4 实施时对照 Java 模块使用率数据确定
-- **每个模块的具体权限边界**：U4-U7 各模块实施时根据 Java 源码逐模块定义
-- **行为对比测试套件的具体实现方式**：U8 确定快照对比还是语义对比
-- **回滚程序的精确 RTO**：U9 与运维团队对齐后定义
-- **Java 写入禁用机制**：U9 根据双轨运行情况设计特性开关或 DB 触发器
-- **OAuth 密钥管理器选型**：U3 根据团队基础设施选择（环境变量 / Vault / 云服务）
-- **会话 token 格式**：U3 确定 JWT vs opaque token（当前为 UUID opaque token）
+- **TODO 标记策略**：标记 `TODO: [module] - real implementation needed` 保留端点可见性；波次内必须清除，未完成的通过 feature flag 禁用；CI 检查生产分支无 TODO（R2, R155）
+- **刷新令牌存储**：refresh token 存 `auth_session` DB 表，session token 存 HttpOnly Secure cookie；两者通过 token + session 双层机制关联，不在浏览器存储 refresh token（R45, R48）
+- **首批 20 个高价值 crate 清单**：U2 完成后通过代码调用频率分析 Java 模块使用率，在 `oa4rust-endpoint-inventory.md` 中锁定清单，作为 U4 实施依据（R34, R35）
+- **权限边界模板**：U4 开始前建立 `permission_boundary.md` 统一模板，各 crate 实现时填写，U8 集成测试覆盖（R40）
+- **行为对比测试方案**：U8 采用"语义对比"（关键字段 + 结构对比），非快照对比；使用共享测试工具库对比 Java 与 Rust 响应（R33）
+- **回滚 RTO**：设定 5 分钟 RTO，nginx 特性开关即时切换，U9 文档化并执行回滚演练（R51）
+- **Java 写入禁用机制**：U4 开始采用应用层特性开关控制（不立即使用 DB 触发器），U9 完善为 DB 触发器 + 监控（R52）
+- **OAuth 密钥管理**：无 KMS 时，U3 采用环境变量 + 加密配置文件存储，禁止硬编码，记录迁移路径（R45）
+- **会话 token 格式**：U3 保持 UUID opaque token 不变，增加 HMAC-SHA256 签名，不切换 JWT（当前稳定，JWT 无显著优势）（R48）
 
 ---
 

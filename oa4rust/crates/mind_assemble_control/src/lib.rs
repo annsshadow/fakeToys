@@ -33,7 +33,7 @@ pub async fn get_control_config(
         ]),
         Err(_) => serde_json::Map::from_iter([
             ("id".to_string(), Value::String(String::new())),
-            ("configData".to_string(), Value::Null),
+            ("configData".to_string(), Value::String(String::new())),
             ("creator".to_string(), Value::String(String::new())),
             ("createTime".to_string(), Value::String(String::new())),
         ]),
@@ -71,8 +71,6 @@ pub async fn update_control_config(
 
 pub fn mind_assemble_control_router(pool: Pool) -> Router {
     routes::mind_assemble_control_routes(pool)
-        .route("/jaxrs/mind/assemble/control/folder/move/{folderId}", post(stub_mind_assemble_control_folder_move_folderId))
-        .route("/jaxrs/mind/assemble/control/folder/{id}/force", post(stub_mind_assemble_control_folder_id_force))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -89,12 +87,9 @@ pub struct MindFolderRequest {
 
 #[axum::debug_handler]
 pub async fn list_folders(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -127,13 +122,10 @@ pub async fn list_folders(
 
 #[axum::debug_handler]
 pub async fn get_folder(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -160,13 +152,10 @@ pub async fn get_folder(
 
 #[axum::debug_handler]
 pub async fn save_folder(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): Json<MindFolderRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -190,17 +179,53 @@ pub async fn save_folder(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[axum::debug_handler]
+pub async fn update_folder(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, content FROM x_mind WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let row = match row {
+        Some(r) => r,
+        None => return Ok(Json(ActionResult::error("mind folder not found"))),
+    };
+
+    let name = payload.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get("name"));
+    let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get("content"));
+
+    client
+        .execute(
+            "UPDATE x_mind SET name = $1, content = $2 WHERE id = $3 AND deleted_at IS NULL",
+            &[&name, &content, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("updated".to_string(), Value::Bool(true)),
+    ])))))
+}
+
 /// Stub handler for /jaxrs/mind/assemble/control/folder/move/{folderId}
 /// TODO: Implement real business logic
 pub async fn stub_mind_assemble_control_folder_move_folderId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(folder_id): Path<String>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let parent_id = req.get("parentId").and_then(|v| v.as_str()).map(|s| s.to_string());
 
@@ -247,13 +272,10 @@ pub async fn stub_mind_assemble_control_folder_move_folderId(
 /// Stub handler for /jaxrs/mind/assemble/control/folder/{id}
 /// TODO: Implement real business logic
 pub async fn stub_mind_assemble_control_folder_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -281,13 +303,10 @@ pub async fn stub_mind_assemble_control_folder_id(
 /// Stub handler for /jaxrs/mind/assemble/control/folder/{id}/force
 /// TODO: Implement real business logic
 pub async fn stub_mind_assemble_control_folder_id_force(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(

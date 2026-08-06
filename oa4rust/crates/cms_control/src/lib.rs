@@ -1,8 +1,12 @@
-use axum::{Json, Router, routing::get};
-use serde_json::Value;
+use axum::Router;
+use deadpool_postgres::Pool;
 
-use shared::{error::AppError, response::ActionResult};
+pub mod routes;
 
-pub fn cms_control_router() -> Router {
-    Router::new()
+pub fn cms_control_router(pool: Pool) -> Router {
+    routes::router(pool)
+}
+
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    cms_control_router(pool)
 }

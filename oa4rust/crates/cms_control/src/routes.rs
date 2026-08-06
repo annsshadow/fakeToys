@@ -1,7 +1,6 @@
 use axum::Router;
+use deadpool_postgres::Pool;
 
-use crate::cms_control_router;
-
-pub fn router() -> Router {
-    cms_control_router()
+pub fn router(pool: Pool) -> Router {
+    Router::new().layer(axum::Extension(pool))
 }

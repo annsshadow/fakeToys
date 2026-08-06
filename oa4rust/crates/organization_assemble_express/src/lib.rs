@@ -82,7 +82,6 @@ pub async fn get_express_status(
     Ok(Json(ActionResult::success(data)))
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/organization_assemble_express/health", axum::routing::get(|| async { "TODO: organization_assemble_express - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    routes::router(pool)
 }

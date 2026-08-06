@@ -12,8 +12,7 @@ pub mod routes;
 mod tests;
 
 pub fn ai_assemble_control_router(pool: Pool) -> axum::Router {
-    routes::router(pool.clone())
-        .merge(mcp_router(Some(pool)))
+    routes::router(pool)
 }
 
 #[axum::debug_handler]

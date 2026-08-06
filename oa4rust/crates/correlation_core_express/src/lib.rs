@@ -65,7 +65,6 @@ pub fn correlation_core_express_router(pool: Pool) -> Router {
 #[cfg(test)]
 mod tests;
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/correlation_core_express/health", axum::routing::get(|| async { "TODO: correlation_core_express - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    correlation_core_express_router(pool)
 }

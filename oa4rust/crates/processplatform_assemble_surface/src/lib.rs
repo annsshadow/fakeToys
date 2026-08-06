@@ -228,12 +228,8 @@ pub fn processplatform_assemble_surface_router() -> Router {
 #[cfg(test)]
 mod tests;
 
-pub fn router(pool: Option<deadpool_postgres::Pool>) -> axum::Router {
-    if let Some(pool) = pool {
-        processplatform_assemble_surface_router().layer(Extension(pool))
-    } else {
-        processplatform_assemble_surface_router()
-    }
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    routes::router(pool)
 }
 
 

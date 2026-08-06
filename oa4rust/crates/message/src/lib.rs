@@ -54,14 +54,37 @@ pub async fn custom_create(
     ])))))
 }
 
+pub async fn mark_read(
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("markedRead".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn unread_count(
+    axum::extract::Path(consume): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(0))),
+            ("consumer".to_string(), Value::String(consume)),
+        ]),
+    ))))
+}
+
 pub fn message_router() -> Router {
     Router::new()
         .route("/jaxrs/message/consume/list/{consume}/count/{count}", get(consume_list))
         .route("/jaxrs/message/consume/{id}/type/{type}", get(update_single))
         .route("/jaxrs/message/custom/create", post(custom_create))
+        .route("/jaxrs/message/mark_read/{id}", post(mark_read))
+        .route("/jaxrs/message/unread/count/{consume}", get(unread_count))
 }
 
 pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/message/health", axum::routing::get(|| async { "TODO: message - real implementation needed" }))
+    message_router()
 }

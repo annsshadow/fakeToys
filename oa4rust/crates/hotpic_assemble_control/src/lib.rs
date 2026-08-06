@@ -1,7 +1,6 @@
 use axum::{
     extract::{Extension, Path},
-    Json, Router,
-    routing::get, routing::post,
+    Json,
 };
 use deadpool_postgres::Pool;
 use serde_json::Value;
@@ -14,15 +13,6 @@ mod tests;
 
 pub fn hotpic_assemble_control_router(pool: Pool) -> axum::Router {
     routes::router(pool)
-        .route("/jaxrs/hotpic/assemble/control/cipher/hotpic/bbs/{id}", get(stub_hotpic_assemble_control_cipher_hotpic_bbs_id))
-        .route("/jaxrs/hotpic/assemble/control/cipher/hotpic/cms/{id}", get(stub_hotpic_assemble_control_cipher_hotpic_cms_id))
-        .route("/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}", get(stub_hotpic_assemble_control_cipher_hotpic_filter_list_page_page_count_count))
-        .route("/jaxrs/hotpic/assemble/control/cipher/hotpic/{id}", get(stub_hotpic_assemble_control_cipher_hotpic_id))
-        .route("/jaxrs/hotpic/assemble/control/user/hotpic/changeTitle", post(stub_hotpic_assemble_control_user_hotpic_changeTitle))
-        .route("/jaxrs/hotpic/assemble/control/user/hotpic/exists/check", post(stub_hotpic_assemble_control_user_hotpic_exists_check))
-        .route("/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/{page}/count/{count}", get(stub_hotpic_assemble_control_user_hotpic_filter_list_page_page_count_count))
-        .route("/jaxrs/hotpic/assemble/control/user/hotpic/{application}/{infoId}", get(stub_hotpic_assemble_control_user_hotpic_application_infoId))
-        .route("/jaxrs/hotpic/assemble/control/user/hotpic/{id}", get(stub_hotpic_assemble_control_user_hotpic_id))
 }
 
 #[axum::debug_handler]

@@ -30,6 +30,18 @@ pub async fn change(
     headers: HeaderMap,
     axum::extract::Json(req): axum::extract::Json<ChangePasswordRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    if req.new_password.len() < 6 || req.new_password.len() > 64 {
+        return Ok(Json(ActionResult::error("password length must be between 6 and 64")));
+    }
+
+    let has_letter = req.new_password.chars().any(|c| c.is_ascii_alphabetic());
+    let has_digit = req.new_password.chars().any(|c| c.is_ascii_digit());
+    if !has_letter || !has_digit {
+        return Ok(Json(ActionResult::error(
+            "password must contain at least one letter and one digit",
+        )));
+    }
+
     let person_unique = resolve_current_person_unique(&session_manager, &headers).await?;
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;

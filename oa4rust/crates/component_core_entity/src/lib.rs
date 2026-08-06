@@ -22,7 +22,7 @@ pub struct ComponentInfo {
 }
 
 pub async fn component_list_all(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let data = vec![
         Value::Object(serde_json::Map::from_iter([
@@ -66,7 +66,7 @@ pub async fn component_list_all(
 }
 
 pub async fn component_get(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let data = vec![
@@ -104,7 +104,7 @@ pub async fn component_get(
 }
 
 pub async fn component_count(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let count = 3i64;
     Ok(Json(ActionResult::success(Value::Object(
@@ -125,7 +125,6 @@ pub fn component_core_entity_router(pool: Pool) -> Router {
 #[cfg(test)]
 mod tests;
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/component_core_entity/health", axum::routing::get(|| async { "TODO: component_core_entity - real implementation needed" }))
+pub fn router(pool: Pool) -> Router {
+    component_core_entity_router(pool)
 }

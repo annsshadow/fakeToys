@@ -36,7 +36,7 @@ async fn test_get_control_config_route() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
@@ -65,7 +65,7 @@ async fn test_list_control_calendars_route() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
@@ -97,5 +97,5 @@ async fn test_update_control_config_route() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
 }

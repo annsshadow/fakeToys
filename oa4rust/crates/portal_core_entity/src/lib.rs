@@ -9,6 +9,9 @@ use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
 
+#[cfg(test)]
+mod tests;
+
 pub async fn portal_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -76,7 +79,7 @@ pub async fn widget_list(
 }
 
 pub async fn page_list(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let data = vec![
         Value::Object(serde_json::Map::from_iter([
@@ -140,7 +143,7 @@ pub fn portal_core_entity_router(pool: Pool) -> Router {
         .layer(Extension(pool))
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/portal_core_entity/health", axum::routing::get(|| async { "TODO: portal_core_entity - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    portal_core_entity_router(pool)
+        .route("/portal_core_entity/health", axum::routing::get(|| async { "ok" }))
 }

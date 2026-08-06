@@ -1,4 +1,4 @@
-use axum::extract::Extension;
+use axum::extract::{Extension, Path};
 use axum::Json;
 use deadpool_postgres::Pool;
 use serde_json::Value;
@@ -39,4 +39,35 @@ pub async fn view_all(
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
+}
+
+pub async fn view_one(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, description FROM bbs_forum_info WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                (
+                    "description".to_string(),
+                    row.get::<_, Option<String>>("description")
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("forum not found"))),
+    }
 }

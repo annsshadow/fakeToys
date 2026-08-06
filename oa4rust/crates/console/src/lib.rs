@@ -11,6 +11,12 @@ pub struct SendMessageRequest {
     pub message: Option<String>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct ExecuteCommandRequest {
+    pub command: Option<String>,
+    pub args: Option<Vec<String>>,
+}
+
 pub async fn get_status() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -58,7 +64,7 @@ pub async fn clear_cache(
         serde_json::Map::from_iter([
             ("cleared".to_string(), Value::Bool(true)),
             ("type".to_string(), Value::String(cache_type)),
-            ("cleared_at".to_string(), Value::String("2024-01-01T00:00:00Z".to_string())),
+            ("clearedAt".to_string(), Value::String("2024-01-01T00:00:00Z".to_string())),
         ]),
     ))))
 }
@@ -75,6 +81,34 @@ pub async fn get_metric(
     ))))
 }
 
+pub async fn execute_command(
+    Json(payload): Json<ExecuteCommandRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let command = payload.command.unwrap_or_default();
+    let args = payload.args.unwrap_or_default();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("command".to_string(), Value::String(command)),
+            ("args".to_string(), Value::Array(args.into_iter().map(Value::String).collect())),
+            ("output".to_string(), Value::String("command executed".to_string())),
+            ("exitCode".to_string(), Value::Number(serde_json::Number::from(0))),
+        ]),
+    ))))
+}
+
+pub async fn get_system_info() -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("os".to_string(), Value::String("linux".to_string())),
+            ("arch".to_string(), Value::String("x86_64".to_string())),
+            ("cpuCores".to_string(), Value::Number(serde_json::Number::from(4))),
+            ("memory".to_string(), Value::String("8GB".to_string())),
+            ("disk".to_string(), Value::String("256GB".to_string())),
+        ]),
+    ))))
+}
+
 pub fn console_router() -> Router {
     Router::new()
         .route("/jaxrs/console/status", get(get_status))
@@ -82,6 +116,8 @@ pub fn console_router() -> Router {
         .route("/jaxrs/console/send/message", post(send_message))
         .route("/jaxrs/console/cache/clear/{type}", post(clear_cache))
         .route("/jaxrs/console/metric/{name}", get(get_metric))
+        .route("/jaxrs/console/command/execute", post(execute_command))
+        .route("/jaxrs/console/system/info", get(get_system_info))
 }
 
 #[cfg(test)]

@@ -1,5 +1,4 @@
 use axum::response::IntoResponse;
-use serde::Serialize;
 use thiserror::Error;
 
 // ──────────────────────────────────────────────────────────────────────────────
