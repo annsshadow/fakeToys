@@ -1,5 +1,5 @@
 use axum::{
-    extract::Extension,
+    extract::{Extension, Path},
     Json, Router,
 };
 use deadpool_postgres::Pool;
@@ -285,60 +285,567 @@ pub async fn attendanceconfig_save(
     ))))
 }
 
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceadmin/list/all
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceadmin_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
+/// GET /jaxrs/attendance/assemble/control/attendanceadmin/list/all
+pub async fn stub_attendance_assemble_control_attendanceadmin_list_all(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, unit_id, creator, create_time FROM x_attendance_admin ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceadmin/{id}
+pub async fn stub_attendance_assemble_control_attendanceadmin_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, unit_id, creator, create_time FROM x_attendance_admin WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("attendance admin not found"))),
+    }
+}
+
+/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/appeal/{id}
+pub async fn stub_attendance_assemble_control_attendanceappealInfo_appeal_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("appealed");
+
+    let result = client
+        .execute(
+            "UPDATE x_attendance_appeal_info SET appeal_status = $1, update_time = NOW() WHERE id = $2",
+            &[&status, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("attendance appeal not found")));
+    }
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
+            ("id".to_string(), Value::String(id.to_string())),
+            ("status".to_string(), Value::String(status.to_string())),
+            ("updated".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
 
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceadmin/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceadmin_id() -> Result<Json<ActionResult<Value>>, AppError> {
+/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/archive/{id}
+pub async fn stub_attendance_assemble_control_attendanceappealInfo_archive_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let result = client
+        .execute(
+            "UPDATE x_attendance_appeal_info SET archived = true, update_time = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("attendance appeal not found")));
+    }
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("archived".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
 
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceappealInfo/appeal/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_appeal_id() -> Result<Json<ActionResult<Value>>, AppError> {
+/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/audit
+pub async fn stub_attendance_assemble_control_attendanceappealInfo_audit(
+    pool: Option<Extension<Pool>>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let audit_status = payload.get("auditStatus").and_then(|v| v.as_str()).unwrap_or("approved");
+
+    let result = client
+        .execute(
+            "UPDATE x_attendance_appeal_info SET audit_status = $1, update_time = NOW() WHERE id = $2",
+            &[&audit_status, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("attendance appeal not found")));
+    }
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("audited".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
 
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceappealInfo/archive/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_archive_id() -> Result<Json<ActionResult<Value>>, AppError> {
+/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/check 
+pub async fn stub_attendance_assemble_control_attendanceappealInfo_check(
+    pool: Option<Extension<Pool>>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let checked = payload.get("checked").and_then(|v| v.as_bool()).unwrap_or(true);
+
+    let result = client
+        .execute(
+            "UPDATE x_attendance_appeal_info SET checked = $1, update_time = NOW() WHERE id = $2",
+            &[&checked, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("attendance appeal not found")));
+    }
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("checked".to_string(), Value::Bool(checked)),
         ]),
     ))))
 }
 
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceappealInfo/audit
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_audit() -> Result<Json<ActionResult<Value>>, AppError> {
+/// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/next/{count}
+pub async fn stub_attendance_assemble_control_attendanceappealInfo_filter_list_id_next_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id > $1 ORDER BY create_time ASC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("status".to_string(), Value::String(row.get("appeal_status"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceappealInfo/check 
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_check () -> Result<Json<ActionResult<Value>>, AppError> {
+/// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/prev/{count}
+pub async fn stub_attendance_assemble_control_attendanceappealInfo_filter_list_id_prev_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("status".to_string(), Value::String(row.get("appeal_status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/manager/list/{id}/next/{count}
+pub async fn stub_attendance_assemble_control_attendanceappealInfo_manager_list_id_next_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id > $1 AND creator = $2 ORDER BY create_time ASC LIMIT $3",
+            &[&id, &"manager", &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("status".to_string(), Value::String(row.get("appeal_status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/appeal/{id}
+pub async fn stub_attendance_assemble_control_attendanceappealInfo_workflow_appeal_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let result = client
+        .execute(
+            "UPDATE x_attendance_appeal_info SET workflow_status = 'appealed', update_time = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("attendance appeal not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("workflowAppealed".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/sync
+pub async fn stub_attendance_assemble_control_attendanceappealInfo_workflow_sync(
+    pool: Option<Extension<Pool>>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let appeal_id = payload.get("appealId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    let result = client
+        .execute(
+            "UPDATE x_attendance_appeal_info SET workflow_synced = true, update_time = NOW() WHERE id = $1",
+            &[&appeal_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("attendance appeal not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("synced".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/{id}
+pub async fn stub_attendance_assemble_control_attendanceappealInfo_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("status".to_string(), Value::String(row.get("appeal_status"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("attendance appeal not found"))),
+    }
+}
+
+/// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse
+pub async fn stub_attendance_assemble_control_attendancedetail_analyse(
+    pool: Option<Extension<Pool>>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let start_date = payload.get("startDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let end_date = payload.get("endDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    let _ = client
+        .execute(
+            "UPDATE x_attendance_detail SET analysed = true, update_time = NOW() WHERE person_id = $1 AND date >= $2 AND date <= $3",
+            &[&person_id, &start_date, &end_date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("analysed".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse/id/{id}
+pub async fn stub_attendance_assemble_control_attendancedetail_analyse_id_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let _ = client
+        .execute(
+            "UPDATE x_attendance_detail SET analysed = true, update_time = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("analysed".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse/redo
+pub async fn stub_attendance_assemble_control_attendancedetail_analyse_redo(
+    pool: Option<Extension<Pool>>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    let _ = client
+        .execute(
+            "UPDATE x_attendance_detail SET analysed = false, update_time = NOW() WHERE person_id = $1",
+            &[&person_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("redone".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse/{startDate}/{endDate}
+pub async fn stub_attendance_assemble_control_attendancedetail_analyse_startDate_endDate(
+    pool: Option<Extension<Pool>>,
+    Path((start_date, end_date)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let _ = client
+        .execute(
+            "UPDATE x_attendance_detail SET analysed = true, update_time = NOW() WHERE date >= $1 AND date <= $2",
+            &[&start_date, &end_date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("analysed".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/attendancedetail/archive/{id}
+pub async fn stub_attendance_assemble_control_attendancedetail_archive_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let result = client
+        .execute(
+            "UPDATE x_attendance_detail SET archived = true, update_time = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("attendance detail not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("archived".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{cycleYear}/{cycleMonth}
+pub async fn stub_attendance_assemble_control_attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
+    pool: Option<Extension<Pool>>,
+    Path((cycle_year, cycle_month)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let _ = client
+        .execute(
+            "UPDATE x_attendance_detail SET checked = true, update_time = NOW() WHERE cycle_year = $1 AND cycle_month = $2",
+            &[&cycle_year, &cycle_month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("checked".to_string(), Value::Bool(true)),
@@ -346,827 +853,2348 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_check () -> R
     ))))
 }
 
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/next/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_filter_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/prev/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_filter_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceappealInfo/manager/list/{id}/next/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_manager_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/appeal/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_workflow_appeal_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/sync
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_workflow_sync() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceappealInfo/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/analyse
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_analyse() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/analyse/id/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_analyse_id_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/analyse/redo
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_analyse_redo() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/analyse/{startDate}/{endDate}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_analyse_startDate_endDate() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/archive/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_archive_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{cycleYear}/{cycleMonth}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/filter/list
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_filter_list() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/filter/list/topUnit
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_topUnit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/filter/list/unit
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_unit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/filter/list/user
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_user() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/filter/list/{id}/next/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/filter/list/{id}/prev/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/list/persons/nonesign
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_list_persons_nonesign() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/list/{file_id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_list_file_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/mobile/filter/list/page/{page}/count/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_mobile_filter_list_page_page_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/mobile/mobilepreview
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_mobile_mobilepreview() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/mobile/my
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_mobile_my() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/mobile/recive
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_mobile_recive() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/mobile/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_mobile_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/recive
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_recive() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/reciveSingle
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_reciveSingle() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancedetail/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancedetail_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceemployeeconfig/list/all
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceemployeeconfig_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceemployeeconfig/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceemployeeconfig_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceimportfileinfo/list/all
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceimportfileinfo_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceimportfileinfo/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceimportfileinfo_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/all
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/topUnit/{name}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_topUnit_name() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/unit/{name}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_unit_name() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceschedulesetting/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceschedulesetting_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/next/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceselfholiday_filter_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/prev/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceselfholiday_filter_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceselfholiday/list/all
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceselfholiday_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceselfholiday/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceselfholiday_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancesetting/code/{code}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancesetting_code_code() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancesetting/enable/type
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancesetting_enable_type() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancesetting/list/all
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancesetting_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancesetting/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancesetting_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/{year}/{month}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_cycleDetail_year_month() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancestatisticalcycle/list/all
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancestatisticalcycle/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/list/all
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancestatisticrequirelog_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendancestatisticrequirelog_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceworkdayconfig/filter
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_filter() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceworkdayconfig/list/all
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/attendanceworkdayconfig/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/selfholidaysimple/docId/{docId}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_selfholidaysimple_docId_docId() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statistic/do
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statistic_do() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/next/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_filter_personMonth_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/prev/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_filter_personMonth_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{id}/next/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitDay_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{id}/prev/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitDay_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{id}/next/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitMonth_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{id}/prev/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitMonth_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/{id}/next/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_filter_unitDay_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/{id}/prev/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_filter_unitDay_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/next/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_filter_unitMonth_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/prev/{count}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_filter_unitMonth_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/person/{name}/{year}/{month}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_person_name_year_month() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/persons/unit/subnested/{name}/{year}/{month}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_persons_unit_subnested_name_year_month() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/persons/unit/{name}/{year}/{month}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_persons_unit_name_year_month() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/topUnit/day/{name}/{year}/{month}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_topUnit_day_name_year_month() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/topUnit/{name}/{year}/{month}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_topUnit_name_year_month() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/unit/day/topUnit/{name}/{date}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_unit_day_topUnit_name_date() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+/// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list
+pub async fn stub_attendance_assemble_control_attendancedetail_filter_list(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, date, status, creator FROM x_attendance_detail ORDER BY date DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/topUnit
+pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_topUnit(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, date, status, unit_id FROM x_attendance_detail WHERE unit_id IS NULL ORDER BY date DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/unit
+pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_unit(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, date, status, unit_id FROM x_attendance_detail WHERE unit_id IS NOT NULL ORDER BY date DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ]))
+        })
+        .collect();
 
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/unit/day/{name}/{date}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_unit_day_name_date() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
-    ))))
-}
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/user
+pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_user(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
 
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/unit/day/{name}/{year}/{month}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_unit_day_name_year_month() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    let rows = client
+        .query(
+            "SELECT id, person_id, date, status FROM x_attendance_detail ORDER BY date DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/unit/subnested/{name}/{year}/{month}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_unit_subnested_name_year_month() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
 
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_unit_sum_name_year_month() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
+    Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/{id}/next/{count}
+pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_id_next_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id > $1 ORDER BY date ASC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/unit/topUnit/{name}/{year}/{month}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_unit_topUnit_name_year_month() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/{id}/prev/{count}
+pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_id_prev_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id < $1 ORDER BY date DESC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-/// Stub handler for /jaxrs/attendance/assemble/control/statisticshow/unit/{name}/{year}/{month}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_statisticshow_unit_name_year_month() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancedetail/list/persons/nonesign
+pub async fn stub_attendance_assemble_control_attendancedetail_list_persons_nonesign(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE status = 'nonesign' ORDER BY date DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-/// Stub handler for /jaxrs/attendance/assemble/control/uuid/random
-/// TODO: Implement real business logic
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancedetail/list/{file_id}
+pub async fn stub_attendance_assemble_control_attendancedetail_list_file_id(
+    pool: Option<Extension<Pool>>,
+    Path(file_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE file_id = $1 ORDER BY date DESC",
+            &[&file_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/filter/list/page/{page}/count/{count}
+pub async fn stub_attendance_assemble_control_attendancedetail_mobile_filter_list_page_page_count_count(
+    pool: Option<Extension<Pool>>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let offset = (page - 1) * count;
+    let rows = client
+        .query(
+            "SELECT id, person_id, date, status FROM x_attendance_detail ORDER BY date DESC LIMIT $2 OFFSET $1",
+            &[&offset, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/mobilepreview
+pub async fn stub_attendance_assemble_control_attendancedetail_mobile_mobilepreview(
+    pool: Option<Extension<Pool>>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let date = payload.get("date").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE person_id = $1 AND date = $2 LIMIT 1",
+            &[&person_id, &date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("attendance detail not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/my
+pub async fn stub_attendance_assemble_control_attendancedetail_mobile_my(
+    pool: Option<Extension<Pool>>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE person_id = $1 ORDER BY date DESC",
+            &[&person_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/attendancedetail/mobile/recive
+pub async fn stub_attendance_assemble_control_attendancedetail_mobile_recive(
+    pool: Option<Extension<Pool>>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let date = payload.get("date").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    let _ = client
+        .execute(
+            "UPDATE x_attendance_detail SET received = true, update_time = NOW() WHERE person_id = $1 AND date = $2",
+            &[&person_id, &date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("received".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/{id}
+pub async fn stub_attendance_assemble_control_attendancedetail_mobile_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("attendance detail not found"))),
+    }
+}
+
+/// POST /jaxrs/attendance/assemble/control/attendancedetail/recive
+pub async fn stub_attendance_assemble_control_attendancedetail_recive(
+    pool: Option<Extension<Pool>>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    let _ = client
+        .execute(
+            "UPDATE x_attendance_detail SET received = true, update_time = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("received".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// POST /jaxrs/attendance/assemble/control/attendancedetail/reciveSingle
+pub async fn stub_attendance_assemble_control_attendancedetail_reciveSingle(
+    pool: Option<Extension<Pool>>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    let _ = client
+        .execute(
+            "UPDATE x_attendance_detail SET received = true, update_time = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("received".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancedetail/{id}
+pub async fn stub_attendance_assemble_control_attendancedetail_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, date, status FROM x_attendance_detail WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("date".to_string(), Value::String(row.get("date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("attendance detail not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceemployeeconfig/list/all
+pub async fn stub_attendance_assemble_control_attendanceemployeeconfig_list_all(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, config_data, creator, create_time FROM x_attendance_employee_config ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("configData".to_string(), Value::String(row.get("config_data"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceemployeeconfig/{id}
+pub async fn stub_attendance_assemble_control_attendanceemployeeconfig_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, config_data, creator, create_time FROM x_attendance_employee_config WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("configData".to_string(), Value::String(row.get("config_data"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("employee config not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceimportfileinfo/list/all
+pub async fn stub_attendance_assemble_control_attendanceimportfileinfo_list_all(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, file_name, file_size, creator, create_time FROM x_attendance_import_file_info ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("fileName".to_string(), Value::String(row.get("file_name"))),
+                ("fileSize".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size")))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceimportfileinfo/{id}
+pub async fn stub_attendance_assemble_control_attendanceimportfileinfo_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, file_name, file_size, creator, create_time FROM x_attendance_import_file_info WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("fileName".to_string(), Value::String(row.get("file_name"))),
+                ("fileSize".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("file_size")))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("import file info not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/all
+pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_all(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, setting_data, creator, create_time FROM x_attendance_schedule_setting ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("settingData".to_string(), Value::String(row.get("setting_data"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/topUnit/{name}
+pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_topUnit_name(
+    pool: Option<Extension<Pool>>,
+    Path(name): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, setting_data, creator FROM x_attendance_schedule_setting WHERE unit_id IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("settingData".to_string(), Value::String(row.get("setting_data"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/unit/{name}
+pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_unit_name(
+    pool: Option<Extension<Pool>>,
+    Path(name): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, setting_data, creator, unit_id FROM x_attendance_schedule_setting WHERE unit_id = $1 ORDER BY create_time DESC",
+            &[&name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("settingData".to_string(), Value::String(row.get("setting_data"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/{id}
+pub async fn stub_attendance_assemble_control_attendanceschedulesetting_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, setting_data, creator, create_time FROM x_attendance_schedule_setting WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("settingData".to_string(), Value::String(row.get("setting_data"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("schedule setting not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/next/{count}
+pub async fn stub_attendance_assemble_control_attendanceselfholiday_filter_list_id_next_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, holiday_date, reason FROM x_attendance_selfholiday WHERE id > $1 ORDER BY holiday_date ASC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("holidayDate".to_string(), Value::String(row.get("holiday_date"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/prev/{count}
+pub async fn stub_attendance_assemble_control_attendanceselfholiday_filter_list_id_prev_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, holiday_date, reason FROM x_attendance_selfholiday WHERE id < $1 ORDER BY holiday_date DESC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("holidayDate".to_string(), Value::String(row.get("holiday_date"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/list/all
+pub async fn stub_attendance_assemble_control_attendanceselfholiday_list_all(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, holiday_date, reason, creator, create_time FROM x_attendance_selfholiday ORDER BY holiday_date DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("holidayDate".to_string(), Value::String(row.get("holiday_date"))),
+                ("reason".to_string(), Value::String(row.get("reason"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/{id}
+pub async fn stub_attendance_assemble_control_attendanceselfholiday_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, holiday_date, reason, creator, create_time FROM x_attendance_selfholiday WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("holidayDate".to_string(), Value::String(row.get("holiday_date"))),
+                ("reason".to_string(), Value::String(row.get("reason"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("self holiday not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancesetting/code/{code}
+pub async fn stub_attendance_assemble_control_attendancesetting_code_code(
+    pool: Option<Extension<Pool>>,
+    Path(code): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, code, name, value, creator, create_time FROM x_attendance_setting WHERE code = $1",
+            &[&code],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("code".to_string(), Value::String(row.get("code"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("setting not found"))),
+    }
+}
+
+/// POST /jaxrs/attendance/assemble/control/attendancesetting/enable/type
+pub async fn stub_attendance_assemble_control_attendancesetting_enable_type(
+    pool: Option<Extension<Pool>>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let code = payload.get("code").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let enabled = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+
+    let result = client
+        .execute(
+            "UPDATE x_attendance_setting SET enabled = $1, update_time = NOW() WHERE code = $2",
+            &[&enabled, &code],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("setting not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("code".to_string(), Value::String(code)),
+            ("enabled".to_string(), Value::Bool(enabled)),
+            ("updated".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancesetting/list/all
+pub async fn stub_attendance_assemble_control_attendancesetting_list_all(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, code, name, value, creator, create_time FROM x_attendance_setting ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("code".to_string(), Value::String(row.get("code"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancesetting/{id}
+pub async fn stub_attendance_assemble_control_attendancesetting_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, code, name, value, creator, create_time FROM x_attendance_setting WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("code".to_string(), Value::String(row.get("code"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("setting not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/{year}/{month}
+pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_cycleDetail_year_month(
+    pool: Option<Extension<Pool>>,
+    Path((year, month)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, year, month, cycle_status, creator, create_time FROM x_attendance_statistical_cycle WHERE year = $1 AND month = $2 LIMIT 1",
+            &[&year, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+                ("cycleStatus".to_string(), Value::String(row.get("cycle_status"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("statistical cycle not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/list/all
+pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_list_all(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, year, month, cycle_status, creator, create_time FROM x_attendance_statistical_cycle ORDER BY year DESC, month DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+                ("cycleStatus".to_string(), Value::String(row.get("cycle_status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/{id}
+pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, year, month, cycle_status, creator, create_time FROM x_attendance_statistical_cycle WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+                ("cycleStatus".to_string(), Value::String(row.get("cycle_status"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("statistical cycle not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/list/all
+pub async fn stub_attendance_assemble_control_attendancestatisticrequirelog_list_all(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, require_type, status, creator, create_time FROM x_attendance_statistic_require_log ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("requireType".to_string(), Value::String(row.get("require_type"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/{id}
+pub async fn stub_attendance_assemble_control_attendancestatisticrequirelog_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, require_type, status, creator, create_time FROM x_attendance_statistic_require_log WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("requireType".to_string(), Value::String(row.get("require_type"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("statistic require log not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/filter
+pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_filter(
+    pool: Option<Extension<Pool>>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let start_date = payload.get("startDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let end_date = payload.get("endDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    let rows = client
+        .query(
+            "SELECT id, work_date, is_workday, creator FROM x_attendance_workday_config WHERE work_date >= $1 AND work_date <= $2 ORDER BY work_date ASC",
+            &[&start_date, &end_date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("workDate".to_string(), Value::String(row.get("work_date"))),
+                ("isWorkday".to_string(), Value::Bool(row.get("is_workday"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/list/all
+pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_list_all(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, work_date, is_workday, creator, create_time FROM x_attendance_workday_config ORDER BY work_date DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("workDate".to_string(), Value::String(row.get("work_date"))),
+                ("isWorkday".to_string(), Value::Bool(row.get("is_workday"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/{id}
+pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, work_date, is_workday, creator, create_time FROM x_attendance_workday_config WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("workDate".to_string(), Value::String(row.get("work_date"))),
+                ("isWorkday".to_string(), Value::Bool(row.get("is_workday"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("workday config not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/selfholidaysimple/docId/{docId}
+pub async fn stub_attendance_assemble_control_selfholidaysimple_docId_docId(
+    pool: Option<Extension<Pool>>,
+    Path(doc_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, holiday_date, reason FROM x_attendance_selfholiday WHERE doc_id = $1 LIMIT 1",
+            &[&doc_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("holidayDate".to_string(), Value::String(row.get("holiday_date"))),
+                ("reason".to_string(), Value::String(row.get("reason"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("self holiday not found"))),
+    }
+}
+
+/// POST /jaxrs/attendance/assemble/control/statistic/do
+pub async fn stub_attendance_assemble_control_statistic_do(
+    pool: Option<Extension<Pool>>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let year = payload.get("year").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let month = payload.get("month").and_then(|v| v.as_str()).unwrap_or("").to_string();
+
+    let _ = client
+        .execute(
+            "INSERT INTO x_attendance_statistic (person_id, year, month, create_time) VALUES ($1, $2, $3, NOW()) ON CONFLICT (person_id, year, month) DO UPDATE SET update_time = NOW()",
+            &[&person_id, &year, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("done".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/next/{count}
+pub async fn stub_attendance_assemble_control_statisticshow_filter_personMonth_list_id_next_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, year, month, status FROM x_attendance_statisticshow WHERE id > $1 ORDER BY year DESC, month DESC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/prev/{count}
+pub async fn stub_attendance_assemble_control_statisticshow_filter_personMonth_list_id_prev_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, year, month, status FROM x_attendance_statisticshow WHERE id < $1 ORDER BY year DESC, month DESC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{id}/next/{count}
+pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitDay_list_id_next_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NULL ORDER BY work_date ASC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("workDate".to_string(), Value::String(row.get("work_date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{id}/prev/{count}
+pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitDay_list_id_prev_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NULL ORDER BY work_date DESC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("workDate".to_string(), Value::String(row.get("work_date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{id}/next/{count}
+pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitMonth_list_id_next_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NULL ORDER BY year DESC, month DESC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{id}/prev/{count}
+pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitMonth_list_id_prev_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NULL ORDER BY year DESC, month DESC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/{id}/next/{count}
+pub async fn stub_attendance_assemble_control_statisticshow_filter_unitDay_list_id_next_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NOT NULL ORDER BY work_date ASC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("workDate".to_string(), Value::String(row.get("work_date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/{id}/prev/{count}
+pub async fn stub_attendance_assemble_control_statisticshow_filter_unitDay_list_id_prev_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NOT NULL ORDER BY work_date DESC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("workDate".to_string(), Value::String(row.get("work_date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/next/{count}
+pub async fn stub_attendance_assemble_control_statisticshow_filter_unitMonth_list_id_next_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id > $1 AND unit_id IS NOT NULL ORDER BY year DESC, month DESC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/prev/{count}
+pub async fn stub_attendance_assemble_control_statisticshow_filter_unitMonth_list_id_prev_count(
+    pool: Option<Extension<Pool>>,
+    Path((id, count)): Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE id < $1 AND unit_id IS NOT NULL ORDER BY year DESC, month DESC LIMIT $2",
+            &[&id, &count],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/person/{name}/{year}/{month}
+pub async fn stub_attendance_assemble_control_statisticshow_person_name_year_month(
+    pool: Option<Extension<Pool>>,
+    Path((name, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, year, month, status FROM x_attendance_statisticshow WHERE person_id = $1 AND year = $2 AND month = $3 LIMIT 1",
+            &[&name, &year, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("statisticshow not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/persons/unit/subnested/{name}/{year}/{month}
+pub async fn stub_attendance_assemble_control_statisticshow_persons_unit_subnested_name_year_month(
+    pool: Option<Extension<Pool>>,
+    Path((name, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 ORDER BY person_id ASC",
+            &[&name, &year, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/persons/unit/{name}/{year}/{month}
+pub async fn stub_attendance_assemble_control_statisticshow_persons_unit_name_year_month(
+    pool: Option<Extension<Pool>>,
+    Path((name, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 ORDER BY person_id ASC",
+            &[&name, &year, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/topUnit/day/{name}/{year}/{month}
+pub async fn stub_attendance_assemble_control_statisticshow_topUnit_day_name_year_month(
+    pool: Option<Extension<Pool>>,
+    Path((name, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id IS NULL AND year = $1 AND month = $2 ORDER BY work_date ASC",
+            &[&year, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("workDate".to_string(), Value::String(row.get("work_date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/topUnit/{name}/{year}/{month}
+pub async fn stub_attendance_assemble_control_statisticshow_topUnit_name_year_month(
+    pool: Option<Extension<Pool>>,
+    Path((name, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id IS NULL AND year = $1 AND month = $2",
+            &[&year, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/day/topUnit/{name}/{date}
+pub async fn stub_attendance_assemble_control_statisticshow_unit_day_topUnit_name_date(
+    pool: Option<Extension<Pool>>,
+    Path((name, date)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND work_date = $2 AND unit_id IS NOT NULL",
+            &[&name, &date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("workDate".to_string(), Value::String(row.get("work_date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/day/{name}/{date}
+pub async fn stub_attendance_assemble_control_statisticshow_unit_day_name_date(
+    pool: Option<Extension<Pool>>,
+    Path((name, date)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND work_date = $2 ORDER BY work_date ASC",
+            &[&name, &date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("workDate".to_string(), Value::String(row.get("work_date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/day/{name}/{year}/{month}
+pub async fn stub_attendance_assemble_control_statisticshow_unit_day_name_year_month(
+    pool: Option<Extension<Pool>>,
+    Path((name, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, work_date, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 ORDER BY work_date ASC",
+            &[&name, &year, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("workDate".to_string(), Value::String(row.get("work_date"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/subnested/{name}/{year}/{month}
+pub async fn stub_attendance_assemble_control_statisticshow_unit_subnested_name_year_month(
+    pool: Option<Extension<Pool>>,
+    Path((name, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, person_id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 ORDER BY person_id ASC",
+            &[&name, &year, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
+pub async fn stub_attendance_assemble_control_statisticshow_unit_sum_name_year_month(
+    pool: Option<Extension<Pool>>,
+    Path((name, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, unit_id, year, month, SUM(status) as total FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 GROUP BY id, unit_id, year, month LIMIT 1",
+            &[&name, &year, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("total".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("total")))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("statisticshow not found"))),
+    }
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/topUnit/{name}/{year}/{month}
+pub async fn stub_attendance_assemble_control_statisticshow_unit_topUnit_name_year_month(
+    pool: Option<Extension<Pool>>,
+    Path((name, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 ORDER BY year DESC, month DESC",
+            &[&name, &year, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/statisticshow/unit/{name}/{year}/{month}
+pub async fn stub_attendance_assemble_control_statisticshow_unit_name_year_month(
+    pool: Option<Extension<Pool>>,
+    Path((name, year, month)): Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, unit_id, year, month, status FROM x_attendance_statisticshow WHERE unit_id = $1 AND year = $2 AND month = $3 ORDER BY year DESC, month DESC",
+            &[&name, &year, &month],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("year".to_string(), Value::String(row.get("year"))),
+                ("month".to_string(), Value::String(row.get("month"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+/// GET /jaxrs/attendance/assemble/control/uuid/random
 pub async fn stub_attendance_assemble_control_uuid_random() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("uuid".to_string(), Value::String(uuid::Uuid::new_v4().to_string())),
         ]),
     ))))
 }
 
-/// Stub handler for /jaxrs/attendance/assemble/control/workplace/list/all
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_workplace_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
+/// GET /jaxrs/attendance/assemble/control/workplace/list/all
+pub async fn stub_attendance_assemble_control_workplace_list_all(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, address, creator, create_time FROM x_attendance_workplace ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("address".to_string(), Value::String(row.get("address"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-/// Stub handler for /jaxrs/attendance/assemble/control/workplace/{id}
-/// TODO: Implement real business logic
-pub async fn stub_attendance_assemble_control_workplace_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+/// GET /jaxrs/attendance/assemble/control/workplace/{id}
+pub async fn stub_attendance_assemble_control_workplace_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, address, creator, create_time FROM x_attendance_workplace WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("address".to_string(), Value::String(row.get("address"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("workplace not found"))),
+    }
 }

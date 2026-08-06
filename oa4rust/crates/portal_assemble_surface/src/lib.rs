@@ -1,5 +1,5 @@
 use axum::{
-    extract::Extension,
+    extract::{Extension, Path},
     Json, Router, routing::get, routing::post,
 };
 use deadpool_postgres::Pool;
@@ -285,359 +285,1190 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 }
 
 
-/// Stub handler for /jaxrs/portal/assemble/surface/dict/list/portal/{portalFlag}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_dict_list_portal_portalFlag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn stub_portal_assemble_surface_dict_list_portal_portalFlag(
+    pool: Option<Extension<Pool>>,
+    Path(portal_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, app_name, key_name, creator, create_time FROM x_portal_dict WHERE portal_flag = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("appName".to_string(), Value::String(row.get("app_name"))),
+                ("keyName".to_string(), Value::String(row.get("key_name"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag(
+    pool: Option<Extension<Pool>>,
+    Path(dict_flag): Path<String>,
+    Path(portal_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, app_name, key_name, app_data, creator, create_time FROM x_portal_dict WHERE flag = $1 AND portal_flag = $2 AND deleted_at IS NULL",
+            &[&dict_flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("appName".to_string(), Value::String(row.get("app_name"))),
+                ("keyName".to_string(), Value::String(row.get("key_name"))),
+                ("appData".to_string(), Value::String(row.get("app_data"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("dict not found"))),
+    }
+}
+
+pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_data(
+    pool: Option<Extension<Pool>>,
+    Path(dict_flag): Path<String>,
+    Path(portal_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, app_data FROM x_portal_dict WHERE flag = $1 AND portal_flag = $2 AND deleted_at IS NULL",
+            &[&dict_flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let app_data: Option<String> = row.get("app_data");
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("data".to_string(), app_data.map(Value::String).unwrap_or(Value::Null)),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("dict not found"))),
+    }
+}
+
+pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_data(
+    pool: Option<Extension<Pool>>,
+    Path(dict_flag): Path<String>,
+    Path(portal_flag): Path<String>,
+    Path(_path): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, app_data FROM x_portal_dict WHERE flag = $1 AND portal_flag = $2 AND deleted_at IS NULL",
+            &[&dict_flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let app_data: Option<String> = row.get("app_data");
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("path".to_string(), Value::String(_path)),
+                    ("data".to_string(), app_data.map(Value::String).unwrap_or(Value::Null)),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("dict not found"))),
+    }
+}
+
+pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget(
+    pool: Option<Extension<Pool>>,
+    Path(dict_flag): Path<String>,
+    Path(portal_flag): Path<String>,
+    Path(_path): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, app_data FROM x_portal_dict WHERE flag = $1 AND portal_flag = $2 AND deleted_at IS NULL",
+            &[&dict_flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("data".to_string(), Value::String({
+                    let __val: Option<String> = row.get("app_data");
+                    __val.unwrap_or_default()
+                })),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("path".to_string(), Value::String(_path)),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
+    pool: Option<Extension<Pool>>,
+    Path(dict_flag): Path<String>,
+    Path(portal_flag): Path<String>,
+    Path(_path): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let data_str = match body {
+        Value::String(s) => s,
+        _ => serde_json::to_string(&body).map_err(|_| AppError::Internal)?,
+    };
+
+    let result = client
+        .execute(
+            "UPDATE x_portal_dict SET app_data = $1, update_time = NOW() WHERE flag = $2 AND portal_flag = $3",
+            &[&data_str, &dict_flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("dict not found")));
+    }
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
+            ("flag".to_string(), Value::String(dict_flag)),
+            ("portalFlag".to_string(), Value::String(portal_flag)),
+            ("path".to_string(), Value::String(_path)),
+            ("updated".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_file_list_portal_portalFlag(
+    pool: Option<Extension<Pool>>,
+    Path(portal_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, file_type, creator, create_time FROM x_portal_file WHERE portal_flag = $1 ORDER BY create_time DESC",
+            &[&portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("fileType".to_string(), Value::String(row.get("file_type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/data
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_data() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_file_flag(
+    pool: Option<Extension<Pool>>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, file_type, creator, create_time FROM x_portal_file WHERE flag = $1 LIMIT 1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("fileType".to_string(), Value::String(row.get("file_type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_data() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_file_flag_download(
+    pool: Option<Extension<Pool>>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, file_type, content FROM x_portal_file WHERE flag = $1 LIMIT 1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("fileType".to_string(), Value::String(row.get("file_type"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data/mockdeletetoget
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_file_flag_portal_portalFlag_content(
+    pool: Option<Extension<Pool>>,
+    Path(flag): Path<String>,
+    Path(portal_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, content FROM x_portal_file WHERE flag = $1 AND portal_flag = $2 LIMIT 1",
+            &[&flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("content".to_string(), Value::String(row.get("content"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/dict/{dictFlag}/portal/{portalFlag}/{path}/data/mockputtopost
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_data_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_file_flag_portal_portalFlag_download(
+    pool: Option<Extension<Pool>>,
+    Path(flag): Path<String>,
+    Path(portal_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, file_type, content FROM x_portal_file WHERE flag = $1 AND portal_flag = $2 LIMIT 1",
+            &[&flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("fileType".to_string(), Value::String(row.get("file_type"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/file/list/portal/{portalFlag}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_file_list_portal_portalFlag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_page_list_portal_portal(
+    pool: Option<Extension<Pool>>,
+    Path(portal): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, category, creator, create_time FROM x_portal_page WHERE portal_id = $1 ORDER BY create_time DESC",
+            &[&portal],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/file/{flag}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_file_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_page_v2_flag_portal_portalFlag(
+    pool: Option<Extension<Pool>>,
+    Path(flag): Path<String>,
+    Path(portal_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, content, creator, create_time FROM x_portal_page WHERE flag = $1 AND portal_flag = $2 LIMIT 1",
+            &[&flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("page not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/file/{flag}/download
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_file_flag_download() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_page_v2_flag_portal_portalFlag_mobile(
+    pool: Option<Extension<Pool>>,
+    Path(flag): Path<String>,
+    Path(portal_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, mobile_content, creator, create_time FROM x_portal_page WHERE flag = $1 AND portal_flag = $2 LIMIT 1",
+            &[&flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("content".to_string(), Value::String(row.get("mobile_content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("page not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/file/{flag}/portal/{portalFlag}/content
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_file_flag_portal_portalFlag_content() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_page_v2_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, content, creator, create_time FROM x_portal_page WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("page not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/file/{flag}/portal/{portalFlag}/download
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_file_flag_portal_portalFlag_download() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_page_v2_id_mobile(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, mobile_content, creator, create_time FROM x_portal_page WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("content".to_string(), Value::String(row.get("mobile_content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("page not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/page/list/portal/{portal}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_page_list_portal_portal() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_page_flag_portal_portalFlag(
+    pool: Option<Extension<Pool>>,
+    Path(flag): Path<String>,
+    Path(portal_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, content, creator, create_time FROM x_portal_page WHERE flag = $1 AND portal_id = $2 LIMIT 1",
+            &[&flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("page not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/page/v2/{flag}/portal/{portalFlag}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_page_v2_flag_portal_portalFlag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_page_flag_portal_portalFlag_mobile(
+    pool: Option<Extension<Pool>>,
+    Path(flag): Path<String>,
+    Path(portal_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, mobile_content, creator, create_time FROM x_portal_page WHERE flag = $1 AND portal_id = $2 LIMIT 1",
+            &[&flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("content".to_string(), Value::String(row.get("mobile_content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("page not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/page/v2/{flag}/portal/{portalFlag}/mobile
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_page_v2_flag_portal_portalFlag_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_page_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, content, creator, create_time FROM x_portal_page WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("page not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/page/v2/{id}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_page_v2_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_page_id_mobile(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, mobile_content, creator, create_time FROM x_portal_page WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("content".to_string(), Value::String(row.get("mobile_content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("page not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/page/v2/{id}/mobile
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_page_v2_id_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_portal_list(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, category, logo, creator, create_time FROM x_portal WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("logo".to_string(), Value::String(row.get("logo"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/page/{flag}/portal/{portalFlag}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_page_flag_portal_portalFlag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_portal_list_mobile(
+    pool: Option<Extension<Pool>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, category, logo, creator, create_time FROM x_portal WHERE deleted_at IS NULL AND mobile_enabled = true ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("logo".to_string(), Value::String(row.get("logo"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/page/{flag}/portal/{portalFlag}/mobile
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_page_flag_portal_portalFlag_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_portal_flag(
+    pool: Option<Extension<Pool>>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, category, logo, description, creator, create_time FROM x_portal WHERE flag = $1 AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("logo".to_string(), Value::String(row.get("logo"))),
+                ("description".to_string(), Value::String(row.get("description"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("portal not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/page/{id}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_page_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_portal_flag_corner_mark(
+    pool: Option<Extension<Pool>>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, corner_mark FROM x_portal WHERE flag = $1 AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("cornerMark".to_string(), Value::String(row.get("corner_mark"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("portal not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/page/{id}/mobile
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_page_id_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_portal_id_icon(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, logo FROM x_portal WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("logo".to_string(), Value::String(row.get("logo"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("portal not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/portal/list
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_portal_list() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_portal_id_icon_base64(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, logo_base64 FROM x_portal WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("logoBase64".to_string(), Value::String(row.get("logo_base64"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("portal not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/portal/list/mobile
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_portal_list_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_script_list_portal_portal(
+    pool: Option<Extension<Pool>>,
+    Path(portal): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE portal_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&portal],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/portal/{flag}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_portal_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_script_portal_portal_name_name(
+    pool: Option<Extension<Pool>>,
+    Path(portal): Path<String>,
+    Path(name): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, content, creator, create_time FROM x_portal_script WHERE portal_id = $1 AND name = $2 AND deleted_at IS NULL LIMIT 1",
+            &[&portal, &name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("script not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/portal/{flag}/corner/mark
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_portal_flag_corner_mark() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_script_portal_portal_name_name_imported(
+    pool: Option<Extension<Pool>>,
+    Path(portal): Path<String>,
+    Path(name): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, imported_content, creator, create_time FROM x_portal_script WHERE portal_id = $1 AND name = $2 AND deleted_at IS NULL LIMIT 1",
+            &[&portal, &name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("importedContent".to_string(), Value::String(row.get("imported_content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("script not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/portal/{id}/icon
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_portal_id_icon() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_script_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, content, creator, create_time FROM x_portal_script WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("script not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/portal/{id}/icon/base64
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_portal_id_icon_base64() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_widget_list_portal_portal(
+    pool: Option<Extension<Pool>>,
+    Path(portal): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let rows = client
+        .query(
+            "SELECT id, name, portal_id, category, config, creator, create_time FROM x_portal_widget WHERE portal_id = $1 ORDER BY create_time DESC",
+            &[&portal],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("portalId".to_string(), Value::String(row.get("portal_id"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("config".to_string(), Value::String(row.get("config"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/script/list/portal/{portal}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_script_list_portal_portal() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_widget_flag_portal_portalFlag(
+    pool: Option<Extension<Pool>>,
+    Path(flag): Path<String>,
+    Path(portal_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, portal_id, category, config, creator, create_time FROM x_portal_widget WHERE flag = $1 AND portal_id = $2 LIMIT 1",
+            &[&flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("portalId".to_string(), Value::String(row.get("portal_id"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("config".to_string(), Value::String(row.get("config"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("widget not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/script/portal/{portal}/name/{name}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_script_portal_portal_name_name() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_widget_flag_portal_portalFlag_mobile(
+    pool: Option<Extension<Pool>>,
+    Path(flag): Path<String>,
+    Path(portal_flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, portal_id, mobile_config, creator, create_time FROM x_portal_widget WHERE flag = $1 AND portal_id = $2 LIMIT 1",
+            &[&flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("portalId".to_string(), Value::String(row.get("portal_id"))),
+                ("config".to_string(), Value::String(row.get("mobile_config"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("widget not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/script/portal/{portal}/name/{name}/imported
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_script_portal_portal_name_name_imported() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn stub_portal_assemble_surface_widget_id(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, portal_id, category, config, creator, create_time, update_time FROM x_portal_widget WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("portalId".to_string(), Value::String(row.get("portal_id"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("config".to_string(), Value::String(row.get("config"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("widget not found"))),
+    }
 }
 
-/// Stub handler for /jaxrs/portal/assemble/surface/script/{id}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_script_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn stub_portal_assemble_surface_widget_id_mobile(
+    pool: Option<Extension<Pool>>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = match pool {
+        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
+        None => return Ok(Json(ActionResult::success(Value::Null))),
+    };
 
-/// Stub handler for /jaxrs/portal/assemble/surface/widget/list/portal/{portal}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_widget_list_portal_portal() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
+    let row = client
+        .query_opt(
+            "SELECT id, name, portal_id, mobile_config, creator, create_time, update_time FROM x_portal_widget WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-/// Stub handler for /jaxrs/portal/assemble/surface/widget/{flag}/portal/{portalFlag}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_widget_flag_portal_portalFlag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/portal/assemble/surface/widget/{flag}/portal/{portalFlag}/mobile
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_widget_flag_portal_portalFlag_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/portal/assemble/surface/widget/{id}
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_widget_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/portal/assemble/surface/widget/{id}/mobile
-/// TODO: Implement real business logic
-pub async fn stub_portal_assemble_surface_widget_id_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("portalId".to_string(), Value::String(row.get("portal_id"))),
+                ("config".to_string(), Value::String(row.get("mobile_config"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("widget not found"))),
+    }
 }

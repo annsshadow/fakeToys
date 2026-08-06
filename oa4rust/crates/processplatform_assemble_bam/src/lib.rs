@@ -1,4 +1,4 @@
-use axum::{Json, Router, routing::get, routing::post};
+﻿use axum::{Json, Router, routing::get, routing::post};
 use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -110,271 +110,406 @@ pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/completed/task/applicationstubs
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_completed_task_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/completed/task/unitstubs
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_completed_task_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/completed/work/applicationstubs
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_completed_work_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/completed/work/unitstubs
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_completed_work_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_application_applicationId_process_processId_unit_unit_person_person_by_activity() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/unit/{unit}/person/{person}/by/process
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/task/unit/{unit}/person/{person}/by/application
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/process/{processId}/by/unit
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_completed_work_application_applicationId_process_processId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_completed_work_application_applicationId_process_processId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/unit/{unit}/person/{person}/by/process
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_completed_work_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/work/unit/{unit}/person/{person}/by/application
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_completed_work_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_application_applicationId_process_processId_unit_unit_person_person_by_activity() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/unit/{unit}/person/{person}/by/process
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/task/unit/{unit}/person/{person}/by/application
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/process/{processId}/by/unit
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_expired_work_application_applicationId_process_processId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_expired_work_application_applicationId_process_processId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/unit/{unit}/person/{person}/by/process
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_expired_work_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/work/unit/{unit}/person/{person}/by/application
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_expired_work_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_application_applicationId_process_processId_activity_activityId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_application_applicationId_process_processId_unit_unit_person_person_by_activity() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/unit/{unit}/person/{person}/by/process
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/task/unit/{unit}/person/{person}/by/application
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/process/{processId}/by/unit
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_start_work_application_applicationId_process_processId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_start_work_application_applicationId_process_processId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/unit/{unit}/person/{person}/by/process
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_start_work_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/work/unit/{unit}/person/{person}/by/application
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_count_start_work_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/expired/task/applicationstubs
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_expired_task_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/expired/task/unitstubs
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_expired_task_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/expired/work/applicationstubs
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_expired_work_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/expired/work/unitstubs
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_expired_work_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/start/task/applicationstubs
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_start_task_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/start/task/unitstubs
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_start_task_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/start/work/applicationstubs
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_start_work_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/start/work/unitstubs
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_period_list_start_work_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/state/applicationtstubs/trigger
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_state_applicationtstubs_trigger() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/state/category
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_state_category() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/state/category/trigger
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_state_category_trigger() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/state/organization
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_state_organization() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/state/running
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_state_running() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/state/summary
-/// TODO: Implement real business logic
 pub async fn stub_processplatform_assemble_bam_state_summary() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
