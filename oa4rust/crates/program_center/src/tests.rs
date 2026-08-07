@@ -1,0 +1,91 @@
+#[cfg(test)]
+mod tests {
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use serde_json::Value;
+    use tower::util::ServiceExt;
+
+    use crate::{program_center_router, modules_all};
+    use shared::response::ActionResult;
+
+    #[test]
+    fn test_action_result_success_structure() {
+        let result: ActionResult<serde_json::Value> =
+            ActionResult::success(serde_json::json!({"key": "value"}));
+        assert_eq!(result.r#type, Some("success".to_string()));
+        assert!(result.data.is_some());
+        assert_eq!(result.message, None);
+        assert_eq!(result.count, None);
+    }
+
+    #[test]
+    fn test_action_result_error_structure() {
+        let result: ActionResult<String> = ActionResult::error("something went wrong");
+        assert_eq!(result.r#type, Some("error".to_string()));
+        assert_eq!(result.message, Some("something went wrong".to_string()));
+        assert!(result.data.is_none());
+    }
+
+    #[test]
+    fn test_modules_all_returns_success_with_data() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let pool = build_dummy_pool().await;
+            let result = modules_all(axum::extract::Extension(pool)).await;
+            assert!(result.is_ok(), "modules_all should succeed without DB: {:?}", result.err());
+
+            let json = result.unwrap().0;
+            assert_eq!(json.r#type, Some("success".to_string()));
+
+            let data_obj = json.data.as_ref().unwrap().as_object().unwrap();
+            assert!(data_obj.contains_key("count"));
+            assert!(data_obj.contains_key("data"));
+
+            let modules = data_obj.get("data").unwrap().as_array().unwrap();
+            assert_eq!(modules.len(), 4, "should have 4 mock modules");
+
+            let first = modules[0].as_object().unwrap();
+            assert!(first.contains_key("name"));
+            assert!(first.contains_key("className"));
+            assert!(first.contains_key("entityCount"));
+        });
+    }
+
+    #[test]
+    fn test_program_center_router_routes_registered() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let app = program_center_router();
+
+            let response = app
+                .oneshot(
+                    Request::builder()
+                        .uri("/jaxrs/program/applications")
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
+
+            assert_ne!(response.status(), StatusCode::NOT_FOUND,
+                "route /jaxrs/program/applications should be registered");
+        });
+    }
+
+    #[test]
+    fn test_action_result_serialization() {
+        let result: ActionResult<i32> = ActionResult::success(42);
+        let json = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"], 42);
+        assert_eq!(json["message"], Value::Null);
+    }
+
+    async fn build_dummy_pool() -> deadpool_postgres::Pool {
+        let mgr = deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        );
+        deadpool_postgres::Pool::builder(mgr).build().unwrap()
+    }
+}

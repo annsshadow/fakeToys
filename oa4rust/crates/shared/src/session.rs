@@ -1,0 +1,193 @@
+use chrono::{Duration, NaiveDateTime, Utc};
+use deadpool_postgres::Pool;
+use hmac::{Hmac, Mac};
+use serde::{Deserialize, Serialize};
+use sha2::Sha256;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use base64::Engine;
+
+// ──────────────────────────────────────────────────────────────────────────────
+// session
+//
+// 会话存储（内存 + PostgreSQL 持久化）。
+// SessionManager 由 main.rs 构造单一实例注入各 router 与认证中间件，
+// 避免认证与限流状态分裂。
+// ──────────────────────────────────────────────────────────────────────────────
+
+type HmacSha256 = Hmac<Sha256>;
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Session {
+    pub token: String,
+    pub person_unique: String,
+    pub created_at: NaiveDateTime,
+    pub expires_at: NaiveDateTime,
+}
+
+#[derive(Clone)]
+pub struct SessionManager {
+    pub sessions: Arc<RwLock<std::collections::HashMap<String, Session>>>,
+    pub pool: Option<Pool>,
+    pub hmac_secret: Option<String>,
+}
+
+impl Default for SessionManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl SessionManager {
+    pub fn new() -> Self {
+        Self {
+            sessions: Arc::new(RwLock::new(std::collections::HashMap::new())),
+            pool: None,
+            hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
+        }
+    }
+
+    /// 创建带数据库持久化的 SessionManager
+    pub fn with_pool(pool: Pool) -> Self {
+        Self {
+            sessions: Arc::new(RwLock::new(std::collections::HashMap::new())),
+            pool: Some(pool),
+            hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
+        }
+    }
+
+    /// 签名 token（HMAC-SHA256）
+    fn sign_token(&self, token: &str) -> String {
+        if let Some(secret) = &self.hmac_secret {
+            let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).unwrap();
+            mac.update(token.as_bytes());
+            let signature = mac.finalize().into_bytes();
+            format!("{}.{}", token, base64::engine::general_purpose::URL_SAFE.encode(signature))
+        } else {
+            token.to_string()
+        }
+    }
+
+    /// 验证签名并提取原始 token
+    fn verify_and_extract(&self, signed_token: &str) -> Option<String> {
+        if let Some(secret) = &self.hmac_secret {
+            let parts: Vec<&str> = signed_token.split('.').collect();
+            if parts.len() != 2 {
+                return None;
+            }
+            let token = parts[0];
+            let sig = parts[1];
+
+            let mut mac = HmacSha256::new_from_slice(secret.as_bytes()).unwrap();
+            mac.update(token.as_bytes());
+            let expected = base64::engine::general_purpose::URL_SAFE.decode(sig).ok()?;
+            if mac.verify_slice(&expected).is_ok() {
+                Some(token.to_string())
+            } else {
+                None
+            }
+        } else {
+            Some(signed_token.to_string())
+        }
+    }
+
+    /// 创建会话
+    ///
+    /// 生成一个新的 Session，有效期 2 小时，同时保存到内存和数据库。
+    pub async fn create_session(&self, person_unique: String, token: String) -> Session {
+        let now = Utc::now().naive_utc();
+        let expires_at = now + Duration::hours(2).to_std().unwrap_or_default();
+        let session = Session {
+            token: token.clone(),
+            person_unique,
+            created_at: now,
+            expires_at,
+        };
+
+        self.sessions.write().await.insert(token.clone(), session.clone());
+
+        if let Some(pool) = &self.pool {
+            if let Ok(client) = pool.get().await {
+                let signed_token = self.sign_token(&token);
+                let created_at_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
+                let expires_at_str = expires_at.format("%Y-%m-%d %H:%M:%S").to_string();
+                let _ = client
+                    .execute(
+                        "INSERT INTO auth_session (token, person_id, expires_at, created_at) \
+                         VALUES ($1, $2, $3, $4) \
+                         ON CONFLICT (token) DO UPDATE SET expires_at = $3",
+                        &[&signed_token, &session.person_unique, &expires_at_str, &created_at_str],
+                    )
+                    .await;
+            }
+        }
+
+        session
+    }
+
+    /// 验证会话令牌是否有效（未过期、存在）
+    pub async fn validate_session(&self, token: &str) -> Option<Session> {
+        let session = {
+            let sessions = self.sessions.read().await;
+            sessions.get(token).cloned()
+        };
+
+        match session {
+            Some(s) if s.expires_at > Utc::now().naive_utc() => Some(s),
+            Some(_) => {
+                self.remove_session(token).await;
+                None
+            }
+            None => {
+                if let Some(pool) = &self.pool {
+                    if let Ok(client) = pool.get().await {
+                        let signed_token = self.sign_token(token);
+                        if let Ok(row) = client
+                            .query_opt(
+                                "SELECT token, person_id, created_at, expires_at \
+                                 FROM auth_session \
+                                 WHERE token = $1 AND expires_at > NOW()",
+                                &[&signed_token],
+                            )
+                            .await
+                        {
+                            if let Some(row) = row {
+                                let raw_token = self.verify_and_extract(&row.get::<_, String>("token"))?;
+                                let created_at_str: String = row.get("created_at");
+                                let expires_at_str: String = row.get("expires_at");
+                                let created_at = NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S").ok()?;
+                                let expires_at = NaiveDateTime::parse_from_str(&expires_at_str, "%Y-%m-%d %H:%M:%S").ok()?;
+                                let session = Session {
+                                    token: raw_token,
+                                    person_unique: row.get("person_id"),
+                                    created_at,
+                                    expires_at,
+                                };
+                                self.sessions
+                                    .write()
+                                    .await
+                                    .insert(token.to_string(), session.clone());
+                                return Some(session);
+                            }
+                        }
+                    }
+                }
+                None
+            }
+        }
+    }
+
+    /// 删除会话（退出登录时使用）
+    pub async fn remove_session(&self, token: &str) {
+        self.sessions.write().await.remove(token);
+
+        if let Some(pool) = &self.pool {
+            if let Ok(client) = pool.get().await {
+                let signed_token = self.sign_token(token);
+                let _ = client
+                    .execute("DELETE FROM auth_session WHERE token = $1", &[&signed_token])
+                    .await;
+            }
+        }
+    }
+}

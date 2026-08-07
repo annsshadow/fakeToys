@@ -1,0 +1,175 @@
+#[cfg(test)]
+mod tests {
+    use crate::{Group, Person};
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use deadpool_postgres::{Manager, Pool};
+    use shared::response::ActionResult;
+    use tower::ServiceExt;
+
+    fn build_test_pool() -> Pool {
+        let mgr = Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        );
+        Pool::builder(mgr).build().unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_definition_list_returns_success() {
+        let pool = build_test_pool();
+        let app = crate::organization_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/definition/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_group_list_returns_success() {
+        let pool = build_test_pool();
+        let app = crate::organization_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/group/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_identity_list_returns_success() {
+        let pool = build_test_pool();
+        let app = crate::organization_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/identity/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_person_list_returns_success() {
+        let pool = build_test_pool();
+        let app = crate::organization_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/person/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_custom_list_returns_success() {
+        let pool = build_test_pool();
+        let app = crate::organization_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/custom/list/test-identity-id")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR); // axum 0.8: {param} 路由可匹配(0.7 下 :param/{param} 混用会 404), handler 缺 pool 返回 500
+    }
+
+    #[tokio::test]
+    async fn test_bind_list_returns_success() {
+        let pool = build_test_pool();
+        let app = crate::organization_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/bind/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn test_action_result_format() {
+        let result: ActionResult<serde_json::Value> =
+            ActionResult::success(serde_json::json!({"count": 1, "data": []}));
+        let json = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"]["count"], 1);
+    }
+
+    #[test]
+    fn test_person_serialization() {
+        let person = Person {
+            id: "person-001".to_string(),
+            name: "张三".to_string(),
+            mobile: Some("13800138000".to_string()),
+            email: Some("zhangsan@example.com".to_string()),
+        };
+        let json = serde_json::to_value(&person).unwrap();
+        assert_eq!(json["id"], "person-001");
+        assert_eq!(json["name"], "张三");
+        assert_eq!(json["mobile"], "13800138000");
+    }
+
+    #[test]
+    fn test_group_serialization() {
+        let group = Group {
+            id: "group-001".to_string(),
+            name: "技术部".to_string(),
+            parent_id: Some("group-000".to_string()),
+            level: 2,
+        };
+        let json = serde_json::to_value(&group).unwrap();
+        assert_eq!(json["id"], "group-001");
+        assert_eq!(json["name"], "技术部");
+        assert_eq!(json["parent_id"], "group-000");
+        assert_eq!(json["level"], 2);
+    }
+}

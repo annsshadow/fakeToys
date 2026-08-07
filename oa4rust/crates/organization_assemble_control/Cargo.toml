@@ -1,0 +1,14 @@
+[package]
+name = "organization_assemble_control"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+axum.workspace = true
+deadpool-postgres.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+shared = { path = "../shared" }
+tokio.workspace = true
+tracing.workspace = true
+uuid.workspace = true
