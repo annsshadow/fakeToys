@@ -187,6 +187,100 @@ pub async fn publish_surface(
     ))))
 }
 
+pub async fn surface_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, portal_id, name, preview_url, published, create_time FROM x_portal_surface WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("portalId".to_string(), Value::String(row.get("portal_id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("previewUrl".to_string(), Value::String(row.get("preview_url"))),
+                ("published".to_string(), Value::Bool(row.get("published"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+pub async fn surface_preview(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, html FROM x_portal_surface WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("previewUrl".to_string(), Value::String(format!("/preview/{}", id))),
+                    ("html".to_string(), Value::String(row.get("html"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("surface not found"))),
+    }
+}
+
+pub async fn surface_publish(
+    pool: Extension<Pool>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = body.get("id").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("id is required".to_string()))?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_portal_surface SET published = true, published_at = NOW(), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("surface not found")));
+    }
+
+    let row = client
+        .query_one(
+            "SELECT id, published, published_at FROM x_portal_surface WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("published".to_string(), Value::Bool(row.get("published"))),
+            ("publishedAt".to_string(), Value::String(row.get("published_at"))),
+        ]),
+    ))))
+}
+
 pub fn portal_assemble_surface_router() -> Router {
     Router::new()
         .route("/jaxrs/portal/assemble/surface/get/{id}", get(get_surface))
@@ -194,6 +288,9 @@ pub fn portal_assemble_surface_router() -> Router {
         .route("/jaxrs/portal/assemble/surface/list/{category}", get(list_surfaces))
         .route("/jaxrs/portal/assemble/surface/preview/{id}", get(preview_surface))
         .route("/jaxrs/portal/assemble/surface/publish/{id}", post(publish_surface))
+        .route("/jaxrs/portal/surface/list", get(surface_list))
+        .route("/jaxrs/portal/surface/{id}/preview", get(surface_preview))
+        .route("/jaxrs/portal/surface/publish", post(surface_publish))
 }
 
 #[cfg(test)]

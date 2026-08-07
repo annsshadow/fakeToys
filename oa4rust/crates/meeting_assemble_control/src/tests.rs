@@ -30,7 +30,6 @@ mod tests {
             )
             .await
             .unwrap();
-        // Route may return 404 in test environment due to route matching
         assert!(matches!(response.status(), StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
     }
 
@@ -66,8 +65,98 @@ mod tests {
             )
             .await
             .unwrap();
-        // Route may return 404 in test environment due to route matching
         assert!(matches!(response.status(), StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
+    }
+
+    #[tokio::test]
+    async fn test_meeting_add_invite_route_accessible() {
+        let app = meeting_assemble_control_router(mock_pool());
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/meeting/meeting-001/add/invite")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"invitee":"user-001"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_meeting_delete_invite_route_accessible() {
+        let app = meeting_assemble_control_router(mock_pool());
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/meeting/meeting-001/delete/invite")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"invitee":"user-001"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_meeting_create_returns_internal_error_without_db() {
+        let app = meeting_assemble_control_router(mock_pool());
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/meeting/create")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"title":"Test","startTime":"2024-01-01","endTime":"2024-01-02"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_room_list_returns_internal_error_without_db() {
+        let app = meeting_assemble_control_router(mock_pool());
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/room/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_building_list_returns_internal_error_without_db() {
+        let app = meeting_assemble_control_router(mock_pool());
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/building/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[test]

@@ -61,81 +61,105 @@ pub struct Participant {
 }
 
 pub async fn room_list(
-    _pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Vec<Room>>>, AppError> {
-    let rooms = vec![
-        Room {
-            id: "room-001".to_string(),
-            name: "第一会议室".to_string(),
-            building_id: Some("building-001".to_string()),
-            floor: Some("3F".to_string()),
-            capacity: Some(20),
-            equipment: Some(Value::Array(vec![
-                Value::String("投影仪".to_string()),
-                Value::String("视频会议".to_string()),
-            ])),
-            description: Some("大型会议室".to_string()),
-            photo: None,
-            order_number: Some(1),
-        },
-        Room {
-            id: "room-002".to_string(),
-            name: "第二会议室".to_string(),
-            building_id: Some("building-001".to_string()),
-            floor: Some("5F".to_string()),
-            capacity: Some(10),
-            equipment: Some(Value::Array(vec![
-                Value::String("投影仪".to_string()),
-            ])),
-            description: Some("中型会议室".to_string()),
-            photo: None,
-            order_number: Some(2),
-        },
-    ];
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, building_id, floor, capacity, equipment, description, photo, order_number FROM x_meeting_room ORDER BY name LIMIT 50",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(rooms)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("buildingId".to_string(), row.get::<_, Option<String>>("building_id").map(|s| Value::String(s)).unwrap_or(Value::Null)),
+                ("floor".to_string(), row.get::<_, Option<String>>("floor").map(|s| Value::String(s)).unwrap_or(Value::Null)),
+                ("capacity".to_string(), row.get::<_, Option<i32>>("capacity").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
+                ("equipment".to_string(), row.get::<_, Option<String>>("equipment").and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(Value::Null)),
+                ("description".to_string(), row.get::<_, Option<String>>("description").map(|s| Value::String(s)).unwrap_or(Value::Null)),
+                ("photo".to_string(), row.get::<_, Option<String>>("photo").map(|s| Value::String(s)).unwrap_or(Value::Null)),
+                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 pub async fn building_list(
-    _pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Vec<Building>>>, AppError> {
-    let buildings = vec![
-        Building {
-            id: "building-001".to_string(),
-            name: "总部大楼".to_string(),
-            address: Some("北京市朝阳区xxx路1号".to_string()),
-            description: Some("公司总部".to_string()),
-            order_number: Some(1),
-        },
-        Building {
-            id: "building-002".to_string(),
-            name: "研发中心".to_string(),
-            address: Some("北京市海淀区xxx路2号".to_string()),
-            description: Some("研发中心".to_string()),
-            order_number: Some(2),
-        },
-    ];
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, address, description, order_number, create_time FROM x_meeting_building ORDER BY name LIMIT 50",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(buildings)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("address".to_string(), row.get::<_, Option<String>>("address").map(Value::String).unwrap_or(Value::Null)),
+                ("description".to_string(), row.get::<_, Option<String>>("description").map(Value::String).unwrap_or(Value::Null)),
+                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 pub async fn openmeeting_list_room(
-    _pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Vec<OpenMeetingRoom>>>, AppError> {
-    let rooms = vec![
-        OpenMeetingRoom {
-            id: "open-001".to_string(),
-            name: "开放式讨论区A".to_string(),
-            url: Some("https://meeting.example.com/room/open-001".to_string()),
-        },
-        OpenMeetingRoom {
-            id: "open-002".to_string(),
-            name: "开放式讨论区B".to_string(),
-            url: Some("https://meeting.example.com/room/open-002".to_string()),
-        },
-    ];
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, url FROM x_meeting_room WHERE open_meeting = true ORDER BY name LIMIT 50",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(rooms)))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("url".to_string(), row.get::<_, Option<String>>("url").map(Value::String).unwrap_or(Value::Null)),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 pub async fn create_meeting(

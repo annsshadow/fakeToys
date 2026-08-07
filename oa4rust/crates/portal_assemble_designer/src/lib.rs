@@ -310,6 +310,51 @@ pub async fn delete_page(
     ))))
 }
 
+pub async fn design_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    list_designs(pool).await
+}
+
+pub async fn design_get(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    get_design(pool, Path(id)).await
+}
+
+pub async fn design_save(
+    pool: Extension<Pool>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = body.get("id").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("id is required".to_string()))?;
+    let content = body.get("content").cloned().unwrap_or(Value::Null);
+    let content_str = match &content {
+        Value::String(s) => s.clone(),
+        _ => serde_json::to_string(&content).map_err(|_| AppError::Internal)?,
+    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_portal_design SET content = $1, update_time = NOW() WHERE id = $2 AND deleted_at IS NULL",
+            &[&content_str, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("design not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id.to_string())),
+            ("saved".to_string(), Value::Bool(true)),
+            ("content".to_string(), content),
+        ]),
+    ))))
+}
+
 pub fn portal_assemble_designer_router() -> Router {
     Router::new()
         .route("/jaxrs/portal/assemble/designer/page/list/{category}", get(list_pages_by_category))
@@ -321,6 +366,9 @@ pub fn portal_assemble_designer_router() -> Router {
         .route("/jaxrs/portal/assemble/designer/get/{id}", get(get_design))
         .route("/jaxrs/portal/assemble/designer/list", get(list_designs))
         .route("/jaxrs/portal/assemble/designer/save/{id}", post(save_design))
+        .route("/jaxrs/portal/design/list", get(design_list))
+        .route("/jaxrs/portal/design/{id}", get(design_get))
+        .route("/jaxrs/portal/design/save", post(design_save))
 }
 
 #[cfg(test)]

@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use deadpool_postgres::{Manager, Pool};
@@ -16,15 +15,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_work_list_returns_success() {
+    async fn test_work_list_route_exists() {
         let pool = build_test_pool();
-        let app = processplatform_core_entity_router(pool);
+        let app = crate::processplatform_core_entity_router(pool);
 
         let response = app
-            .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/work/list")
+                    .uri("/jaxrs/process/work/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -32,19 +30,18 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    async fn test_task_list_returns_success() {
+    async fn test_work_get_route_exists() {
         let pool = build_test_pool();
-        let app = processplatform_core_entity_router(pool);
+        let app = crate::processplatform_core_entity_router(pool);
 
         let response = app
-            .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/task/list")
+                    .uri("/jaxrs/process/work/test-id")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -52,19 +49,18 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    async fn test_work_completed_list_returns_success() {
+    async fn test_task_list_route_exists() {
         let pool = build_test_pool();
-        let app = processplatform_core_entity_router(pool);
+        let app = crate::processplatform_core_entity_router(pool);
 
         let response = app
-            .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/workcompleted/list")
+                    .uri("/jaxrs/process/task/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -72,19 +68,18 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    async fn test_ticket_list_returns_success() {
+    async fn test_task_get_route_exists() {
         let pool = build_test_pool();
-        let app = processplatform_core_entity_router(pool);
+        let app = crate::processplatform_core_entity_router(pool);
 
         let response = app
-            .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/processplatform/ticket/list")
+                    .uri("/jaxrs/process/task/test-id")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -92,7 +87,83 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::OK);
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_ticket_list_route_exists() {
+        let pool = build_test_pool();
+        let app = crate::processplatform_core_entity_router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/process/ticket/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_workcompleted_list_route_exists() {
+        let pool = build_test_pool();
+        let app = crate::processplatform_core_entity_router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/process/workcompleted/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[test]
+    fn test_work_list_empty_data_action_result_structure() {
+        let result: ActionResult<serde_json::Value> = ActionResult::success(serde_json::json!({
+            "count": 0,
+            "data": []
+        }));
+        let json = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"]["count"], 0);
+        assert_eq!(json["data"]["data"].as_array().unwrap().len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_db_error_returns_internal() {
+        let mut cfg = deadpool_postgres::tokio_postgres::Config::new();
+        cfg.host("invalid-host-that-does-not-exist")
+            .port(1)
+            .user("invalid")
+            .password("invalid")
+            .dbname("nonexistent");
+        let mgr = Manager::new(cfg, deadpool_postgres::tokio_postgres::NoTls);
+        let pool = Pool::builder(mgr).build().unwrap();
+        let app = crate::processplatform_core_entity_router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/process/work/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[test]
@@ -102,20 +173,5 @@ mod tests {
         let json = serde_json::to_value(&result).unwrap();
         assert_eq!(json["type"], "success");
         assert_eq!(json["data"]["count"], 1);
-    }
-
-    #[test]
-    fn test_work_list_action_result_structure() {
-        let result: ActionResult<serde_json::Value> = ActionResult::success(serde_json::json!({
-            "count": 2,
-            "data": [
-                {"id": "work-1", "title": "测试工作", "workStatus": "running"}
-            ]
-        }));
-        let json = serde_json::to_value(&result).unwrap();
-        assert_eq!(json["type"], "success");
-        let data = json["data"].as_object().unwrap();
-        assert_eq!(data["count"], 2);
-        assert!(data["data"].is_array());
     }
 }

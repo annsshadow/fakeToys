@@ -305,11 +305,11 @@
 
 | 路由路径 | HTTP 方法 | Handler 函数名 | 实现状态 | 备注 |
 |----------|-----------|----------------|----------|------|
-| /jaxrs/message/consume/list/{consume}/count/{count} | GET | consume_list | 桩代码 | mock 数据 |
-| /jaxrs/message/consume/{id}/type/{type} | GET | update_single | 桩代码 | mock 数据 |
-| /jaxrs/message/custom/create | POST | custom_create | 桩代码 | mock 数据 |
-| /jaxrs/message/mark_read/{id} | POST | mark_read | 桩代码 | mock 数据 |
-| /jaxrs/message/unread/count/{consume} | GET | unread_count | 桩代码 | mock 数据 |
+| /jaxrs/message/consume/list/{consume}/count/{count} | GET | consume_list | 已完成 | 真实 DB 查询 |
+| /jaxrs/message/consume/{id}/type/{type} | GET | update_single | 已完成 | 真实 DB 查询 |
+| /jaxrs/message/custom/create | POST | custom_create | 已完成 | 真实 DB 查询 |
+| /jaxrs/message/mark_read/{id} | POST | mark_read | 已完成 | 真实 DB 查询 |
+| /jaxrs/message/unread/count/{consume} | GET | unread_count | 已完成 | 真实 DB 查询 |
 
 ### message_assemble_communicate
 
@@ -954,7 +954,7 @@
 
 ## 实施建议
 
-1. **Wave 1**：auth、control、personal、personal_extend、program_init 已完成真实业务逻辑，优先作为参考基准（R53）。
-2. **Wave 2**：attendance、calendar、file、general_assemble_control 已有部分真实查询，优先补全 CRUD 和业务编排逻辑。
-3. **Wave 3**：process_*、message_*、meeting_*、portal_*、query_*、cms_* 为核心用户工作流，按业务频率分优先级实施。
+1. **Wave 1**：auth、control、personal、personal_extend、program_init、message 已完成真实业务逻辑，优先作为参考基准（R53）。
+2. **Wave 2**：attendance、calendar、file、general_assemble_control 及其 _core_entity/_assemble_control 已有部分真实查询，优先补全 CRUD 和业务编排逻辑。
+3. **Wave 3**：meeting_*、portal_*、process_*、query_*、cms_* 为核心用户工作流，按业务频率分优先级实施（message_* 已完成）。
 4. **Wave 4**：基础设施模块允许简化或保留接口 stub，优先保证 CRUD 和查询接口对齐。

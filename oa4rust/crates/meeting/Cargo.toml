@@ -16,3 +16,6 @@ tracing.workspace = true
 uuid.workspace = true
 
 shared = { path = "../shared" }
+
+[dev-dependencies]
+tower.workspace = true
