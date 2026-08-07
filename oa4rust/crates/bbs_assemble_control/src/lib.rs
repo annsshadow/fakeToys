@@ -9,6 +9,9 @@ use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
 
+#[cfg(test)]
+mod tests;
+
 #[derive(Debug, Deserialize)]
 pub struct CreateTopicRequest {
     pub forum_id: Option<String>,
@@ -87,12 +90,22 @@ fn row_to_reply(row: &deadpool_postgres::tokio_postgres::Row) -> ReplyRow {
 
 #[axum::debug_handler]
 pub async fn get_control_config(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_one(
+            "SELECT enabled, max_forum_count, allow_anonymous FROM x_bbs_assemble_control_config LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     let data = Value::Object(serde_json::Map::from_iter([
-        ("enabled".to_string(), Value::Bool(true)),
-        ("maxForumCount".to_string(), Value::Number(serde_json::Number::from(1000i64))),
-        ("allowAnonymous".to_string(), Value::Bool(false)),
+        ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+        ("maxForumCount".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("max_forum_count")))),
+        ("allowAnonymous".to_string(), Value::Bool(row.get("allow_anonymous"))),
     ]));
 
     Ok(Json(ActionResult::success(data)))
@@ -100,36 +113,55 @@ pub async fn get_control_config(
 
 #[axum::debug_handler]
 pub async fn list_control_sections(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let sections = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("general".to_string())),
-            ("name".to_string(), Value::String("General".to_string())),
-            ("enabled".to_string(), Value::Bool(true)),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("moderation".to_string())),
-            ("name".to_string(), Value::String("Moderation".to_string())),
-            ("enabled".to_string(), Value::Bool(true)),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, enabled FROM x_bbs_assemble_control_section ORDER BY sort",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let sections: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Array(sections))))
 }
 
 #[axum::debug_handler]
 pub async fn update_control_config(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let config = body.0;
-    tracing::info!("Updating bbs assemble control config: {:?}", config);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let enabled = body.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
+    let max_forum_count = body.get("maxForumCount").and_then(|v| v.as_i64()).unwrap_or(1000);
+    let allow_anonymous = body.get("allowAnonymous").and_then(|v| v.as_bool()).unwrap_or(false);
+
+    client
+        .execute(
+            "UPDATE x_bbs_assemble_control_config SET enabled = $1, max_forum_count = $2, allow_anonymous = $3 WHERE id = (SELECT id FROM x_bbs_assemble_control_config ORDER BY create_time LIMIT 1)",
+            &[&enabled, &max_forum_count, &allow_anonymous],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("updated".to_string(), Value::Bool(true)),
-            ("config".to_string(), config),
+            ("config".to_string(), body.0),
         ]),
     ))))
 }

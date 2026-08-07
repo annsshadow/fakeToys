@@ -1223,6 +1223,7 @@ dependencies = [
 name = "file_assemble_control"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "axum",
  "deadpool-postgres",
  "serde",

@@ -5,6 +5,169 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
+use std::sync::Arc;
+use std::ops::Deref;
+
+// ---- RowGet ----
+// Abstraction over a database row so tests can inject mock data.
+// Implemented for tokio_postgres::Row (production) and MockRow (tests).
+
+pub trait RowGet: Send + Sync {
+    fn get_i32(&self, col: &str) -> i32;
+    fn get_i64(&self, col: &str) -> i64;
+    fn get_str(&self, col: &str) -> &str;
+    fn get_bool(&self, col: &str) -> bool;
+}
+
+impl RowGet for deadpool_postgres::tokio_postgres::Row {
+    fn get_i32(&self, col: &str) -> i32 {
+        self.get(col)
+    }
+    fn get_i64(&self, col: &str) -> i64 {
+        self.get(col)
+    }
+    fn get_str(&self, col: &str) -> &str {
+        self.get(col)
+    }
+    fn get_bool(&self, col: &str) -> bool {
+        self.get(col)
+    }
+}
+
+// ---- ControlClient ----
+// Abstraction over a database client so tests can inject a mock.
+// Production impl wraps deadpool_postgres::Object (derefs to PgClient).
+
+#[async_trait::async_trait]
+trait ControlClient: Send + Sync {
+    async fn ctrl_query(
+        &self,
+        q: &str,
+        p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<Vec<Box<dyn RowGet>>, Box<dyn std::error::Error + Send + Sync>>;
+    async fn ctrl_query_one(
+        &self,
+        q: &str,
+        p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<Box<dyn RowGet>, Box<dyn std::error::Error + Send + Sync>>;
+    async fn ctrl_query_opt(
+        &self,
+        q: &str,
+        p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<Option<Box<dyn RowGet>>, Box<dyn std::error::Error + Send + Sync>>;
+    async fn ctrl_execute(
+        &self,
+        q: &str,
+        p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>>;
+}
+
+#[async_trait::async_trait]
+impl ControlClient for deadpool_postgres::Object {
+    async fn ctrl_query(
+        &self,
+        q: &str,
+        p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<Vec<Box<dyn RowGet>>, Box<dyn std::error::Error + Send + Sync>> {
+        let rows = self.deref().query(q, p).await?;
+        Ok(rows.into_iter().map(|r| Box::new(r) as Box<dyn RowGet>).collect())
+    }
+    async fn ctrl_query_one(
+        &self,
+        q: &str,
+        p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<Box<dyn RowGet>, Box<dyn std::error::Error + Send + Sync>> {
+        let row = self.deref().query_one(q, p).await?;
+        Ok(Box::new(row) as Box<dyn RowGet>)
+    }
+    async fn ctrl_query_opt(
+        &self,
+        q: &str,
+        p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<Option<Box<dyn RowGet>>, Box<dyn std::error::Error + Send + Sync>> {
+        let row_opt = self.deref().query_opt(q, p).await?;
+        Ok(row_opt.map(|r| Box::new(r) as Box<dyn RowGet>))
+    }
+    async fn ctrl_execute(
+        &self,
+        q: &str,
+        p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
+        self.deref().execute(q, p).await.map_err(Into::into)
+    }
+}
+
+// Arc<dyn ControlClient> delegates to the inner impl via this blanket.
+#[async_trait::async_trait]
+impl ControlClient for Arc<dyn ControlClient> {
+    async fn ctrl_query(
+        &self,
+        q: &str,
+        p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<Vec<Box<dyn RowGet>>, Box<dyn std::error::Error + Send + Sync>> {
+        self.as_ref().ctrl_query(q, p).await
+    }
+    async fn ctrl_query_one(
+        &self,
+        q: &str,
+        p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<Box<dyn RowGet>, Box<dyn std::error::Error + Send + Sync>> {
+        self.as_ref().ctrl_query_one(q, p).await
+    }
+    async fn ctrl_query_opt(
+        &self,
+        q: &str,
+        p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<Option<Box<dyn RowGet>>, Box<dyn std::error::Error + Send + Sync>> {
+        self.as_ref().ctrl_query_opt(q, p).await
+    }
+    async fn ctrl_execute(
+        &self,
+        q: &str,
+        p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
+    ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
+        self.as_ref().ctrl_execute(q, p).await
+    }
+}
+
+// ---- ControlPool ----
+
+trait ControlPool: Send + Sync {
+    fn acquire<'a>(
+        &'a self,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Arc<dyn ControlClient>, AppError>> + Send + 'a>>;
+}
+
+impl ControlPool for Pool {
+    fn acquire<'a>(
+        &'a self,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Arc<dyn ControlClient>, AppError>> + Send + 'a>>
+    {
+        Box::pin(async move {
+            let object = self.get().await.map_err(|_| AppError::Internal)?;
+            Ok(Arc::new(object) as Arc<dyn ControlClient>)
+        })
+    }
+}
+
+/// Wrapper allowing tests to inject a mock pool via `Arc<dyn ControlPool>`.
+pub struct DynControlPool(Arc<dyn ControlPool>);
+
+impl DynControlPool {
+    pub fn new(inner: Arc<dyn ControlPool>) -> Self {
+        Self(inner)
+    }
+}
+
+#[async_trait::async_trait]
+impl ControlPool for DynControlPool {
+    fn acquire<'a>(
+        &'a self,
+    ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Arc<dyn ControlClient>, AppError>> + Send + 'a>>
+    {
+        self.0.acquire()
+    }
+}
 
 pub mod routes;
 
@@ -24,74 +187,128 @@ pub fn file_assemble_control_router(pool: Pool) -> axum::Router {
 
 #[axum::debug_handler]
 pub async fn get_control_config(
-    _pool: Extension<Pool>,
+    pool: Extension<Arc<dyn ControlPool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("enabled".to_string(), Value::Bool(true)),
-        ("defaultStorage".to_string(), Value::String("local".to_string())),
-        ("maxUploadSize".to_string(), Value::Number(serde_json::Number::from(104857600i64))),
-    ]));
+    let client = pool.acquire().await?;
 
-    Ok(Json(ActionResult::success(data)))
+    let row = client
+        .ctrl_query_one(
+            "SELECT enabled, default_storage, max_upload_size FROM x_file_assemble_control_config LIMIT 1",
+            &[],
+        )
+        .await;
+
+    let data = match row {
+        Ok(r) => serde_json::Map::from_iter([
+            ("enabled".to_string(), Value::Bool(r.get_bool("enabled"))),
+            ("defaultStorage".to_string(), Value::String(r.get_str("default_storage").to_string())),
+            ("maxUploadSize".to_string(), Value::Number(serde_json::Number::from(r.get_i64("max_upload_size")))),
+        ]),
+        Err(_) => serde_json::Map::from_iter([
+            ("enabled".to_string(), Value::Bool(true)),
+            ("defaultStorage".to_string(), Value::String("local".to_string())),
+            ("maxUploadSize".to_string(), Value::Number(serde_json::Number::from(104857600i64))),
+        ]),
+    };
+
+    Ok(Json(ActionResult::success(Value::Object(data))))
 }
 
 #[axum::debug_handler]
 pub async fn list_storage_pools(
-    _pool: Extension<Pool>,
+    pool: Extension<Arc<dyn ControlPool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("local".to_string())),
-            ("name".to_string(), Value::String("Local Storage".to_string())),
-            ("enabled".to_string(), Value::Bool(true)),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("minio".to_string())),
-            ("name".to_string(), Value::String("MinIO Storage".to_string())),
-            ("enabled".to_string(), Value::Bool(false)),
-        ])),
-    ];
+    let client = pool.acquire().await?;
+
+    let rows = client
+        .ctrl_query(
+            "SELECT id, name, enabled FROM x_file_assemble_control_storage_pool ORDER BY id",
+            &[],
+        )
+        .await;
+
+    let data: Vec<Value> = match rows {
+        Ok(r) => r
+            .iter()
+            .map(|row| {
+                Value::Object(serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get_str("id").to_string())),
+                    ("name".to_string(), Value::String(row.get_str("name").to_string())),
+                    ("enabled".to_string(), Value::Bool(row.get_bool("enabled"))),
+                ]))
+            })
+            .collect(),
+        Err(_) => vec![],
+    };
 
     Ok(Json(ActionResult::success(Value::Array(data))))
 }
 
 #[axum::debug_handler]
 pub async fn update_control_config(
-    _pool: Extension<Pool>,
+    pool: Extension<Arc<dyn ControlPool>>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let config = body.0;
-    tracing::info!("Updating file assemble control config: {:?}", config);
+    let client = pool.acquire().await?;
+
+    let enabled = body
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+    let default_storage = body
+        .get("defaultStorage")
+        .and_then(|v| v.as_str())
+        .unwrap_or("local")
+        .to_string();
+    let max_upload_size: i64 = body
+        .get("maxUploadSize")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(104857600);
+
+    client
+        .ctrl_execute(
+            "UPDATE x_file_assemble_control_config SET enabled = $1, default_storage = $2, max_upload_size = $3 WHERE id = 'global'",
+            &[&enabled, &default_storage, &max_upload_size],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("updated".to_string(), Value::Bool(true)),
-            ("config".to_string(), config),
+            ("enabled".to_string(), Value::Bool(enabled)),
+            ("defaultStorage".to_string(), Value::String(default_storage)),
+            ("maxUploadSize".to_string(), Value::Number(serde_json::Number::from(max_upload_size))),
         ]),
     ))))
 }
 
 #[axum::debug_handler]
 pub async fn list_control_categories(
-    _pool: Extension<Pool>,
+    pool: Extension<Arc<dyn ControlPool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let categories = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("storage".to_string())),
-            ("name".to_string(), Value::String("Storage".to_string())),
-            ("description".to_string(), Value::String("Storage configuration".to_string())),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("security".to_string())),
-            ("name".to_string(), Value::String("Security".to_string())),
-            ("description".to_string(), Value::String("Security settings".to_string())),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("quota".to_string())),
-            ("name".to_string(), Value::String("Quota".to_string())),
-            ("description".to_string(), Value::String("Quota management".to_string())),
-        ])),
-    ];
+    let client = pool.acquire().await?;
+
+    let rows = client
+        .ctrl_query(
+            "SELECT id, name, description FROM x_file_assemble_control_category ORDER BY id",
+            &[],
+        )
+        .await;
+
+    let categories: Vec<Value> = match rows {
+        Ok(r) => r
+            .iter()
+            .map(|row| {
+                Value::Object(serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get_str("id").to_string())),
+                    ("name".to_string(), Value::String(row.get_str("name").to_string())),
+                    ("description".to_string(), Value::String(row.get_str("description").to_string())),
+                ]))
+            })
+            .collect(),
+        Err(_) => vec![],
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -116,7 +333,7 @@ pub async fn list_files(
     let rows = client
         .query(
             "SELECT id, name, path, size, creator, create_time, folder_id \
-             FROM x_file WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+              FROM x_file WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
             &[&folder_id],
         )
         .await
@@ -155,7 +372,7 @@ pub async fn get_file(
     let row = client
         .query_opt(
             "SELECT id, name, path, size, creator, create_time, folder_id \
-             FROM x_file WHERE id = $1 AND deleted_at IS NULL",
+              FROM x_file WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -196,7 +413,7 @@ pub async fn upload_file(
     client
         .execute(
             "INSERT INTO x_file (id, name, path, size, creator, create_time, folder_id) \
-             VALUES ($1, $2, $3, $4, $5, NOW(), $6)",
+              VALUES ($1, $2, $3, $4, $5, NOW(), $6)",
             &[&id, &name, &path, &size, &creator, &folder_id],
         )
         .await
@@ -232,7 +449,7 @@ pub async fn create_file(
     client
         .execute(
             "INSERT INTO x_file (id, name, path, size, creator, create_time, folder_id) \
-             VALUES ($1, $2, $3, $4, $5, NOW(), $6)",
+              VALUES ($1, $2, $3, $4, $5, NOW(), $6)",
             &[&id, &name, &path, &size, &creator, &folder_id],
         )
         .await

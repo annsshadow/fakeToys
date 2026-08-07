@@ -220,3 +220,4 @@ md5 = "0.7"
 urlencoding = "2"
 captcha = "1.0.0"
 reqwest = { version = "0.12", features = ["json"] }
+async-trait = "0.1"

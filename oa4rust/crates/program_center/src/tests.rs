@@ -6,6 +6,7 @@ mod tests {
     use tower::util::ServiceExt;
 
     use crate::{program_center_router, modules_all};
+    use shared::error::AppError;
     use shared::response::ActionResult;
 
     #[test]
@@ -27,27 +28,16 @@ mod tests {
     }
 
     #[test]
-    fn test_modules_all_returns_success_with_data() {
+    fn test_modules_all_returns_error_without_db() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let pool = build_dummy_pool().await;
             let result = modules_all(axum::extract::Extension(pool)).await;
-            assert!(result.is_ok(), "modules_all should succeed without DB: {:?}", result.err());
-
-            let json = result.unwrap().0;
-            assert_eq!(json.r#type, Some("success".to_string()));
-
-            let data_obj = json.data.as_ref().unwrap().as_object().unwrap();
-            assert!(data_obj.contains_key("count"));
-            assert!(data_obj.contains_key("data"));
-
-            let modules = data_obj.get("data").unwrap().as_array().unwrap();
-            assert_eq!(modules.len(), 4, "should have 4 mock modules");
-
-            let first = modules[0].as_object().unwrap();
-            assert!(first.contains_key("name"));
-            assert!(first.contains_key("className"));
-            assert!(first.contains_key("entityCount"));
+            match result {
+                Ok(_) => panic!("expected error without DB"),
+                Err(AppError::Internal) => {}
+                Err(_) => panic!("expected Internal error"),
+            }
         });
     }
 

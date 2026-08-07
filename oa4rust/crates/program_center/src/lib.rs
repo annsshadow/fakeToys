@@ -90,30 +90,40 @@ pub async fn current_style(
 }
 
 pub async fn modules_all(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("name".to_string(), Value::String("Application".to_string())),
-            ("className".to_string(), Value::String("com.x.organization.core.entity.Application".to_string())),
-            ("entityCount".to_string(), Value::Number(serde_json::Number::from(12))),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("name".to_string(), Value::String("Person".to_string())),
-            ("className".to_string(), Value::String("com.x.organization.core.entity.Person".to_string())),
-            ("entityCount".to_string(), Value::Number(serde_json::Number::from(8))),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("name".to_string(), Value::String("Unit".to_string())),
-            ("className".to_string(), Value::String("com.x.organization.core.entity.Unit".to_string())),
-            ("entityCount".to_string(), Value::Number(serde_json::Number::from(5))),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("name".to_string(), Value::String("Process".to_string())),
-            ("className".to_string(), Value::String("com.x.process.core.entity.Process".to_string())),
-            ("entityCount".to_string(), Value::Number(serde_json::Number::from(15))),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT m.id, m.name, m.entity, m.creator, m.create_time, COUNT(f.id) as field_count \
+             FROM x_program_module m \
+             LEFT JOIN x_program_field f ON f.entity = m.entity \
+             GROUP BY m.id, m.name, m.entity, m.creator, m.create_time \
+             ORDER BY m.name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let entity: String = row.get("entity");
+            let class_name = if entity == "Process" {
+                format!("com.x.process.core.entity.{}", entity)
+            } else {
+                format!("com.x.organization.core.entity.{}", entity)
+            };
+            let field_count: i64 = row.get("field_count");
+
+            Value::Object(serde_json::Map::from_iter([
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("className".to_string(), Value::String(class_name)),
+                ("entityCount".to_string(), Value::Number(serde_json::Number::from(field_count))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
