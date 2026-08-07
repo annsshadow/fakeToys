@@ -16,7 +16,7 @@
 
 ## 全部 80 个 crate 的迁移状态
 
-**状态分布：** 已完成（真实化）6 个 · 部分真实化 20 个 · 已接入（桩代码）54 个
+**状态分布：** 已完成（真实化）10 个 · 部分真实化 20 个 · 已接入（桩代码）50 个
 
 | crate 名称 | 对应 Java 模块 | 当前状态 | 接入 main.rs 的版本 | 已接入的端点列表 |
 |------------|----------------|----------|----------------------|------------------|
@@ -34,8 +34,8 @@
 | calendar | x_calendar_assemble_control | 部分真实化 | — | 部分真实（calendar_list_public、calendar_list_my、calendar_get 等 PostgreSQL 查询已实现） |
 | calendar_assemble_control | x_calendar_assemble_control | 部分真实化 | — | 部分真实（config/calendars 查询已实现） |
 | calendar_core_entity | x_calendar_core_entity | 部分真实化 | — | 部分真实（calendar CRUD 已实现） |
-| cms_assemble_control | x_cms_assemble_control | 部分真实化 | — | 部分真实（config/sections 查询已实现） |
-| cms_control | x_cms_assemble_control | 已接入（桩代码） | ac279a0f（U1） | 桩（routes.rs 空，仅注册 pool） |
+| cms_assemble_control | x_cms_assemble_control | 已完成（真实化） | — | GET /jaxrs/cms/assemble/control/config/get、GET /jaxrs/cms/assemble/control/sections、POST /jaxrs/cms/assemble/control/config/update |
+| cms_control | x_cms_assemble_control | 已完成（真实化） | — | GET /jaxrs/cms_control/get/control/config、GET /jaxrs/cms_control/list/control/sections |
 | cms_core_entity | x_cms_core_entity | 部分真实化 | — | 部分真实（category/app/config 查询已实现） |
 | cms_core_express | x_cms_core_express | 已接入（桩代码） | — | 桩 |
 | cms_express | x_cms_core_express | 已接入（桩代码） | — | 桩 |
@@ -79,7 +79,7 @@
 | portal_assemble_designer | x_portal_assemble_designer | 部分真实化 | — | 部分真实（page CRUD 已实现；design 相关仍为桩） |
 | portal_assemble_surface | x_portal_assemble_surface | 部分真实化 | — | 部分真实（surface CRUD 已实现；preview/publish 仍为桩） |
 | portal_core_entity | x_portal_core_entity | 部分真实化 | — | 部分真实（page CRUD 已实现） |
-| process_bam | x_processplatform_assemble_bam | 已接入（桩代码） | — | 桩 |
+| process_bam | x_processplatform_assemble_bam | 已完成（真实化） | — | GET /jaxrs/process/state/summary、GET /jaxrs/process/state/running、GET /jaxrs/process/state/organization |
 | process_designer | x_processplatform_assemble_designer | 部分真实化 | — | 部分真实（application/summary、designer/route 等查询已实现） |
 | process_express | x_processplatform_core_express | 部分真实化 | — | 部分真实（task/read/application count 等查询已实现） |
 | process_surface | x_processplatform_assemble_surface | 部分真实化 | — | 部分真实（list_ids/get/record 等查询已实现） |
@@ -97,7 +97,7 @@
 | query_core_entity | x_query_core_entity | 部分真实化 | — | 部分真实（item/view/import 查询已实现） |
 | query_core_express | x_query_core_express | 已接入（桩代码） | — | 桩 |
 | query_express | x_query_core_express | 已接入（桩代码） | — | 桩 |
-| query_service | x_query_service_processing | 已接入（桩代码） | — | 桩 |
+| query_service | x_query_service_processing | 已完成（真实化） | — | POST /jaxrs/query/service/neural/generate/{model_flag}、GET /jaxrs/query/service/neural/list |
 | query_service_processing | x_query_service_processing | 已接入（桩代码） | — | 桩 |
 | shared | x_base_core_project（基础设施） | 已完成（基础设施） | ac279a0f（U1） | GET /health |
 

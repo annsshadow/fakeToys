@@ -1,20 +1,20 @@
 #[cfg(test)]
 mod tests {
-    use super::*;
     use axum::{
         body::Body,
-        http::{Request, StatusCode},
+        http::{Request, Method, StatusCode},
     };
     use shared::response::ActionResult;
-    use tower::ServiceExt;
+    use deadpool_postgres::{Manager, Pool};
+    use deadpool_postgres::tokio_postgres::{Config, NoTls};
+    use tower::util::ServiceExt;
 
-    fn build_test_pool() -> deadpool_postgres::Pool {
-        deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        ))
-        .build()
-        .unwrap()
+    fn build_test_pool() -> Pool {
+        let mgr = Manager::new(
+            Config::new(),
+            NoTls,
+        );
+        Pool::builder(mgr).max_size(1).build().unwrap()
     }
 
     #[test]
@@ -48,5 +48,43 @@ mod tests {
             .unwrap();
 
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_control_config_returns_internal_error_with_empty_pool() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/cms_control/get/control/config")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_list_control_sections_returns_internal_error_with_empty_pool() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/cms_control/list/control/sections")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 }

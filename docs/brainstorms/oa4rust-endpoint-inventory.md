@@ -491,7 +491,8 @@
 
 | 路由路径 | HTTP 方法 | Handler 函数名 | 实现状态 | 备注 |
 |----------|-----------|----------------|----------|------|
-| /jaxrs/cms/control/* | - | - | 桩代码 | routes.rs 空，仅注册 pool |
+| /jaxrs/cms_control/get/control/config | GET | get_control_config | 已完成 | 真实 DB 查询 |
+| /jaxrs/cms_control/list/control/sections | GET | list_control_sections | 已完成 | 真实 DB 查询 |
 
 ### cms_core_entity
 
@@ -546,7 +547,8 @@
 
 | 路由路径 | HTTP 方法 | Handler 函数名 | 实现状态 | 备注 |
 |----------|-----------|----------------|----------|------|
-| - | - | - | 桩代码 | routes.rs 空，仅注册 pool |
+| /jaxrs/query/service/neural/generate/{model_flag} | POST | neural_generate_model | 已完成 | 真实 DB 查询 |
+| /jaxrs/query/service/neural/list | GET | neural_list_model | 已完成 | 真实 DB 查询 |
 
 ### query_assemble_designer
 
