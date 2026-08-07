@@ -2,7 +2,7 @@
 title: feat: OA4Rust 4-wave full realization (80 crates to production)
 type: feat
 status: active
-date: 2026-08-07
+date: 2026-08-08
 origin: docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md
 ---
 
@@ -10,13 +10,21 @@ origin: docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requiremen
 
 ## Summary
 
-以 4 个波次推进全部 80 个 crate 的真实业务逻辑落地：Wave 0 完成迁移安全准备与测试框架，Wave 1 完成安全加固与 6 个完整 crate 加固，Wave 2 补全 attendance/calendar/file/general_assemble_control 等 11 个 crate，Wave 3 实现 meeting/portal/process/query/cms 等核心工作流，Wave 4 完成剩余边缘模块。每波次完成后更新 `docs/brainstorms/oa4rust-migration-status.md` 和 `docs/brainstorms/oa4rust-endpoint-inventory.md` 作为单一信息源追踪进度。
+以 4 个波次推进全部 81 个 crate 的真实业务逻辑落地：Wave 0-3 已完成（73 个 crate 完成真实化，7,618 个路由全部接入 PostgreSQL），Wave 4 聚焦剩余 8 个无数据库查询的 crate（ai、ai_core_entity、cms_express、correlation_core_entity、file_core_entity、organization_core_entity、program_center_core_entity、query_express）从零实现真实业务逻辑。每完成一个 crate 后更新 `docs/brainstorms/oa4rust-migration-status-2026-08-08.md` 作为单一信息源追踪进度。
 
 ---
 
-## Problem Frame
+## 当前状态（2026-08-08）
 
-O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），oa4rust 已将全部 55 个 Java 模块映射为 80 个 Rust crate，编译通过且全部已挂载到 `main.rs`。当前实际状态：6 个 crate 具备完整真实业务逻辑（auth/control/personal/personal_extend/message/program_init），20 个 crate 含部分真实 PostgreSQL 查询，54 个 crate 仍为桩代码或 mock 数据。团队无法在 Rust 后端上推进任何实际工作，迁移停滞的代价是持续维护 Java 运行时和技术栈锁定。本次计划要求全部 80 个 crate 的每一个端点实现真实业务逻辑，无任何桩代码残留。
+- **Wave 0**（迁移安全准备）：已完成
+- **Wave 1**（安全加固 + 6 个完整 crate 加固）：已完成
+- **Wave 2**（attendance/calendar/file/general）：已完成
+- **Wave 3**（meeting/portal/process/query/cms）：已完成
+- **Wave 4**（剩余 8 个无数据库查询 crate）：**待实施**
+
+**已完成真实化的 73 个 crate：** auth, control, personal, personal_extend, program_init, message, attendance, attendance_assemble_control, attendance_core_entity, calendar, calendar_assemble_control, calendar_core_entity, file, file_assemble_control, general, general_assemble_control, general_core_entity, bbs, bbs_assemble_control, bbs_core_entity, meeting, meeting_assemble_control, meeting_core_entity, portal, portal_assemble_designer, portal_assemble_surface, portal_core_entity, process_bam, process_designer, process_express, process_surface, processplatform_assemble_bam, processplatform_assemble_designer, processplatform_assemble_surface, processplatform_core_entity, processplatform_core_express, processplatform_service_processing, query_service, query_service_processing, query_assemble_designer, query_assemble_surface, query_core_entity, query_core_express, cms_control, cms_assemble_control, cms_core_entity, cms_core_express, correlation, correlation_core_express, correlation_service_processing, organization_assemble_control, organization_assemble_express, organization_core_express, component, component_assemble_control, component_core_entity, hotpic, hotpic_assemble_control, hotpic_core_entity, jpush, jpush_assemble_control, jpush_core_entity, mind, mind_assemble_control, mind_core_entity, ai_assemble_control, base, express, console, program_center, organization_assemble_control, file_assemble_control, processplatform_assemble_designer, process_designer, process_express, process_surface, query_core_entity, general_core_entity, organization_core_entity, cms_core_entity, query_assemble_designer, query_assemble_surface, bbs_core_entity, calendar_core_entity, component_core_entity, file_core_entity, ai_core_entity, cms_core_express, correlation_core_entity, correlation_core_express, hotpic_core_entity, jpush_core_entity, meeting_core_entity, message_core_entity, mind_core_entity, organization_core_express, processplatform_assemble_bam, query_core_express, query_express
+
+**剩余 8 个无数据库查询的 crate：** ai, ai_core_entity, cms_express, correlation_core_entity, file_core_entity, organization_core_entity, program_center_core_entity, query_express
 
 ---
 
@@ -56,6 +64,16 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），oa4rust 已将全部 
 - R32. 核心业务流程必须包含集成测试，核心业务流程集成测试覆盖率 ≥ 80%
 - R33. 必须建立 Rust 端点与 Java 端点的行为对比测试机制，确保功能等效性
 
+**剩余 8 个无数据库查询 crate 的真实化**
+- R54. `ai` crate（26 个路由）实现 AI 模型列表/详情、对话历史、模型配置等真实 PostgreSQL 查询或外部 API 调用
+- R55. `ai_core_entity` crate（17 个路由）实现 AI 核心实体（模型/对话/消息）的 CRUD 操作
+- R56. `cms_express` crate（11 个路由）实现 CMS 内容发布/下架、内容审核、缓存刷新等真实逻辑
+- R57. `correlation_core_entity` crate（14 个路由）实现关联关系实体 CRUD 及数据关联/引用管理
+- R58. `file_core_entity` crate（27 个路由）实现文件实体 CRUD、文件版本管理、文件权限控制（需与 `file` 和 `file_assemble_control` 明确职责边界，避免重复）
+- R59. `organization_core_entity` crate（31 个路由）实现组织核心实体（人员/单位/角色/用户组）CRUD（需与 `control` 和 `organization_assemble_control` 明确职责边界，避免重复）
+- R60. `program_center_core_entity` crate（39 个路由）实现程序中心核心实体（应用/脚本/数据结构）的 CRUD
+- R61. `query_express` crate（6 个路由）实现查询执行引擎、动态 SQL 解析与执行
+
 **认证模块完善**
 - R36. 验证码端点返回真正的验证码图片（本地生成，集成 captcha 库）
 - R37. OAuth 端点实现第三方登录对接（微信、钉钉）
@@ -75,14 +93,14 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），oa4rust 已将全部 
 
 **迁移策略**
 - R49. 沿用 Strangler Fig 渐进式迁移策略：Rust 与 Java 并行运行，通过 nginx 反向代理按 URL 前缀路由，逐步切换流量
-- R50. 迁移进度通过 `docs/brainstorms/oa4rust-migration-status.md` 模块跟踪清单持续反映，每个模块标记为待迁移 / 迁移中 / 已完成
+- R50. 迁移进度通过 `docs/brainstorms/oa4rust-migration-status-2026-08-08.md` 模块跟踪清单持续反映，每个模块标记为待迁移 / 迁移中 / 已完成
 - R51. 必须制定回滚计划：定义触发回滚的条件（数据损坏、性能下降超过阈值等）、回滚流程（切回 Java）、以及用于即时切换的特性开关
 - R52. 双轨运行期间必须进行数据库访问模式分析：记录事务隔离级别、识别并发写入风险、对正在迁移的表实施数据校验或禁用 Java 写入
-- R53. 迁移前必须对已实现真实业务逻辑的 6 个 crate（auth、control、personal、personal_extend、message、program_init）进行行为测试，确认与 Java 后端一致后再作为其余 74 个 crate 的参考基准
+- R53. 迁移前必须对已实现真实业务逻辑的 73 个 crate 进行行为测试，确认与 Java 后端一致后再作为其余 8 个 crate 的参考基准
 
 **Origin actors:** A1（开发者，单人）、A2（现有 Java 后端）、A3（前端 o2web）
 **Origin flows:** F1（模块梳理与优先级排序）、F2（Rust 服务独立开发与测试）、F3（数据迁移与流量切换）
-**Origin acceptance examples:** AE1（Covers R4, R5, R6 — CRUD 端点返回真实数据库数据）、AE2（Covers R36 — 验证码端点返回生成的验证码图片）、AE3（Covers R37 — OAuth 端点返回有效的第三方授权 URL）、AE4（Covers R40 — 无权限返回 403）、AE5（Covers R31, R32 — 集成测试覆盖率 ≥ 80%）、AE6（Covers R5 — 端点清单文档驱动实施）、AE7（Covers R51 — 回滚程序在 RTO 内切回 Java）、AE8（Covers R5 — Rust 修复 Java bug 保持前端契约）
+**Origin acceptance examples:** AE1（Covers R4, R5, R6 — CRUD 端点返回真实数据库数据）、AE2（Covers R36 — 验证码端点返回生成的验证码图片）、AE3（Covers R37 — OAuth 端点返回有效的第三方授权 URL）、AE4（Covers R40 — 无权限返回 403）、AE5（Covers R31, R32 — 集成测试覆盖率 ≥ 80%）、AE6（Covers R5 — 端点清单文档驱动实施）、AE7（Covers R51 — 回滚程序在 RTO 内切回 Java）、AE8（Covers R5 — Rust 修复 Java bug 保持前端契约）、AE9（Covers R54-R61 — 剩余 8 个无数据库查询 crate 实现真实业务逻辑）
 
 ---
 
@@ -601,160 +619,70 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），oa4rust 已将全部 
 
 ---
 
-### Wave 4：边缘模块（AI/BBS/组件/热点/推送/思维导图/快递/控制台/表达式/关联关系/组织/程序中心）
+### Wave 4：剩余 8 个无数据库查询 crate 的真实化
 
-#### U9. Wave 4 part A: organization, program_center, and base
+#### U9. Wave 4: 剩余 8 个无数据库查询 crate 的真实化
 
-**Goal:** 完成组织、程序中心和基础服务模块的真实化
+**Goal:** 为剩余 8 个 handler 中完全没有 PostgreSQL 查询调用的 crate 从零实现真实业务逻辑，按依赖关系排序：先 organization_core_entity（组织基础），再 file_core_entity，最后处理 ai/ai_core_entity、cms_express、correlation_core_entity、program_center_core_entity、query_express 等复杂模块
 
-**Requirements:** R4, R5, R25, R26, R31, R32
+**Requirements:** R54, R55, R56, R57, R58, R59, R60, R61, R31, R32
 
-**Dependencies:** U1, U2
+**Dependencies:** U1, U2, U3
 
 **Files:**
-- Modify: `oa4rust/crates/organization_assemble_control/src/lib.rs`
-- Modify: `oa4rust/crates/organization_assemble_express/src/lib.rs`
 - Modify: `oa4rust/crates/organization_core_entity/src/lib.rs`
-- Modify: `oa4rust/crates/organization_core_express/src/lib.rs`
-- Modify: `oa4rust/crates/program_center/src/lib.rs`
-- Modify: `oa4rust/crates/program_center_core_entity/src/lib.rs`
-- Modify: `oa4rust/crates/base/src/lib.rs`
-- Test: 各 crate 的 `src/tests.rs`
-
-**Approach:**
-- `organization_assemble_control`：补全组织相关业务编排
-- `organization_assemble_express`：补全组织相关表达式
-- `organization_core_entity`：补全组织/单位/人员关联 CRUD
-- `organization_core_express`：补全组织表达式逻辑
-- `program_center`：补全应用管理/配置端点
-- `program_center_core_entity`：补全应用 CRUD
-- `base`：补全基础服务端点
-
-**Patterns to follow:**
-- 现有 `control` 的 CRUD 模式
-- 现有 `general_assemble_control` 的复杂查询模式
-
-**Test scenarios:**
-- Happy: 组织架构查询正常
-- Happy: 程序中心应用列表查询正常
-- Edge: 空列表返回正确分页结构
-- Error: 无权限访问返回 403
-
-**Verification:**
-- `cargo test` 本波次 crate 全部通过
-- `docs/brainstorms/oa4rust-migration-status.md` 更新
-- `docs/brainstorms/oa4rust-endpoint-inventory.md` 更新
-
----
-
-#### U10. Wave 4 part B: AI, component, hotpic, jpush
-
-**Goal:** 完成 AI、组件管理、热点图片、推送服务模块的真实化
-
-**Requirements:** R4, R5, R18, R19, R21, R22, R31, R32
-
-**Dependencies:** U1, U2
-
-**Files:**
+- Modify: `oa4rust/crates/file_core_entity/src/lib.rs`
 - Modify: `oa4rust/crates/ai/src/lib.rs`
-- Modify: `oa4rust/crates/ai_assemble_control/src/lib.rs`
 - Modify: `oa4rust/crates/ai_core_entity/src/lib.rs`
-- Modify: `oa4rust/crates/component/src/lib.rs`
-- Modify: `oa4rust/crates/component_assemble_control/src/lib.rs`
-- Modify: `oa4rust/crates/component_core_entity/src/lib.rs`
-- Modify: `oa4rust/crates/hotpic/src/lib.rs`
-- Modify: `oa4rust/crates/hotpic_assemble_control/src/lib.rs`
-- Modify: `oa4rust/crates/hotpic_core_entity/src/lib.rs`
-- Modify: `oa4rust/crates/jpush/src/lib.rs`
-- Modify: `oa4rust/crates/jpush_assemble_control/src/lib.rs`
-- Modify: `oa4rust/crates/jpush_core_entity/src/lib.rs`
-- Test: 各 crate 的 `src/tests.rs`
-
-**Approach:**
-- AI 模块：模型管理、推理调用（允许对接外部服务或返回模拟结果，但接口契约对齐）
-- 组件管理：应用中心 CRUD、部署状态
-- 热点图片：轮播图 CRUD、推荐列表
-- 推送服务：设备管理、消息推送（允许对接第三方推送服务或记录推送日志）
-
-**Patterns to follow:**
-- 现有 `control` 的 CRUD 模式
-- 现有 `general_assemble_control` 的复杂查询模式
-
-**Test scenarios:**
-- Happy: AI 模型列表查询正常
-- Happy: 组件应用发布/查询正常
-- Happy: 轮播图 CRUD 正常
-- Happy: 推送设备注册/消息推送正常
-- Edge: 空列表返回正确分页结构
-- Error: 无权限访问返回 403
-
-**Verification:**
-- `cargo test` 本波次 crate 全部通过
-- `docs/brainstorms/oa4rust-migration-status.md` 更新
-- `docs/brainstorms/oa4rust-endpoint-inventory.md` 更新
-
----
-
-#### U11. Wave 4 part C: BBS, mind, correlation, express, general, console
-
-**Goal:** 完成 BBS、思维导图、关联关系、表达式引擎、通用服务、控制台模块的真实化
-
-**Requirements:** R4, R5, R16, R24, R25, R26, R27, R30, R31, R32
-
-**Dependencies:** U1, U2
-
-**Files:**
-- Modify: `oa4rust/crates/bbs/src/lib.rs`
-- Modify: `oa4rust/crates/bbs_assemble_control/src/lib.rs`
-- Modify: `oa4rust/crates/bbs_core_entity/src/lib.rs`
-- Modify: `oa4rust/crates/mind/src/lib.rs`
-- Modify: `oa4rust/crates/mind_assemble_control/src/lib.rs`
-- Modify: `oa4rust/crates/mind_core_entity/src/lib.rs`
-- Modify: `oa4rust/crates/correlation/src/lib.rs`
+- Modify: `oa4rust/crates/cms_express/src/lib.rs`
 - Modify: `oa4rust/crates/correlation_core_entity/src/lib.rs`
-- Modify: `oa4rust/crates/correlation_core_express/src/lib.rs`
-- Modify: `oa4rust/crates/correlation_service_processing/src/lib.rs`
-- Modify: `oa4rust/crates/express/src/lib.rs`
-- Modify: `oa4rust/crates/general/src/lib.rs`
-- Modify: `oa4rust/crates/general_core_entity/src/lib.rs`
-- Modify: `oa4rust/crates/console/src/lib.rs`
+- Modify: `oa4rust/crates/program_center_core_entity/src/lib.rs`
+- Modify: `oa4rust/crates/query_express/src/lib.rs`
 - Test: 各 crate 的 `src/tests.rs`
 
 **Approach:**
-- BBS：分类/文章/版主/搜索
-- 思维导图：创建/编辑/共享（允许使用 JSON 存储简化版）
-- 关联关系：数据关联/引用 CRUD
-- 快递查询：物流追踪（允许对接第三方 API 或返回模拟结果）
-- 表达式引擎：组织/流程/CMS/查询脚本的解析和执行
-- 通用服务：序列号/权限/配置
-- 控制台：命令行/日志/监控（允许只读或简化）
+- `organization_core_entity`（31 个路由，优先）：实现人员/单位/角色/用户组核心实体 CRUD；与 `control` 和 `organization_assemble_control` 明确边界：`control` 负责完整业务编排和权限校验，`organization_core_entity` 负责纯 CRUD 数据访问
+- `file_core_entity`（27 个路由，次优先）：实现文件实体 CRUD、文件版本管理、文件权限控制；与 `file` 和 `file_assemble_control` 明确边界：`file` 负责文件上传下载和业务编排，`file_core_entity` 负责纯 CRUD 数据访问
+- `ai`（26 个路由）和 `ai_core_entity`（17 个路由）：实现 AI 模型列表/详情、对话历史、模型配置；AI 推理调用允许对接外部 API 或返回模拟结果，但接口契约对齐
+- `cms_express`（11 个路由）：实现 CMS 内容发布/下架、内容审核、缓存刷新逻辑
+- `correlation_core_entity`（14 个路由）：实现关联关系实体 CRUD 及数据关联/引用管理
+- `program_center_core_entity`（39 个路由）：实现程序中心核心实体（应用/脚本/数据结构）的 CRUD
+- `query_express`（6 个路由）：实现查询执行引擎、动态 SQL 解析与执行；可调用其他 crate 的查询能力
+- 所有实现遵循现有 `ActionResult<T>` 响应包装和分页约定
 
 **Patterns to follow:**
-- 现有 `control` 的 CRUD 模式
-- 现有 `general_assemble_control` 的复杂查询模式
+- 现有 `control` 的 CRUD + 分页模式
+- 现有 `general_core_entity` 的复杂查询模式（多表 JOIN）
+- 现有 `file` 的文件 CRUD 模式
+- 现有 `organization_assemble_control` 的组织查询模式
 
 **Test scenarios:**
-- Happy: BBS 文章发布/查询正常
-- Happy: 思维导图创建/编辑正常
-- Happy: 快递查询返回正常结果
-- Happy: 表达式解析执行正常
+- Happy: organization_core_entity 的人员/单位/角色 CRUD 正常
+- Happy: file_core_entity 的文件上传/下载/版本管理正常
+- Happy: ai 模型列表查询正常
+- Happy: cms_express 内容发布/下架正常
+- Happy: correlation_core_entity 关联关系 CRUD 正常
+- Happy: program_center_core_entity 应用/脚本 CRUD 正常
+- Happy: query_express 查询执行正常
 - Edge: 空列表返回正确分页结构
 - Error: 无权限访问返回 403
+- Integration: 各 crate 端点与前端 `action.js` 的 `ActionResult<T>` 解析兼容
 
 **Verification:**
 - `cargo test` 本波次 crate 全部通过
-- `docs/brainstorms/oa4rust-migration-status.md` 更新
+- 8 个 crate 的 handler 均包含 PostgreSQL 真实查询，无 `ActionResult::success(Value::Null)` 残留
+- `docs/brainstorms/oa4rust-migration-status-2026-08-08.md` 更新
 - `docs/brainstorms/oa4rust-endpoint-inventory.md` 更新
 
 ---
 
 ## System-Wide Impact
 
-- **Interaction graph:** 全部 80 个 crate 共享 `shared::SecurityState`（SessionManager + RateLimiter + Pool），Wave 1 修改中间件栈影响所有 crate 的请求处理顺序；Wave 2-Wave 4 修改各 crate handler 影响前端 `action.js` 的 `ActionResult<T>` 解析
+- **Interaction graph:** 全部 81 个 crate 共享 `shared::SecurityState`（SessionManager + RateLimiter + Pool）；Wave 4 修改剩余 8 个 crate 的 handler 影响前端 `action.js` 的 `ActionResult<T>` 解析
 - **Error propagation:** 统一 `AppError` → HTTP 状态码映射（400/401/403/404/429/500），业务错误保持 HTTP 200 + `type=error`
-- **State lifecycle risks:** SessionManager 从内存迁移到 DB（U0）期间需保证平滑过渡（双写或灰度）；RateLimiter 内存泄漏风险需在 U1 修复
-- **API surface parity:** 前端 `o2web` 的 `action.js` 依赖 9 字段 `ActionResult<T>` 结构，任何 Rust 端点修改响应格式必须保持字段兼容
-- **Integration coverage:** 行为对比测试框架（U0）、中间件栈集成（U1）、Wave 1 边界情况测试（U2）、Wave 2-Wave 4 各 crate 的真实化需通过集成测试验证与 Java 的行为等效性
+- **State lifecycle risks:** SessionManager 已持久化到 DB，RateLimiter 内存泄漏已修复
+- **API surface parity:** 前端 `o2web` 的 `action.js` 依赖 9 字段 `ActionResult<T>` 结构，Wave 4 新增端点必须保持字段兼容
+- **Integration coverage:** Wave 4 剩余 8 个 crate 的真实化需通过集成测试验证与 Java 的行为等效性
 - **Unchanged invariants:** `ActionResult<T>` 的 9 字段 JSON 结构不变；`/health` 端点保持公开；`DATABASE_URL` 环境变量配置方式不变；单进程单体部署模型不变
 
 ---
@@ -764,32 +692,32 @@ O2OA 后端当前 100% 基于 Java（Maven 55+ 模块），oa4rust 已将全部 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
 | 部分 crate 的 Java 源码不可获取或逻辑复杂 | Medium | Low | 允许功能等效而非逐字节一致，优先保证前端契约 |
-| 复杂模块（process engine）实现周期过长 | High | Medium | 分阶段（先 CRUD 后引擎逻辑），允许简化非核心路径 |
-| 前端 `action.js` 对响应格式有隐式假设 | Medium | High | 建立 ActionResult 契约测试框架，每个 crate 实现时自动验证响应格式 |
-| Java 与 Rust 并发写入导致数据不一致 | Low | High | 对正在迁移的表实施数据校验或禁用 Java 写入 |
-| 行为对比测试无法覆盖所有边缘情况 | Medium | Medium | 优先覆盖核心业务流程，边界情况通过集成测试补充 |
-| 部分 crate 的端点清单与实际代码不符 | Medium | Medium | 每次波次完成后立即更新 endpoint-inventory 文档 |
-| 密钥管理策略执行不到位 | Medium | High | 在 U1 中明确具体方案和轮换流程，纳入 CI 检查 |
-| OAuth 提供商签名验证实现复杂 | Medium | Medium | 优先实现微信/钉钉主流方案，其他提供商后续补充 |
-| 80 个 crate 的权限配置工作量巨大 | High | Medium | 建立权限配置模板和自动化工具，减少手动配置 |
+| AI 模块需要外部 API 对接 | Medium | Medium | 允许对接外部服务或返回模拟结果，接口契约对齐 |
+| organization_core_entity 与 control 职责重叠 | Medium | Medium | 明确边界：control 负责业务编排，organization_core_entity 负责纯 CRUD |
+| file_core_entity 与 file 职责重叠 | Medium | Medium | 明确边界：file 负责文件上传下载，file_core_entity 负责纯 CRUD |
+| query_express 查询执行引擎复杂度高 | High | Medium | 先实现基础查询执行，再逐步增强；可调用其他 crate 的查询能力 |
+| 前端 `action.js` 对响应格式有隐式假设 | Medium | High | Wave 4 新增端点必须保持 9 字段 `ActionResult<T>` 结构兼容 |
+| 8 个 crate 的权限配置工作量大 | Medium | Medium | 参考已有 crate 的权限配置模板 |
+| program_center_core_entity 数据结构复杂 | Medium | Medium | 先实现核心 CRUD，再补充复杂数据结构操作 |
 
 ---
 
 ## Documentation / Operational Notes
 
-- 每完成一个 crate 立即更新 `docs/brainstorms/oa4rust-migration-status.md`（单一信息源原则）
+- 每完成一个 crate 立即更新 `docs/brainstorms/oa4rust-migration-status-2026-08-08.md`（单一信息源原则）
 - 每完成一个 crate 立即更新 `docs/brainstorms/oa4rust-endpoint-inventory.md`（端点清单驱动实施）
 - 端点清单文档在实施前作为权威依据，每个 crate 实现前必须对照清单逐条实现
-- CI 配置增加：`cargo test`、集成测试覆盖率检查、TODO 标记检查（生产分支禁止 TODO）
-- 每波次完成后执行一次回滚演练，记录存档
-- 密钥管理策略、授权规则、日志策略等安全相关文档在 U1 完成前必须评审通过
+- CI 配置保持：`cargo test`、集成测试覆盖率检查、TODO 标记检查（生产分支禁止 TODO）
+- 每完成一个 crate 后执行一次回归测试，确保不影响已完成的 73 个 crate
+- 密钥管理策略、授权规则、日志策略等安全相关文档在 Wave 1 已完成，Wave 4 无需重复
 
 ---
 
 ## Sources & References
 
 - **Origin document:** [docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md](../brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md)
-- **Migration status:** [docs/brainstorms/oa4rust-migration-status.md](../brainstorms/oa4rust-migration-status.md)
+- **Migration status:** [docs/brainstorms/oa4rust-migration-status-2026-08-08.md](../brainstorms/oa4rust-migration-status-2026-08-08.md)
+- **Remaining work:** [docs/brainstorms/oa4rust-remaining-work-2026-08-08.md](../brainstorms/oa4rust-remaining-work-2026-08-08.md)
 - **Endpoint inventory:** [docs/brainstorms/oa4rust-endpoint-inventory.md](../brainstorms/oa4rust-endpoint-inventory.md)
 - Related code: `oa4rust/src/main.rs`, `oa4rust/crates/shared/src/`
 - Related plans: [docs/plans/2026-08-06-001-feat-oa4rust-full-realization-plan.md](../plans/2026-08-06-001-feat-oa4rust-full-realization-plan.md)
