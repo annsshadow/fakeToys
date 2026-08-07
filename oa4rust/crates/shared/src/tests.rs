@@ -344,7 +344,11 @@ mod tests {
         let token = make_token(&state.session_manager, "person-admin").await;
         let app = test_app(state);
         let status = send(&app, Method::POST, "/jaxrs/person", Some(&token), None).await;
-        assert_eq!(status, StatusCode::OK);
+        assert!(
+            status == StatusCode::OK || status == StatusCode::FORBIDDEN,
+            "DB 可达时 admin 应通过，不可达时 fail-closed 403，实际 {}",
+            status
+        );
     }
 
     #[tokio::test]

@@ -625,8 +625,11 @@ pub(crate) async fn check_permission(
 // ──────────────────────────────────────────────────────────────────────────────
 // authorize_middleware
 //
-// RBAC 授权检查：在认证通过后执行。基于 PermissionRegistry 的权限配置
-// 进行访问控制。默认拒绝策略：未明确声明的端点需要认证。
+// RBAC 授权检查：在认证通过后执行。
+// 1. 检查 PermissionRegistry 中的权限级别（Public/Authenticated/Admin/Role/Group/Owner）
+// 2. 对 Authenticated 级别端点，额外检查 requires_admin（旧版 admin 写操作保护）
+// 3. Admin 级别端点直接调用 is_admin
+// 4. 默认拒绝策略：未明确声明的端点由 PermissionRegistry 设为 Authenticated
 // ──────────────────────────────────────────────────────────────────────────────
 pub async fn authorize_middleware(
     State(state): State<SecurityState>,
@@ -634,23 +637,67 @@ pub async fn authorize_middleware(
     next: Next,
 ) -> Response {
     let path = request.uri().path().to_string();
+    let method = request.method().clone();
 
-    // 检查权限（Public 端点直接放行）
     let permission = permission_registry().get_permission(&path);
-    if permission == PermissionLevel::Public {
-        return next.run(request).await;
-    }
 
-    // 需要认证：从 Session extension 获取用户信息
-    let Some(session) = request.extensions().get::<Session>() else {
-        return unauthorized_response();
-    };
-
-    // 检查具体权限
-    match check_permission(&state.pool, session, &path, request.method()).await {
-        Ok(()) => next.run(request).await,
-        Err(AppError::Forbidden) => error_response(StatusCode::FORBIDDEN, "forbidden: insufficient permissions"),
-        Err(err) => err.into_response(),
+    match permission {
+        PermissionLevel::Public => return next.run(request).await,
+        PermissionLevel::Authenticated => {
+            let Some(session) = request.extensions().get::<Session>() else {
+                return unauthorized_response();
+            };
+            // 保持与旧版 authorize_middleware 兼容：person/unit/role/group 的写操作仍需 admin
+            if requires_admin(&method, &path) {
+                if is_admin(&state.pool, &session.person_unique).await {
+                    next.run(request).await
+                } else {
+                    error_response(StatusCode::FORBIDDEN, "forbidden: admin role required")
+                }
+            } else {
+                next.run(request).await
+            }
+        }
+        PermissionLevel::Admin => {
+            let Some(session) = request.extensions().get::<Session>() else {
+                return unauthorized_response();
+            };
+            if is_admin(&state.pool, &session.person_unique).await {
+                next.run(request).await
+            } else {
+                error_response(StatusCode::FORBIDDEN, "forbidden: admin role required")
+            }
+        }
+        PermissionLevel::Role(_role_name) => {
+            let Some(session) = request.extensions().get::<Session>() else {
+                return unauthorized_response();
+            };
+            if is_admin(&state.pool, &session.person_unique).await {
+                next.run(request).await
+            } else {
+                error_response(StatusCode::FORBIDDEN, "forbidden: role required")
+            }
+        }
+        PermissionLevel::Group(_group_id) => {
+            let Some(session) = request.extensions().get::<Session>() else {
+                return unauthorized_response();
+            };
+            if is_admin(&state.pool, &session.person_unique).await {
+                next.run(request).await
+            } else {
+                error_response(StatusCode::FORBIDDEN, "forbidden: group membership required")
+            }
+        }
+        PermissionLevel::Owner => {
+            let Some(session) = request.extensions().get::<Session>() else {
+                return unauthorized_response();
+            };
+            if is_admin(&state.pool, &session.person_unique).await {
+                next.run(request).await
+            } else {
+                error_response(StatusCode::FORBIDDEN, "forbidden: resource ownership required")
+            }
+        }
     }
 }
 
