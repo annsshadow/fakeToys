@@ -12,3 +12,6 @@ shared = { path = "../shared" }
 tokio.workspace = true
 tracing.workspace = true
 uuid.workspace = true
+
+[dev-dependencies]
+tower.workspace = true

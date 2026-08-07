@@ -186,3 +186,6 @@ pub fn message_router() -> Router {
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     message_router().layer(axum::extract::Extension(pool))
 }
+
+#[cfg(test)]
+mod tests;

@@ -25,3 +25,4 @@ urlencoding = "2"
 cipher = "0.4"
 captcha.workspace = true
 reqwest.workspace = true
+sha2.workspace = true

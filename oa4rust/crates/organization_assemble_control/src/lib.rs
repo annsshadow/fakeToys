@@ -2791,5 +2791,8 @@ pub fn router(pool: deadpool_postgres::Pool) -> Router {
     router
 }
 
+#[cfg(test)]
+mod tests;
+
 
 

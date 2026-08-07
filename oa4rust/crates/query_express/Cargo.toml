@@ -21,3 +21,4 @@ anyhow.workspace = true
 chrono.workspace = true
 md5.workspace = true
 urlencoding.workspace = true
+tower.workspace = true

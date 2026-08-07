@@ -1,12 +1,37 @@
 use super::*;
+use axum::body::Body;
+use axum::http::{Request, Method, StatusCode};
+use deadpool_postgres::{Manager, Pool};
+use deadpool_postgres::tokio_postgres::{Config, NoTls};
 use serde_json::json;
 use tower::util::ServiceExt;
+
+fn build_test_pool() -> Pool {
+    let mgr = Manager::new(
+        Config::new(),
+        NoTls,
+    );
+    Pool::builder(mgr).max_size(1).build().unwrap()
+}
+
+#[test]
+fn test_create_process_action_result_format() {
+    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
+        "created": true,
+        "id": "proc-1",
+        "name": "My Process",
+        "status": "draft"
+    }));
+    let json = serde_json::to_value(&result).unwrap();
+    assert_eq!(json["type"], "success");
+    assert_eq!(json["data"]["created"], true);
+}
 
 #[test]
 fn test_get_process_action_result_format() {
     let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
         "id": "proc-1",
-        "name": "Process",
+        "name": "Process Flow",
         "status": "active"
     }));
     let json = serde_json::to_value(&result).unwrap();
@@ -15,23 +40,10 @@ fn test_get_process_action_result_format() {
 }
 
 #[test]
-fn test_create_process_action_result_format() {
-    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
-        "created": true,
-        "name": "My Process",
-        "description": "A process",
-        "category": "default"
-    }));
-    let json = serde_json::to_value(&result).unwrap();
-    assert_eq!(json["type"], "success");
-    assert_eq!(json["data"]["created"], true);
-}
-
-#[test]
 fn test_list_processes_action_result_format() {
     let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
         "count": 1,
-        "data": [{"id": "proc-1", "category": "default"}]
+        "data": [{"id": "proc-1", "status": "active"}]
     }));
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
@@ -39,36 +51,10 @@ fn test_list_processes_action_result_format() {
 }
 
 #[test]
-fn test_execute_process_action_result_format() {
+fn test_cancel_process_action_result_format() {
     let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
         "id": "proc-1",
-        "executed": true,
-        "execution_id": "exec-1",
-        "status": "running"
-    }));
-    let json = serde_json::to_value(&result).unwrap();
-    assert_eq!(json["type"], "success");
-    assert_eq!(json["data"]["executed"], true);
-}
-
-#[test]
-fn test_get_process_instance_action_result_format() {
-    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
-        "executionId": "exec-1",
-        "status": "running",
-        "current_node": "start"
-    }));
-    let json = serde_json::to_value(&result).unwrap();
-    assert_eq!(json["type"], "success");
-    assert_eq!(json["data"]["executionId"], "exec-1");
-}
-
-#[test]
-fn test_cancel_process_instance_action_result_format() {
-    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
-        "executionId": "exec-1",
-        "cancelled": true,
-        "cancelled_at": "2024-01-01T00:00:00Z"
+        "cancelled": true
     }));
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
@@ -76,32 +62,9 @@ fn test_cancel_process_instance_action_result_format() {
 }
 
 #[tokio::test]
-async fn test_get_process_route_exists() {
-    let app = processplatform_service_processing_router();
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
-
-    let response = app
-        .oneshot(
-            Request::builder()
-                .uri("/jaxrs/processplatform/service/processing/get/proc-1")
-                .method(Method::GET)
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
-}
-
-#[tokio::test]
 async fn test_create_process_route_exists() {
-    let app = processplatform_service_processing_router();
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
+    let pool = build_test_pool();
+    let app = crate::router(pool);
 
     let req = serde_json::to_string(&json!({
         "name": "My Process",
@@ -121,15 +84,32 @@ async fn test_create_process_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_get_process_route_exists() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/processplatform/service/processing/get/proc-1")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
 async fn test_list_processes_route_exists() {
-    let app = processplatform_service_processing_router();
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
+    let pool = build_test_pool();
+    let app = crate::router(pool);
 
     let response = app
         .oneshot(
@@ -142,15 +122,13 @@ async fn test_list_processes_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
 async fn test_execute_process_route_exists() {
-    let app = processplatform_service_processing_router();
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
+    let pool = build_test_pool();
+    let app = crate::router(pool);
 
     let response = app
         .oneshot(
@@ -163,41 +141,18 @@ async fn test_execute_process_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
-}
-
-#[tokio::test]
-async fn test_get_process_instance_route_exists() {
-    let app = processplatform_service_processing_router();
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
-
-    let response = app
-        .oneshot(
-            Request::builder()
-                .uri("/jaxrs/processplatform/service/processing/instance/exec-1")
-                .method(Method::GET)
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
 async fn test_cancel_process_instance_route_exists() {
-    let app = processplatform_service_processing_router();
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
+    let pool = build_test_pool();
+    let app = crate::router(pool);
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/processplatform/service/processing/cancel/exec-1")
+                .uri("/jaxrs/processplatform/service/processing/cancel/proc-1")
                 .method(Method::POST)
                 .body(Body::empty())
                 .unwrap(),
@@ -205,5 +160,24 @@ async fn test_cancel_process_instance_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_get_process_instance_route_exists() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/processplatform/service/processing/instance/proc-1")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }

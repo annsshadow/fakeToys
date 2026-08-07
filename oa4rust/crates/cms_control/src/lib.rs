@@ -11,3 +11,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::cms_control_router(pool)
 }
 
+#[cfg(test)]
+mod tests;
+

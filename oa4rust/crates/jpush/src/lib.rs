@@ -174,3 +174,6 @@ pub async fn template_get(
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::jpush_router(pool)
 }
+
+#[cfg(test)]
+mod tests;

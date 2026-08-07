@@ -130,3 +130,6 @@ pub fn express_router() -> Router {
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     express_router().layer(axum::extract::Extension(pool))
 }
+
+#[cfg(test)]
+mod tests;

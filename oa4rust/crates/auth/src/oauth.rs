@@ -60,7 +60,8 @@ fn validate_state(s: &str) -> bool {
 // ──────────────────────────────────────────────────────────────────────────────
 
 fn generate_code_verifier() -> String {
-    let bytes = uuid::Uuid::new_v4().as_bytes();
+    let binding = uuid::Uuid::new_v4();
+    let bytes = binding.as_bytes();
     base64::engine::general_purpose::URL_SAFE.encode(bytes)
 }
 
@@ -176,8 +177,9 @@ async fn check_dingtalk_health() -> bool {
 pub fn fallback_auth_url() -> Option<&'static str> {
     std::env::var("OAUTH_FALLBACK_URL")
         .ok()
-        .or_else(|| Some("/jaxrs/authentication").map(|s| s.to_string()))
+        .or_else(|| Some("/jaxrs/authentication".to_string()))
         .map(|s| Box::leak(s.into_boxed_str()))
+        .map(|s: &mut str| s as &str)
 }
 
 #[derive(Debug, Clone)]
