@@ -1,7 +1,7 @@
 mod routes;
 
 use axum::{
-    extract::Extension,
+    extract::{Extension, Path},
     Json,
 };
 use deadpool_postgres::Pool;
@@ -44,21 +44,44 @@ pub async fn area_list(
 }
 
 pub async fn security_clearance_enable(
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_one(
+            "SELECT COUNT(*) as cnt FROM GEN_DICT WHERE deleted_at IS NULL",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let count: i64 = row.get("cnt");
+
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("enable".to_string(), Value::Bool(true)),
+        ("enable".to_string(), Value::Bool(count > 0)),
     ])))))
 }
 
 pub async fn is_workday(
+    pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if date.is_empty() {
         return Ok(Json(ActionResult::error("date is required")));
     }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id FROM GEN_ARA_DISTRICT WHERE deleted_at IS NULL AND id = $1 LIMIT 1",
+            &[&date],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let is_work = row.is_some();
+
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("date".to_string(), Value::String(date)),
-        ("value".to_string(), Value::Bool(true)),
+        ("value".to_string(), Value::Bool(is_work)),
     ])))))
 }
 

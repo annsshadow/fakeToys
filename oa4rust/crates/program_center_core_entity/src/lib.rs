@@ -79,18 +79,29 @@ pub async fn script_list(
 pub async fn invoke_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("invoke-001".to_string())),
-            ("name".to_string(), Value::String("API调用1".to_string())),
-            ("application".to_string(), Value::String("app-001".to_string())),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("invoke-002".to_string())),
-            ("name".to_string(), Value::String("API调用2".to_string())),
-            ("application".to_string(), Value::String("app-001".to_string())),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, alias, category, validated, creator_person FROM CTE_INVOKE WHERE deleted_at IS NULL ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("application".to_string(), Value::String(row.get("id"))),
+                ("alias".to_string(), Value::String(row.get("alias"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("validated".to_string(), Value::Bool(row.get("validated"))),
+                ("creatorPerson".to_string(), Value::String(row.get("creator_person"))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -103,13 +114,30 @@ pub async fn invoke_list(
 pub async fn agent_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("agent-001".to_string())),
-            ("name".to_string(), Value::String("代理服务1".to_string())),
-            ("type".to_string(), Value::String("webhook".to_string())),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, alias, description, validated, enable, cron FROM CTE_AGENT WHERE deleted_at IS NULL ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("type".to_string(), Value::String("agent".to_string())),
+                ("alias".to_string(), Value::String(row.get("alias"))),
+                ("description".to_string(), Value::String(row.get("description"))),
+                ("validated".to_string(), Value::Bool(row.get("validated"))),
+                ("enable".to_string(), Value::Bool(row.get("enable"))),
+                ("cron".to_string(), Value::String(row.get("cron"))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -122,23 +150,28 @@ pub async fn agent_list(
 pub async fn structure_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("struct-001".to_string())),
-            ("name".to_string(), Value::String("数据结构1".to_string())),
-            ("type".to_string(), Value::String("table".to_string())),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("struct-002".to_string())),
-            ("name".to_string(), Value::String("数据结构2".to_string())),
-            ("type".to_string(), Value::String("document".to_string())),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("struct-003".to_string())),
-            ("name".to_string(), Value::String("数据结构3".to_string())),
-            ("type".to_string(), Value::String("form".to_string())),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, extension, storage, length, description FROM CTE_STRUCTURE WHERE deleted_at IS NULL ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("type".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
+                ("storage".to_string(), Value::String(row.get("storage"))),
+                ("length".to_string(), row.get::<_, Option<i64>>("length").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
+                ("description".to_string(), Value::String(row.get("description"))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

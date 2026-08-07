@@ -81,18 +81,30 @@ pub async fn task_list(
 pub async fn work_completed_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("wc-001".to_string())),
-            ("title".to_string(), Value::String("已完成工作1".to_string())),
-            ("workStatus".to_string(), Value::String("completed".to_string())),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("wc-002".to_string())),
-            ("title".to_string(), Value::String("已完成工作2".to_string())),
-            ("workStatus".to_string(), Value::String("completed".to_string())),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, title, job, application, process, work_status, start_time, creator_person FROM PP_C_WORKCOMPLETED WHERE deleted_at IS NULL ORDER BY start_time DESC LIMIT 20",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("job".to_string(), Value::String(row.get("job"))),
+                ("application".to_string(), Value::String(row.get("application"))),
+                ("process".to_string(), Value::String(row.get("process"))),
+                ("workStatus".to_string(), Value::String(row.get("work_status"))),
+                ("startTime".to_string(), Value::String(row.get("start_time"))),
+                ("creatorPerson".to_string(), Value::String(row.get("creator_person"))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

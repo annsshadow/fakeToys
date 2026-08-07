@@ -79,20 +79,29 @@ pub async fn widget_list(
 }
 
 pub async fn page_list(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("page-001".to_string())),
-            ("name".to_string(), Value::String("首页".to_string())),
-            ("portal".to_string(), Value::String("portal-001".to_string())),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("page-002".to_string())),
-            ("name".to_string(), Value::String("工作台".to_string())),
-            ("portal".to_string(), Value::String("portal-001".to_string())),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, alias, category, portal FROM PTL_PAGE WHERE deleted_at IS NULL ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("portal".to_string(), Value::String(row.get("portal"))),
+                ("alias".to_string(), Value::String(row.get("alias"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

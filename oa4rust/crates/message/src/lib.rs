@@ -1,6 +1,11 @@
-use axum::{Json, Router, routing::get, routing::post};
+use axum::{
+    extract::Extension,
+    Json, Router, routing::get, routing::post,
+};
+use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
+use uuid::Uuid;
 
 use shared::{error::AppError, response::ActionResult};
 
@@ -19,44 +24,125 @@ pub struct CreateMessageRequest {
 }
 
 pub async fn consume_list(
+    pool: Extension<Pool>,
     axum::extract::Path((consume, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("msg-1".to_string())),
-            ("title".to_string(), Value::String("Test message".to_string())),
-            ("consumed".to_string(), Value::Bool(false)),
-        ]))
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT xid, xtitle, xbody, xtype, xconsumer, xperson, xcreateTime FROM X.MSG_MESSAGE WHERE xconsumer = $1 AND xconsumed = false ORDER BY xcreateTime ASC LIMIT $2",
+            &[&consume, &(count.min(200).max(1) as i64)],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("title".to_string(), Value::String(row.get("xtitle"))),
+                ("body".to_string(), Value::String(row.get("xbody"))),
+                ("type".to_string(), Value::String(row.get("xtype"))),
+                ("consumer".to_string(), Value::String(row.get("xconsumer"))),
+                ("person".to_string(), Value::String(row.get("xperson"))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 pub async fn update_single(
+    pool: Extension<Pool>,
     axum::extract::Path((id, r#type)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("type".to_string(), Value::String(r#type)),
-        ("updated".to_string(), Value::Bool(true)),
-    ])))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT xid FROM X.MSG_MESSAGE WHERE xid = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if rows.is_empty() {
+        return Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(id)),
+                ("type".to_string(), Value::String(r#type)),
+                ("updated".to_string(), Value::Bool(false)),
+            ]),
+        ))));
+    }
+
+    client
+        .execute(
+            "UPDATE X.MSG_MESSAGE SET xconsumed = true WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("type".to_string(), Value::String(r#type)),
+            ("updated".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 pub async fn custom_create(
+    pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreateMessageRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("created".to_string(), Value::Bool(true)),
-        ("title".to_string(), Value::String(req.title.unwrap_or_default())),
-    ])))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = Uuid::new_v4().to_string();
+    let title = req.title.unwrap_or_default();
+    let body = req.body.unwrap_or_default();
+    let msg_type = req.r#type.unwrap_or_default();
+
+    client
+        .execute(
+            "INSERT INTO X.MSG_MESSAGE (xid, xtitle, xbody, xtype, xconsumed) VALUES ($1, $2, $3, $4, false)",
+            &[&id, &title, &body, &msg_type],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("created".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("title".to_string(), Value::String(title)),
+        ]),
+    ))))
 }
 
 pub async fn mark_read(
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT xid FROM X.MSG_MESSAGE WHERE xid = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if !rows.is_empty() {
+        client
+            .execute(
+                "UPDATE X.MSG_MESSAGE SET xconsumed = true WHERE xid = $1",
+                &[&id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -66,11 +152,23 @@ pub async fn mark_read(
 }
 
 pub async fn unread_count(
+    pool: Extension<Pool>,
     axum::extract::Path(consume): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT COUNT(*) as cnt FROM X.MSG_MESSAGE WHERE xconsumer = $1 AND xconsumed = false",
+            &[&consume],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let count: i64 = rows[0].get("cnt");
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0))),
+            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
             ("consumer".to_string(), Value::String(consume)),
         ]),
     ))))

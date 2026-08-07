@@ -218,8 +218,6 @@ pub async fn update_folder(
     ])))))
 }
 
-/// Stub handler for /jaxrs/mind/assemble/control/folder/move/{folderId}
-/// TODO: Implement real business logic
 pub async fn folder_move_folderId(
     pool: Extension<Pool>,
     Path(folder_id): Path<String>,
@@ -269,8 +267,6 @@ pub async fn folder_move_folderId(
     ))))
 }
 
-/// Stub handler for /jaxrs/mind/assemble/control/folder/{id}
-/// TODO: Implement real business logic
 pub async fn folder_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -300,8 +296,6 @@ pub async fn folder_id(
     }
 }
 
-/// Stub handler for /jaxrs/mind/assemble/control/folder/{id}/force
-/// TODO: Implement real business logic
 pub async fn folder_id_force(
     pool: Extension<Pool>,
     Path(id): Path<String>,

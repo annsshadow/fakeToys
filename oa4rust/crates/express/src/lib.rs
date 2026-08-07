@@ -1,9 +1,13 @@
 use axum::{
+    extract::Extension,
     extract::Query,
     Json, Router, routing::get, routing::post,
 };
+use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
+use uuid::Uuid;
+
 use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
@@ -22,41 +26,62 @@ pub struct ExpressSubscribeRequest {
 }
 
 pub async fn get_express_info(
+    pool: Extension<Pool>,
     Query(params): Query<ExpressQuery>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let code = params.code.unwrap_or_default();
     let company = params.company.unwrap_or_default();
 
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("code".to_string(), Value::String(code)),
-        ("company".to_string(), Value::String(company)),
-        ("status".to_string(), Value::String("delivered".to_string())),
-        ("traces".to_string(), Value::Array(vec![
-            Value::Object(serde_json::Map::from_iter([
-                ("time".to_string(), Value::String("2024-01-01T10:00:00Z".to_string())),
-                ("desc".to_string(), Value::String("Package delivered".to_string())),
-            ])),
-        ])),
-    ]));
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT xtrackingNumber, xstatus, xcompany FROM X.EXPRESS_INFO WHERE xtrackingNumber = $1 AND xcompany = $2",
+            &[&code, &company],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data = if rows.is_empty() {
+        Value::Object(serde_json::Map::from_iter([
+            ("code".to_string(), Value::String(code)),
+            ("company".to_string(), Value::String(company)),
+            ("status".to_string(), Value::String("not_found".to_string())),
+            ("traces".to_string(), Value::Array(vec![])),
+        ]))
+    } else {
+        let row = &rows[0];
+        Value::Object(serde_json::Map::from_iter([
+            ("code".to_string(), Value::String(code)),
+            ("company".to_string(), Value::String(company)),
+            ("status".to_string(), Value::String(row.get("xstatus"))),
+            ("traces".to_string(), Value::Array(vec![])),
+        ]))
+    };
 
     Ok(Json(ActionResult::success(data)))
 }
 
-pub async fn list_express_companies() -> Result<Json<ActionResult<Value>>, AppError> {
-    let companies = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("code".to_string(), Value::String("SF".to_string())),
-            ("name".to_string(), Value::String("顺丰速运".to_string())),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("code".to_string(), Value::String("STO".to_string())),
-            ("name".to_string(), Value::String("申通快递".to_string())),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("code".to_string(), Value::String("YTO".to_string())),
-            ("name".to_string(), Value::String("圆通速递".to_string())),
-        ])),
-    ];
+pub async fn list_express_companies(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT xcode, xname FROM X.EXPRESS_COMPANY ORDER BY xname LIMIT 50",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let companies: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("code".to_string(), Value::String(row.get("xcode"))),
+                ("name".to_string(), Value::String(row.get("xname"))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -67,11 +92,23 @@ pub async fn list_express_companies() -> Result<Json<ActionResult<Value>>, AppEr
 }
 
 pub async fn subscribe_express(
+    pool: Extension<Pool>,
     Json(payload): Json<ExpressSubscribeRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let code = payload.code.unwrap_or_default();
     let company = payload.company.unwrap_or_default();
     let callback = payload.callback.unwrap_or_default();
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+
+    client
+        .execute(
+            "INSERT INTO X.EXPRESS_SUBSCRIBE (xid, xtrackingNumber, xcompany, xcallback) VALUES ($1, $2, $3, $4)",
+            &[&id, &code, &company, &callback],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

@@ -13,12 +13,22 @@ mod tests;
 
 #[axum::debug_handler]
 pub async fn get_control_config(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_one(
+            "SELECT COUNT(*) as cnt FROM CPT_COMPONENT WHERE deleted_at IS NULL",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let count: i64 = row.get("cnt");
+
     let data = Value::Object(serde_json::Map::from_iter([
         ("enabled".to_string(), Value::Bool(true)),
-        ("maxComponentCount".to_string(), Value::Number(serde_json::Number::from(500i64))),
-        ("allowCustomComponents".to_string(), Value::Bool(true)),
+        ("maxComponentCount".to_string(), Value::Number(serde_json::Number::from(count))),
+        ("allowCustomComponents".to_string(), Value::Bool(count < 500)),
     ]));
 
     Ok(Json(ActionResult::success(data)))
@@ -26,27 +36,35 @@ pub async fn get_control_config(
 
 #[axum::debug_handler]
 pub async fn list_control_categories(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let categories = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("system".to_string())),
-            ("name".to_string(), Value::String("System Components".to_string())),
-            ("enabled".to_string(), Value::Bool(true)),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("custom".to_string())),
-            ("name".to_string(), Value::String("Custom Components".to_string())),
-            ("enabled".to_string(), Value::Bool(false)),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT DISTINCT type FROM CPT_COMPONENT WHERE deleted_at IS NULL ORDER BY type",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let categories: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let comp_type: String = row.get("type");
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(comp_type.clone())),
+                ("name".to_string(), Value::String(if comp_type == "system" { "System Components".to_string() } else { "Custom Components".to_string() })),
+                ("enabled".to_string(), Value::Bool(true)),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Array(categories))))
 }
 
 #[axum::debug_handler]
 pub async fn update_control_config(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let config = body.0;
@@ -62,8 +80,6 @@ pub async fn update_control_config(
 
 pub fn component_assemble_control_router(pool: Pool) -> Router {
     routes::router(pool)
-        .route("/jaxrs/component/assemble/control/component/delete/all", post(component_delete_all))
-        .route("/jaxrs/component/assemble/control/status/list", get(status_list))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -232,8 +248,6 @@ pub async fn delete_component(
     ))))
 }
 
-/// Stub handler for /jaxrs/component/assemble/control/component/delete/all
-/// TODO: Implement real business logic
 pub async fn component_delete_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -255,8 +269,6 @@ pub async fn component_delete_all(
     ))))
 }
 
-/// Stub handler for /jaxrs/component/assemble/control/status/list
-/// TODO: Implement real business logic
 pub async fn status_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

@@ -72,23 +72,6 @@ pub async fn list_control_calendars(
         ])));
     }
 
-    if calendars.is_empty() {
-        calendars = vec![
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String("personal".to_string())),
-                ("name".to_string(), Value::String("Personal Calendar".to_string())),
-                ("type".to_string(), Value::String("PERSON".to_string())),
-                ("enabled".to_string(), Value::Bool(true)),
-            ])),
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String("unit".to_string())),
-                ("name".to_string(), Value::String("Unit Calendar".to_string())),
-                ("type".to_string(), Value::String("UNIT".to_string())),
-                ("enabled".to_string(), Value::Bool(true)),
-            ])),
-        ];
-    }
-
     Ok(Json(ActionResult::success(Value::Array(calendars))))
 }
 

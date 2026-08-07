@@ -17,48 +17,81 @@ pub fn ai_router(pool: Pool) -> axum::Router {
 
 #[axum::debug_handler]
 pub async fn config_get(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("config".to_string(), Value::String("base".to_string())),
-        ("version".to_string(), Value::String("1.0.0".to_string())),
-        ("enabled".to_string(), Value::Bool(true)),
-    ]));
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT xname, xtype, xmodel, xenable FROM X.AI_MODEL WHERE xenable = true ORDER BY xname LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data = if rows.is_empty() {
+        Value::Object(serde_json::Map::from_iter([
+            ("config".to_string(), Value::String("base".to_string())),
+            ("version".to_string(), Value::String("1.0.0".to_string())),
+            ("enabled".to_string(), Value::Bool(true)),
+        ]))
+    } else {
+        let row = &rows[0];
+        Value::Object(serde_json::Map::from_iter([
+            ("config".to_string(), Value::String(row.get("xname"))),
+            ("version".to_string(), Value::String("1.0.0".to_string())),
+            ("enabled".to_string(), Value::Bool(row.get("xenable"))),
+        ]))
+    };
 
     Ok(Json(ActionResult::success(data)))
 }
 
 #[axum::debug_handler]
 pub async fn list_enable_model(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("flag".to_string(), Value::String("gpt-4".to_string())),
-            ("name".to_string(), Value::String("GPT-4".to_string())),
-            ("enable".to_string(), Value::Bool(true)),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("flag".to_string(), Value::String("claude-3".to_string())),
-            ("name".to_string(), Value::String("Claude 3".to_string())),
-            ("enable".to_string(), Value::Bool(true)),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT xname, xtype, xmodel, xenable FROM X.AI_MODEL WHERE xenable = true ORDER BY xname LIMIT 20",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("flag".to_string(), Value::String(row.get("xname"))),
+                ("name".to_string(), Value::String(row.get("xname"))),
+                ("enable".to_string(), Value::Bool(row.get("xenable"))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Array(data))))
 }
 
 #[axum::debug_handler]
 pub async fn sync_to_knowledge(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("synced".to_string(), Value::Bool(true)),
-        ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-        ("message".to_string(), Value::String("sync completed".to_string())),
-    ]));
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT COUNT(*) as cnt FROM X.AI_COMPLETION", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(data)))
+    let count: i64 = rows[0].get("cnt");
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("synced".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            ("message".to_string(), Value::String("sync completed".to_string())),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]

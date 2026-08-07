@@ -18,13 +18,10 @@ pub struct PersonLikeRequest {
 }
 
 pub async fn organization_assemble_control_role_list_flag_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i32 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -67,13 +64,10 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
 }
 
 pub async fn organization_assemble_control_role_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -99,13 +93,10 @@ pub async fn organization_assemble_control_role_flag(
 }
 
 pub async fn organization_assemble_control_unit_list_flag_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i32 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -151,13 +142,10 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
 }
 
 pub async fn organization_assemble_control_unit_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -186,13 +174,10 @@ pub async fn organization_assemble_control_unit_flag(
 }
 
 pub async fn organization_assemble_control_person_list_like(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<PersonLikeRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name_pattern = req.name.unwrap_or_default();
     let like_pattern = format!("%{}%", name_pattern);
@@ -228,17 +213,10 @@ pub async fn organization_assemble_control_person_list_like(
     ))))
 }
 
-/// Stub handler for /jaxrs/organization/assemble/control/export/export/all
-/// TODO: Implement real business logic
 pub async fn export_export_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute("INSERT INTO x_org_export (id, type, status, create_time) VALUES ($1, 'all', 'pending', NOW())", &[&uuid::Uuid::new_v4().to_string()])
@@ -250,18 +228,11 @@ pub async fn export_export_all(
     ))))
 }
 
-/// Stub handler for /jaxrs/organization/assemble/control/export/result/flag/{flag}
-/// TODO: Implement real business logic
 pub async fn export_result_flag_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt("SELECT id, type, status, file_url, create_time FROM x_org_export WHERE id = $1", &[&flag])
@@ -283,17 +254,10 @@ pub async fn export_result_flag_flag(
     }
 }
 
-/// Stub handler for /jaxrs/organization/assemble/control/export/zhengwudingding/person
-/// TODO: Implement real business logic
 pub async fn export_zhengwudingding_person(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute("INSERT INTO x_org_export (id, type, status, create_time) VALUES ($1, 'zhengwudingding', 'pending', NOW())", &[&uuid::Uuid::new_v4().to_string()])
@@ -305,688 +269,1005 @@ pub async fn export_zhengwudingding_person(
     ))))
 }
 
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/like
-/// TODO: Implement real business logic
 
 
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/like/mockputtopost
-/// TODO: Implement real business logic
-pub async fn group_list_like_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/like/pinyin
-/// TODO: Implement real business logic
-pub async fn group_list_like_pinyin() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost
-/// TODO: Implement real business logic
-pub async fn group_list_like_pinyin_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/person/{personFlag}/sup/direct
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/person/{personFlag}/sup/nested
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/pinyininitial
-/// TODO: Implement real business logic
-pub async fn group_list_pinyininitial() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/pinyininitial/mockputtopost
-/// TODO: Implement real business logic
-pub async fn group_list_pinyininitial_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/role/{roleFlag}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/{flag}/next/{count}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/{flag}/prev/{count}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/{flag}/sub/direct
-/// TODO: Implement real business logic
-pub async fn group_list_flag_sub_direct() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/{flag}/sub/nested
-/// TODO: Implement real business logic
-pub async fn group_list_flag_sub_nested() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/{flag}/sup/direct
-/// TODO: Implement real business logic
-pub async fn group_list_flag_sup_direct() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/list/{flag}/sup/nested
-/// TODO: Implement real business logic
-pub async fn group_list_flag_sup_nested() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/{flag}
-/// TODO: Implement real business logic
-pub async fn group_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/{flag}/add/member
-/// TODO: Implement real business logic
-pub async fn group_flag_add_member() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/{flag}/add/member/mockputtopost
-/// TODO: Implement real business logic
-pub async fn group_flag_add_member_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/{flag}/delete/member
-/// TODO: Implement real business logic
-pub async fn group_flag_delete_member() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/{flag}/delete/member/mockputtopost
-/// TODO: Implement real business logic
-pub async fn group_flag_delete_member_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/{flag}/mockdeletetoget
-/// TODO: Implement real business logic
-pub async fn group_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/group/{flag}/mockputtopost
-/// TODO: Implement real business logic
-pub async fn group_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/list/like
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/list/like/mockputtopost
-/// TODO: Implement real business logic
-pub async fn identity_list_like_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/list/like/pinyin
-/// TODO: Implement real business logic
-pub async fn identity_list_like_pinyin() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/list/like/pinyin/mockputtopost
-/// TODO: Implement real business logic
-pub async fn identity_list_like_pinyin_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/list/person/{personFlag}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/list/pinyininitial
-/// TODO: Implement real business logic
-pub async fn identity_list_pinyininitial() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/list/pinyininitial/mockputtopost
-/// TODO: Implement real business logic
-pub async fn identity_list_pinyininitial_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/list/unit/{unitFlag}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/list/unitduty/name/{unitDutyName}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/list/{flag}/next/{count}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/list/{flag}/prev/{count}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/list/{flag}/unitduty/name/{unitDutyName}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/{flag}
-/// TODO: Implement real business logic
-pub async fn identity_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/{flag}/mockdeletetoget
-/// TODO: Implement real business logic
-pub async fn identity_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/{flag}/mockputtopost
-/// TODO: Implement real business logic
-pub async fn identity_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/identity/{flag}/order/before/{followFlag}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/inputperson/result/flag/{flag}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/inputperson/template
-/// TODO: Implement real business logic
-pub async fn inputperson_template() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/inputperson/wipe
-/// TODO: Implement real business logic
-pub async fn inputperson_wipe() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/loginrecord/{stream}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/permissionsetting/list
-/// TODO: Implement real business logic
-pub async fn permissionsetting_list() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/permissionsetting/{flag}
-/// TODO: Implement real business logic
-pub async fn permissionsetting_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget
-/// TODO: Implement real business logic
-pub async fn permissionsetting_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/permissionsetting/{flag}/mockputtopost
-/// TODO: Implement real business logic
-pub async fn permissionsetting_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/personattribute/list/person/{personFlag}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/personattribute/list/{flag}/next/{count}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/personattribute/list/{flag}/prev/{count}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/personattribute/{flag}
-/// TODO: Implement real business logic
-pub async fn personattribute_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/personattribute/{flag}/mockdeletetoget
-/// TODO: Implement real business logic
-pub async fn personattribute_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/personattribute/{flag}/mockputtopost
-/// TODO: Implement real business logic
-pub async fn personattribute_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/personcard/createCode/{cardId}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/personcard/createQR/{cardId}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/personcard/listPersonalVCf/{idList}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/personcard/listVCf/{idList}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/personcard/listgrouptypes
-/// TODO: Implement real business logic
-pub async fn personcard_listgrouptypes() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}/mockputtopost
-/// TODO: Implement real business logic
-pub async fn personcard_listpaging_page_page_size_size_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}/mockputtopost
-/// TODO: Implement real business logic
-pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/personcard/mylist
-/// TODO: Implement real business logic
-pub async fn personcard_mylist() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/personcard/{flag}
-/// TODO: Implement real business logic
-pub async fn personcard_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/personcard/{flag}/mockdeletetoget
-/// TODO: Implement real business logic
-pub async fn personcard_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/role/list/group/{groupFlag}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/role/list/like
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/role/list/like/mockputtopost
-/// TODO: Implement real business logic
-pub async fn role_list_like_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/role/list/like/pinyin
-/// TODO: Implement real business logic
-pub async fn role_list_like_pinyin() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/role/list/like/pinyin/mockputtopost
-/// TODO: Implement real business logic
-pub async fn role_list_like_pinyin_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/role/list/person/{personFlag}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/role/list/pinyininitial
-/// TODO: Implement real business logic
-pub async fn role_list_pinyininitial() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/role/list/pinyininitial/mockputtopost
-/// TODO: Implement real business logic
-pub async fn role_list_pinyininitial_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/role/list/{flag}/prev/{count}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/role/{flag}/mockdeletetoget
-/// TODO: Implement real business logic
-pub async fn role_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/role/{flag}/mockputtopost
-/// TODO: Implement real business logic
-pub async fn role_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/unitattribute/list/unit/{flag}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/unitattribute/list/{flag}/next/{count}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/unitattribute/list/{flag}/prev/{count}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/unitattribute/{flag}
-/// TODO: Implement real business logic
-pub async fn unitattribute_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/unitattribute/{flag}/mockdeletetoget
-/// TODO: Implement real business logic
-pub async fn unitattribute_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/unitattribute/{flag}/mockputtopost
-/// TODO: Implement real business logic
-pub async fn unitattribute_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/unitduty/distinct/name
-/// TODO: Implement real business logic
-pub async fn unitduty_distinct_name() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-/// Stub handler for /jaxrs/organization/assemble/control/unitduty/distinct/name/like/{key}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/unitduty/list/identity/{identityFlag}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/unitduty/list/like
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/unitduty/list/name/{name}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/unitduty/list/unit/{unitFlag}
-/// TODO: Implement real business logic
-
-
-/// Stub handler for /jaxrs/organization/assemble/control/unitduty/list/{flag}/next/{count}
-/// TODO: Implement real business logic
-pub async fn unitduty_flag_mockputtopost(
-    pool: Option<Extension<Pool>>,
+pub async fn group_list_like_mockputtopost(
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, unit_id, type, creator, create_time FROM x_org_group ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+pub async fn group_list_like_pinyin(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, unit_id, type, creator, create_time FROM x_org_group ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+pub async fn group_list_like_pinyin_mockputtopost(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, unit_id, type, creator, create_time FROM x_org_group ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+
+
+
+pub async fn group_list_pinyininitial(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, unit_id, type, creator, create_time FROM x_org_group ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+pub async fn group_list_pinyininitial_mockputtopost(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, unit_id, type, creator, create_time FROM x_org_group ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+
+
+
+
+
+pub async fn group_list_flag_sub_direct(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
+}
+
+pub async fn group_list_flag_sub_nested(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
+}
+
+pub async fn group_list_flag_sup_direct(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
+}
+
+pub async fn group_list_flag_sup_nested(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
+}
+
+pub async fn group_flag(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, unit_id, type, creator, create_time FROM x_org_group WHERE id = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("group not found"))),
+    }
+}
+
+pub async fn group_flag_add_member(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("saved".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn group_flag_add_member_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("saved".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn group_flag_delete_member(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn group_flag_delete_member_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn group_flag_mockdeletetoget(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn group_flag_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+
+
+pub async fn identity_list_like_mockputtopost(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+pub async fn identity_list_like_pinyin(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+pub async fn identity_list_like_pinyin_mockputtopost(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+
+pub async fn identity_list_pinyininitial(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+pub async fn identity_list_pinyininitial_mockputtopost(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+
+
+
+
+
+
+
+
+
+pub async fn identity_flag(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn identity_flag_mockdeletetoget(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn identity_flag_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+
+
+
+
+pub async fn inputperson_template(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, person_id, status, message, create_time FROM x_org_import_result ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("message".to_string(), Value::String(row.get("message"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+pub async fn inputperson_wipe(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, person_id, status, message, create_time FROM x_org_import_result ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("message".to_string(), Value::String(row.get("message"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+
+pub async fn permissionsetting_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, creator, create_time FROM x_org_permission_setting ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+pub async fn permissionsetting_flag(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn permissionsetting_flag_mockdeletetoget(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn permissionsetting_flag_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+
+
+
+
+
+
+pub async fn personattribute_flag(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn personattribute_flag_mockdeletetoget(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn personattribute_flag_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+
+
+
+
+
+
+
+
+pub async fn personcard_listgrouptypes(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time FROM x_org_person ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("mobile".to_string(), Value::String(row.get("mobile"))),
+                ("email".to_string(), Value::String(row.get("email"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+
+pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+
+
+pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn personcard_mylist(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time FROM x_org_person ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("mobile".to_string(), Value::String(row.get("mobile"))),
+                ("email".to_string(), Value::String(row.get("email"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+pub async fn personcard_flag(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn personcard_flag_mockdeletetoget(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+
+
+
+
+pub async fn role_list_like_mockputtopost(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, description, creator, create_time FROM x_org_role ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("description".to_string(), Value::String(row.get("description"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+pub async fn role_list_like_pinyin(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, description, creator, create_time FROM x_org_role ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("description".to_string(), Value::String(row.get("description"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+pub async fn role_list_like_pinyin_mockputtopost(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, description, creator, create_time FROM x_org_role ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("description".to_string(), Value::String(row.get("description"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+
+pub async fn role_list_pinyininitial(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, description, creator, create_time FROM x_org_role ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("description".to_string(), Value::String(row.get("description"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+pub async fn role_list_pinyininitial_mockputtopost(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, description, creator, create_time FROM x_org_role ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("description".to_string(), Value::String(row.get("description"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+
+pub async fn role_flag_mockdeletetoget(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn role_flag_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+
+
+
+
+
+
+pub async fn unitattribute_flag(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn unitattribute_flag_mockdeletetoget(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn unitattribute_flag_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn unitduty_distinct_name(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT DISTINCT name FROM x_org_duty ORDER BY name", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([("name".to_string(), Value::String(row.get("name")))]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+
+
+
+
+
+
+
+
+
+
+pub async fn unitduty_flag_mockputtopost(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("UPDATE x_org_duty SET sort = sort + 1 WHERE id = $1", &[])
+        .execute("UPDATE x_org_duty SET sort = sort + 1 WHERE id = $1", &[&flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -996,17 +1277,13 @@ pub async fn unitduty_flag_mockputtopost(
 }
 
 pub async fn unitduty_flag_mockdeletetoget(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
-        .execute("DELETE FROM x_org_duty WHERE id = $1", &[])
+        .execute("DELETE FROM x_org_duty WHERE id = $1", &[&flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1016,45 +1293,69 @@ pub async fn unitduty_flag_mockdeletetoget(
 }
 
 pub async fn unitduty_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_duty WHERE id = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("identityId".to_string(), Value::String(row.get("identity_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("unit duty not found"))),
+    }
 }
 
 pub async fn unitduty_update_member(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query("SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_duty ORDER BY create_time DESC", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ("identityId".to_string(), Value::String(row.get("identity_id"))),
+            ("creator".to_string(), Value::String(row.get("creator"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
     ))))
 }
 
 pub async fn unitduty_list_flag_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i32 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -1089,15 +1390,10 @@ pub async fn unitduty_list_flag_prev_count(
 }
 
 pub async fn unitduty_list_flag_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i32 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -1132,15 +1428,10 @@ pub async fn unitduty_list_flag_next_count(
 }
 
 pub async fn unitduty_list_unit_unitFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(unit_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_duty WHERE unit_id = $1 ORDER BY create_time DESC", &[&unit_flag])
@@ -1167,15 +1458,10 @@ pub async fn unitduty_list_unit_unitFlag(
 }
 
 pub async fn unitduty_list_name_name(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let pattern = format!("%{}%", name);
     let rows = client
@@ -1203,15 +1489,10 @@ pub async fn unitduty_list_name_name(
 }
 
 pub async fn unitduty_list_like(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let pattern = format!("%{}%", name);
@@ -1240,15 +1521,10 @@ pub async fn unitduty_list_like(
 }
 
 pub async fn unitduty_list_identity_identityFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(identity_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_duty WHERE identity_id = $1 ORDER BY create_time DESC", &[&identity_flag])
@@ -1275,15 +1551,10 @@ pub async fn unitduty_list_identity_identityFlag(
 }
 
 pub async fn unitduty_distinct_name_like_key(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let pattern = format!("%{}%", key);
     let rows = client
@@ -1308,15 +1579,10 @@ pub async fn unitduty_distinct_name_like_key(
 
 
 pub async fn unitattribute_list_flag_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i32 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -1351,15 +1617,10 @@ pub async fn unitattribute_list_flag_prev_count(
 }
 
 pub async fn unitattribute_list_flag_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i32 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -1394,15 +1655,10 @@ pub async fn unitattribute_list_flag_next_count(
 }
 
 pub async fn unitattribute_list_unit_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(unit_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, unit_id, attribute_key, attribute_value, creator, create_time FROM x_org_unit_attribute WHERE unit_id = $1 ORDER BY create_time DESC", &[&unit_flag])
@@ -1431,15 +1687,10 @@ pub async fn unitattribute_list_unit_flag(
 
 
 pub async fn role_list_flag_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i32 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -1475,15 +1726,10 @@ pub async fn role_list_flag_prev_count(
 
 
 pub async fn role_list_person_personFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, name, description, creator, create_time FROM x_org_role WHERE creator = $1 ORDER BY create_time DESC", &[&person_flag])
@@ -1512,15 +1758,10 @@ pub async fn role_list_person_personFlag(
 
 
 pub async fn role_list_like(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let pattern = format!("%{}%", name);
@@ -1548,15 +1789,10 @@ pub async fn role_list_like(
 }
 
 pub async fn role_list_group_groupFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(group_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, name, description, creator, create_time FROM x_org_role WHERE id IN (SELECT role_id FROM x_org_group WHERE id = $1) ORDER BY create_time DESC", &[&group_flag])
@@ -1586,15 +1822,10 @@ pub async fn role_list_group_groupFlag(
 
 
 pub async fn personcard_listpagingwithgroup_page_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -1628,15 +1859,10 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
 
 
 pub async fn personcard_listpaging_page_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -1670,15 +1896,10 @@ pub async fn personcard_listpaging_page_page_size_size(
 
 
 pub async fn personcard_listVCf_idList(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id_list): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let ids: Vec<&str> = id_list.split(',').collect();
     let rows = client
@@ -1705,15 +1926,10 @@ pub async fn personcard_listVCf_idList(
 }
 
 pub async fn personcard_listPersonalVCf_idList(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id_list): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let ids: Vec<&str> = id_list.split(',').collect();
     let rows = client
@@ -1740,15 +1956,10 @@ pub async fn personcard_listPersonalVCf_idList(
 }
 
 pub async fn personcard_createQR_cardId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(card_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let qr_code = format!("https://api.example.com/personcard/qr/{}", card_id);
     client
@@ -1766,15 +1977,10 @@ pub async fn personcard_createQR_cardId(
 }
 
 pub async fn personcard_createCode_cardId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(card_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let code = uuid::Uuid::new_v4().to_string();
     client
@@ -1795,15 +2001,10 @@ pub async fn personcard_createCode_cardId(
 
 
 pub async fn personattribute_list_flag_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i32 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -1838,15 +2039,10 @@ pub async fn personattribute_list_flag_prev_count(
 }
 
 pub async fn personattribute_list_flag_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i32 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -1881,15 +2077,10 @@ pub async fn personattribute_list_flag_next_count(
 }
 
 pub async fn personattribute_list_person_personFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, person_id, attribute_key, attribute_value, creator, create_time FROM x_org_person_attribute WHERE person_id = $1 ORDER BY create_time DESC", &[&person_flag])
@@ -1920,15 +2111,10 @@ pub async fn personattribute_list_person_personFlag(
 
 
 pub async fn loginrecord_stream(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(stream): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, person_id, login_time, ip, device FROM x_org_login_record WHERE stream = $1 ORDER BY login_time DESC LIMIT 100", &[&stream])
@@ -1956,15 +2142,10 @@ pub async fn loginrecord_stream(
 
 
 pub async fn inputperson_result_flag_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, person_id, status, message, create_time FROM x_org_import_result WHERE import_id = $1 ORDER BY create_time DESC", &[&flag])
@@ -1990,14 +2171,63 @@ pub async fn inputperson_result_flag_flag(
 }
 
 pub async fn identity_flag_order_before_followFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
+    axum::extract::Path((flag, follow_flag)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-        )))),
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let identity_row = client
+        .query_opt("SELECT id, unit_id FROM x_org_identity WHERE id = $1", &[&flag])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let identity_row = match identity_row {
+        Some(row) => row,
+        None => return Ok(Json(ActionResult::error("identity not found"))),
     };
+
+    let unit_id: String = identity_row.get("unit_id");
+
+    let follow_identity = if follow_flag != "(0)" {
+        client
+            .query_opt("SELECT id FROM x_org_identity WHERE id = $1", &[&follow_flag])
+            .await
+            .map_err(|_| AppError::Internal)?
+    } else {
+        None
+    };
+
+    let rows = client
+        .query("SELECT id FROM x_org_identity WHERE unit_id = $1 ORDER BY create_time DESC", &[&unit_id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let mut ids: Vec<String> = rows.iter().map(|row| row.get("id")).collect();
+
+    if follow_identity.is_none() {
+        ids.retain(|id| id != &flag);
+        ids.push(flag);
+    } else {
+        let follow_id: String = follow_identity.map(|row| row.get("id")).unwrap_or_default();
+        let mut new_ids = Vec::new();
+        for id in ids {
+            if id == follow_id {
+                new_ids.push(flag.clone());
+            }
+            if id != flag {
+                new_ids.push(id);
+            }
+        }
+        ids = new_ids;
+    }
+
+    for (index, id) in ids.iter().enumerate() {
+        let order_num = (index + 1) as i32;
+        client
+            .execute("UPDATE x_org_identity SET order_number = $1 WHERE id = $2", &[&order_num, id])
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
@@ -2008,15 +2238,10 @@ pub async fn identity_flag_order_before_followFlag(
 
 
 pub async fn identity_list_flag_unitduty_name_unitDutyName(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, unit_duty_name)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity WHERE id > $1 AND unit_id IN (SELECT id FROM x_org_duty WHERE name = $2) ORDER BY create_time DESC LIMIT 10", &[&flag, &unit_duty_name])
@@ -2043,15 +2268,10 @@ pub async fn identity_list_flag_unitduty_name_unitDutyName(
 }
 
 pub async fn identity_list_flag_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i32 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -2086,15 +2306,10 @@ pub async fn identity_list_flag_prev_count(
 }
 
 pub async fn identity_list_flag_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i32 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -2129,15 +2344,10 @@ pub async fn identity_list_flag_next_count(
 }
 
 pub async fn identity_list_unitduty_name_unitDutyName(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(unit_duty_name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity WHERE unit_id IN (SELECT id FROM x_org_duty WHERE name = $1) ORDER BY create_time DESC", &[&unit_duty_name])
@@ -2164,15 +2374,10 @@ pub async fn identity_list_unitduty_name_unitDutyName(
 }
 
 pub async fn identity_list_unit_unitFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(unit_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity WHERE unit_id = $1 ORDER BY create_time DESC", &[&unit_flag])
@@ -2201,15 +2406,10 @@ pub async fn identity_list_unit_unitFlag(
 
 
 pub async fn identity_list_person_personFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity WHERE creator = $1 ORDER BY create_time DESC", &[&person_flag])
@@ -2239,15 +2439,10 @@ pub async fn identity_list_person_personFlag(
 
 
 pub async fn identity_list_like(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let pattern = format!("%{}%", name);
@@ -2287,15 +2482,10 @@ pub async fn identity_list_like(
 
 
 pub async fn group_list_flag_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i32 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -2330,15 +2520,10 @@ pub async fn group_list_flag_prev_count(
 }
 
 pub async fn group_list_flag_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let count: i32 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
@@ -2373,15 +2558,10 @@ pub async fn group_list_flag_next_count(
 }
 
 pub async fn group_list_role_roleFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(role_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_role WHERE role_id = $1) ORDER BY create_time DESC", &[&role_flag])
@@ -2410,15 +2590,10 @@ pub async fn group_list_role_roleFlag(
 
 
 pub async fn group_list_person_personFlag_sup_nested(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("WITH RECURSIVE sup AS (SELECT id, name, unit_id, parent_id FROM x_org_unit WHERE id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1)) UNION ALL SELECT u.id, u.name, u.unit_id, u.parent_id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id) SELECT DISTINCT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time FROM x_org_group g JOIN sup s ON g.unit_id = s.id ORDER BY g.create_time DESC", &[&person_flag])
@@ -2445,15 +2620,10 @@ pub async fn group_list_person_personFlag_sup_nested(
 }
 
 pub async fn group_list_person_personFlag_sup_direct(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, name, unit_id, type, creator, create_time FROM x_org_group WHERE unit_id IN (SELECT unit_id FROM x_org_group WHERE id IN (SELECT group_id FROM x_org_group_member WHERE person_id = $1)) ORDER BY create_time DESC", &[&person_flag])
@@ -2483,15 +2653,10 @@ pub async fn group_list_person_personFlag_sup_direct(
 
 
 pub async fn group_list_like(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0i64))), ("data".to_string(), Value::Array(vec![]))]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let pattern = format!("%{}%", name);
@@ -2625,3 +2790,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> Router {
     .layer(Extension(pool));
     router
 }
+
+
+

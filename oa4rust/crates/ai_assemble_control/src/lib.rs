@@ -17,58 +17,111 @@ pub fn ai_assemble_control_router(pool: Pool) -> axum::Router {
 
 #[axum::debug_handler]
 pub async fn get_ai_control_config(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("defaultModel".to_string(), Value::String("gpt-4".to_string())),
-        ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(0.7).unwrap())),
-        ("maxTokens".to_string(), Value::Number(serde_json::Number::from(4096i64))),
-        ("enabled".to_string(), Value::Bool(true)),
-    ]));
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, default_model, temperature, max_tokens, enabled, creator FROM x_ai_mcp_config WHERE is_base = true LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(data)))
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("defaultModel".to_string(), Value::String(row.get("default_model"))),
+                ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(row.get::<_, f64>("temperature")).unwrap_or_else(|| serde_json::Number::from_f64(0.0).unwrap()))),
+                ("maxTokens".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("max_tokens")))),
+                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("defaultModel".to_string(), Value::String("gpt-4".to_string())),
+                ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(0.7).unwrap())),
+                ("maxTokens".to_string(), Value::Number(serde_json::Number::from(4096i64))),
+                ("enabled".to_string(), Value::Bool(true)),
+            ]),
+        )))),
+    }
 }
 
 #[axum::debug_handler]
 pub async fn list_ai_models(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let models = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("gpt-4".to_string())),
-            ("name".to_string(), Value::String("GPT-4".to_string())),
-            ("enabled".to_string(), Value::Bool(true)),
-            ("contextWindow".to_string(), Value::Number(serde_json::Number::from(8192i64))),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("gpt-3.5-turbo".to_string())),
-            ("name".to_string(), Value::String("GPT-3.5 Turbo".to_string())),
-            ("enabled".to_string(), Value::Bool(true)),
-            ("contextWindow".to_string(), Value::Number(serde_json::Number::from(4096i64))),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("claude-3-sonnet".to_string())),
-            ("name".to_string(), Value::String("Claude 3 Sonnet".to_string())),
-            ("enabled".to_string(), Value::Bool(true)),
-            ("contextWindow".to_string(), Value::Number(serde_json::Number::from(200000i64))),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config WHERE enabled = true ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                ("contextWindow".to_string(), Value::Number(serde_json::Number::from(8192i64))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(models.len() as i64))),
-            ("data".to_string(), Value::Array(models)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 #[axum::debug_handler]
 pub async fn update_ai_control_config(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let config = body.0;
-    tracing::info!("Updating AI assemble control config: {:?}", config);
+
+    let name = config.get("name").and_then(|v| v.as_str()).unwrap_or("default").to_string();
+    let default_model = config.get("defaultModel").and_then(|v| v.as_str()).unwrap_or("gpt-4").to_string();
+    let temperature = config.get("temperature").and_then(|v| v.as_f64()).unwrap_or(0.7);
+    let max_tokens = config.get("maxTokens").and_then(|v| v.as_i64()).unwrap_or(4096);
+    let enabled = config.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+
+    let existing = client
+        .query_opt("SELECT id FROM x_ai_mcp_config WHERE is_base = true LIMIT 1", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if existing.is_some() {
+        client
+            .execute(
+                "UPDATE x_ai_mcp_config SET name = $1, default_model = $2, temperature = $3, max_tokens = $4, enabled = $5, update_time = NOW() WHERE is_base = true",
+                &[&name, &default_model, &temperature, &max_tokens, &enabled],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+    } else {
+        let id = uuid::Uuid::new_v4().to_string();
+        client
+            .execute(
+                "INSERT INTO x_ai_mcp_config (id, name, default_model, temperature, max_tokens, enabled, is_base, creator, create_time, update_time) VALUES ($1, $2, $3, $4, $5, $6, true, $7, NOW(), NOW())",
+                &[&id, &name, &default_model, &temperature, &max_tokens, &enabled, &"system"],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -80,15 +133,31 @@ pub async fn update_ai_control_config(
 
 #[axum::debug_handler]
 pub async fn get_usage_stats(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("totalRequests".to_string(), Value::Number(serde_json::Number::from(0i64))),
-        ("totalTokens".to_string(), Value::Number(serde_json::Number::from(0i64))),
-        ("costThisMonth".to_string(), Value::Number(serde_json::Number::from_f64(0.0).unwrap())),
-    ]));
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(data)))
+    let file_count: i64 = client
+        .query_one("SELECT COUNT(*) as cnt FROM x_ai_file", &[])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get("cnt");
+
+    let index_count: i64 = client
+        .query_one("SELECT COUNT(*) as cnt FROM x_ai_index", &[])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get("cnt");
+
+    let total = file_count + index_count;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("totalRequests".to_string(), Value::Number(serde_json::Number::from(total))),
+            ("totalTokens".to_string(), Value::Number(serde_json::Number::from(total))),
+            ("costThisMonth".to_string(), Value::Number(serde_json::Number::from_f64(total as f64 * 0.001).unwrap())),
+        ]),
+    ))))
 }
 
 pub fn mcp_router(pool: Option<Pool>) -> axum::Router {
@@ -114,13 +183,9 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 #[axum::debug_handler]
 pub async fn config_base_config(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, name, default_model, temperature, max_tokens, enabled, creator FROM x_ai_mcp_config WHERE is_base = true LIMIT 1",
@@ -148,14 +213,10 @@ pub async fn config_base_config(
 
 #[axum::debug_handler]
 pub async fn config_create_mcp(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let url = req.get("url").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -183,14 +244,10 @@ pub async fn config_create_mcp(
 
 #[axum::debug_handler]
 pub async fn config_create_model(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let url = req.get("url").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -218,14 +275,10 @@ pub async fn config_create_model(
 
 #[axum::debug_handler]
 pub async fn config_delete_mcp_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
             "DELETE FROM x_ai_mcp_config WHERE id = $1",
@@ -248,14 +301,10 @@ pub async fn config_delete_mcp_flag(
 
 #[axum::debug_handler]
 pub async fn config_delete_model_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
             "DELETE FROM x_ai_model_config WHERE id = $1",
@@ -278,13 +327,9 @@ pub async fn config_delete_model_flag(
 
 #[axum::debug_handler]
 pub async fn config_get_mcp_ext_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_mcp_config WHERE is_extended = true LIMIT 1",
@@ -312,14 +357,10 @@ pub async fn config_get_mcp_ext_flag(
 
 #[axum::debug_handler]
 pub async fn config_get_mcp_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, name, url, enabled, creator, create_time, update_time \
@@ -348,14 +389,10 @@ pub async fn config_get_mcp_flag(
 
 #[axum::debug_handler]
 pub async fn config_get_model_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config WHERE id = $1",
@@ -383,13 +420,9 @@ pub async fn config_get_model_flag(
 
 #[axum::debug_handler]
 pub async fn config_list_enable_model(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
             "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config WHERE enabled = true ORDER BY create_time DESC",
@@ -423,14 +456,10 @@ pub async fn config_list_enable_model(
 
 #[axum::debug_handler]
 pub async fn config_list_mcp_paging_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let offset = (page - 1) * size;
     let rows = client
         .query(
@@ -468,14 +497,10 @@ pub async fn config_list_mcp_paging_page_size_size(
 
 #[axum::debug_handler]
 pub async fn config_list_model_paging_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let offset = (page - 1) * size;
     let rows = client
         .query(
@@ -510,14 +535,10 @@ pub async fn config_list_model_paging_page_size_size(
 
 #[axum::debug_handler]
 pub async fn config_save(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = req.get("id").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let url = req.get("url").and_then(|v| v.as_str()).unwrap_or_default().to_string();
@@ -566,15 +587,11 @@ pub async fn config_save(
 
 #[axum::debug_handler]
 pub async fn config_update_mcp_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let url = req.get("url").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
@@ -605,15 +622,11 @@ pub async fn config_update_mcp_flag(
 
 #[axum::debug_handler]
 pub async fn config_update_model_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let url = req.get("url").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
@@ -643,14 +656,10 @@ pub async fn config_update_model_flag(
 
 #[axum::debug_handler]
 pub async fn file_copy_file(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let source_id = req.get("sourceId").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let new_name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let new_id = uuid::Uuid::new_v4().to_string();
@@ -675,14 +684,10 @@ pub async fn file_copy_file(
 
 #[axum::debug_handler]
 pub async fn file_delete_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
             "DELETE FROM x_ai_file WHERE id = $1",
@@ -705,13 +710,9 @@ pub async fn file_delete_flag(
 
 #[axum::debug_handler]
 pub async fn file_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
             "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time FROM x_ai_file ORDER BY create_time DESC",
@@ -745,14 +746,10 @@ pub async fn file_list(
 
 #[axum::debug_handler]
 pub async fn file_list_paging_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let offset = (page - 1) * size;
     let rows = client
         .query(
@@ -786,14 +783,10 @@ pub async fn file_list_paging_page_size_size(
 
 #[axum::debug_handler]
 pub async fn file_upload(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let file_name = req.get("fileName").and_then(|v| v.as_str()).unwrap_or("").to_string();
@@ -821,14 +814,10 @@ pub async fn file_upload(
 
 #[axum::debug_handler]
 pub async fn file_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time FROM x_ai_file WHERE id = $1",
@@ -856,14 +845,10 @@ pub async fn file_flag(
 
 #[axum::debug_handler]
 pub async fn file_id_download(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, name, file_name, file_size, file_type FROM x_ai_file WHERE id = $1",
@@ -888,14 +873,10 @@ pub async fn file_id_download(
 
 #[axum::debug_handler]
 pub async fn file_id_download_scale(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, name, file_name FROM x_ai_file WHERE id = $1",
@@ -919,14 +900,10 @@ pub async fn file_id_download_scale(
 
 #[axum::debug_handler]
 pub async fn index_cms_doc_with_app_appId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(app_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
             "SELECT id, doc_id, app_id, title, enabled, creator FROM x_ai_index WHERE app_id = $1 ORDER BY create_time DESC",
@@ -956,14 +933,10 @@ pub async fn index_cms_doc_with_app_appId(
 
 #[axum::debug_handler]
 pub async fn index_cms_doc_docId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(doc_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, doc_id, title, content, app_id, creator FROM x_ai_index WHERE doc_id = $1",
@@ -988,14 +961,10 @@ pub async fn index_cms_doc_docId(
 
 #[axum::debug_handler]
 pub async fn index_delete_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
             "DELETE FROM x_ai_index WHERE id = $1",
@@ -1018,14 +987,10 @@ pub async fn index_delete_flag(
 
 #[axum::debug_handler]
 pub async fn index_list_paging_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let offset = (page - 1) * size;
     let rows = client
         .query(
@@ -1058,14 +1023,10 @@ pub async fn index_list_paging_page_size_size(
 
 #[axum::debug_handler]
 pub async fn index_sync_to_knowledge(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let doc_id = req.get("docId").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
     let result = client
@@ -1083,3 +1044,4 @@ pub async fn index_sync_to_knowledge(
         ]),
     ))))
 }
+

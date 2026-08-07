@@ -241,5 +241,7 @@ pub async fn delete(
         return Ok(Json(ActionResult::error("group not found or already deleted")));
     }
 
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+    ))))
 }

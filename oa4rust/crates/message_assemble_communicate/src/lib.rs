@@ -10,53 +10,87 @@ use uuid::Uuid;
 
 pub mod routes;
 
-#[derive(Debug, serde::Deserialize)]
-pub struct SendRequest {
-    pub from: Option<String>,
-    pub to: Option<String>,
-    pub content: Option<String>,
-}
-
 pub async fn send_message(
-    axum::extract::Json(req): Json<SendRequest>,
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let conversation_id = req.get("conversationId").and_then(|v| v.as_str()).unwrap_or_default();
+    let content = req.get("content").and_then(|v| v.as_str()).unwrap_or_default();
+    let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
+    let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
+    let id = Uuid::new_v4().to_string();
+
+    client
+        .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, $5, NOW())", &[&id, &conversation_id, &content, &sender, &msg_type])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    client
+        .execute("UPDATE x_message_conversation SET last_message_time = NOW() WHERE id = $1", &[&conversation_id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("conversationId".to_string(), Value::String(conversation_id.to_string())),
+            ("content".to_string(), Value::String(content.to_string())),
+            ("sender".to_string(), Value::String(sender.to_string())),
+            ("type".to_string(), Value::String(msg_type.to_string())),
             ("sent".to_string(), Value::Bool(true)),
-            ("from".to_string(), Value::String(req.from.unwrap_or_default())),
-            ("to".to_string(), Value::String(req.to.unwrap_or_default())),
         ]),
     ))))
 }
 
 pub async fn receive_list(
+    pool: Extension<Pool>,
     axum::extract::Path(consume): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("msg-1".to_string())),
-            ("consume".to_string(), Value::String(consume)),
-            ("status".to_string(), Value::String("unread".to_string())),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let rows = client
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND consumed = false ORDER BY create_time ASC", &[&consume])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("consume".to_string(), Value::String(row.get("consume"))),
+            ("content".to_string(), Value::String(row.get("content"))),
+            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 pub async fn mark_read(
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("marked_read".to_string(), Value::Bool(true)),
-    ])))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    client
+        .execute("UPDATE x_message_consume SET consumed = true WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("marked_read".to_string(), Value::Bool(true))]),
+    ))))
 }
 
-pub fn message_assemble_communicate_router(pool: Option<Pool>) -> Router {
-    let mut router = Router::new()
+pub fn message_assemble_communicate_router(pool: Pool) -> Router {
+    let router = Router::new()
         .route("/jaxrs/message/assemble/communicate/send", post(send_message))
         .route("/jaxrs/message/assemble/communicate/receive/{consume}", get(receive_list))
         .route("/jaxrs/message/assemble/communicate/mark_read/{id}", post(mark_read))
@@ -114,34 +148,26 @@ pub fn message_assemble_communicate_router(pool: Option<Pool>) -> Router {
         .route("/jaxrs/message/assemble/communicate/mass/{id}", get(mass_id))
         .route("/jaxrs/message/assemble/communicate/mass/{id}/mockdeletetoget", delete(mass_id_mockdeletetoget))
         .route("/jaxrs/message/assemble/communicate/message/custom/create", post(message_custom_create))
-        .route("/jaxrs/message/assemble/communicate/message/list/paging/{page}/size/{size}", get(message_list_paging_page_size_size));
-
-    if let Some(pool) = pool {
-        router = router.layer(Extension(pool));
-    }
+        .route("/jaxrs/message/assemble/communicate/message/list/paging/{page}/size/{size}", get(message_list_paging_page_size_size))
+        .layer(Extension(pool));
 
     router
+}
+
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    message_assemble_communicate_router(pool)
 }
 
 #[cfg(test)]
 mod tests;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    message_assemble_communicate_router(Some(pool))
-}
 
 
-
-/// Stub handler for /jaxrs/message/assemble/communicate/consume/list/{consume}/count/{count}
-/// TODO: Implement real business logic
 pub async fn consume_list_consume_count_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((consume, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let limit = count.max(1) as i64;
     let rows = client
@@ -167,16 +193,11 @@ pub async fn consume_list_consume_count_count(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/consume/list/{consume}/currentperson/count/{count}
-/// TODO: Implement real business logic
 pub async fn consume_list_consume_currentperson_count_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((consume, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let limit = count.max(1) as i64;
     let rows = client
@@ -203,16 +224,11 @@ pub async fn consume_list_consume_currentperson_count_count(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/consume/list/{consume}/person/{person}/count/{count}
-/// TODO: Implement real business logic
 pub async fn consume_list_consume_person_person_count_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((consume, person, count)): axum::extract::Path<(String, String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let limit = count.max(1) as i64;
     let rows = client
@@ -238,16 +254,11 @@ pub async fn consume_list_consume_person_person_count_count(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/consume/type/{type}
-/// TODO: Implement real business logic
 pub async fn consume_type_type(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(msg_type): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, consume, content, type, sender, create_time FROM x_message_consume WHERE type = $1 ORDER BY create_time DESC", &[&msg_type])
@@ -273,16 +284,11 @@ pub async fn consume_type_type(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/consume/type/{type}/mockputtopost
-/// TODO: Implement real business logic
 pub async fn consume_type_type_mockputtopost(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(msg_type): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = Uuid::new_v4().to_string();
     client
@@ -295,16 +301,11 @@ pub async fn consume_type_type_mockputtopost(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/consume/{id}/type/{type}
-/// TODO: Implement real business logic
 pub async fn consume_id_type_type(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((id, msg_type)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute("UPDATE x_message_consume SET type = $1 WHERE id = $2", &[&msg_type, &id])
@@ -320,16 +321,11 @@ pub async fn consume_id_type_type(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation
-/// TODO: Implement real business logic
 pub async fn im_conversation(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let conversation_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("single");
@@ -350,16 +346,11 @@ pub async fn im_conversation(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/business/{businessId}
-/// TODO: Implement real business logic
 pub async fn im_conversation_business_businessId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(business_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt("SELECT id, name, type, business_id, create_time FROM x_message_conversation WHERE business_id = $1 LIMIT 1", &[&business_id])
@@ -381,15 +372,10 @@ pub async fn im_conversation_business_businessId(
     }
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/list/my
-/// TODO: Implement real business logic
 pub async fn im_conversation_list_my(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, name, type, last_message, create_time FROM x_message_conversation ORDER BY update_time DESC", &[])
@@ -414,15 +400,10 @@ pub async fn im_conversation_list_my(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/list/with/person
-/// TODO: Implement real business logic
 pub async fn im_conversation_list_with_person(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, name, type, create_time FROM x_message_conversation WHERE type = 'single' ORDER BY create_time DESC", &[])
@@ -446,31 +427,31 @@ pub async fn im_conversation_list_with_person(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/mockputtopost
-/// TODO: Implement real business logic
 pub async fn im_conversation_mockputtopost(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = req.get("id").and_then(|v| v.as_str()).unwrap_or_default();
+    let title = req.get("title").and_then(|v| v.as_str()).unwrap_or_default();
+    let note = req.get("note").and_then(|v| v.as_str()).unwrap_or_default();
+
+    client
+        .execute("UPDATE x_message_conversation SET title = COALESCE($2, title), note = COALESCE($3, note), update_time = NOW() WHERE id = $1", &[&id, &title, &note])
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("updated".to_string(), Value::Bool(true))]),
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/{id}
-/// TODO: Implement real business logic
 pub async fn im_conversation_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt("SELECT id, name, type, last_message, create_time FROM x_message_conversation WHERE id = $1", &[&id])
@@ -492,16 +473,11 @@ pub async fn im_conversation_id(
     }
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/{id}/group
-/// TODO: Implement real business logic
 pub async fn im_conversation_id_group(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, conversation_id, person_id, role, join_time FROM x_message_conversation_member WHERE conversation_id = $1 ORDER BY join_time", &[&id])
@@ -526,16 +502,11 @@ pub async fn im_conversation_id_group(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/{id}/group/mockdeletetoget
-/// TODO: Implement real business logic
 pub async fn im_conversation_id_group_mockdeletetoget(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1", &[&id])
@@ -547,16 +518,11 @@ pub async fn im_conversation_id_group_mockdeletetoget(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/{id}/group/quit/self
-/// TODO: Implement real business logic
 pub async fn im_conversation_id_group_quit_self(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1 AND person_id = $2", &[&id, &""])
@@ -568,16 +534,11 @@ pub async fn im_conversation_id_group_quit_self(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/{id}/icon
-/// TODO: Implement real business logic
 pub async fn im_conversation_id_icon(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt("SELECT icon_url, icon_name, create_time FROM x_message_conversation_icon WHERE conversation_id = $1 ORDER BY create_time DESC LIMIT 1", &[&id])
@@ -598,16 +559,11 @@ pub async fn im_conversation_id_icon(
     }
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/{id}/read
-/// TODO: Implement real business logic
 pub async fn im_conversation_id_read(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute("UPDATE x_message_conversation SET read_status = 'read', read_time = NOW() WHERE id = $1", &[&id])
@@ -619,16 +575,11 @@ pub async fn im_conversation_id_read(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/{id}/read/mockputtopost
-/// TODO: Implement real business logic
 pub async fn im_conversation_id_read_mockputtopost(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute("UPDATE x_message_conversation SET read_status = 'read', read_time = NOW() WHERE id = $1", &[&id])
@@ -640,16 +591,11 @@ pub async fn im_conversation_id_read_mockputtopost(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/{id}/single
-/// TODO: Implement real business logic
 pub async fn im_conversation_id_single(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt("SELECT id, name, type, create_time FROM x_message_conversation WHERE id = $1 AND type = 'single'", &[&id])
@@ -670,16 +616,11 @@ pub async fn im_conversation_id_single(
     }
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/{id}/single/mockdeletetoget
-/// TODO: Implement real business logic
 pub async fn im_conversation_id_single_mockdeletetoget(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute("DELETE FROM x_message_conversation WHERE id = $1 AND type = 'single'", &[&id])
@@ -691,16 +632,11 @@ pub async fn im_conversation_id_single_mockdeletetoget(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/{id}/top/cancel
-/// TODO: Implement real business logic
 pub async fn im_conversation_id_top_cancel(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute("UPDATE x_message_conversation SET top = false WHERE id = $1", &[&id])
@@ -712,16 +648,11 @@ pub async fn im_conversation_id_top_cancel(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/{id}/top/cancel/mockputtopost
-/// TODO: Implement real business logic
 pub async fn im_conversation_id_top_cancel_mockputtopost(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute("UPDATE x_message_conversation SET top = false WHERE id = $1", &[&id])
@@ -733,16 +664,11 @@ pub async fn im_conversation_id_top_cancel_mockputtopost(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/{id}/top/set
-/// TODO: Implement real business logic
 pub async fn im_conversation_id_top_set(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute("UPDATE x_message_conversation SET top = true, top_time = NOW() WHERE id = $1", &[&id])
@@ -754,16 +680,11 @@ pub async fn im_conversation_id_top_set(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/conversation/{id}/top/set/mockputtopost
-/// TODO: Implement real business logic
 pub async fn im_conversation_id_top_set_mockputtopost(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute("UPDATE x_message_conversation SET top = true, top_time = NOW() WHERE id = $1", &[&id])
@@ -775,15 +696,10 @@ pub async fn im_conversation_id_top_set_mockputtopost(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/manager/config
-/// TODO: Implement real business logic
 pub async fn im_manager_config(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt("SELECT id, config_key, config_value, create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
@@ -804,16 +720,11 @@ pub async fn im_manager_config(
     }
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/msg
-/// TODO: Implement real business logic
 pub async fn im_msg(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let conversation_id = req.get("conversationId").and_then(|v| v.as_str()).unwrap_or_default();
     let content = req.get("content").and_then(|v| v.as_str()).unwrap_or_default();
@@ -838,16 +749,11 @@ pub async fn im_msg(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/msg/clear
-/// TODO: Implement real business logic
 pub async fn im_msg_clear(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(conversation_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute("UPDATE x_message SET cleared = true WHERE conversation_id = $1", &[&conversation_id])
@@ -859,16 +765,11 @@ pub async fn im_msg_clear(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/msg/collection
-/// TODO: Implement real business logic
 pub async fn im_msg_collection(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let message_id = req.get("messageId").and_then(|v| v.as_str()).unwrap_or_default();
     client
@@ -881,16 +782,11 @@ pub async fn im_msg_collection(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/msg/collection/list/{page}/size/{size}
-/// TODO: Implement real business logic
 pub async fn im_msg_collection_list_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -915,16 +811,11 @@ pub async fn im_msg_collection_list_page_size_size(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/msg/collection/remove
-/// TODO: Implement real business logic
 pub async fn im_msg_collection_remove(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let message_id = req.get("messageId").and_then(|v| v.as_str()).unwrap_or_default();
     let result = client
@@ -937,16 +828,11 @@ pub async fn im_msg_collection_remove(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/msg/download/{id}
-/// TODO: Implement real business logic
 pub async fn im_msg_download_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt("SELECT id, file_url, file_name, file_size, create_time FROM x_message_file WHERE message_id = $1 LIMIT 1", &[&id])
@@ -968,16 +854,11 @@ pub async fn im_msg_download_id(
     }
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/msg/download/{id}/image/width/{width}/height/{height}
-/// TODO: Implement real business logic
 pub async fn im_msg_download_id_image_width_width_height_height(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((id, width, height)): axum::extract::Path<(String, i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt("SELECT id, file_url, file_name, create_time FROM x_message_file WHERE message_id = $1 LIMIT 1", &[&id])
@@ -1002,15 +883,10 @@ pub async fn im_msg_download_id_image_width_width_height_height(
     }
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/msg/list/object
-/// TODO: Implement real business logic
 pub async fn im_msg_list_object(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message WHERE type != 'text' ORDER BY create_time DESC LIMIT 50", &[])
@@ -1036,16 +912,11 @@ pub async fn im_msg_list_object(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/msg/list/{page}/size/{size}
-/// TODO: Implement real business logic
 pub async fn im_msg_list_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
@@ -1075,16 +946,11 @@ pub async fn im_msg_list_page_size_size(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/msg/revoke/{id}
-/// TODO: Implement real business logic
 pub async fn im_msg_revoke_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute("UPDATE x_message SET revoked = true, revoke_time = NOW() WHERE id = $1", &[&id])
@@ -1096,17 +962,12 @@ pub async fn im_msg_revoke_id(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/im/msg/upload/{conversationId}/type/{type}
-/// TODO: Implement real business logic
 pub async fn im_msg_upload_conversationId_type_type(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((conversation_id, msg_type)): axum::extract::Path<(String, String)>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let file_url = req.get("fileUrl").and_then(|v| v.as_str()).unwrap_or_default();
     let file_name = req.get("fileName").and_then(|v| v.as_str()).unwrap_or_default();
@@ -1130,15 +991,10 @@ pub async fn im_msg_upload_conversationId_type_type(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/instant/currentperson/consumed
-/// TODO: Implement real business logic
 pub async fn instant_currentperson_consumed(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT 50", &[])
@@ -1163,15 +1019,10 @@ pub async fn instant_currentperson_consumed(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/instant/currentperson/consumed/all
-/// TODO: Implement real business logic
 pub async fn instant_currentperson_consumed_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC", &[])
@@ -1196,31 +1047,33 @@ pub async fn instant_currentperson_consumed_all(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/instant/currentperson/consumed/mockputtopost
-/// TODO: Implement real business logic
 pub async fn instant_currentperson_consumed_mockputtopost(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id_list = req.get("idList").and_then(|v| v.as_array()).map(|arr| {
+        arr.iter().filter_map(|v| v.as_str().map(String::from)).collect::<Vec<String>>()
+    }).unwrap_or_default();
+
+    if !id_list.is_empty() {
+        client
+            .execute("UPDATE x_message_instant SET consumed = true WHERE id = ANY($1)", &[&id_list])
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/instant/list/currentperson/consumed/count/{count}/asc
-/// TODO: Implement real business logic
 pub async fn instant_list_currentperson_consumed_count_count_asc(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time ASC LIMIT $1", &[&count])
@@ -1245,16 +1098,11 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/instant/list/currentperson/consumed/count/{count}/desc
-/// TODO: Implement real business logic
 pub async fn instant_list_currentperson_consumed_count_count_desc(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT $1", &[&count])
@@ -1279,16 +1127,11 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/instant/list/currentperson/count/{count}/asc
-/// TODO: Implement real business logic
 pub async fn instant_list_currentperson_count_count_asc(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time ASC LIMIT $1", &[&count])
@@ -1313,16 +1156,11 @@ pub async fn instant_list_currentperson_count_count_asc(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/instant/list/currentperson/count/{count}/desc
-/// TODO: Implement real business logic
 pub async fn instant_list_currentperson_count_count_desc(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time DESC LIMIT $1", &[&count])
@@ -1347,16 +1185,11 @@ pub async fn instant_list_currentperson_count_count_desc(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/instant/list/currentperson/noim/count/{count}/desc
-/// TODO: Implement real business logic
 pub async fn instant_list_currentperson_noim_count_count_desc(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE type != 'im' ORDER BY create_time DESC LIMIT $1", &[&count])
@@ -1381,16 +1214,11 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/instant/list/currentperson/not/consumed/count/{count}/asc
-/// TODO: Implement real business logic
 pub async fn instant_list_currentperson_not_consumed_count_count_asc(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time ASC LIMIT $1", &[&count])
@@ -1415,16 +1243,11 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/instant/list/currentperson/not/consumed/count/{count}/desc
-/// TODO: Implement real business logic
 pub async fn instant_list_currentperson_not_consumed_count_count_desc(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(count): axum::extract::Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time DESC LIMIT $1", &[&count])
@@ -1449,16 +1272,11 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/instant/list/{id}/next/{count}
-/// TODO: Implement real business logic
 pub async fn instant_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id > $1 ORDER BY create_time ASC LIMIT $2", &[&id, &count])
@@ -1483,16 +1301,11 @@ pub async fn instant_list_id_next_count(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/instant/list/{id}/prev/{count}
-/// TODO: Implement real business logic
 pub async fn instant_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id < $1 ORDER BY create_time DESC LIMIT $2", &[&id, &count])
@@ -1517,16 +1330,11 @@ pub async fn instant_list_id_prev_count(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/mass/enable/type
-/// TODO: Implement real business logic
 pub async fn mass_enable_type(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or_default();
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
@@ -1544,16 +1352,11 @@ pub async fn mass_enable_type(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/mass/list/{id}/next/{count}
-/// TODO: Implement real business logic
 pub async fn mass_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id > $2 ORDER BY create_time ASC LIMIT $3", &[&id, &id, &count])
@@ -1578,16 +1381,11 @@ pub async fn mass_list_id_next_count(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/mass/list/{id}/prev/{count}
-/// TODO: Implement real business logic
 pub async fn mass_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id < $2 ORDER BY create_time DESC LIMIT $3", &[&id, &id, &count])
@@ -1612,16 +1410,11 @@ pub async fn mass_list_id_prev_count(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/mass/{id}
-/// TODO: Implement real business logic
 pub async fn mass_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt("SELECT id, title, content, sender, create_time FROM x_message_mass WHERE id = $1", &[&id])
@@ -1643,16 +1436,11 @@ pub async fn mass_id(
     }
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/mass/{id}/mockdeletetoget
-/// TODO: Implement real business logic
 pub async fn mass_id_mockdeletetoget(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute("DELETE FROM x_message_mass WHERE id = $1", &[&id])
@@ -1664,16 +1452,11 @@ pub async fn mass_id_mockdeletetoget(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/message/custom/create
-/// TODO: Implement real business logic
 pub async fn message_custom_create(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let conversation_id = req.get("conversationId").and_then(|v| v.as_str()).unwrap_or_default();
     let content = req.get("content").and_then(|v| v.as_str()).unwrap_or_default();
@@ -1696,16 +1479,11 @@ pub async fn message_custom_create(
     ))))
 }
 
-/// Stub handler for /jaxrs/message/assemble/communicate/message/list/paging/{page}/size/{size}
-/// TODO: Implement real business logic
 pub async fn message_list_paging_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
