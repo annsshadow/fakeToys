@@ -144,5 +144,5 @@ pub async fn application_list(
 mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    routes::process_express_router(pool)
+    crate::process_express_router(pool)
 }

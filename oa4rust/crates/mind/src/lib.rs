@@ -325,7 +325,6 @@ pub async fn create_version(
     ])))))
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/mind/health", axum::routing::get(|| async { "TODO: mind - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    routes::mind_routes().layer(axum::extract::Extension(pool))
 }

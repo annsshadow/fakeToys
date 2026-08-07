@@ -85,6 +85,6 @@ pub fn message_router() -> Router {
         .route("/jaxrs/message/unread/count/{consume}", get(unread_count))
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    message_router()
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    message_router().layer(axum::extract::Extension(pool))
 }

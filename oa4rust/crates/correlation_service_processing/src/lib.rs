@@ -251,32 +251,31 @@ pub fn correlation_service_processing_router() -> Router {
         .route("/jaxrs/correlation/service/processing/link/{sourceType}/{sourceId}", get(get_link))
         .route("/jaxrs/correlation/service/processing/link", post(link_service))
         .route("/jaxrs/correlation/service/processing/unlink/{sourceType}/{sourceId}/{targetType}/{targetId}", post(unlink_service))
-        .route("/jaxrs/correlation/service/processing/correlation/delete/type/cms/document/{document}", post(stub_correlation_service_processing_correlation_delete_type_cms_document_document))
-        .route("/jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/{job}", post(stub_correlation_service_processing_correlation_delete_type_processplatform_job_job))
-        .route("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}", get(stub_correlation_service_processing_correlation_list_type_cms_document_document))
-        .route("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}/site/{site}", get(stub_correlation_service_processing_correlation_list_type_cms_document_document_site_site))
-        .route("/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}", get(stub_correlation_service_processing_correlation_list_type_processplatform_job_job))
-        .route("/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}/site/{site}", get(stub_correlation_service_processing_correlation_list_type_processplatform_job_job_site_site))
-        .route("/jaxrs/correlation/service/processing/correlation/readable/type/cms", get(stub_correlation_service_processing_correlation_readable_type_cms))
-        .route("/jaxrs/correlation/service/processing/correlation/readable/type/processplatform", get(stub_correlation_service_processing_correlation_readable_type_processplatform))
-        .route("/jaxrs/correlation/service/processing/correlation/type/cms/document/{document}", get(stub_correlation_service_processing_correlation_type_cms_document_document))
-        .route("/jaxrs/correlation/service/processing/correlation/type/processplatform/job/{job}", get(stub_correlation_service_processing_correlation_type_processplatform_job_job))
-        .route("/jaxrs/correlation/service/processing/correlation/update/type/cms/document/{document}", post(stub_correlation_service_processing_correlation_update_type_cms_document_document))
-        .route("/jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/{job}", post(stub_correlation_service_processing_correlation_update_type_processplatform_job_job))
+        .route("/jaxrs/correlation/service/processing/correlation/delete/type/cms/document/{document}", post(correlation_delete_type_cms_document_document))
+        .route("/jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/{job}", post(correlation_delete_type_processplatform_job_job))
+        .route("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}", get(correlation_list_type_cms_document_document))
+        .route("/jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}/site/{site}", get(correlation_list_type_cms_document_document_site_site))
+        .route("/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}", get(correlation_list_type_processplatform_job_job))
+        .route("/jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}/site/{site}", get(correlation_list_type_processplatform_job_job_site_site))
+        .route("/jaxrs/correlation/service/processing/correlation/readable/type/cms", get(correlation_readable_type_cms))
+        .route("/jaxrs/correlation/service/processing/correlation/readable/type/processplatform", get(correlation_readable_type_processplatform))
+        .route("/jaxrs/correlation/service/processing/correlation/type/cms/document/{document}", get(correlation_type_cms_document_document))
+        .route("/jaxrs/correlation/service/processing/correlation/type/processplatform/job/{job}", get(correlation_type_processplatform_job_job))
+        .route("/jaxrs/correlation/service/processing/correlation/update/type/cms/document/{document}", post(correlation_update_type_cms_document_document))
+        .route("/jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/{job}", post(correlation_update_type_processplatform_job_job))
 }
 
 #[cfg(test)]
 mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    correlation_service_processing_router()
-        .layer(Extension(pool))
-        .route("/correlation_service_processing/health", axum::routing::get(|| async { "ok" }))
+    correlation_service_processing_router().layer(axum::extract::Extension(pool))
 }
+
 
 /// Stub handler for /jaxrs/correlation/service/processing/correlation/delete/type/cms/document/{document}
 /// TODO: Implement real business logic
-pub async fn stub_correlation_service_processing_correlation_delete_type_cms_document_document(
+pub async fn correlation_delete_type_cms_document_document(
     pool: Option<Extension<Pool>>,
     Path(document): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -307,7 +306,7 @@ pub async fn stub_correlation_service_processing_correlation_delete_type_cms_doc
 
 /// Stub handler for /jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/{job}
 /// TODO: Implement real business logic
-pub async fn stub_correlation_service_processing_correlation_delete_type_processplatform_job_job(
+pub async fn correlation_delete_type_processplatform_job_job(
     pool: Option<Extension<Pool>>,
     Path(job): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -338,7 +337,7 @@ pub async fn stub_correlation_service_processing_correlation_delete_type_process
 
 /// Stub handler for /jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}
 /// TODO: Implement real business logic
-pub async fn stub_correlation_service_processing_correlation_list_type_cms_document_document(
+pub async fn correlation_list_type_cms_document_document(
     pool: Option<Extension<Pool>>,
     Path(document): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -377,7 +376,7 @@ pub async fn stub_correlation_service_processing_correlation_list_type_cms_docum
 
 /// Stub handler for /jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}/site/{site}
 /// TODO: Implement real business logic
-pub async fn stub_correlation_service_processing_correlation_list_type_cms_document_document_site_site(
+pub async fn correlation_list_type_cms_document_document_site_site(
     pool: Option<Extension<Pool>>,
     Path((document, _site)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -416,7 +415,7 @@ pub async fn stub_correlation_service_processing_correlation_list_type_cms_docum
 
 /// Stub handler for /jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}
 /// TODO: Implement real business logic
-pub async fn stub_correlation_service_processing_correlation_list_type_processplatform_job_job(
+pub async fn correlation_list_type_processplatform_job_job(
     pool: Option<Extension<Pool>>,
     Path(job): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -455,7 +454,7 @@ pub async fn stub_correlation_service_processing_correlation_list_type_processpl
 
 /// Stub handler for /jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}/site/{site}
 /// TODO: Implement real business logic
-pub async fn stub_correlation_service_processing_correlation_list_type_processplatform_job_job_site_site(
+pub async fn correlation_list_type_processplatform_job_job_site_site(
     pool: Option<Extension<Pool>>,
     Path((job, _site)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -494,7 +493,7 @@ pub async fn stub_correlation_service_processing_correlation_list_type_processpl
 
 /// Stub handler for /jaxrs/correlation/service/processing/correlation/readable/type/cms
 /// TODO: Implement real business logic
-pub async fn stub_correlation_service_processing_correlation_readable_type_cms(
+pub async fn correlation_readable_type_cms(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -521,7 +520,7 @@ pub async fn stub_correlation_service_processing_correlation_readable_type_cms(
 
 /// Stub handler for /jaxrs/correlation/service/processing/correlation/readable/type/processplatform
 /// TODO: Implement real business logic
-pub async fn stub_correlation_service_processing_correlation_readable_type_processplatform(
+pub async fn correlation_readable_type_processplatform(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -548,7 +547,7 @@ pub async fn stub_correlation_service_processing_correlation_readable_type_proce
 
 /// Stub handler for /jaxrs/correlation/service/processing/correlation/type/cms/document/{document}
 /// TODO: Implement real business logic
-pub async fn stub_correlation_service_processing_correlation_type_cms_document_document(
+pub async fn correlation_type_cms_document_document(
     pool: Option<Extension<Pool>>,
     Path(document): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -583,7 +582,7 @@ pub async fn stub_correlation_service_processing_correlation_type_cms_document_d
 
 /// Stub handler for /jaxrs/correlation/service/processing/correlation/type/processplatform/job/{job}
 /// TODO: Implement real business logic
-pub async fn stub_correlation_service_processing_correlation_type_processplatform_job_job(
+pub async fn correlation_type_processplatform_job_job(
     pool: Option<Extension<Pool>>,
     Path(job): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -618,7 +617,7 @@ pub async fn stub_correlation_service_processing_correlation_type_processplatfor
 
 /// Stub handler for /jaxrs/correlation/service/processing/correlation/update/type/cms/document/{document}
 /// TODO: Implement real business logic
-pub async fn stub_correlation_service_processing_correlation_update_type_cms_document_document(
+pub async fn correlation_update_type_cms_document_document(
     pool: Option<Extension<Pool>>,
     Path(document): Path<String>,
     Json(req): Json<Value>,
@@ -655,7 +654,7 @@ pub async fn stub_correlation_service_processing_correlation_update_type_cms_doc
 
 /// Stub handler for /jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/{job}
 /// TODO: Implement real business logic
-pub async fn stub_correlation_service_processing_correlation_update_type_processplatform_job_job(
+pub async fn correlation_update_type_processplatform_job_job(
     pool: Option<Extension<Pool>>,
     Path(job): Path<String>,
     Json(req): Json<Value>,

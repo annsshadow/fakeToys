@@ -76,7 +76,6 @@ mod tests {
     }
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/bbs/health", axum::routing::get(|| async { "TODO: bbs - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::bbs_router(pool)
 }

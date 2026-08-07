@@ -230,7 +230,7 @@ pub async fn organization_assemble_control_person_list_like(
 
 /// Stub handler for /jaxrs/organization/assemble/control/export/export/all
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_export_export_all(
+pub async fn export_export_all(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -252,7 +252,7 @@ pub async fn stub_organization_assemble_control_export_export_all(
 
 /// Stub handler for /jaxrs/organization/assemble/control/export/result/flag/{flag}
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_export_result_flag_flag(
+pub async fn export_result_flag_flag(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -285,7 +285,7 @@ pub async fn stub_organization_assemble_control_export_result_flag_flag(
 
 /// Stub handler for /jaxrs/organization/assemble/control/export/zhengwudingding/person
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_export_zhengwudingding_person(
+pub async fn export_zhengwudingding_person(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -311,7 +311,7 @@ pub async fn stub_organization_assemble_control_export_zhengwudingding_person(
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/list/like/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_list_like_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_list_like_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -322,7 +322,7 @@ pub async fn stub_organization_assemble_control_group_list_like_mockputtopost() 
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/list/like/pinyin
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_list_like_pinyin() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_list_like_pinyin() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -333,7 +333,7 @@ pub async fn stub_organization_assemble_control_group_list_like_pinyin() -> Resu
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_list_like_pinyin_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_list_like_pinyin_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -352,7 +352,7 @@ pub async fn stub_organization_assemble_control_group_list_like_pinyin_mockputto
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/list/pinyininitial
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_list_pinyininitial() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_list_pinyininitial() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -363,7 +363,7 @@ pub async fn stub_organization_assemble_control_group_list_pinyininitial() -> Re
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/list/pinyininitial/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_list_pinyininitial_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_list_pinyininitial_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -386,7 +386,7 @@ pub async fn stub_organization_assemble_control_group_list_pinyininitial_mockput
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/list/{flag}/sub/direct
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_list_flag_sub_direct() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_list_flag_sub_direct() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -397,7 +397,7 @@ pub async fn stub_organization_assemble_control_group_list_flag_sub_direct() -> 
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/list/{flag}/sub/nested
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_list_flag_sub_nested() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_list_flag_sub_nested() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -408,7 +408,7 @@ pub async fn stub_organization_assemble_control_group_list_flag_sub_nested() -> 
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/list/{flag}/sup/direct
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_list_flag_sup_direct() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_list_flag_sup_direct() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -419,7 +419,7 @@ pub async fn stub_organization_assemble_control_group_list_flag_sup_direct() -> 
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/list/{flag}/sup/nested
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_list_flag_sup_nested() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_list_flag_sup_nested() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -430,7 +430,7 @@ pub async fn stub_organization_assemble_control_group_list_flag_sup_nested() -> 
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/{flag}
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -440,7 +440,7 @@ pub async fn stub_organization_assemble_control_group_flag() -> Result<Json<Acti
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/{flag}/add/member
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_flag_add_member() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_flag_add_member() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("saved".to_string(), Value::Bool(true)),
@@ -450,7 +450,7 @@ pub async fn stub_organization_assemble_control_group_flag_add_member() -> Resul
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/{flag}/add/member/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_flag_add_member_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_flag_add_member_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("saved".to_string(), Value::Bool(true)),
@@ -460,7 +460,7 @@ pub async fn stub_organization_assemble_control_group_flag_add_member_mockputtop
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/{flag}/delete/member
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_flag_delete_member() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_flag_delete_member() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("deleted".to_string(), Value::Bool(true)),
@@ -470,7 +470,7 @@ pub async fn stub_organization_assemble_control_group_flag_delete_member() -> Re
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/{flag}/delete/member/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_flag_delete_member_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_flag_delete_member_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("deleted".to_string(), Value::Bool(true)),
@@ -480,7 +480,7 @@ pub async fn stub_organization_assemble_control_group_flag_delete_member_mockput
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/{flag}/mockdeletetoget
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -490,7 +490,7 @@ pub async fn stub_organization_assemble_control_group_flag_mockdeletetoget() -> 
 
 /// Stub handler for /jaxrs/organization/assemble/control/group/{flag}/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_group_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn group_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -504,7 +504,7 @@ pub async fn stub_organization_assemble_control_group_flag_mockputtopost() -> Re
 
 /// Stub handler for /jaxrs/organization/assemble/control/identity/list/like/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_identity_list_like_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn identity_list_like_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -515,7 +515,7 @@ pub async fn stub_organization_assemble_control_identity_list_like_mockputtopost
 
 /// Stub handler for /jaxrs/organization/assemble/control/identity/list/like/pinyin
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_identity_list_like_pinyin() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn identity_list_like_pinyin() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -526,7 +526,7 @@ pub async fn stub_organization_assemble_control_identity_list_like_pinyin() -> R
 
 /// Stub handler for /jaxrs/organization/assemble/control/identity/list/like/pinyin/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_identity_list_like_pinyin_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn identity_list_like_pinyin_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -541,7 +541,7 @@ pub async fn stub_organization_assemble_control_identity_list_like_pinyin_mockpu
 
 /// Stub handler for /jaxrs/organization/assemble/control/identity/list/pinyininitial
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_identity_list_pinyininitial() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn identity_list_pinyininitial() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -552,7 +552,7 @@ pub async fn stub_organization_assemble_control_identity_list_pinyininitial() ->
 
 /// Stub handler for /jaxrs/organization/assemble/control/identity/list/pinyininitial/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_identity_list_pinyininitial_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn identity_list_pinyininitial_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -583,7 +583,7 @@ pub async fn stub_organization_assemble_control_identity_list_pinyininitial_mock
 
 /// Stub handler for /jaxrs/organization/assemble/control/identity/{flag}
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_identity_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn identity_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -593,7 +593,7 @@ pub async fn stub_organization_assemble_control_identity_flag() -> Result<Json<A
 
 /// Stub handler for /jaxrs/organization/assemble/control/identity/{flag}/mockdeletetoget
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_identity_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn identity_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -603,7 +603,7 @@ pub async fn stub_organization_assemble_control_identity_flag_mockdeletetoget() 
 
 /// Stub handler for /jaxrs/organization/assemble/control/identity/{flag}/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_identity_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn identity_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -621,7 +621,7 @@ pub async fn stub_organization_assemble_control_identity_flag_mockputtopost() ->
 
 /// Stub handler for /jaxrs/organization/assemble/control/inputperson/template
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_inputperson_template() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn inputperson_template() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -631,7 +631,7 @@ pub async fn stub_organization_assemble_control_inputperson_template() -> Result
 
 /// Stub handler for /jaxrs/organization/assemble/control/inputperson/wipe
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_inputperson_wipe() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn inputperson_wipe() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -645,7 +645,7 @@ pub async fn stub_organization_assemble_control_inputperson_wipe() -> Result<Jso
 
 /// Stub handler for /jaxrs/organization/assemble/control/permissionsetting/list
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_permissionsetting_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn permissionsetting_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -656,7 +656,7 @@ pub async fn stub_organization_assemble_control_permissionsetting_list() -> Resu
 
 /// Stub handler for /jaxrs/organization/assemble/control/permissionsetting/{flag}
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_permissionsetting_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn permissionsetting_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -666,7 +666,7 @@ pub async fn stub_organization_assemble_control_permissionsetting_flag() -> Resu
 
 /// Stub handler for /jaxrs/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_permissionsetting_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn permissionsetting_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -676,7 +676,7 @@ pub async fn stub_organization_assemble_control_permissionsetting_flag_mockdelet
 
 /// Stub handler for /jaxrs/organization/assemble/control/permissionsetting/{flag}/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_permissionsetting_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn permissionsetting_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -698,7 +698,7 @@ pub async fn stub_organization_assemble_control_permissionsetting_flag_mockputto
 
 /// Stub handler for /jaxrs/organization/assemble/control/personattribute/{flag}
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_personattribute_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn personattribute_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -708,7 +708,7 @@ pub async fn stub_organization_assemble_control_personattribute_flag() -> Result
 
 /// Stub handler for /jaxrs/organization/assemble/control/personattribute/{flag}/mockdeletetoget
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_personattribute_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn personattribute_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -718,7 +718,7 @@ pub async fn stub_organization_assemble_control_personattribute_flag_mockdeletet
 
 /// Stub handler for /jaxrs/organization/assemble/control/personattribute/{flag}/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_personattribute_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn personattribute_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -744,7 +744,7 @@ pub async fn stub_organization_assemble_control_personattribute_flag_mockputtopo
 
 /// Stub handler for /jaxrs/organization/assemble/control/personcard/listgrouptypes
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_personcard_listgrouptypes() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn personcard_listgrouptypes() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -758,7 +758,7 @@ pub async fn stub_organization_assemble_control_personcard_listgrouptypes() -> R
 
 /// Stub handler for /jaxrs/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_personcard_listpaging_page_page_size_size_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn personcard_listpaging_page_page_size_size_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -772,7 +772,7 @@ pub async fn stub_organization_assemble_control_personcard_listpaging_page_page_
 
 /// Stub handler for /jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_personcard_listpagingwithgroup_page_page_size_size_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -782,7 +782,7 @@ pub async fn stub_organization_assemble_control_personcard_listpagingwithgroup_p
 
 /// Stub handler for /jaxrs/organization/assemble/control/personcard/mylist
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_personcard_mylist() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn personcard_mylist() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -792,7 +792,7 @@ pub async fn stub_organization_assemble_control_personcard_mylist() -> Result<Js
 
 /// Stub handler for /jaxrs/organization/assemble/control/personcard/{flag}
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_personcard_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn personcard_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -802,7 +802,7 @@ pub async fn stub_organization_assemble_control_personcard_flag() -> Result<Json
 
 /// Stub handler for /jaxrs/organization/assemble/control/personcard/{flag}/mockdeletetoget
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_personcard_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn personcard_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -820,7 +820,7 @@ pub async fn stub_organization_assemble_control_personcard_flag_mockdeletetoget(
 
 /// Stub handler for /jaxrs/organization/assemble/control/role/list/like/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_role_list_like_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn role_list_like_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -831,7 +831,7 @@ pub async fn stub_organization_assemble_control_role_list_like_mockputtopost() -
 
 /// Stub handler for /jaxrs/organization/assemble/control/role/list/like/pinyin
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_role_list_like_pinyin() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn role_list_like_pinyin() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -842,7 +842,7 @@ pub async fn stub_organization_assemble_control_role_list_like_pinyin() -> Resul
 
 /// Stub handler for /jaxrs/organization/assemble/control/role/list/like/pinyin/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_role_list_like_pinyin_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn role_list_like_pinyin_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -857,7 +857,7 @@ pub async fn stub_organization_assemble_control_role_list_like_pinyin_mockputtop
 
 /// Stub handler for /jaxrs/organization/assemble/control/role/list/pinyininitial
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_role_list_pinyininitial() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn role_list_pinyininitial() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -868,7 +868,7 @@ pub async fn stub_organization_assemble_control_role_list_pinyininitial() -> Res
 
 /// Stub handler for /jaxrs/organization/assemble/control/role/list/pinyininitial/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_role_list_pinyininitial_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn role_list_pinyininitial_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -883,7 +883,7 @@ pub async fn stub_organization_assemble_control_role_list_pinyininitial_mockputt
 
 /// Stub handler for /jaxrs/organization/assemble/control/role/{flag}/mockdeletetoget
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_role_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn role_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -893,7 +893,7 @@ pub async fn stub_organization_assemble_control_role_flag_mockdeletetoget() -> R
 
 /// Stub handler for /jaxrs/organization/assemble/control/role/{flag}/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_role_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn role_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -915,7 +915,7 @@ pub async fn stub_organization_assemble_control_role_flag_mockputtopost() -> Res
 
 /// Stub handler for /jaxrs/organization/assemble/control/unitattribute/{flag}
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_unitattribute_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn unitattribute_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -925,7 +925,7 @@ pub async fn stub_organization_assemble_control_unitattribute_flag() -> Result<J
 
 /// Stub handler for /jaxrs/organization/assemble/control/unitattribute/{flag}/mockdeletetoget
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_unitattribute_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn unitattribute_flag_mockdeletetoget() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -935,7 +935,7 @@ pub async fn stub_organization_assemble_control_unitattribute_flag_mockdeletetog
 
 /// Stub handler for /jaxrs/organization/assemble/control/unitattribute/{flag}/mockputtopost
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_unitattribute_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn unitattribute_flag_mockputtopost() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -945,7 +945,7 @@ pub async fn stub_organization_assemble_control_unitattribute_flag_mockputtopost
 
 /// Stub handler for /jaxrs/organization/assemble/control/unitduty/distinct/name
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_unitduty_distinct_name() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn unitduty_distinct_name() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -975,7 +975,7 @@ pub async fn stub_organization_assemble_control_unitduty_distinct_name() -> Resu
 
 /// Stub handler for /jaxrs/organization/assemble/control/unitduty/list/{flag}/next/{count}
 /// TODO: Implement real business logic
-pub async fn stub_organization_assemble_control_unitduty_flag_mockputtopost(
+pub async fn unitduty_flag_mockputtopost(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -995,7 +995,7 @@ pub async fn stub_organization_assemble_control_unitduty_flag_mockputtopost(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_unitduty_flag_mockdeletetoget(
+pub async fn unitduty_flag_mockdeletetoget(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1015,7 +1015,7 @@ pub async fn stub_organization_assemble_control_unitduty_flag_mockdeletetoget(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_unitduty_flag(
+pub async fn unitduty_flag(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1030,7 +1030,7 @@ pub async fn stub_organization_assemble_control_unitduty_flag(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_unitduty_update_member(
+pub async fn unitduty_update_member(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1045,7 +1045,7 @@ pub async fn stub_organization_assemble_control_unitduty_update_member(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_unitduty_list_flag_prev_count(
+pub async fn unitduty_list_flag_prev_count(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1088,7 +1088,7 @@ pub async fn stub_organization_assemble_control_unitduty_list_flag_prev_count(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_unitduty_list_flag_next_count(
+pub async fn unitduty_list_flag_next_count(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1131,7 +1131,7 @@ pub async fn stub_organization_assemble_control_unitduty_list_flag_next_count(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_unitduty_list_unit_unitFlag(
+pub async fn unitduty_list_unit_unitFlag(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(unit_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1166,7 +1166,7 @@ pub async fn stub_organization_assemble_control_unitduty_list_unit_unitFlag(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_unitduty_list_name_name(
+pub async fn unitduty_list_name_name(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1202,7 +1202,7 @@ pub async fn stub_organization_assemble_control_unitduty_list_name_name(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_unitduty_list_like(
+pub async fn unitduty_list_like(
     pool: Option<Extension<Pool>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1239,7 +1239,7 @@ pub async fn stub_organization_assemble_control_unitduty_list_like(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_unitduty_list_identity_identityFlag(
+pub async fn unitduty_list_identity_identityFlag(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(identity_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1274,7 +1274,7 @@ pub async fn stub_organization_assemble_control_unitduty_list_identity_identityF
     ))))
 }
 
-pub async fn stub_organization_assemble_control_unitduty_distinct_name_like_key(
+pub async fn unitduty_distinct_name_like_key(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(key): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1307,7 +1307,7 @@ pub async fn stub_organization_assemble_control_unitduty_distinct_name_like_key(
 
 
 
-pub async fn stub_organization_assemble_control_unitattribute_list_flag_prev_count(
+pub async fn unitattribute_list_flag_prev_count(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1350,7 +1350,7 @@ pub async fn stub_organization_assemble_control_unitattribute_list_flag_prev_cou
     ))))
 }
 
-pub async fn stub_organization_assemble_control_unitattribute_list_flag_next_count(
+pub async fn unitattribute_list_flag_next_count(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1393,7 +1393,7 @@ pub async fn stub_organization_assemble_control_unitattribute_list_flag_next_cou
     ))))
 }
 
-pub async fn stub_organization_assemble_control_unitattribute_list_unit_flag(
+pub async fn unitattribute_list_unit_flag(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(unit_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1430,7 +1430,7 @@ pub async fn stub_organization_assemble_control_unitattribute_list_unit_flag(
 
 
 
-pub async fn stub_organization_assemble_control_role_list_flag_prev_count(
+pub async fn role_list_flag_prev_count(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1474,7 +1474,7 @@ pub async fn stub_organization_assemble_control_role_list_flag_prev_count(
 
 
 
-pub async fn stub_organization_assemble_control_role_list_person_personFlag(
+pub async fn role_list_person_personFlag(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1511,7 +1511,7 @@ pub async fn stub_organization_assemble_control_role_list_person_personFlag(
 
 
 
-pub async fn stub_organization_assemble_control_role_list_like(
+pub async fn role_list_like(
     pool: Option<Extension<Pool>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1547,7 +1547,7 @@ pub async fn stub_organization_assemble_control_role_list_like(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_role_list_group_groupFlag(
+pub async fn role_list_group_groupFlag(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(group_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1585,7 +1585,7 @@ pub async fn stub_organization_assemble_control_role_list_group_groupFlag(
 
 
 
-pub async fn stub_organization_assemble_control_personcard_listpagingwithgroup_page_page_size_size(
+pub async fn personcard_listpagingwithgroup_page_page_size_size(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1627,7 +1627,7 @@ pub async fn stub_organization_assemble_control_personcard_listpagingwithgroup_p
 }
 
 
-pub async fn stub_organization_assemble_control_personcard_listpaging_page_page_size_size(
+pub async fn personcard_listpaging_page_page_size_size(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1669,7 +1669,7 @@ pub async fn stub_organization_assemble_control_personcard_listpaging_page_page_
 }
 
 
-pub async fn stub_organization_assemble_control_personcard_listVCf_idList(
+pub async fn personcard_listVCf_idList(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(id_list): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1704,7 +1704,7 @@ pub async fn stub_organization_assemble_control_personcard_listVCf_idList(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_personcard_listPersonalVCf_idList(
+pub async fn personcard_listPersonalVCf_idList(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(id_list): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1739,7 +1739,7 @@ pub async fn stub_organization_assemble_control_personcard_listPersonalVCf_idLis
     ))))
 }
 
-pub async fn stub_organization_assemble_control_personcard_createQR_cardId(
+pub async fn personcard_createQR_cardId(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(card_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1765,7 +1765,7 @@ pub async fn stub_organization_assemble_control_personcard_createQR_cardId(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_personcard_createCode_cardId(
+pub async fn personcard_createCode_cardId(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(card_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1794,7 +1794,7 @@ pub async fn stub_organization_assemble_control_personcard_createCode_cardId(
 
 
 
-pub async fn stub_organization_assemble_control_personattribute_list_flag_prev_count(
+pub async fn personattribute_list_flag_prev_count(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1837,7 +1837,7 @@ pub async fn stub_organization_assemble_control_personattribute_list_flag_prev_c
     ))))
 }
 
-pub async fn stub_organization_assemble_control_personattribute_list_flag_next_count(
+pub async fn personattribute_list_flag_next_count(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1880,7 +1880,7 @@ pub async fn stub_organization_assemble_control_personattribute_list_flag_next_c
     ))))
 }
 
-pub async fn stub_organization_assemble_control_personattribute_list_person_personFlag(
+pub async fn personattribute_list_person_personFlag(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1919,7 +1919,7 @@ pub async fn stub_organization_assemble_control_personattribute_list_person_pers
 
 
 
-pub async fn stub_organization_assemble_control_loginrecord_stream(
+pub async fn loginrecord_stream(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(stream): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1955,7 +1955,7 @@ pub async fn stub_organization_assemble_control_loginrecord_stream(
 
 
 
-pub async fn stub_organization_assemble_control_inputperson_result_flag_flag(
+pub async fn inputperson_result_flag_flag(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1989,7 +1989,7 @@ pub async fn stub_organization_assemble_control_inputperson_result_flag_flag(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_identity_flag_order_before_followFlag(
+pub async fn identity_flag_order_before_followFlag(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -2007,7 +2007,7 @@ pub async fn stub_organization_assemble_control_identity_flag_order_before_follo
 
 
 
-pub async fn stub_organization_assemble_control_identity_list_flag_unitduty_name_unitDutyName(
+pub async fn identity_list_flag_unitduty_name_unitDutyName(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((flag, unit_duty_name)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2042,7 +2042,7 @@ pub async fn stub_organization_assemble_control_identity_list_flag_unitduty_name
     ))))
 }
 
-pub async fn stub_organization_assemble_control_identity_list_flag_prev_count(
+pub async fn identity_list_flag_prev_count(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2085,7 +2085,7 @@ pub async fn stub_organization_assemble_control_identity_list_flag_prev_count(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_identity_list_flag_next_count(
+pub async fn identity_list_flag_next_count(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2128,7 +2128,7 @@ pub async fn stub_organization_assemble_control_identity_list_flag_next_count(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_identity_list_unitduty_name_unitDutyName(
+pub async fn identity_list_unitduty_name_unitDutyName(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(unit_duty_name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2163,7 +2163,7 @@ pub async fn stub_organization_assemble_control_identity_list_unitduty_name_unit
     ))))
 }
 
-pub async fn stub_organization_assemble_control_identity_list_unit_unitFlag(
+pub async fn identity_list_unit_unitFlag(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(unit_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2200,7 +2200,7 @@ pub async fn stub_organization_assemble_control_identity_list_unit_unitFlag(
 
 
 
-pub async fn stub_organization_assemble_control_identity_list_person_personFlag(
+pub async fn identity_list_person_personFlag(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2238,7 +2238,7 @@ pub async fn stub_organization_assemble_control_identity_list_person_personFlag(
 
 
 
-pub async fn stub_organization_assemble_control_identity_list_like(
+pub async fn identity_list_like(
     pool: Option<Extension<Pool>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2286,7 +2286,7 @@ pub async fn stub_organization_assemble_control_identity_list_like(
 
 
 
-pub async fn stub_organization_assemble_control_group_list_flag_prev_count(
+pub async fn group_list_flag_prev_count(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2329,7 +2329,7 @@ pub async fn stub_organization_assemble_control_group_list_flag_prev_count(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_group_list_flag_next_count(
+pub async fn group_list_flag_next_count(
     pool: Option<Extension<Pool>>,
     axum::extract::Path((flag, count_str)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2372,7 +2372,7 @@ pub async fn stub_organization_assemble_control_group_list_flag_next_count(
     ))))
 }
 
-pub async fn stub_organization_assemble_control_group_list_role_roleFlag(
+pub async fn group_list_role_roleFlag(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(role_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2409,7 +2409,7 @@ pub async fn stub_organization_assemble_control_group_list_role_roleFlag(
 
 
 
-pub async fn stub_organization_assemble_control_group_list_person_personFlag_sup_nested(
+pub async fn group_list_person_personFlag_sup_nested(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2444,7 +2444,7 @@ pub async fn stub_organization_assemble_control_group_list_person_personFlag_sup
     ))))
 }
 
-pub async fn stub_organization_assemble_control_group_list_person_personFlag_sup_direct(
+pub async fn group_list_person_personFlag_sup_direct(
     pool: Option<Extension<Pool>>,
     axum::extract::Path(person_flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2482,7 +2482,7 @@ pub async fn stub_organization_assemble_control_group_list_person_personFlag_sup
 
 
 
-pub async fn stub_organization_assemble_control_group_list_like(
+pub async fn group_list_like(
     pool: Option<Extension<Pool>>,
     axum::extract::Json(req): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2521,104 +2521,104 @@ pub async fn stub_organization_assemble_control_group_list_like(
 
 pub fn router(pool: deadpool_postgres::Pool) -> Router {
     let router = Router::new()
-    .route("/jaxrs/organization/assemble/control/export/export/all", get(stub_organization_assemble_control_export_export_all))
-    .route("/jaxrs/organization/assemble/control/export/result/flag/{flag}", get(stub_organization_assemble_control_export_result_flag_flag))
-    .route("/jaxrs/organization/assemble/control/export/zhengwudingding/person", get(stub_organization_assemble_control_export_zhengwudingding_person))
-    .route("/jaxrs/organization/assemble/control/group/list/like", get(stub_organization_assemble_control_group_list_like))
-    .route("/jaxrs/organization/assemble/control/group/list/like/mockputtopost", get(stub_organization_assemble_control_group_list_like_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/list/like/pinyin", get(stub_organization_assemble_control_group_list_like_pinyin))
-    .route("/jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost", get(stub_organization_assemble_control_group_list_like_pinyin_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/list/person/{personFlag}/sup/direct", get(stub_organization_assemble_control_group_list_person_personFlag_sup_direct))
-    .route("/jaxrs/organization/assemble/control/group/list/person/{personFlag}/sup/nested", get(stub_organization_assemble_control_group_list_person_personFlag_sup_nested))
-    .route("/jaxrs/organization/assemble/control/group/list/pinyininitial", get(stub_organization_assemble_control_group_list_pinyininitial))
-    .route("/jaxrs/organization/assemble/control/group/list/pinyininitial/mockputtopost", get(stub_organization_assemble_control_group_list_pinyininitial_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/list/role/{roleFlag}", get(stub_organization_assemble_control_group_list_role_roleFlag))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/next/{count}", get(stub_organization_assemble_control_group_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/prev/{count}", get(stub_organization_assemble_control_group_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sub/direct", get(stub_organization_assemble_control_group_list_flag_sub_direct))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sub/nested", get(stub_organization_assemble_control_group_list_flag_sub_nested))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sup/direct", get(stub_organization_assemble_control_group_list_flag_sup_direct))
-    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sup/nested", get(stub_organization_assemble_control_group_list_flag_sup_nested))
-    .route("/jaxrs/organization/assemble/control/group/{flag}", get(stub_organization_assemble_control_group_flag))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/add/member", get(stub_organization_assemble_control_group_flag_add_member))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/add/member/mockputtopost", get(stub_organization_assemble_control_group_flag_add_member_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member", get(stub_organization_assemble_control_group_flag_delete_member))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member/mockputtopost", get(stub_organization_assemble_control_group_flag_delete_member_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/mockdeletetoget", get(stub_organization_assemble_control_group_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/group/{flag}/mockputtopost", get(stub_organization_assemble_control_group_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/list/like", get(stub_organization_assemble_control_identity_list_like))
-    .route("/jaxrs/organization/assemble/control/identity/list/like/mockputtopost", get(stub_organization_assemble_control_identity_list_like_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/list/like/pinyin", get(stub_organization_assemble_control_identity_list_like_pinyin))
-    .route("/jaxrs/organization/assemble/control/identity/list/like/pinyin/mockputtopost", get(stub_organization_assemble_control_identity_list_like_pinyin_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/list/person/{personFlag}", get(stub_organization_assemble_control_identity_list_person_personFlag))
-    .route("/jaxrs/organization/assemble/control/identity/list/pinyininitial", get(stub_organization_assemble_control_identity_list_pinyininitial))
-    .route("/jaxrs/organization/assemble/control/identity/list/pinyininitial/mockputtopost", get(stub_organization_assemble_control_identity_list_pinyininitial_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/list/unit/{unitFlag}", get(stub_organization_assemble_control_identity_list_unit_unitFlag))
-    .route("/jaxrs/organization/assemble/control/identity/list/unitduty/name/{unitDutyName}", get(stub_organization_assemble_control_identity_list_unitduty_name_unitDutyName))
-    .route("/jaxrs/organization/assemble/control/identity/list/{flag}/next/{count}", get(stub_organization_assemble_control_identity_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/identity/list/{flag}/prev/{count}", get(stub_organization_assemble_control_identity_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/identity/list/{flag}/unitduty/name/{unitDutyName}", get(stub_organization_assemble_control_identity_list_flag_unitduty_name_unitDutyName))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}", get(stub_organization_assemble_control_identity_flag))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}/mockdeletetoget", get(stub_organization_assemble_control_identity_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}/mockputtopost", get(stub_organization_assemble_control_identity_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/identity/{flag}/order/before/{followFlag}", get(stub_organization_assemble_control_identity_flag_order_before_followFlag))
-    .route("/jaxrs/organization/assemble/control/inputperson/result/flag/{flag}", get(stub_organization_assemble_control_inputperson_result_flag_flag))
-    .route("/jaxrs/organization/assemble/control/inputperson/template", get(stub_organization_assemble_control_inputperson_template))
-    .route("/jaxrs/organization/assemble/control/inputperson/wipe", get(stub_organization_assemble_control_inputperson_wipe))
-    .route("/jaxrs/organization/assemble/control/loginrecord/{stream}", get(stub_organization_assemble_control_loginrecord_stream))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/list", get(stub_organization_assemble_control_permissionsetting_list))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}", get(stub_organization_assemble_control_permissionsetting_flag))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget", get(stub_organization_assemble_control_permissionsetting_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockputtopost", get(stub_organization_assemble_control_permissionsetting_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/personattribute/list/person/{personFlag}", get(stub_organization_assemble_control_personattribute_list_person_personFlag))
-    .route("/jaxrs/organization/assemble/control/personattribute/list/{flag}/next/{count}", get(stub_organization_assemble_control_personattribute_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/personattribute/list/{flag}/prev/{count}", get(stub_organization_assemble_control_personattribute_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/personattribute/{flag}", get(stub_organization_assemble_control_personattribute_flag))
-    .route("/jaxrs/organization/assemble/control/personattribute/{flag}/mockdeletetoget", get(stub_organization_assemble_control_personattribute_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/personattribute/{flag}/mockputtopost", get(stub_organization_assemble_control_personattribute_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/personcard/createCode/{cardId}", get(stub_organization_assemble_control_personcard_createCode_cardId))
-    .route("/jaxrs/organization/assemble/control/personcard/createQR/{cardId}", get(stub_organization_assemble_control_personcard_createQR_cardId))
-    .route("/jaxrs/organization/assemble/control/personcard/listPersonalVCf/{idList}", get(stub_organization_assemble_control_personcard_listPersonalVCf_idList))
-    .route("/jaxrs/organization/assemble/control/personcard/listVCf/{idList}", get(stub_organization_assemble_control_personcard_listVCf_idList))
-    .route("/jaxrs/organization/assemble/control/personcard/listgrouptypes", get(stub_organization_assemble_control_personcard_listgrouptypes))
-    .route("/jaxrs/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}", get(stub_organization_assemble_control_personcard_listpaging_page_page_size_size))
-    .route("/jaxrs/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}/mockputtopost", get(stub_organization_assemble_control_personcard_listpaging_page_page_size_size_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}", get(stub_organization_assemble_control_personcard_listpagingwithgroup_page_page_size_size))
-    .route("/jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}/mockputtopost", get(stub_organization_assemble_control_personcard_listpagingwithgroup_page_page_size_size_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/personcard/mylist", get(stub_organization_assemble_control_personcard_mylist))
-    .route("/jaxrs/organization/assemble/control/personcard/{flag}", get(stub_organization_assemble_control_personcard_flag))
-    .route("/jaxrs/organization/assemble/control/personcard/{flag}/mockdeletetoget", get(stub_organization_assemble_control_personcard_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/role/list/group/{groupFlag}", get(stub_organization_assemble_control_role_list_group_groupFlag))
-    .route("/jaxrs/organization/assemble/control/role/list/like", get(stub_organization_assemble_control_role_list_like))
-    .route("/jaxrs/organization/assemble/control/role/list/like/mockputtopost", get(stub_organization_assemble_control_role_list_like_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/role/list/like/pinyin", get(stub_organization_assemble_control_role_list_like_pinyin))
-    .route("/jaxrs/organization/assemble/control/role/list/like/pinyin/mockputtopost", get(stub_organization_assemble_control_role_list_like_pinyin_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/role/list/person/{personFlag}", get(stub_organization_assemble_control_role_list_person_personFlag))
-    .route("/jaxrs/organization/assemble/control/role/list/pinyininitial", get(stub_organization_assemble_control_role_list_pinyininitial))
-    .route("/jaxrs/organization/assemble/control/role/list/pinyininitial/mockputtopost", get(stub_organization_assemble_control_role_list_pinyininitial_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/export/export/all", get(export_export_all))
+    .route("/jaxrs/organization/assemble/control/export/result/flag/{flag}", get(export_result_flag_flag))
+    .route("/jaxrs/organization/assemble/control/export/zhengwudingding/person", get(export_zhengwudingding_person))
+    .route("/jaxrs/organization/assemble/control/group/list/like", get(group_list_like))
+    .route("/jaxrs/organization/assemble/control/group/list/like/mockputtopost", get(group_list_like_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/group/list/like/pinyin", get(group_list_like_pinyin))
+    .route("/jaxrs/organization/assemble/control/group/list/like/pinyin/mockputtopost", get(group_list_like_pinyin_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/group/list/person/{personFlag}/sup/direct", get(group_list_person_personFlag_sup_direct))
+    .route("/jaxrs/organization/assemble/control/group/list/person/{personFlag}/sup/nested", get(group_list_person_personFlag_sup_nested))
+    .route("/jaxrs/organization/assemble/control/group/list/pinyininitial", get(group_list_pinyininitial))
+    .route("/jaxrs/organization/assemble/control/group/list/pinyininitial/mockputtopost", get(group_list_pinyininitial_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/group/list/role/{roleFlag}", get(group_list_role_roleFlag))
+    .route("/jaxrs/organization/assemble/control/group/list/{flag}/next/{count}", get(group_list_flag_next_count))
+    .route("/jaxrs/organization/assemble/control/group/list/{flag}/prev/{count}", get(group_list_flag_prev_count))
+    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sub/direct", get(group_list_flag_sub_direct))
+    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sub/nested", get(group_list_flag_sub_nested))
+    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sup/direct", get(group_list_flag_sup_direct))
+    .route("/jaxrs/organization/assemble/control/group/list/{flag}/sup/nested", get(group_list_flag_sup_nested))
+    .route("/jaxrs/organization/assemble/control/group/{flag}", get(group_flag))
+    .route("/jaxrs/organization/assemble/control/group/{flag}/add/member", get(group_flag_add_member))
+    .route("/jaxrs/organization/assemble/control/group/{flag}/add/member/mockputtopost", get(group_flag_add_member_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member", get(group_flag_delete_member))
+    .route("/jaxrs/organization/assemble/control/group/{flag}/delete/member/mockputtopost", get(group_flag_delete_member_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/group/{flag}/mockdeletetoget", get(group_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/group/{flag}/mockputtopost", get(group_flag_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/identity/list/like", get(identity_list_like))
+    .route("/jaxrs/organization/assemble/control/identity/list/like/mockputtopost", get(identity_list_like_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/identity/list/like/pinyin", get(identity_list_like_pinyin))
+    .route("/jaxrs/organization/assemble/control/identity/list/like/pinyin/mockputtopost", get(identity_list_like_pinyin_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/identity/list/person/{personFlag}", get(identity_list_person_personFlag))
+    .route("/jaxrs/organization/assemble/control/identity/list/pinyininitial", get(identity_list_pinyininitial))
+    .route("/jaxrs/organization/assemble/control/identity/list/pinyininitial/mockputtopost", get(identity_list_pinyininitial_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/identity/list/unit/{unitFlag}", get(identity_list_unit_unitFlag))
+    .route("/jaxrs/organization/assemble/control/identity/list/unitduty/name/{unitDutyName}", get(identity_list_unitduty_name_unitDutyName))
+    .route("/jaxrs/organization/assemble/control/identity/list/{flag}/next/{count}", get(identity_list_flag_next_count))
+    .route("/jaxrs/organization/assemble/control/identity/list/{flag}/prev/{count}", get(identity_list_flag_prev_count))
+    .route("/jaxrs/organization/assemble/control/identity/list/{flag}/unitduty/name/{unitDutyName}", get(identity_list_flag_unitduty_name_unitDutyName))
+    .route("/jaxrs/organization/assemble/control/identity/{flag}", get(identity_flag))
+    .route("/jaxrs/organization/assemble/control/identity/{flag}/mockdeletetoget", get(identity_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/identity/{flag}/mockputtopost", get(identity_flag_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/identity/{flag}/order/before/{followFlag}", get(identity_flag_order_before_followFlag))
+    .route("/jaxrs/organization/assemble/control/inputperson/result/flag/{flag}", get(inputperson_result_flag_flag))
+    .route("/jaxrs/organization/assemble/control/inputperson/template", get(inputperson_template))
+    .route("/jaxrs/organization/assemble/control/inputperson/wipe", get(inputperson_wipe))
+    .route("/jaxrs/organization/assemble/control/loginrecord/{stream}", get(loginrecord_stream))
+    .route("/jaxrs/organization/assemble/control/permissionsetting/list", get(permissionsetting_list))
+    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}", get(permissionsetting_flag))
+    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget", get(permissionsetting_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockputtopost", get(permissionsetting_flag_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/personattribute/list/person/{personFlag}", get(personattribute_list_person_personFlag))
+    .route("/jaxrs/organization/assemble/control/personattribute/list/{flag}/next/{count}", get(personattribute_list_flag_next_count))
+    .route("/jaxrs/organization/assemble/control/personattribute/list/{flag}/prev/{count}", get(personattribute_list_flag_prev_count))
+    .route("/jaxrs/organization/assemble/control/personattribute/{flag}", get(personattribute_flag))
+    .route("/jaxrs/organization/assemble/control/personattribute/{flag}/mockdeletetoget", get(personattribute_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/personattribute/{flag}/mockputtopost", get(personattribute_flag_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/personcard/createCode/{cardId}", get(personcard_createCode_cardId))
+    .route("/jaxrs/organization/assemble/control/personcard/createQR/{cardId}", get(personcard_createQR_cardId))
+    .route("/jaxrs/organization/assemble/control/personcard/listPersonalVCf/{idList}", get(personcard_listPersonalVCf_idList))
+    .route("/jaxrs/organization/assemble/control/personcard/listVCf/{idList}", get(personcard_listVCf_idList))
+    .route("/jaxrs/organization/assemble/control/personcard/listgrouptypes", get(personcard_listgrouptypes))
+    .route("/jaxrs/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}", get(personcard_listpaging_page_page_size_size))
+    .route("/jaxrs/organization/assemble/control/personcard/listpaging/page/{page}/size/{size}/mockputtopost", get(personcard_listpaging_page_page_size_size_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}", get(personcard_listpagingwithgroup_page_page_size_size))
+    .route("/jaxrs/organization/assemble/control/personcard/listpagingwithgroup/page/{page}/size/{size}/mockputtopost", get(personcard_listpagingwithgroup_page_page_size_size_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/personcard/mylist", get(personcard_mylist))
+    .route("/jaxrs/organization/assemble/control/personcard/{flag}", get(personcard_flag))
+    .route("/jaxrs/organization/assemble/control/personcard/{flag}/mockdeletetoget", get(personcard_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/role/list/group/{groupFlag}", get(role_list_group_groupFlag))
+    .route("/jaxrs/organization/assemble/control/role/list/like", get(role_list_like))
+    .route("/jaxrs/organization/assemble/control/role/list/like/mockputtopost", get(role_list_like_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/role/list/like/pinyin", get(role_list_like_pinyin))
+    .route("/jaxrs/organization/assemble/control/role/list/like/pinyin/mockputtopost", get(role_list_like_pinyin_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/role/list/person/{personFlag}", get(role_list_person_personFlag))
+    .route("/jaxrs/organization/assemble/control/role/list/pinyininitial", get(role_list_pinyininitial))
+    .route("/jaxrs/organization/assemble/control/role/list/pinyininitial/mockputtopost", get(role_list_pinyininitial_mockputtopost))
     .route("/jaxrs/organization/assemble/control/role/list/{flag}/next/{count}", get(organization_assemble_control_role_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/role/list/{flag}/prev/{count}", get(stub_organization_assemble_control_role_list_flag_prev_count))
+    .route("/jaxrs/organization/assemble/control/role/list/{flag}/prev/{count}", get(role_list_flag_prev_count))
     .route("/jaxrs/organization/assemble/control/role/{flag}", get(organization_assemble_control_role_flag))
-    .route("/jaxrs/organization/assemble/control/role/{flag}/mockdeletetoget", get(stub_organization_assemble_control_role_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/role/{flag}/mockputtopost", get(stub_organization_assemble_control_role_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/unitattribute/list/unit/{flag}", get(stub_organization_assemble_control_unitattribute_list_unit_flag))
-    .route("/jaxrs/organization/assemble/control/unitattribute/list/{flag}/next/{count}", get(stub_organization_assemble_control_unitattribute_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/unitattribute/list/{flag}/prev/{count}", get(stub_organization_assemble_control_unitattribute_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}", get(stub_organization_assemble_control_unitattribute_flag))
-    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}/mockdeletetoget", get(stub_organization_assemble_control_unitattribute_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}/mockputtopost", get(stub_organization_assemble_control_unitattribute_flag_mockputtopost))
-    .route("/jaxrs/organization/assemble/control/unitduty/distinct/name", get(stub_organization_assemble_control_unitduty_distinct_name))
-    .route("/jaxrs/organization/assemble/control/unitduty/distinct/name/like/{key}", get(stub_organization_assemble_control_unitduty_distinct_name_like_key))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/identity/{identityFlag}", get(stub_organization_assemble_control_unitduty_list_identity_identityFlag))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/like", get(stub_organization_assemble_control_unitduty_list_like))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/name/{name}", get(stub_organization_assemble_control_unitduty_list_name_name))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/unit/{unitFlag}", get(stub_organization_assemble_control_unitduty_list_unit_unitFlag))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/{flag}/next/{count}", get(stub_organization_assemble_control_unitduty_list_flag_next_count))
-    .route("/jaxrs/organization/assemble/control/unitduty/list/{flag}/prev/{count}", get(stub_organization_assemble_control_unitduty_list_flag_prev_count))
-    .route("/jaxrs/organization/assemble/control/unitduty/update/member", get(stub_organization_assemble_control_unitduty_update_member))
-    .route("/jaxrs/organization/assemble/control/unitduty/{flag}", get(stub_organization_assemble_control_unitduty_flag))
-    .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockdeletetoget", get(stub_organization_assemble_control_unitduty_flag_mockdeletetoget))
-    .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockputtopost", get(stub_organization_assemble_control_unitduty_flag_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/role/{flag}/mockdeletetoget", get(role_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/role/{flag}/mockputtopost", get(role_flag_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/unitattribute/list/unit/{flag}", get(unitattribute_list_unit_flag))
+    .route("/jaxrs/organization/assemble/control/unitattribute/list/{flag}/next/{count}", get(unitattribute_list_flag_next_count))
+    .route("/jaxrs/organization/assemble/control/unitattribute/list/{flag}/prev/{count}", get(unitattribute_list_flag_prev_count))
+    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}", get(unitattribute_flag))
+    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}/mockdeletetoget", get(unitattribute_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/unitattribute/{flag}/mockputtopost", get(unitattribute_flag_mockputtopost))
+    .route("/jaxrs/organization/assemble/control/unitduty/distinct/name", get(unitduty_distinct_name))
+    .route("/jaxrs/organization/assemble/control/unitduty/distinct/name/like/{key}", get(unitduty_distinct_name_like_key))
+    .route("/jaxrs/organization/assemble/control/unitduty/list/identity/{identityFlag}", get(unitduty_list_identity_identityFlag))
+    .route("/jaxrs/organization/assemble/control/unitduty/list/like", get(unitduty_list_like))
+    .route("/jaxrs/organization/assemble/control/unitduty/list/name/{name}", get(unitduty_list_name_name))
+    .route("/jaxrs/organization/assemble/control/unitduty/list/unit/{unitFlag}", get(unitduty_list_unit_unitFlag))
+    .route("/jaxrs/organization/assemble/control/unitduty/list/{flag}/next/{count}", get(unitduty_list_flag_next_count))
+    .route("/jaxrs/organization/assemble/control/unitduty/list/{flag}/prev/{count}", get(unitduty_list_flag_prev_count))
+    .route("/jaxrs/organization/assemble/control/unitduty/update/member", get(unitduty_update_member))
+    .route("/jaxrs/organization/assemble/control/unitduty/{flag}", get(unitduty_flag))
+    .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockdeletetoget", get(unitduty_flag_mockdeletetoget))
+    .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockputtopost", get(unitduty_flag_mockputtopost))
     .route("/jaxrs/organization/assemble/control/unit/list/{flag}/next/{count}", get(organization_assemble_control_unit_list_flag_next_count))
     .route("/jaxrs/organization/assemble/control/unit/{flag}", get(organization_assemble_control_unit_flag))
     .route("/jaxrs/organization/assemble/control/person/list/like", post(organization_assemble_control_person_list_like))

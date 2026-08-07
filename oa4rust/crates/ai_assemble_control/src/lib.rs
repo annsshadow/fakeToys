@@ -93,11 +93,11 @@ pub async fn get_usage_stats(
 
 pub fn mcp_router(pool: Option<Pool>) -> axum::Router {
     let router = Router::new()
-        .route("/jaxrs/ai/assemble/control/config/list/mcp/paging/{page}/size/{size}", get(stub_ai_assemble_control_config_list_mcp_paging_page_size_size))
-        .route("/jaxrs/ai/assemble/control/config/get/mcp/{id}", get(stub_ai_assemble_control_config_get_mcp_flag))
-        .route("/jaxrs/ai/assemble/control/config/create/mcp", post(stub_ai_assemble_control_config_create_mcp))
-        .route("/jaxrs/ai/assemble/control/config/update/mcp/{id}", post(stub_ai_assemble_control_config_update_mcp_flag))
-        .route("/jaxrs/ai/assemble/control/config/delete/mcp/{id}", post(stub_ai_assemble_control_config_delete_mcp_flag));
+        .route("/jaxrs/ai/assemble/control/config/list/mcp/paging/{page}/size/{size}", get(config_list_mcp_paging_page_size_size))
+        .route("/jaxrs/ai/assemble/control/config/get/mcp/{id}", get(config_get_mcp_flag))
+        .route("/jaxrs/ai/assemble/control/config/create/mcp", post(config_create_mcp))
+        .route("/jaxrs/ai/assemble/control/config/update/mcp/{id}", post(config_update_mcp_flag))
+        .route("/jaxrs/ai/assemble/control/config/delete/mcp/{id}", post(config_delete_mcp_flag));
 
     if let Some(pool) = pool {
         router.layer(Extension(pool))
@@ -106,14 +106,14 @@ pub fn mcp_router(pool: Option<Pool>) -> axum::Router {
     }
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/ai_assemble_control/health", axum::routing::get(|| async { "TODO: ai_assemble_control - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::ai_assemble_control_router(pool)
 }
 
 
+
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_base_config(
+pub async fn config_base_config(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -147,7 +147,7 @@ pub async fn stub_ai_assemble_control_config_base_config(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_create_mcp(
+pub async fn config_create_mcp(
     pool: Option<Extension<Pool>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -182,7 +182,7 @@ pub async fn stub_ai_assemble_control_config_create_mcp(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_create_model(
+pub async fn config_create_model(
     pool: Option<Extension<Pool>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -217,7 +217,7 @@ pub async fn stub_ai_assemble_control_config_create_model(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_delete_mcp_flag(
+pub async fn config_delete_mcp_flag(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -247,7 +247,7 @@ pub async fn stub_ai_assemble_control_config_delete_mcp_flag(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_delete_model_flag(
+pub async fn config_delete_model_flag(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -277,7 +277,7 @@ pub async fn stub_ai_assemble_control_config_delete_model_flag(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_get_mcp_ext_flag(
+pub async fn config_get_mcp_ext_flag(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -311,7 +311,7 @@ pub async fn stub_ai_assemble_control_config_get_mcp_ext_flag(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_get_mcp_flag(
+pub async fn config_get_mcp_flag(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -347,7 +347,7 @@ pub async fn stub_ai_assemble_control_config_get_mcp_flag(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_get_model_flag(
+pub async fn config_get_model_flag(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -382,7 +382,7 @@ pub async fn stub_ai_assemble_control_config_get_model_flag(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_list_enable_model(
+pub async fn config_list_enable_model(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -422,7 +422,7 @@ pub async fn stub_ai_assemble_control_config_list_enable_model(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_list_mcp_paging_page_size_size(
+pub async fn config_list_mcp_paging_page_size_size(
     pool: Option<Extension<Pool>>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -467,7 +467,7 @@ pub async fn stub_ai_assemble_control_config_list_mcp_paging_page_size_size(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_list_model_paging_page_size_size(
+pub async fn config_list_model_paging_page_size_size(
     pool: Option<Extension<Pool>>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -509,7 +509,7 @@ pub async fn stub_ai_assemble_control_config_list_model_paging_page_size_size(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_save(
+pub async fn config_save(
     pool: Option<Extension<Pool>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -565,7 +565,7 @@ pub async fn stub_ai_assemble_control_config_save(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_update_mcp_flag(
+pub async fn config_update_mcp_flag(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Json(req): Json<Value>,
@@ -604,7 +604,7 @@ pub async fn stub_ai_assemble_control_config_update_mcp_flag(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_config_update_model_flag(
+pub async fn config_update_model_flag(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Json(req): Json<Value>,
@@ -642,7 +642,7 @@ pub async fn stub_ai_assemble_control_config_update_model_flag(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_file_copy_file(
+pub async fn file_copy_file(
     pool: Option<Extension<Pool>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -674,7 +674,7 @@ pub async fn stub_ai_assemble_control_file_copy_file(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_file_delete_flag(
+pub async fn file_delete_flag(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -704,7 +704,7 @@ pub async fn stub_ai_assemble_control_file_delete_flag(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_file_list(
+pub async fn file_list(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -744,7 +744,7 @@ pub async fn stub_ai_assemble_control_file_list(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_file_list_paging_page_size_size(
+pub async fn file_list_paging_page_size_size(
     pool: Option<Extension<Pool>>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -785,7 +785,7 @@ pub async fn stub_ai_assemble_control_file_list_paging_page_size_size(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_file_upload(
+pub async fn file_upload(
     pool: Option<Extension<Pool>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -820,7 +820,7 @@ pub async fn stub_ai_assemble_control_file_upload(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_file_flag(
+pub async fn file_flag(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -855,7 +855,7 @@ pub async fn stub_ai_assemble_control_file_flag(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_file_id_download(
+pub async fn file_id_download(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -887,7 +887,7 @@ pub async fn stub_ai_assemble_control_file_id_download(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_file_id_download_scale(
+pub async fn file_id_download_scale(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -918,7 +918,7 @@ pub async fn stub_ai_assemble_control_file_id_download_scale(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_index_cms_doc_with_app_appId(
+pub async fn index_cms_doc_with_app_appId(
     pool: Option<Extension<Pool>>,
     Path(app_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -955,7 +955,7 @@ pub async fn stub_ai_assemble_control_index_cms_doc_with_app_appId(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_index_cms_doc_docId(
+pub async fn index_cms_doc_docId(
     pool: Option<Extension<Pool>>,
     Path(doc_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -987,7 +987,7 @@ pub async fn stub_ai_assemble_control_index_cms_doc_docId(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_index_delete_flag(
+pub async fn index_delete_flag(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1017,7 +1017,7 @@ pub async fn stub_ai_assemble_control_index_delete_flag(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_index_list_paging_page_size_size(
+pub async fn index_list_paging_page_size_size(
     pool: Option<Extension<Pool>>,
     Path((page, size)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1057,7 +1057,7 @@ pub async fn stub_ai_assemble_control_index_list_paging_page_size_size(
 }
 
 #[axum::debug_handler]
-pub async fn stub_ai_assemble_control_index_sync_to_knowledge(
+pub async fn index_sync_to_knowledge(
     pool: Option<Extension<Pool>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

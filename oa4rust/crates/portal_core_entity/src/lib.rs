@@ -144,6 +144,5 @@ pub fn portal_core_entity_router(pool: Pool) -> Router {
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    portal_core_entity_router(pool)
-        .route("/portal_core_entity/health", axum::routing::get(|| async { "ok" }))
+    crate::portal_core_entity_router(pool)
 }

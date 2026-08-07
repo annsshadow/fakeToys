@@ -279,15 +279,15 @@ pub fn bbs_assemble_control_router(pool: Pool) -> Router {
     routes::router(pool)
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/bbs_assemble_control/health", axum::routing::get(|| async { "TODO: bbs_assemble_control - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::bbs_assemble_control_router(pool)
 }
+
 
 
 /// Stub handler for /jaxrs/bbs/assemble/control/forum/view/all
 /// TODO: Implement real business logic
-pub async fn stub_bbs_assemble_control_forum_view_all() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn forum_view_all() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -297,7 +297,7 @@ pub async fn stub_bbs_assemble_control_forum_view_all() -> Result<Json<ActionRes
 
 /// Stub handler for /jaxrs/bbs/assemble/control/forum/{id}
 /// TODO: Implement real business logic
-pub async fn stub_bbs_assemble_control_forum_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn forum_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -307,7 +307,7 @@ pub async fn stub_bbs_assemble_control_forum_id() -> Result<Json<ActionResult<Va
 
 /// Stub handler for /jaxrs/bbs/assemble/control/mobile/view/all
 /// TODO: Implement real business logic
-pub async fn stub_bbs_assemble_control_mobile_view_all() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mobile_view_all() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -317,7 +317,7 @@ pub async fn stub_bbs_assemble_control_mobile_view_all() -> Result<Json<ActionRe
 
 /// Stub handler for /jaxrs/bbs/assemble/control/permission/replyPublishable/{subjectId}
 /// TODO: Implement real business logic
-pub async fn stub_bbs_assemble_control_permission_replyPublishable_subjectId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn permission_replyPublishable_subjectId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -327,7 +327,7 @@ pub async fn stub_bbs_assemble_control_permission_replyPublishable_subjectId() -
 
 /// Stub handler for /jaxrs/bbs/assemble/control/permission/subjectPublishable/{sectionId}
 /// TODO: Implement real business logic
-pub async fn stub_bbs_assemble_control_permission_subjectPublishable_sectionId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn permission_subjectPublishable_sectionId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -337,7 +337,7 @@ pub async fn stub_bbs_assemble_control_permission_subjectPublishable_sectionId()
 
 /// Stub handler for /jaxrs/bbs/assemble/control/reply/filter/list/page/{page}/count/{count}
 /// TODO: Implement real business logic
-pub async fn stub_bbs_assemble_control_reply_filter_list_page_page_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn reply_filter_list_page_page_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -348,7 +348,7 @@ pub async fn stub_bbs_assemble_control_reply_filter_list_page_page_count_count()
 
 /// Stub handler for /jaxrs/bbs/assemble/control/reply/list/sub/{id}
 /// TODO: Implement real business logic
-pub async fn stub_bbs_assemble_control_reply_list_sub_id(
+pub async fn reply_list_sub_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -386,7 +386,7 @@ pub async fn stub_bbs_assemble_control_reply_list_sub_id(
 
 /// Stub handler for /jaxrs/bbs/assemble/control/subject/view/{id}
 /// TODO: Implement real business logic
-pub async fn stub_bbs_assemble_control_subject_view_id(
+pub async fn subject_view_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -411,7 +411,7 @@ pub async fn stub_bbs_assemble_control_subject_view_id(
 
 /// Stub handler for /jaxrs/bbs/assemble/control/subject/top/{sectionId}
 /// TODO: Implement real business logic
-pub async fn stub_bbs_assemble_control_subject_top_sectionId(
+pub async fn subject_top_sectionId(
     pool: Option<Extension<Pool>>,
     Path(section_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -448,7 +448,7 @@ pub async fn stub_bbs_assemble_control_subject_top_sectionId(
 
 /// Stub handler for /jaxrs/bbs/assemble/control/permission/section/{sectionId}
 /// TODO: Implement real business logic
-pub async fn stub_bbs_assemble_control_permission_section_sectionId(
+pub async fn permission_section_sectionId(
     pool: Option<Extension<Pool>>,
     Path(_section_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -467,7 +467,7 @@ pub async fn stub_bbs_assemble_control_permission_section_sectionId(
 
 /// Stub handler for /jaxrs/bbs/assemble/control/permission/subject/{subjectId}
 /// TODO: Implement real business logic
-pub async fn stub_bbs_assemble_control_permission_subject_subjectId(
+pub async fn permission_subject_subjectId(
     pool: Option<Extension<Pool>>,
     Path(_subject_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -486,7 +486,7 @@ pub async fn stub_bbs_assemble_control_permission_subject_subjectId(
 
 /// Stub handler for /jaxrs/bbs/assemble/control/section/viewforum/{forumId}
 /// TODO: Implement real business logic
-pub async fn stub_bbs_assemble_control_section_viewforum_forumId(
+pub async fn section_viewforum_forumId(
     pool: Option<Extension<Pool>>,
     Path(forum_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

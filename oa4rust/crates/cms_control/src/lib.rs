@@ -8,5 +8,6 @@ pub fn cms_control_router(pool: Pool) -> Router {
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    cms_control_router(pool)
+    crate::cms_control_router(pool)
 }
+

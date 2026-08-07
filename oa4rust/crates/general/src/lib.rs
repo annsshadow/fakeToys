@@ -68,5 +68,5 @@ pub use routes::general_router;
 mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    general_router(pool)
+    crate::general_router(pool)
 }

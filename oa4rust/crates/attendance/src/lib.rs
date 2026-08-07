@@ -162,10 +162,10 @@ pub fn attendance_router(pool: Pool) -> Router {
     routes::attendance_router(pool)
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/attendance/health", axum::routing::get(|| async { "TODO: attendance - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::attendance_router(pool)
 }
+
 
 pub async fn list_check_in_records(
     pool: Extension<Pool>,

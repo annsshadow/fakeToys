@@ -267,12 +267,13 @@ pub fn processplatform_assemble_designer_router() -> Router {
 mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    routes::router(pool)
+    processplatform_assemble_designer_router().layer(axum::extract::Extension(pool))
 }
 
 
+
 /// Stub handler for /jaxrs/processplatform/assemble/designer/application/list
-pub async fn stub_processplatform_assemble_designer_application_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn application_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -281,7 +282,7 @@ pub async fn stub_processplatform_assemble_designer_application_list() -> Result
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/application/list/applicationcategory/{applicationCategory}
-pub async fn stub_processplatform_assemble_designer_application_list_applicationcategory_applicationCategory() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn application_list_applicationcategory_applicationCategory() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -290,7 +291,7 @@ pub async fn stub_processplatform_assemble_designer_application_list_application
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/application/list/summary
-pub async fn stub_processplatform_assemble_designer_application_list_summary() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn application_list_summary() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -299,7 +300,7 @@ pub async fn stub_processplatform_assemble_designer_application_list_summary() -
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/application/list/summary/applicationcategory/{applicationCategory}
-pub async fn stub_processplatform_assemble_designer_application_list_summary_applicationcategory_applicationCategory() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn application_list_summary_applicationcategory_applicationCategory() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -308,7 +309,7 @@ pub async fn stub_processplatform_assemble_designer_application_list_summary_app
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/application/{id}
-pub async fn stub_processplatform_assemble_designer_application_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn application_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -317,7 +318,7 @@ pub async fn stub_processplatform_assemble_designer_application_id() -> Result<J
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/application/{id}/icon
-pub async fn stub_processplatform_assemble_designer_application_id_icon() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn application_id_icon() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -326,7 +327,7 @@ pub async fn stub_processplatform_assemble_designer_application_id_icon() -> Res
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/application/{id}/permission
-pub async fn stub_processplatform_assemble_designer_application_id_permission() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn application_id_permission() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -335,7 +336,7 @@ pub async fn stub_processplatform_assemble_designer_application_id_permission() 
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/application/{id}/{onlyRemoveNotCompleted}
-pub async fn stub_processplatform_assemble_designer_application_id_onlyRemoveNotCompleted() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn application_id_onlyRemoveNotCompleted() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -344,7 +345,7 @@ pub async fn stub_processplatform_assemble_designer_application_id_onlyRemoveNot
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/applicationcategory/list
-pub async fn stub_processplatform_assemble_designer_applicationcategory_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn applicationcategory_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -353,7 +354,7 @@ pub async fn stub_processplatform_assemble_designer_applicationcategory_list() -
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/applicationdict/list/application/{applicationId}
-pub async fn stub_processplatform_assemble_designer_applicationdict_list_application_applicationId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn applicationdict_list_application_applicationId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -362,7 +363,7 @@ pub async fn stub_processplatform_assemble_designer_applicationdict_list_applica
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/applicationdict/list/paging/{page}/size/{size}
-pub async fn stub_processplatform_assemble_designer_applicationdict_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn applicationdict_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -371,7 +372,7 @@ pub async fn stub_processplatform_assemble_designer_applicationdict_list_paging_
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/applicationdict/{id}
-pub async fn stub_processplatform_assemble_designer_applicationdict_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn applicationdict_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -380,7 +381,7 @@ pub async fn stub_processplatform_assemble_designer_applicationdict_id() -> Resu
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/elementtool/applicationdict/orphan
-pub async fn stub_processplatform_assemble_designer_elementtool_applicationdict_orphan() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn elementtool_applicationdict_orphan() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -389,7 +390,7 @@ pub async fn stub_processplatform_assemble_designer_elementtool_applicationdict_
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/elementtool/form/orphan
-pub async fn stub_processplatform_assemble_designer_elementtool_form_orphan() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn elementtool_form_orphan() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -398,7 +399,7 @@ pub async fn stub_processplatform_assemble_designer_elementtool_form_orphan() ->
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/elementtool/process/orphan
-pub async fn stub_processplatform_assemble_designer_elementtool_process_orphan() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn elementtool_process_orphan() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -407,7 +408,7 @@ pub async fn stub_processplatform_assemble_designer_elementtool_process_orphan()
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/elementtool/script/orphan
-pub async fn stub_processplatform_assemble_designer_elementtool_script_orphan() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn elementtool_script_orphan() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -416,7 +417,7 @@ pub async fn stub_processplatform_assemble_designer_elementtool_script_orphan() 
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/file/list/application/{applicationFlag}
-pub async fn stub_processplatform_assemble_designer_file_list_application_applicationFlag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_list_application_applicationFlag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -425,7 +426,7 @@ pub async fn stub_processplatform_assemble_designer_file_list_application_applic
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/file/list/{id}/next/{count}
-pub async fn stub_processplatform_assemble_designer_file_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -434,7 +435,7 @@ pub async fn stub_processplatform_assemble_designer_file_list_id_next_count() ->
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/file/list/{id}/prev/{count}
-pub async fn stub_processplatform_assemble_designer_file_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -443,7 +444,7 @@ pub async fn stub_processplatform_assemble_designer_file_list_id_prev_count() ->
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/file/{flag}
-pub async fn stub_processplatform_assemble_designer_file_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -452,7 +453,7 @@ pub async fn stub_processplatform_assemble_designer_file_flag() -> Result<Json<A
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/file/{flag}/application/{applicationFlag}
-pub async fn stub_processplatform_assemble_designer_file_flag_application_applicationFlag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_flag_application_applicationFlag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -461,7 +462,7 @@ pub async fn stub_processplatform_assemble_designer_file_flag_application_applic
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/file/{id}
-pub async fn stub_processplatform_assemble_designer_file_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -470,7 +471,7 @@ pub async fn stub_processplatform_assemble_designer_file_id() -> Result<Json<Act
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/file/{id}/content
-pub async fn stub_processplatform_assemble_designer_file_id_content() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_id_content() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -479,7 +480,7 @@ pub async fn stub_processplatform_assemble_designer_file_id_content() -> Result<
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/file/{id}/download
-pub async fn stub_processplatform_assemble_designer_file_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -488,7 +489,7 @@ pub async fn stub_processplatform_assemble_designer_file_id_download() -> Result
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/file/{id}/upload
-pub async fn stub_processplatform_assemble_designer_file_id_upload() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_id_upload() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -497,7 +498,7 @@ pub async fn stub_processplatform_assemble_designer_file_id_upload() -> Result<J
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/form/list/application/{applicationId}
-pub async fn stub_processplatform_assemble_designer_form_list_application_applicationId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn form_list_application_applicationId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -506,7 +507,7 @@ pub async fn stub_processplatform_assemble_designer_form_list_application_applic
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/form/list/formfield/application/{applicationId}
-pub async fn stub_processplatform_assemble_designer_form_list_formfield_application_applicationId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn form_list_formfield_application_applicationId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -515,7 +516,7 @@ pub async fn stub_processplatform_assemble_designer_form_list_formfield_applicat
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/form/list/{id}/formfield
-pub async fn stub_processplatform_assemble_designer_form_list_id_formfield() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn form_list_id_formfield() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -524,7 +525,7 @@ pub async fn stub_processplatform_assemble_designer_form_list_id_formfield() -> 
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/form/list/{id}/next/{count}
-pub async fn stub_processplatform_assemble_designer_form_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn form_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -533,7 +534,7 @@ pub async fn stub_processplatform_assemble_designer_form_list_id_next_count() ->
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/form/list/{id}/prev/{count}
-pub async fn stub_processplatform_assemble_designer_form_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn form_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -542,7 +543,7 @@ pub async fn stub_processplatform_assemble_designer_form_list_id_prev_count() ->
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/form/{id}
-pub async fn stub_processplatform_assemble_designer_form_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn form_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -551,7 +552,7 @@ pub async fn stub_processplatform_assemble_designer_form_id() -> Result<Json<Act
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/formversion/list/form/{formId}
-pub async fn stub_processplatform_assemble_designer_formversion_list_form_formId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn formversion_list_form_formId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -560,7 +561,7 @@ pub async fn stub_processplatform_assemble_designer_formversion_list_form_formId
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/formversion/{id}
-pub async fn stub_processplatform_assemble_designer_formversion_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn formversion_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -569,7 +570,7 @@ pub async fn stub_processplatform_assemble_designer_formversion_id() -> Result<J
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/id/{count}
-pub async fn stub_processplatform_assemble_designer_id_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn id_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -578,7 +579,7 @@ pub async fn stub_processplatform_assemble_designer_id_count() -> Result<Json<Ac
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/input/compare
-pub async fn stub_processplatform_assemble_designer_input_compare() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn input_compare() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -587,7 +588,7 @@ pub async fn stub_processplatform_assemble_designer_input_compare() -> Result<Js
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/input/cover
-pub async fn stub_processplatform_assemble_designer_input_cover() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn input_cover() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -596,7 +597,7 @@ pub async fn stub_processplatform_assemble_designer_input_cover() -> Result<Json
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/input/create
-pub async fn stub_processplatform_assemble_designer_input_create() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn input_create() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -605,7 +606,7 @@ pub async fn stub_processplatform_assemble_designer_input_create() -> Result<Jso
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/input/prepare/cover
-pub async fn stub_processplatform_assemble_designer_input_prepare_cover() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn input_prepare_cover() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -614,7 +615,7 @@ pub async fn stub_processplatform_assemble_designer_input_prepare_cover() -> Res
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/input/prepare/create
-pub async fn stub_processplatform_assemble_designer_input_prepare_create() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn input_prepare_create() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -623,7 +624,7 @@ pub async fn stub_processplatform_assemble_designer_input_prepare_create() -> Re
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/item-access/bach/save
-pub async fn stub_processplatform_assemble_designer_item_access_bach_save() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn item_access_bach_save() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -632,7 +633,7 @@ pub async fn stub_processplatform_assemble_designer_item_access_bach_save() -> R
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/item-access/delete/process/{processId}/path/{path}
-pub async fn stub_processplatform_assemble_designer_item_access_delete_process_processId_path_path() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn item_access_delete_process_processId_path_path() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -641,7 +642,7 @@ pub async fn stub_processplatform_assemble_designer_item_access_delete_process_p
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/item-access/path/{path}
-pub async fn stub_processplatform_assemble_designer_item_access_path_path() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn item_access_path_path() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -650,7 +651,7 @@ pub async fn stub_processplatform_assemble_designer_item_access_path_path() -> R
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/item-access/process/{processId}
-pub async fn stub_processplatform_assemble_designer_item_access_process_processId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn item_access_process_processId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -659,7 +660,7 @@ pub async fn stub_processplatform_assemble_designer_item_access_process_processI
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/item-access/process/{processId}/path/{path}
-pub async fn stub_processplatform_assemble_designer_item_access_process_processId_path_path() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn item_access_process_processId_path_path() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -668,7 +669,7 @@ pub async fn stub_processplatform_assemble_designer_item_access_process_processI
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/item-access/{id}
-pub async fn stub_processplatform_assemble_designer_item_access_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn item_access_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -677,7 +678,7 @@ pub async fn stub_processplatform_assemble_designer_item_access_id() -> Result<J
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/mapping/list/application/{applicationFlag}
-pub async fn stub_processplatform_assemble_designer_mapping_list_application_applicationFlag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mapping_list_application_applicationFlag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -686,7 +687,7 @@ pub async fn stub_processplatform_assemble_designer_mapping_list_application_app
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/mapping/list/{id}/next/{count}
-pub async fn stub_processplatform_assemble_designer_mapping_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mapping_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -695,7 +696,7 @@ pub async fn stub_processplatform_assemble_designer_mapping_list_id_next_count()
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/mapping/list/{id}/prev/{count}
-pub async fn stub_processplatform_assemble_designer_mapping_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mapping_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -704,7 +705,7 @@ pub async fn stub_processplatform_assemble_designer_mapping_list_id_prev_count()
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/mapping/{flag}
-pub async fn stub_processplatform_assemble_designer_mapping_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mapping_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -713,7 +714,7 @@ pub async fn stub_processplatform_assemble_designer_mapping_flag() -> Result<Jso
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/mapping/{flag}/execute
-pub async fn stub_processplatform_assemble_designer_mapping_flag_execute() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mapping_flag_execute() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -722,7 +723,7 @@ pub async fn stub_processplatform_assemble_designer_mapping_flag_execute() -> Re
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/mergeitemplan/estimate
-pub async fn stub_processplatform_assemble_designer_mergeitemplan_estimate() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mergeitemplan_estimate() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -731,7 +732,7 @@ pub async fn stub_processplatform_assemble_designer_mergeitemplan_estimate() -> 
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/mergeitemplan/list/application/{applicationId}/paging/{page}/size/{size}
-pub async fn stub_processplatform_assemble_designer_mergeitemplan_list_application_applicationId_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mergeitemplan_list_application_applicationId_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -740,7 +741,7 @@ pub async fn stub_processplatform_assemble_designer_mergeitemplan_list_applicati
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/mergeitemplan/list/paging/{page}/size/{size}
-pub async fn stub_processplatform_assemble_designer_mergeitemplan_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mergeitemplan_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -749,7 +750,7 @@ pub async fn stub_processplatform_assemble_designer_mergeitemplan_list_paging_pa
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/mergeitemplan/{id}
-pub async fn stub_processplatform_assemble_designer_mergeitemplan_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mergeitemplan_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -758,7 +759,7 @@ pub async fn stub_processplatform_assemble_designer_mergeitemplan_id() -> Result
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/output/list
-pub async fn stub_processplatform_assemble_designer_output_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn output_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -767,7 +768,7 @@ pub async fn stub_processplatform_assemble_designer_output_list() -> Result<Json
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/output/{applicationFlag}/select
-pub async fn stub_processplatform_assemble_designer_output_applicationFlag_select() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn output_applicationFlag_select() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -776,7 +777,7 @@ pub async fn stub_processplatform_assemble_designer_output_applicationFlag_selec
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/activity/{flag}/activityType/{activityType}
-pub async fn stub_processplatform_assemble_designer_process_activity_flag_activityType_activityType() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_activity_flag_activityType_activityType() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -785,7 +786,7 @@ pub async fn stub_processplatform_assemble_designer_process_activity_flag_activi
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/application/{applicationId}
-pub async fn stub_processplatform_assemble_designer_process_application_applicationId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_application_applicationId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -794,7 +795,7 @@ pub async fn stub_processplatform_assemble_designer_process_application_applicat
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/application/{applicationId}/disable/edition
-pub async fn stub_processplatform_assemble_designer_process_application_applicationId_disable_edition() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_application_applicationId_disable_edition() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -803,7 +804,7 @@ pub async fn stub_processplatform_assemble_designer_process_application_applicat
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/application/{applicationId}/edition/{edition}
-pub async fn stub_processplatform_assemble_designer_process_application_applicationId_edition_edition() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_application_applicationId_edition_edition() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -812,7 +813,7 @@ pub async fn stub_processplatform_assemble_designer_process_application_applicat
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/form/{formId}
-pub async fn stub_processplatform_assemble_designer_process_form_formId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_form_formId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -821,7 +822,7 @@ pub async fn stub_processplatform_assemble_designer_process_form_formId() -> Res
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/upgrade/all
-pub async fn stub_processplatform_assemble_designer_process_upgrade_all() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_upgrade_all() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -830,7 +831,7 @@ pub async fn stub_processplatform_assemble_designer_process_upgrade_all() -> Res
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/{id}
-pub async fn stub_processplatform_assemble_designer_process_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -839,7 +840,7 @@ pub async fn stub_processplatform_assemble_designer_process_id() -> Result<Json<
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/{id}/disable
-pub async fn stub_processplatform_assemble_designer_process_id_disable() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_id_disable() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -848,7 +849,7 @@ pub async fn stub_processplatform_assemble_designer_process_id_disable() -> Resu
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/{id}/enable
-pub async fn stub_processplatform_assemble_designer_process_id_enable() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_id_enable() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -857,7 +858,7 @@ pub async fn stub_processplatform_assemble_designer_process_id_enable() -> Resul
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/{id}/enabled
-pub async fn stub_processplatform_assemble_designer_process_id_enabled() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_id_enabled() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -866,7 +867,7 @@ pub async fn stub_processplatform_assemble_designer_process_id_enabled() -> Resu
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/{id}/execute/projection
-pub async fn stub_processplatform_assemble_designer_process_id_execute_projection() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_id_execute_projection() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -875,7 +876,7 @@ pub async fn stub_processplatform_assemble_designer_process_id_execute_projectio
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/{id}/lead/out
-pub async fn stub_processplatform_assemble_designer_process_id_lead_out() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_id_lead_out() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -884,7 +885,7 @@ pub async fn stub_processplatform_assemble_designer_process_id_lead_out() -> Res
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/{id}/list/element
-pub async fn stub_processplatform_assemble_designer_process_id_list_element() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_id_list_element() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -893,7 +894,7 @@ pub async fn stub_processplatform_assemble_designer_process_id_list_element() ->
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/{id}/permission
-pub async fn stub_processplatform_assemble_designer_process_id_permission() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_id_permission() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -902,7 +903,7 @@ pub async fn stub_processplatform_assemble_designer_process_id_permission() -> R
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/{id}/process
-pub async fn stub_processplatform_assemble_designer_process_id_process() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_id_process() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -911,7 +912,7 @@ pub async fn stub_processplatform_assemble_designer_process_id_process() -> Resu
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/{id}/upgrade
-pub async fn stub_processplatform_assemble_designer_process_id_upgrade() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_id_upgrade() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -920,7 +921,7 @@ pub async fn stub_processplatform_assemble_designer_process_id_upgrade() -> Resu
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/{id}/{onlyRemoveNotCompleted}
-pub async fn stub_processplatform_assemble_designer_process_id_onlyRemoveNotCompleted() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_id_onlyRemoveNotCompleted() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -929,7 +930,7 @@ pub async fn stub_processplatform_assemble_designer_process_id_onlyRemoveNotComp
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/process/{id}/{onlyRemoveNotCompleted}/edition
-pub async fn stub_processplatform_assemble_designer_process_id_onlyRemoveNotCompleted_edition() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn process_id_onlyRemoveNotCompleted_edition() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -938,7 +939,7 @@ pub async fn stub_processplatform_assemble_designer_process_id_onlyRemoveNotComp
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/processversion/list/process/{processId}
-pub async fn stub_processplatform_assemble_designer_processversion_list_process_processId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn processversion_list_process_processId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -947,7 +948,7 @@ pub async fn stub_processplatform_assemble_designer_processversion_list_process_
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/processversion/{id}
-pub async fn stub_processplatform_assemble_designer_processversion_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn processversion_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -956,7 +957,7 @@ pub async fn stub_processplatform_assemble_designer_processversion_id() -> Resul
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/script/application/{applicationId}
-pub async fn stub_processplatform_assemble_designer_script_application_applicationId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn script_application_applicationId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -965,7 +966,7 @@ pub async fn stub_processplatform_assemble_designer_script_application_applicati
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/script/application/{applicationId}/name/{name}
-pub async fn stub_processplatform_assemble_designer_script_application_applicationId_name_name() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn script_application_applicationId_name_name() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -974,7 +975,7 @@ pub async fn stub_processplatform_assemble_designer_script_application_applicati
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/script/list/manager
-pub async fn stub_processplatform_assemble_designer_script_list_manager() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn script_list_manager() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -983,7 +984,7 @@ pub async fn stub_processplatform_assemble_designer_script_list_manager() -> Res
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/script/list/paging/{page}/size/{size}
-pub async fn stub_processplatform_assemble_designer_script_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn script_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -992,7 +993,7 @@ pub async fn stub_processplatform_assemble_designer_script_list_paging_page_size
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/script/list/{id}/next/{count}
-pub async fn stub_processplatform_assemble_designer_script_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn script_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1001,7 +1002,7 @@ pub async fn stub_processplatform_assemble_designer_script_list_id_next_count() 
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/script/list/{id}/prev/{count}
-pub async fn stub_processplatform_assemble_designer_script_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn script_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1010,7 +1011,7 @@ pub async fn stub_processplatform_assemble_designer_script_list_id_prev_count() 
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/script/{id}
-pub async fn stub_processplatform_assemble_designer_script_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn script_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1019,7 +1020,7 @@ pub async fn stub_processplatform_assemble_designer_script_id() -> Result<Json<A
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/scriptversion/list/script/{scriptId}
-pub async fn stub_processplatform_assemble_designer_scriptversion_list_script_scriptId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn scriptversion_list_script_scriptId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1028,7 +1029,7 @@ pub async fn stub_processplatform_assemble_designer_scriptversion_list_script_sc
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/scriptversion/{id}
-pub async fn stub_processplatform_assemble_designer_scriptversion_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn scriptversion_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1037,7 +1038,7 @@ pub async fn stub_processplatform_assemble_designer_scriptversion_id() -> Result
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/templateform/list
-pub async fn stub_processplatform_assemble_designer_templateform_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn templateform_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1046,7 +1047,7 @@ pub async fn stub_processplatform_assemble_designer_templateform_list() -> Resul
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/templateform/list/category
-pub async fn stub_processplatform_assemble_designer_templateform_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn templateform_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1055,7 +1056,7 @@ pub async fn stub_processplatform_assemble_designer_templateform_list_category()
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/templateform/{id}
-pub async fn stub_processplatform_assemble_designer_templateform_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn templateform_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1064,7 +1065,7 @@ pub async fn stub_processplatform_assemble_designer_templateform_id() -> Result<
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/workcompleted/application/{applicationFlag}/merge/data
-pub async fn stub_processplatform_assemble_designer_workcompleted_application_applicationFlag_merge_data() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn workcompleted_application_applicationFlag_merge_data() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1073,7 +1074,7 @@ pub async fn stub_processplatform_assemble_designer_workcompleted_application_ap
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/designer/workcompleted/process/{processFlag}/merge/data
-pub async fn stub_processplatform_assemble_designer_workcompleted_process_processFlag_merge_data() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn workcompleted_process_processFlag_merge_data() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),

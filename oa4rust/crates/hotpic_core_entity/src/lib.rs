@@ -128,6 +128,6 @@ pub fn hotpic_core_entity_router(pool: Pool) -> Router {
 #[cfg(test)]
 mod tests;
 
-pub fn router(pool: Pool) -> Router {
-    hotpic_core_entity_router(pool)
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::hotpic_core_entity_router(pool)
 }

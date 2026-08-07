@@ -196,11 +196,11 @@ mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     query_assemble_designer_router(Some(pool))
-        .route("/query_assemble_designer/health", axum::routing::get(|| async { "ok" }))
 }
 
 
-pub async fn stub_query_assemble_designer_designer_search(
+
+pub async fn designer_search(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -235,7 +235,7 @@ pub async fn stub_query_assemble_designer_designer_search(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_id_count(
+pub async fn id_count(
     pool: Option<Extension<Pool>>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -259,7 +259,7 @@ pub async fn stub_query_assemble_designer_id_count(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_importmodel_list_query_flag(
+pub async fn importmodel_list_query_flag(
     pool: Option<Extension<Pool>>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -296,7 +296,7 @@ pub async fn stub_query_assemble_designer_importmodel_list_query_flag(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_importmodel_id(
+pub async fn importmodel_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -330,7 +330,7 @@ pub async fn stub_query_assemble_designer_importmodel_id(
     }
 }
 
-pub async fn stub_query_assemble_designer_importmodel_id_permission(
+pub async fn importmodel_id_permission(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -360,7 +360,7 @@ pub async fn stub_query_assemble_designer_importmodel_id_permission(
     }
 }
 
-pub async fn stub_query_assemble_designer_input_compare(
+pub async fn input_compare(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -394,7 +394,7 @@ pub async fn stub_query_assemble_designer_input_compare(
     }
 }
 
-pub async fn stub_query_assemble_designer_input_cover(
+pub async fn input_cover(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -426,7 +426,7 @@ pub async fn stub_query_assemble_designer_input_cover(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_input_create(
+pub async fn input_create(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -455,7 +455,7 @@ pub async fn stub_query_assemble_designer_input_create(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_input_prepare_cover(
+pub async fn input_prepare_cover(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -487,7 +487,7 @@ pub async fn stub_query_assemble_designer_input_prepare_cover(
     }
 }
 
-pub async fn stub_query_assemble_designer_input_prepare_create(
+pub async fn input_prepare_create(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -521,7 +521,7 @@ pub async fn stub_query_assemble_designer_input_prepare_create(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_neural_generate_model_modelFlag(
+pub async fn neural_generate_model_modelFlag(
     pool: Option<Extension<Pool>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -550,7 +550,7 @@ pub async fn stub_query_assemble_designer_neural_generate_model_modelFlag(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_neural_learn_model_modelFlag(
+pub async fn neural_learn_model_modelFlag(
     pool: Option<Extension<Pool>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -579,7 +579,7 @@ pub async fn stub_query_assemble_designer_neural_learn_model_modelFlag(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_neural_list_model(
+pub async fn neural_list_model(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -615,7 +615,7 @@ pub async fn stub_query_assemble_designer_neural_list_model(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_neural_model(
+pub async fn neural_model(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -647,7 +647,7 @@ pub async fn stub_query_assemble_designer_neural_model(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_neural_model_modelFlag(
+pub async fn neural_model_modelFlag(
     pool: Option<Extension<Pool>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -680,7 +680,7 @@ pub async fn stub_query_assemble_designer_neural_model_modelFlag(
     }
 }
 
-pub async fn stub_query_assemble_designer_neural_model_modelFlag_reset_status(
+pub async fn neural_model_modelFlag_reset_status(
     pool: Option<Extension<Pool>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -709,7 +709,7 @@ pub async fn stub_query_assemble_designer_neural_model_modelFlag_reset_status(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_neural_stop_generating_model_modelFlag(
+pub async fn neural_stop_generating_model_modelFlag(
     pool: Option<Extension<Pool>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -738,7 +738,7 @@ pub async fn stub_query_assemble_designer_neural_stop_generating_model_modelFlag
     ))))
 }
 
-pub async fn stub_query_assemble_designer_neural_stop_learn_model_modelFlag(
+pub async fn neural_stop_learn_model_modelFlag(
     pool: Option<Extension<Pool>>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -767,7 +767,7 @@ pub async fn stub_query_assemble_designer_neural_stop_learn_model_modelFlag(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_output_list(
+pub async fn output_list(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -803,7 +803,7 @@ pub async fn stub_query_assemble_designer_output_list(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_output_flag_select_file(
+pub async fn output_flag_select_file(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -834,7 +834,7 @@ pub async fn stub_query_assemble_designer_output_flag_select_file(
     }
 }
 
-pub async fn stub_query_assemble_designer_output_queryFlag_select(
+pub async fn output_queryFlag_select(
     pool: Option<Extension<Pool>>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -871,7 +871,7 @@ pub async fn stub_query_assemble_designer_output_queryFlag_select(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_query_entity_entity_category_entityCategory_properties(
+pub async fn query_entity_entity_category_entityCategory_properties(
     pool: Option<Extension<Pool>>,
     Path(entity): Path<String>,
     Path(entity_category): Path<String>,
@@ -905,7 +905,7 @@ pub async fn stub_query_assemble_designer_query_entity_entity_category_entityCat
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_query_list_all(
+pub async fn query_list_all(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -940,7 +940,7 @@ pub async fn stub_query_assemble_designer_query_list_all(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_query_list_querycategory_queryCategory(
+pub async fn query_list_querycategory_queryCategory(
     pool: Option<Extension<Pool>>,
     Path(query_category): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -976,7 +976,7 @@ pub async fn stub_query_assemble_designer_query_list_querycategory_queryCategory
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_query_list_summary(
+pub async fn query_list_summary(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1009,7 +1009,7 @@ pub async fn stub_query_assemble_designer_query_list_summary(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_query_list_summary_querycategory_queryCategory(
+pub async fn query_list_summary_querycategory_queryCategory(
     pool: Option<Extension<Pool>>,
     Path(query_category): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1043,7 +1043,7 @@ pub async fn stub_query_assemble_designer_query_list_summary_querycategory_query
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_query_querycategory_list(
+pub async fn query_querycategory_list(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1074,7 +1074,7 @@ pub async fn stub_query_assemble_designer_query_querycategory_list(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_query_flag(
+pub async fn query_flag(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1107,7 +1107,7 @@ pub async fn stub_query_assemble_designer_query_flag(
     }
 }
 
-pub async fn stub_query_assemble_designer_query_flag_icon(
+pub async fn query_flag_icon(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1137,7 +1137,7 @@ pub async fn stub_query_assemble_designer_query_flag_icon(
     }
 }
 
-pub async fn stub_query_assemble_designer_query_id_permission(
+pub async fn query_id_permission(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1167,7 +1167,7 @@ pub async fn stub_query_assemble_designer_query_id_permission(
     }
 }
 
-pub async fn stub_query_assemble_designer_stat_list_query_flag(
+pub async fn stat_list_query_flag(
     pool: Option<Extension<Pool>>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1204,7 +1204,7 @@ pub async fn stub_query_assemble_designer_stat_list_query_flag(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_stat_list_id_next_count(
+pub async fn stat_list_id_next_count(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -1240,7 +1240,7 @@ pub async fn stub_query_assemble_designer_stat_list_id_next_count(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_stat_list_id_prev_count(
+pub async fn stat_list_id_prev_count(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -1276,7 +1276,7 @@ pub async fn stub_query_assemble_designer_stat_list_id_prev_count(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_stat_id(
+pub async fn stat_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1310,7 +1310,7 @@ pub async fn stub_query_assemble_designer_stat_id(
     }
 }
 
-pub async fn stub_query_assemble_designer_stat_id_permission(
+pub async fn stat_id_permission(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1340,7 +1340,7 @@ pub async fn stub_query_assemble_designer_stat_id_permission(
     }
 }
 
-pub async fn stub_query_assemble_designer_stat_id_simulate(
+pub async fn stat_id_simulate(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1370,7 +1370,7 @@ pub async fn stub_query_assemble_designer_stat_id_simulate(
     }
 }
 
-pub async fn stub_query_assemble_designer_table_export_tableFlag_count_count(
+pub async fn table_export_tableFlag_count_count(
     pool: Option<Extension<Pool>>,
     Path(table_flag): Path<String>,
     Path(count): Path<i64>,
@@ -1405,7 +1405,7 @@ pub async fn stub_query_assemble_designer_table_export_tableFlag_count_count(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_table_list_manage(
+pub async fn table_list_manage(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1440,7 +1440,7 @@ pub async fn stub_query_assemble_designer_table_list_manage(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_table_list_query_flag(
+pub async fn table_list_query_flag(
     pool: Option<Extension<Pool>>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1477,7 +1477,7 @@ pub async fn stub_query_assemble_designer_table_list_query_flag(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_table_list_tableFlag_row_select_where_where(
+pub async fn table_list_tableFlag_row_select_where_where(
     pool: Option<Extension<Pool>>,
     Path(table_flag): Path<String>,
     Path(_where): Path<String>,
@@ -1512,7 +1512,7 @@ pub async fn stub_query_assemble_designer_table_list_tableFlag_row_select_where_
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_table_list_tableFlag_row_id_next_count(
+pub async fn table_list_tableFlag_row_id_next_count(
     pool: Option<Extension<Pool>>,
     Path(table_flag): Path<String>,
     Path(id): Path<String>,
@@ -1548,7 +1548,7 @@ pub async fn stub_query_assemble_designer_table_list_tableFlag_row_id_next_count
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_table_list_tableFlag_row_id_prev_count(
+pub async fn table_list_tableFlag_row_id_prev_count(
     pool: Option<Extension<Pool>>,
     Path(table_flag): Path<String>,
     Path(id): Path<String>,
@@ -1584,7 +1584,7 @@ pub async fn stub_query_assemble_designer_table_list_tableFlag_row_id_prev_count
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_table_query_query_build(
+pub async fn table_query_query_build(
     pool: Option<Extension<Pool>>,
     Path(query): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1615,7 +1615,7 @@ pub async fn stub_query_assemble_designer_table_query_query_build(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_table_reload_dynamic(
+pub async fn table_reload_dynamic(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1639,7 +1639,7 @@ pub async fn stub_query_assemble_designer_table_reload_dynamic(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_table_flag(
+pub async fn table_flag(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1671,7 +1671,7 @@ pub async fn stub_query_assemble_designer_table_flag(
     }
 }
 
-pub async fn stub_query_assemble_designer_table_flag_execute(
+pub async fn table_flag_execute(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
     Json(body): Json<Value>,
@@ -1715,7 +1715,7 @@ pub async fn stub_query_assemble_designer_table_flag_execute(
     }
 }
 
-pub async fn stub_query_assemble_designer_table_flag_status_build(
+pub async fn table_flag_status_build(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1744,7 +1744,7 @@ pub async fn stub_query_assemble_designer_table_flag_status_build(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_table_flag_status_draft(
+pub async fn table_flag_status_draft(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1773,7 +1773,7 @@ pub async fn stub_query_assemble_designer_table_flag_status_draft(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_table_id_permission(
+pub async fn table_id_permission(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1803,7 +1803,7 @@ pub async fn stub_query_assemble_designer_table_id_permission(
     }
 }
 
-pub async fn stub_query_assemble_designer_table_query_build_dispatch(
+pub async fn table_query_build_dispatch(
     pool: Option<Extension<Pool>>,
     Path(query): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1825,7 +1825,7 @@ pub async fn stub_query_assemble_designer_table_query_build_dispatch(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_table_tableFlag_row(
+pub async fn table_tableFlag_row(
     pool: Option<Extension<Pool>>,
     Path(table_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1859,7 +1859,7 @@ pub async fn stub_query_assemble_designer_table_tableFlag_row(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_table_tableFlag_row_count_where_where(
+pub async fn table_tableFlag_row_count_where_where(
     pool: Option<Extension<Pool>>,
     Path(table_flag): Path<String>,
     Path(_where): Path<String>,
@@ -1887,7 +1887,7 @@ pub async fn stub_query_assemble_designer_table_tableFlag_row_count_where_where(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_table_tableFlag_row_delete_all(
+pub async fn table_tableFlag_row_delete_all(
     pool: Option<Extension<Pool>>,
     Path(table_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1913,7 +1913,7 @@ pub async fn stub_query_assemble_designer_table_tableFlag_row_delete_all(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_table_tableFlag_row_save(
+pub async fn table_tableFlag_row_save(
     pool: Option<Extension<Pool>>,
     Path(table_flag): Path<String>,
     Json(body): Json<Value>,
@@ -1943,7 +1943,7 @@ pub async fn stub_query_assemble_designer_table_tableFlag_row_save(
     ))))
 }
 
-pub async fn stub_query_assemble_designer_table_tableFlag_row_id(
+pub async fn table_tableFlag_row_id(
     pool: Option<Extension<Pool>>,
     Path(table_flag): Path<String>,
     Path(id): Path<String>,
@@ -1974,7 +1974,7 @@ pub async fn stub_query_assemble_designer_table_tableFlag_row_id(
     }
 }
 
-pub async fn stub_query_assemble_designer_view_list_query_flag(
+pub async fn view_list_query_flag(
     pool: Option<Extension<Pool>>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2011,7 +2011,7 @@ pub async fn stub_query_assemble_designer_view_list_query_flag(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_view_list_id_next_count(
+pub async fn view_list_id_next_count(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -2048,7 +2048,7 @@ pub async fn stub_query_assemble_designer_view_list_id_next_count(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_view_list_id_prev_count(
+pub async fn view_list_id_prev_count(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -2085,7 +2085,7 @@ pub async fn stub_query_assemble_designer_view_list_id_prev_count(
     ])))))
 }
 
-pub async fn stub_query_assemble_designer_view_id(
+pub async fn view_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2119,7 +2119,7 @@ pub async fn stub_query_assemble_designer_view_id(
     }
 }
 
-pub async fn stub_query_assemble_designer_view_id_bundle(
+pub async fn view_id_bundle(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2150,7 +2150,7 @@ pub async fn stub_query_assemble_designer_view_id_bundle(
     }
 }
 
-pub async fn stub_query_assemble_designer_view_id_permission(
+pub async fn view_id_permission(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2180,7 +2180,7 @@ pub async fn stub_query_assemble_designer_view_id_permission(
     }
 }
 
-pub async fn stub_query_assemble_designer_view_id_simulate(
+pub async fn view_id_simulate(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

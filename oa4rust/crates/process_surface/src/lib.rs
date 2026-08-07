@@ -156,5 +156,5 @@ pub async fn record_list(
 mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    routes::process_surface_router(pool)
+    crate::process_surface_router(pool)
 }

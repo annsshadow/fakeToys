@@ -74,9 +74,9 @@ pub fn mind_assemble_control_router(pool: Pool) -> Router {
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    mind_assemble_control_router(pool)
-        .route("/mind_assemble_control/health", axum::routing::get(|| async { "ok" }))
+    crate::routes::mind_assemble_control_routes(pool)
 }
+
 
 #[derive(Debug, serde::Deserialize)]
 pub struct MindFolderRequest {
@@ -220,7 +220,7 @@ pub async fn update_folder(
 
 /// Stub handler for /jaxrs/mind/assemble/control/folder/move/{folderId}
 /// TODO: Implement real business logic
-pub async fn stub_mind_assemble_control_folder_move_folderId(
+pub async fn folder_move_folderId(
     pool: Extension<Pool>,
     Path(folder_id): Path<String>,
     Json(req): Json<Value>,
@@ -271,7 +271,7 @@ pub async fn stub_mind_assemble_control_folder_move_folderId(
 
 /// Stub handler for /jaxrs/mind/assemble/control/folder/{id}
 /// TODO: Implement real business logic
-pub async fn stub_mind_assemble_control_folder_id(
+pub async fn folder_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -302,7 +302,7 @@ pub async fn stub_mind_assemble_control_folder_id(
 
 /// Stub handler for /jaxrs/mind/assemble/control/folder/{id}/force
 /// TODO: Implement real business logic
-pub async fn stub_mind_assemble_control_folder_id_force(
+pub async fn folder_id_force(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

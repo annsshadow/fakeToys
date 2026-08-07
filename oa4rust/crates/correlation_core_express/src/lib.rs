@@ -66,5 +66,5 @@ pub fn correlation_core_express_router(pool: Pool) -> Router {
 mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    correlation_core_express_router(pool)
+    crate::correlation_core_express_router(pool)
 }

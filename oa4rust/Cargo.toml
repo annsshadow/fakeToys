@@ -21,6 +21,7 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 
 shared = { path = "crates/shared" }
+serde_json = "1"
 auth = { path = "crates/auth" }
 personal = { path = "crates/personal" }
 personal_extend = { path = "crates/personal_extend" }

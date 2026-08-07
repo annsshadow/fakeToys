@@ -7,11 +7,11 @@ use deadpool_postgres::Pool;
 
 use crate::{get_control_config, list_control_sections, update_control_config};
 
-pub fn router(pool: Pool) -> Router {
-    let router = Router::new()
-        .route("/jaxrs/cms/assemble/control/config/get", get(get_control_config))
-        .route("/jaxrs/cms/assemble/control/sections", get(list_control_sections))
-        .route("/jaxrs/cms/assemble/control/config/update", post(update_control_config));
-    
-    router.layer(Extension(pool))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    Router::new()
+        .route("/jaxrs/cms_assemble_control/get/control/config", get(get_control_config))
+        .route("/jaxrs/cms_assemble_control/list/control/sections", get(list_control_sections))
+        .route("/jaxrs/cms_assemble_control/update/control/config", get(update_control_config))
+        .layer(Extension(pool))
 }
+

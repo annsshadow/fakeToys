@@ -97,9 +97,9 @@ pub async fn list_control_applications(
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    hotpic_assemble_control_router(pool)
-        .route("/hotpic_assemble_control/health", axum::routing::get(|| async { "ok" }))
+    crate::hotpic_assemble_control_router(pool)
 }
+
 
 #[derive(Debug, serde::Deserialize)]
 pub struct HotpicRequest {
@@ -278,7 +278,7 @@ pub async fn delete_hotpic(
 
 /// Stub handler for /jaxrs/hotpic/assemble/control/cipher/hotpic/bbs/{id}
 /// TODO: Implement real business logic
-pub async fn stub_hotpic_assemble_control_cipher_hotpic_bbs_id(
+pub async fn cipher_hotpic_bbs_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -312,7 +312,7 @@ pub async fn stub_hotpic_assemble_control_cipher_hotpic_bbs_id(
 
 /// Stub handler for /jaxrs/hotpic/assemble/control/cipher/hotpic/cms/{id}
 /// TODO: Implement real business logic
-pub async fn stub_hotpic_assemble_control_cipher_hotpic_cms_id(
+pub async fn cipher_hotpic_cms_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -346,7 +346,7 @@ pub async fn stub_hotpic_assemble_control_cipher_hotpic_cms_id(
 
 /// Stub handler for /jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}
 /// TODO: Implement real business logic
-pub async fn stub_hotpic_assemble_control_cipher_hotpic_filter_list_page_page_count_count(
+pub async fn cipher_hotpic_filter_list_page_page_count_count(
     pool: Option<Extension<Pool>>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -387,7 +387,7 @@ pub async fn stub_hotpic_assemble_control_cipher_hotpic_filter_list_page_page_co
 
 /// Stub handler for /jaxrs/hotpic/assemble/control/cipher/hotpic/{id}
 /// TODO: Implement real business logic
-pub async fn stub_hotpic_assemble_control_cipher_hotpic_id(
+pub async fn cipher_hotpic_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -421,7 +421,7 @@ pub async fn stub_hotpic_assemble_control_cipher_hotpic_id(
 
 /// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/changeTitle
 /// TODO: Implement real business logic
-pub async fn stub_hotpic_assemble_control_user_hotpic_changeTitle(
+pub async fn user_hotpic_changeTitle(
     pool: Option<Extension<Pool>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -460,7 +460,7 @@ pub async fn stub_hotpic_assemble_control_user_hotpic_changeTitle(
 
 /// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/exists/check
 /// TODO: Implement real business logic
-pub async fn stub_hotpic_assemble_control_user_hotpic_exists_check(
+pub async fn user_hotpic_exists_check(
     pool: Option<Extension<Pool>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -490,7 +490,7 @@ pub async fn stub_hotpic_assemble_control_user_hotpic_exists_check(
 
 /// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/{page}/count/{count}
 /// TODO: Implement real business logic
-pub async fn stub_hotpic_assemble_control_user_hotpic_filter_list_page_page_count_count(
+pub async fn user_hotpic_filter_list_page_page_count_count(
     pool: Option<Extension<Pool>>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -531,7 +531,7 @@ pub async fn stub_hotpic_assemble_control_user_hotpic_filter_list_page_page_coun
 
 /// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/{application}/{infoId}
 /// TODO: Implement real business logic
-pub async fn stub_hotpic_assemble_control_user_hotpic_application_infoId(
+pub async fn user_hotpic_application_infoId(
     pool: Option<Extension<Pool>>,
     Path((application, info_id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -566,7 +566,7 @@ pub async fn stub_hotpic_assemble_control_user_hotpic_application_infoId(
 
 /// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/{id}
 /// TODO: Implement real business logic
-pub async fn stub_hotpic_assemble_control_user_hotpic_id(
+pub async fn user_hotpic_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

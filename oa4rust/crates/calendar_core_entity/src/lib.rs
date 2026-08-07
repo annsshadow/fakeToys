@@ -635,7 +635,7 @@ pub fn calendar_core_entity_router(pool: Pool) -> Router {
 #[cfg(test)]
 mod tests;
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/calendar_core_entity/health", axum::routing::get(|| async { "TODO: calendar_core_entity - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::calendar_core_entity_router(pool)
 }
+

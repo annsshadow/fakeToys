@@ -10,15 +10,16 @@ use crate::{
     get_control_config, list_control_categories, update_control_config,
 };
 
-pub fn router(pool: Pool) -> Router {
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     Router::new()
-        .route("/jaxrs/component/assemble/control/config/get", get(get_control_config))
-        .route("/jaxrs/component/assemble/control/categories", get(list_control_categories))
-        .route("/jaxrs/component/assemble/control/config/update", get(update_control_config))
-        .route("/jaxrs/component/assemble/control/component/list", get(list_components))
-        .route("/jaxrs/component/assemble/control/component/get/{id}", get(get_component))
-        .route("/jaxrs/component/assemble/control/component/create", post(create_component))
-        .route("/jaxrs/component/assemble/control/component/save/{id}", post(save_component))
-        .route("/jaxrs/component/assemble/control/component/delete/{id}", post(delete_component))
+        .route("/jaxrs/component_assemble_control/get/component", get(get_component))
+        .route("/jaxrs/component_assemble_control/create/component", get(create_component))
+        .route("/jaxrs/component_assemble_control/list/components", get(list_components))
+        .route("/jaxrs/component_assemble_control/save/component", get(save_component))
+        .route("/jaxrs/component_assemble_control/delete/component", get(delete_component))
+        .route("/jaxrs/component_assemble_control/get/control/config", get(get_control_config))
+        .route("/jaxrs/component_assemble_control/list/control/categories", get(list_control_categories))
+        .route("/jaxrs/component_assemble_control/update/control/config", get(update_control_config))
         .layer(Extension(pool))
 }
+

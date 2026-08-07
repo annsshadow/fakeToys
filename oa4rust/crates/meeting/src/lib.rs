@@ -328,6 +328,5 @@ pub async fn list_schedule(
 pub use routes::meeting_router;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    meeting_router(pool)
-        .route("/meeting/health", axum::routing::get(|| async { "ok" }))
+    crate::meeting_router(pool)
 }

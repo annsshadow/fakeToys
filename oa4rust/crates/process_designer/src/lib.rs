@@ -174,5 +174,5 @@ pub async fn designer_get_route(
 mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    routes::process_designer_router(pool)
+    crate::process_designer_router(pool)
 }

@@ -1,7 +1,7 @@
 use axum::Router;
 
-use crate::bbs_router;
 
-pub fn router(pool: deadpool_postgres::Pool) -> Router {
-    bbs_router(pool)
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::bbs_router(pool)
 }
+

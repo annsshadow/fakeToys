@@ -78,5 +78,5 @@ pub fn base_router(pool: Pool) -> Router {
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    base_router(pool)
+    crate::base_router(pool)
 }

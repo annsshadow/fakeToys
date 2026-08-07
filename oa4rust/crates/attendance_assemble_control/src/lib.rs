@@ -82,10 +82,11 @@ pub fn attendance_assemble_control_router(pool: Pool) -> Router {
     routes::attendance_assemble_control_routes(pool)
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/attendance_assemble_control/health", axum::routing::get(|| async { "TODO: attendance_assemble_control - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::routes::attendance_assemble_control_routes(pool)
 }
+
+
 
 
 /// GET /jaxrs/attendance/assemble/control/attendanceadmin/list/all
@@ -270,105 +271,14 @@ pub async fn attendanceconfig_save(
     ))))
 }
 
-/// GET /jaxrs/attendance/assemble/control/attendanceadmin/list/all
-pub async fn stub_attendance_assemble_control_attendanceadmin_list_all(
-    pool: Extension<Pool>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let rows = client
-        .query(
-            "SELECT id, person_id, unit_id, creator, create_time FROM x_attendance_admin ORDER BY create_time DESC",
-            &[],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]))
-        })
-        .collect();
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
-}
 
-/// GET /jaxrs/attendance/assemble/control/attendanceadmin/{id}
-pub async fn stub_attendance_assemble_control_attendanceadmin_id(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let row = client
-        .query_opt(
-            "SELECT id, person_id, unit_id, creator, create_time FROM x_attendance_admin WHERE id = $1",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    match row {
-        Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("personId".to_string(), Value::String(row.get("person_id"))),
-                ("unitId".to_string(), Value::String(row.get("unit_id"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]));
-            Ok(Json(ActionResult::success(result)))
-        }
-        None => Ok(Json(ActionResult::error("attendance admin not found"))),
-    }
-}
-
-/// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/appeal/{id}
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_appeal_id(
-    pool: Extension<Pool>,
-    Path(id): Path<String>,
-    Json(payload): Json<Value>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let status = payload
-        .get("status")
-        .and_then(|v| v.as_str())
-        .unwrap_or("appealed");
-
-    let result = client
-        .execute(
-            "UPDATE x_attendance_appeal_info SET appeal_status = $1, update_time = NOW() WHERE id = $2",
-            &[&status, &id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    if result == 0 {
-        return Ok(Json(ActionResult::error("attendance appeal not found")));
-    }
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id.to_string())),
-            ("status".to_string(), Value::String(status.to_string())),
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
 
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/archive/{id}
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_archive_id(
+pub async fn attendanceappealInfo_archive_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -395,7 +305,7 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_archive_id(
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/audit
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_audit(
+pub async fn attendanceappealInfo_audit(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -425,7 +335,7 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_audit(
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/check 
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_check(
+pub async fn attendanceappealInfo_check(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -455,7 +365,7 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_check(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/next/{count}
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_filter_list_id_next_count(
+pub async fn attendanceappealInfo_filter_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -489,7 +399,7 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_filter_list_i
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/filter/list/{id}/prev/{count}
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_filter_list_id_prev_count(
+pub async fn attendanceappealInfo_filter_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -523,7 +433,7 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_filter_list_i
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/manager/list/{id}/next/{count}
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_manager_list_id_next_count(
+pub async fn attendanceappealInfo_manager_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -557,7 +467,7 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_manager_list_
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/appeal/{id}
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_workflow_appeal_id(
+pub async fn attendanceappealInfo_workflow_appeal_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -584,7 +494,7 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_workflow_appe
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/sync
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_workflow_sync(
+pub async fn attendanceappealInfo_workflow_sync(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -612,7 +522,7 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_workflow_sync
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceappealInfo/{id}
-pub async fn stub_attendance_assemble_control_attendanceappealInfo_id(
+pub async fn attendanceappealInfo_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -641,7 +551,7 @@ pub async fn stub_attendance_assemble_control_attendanceappealInfo_id(
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse
-pub async fn stub_attendance_assemble_control_attendancedetail_analyse(
+pub async fn attendancedetail_analyse(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -667,7 +577,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_analyse(
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse/id/{id}
-pub async fn stub_attendance_assemble_control_attendancedetail_analyse_id_id(
+pub async fn attendancedetail_analyse_id_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -690,7 +600,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_analyse_id_id(
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse/redo
-pub async fn stub_attendance_assemble_control_attendancedetail_analyse_redo(
+pub async fn attendancedetail_analyse_redo(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -714,7 +624,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_analyse_redo(
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/analyse/{startDate}/{endDate}
-pub async fn stub_attendance_assemble_control_attendancedetail_analyse_startDate_endDate(
+pub async fn attendancedetail_analyse_startDate_endDate(
     pool: Extension<Pool>,
     Path((start_date, end_date)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -736,7 +646,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_analyse_startDate
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/archive/{id}
-pub async fn stub_attendance_assemble_control_attendancedetail_archive_id(
+pub async fn attendancedetail_archive_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -763,7 +673,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_archive_id(
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{cycleYear}/{cycleMonth}
-pub async fn stub_attendance_assemble_control_attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
+pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
     pool: Extension<Pool>,
     Path((cycle_year, cycle_month)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -785,7 +695,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_checkDetailWithPe
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list
-pub async fn stub_attendance_assemble_control_attendancedetail_filter_list(
+pub async fn attendancedetail_filter_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -819,7 +729,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_filter_list(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/topUnit
-pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_topUnit(
+pub async fn attendancedetail_filter_list_topUnit(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -853,7 +763,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_topUn
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/unit
-pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_unit(
+pub async fn attendancedetail_filter_list_unit(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -888,7 +798,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_unit(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/user
-pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_user(
+pub async fn attendancedetail_filter_list_user(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -922,7 +832,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_user(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/{id}/next/{count}
-pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_id_next_count(
+pub async fn attendancedetail_filter_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -957,7 +867,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_id_ne
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/filter/list/{id}/prev/{count}
-pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_id_prev_count(
+pub async fn attendancedetail_filter_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -992,7 +902,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_filter_list_id_pr
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/list/persons/nonesign
-pub async fn stub_attendance_assemble_control_attendancedetail_list_persons_nonesign(
+pub async fn attendancedetail_list_persons_nonesign(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1026,7 +936,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_list_persons_none
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/list/{file_id}
-pub async fn stub_attendance_assemble_control_attendancedetail_list_file_id(
+pub async fn attendancedetail_list_file_id(
     pool: Extension<Pool>,
     Path(file_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1061,7 +971,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_list_file_id(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/filter/list/page/{page}/count/{count}
-pub async fn stub_attendance_assemble_control_attendancedetail_mobile_filter_list_page_page_count_count(
+pub async fn attendancedetail_mobile_filter_list_page_page_count_count(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1097,7 +1007,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_mobile_filter_lis
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/mobilepreview
-pub async fn stub_attendance_assemble_control_attendancedetail_mobile_mobilepreview(
+pub async fn attendancedetail_mobile_mobilepreview(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1129,7 +1039,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_mobile_mobileprev
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/my
-pub async fn stub_attendance_assemble_control_attendancedetail_mobile_my(
+pub async fn attendancedetail_mobile_my(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1166,7 +1076,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_mobile_my(
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/mobile/recive
-pub async fn stub_attendance_assemble_control_attendancedetail_mobile_recive(
+pub async fn attendancedetail_mobile_recive(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1191,7 +1101,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_mobile_recive(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/mobile/{id}
-pub async fn stub_attendance_assemble_control_attendancedetail_mobile_id(
+pub async fn attendancedetail_mobile_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1220,7 +1130,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_mobile_id(
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/recive
-pub async fn stub_attendance_assemble_control_attendancedetail_recive(
+pub async fn attendancedetail_recive(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1244,7 +1154,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_recive(
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendancedetail/reciveSingle
-pub async fn stub_attendance_assemble_control_attendancedetail_reciveSingle(
+pub async fn attendancedetail_reciveSingle(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1268,7 +1178,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_reciveSingle(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancedetail/{id}
-pub async fn stub_attendance_assemble_control_attendancedetail_id(
+pub async fn attendancedetail_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1297,7 +1207,7 @@ pub async fn stub_attendance_assemble_control_attendancedetail_id(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceemployeeconfig/list/all
-pub async fn stub_attendance_assemble_control_attendanceemployeeconfig_list_all(
+pub async fn attendanceemployeeconfig_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1330,7 +1240,7 @@ pub async fn stub_attendance_assemble_control_attendanceemployeeconfig_list_all(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceemployeeconfig/{id}
-pub async fn stub_attendance_assemble_control_attendanceemployeeconfig_id(
+pub async fn attendanceemployeeconfig_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1358,7 +1268,7 @@ pub async fn stub_attendance_assemble_control_attendanceemployeeconfig_id(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceimportfileinfo/list/all
-pub async fn stub_attendance_assemble_control_attendanceimportfileinfo_list_all(
+pub async fn attendanceimportfileinfo_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1391,7 +1301,7 @@ pub async fn stub_attendance_assemble_control_attendanceimportfileinfo_list_all(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceimportfileinfo/{id}
-pub async fn stub_attendance_assemble_control_attendanceimportfileinfo_id(
+pub async fn attendanceimportfileinfo_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1419,7 +1329,7 @@ pub async fn stub_attendance_assemble_control_attendanceimportfileinfo_id(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/all
-pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_all(
+pub async fn attendanceschedulesetting_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1452,7 +1362,7 @@ pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_all
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/topUnit/{name}
-pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_topUnit_name(
+pub async fn attendanceschedulesetting_list_topUnit_name(
     pool: Extension<Pool>,
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1486,7 +1396,7 @@ pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_top
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/list/unit/{name}
-pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_unit_name(
+pub async fn attendanceschedulesetting_list_unit_name(
     pool: Extension<Pool>,
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1521,7 +1431,7 @@ pub async fn stub_attendance_assemble_control_attendanceschedulesetting_list_uni
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceschedulesetting/{id}
-pub async fn stub_attendance_assemble_control_attendanceschedulesetting_id(
+pub async fn attendanceschedulesetting_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1549,7 +1459,7 @@ pub async fn stub_attendance_assemble_control_attendanceschedulesetting_id(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/next/{count}
-pub async fn stub_attendance_assemble_control_attendanceselfholiday_filter_list_id_next_count(
+pub async fn attendanceselfholiday_filter_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1583,7 +1493,7 @@ pub async fn stub_attendance_assemble_control_attendanceselfholiday_filter_list_
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/filter/list/{id}/prev/{count}
-pub async fn stub_attendance_assemble_control_attendanceselfholiday_filter_list_id_prev_count(
+pub async fn attendanceselfholiday_filter_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1617,7 +1527,7 @@ pub async fn stub_attendance_assemble_control_attendanceselfholiday_filter_list_
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/list/all
-pub async fn stub_attendance_assemble_control_attendanceselfholiday_list_all(
+pub async fn attendanceselfholiday_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1651,7 +1561,7 @@ pub async fn stub_attendance_assemble_control_attendanceselfholiday_list_all(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceselfholiday/{id}
-pub async fn stub_attendance_assemble_control_attendanceselfholiday_id(
+pub async fn attendanceselfholiday_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1680,7 +1590,7 @@ pub async fn stub_attendance_assemble_control_attendanceselfholiday_id(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancesetting/code/{code}
-pub async fn stub_attendance_assemble_control_attendancesetting_code_code(
+pub async fn attendancesetting_code_code(
     pool: Extension<Pool>,
     Path(code): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1709,7 +1619,7 @@ pub async fn stub_attendance_assemble_control_attendancesetting_code_code(
 }
 
 /// POST /jaxrs/attendance/assemble/control/attendancesetting/enable/type
-pub async fn stub_attendance_assemble_control_attendancesetting_enable_type(
+pub async fn attendancesetting_enable_type(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1740,7 +1650,7 @@ pub async fn stub_attendance_assemble_control_attendancesetting_enable_type(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancesetting/list/all
-pub async fn stub_attendance_assemble_control_attendancesetting_list_all(
+pub async fn attendancesetting_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1774,7 +1684,7 @@ pub async fn stub_attendance_assemble_control_attendancesetting_list_all(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancesetting/{id}
-pub async fn stub_attendance_assemble_control_attendancesetting_id(
+pub async fn attendancesetting_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1803,7 +1713,7 @@ pub async fn stub_attendance_assemble_control_attendancesetting_id(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/cycleDetail/{year}/{month}
-pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_cycleDetail_year_month(
+pub async fn attendancestatisticalcycle_cycleDetail_year_month(
     pool: Extension<Pool>,
     Path((year, month)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1832,7 +1742,7 @@ pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_cycleDe
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/list/all
-pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_list_all(
+pub async fn attendancestatisticalcycle_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1866,7 +1776,7 @@ pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_list_al
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticalcycle/{id}
-pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_id(
+pub async fn attendancestatisticalcycle_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1895,7 +1805,7 @@ pub async fn stub_attendance_assemble_control_attendancestatisticalcycle_id(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/list/all
-pub async fn stub_attendance_assemble_control_attendancestatisticrequirelog_list_all(
+pub async fn attendancestatisticrequirelog_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1928,7 +1838,7 @@ pub async fn stub_attendance_assemble_control_attendancestatisticrequirelog_list
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendancestatisticrequirelog/{id}
-pub async fn stub_attendance_assemble_control_attendancestatisticrequirelog_id(
+pub async fn attendancestatisticrequirelog_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1956,7 +1866,7 @@ pub async fn stub_attendance_assemble_control_attendancestatisticrequirelog_id(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/filter
-pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_filter(
+pub async fn attendanceworkdayconfig_filter(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1993,7 +1903,7 @@ pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_filter(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/list/all
-pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_list_all(
+pub async fn attendanceworkdayconfig_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2026,7 +1936,7 @@ pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_list_all(
 }
 
 /// GET /jaxrs/attendance/assemble/control/attendanceworkdayconfig/{id}
-pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_id(
+pub async fn attendanceworkdayconfig_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2054,7 +1964,7 @@ pub async fn stub_attendance_assemble_control_attendanceworkdayconfig_id(
 }
 
 /// GET /jaxrs/attendance/assemble/control/selfholidaysimple/docId/{docId}
-pub async fn stub_attendance_assemble_control_selfholidaysimple_docId_docId(
+pub async fn selfholidaysimple_docId_docId(
     pool: Extension<Pool>,
     Path(doc_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2083,7 +1993,7 @@ pub async fn stub_attendance_assemble_control_selfholidaysimple_docId_docId(
 }
 
 /// POST /jaxrs/attendance/assemble/control/statistic/do
-pub async fn stub_attendance_assemble_control_statistic_do(
+pub async fn statistic_do(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2109,7 +2019,7 @@ pub async fn stub_attendance_assemble_control_statistic_do(
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/next/{count}
-pub async fn stub_attendance_assemble_control_statisticshow_filter_personMonth_list_id_next_count(
+pub async fn statisticshow_filter_personMonth_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2144,7 +2054,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_personMonth_l
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/personMonth/list/{id}/prev/{count}
-pub async fn stub_attendance_assemble_control_statisticshow_filter_personMonth_list_id_prev_count(
+pub async fn statisticshow_filter_personMonth_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2179,7 +2089,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_personMonth_l
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{id}/next/{count}
-pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitDay_list_id_next_count(
+pub async fn statisticshow_filter_topUnitDay_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2213,7 +2123,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitDay_li
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitDay/list/{id}/prev/{count}
-pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitDay_list_id_prev_count(
+pub async fn statisticshow_filter_topUnitDay_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2247,7 +2157,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitDay_li
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{id}/next/{count}
-pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitMonth_list_id_next_count(
+pub async fn statisticshow_filter_topUnitMonth_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2282,7 +2192,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitMonth_
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/topUnitMonth/list/{id}/prev/{count}
-pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitMonth_list_id_prev_count(
+pub async fn statisticshow_filter_topUnitMonth_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2317,7 +2227,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_topUnitMonth_
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/{id}/next/{count}
-pub async fn stub_attendance_assemble_control_statisticshow_filter_unitDay_list_id_next_count(
+pub async fn statisticshow_filter_unitDay_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2352,7 +2262,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_unitDay_list_
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitDay/list/{id}/prev/{count}
-pub async fn stub_attendance_assemble_control_statisticshow_filter_unitDay_list_id_prev_count(
+pub async fn statisticshow_filter_unitDay_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2387,7 +2297,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_unitDay_list_
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/next/{count}
-pub async fn stub_attendance_assemble_control_statisticshow_filter_unitMonth_list_id_next_count(
+pub async fn statisticshow_filter_unitMonth_list_id_next_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2423,7 +2333,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_unitMonth_lis
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/filter/unitMonth/list/{id}/prev/{count}
-pub async fn stub_attendance_assemble_control_statisticshow_filter_unitMonth_list_id_prev_count(
+pub async fn statisticshow_filter_unitMonth_list_id_prev_count(
     pool: Extension<Pool>,
     Path((id, count)): Path<(String, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2459,7 +2369,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_filter_unitMonth_lis
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/person/{name}/{year}/{month}
-pub async fn stub_attendance_assemble_control_statisticshow_person_name_year_month(
+pub async fn statisticshow_person_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2489,7 +2399,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_person_name_year_mon
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/persons/unit/subnested/{name}/{year}/{month}
-pub async fn stub_attendance_assemble_control_statisticshow_persons_unit_subnested_name_year_month(
+pub async fn statisticshow_persons_unit_subnested_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2523,7 +2433,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_persons_unit_subnest
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/persons/unit/{name}/{year}/{month}
-pub async fn stub_attendance_assemble_control_statisticshow_persons_unit_name_year_month(
+pub async fn statisticshow_persons_unit_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2557,7 +2467,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_persons_unit_name_ye
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/topUnit/day/{name}/{year}/{month}
-pub async fn stub_attendance_assemble_control_statisticshow_topUnit_day_name_year_month(
+pub async fn statisticshow_topUnit_day_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2591,7 +2501,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_topUnit_day_name_yea
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/topUnit/{name}/{year}/{month}
-pub async fn stub_attendance_assemble_control_statisticshow_topUnit_name_year_month(
+pub async fn statisticshow_topUnit_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2626,7 +2536,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_topUnit_name_year_mo
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/day/topUnit/{name}/{date}
-pub async fn stub_attendance_assemble_control_statisticshow_unit_day_topUnit_name_date(
+pub async fn statisticshow_unit_day_topUnit_name_date(
     pool: Extension<Pool>,
     Path((name, date)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2660,7 +2570,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_unit_day_topUnit_nam
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/day/{name}/{date}
-pub async fn stub_attendance_assemble_control_statisticshow_unit_day_name_date(
+pub async fn statisticshow_unit_day_name_date(
     pool: Extension<Pool>,
     Path((name, date)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2695,7 +2605,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_unit_day_name_date(
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/day/{name}/{year}/{month}
-pub async fn stub_attendance_assemble_control_statisticshow_unit_day_name_year_month(
+pub async fn statisticshow_unit_day_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2729,7 +2639,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_unit_day_name_year_m
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/subnested/{name}/{year}/{month}
-pub async fn stub_attendance_assemble_control_statisticshow_unit_subnested_name_year_month(
+pub async fn statisticshow_unit_subnested_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2763,7 +2673,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_unit_subnested_name_
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/sum/{name}/{year}/{month}
-pub async fn stub_attendance_assemble_control_statisticshow_unit_sum_name_year_month(
+pub async fn statisticshow_unit_sum_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2791,7 +2701,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_unit_sum_name_year_m
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/topUnit/{name}/{year}/{month}
-pub async fn stub_attendance_assemble_control_statisticshow_unit_topUnit_name_year_month(
+pub async fn statisticshow_unit_topUnit_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2827,7 +2737,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_unit_topUnit_name_ye
 }
 
 /// GET /jaxrs/attendance/assemble/control/statisticshow/unit/{name}/{year}/{month}
-pub async fn stub_attendance_assemble_control_statisticshow_unit_name_year_month(
+pub async fn statisticshow_unit_name_year_month(
     pool: Extension<Pool>,
     Path((name, year, month)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2863,7 +2773,7 @@ pub async fn stub_attendance_assemble_control_statisticshow_unit_name_year_month
 }
 
 /// GET /jaxrs/attendance/assemble/control/uuid/random
-pub async fn stub_attendance_assemble_control_uuid_random() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn uuid_random() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("uuid".to_string(), Value::String(uuid::Uuid::new_v4().to_string())),
@@ -2872,7 +2782,7 @@ pub async fn stub_attendance_assemble_control_uuid_random() -> Result<Json<Actio
 }
 
 /// GET /jaxrs/attendance/assemble/control/workplace/list/all
-pub async fn stub_attendance_assemble_control_workplace_list_all(
+pub async fn workplace_list_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -2905,7 +2815,7 @@ pub async fn stub_attendance_assemble_control_workplace_list_all(
 }
 
 /// GET /jaxrs/attendance/assemble/control/workplace/{id}
-pub async fn stub_attendance_assemble_control_workplace_id(
+pub async fn workplace_id(
     pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

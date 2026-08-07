@@ -62,14 +62,14 @@ pub async fn update_control_config(
 
 pub fn component_assemble_control_router(pool: Pool) -> Router {
     routes::router(pool)
-        .route("/jaxrs/component/assemble/control/component/delete/all", post(stub_component_assemble_control_component_delete_all))
-        .route("/jaxrs/component/assemble/control/status/list", get(stub_component_assemble_control_status_list))
+        .route("/jaxrs/component/assemble/control/component/delete/all", post(component_delete_all))
+        .route("/jaxrs/component/assemble/control/status/list", get(status_list))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    component_assemble_control_router(pool)
-        .route("/component_assemble_control/health", axum::routing::get(|| async { "ok" }))
+    crate::component_assemble_control_router(pool)
 }
+
 
 #[derive(Debug, serde::Deserialize)]
 pub struct ComponentRequest {
@@ -234,7 +234,7 @@ pub async fn delete_component(
 
 /// Stub handler for /jaxrs/component/assemble/control/component/delete/all
 /// TODO: Implement real business logic
-pub async fn stub_component_assemble_control_component_delete_all(
+pub async fn component_delete_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -257,7 +257,7 @@ pub async fn stub_component_assemble_control_component_delete_all(
 
 /// Stub handler for /jaxrs/component/assemble/control/status/list
 /// TODO: Implement real business logic
-pub async fn stub_component_assemble_control_status_list(
+pub async fn status_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;

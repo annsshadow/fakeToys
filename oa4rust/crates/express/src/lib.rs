@@ -90,7 +90,6 @@ pub fn express_router() -> Router {
         .route("/jaxrs/express/subscribe", post(subscribe_express))
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/express/health", axum::routing::get(|| async { "TODO: express - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    express_router().layer(axum::extract::Extension(pool))
 }

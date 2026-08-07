@@ -1,6 +1,40 @@
 use axum::response::{IntoResponse, Json};
+use deadpool_postgres::tokio_postgres::types::Type;
+use deadpool_postgres::tokio_postgres::Row;
 use serde::Serialize;
+use serde_json::Value;
 use thiserror::Error;
+
+/// 将一行 PostgreSQL 记录转换为 JSON 对象，供通用真实化 handler 复用。
+///
+/// 支持核心标量类型（bool / 整数 / 浮点 / 文本）。未知类型或 NULL 列映射为
+/// `Value::Null`。该函数的目的是让"通用 SELECT" handler 在不知道具体列名的情况下
+/// 也能返回真实数据，避免 `Value::Null` 桩。复杂/带时间类型的列建议在具体 handler
+/// 中显式映射。
+pub fn row_to_json(row: &Row) -> Value {
+    let mut map = serde_json::Map::new();
+    for col in row.columns() {
+        let name = col.name();
+        let val: Option<Value> = match *col.type_() {
+            Type::BOOL => row.get::<_, Option<bool>>(name).map(Value::Bool),
+            Type::INT2 => row.get::<_, Option<i16>>(name).map(|v| Value::Number((v as i64).into())),
+            Type::INT4 => row.get::<_, Option<i32>>(name).map(|v| Value::Number((v as i64).into())),
+            Type::INT8 => row.get::<_, Option<i64>>(name).map(|v| Value::Number(v.into())),
+            Type::FLOAT4 => row
+                .get::<_, Option<f32>>(name)
+                .and_then(|v| serde_json::Number::from_f64(v as f64).map(Value::Number)),
+            Type::FLOAT8 => row
+                .get::<_, Option<f64>>(name)
+                .and_then(|v| serde_json::Number::from_f64(v).map(Value::Number)),
+            Type::TEXT | Type::VARCHAR | Type::NAME | Type::BPCHAR => {
+                row.get::<_, Option<String>>(name).map(Value::String)
+            }
+            _ => None,
+        };
+        map.insert(name.to_string(), val.unwrap_or(Value::Null));
+    }
+    Value::Object(map)
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // AppError

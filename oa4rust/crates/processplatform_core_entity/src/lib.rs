@@ -145,5 +145,5 @@ pub fn processplatform_core_entity_router(pool: Pool) -> Router {
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    processplatform_core_entity_router(pool)
+    crate::processplatform_core_entity_router(pool)
 }

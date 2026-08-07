@@ -267,23 +267,14 @@ pub async fn config_get(
 mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/program_center/health", axum::routing::get(|| async { "ok" }))
-        .route("/jaxrs/program/applications", get(applications))
-        .route("/jaxrs/program/appstyle/current/style", get(current_style))
-        .route("/jaxrs/program/datastructure/modules/all", get(modules_all))
-        .route("/jaxrs/program_center/collect/list", get(collect_list))
-        .route("/jaxrs/program_center/collect/add", post(collect_add))
-        .route("/jaxrs/program_center/collect/remove/{id}", post(collect_remove))
-        .route("/jaxrs/program_center/config/get/{key}", get(config_get))
-        .route("/jaxrs/program_center/config/save", post(config_save))
-        .layer(axum::Extension(pool))
+    program_center_router().layer(axum::extract::Extension(pool))
 }
+
 
 
 /// Stub handler for /jaxrs/program_center/agent/{flag}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_agent_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn agent_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -293,7 +284,7 @@ pub async fn stub_program_center_agent_flag() -> Result<Json<ActionResult<Value>
 
 /// Stub handler for /jaxrs/program_center/agent/{flag}/disable
 /// TODO: Implement real business logic
-pub async fn stub_program_center_agent_flag_disable() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn agent_flag_disable() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -303,7 +294,7 @@ pub async fn stub_program_center_agent_flag_disable() -> Result<Json<ActionResul
 
 /// Stub handler for /jaxrs/program_center/agent/{flag}/enable
 /// TODO: Implement real business logic
-pub async fn stub_program_center_agent_flag_enable() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn agent_flag_enable() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -313,7 +304,7 @@ pub async fn stub_program_center_agent_flag_enable() -> Result<Json<ActionResult
 
 /// Stub handler for /jaxrs/program_center/agent/{flag}/execute
 /// TODO: Implement real business logic
-pub async fn stub_program_center_agent_flag_execute() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn agent_flag_execute() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -323,7 +314,7 @@ pub async fn stub_program_center_agent_flag_execute() -> Result<Json<ActionResul
 
 /// Stub handler for /jaxrs/program_center/agent/{flag}/file
 /// TODO: Implement real business logic
-pub async fn stub_program_center_agent_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn agent_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -333,7 +324,7 @@ pub async fn stub_program_center_agent_flag_file() -> Result<Json<ActionResult<V
 
 /// Stub handler for /jaxrs/program_center/andfx/pull/sync
 /// TODO: Implement real business logic
-pub async fn stub_program_center_andfx_pull_sync() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn andfx_pull_sync() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -343,7 +334,7 @@ pub async fn stub_program_center_andfx_pull_sync() -> Result<Json<ActionResult<V
 
 /// Stub handler for /jaxrs/program_center/appstyle/current/style
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_current_style() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_current_style() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -353,7 +344,7 @@ pub async fn stub_program_center_appstyle_current_style() -> Result<Json<ActionR
 
 /// Stub handler for /jaxrs/program_center/appstyle/current/update
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_current_update() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_current_update() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("saved".to_string(), Value::Bool(true)),
@@ -363,7 +354,7 @@ pub async fn stub_program_center_appstyle_current_update() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/application/top
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_application_top() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_application_top() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -373,7 +364,7 @@ pub async fn stub_program_center_appstyle_image_application_top() -> Result<Json
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/application/top/erase
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_application_top_erase() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_application_top_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("deleted".to_string(), Value::Bool(true)),
@@ -383,7 +374,7 @@ pub async fn stub_program_center_appstyle_image_application_top_erase() -> Resul
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/launch/logo
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_launch_logo() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_launch_logo() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -393,7 +384,7 @@ pub async fn stub_program_center_appstyle_image_launch_logo() -> Result<Json<Act
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/launch/logo/erase
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_launch_logo_erase() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_launch_logo_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("deleted".to_string(), Value::Bool(true)),
@@ -403,7 +394,7 @@ pub async fn stub_program_center_appstyle_image_launch_logo_erase() -> Result<Js
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/login/avatar
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_login_avatar() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_login_avatar() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -413,7 +404,7 @@ pub async fn stub_program_center_appstyle_image_login_avatar() -> Result<Json<Ac
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/login/avatar/erase
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_login_avatar_erase() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_login_avatar_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("deleted".to_string(), Value::Bool(true)),
@@ -423,7 +414,7 @@ pub async fn stub_program_center_appstyle_image_login_avatar_erase() -> Result<J
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/menu/logo/blur
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_menu_logo_blur() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_menu_logo_blur() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -433,7 +424,7 @@ pub async fn stub_program_center_appstyle_image_menu_logo_blur() -> Result<Json<
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/menu/logo/blur/erase
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_menu_logo_blur_erase() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_menu_logo_blur_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("deleted".to_string(), Value::Bool(true)),
@@ -443,7 +434,7 @@ pub async fn stub_program_center_appstyle_image_menu_logo_blur_erase() -> Result
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/menu/logo/focus
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_menu_logo_focus() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_menu_logo_focus() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -453,7 +444,7 @@ pub async fn stub_program_center_appstyle_image_menu_logo_focus() -> Result<Json
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/menu/logo/focus/erase
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_menu_logo_focus_erase() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_menu_logo_focus_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("deleted".to_string(), Value::Bool(true)),
@@ -463,7 +454,7 @@ pub async fn stub_program_center_appstyle_image_menu_logo_focus_erase() -> Resul
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/process/default
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_process_default() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_process_default() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -473,7 +464,7 @@ pub async fn stub_program_center_appstyle_image_process_default() -> Result<Json
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/process/default/erase
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_process_default_erase() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_process_default_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("deleted".to_string(), Value::Bool(true)),
@@ -483,7 +474,7 @@ pub async fn stub_program_center_appstyle_image_process_default_erase() -> Resul
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/setup/about/logo
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_setup_about_logo() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_setup_about_logo() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -493,7 +484,7 @@ pub async fn stub_program_center_appstyle_image_setup_about_logo() -> Result<Jso
 
 /// Stub handler for /jaxrs/program_center/appstyle/image/setup/about/logo/erase
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_image_setup_about_logo_erase() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_image_setup_about_logo_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("deleted".to_string(), Value::Bool(true)),
@@ -503,7 +494,7 @@ pub async fn stub_program_center_appstyle_image_setup_about_logo_erase() -> Resu
 
 /// Stub handler for /jaxrs/program_center/appstyle/index/portal
 /// TODO: Implement real business logic
-pub async fn stub_program_center_appstyle_index_portal() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_index_portal() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -513,7 +504,7 @@ pub async fn stub_program_center_appstyle_index_portal() -> Result<Json<ActionRe
 
 /// Stub handler for /jaxrs/program_center/bar/create/mass/{from}/{count}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_bar_create_mass_from_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bar_create_mass_from_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -523,7 +514,7 @@ pub async fn stub_program_center_bar_create_mass_from_count() -> Result<Json<Act
 
 /// Stub handler for /jaxrs/program_center/bar/select1/field/{field}/value/{value}/count/{count}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_bar_select1_field_field_value_value_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bar_select1_field_field_value_value_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -533,7 +524,7 @@ pub async fn stub_program_center_bar_select1_field_field_value_value_count_count
 
 /// Stub handler for /jaxrs/program_center/bar/select2/count/{count}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_bar_select2_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bar_select2_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -543,7 +534,7 @@ pub async fn stub_program_center_bar_select2_count_count() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/program_center/bar/select3/field/{field}/value/{value}/count/{count}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_bar_select3_field_field_value_value_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bar_select3_field_field_value_value_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -553,7 +544,7 @@ pub async fn stub_program_center_bar_select3_field_field_value_value_count_count
 
 /// Stub handler for /jaxrs/program_center/bar/select4/field/{field}/value/{value}/count/{count}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_bar_select4_field_field_value_value_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn bar_select4_field_field_value_value_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -563,7 +554,7 @@ pub async fn stub_program_center_bar_select4_field_field_value_value_count_count
 
 /// Stub handler for /jaxrs/program_center/captcha/list
 /// TODO: Implement real business logic
-pub async fn stub_program_center_captcha_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn captcha_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -573,7 +564,7 @@ pub async fn stub_program_center_captcha_list() -> Result<Json<ActionResult<Valu
 
 /// Stub handler for /jaxrs/program_center/captcha/v2/create/width/{width}/height/{height}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_captcha_v2_create_width_width_height_height() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn captcha_v2_create_width_width_height_height() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("saved".to_string(), Value::Bool(true)),
@@ -583,7 +574,7 @@ pub async fn stub_program_center_captcha_v2_create_width_width_height_height() -
 
 /// Stub handler for /jaxrs/program_center/captcha/{id}/validate/answer/{answer}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_captcha_id_validate_answer_answer() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn captcha_id_validate_answer_answer() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -593,7 +584,7 @@ pub async fn stub_program_center_captcha_id_validate_answer_answer() -> Result<J
 
 /// Stub handler for /jaxrs/program_center/center/applications
 /// TODO: Implement real business logic
-pub async fn stub_program_center_center_applications() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn center_applications() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -603,7 +594,7 @@ pub async fn stub_program_center_center_applications() -> Result<Json<ActionResu
 
 /// Stub handler for /jaxrs/program_center/center/regist/applications
 /// TODO: Implement real business logic
-pub async fn stub_program_center_center_regist_applications() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn center_regist_applications() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -613,7 +604,7 @@ pub async fn stub_program_center_center_regist_applications() -> Result<Json<Act
 
 /// Stub handler for /jaxrs/program_center/center/version
 /// TODO: Implement real business logic
-pub async fn stub_program_center_center_version() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn center_version() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -623,7 +614,7 @@ pub async fn stub_program_center_center_version() -> Result<Json<ActionResult<Va
 
 /// Stub handler for /jaxrs/program_center/code/create/mobile/{mobile}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_code_create_mobile_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn code_create_mobile_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -633,7 +624,7 @@ pub async fn stub_program_center_code_create_mobile_mobile() -> Result<Json<Acti
 
 /// Stub handler for /jaxrs/program_center/code/list
 /// TODO: Implement real business logic
-pub async fn stub_program_center_code_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn code_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -643,7 +634,7 @@ pub async fn stub_program_center_code_list() -> Result<Json<ActionResult<Value>>
 
 /// Stub handler for /jaxrs/program_center/code/list/paging/{page}/size/{size}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_code_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn code_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -653,7 +644,7 @@ pub async fn stub_program_center_code_list_paging_page_size_size() -> Result<Jso
 
 /// Stub handler for /jaxrs/program_center/code/validate/mobile/{mobile}/answer/{answer}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_code_validate_mobile_mobile_answer_answer() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn code_validate_mobile_mobile_answer_answer() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -663,7 +654,7 @@ pub async fn stub_program_center_code_validate_mobile_mobile_answer_answer() -> 
 
 /// Stub handler for /jaxrs/program_center/code/validate/mobile/{mobile}/answer/{answer}/cascade
 /// TODO: Implement real business logic
-pub async fn stub_program_center_code_validate_mobile_mobile_answer_answer_cascade() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn code_validate_mobile_mobile_answer_answer_cascade() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -673,7 +664,7 @@ pub async fn stub_program_center_code_validate_mobile_mobile_answer_answer_casca
 
 /// Stub handler for /jaxrs/program_center/collect/code/mobile/{mobile}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_code_mobile_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_code_mobile_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -683,7 +674,7 @@ pub async fn stub_program_center_collect_code_mobile_mobile() -> Result<Json<Act
 
 /// Stub handler for /jaxrs/program_center/collect/connect
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_connect() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_connect() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -693,7 +684,7 @@ pub async fn stub_program_center_collect_connect() -> Result<Json<ActionResult<V
 
 /// Stub handler for /jaxrs/program_center/collect/controllebbs
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_controllebbs() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_controllebbs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -703,7 +694,7 @@ pub async fn stub_program_center_collect_controllebbs() -> Result<Json<ActionRes
 
 /// Stub handler for /jaxrs/program_center/collect/controllermobile/name/{name}/mobile/{mobile}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_controllermobile_name_name_mobile_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_controllermobile_name_name_mobile_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -713,7 +704,7 @@ pub async fn stub_program_center_collect_controllermobile_name_name_mobile_mobil
 
 /// Stub handler for /jaxrs/program_center/collect/disconnect
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_disconnect() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_disconnect() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -723,7 +714,7 @@ pub async fn stub_program_center_collect_disconnect() -> Result<Json<ActionResul
 
 /// Stub handler for /jaxrs/program_center/collect/login
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_login() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_login() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -733,7 +724,7 @@ pub async fn stub_program_center_collect_login() -> Result<Json<ActionResult<Val
 
 /// Stub handler for /jaxrs/program_center/collect/mobile/check/connect
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_mobile_check_connect() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_mobile_check_connect() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -743,7 +734,7 @@ pub async fn stub_program_center_collect_mobile_check_connect() -> Result<Json<A
 
 /// Stub handler for /jaxrs/program_center/collect/name/{name}/exist
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_name_name_exist() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_name_name_exist() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -753,7 +744,7 @@ pub async fn stub_program_center_collect_name_name_exist() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/program_center/collect/name/{name}/mobile/{mobile}/code/{code}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_name_name_mobile_mobile_code_code() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_name_name_mobile_mobile_code_code() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -763,7 +754,7 @@ pub async fn stub_program_center_collect_name_name_mobile_mobile_code_code() -> 
 
 /// Stub handler for /jaxrs/program_center/collect/person
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_person() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_person() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -773,7 +764,7 @@ pub async fn stub_program_center_collect_person() -> Result<Json<ActionResult<Va
 
 /// Stub handler for /jaxrs/program_center/collect/resetpassword
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_resetpassword() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_resetpassword() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -783,7 +774,7 @@ pub async fn stub_program_center_collect_resetpassword() -> Result<Json<ActionRe
 
 /// Stub handler for /jaxrs/program_center/collect/sync/area
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_sync_area() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_sync_area() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -793,7 +784,7 @@ pub async fn stub_program_center_collect_sync_area() -> Result<Json<ActionResult
 
 /// Stub handler for /jaxrs/program_center/collect/updateUnit
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_updateUnit() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_updateUnit() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -803,7 +794,7 @@ pub async fn stub_program_center_collect_updateUnit() -> Result<Json<ActionResul
 
 /// Stub handler for /jaxrs/program_center/collect/urlMapping
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_urlMapping() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_urlMapping() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -813,7 +804,7 @@ pub async fn stub_program_center_collect_urlMapping() -> Result<Json<ActionResul
 
 /// Stub handler for /jaxrs/program_center/collect/validate
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_validate() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_validate() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -823,7 +814,7 @@ pub async fn stub_program_center_collect_validate() -> Result<Json<ActionResult<
 
 /// Stub handler for /jaxrs/program_center/collect/validate/codeanswer
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_validate_codeanswer() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_validate_codeanswer() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -833,7 +824,7 @@ pub async fn stub_program_center_collect_validate_codeanswer() -> Result<Json<Ac
 
 /// Stub handler for /jaxrs/program_center/collect/validate/direct
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_validate_direct() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_validate_direct() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -843,7 +834,7 @@ pub async fn stub_program_center_collect_validate_direct() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/program_center/collect/validate/password
 /// TODO: Implement real business logic
-pub async fn stub_program_center_collect_validate_password() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn collect_validate_password() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -853,7 +844,7 @@ pub async fn stub_program_center_collect_validate_password() -> Result<Json<Acti
 
 /// Stub handler for /jaxrs/program_center/command/execute
 /// TODO: Implement real business logic
-pub async fn stub_program_center_command_execute() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn command_execute() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -863,7 +854,7 @@ pub async fn stub_program_center_command_execute() -> Result<Json<ActionResult<V
 
 /// Stub handler for /jaxrs/program_center/command/list/node
 /// TODO: Implement real business logic
-pub async fn stub_program_center_command_list_node() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn command_list_node() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -873,7 +864,7 @@ pub async fn stub_program_center_command_list_node() -> Result<Json<ActionResult
 
 /// Stub handler for /jaxrs/program_center/config-open/get/disable/export/enable
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_open_get_disable_export_enable() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_open_get_disable_export_enable() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -883,7 +874,7 @@ pub async fn stub_program_center_config_open_get_disable_export_enable() -> Resu
 
 /// Stub handler for /jaxrs/program_center/config/centerserver
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_centerserver() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_centerserver() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -893,7 +884,7 @@ pub async fn stub_program_center_config_centerserver() -> Result<Json<ActionResu
 
 /// Stub handler for /jaxrs/program_center/config/change/password
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_change_password() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_change_password() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -903,7 +894,7 @@ pub async fn stub_program_center_config_change_password() -> Result<Json<ActionR
 
 /// Stub handler for /jaxrs/program_center/config/collect
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_collect() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_collect() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -913,7 +904,7 @@ pub async fn stub_program_center_config_collect() -> Result<Json<ActionResult<Va
 
 /// Stub handler for /jaxrs/program_center/config/license
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_license() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_license() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -923,7 +914,7 @@ pub async fn stub_program_center_config_license() -> Result<Json<ActionResult<Va
 
 /// Stub handler for /jaxrs/program_center/config/list
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -933,7 +924,7 @@ pub async fn stub_program_center_config_list() -> Result<Json<ActionResult<Value
 
 /// Stub handler for /jaxrs/program_center/config/list/application
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_list_application() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_list_application() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -943,7 +934,7 @@ pub async fn stub_program_center_config_list_application() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/program_center/config/list/dump/data
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_list_dump_data() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_list_dump_data() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -953,7 +944,7 @@ pub async fn stub_program_center_config_list_dump_data() -> Result<Json<ActionRe
 
 /// Stub handler for /jaxrs/program_center/config/list/dump/data/current/node
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_list_dump_data_current_node() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_list_dump_data_current_node() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -963,7 +954,7 @@ pub async fn stub_program_center_config_list_dump_data_current_node() -> Result<
 
 /// Stub handler for /jaxrs/program_center/config/list/entity
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_list_entity() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_list_entity() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -973,7 +964,7 @@ pub async fn stub_program_center_config_list_entity() -> Result<Json<ActionResul
 
 /// Stub handler for /jaxrs/program_center/config/open
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_open() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_open() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -983,7 +974,7 @@ pub async fn stub_program_center_config_open() -> Result<Json<ActionResult<Value
 
 /// Stub handler for /jaxrs/program_center/config/open/run/time/config
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_open_run_time_config() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_open_run_time_config() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -993,7 +984,7 @@ pub async fn stub_program_center_config_open_run_time_config() -> Result<Json<Ac
 
 /// Stub handler for /jaxrs/program_center/config/person
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_person() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_person() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1003,7 +994,7 @@ pub async fn stub_program_center_config_person() -> Result<Json<ActionResult<Val
 
 /// Stub handler for /jaxrs/program_center/config/portal
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_portal() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_portal() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1013,7 +1004,7 @@ pub async fn stub_program_center_config_portal() -> Result<Json<ActionResult<Val
 
 /// Stub handler for /jaxrs/program_center/config/proxy
 /// TODO: Implement real business logic
-pub async fn stub_program_center_config_proxy() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_proxy() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1055,7 +1046,7 @@ pub async fn config_save(
     ))))
 }
 
-pub async fn stub_program_center_config_ternary_management(
+pub async fn config_ternary_management(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1091,7 +1082,7 @@ pub async fn stub_program_center_config_ternary_management(
     ])))))
 }
 
-pub async fn stub_program_center_config_token(
+pub async fn config_token(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1123,7 +1114,7 @@ pub async fn stub_program_center_config_token(
     }
 }
 
-pub async fn stub_program_center_datastructure_fileds_all(
+pub async fn datastructure_fileds_all(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1159,7 +1150,7 @@ pub async fn stub_program_center_datastructure_fileds_all(
     ])))))
 }
 
-pub async fn stub_program_center_datastructure_modules_all(
+pub async fn datastructure_modules_all(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1194,7 +1185,7 @@ pub async fn stub_program_center_datastructure_modules_all(
     ])))))
 }
 
-pub async fn stub_program_center_datastructure_tables_all(
+pub async fn datastructure_tables_all(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1229,7 +1220,7 @@ pub async fn stub_program_center_datastructure_tables_all(
     ])))))
 }
 
-pub async fn stub_program_center_deploy_list_paging_page_size_size(
+pub async fn deploy_list_paging_page_size_size(
     pool: Option<Extension<Pool>>,
     Path(page): Path<i64>,
     Path(size): Path<i64>,
@@ -1266,7 +1257,7 @@ pub async fn stub_program_center_deploy_list_paging_page_size_size(
     ])))))
 }
 
-pub async fn stub_program_center_deploy_server_o2(
+pub async fn deploy_server_o2(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1298,7 +1289,7 @@ pub async fn stub_program_center_deploy_server_o2(
     }
 }
 
-pub async fn stub_program_center_deploy_server_resource(
+pub async fn deploy_server_resource(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1334,7 +1325,7 @@ pub async fn stub_program_center_deploy_server_resource(
     ])))))
 }
 
-pub async fn stub_program_center_deploy_web_resource_as_new_asNew(
+pub async fn deploy_web_resource_as_new_asNew(
     pool: Option<Extension<Pool>>,
     Path(as_new): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1363,7 +1354,7 @@ pub async fn stub_program_center_deploy_web_resource_as_new_asNew(
     ))))
 }
 
-pub async fn stub_program_center_deploy_id(
+pub async fn deploy_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1396,7 +1387,7 @@ pub async fn stub_program_center_deploy_id(
     }
 }
 
-pub async fn stub_program_center_designer_search(
+pub async fn designer_search(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1431,7 +1422,7 @@ pub async fn stub_program_center_designer_search(
     ])))))
 }
 
-pub async fn stub_program_center_dict_list(
+pub async fn dict_list(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1467,7 +1458,7 @@ pub async fn stub_program_center_dict_list(
     ])))))
 }
 
-pub async fn stub_program_center_dict_list_paging_page_size_size(
+pub async fn dict_list_paging_page_size_size(
     pool: Option<Extension<Pool>>,
     Path(page): Path<i64>,
     Path(size): Path<i64>,
@@ -1505,7 +1496,7 @@ pub async fn stub_program_center_dict_list_paging_page_size_size(
     ])))))
 }
 
-pub async fn stub_program_center_dict_dictFlag_data(
+pub async fn dict_dictFlag_data(
     pool: Option<Extension<Pool>>,
     Path(dict_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1535,7 +1526,7 @@ pub async fn stub_program_center_dict_dictFlag_data(
     }
 }
 
-pub async fn stub_program_center_dict_dictFlag_path_data(
+pub async fn dict_dictFlag_path_data(
     pool: Option<Extension<Pool>>,
     Path(dict_flag): Path<String>,
     Path(_path): Path<String>,
@@ -1567,7 +1558,7 @@ pub async fn stub_program_center_dict_dictFlag_path_data(
     }
 }
 
-pub async fn stub_program_center_dict_dictFlag_path_data_mockdeletetoget(
+pub async fn dict_dictFlag_path_data_mockdeletetoget(
     pool: Option<Extension<Pool>>,
     Path(dict_flag): Path<String>,
     Path(_path): Path<String>,
@@ -1604,7 +1595,7 @@ pub async fn stub_program_center_dict_dictFlag_path_data_mockdeletetoget(
     ])))))
 }
 
-pub async fn stub_program_center_dict_dictFlag_path_data_mockputtopost(
+pub async fn dict_dictFlag_path_data_mockputtopost(
     pool: Option<Extension<Pool>>,
     Path(dict_flag): Path<String>,
     Path(_path): Path<String>,
@@ -1641,7 +1632,7 @@ pub async fn stub_program_center_dict_dictFlag_path_data_mockputtopost(
     ))))
 }
 
-pub async fn stub_program_center_dict_id(
+pub async fn dict_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1675,7 +1666,7 @@ pub async fn stub_program_center_dict_id(
     }
 }
 
-pub async fn stub_program_center_dingding_get_callback_aes() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn dingding_get_callback_aes() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1683,7 +1674,7 @@ pub async fn stub_program_center_dingding_get_callback_aes() -> Result<Json<Acti
     ))))
 }
 
-pub async fn stub_program_center_dingding_pull_sync(
+pub async fn dingding_pull_sync(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1707,7 +1698,7 @@ pub async fn stub_program_center_dingding_pull_sync(
     ))))
 }
 
-pub async fn stub_program_center_dingding_request_pull_sync() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn dingding_request_pull_sync() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1715,7 +1706,7 @@ pub async fn stub_program_center_dingding_request_pull_sync() -> Result<Json<Act
     ))))
 }
 
-pub async fn stub_program_center_dingding_sync_organization_callback(
+pub async fn dingding_sync_organization_callback(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1742,7 +1733,7 @@ pub async fn stub_program_center_dingding_sync_organization_callback(
     ))))
 }
 
-pub async fn stub_program_center_dingding_sync_organization_register_callback_enable(
+pub async fn dingding_sync_organization_register_callback_enable(
     Path(_enable): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
@@ -1755,7 +1746,7 @@ pub async fn stub_program_center_dingding_sync_organization_register_callback_en
 
 /// Stub handler for /jaxrs/program_center/distribute/assemble/source/{source}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_distribute_assemble_source_source() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn distribute_assemble_source_source() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1765,7 +1756,7 @@ pub async fn stub_program_center_distribute_assemble_source_source() -> Result<J
 
 /// Stub handler for /jaxrs/program_center/distribute/webserver/assemble/source/{source}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_distribute_webserver_assemble_source_source() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn distribute_webserver_assemble_source_source() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1775,7 +1766,7 @@ pub async fn stub_program_center_distribute_webserver_assemble_source_source() -
 
 /// Stub handler for /jaxrs/program_center/foo/create/mass/{from}/{count}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_foo_create_mass_from_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn foo_create_mass_from_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1785,7 +1776,7 @@ pub async fn stub_program_center_foo_create_mass_from_count() -> Result<Json<Act
 
 /// Stub handler for /jaxrs/program_center/input/compare
 /// TODO: Implement real business logic
-pub async fn stub_program_center_input_compare() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn input_compare() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1795,7 +1786,7 @@ pub async fn stub_program_center_input_compare() -> Result<Json<ActionResult<Val
 
 /// Stub handler for /jaxrs/program_center/input/cover
 /// TODO: Implement real business logic
-pub async fn stub_program_center_input_cover() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn input_cover() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1805,7 +1796,7 @@ pub async fn stub_program_center_input_cover() -> Result<Json<ActionResult<Value
 
 /// Stub handler for /jaxrs/program_center/input/create
 /// TODO: Implement real business logic
-pub async fn stub_program_center_input_create() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn input_create() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1815,7 +1806,7 @@ pub async fn stub_program_center_input_create() -> Result<Json<ActionResult<Valu
 
 /// Stub handler for /jaxrs/program_center/input/prepare/cover
 /// TODO: Implement real business logic
-pub async fn stub_program_center_input_prepare_cover() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn input_prepare_cover() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1825,7 +1816,7 @@ pub async fn stub_program_center_input_prepare_cover() -> Result<Json<ActionResu
 
 /// Stub handler for /jaxrs/program_center/input/prepare/create
 /// TODO: Implement real business logic
-pub async fn stub_program_center_input_prepare_create() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn input_prepare_create() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("saved".to_string(), Value::Bool(true)),
@@ -1835,7 +1826,7 @@ pub async fn stub_program_center_input_prepare_create() -> Result<Json<ActionRes
 
 /// Stub handler for /jaxrs/program_center/invoke/list/category
 /// TODO: Implement real business logic
-pub async fn stub_program_center_invoke_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn invoke_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1845,7 +1836,7 @@ pub async fn stub_program_center_invoke_list_category() -> Result<Json<ActionRes
 
 /// Stub handler for /jaxrs/program_center/invoke/list/with/category/{category}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_invoke_list_with_category_category() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn invoke_list_with_category_category() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1855,7 +1846,7 @@ pub async fn stub_program_center_invoke_list_with_category_category() -> Result<
 
 /// Stub handler for /jaxrs/program_center/invoke/token
 /// TODO: Implement real business logic
-pub async fn stub_program_center_invoke_token() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn invoke_token() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1865,7 +1856,7 @@ pub async fn stub_program_center_invoke_token() -> Result<Json<ActionResult<Valu
 
 /// Stub handler for /jaxrs/program_center/invoke/{flag}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_invoke_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn invoke_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1875,7 +1866,7 @@ pub async fn stub_program_center_invoke_flag() -> Result<Json<ActionResult<Value
 
 /// Stub handler for /jaxrs/program_center/invoke/{flag}/client/{client}/token/{token}/execute
 /// TODO: Implement real business logic
-pub async fn stub_program_center_invoke_flag_client_client_token_token_execute() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn invoke_flag_client_client_token_token_execute() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1885,7 +1876,7 @@ pub async fn stub_program_center_invoke_flag_client_client_token_token_execute()
 
 /// Stub handler for /jaxrs/program_center/invoke/{flag}/execute
 /// TODO: Implement real business logic
-pub async fn stub_program_center_invoke_flag_execute() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn invoke_flag_execute() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1895,7 +1886,7 @@ pub async fn stub_program_center_invoke_flag_execute() -> Result<Json<ActionResu
 
 /// Stub handler for /jaxrs/program_center/invoke/{flag}/execute/get
 /// TODO: Implement real business logic
-pub async fn stub_program_center_invoke_flag_execute_get() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn invoke_flag_execute_get() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1905,7 +1896,7 @@ pub async fn stub_program_center_invoke_flag_execute_get() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/program_center/invoke/{flag}/file
 /// TODO: Implement real business logic
-pub async fn stub_program_center_invoke_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn invoke_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1915,7 +1906,7 @@ pub async fn stub_program_center_invoke_flag_file() -> Result<Json<ActionResult<
 
 /// Stub handler for /jaxrs/program_center/jest/center/list
 /// TODO: Implement real business logic
-pub async fn stub_program_center_jest_center_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn jest_center_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -1926,7 +1917,7 @@ pub async fn stub_program_center_jest_center_list() -> Result<Json<ActionResult<
 
 /// Stub handler for /jaxrs/program_center/jest/clear/cache/{source}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_jest_clear_cache_source() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn jest_clear_cache_source() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1936,7 +1927,7 @@ pub async fn stub_program_center_jest_clear_cache_source() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/program_center/jest/list
 /// TODO: Implement real business logic
-pub async fn stub_program_center_jest_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn jest_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1946,7 +1937,7 @@ pub async fn stub_program_center_jest_list() -> Result<Json<ActionResult<Value>>
 
 /// Stub handler for /jaxrs/program_center/jest/version
 /// TODO: Implement real business logic
-pub async fn stub_program_center_jest_version() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn jest_version() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1956,7 +1947,7 @@ pub async fn stub_program_center_jest_version() -> Result<Json<ActionResult<Valu
 
 /// Stub handler for /jaxrs/program_center/market/cloud/unit/is/vip
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_cloud_unit_is_vip() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_cloud_unit_is_vip() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1966,7 +1957,7 @@ pub async fn stub_program_center_market_cloud_unit_is_vip() -> Result<Json<Actio
 
 /// Stub handler for /jaxrs/program_center/market/install/offline
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_install_offline() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_install_offline() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1976,7 +1967,7 @@ pub async fn stub_program_center_market_install_offline() -> Result<Json<ActionR
 
 /// Stub handler for /jaxrs/program_center/market/list/category
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1986,7 +1977,7 @@ pub async fn stub_program_center_market_list_category() -> Result<Json<ActionRes
 
 /// Stub handler for /jaxrs/program_center/market/list/install/log/paging/{page}/size/{size}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_list_install_log_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_list_install_log_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1996,7 +1987,7 @@ pub async fn stub_program_center_market_list_install_log_paging_page_size_size()
 
 /// Stub handler for /jaxrs/program_center/market/list/paging/{page}/size/{size}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2006,7 +1997,7 @@ pub async fn stub_program_center_market_list_paging_page_size_size() -> Result<J
 
 /// Stub handler for /jaxrs/program_center/market/list/paging/{page}/size/{size}/category/{category}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_list_paging_page_size_size_category_category() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_list_paging_page_size_size_category_category() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2016,7 +2007,7 @@ pub async fn stub_program_center_market_list_paging_page_size_size_category_cate
 
 /// Stub handler for /jaxrs/program_center/market/list/top/three
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_list_top_three() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_list_top_three() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2026,7 +2017,7 @@ pub async fn stub_program_center_market_list_top_three() -> Result<Json<ActionRe
 
 /// Stub handler for /jaxrs/program_center/market/{flag}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2036,7 +2027,7 @@ pub async fn stub_program_center_market_flag() -> Result<Json<ActionResult<Value
 
 /// Stub handler for /jaxrs/program_center/market/{flag}/cover/pic
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_flag_cover_pic() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_flag_cover_pic() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2046,7 +2037,7 @@ pub async fn stub_program_center_market_flag_cover_pic() -> Result<Json<ActionRe
 
 /// Stub handler for /jaxrs/program_center/market/{flag}/install/log
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_flag_install_log() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_flag_install_log() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2056,7 +2047,7 @@ pub async fn stub_program_center_market_flag_install_log() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/program_center/market/{flag}/install/or/update
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_flag_install_or_update() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_flag_install_or_update() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("saved".to_string(), Value::Bool(true)),
@@ -2066,7 +2057,7 @@ pub async fn stub_program_center_market_flag_install_or_update() -> Result<Json<
 
 /// Stub handler for /jaxrs/program_center/market/{flag}/installed/version
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_flag_installed_version() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_flag_installed_version() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2076,7 +2067,7 @@ pub async fn stub_program_center_market_flag_installed_version() -> Result<Json<
 
 /// Stub handler for /jaxrs/program_center/market/{flag}/uninstall
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_flag_uninstall() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_flag_uninstall() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2086,7 +2077,7 @@ pub async fn stub_program_center_market_flag_uninstall() -> Result<Json<ActionRe
 
 /// Stub handler for /jaxrs/program_center/market/{id}/download
 /// TODO: Implement real business logic
-pub async fn stub_program_center_market_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2096,7 +2087,7 @@ pub async fn stub_program_center_market_id_download() -> Result<Json<ActionResul
 
 /// Stub handler for /jaxrs/program_center/module/compare/upload
 /// TODO: Implement real business logic
-pub async fn stub_program_center_module_compare_upload() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn module_compare_upload() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2106,7 +2097,7 @@ pub async fn stub_program_center_module_compare_upload() -> Result<Json<ActionRe
 
 /// Stub handler for /jaxrs/program_center/module/list
 /// TODO: Implement real business logic
-pub async fn stub_program_center_module_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn module_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2116,7 +2107,7 @@ pub async fn stub_program_center_module_list() -> Result<Json<ActionResult<Value
 
 /// Stub handler for /jaxrs/program_center/module/list/category
 /// TODO: Implement real business logic
-pub async fn stub_program_center_module_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn module_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2126,7 +2117,7 @@ pub async fn stub_program_center_module_list_category() -> Result<Json<ActionRes
 
 /// Stub handler for /jaxrs/program_center/module/output
 /// TODO: Implement real business logic
-pub async fn stub_program_center_module_output() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn module_output() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2136,7 +2127,7 @@ pub async fn stub_program_center_module_output() -> Result<Json<ActionResult<Val
 
 /// Stub handler for /jaxrs/program_center/module/output/list/structure
 /// TODO: Implement real business logic
-pub async fn stub_program_center_module_output_list_structure() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn module_output_list_structure() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -2147,7 +2138,7 @@ pub async fn stub_program_center_module_output_list_structure() -> Result<Json<A
 
 /// Stub handler for /jaxrs/program_center/module/output/structure
 /// TODO: Implement real business logic
-pub async fn stub_program_center_module_output_structure() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn module_output_structure() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2157,7 +2148,7 @@ pub async fn stub_program_center_module_output_structure() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/program_center/module/output/{flag}/file
 /// TODO: Implement real business logic
-pub async fn stub_program_center_module_output_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn module_output_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2167,7 +2158,7 @@ pub async fn stub_program_center_module_output_flag_file() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/program_center/module/remove/structure/{id}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_module_remove_structure_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn module_remove_structure_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2177,7 +2168,7 @@ pub async fn stub_program_center_module_remove_structure_id() -> Result<Json<Act
 
 /// Stub handler for /jaxrs/program_center/module/write/{flag}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_module_write_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn module_write_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2187,7 +2178,7 @@ pub async fn stub_program_center_module_write_flag() -> Result<Json<ActionResult
 
 /// Stub handler for /jaxrs/program_center/module/{id}/compare
 /// TODO: Implement real business logic
-pub async fn stub_program_center_module_id_compare() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn module_id_compare() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2197,7 +2188,7 @@ pub async fn stub_program_center_module_id_compare() -> Result<Json<ActionResult
 
 /// Stub handler for /jaxrs/program_center/mpweixin/check
 /// TODO: Implement real business logic
-pub async fn stub_program_center_mpweixin_check() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mpweixin_check() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2207,7 +2198,7 @@ pub async fn stub_program_center_mpweixin_check() -> Result<Json<ActionResult<Va
 
 /// Stub handler for /jaxrs/program_center/mpweixin/media/add/forever
 /// TODO: Implement real business logic
-pub async fn stub_program_center_mpweixin_media_add_forever() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mpweixin_media_add_forever() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("saved".to_string(), Value::Bool(true)),
@@ -2217,7 +2208,7 @@ pub async fn stub_program_center_mpweixin_media_add_forever() -> Result<Json<Act
 
 /// Stub handler for /jaxrs/program_center/mpweixin/menu/add
 /// TODO: Implement real business logic
-pub async fn stub_program_center_mpweixin_menu_add() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mpweixin_menu_add() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("saved".to_string(), Value::Bool(true)),
@@ -2227,7 +2218,7 @@ pub async fn stub_program_center_mpweixin_menu_add() -> Result<Json<ActionResult
 
 /// Stub handler for /jaxrs/program_center/mpweixin/menu/create/to/weixin
 /// TODO: Implement real business logic
-pub async fn stub_program_center_mpweixin_menu_create_to_weixin() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mpweixin_menu_create_to_weixin() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("saved".to_string(), Value::Bool(true)),
@@ -2237,7 +2228,7 @@ pub async fn stub_program_center_mpweixin_menu_create_to_weixin() -> Result<Json
 
 /// Stub handler for /jaxrs/program_center/mpweixin/menu/delete/{id}
 /// TODO: Implement real business logic
-pub async fn stub_program_center_mpweixin_menu_delete_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mpweixin_menu_delete_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("deleted".to_string(), Value::Bool(true)),
@@ -2247,7 +2238,7 @@ pub async fn stub_program_center_mpweixin_menu_delete_id() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/program_center/mpweixin/menu/list/weixin
 /// TODO: Implement real business logic
-pub async fn stub_program_center_mpweixin_menu_list_weixin() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mpweixin_menu_list_weixin() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -2256,7 +2247,7 @@ pub async fn stub_program_center_mpweixin_menu_list_weixin() -> Result<Json<Acti
     ))))
 }
 
-pub async fn stub_program_center_mpweixin_menu_subscribe() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mpweixin_menu_subscribe() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2264,7 +2255,7 @@ pub async fn stub_program_center_mpweixin_menu_subscribe() -> Result<Json<Action
     ))))
 }
 
-pub async fn stub_program_center_mpweixin_menu_update_id(
+pub async fn mpweixin_menu_update_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2293,7 +2284,7 @@ pub async fn stub_program_center_mpweixin_menu_update_id(
     ))))
 }
 
-pub async fn stub_program_center_mpweixin_message_template_send() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn mpweixin_message_template_send() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2301,7 +2292,7 @@ pub async fn stub_program_center_mpweixin_message_template_send() -> Result<Json
     ))))
 }
 
-pub async fn stub_program_center_output_list(
+pub async fn output_list(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -2337,7 +2328,7 @@ pub async fn stub_program_center_output_list(
     ])))))
 }
 
-pub async fn stub_program_center_output_appInfoFlag_select(
+pub async fn output_appInfoFlag_select(
     pool: Option<Extension<Pool>>,
     Path(app_info_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2374,7 +2365,7 @@ pub async fn stub_program_center_output_appInfoFlag_select(
     ])))))
 }
 
-pub async fn stub_program_center_output_flag_select_file(
+pub async fn output_flag_select_file(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2406,7 +2397,7 @@ pub async fn stub_program_center_output_flag_select_file(
     }
 }
 
-pub async fn stub_program_center_prompterrorlog_count_exceptionclass(
+pub async fn prompterrorlog_count_exceptionclass(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -2441,7 +2432,7 @@ pub async fn stub_program_center_prompterrorlog_count_exceptionclass(
     ])))))
 }
 
-pub async fn stub_program_center_prompterrorlog_count_loggername(
+pub async fn prompterrorlog_count_loggername(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -2476,7 +2467,7 @@ pub async fn stub_program_center_prompterrorlog_count_loggername(
     ])))))
 }
 
-pub async fn stub_program_center_prompterrorlog_list_id_next_count(
+pub async fn prompterrorlog_list_id_next_count(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -2513,7 +2504,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_next_count(
     ])))))
 }
 
-pub async fn stub_program_center_prompterrorlog_list_id_next_count_date_date(
+pub async fn prompterrorlog_list_id_next_count_date_date(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -2551,7 +2542,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_next_count_date_date(
     ])))))
 }
 
-pub async fn stub_program_center_prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
+pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -2589,7 +2580,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_next_count_exceptionclas
     ])))))
 }
 
-pub async fn stub_program_center_prompterrorlog_list_id_next_count_loggername_loggerName(
+pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -2627,7 +2618,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_next_count_loggername_lo
     ])))))
 }
 
-pub async fn stub_program_center_prompterrorlog_list_id_prev_count(
+pub async fn prompterrorlog_list_id_prev_count(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -2664,7 +2655,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_prev_count(
     ])))))
 }
 
-pub async fn stub_program_center_prompterrorlog_list_id_prev_count_date_date(
+pub async fn prompterrorlog_list_id_prev_count_date_date(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -2702,7 +2693,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_prev_count_date_date(
     ])))))
 }
 
-pub async fn stub_program_center_prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
+pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -2740,7 +2731,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_prev_count_exceptionclas
     ])))))
 }
 
-pub async fn stub_program_center_prompterrorlog_list_id_prev_count_loggername_loggerName(
+pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -2778,7 +2769,7 @@ pub async fn stub_program_center_prompterrorlog_list_id_prev_count_loggername_lo
     ])))))
 }
 
-pub async fn stub_program_center_prompterrorlog_id(
+pub async fn prompterrorlog_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2810,7 +2801,7 @@ pub async fn stub_program_center_prompterrorlog_id(
     }
 }
 
-pub async fn stub_program_center_qiyeweixin_get_callback_aes() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn qiyeweixin_get_callback_aes() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2818,7 +2809,7 @@ pub async fn stub_program_center_qiyeweixin_get_callback_aes() -> Result<Json<Ac
     ))))
 }
 
-pub async fn stub_program_center_qiyeweixin_pull_sync(
+pub async fn qiyeweixin_pull_sync(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -2841,7 +2832,7 @@ pub async fn stub_program_center_qiyeweixin_pull_sync(
     ))))
 }
 
-pub async fn stub_program_center_qiyeweixin_request_pull_sync() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn qiyeweixin_request_pull_sync() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -2849,7 +2840,7 @@ pub async fn stub_program_center_qiyeweixin_request_pull_sync() -> Result<Json<A
     ))))
 }
 
-pub async fn stub_program_center_qiyeweixin_send_getprivateinfo_message(
+pub async fn qiyeweixin_send_getprivateinfo_message(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2875,7 +2866,7 @@ pub async fn stub_program_center_qiyeweixin_send_getprivateinfo_message(
     ))))
 }
 
-pub async fn stub_program_center_schedule_list_schedule(
+pub async fn schedule_list_schedule(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -2911,7 +2902,7 @@ pub async fn stub_program_center_schedule_list_schedule(
     ])))))
 }
 
-pub async fn stub_program_center_schedule_list_schedulelocal(
+pub async fn schedule_list_schedulelocal(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -2948,7 +2939,7 @@ pub async fn stub_program_center_schedule_list_schedulelocal(
     ])))))
 }
 
-pub async fn stub_program_center_schedule_list_schedulelog_application_application(
+pub async fn schedule_list_schedulelog_application_application(
     pool: Option<Extension<Pool>>,
     Path(application): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -2985,7 +2976,7 @@ pub async fn stub_program_center_schedule_list_schedulelog_application_applicati
     ])))))
 }
 
-pub async fn stub_program_center_schedule_report(
+pub async fn schedule_report(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -3020,7 +3011,7 @@ pub async fn stub_program_center_schedule_report(
     ])))))
 }
 
-pub async fn stub_program_center_schedule_schedule_fire(
+pub async fn schedule_schedule_fire(
     pool: Option<Extension<Pool>>,
     Path(schedule_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3045,7 +3036,7 @@ pub async fn stub_program_center_schedule_schedule_fire(
     ))))
 }
 
-pub async fn stub_program_center_script_list(
+pub async fn script_list(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -3081,7 +3072,7 @@ pub async fn stub_program_center_script_list(
     ])))))
 }
 
-pub async fn stub_program_center_script_list_paging_page_size_size(
+pub async fn script_list_paging_page_size_size(
     pool: Option<Extension<Pool>>,
     Path(page): Path<i64>,
     Path(size): Path<i64>,
@@ -3119,7 +3110,7 @@ pub async fn stub_program_center_script_list_paging_page_size_size(
     ])))))
 }
 
-pub async fn stub_program_center_script_name_name(
+pub async fn script_name_name(
     pool: Option<Extension<Pool>>,
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3152,7 +3143,7 @@ pub async fn stub_program_center_script_name_name(
     }
 }
 
-pub async fn stub_program_center_script_name_name_imported(
+pub async fn script_name_name_imported(
     pool: Option<Extension<Pool>>,
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3185,7 +3176,7 @@ pub async fn stub_program_center_script_name_name_imported(
     }
 }
 
-pub async fn stub_program_center_script_flag(
+pub async fn script_flag(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3218,7 +3209,7 @@ pub async fn stub_program_center_script_flag(
     }
 }
 
-pub async fn stub_program_center_script_id(
+pub async fn script_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3251,7 +3242,7 @@ pub async fn stub_program_center_script_id(
     }
 }
 
-pub async fn stub_program_center_test_test1() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn test_test1() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -3260,7 +3251,7 @@ pub async fn stub_program_center_test_test1() -> Result<Json<ActionResult<Value>
     ))))
 }
 
-pub async fn stub_program_center_test_test2() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn test_test2() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -3269,7 +3260,7 @@ pub async fn stub_program_center_test_test2() -> Result<Json<ActionResult<Value>
     ))))
 }
 
-pub async fn stub_program_center_tokenthreshold_update(
+pub async fn tokenthreshold_update(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3307,7 +3298,7 @@ pub async fn stub_program_center_tokenthreshold_update(
     ))))
 }
 
-pub async fn stub_program_center_unexpectederrorlog_list_id_next_count(
+pub async fn unexpectederrorlog_list_id_next_count(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -3344,7 +3335,7 @@ pub async fn stub_program_center_unexpectederrorlog_list_id_next_count(
     ])))))
 }
 
-pub async fn stub_program_center_unexpectederrorlog_list_id_next_count_date_date(
+pub async fn unexpectederrorlog_list_id_next_count_date_date(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -3382,7 +3373,7 @@ pub async fn stub_program_center_unexpectederrorlog_list_id_next_count_date_date
     ])))))
 }
 
-pub async fn stub_program_center_unexpectederrorlog_list_id_prev_count(
+pub async fn unexpectederrorlog_list_id_prev_count(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -3419,7 +3410,7 @@ pub async fn stub_program_center_unexpectederrorlog_list_id_prev_count(
     ])))))
 }
 
-pub async fn stub_program_center_unexpectederrorlog_list_id_prev_count_date_date(
+pub async fn unexpectederrorlog_list_id_prev_count_date_date(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -3457,7 +3448,7 @@ pub async fn stub_program_center_unexpectederrorlog_list_id_prev_count_date_date
     ])))))
 }
 
-pub async fn stub_program_center_unexpectederrorlog_id(
+pub async fn unexpectederrorlog_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3489,7 +3480,7 @@ pub async fn stub_program_center_unexpectederrorlog_id(
     }
 }
 
-pub async fn stub_program_center_validation_meta() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn validation_meta() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("valid".to_string(), Value::Bool(true)),
@@ -3497,7 +3488,7 @@ pub async fn stub_program_center_validation_meta() -> Result<Json<ActionResult<V
     ))))
 }
 
-pub async fn stub_program_center_validation_scripting_benchmark() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn validation_scripting_benchmark() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -3506,7 +3497,7 @@ pub async fn stub_program_center_validation_scripting_benchmark() -> Result<Json
     ))))
 }
 
-pub async fn stub_program_center_validation_timeout_timeout(
+pub async fn validation_timeout_timeout(
     Path(_timeout): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
@@ -3517,7 +3508,7 @@ pub async fn stub_program_center_validation_timeout_timeout(
     ))))
 }
 
-pub async fn stub_program_center_zhengwudingding_pull_sync(
+pub async fn zhengwudingding_pull_sync(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -3540,7 +3531,7 @@ pub async fn stub_program_center_zhengwudingding_pull_sync(
     ))))
 }
 
-pub async fn stub_program_center_zhengwudingding_regist_callback(
+pub async fn zhengwudingding_regist_callback(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -3564,7 +3555,7 @@ pub async fn stub_program_center_zhengwudingding_regist_callback(
     ))))
 }
 
-pub async fn stub_program_center_zhengwudingding_sync_organization_callback(
+pub async fn zhengwudingding_sync_organization_callback(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

@@ -101,10 +101,10 @@ pub async fn list_control_categories(
     ))))
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/file_assemble_control/health", axum::routing::get(|| async { "TODO: file_assemble_control - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::file_assemble_control_router(pool)
 }
+
 
 #[axum::debug_handler]
 pub async fn list_files(
@@ -275,7 +275,7 @@ pub async fn delete_file(
 
 /// Stub handler for /jaxrs/file/assemble/control/anonymous/file/{id}/download
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_anonymous_file_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn anonymous_file_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -285,7 +285,7 @@ pub async fn stub_file_assemble_control_anonymous_file_id_download() -> Result<J
 
 /// Stub handler for /jaxrs/file/assemble/control/anonymous/file/{id}/download/stream
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_anonymous_file_id_download_stream() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn anonymous_file_id_download_stream() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -295,7 +295,7 @@ pub async fn stub_file_assemble_control_anonymous_file_id_download_stream() -> R
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/list/editor/{owner}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_list_editor_owner() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_list_editor_owner() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -306,7 +306,7 @@ pub async fn stub_file_assemble_control_attachment_list_editor_owner() -> Result
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/list/folder/{folderId}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_list_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_list_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -317,7 +317,7 @@ pub async fn stub_file_assemble_control_attachment_list_folder_folderId() -> Res
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/list/share/{owner}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_list_share_owner() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_list_share_owner() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -328,7 +328,7 @@ pub async fn stub_file_assemble_control_attachment_list_share_owner() -> Result<
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/list/top
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_list_top() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_list_top() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -339,7 +339,7 @@ pub async fn stub_file_assemble_control_attachment_list_top() -> Result<Json<Act
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/upload/folder/{folderId}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_upload_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_upload_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -349,7 +349,7 @@ pub async fn stub_file_assemble_control_attachment_upload_folder_folderId() -> R
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/upload/folder/{folderId}/callback/{callback}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_upload_folder_folderId_callback_callback() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_upload_folder_folderId_callback_callback() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -359,7 +359,7 @@ pub async fn stub_file_assemble_control_attachment_upload_folder_folderId_callba
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/{id}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -369,7 +369,7 @@ pub async fn stub_file_assemble_control_attachment_id() -> Result<Json<ActionRes
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/{id}/binary/base64
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_id_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_id_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -379,7 +379,7 @@ pub async fn stub_file_assemble_control_attachment_id_binary_base64() -> Result<
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/{id}/download
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -389,7 +389,7 @@ pub async fn stub_file_assemble_control_attachment_id_download() -> Result<Json<
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/{id}/download/stream
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_id_download_stream() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_id_download_stream() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -399,7 +399,7 @@ pub async fn stub_file_assemble_control_attachment_id_download_stream() -> Resul
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/{id}/image/scale/{scale}/binary/base64
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_id_image_scale_scale_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_id_image_scale_scale_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -409,7 +409,7 @@ pub async fn stub_file_assemble_control_attachment_id_image_scale_scale_binary_b
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/{id}/image/width/{width}/height/{height}/binary/base64
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_id_image_width_width_height_height_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_id_image_width_width_height_height_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -419,7 +419,7 @@ pub async fn stub_file_assemble_control_attachment_id_image_width_width_height_h
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/{id}/update
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_id_update() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_id_update() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("saved".to_string(), Value::Bool(true)),
@@ -429,7 +429,7 @@ pub async fn stub_file_assemble_control_attachment_id_update() -> Result<Json<Ac
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment/{id}/update/callback/{callback}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment_id_update_callback_callback() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment_id_update_callback_callback() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("saved".to_string(), Value::Bool(true)),
@@ -439,7 +439,7 @@ pub async fn stub_file_assemble_control_attachment_id_update_callback_callback()
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/exist/file/{fileMd5}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_exist_file_fileMd5() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_exist_file_fileMd5() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -449,7 +449,7 @@ pub async fn stub_file_assemble_control_attachment2_exist_file_fileMd5() -> Resu
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/list/editor/{owner}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_list_editor_owner() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_list_editor_owner() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -460,7 +460,7 @@ pub async fn stub_file_assemble_control_attachment2_list_editor_owner() -> Resul
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/list/filter/{name}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_list_filter_name() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_list_filter_name() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -471,7 +471,7 @@ pub async fn stub_file_assemble_control_attachment2_list_filter_name() -> Result
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/list/folder/{folderId}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_list_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_list_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -482,7 +482,7 @@ pub async fn stub_file_assemble_control_attachment2_list_folder_folderId() -> Re
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/list/share/{owner}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_list_share_owner() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_list_share_owner() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -493,7 +493,7 @@ pub async fn stub_file_assemble_control_attachment2_list_share_owner() -> Result
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/list/top
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_list_top() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_list_top() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -504,7 +504,7 @@ pub async fn stub_file_assemble_control_attachment2_list_top() -> Result<Json<Ac
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/list/type/{page}/size/{size}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_list_type_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_list_type_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -515,7 +515,7 @@ pub async fn stub_file_assemble_control_attachment2_list_type_page_size_size() -
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/upload/folder/{folderId}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_upload_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_upload_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -525,7 +525,7 @@ pub async fn stub_file_assemble_control_attachment2_upload_folder_folderId() -> 
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/user/capacity
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_user_capacity() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_user_capacity() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -535,7 +535,7 @@ pub async fn stub_file_assemble_control_attachment2_user_capacity() -> Result<Js
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/{id}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -545,7 +545,7 @@ pub async fn stub_file_assemble_control_attachment2_id() -> Result<Json<ActionRe
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/{id}/binary/base64
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_id_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_id_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -555,7 +555,7 @@ pub async fn stub_file_assemble_control_attachment2_id_binary_base64() -> Result
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/{id}/download
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -565,7 +565,7 @@ pub async fn stub_file_assemble_control_attachment2_id_download() -> Result<Json
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/{id}/download/image/width/{width}/height/{height}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_id_download_image_width_width_height_height() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_id_download_image_width_width_height_height() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -575,7 +575,7 @@ pub async fn stub_file_assemble_control_attachment2_id_download_image_width_widt
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/{id}/download/stream
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_id_download_stream() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_id_download_stream() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -585,7 +585,7 @@ pub async fn stub_file_assemble_control_attachment2_id_download_stream() -> Resu
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/{id}/image/scale/{scale}/binary/base64
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_id_image_scale_scale_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_id_image_scale_scale_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -595,7 +595,7 @@ pub async fn stub_file_assemble_control_attachment2_id_image_scale_scale_binary_
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/{id}/image/width/{width}/height/{height}/binary/base64
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_id_image_width_width_height_height_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_id_image_width_width_height_height_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -605,7 +605,7 @@ pub async fn stub_file_assemble_control_attachment2_id_image_width_width_height_
 
 /// Stub handler for /jaxrs/file/assemble/control/attachment2/{id}/office/preview/type/{type}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_attachment2_id_office_preview_type_type() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn attachment2_id_office_preview_type_type() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -615,7 +615,7 @@ pub async fn stub_file_assemble_control_attachment2_id_office_preview_type_type(
 
 /// Stub handler for /jaxrs/file/assemble/control/complex/folder/{id}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_complex_folder_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn complex_folder_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -625,7 +625,7 @@ pub async fn stub_file_assemble_control_complex_folder_id() -> Result<Json<Actio
 
 /// Stub handler for /jaxrs/file/assemble/control/complex/top
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_complex_top() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn complex_top() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -635,7 +635,7 @@ pub async fn stub_file_assemble_control_complex_top() -> Result<Json<ActionResul
 
 /// Stub handler for /jaxrs/file/assemble/control/config/is/file/manager
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_config_is_file_manager() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_is_file_manager() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -645,7 +645,7 @@ pub async fn stub_file_assemble_control_config_is_file_manager() -> Result<Json<
 
 /// Stub handler for /jaxrs/file/assemble/control/config/system/config
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_config_system_config() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn config_system_config() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -655,7 +655,7 @@ pub async fn stub_file_assemble_control_config_system_config() -> Result<Json<Ac
 
 /// Stub handler for /jaxrs/file/assemble/control/editor/list
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_editor_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn editor_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -666,7 +666,7 @@ pub async fn stub_file_assemble_control_editor_list() -> Result<Json<ActionResul
 
 /// Stub handler for /jaxrs/file/assemble/control/file/clean/unused/referencetype/cmsdocument/manage
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_clean_unused_referencetype_cmsdocument_manage() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_clean_unused_referencetype_cmsdocument_manage() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -676,7 +676,7 @@ pub async fn stub_file_assemble_control_file_clean_unused_referencetype_cmsdocum
 
 /// Stub handler for /jaxrs/file/assemble/control/file/copy/attachment/{attachmentId}/referencetype/{referenceType}/reference/{reference}/scale/{scale}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -686,7 +686,7 @@ pub async fn stub_file_assemble_control_file_copy_attachment_attachmentId_refere
 
 /// Stub handler for /jaxrs/file/assemble/control/file/list/referencetype
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_list_referencetype() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_list_referencetype() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -697,7 +697,7 @@ pub async fn stub_file_assemble_control_file_list_referencetype() -> Result<Json
 
 /// Stub handler for /jaxrs/file/assemble/control/file/list/referencetype/{referenceType}/reference/{reference}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_list_referencetype_referenceType_reference_reference() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_list_referencetype_referenceType_reference_reference() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -708,7 +708,7 @@ pub async fn stub_file_assemble_control_file_list_referencetype_referenceType_re
 
 /// Stub handler for /jaxrs/file/assemble/control/file/list/unused/referencetype/cmsdocument/manage
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_list_unused_referencetype_cmsdocument_manage() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_list_unused_referencetype_cmsdocument_manage() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -719,7 +719,7 @@ pub async fn stub_file_assemble_control_file_list_unused_referencetype_cmsdocume
 
 /// Stub handler for /jaxrs/file/assemble/control/file/list/{id}/next/{count}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -730,7 +730,7 @@ pub async fn stub_file_assemble_control_file_list_id_next_count() -> Result<Json
 
 /// Stub handler for /jaxrs/file/assemble/control/file/list/{id}/next/{count}/all
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_list_id_next_count_all() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_list_id_next_count_all() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -741,7 +741,7 @@ pub async fn stub_file_assemble_control_file_list_id_next_count_all() -> Result<
 
 /// Stub handler for /jaxrs/file/assemble/control/file/list/{id}/next/{count}/referencetype/{referenceType}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_list_id_next_count_referencetype_referenceType() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_list_id_next_count_referencetype_referenceType() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -752,7 +752,7 @@ pub async fn stub_file_assemble_control_file_list_id_next_count_referencetype_re
 
 /// Stub handler for /jaxrs/file/assemble/control/file/list/{id}/prev/{count}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -763,7 +763,7 @@ pub async fn stub_file_assemble_control_file_list_id_prev_count() -> Result<Json
 
 /// Stub handler for /jaxrs/file/assemble/control/file/list/{id}/prev/{count}/all
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_list_id_prev_count_all() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_list_id_prev_count_all() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -774,7 +774,7 @@ pub async fn stub_file_assemble_control_file_list_id_prev_count_all() -> Result<
 
 /// Stub handler for /jaxrs/file/assemble/control/file/list/{id}/prev/{count}/referencetype/{referenceType}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_list_id_prev_count_referencetype_referenceType() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_list_id_prev_count_referencetype_referenceType() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -785,7 +785,7 @@ pub async fn stub_file_assemble_control_file_list_id_prev_count_referencetype_re
 
 /// Stub handler for /jaxrs/file/assemble/control/file/referencetype/{referenceType}/reference/{reference}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_referencetype_referenceType_reference_reference() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_referencetype_referenceType_reference_reference() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -795,7 +795,7 @@ pub async fn stub_file_assemble_control_file_referencetype_referenceType_referen
 
 /// Stub handler for /jaxrs/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_upload_referencetype_referenceType_reference_reference_scale_scale() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_upload_referencetype_referenceType_reference_reference_scale_scale() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -805,7 +805,7 @@ pub async fn stub_file_assemble_control_file_upload_referencetype_referenceType_
 
 /// Stub handler for /jaxrs/file/assemble/control/file/upload/referencetype/{referenceType}/reference/{reference}/scale/{scale}/callback/{callback}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_upload_referencetype_referenceType_reference_reference_scale_scale_callback_callback() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_upload_referencetype_referenceType_reference_reference_scale_scale_callback_callback() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -815,7 +815,7 @@ pub async fn stub_file_assemble_control_file_upload_referencetype_referenceType_
 
 /// Stub handler for /jaxrs/file/assemble/control/file/upload/with/url
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_upload_with_url() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_upload_with_url() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -825,7 +825,7 @@ pub async fn stub_file_assemble_control_file_upload_with_url() -> Result<Json<Ac
 
 /// Stub handler for /jaxrs/file/assemble/control/file/{id}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -835,7 +835,7 @@ pub async fn stub_file_assemble_control_file_id() -> Result<Json<ActionResult<Va
 
 /// Stub handler for /jaxrs/file/assemble/control/file/{id}/binary/base64
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_id_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_id_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -845,7 +845,7 @@ pub async fn stub_file_assemble_control_file_id_binary_base64() -> Result<Json<A
 
 /// Stub handler for /jaxrs/file/assemble/control/file/{id}/download
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -855,7 +855,7 @@ pub async fn stub_file_assemble_control_file_id_download() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/file/assemble/control/file/{id}/download/stream
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_file_id_download_stream() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn file_id_download_stream() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -865,7 +865,7 @@ pub async fn stub_file_assemble_control_file_id_download_stream() -> Result<Json
 
 /// Stub handler for /jaxrs/file/assemble/control/folder/list/top
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_folder_list_top() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn folder_list_top() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -876,7 +876,7 @@ pub async fn stub_file_assemble_control_folder_list_top() -> Result<Json<ActionR
 
 /// Stub handler for /jaxrs/file/assemble/control/folder/list/{id}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_folder_list_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn folder_list_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -887,7 +887,7 @@ pub async fn stub_file_assemble_control_folder_list_id() -> Result<Json<ActionRe
 
 /// Stub handler for /jaxrs/file/assemble/control/folder/{id}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_folder_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn folder_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -897,7 +897,7 @@ pub async fn stub_file_assemble_control_folder_id() -> Result<Json<ActionResult<
 
 /// Stub handler for /jaxrs/file/assemble/control/folder2/batch/download
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_folder2_batch_download() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn folder2_batch_download() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -907,7 +907,7 @@ pub async fn stub_file_assemble_control_folder2_batch_download() -> Result<Json<
 
 /// Stub handler for /jaxrs/file/assemble/control/folder2/list/top
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_folder2_list_top() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn folder2_list_top() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -918,7 +918,7 @@ pub async fn stub_file_assemble_control_folder2_list_top() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/file/assemble/control/folder2/list/{id}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_folder2_list_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn folder2_list_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -929,7 +929,7 @@ pub async fn stub_file_assemble_control_folder2_list_id() -> Result<Json<ActionR
 
 /// Stub handler for /jaxrs/file/assemble/control/folder2/{id}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_folder2_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn folder2_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -939,7 +939,7 @@ pub async fn stub_file_assemble_control_folder2_id() -> Result<Json<ActionResult
 
 /// Stub handler for /jaxrs/file/assemble/control/folder2/{id}/download
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_folder2_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn folder2_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -949,7 +949,7 @@ pub async fn stub_file_assemble_control_folder2_id_download() -> Result<Json<Act
 
 /// Stub handler for /jaxrs/file/assemble/control/recycle/empty
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_recycle_empty() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn recycle_empty() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -959,7 +959,7 @@ pub async fn stub_file_assemble_control_recycle_empty() -> Result<Json<ActionRes
 
 /// Stub handler for /jaxrs/file/assemble/control/recycle/list
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_recycle_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn recycle_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -970,7 +970,7 @@ pub async fn stub_file_assemble_control_recycle_list() -> Result<Json<ActionResu
 
 /// Stub handler for /jaxrs/file/assemble/control/recycle/{id}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_recycle_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn recycle_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -980,7 +980,7 @@ pub async fn stub_file_assemble_control_recycle_id() -> Result<Json<ActionResult
 
 /// Stub handler for /jaxrs/file/assemble/control/recycle/{id}/delete
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_recycle_id_delete() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn recycle_id_delete() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("deleted".to_string(), Value::Bool(true)),
@@ -990,7 +990,7 @@ pub async fn stub_file_assemble_control_recycle_id_delete() -> Result<Json<Actio
 
 /// Stub handler for /jaxrs/file/assemble/control/recycle/{id}/resume
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_recycle_id_resume() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn recycle_id_resume() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1000,7 +1000,7 @@ pub async fn stub_file_assemble_control_recycle_id_resume() -> Result<Json<Actio
 
 /// Stub handler for /jaxrs/file/assemble/control/share/download/share/{shareId}/file/{fileId}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_share_download_share_shareId_file_fileId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn share_download_share_shareId_file_fileId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1010,7 +1010,7 @@ pub async fn stub_file_assemble_control_share_download_share_shareId_file_fileId
 
 /// Stub handler for /jaxrs/file/assemble/control/share/list
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_share_list() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn share_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -1021,7 +1021,7 @@ pub async fn stub_file_assemble_control_share_list() -> Result<Json<ActionResult
 
 /// Stub handler for /jaxrs/file/assemble/control/share/list/att/share/{shareId}/folder/{folderId}/
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_share_list_att_share_shareId_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn share_list_att_share_shareId_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -1032,7 +1032,7 @@ pub async fn stub_file_assemble_control_share_list_att_share_shareId_folder_fold
 
 /// Stub handler for /jaxrs/file/assemble/control/share/list/folder/share/{shareId}/folder/{folderId}/
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_share_list_folder_share_shareId_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn share_list_folder_share_shareId_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -1043,7 +1043,7 @@ pub async fn stub_file_assemble_control_share_list_folder_share_shareId_folder_f
 
 /// Stub handler for /jaxrs/file/assemble/control/share/list/my
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_share_list_my() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn share_list_my() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -1054,7 +1054,7 @@ pub async fn stub_file_assemble_control_share_list_my() -> Result<Json<ActionRes
 
 /// Stub handler for /jaxrs/file/assemble/control/share/list/my2/{shareType}/{fileType}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_share_list_my2_shareType_fileType() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn share_list_my2_shareType_fileType() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -1065,7 +1065,7 @@ pub async fn stub_file_assemble_control_share_list_my2_shareType_fileType() -> R
 
 /// Stub handler for /jaxrs/file/assemble/control/share/list/to/me
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_share_list_to_me() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn share_list_to_me() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -1076,7 +1076,7 @@ pub async fn stub_file_assemble_control_share_list_to_me() -> Result<Json<Action
 
 /// Stub handler for /jaxrs/file/assemble/control/share/list/to/me2/{fileType}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_share_list_to_me2_fileType() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn share_list_to_me2_fileType() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
@@ -1087,7 +1087,7 @@ pub async fn stub_file_assemble_control_share_list_to_me2_fileType() -> Result<J
 
 /// Stub handler for /jaxrs/file/assemble/control/share/share/{shareId}/file/{fileId}/folder/{folderId}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_share_share_shareId_file_fileId_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn share_share_shareId_file_fileId_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1097,7 +1097,7 @@ pub async fn stub_file_assemble_control_share_share_shareId_file_fileId_folder_f
 
 /// Stub handler for /jaxrs/file/assemble/control/share/shield/{id}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_share_shield_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn share_shield_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1107,7 +1107,7 @@ pub async fn stub_file_assemble_control_share_shield_id() -> Result<Json<ActionR
 
 /// Stub handler for /jaxrs/file/assemble/control/share/{id}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_share_id() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn share_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1117,7 +1117,7 @@ pub async fn stub_file_assemble_control_share_id() -> Result<Json<ActionResult<V
 
 /// Stub handler for /jaxrs/file/assemble/control/share/{id}/password/{password}
 /// TODO: Implement real business logic
-pub async fn stub_file_assemble_control_share_id_password_password() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn share_id_password_password() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),

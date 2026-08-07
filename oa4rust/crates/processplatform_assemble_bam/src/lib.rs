@@ -104,13 +104,13 @@ pub fn processplatform_assemble_bam_router() -> Router {
 mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    routes::router(pool)
-        .route("/processplatform_assemble_bam/health", axum::routing::get(|| async { "ok" }))
+    processplatform_assemble_bam_router().layer(axum::extract::Extension(pool))
 }
 
 
+
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/completed/task/applicationstubs
-pub async fn stub_processplatform_assemble_bam_period_list_completed_task_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_completed_task_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -119,7 +119,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_completed_task_applic
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/completed/task/unitstubs
-pub async fn stub_processplatform_assemble_bam_period_list_completed_task_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_completed_task_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -128,7 +128,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_completed_task_unitst
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/completed/work/applicationstubs
-pub async fn stub_processplatform_assemble_bam_period_list_completed_work_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_completed_work_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -137,7 +137,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_completed_work_applic
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/completed/work/unitstubs
-pub async fn stub_processplatform_assemble_bam_period_list_completed_work_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_completed_work_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -146,7 +146,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_completed_work_unitst
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit
-pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -155,7 +155,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}
-pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -164,7 +164,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity
-pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_application_applicationId_process_processId_unit_unit_person_person_by_activity() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_completed_task_application_applicationId_process_processId_unit_unit_person_person_by_activity() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -173,7 +173,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/task/application/{applicationId}/unit/{unit}/person/{person}/by/process
-pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_completed_task_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -182,7 +182,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/task/unit/{unit}/person/{person}/by/application
-pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_completed_task_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -191,7 +191,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_completed_task_
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/process/{processId}/by/unit
-pub async fn stub_processplatform_assemble_bam_period_list_count_completed_work_application_applicationId_process_processId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_completed_work_application_applicationId_process_processId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -200,7 +200,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_completed_work_
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}
-pub async fn stub_processplatform_assemble_bam_period_list_count_completed_work_application_applicationId_process_processId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_completed_work_application_applicationId_process_processId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -209,7 +209,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_completed_work_
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/work/application/{applicationId}/unit/{unit}/person/{person}/by/process
-pub async fn stub_processplatform_assemble_bam_period_list_count_completed_work_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_completed_work_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -218,7 +218,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_completed_work_
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/completed/work/unit/{unit}/person/{person}/by/application
-pub async fn stub_processplatform_assemble_bam_period_list_count_completed_work_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_completed_work_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -227,7 +227,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_completed_work_
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit
-pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -236,7 +236,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_ap
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}
-pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -245,7 +245,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_ap
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity
-pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_application_applicationId_process_processId_unit_unit_person_person_by_activity() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_expired_task_application_applicationId_process_processId_unit_unit_person_person_by_activity() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -254,7 +254,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_ap
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/task/application/{applicationId}/unit/{unit}/person/{person}/by/process
-pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_expired_task_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -263,7 +263,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_ap
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/task/unit/{unit}/person/{person}/by/application
-pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_expired_task_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -272,7 +272,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_expired_task_un
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/process/{processId}/by/unit
-pub async fn stub_processplatform_assemble_bam_period_list_count_expired_work_application_applicationId_process_processId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_expired_work_application_applicationId_process_processId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -281,7 +281,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_expired_work_ap
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}
-pub async fn stub_processplatform_assemble_bam_period_list_count_expired_work_application_applicationId_process_processId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_expired_work_application_applicationId_process_processId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -290,7 +290,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_expired_work_ap
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/work/application/{applicationId}/unit/{unit}/person/{person}/by/process
-pub async fn stub_processplatform_assemble_bam_period_list_count_expired_work_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_expired_work_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -299,7 +299,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_expired_work_ap
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/expired/work/unit/{unit}/person/{person}/by/application
-pub async fn stub_processplatform_assemble_bam_period_list_count_expired_work_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_expired_work_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -308,7 +308,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_expired_work_un
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/activity/{activityId}/by/unit
-pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_application_applicationId_process_processId_activity_activityId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_start_task_application_applicationId_process_processId_activity_activityId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -317,7 +317,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_appl
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/activity/{activityId}/unit/{unit}/person/{person}
-pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_start_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -326,7 +326,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_appl
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}/by/activity
-pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_application_applicationId_process_processId_unit_unit_person_person_by_activity() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_start_task_application_applicationId_process_processId_unit_unit_person_person_by_activity() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -335,7 +335,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_appl
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/task/application/{applicationId}/unit/{unit}/person/{person}/by/process
-pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_start_task_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -344,7 +344,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_appl
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/task/unit/{unit}/person/{person}/by/application
-pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_start_task_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -353,7 +353,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_start_task_unit
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/process/{processId}/by/unit
-pub async fn stub_processplatform_assemble_bam_period_list_count_start_work_application_applicationId_process_processId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_start_work_application_applicationId_process_processId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -362,7 +362,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_start_work_appl
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/process/{processId}/unit/{unit}/person/{person}
-pub async fn stub_processplatform_assemble_bam_period_list_count_start_work_application_applicationId_process_processId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_start_work_application_applicationId_process_processId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -371,7 +371,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_start_work_appl
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/work/application/{applicationId}/unit/{unit}/person/{person}/by/process
-pub async fn stub_processplatform_assemble_bam_period_list_count_start_work_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_start_work_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -380,7 +380,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_start_work_appl
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/count/start/work/unit/{unit}/person/{person}/by/application
-pub async fn stub_processplatform_assemble_bam_period_list_count_start_work_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_count_start_work_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -389,7 +389,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_count_start_work_unit
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/expired/task/applicationstubs
-pub async fn stub_processplatform_assemble_bam_period_list_expired_task_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_expired_task_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -398,7 +398,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_expired_task_applicat
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/expired/task/unitstubs
-pub async fn stub_processplatform_assemble_bam_period_list_expired_task_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_expired_task_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -407,7 +407,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_expired_task_unitstub
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/expired/work/applicationstubs
-pub async fn stub_processplatform_assemble_bam_period_list_expired_work_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_expired_work_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -416,7 +416,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_expired_work_applicat
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/expired/work/unitstubs
-pub async fn stub_processplatform_assemble_bam_period_list_expired_work_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_expired_work_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -425,7 +425,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_expired_work_unitstub
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/start/task/applicationstubs
-pub async fn stub_processplatform_assemble_bam_period_list_start_task_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_start_task_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -434,7 +434,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_start_task_applicatio
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/start/task/unitstubs
-pub async fn stub_processplatform_assemble_bam_period_list_start_task_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_start_task_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -443,7 +443,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_start_task_unitstubs(
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/start/work/applicationstubs
-pub async fn stub_processplatform_assemble_bam_period_list_start_work_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_start_work_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -452,7 +452,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_start_work_applicatio
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/period/list/start/work/unitstubs
-pub async fn stub_processplatform_assemble_bam_period_list_start_work_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn period_list_start_work_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -461,7 +461,7 @@ pub async fn stub_processplatform_assemble_bam_period_list_start_work_unitstubs(
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/state/applicationtstubs/trigger
-pub async fn stub_processplatform_assemble_bam_state_applicationtstubs_trigger() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn state_applicationtstubs_trigger() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -470,7 +470,7 @@ pub async fn stub_processplatform_assemble_bam_state_applicationtstubs_trigger()
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/state/category
-pub async fn stub_processplatform_assemble_bam_state_category() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn state_category() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -479,7 +479,7 @@ pub async fn stub_processplatform_assemble_bam_state_category() -> Result<Json<A
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/state/category/trigger
-pub async fn stub_processplatform_assemble_bam_state_category_trigger() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn state_category_trigger() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -488,7 +488,7 @@ pub async fn stub_processplatform_assemble_bam_state_category_trigger() -> Resul
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/state/organization
-pub async fn stub_processplatform_assemble_bam_state_organization() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn state_organization() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -497,7 +497,7 @@ pub async fn stub_processplatform_assemble_bam_state_organization() -> Result<Js
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/state/running
-pub async fn stub_processplatform_assemble_bam_state_running() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn state_running() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -506,7 +506,7 @@ pub async fn stub_processplatform_assemble_bam_state_running() -> Result<Json<Ac
 }
 
 /// Stub handler for /jaxrs/processplatform/assemble/bam/state/summary
-pub async fn stub_processplatform_assemble_bam_state_summary() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn state_summary() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),

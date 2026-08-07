@@ -7,8 +7,8 @@ use deadpool_postgres::Pool;
 
 use crate::{
     get_control_config, get_folder, list_folders, save_folder, update_control_config, update_folder,
-    stub_mind_assemble_control_folder_id_force,
-    stub_mind_assemble_control_folder_move_folderId,
+    folder_id_force,
+    folder_move_folderId,
 };
 
 pub fn mind_assemble_control_routes(pool: Pool) -> Router {
@@ -19,7 +19,7 @@ pub fn mind_assemble_control_routes(pool: Pool) -> Router {
         .route("/jaxrs/mind/assemble/control/folder/{id}", get(get_folder))
         .route("/jaxrs/mind/assemble/control/folder/save", post(save_folder))
         .route("/jaxrs/mind/assemble/control/folder/{id}/update", post(update_folder))
-        .route("/jaxrs/mind/assemble/control/folder/move/{folderId}", post(stub_mind_assemble_control_folder_move_folderId))
-        .route("/jaxrs/mind/assemble/control/folder/{id}/force", post(stub_mind_assemble_control_folder_id_force))
+        .route("/jaxrs/mind/assemble/control/folder/move/{folderId}", post(folder_move_folderId))
+        .route("/jaxrs/mind/assemble/control/folder/{id}/force", post(folder_id_force))
         .layer(axum::Extension(pool))
 }

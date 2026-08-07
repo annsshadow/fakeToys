@@ -301,7 +301,5 @@ pub fn portal_router() -> Router {
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    portal_router()
-        .layer(Extension(pool))
-        .route("/portal/health", axum::routing::get(|| async { "ok" }))
+    portal_router().layer(axum::extract::Extension(pool))
 }

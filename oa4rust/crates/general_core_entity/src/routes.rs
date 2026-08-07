@@ -10,13 +10,7 @@ use crate::{
     invoice_get, invoice_list, invoice_update,
 };
 
-pub fn router() -> Router {
-    general_core_entity_router(deadpool_postgres::Pool::builder(
-        deadpool_postgres::Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        ),
-    )
-    .build()
-    .unwrap())
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::general_core_entity_router(pool)
 }
+

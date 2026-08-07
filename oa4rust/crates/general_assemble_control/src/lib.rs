@@ -108,10 +108,10 @@ pub fn general_assemble_control_router(pool: Pool) -> Router {
     routes::general_assemble_control_routes(pool)
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/general_assemble_control/health", axum::routing::get(|| async { "TODO: general_assemble_control - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::routes::general_assemble_control_routes(pool)
 }
+
 
 // ---- attendscope handlers ----
 
@@ -270,7 +270,7 @@ pub async fn attendscope_delete(
 }
 
 
-pub async fn stub_general_assemble_control_area_list(
+pub async fn area_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -306,7 +306,7 @@ pub async fn stub_general_assemble_control_area_list(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_area_list_province_province(
+pub async fn area_list_province_province(
     pool: Extension<Pool>,
     axum::extract::Path(province): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -343,7 +343,7 @@ pub async fn stub_general_assemble_control_area_list_province_province(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_area_list_province_province_city_city(
+pub async fn area_list_province_province_city_city(
     pool: Extension<Pool>,
     axum::extract::Path(province): axum::extract::Path<String>,
     axum::extract::Path(city): axum::extract::Path<String>,
@@ -381,7 +381,7 @@ pub async fn stub_general_assemble_control_area_list_province_province_city_city
     ])))))
 }
 
-pub async fn stub_general_assemble_control_area_list_province_province_city_city_district_district(
+pub async fn area_list_province_province_city_city_district_district(
     pool: Extension<Pool>,
     axum::extract::Path(province): axum::extract::Path<String>,
     axum::extract::Path(city): axum::extract::Path<String>,
@@ -543,7 +543,7 @@ pub async fn area_delete(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_ecnet_check(
+pub async fn ecnet_check(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -575,7 +575,7 @@ pub async fn stub_general_assemble_control_ecnet_check(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_excel_excelName_excelName(
+pub async fn excel_excelName_excelName(
     pool: Extension<Pool>,
     axum::extract::Path(excel_name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -604,7 +604,7 @@ pub async fn stub_general_assemble_control_excel_excelName_excelName(
     }
 }
 
-pub async fn stub_general_assemble_control_excel_excelName_excelName_sheetList(
+pub async fn excel_excelName_excelName_sheetList(
     pool: Extension<Pool>,
     axum::extract::Path(excel_name): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -637,7 +637,7 @@ pub async fn stub_general_assemble_control_excel_excelName_excelName_sheetList(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_excel_result_flag(
+pub async fn excel_result_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -666,7 +666,7 @@ pub async fn stub_general_assemble_control_excel_result_flag(
     }
 }
 
-pub async fn stub_general_assemble_control_excel_upload(
+pub async fn excel_upload(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -694,7 +694,7 @@ pub async fn stub_general_assemble_control_excel_upload(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_excel_upload_with_url(
+pub async fn excel_upload_with_url(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -722,7 +722,7 @@ pub async fn stub_general_assemble_control_excel_upload_with_url(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_generalfile_download_flag_flag(
+pub async fn generalfile_download_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -752,7 +752,7 @@ pub async fn stub_general_assemble_control_generalfile_download_flag_flag(
     }
 }
 
-pub async fn stub_general_assemble_control_generalfile_flag_flag(
+pub async fn generalfile_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -782,7 +782,7 @@ pub async fn stub_general_assemble_control_generalfile_flag_flag(
     }
 }
 
-pub async fn stub_general_assemble_control_generalfile_flag_flag_binary_base64(
+pub async fn generalfile_flag_flag_binary_base64(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -814,7 +814,7 @@ pub async fn stub_general_assemble_control_generalfile_flag_flag_binary_base64(
     }
 }
 
-pub async fn stub_general_assemble_control_invoice_create(
+pub async fn invoice_create(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -843,7 +843,7 @@ pub async fn stub_general_assemble_control_invoice_create(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_invoice_delete_id(
+pub async fn invoice_delete_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -864,7 +864,7 @@ pub async fn stub_general_assemble_control_invoice_delete_id(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_invoice_download_flag_flag(
+pub async fn invoice_download_flag_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -894,7 +894,7 @@ pub async fn stub_general_assemble_control_invoice_download_flag_flag(
     }
 }
 
-pub async fn stub_general_assemble_control_invoice_get_id(
+pub async fn invoice_get_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -924,7 +924,7 @@ pub async fn stub_general_assemble_control_invoice_get_id(
     }
 }
 
-pub async fn stub_general_assemble_control_invoice_list_paging_page_size_size(
+pub async fn invoice_list_paging_page_size_size(
     pool: Extension<Pool>,
     axum::extract::Path(page): axum::extract::Path<i32>,
     axum::extract::Path(size): axum::extract::Path<i32>,
@@ -969,7 +969,7 @@ pub async fn stub_general_assemble_control_invoice_list_paging_page_size_size(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_invoice_update_apply_status_id(
+pub async fn invoice_update_apply_status_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -997,7 +997,7 @@ pub async fn stub_general_assemble_control_invoice_update_apply_status_id(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_invoice_update_id(
+pub async fn invoice_update_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -1027,7 +1027,7 @@ pub async fn stub_general_assemble_control_invoice_update_id(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_invoice_upload(
+pub async fn invoice_upload(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1054,7 +1054,7 @@ pub async fn stub_general_assemble_control_invoice_upload(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_invoice_upload_for_create(
+pub async fn invoice_upload_for_create(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1081,7 +1081,7 @@ pub async fn stub_general_assemble_control_invoice_upload_for_create(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_invoice_upload_with_url(
+pub async fn invoice_upload_with_url(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1108,7 +1108,7 @@ pub async fn stub_general_assemble_control_invoice_upload_with_url(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_office_html_to_word(
+pub async fn office_html_to_word(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1133,7 +1133,7 @@ pub async fn stub_general_assemble_control_office_html_to_word(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_office_html_to_word_result_flag(
+pub async fn office_html_to_word_result_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1162,7 +1162,7 @@ pub async fn stub_general_assemble_control_office_html_to_word_result_flag(
     }
 }
 
-pub async fn stub_general_assemble_control_qrcode_width_width_height_height_text_text(
+pub async fn qrcode_width_width_height_height_text_text(
     pool: Extension<Pool>,
     axum::extract::Path(width): axum::extract::Path<u32>,
     axum::extract::Path(height): axum::extract::Path<u32>,
@@ -1277,7 +1277,7 @@ pub async fn qrcode_delete(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_securityclearance_enable(
+pub async fn securityclearance_enable(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1328,7 +1328,7 @@ pub async fn stub_general_assemble_control_securityclearance_enable(
     }
 }
 
-pub async fn stub_general_assemble_control_securityclearance_object(
+pub async fn securityclearance_object(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1362,7 +1362,7 @@ pub async fn stub_general_assemble_control_securityclearance_object(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_securityclearance_subject(
+pub async fn securityclearance_subject(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1396,7 +1396,7 @@ pub async fn stub_general_assemble_control_securityclearance_subject(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_securityclearance_system(
+pub async fn securityclearance_system(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1546,7 +1546,7 @@ pub async fn securityclearance_delete(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_upgrade_2021090901(
+pub async fn upgrade_2021090901(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1579,7 +1579,7 @@ pub async fn stub_general_assemble_control_upgrade_2021090901(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_upgrade_2021090902(
+pub async fn upgrade_2021090902(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -1612,7 +1612,7 @@ pub async fn stub_general_assemble_control_upgrade_2021090902(
     ])))))
 }
 
-pub async fn stub_general_assemble_control_worktime_betweenholidaycount_start_startDate_end_endDate(
+pub async fn worktime_betweenholidaycount_start_startDate_end_endDate(
     pool: Extension<Pool>,
     axum::extract::Path(start_date): axum::extract::Path<String>,
     axum::extract::Path(end_date): axum::extract::Path<String>,
@@ -1635,7 +1635,7 @@ pub async fn stub_general_assemble_control_worktime_betweenholidaycount_start_st
     ])))))
 }
 
-pub async fn stub_general_assemble_control_worktime_betweenminutes_start_start_end_end(
+pub async fn worktime_betweenminutes_start_start_end_end(
     pool: Extension<Pool>,
     axum::extract::Path(start): axum::extract::Path<String>,
     axum::extract::Path(end): axum::extract::Path<String>,
@@ -1658,7 +1658,7 @@ pub async fn stub_general_assemble_control_worktime_betweenminutes_start_start_e
     ])))))
 }
 
-pub async fn stub_general_assemble_control_worktime_forwarddays_start_start_days_days(
+pub async fn worktime_forwarddays_start_start_days_days(
     pool: Extension<Pool>,
     axum::extract::Path(start): axum::extract::Path<String>,
     axum::extract::Path(days): axum::extract::Path<u32>,
@@ -1699,7 +1699,7 @@ pub async fn stub_general_assemble_control_worktime_forwarddays_start_start_days
     ])))))
 }
 
-pub async fn stub_general_assemble_control_worktime_forwardminutes_start_start_minutes_minutes(
+pub async fn worktime_forwardminutes_start_start_minutes_minutes(
     pool: Extension<Pool>,
     axum::extract::Path(start): axum::extract::Path<String>,
     axum::extract::Path(minutes): axum::extract::Path<i64>,
@@ -1748,7 +1748,7 @@ pub async fn stub_general_assemble_control_worktime_forwardminutes_start_start_m
     ])))))
 }
 
-pub async fn stub_general_assemble_control_worktime_indefinedholiday_date(
+pub async fn worktime_indefinedholiday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1791,7 +1791,7 @@ pub async fn stub_general_assemble_control_worktime_indefinedholiday_date(
     }
 }
 
-pub async fn stub_general_assemble_control_worktime_indefinedworkday_date(
+pub async fn worktime_indefinedworkday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1834,7 +1834,7 @@ pub async fn stub_general_assemble_control_worktime_indefinedworkday_date(
     }
 }
 
-pub async fn stub_general_assemble_control_worktime_isholiday_date(
+pub async fn worktime_isholiday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1876,7 +1876,7 @@ pub async fn stub_general_assemble_control_worktime_isholiday_date(
     }
 }
 
-pub async fn stub_general_assemble_control_worktime_isworkday_date(
+pub async fn worktime_isworkday_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1918,7 +1918,7 @@ pub async fn stub_general_assemble_control_worktime_isworkday_date(
     }
 }
 
-pub async fn stub_general_assemble_control_worktime_isworktime_date(
+pub async fn worktime_isworktime_date(
     pool: Extension<Pool>,
     axum::extract::Path(date): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1950,7 +1950,7 @@ pub async fn stub_general_assemble_control_worktime_isworktime_date(
     }
 }
 
-pub async fn stub_general_assemble_control_worktime_minutesofworkday(
+pub async fn worktime_minutesofworkday(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;

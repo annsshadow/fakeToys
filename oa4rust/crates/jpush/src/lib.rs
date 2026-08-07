@@ -171,13 +171,6 @@ pub async fn template_get(
     }
 }
 
-pub fn router(pool: Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/jpush/health", axum::routing::get(|| async { "ok" }))
-        .route("/jaxrs/jpush/device/list", get(device_list))
-        .route("/jaxrs/jpush/device/{id}", get(device_get))
-        .route("/jaxrs/jpush/device/create", post(device_create))
-        .route("/jaxrs/jpush/template/list", get(template_list))
-        .route("/jaxrs/jpush/template/{id}", get(template_get))
-        .layer(Extension(pool))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::jpush_router(pool)
 }

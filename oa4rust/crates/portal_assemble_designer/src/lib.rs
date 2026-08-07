@@ -272,13 +272,12 @@ pub fn portal_assemble_designer_router() -> Router {
 mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    portal_assemble_designer_router()
-        .layer(Extension(pool))
-        .route("/portal_assemble_designer/health", axum::routing::get(|| async { "ok" }))
+    portal_assemble_designer_router().layer(axum::extract::Extension(pool))
 }
 
 
-pub async fn stub_portal_assemble_designer_designer_search(
+
+pub async fn designer_search(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -313,7 +312,7 @@ pub async fn stub_portal_assemble_designer_designer_search(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_dict_list_paging_page_size_size(
+pub async fn dict_list_paging_page_size_size(
     pool: Option<Extension<Pool>>,
     Path(_page): Path<i64>,
     Path(_size): Path<i64>,
@@ -349,7 +348,7 @@ pub async fn stub_portal_assemble_designer_dict_list_paging_page_size_size(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_dict_list_portal_portalId(
+pub async fn dict_list_portal_portalId(
     pool: Option<Extension<Pool>>,
     Path(portal_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -384,7 +383,7 @@ pub async fn stub_portal_assemble_designer_dict_list_portal_portalId(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_dict_id(
+pub async fn dict_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -417,7 +416,7 @@ pub async fn stub_portal_assemble_designer_dict_id(
     }
 }
 
-pub async fn stub_portal_assemble_designer_file_list_application_applicationFlag(
+pub async fn file_list_application_applicationFlag(
     pool: Option<Extension<Pool>>,
     Path(application_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -454,7 +453,7 @@ pub async fn stub_portal_assemble_designer_file_list_application_applicationFlag
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_file_list_id_next_count(
+pub async fn file_list_id_next_count(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -492,7 +491,7 @@ pub async fn stub_portal_assemble_designer_file_list_id_next_count(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_file_list_id_prev_count(
+pub async fn file_list_id_prev_count(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
@@ -530,7 +529,7 @@ pub async fn stub_portal_assemble_designer_file_list_id_prev_count(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_file_flag(
+pub async fn file_flag(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -563,7 +562,7 @@ pub async fn stub_portal_assemble_designer_file_flag(
     }
 }
 
-pub async fn stub_portal_assemble_designer_file_id(
+pub async fn file_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -596,7 +595,7 @@ pub async fn stub_portal_assemble_designer_file_id(
     }
 }
 
-pub async fn stub_portal_assemble_designer_file_id_download(
+pub async fn file_id_download(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -628,7 +627,7 @@ pub async fn stub_portal_assemble_designer_file_id_download(
     }
 }
 
-pub async fn stub_portal_assemble_designer_file_id_upload(
+pub async fn file_id_upload(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
@@ -664,7 +663,7 @@ pub async fn stub_portal_assemble_designer_file_id_upload(
     ))))
 }
 
-pub async fn stub_portal_assemble_designer_id_count(
+pub async fn id_count(
     pool: Option<Extension<Pool>>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -688,7 +687,7 @@ pub async fn stub_portal_assemble_designer_id_count(
     ))))
 }
 
-pub async fn stub_portal_assemble_designer_input_compare(
+pub async fn input_compare(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -723,7 +722,7 @@ pub async fn stub_portal_assemble_designer_input_compare(
     }
 }
 
-pub async fn stub_portal_assemble_designer_input_cover(
+pub async fn input_cover(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -756,7 +755,7 @@ pub async fn stub_portal_assemble_designer_input_cover(
     ))))
 }
 
-pub async fn stub_portal_assemble_designer_input_create(
+pub async fn input_create(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -785,7 +784,7 @@ pub async fn stub_portal_assemble_designer_input_create(
     ))))
 }
 
-pub async fn stub_portal_assemble_designer_input_prepare_cover(
+pub async fn input_prepare_cover(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -817,7 +816,7 @@ pub async fn stub_portal_assemble_designer_input_prepare_cover(
     }
 }
 
-pub async fn stub_portal_assemble_designer_input_prepare_create(
+pub async fn input_prepare_create(
     pool: Option<Extension<Pool>>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -851,7 +850,7 @@ pub async fn stub_portal_assemble_designer_input_prepare_create(
     ))))
 }
 
-pub async fn stub_portal_assemble_designer_output_list(
+pub async fn output_list(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -887,7 +886,7 @@ pub async fn stub_portal_assemble_designer_output_list(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_output_flag_select_file(
+pub async fn output_flag_select_file(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -918,7 +917,7 @@ pub async fn stub_portal_assemble_designer_output_flag_select_file(
     }
 }
 
-pub async fn stub_portal_assemble_designer_output_portalFlag_select(
+pub async fn output_portalFlag_select(
     pool: Option<Extension<Pool>>,
     Path(portal_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -955,7 +954,7 @@ pub async fn stub_portal_assemble_designer_output_portalFlag_select(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_page_list_portal_portalId(
+pub async fn page_list_portal_portalId(
     pool: Option<Extension<Pool>>,
     Path(portal_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -992,7 +991,7 @@ pub async fn stub_portal_assemble_designer_page_list_portal_portalId(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_page_id(
+pub async fn page_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1030,7 +1029,7 @@ pub async fn stub_portal_assemble_designer_page_id(
     }
 }
 
-pub async fn stub_portal_assemble_designer_pageversion_list_page_pageId(
+pub async fn pageversion_list_page_pageId(
     pool: Option<Extension<Pool>>,
     Path(page_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1066,7 +1065,7 @@ pub async fn stub_portal_assemble_designer_pageversion_list_page_pageId(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_pageversion_id(
+pub async fn pageversion_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1099,7 +1098,7 @@ pub async fn stub_portal_assemble_designer_pageversion_id(
     }
 }
 
-pub async fn stub_portal_assemble_designer_portal_list(
+pub async fn portal_list(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1135,7 +1134,7 @@ pub async fn stub_portal_assemble_designer_portal_list(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_portal_list_portalcategory_portalCategory(
+pub async fn portal_list_portalcategory_portalCategory(
     pool: Option<Extension<Pool>>,
     Path(portal_category): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1172,7 +1171,7 @@ pub async fn stub_portal_assemble_designer_portal_list_portalcategory_portalCate
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_portal_list_summary(
+pub async fn portal_list_summary(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1206,7 +1205,7 @@ pub async fn stub_portal_assemble_designer_portal_list_summary(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_portal_list_summary_portalcategory_portalCategory(
+pub async fn portal_list_summary_portalcategory_portalCategory(
     pool: Option<Extension<Pool>>,
     Path(portal_category): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1241,7 +1240,7 @@ pub async fn stub_portal_assemble_designer_portal_list_summary_portalcategory_po
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_portal_list_summary_v2(
+pub async fn portal_list_summary_v2(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1278,7 +1277,7 @@ pub async fn stub_portal_assemble_designer_portal_list_summary_v2(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_portal_id(
+pub async fn portal_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1313,7 +1312,7 @@ pub async fn stub_portal_assemble_designer_portal_id(
     }
 }
 
-pub async fn stub_portal_assemble_designer_portal_id_icon(
+pub async fn portal_id_icon(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1342,7 +1341,7 @@ pub async fn stub_portal_assemble_designer_portal_id_icon(
     }
 }
 
-pub async fn stub_portal_assemble_designer_portal_id_permission(
+pub async fn portal_id_permission(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1371,7 +1370,7 @@ pub async fn stub_portal_assemble_designer_portal_id_permission(
     }
 }
 
-pub async fn stub_portal_assemble_designer_portalcategory_list(
+pub async fn portalcategory_list(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1402,7 +1401,7 @@ pub async fn stub_portal_assemble_designer_portalcategory_list(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_script_list_manager(
+pub async fn script_list_manager(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1438,7 +1437,7 @@ pub async fn stub_portal_assemble_designer_script_list_manager(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_script_list_paging_page_size_size(
+pub async fn script_list_paging_page_size_size(
     pool: Option<Extension<Pool>>,
     Path(page): Path<i64>,
     Path(size): Path<i64>,
@@ -1476,7 +1475,7 @@ pub async fn stub_portal_assemble_designer_script_list_paging_page_size_size(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_script_list_portal_portalId(
+pub async fn script_list_portal_portalId(
     pool: Option<Extension<Pool>>,
     Path(portal_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1513,7 +1512,7 @@ pub async fn stub_portal_assemble_designer_script_list_portal_portalId(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_script_id(
+pub async fn script_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1547,7 +1546,7 @@ pub async fn stub_portal_assemble_designer_script_id(
     }
 }
 
-pub async fn stub_portal_assemble_designer_scriptversion_list_script_scriptId(
+pub async fn scriptversion_list_script_scriptId(
     pool: Option<Extension<Pool>>,
     Path(script_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1583,7 +1582,7 @@ pub async fn stub_portal_assemble_designer_scriptversion_list_script_scriptId(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_scriptversion_id(
+pub async fn scriptversion_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1616,7 +1615,7 @@ pub async fn stub_portal_assemble_designer_scriptversion_id(
     }
 }
 
-pub async fn stub_portal_assemble_designer_templatepage_list(
+pub async fn templatepage_list(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1652,7 +1651,7 @@ pub async fn stub_portal_assemble_designer_templatepage_list(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_templatepage_list_category(
+pub async fn templatepage_list_category(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1683,7 +1682,7 @@ pub async fn stub_portal_assemble_designer_templatepage_list_category(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_templatepage_id(
+pub async fn templatepage_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1720,7 +1719,7 @@ pub async fn stub_portal_assemble_designer_templatepage_id(
     }
 }
 
-pub async fn stub_portal_assemble_designer_widget_list_portal_portalId(
+pub async fn widget_list_portal_portalId(
     pool: Option<Extension<Pool>>,
     Path(portal_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1758,7 +1757,7 @@ pub async fn stub_portal_assemble_designer_widget_list_portal_portalId(
     ])))))
 }
 
-pub async fn stub_portal_assemble_designer_widget_id(
+pub async fn widget_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

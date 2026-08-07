@@ -219,7 +219,7 @@ pub fn calendar_assemble_control_router(pool: Pool) -> Router {
         .route("/jaxrs/calendar/assemble/control/calendar/detail/{id}", get(get_calendar_detail))
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/calendar_assemble_control/health", axum::routing::get(|| async { "TODO: calendar_assemble_control - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::calendar_assemble_control_router(pool)
 }
+

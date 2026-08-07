@@ -60,10 +60,10 @@ pub fn jpush_assemble_control_router(pool: Pool) -> Router {
     routes::router(pool)
 }
 
-pub fn router(pool: deadpool_postgres::Pool) -> Router {
-    jpush_assemble_control_router(pool)
-        .route("/jpush_assemble_control/health", axum::routing::get(|| async { "ok" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::jpush_assemble_control_router(pool)
 }
+
 
 #[derive(Debug, serde::Deserialize)]
 pub struct JpushRequest {
@@ -249,7 +249,7 @@ pub async fn delete_jpush(
 
 /// Stub handler for /jaxrs/jpush/assemble/control/device/admin/unbind/all/person
 /// TODO: Implement real business logic
-pub async fn stub_jpush_assemble_control_device_admin_unbind_all_person(
+pub async fn device_admin_unbind_all_person(
     pool: Option<Extension<Pool>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -283,7 +283,7 @@ pub async fn stub_jpush_assemble_control_device_admin_unbind_all_person(
 
 /// Stub handler for /jaxrs/jpush/assemble/control/device/bind
 /// TODO: Implement real business logic
-pub async fn stub_jpush_assemble_control_device_bind(
+pub async fn device_bind(
     pool: Option<Extension<Pool>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -320,7 +320,7 @@ pub async fn stub_jpush_assemble_control_device_bind(
 
 /// Stub handler for /jaxrs/jpush/assemble/control/device/check/{deviceName}/{deviceType}/{pushType}
 /// TODO: Implement real business logic
-pub async fn stub_jpush_assemble_control_device_check_deviceName_deviceType_pushType(
+pub async fn device_check_deviceName_deviceType_pushType(
     pool: Option<Extension<Pool>>,
     Path((device_name, device_type, push_type)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -350,7 +350,7 @@ pub async fn stub_jpush_assemble_control_device_check_deviceName_deviceType_push
 
 /// Stub handler for /jaxrs/jpush/assemble/control/device/config/push/type
 /// TODO: Implement real business logic
-pub async fn stub_jpush_assemble_control_device_config_push_type(
+pub async fn device_config_push_type(
     pool: Option<Extension<Pool>>,
     Path(push_type): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -378,7 +378,7 @@ pub async fn stub_jpush_assemble_control_device_config_push_type(
 
 /// Stub handler for /jaxrs/jpush/assemble/control/device/list/{pushType}
 /// TODO: Implement real business logic
-pub async fn stub_jpush_assemble_control_device_list_pushType(
+pub async fn device_list_pushType(
     pool: Option<Extension<Pool>>,
     Path(push_type): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -419,7 +419,7 @@ pub async fn stub_jpush_assemble_control_device_list_pushType(
 
 /// Stub handler for /jaxrs/jpush/assemble/control/device/unbind/new/{deviceName}/{deviceType}/{pushType}
 /// TODO: Implement real business logic
-pub async fn stub_jpush_assemble_control_device_unbind_new_deviceName_deviceType_pushType(
+pub async fn device_unbind_new_deviceName_deviceType_pushType(
     pool: Option<Extension<Pool>>,
     Path((device_name, device_type, push_type)): Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -452,7 +452,7 @@ pub async fn stub_jpush_assemble_control_device_unbind_new_deviceName_deviceType
 
 /// Stub handler for /jaxrs/jpush/assemble/control/device/unbind/{deviceName}/{deviceType}
 /// TODO: Implement real business logic
-pub async fn stub_jpush_assemble_control_device_unbind_deviceName_deviceType(
+pub async fn device_unbind_deviceName_deviceType(
     pool: Option<Extension<Pool>>,
     Path((device_name, device_type)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -484,7 +484,7 @@ pub async fn stub_jpush_assemble_control_device_unbind_deviceName_deviceType(
 
 /// Stub handler for /jaxrs/jpush/assemble/control/message/test/send
 /// TODO: Implement real business logic
-pub async fn stub_jpush_assemble_control_message_test_send(
+pub async fn message_test_send(
     pool: Option<Extension<Pool>>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {

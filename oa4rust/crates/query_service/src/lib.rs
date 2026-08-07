@@ -51,5 +51,5 @@ mod tests {
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    query_service_router(pool)
+    crate::query_service_router(pool)
 }

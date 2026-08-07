@@ -11,5 +11,5 @@ pub fn correlation_router(pool: Pool) -> Router {
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    correlation_router(pool)
+    crate::correlation_router(pool)
 }

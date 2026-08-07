@@ -123,7 +123,6 @@ pub fn console_router() -> Router {
 #[cfg(test)]
 mod tests;
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/console/health", axum::routing::get(|| async { "TODO: console - real implementation needed" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    console_router().layer(axum::extract::Extension(pool))
 }

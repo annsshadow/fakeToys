@@ -14,6 +14,6 @@ pub fn query_express_router() -> Router {
     Router::new().route("/jaxrs/query/list", get(query_list))
 }
 
-pub fn router(_pool: deadpool_postgres::Pool) -> axum::Router {
-    query_express_router()
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    query_express_router().layer(axum::extract::Extension(pool))
 }

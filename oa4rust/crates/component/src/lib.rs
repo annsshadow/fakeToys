@@ -107,7 +107,6 @@ pub use routes::component_router;
 #[cfg(test)]
 mod tests;
 
-pub fn router(pool: Pool) -> axum::Router {
-    component_router(pool)
-        .route("/component/health", axum::routing::get(|| async { "ok" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::component_router(pool)
 }

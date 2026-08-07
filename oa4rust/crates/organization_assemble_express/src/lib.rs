@@ -83,5 +83,5 @@ pub async fn get_express_status(
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    routes::router(pool)
+    crate::organization_assemble_express_router(pool)
 }

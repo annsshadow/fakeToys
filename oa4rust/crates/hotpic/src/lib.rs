@@ -104,11 +104,6 @@ pub async fn list_by_application_and_info_id(
     ])))))
 }
 
-pub fn router(pool: Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/hotpic/health", axum::routing::get(|| async { "ok" }))
-        .route("/jaxrs/hotpic/user/hotpic/exists/check", get(exists_check))
-        .route("/jaxrs/hotpic/user/hotpic/{id}", get(get_by_id))
-        .route("/jaxrs/hotpic/user/hotpic/{application}/{infoId}", get(list_by_application_and_info_id))
-        .layer(Extension(pool))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::hotpic_router(pool)
 }

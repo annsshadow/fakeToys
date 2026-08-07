@@ -165,7 +165,6 @@ pub async fn conversation_list(
     ))))
 }
 
-pub fn router(pool: Pool) -> axum::Router {
-    ai_router(pool)
-        .route("/ai/health", axum::routing::get(|| async { "ok" }))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::ai_router(pool)
 }

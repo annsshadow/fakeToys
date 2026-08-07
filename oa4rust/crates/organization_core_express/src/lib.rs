@@ -96,5 +96,5 @@ pub fn organization_core_express_router(pool: Pool) -> Router {
 mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    organization_core_express_router(pool)
+    crate::organization_core_express_router(pool)
 }

@@ -274,18 +274,12 @@ pub async fn delete_layout(
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    axum::Router::new()
-        .route("/portal_assemble_surface/health", axum::routing::get(|| async { "ok" }))
-        .route("/jaxrs/portal/assemble/surface/layout/list/{category}", get(list_layouts))
-        .route("/jaxrs/portal/assemble/surface/layout/{id}", get(get_layout))
-        .route("/jaxrs/portal/assemble/surface/layout/create", post(create_layout))
-        .route("/jaxrs/portal/assemble/surface/layout/save/{id}", post(save_layout))
-        .route("/jaxrs/portal/assemble/surface/layout/delete/{id}", post(delete_layout))
-        .layer(Extension(pool))
+    portal_assemble_surface_router().layer(axum::extract::Extension(pool))
 }
 
 
-pub async fn stub_portal_assemble_surface_dict_list_portal_portalFlag(
+
+pub async fn dict_list_portal_portalFlag(
     pool: Option<Extension<Pool>>,
     Path(portal_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -322,7 +316,7 @@ pub async fn stub_portal_assemble_surface_dict_list_portal_portalFlag(
     ])))))
 }
 
-pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag(
+pub async fn dict_dictFlag_portal_portalFlag(
     pool: Option<Extension<Pool>>,
     Path(dict_flag): Path<String>,
     Path(portal_flag): Path<String>,
@@ -357,7 +351,7 @@ pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag(
     }
 }
 
-pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_data(
+pub async fn dict_dictFlag_portal_portalFlag_data(
     pool: Option<Extension<Pool>>,
     Path(dict_flag): Path<String>,
     Path(portal_flag): Path<String>,
@@ -389,7 +383,7 @@ pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_data(
     }
 }
 
-pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_data(
+pub async fn dict_dictFlag_portal_portalFlag_path_data(
     pool: Option<Extension<Pool>>,
     Path(dict_flag): Path<String>,
     Path(portal_flag): Path<String>,
@@ -423,7 +417,7 @@ pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_d
     }
 }
 
-pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget(
+pub async fn dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget(
     pool: Option<Extension<Pool>>,
     Path(dict_flag): Path<String>,
     Path(portal_flag): Path<String>,
@@ -461,7 +455,7 @@ pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_d
     ])))))
 }
 
-pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
+pub async fn dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
     pool: Option<Extension<Pool>>,
     Path(dict_flag): Path<String>,
     Path(portal_flag): Path<String>,
@@ -500,7 +494,7 @@ pub async fn stub_portal_assemble_surface_dict_dictFlag_portal_portalFlag_path_d
     ))))
 }
 
-pub async fn stub_portal_assemble_surface_file_list_portal_portalFlag(
+pub async fn file_list_portal_portalFlag(
     pool: Option<Extension<Pool>>,
     Path(portal_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -537,7 +531,7 @@ pub async fn stub_portal_assemble_surface_file_list_portal_portalFlag(
     ])))))
 }
 
-pub async fn stub_portal_assemble_surface_file_flag(
+pub async fn file_flag(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -570,7 +564,7 @@ pub async fn stub_portal_assemble_surface_file_flag(
     }
 }
 
-pub async fn stub_portal_assemble_surface_file_flag_download(
+pub async fn file_flag_download(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -602,7 +596,7 @@ pub async fn stub_portal_assemble_surface_file_flag_download(
     }
 }
 
-pub async fn stub_portal_assemble_surface_file_flag_portal_portalFlag_content(
+pub async fn file_flag_portal_portalFlag_content(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
     Path(portal_flag): Path<String>,
@@ -634,7 +628,7 @@ pub async fn stub_portal_assemble_surface_file_flag_portal_portalFlag_content(
     }
 }
 
-pub async fn stub_portal_assemble_surface_file_flag_portal_portalFlag_download(
+pub async fn file_flag_portal_portalFlag_download(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
     Path(portal_flag): Path<String>,
@@ -667,7 +661,7 @@ pub async fn stub_portal_assemble_surface_file_flag_portal_portalFlag_download(
     }
 }
 
-pub async fn stub_portal_assemble_surface_page_list_portal_portal(
+pub async fn page_list_portal_portal(
     pool: Option<Extension<Pool>>,
     Path(portal): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -703,7 +697,7 @@ pub async fn stub_portal_assemble_surface_page_list_portal_portal(
     ])))))
 }
 
-pub async fn stub_portal_assemble_surface_page_v2_flag_portal_portalFlag(
+pub async fn page_v2_flag_portal_portalFlag(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
     Path(portal_flag): Path<String>,
@@ -736,7 +730,7 @@ pub async fn stub_portal_assemble_surface_page_v2_flag_portal_portalFlag(
     }
 }
 
-pub async fn stub_portal_assemble_surface_page_v2_flag_portal_portalFlag_mobile(
+pub async fn page_v2_flag_portal_portalFlag_mobile(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
     Path(portal_flag): Path<String>,
@@ -769,7 +763,7 @@ pub async fn stub_portal_assemble_surface_page_v2_flag_portal_portalFlag_mobile(
     }
 }
 
-pub async fn stub_portal_assemble_surface_page_v2_id(
+pub async fn page_v2_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -801,7 +795,7 @@ pub async fn stub_portal_assemble_surface_page_v2_id(
     }
 }
 
-pub async fn stub_portal_assemble_surface_page_v2_id_mobile(
+pub async fn page_v2_id_mobile(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -833,7 +827,7 @@ pub async fn stub_portal_assemble_surface_page_v2_id_mobile(
     }
 }
 
-pub async fn stub_portal_assemble_surface_page_flag_portal_portalFlag(
+pub async fn page_flag_portal_portalFlag(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
     Path(portal_flag): Path<String>,
@@ -866,7 +860,7 @@ pub async fn stub_portal_assemble_surface_page_flag_portal_portalFlag(
     }
 }
 
-pub async fn stub_portal_assemble_surface_page_flag_portal_portalFlag_mobile(
+pub async fn page_flag_portal_portalFlag_mobile(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
     Path(portal_flag): Path<String>,
@@ -899,7 +893,7 @@ pub async fn stub_portal_assemble_surface_page_flag_portal_portalFlag_mobile(
     }
 }
 
-pub async fn stub_portal_assemble_surface_page_id(
+pub async fn page_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -931,7 +925,7 @@ pub async fn stub_portal_assemble_surface_page_id(
     }
 }
 
-pub async fn stub_portal_assemble_surface_page_id_mobile(
+pub async fn page_id_mobile(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -963,7 +957,7 @@ pub async fn stub_portal_assemble_surface_page_id_mobile(
     }
 }
 
-pub async fn stub_portal_assemble_surface_portal_list(
+pub async fn portal_list(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -999,7 +993,7 @@ pub async fn stub_portal_assemble_surface_portal_list(
     ])))))
 }
 
-pub async fn stub_portal_assemble_surface_portal_list_mobile(
+pub async fn portal_list_mobile(
     pool: Option<Extension<Pool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = match pool {
@@ -1035,7 +1029,7 @@ pub async fn stub_portal_assemble_surface_portal_list_mobile(
     ])))))
 }
 
-pub async fn stub_portal_assemble_surface_portal_flag(
+pub async fn portal_flag(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1069,7 +1063,7 @@ pub async fn stub_portal_assemble_surface_portal_flag(
     }
 }
 
-pub async fn stub_portal_assemble_surface_portal_flag_corner_mark(
+pub async fn portal_flag_corner_mark(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1099,7 +1093,7 @@ pub async fn stub_portal_assemble_surface_portal_flag_corner_mark(
     }
 }
 
-pub async fn stub_portal_assemble_surface_portal_id_icon(
+pub async fn portal_id_icon(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1129,7 +1123,7 @@ pub async fn stub_portal_assemble_surface_portal_id_icon(
     }
 }
 
-pub async fn stub_portal_assemble_surface_portal_id_icon_base64(
+pub async fn portal_id_icon_base64(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1159,7 +1153,7 @@ pub async fn stub_portal_assemble_surface_portal_id_icon_base64(
     }
 }
 
-pub async fn stub_portal_assemble_surface_script_list_portal_portal(
+pub async fn script_list_portal_portal(
     pool: Option<Extension<Pool>>,
     Path(portal): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1196,7 +1190,7 @@ pub async fn stub_portal_assemble_surface_script_list_portal_portal(
     ])))))
 }
 
-pub async fn stub_portal_assemble_surface_script_portal_portal_name_name(
+pub async fn script_portal_portal_name_name(
     pool: Option<Extension<Pool>>,
     Path(portal): Path<String>,
     Path(name): Path<String>,
@@ -1230,7 +1224,7 @@ pub async fn stub_portal_assemble_surface_script_portal_portal_name_name(
     }
 }
 
-pub async fn stub_portal_assemble_surface_script_portal_portal_name_name_imported(
+pub async fn script_portal_portal_name_name_imported(
     pool: Option<Extension<Pool>>,
     Path(portal): Path<String>,
     Path(name): Path<String>,
@@ -1264,7 +1258,7 @@ pub async fn stub_portal_assemble_surface_script_portal_portal_name_name_importe
     }
 }
 
-pub async fn stub_portal_assemble_surface_script_id(
+pub async fn script_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1297,7 +1291,7 @@ pub async fn stub_portal_assemble_surface_script_id(
     }
 }
 
-pub async fn stub_portal_assemble_surface_widget_list_portal_portal(
+pub async fn widget_list_portal_portal(
     pool: Option<Extension<Pool>>,
     Path(portal): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1335,7 +1329,7 @@ pub async fn stub_portal_assemble_surface_widget_list_portal_portal(
     ])))))
 }
 
-pub async fn stub_portal_assemble_surface_widget_flag_portal_portalFlag(
+pub async fn widget_flag_portal_portalFlag(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
     Path(portal_flag): Path<String>,
@@ -1370,7 +1364,7 @@ pub async fn stub_portal_assemble_surface_widget_flag_portal_portalFlag(
     }
 }
 
-pub async fn stub_portal_assemble_surface_widget_flag_portal_portalFlag_mobile(
+pub async fn widget_flag_portal_portalFlag_mobile(
     pool: Option<Extension<Pool>>,
     Path(flag): Path<String>,
     Path(portal_flag): Path<String>,
@@ -1404,7 +1398,7 @@ pub async fn stub_portal_assemble_surface_widget_flag_portal_portalFlag_mobile(
     }
 }
 
-pub async fn stub_portal_assemble_surface_widget_id(
+pub async fn widget_id(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -1439,7 +1433,7 @@ pub async fn stub_portal_assemble_surface_widget_id(
     }
 }
 
-pub async fn stub_portal_assemble_surface_widget_id_mobile(
+pub async fn widget_id_mobile(
     pool: Option<Extension<Pool>>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
