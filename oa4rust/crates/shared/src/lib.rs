@@ -13,6 +13,7 @@
 
 pub mod db;
 pub mod error;
+pub mod input_validation;
 pub mod middleware;
 pub mod rate_limit;
 pub mod response;

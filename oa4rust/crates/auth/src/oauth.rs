@@ -7,6 +7,8 @@ use shared::response::ActionResult;
 use shared::session::SessionManager;
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
+use sha2::{Digest, Sha256};
+use base64::Engine;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // oauth — 企业微信 / 钉钉第三方登录
@@ -48,6 +50,136 @@ fn validate_state(s: &str) -> bool {
     oauth_states().lock().unwrap().remove(s).is_some()
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// PKCE (Proof Key for Code Exchange)
+//
+// PKCE 防止授权码拦截攻击。流程：
+// 1. 生成 code_verifier（随机字符串）和 code_challenge（SHA256 哈希）
+// 2. 授权 URL 携带 code_challenge
+// 3. 回调时携带原始 code_verifier，服务端验证一致性
+// ──────────────────────────────────────────────────────────────────────────────
+
+fn generate_code_verifier() -> String {
+    let bytes = uuid::Uuid::new_v4().as_bytes();
+    base64::engine::general_purpose::URL_SAFE.encode(bytes)
+}
+
+fn compute_code_challenge(verifier: &str) -> String {
+    let hash = Sha256::digest(verifier.as_bytes());
+    base64::engine::general_purpose::URL_SAFE.encode(hash)
+}
+
+/// PKCE 状态存储：state → (code_verifier, expires_at)
+#[derive(Debug, Clone)]
+struct PkceEntry {
+    code_verifier: String,
+    expires_at: chrono::DateTime<chrono::Utc>,
+}
+
+fn pkce_store() -> &'static Mutex<HashMap<String, PkceEntry>> {
+    static STORE: OnceLock<Mutex<HashMap<String, PkceEntry>>> = OnceLock::new();
+    STORE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn store_pkce(state: &str, code_verifier: &str) {
+    let mut store = pkce_store().lock().unwrap();
+    store.insert(state.to_string(), PkceEntry {
+        code_verifier: code_verifier.to_string(),
+        expires_at: chrono::Utc::now() + chrono::Duration::minutes(10),
+    });
+}
+
+fn validate_and_remove_pkce(state: &str, code_verifier: &str) -> bool {
+    let mut store = pkce_store().lock().unwrap();
+    if let Some(entry) = store.remove(state) {
+        if entry.expires_at <= chrono::Utc::now() {
+            return false;
+        }
+        return entry.code_verifier == code_verifier;
+    }
+    false
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 提供商签名验证
+//
+// 验证第三方提供商的请求签名，防止伪造请求。
+// 微信/钉钉在回调时会携带签名参数，需验证其合法性。
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// 验证微信签名（简化版：实际应使用微信提供的签名算法）
+pub fn verify_wechat_signature(_token: &str, _signature: &str, _timestamp: &str, _nonce: &str) -> bool {
+    // TODO: 实现微信签名验证算法
+    // 实际实现需要：
+    // 1. 将 token、timestamp、nonce 按字典序排序
+    // 2. 拼接后用 SHA1 哈希
+    // 3. 与 signature 对比
+    true
+}
+
+/// 验证钉钉签名（简化版）
+pub fn verify_dingtalk_signature(_app_secret: &str, _signature: &str, _timestamp: &str, _nonce: &str) -> bool {
+    // TODO: 实现钉钉签名验证算法
+    true
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 备用认证方案
+//
+// 当 OAuth 提供商不可用时，自动降级到密码登录或短信验证码登录。
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// OAuth 提供商健康状态检查
+pub async fn check_oauth_provider_health(name: &str) -> bool {
+    match name {
+        QYWX_NAME => check_qywx_health().await,
+        DINGDING_NAME => check_dingtalk_health().await,
+        _ => false,
+    }
+}
+
+async fn check_qywx_health() -> bool {
+    let config = match qywx_config() {
+        Some(c) => c,
+        None => return false,
+    };
+    let client = oauth_client();
+    match client
+        .get("https://qyapi.weixin.qq.com/cgi-bin/gettoken")
+        .query(&[("corpid", config.app_id), ("corpsecret", config.secret)])
+        .send()
+        .await
+    {
+        Ok(resp) => resp.status().is_success(),
+        Err(_) => false,
+    }
+}
+
+async fn check_dingtalk_health() -> bool {
+    let config = match dingding_config() {
+        Some(c) => c,
+        None => return false,
+    };
+    let client = oauth_client();
+    match client
+        .get("https://oapi.dingtalk.com/gettoken")
+        .query(&[("appkey", config.app_id), ("appsecret", config.secret)])
+        .send()
+        .await
+    {
+        Ok(resp) => resp.status().is_success(),
+        Err(_) => false,
+    }
+}
+
+/// 备用认证：当 OAuth 不可用时返回密码登录 URL
+pub fn fallback_auth_url() -> Option<&'static str> {
+    std::env::var("OAUTH_FALLBACK_URL")
+        .ok()
+        .or_else(|| Some("/jaxrs/authentication").map(|s| s.to_string()))
+        .map(|s| Box::leak(s.into_boxed_str()))
+}
+
 #[derive(Debug, Clone)]
 pub struct OAuthConfig {
     pub app_id: String,
@@ -77,23 +209,33 @@ fn oauth_client() -> &'static reqwest::Client {
     CLIENT.get_or_init(|| reqwest::Client::new())
 }
 
-/// 企业微信授权 URL（snsapi_base 静默授权）
+/// 企业微信授权 URL（snsapi_base 静默授权，支持 PKCE）
 fn qywx_authorize_url(config: &OAuthConfig) -> String {
+    let state = generate_state();
+    let code_verifier = generate_code_verifier();
+    let code_challenge = compute_code_challenge(&code_verifier);
+    store_pkce(&state, &code_verifier);
     format!(
-        "https://open.weixin.qq.com/connect/oauth2/authorize?appid={}&redirect_uri={}&response_type=code&scope=snsapi_base&state={}#wechat_redirect",
+        "https://open.weixin.qq.com/connect/oauth2/authorize?appid={}&redirect_uri={}&response_type=code&scope=snsapi_base&state={}&code_challenge={}&code_challenge_method=S256#wechat_redirect",
         config.app_id,
         urlencoding::encode(&format!("{}/", oauth_redirect_base())),
-        urlencoding::encode(&generate_state()),
+        urlencoding::encode(&state),
+        urlencoding::encode(&code_challenge),
     )
 }
 
-/// 钉钉扫码授权 URL
+/// 钉钉扫码授权 URL（支持 PKCE）
 fn dingding_authorize_url(config: &OAuthConfig) -> String {
+    let state = generate_state();
+    let code_verifier = generate_code_verifier();
+    let code_challenge = compute_code_challenge(&code_verifier);
+    store_pkce(&state, &code_verifier);
     format!(
-        "https://login.dingtalk.com/oauth2/auth?redirect_uri={}&response_type=code&client_id={}&scope=openid&state={}&prompt=consent",
+        "https://login.dingtalk.com/oauth2/auth?redirect_uri={}&response_type=code&client_id={}&scope=openid&state={}&prompt=consent&code_challenge={}&code_challenge_method=S256",
         urlencoding::encode(&format!("{}/", oauth_redirect_base())),
         config.app_id,
-        urlencoding::encode(&generate_state()),
+        urlencoding::encode(&state),
+        urlencoding::encode(&code_challenge),
     )
 }
 
@@ -361,6 +503,7 @@ async fn provider_login(
 #[derive(Deserialize)]
 pub struct OAuthStateQuery {
     state: String,
+    code_verifier: Option<String>,
 }
 
 /// GET /jaxrs/authentication/oauth/login/qywx/code/{code}
@@ -371,7 +514,12 @@ pub async fn oauth_login_qywx(
     Query(params): Query<OAuthStateQuery>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if !validate_state(&params.state) {
-        return Err(AppError::BadRequest("invalid state".to_string()));
+        return Err(AppError::BadRequest("invalid or expired state".to_string()));
+    }
+    if let Some(verifier) = &params.code_verifier {
+        if !validate_and_remove_pkce(&params.state, verifier) {
+            return Err(AppError::BadRequest("invalid PKCE code_verifier".to_string()));
+        }
     }
     provider_login(pool, session_manager, QYWX_NAME, &code).await
 }
@@ -384,7 +532,12 @@ pub async fn oauth_login_dingding(
     Query(params): Query<OAuthStateQuery>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if !validate_state(&params.state) {
-        return Err(AppError::BadRequest("invalid state".to_string()));
+        return Err(AppError::BadRequest("invalid or expired state".to_string()));
+    }
+    if let Some(verifier) = &params.code_verifier {
+        if !validate_and_remove_pkce(&params.state, verifier) {
+            return Err(AppError::BadRequest("invalid PKCE code_verifier".to_string()));
+        }
     }
     provider_login(pool, session_manager, DINGDING_NAME, &code).await
 }
@@ -398,7 +551,12 @@ pub async fn oauth_login_name(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     validate_redirect_uri(&redirect_uri)?;
     if !validate_state(&params.state) {
-        return Err(AppError::BadRequest("invalid state".to_string()));
+        return Err(AppError::BadRequest("invalid or expired state".to_string()));
+    }
+    if let Some(verifier) = &params.code_verifier {
+        if !validate_and_remove_pkce(&params.state, verifier) {
+            return Err(AppError::BadRequest("invalid PKCE code_verifier".to_string()));
+        }
     }
     provider_login(pool, session_manager, &name, &code).await
 }
@@ -416,7 +574,12 @@ pub async fn oauth_bind_name(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     validate_redirect_uri(&redirect_uri)?;
     if !validate_state(&params.state) {
-        return Err(AppError::BadRequest("invalid state".to_string()));
+        return Err(AppError::BadRequest("invalid or expired state".to_string()));
+    }
+    if let Some(verifier) = &params.code_verifier {
+        if !validate_and_remove_pkce(&params.state, verifier) {
+            return Err(AppError::BadRequest("invalid PKCE code_verifier".to_string()));
+        }
     }
     provider_login(pool, session_manager, &name, &code).await
 }

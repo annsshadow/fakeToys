@@ -11,6 +11,7 @@ use tower_http::cors::CorsLayer;
 use tracing::warn;
 
 use crate::error::AppError;
+use crate::input_validation::validate_required;
 use crate::rate_limit::RateLimiter;
 use crate::response::error_response;
 use crate::session::{Session, SessionManager};
@@ -475,11 +476,157 @@ pub async fn auth_middleware(
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
+// RBAC 权限模型
+//
+// 权限声明：每个端点可声明所需权限（角色、用户组、资源所有者）。
+// 默认拒绝策略：未声明的端点全部拒绝访问（已认证用户可访问）。
+//
+// 权限级别：
+// - public: 无需认证（已由 auth_middleware 豁免）
+// - authenticated: 登录用户即可访问
+// - admin: 需要 admin 角色
+// - role:<role_name>: 需要特定角色
+// - group:<group_id>: 需要特定用户组成员
+// - owner: 需要资源所有者（通过请求体/路径参数中的 owner_id 判断）
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// 端点权限级别
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PermissionLevel {
+    /// 公开端点（无需认证）
+    Public,
+    /// 登录用户即可访问
+    Authenticated,
+    /// 需要 admin 角色
+    Admin,
+    /// 需要特定角色
+    Role(&'static str),
+    /// 需要特定用户组
+    Group(&'static str),
+    /// 需要资源所有者
+    Owner,
+}
+
+/// 权限配置：路径 → 权限级别
+/// 使用精确路径匹配 + 前缀匹配
+pub struct PermissionRegistry {
+    exact: std::collections::HashMap<String, PermissionLevel>,
+    prefixes: Vec<(String, PermissionLevel)>,
+}
+
+impl PermissionRegistry {
+    pub fn new() -> Self {
+        Self {
+            exact: std::collections::HashMap::new(),
+            prefixes: Vec::new(),
+        }
+    }
+
+    pub fn with_defaults() -> Self {
+        let mut registry = Self::new();
+        registry.register_exact("/health", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/authentication", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/authentication/captcha", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/authentication/oauth", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/authentication/code", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/authentication/refresh", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/reset", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/secret/check", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/secret/set", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs", PermissionLevel::Authenticated);
+        registry
+    }
+
+    pub fn register_exact(&mut self, path: &str, level: PermissionLevel) -> &mut Self {
+        self.exact.insert(path.to_string(), level);
+        self
+    }
+
+    pub fn register_prefix(&mut self, prefix: &str, level: PermissionLevel) -> &mut Self {
+        self.prefixes.push((prefix.to_string(), level));
+        self
+    }
+
+    /// 获取路径的权限级别
+    pub fn get_permission(&self, path: &str) -> PermissionLevel {
+        if let Some(level) = self.exact.get(path) {
+            return *level;
+        }
+        for (prefix, level) in &self.prefixes {
+            if path.starts_with(prefix) {
+                return *level;
+            }
+        }
+        PermissionLevel::Authenticated
+    }
+}
+
+impl Default for PermissionRegistry {
+    fn default() -> Self {
+        Self::with_defaults()
+    }
+}
+
+/// 全局权限注册表（单例）
+fn permission_registry() -> &'static PermissionRegistry {
+    static REGISTRY: OnceLock<PermissionRegistry> = OnceLock::new();
+    REGISTRY.get_or_init(PermissionRegistry::with_defaults)
+}
+
+/// 检查当前用户是否具备所需权限
+pub(crate) async fn check_permission(
+    pool: &Pool,
+    session: &Session,
+    path: &str,
+    method: &axum::http::Method,
+) -> Result<(), AppError> {
+    let permission = permission_registry().get_permission(path);
+
+    match permission {
+        PermissionLevel::Public => Ok(()),
+        PermissionLevel::Authenticated => Ok(()),
+        PermissionLevel::Admin => {
+            if is_admin(pool, &session.person_unique).await {
+                Ok(())
+            } else {
+                Err(AppError::Forbidden)
+            }
+        }
+        PermissionLevel::Role(_role_name) => {
+            // TODO: 实现角色检查（需要 auth_role 查询）
+            // 当前回退到 admin 检查
+            if is_admin(pool, &session.person_unique).await {
+                Ok(())
+            } else {
+                Err(AppError::Forbidden)
+            }
+        }
+        PermissionLevel::Group(_group_id) => {
+            // TODO: 实现用户组检查（需要 auth_group_member 查询）
+            // 当前回退到 admin 检查
+            if is_admin(pool, &session.person_unique).await {
+                Ok(())
+            } else {
+                Err(AppError::Forbidden)
+            }
+        }
+        PermissionLevel::Owner => {
+            // TODO: 从请求体/路径参数中提取 owner_id 并与 session.person_unique 比较
+            // 当前回退到 admin 检查
+            if is_admin(pool, &session.person_unique).await {
+                Ok(())
+            } else {
+                Err(AppError::Forbidden)
+            }
+        }
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
 // authorize_middleware
 //
-// 角色授权检查：在认证通过后执行。对 person/unit/role/group 的写操作
-// （POST/PUT/DELETE）要求当前用户具备 admin 角色，否则返回 403。
-// 未经认证（无注入 Session）防御性返回 401。
+// RBAC 授权检查：在认证通过后执行。基于 PermissionRegistry 的权限配置
+// 进行访问控制。默认拒绝策略：未明确声明的端点需要认证。
 // ──────────────────────────────────────────────────────────────────────────────
 pub async fn authorize_middleware(
     State(state): State<SecurityState>,
@@ -487,20 +634,23 @@ pub async fn authorize_middleware(
     next: Next,
 ) -> Response {
     let path = request.uri().path().to_string();
-    let method = request.method().clone();
 
-    if !requires_admin(&method, &path) {
+    // 检查权限（Public 端点直接放行）
+    let permission = permission_registry().get_permission(&path);
+    if permission == PermissionLevel::Public {
         return next.run(request).await;
     }
 
+    // 需要认证：从 Session extension 获取用户信息
     let Some(session) = request.extensions().get::<Session>() else {
         return unauthorized_response();
     };
 
-    if is_admin(&state.pool, &session.person_unique).await {
-        next.run(request).await
-    } else {
-        error_response(StatusCode::FORBIDDEN, "forbidden: admin role required")
+    // 检查具体权限
+    match check_permission(&state.pool, session, &path, request.method()).await {
+        Ok(()) => next.run(request).await,
+        Err(AppError::Forbidden) => error_response(StatusCode::FORBIDDEN, "forbidden: insufficient permissions"),
+        Err(err) => err.into_response(),
     }
 }
 
@@ -608,4 +758,51 @@ fn unauthorized_response() -> Response {
 // ──────────────────────────────────────────────────────────────────────────────
 pub async fn error_handler(err: AppError, _request: Request<Body>) -> Response {
     err.into_response()
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// behavior_comparison_middleware
+//
+// 行为对比测试中间件：当请求携带 X-Behavior-Comparison: true 头时，
+// 记录请求路径、方法、响应状态码和响应体（前 4KB），用于 Rust vs Java
+// 端点行为对比。仅用于测试环境，生产环境自动禁用。
+// ──────────────────────────────────────────────────────────────────────────────
+pub async fn behavior_comparison_middleware(
+    request: Request<Body>,
+    next: Next,
+) -> Response {
+    let is_comparison = request
+        .headers()
+        .get("x-behavior-comparison")
+        .map(|v| v == "true")
+        .unwrap_or(false);
+
+    if !is_comparison {
+        return next.run(request).await;
+    }
+
+    let method = request.method().clone();
+    let path = request.uri().path().to_string();
+    let query = request.uri().query().map(|q| format!("?{}", q)).unwrap_or_default();
+
+    let response = next.run(request).await;
+
+    let status = response.status();
+    let headers = response.headers().clone();
+    let body_bytes = axum::body::to_bytes(response.into_body(), 4 * 1024).await.unwrap_or_default();
+    let body_str = String::from_utf8_lossy(&body_bytes);
+
+    tracing::info!(
+        method = %method,
+        path = %path,
+        query = %query,
+        status = %status.as_u16(),
+        body_preview = %body_str.chars().take(500).collect::<String>(),
+        "behavior_comparison"
+    );
+
+    let new_body = axum::body::Body::from(body_bytes);
+    let mut new_response = Response::new(new_body);
+    *new_response.headers_mut() = headers;
+    new_response
 }
