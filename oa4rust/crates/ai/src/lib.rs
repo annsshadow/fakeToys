@@ -89,7 +89,8 @@ pub async fn config_list_model_paging(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let size = size.clamp(1, 200) as i64;
-    let offset = ((page.max(1) - 1) as i64) * size;
+    let page = page.max(1) as i64;
+    let offset = (page - 1) * size;
 
     let total_row = client
         .query_one("SELECT COUNT(*) as cnt FROM X.AI_MODEL", &[])
@@ -178,13 +179,12 @@ pub async fn config_get_model(
 
 #[axum::debug_handler]
 pub async fn config_list_mcp_paging(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     Path((page, size)): Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let size = size.clamp(1, 200) as i64;
-    let offset = ((page.max(1) - 1) as i64) * size;
+    let page = page.max(1) as i64;
+    let offset = (page - 1) * size;
     let total: i64 = 0;
 
     let data: Vec<Value> = vec![];
@@ -201,11 +201,9 @@ pub async fn config_list_mcp_paging(
 
 #[axum::debug_handler]
 pub async fn config_get_mcp(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     Ok(Json(ActionResult::error("mcp not found")))
 }
 
@@ -217,7 +215,8 @@ pub async fn chat_list_paging(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let size = size.clamp(1, 200) as i64;
-    let offset = ((page.max(1) - 1) as i64) * size;
+    let page = page.max(1) as i64;
+    let offset = (page - 1) * size;
 
     let total_row = client
         .query_one("SELECT COUNT(*) as cnt FROM X.AI_CLUE", &[])
@@ -263,7 +262,8 @@ pub async fn chat_list_completion_paging(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let size = size.clamp(1, 200) as i64;
-    let offset = ((page.max(1) - 1) as i64) * size;
+    let page = page.max(1) as i64;
+    let offset = (page - 1) * size;
 
     let total_row = client
         .query_one("SELECT COUNT(*) as cnt FROM X.AI_COMPLETION WHERE clueId = $1", &[&clue_id])
@@ -397,11 +397,9 @@ pub async fn index_cms_doc_with_app(
 
 #[axum::debug_handler]
 pub async fn index_delete(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(flag)),
@@ -442,11 +440,9 @@ pub async fn file_get(
 
 #[axum::debug_handler]
 pub async fn file_download(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id.clone())),
@@ -460,11 +456,9 @@ pub async fn file_download(
 
 #[axum::debug_handler]
 pub async fn file_download_scale(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id.clone())),
@@ -479,9 +473,22 @@ pub async fn file_download_scale(
 #[axum::debug_handler]
 pub async fn file_delete(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt("SELECT xcreator FROM X.AI_FILE WHERE xid = $1 OR xname = $1", &[&flag])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("file not found")));
+    };
+
+    let file_creator: String = row.get("xcreator");
+    shared::middleware::require_owner(&pool, &session, &file_creator).await?;
 
     client
         .execute("DELETE FROM X.AI_FILE WHERE xid = $1 OR xname = $1", &[&flag])
@@ -512,7 +519,7 @@ pub async fn list_enable_model(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("flag".to_string(), Value::String(row.get("xname"))),
+                ("flag".to_string(), Value::String(row.get("name"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("enable".to_string(), Value::Bool(row.get("xenable"))),
             ]))

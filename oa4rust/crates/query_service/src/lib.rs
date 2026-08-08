@@ -90,6 +90,15 @@ pub struct ProcessingExecuteRequest {
     pub params: Option<Value>,
 }
 
+/// Validate user-provided query to reject dangerous SQL-like patterns.
+/// Returns true if the query is safe to use.
+fn validate_query(query: &str) -> bool {
+    let dangerous = [
+        "SELECT", "INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE", "TRUNCATE",
+    ];
+    !dangerous.iter().any(|d| query.to_uppercase().contains(d))
+}
+
 #[axum::debug_handler]
 pub async fn processing_execute(
     pool: Extension<Pool>,
@@ -104,6 +113,10 @@ pub async fn processing_execute(
 
     if query.trim().is_empty() {
         return Ok(Json(ActionResult::error("query is required")));
+    }
+
+    if !validate_query(&query) {
+        return Ok(Json(ActionResult::error("query contains disallowed SQL keywords")));
     }
 
     let creator = "system";
@@ -121,8 +134,8 @@ pub async fn processing_execute(
         id
     } else {
         let id = uuid::Uuid::new_v4().to_string();
-        let result = client
-            .execute(
+        let row = client
+            .query_opt(
                 "INSERT INTO x_query_processing (id, query, model_flag, params, creator, create_time, update_time) \
                  VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) \
                  ON CONFLICT (model_flag) DO UPDATE SET query = EXCLUDED.query, params = EXCLUDED.params, update_time = NOW() \
@@ -132,11 +145,9 @@ pub async fn processing_execute(
             .await
             .map_err(|_| AppError::Internal)?;
 
-        if result > 0 {
-            id
-        } else {
-            uuid::Uuid::new_v4().to_string()
-        }
+        // Return the existing id if ON CONFLICT fired, otherwise the new id
+        let resolved_id = row.map(|r| r.get::<_, String>("id")).unwrap_or(id);
+        resolved_id
     };
 
     let status = if model_flag.is_empty() {

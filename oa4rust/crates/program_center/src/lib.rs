@@ -122,7 +122,7 @@ pub async fn modules_all(
             Value::Object(serde_json::Map::from_iter([
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("className".to_string(), Value::String(class_name)),
-                ("fieldCount".to_string(), Value::Number(serde_json::Number::from(field_count))),
+                ("entityCount".to_string(), Value::Number(serde_json::Number::from(field_count))),
             ]))
         })
         .collect();

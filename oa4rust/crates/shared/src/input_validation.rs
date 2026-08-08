@@ -5,7 +5,6 @@
 //! 直接调用验证函数完成参数校验。
 
 use axum::http::StatusCode;
-use serde::de::DeserializeOwned;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -64,7 +63,7 @@ impl<'a> StringValidator<'a> {
         Self { field, value }
     }
 
-    pub fn required(mut self) -> Self {
+    pub fn required(self) -> Self {
         if self.value.is_empty() {
             // We can't return error here, it's a builder pattern
             // The actual validation happens in validate()
@@ -72,14 +71,14 @@ impl<'a> StringValidator<'a> {
         self
     }
 
-    pub fn min_length(mut self, min: usize) -> Self {
+    pub fn min_length(self, min: usize) -> Self {
         if self.value.len() < min {
             // Store the error - but we need a different approach
         }
         self
     }
 
-    pub fn max_length(mut self, max: usize) -> Self {
+    pub fn max_length(self, max: usize) -> Self {
         if self.value.len() > max {
             // Store the error
         }

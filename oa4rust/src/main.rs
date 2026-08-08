@@ -7,7 +7,7 @@ use axum::Router;
 use mcp_server::tool_bridge::ToolBridge;
 use shared::db::create_pool;
 use shared::middleware::{
-    auth_middleware, authorize_middleware, cors_middleware, rate_limit_middleware, security_headers_middleware,
+    auth_middleware, authorize_middleware, behavior_comparison_middleware, cors_middleware, rate_limit_middleware, security_headers_middleware,
     trace_middleware, SecurityState,
 };
 use shared::rate_limit::RateLimiter;
@@ -323,9 +323,9 @@ pub async fn create_app(
         .layer(middleware::from_fn_with_state(security_state.clone(), authorize_middleware))
         .layer(middleware::from_fn_with_state(security_state.clone(), auth_middleware))
         .layer(middleware::from_fn_with_state(security_state.clone(), rate_limit_middleware))
-        .layer(cors_middleware())
         .layer(middleware::from_fn(security_headers_middleware))
-        .layer(middleware::from_fn(trace_middleware));
+        .layer(middleware::from_fn(trace_middleware))
+        .layer(middleware::from_fn(behavior_comparison_middleware));
 
     Ok(app)
 }

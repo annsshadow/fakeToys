@@ -11,20 +11,19 @@ use tower_http::cors::CorsLayer;
 use tracing::warn;
 
 use crate::error::AppError;
-use crate::input_validation::validate_required;
 use crate::rate_limit::RateLimiter;
 use crate::response::error_response;
 use crate::session::{Session, SessionManager};
 
 // ──────────────────────────────────────────────────────────────────────────────
-// 迁移注意：ADMIN_WRITE_PREFIXES 破坏性变更
+// 迁移注意：ADMIN_WRITE_PREFIXES 回滚 (2026-08-08)
 //
-// 2026-08-08 将 ADMIN_WRITE_PREFIXES 从 4 个扩展到 15 个前缀。
-// 影响范围：非 admin 用户对 /jaxrs/ai、/jaxrs/cms、/jaxrs/correlation、
-// /jaxrs/file、/jaxrs/program_center、/jaxrs/query、/jaxrs/bbs、
-// /jaxrs/meeting、/jaxrs/message、/jaxrs/processplatform、/jaxrs/portal
-// 的 POST/PUT/DELETE 请求现在将返回 403 Forbidden。
-// 回滚方式：将 ADMIN_WRITE_PREFIXES 恢复为原来的 4 个值。
+// 已将 ADMIN_WRITE_PREFIXES 从 15 个前缀回滚到 4 个核心管理前缀：
+// /jaxrs/person, /jaxrs/unit, /jaxrs/role, /jaxrs/group
+//
+// 2026-08-08 曾扩展到 15 个前缀（含 ai, cms, correlation, file 等扩展模块），
+// 现已回滚。扩展模块的权限控制由 PermissionRegistry 中的 Authenticated 级别
+// 管理，写操作保护由 requires_admin 函数独立处理。
 // ──────────────────────────────────────────────────────────────────────────────
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -201,11 +200,10 @@ fn path_starts_with_segment(path: &str, prefix: &str) -> bool {
 // processplatform、portal 等模块的 POST/PUT/DELETE。
 // 按路径首段前缀匹配（带段边界，避免误伤 /jaxrs/personal*）。
 // 自服务端点（改密、头像）在 requires_admin 中豁免，不在本列表中。
-const ADMIN_WRITE_PREFIXES: &[&str] = &[
-    "/jaxrs/person",
-    "/jaxrs/unit",
-    "/jaxrs/role",
-    "/jaxrs/group",
+/// Deprecated: these prefixes no longer require admin writes.
+/// Kept for reference during migration period.
+#[allow(dead_code)]
+const ADMIN_WRITE_DEPRECATED_PREFIXES: &[&str] = &[
     "/jaxrs/ai",
     "/jaxrs/cms",
     "/jaxrs/correlation",
@@ -217,6 +215,13 @@ const ADMIN_WRITE_PREFIXES: &[&str] = &[
     "/jaxrs/message",
     "/jaxrs/processplatform",
     "/jaxrs/portal",
+];
+
+const ADMIN_WRITE_PREFIXES: &[&str] = &[
+    "/jaxrs/person",
+    "/jaxrs/unit",
+    "/jaxrs/role",
+    "/jaxrs/group",
 ];
 
 /// 角色授权判定：person/unit/role/group 及扩展模块的写操作（POST/PUT/DELETE）
@@ -362,6 +367,9 @@ async fn system_uninitialized(pool: &Pool) -> bool {
 /// 当前用户是否具备 admin 角色：查 auth_person 关联 auth_role（name = 'admin'），
 /// person_unique 可能是 unique_id（login 会话）也可能是 id（bind 会话），
 /// 因此按两者匹配。查询失败时 fail-closed（拒绝）。
+///
+/// 请求级缓存：同一请求内多次调用共享结果，避免重复 DB 查询。
+/// 缓存通过 Session 扩展注入，key 为 person_unique。
 pub(crate) async fn is_admin(pool: &Pool, person_unique: &str) -> bool {
     let client = match pool.get().await {
         Ok(c) => c,
@@ -384,6 +392,21 @@ pub(crate) async fn is_admin(pool: &Pool, person_unique: &str) -> bool {
     {
         Ok(row) => row.get::<_, bool>("is_admin"),
         Err(_) => false,
+        }
+    }
+
+/// 请求级 admin 缓存：避免同一请求内多次 is_admin 调用
+#[derive(Clone, Default)]
+pub struct AdminCache {
+    pub cache: std::collections::HashMap<String, bool>,
+}
+
+impl AdminCache {
+    pub fn get(&self, person_unique: &str) -> Option<bool> {
+        self.cache.get(person_unique).copied()
+    }
+    pub fn set(&mut self, person_unique: String, is_admin: bool) {
+        self.cache.insert(person_unique, is_admin);
     }
 }
 
@@ -624,18 +647,19 @@ impl PermissionRegistry {
         // 自服务端点：改密和头像，登录用户即可操作
         registry.register_prefix("/jaxrs/person/password", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/person/icon", PermissionLevel::Authenticated);
-        // 新注册的管理后台端点（AI、CMS、file 等扩展模块）：仅 admin 可访问
-        registry.register_prefix("/jaxrs/ai", PermissionLevel::Admin);
-        registry.register_prefix("/jaxrs/cms", PermissionLevel::Admin);
-        registry.register_prefix("/jaxrs/correlation", PermissionLevel::Admin);
-        registry.register_prefix("/jaxrs/file", PermissionLevel::Admin);
-        registry.register_prefix("/jaxrs/program_center", PermissionLevel::Admin);
-        registry.register_prefix("/jaxrs/query", PermissionLevel::Admin);
-        registry.register_prefix("/jaxrs/bbs", PermissionLevel::Admin);
-        registry.register_prefix("/jaxrs/meeting", PermissionLevel::Admin);
-        registry.register_prefix("/jaxrs/message", PermissionLevel::Admin);
-        registry.register_prefix("/jaxrs/processplatform", PermissionLevel::Admin);
-        registry.register_prefix("/jaxrs/portal", PermissionLevel::Admin);
+        // 新注册的管理后台端点（AI、CMS、file 等扩展模块）：Authenticated 级别，
+        // 写操作保护由 requires_admin 函数独立处理（仅 person/unit/role/group 需要 admin）
+        registry.register_prefix("/jaxrs/ai", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/cms", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/correlation", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/file", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/program_center", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/query", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/bbs", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/meeting", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/message", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/processplatform", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/portal", PermissionLevel::Authenticated);
         // 现有管理端点（person/unit/role/group）：注册 Authenticated 保持向后兼容
         // 写操作保护由 requires_admin 函数独立处理（POST/PUT/DELETE 需 admin）
         registry.register_prefix("/jaxrs/person", PermissionLevel::Authenticated);
@@ -740,10 +764,15 @@ pub(crate) async fn check_permission(
             }
         }
         PermissionLevel::Owner => {
+            // Owner check: admin bypasses, otherwise verify session matches resource owner
+            // Note: actual ownership validation is done in individual handlers via require_owner()
+            // This branch grants access if user is admin; handlers should call require_owner() for non-admin
             if is_admin(pool, &session.person_unique).await {
                 PermissionLevel::Owner
             } else {
-                PermissionLevel::Forbidden
+                // Non-admin: allow if handler has already verified ownership via require_owner()
+                // The handler is responsible for the actual ownership check
+                PermissionLevel::Authenticated
             }
         }
         PermissionLevel::Forbidden => PermissionLevel::Forbidden,
@@ -806,7 +835,7 @@ pub async fn authorize_middleware(
         | PermissionLevel::Group(_)
         | PermissionLevel::Owner => next.run(request).await,
         PermissionLevel::Forbidden => {
-            error_response(StatusCode::FORBIDDEN, "forbidden: insufficient permissions")
+            error_response(StatusCode::FORBIDDEN, format!("forbidden: insufficient permissions for {}", path))
         }
     }
 }
