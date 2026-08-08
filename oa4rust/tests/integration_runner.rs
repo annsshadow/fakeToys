@@ -28,16 +28,17 @@ use integration_tests::db::init_test_database;
 #[ignore = "requires a running PostgreSQL server"]
 #[tokio::test]
 async fn integration_scenarios() {
-    let _pool = init_test_database();
+    let _ctx = init_test_database();
+    let _pool = _ctx.pool();
 
     // Run all scenario tests sequentially to avoid port conflicts
     // (each scenario spins up its own HTTP server on a random port)
     // Note: each scenario is its own #[tokio::test] — call them directly
     // without .await (they manage their own runtime via the test macro).
 
-    integration_tests::scenarios::org_person_meeting::org_person_meeting_flow();
-    integration_tests::scenarios::bbs_correlation::bbs_correlation_flow();
-    integration_tests::scenarios::file_upload::file_upload_flow();
+    integration_tests::scenarios::org_person_meeting::org_person_meeting_flow().await;
+    integration_tests::scenarios::bbs_correlation::bbs_correlation_flow().await;
+    integration_tests::scenarios::file_upload::file_upload_flow().await;
 }
 
 #[cfg(test)]

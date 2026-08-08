@@ -1,4 +1,4 @@
-use axum::{routing::get, routing::post, Router};
+use axum::{extract::Extension, routing::get, routing::post, Router};
 use deadpool_postgres::Pool;
 use shared::middleware::SecurityState;
 
@@ -18,6 +18,7 @@ pub fn bbs_router(pool: Pool) -> Router {
         .route("/jaxrs/bbs/subject/view/{id}", get(subject::view))
         .route("/jaxrs/bbs/subject/create", post(subject::create))
         .route("/jaxrs/bbs/subject/search", get(subject::search))
+        .layer(Extension(pool))
 }
 
 pub fn router(pool: Pool) -> Router {

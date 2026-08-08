@@ -120,9 +120,14 @@ async fn main() -> anyhow::Result<()> {
         .route("/openapi.json", axum::routing::get(openapi_json_handler));
 
     // Optionally mount the MCP HTTP endpoint at /mcp when --http flag is present.
+    let security_state = shared::middleware::SecurityState {
+        session_manager: session_manager.clone(),
+        rate_limiter: rate_limiter.clone(),
+        pool: pool.clone(),
+    };
     let app = if http_flag {
         let bridge = Arc::new(ToolBridge::new(pool, session_manager));
-        app.merge(mcp_app(bridge))
+        app.merge(mcp_app(bridge, security_state))
     } else {
         app
     };
@@ -141,7 +146,8 @@ async fn main() -> anyhow::Result<()> {
 /// Build the MCP HTTP sub-application mounted at /mcp.
 /// Forwards the caller's Authorization header to the internal ToolBridge so
 /// existing session-based auth is reused without duplicating business logic.
-fn mcp_app(bridge: Arc<ToolBridge>) -> Router {
+fn mcp_app(bridge: Arc<ToolBridge>, security_state: shared::middleware::SecurityState) -> Router {
+    use axum::middleware;
     use axum::routing::post;
     use axum::Json;
 
@@ -211,6 +217,11 @@ fn mcp_app(bridge: Arc<ToolBridge>) -> Router {
         "/mcp",
         post(mcp_handler).with_state(Arc::clone(&bridge)),
     )
+    .layer(middleware::from_fn_with_state(security_state.clone(), authorize_middleware))
+    .layer(middleware::from_fn_with_state(security_state.clone(), auth_middleware))
+    .layer(middleware::from_fn_with_state(security_state.clone(), rate_limit_middleware))
+    .layer(middleware::from_fn(security_headers_middleware))
+    .layer(middleware::from_fn(trace_middleware))
 }
 
 /// 构建完整应用 Router（供集成测试使用）。

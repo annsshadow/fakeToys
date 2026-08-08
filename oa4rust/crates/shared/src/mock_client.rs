@@ -116,7 +116,17 @@ impl ControlClient for MockControlClient {
         _q: &str,
         _p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
     ) -> Result<Option<Box<dyn RowGet>>, Box<dyn std::error::Error + Send + Sync>> {
-        Ok(None)
+        match self.results.lock().await.pop() {
+            Some(MockQueryResult::Row(values)) => {
+                Ok(Some(Box::new(MockRow { values }) as Box<dyn RowGet>))
+            }
+            Some(MockQueryResult::Rows(rows)) if rows.len() == 1 => {
+                Ok(Some(Box::new(MockRow { values: rows[0].clone() }) as Box<dyn RowGet>))
+            }
+            Some(MockQueryResult::Empty) | None => Ok(None),
+            Some(MockQueryResult::Error) => Err(Box::<dyn std::error::Error + Send + Sync>::from("mock query error")),
+            _ => Ok(None),
+        }
     }
 
     async fn ctrl_execute(
@@ -126,7 +136,6 @@ impl ControlClient for MockControlClient {
     ) -> Result<u64, Box<dyn std::error::Error + Send + Sync>> {
         match self.results.lock().await.pop() {
             Some(MockQueryResult::Row(values)) => {
-                values.iter().find(|(k, _)| *k == "count").and_then(|(_, v)| v.as_u64()).unwrap_or(1);
                 Ok(values.iter().find(|(k, _)| *k == "count").and_then(|(_, v)| v.as_u64()).unwrap_or(1))
             }
             _ => Ok(1),

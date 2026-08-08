@@ -761,6 +761,34 @@ const ENDPOINTS: &[EndpointDef] = &[
         body: None,
         requires_auth: true,
     },
+    // ── POST endpoints for behavior comparison ───────────────────────────────
+    EndpointDef {
+        crate_name: "bbs",
+        method: "POST",
+        rust_path: "/jaxrs/bbs/subject/create",
+        java_war: "x_bbs_core_project",
+        java_action: "jaxrs/subject/create",
+        body: Some(serde_json::json!({"sectionId": "test-section", "title": "Test Topic", "content": "Test content"})),
+        requires_auth: true,
+    },
+    EndpointDef {
+        crate_name: "file",
+        method: "POST",
+        rust_path: "/jaxrs/file/folder/create",
+        java_war: "x_file_core_project",
+        java_action: "jaxrs/folder/create",
+        body: Some(serde_json::json!({"name": "test-folder", "parentId": ""})),
+        requires_auth: true,
+    },
+    EndpointDef {
+        crate_name: "meeting",
+        method: "POST",
+        rust_path: "/jaxrs/meeting/create",
+        java_war: "x_meeting_core_project",
+        java_action: "jaxrs/meeting/create",
+        body: Some(serde_json::json!({"title": "Test Meeting", "startTime": "2026-01-01T10:00:00Z", "endTime": "2026-01-01T11:00:00Z"})),
+        requires_auth: true,
+    },
 ];
 
 // ──────────────────────────────────────────────────────────────────────────────

@@ -1514,7 +1514,8 @@ impl ToolBridge {
         let mut body_args = serde_json::Map::new();
         for (k, v) in args {
             if def.path_params.contains(&k.as_str()) {
-                path = path.replace(&format!("{{{}}}", k), &v.to_string());
+                let encoded: String = urlencoding::encode(&v.to_string()).into();
+                path = path.replace(&format!("{{{}}}", k), &encoded);
             } else {
                 body_args.insert(k, v);
             }

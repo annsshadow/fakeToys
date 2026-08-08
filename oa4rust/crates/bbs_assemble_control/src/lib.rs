@@ -402,7 +402,7 @@ pub async fn reply_filter_list_page_page_count_count(
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let offset = (page - 1) * count;
+    let offset = (page.saturating_sub(1)) * count;
 
     let rows = client
         .query(

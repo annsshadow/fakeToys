@@ -14,23 +14,44 @@ use tracing::info;
 // ──────────────────────────────────────────────────────────────────────────────
 
 pub static TEST_DB: OnceLock<Arc<Pool>> = OnceLock::new();
+pub static TEST_DB_NAME: OnceLock<String> = OnceLock::new();
 
-/// Test database context: owns the pool and database name, drops the DB on drop.
+/// Test database context: owns the database name, drops the DB on drop.
+/// The pool itself is stored separately in TEST_DB so it remains available
+/// after the context is dropped.
 pub struct TestContext {
-    pub pool: Pool,
-    pub db_name: String,
+    pool: Arc<Pool>,
+    db_name: String,
+}
+
+impl TestContext {
+    /// Returns a clone of the shared pool for use in scenarios.
+    pub fn pool(&self) -> Arc<Pool> {
+        self.pool.clone()
+    }
 }
 
 impl Drop for TestContext {
     fn drop(&mut self) {
         let db_name = self.db_name.clone();
-        // Spawn a background task to drop the test database.
-        // We connect to the admin "postgres" DB to perform the drop.
-        tokio::task::spawn(async move {
-            if let Err(e) = drop_database(&db_name).await {
-                tracing::warn!(db = %db_name, error = %e, "failed to drop test database");
+        // Use try_current to avoid panicking if no tokio runtime is active.
+        if let Ok(handle) = Handle::try_current() {
+            handle.spawn(async move {
+                if let Err(e) = drop_database(&db_name).await {
+                    tracing::warn!(db = %db_name, error = %e, "failed to drop test database");
+                }
+            });
+        } else {
+            // Fallback: run synchronously (may block but ensures cleanup).
+            let rt = tokio::runtime::Runtime::new().ok();
+            if let Some(r) = rt {
+                r.block_on(async {
+                    if let Err(e) = drop_database(&db_name).await {
+                        tracing::warn!(db = %db_name, error = %e, "failed to drop test database");
+                    }
+                });
             }
-        });
+        }
     }
 }
 
@@ -70,18 +91,28 @@ async fn drop_database(db_name: &str) -> anyhow::Result<()> {
 
 /// Initialize the test database and run migrations.
 /// Must be called before any async test code. Safe to call multiple times;
-/// subsequent calls return the same pool.
-pub fn init_test_database() -> Arc<Pool> {
-    TEST_DB
+/// subsequent calls return the same context.
+///
+/// Returns an Arc<TestContext> which keeps the database alive until dropped.
+/// Call .pool() to get the shared Arc<Pool> for test code.
+pub fn init_test_database() -> Arc<TestContext> {
+    let db_name = format!("oa4rust_test_{}", std::process::id());
+    TEST_DB_NAME.get_or_init(|| db_name.clone());
+
+    let pool = TEST_DB
         .get_or_init(|| {
-            let db_name = format!("oa4rust_test_{}", std::process::id());
             let rt = runtime_or_new();
-            let pool = rt
+            let p = rt
                 .block_on(async { setup_database(&db_name).await })
                 .expect("failed to set up test database");
-            Arc::new(pool)
+            Arc::new(p)
         })
-        .clone()
+        .clone();
+
+    Arc::new(TestContext {
+        pool: pool.clone(),
+        db_name: db_name.clone(),
+    })
 }
 
 /// Get the already-initialized test pool, or panic with a clear message.
