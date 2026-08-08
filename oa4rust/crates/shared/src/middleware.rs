@@ -11,7 +11,6 @@ use tower_http::cors::CorsLayer;
 use tracing::warn;
 
 use crate::error::AppError;
-use crate::input_validation::validate_required;
 use crate::rate_limit::RateLimiter;
 use crate::response::error_response;
 use crate::session::{Session, SessionManager};
@@ -203,6 +202,7 @@ fn path_starts_with_segment(path: &str, prefix: &str) -> bool {
 // 自服务端点（改密、头像）在 requires_admin 中豁免，不在本列表中。
 /// Deprecated: these prefixes no longer require admin writes.
 /// Kept for reference during migration period.
+#[allow(dead_code)]
 const ADMIN_WRITE_DEPRECATED_PREFIXES: &[&str] = &[
     "/jaxrs/ai",
     "/jaxrs/cms",

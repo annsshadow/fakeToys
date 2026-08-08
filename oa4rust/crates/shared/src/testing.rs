@@ -80,7 +80,7 @@ pub async fn send_request(
     let mut req = Request::builder()
         .method(method)
         .uri(uri);
-    if let Some(body) = &body {
+    if let Some(_body) = &body {
         req = req.header(header::CONTENT_TYPE, "application/json");
     }
     let mut req = if let Some(body) = body {
