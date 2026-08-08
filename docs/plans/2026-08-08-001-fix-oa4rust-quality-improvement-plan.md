@@ -1,7 +1,7 @@
 ---
 title: OA4Rust 质量改进与合并准入
 type: fix
-status: active
+status: completed
 date: 2026-08-08
 origin: docs/brainstorms/2026-08-08-oa4rust-quality-improvement-requirements.md
 ---
