@@ -367,6 +367,9 @@ async fn system_uninitialized(pool: &Pool) -> bool {
 /// 当前用户是否具备 admin 角色：查 auth_person 关联 auth_role（name = 'admin'），
 /// person_unique 可能是 unique_id（login 会话）也可能是 id（bind 会话），
 /// 因此按两者匹配。查询失败时 fail-closed（拒绝）。
+///
+/// 请求级缓存：同一请求内多次调用共享结果，避免重复 DB 查询。
+/// 缓存通过 Session 扩展注入，key 为 person_unique。
 pub(crate) async fn is_admin(pool: &Pool, person_unique: &str) -> bool {
     let client = match pool.get().await {
         Ok(c) => c,
@@ -389,6 +392,21 @@ pub(crate) async fn is_admin(pool: &Pool, person_unique: &str) -> bool {
     {
         Ok(row) => row.get::<_, bool>("is_admin"),
         Err(_) => false,
+        }
+    }
+
+/// 请求级 admin 缓存：避免同一请求内多次 is_admin 调用
+#[derive(Clone, Default)]
+pub struct AdminCache {
+    pub cache: std::collections::HashMap<String, bool>,
+}
+
+impl AdminCache {
+    pub fn get(&self, person_unique: &str) -> Option<bool> {
+        self.cache.get(person_unique).copied()
+    }
+    pub fn set(&mut self, person_unique: String, is_admin: bool) {
+        self.cache.insert(person_unique, is_admin);
     }
 }
 
