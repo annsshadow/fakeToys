@@ -231,6 +231,7 @@ pub async fn get_file(
 #[axum::debug_handler]
 pub async fn upload_file(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -239,7 +240,7 @@ pub async fn upload_file(
     let path = body.get("path").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let folder_id = body.get("folderId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let creator = body.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let creator = session.person_unique.clone();
 
     let id = uuid::Uuid::new_v4().to_string();
 
@@ -267,6 +268,7 @@ pub async fn upload_file(
 #[axum::debug_handler]
 pub async fn create_file(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
@@ -275,7 +277,7 @@ pub async fn create_file(
     let path = body.get("path").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let folder_id = body.get("folderId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let creator = body.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let creator = session.person_unique.clone();
 
     let id = uuid::Uuid::new_v4().to_string();
 
