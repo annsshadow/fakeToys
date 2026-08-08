@@ -62,7 +62,7 @@ fn test_publish_surface_action_result_format() {
 }
 
 #[tokio::test]
-async fn test_get_surface_route_exists() {
+async fn test_get_surface_returns_error_without_db() {
     let app = portal_assemble_surface_router();
 
     use axum::body::Body;
@@ -79,11 +79,11 @@ async fn test_get_surface_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
-async fn test_create_surface_route_exists() {
+async fn test_create_surface_returns_error_without_db() {
     let app = portal_assemble_surface_router();
 
     use axum::body::Body;
@@ -106,11 +106,11 @@ async fn test_create_surface_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
-async fn test_list_surfaces_route_exists() {
+async fn test_list_surfaces_returns_error_without_db() {
     let app = portal_assemble_surface_router();
 
     use axum::body::Body;
@@ -127,11 +127,11 @@ async fn test_list_surfaces_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
-async fn test_preview_surface_route_exists() {
+async fn test_preview_surface_returns_error_without_db() {
     let app = portal_assemble_surface_router();
 
     use axum::body::Body;
@@ -148,11 +148,11 @@ async fn test_preview_surface_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
-async fn test_publish_surface_route_exists() {
+async fn test_publish_surface_returns_error_without_db() {
     let app = portal_assemble_surface_router();
 
     use axum::body::Body;
@@ -169,5 +169,73 @@ async fn test_publish_surface_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_surface_list_returns_error_without_db() {
+    let app = portal_assemble_surface_router();
+
+    use axum::body::Body;
+    use axum::http::{Request, Method};
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/portal/surface/list")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_surface_preview_returns_error_without_db() {
+    let app = portal_assemble_surface_router();
+
+    use axum::body::Body;
+    use axum::http::{Request, Method};
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/portal/surface/surface-1/preview")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_surface_publish_returns_error_without_db() {
+    let app = portal_assemble_surface_router();
+
+    use axum::body::Body;
+    use axum::http::{Request, Method};
+
+    let req = serde_json::to_string(&json!({
+        "id": "surface-1"
+    })).unwrap();
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/portal/surface/publish")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(req))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
 }

@@ -19,6 +19,10 @@ pub struct MeetingRoom {
     pub building_id: Option<String>,
     pub floor: Option<String>,
     pub capacity: Option<i32>,
+    pub equipment: Option<serde_json::Value>,
+    pub description: Option<String>,
+    pub photo: Option<String>,
+    pub order_number: Option<i32>,
 }
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -80,6 +84,129 @@ pub async fn room_list(
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
+}
+
+pub async fn create_room(
+    pool: Extension<Pool>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name = payload.get("name").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("name is required".to_string()))?;
+    let building_id = payload.get("buildingId").and_then(|v| v.as_str());
+    let floor = payload.get("floor").and_then(|v| v.as_str());
+    let capacity = payload.get("capacity").and_then(|v| v.as_i64()).map(|v| v as i32);
+    let equipment = payload.get("equipment").and_then(|v| serde_json::to_string(v).ok());
+    let description = payload.get("description").and_then(|v| v.as_str());
+    let photo = payload.get("photo").and_then(|v| v.as_str());
+    let order_number = payload.get("orderNumber").and_then(|v| v.as_i64()).map(|v| v as i32);
+
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_meeting_room (id, name, building_id, floor, capacity, equipment, description, photo, order_number, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())",
+            &[&id, &name, &building_id, &floor, &capacity, &equipment, &description, &photo, &order_number],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name.to_string())),
+        ("buildingId".to_string(), building_id.map(|s| Value::String(s.to_string())).unwrap_or(Value::Null)),
+        ("floor".to_string(), floor.map(|s| Value::String(s.to_string())).unwrap_or(Value::Null)),
+        ("capacity".to_string(), capacity.map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
+        ("orderNumber".to_string(), order_number.map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
+    ])))))
+}
+
+pub async fn get_room(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, building_id, floor, capacity, equipment, description, photo, order_number, create_time FROM x_meeting_room WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("buildingId".to_string(), row.get::<_, Option<String>>("building_id").map(|s| Value::String(s)).unwrap_or(Value::Null)),
+                ("floor".to_string(), row.get::<_, Option<String>>("floor").map(|s| Value::String(s)).unwrap_or(Value::Null)),
+                ("capacity".to_string(), row.get::<_, Option<i32>>("capacity").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
+                ("equipment".to_string(), row.get::<_, Option<String>>("equipment").and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(Value::Null)),
+                ("description".to_string(), row.get::<_, Option<String>>("description").map(|s| Value::String(s)).unwrap_or(Value::Null)),
+                ("photo".to_string(), row.get::<_, Option<String>>("photo").map(|s| Value::String(s)).unwrap_or(Value::Null)),
+                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("room not found"))),
+    }
+}
+
+pub async fn update_room(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(payload): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default();
+    let building_id = payload.get("buildingId").and_then(|v| v.as_str());
+    let floor = payload.get("floor").and_then(|v| v.as_str());
+    let capacity = payload.get("capacity").and_then(|v| v.as_i64()).map(|v| v as i32);
+    let equipment = payload.get("equipment").and_then(|v| serde_json::to_string(v).ok());
+    let description = payload.get("description").and_then(|v| v.as_str());
+    let photo = payload.get("photo").and_then(|v| v.as_str());
+    let order_number = payload.get("orderNumber").and_then(|v| v.as_i64()).map(|v| v as i32);
+
+    let result = client
+        .execute(
+            "UPDATE x_meeting_room SET name = $1, building_id = $2, floor = $3, capacity = $4, equipment = $5, description = $6, photo = $7, order_number = $8 WHERE id = $9",
+            &[&name, &building_id, &floor, &capacity, &equipment, &description, &photo, &order_number, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("room not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("saved".to_string(), Value::Bool(true)),
+        ("name".to_string(), Value::String(name.to_string())),
+    ])))))
+}
+
+pub async fn delete_room(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "DELETE FROM x_meeting_room WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("room not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("deleted".to_string(), Value::Bool(true)),
+    ])))))
 }
 
 /// 获取会议列表
@@ -285,6 +412,10 @@ pub async fn delete_meeting(
 pub fn meeting_core_entity_router(pool: Pool) -> Router {
     Router::new()
         .route("/jaxrs/meeting/core/entity/room/list", get(room_list))
+        .route("/jaxrs/meeting/core/entity/room/create", post(create_room))
+        .route("/jaxrs/meeting/core/entity/room/{id}", get(get_room))
+        .route("/jaxrs/meeting/core/entity/room/save/{id}", post(update_room))
+        .route("/jaxrs/meeting/core/entity/room/delete/{id}", post(delete_room))
         .route("/jaxrs/meeting/core/entity/meeting/list", get(meeting_list))
         .route("/jaxrs/meeting/core/entity/meeting/list/by/{roomId}", get(meeting_list_by_room))
         .route("/jaxrs/meeting/core/entity/meeting/create", post(create_meeting))

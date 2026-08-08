@@ -81,13 +81,7 @@ pub async fn get_by_flag(
     {
         Ok(row) => row,
         Err(_) => {
-            return Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("flag".to_string(), Value::String(flag)),
-                    ("name".to_string(), Value::String("mock_process".to_string())),
-                    ("description".to_string(), Value::String("mock_description".to_string())),
-                ]),
-            )));
+            return Json(ActionResult::error("not found"));
         }
     };
 

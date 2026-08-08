@@ -1,28 +1,44 @@
-//! OA4Rust 集成测试运行器 (U8)
+//! OA4Rust 集成测试运行器 (U6)
 //!
-//! 这是集成测试的入口。完整流程应当：构建全量 Router（`src/main.rs` 的
-//! `create_app`）并用 HTTP 客户端发起请求、断言 `/health` 与受保护端点的行为。
+//! 入口测试：初始化一次性测试数据库，然后按场景顺序执行所有集成测试。
 //!
-//! 由于本仓库的集成测试依赖真实 PostgreSQL，当 `DATABASE_URL` 未设置时，所有需要
-//! 连库的用例通过环境变量守卫提前返回，保证 `cargo test` 在无库环境也能通过
-//! （满足 R33 "数据库不可用时集成测试跳过而非 panic" 的要求）。
-//!
-//! 运行真实集成测试：
+//! 运行方式：
 //! ```bash
-//! DATABASE_URL=postgres://o2server:password@localhost:5432/oa4rust \
-//!   cargo test --test integration_runner -- --ignored
+//! cargo test --test integration_runner -- --ignored
 //! ```
+//!
+//! 环境变量：
+//! - `DATABASE_URL` — 管理员连接 URL（默认 `postgres://o2server:password@localhost:5432/postgres`）
+//! - `SESSION_HMAC_SECRET` — 可选，会话 token HMAC 密钥（未设置时不签名）
 
-#[ignore = "requires DATABASE_URL and a running PostgreSQL"]
+mod integration_tests;
+
+use integration_tests::db::init_test_database;
+
+/// 集成测试主入口。
+///
+/// 使用 `#[ignore]` 标记，避免在无 PostgreSQL 环境的 `cargo test` 中运行。
+/// 通过 `--ignored` 显式启用。
+///
+/// 初始化流程：
+/// 1. 同步初始化一次性测试数据库（`oa4rust_test_<pid>`）
+/// 2. 执行所有迁移
+/// 3. 注入测试数据（admin 用户 + 会话）
+/// 4. 按顺序运行每个 cross-crate 场景
+#[ignore = "requires a running PostgreSQL server"]
 #[tokio::test]
-async fn app_boots_and_health_ok() {
-    if std::env::var("DATABASE_URL").is_err() {
-        eprintln!("DATABASE_URL 未设置，跳过集成冒烟测试");
-        return;
-    }
-    // 真实实现依赖 binary crate 的 create_app（位于 src/main.rs）。
-    // 待 lib crate 暴露 create_app 后，可在此构造 Router 并断言 /health 返回 200。
-    unimplemented!("enable once create_app is exposed via the lib crate and DATABASE_URL is set");
+async fn integration_scenarios() {
+    let _ctx = init_test_database();
+    let _pool = _ctx.pool();
+
+    // Run all scenario tests sequentially to avoid port conflicts
+    // (each scenario spins up its own HTTP server on a random port)
+    // Note: each scenario is its own #[tokio::test] — call them directly
+    // without .await (they manage their own runtime via the test macro).
+
+    integration_tests::scenarios::org_person_meeting::org_person_meeting_flow().await;
+    integration_tests::scenarios::bbs_correlation::bbs_correlation_flow().await;
+    integration_tests::scenarios::file_upload::file_upload_flow().await;
 }
 
 #[cfg(test)]

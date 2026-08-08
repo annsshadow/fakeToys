@@ -1,7 +1,76 @@
 #[cfg(test)]
 mod tests {
-    use crate::{Building, OpenMeetingRoom, Room};
+    use crate::{Building, OpenMeetingRoom, Room, meeting_router};
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
+    use tower::ServiceExt;
+
+    fn build_test_pool() -> Pool {
+        let mgr = Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        );
+        Pool::builder(mgr).build().unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_room_list_returns_internal_error_without_db() {
+        let pool = build_test_pool();
+        let app = meeting_router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/room/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_building_list_returns_internal_error_without_db() {
+        let pool = build_test_pool();
+        let app = meeting_router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/building/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_openmeeting_list_room_returns_internal_error_without_db() {
+        let pool = build_test_pool();
+        let app = meeting_router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/openmeeting/list/room")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
 
     #[test]
     fn test_room_list_response() {

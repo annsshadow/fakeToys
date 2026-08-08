@@ -1,7 +1,7 @@
 use axum::extract::{Extension, Path};
 use axum::Json;
 use deadpool_postgres::Pool;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared::error::AppError;
 use shared::response::ActionResult;
@@ -9,7 +9,7 @@ use shared::response::ActionResult;
 use crate::pagination::page_result;
 
 /// 创建人员请求体（契约路径 POST /jaxrs/person）
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct PersonCreateRequest {
     /// 唯一标识（如工号）
     pub unique_id: String,
@@ -24,7 +24,7 @@ pub struct PersonCreateRequest {
 }
 
 /// 更新人员请求体（契约路径 PUT /jaxrs/person/{flag}）
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct PersonUpdateRequest {
     /// 姓名
     pub name: Option<String>,
@@ -44,7 +44,20 @@ fn person_flag_clause(param_index: usize) -> String {
     )
 }
 
-/// 获取人员详情：GET /jaxrs/person/{flag}
+#[utoipa::path(
+    get,
+    path = "/jaxrs/person/{flag}",
+    params(
+        ("flag" = String, Path, description = "Person flag (id, unique_id, or name)")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn get(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -143,7 +156,21 @@ async fn query_page(
     Ok((total, data))
 }
 
-/// 获取人员列表（下一批）：GET /jaxrs/person/list/{flag}/next/{count}
+#[utoipa::path(
+    get,
+    path = "/jaxrs/person/list/{flag}/next/{count}",
+    params(
+        ("flag" = String, Path, description = "Pagination cursor flag"),
+        ("count" = i64, Path, description = "Number of items to return")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn list_next(
     pool: Extension<Pool>,
     Path((flag, count)): Path<(String, i64)>,
@@ -152,7 +179,21 @@ pub async fn list_next(
     Ok(page_result(total, data, true))
 }
 
-/// 获取人员列表（上一批）：GET /jaxrs/person/list/{flag}/prev/{count}
+#[utoipa::path(
+    get,
+    path = "/jaxrs/person/list/{flag}/prev/{count}",
+    params(
+        ("flag" = String, Path, description = "Pagination cursor flag"),
+        ("count" = i64, Path, description = "Number of items to return")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn list_prev(
     pool: Extension<Pool>,
     Path((flag, count)): Path<(String, i64)>,
@@ -161,7 +202,18 @@ pub async fn list_prev(
     Ok(page_result(total, data, false))
 }
 
-/// 创建人员：POST /jaxrs/person
+#[utoipa::path(
+    post,
+    path = "/jaxrs/person",
+    request_body = PersonCreateRequest,
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn create(
     pool: Extension<Pool>,
     Json(req): Json<PersonCreateRequest>,
@@ -214,7 +266,21 @@ pub async fn create(
     Ok(Json(ActionResult::success(result)))
 }
 
-/// 更新人员信息：PUT /jaxrs/person/{flag}
+#[utoipa::path(
+    put,
+    path = "/jaxrs/person/{flag}",
+    params(
+        ("flag" = String, Path, description = "Person flag (id, unique_id, or name)")
+    ),
+    request_body = PersonUpdateRequest,
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn update(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -263,7 +329,20 @@ pub async fn update(
     Ok(Json(ActionResult::success(result)))
 }
 
-/// 软删除人员：DELETE /jaxrs/person/{flag}
+#[utoipa::path(
+    delete,
+    path = "/jaxrs/person/{flag}",
+    params(
+        ("flag" = String, Path, description = "Person flag (id, unique_id, or name)")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn delete(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -284,5 +363,7 @@ pub async fn delete(
         return Ok(Json(ActionResult::error("person not found or already deleted")));
     }
 
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+    ))))
 }

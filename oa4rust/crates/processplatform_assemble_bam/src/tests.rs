@@ -1,6 +1,18 @@
 use super::*;
+use axum::body::Body;
+use axum::http::{Request, Method, StatusCode};
+use deadpool_postgres::{Manager, Pool};
+use deadpool_postgres::tokio_postgres::{Config, NoTls};
 use serde_json::json;
 use tower::util::ServiceExt;
+
+fn build_test_pool() -> Pool {
+    let mgr = Manager::new(
+        Config::new(),
+        NoTls,
+    );
+    Pool::builder(mgr).max_size(1).build().unwrap()
+}
 
 #[test]
 fn test_get_bam_config_action_result_format() {
@@ -64,10 +76,8 @@ fn test_get_bam_status_action_result_format() {
 
 #[tokio::test]
 async fn test_get_bam_config_route_exists() {
-    let app = processplatform_assemble_bam_router();
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
+    let pool = build_test_pool();
+    let app = crate::router(pool);
 
     let response = app
         .oneshot(
@@ -80,15 +90,13 @@ async fn test_get_bam_config_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
 async fn test_create_bam_route_exists() {
-    let app = processplatform_assemble_bam_router();
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
+    let pool = build_test_pool();
+    let app = crate::router(pool);
 
     let req = serde_json::to_string(&json!({
         "name": "My BAM",
@@ -107,15 +115,13 @@ async fn test_create_bam_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
 async fn test_list_bams_route_exists() {
-    let app = processplatform_assemble_bam_router();
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
+    let pool = build_test_pool();
+    let app = crate::router(pool);
 
     let response = app
         .oneshot(
@@ -128,15 +134,13 @@ async fn test_list_bams_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
 async fn test_delete_bam_route_exists() {
-    let app = processplatform_assemble_bam_router();
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
+    let pool = build_test_pool();
+    let app = crate::router(pool);
 
     let response = app
         .oneshot(
@@ -149,15 +153,13 @@ async fn test_delete_bam_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
 async fn test_get_bam_status_route_exists() {
-    let app = processplatform_assemble_bam_router();
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
+    let pool = build_test_pool();
+    let app = crate::router(pool);
 
     let response = app
         .oneshot(
@@ -170,5 +172,5 @@ async fn test_get_bam_status_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }

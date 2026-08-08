@@ -17,13 +17,10 @@ pub struct CreateDesignerRequest {
 }
 
 pub async fn get_designer(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -52,10 +49,10 @@ pub async fn get_designer(
 }
 
 pub async fn create_designer(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreateDesignerRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool { Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?, None => return Ok(Json(ActionResult::error("not implemented"))), };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -83,10 +80,10 @@ pub async fn create_designer(
 }
 
 pub async fn list_designers(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool { Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?, None => return Ok(Json(ActionResult::error("not implemented"))), };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -117,11 +114,11 @@ pub async fn list_designers(
 }
 
 pub async fn save_designer(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<CreateDesignerRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool { Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?, None => return Ok(Json(ActionResult::error("not implemented"))), };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = req.name.unwrap_or_default();
     let category = req.category.unwrap_or_default();
@@ -151,10 +148,10 @@ pub async fn save_designer(
 }
 
 pub async fn delete_designer(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool { Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?, None => return Ok(Json(ActionResult::error("not implemented"))), };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -201,12 +198,9 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 pub async fn designer_search(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -236,13 +230,10 @@ pub async fn designer_search(
 }
 
 pub async fn id_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_one("SELECT COUNT(*) as cnt FROM x_query_design WHERE deleted_at IS NULL", &[])
@@ -260,13 +251,10 @@ pub async fn id_count(
 }
 
 pub async fn importmodel_list_query_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -297,13 +285,10 @@ pub async fn importmodel_list_query_flag(
 }
 
 pub async fn importmodel_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -331,13 +316,10 @@ pub async fn importmodel_id(
 }
 
 pub async fn importmodel_id_permission(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -361,13 +343,10 @@ pub async fn importmodel_id_permission(
 }
 
 pub async fn input_compare(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
 
@@ -395,13 +374,10 @@ pub async fn input_compare(
 }
 
 pub async fn input_cover(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
     let content_str = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
@@ -427,13 +403,10 @@ pub async fn input_cover(
 }
 
 pub async fn input_create(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let content = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
@@ -456,13 +429,10 @@ pub async fn input_create(
 }
 
 pub async fn input_prepare_cover(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
     let row = client
@@ -488,22 +458,14 @@ pub async fn input_prepare_cover(
 }
 
 pub async fn input_prepare_create(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let content = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
     let creator = "system";
 
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(id)),
-                ("saved".to_string(), Value::Bool(true)),
-            ]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute(
@@ -522,13 +484,10 @@ pub async fn input_prepare_create(
 }
 
 pub async fn neural_generate_model_modelFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -551,13 +510,10 @@ pub async fn neural_generate_model_modelFlag(
 }
 
 pub async fn neural_learn_model_modelFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -580,12 +536,9 @@ pub async fn neural_learn_model_modelFlag(
 }
 
 pub async fn neural_list_model(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -616,13 +569,10 @@ pub async fn neural_list_model(
 }
 
 pub async fn neural_model(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default();
     let flag = body.get("flag").and_then(|v| v.as_str()).unwrap_or_default();
@@ -648,13 +598,10 @@ pub async fn neural_model(
 }
 
 pub async fn neural_model_modelFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -681,13 +628,10 @@ pub async fn neural_model_modelFlag(
 }
 
 pub async fn neural_model_modelFlag_reset_status(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -710,13 +654,10 @@ pub async fn neural_model_modelFlag_reset_status(
 }
 
 pub async fn neural_stop_generating_model_modelFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -739,13 +680,10 @@ pub async fn neural_stop_generating_model_modelFlag(
 }
 
 pub async fn neural_stop_learn_model_modelFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(model_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -768,12 +706,9 @@ pub async fn neural_stop_learn_model_modelFlag(
 }
 
 pub async fn output_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -804,13 +739,10 @@ pub async fn output_list(
 }
 
 pub async fn output_flag_select_file(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -835,13 +767,10 @@ pub async fn output_flag_select_file(
 }
 
 pub async fn output_queryFlag_select(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -872,14 +801,11 @@ pub async fn output_queryFlag_select(
 }
 
 pub async fn query_entity_entity_category_entityCategory_properties(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(entity): Path<String>,
     Path(entity_category): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -906,12 +832,9 @@ pub async fn query_entity_entity_category_entityCategory_properties(
 }
 
 pub async fn query_list_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -941,13 +864,10 @@ pub async fn query_list_all(
 }
 
 pub async fn query_list_querycategory_queryCategory(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(query_category): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -977,12 +897,9 @@ pub async fn query_list_querycategory_queryCategory(
 }
 
 pub async fn query_list_summary(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1010,13 +927,10 @@ pub async fn query_list_summary(
 }
 
 pub async fn query_list_summary_querycategory_queryCategory(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(query_category): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1044,12 +958,9 @@ pub async fn query_list_summary_querycategory_queryCategory(
 }
 
 pub async fn query_querycategory_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1075,13 +986,10 @@ pub async fn query_querycategory_list(
 }
 
 pub async fn query_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1108,13 +1016,10 @@ pub async fn query_flag(
 }
 
 pub async fn query_flag_icon(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1138,13 +1043,10 @@ pub async fn query_flag_icon(
 }
 
 pub async fn query_id_permission(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1168,13 +1070,10 @@ pub async fn query_id_permission(
 }
 
 pub async fn stat_list_query_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1205,14 +1104,11 @@ pub async fn stat_list_query_flag(
 }
 
 pub async fn stat_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1241,14 +1137,11 @@ pub async fn stat_list_id_next_count(
 }
 
 pub async fn stat_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1277,13 +1170,10 @@ pub async fn stat_list_id_prev_count(
 }
 
 pub async fn stat_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1311,13 +1201,10 @@ pub async fn stat_id(
 }
 
 pub async fn stat_id_permission(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1341,13 +1228,10 @@ pub async fn stat_id_permission(
 }
 
 pub async fn stat_id_simulate(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1371,14 +1255,11 @@ pub async fn stat_id_simulate(
 }
 
 pub async fn table_export_tableFlag_count_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(table_flag): Path<String>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1406,12 +1287,9 @@ pub async fn table_export_tableFlag_count_count(
 }
 
 pub async fn table_list_manage(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1441,13 +1319,10 @@ pub async fn table_list_manage(
 }
 
 pub async fn table_list_query_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1478,14 +1353,11 @@ pub async fn table_list_query_flag(
 }
 
 pub async fn table_list_tableFlag_row_select_where_where(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(table_flag): Path<String>,
     Path(_where): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1513,15 +1385,12 @@ pub async fn table_list_tableFlag_row_select_where_where(
 }
 
 pub async fn table_list_tableFlag_row_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(table_flag): Path<String>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1549,15 +1418,12 @@ pub async fn table_list_tableFlag_row_id_next_count(
 }
 
 pub async fn table_list_tableFlag_row_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(table_flag): Path<String>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1585,13 +1451,10 @@ pub async fn table_list_tableFlag_row_id_prev_count(
 }
 
 pub async fn table_query_query_build(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(query): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(&query, &[])
@@ -1616,12 +1479,9 @@ pub async fn table_query_query_build(
 }
 
 pub async fn table_reload_dynamic(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -1640,13 +1500,10 @@ pub async fn table_reload_dynamic(
 }
 
 pub async fn table_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1672,14 +1529,11 @@ pub async fn table_flag(
 }
 
 pub async fn table_flag_execute(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let sql = body.get("sql").and_then(|v| v.as_str()).unwrap_or_default();
 
@@ -1716,13 +1570,10 @@ pub async fn table_flag_execute(
 }
 
 pub async fn table_flag_status_build(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -1745,13 +1596,10 @@ pub async fn table_flag_status_build(
 }
 
 pub async fn table_flag_status_draft(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -1774,13 +1622,10 @@ pub async fn table_flag_status_draft(
 }
 
 pub async fn table_id_permission(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1804,13 +1649,10 @@ pub async fn table_id_permission(
 }
 
 pub async fn table_query_build_dispatch(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(query): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(&query, &[])
@@ -1826,13 +1668,10 @@ pub async fn table_query_build_dispatch(
 }
 
 pub async fn table_tableFlag_row(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(table_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1860,14 +1699,11 @@ pub async fn table_tableFlag_row(
 }
 
 pub async fn table_tableFlag_row_count_where_where(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(table_flag): Path<String>,
     Path(_where): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_one(
@@ -1888,13 +1724,10 @@ pub async fn table_tableFlag_row_count_where_where(
 }
 
 pub async fn table_tableFlag_row_delete_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(table_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -1914,14 +1747,11 @@ pub async fn table_tableFlag_row_delete_all(
 }
 
 pub async fn table_tableFlag_row_save(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(table_flag): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
@@ -1944,14 +1774,11 @@ pub async fn table_tableFlag_row_save(
 }
 
 pub async fn table_tableFlag_row_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(table_flag): Path<String>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1975,13 +1802,10 @@ pub async fn table_tableFlag_row_id(
 }
 
 pub async fn view_list_query_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(query_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2012,14 +1836,11 @@ pub async fn view_list_query_flag(
 }
 
 pub async fn view_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2049,14 +1870,11 @@ pub async fn view_list_id_next_count(
 }
 
 pub async fn view_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2086,13 +1904,10 @@ pub async fn view_list_id_prev_count(
 }
 
 pub async fn view_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -2120,13 +1935,10 @@ pub async fn view_id(
 }
 
 pub async fn view_id_bundle(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -2151,13 +1963,10 @@ pub async fn view_id_bundle(
 }
 
 pub async fn view_id_permission(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -2181,13 +1990,10 @@ pub async fn view_id_permission(
 }
 
 pub async fn view_id_simulate(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(

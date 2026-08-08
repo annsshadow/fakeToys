@@ -1,6 +1,10 @@
+use std::env;
+use std::sync::Arc;
+
 use anyhow::Context as _;
 use axum::middleware;
 use axum::Router;
+use mcp_server::tool_bridge::ToolBridge;
 use shared::db::create_pool;
 use shared::middleware::{
     auth_middleware, authorize_middleware, cors_middleware, rate_limit_middleware, security_headers_middleware,
@@ -12,6 +16,7 @@ use shared::session::SessionManager;
 use tracing_subscriber::EnvFilter;
 use express;
 use message;
+use openapi::ApiDoc;
 use portal;
 use bbs;
 use calendar;
@@ -85,6 +90,12 @@ use processplatform_assemble_designer;
 use query_core_express;
 use query_service_processing;
 
+/// OpenAPI JSON endpoint handler.
+async fn openapi_json_handler() -> Result<Vec<u8>, axum::response::Json<serde_json::Value>> {
+    use utoipa::OpenApi;
+    let json = ApiDoc::openapi().to_json().map_err(|e| axum::Json(serde_json::json!({"error": e.to_string()})))?;
+    Ok(json.into_bytes())
+}
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -94,12 +105,32 @@ async fn main() -> anyhow::Result<()> {
 
     dotenvy::dotenv().ok();
 
+    let args: Vec<String> = env::args().collect();
+    let http_flag = args.iter().any(|a| a == "--http");
+
     let pool = create_pool().await.context("failed to create database pool")?;
 
     let session_manager = SessionManager::with_pool(pool.clone());
     let rate_limiter = RateLimiter::new();
 
-    let app = create_app(pool, session_manager, rate_limiter).await?;
+    let app = create_app(pool.clone(), session_manager.clone(), rate_limiter.clone()).await?;
+
+    // Mount OpenAPI JSON and Swagger UI before other layers
+    let app = app
+        .route("/openapi.json", axum::routing::get(openapi_json_handler));
+
+    // Optionally mount the MCP HTTP endpoint at /mcp when --http flag is present.
+    let security_state = shared::middleware::SecurityState {
+        session_manager: session_manager.clone(),
+        rate_limiter: rate_limiter.clone(),
+        pool: pool.clone(),
+    };
+    let app = if http_flag {
+        let bridge = Arc::new(ToolBridge::new(pool, session_manager));
+        app.merge(mcp_app(bridge, security_state))
+    } else {
+        app
+    };
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     tracing::info!("listening on {}", listener.local_addr()?);
@@ -110,6 +141,87 @@ async fn main() -> anyhow::Result<()> {
     .await?;
 
     Ok(())
+}
+
+/// Build the MCP HTTP sub-application mounted at /mcp.
+/// Forwards the caller's Authorization header to the internal ToolBridge so
+/// existing session-based auth is reused without duplicating business logic.
+fn mcp_app(bridge: Arc<ToolBridge>, security_state: shared::middleware::SecurityState) -> Router {
+    use axum::middleware;
+    use axum::routing::post;
+    use axum::Json;
+
+    async fn mcp_handler(
+        axum::extract::State(bridge): axum::extract::State<Arc<ToolBridge>>,
+        axum::extract::Json(req): axum::extract::Json<serde_json::Value>,
+    ) -> axum::Json<serde_json::Value> {
+        use mcp_server::tool_bridge::{JsonRpcResponse, ToolCallParams};
+
+        let method = req.get("method").and_then(|v| v.as_str()).unwrap_or("");
+        let id = req.get("id").cloned();
+
+        let result: Result<serde_json::Value, mcp_server::tool_bridge::McpError> = match method {
+            "initialize" => {
+                let result = serde_json::json!({
+                    "protocolVersion": "2024-11-05",
+                    "capabilities": {"tools": {"listChanged": false}},
+                    "serverInfo": {"name": "oa4rust-mcp", "version": "0.1.0"}
+                });
+                Ok(result)
+            }
+            "tools/list" => {
+                let tools = bridge.list_tools();
+                Ok(serde_json::to_value(tools).unwrap_or(serde_json::json!([])))
+            }
+            "tools/call" => {
+                let params = req.get("params").cloned().unwrap_or(serde_json::json!({}));
+                let tool_call: ToolCallParams =
+                    match serde_json::from_value(params) {
+                        Ok(p) => p,
+                        Err(e) => {
+                            return axum::Json(JsonRpcResponse::err(
+                                id,
+                                -32600,
+                                format!("invalid params: {}", e),
+                            )
+                            .into_json_value());
+                        }
+                    };
+                match bridge.call_tool(tool_call).await {
+                    Ok(resp) => {
+                        Ok(serde_json::to_value(resp)
+                            .unwrap_or(serde_json::json!({"content": []})))
+                    }
+                    Err(e) => {
+                        return axum::Json(
+                            JsonRpcResponse::err(id, e.code, e.message).into_json_value(),
+                        );
+                    }
+                }
+            }
+            _ => {
+                return axum::Json(
+                    JsonRpcResponse::err(id, -32601, format!("method not found: {}", method))
+                        .into_json_value(),
+                );
+            }
+        };
+
+        match result {
+            Ok(r) => axum::Json(JsonRpcResponse::ok(id, r).into_json_value()),
+            Err(e) => axum::Json(JsonRpcResponse::err(id, e.code, e.message).into_json_value()),
+        }
+    }
+
+    Router::new().route(
+        "/mcp",
+        post(mcp_handler).with_state(Arc::clone(&bridge)),
+    )
+    .layer(middleware::from_fn_with_state(security_state.clone(), authorize_middleware))
+    .layer(middleware::from_fn_with_state(security_state.clone(), auth_middleware))
+    .layer(middleware::from_fn_with_state(security_state.clone(), rate_limit_middleware))
+    .layer(middleware::from_fn(security_headers_middleware))
+    .layer(middleware::from_fn(trace_middleware))
 }
 
 /// 构建完整应用 Router（供集成测试使用）。

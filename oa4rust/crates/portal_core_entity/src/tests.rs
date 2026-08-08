@@ -54,7 +54,7 @@ async fn test_widget_list_returns_success() {
 }
 
 #[tokio::test]
-async fn test_page_list_returns_success() {
+async fn test_page_list_returns_error_without_db() {
     let pool = build_test_pool();
     let app = portal_core_entity_router(pool);
 
@@ -70,7 +70,108 @@ async fn test_page_list_returns_success() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_page_get_returns_error_without_db() {
+    let pool = build_test_pool();
+    let app = portal_core_entity_router(pool);
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/portal/page/test-page-id")
+                .method(axum::http::Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_page_create_returns_error_without_db() {
+    let pool = build_test_pool();
+    let app = portal_core_entity_router(pool);
+
+    let req = serde_json::to_string(&serde_json::json!({
+        "portalId": "portal-1",
+        "name": "Test Page",
+        "content": "<div>content</div>",
+        "status": "active"
+    })).unwrap();
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/portal/page/create")
+                .method(axum::http::Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(req))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_page_update_returns_error_without_db() {
+    let pool = build_test_pool();
+    let app = portal_core_entity_router(pool);
+
+    let req = serde_json::to_string(&serde_json::json!({
+        "id": "page-1",
+        "name": "Updated Page",
+        "content": "<div>updated</div>",
+        "status": "active"
+    })).unwrap();
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/portal/page/update")
+                .method(axum::http::Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(req))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_page_remove_returns_error_without_db() {
+    let pool = build_test_pool();
+    let app = portal_core_entity_router(pool);
+
+    let req = serde_json::to_string(&serde_json::json!({
+        "id": "page-1"
+    })).unwrap();
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/portal/page/remove")
+                .method(axum::http::Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(req))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]

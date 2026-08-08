@@ -28,36 +28,86 @@ pub struct SavePageRequest {
 }
 
 pub async fn create_design(
+    pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreatePortalRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("created".to_string(), Value::Bool(true)),
-            ("name".to_string(), Value::String(req.name.unwrap_or_default())),
-            ("description".to_string(), Value::String(req.description.unwrap_or_default())),
-        ]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = req.name.unwrap_or_default();
+    let description = req.description.unwrap_or_default();
+    let creator = "system";
+
+    client
+        .execute(
+            "INSERT INTO x_portal_design (id, name, description, creator, create_time, update_time) VALUES ($1, $2, $3, $4, NOW(), NOW())",
+            &[&id, &name, &description, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("description".to_string(), Value::String(description)),
+    ]));
+    Ok(Json(ActionResult::success(result)))
 }
 
 pub async fn get_design(
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("name".to_string(), Value::String("Portal Design".to_string())),
-            ("components".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, description, content FROM x_portal_design WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            let content_value = content
+                .and_then(|s| serde_json::from_str(&s).ok())
+                .unwrap_or(Value::Null);
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("description".to_string(), Value::String(row.get("description"))),
+                ("components".to_string(), content_value),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("design not found"))),
+    }
 }
 
-pub async fn list_designs() -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("design-1".to_string())),
-            ("name".to_string(), Value::String("Design 1".to_string())),
-        ])),
-    ];
+pub async fn list_designs(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, description, create_time, update_time FROM x_portal_design WHERE deleted_at IS NULL ORDER BY update_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("description".to_string(), Value::String(row.get("description"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
@@ -66,26 +116,43 @@ pub async fn list_designs() -> Result<Json<ActionResult<Value>>, AppError> {
 }
 
 pub async fn save_design(
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let content = body.get("content").cloned().unwrap_or(Value::Null);
+    let content_str = match &content {
+        Value::String(s) => s.clone(),
+        _ => serde_json::to_string(&content).map_err(|_| AppError::Internal)?,
+    };
+
+    let result = client
+        .execute(
+            "UPDATE x_portal_design SET content = $1, update_time = NOW() WHERE id = $2",
+            &[&content_str, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("design not found")));
+    }
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("saved".to_string(), Value::Bool(true)),
-            ("updated_at".to_string(), Value::String("2024-01-01T00:00:00Z".to_string())),
+            ("content".to_string(), content),
         ]),
     ))))
 }
 
 pub async fn list_pages_by_category(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -121,13 +188,10 @@ pub async fn list_pages_by_category(
 }
 
 pub async fn get_page(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -159,13 +223,10 @@ pub async fn get_page(
 }
 
 pub async fn create_page(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreatePageRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = req.name.unwrap_or_default();
@@ -193,14 +254,11 @@ pub async fn create_page(
 }
 
 pub async fn save_page(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<SavePageRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let content = req.content.unwrap_or_else(|| Value::Object(serde_json::Map::new()));
     let content_str = serde_json::to_string(&content).map_err(|_| AppError::Internal)?;
@@ -227,13 +285,10 @@ pub async fn save_page(
 }
 
 pub async fn delete_page(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -255,6 +310,51 @@ pub async fn delete_page(
     ))))
 }
 
+pub async fn design_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    list_designs(pool).await
+}
+
+pub async fn design_get(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    get_design(pool, Path(id)).await
+}
+
+pub async fn design_save(
+    pool: Extension<Pool>,
+    axum::extract::Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = body.get("id").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("id is required".to_string()))?;
+    let content = body.get("content").cloned().unwrap_or(Value::Null);
+    let content_str = match &content {
+        Value::String(s) => s.clone(),
+        _ => serde_json::to_string(&content).map_err(|_| AppError::Internal)?,
+    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "UPDATE x_portal_design SET content = $1, update_time = NOW() WHERE id = $2 AND deleted_at IS NULL",
+            &[&content_str, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("design not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id.to_string())),
+            ("saved".to_string(), Value::Bool(true)),
+            ("content".to_string(), content),
+        ]),
+    ))))
+}
+
 pub fn portal_assemble_designer_router() -> Router {
     Router::new()
         .route("/jaxrs/portal/assemble/designer/page/list/{category}", get(list_pages_by_category))
@@ -266,6 +366,9 @@ pub fn portal_assemble_designer_router() -> Router {
         .route("/jaxrs/portal/assemble/designer/get/{id}", get(get_design))
         .route("/jaxrs/portal/assemble/designer/list", get(list_designs))
         .route("/jaxrs/portal/assemble/designer/save/{id}", post(save_design))
+        .route("/jaxrs/portal/design/list", get(design_list))
+        .route("/jaxrs/portal/design/{id}", get(design_get))
+        .route("/jaxrs/portal/design/save", post(design_save))
 }
 
 #[cfg(test)]
@@ -278,12 +381,9 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 pub async fn designer_search(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -313,14 +413,11 @@ pub async fn designer_search(
 }
 
 pub async fn dict_list_paging_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(_page): Path<i64>,
     Path(_size): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -349,13 +446,10 @@ pub async fn dict_list_paging_page_size_size(
 }
 
 pub async fn dict_list_portal_portalId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(portal_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -384,13 +478,10 @@ pub async fn dict_list_portal_portalId(
 }
 
 pub async fn dict_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -417,13 +508,10 @@ pub async fn dict_id(
 }
 
 pub async fn file_list_application_applicationFlag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(application_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -454,14 +542,11 @@ pub async fn file_list_application_applicationFlag(
 }
 
 pub async fn file_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -492,14 +577,11 @@ pub async fn file_list_id_next_count(
 }
 
 pub async fn file_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -530,13 +612,10 @@ pub async fn file_list_id_prev_count(
 }
 
 pub async fn file_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -563,13 +642,10 @@ pub async fn file_flag(
 }
 
 pub async fn file_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -596,13 +672,10 @@ pub async fn file_id(
 }
 
 pub async fn file_id_download(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -628,14 +701,11 @@ pub async fn file_id_download(
 }
 
 pub async fn file_id_upload(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let content = body.get("content").cloned().unwrap_or(Value::Null);
     let content_str = match content {
@@ -664,13 +734,10 @@ pub async fn file_id_upload(
 }
 
 pub async fn id_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_one("SELECT COUNT(*) as cnt FROM x_portal", &[])
@@ -688,13 +755,10 @@ pub async fn id_count(
 }
 
 pub async fn input_compare(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
     let content_str = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
@@ -723,13 +787,10 @@ pub async fn input_compare(
 }
 
 pub async fn input_cover(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
     let content_str = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
@@ -756,13 +817,10 @@ pub async fn input_cover(
 }
 
 pub async fn input_create(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let content = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
@@ -785,13 +843,10 @@ pub async fn input_create(
 }
 
 pub async fn input_prepare_cover(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let input_id = body.get("id").and_then(|v| v.as_str()).unwrap_or_default();
     let row = client
@@ -817,22 +872,14 @@ pub async fn input_prepare_cover(
 }
 
 pub async fn input_prepare_create(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let content = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
     let creator = "system";
 
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(id)),
-                ("saved".to_string(), Value::Bool(true)),
-            ]),
-        )))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute(
@@ -851,12 +898,9 @@ pub async fn input_prepare_create(
 }
 
 pub async fn output_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -887,13 +931,10 @@ pub async fn output_list(
 }
 
 pub async fn output_flag_select_file(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -918,13 +959,10 @@ pub async fn output_flag_select_file(
 }
 
 pub async fn output_portalFlag_select(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(portal_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -955,13 +993,10 @@ pub async fn output_portalFlag_select(
 }
 
 pub async fn page_list_portal_portalId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(portal_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -992,13 +1027,10 @@ pub async fn page_list_portal_portalId(
 }
 
 pub async fn page_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1030,13 +1062,10 @@ pub async fn page_id(
 }
 
 pub async fn pageversion_list_page_pageId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(page_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1066,13 +1095,10 @@ pub async fn pageversion_list_page_pageId(
 }
 
 pub async fn pageversion_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1099,12 +1125,9 @@ pub async fn pageversion_id(
 }
 
 pub async fn portal_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1135,13 +1158,10 @@ pub async fn portal_list(
 }
 
 pub async fn portal_list_portalcategory_portalCategory(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(portal_category): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1172,12 +1192,9 @@ pub async fn portal_list_portalcategory_portalCategory(
 }
 
 pub async fn portal_list_summary(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1206,13 +1223,10 @@ pub async fn portal_list_summary(
 }
 
 pub async fn portal_list_summary_portalcategory_portalCategory(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(portal_category): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1241,12 +1255,9 @@ pub async fn portal_list_summary_portalcategory_portalCategory(
 }
 
 pub async fn portal_list_summary_v2(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1278,13 +1289,10 @@ pub async fn portal_list_summary_v2(
 }
 
 pub async fn portal_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1313,13 +1321,10 @@ pub async fn portal_id(
 }
 
 pub async fn portal_id_icon(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1342,13 +1347,10 @@ pub async fn portal_id_icon(
 }
 
 pub async fn portal_id_permission(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1371,12 +1373,9 @@ pub async fn portal_id_permission(
 }
 
 pub async fn portalcategory_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1402,12 +1401,9 @@ pub async fn portalcategory_list(
 }
 
 pub async fn script_list_manager(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1438,14 +1434,11 @@ pub async fn script_list_manager(
 }
 
 pub async fn script_list_paging_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(page): Path<i64>,
     Path(size): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1476,13 +1469,10 @@ pub async fn script_list_paging_page_size_size(
 }
 
 pub async fn script_list_portal_portalId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(portal_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1513,13 +1503,10 @@ pub async fn script_list_portal_portalId(
 }
 
 pub async fn script_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1547,13 +1534,10 @@ pub async fn script_id(
 }
 
 pub async fn scriptversion_list_script_scriptId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(script_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1583,13 +1567,10 @@ pub async fn scriptversion_list_script_scriptId(
 }
 
 pub async fn scriptversion_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1616,12 +1597,9 @@ pub async fn scriptversion_id(
 }
 
 pub async fn templatepage_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1652,12 +1630,9 @@ pub async fn templatepage_list(
 }
 
 pub async fn templatepage_list_category(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1683,13 +1658,10 @@ pub async fn templatepage_list_category(
 }
 
 pub async fn templatepage_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1720,13 +1692,10 @@ pub async fn templatepage_id(
 }
 
 pub async fn widget_list_portal_portalId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(portal_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1758,13 +1727,10 @@ pub async fn widget_list_portal_portalId(
 }
 
 pub async fn widget_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1791,3 +1757,5 @@ pub async fn widget_id(
         None => Ok(Json(ActionResult::error("widget not found"))),
     }
 }
+
+

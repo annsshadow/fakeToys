@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Item, View};
+    use crate::{QueryImport, QueryItem, QueryView};
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use deadpool_postgres::{Manager, Pool};
@@ -37,26 +37,6 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_item_access_list_returns_success() {
-        let pool = build_test_pool();
-        let app = crate::query_core_entity_router(pool);
-
-        let response = app
-            .clone()
-            .oneshot(
-                Request::builder()
-                    .uri("/jaxrs/query/item/access/list/test-item-id")
-                    .method(axum::http::Method::GET)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR); // axum 0.8: {param} 路由可匹配(0.7 下 :param/{param} 混用会 404), handler 缺 pool 返回 500
-    }
-
-    #[tokio::test]
     async fn test_view_list_returns_success() {
         let pool = build_test_pool();
         let app = crate::query_core_entity_router(pool);
@@ -77,7 +57,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_import_model_list_returns_success() {
+    async fn test_view_get_returns_success() {
         let pool = build_test_pool();
         let app = crate::query_core_entity_router(pool);
 
@@ -85,7 +65,7 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/import/model/list")
+                    .uri("/jaxrs/query/view/test-view-id")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -97,7 +77,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_import_record_list_returns_success() {
+    async fn test_view_create_returns_success() {
         let pool = build_test_pool();
         let app = crate::query_core_entity_router(pool);
 
@@ -105,7 +85,28 @@ mod tests {
             .clone()
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/query/import/record/list")
+                    .uri("/jaxrs/query/view/create")
+                    .method(axum::http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"name":"test"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_import_list_returns_success() {
+        let pool = build_test_pool();
+        let app = crate::query_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/query/import/list")
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -126,30 +127,49 @@ mod tests {
     }
 
     #[test]
-    fn test_item_serialization() {
-        let item = Item {
-            id: "item-001".to_string(),
-            name: "测试查询".to_string(),
-            application: "app-001".to_string(),
-            item_access: None,
-        };
-        let json = serde_json::to_value(&item).unwrap();
-        assert_eq!(json["id"], "item-001");
-        assert_eq!(json["name"], "测试查询");
-    }
-
-    #[test]
-    fn test_view_serialization() {
-        let view = View {
+    fn test_query_view_serialization() {
+        let view = QueryView {
             id: "view-001".to_string(),
             name: "默认视图".to_string(),
-            item_id: "item-001".to_string(),
-            view_type: "list".to_string(),
+            description: Some("测试描述".to_string()),
+            query_sql: Some("SELECT * FROM t".to_string()),
+            creator_id: "user-001".to_string(),
+            status: "active".to_string(),
+            create_time: "2024-01-01T00:00:00Z".to_string(),
         };
         let json = serde_json::to_value(&view).unwrap();
         assert_eq!(json["id"], "view-001");
-        assert_eq!(json["viewType"], "list");
+        assert_eq!(json["creatorId"], "user-001");
+        assert_eq!(json["querySql"], "SELECT * FROM t");
+    }
+
+    #[test]
+    fn test_query_item_serialization() {
+        let item = QueryItem {
+            id: "item-001".to_string(),
+            view_id: "view-001".to_string(),
+            name: "名称字段".to_string(),
+            field_name: "name".to_string(),
+            data_type: "string".to_string(),
+            create_time: "2024-01-01T00:00:00Z".to_string(),
+        };
+        let json = serde_json::to_value(&item).unwrap();
+        assert_eq!(json["viewId"], "view-001");
+        assert_eq!(json["fieldName"], "name");
+    }
+
+    #[test]
+    fn test_query_import_serialization() {
+        let imp = QueryImport {
+            id: "import-001".to_string(),
+            view_id: "view-001".to_string(),
+            file_name: "data.csv".to_string(),
+            status: "completed".to_string(),
+            import_time: Some("2024-01-01T01:00:00Z".to_string()),
+            create_time: "2024-01-01T00:00:00Z".to_string(),
+        };
+        let json = serde_json::to_value(&imp).unwrap();
+        assert_eq!(json["fileName"], "data.csv");
+        assert_eq!(json["importTime"], "2024-01-01T01:00:00Z");
     }
 }
-
-

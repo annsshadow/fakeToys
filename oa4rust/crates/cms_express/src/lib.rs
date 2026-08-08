@@ -1,4 +1,8 @@
-use axum::{Json, Router};
+use axum::{
+    extract::Extension,
+    Json, Router,
+};
+use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 use uuid::Uuid;
@@ -21,45 +25,67 @@ pub async fn uuid_random() -> Result<Json<ActionResult<Value>>, AppError> {
 }
 
 #[axum::debug_handler]
-pub async fn template_form_list() -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("template-001".to_string())),
-            ("name".to_string(), Value::String("默认表单模板".to_string())),
-            ("category".to_string(), Value::String("通用".to_string())),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("template-002".to_string())),
-            ("name".to_string(), Value::String("审批表单模板".to_string())),
-            ("category".to_string(), Value::String("流程".to_string())),
-        ])),
-    ];
+pub async fn template_form_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT xid, xname, xcategory FROM X.CMS_TEMPLATEFORM ORDER BY xname LIMIT 50",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("name".to_string(), Value::String(row.get("xname"))),
+                ("category".to_string(), Value::String(row.get("xcategory"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
-pub async fn view_list_all() -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("view-001".to_string())),
-            ("name".to_string(), Value::String("默认视图".to_string())),
-            ("appId".to_string(), Value::String("app-001".to_string())),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("view-002".to_string())),
-            ("name".to_string(), Value::String("审批视图".to_string())),
-            ("appId".to_string(), Value::String("app-002".to_string())),
-        ])),
-    ];
+pub async fn view_list_all(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT xid, xname, xappId FROM X.CMS_VIEW ORDER BY xname LIMIT 50",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-        ("data".to_string(), Value::Array(data)),
-    ])))))
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("name".to_string(), Value::String(row.get("xname"))),
+                ("appId".to_string(), Value::String(row.get("xappId"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {

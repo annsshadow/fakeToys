@@ -1,14 +1,29 @@
 use axum::extract::{Extension, Path, Query};
 use axum::Json;
 use deadpool_postgres::Pool;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
-#[derive(serde::Deserialize)]
+#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct SubjectSearchQuery {
     pub keyword: Option<String>,
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/bbs/subject/top/{sectionId}",
+    params(
+        ("sectionId" = String, Path, description = "Section ID")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "bbs"
+)]
 pub async fn top(
     pool: Extension<Pool>,
     Path(section_id): Path<String>,
@@ -61,6 +76,20 @@ pub async fn top(
     ))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/bbs/subject/list/{sectionId}",
+    params(
+        ("sectionId" = String, Path, description = "Section ID")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "bbs"
+)]
 pub async fn list(
     pool: Extension<Pool>,
     Path(section_id): Path<String>,
@@ -111,6 +140,20 @@ pub async fn list(
     ))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/bbs/subject/view/{id}",
+    params(
+        ("id" = String, Path, description = "Subject ID")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "bbs"
+)]
 pub async fn view(
     pool: Extension<Pool>,
     Path(id): Path<String>,
@@ -154,6 +197,18 @@ pub async fn view(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/jaxrs/bbs/subject/create",
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "bbs"
+)]
 pub async fn create(
     pool: Extension<Pool>,
     Json(payload): Json<Value>,
@@ -180,6 +235,20 @@ pub async fn create(
     ])))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/bbs/subject/search",
+    params(
+        ("keyword" = Option<String>, Query, description = "Search keyword")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "bbs"
+)]
 pub async fn search(
     pool: Extension<Pool>,
     Query(params): Query<SubjectSearchQuery>,

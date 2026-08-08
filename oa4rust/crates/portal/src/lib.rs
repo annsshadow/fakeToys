@@ -8,23 +8,86 @@ use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
 
-pub async fn get_portal(
+#[cfg(test)]
+mod tests;
+
+#[utoipa::path(
+    get,
+    path = "/jaxrs/portal/{id}",
+    params(
+        ("id" = String, Path, description = "Portal ID")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "portal"
+)]
+pub async fn portal_get(
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String("Portal".to_string())),
-        ("description".to_string(), Value::String("Portal description".to_string())),
-    ])))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, description, status, create_time FROM x_portal WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("portal not found"))),
+    }
 }
 
-pub async fn list_portal() -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("portal-1".to_string())),
-            ("name".to_string(), Value::String("Portal 1".to_string())),
-        ]))
-    ];
+#[utoipa::path(
+    get,
+    path = "/jaxrs/portal/list",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "portal"
+)]
+pub async fn portal_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, description, status, create_time FROM x_portal WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
@@ -32,6 +95,17 @@ pub async fn list_portal() -> Result<Json<ActionResult<Value>>, AppError> {
     ])))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/portalcategory/list",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "portal"
+)]
 pub async fn list_portal_category() -> Result<Json<ActionResult<Value>>, AppError> {
     let data = vec![
         Value::Object(serde_json::Map::from_iter([
@@ -47,6 +121,17 @@ pub async fn list_portal_category() -> Result<Json<ActionResult<Value>>, AppErro
     ])))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/portal/page/list",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "portal"
+)]
 pub async fn page_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -80,6 +165,20 @@ pub async fn page_list(
     ])))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/portal/page/{id}",
+    params(
+        ("id" = String, Path, description = "Page ID")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "portal"
+)]
 pub async fn get_page(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -110,6 +209,18 @@ pub async fn get_page(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/jaxrs/portal/page/create",
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "portal"
+)]
 pub async fn create_page(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -136,6 +247,21 @@ pub async fn create_page(
     ])))))
 }
 
+#[utoipa::path(
+    post,
+    path = "/jaxrs/portal/page/save/{id}",
+    params(
+        ("id" = String, Path, description = "Page ID")
+    ),
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "portal"
+)]
 pub async fn save_page(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -164,6 +290,20 @@ pub async fn save_page(
     ))))
 }
 
+#[utoipa::path(
+    post,
+    path = "/jaxrs/portal/page/delete/{id}",
+    params(
+        ("id" = String, Path, description = "Page ID")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "portal"
+)]
 pub async fn delete_page(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -189,6 +329,17 @@ pub async fn delete_page(
     ))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/portal/widget/list",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "portal"
+)]
 pub async fn widget_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -222,6 +373,17 @@ pub async fn widget_list(
     ))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/portal/script/list",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "portal"
+)]
 pub async fn script_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -254,6 +416,17 @@ pub async fn script_list(
     ))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/portal/dict/list",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "portal"
+)]
 pub async fn dict_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -288,18 +461,6 @@ pub async fn dict_list(
     ))))
 }
 
-pub fn portal_router() -> Router {
-    Router::new()
-        .route("/jaxrs/portal/{id}", get(get_portal))
-        .route("/jaxrs/portal/list", get(list_portal))
-        .route("/jaxrs/portalcategory/list", get(list_portal_category))
-        .route("/jaxrs/portal/page/{id}", get(get_page))
-        .route("/jaxrs/portal/page/create", post(create_page))
-        .route("/jaxrs/portal/page/save/{id}", post(save_page))
-        .route("/jaxrs/portal/page/delete/{id}", post(delete_page))
-        .route("/jaxrs/portal/dict/list", get(dict_list))
-}
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    portal_router().layer(axum::extract::Extension(pool))
+    routes::router(pool)
 }

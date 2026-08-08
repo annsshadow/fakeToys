@@ -1,4 +1,4 @@
-﻿use axum::{
+use axum::{
     Json, Router,
     extract::Extension,
     routing::get, routing::post,
@@ -19,14 +19,10 @@ pub struct CreateProcessRequest {
 }
 
 pub async fn get_process(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-    let row = client
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;    let row = client
         .query_one(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&id],
@@ -71,14 +67,10 @@ pub async fn get_process(
 }
 
 pub async fn create_process(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): Json<CreateProcessRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-    let id = Uuid::new_v4().to_string();
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;    let id = Uuid::new_v4().to_string();
     let title = req.name.unwrap_or_default();
     let application = req.category.clone().unwrap_or_default();
     let process = req.category.unwrap_or_else(|| "default".to_string());
@@ -98,15 +90,29 @@ pub async fn create_process(
 }
 
 pub async fn list_processes(
+    pool: Extension<Pool>,
     axum::extract::Path(category): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("proc-1".to_string())),
-            ("name".to_string(), Value::String("Process 1".to_string())),
-            ("category".to_string(), Value::String(category)),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, title, process, application, work_status, creator, create_time FROM x_work WHERE application = $1 ORDER BY create_time DESC",
+            &[&category],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("title"))),
+                ("category".to_string(), Value::String(row.get("application"))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
@@ -115,14 +121,10 @@ pub async fn list_processes(
 }
 
 pub async fn execute_process(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-    client
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;    client
         .execute("UPDATE x_work SET work_status = $1 WHERE id = $2", &[&"processing", &id])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -147,14 +149,10 @@ pub async fn execute_process(
 }
 
 pub async fn get_process_instance(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(execution_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-    let row = client
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;    let row = client
         .query_one(
             "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
             &[&execution_id],
@@ -199,14 +197,10 @@ pub async fn get_process_instance(
 }
 
 pub async fn cancel_process_instance(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(execution_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-    client
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;    client
         .execute("UPDATE x_work SET work_status = $1, end_time = NOW() WHERE id = $2", &[&"cancelled", &execution_id])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -219,26 +213,12 @@ pub async fn cancel_process_instance(
     ))))
 }
 
-pub fn processplatform_service_processing_router() -> Router {
-    Router::new()
-        .route("/jaxrs/processplatform/service/processing/get/{id}", get(get_process))
-        .route("/jaxrs/processplatform/service/processing/create", post(create_process))
-        .route("/jaxrs/processplatform/service/processing/list/{category}", get(list_processes))
-        .route("/jaxrs/processplatform/service/processing/execute/{id}", post(execute_process))
-        .route("/jaxrs/processplatform/service/processing/instance/{executionId}", get(get_process_instance))
-        .route("/jaxrs/processplatform/service/processing/cancel/{executionId}", post(cancel_process_instance))
-}
-
-#[cfg(test)]
-mod tests;
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    processplatform_service_processing_router().layer(axum::extract::Extension(pool))
+    routes::router(pool)
 }
 
 
 
-/// Stub handler for /jaxrs/processplatform/service/processing/applicationdict/{id}
 pub async fn applicationdict_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -247,7 +227,6 @@ pub async fn applicationdict_id() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/applicationdict/{id}/{path0}/data
 pub async fn applicationdict_id_path0_data() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -256,7 +235,6 @@ pub async fn applicationdict_id_path0_data() -> Result<Json<ActionResult<Value>>
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/applicationdict/{id}/{path0}/{path1}/data
 pub async fn applicationdict_id_path0_path1_data() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -265,7 +243,6 @@ pub async fn applicationdict_id_path0_path1_data() -> Result<Json<ActionResult<V
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/applicationdict/{id}/{path0}/{path1}/{path2}/data
 pub async fn applicationdict_id_path0_path1_path2_data() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -274,7 +251,6 @@ pub async fn applicationdict_id_path0_path1_path2_data() -> Result<Json<ActionRe
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/applicationdict/{id}/{path0}/{path1}/{path2}/{path3}/data
 pub async fn applicationdict_id_path0_path1_path2_path3_data() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -283,7 +259,6 @@ pub async fn applicationdict_id_path0_path1_path2_path3_data() -> Result<Json<Ac
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/applicationdict/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/data
 pub async fn applicationdict_id_path0_path1_path2_path3_path4_data() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -292,7 +267,6 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_data() -> Result<J
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/applicationdict/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/data
 pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_data() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -301,7 +275,6 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_data() -> Re
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/applicationdict/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/data
 pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_path6_data() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -310,7 +283,6 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_path6_data()
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/applicationdict/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/data
 pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_path6_path7_data() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -319,7 +291,6 @@ pub async fn applicationdict_id_path0_path1_path2_path3_path4_path5_path6_path7_
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/attachment/copy/work/{workId}
 pub async fn attachment_copy_work_workId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -328,7 +299,6 @@ pub async fn attachment_copy_work_workId() -> Result<Json<ActionResult<Value>>, 
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/attachment/copy/workcompleted/{workCompletedId}
 pub async fn attachment_copy_workcompleted_workCompletedId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -337,7 +307,6 @@ pub async fn attachment_copy_workcompleted_workCompletedId() -> Result<Json<Acti
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/attachment/edit/{id}/text
 pub async fn attachment_edit_id_text() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -346,7 +315,6 @@ pub async fn attachment_edit_id_text() -> Result<Json<ActionResult<Value>>, AppE
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/attachment/{id}
 pub async fn attachment_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -355,7 +323,6 @@ pub async fn attachment_id() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/attachment/{id}/work/{workId}
 pub async fn attachment_id_work_workId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -364,7 +331,6 @@ pub async fn attachment_id_work_workId() -> Result<Json<ActionResult<Value>>, Ap
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/attachment/{id}/workcompleted/{workCompletedId}
 pub async fn attachment_id_workcompleted_workCompletedId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -373,7 +339,6 @@ pub async fn attachment_id_workcompleted_workCompletedId() -> Result<Json<Action
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/data/job/{job}
 pub async fn data_job_job() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -382,7 +347,6 @@ pub async fn data_job_job() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/data/job/{job}/{path}
 pub async fn data_job_job_path() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -391,7 +355,6 @@ pub async fn data_job_job_path() -> Result<Json<ActionResult<Value>>, AppError> 
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/data/work/{id}
 pub async fn data_work_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -400,7 +363,6 @@ pub async fn data_work_id() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/data/work/{id}/delete
 pub async fn data_work_id_delete() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -409,7 +371,6 @@ pub async fn data_work_id_delete() -> Result<Json<ActionResult<Value>>, AppError
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/data/work/{id}/{path}
 pub async fn data_work_id_path() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -418,7 +379,6 @@ pub async fn data_work_id_path() -> Result<Json<ActionResult<Value>>, AppError> 
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/data/work/{id}/{path}/delete
 pub async fn data_work_id_path_delete() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -427,7 +387,6 @@ pub async fn data_work_id_path_delete() -> Result<Json<ActionResult<Value>>, App
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/data/workcompleted/{id}
 pub async fn data_workcompleted_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -436,7 +395,6 @@ pub async fn data_workcompleted_id() -> Result<Json<ActionResult<Value>>, AppErr
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/data/workcompleted/{id}/{path}
 pub async fn data_workcompleted_id_path() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -445,7 +403,6 @@ pub async fn data_workcompleted_id_path() -> Result<Json<ActionResult<Value>>, A
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/documentversion/work/{work}
 pub async fn documentversion_work_work() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -454,7 +411,6 @@ pub async fn documentversion_work_work() -> Result<Json<ActionResult<Value>>, Ap
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/event/add/update/table
 pub async fn event_add_update_table() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -463,7 +419,6 @@ pub async fn event_add_update_table() -> Result<Json<ActionResult<Value>>, AppEr
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/form/suitable/activity/{activityId}
 pub async fn form_suitable_activity_activityId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -472,7 +427,6 @@ pub async fn form_suitable_activity_activityId() -> Result<Json<ActionResult<Val
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/job/v2/{job}/person/{person}/view
 pub async fn job_v2_job_person_person_view() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -481,7 +435,6 @@ pub async fn job_v2_job_person_person_view() -> Result<Json<ActionResult<Value>>
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/job/v2/{job}/projection
 pub async fn job_v2_job_projection() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -490,7 +443,6 @@ pub async fn job_v2_job_projection() -> Result<Json<ActionResult<Value>>, AppErr
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/job/{job}
 pub async fn job_job() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -499,7 +451,6 @@ pub async fn job_job() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/readcompleted/{id}
 pub async fn readcompleted_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -508,7 +459,6 @@ pub async fn readcompleted_id() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/record/job/{job}
 pub async fn record_job_job() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -517,7 +467,6 @@ pub async fn record_job_job() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/record/task/processing
 pub async fn record_task_processing() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -526,7 +475,6 @@ pub async fn record_task_processing() -> Result<Json<ActionResult<Value>>, AppEr
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/record/work/processing
 pub async fn record_work_processing() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -535,7 +483,6 @@ pub async fn record_work_processing() -> Result<Json<ActionResult<Value>>, AppEr
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/record/work/terminate
 pub async fn record_work_terminate() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -544,7 +491,6 @@ pub async fn record_work_terminate() -> Result<Json<ActionResult<Value>>, AppErr
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/record/{id}
 pub async fn record_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -553,7 +499,6 @@ pub async fn record_id() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/review/create/work
 pub async fn review_create_work() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -562,7 +507,6 @@ pub async fn review_create_work() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/review/create/workcompleted
 pub async fn review_create_workcompleted() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -571,7 +515,6 @@ pub async fn review_create_workcompleted() -> Result<Json<ActionResult<Value>>, 
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/review/init/review
 pub async fn review_init_review() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -580,7 +523,6 @@ pub async fn review_init_review() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/review/{id}
 pub async fn review_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -589,7 +531,6 @@ pub async fn review_id() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/service/work/{id}/touch
 pub async fn service_work_id_touch() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -598,7 +539,6 @@ pub async fn service_work_id_touch() -> Result<Json<ActionResult<Value>>, AppErr
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/snap/upload
 pub async fn snap_upload() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -607,7 +547,6 @@ pub async fn snap_upload() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/snap/work/{workId}/type/abandoned
 pub async fn snap_work_workId_type_abandoned() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -616,7 +555,6 @@ pub async fn snap_work_workId_type_abandoned() -> Result<Json<ActionResult<Value
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/snap/work/{workId}/type/snap
 pub async fn snap_work_workId_type_snap() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -625,7 +563,6 @@ pub async fn snap_work_workId_type_snap() -> Result<Json<ActionResult<Value>>, A
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/snap/work/{workId}/type/suspend
 pub async fn snap_work_workId_type_suspend() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -634,7 +571,6 @@ pub async fn snap_work_workId_type_suspend() -> Result<Json<ActionResult<Value>>
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/snap/workcompleted/{workCompletedId}/type/abandonedworkcompleted
 pub async fn snap_workcompleted_workCompletedId_type_abandonedworkcompleted() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -643,7 +579,6 @@ pub async fn snap_workcompleted_workCompletedId_type_abandonedworkcompleted() ->
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/snap/workcompleted/{workCompletedId}/type/snapworkcompleted
 pub async fn snap_workcompleted_workCompletedId_type_snapworkcompleted() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -652,7 +587,6 @@ pub async fn snap_workcompleted_workCompletedId_type_snapworkcompleted() -> Resu
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/snap/{id}
 pub async fn snap_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -661,7 +595,6 @@ pub async fn snap_id() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/snap/{id}/restore
 pub async fn snap_id_restore() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -670,7 +603,6 @@ pub async fn snap_id_restore() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/task/v2/{id}
 pub async fn task_v2_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -679,7 +611,6 @@ pub async fn task_v2_id() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/task/v2/{id}/pause
 pub async fn task_v2_id_pause() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -688,7 +619,6 @@ pub async fn task_v2_id_pause() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/task/v2/{id}/reset
 pub async fn task_v2_id_reset() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -697,7 +627,6 @@ pub async fn task_v2_id_reset() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/task/v2/{id}/resume
 pub async fn task_v2_id_resume() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -706,7 +635,6 @@ pub async fn task_v2_id_resume() -> Result<Json<ActionResult<Value>>, AppError> 
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/task/v3/{id}/add
 pub async fn task_v3_id_add() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -715,7 +643,6 @@ pub async fn task_v3_id_add() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/task/{id}
 pub async fn task_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -724,7 +651,6 @@ pub async fn task_id() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/task/{id}/expire
 pub async fn task_id_expire() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -733,7 +659,6 @@ pub async fn task_id_expire() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/task/{id}/pass/expired
 pub async fn task_id_pass_expired() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -742,7 +667,6 @@ pub async fn task_id_pass_expired() -> Result<Json<ActionResult<Value>>, AppErro
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/task/{id}/press
 pub async fn task_id_press() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -751,7 +675,6 @@ pub async fn task_id_press() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/task/{id}/processing
 pub async fn task_id_processing() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -760,7 +683,6 @@ pub async fn task_id_processing() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/task/{id}/replace
 pub async fn task_id_replace() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -769,7 +691,6 @@ pub async fn task_id_replace() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/task/{id}/urge
 pub async fn task_id_urge() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -778,7 +699,6 @@ pub async fn task_id_urge() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/task/{id}/will
 pub async fn task_id_will() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -787,7 +707,6 @@ pub async fn task_id_will() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/taskcompleted/next/task/identity
 pub async fn taskcompleted_next_task_identity() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -796,7 +715,6 @@ pub async fn taskcompleted_next_task_identity() -> Result<Json<ActionResult<Valu
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/taskcompleted/{id}
 pub async fn taskcompleted_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -805,7 +723,6 @@ pub async fn taskcompleted_id() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/taskcompleted/{id}/press/work/{work}
 pub async fn taskcompleted_id_press_work_work() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -814,7 +731,6 @@ pub async fn taskcompleted_id_press_work_work() -> Result<Json<ActionResult<Valu
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/touch/cleanevent
 pub async fn touch_cleanevent() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -823,7 +739,6 @@ pub async fn touch_cleanevent() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/touch/deletedraft
 pub async fn touch_deletedraft() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -832,7 +747,6 @@ pub async fn touch_deletedraft() -> Result<Json<ActionResult<Value>>, AppError> 
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/touch/handoverjob
 pub async fn touch_handoverjob() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -841,7 +755,6 @@ pub async fn touch_handoverjob() -> Result<Json<ActionResult<Value>>, AppError> 
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/touch/loglongdetained
 pub async fn touch_loglongdetained() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -850,7 +763,6 @@ pub async fn touch_loglongdetained() -> Result<Json<ActionResult<Value>>, AppErr
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/touch/merge
 pub async fn touch_merge() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -859,7 +771,6 @@ pub async fn touch_merge() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/touch/mergeitem
 pub async fn touch_mergeitem() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -868,7 +779,6 @@ pub async fn touch_mergeitem() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/touch/touchdelay
 pub async fn touch_touchdelay() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -877,7 +787,6 @@ pub async fn touch_touchdelay() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/touch/urge
 pub async fn touch_urge() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -886,7 +795,6 @@ pub async fn touch_urge() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/manual/after/processing
 pub async fn work_manual_after_processing() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -895,7 +803,6 @@ pub async fn work_manual_after_processing() -> Result<Json<ActionResult<Value>>,
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/process/{processId}
 pub async fn work_process_processId() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -904,7 +811,6 @@ pub async fn work_process_processId() -> Result<Json<ActionResult<Value>>, AppEr
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/process/{processId}/name/{name}/serial
 pub async fn work_process_processId_name_name_serial() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -913,7 +819,6 @@ pub async fn work_process_processId_name_name_serial() -> Result<Json<ActionResu
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/v2/{id}/add/split
 pub async fn work_v2_id_add_split() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -922,7 +827,6 @@ pub async fn work_v2_id_add_split() -> Result<Json<ActionResult<Value>>, AppErro
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/v2/{id}/goback
 pub async fn work_v2_id_goback() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -931,7 +835,6 @@ pub async fn work_v2_id_goback() -> Result<Json<ActionResult<Value>>, AppError> 
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/v2/{id}/reroute
 pub async fn work_v2_id_reroute() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -940,7 +843,6 @@ pub async fn work_v2_id_reroute() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/v2/{id}/retract
 pub async fn work_v2_id_retract() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -949,7 +851,6 @@ pub async fn work_v2_id_retract() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/v2/{id}/rollback
 pub async fn work_v2_id_rollback() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -958,7 +859,6 @@ pub async fn work_v2_id_rollback() -> Result<Json<ActionResult<Value>>, AppError
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/v2/{id}/terminate
 pub async fn work_v2_id_terminate() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -967,7 +867,6 @@ pub async fn work_v2_id_terminate() -> Result<Json<ActionResult<Value>>, AppErro
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/v3/retract
 pub async fn work_v3_retract() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -976,7 +875,6 @@ pub async fn work_v3_retract() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/{id}
 pub async fn work_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -985,7 +883,6 @@ pub async fn work_id() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/{id}/draft
 pub async fn work_id_draft() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -994,7 +891,6 @@ pub async fn work_id_draft() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/{id}/manual/append/identity
 pub async fn work_id_manual_append_identity() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1003,7 +899,6 @@ pub async fn work_id_manual_append_identity() -> Result<Json<ActionResult<Value>
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/{id}/processing
 pub async fn work_id_processing() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1012,7 +907,6 @@ pub async fn work_id_processing() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/{id}/projection
 pub async fn work_id_projection() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1021,7 +915,6 @@ pub async fn work_id_projection() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/work/{id}/series/{series}/activitytoken/{activityToken}/processing/signal
 pub async fn work_id_series_series_activitytoken_activityToken_processing_signal() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1030,7 +923,6 @@ pub async fn work_id_series_series_activitytoken_activityToken_processing_signal
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/workcompleted/process/{processFlag}
 pub async fn workcompleted_process_processFlag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1039,7 +931,6 @@ pub async fn workcompleted_process_processFlag() -> Result<Json<ActionResult<Val
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/workcompleted/shift/time
 pub async fn workcompleted_shift_time() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1048,7 +939,6 @@ pub async fn workcompleted_shift_time() -> Result<Json<ActionResult<Value>>, App
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/workcompleted/{flag}/merge
 pub async fn workcompleted_flag_merge() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1057,7 +947,6 @@ pub async fn workcompleted_flag_merge() -> Result<Json<ActionResult<Value>>, App
     ))))
 }
 
-/// Stub handler for /jaxrs/processplatform/service/processing/workcompleted/{flag}/rollback
 pub async fn workcompleted_flag_rollback() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1065,3 +954,4 @@ pub async fn workcompleted_flag_rollback() -> Result<Json<ActionResult<Value>>, 
         ]),
     ))))
 }
+

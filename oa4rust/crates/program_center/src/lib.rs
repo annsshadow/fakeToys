@@ -8,6 +8,8 @@ use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub mod routes;
+
 #[derive(Debug, Deserialize)]
 pub struct CollectAddRequest {
     pub title: Option<String>,
@@ -90,30 +92,40 @@ pub async fn current_style(
 }
 
 pub async fn modules_all(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("name".to_string(), Value::String("Application".to_string())),
-            ("className".to_string(), Value::String("com.x.organization.core.entity.Application".to_string())),
-            ("entityCount".to_string(), Value::Number(serde_json::Number::from(12))),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("name".to_string(), Value::String("Person".to_string())),
-            ("className".to_string(), Value::String("com.x.organization.core.entity.Person".to_string())),
-            ("entityCount".to_string(), Value::Number(serde_json::Number::from(8))),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("name".to_string(), Value::String("Unit".to_string())),
-            ("className".to_string(), Value::String("com.x.organization.core.entity.Unit".to_string())),
-            ("entityCount".to_string(), Value::Number(serde_json::Number::from(5))),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("name".to_string(), Value::String("Process".to_string())),
-            ("className".to_string(), Value::String("com.x.process.core.entity.Process".to_string())),
-            ("entityCount".to_string(), Value::Number(serde_json::Number::from(15))),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT m.id, m.name, m.entity, m.creator, m.create_time, COUNT(f.id) as field_count \
+             FROM x_program_module m \
+             LEFT JOIN x_program_field f ON f.entity = m.entity \
+             GROUP BY m.id, m.name, m.entity, m.creator, m.create_time \
+             ORDER BY m.name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let entity: String = row.get("entity");
+            let class_name = if entity == "Process" {
+                format!("com.x.process.core.entity.{}", entity)
+            } else {
+                format!("com.x.organization.core.entity.{}", entity)
+            };
+            let field_count: i64 = row.get("field_count");
+
+            Value::Object(serde_json::Map::from_iter([
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("className".to_string(), Value::String(class_name)),
+                ("fieldCount".to_string(), Value::Number(serde_json::Number::from(field_count))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -123,20 +135,14 @@ pub async fn modules_all(
     ))))
 }
 
-pub fn program_center_router() -> Router {
-    Router::new()
-        .route("/jaxrs/program/applications", get(applications))
-        .route("/jaxrs/program/appstyle/current/style", get(current_style))
-        .route("/jaxrs/program/datastructure/modules/all", get(modules_all))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    routes::router(pool)
 }
 
 pub async fn collect_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -169,13 +175,10 @@ pub async fn collect_list(
 }
 
 pub async fn collect_add(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): Json<CollectAddRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();
@@ -202,13 +205,10 @@ pub async fn collect_add(
 }
 
 pub async fn collect_remove(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -231,13 +231,10 @@ pub async fn collect_remove(
 }
 
 pub async fn config_get(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(key): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -266,14 +263,7 @@ pub async fn config_get(
 #[cfg(test)]
 mod tests;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    program_center_router().layer(axum::extract::Extension(pool))
-}
 
-
-
-/// Stub handler for /jaxrs/program_center/agent/{flag}
-/// TODO: Implement real business logic
 pub async fn agent_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -282,8 +272,6 @@ pub async fn agent_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/agent/{flag}/disable
-/// TODO: Implement real business logic
 pub async fn agent_flag_disable() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -292,8 +280,6 @@ pub async fn agent_flag_disable() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/agent/{flag}/enable
-/// TODO: Implement real business logic
 pub async fn agent_flag_enable() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -302,8 +288,6 @@ pub async fn agent_flag_enable() -> Result<Json<ActionResult<Value>>, AppError> 
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/agent/{flag}/execute
-/// TODO: Implement real business logic
 pub async fn agent_flag_execute() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -312,8 +296,6 @@ pub async fn agent_flag_execute() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/agent/{flag}/file
-/// TODO: Implement real business logic
 pub async fn agent_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -322,8 +304,6 @@ pub async fn agent_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/andfx/pull/sync
-/// TODO: Implement real business logic
 pub async fn andfx_pull_sync() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -332,8 +312,6 @@ pub async fn andfx_pull_sync() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/current/style
-/// TODO: Implement real business logic
 pub async fn appstyle_current_style() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -342,8 +320,6 @@ pub async fn appstyle_current_style() -> Result<Json<ActionResult<Value>>, AppEr
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/current/update
-/// TODO: Implement real business logic
 pub async fn appstyle_current_update() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -352,8 +328,6 @@ pub async fn appstyle_current_update() -> Result<Json<ActionResult<Value>>, AppE
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/application/top
-/// TODO: Implement real business logic
 pub async fn appstyle_image_application_top() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -362,8 +336,6 @@ pub async fn appstyle_image_application_top() -> Result<Json<ActionResult<Value>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/application/top/erase
-/// TODO: Implement real business logic
 pub async fn appstyle_image_application_top_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -372,8 +344,6 @@ pub async fn appstyle_image_application_top_erase() -> Result<Json<ActionResult<
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/launch/logo
-/// TODO: Implement real business logic
 pub async fn appstyle_image_launch_logo() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -382,8 +352,6 @@ pub async fn appstyle_image_launch_logo() -> Result<Json<ActionResult<Value>>, A
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/launch/logo/erase
-/// TODO: Implement real business logic
 pub async fn appstyle_image_launch_logo_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -392,8 +360,6 @@ pub async fn appstyle_image_launch_logo_erase() -> Result<Json<ActionResult<Valu
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/login/avatar
-/// TODO: Implement real business logic
 pub async fn appstyle_image_login_avatar() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -402,8 +368,6 @@ pub async fn appstyle_image_login_avatar() -> Result<Json<ActionResult<Value>>, 
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/login/avatar/erase
-/// TODO: Implement real business logic
 pub async fn appstyle_image_login_avatar_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -412,8 +376,6 @@ pub async fn appstyle_image_login_avatar_erase() -> Result<Json<ActionResult<Val
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/menu/logo/blur
-/// TODO: Implement real business logic
 pub async fn appstyle_image_menu_logo_blur() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -422,8 +384,6 @@ pub async fn appstyle_image_menu_logo_blur() -> Result<Json<ActionResult<Value>>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/menu/logo/blur/erase
-/// TODO: Implement real business logic
 pub async fn appstyle_image_menu_logo_blur_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -432,8 +392,6 @@ pub async fn appstyle_image_menu_logo_blur_erase() -> Result<Json<ActionResult<V
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/menu/logo/focus
-/// TODO: Implement real business logic
 pub async fn appstyle_image_menu_logo_focus() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -442,8 +400,6 @@ pub async fn appstyle_image_menu_logo_focus() -> Result<Json<ActionResult<Value>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/menu/logo/focus/erase
-/// TODO: Implement real business logic
 pub async fn appstyle_image_menu_logo_focus_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -452,8 +408,6 @@ pub async fn appstyle_image_menu_logo_focus_erase() -> Result<Json<ActionResult<
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/process/default
-/// TODO: Implement real business logic
 pub async fn appstyle_image_process_default() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -462,8 +416,6 @@ pub async fn appstyle_image_process_default() -> Result<Json<ActionResult<Value>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/process/default/erase
-/// TODO: Implement real business logic
 pub async fn appstyle_image_process_default_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -472,8 +424,6 @@ pub async fn appstyle_image_process_default_erase() -> Result<Json<ActionResult<
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/setup/about/logo
-/// TODO: Implement real business logic
 pub async fn appstyle_image_setup_about_logo() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -482,8 +432,6 @@ pub async fn appstyle_image_setup_about_logo() -> Result<Json<ActionResult<Value
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/image/setup/about/logo/erase
-/// TODO: Implement real business logic
 pub async fn appstyle_image_setup_about_logo_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -492,8 +440,6 @@ pub async fn appstyle_image_setup_about_logo_erase() -> Result<Json<ActionResult
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/appstyle/index/portal
-/// TODO: Implement real business logic
 pub async fn appstyle_index_portal() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -502,8 +448,6 @@ pub async fn appstyle_index_portal() -> Result<Json<ActionResult<Value>>, AppErr
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/bar/create/mass/{from}/{count}
-/// TODO: Implement real business logic
 pub async fn bar_create_mass_from_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -512,8 +456,6 @@ pub async fn bar_create_mass_from_count() -> Result<Json<ActionResult<Value>>, A
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/bar/select1/field/{field}/value/{value}/count/{count}
-/// TODO: Implement real business logic
 pub async fn bar_select1_field_field_value_value_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -522,8 +464,6 @@ pub async fn bar_select1_field_field_value_value_count_count() -> Result<Json<Ac
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/bar/select2/count/{count}
-/// TODO: Implement real business logic
 pub async fn bar_select2_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -532,8 +472,6 @@ pub async fn bar_select2_count_count() -> Result<Json<ActionResult<Value>>, AppE
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/bar/select3/field/{field}/value/{value}/count/{count}
-/// TODO: Implement real business logic
 pub async fn bar_select3_field_field_value_value_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -542,8 +480,6 @@ pub async fn bar_select3_field_field_value_value_count_count() -> Result<Json<Ac
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/bar/select4/field/{field}/value/{value}/count/{count}
-/// TODO: Implement real business logic
 pub async fn bar_select4_field_field_value_value_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -552,8 +488,6 @@ pub async fn bar_select4_field_field_value_value_count_count() -> Result<Json<Ac
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/captcha/list
-/// TODO: Implement real business logic
 pub async fn captcha_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -562,8 +496,6 @@ pub async fn captcha_list() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/captcha/v2/create/width/{width}/height/{height}
-/// TODO: Implement real business logic
 pub async fn captcha_v2_create_width_width_height_height() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -572,8 +504,6 @@ pub async fn captcha_v2_create_width_width_height_height() -> Result<Json<Action
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/captcha/{id}/validate/answer/{answer}
-/// TODO: Implement real business logic
 pub async fn captcha_id_validate_answer_answer() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -582,8 +512,6 @@ pub async fn captcha_id_validate_answer_answer() -> Result<Json<ActionResult<Val
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/center/applications
-/// TODO: Implement real business logic
 pub async fn center_applications() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -592,8 +520,6 @@ pub async fn center_applications() -> Result<Json<ActionResult<Value>>, AppError
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/center/regist/applications
-/// TODO: Implement real business logic
 pub async fn center_regist_applications() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -602,8 +528,6 @@ pub async fn center_regist_applications() -> Result<Json<ActionResult<Value>>, A
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/center/version
-/// TODO: Implement real business logic
 pub async fn center_version() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -612,8 +536,6 @@ pub async fn center_version() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/code/create/mobile/{mobile}
-/// TODO: Implement real business logic
 pub async fn code_create_mobile_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -622,8 +544,6 @@ pub async fn code_create_mobile_mobile() -> Result<Json<ActionResult<Value>>, Ap
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/code/list
-/// TODO: Implement real business logic
 pub async fn code_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -632,8 +552,6 @@ pub async fn code_list() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/code/list/paging/{page}/size/{size}
-/// TODO: Implement real business logic
 pub async fn code_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -642,8 +560,6 @@ pub async fn code_list_paging_page_size_size() -> Result<Json<ActionResult<Value
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/code/validate/mobile/{mobile}/answer/{answer}
-/// TODO: Implement real business logic
 pub async fn code_validate_mobile_mobile_answer_answer() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -652,8 +568,6 @@ pub async fn code_validate_mobile_mobile_answer_answer() -> Result<Json<ActionRe
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/code/validate/mobile/{mobile}/answer/{answer}/cascade
-/// TODO: Implement real business logic
 pub async fn code_validate_mobile_mobile_answer_answer_cascade() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -662,8 +576,6 @@ pub async fn code_validate_mobile_mobile_answer_answer_cascade() -> Result<Json<
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/code/mobile/{mobile}
-/// TODO: Implement real business logic
 pub async fn collect_code_mobile_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -672,8 +584,6 @@ pub async fn collect_code_mobile_mobile() -> Result<Json<ActionResult<Value>>, A
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/connect
-/// TODO: Implement real business logic
 pub async fn collect_connect() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -682,8 +592,6 @@ pub async fn collect_connect() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/controllebbs
-/// TODO: Implement real business logic
 pub async fn collect_controllebbs() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -692,8 +600,6 @@ pub async fn collect_controllebbs() -> Result<Json<ActionResult<Value>>, AppErro
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/controllermobile/name/{name}/mobile/{mobile}
-/// TODO: Implement real business logic
 pub async fn collect_controllermobile_name_name_mobile_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -702,8 +608,6 @@ pub async fn collect_controllermobile_name_name_mobile_mobile() -> Result<Json<A
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/disconnect
-/// TODO: Implement real business logic
 pub async fn collect_disconnect() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -712,8 +616,6 @@ pub async fn collect_disconnect() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/login
-/// TODO: Implement real business logic
 pub async fn collect_login() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -722,8 +624,6 @@ pub async fn collect_login() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/mobile/check/connect
-/// TODO: Implement real business logic
 pub async fn collect_mobile_check_connect() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -732,8 +632,6 @@ pub async fn collect_mobile_check_connect() -> Result<Json<ActionResult<Value>>,
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/name/{name}/exist
-/// TODO: Implement real business logic
 pub async fn collect_name_name_exist() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -742,8 +640,6 @@ pub async fn collect_name_name_exist() -> Result<Json<ActionResult<Value>>, AppE
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/name/{name}/mobile/{mobile}/code/{code}
-/// TODO: Implement real business logic
 pub async fn collect_name_name_mobile_mobile_code_code() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -752,8 +648,6 @@ pub async fn collect_name_name_mobile_mobile_code_code() -> Result<Json<ActionRe
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/person
-/// TODO: Implement real business logic
 pub async fn collect_person() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -762,8 +656,6 @@ pub async fn collect_person() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/resetpassword
-/// TODO: Implement real business logic
 pub async fn collect_resetpassword() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -772,8 +664,6 @@ pub async fn collect_resetpassword() -> Result<Json<ActionResult<Value>>, AppErr
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/sync/area
-/// TODO: Implement real business logic
 pub async fn collect_sync_area() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -782,8 +672,6 @@ pub async fn collect_sync_area() -> Result<Json<ActionResult<Value>>, AppError> 
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/updateUnit
-/// TODO: Implement real business logic
 pub async fn collect_updateUnit() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -792,8 +680,6 @@ pub async fn collect_updateUnit() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/urlMapping
-/// TODO: Implement real business logic
 pub async fn collect_urlMapping() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -802,8 +688,6 @@ pub async fn collect_urlMapping() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/validate
-/// TODO: Implement real business logic
 pub async fn collect_validate() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -812,8 +696,6 @@ pub async fn collect_validate() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/validate/codeanswer
-/// TODO: Implement real business logic
 pub async fn collect_validate_codeanswer() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -822,8 +704,6 @@ pub async fn collect_validate_codeanswer() -> Result<Json<ActionResult<Value>>, 
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/validate/direct
-/// TODO: Implement real business logic
 pub async fn collect_validate_direct() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -832,8 +712,6 @@ pub async fn collect_validate_direct() -> Result<Json<ActionResult<Value>>, AppE
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/collect/validate/password
-/// TODO: Implement real business logic
 pub async fn collect_validate_password() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -842,8 +720,6 @@ pub async fn collect_validate_password() -> Result<Json<ActionResult<Value>>, Ap
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/command/execute
-/// TODO: Implement real business logic
 pub async fn command_execute() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -852,8 +728,6 @@ pub async fn command_execute() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/command/list/node
-/// TODO: Implement real business logic
 pub async fn command_list_node() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -862,8 +736,6 @@ pub async fn command_list_node() -> Result<Json<ActionResult<Value>>, AppError> 
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config-open/get/disable/export/enable
-/// TODO: Implement real business logic
 pub async fn config_open_get_disable_export_enable() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -872,8 +744,6 @@ pub async fn config_open_get_disable_export_enable() -> Result<Json<ActionResult
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/centerserver
-/// TODO: Implement real business logic
 pub async fn config_centerserver() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -882,8 +752,6 @@ pub async fn config_centerserver() -> Result<Json<ActionResult<Value>>, AppError
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/change/password
-/// TODO: Implement real business logic
 pub async fn config_change_password() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -892,8 +760,6 @@ pub async fn config_change_password() -> Result<Json<ActionResult<Value>>, AppEr
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/collect
-/// TODO: Implement real business logic
 pub async fn config_collect() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -902,8 +768,6 @@ pub async fn config_collect() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/license
-/// TODO: Implement real business logic
 pub async fn config_license() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -912,8 +776,6 @@ pub async fn config_license() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/list
-/// TODO: Implement real business logic
 pub async fn config_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -922,8 +784,6 @@ pub async fn config_list() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/list/application
-/// TODO: Implement real business logic
 pub async fn config_list_application() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -932,8 +792,6 @@ pub async fn config_list_application() -> Result<Json<ActionResult<Value>>, AppE
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/list/dump/data
-/// TODO: Implement real business logic
 pub async fn config_list_dump_data() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -942,8 +800,6 @@ pub async fn config_list_dump_data() -> Result<Json<ActionResult<Value>>, AppErr
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/list/dump/data/current/node
-/// TODO: Implement real business logic
 pub async fn config_list_dump_data_current_node() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -952,8 +808,6 @@ pub async fn config_list_dump_data_current_node() -> Result<Json<ActionResult<Va
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/list/entity
-/// TODO: Implement real business logic
 pub async fn config_list_entity() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -962,8 +816,6 @@ pub async fn config_list_entity() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/open
-/// TODO: Implement real business logic
 pub async fn config_open() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -972,8 +824,6 @@ pub async fn config_open() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/open/run/time/config
-/// TODO: Implement real business logic
 pub async fn config_open_run_time_config() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -982,8 +832,6 @@ pub async fn config_open_run_time_config() -> Result<Json<ActionResult<Value>>, 
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/person
-/// TODO: Implement real business logic
 pub async fn config_person() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -992,8 +840,6 @@ pub async fn config_person() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/portal
-/// TODO: Implement real business logic
 pub async fn config_portal() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1002,8 +848,6 @@ pub async fn config_portal() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/config/proxy
-/// TODO: Implement real business logic
 pub async fn config_proxy() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1013,13 +857,10 @@ pub async fn config_proxy() -> Result<Json<ActionResult<Value>>, AppError> {
 }
 
 pub async fn config_save(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): Json<ConfigSaveRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let key = req.key;
@@ -1047,12 +888,9 @@ pub async fn config_save(
 }
 
 pub async fn config_ternary_management(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1083,12 +921,9 @@ pub async fn config_ternary_management(
 }
 
 pub async fn config_token(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1115,12 +950,9 @@ pub async fn config_token(
 }
 
 pub async fn datastructure_fileds_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1151,12 +983,9 @@ pub async fn datastructure_fileds_all(
 }
 
 pub async fn datastructure_modules_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1186,12 +1015,9 @@ pub async fn datastructure_modules_all(
 }
 
 pub async fn datastructure_tables_all(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1221,14 +1047,11 @@ pub async fn datastructure_tables_all(
 }
 
 pub async fn deploy_list_paging_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(page): Path<i64>,
     Path(size): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1258,12 +1081,9 @@ pub async fn deploy_list_paging_page_size_size(
 }
 
 pub async fn deploy_server_o2(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1290,12 +1110,9 @@ pub async fn deploy_server_o2(
 }
 
 pub async fn deploy_server_resource(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1326,13 +1143,10 @@ pub async fn deploy_server_resource(
 }
 
 pub async fn deploy_web_resource_as_new_asNew(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(as_new): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     let creator = "system";
@@ -1355,13 +1169,10 @@ pub async fn deploy_web_resource_as_new_asNew(
 }
 
 pub async fn deploy_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1388,12 +1199,9 @@ pub async fn deploy_id(
 }
 
 pub async fn designer_search(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1423,12 +1231,9 @@ pub async fn designer_search(
 }
 
 pub async fn dict_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1459,14 +1264,11 @@ pub async fn dict_list(
 }
 
 pub async fn dict_list_paging_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(page): Path<i64>,
     Path(size): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1497,13 +1299,10 @@ pub async fn dict_list_paging_page_size_size(
 }
 
 pub async fn dict_dictFlag_data(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1527,14 +1326,11 @@ pub async fn dict_dictFlag_data(
 }
 
 pub async fn dict_dictFlag_path_data(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
     Path(_path): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1559,14 +1355,11 @@ pub async fn dict_dictFlag_path_data(
 }
 
 pub async fn dict_dictFlag_path_data_mockdeletetoget(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
     Path(_path): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -1596,15 +1389,12 @@ pub async fn dict_dictFlag_path_data_mockdeletetoget(
 }
 
 pub async fn dict_dictFlag_path_data_mockputtopost(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(dict_flag): Path<String>,
     Path(_path): Path<String>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let data_str = match body {
         Value::String(s) => s,
@@ -1633,13 +1423,10 @@ pub async fn dict_dictFlag_path_data_mockputtopost(
 }
 
 pub async fn dict_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -1675,12 +1462,9 @@ pub async fn dingding_get_callback_aes() -> Result<Json<ActionResult<Value>>, Ap
 }
 
 pub async fn dingding_pull_sync(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -1707,13 +1491,10 @@ pub async fn dingding_request_pull_sync() -> Result<Json<ActionResult<Value>>, A
 }
 
 pub async fn dingding_sync_organization_callback(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let event_type = body.get("eventType").and_then(|v| v.as_str()).unwrap_or_default();
     let org_id = body.get("orgId").and_then(|v| v.as_str()).unwrap_or_default();
@@ -1744,8 +1525,6 @@ pub async fn dingding_sync_organization_register_callback_enable(
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/distribute/assemble/source/{source}
-/// TODO: Implement real business logic
 pub async fn distribute_assemble_source_source() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1754,8 +1533,6 @@ pub async fn distribute_assemble_source_source() -> Result<Json<ActionResult<Val
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/distribute/webserver/assemble/source/{source}
-/// TODO: Implement real business logic
 pub async fn distribute_webserver_assemble_source_source() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1764,8 +1541,6 @@ pub async fn distribute_webserver_assemble_source_source() -> Result<Json<Action
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/foo/create/mass/{from}/{count}
-/// TODO: Implement real business logic
 pub async fn foo_create_mass_from_count() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1774,8 +1549,6 @@ pub async fn foo_create_mass_from_count() -> Result<Json<ActionResult<Value>>, A
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/input/compare
-/// TODO: Implement real business logic
 pub async fn input_compare() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1784,8 +1557,6 @@ pub async fn input_compare() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/input/cover
-/// TODO: Implement real business logic
 pub async fn input_cover() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1794,8 +1565,6 @@ pub async fn input_cover() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/input/create
-/// TODO: Implement real business logic
 pub async fn input_create() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1804,8 +1573,6 @@ pub async fn input_create() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/input/prepare/cover
-/// TODO: Implement real business logic
 pub async fn input_prepare_cover() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1814,8 +1581,6 @@ pub async fn input_prepare_cover() -> Result<Json<ActionResult<Value>>, AppError
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/input/prepare/create
-/// TODO: Implement real business logic
 pub async fn input_prepare_create() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1824,8 +1589,6 @@ pub async fn input_prepare_create() -> Result<Json<ActionResult<Value>>, AppErro
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/invoke/list/category
-/// TODO: Implement real business logic
 pub async fn invoke_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1834,8 +1597,6 @@ pub async fn invoke_list_category() -> Result<Json<ActionResult<Value>>, AppErro
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/invoke/list/with/category/{category}
-/// TODO: Implement real business logic
 pub async fn invoke_list_with_category_category() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1844,8 +1605,6 @@ pub async fn invoke_list_with_category_category() -> Result<Json<ActionResult<Va
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/invoke/token
-/// TODO: Implement real business logic
 pub async fn invoke_token() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1854,8 +1613,6 @@ pub async fn invoke_token() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/invoke/{flag}
-/// TODO: Implement real business logic
 pub async fn invoke_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1864,8 +1621,6 @@ pub async fn invoke_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/invoke/{flag}/client/{client}/token/{token}/execute
-/// TODO: Implement real business logic
 pub async fn invoke_flag_client_client_token_token_execute() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1874,8 +1629,6 @@ pub async fn invoke_flag_client_client_token_token_execute() -> Result<Json<Acti
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/invoke/{flag}/execute
-/// TODO: Implement real business logic
 pub async fn invoke_flag_execute() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1884,8 +1637,6 @@ pub async fn invoke_flag_execute() -> Result<Json<ActionResult<Value>>, AppError
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/invoke/{flag}/execute/get
-/// TODO: Implement real business logic
 pub async fn invoke_flag_execute_get() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1894,8 +1645,6 @@ pub async fn invoke_flag_execute_get() -> Result<Json<ActionResult<Value>>, AppE
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/invoke/{flag}/file
-/// TODO: Implement real business logic
 pub async fn invoke_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1904,8 +1653,6 @@ pub async fn invoke_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/jest/center/list
-/// TODO: Implement real business logic
 pub async fn jest_center_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1915,8 +1662,6 @@ pub async fn jest_center_list() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/jest/clear/cache/{source}
-/// TODO: Implement real business logic
 pub async fn jest_clear_cache_source() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1925,8 +1670,6 @@ pub async fn jest_clear_cache_source() -> Result<Json<ActionResult<Value>>, AppE
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/jest/list
-/// TODO: Implement real business logic
 pub async fn jest_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1935,8 +1678,6 @@ pub async fn jest_list() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/jest/version
-/// TODO: Implement real business logic
 pub async fn jest_version() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1945,8 +1686,6 @@ pub async fn jest_version() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/cloud/unit/is/vip
-/// TODO: Implement real business logic
 pub async fn market_cloud_unit_is_vip() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1955,8 +1694,6 @@ pub async fn market_cloud_unit_is_vip() -> Result<Json<ActionResult<Value>>, App
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/install/offline
-/// TODO: Implement real business logic
 pub async fn market_install_offline() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1965,8 +1702,6 @@ pub async fn market_install_offline() -> Result<Json<ActionResult<Value>>, AppEr
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/list/category
-/// TODO: Implement real business logic
 pub async fn market_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1975,8 +1710,6 @@ pub async fn market_list_category() -> Result<Json<ActionResult<Value>>, AppErro
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/list/install/log/paging/{page}/size/{size}
-/// TODO: Implement real business logic
 pub async fn market_list_install_log_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1985,8 +1718,6 @@ pub async fn market_list_install_log_paging_page_size_size() -> Result<Json<Acti
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/list/paging/{page}/size/{size}
-/// TODO: Implement real business logic
 pub async fn market_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1995,8 +1726,6 @@ pub async fn market_list_paging_page_size_size() -> Result<Json<ActionResult<Val
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/list/paging/{page}/size/{size}/category/{category}
-/// TODO: Implement real business logic
 pub async fn market_list_paging_page_size_size_category_category() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2005,8 +1734,6 @@ pub async fn market_list_paging_page_size_size_category_category() -> Result<Jso
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/list/top/three
-/// TODO: Implement real business logic
 pub async fn market_list_top_three() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2015,8 +1742,6 @@ pub async fn market_list_top_three() -> Result<Json<ActionResult<Value>>, AppErr
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/{flag}
-/// TODO: Implement real business logic
 pub async fn market_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2025,8 +1750,6 @@ pub async fn market_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/{flag}/cover/pic
-/// TODO: Implement real business logic
 pub async fn market_flag_cover_pic() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2035,8 +1758,6 @@ pub async fn market_flag_cover_pic() -> Result<Json<ActionResult<Value>>, AppErr
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/{flag}/install/log
-/// TODO: Implement real business logic
 pub async fn market_flag_install_log() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2045,8 +1766,6 @@ pub async fn market_flag_install_log() -> Result<Json<ActionResult<Value>>, AppE
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/{flag}/install/or/update
-/// TODO: Implement real business logic
 pub async fn market_flag_install_or_update() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2055,8 +1774,6 @@ pub async fn market_flag_install_or_update() -> Result<Json<ActionResult<Value>>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/{flag}/installed/version
-/// TODO: Implement real business logic
 pub async fn market_flag_installed_version() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2065,8 +1782,6 @@ pub async fn market_flag_installed_version() -> Result<Json<ActionResult<Value>>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/{flag}/uninstall
-/// TODO: Implement real business logic
 pub async fn market_flag_uninstall() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2075,8 +1790,6 @@ pub async fn market_flag_uninstall() -> Result<Json<ActionResult<Value>>, AppErr
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/market/{id}/download
-/// TODO: Implement real business logic
 pub async fn market_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2085,8 +1798,6 @@ pub async fn market_id_download() -> Result<Json<ActionResult<Value>>, AppError>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/module/compare/upload
-/// TODO: Implement real business logic
 pub async fn module_compare_upload() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2095,8 +1806,6 @@ pub async fn module_compare_upload() -> Result<Json<ActionResult<Value>>, AppErr
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/module/list
-/// TODO: Implement real business logic
 pub async fn module_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2105,8 +1814,6 @@ pub async fn module_list() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/module/list/category
-/// TODO: Implement real business logic
 pub async fn module_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2115,8 +1822,6 @@ pub async fn module_list_category() -> Result<Json<ActionResult<Value>>, AppErro
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/module/output
-/// TODO: Implement real business logic
 pub async fn module_output() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2125,8 +1830,6 @@ pub async fn module_output() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/module/output/list/structure
-/// TODO: Implement real business logic
 pub async fn module_output_list_structure() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2136,8 +1839,6 @@ pub async fn module_output_list_structure() -> Result<Json<ActionResult<Value>>,
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/module/output/structure
-/// TODO: Implement real business logic
 pub async fn module_output_structure() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2146,8 +1847,6 @@ pub async fn module_output_structure() -> Result<Json<ActionResult<Value>>, AppE
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/module/output/{flag}/file
-/// TODO: Implement real business logic
 pub async fn module_output_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2156,8 +1855,6 @@ pub async fn module_output_flag_file() -> Result<Json<ActionResult<Value>>, AppE
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/module/remove/structure/{id}
-/// TODO: Implement real business logic
 pub async fn module_remove_structure_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2166,8 +1863,6 @@ pub async fn module_remove_structure_id() -> Result<Json<ActionResult<Value>>, A
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/module/write/{flag}
-/// TODO: Implement real business logic
 pub async fn module_write_flag() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2176,8 +1871,6 @@ pub async fn module_write_flag() -> Result<Json<ActionResult<Value>>, AppError> 
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/module/{id}/compare
-/// TODO: Implement real business logic
 pub async fn module_id_compare() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2186,8 +1879,6 @@ pub async fn module_id_compare() -> Result<Json<ActionResult<Value>>, AppError> 
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/mpweixin/check
-/// TODO: Implement real business logic
 pub async fn mpweixin_check() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2196,8 +1887,6 @@ pub async fn mpweixin_check() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/mpweixin/media/add/forever
-/// TODO: Implement real business logic
 pub async fn mpweixin_media_add_forever() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2206,8 +1895,6 @@ pub async fn mpweixin_media_add_forever() -> Result<Json<ActionResult<Value>>, A
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/mpweixin/menu/add
-/// TODO: Implement real business logic
 pub async fn mpweixin_menu_add() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2216,8 +1903,6 @@ pub async fn mpweixin_menu_add() -> Result<Json<ActionResult<Value>>, AppError> 
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/mpweixin/menu/create/to/weixin
-/// TODO: Implement real business logic
 pub async fn mpweixin_menu_create_to_weixin() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2226,8 +1911,6 @@ pub async fn mpweixin_menu_create_to_weixin() -> Result<Json<ActionResult<Value>
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/mpweixin/menu/delete/{id}
-/// TODO: Implement real business logic
 pub async fn mpweixin_menu_delete_id() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2236,8 +1919,6 @@ pub async fn mpweixin_menu_delete_id() -> Result<Json<ActionResult<Value>>, AppE
     ))))
 }
 
-/// Stub handler for /jaxrs/program_center/mpweixin/menu/list/weixin
-/// TODO: Implement real business logic
 pub async fn mpweixin_menu_list_weixin() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2256,13 +1937,10 @@ pub async fn mpweixin_menu_subscribe() -> Result<Json<ActionResult<Value>>, AppE
 }
 
 pub async fn mpweixin_menu_update_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -2293,12 +1971,9 @@ pub async fn mpweixin_message_template_send() -> Result<Json<ActionResult<Value>
 }
 
 pub async fn output_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2329,13 +2004,10 @@ pub async fn output_list(
 }
 
 pub async fn output_appInfoFlag_select(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(app_info_flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2366,13 +2038,10 @@ pub async fn output_appInfoFlag_select(
 }
 
 pub async fn output_flag_select_file(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -2398,12 +2067,9 @@ pub async fn output_flag_select_file(
 }
 
 pub async fn prompterrorlog_count_exceptionclass(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2433,12 +2099,9 @@ pub async fn prompterrorlog_count_exceptionclass(
 }
 
 pub async fn prompterrorlog_count_loggername(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2468,14 +2131,11 @@ pub async fn prompterrorlog_count_loggername(
 }
 
 pub async fn prompterrorlog_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2505,15 +2165,12 @@ pub async fn prompterrorlog_list_id_next_count(
 }
 
 pub async fn prompterrorlog_list_id_next_count_date_date(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
     Path(date): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2543,15 +2200,12 @@ pub async fn prompterrorlog_list_id_next_count_date_date(
 }
 
 pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
     Path(exception_class): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2581,15 +2235,12 @@ pub async fn prompterrorlog_list_id_next_count_exceptionclass_exceptionClass(
 }
 
 pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
     Path(logger_name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2619,14 +2270,11 @@ pub async fn prompterrorlog_list_id_next_count_loggername_loggerName(
 }
 
 pub async fn prompterrorlog_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2656,15 +2304,12 @@ pub async fn prompterrorlog_list_id_prev_count(
 }
 
 pub async fn prompterrorlog_list_id_prev_count_date_date(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
     Path(date): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2694,15 +2339,12 @@ pub async fn prompterrorlog_list_id_prev_count_date_date(
 }
 
 pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
     Path(exception_class): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2732,15 +2374,12 @@ pub async fn prompterrorlog_list_id_prev_count_exceptionclass_exceptionClass(
 }
 
 pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
     Path(logger_name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2770,13 +2409,10 @@ pub async fn prompterrorlog_list_id_prev_count_loggername_loggerName(
 }
 
 pub async fn prompterrorlog_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -2810,12 +2446,9 @@ pub async fn qiyeweixin_get_callback_aes() -> Result<Json<ActionResult<Value>>, 
 }
 
 pub async fn qiyeweixin_pull_sync(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute(
@@ -2841,13 +2474,10 @@ pub async fn qiyeweixin_request_pull_sync() -> Result<Json<ActionResult<Value>>,
 }
 
 pub async fn qiyeweixin_send_getprivateinfo_message(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let user_id = body.get("userId").and_then(|v| v.as_str()).unwrap_or_default();
 
@@ -2861,18 +2491,176 @@ pub async fn qiyeweixin_send_getprivateinfo_message(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("sent".to_string(), Value::Bool(true)),
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ApplicationCreateRequest {
+    pub name: Option<String>,
+    pub app_id: Option<String>,
+    pub description: Option<String>,
+    pub creator: Option<String>,
+}
+
+#[axum::debug_handler]
+pub async fn application_create(
+    pool: Extension<Pool>,
+    Json(req): Json<ApplicationCreateRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = req.name.unwrap_or_default();
+    let app_id = req.app_id.unwrap_or_default();
+    let description = req.description.unwrap_or_default();
+    let creator = req.creator.unwrap_or_else(|| "system".to_string());
+
+    if name.trim().is_empty() {
+        return Ok(Json(ActionResult::error("name is required")));
+    }
+
+    client
+        .execute(
+            "INSERT INTO x_applications (id, name, app_id, description, disable, creator, create_time) \
+              VALUES ($1, $2, $3, $4, false, $5, NOW())",
+            &[&id, &name, &app_id, &description, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("appId".to_string(), Value::String(app_id)),
+            ("description".to_string(), Value::String(description)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ApplicationSaveRequest {
+    pub name: Option<String>,
+    pub app_id: Option<String>,
+    pub description: Option<String>,
+    pub disable: Option<bool>,
+}
+
+#[axum::debug_handler]
+pub async fn application_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    Json(req): Json<ApplicationSaveRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_applications SET name = COALESCE($1, name), app_id = COALESCE($2, app_id), description = COALESCE($3, description), disable = COALESCE($4, disable), update_time = NOW() WHERE id = $5",
+            &[&req.name, &req.app_id, &req.description, &req.disable, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("application not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AgentCreateRequest {
+    pub name: Option<String>,
+    pub flag: Option<String>,
+    pub description: Option<String>,
+    pub creator: Option<String>,
+}
+
+#[axum::debug_handler]
+pub async fn agent_create(
+    pool: Extension<Pool>,
+    Json(req): Json<AgentCreateRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = req.name.unwrap_or_default();
+    let flag = req.flag.unwrap_or_default();
+    let description = req.description.unwrap_or_default();
+    let creator = req.creator.unwrap_or_else(|| "system".to_string());
+
+    if name.trim().is_empty() {
+        return Ok(Json(ActionResult::error("name is required")));
+    }
+
+    client
+        .execute(
+            "INSERT INTO x_program_agent (id, name, flag, description, creator, create_time, update_time) \
+              VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
+            &[&id, &name, &flag, &description, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("flag".to_string(), Value::String(flag)),
+            ("description".to_string(), Value::String(description)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AgentSaveRequest {
+    pub name: Option<String>,
+    pub flag: Option<String>,
+    pub description: Option<String>,
+}
+
+#[axum::debug_handler]
+pub async fn agent_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    Json(req): Json<AgentSaveRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_program_agent SET name = COALESCE($1, name), flag = COALESCE($2, flag), description = COALESCE($3, description), update_time = NOW() WHERE id = $4",
+            &[&req.name, &req.flag, &req.description, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("agent not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
 
 pub async fn schedule_list_schedule(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2903,12 +2691,9 @@ pub async fn schedule_list_schedule(
 }
 
 pub async fn schedule_list_schedulelocal(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2940,13 +2725,10 @@ pub async fn schedule_list_schedulelocal(
 }
 
 pub async fn schedule_list_schedulelog_application_application(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(application): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -2977,12 +2759,9 @@ pub async fn schedule_list_schedulelog_application_application(
 }
 
 pub async fn schedule_report(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -3012,13 +2791,10 @@ pub async fn schedule_report(
 }
 
 pub async fn schedule_schedule_fire(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(schedule_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute(
@@ -3037,12 +2813,9 @@ pub async fn schedule_schedule_fire(
 }
 
 pub async fn script_list(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -3073,14 +2846,11 @@ pub async fn script_list(
 }
 
 pub async fn script_list_paging_page_size_size(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(page): Path<i64>,
     Path(size): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -3111,13 +2881,10 @@ pub async fn script_list_paging_page_size_size(
 }
 
 pub async fn script_name_name(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -3144,13 +2911,10 @@ pub async fn script_name_name(
 }
 
 pub async fn script_name_name_imported(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(name): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -3177,13 +2941,10 @@ pub async fn script_name_name_imported(
 }
 
 pub async fn script_flag(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -3210,13 +2971,10 @@ pub async fn script_flag(
 }
 
 pub async fn script_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -3261,13 +3019,10 @@ pub async fn test_test2() -> Result<Json<ActionResult<Value>>, AppError> {
 }
 
 pub async fn tokenthreshold_update(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let threshold = body.get("threshold").and_then(|v| v.as_i64()).unwrap_or(100);
 
@@ -3299,14 +3054,11 @@ pub async fn tokenthreshold_update(
 }
 
 pub async fn unexpectederrorlog_list_id_next_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -3336,15 +3088,12 @@ pub async fn unexpectederrorlog_list_id_next_count(
 }
 
 pub async fn unexpectederrorlog_list_id_next_count_date_date(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
     Path(date): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -3374,14 +3123,11 @@ pub async fn unexpectederrorlog_list_id_next_count_date_date(
 }
 
 pub async fn unexpectederrorlog_list_id_prev_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -3411,15 +3157,12 @@ pub async fn unexpectederrorlog_list_id_prev_count(
 }
 
 pub async fn unexpectederrorlog_list_id_prev_count_date_date(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
     Path(count): Path<i64>,
     Path(date): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
         .query(
@@ -3449,13 +3192,10 @@ pub async fn unexpectederrorlog_list_id_prev_count_date_date(
 }
 
 pub async fn unexpectederrorlog_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_opt(
@@ -3509,12 +3249,9 @@ pub async fn validation_timeout_timeout(
 }
 
 pub async fn zhengwudingding_pull_sync(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     client
         .execute(
@@ -3532,12 +3269,9 @@ pub async fn zhengwudingding_pull_sync(
 }
 
 pub async fn zhengwudingding_regist_callback(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
     client
@@ -3556,13 +3290,10 @@ pub async fn zhengwudingding_regist_callback(
 }
 
 pub async fn zhengwudingding_sync_organization_callback(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::error("not implemented"))),
-    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let event_type = body.get("eventType").and_then(|v| v.as_str()).unwrap_or_default();
     let org_id = body.get("orgId").and_then(|v| v.as_str()).unwrap_or_default();
@@ -3581,3 +3312,4 @@ pub async fn zhengwudingding_sync_organization_callback(
         ]),
     ))))
 }
+

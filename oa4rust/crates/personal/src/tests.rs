@@ -100,8 +100,9 @@ mod tests {
     #[test]
     fn test_is_password_acceptable() {
         assert!(!crate::reset::is_password_acceptable("12345"));
-        assert!(crate::reset::is_password_acceptable("123456"));
-        let long = "x".repeat(64);
+        assert!(!crate::reset::is_password_acceptable("123456"));
+        assert!(crate::reset::is_password_acceptable("123456a"));
+        let long = format!("{}1", "x".repeat(63));
         assert!(crate::reset::is_password_acceptable(&long));
         assert!(!crate::reset::is_password_acceptable(&format!("{}x", long)));
     }

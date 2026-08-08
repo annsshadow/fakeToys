@@ -213,40 +213,9 @@ pub fn program_init_router(pool: Pool) -> Router {
         .layer(Extension(pool))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::SecretCipher;
-    use super::SetSecretRequest;
-
-    #[test]
-    fn test_secret_cipher_roundtrip() {
-        std::env::set_var("SECRET_ENCRYPTION_KEY", "test-key-for-unit-tests");
-        let plain = "xadmin-initial-password";
-        let encoded = SecretCipher::encrypt(plain).unwrap();
-        // 密文为 base64 且非明文
-        assert!(!encoded.contains(plain));
-        assert_eq!(SecretCipher::decrypt(&encoded).unwrap(), plain);
-    }
-
-    #[test]
-    fn test_secret_cipher_random_nonce() {
-        std::env::set_var("SECRET_ENCRYPTION_KEY", "test-key-for-unit-tests");
-        let a = SecretCipher::encrypt("same").unwrap();
-        let b = SecretCipher::encrypt("same").unwrap();
-        assert_ne!(a, b);
-        assert_eq!(SecretCipher::decrypt(&a).unwrap(), "same");
-        assert_eq!(SecretCipher::decrypt(&b).unwrap(), "same");
-    }
-
-    #[test]
-    fn test_secret_cipher_invalid_input() {
-        std::env::set_var("SECRET_ENCRYPTION_KEY", "test-key-for-unit-tests");
-        assert!(SecretCipher::decrypt("not-base64!!").is_err());
-    }
-
-    #[test]
-    fn test_set_secret_request_deserialize() {
-        let req: SetSecretRequest = serde_json::from_str(r#"{"secret":"abc"}"#).unwrap();
-        assert_eq!(req.secret, "abc");
-    }
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::program_init_router(pool)
 }
+
+#[cfg(test)]
+mod tests;

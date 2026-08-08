@@ -1,7 +1,7 @@
 use axum::extract::{Extension, Path};
 use axum::Json;
 use deadpool_postgres::Pool;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared::error::AppError;
 use shared::response::ActionResult;
@@ -9,7 +9,7 @@ use shared::response::ActionResult;
 use crate::pagination::page_result;
 
 /// 创建单位请求体（契约路径 POST /jaxrs/unit）
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct UnitCreateRequest {
     /// 单位名称
     pub name: String,
@@ -20,7 +20,7 @@ pub struct UnitCreateRequest {
 }
 
 /// 更新单位请求体（契约路径 PUT /jaxrs/unit/{flag}）
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct UnitUpdateRequest {
     /// 单位名称
     pub name: Option<String>,
@@ -30,7 +30,20 @@ pub struct UnitUpdateRequest {
     pub level: Option<i32>,
 }
 
-/// 获取单位详情：GET /jaxrs/unit/{flag}
+#[utoipa::path(
+    get,
+    path = "/jaxrs/unit/{flag}",
+    params(
+        ("flag" = String, Path, description = "Unit flag (id or name)")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn get(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -153,7 +166,21 @@ async fn query_page(
     Ok((total, data))
 }
 
-/// 获取单位列表（下一批）：GET /jaxrs/unit/list/{flag}/next/{count}
+#[utoipa::path(
+    get,
+    path = "/jaxrs/unit/list/{flag}/next/{count}",
+    params(
+        ("flag" = String, Path, description = "Pagination cursor flag"),
+        ("count" = i64, Path, description = "Number of items to return")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn list_next(
     pool: Extension<Pool>,
     Path((flag, count)): Path<(String, i64)>,
@@ -272,5 +299,7 @@ pub async fn delete(
         return Ok(Json(ActionResult::error("unit not found or already deleted")));
     }
 
-    Ok(Json(ActionResult::success(Value::Null)))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+    ))))
 }

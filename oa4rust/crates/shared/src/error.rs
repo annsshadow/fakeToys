@@ -28,12 +28,17 @@ pub enum AppError {
     /// 请求的资源不存在
     #[error("not found")]
     NotFound,
+
+    /// 权限不足（已认证但无权限访问）
+    #[error("forbidden")]
+    Forbidden,
 }
 
 // 将 AppError 转换为 HTTP 响应：
 //   - Database / Internal  → 500 Internal Server Error
 //   - BadRequest           → 400 Bad Request
 //   - Unauthorized         → 401 Unauthorized
+//   - Forbidden            → 403 Forbidden
 //   - NotFound             → 404 Not Found
 //
 // 响应体统一使用 ActionResult 格式的 JSON，错误时 data 字段为 null。
@@ -44,6 +49,7 @@ impl IntoResponse for AppError {
             AppError::Internal => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             AppError::BadRequest(_) => axum::http::StatusCode::BAD_REQUEST,
             AppError::Unauthorized => axum::http::StatusCode::UNAUTHORIZED,
+            AppError::Forbidden => axum::http::StatusCode::FORBIDDEN,
             AppError::NotFound => axum::http::StatusCode::NOT_FOUND,
         };
 

@@ -17,3 +17,4 @@ shared = { path = "../shared" }
 
 [dev-dependencies]
 tokio-postgres = "0.7"
+tower.workspace = true

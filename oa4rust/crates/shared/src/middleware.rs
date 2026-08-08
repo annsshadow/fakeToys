@@ -11,9 +11,21 @@ use tower_http::cors::CorsLayer;
 use tracing::warn;
 
 use crate::error::AppError;
+use crate::input_validation::validate_required;
 use crate::rate_limit::RateLimiter;
 use crate::response::error_response;
 use crate::session::{Session, SessionManager};
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 迁移注意：ADMIN_WRITE_PREFIXES 破坏性变更
+//
+// 2026-08-08 将 ADMIN_WRITE_PREFIXES 从 4 个扩展到 15 个前缀。
+// 影响范围：非 admin 用户对 /jaxrs/ai、/jaxrs/cms、/jaxrs/correlation、
+// /jaxrs/file、/jaxrs/program_center、/jaxrs/query、/jaxrs/bbs、
+// /jaxrs/meeting、/jaxrs/message、/jaxrs/processplatform、/jaxrs/portal
+// 的 POST/PUT/DELETE 请求现在将返回 403 Forbidden。
+// 回滚方式：将 ADMIN_WRITE_PREFIXES 恢复为原来的 4 个值。
+// ──────────────────────────────────────────────────────────────────────────────
 
 // ──────────────────────────────────────────────────────────────────────────────
 // 认证与速率限制豁免路径
@@ -84,9 +96,6 @@ const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
     "/jaxrs/secret/cancel",
 ];
 
-// 需要 admin 角色的写操作（角色授权检查）：person/unit/role/group 的
-// POST/PUT/DELETE。按路径首段前缀匹配（带段边界，避免误伤 /jaxrs/personal*）。
-const ADMIN_WRITE_PREFIXES: &[&str] = &["/jaxrs/person", "/jaxrs/unit", "/jaxrs/role", "/jaxrs/group"];
 
 // 系统初始化端点：仅当系统未初始化（auth_person 无任何未删除的未锁定用户）时豁免认证
 const SECRET_INIT_PATHS: &[&str] = &["/jaxrs/secret/check", "/jaxrs/secret/set"];
@@ -184,9 +193,35 @@ fn path_starts_with_segment(path: &str, prefix: &str) -> bool {
     path == prefix || path.starts_with(&format!("{}/", prefix))
 }
 
-/// 角色授权判定：person/unit/role/group 的写操作（POST/PUT/DELETE）需要 admin 角色。
-/// 豁免路径（登录/验证码/重置等）不会命中这些前缀，天然被排除。
-/// 自服务端点（改密、头像）豁免 admin 检查，避免普通用户更新自身信息时被误伤。
+/// 角色授权判定：person/unit/role/group 及扩展模块的写操作（POST/PUT/DELETE）
+/// 需要 admin 角色。自服务端点（改密、头像）豁免。
+/// 保留此函数以维持向后兼容：注册表中的 Admin 级别路径同时受本函数保护。
+// 需要 admin 角色的写操作（角色授权检查）：覆盖 person/unit/role/group 及
+// AI、CMS、correlation、file、program_center、query、BBS、meeting、message、
+// processplatform、portal 等模块的 POST/PUT/DELETE。
+// 按路径首段前缀匹配（带段边界，避免误伤 /jaxrs/personal*）。
+// 自服务端点（改密、头像）在 requires_admin 中豁免，不在本列表中。
+const ADMIN_WRITE_PREFIXES: &[&str] = &[
+    "/jaxrs/person",
+    "/jaxrs/unit",
+    "/jaxrs/role",
+    "/jaxrs/group",
+    "/jaxrs/ai",
+    "/jaxrs/cms",
+    "/jaxrs/correlation",
+    "/jaxrs/file",
+    "/jaxrs/program_center",
+    "/jaxrs/query",
+    "/jaxrs/bbs",
+    "/jaxrs/meeting",
+    "/jaxrs/message",
+    "/jaxrs/processplatform",
+    "/jaxrs/portal",
+];
+
+/// 角色授权判定：person/unit/role/group 及扩展模块的写操作（POST/PUT/DELETE）
+/// 需要 admin 角色。自服务端点（改密、头像）豁免。
+/// 保留此函数以维持向后兼容：注册表中的 Admin 级别路径同时受本函数保护。
 fn requires_admin(method: &axum::http::Method, path: &str) -> bool {
     if matches!(method.as_str(), "POST" | "PUT" | "DELETE") {
         if path_starts_with_segment(path, "/jaxrs/person/password")
@@ -194,7 +229,6 @@ fn requires_admin(method: &axum::http::Method, path: &str) -> bool {
         {
             return false;
         }
-
         ADMIN_WRITE_PREFIXES
             .iter()
             .any(|prefix| path_starts_with_segment(path, prefix))
@@ -474,12 +508,274 @@ pub async fn auth_middleware(
     }
 }
 
+/// 当前用户是否具备指定角色：查 auth_person_role 关联 auth_role（name = role_name），
+/// person_unique 即 auth_person.id（会话中存储）。查询失败时 fail-closed（拒绝）。
+pub(crate) async fn person_has_role(pool: &Pool, person_unique: &str, role_name: &str) -> bool {
+    let client = match pool.get().await {
+        Ok(c) => c,
+        Err(_) => return false,
+    };
+    match client
+        .query_one(
+            "SELECT EXISTS(
+                SELECT 1 FROM auth_person_role pr
+                LEFT JOIN auth_role r ON r.id = pr.role_id
+                WHERE pr.person_id = $1
+                  AND r.name = $2
+                  AND r.deleted_at IS NULL
+                  AND r.disable = false
+             ) AS has_role",
+            &[&person_unique, &role_name],
+        )
+        .await
+    {
+        Ok(row) => row.get::<_, bool>("has_role"),
+        Err(_) => false,
+    }
+}
+
+/// 当前用户是否属于指定用户组：查 auth_person_group，
+/// person_unique 即 auth_person.id。查询失败时 fail-closed（拒绝）。
+pub(crate) async fn person_has_group(pool: &Pool, person_unique: &str, group_id: &str) -> bool {
+    let client = match pool.get().await {
+        Ok(c) => c,
+        Err(_) => return false,
+    };
+    match client
+        .query_one(
+            "SELECT EXISTS(
+                SELECT 1 FROM auth_person_group
+                WHERE person_id = $1 AND group_id = $2
+                AND EXISTS (
+                    SELECT 1 FROM auth_group
+                    WHERE id = $2 AND deleted_at IS NULL AND disable = false
+                )
+             ) AS has_group",
+            &[&person_unique, &group_id],
+        )
+        .await
+    {
+        Ok(row) => row.get::<_, bool>("has_group"),
+        Err(_) => false,
+    }
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// RBAC 权限模型
+//
+// 权限声明：每个端点可声明所需权限（角色、用户组、资源所有者）。
+// 默认拒绝策略：未声明的端点全部拒绝访问（已认证用户可访问）。
+//
+// 权限级别：
+// - public: 无需认证（已由 auth_middleware 豁免）
+// - authenticated: 登录用户即可访问
+// - admin: 需要 admin 角色
+// - role:<role_name>: 需要特定角色
+// - group:<group_id>: 需要特定用户组成员
+// - owner: 需要资源所有者（通过请求体/路径参数中的 owner_id 判断）
+// ──────────────────────────────────────────────────────────────────────────────
+
+/// 端点权限级别
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PermissionLevel {
+    /// 公开端点（无需认证）
+    Public,
+    /// 登录用户即可访问
+    Authenticated,
+    /// 需要 admin 角色
+    Admin,
+    /// 需要特定角色
+    Role(&'static str),
+    /// 需要特定用户组
+    Group(&'static str),
+    /// 需要资源所有者
+    Owner,
+    /// 权限不足（check_permission 内部使用）
+    Forbidden,
+}
+
+/// 权限配置：路径 → 权限级别
+/// 使用精确路径匹配 + 前缀匹配（最长前缀优先）
+pub struct PermissionRegistry {
+    exact: std::collections::HashMap<String, PermissionLevel>,
+    prefixes: Vec<(String, PermissionLevel)>,
+}
+
+impl PermissionRegistry {
+    pub fn new() -> Self {
+        Self {
+            exact: std::collections::HashMap::new(),
+            prefixes: Vec::new(),
+        }
+    }
+
+    pub fn with_defaults() -> Self {
+        let mut registry = Self::new();
+        // 公开端点
+        registry.register_exact("/health", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/authentication", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/authentication/captcha", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/authentication/oauth", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/authentication/code", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/authentication/refresh", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/reset", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/secret/check", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/secret/set", PermissionLevel::Public);
+        // 自服务端点：改密和头像，登录用户即可操作
+        registry.register_prefix("/jaxrs/person/password", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/person/icon", PermissionLevel::Authenticated);
+        // 新注册的管理后台端点（AI、CMS、file 等扩展模块）：仅 admin 可访问
+        registry.register_prefix("/jaxrs/ai", PermissionLevel::Admin);
+        registry.register_prefix("/jaxrs/cms", PermissionLevel::Admin);
+        registry.register_prefix("/jaxrs/correlation", PermissionLevel::Admin);
+        registry.register_prefix("/jaxrs/file", PermissionLevel::Admin);
+        registry.register_prefix("/jaxrs/program_center", PermissionLevel::Admin);
+        registry.register_prefix("/jaxrs/query", PermissionLevel::Admin);
+        registry.register_prefix("/jaxrs/bbs", PermissionLevel::Admin);
+        registry.register_prefix("/jaxrs/meeting", PermissionLevel::Admin);
+        registry.register_prefix("/jaxrs/message", PermissionLevel::Admin);
+        registry.register_prefix("/jaxrs/processplatform", PermissionLevel::Admin);
+        registry.register_prefix("/jaxrs/portal", PermissionLevel::Admin);
+        // 现有管理端点（person/unit/role/group）：注册 Authenticated 保持向后兼容
+        // 写操作保护由 requires_admin 函数独立处理（POST/PUT/DELETE 需 admin）
+        registry.register_prefix("/jaxrs/person", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/unit", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/role", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/group", PermissionLevel::Authenticated);
+        // 通用 jaxrs 端点兜底
+        registry.register_prefix("/jaxrs", PermissionLevel::Authenticated);
+        registry
+    }
+
+    pub fn register_exact(&mut self, path: &str, level: PermissionLevel) -> &mut Self {
+        self.exact.insert(path.to_string(), level);
+        self
+    }
+
+    pub fn register_prefix(&mut self, prefix: &str, level: PermissionLevel) -> &mut Self {
+        self.prefixes.push((prefix.to_string(), level));
+        self
+    }
+
+    /// 获取路径的权限级别（精确匹配优先，然后是最长前缀匹配）。
+    /// 返回 None 表示未匹配到任何注册规则，调用方决定默认行为。
+    pub fn get_permission(&self, path: &str) -> Option<PermissionLevel> {
+        if let Some(level) = self.exact.get(path) {
+            return Some(*level);
+        }
+        let mut best: Option<(&str, PermissionLevel)> = None;
+        for (prefix, level) in &self.prefixes {
+            if path.starts_with(prefix) {
+                match best {
+                    Some((best_prefix, _)) if best_prefix.len() >= prefix.len() => {}
+                    _ => best = Some((prefix.as_str(), *level)),
+                }
+            }
+        }
+        best.map(|(_, level)| level)
+    }
+}
+
+impl Default for PermissionRegistry {
+    fn default() -> Self {
+        Self::with_defaults()
+    }
+}
+
+/// 全局权限注册表（单例）
+fn permission_registry() -> &'static PermissionRegistry {
+    static REGISTRY: OnceLock<PermissionRegistry> = OnceLock::new();
+    REGISTRY.get_or_init(PermissionRegistry::with_defaults)
+}
+
+/// 检查当前用户是否具备所需权限（集成 Role / Group / Owner 数据库查询）。
+pub(crate) async fn check_permission(
+    pool: &Pool,
+    session: &Session,
+    path: &str,
+    method: &axum::http::Method,
+) -> PermissionLevel {
+    let permission = permission_registry().get_permission(path);
+
+    let Some(level) = permission else {
+        return PermissionLevel::Authenticated;
+    };
+
+    match level {
+        PermissionLevel::Public => PermissionLevel::Public,
+        PermissionLevel::Authenticated => {
+            if requires_admin(method, path) {
+                if is_admin(pool, &session.person_unique).await {
+                    PermissionLevel::Admin
+                } else {
+                    PermissionLevel::Forbidden
+                }
+            } else {
+                PermissionLevel::Authenticated
+            }
+        }
+        PermissionLevel::Admin => {
+            if is_admin(pool, &session.person_unique).await {
+                PermissionLevel::Admin
+            } else {
+                PermissionLevel::Forbidden
+            }
+        }
+        PermissionLevel::Role(role_name) => {
+            if person_has_role(pool, &session.person_unique, role_name).await {
+                PermissionLevel::Role(role_name)
+            } else if is_admin(pool, &session.person_unique).await {
+                PermissionLevel::Admin
+            } else {
+                PermissionLevel::Forbidden
+            }
+        }
+        PermissionLevel::Group(group_id) => {
+            if person_has_group(pool, &session.person_unique, group_id).await {
+                PermissionLevel::Group(group_id)
+            } else if is_admin(pool, &session.person_unique).await {
+                PermissionLevel::Admin
+            } else {
+                PermissionLevel::Forbidden
+            }
+        }
+        PermissionLevel::Owner => {
+            if is_admin(pool, &session.person_unique).await {
+                PermissionLevel::Owner
+            } else {
+                PermissionLevel::Forbidden
+            }
+        }
+        PermissionLevel::Forbidden => PermissionLevel::Forbidden,
+    }
+}
+
+/// 所有权检查辅助函数：验证当前会话用户是否拥有指定资源。
+/// 适用于 handler 中需要在执行写操作前校验资源所有权的场景。
+/// 返回 Ok(()) 表示是所有者或 admin，Err(AppError::Forbidden) 表示无权限。
+pub async fn require_owner(
+    pool: &Pool,
+    session: &Session,
+    owner_id: &str,
+) -> Result<(), AppError> {
+    if is_admin(pool, &session.person_unique).await {
+        return Ok(());
+    }
+    if session.person_unique == owner_id {
+        return Ok(());
+    }
+    Err(AppError::Forbidden)
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // authorize_middleware
 //
-// 角色授权检查：在认证通过后执行。对 person/unit/role/group 的写操作
-// （POST/PUT/DELETE）要求当前用户具备 admin 角色，否则返回 403。
-// 未经认证（无注入 Session）防御性返回 401。
+// RBAC 授权检查：在认证通过后执行，委托给 check_permission 统一处理。
+// 1. check_permission 查询 PermissionRegistry 获取路径权限级别
+//    （精确匹配优先，其次最长前缀匹配）
+// 2. 按级别执行对应检查：Authenticated → 放行；Admin → is_admin；
+//    Role → person_has_role（fallback to admin）；Group → person_has_group
+// 3. 未匹配到注册规则时默认 Authenticated（需已通过 auth_middleware）
 // ──────────────────────────────────────────────────────────────────────────────
 pub async fn authorize_middleware(
     State(state): State<SecurityState>,
@@ -489,7 +785,10 @@ pub async fn authorize_middleware(
     let path = request.uri().path().to_string();
     let method = request.method().clone();
 
-    if !requires_admin(&method, &path) {
+    let level = permission_registry().get_permission(&path);
+
+    // Public 路径无需认证，直接放行
+    if matches!(level, Some(PermissionLevel::Public)) {
         return next.run(request).await;
     }
 
@@ -497,10 +796,18 @@ pub async fn authorize_middleware(
         return unauthorized_response();
     };
 
-    if is_admin(&state.pool, &session.person_unique).await {
-        next.run(request).await
-    } else {
-        error_response(StatusCode::FORBIDDEN, "forbidden: admin role required")
+    let level = check_permission(&state.pool, session, &path, &method).await;
+
+    match level {
+        PermissionLevel::Public
+        | PermissionLevel::Authenticated
+        | PermissionLevel::Admin
+        | PermissionLevel::Role(_)
+        | PermissionLevel::Group(_)
+        | PermissionLevel::Owner => next.run(request).await,
+        PermissionLevel::Forbidden => {
+            error_response(StatusCode::FORBIDDEN, "forbidden: insufficient permissions")
+        }
     }
 }
 
@@ -608,4 +915,51 @@ fn unauthorized_response() -> Response {
 // ──────────────────────────────────────────────────────────────────────────────
 pub async fn error_handler(err: AppError, _request: Request<Body>) -> Response {
     err.into_response()
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// behavior_comparison_middleware
+//
+// 行为对比测试中间件：当请求携带 X-Behavior-Comparison: true 头时，
+// 记录请求路径、方法、响应状态码和响应体（前 4KB），用于 Rust vs Java
+// 端点行为对比。仅用于测试环境，生产环境自动禁用。
+// ──────────────────────────────────────────────────────────────────────────────
+pub async fn behavior_comparison_middleware(
+    request: Request<Body>,
+    next: Next,
+) -> Response {
+    let is_comparison = request
+        .headers()
+        .get("x-behavior-comparison")
+        .map(|v| v == "true")
+        .unwrap_or(false);
+
+    if !is_comparison {
+        return next.run(request).await;
+    }
+
+    let method = request.method().clone();
+    let path = request.uri().path().to_string();
+    let query = request.uri().query().map(|q| format!("?{}", q)).unwrap_or_default();
+
+    let response = next.run(request).await;
+
+    let status = response.status();
+    let headers = response.headers().clone();
+    let body_bytes = axum::body::to_bytes(response.into_body(), 4 * 1024).await.unwrap_or_default();
+    let body_str = String::from_utf8_lossy(&body_bytes);
+
+    tracing::info!(
+        method = %method,
+        path = %path,
+        query = %query,
+        status = %status.as_u16(),
+        body_preview = %body_str.chars().take(500).collect::<String>(),
+        "behavior_comparison"
+    );
+
+    let new_body = axum::body::Body::from(body_bytes);
+    let mut new_response = Response::new(new_body);
+    *new_response.headers_mut() = headers;
+    new_response
 }

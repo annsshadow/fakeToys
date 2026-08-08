@@ -17,6 +17,8 @@ uuid.workspace = true
 tower.workspace = true
 
 shared = { path = "../shared" }
+file_assemble_control = { path = "../file_assemble_control" }
 
 [dev-dependencies]
 tower.workspace = true
+async-trait.workspace = true

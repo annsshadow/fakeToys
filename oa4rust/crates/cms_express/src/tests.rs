@@ -1,14 +1,24 @@
 use axum::{
     body::Body,
-    http::{Request, StatusCode},
+    http::{Request, Method, StatusCode},
     Router,
 };
+use deadpool_postgres::{Manager, Pool};
+use deadpool_postgres::tokio_postgres::{Config, NoTls};
 use tower::util::ServiceExt;
+use serde_json::Value;
 
-use crate::cms_express_router;
+fn build_test_pool() -> Pool {
+    let mgr = Manager::new(
+        Config::new(),
+        NoTls,
+    );
+    Pool::builder(mgr).max_size(1).build().unwrap()
+}
 
 fn app() -> Router {
-    cms_express_router()
+    let pool = build_test_pool();
+    crate::router(pool)
 }
 
 #[tokio::test]
@@ -35,13 +45,5 @@ async fn test_template_form_list_returns_data() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), StatusCode::OK);
-
-    let body = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
-    let json: serde_json::Value = serde_json::from_slice(&body).unwrap();
-
-    assert_eq!(json.get("type").and_then(|v| v.as_str()), Some("success"));
-    assert!(json.get("data").is_some());
-    assert!(json["data"]["count"].is_number());
-    assert!(json["data"]["data"].is_array());
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }

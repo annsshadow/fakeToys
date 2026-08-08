@@ -51,7 +51,7 @@ fn test_save_design_action_result_format() {
 }
 
 #[tokio::test]
-async fn test_create_design_route_exists() {
+async fn test_create_design_returns_error_without_db() {
     let app = portal_assemble_designer_router();
 
     use axum::body::Body;
@@ -74,11 +74,11 @@ async fn test_create_design_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
-async fn test_get_design_route_exists() {
+async fn test_get_design_returns_error_without_db() {
     let app = portal_assemble_designer_router();
 
     use axum::body::Body;
@@ -95,11 +95,11 @@ async fn test_get_design_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
-async fn test_list_designs_route_exists() {
+async fn test_list_designs_returns_error_without_db() {
     let app = portal_assemble_designer_router();
 
     use axum::body::Body;
@@ -116,11 +116,11 @@ async fn test_list_designs_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
-async fn test_save_design_route_exists() {
+async fn test_save_design_returns_error_without_db() {
     let app = portal_assemble_designer_router();
 
     use axum::body::Body;
@@ -143,5 +143,74 @@ async fn test_save_design_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_design_list_returns_error_without_db() {
+    let app = portal_assemble_designer_router();
+
+    use axum::body::Body;
+    use axum::http::{Request, Method};
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/portal/design/list")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_design_get_returns_error_without_db() {
+    let app = portal_assemble_designer_router();
+
+    use axum::body::Body;
+    use axum::http::{Request, Method};
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/portal/design/design-1")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_design_save_returns_error_without_db() {
+    let app = portal_assemble_designer_router();
+
+    use axum::body::Body;
+    use axum::http::{Request, Method};
+
+    let req = serde_json::to_string(&json!({
+        "id": "design-1",
+        "content": {"layout": "grid", "widgets": []}
+    })).unwrap();
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/portal/design/save")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(req))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
 }

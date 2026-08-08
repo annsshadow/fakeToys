@@ -17,51 +17,83 @@ pub fn hotpic_assemble_control_router(pool: Pool) -> axum::Router {
 
 #[axum::debug_handler]
 pub async fn get_control_config(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("enabled".to_string(), Value::Bool(true)),
-        ("cacheEnabled".to_string(), Value::Bool(true)),
-        ("defaultScale".to_string(), Value::Number(serde_json::Number::from_f64(1.0).unwrap())),
-    ]));
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT COUNT(*) as cnt FROM x_hotpic WHERE deleted_at IS NULL",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(data)))
+    let count: i64 = row.map(|r| r.get("cnt")).unwrap_or(0);
+    let enabled = count > 0;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("enabled".to_string(), Value::Bool(enabled)),
+            ("cacheEnabled".to_string(), Value::Bool(true)),
+            ("defaultScale".to_string(), Value::Number(serde_json::Number::from_f64(1.0).unwrap())),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]
 pub async fn list_control_panels(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let panels = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("heatmap".to_string())),
-            ("name".to_string(), Value::String("Heatmap".to_string())),
-            ("enabled".to_string(), Value::Bool(true)),
-            ("type".to_string(), Value::String("hotpic".to_string())),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("annotation".to_string())),
-            ("name".to_string(), Value::String("Annotation".to_string())),
-            ("enabled".to_string(), Value::Bool(false)),
-            ("type".to_string(), Value::String("hotpic".to_string())),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT DISTINCT creator FROM x_hotpic WHERE deleted_at IS NULL ORDER BY creator ASC LIMIT 10",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .enumerate()
+        .map(|(i, row)| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(format!("panel-{}", i))),
+                ("name".to_string(), Value::String(row.get("creator"))),
+                ("enabled".to_string(), Value::Bool(true)),
+                ("type".to_string(), Value::String("hotpic".to_string())),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(panels.len() as i64))),
-            ("data".to_string(), Value::Array(panels)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 #[axum::debug_handler]
 pub async fn update_control_config(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let config = body.0;
     tracing::info!("Updating hotpic assemble control config: {:?}", config);
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = config.get("name").and_then(|v| v.as_str()).unwrap_or("default").to_string();
+    let enabled = config.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
+
+    client
+        .execute(
+            "INSERT INTO x_hotpic (id, title, image_url, creator, create_time) VALUES ($1, $2, $3, $4, NOW())",
+            &[&id, &name, &"", &"system"],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -73,25 +105,32 @@ pub async fn update_control_config(
 
 #[axum::debug_handler]
 pub async fn list_control_applications(
-    _pool: Extension<Pool>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let applications = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("application".to_string(), Value::String("hr".to_string())),
-            ("name".to_string(), Value::String("HR Application".to_string())),
-            ("enabled".to_string(), Value::Bool(true)),
-        ])),
-        Value::Object(serde_json::Map::from_iter([
-            ("application".to_string(), Value::String("finance".to_string())),
-            ("name".to_string(), Value::String("Finance Application".to_string())),
-            ("enabled".to_string(), Value::Bool(true)),
-        ])),
-    ];
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT DISTINCT creator as application FROM x_hotpic WHERE deleted_at IS NULL ORDER BY creator ASC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("application".to_string(), Value::String(row.get("application"))),
+                ("name".to_string(), Value::String(row.get("application"))),
+                ("enabled".to_string(), Value::Bool(true)),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(applications.len() as i64))),
-            ("data".to_string(), Value::Array(applications)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
@@ -109,13 +148,9 @@ pub struct HotpicRequest {
 
 #[axum::debug_handler]
 pub async fn list_hotpics(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
             "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE deleted_at IS NULL ORDER BY create_time DESC",
@@ -147,14 +182,10 @@ pub async fn list_hotpics(
 
 #[axum::debug_handler]
 pub async fn get_hotpic(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -180,14 +211,10 @@ pub async fn get_hotpic(
 
 #[axum::debug_handler]
 pub async fn create_hotpic(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): Json<HotpicRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let title = req.title.unwrap_or_default();
     let image_url = req.imageUrl.unwrap_or_default();
@@ -212,15 +239,11 @@ pub async fn create_hotpic(
 
 #[axum::debug_handler]
 pub async fn save_hotpic(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<HotpicRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let title = req.title.unwrap_or_default();
     let image_url = req.imageUrl.unwrap_or_default();
 
@@ -248,14 +271,10 @@ pub async fn save_hotpic(
 
 #[axum::debug_handler]
 pub async fn delete_hotpic(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
             "UPDATE x_hotpic SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
@@ -276,17 +295,11 @@ pub async fn delete_hotpic(
     ))))
 }
 
-/// Stub handler for /jaxrs/hotpic/assemble/control/cipher/hotpic/bbs/{id}
-/// TODO: Implement real business logic
 pub async fn cipher_hotpic_bbs_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -310,17 +323,11 @@ pub async fn cipher_hotpic_bbs_id(
     }
 }
 
-/// Stub handler for /jaxrs/hotpic/assemble/control/cipher/hotpic/cms/{id}
-/// TODO: Implement real business logic
 pub async fn cipher_hotpic_cms_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -344,17 +351,11 @@ pub async fn cipher_hotpic_cms_id(
     }
 }
 
-/// Stub handler for /jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/{page}/count/{count}
-/// TODO: Implement real business logic
 pub async fn cipher_hotpic_filter_list_page_page_count_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let offset = (page - 1) * count;
     let rows = client
         .query(
@@ -385,17 +386,11 @@ pub async fn cipher_hotpic_filter_list_page_page_count_count(
     ))))
 }
 
-/// Stub handler for /jaxrs/hotpic/assemble/control/cipher/hotpic/{id}
-/// TODO: Implement real business logic
 pub async fn cipher_hotpic_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -419,17 +414,11 @@ pub async fn cipher_hotpic_id(
     }
 }
 
-/// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/changeTitle
-/// TODO: Implement real business logic
 pub async fn user_hotpic_changeTitle(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = req.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let title = req.get("title").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
@@ -458,17 +447,11 @@ pub async fn user_hotpic_changeTitle(
     ))))
 }
 
-/// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/exists/check
-/// TODO: Implement real business logic
 pub async fn user_hotpic_exists_check(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let person_id = req.get("personId").and_then(|v| v.as_str()).unwrap_or("");
     let _application = req.get("application").and_then(|v| v.as_str()).unwrap_or("");
 
@@ -488,17 +471,11 @@ pub async fn user_hotpic_exists_check(
     Ok(Json(ActionResult::success(Value::Bool(count > 0))))
 }
 
-/// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/{page}/count/{count}
-/// TODO: Implement real business logic
 pub async fn user_hotpic_filter_list_page_page_count_count(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let offset = (page - 1) * count;
     let rows = client
         .query(
@@ -529,17 +506,11 @@ pub async fn user_hotpic_filter_list_page_page_count_count(
     ))))
 }
 
-/// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/{application}/{infoId}
-/// TODO: Implement real business logic
 pub async fn user_hotpic_application_infoId(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((application, info_id)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -564,17 +535,11 @@ pub async fn user_hotpic_application_infoId(
     }
 }
 
-/// Stub handler for /jaxrs/hotpic/assemble/control/user/hotpic/{id}
-/// TODO: Implement real business logic
 pub async fn user_hotpic_id(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, title, image_url, creator, create_time FROM x_hotpic WHERE id = $1 AND deleted_at IS NULL",
@@ -597,3 +562,4 @@ pub async fn user_hotpic_id(
         None => Ok(Json(ActionResult::error("hotpic not found"))),
     }
 }
+

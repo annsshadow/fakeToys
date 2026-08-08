@@ -5,6 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+utoipa.workspace = true
 shared = { path = "../shared" }
 axum.workspace = true
 tokio.workspace = true
@@ -18,3 +19,6 @@ uuid.workspace = true
 anyhow.workspace = true
 chrono.workspace = true
 tower = "0.5"
+
+[dev-dependencies]
+tower.workspace = true

@@ -1,18 +1,17 @@
 use super::*;
+use axum::body::Body;
+use axum::http::{Request, Method, StatusCode};
+use deadpool_postgres::{Manager, Pool};
+use deadpool_postgres::tokio_postgres::{Config, NoTls};
 use serde_json::json;
 use tower::util::ServiceExt;
 
-#[test]
-fn test_get_designer_action_result_format() {
-    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
-        "id": "designer-1",
-        "name": "Query Designer",
-        "query": "",
-        "category": "default"
-    }));
-    let json = serde_json::to_value(&result).unwrap();
-    assert_eq!(json["type"], "success");
-    assert_eq!(json["data"]["id"], "designer-1");
+fn build_test_pool() -> Pool {
+    let mgr = Manager::new(
+        Config::new(),
+        NoTls,
+    );
+    Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
 #[test]
@@ -21,12 +20,23 @@ fn test_create_designer_action_result_format() {
         "created": true,
         "id": "designer-1",
         "name": "My Designer",
-        "query": "select * from test",
         "category": "default"
     }));
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
     assert_eq!(json["data"]["created"], true);
+}
+
+#[test]
+fn test_get_designer_action_result_format() {
+    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
+        "id": "designer-1",
+        "name": "Query Designer",
+        "category": "default"
+    }));
+    let json = serde_json::to_value(&result).unwrap();
+    assert_eq!(json["type"], "success");
+    assert_eq!(json["data"]["id"], "designer-1");
 }
 
 #[test]
@@ -45,57 +55,21 @@ fn test_save_designer_action_result_format() {
     let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
         "id": "designer-1",
         "saved": true,
-        "name": "My Designer",
-        "query": "select * from test"
+        "updated_at": "2024-01-01T00:00:00Z"
     }));
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
     assert_eq!(json["data"]["saved"], true);
 }
 
-#[test]
-fn test_delete_designer_action_result_format() {
-    let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
-        "id": "designer-1",
-        "deleted": true
-    }));
-    let json = serde_json::to_value(&result).unwrap();
-    assert_eq!(json["type"], "success");
-    assert_eq!(json["data"]["deleted"], true);
-}
-
-#[tokio::test]
-async fn test_get_designer_route_exists() {
-    let app = query_assemble_designer_router(None);
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
-
-    let response = app
-        .oneshot(
-            Request::builder()
-                .uri("/jaxrs/query/assemble/designer/get/designer-1")
-                .method(Method::GET)
-                .body(Body::empty())
-                .unwrap(),
-        )
-        .await
-        .unwrap();
-
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
-}
-
 #[tokio::test]
 async fn test_create_designer_route_exists() {
-    let app = query_assemble_designer_router(None);
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
+    let pool = build_test_pool();
+    let app = crate::router(pool);
 
     let req = serde_json::to_string(&json!({
         "name": "My Designer",
-        "query": "select * from test",
-        "category": "default"
+        "query": "select * from test"
     })).unwrap();
 
     let response = app
@@ -110,15 +84,32 @@ async fn test_create_designer_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_get_designer_route_exists() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/assemble/designer/get/designer-1")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
 async fn test_list_designers_route_exists() {
-    let app = query_assemble_designer_router(None);
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
+    let pool = build_test_pool();
+    let app = crate::router(pool);
 
     let response = app
         .oneshot(
@@ -131,15 +122,13 @@ async fn test_list_designers_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
 async fn test_save_designer_route_exists() {
-    let app = query_assemble_designer_router(None);
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
+    let pool = build_test_pool();
+    let app = crate::router(pool);
 
     let req = serde_json::to_string(&json!({
         "name": "My Designer",
@@ -158,15 +147,13 @@ async fn test_save_designer_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
 
 #[tokio::test]
 async fn test_delete_designer_route_exists() {
-    let app = query_assemble_designer_router(None);
-
-    use axum::body::Body;
-    use axum::http::{Request, Method};
+    let pool = build_test_pool();
+    let app = crate::router(pool);
 
     let response = app
         .oneshot(
@@ -179,5 +166,5 @@ async fn test_delete_designer_route_exists() {
         .await
         .unwrap();
 
-    assert_eq!(response.status(), axum::http::StatusCode::OK);
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }

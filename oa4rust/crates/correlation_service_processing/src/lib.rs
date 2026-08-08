@@ -31,41 +31,71 @@ pub struct CorrelationUpdateRequest {
 }
 
 pub async fn link_service(
+    pool: Extension<Pool>,
     axum::extract::Json(req): Json<LinkRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let source_type = req.source_type.unwrap_or_default();
+    let source_id = req.source_id.unwrap_or_default();
+    let target_type = req.target_type.unwrap_or_default();
+    let target_id = req.target_id.unwrap_or_default();
+
+    let row = client
+        .query_opt(
+            r#"SELECT id FROM x_correlation WHERE "type" = $1 AND person_id = $2 AND target_id = $3 LIMIT 1"#,
+            &[&source_type, &source_id, &target_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let linked = row.is_some();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("linked".to_string(), Value::Bool(true)),
-            ("source_type".to_string(), Value::String(req.source_type.unwrap_or_default())),
-            ("source_id".to_string(), Value::String(req.source_id.unwrap_or_default())),
-            ("target_type".to_string(), Value::String(req.target_type.unwrap_or_default())),
-            ("target_id".to_string(), Value::String(req.target_id.unwrap_or_default())),
+            ("linked".to_string(), Value::Bool(linked)),
+            ("source_type".to_string(), Value::String(source_type)),
+            ("source_id".to_string(), Value::String(source_id)),
+            ("target_type".to_string(), Value::String(target_type)),
+            ("target_id".to_string(), Value::String(target_id)),
         ]),
     ))))
 }
 
 pub async fn get_link(
+    pool: Extension<Pool>,
     axum::extract::Path((source_type, source_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("sourceType".to_string(), Value::String(source_type)),
-            ("sourceId".to_string(), Value::String(source_id)),
-            ("targetType".to_string(), Value::String("unknown".to_string())),
-            ("targetId".to_string(), Value::String("none".to_string())),
-        ]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            r#"SELECT id, target_id, "type" FROM x_correlation WHERE "type" = $1 AND person_id = $2 LIMIT 1"#,
+            &[&source_type, &source_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("sourceType".to_string(), Value::String(source_type)),
+                    ("sourceId".to_string(), Value::String(source_id)),
+                    ("targetType".to_string(), Value::String(row.get("type"))),
+                    ("targetId".to_string(), Value::String(row.get("target_id"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("link not found"))),
+    }
 }
 
 pub async fn list_correlations(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(person_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
             r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation \
@@ -96,14 +126,10 @@ pub async fn list_correlations(
 }
 
 pub async fn get_correlation(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation \
@@ -130,14 +156,10 @@ pub async fn get_correlation(
 }
 
 pub async fn create_correlation(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Json(req): Json<CorrelationRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let person_id = req.person_id.unwrap_or_default();
     let target_id = req.target_id.unwrap_or_default();
@@ -164,15 +186,11 @@ pub async fn create_correlation(
 }
 
 pub async fn save_correlation(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(req): Json<CorrelationUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let target_id = req.target_id.unwrap_or_default();
     let r#type = req.r#type.unwrap_or_default();
 
@@ -199,14 +217,10 @@ pub async fn save_correlation(
 }
 
 pub async fn delete_correlation(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
             "DELETE FROM x_correlation WHERE id = $1",
@@ -273,17 +287,11 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 }
 
 
-/// Stub handler for /jaxrs/correlation/service/processing/correlation/delete/type/cms/document/{document}
-/// TODO: Implement real business logic
 pub async fn correlation_delete_type_cms_document_document(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(document): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
             r#"DELETE FROM x_correlation WHERE "type" = 'cms/document' AND target_id = $1"#,
@@ -304,17 +312,11 @@ pub async fn correlation_delete_type_cms_document_document(
     ))))
 }
 
-/// Stub handler for /jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/{job}
-/// TODO: Implement real business logic
 pub async fn correlation_delete_type_processplatform_job_job(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(job): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
             r#"DELETE FROM x_correlation WHERE "type" = 'processplatform/job' AND target_id = $1"#,
@@ -335,17 +337,11 @@ pub async fn correlation_delete_type_processplatform_job_job(
     ))))
 }
 
-/// Stub handler for /jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}
-/// TODO: Implement real business logic
 pub async fn correlation_list_type_cms_document_document(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(document): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
             r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation WHERE "type" = 'cms/document' AND target_id = $1 ORDER BY create_time DESC"#,
@@ -374,17 +370,11 @@ pub async fn correlation_list_type_cms_document_document(
     ])))))
 }
 
-/// Stub handler for /jaxrs/correlation/service/processing/correlation/list/type/cms/document/{document}/site/{site}
-/// TODO: Implement real business logic
 pub async fn correlation_list_type_cms_document_document_site_site(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((document, _site)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
             r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation WHERE "type" = 'cms/document' AND target_id = $1 ORDER BY create_time DESC"#,
@@ -413,17 +403,11 @@ pub async fn correlation_list_type_cms_document_document_site_site(
     ])))))
 }
 
-/// Stub handler for /jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}
-/// TODO: Implement real business logic
 pub async fn correlation_list_type_processplatform_job_job(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(job): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
             r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation WHERE "type" = 'processplatform/job' AND target_id = $1 ORDER BY create_time DESC"#,
@@ -452,17 +436,11 @@ pub async fn correlation_list_type_processplatform_job_job(
     ])))))
 }
 
-/// Stub handler for /jaxrs/correlation/service/processing/correlation/list/type/processplatform/job/{job}/site/{site}
-/// TODO: Implement real business logic
 pub async fn correlation_list_type_processplatform_job_job_site_site(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path((job, _site)): Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
             r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation WHERE "type" = 'processplatform/job' AND target_id = $1 ORDER BY create_time DESC"#,
@@ -491,16 +469,10 @@ pub async fn correlation_list_type_processplatform_job_job_site_site(
     ])))))
 }
 
-/// Stub handler for /jaxrs/correlation/service/processing/correlation/readable/type/cms
-/// TODO: Implement real business logic
 pub async fn correlation_readable_type_cms(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
             r#"SELECT COUNT(*) as cnt FROM x_correlation WHERE "type" LIKE 'cms/%'"#,
@@ -518,16 +490,10 @@ pub async fn correlation_readable_type_cms(
     ))))
 }
 
-/// Stub handler for /jaxrs/correlation/service/processing/correlation/readable/type/processplatform
-/// TODO: Implement real business logic
 pub async fn correlation_readable_type_processplatform(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_one(
             r#"SELECT COUNT(*) as cnt FROM x_correlation WHERE "type" LIKE 'processplatform/%'"#,
@@ -545,17 +511,11 @@ pub async fn correlation_readable_type_processplatform(
     ))))
 }
 
-/// Stub handler for /jaxrs/correlation/service/processing/correlation/type/cms/document/{document}
-/// TODO: Implement real business logic
 pub async fn correlation_type_cms_document_document(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(document): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation WHERE "type" = 'cms/document' AND target_id = $1 LIMIT 1"#,
@@ -580,17 +540,11 @@ pub async fn correlation_type_cms_document_document(
     }
 }
 
-/// Stub handler for /jaxrs/correlation/service/processing/correlation/type/processplatform/job/{job}
-/// TODO: Implement real business logic
 pub async fn correlation_type_processplatform_job_job(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(job): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation WHERE "type" = 'processplatform/job' AND target_id = $1 LIMIT 1"#,
@@ -615,18 +569,12 @@ pub async fn correlation_type_processplatform_job_job(
     }
 }
 
-/// Stub handler for /jaxrs/correlation/service/processing/correlation/update/type/cms/document/{document}
-/// TODO: Implement real business logic
 pub async fn correlation_update_type_cms_document_document(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(document): Path<String>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let person_id = req.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let r#type = req.get("type").and_then(|v| v.as_str()).unwrap_or("cms/document").to_string();
 
@@ -652,18 +600,12 @@ pub async fn correlation_update_type_cms_document_document(
     ))))
 }
 
-/// Stub handler for /jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/{job}
-/// TODO: Implement real business logic
 pub async fn correlation_update_type_processplatform_job_job(
-    pool: Option<Extension<Pool>>,
+    pool: Extension<Pool>,
     Path(job): Path<String>,
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = match pool {
-        Some(Extension(pool)) => pool.get().await.map_err(|_| AppError::Internal)?,
-        None => return Ok(Json(ActionResult::success(Value::Null))),
-    };
-
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let person_id = req.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let r#type = req.get("type").and_then(|v| v.as_str()).unwrap_or("processplatform/job").to_string();
 
@@ -688,3 +630,4 @@ pub async fn correlation_update_type_processplatform_job_job(
         ]),
     ))))
 }
+
