@@ -3,6 +3,7 @@ use axum::{
     Json, Router,
 };
 use deadpool_postgres::Pool;
+use serde::Deserialize;
 use serde_json::Value;
 
 use shared::error::AppError;
@@ -80,6 +81,91 @@ pub fn query_service_router(pool: Pool) -> Router {
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::query_service_router(pool)
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ProcessingExecuteRequest {
+    pub query: Option<String>,
+    pub model_flag: Option<String>,
+    pub params: Option<Value>,
+}
+
+#[axum::debug_handler]
+pub async fn processing_execute(
+    pool: Extension<Pool>,
+    Json(req): Json<ProcessingExecuteRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let query = req.query.unwrap_or_default();
+    let model_flag = req.model_flag.unwrap_or_default();
+    let params = req.params.unwrap_or_default();
+    let params_str = serde_json::to_string(&params).unwrap_or_default();
+
+    if query.trim().is_empty() {
+        return Ok(Json(ActionResult::error("query is required")));
+    }
+
+    let creator = "system";
+
+    let id = if model_flag.is_empty() {
+        let id = uuid::Uuid::new_v4().to_string();
+        client
+            .execute(
+                "INSERT INTO x_query_processing (id, query, model_flag, params, creator, create_time, update_time) \
+                 VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
+                &[&id, &query, &model_flag, &params_str, &creator],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        id
+    } else {
+        let id = uuid::Uuid::new_v4().to_string();
+        let result = client
+            .execute(
+                "INSERT INTO x_query_processing (id, query, model_flag, params, creator, create_time, update_time) \
+                 VALUES ($1, $2, $3, $4, $5, NOW(), NOW()) \
+                 ON CONFLICT (model_flag) DO UPDATE SET query = EXCLUDED.query, params = EXCLUDED.params, update_time = NOW() \
+                 RETURNING id",
+                &[&id, &query, &model_flag, &params_str, &creator],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+
+        if result > 0 {
+            id
+        } else {
+            uuid::Uuid::new_v4().to_string()
+        }
+    };
+
+    let status = if model_flag.is_empty() {
+        "pending".to_string()
+    } else {
+        let model_result = client
+            .execute(
+                "UPDATE x_query_neural_model SET status = 'processing', update_time = NOW() WHERE flag = $1",
+                &[&model_flag],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+
+        if model_result > 0 {
+            "processing".to_string()
+        } else {
+            "pending".to_string()
+        }
+    };
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("query".to_string(), Value::String(query)),
+            ("modelFlag".to_string(), Value::String(model_flag)),
+            ("status".to_string(), Value::String(status)),
+            ("executed".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 #[cfg(test)]

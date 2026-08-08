@@ -1232,6 +1232,7 @@ dependencies = [
  "sqlx",
  "thiserror",
  "tokio",
+ "tower",
  "tracing",
  "uuid",
 ]
@@ -3219,8 +3220,10 @@ dependencies = [
 name = "program_center_core_entity"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "axum",
  "deadpool-postgres",
+ "file_assemble_control",
  "serde",
  "serde_json",
  "shared",

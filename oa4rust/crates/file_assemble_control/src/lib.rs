@@ -39,7 +39,7 @@ impl RowGet for deadpool_postgres::tokio_postgres::Row {
 // Production impl wraps deadpool_postgres::Object (derefs to PgClient).
 
 #[async_trait::async_trait]
-trait ControlClient: Send + Sync {
+pub trait ControlClient: Send + Sync {
     async fn ctrl_query(
         &self,
         q: &str,
@@ -132,7 +132,7 @@ impl ControlClient for Arc<dyn ControlClient> {
 
 // ---- ControlPool ----
 
-trait ControlPool: Send + Sync {
+pub trait ControlPool: Send + Sync {
     fn acquire<'a>(
         &'a self,
     ) -> std::pin::Pin<Box<dyn std::future::Future<Output = Result<Arc<dyn ControlClient>, AppError>> + Send + 'a>>;
@@ -183,6 +183,9 @@ pub fn file_assemble_control_router(pool: Pool) -> axum::Router {
         .route("/jaxrs/file/assemble/control/file/upload", post(upload_file))
         .route("/jaxrs/file/assemble/control/file/create", post(create_file))
         .route("/jaxrs/file/assemble/control/file/delete/{id}", post(delete_file))
+        .route("/jaxrs/file/core/entity/file/create", post(create_file_entity))
+        .route("/jaxrs/file/core/entity/file/update/{id}", post(update_file_entity))
+        .route("/jaxrs/file/core/entity/file/delete/{id}", post(delete_file_entity))
 }
 
 #[axum::debug_handler]
@@ -479,6 +482,197 @@ pub async fn delete_file(
 
     if result == 0 {
         return Ok(Json(ActionResult::error("file not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn create_file_entity(
+    pool: Extension<Pool>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let path = body.get("path").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let folder_id = body.get("folderId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
+    let creator = "system";
+
+    let id = uuid::Uuid::new_v4().to_string();
+
+    client
+        .execute(
+            "INSERT INTO x_file (id, name, path, size, creator, create_time, folder_id) \
+              VALUES ($1, $2, $3, $4, $5, NOW(), $6)",
+            &[&id, &name, &path, &size, &creator, &folder_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("path".to_string(), Value::String(path)),
+            ("folderId".to_string(), Value::String(folder_id)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn update_file_entity(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt("SELECT creator FROM x_file WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("file not found")));
+    };
+
+    let creator: String = row.get("creator");
+    shared::middleware::require_owner(&pool, &session, &creator).await?;
+
+    let has_name = body.get("name").is_some();
+    let has_path = body.get("path").is_some();
+    let has_size = body.get("size").is_some();
+    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let path = body.get("path").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(-1);
+
+    let row = if has_name && has_path && has_size {
+        client
+            .query_opt(
+                "UPDATE x_file SET name = NULLIF($2, ''), path = NULLIF($3, ''), size = NULLIF($4, -1), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, name, path, size",
+                &[&id, &name, &path, &size],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    } else if has_name && has_path {
+        client
+            .query_opt(
+                "UPDATE x_file SET name = NULLIF($2, ''), path = NULLIF($3, ''), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, name, path",
+                &[&id, &name, &path],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    } else if has_name && has_size {
+        client
+            .query_opt(
+                "UPDATE x_file SET name = NULLIF($2, ''), size = NULLIF($3, -1), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, name, path, size",
+                &[&id, &name, &size],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    } else if has_path && has_size {
+        client
+            .query_opt(
+                "UPDATE x_file SET path = NULLIF($2, ''), size = NULLIF($3, -1), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, name, path, size",
+                &[&id, &path, &size],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    } else if has_name {
+        client
+            .query_opt(
+                "UPDATE x_file SET name = NULLIF($2, ''), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, name, path",
+                &[&id, &name],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    } else if has_path {
+        client
+            .query_opt(
+                "UPDATE x_file SET path = NULLIF($2, ''), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, name, path",
+                &[&id, &path],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    } else if has_size {
+        client
+            .query_opt(
+                "UPDATE x_file SET size = NULLIF($2, -1), update_time = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, name, path, size",
+                &[&id, &size],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    } else {
+        client
+            .query_opt(
+                "UPDATE x_file SET update_time = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id, name, path",
+                &[&id],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    };
+
+    match row {
+        Some(row) => {
+            let result_name: String = row.get("name");
+            let result_path: String = row.get("path");
+            let result_size: Option<i64> = row.get("size");
+
+            let mut map = serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("saved".to_string(), Value::Bool(true)),
+                ("name".to_string(), Value::String(result_name)),
+                ("path".to_string(), Value::String(result_path)),
+            ]);
+            if let Some(s) = result_size {
+                map.insert("size".to_string(), Value::Number(serde_json::Number::from(s)));
+            }
+
+            Ok(Json(ActionResult::success(Value::Object(map))))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn delete_file_entity(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt("SELECT creator FROM x_file WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("file not found or already deleted")));
+    };
+
+    let creator: String = row.get("creator");
+    shared::middleware::require_owner(&pool, &session, &creator).await?;
+
+    let result = client
+        .execute(
+            "DELETE FROM x_file WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("file not found or already deleted")));
     }
 
     Ok(Json(ActionResult::success(Value::Object(

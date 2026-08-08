@@ -4,17 +4,19 @@ use axum::{
     Json, Router,
 };
 use deadpool_postgres::Pool;
+use file_assemble_control::{ControlClient, ControlPool};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
+use std::sync::Arc;
 
 pub mod routes;
 
 pub async fn application_list(
-    pool: Extension<Pool>,
+    pool: Extension<Arc<dyn ControlPool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = pool.acquire().await?;
     let rows = client
-        .query(
+        .ctrl_query(
             "SELECT id, name, category, sub_category, version, publisher FROM x_application ORDER BY name",
             &[],
         )
@@ -25,12 +27,12 @@ pub async fn application_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("subCategory".to_string(), Value::String(row.get("sub_category"))),
-                ("version".to_string(), Value::String(row.get("version"))),
-                ("publisher".to_string(), Value::String(row.get("publisher"))),
+                ("id".to_string(), Value::String(row.get_str("id").to_string())),
+                ("name".to_string(), Value::String(row.get_str("name").to_string())),
+                ("category".to_string(), Value::String(row.get_str("category").to_string())),
+                ("subCategory".to_string(), Value::String(row.get_str("sub_category").to_string())),
+                ("version".to_string(), Value::String(row.get_str("version").to_string())),
+                ("publisher".to_string(), Value::String(row.get_str("publisher").to_string())),
             ]))
         })
         .collect();
@@ -44,11 +46,11 @@ pub async fn application_list(
 }
 
 pub async fn script_list(
-    pool: Extension<Pool>,
+    pool: Extension<Arc<dyn ControlPool>>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = pool.acquire().await?;
     let rows = client
-        .query(
+        .ctrl_query(
             "SELECT id, name, alias, validated, creator_person FROM x_script ORDER BY name",
             &[],
         )
@@ -59,11 +61,11 @@ pub async fn script_list(
         .iter()
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("alias".to_string(), Value::String(row.get("alias"))),
-                ("validated".to_string(), Value::Bool(row.get("validated"))),
-                ("creatorPerson".to_string(), Value::String(row.get("creator_person"))),
+                ("id".to_string(), Value::String(row.get_str("id").to_string())),
+                ("name".to_string(), Value::String(row.get_str("name").to_string())),
+                ("alias".to_string(), Value::String(row.get_str("alias").to_string())),
+                ("validated".to_string(), Value::Bool(row.get_bool("validated"))),
+                ("creatorPerson".to_string(), Value::String(row.get_str("creator_person").to_string())),
             ]))
         })
         .collect();
@@ -191,6 +193,17 @@ pub fn program_center_core_entity_router(pool: Pool) -> Router {
         .layer(Extension(pool))
 }
 
+#[cfg(test)]
+pub fn program_center_mock_router(pool: Arc<dyn ControlPool>) -> Router {
+    Router::new()
+        .route("/jaxrs/program_center/application/list", get(application_list))
+        .route("/jaxrs/program_center/script/list", get(script_list))
+        .layer(Extension(pool))
+}
+
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::program_center_core_entity_router(pool)
 }
+
+#[cfg(test)]
+mod tests;

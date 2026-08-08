@@ -120,7 +120,7 @@ pub async fn modules_all(
             Value::Object(serde_json::Map::from_iter([
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("className".to_string(), Value::String(class_name)),
-                ("entityCount".to_string(), Value::Number(serde_json::Number::from(field_count))),
+                ("fieldCount".to_string(), Value::Number(serde_json::Number::from(field_count))),
             ]))
         })
         .collect();
@@ -138,6 +138,10 @@ pub fn program_center_router() -> Router {
         .route("/jaxrs/program/applications", get(applications))
         .route("/jaxrs/program/appstyle/current/style", get(current_style))
         .route("/jaxrs/program/datastructure/modules/all", get(modules_all))
+        .route("/jaxrs/program_center/application/create", post(application_create))
+        .route("/jaxrs/program_center/application/save/{id}", post(application_save))
+        .route("/jaxrs/program_center/agent/create", post(agent_create))
+        .route("/jaxrs/program_center/agent/save/{id}", post(agent_save))
 }
 
 pub async fn collect_list(
@@ -2497,7 +2501,168 @@ pub async fn qiyeweixin_send_getprivateinfo_message(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("sent".to_string(), Value::Bool(true)),
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ApplicationCreateRequest {
+    pub name: Option<String>,
+    pub app_id: Option<String>,
+    pub description: Option<String>,
+    pub creator: Option<String>,
+}
+
+#[axum::debug_handler]
+pub async fn application_create(
+    pool: Extension<Pool>,
+    Json(req): Json<ApplicationCreateRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = req.name.unwrap_or_default();
+    let app_id = req.app_id.unwrap_or_default();
+    let description = req.description.unwrap_or_default();
+    let creator = req.creator.unwrap_or_else(|| "system".to_string());
+
+    if name.trim().is_empty() {
+        return Ok(Json(ActionResult::error("name is required")));
+    }
+
+    client
+        .execute(
+            "INSERT INTO x_applications (id, name, app_id, description, disable, creator, create_time) \
+              VALUES ($1, $2, $3, $4, false, $5, NOW())",
+            &[&id, &name, &app_id, &description, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("appId".to_string(), Value::String(app_id)),
+            ("description".to_string(), Value::String(description)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ApplicationSaveRequest {
+    pub name: Option<String>,
+    pub app_id: Option<String>,
+    pub description: Option<String>,
+    pub disable: Option<bool>,
+}
+
+#[axum::debug_handler]
+pub async fn application_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    Json(req): Json<ApplicationSaveRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_applications SET name = COALESCE($1, name), app_id = COALESCE($2, app_id), description = COALESCE($3, description), disable = COALESCE($4, disable), update_time = NOW() WHERE id = $5",
+            &[&req.name, &req.app_id, &req.description, &req.disable, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("application not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AgentCreateRequest {
+    pub name: Option<String>,
+    pub flag: Option<String>,
+    pub description: Option<String>,
+    pub creator: Option<String>,
+}
+
+#[axum::debug_handler]
+pub async fn agent_create(
+    pool: Extension<Pool>,
+    Json(req): Json<AgentCreateRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = req.name.unwrap_or_default();
+    let flag = req.flag.unwrap_or_default();
+    let description = req.description.unwrap_or_default();
+    let creator = req.creator.unwrap_or_else(|| "system".to_string());
+
+    if name.trim().is_empty() {
+        return Ok(Json(ActionResult::error("name is required")));
+    }
+
+    client
+        .execute(
+            "INSERT INTO x_program_agent (id, name, flag, description, creator, create_time, update_time) \
+              VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
+            &[&id, &name, &flag, &description, &creator],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("flag".to_string(), Value::String(flag)),
+            ("description".to_string(), Value::String(description)),
+            ("created".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AgentSaveRequest {
+    pub name: Option<String>,
+    pub flag: Option<String>,
+    pub description: Option<String>,
+}
+
+#[axum::debug_handler]
+pub async fn agent_save(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    Json(req): Json<AgentSaveRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "UPDATE x_program_agent SET name = COALESCE($1, name), flag = COALESCE($2, flag), description = COALESCE($3, description), update_time = NOW() WHERE id = $4",
+            &[&req.name, &req.flag, &req.description, &id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("agent not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("saved".to_string(), Value::Bool(true)),
         ]),
     ))))
 }

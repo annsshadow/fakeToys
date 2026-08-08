@@ -5,13 +5,16 @@ mod tests {
         file_assemble_control_router, get_control_config, list_control_categories,
         list_storage_pools, update_control_config,
     };
+    use axum::body::Body;
     use axum::extract::Extension;
+    use axum::http::{Request, Method, StatusCode};
     use deadpool_postgres::Pool;
     use deadpool_postgres::tokio_postgres::{Config, NoTls};
     use serde_json::Value;
     use shared::response::ActionResult;
     use std::sync::Arc;
     use tokio::sync::Mutex;
+    use tower::ServiceExt;
 
     // ---- Mock types ----
 
@@ -98,7 +101,8 @@ mod tests {
             _p: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
         ) -> Result<Vec<Box<dyn RowGet>>, Box<dyn std::error::Error + Send + Sync>> {
             match self.results.lock().await.pop() {
-                Some(MockQueryResult::Rows(_)) | Some(MockQueryResult::EmptyRows) => Ok(vec![]),
+                Some(MockQueryResult::Rows(rows)) => Ok(rows.into_iter().map(|v| Box::new(MockRow { values: v }) as Box<dyn RowGet>).collect()),
+                Some(MockQueryResult::EmptyRows) => Ok(vec![]),
                 Some(MockQueryResult::Error) => Err(Box::<dyn std::error::Error + Send + Sync>::from("mock query error")),
                 _ => Ok(vec![]),
             }
@@ -254,5 +258,170 @@ mod tests {
         let result: ActionResult<String> = ActionResult::error("test error");
         assert_eq!(result.r#type, Some("error".to_string()));
         assert_eq!(result.message, Some("test error".to_string()));
+    }
+
+    // ── route existence: routes defined in file_assemble_control_router ──────
+
+    #[tokio::test]
+    async fn test_file_list_requires_db() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/file/list/folder-1")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_get_file_requires_db() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/file/file-1")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_upload_file_requires_db() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let body = serde_json::to_string(&serde_json::json!({"name": "test.txt", "path": "/tmp", "folderId": "f1", "size": 100})).unwrap();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/file/upload")
+                    .method(Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_create_file_requires_db() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let body = serde_json::to_string(&serde_json::json!({"name": "new.txt", "path": "/tmp", "folderId": "f1"})).unwrap();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/file/create")
+                    .method(Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_delete_file_requires_db() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/file/delete/file-1")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_unknown_route_returns_404() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/unknown/path")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    // ── Request validation: create/update/delete with invalid input ─────────
+
+    #[tokio::test]
+    async fn test_create_file_empty_name() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let body = serde_json::to_string(&serde_json::json!({"name": "", "path": "/tmp"})).unwrap();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/file/create")
+                    .method(Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_upload_file_missing_path() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let body = serde_json::to_string(&serde_json::json!({"name": "test.txt", "folderId": "f1"})).unwrap();
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/file/upload")
+                    .method(Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_delete_file_empty_id_path() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/file/delete/")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 }
