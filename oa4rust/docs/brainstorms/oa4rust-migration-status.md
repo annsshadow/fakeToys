@@ -8,7 +8,7 @@
 | crate | 状态 | handlers | stub_ | null |
 |-------|------|---------:|------:|-----:|
 | auth | done | 24 | 0 | 0 |
-| control | doing | 25 | 0 | 4 |
+| control | done | 25 | 0 | 0 |
 | personal | done | 7 | 0 | 0 |
 | personal_extend | done | 6 | 0 | 0 |
 | program_init | done | 3 | 0 | 0 |
@@ -23,8 +23,8 @@
 | calendar | todo | 0 | 0 | 0 |
 | calendar_assemble_control | done | 4 | 0 | 0 |
 | calendar_core_entity | done | 10 | 0 | 0 |
-| file | done | 3 | 0 | 0 |
-| file_assemble_control | done | 91 | 0 | 0 |
+| file | done | 10 | 0 | 0 |
+| file_assemble_control | done | 94 | 0 | 0 |
 | file_core_entity | done | 4 | 0 | 0 |
 | general | done | 3 | 0 | 0 |
 | general_assemble_control | done | 61 | 0 | 0 |
@@ -35,47 +35,47 @@
 | crate | 状态 | handlers | stub_ | null |
 |-------|------|---------:|------:|-----:|
 | cms_assemble_control | done | 310 | 0 | 0 |
-| cms_control | todo | 0 | 0 | 0 |
-| cms_core_entity | done | 4 | 0 | 0 |
+| cms_control | done | 2 | 0 | 0 |
+| cms_core_entity | done | 6 | 0 | 0 |
 | cms_core_express | done | 2 | 0 | 0 |
 | cms_express | done | 3 | 0 | 0 |
-| meeting | done | 6 | 0 | 0 |
+| meeting | done | 9 | 0 | 0 |
 | meeting_assemble_control | done | 59 | 0 | 0 |
-| meeting_core_entity | done | 7 | 0 | 0 |
+| meeting_core_entity | done | 11 | 0 | 0 |
 | message | done | 5 | 0 | 0 |
-| message_assemble_communicate | doing | 58 | 0 | 55 |
+| message_assemble_communicate | done | 58 | 0 | 0 |
 | message_core_entity | done | 3 | 0 | 0 |
 | portal | done | 11 | 0 | 0 |
-| portal_assemble_designer | doing | 53 | 0 | 48 |
-| portal_assemble_surface | doing | 45 | 0 | 40 |
-| portal_core_entity | done | 4 | 0 | 0 |
-| process_designer | todo | 0 | 0 | 0 |
+| portal_assemble_designer | done | 56 | 0 | 0 |
+| portal_assemble_surface | done | 48 | 0 | 0 |
+| portal_core_entity | done | 8 | 0 | 0 |
+| process_designer | done | 5 | 0 | 0 |
 | process_express | todo | 0 | 0 | 0 |
 | process_surface | todo | 0 | 0 | 0 |
 | processplatform_assemble_bam | done | 50 | 0 | 0 |
-| processplatform_assemble_designer | doing | 96 | 0 | 5 |
-| processplatform_assemble_surface | doing | 487 | 0 | 5 |
-| processplatform_core_entity | done | 4 | 0 | 0 |
+| processplatform_assemble_designer | done | 96 | 0 | 0 |
+| processplatform_assemble_surface | done | 487 | 0 | 0 |
+| processplatform_core_entity | done | 6 | 0 | 0 |
 | processplatform_core_express | done | 6 | 0 | 0 |
-| processplatform_service_processing | doing | 98 | 0 | 5 |
+| processplatform_service_processing | done | 98 | 0 | 0 |
 | query_assemble_designer | done | 67 | 0 | 0 |
 | query_assemble_surface | done | 59 | 0 | 0 |
 | query_core_entity | done | 5 | 0 | 0 |
 | query_core_express | done | 4 | 0 | 0 |
 | query_express | done | 1 | 0 | 0 |
-| query_service | done | 1 | 0 | 0 |
+| query_service | done | 3 | 0 | 0 |
 | query_service_processing | done | 4 | 0 | 0 |
 
 ## U7
 
 | crate | 状态 | handlers | stub_ | null |
 |-------|------|---------:|------:|-----:|
-| ai | done | 6 | 0 | 0 |
-| ai_assemble_control | doing | 31 | 0 | 27 |
+| ai | done | 21 | 0 | 0 |
+| ai_assemble_control | done | 31 | 0 | 0 |
 | ai_core_entity | done | 3 | 0 | 0 |
-| base | done | 3 | 0 | 0 |
+| base | done | 2 | 0 | 0 |
 | bbs | done | 9 | 0 | 0 |
-| bbs_assemble_control | doing | 20 | 0 | 8 |
+| bbs_assemble_control | done | 57 | 0 | 0 |
 | bbs_core_entity | done | 15 | 0 | 0 |
 | component | done | 3 | 0 | 0 |
 | component_assemble_control | done | 10 | 0 | 0 |
@@ -84,22 +84,22 @@
 | correlation | done | 3 | 0 | 0 |
 | correlation_core_entity | done | 2 | 0 | 0 |
 | correlation_core_express | done | 2 | 0 | 0 |
-| correlation_service_processing | doing | 20 | 0 | 17 |
+| correlation_service_processing | done | 20 | 0 | 0 |
 | express | done | 3 | 0 | 0 |
 | hotpic | done | 3 | 0 | 0 |
-| hotpic_assemble_control | doing | 18 | 0 | 14 |
+| hotpic_assemble_control | done | 18 | 0 | 0 |
 | hotpic_core_entity | done | 3 | 0 | 0 |
 | jpush | done | 6 | 0 | 0 |
-| jpush_assemble_control | doing | 16 | 0 | 13 |
+| jpush_assemble_control | done | 16 | 0 | 0 |
 | jpush_core_entity | done | 5 | 0 | 0 |
 | mind | done | 10 | 0 | 0 |
 | mind_assemble_control | done | 9 | 0 | 0 |
 | mind_core_entity | done | 10 | 0 | 0 |
-| organization_assemble_control | doing | 101 | 0 | 5 |
+| organization_assemble_control | done | 101 | 0 | 0 |
 | organization_assemble_express | done | 4 | 0 | 0 |
 | organization_core_entity | done | 6 | 0 | 0 |
 | organization_core_express | done | 3 | 0 | 0 |
-| program_center | done | 201 | 0 | 0 |
+| program_center | done | 205 | 0 | 0 |
 | program_center_core_entity | done | 5 | 0 | 0 |
 
 ## 说明

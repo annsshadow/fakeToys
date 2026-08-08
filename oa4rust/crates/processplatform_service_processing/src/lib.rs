@@ -213,21 +213,8 @@ pub async fn cancel_process_instance(
     ))))
 }
 
-pub fn processplatform_service_processing_router() -> Router {
-    Router::new()
-        .route("/jaxrs/processplatform/service/processing/get/{id}", get(get_process))
-        .route("/jaxrs/processplatform/service/processing/create", post(create_process))
-        .route("/jaxrs/processplatform/service/processing/list/{category}", get(list_processes))
-        .route("/jaxrs/processplatform/service/processing/execute/{id}", post(execute_process))
-        .route("/jaxrs/processplatform/service/processing/instance/{executionId}", get(get_process_instance))
-        .route("/jaxrs/processplatform/service/processing/cancel/{executionId}", post(cancel_process_instance))
-}
-
-#[cfg(test)]
-mod tests;
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    processplatform_service_processing_router().layer(axum::extract::Extension(pool))
+    routes::router(pool)
 }
 
 

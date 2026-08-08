@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::{
-        complex_top, file_download, file_router, folder_create, folder_list_top,
+        complex_top, file_download, router as file_router, folder_create, folder_list_top,
         folder_list_with_folder, upload_file_record,
     };
     use axum::extract::{Extension, Json};

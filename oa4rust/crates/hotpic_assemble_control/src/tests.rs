@@ -74,19 +74,95 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_update_control_config_returns_success() {
+    async fn test_hotpic_list_java_path_route() {
         let pool = build_test_pool();
         let app = crate::router(pool);
-
-        let body = serde_json::to_string(&serde_json::json!({"cacheEnabled": false})).unwrap();
 
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/hotpic_assemble_control/update/control/config")
+                    .uri("/jaxrs/hotpic/list/hotpics")
                     .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_hotpic_get_by_id_route() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/hotpic/get/hotpic/hotpic-001")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_hotpic_create_java_path_route() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+
+        let body = serde_json::to_string(&serde_json::json!({"name": "test"})).unwrap();
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/hotpic/create/hotpic")
+                    .method(Method::POST)
                     .header("content-type", "application/json")
                     .body(Body::from(body))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_hotpic_control_config_java_path_route() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/hotpic/assemble/control/config")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_user_hotpic_id_route() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/hotpic/assemble/control/user/hotpic/hotpic-001")
+                    .method(Method::GET)
+                    .body(Body::empty())
                     .unwrap(),
             )
             .await

@@ -20,7 +20,11 @@ anyhow.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
+utoipa = { version = "4", features = ["axum_extras"] }
+utoipa-swagger-ui = { version = "6", features = ["axum"] }
+
 shared = { path = "crates/shared" }
+mcp_server = { path = "crates/mcp_server" }
 serde_json = "1"
 auth = { path = "crates/auth" }
 personal = { path = "crates/personal" }
@@ -101,7 +105,8 @@ organization_assemble_control = { path = "crates/organization_assemble_control" 
 processplatform_assemble_bam = { path = "crates/processplatform_assemble_bam" }
 processplatform_assemble_designer = { path = "crates/processplatform_assemble_designer" }
 query_core_express = { path = "crates/query_core_express" }
-query_service_processing = { path = "crates/query_service_processing" }
+ openapi = { path = "crates/openapi" }
+ query_service_processing = { path = "crates/query_service_processing" }
 
 
 [workspace]
@@ -187,6 +192,8 @@ members = [
     "crates/processplatform_assemble_designer",
     "crates/query_core_express",
     "crates/query_service_processing",
+    "crates/mcp_server",
+    "crates/openapi",
 ]
 resolver = "2"
 
@@ -194,6 +201,22 @@ resolver = "2"
 edition = "2021"
 rust-version = "1.75"
 version = "0.1.0"
+
+[dev-dependencies]
+oa4rust = { path = "." }
+reqwest = { version = "0.12", features = ["json", "rustls-tls", "multipart"] }
+tokio = { version = "1", features = ["full"] }
+serde_yaml = "0.9"
+deadpool-postgres.workspace = true
+url = "2"
+hmac.workspace = true
+sha2.workspace = true
+base64.workspace = true
+uuid.workspace = true
+chrono.workspace = true
+anyhow.workspace = true
+tracing.workspace = true
+serde.workspace = true
 
 [workspace.dependencies]
 axum = { version = "0.8", features = ["macros", "json"] }
@@ -221,3 +244,6 @@ urlencoding = "2"
 captcha = "1.0.0"
 reqwest = { version = "0.12", features = ["json"] }
 async-trait = "0.1"
+ utoipa = { version = "4", features = ["axum_extras"] }
+ utoipa-swagger-ui = { version = "7", features = ["axum"] }
+ openapi = { path = "crates/openapi" }

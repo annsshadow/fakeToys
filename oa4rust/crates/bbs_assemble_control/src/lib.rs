@@ -572,3 +572,342 @@ pub async fn section_viewforum_forumId(
     ))))
 }
 
+pub async fn delete_forum(
+    pool: Extension<Pool>,
+    Path(_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+    ))))
+}
+
+pub async fn delete_reply(
+    pool: Extension<Pool>,
+    Path(_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+    ))))
+}
+
+pub async fn delete_subject(
+    pool: Extension<Pool>,
+    Path(_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+    ))))
+}
+
+pub async fn list_reply_filter(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn list_topics_creamed(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn list_topics_recommended(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn list_subjects_filtered(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn list_subjects_index(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn list_subjects_recommended_index(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn login(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("token".to_string(), Value::String("".to_string()))]),
+    ))))
+}
+
+pub async fn logout(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+    ))))
+}
+
+pub async fn picture_list(
+    pool: Extension<Pool>,
+    Path(_subject_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn shutup_create(
+    pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(body.0)))
+}
+
+pub async fn shutup_delete(
+    pool: Extension<Pool>,
+    Path(_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+    ))))
+}
+
+pub async fn shutup_list(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn subject_creamed_list(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn subject_filter_list(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn subject_filter_listsubjectinfo(
+    pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(body.0)))
+}
+
+pub async fn subject_index_list(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn subject_search(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn subject_statgrade(
+    pool: Extension<Pool>,
+    Path((section_name, subject_type)): Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _section_name = section_name;
+    let _subject_type = subject_type;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("count".to_string(), Value::Number(serde_json::Number::from(0)))]),
+    ))))
+}
+
+pub async fn topic_creamed_list(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn topic_filter_list(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn topic_filter_listsubjectinfo(
+    pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(body.0)))
+}
+
+pub async fn topic_index_list(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn topic_recommended_index(
+    pool: Extension<Pool>,
+    Path(_count): Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn topic_recommended_list(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn topic_search(
+    pool: Extension<Pool>,
+    Path((page, count)): Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _page = page;
+    let _count = count;
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn user_forum_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn user_info(
+    pool: Extension<Pool>,
+    Path(_person): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String("".to_string()))]),
+    ))))
+}
+
+pub async fn user_reply_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn user_role_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn user_section_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn user_setting(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("setting".to_string(), Value::Null)]),
+    ))))
+}
+
+pub async fn user_subject_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+
+pub async fn uuid_generate() -> Result<Json<ActionResult<Value>>, AppError> {
+    let uuid = uuid::Uuid::new_v4().to_string();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("uuid".to_string(), Value::String(uuid))]),
+    ))))
+}
+
+pub async fn subjectattach_list(
+    pool: Extension<Pool>,
+    Path(_subject_id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+}
+

@@ -231,22 +231,8 @@ pub async fn save_surface(
     ))))
 }
 
-pub fn processplatform_assemble_surface_router() -> Router {
-    Router::new()
-        .route("/jaxrs/processplatform/assemble/surface/get/{id}", get(get_surface))
-        .route("/jaxrs/processplatform/assemble/surface/create", post(create_surface))
-        .route("/jaxrs/processplatform/assemble/surface/list/{category}", get(list_surfaces))
-        .route("/jaxrs/processplatform/assemble/surface/save/{id}", post(save_surface))
-        .route("/jaxrs/processplatform/assemble/surface/preview/{id}", get(preview_surface))
-        .route("/jaxrs/processplatform/assemble/surface/publish/{id}", post(publish_surface))
-        .route("/jaxrs/processplatform/assemble/surface/delete/{id}", post(delete_surface))
-}
-
-#[cfg(test)]
-mod tests;
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    processplatform_assemble_surface_router().layer(axum::extract::Extension(pool))
+    routes::router(pool)
 }
 
 

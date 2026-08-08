@@ -4,6 +4,17 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/bbs/forum/view/all",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "bbs"
+)]
 pub async fn view_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -41,6 +52,20 @@ pub async fn view_all(
     ))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/bbs/forum/view/{id}",
+    params(
+        ("id" = String, Path, description = "Forum ID")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "bbs"
+)]
 pub async fn view_one(
     pool: Extension<Pool>,
     Path(id): Path<String>,

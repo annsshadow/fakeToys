@@ -1,7 +1,7 @@
 use axum::extract::{Extension, Path};
 use axum::Json;
 use deadpool_postgres::Pool;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared::error::AppError;
 use shared::response::ActionResult;
@@ -9,7 +9,7 @@ use shared::response::ActionResult;
 use crate::pagination::page_result;
 
 /// 创建用户组请求体（契约路径 POST /jaxrs/group）
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct GroupCreateRequest {
     /// 用户组名称
     pub name: String,
@@ -18,7 +18,7 @@ pub struct GroupCreateRequest {
 }
 
 /// 更新用户组请求体（契约路径 PUT /jaxrs/group/{flag}）
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, utoipa::ToSchema)]
 pub struct GroupUpdateRequest {
     /// 用户组名称
     pub name: Option<String>,
@@ -28,7 +28,20 @@ pub struct GroupUpdateRequest {
     pub disable: Option<bool>,
 }
 
-/// 获取用户组详情：GET /jaxrs/group/{flag}
+#[utoipa::path(
+    get,
+    path = "/jaxrs/group/{flag}",
+    params(
+        ("flag" = String, Path, description = "Group flag (id or name)")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn get(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -115,7 +128,21 @@ async fn query_page(
     Ok((total, data))
 }
 
-/// 获取用户组列表（下一批）：GET /jaxrs/group/list/{flag}/next/{count}
+#[utoipa::path(
+    get,
+    path = "/jaxrs/group/list/{flag}/next/{count}",
+    params(
+        ("flag" = String, Path, description = "Pagination cursor flag"),
+        ("count" = i64, Path, description = "Number of items to return")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn list_next(
     pool: Extension<Pool>,
     Path((flag, count)): Path<(String, i64)>,
@@ -124,7 +151,21 @@ pub async fn list_next(
     Ok(page_result(total, data, true))
 }
 
-/// 获取用户组列表（上一批）：GET /jaxrs/group/list/{flag}/prev/{count}
+#[utoipa::path(
+    get,
+    path = "/jaxrs/group/list/{flag}/prev/{count}",
+    params(
+        ("flag" = String, Path, description = "Pagination cursor flag"),
+        ("count" = i64, Path, description = "Number of items to return")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn list_prev(
     pool: Extension<Pool>,
     Path((flag, count)): Path<(String, i64)>,
@@ -133,7 +174,18 @@ pub async fn list_prev(
     Ok(page_result(total, data, false))
 }
 
-/// 创建用户组：POST /jaxrs/group
+#[utoipa::path(
+    post,
+    path = "/jaxrs/group",
+    request_body = GroupCreateRequest,
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn create(
     pool: Extension<Pool>,
     Json(req): Json<GroupCreateRequest>,
@@ -177,7 +229,21 @@ pub async fn create(
     Ok(Json(ActionResult::success(result)))
 }
 
-/// 更新用户组信息：PUT /jaxrs/group/{flag}
+#[utoipa::path(
+    put,
+    path = "/jaxrs/group/{flag}",
+    params(
+        ("flag" = String, Path, description = "Group flag (id or name)")
+    ),
+    request_body = GroupUpdateRequest,
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn update(
     pool: Extension<Pool>,
     Path(flag): Path<String>,
@@ -221,7 +287,20 @@ pub async fn update(
     Ok(Json(ActionResult::success(result)))
 }
 
-/// 软删除用户组：DELETE /jaxrs/group/{flag}
+#[utoipa::path(
+    delete,
+    path = "/jaxrs/group/{flag}",
+    params(
+        ("flag" = String, Path, description = "Group flag (id or name)")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "control"
+)]
 pub async fn delete(
     pool: Extension<Pool>,
     Path(flag): Path<String>,

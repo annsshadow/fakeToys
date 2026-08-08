@@ -1,0 +1,108 @@
+[package]
+name = "mcp_server"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "mcp_server"
+path = "src/main.rs"
+
+[dependencies]
+axum.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tower.workspace = true
+tower-http.workspace = true
+anyhow.workspace = true
+urlencoding.workspace = true
+deadpool-postgres.workspace = true
+tracing.workspace = true
+dotenvy.workspace = true
+
+shared = { path = "../shared" }
+
+auth = { path = "../auth" }
+personal = { path = "../personal" }
+cms_control = { path = "../cms_control" }
+control = { path = "../control" }
+personal_extend = { path = "../personal_extend" }
+program_init = { path = "../program_init" }
+express = { path = "../express" }
+message = { path = "../message" }
+portal = { path = "../portal" }
+bbs = { path = "../bbs" }
+calendar = { path = "../calendar" }
+component = { path = "../component" }
+file = { path = "../file" }
+ai = { path = "../ai" }
+attendance = { path = "../attendance" }
+correlation = { path = "../correlation" }
+general = { path = "../general" }
+hotpic = { path = "../hotpic" }
+jpush = { path = "../jpush" }
+meeting = { path = "../meeting" }
+mind = { path = "../mind" }
+cms_express = { path = "../cms_express" }
+cms_assemble_control = { path = "../cms_assemble_control" }
+process_express = { path = "../process_express" }
+query_express = { path = "../query_express" }
+process_designer = { path = "../process_designer" }
+program_center = { path = "../program_center" }
+base = { path = "../base" }
+query_service = { path = "../query_service" }
+process_bam = { path = "../process_bam" }
+process_surface = { path = "../process_surface" }
+file_assemble_control = { path = "../file_assemble_control" }
+ai_assemble_control = { path = "../ai_assemble_control" }
+hotpic_assemble_control = { path = "../hotpic_assemble_control" }
+organization_assemble_express = { path = "../organization_assemble_express" }
+organization_assemble_control = { path = "../organization_assemble_control" }
+mind_assemble_control = { path = "../mind_assemble_control" }
+attendance_assemble_control = { path = "../attendance_assemble_control" }
+general_assemble_control = { path = "../general_assemble_control" }
+meeting_assemble_control = { path = "../meeting_assemble_control" }
+message_assemble_communicate = { path = "../message_assemble_communicate" }
+portal_assemble_designer = { path = "../portal_assemble_designer" }
+correlation_service_processing = { path = "../correlation_service_processing" }
+portal_assemble_surface = { path = "../portal_assemble_surface" }
+processplatform_service_processing = { path = "../processplatform_service_processing" }
+bbs_assemble_control = { path = "../bbs_assemble_control" }
+calendar_assemble_control = { path = "../calendar_assemble_control" }
+component_assemble_control = { path = "../component_assemble_control" }
+jpush_assemble_control = { path = "../jpush_assemble_control" }
+processplatform_core_entity = { path = "../processplatform_core_entity" }
+portal_core_entity = { path = "../portal_core_entity" }
+program_center_core_entity = { path = "../program_center_core_entity" }
+processplatform_core_express = { path = "../processplatform_core_express" }
+query_core_entity = { path = "../query_core_entity" }
+general_core_entity = { path = "../general_core_entity" }
+organization_core_entity = { path = "../organization_core_entity" }
+cms_core_entity = { path = "../cms_core_entity" }
+query_assemble_designer = { path = "../query_assemble_designer" }
+query_assemble_surface = { path = "../query_assemble_surface" }
+console = { path = "../console" }
+processplatform_assemble_surface = { path = "../processplatform_assemble_surface" }
+bbs_core_entity = { path = "../bbs_core_entity" }
+calendar_core_entity = { path = "../calendar_core_entity" }
+component_core_entity = { path = "../component_core_entity" }
+file_core_entity = { path = "../file_core_entity" }
+ai_core_entity = { path = "../ai_core_entity" }
+attendance_core_entity = { path = "../attendance_core_entity" }
+cms_core_express = { path = "../cms_core_express" }
+correlation_core_entity = { path = "../correlation_core_entity" }
+correlation_core_express = { path = "../correlation_core_express" }
+hotpic_core_entity = { path = "../hotpic_core_entity" }
+jpush_core_entity = { path = "../jpush_core_entity" }
+meeting_core_entity = { path = "../meeting_core_entity" }
+message_core_entity = { path = "../message_core_entity" }
+mind_core_entity = { path = "../mind_core_entity" }
+organization_core_express = { path = "../organization_core_express" }
+processplatform_assemble_bam = { path = "../processplatform_assemble_bam" }
+processplatform_assemble_designer = { path = "../processplatform_assemble_designer" }
+query_core_express = { path = "../query_core_express" }
+query_service_processing = { path = "../query_service_processing" }
+
+[dev-dependencies]
+tower.workspace = true

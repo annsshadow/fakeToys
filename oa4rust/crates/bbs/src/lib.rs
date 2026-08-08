@@ -1,16 +1,11 @@
-use axum::{
-    extract::Extension,
-    Json,
-    routing::get,
-    Router,
-};
+use axum::{routing::get, routing::post, Router};
 use deadpool_postgres::Pool;
-use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::middleware::SecurityState;
 
 pub mod forum;
 pub mod section;
 pub mod subject;
+pub mod routes;
 
 pub fn bbs_router(pool: Pool) -> Router {
     Router::new()
@@ -21,13 +16,15 @@ pub fn bbs_router(pool: Pool) -> Router {
         .route("/jaxrs/bbs/subject/top/{sectionId}", get(subject::top))
         .route("/jaxrs/bbs/subject/list/{sectionId}", get(subject::list))
         .route("/jaxrs/bbs/subject/view/{id}", get(subject::view))
-        .route("/jaxrs/bbs/subject/create", axum::routing::post(subject::create))
+        .route("/jaxrs/bbs/subject/create", post(subject::create))
         .route("/jaxrs/bbs/subject/search", get(subject::search))
-        .layer(Extension(pool))
 }
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::bbs_router(pool)
+pub fn router(pool: Pool) -> Router {
+    use axum::middleware;
+    bbs_router(pool)
+        .layer(middleware::from_fn(shared::middleware::security_headers_middleware))
+        .layer(middleware::from_fn(shared::middleware::trace_middleware))
 }
 
 #[cfg(test)]

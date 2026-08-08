@@ -31,7 +31,7 @@ async fn test_get_control_config_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/bbs_assemble_control/get/control/config")
+                .uri("/jaxrs/bbs/assemble/control/config")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -50,7 +50,7 @@ async fn test_list_control_sections_route() {
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/bbs_assemble_control/list/control/sections")
+                .uri("/jaxrs/bbs/assemble/control/section/list")
                 .method(Method::GET)
                 .body(Body::empty())
                 .unwrap(),
@@ -62,23 +62,140 @@ async fn test_list_control_sections_route() {
 }
 
 #[tokio::test]
-async fn test_update_control_config_route() {
+async fn test_list_forums_route() {
     let pool = build_test_pool();
     let app = crate::routes::router(pool);
-
-    let req_body = serde_json::to_string(&json!({"enabled": true, "maxForumCount": 500})).unwrap();
 
     let response = app
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/bbs_assemble_control/update/control/config")
+                .uri("/jaxrs/bbs/assemble/control/forum/list")
                 .method(Method::GET)
-                .header("content-type", "application/json")
-                .body(Body::from(req_body))
+                .body(Body::empty())
                 .unwrap(),
         )
         .await
         .unwrap();
 
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_forum_view_all_route() {
+    let pool = build_test_pool();
+    let app = crate::routes::router(pool);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/bbs/assemble/control/forum/view/all")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_create_topic_route() {
+    let pool = build_test_pool();
+    let app = crate::routes::router(pool);
+
+    let body = serde_json::to_string(&json!({"forumId": "f1", "title": "Test", "content": "hello"})).unwrap();
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/bbs/assemble/control/topic/create")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_subject_view_id_route() {
+    let pool = build_test_pool();
+    let app = crate::routes::router(pool);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/bbs/assemble/control/subject/view/sub-001")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_permission_section_section_id_route() {
+    let pool = build_test_pool();
+    let app = crate::routes::router(pool);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/bbs/assemble/control/permission/section/sec-001")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_shutup_create_route() {
+    let pool = build_test_pool();
+    let app = crate::routes::router(pool);
+
+    let body = serde_json::to_string(&json!({"person": "test"})).unwrap();
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/bbs/assemble/control/shutup/create")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_uuid_generate_route() {
+    let pool = build_test_pool();
+    let app = crate::routes::router(pool);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/bbs/assemble/control/uuid")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::OK);
 }

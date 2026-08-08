@@ -5,7 +5,7 @@ mod tests {
     use serde_json::Value;
     use tower::util::ServiceExt;
 
-    use crate::{program_center_router, modules_all};
+    use crate::{router as program_center_router, modules_all};
     use shared::error::AppError;
     use shared::response::ActionResult;
 
@@ -45,7 +45,8 @@ mod tests {
     fn test_program_center_router_routes_registered() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
-            let app = program_center_router();
+            let pool = build_dummy_pool().await;
+            let app = program_center_router(pool);
 
             let response = app
                 .oneshot(

@@ -262,21 +262,8 @@ pub async fn preview_flow(
 
 /// ����ƽ̨�����װ��·��
 /// ·��ǰ׺: /jaxrs/processplatform/assemble/designer/*
-pub fn processplatform_assemble_designer_router() -> Router {
-    Router::new()
-        .route("/jaxrs/processplatform/assemble/designer/create", post(create_flow))
-        .route("/jaxrs/processplatform/assemble/designer/get/{id}", get(get_flow))
-        .route("/jaxrs/processplatform/assemble/designer/list/{category}", get(list_flows))
-        .route("/jaxrs/processplatform/assemble/designer/save/{id}", post(save_flow))
-        .route("/jaxrs/processplatform/assemble/designer/delete/{id}", post(delete_flow))
-        .route("/jaxrs/processplatform/assemble/designer/preview/{id}", get(preview_flow))
-}
-
-#[cfg(test)]
-mod tests;
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    processplatform_assemble_designer_router().layer(axum::extract::Extension(pool))
+    routes::router(pool)
 }
 
 

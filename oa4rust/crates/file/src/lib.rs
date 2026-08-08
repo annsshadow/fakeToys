@@ -21,18 +21,10 @@ const ALLOWED_MIME_TYPES: &[&str] = &[
 ];
 const MAX_FILE_SIZE: u64 = 5 * 1024 * 1024;
 
-pub fn file_router(pool: Pool) -> Router {
-    Router::new()
-        .route("/jaxrs/file/folder/list/top", get(folder_list_top))
-        .route("/jaxrs/file/folder/list/{id}", get(folder_list_with_folder))
-        .route("/jaxrs/file/complex/top", get(complex_top))
-        .route("/jaxrs/file/upload", post(file_upload))
-        .route("/jaxrs/file/download/{id}", get(file_download))
-        .route("/jaxrs/file/folder/create", post(folder_create))
-        .route("/jaxrs/file/folder/update", post(folder_update))
-        .route("/jaxrs/file/folder/remove", post(folder_remove))
-        .route("/jaxrs/file/permission/set", post(permission_set))
-        .layer(Extension(pool))
+pub mod routes;
+
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    routes::router(pool)
 }
 
 #[derive(Debug, Serialize)]
@@ -41,6 +33,17 @@ struct ComplexTopResponse {
     attachment_list: Vec<Value>,
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/file/folder/list/top",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "file"
+)]
 #[axum::debug_handler]
 pub async fn folder_list_top(
     pool: Extension<Pool>,
@@ -89,6 +92,20 @@ pub async fn folder_list_top(
     ))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/file/folder/list/{id}",
+    params(
+        ("id" = String, Path, description = "Folder ID")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "file"
+)]
 #[axum::debug_handler]
 pub async fn folder_list_with_folder(
     pool: Extension<Pool>,
@@ -138,6 +155,17 @@ pub async fn folder_list_with_folder(
     ))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/file/complex/top",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "file"
+)]
 #[axum::debug_handler]
 pub async fn complex_top(
     pool: Extension<Pool>,
@@ -225,6 +253,17 @@ pub async fn complex_top(
     ))))
 }
 
+#[utoipa::path(
+    post,
+    path = "/jaxrs/file/upload",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "file"
+)]
 #[axum::debug_handler]
 pub async fn file_upload(
     pool: Extension<Pool>,
@@ -397,6 +436,20 @@ pub(crate) async fn upload_file_record(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/file/download/{id}",
+    params(
+        ("id" = String, Path, description = "File ID")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "file"
+)]
 #[axum::debug_handler]
 pub async fn file_download(
     pool: Extension<Pool>,
@@ -433,6 +486,18 @@ pub async fn file_download(
     }
 }
 
+#[utoipa::path(
+    post,
+    path = "/jaxrs/file/folder/create",
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "file"
+)]
 #[axum::debug_handler]
 pub async fn folder_create(
     pool: Extension<Pool>,
@@ -471,6 +536,18 @@ pub async fn folder_create(
     Ok(Json(ActionResult::success(result)))
 }
 
+#[utoipa::path(
+    post,
+    path = "/jaxrs/file/folder/update",
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "file"
+)]
 #[axum::debug_handler]
 pub async fn folder_update(
     pool: Extension<Pool>,
@@ -505,6 +582,18 @@ pub async fn folder_update(
     ))))
 }
 
+#[utoipa::path(
+    post,
+    path = "/jaxrs/file/folder/remove",
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "file"
+)]
 #[axum::debug_handler]
 pub async fn folder_remove(
     pool: Extension<Pool>,
@@ -534,6 +623,18 @@ pub async fn folder_remove(
     ))))
 }
 
+#[utoipa::path(
+    post,
+    path = "/jaxrs/file/permission/set",
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "file"
+)]
 #[axum::debug_handler]
 pub async fn permission_set(
     pool: Extension<Pool>,
@@ -574,6 +675,3 @@ pub async fn permission_set(
 #[cfg(test)]
 mod tests;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::file_router(pool)
-}

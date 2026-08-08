@@ -174,18 +174,11 @@ pub async fn unread_count(
     ))))
 }
 
-pub fn message_router() -> Router {
-    Router::new()
-        .route("/jaxrs/message/consume/list/{consume}/count/{count}", get(consume_list))
-        .route("/jaxrs/message/consume/{id}/type/{type}", get(update_single))
-        .route("/jaxrs/message/custom/create", post(custom_create))
-        .route("/jaxrs/message/mark_read/{id}", post(mark_read))
-        .route("/jaxrs/message/unread/count/{consume}", get(unread_count))
-}
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    message_router().layer(axum::extract::Extension(pool))
+    routes::router(pool)
 }
 
 #[cfg(test)]
 mod tests;
+
+pub mod routes;

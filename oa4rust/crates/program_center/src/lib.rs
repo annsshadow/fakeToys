@@ -8,6 +8,8 @@ use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub mod routes;
+
 #[derive(Debug, Deserialize)]
 pub struct CollectAddRequest {
     pub title: Option<String>,
@@ -133,15 +135,8 @@ pub async fn modules_all(
     ))))
 }
 
-pub fn program_center_router() -> Router {
-    Router::new()
-        .route("/jaxrs/program/applications", get(applications))
-        .route("/jaxrs/program/appstyle/current/style", get(current_style))
-        .route("/jaxrs/program/datastructure/modules/all", get(modules_all))
-        .route("/jaxrs/program_center/application/create", post(application_create))
-        .route("/jaxrs/program_center/application/save/{id}", post(application_save))
-        .route("/jaxrs/program_center/agent/create", post(agent_create))
-        .route("/jaxrs/program_center/agent/save/{id}", post(agent_save))
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    routes::router(pool)
 }
 
 pub async fn collect_list(
@@ -267,11 +262,6 @@ pub async fn config_get(
 
 #[cfg(test)]
 mod tests;
-
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    program_center_router().layer(axum::extract::Extension(pool))
-}
-
 
 
 pub async fn agent_flag() -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3322,3 +3312,4 @@ pub async fn zhengwudingding_sync_organization_callback(
         ]),
     ))))
 }
+

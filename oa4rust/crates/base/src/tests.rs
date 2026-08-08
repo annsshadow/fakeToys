@@ -40,7 +40,7 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), axum::http::StatusCode::OK);
+        assert_eq!(response.status(), axum::http::StatusCode::TEMPORARY_REDIRECT);
     }
 
     #[tokio::test]

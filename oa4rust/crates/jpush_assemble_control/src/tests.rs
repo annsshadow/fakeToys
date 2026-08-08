@@ -82,3 +82,85 @@ async fn test_update_control_config_route() {
 
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
+
+#[tokio::test]
+async fn test_jpush_get_by_id_java_path() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/jpush/get/jpush-001")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_jpush_create_java_path() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+
+    let body = serde_json::to_string(&json!({"title": "test", "content": "hello"})).unwrap();
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/jpush/create")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_jpush_control_config_java_path() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/jpush/assemble/control/config")
+                .method(Method::GET)
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}
+
+#[tokio::test]
+async fn test_device_bind_java_path() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+
+    let body = serde_json::to_string(&json!({"person": "test", "deviceName": "dev1"})).unwrap();
+
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/jpush/assemble/control/device/bind")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+}

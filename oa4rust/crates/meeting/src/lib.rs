@@ -60,6 +60,17 @@ pub struct Participant {
     pub status: String,
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/meeting/room/list",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "meeting"
+)]
 pub async fn room_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -97,6 +108,17 @@ pub async fn room_list(
     ))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/meeting/building/list",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "meeting"
+)]
 pub async fn building_list(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -131,6 +153,17 @@ pub async fn building_list(
     ))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/meeting/openmeeting/list/room",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "meeting"
+)]
 pub async fn openmeeting_list_room(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -162,6 +195,18 @@ pub async fn openmeeting_list_room(
     ))))
 }
 
+#[utoipa::path(
+    post,
+    path = "/jaxrs/meeting/create",
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "meeting"
+)]
 pub async fn create_meeting(
     pool: Extension<Pool>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
@@ -192,6 +237,20 @@ pub async fn create_meeting(
     ])))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/meeting/{id}",
+    params(
+        ("id" = String, Path, description = "Meeting ID")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "meeting"
+)]
 pub async fn get_meeting(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -223,6 +282,17 @@ pub async fn get_meeting(
     }
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/meeting/list",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "meeting"
+)]
 pub async fn list_meetings(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -257,6 +327,21 @@ pub async fn list_meetings(
     ])))))
 }
 
+#[utoipa::path(
+    post,
+    path = "/jaxrs/meeting/{meetingId}/participant/add",
+    params(
+        ("meetingId" = String, Path, description = "Meeting ID")
+    ),
+    request_body = serde_json::Value,
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "meeting"
+)]
 pub async fn add_participant(
     pool: Extension<Pool>,
     axum::extract::Path(meeting_id): axum::extract::Path<String>,
@@ -282,6 +367,20 @@ pub async fn add_participant(
     ])))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/meeting/{meetingId}/participant/list",
+    params(
+        ("meetingId" = String, Path, description = "Meeting ID")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "meeting"
+)]
 pub async fn list_participants(
     pool: Extension<Pool>,
     axum::extract::Path(meeting_id): axum::extract::Path<String>,
@@ -314,6 +413,20 @@ pub async fn list_participants(
     ])))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/meeting/schedule/days/{days}",
+    params(
+        ("days" = i64, Path, description = "Number of days to look ahead")
+    ),
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "meeting"
+)]
 pub async fn list_schedule(
     pool: Extension<Pool>,
     axum::extract::Path(days): axum::extract::Path<i64>,

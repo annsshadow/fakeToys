@@ -120,15 +120,8 @@ pub async fn subscribe_express(
     ))))
 }
 
-pub fn express_router() -> Router {
-    Router::new()
-        .route("/jaxrs/express/query", get(get_express_info))
-        .route("/jaxrs/express/companies", get(list_express_companies))
-        .route("/jaxrs/express/subscribe", post(subscribe_express))
-}
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    express_router().layer(axum::extract::Extension(pool))
+    routes::router(pool)
 }
 
 #[cfg(test)]

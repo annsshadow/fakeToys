@@ -1,5 +1,6 @@
 use axum::{
     extract::Extension,
+    response::Redirect,
     Json, Router,
 };
 use deadpool_postgres::Pool;
@@ -17,6 +18,17 @@ mod tests;
 ///
 /// # 返回
 /// - `Ok(Json<ActionResult<Value>>)`: 成功响应，内容为 pong 消息
+#[utoipa::path(
+    get,
+    path = "/jaxrs/base/echo/get",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "base"
+)]
 pub async fn echo_get() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("type".to_string(), Value::String("echo".to_string())),
@@ -33,6 +45,17 @@ pub async fn echo_get() -> Result<Json<ActionResult<Value>>, AppError> {
 ///
 /// # 返回
 /// - `Ok(Json<ActionResult<Value>>)`: 包含 `status`（"running"）和 `cacheCount`（缓存表数量）
+#[utoipa::path(
+    get,
+    path = "/jaxrs/base/cache/detail",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "base"
+)]
 pub async fn cache_detail(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -57,11 +80,19 @@ pub async fn cache_detail(
 ///
 /// # 返回
 /// - `Ok(Json<ActionResult<Value>>)`: 包含 `version`（"3.0.3"）和 `title`（"OA4Rust API"）
-pub async fn openapi_info() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("version".to_string(), Value::String("3.0.3".to_string())),
-        ("title".to_string(), Value::String("OA4Rust API".to_string())),
-    ])))))
+#[utoipa::path(
+    get,
+    path = "/jaxrs/base/openapi/info",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "base"
+)]
+pub async fn openapi_info() -> Result<Redirect, AppError> {
+    Ok(Redirect::temporary("/openapi.json"))
 }
 
 /// 构建基础模块路由

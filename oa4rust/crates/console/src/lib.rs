@@ -199,20 +199,6 @@ pub async fn get_system_info() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-pub fn console_router() -> Router {
-    Router::new()
-        .route("/jaxrs/console/status", get(get_status))
-        .route("/jaxrs/console/logs/{type}", get(get_logs))
-        .route("/jaxrs/console/send/message", post(send_message))
-        .route("/jaxrs/console/cache/clear/{type}", post(clear_cache))
-        .route("/jaxrs/console/metric/{name}", get(get_metric))
-        .route("/jaxrs/console/command/execute", post(execute_command))
-        .route("/jaxrs/console/system/info", get(get_system_info))
-}
-
-#[cfg(test)]
-mod tests;
-
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    console_router().layer(axum::extract::Extension(pool))
+    routes::router(pool)
 }

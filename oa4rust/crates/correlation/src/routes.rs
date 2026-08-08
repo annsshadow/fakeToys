@@ -24,6 +24,17 @@ pub fn correlation_router(pool: Pool) -> Router {
         .layer(Extension(pool))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/correlation/type/cms/list",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "correlation"
+)]
 pub async fn list_cms_correlations(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -69,6 +80,17 @@ pub async fn list_cms_correlations(
     ))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/correlation/type/processplatform/list",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "correlation"
+)]
 pub async fn list_process_platform_correlations(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -114,6 +136,17 @@ pub async fn list_process_platform_correlations(
     ))))
 }
 
+#[utoipa::path(
+    get,
+    path = "/jaxrs/correlation/type/cms/readable",
+    responses(
+        (status = 200, description = "Success", body = serde_json::Value),
+        (status = 400, description = "Bad Request"),
+        (status = 401, description = "Unauthorized"),
+        (status = 500, description = "Internal Server Error")
+    ),
+    tag = "correlation"
+)]
 pub async fn check_cms_readable(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
