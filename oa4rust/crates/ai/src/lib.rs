@@ -179,11 +179,9 @@ pub async fn config_get_model(
 
 #[axum::debug_handler]
 pub async fn config_list_mcp_paging(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     Path((page, size)): Path<(i32, i32)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let size = size.clamp(1, 200) as i64;
     let page = page.max(1) as i64;
     let offset = (page - 1) * size;
@@ -203,11 +201,9 @@ pub async fn config_list_mcp_paging(
 
 #[axum::debug_handler]
 pub async fn config_get_mcp(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     Ok(Json(ActionResult::error("mcp not found")))
 }
 
@@ -401,11 +397,9 @@ pub async fn index_cms_doc_with_app(
 
 #[axum::debug_handler]
 pub async fn index_delete(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     Path(flag): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(flag)),
@@ -446,11 +440,9 @@ pub async fn file_get(
 
 #[axum::debug_handler]
 pub async fn file_download(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id.clone())),
@@ -464,11 +456,9 @@ pub async fn file_download(
 
 #[axum::debug_handler]
 pub async fn file_download_scale(
-    pool: Extension<Pool>,
+    _pool: Extension<Pool>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id.clone())),
