@@ -9,6 +9,7 @@ use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use sha2::{Digest, Sha256};
 use base64::Engine;
+use hmac::{Hmac, Mac};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // oauth — 企业微信 / 钉钉第三方登录
@@ -108,20 +109,26 @@ fn validate_and_remove_pkce(state: &str, code_verifier: &str) -> bool {
 // 微信/钉钉在回调时会携带签名参数，需验证其合法性。
 // ──────────────────────────────────────────────────────────────────────────────
 
-/// 验证微信签名（简化版：实际应使用微信提供的签名算法）
-pub fn verify_wechat_signature(_token: &str, _signature: &str, _timestamp: &str, _nonce: &str) -> bool {
-    // TODO: 实现微信签名验证算法
-    // 实际实现需要：
-    // 1. 将 token、timestamp、nonce 按字典序排序
-    // 2. 拼接后用 SHA1 哈希
-    // 3. 与 signature 对比
-    true
+/// 验证微信签名
+/// 算法：将 token、timestamp、nonce 按字典序排序后拼接，计算 SHA1 哈希，与 signature 对比
+pub fn verify_wechat_signature(token: &str, signature: &str, timestamp: &str, nonce: &str) -> bool {
+    let mut items = vec![token, timestamp, nonce];
+    items.sort();
+    let text = items.concat();
+    let hash = format!("{:x}", sha1::Sha1::digest(text.as_bytes()));
+    hash == signature
 }
 
-/// 验证钉钉签名（简化版）
-pub fn verify_dingtalk_signature(_app_secret: &str, _signature: &str, _timestamp: &str, _nonce: &str) -> bool {
-    // TODO: 实现钉钉签名验证算法
-    true
+/// 验证钉钉签名
+/// 算法：密钥 + 换行 + timestamp，计算 HMAC-SHA256，与 signature 对比
+pub fn verify_dingtalk_signature(app_secret: &str, signature: &str, timestamp: &str, _nonce: &str) -> bool {
+    let key = format!("{}{}", app_secret, timestamp);
+    let mut mac = Hmac::<Sha256>::new_from_slice(app_secret.as_bytes())
+        .expect("HMAC can take key of any size");
+    mac.update(key.as_bytes());
+    let result = mac.finalize();
+    let hex = hex::encode(result.into_bytes());
+    hex == signature
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
