@@ -304,9 +304,9 @@ pub async fn rule_delete(
 }
 
 /// 创建考勤核心实体路由
-pub async fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = shared::db::create_sea_orm_pool()
-        .await
+pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+    let db = tokio::runtime::Handle::current()
+        .block_on(shared::db::create_sea_orm_pool())
         .ok();
 
     let router = Router::new()
@@ -352,6 +352,6 @@ pub async fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Ro
 #[cfg(test)]
 mod tests;
 
-pub async fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::attendance_core_entity_router(pool).await
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::attendance_core_entity_router(pool)
 }

@@ -465,29 +465,12 @@ pub async fn create_version(
 }
 
 /// 创建思维导图核心实体路由
-pub async fn mind_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = match shared::db::create_sea_orm_pool().await {
-        Ok(db) => Some(db),
-        Err(_) => {
-            return Router::new()
-                .route("/jaxrs/mind/core/entity/list", get(list))
-                .route("/jaxrs/mind/core/entity/folder/list", get(folder_list))
-                .route(
-                    "/jaxrs/mind/core/entity/version/list/{mindId}",
-                    get(version_list),
-                )
-                .route("/jaxrs/mind/core/entity/mind", post(create_mind))
-                .route("/jaxrs/mind/core/entity/mind/{id}", post(update_mind))
-                .route("/jaxrs/mind/core/entity/mind/{id}", delete(delete_mind))
-                .route("/jaxrs/mind/core/entity/folder", post(create_folder))
-                .route("/jaxrs/mind/core/entity/folder/{id}", post(update_folder))
-                .route("/jaxrs/mind/core/entity/folder/{id}", delete(delete_folder))
-                .route("/jaxrs/mind/core/entity/version", post(create_version))
-        }
-    };
+pub fn mind_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+    let db = tokio::runtime::Handle::current()
+        .block_on(shared::db::create_sea_orm_pool())
+        .ok();
 
-    let db = db.expect("failed to create sea-orm connection");
-    Router::new()
+    let router = Router::new()
         .route("/jaxrs/mind/core/entity/list", get(list))
         .route("/jaxrs/mind/core/entity/folder/list", get(folder_list))
         .route(
@@ -500,13 +483,17 @@ pub async fn mind_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route("/jaxrs/mind/core/entity/folder", post(create_folder))
         .route("/jaxrs/mind/core/entity/folder/{id}", post(update_folder))
         .route("/jaxrs/mind/core/entity/folder/{id}", delete(delete_folder))
-        .route("/jaxrs/mind/core/entity/version", post(create_version))
-        .layer(Extension(db))
+        .route("/jaxrs/mind/core/entity/version", post(create_version));
+
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]
 mod tests;
 
-pub async fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::mind_core_entity_router(pool).await
+pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::mind_core_entity_router(pool)
 }
