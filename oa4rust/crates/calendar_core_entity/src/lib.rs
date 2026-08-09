@@ -700,11 +700,14 @@ pub async fn event_list_by_calendar(
 }
 
 pub fn calendar_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .expect("failed to create sea-orm connection");
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
 
-    Router::new()
+    let router = Router::new()
         .route(
             "/jaxrs/calendar/core/entity/calendar/list/public",
             get(calendar_list_public),
@@ -744,8 +747,11 @@ pub fn calendar_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route(
             "/jaxrs/calendar/core/entity/event/list/{calendarId}",
             get(event_list_by_calendar),
-        )
-        .layer(Extension(db))
+        );
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]

@@ -165,18 +165,24 @@ pub async fn conversation_list(
 /// - /jaxrs/ai/core/entity/model/list - 模型列表
 /// - /jaxrs/ai/core/entity/conversation/list - 对话列表
 pub fn ai_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .expect("failed to create sea-orm connection");
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
 
-    Router::new()
+    let router = Router::new()
         .route("/jaxrs/ai/core/entity/app/list", get(app_list))
         .route("/jaxrs/ai/core/entity/model/list", get(model_list))
         .route(
             "/jaxrs/ai/core/entity/conversation/list",
             get(conversation_list),
-        )
-        .layer(Extension(db))
+        );
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]

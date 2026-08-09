@@ -188,11 +188,14 @@ pub async fn delete_by_id(
 /// - /jaxrs/hotpic/core/entity/create - 创建热图
 /// - /jaxrs/hotpic/core/entity/delete/{id} - 删除热图
 pub fn hotpic_core_entity_router(_pool: Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .expect("failed to create sea-orm connection");
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
 
-    Router::new()
+    let router = Router::new()
         .route("/jaxrs/hotpic/core/entity/list", get(list))
         .route("/jaxrs/hotpic/core/entity/list/by/{application}/{infoId}", get(list_by_app_and_info))
         .route(
@@ -200,8 +203,11 @@ pub fn hotpic_core_entity_router(_pool: Pool) -> Router {
             get(exists_check),
         )
         .route("/jaxrs/hotpic/core/entity/create", post(create))
-        .route("/jaxrs/hotpic/core/entity/delete/{id}", delete(delete_by_id))
-        .layer(Extension(db))
+        .route("/jaxrs/hotpic/core/entity/delete/{id}", delete(delete_by_id));
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]

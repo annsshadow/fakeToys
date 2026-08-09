@@ -466,9 +466,12 @@ pub async fn create_version(
 
 /// 创建思维导图核心实体路由
 pub fn mind_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .ok();
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
 
     let router = Router::new()
         .route("/jaxrs/mind/core/entity/list", get(list))

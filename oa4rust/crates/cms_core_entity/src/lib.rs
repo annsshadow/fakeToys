@@ -317,9 +317,12 @@ pub async fn article_create(
 }
 
 pub fn cms_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .ok();
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
 
     let router = Router::new()
         .route("/jaxrs/cms/category/list", get(category_list))

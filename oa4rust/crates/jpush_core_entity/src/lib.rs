@@ -189,17 +189,23 @@ pub async fn template_get(
 /// - /jaxrs/jpush/core/entity/template/list - 模板列表
 /// - /jaxrs/jpush/core/entity/template/{id} - 模板详情
 pub fn jpush_core_entity_router(_pool: Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .expect("failed to create sea-orm connection");
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
 
-    Router::new()
+    let router = Router::new()
         .route("/jaxrs/jpush/core/entity/device/list", get(device_list))
         .route("/jaxrs/jpush/core/entity/device/{id}", get(device_get))
         .route("/jaxrs/jpush/core/entity/device/create", post(device_create))
         .route("/jaxrs/jpush/core/entity/template/list", get(template_list))
-        .route("/jaxrs/jpush/core/entity/template/{id}", get(template_get))
-        .layer(Extension(db))
+        .route("/jaxrs/jpush/core/entity/template/{id}", get(template_get));
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]

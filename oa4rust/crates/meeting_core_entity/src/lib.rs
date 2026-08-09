@@ -638,11 +638,14 @@ pub async fn delete_meeting(
 /// - /jaxrs/meeting/core/entity/meeting/save/{id} - 更新会议
 /// - /jaxrs/meeting/core/entity/meeting/delete/{id} - 删除会议
 pub fn meeting_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .expect("failed to create sea-orm connection");
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
 
-    Router::new()
+    let router = Router::new()
         .route("/jaxrs/meeting/core/entity/room/list", get(room_list))
         .route("/jaxrs/meeting/core/entity/room/create", post(create_room))
         .route("/jaxrs/meeting/core/entity/room/{id}", get(get_room))
@@ -674,8 +677,11 @@ pub fn meeting_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route(
             "/jaxrs/meeting/core/entity/meeting/delete/{id}",
             post(delete_meeting),
-        )
-        .layer(Extension(db))
+        );
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {

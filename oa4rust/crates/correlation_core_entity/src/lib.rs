@@ -176,19 +176,25 @@ pub async fn delete_by_id(
 /// - /jaxrs/correlation/core/entity/create - 创建关联
 /// - /jaxrs/correlation/core/entity/delete/{id} - 删除关联
 pub fn correlation_core_entity_router(_pool: Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .expect("failed to create sea-orm connection");
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
 
-    Router::new()
+    let router = Router::new()
         .route("/jaxrs/correlation/core/entity/list", get(list))
         .route(
             "/jaxrs/correlation/core/entity/list/by/{sourceType}/{sourceId}",
             get(list_by_source),
         )
         .route("/jaxrs/correlation/core/entity/create", post(create))
-        .route("/jaxrs/correlation/core/entity/delete/{id}", delete(delete_by_id))
-        .layer(Extension(db))
+        .route("/jaxrs/correlation/core/entity/delete/{id}", delete(delete_by_id));
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]

@@ -387,11 +387,14 @@ pub async fn file_create(
 // ── Router ───────────────────────────────────────────────────────────────────
 
 pub fn file_core_entity_router(_pool: Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .expect("failed to create sea-orm connection");
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
 
-    Router::new()
+    let router = Router::new()
         // folder
         .route("/jaxrs/file/core/entity/folder/list/top", get(folder_list_top))
         .route(
@@ -410,8 +413,11 @@ pub fn file_core_entity_router(_pool: Pool) -> Router {
         .route("/jaxrs/file/core/entity/file/list", get(file_list))
         .route("/jaxrs/file/core/entity/file", post(file_create))
         // complex
-        .route("/jaxrs/file/core/entity/complex/top", get(complex_top))
-        .layer(Extension(db))
+        .route("/jaxrs/file/core/entity/complex/top", get(complex_top));
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]

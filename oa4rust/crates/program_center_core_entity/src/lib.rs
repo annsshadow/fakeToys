@@ -215,17 +215,23 @@ pub async fn structure_list(
 }
 
 pub fn program_center_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .expect("failed to create sea-orm connection");
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
 
-    Router::new()
+    let router = Router::new()
         .route("/jaxrs/program_center/application/list", get(application_list))
         .route("/jaxrs/program_center/script/list", get(script_list))
         .route("/jaxrs/program_center/invoke/list", get(invoke_list))
         .route("/jaxrs/program_center/agent/list", get(agent_list))
-        .route("/jaxrs/program_center/structure/list", get(structure_list))
-        .layer(Extension(db))
+        .route("/jaxrs/program_center/structure/list", get(structure_list));
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]

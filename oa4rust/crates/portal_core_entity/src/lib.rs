@@ -342,11 +342,14 @@ pub async fn script_list(
 }
 
 pub fn portal_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .expect("failed to create sea-orm connection");
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
 
-    Router::new()
+    let router = Router::new()
         .route("/jaxrs/portal/portal/list", get(portal_list))
         .route("/jaxrs/portal/widget/list", get(widget_list))
         .route("/jaxrs/portal/page/list", get(page_list))
@@ -354,8 +357,11 @@ pub fn portal_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route("/jaxrs/portal/page/create", post(page_create))
         .route("/jaxrs/portal/page/update", post(page_update))
         .route("/jaxrs/portal/page/remove", post(page_remove))
-        .route("/jaxrs/portal/script/list", get(script_list))
-        .layer(Extension(db))
+        .route("/jaxrs/portal/script/list", get(script_list));
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]

@@ -725,11 +725,14 @@ pub async fn invoice_delete(
 }
 
 pub fn general_core_entity_router(_pool: Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .expect("failed to create sea-orm connection");
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
 
-    Router::new()
+    let router = Router::new()
         .route("/jaxrs/general/dict/list", get(dict_list))
         .route("/jaxrs/general/dict/create", post(dict_create))
         .route("/jaxrs/general/dict/{id}", get(dict_get))
@@ -750,8 +753,11 @@ pub fn general_core_entity_router(_pool: Pool) -> Router {
         .route("/jaxrs/general/invoice/create", post(invoice_create))
         .route("/jaxrs/general/invoice/{id}", get(invoice_get))
         .route("/jaxrs/general/invoice/update/{id}", post(invoice_update))
-        .route("/jaxrs/general/invoice/delete/{id}", post(invoice_delete))
-        .layer(Extension(db))
+        .route("/jaxrs/general/invoice/delete/{id}", post(invoice_delete));
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]
