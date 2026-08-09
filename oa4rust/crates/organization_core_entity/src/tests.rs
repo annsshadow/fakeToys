@@ -164,6 +164,59 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_person_update_returns_error_without_db() {
+        let pool = build_test_pool();
+        let app = crate::organization_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/person/person-001")
+                    .method(axum::http::Method::PUT)
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        serde_json::to_string(&serde_json::json!({
+                            "name": "张三更新"
+                        }))
+                        .unwrap(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_group_update_returns_error_without_db() {
+        let pool = build_test_pool();
+        let app = crate::organization_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/group/group-001")
+                    .method(axum::http::Method::PUT)
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        serde_json::to_string(&serde_json::json!({
+                            "name": "技术部更新",
+                            "level": 3
+                        }))
+                        .unwrap(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
     async fn test_definition_create_missing_fields_returns_200_with_error_body() {
         let pool = build_test_pool();
         let app = crate::organization_core_entity_router(pool);

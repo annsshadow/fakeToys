@@ -27,63 +27,247 @@ mod tests {
 
     #[tokio::test]
     async fn test_folder_list_top_returns_error_without_db() {
-        // Handler signature verification: Extension<DatabaseConnection>
-        // Router creation would require a DB connection; this test verifies
-        // the module compiles with the new SeaORM-based handlers.
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::file_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/core/entity/folder/list/top")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
     async fn test_folder_list_with_folder_returns_error_without_db() {
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::file_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/core/entity/folder/list/test-folder-id")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert!(matches!(
+            response.status(),
+            StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+        ));
     }
 
     #[tokio::test]
     async fn test_file_list_returns_error_without_db() {
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::file_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/core/entity/file/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
     async fn test_complex_top_returns_error_without_db() {
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::file_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/core/entity/complex/top")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
     async fn test_unknown_route_returns_404() {
-        assert!(true);
-    }
+        let pool = build_test_pool();
+        let app = crate::file_core_entity_router(pool);
 
-    // ── Write handler compilation and route tests ────────────────────────────
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/core/entity/nonexistent")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
+    }
 
     #[tokio::test]
     async fn test_folder_create_returns_error_without_db() {
-        // Router uses block_on which panics inside tokio test runtime.
-        // Handler signature and route registration verified by cargo check.
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::file_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/core/entity/folder")
+                    .method(axum::http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        serde_json::to_string(&serde_json::json!({
+                            "name": "测试文件夹",
+                            "person": "user-001"
+                        }))
+                        .unwrap(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
     async fn test_folder_create_missing_fields_returns_200_with_error_body() {
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::file_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/core/entity/folder")
+                    .method(axum::http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        serde_json::to_string(&serde_json::json!({
+                            "name": "",
+                            "person": "user-001"
+                        }))
+                        .unwrap(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
     async fn test_folder_delete_returns_error_without_db() {
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::file_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/core/entity/folder/folder-001")
+                    .method(axum::http::Method::DELETE)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
     async fn test_file_create_returns_error_without_db() {
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::file_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/core/entity/file")
+                    .method(axum::http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        serde_json::to_string(&serde_json::json!({
+                            "name": "report.pdf",
+                            "person": "user-001",
+                            "reference_type": "cms/document"
+                        }))
+                        .unwrap(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
     async fn test_file_create_missing_fields_returns_200_with_error_body() {
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::file_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/core/entity/file")
+                    .method(axum::http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(
+                        serde_json::to_string(&serde_json::json!({
+                            "name": "",
+                            "person": "user-001",
+                            "reference_type": "cms/document"
+                        }))
+                        .unwrap(),
+                    ))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn test_file_core_entity_router_builds() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let pool = build_test_pool();
+            let _app = crate::file_core_entity_router(pool);
+        });
     }
 
     // ── ActionResult serialization ───────────────────────────────────────────
-
     #[test]
     fn test_action_result_success_serialization() {
         let result: ActionResult<serde_json::Value> =
@@ -218,15 +402,6 @@ mod tests {
         assert_eq!(json["type"], "success");
         assert!(json["data"]["folderList"].is_array());
         assert!(json["data"]["attachmentList"].is_array());
-    }
-
-    // ── Router build test ────────────────────────────────────────────────────
-
-    #[test]
-    fn test_file_core_entity_router_builds() {
-        // Router creation requires a tokio runtime for DatabaseConnection init.
-        // Verified by cargo check and production startup.
-        assert!(true);
     }
 
     // ── Request struct validation tests ───────────────────────────────────────

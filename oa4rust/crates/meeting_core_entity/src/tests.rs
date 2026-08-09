@@ -95,6 +95,30 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_update_room_returns_error_without_db() {
+        let pool = build_test_pool();
+        let app = meeting_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/core/entity/room/save/room-001")
+                    .method(axum::http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"name":"Updated Room"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert!(matches!(
+            response.status(),
+            StatusCode::OK | StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND
+        ));
+    }
+
+    #[tokio::test]
     async fn test_delete_room_route_accessible() {
         let pool = build_test_pool();
         let app = meeting_core_entity_router(pool);

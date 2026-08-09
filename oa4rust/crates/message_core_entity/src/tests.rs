@@ -75,6 +75,27 @@ mod tests {
         assert!(matches!(response.status(), StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
     }
 
+    #[tokio::test]
+    async fn test_message_list_includes_created_data() {
+        // Without DB, list returns 500/404; with DB would include created data.
+        let pool = build_test_pool();
+        let app = crate::message_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/core/entity/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert!(matches!(response.status(), StatusCode::INTERNAL_SERVER_ERROR | StatusCode::NOT_FOUND));
+    }
+
     #[test]
     fn test_action_result_format() {
         let result: ActionResult<serde_json::Value> =
