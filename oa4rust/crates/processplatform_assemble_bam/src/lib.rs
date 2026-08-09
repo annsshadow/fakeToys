@@ -184,362 +184,158 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 
 
-pub async fn period_list_completed_task_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn period_list_completed_task_application() -> Result<Json<ActionResult<Value>>, AppError> { Err(AppError::NotImplemented) }
 
-pub async fn period_list_completed_task_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn period_list_completed_task_unit() -> Result<Json<ActionResult<Value>>, AppError> { Err(AppError::NotImplemented) }
 
-pub async fn period_list_completed_work_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn period_list_completed_work_application() -> Result<Json<ActionResult<Value>>, AppError> { Err(AppError::NotImplemented) }
 
-pub async fn period_list_completed_work_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn period_list_completed_work_unit() -> Result<Json<ActionResult<Value>>, AppError> { Err(AppError::NotImplemented) }
 
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_completed_task_application_applicationId_process_processId_unit_unit_person_person_by_activity() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_completed_task_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_completed_task_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_completed_work_application_applicationId_process_processId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_completed_work_application_applicationId_process_processId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_completed_work_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_completed_work_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_expired_task_application_applicationId_process_processId_unit_unit_person_person_by_activity() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_expired_task_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_expired_task_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_expired_work_application_applicationId_process_processId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_expired_work_application_applicationId_process_processId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_expired_work_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_expired_work_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_start_task_application_applicationId_process_processId_activity_activityId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_start_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_start_task_application_applicationId_process_processId_unit_unit_person_person_by_activity() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_start_task_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_start_task_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_start_work_application_applicationId_process_processId_by_unit() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_start_work_application_applicationId_process_processId_unit_unit_person_person() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_start_work_application_applicationId_unit_unit_person_person_by_process() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn period_list_count_start_work_unit_unit_person_person_by_application() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
-pub async fn period_list_expired_task_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn period_list_expired_task_application() -> Result<Json<ActionResult<Value>>, AppError> { Err(AppError::NotImplemented) }
 
-pub async fn period_list_expired_task_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn period_list_expired_task_unit() -> Result<Json<ActionResult<Value>>, AppError> { Err(AppError::NotImplemented) }
 
-pub async fn period_list_expired_work_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn period_list_expired_work_application() -> Result<Json<ActionResult<Value>>, AppError> { Err(AppError::NotImplemented) }
 
-pub async fn period_list_expired_work_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn period_list_expired_work_unit() -> Result<Json<ActionResult<Value>>, AppError> { Err(AppError::NotImplemented) }
 
-pub async fn period_list_start_task_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn period_list_start_task_application() -> Result<Json<ActionResult<Value>>, AppError> { Err(AppError::NotImplemented) }
 
-pub async fn period_list_start_task_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn period_list_start_task_unit() -> Result<Json<ActionResult<Value>>, AppError> { Err(AppError::NotImplemented) }
 
-pub async fn period_list_start_work_applicationstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn period_list_start_work_application() -> Result<Json<ActionResult<Value>>, AppError> { Err(AppError::NotImplemented) }
 
-pub async fn period_list_start_work_unitstubs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn period_list_start_work_unit() -> Result<Json<ActionResult<Value>>, AppError> { Err(AppError::NotImplemented) }
 
 pub async fn state_applicationtstubs_trigger() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn state_category() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn state_category_trigger() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn state_organization() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn state_running() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 pub async fn state_summary() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }

@@ -3,11 +3,7 @@ pub use crate::RowGet;
 use crate::{
     ControlClient, ControlPool, DynControlPool, error::AppError,
 };
-use axum::extract::Extension;
-use axum::Json;
-use deadpool_postgres::Pool;
 use serde_json::Value;
-use crate::response::ActionResult;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 

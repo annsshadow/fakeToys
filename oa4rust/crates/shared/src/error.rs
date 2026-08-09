@@ -32,6 +32,10 @@ pub enum AppError {
     /// 权限不足（已认证但无权限访问）
     #[error("forbidden")]
     Forbidden,
+
+    /// 请求的功能尚未实现
+    #[error("not implemented")]
+    NotImplemented,
 }
 
 // 将 AppError 转换为 HTTP 响应：
@@ -51,6 +55,7 @@ impl IntoResponse for AppError {
             AppError::Unauthorized => axum::http::StatusCode::UNAUTHORIZED,
             AppError::Forbidden => axum::http::StatusCode::FORBIDDEN,
             AppError::NotFound => axum::http::StatusCode::NOT_FOUND,
+            AppError::NotImplemented => axum::http::StatusCode::NOT_IMPLEMENTED,
         };
 
         // 错误响应与成功响应使用相同的 JSON 结构，便于前端统一处理。
