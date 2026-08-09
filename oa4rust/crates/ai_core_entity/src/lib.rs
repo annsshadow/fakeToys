@@ -3,10 +3,11 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use deadpool_postgres::Pool;
+use sea_orm::{DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub mod entities;
 pub mod routes;
 
 // AI 应用实体 - 存储 AI 应用的基本信息
@@ -39,37 +40,39 @@ pub struct AiConversation {
 /// 获取 AI 应用列表
 /// 从数据库查询 x_ai_app 表，返回应用列表
 pub async fn app_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, description, status FROM x_ai_app ORDER BY create_time DESC LIMIT 20",
-            &[],
-        )
+    let models = entities::ai_app::Entity::find()
+        .order_by_desc(entities::ai_app::Column::CreateTime)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
                 (
                     "description".to_string(),
-                    row.get::<_, Option<String>>("description")
+                    m.description
+                        .clone()
                         .map(Value::String)
                         .unwrap_or(Value::Null),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                ("status".to_string(), Value::String(m.status.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -78,32 +81,33 @@ pub async fn app_list(
 /// 获取 AI 模型列表
 /// 从数据库查询 x_ai_model 表，返回模型列表
 pub async fn model_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, provider, enabled FROM x_ai_model ORDER BY name LIMIT 20",
-            &[],
-        )
+    let models = entities::ai_model::Entity::find()
+        .order_by_asc(entities::ai_model::Column::Name)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("provider".to_string(), Value::String(row.get("provider"))),
-                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("provider".to_string(), Value::String(m.provider.clone())),
+                ("enabled".to_string(), Value::Bool(m.enabled)),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -112,32 +116,44 @@ pub async fn model_list(
 /// 获取 AI 对话列表
 /// 从数据库查询 x_ai_conversation 表，返回对话列表
 pub async fn conversation_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, title, user_id, create_time FROM x_ai_conversation ORDER BY create_time DESC LIMIT 20",
-            &[],
-        )
+    let models = entities::ai_conversation::Entity::find()
+        .order_by_desc(entities::ai_conversation::Column::CreateTime)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("userId".to_string(), Value::String(row.get("user_id"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("title".to_string(), Value::String(m.title.clone())),
+                (
+                    "userId".to_string(),
+                    Value::String(m.user_id.clone()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -148,12 +164,19 @@ pub async fn conversation_list(
 /// - /jaxrs/ai/core/entity/app/list - 应用列表
 /// - /jaxrs/ai/core/entity/model/list - 模型列表
 /// - /jaxrs/ai/core/entity/conversation/list - 对话列表
-pub fn ai_core_entity_router(pool: Pool) -> Router {
+pub fn ai_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+    let db = tokio::runtime::Handle::current()
+        .block_on(shared::db::create_sea_orm_pool())
+        .expect("failed to create sea-orm connection");
+
     Router::new()
         .route("/jaxrs/ai/core/entity/app/list", get(app_list))
         .route("/jaxrs/ai/core/entity/model/list", get(model_list))
-        .route("/jaxrs/ai/core/entity/conversation/list", get(conversation_list))
-        .layer(Extension(pool))
+        .route(
+            "/jaxrs/ai/core/entity/conversation/list",
+            get(conversation_list),
+        )
+        .layer(Extension(db))
 }
 
 #[cfg(test)]

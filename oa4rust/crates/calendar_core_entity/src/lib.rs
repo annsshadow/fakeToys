@@ -1,14 +1,18 @@
-use axum::{
-    extract::Extension,
+﻿use axum::{
+    extract::{Extension, Json, Path},
     routing::{get, post},
-    Json, Router,
+    Json as AxumJson, Router,
 };
-use deadpool_postgres::Pool;
+use chrono::Utc;
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub mod entities;
 pub mod routes;
+
+use entities::{cal_calendar, cal_event};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct CalendarItem {
@@ -100,84 +104,88 @@ pub struct DeleteEventRequest {
 }
 
 pub async fn calendar_list_public(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, type, target, color, description, createor, is_public, status \
-             FROM CAL_CALENDAR WHERE is_public = true AND status = 'OPEN' ORDER BY create_time DESC LIMIT 50",
-            &[],
+    let models = cal_calendar::Entity::find()
+        .filter(
+            cal_calendar::Column::IsPublic
+                .eq(true)
+                .and(cal_calendar::Column::Status.eq("OPEN")),
         )
+        .order_by_desc(cal_calendar::Column::CreateTime)
+        .limit(50)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("target".to_string(), Value::String(row.get("target"))),
-                ("color".to_string(), Value::String(row.get("color"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("type".to_string(), Value::String(m.type_.clone())),
+                ("target".to_string(), Value::String(m.target.clone())),
+                ("color".to_string(), Value::String(m.color.clone())),
                 (
                     "description".to_string(),
-                    row.get::<_, Option<String>>("description")
+                    m.description
+                        .clone()
                         .map(Value::String)
                         .unwrap_or(Value::Null),
                 ),
-                ("createor".to_string(), Value::String(row.get("createor"))),
-                ("isPublic".to_string(), Value::Bool(row.get("is_public"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                ("createor".to_string(), Value::String(m.createor.clone())),
+                ("isPublic".to_string(), Value::Bool(m.is_public)),
+                ("status".to_string(), Value::String(m.status.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn calendar_list_my(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, type, target, color, description, createor, is_public, status \
-             FROM CAL_CALENDAR WHERE status = 'OPEN' ORDER BY create_time DESC LIMIT 50",
-            &[],
-        )
+    let models = cal_calendar::Entity::find()
+        .filter(cal_calendar::Column::Status.eq("OPEN"))
+        .order_by_desc(cal_calendar::Column::CreateTime)
+        .limit(50)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
     let mut my_calendars = Vec::new();
     let mut unit_calendars = Vec::new();
 
-    for row in rows.iter() {
-        let calendar_type: String = row.get("type");
-        let item: Value = Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("type".to_string(), Value::String(calendar_type.clone())),
-            ("target".to_string(), Value::String(row.get("target"))),
-            ("color".to_string(), Value::String(row.get("color"))),
+    for m in models.iter() {
+        let item = Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(m.id.clone())),
+            ("name".to_string(), Value::String(m.name.clone())),
+            ("type".to_string(), Value::String(m.type_.clone())),
+            ("target".to_string(), Value::String(m.target.clone())),
+            ("color".to_string(), Value::String(m.color.clone())),
             (
                 "description".to_string(),
-                row.get::<_, Option<String>>("description")
+                m.description
+                    .clone()
                     .map(Value::String)
                     .unwrap_or(Value::Null),
             ),
-            ("createor".to_string(), Value::String(row.get("createor"))),
-            ("isPublic".to_string(), Value::Bool(row.get("is_public"))),
-            ("status".to_string(), Value::String(row.get("status"))),
+            ("createor".to_string(), Value::String(m.createor.clone())),
+            ("isPublic".to_string(), Value::Bool(m.is_public)),
+            ("status".to_string(), Value::String(m.status.clone())),
         ]));
 
-        if calendar_type.eq_ignore_ascii_case("UNIT") {
+        if m.type_.eq_ignore_ascii_case("UNIT") {
             unit_calendars.push(item);
         } else {
             my_calendars.push(item);
@@ -186,62 +194,52 @@ pub async fn calendar_list_my(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            (
-                "myCalendars".to_string(),
-                Value::Array(my_calendars),
-            ),
-            (
-                "unitCalendars".to_string(),
-                Value::Array(unit_calendars),
-            ),
-            (
-                "followCalendars".to_string(),
-                Value::Array(Vec::<Value>::new()),
-            ),
+            ("myCalendars".to_string(), Value::Array(my_calendars)),
+            ("unitCalendars".to_string(), Value::Array(unit_calendars)),
+            ("followCalendars".to_string(), Value::Array(Vec::<Value>::new())),
         ]),
     ))))
 }
 
 pub async fn calendar_get(
-    pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    db: Extension<DatabaseConnection>,
+    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_one(
-            "SELECT id, name, type, target, color, description, createor, is_public, status \
-             FROM CAL_CALENDAR WHERE id = $1 AND status = 'OPEN'",
-            &[&id],
-        )
+    let model = cal_calendar::Entity::find_by_id(&id)
+        .filter(cal_calendar::Column::Status.eq("OPEN"))
+        .one(&db.0)
         .await
-        .map_err(|_| AppError::NotFound)?;
+        .map_err(|_| AppError::Internal)?;
 
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(row.get("id"))),
-        ("name".to_string(), Value::String(row.get("name"))),
-        ("type".to_string(), Value::String(row.get("type"))),
-        ("target".to_string(), Value::String(row.get("target"))),
-        ("color".to_string(), Value::String(row.get("color"))),
-        (
-            "description".to_string(),
-            row.get::<_, Option<String>>("description")
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        ("createor".to_string(), Value::String(row.get("createor"))),
-        ("isPublic".to_string(), Value::Bool(row.get("is_public"))),
-        ("status".to_string(), Value::String(row.get("status"))),
-    ]));
-
-    Ok(Json(ActionResult::success(data)))
+    match model {
+        Some(m) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("type".to_string(), Value::String(m.type_.clone())),
+                ("target".to_string(), Value::String(m.target.clone())),
+                ("color".to_string(), Value::String(m.color.clone())),
+                (
+                    "description".to_string(),
+                    m.description
+                        .clone()
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
+                ),
+                ("createor".to_string(), Value::String(m.createor.clone())),
+                ("isPublic".to_string(), Value::Bool(m.is_public)),
+                ("status".to_string(), Value::String(m.status.clone())),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("calendar not found"))),
+    }
 }
 
 pub async fn calendar_create(
-    pool: Extension<Pool>,
-    axum::extract::Json(req): axum::extract::Json<CreateCalendarRequest>,
+    db: Extension<DatabaseConnection>,
+    AxumJson(req): AxumJson<CreateCalendarRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let name = req.name.ok_or_else(|| AppError::BadRequest("name is required".to_string()))?;
     let calendar_type = req
         .calendar_type
@@ -250,148 +248,169 @@ pub async fn calendar_create(
     let color = req.color.unwrap_or_else(|| "#1462be".to_string());
     let description = req.description;
     let source = req.source;
-    let createor = req
-        .createor
-        .unwrap_or_else(|| "anonymous".to_string());
+    let createor = req.createor.unwrap_or_else(|| "anonymous".to_string());
     let is_public = req.is_public.unwrap_or(false);
 
     let id = uuid::Uuid::new_v4().to_string();
+    let now = Utc::now().naive_utc();
 
-    client
-        .execute(
-            "INSERT INTO CAL_CALENDAR (id, name, type, target, color, description, source, createor, is_public, status) \
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'OPEN')",
-            &[&id, &name, &calendar_type, &target, &color, &description, &source, &createor, &is_public],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    let active_model = cal_calendar::ActiveModel {
+        id: Set(id.clone()),
+        name: Set(name.clone()),
+        type_: Set(calendar_type.clone()),
+        target: Set(target.clone()),
+        color: Set(color.clone()),
+        description: Set(description.clone()),
+        source: Set(source.clone()),
+        createor: Set(createor.clone()),
+        is_public: Set(is_public),
+        status: Set("OPEN".to_string()),
+        create_time: Set(Some(now)),
+    };
+
+    let m = active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
     let data = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("type".to_string(), Value::String(calendar_type)),
-        ("target".to_string(), Value::String(target)),
-        ("color".to_string(), Value::String(color)),
+        ("id".to_string(), Value::String(m.id.clone())),
+        ("name".to_string(), Value::String(m.name.clone())),
+        ("type".to_string(), Value::String(m.type_.clone())),
+        ("target".to_string(), Value::String(m.target.clone())),
+        ("color".to_string(), Value::String(m.color.clone())),
         (
             "description".to_string(),
-            description.map(Value::String).unwrap_or(Value::Null),
+            m.description
+                .clone()
+                .map(Value::String)
+                .unwrap_or(Value::Null),
         ),
         (
             "source".to_string(),
-            source.map(Value::String).unwrap_or(Value::Null),
+            m.source
+                .clone()
+                .map(Value::String)
+                .unwrap_or(Value::Null),
         ),
-        ("createor".to_string(), Value::String(createor)),
-        ("isPublic".to_string(), Value::Bool(is_public)),
-        ("status".to_string(), Value::String("OPEN".to_string())),
+        ("createor".to_string(), Value::String(m.createor.clone())),
+        ("isPublic".to_string(), Value::Bool(m.is_public)),
+        ("status".to_string(), Value::String(m.status.clone())),
     ]));
 
     Ok(Json(ActionResult::success(data)))
 }
 
 pub async fn calendar_update(
-    pool: Extension<Pool>,
-    axum::extract::Json(req): axum::extract::Json<UpdateCalendarRequest>,
+    db: Extension<DatabaseConnection>,
+    AxumJson(req): AxumJson<UpdateCalendarRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let id = req
         .id
         .ok_or_else(|| AppError::BadRequest("id is required".to_string()))?;
 
-    let existing = client
-        .query_one(
-            "SELECT id, name, type, target, color, description, source, createor, is_public, status \
-             FROM CAL_CALENDAR WHERE id = $1 AND status = 'OPEN'",
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::NotFound)?;
-
-    let name = req.name.unwrap_or_else(|| existing.get("name"));
-    let calendar_type = req
-        .calendar_type
-        .unwrap_or_else(|| existing.get("type"));
-    let target = req
-        .target
-        .unwrap_or_else(|| existing.get("target"));
-    let color = req
-        .color
-        .unwrap_or_else(|| existing.get("color"));
-    let description = req
-        .description
-        .or_else(|| existing.get("description"));
-    let is_public = req
-        .is_public
-        .unwrap_or_else(|| existing.get("is_public"));
-
-    client
-        .execute(
-            "UPDATE CAL_CALENDAR SET name = $1, type = $2, target = $3, color = $4, description = $5, is_public = $6 \
-             WHERE id = $7",
-            &[&name, &calendar_type, &target, &color, &description, &is_public, &id],
-        )
+    let existing = cal_calendar::Entity::find_by_id(&id)
+        .filter(cal_calendar::Column::Status.eq("OPEN"))
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let source: Option<String> = existing.get("source");
-    let createor: String = existing.get("createor");
-    let status: String = existing.get("status");
+    let m = existing.ok_or_else(|| AppError::NotFound)?;
+
+    let name = req.name.unwrap_or(m.name);
+    let calendar_type = req.calendar_type.unwrap_or(m.type_);
+    let target = req.target.unwrap_or(m.target);
+    let color = req.color.unwrap_or(m.color);
+    let description = req.description.or(m.description);
+    let is_public = req.is_public.unwrap_or(m.is_public);
+
+    let active_model = cal_calendar::ActiveModel {
+        id: Set(id.clone()),
+        name: Set(name),
+        type_: Set(calendar_type),
+        target: Set(target),
+        color: Set(color),
+        description: Set(description.clone()),
+        source: Set(m.source.clone()),
+        createor: Set(m.createor.clone()),
+        is_public: Set(is_public),
+        status: Set(m.status.clone()),
+        create_time: Set(m.create_time.clone()),
+    };
+
+    let updated = active_model
+        .update(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?;
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("type".to_string(), Value::String(calendar_type)),
-        ("target".to_string(), Value::String(target)),
-        ("color".to_string(), Value::String(color)),
+        ("name".to_string(), Value::String(updated.name.clone())),
+        ("type".to_string(), Value::String(updated.type_.clone())),
+        ("target".to_string(), Value::String(updated.target.clone())),
+        ("color".to_string(), Value::String(updated.color.clone())),
         (
             "description".to_string(),
-            description.map(Value::String).unwrap_or(Value::Null),
+            updated
+                .description
+                .clone()
+                .map(Value::String)
+                .unwrap_or(Value::Null),
         ),
         (
             "source".to_string(),
-            source.map(Value::String).unwrap_or(Value::Null),
+            updated
+                .source
+                .clone()
+                .map(Value::String)
+                .unwrap_or(Value::Null),
         ),
-        ("createor".to_string(), Value::String(createor)),
-        ("isPublic".to_string(), Value::Bool(is_public)),
-        ("status".to_string(), Value::String(status)),
+        ("createor".to_string(), Value::String(updated.createor.clone())),
+        ("isPublic".to_string(), Value::Bool(updated.is_public)),
+        ("status".to_string(), Value::String(updated.status.clone())),
     ]));
 
     Ok(Json(ActionResult::success(data)))
 }
 
 pub async fn calendar_remove(
-    pool: Extension<Pool>,
-    axum::extract::Json(req): axum::extract::Json<DeleteCalendarRequest>,
+    db: Extension<DatabaseConnection>,
+    AxumJson(req): AxumJson<DeleteCalendarRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let id = req
         .id
         .ok_or_else(|| AppError::BadRequest("id is required".to_string()))?;
 
-    let existing = client
-        .query_one(
-            "SELECT id, name, type, target, color, description, source, createor, is_public, status \
-             FROM CAL_CALENDAR WHERE id = $1 AND status = 'OPEN'",
-            &[&id],
-        )
+    let existing = cal_calendar::Entity::find_by_id(&id)
+        .filter(cal_calendar::Column::Status.eq("OPEN"))
+        .one(&db.0)
         .await
-        .map_err(|_| AppError::NotFound)?;
+        .map_err(|_| AppError::Internal)?;
 
-    client
-        .execute(
-            "UPDATE CAL_CALENDAR SET status = 'CLOSED' WHERE id = $1",
-            &[&id],
-        )
+    let m = existing.ok_or_else(|| AppError::NotFound)?;
+
+    let active_model = cal_calendar::ActiveModel {
+        id: Set(m.id.clone()),
+        name: Set(m.name.clone()),
+        type_: Set(m.type_.clone()),
+        target: Set(m.target.clone()),
+        color: Set(m.color.clone()),
+        description: Set(m.description.clone()),
+        source: Set(m.source.clone()),
+        createor: Set(m.createor.clone()),
+        is_public: Set(m.is_public),
+        status: Set("CLOSED".to_string()),
+        create_time: Set(m.create_time.clone()),
+    };
+
+    let _updated = active_model
+        .update(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(existing.get("name"))),
-        ("type".to_string(), Value::String(existing.get("type"))),
-        ("target".to_string(), Value::String(existing.get("target"))),
-        ("color".to_string(), Value::String(existing.get("color"))),
+        ("name".to_string(), Value::String(m.name.clone())),
+        ("type".to_string(), Value::String(m.type_.clone())),
+        ("target".to_string(), Value::String(m.target.clone())),
+        ("color".to_string(), Value::String(m.color.clone())),
         ("status".to_string(), Value::String("CLOSED".to_string())),
     ]));
 
@@ -399,11 +418,9 @@ pub async fn calendar_remove(
 }
 
 pub async fn event_create(
-    pool: Extension<Pool>,
-    axum::extract::Json(req): axum::extract::Json<CreateEventRequest>,
+    db: Extension<DatabaseConnection>,
+    AxumJson(req): AxumJson<CreateEventRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let calendar_id = req
         .calendar_id
         .ok_or_else(|| AppError::BadRequest("calendarId is required".to_string()))?;
@@ -412,152 +429,203 @@ pub async fn event_create(
         .ok_or_else(|| AppError::BadRequest("title is required".to_string()))?;
     let content = req.content;
     let location = req.location;
-    let start_time = req
+    let start_time_str = req
         .start_time
         .ok_or_else(|| AppError::BadRequest("startTime is required".to_string()))?;
-    let end_time = req
+    let end_time_str = req
         .end_time
         .ok_or_else(|| AppError::BadRequest("endTime is required".to_string()))?;
     let all_day = req.all_day.unwrap_or(false);
     let visibility = req.visibility.unwrap_or_else(|| "PUBLIC".to_string());
-    let createor = req
-        .createor
-        .unwrap_or_else(|| "anonymous".to_string());
+    let createor = req.createor.unwrap_or_else(|| "anonymous".to_string());
 
     let id = uuid::Uuid::new_v4().to_string();
 
-    client
-        .execute(
-            "INSERT INTO CAL_EVENT (id, calendar_id, title, content, location, start_time, end_time, all_day, visibility, status, createor) \
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'OPEN', $10)",
-            &[&id, &calendar_id, &title, &content, &location, &start_time, &end_time, &all_day, &visibility, &createor],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    let start_time: chrono::NaiveDateTime = start_time_str.parse().map_err(|_| AppError::BadRequest("invalid startTime".to_string()))?;
+    let end_time: chrono::NaiveDateTime = end_time_str.parse().map_err(|_| AppError::BadRequest("invalid endTime".to_string()))?;
+
+    let active_model = cal_event::ActiveModel {
+        id: Set(id.clone()),
+        calendar_id: Set(calendar_id.clone()),
+        title: Set(title.clone()),
+        content: Set(content.clone()),
+        location: Set(location.clone()),
+        start_time: Set(start_time),
+        end_time: Set(end_time),
+        all_day: Set(all_day),
+        visibility: Set(visibility.clone()),
+        status: Set("OPEN".to_string()),
+        createor: Set(createor.clone()),
+        create_time: Set(Some(Utc::now().naive_utc())),
+    };
+
+    let m = active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
     let data = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("calendarId".to_string(), Value::String(calendar_id)),
-        ("title".to_string(), Value::String(title)),
+        ("id".to_string(), Value::String(m.id.clone())),
+        (
+            "calendarId".to_string(),
+            Value::String(m.calendar_id.clone()),
+        ),
+        ("title".to_string(), Value::String(m.title.clone())),
         (
             "content".to_string(),
-            content.map(Value::String).unwrap_or(Value::Null),
+            m.content
+                .clone()
+                .map(Value::String)
+                .unwrap_or(Value::Null),
         ),
         (
             "location".to_string(),
-            location.map(Value::String).unwrap_or(Value::Null),
+            m.location
+                .clone()
+                .map(Value::String)
+                .unwrap_or(Value::Null),
         ),
-        ("startTime".to_string(), Value::String(start_time)),
-        ("endTime".to_string(), Value::String(end_time)),
-        ("allDay".to_string(), Value::Bool(all_day)),
-        ("visibility".to_string(), Value::String(visibility)),
-        ("status".to_string(), Value::String("OPEN".to_string())),
-        ("createor".to_string(), Value::String(createor)),
+        (
+            "startTime".to_string(),
+            Value::String(m.start_time.to_string()),
+        ),
+        ("endTime".to_string(), Value::String(m.end_time.to_string())),
+        ("allDay".to_string(), Value::Bool(m.all_day)),
+        ("visibility".to_string(), Value::String(m.visibility.clone())),
+        ("status".to_string(), Value::String(m.status.clone())),
+        ("createor".to_string(), Value::String(m.createor.clone())),
     ]));
 
     Ok(Json(ActionResult::success(data)))
 }
 
 pub async fn event_update(
-    pool: Extension<Pool>,
-    axum::extract::Json(req): axum::extract::Json<UpdateEventRequest>,
+    db: Extension<DatabaseConnection>,
+    AxumJson(req): AxumJson<UpdateEventRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let id = req
         .id
         .ok_or_else(|| AppError::BadRequest("id is required".to_string()))?;
 
-    let existing = client
-        .query_one(
-            "SELECT id, calendar_id, title, content, location, start_time, end_time, all_day, visibility, status, createor \
-             FROM CAL_EVENT WHERE id = $1 AND status = 'OPEN'",
-            &[&id],
-        )
+    let existing = cal_event::Entity::find_by_id(&id)
+        .filter(cal_event::Column::Status.eq("OPEN"))
+        .one(&db.0)
         .await
-        .map_err(|_| AppError::NotFound)?;
+        .map_err(|_| AppError::Internal)?;
 
-    let title = req.title.unwrap_or_else(|| existing.get("title"));
-    let content = req.content.or_else(|| existing.get("content"));
-    let location = req.location.or_else(|| existing.get("location"));
-    let start_time = req
-        .start_time
-        .unwrap_or_else(|| existing.get::<_, String>("start_time"));
-    let end_time = req
-        .end_time
-        .unwrap_or_else(|| existing.get::<_, String>("end_time"));
-    let all_day = req.all_day.unwrap_or_else(|| existing.get("all_day"));
-    let visibility = req
-        .visibility
-        .unwrap_or_else(|| existing.get("visibility"));
-    let status = req
-        .status
-        .unwrap_or_else(|| existing.get("status"));
-    let calendar_id: String = existing.get("calendar_id");
-    let createor: String = existing.get("createor");
+    let m = existing.ok_or_else(|| AppError::NotFound)?;
 
-    client
-        .execute(
-            "UPDATE CAL_EVENT SET title = $1, content = $2, location = $3, start_time = $4, end_time = $5, all_day = $6, visibility = $7, status = $8 \
-             WHERE id = $9",
-            &[&title, &content, &location, &start_time, &end_time, &all_day, &visibility, &status, &id],
-        )
+    let title = req.title.unwrap_or(m.title);
+    let content = req.content.or(m.content);
+    let location = req.location.or(m.location);
+    let start_time_str = req.start_time.unwrap_or_else(|| m.start_time.to_string());
+    let end_time_str = req.end_time.unwrap_or_else(|| m.end_time.to_string());
+    let all_day = req.all_day.unwrap_or(m.all_day);
+    let visibility = req.visibility.unwrap_or(m.visibility);
+    let status = req.status.unwrap_or(m.status);
+
+    let start_time: chrono::NaiveDateTime = start_time_str.parse().map_err(|_| AppError::BadRequest("invalid startTime".to_string()))?;
+    let end_time: chrono::NaiveDateTime = end_time_str.parse().map_err(|_| AppError::BadRequest("invalid endTime".to_string()))?;
+
+    let active_model = cal_event::ActiveModel {
+        id: Set(id.clone()),
+        calendar_id: Set(m.calendar_id.clone()),
+        title: Set(title),
+        content: Set(content.clone()),
+        location: Set(location.clone()),
+        start_time: Set(start_time),
+        end_time: Set(end_time),
+        all_day: Set(all_day),
+        visibility: Set(visibility.clone()),
+        status: Set(status.clone()),
+        createor: Set(m.createor.clone()),
+        create_time: Set(m.create_time.clone()),
+    };
+
+    let updated = active_model
+        .update(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("calendarId".to_string(), Value::String(calendar_id)),
-        ("title".to_string(), Value::String(title)),
+        (
+            "calendarId".to_string(),
+            Value::String(updated.calendar_id.clone()),
+        ),
+        ("title".to_string(), Value::String(updated.title.clone())),
         (
             "content".to_string(),
-            content.map(Value::String).unwrap_or(Value::Null),
+            updated
+                .content
+                .clone()
+                .map(Value::String)
+                .unwrap_or(Value::Null),
         ),
         (
             "location".to_string(),
-            location.map(Value::String).unwrap_or(Value::Null),
+            updated
+                .location
+                .clone()
+                .map(Value::String)
+                .unwrap_or(Value::Null),
         ),
-        ("startTime".to_string(), Value::String(start_time)),
-        ("endTime".to_string(), Value::String(end_time)),
-        ("allDay".to_string(), Value::Bool(all_day)),
-        ("visibility".to_string(), Value::String(visibility)),
-        ("status".to_string(), Value::String(status)),
-        ("createor".to_string(), Value::String(createor)),
+        (
+            "startTime".to_string(),
+            Value::String(updated.start_time.to_string()),
+        ),
+        (
+            "endTime".to_string(),
+            Value::String(updated.end_time.to_string()),
+        ),
+        ("allDay".to_string(), Value::Bool(updated.all_day)),
+        (
+            "visibility".to_string(),
+            Value::String(updated.visibility.clone()),
+        ),
+        ("status".to_string(), Value::String(updated.status.clone())),
+        ("createor".to_string(), Value::String(updated.createor.clone())),
     ]));
 
     Ok(Json(ActionResult::success(data)))
 }
 
 pub async fn event_remove(
-    pool: Extension<Pool>,
-    axum::extract::Json(req): axum::extract::Json<DeleteEventRequest>,
+    db: Extension<DatabaseConnection>,
+    AxumJson(req): AxumJson<DeleteEventRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let id = req
         .id
         .ok_or_else(|| AppError::BadRequest("id is required".to_string()))?;
 
-    let existing = client
-        .query_one(
-            "SELECT id, calendar_id, title, content, location, start_time, end_time, all_day, visibility, status, createor \
-             FROM CAL_EVENT WHERE id = $1 AND status = 'OPEN'",
-            &[&id],
-        )
+    let existing = cal_event::Entity::find_by_id(&id)
+        .filter(cal_event::Column::Status.eq("OPEN"))
+        .one(&db.0)
         .await
-        .map_err(|_| AppError::NotFound)?;
+        .map_err(|_| AppError::Internal)?;
 
-    client
-        .execute(
-            "UPDATE CAL_EVENT SET status = 'CLOSED' WHERE id = $1",
-            &[&id],
-        )
+    let m = existing.ok_or_else(|| AppError::NotFound)?;
+
+    let active_model = cal_event::ActiveModel {
+        id: Set(m.id.clone()),
+        calendar_id: Set(m.calendar_id.clone()),
+        title: Set(m.title.clone()),
+        content: Set(m.content.clone()),
+        location: Set(m.location.clone()),
+        start_time: Set(m.start_time),
+        end_time: Set(m.end_time),
+        all_day: Set(m.all_day),
+        visibility: Set(m.visibility.clone()),
+        status: Set("CLOSED".to_string()),
+        createor: Set(m.createor.clone()),
+        create_time: Set(m.create_time.clone()),
+    };
+
+    let _updated = active_model
+        .update(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("title".to_string(), Value::String(existing.get("title"))),
+        ("title".to_string(), Value::String(m.title.clone())),
         ("status".to_string(), Value::String("CLOSED".to_string())),
     ]));
 
@@ -565,71 +633,119 @@ pub async fn event_remove(
 }
 
 pub async fn event_list_by_calendar(
-    pool: Extension<Pool>,
-    axum::extract::Path(calendar_id): axum::extract::Path<String>,
+    db: Extension<DatabaseConnection>,
+    Path(calendar_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let rows = client
-        .query(
-            "SELECT id, calendar_id, title, content, location, start_time, end_time, all_day, visibility, status, createor \
-             FROM CAL_EVENT WHERE calendar_id = $1 AND status = 'OPEN' ORDER BY start_time ASC LIMIT 100",
-            &[&calendar_id],
+    let models = cal_event::Entity::find()
+        .filter(
+            cal_event::Column::CalendarId.eq(&calendar_id)
+                .and(cal_event::Column::Status.eq("OPEN")),
         )
+        .order_by_asc(cal_event::Column::StartTime)
+        .limit(100)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("calendarId".to_string(), Value::String(row.get("calendar_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                (
+                    "calendarId".to_string(),
+                    Value::String(m.calendar_id.clone()),
+                ),
+                ("title".to_string(), Value::String(m.title.clone())),
                 (
                     "content".to_string(),
-                    row.get::<_, Option<String>>("content")
+                    m.content
+                        .clone()
                         .map(Value::String)
                         .unwrap_or(Value::Null),
                 ),
                 (
                     "location".to_string(),
-                    row.get::<_, Option<String>>("location")
+                    m.location
+                        .clone()
                         .map(Value::String)
                         .unwrap_or(Value::Null),
                 ),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
-                ("endTime".to_string(), Value::String(row.get("end_time"))),
-                ("allDay".to_string(), Value::Bool(row.get("all_day"))),
-                ("visibility".to_string(), Value::String(row.get("visibility"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("createor".to_string(), Value::String(row.get("createor"))),
+                (
+                    "startTime".to_string(),
+                    Value::String(m.start_time.to_string()),
+                ),
+                ("endTime".to_string(), Value::String(m.end_time.to_string())),
+                ("allDay".to_string(), Value::Bool(m.all_day)),
+                ("visibility".to_string(), Value::String(m.visibility.clone())),
+                ("status".to_string(), Value::String(m.status.clone())),
+                ("createor".to_string(), Value::String(m.createor.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
-            ("calendarId".to_string(), Value::String(calendar_id)),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
+            (
+                "calendarId".to_string(),
+                Value::String(calendar_id),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub fn calendar_core_entity_router(pool: Pool) -> Router {
+pub fn calendar_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+    let db = tokio::runtime::Handle::current()
+        .block_on(shared::db::create_sea_orm_pool())
+        .expect("failed to create sea-orm connection");
+
     Router::new()
-        .route("/jaxrs/calendar/core/entity/calendar/list/public", get(calendar_list_public))
-        .route("/jaxrs/calendar/core/entity/calendar/list/my", get(calendar_list_my))
-        .route("/jaxrs/calendar/core/entity/calendar/{id}", get(calendar_get))
-        .route("/jaxrs/calendar/core/entity/calendar/create", post(calendar_create))
-        .route("/jaxrs/calendar/core/entity/calendar/update", post(calendar_update))
-        .route("/jaxrs/calendar/core/entity/calendar/remove", post(calendar_remove))
-        .route("/jaxrs/calendar/core/entity/event/create", post(event_create))
-        .route("/jaxrs/calendar/core/entity/event/update", post(event_update))
-        .route("/jaxrs/calendar/core/entity/event/remove", post(event_remove))
-        .route("/jaxrs/calendar/core/entity/event/list/{calendarId}", get(event_list_by_calendar))
-        .layer(Extension(pool))
+        .route(
+            "/jaxrs/calendar/core/entity/calendar/list/public",
+            get(calendar_list_public),
+        )
+        .route(
+            "/jaxrs/calendar/core/entity/calendar/list/my",
+            get(calendar_list_my),
+        )
+        .route(
+            "/jaxrs/calendar/core/entity/calendar/{id}",
+            get(calendar_get),
+        )
+        .route(
+            "/jaxrs/calendar/core/entity/calendar/create",
+            post(calendar_create),
+        )
+        .route(
+            "/jaxrs/calendar/core/entity/calendar/update",
+            post(calendar_update),
+        )
+        .route(
+            "/jaxrs/calendar/core/entity/calendar/remove",
+            post(calendar_remove),
+        )
+        .route(
+            "/jaxrs/calendar/core/entity/event/create",
+            post(event_create),
+        )
+        .route(
+            "/jaxrs/calendar/core/entity/event/update",
+            post(event_update),
+        )
+        .route(
+            "/jaxrs/calendar/core/entity/event/remove",
+            post(event_remove),
+        )
+        .route(
+            "/jaxrs/calendar/core/entity/event/list/{calendarId}",
+            get(event_list_by_calendar),
+        )
+        .layer(Extension(db))
 }
 
 #[cfg(test)]

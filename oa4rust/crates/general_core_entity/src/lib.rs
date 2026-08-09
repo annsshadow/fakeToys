@@ -4,10 +4,16 @@ use axum::{
     Json, Router,
 };
 use deadpool_postgres::Pool;
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub mod entities;
 pub mod routes;
+
+use entities::{
+    general_application_dict, general_application_dict_item, general_file, general_invoice,
+};
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
 pub struct ApplicationDict {
@@ -42,114 +48,114 @@ pub struct Invoice {
 }
 
 pub async fn dict_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, application FROM x_general_application_dict ORDER BY name LIMIT 20",
-            &[],
-        )
+    let models = general_application_dict::Entity::find()
+        .order_by_asc(general_application_dict::Column::Name)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("application".to_string(), Value::String(row.get("application"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("application".to_string(), Value::String(m.application.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn dict_item_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(dict_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, dict_id, name, value FROM x_general_application_dict_item WHERE dict_id = $1",
-            &[&dict_id],
-        )
+    let models = general_application_dict_item::Entity::find()
+        .filter(general_application_dict_item::Column::DictId.eq(&dict_id))
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("dictId".to_string(), Value::String(row.get("dict_id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("dictId".to_string(), Value::String(m.dict_id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("value".to_string(), Value::String(m.value.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn dict_create(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let application = payload.get("application").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let application = payload
+        .get("application")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
-    client
-        .execute(
-            "INSERT INTO x_general_application_dict (id, name, application) VALUES ($1, $2, $3)",
-            &[&id, &name, &application],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    let active_model = general_application_dict::ActiveModel {
+        id: sea_orm::ActiveValue::Set(id.clone()),
+        name: sea_orm::ActiveValue::Set(name.clone()),
+        application: sea_orm::ActiveValue::Set(application.clone()),
+    };
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("application".to_string(), Value::String(application)),
-    ])))))
+    active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("application".to_string(), Value::String(application)),
+        ]),
+    ))))
 }
 
 pub async fn dict_get(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let row = client
-        .query_opt(
-            "SELECT id, name, application FROM x_general_application_dict WHERE id = $1",
-            &[&id],
-        )
+    let model = general_application_dict::Entity::find_by_id(&id)
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    match row {
-        Some(row) => {
+    match model {
+        Some(m) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("application".to_string(), Value::String(row.get("application"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("application".to_string(), Value::String(m.application.clone())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -158,103 +164,110 @@ pub async fn dict_get(
 }
 
 pub async fn dict_update(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let application = payload.get("application").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let application = payload
+        .get("application")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
-    let result = client
-        .execute(
-            "UPDATE x_general_application_dict SET name = $1, application = $2 WHERE id = $3",
-            &[&name, &application, &id],
-        )
+    let model = general_application_dict::Entity::find_by_id(&id)
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
-        return Ok(Json(ActionResult::error("dict not found")));
-    }
+    match model {
+        Some(m) => {
+            let mut active: general_application_dict::ActiveModel = m.into();
+            active.name = sea_orm::ActiveValue::Set(name.clone());
+            active.application = sea_orm::ActiveValue::Set(application.clone());
+            active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("saved".to_string(), Value::Bool(true)),
-        ("name".to_string(), Value::String(name)),
-    ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("saved".to_string(), Value::Bool(true)),
+                    ("name".to_string(), Value::String(name)),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("dict not found"))),
+    }
 }
 
 pub async fn dict_delete(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let result = client
-        .execute("DELETE FROM x_general_application_dict WHERE id = $1", &[&id])
+    let result = general_application_dict::Entity::delete_by_id(&id)
+        .exec(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
+    if result.rows_affected == 0 {
         return Ok(Json(ActionResult::error("dict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 pub async fn dict_item_create(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let id = uuid::Uuid::new_v4().to_string();
-    let dict_id = payload.get("dictId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let dict_id = payload
+        .get("dictId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let value = payload.get("value").and_then(|v| v.as_str()).unwrap_or_default().to_string();
 
-    client
-        .execute(
-            "INSERT INTO x_general_application_dict_item (id, dict_id, name, value) VALUES ($1, $2, $3, $4)",
-            &[&id, &dict_id, &name, &value],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    let active_model = general_application_dict_item::ActiveModel {
+        id: sea_orm::ActiveValue::Set(id.clone()),
+        dict_id: sea_orm::ActiveValue::Set(dict_id.clone()),
+        name: sea_orm::ActiveValue::Set(name.clone()),
+        value: sea_orm::ActiveValue::Set(value.clone()),
+    };
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("dictId".to_string(), Value::String(dict_id)),
-        ("name".to_string(), Value::String(name)),
-        ("value".to_string(), Value::String(value)),
-    ])))))
+    active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("dictId".to_string(), Value::String(dict_id)),
+            ("name".to_string(), Value::String(name)),
+            ("value".to_string(), Value::String(value)),
+        ]),
+    ))))
 }
 
 pub async fn dict_item_get(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let row = client
-        .query_opt(
-            "SELECT id, dict_id, name, value FROM x_general_application_dict_item WHERE id = $1",
-            &[&id],
-        )
+    let model = general_application_dict_item::Entity::find_by_id(&id)
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    match row {
-        Some(row) => {
+    match model {
+        Some(m) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("dictId".to_string(), Value::String(row.get("dict_id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("value".to_string(), Value::String(row.get("value"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("dictId".to_string(), Value::String(m.dict_id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("value".to_string(), Value::String(m.value.clone())),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -263,172 +276,200 @@ pub async fn dict_item_get(
 }
 
 pub async fn dict_item_update(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let dict_id = payload.get("dictId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let dict_id = payload
+        .get("dictId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let value = payload.get("value").and_then(|v| v.as_str()).unwrap_or_default().to_string();
 
-    let result = client
-        .execute(
-            "UPDATE x_general_application_dict_item SET dict_id = $1, name = $2, value = $3 WHERE id = $4",
-            &[&dict_id, &name, &value, &id],
-        )
+    let model = general_application_dict_item::Entity::find_by_id(&id)
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
-        return Ok(Json(ActionResult::error("dict item not found")));
-    }
+    match model {
+        Some(m) => {
+            let mut active: general_application_dict_item::ActiveModel = m.into();
+            active.dict_id = sea_orm::ActiveValue::Set(dict_id.clone());
+            active.name = sea_orm::ActiveValue::Set(name.clone());
+            active.value = sea_orm::ActiveValue::Set(value.clone());
+            active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("saved".to_string(), Value::Bool(true)),
-        ("name".to_string(), Value::String(name)),
-    ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("saved".to_string(), Value::Bool(true)),
+                    ("name".to_string(), Value::String(name)),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("dict item not found"))),
+    }
 }
 
 pub async fn dict_item_delete(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let result = client
-        .execute("DELETE FROM x_general_application_dict_item WHERE id = $1", &[&id])
+    let result = general_application_dict_item::Entity::delete_by_id(&id)
+        .exec(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
+    if result.rows_affected == 0 {
         return Ok(Json(ActionResult::error("dict item not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 pub async fn file_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, mime_type, size FROM x_general_file ORDER BY create_time DESC LIMIT 20",
-            &[],
-        )
+    let models = general_file::Entity::find()
+        .order_by_desc(general_file::Column::CreateTime)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("mimeType".to_string(), Value::String(m.mime_type.clone())),
+                ("size".to_string(), Value::Number(serde_json::Number::from(m.size))),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn invoice_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, number, date, amount, status FROM x_general_invoice ORDER BY create_time DESC LIMIT 20",
-            &[],
-        )
+    let models = general_invoice::Entity::find()
+        .order_by_desc(general_invoice::Column::CreateTime)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("number".to_string(), Value::String(row.get("number"))),
-                ("date".to_string(), Value::String(row.get("date"))),
-                ("amount".to_string(), Value::Number(serde_json::Number::from_f64(row.get::<_, f64>("amount")).unwrap_or_else(|| serde_json::Number::from(0)))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("number".to_string(), Value::String(m.number.clone())),
+                ("date".to_string(), Value::String(m.date.clone())),
+                (
+                    "amount".to_string(),
+                    Value::Number(
+                        serde_json::Number::from_f64(m.amount).unwrap_or_else(|| serde_json::Number::from(0)),
+                    ),
+                ),
+                ("status".to_string(), Value::String(m.status.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn file_create(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let mime_type = payload.get("mimeType").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let mime_type = payload
+        .get("mimeType")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let size = payload.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
 
-    client
-        .execute(
-            "INSERT INTO x_general_file (id, name, mime_type, size, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
-            &[&id, &name, &mime_type, &size, &creator],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    let active_model = general_file::ActiveModel {
+        id: sea_orm::ActiveValue::Set(id.clone()),
+        name: sea_orm::ActiveValue::Set(name.clone()),
+        mime_type: sea_orm::ActiveValue::Set(mime_type.clone()),
+        size: sea_orm::ActiveValue::Set(size),
+        creator: sea_orm::ActiveValue::Set(Some(creator.to_string())),
+        create_time: sea_orm::ActiveValue::NotSet,
+    };
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name)),
-        ("mimeType".to_string(), Value::String(mime_type)),
-        ("size".to_string(), Value::Number(serde_json::Number::from(size))),
-    ])))))
+    active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("mimeType".to_string(), Value::String(mime_type)),
+            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
+        ]),
+    ))))
 }
 
 pub async fn file_get(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let row = client
-        .query_opt(
-            "SELECT id, name, mime_type, size, creator, create_time FROM x_general_file WHERE id = $1",
-            &[&id],
-        )
+    let model = general_file::Entity::find_by_id(&id)
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    match row {
-        Some(row) => {
+    match model {
+        Some(m) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("mimeType".to_string(), Value::String(m.mime_type.clone())),
+                ("size".to_string(), Value::Number(serde_json::Number::from(m.size))),
+                (
+                    "creator".to_string(),
+                    Value::String(m.creator.clone().unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -437,78 +478,91 @@ pub async fn file_get(
 }
 
 pub async fn file_update(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let mime_type = payload.get("mimeType").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let mime_type = payload
+        .get("mimeType")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
-    let result = client
-        .execute(
-            "UPDATE x_general_file SET name = $1, mime_type = $2 WHERE id = $3",
-            &[&name, &mime_type, &id],
-        )
+    let model = general_file::Entity::find_by_id(&id)
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
-        return Ok(Json(ActionResult::error("file not found")));
-    }
+    match model {
+        Some(m) => {
+            let mut active: general_file::ActiveModel = m.into();
+            active.name = sea_orm::ActiveValue::Set(name.clone());
+            active.mime_type = sea_orm::ActiveValue::Set(mime_type.clone());
+            active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("saved".to_string(), Value::Bool(true)),
-        ("name".to_string(), Value::String(name)),
-    ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("saved".to_string(), Value::Bool(true)),
+                    ("name".to_string(), Value::String(name)),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
 }
 
 pub async fn file_delete(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let result = client
-        .execute("DELETE FROM x_general_file WHERE id = $1", &[&id])
+    let result = general_file::Entity::delete_by_id(&id)
+        .exec(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
+    if result.rows_affected == 0 {
         return Ok(Json(ActionResult::error("file not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 pub async fn file_download(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let row = client
-        .query_opt(
-            "SELECT id, name, mime_type, size, creator, create_time FROM x_general_file WHERE id = $1",
-            &[&id],
-        )
+    let model = general_file::Entity::find_by_id(&id)
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    match row {
-        Some(row) => {
+    match model {
+        Some(m) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("mimeType".to_string(), Value::String(row.get("mime_type"))),
-                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("mimeType".to_string(), Value::String(m.mime_type.clone())),
+                ("size".to_string(), Value::Number(serde_json::Number::from(m.size))),
+                (
+                    "creator".to_string(),
+                    Value::String(m.creator.clone().unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -517,59 +571,87 @@ pub async fn file_download(
 }
 
 pub async fn invoice_create(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
     let id = uuid::Uuid::new_v4().to_string();
-    let number = payload.get("number").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let number = payload
+        .get("number")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let date = payload.get("date").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let amount = payload.get("amount").and_then(|v| v.as_f64()).unwrap_or(0.0);
-    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or("draft").to_string();
-    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
+    let status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("draft")
+        .to_string();
+    let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
 
-    client
-        .execute(
-            "INSERT INTO x_general_invoice (id, number, date, amount, status, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
-            &[&id, &number, &date, &amount, &status, &creator],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    let active_model = general_invoice::ActiveModel {
+        id: sea_orm::ActiveValue::Set(id.clone()),
+        number: sea_orm::ActiveValue::Set(number.clone()),
+        date: sea_orm::ActiveValue::Set(date.clone()),
+        amount: sea_orm::ActiveValue::Set(amount),
+        status: sea_orm::ActiveValue::Set(status.clone()),
+        creator: sea_orm::ActiveValue::Set(Some(creator.to_string())),
+        create_time: sea_orm::ActiveValue::NotSet,
+    };
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("number".to_string(), Value::String(number)),
-        ("date".to_string(), Value::String(date)),
-        ("amount".to_string(), Value::Number(serde_json::Number::from_f64(amount).unwrap_or_else(|| serde_json::Number::from(0)))),
-        ("status".to_string(), Value::String(status)),
-    ])))))
+    active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("number".to_string(), Value::String(number)),
+            ("date".to_string(), Value::String(date)),
+            (
+                "amount".to_string(),
+                Value::Number(
+                    serde_json::Number::from_f64(amount).unwrap_or_else(|| serde_json::Number::from(0)),
+                ),
+            ),
+            ("status".to_string(), Value::String(status)),
+        ]),
+    ))))
 }
 
 pub async fn invoice_get(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let row = client
-        .query_opt(
-            "SELECT id, number, date, amount, status, creator, create_time FROM x_general_invoice WHERE id = $1",
-            &[&id],
-        )
+    let model = general_invoice::Entity::find_by_id(&id)
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    match row {
-        Some(row) => {
+    match model {
+        Some(m) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("number".to_string(), Value::String(row.get("number"))),
-                ("date".to_string(), Value::String(row.get("date"))),
-                ("amount".to_string(), Value::Number(serde_json::Number::from_f64(row.get::<_, f64>("amount")).unwrap_or_else(|| serde_json::Number::from(0)))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("number".to_string(), Value::String(m.number.clone())),
+                ("date".to_string(), Value::String(m.date.clone())),
+                (
+                    "amount".to_string(),
+                    Value::Number(
+                        serde_json::Number::from_f64(m.amount).unwrap_or_else(|| serde_json::Number::from(0)),
+                    ),
+                ),
+                ("status".to_string(), Value::String(m.status.clone())),
+                (
+                    "creator".to_string(),
+                    Value::String(m.creator.clone().unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -578,58 +660,75 @@ pub async fn invoice_get(
 }
 
 pub async fn invoice_update(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
     axum::extract::Json(payload): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let number = payload.get("number").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let number = payload
+        .get("number")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let date = payload.get("date").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let amount = payload.get("amount").and_then(|v| v.as_f64()).unwrap_or(0.0);
-    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
 
-    let result = client
-        .execute(
-            "UPDATE x_general_invoice SET number = $1, date = $2, amount = $3, status = $4 WHERE id = $5",
-            &[&number, &date, &amount, &status, &id],
-        )
+    let model = general_invoice::Entity::find_by_id(&id)
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
-        return Ok(Json(ActionResult::error("invoice not found")));
-    }
+    match model {
+        Some(m) => {
+            let mut active: general_invoice::ActiveModel = m.into();
+            active.number = sea_orm::ActiveValue::Set(number.clone());
+            active.date = sea_orm::ActiveValue::Set(date.clone());
+            active.amount = sea_orm::ActiveValue::Set(amount);
+            active.status = sea_orm::ActiveValue::Set(status.clone());
+            active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("saved".to_string(), Value::Bool(true)),
-        ("number".to_string(), Value::String(number)),
-    ])))))
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("saved".to_string(), Value::Bool(true)),
+                    ("number".to_string(), Value::String(number)),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("invoice not found"))),
+    }
 }
 
 pub async fn invoice_delete(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let result = client
-        .execute("DELETE FROM x_general_invoice WHERE id = $1", &[&id])
+    let result = general_invoice::Entity::delete_by_id(&id)
+        .exec(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
+    if result.rows_affected == 0 {
         return Ok(Json(ActionResult::error("invoice not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("deleted".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
-pub fn general_core_entity_router(pool: Pool) -> Router {
+pub fn general_core_entity_router(_pool: Pool) -> Router {
+    let db = tokio::runtime::Handle::current()
+        .block_on(shared::db::create_sea_orm_pool())
+        .expect("failed to create sea-orm connection");
+
     Router::new()
         .route("/jaxrs/general/dict/list", get(dict_list))
         .route("/jaxrs/general/dict/create", post(dict_create))
@@ -652,7 +751,7 @@ pub fn general_core_entity_router(pool: Pool) -> Router {
         .route("/jaxrs/general/invoice/{id}", get(invoice_get))
         .route("/jaxrs/general/invoice/update/{id}", post(invoice_update))
         .route("/jaxrs/general/invoice/delete/{id}", post(invoice_delete))
-        .layer(Extension(pool))
+        .layer(Extension(db))
 }
 
 #[cfg(test)]

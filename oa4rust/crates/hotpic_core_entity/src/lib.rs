@@ -4,10 +4,14 @@ use axum::{
     Json, Router,
 };
 use deadpool_postgres::Pool;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub mod entities;
 pub mod routes;
+
+use entities::hotpic;
 
 // 热图实体
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -22,32 +26,33 @@ pub struct HotPic {
 /// 获取热图列表
 /// 从数据库查询 x_hotpic 表
 pub async fn list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, application, info_id, title FROM x_hotpic ORDER BY create_time DESC LIMIT 20",
-            &[],
-        )
+    let models = hotpic::Entity::find()
+        .order_by_desc(hotpic::Column::CreateTime)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("application".to_string(), Value::String(row.get("application"))),
-                ("infoId".to_string(), Value::String(row.get("info_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("application".to_string(), Value::String(m.application.clone())),
+                ("infoId".to_string(), Value::String(m.info_id.clone())),
+                ("title".to_string(), Value::String(m.title.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -56,33 +61,37 @@ pub async fn list(
 /// 根据应用和信息ID获取热图
 /// 查询 x_hotpic 表中指定应用和信息ID的热图
 pub async fn list_by_app_and_info(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path((application, info_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, application, info_id, title FROM x_hotpic WHERE application = $1 AND info_id = $2 ORDER BY create_time DESC LIMIT 20",
-            &[&application, &info_id],
+    let models = hotpic::Entity::find()
+        .filter(
+            hotpic::Column::Application.eq(&application).and(hotpic::Column::InfoId.eq(&info_id)),
         )
+        .order_by_desc(hotpic::Column::CreateTime)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("application".to_string(), Value::String(row.get("application"))),
-                ("infoId".to_string(), Value::String(row.get("info_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("application".to_string(), Value::String(m.application.clone())),
+                ("infoId".to_string(), Value::String(m.info_id.clone())),
+                ("title".to_string(), Value::String(m.title.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -91,18 +100,16 @@ pub async fn list_by_app_and_info(
 /// 检查热图是否存在
 /// 验证指定应用和信息ID的热图是否存在
 pub async fn exists_check(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     axum::extract::Path((application, info_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let count: i64 = client
-        .query_one(
-            "SELECT COUNT(*) FROM x_hotpic WHERE application = $1 AND info_id = $2",
-            &[&application, &info_id],
+    let count: u64 = hotpic::Entity::find()
+        .filter(
+            hotpic::Column::Application.eq(&application).and(hotpic::Column::InfoId.eq(&info_id)),
         )
+        .count(&db.0)
         .await
-        .map_err(|_| AppError::Internal)?
-        .get("count");
+        .map_err(|_| AppError::Internal)?;
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("allExists".to_string(), Value::Bool(count > 0)),
@@ -117,12 +124,19 @@ pub async fn exists_check(
 /// - /jaxrs/hotpic/core/entity/list - 热图列表
 /// - /jaxrs/hotpic/core/entity/list/by/{application}/{infoId} - 按条件查询
 /// - /jaxrs/hotpic/core/entity/exists/check/{application}/{infoId} - 检查存在
-pub fn hotpic_core_entity_router(pool: Pool) -> Router {
+pub fn hotpic_core_entity_router(_pool: Pool) -> Router {
+    let db = tokio::runtime::Handle::current()
+        .block_on(shared::db::create_sea_orm_pool())
+        .expect("failed to create sea-orm connection");
+
     Router::new()
         .route("/jaxrs/hotpic/core/entity/list", get(list))
         .route("/jaxrs/hotpic/core/entity/list/by/{application}/{infoId}", get(list_by_app_and_info))
-        .route("/jaxrs/hotpic/core/entity/exists/check/{application}/{infoId}", get(exists_check))
-        .layer(Extension(pool))
+        .route(
+            "/jaxrs/hotpic/core/entity/exists/check/{application}/{infoId}",
+            get(exists_check),
+        )
+        .layer(Extension(db))
 }
 
 #[cfg(test)]

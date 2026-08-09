@@ -1,141 +1,119 @@
 use axum::{
-    extract::{Extension, Path},
+    extract::{Extension, Json, Path},
     routing::{get, post},
-    Json, Router,
+    Json as AxumJson, Router,
 };
-use deadpool_postgres::Pool;
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub mod entities;
 pub mod routes;
 
-// 考勤记录实体
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct AttendanceRecord {
-    pub id: String,
-    pub user_id: String,
-    pub check_in_time: String,
-    pub check_out_time: Option<String>,
-    pub status: String,
-}
-
-// 考勤规则实体
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct AttendanceRule {
-    pub id: String,
-    pub name: String,
-    pub start_time: String,
-    pub end_time: String,
-}
+use entities::{attendance_record, attendance_rule};
 
 /// 获取考勤记录列表
-/// 从数据库查询 x_attendance_record 表
 pub async fn record_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, user_id, check_in_time, check_out_time, status FROM x_attendance_record ORDER BY check_in_time DESC LIMIT 20",
-            &[],
-        )
+    let models = attendance_record::Entity::find()
+        .order_by_desc(attendance_record::Column::CreateTime)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("userId".to_string(), Value::String(row.get("user_id"))),
-                ("checkInTime".to_string(), Value::String(row.get("check_in_time"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("userId".to_string(), Value::String(m.user_id.clone())),
+                ("checkInTime".to_string(), Value::String(m.check_in_time.clone())),
                 (
                     "checkOutTime".to_string(),
-                    row.get::<_, Option<String>>("check_out_time")
+                    m.check_out_time
+                        .clone()
                         .map(Value::String)
                         .unwrap_or(Value::Null),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                ("status".to_string(), Value::String(m.status.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 /// 获取考勤规则列表
-/// 从数据库查询 x_attendance_rule 表
 pub async fn rule_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, start_time, end_time FROM x_attendance_rule ORDER BY name LIMIT 20",
-            &[],
-        )
+    let models = attendance_rule::Entity::find()
+        .order_by_asc(attendance_rule::Column::Name)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
-                ("endTime".to_string(), Value::String(row.get("end_time"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("startTime".to_string(), Value::String(m.start_time.clone())),
+                ("endTime".to_string(), Value::String(m.end_time.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-/// 创建考勤核心实体路由
-/// 注册以下路由：
-/// - /jaxrs/attendance/core/entity/record/list - 考勤记录列表
-/// - /jaxrs/attendance/core/entity/rule/list - 考勤规则列表
-pub fn attendance_core_entity_router(pool: Pool) -> Router {
-    Router::new()
-        .route("/jaxrs/attendance/core/entity/record/list", get(record_list))
-        .route("/jaxrs/attendance/core/entity/record/create", post(record_create))
-        .route("/jaxrs/attendance/core/entity/record/{id}/update", post(record_update))
-        .route("/jaxrs/attendance/core/entity/record/{id}/delete", get(record_delete))
-        .route("/jaxrs/attendance/core/entity/rule/list", get(rule_list))
-        .route("/jaxrs/attendance/core/entity/rule/create", post(rule_create))
-        .route("/jaxrs/attendance/core/entity/rule/{id}/update", post(rule_update))
-        .route("/jaxrs/attendance/core/entity/rule/{id}/delete", get(rule_delete))
-        .layer(Extension(pool))
-}
-
+/// 创建考勤记录
 pub async fn record_create(
-    pool: Extension<Pool>,
-    Json(payload): Json<Value>,
+    db: Extension<DatabaseConnection>,
+    AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    use attendance_record::ActiveModel;
 
     let user_id = payload.get("userId").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let check_in_time = payload.get("checkInTime").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let check_in_time = payload
+        .get("checkInTime")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or("normal").to_string();
-
     let new_id = uuid::Uuid::new_v4().to_string();
 
-    client
-        .execute(
-            "INSERT INTO x_attendance_record (id, user_id, check_in_time, status, create_time) VALUES ($1, $2, $3, $4, NOW())",
-            &[&new_id, &user_id, &check_in_time, &status],
-        )
+    let active = ActiveModel {
+        id: sea_orm::ActiveValue::Set(new_id.clone()),
+        user_id: sea_orm::ActiveValue::Set(user_id.clone()),
+        check_in_time: sea_orm::ActiveValue::Set(check_in_time.clone()),
+        check_out_time: sea_orm::ActiveValue::Set(None),
+        status: sea_orm::ActiveValue::Set(status.clone()),
+        create_time: sea_orm::ActiveValue::Set(None),
+    };
+
+    active
+        .insert(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -150,27 +128,32 @@ pub async fn record_create(
     ))))
 }
 
+/// 更新考勤记录
 pub async fn record_update(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
-    Json(payload): Json<Value>,
+    AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    use attendance_record::ActiveModel;
 
-    let check_out_time = payload.get("checkOutTime").and_then(|v| v.as_str());
-    let status = payload.get("status").and_then(|v| v.as_str());
+    let check_out_time = payload.get("checkOutTime").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let status = payload.get("status").and_then(|v| v.as_str()).map(|s| s.to_string());
 
-    let result = client
-        .execute(
-            "UPDATE x_attendance_record SET check_out_time = COALESCE($1, check_out_time), status = COALESCE($2, status), update_time = NOW() WHERE id = $3",
-            &[&check_out_time, &status, &id],
-        )
+    let model = attendance_record::Entity::find_by_id(id.clone())
+        .one(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::NotFound)?;
+
+    let mut active: ActiveModel = model.clone().into();
+    active.check_out_time = sea_orm::ActiveValue::Set(check_out_time);
+    let status_val = status.clone().unwrap_or(model.status.clone());
+    active.status = sea_orm::ActiveValue::Set(status_val);
+
+    active
+        .update(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
-
-    if result == 0 {
-        return Ok(Json(ActionResult::error("attendance record not found")));
-    }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -180,18 +163,17 @@ pub async fn record_update(
     ))))
 }
 
+/// 删除考勤记录
 pub async fn record_delete(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let result = client
-        .execute("DELETE FROM x_attendance_record WHERE id = $1", &[&id])
+    let deleted = attendance_record::Entity::delete_by_id(id.clone())
+        .exec(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
+    if deleted.rows_affected == 0 {
         return Ok(Json(ActionResult::error("attendance record not found")));
     }
 
@@ -203,23 +185,38 @@ pub async fn record_delete(
     ))))
 }
 
+/// 创建考勤规则
 pub async fn rule_create(
-    pool: Extension<Pool>,
-    Json(payload): Json<Value>,
+    db: Extension<DatabaseConnection>,
+    AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    use attendance_rule::ActiveModel;
 
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let start_time = payload.get("startTime").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let end_time = payload.get("endTime").and_then(|v| v.as_str()).unwrap_or("").to_string();
-
+    let start_time = payload
+        .get("startTime")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let end_time = payload
+        .get("EndTime")
+        .or_else(|| payload.get("endTime"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
     let new_id = uuid::Uuid::new_v4().to_string();
 
-    client
-        .execute(
-            "INSERT INTO x_attendance_rule (id, name, start_time, end_time, create_time) VALUES ($1, $2, $3, $4, NOW())",
-            &[&new_id, &name, &start_time, &end_time],
-        )
+    let active = ActiveModel {
+        id: sea_orm::ActiveValue::Set(new_id.clone()),
+        name: sea_orm::ActiveValue::Set(name.clone()),
+        start_time: sea_orm::ActiveValue::Set(start_time.clone()),
+        end_time: sea_orm::ActiveValue::Set(end_time.clone()),
+        create_time: sea_orm::ActiveValue::Set(None),
+        update_time: sea_orm::ActiveValue::Set(None),
+    };
+
+    active
+        .insert(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -234,28 +231,47 @@ pub async fn rule_create(
     ))))
 }
 
+/// 更新考勤规则
 pub async fn rule_update(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
-    Json(payload): Json<Value>,
+    AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    use attendance_rule::ActiveModel;
 
-    let name = payload.get("name").and_then(|v| v.as_str());
-    let start_time = payload.get("startTime").and_then(|v| v.as_str());
-    let end_time = payload.get("endTime").and_then(|v| v.as_str());
+    let name = payload.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let start_time = payload.get("startTime").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let end_time = payload
+        .get("endTime")
+        .or_else(|| payload.get("EndTime"))
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
 
-    let result = client
-        .execute(
-            "UPDATE x_attendance_rule SET name = COALESCE($1, name), start_time = COALESCE($2, start_time), end_time = COALESCE($3, end_time), update_time = NOW() WHERE id = $4",
-            &[&name, &start_time, &end_time, &id],
-        )
+    let model = attendance_rule::Entity::find_by_id(id.clone())
+        .one(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::NotFound)?;
+
+    let mut active: ActiveModel = model.clone().into();
+    active.name = sea_orm::ActiveValue::Set(
+        name.or_else(|| Some(model.name.clone())).unwrap_or_default(),
+    );
+    active.start_time = sea_orm::ActiveValue::Set(
+        start_time
+            .or_else(|| Some(model.start_time.clone()))
+            .unwrap_or_default(),
+    );
+    active.end_time = sea_orm::ActiveValue::Set(
+        end_time
+            .or_else(|| Some(model.end_time.clone()))
+            .unwrap_or_default(),
+    );
+
+    active
+        .update(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
-
-    if result == 0 {
-        return Ok(Json(ActionResult::error("attendance rule not found")));
-    }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -265,18 +281,17 @@ pub async fn rule_update(
     ))))
 }
 
+/// 删除考勤规则
 pub async fn rule_delete(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let result = client
-        .execute("DELETE FROM x_attendance_rule WHERE id = $1", &[&id])
+    let deleted = attendance_rule::Entity::delete_by_id(id.clone())
+        .exec(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
+    if deleted.rows_affected == 0 {
         return Ok(Json(ActionResult::error("attendance rule not found")));
     }
 
@@ -286,6 +301,48 @@ pub async fn rule_delete(
             ("deleted".to_string(), Value::Bool(true)),
         ]),
     ))))
+}
+
+/// 创建考勤核心实体路由
+pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+    let db = tokio::runtime::Handle::current()
+        .block_on(shared::db::create_sea_orm_pool())
+        .expect("failed to create sea-orm connection");
+
+    Router::new()
+        .route(
+            "/jaxrs/attendance/core/entity/record/list",
+            get(record_list),
+        )
+        .route(
+            "/jaxrs/attendance/core/entity/record/create",
+            post(record_create),
+        )
+        .route(
+            "/jaxrs/attendance/core/entity/record/{id}/update",
+            post(record_update),
+        )
+        .route(
+            "/jaxrs/attendance/core/entity/record/{id}/delete",
+            get(record_delete),
+        )
+        .route(
+            "/jaxrs/attendance/core/entity/rule/list",
+            get(rule_list),
+        )
+        .route(
+            "/jaxrs/attendance/core/entity/rule/create",
+            post(rule_create),
+        )
+        .route(
+            "/jaxrs/attendance/core/entity/rule/{id}/update",
+            post(rule_update),
+        )
+        .route(
+            "/jaxrs/attendance/core/entity/rule/{id}/delete",
+            get(rule_delete),
+        )
+        .layer(Extension(db))
 }
 
 #[cfg(test)]

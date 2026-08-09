@@ -4,9 +4,13 @@ use axum::{
     Json, Router,
 };
 use deadpool_postgres::Pool;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+use crate::entities::{file_file, file_folder};
+
+pub mod entities;
 pub mod routes;
 
 #[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
@@ -28,27 +32,31 @@ pub struct FileInfo {
 }
 
 pub async fn folder_list_top(
-    pool: Extension<Pool>,
+    Extension(db): Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name LIMIT 50",
-            &[],
+    let models = file_folder::Entity::find()
+        .filter(
+            file_folder::Column::Superior
+                .is_in(vec![""])
+                .or(file_folder::Column::Superior.is_null()),
         )
+        .order_by_asc(file_folder::Column::Name)
+        .limit(50)
+        .all(&db)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("person".to_string(), Value::String(m.person.clone())),
                 (
                     "superior".to_string(),
-                    row.get::<_, Option<String>>("superior")
+                    m.superior
+                        .clone()
                         .map(Value::String)
                         .unwrap_or(Value::Null),
                 ),
@@ -61,35 +69,38 @@ pub async fn folder_list_top(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn folder_list_with_folder(
-    pool: Extension<Pool>,
+    Extension(db): Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior = $1 ORDER BY name LIMIT 50",
-            &[&id],
-        )
+    let models = file_folder::Entity::find()
+        .filter(file_folder::Column::Superior.eq(id))
+        .order_by_asc(file_folder::Column::Name)
+        .limit(50)
+        .all(&db)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("person".to_string(), Value::String(m.person.clone())),
                 (
                     "superior".to_string(),
-                    row.get::<_, Option<String>>("superior")
+                    m.superior
+                        .clone()
                         .map(Value::String)
                         .unwrap_or(Value::Null),
                 ),
@@ -102,36 +113,44 @@ pub async fn folder_list_with_folder(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn file_list(
-    pool: Extension<Pool>,
+    Extension(db): Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE ORDER BY name LIMIT 50",
-            &[],
-        )
+    let models = file_file::Entity::find()
+        .order_by_asc(file_file::Column::Name)
+        .limit(50)
+        .all(&db)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
-                ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-                ("extension".to_string(), Value::String(row.get("extension"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("person".to_string(), Value::String(m.person.clone())),
+                ("referenceType".to_string(), Value::String(m.reference_type.clone())),
+                (
+                    "extension".to_string(),
+                    serde_json::Value::String(
+                        m.extension
+                            .clone()
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i64>("length"))),
+                    Value::Number(serde_json::Number::from(m.length)),
                 ),
             ]))
         })
@@ -139,34 +158,41 @@ pub async fn file_list(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn complex_top(
-    pool: Extension<Pool>,
+    Extension(db): Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let folder_rows = client
-        .query(
-            "SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name LIMIT 20",
-            &[],
+    let folder_models = file_folder::Entity::find()
+        .filter(
+            file_folder::Column::Superior
+                .is_in(vec![""])
+                .or(file_folder::Column::Superior.is_null()),
         )
+        .order_by_asc(file_folder::Column::Name)
+        .limit(20)
+        .all(&db)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let folder_list: Vec<Value> = folder_rows
+    let folder_list: Vec<Value> = folder_models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("person".to_string(), Value::String(m.person.clone())),
                 (
                     "superior".to_string(),
-                    row.get::<_, Option<String>>("superior")
+                    m.superior
+                        .clone()
                         .map(Value::String)
                         .unwrap_or(Value::Null),
                 ),
@@ -177,28 +203,32 @@ pub async fn complex_top(
         })
         .collect();
 
-    let attachment_rows = client
-        .query(
-            "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE ORDER BY name LIMIT 20",
-            &[],
-        )
+    let file_models = file_file::Entity::find()
+        .order_by_asc(file_file::Column::Name)
+        .limit(20)
+        .all(&db)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let attachment_list: Vec<Value> = attachment_rows
+    let attachment_list: Vec<Value> = file_models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
-                ("referenceType".to_string(), Value::String(row.get("reference_type"))),
-                ("extension".to_string(), Value::String(row.get("extension"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("person".to_string(), Value::String(m.person.clone())),
+                ("referenceType".to_string(), Value::String(m.reference_type.clone())),
+                (
+                    "extension".to_string(),
+                    serde_json::Value::String(
+                        m.extension
+                            .clone()
+                            .unwrap_or_default(),
+                    ),
+                ),
                 (
                     "length".to_string(),
-                    Value::Number(serde_json::Number::from(
-                        row.get::<_, i64>("length"),
-                    )),
+                    Value::Number(serde_json::Number::from(m.length)),
                 ),
             ]))
         })
@@ -212,13 +242,20 @@ pub async fn complex_top(
     ))))
 }
 
-pub fn file_core_entity_router(pool: Pool) -> Router {
+pub fn file_core_entity_router(_pool: Pool) -> Router {
+    let db = tokio::runtime::Handle::current()
+        .block_on(shared::db::create_sea_orm_pool())
+        .expect("failed to create sea-orm connection");
+
     Router::new()
         .route("/jaxrs/file/core/entity/folder/list/top", get(folder_list_top))
-        .route("/jaxrs/file/core/entity/folder/list/{id}", get(folder_list_with_folder))
+        .route(
+            "/jaxrs/file/core/entity/folder/list/{id}",
+            get(folder_list_with_folder),
+        )
         .route("/jaxrs/file/core/entity/file/list", get(file_list))
         .route("/jaxrs/file/core/entity/complex/top", get(complex_top))
-        .layer(Extension(pool))
+        .layer(Extension(db))
 }
 
 #[cfg(test)]

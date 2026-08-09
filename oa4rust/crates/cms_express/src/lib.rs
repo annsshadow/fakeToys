@@ -3,11 +3,15 @@ use axum::{
     Json, Router,
 };
 use deadpool_postgres::Pool;
+use sea_orm::{DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 use uuid::Uuid;
 
+pub mod entities;
 pub mod routes;
+
+use entities::cms_view;
 
 #[cfg(test)]
 mod tests;
@@ -31,7 +35,7 @@ pub async fn template_form_list(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xid, xname, xcategory FROM X.CMS_TEMPLATEFORM ORDER BY xname LIMIT 50",
+            "SELECT xid, xname, xcategory FROM x_cms_templateform ORDER BY xname LIMIT 50",
             &[],
         )
         .await
@@ -50,7 +54,10 @@ pub async fn template_form_list(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
@@ -58,36 +65,43 @@ pub async fn template_form_list(
 
 #[axum::debug_handler]
 pub async fn view_list_all(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT xid, xname, xappId FROM X.CMS_VIEW ORDER BY xname LIMIT 50",
-            &[],
-        )
+    let models = cms_view::Entity::find()
+        .order_by_asc(cms_view::Column::Xname)
+        .limit(50)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("xid"))),
-                ("name".to_string(), Value::String(row.get("xname"))),
-                ("appId".to_string(), Value::String(row.get("xappId"))),
+                ("id".to_string(), Value::String(m.xid.clone())),
+                ("name".to_string(), Value::String(m.xname.clone())),
+                ("appId".to_string(), Value::String(m.xapp_id.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    cms_express_router().layer(axum::extract::Extension(pool))
+    let db = tokio::runtime::Handle::current()
+        .block_on(shared::db::create_sea_orm_pool())
+        .expect("failed to create sea-orm connection");
+
+    cms_express_router()
+        .layer(Extension(pool))
+        .layer(Extension(db))
 }

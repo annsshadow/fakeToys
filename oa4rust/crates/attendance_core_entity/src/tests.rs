@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use crate::{AttendanceRecord, AttendanceRule};
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use deadpool_postgres::{Manager, Pool};
@@ -62,34 +61,5 @@ mod tests {
         let json = serde_json::to_value(&result).unwrap();
         assert_eq!(json["type"], "success");
         assert_eq!(json["data"]["count"], 1);
-    }
-
-    #[test]
-    fn test_attendance_record_serialization() {
-        let record = AttendanceRecord {
-            id: "record-001".to_string(),
-            user_id: "user-001".to_string(),
-            check_in_time: "2024-01-01T09:00:00Z".to_string(),
-            check_out_time: Some("2024-01-01T18:00:00Z".to_string()),
-            status: "normal".to_string(),
-        };
-        let json = serde_json::to_value(&record).unwrap();
-        assert_eq!(json["id"], "record-001");
-        assert_eq!(json["user_id"], "user-001");
-        assert_eq!(json["status"], "normal");
-    }
-
-    #[test]
-    fn test_attendance_rule_serialization() {
-        let rule = AttendanceRule {
-            id: "rule-001".to_string(),
-            name: "标准考勤".to_string(),
-            start_time: "09:00".to_string(),
-            end_time: "18:00".to_string(),
-        };
-        let json = serde_json::to_value(&rule).unwrap();
-        assert_eq!(json["id"], "rule-001");
-        assert_eq!(json["name"], "标准考勤");
-        assert_eq!(json["start_time"], "09:00");
     }
 }
