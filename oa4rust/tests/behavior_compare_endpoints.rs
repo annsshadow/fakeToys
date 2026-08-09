@@ -2,9 +2,11 @@
 /// 复制下面的 ENDPOINTS 数组到 tests/behavior_compare.rs 中替换原有内容。
 
 /// 行为对比测试端点列表（由 extract_endpoints.py 自动生成，请勿手动修改）
-/// 生成时间: 2026-08-09 22:12:45
+/// 生成时间: 2026-08-09 22:33:30
 
-const ENDPOINTS: &[EndpointDef] = &[
+use super::behavior_comparison::EndpointDef;
+
+pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "ai",
         method: "GET",
@@ -497,7 +499,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/ai/assemble/control/config/create/mcp",
         java_war: "x_ai_assemble_control",
         java_action: "jaxrs/ai/assemble/control/config/create/mcp",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -506,7 +508,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/ai/assemble/control/config/delete/mcp/{id}",
         java_war: "x_ai_assemble_control",
         java_action: "jaxrs/ai/assemble/control/config/delete/mcp/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -515,7 +517,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/ai/assemble/control/config/update/mcp/{id}",
         java_war: "x_ai_assemble_control",
         java_action: "jaxrs/ai/assemble/control/config/update/mcp/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -605,7 +607,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/appeal/archive/{id}",
         java_war: "x_attendance_core_entity",
         java_action: "jaxrs/attendance/appeal/archive/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -614,7 +616,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/appeal/audit",
         java_war: "x_attendance_core_entity",
         java_action: "jaxrs/attendance/appeal/audit",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -623,7 +625,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/appeal/submit",
         java_war: "x_attendance_core_entity",
         java_action: "jaxrs/attendance/appeal/submit",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1226,7 +1228,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendanceappealInfo/appeal/{id}",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendanceappealInfo/appeal/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1235,7 +1237,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendanceappealInfo/archive/{id}",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendanceappealInfo/archive/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1244,7 +1246,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendanceappealInfo/audit",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendanceappealInfo/audit",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1253,7 +1255,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendanceappealInfo/check",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendanceappealInfo/check",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1262,7 +1264,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/appeal/{id}",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/appeal/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1271,7 +1273,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/sync",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendanceappealInfo/workflow/sync",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1280,7 +1282,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendancedetail/analyse",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendancedetail/analyse",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1289,7 +1291,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendancedetail/analyse/id/{id}",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendancedetail/analyse/id/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1298,7 +1300,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendancedetail/analyse/redo",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendancedetail/analyse/redo",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1307,7 +1309,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendancedetail/analyse/{startDate}/{endDate}",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendancedetail/analyse/{startDate}/{endDate}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1316,7 +1318,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendancedetail/archive/{id}",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendancedetail/archive/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1325,7 +1327,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{cycleYear}/{cycleMonth}",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendancedetail/checkDetailWithPersonByCycle/{cycleYear}/{cycleMonth}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1334,7 +1336,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendancedetail/mobile/mobilepreview",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendancedetail/mobile/mobilepreview",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1343,7 +1345,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendancedetail/mobile/my",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendancedetail/mobile/my",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1352,7 +1354,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendancedetail/mobile/recive",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendancedetail/mobile/recive",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1361,7 +1363,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendancedetail/recive",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendancedetail/recive",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1370,7 +1372,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendancedetail/reciveSingle",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendancedetail/reciveSingle",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1379,7 +1381,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendancesetting/enable/type",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendancesetting/enable/type",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1388,7 +1390,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/attendanceworkdayconfig/filter",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/attendanceworkdayconfig/filter",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1397,7 +1399,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/rule/{id}/toggle",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/rule/{id}/toggle",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1406,7 +1408,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/assemble/control/statistic/do",
         java_war: "x_attendance_assemble_control",
         java_action: "jaxrs/attendance/assemble/control/statistic/do",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1451,7 +1453,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/core/entity/record/create",
         java_war: "x_attendance_core_entity",
         java_action: "jaxrs/attendance/core/entity/record/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1460,7 +1462,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/core/entity/record/{id}/update",
         java_war: "x_attendance_core_entity",
         java_action: "jaxrs/attendance/core/entity/record/{id}/update",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1469,7 +1471,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/core/entity/rule/create",
         java_war: "x_attendance_core_entity",
         java_action: "jaxrs/attendance/core/entity/rule/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1478,7 +1480,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attendance/core/entity/rule/{id}/update",
         java_war: "x_attendance_core_entity",
         java_action: "jaxrs/attendance/core/entity/rule/{id}/update",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1595,7 +1597,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/authentication",
         java_war: "x_organization_assemble_authentication",
         java_action: "jaxrs/authentication",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1604,7 +1606,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/authentication/code",
         java_war: "x_organization_assemble_authentication",
         java_action: "jaxrs/authentication/code",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1613,7 +1615,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/authentication/login",
         java_war: "x_organization_assemble_authentication",
         java_action: "jaxrs/authentication/login",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1622,7 +1624,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/authentication/logout",
         java_war: "x_organization_assemble_authentication",
         java_action: "jaxrs/authentication/logout",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1631,7 +1633,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/authentication/refresh",
         java_war: "x_organization_assemble_authentication",
         java_action: "jaxrs/authentication/refresh",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1739,7 +1741,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/bbs/subject/create",
         java_war: "x_bbs_core_entity",
         java_action: "jaxrs/bbs/subject/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1865,7 +1867,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/bbs/assemble/control/reply/create",
         java_war: "x_bbs_assemble_control",
         java_action: "jaxrs/bbs/assemble/control/reply/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1874,7 +1876,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/bbs/assemble/control/shutup/create",
         java_war: "x_bbs_assemble_control",
         java_action: "jaxrs/bbs/assemble/control/shutup/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1883,7 +1885,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/bbs/assemble/control/topic/create",
         java_war: "x_bbs_assemble_control",
         java_action: "jaxrs/bbs/assemble/control/topic/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1892,7 +1894,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/bbs/assemble/control/update/control/config",
         java_war: "x_bbs_assemble_control",
         java_action: "jaxrs/bbs/assemble/control/update/control/config",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1973,7 +1975,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/bbs/core/entity/forum",
         java_war: "x_bbs_core_entity",
         java_action: "jaxrs/bbs/core/entity/forum",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1982,7 +1984,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/bbs/core/entity/forum/{id}",
         java_war: "x_bbs_core_entity",
         java_action: "jaxrs/bbs/core/entity/forum/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -1991,7 +1993,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/bbs/core/entity/reply",
         java_war: "x_bbs_core_entity",
         java_action: "jaxrs/bbs/core/entity/reply",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2000,7 +2002,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/bbs/core/entity/section",
         java_war: "x_bbs_core_entity",
         java_action: "jaxrs/bbs/core/entity/section",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2009,7 +2011,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/bbs/core/entity/section/{id}",
         java_war: "x_bbs_core_entity",
         java_action: "jaxrs/bbs/core/entity/section/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2018,7 +2020,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/bbs/core/entity/subject",
         java_war: "x_bbs_core_entity",
         java_action: "jaxrs/bbs/core/entity/subject",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2027,7 +2029,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/bbs/core/entity/subject/{id}",
         java_war: "x_bbs_core_entity",
         java_action: "jaxrs/bbs/core/entity/subject/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2072,7 +2074,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/calendar/calendar/create",
         java_war: "x_calendar_core_entity",
         java_action: "jaxrs/calendar/calendar/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2081,7 +2083,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/calendar/calendar/remove",
         java_war: "x_calendar_core_entity",
         java_action: "jaxrs/calendar/calendar/remove",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2090,7 +2092,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/calendar/calendar/update",
         java_war: "x_calendar_core_entity",
         java_action: "jaxrs/calendar/calendar/update",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2099,7 +2101,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/calendar/event/create",
         java_war: "x_calendar_core_entity",
         java_action: "jaxrs/calendar/event/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2108,7 +2110,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/calendar/event/remove",
         java_war: "x_calendar_core_entity",
         java_action: "jaxrs/calendar/event/remove",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2117,7 +2119,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/calendar/event/update",
         java_war: "x_calendar_core_entity",
         java_action: "jaxrs/calendar/event/update",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2198,7 +2200,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/calendar/core/entity/calendar/create",
         java_war: "x_calendar_core_entity",
         java_action: "jaxrs/calendar/core/entity/calendar/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2207,7 +2209,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/calendar/core/entity/calendar/remove",
         java_war: "x_calendar_core_entity",
         java_action: "jaxrs/calendar/core/entity/calendar/remove",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2216,7 +2218,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/calendar/core/entity/calendar/update",
         java_war: "x_calendar_core_entity",
         java_action: "jaxrs/calendar/core/entity/calendar/update",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2225,7 +2227,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/calendar/core/entity/event/create",
         java_war: "x_calendar_core_entity",
         java_action: "jaxrs/calendar/core/entity/event/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2234,7 +2236,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/calendar/core/entity/event/remove",
         java_war: "x_calendar_core_entity",
         java_action: "jaxrs/calendar/core/entity/event/remove",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2243,7 +2245,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/calendar/core/entity/event/update",
         java_war: "x_calendar_core_entity",
         java_action: "jaxrs/calendar/core/entity/event/update",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2333,7 +2335,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/cms/article/create",
         java_war: "x_cms_core_entity",
         java_action: "jaxrs/cms/article/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2342,7 +2344,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/cms/category/create",
         java_war: "x_cms_core_entity",
         java_action: "jaxrs/cms/category/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2396,7 +2398,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/cms/view/publish/{id}",
         java_war: "x_cms_express",
         java_action: "jaxrs/cms/view/publish/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2405,7 +2407,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/cms/view/unpublish/{id}",
         java_war: "x_cms_express",
         java_action: "jaxrs/cms/view/unpublish/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2522,7 +2524,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/component/assemble/control/component/delete/all",
         java_war: "x_component_assemble_control",
         java_action: "jaxrs/component/assemble/control/component/delete/all",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2594,7 +2596,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/console/cache/clear/{type}",
         java_war: "x_console",
         java_action: "jaxrs/console/cache/clear/{type}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2603,7 +2605,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/console/command/execute",
         java_war: "x_console",
         java_action: "jaxrs/console/command/execute",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2612,7 +2614,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/console/send/message",
         java_war: "x_console",
         java_action: "jaxrs/console/send/message",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2774,7 +2776,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/group",
         java_war: "x_organization_assemble_control",
         java_action: "jaxrs/group",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2783,7 +2785,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/person",
         java_war: "x_organization_assemble_control",
         java_action: "jaxrs/person",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2792,7 +2794,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/role",
         java_war: "x_organization_assemble_control",
         java_action: "jaxrs/role",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2801,7 +2803,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/unit",
         java_war: "x_organization_assemble_control",
         java_action: "jaxrs/unit",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2810,7 +2812,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/group/{flag}",
         java_war: "x_organization_assemble_control",
         java_action: "jaxrs/group/{flag}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2819,7 +2821,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/person/{flag}",
         java_war: "x_organization_assemble_control",
         java_action: "jaxrs/person/{flag}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2828,7 +2830,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/role/{flag}",
         java_war: "x_organization_assemble_control",
         java_action: "jaxrs/role/{flag}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2837,7 +2839,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/unit/{flag}",
         java_war: "x_organization_assemble_control",
         java_action: "jaxrs/unit/{flag}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -2900,7 +2902,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/correlation/core/entity/create",
         java_war: "x_correlation_core_entity",
         java_action: "jaxrs/correlation/core/entity/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3026,7 +3028,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/correlation/service/processing/correlation/delete/type/cms/document/{document}",
         java_war: "x_correlation_service_processing",
         java_action: "jaxrs/correlation/service/processing/correlation/delete/type/cms/document/{document}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3035,7 +3037,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/{job}",
         java_war: "x_correlation_service_processing",
         java_action: "jaxrs/correlation/service/processing/correlation/delete/type/processplatform/job/{job}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3044,7 +3046,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/correlation/service/processing/correlation/update/type/cms/document/{document}",
         java_war: "x_correlation_service_processing",
         java_action: "jaxrs/correlation/service/processing/correlation/update/type/cms/document/{document}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3053,7 +3055,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/{job}",
         java_war: "x_correlation_service_processing",
         java_action: "jaxrs/correlation/service/processing/correlation/update/type/processplatform/job/{job}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3062,7 +3064,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/correlation/service/processing/create",
         java_war: "x_correlation_service_processing",
         java_action: "jaxrs/correlation/service/processing/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3071,7 +3073,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/correlation/service/processing/delete/{id}",
         java_war: "x_correlation_service_processing",
         java_action: "jaxrs/correlation/service/processing/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3080,7 +3082,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/correlation/service/processing/link",
         java_war: "x_correlation_service_processing",
         java_action: "jaxrs/correlation/service/processing/link",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3089,7 +3091,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/correlation/service/processing/save/{id}",
         java_war: "x_correlation_service_processing",
         java_action: "jaxrs/correlation/service/processing/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3098,7 +3100,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/correlation/service/processing/unlink/{sourceType}/{sourceId}/{targetType}/{targetId}",
         java_war: "x_correlation_service_processing",
         java_action: "jaxrs/correlation/service/processing/unlink/{sourceType}/{sourceId}/{targetType}/{targetId}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3125,7 +3127,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/express/subscribe",
         java_war: "x_organization_assemble_express",
         java_action: "jaxrs/express/subscribe",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3170,7 +3172,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/file/folder/create",
         java_war: "x_file_core_entity",
         java_action: "jaxrs/file/folder/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3179,7 +3181,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/file/folder/remove",
         java_war: "x_file_core_entity",
         java_action: "jaxrs/file/folder/remove",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3188,7 +3190,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/file/folder/update",
         java_war: "x_file_core_entity",
         java_action: "jaxrs/file/folder/update",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3197,7 +3199,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/file/permission/set",
         java_war: "x_file_core_entity",
         java_action: "jaxrs/file/permission/set",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3206,7 +3208,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/file/upload",
         java_war: "x_file_core_entity",
         java_action: "jaxrs/file/upload",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3233,7 +3235,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/file/assemble/control/file/create",
         java_war: "x_file_assemble_control",
         java_action: "jaxrs/file/assemble/control/file/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3242,7 +3244,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/file/assemble/control/file/delete/{id}",
         java_war: "x_file_assemble_control",
         java_action: "jaxrs/file/assemble/control/file/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3251,7 +3253,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/file/assemble/control/file/upload",
         java_war: "x_file_assemble_control",
         java_action: "jaxrs/file/assemble/control/file/upload",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3260,7 +3262,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/file/core/entity/file/create",
         java_war: "x_file_assemble_control",
         java_action: "jaxrs/file/core/entity/file/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3269,7 +3271,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/file/core/entity/file/delete/{id}",
         java_war: "x_file_assemble_control",
         java_action: "jaxrs/file/core/entity/file/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3278,7 +3280,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/file/core/entity/file/update/{id}",
         java_war: "x_file_assemble_control",
         java_action: "jaxrs/file/core/entity/file/update/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3332,7 +3334,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/file/core/entity/file",
         java_war: "x_file_core_entity",
         java_action: "jaxrs/file/core/entity/file",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3341,7 +3343,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/file/core/entity/folder",
         java_war: "x_file_core_entity",
         java_action: "jaxrs/file/core/entity/folder",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3692,7 +3694,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/area/create",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/area/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3701,7 +3703,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/area/delete/{id}",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/area/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3710,7 +3712,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/area/update/{id}",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/area/update/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3719,7 +3721,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/attendscope/create",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/attendscope/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3728,7 +3730,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/attendscope/delete/{id}",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/attendscope/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3737,7 +3739,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/attendscope/save/{id}",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/attendscope/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3746,7 +3748,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/excel/upload",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/excel/upload",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3755,7 +3757,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/excel/upload/with/url",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/excel/upload/with/url",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3764,7 +3766,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/invoice/create",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/invoice/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3773,7 +3775,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/invoice/delete/{id}",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/invoice/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3782,7 +3784,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/invoice/update/apply/status/{id}",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/invoice/update/apply/status/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3791,7 +3793,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/invoice/update/{id}",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/invoice/update/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3800,7 +3802,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/invoice/upload",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/invoice/upload",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3809,7 +3811,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/invoice/upload/for/create",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/invoice/upload/for/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3818,7 +3820,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/invoice/upload/with/url",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/invoice/upload/with/url",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3827,7 +3829,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/office/html/to/word",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/office/html/to/word",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3836,7 +3838,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/qrcode/delete/{id}",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/qrcode/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3845,7 +3847,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/qrcode/width/{width}/height/{height}/text/{text}",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/qrcode/width/{width}/height/{height}/text/{text}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3854,7 +3856,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/securityclearance/create",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/securityclearance/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3863,7 +3865,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/securityclearance/delete/{id}",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/securityclearance/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3872,7 +3874,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/securityclearance/enable",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/securityclearance/enable",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3881,7 +3883,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/securityclearance/update/{id}",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/securityclearance/update/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3890,7 +3892,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/assemble/control/status/update",
         java_war: "x_general_assemble_control",
         java_action: "jaxrs/general/assemble/control/status/update",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3980,7 +3982,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/dict/create",
         java_war: "x_general_core_entity",
         java_action: "jaxrs/general/dict/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3989,7 +3991,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/dict/delete/{id}",
         java_war: "x_general_core_entity",
         java_action: "jaxrs/general/dict/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -3998,7 +4000,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/dict/item/create",
         java_war: "x_general_core_entity",
         java_action: "jaxrs/general/dict/item/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4007,7 +4009,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/dict/item/delete/{id}",
         java_war: "x_general_core_entity",
         java_action: "jaxrs/general/dict/item/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4016,7 +4018,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/dict/item/update/{id}",
         java_war: "x_general_core_entity",
         java_action: "jaxrs/general/dict/item/update/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4025,7 +4027,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/dict/update/{id}",
         java_war: "x_general_core_entity",
         java_action: "jaxrs/general/dict/update/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4034,7 +4036,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/file/create",
         java_war: "x_general_core_entity",
         java_action: "jaxrs/general/file/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4043,7 +4045,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/file/delete/{id}",
         java_war: "x_general_core_entity",
         java_action: "jaxrs/general/file/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4052,7 +4054,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/file/update/{id}",
         java_war: "x_general_core_entity",
         java_action: "jaxrs/general/file/update/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4061,7 +4063,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/invoice/create",
         java_war: "x_general_core_entity",
         java_action: "jaxrs/general/invoice/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4070,7 +4072,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/invoice/delete/{id}",
         java_war: "x_general_core_entity",
         java_action: "jaxrs/general/invoice/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4079,7 +4081,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/general/invoice/update/{id}",
         java_war: "x_general_core_entity",
         java_action: "jaxrs/general/invoice/update/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4394,7 +4396,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/hotpic/assemble/control/update/control/config",
         java_war: "x_hotpic_assemble_control",
         java_action: "jaxrs/hotpic/assemble/control/update/control/config",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4403,7 +4405,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/hotpic/assemble/control/user/hotpic/changeTitle",
         java_war: "x_hotpic_assemble_control",
         java_action: "jaxrs/hotpic/assemble/control/user/hotpic/changeTitle",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4412,7 +4414,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/hotpic/create/hotpic",
         java_war: "x_hotpic_assemble_control",
         java_action: "jaxrs/hotpic/create/hotpic",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4421,7 +4423,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/hotpic/delete/hotpic",
         java_war: "x_hotpic_assemble_control",
         java_action: "jaxrs/hotpic/delete/hotpic",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4430,7 +4432,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/hotpic/save/hotpic",
         java_war: "x_hotpic_assemble_control",
         java_action: "jaxrs/hotpic/save/hotpic",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4475,7 +4477,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/hotpic/core/entity/create",
         java_war: "x_hotpic_core_entity",
         java_action: "jaxrs/hotpic/core/entity/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4529,7 +4531,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/jpush/device/create",
         java_war: "x_jpush_core_entity",
         java_action: "jaxrs/jpush/device/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4763,7 +4765,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/jpush/assemble/control/device/bind",
         java_war: "x_jpush_assemble_control",
         java_action: "jaxrs/jpush/assemble/control/device/bind",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4772,7 +4774,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/jpush/assemble/control/device/unbind/deviceName/deviceType",
         java_war: "x_jpush_assemble_control",
         java_action: "jaxrs/jpush/assemble/control/device/unbind/deviceName/deviceType",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4781,7 +4783,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType",
         java_war: "x_jpush_assemble_control",
         java_action: "jaxrs/jpush/assemble/control/device/unbind/new/deviceName/deviceType/pushType",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4790,7 +4792,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/jpush/assemble/control/update/control/config",
         java_war: "x_jpush_assemble_control",
         java_action: "jaxrs/jpush/assemble/control/update/control/config",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4799,7 +4801,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/jpush/create",
         java_war: "x_jpush_assemble_control",
         java_action: "jaxrs/jpush/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4808,7 +4810,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/jpush/delete/{id}",
         java_war: "x_jpush_assemble_control",
         java_action: "jaxrs/jpush/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4817,7 +4819,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/jpush/save/{id}",
         java_war: "x_jpush_assemble_control",
         java_action: "jaxrs/jpush/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4862,7 +4864,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/jpush/core/entity/device/create",
         java_war: "x_jpush_core_entity",
         java_action: "jaxrs/jpush/core/entity/device/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4934,7 +4936,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/create",
         java_war: "x_meeting_core_entity",
         java_action: "jaxrs/meeting/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -4943,7 +4945,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/{meetingId}/participant/add",
         java_war: "x_meeting_core_entity",
         java_action: "jaxrs/meeting/{meetingId}/participant/add",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5195,7 +5197,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/config/system/config/manage",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/config/system/config/manage",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5204,7 +5206,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/create",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5213,7 +5215,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/meeting/create",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/meeting/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5222,7 +5224,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/meeting/delete/{id}",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/meeting/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5231,7 +5233,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/meeting/save/{id}",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/meeting/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5240,7 +5242,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/accept",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/meeting/{id}/accept",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5249,7 +5251,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/add/invite",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/meeting/{id}/add/invite",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5258,7 +5260,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/checkin",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/meeting/{id}/checkin",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5267,7 +5269,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/confirm/allow",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/meeting/{id}/confirm/allow",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5276,7 +5278,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/confirm/deny",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/meeting/{id}/confirm/deny",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5285,7 +5287,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/delete/invite",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/meeting/{id}/delete/invite",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5294,7 +5296,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/manual/completed",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/meeting/{id}/manual/completed",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5303,7 +5305,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/modify/completedtime",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/meeting/{id}/modify/completedtime",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5312,7 +5314,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/modify/starttime",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/meeting/{id}/modify/starttime",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5321,7 +5323,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/reject",
         java_war: "x_meeting_assemble_control",
         java_action: "jaxrs/meeting/assemble/control/meeting/{id}/reject",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5375,7 +5377,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/core/entity/meeting/create",
         java_war: "x_meeting_core_entity",
         java_action: "jaxrs/meeting/core/entity/meeting/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5384,7 +5386,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/core/entity/meeting/delete/{id}",
         java_war: "x_meeting_core_entity",
         java_action: "jaxrs/meeting/core/entity/meeting/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5393,7 +5395,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/core/entity/meeting/save/{id}",
         java_war: "x_meeting_core_entity",
         java_action: "jaxrs/meeting/core/entity/meeting/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5402,7 +5404,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/core/entity/room/create",
         java_war: "x_meeting_core_entity",
         java_action: "jaxrs/meeting/core/entity/room/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5411,7 +5413,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/core/entity/room/delete/{id}",
         java_war: "x_meeting_core_entity",
         java_action: "jaxrs/meeting/core/entity/room/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5420,7 +5422,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/meeting/core/entity/room/save/{id}",
         java_war: "x_meeting_core_entity",
         java_action: "jaxrs/meeting/core/entity/room/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5456,7 +5458,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/custom/create",
         java_war: "x_message_core_entity",
         java_action: "jaxrs/message/custom/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5465,7 +5467,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/mark_read/{id}",
         java_war: "x_message_core_entity",
         java_action: "jaxrs/message/mark_read/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5798,7 +5800,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/consume/type/{type}/mockputtopost",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/consume/type/{type}/mockputtopost",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5807,7 +5809,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/consume/{id}/type/{type}",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/consume/{id}/type/{type}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5816,7 +5818,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/conversation",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/conversation",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5825,7 +5827,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/conversation/mockputtopost",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/conversation/mockputtopost",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5834,7 +5836,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/conversation/{id}/group/quit/self",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/conversation/{id}/group/quit/self",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5843,7 +5845,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/conversation/{id}/read",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/conversation/{id}/read",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5852,7 +5854,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/conversation/{id}/read/mockputtopost",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/conversation/{id}/read/mockputtopost",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5861,7 +5863,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/conversation/{id}/top/cancel",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/conversation/{id}/top/cancel",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5870,7 +5872,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/conversation/{id}/top/cancel/mockputtopost",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/conversation/{id}/top/cancel/mockputtopost",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5879,7 +5881,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/conversation/{id}/top/set",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/conversation/{id}/top/set",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5888,7 +5890,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/conversation/{id}/top/set/mockputtopost",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/conversation/{id}/top/set/mockputtopost",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5897,7 +5899,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/msg",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/msg",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5906,7 +5908,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/msg/clear",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/msg/clear",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5915,7 +5917,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/msg/collection",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/msg/collection",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5924,7 +5926,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/msg/collection/remove",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/msg/collection/remove",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5933,7 +5935,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/msg/revoke/{id}",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/msg/revoke/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5942,7 +5944,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/im/msg/upload/{conversationId}/type/{type}",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/im/msg/upload/{conversationId}/type/{type}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5951,7 +5953,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/instant/currentperson/consumed/mockputtopost",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/instant/currentperson/consumed/mockputtopost",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5960,7 +5962,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/mark_read/{id}",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/mark_read/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5969,7 +5971,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/mass/enable/type",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/mass/enable/type",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5978,7 +5980,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/message/custom/create",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/message/custom/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -5987,7 +5989,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/message/assemble/communicate/send",
         java_war: "x_message_assemble_communicate",
         java_action: "jaxrs/message/assemble/communicate/send",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6068,7 +6070,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/folder",
         java_war: "x_mind_core_entity",
         java_action: "jaxrs/mind/folder",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6077,7 +6079,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/folder/{id}",
         java_war: "x_mind_core_entity",
         java_action: "jaxrs/mind/folder/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6086,7 +6088,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/mind",
         java_war: "x_mind_core_entity",
         java_action: "jaxrs/mind/mind",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6095,7 +6097,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/mind/{id}",
         java_war: "x_mind_core_entity",
         java_action: "jaxrs/mind/mind/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6104,7 +6106,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/version",
         java_war: "x_mind_core_entity",
         java_action: "jaxrs/mind/version",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6140,7 +6142,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/assemble/control/config/update",
         java_war: "x_mind_assemble_control",
         java_action: "jaxrs/mind/assemble/control/config/update",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6149,7 +6151,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/assemble/control/folder/move/{folderId}",
         java_war: "x_mind_assemble_control",
         java_action: "jaxrs/mind/assemble/control/folder/move/{folderId}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6158,7 +6160,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/assemble/control/folder/save",
         java_war: "x_mind_assemble_control",
         java_action: "jaxrs/mind/assemble/control/folder/save",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6167,7 +6169,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/assemble/control/folder/{id}/force",
         java_war: "x_mind_assemble_control",
         java_action: "jaxrs/mind/assemble/control/folder/{id}/force",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6176,7 +6178,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/assemble/control/folder/{id}/update",
         java_war: "x_mind_assemble_control",
         java_action: "jaxrs/mind/assemble/control/folder/{id}/update",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6230,7 +6232,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/core/entity/folder",
         java_war: "x_mind_core_entity",
         java_action: "jaxrs/mind/core/entity/folder",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6239,7 +6241,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/core/entity/folder/{id}",
         java_war: "x_mind_core_entity",
         java_action: "jaxrs/mind/core/entity/folder/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6248,7 +6250,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/core/entity/mind",
         java_war: "x_mind_core_entity",
         java_action: "jaxrs/mind/core/entity/mind",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6257,7 +6259,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/core/entity/mind/{id}",
         java_war: "x_mind_core_entity",
         java_action: "jaxrs/mind/core/entity/mind/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -6266,7 +6268,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/mind/core/entity/version",
         java_war: "x_mind_core_entity",
         java_action: "jaxrs/mind/core/entity/version",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7175,7 +7177,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/assemble/control/person/list/like",
         java_war: "x_organization_assemble_control",
         java_action: "jaxrs/organization/assemble/control/person/list/like",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7274,7 +7276,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/bind",
         java_war: "x_organization_core_entity",
         java_action: "jaxrs/organization/bind",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7283,7 +7285,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/custom",
         java_war: "x_organization_core_entity",
         java_action: "jaxrs/organization/custom",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7292,7 +7294,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/definition",
         java_war: "x_organization_core_entity",
         java_action: "jaxrs/organization/definition",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7301,7 +7303,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/group",
         java_war: "x_organization_core_entity",
         java_action: "jaxrs/organization/group",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7310,7 +7312,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/identity",
         java_war: "x_organization_core_entity",
         java_action: "jaxrs/organization/identity",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7319,7 +7321,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/person",
         java_war: "x_organization_core_entity",
         java_action: "jaxrs/organization/person",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7328,7 +7330,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/bind/{id}",
         java_war: "x_organization_core_entity",
         java_action: "jaxrs/organization/bind/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7337,7 +7339,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/custom/{id}",
         java_war: "x_organization_core_entity",
         java_action: "jaxrs/organization/custom/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7346,7 +7348,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/definition/{id}",
         java_war: "x_organization_core_entity",
         java_action: "jaxrs/organization/definition/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7355,7 +7357,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/group/{id}",
         java_war: "x_organization_core_entity",
         java_action: "jaxrs/organization/group/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7364,7 +7366,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/identity/{id}",
         java_war: "x_organization_core_entity",
         java_action: "jaxrs/organization/identity/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7373,7 +7375,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/person/{id}",
         java_war: "x_organization_core_entity",
         java_action: "jaxrs/organization/person/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7445,7 +7447,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/reset/password/anonymous",
         java_war: "x_organization_assemble_personal",
         java_action: "jaxrs/reset/password/anonymous",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7454,7 +7456,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/person",
         java_war: "x_organization_assemble_personal",
         java_action: "jaxrs/person",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7463,7 +7465,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/person/password",
         java_war: "x_organization_assemble_personal",
         java_action: "jaxrs/person/password",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7472,7 +7474,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/reset",
         java_war: "x_organization_assemble_personal",
         java_action: "jaxrs/reset",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7562,7 +7564,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/page/create",
         java_war: "x_portal_core_entity",
         java_action: "jaxrs/portal/page/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7571,7 +7573,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/page/delete/{id}",
         java_war: "x_portal_core_entity",
         java_action: "jaxrs/portal/page/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7580,7 +7582,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/page/save/{id}",
         java_war: "x_portal_core_entity",
         java_action: "jaxrs/portal/page/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7643,7 +7645,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/assemble/designer/create",
         java_war: "x_portal_assemble_designer",
         java_action: "jaxrs/portal/assemble/designer/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7652,7 +7654,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/assemble/designer/page/create",
         java_war: "x_portal_assemble_designer",
         java_action: "jaxrs/portal/assemble/designer/page/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7661,7 +7663,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/assemble/designer/page/delete/{id}",
         java_war: "x_portal_assemble_designer",
         java_action: "jaxrs/portal/assemble/designer/page/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7670,7 +7672,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/assemble/designer/page/save/{id}",
         java_war: "x_portal_assemble_designer",
         java_action: "jaxrs/portal/assemble/designer/page/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7679,7 +7681,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/assemble/designer/save/{id}",
         java_war: "x_portal_assemble_designer",
         java_action: "jaxrs/portal/assemble/designer/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7688,7 +7690,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/design/save",
         java_war: "x_portal_assemble_designer",
         java_action: "jaxrs/portal/design/save",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7742,7 +7744,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/assemble/surface/create",
         java_war: "x_portal_assemble_surface",
         java_action: "jaxrs/portal/assemble/surface/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7751,7 +7753,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/assemble/surface/publish/{id}",
         java_war: "x_portal_assemble_surface",
         java_action: "jaxrs/portal/assemble/surface/publish/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7760,7 +7762,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/surface/publish",
         java_war: "x_portal_assemble_surface",
         java_action: "jaxrs/portal/surface/publish",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7805,7 +7807,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/page/remove",
         java_war: "x_portal_core_entity",
         java_action: "jaxrs/portal/page/remove",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7814,7 +7816,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/portal/page/update",
         java_war: "x_portal_core_entity",
         java_action: "jaxrs/portal/page/update",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7886,7 +7888,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/process/designer/application/create",
         java_war: "x_processplatform_assemble_designer",
         java_action: "jaxrs/process/designer/application/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7895,7 +7897,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/process/designer/application/remove",
         java_war: "x_processplatform_assemble_designer",
         java_action: "jaxrs/process/designer/application/remove",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7904,7 +7906,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/process/designer/application/update",
         java_war: "x_processplatform_assemble_designer",
         java_action: "jaxrs/process/designer/application/update",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -7994,7 +7996,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/processplatform/assemble/bam/create",
         java_war: "x_processplatform_assemble_bam",
         java_action: "jaxrs/processplatform/assemble/bam/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8003,7 +8005,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/processplatform/assemble/bam/delete/{id}",
         java_war: "x_processplatform_assemble_bam",
         java_action: "jaxrs/processplatform/assemble/bam/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8039,7 +8041,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/processplatform/assemble/designer/create",
         java_war: "x_processplatform_assemble_designer",
         java_action: "jaxrs/processplatform/assemble/designer/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8048,7 +8050,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/processplatform/assemble/designer/delete/{id}",
         java_war: "x_processplatform_assemble_designer",
         java_action: "jaxrs/processplatform/assemble/designer/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8057,7 +8059,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/processplatform/assemble/designer/save/{id}",
         java_war: "x_processplatform_assemble_designer",
         java_action: "jaxrs/processplatform/assemble/designer/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8093,7 +8095,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/processplatform/assemble/surface/create",
         java_war: "x_processplatform_assemble_surface",
         java_action: "jaxrs/processplatform/assemble/surface/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8102,7 +8104,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/processplatform/assemble/surface/delete/{id}",
         java_war: "x_processplatform_assemble_surface",
         java_action: "jaxrs/processplatform/assemble/surface/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8111,7 +8113,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/processplatform/assemble/surface/publish/{id}",
         java_war: "x_processplatform_assemble_surface",
         java_action: "jaxrs/processplatform/assemble/surface/publish/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8120,7 +8122,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/processplatform/assemble/surface/save/{id}",
         java_war: "x_processplatform_assemble_surface",
         java_action: "jaxrs/processplatform/assemble/surface/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8264,7 +8266,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/processplatform/service/processing/cancel/{executionId}",
         java_war: "x_processplatform_service_processing",
         java_action: "jaxrs/processplatform/service/processing/cancel/{executionId}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8273,7 +8275,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/processplatform/service/processing/create",
         java_war: "x_processplatform_service_processing",
         java_action: "jaxrs/processplatform/service/processing/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8282,7 +8284,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/processplatform/service/processing/execute/{id}",
         java_war: "x_processplatform_service_processing",
         java_action: "jaxrs/processplatform/service/processing/execute/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8318,7 +8320,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/program_center/agent/create",
         java_war: "x_program_center",
         java_action: "jaxrs/program_center/agent/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8327,7 +8329,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/program_center/agent/save/{id}",
         java_war: "x_program_center",
         java_action: "jaxrs/program_center/agent/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8336,7 +8338,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/program_center/application/create",
         java_war: "x_program_center",
         java_action: "jaxrs/program_center/application/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8345,7 +8347,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/program_center/application/save/{id}",
         java_war: "x_program_center",
         java_action: "jaxrs/program_center/application/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8417,7 +8419,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/secret/set",
         java_war: "x_program_init",
         java_action: "jaxrs/secret/set",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8444,7 +8446,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/query/assemble/designer/create",
         java_war: "x_query_assemble_designer",
         java_action: "jaxrs/query/assemble/designer/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8453,7 +8455,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/query/assemble/designer/delete/{id}",
         java_war: "x_query_assemble_designer",
         java_action: "jaxrs/query/assemble/designer/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8462,7 +8464,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/query/assemble/designer/save/{id}",
         java_war: "x_query_assemble_designer",
         java_action: "jaxrs/query/assemble/designer/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8498,7 +8500,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/query/assemble/surface/create",
         java_war: "x_query_assemble_surface",
         java_action: "jaxrs/query/assemble/surface/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8507,7 +8509,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/query/assemble/surface/delete/{id}",
         java_war: "x_query_assemble_surface",
         java_action: "jaxrs/query/assemble/surface/delete/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8516,7 +8518,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/query/assemble/surface/save/{id}",
         java_war: "x_query_assemble_surface",
         java_action: "jaxrs/query/assemble/surface/save/{id}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8561,7 +8563,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/query/view/create",
         java_war: "x_query_core_entity",
         java_action: "jaxrs/query/view/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8588,7 +8590,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/query/core/express/cache/{queryId}",
         java_war: "x_query_core_express",
         java_action: "jaxrs/query/core/express/cache/{queryId}",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8597,7 +8599,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/query/core/express/execute",
         java_war: "x_query_core_express",
         java_action: "jaxrs/query/core/express/execute",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8615,7 +8617,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/query/create",
         java_war: "x_query_express",
         java_action: "jaxrs/query/create",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8633,7 +8635,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/query/service/processing/batch",
         java_war: "x_query_service",
         java_action: "jaxrs/query/service/processing/batch",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8642,7 +8644,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/query/service/processing/process",
         java_war: "x_query_service",
         java_action: "jaxrs/query/service/processing/process",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
     EndpointDef {
@@ -8651,7 +8653,7 @@ const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/query/service/processing/reset",
         java_war: "x_query_service",
         java_action: "jaxrs/query/service/processing/reset",
-        body: Some(serde_json::json!({})),
+        body: Some(r#"{}"#),
         requires_auth: true,
     },
 ];

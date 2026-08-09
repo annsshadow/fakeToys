@@ -10,6 +10,7 @@
 //! 如果 Rust 服务不可达，测试失败。
 
 mod behavior_comparison;
+mod behavior_compare_endpoints;
 
 use std::collections::HashMap;
 
@@ -34,6 +35,24 @@ const REPORT_PATH: &str = "target/debug/behavior-report.md";
 // ──────────────────────────────────────────────────────────────────────────────
 // 端点定义
 // ──────────────────────────────────────────────────────────────────────────────
+
+/// 合并手动维护端点 + 自动生成端点清单，按 rust_path 去重（自动生成优先）。
+fn all_endpoints() -> Vec<EndpointDef> {
+    let mut seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
+    let mut result = Vec::new();
+    // 先加入手动维护的端点（作为基准）
+    for ep in ENDPOINTS {
+        seen.insert(ep.rust_path);
+        result.push(ep.clone());
+    }
+    // 再加入自动生成的端点（去重）
+    for ep in behavior_compare_endpoints::ENDPOINTS.iter() {
+        if seen.insert(ep.rust_path) {
+            result.push(ep.clone());
+        }
+    }
+    result
+}
 
 const ENDPOINTS: &[EndpointDef] = &[
     // ── base（_base_core_project）─────────────────────────────────────────────
@@ -859,8 +878,8 @@ async fn behavior_compare_rust_vs_java() {
     };
 
     // ── 执行对比 ──────────────────────────────────────────────────────────
-    eprintln!("[behavior_compare] Comparing {} endpoints...", ENDPOINTS.len());
-    let results = comparator.compare_all(ENDPOINTS).await;
+    eprintln!("[behavior_compare] Comparing {} endpoints...", all_endpoints().len());
+    let results = comparator.compare_all(&all_endpoints()).await;
 
     let passed = results.iter().filter(|r| r.status == ComparisonStatus::Pass).count();
     let failed = results.iter().filter(|r| r.status == ComparisonStatus::Fail).count();

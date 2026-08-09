@@ -65,10 +65,11 @@ origin: docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md
 
 **Requirements:** R12, R13, R14
 
-**Dependencies:** None
+**Dependencies:** U9
 
 **Files:**
 - Modify: 各 core_entity crate 的 `src/tests.rs`
+- Use: `oa4rust/tests/integration_tests/db.rs`（`init_test_database()`）和 `helpers.rs`（`setup_test_server()`）
 
 **Approach:**
 - 为每个写操作端点添加集成测试
@@ -78,7 +79,9 @@ origin: docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md
   - Happy: 软删除 → 查询验证（deleted_at IS NULL 过滤生效）
   - Error: 缺少必填字段 → 400
   - Error: 更新不存在的记录 → 404
-- 使用 `DatabaseConnection` mock 或直接连接测试数据库
+  - Error: 未认证用户调用写操作 → 401
+  - Error: 无权限用户调用 → 403
+- 使用 `DatabaseConnection` mock 或直接连接测试数据库（需 U9 验证后的测试数据库，执行所有 migrations 含 011）
 - 遵循现有测试模式（`#[test]` + tokio runtime）
 
 **Test scenarios:**
@@ -88,10 +91,13 @@ origin: docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md
 - Happy: 软删除 → deleted_at IS NULL 过滤生效
 - Error: 缺少 name 字段 → BadRequest
 - Error: 更新不存在 id → NotFound
+- Error: 未认证用户调用写操作 → 401
+- Error: 无权限用户调用 → 403
 
 **Verification:**
 - 所有写操作端点有对应集成测试
 - `cargo test --workspace --lib` 全部通过
+- 写操作响应 JSON 结构与 Java 等效（通过 behavior_compare 测试验证）
 
 ---
 
@@ -105,8 +111,11 @@ origin: docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md
 
 **Files:**
 - Create: `oa4rust/scripts/extract_endpoints.py`
-- Modify: `oa4rust/tests/behavior_compare.rs`（使用生成的端点清单）
+- Create: `oa4rust/tests/behavior_comparison/mock_responses/`（基础 mock 响应目录）
+- Modify: `oa4rust/tests/behavior_compare.rs`（添加 `mod behavior_compare_endpoints;` 引入生成的端点清单）
+- Modify: `oa4rust/tests/behavior_compare_endpoints.rs`（修复 `body` 字段类型匹配 `comparator.rs` 的 `Option<&'static str>`）
 - Modify: `oa4rust/tests/behavior_comparison/allowlist.yaml`（扩展字段映射）
+- Modify: `oa4rust/tests/behavior_comparison/comparator.rs`（添加 Java 不可达时加载 mock 响应的降级逻辑）
 
 **Approach:**
 - 编写 Python 脚本扫描所有 crate 的 router 注册代码
@@ -114,9 +123,11 @@ origin: docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md
 - Java 映射基于 `oa4rust-migration-status-2026-08-08.md` 中的 Java 模块映射
 - 输出 CSV/JSON 格式的端点清单
 - 扩展 allowlist.yaml 覆盖更多字段命名差异
+- 为每个端点生成基础 mock 响应（基于 allowlist.yaml 字段命名规则）
+- 修改 comparator.rs：当 Java 服务不可达时，加载对应端点的 mock 响应文件作为 Java 侧响应，标记为 SKIP
 
 **Verification:**
-- `extract_endpoints.py` 输出 7,000+ 行端点清单
+- `extract_endpoints.py` 输出 7,624 行端点清单
 - `cargo test --test behavior_compare` 通过（Java 不可用时全部 SKIP）
 
 ---
@@ -130,7 +141,7 @@ origin: docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md
 **Dependencies:** U9, U10
 
 **Files:**
-- Create: `oa4rust/tests/integration/` 目录
+- Create: `oa4rust/tests/integration_tests/` 目录
 - Modify: 现有集成测试
 
 **Approach:**
@@ -144,7 +155,9 @@ origin: docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md
 
 **Verification:**
 - 集成测试全部通过
-- 功能等效性验证通过
+- behavior_compare 测试 7,624 端点全部 PASS 或 SKIP
+- 与迁移前 git diff 对比无 ActionResult 格式变更
+- 分页/软删除/ActionResult 9 字段结构与 origin 验收标准一致
 
 ---
 
