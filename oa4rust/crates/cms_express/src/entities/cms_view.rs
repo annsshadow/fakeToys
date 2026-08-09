@@ -7,6 +7,7 @@ pub struct Model {
     pub xid: String,
     pub xname: String,
     pub xapp_id: String,
+    pub deleted_at: Option<DateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

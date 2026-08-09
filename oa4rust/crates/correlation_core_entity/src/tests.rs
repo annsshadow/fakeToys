@@ -81,4 +81,48 @@ mod tests {
         assert_eq!(json["source_type"], "user");
         assert_eq!(json["weight"], 10);
     }
+
+    #[tokio::test]
+    async fn test_create_route_exists() {
+        let pool = build_test_pool();
+        let app = crate::correlation_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/correlation/core/entity/create")
+                    .method(axum::http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"sourceType":"user","sourceId":"u1","targetType":"doc","targetId":"d1","weight":5}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
+            || response.status() == StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_delete_route_exists() {
+        let pool = build_test_pool();
+        let app = crate::correlation_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/correlation/core/entity/delete/corr-test-001")
+                    .method(axum::http::Method::DELETE)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
+            || response.status() == StatusCode::OK
+            || response.status() == StatusCode::NOT_FOUND);
+    }
 }

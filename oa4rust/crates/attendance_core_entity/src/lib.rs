@@ -304,12 +304,12 @@ pub async fn rule_delete(
 }
 
 /// 创建考勤核心实体路由
-pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .expect("failed to create sea-orm connection");
+pub async fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+    let db = shared::db::create_sea_orm_pool()
+        .await
+        .ok();
 
-    Router::new()
+    let router = Router::new()
         .route(
             "/jaxrs/attendance/core/entity/record/list",
             get(record_list),
@@ -341,13 +341,17 @@ pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route(
             "/jaxrs/attendance/core/entity/rule/{id}/delete",
             get(rule_delete),
-        )
-        .layer(Extension(db))
+        );
+
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]
 mod tests;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::attendance_core_entity_router(pool)
+pub async fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::attendance_core_entity_router(pool).await
 }

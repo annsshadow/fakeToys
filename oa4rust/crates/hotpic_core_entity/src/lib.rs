@@ -1,10 +1,10 @@
 use axum::{
-    extract::Extension,
-    routing::get,
+    extract::{Extension, Path},
+    routing::{delete, get, post},
     Json, Router,
 };
 use deadpool_postgres::Pool;
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect, Set};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -119,11 +119,74 @@ pub async fn exists_check(
     Ok(Json(ActionResult::success(data)))
 }
 
+#[axum::debug_handler]
+pub async fn create(
+    db: Extension<DatabaseConnection>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let application = payload.get("application").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let info_id = payload.get("infoId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let base64 = payload.get("base64").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+    let active_model = hotpic::ActiveModel {
+        id: Set(id.clone()),
+        application: Set(application.clone()),
+        info_id: Set(info_id.clone()),
+        title: Set(title.clone()),
+        base64: Set(base64),
+        create_time: Set(Some(chrono::Utc::now().naive_utc())),
+        deleted_at: Set(None),
+    };
+
+    active_model
+        .insert(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("application".to_string(), Value::String(application)),
+        ("infoId".to_string(), Value::String(info_id)),
+        ("title".to_string(), Value::String(title)),
+    ])))))
+}
+
+pub async fn delete_by_id(
+    db: Extension<DatabaseConnection>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let model = hotpic::Entity::find_by_id(&id)
+        .one(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match model {
+        Some(m) => {
+            let active = hotpic::ActiveModel {
+                id: Set(m.id.clone()),
+                application: Set(m.application.clone()),
+                info_id: Set(m.info_id.clone()),
+                title: Set(m.title.clone()),
+                base64: Set(m.base64.clone()),
+                create_time: Set(m.create_time.clone()),
+                deleted_at: Set(Some(chrono::Utc::now().naive_utc())),
+            };
+            active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Null)))
+        }
+        None => Ok(Json(ActionResult::error("hotpic not found"))),
+    }
+}
+
 /// 创建热图核心实体路由
 /// 注册以下路由：
 /// - /jaxrs/hotpic/core/entity/list - 热图列表
 /// - /jaxrs/hotpic/core/entity/list/by/{application}/{infoId} - 按条件查询
 /// - /jaxrs/hotpic/core/entity/exists/check/{application}/{infoId} - 检查存在
+/// - /jaxrs/hotpic/core/entity/create - 创建热图
+/// - /jaxrs/hotpic/core/entity/delete/{id} - 删除热图
 pub fn hotpic_core_entity_router(_pool: Pool) -> Router {
     let db = tokio::runtime::Handle::current()
         .block_on(shared::db::create_sea_orm_pool())
@@ -136,6 +199,8 @@ pub fn hotpic_core_entity_router(_pool: Pool) -> Router {
             "/jaxrs/hotpic/core/entity/exists/check/{application}/{infoId}",
             get(exists_check),
         )
+        .route("/jaxrs/hotpic/core/entity/create", post(create))
+        .route("/jaxrs/hotpic/core/entity/delete/{id}", delete(delete_by_id))
         .layer(Extension(db))
 }
 

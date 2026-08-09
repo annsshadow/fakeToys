@@ -1,6 +1,6 @@
 use sea_orm::entity::prelude::*;
 
-#[derive(Clone, Debug, PartialEq, DeriveEntityModel)]
+#[derive(Clone, Debug, PartialEq, DeriveEntityModel, serde::Serialize)]
 #[sea_orm(table_name = "x_org_bind")]
 pub struct Model {
     #[sea_orm(primary_key)]
@@ -9,6 +9,7 @@ pub struct Model {
     pub group_id: String,
     pub role: Option<String>,
     pub create_time: Option<DateTime>,
+    pub deleted_at: Option<DateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

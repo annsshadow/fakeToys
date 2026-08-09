@@ -17,7 +17,7 @@ mod tests {
     #[tokio::test]
     async fn test_record_list_returns_success() {
         let pool = build_test_pool();
-        let app = crate::attendance_core_entity_router(pool);
+        let app = crate::attendance_core_entity_router(pool).await;
 
         let response = app
             .clone()
@@ -37,7 +37,7 @@ mod tests {
     #[tokio::test]
     async fn test_rule_list_returns_success() {
         let pool = build_test_pool();
-        let app = crate::attendance_core_entity_router(pool);
+        let app = crate::attendance_core_entity_router(pool).await;
 
         let response = app
             .clone()

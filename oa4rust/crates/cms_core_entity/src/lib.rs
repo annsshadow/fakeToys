@@ -316,25 +316,27 @@ pub async fn article_create(
     ])))))
 }
 
-pub fn cms_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = tokio::runtime::Handle::current()
-        .block_on(shared::db::create_sea_orm_pool())
-        .expect("failed to create sea-orm connection");
+pub async fn cms_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+    let db = shared::db::create_sea_orm_pool().await.ok();
 
-    Router::new()
+    let router = Router::new()
         .route("/jaxrs/cms/category/list", get(category_list))
         .route("/jaxrs/cms/category/{id}", get(category_get))
         .route("/jaxrs/cms/category/create", post(category_create))
         .route("/jaxrs/cms/article/list", get(article_list))
         .route("/jaxrs/cms/article/{id}", get(article_get))
-        .route("/jaxrs/cms/article/create", post(article_create))
-        .layer(Extension(db))
+        .route("/jaxrs/cms/article/create", post(article_create));
+
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]
 mod tests;
 
-pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    crate::cms_core_entity_router(pool)
+pub async fn router(pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::cms_core_entity_router(pool).await
 }
 

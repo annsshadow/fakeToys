@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::{MeetingRoom, Meeting, meeting_core_entity_router};
+    use crate::{entities::{meeting_room::Model as MeetingRoom, meeting::Model as Meeting}, meeting_core_entity_router};
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use deadpool_postgres::{Manager, Pool};
@@ -174,7 +174,9 @@ mod tests {
             equipment: None,
             description: None,
             photo: None,
+            open_meeting: None,
             order_number: None,
+            create_time: None,
         };
         let json = serde_json::to_value(&room).unwrap();
         assert_eq!(json["id"], "room-001");
@@ -188,10 +190,11 @@ mod tests {
             id: "meeting-001".to_string(),
             title: "项目评审会".to_string(),
             content: None,
-            room_id: "room-001".to_string(),
-            start_time: "2024-01-01T10:00:00Z".to_string(),
-            end_time: "2024-01-01T11:00:00Z".to_string(),
-            organizer_id: "user-001".to_string(),
+            room_id: Some("room-001".to_string()),
+            start_time: chrono::NaiveDateTime::from_timestamp_opt(1704067200, 0).unwrap(),
+            end_time: chrono::NaiveDateTime::from_timestamp_opt(1704070800, 0).unwrap(),
+            creator: Some("user-001".to_string()),
+            create_time: None,
         };
         let json = serde_json::to_value(&meeting).unwrap();
         assert_eq!(json["id"], "meeting-001");

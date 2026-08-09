@@ -17,6 +17,7 @@ uuid.workspace = true
 tower.workspace = true
 
 shared = { path = "../shared" }
+chrono.workspace = true
 
 [dev-dependencies]
 tower.workspace = true

@@ -18,6 +18,7 @@ deadpool-postgres.workspace = true
 
 shared = { path = "../shared" }
 orm = { path = "../orm" }
+chrono.workspace = true
 
 [dev-dependencies]
 tower.workspace = true

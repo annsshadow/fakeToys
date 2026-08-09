@@ -1,10 +1,10 @@
 use axum::{
     extract::Extension,
-    routing::get,
+    routing::{get, post},
     Json, Router,
 };
 use deadpool_postgres::Pool;
-use sea_orm::{DatabaseConnection, EntityTrait, QueryOrder, QuerySelect};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryOrder, QuerySelect, Set};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -54,6 +54,34 @@ pub async fn query_list(
     ))))
 }
 
+#[axum::debug_handler]
+pub async fn create_query(
+    db: Extension<DatabaseConnection>,
+    Json(payload): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let query_type = payload.get("queryType").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+
+    let active_model = query_view::ActiveModel {
+        id: Set(id.clone()),
+        name: Set(name.clone()),
+        query_type: Set(query_type.clone()),
+        create_time: Set(Some(chrono::Utc::now().naive_utc())),
+    };
+
+    active_model
+        .insert(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("queryType".to_string(), Value::String(query_type)),
+    ])))))
+}
+
 pub fn query_express_router(_pool: Pool) -> Router {
     let db = tokio::runtime::Handle::current()
         .block_on(shared::db::create_sea_orm_pool())
@@ -61,6 +89,7 @@ pub fn query_express_router(_pool: Pool) -> Router {
 
     Router::new()
         .route("/jaxrs/query/list", get(query_list))
+        .route("/jaxrs/query/create", post(create_query))
         .layer(Extension(db))
 }
 

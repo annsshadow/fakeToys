@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::Message;
+    use crate::entities::message::Model as Message;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
     use deadpool_postgres::{Manager, Pool};
@@ -93,6 +93,7 @@ mod tests {
             r#type: "system".to_string(),
             consumer: "system".to_string(),
             is_read: false,
+            create_time: None,
         };
         let json = serde_json::to_value(&message).unwrap();
         assert_eq!(json["id"], "msg-001");
