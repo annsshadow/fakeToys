@@ -20,6 +20,11 @@ pub fn ai_router(pool: Pool) -> axum::Router {
     routes::ai_router(pool)
 }
 
+// Alias for backward compatibility with main.rs
+pub fn router(pool: Pool) -> axum::Router {
+    ai_router(pool)
+}
+
 // Re-export handlers for route registration
 pub use config::{
     config_get, config_base_config, config_list_model_paging, config_get_model,
