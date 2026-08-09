@@ -23,7 +23,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool).await;
+            let app = crate::cms_core_entity_router(pool);
 
             let response = app
                 .clone()
@@ -46,7 +46,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool).await;
+            let app = crate::cms_core_entity_router(pool);
 
             let response = app
                 .clone()
@@ -69,7 +69,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool).await;
+            let app = crate::cms_core_entity_router(pool);
 
             let response = app
                 .clone()
@@ -93,7 +93,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool).await;
+            let app = crate::cms_core_entity_router(pool);
 
             let response = app
                 .clone()
@@ -116,7 +116,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool).await;
+            let app = crate::cms_core_entity_router(pool);
 
             let response = app
                 .clone()
@@ -139,7 +139,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let pool = build_test_pool();
-            let app = crate::cms_core_entity_router(pool).await;
+            let app = crate::cms_core_entity_router(pool);
 
             let response = app
                 .clone()

@@ -14,44 +14,50 @@ mod tests {
         Pool::builder(mgr).build().unwrap()
     }
 
-    #[tokio::test]
-    async fn test_record_list_returns_success() {
-        let pool = build_test_pool();
-        let app = crate::attendance_core_entity_router(pool).await;
+    #[test]
+    fn test_record_list_returns_success() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let pool = build_test_pool();
+            let app = crate::attendance_core_entity_router(pool);
 
-        let response = app
-            .clone()
-            .oneshot(
-                Request::builder()
-                    .uri("/jaxrs/attendance/core/entity/record/list")
-                    .method(axum::http::Method::GET)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
+            let response = app
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .uri("/jaxrs/attendance/core/entity/record/list")
+                        .method(axum::http::Method::GET)
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+            assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        });
     }
 
-    #[tokio::test]
-    async fn test_rule_list_returns_success() {
-        let pool = build_test_pool();
-        let app = crate::attendance_core_entity_router(pool).await;
+    #[test]
+    fn test_rule_list_returns_success() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let pool = build_test_pool();
+            let app = crate::attendance_core_entity_router(pool);
 
-        let response = app
-            .clone()
-            .oneshot(
-                Request::builder()
-                    .uri("/jaxrs/attendance/core/entity/rule/list")
-                    .method(axum::http::Method::GET)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
+            let response = app
+                .clone()
+                .oneshot(
+                    Request::builder()
+                        .uri("/jaxrs/attendance/core/entity/rule/list")
+                        .method(axum::http::Method::GET)
+                        .body(Body::empty())
+                        .unwrap(),
+                )
+                .await
+                .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+            assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        });
     }
 
     #[test]
