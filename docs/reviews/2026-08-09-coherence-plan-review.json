@@ -1,0 +1,126 @@
+{
+  "reviewer": "coherence",
+  "findings": [
+    {
+      "title": "U3/U4 core_entity crate 列表与 R7 不匹配",
+      "severity": "P0",
+      "section": "U3 (Wave 1：core_entity crate ORM 迁移) / U4 (Wave 1：core_entity crate 写操作补齐)",
+      "why_it_matters": "U3 和 U4 都声明覆盖 R7/R12，但 Files 列表中的 crate 与 R7 明确指定的 8 个 core_entity crate 不一致。实现者按计划会迁移错误的 crate，遗漏 R7 要求的 3 个 crate，并对不需要写操作的 3 个 crate 执行多余工作。",
+      "finding_type": "error",
+      "autofix_class": "safe_auto",
+      "confidence": 100,
+      "evidence": [
+        "Origin R7 明确列出：organization_core_entity、file_core_entity、program_center_core_entity、ai_core_entity、cms_core_entity、bbs_core_entity、calendar_core_entity、meeting_core_entity",
+        "U3 Files 列表：organization_core_entity、file_core_entity、program_center_core_entity、ai_core_entity、cms_express（非 core_entity）、correlation_core_entity、query_express（非 core_entity）、cms_core_entity",
+        "U4 Files 列表仅 7 个 crate（缺少 cms_core_entity），Goal 却声称 '8 个 core_entity crate'",
+        "U3 遗漏 R7 中的 bbs_core_entity、calendar_core_entity、meeting_core_entity（均存在于 D:\\WORKSPACE\\fakeToys\\oa4rust\\crates\\）",
+        "U3 额外包含 R7 中没有的 cms_express、correlation_core_entity、query_express"
+      ],
+      "suggested_fix": "将 U3 和 U4 的 Files 列表修正为 R7 明确指定的 8 个 core_entity crate：organization_core_entity、file_core_entity、program_center_core_entity、ai_core_entity、cms_core_entity、bbs_core_entity、calendar_core_entity、meeting_core_entity。删除 cms_express、correlation_core_entity、query_express。"
+    },
+    {
+      "title": "R6 错误地分配给 U1",
+      "severity": "P1",
+      "section": "U1 (ORM 共享层基础构建) Requirements",
+      "why_it_matters": "R6（迁移文件幂等执行）是 U2（Schema 规范化迁移脚本）的核心职责，与 U1 的 ORM 共享层构建无关。U1 声称 R6 会导致实现者误解 U1 的边界，也可能让 U2 的实现者认为 R6 已由 U1 覆盖而忽略幂等性要求。",
+      "finding_type": "error",
+      "autofix_class": "safe_auto",
+      "confidence": 100,
+      "evidence": [
+        "U1 Requirements: R1, R2, R3, R6",
+        "U2 Requirements: R4, R5, R6",
+        "R6 原文：'迁移文件需支持幂等执行（IF NOT EXISTS + 条件检查），确保现有数据库可安全升级'",
+        "U1 Goal 为 '在 crates/orm 中构建 SeaORM 共享层'，与迁移脚本幂等性无关"
+      ],
+      "suggested_fix": "从 U1 的 Requirements 中移除 R6，保留在 U2 中即可。U1 的 Requirements 应为 R1, R2, R3。"
+    },
+    {
+      "title": "U3 Verification 误述当前 core_entity crate 状态",
+      "severity": "P2",
+      "section": "U3 (Wave 1) Verification",
+      "why_it_matters": "Verification 中写道'状态从无数据库查询→SeaORM'，但 oa4rust-migration-status-2026-08-08.md 显示所有 81 个 crate 均为'已完成（真实化）'，不存在'无数据库查询'状态的 crate。这会造成实现者对当前代码状态的误判。",
+      "finding_type": "error",
+      "autofix_class": "safe_auto",
+      "confidence": 100,
+      "evidence": [
+        "U3 Verification 原文：'8 个 core_entity crate 状态从\"无数据库查询\"→\"SeaORM\"'",
+        "oa4rust-migration-status-2026-08-08.md 第 28-32 行：已完成（真实化）81 个，无数据库查询 0 个",
+        "origin Problem Frame 描述为'仅有 GET 查询无写操作'，而非'无数据库查询'"
+      ],
+      "suggested_fix": "将 Verification 中的'无数据库查询'改为'仅 GET 查询（无写操作）'或'SQLx 原生查询'，与 origin Problem Frame 和 migration status 的实际状态一致。"
+    },
+    {
+      "title": "U5 依赖图不完整",
+      "severity": "P2",
+      "section": "U5 (Wave 2) Dependencies",
+      "why_it_matters": "U5 的 Dependencies 仅列出 U4，而 U3（同一类别的 ORM 迁移）正确列出了 U1 和 U2。U5 需要 U1 提供的 SeaORM 共享层和 U2 提供的 schema 规范化，缺少这些依赖会导致实现者误以为可以在 U1/U2 之前启动 U5。",
+      "finding_type": "error",
+      "autofix_class": "safe_auto",
+      "confidence": 75,
+      "evidence": [
+        "U3 Dependencies: U1, U2",
+        "U5 Dependencies: U4（仅）",
+        "U5 是 assemble_control crate 的 ORM 迁移，需要 U1 的 SeaORM 共享层（orm_entity! 宏、CRUD 助手等）",
+        "U5 需要 U2 的 schema 规范化结果（小写表名）"
+      ],
+      "suggested_fix": "将 U5 的 Dependencies 修正为 U1, U2, U4（或至少 U1, U2）。Wave 2 迁移与 Wave 1 同样依赖 ORM 共享层和 schema 规范化。"
+    },
+    {
+      "title": "R11 未在任一 U 的 Requirements 中显式分配",
+      "severity": "P3",
+      "section": "Requirements 全局追溯",
+      "why_it_matters": "R11（ORM 与 SQLx 并存，复杂查询保留 SQLx）在 Requirements 摘要中存在，但未出现在任何 Implementation Unit 的 Requirements 字段中。虽然 U3/U5/U6 的 Approach 中提到了保留动态 SQL 为 SQLx，但缺乏显式追溯会导致覆盖验证困难。",
+      "finding_type": "omission",
+      "autofix_class": "manual",
+      "confidence": 75,
+      "evidence": [
+        "R11 原文：'ORM 与 SQLx 并存（复杂查询保留 SQLx）'",
+        "U1-U8 的 Requirements 字段均不含 R11",
+        "U3 Approach 提到：'person_flag_clause 等动态 SQL 模式保留 SQLx 原生查询'",
+        "U5 Approach 提到：'复杂查询保留 SQLx'",
+        "U6 Approach 提到：'识别其中的动态 SQL 模式并保留为 SQLx'"
+      ],
+      "suggested_fix": "在 U3、U5、U6 的 Requirements 字段中显式添加 R11，或在 Requirements 摘要中添加说明指出 R11 由三波迁移共同覆盖。"
+    },
+    {
+      "title": "U4 Files 列表仅有 7 个 crate，与 Goal '8 个 core_entity crate' 不符",
+      "severity": "P3",
+      "section": "U4 (Wave 1：core_entity crate 写操作补齐) Files",
+      "why_it_matters": "U4 Goal 声称覆盖'8 个 core_entity crate'，但 Files 列表只有 7 个 Modify 项（缺少 cms_core_entity）。这与 U3 的 8 个 crate 列表也不一致。",
+      "finding_type": "omission",
+      "autofix_class": "safe_auto",
+      "confidence": 100,
+      "evidence": [
+        "U4 Goal: '为 8 个 core_entity crate 补全 POST/PUT/DELETE 写操作'",
+        "U4 Files 列出 7 个 Modify 项：organization_core_entity、file_core_entity、program_center_core_entity、ai_core_entity、cms_express、correlation_core_entity、query_express",
+        "U4 缺少 cms_core_entity（在 U3 的 Files 列表中存在）"
+      ],
+      "suggested_fix": "在修正 U3 的 crate 列表后（见 P0 发现），同步修正 U4 的 Files 列表，确保两者一致且覆盖相同的 8 个 crate。"
+    },
+    {
+      "title": "AE1/AE2/AE4/AE5 未在测试场景中标注显式引用",
+      "severity": "P3",
+      "section": "U1/U2/U7 的 Test scenarios",
+      "why_it_matters": "仅 AE3（U4）和 AE6（U7）在测试场景中显式引用。AE1（R1/R2/R7）、AE2（R4/R5）、AE4（R16/R18）、AE5（R22/R23）虽被相关 U 的需求间接覆盖，但缺少显式引用会降低追溯性。",
+      "finding_type": "omission",
+      "autofix_class": "manual",
+      "confidence": 50,
+      "evidence": [
+        "U4 Test scenarios 含 '（Covers AE3）' 标注",
+        "U7 Test scenarios 含 '（Covers AE6）' 标注",
+        "U1、U2、U3、U5、U6 的 Test scenarios 中无 AE 标注"
+      ],
+      "suggested_fix": "在相关 U 的 Test scenarios 中添加 AE1（U1/U3）、AE2（U2）、AE4（U7）、AE5（U3/U5/U6）的显式引用，提升需求追溯清晰度。"
+    }
+  ],
+  "residual_risks": [
+    "即使修正 crate 列表，R7 原文列出的 8 个 core_entity crate 中，bbs_core_entity、calendar_core_entity、meeting_core_entity 在 migration status 中已标记为'CRUD 全部真实'，意味着它们可能已有写操作。计划需确认 R7 的'8 个'是否真正需要补全写操作，还是仅需 ORM 迁移。",
+    "U7 的 7,624 个端点自动生成策略在'Open Questions'中列为'Deferred to Implementation'，实际实现时可能发现脚本方案与手动维护的成本差异与预期不同。",
+    "SeaORM 2.0 与 sqlx 0.8 的版本隔离策略（Key Technical Decisions 中解决）依赖 SeaORM 通过 sqlx-postgres feature 自行管理内部 sqlx 版本，此方案需在实现时验证编译通过。"
+  ],
+  "deferred_questions": [
+    "R7 列出的 bbs_core_entity、calendar_core_entity、meeting_core_entity 在 migration status 中已显示'CRUD 全部真实'，是否仍需纳入 Wave 1 ORM 迁移范围？还是 R7 的'8 个'实际应为'仅有 GET 查询'的 crate？",
+    "U4 Goal 声称'8 个 core_entity crate'但 Files 仅 7 项，且包含 cms_express（非 core_entity）。修正 crate 列表后，cms_express 和 query_express 是否应单独安排 ORM 迁移（归入 Wave 3）？",
+    "Origin 的 F2 写操作补全流程标注为'R7-R12'覆盖，但 R7-R9 均为 ORM 迁移需求，写操作实际由 R12-R14 覆盖。此跨文档引用是否需要修正？"
+  ]
+}

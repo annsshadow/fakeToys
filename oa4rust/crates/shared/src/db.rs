@@ -1,6 +1,7 @@
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
 use deadpool_postgres::{Manager, Pool};
 use dotenvy::dotenv;
+use sea_orm::{Database, DatabaseConnection, ConnectOptions};
 use std::env;
 use thiserror::Error;
 
@@ -41,4 +42,18 @@ pub async fn create_pool() -> Result<Pool, DbError> {
         .map_err(|e| DbError::PoolError(e.to_string()))?;
 
     Ok(pool)
+}
+
+/// 创建 SeaORM DatabaseConnection（与 create_pool 并行）
+pub async fn create_sea_orm_pool() -> Result<DatabaseConnection, DbError> {
+    dotenv().ok();
+    let database_url = env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/oa4rust".to_string());
+
+    let mut options = ConnectOptions::new(database_url);
+    options.max_connections(20).sqlx_logging(false);
+
+    Database::connect(options)
+        .await
+        .map_err(|e| DbError::PoolError(e.to_string()))
 }
