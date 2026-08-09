@@ -814,6 +814,7 @@ const ENDPOINTS: &[EndpointDef] = &[
 // 测试
 // ──────────────────────────────────────────────────────────────────────────────
 
+#[ignore = "requires a running Rust server at localhost:3000"]
 #[tokio::test]
 async fn behavior_compare_rust_vs_java() {
     let java_url = std::env::var("JAVA_SERVICE_URL").unwrap_or_else(|_| DEFAULT_JAVA_BASE_URL.to_string());
