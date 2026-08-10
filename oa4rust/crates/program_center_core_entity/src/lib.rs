@@ -3,13 +3,19 @@ use axum::{
     routing::{get, post, put},
     Json, Router,
 };
+use deadpool_postgres::Pool;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
-use shared::{error::AppError, response::ActionResult};
 use serde::Deserialize;
 use serde_json::Value;
+use shared::{error::AppError, middleware::require_owner, response::ActionResult, session::Session};
 
 pub mod entities;
 pub mod routes;
+
+/// Maximum length for text input fields to prevent DB overflow.
+const MAX_NAME_LEN: usize = 200;
+const MAX_TEXT_LEN: usize = 500;
+const MAX_LONG_TEXT_LEN: usize = 2000;
 
 // ── Request structs ──────────────────────────────────────────────────────────
 
@@ -89,6 +95,29 @@ pub struct StructureUpdateRequest {
     pub description: Option<String>,
 }
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+fn validate_name(name: &str) -> Result<(), AppError> {
+    if name.trim().is_empty() {
+        return Err(AppError::BadRequest("name is required".to_string()));
+    }
+    if name.len() > MAX_NAME_LEN {
+        return Err(AppError::BadRequest(format!(
+            "name must be at most {MAX_NAME_LEN} characters"
+        )));
+    }
+    Ok(())
+}
+
+fn validate_text(text: &str, max: usize, field: &str) -> Result<(), AppError> {
+    if text.len() > max {
+        return Err(AppError::BadRequest(format!(
+            "{field} must be at most {max} characters"
+        )));
+    }
+    Ok(())
+}
+
 // ── List handlers (with soft-delete filter) ──────────────────────────────────
 
 pub async fn application_list(
@@ -114,6 +143,10 @@ pub async fn application_list(
                 ),
                 ("version".to_string(), Value::String(m.version.clone())),
                 ("publisher".to_string(), Value::String(m.publisher.clone())),
+                (
+                    "creatorPerson".to_string(),
+                    Value::String(m.creator_person.clone()),
+                ),
             ]))
         })
         .collect();
@@ -183,7 +216,6 @@ pub async fn invoke_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
-                ("application".to_string(), Value::String(m.id.clone())),
                 ("alias".to_string(), Value::String(m.alias.clone())),
                 ("category".to_string(), Value::String(m.category.clone())),
                 ("validated".to_string(), Value::Bool(m.validated)),
@@ -266,18 +298,12 @@ pub async fn structure_list(
                 ("name".to_string(), Value::String(m.name.clone())),
                 (
                     "type".to_string(),
-                    Value::String(
-                        m.extension
-                            .clone()
-                            .unwrap_or_default(),
-                    ),
+                    Value::String(m.extension.clone().unwrap_or_default()),
                 ),
                 ("storage".to_string(), Value::String(m.storage.clone())),
                 (
                     "length".to_string(),
-                    m.length
-                        .map(|v| Value::Number(serde_json::Number::from(v)))
-                        .unwrap_or(Value::Null),
+                    Value::Number(serde_json::Number::from(m.length.unwrap_or(0))),
                 ),
                 (
                     "description".to_string(),
@@ -302,11 +328,10 @@ pub async fn structure_list(
 
 pub async fn application_create(
     db: Extension<DatabaseConnection>,
+    Extension(session): Extension<Session>,
     Json(req): Json<ApplicationCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if req.name.trim().is_empty() {
-        return Ok(Json(ActionResult::error("name is required")));
-    }
+    validate_name(&req.name)?;
 
     let active = entities::application::ActiveModel {
         id: Set(uuid::Uuid::new_v4().to_string()),
@@ -315,6 +340,8 @@ pub async fn application_create(
         sub_category: Set(req.sub_category.unwrap_or_default()),
         version: Set(req.version.unwrap_or_default()),
         publisher: Set(req.publisher.unwrap_or_default()),
+        creator_person: Set(session.person_unique),
+        deleted_at: Set(None),
     };
     let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
@@ -328,6 +355,10 @@ pub async fn application_create(
         ),
         ("version".to_string(), Value::String(model.version.clone())),
         ("publisher".to_string(), Value::String(model.publisher.clone())),
+        (
+            "creatorPerson".to_string(),
+            Value::String(model.creator_person.clone()),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -335,6 +366,8 @@ pub async fn application_create(
 
 pub async fn application_update(
     db: Extension<DatabaseConnection>,
+    pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
     Json(req): Json<ApplicationUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -344,20 +377,28 @@ pub async fn application_update(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
+    // IDOR check: verify current user owns this record
+    require_owner(&pool, &session, &model.creator_person).await?;
+
     let mut active: entities::application::ActiveModel = model.into();
     if let Some(name) = req.name {
+        validate_name(&name)?;
         active.name = Set(name);
     }
     if let Some(category) = req.category {
+        validate_text(&category, MAX_TEXT_LEN, "category")?;
         active.category = Set(category);
     }
     if let Some(sub_category) = req.sub_category {
+        validate_text(&sub_category, MAX_TEXT_LEN, "sub_category")?;
         active.sub_category = Set(sub_category);
     }
     if let Some(version) = req.version {
+        validate_text(&version, MAX_TEXT_LEN, "version")?;
         active.version = Set(version);
     }
     if let Some(publisher) = req.publisher {
+        validate_text(&publisher, MAX_TEXT_LEN, "publisher")?;
         active.publisher = Set(publisher);
     }
 
@@ -373,36 +414,56 @@ pub async fn application_update(
         ),
         ("version".to_string(), Value::String(updated.version.clone())),
         ("publisher".to_string(), Value::String(updated.publisher.clone())),
+        (
+            "creatorPerson".to_string(),
+            Value::String(updated.creator_person.clone()),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
 }
 
 pub async fn application_delete(
-    _db: Extension<DatabaseConnection>,
-    _id: Path<String>,
+    db: Extension<DatabaseConnection>,
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::error(
-        "physical delete not supported for application entity",
-    )))
+    let model = entities::application::Entity::find_by_id(&id)
+        .one(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
+
+    // IDOR check: verify current user owns this record
+    require_owner(&pool, &session, &model.creator_person).await?;
+
+    // Soft delete
+    let mut active: entities::application::ActiveModel = model.into();
+    active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
+    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+    ))))
 }
 
 // ── Script write handlers ────────────────────────────────────────────────────
 
 pub async fn script_create(
     db: Extension<DatabaseConnection>,
+    Extension(session): Extension<Session>,
     Json(req): Json<ScriptCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if req.name.trim().is_empty() {
-        return Ok(Json(ActionResult::error("name is required")));
-    }
+    validate_name(&req.name)?;
 
     let active = entities::script::ActiveModel {
         id: Set(uuid::Uuid::new_v4().to_string()),
         name: Set(req.name),
         alias: Set(req.alias.unwrap_or_default()),
         validated: Set(false),
-        creator_person: Set(String::new()),
+        creator_person: Set(session.person_unique),
+        deleted_at: Set(None),
     };
     let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
@@ -422,6 +483,8 @@ pub async fn script_create(
 
 pub async fn script_update(
     db: Extension<DatabaseConnection>,
+    pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
     Json(req): Json<ScriptUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -431,11 +494,16 @@ pub async fn script_update(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
+    // IDOR check
+    require_owner(&pool, &session, &model.creator_person).await?;
+
     let mut active: entities::script::ActiveModel = model.into();
     if let Some(name) = req.name {
+        validate_name(&name)?;
         active.name = Set(name);
     }
     if let Some(alias) = req.alias {
+        validate_text(&alias, MAX_TEXT_LEN, "alias")?;
         active.alias = Set(alias);
     }
 
@@ -456,23 +524,38 @@ pub async fn script_update(
 }
 
 pub async fn script_delete(
-    _db: Extension<DatabaseConnection>,
-    _id: Path<String>,
+    db: Extension<DatabaseConnection>,
+    pool: Extension<Pool>,
+    session: Extension<Session>,
+    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::error(
-        "physical delete not supported for script entity",
-    )))
+    let model = entities::script::Entity::find_by_id(&id)
+        .one(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or(AppError::NotFound)?;
+
+    // IDOR check
+    require_owner(&pool, &session, &model.creator_person).await?;
+
+    // Soft delete
+    let mut active: entities::script::ActiveModel = model.into();
+    active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
+    active.update(&db.0).await.map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+    ))))
 }
 
 // ── Invoke write handlers ────────────────────────────────────────────────────
 
 pub async fn invoke_create(
     db: Extension<DatabaseConnection>,
+    Extension(session): Extension<Session>,
     Json(req): Json<InvokeCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if req.name.trim().is_empty() {
-        return Ok(Json(ActionResult::error("name is required")));
-    }
+    validate_name(&req.name)?;
 
     let active = entities::cte_invoke::ActiveModel {
         id: Set(uuid::Uuid::new_v4().to_string()),
@@ -480,7 +563,7 @@ pub async fn invoke_create(
         alias: Set(req.alias.unwrap_or_default()),
         category: Set(req.category.unwrap_or_default()),
         validated: Set(false),
-        creator_person: Set(String::new()),
+        creator_person: Set(session.person_unique),
         deleted_at: Set(None),
     };
     let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
@@ -488,7 +571,6 @@ pub async fn invoke_create(
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(model.id.clone())),
         ("name".to_string(), Value::String(model.name.clone())),
-        ("application".to_string(), Value::String(model.id.clone())),
         ("alias".to_string(), Value::String(model.alias.clone())),
         ("category".to_string(), Value::String(model.category.clone())),
         ("validated".to_string(), Value::Bool(model.validated)),
@@ -503,6 +585,8 @@ pub async fn invoke_create(
 
 pub async fn invoke_update(
     db: Extension<DatabaseConnection>,
+    pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
     Json(req): Json<InvokeUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -512,14 +596,20 @@ pub async fn invoke_update(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
+    // IDOR check
+    require_owner(&pool, &session, &model.creator_person).await?;
+
     let mut active: entities::cte_invoke::ActiveModel = model.into();
     if let Some(name) = req.name {
+        validate_name(&name)?;
         active.name = Set(name);
     }
     if let Some(alias) = req.alias {
+        validate_text(&alias, MAX_TEXT_LEN, "alias")?;
         active.alias = Set(alias);
     }
     if let Some(category) = req.category {
+        validate_text(&category, MAX_TEXT_LEN, "category")?;
         active.category = Set(category);
     }
 
@@ -528,7 +618,6 @@ pub async fn invoke_update(
     let result = Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(updated.id.clone())),
         ("name".to_string(), Value::String(updated.name.clone())),
-        ("application".to_string(), Value::String(updated.id.clone())),
         ("alias".to_string(), Value::String(updated.alias.clone())),
         ("category".to_string(), Value::String(updated.category.clone())),
         ("validated".to_string(), Value::Bool(updated.validated)),
@@ -543,6 +632,8 @@ pub async fn invoke_update(
 
 pub async fn invoke_delete(
     db: Extension<DatabaseConnection>,
+    pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let model = entities::cte_invoke::Entity::find_by_id(&id)
@@ -550,6 +641,9 @@ pub async fn invoke_delete(
         .await
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
+
+    // IDOR check
+    require_owner(&pool, &session, &model.creator_person).await?;
 
     let mut active: entities::cte_invoke::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
@@ -564,17 +658,16 @@ pub async fn invoke_delete(
 
 pub async fn agent_create(
     db: Extension<DatabaseConnection>,
+    Extension(session): Extension<Session>,
     Json(req): Json<AgentCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if req.name.trim().is_empty() {
-        return Ok(Json(ActionResult::error("name is required")));
-    }
+    validate_name(&req.name)?;
 
     let active = entities::cte_agent::ActiveModel {
         id: Set(uuid::Uuid::new_v4().to_string()),
         name: Set(req.name),
         alias: Set(req.alias.unwrap_or_default()),
-        description: Set(req.description.unwrap_or_default()),
+        description: Set(req.description.clone().unwrap_or_default()),
         validated: Set(false),
         enable: Set(false),
         cron: Set(req.cron.unwrap_or_default()),
@@ -601,6 +694,8 @@ pub async fn agent_create(
 
 pub async fn agent_update(
     db: Extension<DatabaseConnection>,
+    _pool: Extension<Pool>,
+    _session: Extension<Session>,
     Path(id): Path<String>,
     Json(req): Json<AgentUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -610,17 +705,22 @@ pub async fn agent_update(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
+    // cte_agent has no creator_person field; admin check is handled by RBAC middleware
     let mut active: entities::cte_agent::ActiveModel = model.into();
     if let Some(name) = req.name {
+        validate_name(&name)?;
         active.name = Set(name);
     }
     if let Some(alias) = req.alias {
+        validate_text(&alias, MAX_TEXT_LEN, "alias")?;
         active.alias = Set(alias);
     }
     if let Some(description) = req.description {
+        validate_text(&description, MAX_LONG_TEXT_LEN, "description")?;
         active.description = Set(description);
     }
     if let Some(cron) = req.cron {
+        validate_text(&cron, MAX_TEXT_LEN, "cron")?;
         active.cron = Set(cron);
     }
 
@@ -645,6 +745,8 @@ pub async fn agent_update(
 
 pub async fn agent_delete(
     db: Extension<DatabaseConnection>,
+    _pool: Extension<Pool>,
+    _session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let model = entities::cte_agent::Entity::find_by_id(&id)
@@ -653,6 +755,7 @@ pub async fn agent_delete(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
+    // cte_agent has no creator_person; admin check handled by RBAC middleware
     let mut active: entities::cte_agent::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
     active.update(&db.0).await.map_err(|_| AppError::Internal)?;
@@ -666,10 +769,13 @@ pub async fn agent_delete(
 
 pub async fn structure_create(
     db: Extension<DatabaseConnection>,
+    Extension(session): Extension<Session>,
     Json(req): Json<StructureCreateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if req.name.trim().is_empty() {
-        return Ok(Json(ActionResult::error("name is required")));
+    validate_name(&req.name)?;
+    validate_text(&req.storage, MAX_TEXT_LEN, "storage")?;
+    if let Some(ref desc) = req.description {
+        validate_text(desc, MAX_LONG_TEXT_LEN, "description")?;
     }
 
     let active = entities::cte_structure::ActiveModel {
@@ -706,6 +812,8 @@ pub async fn structure_create(
 
 pub async fn structure_update(
     db: Extension<DatabaseConnection>,
+    pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
     Json(req): Json<StructureUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -715,17 +823,22 @@ pub async fn structure_update(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
+    // cte_structure has no creator_person; admin check handled by RBAC middleware
     let mut active: entities::cte_structure::ActiveModel = model.into();
     if let Some(name) = req.name {
+        validate_name(&name)?;
         active.name = Set(name);
     }
     if let Some(storage) = req.storage {
+        validate_text(&storage, MAX_TEXT_LEN, "storage")?;
         active.storage = Set(storage);
     }
     if let Some(extension) = req.extension {
+        validate_text(&extension, MAX_TEXT_LEN, "extension")?;
         active.extension = Set(Some(extension));
     }
     if let Some(description) = req.description {
+        validate_text(&description, MAX_LONG_TEXT_LEN, "description")?;
         active.description = Set(description);
     }
 
@@ -754,6 +867,8 @@ pub async fn structure_update(
 
 pub async fn structure_delete(
     db: Extension<DatabaseConnection>,
+    pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let model = entities::cte_structure::Entity::find_by_id(&id)
@@ -762,6 +877,7 @@ pub async fn structure_delete(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
+    // cte_structure has no creator_person; admin check handled by RBAC middleware
     let mut active: entities::cte_structure::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
     active.update(&db.0).await.map_err(|_| AppError::Internal)?;
@@ -773,7 +889,7 @@ pub async fn structure_delete(
 
 // ── Router ───────────────────────────────────────────────────────────────────
 
-pub fn program_center_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+pub fn program_center_core_entity_router(pool: deadpool_postgres::Pool) -> Router {
     let db = std::panic::catch_unwind(|| {
         tokio::runtime::Handle::current()
             .block_on(shared::db::create_sea_orm_pool())
@@ -785,23 +901,38 @@ pub fn program_center_core_entity_router(_pool: deadpool_postgres::Pool) -> Rout
         // Application
         .route("/jaxrs/program_center/application/list", get(application_list))
         .route("/jaxrs/program_center/application", post(application_create))
-        .route("/jaxrs/program_center/application/{id}", put(application_update).delete(application_delete))
+        .route(
+            "/jaxrs/program_center/application/{id}",
+            put(application_update).delete(application_delete),
+        )
         // Script
         .route("/jaxrs/program_center/script/list", get(script_list))
         .route("/jaxrs/program_center/script", post(script_create))
-        .route("/jaxrs/program_center/script/{id}", put(script_update).delete(script_delete))
+        .route(
+            "/jaxrs/program_center/script/{id}",
+            put(script_update).delete(script_delete),
+        )
         // Invoke
         .route("/jaxrs/program_center/invoke/list", get(invoke_list))
         .route("/jaxrs/program_center/invoke", post(invoke_create))
-        .route("/jaxrs/program_center/invoke/{id}", put(invoke_update).delete(invoke_delete))
+        .route(
+            "/jaxrs/program_center/invoke/{id}",
+            put(invoke_update).delete(invoke_delete),
+        )
         // Agent
         .route("/jaxrs/program_center/agent/list", get(agent_list))
         .route("/jaxrs/program_center/agent", post(agent_create))
-        .route("/jaxrs/program_center/agent/{id}", put(agent_update).delete(agent_delete))
+        .route(
+            "/jaxrs/program_center/agent/{id}",
+            put(agent_update).delete(agent_delete),
+        )
         // Structure
         .route("/jaxrs/program_center/structure/list", get(structure_list))
         .route("/jaxrs/program_center/structure", post(structure_create))
-        .route("/jaxrs/program_center/structure/{id}", put(structure_update).delete(structure_delete));
+        .route(
+            "/jaxrs/program_center/structure/{id}",
+            put(structure_update).delete(structure_delete),
+        );
     match db {
         Some(conn) => router.layer(Extension(conn)),
         None => router,
