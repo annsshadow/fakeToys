@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+组件核心实体模块，定义组件数据模型和 CRUD 能力。
 
 ## Core Classes and Interfaces
 

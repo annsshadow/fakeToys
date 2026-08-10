@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+PDF 查看器组件，负责 PDF 文档的在线浏览和打印。
 
 ## Entry Point
 

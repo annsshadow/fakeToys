@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+控制面板组件，提供系统状态概览和快速操作入口。
 
 ## Entry Point
 

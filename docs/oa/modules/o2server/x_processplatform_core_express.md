@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+流程平台核心表达式模块，提供流程任务的终止、撤回等操作能力。
 
 ## Core Classes and Interfaces
 

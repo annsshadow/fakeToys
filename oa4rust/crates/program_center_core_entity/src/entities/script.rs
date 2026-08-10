@@ -9,6 +9,8 @@ pub struct Model {
     pub alias: String,
     pub validated: bool,
     pub creator_person: String,
+    #[sea_orm(column_type = "Text", nullable)]
+    pub deleted_at: Option<DateTime>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+考勤管理组件（v2），负责新版考勤界面的展示和交互操作。
 
 ## Entry Point
 

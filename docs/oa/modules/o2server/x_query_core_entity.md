@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+查询核心实体模块，定义查询项、视图和导入等查询数据模型。
 
 ## Core Classes and Interfaces
 

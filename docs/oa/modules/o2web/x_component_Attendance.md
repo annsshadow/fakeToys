@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+考勤管理组件，负责考勤记录的查看、打卡统计和申诉管理。
 
 ## Entry Point
 

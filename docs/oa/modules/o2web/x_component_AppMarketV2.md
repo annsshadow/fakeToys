@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+应用市场组件，负责应用的分类浏览、搜索和安装管理。
 
 ## Entry Point
 

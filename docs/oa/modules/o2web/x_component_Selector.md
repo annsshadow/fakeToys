@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+通用选择器组件，提供人员、单位、角色等数据的通用选择功能。
 
 ## Entry Point
 

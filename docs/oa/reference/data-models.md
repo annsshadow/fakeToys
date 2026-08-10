@@ -171,3 +171,184 @@ Core entities:
 - Most domain entities extend `com.x.base.core.entity.AbstractPersistence` or a similar base class defined in `x_base_core_project`.
 - Entities use `@Table` with a schema-qualified table name convention (`{domain}_*`).
 - Relationships are expressed via JPA `@OneToMany`, `@ManyToOne`, and `@OneToOne` annotations. Cross-domain references typically go through the `x_*_core_entity` module of the target domain.
+
+## Entity Relationship Diagrams
+
+### Organization Domain
+
+```mermaid
+erDiagram
+    Person ||--o{ Identity : has
+    Person ||--o| PersonExtend : extends
+    Person ||--o{ PersonAttribute : has
+    Identity ||--o{ Group : belongs_to
+    Identity ||--o{ Role : has
+    Unit ||--o{ Unit : has_parent
+    Unit ||--o{ Person : employs
+    Group ||--o{ Group : has_parent
+    Definition ||--o{ Unit : defines
+    Definition ||--o{ Role : defines
+    Definition ||--o{ Group : defines
+    Person ||--o{ Bind : binds
+    Bind }o--|| Group : references
+```
+
+**Key relationships:**
+- `Person` → `Identity`：一人一身份，身份是访问控制的基本单元
+- `Person` → `PersonExtend`：一对一对个人扩展信息
+- `Person` → `Group/Role/Unit`：通过 `Bind` 实现多对多归属关系
+- `Unit` 自引用：组织单位层级结构（树形）
+
+### Process Platform Domain
+
+```mermaid
+erDiagram
+    ProcessUnit ||--o{ Work : produces
+    Work ||--o{ Task : generates
+    Work ||--o| DataRecord : has_record
+    DataRecord ||--o{ DataRecordItem : contains
+    Work ||--o| Document : attached
+    Document ||--o| DocumentVersion : has_version
+    Task ||--o| Handover : can_handover
+    Work ||--o| DocSign : requires_signature
+    DocSign ||--o| DocSignScrawl : has_scrawl
+    Activity ||--o{ Task : triggers
+    ProcessUnit ||--o| Draft : has_draft
+```
+
+**Key relationships:**
+- `ProcessUnit` → `Work`：流程定义产生流程实例
+- `Work` → `Task`：流程实例产生待办任务
+- `Work` → `DataRecord`：流程实例绑定表单数据
+- `Work` → `DocSign`：流程实例可能需要签名
+
+### CMS Domain
+
+```mermaid
+erDiagram
+    AppInfo ||--o{ CategoryInfo : contains
+    CategoryInfo ||--o{ CategoryInfo : has_child
+    CategoryInfo ||--o| CategoryExt : extends
+    AppInfo ||--o| AppInfoConfig : has_config
+    AppInfo ||--o{ Document : publishes
+    Document ||--o| DocumentCommend : has_recommend
+    Document ||--o| DocumentCommentCommend : has_comment
+```
+
+**Key relationships:**
+- `AppInfo` → `CategoryInfo`：应用包含栏目树
+- `CategoryInfo` 自引用：栏目层级结构
+- `AppInfo` → `Document`：应用发布文章
+
+### File Domain
+
+```mermaid
+erDiagram
+    FileFolder ||--o{ FileFolder : contains
+    FileFolder ||--o{ File : contains
+    File ||--o| OriginFile : stored_as
+    File ||--o{ Attachment : has_attachment
+    File ||--o{ Attachment2 : has_attachment2
+```
+
+**Key relationships:**
+- `FileFolder` 自引用：文件夹树形结构
+- `FileFolder` → `File`：文件夹包含文件
+- `File` → `OriginFile`：文件元数据指向原始存储
+
+### Query Domain
+
+```mermaid
+erDiagram
+    Item ||--o{ ItemAccess : has_access
+    ItemAccess ||--o{ ItemAccessActivity : logs
+    View ||--o{ Item : belongs_to
+    ImportModel ||--o{ ImportRecord : creates
+    ImportRecord ||--o{ ImportRecordItem : contains
+    Stat ||--o{ View : generates
+```
+
+**Key relationships:**
+- `Item` → `ItemAccess`：查询项的访问控制
+- `View` → `Item`：视图引用查询项
+- `ImportModel` → `ImportRecord` → `ImportRecordItem`：导入模型级联记录
+
+### Meeting Domain
+
+```mermaid
+erDiagram
+    Building ||--o{ Room : contains
+    Room ||--o{ Meeting : hosts
+    Meeting ||--o{ Attachment : has_attachment
+    MeetingConfig ||--|| Room : configures
+```
+
+**Key relationships:**
+- `Building` → `Room`：楼宇包含会议室
+- `Room` → `Meeting`：会议室产生会议实例
+
+### Message Domain
+
+```mermaid
+erDiagram
+    IMConversation ||--o{ IMMsg : contains
+    IMConversation ||--o| IMConversationExt : extends
+    IMMsg ||--o{ IMMsgFile : has_attachment
+    IMMsg ||--o{ IMMsgCollection : collected_in
+```
+
+**Key relationships:**
+- `IMConversation` → `IMMsg`：会话包含消息
+- `IMMsg` → `IMMsgFile`：消息可带文件附件
+
+### Mind Domain
+
+```mermaid
+erDiagram
+    MindFolderInfo ||--o{ MindFolderInfo : contains
+    MindFolderInfo ||--o{ MindBaseInfo : contains
+    MindBaseInfo ||--o{ MindContentInfo : has_content
+    MindBaseInfo ||--o| MindIconInfo : has_icon
+    MindBaseInfo ||--o| MindRecycleInfo : can_recycle
+```
+
+**Key relationships:**
+- `MindFolderInfo` 自引用：脑图文件夹树形结构
+- `MindFolderInfo` → `MindBaseInfo`：文件夹包含脑图
+
+### BBS Domain
+
+```mermaid
+erDiagram
+    BBSForumInfo ||--o{ BBSTopicInfo : contains
+    BBSTopicInfo ||--o{ BBSDocumentInfo : contains
+    BBSForumInfo ||--o{ BBSPermissionInfo : has_permission
+    BBSPermissionInfo ||--o{ BBSPermissionRole : assigns_role
+    BBSForumInfo ||--o{ BBSOperationRecord : logs
+```
+
+**Key relationships:**
+- `BBSForumInfo` → `BBSTopicInfo` → `BBSDocumentInfo`：论坛-帖子-回复层级
+- `BBSForumInfo` → `BBSPermissionInfo`：论坛权限配置
+
+### AI Domain
+
+```mermaid
+erDiagram
+    AiModel ||--o{ Completion : generates
+    AiModel ||--o{ Clue : trained_by
+```
+
+**Key relationships:**
+- `AiModel` → `Completion`：模型生成对话记录
+- `AiModel` → `Clue`：模型训练数据
+
+## Domain Cross-Reference
+
+| 实体 | 被其他域引用 | 跨域关系 |
+|------|-------------|---------|
+| `Person` | Process, CMS, BBS, Meeting, Message | 流程审批人、文章作者、论坛用户、会议参与人、消息发送者 |
+| `Unit` | Process, Query | 流程组织范围、查询数据范围 |
+| `File` | CMS, Process, Meeting | 文章附件、流程文档、会议材料 |
+| `Group` | 全部域 | 权限分配的基本单元 |
+| `Role` | 全部域 | 角色权限的基础 |

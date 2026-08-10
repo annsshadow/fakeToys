@@ -1,7 +1,7 @@
 ---
 title: feat: OA4Rust 4-wave full realization (80 crates to production)
 type: feat
-status: active
+status: completed
 date: 2026-08-08
 origin: docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md
 ---

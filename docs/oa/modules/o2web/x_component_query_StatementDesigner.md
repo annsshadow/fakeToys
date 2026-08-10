@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+查询报表前端组件，负责查询设计的界面展示与交互操作。
 
 ## Entry Point
 

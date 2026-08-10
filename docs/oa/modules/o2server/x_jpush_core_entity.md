@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+推送核心实体模块，定义设备和模板等推送数据模型。
 
 ## Core Classes and Interfaces
 

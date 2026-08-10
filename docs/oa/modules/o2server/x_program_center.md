@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+程序中心模块，提供应用程序管理、脚本集合和配置功能。
 
 ## Core Classes and Interfaces
 

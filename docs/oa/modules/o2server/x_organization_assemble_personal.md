@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+organization assemble personal 模块。
 
 ## Core Classes and Interfaces
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+流程监控（BAM）组件，负责业务流程的实时监控和统计展示。
 
 ## Entry Point
 

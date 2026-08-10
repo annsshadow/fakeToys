@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+即时通讯组件（v2），负责消息收发和会话管理界面。
 
 ## Entry Point
 

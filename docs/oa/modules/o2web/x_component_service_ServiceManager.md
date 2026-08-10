@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+服务组件，负责服务管理的界面展示与交互操作。
 
 ## Entry Point
 

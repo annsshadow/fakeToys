@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+组件管控模块，处理应用中心、市场配置和部署管理。
 
 ## Core Classes and Interfaces
 

@@ -1,8 +1,9 @@
 ---
 title: refactor: O2OA 后端 Rust 改写
 type: refactor
-status: active
+status: superseded
 date: 2026-08-03
+<!-- Superseded by: docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md -->
 origin: docs/brainstorms/2026-08-03-o2server-rust-rewrite-requirements.md
 ---
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+流程引擎前端组件，负责办公中心的界面展示与交互操作。
 
 ## Entry Point
 

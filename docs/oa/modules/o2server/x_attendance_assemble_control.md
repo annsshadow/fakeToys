@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+考勤管控模块，处理考勤规则、排班管理和申诉审批流程。
 
 ## Core Classes and Interfaces
 

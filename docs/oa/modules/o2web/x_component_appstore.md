@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+应用商店组件，负责应用的分发和安装管理。
 
 ## Entry Point
 

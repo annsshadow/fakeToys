@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+CMS 管控模块，处理 CMS 栏目、文章、字典等内容的配置和管理。
 
 ## Core Classes and Interfaces
 

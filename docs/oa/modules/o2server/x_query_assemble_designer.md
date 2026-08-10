@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+查询设计器管控模块，提供查询视图的设计、创建和管理。
 
 ## Core Classes and Interfaces
 

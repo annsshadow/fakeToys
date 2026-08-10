@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+论坛个人中心组件，负责用户在论坛中的活动和设置管理。
 
 ## Entry Point
 

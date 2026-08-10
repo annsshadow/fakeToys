@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+笔记组件，负责个人笔记的创建和管理。
 
 ## Entry Point
 

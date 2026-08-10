@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+脑图编辑器，负责思维导图的创建、编辑和节点管理。
 
 ## Entry Point
 

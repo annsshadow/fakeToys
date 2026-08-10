@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+系统初始化模块，负责系统初始化检查、密钥设置和系统初始状态管理。
 
 ## Core Classes and Interfaces
 

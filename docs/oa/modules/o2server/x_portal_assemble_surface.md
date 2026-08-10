@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+门户展现模块，处理门户页面的预览、发布和渲染。
 
 ## Core Classes and Interfaces
 

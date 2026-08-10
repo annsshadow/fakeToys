@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+通用基础组件，提供共享的样式、工具函数和基础交互能力。
 
 ## Entry Point
 

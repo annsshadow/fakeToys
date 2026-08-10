@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+会议管控模块，处理会议业务编排、日程关联和会议室调度。
 
 ## Core Classes and Interfaces
 

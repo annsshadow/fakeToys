@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+热点图片管控模块，处理轮播配置、面板和应用管理。
 
 ## Core Classes and Interfaces
 

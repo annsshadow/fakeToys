@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+组织表达式模块，提供组织相关的脚本表达式和动态处理能力。
 
 ## Core Classes and Interfaces
 

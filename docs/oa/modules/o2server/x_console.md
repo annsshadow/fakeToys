@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+控制台模块，提供命令行、日志查看和系统监控功能。
 
 ## Core Classes and Interfaces
 

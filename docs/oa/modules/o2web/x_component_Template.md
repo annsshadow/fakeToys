@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+模板组件，负责表单模板、页面模板的加载和渲染。
 
 ## Entry Point
 

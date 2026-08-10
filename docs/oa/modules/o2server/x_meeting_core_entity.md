@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+会议核心实体模块，定义会议室和会议数据模型。
 
 ## Core Classes and Interfaces
 

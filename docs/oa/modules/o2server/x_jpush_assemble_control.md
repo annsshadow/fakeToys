@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+推送管控模块，处理推送配置、应用和消息管理。
 
 ## Core Classes and Interfaces
 

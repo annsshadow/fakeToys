@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+论坛帖子组件，负责帖子的阅读、回复和管理操作。
 
 ## Entry Point
 

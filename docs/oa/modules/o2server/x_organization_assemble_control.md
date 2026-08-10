@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+组织控制模块，提供人员、单位、角色、用户组的完整 CRUD 业务编排和权限管理。
 
 ## Core Classes and Interfaces
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+关联关系服务处理模块，处理关联数据的创建、保存和删除。
 
 ## Core Classes and Interfaces
 

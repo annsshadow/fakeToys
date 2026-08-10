@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+系统设置组件，负责系统参数的配置和管理。
 
 ## Entry Point
 

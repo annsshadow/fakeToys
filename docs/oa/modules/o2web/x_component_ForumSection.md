@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+论坛版块组件，负责论坛子版块的展示和管理。
 
 ## Entry Point
 

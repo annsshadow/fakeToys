@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+首页组件，负责门户首页的布局和个性化展示。
 
 ## Entry Point
 

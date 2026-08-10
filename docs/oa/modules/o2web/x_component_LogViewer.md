@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+日志查看器组件，负责系统日志和运行日志的浏览和筛选。
 
 ## Entry Point
 

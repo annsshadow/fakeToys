@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+流程平台设计器管控模块，处理流程应用的预览和发布管理。
 
 ## Core Classes and Interfaces
 

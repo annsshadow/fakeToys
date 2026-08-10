@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+论坛分区组件，负责论坛板块的分类管理和展示。
 
 ## Entry Point
 

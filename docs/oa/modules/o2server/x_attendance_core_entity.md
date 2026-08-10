@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+考勤核心实体模块，定义打卡记录、排班规则等考勤数据模型。
 
 ## Core Classes and Interfaces
 

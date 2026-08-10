@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+通用管控模块，处理参会范围、区域管理、发票和二维码等综合配置。
 
 ## Core Classes and Interfaces
 

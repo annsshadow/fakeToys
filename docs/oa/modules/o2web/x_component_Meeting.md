@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+会议管理组件，负责会议的预约、日程查看和参与管理。
 
 ## Entry Point
 

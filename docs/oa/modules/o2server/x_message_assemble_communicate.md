@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+消息通信模块，处理消息的发送、接收、已读未读统计等通信逻辑。
 
 ## Core Classes and Interfaces
 

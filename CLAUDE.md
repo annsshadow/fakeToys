@@ -72,3 +72,7 @@ When compressing, preserve in priority order:
 3. Current verification status (pass/fail)
 4. Open TODOs and rollback notes
 5. Tool outputs (can delete, keep pass/fail only)
+
+# Knowledge Store
+
+`docs/solutions/` — documented solutions to past problems (bugs, best practices, architecture patterns, workflow improvements), organized by category with YAML frontmatter (`module`, `tags`, `problem_type`). Relevant when implementing or debugging in the oa4rust or oa subproject areas.

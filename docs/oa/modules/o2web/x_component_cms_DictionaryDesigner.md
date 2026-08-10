@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+CMS（内容管理）前端组件，负责数据字典编辑的界面展示与交互操作，通过 REST API 与后端模块通信。
 
 ## Entry Point
 

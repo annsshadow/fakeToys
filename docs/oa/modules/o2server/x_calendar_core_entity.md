@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+日历核心实体模块，定义日历事件数据模型和基础查询。
 
 ## Core Classes and Interfaces
 

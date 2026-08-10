@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+AI 管控模块，处理 AI 应用、模型和对话的业务编排。
 
 ## Core Classes and Interfaces
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+文件管控模块，处理文件配置、存储池、分类管理等文件业务编排。
 
 ## Core Classes and Interfaces
 

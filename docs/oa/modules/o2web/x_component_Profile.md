@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+个人设置组件，负责用户个人信息和偏好设置的管理。
 
 ## Entry Point
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+流程平台核心实体模块，定义工作、任务、工单等流程数据模型。
 
 ## Core Classes and Interfaces
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+查询展现管控模块，处理查询视图的预览和结果展示。
 
 ## Core Classes and Interfaces
 

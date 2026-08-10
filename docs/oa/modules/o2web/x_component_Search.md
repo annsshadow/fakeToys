@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+全局搜索组件，提供对平台多类型数据的统一搜索入口。
 
 ## Entry Point
 

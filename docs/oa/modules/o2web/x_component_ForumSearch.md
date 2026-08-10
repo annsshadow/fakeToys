@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+论坛搜索组件，负责帖子和话题的全文检索功能。
 
 ## Entry Point
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+日历管控模块，处理日历配置和日历业务编排。
 
 ## Core Classes and Interfaces
 
