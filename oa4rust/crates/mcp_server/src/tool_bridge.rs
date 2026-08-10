@@ -1325,6 +1325,15 @@ static ROUTE_DEFS: &[RouteDef] = &[
     },
 ];
 
+// 合并静态路由与自动生成路由
+include!("generated_routes.rs");
+
+fn all_route_defs() -> Vec<RouteDef> {
+    let mut all = ROUTE_DEFS.to_vec();
+    all.extend_from_slice(&GENERATED_ROUTE_DEFS);
+    all
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
 // ToolBridge: owns the internal axum app and dispatches tool calls.
 // ──────────────────────────────────────────────────────────────────────────────
@@ -1442,9 +1451,9 @@ impl ToolBridge {
             .layer(axum::Extension(pool))
             .layer(axum::Extension(security_state.session_manager));
 
-        let route_map: HashMap<String, RouteDef> = ROUTE_DEFS
+        let route_map: HashMap<String, RouteDef> = all_defs
             .iter()
-            .map(|r| (r.tool_name.to_string(), *r))
+            .map(|r| (r.tool_name.to_string(), r.clone()))
             .collect();
 
         Self { app, route_map }
@@ -1452,7 +1461,8 @@ impl ToolBridge {
 
     /// Return the full tool catalog as MCP ListToolsResult.
     pub fn list_tools(&self) -> ListToolsResponse {
-        let tools: Vec<McpTool> = ROUTE_DEFS
+        let all_defs = all_route_defs();
+        let tools: Vec<McpTool> = all_defs
             .iter()
             .map(|def| {
                 let mut properties = HashMap::new();
