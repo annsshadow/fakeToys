@@ -32,7 +32,7 @@ pub struct EndpointDef {
     pub rust_path: &'static str,
     pub java_war: &'static str,
     pub java_action: &'static str,
-    pub body: Option<serde_json::Value>,
+    pub body: Option<&'static str>,
     pub requires_auth: bool,
 }
 
@@ -123,10 +123,10 @@ impl EndpointComparator {
         let headers = self.auth_headers();
 
         let (rust_status, rust_body) = self
-            .call_endpoint(&rust_url, def.method, headers.clone(), def.body.as_ref())
+            .call_endpoint(&rust_url, def.method, headers.clone(), def.body)
             .await;
         let (java_status, java_body) = self
-            .call_endpoint(&java_url, def.method, headers.clone(), def.body.as_ref())
+            .call_endpoint(&java_url, def.method, headers.clone(), def.body)
             .await;
 
         let java_unreachable = java_status.is_none() && java_body.is_none();
@@ -201,7 +201,7 @@ impl EndpointComparator {
         url: &str,
         method: &str,
         headers: Option<HashMap<String, String>>,
-        body: Option<&serde_json::Value>,
+        body: Option<&'static str>,
     ) -> (Option<u16>, Option<serde_json::Value>) {
         let mut request = match method.to_uppercase().as_str() {
             "POST" => self.client.post(url),
@@ -218,7 +218,9 @@ impl EndpointComparator {
             }
         }
         if let Some(b) = body {
-            request = request.json(b);
+            if let Ok(json) = serde_json::from_str::<serde_json::Value>(b) {
+                request = request.json(&json);
+            }
         }
 
         match request.send().await {

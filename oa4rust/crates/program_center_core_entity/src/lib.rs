@@ -3,204 +3,243 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use deadpool_postgres::Pool;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder};
 use shared::{
     error::AppError, response::ActionResult,
-    ControlClient, ControlPool,
 };
 use serde_json::Value;
-use std::sync::Arc;
 
+pub mod entities;
 pub mod routes;
 
 pub async fn application_list(
-    pool: Extension<Arc<dyn ControlPool>>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.acquire().await?;
-    let rows = client
-        .ctrl_query(
-            "SELECT id, name, category, sub_category, version, publisher FROM x_application ORDER BY name",
-            &[],
-        )
+    let models = entities::application::Entity::find()
+        .order_by_asc(entities::application::Column::Name)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get_str("id").to_string())),
-                ("name".to_string(), Value::String(row.get_str("name").to_string())),
-                ("category".to_string(), Value::String(row.get_str("category").to_string())),
-                ("subCategory".to_string(), Value::String(row.get_str("sub_category").to_string())),
-                ("version".to_string(), Value::String(row.get_str("version").to_string())),
-                ("publisher".to_string(), Value::String(row.get_str("publisher").to_string())),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("category".to_string(), Value::String(m.category.clone())),
+                (
+                    "subCategory".to_string(),
+                    Value::String(m.sub_category.clone()),
+                ),
+                ("version".to_string(), Value::String(m.version.clone())),
+                ("publisher".to_string(), Value::String(m.publisher.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn script_list(
-    pool: Extension<Arc<dyn ControlPool>>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.acquire().await?;
-    let rows = client
-        .ctrl_query(
-            "SELECT id, name, alias, validated, creator_person FROM x_script ORDER BY name",
-            &[],
-        )
+    let models = entities::script::Entity::find()
+        .order_by_asc(entities::script::Column::Name)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get_str("id").to_string())),
-                ("name".to_string(), Value::String(row.get_str("name").to_string())),
-                ("alias".to_string(), Value::String(row.get_str("alias").to_string())),
-                ("validated".to_string(), Value::Bool(row.get_bool("validated"))),
-                ("creatorPerson".to_string(), Value::String(row.get_str("creator_person").to_string())),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("alias".to_string(), Value::String(m.alias.clone())),
+                ("validated".to_string(), Value::Bool(m.validated)),
+                (
+                    "creatorPerson".to_string(),
+                    Value::String(m.creator_person.clone()),
+                ),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn invoke_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, alias, category, validated, creator_person FROM CTE_INVOKE WHERE deleted_at IS NULL ORDER BY name",
-            &[],
-        )
+    let models = entities::cte_invoke::Entity::find()
+        .filter(entities::cte_invoke::Column::DeletedAt.is_null())
+        .order_by_asc(entities::cte_invoke::Column::Name)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("application".to_string(), Value::String(row.get("id"))),
-                ("alias".to_string(), Value::String(row.get("alias"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("validated".to_string(), Value::Bool(row.get("validated"))),
-                ("creatorPerson".to_string(), Value::String(row.get("creator_person"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("application".to_string(), Value::String(m.id.clone())),
+                ("alias".to_string(), Value::String(m.alias.clone())),
+                ("category".to_string(), Value::String(m.category.clone())),
+                ("validated".to_string(), Value::Bool(m.validated)),
+                (
+                    "creatorPerson".to_string(),
+                    Value::String(m.creator_person.clone()),
+                ),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn agent_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, alias, description, validated, enable, cron FROM CTE_AGENT WHERE deleted_at IS NULL ORDER BY name",
-            &[],
-        )
+    let models = entities::cte_agent::Entity::find()
+        .filter(entities::cte_agent::Column::DeletedAt.is_null())
+        .order_by_asc(entities::cte_agent::Column::Name)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
                 ("type".to_string(), Value::String("agent".to_string())),
-                ("alias".to_string(), Value::String(row.get("alias"))),
-                ("description".to_string(), Value::String(row.get("description"))),
-                ("validated".to_string(), Value::Bool(row.get("validated"))),
-                ("enable".to_string(), Value::Bool(row.get("enable"))),
-                ("cron".to_string(), Value::String(row.get("cron"))),
+                ("alias".to_string(), Value::String(m.alias.clone())),
+                (
+                    "description".to_string(),
+                    Value::String(m.description.clone()),
+                ),
+                ("validated".to_string(), Value::Bool(m.validated)),
+                ("enable".to_string(), Value::Bool(m.enable)),
+                ("cron".to_string(), Value::String(m.cron.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn structure_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, extension, storage, length, description FROM CTE_STRUCTURE WHERE deleted_at IS NULL ORDER BY name",
-            &[],
-        )
+    let models = entities::cte_structure::Entity::find()
+        .filter(entities::cte_structure::Column::DeletedAt.is_null())
+        .order_by_asc(entities::cte_structure::Column::Name)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("type".to_string(), Value::String(row.get::<_, Option<String>>("extension").unwrap_or_default())),
-                ("storage".to_string(), Value::String(row.get("storage"))),
-                ("length".to_string(), row.get::<_, Option<i64>>("length").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
-                ("description".to_string(), Value::String(row.get("description"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                (
+                    "type".to_string(),
+                    Value::String(
+                        m.extension
+                            .clone()
+                            .unwrap_or_default(),
+                    ),
+                ),
+                ("storage".to_string(), Value::String(m.storage.clone())),
+                (
+                    "length".to_string(),
+                    m.length
+                        .map(|v| Value::Number(serde_json::Number::from(v)))
+                        .unwrap_or(Value::Null),
+                ),
+                (
+                    "description".to_string(),
+                    Value::String(m.description.clone()),
+                ),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub fn program_center_core_entity_router(pool: Pool) -> Router {
-    Router::new()
+pub fn program_center_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
+
+    let router = Router::new()
         .route("/jaxrs/program_center/application/list", get(application_list))
         .route("/jaxrs/program_center/script/list", get(script_list))
         .route("/jaxrs/program_center/invoke/list", get(invoke_list))
         .route("/jaxrs/program_center/agent/list", get(agent_list))
-        .route("/jaxrs/program_center/structure/list", get(structure_list))
-        .layer(Extension(pool))
+        .route("/jaxrs/program_center/structure/list", get(structure_list));
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]
-pub fn program_center_mock_router(pool: Arc<dyn ControlPool>) -> Router {
+pub fn program_center_mock_router(_db: DatabaseConnection) -> Router {
     Router::new()
         .route("/jaxrs/program_center/application/list", get(application_list))
         .route("/jaxrs/program_center/script/list", get(script_list))
-        .layer(Extension(pool))
+        .layer(Extension(_db))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {

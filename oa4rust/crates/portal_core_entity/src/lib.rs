@@ -1,139 +1,169 @@
 use axum::{
-    extract::Extension,
+    extract::{Extension, Json, Path},
     routing::{get, post},
-    Json, Router,
+    Json as AxumJson, Router,
 };
-use deadpool_postgres::Pool;
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub mod entities;
 pub mod routes;
 
-#[cfg(test)]
-mod tests;
+use entities::{portal, widget, portal_page, script};
 
 pub async fn portal_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, alias, description, portal_category FROM x_portal ORDER BY name",
-            &[],
-        )
+    let models = portal::Entity::find()
+        .order_by_asc(portal::Column::Name)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("alias".to_string(), Value::String(row.get("alias"))),
-                ("description".to_string(), Value::String(row.get("description"))),
-                ("portalCategory".to_string(), Value::String(row.get("portal_category"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("alias".to_string(), Value::String(m.alias.clone())),
+                ("description".to_string(), Value::String(m.description.clone())),
+                (
+                    "portalCategory".to_string(),
+                    Value::String(m.portal_category.clone()),
+                ),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn widget_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, alias, category, portal FROM x_widget ORDER BY name",
-            &[],
-        )
+    let models = widget::Entity::find()
+        .order_by_asc(widget::Column::Name)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("alias".to_string(), Value::String(row.get("alias"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("portal".to_string(), Value::String(row.get("portal"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("alias".to_string(), Value::String(m.alias.clone())),
+                ("category".to_string(), Value::String(m.category.clone())),
+                ("portal".to_string(), Value::String(m.portal.clone())),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn page_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, portal_id, name, content, status, create_time FROM x_portal_page WHERE deleted_at IS NULL ORDER BY create_time DESC",
-            &[],
-        )
+    let models = portal_page::Entity::find()
+        .filter(portal_page::Column::DeletedAt.is_null())
+        .order_by_desc(portal_page::Column::CreateTime)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("portalId".to_string(), Value::String(row.get("portal_id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("portalId".to_string(), Value::String(m.portal_id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                (
+                    "content".to_string(),
+                    m.content
+                        .clone()
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
+                ),
+                ("status".to_string(), Value::String(m.status.clone())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn page_get(
-    pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    db: Extension<DatabaseConnection>,
+    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            "SELECT id, portal_id, name, content, status, create_time FROM x_portal_page WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
+    let model = portal_page::Entity::find()
+        .filter(portal_page::Column::Id.eq(&id))
+        .filter(portal_page::Column::DeletedAt.is_null())
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    match row {
-        Some(row) => {
+    match model {
+        Some(m) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("portalId".to_string(), Value::String(row.get("portal_id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("portalId".to_string(), Value::String(m.portal_id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                (
+                    "content".to_string(),
+                    m.content
+                        .clone()
+                        .map(Value::String)
+                        .unwrap_or(Value::Null),
+                ),
+                ("status".to_string(), Value::String(m.status.clone())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -142,119 +172,184 @@ pub async fn page_get(
 }
 
 pub async fn page_create(
-    pool: Extension<Pool>,
-    axum::extract::Json(payload): Json<Value>,
+    db: Extension<DatabaseConnection>,
+    AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let portal_id = payload.get("portalId").and_then(|v| v.as_str()).unwrap_or_default();
-    let name = payload.get("name").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("name is required".to_string()))?;
-    let content = payload.get("content").and_then(|v| v.as_str()).unwrap_or_default();
-    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or("active");
+    use portal_page::ActiveModel;
+
+    let portal_id = payload
+        .get("portalId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("name is required".to_string()))?;
+    let name = name.to_string();
+    let content = payload
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("active");
     let id = uuid::Uuid::new_v4().to_string();
-    client
-        .execute(
-            "INSERT INTO x_portal_page (id, portal_id, name, content, status, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
-            &[&id, &portal_id, &name, &content, &status],
-        )
+
+    let active = ActiveModel {
+        id: sea_orm::ActiveValue::Set(id.clone()),
+        portal_id: sea_orm::ActiveValue::Set(portal_id),
+        name: sea_orm::ActiveValue::Set(name.clone()),
+        content: sea_orm::ActiveValue::Set(Some(content)),
+        status: sea_orm::ActiveValue::Set(status.to_string()),
+        create_time: sea_orm::ActiveValue::Set(None),
+        update_time: sea_orm::ActiveValue::Set(None),
+        deleted_at: sea_orm::ActiveValue::Set(None),
+    };
+
+    active
+        .insert(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(name.to_string())),
+        ("name".to_string(), Value::String(name)),
         ("status".to_string(), Value::String(status.to_string())),
     ])))))
 }
 
 pub async fn page_update(
-    pool: Extension<Pool>,
-    axum::extract::Json(payload): Json<Value>,
+    db: Extension<DatabaseConnection>,
+    AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let id = payload.get("id").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("id is required".to_string()))?;
-    let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default();
-    let content = payload.get("content").and_then(|v| v.as_str()).unwrap_or_default();
-    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or("active");
-    let result = client
-        .execute(
-            "UPDATE x_portal_page SET name = $1, content = $2, status = $3 WHERE id = $4 AND deleted_at IS NULL",
-            &[&name, &content, &status, &id],
-        )
+    use portal_page::ActiveModel;
+
+    let id = payload
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("id is required".to_string()))?;
+    let id = id.to_string();
+    let name = payload
+        .get("name")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let content = payload
+        .get("content")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or("active");
+
+    let model = portal_page::Entity::find()
+        .filter(portal_page::Column::Id.eq(&id))
+        .filter(portal_page::Column::DeletedAt.is_null())
+        .one(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::NotFound)?;
+
+    let mut active: ActiveModel = model.into();
+    active.name = sea_orm::ActiveValue::Set(name);
+    active.content = sea_orm::ActiveValue::Set(Some(content));
+    active.status = sea_orm::ActiveValue::Set(status.to_string());
+
+    active
+        .update(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
-        return Ok(Json(ActionResult::error("page not found")));
-    }
-
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id.to_string())),
+            ("id".to_string(), Value::String(id)),
             ("updated".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
 
 pub async fn page_remove(
-    pool: Extension<Pool>,
-    axum::extract::Json(payload): Json<Value>,
+    db: Extension<DatabaseConnection>,
+    AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let id = payload.get("id").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("id is required".to_string()))?;
-    let result = client
-        .execute(
-            "UPDATE x_portal_page SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
+    use portal_page::ActiveModel;
+
+    let id = payload
+        .get("id")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::BadRequest("id is required".to_string()))?;
+    let id = id.to_string();
+
+    let model = portal_page::Entity::find()
+        .filter(portal_page::Column::Id.eq(&id))
+        .filter(portal_page::Column::DeletedAt.is_null())
+        .one(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::NotFound)?;
+
+    let mut active: ActiveModel = model.into();
+    active.deleted_at = sea_orm::ActiveValue::Set(Some(chrono::Utc::now().naive_utc()));
+
+    active
+        .update(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
-        return Ok(Json(ActionResult::error("page not found or already deleted")));
-    }
-
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id.to_string())),
+            ("id".to_string(), Value::String(id)),
             ("deleted".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
 
 pub async fn script_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, alias, validated FROM x_script ORDER BY name",
-            &[],
-        )
+    let models = script::Entity::find()
+        .order_by_asc(script::Column::Name)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("alias".to_string(), Value::String(row.get("alias"))),
-                ("validated".to_string(), Value::Bool(row.get("validated"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("alias".to_string(), Value::String(m.alias.clone())),
+                ("validated".to_string(), Value::Bool(m.validated)),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub fn portal_core_entity_router(pool: Pool) -> Router {
-    Router::new()
+pub fn portal_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
+
+    let router = Router::new()
         .route("/jaxrs/portal/portal/list", get(portal_list))
         .route("/jaxrs/portal/widget/list", get(widget_list))
         .route("/jaxrs/portal/page/list", get(page_list))
@@ -262,9 +357,15 @@ pub fn portal_core_entity_router(pool: Pool) -> Router {
         .route("/jaxrs/portal/page/create", post(page_create))
         .route("/jaxrs/portal/page/update", post(page_update))
         .route("/jaxrs/portal/page/remove", post(page_remove))
-        .route("/jaxrs/portal/script/list", get(script_list))
-        .layer(Extension(pool))
+        .route("/jaxrs/portal/script/list", get(script_list));
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
+
+#[cfg(test)]
+mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::portal_core_entity_router(pool)

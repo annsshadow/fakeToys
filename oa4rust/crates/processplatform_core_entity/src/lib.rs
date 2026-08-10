@@ -3,221 +3,314 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use deadpool_postgres::Pool;
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub mod entities;
 pub mod routes;
 
-#[cfg(test)]
-mod tests;
+use entities::{pp_work, pp_task, pp_ticket, pp_work_completed};
 
 pub async fn work_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, title, creator_id, status, form_data, create_time, update_time FROM PROCESS_WORK WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 20",
-            &[],
-        )
+    let models = pp_work::Entity::find()
+        .filter(pp_work::Column::DeletedAt.is_null())
+        .order_by_desc(pp_work::Column::CreateTime)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("creatorId".to_string(), Value::String(row.get("creator_id"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("title".to_string(), Value::String(m.title.clone())),
+                ("creatorId".to_string(), Value::String(m.creator_id.clone())),
+                ("status".to_string(), Value::String(m.status.clone())),
                 ("formData".to_string(), {
-                    let fd: Option<String> = row.get("form_data");
-                    fd.and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(Value::Null)
+                    let fd: Option<String> = m.form_data.clone();
+                    fd.and_then(|s| serde_json::from_str(&s).ok())
+                        .unwrap_or(Value::Null)
                 }),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
+                ),
+                (
+                    "updateTime".to_string(),
+                    Value::String(
+                        m.update_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn work_get(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_one(
-            "SELECT id, title, creator_id, status, form_data, create_time, update_time FROM PROCESS_WORK WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
+    let model = pp_work::Entity::find()
+        .filter(pp_work::Column::Id.eq(&id))
+        .filter(pp_work::Column::DeletedAt.is_null())
+        .one(&db.0)
         .await
-        .map_err(|_| AppError::NotFound)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::NotFound)?;
 
     let result = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(row.get("id"))),
-        ("title".to_string(), Value::String(row.get("title"))),
-        ("creatorId".to_string(), Value::String(row.get("creator_id"))),
-        ("status".to_string(), Value::String(row.get("status"))),
+        ("id".to_string(), Value::String(model.id.clone())),
+        ("title".to_string(), Value::String(model.title.clone())),
+        ("creatorId".to_string(), Value::String(model.creator_id.clone())),
+        ("status".to_string(), Value::String(model.status.clone())),
         ("formData".to_string(), {
-            let fd: Option<String> = row.get("form_data");
-            fd.and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(Value::Null)
+            let fd: Option<String> = model.form_data.clone();
+            fd.and_then(|s| serde_json::from_str(&s).ok())
+                .unwrap_or(Value::Null)
         }),
-        ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ("updateTime".to_string(), Value::String(row.get("update_time"))),
+        (
+            "createTime".to_string(),
+            Value::String(
+                model
+                    .create_time
+                    .clone()
+                    .map(|dt| dt.to_string())
+                    .unwrap_or_default(),
+            ),
+        ),
+        (
+            "updateTime".to_string(),
+            Value::String(
+                model
+                    .update_time
+                    .clone()
+                    .map(|dt| dt.to_string())
+                    .unwrap_or_default(),
+            ),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
 }
 
 pub async fn task_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, work_id, title, assignee_id, status, create_time FROM PROCESS_TASK WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 20",
-            &[],
-        )
+    let models = pp_task::Entity::find()
+        .filter(pp_task::Column::DeletedAt.is_null())
+        .order_by_desc(pp_task::Column::CreateTime)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("workId".to_string(), Value::String(row.get("work_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("assigneeId".to_string(), Value::String(row.get("assignee_id"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("workId".to_string(), Value::String(m.work_id.clone())),
+                ("title".to_string(), Value::String(m.title.clone())),
+                ("assigneeId".to_string(), Value::String(m.assignee_id.clone())),
+                ("status".to_string(), Value::String(m.status.clone())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn task_get(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_one(
-            "SELECT id, work_id, title, assignee_id, status, create_time FROM PROCESS_TASK WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
+    let model = pp_task::Entity::find()
+        .filter(pp_task::Column::Id.eq(&id))
+        .filter(pp_task::Column::DeletedAt.is_null())
+        .one(&db.0)
         .await
-        .map_err(|_| AppError::NotFound)?;
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::NotFound)?;
 
     let result = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(row.get("id"))),
-        ("workId".to_string(), Value::String(row.get("work_id"))),
-        ("title".to_string(), Value::String(row.get("title"))),
-        ("assigneeId".to_string(), Value::String(row.get("assignee_id"))),
-        ("status".to_string(), Value::String(row.get("status"))),
-        ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ("id".to_string(), Value::String(model.id.clone())),
+        ("workId".to_string(), Value::String(model.work_id.clone())),
+        ("title".to_string(), Value::String(model.title.clone())),
+        ("assigneeId".to_string(), Value::String(model.assignee_id.clone())),
+        ("status".to_string(), Value::String(model.status.clone())),
+        (
+            "createTime".to_string(),
+            Value::String(
+                model
+                    .create_time
+                    .clone()
+                    .map(|dt| dt.to_string())
+                    .unwrap_or_default(),
+            ),
+        ),
     ]));
 
     Ok(Json(ActionResult::success(result)))
 }
 
 pub async fn ticket_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, work_id, title, description, status, create_time FROM PROCESS_TICKET WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 20",
-            &[],
-        )
+    let models = pp_ticket::Entity::find()
+        .filter(pp_ticket::Column::DeletedAt.is_null())
+        .order_by_desc(pp_ticket::Column::CreateTime)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("workId".to_string(), Value::String(row.get("work_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("description".to_string(), {
-                    row.get::<_, Option<String>>("description")
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("workId".to_string(), Value::String(m.work_id.clone())),
+                ("title".to_string(), Value::String(m.title.clone())),
+                (
+                    "description".to_string(),
+                    m.description
+                        .clone()
                         .map(Value::String)
-                        .unwrap_or(Value::Null)
-                }),
-                ("status".to_string(), Value::String(row.get("status"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                        .unwrap_or(Value::Null),
+                ),
+                ("status".to_string(), Value::String(m.status.clone())),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn workcompleted_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, work_id, result, complete_time FROM PROCESS_WORK_COMPLETED WHERE deleted_at IS NULL ORDER BY complete_time DESC LIMIT 20",
-            &[],
-        )
+    let models = pp_work_completed::Entity::find()
+        .filter(pp_work_completed::Column::DeletedAt.is_null())
+        .order_by_desc(pp_work_completed::Column::CompleteTime)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("workId".to_string(), Value::String(row.get("work_id"))),
-                ("result".to_string(), Value::String(row.get("result"))),
-                ("completeTime".to_string(), Value::String(row.get("complete_time"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("workId".to_string(), Value::String(m.work_id.clone())),
+                ("result".to_string(), Value::String(m.result.clone())),
+                (
+                    "completeTime".to_string(),
+                    Value::String(
+                        m.complete_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
+                ),
             ]))
         })
         .collect();
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub fn processplatform_core_entity_router(pool: Pool) -> Router {
-    Router::new()
+pub fn processplatform_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
+
+    let router = Router::new()
         .route("/jaxrs/process/work/list", get(work_list))
         .route("/jaxrs/process/work/{id}", get(work_get))
         .route("/jaxrs/process/task/list", get(task_list))
         .route("/jaxrs/process/task/{id}", get(task_get))
         .route("/jaxrs/process/ticket/list", get(ticket_list))
-        .route("/jaxrs/process/workcompleted/list", get(workcompleted_list))
-        .layer(Extension(pool))
+        .route(
+            "/jaxrs/process/workcompleted/list",
+            get(workcompleted_list),
+        );
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
+
+#[cfg(test)]
+mod tests;
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::processplatform_core_entity_router(pool)

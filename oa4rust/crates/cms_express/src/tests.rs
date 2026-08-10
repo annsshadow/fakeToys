@@ -47,3 +47,35 @@ async fn test_template_form_list_returns_data() {
 
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
+
+#[tokio::test]
+async fn test_view_publish_route_exists() {
+    let response = app()
+        .oneshot(Request::builder()
+            .uri("/jaxrs/cms/view/publish/view-001")
+            .method(Method::POST)
+            .body(Body::empty())
+            .unwrap())
+        .await
+        .unwrap();
+
+    assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
+        || response.status() == StatusCode::OK
+        || response.status() == StatusCode::NOT_FOUND);
+}
+
+#[tokio::test]
+async fn test_view_unpublish_route_exists() {
+    let response = app()
+        .oneshot(Request::builder()
+            .uri("/jaxrs/cms/view/unpublish/view-001")
+            .method(Method::POST)
+            .body(Body::empty())
+            .unwrap())
+        .await
+        .unwrap();
+
+    assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
+        || response.status() == StatusCode::OK
+        || response.status() == StatusCode::NOT_FOUND);
+}

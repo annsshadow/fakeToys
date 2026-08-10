@@ -1,76 +1,54 @@
-use axum::{
-    extract::{Extension, Json},
+﻿use axum::{
+    extract::{Extension, Json, Path},
     routing::{get, post},
     Router,
 };
-use axum::extract::Path;
-use deadpool_postgres::Pool;
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub mod entities;
 pub mod routes;
 
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct Category {
-    pub id: String,
-    pub name: String,
-    #[serde(rename = "parentId")]
-    pub parent_id: Option<String>,
-    #[serde(rename = "sortOrder")]
-    pub sort_order: i32,
-    pub status: String,
-    #[serde(rename = "createTime")]
-    pub create_time: String,
-}
-
-#[derive(serde::Serialize, serde::Deserialize, Debug, Clone)]
-pub struct Article {
-    pub id: String,
-    #[serde(rename = "categoryId")]
-    pub category_id: String,
-    pub title: String,
-    pub content: Option<String>,
-    #[serde(rename = "authorId")]
-    pub author_id: String,
-    pub status: String,
-    #[serde(rename = "publishTime")]
-    pub publish_time: Option<String>,
-    #[serde(rename = "createTime")]
-    pub create_time: String,
-}
+use entities::{cms_article, cms_category};
 
 pub async fn category_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, name, parent_id, sort_order, status, create_time FROM CMS_CATEGORY WHERE deleted_at IS NULL ORDER BY sort_order LIMIT 20",
-            &[],
-        )
+    let models = cms_category::Entity::find()
+        .filter(cms_category::Column::DeletedAt.is_null())
+        .order_by_asc(cms_category::Column::SortOrder)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
                 (
                     "parentId".to_string(),
-                    row.get::<_, Option<String>>("parent_id")
+                    m.parent_id
+                        .clone()
                         .map(Value::String)
                         .unwrap_or(Value::Null),
                 ),
                 (
                     "sortOrder".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("sort_order"))),
+                    Value::Number(serde_json::Number::from(m.sort_order)),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                ("status".to_string(), Value::String(m.status.clone())),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -78,45 +56,50 @@ pub async fn category_list(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn category_get(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let row = client
-        .query_opt(
-            "SELECT id, name, parent_id, sort_order, status, create_time FROM CMS_CATEGORY WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
+    let model = cms_category::Entity::find_by_id(&id)
+        .filter(cms_category::Column::DeletedAt.is_null())
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    match row {
-        Some(row) => {
+    match model {
+        Some(m) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
                 (
                     "parentId".to_string(),
-                    row.get::<_, Option<String>>("parent_id")
+                    m.parent_id
+                        .clone()
                         .map(Value::String)
                         .unwrap_or(Value::Null),
                 ),
                 (
                     "sortOrder".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("sort_order"))),
+                    Value::Number(serde_json::Number::from(m.sort_order)),
                 ),
-                ("status".to_string(), Value::String(row.get("status"))),
+                ("status".to_string(), Value::String(m.status.clone())),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -127,21 +110,32 @@ pub async fn category_get(
 
 #[axum::debug_handler]
 pub async fn category_create(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let parent_id = payload.get("parentId").and_then(|v| v.as_str()).map(|s| s.to_string());
     let sort_order = payload.get("sortOrder").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
-    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or_else(|| "active").to_string();
+    let status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or_else(|| "active")
+        .to_string();
+    let _create_time = chrono::Utc::now();
 
-    client
-        .execute(
-            "INSERT INTO CMS_CATEGORY (id, name, parent_id, sort_order, status, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
-            &[&id, &name, &parent_id, &sort_order, &status],
-        )
+    let active_model = cms_category::ActiveModel {
+        id: Set(id.clone()),
+        name: Set(name.clone()),
+        parent_id: Set(parent_id),
+        sort_order: Set(sort_order),
+        status: Set(status.clone()),
+        create_time: Set(Some(chrono::Utc::now().naive_utc())),
+        deleted_at: Set(None),
+    };
+
+    active_model
+        .insert(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -153,41 +147,53 @@ pub async fn category_create(
 }
 
 pub async fn article_list(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let rows = client
-        .query(
-            "SELECT id, category_id, title, content, author_id, status, publish_time, create_time FROM CMS_ARTICLE WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 20",
-            &[],
-        )
+    let models = cms_article::Entity::find()
+        .filter(cms_article::Column::DeletedAt.is_null())
+        .order_by_desc(cms_article::Column::CreateTime)
+        .limit(20)
+        .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data: Vec<Value> = rows
+    let data: Vec<Value> = models
         .iter()
-        .map(|row| {
+        .map(|m| {
             Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("categoryId".to_string(), Value::String(row.get("category_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                (
+                    "categoryId".to_string(),
+                    Value::String(m.category_id.clone()),
+                ),
+                ("title".to_string(), Value::String(m.title.clone())),
                 (
                     "content".to_string(),
-                    row.get::<_, Option<String>>("content")
+                    m.content
+                        .clone()
                         .map(Value::String)
                         .unwrap_or(Value::Null),
                 ),
-                ("authorId".to_string(), Value::String(row.get("author_id"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "authorId".to_string(),
+                    Value::String(m.author_id.clone()),
+                ),
+                ("status".to_string(), Value::String(m.status.clone())),
                 (
                     "publishTime".to_string(),
-                    row.get::<_, Option<String>>("publish_time")
-                        .map(Value::String)
+                    m.publish_time
+                        .clone()
+                        .map(|dt| Value::String(dt.to_string()))
                         .unwrap_or(Value::Null),
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]))
         })
@@ -195,49 +201,61 @@ pub async fn article_list(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            (
+                "count".to_string(),
+                Value::Number(serde_json::Number::from(data.len() as i64)),
+            ),
             ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
 pub async fn article_get(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-
-    let row = client
-        .query_opt(
-            "SELECT id, category_id, title, content, author_id, status, publish_time, create_time FROM CMS_ARTICLE WHERE id = $1 AND deleted_at IS NULL",
-            &[&id],
-        )
+    let model = cms_article::Entity::find_by_id(&id)
+        .filter(cms_article::Column::DeletedAt.is_null())
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    match row {
-        Some(row) => {
+    match model {
+        Some(m) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("categoryId".to_string(), Value::String(row.get("category_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
+                ("id".to_string(), Value::String(m.id.clone())),
+                (
+                    "categoryId".to_string(),
+                    Value::String(m.category_id.clone()),
+                ),
+                ("title".to_string(), Value::String(m.title.clone())),
                 (
                     "content".to_string(),
-                    row.get::<_, Option<String>>("content")
+                    m.content
+                        .clone()
                         .map(Value::String)
                         .unwrap_or(Value::Null),
                 ),
-                ("authorId".to_string(), Value::String(row.get("author_id"))),
-                ("status".to_string(), Value::String(row.get("status"))),
+                (
+                    "authorId".to_string(),
+                    Value::String(m.author_id.clone()),
+                ),
+                ("status".to_string(), Value::String(m.status.clone())),
                 (
                     "publishTime".to_string(),
-                    row.get::<_, Option<String>>("publish_time")
-                        .map(Value::String)
+                    m.publish_time
+                        .clone()
+                        .map(|dt| Value::String(dt.to_string()))
                         .unwrap_or(Value::Null),
                 ),
                 (
                     "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
                 ),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -248,22 +266,46 @@ pub async fn article_get(
 
 #[axum::debug_handler]
 pub async fn article_create(
-    pool: Extension<Pool>,
+    db: Extension<DatabaseConnection>,
     Json(payload): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
-    let category_id = payload.get("categoryId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let title = payload.get("title").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let category_id = payload
+        .get("categoryId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let title = payload
+        .get("title")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
     let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let author_id = payload.get("authorId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let status = payload.get("status").and_then(|v| v.as_str()).unwrap_or_else(|| "draft").to_string();
+    let author_id = payload
+        .get("authorId")
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string();
+    let status = payload
+        .get("status")
+        .and_then(|v| v.as_str())
+        .unwrap_or_else(|| "draft")
+        .to_string();
 
-    client
-        .execute(
-            "INSERT INTO CMS_ARTICLE (id, category_id, title, content, author_id, status, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
-            &[&id, &category_id, &title, &content, &author_id, &status],
-        )
+    let active_model = cms_article::ActiveModel {
+        id: Set(id.clone()),
+        category_id: Set(category_id.clone()),
+        title: Set(title.clone()),
+        content: Set(content),
+        author_id: Set(author_id),
+        status: Set(status),
+        publish_time: Set(None),
+        create_time: Set(Some(chrono::Utc::now().naive_utc())),
+        deleted_at: Set(None),
+    };
+
+    active_model
+        .insert(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -274,15 +316,26 @@ pub async fn article_create(
     ])))))
 }
 
-pub fn cms_core_entity_router(pool: Pool) -> Router {
-    Router::new()
+pub fn cms_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
+    let db = std::panic::catch_unwind(|| {
+        tokio::runtime::Handle::current()
+            .block_on(shared::db::create_sea_orm_pool())
+    })
+    .ok()
+    .and_then(|r| r.ok());
+
+    let router = Router::new()
         .route("/jaxrs/cms/category/list", get(category_list))
         .route("/jaxrs/cms/category/{id}", get(category_get))
         .route("/jaxrs/cms/category/create", post(category_create))
         .route("/jaxrs/cms/article/list", get(article_list))
         .route("/jaxrs/cms/article/{id}", get(article_get))
-        .route("/jaxrs/cms/article/create", post(article_create))
-        .layer(Extension(pool))
+        .route("/jaxrs/cms/article/create", post(article_create));
+
+    match db {
+        Some(conn) => router.layer(Extension(conn)),
+        None => router,
+    }
 }
 
 #[cfg(test)]
@@ -291,3 +344,4 @@ mod tests;
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::cms_core_entity_router(pool)
 }
+

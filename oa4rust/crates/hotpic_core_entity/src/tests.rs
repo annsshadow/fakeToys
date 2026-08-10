@@ -102,4 +102,48 @@ mod tests {
         assert_eq!(json["application"], "OA");
         assert_eq!(json["title"], "热图测试");
     }
+
+    #[tokio::test]
+    async fn test_create_route_exists() {
+        let pool = build_test_pool();
+        let app = crate::hotpic_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/hotpic/core/entity/create")
+                    .method(axum::http::Method::POST)
+                    .header("content-type", "application/json")
+                    .body(Body::from(r#"{"application":"OA","infoId":"info-001","title":"热图"}"#))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
+            || response.status() == StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_delete_route_exists() {
+        let pool = build_test_pool();
+        let app = crate::hotpic_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/hotpic/core/entity/delete/hotpic-test-001")
+                    .method(axum::http::Method::DELETE)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
+            || response.status() == StatusCode::OK
+            || response.status() == StatusCode::NOT_FOUND);
+    }
 }

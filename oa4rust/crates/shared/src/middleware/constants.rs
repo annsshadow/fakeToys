@@ -92,4 +92,6 @@ pub const ADMIN_WRITE_PREFIXES: &[&str] = &[
     "/jaxrs/unit",
     "/jaxrs/role",
     "/jaxrs/group",
+    "/jaxrs/organization/person",
+    "/jaxrs/organization/group",
 ];

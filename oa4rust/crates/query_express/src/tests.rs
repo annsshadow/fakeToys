@@ -80,3 +80,22 @@ fn test_action_result_success_with_null_message() {
     assert!(result.message.is_none());
     assert_eq!(result.data, Some(0));
 }
+
+#[tokio::test]
+async fn test_create_query_route_exists() {
+    let pool = build_test_pool();
+    let app = crate::router(pool);
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/jaxrs/query/create")
+                .method(Method::POST)
+                .header("content-type", "application/json")
+                .body(Body::from(r#"{"name":"测试查询","queryType":"simple"}"#))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert!(response.status() == StatusCode::INTERNAL_SERVER_ERROR
+        || response.status() == StatusCode::OK);
+}

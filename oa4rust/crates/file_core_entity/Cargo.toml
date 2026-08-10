@@ -7,7 +7,7 @@ rust-version.workspace = true
 [dependencies]
 axum.workspace = true
 tokio.workspace = true
-sqlx.workspace = true
+sea-orm.workspace = true
 deadpool-postgres.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -17,6 +17,7 @@ uuid.workspace = true
 tower.workspace = true
 
 shared = { path = "../shared" }
+chrono.workspace = true
 
 [dev-dependencies]
 tower.workspace = true

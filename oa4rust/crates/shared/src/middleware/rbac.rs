@@ -198,6 +198,13 @@ impl PermissionRegistry {
         registry.register_prefix("/jaxrs/unit", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/role", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/group", PermissionLevel::Authenticated);
+        // 组织核心实体写操作端点
+        registry.register_prefix("/jaxrs/organization/person", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/organization/group", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/organization/definition", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/organization/identity", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/organization/custom", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/organization/bind", PermissionLevel::Authenticated);
         // 通用 jaxrs 端点兜底
         registry.register_prefix("/jaxrs", PermissionLevel::Authenticated);
         registry

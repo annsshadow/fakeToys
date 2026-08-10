@@ -15,3 +15,5 @@ tracing.workspace = true
 uuid = { version = "1", features = ["v4"] }
 tower.workspace = true
 deadpool-postgres.workspace = true
+sea-orm.workspace = true
+chrono.workspace = true

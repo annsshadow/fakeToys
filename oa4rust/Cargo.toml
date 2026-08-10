@@ -112,6 +112,7 @@ query_core_express = { path = "crates/query_core_express" }
 [workspace]
 members = [
     "crates/shared",
+    "crates/orm",
     "crates/auth",
     "crates/personal",
     "crates/express",
@@ -221,7 +222,8 @@ serde.workspace = true
 [workspace.dependencies]
 axum = { version = "0.8", features = ["macros", "json"] }
 tokio = { version = "1", features = ["full"] }
-sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "macros", "chrono"] }
+ sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "macros", "chrono"] }
+ sea-orm = { version = "1.0", features = ["runtime-tokio-rustls", "sqlx-postgres", "macros", "with-chrono", "with-uuid"] }
 deadpool-postgres = "0.12"
 dotenvy = "0.15"
 serde = { version = "1", features = ["derive"] }
