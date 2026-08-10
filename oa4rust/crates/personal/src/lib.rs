@@ -12,6 +12,7 @@ use shared::response::ActionResult;
 use auth::SessionManager;
 
 pub mod password;
+pub mod regist;
 pub mod reset;
 
 // --- 数据模型 ---
@@ -170,6 +171,21 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
             "/jaxrs/reset/password/anonymous",
             post(reset::reset_password_anonymous),
         )
+        // 注册端点（Public，无需认证）
+        .route("/jaxrs/person/regist", post(regist::register))
+        .route(
+            "/jaxrs/person/regist/check/name/{name}",
+            get(regist::check_name),
+        )
+        .route(
+            "/jaxrs/person/regist/check/mobile/{mobile}",
+            get(regist::check_mobile),
+        )
+        .route(
+            "/jaxrs/person/regist/check/email/{email}",
+            get(regist::check_email),
+        )
+        .route("/jaxrs/person/regist/code", post(regist::send_regist_code))
         .layer(Extension(pool))
         .layer(Extension(session_manager))
         .layer(Extension(reset_store))
