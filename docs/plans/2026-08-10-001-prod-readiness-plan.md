@@ -90,13 +90,13 @@ oa4rust 已完成 81 个 crate 的真实化和 SeaORM 迁移，但 `docs/plans/`
 - 模块卡片具体措辞——实施时需对照 Java 源码确认职责描述准确
 - API 文档生成脚本的模块名到 action JSON 的映射规则——需在实际运行中调整
 - application/script DELETE 端点返回 error 而非 success+note（已修复：返回 ActionResult::error）
-- update/delete 端点授权检查粒度——需确认 `authorize_middleware` 是否包含资源级校验，如仅角色级则需补充 IDOR 防护（P0 发现，需设计决策）
-- 输入验证除 name 非空外，是否需要字段长度限制（如 name ≤ 255）和基础清洗（P1 发现）
-- invoke 响应中 application 字段语义：当前设为自身 ID，需确认是否为 bug（P0 发现）
-- creator_person 字段：当前硬编码为空字符串，需注入认证用户身份（P1 发现）
-- agent_update 缺少 enable 字段（P3 发现）
-- 15 个 handler 存在大量重复代码，可考虑抽取通用助手（P2 发现）
-- 测试仅验证无 DB 时返回 500，未覆盖业务逻辑分支（P2 发现）
+- update/delete 端点授权检查粒度——需确认 `authorize_middleware` 是否包含资源级校验，如仅角色级则需补充 IDOR 防护（P0 发现，需设计决策）✅ 已修复：application/script/invoke 的 update+delete 已添加 require_owner 资源级 IDOR 校验
+- 输入验证除 name 非空外，是否需要字段长度限制（如 name ≤ 255）和基础清洗（P1 发现）✅ 已修复：name ≤200，其他文本字段 ≤500，description ≤2000
+- invoke 响应中 application 字段语义：当前设为自身 ID，需确认是否为 bug（P0 发现）✅ 已修复：移除 invoke_list 中 application=self_id 的误导性字段
+- creator_person 字段：当前硬编码为空字符串，需注入认证用户身份（P1 发现）✅ 已修复：所有 create handler 注入 Session.person_unique；新增 migration 012
+- agent_update 缺少 enable 字段（P3 发现）✅ 已修复：响应中补回 enable 字段
+- 15 个 handler 存在大量重复代码，可考虑抽取通用助手（P2 发现）— 待后续 refactor
+- 测试仅验证无 DB 时返回 500，未覆盖业务逻辑分支（P2 发现）— 待补充 name 校验、404、软删除等业务测试
 
 ---
 
