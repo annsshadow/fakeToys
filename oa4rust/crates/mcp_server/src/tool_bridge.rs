@@ -1451,6 +1451,7 @@ impl ToolBridge {
             .layer(axum::Extension(pool))
             .layer(axum::Extension(security_state.session_manager));
 
+        let all_defs = all_route_defs();
         let route_map: HashMap<String, RouteDef> = all_defs
             .iter()
             .map(|r| (r.tool_name.to_string(), r.clone()))
