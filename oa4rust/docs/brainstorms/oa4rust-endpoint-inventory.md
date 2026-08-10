@@ -6,9 +6,9 @@
 
 | crate | wave | routes | handlers | stub_ | null | todo | status |
 |-------|------|-------:|---------:|------:|-----:|-----:|:------|
-| auth | U1-U4 | 22 | 24 | 0 | 0 | 0 | done |
+| auth | U1-U4 | 29 | 27 | 0 | 0 | 0 | done |
 | control | U1-U4 | 25 | 25 | 0 | 0 | 0 | done |
-| personal | U1-U4 | 8 | 7 | 0 | 0 | 0 | done |
+| personal | U1-U4 | 13 | 12 | 0 | 0 | 0 | done |
 | personal_extend | U1-U4 | 6 | 6 | 0 | 0 | 0 | done |
 | program_init | U1-U4 | 3 | 3 | 0 | 0 | 0 | done |
 | attendance | U5 | 9 | 9 | 0 | 0 | 0 | done |
@@ -19,7 +19,7 @@
 | calendar_core_entity | U5 | 10 | 10 | 0 | 0 | 0 | done |
 | file | U5 | 9 | 10 | 0 | 0 | 0 | done |
 | file_assemble_control | U5 | 8 | 94 | 0 | 0 | 0 | done |
-| file_core_entity | U5 | 4 | 4 | 0 | 0 | 0 | done |
+| file_core_entity | U5 | 7 | 7 | 0 | 0 | 0 | done |
 | general | U5 | 3 | 3 | 0 | 0 | 0 | done |
 | general_assemble_control | U5 | 61 | 61 | 0 | 0 | 0 | done |
 | general_core_entity | U5 | 21 | 21 | 0 | 0 | 0 | done |
@@ -27,7 +27,7 @@
 | cms_control | U6 | 2 | 2 | 0 | 0 | 0 | done |
 | cms_core_entity | U6 | 6 | 6 | 0 | 0 | 0 | done |
 | cms_core_express | U6 | 2 | 2 | 0 | 0 | 0 | done |
-| cms_express | U6 | 3 | 3 | 0 | 0 | 0 | done |
+| cms_express | U6 | 5 | 5 | 0 | 0 | 0 | done |
 | meeting | U6 | 9 | 9 | 0 | 0 | 0 | done |
 | meeting_assemble_control | U6 | 42 | 59 | 0 | 0 | 0 | done |
 | meeting_core_entity | U6 | 11 | 11 | 0 | 0 | 0 | done |
@@ -51,7 +51,7 @@
 | query_assemble_surface | U6 | 6 | 59 | 0 | 0 | 0 | done |
 | query_core_entity | U6 | 5 | 5 | 0 | 0 | 0 | done |
 | query_core_express | U6 | 4 | 4 | 0 | 0 | 0 | done |
-| query_express | U6 | 1 | 1 | 0 | 0 | 0 | done |
+| query_express | U6 | 2 | 2 | 0 | 0 | 0 | done |
 | query_service | U6 | 3 | 3 | 0 | 0 | 0 | done |
 | query_service_processing | U6 | 4 | 4 | 0 | 0 | 0 | done |
 | ai | U7 | 21 | 21 | 0 | 0 | 0 | done |
@@ -66,13 +66,13 @@
 | component_core_entity | U7 | 3 | 3 | 0 | 0 | 0 | done |
 | console | U7 | 7 | 7 | 0 | 0 | 0 | done |
 | correlation | U7 | 3 | 3 | 0 | 0 | 0 | done |
-| correlation_core_entity | U7 | 2 | 2 | 0 | 0 | 0 | done |
+| correlation_core_entity | U7 | 4 | 4 | 0 | 1 | 0 | doing |
 | correlation_core_express | U7 | 2 | 2 | 0 | 0 | 0 | done |
 | correlation_service_processing | U7 | 20 | 20 | 0 | 0 | 0 | done |
 | express | U7 | 3 | 3 | 0 | 0 | 0 | done |
 | hotpic | U7 | 3 | 3 | 0 | 0 | 0 | done |
 | hotpic_assemble_control | U7 | 36 | 18 | 0 | 0 | 0 | done |
-| hotpic_core_entity | U7 | 3 | 3 | 0 | 0 | 0 | done |
+| hotpic_core_entity | U7 | 5 | 5 | 0 | 1 | 0 | doing |
 | jpush | U7 | 6 | 6 | 0 | 0 | 0 | done |
 | jpush_assemble_control | U7 | 32 | 16 | 0 | 0 | 0 | done |
 | jpush_core_entity | U7 | 5 | 5 | 0 | 0 | 0 | done |
@@ -81,18 +81,19 @@
 | mind_core_entity | U7 | 10 | 10 | 0 | 0 | 0 | done |
 | organization_assemble_control | U7 | 101 | 101 | 0 | 0 | 0 | done |
 | organization_assemble_express | U7 | 4 | 4 | 0 | 0 | 0 | done |
-| organization_core_entity | U7 | 6 | 6 | 0 | 0 | 0 | done |
+| organization_core_entity | U7 | 18 | 24 | 0 | 0 | 0 | done |
 | organization_core_express | U7 | 3 | 3 | 0 | 0 | 0 | done |
 | program_center | U7 | 7 | 205 | 0 | 0 | 0 | done |
-| program_center_core_entity | U7 | 7 | 5 | 0 | 0 | 0 | done |
+| program_center_core_entity | U7 | 20 | 20 | 0 | 0 | 0 | done |
 | mcp_server | U? | 2 | 0 | 0 | 0 | 0 | todo |
 | openapi | U? | 0 | 0 | 0 | 0 | 0 | todo |
+| orm | U? | 0 | 1 | 0 | 0 | 0 | done |
 | process_bam | U? | 3 | 3 | 0 | 0 | 0 | done |
 | shared | U? | 11 | 0 | 0 | 0 | 0 | todo |
 
 ## 汇总
 
-- crate 总数: 83
-- 已完成(done): 77 | 迁移中(doing): 0 | 待迁移(todo): 6
-- 真实 handler 总数: 2458
-- 残留 stub_ 标记: 0 | 纯 Value::Null 桩: 0 | TODO 占位: 0
+- crate 总数: 84
+- 已完成(done): 76 | 迁移中(doing): 2 | 待迁移(todo): 6
+- 真实 handler 总数: 2510
+- 残留 stub_ 标记: 0 | 纯 Value::Null 桩: 2 | TODO 占位: 0
