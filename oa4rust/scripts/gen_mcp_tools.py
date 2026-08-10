@@ -47,15 +47,15 @@ def parse_routes_from_file(filepath: Path) -> list:
     routes = []
     # Flatten multi-line .route() calls before matching
     text_flat = re.sub(r'\s+', ' ', text)
-    # Match single-method: .route("path", get(handler))
-    single_pattern = r'\.route\(\s*"([^"]+)",\s*(\w+)\((\w+)\)'
+    # Match single-method: .route("path", get(handler)) or .route("path", axum::routing::get(handler))
+    single_pattern = r'\.route\(\s*"([^"]+)",\s*(?:axum::routing::)?(\w+)\(([\w:]+(?:\([^)]*\))?)\)'
     for match in re.finditer(single_pattern, text_flat):
         path = match.group(1)
         method_str = match.group(2)
         handler = match.group(3)
         routes.append((path, method_str.upper(), handler))
     # Match multi-method: .route("path", put(handler).delete(handler))
-    multi_pattern = r'\.route\(\s*"([^"]+)",\s*(put|delete|patch)\((\w+)\)\.(\w+)\((\w+)\)'
+    multi_pattern = r'\.route\(\s*"([^"]+)",\s*(put|delete|patch)\(([\w:]+)\)\.(\w+)\(([\w:]+)\)'
     for match in re.finditer(multi_pattern, text_flat):
         path = match.group(1)
         for method_str, handler in [(match.group(2), match.group(3)), (match.group(4), match.group(5))]:
@@ -72,21 +72,21 @@ def extract_crate_name(filepath: Path) -> str:
     return "unknown"
 
 def path_to_tool_name(crate: str, path: str, method: str) -> str:
-    """将路由路径转换为 MCP 工具名称。"""
-    # 移除 /jaxrs/ 前缀
+    """将路由路径转换为 MCP 工具名称。
+    使用完整路径生成唯一名称，避免多 crate 共享同一路径前缀时命名冲突。
+    工具名格式：jaxrs_{crate}_{path_snake_case}
+    """
     p = path.replace("/jaxrs/", "")
-    # 将路径段转换为下划线命名
     parts = p.split("/")
     tool_parts = []
     for part in parts:
-        # 处理路径参数 {param}
         param_match = re.match(r"\{(.+?)\}", part)
         if param_match:
             tool_parts.append(param_match.group(1).lower())
         else:
-            # 转换 camelCase 为 snake_case
             s = re.sub(r'([A-Z])', r'_\1', part).lower().strip("_")
-            tool_parts.append(s)
+            if s and (not tool_parts or tool_parts[-1] != s):
+                tool_parts.append(s)
     return f"jaxrs_{crate}_{'_'.join(tool_parts)}"
 
 def extract_path_params(path: str) -> list:
