@@ -57,6 +57,9 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
 pub const AUTH_RATE_LIMIT_EXACT: &[&str] = &["/jaxrs/authentication", "/jaxrs/authentication/login"];
 pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
     "/jaxrs/authentication/code",
+    "/jaxrs/authentication/two",     // 双因素登录
+    "/jaxrs/authentication/safe",    // 安全注销
+    "/jaxrs/authentication/switchuser", // 用户切换
     "/jaxrs/reset",
     "/jaxrs/secret/check",
     "/jaxrs/secret/set",

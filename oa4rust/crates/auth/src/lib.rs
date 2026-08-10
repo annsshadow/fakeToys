@@ -16,10 +16,13 @@ use uuid::Uuid;
 
 pub mod bind;
 pub mod captcha;
+pub mod check_token;
 pub mod model;
 pub mod oauth;
 pub mod password;
 pub mod person;
+pub mod safe_logout;
+pub mod two_factor;
 
 // 兼容重导出：会话与限流类型已移入 shared，供外部 crate 使用 auth:: 前缀继续引用
 pub use shared::rate_limit::RateLimiter;
@@ -48,6 +51,12 @@ pub struct PersonInfo {
     pub unique: String,
     pub name: String,
     pub mobile: Option<String>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TwoFactorLoginResponse {
+    pub token: String,
+    pub person: PersonInfo,
 }
 
 // --- 认证处理器 ---
@@ -279,7 +288,7 @@ fn rand_code() -> u32 {
     (uuid::Uuid::new_v4().as_u128() % 1_000_000) as u32
 }
 
-fn code_store() -> &'static CodeStore {
+pub(crate) fn code_store() -> &'static CodeStore {
     static STORE: OnceLock<CodeStore> = OnceLock::new();
     STORE.get_or_init(CodeStore::new)
 }
@@ -464,6 +473,9 @@ pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionMan
         )
         .merge(captcha::captcha_router())
         .merge(bind::bind_router())
+        .route("/jaxrs/authentication/two_factor", post(two_factor::two_factor_login))
+        .route("/jaxrs/authentication/safe/logout", post(safe_logout::safe_logout))
+        .route("/jaxrs/authentication/check/token", post(check_token::check_token))
         .layer(Extension(pool))
         .layer(Extension(rate_limiter))
         .layer(Extension(session_manager))

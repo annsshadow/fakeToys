@@ -174,6 +174,13 @@ impl PermissionRegistry {
         registry.register_prefix("/jaxrs/authentication/oauth", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/authentication/code", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/authentication/refresh", PermissionLevel::Public);
+        // 新增认证端点：显式覆盖，避免继承 /jaxrs/authentication 的 Public 权限
+        registry.register_prefix("/jaxrs/authentication/two_factor", PermissionLevel::Authenticated);
+        registry.register_exact("/jaxrs/authentication/safe/logout", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/authentication/check/token", PermissionLevel::Authenticated);
+        registry.register_exact("/jaxrs/authentication/switchuser", PermissionLevel::Admin);
+        registry.register_exact("/jaxrs/authentication/switchuser/mockputtopost", PermissionLevel::Admin);
+        registry.register_prefix("/jaxrs/authentication/sso", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/reset", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/secret/check", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/secret/set", PermissionLevel::Public);

@@ -115,6 +115,58 @@ mod tests {
     }
 
     #[test]
+    fn test_session_manager_remove_sessions_by_person() {
+        let rt = tokio::runtime::Runtime::new().unwrap();
+        rt.block_on(async {
+            let manager = SessionManager::new();
+            // 为 user1 创建多个 session
+            manager.create_session("user1".to_string(), "token1".to_string()).await;
+            manager.create_session("user1".to_string(), "token2".to_string()).await;
+            // 为 user2 创建 session
+            manager.create_session("user2".to_string(), "token3".to_string()).await;
+
+            // 验证三个 session 都有效
+            assert!(manager.validate_session("token1").await.is_some());
+            assert!(manager.validate_session("token2").await.is_some());
+            assert!(manager.validate_session("token3").await.is_some());
+
+            // 批量注销 user1 的所有 session
+            manager.remove_sessions_by_person("user1").await;
+
+            // user1 的 session 应全部失效
+            assert!(manager.validate_session("token1").await.is_none());
+            assert!(manager.validate_session("token2").await.is_none());
+            // user2 的 session 不受影响
+            assert!(manager.validate_session("token3").await.is_some());
+        });
+    }
+
+    #[test]
+    fn test_code_store_issue_and_verify() {
+        let store = crate::CodeStore::new();
+        let code = store.issue("user1");
+        assert!(!code.is_empty());
+        assert!(store.verify("user1", &code));
+        // 验证码一次性，再次验证应失败
+        assert!(!store.verify("user1", &code));
+    }
+
+    #[test]
+    fn test_code_store_expired() {
+        let store = crate::CodeStore::new();
+        let code = store.issue("user1");
+        // 模拟过期（直接修改内部存储）
+        {
+            let mut entries = store.entries.lock().unwrap();
+            if let Some(entry) = entries.get_mut("user1") {
+                use chrono::{Duration, Utc};
+                entry.expires_at = Utc::now() - Duration::minutes(1);
+            }
+        }
+        assert!(!store.verify("user1", &code));
+    }
+
+    #[test]
     fn test_rate_limiter() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {

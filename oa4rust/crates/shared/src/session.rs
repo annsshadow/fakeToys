@@ -190,4 +190,36 @@ impl SessionManager {
             }
         }
     }
+
+    /// 删除指定用户的所有会话（安全注销时使用）
+    ///
+    /// 遍历内存 sessions 和数据库 auth_session，批量移除所有属于 person_unique 的会话。
+    /// 注意：此操作会强制该用户所有设备同时下线。
+    pub async fn remove_sessions_by_person(&self, person_unique: &str) {
+        // 先移除内存中的会话
+        let tokens_to_remove: Vec<String> = {
+            let sessions = self.sessions.write().await;
+            sessions
+                .iter()
+                .filter(|(_, s)| s.person_unique == person_unique)
+                .map(|(token, _)| token.clone())
+                .collect()
+        };
+
+        for token in &tokens_to_remove {
+            self.sessions.write().await.remove(token);
+        }
+
+        // 再从数据库移除
+        if let Some(pool) = &self.pool {
+            if let Ok(client) = pool.get().await {
+                let _ = client
+                    .execute(
+                        "DELETE FROM auth_session WHERE person_id = $1",
+                        &[&person_unique],
+                    )
+                    .await;
+            }
+        }
+    }
 }
