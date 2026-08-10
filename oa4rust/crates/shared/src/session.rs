@@ -213,12 +213,15 @@ impl SessionManager {
         // 再从数据库移除
         if let Some(pool) = &self.pool {
             if let Ok(client) = pool.get().await {
-                let _ = client
+                if let Err(e) = client
                     .execute(
                         "DELETE FROM auth_session WHERE person_id = $1",
                         &[&person_unique],
                     )
-                    .await;
+                    .await
+                {
+                    tracing::warn!(person = %person_unique, error = %e, "failed to batch-delete auth_session rows");
+                }
             }
         }
     }

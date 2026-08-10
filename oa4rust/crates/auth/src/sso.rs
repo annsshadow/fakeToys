@@ -1,5 +1,5 @@
 use axum::{
-    extract::{Extension, Path},
+    extract::Extension,
     Json,
 };
 use base64::Engine;
@@ -50,18 +50,6 @@ pub struct SsoLoginResponse {
 pub struct SsoPersonInfo {
     pub unique: String,
     pub name: String,
-}
-
-/// GET /jaxrs/authentication/sso/client/{client}/token/{token}
-pub async fn sso_get_login(
-    pool: Extension<Pool>,
-    session_manager: Extension<SessionManager>,
-    Path((client, token)): Path<(String, String)>,
-) -> Result<Json<ActionResult<SsoLoginResponse>>, AppError> {
-    let decrypted = decrypt_sso_token(&token, &client)?;
-    let (credential, timestamp_str) = parse_sso_payload(&decrypted)?;
-    validate_sso_timestamp(&timestamp_str)?;
-    create_sso_session(&pool, &session_manager, &credential).await
 }
 
 /// POST /jaxrs/authentication/sso
@@ -160,4 +148,26 @@ async fn create_sso_session(
             name: person_name,
         },
     })))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_sso_timestamp_recent_passes() {
+        let now_ms = Utc::now().timestamp_millis();
+        assert!(validate_sso_timestamp(&now_ms.to_string()).is_ok());
+    }
+
+    #[test]
+    fn validate_sso_timestamp_expired_fails() {
+        let expired_ms = Utc::now().timestamp_millis() - Duration::minutes(10).num_milliseconds();
+        assert!(validate_sso_timestamp(&expired_ms.to_string()).is_err());
+    }
+
+    #[test]
+    fn validate_sso_timestamp_invalid_format_fails() {
+        assert!(validate_sso_timestamp("not-a-timestamp").is_err());
+    }
 }

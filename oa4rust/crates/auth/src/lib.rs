@@ -478,10 +478,6 @@ pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionMan
         .route("/jaxrs/authentication/two_factor", post(two_factor::two_factor_login))
         .route("/jaxrs/authentication/safe/logout", post(safe_logout::safe_logout))
         .route("/jaxrs/authentication/check/token", post(check_token::check_token))
-        .route(
-            "/jaxrs/authentication/sso/client/{client}/token/{token}",
-            get(sso::sso_get_login),
-        )
         .route("/jaxrs/authentication/sso", post(sso::sso_post_login))
         .route("/jaxrs/authentication/sso/encrypt", post(sso::sso_encrypt))
         .route("/jaxrs/authentication/switchuser", post(switch_user::switch_user))

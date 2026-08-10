@@ -1323,6 +1323,55 @@ static ROUTE_DEFS: &[RouteDef] = &[
         path_params: [],
         body_params: ["credential", "code", "newPassword"],
     },
+    // ── auth extended endpoints ─────────────────────────────────────────────
+    register_tool! {
+        name: "jaxrs_authentication_two_factor",
+        method: Post,
+        path: "/jaxrs/authentication/two_factor",
+        desc: "Two-factor authentication login",
+        path_params: [],
+        body_params: ["credential", "code"],
+    },
+    register_tool! {
+        name: "jaxrs_authentication_safe_logout",
+        method: Post,
+        path: "/jaxrs/authentication/safe/logout",
+        desc: "Securely logout and revoke all sessions",
+        path_params: [],
+        body_params: [],
+    },
+    register_tool! {
+        name: "jaxrs_authentication_check_token",
+        method: Post,
+        path: "/jaxrs/authentication/check/token",
+        desc: "Check token validity",
+        path_params: [],
+        body_params: ["token"],
+    },
+    register_tool! {
+        name: "jaxrs_authentication_sso_encrypt",
+        method: Post,
+        path: "/jaxrs/authentication/sso/encrypt",
+        desc: "Encrypt SSO token for single sign-on",
+        path_params: [],
+        body_params: ["client", "key", "credential"],
+    },
+    register_tool! {
+        name: "jaxrs_authentication_sso",
+        method: Post,
+        path: "/jaxrs/authentication/sso",
+        desc: "SSO login via token",
+        path_params: [],
+        body_params: ["client", "token"],
+    },
+    register_tool! {
+        name: "jaxrs_authentication_switchuser",
+        method: Post,
+        path: "/jaxrs/authentication/switchuser",
+        desc: "Admin switch user to another account",
+        path_params: [],
+        body_params: ["targetCredential"],
+    },
 ];
 
 // 合并静态路由与自动生成路由

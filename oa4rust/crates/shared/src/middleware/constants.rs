@@ -49,6 +49,8 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/jaxrs/secret/check",
     "/jaxrs/secret/set",
     "/jaxrs/secret/set/cancel",
+    // 注册（匿名访问）
+    "/jaxrs/person/regist",
 ];
 
 // 认证类端点（计入 10 次/分钟/IP 的认证限流）。
@@ -60,6 +62,7 @@ pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
     "/jaxrs/authentication/two",     // 双因素登录
     "/jaxrs/authentication/safe",    // 安全注销
     "/jaxrs/authentication/switchuser", // 用户切换
+    "/jaxrs/person/regist/code",    // 注册验证码发送
     "/jaxrs/reset",
     "/jaxrs/secret/check",
     "/jaxrs/secret/set",

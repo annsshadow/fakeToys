@@ -1,13 +1,13 @@
 use axum::{
     extract::{Extension, Json},
     http::HeaderMap,
-    Json as AxumJson,
 };
 use serde::Deserialize;
 use shared::error::AppError;
 use shared::middleware::extract_token_from_headers;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
+use tracing;
 
 /// POST /jaxrs/authentication/switchuser — 用户切换（管理员）
 ///
@@ -24,13 +24,13 @@ pub async fn switch_user(
     session_manager: Extension<SessionManager>,
     headers: HeaderMap,
     Json(req): Json<SwitchUserRequest>,
-) -> Result< AxumJson<ActionResult<serde_json::Value>>, AppError> {
+) -> Result<Json<ActionResult<serde_json::Value>>, AppError> {
     // 验证当前用户是 admin
     let token = extract_token_from_headers(&headers).ok_or(AppError::Unauthorized)?;
     let session = session_manager.validate_session(&token).await.ok_or(AppError::Unauthorized)?;
 
     if !shared::middleware::is_admin(&pool, &session.person_unique).await {
-        return Ok(AxumJson(ActionResult::error("forbidden")));
+        return Ok(Json(ActionResult::error("forbidden")));
     }
 
     // 查找目标用户
@@ -51,7 +51,13 @@ pub async fn switch_user(
     let new_token = uuid::Uuid::new_v4().to_string();
     let new_session = session_manager.create_session(target_unique.clone(), new_token.clone()).await;
 
-    Ok(AxumJson(ActionResult::success(serde_json::json!({
+    tracing::info!(
+        switcher = %session.person_unique,
+        target = %target_unique,
+        "admin user switch"
+    );
+
+    Ok(Json(ActionResult::success(serde_json::json!({
         "token": new_session.token,
         "person": {
             "unique": target_unique,

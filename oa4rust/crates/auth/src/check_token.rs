@@ -1,7 +1,5 @@
-use axum::{
-    extract::{Extension, Json},
-    Json as AxumJson,
-};
+use axum::extract::Extension;
+use axum::Json;
 use serde::Deserialize;
 use serde_json::Value;
 use shared::error::AppError;
@@ -19,7 +17,7 @@ pub struct CheckTokenRequest {
 /// 权限级别：Authenticated（需携带有效 token 才能校验，防止会话枚举）。
 pub async fn check_token(
     session_manager: Extension<SessionManager>,
-    AxumJson(req): AxumJson<CheckTokenRequest>,
+    Json(req): Json<CheckTokenRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let token = req.token.trim().to_string();
     if token.is_empty() {

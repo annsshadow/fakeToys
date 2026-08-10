@@ -4780,6 +4780,54 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         body_params: &[],
     },
     RouteDef {
+        tool_name: "jaxrs_organization_core_entity_organization_bind_id",
+        method: HttpMethod::Delete,
+        path: "/jaxrs/organization/bind/{id}",
+        description: "bind_delete handler",
+        path_params: &["id"],
+        body_params: &[],
+    },
+    RouteDef {
+        tool_name: "jaxrs_organization_core_entity_organization_custom_id",
+        method: HttpMethod::Delete,
+        path: "/jaxrs/organization/custom/{id}",
+        description: "custom_delete handler",
+        path_params: &["id"],
+        body_params: &[],
+    },
+    RouteDef {
+        tool_name: "jaxrs_organization_core_entity_organization_definition_id",
+        method: HttpMethod::Delete,
+        path: "/jaxrs/organization/definition/{id}",
+        description: "definition_delete handler",
+        path_params: &["id"],
+        body_params: &[],
+    },
+    RouteDef {
+        tool_name: "jaxrs_organization_core_entity_organization_group_id",
+        method: HttpMethod::Delete,
+        path: "/jaxrs/organization/group/{id}",
+        description: "group_delete handler",
+        path_params: &["id"],
+        body_params: &[],
+    },
+    RouteDef {
+        tool_name: "jaxrs_organization_core_entity_organization_identity_id",
+        method: HttpMethod::Delete,
+        path: "/jaxrs/organization/identity/{id}",
+        description: "identity_delete handler",
+        path_params: &["id"],
+        body_params: &[],
+    },
+    RouteDef {
+        tool_name: "jaxrs_organization_core_entity_organization_person_id",
+        method: HttpMethod::Delete,
+        path: "/jaxrs/organization/person/{id}",
+        description: "person_delete handler",
+        path_params: &["id"],
+        body_params: &[],
+    },
+    RouteDef {
         tool_name: "jaxrs_organization_core_entity_organization_bind_list",
         method: HttpMethod::Get,
         path: "/jaxrs/organization/bind/list",
@@ -5620,6 +5668,46 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
         body_params: &[],
     },
     RouteDef {
+        tool_name: "jaxrs_program_center_core_entity_program_center_agent_id",
+        method: HttpMethod::Delete,
+        path: "/jaxrs/program_center/agent/{id}",
+        description: "agent_delete handler",
+        path_params: &["id"],
+        body_params: &[],
+    },
+    RouteDef {
+        tool_name: "jaxrs_program_center_core_entity_program_center_application_id",
+        method: HttpMethod::Delete,
+        path: "/jaxrs/program_center/application/{id}",
+        description: "application_delete handler",
+        path_params: &["id"],
+        body_params: &[],
+    },
+    RouteDef {
+        tool_name: "jaxrs_program_center_core_entity_program_center_invoke_id",
+        method: HttpMethod::Delete,
+        path: "/jaxrs/program_center/invoke/{id}",
+        description: "invoke_delete handler",
+        path_params: &["id"],
+        body_params: &[],
+    },
+    RouteDef {
+        tool_name: "jaxrs_program_center_core_entity_program_center_script_id",
+        method: HttpMethod::Delete,
+        path: "/jaxrs/program_center/script/{id}",
+        description: "script_delete handler",
+        path_params: &["id"],
+        body_params: &[],
+    },
+    RouteDef {
+        tool_name: "jaxrs_program_center_core_entity_program_center_structure_id",
+        method: HttpMethod::Delete,
+        path: "/jaxrs/program_center/structure/{id}",
+        description: "structure_delete handler",
+        path_params: &["id"],
+        body_params: &[],
+    },
+    RouteDef {
         tool_name: "jaxrs_program_center_core_entity_program_center_agent_list",
         method: HttpMethod::Get,
         path: "/jaxrs/program_center/agent/list",
@@ -5974,4 +6062,4 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
 ];
 
 /// 生成的工具总数
-pub const GENERATED_TOOL_COUNT: usize = 746;
+pub const GENERATED_TOOL_COUNT: usize = 757;

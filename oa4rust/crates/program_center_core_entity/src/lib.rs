@@ -8,6 +8,7 @@ use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, Qu
 use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, middleware::require_owner, response::ActionResult, session::Session};
+use tracing;
 
 pub mod entities;
 pub mod routes;
@@ -694,8 +695,8 @@ pub async fn agent_create(
 
 pub async fn agent_update(
     db: Extension<DatabaseConnection>,
-    _pool: Extension<Pool>,
-    _session: Extension<Session>,
+    pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
     Json(req): Json<AgentUpdateRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -705,7 +706,10 @@ pub async fn agent_update(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
-    // cte_agent has no creator_person field; admin check is handled by RBAC middleware
+    // cte_agent has no creator_person; require admin check
+    if !shared::middleware::is_admin(&pool, &session.person_unique).await {
+        return Ok(Json(ActionResult::error("forbidden")));
+    }
     let mut active: entities::cte_agent::ActiveModel = model.into();
     if let Some(name) = req.name {
         validate_name(&name)?;
@@ -745,8 +749,8 @@ pub async fn agent_update(
 
 pub async fn agent_delete(
     db: Extension<DatabaseConnection>,
-    _pool: Extension<Pool>,
-    _session: Extension<Session>,
+    pool: Extension<Pool>,
+    session: Extension<Session>,
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let model = entities::cte_agent::Entity::find_by_id(&id)
@@ -755,7 +759,10 @@ pub async fn agent_delete(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
-    // cte_agent has no creator_person; admin check handled by RBAC middleware
+    // cte_agent has no creator_person; require admin check
+    if !shared::middleware::is_admin(&pool, &session.person_unique).await {
+        return Ok(Json(ActionResult::error("forbidden")));
+    }
     let mut active: entities::cte_agent::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
     active.update(&db.0).await.map_err(|_| AppError::Internal)?;
@@ -823,7 +830,10 @@ pub async fn structure_update(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
-    // cte_structure has no creator_person; admin check handled by RBAC middleware
+    // cte_structure has no creator_person; require admin check
+    if !shared::middleware::is_admin(&pool, &session.person_unique).await {
+        return Ok(Json(ActionResult::error("forbidden")));
+    }
     let mut active: entities::cte_structure::ActiveModel = model.into();
     if let Some(name) = req.name {
         validate_name(&name)?;
@@ -877,7 +887,10 @@ pub async fn structure_delete(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
-    // cte_structure has no creator_person; admin check handled by RBAC middleware
+    // cte_structure has no creator_person; require admin check
+    if !shared::middleware::is_admin(&pool, &session.person_unique).await {
+        return Ok(Json(ActionResult::error("forbidden")));
+    }
     let mut active: entities::cte_structure::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
     active.update(&db.0).await.map_err(|_| AppError::Internal)?;

@@ -10,7 +10,6 @@ gen_mcp_tools.py — 从 oa4rust crates 源码扫描路由定义，生成 MCP �
   python scripts/gen_mcp_tools.py
 """
 
-import os
 import re
 import sys
 from pathlib import Path
@@ -46,14 +45,21 @@ def parse_routes_from_file(filepath: Path) -> list:
         return []
 
     routes = []
-    # 匹配 .route("METHOD path", handler) 模式
-    pattern = r'\.route\(\s*"([^"]+)",\s*(\w+)\((\w+)\)'
-    for match in re.finditer(pattern, text):
+    # Flatten multi-line .route() calls before matching
+    text_flat = re.sub(r'\s+', ' ', text)
+    # Match single-method: .route("path", get(handler))
+    single_pattern = r'\.route\(\s*"([^"]+)",\s*(\w+)\((\w+)\)'
+    for match in re.finditer(single_pattern, text_flat):
         path = match.group(1)
-        method_str = match.group(2)  # get, post, put, delete
+        method_str = match.group(2)
         handler = match.group(3)
-        method = method_str.upper()
-        routes.append((path, method, handler))
+        routes.append((path, method_str.upper(), handler))
+    # Match multi-method: .route("path", put(handler).delete(handler))
+    multi_pattern = r'\.route\(\s*"([^"]+)",\s*(put|delete|patch)\((\w+)\)\.(\w+)\((\w+)\)'
+    for match in re.finditer(multi_pattern, text_flat):
+        path = match.group(1)
+        for method_str, handler in [(match.group(2), match.group(3)), (match.group(4), match.group(5))]:
+            routes.append((path, method_str.upper(), handler))
     return routes
 
 def extract_crate_name(filepath: Path) -> str:

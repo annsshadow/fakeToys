@@ -3,6 +3,7 @@ use deadpool_postgres::{Manager, Pool};
 use dotenvy::dotenv;
 use sea_orm::{Database, DatabaseConnection, ConnectOptions};
 use std::env;
+use std::time::Duration;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -37,7 +38,12 @@ pub async fn create_pool() -> Result<Pool, DbError> {
         .dbname(dbname);
 
     let mgr = Manager::new(cfg, NoTls);
+    let wait_ms = env::var("POOL_WAIT_TIMEOUT_MS")
+        .ok()
+        .and_then(|s| s.parse::<u64>().ok())
+        .unwrap_or(10_000);
     let pool = Pool::builder(mgr)
+        .wait_timeout(Some(Duration::from_millis(wait_ms)))
         .build()
         .map_err(|e| DbError::PoolError(e.to_string()))?;
 

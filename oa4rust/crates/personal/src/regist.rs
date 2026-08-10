@@ -55,19 +55,7 @@ pub async fn register(
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    // 唯一性预检查
-    let existing = client
-        .query_opt(
-            "SELECT id FROM auth_person WHERE unique_id = $1 AND deleted_at IS NULL",
-            &[&req.credential],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-    if existing.is_some() {
-        return Ok(Json(ActionResult::error("username already exists")));
-    }
-
-    // 创建用户
+    // 创建用户（唯一性由数据库 UNIQUE 约束保证）
     let id = uuid::Uuid::new_v4().to_string();
     let password_hash = auth::password::hash_password(&req.password);
 
