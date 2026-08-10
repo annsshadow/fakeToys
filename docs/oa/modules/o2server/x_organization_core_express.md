@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+组织核心表达式模块，提供组织数据的表达式引擎和动态查询能力。
 
 ## Core Classes and Interfaces
 

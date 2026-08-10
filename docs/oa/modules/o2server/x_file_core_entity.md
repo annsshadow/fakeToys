@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+文件核心实体模块，定义文件和文件夹数据模型及基础 CRUD。
 
 ## Core Classes and Interfaces
 

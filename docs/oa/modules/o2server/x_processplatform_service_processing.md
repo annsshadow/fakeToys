@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+流程平台服务处理模块，处理流程实例的创建、执行和取消等操作。
 
 ## Core Classes and Interfaces
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+组织认证模块，负责用户登录、登出、会话管理、OAuth 第三方登录及验证码功能。
 
 ## Core Classes and Interfaces
 

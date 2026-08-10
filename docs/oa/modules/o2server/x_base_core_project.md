@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+基础核心项目模块，提供平台公共基础设施、工具类和通用配置。
 
 ## Core Classes and Interfaces
 

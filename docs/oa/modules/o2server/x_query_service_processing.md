@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+查询服务处理模块，提供查询执行、生成和列表管理能力。
 
 ## Core Classes and Interfaces
 

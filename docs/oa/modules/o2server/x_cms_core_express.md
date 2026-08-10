@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+CMS 核心表达式模块，提供 CMS 内容列表和查询能力。
 
 ## Core Classes and Interfaces
 

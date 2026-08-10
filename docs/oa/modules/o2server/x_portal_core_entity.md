@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+门户核心实体模块，定义门户页面和部件的数据模型。
 
 ## Core Classes and Interfaces
 

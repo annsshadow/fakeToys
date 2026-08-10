@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+流程平台 BAM 管控模块，处理流程监控配置和统计报表。
 
 ## Core Classes and Interfaces
 

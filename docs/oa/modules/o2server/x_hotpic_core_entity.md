@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+热点图片核心实体模块，定义热点图片数据模型。
 
 ## Core Classes and Interfaces
 

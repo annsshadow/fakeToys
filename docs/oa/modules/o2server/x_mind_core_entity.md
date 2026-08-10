@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+思维导图核心实体模块，定义导图、文件夹和版本数据模型。
 
 ## Core Classes and Interfaces
 

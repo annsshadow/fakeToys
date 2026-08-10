@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+流程平台展现管控模块，处理流程表面的预览和发布功能。
 
 ## Core Classes and Interfaces
 

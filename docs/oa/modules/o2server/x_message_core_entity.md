@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+消息核心实体模块，定义消息数据模型和基础查询能力。
 
 ## Core Classes and Interfaces
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+AI 核心实体模块，定义 AI 应用、模型和对话数据模型。
 
 ## Core Classes and Interfaces
 

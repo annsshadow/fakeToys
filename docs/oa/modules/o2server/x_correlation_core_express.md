@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+关联关系核心表达式模块，提供关联状态和同步能力。
 
 ## Core Classes and Interfaces
 

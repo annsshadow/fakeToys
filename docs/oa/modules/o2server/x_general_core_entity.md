@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+通用核心实体模块，定义字典、文件、发票等通用数据模型。
 
 ## Core Classes and Interfaces
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+程序中心核心实体模块，定义应用程序、脚本、调用、代理和结构数据模型。
 
 ## Core Classes and Interfaces
 

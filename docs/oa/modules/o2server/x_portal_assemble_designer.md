@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+门户设计器模块，处理门户页面的设计和配置管理。
 
 ## Core Classes and Interfaces
 

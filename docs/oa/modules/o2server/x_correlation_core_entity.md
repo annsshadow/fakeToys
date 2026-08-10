@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+关联关系核心实体模块，定义关联关系数据模型。
 
 ## Core Classes and Interfaces
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+论坛管控模块，处理论坛配置、版块管理和主题回复。
 
 ## Core Classes and Interfaces
 

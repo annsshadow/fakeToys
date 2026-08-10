@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+思维导图管控模块，处理导图配置和文件夹管理。
 
 ## Core Classes and Interfaces
 

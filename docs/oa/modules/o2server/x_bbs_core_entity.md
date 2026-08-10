@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+论坛核心实体模块，定义论坛、版块、主题等 BBS 数据模型。
 
 ## Core Classes and Interfaces
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+CMS 核心实体模块，定义栏目、应用、配置等 CMS 数据模型。
 
 ## Core Classes and Interfaces
 
