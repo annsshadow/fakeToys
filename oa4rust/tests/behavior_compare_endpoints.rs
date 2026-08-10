@@ -2,13 +2,11 @@
 /// 复制下面的 ENDPOINTS 数组到 tests/behavior_compare.rs 中替换原有内容。
 
 /// 行为对比测试端点列表（由 extract_endpoints.py 自动生成，请勿手动修改）
-/// 生成时间: 2026-08-10 16:32:32
+/// 生成时间: 2026-08-10 16:34:29
 
 use super::behavior_comparison::EndpointDef;
 
 pub const ENDPOINTS: &[EndpointDef] = &[
-/// 行为对比测试端点列表（由 extract_endpoints.py 自动生成，请勿手动修改）
-/// 生成时间: 2026-08-10 16:32:32
 
 const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {

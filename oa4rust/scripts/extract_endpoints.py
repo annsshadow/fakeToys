@@ -426,8 +426,9 @@ def main():
         "",
         "pub const ENDPOINTS: &[EndpointDef] = &[",
     ]
-    # 复制 Rust 输出格式
-    for line in rust_path.read_text(encoding="utf-8").splitlines():
+    # 复制 Rust 输出格式（跳过前 2 行注释）
+    rust_text = rust_path.read_text(encoding="utf-8")
+    for line in rust_text.splitlines()[2:]:
         lines.append(line)
     rust_test_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"  Test → {rust_test_path}")
