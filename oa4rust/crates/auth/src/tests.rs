@@ -209,4 +209,28 @@ mod tests {
     fn des_encrypt_for_test(plain: &str, key: &str) -> Vec<u8> {
         crate::password::des_encrypt(plain, key).unwrap()
     }
+
+    #[test]
+    fn test_des3_encrypt_decrypt_ede2_roundtrip() {
+        let plain = "testuser#1700000000000";
+        let key = "0123456789abcdef"; // 16 bytes
+        let encrypted = crate::password::des3_encrypt_ede2(plain, key).unwrap();
+        let decrypted = crate::password::des3_decrypt_ede2(&encrypted, key).unwrap();
+        assert_eq!(String::from_utf8(decrypted).unwrap(), plain);
+    }
+
+    #[test]
+    fn test_des3_decrypt_wrong_key() {
+        let plain = "testuser#1700000000000";
+        let key = "0123456789abcdef";
+        let encrypted = crate::password::des3_encrypt_ede2(plain, key).unwrap();
+        let result = crate::password::des3_decrypt_ede2(&encrypted, "wrongkey12345678");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_des3_encrypt_short_key() {
+        let result = crate::password::des3_encrypt_ede2("test", "short");
+        assert!(result.is_err());
+    }
 }
