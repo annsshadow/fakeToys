@@ -23,6 +23,7 @@ pub mod password;
 pub mod person;
 pub mod safe_logout;
 pub mod sso;
+pub mod switch_user;
 pub mod two_factor;
 
 // 兼容重导出：会话与限流类型已移入 shared，供外部 crate 使用 auth:: 前缀继续引用
@@ -483,6 +484,7 @@ pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionMan
         )
         .route("/jaxrs/authentication/sso", post(sso::sso_post_login))
         .route("/jaxrs/authentication/sso/encrypt", post(sso::sso_encrypt))
+        .route("/jaxrs/authentication/switchuser", post(switch_user::switch_user))
         .layer(Extension(pool))
         .layer(Extension(rate_limiter))
         .layer(Extension(session_manager))

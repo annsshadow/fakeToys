@@ -73,7 +73,7 @@ impl AdminCache {
 ///
 /// 请求级缓存：同一请求内多次调用共享结果，避免重复 DB 查询。
 /// 缓存通过 AdminCache 扩展注入，key 为 person_unique。
-pub(crate) async fn is_admin(pool: &Pool, person_unique: &str) -> bool {
+pub async fn is_admin(pool: &Pool, person_unique: &str) -> bool {
     let client = match pool.get().await {
         Ok(c) => c,
         Err(_) => return false,
