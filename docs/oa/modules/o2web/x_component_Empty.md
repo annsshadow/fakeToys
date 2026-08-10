@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+空容器组件，用于占位或动态加载其他组件。
 
 ## Entry Point
 

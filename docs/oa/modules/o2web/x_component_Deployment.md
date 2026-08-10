@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+应用部署组件，负责组件和应用的生命周期管理与部署操作。
 
 ## Entry Point
 

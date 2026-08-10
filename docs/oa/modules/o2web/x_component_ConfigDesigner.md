@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+平台配置设计器，负责系统平台配置项的可视化编辑和管理。
 
 ## Entry Point
 

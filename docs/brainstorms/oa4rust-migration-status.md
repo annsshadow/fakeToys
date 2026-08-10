@@ -1,7 +1,11 @@
 # OA4Rust 迁移进度跟踪清单
 
-**更新时间：** 2026-08-07
+> **⚠️ 已过期** — 此文档（2026-08-07 版）已被 `docs/brainstorms/oa4rust-migration-status-2026-08-08.md` 取代。
+> 新文档追踪 81 个 crate 全部完成 SeaORM 迁移和写操作补齐。请勿引用本文档。
+
+**更新时间：** 2026-08-07（已过期）
 **参照需求：** `docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md`
+**取代文档：** `docs/brainstorms/oa4rust-migration-status-2026-08-08.md`
 
 > 本文档是团队追踪 O2OA（Java）→ OA4Rust 迁移进度的**单一信息源（Single Source of Truth）**。
 > 每次 sprint 结束时按末尾「如何更新」一节对齐实际代码状态。若代码与本文档不一致，以本文档为准先更新，再排查代码。

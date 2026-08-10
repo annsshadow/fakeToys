@@ -1,5 +1,9 @@
 # OA4Rust 端点清单文档
 
+> **⚠️ 部分过期** — 此文档（2026-08-06）基于 ORM 迁移前的代码快照。
+> 当前状态：81 个 crate 全部完成 SeaORM 迁移和写操作补齐，7,624 个路由全部真实化。
+> 最新迁移状态请参考 `docs/brainstorms/oa4rust-migration-status-2026-08-08.md`。
+>
 > 生成日期：2026-08-06
 > 参考来源：R34-R35、Implementation Units (U4-U7)、各 crate `src/lib.rs` / `src/routes.rs`
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+三员管理组件，负责系统管理员、安全管理员和审计管理员的职责分离管理。
 
 ## Entry Point
 

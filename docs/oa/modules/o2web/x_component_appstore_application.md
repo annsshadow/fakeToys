@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+应用商店应用详情组件，负责单个应用的安装和配置。
 
 ## Entry Point
 

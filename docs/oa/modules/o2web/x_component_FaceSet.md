@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+人脸识别组件，负责人脸信息采集、比对和管理功能。
 
 ## Entry Point
 

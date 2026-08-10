@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use utoipa::OpenApi;
 
 // Minimal inline path handlers for OpenAPI spec generation.

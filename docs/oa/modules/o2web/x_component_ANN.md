@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+神经网络模型组件，负责 ANN 相关模型的配置和推理展示。
 
 ## Entry Point
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+企业网盘组件，负责文件的上传、下载、浏览和权限管理。
 
 ## Entry Point
 

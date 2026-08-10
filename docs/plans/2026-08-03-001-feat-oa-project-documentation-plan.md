@@ -1,8 +1,8 @@
 ---
 title: feat: Build oa subproject documentation in docs/oa/
 type: feat
-status: active
-date: 2026-08-03
+status: completed
+date: 2026-08-10
 origin: docs/brainstorms/2026-08-03-oa-project-documentation-requirements.md
 ---
 
@@ -11,6 +11,8 @@ origin: docs/brainstorms/2026-08-03-oa-project-documentation-requirements.md
 ## Summary
 
 Build a complete developer-facing documentation set for the `oa` subproject under `docs/oa/`, using Mermaid architecture diagrams and standardized module/component cards as the primary vehicle, with code-driven auto-extraction for API and data-model reference sections.
+
+**状态更新（2026-08-10）：** 本计划所有 7 个实施单元（U1-U7）已全部完成。`docs/oa/` 目录结构完整，包含架构概览、55 张 o2server 模块卡片（含 Responsibility 字段）、86 张 o2web 组件卡片、58 个自动生成 API 文档、开发环境指南、部署指南、配置参考、数据模型参考、业务功能指南和扩展指南。API 文档生成脚本 `docs/oa/scripts/generate_api_docs.py` 已扩展覆盖全部 o2server 模块。
 
 ---
 

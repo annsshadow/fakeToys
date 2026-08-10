@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+数据采集组件，负责问卷或表单数据的收集和管理。
 
 ## Entry Point
 

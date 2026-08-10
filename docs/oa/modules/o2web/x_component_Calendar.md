@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+日程安排组件，负责日历视图的展示、日程的创建编辑和事件管理。
 
 ## Entry Point
 

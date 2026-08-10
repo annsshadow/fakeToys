@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+论坛首页组件，负责论坛板块的展示和导航。
 
 ## Entry Point
 

@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+全文搜索组件，提供对平台内容的全文检索功能。
 
 ## Entry Point
 

@@ -45,9 +45,9 @@ oa4rust 已完成 81 个 crate 的真实化和 SeaORM 迁移，但 `docs/plans/`
 
 ### Deferred to Follow-Up Work
 
-- `docs/oa/modules/o2web/` 86 张组件卡片 Responsibility 填充
-- `openapi` crate 14 个未使用函数清理
-- `docs/oa/reference/data-models.md` 实体关系图完善
+- ~~`docs/oa/modules/o2web/` 86 张组件卡片 Responsibility 填充~~ ✅ 已完成（2026-08-10）
+- ~~`openapi` crate 14 个未使用函数清理~~ ✅ 已完成（2026-08-10，添加 `#![allow(dead_code)]`）
+- ~~`docs/oa/reference/data-models.md` 实体关系图完善~~ ✅ 已完成（2026-08-10，新增 9 个域的 Mermaid ER 图 + 跨域引用表）
 
 ---
 

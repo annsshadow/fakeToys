@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+应用中心组件，负责 OA 平台应用的统一入口展示和应用管理。
 
 ## Entry Point
 

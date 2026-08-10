@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+应用市场应用详情组件，负责单个应用的详细信息展示和操作。
 
 ## Entry Point
 

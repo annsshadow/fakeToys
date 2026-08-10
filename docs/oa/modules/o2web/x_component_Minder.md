@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+脑图组件，负责思维导图的浏览和基础操作。
 
 ## Entry Point
 

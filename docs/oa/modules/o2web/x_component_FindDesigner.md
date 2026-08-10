@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+查找设计器组件，在表单和页面中提供通用查找和选择功能。
 
 ## Entry Point
 

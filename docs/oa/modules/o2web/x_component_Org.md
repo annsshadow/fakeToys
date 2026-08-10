@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+组织管理组件，负责人事组织架构的浏览和选择操作。
 
 ## Entry Point
 

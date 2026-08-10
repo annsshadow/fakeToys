@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+热点信息组件，负责热门文章和推荐内容的展示。
 
 ## Entry Point
 

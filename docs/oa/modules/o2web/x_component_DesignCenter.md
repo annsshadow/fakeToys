@@ -2,7 +2,7 @@
 
 ## Responsibility
 
-
+设计中心组件，提供表单、流程、页面等各类设计器的统一入口。
 
 ## Entry Point
 
