@@ -1,11 +1,11 @@
 use axum::{
     extract::{Extension, Path},
-    routing::{delete, get, post, put},
+    routing::{get, post, put},
     Json, Router,
 };
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, Set};
 use shared::{error::AppError, response::ActionResult};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::Value;
 
 pub mod entities;
@@ -96,6 +96,7 @@ pub async fn application_list(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let models = entities::application::Entity::find()
         .order_by_asc(entities::application::Column::Name)
+        .limit(20)
         .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
@@ -133,6 +134,7 @@ pub async fn script_list(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let models = entities::script::Entity::find()
         .order_by_asc(entities::script::Column::Name)
+        .limit(20)
         .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
@@ -170,6 +172,7 @@ pub async fn invoke_list(
     let models = entities::cte_invoke::Entity::find()
         .filter(entities::cte_invoke::Column::DeletedAt.is_null())
         .order_by_asc(entities::cte_invoke::Column::Name)
+        .limit(20)
         .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
@@ -209,6 +212,7 @@ pub async fn agent_list(
     let models = entities::cte_agent::Entity::find()
         .filter(entities::cte_agent::Column::DeletedAt.is_null())
         .order_by_asc(entities::cte_agent::Column::Name)
+        .limit(20)
         .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
@@ -249,6 +253,7 @@ pub async fn structure_list(
     let models = entities::cte_structure::Entity::find()
         .filter(entities::cte_structure::Column::DeletedAt.is_null())
         .order_by_asc(entities::cte_structure::Column::Name)
+        .limit(20)
         .all(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
@@ -374,21 +379,12 @@ pub async fn application_update(
 }
 
 pub async fn application_delete(
-    db: Extension<DatabaseConnection>,
-    Path(id): Path<String>,
+    _db: Extension<DatabaseConnection>,
+    _id: Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _model = entities::application::Entity::find_by_id(&id)
-        .one(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?
-        .ok_or(AppError::NotFound)?;
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([(
-            "note".to_string(),
-            Value::String("physical delete not supported for this entity".to_string()),
-        )]),
-    ))))
+    Ok(Json(ActionResult::error(
+        "physical delete not supported for application entity",
+    )))
 }
 
 // ── Script write handlers ────────────────────────────────────────────────────
@@ -460,21 +456,12 @@ pub async fn script_update(
 }
 
 pub async fn script_delete(
-    db: Extension<DatabaseConnection>,
-    Path(id): Path<String>,
+    _db: Extension<DatabaseConnection>,
+    _id: Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _model = entities::script::Entity::find_by_id(&id)
-        .one(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?
-        .ok_or(AppError::NotFound)?;
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([(
-            "note".to_string(),
-            Value::String("physical delete not supported for this entity".to_string()),
-        )]),
-    ))))
+    Ok(Json(ActionResult::error(
+        "physical delete not supported for script entity",
+    )))
 }
 
 // ── Invoke write handlers ────────────────────────────────────────────────────

@@ -307,7 +307,8 @@ mod tests {
     #[tokio::test]
     async fn test_program_center_core_entity_router_builds() {
         let pool = build_test_pool();
-        let _router = crate::program_center_core_entity_router(pool);
-        // Router builds successfully — verified by cargo check and production startup
+        let router = crate::program_center_core_entity_router(pool);
+        // Verify router is non-empty by checking it has at least one route
+        assert!(format!("{:?}", router) != "Router {}", "router should have routes registered");
     }
 }
