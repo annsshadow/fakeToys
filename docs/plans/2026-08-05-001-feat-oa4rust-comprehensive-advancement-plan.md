@@ -1,8 +1,9 @@
 ---
 title: feat: Comprehensive oa4rust advancement
 type: feat
-status: active
+status: superseded
 date: 2026-08-05
+<!-- Superseded by: docs/plans/2026-08-07-001-feat-oa4rust-4wave-realization-plan.md -->
 origin: docs/brainstorms/2026-08-05-oa4rust-comprehensive-advancement-requirements.md
 ---
 

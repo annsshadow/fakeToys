@@ -1,7 +1,7 @@
 ---
 title: refact: OA4Rust 全量 SeaORM 迁移与写操作补齐
 type: refactor
-status: active
+status: completed
 date: 2026-08-09
 origin: docs/brainstorms/2026-08-09-oa4rust-orm-migration-and-write-ops-requirements.md
 ---
