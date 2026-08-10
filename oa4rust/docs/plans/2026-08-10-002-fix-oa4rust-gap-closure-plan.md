@@ -1,7 +1,7 @@
 ---
 title: OA4Rust 遗留问题修复 — DB 超时、模块拆分、OpenAPI 生成
 type: fix
-status: active — U1+U2 done, U3 pending
+status: completed
 date: 2026-08-10
 origin: docs/brainstorms/2026-08-10-002-oa4rust-gap-closure-requirements.md
 ---
