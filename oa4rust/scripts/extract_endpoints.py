@@ -367,7 +367,7 @@ def output_rust(endpoints: list, path: Path):
     for e in endpoints:
         body = "None"
         if e["method"] in ("POST", "PUT", "PATCH"):
-            body = 'Some(serde_json::json!({}))'
+            body = 'Some(r#"{}"#)'
         auth = "true" if e["method"] != "GET" else "false"
         lines.append("    EndpointDef {")
         lines.append(f'        crate_name: "{e["crate_name"]}",')
