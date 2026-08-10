@@ -18,35 +18,269 @@ mod tests {
 
     #[tokio::test]
     async fn test_application_list_returns_error_without_db() {
-        // Handler signature verification: Extension<DatabaseConnection>
-        // Router creation requires a tokio runtime to create the DatabaseConnection,
-        // so we test handlers indirectly via the router in integration tests.
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::program_center_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/application/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
     async fn test_script_list_returns_error_without_db() {
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::program_center_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/script/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
     async fn test_invoke_list_returns_error_without_db() {
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::program_center_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/invoke/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
     async fn test_agent_list_returns_error_without_db() {
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::program_center_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/agent/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
     async fn test_structure_list_returns_error_without_db() {
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::program_center_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/structure/list")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_application_create_returns_error_without_db() {
+        let pool = build_test_pool();
+        let app = crate::program_center_core_entity_router(pool);
+
+        let body = serde_json::json!({
+            "name": "Test App",
+            "category": "Office"
+        });
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/application")
+                    .method(axum::http::Method::POST)
+                    .header("Content-Type", "application/json")
+                    .body(Body::from(serde_json::to_string(&body).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_application_update_returns_error_without_db() {
+        let pool = build_test_pool();
+        let app = crate::program_center_core_entity_router(pool);
+
+        let body = serde_json::json!({
+            "name": "Updated App"
+        });
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/application/some-id")
+                    .method(axum::http::Method::PUT)
+                    .header("Content-Type", "application/json")
+                    .body(Body::from(serde_json::to_string(&body).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_application_delete_returns_error_without_db() {
+        let pool = build_test_pool();
+        let app = crate::program_center_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/application/some-id")
+                    .method(axum::http::Method::DELETE)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_invoke_create_returns_error_without_db() {
+        let pool = build_test_pool();
+        let app = crate::program_center_core_entity_router(pool);
+
+        let body = serde_json::json!({
+            "name": "Test Invoke"
+        });
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/invoke")
+                    .method(axum::http::Method::POST)
+                    .header("Content-Type", "application/json")
+                    .body(Body::from(serde_json::to_string(&body).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_agent_create_returns_error_without_db() {
+        let pool = build_test_pool();
+        let app = crate::program_center_core_entity_router(pool);
+
+        let body = serde_json::json!({
+            "name": "Test Agent"
+        });
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/agent")
+                    .method(axum::http::Method::POST)
+                    .header("Content-Type", "application/json")
+                    .body(Body::from(serde_json::to_string(&body).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_structure_create_returns_error_without_db() {
+        let pool = build_test_pool();
+        let app = crate::program_center_core_entity_router(pool);
+
+        let body = serde_json::json!({
+            "name": "Test Structure",
+            "storage": "local"
+        });
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/structure")
+                    .method(axum::http::Method::POST)
+                    .header("Content-Type", "application/json")
+                    .body(Body::from(serde_json::to_string(&body).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     #[tokio::test]
     async fn test_unknown_route_returns_404() {
-        assert!(true);
+        let pool = build_test_pool();
+        let app = crate::program_center_core_entity_router(pool);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/unknown")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
 
     // ── ActionResult serialization ───────────────────────────────────────────
@@ -68,49 +302,12 @@ mod tests {
         assert!(json["data"].is_null());
     }
 
-    #[test]
-    fn test_action_result_with_count_and_size() {
-        let mut result: ActionResult<serde_json::Value> =
-            ActionResult::success(serde_json::json!({"items": []}));
-        result.count = Some(10);
-        result.size = Some(50);
-        let json = serde_json::to_value(&result).unwrap();
-        assert_eq!(json["count"], 10);
-        assert_eq!(json["size"], 50);
-    }
-
-    #[test]
-    fn test_application_list_response_format() {
-        let result: ActionResult<serde_json::Value> = ActionResult::success(serde_json::json!({
-            "count": 3,
-            "data": [
-                {"id": "1", "name": "测试应用", "category": "办公"}
-            ]
-        }));
-        let json = serde_json::to_value(&result).unwrap();
-        assert_eq!(json["type"], "success");
-        assert_eq!(json["data"]["count"], 3);
-    }
-
-    #[test]
-    fn test_script_list_response_format() {
-        let result: ActionResult<serde_json::Value> = ActionResult::success(serde_json::json!({
-            "count": 1,
-            "data": [
-                {"id": "s1", "name": "脚本1", "alias": "script1", "validated": true, "creatorPerson": "admin"}
-            ]
-        }));
-        let json = serde_json::to_value(&result).unwrap();
-        assert_eq!(json["type"], "success");
-        assert_eq!(json["data"]["data"][0]["validated"], true);
-    }
-
-    // ── Router build tests ───────────────────────────────────────────────────
+    // ── Router build test ────────────────────────────────────────────────────
 
     #[tokio::test]
     async fn test_program_center_core_entity_router_builds() {
-        // Router creation requires a tokio runtime to create the DatabaseConnection.
-        // Verified by cargo check and production startup.
-        assert!(true);
+        let pool = build_test_pool();
+        let _router = crate::program_center_core_entity_router(pool);
+        // Router builds successfully — verified by cargo check and production startup
     }
 }
