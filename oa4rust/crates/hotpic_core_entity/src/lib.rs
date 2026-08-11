@@ -43,6 +43,7 @@ pub async fn list(
                 ("application".to_string(), Value::String(m.application.clone())),
                 ("infoId".to_string(), Value::String(m.info_id.clone())),
                 ("title".to_string(), Value::String(m.title.clone())),
+                ("base64".to_string(), Value::String(m.base64.clone().unwrap_or_default())),
             ]))
         })
         .collect();
@@ -82,6 +83,7 @@ pub async fn list_by_app_and_info(
                 ("application".to_string(), Value::String(m.application.clone())),
                 ("infoId".to_string(), Value::String(m.info_id.clone())),
                 ("title".to_string(), Value::String(m.title.clone())),
+                ("base64".to_string(), Value::String(m.base64.clone().unwrap_or_default())),
             ]))
         })
         .collect();
@@ -174,7 +176,7 @@ pub async fn delete_by_id(
                 deleted_at: Set(Some(chrono::Utc::now().naive_utc())),
             };
             active.update(&db.0).await.map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Null)))
+            Ok(Json(ActionResult::success(serde_json::json!({"success": true}))))
         }
         None => Ok(Json(ActionResult::error("hotpic not found"))),
     }

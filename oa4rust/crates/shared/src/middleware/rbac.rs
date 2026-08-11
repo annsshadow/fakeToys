@@ -200,6 +200,12 @@ impl PermissionRegistry {
         registry.register_prefix("/jaxrs/message", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/processplatform", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/portal", PermissionLevel::Authenticated);
+        // express batch query endpoints: no authentication required (R24)
+        registry.register_prefix("/jaxrs/express/person", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/express/unit", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/express/identity", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/express/group", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/express/role", PermissionLevel::Public);
         // 现有管理端点（person/unit/role/group）：注册 Authenticated 保持向后兼容
         registry.register_prefix("/jaxrs/person", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/unit", PermissionLevel::Authenticated);

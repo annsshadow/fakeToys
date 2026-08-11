@@ -1,25 +1,23 @@
 [package]
-name = "personal"
+name = "empower"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-axum = { workspace = true, features = ["multipart"] }
+axum = { workspace = true }
 tokio.workspace = true
 sqlx.workspace = true
 deadpool-postgres.workspace = true
-serde.workspace = true
+serde = { workspace = true, features = ["derive"] }
 serde_json.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 uuid.workspace = true
-bcrypt.workspace = true
-base64.workspace = true
 chrono.workspace = true
-md5.workspace = true
-urlencoding.workspace = true
 
 shared = { path = "../shared" }
 auth = { path = "../auth" }
-empower = { path = "../empower" }
+
+[dev-dependencies]
+tower = "0.5"

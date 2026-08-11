@@ -14,6 +14,7 @@ use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
 
+mod ldap_auth;
 pub mod andfx;
 pub mod bind;
 pub mod captcha;
@@ -50,14 +51,25 @@ pub struct LoginRequest {
 #[derive(Debug, Serialize)]
 pub struct LoginResponse {
     pub token: String,
+    pub token_type: String,
+    pub role_list: Vec<String>,
+    pub password_expired: bool,
+    pub identity_list: Vec<String>,
     pub person: PersonInfo,
 }
 
 #[derive(Debug, Serialize, Clone)]
 pub struct PersonInfo {
+    pub id: String,
     pub unique: String,
     pub name: String,
     pub mobile: Option<String>,
+    pub email: Option<String>,
+    pub icon: Option<String>,
+    pub job: Option<String>,
+    pub department: Option<String>,
+    pub unit: Option<String>,
+    pub position: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -85,21 +97,48 @@ pub async fn login(
 
     let row = client
         .query_one(
-            "SELECT id, unique_id, name, mobile, password_hash, locked FROM auth_person \
-             WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
+            "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
+             password_hash, locked, change_password_time, password_expired_time FROM auth_person \
+             WHERE unique_id = $1 AND deleted_at IS NULL",
             &[&req.credential],
         )
         .await
         .map_err(|_| AppError::Unauthorized)?;
 
-    let _person_id: String = row.get("id");
+    let person_id: String = row.get("id");
     let person_unique: String = row.get("unique_id");
     let person_name: String = row.get("name");
     let person_mobile: Option<String> = row.get("mobile");
+    let person_email: Option<String> = row.get("email");
+    let person_icon: Option<String> = row.get("icon");
+    let person_job: Option<String> = row.get("job");
+    let person_department: Option<String> = row.get("department");
+    let person_unit: Option<String> = row.get("unit");
+    let person_position: Option<String> = row.get("position");
     let password_hash: String = row.get("password_hash");
+    let locked: bool = row.get("locked");
+    let change_password_time: Option<String> = row.get("change_password_time");
+    let password_expired_time: Option<String> = row.get("password_expired_time");
 
-    // 验证密码（支持 bcrypt/MD5/DES 多算法兼容）
-    let valid = password::verify_password(&req.password, &password_hash, "", None);
+    // 检查账户是否被锁定
+    if locked {
+        return Ok(Json(ActionResult::error("account locked")));
+    }
+
+
+    // LDAP 认证优先（若启用）：成功后跳过数据库密码校验
+    let ldap_result = ldap_auth::try_ldap_authenticate(&req.credential, &req.password).await;
+    let valid = match ldap_result {
+        Some(true) => true,  // LDAP 认证成功
+        Some(false) => {
+            // LDAP 认证失败/出错，回退到数据库密码校验
+            password::verify_password(&req.password, &password_hash, "", None)
+        }
+        None => {
+            // LDAP 未启用，走数据库密码校验
+            password::verify_password(&req.password, &password_hash, "", None)
+        }
+    };
     if !valid {
         return Ok(Json(ActionResult::error("invalid credentials")));
     }
@@ -110,24 +149,70 @@ pub async fn login(
         let _ = client
             .execute(
                 "UPDATE auth_person SET password_hash = $1, updated_at = NOW() WHERE id = $2",
-                &[&new_hash, &_person_id],
+                &[&new_hash, &person_id],
             )
             .await;
     }
+
+    // 检查密码是否过期（简化实现：如果 change_password_time 为 NULL 则密码过期）
+    let password_expired = match change_password_time {
+        None => true,
+        Some(_) => false,
+    };
+
+    // 查询用户角色列表
+    let role_list: Vec<String> = {
+        let role_rows = client
+            .query(
+                "SELECT r.name FROM auth_role r \
+                 JOIN auth_person_role pr ON r.id = pr.role_id \
+                 WHERE pr.person_id = $1 AND r.deleted_at IS NULL",
+                &[&person_id],
+            )
+            .await
+            .unwrap_or_default();
+        role_rows.iter().map(|r| r.get::<_, String>("name")).collect()
+    };
+
+    // 查询用户身份列表
+    let identity_list: Vec<String> = {
+        let identity_rows = client
+            .query(
+                "SELECT i.name FROM auth_identity i \
+                 JOIN auth_person_identity pi ON i.id = pi.identity_id \
+                 WHERE pi.person_id = $1 AND i.deleted_at IS NULL",
+                &[&person_id],
+            )
+            .await
+            .unwrap_or_default();
+        identity_rows.iter().map(|r| r.get::<_, String>("name")).collect()
+    };
 
     let token = Uuid::new_v4().to_string();
     let session = session_manager.create_session(person_unique.clone(), token.clone()).await;
 
     let response = ActionResult::success(LoginResponse {
         token: session.token,
+        token_type: "Bearer".to_string(),
+        role_list,
+        password_expired,
+        identity_list,
         person: PersonInfo {
+            id: person_id,
             unique: person_unique,
             name: person_name,
             mobile: person_mobile,
+            email: person_email,
+            icon: person_icon,
+            job: person_job,
+            department: person_department,
+            unit: person_unit,
+            position: person_position,
         },
     });
 
     Ok(Json(response))
+
 }
 
 // --- 刷新 / 登出 / 当前用户 ---
@@ -300,6 +385,73 @@ pub(crate) fn code_store() -> &'static CodeStore {
     STORE.get_or_init(CodeStore::new)
 }
 
+// --- 临时 Token 存储（双因素登录阶段绑定）---
+
+#[derive(Clone)]
+struct TempTokenEntry {
+    credential: String,
+    expires_at: DateTime<Utc>,
+}
+
+const TEMP_TOKEN_TTL_MINUTES: i64 = 5;
+
+pub struct TempTokenStore {
+    entries: Mutex<HashMap<String, TempTokenEntry>>,
+}
+
+impl Default for TempTokenStore {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl TempTokenStore {
+    pub fn new() -> Self {
+        Self {
+            entries: Mutex::new(HashMap::new()),
+        }
+    }
+
+    fn cleanup(&self) {
+        let now = Utc::now();
+        if let Ok(mut map) = self.entries.lock() {
+            map.retain(|_, e| e.expires_at > now);
+        }
+    }
+
+    pub fn issue(&self, credential: &str) -> String {
+        self.cleanup();
+        let token = Uuid::new_v4().to_string();
+        if let Ok(mut map) = self.entries.lock() {
+            map.insert(
+                token.clone(),
+                TempTokenEntry {
+                    credential: credential.to_string(),
+                    expires_at: Utc::now() + Duration::minutes(TEMP_TOKEN_TTL_MINUTES),
+                },
+            );
+        }
+        token
+    }
+
+    pub fn verify(&self, token: &str) -> Option<String> {
+        self.cleanup();
+        let Ok(mut map) = self.entries.lock() else {
+            return None;
+        };
+        let entry = map.remove(token)?;
+        if entry.expires_at <= Utc::now() {
+            return None;
+        }
+        Some(entry.credential)
+    }
+}
+
+pub(crate) fn temp_token_store() -> &'static TempTokenStore {
+    static STORE: OnceLock<TempTokenStore> = OnceLock::new();
+    STORE.get_or_init(TempTokenStore::new)
+}
+
 /// GET /jaxrs/authentication/code/credential/{credential} —— 向凭据发送登录验证码
 pub async fn code_send(
     Path(credential): Path<String>,
@@ -313,22 +465,89 @@ pub async fn code_send(
     ])))))
 }
 
-/// POST /jaxrs/authentication/code —— 发送登录验证码（请求体可含 credential）
+/// POST /jaxrs/authentication/code —— 双因素登录第二阶段
+///
+/// 验证 credential + codeAnswer + temp_token，签发完整会话
 pub async fn code(
+    pool: Extension<Pool>,
+    session_manager: Extension<SessionManager>,
     Json(payload): Json<Value>,
-) -> Result<Json<ActionResult<Value>>, AppError> {
+) -> Result<Json<ActionResult<TwoFactorLoginResponse>>, AppError> {
     let credential = payload
         .get("credential")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
-    if credential.is_empty() {
-        return Err(AppError::BadRequest("credential cannot be empty".to_string()));
+    let code_answer = payload
+        .get("codeAnswer")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+    let temp_token = payload
+        .get("tempToken")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    if credential.is_empty() || code_answer.is_empty() || temp_token.is_empty() {
+        return Ok(Json(ActionResult::error("invalid request")));
     }
-    let _plain = code_store().issue(&credential);
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("message".to_string(), Value::String("code sent".to_string())),
-    ])))))
+
+    let bound_credential = temp_token_store().verify(&temp_token);
+    let bound_credential = match bound_credential {
+        Some(cred) => cred,
+        None => return Ok(Json(ActionResult::error("invalid or expired session"))),
+    };
+
+    if bound_credential != credential {
+        return Ok(Json(ActionResult::error("credential mismatch")));
+    }
+
+    let code_valid = code_store().verify(&credential, &code_answer);
+    if !code_valid {
+        return Ok(Json(ActionResult::error("invalid code")));
+    }
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_one(
+            "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position \
+             FROM auth_person \
+             WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
+            &[&credential],
+        )
+        .await
+        .map_err(|_| AppError::Unauthorized)?;
+
+    let person_id: String = row.get("id");
+    let person_unique: String = row.get("unique_id");
+    let person_name: String = row.get("name");
+    let person_mobile: Option<String> = row.get("mobile");
+    let person_email: Option<String> = row.get("email");
+    let person_icon: Option<String> = row.get("icon");
+    let person_job: Option<String> = row.get("job");
+    let person_department: Option<String> = row.get("department");
+    let person_unit: Option<String> = row.get("unit");
+    let person_position: Option<String> = row.get("position");
+
+    let token = Uuid::new_v4().to_string();
+    let session = session_manager.create_session(person_unique.clone(), token.clone()).await;
+
+    Ok(Json(ActionResult::success(TwoFactorLoginResponse {
+        token: session.token,
+        person: PersonInfo {
+            id: person_id,
+            unique: person_unique,
+            name: person_name,
+            mobile: person_mobile,
+            email: person_email,
+            icon: person_icon,
+            job: person_job,
+            department: person_department,
+            unit: person_unit,
+            position: person_position,
+        },
+    })))
 }
 
 // --- 组织架构查询（保持既有契约路径）---

@@ -125,7 +125,33 @@ impl SessionManager {
         session
     }
 
-    /// 验证会话令牌是否有效（未过期、存在）
+    /// 检查 TokenThreshold：若会话创建时间早于用户最新注销时间戳，则拒绝该会话。
+    /// 多实例场景下，safe_logout 写入 TokenThreshold 后，其他实例通过此方法
+    /// 在验证会话时感知注销事件，使旧 token 失效。
+    /// 返回 true 表示会话有效（未被注销），false 表示已被注销。
+    pub async fn check_token_threshold(&self, token_created_at: NaiveDateTime, person_unique: &str) -> bool {
+        if let Some(pool) = &self.pool {
+            if let Ok(client) = pool.get().await {
+                if let Ok(row) = client
+                    .query_opt(
+                        "SELECT threshold_time FROM auth_token_threshold WHERE person_unique = $1",
+                        &[&person_unique],
+                    )
+                    .await
+                {
+                    if let Some(row) = row {
+                        let threshold_str: String = row.get("threshold_time");
+                        if let Ok(threshold) = NaiveDateTime::parse_from_str(&threshold_str, "%Y-%m-%d %H:%M:%S") {
+                            return token_created_at >= threshold;
+                        }
+                    }
+                }
+            }
+        }
+        true
+    }
+
+    /// 验证会话令牌是否有效（未过期、存在、未被 TokenThreshold 注销）
     pub async fn validate_session(&self, token: &str) -> Option<Session> {
         let session = {
             let sessions = self.sessions.read().await;
@@ -133,7 +159,14 @@ impl SessionManager {
         };
 
         match session {
-            Some(s) if s.expires_at > Utc::now().naive_utc() => Some(s),
+            Some(s) if s.expires_at > Utc::now().naive_utc() => {
+                // 检查 TokenThreshold
+                if !self.check_token_threshold(s.created_at, &s.person_unique).await {
+                    self.remove_session(token).await;
+                    return None;
+                }
+                Some(s)
+            }
             Some(_) => {
                 self.remove_session(token).await;
                 None
@@ -163,6 +196,10 @@ impl SessionManager {
                                     created_at,
                                     expires_at,
                                 };
+                                // 检查 TokenThreshold
+                                if !self.check_token_threshold(session.created_at, &session.person_unique).await {
+                                    return None;
+                                }
                                 self.sessions
                                     .write()
                                     .await
@@ -224,5 +261,67 @@ impl SessionManager {
                 }
             }
         }
+    }
+
+    /// 多实例安全注销广播
+    ///
+    /// 单实例场景：仅执行本地 session 移除（已在 remove_sessions_by_person 中完成），
+    /// 此方法仅记录日志并返回。
+    ///
+    /// 多实例场景：通过数据库广播 TokenThreshold，使其他实例在验证会话时
+    /// 感知注销事件。TokenThreshold 已在 safe_logout 中写入，此方法
+    /// 确保所有实例的本地缓存中早于阈值的 session 被清除。
+    pub async fn broadcast_logout(&self, person_unique: &str) {
+        // 单实例模式：无数据库连接时直接返回
+        let pool = match &self.pool {
+            Some(p) => p,
+            None => {
+                tracing::debug!(person = %person_unique, "single-instance mode: skipping broadcast");
+                return;
+            }
+        };
+
+        // 多实例模式：读取最新 TokenThreshold，清除本地缓存中早于阈值的 session
+        let client = match pool.get().await {
+            Ok(c) => c,
+            Err(_) => return,
+        };
+
+        let threshold: NaiveDateTime = match client
+            .query_opt(
+                "SELECT threshold_time FROM auth_token_threshold WHERE person_unique = $1",
+                &[&person_unique],
+            )
+            .await
+        {
+            Ok(Some(row)) => {
+                let threshold_str: String = row.get("threshold_time");
+                match NaiveDateTime::parse_from_str(&threshold_str, "%Y-%m-%d %H:%M:%S") {
+                    Ok(t) => t,
+                    Err(_) => return,
+                }
+            }
+            _ => return,
+        };
+
+        // 清除本地缓存中早于阈值的 session
+        let expired_tokens: Vec<String> = {
+            let sessions = self.sessions.read().await;
+            sessions
+                .iter()
+                .filter(|(_, s)| s.person_unique == person_unique && s.created_at < threshold)
+                .map(|(token, _)| token.clone())
+                .collect()
+        };
+
+        for token in &expired_tokens {
+            self.sessions.write().await.remove(token);
+        }
+
+        tracing::debug!(
+            person = %person_unique,
+            expired_count = expired_tokens.len(),
+            "multi-instance broadcast: invalidated sessions before threshold"
+        );
     }
 }

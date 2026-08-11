@@ -1,16 +1,21 @@
 use axum::{
     extract::Extension,
     extract::Query,
-    Json, Router, routing::get, routing::post,
+    Json,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
-use uuid::Uuid;
 
 use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
+pub mod batch_query;
+
+pub use batch_query::{
+    express_person_list, express_unit_list, express_identity_list, express_group_list,
+    express_role_list, express_person_with_unit, express_person_with_identity,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct ExpressQuery {

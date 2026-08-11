@@ -146,4 +146,27 @@ mod tests {
             || response.status() == StatusCode::OK
             || response.status() == StatusCode::NOT_FOUND);
     }
+
+    #[test]
+    fn test_delete_success_response_structure() {
+        let result = shared::response::ActionResult::success(serde_json::json!({"success": true}));
+        let json = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"]["success"], true);
+    }
+
+    #[test]
+    fn test_list_data_includes_base64_field() {
+        let data = serde_json::json!([{
+            "id": "hp-001",
+            "application": "OA",
+            "infoId": "info-001",
+            "title": "热图",
+            "base64": "iVBORw0KGgo="
+        }]);
+        let result = shared::response::ActionResult::success(serde_json::json!({"count": 1, "data": data}));
+        let json = serde_json::to_value(&result).unwrap();
+        let item = &json["data"]["data"][0];
+        assert_eq!(item["base64"], "iVBORw0KGgo=");
+    }
 }

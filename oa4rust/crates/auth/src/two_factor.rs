@@ -3,21 +3,20 @@ use axum::{
     Json,
 };
 use deadpool_postgres::Pool;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use shared::error::AppError;
 use shared::response::ActionResult;
-use shared::session::SessionManager;
 
-use crate::{code_store, PersonInfo};
-pub use crate::TwoFactorLoginResponse;
+use crate::{code_store, password, temp_token_store};
 
 // ──────────────────────────────────────────────────────────────────────────────
-// two_factor — 双因素登录（短信验证码第二因子）
+// two_factor — 双因素登录第一阶段（短信验证码发送）
 //
 // 流程：POST /jaxrs/authentication/two_factor
-//   1. 验证第一因子：credential + password（复用 login 逻辑）
-//   2. 验证第二因子：短信验证码（复用 CodeStore）
-//   3. 签发会话 token
+//   1. 验证第一因子：credential + password
+//   2. 发送短信验证码
+//   3. 签发临时 token（绑定到 credential，防止凭证交换攻击）
+//   4. 返回 {value: true, password_expired: bool, temp_token: "..."}
 //
 // 安全：第一因子失败时返回相同错误消息，不暴露是否验证码正确（防枚举）
 // ──────────────────────────────────────────────────────────────────────────────
@@ -26,64 +25,61 @@ pub use crate::TwoFactorLoginResponse;
 pub struct TwoFactorLoginRequest {
     pub credential: String,
     pub password: String,
-    pub code: String,
 }
 
-/// POST /jaxrs/authentication/two_factor —— 双因素登录
+#[derive(Debug, Serialize)]
+pub struct TwoFactorPhase1Response {
+    pub value: bool,
+    pub password_expired: bool,
+    pub temp_token: String,
+}
+
+/// POST /jaxrs/authentication/two_factor —— 双因素登录第一阶段
 ///
-/// 第一因子：credential + password（复用 login handler 的密码验证逻辑）
-/// 第二因子：短信验证码（复用 CodeStore）
-/// 成功后签发 2 小时有效会话 token。
+/// 验证 credential + password，发送短信验证码，签发临时 token（阶段绑定）
 pub async fn two_factor_login(
     pool: Extension<Pool>,
-    session_manager: Extension<SessionManager>,
     Json(req): Json<TwoFactorLoginRequest>,
-) -> Result<Json<ActionResult<TwoFactorLoginResponse>>, AppError> {
-    if req.credential.is_empty() || req.password.is_empty() || req.code.is_empty() {
+) -> Result<Json<ActionResult<TwoFactorPhase1Response>>, AppError> {
+    if req.credential.is_empty() || req.password.is_empty() {
         return Ok(Json(ActionResult::error("invalid credentials")));
     }
 
-    // 第一因子验证：查询用户并验证密码
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
         .query_one(
-            "SELECT id, unique_id, name, mobile, password_hash FROM auth_person \
-             WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
+            "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
+             password_hash, locked, change_password_time, password_expired_time FROM auth_person \
+             WHERE unique_id = $1 AND deleted_at IS NULL",
             &[&req.credential],
         )
         .await
         .map_err(|_| AppError::Unauthorized)?;
 
     let person_unique: String = row.get("unique_id");
-    let person_name: String = row.get("name");
-    let person_mobile: Option<String> = row.get("mobile");
+    let locked: bool = row.get("locked");
     let password_hash: String = row.get("password_hash");
+    let change_password_time: Option<String> = row.get("change_password_time");
 
-    // 验证密码
-    let valid = crate::password::verify_password(&req.password, &password_hash, "", None);
+    if locked {
+        return Ok(Json(ActionResult::error("account locked")));
+    }
+
+    let valid = password::verify_password(&req.password, &password_hash, "", None);
     if !valid {
         return Ok(Json(ActionResult::error("invalid credentials")));
     }
 
-    // 第二因子验证：短信验证码
-    let code_valid = code_store().verify(&req.credential, &req.code);
-    if !code_valid {
-        return Ok(Json(ActionResult::error("invalid credentials")));
-    }
+    let password_expired = change_password_time.is_none();
 
-    // 签发会话
-    let token = uuid::Uuid::new_v4().to_string();
-    let session = session_manager
-        .create_session(person_unique.clone(), token.clone())
-        .await;
+    let _plain = code_store().issue(&person_unique);
 
-    Ok(Json(ActionResult::success(TwoFactorLoginResponse {
-        token: session.token,
-        person: PersonInfo {
-            unique: person_unique,
-            name: person_name,
-            mobile: person_mobile,
-        },
+    let temp_token = temp_token_store().issue(&person_unique);
+
+    Ok(Json(ActionResult::success(TwoFactorPhase1Response {
+        value: true,
+        password_expired,
+        temp_token,
     })))
 }
