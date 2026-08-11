@@ -4,11 +4,26 @@ use deadpool_postgres::Pool;
 use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
+use shared::session::Session;
+use shared::middleware::rbac::is_admin;
+
+/// 检查发布权限（仅 admin 角色）
+async fn check_cms_publish(pool: &Pool, session: &Session) -> Result<(), AppError> {
+    if is_admin(pool, &session.person_unique).await {
+        return Ok(());
+    }
+    Err(AppError::Forbidden)
+}
 
 pub async fn view_publish(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
     db: Extension<DatabaseConnection>,
     Path(xid): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let pool_ref: &Pool = &pool;
+    check_cms_publish(pool_ref, &session).await?;
+
     let model = cms_view::Entity::find_by_id(&xid)
         .one(&db.0)
         .await
@@ -34,9 +49,14 @@ pub async fn view_publish(
 }
 
 pub async fn view_unpublish(
+    pool: Extension<Pool>,
+    session: Extension<Session>,
     db: Extension<DatabaseConnection>,
     Path(xid): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let pool_ref: &Pool = &pool;
+    check_cms_publish(pool_ref, &session).await?;
+
     let model = cms_view::Entity::find_by_id(&xid)
         .one(&db.0)
         .await

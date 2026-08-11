@@ -1,11 +1,12 @@
 use axum::{
     extract::{Extension, Query},
-    Json, Router, routing::get, routing::post,
+    Json,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
+use shared::session::Session;
 
 /// ����ƽ̨�����װ��ģ��
 /// �ṩ�����������ص�װ�����
@@ -28,6 +29,7 @@ pub struct CreateFlowRequest {
 /// �������󴴽��µ��������
 pub async fn create_flow(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     axum::extract::Json(req): Json<CreateFlowRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let name = req.name.unwrap_or_default();
@@ -40,7 +42,7 @@ pub async fn create_flow(
     let category = req.category.unwrap_or_default();
     let description = req.description.unwrap_or_default();
     let version = 1i32;
-    let creator = "system".to_string();
+    let creator = session.person_unique.clone();
 
     client
         .execute(
@@ -104,32 +106,45 @@ pub async fn list_flows(
     let size = params.size.unwrap_or(20).clamp(1, 100);
     let offset = (page - 1) * size;
 
-    let category_filter = if category == "all" || category.is_empty() {
-        "".to_string()
+    let total: i64 = if category.is_empty() || category == "all" {
+        client
+            .query_one(
+                "SELECT COUNT(*) as count FROM x_process_definition WHERE 1=1",
+                &[],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+            .get("count")
     } else {
-        format!("AND category = '{}'", category.replace("'", "''"))
+        client
+            .query_one(
+                "SELECT COUNT(*) as count FROM x_process_definition WHERE category = $1",
+                &[&category],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+            .get("count")
     };
 
-    let total: i64 = client
-        .query_one(
-            &format!("SELECT COUNT(*) as count FROM x_process_definition WHERE 1=1 {}", category_filter),
-            &[],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?
-        .get("count");
-
-    let rows = client
-        .query(
-            &format!(
+    let rows = if category.is_empty() || category == "all" {
+        client
+            .query(
                 "SELECT id, name, category, version, creator, create_time FROM x_process_definition \
-                 WHERE 1=1 {} ORDER BY create_time DESC LIMIT $1 OFFSET $2",
-                category_filter
-            ),
-            &[&size, &offset],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+                 WHERE 1=1 ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+                &[&size, &offset],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    } else {
+        client
+            .query(
+                "SELECT id, name, category, version, creator, create_time FROM x_process_definition \
+                 WHERE category = $1 ORDER BY create_time DESC LIMIT $2 OFFSET $3",
+                &[&category, &size, &offset],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?
+    };
 
     let data: Vec<Value> = rows
         .iter()

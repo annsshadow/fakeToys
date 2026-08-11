@@ -1,7 +1,8 @@
 use axum::{
     extract::Extension,
-    Json, routing::get, routing::post,
+    Json,
 };
+use base64::Engine;
 use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
@@ -516,304 +517,878 @@ pub async fn delete_file_entity(
 }
 
 
-pub async fn anonymous_file_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn anonymous_file_id_download(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    let client = pool.0.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT name, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            let mime: String = row.get("mime_type");
+            let name: String = row.get("name");
+            let bytes = match content {
+                Some(c) => base64::engine::general_purpose::STANDARD.decode(c).unwrap_or_default(),
+                None => vec![],
+            };
+            Ok(axum::response::Response::builder()
+                .status(axum::http::StatusCode::OK)
+                .header("Content-Type", mime)
+                .header("Content-Disposition", format!("attachment; filename=\"{}\"", name))
+                .body(axum::body::Body::from(bytes))
+                .unwrap())
+        }
+        None => Ok(axum::response::Response::builder()
+            .status(axum::http::StatusCode::NOT_FOUND)
+            .body(axum::body::Body::empty())
+            .unwrap()),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn anonymous_file_id_download_stream(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    anonymous_file_id_download(pool, axum::extract::Path(id)).await
+}
+
+#[axum::debug_handler]
+pub async fn attachment_list_editor_owner(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
+             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn anonymous_file_id_download_stream() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn attachment_list_folder_folderId(
+    pool: Extension<Pool>,
+    axum::extract::Path(folder_id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
+             FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&folder_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn attachment_list_editor_owner() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn attachment_list_share_owner(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
+             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn attachment_list_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn attachment_list_top(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
+             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 20",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn attachment_list_share_owner() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn attachment_upload_folder_folderId(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(folder_id): axum::extract::Path<String>,
+    mut form: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut file_data: Option<Vec<u8>> = None;
+    let mut mime_type: Option<String> = None;
+    let mut filename: Option<String> = None;
+    let mut name: Option<String> = None;
+    while let Some(field) = form.next_field().await.map_err(|_| AppError::BadRequest("multipart parse failed".to_string()))? {
+        if let Some(fname) = field.file_name() {
+            mime_type = field.content_type().map(|s| s.to_string());
+            filename = Some(fname.to_string());
+            file_data = Some(field.bytes().await.map_err(|_| AppError::BadRequest("file read failed".to_string()))?.to_vec());
+        } else {
+            let fn_ = field.name().unwrap_or("").to_string();
+            let value = field.text().await.map_err(|_| AppError::BadRequest("form read failed".to_string()))?;
+            if fn_ == "name" { name = Some(value); }
+        }
+    }
+    let data = match file_data { Some(d) => d, None => return Ok(Json(ActionResult::error("no file provided"))), };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = name.unwrap_or_else(|| filename.clone().unwrap_or_else(|| format!("file-{}", id)));
+    let mime = mime_type.as_deref().unwrap_or("");
+    let ext = match mime {
+        "image/jpeg" => "jpg", "image/png" => "png", "image/gif" => "gif",
+        "application/pdf" => "pdf", "text/plain" => "txt",
+        _ => { if let Some(ref fname) = filename { fname.split('.').last().unwrap_or("bin") } else { "bin" } }
+    };
+    let content_b64 = base64::engine::general_purpose::STANDARD.encode(&data);
+    let ref_type = String::from("attachment");
+    client.execute(
+        "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
+        &[&id, &name, &session.person_unique, &folder_id, &ref_type, &ext, &(data.len() as i64), &mime, &content_b64],
+    ).await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("uploaded".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
 
-pub async fn attachment_list_top() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+#[axum::debug_handler]
+pub async fn attachment_upload_folder_folderId_callback_callback(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path((folder_id, _callback)): axum::extract::Path<(String, String)>,
+    mut form: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment_upload_folder_folderId(pool, Extension(session), axum::extract::Path(folder_id), form).await
 }
 
-pub async fn attachment_upload_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+#[axum::debug_handler]
+pub async fn attachment_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("person".to_string(), Value::String(row.get("person"))),
+                ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+                ("extension".to_string(), Value::String(row.get("extension"))),
+                ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+                ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]),
+        )))),
+        None => Ok(Json(ActionResult::error("attachment not found"))),
+    }
 }
 
-pub async fn attachment_upload_folder_folderId_callback_callback() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+#[axum::debug_handler]
+pub async fn attachment_id_binary_base64(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("contentBase64".to_string(), Value::String(content.unwrap_or_default())),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("attachment not found"))),
+    }
 }
 
-pub async fn attachment_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+#[axum::debug_handler]
+pub async fn attachment_id_download(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT name, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            let mime: String = row.get("mime_type");
+            let name: String = row.get("name");
+            let bytes = match content {
+                Some(c) => base64::engine::general_purpose::STANDARD.decode(c).unwrap_or_default(),
+                None => vec![],
+            };
+            Ok(axum::response::Response::builder()
+                .status(axum::http::StatusCode::OK)
+                .header("Content-Type", mime)
+                .header("Content-Disposition", format!("attachment; filename=\"{}\"", name))
+                .body(axum::body::Body::from(bytes))
+                .unwrap())
+        }
+        None => Ok(axum::response::Response::builder()
+            .status(axum::http::StatusCode::NOT_FOUND)
+            .body(axum::body::Body::empty())
+            .unwrap()),
+    }
 }
 
-pub async fn attachment_id_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+#[axum::debug_handler]
+pub async fn attachment_id_download_stream(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    attachment_id_download(pool, axum::extract::Path(id)).await
 }
 
-pub async fn attachment_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+#[axum::debug_handler]
+pub async fn attachment_id_image_scale_scale_binary_base64(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, _scale)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment_id_binary_base64(pool, axum::extract::Path(id)).await
 }
 
-pub async fn attachment_id_download_stream() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+#[axum::debug_handler]
+pub async fn attachment_id_image_width_width_height_height_binary_base64(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, _width, _height)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment_id_binary_base64(pool, axum::extract::Path(id)).await
 }
 
-pub async fn attachment_id_image_scale_scale_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn attachment_id_update(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let Some(row) = row else { return Ok(Json(ActionResult::error("attachment not found"))); };
+    let creator: String = row.get("person");
+    shared::middleware::require_owner(&pool, &session, &creator).await?;
+    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let mime_type = body.get("mimeType").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    client.execute(
+        "UPDATE FILE_FILE SET name = $1, mime_type = $2, update_time = NOW() WHERE id = $3 AND deleted_at IS NULL",
+        &[&name, &mime_type, &id],
+    ).await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn attachment_id_image_width_width_height_height_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn attachment_id_update() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
             ("saved".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
 
-pub async fn attachment_id_update_callback_callback() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn attachment_id_update_callback_callback(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path((id, _callback)): axum::extract::Path<(String, String)>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment_id_update(pool, Extension(session), axum::extract::Path(id), axum::extract::Json(body)).await
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_exist_file_fileMd5(
+    pool: Extension<Pool>,
+    axum::extract::Path(md5): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let count: i64 = client
+        .query_one("SELECT COUNT(*) FROM FILE_FILE WHERE md5 = $1 AND deleted_at IS NULL", &[&md5])
+        .await.map_err(|_| AppError::Internal)?
+        .get("count");
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(true)),
+            ("exists".to_string(), Value::Bool(count > 0)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
         ]),
     ))))
 }
 
-pub async fn attachment2_exist_file_fileMd5() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn attachment2_list_editor_owner(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
+             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&session.person_unique],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_list_filter_name(
+    pool: Extension<Pool>,
+    axum::extract::Path(name): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
+             FROM FILE_FILE WHERE name ILIKE $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&format!("%{}%", name)],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_list_folder_folderId(
+    pool: Extension<Pool>,
+    axum::extract::Path(folder_id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
+             FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&folder_id],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_list_share_owner(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
+             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&session.person_unique],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_list_top(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
+             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 20",
+            &[],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_list_type_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((_type, page, size)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let page_size: i64 = size.parse().unwrap_or(20);
+    let offset: i64 = page.parse().unwrap_or(0) * page_size;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
+             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+            &[&page_size, &offset],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_upload_folder_folderId(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(folder_id): axum::extract::Path<String>,
+    mut form: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut file_data: Option<Vec<u8>> = None;
+    let mut mime_type: Option<String> = None;
+    let mut filename: Option<String> = None;
+    let mut name: Option<String> = None;
+    while let Some(field) = form.next_field().await.map_err(|_| AppError::BadRequest("multipart parse failed".to_string()))? {
+        if let Some(fname) = field.file_name() {
+            mime_type = field.content_type().map(|s| s.to_string());
+            filename = Some(fname.to_string());
+            file_data = Some(field.bytes().await.map_err(|_| AppError::BadRequest("file read failed".to_string()))?.to_vec());
+        } else {
+            let fn_ = field.name().unwrap_or("").to_string();
+            let value = field.text().await.map_err(|_| AppError::BadRequest("form read failed".to_string()))?;
+            if fn_ == "name" { name = Some(value); }
+        }
+    }
+    let data = match file_data { Some(d) => d, None => return Ok(Json(ActionResult::error("no file provided"))), };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = name.unwrap_or_else(|| filename.clone().unwrap_or_else(|| format!("file-{}", id)));
+    let mime = mime_type.as_deref().unwrap_or("");
+    let ext = match mime {
+        "image/jpeg" => "jpg", "image/png" => "png", "image/gif" => "gif",
+        "application/pdf" => "pdf", "text/plain" => "txt",
+        _ => { if let Some(ref fname) = filename { fname.split('.').last().unwrap_or("bin") } else { "bin" } }
+    };
+    let content_b64 = base64::engine::general_purpose::STANDARD.encode(&data);
+    let ref_type = String::from("attachment");
+    client.execute(
+        "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
+        &[&id, &name, &session.person_unique, &folder_id, &ref_type, &ext, &(data.len() as i64), &mime, &content_b64],
+    ).await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("uploaded".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_user_capacity(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT COALESCE(SUM(length), 0) AS total FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL", &[&session.person_unique])
+        .await.map_err(|_| AppError::Internal)?;
+    let total: i64 = row.map(|r| r.get("total")).unwrap_or(0);
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("used".to_string(), Value::Number(serde_json::Number::from(total))),
+            ("limit".to_string(), Value::Number(serde_json::Number::from(1073741824i64))),
             ("success".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
 
-pub async fn attachment2_list_editor_owner() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn attachment2_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("person".to_string(), Value::String(row.get("person"))),
+                ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+                ("extension".to_string(), Value::String(row.get("extension"))),
+                ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+                ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]),
+        )))),
+        None => Ok(Json(ActionResult::error("attachment not found"))),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_id_binary_base64(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("contentBase64".to_string(), Value::String(content.unwrap_or_default())),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("attachment not found"))),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_id_download(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT name, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            let mime: String = row.get("mime_type");
+            let name: String = row.get("name");
+            let bytes = match content {
+                Some(c) => base64::engine::general_purpose::STANDARD.decode(c).unwrap_or_default(),
+                None => vec![],
+            };
+            Ok(axum::response::Response::builder()
+                .status(axum::http::StatusCode::OK)
+                .header("Content-Type", mime)
+                .header("Content-Disposition", format!("attachment; filename=\"{}\"", name))
+                .body(axum::body::Body::from(bytes))
+                .unwrap())
+        }
+        None => Ok(axum::response::Response::builder()
+            .status(axum::http::StatusCode::NOT_FOUND)
+            .body(axum::body::Body::empty())
+            .unwrap()),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_id_download_image_width_width_height_height(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, _width, _height)): axum::extract::Path<(String, String, String)>,
+) -> Result<axum::response::Response, AppError> {
+    attachment2_id_download(pool, axum::extract::Path(id)).await
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_id_download_stream(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    attachment2_id_download(pool, axum::extract::Path(id)).await
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_id_image_scale_scale_binary_base64(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, _scale)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment2_id_binary_base64(pool, axum::extract::Path(id)).await
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_id_image_width_width_height_height_binary_base64(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, _width, _height)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment2_id_binary_base64(pool, axum::extract::Path(id)).await
+}
+
+#[axum::debug_handler]
+pub async fn attachment2_id_office_preview_type_type(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, _type)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT id, name FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("previewUrl".to_string(), Value::String(format!("/preview/{}", row.get::<_, String>("id")))),
+            ]),
+        )))),
+        None => Ok(Json(ActionResult::error("attachment not found"))),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn complex_folder_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT id, name, person, superior FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("person".to_string(), Value::String(row.get("person"))),
+                ("superior".to_string(), row.get::<_, Option<String>>("superior").map(Value::String).unwrap_or(Value::Null)),
+            ]),
+        )))),
+        None => Ok(Json(ActionResult::error("folder not found"))),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn complex_top(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let folder_rows = client
+        .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name LIMIT 10", &[])
+        .await.map_err(|_| AppError::Internal)?;
+    let folder_list: Vec<Value> = folder_rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("superior".to_string(), row.get::<_, Option<String>>("superior").map(Value::String).unwrap_or(Value::Null)),
+        ]))
+    }).collect();
+    let attachment_rows = client
+        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE ORDER BY name LIMIT 10", &[])
+        .await.map_err(|_| AppError::Internal)?;
+    let attachment_list: Vec<Value> = attachment_rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+        ]))
+    }).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
+            ("folderList".to_string(), Value::Array(folder_list)),
+            ("attachmentList".to_string(), Value::Array(attachment_list)),
         ]),
     ))))
 }
 
-pub async fn attachment2_list_filter_name() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn config_is_file_manager(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _ = pool;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
+            ("isFileManager".to_string(), Value::Bool(!session.person_unique.is_empty())),
+            ("personUnique".to_string(), Value::String(session.person_unique)),
         ]),
     ))))
 }
 
-pub async fn attachment2_list_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn attachment2_list_share_owner() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn attachment2_list_top() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn attachment2_list_type_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn attachment2_upload_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn attachment2_user_capacity() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn attachment2_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn attachment2_id_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn attachment2_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn attachment2_id_download_image_width_width_height_height() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn attachment2_id_download_stream() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn attachment2_id_image_scale_scale_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn attachment2_id_image_width_width_height_height_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn attachment2_id_office_preview_type_type() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn complex_folder_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn complex_top() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn config_is_file_manager() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
+#[axum::debug_handler]
 pub async fn config_system_config() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -822,16 +1397,361 @@ pub async fn config_system_config() -> Result<Json<ActionResult<Value>>, AppErro
     ))))
 }
 
-pub async fn editor_list() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn editor_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT DISTINCT person FROM FILE_FILE WHERE deleted_at IS NULL AND person != '' ORDER BY person", &[])
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("person".to_string(), Value::String(row.get("person"))),
+        ]))
+    }).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn file_clean_unused_referencetype_cmsdocument_manage() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn file_clean_unused_referencetype_cmsdocument_manage(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute("DELETE FROM FILE_FILE WHERE reference_type = $1 AND deleted_at IS NULL", &[&String::from("cmsdocument_manage")])
+        .await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("deleted".to_string(), Value::Number(serde_json::Number::from(result))),
+            ("success".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale(
+    pool: Extension<Pool>,
+    axum::extract::Path((attachment_id, reference_type, reference, _scale)): axum::extract::Path<(String, String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT name, person, extension, length, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&attachment_id])
+        .await.map_err(|_| AppError::Internal)?;
+    let Some(row) = row else { return Ok(Json(ActionResult::error("attachment not found"))); };
+    let new_id = uuid::Uuid::new_v4().to_string();
+    let name: String = row.get("name");
+    let person: String = row.get("person");
+    let ext: String = row.get("extension");
+    let length: i64 = row.get("length");
+    let mime: String = row.get("mime_type");
+    let content: Option<String> = row.get("content");
+    client.execute(
+        "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
+        &[&new_id, &name, &person, &reference, &reference_type, &ext, &length, &mime, &content],
+    ).await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(new_id)),
+            ("copied".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn file_list_referencetype(
+    pool: Extension<Pool>,
+    axum::extract::Path(reference_type): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
+             FROM FILE_FILE WHERE reference_type = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&reference_type],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn file_list_referencetype_referenceType_reference_reference(
+    pool: Extension<Pool>,
+    axum::extract::Path((reference_type, reference)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
+             FROM FILE_FILE WHERE reference_type = $1 AND reference_id = $2 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&reference_type, &reference],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn file_list_unused_referencetype_cmsdocument_manage(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE reference_type = 'cmsdocument_manage' AND deleted_at IS NULL ORDER BY create_time DESC", &[])
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn file_list_id_next_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, _count)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id > $1 AND deleted_at IS NULL ORDER BY id LIMIT 20", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn file_list_id_next_count_all(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, count)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    file_list_id_next_count(pool, axum::extract::Path((id, count))).await
+}
+
+#[axum::debug_handler]
+pub async fn file_list_id_next_count_referencetype_referenceType(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, count, reference_type)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id > $1 AND reference_type = $2 AND deleted_at IS NULL ORDER BY id LIMIT 20", &[&id, &reference_type])
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn file_list_id_prev_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, _count)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id < $1 AND deleted_at IS NULL ORDER BY id DESC LIMIT 20", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn file_list_id_prev_count_all(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, count)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    file_list_id_prev_count(pool, axum::extract::Path((id, count))).await
+}
+
+#[axum::debug_handler]
+pub async fn file_list_id_prev_count_referencetype_referenceType(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, count, reference_type)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE id < $1 AND reference_type = $2 AND deleted_at IS NULL ORDER BY id DESC LIMIT 20", &[&id, &reference_type])
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn file_referencetype_referenceType_reference_reference(
+    pool: Extension<Pool>,
+    axum::extract::Path((reference_type, reference)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    file_list_referencetype_referenceType_reference_reference(pool, axum::extract::Path((reference_type.clone(), reference.clone()))).await
+}
+
+#[axum::debug_handler]
+pub async fn file_upload_referencetype_referenceType_reference_reference_scale_scale(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path((reference_type, reference, _scale)): axum::extract::Path<(String, String, String)>,
+    mut form: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut file_data: Option<Vec<u8>> = None;
+    let mut mime_type: Option<String> = None;
+    let mut filename: Option<String> = None;
+    let mut name: Option<String> = None;
+    while let Some(field) = form.next_field().await.map_err(|_| AppError::BadRequest("multipart parse failed".to_string()))? {
+        if let Some(fname) = field.file_name() {
+            mime_type = field.content_type().map(|s| s.to_string());
+            filename = Some(fname.to_string());
+            file_data = Some(field.bytes().await.map_err(|_| AppError::BadRequest("file read failed".to_string()))?.to_vec());
+        } else {
+            let fn_ = field.name().unwrap_or("").to_string();
+            let value = field.text().await.map_err(|_| AppError::BadRequest("form read failed".to_string()))?;
+            if fn_ == "name" { name = Some(value); }
+        }
+    }
+    let data = match file_data { Some(d) => d, None => return Ok(Json(ActionResult::error("no file provided"))), };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = name.unwrap_or_else(|| filename.clone().unwrap_or_else(|| format!("file-{}", id)));
+    let mime = mime_type.as_deref().unwrap_or("");
+    let ext = match mime {
+        "image/jpeg" => "jpg", "image/png" => "png", "image/gif" => "gif",
+        "application/pdf" => "pdf", "text/plain" => "txt",
+        _ => { if let Some(ref fname) = filename { fname.split('.').last().unwrap_or("bin") } else { "bin" } }
+    };
+    let content_b64 = base64::engine::general_purpose::STANDARD.encode(&data);
+    client.execute(
+        "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
+        &[&id, &name, &session.person_unique, &reference, &reference_type, &ext, &(data.len() as i64), &mime, &content_b64],
+    ).await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("uploaded".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn file_upload_referencetype_referenceType_reference_reference_scale_scale_callback_callback(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path((reference_type, reference, _scale, _callback)): axum::extract::Path<(String, String, String, String)>,
+    mut form: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    file_upload_referencetype_referenceType_reference_reference_scale_scale(pool, Extension(session), axum::extract::Path((reference_type, reference, _scale)), form).await
+}
+
+#[axum::debug_handler]
+pub async fn file_upload_with_url(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _ = (pool, session, body);
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -839,7 +1759,177 @@ pub async fn file_clean_unused_referencetype_cmsdocument_manage() -> Result<Json
     ))))
 }
 
-pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn file_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT id, name, person, reference_type, extension, length, mime_type, create_time FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("person".to_string(), Value::String(row.get("person"))),
+                ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+                ("extension".to_string(), Value::String(row.get("extension"))),
+                ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+                ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]),
+        )))),
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn file_id_binary_base64(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("contentBase64".to_string(), Value::String(content.unwrap_or_default())),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn file_id_download(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT name, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            let mime: String = row.get("mime_type");
+            let name: String = row.get("name");
+            let bytes = match content {
+                Some(c) => base64::engine::general_purpose::STANDARD.decode(c).unwrap_or_default(),
+                None => vec![],
+            };
+            Ok(axum::response::Response::builder()
+                .status(axum::http::StatusCode::OK)
+                .header("Content-Type", mime)
+                .header("Content-Disposition", format!("attachment; filename=\"{}\"", name))
+                .body(axum::body::Body::from(bytes))
+                .unwrap())
+        }
+        None => Ok(axum::response::Response::builder()
+            .status(axum::http::StatusCode::NOT_FOUND)
+            .body(axum::body::Body::empty())
+            .unwrap()),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn file_id_download_stream(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    file_id_download(pool, axum::extract::Path(id)).await
+}
+
+#[axum::debug_handler]
+pub async fn folder_list_top(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name", &[])
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("superior".to_string(), row.get::<_, Option<String>>("superior").map(Value::String).unwrap_or(Value::Null)),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn folder_list_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior = $1 ORDER BY name", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("superior".to_string(), row.get::<_, Option<String>>("superior").map(Value::String).unwrap_or(Value::Null)),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn folder_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT id, name, person, superior FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("person".to_string(), Value::String(row.get("person"))),
+                ("superior".to_string(), row.get::<_, Option<String>>("superior").map(Value::String).unwrap_or(Value::Null)),
+            ]),
+        )))),
+        None => Ok(Json(ActionResult::error("folder not found"))),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn folder2_batch_download(
+    pool: Extension<Pool>,
+    axum::extract::Json(body): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ids: Vec<String> = body.get("ids")
+        .and_then(|v| v.as_array())
+        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
+        .unwrap_or_default();
+    if ids.is_empty() { return Ok(Json(ActionResult::error("ids is required"))); }
+    let _ = (pool, ids);
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -847,253 +1937,389 @@ pub async fn file_copy_attachment_attachmentId_referencetype_referenceType_refer
     ))))
 }
 
-pub async fn file_list_referencetype() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn folder2_list_top(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name LIMIT 20", &[])
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("superior".to_string(), row.get::<_, Option<String>>("superior").map(Value::String).unwrap_or(Value::Null)),
+        ]))
+    }).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn file_list_referencetype_referenceType_reference_reference() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+#[axum::debug_handler]
+pub async fn folder2_list_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    folder_list_id(pool, axum::extract::Path(id)).await
 }
 
-pub async fn file_list_unused_referencetype_cmsdocument_manage() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+#[axum::debug_handler]
+pub async fn folder2_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    folder_id(pool, axum::extract::Path(id)).await
 }
 
-pub async fn file_list_id_next_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
+#[axum::debug_handler]
+pub async fn folder2_id_download(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT id, name FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("downloadable".to_string(), Value::Bool(true)),
+            ]),
+        )))),
+        None => Ok(Json(ActionResult::error("folder not found"))),
+    }
 }
 
-pub async fn file_list_id_next_count_all() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn recycle_empty(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute("DELETE FROM FILE_FILE WHERE deleted_at IS NOT NULL AND person = $1", &[&session.person_unique])
+        .await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn file_list_id_next_count_referencetype_referenceType() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn file_list_id_prev_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn file_list_id_prev_count_all() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn file_list_id_prev_count_referencetype_referenceType() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn file_referencetype_referenceType_reference_reference() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
+            ("cleared".to_string(), Value::Number(serde_json::Number::from(result))),
             ("success".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
 
-pub async fn file_upload_referencetype_referenceType_reference_reference_scale_scale() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn recycle_list(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, mime_type, deleted_at \
+             FROM FILE_FILE WHERE deleted_at IS NOT NULL AND person = $1 ORDER BY deleted_at DESC",
+            &[&session.person_unique],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("mimeType".to_string(), Value::String(row.get("mime_type"))),
+            ("deletedAt".to_string(), Value::String(row.get("deleted_at"))),
+        ]))
+    }).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn file_upload_referencetype_referenceType_reference_reference_scale_scale_callback_callback() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+#[axum::debug_handler]
+pub async fn recycle_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT id, name, person, deleted_at FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("person".to_string(), Value::String(row.get("person"))),
+                ("deletedAt".to_string(), Value::String(row.get("deleted_at"))),
+            ]),
+        )))),
+        None => Ok(Json(ActionResult::error("file not in recycle bin"))),
+    }
 }
 
-pub async fn file_upload_with_url() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn recycle_id_delete(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let Some(row) = row else { return Ok(Json(ActionResult::error("file not in recycle bin"))); };
+    let creator: String = row.get("person");
+    shared::middleware::require_owner(&pool, &session, &creator).await?;
+    let result = client
+        .execute("DELETE FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    if result == 0 { return Ok(Json(ActionResult::error("file not in recycle bin"))); }
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn file_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn file_id_binary_base64() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn file_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn file_id_download_stream() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn folder_list_top() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn folder_list_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn folder_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn folder2_batch_download() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn folder2_list_top() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn folder2_list_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn folder2_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn folder2_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn recycle_empty() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn recycle_list() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn recycle_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn recycle_id_delete() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
             ("deleted".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
 
-pub async fn recycle_id_resume() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn recycle_id_resume(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT person FROM FILE_FILE WHERE id = $1 AND deleted_at IS NOT NULL", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    let Some(row) = row else { return Ok(Json(ActionResult::error("file not in recycle bin"))); };
+    let creator: String = row.get("person");
+    shared::middleware::require_owner(&pool, &session, &creator).await?;
+    client.execute("UPDATE FILE_FILE SET deleted_at = NULL, update_time = NOW() WHERE id = $1", &[&id])
+        .await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("resumed".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn share_download_share_shareId_file_fileId(
+    pool: Extension<Pool>,
+    axum::extract::Path((share_id, file_id)): axum::extract::Path<(String, String)>,
+) -> Result<axum::response::Response, AppError> {
+    let _ = share_id;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt("SELECT name, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&file_id])
+        .await.map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let content: Option<String> = row.get("content");
+            let mime: String = row.get("mime_type");
+            let name: String = row.get("name");
+            let bytes = match content {
+                Some(c) => base64::engine::general_purpose::STANDARD.decode(c).unwrap_or_default(),
+                None => vec![],
+            };
+            Ok(axum::response::Response::builder()
+                .status(axum::http::StatusCode::OK)
+                .header("Content-Type", mime)
+                .header("Content-Disposition", format!("attachment; filename=\"{}\"", name))
+                .body(axum::body::Body::from(bytes))
+                .unwrap())
+        }
+        None => Ok(axum::response::Response::builder()
+            .status(axum::http::StatusCode::NOT_FOUND)
+            .body(axum::body::Body::empty())
+            .unwrap()),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn share_list(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, create_time \
+             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&session.person_unique],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn share_list_att_share_shareId_folder_folderId(
+    pool: Extension<Pool>,
+    axum::extract::Path((share_id, folder_id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _ = share_id;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE folder_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&folder_id],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn share_list_folder_share_shareId_folder_folderId(
+    pool: Extension<Pool>,
+    axum::extract::Path((share_id, folder_id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    share_list_att_share_shareId_folder_folderId(pool, axum::extract::Path((share_id, folder_id))).await
+}
+
+#[axum::debug_handler]
+pub async fn share_list_my(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length, create_time \
+             FROM FILE_FILE WHERE person = $1 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&session.person_unique],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn share_list_my2_shareType_fileType(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path((_share_type, file_type)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, person, reference_type, extension, length FROM FILE_FILE WHERE person = $1 AND reference_type = $2 AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[&session.person_unique, &file_type],
+        )
+        .await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("extension".to_string(), Value::String(row.get("extension"))),
+            ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
+        ]))
+    }).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn share_list_to_me(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _ = (pool, session);
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn share_list_to_me2_fileType(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Path(file_type): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _ = (pool, session, file_type);
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn share_share_shareId_file_fileId_folder_folderId(
+    pool: Extension<Pool>,
+    axum::extract::Path((share_id, file_id, folder_id)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _ = (pool, share_id, file_id, folder_id);
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1101,7 +2327,12 @@ pub async fn recycle_id_resume() -> Result<Json<ActionResult<Value>>, AppError> 
     ))))
 }
 
-pub async fn share_download_share_shareId_file_fileId() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn share_shield_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _ = (pool, id);
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1109,70 +2340,12 @@ pub async fn share_download_share_shareId_file_fileId() -> Result<Json<ActionRes
     ))))
 }
 
-pub async fn share_list() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn share_list_att_share_shareId_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn share_list_folder_share_shareId_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn share_list_my() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn share_list_my2_shareType_fileType() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn share_list_to_me() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn share_list_to_me2_fileType() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
-            ("data".to_string(), Value::Array(vec![])),
-        ]),
-    ))))
-}
-
-pub async fn share_share_shareId_file_fileId_folder_folderId() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn share_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _ = (pool, id);
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),
@@ -1180,23 +2353,12 @@ pub async fn share_share_shareId_file_fileId_folder_folderId() -> Result<Json<Ac
     ))))
 }
 
-pub async fn share_shield_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn share_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn share_id_password_password() -> Result<Json<ActionResult<Value>>, AppError> {
+#[axum::debug_handler]
+pub async fn share_id_password_password(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, _password)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _ = (pool, id, _password);
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("success".to_string(), Value::Bool(true)),

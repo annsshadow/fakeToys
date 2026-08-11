@@ -251,8 +251,10 @@ chrono = { version = "0.4", features = ["serde"] }
 md5 = "0.7"
 urlencoding = "2"
 captcha = "1.0.0"
-reqwest = { version = "0.12", features = ["json"] }
-async-trait = "0.1"
+ reqwest = { version = "0.12", features = ["json"] }
+ async-trait = "0.1"
+ sqlparser = "0.51"
+ sysinfo = "0.33"
  utoipa = { version = "4", features = ["axum_extras"] }
  utoipa-swagger-ui = { version = "7", features = ["axum"] }
  openapi = { path = "crates/openapi" }

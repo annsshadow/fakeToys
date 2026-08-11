@@ -8,7 +8,9 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use shared::{error::AppError, response::ActionResult};
-
+use shared::session::Session;
+use shared::middleware::rbac::is_admin;
+use std::ops::Deref;
 pub mod routes;
 
 #[derive(Debug, Deserialize)]
@@ -22,6 +24,12 @@ pub struct ExecuteCommandRequest {
     pub command: Option<String>,
     pub args: Option<Vec<String>>,
 }
+
+/// 只读系统命令白名单
+const ALLOWED_COMMANDS: &[&str] = &["uname", "df", "free", "ps", "uptime"];
+
+/// shell 元字符黑名单
+const FORBIDDEN_CHARS: &[char] = &[';', '|', '&', '`', '$', '(', ')'];
 
 pub async fn get_status(
     pool: Extension<Pool>,
@@ -161,40 +169,77 @@ pub async fn get_metric(
 
 pub async fn execute_command(
     pool: Extension<Pool>,
+    session: Extension<Session>,
     Json(payload): Json<ExecuteCommandRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let command = payload.command.unwrap_or_default();
+    let command = payload.command.as_deref().ok_or(AppError::BadRequest("command is required".to_string()))?;
     let args = payload.args.unwrap_or_default();
 
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let id = uuid::Uuid::new_v4().to_string();
+    // RBAC: 仅 Admin 可执行命令
+    // pool 是 Extension<Pool>，可以通过 Deref 转换为 &Pool
+    if !is_admin(pool.deref(), &session.person_unique).await {
+        return Err(AppError::Forbidden);
+    }
 
-    client
-        .execute(
-            "INSERT INTO X.CONSOLE_COMMAND_LOG (xid, xcommand, xargs) VALUES ($1, $2, $3)",
-            &[&id, &command, &args.join(",")],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
+    // 检查命令是否在白名单中
+    let base_cmd = command.split_whitespace().next().unwrap_or(command);
+    if !ALLOWED_COMMANDS.contains(&base_cmd) {
+        return Err(AppError::BadRequest(format!(
+            "command '{}' is not allowed. Allowed: {:?}",
+            base_cmd, ALLOWED_COMMANDS
+        )));
+    }
+
+    // 检查 shell 元字符（禁止注入）
+    let full_input = format!("{} {}", command, args.join(" "));
+    if full_input.chars().any(|c| FORBIDDEN_CHARS.contains(&c)) {
+        return Err(AppError::BadRequest("forbidden shell metacharacters detected".to_string()));
+    }
+
+    // 执行命令（同步，非 async）
+    let output = std::process::Command::new("sh")
+        .arg("-c")
+        .arg(&full_input)
+        .output()
+        .map_err(|e| AppError::BadRequest(format!("failed to execute command: {}", e)))?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    let exit_code = output.status.code().unwrap_or(-1);
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("command".to_string(), Value::String(command)),
+            ("command".to_string(), Value::String(command.to_string())),
             ("args".to_string(), Value::Array(args.into_iter().map(Value::String).collect())),
-            ("output".to_string(), Value::String("command executed".to_string())),
-            ("exitCode".to_string(), Value::Number(serde_json::Number::from(0))),
+            ("output".to_string(), Value::String(stdout)),
+            ("stderr".to_string(), Value::String(stderr)),
+            ("exitCode".to_string(), Value::Number(serde_json::Number::from(exit_code))),
         ]),
     ))))
 }
 
 pub async fn get_system_info() -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut sys = sysinfo::System::new_all();
+    sys.refresh_all();
+
+    let os_name = std::env::consts::OS;
+    let arch = std::env::consts::ARCH;
+    let cpu_cores = sys.cpus().len() as i64;
+
+    let total_mem = sys.total_memory();
+    let mem_gb = total_mem as f64 / (1024.0 * 1024.0 * 1024.0);
+    let mem_str = format!("{:.1}GB", mem_gb);
+
+    // 获取磁盘大小（sysinfo 0.33 无 disks() API，使用占位值）
+    let disk_str = "unknown".to_string();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("os".to_string(), Value::String("linux".to_string())),
-            ("arch".to_string(), Value::String("x86_64".to_string())),
-            ("cpuCores".to_string(), Value::Number(serde_json::Number::from(4))),
-            ("memory".to_string(), Value::String("8GB".to_string())),
-            ("disk".to_string(), Value::String("256GB".to_string())),
+            ("os".to_string(), Value::String(os_name.to_string())),
+            ("arch".to_string(), Value::String(arch.to_string())),
+            ("cpuCores".to_string(), Value::Number(serde_json::Number::from(cpu_cores))),
+            ("memory".to_string(), Value::String(mem_str)),
+            ("disk".to_string(), Value::String(disk_str)),
         ]),
     ))))
 }
