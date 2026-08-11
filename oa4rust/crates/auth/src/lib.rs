@@ -128,17 +128,22 @@ pub async fn login(
 
 
     // LDAP 认证优先（若启用）：成功后跳过数据库密码校验
-    let ldap_result = ldap_auth::try_ldap_authenticate(&req.credential, &req.password).await;
+    let ldap_result = match ldap_auth::try_ldap_authenticate(&req.credential, &req.password).await {
+        Ok(r) => r,
+        Err(e) => return Err(e), // LDAP 连接错误：不静默回退
+    };
     let valid = match ldap_result {
-        Some(true) => true,  // LDAP 认证成功
-        Some(false) => {
-            // LDAP 认证失败/出错，回退到数据库密码校验
+        Some(ldap_auth::LdapAuthOutcome::Success) => true, // LDAP 认证成功
+        Some(ldap_auth::LdapAuthOutcome::Failed) => {
+            // LDAP 凭据无效，回退到数据库密码校验
             password::verify_password(&req.password, &password_hash, "", None)
         }
         None => {
-            // LDAP 未启用，走数据库密码校验
+            // LDAP 未启用（Disabled 或 from_env 返回 None），走数据库密码校验
             password::verify_password(&req.password, &password_hash, "", None)
         }
+        // Error 和 Disabled 已通过 Err/None 路径处理，此处为防御性分支
+        Some(_) => password::verify_password(&req.password, &password_hash, "", None),
     };
     if !valid {
         return Ok(Json(ActionResult::error("invalid credentials")));
@@ -455,10 +460,26 @@ pub(crate) fn temp_token_store() -> &'static TempTokenStore {
 
 /// GET /jaxrs/authentication/code/credential/{credential} —— 向凭据发送登录验证码
 pub async fn code_send(
+    pool: Extension<Pool>,
     Path(credential): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     if credential.is_empty() {
         return Err(AppError::BadRequest("credential cannot be empty".to_string()));
+    }
+    // 检查凭证是否存在（防止对任意凭据发送验证码）
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let exists = client
+        .query_opt(
+            "SELECT 1 FROM auth_person WHERE unique_id = $1 AND deleted_at IS NULL",
+            &[&credential],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if exists.is_none() {
+        // 返回通用成功消息，防止凭据枚举
+        return Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            ("message".to_string(), Value::String("code sent".to_string())),
+        ])))))
     }
     let _plain = code_store().issue(&credential);
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([

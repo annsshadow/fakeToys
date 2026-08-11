@@ -1,6 +1,6 @@
 use std::env;
 use std::time::Duration;
-use tracing::{info, warn};
+use tracing::{error, info, warn};
 
 /// LDAP 配置，从环境变量读取。
 /// 所有环境变量均可选；LDAP_ENABLE 默认 false。
@@ -94,11 +94,13 @@ impl LdapAuthenticator {
                 LdapAuthResult::Success
             }
             Ok(Err(e)) => {
+                // 凭据无效（密码错误、账号不存在等）— 应回退到 DB 校验
                 warn!("LDAP bind failed for user {}: {}", username, e);
                 LdapAuthResult::Failed
             }
             Err(_) => {
-                warn!("LDAP connection timed out for user: {}", username);
+                // 连接超时或网络错误 — 不应静默回退，应告警
+                error!("LDAP connection error for user {}: service unavailable", username);
                 LdapAuthResult::Error("connection timeout".to_string())
             }
         }

@@ -67,6 +67,12 @@ pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
     "/jaxrs/secret/check",
     "/jaxrs/secret/set",
     "/jaxrs/secret/cancel",
+    // express 批量查询：无认证但需速率限制防枚举
+    "/jaxrs/express/person",
+    "/jaxrs/express/unit",
+    "/jaxrs/express/identity",
+    "/jaxrs/express/group",
+    "/jaxrs/express/role",
 ];
 
 // 系统初始化端点：仅当系统未初始化（auth_person 无任何未删除的未锁定用户）时豁免认证

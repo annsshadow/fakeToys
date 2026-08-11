@@ -473,9 +473,9 @@ pub async fn manager_list_paging(
 
     let rows = client
         .query(
-            "SELECT id, from_person, to_person, role_id, enabled, created_at, updated_at \
-             FROM x_empower WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $1 OFFSET $2",
-            &[&size, &offset],
+             "SELECT id, from_person, to_person, role_id, enabled, created_at, updated_at \
+              FROM x_empower WHERE deleted_at IS NULL ORDER BY created_at DESC LIMIT $2 OFFSET $1",
+             &[&offset, &size],
         )
         .await
         .map_err(|_| AppError::Internal)?;
