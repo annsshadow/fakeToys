@@ -1,5 +1,5 @@
 use axum::{
-    extract::Extension,
+    extract::{Extension, Path},
     Json,
 };
 use base64::Engine;
@@ -61,7 +61,27 @@ pub async fn sso_post_login(
     if req.client.is_empty() || req.token.is_empty() {
         return Ok(Json(ActionResult::error("client and token are required")));
     }
-    let decrypted = decrypt_sso_token(&req.token, &req.client)?;
+    let key = lookup_sso_key(&pool, &req.client).await?;
+    let decrypted = decrypt_sso_token(&req.token, &key)?;
+    let (credential, timestamp_str) = parse_sso_payload(&decrypted)?;
+    validate_sso_timestamp(&timestamp_str)?;
+    create_sso_session(&pool, &session_manager, &credential).await
+}
+
+/// GET /jaxrs/authentication/sso/client/{client}/token/{token}
+///
+/// SSO 浏览器重定向登录：从 URL path 参数提取 client 和 token，
+/// 解密后与 POST 端点流程完全一致。
+pub async fn sso_get_login(
+    pool: Extension<Pool>,
+    session_manager: Extension<SessionManager>,
+    Path((client, token)): Path<(String, String)>,
+) -> Result<Json<ActionResult<SsoLoginResponse>>, AppError> {
+    if client.is_empty() || token.is_empty() {
+        return Ok(Json(ActionResult::error("client and token are required")));
+    }
+    let key = lookup_sso_key(&pool, &client).await?;
+    let decrypted = decrypt_sso_token(&token, &key)?;
     let (credential, timestamp_str) = parse_sso_payload(&decrypted)?;
     validate_sso_timestamp(&timestamp_str)?;
     create_sso_session(&pool, &session_manager, &credential).await
@@ -87,6 +107,25 @@ pub async fn sso_encrypt(Json(req): Json<SsoEncryptRequest>) -> Result<Json<Acti
 // ──────────────────────────────────────────────────────────────────────────────
 // Internal helpers
 // ──────────────────────────────────────────────────────────────────────────────
+
+/// 从 sso_client 表查找 client_name 对应的 3DES key
+async fn lookup_sso_key(pool: &Pool, client: &str) -> Result<String, AppError> {
+    let client_row = pool
+        .get()
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let row = client_row
+        .query_opt(
+            "SELECT key FROM sso_client WHERE client_name = $1 AND deleted_at IS NULL",
+            &[&client],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(r) => Ok(r.get("key")),
+        None => Err(AppError::BadRequest(format!("client not found: {client}"))),
+    }
+}
 
 fn decrypt_sso_token(token: &str, key: &str) -> Result<Vec<u8>, AppError> {
     let decoded = base64::engine::general_purpose::URL_SAFE
