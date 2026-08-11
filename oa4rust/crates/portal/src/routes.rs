@@ -7,12 +7,12 @@ use deadpool_postgres::Pool;
 
 use crate::{
     create_page, dict_list, delete_page, get_page, list_portal_category,
-    portal_get, portal_list, save_page,
+    portal_id, portal_list, save_page,
 };
 
 pub fn router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/portal/{id}", get(portal_get))
+        .route("/jaxrs/portal/{id}", get(portal_id))
         .route("/jaxrs/portal/list", get(portal_list))
         .route("/jaxrs/portalcategory/list", get(list_portal_category))
         .route("/jaxrs/portal/page/{id}", get(get_page))

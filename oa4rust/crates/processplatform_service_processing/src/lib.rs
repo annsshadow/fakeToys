@@ -6,6 +6,7 @@ use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult, response::row_to_json};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 pub mod routes;
@@ -1369,6 +1370,121 @@ pub async fn data_work_id_path(
             Ok(Json(ActionResult::success(row_to_json(&row))))
         }
     }
+}
+
+pub async fn work_list(
+    pool: Extension<Pool>,
+    axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let application = params.get("application").map(|s| s.as_str()).unwrap_or("");
+    let page: u64 = params.get("page").and_then(|s| s.parse().ok()).unwrap_or(1);
+    let size: u64 = params.get("size").and_then(|s| s.parse().ok()).unwrap_or(20);
+    let offset = (page - 1) * size;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let count_row = client
+        .query_one(
+            "SELECT COUNT(*) FROM x_work WHERE deleted_at IS NULL AND ($1 = '' OR application = $1)",
+            &[&application],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let total: i64 = count_row.get("count");
+
+    let rows = client
+        .query(
+            "SELECT id, title, process, application, work_status, creator, create_time FROM x_work WHERE deleted_at IS NULL AND ($1 = '' OR application = $1) ORDER BY create_time DESC LIMIT $2 OFFSET $3",
+            &[&application, &(size as i64), &(offset as i64)],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("process".to_string(), Value::String(row.get("process"))),
+                ("application".to_string(), Value::String(row.get("application"))),
+                ("workStatus".to_string(), Value::String(row.get("work_status"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(total))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+pub async fn process_id_complex(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let work_row = client
+        .query_opt(
+            "SELECT id, title, process, application, work_status, creator, create_time FROM x_work WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let work = match work_row {
+        Some(r) => r,
+        None => return Err(AppError::Internal),
+    };
+
+    let tasks = client
+        .query(
+            "SELECT id, title, activity, activity_token, person, start_time, end_time FROM x_task WHERE work = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let task_list: Vec<Value> = tasks.iter().map(|row| {
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("title".to_string(), Value::String(row.get("title"))),
+            ("activity".to_string(), Value::String(row.get("activity"))),
+            ("activityToken".to_string(), Value::String(row.get("activity_token"))),
+            ("person".to_string(), Value::String(row.get("person"))),
+            ("startTime".to_string(), Value::String(row.get("start_time"))),
+            ("endTime".to_string(), Value::String(row.get("end_time"))),
+        ]))
+    }).collect();
+
+    let reviews = client
+        .query(
+            "SELECT id, work_id, reviewer, comment, status, create_time FROM x_review WHERE work_id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let review_list: Vec<Value> = reviews.iter().map(|row| row_to_json(row)).collect();
+
+    let snaps = client
+        .query(
+            "SELECT id, work_id, snap_type, snap_data, create_time FROM x_snap WHERE work_id = $1 ORDER BY create_time DESC",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let snap_list: Vec<Value> = snaps.iter().map(|row| row_to_json(row)).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("work".to_string(), row_to_json(&work)),
+            ("tasks".to_string(), Value::Array(task_list)),
+            ("reviews".to_string(), Value::Array(review_list)),
+            ("snaps".to_string(), Value::Array(snap_list)),
+        ]),
+    ))))
 }
 
 pub async fn data_work_id_path_delete(

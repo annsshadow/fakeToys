@@ -721,6 +721,32 @@ pub async fn group_flag_mockputtopost(
 
 
 
+pub async fn identity_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, unit_id FROM x_org_identity WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("identity not found"))),
+    }
+}
+
 pub async fn identity_list_like_mockputtopost(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
@@ -3150,6 +3176,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> Router {
     .route("/jaxrs/organization/assemble/control/unit/list/{flag}/next/{count}", get(organization_assemble_control_unit_list_flag_next_count))
     .route("/jaxrs/organization/assemble/control/unit/{flag}", get(organization_assemble_control_unit_flag))
     .route("/jaxrs/organization/assemble/control/person/list/like", post(organization_assemble_control_person_list_like))
+    .route("/jaxrs/identity/{id}", get(identity_id))
     .layer(Extension(pool));
     router
 }

@@ -45,6 +45,8 @@ use ai_assemble_control;
 use hotpic_assemble_control;
 use organization_assemble_express;
 use organization_assemble_control;
+use organization_assemble_authentication;
+use organization_assemble_personal;
 use mind_assemble_control;
 use attendance_assemble_control;
 use general_assemble_control;
@@ -274,6 +276,8 @@ pub async fn create_app(
         .merge(hotpic_assemble_control::router(pool.clone()))
         .merge(organization_assemble_express::router(pool.clone()))
         .merge(organization_assemble_control::router(pool.clone()))
+        .merge(organization_assemble_authentication::router(pool.clone()))
+        .merge(organization_assemble_personal::router(pool.clone()))
         .merge(mind_assemble_control::router(pool.clone()))
         .merge(attendance_assemble_control::router(pool.clone()))
         .merge(general_assemble_control::router(pool.clone()))

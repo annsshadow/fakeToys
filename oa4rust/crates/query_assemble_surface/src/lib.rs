@@ -194,6 +194,9 @@ pub fn query_assemble_surface_router() -> Router {
         .route("/jaxrs/query/assemble/surface/save/{id}", post(save_surface))
         .route("/jaxrs/query/assemble/surface/delete/{id}", post(delete_surface))
         .route("/jaxrs/query/assemble/surface/preview/{id}", get(preview_surface))
+        .route("/jaxrs/queryview/flag/{view}/application/flag/{app}/execute", get(view_flag_flag_query_queryFlag_execute))
+        .route("/jaxrs/queryview/flag/{view}/application/flag/{app}/execute/page/{page}/size/{size}", get(view_flag_flag_query_queryFlag_execute_v2_page_page_size_size))
+        .route("/jaxrs/importmodel/id/{id}/execute", post(importmodel_id_execute))
 }
 
 #[cfg(test)]

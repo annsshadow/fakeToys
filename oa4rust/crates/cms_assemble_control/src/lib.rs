@@ -7,11 +7,42 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult, response::row_to_json};
 use deadpool_postgres::tokio_postgres::types::ToSql;
+use std::collections::HashMap;
 
 pub mod routes;
 
 #[cfg(test)]
 mod tests;
+
+#[axum::debug_handler]
+pub async fn application_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, alias, appType, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("alias".to_string(), Value::String(row.get("alias"))),
+                ("appType".to_string(), Value::String(row.get("appType"))),
+                ("icon".to_string(), Value::String(row.get::<_, Option<String>>("icon").unwrap_or_default())),
+                ("enabled".to_string(), Value::Bool(row.get("enabled"))),
+                ("manager".to_string(), Value::String(row.get("manager"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("application not found"))),
+    }
+}
 
 #[axum::debug_handler]
 pub async fn get_control_config(
@@ -2910,4 +2941,139 @@ pub async fn input_prepare_create_mockputtopost(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
     ))))
+}
+
+// ─── document_id_view_count ─────────────────────────────────────────────────
+
+#[axum::debug_handler]
+pub async fn document_id_view_count(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "UPDATE x_cms_document SET view_count = view_count + 1 WHERE id = $1 RETURNING view_count AS new_count",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(r) => {
+            let new_count: i64 = r.get("new_count");
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("viewCount".to_string(), Value::Number(serde_json::Number::from(new_count))),
+                ]),
+            ))))
+        }
+        None => Err(AppError::NotFound),
+    }
+}
+
+// ─── commend_list_paging ────────────────────────────────────────────────────
+
+#[axum::debug_handler]
+pub async fn commend_list_paging(
+    pool: Extension<Pool>,
+    axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let doc_id = params
+        .get("doc_id")
+        .ok_or_else(|| AppError::BadRequest("doc_id is required".to_string()))?
+        .clone();
+
+    let page: i64 = params
+        .get("page")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(1);
+    let size: i64 = params
+        .get("size")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(20);
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let count_row = client
+        .query_one(
+            "SELECT COUNT(*) FROM x_cms_commend WHERE doc_id = $1 AND deleted_at IS NULL",
+            &[&doc_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let count: i64 = count_row.get("count");
+
+    let rows = client
+        .query(
+            "SELECT id, doc_id, person_id, create_time FROM x_cms_commend WHERE doc_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET $3",
+            &[&doc_id, &size, &((page - 1) * size)],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ─── queryview_flag_definition ──────────────────────────────────────────────
+
+#[axum::debug_handler]
+pub async fn queryview_flag_definition(
+    pool: Extension<Pool>,
+    axum::extract::Path((view_flag, query_flag)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, view_flag, query_flag, content FROM x_query_view WHERE view_flag = $1 AND query_flag = $2 LIMIT 1",
+            &[&view_flag, &query_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(r) => {
+            let content: Option<String> = r.get("content");
+            let content_str = content.clone().unwrap_or_default();
+            if let Some(c) = &content {
+                if let Ok(json) = serde_json::from_str::<Value>(c) {
+                    if let Some(fields) = json.get("fields").and_then(|v| v.as_array()) {
+                        return Ok(Json(ActionResult::success(Value::Object(
+                            serde_json::Map::from_iter([
+                                ("fields".to_string(), Value::Array(fields.clone())),
+                            ]),
+                        ))));
+                    }
+                }
+            }
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("viewFlag".to_string(), Value::String(view_flag)),
+                    ("queryFlag".to_string(), Value::String(query_flag)),
+                    ("content".to_string(), Value::String(content_str)),
+                ]),
+            ))))
+        }
+        None => Err(AppError::NotFound),
+    }
 }

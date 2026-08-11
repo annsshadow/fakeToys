@@ -3150,8 +3150,10 @@ dependencies = [
  "mind_core_entity",
  "oa4rust",
  "openapi",
+ "organization_assemble_authentication",
  "organization_assemble_control",
  "organization_assemble_express",
+ "organization_assemble_personal",
  "organization_core_entity",
  "organization_core_express",
  "personal",
@@ -3288,6 +3290,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "organization_assemble_authentication"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "deadpool-postgres",
+ "serde_json",
+ "shared",
+ "uuid",
+]
+
+[[package]]
 name = "organization_assemble_control"
 version = "0.1.0"
 dependencies = [
@@ -3316,6 +3329,17 @@ dependencies = [
  "tokio",
  "tower",
  "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "organization_assemble_personal"
+version = "0.1.0"
+dependencies = [
+ "axum 0.8.9",
+ "deadpool-postgres",
+ "serde_json",
+ "shared",
  "uuid",
 ]
 

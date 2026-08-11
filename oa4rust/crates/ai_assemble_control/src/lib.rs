@@ -3,6 +3,7 @@ use axum::{
     Json, Router, routing::get, routing::post,
 };
 use deadpool_postgres::Pool;
+use serde::Deserialize;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -10,6 +11,18 @@ pub mod routes;
 
 #[cfg(test)]
 mod tests;
+
+#[derive(Debug, Deserialize)]
+pub struct ChatCompletionRequest {
+    pub conversation_id: Option<String>,
+    pub messages: Vec<ChatMessage>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ChatMessage {
+    pub role: String,
+    pub content: String,
+}
 
 pub fn ai_assemble_control_router(pool: Pool) -> axum::Router {
     routes::router(pool)
@@ -1043,5 +1056,47 @@ pub async fn index_sync_to_knowledge(
             ("count".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
+}
+
+#[axum::debug_handler]
+pub async fn chat_completion(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): Json<ChatCompletionRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let conversation_id = req
+        .conversation_id
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+
+    let last_user_message = req
+        .messages
+        .iter()
+        .rev()
+        .find(|m| m.role == "user")
+        .map(|m| m.content.clone())
+        .unwrap_or_default();
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "INSERT INTO x_ai_chat (id, conversation_id, role, content, creator, create_time) \
+             VALUES ($1, $2, $3, $4, $5, NOW())",
+            &[
+                &uuid::Uuid::new_v4().to_string(),
+                &conversation_id,
+                &"user".to_string(),
+                &last_user_message,
+                &"system".to_string(),
+            ],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let reply = Value::Object(serde_json::Map::from_iter([
+        ("conversationId".to_string(), Value::String(conversation_id)),
+        ("reply".to_string(), Value::String("你好！我是AI助手，很高兴为你服务。".to_string())),
+        ("success".to_string(), Value::Bool(true)),
+    ]));
+
+    Ok(Json(ActionResult::success(reply)))
 }
 

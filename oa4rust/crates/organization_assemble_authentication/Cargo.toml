@@ -1,0 +1,12 @@
+[package]
+name = "organization_assemble_authentication"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+axum.workspace = true
+serde_json = "1"
+deadpool-postgres.workspace = true
+uuid = { workspace = true, features = ["v4"] }
+shared = { path = "../shared" }
