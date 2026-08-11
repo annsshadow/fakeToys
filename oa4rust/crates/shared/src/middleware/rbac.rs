@@ -186,7 +186,8 @@ impl PermissionRegistry {
         registry.register_prefix("/jaxrs/secret/set", PermissionLevel::Public);
         // 自服务端点：改密和头像，登录用户即可操作
         registry.register_prefix("/jaxrs/person/password", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/person/icon", PermissionLevel::Authenticated);
+        // GET icon is public per R8 (头像端点无权限也可访问)
+        registry.register_exact("/jaxrs/person/icon", PermissionLevel::Public);
         // 新注册的管理后台端点（AI、CMS、file 等扩展模块）：Authenticated 级别，
         // 写操作保护由 requires_admin 函数独立处理（仅 person/unit/role/group 需要 admin）
         registry.register_prefix("/jaxrs/ai", PermissionLevel::Authenticated);

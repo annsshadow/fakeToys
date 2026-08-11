@@ -63,7 +63,8 @@ pub async fn two_factor_login(
     let change_password_time: Option<String> = row.get("change_password_time");
 
     if locked {
-        return Ok(Json(ActionResult::error("account locked")));
+        // 返回通用错误消息，防止账户锁定状态枚举
+        return Ok(Json(ActionResult::error("invalid credentials")));
     }
 
     let valid = password::verify_password(&req.password, &password_hash, "", None);

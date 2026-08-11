@@ -122,7 +122,8 @@ pub async fn login(
 
     // 检查账户是否被锁定
     if locked {
-        return Ok(Json(ActionResult::error("account locked")));
+        // 返回通用错误消息，防止账户锁定状态枚举
+        return Ok(Json(ActionResult::error("invalid credentials")));
     }
 
 
