@@ -367,7 +367,7 @@ def output_rust(endpoints: list, path: Path):
     for e in endpoints:
         body = "None"
         if e["method"] in ("POST", "PUT", "PATCH"):
-            body = 'Some(serde_json::json!({}))'
+            body = 'Some(r#"{}"#)'
         auth = "true" if e["method"] != "GET" else "false"
         lines.append("    EndpointDef {")
         lines.append(f'        crate_name: "{e["crate_name"]}",')
@@ -419,9 +419,16 @@ def main():
         "/// 行为对比测试端点列表（由 extract_endpoints.py 自动生成）",
         "/// 复制下面的 ENDPOINTS 数组到 tests/behavior_compare.rs 中替换原有内容。",
         "",
+        "/// 行为对比测试端点列表（由 extract_endpoints.py 自动生成，请勿手动修改）",
+        f"/// 生成时间: {__import__('datetime').datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        "",
+        "use super::behavior_comparison::EndpointDef;",
+        "",
+        "pub const ENDPOINTS: &[EndpointDef] = &[",
     ]
-    # 复制 Rust 输出格式
-    for line in rust_path.read_text(encoding="utf-8").splitlines():
+    # 复制 Rust 输出格式（跳过前 4 行注释）
+    rust_text = rust_path.read_text(encoding="utf-8")
+    for line in rust_text.splitlines()[4:]:
         lines.append(line)
     rust_test_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"  Test → {rust_test_path}")

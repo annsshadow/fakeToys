@@ -73,7 +73,7 @@ impl AdminCache {
 ///
 /// 请求级缓存：同一请求内多次调用共享结果，避免重复 DB 查询。
 /// 缓存通过 AdminCache 扩展注入，key 为 person_unique。
-pub(crate) async fn is_admin(pool: &Pool, person_unique: &str) -> bool {
+pub async fn is_admin(pool: &Pool, person_unique: &str) -> bool {
     let client = match pool.get().await {
         Ok(c) => c,
         Err(_) => return false,
@@ -174,12 +174,20 @@ impl PermissionRegistry {
         registry.register_prefix("/jaxrs/authentication/oauth", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/authentication/code", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/authentication/refresh", PermissionLevel::Public);
+        // 新增认证端点：显式覆盖，避免继承 /jaxrs/authentication 的 Public 权限
+        registry.register_prefix("/jaxrs/authentication/two_factor", PermissionLevel::Authenticated);
+        registry.register_exact("/jaxrs/authentication/safe/logout", PermissionLevel::Authenticated);
+        registry.register_prefix("/jaxrs/authentication/check/token", PermissionLevel::Authenticated);
+        registry.register_exact("/jaxrs/authentication/switchuser", PermissionLevel::Admin);
+        registry.register_exact("/jaxrs/authentication/switchuser/mockputtopost", PermissionLevel::Admin);
+        registry.register_prefix("/jaxrs/authentication/sso", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/reset", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/secret/check", PermissionLevel::Public);
         registry.register_prefix("/jaxrs/secret/set", PermissionLevel::Public);
         // 自服务端点：改密和头像，登录用户即可操作
         registry.register_prefix("/jaxrs/person/password", PermissionLevel::Authenticated);
-        registry.register_prefix("/jaxrs/person/icon", PermissionLevel::Authenticated);
+        // GET icon is public per R8 (头像端点无权限也可访问)
+        registry.register_exact("/jaxrs/person/icon", PermissionLevel::Public);
         // 新注册的管理后台端点（AI、CMS、file 等扩展模块）：Authenticated 级别，
         // 写操作保护由 requires_admin 函数独立处理（仅 person/unit/role/group 需要 admin）
         registry.register_prefix("/jaxrs/ai", PermissionLevel::Authenticated);
@@ -193,6 +201,12 @@ impl PermissionRegistry {
         registry.register_prefix("/jaxrs/message", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/processplatform", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/portal", PermissionLevel::Authenticated);
+        // express batch query endpoints: no authentication required (R24)
+        registry.register_prefix("/jaxrs/express/person", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/express/unit", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/express/identity", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/express/group", PermissionLevel::Public);
+        registry.register_prefix("/jaxrs/express/role", PermissionLevel::Public);
         // 现有管理端点（person/unit/role/group）：注册 Authenticated 保持向后兼容
         registry.register_prefix("/jaxrs/person", PermissionLevel::Authenticated);
         registry.register_prefix("/jaxrs/unit", PermissionLevel::Authenticated);

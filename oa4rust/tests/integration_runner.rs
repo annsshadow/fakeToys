@@ -39,6 +39,7 @@ async fn integration_scenarios() {
     integration_tests::scenarios::org_person_meeting::org_person_meeting_flow().await;
     integration_tests::scenarios::bbs_correlation::bbs_correlation_flow().await;
     integration_tests::scenarios::file_upload::file_upload_flow().await;
+    integration_tests::scenarios::program_center_core_entity::program_center_core_entity_application_flow().await;
 }
 
 #[cfg(test)]

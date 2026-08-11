@@ -125,4 +125,12 @@ mod tests {
             || response.status() == StatusCode::OK
             || response.status() == StatusCode::NOT_FOUND);
     }
+
+    #[test]
+    fn test_delete_success_response_structure() {
+        let result = shared::response::ActionResult::success(serde_json::json!({"success": true}));
+        let json = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"]["success"], true);
+    }
 }

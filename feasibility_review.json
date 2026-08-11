@@ -2,111 +2,96 @@
   "reviewer": "feasibility",
   "findings": [
     {
-      "title": "生成端点清单未接入行为对比测试",
-      "severity": "P1",
-      "section": "U11",
-      "why_it_matters": "计划明确说「Modify: behavior_compare.rs（使用生成的端点清单）」，但生成的 behavior_compare_endpoints.rs（961 个端点）并未被 behavior_compare.rs 导入或使用——后者仍只使用原有的 77 条手动端点。U11 的目标「覆盖全部 7,624 个端点」完全无法达成，行为对比测试的实际覆盖率停留在约 1%。",
+      "title": "OpenAPI生成脚本产生无法编译的Rust代码",
+      "severity": "P0",
+      "section": "OpenAPI 自动生成 (R8-R12)",
+      "why_it_matters": "脚本生成的代码包含两处致命语法错误：1) 746个函数全部使用了summary属性，但utoipa 4.x不支持此属性（已验证编译报错）；2) 62个含多个path参数的函数生成了重复的parameters属性块，这是无效Rust语法。两者都会导致cargo check失败，与R12 acceptance criteria冲突。",
       "finding_type": "error",
       "autofix_class": "manual",
-      "suggested_fix": "在 behavior_compare.rs 中添加 mod behavior_compare_endpoints; 并使用其中的 ENDPOINTS 替换手动维护的数组，或修改 extract_endpoints.py 使其直接覆盖 behavior_compare.rs。",
       "confidence": 100,
       "evidence": [
-        "behavior_compare.rs:38: const ENDPOINTS: &[EndpointDef] = &[（77 条手动端点）",
-        "behavior_compare_endpoints.rs:7: const ENDPOINTS: &[EndpointDef] = &[（961 条生成端点）",
-        "behavior_compare.rs 中无 'behavior_compare_endpoints' 引用",
-        "behavior_compare_endpoints.rs 无 mod/use 声明，仅为独立常量文件"
-      ]
+        "utoipa版本: 4.2.3 (Cargo.lock)",
+        "验证测试：#[utoipa::path(get, path = '/...', summary = '...')] 编译报错：unexpected identifier 'summary'",
+        "验证测试：#[utoipa::path(get, path = '/...', params(...))] 编译通过",
+        "gen_openapi_paths.py第186-187行：为每个path参数生成独立parameters属性，多参数路径产生重复属性",
+        "脚本输出示例：auth_authentication_captcha_width_width_height_height_get函数包含两个parameters属性块"
+      ],
+      "suggested_fix": "重写脚本使用utoipa 4.x正确语法：1) 移除summary属性；2) 将多个path参数合并为单个params(...)属性；3) 生成responses(...)属性；4) 直接写入lib.rs并更新#[openapi(paths(...))]列表"
     },
     {
-      "title": "生成端点代码与 comparator.rs 类型不兼容",
+      "title": "deadpool版本策略基于错误前提",
       "severity": "P1",
-      "section": "U11",
-      "why_it_matters": "comparator.rs 已将 body 字段改为 Option<&'static str>，但 extract_endpoints.py 生成的代码仍输出 body: Some(serde_json::json!({}))（276 条 POST/PUT 端点）。若将生成端点接入测试，编译将直接失败，所有写操作端点的行为对比测试无法运行。",
-      "finding_type": "error",
-      "autofix_class": "safe_auto",
-      "suggested_fix": "修改 extract_endpoints.py 的 output_rust() 函数，将 body 输出从 Some(serde_json::json!({})) 改为 Some(r#\"{}\"#) 以匹配 comparator.rs 的 &'static str 类型。",
-      "confidence": 100,
-      "evidence": [
-        "comparator.rs:204: body: Option<&'static str>",
-        "behavior_compare_endpoints.rs:500: body: Some(serde_json::json!({}))",
-        "behavior_compare_endpoints.rs 中 276 条非 GET 端点均使用 serde_json::json! 格式",
-        "behavior_compare.rs 中 3 条手动端点已使用 string literal 格式: body: Some(r#\"...\"#)"
-      ]
-    },
-    {
-      "title": "U12 目录路径错误",
-      "severity": "P2",
-      "section": "U12",
-      "why_it_matters": "计划写「Create: oa4rust/tests/integration/ 目录」，但实际集成测试基础设施在 tests/integration_tests/（带下划线），并非 tests/integration/。按计划执行会创建错误路径，且无法复用已有的 init_test_database() 和 setup_test_server() 基础设施。",
-      "finding_type": "error",
-      "autofix_class": "safe_auto",
-      "suggested_fix": "将 U12 的 Files 列表改为：Use: oa4rust/tests/integration_tests/（已有），Modify: oa4rust/tests/integration_runner.rs 和 oa4rust/tests/integration_tests/scenarios/（新增场景文件）。",
-      "confidence": 100,
-      "evidence": [
-        "计划原文：Create: oa4rust/tests/integration/ 目录",
-        "实际目录：oa4rust/tests/integration_tests/（mod.rs, db.rs, helpers.rs, scenarios/）",
-        "integration_runner.rs:14: mod integration_tests;",
-        "integration_runner.rs:39-41: 调用 integration_tests::scenarios::*"
-      ]
-    },
-    {
-      "title": "端点提取数量远低于预期（961 vs 7,624）",
-      "severity": "P2",
-      "section": "U11",
-      "why_it_matters": "计划目标为 7,000+ 端点，但 extract_endpoints.py 仅提取到 961 个端点（78 个 crate）。这意味着大部分端点路径未被扫描到——可能是路由定义在 main.rs 或其他位置而非 routes.rs/lib.rs。若以此清单作为行为对比测试基础，覆盖率将严重不足。",
+      "section": "DB 连接池超时 (R1-R3)",
+      "why_it_matters": "Requirements声称deadpool-postgres 0.12.1依赖deadpool 0.12，但实际Cargo.toml显示依赖deadpool 0.10.0。如果在shared/Cargo.toml中显式声明deadpool=0.12，将产生版本冲突。此外，deadpool 0.10的Pool类型没有timeout_get()方法，无法实现R1要求的超时行为。",
       "finding_type": "error",
       "autofix_class": "manual",
-      "suggested_fix": "在 extract_endpoints.py 中增加对 main.rs 及其他 router 注册文件的路由扫描，或在脚本输出中添加未覆盖 crate 的警告信息，明确标注哪些端点未被提取。",
       "confidence": 75,
       "evidence": [
-        "extract_endpoints.py 输出: '去重后端点数: 961'，'Crate 数: 78'",
-        "计划原文：'extract_endpoints.py 输出 7,000+ 行端点清单'",
-        "behavior_compare.rs 注释：'对比相同请求下 Rust 端点与 Java 端点'，目标 7,624 个端点",
-        "extract_endpoints.py 只扫描 routes.rs 和 lib.rs，未扫描 main.rs 中的路由注册"
-      ]
+        "Cargo.lock: deadpool v0.10.0, deadpool-postgres v0.12.1",
+        "deadpool-postgres 0.12.1 Cargo.toml: [dependencies.deadpool] version = '0.10.0'",
+        "deadpool 0.12.3 src/managed/pool.rs: 有pub async fn timeout_get(&self, timeouts: &Timeouts)",
+        "deadpool 0.10.0 src/managed/pool.rs: 无timeout_get方法",
+        "deadpool-postgres 0.14.1 Cargo.toml: [dependencies.deadpool] version = '0.12.0'",
+        "deadpool 0.12.3 rust-version = 1.75（与workspace兼容）",
+        "deadpool 0.13.0 rust-version = 1.85（不兼容workspace）"
+      ],
+      "suggested_fix": "可行方案：1) 升级deadpool-postgres到0.14.1（依赖deadpool 0.12.0），同时更新workspace中deadpool-postgres版本声明；2) 在shared/Cargo.toml添加deadpool = '0.12'；3) 修改db.rs使用PoolBuilder的.timeouts()方法配置超时。注意：deadpool 0.13+需要rust 1.85，不可用。"
     },
     {
-      "title": "U10 测试仅覆盖错误路径，未验证实际 CRUD",
+      "title": "多方法路由未被脚本捕获",
       "severity": "P2",
-      "section": "U10",
-      "why_it_matters": "计划要求「Happy: 创建记录 → 查询验证」「Happy: 软删除 → deleted_at IS NULL 过滤生效」等真实 CRUD 测试，但所有 core_entity crate 的 tests.rs 中仅测试了无数据库连接时的 500 错误路径（INTERNAL_SERVER_ERROR）。不存在任何使用真实测试数据库验证写操作行为的测试。",
-      "finding_type": "error",
-      "autofix_class": "manual",
-      "suggested_fix": "为每个核心写操作端点添加使用 init_test_database() + setup_test_server() 的集成测试，覆盖 create → list → verify、update → get → verify、delete → list → verify (deleted_at) 三个 happy path 场景。",
-      "confidence": 75,
-      "evidence": [
-        "organization_core_entity/src/tests.rs:35: assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR)",
-        "file_core_entity/src/tests.rs:45: assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR)",
-        "bbs_core_entity/src/tests.rs:37: assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR)",
-        "cms_core_entity/src/tests.rs:40: assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR)",
-        "计划原文：'Happy: 创建记录 → 查询验证'、'Happy: 软删除 → deleted_at IS NULL 过滤生效'"
-      ]
-    },
-    {
-      "title": "未引用现有集成测试基础设施",
-      "severity": "P3",
-      "section": "U10/U12",
-      "why_it_matters": "计划提到「使用 DatabaseConnection mock 或直接连接测试数据库」但未引用已存在的 tests/integration_tests/db.rs（提供 init_test_database()）和 helpers.rs（提供 setup_test_server()）。实现者可能重复造轮子而非复用已有基础设施。",
+      "section": "OpenAPI 自动生成 (R11)",
+      "why_it_matters": "当前脚本的正则只匹配单方法路由，漏掉了12个多方法路由（如.put(h1).delete(h2)）。这些端点不会出现在生成的OpenAPI规范中，导致下游MCP客户端无法发现完整API。",
       "finding_type": "omission",
       "autofix_class": "safe_auto",
-      "suggested_fix": "在 U10 和 U12 的 Approach 中明确引用 tests/integration_tests/db.rs 和 helpers.rs，说明如何复用 init_test_database() 和 setup_test_server()。",
+      "confidence": 100,
+      "evidence": [
+        "代码库中存在12个多方法路由，如organization_core_entity/src/lib.rs中的.put(definition_update).delete(definition_delete)",
+        "gen_openapi_paths.py第114行正则只匹配单方法",
+        "当前脚本输出746条路径，实际应为758条（746单方法+12×2多方法）"
+      ],
+      "suggested_fix": "扩展正则以支持.put(h1).delete(h2)模式，为每个HTTP方法生成独立的#[utoipa::path]函数和路径项"
+    },
+    {
+      "title": "脚本输出到stdout而非直接写入文件",
+      "severity": "P2",
+      "section": "OpenAPI 自动生成 (R8)",
+      "why_it_matters": "R8要求脚本直接重写lib.rs，但当前脚本仅打印到stdout。实现需要修改脚本写入目标文件，并更新#[openapi(paths(...))]中的函数名列表。",
+      "finding_type": "omission",
+      "autofix_class": "safe_auto",
+      "confidence": 100,
+      "evidence": [
+        "gen_openapi_paths.py第190-205行：所有输出都是print()语句",
+        "crates/openapi/src/lib.rs当前只有14个占位函数",
+        "参考：extract_endpoints.py已有直接写文件的模式"
+      ],
+      "suggested_fix": "修改脚本：1) 直接写入crates/openapi/src/lib.rs；2) 生成完整的#[openapi(paths(...), tags(...))]属性；3) 参考extract_endpoints.py的写文件模式"
+    },
+    {
+      "title": "未从Rust请求结构体推断body_params",
+      "severity": "P2",
+      "section": "OpenAPI 自动生成 (R9)",
+      "why_it_matters": "R9要求从CreateRequest/UpdateRequest结构体自动推断body_params，但当前脚本完全不做此分析。",
+      "finding_type": "omission",
+      "autofix_class": "manual",
       "confidence": 75,
       "evidence": [
-        "tests/integration_tests/db.rs:98: pub fn init_test_database() -> Arc<TestContext>",
-        "tests/integration_tests/helpers.rs:27: pub async fn setup_test_server(pool) -> anyhow::Result<...>",
-        "integration_runner.rs:31: let _ctx = init_test_database();",
-        "计划原文未提及 integration_tests 模块"
-      ]
+        "gen_openapi_paths.py当前仅从URL路径推断path_params",
+        "无任何代码扫描struct定义或handler函数签名",
+        "Outstanding Questions section明确标注[Needs research]此项"
+      ],
+      "suggested_fix": "在脚本中添加Rust AST解析或正则匹配，扫描struct CreateRequest/UpdateRequest定义，提取字段名和类型，生成params(...)中的body参数"
     }
   ],
   "residual_risks": [
-    "extract_endpoints.py 仅提取 961 端点，实际 Java 端点总数可能远超此数——需确认 7,624 的原始数据来源及是否包含未实现的 stub 端点",
-    "U12 的端到端验证目标（所有 GET/写操作端点功能等效）缺少具体测试用例和断言标准，难以量化验收",
-    "verify_migration_011.py 依赖 psycopg2 和 PostgreSQL 本地连接，在无数据库环境中只能 SKIP，无法作为 CI 门禁"
+    "deadpool-postgres从0.12.1升级到0.14.1可能引入breaking changes，影响83个依赖crate",
+    "utoipa 4.x处理746个#[utoipa::path]宏时的编译时间可能显著增加（已标记为Deferred Question）",
+    "模块拆分后测试覆盖完整性需验证（现有314行tests.rs需同步拆分）"
   ],
   "deferred_questions": [
-    "7,624 个端点的原始数据来源是什么？extract_endpoints.py 提取的 961 个端点是否已覆盖所有真实实现的路由？",
-    "U10 的写操作集成测试是否需要与 Java 端点做响应结构对比（类似行为对比测试），还是仅验证 Rust 侧 CRUD 正确性？",
-    "U12 端到端测试的验证范围是仅覆盖有 Java 对照的端点，还是全部 7,624 个端点？"
+    "deadpool升级路径：是否需要同时将deadpool-postgres从0.12.1升级到0.14.1？workspace中其他依赖deadpool-postgres的crate是否需要适配？",
+    "utoipa 4.x的#[openapi(paths(...))]是否支持746+个函数名列表？编译时间是否在可接受范围内？",
+    "body_params推断：是否需要完整的Rust AST解析，还是可以用正则匹配struct定义？",
+    "timeout配置值：环境变量（如POOL_WAIT_TIMEOUT_MS）还是shared crate的配置模块？"
   ]
 }

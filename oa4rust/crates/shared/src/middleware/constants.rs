@@ -49,6 +49,8 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
     "/jaxrs/secret/check",
     "/jaxrs/secret/set",
     "/jaxrs/secret/set/cancel",
+    // 注册（匿名访问）
+    "/jaxrs/person/regist",
 ];
 
 // 认证类端点（计入 10 次/分钟/IP 的认证限流）。
@@ -57,10 +59,20 @@ pub const AUTH_EXEMPT_PATHS: &[&str] = &[
 pub const AUTH_RATE_LIMIT_EXACT: &[&str] = &["/jaxrs/authentication", "/jaxrs/authentication/login"];
 pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
     "/jaxrs/authentication/code",
+    "/jaxrs/authentication/two",     // 双因素登录
+    "/jaxrs/authentication/safe",    // 安全注销
+    "/jaxrs/authentication/switchuser", // 用户切换
+    "/jaxrs/person/regist/code",    // 注册验证码发送
     "/jaxrs/reset",
     "/jaxrs/secret/check",
     "/jaxrs/secret/set",
     "/jaxrs/secret/cancel",
+    // express 批量查询：无认证但需速率限制防枚举
+    "/jaxrs/express/person",
+    "/jaxrs/express/unit",
+    "/jaxrs/express/identity",
+    "/jaxrs/express/group",
+    "/jaxrs/express/role",
 ];
 
 // 系统初始化端点：仅当系统未初始化（auth_person 无任何未删除的未锁定用户）时豁免认证

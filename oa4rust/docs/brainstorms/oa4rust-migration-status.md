@@ -7,9 +7,9 @@
 
 | crate | 状态 | handlers | stub_ | null |
 |-------|------|---------:|------:|-----:|
-| auth | done | 24 | 0 | 0 |
+| auth | done | 27 | 0 | 0 |
 | control | done | 25 | 0 | 0 |
-| personal | done | 7 | 0 | 0 |
+| personal | done | 12 | 0 | 0 |
 | personal_extend | done | 6 | 0 | 0 |
 | program_init | done | 3 | 0 | 0 |
 
@@ -25,7 +25,7 @@
 | calendar_core_entity | done | 10 | 0 | 0 |
 | file | done | 10 | 0 | 0 |
 | file_assemble_control | done | 94 | 0 | 0 |
-| file_core_entity | done | 4 | 0 | 0 |
+| file_core_entity | done | 7 | 0 | 0 |
 | general | done | 3 | 0 | 0 |
 | general_assemble_control | done | 61 | 0 | 0 |
 | general_core_entity | done | 21 | 0 | 0 |
@@ -38,7 +38,7 @@
 | cms_control | done | 2 | 0 | 0 |
 | cms_core_entity | done | 6 | 0 | 0 |
 | cms_core_express | done | 2 | 0 | 0 |
-| cms_express | done | 3 | 0 | 0 |
+| cms_express | done | 5 | 0 | 0 |
 | meeting | done | 9 | 0 | 0 |
 | meeting_assemble_control | done | 59 | 0 | 0 |
 | meeting_core_entity | done | 11 | 0 | 0 |
@@ -62,7 +62,7 @@
 | query_assemble_surface | done | 59 | 0 | 0 |
 | query_core_entity | done | 5 | 0 | 0 |
 | query_core_express | done | 4 | 0 | 0 |
-| query_express | done | 1 | 0 | 0 |
+| query_express | done | 2 | 0 | 0 |
 | query_service | done | 3 | 0 | 0 |
 | query_service_processing | done | 4 | 0 | 0 |
 
@@ -82,13 +82,13 @@
 | component_core_entity | done | 3 | 0 | 0 |
 | console | done | 7 | 0 | 0 |
 | correlation | done | 3 | 0 | 0 |
-| correlation_core_entity | done | 2 | 0 | 0 |
+| correlation_core_entity | doing | 4 | 0 | 1 |
 | correlation_core_express | done | 2 | 0 | 0 |
 | correlation_service_processing | done | 20 | 0 | 0 |
 | express | done | 3 | 0 | 0 |
 | hotpic | done | 3 | 0 | 0 |
 | hotpic_assemble_control | done | 18 | 0 | 0 |
-| hotpic_core_entity | done | 3 | 0 | 0 |
+| hotpic_core_entity | doing | 5 | 0 | 1 |
 | jpush | done | 6 | 0 | 0 |
 | jpush_assemble_control | done | 16 | 0 | 0 |
 | jpush_core_entity | done | 5 | 0 | 0 |
@@ -97,10 +97,10 @@
 | mind_core_entity | done | 10 | 0 | 0 |
 | organization_assemble_control | done | 101 | 0 | 0 |
 | organization_assemble_express | done | 4 | 0 | 0 |
-| organization_core_entity | done | 6 | 0 | 0 |
+| organization_core_entity | done | 24 | 0 | 0 |
 | organization_core_express | done | 3 | 0 | 0 |
 | program_center | done | 205 | 0 | 0 |
-| program_center_core_entity | done | 5 | 0 | 0 |
+| program_center_core_entity | done | 20 | 0 | 0 |
 
 ## 说明
 

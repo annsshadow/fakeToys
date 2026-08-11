@@ -171,4 +171,160 @@ mod tests {
         assert_eq!(json["data"]["id"], "person-1");
         assert_eq!(json["data"]["name"], "admin");
     }
+
+    #[test]
+    fn test_signature_info_struct() {
+        use crate::signature::SignatureInfo;
+        let info = SignatureInfo {
+            id: "sig-1".to_string(),
+            name: "SIGNATURE_sig-1".to_string(),
+            person: "user1".to_string(),
+            value: "base64data".to_string(),
+            created_at: None,
+        };
+        assert_eq!(info.id, "sig-1");
+        assert_eq!(info.name, "SIGNATURE_sig-1");
+        assert_eq!(info.person, "user1");
+        assert_eq!(info.value, "base64data");
+    }
+
+    #[test]
+    fn test_signature_upload_result_serialization() {
+        let result: ActionResult<crate::signature::SignatureInfo> = ActionResult::success(
+            crate::signature::SignatureInfo {
+                id: "sig-2".to_string(),
+                name: "SIGNATURE_sig-2".to_string(),
+                person: "user2".to_string(),
+                value: "encoded_data".to_string(),
+                created_at: None,
+            },
+        );
+
+        let json = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"]["id"], "sig-2");
+        assert_eq!(json["data"]["name"], "SIGNATURE_sig-2");
+        assert_eq!(json["data"]["person"], "user2");
+        assert_eq!(json["data"]["value"], "encoded_data");
+    }
+
+    #[test]
+    fn test_signature_list_result_serialization() {
+        use serde_json::json;
+        let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
+            "signatures": [
+                {"id": "sig-1", "name": "SIGNATURE_sig-1", "person": "user1", "value": "data1"},
+                {"id": "sig-2", "name": "SIGNATURE_sig-2", "person": "user1", "value": "data2"}
+            ]
+        }));
+
+        let json = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"]["signatures"].as_array().unwrap().len(), 2);
+        assert_eq!(json["data"]["signatures"][0]["id"], "sig-1");
+        assert_eq!(json["data"]["signatures"][1]["id"], "sig-2");
+    }
+
+    #[test]
+    fn test_icon_get_result_serialization_with_icon() {
+        use serde_json::json;
+        let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
+            "icon": "iVBORw0KGgo=",
+            "exists": true,
+        }));
+
+        let json = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"]["icon"], "iVBORw0KGgo=");
+        assert_eq!(json["data"]["exists"], true);
+    }
+
+    #[test]
+    fn test_icon_get_result_serialization_without_icon() {
+        use serde_json::json;
+        let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
+            "icon": "",
+            "exists": false,
+        }));
+
+        let json = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"]["icon"], "");
+        assert_eq!(json["data"]["exists"], false);
+    }
+
+    #[test]
+    fn test_icon_upload_result_serialization() {
+        use serde_json::json;
+        let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
+            "icon": "base64encodeddata",
+            "exists": true,
+        }));
+
+        let json = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"]["icon"], "base64encodeddata");
+        assert_eq!(json["data"]["exists"], true);
+    }
+
+    #[test]
+    fn test_register_request_deserialize() {
+        let req: crate::regist::RegisterRequest = serde_json::from_str(
+            r#"{"credential":"newuser","password":"Abcdef1","name":"新用户","mobile":"13800138000","email":"new@example.com","code":"123456"}"#,
+        )
+        .unwrap();
+        assert_eq!(req.credential, "newuser");
+        assert_eq!(req.password, "Abcdef1");
+        assert_eq!(req.name, "新用户");
+        assert_eq!(req.mobile, Some("13800138000".to_string()));
+        assert_eq!(req.email, Some("new@example.com".to_string()));
+        assert_eq!(req.code, "123456");
+    }
+
+    #[test]
+    fn test_register_request_deserialize_no_optional_fields() {
+        let req: crate::regist::RegisterRequest = serde_json::from_str(
+            r#"{"credential":"u1","password":"Pass1word","name":"User One","code":"654321"}"#,
+        )
+        .unwrap();
+        assert_eq!(req.credential, "u1");
+        assert_eq!(req.mobile, None);
+        assert_eq!(req.email, None);
+    }
+
+    #[test]
+    fn test_register_response_serialization() {
+        let result: ActionResult<serde_json::Value> = ActionResult::success(serde_json::json!({
+            "id": "person-abc-123",
+            "unique": "newuser",
+            "name": "新用户",
+            "mobile": "13800138000",
+            "email": "new@example.com",
+        }));
+
+        let json = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"]["id"], "person-abc-123");
+        assert_eq!(json["data"]["unique"], "newuser");
+        assert_eq!(json["data"]["name"], "新用户");
+        assert_eq!(json["data"]["mobile"], "13800138000");
+        assert_eq!(json["data"]["email"], "new@example.com");
+    }
+
+    #[test]
+    fn test_register_password_strength() {
+        // Weak: too short
+        assert!(!crate::reset::is_password_acceptable("12345"));
+        // Weak: no letter
+        assert!(!crate::reset::is_password_acceptable("123456"));
+        // Weak: no digit
+        assert!(!crate::reset::is_password_acceptable("abcdef"));
+        // Valid: minimum length with letter and digit
+        assert!(crate::reset::is_password_acceptable("Abcdef1"));
+        // Valid: longer
+        assert!(crate::reset::is_password_acceptable("MyPass1234"));
+        // Weak: too long (>64)
+        let long = format!("{}1", "x".repeat(64));
+        assert!(!crate::reset::is_password_acceptable(&long));
+    }
 }

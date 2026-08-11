@@ -11,8 +11,11 @@ use shared::response::ActionResult;
 
 use auth::SessionManager;
 
+pub mod icon;
 pub mod password;
+pub mod regist;
 pub mod reset;
+pub mod signature;
 
 // --- 数据模型 ---
 
@@ -170,6 +173,31 @@ pub fn router(pool: Pool, session_manager: SessionManager) -> Router {
             "/jaxrs/reset/password/anonymous",
             post(reset::reset_password_anonymous),
         )
+        // 注册端点（Public，无需认证）
+        .route("/jaxrs/person/regist", post(regist::register))
+        .route(
+            "/jaxrs/person/regist/check/name/{name}",
+            get(regist::check_name),
+        )
+        .route(
+            "/jaxrs/person/regist/check/mobile/{mobile}",
+            get(regist::check_mobile),
+        )
+        .route(
+            "/jaxrs/person/regist/check/email/{email}",
+            get(regist::check_email),
+        )
+        .route("/jaxrs/person/regist/code", post(regist::send_regist_code))
+        // empower 模块路由
+        .merge(empower::router::router(pool.clone(), session_manager.clone()))
+        // 电子签名端点
+        .route("/jaxrs/person/signature/upload", post(signature::upload))
+        .route("/jaxrs/person/signature/list", get(signature::list))
+        .route("/jaxrs/person/signature/delete/{id}", get(signature::delete))
+        .route("/jaxrs/person/signature/manager/list", get(signature::manager_list))
+        // 头像端点
+        .route("/jaxrs/person/icon/{person}", get(icon::get))
+        .route("/jaxrs/person/icon/upload", post(icon::upload))
         .layer(Extension(pool))
         .layer(Extension(session_manager))
         .layer(Extension(reset_store))

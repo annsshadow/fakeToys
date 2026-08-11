@@ -163,7 +163,7 @@ pub async fn delete_by_id(
                 deleted_at: Set(Some(chrono::Utc::now().naive_utc())),
             };
             active.update(&db.0).await.map_err(|_| AppError::Internal)?;
-            Ok(Json(ActionResult::success(Value::Null)))
+            Ok(Json(ActionResult::success(serde_json::json!({"success": true}))))
         }
         None => Ok(Json(ActionResult::error("correlation not found"))),
     }
