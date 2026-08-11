@@ -1,7 +1,7 @@
 ---
 title: OA4Rust 核心模块 stub 补全 — 流程引擎/文件/BBS/组织/安全
 type: feat
-status: active
+status: completed
 date: 2026-08-11
 origin: docs/brainstorms/2026-08-11-oa4rust-full-gap-closure-comprehensive-requirements.md
 ---
