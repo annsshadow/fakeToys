@@ -2,96 +2,209 @@
   "reviewer": "feasibility",
   "findings": [
     {
-      "title": "OpenAPI生成脚本产生无法编译的Rust代码",
+      "title": "流程引擎核心表 (x_work/x_task/x_review/x_snap/x_record) 无任何 migration",
       "severity": "P0",
-      "section": "OpenAPI 自动生成 (R8-R12)",
-      "why_it_matters": "脚本生成的代码包含两处致命语法错误：1) 746个函数全部使用了summary属性，但utoipa 4.x不支持此属性（已验证编译报错）；2) 62个含多个path参数的函数生成了重复的parameters属性块，这是无效Rust语法。两者都会导致cargo check失败，与R12 acceptance criteria冲突。",
-      "finding_type": "error",
+      "section": "Tier 1 — 流程引擎核心",
+      "why_it_matters": "Tier 1 的 R1-R5 全部依赖 x_work、x_task、x_review、x_record、x_snap 等表。grep 确认 migrations/ 目录中不存在任何 CREATE TABLE 语句定义这些表。代码中直接执行 SELECT/INSERT/UPDATE 查询这些不存在的表，数据库层面完全缺失，Tier 1 无法实现。",
+      "finding_type": "omission",
       "autofix_class": "manual",
+      "suggested_fix": "创建 migration 文件定义 x_work、x_task、x_review、x_record、x_snap 等表的 schema，与 Java o2server 的表结构对齐。这是 Tier 1 的先决条件，必须在任何业务逻辑实现之前完成。",
       "confidence": 100,
       "evidence": [
-        "utoipa版本: 4.2.3 (Cargo.lock)",
-        "验证测试：#[utoipa::path(get, path = '/...', summary = '...')] 编译报错：unexpected identifier 'summary'",
-        "验证测试：#[utoipa::path(get, path = '/...', params(...))] 编译通过",
-        "gen_openapi_paths.py第186-187行：为每个path参数生成独立parameters属性，多参数路径产生重复属性",
-        "脚本输出示例：auth_authentication_captcha_width_width_height_height_get函数包含两个parameters属性块"
-      ],
-      "suggested_fix": "重写脚本使用utoipa 4.x正确语法：1) 移除summary属性；2) 将多个path参数合并为单个params(...)属性；3) 生成responses(...)属性；4) 直接写入lib.rs并更新#[openapi(paths(...))]列表"
+        "grep migrations/ 目录中无任何 x_work/x_task/x_review/x_snap/x_record 的 CREATE TABLE 语句",
+        "processplatform_service_processing/src/lib.rs:27 直接查询 x_work 表",
+        "processplatform_service_processing/src/lib.rs:34 直接查询 x_task 表",
+        "processplatform_service_processing/src/lib.rs 中大量 stub 函数存在但无对应表定义"
+      ]
     },
     {
-      "title": "deadpool版本策略基于错误前提",
+      "title": "BBS 表名不匹配：migration 创建 bbs_*_info 但代码查询 x_bbs_*",
       "severity": "P1",
-      "section": "DB 连接池超时 (R1-R3)",
-      "why_it_matters": "Requirements声称deadpool-postgres 0.12.1依赖deadpool 0.12，但实际Cargo.toml显示依赖deadpool 0.10.0。如果在shared/Cargo.toml中显式声明deadpool=0.12，将产生版本冲突。此外，deadpool 0.10的Pool类型没有timeout_get()方法，无法实现R1要求的超时行为。",
+      "section": "Tier 3 — BBS 社区",
+      "why_it_matters": "migrations/007_bbs_tables.sql 创建 bbs_forum_info、bbs_section_info、bbs_subject_info、bbs_comment_info，但 bbs_assemble_control/src/lib.rs 中所有查询使用 x_bbs_forum、x_bbs_section、x_bbs_topic、x_bbs_reply。即使 Tier 3 开始实现，所有 DB 查询也会因表不存在而失败。",
       "finding_type": "error",
       "autofix_class": "manual",
-      "confidence": 75,
-      "evidence": [
-        "Cargo.lock: deadpool v0.10.0, deadpool-postgres v0.12.1",
-        "deadpool-postgres 0.12.1 Cargo.toml: [dependencies.deadpool] version = '0.10.0'",
-        "deadpool 0.12.3 src/managed/pool.rs: 有pub async fn timeout_get(&self, timeouts: &Timeouts)",
-        "deadpool 0.10.0 src/managed/pool.rs: 无timeout_get方法",
-        "deadpool-postgres 0.14.1 Cargo.toml: [dependencies.deadpool] version = '0.12.0'",
-        "deadpool 0.12.3 rust-version = 1.75（与workspace兼容）",
-        "deadpool 0.13.0 rust-version = 1.85（不兼容workspace）"
-      ],
-      "suggested_fix": "可行方案：1) 升级deadpool-postgres到0.14.1（依赖deadpool 0.12.0），同时更新workspace中deadpool-postgres版本声明；2) 在shared/Cargo.toml添加deadpool = '0.12'；3) 修改db.rs使用PoolBuilder的.timeouts()方法配置超时。注意：deadpool 0.13+需要rust 1.85，不可用。"
-    },
-    {
-      "title": "多方法路由未被脚本捕获",
-      "severity": "P2",
-      "section": "OpenAPI 自动生成 (R11)",
-      "why_it_matters": "当前脚本的正则只匹配单方法路由，漏掉了12个多方法路由（如.put(h1).delete(h2)）。这些端点不会出现在生成的OpenAPI规范中，导致下游MCP客户端无法发现完整API。",
-      "finding_type": "omission",
-      "autofix_class": "safe_auto",
+      "suggested_fix": "统一表名：要么将 migration 中的表名改为 x_bbs_forum 等与代码对齐，要么修改代码使用 bbs_*_info 表名。建议在实现 Tier 3 之前修复此不一致。",
       "confidence": 100,
       "evidence": [
-        "代码库中存在12个多方法路由，如organization_core_entity/src/lib.rs中的.put(definition_update).delete(definition_delete)",
-        "gen_openapi_paths.py第114行正则只匹配单方法",
-        "当前脚本输出746条路径，实际应为758条（746单方法+12×2多方法）"
-      ],
-      "suggested_fix": "扩展正则以支持.put(h1).delete(h2)模式，为每个HTTP方法生成独立的#[utoipa::path]函数和路径项"
+        "migrations/007_bbs_tables.sql:4-9 创建 bbs_forum_info",
+        "migrations/007_bbs_tables.sql:11-19 创建 bbs_section_info",
+        "migrations/007_bbs_tables.sql:21-32 创建 bbs_subject_info",
+        "migrations/007_bbs_tables.sql:34-40 创建 bbs_comment_info",
+        "crates/bbs_assemble_control/src/lib.rs:176 查询 x_bbs_forum",
+        "crates/bbs_assemble_control/src/lib.rs:225 插入 x_bbs_topic",
+        "crates/bbs_assemble_control/src/lib.rs:276 插入 x_bbs_reply"
+      ]
     },
     {
-      "title": "脚本输出到stdout而非直接写入文件",
-      "severity": "P2",
-      "section": "OpenAPI 自动生成 (R8)",
-      "why_it_matters": "R8要求脚本直接重写lib.rs，但当前脚本仅打印到stdout。实现需要修改脚本写入目标文件，并更新#[openapi(paths(...))]中的函数名列表。",
-      "finding_type": "omission",
-      "autofix_class": "safe_auto",
-      "confidence": 100,
-      "evidence": [
-        "gen_openapi_paths.py第190-205行：所有输出都是print()语句",
-        "crates/openapi/src/lib.rs当前只有14个占位函数",
-        "参考：extract_endpoints.py已有直接写文件的模式"
-      ],
-      "suggested_fix": "修改脚本：1) 直接写入crates/openapi/src/lib.rs；2) 生成完整的#[openapi(paths(...), tags(...))]属性；3) 参考extract_endpoints.py的写文件模式"
-    },
-    {
-      "title": "未从Rust请求结构体推断body_params",
-      "severity": "P2",
-      "section": "OpenAPI 自动生成 (R9)",
-      "why_it_matters": "R9要求从CreateRequest/UpdateRequest结构体自动推断body_params，但当前脚本完全不做此分析。",
+      "title": "组织控制表 (x_org_group/x_org_identity/x_org_person/x_org_role/x_org_duty 等) 无 migration",
+      "severity": "P1",
+      "section": "Tier 4 — 组织控制",
+      "why_it_matters": "Tier 4 的 R17-R18 依赖 x_org_group、x_org_identity、x_org_person、x_org_role、x_org_permission_setting、x_org_duty、x_org_group_member、x_org_group_role、x_org_person_attribute 等表。grep 确认这些表在 migrations/ 中不存在。代码中的现有查询（如 x_org_role、x_org_unit）依赖于可能不存在的表。",
       "finding_type": "omission",
       "autofix_class": "manual",
+      "suggested_fix": "创建 migration 定义组织控制所需的全部表 schema，与 Java o2server 的表结构对齐。需特别注意 x_org_group_member、x_org_group_role 等关联表的定义。",
+      "confidence": 100,
+      "evidence": [
+        "grep migrations/ 中无 x_org_group/x_org_identity/x_org_person/x_org_role/x_org_duty 的 CREATE TABLE",
+        "crates/organization_core_entity/src/entities/org_person.rs:4 table_name = 'x_org_person'",
+        "crates/organization_core_entity/src/entities/org_group.rs:4 table_name = 'x_org_group'",
+        "crates/organization_assemble_control/src/lib.rs:30 查询 x_org_role",
+        "crates/organization_assemble_control/src/lib.rs:280 查询 x_org_group",
+        "crates/organization_assemble_control/src/lib.rs:576 查询 x_org_identity"
+      ]
+    },
+    {
+      "title": "文件管理表名不匹配：migration 创建 FILE_FILE/FILE_FOLDER 但代码查询 x_file/x_folder",
+      "severity": "P1",
+      "section": "Tier 2 — 文件管理",
+      "why_it_matters": "migrations/008_file_tables.sql 创建 FILE_FILE 和 FILE_FOLDER（大写），但 file_assemble_control/src/lib.rs 中的代码查询 x_file、x_file_assemble_control_config 等表。file crate 中的 file_download 和 upload_file 查询 FILE_FILE（大写），而 file_assemble_control 查询 x_file（小写），命名不一致。",
+      "finding_type": "error",
+      "autofix_class": "manual",
+      "suggested_fix": "统一文件管理相关的表命名。建议要么将所有文件相关查询改为大写 FILE_FILE/FILE_FOLDER 以匹配 migration，要么在 migration 中创建 x_file/x_folder 别名或改为小写命名。同时需要补充 x_file_assemble_control_config 等配置表的 migration。",
+      "confidence": 100,
+      "evidence": [
+        "migrations/008_file_tables.sql:12 CREATE TABLE FILE_FILE",
+        "migrations/008_file_tables.sql:2 CREATE TABLE FILE_FOLDER",
+        "crates/file/src/lib.rs:462 查询 FILE_FILE（大写）",
+        "crates/file_assemble_control/src/lib.rs:169 查询 x_file（小写）",
+        "crates/file_assemble_control/src/lib.rs:29 查询 x_file_assemble_control_config"
+      ]
+    },
+    {
+      "title": "BBS 认证未接入 auth crate 的 SessionManager",
+      "severity": "P2",
+      "section": "Tier 3 — BBS 社区 / Key Decisions",
+      "why_it_matters": "Key Decisions 声明'BBS 和用户认证复用 auth crate 的 SessionManager 和 RBAC 中间件'，但 bbs_assemble_control/src/lib.rs:665-672 的 login 函数是一个仅返回空 token 的 stub，完全不使用 auth crate 的 login 实现或 SessionManager。实现时需打通此集成。",
+      "finding_type": "omission",
+      "autofix_class": "gated_auto",
+      "suggested_fix": "R13 BBS 登录实现时，复用 auth crate 的 login 函数或 SessionManager，而非独立实现认证逻辑。确保 BBS token 与系统统一认证体系兼容。",
       "confidence": 75,
       "evidence": [
-        "gen_openapi_paths.py当前仅从URL路径推断path_params",
-        "无任何代码扫描struct定义或handler函数签名",
-        "Outstanding Questions section明确标注[Needs research]此项"
-      ],
-      "suggested_fix": "在脚本中添加Rust AST解析或正则匹配，扫描struct CreateRequest/UpdateRequest定义，提取字段名和类型，生成params(...)中的body参数"
+        "crates/auth/src/lib.rs:87-221 完整 login 实现，含 LDAP、密码校验、SessionManager",
+        "crates/bbs_assemble_control/src/lib.rs:665-672 login stub 返回空 token",
+        "docs/brainstorms/...md Key Decisions: '复用 auth crate 的 SessionManager 和 RBAC 中间件'"
+      ]
+    },
+    {
+      "title": "文件物理存储后端缺失（已延期但影响 Tier 2 实现边界）",
+      "severity": "P2",
+      "section": "Tier 2 — 文件管理 / Scope Boundaries",
+      "why_it_matters": "Scope Boundaries 明确延期'文件实际物理存储后端'，但 R6-R8 要求'真实二进制流返回'、'支持 multipart 解析'。当前 file crate 的 upload_file 仅存储元数据不存储文件内容，file_download 返回 JSON 而非二进制。实现 Tier 2 时需要明确：是在 DB BLOB 中存文件内容，还是引入文件系统后端。",
+      "finding_type": "omission",
+      "autofix_class": "gated_auto",
+      "suggested_fix": "在 Tier 2 实现前明确文件存储策略：短期用 DB bytea 存储小文件内容（满足 o2web 联调需求），长期引入文件系统/对象存储后端。R6 的匿名下载和 R7 的预览功能需要先确定存储后端。",
+      "confidence": 75,
+      "evidence": [
+        "crates/file/src/lib.rs:268-371 upload_file 仅插入元数据，不存储文件内容",
+        "crates/file/src/lib.rs:454-487 file_download 返回 JSON ActionResult 而非二进制流",
+        "crates/file_assemble_control/src/lib.rs:519-533 anonymous_file_*_download 是 stub",
+        "Scope Boundaries: '文件实际物理存储后端（当前仅存 DB 元数据，真实文件存储为后续工作）'"
+      ]
+    },
+    {
+      "title": "processplatform_assemble_designer list_flows 存在 SQL 注入（R23 部分已实现但未完全修复）",
+      "severity": "P2",
+      "section": "Tier 5 — 质量/安全修复",
+      "why_it_matters": "R23 要求'从字符串拼接改为参数化查询'，但当前 lib.rs:110 仍使用 format!() 拼接 category 参数到 SQL 中（虽然做了 replace(\"'\", \"''\") 转义）。这不是安全的参数化查询，且 lib.rs:115 的 COUNT 查询也使用了拼接字符串。需要完全重构为参数化查询。",
+      "finding_type": "error",
+      "autofix_class": "safe_auto",
+      "suggested_fix": "将 list_flows 中的 category 过滤改为参数化查询：使用 WHERE category = $1 代替字符串拼接。R23 的修复可在实现 Tier 1 时同步完成。",
+      "confidence": 100,
+      "evidence": [
+        "crates/processplatform_assemble_designer/src/lib.rs:107-111 使用 format! 拼接 category",
+        "crates/processplatform_assemble_designer/src/lib.rs:115  COUNT 查询也使用拼接字符串",
+        "R23: '修复 processplatform_assemble_designer list_flows: 从字符串拼接改为参数化查询'"
+      ]
+    },
+    {
+      "title": "query_core_express execute_query 动态 SQL 执行需要 SQL 解析器（R19 架构复杂度高）",
+      "severity": "P2",
+      "section": "Tier 5 — 质量/安全修复",
+      "why_it_matters": "R19 要求'从执行固定 SQL 改为真正执行用户传入的动态查询（含参数绑定）'，并'保留 Java 端的 DML 保护检查和权限过滤注入'。当前 lib.rs:30-36 执行固定 SELECT 查询。实现需要：1) SQL 解析（sqlparser-rs）验证语法，2) DML 保护（拒绝 INSERT/UPDATE/DELETE），3) 权限过滤注入（person/identityList/unitList）。这是一个需要架构决策的功能，不是简单 stub 替换。",
+      "finding_type": "omission",
+      "autofix_class": "manual",
+      "suggested_fix": "在规划阶段决定：使用 sqlparser-rs 解析+验证 SQL，用 SQLx 的 bind 机制执行参数化查询。实现 DML 白名单保护（仅允许 SELECT）和权限条件注入。参考 Java 端的 QueryAction 实现。",
+      "confidence": 75,
+      "evidence": [
+        "crates/query_core_express/src/lib.rs:24-47 execute_query 执行固定 SQL，忽略 req.query",
+        "Dependencies: 'query_core_express 的动态 SQL 执行需要 SQL 解析器（如 sqlparser-rs）'",
+        "Outstanding Questions: 'query_core_express 动态 SQL 执行的参数绑定策略'"
+      ]
+    },
+    {
+      "title": "console get_system_info 硬编码假数据（R20）",
+      "severity": "P2",
+      "section": "Tier 5 — 质量/安全修复",
+      "why_it_matters": "R20 要求'从硬编码假数据改为读取真实系统指标'。当前 lib.rs:190-200 硬编码返回 os=linux、cpuCores=4、memory=8GB。需要引入 sysinfo crate 获取真实数据。",
+      "finding_type": "error",
+      "autofix_class": "safe_auto",
+      "suggested_fix": "引入 sysinfo crate，实现 get_system_info 从系统 API 读取 OS 类型、CPU 核数、内存大小、磁盘空间等真实指标。R20 是独立修复，不依赖其他 Tier。",
+      "confidence": 100,
+      "evidence": [
+        "crates/console/src/lib.rs:190-200 硬编码返回假数据",
+        "R20: '修复 console get_system_info: 从硬编码假数据改为读取真实系统指标'",
+        "Dependencies: 'console 真实系统指标需要 sysinfo crate 支持跨平台'"
+      ]
+    },
+    {
+      "title": "console execute_command 无安全限制（R21 安全需求）",
+      "severity": "P2",
+      "section": "Tier 5 — 质量/安全修复",
+      "why_it_matters": "R21 要求'从仅记录日志改为真正执行系统命令'，但 Key Decisions 声明'execute_command 仅允许预定义的安全命令白名单，不开放任意命令执行'。当前 lib.rs:162-188 仅记录日志不执行命令。实现时需要同时做两件事：1) 集成 std::process::Command 执行命令，2) 实现命令白名单和权限校验。",
+      "finding_type": "omission",
+      "autofix_class": "manual",
+      "suggested_fix": "实现命令执行前先检查管理员权限（通过 SessionManager），然后使用 std::process::Command 在白名单内执行命令，返回真实 stdout/stderr 和退出码。白名单应限制为安全的系统诊断命令。",
+      "confidence": 75,
+      "evidence": [
+        "crates/console/src/lib.rs:162-188 execute_command 仅记录日志",
+        "Key Decisions: 'console 命令执行增加安全限制：execute_command 仅允许预定义的安全命令白名单'",
+        "R21: '修复 console execute_command: 从仅记录日志改为真正执行系统命令'"
+      ]
+    },
+    {
+      "title": "x_file_assemble_control_* 配置表无 migration",
+      "severity": "P2",
+      "section": "Tier 2 — 文件管理",
+      "why_it_matters": "file_assemble_control/src/lib.rs 查询 x_file_assemble_control_config、x_file_assemble_control_storage_pool、x_file_assemble_control_category 等配置表，但 migrations/ 中无这些表的定义。这些是配置表，不影响核心文件功能，但会导致 get_control_config、list_storage_pools、list_control_categories 等端点失败。",
+      "finding_type": "omission",
+      "autofix_class": "safe_auto",
+      "suggested_fix": "创建 migration 定义 x_file_assemble_control_config、x_file_assemble_control_storage_pool、x_file_assemble_control_category 表。这些表结构可从代码中的查询推断。",
+      "confidence": 75,
+      "evidence": [
+        "crates/file_assemble_control/src/lib.rs:29 查询 x_file_assemble_control_config",
+        "crates/file_assemble_control/src/lib.rs:58 查询 x_file_assemble_control_storage_pool",
+        "crates/file_assemble_control/src/lib.rs:127 查询 x_file_assemble_control_category",
+        "grep migrations/ 中无 x_file_assemble_control 相关 CREATE TABLE"
+      ]
+    },
+    {
+      "title": "流程引擎并发控制策略未决策（延期问题影响 Tier 1 实现）",
+      "severity": "P2",
+      "section": "Tier 1 — 流程引擎核心 / Outstanding Questions",
+      "why_it_matters": "Outstanding Questions 标记'流程引擎状态机的并发控制策略'为延期问题。Java 端使用 KeyLock 机制防止并发操作。Rust 端需要决定使用乐观锁（version 字段）还是分布式锁（如 pg_advisory_lock）。虽然标记为延期，但 Tier 1 的状态机变更（R1-R5）若无并发控制，在生产环境中可能导致数据不一致。",
+      "finding_type": "omission",
+      "autofix_class": "manual",
+      "suggested_fix": "在 Tier 1 实现前至少决定并发控制策略：建议对 x_work/x_task 表添加 version 字段实现乐观锁，在状态变更时使用 UPDATE ... WHERE version = $1 检查并发冲突。pg_advisory_lock 可作为备选方案。",
+      "confidence": 50,
+      "evidence": [
+        "Outstanding Questions: '流程引擎状态机的并发控制策略：Java 端使用 KeyLock 机制防止并发操作，Rust 端如何实现等效的乐观锁/分布式锁'",
+        "processplatform_service_processing/src/lib.rs:127-140 execute_process 直接 UPDATE x_work 无并发检查"
+      ]
     }
   ],
   "residual_risks": [
-    "deadpool-postgres从0.12.1升级到0.14.1可能引入breaking changes，影响83个依赖crate",
-    "utoipa 4.x处理746个#[utoipa::path]宏时的编译时间可能显著增加（已标记为Deferred Question）",
-    "模块拆分后测试覆盖完整性需验证（现有314行tests.rs需同步拆分）"
+    "Tier 1 完全依赖 x_work/x_task/x_review/x_snap/x_record 表的 migration，如果 Java 端的表结构复杂（多字段、约束、索引），migration 创建可能需要额外工作量。",
+    "BBS 表名不一致（bbs_*_info vs x_bbs_*）意味着现有 BBS 代码（即使部分非 stub）也无法正常工作，需要系统性修复。",
+    "文件物理存储后端的延期决策会影响 Tier 2 的实现范围——如果确定为 DB BLOB 存储，需要修改 file crate 的 upload 实现来存储实际内容。",
+    "query_core_express 的动态 SQL 执行涉及 SQL 注入防护，实现不当可能导致安全漏洞。",
+    "组织控制的递归查询（sub_nested/sup_nested）在 PostgreSQL 中使用 CTE 实现，大量数据时可能性能瓶颈，需要测试验证。"
   ],
   "deferred_questions": [
-    "deadpool升级路径：是否需要同时将deadpool-postgres从0.12.1升级到0.14.1？workspace中其他依赖deadpool-postgres的crate是否需要适配？",
-    "utoipa 4.x的#[openapi(paths(...))]是否支持746+个函数名列表？编译时间是否在可接受范围内？",
-    "body_params推断：是否需要完整的Rust AST解析，还是可以用正则匹配struct定义？",
-    "timeout配置值：环境变量（如POOL_WAIT_TIMEOUT_MS）还是shared crate的配置模块？"
+    "[Affects Tier 1] x_work/x_task/x_review/x_snap/x_record 表的完整 schema 是什么？需要与 Java o2server 的表定义对齐，建议提供 DDL 参考。",
+    "[Affects Tier 2] 文件物理存储策略：短期用 DB bytea 存储还是引入文件系统？这决定 file_assemble_control 的 download/upload 实现方式。",
+    "[Affects Tier 3] BBS 认证是直接复用 auth crate 的 login 函数，还是在 BBS 模块中独立实现？复用可以更快速地解决 R13。",
+    "[Affects Tier 5] query_core_express 动态 SQL 的权限过滤注入具体逻辑是什么？Java 端的 person/identityList/unitList 注入规则需要明确。",
+    "[Affects Tier 1] 流程状态机的完整状态流转图是什么？Java 端的工单/任务状态机状态和转换规则需要文档化以便 Rust 实现对齐。"
   ]
 }
