@@ -5,6 +5,9 @@ use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
 
+#[cfg(test)]
+mod tests;
+
 #[axum::debug_handler]
 pub async fn person_id_icon(
     pool: Extension<Pool>,
