@@ -409,15 +409,16 @@ DO $$ BEGIN
 END $$;
 
 -- ── Update indexes ───────────────────────────────────────────────────────────
+-- Indexes are already lowercase; skip no-op renames.
 DO $$ BEGIN
-  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'idx_file_folder_superior') THEN
-    ALTER INDEX "idx_file_folder_superior" RENAME TO "idx_file_folder_superior";
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'IDX_FILE_FOLDER_SUPERIOR') THEN
+    ALTER INDEX "IDX_FILE_FOLDER_SUPERIOR" RENAME TO "idx_file_folder_superior";
   END IF;
-  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'idx_file_file_person') THEN
-    ALTER INDEX "idx_file_file_person" RENAME TO "idx_file_file_person";
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'IDX_FILE_FILE_PERSON') THEN
+    ALTER INDEX "IDX_FILE_FILE_PERSON" RENAME TO "idx_file_file_person";
   END IF;
-  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'idx_file_file_reference') THEN
-    ALTER INDEX "idx_file_file_reference" RENAME TO "idx_file_file_reference";
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'IDX_FILE_FILE_REFERENCE') THEN
+    ALTER INDEX "IDX_FILE_FILE_REFERENCE" RENAME TO "idx_file_file_reference";
   END IF;
 END $$;
 
