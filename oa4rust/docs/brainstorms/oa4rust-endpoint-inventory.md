@@ -6,26 +6,26 @@
 
 | crate | wave | routes | handlers | stub_ | null | todo | status |
 |-------|------|-------:|---------:|------:|-----:|-----:|:------|
-| auth | U1-U4 | 40 | 32 | 0 | 0 | 0 | done |
+| auth | U1-U4 | 40 | 45 | 0 | 0 | 0 | done |
 | control | U1-U4 | 25 | 25 | 0 | 0 | 0 | done |
-| personal | U1-U4 | 19 | 17 | 0 | 0 | 0 | done |
-| personal_extend | U1-U4 | 6 | 6 | 0 | 0 | 0 | done |
+| personal | U1-U4 | 19 | 22 | 0 | 0 | 0 | done |
+| personal_extend | U1-U4 | 6 | 12 | 0 | 0 | 0 | done |
 | program_init | U1-U4 | 3 | 3 | 0 | 0 | 0 | done |
 | attendance | U5 | 9 | 9 | 0 | 0 | 0 | done |
 | attendance_assemble_control | U5 | 87 | 89 | 0 | 0 | 0 | done |
-| attendance_core_entity | U5 | 8 | 8 | 0 | 0 | 0 | done |
-| calendar | U5 | 10 | 0 | 0 | 0 | 0 | todo |
+| attendance_core_entity | U5 | 8 | 9 | 0 | 0 | 0 | done |
+| calendar | U5 | 10 | 10 | 0 | 0 | 0 | done |
 | calendar_assemble_control | U5 | 4 | 4 | 0 | 0 | 0 | done |
 | calendar_core_entity | U5 | 10 | 10 | 0 | 0 | 0 | done |
-| file | U5 | 9 | 10 | 0 | 0 | 0 | done |
-| file_assemble_control | U5 | 11 | 84 | 0 | 0 | 0 | done |
+| file | U5 | 9 | 9 | 0 | 0 | 0 | done |
+| file_assemble_control | U5 | 11 | 94 | 0 | 0 | 0 | done |
 | file_core_entity | U5 | 7 | 7 | 0 | 0 | 0 | done |
 | general | U5 | 3 | 3 | 0 | 0 | 0 | done |
 | general_assemble_control | U5 | 61 | 61 | 0 | 0 | 0 | done |
 | general_core_entity | U5 | 21 | 21 | 0 | 0 | 0 | done |
 | cms_assemble_control | U6 | 7 | 311 | 0 | 0 | 0 | done |
 | cms_control | U6 | 2 | 2 | 0 | 0 | 0 | done |
-| cms_core_entity | U6 | 6 | 6 | 0 | 0 | 0 | done |
+| cms_core_entity | U6 | 6 | 7 | 0 | 0 | 0 | done |
 | cms_core_express | U6 | 2 | 2 | 0 | 0 | 0 | done |
 | cms_express | U6 | 5 | 5 | 0 | 0 | 0 | done |
 | meeting | U6 | 9 | 9 | 0 | 0 | 0 | done |
@@ -38,9 +38,9 @@
 | portal_assemble_designer | U6 | 12 | 56 | 0 | 0 | 0 | done |
 | portal_assemble_surface | U6 | 8 | 48 | 0 | 0 | 0 | done |
 | portal_core_entity | U6 | 8 | 8 | 0 | 0 | 0 | done |
-| process_designer | U6 | 7 | 5 | 0 | 0 | 0 | done |
-| process_express | U6 | 3 | 0 | 0 | 0 | 0 | todo |
-| process_surface | U6 | 3 | 0 | 0 | 0 | 0 | todo |
+| process_designer | U6 | 7 | 7 | 0 | 0 | 0 | done |
+| process_express | U6 | 3 | 3 | 0 | 0 | 0 | done |
+| process_surface | U6 | 3 | 3 | 0 | 0 | 0 | done |
 | processplatform_assemble_bam | U6 | 5 | 50 | 0 | 0 | 0 | done |
 | processplatform_assemble_designer | U6 | 6 | 96 | 0 | 0 | 0 | done |
 | processplatform_assemble_surface | U6 | 7 | 487 | 0 | 0 | 0 | done |
@@ -57,7 +57,7 @@
 | ai | U7 | 21 | 21 | 0 | 0 | 0 | done |
 | ai_assemble_control | U7 | 37 | 32 | 0 | 0 | 0 | done |
 | ai_core_entity | U7 | 3 | 3 | 0 | 0 | 0 | done |
-| base | U7 | 3 | 2 | 0 | 0 | 0 | done |
+| base | U7 | 3 | 3 | 0 | 0 | 0 | done |
 | bbs | U7 | 18 | 9 | 0 | 0 | 0 | done |
 | bbs_assemble_control | U7 | 17 | 57 | 0 | 0 | 0 | done |
 | bbs_core_entity | U7 | 15 | 15 | 0 | 0 | 0 | done |
@@ -78,26 +78,21 @@
 | jpush_core_entity | U7 | 5 | 5 | 0 | 0 | 0 | done |
 | mind | U7 | 10 | 10 | 0 | 0 | 0 | done |
 | mind_assemble_control | U7 | 8 | 9 | 0 | 0 | 0 | done |
-| mind_core_entity | U7 | 10 | 10 | 0 | 0 | 0 | done |
+| mind_core_entity | U7 | 10 | 11 | 0 | 0 | 0 | done |
+| organization_assemble_authentication | U7 | 2 | 2 | 0 | 0 | 0 | done |
 | organization_assemble_control | U7 | 102 | 102 | 0 | 0 | 0 | done |
 | organization_assemble_express | U7 | 4 | 4 | 0 | 0 | 0 | done |
+| organization_assemble_personal | U7 | 2 | 2 | 0 | 0 | 0 | done |
 | organization_core_entity | U7 | 18 | 24 | 0 | 0 | 0 | done |
 | organization_core_express | U7 | 3 | 3 | 0 | 0 | 0 | done |
 | program_center | U7 | 7 | 205 | 0 | 0 | 0 | done |
 | program_center_core_entity | U7 | 20 | 20 | 0 | 0 | 0 | done |
-| empower | U? | 14 | 0 | 0 | 0 | 0 | todo |
-| ldap | U? | 0 | 0 | 0 | 0 | 0 | todo |
-| mcp_server | U? | 2 | 0 | 0 | 0 | 0 | todo |
-| openapi | U? | 0 | 0 | 0 | 0 | 0 | todo |
-| organization_assemble_authentication | U? | 2 | 2 | 0 | 0 | 0 | done |
-| organization_assemble_personal | U? | 2 | 2 | 0 | 0 | 0 | done |
-| orm | U? | 0 | 1 | 0 | 0 | 0 | done |
+| empower | U? | 14 | 14 | 0 | 0 | 0 | done |
 | process_bam | U? | 3 | 3 | 0 | 0 | 0 | done |
-| shared | U? | 11 | 0 | 0 | 0 | 0 | todo |
 
 ## 汇总
 
-- crate 总数: 88
-- 已完成(done): 79 | 迁移中(doing): 1 | 待迁移(todo): 8
-- 真实 handler 总数: 2525
+- crate 总数: 83
+- 已完成(done): 82 | 迁移中(doing): 1 | 待迁移(todo): 0
+- 真实 handler 总数: 2593
 - 残留 stub_ 标记: 0 | 纯 Value::Null 桩: 3 | TODO 占位: 0

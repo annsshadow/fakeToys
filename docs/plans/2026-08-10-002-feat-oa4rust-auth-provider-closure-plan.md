@@ -1,7 +1,7 @@
 ---
 title: OA4Rust 认证提供方补全与工具链验证
 type: feat
-status: active
+status: completed
 date: 2026-08-10
 origin: docs/brainstorms/2026-08-10-oa4rust-auth-and-toolchain-closure-requirements.md
 ---

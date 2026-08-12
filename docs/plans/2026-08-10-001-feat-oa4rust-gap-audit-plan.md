@@ -1,7 +1,7 @@
 ---
 title: OA4Rust 全面差距补全
 type: feat
-status: active
+status: completed
 date: 2026-08-10
 origin: docs/brainstorms/2026-08-10-oa4rust-comprehensive-gap-audit-requirements.md
 ---
