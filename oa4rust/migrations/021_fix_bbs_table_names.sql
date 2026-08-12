@@ -54,8 +54,16 @@ BEGIN
 END $$;
 
 -- Ensure indexes exist
-CREATE INDEX IF NOT EXISTS idx_x_bbs_topic_section ON x_bbs_topic(forum_id);
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_attribute a JOIN pg_class c ON a.attrelid = c.oid WHERE c.relname = 'x_bbs_topic' AND a.attname = 'forum_id') THEN
+    CREATE INDEX IF NOT EXISTS idx_x_bbs_topic_forum ON x_bbs_topic(forum_id);
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_x_bbs_topic_author ON x_bbs_topic(creator);
 CREATE INDEX IF NOT EXISTS idx_x_bbs_reply_topic ON x_bbs_reply(topic_id);
-CREATE INDEX IF NOT EXISTS idx_x_bbs_section_forum ON x_bbs_section(forum_id);
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_attribute a JOIN pg_class c ON a.attrelid = c.oid WHERE c.relname = 'x_bbs_section' AND a.attname = 'forum_id') THEN
+    CREATE INDEX IF NOT EXISTS idx_x_bbs_section_forum ON x_bbs_section(forum_id);
+  END IF;
+END $$;
 CREATE INDEX IF NOT EXISTS idx_x_bbs_topic_deleted ON x_bbs_topic(deleted_at);
