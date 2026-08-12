@@ -7,10 +7,10 @@ use tracing::info;
 use crate::integration_tests::db::TEST_DB;
 
 // ──────────────────────────────────────────────────────────────────────────────
-// File metadata creation �?upload �?retrieval cross-crate happy path
+// File metadata creation �?upload �?retrieval cross-crate happy path
 //
 // Verifies: a file folder can be created, a file can be uploaded into it,
-// and the file metadata can be retrieved by ID �?all through the real
+// and the file metadata can be retrieved by ID �?all through the real
 // HTTP layer with auth middleware active.
 // ──────────────────────────────────────────────────────────────────────────────
 

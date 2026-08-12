@@ -103,6 +103,7 @@ pub fn init_test_database() -> Arc<TestContext> {
         .get_or_init(|| {
             let rt = runtime_or_new();
             let p = rt
+                .handle()
                 .block_on(async { setup_database(&db_name).await })
                 .expect("failed to set up test database");
             Arc::new(p)
@@ -128,13 +129,21 @@ pub fn lazy_lock() -> &'static OnceLock<Arc<Pool>> {
     &TEST_DB
 }
 
-fn runtime_or_new() -> Handle {
+fn runtime_or_new() -> std::sync::Arc<tokio::runtime::Runtime> {
     match Handle::try_current() {
-        Ok(h) => h,
+        Ok(h) => {
+            // Already in a runtime; return a no-op Arc so the handle stays valid
+            // by relying on the existing runtime. We still need to return an Arc
+            // for the caller, so create a new runtime and return its Arc.
+            Arc::new(
+                tokio::runtime::Runtime::new()
+                    .expect("failed to create fallback tokio runtime"),
+            )
+        }
         Err(_) => {
             let rt = tokio::runtime::Runtime::new()
                 .expect("failed to create tokio runtime for test db setup");
-            rt.handle().clone()
+            Arc::new(rt)
         }
     }
 }

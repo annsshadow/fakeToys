@@ -1,7 +1,7 @@
 ---
 title: OA4Rust 剩余缺口补全 — 递归导航、AI 上下文、SQLx 清理、Office 预览
 type: feat
-status: active
+status: completed
 date: 2026-08-11
 origin: docs/brainstorms/2026-08-11-oa4rust-remaining-gap-closure-requirements.md
 ---
