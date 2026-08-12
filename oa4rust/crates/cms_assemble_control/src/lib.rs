@@ -207,22 +207,6 @@ async fn list_from_table_filtered(
     ])))
 }
 
-async fn get_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt(
-            &format!("SELECT * FROM {} WHERE id = $1", table),
-            &[&id],
-        )
-        .await
-        .map_err(|_| AppError::Internal)?;
-
-    match row {
-        Some(r) => Ok(row_to_json(&r)),
-        None => Ok(Value::Null),
-    }
-}
-
 async fn delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
