@@ -10,3 +10,8 @@ serde_json = "1"
 deadpool-postgres.workspace = true
 uuid = { workspace = true, features = ["v4"] }
 shared = { path = "../shared" }
+
+[dev-dependencies]
+tower.workspace = true
+tokio = { workspace = true, features = ["full"] }
+
