@@ -3,7 +3,16 @@
 
 BEGIN;
 
-ALTER TABLE x_application ADD COLUMN IF NOT EXISTS creator_person TEXT NOT NULL DEFAULT '';
-ALTER TABLE x_script ADD COLUMN IF NOT EXISTS creator_person TEXT NOT NULL DEFAULT '';
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'x_application') THEN
+    ALTER TABLE x_application ADD COLUMN IF NOT EXISTS creator_person TEXT NOT NULL DEFAULT '';
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'x_script') THEN
+    ALTER TABLE x_script ADD COLUMN IF NOT EXISTS creator_person TEXT NOT NULL DEFAULT '';
+  END IF;
+END $$;
 
 COMMIT;
