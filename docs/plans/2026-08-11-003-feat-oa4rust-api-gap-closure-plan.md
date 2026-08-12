@@ -1,7 +1,7 @@
 ---
 title: OA4Rust API Gap Closure — 附件下载流、查询视图执行、工作流操作、组织模块补全
 type: feat
-status: active
+status: completed
 date: 2026-08-11
 origin: docs/brainstorms/2026-08-11-oa4rust-full-api-gap-closure-comprehensive-requirements.md
 ---
