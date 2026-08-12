@@ -1294,25 +1294,123 @@ pub async fn attachment2_id_image_width_width_height_height_binary_base64(
     attachment2_id_binary_base64(pool, axum::extract::Path(id)).await
 }
 
+/// .docx 本质是 ZIP 包：解压 word/document.xml，将 <w:p> 段落中的
+/// <w:t> 文本提取为简单 HTML（<p> 标签）。表格/图片等复杂内容由调用方降级。
+fn docx_to_html(bytes: &[u8]) -> Option<String> {
+    let reader = std::io::Cursor::new(bytes);
+    let mut archive = zip::ZipArchive::new(reader).ok()?;
+    let xml = archive.by_name("word/document.xml").ok().and_then(|mut f| {
+        let mut s = String::new();
+        std::io::Read::read_to_string(&mut f, &mut s).ok()?;
+        Some(s)
+    })?;
+
+    if xml.contains("<w:tbl") || xml.contains("<w:drawing") {
+        return None;
+    }
+
+    let mut html = String::new();
+    let mut rest = xml.as_str();
+    while let Some(start) = rest.find("<w:p") {
+        let Some(close_rel) = rest[start..].find("</w:p>") else { break };
+        let para = &rest[start..start + close_rel];
+        let text = extract_wt_text(para);
+        if !text.is_empty() {
+            html.push_str("<p>");
+            html.push_str(&html_escape(&text));
+            html.push_str("</p>");
+        }
+        rest = &rest[start + close_rel + 6..];
+    }
+
+    if html.is_empty() { None } else { Some(html) }
+}
+
+fn extract_wt_text(para: &str) -> String {
+    let mut out = String::new();
+    let mut rest = para;
+    while let Some(start) = rest.find("<w:t") {
+        let Some(gt_rel) = rest[start..].find('>') else { break };
+        let content_start = start + gt_rel + 1;
+        let Some(end_rel) = rest[content_start..].find("</w:t>") else { break };
+        out.push_str(&xml_unescape(&rest[content_start..content_start + end_rel]));
+        rest = &rest[content_start + end_rel + 6..];
+    }
+    out
+}
+
+fn xml_unescape(s: &str) -> String {
+    s.replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#39;", "'")
+}
+
+fn html_escape(s: &str) -> String {
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+}
+
 #[axum::debug_handler]
 pub async fn attachment2_id_office_preview_type_type(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Path((id, _type)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
-        .query_opt("SELECT id, name FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("previewUrl".to_string(), Value::String(format!("/preview/{}", row.get::<_, String>("id")))),
-            ]),
-        )))),
-        None => Ok(Json(ActionResult::error("attachment not found"))),
+        .query_opt(
+            "SELECT id, name, person, extension, mime_type, content FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("attachment not found")));
+    };
+
+    shared::middleware::require_owner(&pool, &session, &row.get::<_, String>("person")).await?;
+
+    let content: Option<String> = row.get("content");
+    let extension: String = row.get("extension");
+    let mime: String = row.get("mime_type");
+    let id: String = row.get("id");
+    let name: String = row.get("name");
+
+    let bytes = match content {
+        Some(c) => base64::engine::general_purpose::STANDARD
+            .decode(c)
+            .unwrap_or_default(),
+        None => vec![],
+    };
+
+    let is_docx = extension.eq_ignore_ascii_case("docx") || mime.contains("wordprocessingml");
+
+    if is_docx {
+        if let Some(html) = docx_to_html(&bytes) {
+            return Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("name".to_string(), Value::String(name)),
+                    ("html".to_string(), Value::String(html)),
+                    ("contentType".to_string(), Value::String("text/html".to_string())),
+                ]),
+            ))));
+        }
     }
+
+    // 降级：非 .docx、解析失败或含复杂内容时返回 base64（不抛错）
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("content".to_string(), Value::String(base64::engine::general_purpose::STANDARD.encode(&bytes))),
+            ("contentType".to_string(), Value::String(mime)),
+        ]),
+    ))))
 }
 
 #[axum::debug_handler]

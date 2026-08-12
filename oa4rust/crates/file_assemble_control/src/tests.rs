@@ -425,4 +425,72 @@ mod tests {
             .unwrap();
         assert_eq!(response.status(), StatusCode::NOT_FOUND);
     }
+
+    #[tokio::test]
+    async fn test_office_preview_route_registered() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/attachment2/some-id/office/preview/type/docx")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    fn build_docx(document_xml: &str) -> Vec<u8> {
+        use std::io::Write;
+        let mut buf = std::io::Cursor::new(Vec::new());
+        {
+            let mut zip = zip::ZipWriter::new(&mut buf);
+            let opts = zip::write::SimpleFileOptions::default();
+            zip.start_file("word/document.xml", opts).unwrap();
+            zip.write_all(document_xml.as_bytes()).unwrap();
+            zip.finish().unwrap();
+        }
+        buf.into_inner()
+    }
+
+    #[test]
+    fn test_docx_to_html_extracts_paragraphs() {
+        let xml = r#"<?xml version="1.0"?>
+<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
+  <w:body>
+    <w:p><w:r><w:t>Hello world</w:t></w:r></w:p>
+    <w:p><w:r><w:t>Second &amp; third</w:t></w:r></w:p>
+  </w:body>
+</w:document>"#;
+        let bytes = build_docx(xml);
+        let html = crate::docx_to_html(&bytes).expect("docx should parse");
+        assert!(html.contains("<p>Hello world</p>"), "got: {}", html);
+        assert!(html.contains("<p>Second &amp; third</p>"), "got: {}", html);
+    }
+
+    #[test]
+    fn test_docx_to_html_returns_none_for_missing_document_xml() {
+        let mut buf = std::io::Cursor::new(Vec::new());
+        {
+            let mut zip = zip::ZipWriter::new(&mut buf);
+            zip.start_file(
+                "word/styles.xml",
+                zip::write::SimpleFileOptions::default(),
+            )
+            .unwrap();
+            zip.finish().unwrap();
+        }
+        let bytes = buf.into_inner();
+        assert!(crate::docx_to_html(&bytes).is_none());
+    }
+
+    #[test]
+    fn test_docx_to_html_returns_none_for_table_content() {
+        let xml = r#"<w:document><w:body><w:tbl><w:tr><w:tc><w:p><w:r><w:t>x</w:t></w:r></w:p></w:tc></w:tr></w:tbl></w:body></w:document>"#;
+        let bytes = build_docx(xml);
+        assert!(crate::docx_to_html(&bytes).is_none());
+    }
 }
