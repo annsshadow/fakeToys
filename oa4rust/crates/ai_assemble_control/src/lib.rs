@@ -16,9 +16,10 @@ mod tests;
 pub struct ChatCompletionRequest {
     pub conversation_id: Option<String>,
     pub messages: Vec<ChatMessage>,
+    pub context_window: Option<i32>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct ChatMessage {
     pub role: String,
     pub content: String,
@@ -1058,9 +1059,40 @@ pub async fn index_sync_to_knowledge(
     ))))
 }
 
+fn ai_client() -> &'static reqwest::Client {
+    static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+    CLIENT.get_or_init(|| reqwest::Client::new())
+}
+
+async fn call_llm(messages: &[ChatMessage]) -> Result<String, AppError> {
+    let api_key = std::env::var("AI_API_KEY").map_err(|_| AppError::Internal)?;
+    let api_base = std::env::var("AI_API_BASE").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
+    let model = std::env::var("AI_MODEL").unwrap_or_else(|_| "gpt-4".to_string());
+
+    let body = serde_json::json!({
+        "model": model,
+        "messages": messages.iter().map(|m| serde_json::json!({"role": m.role, "content": m.content})).collect::<Vec<_>>(),
+    });
+
+    let resp = ai_client()
+        .post(format!("{}/chat/completions", api_base.trim_end_matches('/')))
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&body)
+        .send()
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let value: Value = resp.json().await.map_err(|_| AppError::Internal)?;
+    value["choices"][0]["message"]["content"]
+        .as_str()
+        .map(|s| s.to_string())
+        .ok_or(AppError::Internal)
+}
+
 #[axum::debug_handler]
 pub async fn chat_completion(
     pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
     axum::extract::Json(req): Json<ChatCompletionRequest>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let conversation_id = req
@@ -1075,7 +1107,54 @@ pub async fn chat_completion(
         .map(|m| m.content.clone())
         .unwrap_or_default();
 
+    let context_window = req.context_window.unwrap_or(20).clamp(1, 100);
+
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    // 校验 conversation 所有权：仅允许读取 own conversations 或 shared conversations
+    let owner_rows = client
+        .query(
+            "SELECT DISTINCT creator FROM x_ai_chat WHERE conversation_id = $1 AND deleted_at IS NULL AND creator IS NOT NULL",
+            &[&conversation_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let owners: Vec<String> = owner_rows
+        .iter()
+        .map(|r| r.get::<_, String>("creator"))
+        .collect();
+
+    let is_owned_by_others = !owners.is_empty()
+        && owners
+            .iter()
+            .all(|o| o != &session.person_unique && !o.is_empty() && o != "system");
+
+    if is_owned_by_others {
+        return Ok(Json(ActionResult::error("conversation not owned")));
+    }
+
+    // 加载历史消息：按 create_time 升序取最近 context_window 条
+    let history_rows = client
+        .query(
+            "SELECT role, content FROM ( \
+             SELECT role, content, create_time FROM x_ai_chat \
+             WHERE conversation_id = $1 AND deleted_at IS NULL \
+             ORDER BY create_time DESC LIMIT $2 \
+             ) h ORDER BY create_time ASC",
+            &[&conversation_id, &context_window],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let history: Vec<ChatMessage> = history_rows
+        .iter()
+        .map(|r| ChatMessage {
+            role: r.get("role"),
+            content: r.get("content"),
+        })
+        .collect();
+
     client
         .execute(
             "INSERT INTO x_ai_chat (id, conversation_id, role, content, creator, create_time) \
@@ -1085,18 +1164,51 @@ pub async fn chat_completion(
                 &conversation_id,
                 &"user".to_string(),
                 &last_user_message,
-                &"system".to_string(),
+                &session.person_unique,
             ],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let reply = Value::Object(serde_json::Map::from_iter([
+    // 当前请求消息 + 历史作为完整上下文
+    let mut full_messages = history.clone();
+    full_messages.extend(req.messages.iter().cloned());
+
+    let reply = match std::env::var("AI_API_KEY") {
+        Ok(_) => call_llm(&full_messages).await?,
+        Err(_) => "你好！我是AI助手，很高兴为你服务。".to_string(),
+    };
+
+    client
+        .execute(
+            "INSERT INTO x_ai_chat (id, conversation_id, role, content, creator, create_time) \
+             VALUES ($1, $2, $3, $4, $5, NOW())",
+            &[
+                &uuid::Uuid::new_v4().to_string(),
+                &conversation_id,
+                &"assistant".to_string(),
+                &reply,
+                &session.person_unique,
+            ],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    // 响应 messages：历史 + 最新 user 消息 + 最新回复
+    let mut response_messages: Vec<Value> = history
+        .iter()
+        .map(|m| serde_json::json!({"role": m.role, "content": m.content}))
+        .collect();
+    response_messages.push(serde_json::json!({"role": "user", "content": last_user_message}));
+    response_messages.push(serde_json::json!({"role": "assistant", "content": reply}));
+
+    let result = Value::Object(serde_json::Map::from_iter([
         ("conversationId".to_string(), Value::String(conversation_id)),
-        ("reply".to_string(), Value::String("你好！我是AI助手，很高兴为你服务。".to_string())),
+        ("reply".to_string(), Value::String(reply)),
         ("success".to_string(), Value::Bool(true)),
+        ("messages".to_string(), Value::Array(response_messages)),
     ]));
 
-    Ok(Json(ActionResult::success(reply)))
+    Ok(Json(ActionResult::success(result)))
 }
 
