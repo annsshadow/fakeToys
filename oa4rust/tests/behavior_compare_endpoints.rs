@@ -2,7 +2,7 @@
 /// 复制下面的 ENDPOINTS 数组到 tests/behavior_compare.rs 中替换原有内容。
 
 /// 行为对比测试端点列表（由 extract_endpoints.py 自动生成，请勿手动修改）
-/// 生成时间: 2026-08-12 10:14:40
+/// 生成时间: 2026-08-12 20:41:37
 
 use super::behavior_comparison::EndpointDef;
 
@@ -3406,6 +3406,15 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/attachment/download/{attid}/stream",
         java_war: "x_file_assemble_control",
         java_action: "jaxrs/attachment/download/{attid}/stream",
+        body: None,
+        requires_auth: false,
+    },
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/assemble/control/attachment2/{id}/office/preview/type/{type}",
+        java_war: "x_file_assemble_control",
+        java_action: "jaxrs/file/assemble/control/attachment2/{id}/office/preview/type/{type}",
         body: None,
         requires_auth: false,
     },
@@ -7231,6 +7240,33 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         rust_path: "/jaxrs/organization/assemble/control/unit/list/{flag}/next/{count}",
         java_war: "x_organization_assemble_control",
         java_action: "jaxrs/organization/assemble/control/unit/list/{flag}/next/{count}",
+        body: None,
+        requires_auth: false,
+    },
+    EndpointDef {
+        crate_name: "organization_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/organization/assemble/control/unit/list/{flag}/sub/nested",
+        java_war: "x_organization_assemble_control",
+        java_action: "jaxrs/organization/assemble/control/unit/list/{flag}/sub/nested",
+        body: None,
+        requires_auth: false,
+    },
+    EndpointDef {
+        crate_name: "organization_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/organization/assemble/control/unit/list/{flag}/sup/nested",
+        java_war: "x_organization_assemble_control",
+        java_action: "jaxrs/organization/assemble/control/unit/list/{flag}/sup/nested",
+        body: None,
+        requires_auth: false,
+    },
+    EndpointDef {
+        crate_name: "organization_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/organization/assemble/control/unit/list/{flag}/sup/nested/type/{type}",
+        java_war: "x_organization_assemble_control",
+        java_action: "jaxrs/organization/assemble/control/unit/list/{flag}/sup/nested/type/{type}",
         body: None,
         requires_auth: false,
     },
