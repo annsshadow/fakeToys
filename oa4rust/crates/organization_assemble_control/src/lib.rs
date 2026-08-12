@@ -173,6 +173,102 @@ pub async fn organization_assemble_control_unit_flag(
     }
 }
 
+pub async fn organization_assemble_control_unit_list_flag_sub_nested(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "WITH RECURSIVE sub AS (
+                SELECT id FROM x_org_unit WHERE id = $1 AND deleted_at IS NULL
+                UNION ALL
+                SELECT u.id FROM x_org_unit u JOIN sub s ON u.parent_id = s.id WHERE u.deleted_at IS NULL
+            )
+            SELECT id, name, parent_id, level, sort, creator, create_time FROM x_org_unit
+            WHERE id IN (SELECT id FROM sub) AND deleted_at IS NULL
+            ORDER BY sort ASC, create_time DESC",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        let parent_id: Option<String> = row.get("parent_id");
+        let level: i32 = row.get("level");
+        let sort: i32 = row.get("sort");
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("parentId".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
+            ("level".to_string(), Value::Number(serde_json::Number::from(level))),
+            ("sort".to_string(), Value::Number(serde_json::Number::from(sort))),
+            ("creator".to_string(), Value::String(row.get("creator"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+pub async fn organization_assemble_control_unit_list_flag_sup_nested(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "WITH RECURSIVE sup AS (
+                SELECT id FROM x_org_unit WHERE id = $1 AND deleted_at IS NULL
+                UNION ALL
+                SELECT u.id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL
+            )
+            SELECT id, name, parent_id, level, sort, creator, create_time FROM x_org_unit
+            WHERE id IN (SELECT id FROM sup) AND deleted_at IS NULL
+            ORDER BY level ASC, sort ASC",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(|row| {
+        let parent_id: Option<String> = row.get("parent_id");
+        let level: i32 = row.get("level");
+        let sort: i32 = row.get("sort");
+        Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("parentId".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
+            ("level".to_string(), Value::Number(serde_json::Number::from(level))),
+            ("sort".to_string(), Value::Number(serde_json::Number::from(sort))),
+            ("creator".to_string(), Value::String(row.get("creator"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]))
+    }).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+pub async fn organization_assemble_control_unit_list_flag_sup_nested_type_type(
+    pool: Extension<Pool>,
+    axum::extract::Path((flag, _ty)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    tracing::warn!("unit sup/nested/type: type param ignored (x_org_unit has no type column)");
+    organization_assemble_control_unit_list_flag_sup_nested(pool, axum::extract::Path(flag)).await
+}
+
 pub async fn organization_assemble_control_person_list_like(
     pool: Extension<Pool>,
     axum::extract::Json(req): axum::extract::Json<PersonLikeRequest>,
@@ -495,8 +591,14 @@ pub async fn group_list_flag_sup_direct(
 
     let rows = client
         .query(
-            "WITH RECURSIVE sup AS (SELECT id FROM x_org_unit WHERE id = $1 WHERE deleted_at IS NULL UNION ALL SELECT u.id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL) SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time FROM x_org_group g JOIN sup s ON g.unit_id = s.id WHERE g.id != $2 ORDER BY g.create_time DESC",
-            &[&flag, &flag],
+            "SELECT g2.id, g2.name, g2.unit_id, g2.type, g2.creator, g2.create_time \
+             FROM x_org_group g1 \
+             JOIN x_org_unit u1 ON g1.unit_id = u1.id AND u1.deleted_at IS NULL \
+             JOIN x_org_unit pu ON pu.id = u1.parent_id AND pu.deleted_at IS NULL \
+             JOIN x_org_group g2 ON g2.unit_id = pu.id AND g2.deleted_at IS NULL \
+             WHERE g1.id = $1 AND g2.id != $1 \
+             ORDER BY g2.create_time DESC",
+            &[&flag],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -528,8 +630,16 @@ pub async fn group_list_flag_sup_nested(
 
     let rows = client
         .query(
-            "WITH RECURSIVE sup AS (SELECT id FROM x_org_unit WHERE id = $1 WHERE deleted_at IS NULL UNION ALL SELECT u.id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL) SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time FROM x_org_group g JOIN sup s ON g.unit_id = s.id WHERE g.id != $2 ORDER BY g.create_time DESC",
-            &[&flag, &flag],
+            "WITH RECURSIVE sup AS (\
+             SELECT id FROM x_org_unit WHERE id = $1 AND deleted_at IS NULL \
+             UNION ALL \
+             SELECT u.id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL \
+             ) \
+             SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time \
+             FROM x_org_group g JOIN sup s ON g.unit_id = s.id \
+             WHERE g.id != $1 \
+             ORDER BY g.create_time DESC",
+            &[&flag],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -3174,6 +3284,9 @@ pub fn router(pool: deadpool_postgres::Pool) -> Router {
     .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockdeletetoget", get(unitduty_flag_mockdeletetoget))
     .route("/jaxrs/organization/assemble/control/unitduty/{flag}/mockputtopost", get(unitduty_flag_mockputtopost))
     .route("/jaxrs/organization/assemble/control/unit/list/{flag}/next/{count}", get(organization_assemble_control_unit_list_flag_next_count))
+    .route("/jaxrs/organization/assemble/control/unit/list/{flag}/sub/nested", get(organization_assemble_control_unit_list_flag_sub_nested))
+    .route("/jaxrs/organization/assemble/control/unit/list/{flag}/sup/nested", get(organization_assemble_control_unit_list_flag_sup_nested))
+    .route("/jaxrs/organization/assemble/control/unit/list/{flag}/sup/nested/type/{type}", get(organization_assemble_control_unit_list_flag_sup_nested_type_type))
     .route("/jaxrs/organization/assemble/control/unit/{flag}", get(organization_assemble_control_unit_flag))
     .route("/jaxrs/organization/assemble/control/person/list/like", post(organization_assemble_control_person_list_like))
     .route("/jaxrs/identity/{id}", get(identity_id))

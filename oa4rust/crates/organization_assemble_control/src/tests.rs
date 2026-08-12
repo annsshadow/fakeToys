@@ -69,6 +69,60 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_unit_list_flag_sub_nested_route_registered() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/control/unit/list/test-unit/sub/nested")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_unit_list_flag_sup_nested_route_registered() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/control/unit/list/test-unit/sup/nested")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_unit_list_flag_sup_nested_type_route_registered() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/control/unit/list/test-unit/sup/nested/type/company")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
     async fn test_group_list_like() {
         let pool = build_test_pool();
         let app = crate::router(pool);
