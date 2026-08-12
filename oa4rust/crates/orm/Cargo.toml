@@ -1,4 +1,4 @@
-[package]
+﻿[package]
 name = "orm"
 version.workspace = true
 edition.workspace = true
@@ -8,7 +8,6 @@ rust-version.workspace = true
 sea-orm = { version = "1.0", features = ["runtime-tokio-rustls", "sqlx-postgres", "macros", "with-chrono", "with-uuid"] }
 sea-query = "0.30"
 deadpool-postgres.workspace = true
-sqlx.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

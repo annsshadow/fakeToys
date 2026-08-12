@@ -1,4 +1,4 @@
-[package]
+﻿[package]
 name = "portal"
 version.workspace = true
 edition.workspace = true
@@ -9,7 +9,6 @@ utoipa.workspace = true
 shared = { path = "../shared" }
 axum.workspace = true
 tokio.workspace = true
-sqlx.workspace = true
 deadpool-postgres.workspace = true
 serde.workspace = true
 serde_json.workspace = true
