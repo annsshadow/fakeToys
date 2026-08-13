@@ -15,6 +15,9 @@ use entities::cms_view;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn cms_express_router() -> Router {
     routes::cms_express_router()

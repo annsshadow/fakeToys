@@ -201,6 +201,9 @@ pub fn query_assemble_surface_router() -> Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     query_assemble_surface_router().layer(axum::extract::Extension(pool))

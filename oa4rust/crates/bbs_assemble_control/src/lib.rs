@@ -16,6 +16,9 @@ pub mod routes;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 thread_local! {
     static TOKEN_STORE: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());

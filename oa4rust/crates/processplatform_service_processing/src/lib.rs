@@ -2197,3 +2197,6 @@ pub async fn work_v3_retract(
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
+
+#[cfg(test)]
+mod tests_generated;

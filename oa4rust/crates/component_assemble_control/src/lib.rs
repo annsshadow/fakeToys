@@ -10,6 +10,9 @@ pub mod routes;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 #[axum::debug_handler]
 pub async fn get_control_config(

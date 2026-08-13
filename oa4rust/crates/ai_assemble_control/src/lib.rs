@@ -11,6 +11,9 @@ pub mod routes;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 #[derive(Debug, Deserialize)]
 pub struct ChatCompletionRequest {

@@ -762,6 +762,9 @@ pub fn general_core_entity_router(_pool: Pool) -> Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::general_core_entity_router(pool)

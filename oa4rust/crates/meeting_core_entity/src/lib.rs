@@ -15,6 +15,9 @@ use entities::{meeting, meeting_room};
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 /// 获取会议室列表
 /// 从数据库查询 x_meeting_room 表

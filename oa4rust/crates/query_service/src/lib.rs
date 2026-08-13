@@ -181,3 +181,6 @@ pub async fn processing_execute(
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+

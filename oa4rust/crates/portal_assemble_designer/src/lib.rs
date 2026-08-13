@@ -373,6 +373,9 @@ pub fn portal_assemble_designer_router() -> Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     portal_assemble_designer_router().layer(axum::extract::Extension(pool))

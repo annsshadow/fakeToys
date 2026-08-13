@@ -247,3 +247,6 @@ pub async fn get_system_info() -> Result<Json<ActionResult<Value>>, AppError> {
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     routes::router(pool)
 }
+
+#[cfg(test)]
+mod tests_generated;

@@ -39,6 +39,9 @@ pub(crate) use shared::middleware::extract_token_from_headers;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 // --- 请求/响应 DTO ---
 

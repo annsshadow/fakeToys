@@ -674,4 +674,7 @@ pub async fn permission_set(
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 

@@ -10,6 +10,9 @@ pub mod routes;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn hotpic_router(pool: Pool) -> Router {
     routes::hotpic_router(pool)

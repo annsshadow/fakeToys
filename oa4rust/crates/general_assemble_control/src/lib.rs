@@ -12,6 +12,9 @@ pub mod routes;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub async fn get_general_control_status(
     pool: Extension<Pool>,

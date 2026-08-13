@@ -29,6 +29,9 @@ use std::ops::Deref;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 // ---- RowGet ----
 // Abstraction over a database row so tests can inject mock data.

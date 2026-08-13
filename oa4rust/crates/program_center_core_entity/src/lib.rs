@@ -42,3 +42,6 @@ pub fn program_center_mock_router(_db: sea_orm::DatabaseConnection) -> Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+

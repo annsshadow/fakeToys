@@ -30,3 +30,6 @@ pub fn router(pool: Pool) -> Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+

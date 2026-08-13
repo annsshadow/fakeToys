@@ -2605,3 +2605,6 @@ pub async fn workcompleted_process_processFlag_merge_data(
         ("data".to_string(), Value::Array(data)),
     ])))))
 }
+
+#[cfg(test)]
+mod tests_generated;

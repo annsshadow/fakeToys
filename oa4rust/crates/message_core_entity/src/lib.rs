@@ -139,6 +139,9 @@ pub fn message_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::message_core_entity_router(pool)

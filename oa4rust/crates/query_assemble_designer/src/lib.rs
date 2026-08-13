@@ -190,6 +190,9 @@ pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     query_assemble_designer_router(Some(pool))

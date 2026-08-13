@@ -144,4 +144,5 @@ pub fn authenticator_from_env() -> Option<LdapAuthenticator> {
     LdapConfig::from_env().map(LdapAuthenticator::new)
 }
 
-
+#[cfg(test)]
+mod tests_generated;

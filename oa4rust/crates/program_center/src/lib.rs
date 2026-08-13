@@ -262,6 +262,9 @@ pub async fn config_get(
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 
 pub async fn agent_flag() -> Result<Json<ActionResult<Value>>, AppError> {

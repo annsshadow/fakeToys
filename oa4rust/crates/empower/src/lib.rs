@@ -674,3 +674,6 @@ pub async fn list_to_enable(
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
