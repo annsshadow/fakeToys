@@ -57,8 +57,11 @@ docker run --rm --privileged \
       exit 1
     fi
     # 脚本经 /work 的 symlink 解析（fakeToys），但源码/构建走本地 /src，规避 9p 竞争。
-    cd /work && python3 -u tools/testing/coverage/\$SCRIPT \
+    # 注意：$SCRIPT 与 $* 由【外层】shell 展开（不转义），其余 $item/$count/$(ls) 由
+    # 【容器内】shell 展开（转义 \$）。若误转义 \$SCRIPT，容器内该变量未定义，命令会
+    # 塌缩成 python3 -u tools/testing/coverage/（目录）而报 can't find '__main__'。
+    cd /work && python3 -u tools/testing/coverage/$SCRIPT \
         --srcdir /src --builddir /src/build-qemu \
-        --output /work/tools/testing/coverage/baseline \$*
+        --output /work/tools/testing/coverage/baseline $*
     echo \"[run_docker] 测量完成。报告已写回 /work/tools/testing/coverage/baseline。\"
   "
