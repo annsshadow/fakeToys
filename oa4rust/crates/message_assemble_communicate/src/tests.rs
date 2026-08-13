@@ -6,13 +6,6 @@ use deadpool_postgres::tokio_postgres::{Config, NoTls};
 use serde_json::json;
 use tower::util::ServiceExt;
 
-fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        Config::new(),
-        NoTls,
-    );
-    Pool::builder(mgr).max_size(1).build().unwrap()
-}
 
 #[test]
 fn test_send_message_action_result_format() {
