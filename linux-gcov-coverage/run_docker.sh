@@ -22,4 +22,23 @@ docker run --rm --privileged \
   -v "$TOOLCHAIN:/work/tools/testing/coverage" \
   -w /work \
   "$IMAGE" \
-  bash -c "cd /work && python3 -u tools/testing/coverage/$SCRIPT $*"
+  bash -c "
+    set -e
+    # 关键修复：Docker Desktop 的 9p 挂载在 make -j 高并发读取被每个编译单元
+    # 包含的头文件(page_64.h/cpufeature.h)时发生读竞争，返回截断/错乱数据，
+    # 汇编器报 'bad or irreducible absolute expression'，导致 gcov 构建非确定性失败
+    # （不同文件在不同次运行失败）。解决：先把内核源码顺序复制到容器本地磁盘 /src
+    # （单次顺序读、无竞争），编译全程走本地 IO；报告仍写回 /work(经 symlink 落 fakeToys)。
+    echo \"[run_docker] 复制内核源码到容器本地磁盘 /src（规避 9p 并发读竞争）...\"
+    rm -rf /src && mkdir -p /src
+    tar cf - -C /work --exclude=build* --exclude=.git \
+        --exclude='*.o' --exclude='*.a' --exclude='*.gcda' \
+        --exclude='*.gcno' --exclude='*.gcov' --exclude=__pycache__ \
+        --exclude='*.pyc' --exclude='-p' . | tar xf - -C /src
+    echo \"[run_docker] 源码复制完成（$(find /src -type f | wc -l) 文件）。开始测量...\"
+    # 脚本经 /work 的 symlink 解析（fakeToys），但源码/构建走本地 /src，规避 9p 竞争。
+    cd /work && python3 -u tools/testing/coverage/$SCRIPT \
+        --srcdir /src --builddir /src/build-qemu \
+        --output /work/tools/testing/coverage/baseline $*
+    echo \"[run_docker] 测量完成。报告已写回 /work/tools/testing/coverage/baseline。\"
+  "

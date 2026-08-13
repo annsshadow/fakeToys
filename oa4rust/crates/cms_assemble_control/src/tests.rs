@@ -7,6 +7,15 @@ use deadpool_postgres::{Manager, Pool};
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
 use tower::util::ServiceExt;
 
+fn build_test_pool() -> deadpool_postgres::Pool {
+    deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
+        deadpool_postgres::tokio_postgres::Config::new(),
+        deadpool_postgres::tokio_postgres::NoTls,
+    ))
+    .build()
+    .unwrap()
+}
+
 
 #[test]
 fn test_action_result_success_serialization() {
