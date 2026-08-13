@@ -109,12 +109,13 @@ def prepare_build(source_dir: str, build_dir: str, tool: str = "gcov",
         # (=m->=y promotion) run as initcalls before PID 1, so they are already
         # exercised by the time /sys/kernel/debug/gcov appears.
         "CONFIG_KUNIT_DEFAULT_ENABLED=y",
-        # Compile + run ALL KUnit test suites built-in. This is the single
-        # largest lever for raising unit-tested core-subsystem coverage
-        # (kernel/ mm/ fs/ net/ lib/ ...). Combined with the =m->=y promotion
-        # every suite is linked into vmlinux and autoruns as an initcall before
-        # PID 1, so the capture reflects them without extra userspace plumbing.
-        "CONFIG_KUNIT_ALL_TESTS=y",
+        # NOTE: CONFIG_KUNIT_ALL_TESTS 已临时撤回。GCC 12 的 gcov(-fprofile-arcs)
+        # 与 x86 ALTERNATIVE 内联汇编存在交互 bug（"bad or irreducible absolute
+        # expression"，出现在 clear_page/clear_pages 内联路径），KUNIT_ALL_TESTS
+        # 增大编译规模改变全局内联决策后触发，且无法按文件干净排除（内联扩散到
+        # fair.o/swap.o/snapshot.o/blk-mq-cpumap.o 等大量核心文件）。该 bug 与
+        # 具体测试配置无关（已 diff 确认除 *_TEST/KUNIT 外配置完全一致）。
+        # 覆盖率提升主杠杆改为 Phase 2 的 syzkaller(KCOV)，规避 gcov bug。
         "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y",
     ]
 
