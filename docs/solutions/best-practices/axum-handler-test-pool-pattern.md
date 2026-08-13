@@ -147,5 +147,5 @@ async fn test_entity_handler() {
 ```
 
 ## Related
-- [Auto-Generate Rust Handler Unit Tests](auto-generate-rust-handler-tests.md) — the full test generation approach
+- [Auto-Generate Rust Handler Unit Tests](best-practices/auto-generate-rust-handler-tests.md) — the full test generation approach
 - [sea-orm Dual Pool Coexistence](architecture-patterns/seaorm-dual-pool-coexistence.md) — production dual-pool design

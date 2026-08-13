@@ -35,8 +35,15 @@ The oa4rust project migrated 81 crates from raw SQLx queries to SeaORM 2.0. SeaO
 
 ```rust
 // shared/src/db.rs
-pub async fn create_sea_orm_pool() -> Result<DatabaseConnection, DbErr> {
-    DatabaseConnection::connect(&std::env::var("DATABASE_URL")?).await
+pub async fn create_sea_orm_pool() -> Result<DatabaseConnection, DbError> {
+    dotenv().ok();
+    let database_url = env::var("DATABASE_URL")
+        .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/oa4rust".to_string());
+    let mut options = ConnectOptions::new(database_url);
+    options.max_connections(20).sqlx_logging(false);
+    Database::connect(options)
+        .await
+        .map_err(|e| DbError::PoolError(e.to_string()))
 }
 ```
 
@@ -138,7 +145,6 @@ pub async fn person_by_flag(pool: Extension<Pool>, flag: String) -> Result<Json<
 
 - [Nested Tokio Runtime Panic](integration-issues/nested-tokio-runtime-panic.md)
 - [Dynamic SQL Retains SQLx](architecture-patterns/dynamic-sql-retains-sqlx.md)
-- [_core_entity vs _assemble_control Boundary](architecture-patterns/core-entity-vs-assemble-control-boundary.md)
 - **Origin:** `docs/brainstorms/2026-08-09-oa4rust-orm-migration-and-write-ops-requirements.md`
 - **Plan:** `docs/plans/2026-08-09-001-refact-oa4rust-orm-migration-plan.md` (U1-U3)
 - **Status:** `docs/brainstorms/oa4rust-migration-status-2026-08-08.md` (81 crates, all SeaORM)

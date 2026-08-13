@@ -101,7 +101,7 @@ date: 2026-08-06
 ## Related
 
 - [Single Source of Truth: Migration Status](best-practices/single-source-of-truth-migration-status.md)
-- [Strangler Fig Migration Pattern](architecture-patterns/strangler-fig-migration.md)
+- [Strangler Fig Migration Pattern](../architecture-patterns/strangler-fig-migration-pattern.md)
 - **Audit command:** `grep -r "status: active" docs/plans/`
 - **Fix commit:** `46c4f51e` — refactor(plans): mark completed/superseded plans
 - **Done in:** `docs/plans/2026-08-10-001-prod-readiness-plan.md` (U1)
