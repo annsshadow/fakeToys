@@ -43,43 +43,59 @@ def get_router_name(crate_name: str) -> str:
             pass
     return "router"
 
-def make_unique_name(base_name: str, used: set) -> str:
-    if base_name not in used:
-        used.add(base_name)
-        return base_name
-    idx = 2
-    while f"{base_name}_{idx}" in used:
-        idx += 1
-    name = f"{base_name}_{idx}"
-    used.add(name)
-    return name
+def safe_test_name(path: str, method: str, idx: int) -> str:
+    """生成安全的测试函数名。"""
+    clean = path.replace("/", "_").replace("{", "").replace("}", "").strip("_")
+    clean = re.sub(r'_+', '_', clean)
+    clean = clean[:40]
+    base = f"test_{method.lower()}_{clean}"
+    return base
 
-def generate_test_functions(crate_name: str):
-    eps = [e for e in DATA if e["crate_name"] == crate_name]
-    if not eps:
-        return []
+def analyze_test_file(content: str) -> dict:
+    """分析测试文件，返回配置信息。"""
+    info = {
+        "pool_helper": None,
+        "pool_helper_is_async": False,
+        "has_method_import": False,
+        "has_service_ext": False,
+    }
+    
+    # 检测 pool helper - 查找函数定义
+    m = re.search(r'async fn (\w+_pool)\s*\(', content)
+    if not m:
+        m = re.search(r'fn (\w+_pool)\s*\(', content)
+    if m:
+        info["pool_helper"] = m.group(1)
+        # 检查是否是 async
+        info["pool_helper_is_async"] = "async fn" in content[max(0, m.start()-20):m.start()+30]
+    
+    # 检测 Method 导入
+    if re.search(r'use axum::http::\{[^}]*Method', content):
+        info["has_method_import"] = True
+    
+    # 检测 ServiceExt 导入
+    if 'use tower::util::ServiceExt' in content or 'use tower::ServiceExt' in content:
+        info["has_service_ext"] = True
+    
+    return info
 
+def generate_test_function(crate_name: str, pool_helper: str, is_async: bool, ep: dict, idx: int) -> str:
+    """生成单个测试函数。"""
     router_name = get_router_name(crate_name)
-    tests = []
-    used_names = set()
-
-    by_method = defaultdict(list)
-    for ep in eps:
-        by_method[ep["method"]].append(ep)
-
-    for method in ["GET", "POST", "PUT", "DELETE"]:
-        eps_method = by_method.get(method, [])
-        if not eps_method:
-            continue
-        for ep in eps_method:
-            path = ep["rust_path"]
-            test_path = re.sub(r"\{[^}]+\}", "test-id", path)
-            base_name = f"test_{method.lower()}_{path.replace('/', '_').replace('{', '').replace('}', '').strip('_')}"
-            base_name = re.sub(r'_+', '_', base_name)[:50]
-            test_name = make_unique_name(base_name, used_names)
-            tests.append(f'''    #[tokio::test]
+    path = ep["rust_path"]
+    method = ep["method"]
+    test_path = re.sub(r"\{[^}]+\}", "test-id", path)
+    test_name = safe_test_name(path, method, idx)
+    
+    # 构建 pool 获取代码 - 注意：async 函数调用需要 .await
+    if is_async:
+        pool_code = f"let pool = {pool_helper}().await;"
+    else:
+        pool_code = f"let pool = {pool_helper}();"
+    
+    return f'''    #[tokio::test]
     async fn {test_name}() {{
-        let pool = build_test_pool();
+        {pool_code}
         let app = crate::{router_name}(pool);
         let response = app
             .oneshot(
@@ -93,12 +109,15 @@ def generate_test_functions(crate_name: str):
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }}
-''')
-    return tests
+'''
 
-def add_tests_to_file(tests_file: Path, tests: list):
-    """Add tests inside the mod tests block."""
+def add_tests_to_file(tests_file: Path, tests: list, info: dict):
+    """将生成的测试添加到 tests.rs 文件中。"""
+    pool_helper = info["pool_helper"] or "build_test_pool"
+    is_async = info["pool_helper_is_async"]
+    
     if not tests_file.exists():
+        # 新建文件
         header = '''#[cfg(test)]
 mod tests {
     use axum::body::Body;
@@ -118,60 +137,71 @@ mod tests {
 
     content = tests_file.read_text(encoding="utf-8")
 
-    # Check if mod tests exists
-    if "mod tests {" not in content:
-        header = '''#[cfg(test)]
-mod tests {
-    use axum::body::Body;
-    use axum::http::{Request, Method, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
-    use deadpool_postgres::tokio_postgres::{Config, NoTls};
-    use tower::util::ServiceExt;
-
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(Config::new(), NoTls);
-        Pool::builder(mgr).max_size(1).build().unwrap()
-    }
-'''
-        body = "\n".join(tests)
-        tests_file.write_text(content.rstrip() + "\n" + header + body + "}\n", encoding="utf-8")
-        return
-
-    # Ensure Method is imported
-    if "Method" not in content:
-        content = content.replace(
-            "use axum::http::{Request, StatusCode};",
-            "use axum::http::{Request, Method, StatusCode};"
-        )
-        if "Method" not in content:
+    # 确保 Method 已导入
+    if not info["has_method_import"]:
+        if "use axum::http::{Request, StatusCode};" in content:
+            content = content.replace(
+                "use axum::http::{Request, StatusCode};",
+                "use axum::http::{Request, Method, StatusCode};"
+            )
+        elif re.search(r'use axum::http::\{Request, StatusCode\}', content):
+            content = re.sub(
+                r'use axum::http::\{Request, StatusCode\}',
+                'use axum::http::{Request, Method, StatusCode}',
+                content
+            )
+        elif "use axum::http::{Request" in content:
             content = content.replace(
                 "use axum::http::{Request",
                 "use axum::http::{Request, Method"
             )
 
-    # Ensure deadpool imports exist (only if not already present)
-    if "use deadpool_postgres::{Manager, Pool};" not in content and "use deadpool_postgres" not in content:
-        # Add after tower import
-        if "use tower::util::ServiceExt;" in content:
-            content = content.replace(
-                "use tower::util::ServiceExt;",
-                "use tower::util::ServiceExt;\n    use deadpool_postgres::{Manager, Pool};\n    use deadpool_postgres::tokio_postgres::{Config, NoTls};"
-            )
-        elif "use tower::ServiceExt;" in content:
+    # 确保 tower import 正确
+    if not info["has_service_ext"]:
+        if "use tower::ServiceExt;" in content:
             content = content.replace(
                 "use tower::ServiceExt;",
-                "use tower::util::ServiceExt;\n    use deadpool_postgres::{Manager, Pool};\n    use deadpool_postgres::tokio_postgres::{Config, NoTls};"
+                "use tower::util::ServiceExt;"
             )
+        elif "use tower::util::ServiceExt;" not in content:
+            # 添加 tower import
+            if "use shared::" in content:
+                content = content.replace(
+                    "use shared::",
+                    "use tower::util::ServiceExt;\n    use shared::"
+                )
+            elif "use deadpool_postgres::" in content:
+                content = content.replace(
+                    "use deadpool_postgres::",
+                    "use tower::util::ServiceExt;\n    use deadpool_postgres::"
+                )
 
-    # Ensure build_test_pool exists (only if not already present)
-    if "fn build_test_pool" not in content:
-        pool_code = '''
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(Config::new(), NoTls);
-        Pool::builder(mgr).max_size(1).build().unwrap()
-    }
+    # 添加缺失的 pool helper（仅当不存在时）
+    if pool_helper not in content:
+        # 确定是要添加 sync 还是 async 版本
+        if is_async:
+            pool_code = f'''
+    async fn {pool_helper}() -> deadpool_postgres::Pool {{
+        deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        ))
+        .build()
+        .unwrap()
+    }}
 '''
-        # Insert before first test
+        else:
+            pool_code = f'''
+    fn {pool_helper}() -> deadpool_postgres::Pool {{
+        deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
+            deadpool_postgres::tokio_postgres::Config::new(),
+            deadpool_postgres::tokio_postgres::NoTls,
+        ))
+        .build()
+        .unwrap()
+    }}
+'''
+        # 插入到第一个 test 属性之前
         lines = content.split('\n')
         for i, line in enumerate(lines):
             if line.strip().startswith('#[test]') or line.strip().startswith('#[tokio::test]'):
@@ -179,7 +209,23 @@ mod tests {
                 content = '\n'.join(lines)
                 break
 
-    # Find the mod tests block and insert before its closing brace
+    # 收集已存在的测试函数名
+    existing_names = set(re.findall(r'async fn (\w+)\(\)', content))
+    
+    # 过滤掉重复的测试名
+    unique_tests = []
+    for test in tests:
+        m = re.search(r'async fn (\w+)\(\)', test)
+        if m:
+            name = m.group(1)
+            if name not in existing_names:
+                unique_tests.append(test)
+                existing_names.add(name)
+    
+    if not unique_tests:
+        return
+
+    # 找到 mod tests 块的结束位置并插入测试
     lines = content.split('\n')
     mod_start_idx = -1
     for i, line in enumerate(lines):
@@ -188,37 +234,57 @@ mod tests {
             break
 
     if mod_start_idx < 0:
-        return
+        # 没有 mod tests 块，创建一个新的
+        header = '''#[cfg(test)]
+mod tests {
+'''
+        body = "\n".join(unique_tests)
+        content = content.rstrip() + "\n" + header + body + "}\n"
+    else:
+        # 找到匹配的结束大括号
+        brace_count = 0
+        mod_end_idx = -1
+        for i in range(mod_start_idx, len(lines)):
+            for ch in lines[i]:
+                if ch == '{':
+                    brace_count += 1
+                elif ch == '}':
+                    brace_count -= 1
+                    if brace_count == 0:
+                        mod_end_idx = i
+                        break
+            if mod_end_idx >= 0:
+                break
 
-    # Find matching closing brace
-    brace_count = 0
-    mod_end_idx = -1
-    for i in range(mod_start_idx, len(lines)):
-        for ch in lines[i]:
-            if ch == '{':
-                brace_count += 1
-            elif ch == '}':
-                brace_count -= 1
-                if brace_count == 0:
-                    mod_end_idx = i
-                    break
         if mod_end_idx >= 0:
-            break
+            new_tests = "\n" + "\n".join(unique_tests) + "\n"
+            lines.insert(mod_end_idx, new_tests)
+            content = "\n".join(lines)
 
-    if mod_end_idx < 0:
-        return
-
-    # Insert tests before the closing brace
-    new_tests = "\n" + "\n".join(tests) + "\n"
-    lines.insert(mod_end_idx, new_tests)
-    content = "\n".join(lines)
     tests_file.write_text(content, encoding="utf-8")
 
 if __name__ == "__main__":
     for crate_name in TARGET_CRATES:
-        tests = generate_test_functions(crate_name)
-        if not tests:
-            continue
         tests_file = BASE / "crates" / crate_name / "src" / "tests.rs"
-        add_tests_to_file(tests_file, tests)
-        print(f"Added {len(tests)} tests to {crate_name}/src/tests.rs")
+        
+        # 分析现有测试文件
+        if tests_file.exists():
+            content = tests_file.read_text(encoding="utf-8")
+            info = analyze_test_file(content)
+        else:
+            info = {"pool_helper": None, "pool_helper_is_async": False, 
+                    "has_method_import": False, "has_service_ext": False}
+        
+        # 生成测试
+        eps = [e for e in DATA if e["crate_name"] == crate_name]
+        if not eps:
+            continue
+        
+        tests = []
+        for idx, ep in enumerate(eps, 1):
+            test_code = generate_test_function(crate_name, info["pool_helper"] or "build_test_pool", info["pool_helper_is_async"], ep, idx)
+            tests.append(test_code)
+        
+        if tests:
+            add_tests_to_file(tests_file, tests, info)
+            print(f"Added {len(tests)} tests to {crate_name}/src/tests.rs")

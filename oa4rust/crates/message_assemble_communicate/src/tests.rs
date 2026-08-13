@@ -111,3 +111,311 @@ async fn test_mark_read_route_exists() {
 
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn test_delete_jaxrs_message_assemble_communicate_im_co() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/group/mockdeletetoget")
+                    .method(Method::DELETE)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_delete_jaxrs_message_assemble_communicate_mass_() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/mass/test-id/mockdeletetoget")
+                    .method(Method::DELETE)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_message_assemble_communicate_consu() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/consume/list/test-id/count/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_message_assemble_communicate_im_co() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/im/conversation/business/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_message_assemble_communicate_im_ma() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/im/manager/config")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_message_assemble_communicate_im_ms() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/im/msg/collection/list/test-id/size/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_message_assemble_communicate_insta() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/instant/currentperson/consumed")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_message_assemble_communicate_mass_() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/mass/list/test-id/next/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_message_assemble_communicate_messa() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/message/list/paging/test-id/size/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_message_assemble_communicate_recei() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/receive/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_message_assemble_communicate_consu() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/consume/type/test-id/mockputtopost")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_message_assemble_communicate_im_co() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/im/conversation")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_message_assemble_communicate_im_ms() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/im/msg")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_message_assemble_communicate_insta() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/instant/currentperson/consumed/mockputtopost")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_message_assemble_communicate_mark_() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/mark_read/test-id")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_message_assemble_communicate_mass_() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/mass/enable/type")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_message_assemble_communicate_messa() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/message/custom/create")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_message_assemble_communicate_send() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/send")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+}

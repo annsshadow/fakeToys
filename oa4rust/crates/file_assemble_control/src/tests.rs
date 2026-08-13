@@ -493,4 +493,210 @@ mod tests {
         let bytes = build_docx(xml);
         assert!(crate::docx_to_html(&bytes).is_none());
     }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_anonymous_file_id_download_stream() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/anonymous/file/test-id/download/stream")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_attachment_download_attid_stream() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/attachment/download/test-id/stream")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_file_assemble_control_attachment2_() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/attachment2/test-id/office/preview/type/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_file_assemble_control_file_list_fo() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/file/list/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_file_assemble_control_file_id() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/file/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_file_id_download_stream() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/test-id/download/stream")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_file_assemble_control_file_create() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/file/create")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_file_assemble_control_file_delete_() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/file/delete/test-id")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_file_assemble_control_file_upload() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/assemble/control/file/upload")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_file_core_entity_file_create() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/core/entity/file/create")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_file_core_entity_file_delete_id() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/core/entity/file/delete/test-id")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_file_core_entity_file_update_id() {
+        let pool = mock_pool();
+        let app = crate::file_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/core/entity/file/update/test-id")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+
 }

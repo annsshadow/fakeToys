@@ -228,3 +228,124 @@ async fn test_publish_surface_route_exists() {
 
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn test_get_jaxrs_processplatform_assemble_surface_g() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/assemble/surface/get/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_processplatform_assemble_surface_l() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/assemble/surface/list/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_processplatform_assemble_surface_p() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/assemble/surface/preview/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_processplatform_assemble_surface_c() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/assemble/surface/create")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_processplatform_assemble_surface_d() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/assemble/surface/delete/test-id")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_processplatform_assemble_surface_p() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/assemble/surface/publish/test-id")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_processplatform_assemble_surface_s() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/assemble/surface/save/test-id")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+}

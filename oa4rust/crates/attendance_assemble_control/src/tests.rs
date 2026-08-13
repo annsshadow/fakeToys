@@ -2,7 +2,7 @@
 mod tests {
     use crate::{attendance_assemble_control_router, ControlRule};
     use axum::body::Body;
-    use axum::http::{Request, StatusCode};
+    use axum::http::{Request, Method, StatusCode};
     use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
     use tower::ServiceExt;
@@ -89,4 +89,159 @@ mod tests {
         assert_eq!(data["id"], "rule-001");
         assert_eq!(data["enabled"], true);
     }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_attendance_assemble_control_attend() {
+        let pool = mock_pool();
+        let app = crate::attendance_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/attendance/assemble/control/attendanceadmin/list/all")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_attendance_assemble_control_rule_l() {
+        let pool = mock_pool();
+        let app = crate::attendance_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/attendance/assemble/control/rule/list")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_attendance_assemble_control_selfho() {
+        let pool = mock_pool();
+        let app = crate::attendance_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/attendance/assemble/control/selfholidaysimple/docId/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_attendance_assemble_control_statis() {
+        let pool = mock_pool();
+        let app = crate::attendance_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/attendance/assemble/control/statisticshow/filter/personMonth/list/test-id/next/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_attendance_assemble_control_uuid_r() {
+        let pool = mock_pool();
+        let app = crate::attendance_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/attendance/assemble/control/uuid/random")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_attendance_assemble_control_workpl() {
+        let pool = mock_pool();
+        let app = crate::attendance_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/attendance/assemble/control/workplace/list/all")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_attendance_assemble_control_attend() {
+        let pool = mock_pool();
+        let app = crate::attendance_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/attendance/assemble/control/attendanceappealInfo/appeal/test-id")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_attendance_assemble_control_rule_i() {
+        let pool = mock_pool();
+        let app = crate::attendance_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/attendance/assemble/control/rule/test-id/toggle")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_attendance_assemble_control_statis() {
+        let pool = mock_pool();
+        let app = crate::attendance_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/attendance/assemble/control/statistic/do")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+
 }

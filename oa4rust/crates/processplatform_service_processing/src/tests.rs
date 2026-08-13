@@ -181,3 +181,90 @@ async fn test_get_process_instance_route_exists() {
 
     assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
 }
+#[cfg(test)]
+mod tests {
+    #[tokio::test]
+    async fn test_get_jaxrs_processplatform_service_processing() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/service/processing/get/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_processplatform_service_processing() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/service/processing/cancel/test-id")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_work_id_retract() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/work/test-id/retract")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_work_id_terminate() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/work/test-id/terminate")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_put_jaxrs_work_id_processing() {
+        let pool = build_test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/work/test-id/processing")
+                    .method(Method::PUT)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+}

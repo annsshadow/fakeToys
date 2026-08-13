@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use axum::body::Body;
-    use axum::http::{Request, StatusCode};
+    use axum::http::{Request, Method, StatusCode};
     use serde_json::Value;
     use tower::util::ServiceExt;
 
@@ -79,4 +79,125 @@ mod tests {
         );
         deadpool_postgres::Pool::builder(mgr).build().unwrap()
     }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_program_applications() {
+        let pool = build_dummy_pool().await;
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program/applications")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_program_appstyle_current_style() {
+        let pool = build_dummy_pool().await;
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program/appstyle/current/style")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_program_datastructure_modules_all() {
+        let pool = build_dummy_pool().await;
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program/datastructure/modules/all")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_program_center_agent_create() {
+        let pool = build_dummy_pool().await;
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/agent/create")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_program_center_agent_save_id() {
+        let pool = build_dummy_pool().await;
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/agent/save/test-id")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_program_center_application_create() {
+        let pool = build_dummy_pool().await;
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/application/create")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_program_center_application_save_id() {
+        let pool = build_dummy_pool().await;
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/program_center/application/save/test-id")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+
 }
