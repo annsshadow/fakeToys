@@ -109,6 +109,12 @@ def prepare_build(source_dir: str, build_dir: str, tool: str = "gcov",
         # (=m->=y promotion) run as initcalls before PID 1, so they are already
         # exercised by the time /sys/kernel/debug/gcov appears.
         "CONFIG_KUNIT_DEFAULT_ENABLED=y",
+        # Compile + run ALL KUnit test suites built-in. This is the single
+        # largest lever for raising unit-tested core-subsystem coverage
+        # (kernel/ mm/ fs/ net/ lib/ ...). Combined with the =m->=y promotion
+        # every suite is linked into vmlinux and autoruns as an initcall before
+        # PID 1, so the capture reflects them without extra userspace plumbing.
+        "CONFIG_KUNIT_ALL_TESTS=y",
         "CONFIG_CC_OPTIMIZE_FOR_PERFORMANCE=y",
     ]
 
