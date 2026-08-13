@@ -22,8 +22,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="核心子系统 95% 覆盖率缺口分析")
     parser.add_argument(
         "--report",
-        default="tools/testing/coverage/baseline/baseline_report_scoped.json",
-        help="baseline_report_scoped.json 路径",
+        default="baseline/baseline_report_scoped.json",
+        help="baseline_report_scoped.json 路径（相对本工具链目录，或传绝对路径）",
     )
     parser.add_argument("--target", type=float, default=95.0,
                         help="目标分支覆盖率（默认 95%%）")
