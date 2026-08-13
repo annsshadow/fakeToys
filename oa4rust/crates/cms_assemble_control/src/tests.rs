@@ -77,6 +77,15 @@ async fn test_update_control_config_route() {
 }
 #[cfg(test)]
 mod tests {
+    fn build_test_pool() -> Pool {
+        let mgr = Manager::new(
+            Config::new(),
+            NoTls,
+        );
+        Pool::builder(mgr).max_size(1).build().unwrap()
+    }
+
+
     #[tokio::test]
     async fn test_get_jaxrs_application_id() {
         let pool = build_test_pool();

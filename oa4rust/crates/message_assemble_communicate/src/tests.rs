@@ -106,6 +106,15 @@ async fn test_mark_read_route_exists() {
 }
 #[cfg(test)]
 mod tests {
+    fn build_test_pool() -> Pool {
+        let mgr = Manager::new(
+            Config::new(),
+            NoTls,
+        );
+        Pool::builder(mgr).max_size(1).build().unwrap()
+    }
+
+
     #[tokio::test]
     async fn test_delete_jaxrs_message_assemble_communicate_im_co() {
         let pool = build_test_pool();
