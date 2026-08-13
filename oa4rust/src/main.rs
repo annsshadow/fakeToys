@@ -109,8 +109,24 @@ async fn main() -> anyhow::Result<()> {
 
     let args: Vec<String> = env::args().collect();
     let http_flag = args.iter().any(|a| a == "--http");
+    let migrate_only = args.iter().any(|a| a == "--migrate-only");
 
     let pool = create_pool().await.context("failed to create database pool")?;
+
+    // 启动时自行应用数据库迁移（幂等），无需手工执行 SQL。
+    let report = shared::migrate::run_migrations(&pool)
+        .await
+        .context("failed to run database migrations")?;
+    tracing::info!(
+        "migrations: {} applied, {} already applied (skipped)",
+        report.applied.len(),
+        report.skipped.len()
+    );
+
+    if migrate_only {
+        tracing::info!("migrate-only requested; exiting after applying migrations");
+        return Ok(());
+    }
 
     let session_manager = SessionManager::with_pool(pool.clone());
     let rate_limiter = RateLimiter::new();

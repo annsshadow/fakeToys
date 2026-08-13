@@ -15,6 +15,7 @@ pub mod db;
 pub mod error;
 pub mod input_validation;
 pub mod middleware;
+pub mod migrate;
 pub mod mock_client;
 pub mod rate_limit;
 pub mod response;
