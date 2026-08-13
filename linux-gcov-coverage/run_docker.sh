@@ -34,7 +34,8 @@ docker run --rm --privileged \
     tar cf - -C /work --exclude=build* --exclude=.git \
         --exclude='*.o' --exclude='*.a' --exclude='*.gcda' \
         --exclude='*.gcno' --exclude='*.gcov' --exclude=__pycache__ \
-        --exclude='*.pyc' --exclude='-p' . | tar xf - -C /src
+        --exclude='*.pyc' --exclude='-p' \
+        --exclude=tools/testing/coverage . | tar xf - -C /src
     echo \"[run_docker] 源码复制完成（$(find /src -type f | wc -l) 文件）。开始测量...\"
     # 脚本经 /work 的 symlink 解析（fakeToys），但源码/构建走本地 /src，规避 9p 竞争。
     cd /work && python3 -u tools/testing/coverage/$SCRIPT \
