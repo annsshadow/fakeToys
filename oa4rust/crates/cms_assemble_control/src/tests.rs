@@ -9,6 +9,14 @@ use tower::util::ServiceExt;
 
 
 
+fn build_test_pool() -> deadpool_postgres::Pool {
+    deadpool_postgres::Pool::builder(deadpool_postgres::Manager::new(
+        deadpool_postgres::tokio_postgres::Config::new(),
+        deadpool_postgres::tokio_postgres::NoTls,
+    ))
+    .build()
+    .unwrap()
+}
 #[test]
 fn test_action_result_success_serialization() {
     let result: ActionResult<serde_json::Value> = ActionResult::success(json!({"count": 2, "data": []}));
@@ -79,21 +87,7 @@ async fn test_update_control_config_route() {
 #[cfg(test)]
 mod tests {
 
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            Config::new(),
-            NoTls,
-        );
-        Pool::builder(mgr).max_size(1).build().unwrap()
-    }
 
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(
-            Config::new(),
-            NoTls,
-        );
-        Pool::builder(mgr).max_size(1).build().unwrap()
-    }
 
 
     #[tokio::test]
