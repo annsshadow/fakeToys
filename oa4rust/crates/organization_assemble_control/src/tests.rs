@@ -3,7 +3,7 @@ mod tests {
     use super::*;
     use axum::{
         body::Body,
-        http::{Request, StatusCode},
+        http::{Request, Method, StatusCode},
     };
     use shared::response::ActionResult;
     use tower::ServiceExt;
