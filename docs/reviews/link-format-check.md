@@ -1,0 +1,244 @@
+# 链接 / 格式有效性验证报告
+
+- 扫描范围：`docs/系统文档/` 全部已翻译 `.md`（3945 个文件）
+
+- 生成方式：自动化只读校验，未修改任何文件
+
+- 链接判定：extensionless 链接回退到 `.md`；目录链接回退到 `index.md`；图片/`.rst` 链接按非致命残留计。
+
+
+## 汇总
+
+- 围栏未闭合（``` 奇数）：**7** 个文件（需人工复核）
+- 内部真实死链（指向不存在且无法回退）：**205** 处
+- 图片链接残留（svg/png/...，翻译树未含图，非致命）：`0` 处
+- `.rst` 链接残留（翻译残留，非致命）：`71` 处
+- 空目标链接 `[]()`：`7` 处
+- 空文本链接 `[ ]()`：`1` 处
+
+## 围栏未闭合文件（需人工复核）
+
+- `docs/系统文档/admin-guide/module-signing.md`（``` 计数 23，奇数）
+- `docs/系统文档/doc-guide/kernel-doc.md`（``` 计数 63，奇数）
+- `docs/系统文档/filesystems/omfs.md`（``` 计数 5，奇数）
+- `docs/系统文档/filesystems/overlayfs.md`（``` 计数 31，奇数）
+- `docs/系统文档/filesystems/xfs/xfs-online-fsck-design.md`（``` 计数 285，奇数）
+- `docs/系统文档/mm/hwpoison.md`（``` 计数 5，奇数）
+- `docs/系统文档/sound/designs/timestamping.md`（``` 计数 11，奇数）
+
+## 疑似内部死链（样例，最多 300，需人工复核）
+
+
+> 注：以下目标经 `.md` / `index.md` 回退后仍无法解析。其中可能包含转换残留、autodoc 交叉引用或正文误写，未必全部为真实断链，建议人工逐条确认。
+
+- `docs/系统文档/admin-guide/LSM/ipe.md:8` → `the` （文本：IPE 的开发文档 </security/ipe>）
+- `docs/系统文档/admin-guide/LSM/ipe.md:73` → `AT_EXECVE_CHECK` （文本：AT_EXECVE_CHECK </userspace-api/check_ex）
+- `docs/系统文档/admin-guide/LSM/ipe.md:713` → `Developer` （文本：IPE 的开发与设计文档 </security/ipe>）
+- `docs/系统文档/admin-guide/media/building.md:233` → `this` （文本：this table <cx231xx-cardlist>）
+- `docs/系统文档/admin-guide/media/usb-cardlist.md:29` → `gspca` （文本：gspca card list <gspca-cardlist>）
+- `docs/系统文档/admin-guide/mm/damon/start.md:21` → `sysfs` （文本：sysfs </filesystems/sysfs>）
+- `docs/系统文档/admin-guide/mm/damon/usage.md:10` → `This` （文本：This </mm/damon/api>）
+- `docs/系统文档/admin-guide/mm/damon/usage.md:141` → `/mm/damon/design` （文本：/mm/damon/design）
+- `docs/系统文档/admin-guide/pm/cpufreq_drivers.md:6` → `CPU` （文本：CPU performance scaling <cpufreq>）
+- `docs/系统文档/admin-guide/pm/intel_idle.md:12` → `CPU` （文本：CPU 空闲时间管理子系统 <cpuidle>）
+- `docs/系统文档/admin-guide/pm/intel_pstate.md:14` → `CPU` （文本：CPU 性能缩放子系统 <cpufreq>）
+- `docs/系统文档/admin-guide/pm/strategies.md:13` → `睡眠状态` （文本：睡眠状态 <sleep-states>）
+- `docs/系统文档/admin-guide/pm/strategies.md:17` → `系统级电源管理` （文本：系统级电源管理 <system-wide>）
+- `docs/系统文档/admin-guide/pm/suspend-flows.md:8` → `sleep` （文本：睡眠状态 <sleep-states>）
+- `docs/系统文档/block/cmdline-partition.md:13` → `part-name` （文本：@<offset>）
+- `docs/系统文档/bpf/bpf_devel_QA.md:330` → `kernel` （文本：kernel selftest documentation </dev-tool）
+- `docs/系统文档/bpf/maps.md:18` → `map_*` （文本：map_*）
+- `docs/系统文档/bpf/programs.md:4` → `prog_*` （文本：prog_*）
+- `docs/系统文档/bpf/libbpf/libbpf_overview.md:132` → `BTF` （文本：BTF types <../btf>）
+- `docs/系统文档/core-api/liveupdate.md:56` → `Live` （文本：Live Update uAPI </userspace-api/liveupd）
+- `docs/系统文档/core-api/liveupdate.md:57` → `/core-api/kho/index` （文本：/core-api/kho/index）
+- `docs/系统文档/core-api/kho/abi.md:32` → `/admin-guide/mm/kho` （文本：/admin-guide/mm/kho）
+- `docs/系统文档/core-api/kho/index.md:51` → `/admin-guide/mm/kho` （文本：/admin-guide/mm/kho）
+- `docs/系统文档/dev-tools/kunit/architecture.md:72` → `kunit,` （文本：_MSG）
+- `docs/系统文档/dev-tools/kunit/index.md:23` → `KTAP` （文本：KTAP (Kernel - Test Anything Protocol) f）
+- `docs/系统文档/dev-tools/kunit/index.md:34` → `User` （文本：User Mode Linux </virt/uml/user_mode_lin）
+- `docs/系统文档/dev-tools/kunit/start.md:32` → `admin-guide` （文本：admin-guide </admin-guide/README>）
+- `docs/系统文档/driver-api/cxl/conventions/cxl-atl.md:46` → `x86` （文本：x86 AMD Address Translation </admin-guid）
+- `docs/系统文档/driver-api/cxl/devices/device-types.md:90` → `CEDT` （文本：CEDT <../platform/acpi/cedt>）
+- `docs/系统文档/driver-api/cxl/linux/access-coordinates.md:8` → `SRAT` （文本：SRAT <../platform/acpi/srat>）
+- `docs/系统文档/driver-api/cxl/linux/access-coordinates.md:8` → `HMAT` （文本：HMAT <../platform/acpi/hmat>）
+- `docs/系统文档/driver-api/cxl/linux/access-coordinates.md:10` → `SRAT` （文本：SRAT <../platform/acpi/srat>）
+- `docs/系统文档/driver-api/cxl/linux/access-coordinates.md:10` → `HMAT` （文本：HMAT <../platform/acpi/hmat>）
+- `docs/系统文档/driver-api/cxl/linux/access-coordinates.md:12` → `CDAT` （文本：CDAT <../platform/cdat>）
+- `docs/系统文档/driver-api/cxl/linux/access-coordinates.md:67` → `CEDT` （文本：CEDT <../platform/acpi/cedt>）
+- `docs/系统文档/driver-api/cxl/linux/access-coordinates.md:108` → `SRAT` （文本：SRAT <../platform/acpi/srat>）
+- `docs/系统文档/driver-api/cxl/linux/access-coordinates.md:108` → `HMAT` （文本：HMAT <../platform/acpi/hmat>）
+- `docs/系统文档/driver-api/cxl/linux/access-coordinates.md:115` → `CEDT` （文本：CEDT <../platform/acpi/cedt>）
+- `docs/系统文档/driver-api/cxl/linux/cxl-driver.md:73` → `CEDT<../platform/acpi/cedt>` （文本：CEDT<../platform/acpi/cedt>）
+- `docs/系统文档/driver-api/cxl/linux/cxl-driver.md:77` → `CEDT<../platform/acpi/cedt>` （文本：CEDT<../platform/acpi/cedt>）
+- `docs/系统文档/driver-api/cxl/linux/cxl-driver.md:217` → `CEDT` （文本：CEDT <../platform/acpi/cedt>）
+- `docs/系统文档/driver-api/cxl/linux/cxl-driver.md:224` → `DSDT` （文本：DSDT <../platform/acpi/dsdt>）
+- `docs/系统文档/driver-api/cxl/linux/early-boot.md:9` → `ACPI` （文本：ACPI tables <../platform/acpi>）
+- `docs/系统文档/driver-api/cxl/linux/early-boot.md:50` → `CEDT` （文本：CEDT <../platform/acpi/cedt>）
+- `docs/系统文档/driver-api/cxl/linux/early-boot.md:58` → `Example` （文本：Example Platform Configurations <../plat）
+- `docs/系统文档/driver-api/cxl/linux/early-boot.md:75` → `HMAT` （文本：HMAT <../platform/acpi/hmat>）
+- `docs/系统文档/driver-api/cxl/platform/bios-and-efi.md:144` → `SRAT` （文本：SRAT <acpi/srat>）
+- `docs/系统文档/driver-api/cxl/platform/device-hotplug.md:26` → `CEDT<acpi/cedt>` （文本：CEDT<acpi/cedt>）
+- `docs/系统文档/driver-api/cxl/platform/device-hotplug.md:36` → `CEDT<acpi/cedt>` （文本：CEDT<acpi/cedt>）
+- `docs/系统文档/driver-api/cxl/platform/device-hotplug.md:69` → `CEDT<acpi/cedt>` （文本：CEDT<acpi/cedt>）
+- `docs/系统文档/driver-api/cxl/platform/device-hotplug.md:103` → `CEDT<acpi/cedt>` （文本：CEDT<acpi/cedt>）
+- `docs/系统文档/driver-api/cxl/platform/device-hotplug.md:106` → `Flexible` （文本：Flexible CEDT Configuration<example-conf）
+- `docs/系统文档/driver-api/iio/core.md:25` → `I2C` （文本：I2C <../i2c>）
+- `docs/系统文档/driver-api/iio/core.md:26` → `SPI` （文本：SPI <../spi>）
+- `docs/系统文档/driver-api/iio/intro.md:7` → `Input` （文本：input <../input>）
+- `docs/系统文档/driver-api/iio/intro.md:8` → `Input` （文本：Input <../input>）
+- `docs/系统文档/driver-api/iio/intro.md:25` → `SPI` （文本：SPI <../spi>）
+- `docs/系统文档/driver-api/iio/intro.md:25` → `I2C` （文本：I2C <../i2c>）
+- `docs/系统文档/driver-api/tty/n_tty.md:5` → `TTY` （文本：TTY line discipline <tty_ldisc>）
+- `docs/系统文档/filesystems/fsverity.md:70` → `IPE` （文本：IPE admin guide </admin-guide/LSM/ipe>）
+- `docs/系统文档/filesystems/fsverity.md:436` → `IPE` （文本：IPE admin guide </admin-guide/LSM/ipe>）
+- `docs/系统文档/filesystems/ext4/inode_table.md:6` → `inode` （文本：inode documentation <inodes>）
+- `docs/系统文档/gpu/drm-vm-bind-async.md:18` → `dma-buf` （文本：dma-buf doc）
+- `docs/系统文档/gpu/drm-vm-bind-locking.md:34` → `dma-buf` （文本：dma-buf doc </driver-api/dma-buf>）
+- `docs/系统文档/gpu/drm-vm-bind-locking.md:40` → `dma-buf` （文本：dma-buf doc </driver-api/dma-buf>）
+- `docs/系统文档/input/devices/index.md:6` → `*` （文本：*）
+- `docs/系统文档/mm/index.md:4` → `admin` （文本：管理员指南 <../admin-guide/mm/index>）
+- `docs/系统文档/mm/memfd_preservation.md:18` → `/core-api/liveupdate` （文本：/core-api/liveupdate）
+- `docs/系统文档/mm/memfd_preservation.md:19` → `/core-api/kho/index` （文本：/core-api/kho/index）
+- `docs/系统文档/mm/damon/design.md:362` → `文档` （文本：文档 </mm/damon/api>）
+- `docs/系统文档/mm/damon/design.md:387` → `/admin-guide/mm/damon/stat` （文本：/admin-guide/mm/damon/stat）
+- `docs/系统文档/mm/damon/design.md:387` → `/admin-guide/mm/damon/reclaim` （文本：/admin-guide/mm/damon/reclaim）
+- `docs/系统文档/mm/damon/design.md:387` → `/admin-guide/mm/damon/lru_sort` （文本：/admin-guide/mm/damon/lru_sort）
+- `docs/系统文档/mm/damon/index.md:21` → `guide` （文本：guide </admin-guide/mm/damon/index>）
+- `docs/系统文档/netlink/specs/index.md:6` → `*` （文本：*）
+- `docs/系统文档/PCI/endpoint/pci-ntb-howto.md:156` → `Non-Transparent` （文本：Non-Transparent Bridge <../../driver-api）
+- `docs/系统文档/PCI/endpoint/pci-vntb-howto.md:173` → `Non-Transparent` （文本：Non-Transparent Bridge <../../driver-api）
+- `docs/系统文档/plans/2026-07-06-001-feat-markdown-docs-output-plan.md:191` → `subdir/page.md#anchor` （文本：text）
+- `docs/系统文档/plans/2026-07-06-001-feat-markdown-docs-output-plan.md:271` → `docs/brainstorms/2026-07-06-markdown-docs-output-requirements.md` （文本：docs/brainstorms/2026-07-06-markdown-doc）
+- `docs/系统文档/plans/2026-07-06-002-feat-project-markdown-plan.md:336` → `docs/brainstorms/2026-07-06-project-overview-markdown-requirements.md` （文本：docs/brainstorms/2026-07-06-project-over）
+- `docs/系统文档/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md:490` → `../brainstorms/kernel-branch-coverage-90-requirements.md` （文本：docs/brainstorms/kernel-branch-coverage-）
+- `docs/系统文档/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md:491` → `../../lib/kunit/` （文本：lib/kunit/）
+- `docs/系统文档/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md:492` → `../../tools/testing/kunit/kunit.py` （文本：tools/testing/kunit/kunit.py）
+- `docs/系统文档/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md:493` → `../../tools/testing/selftests/` （文本：tools/testing/selftests/）
+- `docs/系统文档/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md:494` → `../../kernel/gcov/` （文本：kernel/gcov/）
+- `docs/系统文档/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md:495` → `../../lib/Kconfig.debug` （文本：lib/Kconfig.debug）
+- `docs/系统文档/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md:496` → `../../lib/fault-inject.c` （文本：lib/fault-inject.c）
+- `docs/系统文档/plans/2026-07-07-003-feat-kernel-branch-coverage-90-plan.md:497` → `../../drivers/gpu/drm/ci/` （文本：drivers/gpu/drm/ci/）
+- `docs/系统文档/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md:467` → `docs/brainstorms/2026-07-08-multi-engine-full-coverage-requirements.md` （文本：docs/brainstorms/2026-07-08-multi-engine）
+- `docs/系统文档/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md:468` → `tools/testing/orchestrator/test_orchestrator.py` （文本：tools/testing/orchestrator/test_orchestr）
+- `docs/系统文档/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md:468` → `tools/testing/orchestrator/syzkaller_runner.py` （文本：tools/testing/orchestrator/syzkaller_run）
+- `docs/系统文档/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md:468` → `tools/testing/orchestrator/faultinj_runner.py` （文本：tools/testing/orchestrator/faultinj_runn）
+- `docs/系统文档/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md:468` → `tools/testing/coverage/coverage_harness.py` （文本：tools/testing/coverage/coverage_harness.）
+- `docs/系统文档/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md:468` → `.gitlab-ci-coverage.yml` （文本：.gitlab-ci-coverage.yml）
+- `docs/系统文档/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md:470` → `net/core_kunit_test.c` （文本：net/core_kunit_test.c）
+- `docs/系统文档/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md:470` → `fs/super_kunit_test.c` （文本：fs/super_kunit_test.c）
+- `docs/系统文档/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md:470` → `kernel/sysctl-test.c` （文本：kernel/sysctl-test.c）
+- `docs/系统文档/plans/2026-07-08-001-feat-test-coverage-expansion-plan.md:470` → `mm/page_alloc_kunit_test.c` （文本：mm/page_alloc_kunit_test.c）
+- `docs/系统文档/process/development-process.md:7` → `1.Intro` （文本：1.Intro）
+- `docs/系统文档/process/development-process.md:8` → `2.Process` （文本：2.Process）
+- `docs/系统文档/process/development-process.md:9` → `3.Early-stage` （文本：3.Early-stage）
+- `docs/系统文档/process/development-process.md:10` → `4.Coding` （文本：4.Coding）
+- `docs/系统文档/process/development-process.md:11` → `5.Posting` （文本：5.Posting）
+- `docs/系统文档/process/development-process.md:12` → `6.Followthrough` （文本：6.Followthrough）
+- `docs/系统文档/process/development-process.md:13` → `7.AdvancedTopics` （文本：7.AdvancedTopics）
+- `docs/系统文档/process/development-process.md:14` → `8.Conclusion` （文本：8.Conclusion）
+- `docs/系统文档/process/security-bugs.md:113` → `常规补丁提交` （文本：常规补丁提交 <../process/submitting-patches>）
+- `docs/系统文档/process/threat-model.md:3` → `security-related` （文本：安全相关的 <security-bugs>）
+- `docs/系统文档/process/debugging/driver_development_debugging_guide.md:31` → `/core-api/printk-formats` （文本：/core-api/printk-formats）
+- `docs/系统文档/process/debugging/driver_development_debugging_guide.md:39` → `/core-api/printk-basics` （文本：/core-api/printk-basics）
+- `docs/系统文档/process/debugging/driver_development_debugging_guide.md:95` → `/trace/events` （文本：/trace/events）
+- `docs/系统文档/process/debugging/driver_development_debugging_guide.md:97` → `/trace/ftrace` （文本：/trace/ftrace）
+- `docs/系统文档/process/debugging/driver_development_debugging_guide.md:133` → `/filesystems/debugfs` （文本：/filesystems/debugfs）
+- `docs/系统文档/process/debugging/driver_development_debugging_guide.md:146` → `/dev-tools/kasan` （文本：/dev-tools/kasan）
+- `docs/系统文档/process/debugging/driver_development_debugging_guide.md:156` → `/dev-tools/ubsan` （文本：/dev-tools/ubsan）
+- `docs/系统文档/process/debugging/index.md:32` → `/process/debugging/userspace_debugging_guide` （文本：/process/debugging/userspace_debugging_g）
+- `docs/系统文档/process/debugging/index.md:42` → `/process/debugging/driver_development_debugging_guide` （文本：/process/debugging/driver_development_de）
+- `docs/系统文档/process/debugging/userspace_debugging_guide.md:53` → `/admin-guide/dynamic-debug-howto` （文本：/admin-guide/dynamic-debug-howto）
+- `docs/系统文档/process/debugging/userspace_debugging_guide.md:75` → `/trace/ftrace` （文本：/trace/ftrace）
+- `docs/系统文档/process/debugging/userspace_debugging_guide.md:82` → `/trace/events` （文本：/trace/events）
+- `docs/系统文档/process/debugging/userspace_debugging_guide.md:195` → `/admin-guide/kdump/kdump` （文本：/admin-guide/kdump/kdump）
+- `docs/系统文档/rust/coding-guidelines.md:182` → `srctree/include/linux/printk.h` （文本：`include/linux/printk.h`）
+- `docs/系统文档/security/snp-tdx-threat-model.md:48` → `Intel` （文本：Intel Trust Domain Extensions (TDX) </ar）
+- `docs/系统文档/sound/designs/index.md:19` → `midi-2.0` （文本：midi-2.0）
+- `docs/系统文档/trace/coresight/index.md:4` → `*` （文本：*）
+- `docs/系统文档/translations/it_IT/process/development-process.md:18` → `1.Intro` （文本：1.Intro）
+- `docs/系统文档/translations/it_IT/process/development-process.md:19` → `2.Process` （文本：2.Process）
+- `docs/系统文档/translations/it_IT/process/development-process.md:20` → `3.Early-stage` （文本：3.Early-stage）
+- `docs/系统文档/translations/it_IT/process/development-process.md:21` → `4.Coding` （文本：4.Coding）
+- `docs/系统文档/translations/it_IT/process/development-process.md:22` → `5.Posting` （文本：5.Posting）
+- `docs/系统文档/translations/it_IT/process/development-process.md:23` → `6.Followthrough` （文本：6.Followthrough）
+- `docs/系统文档/translations/it_IT/process/development-process.md:24` → `7.AdvancedTopics` （文本：7.AdvancedTopics）
+- `docs/系统文档/translations/it_IT/process/development-process.md:25` → `8.Conclusion` （文本：8.Conclusion）
+- `docs/系统文档/translations/pt_BR/index.md:62` → `process/1.Intro` （文本：Introdução）
+- `docs/系统文档/translations/sp_SP/process/development-process.md:18` → `1.Intro` （文本：1.Intro）
+- `docs/系统文档/translations/sp_SP/process/development-process.md:19` → `2.Process` （文本：2.Process）
+- `docs/系统文档/translations/sp_SP/process/development-process.md:20` → `3.Early-stage` （文本：3.Early-stage）
+- `docs/系统文档/translations/sp_SP/process/development-process.md:21` → `4.Coding` （文本：4.Coding）
+- `docs/系统文档/translations/sp_SP/process/development-process.md:22` → `5.Posting` （文本：5.Posting）
+- `docs/系统文档/translations/sp_SP/process/development-process.md:23` → `6.Followthrough` （文本：6.Followthrough）
+- `docs/系统文档/translations/sp_SP/process/development-process.md:24` → `7.AdvancedTopics` （文本：7.AdvancedTopics）
+- `docs/系统文档/translations/sp_SP/process/development-process.md:25` → `8.Conclusion` （文本：8.Conclusion）
+- `docs/系统文档/translations/sp_SP/process/embargoed-hardware-issues.md:34` → `errores` （文本：errores de seguridad <security-bugs>）
+- `docs/系统文档/translations/sp_SP/process/security-bugs.md:37` → `envío` （文本：envío de parche regular <submitting-patc）
+- `docs/系统文档/translations/zh_CN/admin-guide/mm/damon/index.md:13` → `DAMON` （文本：DAMON </mm/damon/index>）
+- `docs/系统文档/translations/zh_CN/admin-guide/mm/damon/start.md:35` → `sysfs` （文本：sysfs </filesystems/sysfs>）
+- `docs/系统文档/translations/zh_CN/admin-guide/mm/damon/usage.md:28` → `这` （文本：这 </mm/damon/api>）
+- `docs/系统文档/translations/zh_CN/admin-guide/mm/damon/usage.md:30` → `文件` （文本：文件 </mm/damon/api>）
+- `docs/系统文档/translations/zh_CN/admin-guide/mm/damon/usage.md:152` → `/mm/damon/design` （文本：/mm/damon/design）
+- `docs/系统文档/translations/zh_CN/core-api/index.md:56` → `/locking/index` （文本：/locking/index）
+- `docs/系统文档/translations/zh_CN/core-api/index.md:90` → `/mm/index` （文本：/mm/index）
+- `docs/系统文档/translations/zh_CN/process/cve.md:15` → `安全漏洞报送流程</process/security-bugs>` （文本：安全漏洞报送流程</process/security-bugs>）
+- `docs/系统文档/translations/zh_CN/process/development-process.md:11` → `1.Intro` （文本：1.Intro）
+- `docs/系统文档/translations/zh_CN/process/development-process.md:12` → `2.Process` （文本：2.Process）
+- `docs/系统文档/translations/zh_CN/process/development-process.md:13` → `3.Early-stage` （文本：3.Early-stage）
+- `docs/系统文档/translations/zh_CN/process/development-process.md:14` → `4.Coding` （文本：4.Coding）
+- `docs/系统文档/translations/zh_CN/process/development-process.md:15` → `5.Posting` （文本：5.Posting）
+- `docs/系统文档/translations/zh_CN/process/development-process.md:16` → `6.Followthrough` （文本：6.Followthrough）
+- `docs/系统文档/translations/zh_CN/process/development-process.md:17` → `7.AdvancedTopics` （文本：7.AdvancedTopics）
+- `docs/系统文档/translations/zh_CN/process/development-process.md:18` → `8.Conclusion` （文本：8.Conclusion）
+- `docs/系统文档/translations/zh_CN/process/security-bugs.md:31` → `常规的补丁提交` （文本：常规的补丁提交 <../process/submitting-patches>）
+- `docs/系统文档/translations/zh_CN/process/security-bugs.md:77` → `内核` （文本：内核 CVE 分配团队 <../process/cve>）
+- `docs/系统文档/translations/zh_CN/rust/coding-guidelines.md:229` → `srctree/include/linux/printk.h` （文本：`include/linux/printk.h`）
+- `docs/系统文档/translations/zh_CN/security/snp-tdx-threat-model.md:44` → `Intel` （文本：Intel Trust Domain Extensions (TDX) </ar）
+- `docs/系统文档/translations/zh_TW/admin-guide/security-bugs.md:31` → `常規的補丁提交` （文本：常規的補丁提交 <../process/submitting-patches>）
+- `docs/系统文档/translations/zh_TW/admin-guide/mm/damon/index.md:13` → `DAMON` （文本：DAMON </mm/damon/index>）
+- `docs/系统文档/translations/zh_TW/admin-guide/mm/damon/start.md:35` → `sysfs` （文本：sysfs </filesystems/sysfs>）
+- `docs/系统文档/translations/zh_TW/admin-guide/mm/damon/usage.md:28` → `這` （文本：這 </mm/damon/api>）
+- `docs/系统文档/translations/zh_TW/admin-guide/mm/damon/usage.md:30` → `文件` （文本：文件 </mm/damon/api>）
+- `docs/系统文档/translations/zh_TW/admin-guide/mm/damon/usage.md:152` → `/mm/damon/design` （文本：/mm/damon/design）
+- `docs/系统文档/translations/zh_TW/process/development-process.md:13` → `1.Intro` （文本：1.Intro）
+- `docs/系统文档/translations/zh_TW/process/development-process.md:14` → `2.Process` （文本：2.Process）
+- `docs/系统文档/translations/zh_TW/process/development-process.md:15` → `3.Early-stage` （文本：3.Early-stage）
+- `docs/系统文档/translations/zh_TW/process/development-process.md:16` → `4.Coding` （文本：4.Coding）
+- `docs/系统文档/translations/zh_TW/process/development-process.md:17` → `5.Posting` （文本：5.Posting）
+- `docs/系统文档/translations/zh_TW/process/development-process.md:18` → `6.Followthrough` （文本：6.Followthrough）
+- `docs/系统文档/translations/zh_TW/process/development-process.md:19` → `7.AdvancedTopics` （文本：7.AdvancedTopics）
+- `docs/系统文档/translations/zh_TW/process/development-process.md:20` → `8.Conclusion` （文本：8.Conclusion）
+- `docs/系统文档/usb/index.md:23` → `gadget_testing` （文本：复合设备测试）
+- `docs/系统文档/userspace-api/liveupdate.md:20` → `/core-api/liveupdate` （文本：Live Update Orchestrator）
+- `docs/系统文档/userspace-api/media/rc/rc-table-change.md:10` → `keytable.c` （文本：keytable.c）
+- `docs/系统文档/userspace-api/media/v4l/capture-example.md:7` → `capture.c` （文本：capture.c）
+- `docs/系统文档/userspace-api/media/v4l/v4l2grab-example.md:9` → `v4l2grab.c` （文本：v4l2grab.c）
+- `docs/系统文档/userspace-api/netlink/specs.md:56` → `genetlink-c` （文本：genetlink-c <c-code-gen>）
+- `docs/系统文档/wmi/devices/index.md:6` → `*` （文本：*）
+- `docs/系统文档/__test_backup/arch_index.md:6` → `arc/index` （文本：arc/index）
+- `docs/系统文档/__test_backup/arch_index.md:7` → `arm/index` （文本：arm/index）
+- `docs/系统文档/__test_backup/arch_index.md:8` → `arm64/index` （文本：arm64/index）
+- `docs/系统文档/__test_backup/arch_index.md:9` → `loongarch/index` （文本：loongarch/index）
+- `docs/系统文档/__test_backup/arch_index.md:10` → `m68k/index` （文本：m68k/index）
+- `docs/系统文档/__test_backup/arch_index.md:11` → `mips/index` （文本：mips/index）
+- `docs/系统文档/__test_backup/arch_index.md:12` → `nios2/index` （文本：nios2/index）
+- `docs/系统文档/__test_backup/arch_index.md:13` → `openrisc/index` （文本：openrisc/index）
+- `docs/系统文档/__test_backup/arch_index.md:14` → `parisc/index` （文本：parisc/index）
+- `docs/系统文档/__test_backup/arch_index.md:15` → `powerpc/index` （文本：powerpc/index）
+- `docs/系统文档/__test_backup/arch_index.md:16` → `riscv/index` （文本：riscv/index）
+- `docs/系统文档/__test_backup/arch_index.md:17` → `s390/index` （文本：s390/index）
+- `docs/系统文档/__test_backup/arch_index.md:18` → `sh/index` （文本：sh/index）
+- `docs/系统文档/__test_backup/arch_index.md:19` → `sparc/index` （文本：sparc/index）
+- `docs/系统文档/__test_backup/arch_index.md:20` → `x86/index` （文本：x86/index）
+- `docs/系统文档/__test_backup/arch_index.md:21` → `xtensa/index` （文本：xtensa/index）
+- `docs/系统文档/__test_backup/net.md:31` → `net-types` （文本：net-types）
+- `docs/系统文档/__test_backup/net.md:32` → `net-add-if` （文本：net-add-if）
+- `docs/系统文档/__test_backup/net.md:33` → `net-remove-if` （文本：net-remove-if）
+- `docs/系统文档/__test_backup/net.md:34` → `net-get-if` （文本：net-get-if）
+
+（涉及 85 个文件；完整列表见 `.link_format_check.json`）
+
+## 图片链接残留样例（最多 100，非致命）
+
+- 无
