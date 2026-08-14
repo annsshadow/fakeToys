@@ -1,0 +1,19 @@
+
+:Original: Documentation/admin-guide/mm/damon/index.rst
+
+:翻译:
+
+ 司延腾 Yanteng Si <siyanteng@loongson.cn>
+
+:校译:
+
+## 监测数据访问
+
+
+[DAMON </mm/damon/index>](DAMON </mm/damon/index>) 允许轻量级的数据访问监测。使用DAMON，
+用户可以分析他们系统的内存访问模式，并优化它们。
+
+- [start](start)
+- [usage](usage)
+- [reclaim](reclaim)
+- [lru_sort](lru_sort)

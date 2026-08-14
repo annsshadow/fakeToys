@@ -1,0 +1,48 @@
+## 内核驱动w1-gpio
+
+
+作者：Ville Syrjala <syrjala@sci.fi>
+
+
+### 描述
+
+
+GPIO 1 线总线主驱动器。驱动程序使用 GPIO API 来控制
+可以使用 GPIO 机器描述符表指定线路和 GPIO 引脚。
+也可以使用设备树定义主设备，请参见
+文档/devicetree/bindings/w1/w1-gpio.yaml
+
+
+### 示例（mach-at91）
+
+
+```
+
+  #include <linux/gpio/machine.h>
+  #include <linux/w1-gpio.h>
+
+  static struct gpiod_lookup_table foo_w1_gpiod_table = {
+	.dev_id = "w1-gpio",
+	.table = {
+		GPIO_LOOKUP_IDX("at91-gpio", AT91_PIN_PB20, NULL, 0,
+			GPIO_ACTIVE_HIGH|GPIO_OPEN_DRAIN),
+	},
+  };
+
+  static struct w1_gpio_platform_data foo_w1_gpio_pdata = {
+	.ext_pullup_enable_pin	= -EINVAL,
+  };
+
+  static struct platform_device foo_w1_device = {
+	.name			= "w1-gpio",
+	.id			= -1,
+	.dev.platform_data	= &foo_w1_gpio_pdata,
+  };
+
+  ...
+	at91_set_GPIO_periph(foo_w1_gpio_pdata.pin, 1);
+	at91_set_multi_drive(foo_w1_gpio_pdata.pin, 1);
+	gpiod_add_lookup_table(&foo_w1_gpiod_table);
+	platform_device_register(&foo_w1_device);
+
+```

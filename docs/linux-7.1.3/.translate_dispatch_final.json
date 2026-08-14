@@ -1,0 +1,2720 @@
+{
+ "chunk_size": 45,
+ "n_chunks": 7,
+ "total_files": 294,
+ "real_count": 99,
+ "stub_count": 195,
+ "hot_units": [
+  141,
+  161
+ ],
+ "safe_units": [
+  56,
+  64,
+  75,
+  78,
+  95,
+  100,
+  111,
+  114,
+  115,
+  116,
+  119,
+  120,
+  122,
+  123,
+  125,
+  135,
+  138,
+  139,
+  142,
+  144,
+  145,
+  149,
+  156,
+  157,
+  168,
+  171,
+  172,
+  173,
+  175,
+  178,
+  179,
+  181,
+  182,
+  184,
+  188,
+  189,
+  190,
+  191,
+  192,
+  193,
+  194,
+  195
+ ],
+ "n_safe_units": 42,
+ "chunks": [
+  [
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm64/silicon-errata.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\bpf/libbpf/program_types.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/nfs/nfs41-server.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/gspca-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/tcp_sock.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/capture.c.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/netns_ipv4_sysctl.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/net_device.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/saa7134-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/driver-model/devres.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\power/suspend-and-cpuhotplug.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\power/freezing-of-tasks.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/omap/dss.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/device-mapper/dm-integrity.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\security/snp-tdx-threat-model.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\trace/tracepoint-analysis.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/multigen_lru.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/devices.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/svga.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\process/code-of-conduct-interpretation.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\sound/cards/audigy-mixer.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/ext4/blockmap.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\hwmon/lm85.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/java.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/bttv-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\trace/coresight/coresight-ect.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/vfio-mediated-device.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\hid/hiddev.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/kunit/start.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/nfs/client-identifier.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/biblio.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/drivers/ipu6.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/blockdev/paride.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/smb/ksmbd.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/metafmt-generic.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/tls-handshake.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\trace/debugging.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\process/researcher-guidelines.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/pci/p2pdma.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/scsi.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/riscv/zicfiss.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/booting.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\hwmon/pc87360.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\security/keys/request-key.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\sound/cards/emu-mixer.md"
+  ],
+  [
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/ppc-pv.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/plip.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/dmaengine/dmatest.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\i2c/slave-interface.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/x86/nested-vmx.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/pixfmt-srggb10-ipu3.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/hw-vuln/indirect-target-selection.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/powerpc/elf_hwcaps.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\crypto/libcrypto.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/halt-polling.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/frontend-stat-properties.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\misc-devices/uacce.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\fb/uvesafb.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/bug-bisect.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\watchdog/convert_drivers_to_kernel_api.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/snmp.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\hwmon/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/cx88-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/inet_connection_sock.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/v4l2grab.c.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\hwmon/w83795.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/sunxi.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-dib0700-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/cx23885-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/tuner-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/soundwire/locking.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/s390/mm.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/rc/lirc-get-features.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/pwrseq.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/pixfmt-srggb8-pisp-comp.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\trace/events-power.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/imagination/uapi.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\locking/rt-mutex.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\i2c/i2c-address-translators.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/nwfpe/todo.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/device_drivers/ethernet/ti/am65_nuss_cpsw_switchdev.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\crypto/sha3.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/avermedia.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/other-usb-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/user-func.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/80211/cfg80211.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/inet_sock.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/ivtv-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/radio-cardlist.md"
+  ],
+  [
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/cx231xx-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-af9015-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/device_drivers/ethernet/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-rtl28xxu-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-af9035-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/siano-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-dw2102-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\scsi/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\power/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/saa7164-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/powerpc/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-dvbsky-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-mxl111sf-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/fe-bandwidth-t.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/rc/lirc-func.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-cxusb-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\RCU/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-dibusb-mc-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\i2c/busses/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/au0828-cardlist.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/cec/cec-funcs.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/sdr-formats.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/devices.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\PCI/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/cxl/platform/example-configs.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/thermal/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/selection-api.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/cgroup-v1/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\devicetree/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/abi.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/s390/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/laptops/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/pm/working-state.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\watchdog/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\hid/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/riscv/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/ca_function_calls.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/x86/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\sound/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/nfs/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\livepatch/index.md"
+  ],
+  [
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/xfs/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\security/tpm/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/device_drivers/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/devices/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/nfs/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\input/input_uapi.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/surface_aggregator/client-api.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\doc-guide/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/x86/x86_64/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/iio/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\spi/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/driver-model/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\staging/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\w1/slaves/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\crypto/api.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/device_drivers/can/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/gpio/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/firmware/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-drivers.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/arm/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/gpio/obsolete.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\fault-injection/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/control-dependencies.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/driver-uapi.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/herd-representation.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/readme.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/device_drivers/ethernet/freescale/dpaa2/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\infiniband/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/access-marking.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/fpga/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/mmc/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/litmus-tests.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/explanation.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/cheatsheet.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/references.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/mei/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/fuse/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\sound/hd-audio/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\timers/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\devicetree/bindings/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/soundwire/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/glossary.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/ordering.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/firmware/efi/index.md"
+  ],
+  [
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\usb/text_files.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/locking.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/recipes.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/blockdev/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\accounting/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/simple.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\tools/kabi.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/80211/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/dsa/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\core-api/irq/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/surface_aggregator/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\w1/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\w1/masters/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/pci/tsm.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/implementation_guidelines.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\accel/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/readme.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/hyperv/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\input/input_kapi.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/hte/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/serial/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\wmi/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/loongarch/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/nvdimm/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/rapidio/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/xe/xe_rtp.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/s390/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\core-api/generic-radix-tree.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\netlabel/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\tools/kdoc_output.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/xfrm/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\nvme/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/caching/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/nwfpe/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/i3c/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/ext4/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\security/keys/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\input/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/pm/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/xe/xe_pcode.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/sparc/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/drivers/vimc-devel.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/component.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\tee/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/sa1100/index.md"
+  ],
+  [
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/libv4l.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/virtio/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\crypto/device_drivers/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/coco/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/smb/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/backlight.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/drivers/frontends.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/slab.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/omap/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/capture-example.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\bpf/test_debug.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/tty/tty_ioctl.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-mc.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-mem2mem.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-videobuf2.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arc/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-tveeprom.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/coco/measurement-registers.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\sound/codecs/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\target/scripts.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-mediabus.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/xe/xe_device.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-common.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-flash-led-class.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\cdrom/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mhi/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\netlink/specs/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\scheduler/text_files.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-tuner.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\scsi/scsi_transport_srp/figures.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\trace/coresight/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/xe/xe_migrate.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\security/secrets/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/vmalloc.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/abi-obsolete-files.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/dtv-ca.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/abi-removed-files.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/abi-removed.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/abi-testing-files.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/x86/i386/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/i3c/master-driver-api.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/pm/types.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/abi-stable-files.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/misc_devices.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\peci/index.md"
+  ],
+  [
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-rect.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/xe/xe_map.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-dv-timings.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/xilinx/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/dtv-net.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/dmx_types.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/frontend-header.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/i3c/device-driver-api.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/shmfs.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/net-types.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/ca_data_types.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/oom.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\sphinx-includes/subproject-index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\fpga/index.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/amdgpu/xgmi.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\crypto/libcrypto-utils.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-fwnode.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-async.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-cci.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/page_allocation.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/page_reclaim.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/xe/xe_debugging.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/bootmem.md",
+   "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/swap.md"
+  ]
+ ],
+ "meta": [
+  {
+   "unit": 56,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm64/silicon-errata.md",
+   "pr": 0.017,
+   "fences": 0,
+   "strict_ew": 673,
+   "mode": "full"
+  },
+  {
+   "unit": 64,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\bpf/libbpf/program_types.md",
+   "pr": 0.008,
+   "fences": 0,
+   "strict_ew": 73,
+   "mode": "full"
+  },
+  {
+   "unit": 75,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/nfs/nfs41-server.md",
+   "pr": 0.027,
+   "fences": 0,
+   "strict_ew": 436,
+   "mode": "full"
+  },
+  {
+   "unit": 78,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/gspca-cardlist.md",
+   "pr": 0.001,
+   "fences": 0,
+   "strict_ew": 1890,
+   "mode": "full"
+  },
+  {
+   "unit": 95,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/tcp_sock.md",
+   "pr": 0.001,
+   "fences": 0,
+   "strict_ew": 1445,
+   "mode": "full"
+  },
+  {
+   "unit": 100,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/capture.c.md",
+   "pr": 0.016,
+   "fences": 0,
+   "strict_ew": 1356,
+   "mode": "full"
+  },
+  {
+   "unit": 111,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/netns_ipv4_sysctl.md",
+   "pr": 0.001,
+   "fences": 0,
+   "strict_ew": 1035,
+   "mode": "full"
+  },
+  {
+   "unit": 114,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/net_device.md",
+   "pr": 0.003,
+   "fences": 0,
+   "strict_ew": 1146,
+   "mode": "full"
+  },
+  {
+   "unit": 114,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/saa7134-cardlist.md",
+   "pr": 0.001,
+   "fences": 0,
+   "strict_ew": 740,
+   "mode": "full"
+  },
+  {
+   "unit": 115,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/driver-model/devres.md",
+   "pr": 0.0,
+   "fences": 10,
+   "strict_ew": 1613,
+   "mode": "full"
+  },
+  {
+   "unit": 115,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\power/suspend-and-cpuhotplug.md",
+   "pr": 0.0,
+   "fences": 8,
+   "strict_ew": 1163,
+   "mode": "full"
+  },
+  {
+   "unit": 116,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\power/freezing-of-tasks.md",
+   "pr": 0.0,
+   "fences": 2,
+   "strict_ew": 1884,
+   "mode": "full"
+  },
+  {
+   "unit": 116,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/omap/dss.md",
+   "pr": 0.0,
+   "fences": 12,
+   "strict_ew": 1617,
+   "mode": "full"
+  },
+  {
+   "unit": 116,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/device-mapper/dm-integrity.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1974,
+   "mode": "full"
+  },
+  {
+   "unit": 116,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\security/snp-tdx-threat-model.md",
+   "pr": 0.0,
+   "fences": 6,
+   "strict_ew": 1419,
+   "mode": "full"
+  },
+  {
+   "unit": 119,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\trace/tracepoint-analysis.md",
+   "pr": 0.0,
+   "fences": 28,
+   "strict_ew": 875,
+   "mode": "full"
+  },
+  {
+   "unit": 119,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/multigen_lru.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1740,
+   "mode": "full"
+  },
+  {
+   "unit": 119,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/devices.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1576,
+   "mode": "full"
+  },
+  {
+   "unit": 120,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/svga.md",
+   "pr": 0.0,
+   "fences": 6,
+   "strict_ew": 1347,
+   "mode": "full"
+  },
+  {
+   "unit": 120,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\process/code-of-conduct-interpretation.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1806,
+   "mode": "full"
+  },
+  {
+   "unit": 120,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\sound/cards/audigy-mixer.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1465,
+   "mode": "full"
+  },
+  {
+   "unit": 122,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/ext4/blockmap.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 132,
+   "mode": "full"
+  },
+  {
+   "unit": 123,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\hwmon/lm85.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1560,
+   "mode": "full"
+  },
+  {
+   "unit": 123,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/java.md",
+   "pr": 0.0,
+   "fences": 14,
+   "strict_ew": 1024,
+   "mode": "full"
+  },
+  {
+   "unit": 125,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/bttv-cardlist.md",
+   "pr": 0.001,
+   "fences": 0,
+   "strict_ew": 676,
+   "mode": "full"
+  },
+  {
+   "unit": 135,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\trace/coresight/coresight-ect.md",
+   "pr": 0.0,
+   "fences": 16,
+   "strict_ew": 847,
+   "mode": "full"
+  },
+  {
+   "unit": 135,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/vfio-mediated-device.md",
+   "pr": 0.0,
+   "fences": 22,
+   "strict_ew": 773,
+   "mode": "full"
+  },
+  {
+   "unit": 135,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\hid/hiddev.md",
+   "pr": 0.0,
+   "fences": 6,
+   "strict_ew": 1263,
+   "mode": "full"
+  },
+  {
+   "unit": 135,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/kunit/start.md",
+   "pr": 0.0,
+   "fences": 12,
+   "strict_ew": 1196,
+   "mode": "full"
+  },
+  {
+   "unit": 138,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/nfs/client-identifier.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1294,
+   "mode": "full"
+  },
+  {
+   "unit": 139,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/biblio.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 142,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/drivers/ipu6.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1201,
+   "mode": "full"
+  },
+  {
+   "unit": 142,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/blockdev/paride.md",
+   "pr": 0.0,
+   "fences": 14,
+   "strict_ew": 1058,
+   "mode": "full"
+  },
+  {
+   "unit": 142,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/smb/ksmbd.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 993,
+   "mode": "full"
+  },
+  {
+   "unit": 142,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/metafmt-generic.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 880,
+   "mode": "full"
+  },
+  {
+   "unit": 142,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/tls-handshake.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1122,
+   "mode": "full"
+  },
+  {
+   "unit": 142,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\trace/debugging.md",
+   "pr": 0.0,
+   "fences": 18,
+   "strict_ew": 1127,
+   "mode": "full"
+  },
+  {
+   "unit": 142,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\process/researcher-guidelines.md",
+   "pr": 0.0,
+   "fences": 2,
+   "strict_ew": 980,
+   "mode": "full"
+  },
+  {
+   "unit": 142,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/pci/p2pdma.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1266,
+   "mode": "full"
+  },
+  {
+   "unit": 142,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/scsi.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 991,
+   "mode": "full"
+  },
+  {
+   "unit": 144,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/riscv/zicfiss.md",
+   "pr": 0.0,
+   "fences": 2,
+   "strict_ew": 1068,
+   "mode": "full"
+  },
+  {
+   "unit": 144,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/booting.md",
+   "pr": 0.0,
+   "fences": 2,
+   "strict_ew": 1222,
+   "mode": "full"
+  },
+  {
+   "unit": 144,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\hwmon/pc87360.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1061,
+   "mode": "full"
+  },
+  {
+   "unit": 144,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\security/keys/request-key.md",
+   "pr": 0.0,
+   "fences": 12,
+   "strict_ew": 1080,
+   "mode": "full"
+  },
+  {
+   "unit": 144,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\sound/cards/emu-mixer.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1005,
+   "mode": "full"
+  },
+  {
+   "unit": 144,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/ppc-pv.md",
+   "pr": 0.0,
+   "fences": 2,
+   "strict_ew": 1140,
+   "mode": "full"
+  },
+  {
+   "unit": 144,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/plip.md",
+   "pr": 0.0,
+   "fences": 10,
+   "strict_ew": 1028,
+   "mode": "full"
+  },
+  {
+   "unit": 144,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/dmaengine/dmatest.md",
+   "pr": 0.0,
+   "fences": 36,
+   "strict_ew": 713,
+   "mode": "full"
+  },
+  {
+   "unit": 144,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\i2c/slave-interface.md",
+   "pr": 0.0,
+   "fences": 6,
+   "strict_ew": 1151,
+   "mode": "full"
+  },
+  {
+   "unit": 144,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/x86/nested-vmx.md",
+   "pr": 0.0,
+   "fences": 2,
+   "strict_ew": 601,
+   "mode": "full"
+  },
+  {
+   "unit": 145,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/pixfmt-srggb10-ipu3.md",
+   "pr": 0.013,
+   "fences": 0,
+   "strict_ew": 193,
+   "mode": "full"
+  },
+  {
+   "unit": 149,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/hw-vuln/indirect-target-selection.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 896,
+   "mode": "full"
+  },
+  {
+   "unit": 149,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/powerpc/elf_hwcaps.md",
+   "pr": 0.0,
+   "fences": 4,
+   "strict_ew": 957,
+   "mode": "full"
+  },
+  {
+   "unit": 149,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\crypto/libcrypto.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 973,
+   "mode": "full"
+  },
+  {
+   "unit": 149,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/halt-polling.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1058,
+   "mode": "full"
+  },
+  {
+   "unit": 149,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/frontend-stat-properties.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 955,
+   "mode": "full"
+  },
+  {
+   "unit": 149,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\misc-devices/uacce.md",
+   "pr": 0.0,
+   "fences": 10,
+   "strict_ew": 437,
+   "mode": "full"
+  },
+  {
+   "unit": 149,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\fb/uvesafb.md",
+   "pr": 0.0,
+   "fences": 2,
+   "strict_ew": 944,
+   "mode": "full"
+  },
+  {
+   "unit": 149,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/bug-bisect.md",
+   "pr": 0.0,
+   "fences": 12,
+   "strict_ew": 691,
+   "mode": "full"
+  },
+  {
+   "unit": 149,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\watchdog/convert_drivers_to_kernel_api.md",
+   "pr": 0.0,
+   "fences": 18,
+   "strict_ew": 806,
+   "mode": "full"
+  },
+  {
+   "unit": 149,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/snmp.md",
+   "pr": 0.003,
+   "fences": 0,
+   "strict_ew": 772,
+   "mode": "full"
+  },
+  {
+   "unit": 156,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\hwmon/index.md",
+   "pr": 0.002,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 157,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/cx88-cardlist.md",
+   "pr": 0.007,
+   "fences": 0,
+   "strict_ew": 362,
+   "mode": "full"
+  },
+  {
+   "unit": 157,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/inet_connection_sock.md",
+   "pr": 0.011,
+   "fences": 0,
+   "strict_ew": 650,
+   "mode": "full"
+  },
+  {
+   "unit": 168,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/v4l2grab.c.md",
+   "pr": 0.026,
+   "fences": 0,
+   "strict_ew": 404,
+   "mode": "full"
+  },
+  {
+   "unit": 171,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\hwmon/w83795.md",
+   "pr": 0.017,
+   "fences": 0,
+   "strict_ew": 321,
+   "mode": "full"
+  },
+  {
+   "unit": 172,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/sunxi.md",
+   "pr": 0.025,
+   "fences": 0,
+   "strict_ew": 344,
+   "mode": "full"
+  },
+  {
+   "unit": 173,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-dib0700-cardlist.md",
+   "pr": 0.002,
+   "fences": 0,
+   "strict_ew": 329,
+   "mode": "full"
+  },
+  {
+   "unit": 173,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/cx23885-cardlist.md",
+   "pr": 0.004,
+   "fences": 0,
+   "strict_ew": 190,
+   "mode": "full"
+  },
+  {
+   "unit": 175,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/tuner-cardlist.md",
+   "pr": 0.005,
+   "fences": 0,
+   "strict_ew": 371,
+   "mode": "full"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/soundwire/locking.md",
+   "pr": 0.0,
+   "fences": 4,
+   "strict_ew": 189,
+   "mode": "full"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/s390/mm.md",
+   "pr": 0.0,
+   "fences": 2,
+   "strict_ew": 75,
+   "mode": "full"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/rc/lirc-get-features.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 392,
+   "mode": "full"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/pwrseq.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 499,
+   "mode": "full"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/pixfmt-srggb8-pisp-comp.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 407,
+   "mode": "full"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\trace/events-power.md",
+   "pr": 0.0,
+   "fences": 14,
+   "strict_ew": 370,
+   "mode": "full"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/imagination/uapi.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 116,
+   "mode": "full"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\locking/rt-mutex.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 496,
+   "mode": "full"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\i2c/i2c-address-translators.md",
+   "pr": 0.0,
+   "fences": 2,
+   "strict_ew": 436,
+   "mode": "full"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/nwfpe/todo.md",
+   "pr": 0.0,
+   "fences": 2,
+   "strict_ew": 431,
+   "mode": "full"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/device_drivers/ethernet/ti/am65_nuss_cpsw_switchdev.md",
+   "pr": 0.0,
+   "fences": 18,
+   "strict_ew": 180,
+   "mode": "full"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\crypto/sha3.md",
+   "pr": 0.0,
+   "fences": 22,
+   "strict_ew": 306,
+   "mode": "full"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/index.md",
+   "pr": 0.006,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 178,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/avermedia.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 505,
+   "mode": "full"
+  },
+  {
+   "unit": 179,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/other-usb-cardlist.md",
+   "pr": 0.003,
+   "fences": 0,
+   "strict_ew": 274,
+   "mode": "full"
+  },
+  {
+   "unit": 181,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/user-func.md",
+   "pr": 0.001,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 182,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/80211/cfg80211.md",
+   "pr": 0.017,
+   "fences": 0,
+   "strict_ew": 300,
+   "mode": "full"
+  },
+  {
+   "unit": 182,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/inet_sock.md",
+   "pr": 0.006,
+   "fences": 0,
+   "strict_ew": 187,
+   "mode": "full"
+  },
+  {
+   "unit": 184,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/ivtv-cardlist.md",
+   "pr": 0.005,
+   "fences": 0,
+   "strict_ew": 211,
+   "mode": "full"
+  },
+  {
+   "unit": 188,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/radio-cardlist.md",
+   "pr": 0.015,
+   "fences": 0,
+   "strict_ew": 213,
+   "mode": "full"
+  },
+  {
+   "unit": 188,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/cx231xx-cardlist.md",
+   "pr": 0.006,
+   "fences": 0,
+   "strict_ew": 120,
+   "mode": "full"
+  },
+  {
+   "unit": 188,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-af9015-cardlist.md",
+   "pr": 0.004,
+   "fences": 0,
+   "strict_ew": 157,
+   "mode": "full"
+  },
+  {
+   "unit": 189,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/device_drivers/ethernet/index.md",
+   "pr": 0.018,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 189,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-rtl28xxu-cardlist.md",
+   "pr": 0.018,
+   "fences": 0,
+   "strict_ew": 143,
+   "mode": "full"
+  },
+  {
+   "unit": 190,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-af9035-cardlist.md",
+   "pr": 0.005,
+   "fences": 0,
+   "strict_ew": 111,
+   "mode": "full"
+  },
+  {
+   "unit": 190,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 191,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/siano-cardlist.md",
+   "pr": 0.004,
+   "fences": 0,
+   "strict_ew": 85,
+   "mode": "full"
+  },
+  {
+   "unit": 192,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-dw2102-cardlist.md",
+   "pr": 0.012,
+   "fences": 0,
+   "strict_ew": 82,
+   "mode": "full"
+  },
+  {
+   "unit": 192,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\scsi/index.md",
+   "pr": 0.016,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 193,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\power/index.md",
+   "pr": 0.004,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 193,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/saa7164-cardlist.md",
+   "pr": 0.019,
+   "fences": 0,
+   "strict_ew": 42,
+   "mode": "full"
+  },
+  {
+   "unit": 193,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/powerpc/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 194,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-dvbsky-cardlist.md",
+   "pr": 0.009,
+   "fences": 0,
+   "strict_ew": 57,
+   "mode": "full"
+  },
+  {
+   "unit": 194,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-mxl111sf-cardlist.md",
+   "pr": 0.009,
+   "fences": 0,
+   "strict_ew": 36,
+   "mode": "full"
+  },
+  {
+   "unit": 194,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/fe-bandwidth-t.md",
+   "pr": 0.02,
+   "fences": 0,
+   "strict_ew": 33,
+   "mode": "full"
+  },
+  {
+   "unit": 194,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/rc/lirc-func.md",
+   "pr": 0.029,
+   "fences": 0,
+   "strict_ew": 2,
+   "mode": "stub"
+  },
+  {
+   "unit": 194,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-cxusb-cardlist.md",
+   "pr": 0.011,
+   "fences": 0,
+   "strict_ew": 63,
+   "mode": "full"
+  },
+  {
+   "unit": 194,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\RCU/index.md",
+   "pr": 0.006,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 194,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-usb-dibusb-mc-cardlist.md",
+   "pr": 0.017,
+   "fences": 0,
+   "strict_ew": 53,
+   "mode": "full"
+  },
+  {
+   "unit": 194,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\i2c/busses/index.md",
+   "pr": 0.028,
+   "fences": 0,
+   "strict_ew": 2,
+   "mode": "stub"
+  },
+  {
+   "unit": 194,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/au0828-cardlist.md",
+   "pr": 0.025,
+   "fences": 0,
+   "strict_ew": 21,
+   "mode": "full"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/cec/cec-funcs.md",
+   "pr": 0.008,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/sdr-formats.md",
+   "pr": 0.03,
+   "fences": 0,
+   "strict_ew": 2,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/devices.md",
+   "pr": 0.005,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/index.md",
+   "pr": 0.005,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\PCI/index.md",
+   "pr": 0.014,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/cxl/platform/example-configs.md",
+   "pr": 0.017,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/thermal/index.md",
+   "pr": 0.008,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/selection-api.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/cgroup-v1/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\devicetree/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/abi.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/s390/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/laptops/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/pm/working-state.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\watchdog/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\hid/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/riscv/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/ca_function_calls.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/x86/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\sound/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/nfs/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\livepatch/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/xfs/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\security/tpm/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/device_drivers/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/devices/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/nfs/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\input/input_uapi.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/surface_aggregator/client-api.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\doc-guide/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/x86/x86_64/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/iio/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 5,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/net_cachelines/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\spi/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/driver-model/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\staging/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\w1/slaves/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\crypto/api.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/device_drivers/can/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 6,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/gpio/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/firmware/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/media/dvb-drivers.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/arm/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/gpio/obsolete.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\fault-injection/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/control-dependencies.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/driver-uapi.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/herd-representation.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/readme.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/device_drivers/ethernet/freescale/dpaa2/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\infiniband/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/access-marking.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/fpga/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/mmc/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/litmus-tests.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/explanation.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/cheatsheet.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/references.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/mei/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 4,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/fuse/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\sound/hd-audio/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\timers/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\devicetree/bindings/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/soundwire/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/glossary.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/ordering.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/firmware/efi/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\usb/text_files.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/locking.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/recipes.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/blockdev/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\accounting/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/docs/simple.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\tools/kabi.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/80211/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/dsa/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\core-api/irq/index.md",
+   "pr": 0.012,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/surface_aggregator/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\w1/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\w1/masters/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/pci/tsm.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/implementation_guidelines.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\accel/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\dev-tools/lkmm/readme.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 3,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/hyperv/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\input/input_kapi.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/hte/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/serial/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\wmi/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/loongarch/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/nvdimm/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/rapidio/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/xe/xe_rtp.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\virt/kvm/s390/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\core-api/generic-radix-tree.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\netlabel/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\tools/kdoc_output.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 4,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\networking/xfrm/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\nvme/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/caching/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/nwfpe/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/i3c/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/ext4/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\security/keys/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\input/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/pm/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/xe/xe_pcode.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/sparc/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/drivers/vimc-devel.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/component.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\tee/index.md",
+   "pr": 0.03,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/sa1100/index.md",
+   "pr": 0.019,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/libv4l.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/virtio/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\crypto/device_drivers/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/coco/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\filesystems/smb/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/backlight.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/drivers/frontends.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/slab.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arm/omap/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/v4l/capture-example.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\bpf/test_debug.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/tty/tty_ioctl.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-mc.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-mem2mem.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-videobuf2.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/arc/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-tveeprom.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/coco/measurement-registers.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\sound/codecs/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\target/scripts.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-mediabus.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/xe/xe_device.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-common.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-flash-led-class.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\cdrom/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mhi/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\netlink/specs/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\scheduler/text_files.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-tuner.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\scsi/scsi_transport_srp/figures.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\trace/coresight/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/xe/xe_migrate.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\security/secrets/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/vmalloc.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/abi-obsolete-files.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 2,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/dtv-ca.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/abi-removed-files.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 2,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/abi-removed.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 2,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/abi-testing-files.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 2,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\arch/x86/i386/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/i3c/master-driver-api.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/pm/types.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\admin-guide/abi-stable-files.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 2,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/misc_devices.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\peci/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-rect.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/xe/xe_map.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-dv-timings.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/xilinx/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/dtv-net.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/dmx_types.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/frontend-header.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/i3c/device-driver-api.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/shmfs.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/net-types.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\userspace-api/media/dvb/ca_data_types.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/oom.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\sphinx-includes/subproject-index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 1,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\fpga/index.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/amdgpu/xgmi.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\crypto/libcrypto-utils.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-fwnode.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-async.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\driver-api/media/v4l2-cci.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/page_allocation.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/page_reclaim.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\gpu/xe/xe_debugging.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/bootmem.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  },
+  {
+   "unit": 195,
+   "path": "D:/WORKSPACE/linux-7.1.3/docs/系统文档\\mm/swap.md",
+   "pr": 0.0,
+   "fences": 0,
+   "strict_ew": 0,
+   "mode": "stub"
+  }
+ ]
+}

@@ -1,0 +1,16 @@
+
+######## V4L2_PIX_FMT_SBGGR10ALAW8 ('aBA8'), V4L2_PIX_FMT_SGBRG10ALAW8 ('aGA8'), V4L2_PIX_FMT_SGRBG10ALAW8 ('agA8'), V4L2_PIX_FMT_SRGGB10ALAW8 ('aRA8'),
+
+
+V4L2_PIX_FMT_SGBRG10ALAW8
+V4L2_PIX_FMT_SGRBG10ALAW8
+V4L2_PIX_FMT_SRGGB10ALAW8
+压缩为 8 位的 10 位 Bayer 格式
+
+
+## 描述
+
+
+这四种像素格式是原始 sRGB / Bayer 格式，每种颜色 10 位，使用 A-LAW 算法
+压缩为各 8 位。每个颜色分量占用 8 位内存。在其他方面，该格式与
+V4L2-PIX-FMT-SRGGB8 类似。

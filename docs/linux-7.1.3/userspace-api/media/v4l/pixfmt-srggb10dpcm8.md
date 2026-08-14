@@ -1,0 +1,15 @@
+######## V4L2_PIX_FMT_SBGGR10DPCM8 ('bBA8'), V4L2_PIX_FMT_SGBRG10DPCM8 ('bGA8'), V4L2_PIX_FMT_SGRBG10DPCM8 ('BD10'), V4L2_PIX_FMT_SRGGB10DPCM8 ('bRA8'),
+
+
+**man V4L2_PIX_FMT_SBGGR10DPCM8(2)**
+
+V4L2_PIX_FMT_SGBRG10DPCM8
+V4L2_PIX_FMT_SGRBG10DPCM8
+V4L2_PIX_FMT_SRGGB10DPCM8
+10-bit Bayer 格式压缩至 8 位
+
+
+## Description
+
+
+这四种像素格式是每颜色 10 位的原始 sRGB / Bayer 格式，使用 DPCM 压缩算法压缩到每个分量 8 位。DPCM（差分脉冲编码调制）是有损的。每个颜色分量占用 8 位内存。在其他方面，该格式与 V4L2-PIX-FMT-SRGGB10 类似。
