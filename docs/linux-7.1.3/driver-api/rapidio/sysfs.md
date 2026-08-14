@@ -1,8 +1,8 @@
-## Sysfs 条目
+﻿## Sysfs 鏉＄洰
 
-本页说明 RapidIO 子系统的 sysfs 接口条目，指出相关属性文件已迁移至内核 ABI 文档（sysfs-bus-rapidio 与 sysfs-class-rapidio），供需要查阅 RapidIO 设备与总线 sysfs 属性的开发者定位最新定义。
+鏈〉璇存槑 RapidIO 瀛愮郴缁熺殑 sysfs 鎺ュ彛鏉＄洰锛屾寚鍑虹浉鍏冲睘鎬ф枃浠跺凡杩佺Щ鑷冲唴鏍?ABI 鏂囨。锛坰ysfs-bus-rapidio 涓?sysfs-class-rapidio锛夛紝渚涢渶瑕佹煡闃?RapidIO 璁惧涓庢€荤嚎 sysfs 灞炴€х殑寮€鍙戣€呭畾浣嶆渶鏂板畾涔夈€?
 
 
 
-RapidIO 的 sysfs 文件已迁移至：Documentation/ABI/testing/sysfs-bus-rapidio 与
+RapidIO 鐨?sysfs 鏂囦欢宸茶縼绉昏嚦锛欴ocumentation/ABI/testing/sysfs-bus-rapidio 涓?
 Documentation/ABI/testing/sysfs-class-rapidio

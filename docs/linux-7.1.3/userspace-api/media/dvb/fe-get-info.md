@@ -1,11 +1,10 @@
-######## ioctl FE_GET_INFO
+﻿######## ioctl FE_GET_INFO
 
 
 ## Name
 
 
-FE_GET_INFO - 查询数字电视前端（front-end）的能力并返回有关前端的信息。该调用仅需要对设备具有只读访问权限。
-
+FE_GET_INFO - 鏌ヨ鏁板瓧鐢佃鍓嶇锛坒ront-end锛夌殑鑳藉姏骞惰繑鍥炴湁鍏冲墠绔殑淇℃伅銆傝璋冪敤浠呴渶瑕佸璁惧鍏锋湁鍙璁块棶鏉冮檺銆?
 ## Synopsis
 
 
@@ -15,28 +14,21 @@ FE_GET_INFO - 查询数字电视前端（front-end）的能力并返回有关前
 
 
 `fd`
-    `open()` 返回的文件描述符。
-
+    `open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `argp`
-    指向 struct `dvb_frontend_info` 的指针。
-
+    鎸囧悜 struct `dvb_frontend_info` 鐨勬寚閽堛€?
 ## Description
 
 
-所有数字电视（Digital TV）前端设备都支持 FE_GET_INFO ioctl。它用于识别与此规范兼容的内核设备，并获取有关驱动程序和硬件能力的信息。该 ioctl 接收一个指向 dvb_frontend_info 的指针，由驱动程序填充。当驱动程序与此规范不兼容时，该 ioctl 返回错误。
-
+鎵€鏈夋暟瀛楃數瑙嗭紙Digital TV锛夊墠绔澶囬兘鏀寔 FE_GET_INFO ioctl銆傚畠鐢ㄤ簬璇嗗埆涓庢瑙勮寖鍏煎鐨勫唴鏍歌澶囷紝骞惰幏鍙栨湁鍏抽┍鍔ㄧ▼搴忓拰纭欢鑳藉姏鐨勪俊鎭€傝 ioctl 鎺ユ敹涓€涓寚鍚?dvb_frontend_info 鐨勬寚閽堬紝鐢遍┍鍔ㄧ▼搴忓～鍏呫€傚綋椹卞姩绋嬪簭涓庢瑙勮寖涓嶅吋瀹规椂锛岃 ioctl 杩斿洖閿欒銆?
 ## frontend capabilities
 
 
-能力（capabilities）描述了前端能够执行的操作。某些能力仅在特定类型的前端上受支持。
-
-前端能力在 `fe_caps` 中描述。
-
+鑳藉姏锛坈apabilities锛夋弿杩颁簡鍓嶇鑳藉鎵ц鐨勬搷浣溿€傛煇浜涜兘鍔涗粎鍦ㄧ壒瀹氱被鍨嬬殑鍓嶇涓婂彈鏀寔銆?
+鍓嶇鑳藉姏鍦?`fe_caps` 涓弿杩般€?
 ## Return Value
 
 
-成功时返回 0。
-
-出错时返回 -1，并相应地设置 `errno` 变量。
-
-通用错误码在 Generic Error Codes <gen-errors> 章节中描述。
+鎴愬姛鏃惰繑鍥?0銆?
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?

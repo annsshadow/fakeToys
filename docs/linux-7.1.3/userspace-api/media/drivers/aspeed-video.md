@@ -1,57 +1,40 @@
+﻿
 
 
+## ASPEED 瑙嗛椹卞姩
 
-## ASPEED 视频驱动
 
-
-AST2400/2500/2600 SoC 上的 ASPEED 视频引擎（Video Engine）支持高性能视频压缩，
-具有广泛的视频质量和压缩比选项。所采用的压缩算法是一种修改过的 JPEG 算法。
-
-该 IP 中有两种类型的压缩。
-
-- JPEG JFIF 标准模式：用于单帧和管理压缩
-- ASPEED 专有模式：用于多帧和差分压缩。
-  支持 2-pass（高质量）视频压缩方案（ASPEED 专利申请中）。
-  提供视觉无损的视频压缩质量，或在内部网 KVM 应用中降低网络平均负载。
-
-VIDIOC_S_FMT 可用于选择你想要的格式。V4L2_PIX_FMT_JPEG
-代表 JPEG JFIF 标准模式；V4L2_PIX_FMT_AJPG 代表 ASPEED 专有模式。
-
-关于 ASPEED 视频硬件操作的更多细节，可在 `github <https://github.com/AspeedTech-BMC/openbmc/releases/>`__ 上提供的 SDK_User_Guide 的 **第 6.2.16 节 KVM Video Driver** 中找到。
-
-ASPEED 视频驱动实现了以下驱动特定的控制：
-
+AST2400/2500/2600 SoC 涓婄殑 ASPEED 瑙嗛寮曟搸锛圴ideo Engine锛夋敮鎸侀珮鎬ц兘瑙嗛鍘嬬缉锛?鍏锋湁骞挎硾鐨勮棰戣川閲忓拰鍘嬬缉姣旈€夐」銆傛墍閲囩敤鐨勫帇缂╃畻娉曟槸涓€绉嶄慨鏀硅繃鐨?JPEG 绠楁硶銆?
+璇?IP 涓湁涓ょ绫诲瀷鐨勫帇缂┿€?
+- JPEG JFIF 鏍囧噯妯″紡锛氱敤浜庡崟甯у拰绠＄悊鍘嬬缉
+- ASPEED 涓撴湁妯″紡锛氱敤浜庡甯у拰宸垎鍘嬬缉銆?  鏀寔 2-pass锛堥珮璐ㄩ噺锛夎棰戝帇缂╂柟妗堬紙ASPEED 涓撳埄鐢宠涓級銆?  鎻愪緵瑙嗚鏃犳崯鐨勮棰戝帇缂╄川閲忥紝鎴栧湪鍐呴儴缃?KVM 搴旂敤涓檷浣庣綉缁滃钩鍧囪礋杞姐€?
+VIDIOC_S_FMT 鍙敤浜庨€夋嫨浣犳兂瑕佺殑鏍煎紡銆俈4L2_PIX_FMT_JPEG
+浠ｈ〃 JPEG JFIF 鏍囧噯妯″紡锛沄4L2_PIX_FMT_AJPG 浠ｈ〃 ASPEED 涓撴湁妯″紡銆?
+鍏充簬 ASPEED 瑙嗛纭欢鎿嶄綔鐨勬洿澶氱粏鑺傦紝鍙湪 `github <https://github.com/AspeedTech-BMC/openbmc/releases/>`__ 涓婃彁渚涚殑 SDK_User_Guide 鐨?**绗?6.2.16 鑺?KVM Video Driver** 涓壘鍒般€?
+ASPEED 瑙嗛椹卞姩瀹炵幇浜嗕互涓嬮┍鍔ㄧ壒瀹氱殑鎺у埗锛?
 ### ``V4L2_CID_ASPEED_HQ_MODE``
 
-    启用/禁用 ASPEED 的高质量模式。这是一个私有控制，
-    可用于为 ASPEED 专有模式启用高质量。
-
+    鍚敤/绂佺敤 ASPEED 鐨勯珮璐ㄩ噺妯″紡銆傝繖鏄竴涓鏈夋帶鍒讹紝
+    鍙敤浜庝负 ASPEED 涓撴湁妯″紡鍚敤楂樿川閲忋€?
     :header-rows:  0
     :stub-columns: 0
     :widths:       1 4
 
     - - `(0)`
-      - ASPEED HQ 模式已禁用。
-    - - `(1)`
-      - ASPEED HQ 模式已启用。
-
+      - ASPEED HQ 妯″紡宸茬鐢ㄣ€?    - - `(1)`
+      - ASPEED HQ 妯″紡宸插惎鐢ㄣ€?
 ### ``V4L2_CID_ASPEED_HQ_JPEG_QUALITY``
 
-    定义 ASPEED 高质量模式的质量。这是一个私有控制，
-    如果启用了高质量模式，可用于决定压缩质量。
-    值越大，质量越好，体积也越大。
-
+    瀹氫箟 ASPEED 楂樿川閲忔ā寮忕殑璐ㄩ噺銆傝繖鏄竴涓鏈夋帶鍒讹紝
+    濡傛灉鍚敤浜嗛珮璐ㄩ噺妯″紡锛屽彲鐢ㄤ簬鍐冲畾鍘嬬缉璐ㄩ噺銆?    鍊艰秺澶э紝璐ㄩ噺瓒婂ソ锛屼綋绉篃瓒婂ぇ銆?
     :header-rows:  0
     :stub-columns: 0
     :widths:       1 4
 
     - - `(1)`
-      - 最小值
-    - - `(12)`
-      - 最大值
+      - 鏈€灏忓€?    - - `(12)`
+      - 鏈€澶у€?    - - `(1)`
+      - 姝ラ暱
     - - `(1)`
-      - 步长
-    - - `(1)`
-      - 默认值
-
+      - 榛樿鍊?
 **Copyright** |copy| 2022 ASPEED Technology Inc.

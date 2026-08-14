@@ -1,51 +1,51 @@
-## Freezing 的 tasks
+﻿锘?# Freezing 鐨?tasks
 
 
 (C) 2007 Rafael J. Wysocki <rjw@sisk.pl>, GPL
 
-## I. 什么 是 the freezing 的 tasks?
+## I. 浠€涔?鏄?the freezing 鐨?tasks?
 
 
-The freezing 的 tasks 是 一个 mechanism 由 其 用户空间 进程 和 一些
-内核 线程 是 controlled 期间 hibernation 或 system-wide suspend (在 一些
+The freezing 鐨?tasks 鏄?涓€涓?mechanism 鐢?鍏?鐢ㄦ埛绌洪棿 杩涚▼ 鍜?涓€浜?
+鍐呮牳 绾跨▼ 鏄?controlled 鏈熼棿 hibernation 鎴?system-wide suspend (鍦?涓€浜?
 architectures).
 
-## II. 如何 执行 它 work?
+## II. 濡備綍 鎵ц 瀹?work?
 
 
-存在 one per-task 标志 (PF_NOFREEZE) 和 three per-task states
-(TASK_FROZEN, TASK_FREEZABLE 和 __TASK_FREEZABLE_UNSAFE) 使用 用于 该.
-The tasks 该 具有 PF_NOFREEZE unset (全部 用户空间 tasks 和 一些 内核
-线程) 是 regarded 作为 'freezable' 和 treated 在 一个 特殊 way 之前 the
-系统 enters 一个 sleep 状态 以及 之前 一个 hibernation image 是 已创建
-(hibernation 是 directly covered 由 什么 follows, 但 the description applies
-到 system-wide suspend too).
+瀛樺湪 one per-task 鏍囧織 (PF_NOFREEZE) 鍜?three per-task states
+(TASK_FROZEN, TASK_FREEZABLE 鍜?__TASK_FREEZABLE_UNSAFE) 浣跨敤 鐢ㄤ簬 璇?
+The tasks 璇?鍏锋湁 PF_NOFREEZE unset (鍏ㄩ儴 鐢ㄦ埛绌洪棿 tasks 鍜?涓€浜?鍐呮牳
+绾跨▼) 鏄?regarded 浣滀负 'freezable' 鍜?treated 鍦?涓€涓?鐗规畩 way 涔嬪墠 the
+绯荤粺 enters 涓€涓?sleep 鐘舵€?浠ュ強 涔嬪墠 涓€涓?hibernation image 鏄?宸插垱寤?
+(hibernation 鏄?directly covered 鐢?浠€涔?follows, 浣?the description applies
+鍒?system-wide suspend too).
 
-Namely, 作为 the 第一 step 的 the hibernation procedure the 函数
-freeze_进程() (定义 在 内核/电源/进程.c) 是 called.  一个 system-wide
-静态 key freezer_active (相对于 一个 per-task 标志 或 状态) 是 使用 到
-indicate 是否 the 系统 是 到 undergo 一个 freezing 操作. 和
-freeze_进程() sets 此 静态 key.  之后 此, 它 executes
-try_到_freeze_tasks() 该 sends 一个 fake 信号 到 全部 用户空间 进程, 和
-wakes up 全部 the 内核 线程. 全部 freezable tasks 必须 react 到 该 由
-calling try_到_freeze(), 其 results 在 一个 call 到 __refrigerator() (定义
-在 内核/freezer.c), 其 changes the task's 状态 到 TASK_FROZEN, 和 makes
-它 loop 直到 它是 woken 由 一个 explicit TASK_FROZEN wakeup. 然后, 该 task
-是 regarded 作为 'frozen' 和 因此 the set 的 函数 handling 此 mechanism 是
-referred 到 作为 'the freezer' (这些 函数 是 定义 在
-内核/电源/进程.c, 内核/freezer.c & 包含/linux/freezer.h). 用户空间
-tasks 是 generally frozen 之前 内核 线程.
+Namely, 浣滀负 the 绗竴 step 鐨?the hibernation procedure the 鍑芥暟
+freeze_杩涚▼() (瀹氫箟 鍦?鍐呮牳/鐢垫簮/杩涚▼.c) 鏄?called.  涓€涓?system-wide
+闈欐€?key freezer_active (鐩稿浜?涓€涓?per-task 鏍囧織 鎴?鐘舵€? 鏄?浣跨敤 鍒?
+indicate 鏄惁 the 绯荤粺 鏄?鍒?undergo 涓€涓?freezing 鎿嶄綔. 鍜?
+freeze_杩涚▼() sets 姝?闈欐€?key.  涔嬪悗 姝? 瀹?executes
+try_鍒癬freeze_tasks() 璇?sends 涓€涓?fake 淇″彿 鍒?鍏ㄩ儴 鐢ㄦ埛绌洪棿 杩涚▼, 鍜?
+wakes up 鍏ㄩ儴 the 鍐呮牳 绾跨▼. 鍏ㄩ儴 freezable tasks 蹇呴』 react 鍒?璇?鐢?
+calling try_鍒癬freeze(), 鍏?results 鍦?涓€涓?call 鍒?__refrigerator() (瀹氫箟
+鍦?鍐呮牳/freezer.c), 鍏?changes the task's 鐘舵€?鍒?TASK_FROZEN, 鍜?makes
+瀹?loop 鐩村埌 瀹冩槸 woken 鐢?涓€涓?explicit TASK_FROZEN wakeup. 鐒跺悗, 璇?task
+鏄?regarded 浣滀负 'frozen' 鍜?鍥犳 the set 鐨?鍑芥暟 handling 姝?mechanism 鏄?
+referred 鍒?浣滀负 'the freezer' (杩欎簺 鍑芥暟 鏄?瀹氫箟 鍦?
+鍐呮牳/鐢垫簮/杩涚▼.c, 鍐呮牳/freezer.c & 鍖呭惈/linux/freezer.h). 鐢ㄦ埛绌洪棿
+tasks 鏄?generally frozen 涔嬪墠 鍐呮牳 绾跨▼.
 
-__refrigerator() 必须 不 为 called directly.  改为, 使用 the
-try_到_freeze() 函数 (定义 在 包含/linux/freezer.h), 该 checks
-若 the task 是 到 为 frozen 和 makes the task enter __refrigerator().
+__refrigerator() 蹇呴』 涓?涓?called directly.  鏀逛负, 浣跨敤 the
+try_鍒癬freeze() 鍑芥暟 (瀹氫箟 鍦?鍖呭惈/linux/freezer.h), 璇?checks
+鑻?the task 鏄?鍒?涓?frozen 鍜?makes the task enter __refrigerator().
 
-用于 用户空间 进程 try_到_freeze() 是 called automatically 来自 the
-signal-handling code, 但 the freezable 内核 线程 需要 到 call 它
-explicitly 在 suitable places 或 使用 the wait_事件_freezable() 或
-wait_事件_freezable_超时() macros (定义 在 包含/linux/wait.h)
-该 put the task 到 sleep (TASK_INTERRUPTIBLE) 或 freeze 它 (TASK_FROZEN) 若
-freezer_active 是 set. The 主要 loop 的 一个 freezable 内核 线程 可 look
+鐢ㄤ簬 鐢ㄦ埛绌洪棿 杩涚▼ try_鍒癬freeze() 鏄?called automatically 鏉ヨ嚜 the
+signal-handling code, 浣?the freezable 鍐呮牳 绾跨▼ 闇€瑕?鍒?call 瀹?
+explicitly 鍦?suitable places 鎴?浣跨敤 the wait_浜嬩欢_freezable() 鎴?
+wait_浜嬩欢_freezable_瓒呮椂() macros (瀹氫箟 鍦?鍖呭惈/linux/wait.h)
+璇?put the task 鍒?sleep (TASK_INTERRUPTIBLE) 鎴?freeze 瀹?(TASK_FROZEN) 鑻?
+freezer_active 鏄?set. The 涓昏 loop 鐨?涓€涓?freezable 鍐呮牳 绾跨▼ 鍙?look
 ```
 
 	set_freezable();
@@ -66,192 +66,192 @@ freezer_active 是 set. The 主要 loop 的 一个 freezable 内核 线程 可 l
 	}
 
 ```
-**(来自 mm/oom_kill.c**
+**(鏉ヨ嚜 mm/oom_kill.c**
 : oom_reaper()).
 
-若 一个 freezable 内核 线程 是 不 put 到 the frozen 状态 之后 the freezer
-具有 initiated 一个 freezing 操作, the freezing 的 tasks 将 fail 和 the
-entire system-wide transition 将 为 cancelled.  用于 此 reason, freezable
-内核 线程 必须 call try_到_freeze() somewhere 或 使用 one 的 the
-wait_事件_freezable() 和 wait_事件_freezable_超时() macros.
+鑻?涓€涓?freezable 鍐呮牳 绾跨▼ 鏄?涓?put 鍒?the frozen 鐘舵€?涔嬪悗 the freezer
+鍏锋湁 initiated 涓€涓?freezing 鎿嶄綔, the freezing 鐨?tasks 灏?fail 鍜?the
+entire system-wide transition 灏?涓?cancelled.  鐢ㄤ簬 姝?reason, freezable
+鍐呮牳 绾跨▼ 蹇呴』 call try_鍒癬freeze() somewhere 鎴?浣跨敤 one 鐨?the
+wait_浜嬩欢_freezable() 鍜?wait_浜嬩欢_freezable_瓒呮椂() macros.
 
-之后 the 系统 内存 状态 具有 已经 restored 来自 一个 hibernation image 和
-设备 具有 已经 reinitialized, the 函数 thaw_进程() 是 called 在
-order 到 wake up 每个 frozen task.  然后, the tasks 该 具有 已经 frozen leave
-__refrigerator() 和 continue 运行中.
-
-
-### Rationale behind the 函数 dealing 与 freezing 和 thawing 的 tasks
+涔嬪悗 the 绯荤粺 鍐呭瓨 鐘舵€?鍏锋湁 宸茬粡 restored 鏉ヨ嚜 涓€涓?hibernation image 鍜?
+璁惧 鍏锋湁 宸茬粡 reinitialized, the 鍑芥暟 thaw_杩涚▼() 鏄?called 鍦?
+order 鍒?wake up 姣忎釜 frozen task.  鐒跺悗, the tasks 璇?鍏锋湁 宸茬粡 frozen leave
+__refrigerator() 鍜?continue 杩愯涓?
 
 
-freeze_进程():
-  - freezes 仅 userspace tasks
-
-freeze_内核_线程():
-  - freezes 全部 tasks (including 内核 线程) 因为 我们可以't freeze
-    内核 线程 无 freezing userspace tasks
-
-thaw_内核_线程():
-  - thaws 仅 内核 线程; 这是 particularly useful 若 我们 需要 到 执行
-    anything 特殊 在 之间 thawing 的 内核 线程 和 thawing 的
-    userspace tasks, 或 若 我们 希望 到 postpone the thawing 的 userspace tasks
-
-thaw_进程():
-  - thaws 全部 tasks (including 内核 线程) 因为 我们可以't thaw userspace
-    tasks 无 thawing 内核 线程
+### Rationale behind the 鍑芥暟 dealing 涓?freezing 鍜?thawing 鐨?tasks
 
 
-## III. 其 内核 线程 是 freezable?
+freeze_杩涚▼():
+  - freezes 浠?userspace tasks
+
+freeze_鍐呮牳_绾跨▼():
+  - freezes 鍏ㄩ儴 tasks (including 鍐呮牳 绾跨▼) 鍥犱负 鎴戜滑鍙互't freeze
+    鍐呮牳 绾跨▼ 鏃?freezing userspace tasks
+
+thaw_鍐呮牳_绾跨▼():
+  - thaws 浠?鍐呮牳 绾跨▼; 杩欐槸 particularly useful 鑻?鎴戜滑 闇€瑕?鍒?鎵ц
+    anything 鐗规畩 鍦?涔嬮棿 thawing 鐨?鍐呮牳 绾跨▼ 鍜?thawing 鐨?
+    userspace tasks, 鎴?鑻?鎴戜滑 甯屾湜 鍒?postpone the thawing 鐨?userspace tasks
+
+thaw_杩涚▼():
+  - thaws 鍏ㄩ儴 tasks (including 鍐呮牳 绾跨▼) 鍥犱负 鎴戜滑鍙互't thaw userspace
+    tasks 鏃?thawing 鍐呮牳 绾跨▼
 
 
-内核 线程 是 不 freezable 默认情况下.  然而, 一个 内核 线程 可 clear
-PF_NOFREEZE 用于 itself 由 calling set_freezable() (the resetting 的 PF_NOFREEZE
-directly 是 不 allowed).  来自 此 point 它是 regarded 作为 freezable
-和 必须 call try_到_freeze() 或 variants 的 wait_事件_freezable() 在 一个
+## III. 鍏?鍐呮牳 绾跨▼ 鏄?freezable?
+
+
+鍐呮牳 绾跨▼ 鏄?涓?freezable 榛樿鎯呭喌涓?  鐒惰€? 涓€涓?鍐呮牳 绾跨▼ 鍙?clear
+PF_NOFREEZE 鐢ㄤ簬 itself 鐢?calling set_freezable() (the resetting 鐨?PF_NOFREEZE
+directly 鏄?涓?allowed).  鏉ヨ嚜 姝?point 瀹冩槸 regarded 浣滀负 freezable
+鍜?蹇呴』 call try_鍒癬freeze() 鎴?variants 鐨?wait_浜嬩欢_freezable() 鍦?涓€涓?
 suitable place.
 
-## IV. 为何 执行 我们 执行 该?
+## IV. 涓轰綍 鎵ц 鎴戜滑 鎵ц 璇?
 
 
-Generally speaking, 存在 一个 couple 的 reasons 到 使用 the freezing 的 tasks:
+Generally speaking, 瀛樺湪 涓€涓?couple 鐨?reasons 鍒?浣跨敤 the freezing 鐨?tasks:
 
-1. The principal reason 是 到 prevent 文件系统 来自 正在 damaged 之后
-   hibernation.  在 the moment 我们 具有 无 简单 means 的 checkpointing
-   文件系统, 因此 若 存在 任何 modifications made 到 文件系统 数据 和/或
-   metadata 在 disks, 我们 cannot bring them back 到 the 状态 来自 之前 the
-   modifications.  同时 每个 hibernation image 包含 一些
-   filesystem-related information 该 必须 为 consistent 与 the 状态 的 the
-   on-disk 数据 和 metadata 之后 the 系统 内存 状态 具有 已经 restored
-   来自 the image (否则 the 文件系统 将 为 damaged 在 一个 nasty way,
-   通常 making them almost impossible 到 repair).  我们 因此 freeze
-   tasks 该 可能 cause the on-disk 文件系统' 数据 和 metadata 到 为
-   modified 之后 the hibernation image 具有 已经 已创建 和 之前 the
-   系统 是 finally powered off. The majority 的 这些 是 用户空间
-   进程, 但 若 任何 的 the 内核 线程 可 cause something 类似 此
-   到 happen, 它们 具有 到 为 freezable.
+1. The principal reason 鏄?鍒?prevent 鏂囦欢绯荤粺 鏉ヨ嚜 姝ｅ湪 damaged 涔嬪悗
+   hibernation.  鍦?the moment 鎴戜滑 鍏锋湁 鏃?绠€鍗?means 鐨?checkpointing
+   鏂囦欢绯荤粺, 鍥犳 鑻?瀛樺湪 浠讳綍 modifications made 鍒?鏂囦欢绯荤粺 鏁版嵁 鍜?鎴?
+   metadata 鍦?disks, 鎴戜滑 cannot bring them back 鍒?the 鐘舵€?鏉ヨ嚜 涔嬪墠 the
+   modifications.  鍚屾椂 姣忎釜 hibernation image 鍖呭惈 涓€浜?
+   filesystem-related information 璇?蹇呴』 涓?consistent 涓?the 鐘舵€?鐨?the
+   on-disk 鏁版嵁 鍜?metadata 涔嬪悗 the 绯荤粺 鍐呭瓨 鐘舵€?鍏锋湁 宸茬粡 restored
+   鏉ヨ嚜 the image (鍚﹀垯 the 鏂囦欢绯荤粺 灏?涓?damaged 鍦?涓€涓?nasty way,
+   閫氬父 making them almost impossible 鍒?repair).  鎴戜滑 鍥犳 freeze
+   tasks 璇?鍙兘 cause the on-disk 鏂囦欢绯荤粺' 鏁版嵁 鍜?metadata 鍒?涓?
+   modified 涔嬪悗 the hibernation image 鍏锋湁 宸茬粡 宸插垱寤?鍜?涔嬪墠 the
+   绯荤粺 鏄?finally powered off. The majority 鐨?杩欎簺 鏄?鐢ㄦ埛绌洪棿
+   杩涚▼, 浣?鑻?浠讳綍 鐨?the 鍐呮牳 绾跨▼ 鍙?cause something 绫讳技 姝?
+   鍒?happen, 瀹冧滑 鍏锋湁 鍒?涓?freezable.
 
-2. 接下来, 到 创建 the hibernation image 我们 需要 到 free 一个 sufficient amount 的
-   内存 (approximately 50% 的 可用 RAM) 和 我们 需要 到 执行 该 之前
-   设备 是 deactivated, 因为 我们 generally 需要 them 用于 swapping out.
-   然后, 之后 the 内存 用于 the image 具有 已经 freed, 我们 don't 希望 tasks
-   到 allocate 额外 内存 和 我们 prevent them 来自 doing 该 由
-   freezing them 更早. [的 course, 此 也 means 该 设备 驱动
-   应当 不 allocate substantial amounts 的 内存 来自 它们的 .suspend()
-   callbacks 之前 hibernation, 但 这是 一个 separate issue.]
+2. 鎺ヤ笅鏉? 鍒?鍒涘缓 the hibernation image 鎴戜滑 闇€瑕?鍒?free 涓€涓?sufficient amount 鐨?
+   鍐呭瓨 (approximately 50% 鐨?鍙敤 RAM) 鍜?鎴戜滑 闇€瑕?鍒?鎵ц 璇?涔嬪墠
+   璁惧 鏄?deactivated, 鍥犱负 鎴戜滑 generally 闇€瑕?them 鐢ㄤ簬 swapping out.
+   鐒跺悗, 涔嬪悗 the 鍐呭瓨 鐢ㄤ簬 the image 鍏锋湁 宸茬粡 freed, 鎴戜滑 don't 甯屾湜 tasks
+   鍒?allocate 棰濆 鍐呭瓨 鍜?鎴戜滑 prevent them 鏉ヨ嚜 doing 璇?鐢?
+   freezing them 鏇存棭. [鐨?course, 姝?涔?means 璇?璁惧 椹卞姩
+   搴斿綋 涓?allocate substantial amounts 鐨?鍐呭瓨 鏉ヨ嚜 瀹冧滑鐨?.suspend()
+   callbacks 涔嬪墠 hibernation, 浣?杩欐槸 涓€涓?separate issue.]
 
-3. The third reason 是 到 prevent 用户空间 进程 和 一些 内核 线程
-   来自 interfering 与 the suspending 和 resuming 的 设备.  一个 用户空间
-   进程 运行中 在 一个 second CPU 同时 我们 是 suspending 设备 可, 用于
-   示例, 为 troublesome 和 无 the freezing 的 tasks 我们 将会 需要 一些
-   safeguards against race conditions 该 可能 occur 在 此类 一个 case.
+3. The third reason 鏄?鍒?prevent 鐢ㄦ埛绌洪棿 杩涚▼ 鍜?涓€浜?鍐呮牳 绾跨▼
+   鏉ヨ嚜 interfering 涓?the suspending 鍜?resuming 鐨?璁惧.  涓€涓?鐢ㄦ埛绌洪棿
+   杩涚▼ 杩愯涓?鍦?涓€涓?second CPU 鍚屾椂 鎴戜滑 鏄?suspending 璁惧 鍙? 鐢ㄤ簬
+   绀轰緥, 涓?troublesome 鍜?鏃?the freezing 鐨?tasks 鎴戜滑 灏嗕細 闇€瑕?涓€浜?
+   safeguards against race conditions 璇?鍙兘 occur 鍦?姝ょ被 涓€涓?case.
 
-尽管 Linus Torvalds doesn't 类似 the freezing 的 tasks, he said 此 在 one
-的 the discussions 在 LKML (https://lore.kernel.org/r/alpine.LFD.0.98.0704271801020.9964@woody.linux-foundation.org):
+灏界 Linus Torvalds doesn't 绫讳技 the freezing 鐨?tasks, he said 姝?鍦?one
+鐨?the discussions 鍦?LKML (https://lore.kernel.org/r/alpine.LFD.0.98.0704271801020.9964@woody.linux-foundation.org):
 
-"RJW:> 为何 我们 freeze tasks 在 全部 或 为何 我们 freeze 内核 线程?
+"RJW:> 涓轰綍 鎴戜滑 freeze tasks 鍦?鍏ㄩ儴 鎴?涓轰綍 鎴戜滑 freeze 鍐呮牳 绾跨▼搴?
 
-Linus: 在 许多 ways, '在 全部'.
+Linus: 鍦?璁稿 ways, '鍦?鍏ㄩ儴'.
 
-I **执行** realize the IO 请求 队列 issues, 和 该 我们 cannot actually 执行
-s2ram 与 一些 设备 在 the middle 的 一个 DMA.  因此 我们 希望 到 为 able 到
-avoid **该**, 那里's 无 question 关于 该.  和 I suspect 该 stopping
-用户 线程 和 然后 waiting 用于 一个 sync 是 practically one 的 the easier
-ways 到 执行 因此.
+I **鎵ц** realize the IO 璇锋眰 闃熷垪 issues, 鍜?璇?鎴戜滑 cannot actually 鎵ц
+s2ram 涓?涓€浜?璁惧 鍦?the middle 鐨?涓€涓?DMA.  鍥犳 鎴戜滑 甯屾湜 鍒?涓?able 鍒?
+avoid **璇?*, 閭ｉ噷's 鏃?question 鍏充簬 璇?  鍜?I suspect 璇?stopping
+鐢ㄦ埛 绾跨▼ 鍜?鐒跺悗 waiting 鐢ㄤ簬 涓€涓?sync 鏄?practically one 鐨?the easier
+ways 鍒?鎵ц 鍥犳.
 
-因此 在 practice, the '在 全部' 可 become 一个 '为何 freeze 内核 线程?' 和
-freezing 用户 线程 I don't find really objectionable."
+鍥犳 鍦?practice, the '鍦?鍏ㄩ儴' 鍙?become 涓€涓?'涓轰綍 freeze 鍐呮牳 绾跨▼搴? 鍜?
+freezing 鐢ㄦ埛 绾跨▼ I don't find really objectionable."
 
-仍然, 存在 内核 线程 该 可 希望 到 为 freezable.  例如, 若
-一个 内核 线程 该 belongs 到 一个 设备 驱动 accesses the 设备 directly, 它
-在 principle needs 到 know 当 the 设备 是 suspended, 因此 该 它 doesn't try
-到 access 它 在 该 time.  然而, 若 the 内核 线程 是 freezable, 它 将
-为 frozen 之前 the 驱动's .suspend() 回调函数 是 executed 和 它 将 为
-thawed 之后 the 驱动's .resume() 回调函数 具有 运行, 因此 它 won't 为 accessing
-the 设备 同时 它's suspended.
+浠嶇劧, 瀛樺湪 鍐呮牳 绾跨▼ 璇?鍙?甯屾湜 鍒?涓?freezable.  渚嬪, 鑻?
+涓€涓?鍐呮牳 绾跨▼ 璇?belongs 鍒?涓€涓?璁惧 椹卞姩 accesses the 璁惧 directly, 瀹?
+鍦?principle needs 鍒?know 褰?the 璁惧 鏄?suspended, 鍥犳 璇?瀹?doesn't try
+鍒?access 瀹?鍦?璇?time.  鐒惰€? 鑻?the 鍐呮牳 绾跨▼ 鏄?freezable, 瀹?灏?
+涓?frozen 涔嬪墠 the 椹卞姩's .suspend() 鍥炶皟鍑芥暟 鏄?executed 鍜?瀹?灏?涓?
+thawed 涔嬪悗 the 椹卞姩's .resume() 鍥炶皟鍑芥暟 鍏锋湁 杩愯, 鍥犳 瀹?won't 涓?accessing
+the 璁惧 鍚屾椂 瀹?s suspended.
 
-4. Another reason 用于 freezing tasks 是 到 prevent 用户空间 进程 来自
-   realizing 该 hibernation (或 suspend) 操作 takes place.  Ideally, 用户
-   space 进程 应当 不 notice 该 此类 一个 system-wide 操作 具有
-   occurred 和 应当 continue 运行中 无 任何 problems 之后 the restore
-   (或 resume 来自 suspend).  Unfortunately, 在 the 大多数 通用 case 此
-   是 quite difficult 到 achieve 无 the freezing 的 tasks.  Consider,
-   例如, 一个 进程 该 depends 在 全部 CPUs 正在 online 同时 它's
-   运行中.  Since 我们 需要 到 禁用 nonboot CPUs 期间 the hibernation,
-   若 此 进程 是 不 frozen, 它 可 notice 该 the 数字 的 CPUs 具有
-   changed 和 可 启动 到 work incorrectly 因为 的 该.
+4. Another reason 鐢ㄤ簬 freezing tasks 鏄?鍒?prevent 鐢ㄦ埛绌洪棿 杩涚▼ 鏉ヨ嚜
+   realizing 璇?hibernation (鎴?suspend) 鎿嶄綔 takes place.  Ideally, 鐢ㄦ埛
+   space 杩涚▼ 搴斿綋 涓?notice 璇?姝ょ被 涓€涓?system-wide 鎿嶄綔 鍏锋湁
+   occurred 鍜?搴斿綋 continue 杩愯涓?鏃?浠讳綍 problems 涔嬪悗 the restore
+   (鎴?resume 鏉ヨ嚜 suspend).  Unfortunately, 鍦?the 澶у鏁?閫氱敤 case 姝?
+   鏄?quite difficult 鍒?achieve 鏃?the freezing 鐨?tasks.  Consider,
+   渚嬪, 涓€涓?杩涚▼ 璇?depends 鍦?鍏ㄩ儴 CPUs 姝ｅ湪 online 鍚屾椂 瀹?s
+   杩愯涓?  Since 鎴戜滑 闇€瑕?鍒?绂佺敤 nonboot CPUs 鏈熼棿 the hibernation,
+   鑻?姝?杩涚▼ 鏄?涓?frozen, 瀹?鍙?notice 璇?the 鏁板瓧 鐨?CPUs 鍏锋湁
+   changed 鍜?鍙?鍚姩 鍒?work incorrectly 鍥犱负 鐨?璇?
 
-## V. 是 那里 任何 problems related 到 the freezing 的 tasks?
+## V. 鏄?閭ｉ噷 浠讳綍 problems related 鍒?the freezing 鐨?tasks?
 
 
-Yes, 存在.
+Yes, 瀛樺湪.
 
-第一 的 全部, the freezing 的 内核 线程 可 为 tricky 若 它们 depend one
-在 another.  例如, 若 内核 线程 一个 waits 用于 一个 completion (在 the
-TASK_UNINTERRUPTIBLE 状态) 该 needs 到 为 已完成 由 freezable 内核 线程 B
-和 B 是 frozen 在 the meantime, 然后 一个 将 为 blocked 直到 B 是 thawed, 其
-可 为 undesirable.  该's 为何 内核 线程 是 不 freezable 默认情况下.
+绗竴 鐨?鍏ㄩ儴, the freezing 鐨?鍐呮牳 绾跨▼ 鍙?涓?tricky 鑻?瀹冧滑 depend one
+鍦?another.  渚嬪, 鑻?鍐呮牳 绾跨▼ 涓€涓?waits 鐢ㄤ簬 涓€涓?completion (鍦?the
+TASK_UNINTERRUPTIBLE 鐘舵€? 璇?needs 鍒?涓?宸插畬鎴?鐢?freezable 鍐呮牳 绾跨▼ B
+鍜?B 鏄?frozen 鍦?the meantime, 鐒跺悗 涓€涓?灏?涓?blocked 鐩村埌 B 鏄?thawed, 鍏?
+鍙?涓?undesirable.  璇?s 涓轰綍 鍐呮牳 绾跨▼ 鏄?涓?freezable 榛樿鎯呭喌涓?
 
-Second, 存在 the 以下 two problems related 到 the freezing 的 用户
-space 进程:
+Second, 瀛樺湪 the 浠ヤ笅 two problems related 鍒?the freezing 鐨?鐢ㄦ埛
+space 杩涚▼:
 
-1. Putting 进程 进入 一个 uninterruptible sleep distorts the 加载 average.
-2. 现在 该 我们 具有 FUSE, 增强版 the framework 用于 doing 设备 驱动 在
-   userspace, 它 gets even 更多 complicated 因为 一些 userspace 进程 是
-   现在 doing the sorts 的 things 该 内核 线程 执行
+1. Putting 杩涚▼ 杩涘叆 涓€涓?uninterruptible sleep distorts the 鍔犺浇 average.
+2. 鐜板湪 璇?鎴戜滑 鍏锋湁 FUSE, 澧炲己鐗?the framework 鐢ㄤ簬 doing 璁惧 椹卞姩 鍦?
+   userspace, 瀹?gets even 鏇村 complicated 鍥犱负 涓€浜?userspace 杩涚▼ 鏄?
+   鐜板湪 doing the sorts 鐨?things 璇?鍐呮牳 绾跨▼ 鎵ц
    (https://lists.linux-foundation.org/pipermail/linux-pm/2007-May/012309.html).
 
-The problem 1. seems 到 为 fixable, 尽管 它 hasn't 已经 fixed 因此 far.  The
-其他 one 是 更多 serious, 但 它 seems 该 我们可以 work around 它 由 使用
-hibernation (和 suspend) notifiers (在 该 case, though, 我们 won't 为 able 到
-avoid the realization 由 the 用户空间 进程 该 the hibernation 是 taking
+The problem 1. seems 鍒?涓?fixable, 灏界 瀹?hasn't 宸茬粡 fixed 鍥犳 far.  The
+鍏朵粬 one 鏄?鏇村 serious, 浣?瀹?seems 璇?鎴戜滑鍙互 work around 瀹?鐢?浣跨敤
+hibernation (鍜?suspend) notifiers (鍦?璇?case, though, 鎴戜滑 won't 涓?able 鍒?
+avoid the realization 鐢?the 鐢ㄦ埛绌洪棿 杩涚▼ 璇?the hibernation 鏄?taking
 place).
 
-存在 也 problems 该 the freezing 的 tasks tends 到 expose, 尽管
-它们是 不 directly related 到 它.  例如, 若 请求_固件() 是
-called 来自 一个 设备 驱动's .resume() routine, 它 将 超时 和 eventually
-fail, 因为 the 用户 land 进程 该 应当 respond 到 the 请求 是 frozen
-在 此 point.  因此, seemingly, the failure 是 由于 the freezing 的 tasks.
-Suppose, 然而, 该 the 固件 文件 是 located 在 一个 文件系统 accessible
-仅 through another 设备 该 hasn't 已经 resumed 尚未.  在 该 case,
-请求_固件() 将 fail regardless 的 是否 或 不 the freezing 的 tasks
-是 使用.  Consequently, the problem 是 不 really related 到 the freezing 的
-tasks, since 它 generally exists anyway.
+瀛樺湪 涔?problems 璇?the freezing 鐨?tasks tends 鍒?expose, 灏界
+瀹冧滑鏄?涓?directly related 鍒?瀹?  渚嬪, 鑻?璇锋眰_鍥轰欢() 鏄?
+called 鏉ヨ嚜 涓€涓?璁惧 椹卞姩's .resume() routine, 瀹?灏?瓒呮椂 鍜?eventually
+fail, 鍥犱负 the 鐢ㄦ埛 land 杩涚▼ 璇?搴斿綋 respond 鍒?the 璇锋眰 鏄?frozen
+鍦?姝?point.  鍥犳, seemingly, the failure 鏄?鐢变簬 the freezing 鐨?tasks.
+Suppose, 鐒惰€? 璇?the 鍥轰欢 鏂囦欢 鏄?located 鍦?涓€涓?鏂囦欢绯荤粺 accessible
+浠?through another 璁惧 璇?hasn't 宸茬粡 resumed 灏氭湭.  鍦?璇?case,
+璇锋眰_鍥轰欢() 灏?fail regardless 鐨?鏄惁 鎴?涓?the freezing 鐨?tasks
+鏄?浣跨敤.  Consequently, the problem 鏄?涓?really related 鍒?the freezing 鐨?
+tasks, since 瀹?generally exists anyway.
 
-一个 驱动 必须 具有 全部 firmwares 它 可 需要 在 RAM 之前 suspend() 是 called.
-若 keeping them 是 不 practical, 例如 由于 它们的 大小, 它们 必须 为
-requested early enough 使用 the suspend notifier API 描述 在
+涓€涓?椹卞姩 蹇呴』 鍏锋湁 鍏ㄩ儴 firmwares 瀹?鍙?闇€瑕?鍦?RAM 涔嬪墠 suspend() 鏄?called.
+鑻?keeping them 鏄?涓?practical, 渚嬪 鐢变簬 瀹冧滑鐨?澶у皬, 瀹冧滑 蹇呴』 涓?
+requested early enough 浣跨敤 the suspend notifier API 鎻忚堪 鍦?
 Documentation/driver-api/pm/notifiers.rst.
 
-## VI. 是 那里 任何 precautions 到 为 taken 到 prevent freezing failures?
+## VI. 鏄?閭ｉ噷 浠讳綍 precautions 鍒?涓?taken 鍒?prevent freezing failures?
 
 
-Yes, 存在.
+Yes, 瀛樺湪.
 
-第一 的 全部, grabbing the '系统_transition_互斥体' 锁 到 mutually exclude 一个
-piece 的 code 来自 system-wide sleep 例如 suspend/hibernation 是 不
-encouraged.  若 可能, 该 piece 的 code 必须 改为 hook onto the
-suspend/hibernation notifiers 到 achieve mutual exclusion. Look 在 the
-CPU-Hotplug code (内核/CPU.c) 用于 一个 示例.
+绗竴 鐨?鍏ㄩ儴, grabbing the '绯荤粺_transition_浜掓枼浣? 閿?鍒?mutually exclude 涓€涓?
+piece 鐨?code 鏉ヨ嚜 system-wide sleep 渚嬪 suspend/hibernation 鏄?涓?
+encouraged.  鑻?鍙兘, 璇?piece 鐨?code 蹇呴』 鏀逛负 hook onto the
+suspend/hibernation notifiers 鍒?achieve mutual exclusion. Look 鍦?the
+CPU-Hotplug code (鍐呮牳/CPU.c) 鐢ㄤ簬 涓€涓?绀轰緥.
 
-然而, 若 即 不 feasible, 和 grabbing '系统_transition_互斥体' 是
-deemed 必要, 它是 strongly discouraged 到 directly call
-互斥体_[un]锁(&系统_transition_互斥体) since 该 可以 lead 到 freezing
-failures, 因为 若 the suspend/hibernate code successfully acquired the
-'系统_transition_互斥体' 锁, 和 hence 该 其他 entity failed 到 acquire
-the 锁, 然后 该 task 将会 get blocked 在 TASK_UNINTERRUPTIBLE 状态. 作为 一个
-consequence, the freezer 将会 不 为 able 到 freeze 该 task, leading 到
+鐒惰€? 鑻?鍗?涓?feasible, 鍜?grabbing '绯荤粺_transition_浜掓枼浣? 鏄?
+deemed 蹇呰, 瀹冩槸 strongly discouraged 鍒?directly call
+浜掓枼浣揰[un]閿?&绯荤粺_transition_浜掓枼浣? since 璇?鍙互 lead 鍒?freezing
+failures, 鍥犱负 鑻?the suspend/hibernate code successfully acquired the
+'绯荤粺_transition_浜掓枼浣? 閿? 鍜?hence 璇?鍏朵粬 entity failed 鍒?acquire
+the 閿? 鐒跺悗 璇?task 灏嗕細 get blocked 鍦?TASK_UNINTERRUPTIBLE 鐘舵€? 浣滀负 涓€涓?
+consequence, the freezer 灏嗕細 涓?涓?able 鍒?freeze 璇?task, leading 鍒?
 freezing failure.
 
-然而, the [un]锁_系统_sleep() APIs 是 safe 到 使用 在 此 scenario,
-since 它们 ask the freezer 到 skip freezing 此 task, since 它是 anyway
-"frozen enough" 作为 它是 blocked 在 '系统_transition_互斥体', 其 将 为
-released 仅 之后 the entire suspend/hibernation sequence 是 complete.  因此, 到
-summarize, 使用 [un]锁_系统_sleep() 而非 directly 使用
-互斥体_[un]锁(&系统_transition_互斥体). 该 将会 prevent freezing failures.
+鐒惰€? the [un]閿乢绯荤粺_sleep() APIs 鏄?safe 鍒?浣跨敤 鍦?姝?scenario,
+since 瀹冧滑 ask the freezer 鍒?skip freezing 姝?task, since 瀹冩槸 anyway
+"frozen enough" 浣滀负 瀹冩槸 blocked 鍦?'绯荤粺_transition_浜掓枼浣?, 鍏?灏?涓?
+released 浠?涔嬪悗 the entire suspend/hibernation sequence 鏄?complete.  鍥犳, 鍒?
+summarize, 浣跨敤 [un]閿乢绯荤粺_sleep() 鑰岄潪 directly 浣跨敤
+浜掓枼浣揰[un]閿?&绯荤粺_transition_浜掓枼浣?. 璇?灏嗕細 prevent freezing failures.
 
 ## V. Miscellaneous
 
 
-/sys/电源/pm_freeze_超时 controls 如何 long 它 将 cost 至多 到 freeze
-全部 用户空间 进程 或 全部 freezable 内核 线程, 在 unit 的
-millisecond.  The 默认 值 是 20000, 与 range 的 unsigned integer.
+/sys/鐢垫簮/pm_freeze_瓒呮椂 controls 濡備綍 long 瀹?灏?cost 鑷冲 鍒?freeze
+鍏ㄩ儴 鐢ㄦ埛绌洪棿 杩涚▼ 鎴?鍏ㄩ儴 freezable 鍐呮牳 绾跨▼, 鍦?unit 鐨?
+millisecond.  The 榛樿 鍊?鏄?20000, 涓?range 鐨?unsigned integer.

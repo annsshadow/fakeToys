@@ -1,24 +1,19 @@
-## /proc/sys/xen/
+﻿## /proc/sys/xen/
 
 
-版权 (c) 2026, Shubham Chakraborty <chakrabortyshubham66@gmail.com>
+鐗堟潈 (c) 2026, Shubham Chakraborty <chakrabortyshubham66@gmail.com>
 
-有关一般信息和法律声明，请参阅
-Documentation/admin-guide/sysctl/index.rst。
-
+鏈夊叧涓€鑸俊鎭拰娉曞緥澹版槑锛岃鍙傞槄
+Documentation/admin-guide/sysctl/index.rst銆?
 ------------------------------------------------------------------------------
 
-这些文件是否出现在 `/proc/sys/xen/` 中，取决于内核配置：
+杩欎簺鏂囦欢鏄惁鍑虹幇鍦?`/proc/sys/xen/` 涓紝鍙栧喅浜庡唴鏍搁厤缃細
 
 ## balloon/hotplug_unpopulated
 
 
-此标志控制是否将未填充的内存范围自动热插拔为系统 RAM。
-
-- `0`：未填充的范围不被热插拔（默认）。
-- `1`：未填充的范围被自动热插拔。
-
-启用后，Xen balloon 驱动程序会将 Xen 内存映射中标记为未填充的内存区域作为
-可用 RAM 添加到系统中。这允许在 Xen 客户域中动态扩展内存。
-
-此选项仅在以内核配置了 `CONFIG_XEN_BALLOON_MEMORY_HOTPLUG` 时才可用。
+姝ゆ爣蹇楁帶鍒舵槸鍚﹀皢鏈～鍏呯殑鍐呭瓨鑼冨洿鑷姩鐑彃鎷斾负绯荤粺 RAM銆?
+- `0`锛氭湭濉厖鐨勮寖鍥翠笉琚儹鎻掓嫈锛堥粯璁わ級銆?- `1`锛氭湭濉厖鐨勮寖鍥磋鑷姩鐑彃鎷斻€?
+鍚敤鍚庯紝Xen balloon 椹卞姩绋嬪簭浼氬皢 Xen 鍐呭瓨鏄犲皠涓爣璁颁负鏈～鍏呯殑鍐呭瓨鍖哄煙浣滀负
+鍙敤 RAM 娣诲姞鍒扮郴缁熶腑銆傝繖鍏佽鍦?Xen 瀹㈡埛鍩熶腑鍔ㄦ€佹墿灞曞唴瀛樸€?
+姝ら€夐」浠呭湪浠ュ唴鏍搁厤缃簡 `CONFIG_XEN_BALLOON_MEMORY_HOTPLUG` 鏃舵墠鍙敤銆?

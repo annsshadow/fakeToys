@@ -1,14 +1,11 @@
-
-## drm/Panthor CSF 驱动
-
-
-## Panthor DRM 客户端使用统计实现
+﻿
+## drm/Panthor CSF 椹卞姩
 
 
-drm/Panthor 驱动实现了 DRM 客户端使用统计规范，如 drm-client-usage-stats 中所述。
+## Panthor DRM 瀹㈡埛绔娇鐢ㄧ粺璁″疄鐜?
 
-展示所实现的键值对以及当前可能格式选项的完整性的输出示例：
-
+drm/Panthor 椹卞姩瀹炵幇浜?DRM 瀹㈡埛绔娇鐢ㄧ粺璁¤鑼冿紝濡?drm-client-usage-stats 涓墍杩般€?
+灞曠ず鎵€瀹炵幇鐨勯敭鍊煎浠ュ強褰撳墠鍙兘鏍煎紡閫夐」鐨勫畬鏁存€х殑杈撳嚭绀轰緥锛?
 ```
      pos:    0
      flags:  02400002
@@ -29,16 +26,12 @@ drm/Panthor 驱动实现了 DRM 客户端使用统计规范，如 drm-client-usa
      drm-purgeable-memory:   0
 
 ```
-可能的 `drm-engine-` 键名有：`panthor`。
-`drm-curfreq-` 值表示该引擎当前的运行频率。
-
-用户必须记住，出于省电考虑，引擎和周期采样默认是禁用的。`fdinfo` 用户以及查询 fdinfo 文件的基准测试应用程序必须确保切换作业的性能分析状态：
+鍙兘鐨?`drm-engine-` 閿悕鏈夛細`panthor`銆?`drm-curfreq-` 鍊艰〃绀鸿寮曟搸褰撳墠鐨勮繍琛岄鐜囥€?
+鐢ㄦ埛蹇呴』璁颁綇锛屽嚭浜庣渷鐢佃€冭檻锛屽紩鎿庡拰鍛ㄦ湡閲囨牱榛樿鏄鐢ㄧ殑銆俙fdinfo` 鐢ㄦ埛浠ュ強鏌ヨ fdinfo 鏂囦欢鐨勫熀鍑嗘祴璇曞簲鐢ㄧ▼搴忓繀椤荤‘淇濆垏鎹綔涓氱殑鎬ц兘鍒嗘瀽鐘舵€侊細
 ```
 
     echo <N> > /sys/bus/platform/drivers/panthor/[a-f0-9]*.gpu/profiling
 
 ```
-其中 `N` 是一个位掩码，其中周期和时间戳采样分别由第一位和第二位启用。
-
-可能的 `panthor-*-memory` 键有：`active` 和 `resident`。
-这些值表示内部由驱动拥有的 shmem BO 的大小，这些 BO 没有通过 DRM handle 暴露给用户空间，例如队列环形缓冲区、同步对象数组和堆块。因为它们都在创建时分配并固定，所以只需 `panthor-resident-memory` 即可说明它们的大小。`panthor-active-memory` 显示当前正被 GPU 调度执行、与 VM 和组关联的驱动 BO 的大小。
+鍏朵腑 `N` 鏄竴涓綅鎺╃爜锛屽叾涓懆鏈熷拰鏃堕棿鎴抽噰鏍峰垎鍒敱绗竴浣嶅拰绗簩浣嶅惎鐢ㄣ€?
+鍙兘鐨?`panthor-*-memory` 閿湁锛歚active` 鍜?`resident`銆?杩欎簺鍊艰〃绀哄唴閮ㄧ敱椹卞姩鎷ユ湁鐨?shmem BO 鐨勫ぇ灏忥紝杩欎簺 BO 娌℃湁閫氳繃 DRM handle 鏆撮湶缁欑敤鎴风┖闂达紝渚嬪闃熷垪鐜舰缂撳啿鍖恒€佸悓姝ュ璞℃暟缁勫拰鍫嗗潡銆傚洜涓哄畠浠兘鍦ㄥ垱寤烘椂鍒嗛厤骞跺浐瀹氾紝鎵€浠ュ彧闇€ `panthor-resident-memory` 鍗冲彲璇存槑瀹冧滑鐨勫ぇ灏忋€俙panthor-active-memory` 鏄剧ず褰撳墠姝ｈ GPU 璋冨害鎵ц銆佷笌 VM 鍜岀粍鍏宠仈鐨勯┍鍔?BO 鐨勫ぇ灏忋€?

@@ -1,6 +1,6 @@
-### IETF CIPSO IP 安全草案
+﻿### IETF CIPSO IP 瀹夊叏鑽夋
 
-本页收录 IETF CIPSO（通用 IP 安全选项，Common IP Security Option）草案的原文内容，以下以字面（literal）形式引入该草案文本，供内核网络标记相关实现参考。
+鏈〉鏀跺綍 IETF CIPSO锛堥€氱敤 IP 瀹夊叏閫夐」锛孋ommon IP Security Option锛夎崏妗堢殑鍘熸枃鍐呭锛屼互涓嬩互瀛楅潰锛坙iteral锛夊舰寮忓紩鍏ヨ鑽夋鏂囨湰锛屼緵鍐呮牳缃戠粶鏍囪鐩稿叧瀹炵幇鍙傝€冦€?
 
  .. include:: draft-ietf-cipso-ipsecurity-01.txt
     :literal:

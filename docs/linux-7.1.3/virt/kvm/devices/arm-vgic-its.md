@@ -1,138 +1,85 @@
+﻿
+## ARM 铏氭嫙涓柇杞崲鏈嶅姟锛圛TS锛?
 
-## ARM 虚拟中断转换服务（ITS）
+鏀寔鐨勮澶囩被鍨嬶細
+  KVM_DEV_TYPE_ARM_VGIC_ITS    ARM 涓柇杞崲鏈嶅姟鎺у埗鍣?
+ITS 鍏佽灏?MSI(-X) 涓柇娉ㄥ叆鍒板鎴锋満涓€傝鎵╁睍鏄彲閫夌殑銆傚垱寤轰竴涓櫄鎷?ITS 鎺у埗鍣?杩橀渶瑕佷竴涓富鏈?GICv3锛堝弬瑙?arm-vgic-v3.txt锛夛紝浣嗕笉渚濊禆浜庢槸鍚︽湁鐗╃悊 ITS 鎺у埗鍣ㄣ€?
+姣忎釜瀹㈡埛鏈哄彲浠ユ湁澶氫釜 ITS 鎺у埗鍣紝姣忎釜閮藉繀椤绘湁鐙珛銆佷笉閲嶅彔鐨?MMIO 鍖哄煙銆?
 
-
-支持的设备类型：
-  KVM_DEV_TYPE_ARM_VGIC_ITS    ARM 中断转换服务控制器
-
-ITS 允许将 MSI(-X) 中断注入到客户机中。该扩展是可选的。创建一个虚拟 ITS 控制器
-还需要一个主机 GICv3（参见 arm-vgic-v3.txt），但不依赖于是否有物理 ITS 控制器。
-
-每个客户机可以有多个 ITS 控制器，每个都必须有独立、不重叠的 MMIO 区域。
-
-
-## 组
-
+## 缁?
 
 ### KVM_DEV_ARM_VGIC_GRP_ADDR
 
 
-  属性：
+  灞炴€э細
     KVM_VGIC_ITS_ADDR_TYPE (rw, 64-bit)
-      GICv3 ITS 控制寄存器帧在客户机物理地址空间中的基地址。
-      该地址需要 64K 对齐，并且该区域覆盖 128K。
-
-  错误：
-
+      GICv3 ITS 鎺у埗瀵勫瓨鍣ㄥ抚鍦ㄥ鎴锋満鐗╃悊鍦板潃绌洪棿涓殑鍩哄湴鍧€銆?      璇ュ湴鍧€闇€瑕?64K 瀵归綈锛屽苟涓旇鍖哄煙瑕嗙洊 128K銆?
+  閿欒锛?
     =======  =================================================
-    -E2BIG   地址超出可寻址的 IPA 范围
-    -EINVAL  地址对齐不正确
-    -EEXIST  地址已配置
-    -EFAULT  attr->addr 的用户指针无效。
-    -ENODEV  属性不正确或 ITS 不受支持。
-    =======  =================================================
+    -E2BIG   鍦板潃瓒呭嚭鍙鍧€鐨?IPA 鑼冨洿
+    -EINVAL  鍦板潃瀵归綈涓嶆纭?    -EEXIST  鍦板潃宸查厤缃?    -EFAULT  attr->addr 鐨勭敤鎴锋寚閽堟棤鏁堛€?    -ENODEV  灞炴€т笉姝ｇ‘鎴?ITS 涓嶅彈鏀寔銆?    =======  =================================================
 
 
 ### KVM_DEV_ARM_VGIC_GRP_CTRL
 
 
-  属性：
+  灞炴€э細
     KVM_DEV_ARM_VGIC_CTRL_INIT
-      请求初始化 ITS，kvm_device_attr.addr 中没有额外参数。
-
+      璇锋眰鍒濆鍖?ITS锛宬vm_device_attr.addr 涓病鏈夐澶栧弬鏁般€?
     KVM_DEV_ARM_ITS_CTRL_RESET
-      复位 ITS，kvm_device_attr.addr 中没有额外参数。
-      参见“ITS 复位状态”一节。
-
+      澶嶄綅 ITS锛宬vm_device_attr.addr 涓病鏈夐澶栧弬鏁般€?      鍙傝鈥淚TS 澶嶄綅鐘舵€佲€濅竴鑺傘€?
     KVM_DEV_ARM_ITS_SAVE_TABLES
-      将 ITS 表数据保存到客户机 RAM 中，位置由客户机在相应寄存器/表项中所提供。
-      如果用户空间需要某种形式的脏页跟踪来识别哪些页被保存过程修改，它应使用一个
-      位图，即使使用其它机制来跟踪由 vCPU 弄脏的内存。
-
-      客户机内存中表的布局定义了一个 ABI。表项以小端格式排列，如最后一段所述。
-
+      灏?ITS 琛ㄦ暟鎹繚瀛樺埌瀹㈡埛鏈?RAM 涓紝浣嶇疆鐢卞鎴锋満鍦ㄧ浉搴斿瘎瀛樺櫒/琛ㄩ」涓墍鎻愪緵銆?      濡傛灉鐢ㄦ埛绌洪棿闇€瑕佹煇绉嶅舰寮忕殑鑴忛〉璺熻釜鏉ヨ瘑鍒摢浜涢〉琚繚瀛樿繃绋嬩慨鏀癸紝瀹冨簲浣跨敤涓€涓?      浣嶅浘锛屽嵆浣夸娇鐢ㄥ叾瀹冩満鍒舵潵璺熻釜鐢?vCPU 寮勮剰鐨勫唴瀛樸€?
+      瀹㈡埛鏈哄唴瀛樹腑琛ㄧ殑甯冨眬瀹氫箟浜嗕竴涓?ABI銆傝〃椤逛互灏忕鏍煎紡鎺掑垪锛屽鏈€鍚庝竴娈垫墍杩般€?
     KVM_DEV_ARM_ITS_RESTORE_TABLES
-      将 ITS 表从客户机 RAM 恢复到 ITS 内部结构。
-
-      GICV3 必须在 ITS 之前恢复，并且除 GITS_CTLR 之外的所有 ITS 寄存器都必须在
-      恢复 ITS 表之前恢复。
-
-      GITS_IIDR 只读寄存器也必须在调用 KVM_DEV_ARM_ITS_RESTORE_TABLES 之前恢复，
-      因为 IIDR 修订字段编码了 ABI 修订号。
-
-      恢复 GICv3/ITS 时的预期顺序在“ITS 恢复序列”一节中描述。
-
-  错误：
-
+      灏?ITS 琛ㄤ粠瀹㈡埛鏈?RAM 鎭㈠鍒?ITS 鍐呴儴缁撴瀯銆?
+      GICV3 蹇呴』鍦?ITS 涔嬪墠鎭㈠锛屽苟涓旈櫎 GITS_CTLR 涔嬪鐨勬墍鏈?ITS 瀵勫瓨鍣ㄩ兘蹇呴』鍦?      鎭㈠ ITS 琛ㄤ箣鍓嶆仮澶嶃€?
+      GITS_IIDR 鍙瀵勫瓨鍣ㄤ篃蹇呴』鍦ㄨ皟鐢?KVM_DEV_ARM_ITS_RESTORE_TABLES 涔嬪墠鎭㈠锛?      鍥犱负 IIDR 淇瀛楁缂栫爜浜?ABI 淇鍙枫€?
+      鎭㈠ GICv3/ITS 鏃剁殑棰勬湡椤哄簭鍦ㄢ€淚TS 鎭㈠搴忓垪鈥濅竴鑺備腑鎻忚堪銆?
+  閿欒锛?
     =======  ==========================================================
-     -ENXIO  ITS 在设置此属性之前未按要求正确配置
-    -ENOMEM  分配 ITS 内部数据时内存不足
-    -EINVAL  恢复的數据不一致
-    -EFAULT  无效的客户机 ram 访问
-    -EBUSY   一个或多个 VCPU 正在运行
-    -EACCES  虚拟 ITS 由物理 GICv4 ITS 支撑，并且在没有 GICv4.1 的情况下状态不可用
+     -ENXIO  ITS 鍦ㄨ缃灞炴€т箣鍓嶆湭鎸夎姹傛纭厤缃?    -ENOMEM  鍒嗛厤 ITS 鍐呴儴鏁版嵁鏃跺唴瀛樹笉瓒?    -EINVAL  鎭㈠鐨勬暩鎹笉涓€鑷?    -EFAULT  鏃犳晥鐨勫鎴锋満 ram 璁块棶
+    -EBUSY   涓€涓垨澶氫釜 VCPU 姝ｅ湪杩愯
+    -EACCES  铏氭嫙 ITS 鐢辩墿鐞?GICv4 ITS 鏀拺锛屽苟涓斿湪娌℃湁 GICv4.1 鐨勬儏鍐典笅鐘舵€佷笉鍙敤
     =======  ==========================================================
 
 ### KVM_DEV_ARM_VGIC_GRP_ITS_REGS
 
 
-  属性：
-      kvm_device_attr 的 attr 字段编码了 ITS 寄存器相对于 ITS 控制帧基地址
-      （ITS_base）的偏移量。
+  灞炴€э細
+      kvm_device_attr 鐨?attr 瀛楁缂栫爜浜?ITS 瀵勫瓨鍣ㄧ浉瀵逛簬 ITS 鎺у埗甯у熀鍦板潃
+      锛圛TS_base锛夌殑鍋忕Щ閲忋€?
+      kvm_device_attr.addr 鎸囧悜涓€涓?__u64 鍊硷紝鏃犺琚鍧€瀵勫瓨鍣ㄧ殑瀹藉害锛?2/64 浣嶏級
+      濡備綍銆?4 浣嶅瘎瀛樺櫒鍙兘浠ュ畬鏁撮暱搴﹁闂€?
+      瀵瑰彧璇诲瘎瀛樺櫒鐨勫啓鍏ヤ細琚唴鏍稿拷鐣ワ紝浣嗕互涓嬮櫎澶栵細
 
-      kvm_device_attr.addr 指向一个 __u64 值，无论被寻址寄存器的宽度（32/64 位）
-      如何。64 位寄存器只能以完整长度访问。
-
-      对只读寄存器的写入会被内核忽略，但以下除外：
-
-      - GITS_CREADR。必须恢复它，否则队列中的命令会在恢复 CWRITER 后重新执行。
-        GITS_CREADR 必须在恢复 GITS_CTLR（后者可能会启用 ITS）之前恢复。同时它必须
-        在 GITS_CBASER 之后恢复，因为对 GITS_CBASER 的写入会重置 GITS_CREADR。
-      - GITS_IIDR。Revision 字段编码了表布局 ABI 修订号。将来我们可能实现虚拟 LPI
-        的直接注入。这将需要升级表布局以及 ABI 的演进。GITS_IIDR 必须在调用
-        KVM_DEV_ARM_ITS_RESTORE_TABLES 之前恢复。
-
-      对于其它寄存器，获取或设置一个寄存器与在真实硬件上读取/写入该寄存器具有相同的
-      效果。
-
-  错误：
-
+      - GITS_CREADR銆傚繀椤绘仮澶嶅畠锛屽惁鍒欓槦鍒椾腑鐨勫懡浠や細鍦ㄦ仮澶?CWRITER 鍚庨噸鏂版墽琛屻€?        GITS_CREADR 蹇呴』鍦ㄦ仮澶?GITS_CTLR锛堝悗鑰呭彲鑳戒細鍚敤 ITS锛変箣鍓嶆仮澶嶃€傚悓鏃跺畠蹇呴』
+        鍦?GITS_CBASER 涔嬪悗鎭㈠锛屽洜涓哄 GITS_CBASER 鐨勫啓鍏ヤ細閲嶇疆 GITS_CREADR銆?      - GITS_IIDR銆俁evision 瀛楁缂栫爜浜嗚〃甯冨眬 ABI 淇鍙枫€傚皢鏉ユ垜浠彲鑳藉疄鐜拌櫄鎷?LPI
+        鐨勭洿鎺ユ敞鍏ャ€傝繖灏嗛渶瑕佸崌绾ц〃甯冨眬浠ュ強 ABI 鐨勬紨杩涖€侴ITS_IIDR 蹇呴』鍦ㄨ皟鐢?        KVM_DEV_ARM_ITS_RESTORE_TABLES 涔嬪墠鎭㈠銆?
+      瀵逛簬鍏跺畠瀵勫瓨鍣紝鑾峰彇鎴栬缃竴涓瘎瀛樺櫒涓庡湪鐪熷疄纭欢涓婅鍙?鍐欏叆璇ュ瘎瀛樺櫒鍏锋湁鐩稿悓鐨?      鏁堟灉銆?
+  閿欒锛?
     =======  ====================================================
-    -ENXIO   偏移量不对应于任何受支持的寄存器
-    -EFAULT  attr->addr 的用户指针无效
-    -EINVAL  偏移量未 64 位对齐
-    -EBUSY   一个或多个 VCPU 正在运行
+    -ENXIO   鍋忕Щ閲忎笉瀵瑰簲浜庝换浣曞彈鏀寔鐨勫瘎瀛樺櫒
+    -EFAULT  attr->addr 鐨勭敤鎴锋寚閽堟棤鏁?    -EINVAL  鍋忕Щ閲忔湭 64 浣嶅榻?    -EBUSY   涓€涓垨澶氫釜 VCPU 姝ｅ湪杩愯
     =======  ====================================================
 
-### ITS 恢复序列：
+### ITS 鎭㈠搴忓垪锛?
 
-
-在恢复 GIC、ITS 和 KVM_IRQFD 赋值时必须遵循以下顺序：
-
-a) 恢复所有客户机内存并创建 vcpu
-b) 恢复所有重分发器（redistributor）
-c) 提供 ITS 基地址
+鍦ㄦ仮澶?GIC銆両TS 鍜?KVM_IRQFD 璧嬪€兼椂蹇呴』閬靛惊浠ヤ笅椤哄簭锛?
+a) 鎭㈠鎵€鏈夊鎴锋満鍐呭瓨骞跺垱寤?vcpu
+b) 鎭㈠鎵€鏈夐噸鍒嗗彂鍣紙redistributor锛?c) 鎻愪緵 ITS 鍩哄湴鍧€
    (KVM_DEV_ARM_VGIC_GRP_ADDR)
-d) 按以下顺序恢复 ITS：
+d) 鎸変互涓嬮『搴忔仮澶?ITS锛?
+     1. 鎭㈠ GITS_CBASER
+     2. 鎭㈠鎵€鏈夊叾瀹?`GITS_` 瀵勫瓨鍣紝浣?GITS_CTLR 闄ゅ锛?     3. 鍔犺浇 ITS 琛ㄦ暟鎹紙KVM_DEV_ARM_ITS_RESTORE_TABLES锛?     4. 鎭㈠ GITS_CTLR
 
-     1. 恢复 GITS_CBASER
-     2. 恢复所有其它 `GITS_` 寄存器，但 GITS_CTLR 除外！
-     3. 加载 ITS 表数据（KVM_DEV_ARM_ITS_RESTORE_TABLES）
-     4. 恢复 GITS_CTLR
+e) 鎭㈠ MSI 鐨?KVM_IRQFD 璧嬪€?
+鐒跺悗 vcpu 鍙互鍚姩銆?
+### ITS 琛?ABI REV0锛?
 
-e) 恢复 MSI 的 KVM_IRQFD 赋值
-
-然后 vcpu 可以启动。
-
-### ITS 表 ABI REV0：
-
-
-ABI 的修订 0 仅支持虚拟 GICv3 的特性，不支持带有嵌套虚拟机监控程序虚拟中断
-直接注入支持的虚拟 GICv4。
-
-设备表和 ITT 分别由 DeviceID 和 EventID 索引。集合表不由 CollectionID 索引，集合
-中的表项以任意顺序列出。所有表项均为 8 字节。
-
+ABI 鐨勪慨璁?0 浠呮敮鎸佽櫄鎷?GICv3 鐨勭壒鎬э紝涓嶆敮鎸佸甫鏈夊祵濂楄櫄鎷熸満鐩戞帶绋嬪簭铏氭嫙涓柇
+鐩存帴娉ㄥ叆鏀寔鐨勮櫄鎷?GICv4銆?
+璁惧琛ㄥ拰 ITT 鍒嗗埆鐢?DeviceID 鍜?EventID 绱㈠紩銆傞泦鍚堣〃涓嶇敱 CollectionID 绱㈠紩锛岄泦鍚?涓殑琛ㄩ」浠ヤ换鎰忛『搴忓垪鍑恒€傛墍鏈夎〃椤瑰潎涓?8 瀛楄妭銆?
 ```
 
    bits:     | 63| 62 ... 49 | 48 ... 5 | 4 ... 0 |
@@ -140,11 +87,8 @@ ABI 的修订 0 仅支持虚拟 GICv3 的特性，不支持带有嵌套虚拟机
 
  where:
 
- - V 指示该表项是否有效。如果无效，其它字段没有意义。
- - next：如果此表项是最后一个，则等于 0；否则它对应于到下一个 DTE 的 DeviceID
-   偏移量，上限为 2^14 -1。
- - ITT_addr 匹配 ITT 地址的 [51:8] 位（256 字节对齐）。
- - Size 指定 EventID 支持的位数减一
+ - V 鎸囩ず璇ヨ〃椤规槸鍚︽湁鏁堛€傚鏋滄棤鏁堬紝鍏跺畠瀛楁娌℃湁鎰忎箟銆? - next锛氬鏋滄琛ㄩ」鏄渶鍚庝竴涓紝鍒欑瓑浜?0锛涘惁鍒欏畠瀵瑰簲浜庡埌涓嬩竴涓?DTE 鐨?DeviceID
+   鍋忕Щ閲忥紝涓婇檺涓?2^14 -1銆? - ITT_addr 鍖归厤 ITT 鍦板潃鐨?[51:8] 浣嶏紙256 瀛楄妭瀵归綈锛夈€? - Size 鎸囧畾 EventID 鏀寔鐨勪綅鏁板噺涓€
 
  Collection Table Entry (CTE)::
 
@@ -153,10 +97,8 @@ ABI 的修订 0 仅支持虚拟 GICv3 的特性，不支持带有嵌套虚拟机
 
  where:
 
- - V 指示该表项是否有效。如果无效，其它字段没有意义。
- - RES0：保留字段，具有 Should-Be-Zero-or-Preserved 行为。
- - RDBase 是 PE 编号（GICR_TYPER.Processor_Number 语义），
- - ICID 是集合 ID
+ - V 鎸囩ず璇ヨ〃椤规槸鍚︽湁鏁堛€傚鏋滄棤鏁堬紝鍏跺畠瀛楁娌℃湁鎰忎箟銆? - RES0锛氫繚鐣欏瓧娈碉紝鍏锋湁 Should-Be-Zero-or-Preserved 琛屼负銆? - RDBase 鏄?PE 缂栧彿锛圙ICR_TYPER.Processor_Number 璇箟锛夛紝
+ - ICID 鏄泦鍚?ID
 
  Interrupt Translation Entry (ITE)::
 
@@ -165,22 +107,17 @@ ABI 的修订 0 仅支持虚拟 GICv3 的特性，不支持带有嵌套虚拟机
 
  where:
 
- - next：如果此表项是最后一个，则等于 0；否则它对应于到下一个 ITE 的 EventID
-   偏移量，上限为 2^16 -1。
- - pINTID 是物理 LPI ID；如果为零，意味着该表项无效，其它字段没有意义。
- - ICID 是集合 ID
+ - next锛氬鏋滄琛ㄩ」鏄渶鍚庝竴涓紝鍒欑瓑浜?0锛涘惁鍒欏畠瀵瑰簲浜庡埌涓嬩竴涓?ITE 鐨?EventID
+   鍋忕Щ閲忥紝涓婇檺涓?2^16 -1銆? - pINTID 鏄墿鐞?LPI ID锛涘鏋滀负闆讹紝鎰忓懗鐫€璇ヨ〃椤规棤鏁堬紝鍏跺畠瀛楁娌℃湁鎰忎箟銆? - ICID 鏄泦鍚?ID
 
 ```
-### ITS 复位状态：
+### ITS 澶嶄綅鐘舵€侊細
 
 
-RESET 将 ITS 返回到它首次被创建和初始化时的相同状态。当 RESET 命令返回时，保证
-以下事项：
-
-- ITS 未启用且静止
+RESET 灏?ITS 杩斿洖鍒板畠棣栨琚垱寤哄拰鍒濆鍖栨椂鐨勭浉鍚岀姸鎬併€傚綋 RESET 鍛戒护杩斿洖鏃讹紝淇濊瘉
+浠ヤ笅浜嬮」锛?
+- ITS 鏈惎鐢ㄤ笖闈欐
   GITS_CTLR.Enabled = 0 .Quiescent=1
-- 没有内部缓存的状态
-- 没有使用集合表或设备表
-  GITS_BASER<n>.Valid = 0
+- 娌℃湁鍐呴儴缂撳瓨鐨勭姸鎬?- 娌℃湁浣跨敤闆嗗悎琛ㄦ垨璁惧琛?  GITS_BASER<n>.Valid = 0
 - GITS_CBASER = 0, GITS_CREADR = 0, GITS_CWRITER = 0
-- ABI 版本不变，并保持为 ITS 设备首次创建时所设置的版本。
+- ABI 鐗堟湰涓嶅彉锛屽苟淇濇寔涓?ITS 璁惧棣栨鍒涘缓鏃舵墍璁剧疆鐨勭増鏈€?

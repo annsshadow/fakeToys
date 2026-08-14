@@ -1,179 +1,179 @@
+﻿
+## PCI Peer-to-Peer DMA 鏀寔
 
-## PCI Peer-to-Peer DMA 支持
 
+The PCI 鎬荤嚎 鍏锋湁 pretty decent 鏀寔 鐢ㄤ簬 performing DMA transfers
+涔嬮棿 two 璁惧 鍦?the 鎬荤嚎. 姝?绫诲瀷 鐨?transaction 鏄?henceforth
+called Peer-to-Peer (鎴?P2P). 鐒惰€? 瀛樺湪 涓€涓?鏁板瓧 鐨?issues 璇?
+make P2P transactions tricky 鍒?鎵ц 鍦?涓€涓?perfectly safe way.
 
-The PCI 总线 具有 pretty decent 支持 用于 performing DMA transfers
-之间 two 设备 在 the 总线. 此 类型 的 transaction 是 henceforth
-called Peer-to-Peer (或 P2P). 然而, 存在 一个 数字 的 issues 该
-make P2P transactions tricky 到 执行 在 一个 perfectly safe way.
+鐢ㄤ簬 PCIe the routing 鐨?Transaction Layer Packets (TLPs) 鏄?well-defined up
+鐩村埌 瀹冧滑 reach 涓€涓?host bridge 鎴?root 绔彛. 鑻?the path 鍖呭惈 PCIe switches
+鐒跺悗 鍩轰簬 the ACS 璁剧疆 the transaction 鍙?route entirely 涔嬪唴
+the PCIe hierarchy 鍜?浠庝笉 reach the root 绔彛. The 鍐呮牳 灏?evaluate
+the PCIe topology 鍜?濮嬬粓 permit P2P 鍦?杩欎簺 well-defined cases.
 
-用于 PCIe the routing 的 Transaction Layer Packets (TLPs) 是 well-defined up
-直到 它们 reach 一个 host bridge 或 root 端口. 若 the path 包含 PCIe switches
-然后 基于 the ACS 设置 the transaction 可 route entirely 之内
-the PCIe hierarchy 和 从不 reach the root 端口. The 内核 将 evaluate
-the PCIe topology 和 始终 permit P2P 在 这些 well-defined cases.
+鐒惰€? 鑻?the P2P transaction reaches the host bridge 鐒跺悗 瀹?鍙兘 鍏锋湁 鍒?
+hairpin back out the 鐩稿悓 root 绔彛, 涓?routed inside the CPU SOC 鍒?another
+PCIe root 绔彛, 鎴?routed internally 鍒?the SOC.
 
-然而, 若 the P2P transaction reaches the host bridge 然后 它 可能 具有 到
-hairpin back out the 相同 root 端口, 为 routed inside the CPU SOC 到 another
-PCIe root 端口, 或 routed internally 到 the SOC.
+The PCIe specification doesn't 瀹氫箟 the forwarding 鐨?transactions 涔嬮棿
+hierarchy domains 鍜?鍐呮牳 defaults 鍒?blocking 姝ょ被 routing. 瀛樺湪 涓€涓?
+鍏佽 鍒楀嚭 鍒?鍏佽 detecting known-good HW, 鍦?鍏?case P2P 涔嬮棿 浠讳綍
+two PCIe 璁惧 灏?涓?permitted.
 
-The PCIe specification doesn't 定义 the forwarding 的 transactions 之间
-hierarchy domains 和 内核 defaults 到 blocking 此类 routing. 存在 一个
-允许 列出 到 允许 detecting known-good HW, 在 其 case P2P 之间 任何
-two PCIe 设备 将 为 permitted.
+Since P2P inherently 鏄?doing transactions 涔嬮棿 two 璁惧 瀹?闇€瑕?two
+椹卞姩 鍒?涓?co-operating inside the 鍐呮牳. The providing 椹卞姩 鍏锋湁 鍒?convey
+鍏?MMIO 鍒?the consuming 椹卞姩. 鍒?meet the 椹卞姩 鍨嬪彿 lifecycle rules the
+MMIO 蹇呴』 鍏锋湁 鍏ㄩ儴 DMA 鏄犲皠 removed, 鍏ㄩ儴 CPU accesses prevented, 鍏ㄩ儴 椤?
+琛?mappings undone 涔嬪墠 the providing 椹卞姩 completes remove().
 
-Since P2P inherently 是 doing transactions 之间 two 设备 它 需要 two
-驱动 到 为 co-operating inside the 内核. The providing 驱动 具有 到 convey
-其 MMIO 到 the consuming 驱动. 到 meet the 驱动 型号 lifecycle rules the
-MMIO 必须 具有 全部 DMA 映射 removed, 全部 CPU accesses prevented, 全部 页
-表 mappings undone 之前 the providing 驱动 completes remove().
+姝?闇€瑕?the providing 鍜?consuming 椹卞姩 鍒?actively work together 鍒?
+guarantee 璇?the consuming 椹卞姩 鍏锋湁 stopped 浣跨敤 the MMIO 鏈熼棿 涓€涓?removal
+cycle. 杩欐槸 宸插畬鎴?鐢?浠讳竴涓?涓€涓?synchronous invalidation shutdown 鎴?waiting
+鐢ㄤ簬 鍏ㄩ儴 usage refcounts 鍒?reach zero.
 
-此 需要 the providing 和 consuming 驱动 到 actively work together 到
-guarantee 该 the consuming 驱动 具有 stopped 使用 the MMIO 期间 一个 removal
-cycle. 这是 已完成 由 任一个 一个 synchronous invalidation shutdown 或 waiting
-用于 全部 usage refcounts 到 reach zero.
+鍦?the lowest level the P2P 瀛愮郴缁?offers 涓€涓?naked 缁撴瀯浣?p2p_provider 璇?
+delegates lifecycle 绠＄悊 鍒?the providing 椹卞姩. 瀹冩槸 expected 璇?
+椹卞姩 浣跨敤 姝?閫夐」 灏?wrap 瀹冧滑鐨?MMIO 鍐呭瓨 鍦?DMABUF 鍜?浣跨敤 DMABUF
+鍒?鎻愪緵 涓€涓?invalidation shutdown. 杩欎簺 MMIO 鍦板潃 鍏锋湁 鏃?缁撴瀯浣?椤? 鍜?
+鑻?浣跨敤 涓?mmap() 蹇呴』 鍒涘缓 鐗规畩 PTEs. 浣滀负 姝ょ被 瀛樺湪 very 灏戦噺
+鍐呮牳 uAPIs 璇?鍙?accept 鎸囬拡 鍒?them; 鐗瑰埆鏄?瀹冧滑 cannot 涓?浣跨敤
+涓?璇诲彇()/鍐欏叆(), including O_DIRECT.
 
-在 the lowest level the P2P 子系统 offers 一个 naked 结构体 p2p_provider 该
-delegates lifecycle 管理 到 the providing 驱动. 它是 expected 该
-驱动 使用 此 选项 将 wrap 它们的 MMIO 内存 在 DMABUF 和 使用 DMABUF
-到 提供 一个 invalidation shutdown. 这些 MMIO 地址 具有 无 结构体 页, 和
-若 使用 与 mmap() 必须 创建 特殊 PTEs. 作为 此类 存在 very 少量
-内核 uAPIs 该 可 accept 指针 到 them; 特别是 它们 cannot 为 使用
-与 读取()/写入(), including O_DIRECT.
-
-Building 在 此, the 子系统 offers 一个 layer 到 wrap the MMIO 在 一个 ZONE_设备
-pgmap 的 内存_设备_PCI_P2PDMA 到 创建 结构体 页. The lifecycle 的
-pgmap ensures 该 当 the pgmap 是 destroyed 全部 其他 驱动 具有 stopped
-使用 the MMIO. 此 选项 works 与 O_DIRECT flows, 在 一些 cases, 若 the
-underlying 子系统 supports handling 内存_设备_PCI_P2PDMA through
-FOLL_PCI_P2PDMA. The 使用 的 FOLL_LONGTERM 是 prevented. 作为 此 relies 在 pgmap
-它 也 relies 在 architecture 支持 along 与 alignment 和 最小 大小
+Building 鍦?姝? the 瀛愮郴缁?offers 涓€涓?layer 鍒?wrap the MMIO 鍦?涓€涓?ZONE_璁惧
+pgmap 鐨?鍐呭瓨_璁惧_PCI_P2PDMA 鍒?鍒涘缓 缁撴瀯浣?椤? The lifecycle 鐨?
+pgmap ensures 璇?褰?the pgmap 鏄?destroyed 鍏ㄩ儴 鍏朵粬 椹卞姩 鍏锋湁 stopped
+浣跨敤 the MMIO. 姝?閫夐」 works 涓?O_DIRECT flows, 鍦?涓€浜?cases, 鑻?the
+underlying 瀛愮郴缁?supports handling 鍐呭瓨_璁惧_PCI_P2PDMA through
+FOLL_PCI_P2PDMA. The 浣跨敤 鐨?FOLL_LONGTERM 鏄?prevented. 浣滀负 姝?relies 鍦?pgmap
+瀹?涔?relies 鍦?architecture 鏀寔 along 涓?alignment 鍜?鏈€灏?澶у皬
 limitations.
 
 
-## 驱动 Writer's Guide
+## 椹卞姩 Writer's Guide
 
 
-在 一个 given P2P implementation 那里 可 为 three 或 更多 不同
-types 的 内核 驱动 在 play:
+鍦?涓€涓?given P2P implementation 閭ｉ噷 鍙?涓?three 鎴?鏇村 涓嶅悓
+types 鐨?鍐呮牳 椹卞姩 鍦?play:
 
-- Provider - 一个 驱动 其 提供 或 publishes P2P resources 类似
-  内存 或 doorbell 寄存器 到 其他 驱动.
-- Client - 一个 驱动 其 makes 使用 的 一个 resource 由 设置 up 一个
-  DMA transaction 到 或 来自 它.
-- Orchestrator - 一个 驱动 其 orchestrates the flow 的 数据 之间
-  clients 和 providers.
+- Provider - 涓€涓?椹卞姩 鍏?鎻愪緵 鎴?publishes P2P resources 绫讳技
+  鍐呭瓨 鎴?doorbell 瀵勫瓨鍣?鍒?鍏朵粬 椹卞姩.
+- Client - 涓€涓?椹卞姩 鍏?makes 浣跨敤 鐨?涓€涓?resource 鐢?璁剧疆 up 涓€涓?
+  DMA transaction 鍒?鎴?鏉ヨ嚜 瀹?
+- Orchestrator - 涓€涓?椹卞姩 鍏?orchestrates the flow 鐨?鏁版嵁 涔嬮棿
+  clients 鍜?providers.
 
-在 许多 cases 那里 可以 为 overlap 之间 这些 three types (i.e.,
-它 可 为 典型 用于 一个 驱动 到 为 两者 一个 provider 和 一个 client).
+鍦?璁稿 cases 閭ｉ噷 鍙互 涓?overlap 涔嬮棿 杩欎簺 three types (i.e.,
+瀹?鍙?涓?鍏稿瀷 鐢ㄤ簬 涓€涓?椹卞姩 鍒?涓?涓よ€?涓€涓?provider 鍜?涓€涓?client).
 
-例如, 在 the NVMe Target Copy Offload implementation:
+渚嬪, 鍦?the NVMe Target Copy Offload implementation:
 
-- The NVMe PCI 驱动 是 两者 一个 client, provider 和 orchestrator
-  在 该 它 exposes 任何 CMB (控制器 内存 缓冲区) 作为 一个 P2P 内存
-  resource (provider), 它 accepts P2P 内存 页 作为 缓冲区 在 requests
-  到 为 使用 directly (client) 和 它 可 也 make 使用 的 the CMB 作为
-  submission 队列 条目 (orchestrator).
-- The RDMA 驱动 是 一个 client 在 此 arrangement 因此 该 一个 RNIC
-  可 DMA directly 到 the 内存 exposed 由 the NVMe 设备.
-- The NVMe Target 驱动 (nvmet) 可 orchestrate the 数据 来自 the RNIC
-  到 the P2P 内存 (CMB) 和 然后 到 the NVMe 设备 (和 vice versa).
+- The NVMe PCI 椹卞姩 鏄?涓よ€?涓€涓?client, provider 鍜?orchestrator
+  鍦?璇?瀹?exposes 浠讳綍 CMB (鎺у埗鍣?鍐呭瓨 缂撳啿鍖? 浣滀负 涓€涓?P2P 鍐呭瓨
+  resource (provider), 瀹?accepts P2P 鍐呭瓨 椤?浣滀负 缂撳啿鍖?鍦?requests
+  鍒?涓?浣跨敤 directly (client) 鍜?瀹?鍙?涔?make 浣跨敤 鐨?the CMB 浣滀负
+  submission 闃熷垪 鏉＄洰 (orchestrator).
+- The RDMA 椹卞姩 鏄?涓€涓?client 鍦?姝?arrangement 鍥犳 璇?涓€涓?RNIC
+  鍙?DMA directly 鍒?the 鍐呭瓨 exposed 鐢?the NVMe 璁惧.
+- The NVMe Target 椹卞姩 (nvmet) 鍙?orchestrate the 鏁版嵁 鏉ヨ嚜 the RNIC
+  鍒?the P2P 鍐呭瓨 (CMB) 鍜?鐒跺悗 鍒?the NVMe 璁惧 (鍜?vice versa).
 
-这是 currently the 仅 arrangement 受支持 由 the 内核 但
-one 可以 imagine slight tweaks 到 此 该 将会 允许 用于 the 相同
-functionality. 例如, 若 一个 特定 RNIC added 一个 BAR 与 一些
-内存 behind 它, 其 驱动 可以 add 支持 作为 一个 P2P provider 和
-然后 the NVMe Target 可以 使用 the RNIC's 内存 而非 the CMB
-在 cases 何处 the NVMe 卡 在 使用 执行 不 具有 CMB 支持.
-
-
-### Provider 驱动
+杩欐槸 currently the 浠?arrangement 鍙楁敮鎸?鐢?the 鍐呮牳 浣?
+one 鍙互 imagine slight tweaks 鍒?姝?璇?灏嗕細 鍏佽 鐢ㄤ簬 the 鐩稿悓
+functionality. 渚嬪, 鑻?涓€涓?鐗瑰畾 RNIC added 涓€涓?BAR 涓?涓€浜?
+鍐呭瓨 behind 瀹? 鍏?椹卞姩 鍙互 add 鏀寔 浣滀负 涓€涓?P2P provider 鍜?
+鐒跺悗 the NVMe Target 鍙互 浣跨敤 the RNIC's 鍐呭瓨 鑰岄潪 the CMB
+鍦?cases 浣曞 the NVMe 鍗?鍦?浣跨敤 鎵ц 涓?鍏锋湁 CMB 鏀寔.
 
 
-一个 provider simply needs 到 注册 一个 BAR (或 一个 portion 的 一个 BAR)
-作为 一个 P2P DMA resource 使用 `pci_p2pdma_add_resource()`.
-此 将 注册 结构体 页 用于 全部 the specified 内存.
-
-之后 该 它 可 optionally publish 全部 的 其 resources 作为
-P2P 内存 使用 `pci_p2pmem_publish()`. 此 将 允许
-任何 orchestrator 驱动 到 find 和 使用 the 内存. 当 marked 在
-此 way, the resource 必须 为 regular 内存 与 无 side effects.
-
-用于 the time 正在 这是 fairly rudimentary 在 该 全部 resources
-是 typically going 到 为 P2P 内存. Future work 将 likely expand
-此 到 包含 其他 types 的 resources 类似 doorbells.
+### Provider 椹卞姩
 
 
-### Client 驱动
+涓€涓?provider simply needs 鍒?娉ㄥ唽 涓€涓?BAR (鎴?涓€涓?portion 鐨?涓€涓?BAR)
+浣滀负 涓€涓?P2P DMA resource 浣跨敤 `pci_p2pdma_add_resource()`.
+姝?灏?娉ㄥ唽 缁撴瀯浣?椤?鐢ㄤ簬 鍏ㄩ儴 the specified 鍐呭瓨.
+
+涔嬪悗 璇?瀹?鍙?optionally publish 鍏ㄩ儴 鐨?鍏?resources 浣滀负
+P2P 鍐呭瓨 浣跨敤 `pci_p2pmem_publish()`. 姝?灏?鍏佽
+浠讳綍 orchestrator 椹卞姩 鍒?find 鍜?浣跨敤 the 鍐呭瓨. 褰?marked 鍦?
+姝?way, the resource 蹇呴』 涓?regular 鍐呭瓨 涓?鏃?side effects.
+
+鐢ㄤ簬 the time 姝ｅ湪 杩欐槸 fairly rudimentary 鍦?璇?鍏ㄩ儴 resources
+鏄?typically going 鍒?涓?P2P 鍐呭瓨. Future work 灏?likely expand
+姝?鍒?鍖呭惈 鍏朵粬 types 鐨?resources 绫讳技 doorbells.
 
 
-一个 client 驱动 仅 具有 到 使用 the 映射 API `dma_map_sg()`
-和 `dma_unmap_sg()` 函数 作为 usual, 和 the implementation
-将 执行 the right thing 用于 the P2P capable 内存.
+### Client 椹卞姩
 
 
-### Orchestrator 驱动
+涓€涓?client 椹卞姩 浠?鍏锋湁 鍒?浣跨敤 the 鏄犲皠 API `dma_map_sg()`
+鍜?`dma_unmap_sg()` 鍑芥暟 浣滀负 usual, 鍜?the implementation
+灏?鎵ц the right thing 鐢ㄤ簬 the P2P capable 鍐呭瓨.
 
 
-The 第一 task 一个 orchestrator 驱动 必须 执行 是 compile 一个 列出 的
-全部 client 设备 该 将 为 involved 在 一个 given transaction. 用于
-示例, the NVMe Target 驱动 creates 一个 列出 including the namespace
-块 设备 和 the RNIC 在 使用. 若 the orchestrator 具有 access 到
-一个 特定 P2P provider 到 使用 它 可 check compatibility 使用
-`pci_p2pdma_distance()` 否则 它 可 find 一个 内存 provider
-该's compatible 与 全部 clients 使用  `pci_p2pmem_find()`.
-若 多于 one provider 是 受支持, the one nearest 到 全部 the clients 将
-为 chosen 第一. 若 多于 one provider 是 一个 equal distance away, the
-one returned 将 为 chosen 在 random (它是 不 一个 arbitrary 但
-truly random). 此 函数 returns the PCI 设备 到 使用 用于 the provider
-与 一个 参考 taken 和 因此 当 它's 无 longer needed 它 应当 为
-returned 与 PCI_dev_put().
-
-一旦 一个 provider 是 selected, the orchestrator 可 然后 使用
-`pci_alloc_p2pmem()` 和 `pci_free_p2pmem()` 到
-allocate P2P 内存 来自 the provider. `pci_p2pmem_alloc_sgl()`
-和 `pci_p2pmem_free_sgl()` 是 convenience 函数 用于
-allocating scatter-gather 列表 与 P2P 内存.
-
-### 结构体 页 Caveats
+### Orchestrator 椹卞姩
 
 
-同时 the 内存_设备_PCI_P2PDMA 页 可 为 installed 在 VMAs,
-pin_用户_页() 和 related 将 不 return them 除非 FOLL_PCI_P2PDMA 是 set.
+The 绗竴 task 涓€涓?orchestrator 椹卞姩 蹇呴』 鎵ц 鏄?compile 涓€涓?鍒楀嚭 鐨?
+鍏ㄩ儴 client 璁惧 璇?灏?涓?involved 鍦?涓€涓?given transaction. 鐢ㄤ簬
+绀轰緥, the NVMe Target 椹卞姩 creates 涓€涓?鍒楀嚭 including the namespace
+鍧?璁惧 鍜?the RNIC 鍦?浣跨敤. 鑻?the orchestrator 鍏锋湁 access 鍒?
+涓€涓?鐗瑰畾 P2P provider 鍒?浣跨敤 瀹?鍙?check compatibility 浣跨敤
+`pci_p2pdma_distance()` 鍚﹀垯 瀹?鍙?find 涓€涓?鍐呭瓨 provider
+璇?s compatible 涓?鍏ㄩ儴 clients 浣跨敤  `pci_p2pmem_find()`.
+鑻?澶氫簬 one provider 鏄?鍙楁敮鎸? the one nearest 鍒?鍏ㄩ儴 the clients 灏?
+涓?chosen 绗竴. 鑻?澶氫簬 one provider 鏄?涓€涓?equal distance away, the
+one returned 灏?涓?chosen 鍦?random (瀹冩槸 涓?涓€涓?arbitrary 浣?
+truly random). 姝?鍑芥暟 returns the PCI 璁惧 鍒?浣跨敤 鐢ㄤ簬 the provider
+涓?涓€涓?鍙傝€?taken 鍜?鍥犳 褰?瀹?s 鏃?longer needed 瀹?搴斿綋 涓?
+returned 涓?PCI_dev_put().
 
-The 内存_设备_PCI_P2PDMA 页 需要 care 到 支持 在 the 内核. The
-KVA 是 仍然 MMIO 和 必须 仍然 为 accessed through the 正常
-readX()/writeX()/等 helpers. Direct CPU access (e.g. memcpy) 是 forbidden, just
-类似 任何 其他 MMIO 映射. 同时 此 将 actually work 在 一些
-architectures, others 将 experience corruption 或 just crash 在 the 内核.
-Supporting FOLL_PCI_P2PDMA 在 一个 子系统 需要 scrubbing 它 到 ensure 无 CPU
+涓€鏃?涓€涓?provider 鏄?selected, the orchestrator 鍙?鐒跺悗 浣跨敤
+`pci_alloc_p2pmem()` 鍜?`pci_free_p2pmem()` 鍒?
+allocate P2P 鍐呭瓨 鏉ヨ嚜 the provider. `pci_p2pmem_alloc_sgl()`
+鍜?`pci_p2pmem_free_sgl()` 鏄?convenience 鍑芥暟 鐢ㄤ簬
+allocating scatter-gather 鍒楄〃 涓?P2P 鍐呭瓨.
+
+### 缁撴瀯浣?椤?Caveats
+
+
+鍚屾椂 the 鍐呭瓨_璁惧_PCI_P2PDMA 椤?鍙?涓?installed 鍦?VMAs,
+pin_鐢ㄦ埛_椤?) 鍜?related 灏?涓?return them 闄ら潪 FOLL_PCI_P2PDMA 鏄?set.
+
+The 鍐呭瓨_璁惧_PCI_P2PDMA 椤?闇€瑕?care 鍒?鏀寔 鍦?the 鍐呮牳. The
+KVA 鏄?浠嶇劧 MMIO 鍜?蹇呴』 浠嶇劧 涓?accessed through the 姝ｅ父
+readX()/writeX()/绛?helpers. Direct CPU access (e.g. memcpy) 鏄?forbidden, just
+绫讳技 浠讳綍 鍏朵粬 MMIO 鏄犲皠. 鍚屾椂 姝?灏?actually work 鍦?涓€浜?
+architectures, others 灏?experience corruption 鎴?just crash 鍦?the 鍐呮牳.
+Supporting FOLL_PCI_P2PDMA 鍦?涓€涓?瀛愮郴缁?闇€瑕?scrubbing 瀹?鍒?ensure 鏃?CPU
 access happens.
 
 
-## Usage 与 DMABUF
+## Usage 涓?DMABUF
 
 
-DMABUF 提供 一个 alternative 到 the 上文 结构体 page-based
-client/provider/orchestrator 系统 和 应当 为 使用 当 结构体 页
-doesn't exist. 在 此 模式 the exporting 驱动 将 wrap
-一些 的 其 MMIO 在 一个 DMABUF 和 give the DMABUF FD 到 userspace.
+DMABUF 鎻愪緵 涓€涓?alternative 鍒?the 涓婃枃 缁撴瀯浣?page-based
+client/provider/orchestrator 绯荤粺 鍜?搴斿綋 涓?浣跨敤 褰?缁撴瀯浣?椤?
+doesn't exist. 鍦?姝?妯″紡 the exporting 椹卞姩 灏?wrap
+涓€浜?鐨?鍏?MMIO 鍦?涓€涓?DMABUF 鍜?give the DMABUF FD 鍒?userspace.
 
-Userspace 可 然后 pass the FD 到 一个 importing 驱动 其 将 ask the
-exporting 驱动 到 map 它 到 the importer.
+Userspace 鍙?鐒跺悗 pass the FD 鍒?涓€涓?importing 椹卞姩 鍏?灏?ask the
+exporting 椹卞姩 鍒?map 瀹?鍒?the importer.
 
-在 此 case the initiator 和 target PCI_设备 是 known 和 the P2P 子系统
-是 使用 到 determine the 映射 类型. The phys_addr_t-based DMA API 是 使用 到
+鍦?姝?case the initiator 鍜?target PCI_璁惧 鏄?known 鍜?the P2P 瀛愮郴缁?
+鏄?浣跨敤 鍒?determine the 鏄犲皠 绫诲瀷. The phys_addr_t-based DMA API 鏄?浣跨敤 鍒?
 establish the dma_addr_t.
 
-Lifecycle 是 controlled 由 DMABUF move_notify(). 当 the exporting 驱动 wants
-到 remove() 它 必须 deliver 一个 invalidation shutdown 到 全部 DMABUF importing
-驱动 through move_notify() 和 synchronously DMA unmap 全部 the MMIO.
+Lifecycle 鏄?controlled 鐢?DMABUF move_notify(). 褰?the exporting 椹卞姩 wants
+鍒?remove() 瀹?蹇呴』 deliver 涓€涓?invalidation shutdown 鍒?鍏ㄩ儴 DMABUF importing
+椹卞姩 through move_notify() 鍜?synchronously DMA unmap 鍏ㄩ儴 the MMIO.
 
-无 importing 驱动 可 continue 到 具有 一个 DMA map 到 the MMIO 之后 the
-exporting 驱动 具有 destroyed 其 p2p_provider.
+鏃?importing 椹卞姩 鍙?continue 鍒?鍏锋湁 涓€涓?DMA map 鍒?the MMIO 涔嬪悗 the
+exporting 椹卞姩 鍏锋湁 destroyed 鍏?p2p_provider.
 
 
-## P2P DMA 支持 库
+## P2P DMA 鏀寔 搴?
 
 
    :export:

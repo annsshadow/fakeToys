@@ -1,5 +1,5 @@
-
-## Adaptec dpti 驱动
+﻿
+## Adaptec dpti 椹卞姩
 
 
 Redistribution and use in source form, with or without modification, are
@@ -18,66 +18,44 @@ contract, strict liability, or tort (including negligence or otherwise)
 arising in any way out of the use of this driver software, even if advised
 of the possibility of such damage.
 
-本驱动支持 Adaptec I2O RAID 与 DPT SmartRAID V I2O 板卡。
-
-## 致谢
-
-
-原始 Linux 驱动由 Karen White 在 Dell Computer 期间移植到 Linux。它移植自 Bob Pasteur
-（DPT）的原始非 Linux 驱动。Mark Salyzyn 与 Bob Pasteur 对原始驱动提供了咨询。
-
-2.0 版本的驱动由 Deanna Bonds 与 Mark Salyzyn 完成。
-
-## 历史
+鏈┍鍔ㄦ敮鎸?Adaptec I2O RAID 涓?DPT SmartRAID V I2O 鏉垮崱銆?
+## 鑷磋阿
 
 
-该驱动最初被移植到 linux 2.0.34 版本。
+鍘熷 Linux 椹卞姩鐢?Karen White 鍦?Dell Computer 鏈熼棿绉绘鍒?Linux銆傚畠绉绘鑷?Bob Pasteur
+锛圖PT锛夌殑鍘熷闈?Linux 椹卞姩銆侻ark Salyzyn 涓?Bob Pasteur 瀵瑰師濮嬮┍鍔ㄦ彁渚涗簡鍜ㄨ銆?
+2.0 鐗堟湰鐨勯┍鍔ㄧ敱 Deanna Bonds 涓?Mark Salyzyn 瀹屾垚銆?
+## 鍘嗗彶
 
+
+璇ラ┍鍔ㄦ渶鍒濊绉绘鍒?linux 2.0.34 鐗堟湰銆?
 ==== ==========================================================================
-V2.0 驱动重写。基于 i2o 子系统重新架构。这是第一个完全 GPL 的版本，因为上一个版本使用的
-     i2osig 头文件不是 GPL 的。开发者测试版本。
-V2.1 内部测试
-V2.2 首个发布版本
+V2.0 椹卞姩閲嶅啓銆傚熀浜?i2o 瀛愮郴缁熼噸鏂版灦鏋勩€傝繖鏄涓€涓畬鍏?GPL 鐨勭増鏈紝鍥犱负涓婁竴涓増鏈娇鐢ㄧ殑
+     i2osig 澶存枃浠朵笉鏄?GPL 鐨勩€傚紑鍙戣€呮祴璇曠増鏈€?V2.1 鍐呴儴娴嬭瘯
+V2.2 棣栦釜鍙戝竷鐗堟湰
 
-V2.3 变更：
-
-     - 增加了 Raptor 支持
-     - 修复了在负载极重、管理工具运行（从 kmalloc 标志中移除 GFP_DMA）时导致系统挂起的缺陷
-
-V2.4 首个准备好提交并嵌入内核的版本
-
-     变更：
-
-     - 实现了 Alan Cox 的建议
-     - 为 sg 层增加了 resid 的计算
-     - 更好的错误处理
-     - 增加了下溢条件检查
-     - 增加了 DATAPROTECT 检查
-     - 更改了错误返回码
-     - 修复了总线复位例程中的指针缺陷
-     - 启用了来自 ioctl 的 hba 复位（允许 FW 刷写后重启并使用新 FW，而无需重启系统）
-     - 更改了 proc 输出
+V2.3 鍙樻洿锛?
+     - 澧炲姞浜?Raptor 鏀寔
+     - 淇浜嗗湪璐熻浇鏋侀噸銆佺鐞嗗伐鍏疯繍琛岋紙浠?kmalloc 鏍囧織涓Щ闄?GFP_DMA锛夋椂瀵艰嚧绯荤粺鎸傝捣鐨勭己闄?
+V2.4 棣栦釜鍑嗗濂芥彁浜ゅ苟宓屽叆鍐呮牳鐨勭増鏈?
+     鍙樻洿锛?
+     - 瀹炵幇浜?Alan Cox 鐨勫缓璁?     - 涓?sg 灞傚鍔犱簡 resid 鐨勮绠?     - 鏇村ソ鐨勯敊璇鐞?     - 澧炲姞浜嗕笅婧㈡潯浠舵鏌?     - 澧炲姞浜?DATAPROTECT 妫€鏌?     - 鏇存敼浜嗛敊璇繑鍥炵爜
+     - 淇浜嗘€荤嚎澶嶄綅渚嬬▼涓殑鎸囬拡缂洪櫡
+     - 鍚敤浜嗘潵鑷?ioctl 鐨?hba 澶嶄綅锛堝厑璁?FW 鍒峰啓鍚庨噸鍚苟浣跨敤鏂?FW锛岃€屾棤闇€閲嶅惎绯荤粺锛?     - 鏇存敼浜?proc 杈撳嚭
 ==== ==========================================================================
 
-## 待办
+## 寰呭姙
 
 
-- 在 64 位架构上编译时增加 64 位分散/聚集（Scatter Gather）支持
-- 增加稀疏 LUN 扫描
-- 增加在 scsi-core 发出 test unit ready 或 inquiry 命令时，检查曾被离线（在 FW 层面）的设备
-  现已在线的代码
-- 增加 proc 读接口
-- busrescan 命令
-- rescan 命令
-- 增加向 scsi-core 通知新设备的 rescan 例程代码
-- 增加 C-PCI（热插拔相关）支持
-- 增加 ioctl 透传错误恢复
+- 鍦?64 浣嶆灦鏋勪笂缂栬瘧鏃跺鍔?64 浣嶅垎鏁?鑱氶泦锛圫catter Gather锛夋敮鎸?- 澧炲姞绋€鐤?LUN 鎵弿
+- 澧炲姞鍦?scsi-core 鍙戝嚭 test unit ready 鎴?inquiry 鍛戒护鏃讹紝妫€鏌ユ浘琚绾匡紙鍦?FW 灞傞潰锛夌殑璁惧
+  鐜板凡鍦ㄧ嚎鐨勪唬鐮?- 澧炲姞 proc 璇绘帴鍙?- busrescan 鍛戒护
+- rescan 鍛戒护
+- 澧炲姞鍚?scsi-core 閫氱煡鏂拌澶囩殑 rescan 渚嬬▼浠ｇ爜
+- 澧炲姞 C-PCI锛堢儹鎻掓嫈鐩稿叧锛夋敮鎸?- 澧炲姞 ioctl 閫忎紶閿欒鎭㈠
 
-## 说明
+## 璇存槑
 
 
-DPT 卡会优化命令处理的顺序。因此，一条命令在发送到板卡后最多可能需要 6 分钟才能完成。
-
-文件 dpti_ioctl.h、dptsig.h、osd_defs.h、osd_util.h、sys_info.h 是 Adaptec 管理例程的接口
-文件的一部分。它们定义了 ioctl 中使用的结构体。它们被写成可移植的。它们难以阅读，但我需要
-“原样”使用它们，否则我可能会漏掉接口的变更。
+DPT 鍗′細浼樺寲鍛戒护澶勭悊鐨勯『搴忋€傚洜姝わ紝涓€鏉″懡浠ゅ湪鍙戦€佸埌鏉垮崱鍚庢渶澶氬彲鑳介渶瑕?6 鍒嗛挓鎵嶈兘瀹屾垚銆?
+鏂囦欢 dpti_ioctl.h銆乨ptsig.h銆乷sd_defs.h銆乷sd_util.h銆乻ys_info.h 鏄?Adaptec 绠＄悊渚嬬▼鐨勬帴鍙?鏂囦欢鐨勪竴閮ㄥ垎銆傚畠浠畾涔変簡 ioctl 涓娇鐢ㄧ殑缁撴瀯浣撱€傚畠浠鍐欐垚鍙Щ妞嶇殑銆傚畠浠毦浠ラ槄璇伙紝浣嗘垜闇€瑕?鈥滃師鏍封€濅娇鐢ㄥ畠浠紝鍚﹀垯鎴戝彲鑳戒細婕忔帀鎺ュ彛鐨勫彉鏇淬€?

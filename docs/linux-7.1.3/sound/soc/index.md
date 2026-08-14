@@ -1,10 +1,10 @@
-## ALSA SoC 层
+﻿## ALSA SoC 灞?
 
-本页是 ALSA SoC（片上音频系统）层文档的索引，汇总了 overview、codec、dai、dapm、dpcm 等子章节入口，便于音频驱动开发者按主题查阅 SoC 音频框架说明。
+鏈〉鏄?ALSA SoC锛堢墖涓婇煶棰戠郴缁燂級灞傛枃妗ｇ殑绱㈠紩锛屾眹鎬讳簡 overview銆乧odec銆乨ai銆乨apm銆乨pcm 绛夊瓙绔犺妭鍏ュ彛锛屼究浜庨煶棰戦┍鍔ㄥ紑鍙戣€呮寜涓婚鏌ラ槄 SoC 闊抽妗嗘灦璇存槑銆?
 
 
 
-文档分为以下章节：-
+鏂囨。鍒嗕负浠ヤ笅绔犺妭锛?
 
 - [overview](overview)
 - [codec](codec)

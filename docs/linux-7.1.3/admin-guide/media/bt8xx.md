@@ -1,6 +1,5 @@
-
-## 如何让 bt8xx 系列卡工作
-
+﻿
+## 濡備綍璁?bt8xx 绯诲垪鍗″伐浣?
 
 Authors:
 	 Richard Walker,
@@ -10,15 +9,12 @@ Authors:
 	 Uwe Bugla,
 	 Michael Krufky
 
-### 一般信息
+### 涓€鑸俊鎭?
 
-
-这类卡以 bt878a 作为 PCI 接口，并且需要 bttv 驱动来访问 bt8xx 芯片组的 i2c 总线和 gpio 引脚。
-
-关于 Linux 内核支持的基于 Conexant Bt8xx PCI 桥的卡的完整列表，请参见
-`Documentation/admin-guide/media/bttv-cardlist.rst`。
-
-为了能够编译内核，应配置一些选项
+杩欑被鍗′互 bt878a 浣滀负 PCI 鎺ュ彛锛屽苟涓旈渶瑕?bttv 椹卞姩鏉ヨ闂?bt8xx 鑺墖缁勭殑 i2c 鎬荤嚎鍜?gpio 寮曡剼銆?
+鍏充簬 Linux 鍐呮牳鏀寔鐨勫熀浜?Conexant Bt8xx PCI 妗ョ殑鍗＄殑瀹屾暣鍒楄〃锛岃鍙傝
+`Documentation/admin-guide/media/bttv-cardlist.rst`銆?
+涓轰簡鑳藉缂栬瘧鍐呮牳锛屽簲閰嶇疆涓€浜涢€夐」
 ```
 
     ./scripts/config -e PCI
@@ -34,43 +30,34 @@ Authors:
     ./scripts/config -m DVB_BT8XX
 
 ```
-如果你希望自动支持 Bt8xx 的所有可能变体
-```
+濡傛灉浣犲笇鏈涜嚜鍔ㄦ敮鎸?Bt8xx 鐨勬墍鏈夊彲鑳藉彉浣?```
 
     ./scripts/config -e MEDIA_SUBDRV_AUTOSELECT
 
 ```
-   请谨慎使用以下选项，因为取消选择实际必需的驱动可能导致因缺少驱动支持而无法调谐的 DVB 设备。
-
-如果你的目标只是支持某个特定的板卡，你可以禁用 MEDIA_SUBDRV_AUTOSELECT 并手动选择你的板卡所需的
-前端驱动。这样，你可以节省一些 RAM。
-
-你可以通过调用 make xconfig/qconfig/menuconfig，并查看这些菜单选项来完成（仅在
-`Autoselect ancillary drivers` 被禁用时启用）：
+   璇疯皑鎱庝娇鐢ㄤ互涓嬮€夐」锛屽洜涓哄彇娑堥€夋嫨瀹為檯蹇呴渶鐨勯┍鍔ㄥ彲鑳藉鑷村洜缂哄皯椹卞姩鏀寔鑰屾棤娉曡皟璋愮殑 DVB 璁惧銆?
+濡傛灉浣犵殑鐩爣鍙槸鏀寔鏌愪釜鐗瑰畾鐨勬澘鍗★紝浣犲彲浠ョ鐢?MEDIA_SUBDRV_AUTOSELECT 骞舵墜鍔ㄩ€夋嫨浣犵殑鏉垮崱鎵€闇€鐨?鍓嶇椹卞姩銆傝繖鏍凤紝浣犲彲浠ヨ妭鐪佷竴浜?RAM銆?
+浣犲彲浠ラ€氳繃璋冪敤 make xconfig/qconfig/menuconfig锛屽苟鏌ョ湅杩欎簺鑿滃崟閫夐」鏉ュ畬鎴愶紙浠呭湪
+`Autoselect ancillary drivers` 琚鐢ㄦ椂鍚敤锛夛細
 
 #) `Device drivers` => `Multimedia support` => `Customize TV tuners`
 #) `Device drivers` => `Multimedia support` => `Customize DVB frontends`
 
-然后，在上述每个菜单中，请选择你板卡特定的前端与调谐器模块。
+鐒跺悗锛屽湪涓婅堪姣忎釜鑿滃崟涓紝璇烽€夋嫨浣犳澘鍗＄壒瀹氱殑鍓嶇涓庤皟璋愬櫒妯″潡銆?
+
+### 鍔犺浇妯″潡
 
 
-### 加载模块
+甯歌鎯呭喌锛氬鏋?bttv 椹卞姩妫€娴嬪埌涓€涓熀浜?bt8xx 鐨?DVB 鍗★紝鎵€鏈夊墠绔笌鍚庣妯″潡閮戒細鑷姩鍔犺浇銆?
+渚嬪鎯呭喌鏈夛細
 
+- 娌℃湁 EEPROM銆佸叡浜竴涓€氱敤 PCI 瀛愮郴缁?ID 鐨勬棫鐢佃鍗★紱
+- 甯︽湁鎴栦笉甯︽湁 CA 鎻掓Ы銆佷笖涓嶅寘鍚?Eeprom 鐨勬棫 TwinHan DST 鍗℃垨鍏跺厠闅嗐€?
+鍦ㄤ互涓嬫儏鍐典笅锛屽彲鑳介渶瑕侀€氳繃浼犻€?modprobe 鍙傛暟鏉ヨ鐩?bttv 鍜?dvb-bt8xx 椹卞姩鐨?PCI 绫诲瀷妫€娴嬨€?
+#### 杩愯 TwinHan 鍙婂叾鍏嬮殕鍗?
 
-常规情况：如果 bttv 驱动检测到一个基于 bt8xx 的 DVB 卡，所有前端与后端模块都会自动加载。
-
-例外情况有：
-
-- 没有 EEPROM、共享一个通用 PCI 子系统 ID 的旧电视卡；
-- 带有或不带有 CA 插槽、且不包含 Eeprom 的旧 TwinHan DST 卡或其克隆。
-
-在以下情况下，可能需要通过传递 modprobe 参数来覆盖 bttv 和 dvb-bt8xx 驱动的 PCI 类型检测。
-
-#### 运行 TwinHan 及其克隆卡
-
-
-如 `Documentation/admin-guide/media/bttv-cardlist.rst` 所示，TwinHan 及其克隆卡使用 `card=113`
-modprobe 参数。因此，为了正确
+濡?`Documentation/admin-guide/media/bttv-cardlist.rst` 鎵€绀猴紝TwinHan 鍙婂叾鍏嬮殕鍗′娇鐢?`card=113`
+modprobe 鍙傛暟銆傚洜姝わ紝涓轰簡姝ｇ‘
 ```
 
 	$ modprobe bttv card=113
@@ -79,28 +66,22 @@ modprobe 参数。因此，为了正确
 ```
 ```
 
-	verbose=0:		禁用消息
-		1:		仅显示错误消息
-		2:		显示通知
-		3:		显示其他有用的消息
-		4:		调试设置
-	dst_addons=0:		卡仅为免费卫星（FTA）卡
-		0x20:		卡带有用于加扰频道的条件接收插槽
-	dst_algo=0:		（默认）软件调谐算法
-	         1:		硬件调谐算法
+	verbose=0:		绂佺敤娑堟伅
+		1:		浠呮樉绀洪敊璇秷鎭?		2:		鏄剧ず閫氱煡
+		3:		鏄剧ず鍏朵粬鏈夌敤鐨勬秷鎭?		4:		璋冭瘯璁剧疆
+	dst_addons=0:		鍗′粎涓哄厤璐瑰崼鏄燂紙FTA锛夊崱
+		0x20:		鍗″甫鏈夌敤浜庡姞鎵伴閬撶殑鏉′欢鎺ユ敹鎻掓Ы
+	dst_algo=0:		锛堥粯璁わ級杞欢璋冭皭绠楁硶
+	         1:		纭欢璋冭皭绠楁硶
 
 
 ```
-自动检测的值由卡的“响应字符串”决定。
+鑷姩妫€娴嬬殑鍊肩敱鍗＄殑鈥滃搷搴斿瓧绗︿覆鈥濆喅瀹氥€?
+鍦ㄤ綘鐨勬棩蹇椾腑鍙锛屼緥濡傦細dst_get_device_id: Recognize [DSTMCI]銆?
+瀵逛簬缂洪櫡鎶ュ憡锛岃鍙戦€佷竴浠芥縺娲讳簡 verbose=4 鐨勫畬鏁存棩蹇椼€傚彟璇峰弬瑙?`Documentation/admin-guide/media/ci.rst`銆?
+#### 杩愯澶氬紶鍗?
 
-在你的日志中可见，例如：dst_get_device_id: Recognize [DSTMCI]。
-
-对于缺陷报告，请发送一份激活了 verbose=4 的完整日志。另请参见 `Documentation/admin-guide/media/ci.rst`。
-
-#### 运行多张卡
-
-
-关于卡 ID 的完整列表，请参见 `Documentation/admin-guide/media/bttv-cardlist.rst`。一些示例：
+鍏充簬鍗?ID 鐨勫畬鏁村垪琛紝璇峰弬瑙?`Documentation/admin-guide/media/bttv-cardlist.rst`銆備竴浜涚ず渚嬶細
 
 	===========================	===
 	Brand name			ID
@@ -115,21 +96,18 @@ modprobe 参数。因此，为了正确
 	DViCO FusionHDTV 5 Lite		135
 	===========================	===
 
-   当你有多张卡时，卡 ID 的顺序应与系统检测到它们的顺序一致。请注意，移除/插入其他 PCI 卡可能会
-   改变检测顺序。
-
+   褰撲綘鏈夊寮犲崱鏃讹紝鍗?ID 鐨勯『搴忓簲涓庣郴缁熸娴嬪埌瀹冧滑鐨勯『搴忎竴鑷淬€傝娉ㄦ剰锛岀Щ闄?鎻掑叆鍏朵粬 PCI 鍗″彲鑳戒細
+   鏀瑰彉妫€娴嬮『搴忋€?
 ```
 
 	$ modprobe bttv card=113 card=135
 
 ```
-如果还有进一步的问题，请订阅并向邮件列表发送问题：linux-media@vger.kernel.org。
+濡傛灉杩樻湁杩涗竴姝ョ殑闂锛岃璁㈤槄骞跺悜閭欢鍒楄〃鍙戦€侀棶棰橈細linux-media@vger.kernel.org銆?
+#### 鎺㈡祴 PCI 瀛愮郴缁?ID 鎹熷潖鐨勫崱
 
-#### 探测 PCI 子系统 ID 损坏的卡
 
-
-有一些 TwinHan 卡由于某种原因其 EEPROM 已损坏。这些卡没有正确的 PCI 子系统 ID。
-```
+鏈変竴浜?TwinHan 鍗＄敱浜庢煇绉嶅師鍥犲叾 EEPROM 宸叉崯鍧忋€傝繖浜涘崱娌℃湁姝ｇ‘鐨?PCI 瀛愮郴缁?ID銆?```
 
 	$ echo 109e 0878 $subvendor $subdevice > \
 		/sys/bus/pci/drivers/bt878/new_id

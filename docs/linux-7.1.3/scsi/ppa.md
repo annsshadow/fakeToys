@@ -1,15 +1,15 @@
-## ZIP 驱动器帮助信息获取途径（简略）
+﻿## ZIP 椹卞姩鍣ㄥ府鍔╀俊鎭幏鍙栭€斿緞锛堢畝鐣ワ級
 
 
-Linux 下 Iomega ZIP 驱动器通用页面：
+Linux 涓?Iomega ZIP 椹卞姩鍣ㄩ€氱敤椤甸潰锛?
 http://web.archive.org/web/%2E/http://www.torque.net/~campbell/
 
-旧驱动的程序存档：
+鏃ч┍鍔ㄧ殑绋嬪簭瀛樻。锛?
 http://web.archive.org/web/%2E/http://www.torque.net/~campbell/ppa
 
-Linux 并行端口（parport）页面：
+Linux 骞惰绔彛锛坧arport锛夐〉闈細
 http://web.archive.org/web/%2E/http://www.torque.net/parport/
 
-Linux 并行端口邮件列表：
+Linux 骞惰绔彛閭欢鍒楄〃锛?
 linux-parport@torque.net
 

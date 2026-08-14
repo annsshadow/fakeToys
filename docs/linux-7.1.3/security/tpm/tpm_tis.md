@@ -1,26 +1,17 @@
+﻿
+## TPM FIFO 鎺ュ彛椹卞姩
 
-## TPM FIFO 接口驱动
 
+TCG PTP 瑙勮寖瀹氫箟浜嗕袱绉嶆帴鍙ｇ被鍨嬶細FIFO 鍜?CRB銆傚墠鑰呭熀浜庢湁搴忕殑璇诲啓鎿嶄綔锛屽悗鑰呭熀浜庡寘鍚竴涓畬鏁村懡浠ゆ垨鍝嶅簲鐨勭紦鍐插尯銆?
+FIFO锛團irst-In-First-Out锛屽厛杩涘厛鍑猴級鎺ュ彛琚緷璧栦簬 tpm_tis_core 鐨勯┍鍔ㄦ墍浣跨敤銆傛渶鍒?Linux 鍙湁涓€涓悕涓?tpm_tis 鐨勯┍鍔紝瀹冭鐩栧唴瀛樻槧灏勶紙鍗?MMIO锛夋帴鍙ｏ紝浣嗗悗鏉ヨ鎵╁睍涓鸿鐩?TCG 鏍囧噯鏀寔鐨勫叾浠栫墿鐞嗘帴鍙ｃ€?
+鐢变簬涓婅堪鍘嗗彶鍘熷洜锛屾渶鍒濈殑 MMIO 椹卞姩琚О涓?tpm_tis锛岃€?FIFO 椹卞姩鐨勬鏋惰鍛藉悕涓?tpm_tis_core銆倀pm_tis 涓殑鍚庣紑"tis"鏉ヨ嚜 TPM Interface Specification锛圱PM 鎺ュ彛瑙勮寖锛夛紝鍗?TPM 1.x 鑺墖鐨勭‖浠舵帴鍙ｈ鑼冦€?
+閫氫俊鍩轰簬涓€鍧楃敱 TPM 鑺墖閫氳繃纭欢鎬荤嚎鎴栧唴瀛樻槧灏勫叡浜殑 20 KiB 缂撳啿鍖猴紙鍙栧喅浜庣墿鐞嗘帴绾挎柟寮忥級銆傝缂撳啿鍖鸿繘涓€姝ヨ鍒掑垎涓轰簲涓瓑澶у皬鐨?4 KiB 缂撳啿鍖猴紝瀹冧滑鎻愪緵绛変环鐨勫瘎瀛樺櫒闆嗗悎锛岀敤浜?CPU 涓?TPM 涔嬮棿鐨勯€氫俊銆傝繖浜涢€氫俊绔偣琚?TCG 鏈绉颁负 localities锛堝眬閮ㄥ煙锛夈€?
+褰撳唴鏍告兂瑕佸悜 TPM 鑺墖鍙戦€佸懡浠ゆ椂锛屽畠棣栧厛閫氳繃璁剧疆 TPM_ACCESS 瀵勫瓨鍣ㄤ腑鐨?requestUse 浣嶆潵淇濈暀 locality 0銆傚綋璁块棶琚巿浜堟椂锛岃浣嶇敱鑺墖娓呴櫎銆備竴鏃﹀畬鎴愰€氫俊锛屽唴鏍稿啓鍏?TPM_ACCESS.activeLocality 浣嶃€傝繖閫氱煡鑺墖璇?locality 宸茶閲婃斁銆?
+寰呭鐞嗙殑 localities 鐢辫姱鐗囨寜浼樺厛绾т粠楂樺埌浣庝緷娆″鐞嗭紝涓€娆′竴涓細
 
-TCG PTP 规范定义了两种接口类型：FIFO 和 CRB。前者基于有序的读写操作，后者基于包含一个完整命令或响应的缓冲区。
-
-FIFO（First-In-First-Out，先进先出）接口被依赖于 tpm_tis_core 的驱动所使用。最初 Linux 只有一个名为 tpm_tis 的驱动，它覆盖内存映射（即 MMIO）接口，但后来被扩展为覆盖 TCG 标准支持的其他物理接口。
-
-由于上述历史原因，最初的 MMIO 驱动被称为 tpm_tis，而 FIFO 驱动的框架被命名为 tpm_tis_core。tpm_tis 中的后缀"tis"来自 TPM Interface Specification（TPM 接口规范），即 TPM 1.x 芯片的硬件接口规范。
-
-通信基于一块由 TPM 芯片通过硬件总线或内存映射共享的 20 KiB 缓冲区（取决于物理接线方式）。该缓冲区进一步被划分为五个等大小的 4 KiB 缓冲区，它们提供等价的寄存器集合，用于 CPU 与 TPM 之间的通信。这些通信端点被 TCG 术语称为 localities（局部域）。
-
-当内核想要向 TPM 芯片发送命令时，它首先通过设置 TPM_ACCESS 寄存器中的 requestUse 位来保留 locality 0。当访问被授予时，该位由芯片清除。一旦完成通信，内核写入 TPM_ACCESS.activeLocality 位。这通知芯片该 locality 已被释放。
-
-待处理的 localities 由芯片按优先级从高到低依次处理，一次一个：
-
-- Locality 0 优先级最低。
-- Locality 5 优先级最高。
-
-关于 localities 的目的和含义的进一步信息，可在 TCG PC Client Platform TPM Profile 规范的 3.2 节中找到。
-
-## 参考资料
-
+- Locality 0 浼樺厛绾ф渶浣庛€?- Locality 5 浼樺厛绾ф渶楂樸€?
+鍏充簬 localities 鐨勭洰鐨勫拰鍚箟鐨勮繘涓€姝ヤ俊鎭紝鍙湪 TCG PC Client Platform TPM Profile 瑙勮寖鐨?3.2 鑺備腑鎵惧埌銆?
+## 鍙傝€冭祫鏂?
 
 TCG PC Client Platform TPM Profile (PTP) Specification
 https://trustedcomputinggroup.org/resource/pc-client-platform-tpm-profile-ptp-specification/

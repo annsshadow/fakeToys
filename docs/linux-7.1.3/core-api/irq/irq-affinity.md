@@ -1,21 +1,14 @@
-## SMP IRQ 亲和性
-
+﻿## SMP IRQ 浜插拰鎬?
 
 ChangeLog:
- - 由 Ingo Molnar <mingo@redhat.com> 发起
- - 由 Max Krasnyansky <maxk@qualcomm.com> 更新
+ - 鐢?Ingo Molnar <mingo@redhat.com> 鍙戣捣
+ - 鐢?Max Krasnyansky <maxk@qualcomm.com> 鏇存柊
 
 
-/proc/irq/IRQ#/smp_affinity 和 /proc/irq/IRQ#/smp_affinity_list 指定了对于给定的
-IRQ 源允许的目标 CPU。它是一个位掩码（smp_affinity）或允许的 CPU 列表（smp_affinity_list）。
-不允许关闭所有 CPU，如果某个 IRQ 控制器不支持 IRQ 亲和性，则该值将保持默认值（所有 CPU）
-不变。
-
-/proc/irq/default_smp_affinity 指定应用于所有非活动 IRQ 的默认亲和性掩码。一旦 IRQ 被分配
-/激活，其亲和性位掩码将被设置为该默认掩码。之后可以如上所述进行更改。默认掩码为 0xffffffff。
-
-下面是一个将 IRQ44（eth1）限制到 CPU0-3，然后再限制的示例
-```
+/proc/irq/IRQ#/smp_affinity 鍜?/proc/irq/IRQ#/smp_affinity_list 鎸囧畾浜嗗浜庣粰瀹氱殑
+IRQ 婧愬厑璁哥殑鐩爣 CPU銆傚畠鏄竴涓綅鎺╃爜锛坰mp_affinity锛夋垨鍏佽鐨?CPU 鍒楄〃锛坰mp_affinity_list锛夈€?涓嶅厑璁稿叧闂墍鏈?CPU锛屽鏋滄煇涓?IRQ 鎺у埗鍣ㄤ笉鏀寔 IRQ 浜插拰鎬э紝鍒欒鍊煎皢淇濇寔榛樿鍊硷紙鎵€鏈?CPU锛?涓嶅彉銆?
+/proc/irq/default_smp_affinity 鎸囧畾搴旂敤浜庢墍鏈夐潪娲诲姩 IRQ 鐨勯粯璁や翰鍜屾€ф帺鐮併€備竴鏃?IRQ 琚垎閰?/婵€娲伙紝鍏朵翰鍜屾€т綅鎺╃爜灏嗚璁剧疆涓鸿榛樿鎺╃爜銆備箣鍚庡彲浠ュ涓婃墍杩拌繘琛屾洿鏀广€傞粯璁ゆ帺鐮佷负 0xffffffff銆?
+涓嬮潰鏄竴涓皢 IRQ44锛坋th1锛夐檺鍒跺埌 CPU0-3锛岀劧鍚庡啀闄愬埗鐨勭ず渚?```
 
 	[root@moon 44]# cd /proc/irq/44
 	[root@moon 44]# cat smp_affinity
@@ -35,9 +28,7 @@ IRQ 源允许的目标 CPU。它是一个位掩码（smp_affinity）或允许的
 	44:       1068       1785       1785       1783         0          0           0         0    IO-APIC-level  eth1
 
 ```
-从上面的行可以看出，IRQ44 只被传递给了前四个处理器（0-3）。
-现在让我们将该 IRQ 限制到 CPU（4-7）。
-
+浠庝笂闈㈢殑琛屽彲浠ョ湅鍑猴紝IRQ44 鍙浼犻€掔粰浜嗗墠鍥涗釜澶勭悊鍣紙0-3锛夈€?鐜板湪璁╂垜浠皢璇?IRQ 闄愬埗鍒?CPU锛?-7锛夈€?
 ```
 
 	[root@moon 44]# echo f0 > smp_affinity
@@ -54,9 +45,7 @@ IRQ 源允许的目标 CPU。它是一个位掩码（smp_affinity）或允许的
 	44:       1068       1785       1785       1783      1784       1069        1070       1069   IO-APIC-level  eth1
 
 ```
-这次 IRQ44 只被传递给了最后四个处理器。
-即 CPU0-3 的计数器没有变化。
-
+杩欐 IRQ44 鍙浼犻€掔粰浜嗘渶鍚庡洓涓鐞嗗櫒銆?鍗?CPU0-3 鐨勮鏁板櫒娌℃湁鍙樺寲銆?
 ```
 
 	[root@moon 44]# echo 1024-1031 > smp_affinity_list
@@ -64,4 +53,4 @@ IRQ 源允许的目标 CPU。它是一个位掩码（smp_affinity）或允许的
 	1024-1031
 
 ```
-注意，要用位掩码做到这一点，需要在相关位掩码之后跟随 32 个零位掩码。
+娉ㄦ剰锛岃鐢ㄤ綅鎺╃爜鍋氬埌杩欎竴鐐癸紝闇€瑕佸湪鐩稿叧浣嶆帺鐮佷箣鍚庤窡闅?32 涓浂浣嶆帺鐮併€?

@@ -1,5 +1,5 @@
-
-## 不可执行 mfd 的引入
+﻿
+## 涓嶅彲鎵ц mfd 鐨勫紩鍏?
 
 
 :Author:
@@ -9,51 +9,51 @@
 :Contributor:
 	Aleksa Sarai <cyphar@cyphar.com>
 
-自 Linux 引入 memfd 特性以来，memfd 始终带有执行位，而 memfd_create() 系统调用不允许以不同方式设置它。
+鑷?Linux 寮曞叆 memfd 鐗规€т互鏉ワ紝memfd 濮嬬粓甯︽湁鎵ц浣嶏紝鑰?memfd_create() 绯荤粺璋冪敤涓嶅厑璁镐互涓嶅悓鏂瑰紡璁剧疆瀹冦€?
 
-然而，在一个默认安全（secure-by-default）的系统（如 ChromeOS，其中所有可执行文件都应来自受验证启动保护的根文件系统）中，memfd 的这种可执行特性为 NoExec 绕过打开了大门，并促成了“混淆代理攻击（confused deputy attack）”。例如，在 VRP 缺陷 [^1^] 中：cros_vm 进程创建了一个 memfd 来与外部进程共享内容，但该 memfd 被覆写并用于执行任意代码与提权。[^2^] 列出了更多此类 VRP。
+鐒惰€岋紝鍦ㄤ竴涓粯璁ゅ畨鍏紙secure-by-default锛夌殑绯荤粺锛堝 ChromeOS锛屽叾涓墍鏈夊彲鎵ц鏂囦欢閮藉簲鏉ヨ嚜鍙楅獙璇佸惎鍔ㄤ繚鎶ょ殑鏍规枃浠剁郴缁燂級涓紝memfd 鐨勮繖绉嶅彲鎵ц鐗规€т负 NoExec 缁曡繃鎵撳紑浜嗗ぇ闂紝骞朵績鎴愪簡鈥滄贩娣嗕唬鐞嗘敾鍑伙紙confused deputy attack锛夆€濄€備緥濡傦紝鍦?VRP 缂洪櫡 [^1^] 涓細cros_vm 杩涚▼鍒涘缓浜嗕竴涓?memfd 鏉ヤ笌澶栭儴杩涚▼鍏变韩鍐呭锛屼絾璇?memfd 琚鍐欏苟鐢ㄤ簬鎵ц浠绘剰浠ｇ爜涓庢彁鏉冦€俒^2^] 鍒楀嚭浜嗘洿澶氭绫?VRP銆?
 
-另一方面，可执行的 memfd 有其合法用途：runc 使用 memfd 的 seal 与可执行特性来复制二进制的内容然后执行它们。对于这样的系统，我们需要一种方案来区分 runc 对可执行 memfd 的使用与攻击者的使用 [^3^]。
+鍙︿竴鏂归潰锛屽彲鎵ц鐨?memfd 鏈夊叾鍚堟硶鐢ㄩ€旓細runc 浣跨敤 memfd 鐨?seal 涓庡彲鎵ц鐗规€ф潵澶嶅埗浜岃繘鍒剁殑鍐呭鐒跺悗鎵ц瀹冧滑銆傚浜庤繖鏍风殑绯荤粺锛屾垜浠渶瑕佷竴绉嶆柟妗堟潵鍖哄垎 runc 瀵瑰彲鎵ц memfd 鐨勪娇鐢ㄤ笌鏀诲嚮鑰呯殑浣跨敤 [^3^]銆?
 
-为了解决上述问题：
- - 让 memfd_create() 在创建时设置 X 位。
- - 当设置 NX 时，让 memfd 被 seal 以禁止修改 X 位。
- - 新增一个 pid namespace sysctl：vm.memfd_noexec，以帮助应用程序迁移并强制使用不可执行 MFD。
+涓轰簡瑙ｅ喅涓婅堪闂锛?
+ - 璁?memfd_create() 鍦ㄥ垱寤烘椂璁剧疆 X 浣嶃€?
+ - 褰撹缃?NX 鏃讹紝璁?memfd 琚?seal 浠ョ姝慨鏀?X 浣嶃€?
+ - 鏂板涓€涓?pid namespace sysctl锛歷m.memfd_noexec锛屼互甯姪搴旂敤绋嬪簭杩佺Щ骞跺己鍒朵娇鐢ㄤ笉鍙墽琛?MFD銆?
 
-## 用户 API
+## 鐢ㄦ埛 API
 
 
 `int memfd_create(const char *name, unsigned int flags)`
 
 `MFD_NOEXEC_SEAL`
-	当 `flags` 中设置了 MFD_NOEXEC_SEAL 位时，memfd 以 NX 创建。F_SEAL_EXEC 被设置，且 memfd 之后不能被修改为添加 X。同时隐含 MFD_ALLOW_SEALING。
-	这是应用程序使用 memfd 最常见的情况。
+	褰?`flags` 涓缃簡 MFD_NOEXEC_SEAL 浣嶆椂锛宮emfd 浠?NX 鍒涘缓銆侳_SEAL_EXEC 琚缃紝涓?memfd 涔嬪悗涓嶈兘琚慨鏀逛负娣诲姞 X銆傚悓鏃堕殣鍚?MFD_ALLOW_SEALING銆?
+	杩欐槸搴旂敤绋嬪簭浣跨敤 memfd 鏈€甯歌鐨勬儏鍐点€?
 
 `MFD_EXEC`
-	当 `flags` 中设置了 MFD_EXEC 位时，memfd 以 X 创建。
+	褰?`flags` 涓缃簡 MFD_EXEC 浣嶆椂锛宮emfd 浠?X 鍒涘缓銆?
 
-注意：
-	`MFD_NOEXEC_SEAL` 隐含 `MFD_ALLOW_SEALING`。若应用程序不希望 seal，它可以在创建后添加 F_SEAL_SEAL。
+娉ㄦ剰锛?
+	`MFD_NOEXEC_SEAL` 闅愬惈 `MFD_ALLOW_SEALING`銆傝嫢搴旂敤绋嬪簭涓嶅笇鏈?seal锛屽畠鍙互鍦ㄥ垱寤哄悗娣诲姞 F_SEAL_SEAL銆?
 
-## Sysctl：
+## Sysctl锛?
 
 
 `pid namespaced sysctl vm.memfd_noexec`
 
-新的 pid namespaced sysctl vm.memfd_noexec 有 3 个值：
+鏂扮殑 pid namespaced sysctl vm.memfd_noexec 鏈?3 涓€硷細
 
  - 0: MEMFD_NOEXEC_SCOPE_EXEC
-	不带 MFD_EXEC 也不带 MFD_NOEXEC_SEAL 的 memfd_create() 表现得如同设置了 MFD_EXEC。
+	涓嶅甫 MFD_EXEC 涔熶笉甯?MFD_NOEXEC_SEAL 鐨?memfd_create() 琛ㄧ幇寰楀鍚岃缃簡 MFD_EXEC銆?
 
  - 1: MEMFD_NOEXEC_SCOPE_NOEXEC_SEAL
-	不带 MFD_EXEC 也不带 MFD_NOEXEC_SEAL 的 memfd_create() 表现得如同设置了 MFD_NOEXEC_SEAL。
+	涓嶅甫 MFD_EXEC 涔熶笉甯?MFD_NOEXEC_SEAL 鐨?memfd_create() 琛ㄧ幇寰楀鍚岃缃簡 MFD_NOEXEC_SEAL銆?
 
  - 2: MEMFD_NOEXEC_SCOPE_NOEXEC_ENFORCED
-	不带 MFD_NOEXEC_SEAL 的 memfd_create() 将被拒绝。
+	涓嶅甫 MFD_NOEXEC_SEAL 鐨?memfd_create() 灏嗚鎷掔粷銆?
 
-该 sysctl 允许对不设置执行位的旧软件进行更精细的 memfd_create 控制；例如，一个 vm.memfd_noexec=1 的容器意味着旧软件默认将创建不可执行的 memfd，而新软件可以通过设置 MFD_EXEC 创建可执行的 memfd。
+璇?sysctl 鍏佽瀵逛笉璁剧疆鎵ц浣嶇殑鏃ц蒋浠惰繘琛屾洿绮剧粏鐨?memfd_create 鎺у埗锛涗緥濡傦紝涓€涓?vm.memfd_noexec=1 鐨勫鍣ㄦ剰鍛崇潃鏃ц蒋浠堕粯璁ゅ皢鍒涘缓涓嶅彲鎵ц鐨?memfd锛岃€屾柊杞欢鍙互閫氳繃璁剧疆 MFD_EXEC 鍒涘缓鍙墽琛岀殑 memfd銆?
 
-vm.memfd_noexec 的值在创建时传递给子命名空间。此外，该设置是分层的，即在 memfd_create 期间，我们将从当前 ns 搜索到根 ns，并使用最严格的设置。
+vm.memfd_noexec 鐨勫€煎湪鍒涘缓鏃朵紶閫掔粰瀛愬懡鍚嶇┖闂淬€傛澶栵紝璇ヨ缃槸鍒嗗眰鐨勶紝鍗冲湪 memfd_create 鏈熼棿锛屾垜浠皢浠庡綋鍓?ns 鎼滅储鍒版牴 ns锛屽苟浣跨敤鏈€涓ユ牸鐨勮缃€?
 
 [^1^] https://crbug.com/1305267
 

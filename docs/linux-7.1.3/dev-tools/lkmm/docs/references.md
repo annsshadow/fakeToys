@@ -1,9 +1,9 @@
-### 参考资料
+﻿### 鍙傝€冭祫鏂?
 
-本文档以逐字（literal）方式嵌入 tools/memory-model/Documentation/references.txt，
-汇总 Linux 内存模型（LKMM）相关的参考文献与资料。
+鏈枃妗ｄ互閫愬瓧锛坙iteral锛夋柟寮忓祵鍏?tools/memory-model/Documentation/references.txt锛?
+姹囨€?Linux 鍐呭瓨妯″瀷锛圠KMM锛夌浉鍏崇殑鍙傝€冩枃鐚笌璧勬枡銆?
 
-字面包含 `tools/memory-model/Documentation/references.txt'.
+瀛楅潰鍖呭惈 `tools/memory-model/Documentation/references.txt'.
 
 ------------------------------------------------------------------
 

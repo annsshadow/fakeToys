@@ -1,19 +1,19 @@
-## /proc/sys/sunrpc/ 文档
+﻿## /proc/sys/sunrpc/ 鏂囨。
 
 
-内核版本 2.2.10
+鍐呮牳鐗堟湰 2.2.10
 
 Copyright (c) 1998, 1999,  Rik van Riel <riel@nl.linux.org>
 
-一般性说明与法律声明，请参见 index.rst。
+涓€鑸€ц鏄庝笌娉曞緥澹版槑锛岃鍙傝 index.rst銆?
 
 ------------------------------------------------------------------------------
 
-本文件包含 /proc/sys/sunrpc 中 sysctl 文件的文档，适用于 Linux 内核版本 2.2。
+鏈枃浠跺寘鍚?/proc/sys/sunrpc 涓?sysctl 鏂囦欢鐨勬枃妗ｏ紝閫傜敤浜?Linux 鍐呮牳鐗堟湰 2.2銆?
 
-该目录下的文件可用于（重新）设置 Linux 内核中 SUN 远程过程调用（RPC）子系统的调试标志。这些内容用于 NFS、KNFSD 以及可能还有其他一些功能。
+璇ョ洰褰曚笅鐨勬枃浠跺彲鐢ㄤ簬锛堥噸鏂帮級璁剧疆 Linux 鍐呮牳涓?SUN 杩滅▼杩囩▼璋冪敤锛圧PC锛夊瓙绯荤粺鐨勮皟璇曟爣蹇椼€傝繖浜涘唴瀹圭敤浜?NFS銆並NFSD 浠ュ強鍙兘杩樻湁鍏朵粬涓€浜涘姛鑳姐€?
 
-其中的文件用于控制调试标志：
-rpc_debug、nfs_debug、nfsd_debug 和 nlm_debug。
+鍏朵腑鐨勬枃浠剁敤浜庢帶鍒惰皟璇曟爣蹇楋細
+rpc_debug銆乶fs_debug銆乶fsd_debug 鍜?nlm_debug銆?
 
-这些标志仅供内核开发者使用。更多信息请阅读 net/sunrpc/ 中的源代码。
+杩欎簺鏍囧織浠呬緵鍐呮牳寮€鍙戣€呬娇鐢ㄣ€傛洿澶氫俊鎭闃呰 net/sunrpc/ 涓殑婧愪唬鐮併€?

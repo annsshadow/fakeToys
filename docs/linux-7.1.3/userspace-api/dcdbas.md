@@ -1,28 +1,19 @@
-## Dell 系统管理基础驱动
+﻿## Dell 绯荤粺绠＄悊鍩虹椹卞姩
 
 
-## 概述
+## 姒傝堪
 
 
-Dell 系统管理基础驱动提供了一个 sysfs 接口，供 Dell OpenManage 等系统管理软件在特定的
-Dell 系统上执行系统管理中断（SMI）与主机控制动作（在 OS 关机后进行系统电源循环或断电）。
+Dell 绯荤粺绠＄悊鍩虹椹卞姩鎻愪緵浜嗕竴涓?sysfs 鎺ュ彛锛屼緵 Dell OpenManage 绛夌郴缁熺鐞嗚蒋浠跺湪鐗瑰畾鐨?Dell 绯荤粺涓婃墽琛岀郴缁熺鐞嗕腑鏂紙SMI锛変笌涓绘満鎺у埗鍔ㄤ綔锛堝湪 OS 鍏虫満鍚庤繘琛岀郴缁熺數婧愬惊鐜垨鏂數锛夈€?
+Dell OpenManage 鍦ㄤ互涓?Dell PowerEdge 绯荤粺涓婇渶瑕佹椹卞姩锛?00銆?300銆?400銆?00SC銆?00SC銆?1500SC銆?550銆?00SC銆?600SC銆?50銆?655MC銆?00 涓?750銆傚叾浠?Dell 杞欢锛堝寮€婧愮殑 libsmbios
+椤圭洰锛夐鏈熶細鍒╃敤姝ら┍鍔紝鍏朵腑鍙兘鍖呮嫭鍦ㄥ叾浠?Dell 绯荤粺涓婁娇鐢ㄦ椹卞姩銆?
+Dell libsmbios 椤圭洰鑷村姏浜庡敖鍙兘澶氬湴鎻愪緵瀵?BIOS 淇℃伅鐨勮闂€傚叧浜?libsmbios 椤圭洰鐨勬洿澶?淇℃伅锛岃鍙傝 http://linux.dell.com/libsmbios/main/銆?
 
-Dell OpenManage 在以下 Dell PowerEdge 系统上需要此驱动：300、1300、1400、400SC、500SC、
-1500SC、1550、600SC、1600SC、650、1655MC、700 与 750。其他 Dell 软件（如开源的 libsmbios
-项目）预期会利用此驱动，其中可能包括在其他 Dell 系统上使用此驱动。
-
-Dell libsmbios 项目致力于尽可能多地提供对 BIOS 信息的访问。关于 libsmbios 项目的更多
-信息，请参见 http://linux.dell.com/libsmbios/main/。
+## 绯荤粺绠＄悊涓柇
 
 
-## 系统管理中断
-
-
-在某些 Dell 系统上，系统管理软件必须通过系统管理中断（SMI）访问某些管理信息。SMI 数据
-缓冲区必须位于 32 位地址空间中，且 SMI 需要该缓冲区的物理地址。驱动维护 SMI 所需的
-内存，并为应用程序提供生成 SMI 的方式。
-驱动为系统管理软件创建以下 sysfs 条目：
-```
+鍦ㄦ煇浜?Dell 绯荤粺涓婏紝绯荤粺绠＄悊杞欢蹇呴』閫氳繃绯荤粺绠＄悊涓柇锛圫MI锛夎闂煇浜涚鐞嗕俊鎭€係MI 鏁版嵁
+缂撳啿鍖哄繀椤讳綅浜?32 浣嶅湴鍧€绌洪棿涓紝涓?SMI 闇€瑕佽缂撳啿鍖虹殑鐗╃悊鍦板潃銆傞┍鍔ㄧ淮鎶?SMI 鎵€闇€鐨?鍐呭瓨锛屽苟涓哄簲鐢ㄧ▼搴忔彁渚涚敓鎴?SMI 鐨勬柟寮忋€?椹卞姩涓虹郴缁熺鐞嗚蒋浠跺垱寤轰互涓?sysfs 鏉＄洰锛?```
 
 	/sys/devices/platform/dcdbas/smi_data
 	/sys/devices/platform/dcdbas/smi_data_buf_phys_addr
@@ -30,44 +21,30 @@ Dell libsmbios 项目致力于尽可能多地提供对 BIOS 信息的访问。�
 	/sys/devices/platform/dcdbas/smi_request
 
 ```
-系统管理软件必须执行以下步骤以使用该驱动执行一次 SMI：
+绯荤粺绠＄悊杞欢蹇呴』鎵ц浠ヤ笅姝ラ浠ヤ娇鐢ㄨ椹卞姩鎵ц涓€娆?SMI锛?
+1) 閿佸畾 smi_data銆?2) 灏嗙郴缁熺鐞嗗懡浠ゅ啓鍏?smi_data銆?3) 鍚?smi_request 鍐欏叆 "1" 浠ョ敓鎴愯皟鐢ㄦ帴鍙?SMI锛屾垨鍐欏叆 "2" 浠ョ敓鎴愬師濮?SMI銆?4) 浠?smi_data 璇诲彇绯荤粺绠＄悊鍛戒护鐨勫搷搴斻€?5) 瑙ｉ攣 smi_data銆?
 
-1) 锁定 smi_data。
-2) 将系统管理命令写入 smi_data。
-3) 向 smi_request 写入 "1" 以生成调用接口 SMI，或写入 "2" 以生成原始 SMI。
-4) 从 smi_data 读取系统管理命令的响应。
-5) 解锁 smi_data。
+## 涓绘満鎺у埗鍔ㄤ綔
 
 
-## 主机控制动作
-
-
-Dell OpenManage 支持一种主机控制特性，允许管理员在 OS 完成关机后对系统执行电源循环或
-断电。在某些 Dell 系统上，该主机控制特性要求驱动在 OS 完成关机后执行一次 SMI。
-
-驱动为系统管理软件创建以下 sysfs 条目，以安排驱动在系统完成关机后执行电源循环或断电
-主机控制动作：
-
+Dell OpenManage 鏀寔涓€绉嶄富鏈烘帶鍒剁壒鎬э紝鍏佽绠＄悊鍛樺湪 OS 瀹屾垚鍏虫満鍚庡绯荤粺鎵ц鐢垫簮寰幆鎴?鏂數銆傚湪鏌愪簺 Dell 绯荤粺涓婏紝璇ヤ富鏈烘帶鍒剁壒鎬ц姹傞┍鍔ㄥ湪 OS 瀹屾垚鍏虫満鍚庢墽琛屼竴娆?SMI銆?
+椹卞姩涓虹郴缁熺鐞嗚蒋浠跺垱寤轰互涓?sysfs 鏉＄洰锛屼互瀹夋帓椹卞姩鍦ㄧ郴缁熷畬鎴愬叧鏈哄悗鎵ц鐢垫簮寰幆鎴栨柇鐢?涓绘満鎺у埗鍔ㄤ綔锛?
 /sys/devices/platform/dcdbas/host_control_action
 /sys/devices/platform/dcdbas/host_control_smi_type
 /sys/devices/platform/dcdbas/host_control_on_shutdown
 
-Dell OpenManage 使用此驱动执行电源循环或断电主机控制动作的步骤如下：
+Dell OpenManage 浣跨敤姝ら┍鍔ㄦ墽琛岀數婧愬惊鐜垨鏂數涓绘満鎺у埗鍔ㄤ綔鐨勬楠ゅ涓嬶細
 
-1) 将待执行的主机控制动作写入 host_control_action。
-2) 将驱动需要执行的 SMI 类型写入 host_control_smi_type。
-3) 向 host_control_on_shutdown 写入 "1" 以启用主机控制动作。
-4) 发起 OS 关机。
-   （当驱动收到 OS 已完成关机的通知时，会执行主机控制 SMI。）
+1) 灏嗗緟鎵ц鐨勪富鏈烘帶鍒跺姩浣滃啓鍏?host_control_action銆?2) 灏嗛┍鍔ㄩ渶瑕佹墽琛岀殑 SMI 绫诲瀷鍐欏叆 host_control_smi_type銆?3) 鍚?host_control_on_shutdown 鍐欏叆 "1" 浠ュ惎鐢ㄤ富鏈烘帶鍒跺姩浣溿€?4) 鍙戣捣 OS 鍏虫満銆?   锛堝綋椹卞姩鏀跺埌 OS 宸插畬鎴愬叧鏈虹殑閫氱煡鏃讹紝浼氭墽琛屼富鏈烘帶鍒?SMI銆傦級
 
 
-## 主机控制 SMI 类型
+## 涓绘満鎺у埗 SMI 绫诲瀷
 
 
-下表显示了为执行电源循环或断电主机控制动作需要写入 host_control_smi_type 的值：
+涓嬭〃鏄剧ず浜嗕负鎵ц鐢垫簮寰幆鎴栨柇鐢典富鏈烘帶鍒跺姩浣滈渶瑕佸啓鍏?host_control_smi_type 鐨勫€硷細
 
 =================== =====================
-PowerEdge 系统      Host Control SMI 类型
+PowerEdge 绯荤粺      Host Control SMI 绫诲瀷
 =================== =====================
       300             HC_SMITYPE_TYPE1
      1300             HC_SMITYPE_TYPE1

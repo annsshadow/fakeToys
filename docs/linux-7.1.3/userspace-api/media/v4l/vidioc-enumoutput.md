@@ -1,33 +1,30 @@
-
+﻿
 
 
 ######## ioctl VIDIOC_ENUMOUTPUT
 
 
-## 名称
+## 鍚嶇О
 
 
-VIDIOC_ENUMOUTPUT - 枚举视频输出
+VIDIOC_ENUMOUTPUT - 鏋氫妇瑙嗛杈撳嚭
 
-## 概要
+## 姒傝
 
 
 `int ioctl(int fd, VIDIOC_ENUMOUTPUT, struct v4l2_output *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
-
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `argp`
-    指向 struct `v4l2_output` 的指针。
+    鎸囧悜 struct `v4l2_output` 鐨勬寚閽堛€?
+## 鎻忚堪
 
-## 描述
 
-
-为查询视频输出的属性，应用程序初始化 struct `v4l2_output` 的 `index` 字段，并以指向该结构的指针调用 VIDIOC_ENUMOUTPUT。当索引越界时，驱动填充结构的其余部分或返回 `EINVAL` 错误码。为枚举所有输出，应用程序应从索引零开始，每次递增一，直到驱动返回 `EINVAL`。
-
+涓烘煡璇㈣棰戣緭鍑虹殑灞炴€э紝搴旂敤绋嬪簭鍒濆鍖?struct `v4l2_output` 鐨?`index` 瀛楁锛屽苟浠ユ寚鍚戣缁撴瀯鐨勬寚閽堣皟鐢?VIDIOC_ENUMOUTPUT銆傚綋绱㈠紩瓒婄晫鏃讹紝椹卞姩濉厖缁撴瀯鐨勫叾浣欓儴鍒嗘垨杩斿洖 `EINVAL` 閿欒鐮併€備负鏋氫妇鎵€鏈夎緭鍑猴紝搴旂敤绋嬪簭搴斾粠绱㈠紩闆跺紑濮嬶紝姣忔閫掑涓€锛岀洿鍒伴┍鍔ㄨ繑鍥?`EINVAL`銆?
 
 
     :header-rows:  0
@@ -36,33 +33,23 @@ VIDIOC_ENUMOUTPUT - 枚举视频输出
 
     - - __u32
       - `index`
-      - 标识输出，由应用程序设置。
-    - - __u8
+      - 鏍囪瘑杈撳嚭锛岀敱搴旂敤绋嬪簭璁剧疆銆?    - - __u8
       - `name`\ [^32^]
-      - 视频输出的名称，一个以 NUL 结尾的 ASCII 字符串，例如："Vout"。此信息面向用户，最好使用设备本身上的连接器标签。
-    - - __u32
+      - 瑙嗛杈撳嚭鐨勫悕绉帮紝涓€涓互 NUL 缁撳熬鐨?ASCII 瀛楃涓诧紝渚嬪锛?Vout"銆傛淇℃伅闈㈠悜鐢ㄦ埛锛屾渶濂戒娇鐢ㄨ澶囨湰韬笂鐨勮繛鎺ュ櫒鏍囩銆?    - - __u32
       - `type`
-      - 输出的类型，参见 output-type。
-    - - __u32
+      - 杈撳嚭鐨勭被鍨嬶紝鍙傝 output-type銆?    - - __u32
       - `audioset`
-      - 驱动可以枚举多达 32 个视频和音频输出。如果这是当前选中的视频输出，该字段显示哪些音频输出可作为当前输出被选中。它是一个位掩码。LSB 对应音频输出 0，MSB 对应输出 31。可以设置任意数量的位，也可以不设置。
-
-	当驱动不枚举音频输出时，不得设置任何位。应用程序不应将此解释为缺乏音频支持。驱动可以在不枚举的情况下自动选择音频输出。
-
-	关于音频输出以及如何选择当前输出的细节，请参见 audio。
-    - - __u32
+      - 椹卞姩鍙互鏋氫妇澶氳揪 32 涓棰戝拰闊抽杈撳嚭銆傚鏋滆繖鏄綋鍓嶉€変腑鐨勮棰戣緭鍑猴紝璇ュ瓧娈垫樉绀哄摢浜涢煶棰戣緭鍑哄彲浣滀负褰撳墠杈撳嚭琚€変腑銆傚畠鏄竴涓綅鎺╃爜銆侺SB 瀵瑰簲闊抽杈撳嚭 0锛孧SB 瀵瑰簲杈撳嚭 31銆傚彲浠ヨ缃换鎰忔暟閲忕殑浣嶏紝涔熷彲浠ヤ笉璁剧疆銆?
+	褰撻┍鍔ㄤ笉鏋氫妇闊抽杈撳嚭鏃讹紝涓嶅緱璁剧疆浠讳綍浣嶃€傚簲鐢ㄧ▼搴忎笉搴斿皢姝よВ閲婁负缂轰箯闊抽鏀寔銆傞┍鍔ㄥ彲浠ュ湪涓嶆灇涓剧殑鎯呭喌涓嬭嚜鍔ㄩ€夋嫨闊抽杈撳嚭銆?
+	鍏充簬闊抽杈撳嚭浠ュ強濡備綍閫夋嫨褰撳墠杈撳嚭鐨勭粏鑺傦紝璇峰弬瑙?audio銆?    - - __u32
       - `modulator`
-      - 输出设备可以有零个或多个 RF 调制器。当 `type` 为 `V4L2_OUTPUT_TYPE_MODULATOR` 时，这是一个 RF 连接器，该字段标识调制器。它对应 struct `v4l2_modulator` 的 `index` 字段。关于调制器的细节，请参见 tuner。
-    - - v4l2_std_id <v4l2-std-id>
+      - 杈撳嚭璁惧鍙互鏈夐浂涓垨澶氫釜 RF 璋冨埗鍣ㄣ€傚綋 `type` 涓?`V4L2_OUTPUT_TYPE_MODULATOR` 鏃讹紝杩欐槸涓€涓?RF 杩炴帴鍣紝璇ュ瓧娈垫爣璇嗚皟鍒跺櫒銆傚畠瀵瑰簲 struct `v4l2_modulator` 鐨?`index` 瀛楁銆傚叧浜庤皟鍒跺櫒鐨勭粏鑺傦紝璇峰弬瑙?tuner銆?    - - v4l2_std_id <v4l2-std-id>
       - `std`
-      - 每个视频输出支持一种或多种不同的视频标准。该字段是所有支持标准的集合。关于视频标准及如何切换的细节，请参见 standard。
-    - - __u32
+      - 姣忎釜瑙嗛杈撳嚭鏀寔涓€绉嶆垨澶氱涓嶅悓鐨勮棰戞爣鍑嗐€傝瀛楁鏄墍鏈夋敮鎸佹爣鍑嗙殑闆嗗悎銆傚叧浜庤棰戞爣鍑嗗強濡備綍鍒囨崲鐨勭粏鑺傦紝璇峰弬瑙?standard銆?    - - __u32
       - `capabilities`
-      - 该字段提供输出的能力。参见 output-capabilities 中的标志。
-    - - __u32
+      - 璇ュ瓧娈垫彁渚涜緭鍑虹殑鑳藉姏銆傚弬瑙?output-capabilities 涓殑鏍囧織銆?    - - __u32
       - `reserved`\ [^3^]
-      - 为未来扩展保留。驱动必须将数组置零。
-
+      - 涓烘湭鏉ユ墿灞曚繚鐣欍€傞┍鍔ㄥ繀椤诲皢鏁扮粍缃浂銆?
 
 
 
@@ -73,14 +60,11 @@ VIDIOC_ENUMOUTPUT - 枚举视频输出
 
     - - `V4L2_OUTPUT_TYPE_MODULATOR`
       - 1
-      - 此输出为模拟 TV 调制器。
-    - - `V4L2_OUTPUT_TYPE_ANALOG`
+      - 姝よ緭鍑轰负妯℃嫙 TV 璋冨埗鍣ㄣ€?    - - `V4L2_OUTPUT_TYPE_ANALOG`
       - 2
-      - 任何非调制器的视频输出，例如 Composite Video、S-Video、HDMI。命名为 `_TYPE_ANALOG` 是历史原因，今天我们会称其为 `_TYPE_VIDEO`。
-    - - `V4L2_OUTPUT_TYPE_ANALOGVGAOVERLAY`
+      - 浠讳綍闈炶皟鍒跺櫒鐨勮棰戣緭鍑猴紝渚嬪 Composite Video銆丼-Video銆丠DMI銆傚懡鍚嶄负 `_TYPE_ANALOG` 鏄巻鍙插師鍥狅紝浠婂ぉ鎴戜滑浼氱О鍏朵负 `_TYPE_VIDEO`銆?    - - `V4L2_OUTPUT_TYPE_ANALOGVGAOVERLAY`
       - 3
-      - 视频输出将被复制到视频叠加 <overlay>。
-
+      - 瑙嗛杈撳嚭灏嗚澶嶅埗鍒拌棰戝彔鍔?<overlay>銆?
 
 
 
@@ -91,18 +75,13 @@ VIDIOC_ENUMOUTPUT - 枚举视频输出
 
     - - `V4L2_OUT_CAP_DV_TIMINGS`
       - 0x00000002
-      - 此输出支持使用 `VIDIOC_S_DV_TIMINGS` 设置视频时序。
-    - - `V4L2_OUT_CAP_STD`
+      - 姝よ緭鍑烘敮鎸佷娇鐢?`VIDIOC_S_DV_TIMINGS` 璁剧疆瑙嗛鏃跺簭銆?    - - `V4L2_OUT_CAP_STD`
       - 0x00000004
-      - 此输出支持使用 `VIDIOC_S_STD` 设置 TV 标准。
-    - - `V4L2_OUT_CAP_NATIVE_SIZE`
+      - 姝よ緭鍑烘敮鎸佷娇鐢?`VIDIOC_S_STD` 璁剧疆 TV 鏍囧噯銆?    - - `V4L2_OUT_CAP_NATIVE_SIZE`
       - 0x00000008
-      - 此输出支持使用 `V4L2_SEL_TGT_NATIVE_SIZE` 选择目标设置原生尺寸，请参见 v4l2-selections-common。
+      - 姝よ緭鍑烘敮鎸佷娇鐢?`V4L2_SEL_TGT_NATIVE_SIZE` 閫夋嫨鐩爣璁剧疆鍘熺敓灏哄锛岃鍙傝 v4l2-selections-common銆?
+## 杩斿洖鍊?
 
-## 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在 Generic Error Codes <gen-errors> 章节中描述。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
 EINVAL
-    struct `v4l2_output` 的 `index` 越界。
+    struct `v4l2_output` 鐨?`index` 瓒婄晫銆?

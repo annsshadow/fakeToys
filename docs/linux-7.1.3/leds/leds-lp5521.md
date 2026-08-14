@@ -1,31 +1,28 @@
-## lp5521 内核驱动
+﻿## lp5521 鍐呮牳椹卞姩
 
 
-- National Semiconductor LP5521 LED 驱动芯片
+- National Semiconductor LP5521 LED 椹卞姩鑺墖
 - Datasheet: http://www.national.com/pf/LP/LP5521.html
 
 Authors: Mathias Nyman, Yuri Zaporozhets, Samu Onkalo
 
 Contact: Samu Onkalo (samu.p.onkalo-at-nokia.com)
 
-### 描述
+### 鎻忚堪
 
 
-LP5521 最多可驱动 3 个通道。LED 可以通过 LED 类控制接口直接控制。通道具有通用名称：lp5521:channelx，其中 x 为 0 .. 2。
+LP5521 鏈€澶氬彲椹卞姩 3 涓€氶亾銆侺ED 鍙互閫氳繃 LED 绫绘帶鍒舵帴鍙ｇ洿鎺ユ帶鍒躲€傞€氶亾鍏锋湁閫氱敤鍚嶇О锛歭p5521:channelx锛屽叾涓?x 涓?0 .. 2銆?
+鎵€鏈変笁涓€氶亾涔熷彲浠ヤ娇鐢ㄥ紩鎿庡井绋嬪簭锛坋ngine micro program锛夋潵鎺у埗銆傛湁鍏虫寚浠ょ殑鏇村缁嗚妭鍙湪鍏紑鐨勬暟鎹墜鍐屼腑鎵惧埌銆?
+LP5521 鍏锋湁鍐呴儴绋嬪簭瀛樺偍鍣紝鐢ㄤ簬杩愯鍚勭 LED 妯″紡銆傛湁涓ょ杩愯 LED 妯″紡鐨勬柟寮忋€?
+1) sysfs 鎺ュ彛 - enginex_mode 鍜?enginex_load
+   寮曟搸鐨勬帶鍒舵帴鍙ｏ細
 
-所有三个通道也可以使用引擎微程序（engine micro program）来控制。有关指令的更多细节可在公开的数据手册中找到。
-
-LP5521 具有内部程序存储器，用于运行各种 LED 模式。有两种运行 LED 模式的方式。
-
-1) sysfs 接口 - enginex_mode 和 enginex_load
-   引擎的控制接口：
-
-   x 为 1 .. 3
+   x 涓?1 .. 3
 
    enginex_mode:
-	disabled（禁用）、load（加载）、run（运行）
+	disabled锛堢鐢級銆乴oad锛堝姞杞斤級銆乺un锛堣繍琛岋級
    enginex_load:
-	存储程序（仅在 engine 加载模式下可见）
+	瀛樺偍绋嬪簭锛堜粎鍦?engine 鍔犺浇妯″紡涓嬪彲瑙侊級
 
 ```
 
@@ -34,26 +31,22 @@ LP5521 具有内部程序存储器，用于运行各种 LED 模式。有两种�
 	echo "037f4d0003ff6000" > engine3_load
 	echo "run" > engine3_mode
 
-  要停止引擎::
+  瑕佸仠姝㈠紩鎿?:
 
 	echo "disabled" > engine3_mode
 
 ```
 
-2) 固件接口 - LP55xx 通用接口
+2) 鍥轰欢鎺ュ彛 - LP55xx 閫氱敤鎺ュ彛
 
-有关细节，请参阅 leds-lp55xx.txt 中的 'firmware' 章节。
+鏈夊叧缁嗚妭锛岃鍙傞槄 leds-lp55xx.txt 涓殑 'firmware' 绔犺妭銆?
+sysfs 鍖呭惈涓€涓嚜妫€锛坰elftest锛夋潯鐩€?
+璇ユ祴璇曚笌鑺墖閫氫俊锛屽苟妫€鏌ユ椂閽熸ā寮忔槸鍚﹀凡鑷姩璁剧疆涓烘墍璇锋眰鐨勬ā寮忋€?
+姣忎釜閫氶亾閮芥湁鍚勮嚜鐨?LED 鐢垫祦璁剧疆銆?
+- /sys/class/leds/lp5521:channel0/led_current - RW锛堣鍐欙級
+- /sys/class/leds/lp5521:channel0/max_current - RO锛堝彧璇伙級
 
-sysfs 包含一个自检（selftest）条目。
-
-该测试与芯片通信，并检查时钟模式是否已自动设置为所请求的模式。
-
-每个通道都有各自的 LED 电流设置。
-
-- /sys/class/leds/lp5521:channel0/led_current - RW（读写）
-- /sys/class/leds/lp5521:channel0/max_current - RO（只读）
-
-格式：10x mA，即 10 表示 1.0 mA
+鏍煎紡锛?0x mA锛屽嵆 10 琛ㄧず 1.0 mA
 
 ```
 
@@ -78,17 +71,17 @@ sysfs 包含一个自检（selftest）条目。
 
   static int lp5521_setup(void)
   {
-	/* 设置硬件资源 */
+	/* 璁剧疆纭欢璧勬簮 */
   }
 
   static void lp5521_release(void)
   {
-	/* 释放硬件资源 */
+	/* 閲婃斁纭欢璧勬簮 */
   }
 
   static void lp5521_enable(bool state)
   {
-	/* 控制芯片使能信号 */
+	/* 鎺у埗鑺墖浣胯兘淇″彿 */
   }
 
   static struct lp55xx_platform_data lp5521_platform_data = {
@@ -102,11 +95,8 @@ sysfs 包含一个自检（selftest）条目。
 
 ```
 
-注意：
-  chan_nr 可取 0 到 2 之间的值。
-  每个通道的名称可配置。
-  如果未定义 name 字段，则默认名称将被设为 'xxxx:channelN'
-  （XXXX : pdata->label 或 i2c 客户端名称，N : 通道号）
+娉ㄦ剰锛?  chan_nr 鍙彇 0 鍒?2 涔嬮棿鐨勫€笺€?  姣忎釜閫氶亾鐨勫悕绉板彲閰嶇疆銆?  濡傛灉鏈畾涔?name 瀛楁锛屽垯榛樿鍚嶇О灏嗚璁句负 'xxxx:channelN'
+  锛圶XXX : pdata->label 鎴?i2c 瀹㈡埛绔悕绉帮紝N : 閫氶亾鍙凤級
 
 
-如果平台数据中电流被设为 0，则该通道被禁用，并且不会在 sysfs 中出现。
+濡傛灉骞冲彴鏁版嵁涓數娴佽璁句负 0锛屽垯璇ラ€氶亾琚鐢紝骞朵笖涓嶄細鍦?sysfs 涓嚭鐜般€?

@@ -1,66 +1,45 @@
-
-## 图（Graphs）
-
+﻿
+## 鍥撅紙Graphs锛?
 
 ## _DSD
 
 
-_DSD（Device Specific Data，设备特定数据）[dsd-guide] 是一个预定义的 ACPI 设备
-配置对象，可用于传达 ACPI 规范 [acpi] 未专门涵盖的硬件特性信息。与图相关的
-_DSD 扩展有两种：property（属性）[dsd-guide] 扩展和 hierarchical data（分层数据）
-扩展。property 扩展提供通用的键值对，而 hierarchical data 扩展支持带有指向其他
-节点引用的节点，从而形成一棵树。树中的节点可以包含由 property 扩展定义的属性。
-这两种扩展一起提供了一个类树结构，树的每个节点带有零个或多个属性（键值对）。
+_DSD锛圖evice Specific Data锛岃澶囩壒瀹氭暟鎹級[dsd-guide] 鏄竴涓瀹氫箟鐨?ACPI 璁惧
+閰嶇疆瀵硅薄锛屽彲鐢ㄤ簬浼犺揪 ACPI 瑙勮寖 [acpi] 鏈笓闂ㄦ兜鐩栫殑纭欢鐗规€т俊鎭€備笌鍥剧浉鍏崇殑
+_DSD 鎵╁睍鏈変袱绉嶏細property锛堝睘鎬э級[dsd-guide] 鎵╁睍鍜?hierarchical data锛堝垎灞傛暟鎹級
+鎵╁睍銆俻roperty 鎵╁睍鎻愪緵閫氱敤鐨勯敭鍊煎锛岃€?hierarchical data 鎵╁睍鏀寔甯︽湁鎸囧悜鍏朵粬
+鑺傜偣寮曠敤鐨勮妭鐐癸紝浠庤€屽舰鎴愪竴妫垫爲銆傛爲涓殑鑺傜偣鍙互鍖呭惈鐢?property 鎵╁睍瀹氫箟鐨勫睘鎬с€?杩欎袱绉嶆墿灞曚竴璧锋彁渚涗簡涓€涓被鏍戠粨鏋勶紝鏍戠殑姣忎釜鑺傜偣甯︽湁闆朵釜鎴栧涓睘鎬э紙閿€煎锛夈€?
+璇ユ暟鎹粨鏋勫彲浠ュ湪杩愯鏃堕€氳繃 include/linux/fwnode.h 涓畾涔夌殑 device_* 鍜?fwnode_*
+鍑芥暟鏉ヨ闂€?
+fwnode 琛ㄧず涓€涓€氱敤鐨勫浐浠惰妭鐐瑰璞°€傚畠鐙珛浜庡浐浠剁被鍨嬨€傚湪 ACPI 涓紝fwnode 鏄?_DSD 鍒嗗眰鏁版嵁鎵╁睍瀵硅薄銆備竴涓澶囩殑 _DSD 瀵硅薄鐢变竴涓?fwnode 琛ㄧず銆?
+璇ユ暟鎹粨鏋勫彲浠ュ湪 ACPI 琛ㄧ殑鍏跺畠浣嶇疆琚紩鐢紝鏂规硶鏄娇鐢ㄥ璁惧鏈韩鐨勭‖寮曠敤锛屼互鍙?鍦ㄦ瘡涓€娣卞害涓婂鍒嗗眰鏁版嵁鎵╁睍鏁扮粍鐨勭储寮曘€?
 
-该数据结构可以在运行时通过 include/linux/fwnode.h 中定义的 device_* 和 fwnode_*
-函数来访问。
+## 绔彛锛圥orts锛変笌绔偣锛坋ndpoints锛?
 
-fwnode 表示一个通用的固件节点对象。它独立于固件类型。在 ACPI 中，fwnode 是
-_DSD 分层数据扩展对象。一个设备的 _DSD 对象由一个 fwnode 表示。
-
-该数据结构可以在 ACPI 表的其它位置被引用，方法是使用对设备本身的硬引用，以及
-在每一深度上对分层数据扩展数组的索引。
-
-
-## 端口（Ports）与端点（endpoints）
-
-
-端口和端点的概念与 Devicetree [devicetree, graph-bindings] 中的非常相似。端口
-表示一个设备中的接口，端点表示对该接口的连接。另请参见 [data-node-ref] 了解
-通用的数据节点引用。
-
-所有端口节点都位于设备 _DSD 节点下的分层数据扩展树中。与每个端口节点相关的数据
-扩展必须以 "port" 开头，其后必须跟随 "@" 字符以及端口编号作为键。它引用的目标
-对象应命名为 "PRTX"，其中
-```
+绔彛鍜岀鐐圭殑姒傚康涓?Devicetree [devicetree, graph-bindings] 涓殑闈炲父鐩镐技銆傜鍙?琛ㄧず涓€涓澶囦腑鐨勬帴鍙ｏ紝绔偣琛ㄧず瀵硅鎺ュ彛鐨勮繛鎺ャ€傚彟璇峰弬瑙?[data-node-ref] 浜嗚В
+閫氱敤鐨勬暟鎹妭鐐瑰紩鐢ㄣ€?
+鎵€鏈夌鍙ｈ妭鐐归兘浣嶄簬璁惧 _DSD 鑺傜偣涓嬬殑鍒嗗眰鏁版嵁鎵╁睍鏍戜腑銆備笌姣忎釜绔彛鑺傜偣鐩稿叧鐨勬暟鎹?鎵╁睍蹇呴』浠?"port" 寮€澶达紝鍏跺悗蹇呴』璺熼殢 "@" 瀛楃浠ュ強绔彛缂栧彿浣滀负閿€傚畠寮曠敤鐨勭洰鏍?瀵硅薄搴斿懡鍚嶄负 "PRTX"锛屽叾涓?```
 
     Package() { "port@4", "PRT4" }
 
 ```
-此外，端点位于端口节点之下。端点节点的分层数据扩展键必须以 "endpoint" 开头，
-其后必须跟随 "@" 字符以及端点编号。它引用的对象应命名为 "EPXY"，其中 "X" 为端口
-编号，"Y" 为端点编号。此类示例为
+姝ゅ锛岀鐐逛綅浜庣鍙ｈ妭鐐逛箣涓嬨€傜鐐硅妭鐐圭殑鍒嗗眰鏁版嵁鎵╁睍閿繀椤讳互 "endpoint" 寮€澶达紝
+鍏跺悗蹇呴』璺熼殢 "@" 瀛楃浠ュ強绔偣缂栧彿銆傚畠寮曠敤鐨勫璞″簲鍛藉悕涓?"EPXY"锛屽叾涓?"X" 涓虹鍙?缂栧彿锛?Y" 涓虹鐐圭紪鍙枫€傛绫荤ず渚嬩负
 ```
 
     Package() { "endpoint@0", "EP40" }
 
 ```
-每个端口节点含有一个 property 扩展键 "port"，其值为端口编号。每个端点也类似地用
-property 扩展键 "reg" 编号，其值为端点编号。端口编号在一个设备内必须唯一，端点
-编号在一个端口内必须唯一。如果一个设备对象可能只有一个端口，则该端口的编号应为
-零。类似地，如果一个端口可能只有一个端点，则该端点的编号应为零。
-
-端点引用使用带 "remote-endpoint" 属性的 property 扩展
+姣忎釜绔彛鑺傜偣鍚湁涓€涓?property 鎵╁睍閿?"port"锛屽叾鍊间负绔彛缂栧彿銆傛瘡涓鐐逛篃绫讳技鍦扮敤
+property 鎵╁睍閿?"reg" 缂栧彿锛屽叾鍊间负绔偣缂栧彿銆傜鍙ｇ紪鍙峰湪涓€涓澶囧唴蹇呴』鍞竴锛岀鐐?缂栧彿鍦ㄤ竴涓鍙ｅ唴蹇呴』鍞竴銆傚鏋滀竴涓澶囧璞″彲鑳藉彧鏈変竴涓鍙ｏ紝鍒欒绔彛鐨勭紪鍙峰簲涓?闆躲€傜被浼煎湴锛屽鏋滀竴涓鍙ｅ彲鑳藉彧鏈変竴涓鐐癸紝鍒欒绔偣鐨勭紪鍙峰簲涓洪浂銆?
+绔偣寮曠敤浣跨敤甯?"remote-endpoint" 灞炴€х殑 property 鎵╁睍
 ```
 
     "device.datanode"
 
 ```
-在上例中，"X" 为端口编号，"Y" 为端点编号。
-
-对端点的引用必须总是双向进行，既要指向远端端点，也要从被引用的远端端点节点指回
-来。
-
+鍦ㄤ笂渚嬩腑锛?X" 涓虹鍙ｇ紪鍙凤紝"Y" 涓虹鐐圭紪鍙枫€?
+瀵圭鐐圭殑寮曠敤蹇呴』鎬绘槸鍙屽悜杩涜锛屾棦瑕佹寚鍚戣繙绔鐐癸紝涔熻浠庤寮曠敤鐨勮繙绔鐐硅妭鐐规寚鍥?鏉ャ€?
 ```
 
     Scope (\_SB.PCI0.I2C2)
@@ -130,26 +109,15 @@ property 扩展键 "reg" 编号，其值为端点编号。端口编号在一个�
     }
 
 ```
-这里，"CAM0" 设备的端口 0 连接到了 "ISP" 设备的端口 4，反之亦然。
+杩欓噷锛?CAM0" 璁惧鐨勭鍙?0 杩炴帴鍒颁簡 "ISP" 璁惧鐨勭鍙?4锛屽弽涔嬩害鐒躲€?
 
+## 鍙傝€冿紙References锛?
 
-## 参考（References）
-
-
-[acpi] Advanced Configuration and Power Interface 规范。
-    https://uefi.org/specifications/ACPI/6.4/，引用日期 2021-11-30。
-
+[acpi] Advanced Configuration and Power Interface 瑙勮寖銆?    https://uefi.org/specifications/ACPI/6.4/锛屽紩鐢ㄦ棩鏈?2021-11-30銆?
 [data-node-ref] Documentation/firmware-guide/acpi/dsd/data-node-references.rst
 
-[devicetree] Devicetree。https://www.devicetree.org，引用日期 2016-10-03。
+[devicetree] Devicetree銆俬ttps://www.devicetree.org锛屽紩鐢ㄦ棩鏈?2016-10-03銆?
+[dsd-guide] DSD Guide銆?    https://github.com/UEFI/DSD-Guide/blob/main/dsd-guide.adoc锛屽紩鐢ㄦ棩鏈?    2021-11-30銆?
+[dsd-rules] _DSD Device Properties Usage Rules銆?    Documentation/firmware-guide/acpi/DSD-properties-rules.rst
 
-[dsd-guide] DSD Guide。
-    https://github.com/UEFI/DSD-Guide/blob/main/dsd-guide.adoc，引用日期
-    2021-11-30。
-
-[dsd-rules] _DSD Device Properties Usage Rules。
-    Documentation/firmware-guide/acpi/DSD-properties-rules.rst
-
-[graph-bindings] Common bindings for device graphs（Devicetree 设备图的通用绑定）。
-    https://github.com/devicetree-org/dt-schema/blob/main/schemas/graph.yaml，
-    引用日期 2021-11-30。
+[graph-bindings] Common bindings for device graphs锛圖evicetree 璁惧鍥剧殑閫氱敤缁戝畾锛夈€?    https://github.com/devicetree-org/dt-schema/blob/main/schemas/graph.yaml锛?    寮曠敤鏃ユ湡 2021-11-30銆?

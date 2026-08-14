@@ -1,4 +1,4 @@
-## CA_GET_MSG
+﻿## CA_GET_MSG
 
 
 ### Name
@@ -16,24 +16,24 @@ CA_GET_MSG
 
 
 `fd`
-  由先前 `open()` 调用返回的文件描述符。
+  鐢卞厛鍓?`open()` 璋冪敤杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `msg`
-  指向 struct `ca_msg` 的指针。
+  鎸囧悜 struct `ca_msg` 鐨勬寚閽堛€?
 
 ### Description
 
 
-通过 CI CA 模块接收一条消息。
+閫氳繃 CI CA 妯″潡鎺ユ敹涓€鏉℃秷鎭€?
 
 
-   请注意，在大多数驱动上，这是通过读取 /dev/adapter?/ca? 设备节点完成的。
+   璇锋敞鎰忥紝鍦ㄥぇ澶氭暟椹卞姩涓婏紝杩欐槸閫氳繃璇诲彇 /dev/adapter?/ca? 璁惧鑺傜偣瀹屾垚鐨勩€?
 
 ### Return Value
 
 
-成功时返回 0。
+鎴愬姛鏃惰繑鍥?0銆?
 
-出错时返回 -1，并相应地设置 `errno` 变量。
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
 
-通用错误码在 Generic Error Codes <gen-errors> 章节中描述。
+閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?

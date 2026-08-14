@@ -1,32 +1,26 @@
-## 工业 IIO configfs 支持
+﻿## 宸ヤ笟 IIO configfs 鏀寔
 
 
-## 1. 概述
+## 1. 姒傝堪
 
 
-Configfs 是一个基于文件系统的内核对象管理器。IIO 使用一些可以方便地通过 configfs 配置的对象（例如：设备、触发器）。
-
-有关 configfs 的工作方式，请参阅 Documentation/filesystems/configfs.rst。
-
-## 2. 用法
+Configfs 鏄竴涓熀浜庢枃浠剁郴缁熺殑鍐呮牳瀵硅薄绠＄悊鍣ㄣ€侷IO 浣跨敤涓€浜涘彲浠ユ柟渚垮湴閫氳繃 configfs 閰嶇疆鐨勫璞★紙渚嬪锛氳澶囥€佽Е鍙戝櫒锛夈€?
+鏈夊叧 configfs 鐨勫伐浣滄柟寮忥紝璇峰弬闃?Documentation/filesystems/configfs.rst銆?
+## 2. 鐢ㄦ硶
 
 
-为了在 IIO 中使用 configfs 支持，我们需要在编译时通过 CONFIG_IIO_CONFIGFS 配置选项将其选中。
-
+涓轰簡鍦?IIO 涓娇鐢?configfs 鏀寔锛屾垜浠渶瑕佸湪缂栬瘧鏃堕€氳繃 CONFIG_IIO_CONFIGFS 閰嶇疆閫夐」灏嗗叾閫変腑銆?
 ```
 
   $ mkdir /config
   $ mount -t configfs none /config
 
 ```
-此时，所有默认的 IIO 组都将被创建，并可在 /config/iio 下访问。后续章节将描述可用的 IIO 配置对象。
+姝ゆ椂锛屾墍鏈夐粯璁ょ殑 IIO 缁勯兘灏嗚鍒涘缓锛屽苟鍙湪 /config/iio 涓嬭闂€傚悗缁珷鑺傚皢鎻忚堪鍙敤鐨?IIO 閰嶇疆瀵硅薄銆?
+## 3. 杞欢瑙﹀彂鍣?
 
-## 3. 软件触发器
-
-
-IIO 默认 configfs 组之一是 “triggers（触发器）”组。它在 configfs 挂载后自动可访问，可在 /config/iio/triggers 下找到。
-
-IIO 软件触发器的实现支持创建多种触发器类型。一个新的触发器类型通常作为一个独立的
+IIO 榛樿 configfs 缁勪箣涓€鏄?鈥渢riggers锛堣Е鍙戝櫒锛夆€濈粍銆傚畠鍦?configfs 鎸傝浇鍚庤嚜鍔ㄥ彲璁块棶锛屽彲鍦?/config/iio/triggers 涓嬫壘鍒般€?
+IIO 杞欢瑙﹀彂鍣ㄧ殑瀹炵幇鏀寔鍒涘缓澶氱瑙﹀彂鍣ㄧ被鍨嬨€備竴涓柊鐨勮Е鍙戝櫒绫诲瀷閫氬父浣滀负涓€涓嫭绔嬬殑
 ```
 
   /*
@@ -65,26 +59,19 @@ IIO 软件触发器的实现支持创建多种触发器类型。一个新的触�
   module_iio_sw_trigger_driver(iio_trig_sample);
 
 ```
-每种触发器类型在 /config/iio/triggers 下都有自己的目录。加载 iio-trig-sample 模块将创建 'trig-sample' 触发器类型目录 /config/iio/triggers/trig-sample。
+姣忕瑙﹀彂鍣ㄧ被鍨嬪湪 /config/iio/triggers 涓嬮兘鏈夎嚜宸辩殑鐩綍銆傚姞杞?iio-trig-sample 妯″潡灏嗗垱寤?'trig-sample' 瑙﹀彂鍣ㄧ被鍨嬬洰褰?/config/iio/triggers/trig-sample銆?
+鎴戜滑鏀寔浠ヤ笅涓柇婧愶紙瑙﹀彂鍣ㄧ被鍨嬶級锛?
+ - hrtimer锛屼娇鐢ㄩ珮鍒嗚鲸鐜囧畾鏃跺櫒浣滀负涓柇婧?
+### 3.1 hrtimer 瑙﹀彂鍣ㄧ殑鍒涘缓涓庨攢姣?
 
-我们支持以下中断源（触发器类型）：
-
- - hrtimer，使用高分辨率定时器作为中断源
-
-### 3.1 hrtimer 触发器的创建与销毁
-
-
-加载 iio-trig-hrtimer 模块将注册 hrtimer 触发器类型，允许用户在 /config/iio/triggers/hrtimer 下创建 hrtimer 触发器。
-
+鍔犺浇 iio-trig-hrtimer 妯″潡灏嗘敞鍐?hrtimer 瑙﹀彂鍣ㄧ被鍨嬶紝鍏佽鐢ㄦ埛鍦?/config/iio/triggers/hrtimer 涓嬪垱寤?hrtimer 瑙﹀彂鍣ㄣ€?
 ```
 
   $ mkdir /config/iio/triggers/hrtimer/instance1
   $ rmdir /config/iio/triggers/hrtimer/instance1
 
 ```
-每个触发器可以拥有一个或多个特定于该触发器类型的属性。
+姣忎釜瑙﹀彂鍣ㄥ彲浠ユ嫢鏈変竴涓垨澶氫釜鐗瑰畾浜庤瑙﹀彂鍣ㄧ被鍨嬬殑灞炴€с€?
+### 3.2 "hrtimer" 瑙﹀彂鍣ㄧ被鍨嬬殑灞炴€?
 
-### 3.2 "hrtimer" 触发器类型的属性
-
-
-"hrtimer" 触发器类型在 /config 目录下没有任何可配置属性。它会向触发器目录引入 sampling_frequency 属性。该属性以 Hz 为单位设置轮询频率，精度为 mHz。
+"hrtimer" 瑙﹀彂鍣ㄧ被鍨嬪湪 /config 鐩綍涓嬫病鏈変换浣曞彲閰嶇疆灞炴€с€傚畠浼氬悜瑙﹀彂鍣ㄧ洰褰曞紩鍏?sampling_frequency 灞炴€с€傝灞炴€т互 Hz 涓哄崟浣嶈缃疆璇㈤鐜囷紝绮惧害涓?mHz銆?

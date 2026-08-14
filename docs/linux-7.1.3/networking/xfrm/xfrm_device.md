@@ -1,37 +1,28 @@
-
-## XFRM 设备 - 卸载 IPsec 计算
+﻿
+## XFRM 璁惧 - 鍗歌浇 IPsec 璁＄畻
 
 
 Shannon Nelson <shannon.nelson@oracle.com>
 Leon Romanovsky <leonro@nvidia.com>
 
 
-## 概述
+## 姒傝堪
 
 
-IPsec 是保障网络流量安全的实用特性，但计算成本很高：根据流量和链路配置的不同，一条
-10Gbps 的链路很容易降到 1Gbps 以下。幸运的是，有 NIC 提供基于硬件的 IPsec 卸载，可以
-大幅提高吞吐量并降低 CPU 利用率。XFRM 设备接口允许 NIC 驱动向协议栈提供对硬件卸载的
-访问。
+IPsec 鏄繚闅滅綉缁滄祦閲忓畨鍏ㄧ殑瀹炵敤鐗规€э紝浣嗚绠楁垚鏈緢楂橈細鏍规嵁娴侀噺鍜岄摼璺厤缃殑涓嶅悓锛屼竴鏉?10Gbps 鐨勯摼璺緢瀹规槗闄嶅埌 1Gbps 浠ヤ笅銆傚垢杩愮殑鏄紝鏈?NIC 鎻愪緵鍩轰簬纭欢鐨?IPsec 鍗歌浇锛屽彲浠?澶у箙鎻愰珮鍚炲悙閲忓苟闄嶄綆 CPU 鍒╃敤鐜囥€俋FRM 璁惧鎺ュ彛鍏佽 NIC 椹卞姩鍚戝崗璁爤鎻愪緵瀵圭‖浠跺嵏杞界殑
+璁块棶銆?
+鐩墠锛屽唴鏍告敮鎸佷袱绉嶇被鍨嬬殑纭欢鍗歌浇锛?
+ - IPsec 鍔犲瘑鍗歌浇锛?
+   - NIC 鎵ц鍔犲瘑/瑙ｅ瘑
+   - 鍐呮牳澶勭悊鍏跺畠涓€鍒?
+ - IPsec 鏁版嵁鍖呭嵏杞斤細
 
-目前，内核支持两种类型的硬件卸载：
+   - NIC 鎵ц鍔犲瘑/瑙ｅ瘑
+   - NIC 鎵ц灏佽
+   - 鍐呮牳鍜?NIC 鐨?SA 鍜岀瓥鐣ヤ繚鎸佸悓姝?   - NIC 澶勭悊 SA 鍜岀瓥鐣ョ姸鎬?   - 鍐呮牳涓庡瘑閽ョ鐞嗗櫒閫氫俊
 
- - IPsec 加密卸载：
-
-   - NIC 执行加密/解密
-   - 内核处理其它一切
-
- - IPsec 数据包卸载：
-
-   - NIC 执行加密/解密
-   - NIC 执行封装
-   - 内核和 NIC 的 SA 和策略保持同步
-   - NIC 处理 SA 和策略状态
-   - 内核与密钥管理器通信
-
-用户空间对卸载的访问通常通过诸如 libreswan 或 KAME/raccoon 这样的系统，但在试验时，
-iproute2 的 'ip xfrm' 命令集会很方便。一个示例命令可能看起来像
-```
+鐢ㄦ埛绌洪棿瀵瑰嵏杞界殑璁块棶閫氬父閫氳繃璇稿 libreswan 鎴?KAME/raccoon 杩欐牱鐨勭郴缁燂紝浣嗗湪璇曢獙鏃讹紝
+iproute2 鐨?'ip xfrm' 鍛戒护闆嗕細寰堟柟渚裤€備竴涓ず渚嬪懡浠ゅ彲鑳界湅璧锋潵鍍?```
 
   ip x s add proto esp dst 14.0.0.70 src 14.0.0.52 spi 0x07 mode transport \
      reqid 0x07 replay-window 32 \
@@ -52,10 +43,9 @@ iproute2 的 'ip xfrm' 命令集会很方便。一个示例命令可能看起来
   tmpl src 14.0.0.70 dst 14.0.0.52 proto esp reqid 10000 mode transport
 
 ```
-没错，这很难看，但这就是 shell 脚本和/或 libreswan 的用途。
+娌￠敊锛岃繖寰堥毦鐪嬶紝浣嗚繖灏辨槸 shell 鑴氭湰鍜?鎴?libreswan 鐨勭敤閫斻€?
 
-
-## 需要实现的回调
+## 闇€瑕佸疄鐜扮殑鍥炶皟
 
 
 ```
@@ -82,66 +72,49 @@ iproute2 的 'ip xfrm' 命令集会很方便。一个示例命令可能看起来
   };
 
 ```
-提供 ipsec 卸载的 NIC 驱动需要实现与所支持卸载相关的回调，以使该卸载对网络协议栈的
-XFRM 子系统可用。此外，特性位 NETIF_F_HW_ESP 和 NETIF_F_HW_ESP_TX_CSUM 将表明卸载
-的可用性。
+鎻愪緵 ipsec 鍗歌浇鐨?NIC 椹卞姩闇€瑕佸疄鐜颁笌鎵€鏀寔鍗歌浇鐩稿叧鐨勫洖璋冿紝浠ヤ娇璇ュ嵏杞藉缃戠粶鍗忚鏍堢殑
+XFRM 瀛愮郴缁熷彲鐢ㄣ€傛澶栵紝鐗规€т綅 NETIF_F_HW_ESP 鍜?NETIF_F_HW_ESP_TX_CSUM 灏嗚〃鏄庡嵏杞?鐨勫彲鐢ㄦ€с€?
+
+## 娴佺▼
 
 
-## 流程
-
-
-在探测时以及调用 register_netdev() 之前，驱动应当设置本地数据结构和 XFRM 回调，并
-设置特性位。XFRM 代码的监听器将在 NETDEV_REGISTER 上完成设置。
-```
+鍦ㄦ帰娴嬫椂浠ュ強璋冪敤 register_netdev() 涔嬪墠锛岄┍鍔ㄥ簲褰撹缃湰鍦版暟鎹粨鏋勫拰 XFRM 鍥炶皟锛屽苟
+璁剧疆鐗规€т綅銆俋FRM 浠ｇ爜鐨勭洃鍚櫒灏嗗湪 NETDEV_REGISTER 涓婂畬鎴愯缃€?```
 
 		adapter->netdev->xfrmdev_ops = &ixgbe_xfrmdev_ops;
 		adapter->netdev->features |= NETIF_F_HW_ESP;
 		adapter->netdev->hw_enc_features |= NETIF_F_HW_ESP;
 
 ```
-当为请求“卸载”特性的新 SA 建立时，驱动的 xdo_dev_state_add() 将获得要被卸载的新
-SA 以及它是用于 Rx 还是 Tx 的指示。驱动应当
-
- - 验证算法支持卸载
- - 存储 SA 信息（密钥、salt、目标 IP、协议等）
- - 启用该 SA 的硬件卸载
- - 返回状态值：
+褰撲负璇锋眰鈥滃嵏杞解€濈壒鎬х殑鏂?SA 寤虹珛鏃讹紝椹卞姩鐨?xdo_dev_state_add() 灏嗚幏寰楄琚嵏杞界殑鏂?SA 浠ュ強瀹冩槸鐢ㄤ簬 Rx 杩樻槸 Tx 鐨勬寚绀恒€傞┍鍔ㄥ簲褰?
+ - 楠岃瘉绠楁硶鏀寔鍗歌浇
+ - 瀛樺偍 SA 淇℃伅锛堝瘑閽ャ€乻alt銆佺洰鏍?IP銆佸崗璁瓑锛? - 鍚敤璇?SA 鐨勭‖浠跺嵏杞? - 杩斿洖鐘舵€佸€硷細
 
 		===========   ===================================
 		0             success
-		-EOPNETSUPP   不支持卸载，尝试 SW IPsec，
-                              不适用于数据包卸载模式
-		other         使请求失败
-		===========   ===================================
+		-EOPNETSUPP   涓嶆敮鎸佸嵏杞斤紝灏濊瘯 SW IPsec锛?                              涓嶉€傜敤浜庢暟鎹寘鍗歌浇妯″紡
+		other         浣胯姹傚け璐?		===========   ===================================
 
-驱动还可以在 SA 中设置一个 offload_handle，一个不透明的 void 指针
+椹卞姩杩樺彲浠ュ湪 SA 涓缃竴涓?offload_handle锛屼竴涓笉閫忔槑鐨?void 鎸囬拡
 ```
 
 		xs->xso.offload_handle = context;
 
 
 ```
-当网络协议栈为已设置卸载的 SA 准备一个 IPsec 数据包时，它首先调用 xdo_dev_offload_ok()
-，传入 skb 和预期的卸载状态，询问驱动卸载是否可用。这可以检查数据包信息以确保卸载
-被支持（例如 IPv4 或 IPv6、没有 IPv4 选项等），并返回 true 或 false 以表明其支持。
-如果驱动没有实现此回调，协议栈提供合理的默认值。
-
-加密卸载模式：
-当准备发送时，驱动需要检查 Tx 数据包的卸载信息，包括不透明的上下文，并设置数据包
-```
+褰撶綉缁滃崗璁爤涓哄凡璁剧疆鍗歌浇鐨?SA 鍑嗗涓€涓?IPsec 鏁版嵁鍖呮椂锛屽畠棣栧厛璋冪敤 xdo_dev_offload_ok()
+锛屼紶鍏?skb 鍜岄鏈熺殑鍗歌浇鐘舵€侊紝璇㈤棶椹卞姩鍗歌浇鏄惁鍙敤銆傝繖鍙互妫€鏌ユ暟鎹寘淇℃伅浠ョ‘淇濆嵏杞?琚敮鎸侊紙渚嬪 IPv4 鎴?IPv6銆佹病鏈?IPv4 閫夐」绛夛級锛屽苟杩斿洖 true 鎴?false 浠ヨ〃鏄庡叾鏀寔銆?濡傛灉椹卞姩娌℃湁瀹炵幇姝ゅ洖璋冿紝鍗忚鏍堟彁渚涘悎鐞嗙殑榛樿鍊笺€?
+鍔犲瘑鍗歌浇妯″紡锛?褰撳噯澶囧彂閫佹椂锛岄┍鍔ㄩ渶瑕佹鏌?Tx 鏁版嵁鍖呯殑鍗歌浇淇℃伅锛屽寘鎷笉閫忔槑鐨勪笂涓嬫枃锛屽苟璁剧疆鏁版嵁鍖?```
 
 		xs = xfrm_input_state(skb);
 		context = xs->xso.offload_handle;
 		set up HW for send
 
 ```
-协议栈已经在数据包数据中插入了适当的 IPsec 头部，卸载只需要进行加密并修正头部值。
+鍗忚鏍堝凡缁忓湪鏁版嵁鍖呮暟鎹腑鎻掑叆浜嗛€傚綋鐨?IPsec 澶撮儴锛屽嵏杞藉彧闇€瑕佽繘琛屽姞瀵嗗苟淇澶撮儴鍊笺€?
 
-
-当收到一个数据包并且 HW 指示它卸载了解密时，驱动需要向数据包的 skb 添加一个对解码后
-SA 的引用。此时数据应当已被解密，但 IPsec 头部仍在数据包数据中；它们稍后会在协议栈
-上层的 xfrm_input() 中被移除。
-```
+褰撴敹鍒颁竴涓暟鎹寘骞朵笖 HW 鎸囩ず瀹冨嵏杞戒簡瑙ｅ瘑鏃讹紝椹卞姩闇€瑕佸悜鏁版嵁鍖呯殑 skb 娣诲姞涓€涓瑙ｇ爜鍚?SA 鐨勫紩鐢ㄣ€傛鏃舵暟鎹簲褰撳凡琚В瀵嗭紝浣?IPsec 澶撮儴浠嶅湪鏁版嵁鍖呮暟鎹腑锛涘畠浠◢鍚庝細鍦ㄥ崗璁爤
+涓婂眰鐨?xfrm_input() 涓绉婚櫎銆?```
 
 		/* get spi, protocol, and destination IP from packet headers */
 		xs = find xs from (spi, protocol, dest_IP)
@@ -163,25 +136,16 @@ SA 的引用。此时数据应当已被解密，但 IPsec 头部仍在数据包�
 		xo->status = crypto_status;
 
 ```
-4. 像往常一样将数据包交给 napi_gro_receive()。
-
-在 ESN 模式下，从 xfrm_replay_advance_esn()（RX）和 xfrm_replay_overflow_offload_esn
-（TX）调用 xdo_dev_state_advance_esn()。驱动将检查数据包序列号，并在需要时更新 HW ESN
-状态机。
-
-数据包卸载模式：
-HW 添加和删除 XFRM 头部。因此在 RX 路径中，如果 HW 报告成功，XFRM 协议栈被绕过。在
-TX 路径中，数据包在没有额外头部且未加密的情况下离开内核，HW 负责执行它。
-
-当 SA 被用户移除时，会要求驱动的 xdo_dev_state_delete() 和 xdo_dev_policy_delete()
-禁用卸载。之后，在所有对该状态和策略的引用计数都被移除、并且任何剩余资源可以为卸载
-状态清理之后，xdo_dev_state_free() 和 xdo_dev_policy_free() 从一个垃圾回收例程中被
-调用。驱动如何使用这些取决于特定的硬件需求。
-
-当 netdev 被设置为 DOWN 时，XFRM 协议栈的 netdev 监听器会对任何剩余的卸载状态调用
-xdo_dev_state_delete()、xdo_dev_policy_delete()、xdo_dev_state_free() 和
-xdo_dev_policy_free()。
-
-由于 HW 处理数据包的结果，XFRM 核心无法计数硬限制、软限制。HW/驱动负责执行它，并在
-调用 xdo_dev_state_update_stats() 时提供准确的数据。如果发生了这些限制之一，驱动需要
-调用 xfrm_state_check_expire() 以确保 XFRM 执行重新密钥序列。
+4. 鍍忓線甯镐竴鏍峰皢鏁版嵁鍖呬氦缁?napi_gro_receive()銆?
+鍦?ESN 妯″紡涓嬶紝浠?xfrm_replay_advance_esn()锛圧X锛夊拰 xfrm_replay_overflow_offload_esn
+锛圱X锛夎皟鐢?xdo_dev_state_advance_esn()銆傞┍鍔ㄥ皢妫€鏌ユ暟鎹寘搴忓垪鍙凤紝骞跺湪闇€瑕佹椂鏇存柊 HW ESN
+鐘舵€佹満銆?
+鏁版嵁鍖呭嵏杞芥ā寮忥細
+HW 娣诲姞鍜屽垹闄?XFRM 澶撮儴銆傚洜姝ゅ湪 RX 璺緞涓紝濡傛灉 HW 鎶ュ憡鎴愬姛锛孹FRM 鍗忚鏍堣缁曡繃銆傚湪
+TX 璺緞涓紝鏁版嵁鍖呭湪娌℃湁棰濆澶撮儴涓旀湭鍔犲瘑鐨勬儏鍐典笅绂诲紑鍐呮牳锛孒W 璐熻矗鎵ц瀹冦€?
+褰?SA 琚敤鎴风Щ闄ゆ椂锛屼細瑕佹眰椹卞姩鐨?xdo_dev_state_delete() 鍜?xdo_dev_policy_delete()
+绂佺敤鍗歌浇銆備箣鍚庯紝鍦ㄦ墍鏈夊璇ョ姸鎬佸拰绛栫暐鐨勫紩鐢ㄨ鏁伴兘琚Щ闄ゃ€佸苟涓斾换浣曞墿浣欒祫婧愬彲浠ヤ负鍗歌浇
+鐘舵€佹竻鐞嗕箣鍚庯紝xdo_dev_state_free() 鍜?xdo_dev_policy_free() 浠庝竴涓瀮鍦惧洖鏀朵緥绋嬩腑琚?璋冪敤銆傞┍鍔ㄥ浣曚娇鐢ㄨ繖浜涘彇鍐充簬鐗瑰畾鐨勭‖浠堕渶姹傘€?
+褰?netdev 琚缃负 DOWN 鏃讹紝XFRM 鍗忚鏍堢殑 netdev 鐩戝惉鍣ㄤ細瀵逛换浣曞墿浣欑殑鍗歌浇鐘舵€佽皟鐢?xdo_dev_state_delete()銆亁do_dev_policy_delete()銆亁do_dev_state_free() 鍜?xdo_dev_policy_free()銆?
+鐢变簬 HW 澶勭悊鏁版嵁鍖呯殑缁撴灉锛孹FRM 鏍稿績鏃犳硶璁℃暟纭檺鍒躲€佽蒋闄愬埗銆侶W/椹卞姩璐熻矗鎵ц瀹冿紝骞跺湪
+璋冪敤 xdo_dev_state_update_stats() 鏃舵彁渚涘噯纭殑鏁版嵁銆傚鏋滃彂鐢熶簡杩欎簺闄愬埗涔嬩竴锛岄┍鍔ㄩ渶瑕?璋冪敤 xfrm_state_check_expire() 浠ョ‘淇?XFRM 鎵ц閲嶆柊瀵嗛挜搴忓垪銆?

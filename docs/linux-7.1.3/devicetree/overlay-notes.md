@@ -1,16 +1,16 @@
-
-## Devicetree Overlay 笔记
-
-
-本文档描述位于 drivers/of/overlay.c 的内核内设备树 overlay 功能的实现，是
-Documentation/devicetree/dynamic-resolution-notes.rst[^1^] 的配套文档。
-
-### overlay 如何工作
+﻿
+## Devicetree Overlay 绗旇
 
 
-Devicetree 的 overlay 目的是修改内核的实时树（live tree），并使该修改以反映变更的方式
-影响内核的状态。由于内核主要处理设备，任何导致一个活动设备的新设备节点都应当在创建时
-被建立，而如果设备节点被禁用或整体移除，受影响的设备应当被注销。
+鏈枃妗ｆ弿杩颁綅浜?drivers/of/overlay.c 鐨勫唴鏍稿唴璁惧鏍?overlay 鍔熻兘鐨勫疄鐜帮紝鏄?
+Documentation/devicetree/dynamic-resolution-notes.rst[^1^] 鐨勯厤濂楁枃妗ｃ€?
+
+### overlay 濡備綍宸ヤ綔
+
+
+Devicetree 鐨?overlay 鐩殑鏄慨鏀瑰唴鏍哥殑瀹炴椂鏍戯紙live tree锛夛紝骞朵娇璇ヤ慨鏀逛互鍙嶆槧鍙樻洿鐨勬柟寮?
+褰卞搷鍐呮牳鐨勭姸鎬併€傜敱浜庡唴鏍镐富瑕佸鐞嗚澶囷紝浠讳綍瀵艰嚧涓€涓椿鍔ㄨ澶囩殑鏂拌澶囪妭鐐归兘搴斿綋鍦ㄥ垱寤烘椂
+琚缓绔嬶紝鑰屽鏋滆澶囪妭鐐硅绂佺敤鎴栨暣浣撶Щ闄わ紝鍙楀奖鍝嶇殑璁惧搴斿綋琚敞閿€銆?
 
 ```
 
@@ -33,7 +33,7 @@ Devicetree 的 overlay 目的是修改内核的实时树（live tree），并使
     ---- foo.dts ---------------------------------------------------------------
 
 ```
-overlay bar.dtso，
+overlay bar.dtso锛?
 ```
 
     ---- bar.dtso - overlay target location by label ---------------------------
@@ -75,12 +75,12 @@ overlay bar.dtso，
     ---- foo+bar.dts -----------------------------------------------------------
 
 ```
-作为 overlay 的结果，一个新的设备节点（bar）被创建，因此一个 bar platform 设备会被注册；
-如果加载了匹配的设备驱动，该设备会如期被创建。
+浣滀负 overlay 鐨勭粨鏋滐紝涓€涓柊鐨勮澶囪妭鐐癸紙bar锛夎鍒涘缓锛屽洜姝や竴涓?bar platform 璁惧浼氳娉ㄥ唽锛?
+濡傛灉鍔犺浇浜嗗尮閰嶇殑璁惧椹卞姩锛岃璁惧浼氬鏈熻鍒涘缓銆?
 
-如果基础 DT 在编译时没有使用 -@ 选项，那么 "&ocp" 标签将不可用于把 overlay 节点解析到
-基础 DT 中的正确位置。在这种情况下，可以提供目标路径。基于标签语法的目标位置是首选的，
-因为 overlay 可以应用到任何包含该标签的基础 DT，无论该标签在 DT 中出现在何处。
+濡傛灉鍩虹 DT 鍦ㄧ紪璇戞椂娌℃湁浣跨敤 -@ 閫夐」锛岄偅涔?"&ocp" 鏍囩灏嗕笉鍙敤浜庢妸 overlay 鑺傜偣瑙ｆ瀽鍒?
+鍩虹 DT 涓殑姝ｇ‘浣嶇疆銆傚湪杩欑鎯呭喌涓嬶紝鍙互鎻愪緵鐩爣璺緞銆傚熀浜庢爣绛捐娉曠殑鐩爣浣嶇疆鏄閫夌殑锛?
+鍥犱负 overlay 鍙互搴旂敤鍒颁换浣曞寘鍚鏍囩鐨勫熀纭€ DT锛屾棤璁鸿鏍囩鍦?DT 涓嚭鐜板湪浣曞銆?
 
 ```
 
@@ -98,35 +98,35 @@ overlay bar.dtso，
 
 
 ```
-### 内核内 overlay API
+### 鍐呮牳鍐?overlay API
 
 
-该 API 使用起来相当容易。
+璇?API 浣跨敤璧锋潵鐩稿綋瀹规槗銆?
 
-1) 调用 of_overlay_fdt_apply() 以创建并应用一个 overlay changeset。返回值要么是一个错误，
-   要么是一个标识该 overlay 的 cookie。
+1) 璋冪敤 of_overlay_fdt_apply() 浠ュ垱寤哄苟搴旂敤涓€涓?overlay changeset銆傝繑鍥炲€艰涔堟槸涓€涓敊璇紝
+   瑕佷箞鏄竴涓爣璇嗚 overlay 鐨?cookie銆?
 
-2) 调用 of_overlay_remove() 以移除并清理之前通过 of_overlay_fdt_apply() 调用创建的 overlay
-   changeset。不允许移除被另一个 overlay 堆叠的 overlay changeset。
+2) 璋冪敤 of_overlay_remove() 浠ョЩ闄ゅ苟娓呯悊涔嬪墠閫氳繃 of_overlay_fdt_apply() 璋冪敤鍒涘缓鐨?overlay
+   changeset銆備笉鍏佽绉婚櫎琚彟涓€涓?overlay 鍫嗗彔鐨?overlay changeset銆?
 
-最后，如果你需要一次性移除所有 overlay，只需调用 of_overlay_remove_all()，它会以正确的顺序
-移除每一个 overlay。
+鏈€鍚庯紝濡傛灉浣犻渶瑕佷竴娆℃€хЩ闄ゆ墍鏈?overlay锛屽彧闇€璋冪敤 of_overlay_remove_all()锛屽畠浼氫互姝ｇ‘鐨勯『搴?
+绉婚櫎姣忎竴涓?overlay銆?
 
-还可以注册在 overlay 操作时调用的通知器（notifier）。详见 of_overlay_notifier_register/unregister
-和 enum of_overlay_notify_action。
+杩樺彲浠ユ敞鍐屽湪 overlay 鎿嶄綔鏃惰皟鐢ㄧ殑閫氱煡鍣紙notifier锛夈€傝瑙?of_overlay_notifier_register/unregister
+鍜?enum of_overlay_notify_action銆?
 
-针对 OF_OVERLAY_PRE_APPLY、OF_OVERLAY_POST_APPLY 或 OF_OVERLAY_PRE_REMOVE 的通知器回调
-可以在 overlay 或其内容中保存指向设备树节点的指针，但这些指针在 OF_OVERLAY_POST_REMOVE
-的通知器回调返回后不得继续存在。包含 overlay 的内存会在 OF_OVERLAY_POST_REMOVE 通知器被
-调用后被 kfree()。注意，即使 OF_OVERLAY_POST_REMOVE 的通知器返回错误，该内存仍会被 kfree()。
+閽堝 OF_OVERLAY_PRE_APPLY銆丱F_OVERLAY_POST_APPLY 鎴?OF_OVERLAY_PRE_REMOVE 鐨勯€氱煡鍣ㄥ洖璋?
+鍙互鍦?overlay 鎴栧叾鍐呭涓繚瀛樻寚鍚戣澶囨爲鑺傜偣鐨勬寚閽堬紝浣嗚繖浜涙寚閽堝湪 OF_OVERLAY_POST_REMOVE
+鐨勯€氱煡鍣ㄥ洖璋冭繑鍥炲悗涓嶅緱缁х画瀛樺湪銆傚寘鍚?overlay 鐨勫唴瀛樹細鍦?OF_OVERLAY_POST_REMOVE 閫氱煡鍣ㄨ
+璋冪敤鍚庤 kfree()銆傛敞鎰忥紝鍗充娇 OF_OVERLAY_POST_REMOVE 鐨勯€氱煡鍣ㄨ繑鍥為敊璇紝璇ュ唴瀛樹粛浼氳 kfree()銆?
 
-drivers/of/dynamic.c 中的 changeset 通知器是第二类可能由应用或移除 overlay 触发的通知器。
-这些通知器不允许保存指向 overlay 中设备树节点或其内容的指针。overlay 代码并不防止此类指针
-在包含 overlay 的内存因移除 overlay 而被释放时仍然保持活动。
+drivers/of/dynamic.c 涓殑 changeset 閫氱煡鍣ㄦ槸绗簩绫诲彲鑳界敱搴旂敤鎴栫Щ闄?overlay 瑙﹀彂鐨勯€氱煡鍣ㄣ€?
+杩欎簺閫氱煡鍣ㄤ笉鍏佽淇濆瓨鎸囧悜 overlay 涓澶囨爲鑺傜偣鎴栧叾鍐呭鐨勬寚閽堛€俹verlay 浠ｇ爜骞朵笉闃叉姝ょ被鎸囬拡
+鍦ㄥ寘鍚?overlay 鐨勫唴瀛樺洜绉婚櫎 overlay 鑰岃閲婃斁鏃朵粛鐒朵繚鎸佹椿鍔ㄣ€?
 
-任何其它保留指向 overlay 节点或数据指针的代码都被视为缺陷（bug），因为在移除 overlay 后
-该指针将指向已释放的内存。
+浠讳綍鍏跺畠淇濈暀鎸囧悜 overlay 鑺傜偣鎴栨暟鎹寚閽堢殑浠ｇ爜閮借瑙嗕负缂洪櫡锛坆ug锛夛紝鍥犱负鍦ㄧЩ闄?overlay 鍚?
+璇ユ寚閽堝皢鎸囧悜宸查噴鏀剧殑鍐呭瓨銆?
 
-overlay 的使用者必须特别留意系统上发生的整体操作，以确保其它内核代码不会保留任何指向
-overlay 节点或数据的指针。一个无意中使用此类指针的例子是：在 overlay 被应用之后才加载
-驱动或子系统模块，而该驱动或子系统扫描整个设备树或其大部分，包括 overlay 节点。
+overlay 鐨勪娇鐢ㄨ€呭繀椤荤壒鍒暀鎰忕郴缁熶笂鍙戠敓鐨勬暣浣撴搷浣滐紝浠ョ‘淇濆叾瀹冨唴鏍镐唬鐮佷笉浼氫繚鐣欎换浣曟寚鍚?
+overlay 鑺傜偣鎴栨暟鎹殑鎸囬拡銆備竴涓棤鎰忎腑浣跨敤姝ょ被鎸囬拡鐨勪緥瀛愭槸锛氬湪 overlay 琚簲鐢ㄤ箣鍚庢墠鍔犺浇
+椹卞姩鎴栧瓙绯荤粺妯″潡锛岃€岃椹卞姩鎴栧瓙绯荤粺鎵弿鏁翠釜璁惧鏍戞垨鍏跺ぇ閮ㄥ垎锛屽寘鎷?overlay 鑺傜偣銆?

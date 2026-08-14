@@ -1,35 +1,28 @@
-######## ioctl NET_GET_IF
+﻿######## ioctl NET_GET_IF
 
 
-## 名称
+## 鍚嶇О
 
 
-NET_GET_IF - 读取通过 NET_ADD_IF <net> 创建的接口的配置数据。
-
-## 概要
+NET_GET_IF - 璇诲彇閫氳繃 NET_ADD_IF <net> 鍒涘缓鐨勬帴鍙ｇ殑閰嶇疆鏁版嵁銆?
+## 姒傝
 
 
 `int ioctl(int fd, NET_GET_IF, struct dvb_net_if *net_if)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
-
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `net_if`
-    指向 struct `dvb_net_if` 的指针
-
-## 描述
-
-
-NET_GET_IF ioctl 使用 struct **`dvb_net_if`** 的 : ifnum 字段给定的接口号，并用该接口所使用的包 ID 与封装类型填充 struct `dvb_net_if` 的内容。如果尚未通过 NET_ADD_IF <net> 创建该接口，它将返回 -1 并将 `errno` 设为 `EINVAL` 错误码。
-
-## 返回值
+    鎸囧悜 struct `dvb_net_if` 鐨勬寚閽?
+## 鎻忚堪
 
 
-成功时返回 0，并填充 `ca_slot_info`。
+NET_GET_IF ioctl 浣跨敤 struct **`dvb_net_if`** 鐨?: ifnum 瀛楁缁欏畾鐨勬帴鍙ｅ彿锛屽苟鐢ㄨ鎺ュ彛鎵€浣跨敤鐨勫寘 ID 涓庡皝瑁呯被鍨嬪～鍏?struct `dvb_net_if` 鐨勫唴瀹广€傚鏋滃皻鏈€氳繃 NET_ADD_IF <net> 鍒涘缓璇ユ帴鍙ｏ紝瀹冨皢杩斿洖 -1 骞跺皢 `errno` 璁句负 `EINVAL` 閿欒鐮併€?
+## 杩斿洖鍊?
 
-出错时返回 -1，并相应设置 `errno` 变量。
-
-通用错误码在“通用错误码 <gen-errors>”章节中描述。
+鎴愬姛鏃惰繑鍥?0锛屽苟濉厖 `ca_slot_info`銆?
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲璁剧疆 `errno` 鍙橀噺銆?
+閫氱敤閿欒鐮佸湪鈥滈€氱敤閿欒鐮?<gen-errors>鈥濈珷鑺備腑鎻忚堪銆?

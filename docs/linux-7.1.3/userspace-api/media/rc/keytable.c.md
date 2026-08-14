@@ -1,17 +1,17 @@
-## 文件：uapi/v4l/keytable.c
+﻿## 鏂囦欢锛歶api/v4l/keytable.c
 
-本文档展示 V4L 遥控器（RC）子系统中的 keytable.c 示例程序源码，演示如何检查与替换红外（IR）按键映射表，主要供编写或使用红外遥控工具的用户空间开发者参考。
+鏈枃妗ｅ睍绀?V4L 閬ユ帶鍣紙RC锛夊瓙绯荤粺涓殑 keytable.c 绀轰緥绋嬪簭婧愮爜锛屾紨绀哄浣曟鏌ヤ笌鏇挎崲绾㈠锛圛R锛夋寜閿槧灏勮〃锛屼富瑕佷緵缂栧啓鎴栦娇鐢ㄧ孩澶栭仴鎺у伐鍏风殑鐢ㄦ埛绌洪棿寮€鍙戣€呭弬鑰冦€?
 
 
 
-    /* keytable.c - 本程序用于检查/替换 IR 的按键
+    /* keytable.c - 鏈▼搴忕敤浜庢鏌?鏇挎崲 IR 鐨勬寜閿?
        Copyright (C) 2006-2009 Mauro Carvalho Chehab <mchehab@kernel.org>
 
-       本程序是自由软件；你可以在自由软件基金会发布的 GNU 通用公共许可证
-       第 2 版的条款下，重新发布和/或修改它。
+       鏈▼搴忔槸鑷敱杞欢锛涗綘鍙互鍦ㄨ嚜鐢辫蒋浠跺熀閲戜細鍙戝竷鐨?GNU 閫氱敤鍏叡璁稿彲璇?
+       绗?2 鐗堢殑鏉℃涓嬶紝閲嶆柊鍙戝竷鍜?鎴栦慨鏀瑰畠銆?
 
-       本程序的分发希望是有用的，但没有任何担保；甚至没有针对特定用途的
-       适销性或适用性的默示担保。更多细节请参见 GNU 通用公共许可证。
+       鏈▼搴忕殑鍒嗗彂甯屾湜鏄湁鐢ㄧ殑锛屼絾娌℃湁浠讳綍鎷呬繚锛涚敋鑷虫病鏈夐拡瀵圭壒瀹氱敤閫旂殑
+       閫傞攢鎬ф垨閫傜敤鎬х殑榛樼ず鎷呬繚銆傛洿澶氱粏鑺傝鍙傝 GNU 閫氱敤鍏叡璁稿彲璇併€?
      */
 
     #include <ctype.h>
@@ -61,14 +61,14 @@
 	    int codes[^2^];
 
 	    if (argc<2 || argc>4) {
-		    printf ("用法：%s <设备> 获取表；或\\n"
-			    "       %s <设备> <扫描码> <键码>\\n"
-			    "       %s <设备> <键码文件>n",**argv,**argv,*argv);
+		    printf ("鐢ㄦ硶锛?s <璁惧> 鑾峰彇琛紱鎴朶\n"
+			    "       %s <璁惧> <鎵弿鐮? <閿爜>\\n"
+			    "       %s <璁惧> <閿爜鏂囦欢>n",**argv,**argv,*argv);
 		    return -1;
 	    }
 
 	    if ((fd = open(argv[^1^], O_RDONLY)) < 0) {
-		    perror("无法打开输入设备");
+		    perror("鏃犳硶鎵撳紑杈撳叆璁惧");
 		    return(-1);
 	    }
 
@@ -101,11 +101,11 @@
 
 		    fin=fopen(argv[^2^],"r");
 		    if (fin==NULL) {
-			    perror ("打开键码文件");
+			    perror ("鎵撳紑閿爜鏂囦欢");
 			    return -1;
 		    }
 
-		    /** 清空旧表 **/
+		    /** 娓呯┖鏃ц〃 **/
 		    for (j = 0; j < 256; j++) {
 			    for (i = 0; i < 256; i++) {
 				    codes[^0^] = (j << 8) | i;
@@ -117,20 +117,20 @@
 		    while (fgets(s,sizeof(s),fin)) {
 			    scancode=strtok(s,"\\n\\t =:");
 			    if (!scancode) {
-				    perror ("解析输入文件扫描码");
+				    perror ("瑙ｆ瀽杈撳叆鏂囦欢鎵弿鐮?);
 				    return -1;
 			    }
 			    if (!strcasecmp(scancode, "scancode")) {
 				    scancode = strtok(NULL,"\\n\\t =:");
 				    if (!scancode) {
-					    perror ("解析输入文件扫描码");
+					    perror ("瑙ｆ瀽杈撳叆鏂囦欢鎵弿鐮?);
 					    return -1;
 				    }
 			    }
 
 			    keycode=strtok(NULL,"\\n\\t =:(");
 			    if (!keycode) {
-				    perror ("解析输入文件键码");
+				    perror ("瑙ｆ瀽杈撳叆鏂囦欢閿爜");
 				    return -1;
 			    }
 
@@ -149,7 +149,7 @@
 
 			    // printf("\\t%04x=%04x\\n",codes[^0^], codes[^1^]);
 			    if(ioctl(fd, EVIOCSKEYCODE, codes)) {
-				    fprintf(stderr, "正通过 ",codes[^0^], codes[^1^]);
+				    fprintf(stderr, "姝ｉ€氳繃 ",codes[^0^], codes[^1^]);
 				    perror ("EVIOCSKEYCODE");
 			    }
 
@@ -159,7 +159,7 @@
 		    return 0;
 	    }
 
-	    /** 获取扫描码表 **/
+	    /** 鑾峰彇鎵弿鐮佽〃 **/
 	    for (j = 0; j < 256; j++) {
 		    for (i = 0; i < 256; i++) {
 			    codes[^0^] = (j << 8) | i;

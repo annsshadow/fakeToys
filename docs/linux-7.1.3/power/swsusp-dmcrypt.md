@@ -1,39 +1,39 @@
-## How to use dm-crypt and swsusp together
+﻿## How to use dm-crypt and swsusp together
 
 
-作者：Andreas Steinmetz <ast@domdv.de>
+浣滆€咃細Andreas Steinmetz <ast@domdv.de>
 
 
 
-一些先决条件：
-你了解 dm-crypt 的工作原理。如果不了解，请访问以下网页：
+涓€浜涘厛鍐虫潯浠讹細
+浣犱簡瑙?dm-crypt 鐨勫伐浣滃師鐞嗐€傚鏋滀笉浜嗚В锛岃璁块棶浠ヤ笅缃戦〉锛?
 http://www.saout.de/misc/dm-crypt/
-你已阅读 Documentation/power/swsusp.rst 并理解了它。
-你确实阅读过 Documentation/admin-guide/initrd.rst 并了解 initrd 的工作原理。
-你知道如何创建或修改一个 initrd。
+浣犲凡闃呰 Documentation/power/swsusp.rst 骞剁悊瑙ｄ簡瀹冦€?
+浣犵‘瀹為槄璇昏繃 Documentation/admin-guide/initrd.rst 骞朵簡瑙?initrd 鐨勫伐浣滃師鐞嗐€?
+浣犵煡閬撳浣曞垱寤烘垨淇敼涓€涓?initrd銆?
 
-现在你的系统已正确设置，除了交换设备以及可能包含用于加密设置和/或救援用途的
-迷你系统的引导分区外，你的磁盘已加密。你甚至可能已经有一个会完成当前加密设置的 initrd。
+鐜板湪浣犵殑绯荤粺宸叉纭缃紝闄や簡浜ゆ崲璁惧浠ュ強鍙兘鍖呭惈鐢ㄤ簬鍔犲瘑璁剧疆鍜?鎴栨晳鎻寸敤閫旂殑
+杩蜂綘绯荤粺鐨勫紩瀵煎垎鍖哄锛屼綘鐨勭鐩樺凡鍔犲瘑銆備綘鐢氳嚦鍙兘宸茬粡鏈変竴涓細瀹屾垚褰撳墠鍔犲瘑璁剧疆鐨?initrd銆?
 
-此时你也想加密你的交换分区。同时你仍希望能够通过 swsusp 挂起。然而，这意味着你
-必须能够在恢复之前输入口令，或者从外部设备（如 pcmcia 闪存盘或 usb 存储棒）读取密钥。
-因此你需要一个 initrd，它先设置 dm-crypt，然后让 swsusp 从加密的交换设备恢复。
+姝ゆ椂浣犱篃鎯冲姞瀵嗕綘鐨勪氦鎹㈠垎鍖恒€傚悓鏃朵綘浠嶅笇鏈涜兘澶熼€氳繃 swsusp 鎸傝捣銆傜劧鑰岋紝杩欐剰鍛崇潃浣?
+蹇呴』鑳藉鍦ㄦ仮澶嶄箣鍓嶈緭鍏ュ彛浠わ紝鎴栬€呬粠澶栭儴璁惧锛堝 pcmcia 闂瓨鐩樻垨 usb 瀛樺偍妫掞級璇诲彇瀵嗛挜銆?
+鍥犳浣犻渶瑕佷竴涓?initrd锛屽畠鍏堣缃?dm-crypt锛岀劧鍚庤 swsusp 浠庡姞瀵嗙殑浜ゆ崲璁惧鎭㈠銆?
 
-最重要的一点是，你设置 dm-crypt 的方式必须使得你挂起/恢复到的交换设备在 initrd 内
-以及运行中的系统内始终具有相同的主/次设备号。最简单的实现方式是始终首先用 dmsetup
-设置该交换设备，这样
+鏈€閲嶈鐨勪竴鐐规槸锛屼綘璁剧疆 dm-crypt 鐨勬柟寮忓繀椤讳娇寰椾綘鎸傝捣/鎭㈠鍒扮殑浜ゆ崲璁惧鍦?initrd 鍐?
+浠ュ強杩愯涓殑绯荤粺鍐呭缁堝叿鏈夌浉鍚岀殑涓?娆¤澶囧彿銆傛渶绠€鍗曠殑瀹炵幇鏂瑰紡鏄缁堥鍏堢敤 dmsetup
+璁剧疆璇ヤ氦鎹㈣澶囷紝杩欐牱
 ```
 
   brw-------  1 root root 254, 0 Jul 28 13:37 /dev/mapper/swap0
 
 ```
-现在将你的内核设置为使用 /dev/mapper/swap0 作为默认的
+鐜板湪灏嗕綘鐨勫唴鏍歌缃负浣跨敤 /dev/mapper/swap0 浣滀负榛樿鐨?
 ```
 
   CONFIG_PM_STD_PARTITION="/dev/mapper/swap0"
 
 ```
-准备好你的引导加载程序以使用你将创建或修改的 initrd。对于 lilo，最简单的设置如下所示
+鍑嗗濂戒綘鐨勫紩瀵煎姞杞界▼搴忎互浣跨敤浣犲皢鍒涘缓鎴栦慨鏀圭殑 initrd銆傚浜?lilo锛屾渶绠€鍗曠殑璁剧疆濡備笅鎵€绀?
 ```
 
   image=/boot/vmlinuz
@@ -42,9 +42,9 @@ http://www.saout.de/misc/dm-crypt/
   append="root=/dev/ram0 init=/linuxrc rw"
 
 ```
-最后你需要创建或修改你的 initrd。假设你要创建一个从 pcmcia 闪存卡读取所需 dm-crypt
-设置的 initrd。该卡格式化为 ext2 文件系统，插入时位于 /dev/hde1。该卡至少包含一个名为
-“swapkey”的文件，其中存放着加密的交换设置。你 initrd 的 /etc/fstab 中含有类似如下内容
+鏈€鍚庝綘闇€瑕佸垱寤烘垨淇敼浣犵殑 initrd銆傚亣璁句綘瑕佸垱寤轰竴涓粠 pcmcia 闂瓨鍗¤鍙栨墍闇€ dm-crypt
+璁剧疆鐨?initrd銆傝鍗℃牸寮忓寲涓?ext2 鏂囦欢绯荤粺锛屾彃鍏ユ椂浣嶄簬 /dev/hde1銆傝鍗¤嚦灏戝寘鍚竴涓悕涓?
+鈥渟wapkey鈥濈殑鏂囦欢锛屽叾涓瓨鏀剧潃鍔犲瘑鐨勪氦鎹㈣缃€備綘 initrd 鐨?/etc/fstab 涓惈鏈夌被浼煎涓嬪唴瀹?
 ```
 
   /dev/hda1   /mnt    ext3      ro                            0 0
@@ -52,9 +52,9 @@ http://www.saout.de/misc/dm-crypt/
   none        /sys    sysfs     defaults,noatime,nodiratime   0 0
 
 ```
-/dev/hda1 包含一个未加密的迷你系统，它同样通过从 pcmcia 闪存盘读取设置来配置你所有的
-加密设备。以下是你的 initrd 的一个 /linuxrc，它允许你从加密交换恢复，并在恢复失败时
-继续用 /dev/hda1 上的迷你系统引导
+/dev/hda1 鍖呭惈涓€涓湭鍔犲瘑鐨勮糠浣犵郴缁燂紝瀹冨悓鏍烽€氳繃浠?pcmcia 闂瓨鐩樿鍙栬缃潵閰嶇疆浣犳墍鏈夌殑
+鍔犲瘑璁惧銆備互涓嬫槸浣犵殑 initrd 鐨勪竴涓?/linuxrc锛屽畠鍏佽浣犱粠鍔犲瘑浜ゆ崲鎭㈠锛屽苟鍦ㄦ仮澶嶅け璐ユ椂
+缁х画鐢?/dev/hda1 涓婄殑杩蜂綘绯荤粺寮曞
 ```
 
   #!/bin/sh
@@ -106,18 +106,18 @@ http://www.saout.de/misc/dm-crypt/
   exec chroot . /sbin/init $* < dev/console > dev/console 2>&1
 
 ```
-请不要介意上面这个奇怪的循环，busybox 的 msh 不认识 let 语句。那么，这个脚本里发生了什么？
-首先我们必须决定是否要尝试恢复。如果我们以“noresume”或任何给 init 的参数（如“single”
-或“emergency”）作为引导参数启动，我们将不恢复。
+璇蜂笉瑕佷粙鎰忎笂闈㈣繖涓鎬殑寰幆锛宐usybox 鐨?msh 涓嶈璇?let 璇彞銆傞偅涔堬紝杩欎釜鑴氭湰閲屽彂鐢熶簡浠€涔堬紵
+棣栧厛鎴戜滑蹇呴』鍐冲畾鏄惁瑕佸皾璇曟仮澶嶃€傚鏋滄垜浠互鈥渘oresume鈥濇垨浠讳綍缁?init 鐨勫弬鏁帮紙濡傗€渟ingle鈥?
+鎴栤€渆mergency鈥濓級浣滀负寮曞鍙傛暟鍚姩锛屾垜浠皢涓嶆仮澶嶃€?
 
-然后我们需要用来自 pcmcia 闪存盘的设置数据设置 dmcrypt。如果成功，且我们不想恢复，
-则需要重置交换设备。随后“echo 254:0 > /sys/power/resume”这一行尝试从第一个设备映射
-设备恢复。注意，无论是否恢复，在 /sys/power/resume 中设置设备都很重要，否则后续挂起会失败。
-如果恢复开始，脚本执行到此终止。
+鐒跺悗鎴戜滑闇€瑕佺敤鏉ヨ嚜 pcmcia 闂瓨鐩樼殑璁剧疆鏁版嵁璁剧疆 dmcrypt銆傚鏋滄垚鍔燂紝涓旀垜浠笉鎯虫仮澶嶏紝
+鍒欓渶瑕侀噸缃氦鎹㈣澶囥€傞殢鍚庘€渆cho 254:0 > /sys/power/resume鈥濊繖涓€琛屽皾璇曚粠绗竴涓澶囨槧灏?
+璁惧鎭㈠銆傛敞鎰忥紝鏃犺鏄惁鎭㈠锛屽湪 /sys/power/resume 涓缃澶囬兘寰堥噸瑕侊紝鍚﹀垯鍚庣画鎸傝捣浼氬け璐ャ€?
+濡傛灉鎭㈠寮€濮嬶紝鑴氭湰鎵ц鍒版缁堟銆?
 
-否则我们只是移除加密的交换设备，并将其留给 /dev/hda1 上的迷你系统来完成整个加密的设置
-（你可以根据需要自行修改）。
+鍚﹀垯鎴戜滑鍙槸绉婚櫎鍔犲瘑鐨勪氦鎹㈣澶囷紝骞跺皢鍏剁暀缁?/dev/hda1 涓婄殑杩蜂綘绯荤粺鏉ュ畬鎴愭暣涓姞瀵嗙殑璁剧疆
+锛堜綘鍙互鏍规嵁闇€瑕佽嚜琛屼慨鏀癸級銆?
 
-接下来就是众所周知的切换根文件系统并从中继续引导的过程。我倾向于在继续引导之前卸载
-initrd，但这由你自行修改。
+鎺ヤ笅鏉ュ氨鏄紬鎵€鍛ㄧ煡鐨勫垏鎹㈡牴鏂囦欢绯荤粺骞朵粠涓户缁紩瀵肩殑杩囩▼銆傛垜鍊惧悜浜庡湪缁х画寮曞涔嬪墠鍗歌浇
+initrd锛屼絾杩欑敱浣犺嚜琛屼慨鏀广€?
 

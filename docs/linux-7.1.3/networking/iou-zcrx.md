@@ -1,40 +1,30 @@
+﻿
+## io_uring 闆舵嫹璐濇帴鏀讹紙Rx锛?
 
-## io_uring 零拷贝接收（Rx）
+## 绠€浠?
 
+io_uring 闆舵嫹璐濇帴鏀讹紙ZC Rx锛夋槸涓€椤瑰湪缃戠粶鎺ユ敹璺緞涓婃秷闄ゅ唴鏍稿埌鐢ㄦ埛鎷疯礉鐨勭壒鎬э紝鍏佽鏁版嵁鍖呮暟鎹鐩存帴鎺ユ敹鍒扮敤鎴风┖闂村唴瀛樹腑銆傝鐗规€т笌 TCP_ZEROCOPY_RECEIVE 鐨勪笉鍚屼箣澶勫湪浜庯紝娌℃湁涓ユ牸鐨勫榻愯姹傦紝涔熶笉闇€瑕?mmap()/munmap()銆備笌 DPDK 绛夊唴鏍告梺璺柟妗堢浉姣旓紝鏁版嵁鍖呭ご鐢卞唴鏍?TCP 鏍堟甯稿鐞嗐€?
+## NIC 纭欢闇€姹?
 
-## 简介
-
-
-io_uring 零拷贝接收（ZC Rx）是一项在网络接收路径上消除内核到用户拷贝的特性，允许数据包数据被直接接收到用户空间内存中。该特性与 TCP_ZEROCOPY_RECEIVE 的不同之处在于，没有严格的对齐要求，也不需要 mmap()/munmap()。与 DPDK 等内核旁路方案相比，数据包头由内核 TCP 栈正常处理。
-
-## NIC 硬件需求
-
-
-io_uring ZC Rx 工作需要若干 NIC 硬件特性。目前内核 API 不会配置 NIC，必须由用户来完成。
-
-### 头/数据分离
+io_uring ZC Rx 宸ヤ綔闇€瑕佽嫢骞?NIC 纭欢鐗规€с€傜洰鍓嶅唴鏍?API 涓嶄細閰嶇疆 NIC锛屽繀椤荤敱鐢ㄦ埛鏉ュ畬鎴愩€?
+### 澶?鏁版嵁鍒嗙
 
 
-需要在 L4 边界将数据包拆分为头部与负载。头部像往常一样被接收到内核内存中，并由 TCP 栈正常处理。负载被直接接收到用户空间内存中。
+闇€瑕佸湪 L4 杈圭晫灏嗘暟鎹寘鎷嗗垎涓哄ご閮ㄤ笌璐熻浇銆傚ご閮ㄥ儚寰€甯镐竴鏍疯鎺ユ敹鍒板唴鏍稿唴瀛樹腑锛屽苟鐢?TCP 鏍堟甯稿鐞嗐€傝礋杞借鐩存帴鎺ユ敹鍒扮敤鎴风┖闂村唴瀛樹腑銆?
+### 娴佸鍚?
 
-### 流导向
-
-
-为此特性配置了特定的硬件 Rx 队列，但现代 NIC 通常将流分布到所有硬件 Rx 队列上。需要流导向（flow steering）来确保只有期望的流被导向到为 io_uring ZC Rx 配置的硬件队列。
-
+涓烘鐗规€ч厤缃簡鐗瑰畾鐨勭‖浠?Rx 闃熷垪锛屼絾鐜颁唬 NIC 閫氬父灏嗘祦鍒嗗竷鍒版墍鏈夌‖浠?Rx 闃熷垪涓娿€傞渶瑕佹祦瀵煎悜锛坒low steering锛夋潵纭繚鍙湁鏈熸湜鐨勬祦琚鍚戝埌涓?io_uring ZC Rx 閰嶇疆鐨勭‖浠堕槦鍒椼€?
 ### RSS
 
 
-除了上面的流导向之外，还需要 RSS 来将所有其他非零拷贝流从为 io_uring ZC Rx 配置的队列上引开。
-
-## 用法
-
-
-### 配置 NIC
+闄や簡涓婇潰鐨勬祦瀵煎悜涔嬪锛岃繕闇€瑕?RSS 鏉ュ皢鎵€鏈夊叾浠栭潪闆舵嫹璐濇祦浠庝负 io_uring ZC Rx 閰嶇疆鐨勯槦鍒椾笂寮曞紑銆?
+## 鐢ㄦ硶
 
 
-目前必须在带外完成。
+### 閰嶇疆 NIC
 
+
+鐩墠蹇呴』鍦ㄥ甫澶栧畬鎴愩€?
 ```
 
   ethtool -L eth0 combined 2
@@ -55,11 +45,10 @@ io_uring ZC Rx 工作需要若干 NIC 硬件特性。目前内核 API 不会配�
   ethtool -N eth0 flow-type tcp6 ... action 1
 
 ```
-### 配置 io_uring
+### 閰嶇疆 io_uring
 
 
-本节描述底层的 io_uring 内核 API。关于如何使用高层 API，请参考 liburing 文档。
-
+鏈妭鎻忚堪搴曞眰鐨?io_uring 鍐呮牳 API銆傚叧浜庡浣曚娇鐢ㄩ珮灞?API锛岃鍙傝€?liburing 鏂囨。銆?
 ```
 
   IORING_SETUP_SINGLE_ISSUER
@@ -67,7 +56,7 @@ io_uring ZC Rx 工作需要若干 NIC 硬件特性。目前内核 API 不会配�
   IORING_SETUP_CQE32 or IORING_SETUP_CQE_MIXED
 
 ```
-### 创建内存区域
+### 鍒涘缓鍐呭瓨鍖哄煙
 
 
 ```
@@ -78,8 +67,7 @@ io_uring ZC Rx 工作需要若干 NIC 硬件特性。目前内核 API 不会配�
                         0, 0);
 
 ```
-### 创建补充环
-
+### 鍒涘缓琛ュ厖鐜?
 
 ```
 
@@ -89,8 +77,7 @@ io_uring ZC Rx 工作需要若干 NIC 硬件特性。目前内核 API 不会配�
                         0, 0);
 
 ```
-该补充环由头部的一些空间，加上一个数组组成
-```
+璇ヨˉ鍏呯幆鐢卞ご閮ㄧ殑涓€浜涚┖闂达紝鍔犱笂涓€涓暟缁勭粍鎴?```
 
   size_t rq_entries = 4096;
   size_t ring_size = rq_entries * sizeof(struct io_uring_zcrx_rqe) + PAGE_SIZE;
@@ -98,7 +85,7 @@ io_uring ZC Rx 工作需要若干 NIC 硬件特性。目前内核 API 不会配�
   ring_size = (ring_size + (PAGE_SIZE - 1)) & ~(PAGE_SIZE - 1);
 
 ```
-### 注册 ZC Rx
+### 娉ㄥ唽 ZC Rx
 
 
 ```
@@ -130,10 +117,9 @@ io_uring ZC Rx 工作需要若干 NIC 硬件特性。目前内核 API 不会配�
   io_uring_register_ifq(ring, &reg);
 
 ```
-### 映射补充环
+### 鏄犲皠琛ュ厖鐜?
 
-
-内核在注册时为补充环填充字段，注册 ``struct
+鍐呮牳鍦ㄦ敞鍐屾椂涓鸿ˉ鍏呯幆濉厖瀛楁锛屾敞鍐?``struct
 ```
 
   struct io_uring_zcrx_rq refill_ring;
@@ -146,7 +132,7 @@ io_uring ZC Rx 工作需要若干 NIC 硬件特性。目前内核 API 不会配�
   refill_ring.ring_ptr = ring_ptr;
 
 ```
-### 接收数据
+### 鎺ユ敹鏁版嵁
 
 
 ```
@@ -181,8 +167,7 @@ io_uring ZC Rx 工作需要若干 NIC 硬件特性。目前内核 API 不会配�
   io_uring_cq_advance(ring, count);
 
 ```
-### 回收缓冲区
-
+### 鍥炴敹缂撳啿鍖?
 
 ```
 
@@ -196,16 +181,13 @@ io_uring ZC Rx 工作需要若干 NIC 硬件特性。目前内核 API 不会配�
   IO_URING_WRITE_ONCE(*refill_ring.ktail, ++refill_ring.rq_tail);
 
 ```
-### 区域分块
+### 鍖哄煙鍒嗗潡
 
 
-zcrx 将内存区域拆分为固定长度、物理上连续的块。这限制了单个 io_uring CQE 中返回的最大缓冲区大小。用户可以通过在注册期间将 `struct io_uring_zcrx_ifq_reg` 的 `rx_buf_len` 字段设置为期望的长度，向内核提供使用更大块的提示。如果该字段被设置为零，内核默认使用系统页大小。
-
-要使用更大的尺寸，内存区域必须由物理上连续的、大小是 `rx_buf_len` 整数倍的范围作为后备。它还需要内核与硬件支持。如果注册失败，用户一般应通过将其 `rx_buf_len` 设置为零来回退到默认值。
-
-更大的块不会对 CQE 中返回的缓冲区大小提供任何额外保证，并且它们可能因流量模式、硬件卸载等许多因素而变化。除了 zcrx 注册之外，它不需要应用程序做任何更改。
-
-## 测试
+zcrx 灏嗗唴瀛樺尯鍩熸媶鍒嗕负鍥哄畾闀垮害銆佺墿鐞嗕笂杩炵画鐨勫潡銆傝繖闄愬埗浜嗗崟涓?io_uring CQE 涓繑鍥炵殑鏈€澶х紦鍐插尯澶у皬銆傜敤鎴峰彲浠ラ€氳繃鍦ㄦ敞鍐屾湡闂村皢 `struct io_uring_zcrx_ifq_reg` 鐨?`rx_buf_len` 瀛楁璁剧疆涓烘湡鏈涚殑闀垮害锛屽悜鍐呮牳鎻愪緵浣跨敤鏇村ぇ鍧楃殑鎻愮ず銆傚鏋滆瀛楁琚缃负闆讹紝鍐呮牳榛樿浣跨敤绯荤粺椤靛ぇ灏忋€?
+瑕佷娇鐢ㄦ洿澶х殑灏哄锛屽唴瀛樺尯鍩熷繀椤荤敱鐗╃悊涓婅繛缁殑銆佸ぇ灏忔槸 `rx_buf_len` 鏁存暟鍊嶇殑鑼冨洿浣滀负鍚庡銆傚畠杩橀渶瑕佸唴鏍镐笌纭欢鏀寔銆傚鏋滄敞鍐屽け璐ワ紝鐢ㄦ埛涓€鑸簲閫氳繃灏嗗叾 `rx_buf_len` 璁剧疆涓洪浂鏉ュ洖閫€鍒伴粯璁ゅ€笺€?
+鏇村ぇ鐨勫潡涓嶄細瀵?CQE 涓繑鍥炵殑缂撳啿鍖哄ぇ灏忔彁渚涗换浣曢澶栦繚璇侊紝骞朵笖瀹冧滑鍙兘鍥犳祦閲忔ā寮忋€佺‖浠跺嵏杞界瓑璁稿鍥犵礌鑰屽彉鍖栥€傞櫎浜?zcrx 娉ㄥ唽涔嬪锛屽畠涓嶉渶瑕佸簲鐢ㄧ▼搴忓仛浠讳綍鏇存敼銆?
+## 娴嬭瘯
 
 
-参见 `tools/testing/selftests/drivers/net/hw/iou-zcrx.c`
+鍙傝 `tools/testing/selftests/drivers/net/hw/iou-zcrx.c`

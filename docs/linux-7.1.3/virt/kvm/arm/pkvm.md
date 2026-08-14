@@ -1,83 +1,55 @@
+﻿
+## 鍙椾繚鎶?KVM锛坧KVM锛?
 
-## 受保护 KVM（pKVM）
-
-
-**注意**：pKVM 目前是一项实验性的开发特性，随着新隔离特性的实现，可能会发生破坏性变更。
-如有任何问题，请联系开发者 kvmarm@lists.linux.dev。
-
-## 概述
+**娉ㄦ剰**锛歱KVM 鐩墠鏄竴椤瑰疄楠屾€х殑寮€鍙戠壒鎬э紝闅忕潃鏂伴殧绂荤壒鎬х殑瀹炵幇锛屽彲鑳戒細鍙戠敓鐮村潖鎬у彉鏇淬€?濡傛湁浠讳綍闂锛岃鑱旂郴寮€鍙戣€?kvmarm@lists.linux.dev銆?
+## 姒傝堪
 
 
-以 '`kvm-arm.mode=protected`' 引导主机内核会启用“受保护 KVM”（pKVM）。在引导过程中，
-pKVM 为主机安装一个 stage-2 恒等映射（identity map）页表，并用它将运行在 EL2 的
-管理程序（hypervisor）与运行在 EL1/0 的主机其余部分隔离。
-
-pKVM 通过将机器类型标识符 `KVM_VM_TYPE_ARM_PROTECTED` 传给 `KVM_CREATE_VM` ioctl()
-来允许创建受保护虚拟机（pVM）。管理程序通过在一个 pVM 访问时从 stage-2 恒等映射中取消映射
-页面，将 pVM 与主机隔离。提供了超级调用（hypercall）供 pVM 将其 IPA 空间的特定区域共享回
-主机，以便与 VMM 通信。Linux 客户机必须配置 `CONFIG_ARM_PKVM_GUEST=y` 才能发出这些
-超级调用。
-
-更多细节请参见 hypercalls.rst。
-
-## 隔离机制
+浠?'`kvm-arm.mode=protected`' 寮曞涓绘満鍐呮牳浼氬惎鐢ㄢ€滃彈淇濇姢 KVM鈥濓紙pKVM锛夈€傚湪寮曞杩囩▼涓紝
+pKVM 涓轰富鏈哄畨瑁呬竴涓?stage-2 鎭掔瓑鏄犲皠锛坕dentity map锛夐〉琛紝骞剁敤瀹冨皢杩愯鍦?EL2 鐨?绠＄悊绋嬪簭锛坔ypervisor锛変笌杩愯鍦?EL1/0 鐨勪富鏈哄叾浣欓儴鍒嗛殧绂汇€?
+pKVM 閫氳繃灏嗘満鍣ㄧ被鍨嬫爣璇嗙 `KVM_VM_TYPE_ARM_PROTECTED` 浼犵粰 `KVM_CREATE_VM` ioctl()
+鏉ュ厑璁稿垱寤哄彈淇濇姢铏氭嫙鏈猴紙pVM锛夈€傜鐞嗙▼搴忛€氳繃鍦ㄤ竴涓?pVM 璁块棶鏃朵粠 stage-2 鎭掔瓑鏄犲皠涓彇娑堟槧灏?椤甸潰锛屽皢 pVM 涓庝富鏈洪殧绂汇€傛彁渚涗簡瓒呯骇璋冪敤锛坔ypercall锛変緵 pVM 灏嗗叾 IPA 绌洪棿鐨勭壒瀹氬尯鍩熷叡浜洖
+涓绘満锛屼互渚夸笌 VMM 閫氫俊銆侺inux 瀹㈡埛鏈哄繀椤婚厤缃?`CONFIG_ARM_PKVM_GUEST=y` 鎵嶈兘鍙戝嚭杩欎簺
+瓒呯骇璋冪敤銆?
+鏇村缁嗚妭璇峰弬瑙?hypercalls.rst銆?
+## 闅旂鏈哄埗
 
 
-pKVM 依赖多种机制将 pVM 与主机隔离：
+pKVM 渚濊禆澶氱鏈哄埗灏?pVM 涓庝富鏈洪殧绂伙細
 
-### CPU 内存隔离
-
-
-状态：匿名内存与元数据页的隔离。
-
-元数据页（例如页表页与 '`struct kvm_vcpu`' 页）在创建 pVM 时从主机捐赠给管理程序，并
-因此在 pVM 被销毁之前从 stage-2 恒等映射中取消映射。
-
-与常规 KVM 类似，页面是惰性地映射到客户机中的，以响应由主机处理的 stage-2 页错误。但是，
-在运行 pVM 时，这些页面首先被固定（pinned），然后作为捐赠过程的一部分从 stage-2 恒等
-映射中取消映射。这导致与非受保护 VM 相比一些用户可见的差异，主要由于缺乏 MMU 通知器
-（notifier）：
-
-- 一旦 pVM 开始运行，内存槽（memslot）就不能被移动或删除。
-- 不支持只读内存槽与脏页记录（dirty logging）。
-- 除交换（swap）外，基于文件的页不能映射到 pVM。
-- 捐赠的页计入 `RLIMIT_MLOCK`，因此 VMM 必须有足够的资源限制或被授予 `CAP_IPC_LOCK`。
-  缺乏运行时回收机制意味着为 pVM 锁定的内存将保持锁定，直到 pVM 被销毁。
-- 对 VMM 地址空间的更改（例如，在关联内存槽的映射上执行 `MAP_FIXED` mmap()）不会反映到
-  客户机中，并可能导致一致性（coherency）丢失。
-- 访问未共享回的 pVM 内存将导致发送 SIGSEGV。
-- 如果系统调用访问了未共享回的 pVM 内存，则它会返回 `-EFAULT` 或强制回收内存页。被回收的
-  内存由管理程序清零，随后在 pVM 中访问它的尝试将从 `VCPU_RUN` ioctl() 返回 `-EFAULT`。
-
-### CPU 状态隔离
+### CPU 鍐呭瓨闅旂
 
 
-状态：**未实现。**
+鐘舵€侊細鍖垮悕鍐呭瓨涓庡厓鏁版嵁椤电殑闅旂銆?
+鍏冩暟鎹〉锛堜緥濡傞〉琛ㄩ〉涓?'`struct kvm_vcpu`' 椤碉級鍦ㄥ垱寤?pVM 鏃朵粠涓绘満鎹愯禒缁欑鐞嗙▼搴忥紝骞?鍥犳鍦?pVM 琚攢姣佷箣鍓嶄粠 stage-2 鎭掔瓑鏄犲皠涓彇娑堟槧灏勩€?
+涓庡父瑙?KVM 绫讳技锛岄〉闈㈡槸鎯版€у湴鏄犲皠鍒板鎴锋満涓殑锛屼互鍝嶅簲鐢变富鏈哄鐞嗙殑 stage-2 椤甸敊璇€備絾鏄紝
+鍦ㄨ繍琛?pVM 鏃讹紝杩欎簺椤甸潰棣栧厛琚浐瀹氾紙pinned锛夛紝鐒跺悗浣滀负鎹愯禒杩囩▼鐨勪竴閮ㄥ垎浠?stage-2 鎭掔瓑
+鏄犲皠涓彇娑堟槧灏勩€傝繖瀵艰嚧涓庨潪鍙椾繚鎶?VM 鐩告瘮涓€浜涚敤鎴峰彲瑙佺殑宸紓锛屼富瑕佺敱浜庣己涔?MMU 閫氱煡鍣?锛坣otifier锛夛細
 
-### 使用 IOMMU 的 DMA 隔离
+- 涓€鏃?pVM 寮€濮嬭繍琛岋紝鍐呭瓨妲斤紙memslot锛夊氨涓嶈兘琚Щ鍔ㄦ垨鍒犻櫎銆?- 涓嶆敮鎸佸彧璇诲唴瀛樻Ы涓庤剰椤佃褰曪紙dirty logging锛夈€?- 闄や氦鎹紙swap锛夊锛屽熀浜庢枃浠剁殑椤典笉鑳芥槧灏勫埌 pVM銆?- 鎹愯禒鐨勯〉璁″叆 `RLIMIT_MLOCK`锛屽洜姝?VMM 蹇呴』鏈夎冻澶熺殑璧勬簮闄愬埗鎴栬鎺堜簣 `CAP_IPC_LOCK`銆?  缂轰箯杩愯鏃跺洖鏀舵満鍒舵剰鍛崇潃涓?pVM 閿佸畾鐨勫唴瀛樺皢淇濇寔閿佸畾锛岀洿鍒?pVM 琚攢姣併€?- 瀵?VMM 鍦板潃绌洪棿鐨勬洿鏀癸紙渚嬪锛屽湪鍏宠仈鍐呭瓨妲界殑鏄犲皠涓婃墽琛?`MAP_FIXED` mmap()锛変笉浼氬弽鏄犲埌
+  瀹㈡埛鏈轰腑锛屽苟鍙兘瀵艰嚧涓€鑷存€э紙coherency锛変涪澶便€?- 璁块棶鏈叡浜洖鐨?pVM 鍐呭瓨灏嗗鑷村彂閫?SIGSEGV銆?- 濡傛灉绯荤粺璋冪敤璁块棶浜嗘湭鍏变韩鍥炵殑 pVM 鍐呭瓨锛屽垯瀹冧細杩斿洖 `-EFAULT` 鎴栧己鍒跺洖鏀跺唴瀛橀〉銆傝鍥炴敹鐨?  鍐呭瓨鐢辩鐞嗙▼搴忔竻闆讹紝闅忓悗鍦?pVM 涓闂畠鐨勫皾璇曞皢浠?`VCPU_RUN` ioctl() 杩斿洖 `-EFAULT`銆?
+### CPU 鐘舵€侀殧绂?
 
+鐘舵€侊細**鏈疄鐜般€?*
 
-状态：**未实现。**
-
-### Trustzone 服务的代理
-
-
-状态：来自主机的 FF-A 与 PSCI 调用由 pKVM 管理程序代理。
-
-FF-A 代理确保主机不能将 pVM 或管理程序内存作为“ confused deputy（混淆代理）”攻击的一部分
-共享给 Trustzone。
-
-PSCI 代理确保 CPU 在执行于主机中时始终安装有 stage-2 恒等映射。
-
-### 受保护 VM 固件（pvmfw）
+### 浣跨敤 IOMMU 鐨?DMA 闅旂
 
 
-状态：**未实现。**
+鐘舵€侊細**鏈疄鐜般€?*
 
-## 资源
+### Trustzone 鏈嶅姟鐨勪唬鐞?
+
+鐘舵€侊細鏉ヨ嚜涓绘満鐨?FF-A 涓?PSCI 璋冪敤鐢?pKVM 绠＄悊绋嬪簭浠ｇ悊銆?
+FF-A 浠ｇ悊纭繚涓绘満涓嶈兘灏?pVM 鎴栫鐞嗙▼搴忓唴瀛樹綔涓衡€?confused deputy锛堟贩娣嗕唬鐞嗭級鈥濇敾鍑荤殑涓€閮ㄥ垎
+鍏变韩缁?Trustzone銆?
+PSCI 浠ｇ悊纭繚 CPU 鍦ㄦ墽琛屼簬涓绘満涓椂濮嬬粓瀹夎鏈?stage-2 鎭掔瓑鏄犲皠銆?
+### 鍙椾繚鎶?VM 鍥轰欢锛坧vmfw锛?
+
+鐘舵€侊細**鏈疄鐜般€?*
+
+## 璧勬簮
 
 
-Quentin Perret 在 KVM Forum 2022 题为“Protected KVM on arm64: A technical deep dive”的
-演讲仍然是了解 pKVM 的良好资源，尽管其间一些细节已发生变化：
-
+Quentin Perret 鍦?KVM Forum 2022 棰樹负鈥淧rotected KVM on arm64: A technical deep dive鈥濈殑
+婕旇浠嶇劧鏄簡瑙?pKVM 鐨勮壇濂借祫婧愶紝灏界鍏堕棿涓€浜涚粏鑺傚凡鍙戠敓鍙樺寲锛?
 https://www.youtube.com/watch?v=9npebeVFbFw

@@ -1,20 +1,20 @@
-## Linux 在 Nios II 架构上
+﻿## Linux 鍦?Nios II 鏋舵瀯涓?
 
 
-这是 Linux 向 Nios II（nios2）处理器的移植。
+杩欐槸 Linux 鍚?Nios II锛坣ios2锛夊鐞嗗櫒鐨勭Щ妞嶃€?
 
-要编译 Nios II 目标，你需要一个支持通用系统调用 ABI 的 GCC 版本。有关如何为 Nios II 平台编译和启动软件的更多信息，请参见以下链接：
+瑕佺紪璇?Nios II 鐩爣锛屼綘闇€瑕佷竴涓敮鎸侀€氱敤绯荤粺璋冪敤 ABI 鐨?GCC 鐗堟湰銆傛湁鍏冲浣曚负 Nios II 骞冲彴缂栬瘧鍜屽惎鍔ㄨ蒋浠剁殑鏇村淇℃伅锛岃鍙傝浠ヤ笅閾炬帴锛?
 http://www.rocketboards.org/foswiki/Documentation/NiosIILinuxUserManual
 
-供参考，请参见以下链接：
+渚涘弬鑰冿紝璇峰弬瑙佷互涓嬮摼鎺ワ細
 http://www.altera.com/literature/lit-nio2.jsp
 
-## 什么是 Nios II？
+## 浠€涔堟槸 Nios II锛?
 
 
-Nios II 是专为 Altera 系列 FPGA 设计的 32 位嵌入式处理器架构。为了支持 Linux，Nios II 需要配置启用 MMU 和硬件乘法器。
+Nios II 鏄笓涓?Altera 绯诲垪 FPGA 璁捐鐨?32 浣嶅祵鍏ュ紡澶勭悊鍣ㄦ灦鏋勩€備负浜嗘敮鎸?Linux锛孨ios II 闇€瑕侀厤缃惎鐢?MMU 鍜岀‖浠朵箻娉曞櫒銆?
 
 ## Nios II ABI
 
 
-请参考《Nios II 处理器参考手册》中的“应用程序二进制接口”（Application Binary Interface）章节。
+璇峰弬鑰冦€奛ios II 澶勭悊鍣ㄥ弬鑰冩墜鍐屻€嬩腑鐨勨€滃簲鐢ㄧ▼搴忎簩杩涘埗鎺ュ彛鈥濓紙Application Binary Interface锛夌珷鑺傘€?

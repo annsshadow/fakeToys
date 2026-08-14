@@ -1,16 +1,11 @@
-
-## 跟踪点（Tracepoints）
-
+﻿
+## 璺熻釜鐐癸紙Tracepoints锛?
 
 :Copyright: |copy| 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
-mlx5 驱动提供了内部跟踪点，用于借助内核跟踪点接口进行追踪与调试（参见
-Documentation/trace/ftrace.rst）。
-
-有关支持的 mlx5 事件列表，请查看 /sys/kernel/tracing/events/mlx5/。
-
-tc 与 eswitch 卸载（offload）跟踪点：
-
+mlx5 椹卞姩鎻愪緵浜嗗唴閮ㄨ窡韪偣锛岀敤浜庡€熷姪鍐呮牳璺熻釜鐐规帴鍙ｈ繘琛岃拷韪笌璋冭瘯锛堝弬瑙?Documentation/trace/ftrace.rst锛夈€?
+鏈夊叧鏀寔鐨?mlx5 浜嬩欢鍒楄〃锛岃鏌ョ湅 /sys/kernel/tracing/events/mlx5/銆?
+tc 涓?eswitch 鍗歌浇锛坥ffload锛夎窡韪偣锛?
 ```
 
     $ echo mlx5:mlx5e_configure_flower >> /sys/kernel/tracing/set_event
@@ -51,8 +46,7 @@ tc 与 eswitch 卸载（offload）跟踪点：
     kworker/u48:7-2221  [009] ...1  1475.387435: mlx5e_rep_neigh_update: netdev: ens1f0 MAC: 24:8a:07:9a:17:9a IPv4: 1.1.1.10 IPv6: ::ffff:1.1.1.10 neigh_connected=1
 
 ```
-Bridge 卸载（offload）跟踪点：
-
+Bridge 鍗歌浇锛坥ffload锛夎窡韪偣锛?
 ```
 
     $ echo mlx5:mlx5_esw_bridge_fdb_entry_init >> set_event
@@ -69,8 +63,7 @@ Bridge 卸载（offload）跟踪点：
     ip-2581    [005] ...1   318.629871: mlx5_esw_bridge_fdb_entry_cleanup: net_device=enp8s0f0_1 addr=e4:fd:05:08:00:03 vid=0 flags=0 used=16
 
 ```
-- mlx5_esw_bridge_fdb_entry_refresh：追踪桥 FDB 表项的卸载刷新
-```
+- mlx5_esw_bridge_fdb_entry_refresh锛氳拷韪ˉ FDB 琛ㄩ」鐨勫嵏杞藉埛鏂?```
 
     $ echo mlx5:mlx5_esw_bridge_fdb_entry_refresh >> set_event
     $ cat /sys/kernel/tracing/trace
@@ -78,8 +71,7 @@ Bridge 卸载（offload）跟踪点：
     kworker/u20:8-3849    [003] ...1       466716: mlx5_esw_bridge_fdb_entry_refresh: net_device=enp8s0f0_0 addr=e4:fd:05:08:00:02 vid=3 flags=0 used=0
 
 ```
-- mlx5_esw_bridge_vlan_create：追踪 mlx5 上桥 VLAN 对象的添加
-```
+- mlx5_esw_bridge_vlan_create锛氳拷韪?mlx5 涓婃ˉ VLAN 瀵硅薄鐨勬坊鍔?```
 
     $ echo mlx5:mlx5_esw_bridge_vlan_create >> set_event
     $ cat /sys/kernel/tracing/trace
@@ -87,8 +79,7 @@ Bridge 卸载（offload）跟踪点：
     ip-2560    [007] ...1   318.460258: mlx5_esw_bridge_vlan_create: vid=1 flags=6
 
 ```
-- mlx5_esw_bridge_vlan_cleanup：追踪 mlx5 上桥 VLAN 对象的删除
-```
+- mlx5_esw_bridge_vlan_cleanup锛氳拷韪?mlx5 涓婃ˉ VLAN 瀵硅薄鐨勫垹闄?```
 
     $ echo mlx5:mlx5_esw_bridge_vlan_cleanup >> set_event
     $ cat /sys/kernel/tracing/trace
@@ -96,7 +87,7 @@ Bridge 卸载（offload）跟踪点：
     bridge-2582    [007] ...1   318.653496: mlx5_esw_bridge_vlan_cleanup: vid=2 flags=8
 
 ```
-- mlx5_esw_bridge_vport_init：追踪被指派了桥上层设备的 mlx5 vport
+- mlx5_esw_bridge_vport_init锛氳拷韪鎸囨淳浜嗘ˉ涓婂眰璁惧鐨?mlx5 vport
 ```
 
     $ echo mlx5:mlx5_esw_bridge_vport_init >> set_event
@@ -105,7 +96,7 @@ Bridge 卸载（offload）跟踪点：
     ip-2560    [007] ...1   318.458915: mlx5_esw_bridge_vport_init: vport_num=1
 
 ```
-- mlx5_esw_bridge_vport_cleanup：追踪从桥上层设备移除的 mlx5 vport
+- mlx5_esw_bridge_vport_cleanup锛氳拷韪粠妗ヤ笂灞傝澶囩Щ闄ょ殑 mlx5 vport
 ```
 
     $ echo mlx5:mlx5_esw_bridge_vport_cleanup >> set_event
@@ -114,7 +105,7 @@ Bridge 卸载（offload）跟踪点：
     ip-5387    [000] ...1       573713: mlx5_esw_bridge_vport_cleanup: vport_num=1
 
 ```
-Eswitch QoS 跟踪点：
+Eswitch QoS 璺熻釜鐐癸細
 
 ```
 
@@ -164,7 +155,7 @@ Eswitch QoS 跟踪点：
     <...>-27418   [006] .... 76547.187258: mlx5_esw_group_qos_destroy: (0000:82:00.0) group=000000007b576bb3 tsar_ix=1
 
 ```
-SF 跟踪点：
+SF 璺熻釜鐐癸細
 
 ```
 

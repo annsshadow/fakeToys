@@ -1,9 +1,9 @@
-### 访问标记
+﻿### 璁块棶鏍囪
 
-本文档以逐字（literal）方式嵌入 tools/memory-model/Documentation/access-marking.txt，
-介绍 Linux 内存模型（LKMM）中关于访问标记（access-marking）的约定与说明。
+鏈枃妗ｄ互閫愬瓧锛坙iteral锛夋柟寮忓祵鍏?tools/memory-model/Documentation/access-marking.txt锛?
+浠嬬粛 Linux 鍐呭瓨妯″瀷锛圠KMM锛変腑鍏充簬璁块棶鏍囪锛坅ccess-marking锛夌殑绾﹀畾涓庤鏄庛€?
 
-字面包含 `tools/memory-model/Documentation/access-marking.txt`.
+瀛楅潰鍖呭惈 `tools/memory-model/Documentation/access-marking.txt`.
 
 ------------------------------------------------------------------
 

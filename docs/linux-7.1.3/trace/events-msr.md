@@ -1,32 +1,32 @@
-## MSR 跟踪事件
+﻿## MSR 璺熻釜浜嬩欢
 
 
-x86 内核支持跟踪大多数 MSR（Model Specific Register，模型特定寄存器）访问。
-有关 Intel 系统上 MSR 的定义，请参见 SDM：https://www.intel.com/sdm（第 3 卷）
+x86 鍐呮牳鏀寔璺熻釜澶у鏁?MSR锛圡odel Specific Register锛屾ā鍨嬬壒瀹氬瘎瀛樺櫒锛夎闂€?
+鏈夊叧 Intel 绯荤粺涓?MSR 鐨勫畾涔夛紝璇峰弬瑙?SDM锛歨ttps://www.intel.com/sdm锛堢 3 鍗凤級
 
-可用的跟踪点：
+鍙敤鐨勮窡韪偣锛?
 
 /sys/kernel/tracing/events/msr/
 
-跟踪 MSR 读：
+璺熻釜 MSR 璇伙細
 
 read_msr
 
-  - msr: MSR 编号
-  - val: 写入的值
-  - failed: 若访问失败则为 1，否则为 0
+  - msr: MSR 缂栧彿
+  - val: 鍐欏叆鐨勫€?
+  - failed: 鑻ヨ闂け璐ュ垯涓?1锛屽惁鍒欎负 0
 
 
-跟踪 MSR 写：
+璺熻釜 MSR 鍐欙細
 
 write_msr
 
-  - msr: MSR 编号
-  - val: 写入的值
-  - failed: 若访问失败则为 1，否则为 0
+  - msr: MSR 缂栧彿
+  - val: 鍐欏叆鐨勫€?
+  - failed: 鑻ヨ闂け璐ュ垯涓?1锛屽惁鍒欎负 0
 
 
-跟踪内核中的 RDPMC：
+璺熻釜鍐呮牳涓殑 RDPMC锛?
 
 rdpmc
 
@@ -35,4 +35,4 @@ rdpmc
   cat /sys/kernel/tracing/trace | decode_msr.py /usr/src/linux/include/asm/msr-index.h
 
 ```
-以添加符号化的 MSR 名称。
+浠ユ坊鍔犵鍙峰寲鐨?MSR 鍚嶇О銆?

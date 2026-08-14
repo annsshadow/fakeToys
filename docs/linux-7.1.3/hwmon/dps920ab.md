@@ -1,7 +1,7 @@
-## dps920ab 内核驱动
+﻿## dps920ab 鍐呮牳椹卞姩
 
 
-支持的芯片：
+鏀寔鐨勮姱鐗囷細
 
   - Delta DPS920AB
 
@@ -13,57 +13,37 @@ Authors:
     Robert Marko <robert.marko@sartura.hr>
 
 
-### 描述
+### 鎻忚堪
 
 
-该驱动实现对 Delta DPS920AB 920W 54V 直流单输出、支持 PMBus 的电源的支持。
+璇ラ┍鍔ㄥ疄鐜板 Delta DPS920AB 920W 54V 鐩存祦鍗曡緭鍑恒€佹敮鎸?PMBus 鐨勭數婧愮殑鏀寔銆?
+璇ラ┍鍔ㄦ槸鏍稿績 PMBus 椹卞姩鐨勫鎴风椹卞姩銆傛湁鍏?PMBus 瀹㈡埛绔┍鍔ㄧ殑璇︾粏淇℃伅锛岃
+鍙傞槄 Documentation/hwmon/pmbus.rst銆?
 
-该驱动是核心 PMBus 驱动的客户端驱动。有关 PMBus 客户端驱动的详细信息，请
-参阅 Documentation/hwmon/pmbus.rst。
-
-
-### 使用说明
+### 浣跨敤璇存槑
 
 
-该驱动不会自动检测设备。你需要显式实例化设备。详细信息请参阅
-Documentation/i2c/instantiating-devices.rst。
+璇ラ┍鍔ㄤ笉浼氳嚜鍔ㄦ娴嬭澶囥€備綘闇€瑕佹樉寮忓疄渚嬪寲璁惧銆傝缁嗕俊鎭鍙傞槄
+Documentation/i2c/instantiating-devices.rst銆?
 
-
-### Sysfs 条目
+### Sysfs 鏉＄洰
 
 
 ======================= ======================================================
 curr1_label		"iin"
-curr1_input		测量的输入电流
-curr1_alarm		输入电流高告警
-
+curr1_input		娴嬮噺鐨勮緭鍏ョ數娴?curr1_alarm		杈撳叆鐢垫祦楂樺憡璀?
 curr2_label		"iout1"
-curr2_input		测量的输出电流
-curr2_max		最大输出电流
-curr2_rated_max		额定最大输出电流
-
+curr2_input		娴嬮噺鐨勮緭鍑虹數娴?curr2_max		鏈€澶ц緭鍑虹數娴?curr2_rated_max		棰濆畾鏈€澶ц緭鍑虹數娴?
 in1_label		"vin"
-in1_input		测量的输入电压
-in1_alarm		输入电压告警
+in1_input		娴嬮噺鐨勮緭鍏ョ數鍘?in1_alarm		杈撳叆鐢靛帇鍛婅
 
 in2_label		"vout1"
-in2_input		测量的输出电压
-in2_rated_min		额定最小输出电压
-in2_rated_max		额定最大输出电压
-in2_alarm		输出电压告警
+in2_input		娴嬮噺鐨勮緭鍑虹數鍘?in2_rated_min		棰濆畾鏈€灏忚緭鍑虹數鍘?in2_rated_max		棰濆畾鏈€澶ц緭鍑虹數鍘?in2_alarm		杈撳嚭鐢靛帇鍛婅
 
 power1_label		"pin"
-power1_input		测量的输入功率
-power1_alarm		输入功率高告警
-
+power1_input		娴嬮噺鐨勮緭鍏ュ姛鐜?power1_alarm		杈撳叆鍔熺巼楂樺憡璀?
 power2_label		"pout1"
-power2_input		测量的输出功率
-power2_rated_max		额定最大输出功率
+power2_input		娴嬮噺鐨勮緭鍑哄姛鐜?power2_rated_max		棰濆畾鏈€澶ц緭鍑哄姛鐜?
+temp[1-3]_input		娴嬮噺鐨勬俯搴?temp[1-3]_alarm		娓╁害鍛婅
 
-temp[1-3]_input		测量的温度
-temp[1-3]_alarm		温度告警
-
-fan1_alarm		风扇 1 警告。
-fan1_fault		风扇 1 故障。
-fan1_input		风扇 1 转速（RPM）。
-======================= ======================================================
+fan1_alarm		椋庢墖 1 璀﹀憡銆?fan1_fault		椋庢墖 1 鏁呴殰銆?fan1_input		椋庢墖 1 杞€燂紙RPM锛夈€?======================= ======================================================

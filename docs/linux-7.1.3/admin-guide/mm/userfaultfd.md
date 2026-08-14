@@ -1,313 +1,183 @@
-## Userfaultfd
+﻿## Userfaultfd
 
 
-## 目标
+## 鐩爣
 
 
-用户缺页（userfaults）允许从用户空间实现按需分页，更一般地说，它们允许用户空间
-控制各种内存页错误，否则这一工作只有内核代码才能完成。
+鐢ㄦ埛缂洪〉锛坲serfaults锛夊厑璁镐粠鐢ㄦ埛绌洪棿瀹炵幇鎸夐渶鍒嗛〉锛屾洿涓€鑸湴璇达紝瀹冧滑鍏佽鐢ㄦ埛绌洪棿
+鎺у埗鍚勭鍐呭瓨椤甸敊璇紝鍚﹀垯杩欎竴宸ヤ綔鍙湁鍐呮牳浠ｇ爜鎵嶈兘瀹屾垚銆?
+渚嬪锛岀敤鎴风己椤靛厑璁稿 `PROT_NONE+SIGSEGV` 鎶€宸ц繘琛屾伆褰撲笖鏇翠紭鐨勫疄鐜般€?
 
-例如，用户缺页允许对 `PROT_NONE+SIGSEGV` 技巧进行恰当且更优的实现。
-
-
-## 设计
+## 璁捐
 
 
-用户空间创建一个新的 `userfaultfd`，对其进行初始化，并注册一个或多个虚拟内存区域。
-然后，在区域（们）内发生的任何页错误都会向 `userfaultfd` 投递一条消息，通知用户空间
-该错误。
+鐢ㄦ埛绌洪棿鍒涘缓涓€涓柊鐨?`userfaultfd`锛屽鍏惰繘琛屽垵濮嬪寲锛屽苟娉ㄥ唽涓€涓垨澶氫釜铏氭嫙鍐呭瓨鍖哄煙銆?鐒跺悗锛屽湪鍖哄煙锛堜滑锛夊唴鍙戠敓鐨勪换浣曢〉閿欒閮戒細鍚?`userfaultfd` 鎶曢€掍竴鏉℃秷鎭紝閫氱煡鐢ㄦ埛绌洪棿
+璇ラ敊璇€?
+`userfaultfd`锛堥櫎浜嗘敞鍐屽拰娉ㄩ攢铏氭嫙鍐呭瓨鑼冨洿涔嬪锛夋彁渚涗袱涓富瑕佸姛鑳斤細
 
-`userfaultfd`（除了注册和注销虚拟内存范围之外）提供两个主要功能：
-
-1) `read/POLLIN` 协议，用于通知用户空间线程发生了错误
-
-2) 各种 `UFFDIO_*` ioctl，可以管理在 `userfaultfd` 中注册的虚拟内存区域，允许
-   用户空间高效地解决它通过 1) 接收到的用户缺页，或在后台管理虚拟内存
-
-与 mremap/mprotect 的常规虚拟内存管理相比，用户缺页真正的优势在于：其所有操作
-从不涉及像 vma 这样的重量级结构（实际上 `userfaultfd` 运行时加载从不为写操作获取
-mmap_lock）。在处理可能跨越数 TB 的虚拟地址空间时，vma 不适合以页（或 hugepage）
-为粒度的错误跟踪。为此需要太多的 vma。
-
-一旦创建，`userfaultfd` 也可以使用 unix 域套接字传递给一个管理进程，这样同一个
-管理进程可以处理大量不同进程的用户缺页，而它们对此毫无察觉（当然，除非它们之后
-试图在管理器已在跟踪的同一区域上自己使用 `userfaultfd`，这是一个当前会返回
-`-EBUSY` 的边界情况）。
-
+1) `read/POLLIN` 鍗忚锛岀敤浜庨€氱煡鐢ㄦ埛绌洪棿绾跨▼鍙戠敓浜嗛敊璇?
+2) 鍚勭 `UFFDIO_*` ioctl锛屽彲浠ョ鐞嗗湪 `userfaultfd` 涓敞鍐岀殑铏氭嫙鍐呭瓨鍖哄煙锛屽厑璁?   鐢ㄦ埛绌洪棿楂樻晥鍦拌В鍐冲畠閫氳繃 1) 鎺ユ敹鍒扮殑鐢ㄦ埛缂洪〉锛屾垨鍦ㄥ悗鍙扮鐞嗚櫄鎷熷唴瀛?
+涓?mremap/mprotect 鐨勫父瑙勮櫄鎷熷唴瀛樼鐞嗙浉姣旓紝鐢ㄦ埛缂洪〉鐪熸鐨勪紭鍔垮湪浜庯細鍏舵墍鏈夋搷浣?浠庝笉娑夊強鍍?vma 杩欐牱鐨勯噸閲忕骇缁撴瀯锛堝疄闄呬笂 `userfaultfd` 杩愯鏃跺姞杞戒粠涓嶄负鍐欐搷浣滆幏鍙?mmap_lock锛夈€傚湪澶勭悊鍙兘璺ㄨ秺鏁?TB 鐨勮櫄鎷熷湴鍧€绌洪棿鏃讹紝vma 涓嶉€傚悎浠ラ〉锛堟垨 hugepage锛?涓虹矑搴︾殑閿欒璺熻釜銆備负姝ら渶瑕佸お澶氱殑 vma銆?
+涓€鏃﹀垱寤猴紝`userfaultfd` 涔熷彲浠ヤ娇鐢?unix 鍩熷鎺ュ瓧浼犻€掔粰涓€涓鐞嗚繘绋嬶紝杩欐牱鍚屼竴涓?绠＄悊杩涚▼鍙互澶勭悊澶ч噺涓嶅悓杩涚▼鐨勭敤鎴风己椤碉紝鑰屽畠浠姝ゆ鏃犲療瑙夛紙褰撶劧锛岄櫎闈炲畠浠箣鍚?璇曞浘鍦ㄧ鐞嗗櫒宸插湪璺熻釜鐨勫悓涓€鍖哄煙涓婅嚜宸变娇鐢?`userfaultfd`锛岃繖鏄竴涓綋鍓嶄細杩斿洖
+`-EBUSY` 鐨勮竟鐣屾儏鍐碉級銆?
 
 ## API
 
 
-### 创建 userfaultfd
+### 鍒涘缓 userfaultfd
 
 
-创建新的 `userfaultfd` 有两种方式，每种都提供了限制此功能访问的方法（因为历史上
-处理内核页错误的 userfaultfd 一直是一种有用的内核利用工具）。
+鍒涘缓鏂扮殑 `userfaultfd` 鏈変袱绉嶆柟寮忥紝姣忕閮芥彁渚涗簡闄愬埗姝ゅ姛鑳借闂殑鏂规硶锛堝洜涓哄巻鍙蹭笂
+澶勭悊鍐呮牳椤甸敊璇殑 userfaultfd 涓€鐩存槸涓€绉嶆湁鐢ㄧ殑鍐呮牳鍒╃敤宸ュ叿锛夈€?
+绗竴绉嶆柟寮忚嚜 userfaultfd 寮曞叆浠ユ潵涓€鐩村彈鏀寔锛屽嵆 userfaultfd(2) 绯荤粺璋冪敤銆傚鍏剁殑
+璁块棶閫氳繃浠ヤ笅鍑犵鏂瑰紡鎺у埗锛?
+- 浠讳綍鐢ㄦ埛濮嬬粓鍙互鍒涘缓鍙崟鑾风敤鎴风┖闂撮〉閿欒鐨?userfaultfd銆傝繖绉?userfaultfd 鍙互
+  浣跨敤甯︽湁 UFFD_USER_MODE_ONLY 鏍囧織鐨?userfaultfd(2) 绯荤粺璋冪敤鏉ュ垱寤恒€?
+- 涓轰簡涔熻兘鎹曡幏鍦板潃绌洪棿鐨勫唴鏍搁〉閿欒锛岃繘绋嬭涔堥渶瑕?CAP_SYS_PTRACE 鑳藉姏锛岃涔堢郴缁?  蹇呴』灏?vm.unprivileged_userfaultfd 璁剧疆涓?1銆傞粯璁ゆ儏鍐典笅锛寁m.unprivileged_userfaultfd
+  琚缃负 0銆?
+绗簩绉嶆柟寮忚緝鏂板姞鍏ュ唴鏍革紝鏄€氳繃鎵撳紑 /dev/userfaultfd 骞跺鍏惰繘琛?USERFAULTFD_IOC_NEW
+ioctl 鎿嶄綔銆傝繖绉嶆柟寮忎骇鐢熶笌 userfaultfd(2) 绯荤粺璋冪敤绛変环鐨?userfaultfd銆?
+涓?userfaultfd(2) 涓嶅悓锛屽 /dev/userfaultfd 鐨勮闂€氳繃甯歌鏂囦欢绯荤粺鏉冮檺
+锛坲ser/group/mode锛夋帶鍒讹紝杩欏彲浠ュ湪涓嶅悓鏃朵篃鎺堜簣鍏朵粬鏃犲叧鐗规潈鐨勬儏鍐典笅锛屽 userfaultfd
+杩涜缁嗙矑搴﹁闂紙渚嬪鎺堜簣 CAP_SYS_PTRACE 灏变細杩欐牱锛夈€傛湁鏉冭闂?/dev/userfaultfd 鐨?鐢ㄦ埛濮嬬粓鍙互鍒涘缓鎹曡幏鍐呮牳椤甸敊璇殑 userfaultfd锛泇m.unprivileged_userfaultfd 涓嶈
+鑰冭檻銆?
 
-第一种方式自 userfaultfd 引入以来一直受支持，即 userfaultfd(2) 系统调用。对其的
-访问通过以下几种方式控制：
-
-- 任何用户始终可以创建只捕获用户空间页错误的 userfaultfd。这种 userfaultfd 可以
-  使用带有 UFFD_USER_MODE_ONLY 标志的 userfaultfd(2) 系统调用来创建。
-
-- 为了也能捕获地址空间的内核页错误，进程要么需要 CAP_SYS_PTRACE 能力，要么系统
-  必须将 vm.unprivileged_userfaultfd 设置为 1。默认情况下，vm.unprivileged_userfaultfd
-  被设置为 0。
-
-第二种方式较新加入内核，是通过打开 /dev/userfaultfd 并对其进行 USERFAULTFD_IOC_NEW
-ioctl 操作。这种方式产生与 userfaultfd(2) 系统调用等价的 userfaultfd。
-
-与 userfaultfd(2) 不同，对 /dev/userfaultfd 的访问通过常规文件系统权限
-（user/group/mode）控制，这可以在不同时也授予其他无关特权的情况下，对 userfaultfd
-进行细粒度访问（例如授予 CAP_SYS_PTRACE 就会这样）。有权访问 /dev/userfaultfd 的
-用户始终可以创建捕获内核页错误的 userfaultfd；vm.unprivileged_userfaultfd 不被
-考虑。
+### 鍒濆鍖?userfaultfd
 
 
-### 初始化 userfaultfd
+棣栨鎵撳紑鏃讹紝`userfaultfd` 蹇呴』琚惎鐢紝鍗宠皟鐢?`UFFDIO_API` ioctl锛屾寚瀹氳缃负
+`UFFD_API`锛堟垨鏇撮珮 API 鐗堟湰锛夌殑 `uffdio_api.api` 鍊硷紝瀹冨皢鎸囧畾鐢ㄦ埛绌洪棿鎵撶畻鍦?`UFFD`
+涓婁娇鐢ㄧ殑 `read/POLLIN` 鍗忚浠ュ強鐢ㄦ埛绌洪棿闇€瑕佺殑 `uffdio_api.features`銆傚鏋?`UFFDIO_API` ioctl 鎴愬姛锛堝嵆杩愯鐨勬牳涔熸敮鎸佹墍璇锋眰鐨?`uffdio_api.api`锛屼笖鎵€璇锋眰鐨?鐗规€у皢琚惎鐢級锛屽畠灏嗗垎鍒湪 `uffdio_api.features` 鍜?`uffdio_api.ioctls` 涓繑鍥炰袱涓?64 浣嶄綅鎺╃爜锛屽垎鍒唬琛?read(2) 鍗忚鐨勬墍鏈夊彲鐢ㄧ壒鎬т互鍙婂彲鐢ㄧ殑閫氱敤 ioctl銆?
+`UFFDIO_API` ioctl 杩斿洖鐨?`uffdio_api.features` 浣嶆帺鐮佸畾涔変簡 `userfaultfd` 鏀寔鐨?鍐呭瓨绫诲瀷锛屼互鍙婇櫎椤甸敊璇€氱煡澶栧彲鑳界敓鎴愮殑浜嬩欢锛?
+- `UFFD_FEATURE_EVENT_*` 鏍囧織琛ㄧず鏀寔椤甸敊璇箣澶栫殑鍚勭鍏朵粬浜嬩欢銆傝繖浜涗簨浠跺湪涓嬮潰鐨?  `闈炲崗浣?userfaultfd`_ 涓€鑺備腑鏈夋洿璇︾粏鐨勬弿杩般€?
+- `UFFD_FEATURE_MISSING_HUGETLBFS` 鍜?`UFFD_FEATURE_MISSING_SHMEM` 鍒嗗埆琛ㄧず鍐呮牳
+  鏀寔閽堝 hugetlbfs 鍜屽叡浜唴瀛橈紙瑕嗙洊鎵€鏈?shmem API锛屽嵆 tmpfs銆乣IPCSHM`銆?  `/dev/zero`銆乣MAP_SHARED`銆乣memfd_create` 绛夛級铏氭嫙鍐呭瓨鍖哄煙鐨?  `UFFDIO_REGISTER_MODE_MISSING` 娉ㄥ唽銆?
+- `UFFD_FEATURE_MINOR_HUGETLBFS` 琛ㄧず鍐呮牳鏀寔閽堝 hugetlbfs 铏氭嫙鍐呭瓨鍖哄煙鐨?  `UFFDIO_REGISTER_MODE_MINOR` 娉ㄥ唽銆俙UFFD_FEATURE_MINOR_SHMEM` 鏄被浼肩壒鎬э紝琛ㄧず
+  瀵?shmem 铏氭嫙鍐呭瓨鍖哄煙鐨勬敮鎸併€?
+- `UFFD_FEATURE_MOVE` 琛ㄧず鍐呮牳鏀寔浠庣敤鎴风┖闂寸Щ鍔ㄧ幇鏈夐〉鍐呭銆?
+鐢ㄦ埛绌洪棿搴旂敤绋嬪簭鍦ㄨ皟鐢?`UFFDIO_API` ioctl 鏃讹紝搴旇缃湪鎵撶畻浣跨敤鐨勭壒鎬ф爣蹇楋紝浠ヨ姹?鍦ㄦ敮鎸佹椂鍚敤杩欎簺鐗规€с€?
+涓€鏃?`userfaultfd` API 琚惎鐢紝搴旇皟鐢?`UFFDIO_REGISTER` ioctl锛堝鏋滃嚭鐜板湪杩斿洖鐨?`uffdio_api.ioctls` 浣嶆帺鐮佷腑锛夛紝閫氳繃鐩稿簲鍦拌缃?uffdio_register 缁撴瀯鏉ユ敞鍐?`userfaultfd` 涓殑鍐呭瓨鑼冨洿銆俙uffdio_register.mode` 浣嶆帺鐮佸皢鍚戝唴鏍告寚瀹氬璇ヨ寖鍥磋
+璺熻釜鍝閿欒銆俙UFFDIO_REGISTER` ioctl 灏嗚繑鍥為€傚悎瑙ｅ喅鎵€娉ㄥ唽鑼冨洿涓婄敤鎴风己椤电殑
+`uffdio_register.ioctls` ioctl 浣嶆帺鐮併€傚苟闈炴墍鏈?ioctl 閮藉繀鐒跺鎵€鏈夊唴瀛樼被鍨嬶紙渚嬪
+鍖垮悕鍐呭瓨 vs. shmem vs. hugetlbfs锛夋垨鎵€鏈夌被鍨嬬殑琚嫤鎴敊璇彈鏀寔銆?
+
+鐢ㄦ埛绌洪棿鍙互浣跨敤 `uffdio_register.ioctls` 鍦ㄥ悗鍙扮鐞嗚櫄鎷熷湴鍧€绌洪棿锛堟坊鍔犳垨鍙兘绉婚櫎
+`userfaultfd` 娉ㄥ唽鑼冨洿涓殑鍐呭瓨锛夈€傝繖鎰忓懗鐫€鐢ㄦ埛缂洪〉鍙兘鍦ㄧ敤鎴风┖闂村湪鍚庡彴鏄犲皠璇?缂洪〉椤典箣鍓嶆伆濂借Е鍙戙€?
+
+### 瑙ｅ喅鐢ㄦ埛缂洪〉
 
 
-首次打开时，`userfaultfd` 必须被启用，即调用 `UFFDIO_API` ioctl，指定设置为
-`UFFD_API`（或更高 API 版本）的 `uffdio_api.api` 值，它将指定用户空间打算在 `UFFD`
-上使用的 `read/POLLIN` 协议以及用户空间需要的 `uffdio_api.features`。如果
-`UFFDIO_API` ioctl 成功（即运行的核也支持所请求的 `uffdio_api.api`，且所请求的
-特性将被启用），它将分别在 `uffdio_api.features` 和 `uffdio_api.ioctls` 中返回两个
-64 位位掩码，分别代表 read(2) 协议的所有可用特性以及可用的通用 ioctl。
+鏈変笁绉嶅熀鏈柟娉曟潵瑙ｅ喅鐢ㄦ埛缂洪〉锛?
+- `UFFDIO_COPY` 鍘熷瓙鍦板皢鏌愪簺鐜版湁椤靛唴瀹逛粠鐢ㄦ埛绌洪棿澶嶅埗銆?
+- `UFFDIO_ZEROPAGE` 鍘熷瓙鍦板皢鏂伴〉娓呴浂銆?
+- `UFFDIO_CONTINUE` 鏄犲皠涓€涓凡瀛樺湪銆佸厛鍓嶅凡濉厖鐨勯〉銆?
+杩欎簺鎿嶄綔鏄師瀛愮殑锛屽洜涓哄畠浠繚璇佹病鏈変换浣曚笢瑗胯兘鐪嬪埌鍗婂～鍏呯殑椤碉紝鍥犱负璇昏€呬細涓€鐩?瑙﹀彂鐢ㄦ埛缂洪〉鐩村埌鎿嶄綔瀹屾垚銆?
+榛樿鎯呭喌涓嬶紝杩欎簺鎿嶄綔浼氬敜閱掗樆濉炲湪鐩稿叧鑼冨洿涓婄殑鐢ㄦ埛缂洪〉銆傚畠浠敮鎸?`UFFDIO_*_MODE_DONTWAKE`
+`mode` 鏍囧織锛岃〃绀哄敜閱掑皢鍦ㄧ◢鍚庢煇涓椂闂村崟鐙繘琛屻€?
+閫夋嫨鍝釜 ioctl 鍙栧喅浜庨〉閿欒鐨勭绫伙紝浠ュ強鎴戜滑甯屾湜濡備綍鏉ヨВ鍐冲畠锛?
+- 瀵逛簬 `UFFDIO_REGISTER_MODE_MISSING` 閿欒锛岄渶瑕侀€氳繃鎻愪緵鏂伴〉锛坄UFFDIO_COPY`锛夋垨
+  鏄犲皠闆堕〉锛坄UFFDIO_ZEROPAGE`锛夋潵瑙ｅ喅銆傞粯璁ゆ儏鍐典笅锛屽唴鏍镐細涓虹己澶遍敊璇槧灏勯浂椤点€傛湁浜?  userfaultfd锛岀敤鎴风┖闂村彲浠ュ湪缂洪〉绾跨▼缁х画涔嬪墠鍐冲畾鎻愪緵浠€涔堝唴瀹广€?
+- 瀵逛簬 `UFFDIO_REGISTER_MODE_MINOR` 閿欒锛屽瓨鍦ㄤ竴涓幇鏈夐〉锛堝湪椤电紦瀛樹腑锛夈€傜敤鎴风┖闂?  鍙互閫夋嫨鍦ㄨВ鍐抽敊璇箣鍓嶄慨鏀归〉鍐呭銆備竴鏃﹀唴瀹规纭紙鏃犺鏄惁淇敼锛夛紝鐢ㄦ埛绌洪棿灏辫姹?  鍐呮牳鏄犲皠璇ラ〉锛屽苟璁╃己椤电嚎绋嬬敤 `UFFDIO_CONTINUE` 缁х画銆?
+娉ㄦ剰浜嬮」锛?
+- 浣犲彲浠ラ€氳繃妫€鏌?`uffd_msg` 涓殑 `pagefault.flags`锛屽苟妫€鏌?`UFFD_PAGEFAULT_FLAG_*`
+  鏍囧織锛屾潵鍒ゆ柇鍙戠敓浜嗗摢绉嶇被鍨嬬殑閿欒銆?
+- 娌℃湁鍝釜椤垫姇閫?ioctl 榛樿浣滅敤浜庝綘娉ㄥ唽鐨勮寖鍥淬€備綘蹇呴』濉啓鐩稿簲 ioctl 缁撴瀯鐨勬墍鏈?  瀛楁锛屽寘鎷寖鍥淬€?
+- 浣犱粠鍦ㄧ嚎绋嬩腑浠?uffd 璇诲彇鐨?struct uffd_msg 涓幏鍙栬Е鍙戠己澶遍〉浜嬩欢鐨勮闂湴鍧€銆備綘
+  鍙互鐢ㄨ繖浜?IOCTL 鎻愪緵浠绘剰澶氱殑椤点€傝璁颁綇锛岄櫎闈炰綘浣跨敤浜?DONTWAKE锛屽惁鍒欎换浣曡繖浜?  IOCTL 涓殑绗竴涓兘浼氬敜閱掔己椤电嚎绋嬨€?
+- 鍔″繀娴嬭瘯鎵€鏈夐敊璇紝鍖呮嫭 (`pollfd[^0^].revents & POLLERR`)銆傝繖鍙兘鍙戠敓锛屼緥濡傚綋
+  鎻愪緵鐨勮寖鍥翠笉姝ｇ‘鏃躲€?
 
-`UFFDIO_API` ioctl 返回的 `uffdio_api.features` 位掩码定义了 `userfaultfd` 支持的
-内存类型，以及除页错误通知外可能生成的事件：
-
-- `UFFD_FEATURE_EVENT_*` 标志表示支持页错误之外的各种其他事件。这些事件在下面的
-  `非协作 userfaultfd`_ 一节中有更详细的描述。
-
-- `UFFD_FEATURE_MISSING_HUGETLBFS` 和 `UFFD_FEATURE_MISSING_SHMEM` 分别表示内核
-  支持针对 hugetlbfs 和共享内存（覆盖所有 shmem API，即 tmpfs、`IPCSHM`、
-  `/dev/zero`、`MAP_SHARED`、`memfd_create` 等）虚拟内存区域的
-  `UFFDIO_REGISTER_MODE_MISSING` 注册。
-
-- `UFFD_FEATURE_MINOR_HUGETLBFS` 表示内核支持针对 hugetlbfs 虚拟内存区域的
-  `UFFDIO_REGISTER_MODE_MINOR` 注册。`UFFD_FEATURE_MINOR_SHMEM` 是类似特性，表示
-  对 shmem 虚拟内存区域的支持。
-
-- `UFFD_FEATURE_MOVE` 表示内核支持从用户空间移动现有页内容。
-
-用户空间应用程序在调用 `UFFDIO_API` ioctl 时，应设置在打算使用的特性标志，以请求
-在支持时启用这些特性。
-
-一旦 `userfaultfd` API 被启用，应调用 `UFFDIO_REGISTER` ioctl（如果出现在返回的
-`uffdio_api.ioctls` 位掩码中），通过相应地设置 uffdio_register 结构来注册
-`userfaultfd` 中的内存范围。`uffdio_register.mode` 位掩码将向内核指定对该范围要
-跟踪哪种错误。`UFFDIO_REGISTER` ioctl 将返回适合解决所注册范围上用户缺页的
-`uffdio_register.ioctls` ioctl 位掩码。并非所有 ioctl 都必然对所有内存类型（例如
-匿名内存 vs. shmem vs. hugetlbfs）或所有类型的被拦截错误受支持。
+### 鍐欎繚鎶ら€氱煡
 
 
-用户空间可以使用 `uffdio_register.ioctls` 在后台管理虚拟地址空间（添加或可能移除
-`userfaultfd` 注册范围中的内存）。这意味着用户缺页可能在用户空间在后台映射该
-缺页页之前恰好触发。
+杩欑瓑鍚屼簬锛堜絾蹇簬锛変娇鐢?mprotect 鍜?SIGSEGV 淇″彿澶勭悊绋嬪簭銆?
+棣栧厛锛屼綘闇€瑕佺敤 `UFFDIO_REGISTER_MODE_WP` 娉ㄥ唽涓€涓寖鍥淬€備綘浣跨敤
+`ioctl(uffd, UFFDIO_WRITEPROTECT, struct *uffdio_writeprotect)`锛屽悓鏃朵紶鍏ョ粨鏋勪腑
+`mode = UFFDIO_WRITEPROTECT_MODE_WP`锛岃€屼笉鏄娇鐢?mprotect(2)銆傝鑼冨洿涓嶉粯璁や负浣犳敞鍐?鐨勮寖鍥达紝涔熶笉蹇呬笌涔嬬浉鍚屻€備綘鍙互鍐欎繚鎶や换鎰忓涓寖鍥达紙鍦ㄦ敞鍐岃寖鍥村唴锛夈€傜劧鍚庯紝鍦ㄤ粠 uffd
+璇诲彇鐨勭嚎绋嬩腑锛岀粨鏋勫皢鍏锋湁 `msg.arg.pagefault.flags & UFFD_PAGEFAULT_FLAG_WP` 缃綅銆?鐜板湪浣犲啀娆″彂閫?`ioctl(uffd, UFFDIO_WRITEPROTECT, struct *uffdio_writeprotect)`锛岃€?`pagefault.mode` 娌℃湁璁剧疆 `UFFDIO_WRITEPROTECT_MODE_WP`銆傝繖浼氬敜閱掔嚎绋嬶紝璇ョ嚎绋嬪皢甯︾潃
+鍐欐搷浣滅户缁繍琛屻€傝繖鍏佽浣犲湪 ioctl 涔嬪墠鍦?uffd 璇诲彇绾跨▼涓仛鍏充簬璇ュ啓鎿嶄綔鐨勮璐︺€?
+濡傛灉浣犲悓鏃剁敤 `UFFDIO_REGISTER_MODE_MISSING` 鍜?`UFFDIO_REGISTER_MODE_WP` 娉ㄥ唽锛屽垯
+浣犻渶瑕佽€冭檻鎻愪緵椤典笌鎾ら攢鍐欎繚鎶や箣闂寸殑椤哄簭銆傛敞鎰忓 WP 鍖哄煙鍜?!WP 鍖哄煙鐨勫啓鍏ヤ箣闂村瓨鍦?宸紓銆傚墠鑰呭皢缃綅 `UFFD_PAGEFAULT_FLAG_WP`锛屽悗鑰呯疆浣?`UFFD_PAGEFAULT_FLAG_WRITE`銆?鍚庤€呭苟闈炲洜淇濇姢鑰屽け璐ワ紝浣嗗湪浣跨敤 `UFFDIO_REGISTER_MODE_MISSING` 鏃朵綘浠嶇劧闇€瑕佹彁渚涗竴涓〉銆?
+Userfaultfd 鍐欎繚鎶ゆā寮忕洰鍓嶅湪涓嶅悓绫诲瀷鍐呭瓨涓婂 none pte锛堜緥濡傞〉缂哄け鏃讹級鐨勮涓轰笉鍚屻€?
+瀵逛簬鍖垮悕鍐呭瓨锛宍ioctl(UFFDIO_WRITEPROTECT)` 浼氬拷鐣?none pte锛堜緥濡傚綋椤电己澶变笖鏈～鍏?鏃讹級銆傚浜?shmem 鍜?hugetlbfs 绛夋枃浠跺悗澶囧唴瀛橈紝none pte 灏嗗儚 present pte 涓€鏍疯鍐?淇濇姢銆傛崲鍙ヨ瘽璇达紝鍙鍦ㄥ啓缂洪〉椤垫椂瀵规枃浠剁被鍨嬪唴瀛樿缃簡鍐欎繚鎶わ紝灏变細鐢熸垚涓€鏉?userfaultfd 鍐欓敊璇秷鎭€傞粯璁ゆ儏鍐典笅锛屽尶鍚嶅唴瀛樹笂涓嶄細鐢熸垚杩欐牱鐨勬秷鎭€?
+濡傛灉搴旂敤绋嬪簭甯屾湜瀵瑰尶鍚嶅唴瀛樹笂鐨?none pte 杩涜鍐欎繚鎶わ紝鍙互棰勫厛鐢ㄤ緥濡?MADV_POPULATE_READ 濉厖鍐呭瓨銆傚湪杈冩柊鐨勫唴鏍镐笂锛屼篃鍙互妫€娴?UFFD_FEATURE_WP_UNPOPULATED
+鐗规€у苟鎻愬墠璁剧疆鐗规€т綅锛屼互纭繚鍗充究瀵逛簬鍖垮悕鍐呭瓨锛宯one pte 涔熶細琚啓淇濇姢銆?
+褰撳皢 `UFFDIO_REGISTER_MODE_WP` 涓?`UFFDIO_REGISTER_MODE_MISSING` 鎴?`UFFDIO_REGISTER_MODE_MINOR` 缁撳悎浣跨敤鏃讹紝鍦ㄧ敤 `UFFDIO_COPY` 鎴?`UFFDIO_CONTINUE`
+鍒嗗埆瑙ｅ喅缂哄け/娆¤閿欒鏃讹紝鍙兘甯屾湜鏂伴〉/鏄犲皠琚啓淇濇姢锛堜互渚挎湭鏉ョ殑鍐欐搷浣滀篃浼氬鑷?WP
+閿欒锛夈€傝繖浜?ioctl 鏀寔涓€涓?mode 鏍囧織锛堝垎鍒负 `UFFDIO_COPY_MODE_WP` 鎴?`UFFDIO_CONTINUE_MODE_WP`锛夋潵浠ヨ繖绉嶆柟寮忛厤缃槧灏勩€?
+濡傛灉 userfaultfd 涓婁笅鏂囪缃簡 `UFFD_FEATURE_WP_ASYNC` 鐗规€т綅锛屼换浣曚互鍐欎繚鎶ゆ敞鍐岀殑
+vma 灏嗕互寮傛妯″紡宸ヤ綔锛岃€屼笉鏄粯璁ょ殑鍚屾妯″紡銆?
+鍦ㄥ紓姝ユā寮忎笅锛屽彂鐢熷啓鎿嶄綔鏃朵笉浼氱敓鎴愭秷鎭紝鍚屾椂鍐欎繚鎶ゅ皢鐢卞唴鏍歌嚜鍔ㄨВ鍐炽€傚畠鍙互琚涓?soft-dirty 璺熻釜鐨勬洿绮剧‘鐗堟湰锛屽苟涓斿湪鍑犱釜鏂归潰鍙兘鏈夋墍涓嶅悓锛?
+  - 鑴忕粨鏋滀笉鍙?vma 鍙樺寲锛堜緥濡?vma 鍚堝苟锛夌殑褰卞搷锛屽洜涓鸿剰鍙敱 pte 璺熻釜銆?
+  - 榛樿鏀寔鑼冨洿鎿嶄綔锛屽洜姝ゅ彧瑕侀〉瀵归綈锛屽氨鍙互鍦ㄤ换鎰忓唴瀛樿寖鍥翠笂鍚敤璺熻釜銆?
+  - 濡傛灉 pte 鐢变簬鍚勭鍘熷洜锛堜緥濡傚湪 shmem 閫忔槑澶ч〉鎷嗗垎鏈熼棿锛夎娓呴櫎锛岃剰淇℃伅涓嶄細涓㈠け銆?
+  - 鐢变簬 soft-dirty 鍚箟鐨勫弽杞紙璁剧疆 uffd-wp 浣嶆椂椤靛共鍑€锛涙竻闄?uffd-wp 浣嶆椂鑴忥級锛?    瀹冨湪鏌愪簺鍐呭瓨鎿嶄綔涓婂叿鏈変笉鍚岀殑璇箟銆備緥濡傦細鍖垮悕鍐呭瓨涓婄殑 `MADV_DONTNEED`锛堟垨鏂囦欢
+    鏄犲皠涓婄殑 `MADV_REMOVE`锛夊湪杩囩▼涓€氳繃涓㈠純 uffd-wp 浣嶈€岃褰撲綔鍐呭瓨鐨勫紕鑴忋€?
+鐢ㄦ埛搴旂敤鍙互閫氳繃鍦?/proc/pagemap 涓煡鎵炬劅鍏磋叮鐨勯〉鐨?uffd-wp 浣嶆潵鏀堕泦"宸插啓/鑴?
+鐘舵€併€?
+鍦ㄩ〉琚?`ioctl(UFFDIO_WRITEPROTECT)` 鏄惧紡鍐欎繚鎶わ紙璁剧疆 mode 鏍囧織
+`UFFDIO_WRITEPROTECT_MODE_WP`锛変箣鍓嶏紝璇ラ〉涓嶄細澶勪簬 uffd-wp 寮傛妯″紡鐨勮窡韪箣涓嬨€傚皾璇?瑙ｅ喅鐢卞紓姝ユā寮?userfaultfd-wp 璺熻釜鐨勯〉閿欒鏄棤鏁堢殑銆?
+褰?userfaultfd-wp 寮傛妯″紡鍗曠嫭浣跨敤鏃讹紝瀹冨彲浠ュ簲鐢ㄤ簬鎵€鏈夌被鍨嬬殑鍐呭瓨銆?
+
+### 鍐呭瓨涓瘨妯℃嫙
 
 
-### 解决用户缺页
-
-
-有三种基本方法来解决用户缺页：
-
-- `UFFDIO_COPY` 原子地将某些现有页内容从用户空间复制。
-
-- `UFFDIO_ZEROPAGE` 原子地将新页清零。
-
-- `UFFDIO_CONTINUE` 映射一个已存在、先前已填充的页。
-
-这些操作是原子的，因为它们保证没有任何东西能看到半填充的页，因为读者会一直
-触发用户缺页直到操作完成。
-
-默认情况下，这些操作会唤醒阻塞在相关范围上的用户缺页。它们支持 `UFFDIO_*_MODE_DONTWAKE`
-`mode` 标志，表示唤醒将在稍后某个时间单独进行。
-
-选择哪个 ioctl 取决于页错误的种类，以及我们希望如何来解决它：
-
-- 对于 `UFFDIO_REGISTER_MODE_MISSING` 错误，需要通过提供新页（`UFFDIO_COPY`）或
-  映射零页（`UFFDIO_ZEROPAGE`）来解决。默认情况下，内核会为缺失错误映射零页。有了
-  userfaultfd，用户空间可以在缺页线程继续之前决定提供什么内容。
-
-- 对于 `UFFDIO_REGISTER_MODE_MINOR` 错误，存在一个现有页（在页缓存中）。用户空间
-  可以选择在解决错误之前修改页内容。一旦内容正确（无论是否修改），用户空间就请求
-  内核映射该页，并让缺页线程用 `UFFDIO_CONTINUE` 继续。
-
-注意事项：
-
-- 你可以通过检查 `uffd_msg` 中的 `pagefault.flags`，并检查 `UFFD_PAGEFAULT_FLAG_*`
-  标志，来判断发生了哪种类型的错误。
-
-- 没有哪个页投递 ioctl 默认作用于你注册的范围。你必须填写相应 ioctl 结构的所有
-  字段，包括范围。
-
-- 你从在线程中从 uffd 读取的 struct uffd_msg 中获取触发缺失页事件的访问地址。你
-  可以用这些 IOCTL 提供任意多的页。请记住，除非你使用了 DONTWAKE，否则任何这些
-  IOCTL 中的第一个都会唤醒缺页线程。
-
-- 务必测试所有错误，包括 (`pollfd[^0^].revents & POLLERR`)。这可能发生，例如当
-  提供的范围不正确时。
-
-
-### 写保护通知
-
-
-这等同于（但快于）使用 mprotect 和 SIGSEGV 信号处理程序。
-
-首先，你需要用 `UFFDIO_REGISTER_MODE_WP` 注册一个范围。你使用
-`ioctl(uffd, UFFDIO_WRITEPROTECT, struct *uffdio_writeprotect)`，同时传入结构中
-`mode = UFFDIO_WRITEPROTECT_MODE_WP`，而不是使用 mprotect(2)。该范围不默认为你注册
-的范围，也不必与之相同。你可以写保护任意多个范围（在注册范围内）。然后，在从 uffd
-读取的线程中，结构将具有 `msg.arg.pagefault.flags & UFFD_PAGEFAULT_FLAG_WP` 置位。
-现在你再次发送 `ioctl(uffd, UFFDIO_WRITEPROTECT, struct *uffdio_writeprotect)`，而
-`pagefault.mode` 没有设置 `UFFDIO_WRITEPROTECT_MODE_WP`。这会唤醒线程，该线程将带着
-写操作继续运行。这允许你在 ioctl 之前在 uffd 读取线程中做关于该写操作的记账。
-
-如果你同时用 `UFFDIO_REGISTER_MODE_MISSING` 和 `UFFDIO_REGISTER_MODE_WP` 注册，则
-你需要考虑提供页与撤销写保护之间的顺序。注意对 WP 区域和 !WP 区域的写入之间存在
-差异。前者将置位 `UFFD_PAGEFAULT_FLAG_WP`，后者置位 `UFFD_PAGEFAULT_FLAG_WRITE`。
-后者并非因保护而失败，但在使用 `UFFDIO_REGISTER_MODE_MISSING` 时你仍然需要提供一个页。
-
-Userfaultfd 写保护模式目前在不同类型内存上对 none pte（例如页缺失时）的行为不同。
-
-对于匿名内存，`ioctl(UFFDIO_WRITEPROTECT)` 会忽略 none pte（例如当页缺失且未填充
-时）。对于 shmem 和 hugetlbfs 等文件后备内存，none pte 将像 present pte 一样被写
-保护。换句话说，只要在写缺页页时对文件类型内存设置了写保护，就会生成一条
-userfaultfd 写错误消息。默认情况下，匿名内存上不会生成这样的消息。
-
-如果应用程序希望对匿名内存上的 none pte 进行写保护，可以预先用例如
-MADV_POPULATE_READ 填充内存。在较新的内核上，也可以检测 UFFD_FEATURE_WP_UNPOPULATED
-特性并提前设置特性位，以确保即便对于匿名内存，none pte 也会被写保护。
-
-当将 `UFFDIO_REGISTER_MODE_WP` 与 `UFFDIO_REGISTER_MODE_MISSING` 或
-`UFFDIO_REGISTER_MODE_MINOR` 结合使用时，在用 `UFFDIO_COPY` 或 `UFFDIO_CONTINUE`
-分别解决缺失/次要错误时，可能希望新页/映射被写保护（以便未来的写操作也会导致 WP
-错误）。这些 ioctl 支持一个 mode 标志（分别为 `UFFDIO_COPY_MODE_WP` 或
-`UFFDIO_CONTINUE_MODE_WP`）来以这种方式配置映射。
-
-如果 userfaultfd 上下文设置了 `UFFD_FEATURE_WP_ASYNC` 特性位，任何以写保护注册的
-vma 将以异步模式工作，而不是默认的同步模式。
-
-在异步模式下，发生写操作时不会生成消息，同时写保护将由内核自动解决。它可以被视为
-soft-dirty 跟踪的更精确版本，并且在几个方面可能有所不同：
-
-  - 脏结果不受 vma 变化（例如 vma 合并）的影响，因为脏只由 pte 跟踪。
-
-  - 默认支持范围操作，因此只要页对齐，就可以在任意内存范围上启用跟踪。
-
-  - 如果 pte 由于各种原因（例如在 shmem 透明大页拆分期间）被清除，脏信息不会丢失。
-
-  - 由于 soft-dirty 含义的反转（设置 uffd-wp 位时页干净；清除 uffd-wp 位时脏），
-    它在某些内存操作上具有不同的语义。例如：匿名内存上的 `MADV_DONTNEED`（或文件
-    映射上的 `MADV_REMOVE`）在过程中通过丢弃 uffd-wp 位而被当作内存的弄脏。
-
-用户应用可以通过在 /proc/pagemap 中查找感兴趣的页的 uffd-wp 位来收集"已写/脏"
-状态。
-
-在页被 `ioctl(UFFDIO_WRITEPROTECT)` 显式写保护（设置 mode 标志
-`UFFDIO_WRITEPROTECT_MODE_WP`）之前，该页不会处于 uffd-wp 异步模式的跟踪之下。尝试
-解决由异步模式 userfaultfd-wp 跟踪的页错误是无效的。
-
-当 userfaultfd-wp 异步模式单独使用时，它可以应用于所有类型的内存。
-
-
-### 内存中毒模拟
-
-
-作为对错误（缺失或次要）的响应，用户空间可以采取的一个"解决"动作是发出
-`UFFDIO_POISON`。这将导致任何未来的触发者收到 SIGBUS，或者在 KVM 的情况下，客户机
-将收到一个 MCE，就像发生了硬件内存中毒一样。
-
-这用于模拟硬件内存中毒。想象一个运行在经历过真实硬件内存错误的机器上的 VM。随后，
-我们将 VM 实时迁移到另一台物理机器。由于我们想让迁移对客户机透明，我们希望同一地址
-范围表现得就像它仍然被毒化一样，即使它位于一台新的物理主机上，而该主机在完全相同的
-位置显然并没有内存错误。
-
+浣滀负瀵归敊璇紙缂哄け鎴栨瑕侊級鐨勫搷搴旓紝鐢ㄦ埛绌洪棿鍙互閲囧彇鐨勪竴涓?瑙ｅ喅"鍔ㄤ綔鏄彂鍑?`UFFDIO_POISON`銆傝繖灏嗗鑷翠换浣曟湭鏉ョ殑瑙﹀彂鑰呮敹鍒?SIGBUS锛屾垨鑰呭湪 KVM 鐨勬儏鍐典笅锛屽鎴锋満
+灏嗘敹鍒颁竴涓?MCE锛屽氨鍍忓彂鐢熶簡纭欢鍐呭瓨涓瘨涓€鏍枫€?
+杩欑敤浜庢ā鎷熺‖浠跺唴瀛樹腑姣掋€傛兂璞′竴涓繍琛屽湪缁忓巻杩囩湡瀹炵‖浠跺唴瀛橀敊璇殑鏈哄櫒涓婄殑 VM銆傞殢鍚庯紝
+鎴戜滑灏?VM 瀹炴椂杩佺Щ鍒板彟涓€鍙扮墿鐞嗘満鍣ㄣ€傜敱浜庢垜浠兂璁╄縼绉诲瀹㈡埛鏈洪€忔槑锛屾垜浠笇鏈涘悓涓€鍦板潃
+鑼冨洿琛ㄧ幇寰楀氨鍍忓畠浠嶇劧琚瘨鍖栦竴鏍凤紝鍗充娇瀹冧綅浜庝竴鍙版柊鐨勭墿鐞嗕富鏈轰笂锛岃€岃涓绘満鍦ㄥ畬鍏ㄧ浉鍚岀殑
+浣嶇疆鏄剧劧骞舵病鏈夊唴瀛橀敊璇€?
 
 ## QEMU/KVM
 
 
-QEMU/KVM 正在使用 `userfaultfd` 系统调用来实现 postcopy 实时迁移。Postcopy 实时迁移
-是内存外部化的一种形式，由一个部分或全部内存驻留在云中不同节点上的虚拟机运行组成。
-`userfaultfd` 抽象足够通用，以至于无需修改 KVM 内核代码的一行即可将 postcopy 实时
-迁移添加到 QEMU。
+QEMU/KVM 姝ｅ湪浣跨敤 `userfaultfd` 绯荤粺璋冪敤鏉ュ疄鐜?postcopy 瀹炴椂杩佺Щ銆侾ostcopy 瀹炴椂杩佺Щ
+鏄唴瀛樺閮ㄥ寲鐨勪竴绉嶅舰寮忥紝鐢变竴涓儴鍒嗘垨鍏ㄩ儴鍐呭瓨椹荤暀鍦ㄤ簯涓笉鍚岃妭鐐逛笂鐨勮櫄鎷熸満杩愯缁勬垚銆?`userfaultfd` 鎶借薄瓒冲閫氱敤锛屼互鑷充簬鏃犻渶淇敼 KVM 鍐呮牳浠ｇ爜鐨勪竴琛屽嵆鍙皢 postcopy 瀹炴椂
+杩佺Щ娣诲姞鍒?QEMU銆?
+瀹㈡埛鏈哄紓姝ラ〉閿欒銆乣FOLL_NOWAIT` 浠ュ強鎵€鏈夊叾浠?`GUP*` 鐗规€т笌鐢ㄦ埛缂洪〉缁撳悎浣跨敤瀹屽叏娌℃湁
+闂銆傜敤鎴风己椤靛湪瀹㈡埛鏈鸿皟搴﹀櫒涓Е鍙戝紓姝ラ〉閿欒锛屽洜姝ら偅浜涙病鏈夊湪绛夊緟鐢ㄦ埛缂洪〉锛堝嵆鍙楃綉缁?闄愬埗锛夌殑瀹㈡埛鏈鸿繘绋嬪彲浠ュ湪瀹㈡埛鏈?vCPU 涓户缁繍琛屻€?
+閫氬父鏈夌泭鐨勫仛娉曟槸鍦ㄥ紑濮?postcopy 瀹炴椂杩佺Щ涔嬪墠鍏堣繍琛屼竴杞?precopy 瀹炴椂杩佺Щ锛屼互閬垮厤涓?鍙瀹㈡埛鏈哄尯鍩熺敓鎴愮敤鎴风己椤点€?
+postcopy 瀹炴椂杩佺Щ鐨勫綋鍓嶅疄鐜颁娇鐢ㄤ竴涓崟涓€鐨勫弻鍚戝鎺ュ瓧锛屼絾灏嗘潵浼氫娇鐢ㄤ袱涓笉鍚岀殑濂楁帴瀛?锛堜互鍦ㄤ笉蹇呭噺灏?`/proc/sys/net/ipv4/tcp_wmem` 鐨勬儏鍐典笅灏嗙敤鎴风己椤电殑寤惰繜闄嶅埌鏈€浣庯級銆?
+婧愯妭鐐逛腑鐨?QEMU 灏嗗畠鐭ラ亾鍦ㄧ洰鏍囪妭鐐逛腑缂哄け鐨勬墍鏈夐〉鍐欏叆濂楁帴瀛楋紝鑰岃繍琛屽湪鐩爣鑺傜偣涓殑
+QEMU 鐨勮縼绉荤嚎绋嬪湪 `userfaultfd` 涓婅繍琛?`UFFDIO_COPY|ZEROPAGE` ioctl锛屼互渚垮皢鏀跺埌鐨勯〉
+鏄犲皠鍒板鎴锋満锛坄UFFDIO_ZEROCOPY` 鐢ㄤ簬婧愰〉鏄浂椤电殑鎯呭喌锛夈€?
+鐩爣鑺傜偣涓彟涓€涓?postcopy 绾跨▼鐢?poll() 骞惰鐩戝惉 `userfaultfd`銆傚綋鍦ㄧ敤鎴风己椤佃Е鍙戝悗
+鐢熸垚 `POLLIN` 浜嬩欢鏃讹紝postcopy 绾跨▼浠?`userfaultfd` 鎵ц read() 骞舵帴鏀堕敊璇湴鍧€锛堟垨
+`-EAGAIN`锛屽鏋滅敤鎴峰湪骞惰 QEMU 杩佺Щ绾跨▼杩愯鐨?`UFFDIO_COPY|ZEROPAGE` 瑙ｆ瀽骞跺敜閱掍箣鍚?鎵嶈璇诲彇锛夈€?
+鍦ㄧ洰鏍囪妭鐐硅繍琛岀殑 QEMU postcopy 绾跨▼鑾峰緱鐢ㄦ埛缂洪〉鍦板潃鍚庯紝瀹冨皢鍏充簬缂哄け椤电殑淇℃伅鍐欏叆
+濂楁帴瀛椼€俀EMU 婧愯妭鐐规帴鏀惰淇℃伅锛屽苟澶ц嚧"瀵绘壘"鍒拌椤靛湴鍧€锛屽苟缁х画浠庤鏂伴〉鍋忕Щ鍙戦€佹墍鏈?鍓╀綑缂哄け椤点€傛鍚庝笉涔咃紙鍙渶灏?tcp_wmem 闃熷垪閫氳繃缃戠粶鍐插埛鐨勬椂闂达級锛岀洰鏍囪妭鐐硅繍琛岀殑 QEMU
+涓殑杩佺Щ绾跨▼灏嗘敹鍒拌Е鍙戠敤鎴风己椤电殑閭ｄ釜椤碉紝骞跺儚寰€甯镐竴鏍风敤 `UFFDIO_COPY|ZEROPAGE` 鏄犲皠
+瀹冿紙鑰屽疄闄呬笂骞朵笉鐭ラ亾瀹冩槸婧愯妭鐐硅嚜鍙戝彂閫佺殑锛岃繕鏄€氳繃鐢ㄦ埛缂洪〉璇锋眰鐨勭揣鎬ラ〉锛夈€?
+鍒扮敤鎴风己椤靛紑濮嬬殑鏃跺€欙紝鐩爣鑺傜偣涓殑 QEMU 涓嶉渶瑕佷繚鐣欎换浣曚笌瀹炴椂杩佺Щ鐩稿叧鐨勬瘡椤电姸鎬?浣嶅浘锛岃€屾簮鑺傜偣涓繍琛岀殑 QEMU 蹇呴』缁存姢涓€涓崟涓€鐨勬瘡椤典綅鍥撅紝浠ョ煡閬撳摢浜涢〉鍦ㄧ洰鏍囪妭鐐逛腑
+浠嶇劧缂哄け銆傛鏌ユ簮鑺傜偣涓殑浣嶅浘浠ユ壘鍒拌鎸夎疆璇㈠彂閫佺殑缂哄け椤碉紝骞跺湪鎺ユ敹浼犲叆鐢ㄦ埛缂洪〉鏃跺湪鍏朵笂
+鏌ユ壘銆傚綋鐒讹紝鍙戦€佹瘡椤典箣鍚庝綅鍥句細鐩稿簲鏇存柊銆傚畠杩樻湁鍔╀簬閬垮厤鍙戦€佸悓涓€椤典袱娆★紙浠ラ槻 postcopy
+绾跨▼鍦ㄨ縼绉荤嚎绋嬩腑鐨?`UFFDIO_COPY|ZEROPAGE` 杩愯涔嬪墠鍒氬ソ璇诲彇浜嗙敤鎴风己椤碉級銆?
 
-客户机异步页错误、`FOLL_NOWAIT` 以及所有其他 `GUP*` 特性与用户缺页结合使用完全没有
-问题。用户缺页在客户机调度器中触发异步页错误，因此那些没有在等待用户缺页（即受网络
-限制）的客户机进程可以在客户机 vCPU 中继续运行。
-
-通常有益的做法是在开始 postcopy 实时迁移之前先运行一轮 precopy 实时迁移，以避免为
-只读客户机区域生成用户缺页。
-
-postcopy 实时迁移的当前实现使用一个单一的双向套接字，但将来会使用两个不同的套接字
-（以在不必减小 `/proc/sys/net/ipv4/tcp_wmem` 的情况下将用户缺页的延迟降到最低）。
-
-源节点中的 QEMU 将它知道在目标节点中缺失的所有页写入套接字，而运行在目标节点中的
-QEMU 的迁移线程在 `userfaultfd` 上运行 `UFFDIO_COPY|ZEROPAGE` ioctl，以便将收到的页
-映射到客户机（`UFFDIO_ZEROCOPY` 用于源页是零页的情况）。
-
-目标节点中另一个 postcopy 线程用 poll() 并行监听 `userfaultfd`。当在用户缺页触发后
-生成 `POLLIN` 事件时，postcopy 线程从 `userfaultfd` 执行 read() 并接收错误地址（或
-`-EAGAIN`，如果用户在并行 QEMU 迁移线程运行的 `UFFDIO_COPY|ZEROPAGE` 解析并唤醒之后
-才被读取）。
-
-在目标节点运行的 QEMU postcopy 线程获得用户缺页地址后，它将关于缺失页的信息写入
-套接字。QEMU 源节点接收该信息，并大致"寻找"到该页地址，并继续从该新页偏移发送所有
-剩余缺失页。此后不久（只需将 tcp_wmem 队列通过网络冲刷的时间），目标节点运行的 QEMU
-中的迁移线程将收到触发用户缺页的那个页，并像往常一样用 `UFFDIO_COPY|ZEROPAGE` 映射
-它（而实际上并不知道它是源节点自发发送的，还是通过用户缺页请求的紧急页）。
-
-到用户缺页开始的时候，目标节点中的 QEMU 不需要保留任何与实时迁移相关的每页状态
-位图，而源节点中运行的 QEMU 必须维护一个单一的每页位图，以知道哪些页在目标节点中
-仍然缺失。检查源节点中的位图以找到要按轮询发送的缺失页，并在接收传入用户缺页时在其上
-查找。当然，发送每页之后位图会相应更新。它还有助于避免发送同一页两次（以防 postcopy
-线程在迁移线程中的 `UFFDIO_COPY|ZEROPAGE` 运行之前刚好读取了用户缺页）。
+## 闈炲崗浣?userfaultfd
 
 
-## 非协作 userfaultfd
-
-
-当 `userfaultfd` 由外部管理器监控时，管理器必须能够跟踪进程虚拟内存布局的变化。
-Userfaultfd 可以使用与页错误通知相同的 read(2) 协议将这些变化通知管理器。管理器
-必须通过设置在传递给 `UFFDIO_API` ioctl 的 `uffdio_api.features` 中的相应位来显式
-启用这些事件：
-
+褰?`userfaultfd` 鐢卞閮ㄧ鐞嗗櫒鐩戞帶鏃讹紝绠＄悊鍣ㄥ繀椤昏兘澶熻窡韪繘绋嬭櫄鎷熷唴瀛樺竷灞€鐨勫彉鍖栥€?Userfaultfd 鍙互浣跨敤涓庨〉閿欒閫氱煡鐩稿悓鐨?read(2) 鍗忚灏嗚繖浜涘彉鍖栭€氱煡绠＄悊鍣ㄣ€傜鐞嗗櫒
+蹇呴』閫氳繃璁剧疆鍦ㄤ紶閫掔粰 `UFFDIO_API` ioctl 鐨?`uffdio_api.features` 涓殑鐩稿簲浣嶆潵鏄惧紡
+鍚敤杩欎簺浜嬩欢锛?
 `UFFD_FEATURE_EVENT_FORK`
-	为 fork() 启用 `userfaultfd` 钩子。启用此特性后，父进程的 `userfaultfd`
-	上下文会被复制到新创建的进程中。管理器在 `uffd_msg.fork` 中收到带有新
-	`userfaultfd` 上下文文件描述符的 `UFFD_EVENT_FORK`。
-
+	涓?fork() 鍚敤 `userfaultfd` 閽╁瓙銆傚惎鐢ㄦ鐗规€у悗锛岀埗杩涚▼鐨?`userfaultfd`
+	涓婁笅鏂囦細琚鍒跺埌鏂板垱寤虹殑杩涚▼涓€傜鐞嗗櫒鍦?`uffd_msg.fork` 涓敹鍒板甫鏈夋柊
+	`userfaultfd` 涓婁笅鏂囨枃浠舵弿杩扮鐨?`UFFD_EVENT_FORK`銆?
 `UFFD_FEATURE_EVENT_REMAP`
-	启用关于 mremap() 调用的通知。当非协作进程将虚拟内存区域移动到不同
-	位置时，管理器将收到 `UFFD_EVENT_REMAP`。`uffd_msg.remap` 将包含该区域的
-	新旧地址及其原始长度。
-
+	鍚敤鍏充簬 mremap() 璋冪敤鐨勯€氱煡銆傚綋闈炲崗浣滆繘绋嬪皢铏氭嫙鍐呭瓨鍖哄煙绉诲姩鍒颁笉鍚?	浣嶇疆鏃讹紝绠＄悊鍣ㄥ皢鏀跺埌 `UFFD_EVENT_REMAP`銆俙uffd_msg.remap` 灏嗗寘鍚鍖哄煙鐨?	鏂版棫鍦板潃鍙婂叾鍘熷闀垮害銆?
 `UFFD_FEATURE_EVENT_REMOVE`
-	启用关于 madvise(MADV_REMOVE) 和 madvise(MADV_DONTNEED) 调用的通知。对这些
-	madvise() 调用会生成 `UFFD_EVENT_REMOVE` 事件。`uffd_msg.remove` 将包含被
-	移除区域的起始和结束地址。
-
+	鍚敤鍏充簬 madvise(MADV_REMOVE) 鍜?madvise(MADV_DONTNEED) 璋冪敤鐨勯€氱煡銆傚杩欎簺
+	madvise() 璋冪敤浼氱敓鎴?`UFFD_EVENT_REMOVE` 浜嬩欢銆俙uffd_msg.remove` 灏嗗寘鍚
+	绉婚櫎鍖哄煙鐨勮捣濮嬪拰缁撴潫鍦板潃銆?
 `UFFD_FEATURE_EVENT_UNMAP`
-	启用关于内存取消映射的通知。管理器将收到 `UFFD_EVENT_UNMAP`，其中
-	`uffd_msg.remove` 包含被取消映射区域的起始和结束地址。
-
-尽管 `UFFD_FEATURE_EVENT_REMOVE` 和 `UFFD_FEATURE_EVENT_UNMAP` 非常相似，但它们在
-`userfaultfd` 管理器预期的动作上差别很大。在前一种情况下，虚拟内存被移除，但区域
-还在，该区域仍由 `userfaultfd` 监控，如果在该区域发生页错误，它将被投递给管理器。
-对此类页错误的恰当解决是对错误地址进行 zeromap。然而，在后一种情况下，当区域被取消
-映射时，无论是显式地（通过 munmap() 系统调用）还是隐式地（例如在 mremap() 期间），
-区域被移除，进而该区域的 `userfaultfd` 上下文也随之消失，管理器将不再从该被移除的
-区域收到进一步的用户空间页错误。不过，仍然需要该通知，以防止管理器在被取消映射的
-区域上使用 `UFFDIO_COPY`。
-
-与必须同步并需要显式或隐式唤醒的用户空间页错误不同，所有事件都是异步投递的，一旦
-管理器执行 read()，非协作进程就恢复执行。`userfaultfd` 管理器应仔细地将对
-`UFFDIO_COPY` 的调用与事件处理同步。为了辅助同步，`UFFDIO_COPY` ioctl 在监控的进程
-在 `UFFDIO_COPY` 时刻退出时返回 `-ENOSPC`，而当非协作进程在 `UFFDIO_COPY` 操作进行
-的同时改变了其虚拟内存布局时返回 `-ENOENT`。
-
-当前的事件投递异步模型对于单线程非协作 `userfaultfd` 管理器实现是最优的。同步事件
-投递模型以后可以作为一个新的 `userfaultfd` 特性添加，以促进非协作管理器的多线程增强，
-例如允许 `UFFDIO_COPY` ioctl 与事件接收并行运行。单线程实现应该继续使用当前的异步
-事件投递模型。
+	鍚敤鍏充簬鍐呭瓨鍙栨秷鏄犲皠鐨勯€氱煡銆傜鐞嗗櫒灏嗘敹鍒?`UFFD_EVENT_UNMAP`锛屽叾涓?	`uffd_msg.remove` 鍖呭惈琚彇娑堟槧灏勫尯鍩熺殑璧峰鍜岀粨鏉熷湴鍧€銆?
+灏界 `UFFD_FEATURE_EVENT_REMOVE` 鍜?`UFFD_FEATURE_EVENT_UNMAP` 闈炲父鐩镐技锛屼絾瀹冧滑鍦?`userfaultfd` 绠＄悊鍣ㄩ鏈熺殑鍔ㄤ綔涓婂樊鍒緢澶с€傚湪鍓嶄竴绉嶆儏鍐典笅锛岃櫄鎷熷唴瀛樿绉婚櫎锛屼絾鍖哄煙
+杩樺湪锛岃鍖哄煙浠嶇敱 `userfaultfd` 鐩戞帶锛屽鏋滃湪璇ュ尯鍩熷彂鐢熼〉閿欒锛屽畠灏嗚鎶曢€掔粰绠＄悊鍣ㄣ€?瀵规绫婚〉閿欒鐨勬伆褰撹В鍐虫槸瀵归敊璇湴鍧€杩涜 zeromap銆傜劧鑰岋紝鍦ㄥ悗涓€绉嶆儏鍐典笅锛屽綋鍖哄煙琚彇娑?鏄犲皠鏃讹紝鏃犺鏄樉寮忓湴锛堥€氳繃 munmap() 绯荤粺璋冪敤锛夎繕鏄殣寮忓湴锛堜緥濡傚湪 mremap() 鏈熼棿锛夛紝
+鍖哄煙琚Щ闄わ紝杩涜€岃鍖哄煙鐨?`userfaultfd` 涓婁笅鏂囦篃闅忎箣娑堝け锛岀鐞嗗櫒灏嗕笉鍐嶄粠璇ヨ绉婚櫎鐨?鍖哄煙鏀跺埌杩涗竴姝ョ殑鐢ㄦ埛绌洪棿椤甸敊璇€備笉杩囷紝浠嶇劧闇€瑕佽閫氱煡锛屼互闃叉绠＄悊鍣ㄥ湪琚彇娑堟槧灏勭殑
+鍖哄煙涓婁娇鐢?`UFFDIO_COPY`銆?
+涓庡繀椤诲悓姝ュ苟闇€瑕佹樉寮忔垨闅愬紡鍞ら啋鐨勭敤鎴风┖闂撮〉閿欒涓嶅悓锛屾墍鏈変簨浠堕兘鏄紓姝ユ姇閫掔殑锛屼竴鏃?绠＄悊鍣ㄦ墽琛?read()锛岄潪鍗忎綔杩涚▼灏辨仮澶嶆墽琛屻€俙userfaultfd` 绠＄悊鍣ㄥ簲浠旂粏鍦板皢瀵?`UFFDIO_COPY` 鐨勮皟鐢ㄤ笌浜嬩欢澶勭悊鍚屾銆備负浜嗚緟鍔╁悓姝ワ紝`UFFDIO_COPY` ioctl 鍦ㄧ洃鎺х殑杩涚▼
+鍦?`UFFDIO_COPY` 鏃跺埢閫€鍑烘椂杩斿洖 `-ENOSPC`锛岃€屽綋闈炲崗浣滆繘绋嬪湪 `UFFDIO_COPY` 鎿嶄綔杩涜
+鐨勫悓鏃舵敼鍙樹簡鍏惰櫄鎷熷唴瀛樺竷灞€鏃惰繑鍥?`-ENOENT`銆?
+褰撳墠鐨勪簨浠舵姇閫掑紓姝ユā鍨嬪浜庡崟绾跨▼闈炲崗浣?`userfaultfd` 绠＄悊鍣ㄥ疄鐜版槸鏈€浼樼殑銆傚悓姝ヤ簨浠?鎶曢€掓ā鍨嬩互鍚庡彲浠ヤ綔涓轰竴涓柊鐨?`userfaultfd` 鐗规€ф坊鍔狅紝浠ヤ績杩涢潪鍗忎綔绠＄悊鍣ㄧ殑澶氱嚎绋嬪寮猴紝
+渚嬪鍏佽 `UFFDIO_COPY` ioctl 涓庝簨浠舵帴鏀跺苟琛岃繍琛屻€傚崟绾跨▼瀹炵幇搴旇缁х画浣跨敤褰撳墠鐨勫紓姝?浜嬩欢鎶曢€掓ā鍨嬨€?

@@ -1,18 +1,17 @@
-
+﻿
 ## CoreSight - Perf
 
 
     :Author:   Carsten Haitzler <carsten.haitzler@arm.com>
     :Date:     June 29th, 2022
 
-Perf 能够在本地访问 CoreSight 跟踪数据并将其存储到输出的 perf 数据文件中。这些数据随后可以被解码，以给出被跟踪的指令，用于调试或性能分析。你
+Perf 鑳藉鍦ㄦ湰鍦拌闂?CoreSight 璺熻釜鏁版嵁骞跺皢鍏跺瓨鍌ㄥ埌杈撳嚭鐨?perf 鏁版嵁鏂囦欢涓€傝繖浜涙暟鎹殢鍚庡彲浠ヨ瑙ｇ爜锛屼互缁欏嚭琚窡韪殑鎸囦护锛岀敤浜庤皟璇曟垨鎬ц兘鍒嗘瀽銆備綘
 ```
 
    perf record -e cs_etm//u testbinary
 
 ```
-这会运行某个测试二进制文件（testbinary）直到它退出，并记录一个 perf.data 跟踪文件。如果 CoreSight 工作正常，该文件会包含 AUX 段。你可以这样转储该文件的内容：
-```
+杩欎細杩愯鏌愪釜娴嬭瘯浜岃繘鍒舵枃浠讹紙testbinary锛夌洿鍒板畠閫€鍑猴紝骞惰褰曚竴涓?perf.data 璺熻釜鏂囦欢銆傚鏋?CoreSight 宸ヤ綔姝ｅ父锛岃鏂囦欢浼氬寘鍚?AUX 娈点€備綘鍙互杩欐牱杞偍璇ユ枃浠剁殑鍐呭锛?```
 
    perf report --stdio --dump -i perf.data
 
@@ -34,31 +33,27 @@ Perf 能够在本地访问 CoreSight 跟踪数据并将其存储到输出的 per
              ...
 
 ```
-如果你看到上述内容，说明你的系统正在正确地跟踪 CoreSight 数据。
-```
+濡傛灉浣犵湅鍒颁笂杩板唴瀹癸紝璇存槑浣犵殑绯荤粺姝ｅ湪姝ｇ‘鍦拌窡韪?CoreSight 鏁版嵁銆?```
 
    make CORESIGHT=1
 
 ```
-构建它（指带 CoreSight 支持的 perf）需要 OpenCSD。你可以安装发行版提供的支持包，如 libopencsd 和 libopencsd-dev，或者下载源码自行构建。OpenCSD 上游代码位于：
-
+鏋勫缓瀹冿紙鎸囧甫 CoreSight 鏀寔鐨?perf锛夐渶瑕?OpenCSD銆備綘鍙互瀹夎鍙戣鐗堟彁渚涚殑鏀寔鍖咃紝濡?libopencsd 鍜?libopencsd-dev锛屾垨鑰呬笅杞芥簮鐮佽嚜琛屾瀯寤恒€侽penCSD 涓婃父浠ｇ爜浣嶄簬锛?
   https://github.com/Linaro/OpenCSD
 
-有关构建带 CoreSight 支持的 perf 以及更详尽用法的完整信息，请参见：
-
+鏈夊叧鏋勫缓甯?CoreSight 鏀寔鐨?perf 浠ュ強鏇磋灏界敤娉曠殑瀹屾暣淇℃伅锛岃鍙傝锛?
   https://github.com/Linaro/OpenCSD/blob/master/HOWTO.md
 
 
-### 内核 CoreSight 支持
+### 鍐呮牳 CoreSight 鏀寔
 
 
-你还应该在你的内核配置中启用 CoreSight 支持。
-```
+浣犺繕搴旇鍦ㄤ綘鐨勫唴鏍搁厤缃腑鍚敤 CoreSight 鏀寔銆?```
 
    CONFIG_CORESIGHT=y
 
 ```
-你可能还想要启用其他各种 CoreSight 选项
+浣犲彲鑳借繕鎯宠鍚敤鍏朵粬鍚勭 CoreSight 閫夐」
 ```
 
    CONFIG_CORESIGHT_LINKS_AND_SINKS=y
@@ -71,19 +66,14 @@ Perf 能够在本地访问 CoreSight 跟踪数据并将其存储到输出的 per
    CONFIG_CORESIGHT_CTI_INTEGRATION_REGS=y
 
 ```
-更多信息请参阅内核配置帮助。
+鏇村淇℃伅璇峰弬闃呭唴鏍搁厤缃府鍔┿€?
+### 浣跨敤 AUX 鏆傚仠涓庢仮澶嶈繘琛岀粏绮掑害璺熻釜
 
-### 使用 AUX 暂停与恢复进行细粒度跟踪
 
+Arm CoreSight 鍙兘浜х敓澶ч噺鐨勭‖浠惰窡韪暟鎹紝杩欎細甯︽潵璁板綍寮€閿€锛屽苟鍦ㄦ煡鐪嬫€ц兘鍒嗘瀽缁撴灉鏃跺垎鏁ｇ敤鎴锋敞鎰忓姏銆備负浜嗙紦瑙ｈ繃澶氳窡韪暟鎹殑闂锛孭erf 鎻愪緵浜?AUX 鏆傚仠锛坧ause锛夊拰鎭㈠锛坮esume锛夊姛鑳斤紝浠ュ疄鐜扮粏绮掑害璺熻釜銆?
+AUX 鏆傚仠鍜屾仮澶嶅彲浠ョ敱鍏宠仈鐨勪簨浠惰Е鍙戙€傝繖浜涗簨浠跺彲浠ユ槸 ftrace 璺熻釜鐐癸紙鍖呮嫭闈欐€佸拰鍔ㄦ€佽窡韪偣锛夋垨 PMU 浜嬩欢锛堜緥濡?CPU PMU 鍛ㄦ湡浜嬩欢锛夈€備负浜嗗垱寤轰竴涓甫鏈?AUX 鏆傚仠/鎭㈠鐨?perf 浼氳瘽锛屽紩鍏ヤ簡涓変釜閰嶇疆椤癸細
 
-Arm CoreSight 可能产生大量的硬件跟踪数据，这会带来记录开销，并在查看性能分析结果时分散用户注意力。为了缓解过多跟踪数据的问题，Perf 提供了 AUX 暂停（pause）和恢复（resume）功能，以实现细粒度跟踪。
-
-AUX 暂停和恢复可以由关联的事件触发。这些事件可以是 ftrace 跟踪点（包括静态和动态跟踪点）或 PMU 事件（例如 CPU PMU 周期事件）。为了创建一个带有 AUX 暂停/恢复的 perf 会话，引入了三个配置项：
-
-- "aux-action=start-paused"：为 cs_etm PMU 事件指定，使其以暂停状态启动。
-- "aux-action=pause"：用此配置项指定一个关联事件以暂停 AUX 跟踪。
-- "aux-action=resume"：用此配置项指定一个关联事件以恢复 AUX 跟踪。
-```
+- "aux-action=start-paused"锛氫负 cs_etm PMU 浜嬩欢鎸囧畾锛屼娇鍏朵互鏆傚仠鐘舵€佸惎鍔ㄣ€?- "aux-action=pause"锛氱敤姝ら厤缃」鎸囧畾涓€涓叧鑱斾簨浠朵互鏆傚仠 AUX 璺熻釜銆?- "aux-action=resume"锛氱敤姝ら厤缃」鎸囧畾涓€涓叧鑱斾簨浠朵互鎭㈠ AUX 璺熻釜銆?```
 
   perf record -e cs_etm/aux-action=start-paused/k,syscalls:sys_enter_openat/aux-action=resume/,syscalls:sys_exit_openat/aux-action=pause/ ls
 
@@ -95,57 +85,46 @@ AUX 暂停和恢复可以由关联的事件触发。这些事件可以是 ftrace
         -e cycles/aux-action=resume,period=1050000/ -- sleep 1
 
 ```
-### Perf 测试 - 验证内核与用户空间 perf CoreSight 是否工作
+### Perf 娴嬭瘯 - 楠岃瘉鍐呮牳涓庣敤鎴风┖闂?perf CoreSight 鏄惁宸ヤ綔
 
 
-当你运行 perf test 时，它会进行大量自测试。其中一些测试会覆盖 CoreSight（仅在启用且位于 ARM64 上时）。通常你会在内核树的 tools/perf 目录下运行 perf test。一些测试会检查某些内部 perf 支持，例如：
+褰撲綘杩愯 perf test 鏃讹紝瀹冧細杩涜澶ч噺鑷祴璇曘€傚叾涓竴浜涙祴璇曚細瑕嗙洊 CoreSight锛堜粎鍦ㄥ惎鐢ㄤ笖浣嶄簬 ARM64 涓婃椂锛夈€傞€氬父浣犱細鍦ㄥ唴鏍告爲鐨?tools/perf 鐩綍涓嬭繍琛?perf test銆備竴浜涙祴璇曚細妫€鏌ユ煇浜涘唴閮?perf 鏀寔锛屼緥濡傦細
 
    Check Arm CoreSight trace data recording and synthesized samples
-   检查 Arm CoreSight 跟踪数据记录与合成采样
-   Check Arm SPE trace data recording and synthesized samples
-   检查 Arm SPE 跟踪数据记录与合成采样
-
-另一些测试会实际使用 perf record 以及 tests/shell/coresight 中的一些测试二进制文件，并收集跟踪以确保达到最低的功能水平。启动这些测试的脚本位于同一目录中。它们看起来都像：
-
-   CoreSight / ASM 纯循环
-   CoreSight / Memcpy 16k 10 线程
-   CoreSight / 线程循环 10 线程 - 检查 TID
+   妫€鏌?Arm CoreSight 璺熻釜鏁版嵁璁板綍涓庡悎鎴愰噰鏍?   Check Arm SPE trace data recording and synthesized samples
+   妫€鏌?Arm SPE 璺熻釜鏁版嵁璁板綍涓庡悎鎴愰噰鏍?
+鍙︿竴浜涙祴璇曚細瀹為檯浣跨敤 perf record 浠ュ強 tests/shell/coresight 涓殑涓€浜涙祴璇曚簩杩涘埗鏂囦欢锛屽苟鏀堕泦璺熻釜浠ョ‘淇濊揪鍒版渶浣庣殑鍔熻兘姘村钩銆傚惎鍔ㄨ繖浜涙祴璇曠殑鑴氭湰浣嶄簬鍚屼竴鐩綍涓€傚畠浠湅璧锋潵閮藉儚锛?
+   CoreSight / ASM 绾惊鐜?   CoreSight / Memcpy 16k 10 绾跨▼
+   CoreSight / 绾跨▼寰幆 10 绾跨▼ - 妫€鏌?TID
    etc.
 
-如果工具二进制文件不存在于 tests/shell/coresight\*/ 中，这些 perf record 测试将不会运行，而是被跳过。如果你的硬件不支持 CoreSight，那么要么不构建带 CoreSight 支持的 perf，要么移除这些二进制文件，以免这些测试失败，让它们改为被跳过。
-
-这些测试会在当前工作目录（例如 tools/perf）中记录历史结果，并以 stats-\*.csv 这样的名称命名，例如：
-
+濡傛灉宸ュ叿浜岃繘鍒舵枃浠朵笉瀛樺湪浜?tests/shell/coresight\*/ 涓紝杩欎簺 perf record 娴嬭瘯灏嗕笉浼氳繍琛岋紝鑰屾槸琚烦杩囥€傚鏋滀綘鐨勭‖浠朵笉鏀寔 CoreSight锛岄偅涔堣涔堜笉鏋勫缓甯?CoreSight 鏀寔鐨?perf锛岃涔堢Щ闄よ繖浜涗簩杩涘埗鏂囦欢锛屼互鍏嶈繖浜涙祴璇曞け璐ワ紝璁╁畠浠敼涓鸿璺宠繃銆?
+杩欎簺娴嬭瘯浼氬湪褰撳墠宸ヤ綔鐩綍锛堜緥濡?tools/perf锛変腑璁板綍鍘嗗彶缁撴灉锛屽苟浠?stats-\*.csv 杩欐牱鐨勫悕绉板懡鍚嶏紝渚嬪锛?
    stats-asm_pure_loop-out.csv
    stats-memcpy_thread-16k_10.csv
    ...
 
-这些统计文件记录 perf 数据输出中 AUX 数据段的某些方面，统计某些特定编码的数量（一种以非常简单的方式确认其是否正常工作的方法）。CoreSight 的一个问题是，当需要记录的待记录数据量足够大时，其中一部分可能会由于处理器未能及时唤醒以从缓冲区读出所有数据等原因而丢失。你会注意到每次运行 perf test 收集到的数据量可能有很大差异。如果你想观察它随时间如何变化，只需多次运行 perf test，所有这些 csv 文件都会不断追加更多数据，供你之后检查、绘图或以其他方式使用，来判断情况变好还是变坏。
-
-这意味着有时这些测试会失败，因为它们没有捕获到所需的全部数据。这关乎随时间跟踪所产生的数据质量和数量，以及观察对 Linux 内核的更改何时改善了跟踪质量。
-
-请注意，其中一些测试运行时间相当长，特别是在处理 perf 数据文件并转储内容以检查其内部时。
-
-你可以通过在运行 perf 之前设置 PERF_TEST_CORESIGHT_STATDIR 环境变量来改变这些 csv 日志的存储位置
-```
+杩欎簺缁熻鏂囦欢璁板綍 perf 鏁版嵁杈撳嚭涓?AUX 鏁版嵁娈电殑鏌愪簺鏂归潰锛岀粺璁℃煇浜涚壒瀹氱紪鐮佺殑鏁伴噺锛堜竴绉嶄互闈炲父绠€鍗曠殑鏂瑰紡纭鍏舵槸鍚︽甯稿伐浣滅殑鏂规硶锛夈€侰oreSight 鐨勪竴涓棶棰樻槸锛屽綋闇€瑕佽褰曠殑寰呰褰曟暟鎹噺瓒冲澶ф椂锛屽叾涓竴閮ㄥ垎鍙兘浼氱敱浜庡鐞嗗櫒鏈兘鍙婃椂鍞ら啋浠ヤ粠缂撳啿鍖鸿鍑烘墍鏈夋暟鎹瓑鍘熷洜鑰屼涪澶便€備綘浼氭敞鎰忓埌姣忔杩愯 perf test 鏀堕泦鍒扮殑鏁版嵁閲忓彲鑳芥湁寰堝ぇ宸紓銆傚鏋滀綘鎯宠瀵熷畠闅忔椂闂村浣曞彉鍖栵紝鍙渶澶氭杩愯 perf test锛屾墍鏈夎繖浜?csv 鏂囦欢閮戒細涓嶆柇杩藉姞鏇村鏁版嵁锛屼緵浣犱箣鍚庢鏌ャ€佺粯鍥炬垨浠ュ叾浠栨柟寮忎娇鐢紝鏉ュ垽鏂儏鍐靛彉濂借繕鏄彉鍧忋€?
+杩欐剰鍛崇潃鏈夋椂杩欎簺娴嬭瘯浼氬け璐ワ紝鍥犱负瀹冧滑娌℃湁鎹曡幏鍒版墍闇€鐨勫叏閮ㄦ暟鎹€傝繖鍏充箮闅忔椂闂磋窡韪墍浜х敓鐨勬暟鎹川閲忓拰鏁伴噺锛屼互鍙婅瀵熷 Linux 鍐呮牳鐨勬洿鏀逛綍鏃舵敼鍠勪簡璺熻釜璐ㄩ噺銆?
+璇锋敞鎰忥紝鍏朵腑涓€浜涙祴璇曡繍琛屾椂闂寸浉褰撻暱锛岀壒鍒槸鍦ㄥ鐞?perf 鏁版嵁鏂囦欢骞惰浆鍌ㄥ唴瀹逛互妫€鏌ュ叾鍐呴儴鏃躲€?
+浣犲彲浠ラ€氳繃鍦ㄨ繍琛?perf 涔嬪墠璁剧疆 PERF_TEST_CORESIGHT_STATDIR 鐜鍙橀噺鏉ユ敼鍙樿繖浜?csv 鏃ュ織鐨勫瓨鍌ㄤ綅缃?```
 
    export PERF_TEST_CORESIGHT_STATDIR=/var/tmp
    perf test
 
 ```
-它们还会将生成的 perf 输出数据存储在当前
-```
+瀹冧滑杩樹細灏嗙敓鎴愮殑 perf 杈撳嚭鏁版嵁瀛樺偍鍦ㄥ綋鍓?```
 
    perf-asm_pure_loop-out.data
    perf-memcpy_thread-16k_10.data
    ...
 
 ```
-你可以通过设置
+浣犲彲浠ラ€氳繃璁剧疆
 ```
 
    PERF_TEST_CORESIGHT_DATADIR=/var/tmp
    perf test
 
 ```
-来改变 perf 数据文件的存储位置。如果你希望将测试输出保存在当前工作目录之外以进行长期存储和检查，可以设置上述环境变量。
+鏉ユ敼鍙?perf 鏁版嵁鏂囦欢鐨勫瓨鍌ㄤ綅缃€傚鏋滀綘甯屾湜灏嗘祴璇曡緭鍑轰繚瀛樺湪褰撳墠宸ヤ綔鐩綍涔嬪浠ヨ繘琛岄暱鏈熷瓨鍌ㄥ拰妫€鏌ワ紝鍙互璁剧疆涓婅堪鐜鍙橀噺銆?

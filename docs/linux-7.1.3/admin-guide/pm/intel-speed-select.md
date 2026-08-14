@@ -1,30 +1,21 @@
+﻿
+## Intel(R) Speed Select Technology 鐢ㄦ埛鎸囧崡
 
-## Intel(R) Speed Select Technology 用户指南
 
-
-Intel(R) Speed Select Technology（Intel(R) SST）提供了一组强大的新特性，
-可对 CPU 性能进行更精细的控制。借助 Intel(R) SST，一台服务器可以根据各种各样不同的
-工作负载需求，为功耗与性能进行配置。
-
-请参阅以下链接以概览该技术：
+Intel(R) Speed Select Technology锛圛ntel(R) SST锛夋彁渚涗簡涓€缁勫己澶х殑鏂扮壒鎬э紝
+鍙 CPU 鎬ц兘杩涜鏇寸簿缁嗙殑鎺у埗銆傚€熷姪 Intel(R) SST锛屼竴鍙版湇鍔″櫒鍙互鏍规嵁鍚勭鍚勬牱涓嶅悓鐨?宸ヤ綔璐熻浇闇€姹傦紝涓哄姛鑰椾笌鎬ц兘杩涜閰嶇疆銆?
+璇峰弬闃呬互涓嬮摼鎺ヤ互姒傝璇ユ妧鏈細
 
 - https://www.intel.com/content/www/us/en/architecture-and-technology/speed-select-technology-article.html
 - https://builders.intel.com/docs/networkbuilders/intel-speed-select-technology-base-frequency-enhancing-performance.pdf
 
-这些能力在一些较新一代的服务器平台中得到了进一步增强，在这些平台上，无需通过 BIOS 设置选项预先配置，
-即可动态地枚举并控制这些特性。这种动态配置是通过向硬件发送邮箱命令完成的。
-枚举并配置这些特性的一种方式是使用 Intel Speed Select 工具。
-
-本文档解释如何使用 Intel Speed Select 工具来枚举并控制 Intel(R) SST 特性。
-本文档给出示例命令，并解释这些命令如何改变被测系统下的功耗与性能profile。
-以这个工具为例，客户可以在他们的生产软件中复现该工具中所实现的消息交互。
-
-## intel-speed-select 配置工具
+杩欎簺鑳藉姏鍦ㄤ竴浜涜緝鏂颁竴浠ｇ殑鏈嶅姟鍣ㄥ钩鍙颁腑寰楀埌浜嗚繘涓€姝ュ寮猴紝鍦ㄨ繖浜涘钩鍙颁笂锛屾棤闇€閫氳繃 BIOS 璁剧疆閫夐」棰勫厛閰嶇疆锛?鍗冲彲鍔ㄦ€佸湴鏋氫妇骞舵帶鍒惰繖浜涚壒鎬с€傝繖绉嶅姩鎬侀厤缃槸閫氳繃鍚戠‖浠跺彂閫侀偖绠卞懡浠ゅ畬鎴愮殑銆?鏋氫妇骞堕厤缃繖浜涚壒鎬х殑涓€绉嶆柟寮忔槸浣跨敤 Intel Speed Select 宸ュ叿銆?
+鏈枃妗ｈВ閲婂浣曚娇鐢?Intel Speed Select 宸ュ叿鏉ユ灇涓惧苟鎺у埗 Intel(R) SST 鐗规€с€?鏈枃妗ｇ粰鍑虹ず渚嬪懡浠わ紝骞惰В閲婅繖浜涘懡浠ゅ浣曟敼鍙樿娴嬬郴缁熶笅鐨勫姛鑰椾笌鎬ц兘profile銆?浠ヨ繖涓伐鍏蜂负渚嬶紝瀹㈡埛鍙互鍦ㄤ粬浠殑鐢熶骇杞欢涓鐜拌宸ュ叿涓墍瀹炵幇鐨勬秷鎭氦浜掋€?
+## intel-speed-select 閰嶇疆宸ュ叿
 
 
-大多数 Linux 发行版软件包可能包含 "intel-speed-select" 工具。如果没有，
-可以通过从 kernel.org 下载 Linux 内核树来构建它。下载之后，无需构建完整内核即可构建该工具。
-
+澶у鏁?Linux 鍙戣鐗堣蒋浠跺寘鍙兘鍖呭惈 "intel-speed-select" 宸ュ叿銆傚鏋滄病鏈夛紝
+鍙互閫氳繃浠?kernel.org 涓嬭浇 Linux 鍐呮牳鏍戞潵鏋勫缓瀹冦€備笅杞戒箣鍚庯紝鏃犻渶鏋勫缓瀹屾暣鍐呮牳鍗冲彲鏋勫缓璇ュ伐鍏枫€?
 ```
 
 ```
@@ -32,7 +23,7 @@ Intel(R) Speed Select Technology（Intel(R) SST）提供了一组强大的新特
 # make
 # make install
 
-### 获取帮助
+### 鑾峰彇甯姪
 
 
 ```
@@ -40,8 +31,7 @@ Intel(R) Speed Select Technology（Intel(R) SST）提供了一组强大的新特
 ```
 # intel-speed-select --help
 
-top-level 帮助描述了参数与特性。注意还有一个
-```
+top-level 甯姪鎻忚堪浜嗗弬鏁颁笌鐗规€с€傛敞鎰忚繕鏈変竴涓?```
 
 ```
 # intel-speed-select perf-profile --help
@@ -49,7 +39,7 @@ top-level 帮助描述了参数与特性。注意还有一个
 ```
 # intel-speed-select perf-profile info --help
 
-### 平台能力摘要
+### 骞冲彴鑳藉姏鎽樿
 
 ```
 
@@ -72,20 +62,14 @@ top-level 帮助描述了参数与特性。注意还有一个
  Intel(R) SST-CP (feature core-power) is supported
 
 ```
-### Intel(R) Speed Select Technology - Performance Profile（Intel(R) SST-PP）
+### Intel(R) Speed Select Technology - Performance Profile锛圛ntel(R) SST-PP锛?
 
-
-这个特性允许基于工作负载性能需求动态地配置一台服务器。这在部署时帮助用户，
-因为他们不必静态地选择某个特定的服务器配置。这个 Intel(R) Speed Select Technology -
-Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每个系统有多个优化过的性能profile。
-每个 profile 定义了一组需要在线、其余离线的 CPU，以维持一个有保证的基准频率。
-一旦用户发出命令以使用某个特定的性能profile，并满足 CPU 在线/离线的要求，用户就可以预期基准频率会动态地改变。
-在使用 Intel Speed Select 工具时，这个特性被称为 "perf-profile"。
-
+杩欎釜鐗规€у厑璁稿熀浜庡伐浣滆礋杞芥€ц兘闇€姹傚姩鎬佸湴閰嶇疆涓€鍙版湇鍔″櫒銆傝繖鍦ㄩ儴缃叉椂甯姪鐢ㄦ埛锛?鍥犱负浠栦滑涓嶅繀闈欐€佸湴閫夋嫨鏌愪釜鐗瑰畾鐨勬湇鍔″櫒閰嶇疆銆傝繖涓?Intel(R) Speed Select Technology -
+Performance Profile锛圛ntel(R) SST-PP锛夌壒鎬у紩鍏ヤ簡涓€绉嶆満鍒讹紝鍏佽姣忎釜绯荤粺鏈夊涓紭鍖栬繃鐨勬€ц兘profile銆?姣忎釜 profile 瀹氫箟浜嗕竴缁勯渶瑕佸湪绾裤€佸叾浣欑绾跨殑 CPU锛屼互缁存寔涓€涓湁淇濊瘉鐨勫熀鍑嗛鐜囥€?涓€鏃︾敤鎴峰彂鍑哄懡浠や互浣跨敤鏌愪釜鐗瑰畾鐨勬€ц兘profile锛屽苟婊¤冻 CPU 鍦ㄧ嚎/绂荤嚎鐨勮姹傦紝鐢ㄦ埛灏卞彲浠ラ鏈熷熀鍑嗛鐜囦細鍔ㄦ€佸湴鏀瑰彉銆?鍦ㄤ娇鐢?Intel Speed Select 宸ュ叿鏃讹紝杩欎釜鐗规€ц绉颁负 "perf-profile"銆?
 #### Number or performance levels
 
 
-一个系统上可以有多个性能profile。要获取性能
+涓€涓郴缁熶笂鍙互鏈夊涓€ц兘profile銆傝鑾峰彇鎬ц兘
 ```
 
  # intel-speed-select perf-profile get-config-levels
@@ -101,14 +85,10 @@ Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每�
         get-config-levels:4
 
 ```
-在这个被测系统上，除了基础性能profile（即性能级别 0）之外，还有 4 个性能profile。
+鍦ㄨ繖涓娴嬬郴缁熶笂锛岄櫎浜嗗熀纭€鎬ц兘profile锛堝嵆鎬ц兘绾у埆 0锛変箣澶栵紝杩樻湁 4 涓€ц兘profile銆?
+#### 閿佸畾/瑙ｉ攣鐘舵€?
 
-#### 锁定/解锁状态
-
-
-即便有多个性能profile，它们也有可能是被锁定的。如果它们被锁定，用户就无法发出命令来改变性能状态。
-有可能存在某个 BIOS 设置可以解锁，或者咨询你的系统供应商。
-
+鍗充究鏈夊涓€ц兘profile锛屽畠浠篃鏈夊彲鑳芥槸琚攣瀹氱殑銆傚鏋滃畠浠閿佸畾锛岀敤鎴峰氨鏃犳硶鍙戝嚭鍛戒护鏉ユ敼鍙樻€ц兘鐘舵€併€?鏈夊彲鑳藉瓨鍦ㄦ煇涓?BIOS 璁剧疆鍙互瑙ｉ攣锛屾垨鑰呭挩璇綘鐨勭郴缁熶緵搴斿晢銆?
 ```
 
  # intel-speed-select perf-profile get-lock-status
@@ -124,10 +104,8 @@ Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每�
         get-lock-status:0
 
 ```
-在这种情况下，锁定状态为 0，意味着系统处于解锁状态。
-
-#### 性能级别的属性
-
+鍦ㄨ繖绉嶆儏鍐典笅锛岄攣瀹氱姸鎬佷负 0锛屾剰鍛崇潃绯荤粺澶勪簬瑙ｉ攣鐘舵€併€?
+#### 鎬ц兘绾у埆鐨勫睘鎬?
 
 ```
 
@@ -149,13 +127,10 @@ Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每�
 	...
 
 ```
-这里 -l 选项用于指定一个性能级别。
-
-如果省略 -l 选项，那么这个命令将打印所有性能级别的信息。上面的命令打印的是性能级别 0 的属性。
-
-对于这个性能profile，由 "enable-cpu-mask/enable-cpu-list" 显示的最大 CPU 列表可以 "online"。
-当满足这个条件时，就可以维持 2600 MHz 的基准频率。想了解更多，请执行
-"intel-speed-select perf-profile info" 以查看性能
+杩欓噷 -l 閫夐」鐢ㄤ簬鎸囧畾涓€涓€ц兘绾у埆銆?
+濡傛灉鐪佺暐 -l 閫夐」锛岄偅涔堣繖涓懡浠ゅ皢鎵撳嵃鎵€鏈夋€ц兘绾у埆鐨勪俊鎭€備笂闈㈢殑鍛戒护鎵撳嵃鐨勬槸鎬ц兘绾у埆 0 鐨勫睘鎬с€?
+瀵逛簬杩欎釜鎬ц兘profile锛岀敱 "enable-cpu-mask/enable-cpu-list" 鏄剧ず鐨勬渶澶?CPU 鍒楄〃鍙互 "online"銆?褰撴弧瓒宠繖涓潯浠舵椂锛屽氨鍙互缁存寔 2600 MHz 鐨勫熀鍑嗛鐜囥€傛兂浜嗚В鏇村锛岃鎵ц
+"intel-speed-select perf-profile info" 浠ユ煡鐪嬫€ц兘
 ```
 
  # intel-speed-select perf-profile info -l 4
@@ -176,10 +151,8 @@ Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每�
 	...
 
 ```
-"enable-cpu-mask/enable-cpu-list" 中的 CPU 更少。因此，如果用户只将这些 CPU 保持在线，
-而将其余的 "offline"，那么基准频率就会从性能级别 0 时的 2.6 GHz 提升到 2.8 GHz。
-
-#### 获取当前性能级别
+"enable-cpu-mask/enable-cpu-list" 涓殑 CPU 鏇村皯銆傚洜姝わ紝濡傛灉鐢ㄦ埛鍙皢杩欎簺 CPU 淇濇寔鍦ㄧ嚎锛?鑰屽皢鍏朵綑鐨?"offline"锛岄偅涔堝熀鍑嗛鐜囧氨浼氫粠鎬ц兘绾у埆 0 鏃剁殑 2.6 GHz 鎻愬崌鍒?2.8 GHz銆?
+#### 鑾峰彇褰撳墠鎬ц兘绾у埆
 
 
 ```
@@ -200,11 +173,9 @@ Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每�
  2600000
 
 ```
-这与从 "perf-profile info" 命令为性能级别 0 显示的 base-frequency (MHz) 字段值相匹配
-（cpufreq 频率的单位是 KHz）。
-
-要检查平均频率是否等于 100% 繁忙时的基准频率，可以
-```
+杩欎笌浠?"perf-profile info" 鍛戒护涓烘€ц兘绾у埆 0 鏄剧ず鐨?base-frequency (MHz) 瀛楁鍊肩浉鍖归厤
+锛坈pufreq 棰戠巼鐨勫崟浣嶆槸 KHz锛夈€?
+瑕佹鏌ュ钩鍧囬鐜囨槸鍚︾瓑浜?100% 绻佸繖鏃剁殑鍩哄噯棰戠巼锛屽彲浠?```
 
 ```
 # echo 1 > /sys/devices/system/cpu/intel_pstate/no_turbo
@@ -227,7 +198,7 @@ Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每�
 
 
 ```
-#### 改变性能级别
+#### 鏀瑰彉鎬ц兘绾у埆
 
 
 ```
@@ -242,29 +213,20 @@ Performance Profile（Intel(R) SST-PP）特性引入了一种机制，允许每�
         set_tdp_level:success
 
 ```
-在上面的命令中，"-o" 是可选的。如果指定了它，那么它还会让不在这个性能级别的
-enable_cpu_mask 中的 CPU 离线。
-
+鍦ㄤ笂闈㈢殑鍛戒护涓紝"-o" 鏄彲閫夌殑銆傚鏋滄寚瀹氫簡瀹冿紝閭ｄ箞瀹冭繕浼氳涓嶅湪杩欎釜鎬ц兘绾у埆鐨?enable_cpu_mask 涓殑 CPU 绂荤嚎銆?
 ```
 
  #cat /sys/devices/system/cpu/cpu0/cpufreq/base_frequency
  2800000
 
 ```
-这表明基准频率现在从性能级别 0 时的 2600 MHz 提升到了性能级别 4 时的 2800 MHz。
-结果就是，任何能够使用更少 CPU 的工作负载，相比性能级别 0 都可以看到 200 MHz 的提升。
-
-#### 通过 BMC 接口改变性能级别
+杩欒〃鏄庡熀鍑嗛鐜囩幇鍦ㄤ粠鎬ц兘绾у埆 0 鏃剁殑 2600 MHz 鎻愬崌鍒颁簡鎬ц兘绾у埆 4 鏃剁殑 2800 MHz銆?缁撴灉灏辨槸锛屼换浣曡兘澶熶娇鐢ㄦ洿灏?CPU 鐨勫伐浣滆礋杞斤紝鐩告瘮鎬ц兘绾у埆 0 閮藉彲浠ョ湅鍒?200 MHz 鐨勬彁鍗囥€?
+#### 閫氳繃 BMC 鎺ュ彛鏀瑰彉鎬ц兘绾у埆
 
 
-可以使用带外（OOB）代理（通过某些远程管理控制台，经由 BMC "Baseboard Management Controller"
-基板管理控制器接口）来改变 SST-PP 级别。这种模式从 Sapphire Rapids 处理器代开始支持。
-支持这种模式的
-内核与工具改动被加入到了 Linux 内核 5.18 版本。要启用这个特性，需要内核配置
-"CONFIG_INTEL_HFI_THERMAL"。支持这个特性的工具的最低版本是 "v1.12"，它是 Linux 内核 5.18 版本的一部分。
-
-为了支持这样的配置，这个工具可以作为守护进程使用。添加
-```
+鍙互浣跨敤甯﹀锛圤OB锛変唬鐞嗭紙閫氳繃鏌愪簺杩滅▼绠＄悊鎺у埗鍙帮紝缁忕敱 BMC "Baseboard Management Controller"
+鍩烘澘绠＄悊鎺у埗鍣ㄦ帴鍙ｏ級鏉ユ敼鍙?SST-PP 绾у埆銆傝繖绉嶆ā寮忎粠 Sapphire Rapids 澶勭悊鍣ㄤ唬寮€濮嬫敮鎸併€?鏀寔杩欑妯″紡鐨?鍐呮牳涓庡伐鍏锋敼鍔ㄨ鍔犲叆鍒颁簡 Linux 鍐呮牳 5.18 鐗堟湰銆傝鍚敤杩欎釜鐗规€э紝闇€瑕佸唴鏍搁厤缃?"CONFIG_INTEL_HFI_THERMAL"銆傛敮鎸佽繖涓壒鎬х殑宸ュ叿鐨勬渶浣庣増鏈槸 "v1.12"锛屽畠鏄?Linux 鍐呮牳 5.18 鐗堟湰鐨勪竴閮ㄥ垎銆?
+涓轰簡鏀寔杩欐牱鐨勯厤缃紝杩欎釜宸ュ叿鍙互浣滀负瀹堟姢杩涚▼浣跨敤銆傛坊鍔?```
 
  # intel-speed-select --oob
  Intel(R) Speed Select Technology
@@ -272,16 +234,13 @@ enable_cpu_mask 中的 CPU 离线。
  OOB mode is enabled and will run as daemon
 
 ```
-在这种模式下，该工具将根据新的性能级别来使 CPU 在线/离线。
+鍦ㄨ繖绉嶆ā寮忎笅锛岃宸ュ叿灏嗘牴鎹柊鐨勬€ц兘绾у埆鏉ヤ娇 CPU 鍦ㄧ嚎/绂荤嚎銆?
+### 妫€鏌ュ叾浠?Intel(R) SST 鐗规€х殑瀛樺湪
 
-### 检查其他 Intel(R) SST 特性的存在
 
-
-每个性能profile 也指明了是否支持另外两个 Intel(R) SST 特性（Intel(R) Speed Select Technology -
-Base Frequency（Intel(R) SST-BF）与 Intel(R) Speed Select Technology - Turbo Frequency（Intel(R) SST-TF））。
-
-例如，从上面的 "perf-profile info" 输出中，对于级别 0 与级别 4：
-
+姣忎釜鎬ц兘profile 涔熸寚鏄庝簡鏄惁鏀寔鍙﹀涓や釜 Intel(R) SST 鐗规€э紙Intel(R) Speed Select Technology -
+Base Frequency锛圛ntel(R) SST-BF锛変笌 Intel(R) Speed Select Technology - Turbo Frequency锛圛ntel(R) SST-TF锛夛級銆?
+渚嬪锛屼粠涓婇潰鐨?"perf-profile info" 杈撳嚭涓紝瀵逛簬绾у埆 0 涓庣骇鍒?4锛?
 ```
 
        speed-select-turbo-freq:disabled
@@ -294,31 +253,20 @@ Base Frequency（Intel(R) SST-BF）与 Intel(R) Speed Select Technology - Turbo 
        speed-select-base-freq:unsupported
 
 ```
-鉴于这些结果，相比性能级别 0，在级别 4 中 "speed-select-base-freq"（Intel(R) SST-BF）从 "disabled" 变成了 "unsupported"。
+閴翠簬杩欎簺缁撴灉锛岀浉姣旀€ц兘绾у埆 0锛屽湪绾у埆 4 涓?"speed-select-base-freq"锛圛ntel(R) SST-BF锛変粠 "disabled" 鍙樻垚浜?"unsupported"銆?
+杩欐剰鍛崇潃锛屽湪鎬ц兘绾у埆 4 鏃讹紝"speed-select-base-freq" 鐗规€т笉琚敮鎸併€傜劧鑰岋紝鍦ㄦ€ц兘绾у埆 0 鏃讹紝杩欎釜鐗规€ф槸 "supported"锛?浣嗗綋鍓?"disabled"锛屾剰鍛崇潃鐢ㄦ埛灏氭湭婵€娲昏繖涓壒鎬с€傝€?"speed-select-turbo-freq"锛圛ntel(R) SST-TF锛夊湪涓や釜鎬ц兘绾у埆閮藉彈鏀寔锛?浣嗗綋鍓嶆湭琚敤鎴锋縺娲汇€?
+Intel(R) SST-BF 涓?Intel(R) SST-TF 鐗规€ф瀯寤哄湪涓€涓绉颁负 Intel(R) Speed Select Technology -
+Core Power锛圛ntel(R) SST-CP锛夌殑鍩虹鎶€鏈箣涓娿€傚綋骞冲彴涓婃敮鎸?Intel(R) SST-BF 鎴?Intel(R) SST-TF 鏃讹紝
+骞冲彴鍥轰欢浼氬惎鐢ㄨ繖涓壒鎬с€?
+### Intel(R) Speed Select Technology Core Power锛圛ntel(R) SST-CP锛?
 
-这意味着，在性能级别 4 时，"speed-select-base-freq" 特性不被支持。然而，在性能级别 0 时，这个特性是 "supported"，
-但当前 "disabled"，意味着用户尚未激活这个特性。而 "speed-select-turbo-freq"（Intel(R) SST-TF）在两个性能级别都受支持，
-但当前未被用户激活。
-
-Intel(R) SST-BF 与 Intel(R) SST-TF 特性构建在一个被称为 Intel(R) Speed Select Technology -
-Core Power（Intel(R) SST-CP）的基础技术之上。当平台上支持 Intel(R) SST-BF 或 Intel(R) SST-TF 时，
-平台固件会启用这个特性。
-
-### Intel(R) Speed Select Technology Core Power（Intel(R) SST-CP）
-
-
-Intel(R) Speed Select Technology Core Power（Intel(R) SST-CP）是一个允许用户定义每核优先级的接口。
-这定义了一种在存在功耗受限场景时在核之间分配功耗的机制。这定义了一种服务等级（CLOS）配置。
-
-用户可以配置多达 4 个服务等级配置。每个 CLOS 组配置允许定义一些参数，这些参数影响频率如何被限制以及功耗如何被分配。
-每个 CPU 核都可以绑定到一个服务等级，从而关联到相应的优先级。粒度是核级别，而非每个 CPU 级别。
-
-#### 启用基于 CLOS 的优先级排序
+Intel(R) Speed Select Technology Core Power锛圛ntel(R) SST-CP锛夋槸涓€涓厑璁哥敤鎴峰畾涔夋瘡鏍镐紭鍏堢骇鐨勬帴鍙ｃ€?杩欏畾涔変簡涓€绉嶅湪瀛樺湪鍔熻€楀彈闄愬満鏅椂鍦ㄦ牳涔嬮棿鍒嗛厤鍔熻€楃殑鏈哄埗銆傝繖瀹氫箟浜嗕竴绉嶆湇鍔＄瓑绾э紙CLOS锛夐厤缃€?
+鐢ㄦ埛鍙互閰嶇疆澶氳揪 4 涓湇鍔＄瓑绾ч厤缃€傛瘡涓?CLOS 缁勯厤缃厑璁稿畾涔変竴浜涘弬鏁帮紝杩欎簺鍙傛暟褰卞搷棰戠巼濡備綍琚檺鍒朵互鍙婂姛鑰楀浣曡鍒嗛厤銆?姣忎釜 CPU 鏍搁兘鍙互缁戝畾鍒颁竴涓湇鍔＄瓑绾э紝浠庤€屽叧鑱斿埌鐩稿簲鐨勪紭鍏堢骇銆傜矑搴︽槸鏍哥骇鍒紝鑰岄潪姣忎釜 CPU 绾у埆銆?
+#### 鍚敤鍩轰簬 CLOS 鐨勪紭鍏堢骇鎺掑簭
 
 
-要使用基于 CLOS 的优先级排序特性，必须告知固件启用并使用某种优先级类型。每个平台有一个默认的优先级类型，
-它可以通过可选的命令行参数改变。
-
+瑕佷娇鐢ㄥ熀浜?CLOS 鐨勪紭鍏堢骇鎺掑簭鐗规€э紝蹇呴』鍛婄煡鍥轰欢鍚敤骞朵娇鐢ㄦ煇绉嶄紭鍏堢骇绫诲瀷銆傛瘡涓钩鍙版湁涓€涓粯璁ょ殑浼樺厛绾х被鍨嬶紝
+瀹冨彲浠ラ€氳繃鍙€夌殑鍛戒护琛屽弬鏁版敼鍙樸€?
 ```
 
  # intel-speed-select core-power enable --help
@@ -329,21 +277,14 @@ Intel(R) Speed Select Technology Core Power（Intel(R) SST-CP）是一个允许�
 		 0: Proportional, 1: Ordered
 
 ```
-有两种优先级类型：
-
+鏈変袱绉嶄紭鍏堢骇绫诲瀷锛?
 - Ordered
 
-Ordered 节流（throttling）的优先级是根据所分配的 CLOS 组的索引定义的。其中 CLOS0 获得最高优先级（最后被节流）。
-
-优先级顺序是：
-CLOS0 > CLOS1 > CLOS2 > CLOS3。
-
+Ordered 鑺傛祦锛坱hrottling锛夌殑浼樺厛绾ф槸鏍规嵁鎵€鍒嗛厤鐨?CLOS 缁勭殑绱㈠紩瀹氫箟鐨勩€傚叾涓?CLOS0 鑾峰緱鏈€楂樹紭鍏堢骇锛堟渶鍚庤鑺傛祦锛夈€?
+浼樺厛绾ч『搴忔槸锛?CLOS0 > CLOS1 > CLOS2 > CLOS3銆?
 - Proportional
 
-当使用比例（proportional）优先级时，有一个额外的参数叫做 frequency_weight，它可以针对每个 CLOS 组指定。
-比例优先级的目标是首先为每个核提供所请求的最小值，然后按照定义的权重成比例地分配所有剩余（盈余/亏空）的预算。
-这个比例优先级可以使用 "core-power config" 命令来配置。
-
+褰撲娇鐢ㄦ瘮渚嬶紙proportional锛変紭鍏堢骇鏃讹紝鏈変竴涓澶栫殑鍙傛暟鍙仛 frequency_weight锛屽畠鍙互閽堝姣忎釜 CLOS 缁勬寚瀹氥€?姣斾緥浼樺厛绾х殑鐩爣鏄鍏堜负姣忎釜鏍告彁渚涙墍璇锋眰鐨勬渶灏忓€硷紝鐒跺悗鎸夌収瀹氫箟鐨勬潈閲嶆垚姣斾緥鍦板垎閰嶆墍鏈夊墿浣欙紙鐩堜綑/浜忕┖锛夌殑棰勭畻銆?杩欎釜姣斾緥浼樺厛绾у彲浠ヤ娇鐢?"core-power config" 鍛戒护鏉ラ厤缃€?
 ```
 
  # intel-speed-select core-power enable
@@ -361,9 +302,7 @@ CLOS0 > CLOS1 > CLOS2 > CLOS3。
         enable:success
 
 ```
-这个启用的范围在每个 package 包含多个 die 时是 per package 或 die 范围的。
-要检查 CLOS 是否启用并获取优先级类型，可以使用 "core-power info" 命令。
-例如，要检查 core-power 特性的状态，
+杩欎釜鍚敤鐨勮寖鍥村湪姣忎釜 package 鍖呭惈澶氫釜 die 鏃舵槸 per package 鎴?die 鑼冨洿鐨勩€?瑕佹鏌?CLOS 鏄惁鍚敤骞惰幏鍙栦紭鍏堢骇绫诲瀷锛屽彲浠ヤ娇鐢?"core-power info" 鍛戒护銆?渚嬪锛岃妫€鏌?core-power 鐗规€х殑鐘舵€侊紝
 ```
 
  # intel-speed-select -c 0 core-power info
@@ -387,13 +326,10 @@ CLOS0 > CLOS1 > CLOS2 > CLOS3。
         priority-type:proportional
 
 ```
-#### 配置 CLOS 组
+#### 閰嶇疆 CLOS 缁?
 
-
-每个 CLOS 组都有自己的属性，包括 min、max、freq_weight 与 desired。
-这些参数可以用 "core-power config" 命令来配置。如果用户跳过了设置某个参数（除了 clos id 之外），
-将使用默认值，clos id 是
-```
+姣忎釜 CLOS 缁勯兘鏈夎嚜宸辩殑灞炴€э紝鍖呮嫭 min銆乵ax銆乫req_weight 涓?desired銆?杩欎簺鍙傛暟鍙互鐢?"core-power config" 鍛戒护鏉ラ厤缃€傚鏋滅敤鎴疯烦杩囦簡璁剧疆鏌愪釜鍙傛暟锛堥櫎浜?clos id 涔嬪锛夛紝
+灏嗕娇鐢ㄩ粯璁ゅ€硷紝clos id 鏄?```
 
  # intel-speed-select core-power config --help
  Intel(R) Speed Select Technology
@@ -428,13 +364,11 @@ CLOS0 > CLOS1 > CLOS2 > CLOS3。
         config:success
 
 ```
-用户可以选择改变默认值。例如，用户可以改变 "min" 并将基准频率设为总能获得有保证的基准频率。
+鐢ㄦ埛鍙互閫夋嫨鏀瑰彉榛樿鍊笺€備緥濡傦紝鐢ㄦ埛鍙互鏀瑰彉 "min" 骞跺皢鍩哄噯棰戠巼璁句负鎬昏兘鑾峰緱鏈変繚璇佺殑鍩哄噯棰戠巼銆?
+#### 鑾峰彇褰撳墠 CLOS 閰嶇疆
 
-#### 获取当前 CLOS 配置
 
-
-要检查当前配置，可以使用 "core-power get-config"。对于
-```
+瑕佹鏌ュ綋鍓嶉厤缃紝鍙互浣跨敤 "core-power get-config"銆傚浜?```
 
  # intel-speed-select core-power get-config -c 0
  Intel(R) Speed Select Technology
@@ -461,8 +395,7 @@ CLOS0 > CLOS1 > CLOS2 > CLOS3。
         clos-desired:0 MHz
 
 ```
-#### 将一个 CPU 与一个 CLOS 组关联
-
+#### 灏嗕竴涓?CPU 涓庝竴涓?CLOS 缁勫叧鑱?
 
 ```
 
@@ -485,11 +418,9 @@ CLOS0 > CLOS1 > CLOS2 > CLOS3。
         assoc:success
 
 ```
-一旦一个 CPU 被关联，它的兄弟 CPU 也会被关联到一个 CLOS 组。一旦关联，要避免改变 Linux "cpufreq"
-子系统的缩放频率限制。
-
-要检查一个 CPU 已有的关联，可以使用 "core-power get-assoc" 命令，
-```
+涓€鏃︿竴涓?CPU 琚叧鑱旓紝瀹冪殑鍏勫紵 CPU 涔熶細琚叧鑱斿埌涓€涓?CLOS 缁勩€備竴鏃﹀叧鑱旓紝瑕侀伩鍏嶆敼鍙?Linux "cpufreq"
+瀛愮郴缁熺殑缂╂斁棰戠巼闄愬埗銆?
+瑕佹鏌ヤ竴涓?CPU 宸叉湁鐨勫叧鑱旓紝鍙互浣跨敤 "core-power get-assoc" 鍛戒护锛?```
 
  # intel-speed-select -c 10 core-power get-assoc
  Intel(R) Speed Select Technology
@@ -501,10 +432,9 @@ CLOS0 > CLOS1 > CLOS2 > CLOS3。
         clos:3
 
 ```
-这表明 CPU 10 是 CLOS 组 3 的一部分。
+杩欒〃鏄?CPU 10 鏄?CLOS 缁?3 鐨勪竴閮ㄥ垎銆?
 
-
-#### 禁用基于 CLOS 的优先级排序
+#### 绂佺敤鍩轰簬 CLOS 鐨勪紭鍏堢骇鎺掑簭
 
 
 ```
@@ -512,24 +442,14 @@ CLOS0 > CLOS1 > CLOS2 > CLOS3。
 ```
 # intel-speed-select core-power disable
 
-像 Intel(R) SST-TF 这样的一些特性只有在启用了基于 CLOS 的优先级排序时才能被启用。
-出于这个原因，在 Intel(R) SST-TF 已启用时禁用它可能导致 Intel(R) SST-TF 失败。
-如果 Intel(R) SST-TF 已经启用，这将导致 "disable" 命令显示错误。
-相应地，要禁用它，必须先禁用 Intel(R) SST-TF 特性。
+鍍?Intel(R) SST-TF 杩欐牱鐨勪竴浜涚壒鎬у彧鏈夊湪鍚敤浜嗗熀浜?CLOS 鐨勪紭鍏堢骇鎺掑簭鏃舵墠鑳借鍚敤銆?鍑轰簬杩欎釜鍘熷洜锛屽湪 Intel(R) SST-TF 宸插惎鐢ㄦ椂绂佺敤瀹冨彲鑳藉鑷?Intel(R) SST-TF 澶辫触銆?濡傛灉 Intel(R) SST-TF 宸茬粡鍚敤锛岃繖灏嗗鑷?"disable" 鍛戒护鏄剧ず閿欒銆?鐩稿簲鍦帮紝瑕佺鐢ㄥ畠锛屽繀椤诲厛绂佺敤 Intel(R) SST-TF 鐗规€с€?
+### Intel(R) Speed Select Technology - Base Frequency锛圛ntel(R) SST-BF锛?
 
-### Intel(R) Speed Select Technology - Base Frequency（Intel(R) SST-BF）
-
-
-Intel(R) Speed Select Technology - Base Frequency（Intel(R) SST-BF）特性让用户能够控制基准频率。
-如果某些关键的工作负载线程要求恒定的高保证性能，那么这个特性可以用来在特定的 CPU 集合（高优先级 CPU）上以更高的基准频率
-执行该线程，代价是其他 CPU 上较低的基准频率（低优先级 CPU）。这个特性不需要低优先级 CPU 离线。
-
-Intel(R) SST-BF 的支持依赖于 Intel(R) Speed Select Technology -
-Performance Profile（Intel(R) SST-PP）性能级别配置。有可能只有某些性能级别支持 Intel(R) SST-BF。
-也有可能只有基础性能级别（level = 0）支持 Intel(R) SST-BF。
-因此，首先选择想要的性能级别来启用这个特性。
-
-在这个被测系统中，Intel(R) SST-BF 在基础
+Intel(R) Speed Select Technology - Base Frequency锛圛ntel(R) SST-BF锛夌壒鎬ц鐢ㄦ埛鑳藉鎺у埗鍩哄噯棰戠巼銆?濡傛灉鏌愪簺鍏抽敭鐨勫伐浣滆礋杞界嚎绋嬭姹傛亽瀹氱殑楂樹繚璇佹€ц兘锛岄偅涔堣繖涓壒鎬у彲浠ョ敤鏉ュ湪鐗瑰畾鐨?CPU 闆嗗悎锛堥珮浼樺厛绾?CPU锛変笂浠ユ洿楂樼殑鍩哄噯棰戠巼
+鎵ц璇ョ嚎绋嬶紝浠ｄ环鏄叾浠?CPU 涓婅緝浣庣殑鍩哄噯棰戠巼锛堜綆浼樺厛绾?CPU锛夈€傝繖涓壒鎬т笉闇€瑕佷綆浼樺厛绾?CPU 绂荤嚎銆?
+Intel(R) SST-BF 鐨勬敮鎸佷緷璧栦簬 Intel(R) Speed Select Technology -
+Performance Profile锛圛ntel(R) SST-PP锛夋€ц兘绾у埆閰嶇疆銆傛湁鍙兘鍙湁鏌愪簺鎬ц兘绾у埆鏀寔 Intel(R) SST-BF銆?涔熸湁鍙兘鍙湁鍩虹鎬ц兘绾у埆锛坙evel = 0锛夋敮鎸?Intel(R) SST-BF銆?鍥犳锛岄鍏堥€夋嫨鎯宠鐨勬€ц兘绾у埆鏉ュ惎鐢ㄨ繖涓壒鎬с€?
+鍦ㄨ繖涓娴嬬郴缁熶腑锛孖ntel(R) SST-BF 鍦ㄥ熀纭€
 ```
 
  # intel-speed-select -c 0 perf-profile info -l 0
@@ -545,25 +465,18 @@ Performance Profile（Intel(R) SST-PP）性能级别配置。有可能只有某�
 	...
 
 ```
-在启用 Intel(R) SST-BF 并测量其对工作负载性能的影响之前，先执行一些工作负载并测量性能，得到一个用于比较的基线性能。
-
-这里用户想要更多有保证的性能。出于这个原因，很可能
-```
+鍦ㄥ惎鐢?Intel(R) SST-BF 骞舵祴閲忓叾瀵瑰伐浣滆礋杞芥€ц兘鐨勫奖鍝嶄箣鍓嶏紝鍏堟墽琛屼竴浜涘伐浣滆礋杞藉苟娴嬮噺鎬ц兘锛屽緱鍒颁竴涓敤浜庢瘮杈冪殑鍩虹嚎鎬ц兘銆?
+杩欓噷鐢ㄦ埛鎯宠鏇村鏈変繚璇佺殑鎬ц兘銆傚嚭浜庤繖涓師鍥狅紝寰堝彲鑳?```
 
 ```
 #echo 1 > /sys/devices/system/cpu/intel_pstate/no_turbo
 ```
-基于 "intel-speed-select perf-profile info -l 0" 的输出，有保证频率的基准频率为 2600 MHz。
+鍩轰簬 "intel-speed-select perf-profile info -l 0" 鐨勮緭鍑猴紝鏈変繚璇侀鐜囩殑鍩哄噯棰戠巼涓?2600 MHz銆?
 
+#### 娴嬮噺鍩虹嚎鎬ц兘浠ヨ繘琛屾瘮杈?
 
-#### 测量基线性能以进行比较
-
-
-为了比较，挑选一个多线程工作负载，其中每个线程可以被调度到不同的 CPU 上。
-"Hackbench pipe" 测试是如何使用 Intel(R) SST-BF 提升性能的一个好例子。
-
-下面，这个工作负载测量的是平均调度器唤醒延迟，因此一个更低
-```
+涓轰簡姣旇緝锛屾寫閫変竴涓绾跨▼宸ヤ綔璐熻浇锛屽叾涓瘡涓嚎绋嬪彲浠ヨ璋冨害鍒颁笉鍚岀殑 CPU 涓娿€?"Hackbench pipe" 娴嬭瘯鏄浣曚娇鐢?Intel(R) SST-BF 鎻愬崌鎬ц兘鐨勪竴涓ソ渚嬪瓙銆?
+涓嬮潰锛岃繖涓伐浣滆礋杞芥祴閲忕殑鏄钩鍧囪皟搴﹀櫒鍞ら啋寤惰繜锛屽洜姝や竴涓洿浣?```
 
  # taskset -c 3,4 perf bench -r 100 sched pipe
  # Running 'sched/pipe' benchmark:
@@ -573,8 +486,7 @@ Performance Profile（Intel(R) SST-PP）性能级别配置。有可能只有某�
          163868 ops/sec
 
 ```
-在运行上面的测试时，如果我们取 turbostat 的输出，它将向我们显示有 2 个 CPU 很繁忙并达到了最大频率
-（即基准
+鍦ㄨ繍琛屼笂闈㈢殑娴嬭瘯鏃讹紝濡傛灉鎴戜滑鍙?turbostat 鐨勮緭鍑猴紝瀹冨皢鍚戞垜浠樉绀烘湁 2 涓?CPU 寰堢箒蹇欏苟杈惧埌浜嗘渶澶ч鐜?锛堝嵆鍩哄噯
 ```
 
  #turbostat -c 0-13 --show Package,Core,CPU,Bzy_MHz -i 1
@@ -595,12 +507,11 @@ Performance Profile（Intel(R) SST-PP）性能级别配置。有可能只有某�
  0		13	13	1000
 
 ```
-从上面的 turbostat 输出可以看出，CPU 3 与 4 都非常繁忙，并达到了 2600 MHz 的完整有保证频率。
+浠庝笂闈㈢殑 turbostat 杈撳嚭鍙互鐪嬪嚭锛孋PU 3 涓?4 閮介潪甯哥箒蹇欙紝骞惰揪鍒颁簡 2600 MHz 鐨勫畬鏁存湁淇濊瘉棰戠巼銆?
+#### Intel(R) SST-BF 鑳藉姏
 
-#### Intel(R) SST-BF 能力
 
-
-要获取当前性能级别 0 下 Intel(R) SST-BF 的能力，
+瑕佽幏鍙栧綋鍓嶆€ц兘绾у埆 0 涓?Intel(R) SST-BF 鐨勮兘鍔涳紝
 ```
 
  # intel-speed-select base-freq info -l 0
@@ -618,13 +529,9 @@ Performance Profile（Intel(R) SST-PP）性能级别配置。有可能只有某�
         thermal-design-power(W):205
 
 ```
-上述能力表明，这个系统上有一些 CPU 可以提供 3000 MHz 的基准频率，而在这个性能级别下的标准基准频率是
-（不同）。尽管如此，这些 CPU 是固定的，它们通过 high-priority-cpu-list/high-priority-cpu-mask 呈现。
-但如果选择了这个 Intel(R) SST-BF 特性，低优先级 CPU（不在 high-priority-cpu-list 中的）最多只能提供 2400 MHz。
-因此，如果这种对低优先级 CPU 的截断是可以接受的，那么用户可以针对上面这个 "sched pipe" 工作负载启用 Intel(R)
-SST-BF 特性，因为只使用了两个 CPU，它们可以被调度到高优先级 CPU 上，并获得 400 MHz 的提升。
-
-#### 启用 Intel(R) SST-BF
+涓婅堪鑳藉姏琛ㄦ槑锛岃繖涓郴缁熶笂鏈変竴浜?CPU 鍙互鎻愪緵 3000 MHz 鐨勫熀鍑嗛鐜囷紝鑰屽湪杩欎釜鎬ц兘绾у埆涓嬬殑鏍囧噯鍩哄噯棰戠巼鏄?锛堜笉鍚岋級銆傚敖绠″姝わ紝杩欎簺 CPU 鏄浐瀹氱殑锛屽畠浠€氳繃 high-priority-cpu-list/high-priority-cpu-mask 鍛堢幇銆?浣嗗鏋滈€夋嫨浜嗚繖涓?Intel(R) SST-BF 鐗规€э紝浣庝紭鍏堢骇 CPU锛堜笉鍦?high-priority-cpu-list 涓殑锛夋渶澶氬彧鑳芥彁渚?2400 MHz銆?鍥犳锛屽鏋滆繖绉嶅浣庝紭鍏堢骇 CPU 鐨勬埅鏂槸鍙互鎺ュ彈鐨勶紝閭ｄ箞鐢ㄦ埛鍙互閽堝涓婇潰杩欎釜 "sched pipe" 宸ヤ綔璐熻浇鍚敤 Intel(R)
+SST-BF 鐗规€э紝鍥犱负鍙娇鐢ㄤ簡涓や釜 CPU锛屽畠浠彲浠ヨ璋冨害鍒伴珮浼樺厛绾?CPU 涓婏紝骞惰幏寰?400 MHz 鐨勬彁鍗囥€?
+#### 鍚敤 Intel(R) SST-BF
 
 
 ```
@@ -644,20 +551,17 @@ SST-BF 特性，因为只使用了两个 CPU，它们可以被调度到高优先
         enable:success
 
 ```
-在这种情况下，-a 选项是可选的。这不仅启用了 Intel(R) SST-BF，还使用 Intel(R) Speed Select Technology
-Core Power（Intel(R) SST-CP）特性来调整核的优先级。这个选项将每个 Intel(R) Speed Select Technology -
-Performance Profile（Intel(R) SST-PP）类的性能设为最大性能，以便硬件为每个 CPU 提供尽可能最大的性能。
+鍦ㄨ繖绉嶆儏鍐典笅锛?a 閫夐」鏄彲閫夌殑銆傝繖涓嶄粎鍚敤浜?Intel(R) SST-BF锛岃繕浣跨敤 Intel(R) Speed Select Technology
+Core Power锛圛ntel(R) SST-CP锛夌壒鎬ф潵璋冩暣鏍哥殑浼樺厛绾с€傝繖涓€夐」灏嗘瘡涓?Intel(R) Speed Select Technology -
+Performance Profile锛圛ntel(R) SST-PP锛夌被鐨勬€ц兘璁句负鏈€澶ф€ц兘锛屼互渚跨‖浠朵负姣忎釜 CPU 鎻愪緵灏藉彲鑳芥渶澶х殑鎬ц兘銆?
+濡傛灉涓嶄娇鐢?-a 閫夐」锛岄偅涔堝湪鍚敤 Intel(R) SST-BF 涔嬪墠闇€瑕佷互涓嬫楠わ細
 
-如果不使用 -a 选项，那么在启用 Intel(R) SST-BF 之前需要以下步骤：
-
-- 发现 Intel(R) SST-BF 并记下低优先级与高优先级基准频率
-- 记下高优先级 CPU 列表
-- 使用 core-power 特性集启用 CLOS
-- 配置 CLOS 参数。使用 CLOS.min 设为最小性能
-- 将期望的 CPU 订阅到 CLOS 组
-
-在这种配置下，如果通过绑定来执行相同的工作负载，
-```
+- 鍙戠幇 Intel(R) SST-BF 骞惰涓嬩綆浼樺厛绾т笌楂樹紭鍏堢骇鍩哄噯棰戠巼
+- 璁颁笅楂樹紭鍏堢骇 CPU 鍒楄〃
+- 浣跨敤 core-power 鐗规€ч泦鍚敤 CLOS
+- 閰嶇疆 CLOS 鍙傛暟銆備娇鐢?CLOS.min 璁句负鏈€灏忔€ц兘
+- 灏嗘湡鏈涚殑 CPU 璁㈤槄鍒?CLOS 缁?
+鍦ㄨ繖绉嶉厤缃笅锛屽鏋滈€氳繃缁戝畾鏉ユ墽琛岀浉鍚岀殑宸ヤ綔璐熻浇锛?```
 
  #taskset -c 5,6 perf bench -r 100 sched pipe
  # Running 'sched/pipe' benchmark:
@@ -667,9 +571,8 @@ Performance Profile（Intel(R) SST-PP）类的性能设为最大性能，以便�
          177685 ops/sec
 
 ```
-这样，通过启用 Intel(R) SST-BF，这个基准测试的性能提升了（延迟降低了）7.79%。从 turbostat 输出可以观察到，
-高优先级 CPU 达到了 3000 MHz，而之前是 2600 MHz。
-```
+杩欐牱锛岄€氳繃鍚敤 Intel(R) SST-BF锛岃繖涓熀鍑嗘祴璇曠殑鎬ц兘鎻愬崌浜嗭紙寤惰繜闄嶄綆浜嗭級7.79%銆備粠 turbostat 杈撳嚭鍙互瑙傚療鍒帮紝
+楂樹紭鍏堢骇 CPU 杈惧埌浜?3000 MHz锛岃€屼箣鍓嶆槸 2600 MHz銆?```
 
  #turbostat -c 0-13 --show Package,Core,CPU,Bzy_MHz -i 1
  Package	Core	CPU	Bzy_MHz
@@ -689,7 +592,7 @@ Performance Profile（Intel(R) SST-PP）类的性能设为最大性能，以便�
  0		13	13	2661
 
 ```
-#### 禁用 Intel(R) SST-BF
+#### 绂佺敤 Intel(R) SST-BF
 
 
 ```
@@ -698,21 +601,13 @@ Performance Profile（Intel(R) SST-PP）类的性能设为最大性能，以便�
 # intel-speed-select base-freq disable -a
 
 
-### Intel(R) Speed Select Technology - Turbo Frequency（Intel(R) SST-TF）
+### Intel(R) Speed Select Technology - Turbo Frequency锛圛ntel(R) SST-TF锛?
 
-
-这个特性使得能够基于优先级为核设置不同的 "All core turbo ratio limits"（全核睿频比限制）。
-通过使用这个特性，一些核可以被配置为通过指定它们为高优先级来获得更高的睿频频率，
-代价是低优先级核上较低或没有睿频频率。
-
-出于这个原因，这个特性只有当系统正忙于利用所有 CPU、但用户想要某个可配置的选项以在某些 CPU 上获得高性能时才有用。
-
-Intel(R) Speed Select Technology - Turbo Frequency（Intel(R) SST-TF）的支持依赖于
-Intel(R) Speed Select Technology - Performance Profile（Intel(R) SST-PP）性能级别配置。
-有可能只有某个特定的性能级别支持 Intel(R) SST-TF。也有可能只有基础性能级别（level = 0）支持 Intel(R) SST-TF。
-因此，首先选择想要的性能级别来启用这个特性。
-
-在这个被测系统中，Intel(R) SST-TF 在基础
+杩欎釜鐗规€т娇寰楄兘澶熷熀浜庝紭鍏堢骇涓烘牳璁剧疆涓嶅悓鐨?"All core turbo ratio limits"锛堝叏鏍哥澘棰戞瘮闄愬埗锛夈€?閫氳繃浣跨敤杩欎釜鐗规€э紝涓€浜涙牳鍙互琚厤缃负閫氳繃鎸囧畾瀹冧滑涓洪珮浼樺厛绾ф潵鑾峰緱鏇撮珮鐨勭澘棰戦鐜囷紝
+浠ｄ环鏄綆浼樺厛绾ф牳涓婅緝浣庢垨娌℃湁鐫块棰戠巼銆?
+鍑轰簬杩欎釜鍘熷洜锛岃繖涓壒鎬у彧鏈夊綋绯荤粺姝ｅ繖浜庡埄鐢ㄦ墍鏈?CPU銆佷絾鐢ㄦ埛鎯宠鏌愪釜鍙厤缃殑閫夐」浠ュ湪鏌愪簺 CPU 涓婅幏寰楅珮鎬ц兘鏃舵墠鏈夌敤銆?
+Intel(R) Speed Select Technology - Turbo Frequency锛圛ntel(R) SST-TF锛夌殑鏀寔渚濊禆浜?Intel(R) Speed Select Technology - Performance Profile锛圛ntel(R) SST-PP锛夋€ц兘绾у埆閰嶇疆銆?鏈夊彲鑳藉彧鏈夋煇涓壒瀹氱殑鎬ц兘绾у埆鏀寔 Intel(R) SST-TF銆備篃鏈夊彲鑳藉彧鏈夊熀纭€鎬ц兘绾у埆锛坙evel = 0锛夋敮鎸?Intel(R) SST-TF銆?鍥犳锛岄鍏堥€夋嫨鎯宠鐨勬€ц兘绾у埆鏉ュ惎鐢ㄨ繖涓壒鎬с€?
+鍦ㄨ繖涓娴嬬郴缁熶腑锛孖ntel(R) SST-TF 鍦ㄥ熀纭€
 ```
 
  # intel-speed-select -c 0 perf-profile info -l 0
@@ -729,10 +624,9 @@ Intel(R) Speed Select Technology - Performance Profile（Intel(R) SST-PP）性�
 
 
 ```
-要检查使用 Intel(R) SST-TF 特性能否改善性能，请获取启用 Intel(R) SST-TF 时的睿频频率属性，
-并与这个系统的基准睿频能力进行比较。
-
-#### 获取基准睿频能力
+瑕佹鏌ヤ娇鐢?Intel(R) SST-TF 鐗规€ц兘鍚︽敼鍠勬€ц兘锛岃鑾峰彇鍚敤 Intel(R) SST-TF 鏃剁殑鐫块棰戠巼灞炴€э紝
+骞朵笌杩欎釜绯荤粺鐨勫熀鍑嗙澘棰戣兘鍔涜繘琛屾瘮杈冦€?
+#### 鑾峰彇鍩哄噯鐫块鑳藉姏
 
 
 ```
@@ -773,7 +667,7 @@ Intel(R) Speed Select Technology - Performance Profile（Intel(R) SST-PP）性�
             max-turbo-frequency(MHz):3100
 
 ```
-基于上面的数据，当所有 CPU 都繁忙时，可以达到 3100 MHz 的最大频率。如果 cpu 0 - 11 上有些繁忙的工作负载（例如 stress），
+鍩轰簬涓婇潰鐨勬暟鎹紝褰撴墍鏈?CPU 閮界箒蹇欐椂锛屽彲浠ヨ揪鍒?3100 MHz 鐨勬渶澶ч鐜囥€傚鏋?cpu 0 - 11 涓婃湁浜涚箒蹇欑殑宸ヤ綔璐熻浇锛堜緥濡?stress锛夛紝
 ```
 
  # taskset -c 12,13 perf bench -r 100 sched pipe
@@ -805,10 +699,9 @@ Intel(R) Speed Select Technology - Performance Profile（Intel(R) SST-PP）性�
  0		13	13	3100
 
 ```
-基于 turbostat 输出，性能受到了 3100 MHz 的频率上限的限制。要检查能否为 CPU 12 与 CPU 13
-改善 hackbench 性能，首先查看这个性能级别下 Intel(R) SST-TF 特性的能力。
-
-#### 获取 Intel(R) SST-TF 能力
+鍩轰簬 turbostat 杈撳嚭锛屾€ц兘鍙楀埌浜?3100 MHz 鐨勯鐜囦笂闄愮殑闄愬埗銆傝妫€鏌ヨ兘鍚︿负 CPU 12 涓?CPU 13
+鏀瑰杽 hackbench 鎬ц兘锛岄鍏堟煡鐪嬭繖涓€ц兘绾у埆涓?Intel(R) SST-TF 鐗规€х殑鑳藉姏銆?
+#### 鑾峰彇 Intel(R) SST-TF 鑳藉姏
 
 
 ```
@@ -841,14 +734,9 @@ Intel(R) Speed Select Technology - Performance Profile（Intel(R) SST-PP）性�
             low-priority-max-avx512-frequency(MHz):2100
 
 ```
-基于上面的输出，有一个 Intel(R) SST-TF bucket，其中有 2 个高优先级核。
-如果只设置 2 个高优先级核，那么这些核上的最大睿频频率可以提升到 3200 MHz。
-这比所有核的基准睿频能力高了 100 MHz。
-
-相应地，对于 hackbench 工作负载，可以将两个 CPU 设为高优先级，其余为低优先级。
-一个副作用是，一旦启用，低优先级核将被截断到较低的 2600 MHz 频率。
-
-#### 启用 Intel(R) SST-TF
+鍩轰簬涓婇潰鐨勮緭鍑猴紝鏈変竴涓?Intel(R) SST-TF bucket锛屽叾涓湁 2 涓珮浼樺厛绾ф牳銆?濡傛灉鍙缃?2 涓珮浼樺厛绾ф牳锛岄偅涔堣繖浜涙牳涓婄殑鏈€澶х澘棰戦鐜囧彲浠ユ彁鍗囧埌 3200 MHz銆?杩欐瘮鎵€鏈夋牳鐨勫熀鍑嗙澘棰戣兘鍔涢珮浜?100 MHz銆?
+鐩稿簲鍦帮紝瀵逛簬 hackbench 宸ヤ綔璐熻浇锛屽彲浠ュ皢涓や釜 CPU 璁句负楂樹紭鍏堢骇锛屽叾浣欎负浣庝紭鍏堢骇銆?涓€涓壇浣滅敤鏄紝涓€鏃﹀惎鐢紝浣庝紭鍏堢骇鏍稿皢琚埅鏂埌杈冧綆鐨?2600 MHz 棰戠巼銆?
+#### 鍚敤 Intel(R) SST-TF
 
 
 ```
@@ -873,19 +761,15 @@ Intel(R) Speed Select Technology - Performance Profile（Intel(R) SST-PP）性�
         enable:success
 
 ```
-在这种情况下，选项 "-a" 是可选的。如果设置，它会启用 Intel(R) SST-TF 特性，
-并使用 Intel Speed Select Technology Core Power（Intel(R) SST-CP）特性将 CPU 设为高优先级与低优先级。
-通过 "-c" 参数传入的 CPU 编号被标记为高优先级，包括其兄弟核。
+鍦ㄨ繖绉嶆儏鍐典笅锛岄€夐」 "-a" 鏄彲閫夌殑銆傚鏋滆缃紝瀹冧細鍚敤 Intel(R) SST-TF 鐗规€э紝
+骞朵娇鐢?Intel Speed Select Technology Core Power锛圛ntel(R) SST-CP锛夌壒鎬у皢 CPU 璁句负楂樹紭鍏堢骇涓庝綆浼樺厛绾с€?閫氳繃 "-c" 鍙傛暟浼犲叆鐨?CPU 缂栧彿琚爣璁颁负楂樹紭鍏堢骇锛屽寘鎷叾鍏勫紵鏍搞€?
+濡傛灉涓嶄娇鐢?-a 閫夐」锛岄偅涔堝湪鍚敤 Intel(R) SST-TF 涔嬪墠闇€瑕佷互涓嬫楠わ細
 
-如果不使用 -a 选项，那么在启用 Intel(R) SST-TF 之前需要以下步骤：
+- 鍙戠幇 Intel(R) SST-TF 骞惰涓嬮珮浼樺厛绾ф牳鐨?bucket 涓庢渶澶ч鐜?
+- 浣跨敤 core-power 鐗规€ч泦鍚敤 CLOS - 閰嶇疆 CLOS 鍙傛暟
 
-- 发现 Intel(R) SST-TF 并记下高优先级核的 bucket 与最大频率
-
-- 使用 core-power 特性集启用 CLOS - 配置 CLOS 参数
-
-- 将期望的 CPU 订阅到 CLOS 组，确保高优先级核被设为最大频率
-
-如果执行相同的 hackbench 工作负载，将 hackbench 线程调度到高优先级核上，
+- 灏嗘湡鏈涚殑 CPU 璁㈤槄鍒?CLOS 缁勶紝纭繚楂樹紭鍏堢骇鏍歌璁句负鏈€澶ч鐜?
+濡傛灉鎵ц鐩稿悓鐨?hackbench 宸ヤ綔璐熻浇锛屽皢 hackbench 绾跨▼璋冨害鍒伴珮浼樺厛绾ф牳涓婏紝
 ```
 
  #taskset -c 12,13 perf bench -r 100 sched pipe
@@ -896,8 +780,7 @@ Intel(R) Speed Select Technology - Performance Profile（Intel(R) SST-PP）性�
          180826 ops/sec
 
 ```
-这在繁忙的系统上带来了约 3.3% 的性能提升。这里 turbostat 输出将显示 CPU 12 与 CPU 13 获得了 100 MHz 的提升。
-```
+杩欏湪绻佸繖鐨勭郴缁熶笂甯︽潵浜嗙害 3.3% 鐨勬€ц兘鎻愬崌銆傝繖閲?turbostat 杈撳嚭灏嗘樉绀?CPU 12 涓?CPU 13 鑾峰緱浜?100 MHz 鐨勬彁鍗囥€?```
 
  #turbostat -c 0-13 --show Package,Core,CPU,Bzy_MHz -i 1
  Package	Core	CPU	Bzy_MHz

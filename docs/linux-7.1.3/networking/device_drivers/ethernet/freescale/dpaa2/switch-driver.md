@@ -1,15 +1,11 @@
-
-## DPAA2 交换机驱动
-
+﻿
+## DPAA2 浜ゆ崲鏈洪┍鍔?
 
 :Copyright: |copy| 2021 NXP
 
-DPAA2 交换机驱动在 Datapath Switch（DPSW）对象上探测（probe），该对象可在以下 DPAA2 SoC 及其变体上实例化：LS2088A 和 LX2160A。
-
-驱动使用交换机设备驱动模型，并把每个交换机端口作为一个网络接口暴露出来，既可以被纳入网桥，也可以作为独立接口使用。端口之间交换的流量会被卸载到硬件中。
-
-DPSW 可以有连接到 DPNI 或连接到 DPMAC 以实现外部访问的端口。
-```
+DPAA2 浜ゆ崲鏈洪┍鍔ㄥ湪 Datapath Switch锛圖PSW锛夊璞′笂鎺㈡祴锛坧robe锛夛紝璇ュ璞″彲鍦ㄤ互涓?DPAA2 SoC 鍙婂叾鍙樹綋涓婂疄渚嬪寲锛歀S2088A 鍜?LX2160A銆?
+椹卞姩浣跨敤浜ゆ崲鏈鸿澶囬┍鍔ㄦā鍨嬶紝骞舵妸姣忎釜浜ゆ崲鏈虹鍙ｄ綔涓轰竴涓綉缁滄帴鍙ｆ毚闇插嚭鏉ワ紝鏃㈠彲浠ヨ绾冲叆缃戞ˉ锛屼篃鍙互浣滀负鐙珛鎺ュ彛浣跨敤銆傜鍙ｄ箣闂翠氦鎹㈢殑娴侀噺浼氳鍗歌浇鍒扮‖浠朵腑銆?
+DPSW 鍙互鏈夎繛鎺ュ埌 DPNI 鎴栬繛鎺ュ埌 DPMAC 浠ュ疄鐜板閮ㄨ闂殑绔彛銆?```
 
          [ethA]     [ethB]      [ethC]     [ethD]     [ethE]     [ethF]
             :          :          :          :          :          :
@@ -26,44 +22,33 @@ DPSW 可以有连接到 DPNI 或连接到 DPMAC 以实现外部访问的端口�
                                                       [PHY]      [PHY]
 
 ```
-## 创建一个以太网交换机
+## 鍒涘缓涓€涓互澶綉浜ゆ崲鏈?
 
+dpaa2-switch 椹卞姩鍦?fsl-mc 鎬荤嚎涓婂彂鐜扮殑 DPSW 璁惧涓婃帰娴嬨€傝繖浜涜澶囨棦鍙互閫氳繃鍚姩鏃堕厤缃枃浠垛€斺€擠ataPath Layout锛圖PL锛夆€斺€旈潤鎬佸垱寤猴紝涔熷彲浠ュ湪杩愯鏃朵娇鐢?DPAA2 瀵硅薄 API锛堝凡闆嗘垚鍒?restool 鐢ㄦ埛绌洪棿宸ュ叿涓級鍒涘缓銆?
+鐩墠锛宒paa2-switch 椹卞姩瀵瑰畠瑕佹帰娴嬬殑 DPSW 瀵硅薄鏂藉姞浜嗕互涓嬮檺鍒讹細
 
-dpaa2-switch 驱动在 fsl-mc 总线上发现的 DPSW 设备上探测。这些设备既可以通过启动时配置文件——DataPath Layout（DPL）——静态创建，也可以在运行时使用 DPAA2 对象 API（已集成到 restool 用户空间工具中）创建。
-
-目前，dpaa2-switch 驱动对它要探测的 DPSW 对象施加了以下限制：
-
- - FDB 的最小数量应至少等于交换机接口的数量。这是为了实现交换机端口的隔离所必需的，即当不在网桥下时，每个交换机端口将拥有自己的 FDB。
-```
+ - FDB 鐨勬渶灏忔暟閲忓簲鑷冲皯绛変簬浜ゆ崲鏈烘帴鍙ｇ殑鏁伴噺銆傝繖鏄负浜嗗疄鐜颁氦鎹㈡満绔彛鐨勯殧绂绘墍蹇呴渶鐨勶紝鍗冲綋涓嶅湪缃戞ˉ涓嬫椂锛屾瘡涓氦鎹㈡満绔彛灏嗘嫢鏈夎嚜宸辩殑 FDB銆?```
 
         fsl_dpaa2_switch dpsw.0: The number of FDBs is lower than the number of ports, cannot probe
 
- * 广播和洪泛（flooding）配置都应是每个 FDB 独立的。这使得驱动能够根据共享该 FDB 的交换机端口（即处于同一网桥下）来限制每个 FDB 的广播和洪泛域。
-   ::
+ * 骞挎挱鍜屾椽娉涳紙flooding锛夐厤缃兘搴旀槸姣忎釜 FDB 鐙珛鐨勩€傝繖浣垮緱椹卞姩鑳藉鏍规嵁鍏变韩璇?FDB 鐨勪氦鎹㈡満绔彛锛堝嵆澶勪簬鍚屼竴缃戞ˉ涓嬶級鏉ラ檺鍒舵瘡涓?FDB 鐨勫箍鎾拰娲硾鍩熴€?   ::
 
         fsl_dpaa2_switch dpsw.0: Flooding domain is not per FDB, cannot probe
         fsl_dpaa2_switch dpsw.0: Broadcast domain is not per FDB, cannot probe
 
- * 交换机的控制接口不应被禁用（创建时选项不应传入 DPSW_OPT_CTRL_IF_DIS）。没有控制接口，驱动就无法在交换机端口 netdevices 上提供正确的 Rx/Tx 流量支持。
-   ::
+ * 浜ゆ崲鏈虹殑鎺у埗鎺ュ彛涓嶅簲琚鐢紙鍒涘缓鏃堕€夐」涓嶅簲浼犲叆 DPSW_OPT_CTRL_IF_DIS锛夈€傛病鏈夋帶鍒舵帴鍙ｏ紝椹卞姩灏辨棤娉曞湪浜ゆ崲鏈虹鍙?netdevices 涓婃彁渚涙纭殑 Rx/Tx 娴侀噺鏀寔銆?   ::
 
         fsl_dpaa2_switch dpsw.0: Control Interface is disabled, cannot probe
 
 ```
-除了实际 DPSW 对象的配置外，dpaa2-switch 驱动还需要以下 DPAA2 对象：
+闄や簡瀹為檯 DPSW 瀵硅薄鐨勯厤缃锛宒paa2-switch 椹卞姩杩橀渶瑕佷互涓?DPAA2 瀵硅薄锛?
+ - 1 涓?DPMCP - 浠讳綍涓?MC 鍥轰欢鐨勪氦浜掗兘闇€瑕佷竴涓?Management Command Portal 瀵硅薄銆?
+ - 1 涓?DPBP - 涓€涓?Buffer Pool 鐢ㄤ簬涓烘帶鍒舵帴鍙ｄ笂 Rx 璺緞鍑嗗鐨勭紦鍐插尯鎾銆?
+ - 闇€瑕佽闂嚦灏戜竴涓?DPIO 瀵硅薄锛圫oftware Portal锛夋墠鑳藉鎺у埗鎺ュ彛闃熷垪鎵ц浠讳綍鍏ラ槦/鍑洪槦鎿嶄綔銆侱PIO 瀵硅薄灏嗚鍏变韩锛屾棤闇€绉佹湁鐨勩€?
+## 浜ゆ崲鐗规€?
 
- - 1 个 DPMCP - 任何与 MC 固件的交互都需要一个 Management Command Portal 对象。
-
- - 1 个 DPBP - 一个 Buffer Pool 用于为控制接口上 Rx 路径准备的缓冲区播种。
-
- - 需要访问至少一个 DPIO 对象（Software Portal）才能对控制接口队列执行任何入队/出队操作。DPIO 对象将被共享，无需私有的。
-
-## 交换特性
-
-
-驱动支持在硬件中配置 L2 转发规则，用于端口桥接以及独立交换机接口的独立使用。
-
-硬件在 VLAN 感知方面不可配置，因此任何 DPAA2
+椹卞姩鏀寔鍦ㄧ‖浠朵腑閰嶇疆 L2 杞彂瑙勫垯锛岀敤浜庣鍙ｆˉ鎺ヤ互鍙婄嫭绔嬩氦鎹㈡満鎺ュ彛鐨勭嫭绔嬩娇鐢ㄣ€?
+纭欢鍦?VLAN 鎰熺煡鏂归潰涓嶅彲閰嶇疆锛屽洜姝や换浣?DPAA2
 ```
 
         $ ip link add dev br0 type bridge vlan_filtering 1
@@ -73,22 +58,19 @@ dpaa2-switch 驱动在 fsl-mc 总线上发现的 DPSW 设备上探测。这些�
         Error: fsl_dpaa2_switch: Cannot join a VLAN-unaware bridge
 
 ```
-当设置 `stp_state 1` 时，支持通过 STP 进行拓扑和环路检测
-```
+褰撹缃?`stp_state 1` 鏃讹紝鏀寔閫氳繃 STP 杩涜鎷撴墤鍜岀幆璺娴?```
 
         $ ip link add dev br0 type bridge vlan_filtering 1 stp_state 1
 
 ```
-支持 L2 FDB 操作（添加/删除/转储）。
-
-可以通过网桥命令在每个交换机端口上独立配置 HW FDB 学习。当禁用 HW 学习时，会运行一个快速老化（fast age）过程，任何先前学习到的地址都会被移除。
-```
+鏀寔 L2 FDB 鎿嶄綔锛堟坊鍔?鍒犻櫎/杞偍锛夈€?
+鍙互閫氳繃缃戞ˉ鍛戒护鍦ㄦ瘡涓氦鎹㈡満绔彛涓婄嫭绔嬮厤缃?HW FDB 瀛︿範銆傚綋绂佺敤 HW 瀛︿範鏃讹紝浼氳繍琛屼竴涓揩閫熻€佸寲锛坒ast age锛夎繃绋嬶紝浠讳綍鍏堝墠瀛︿範鍒扮殑鍦板潃閮戒細琚Щ闄ゃ€?```
 
         $ bridge link set dev ethX learning off
         $ bridge link set dev ethX learning on
 
 ```
-支持限制未知单播和组播洪泛域，但
+鏀寔闄愬埗鏈煡鍗曟挱鍜岀粍鎾椽娉涘煙锛屼絾
 ```
 
         $ ip link set dev ethX type bridge_slave flood off mcast_flood off
@@ -101,32 +83,26 @@ dpaa2-switch 驱动在 fsl-mc 总线上发现的 DPSW 设备上探测。这些�
         $ echo 0 > /sys/bus/fsl-mc/devices/dpsw.Y/net/ethX/brport/broadcast_flood
 
 ```
-## 卸载（Offloads）
+## 鍗歌浇锛圤ffloads锛?
 
+### 璺敱鍔ㄤ綔锛堥噸瀹氬悜銆乼rap銆乨rop锛?
 
-### 路由动作（重定向、trap、drop）
+DPAA2 浜ゆ崲鏈鸿兘澶熷埄鐢?ACL 琛ㄥ嵏杞藉熀浜庢祦鐨勫寘閲嶅畾鍚戙€傞€氳繃鍦ㄥ涓鍙ｉ棿鍏变韩鍗曚釜 ACL 琛ㄦ潵鏀寔鍏变韩杩囨护鍧椼€?
+鏀寔浠ヤ笅娴佸叧閿瓧锛?
+ - Ethernet锛歞st_mac/src_mac
+ - IPv4锛歞st_ip/src_ip/ip_proto/tos
+ - VLAN锛歷lan_id/vlan_prio/vlan_tpid/vlan_dei
+ - L4锛歞st_port/src_port
 
-
-DPAA2 交换机能够利用 ACL 表卸载基于流的包重定向。通过在多个端口间共享单个 ACL 表来支持共享过滤块。
-
-支持以下流关键字：
-
- - Ethernet：dst_mac/src_mac
- - IPv4：dst_ip/src_ip/ip_proto/tos
- - VLAN：vlan_id/vlan_prio/vlan_tpid/vlan_dei
- - L4：dst_port/src_port
-
-此外，matchall 过滤器可用于重定向端口上接收到的全部流量。
-
-就流动作而言，支持以下动作：
+姝ゅ锛宮atchall 杩囨护鍣ㄥ彲鐢ㄤ簬閲嶅畾鍚戠鍙ｄ笂鎺ユ敹鍒扮殑鍏ㄩ儴娴侀噺銆?
+灏辨祦鍔ㄤ綔鑰岃█锛屾敮鎸佷互涓嬪姩浣滐細
 
  - drop
  - mirred egress redirect
  - trap
 
-每个 ACL 表项（过滤器）只能配置所列动作中的一个。
-
-示例 1：把 eth4 上接收到的、SA 为 00:01:02:03:04:05 的帧发送到
+姣忎釜 ACL 琛ㄩ」锛堣繃婊ゅ櫒锛夊彧鑳介厤缃墍鍒楀姩浣滀腑鐨勪竴涓€?
+绀轰緥 1锛氭妸 eth4 涓婃帴鏀跺埌鐨勩€丼A 涓?00:01:02:03:04:05 鐨勫抚鍙戦€佸埌
 ```
 
         $ tc qdisc add dev eth4 clsact
@@ -153,12 +129,10 @@ DPAA2 交换机能够利用 ACL 表卸载基于流的包重定向。通过在多
                 action mirred egress redirect dev eth3
 
 ```
-#### 镜像（Mirroring）
+#### 闀滃儚锛圡irroring锛?
 
-
-DPAA2 交换机仅支持每端口镜像和每 VLAN 镜像。也支持在共享块中添加镜像过滤器。
-
-当使用带有 802.1q 协议的 tc-flower 分类器时，只接受 ‘’vlan_id‘’ 关键字。基于任何其他字段的镜像
+DPAA2 浜ゆ崲鏈轰粎鏀寔姣忕鍙ｉ暅鍍忓拰姣?VLAN 闀滃儚銆備篃鏀寔鍦ㄥ叡浜潡涓坊鍔犻暅鍍忚繃婊ゅ櫒銆?
+褰撲娇鐢ㄥ甫鏈?802.1q 鍗忚鐨?tc-flower 鍒嗙被鍣ㄦ椂锛屽彧鎺ュ彈 鈥樷€檝lan_id鈥樷€?鍏抽敭瀛椼€傚熀浜庝换浣曞叾浠栧瓧娈电殑闀滃儚
 ```
 
         $ tc qdisc add dev eth8 ingress_block 1 clsact
@@ -167,8 +141,7 @@ DPAA2 交换机仅支持每端口镜像和每 VLAN 镜像。也支持在共享�
         We have an error talking to the kernel
 
 ```
-如果在端口上请求了某个 VLAN 的镜像过滤器，则该 VLAN 必须已安装在相关交换机端口上，可以使用 ‘’bridge‘’ 或
-```
+濡傛灉鍦ㄧ鍙ｄ笂璇锋眰浜嗘煇涓?VLAN 鐨勯暅鍍忚繃婊ゅ櫒锛屽垯璇?VLAN 蹇呴』宸插畨瑁呭湪鐩稿叧浜ゆ崲鏈虹鍙ｄ笂锛屽彲浠ヤ娇鐢?鈥樷€檅ridge鈥樷€?鎴?```
 
         $ tc qdisc add dev eth8 ingress_block 1 clsact
         $ tc filter add block 1 ingress protocol 802.1q flower skip_sw vlan_id 200 action mirred egress mirror dev eth6
@@ -182,9 +155,8 @@ DPAA2 交换机仅支持每端口镜像和每 VLAN 镜像。也支持在共享�
         $ tc filter add block 1 ingress protocol 802.1q flower skip_sw vlan_id 200 action mirred egress mirror dev eth6
 
 ```
-此外，应注意镜像流量将受到与其他任何流量相同的出口限制。这意味着当镜像数据包到达镜像端口时，如果包中发现的 VLAN 未安装在该端口上，它将被丢弃。
-
-DPAA2 交换机只支持单一镜像目的地，因此多个
+姝ゅ锛屽簲娉ㄦ剰闀滃儚娴侀噺灏嗗彈鍒颁笌鍏朵粬浠讳綍娴侀噺鐩稿悓鐨勫嚭鍙ｉ檺鍒躲€傝繖鎰忓懗鐫€褰撻暅鍍忔暟鎹寘鍒拌揪闀滃儚绔彛鏃讹紝濡傛灉鍖呬腑鍙戠幇鐨?VLAN 鏈畨瑁呭湪璇ョ鍙ｄ笂锛屽畠灏嗚涓㈠純銆?
+DPAA2 浜ゆ崲鏈哄彧鏀寔鍗曚竴闀滃儚鐩殑鍦帮紝鍥犳澶氫釜
 ```
 
         $ tc filter add block 1 ingress protocol 802.1q flower skip_sw vlan_id 200 action mirred egress mirror dev eth6

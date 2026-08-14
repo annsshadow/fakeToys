@@ -1,9 +1,9 @@
-## 内核驱动 lineage-pem
+﻿## 鍐呮牳椹卞姩 lineage-pem
 
 
-支持的设备：
+鏀寔鐨勮澶囷細
 
-  - Lineage Compact Power Line 电源入口模块
+  - Lineage Compact Power Line 鐢垫簮鍏ュ彛妯″潡
 
     Prefix: 'lineage-pem'
 
@@ -16,25 +16,18 @@
 Author: Guenter Roeck <linux@roeck-us.net>
 
 
-### 描述
+### 鎻忚堪
 
 
-本驱动支持多种 Lineage Compact Power Line DC/DC 与 AC/DC
-转换器，例如 CP1800、CP2000AC、CP2000DC、CP2100DC 等。
+鏈┍鍔ㄦ敮鎸佸绉?Lineage Compact Power Line DC/DC 涓?AC/DC
+杞崲鍣紝渚嬪 CP1800銆丆P2000AC銆丆P2000DC銆丆P2100DC 绛夈€?
+Lineage CPL 鐢垫簮鍏ュ彛妯″潡鍚嶄箟涓婂吋瀹?PMBus銆傜劧鑰岋紝澶у鏁?鏍囧噯 PMBus 鍛戒护骞朵笉鍙楁敮鎸併€傚叿浣撹€岃█锛屾墍鏈夌‖浠剁洃鎺?涓庣姸鎬佷笂鎶ュ懡浠ら兘鏄潪鏍囧噯鐨勩€傚洜姝わ紝鏃犳硶浣跨敤鏍囧噯鐨?PMBus 椹卞姩銆?
 
-Lineage CPL 电源入口模块名义上兼容 PMBus。然而，大多数
-标准 PMBus 命令并不受支持。具体而言，所有硬件监控
-与状态上报命令都是非标准的。因此，无法使用标准的
-PMBus 驱动。
+### 浣跨敤娉ㄦ剰
 
 
-### 使用注意
-
-
-本驱动不会探测 Lineage CPL 设备，因为没有可供安全用于
-识别芯片的寄存器。你必须显式实例化这些设备。
-
-示例：以下命令将为地址 0x40 处的 Lineage PEM 加载驱动
+鏈┍鍔ㄤ笉浼氭帰娴?Lineage CPL 璁惧锛屽洜涓烘病鏈夊彲渚涘畨鍏ㄧ敤浜?璇嗗埆鑺墖鐨勫瘎瀛樺櫒銆備綘蹇呴』鏄惧紡瀹炰緥鍖栬繖浜涜澶囥€?
+绀轰緥锛氫互涓嬪懡浠ゅ皢涓哄湴鍧€ 0x40 澶勭殑 Lineage PEM 鍔犺浇椹卞姩
 
 ```
 
@@ -42,39 +35,34 @@ PMBus 驱动。
 	$ echo lineage-pem 0x40 > /sys/bus/i2c/devices/i2c-1/new_device
 
 ```
-所有 Lineage CPL 电源入口模块都内置了一个 I2C 总线主选择器
-（PCA9541）。为确保设备访问，本驱动只能作为
-pca9541 I2C 主选择器驱动的客户端驱动使用。
+鎵€鏈?Lineage CPL 鐢垫簮鍏ュ彛妯″潡閮藉唴缃簡涓€涓?I2C 鎬荤嚎涓婚€夋嫨鍣?锛圥CA9541锛夈€備负纭繚璁惧璁块棶锛屾湰椹卞姩鍙兘浣滀负
+pca9541 I2C 涓婚€夋嫨鍣ㄩ┍鍔ㄧ殑瀹㈡埛绔┍鍔ㄤ娇鐢ㄣ€?
+
+### Sysfs 鏉＄洰
 
 
-### Sysfs 条目
-
-
-所有 Lineage CPL 设备都会上报输出电压与设备温度，以及
-输出电压、温度、输入电压、输入电流、输入功率和风扇状态的告警。
-
-输入电压、输入电流、输入功率和风扇转速测量仅在新款设备上
-受支持。驱动会检测这些属性是否受支持，并仅在受支持时
-创建相应的 sysfs 条目。
-
+鎵€鏈?Lineage CPL 璁惧閮戒細涓婃姤杈撳嚭鐢靛帇涓庤澶囨俯搴︼紝浠ュ強
+杈撳嚭鐢靛帇銆佹俯搴︺€佽緭鍏ョ數鍘嬨€佽緭鍏ョ數娴併€佽緭鍏ュ姛鐜囧拰椋庢墖鐘舵€佺殑鍛婅銆?
+杈撳叆鐢靛帇銆佽緭鍏ョ數娴併€佽緭鍏ュ姛鐜囧拰椋庢墖杞€熸祴閲忎粎鍦ㄦ柊娆捐澶囦笂
+鍙楁敮鎸併€傞┍鍔ㄤ細妫€娴嬭繖浜涘睘鎬ф槸鍚﹀彈鏀寔锛屽苟浠呭湪鍙楁敮鎸佹椂
+鍒涘缓鐩稿簲鐨?sysfs 鏉＄洰銆?
 ======================= ===============================
-in1_input		输出电压（mV）
-in1_min_alarm		输出欠压告警
-in1_max_alarm		输出过压告警
-in1_crit		输出电压严重告警
+in1_input		杈撳嚭鐢靛帇锛坢V锛?in1_min_alarm		杈撳嚭娆犲帇鍛婅
+in1_max_alarm		杈撳嚭杩囧帇鍛婅
+in1_crit		杈撳嚭鐢靛帇涓ラ噸鍛婅
 
-in2_input		输入电压（mV，可选）
-in2_alarm		输入电压告警
+in2_input		杈撳叆鐢靛帇锛坢V锛屽彲閫夛級
+in2_alarm		杈撳叆鐢靛帇鍛婅
 
-curr1_input		输入电流（mA，可选）
-curr1_alarm		输入过流告警
+curr1_input		杈撳叆鐢垫祦锛坢A锛屽彲閫夛級
+curr1_alarm		杈撳叆杩囨祦鍛婅
 
-power1_input		输入功率（uW，可选）
-power1_alarm		输入功率告警
+power1_input		杈撳叆鍔熺巼锛坲W锛屽彲閫夛級
+power1_alarm		杈撳叆鍔熺巼鍛婅
 
-fan1_input		风扇 1 转速（rpm，可选）
-fan2_input		风扇 2 转速（rpm，可选）
-fan3_input		风扇 3 转速（rpm，可选）
+fan1_input		椋庢墖 1 杞€燂紙rpm锛屽彲閫夛級
+fan2_input		椋庢墖 2 杞€燂紙rpm锛屽彲閫夛級
+fan3_input		椋庢墖 3 杞€燂紙rpm锛屽彲閫夛級
 
 temp1_input
 temp1_max

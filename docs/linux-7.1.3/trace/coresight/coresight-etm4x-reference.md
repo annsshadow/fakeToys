@@ -1,31 +1,31 @@
-## ETMv4 sysfs Linux 驱动编程参考。
+﻿## ETMv4 sysfs Linux 椹卞姩缂栫▼鍙傝€冦€?
 
 
     :Author:   Mike Leach <mike.leach@linaro.org>
     :Date:     October 11th, 2019
 
-作为现有 ETMv4 驱动文档的补充。
+浣滀负鐜版湁 ETMv4 椹卞姩鏂囨。鐨勮ˉ鍏呫€?
 
-### Sysfs 文件与目录
+### Sysfs 鏂囦欢涓庣洰褰?
 
 
 Root: `/sys/bus/coresight/devices/etm<N>`
 
 
-以下段落说明了 sysfs 文件与它们所影响的 ETMv4 寄存器之间的关联。注意寄存器名称以省略 ‘TRC’ 前缀的形式给出。
+浠ヤ笅娈佃惤璇存槑浜?sysfs 鏂囦欢涓庡畠浠墍褰卞搷鐨?ETMv4 瀵勫瓨鍣ㄤ箣闂寸殑鍏宠仈銆傛敞鎰忓瘎瀛樺櫒鍚嶇О浠ョ渷鐣?鈥楾RC鈥?鍓嶇紑鐨勫舰寮忕粰鍑恒€?
 
 ----
 
 :File:            `mode` (rw)
 :Trace Registers: {CONFIGR + others}
 :Notes:
-    位选择跟踪特性。参见下文的 ‘mode’ 小节。设置其中的位将导致对跟踪配置寄存器
-    及其他寄存器进行等价的编程，以启用所请求的特性。
+    浣嶉€夋嫨璺熻釜鐗规€с€傚弬瑙佷笅鏂囩殑 鈥榤ode鈥?灏忚妭銆傝缃叾涓殑浣嶅皢瀵艰嚧瀵硅窡韪厤缃瘎瀛樺櫒
+    鍙婂叾浠栧瘎瀛樺櫒杩涜绛変环鐨勭紪绋嬶紝浠ュ惎鐢ㄦ墍璇锋眰鐨勭壒鎬с€?
 
 :Syntax & eg:
     `echo bitfield > mode`
 
-    bitfield 最多 32 位，用于设置跟踪特性。
+    bitfield 鏈€澶?32 浣嶏紝鐢ㄤ簬璁剧疆璺熻釜鐗规€с€?
 
 :Example:
     `$> echo 0x012 > mode`
@@ -35,7 +35,7 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `reset` (wo)
 :Trace Registers: All
 :Notes:
-    将所有编程复位为不产生任何跟踪 / 未编程任何逻辑。
+    灏嗘墍鏈夌紪绋嬪浣嶄负涓嶄骇鐢熶换浣曡窡韪?/ 鏈紪绋嬩换浣曢€昏緫銆?
 
 :Syntax:
     `echo 1 > reset`
@@ -45,9 +45,9 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `enable_source` (wo)
 :Trace Registers: PRGCTLR, All hardware regs.
 :Notes:
-    - > 0 : 使用驱动中保存的当前值对硬件进行编程并启用跟踪。
+    - > 0 : 浣跨敤椹卞姩涓繚瀛樼殑褰撳墠鍊煎纭欢杩涜缂栫▼骞跺惎鐢ㄨ窡韪€?
 
-    - = 0 : 禁用跟踪硬件。
+    - = 0 : 绂佺敤璺熻釜纭欢銆?
 
 :Syntax:
     `echo 1 > enable_source`
@@ -57,7 +57,7 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `cpu` (ro)
 :Trace Registers: None.
 :Notes:
-    此 ETM 所连接的 CPU ID。
+    姝?ETM 鎵€杩炴帴鐨?CPU ID銆?
 
 :Example:
     `$> cat cpu`
@@ -69,8 +69,8 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `ts_source` (ro)
 :Trace Registers: None.
 :Notes:
-    当实现了 FEAT_TRF 时，为跟踪会话所用 TRFCR_ELx.TS 的值。否则 -1
-    表示未知的时间源。检查 trcidr0.tssize 以查看是否存在全局时间戳。
+    褰撳疄鐜颁簡 FEAT_TRF 鏃讹紝涓鸿窡韪細璇濇墍鐢?TRFCR_ELx.TS 鐨勫€笺€傚惁鍒?-1
+    琛ㄧず鏈煡鐨勬椂闂存簮銆傛鏌?trcidr0.tssize 浠ユ煡鐪嬫槸鍚﹀瓨鍦ㄥ叏灞€鏃堕棿鎴炽€?
 
 :Example:
     `$> cat ts_source`
@@ -82,28 +82,28 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `addr_idx` (rw)
 :Trace Registers: None.
 :Notes:
-    用于索引地址比较器和范围特性的虚拟寄存器。为范围中的一对比较器
-    设置第一个的索引。
+    鐢ㄤ簬绱㈠紩鍦板潃姣旇緝鍣ㄥ拰鑼冨洿鐗规€х殑铏氭嫙瀵勫瓨鍣ㄣ€備负鑼冨洿涓殑涓€瀵规瘮杈冨櫒
+    璁剧疆绗竴涓殑绱㈠紩銆?
 
 :Syntax:
     `echo idx > addr_idx`
 
-    其中 idx < nr_addr_cmp x 2
+    鍏朵腑 idx < nr_addr_cmp x 2
 
 ----
 
 :File:            `addr_range` (rw)
 :Trace Registers: ACVR[idx, idx+1], VIIECTLR
 :Notes:
-    由 addr_idx 选择的某个范围对应的地址对。根据可选参数进行包含 / 排除；
-    若省略则使用当前 ‘mode’ 设置。在控制寄存器中选择比较器范围。
-    索引为奇数时报错。
+    鐢?addr_idx 閫夋嫨鐨勬煇涓寖鍥村搴旂殑鍦板潃瀵广€傛牴鎹彲閫夊弬鏁拌繘琛屽寘鍚?/ 鎺掗櫎锛?
+    鑻ョ渷鐣ュ垯浣跨敤褰撳墠 鈥榤ode鈥?璁剧疆銆傚湪鎺у埗瀵勫瓨鍣ㄤ腑閫夋嫨姣旇緝鍣ㄨ寖鍥淬€?
+    绱㈠紩涓哄鏁版椂鎶ラ敊銆?
 
 :Depends: `mode, addr_idx`
 :Syntax:
    `echo addr1 addr2 [exclude] > addr_range`
 
-   其中 addr1 与 addr2 界定该范围，且 addr1 < addr2。
+   鍏朵腑 addr1 涓?addr2 鐣屽畾璇ヨ寖鍥达紝涓?addr1 < addr2銆?
 
    Optional exclude value:-
 
@@ -117,8 +117,8 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `addr_single` (rw)
 :Trace Registers: ACVR[idx]
 :Notes:
-    根据 addr_idx 设置一个独立的地址比较器。当该地址比较器用作事件
-    生成逻辑等的一部分时使用。
+    鏍规嵁 addr_idx 璁剧疆涓€涓嫭绔嬬殑鍦板潃姣旇緝鍣ㄣ€傚綋璇ュ湴鍧€姣旇緝鍣ㄧ敤浣滀簨浠?
+    鐢熸垚閫昏緫绛夌殑涓€閮ㄥ垎鏃朵娇鐢ㄣ€?
 
 :Depends: `addr_idx`
 :Syntax:
@@ -129,7 +129,7 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:           `addr_start` (rw)
 :Trace Registers: ACVR[idx], VISSCTLR
 :Notes:
-    根据 addr_idx 设置跟踪起始地址比较器。在控制寄存器中选择比较器。
+    鏍规嵁 addr_idx 璁剧疆璺熻釜璧峰鍦板潃姣旇緝鍣ㄣ€傚湪鎺у埗瀵勫瓨鍣ㄤ腑閫夋嫨姣旇緝鍣ㄣ€?
 
 :Depends: `addr_idx`
 :Syntax:
@@ -140,7 +140,7 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `addr_stop` (rw)
 :Trace Registers: ACVR[idx], VISSCTLR
 :Notes:
-    根据 addr_idx 设置跟踪停止地址比较器。在控制寄存器中选择比较器。
+    鏍规嵁 addr_idx 璁剧疆璺熻釜鍋滄鍦板潃姣旇緝鍣ㄣ€傚湪鎺у埗瀵勫瓨鍣ㄤ腑閫夋嫨姣旇緝鍣ㄣ€?
 
 :Depends: `addr_idx`
 :Syntax:
@@ -151,26 +151,26 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `addr_context` (rw)
 :Trace Registers: ACATR[idx,{6:4}]
 :Notes:
-    将上下文 ID 比较器链接到地址比较器 addr_idx
+    灏嗕笂涓嬫枃 ID 姣旇緝鍣ㄩ摼鎺ュ埌鍦板潃姣旇緝鍣?addr_idx
 
 :Depends: `addr_idx`
 :Syntax:
     `echo ctxt_idx > addr_context`
 
-    其中 ctxt_idx 为所链接的上下文 id / vmid 比较器的索引。
+    鍏朵腑 ctxt_idx 涓烘墍閾炬帴鐨勪笂涓嬫枃 id / vmid 姣旇緝鍣ㄧ殑绱㈠紩銆?
 
 ----
 
 :File:            `addr_ctxtype` (rw)
 :Trace Registers: ACATR[idx,{3:2}]
 :Notes:
-    输入值字符串。为所链接的上下文 ID 比较器设置类型
+    杈撳叆鍊煎瓧绗︿覆銆備负鎵€閾炬帴鐨勪笂涓嬫枃 ID 姣旇緝鍣ㄨ缃被鍨?
 
 :Depends: `addr_idx`
 :Syntax:
     `echo type > addr_ctxtype`
 
-    类型为 {all, vmid, ctxid, none} 之一
+    绫诲瀷涓?{all, vmid, ctxid, none} 涔嬩竴
 :Example:
     `$> echo ctxid > addr_ctxtype`
 
@@ -179,13 +179,13 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `addr_exlevel_s_ns` (rw)
 :Trace Registers: ACATR[idx,{14:8}]
 :Notes:
-    为所选地址比较器设置 ELx 安全与非安全匹配位
+    涓烘墍閫夊湴鍧€姣旇緝鍣ㄨ缃?ELx 瀹夊叏涓庨潪瀹夊叏鍖归厤浣?
 
 :Depends: `addr_idx`
 :Syntax:
     `echo val > addr_exlevel_s_ns`
 
-    val 为用于排除的异常级别对应的 7 位值。输入值在寄存器中被移位到正确的位。
+    val 涓虹敤浜庢帓闄ょ殑寮傚父绾у埆瀵瑰簲鐨?7 浣嶅€笺€傝緭鍏ュ€煎湪瀵勫瓨鍣ㄤ腑琚Щ浣嶅埌姝ｇ‘鐨勪綅銆?
 :Example:
     `$> echo 0x4F > addr_exlevel_s_ns`
 
@@ -194,7 +194,7 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `addr_instdatatype` (rw)
 :Trace Registers: ACATR[idx,{1:0}]
 :Notes:
-    设置用于匹配的地址比较器类型。驱动仅支持设置为指令地址类型。
+    璁剧疆鐢ㄤ簬鍖归厤鐨勫湴鍧€姣旇緝鍣ㄧ被鍨嬨€傞┍鍔ㄤ粎鏀寔璁剧疆涓烘寚浠ゅ湴鍧€绫诲瀷銆?
 
 :Depends: `addr_idx`
 
@@ -203,7 +203,7 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `addr_cmp_view` (ro)
 :Trace Registers: ACVR[idx, idx+1], ACATR[idx], VIIECTLR
 :Notes:
-    读取当前选中的地址比较器。如果属于某个地址范围，则显示两个地址。
+    璇诲彇褰撳墠閫変腑鐨勫湴鍧€姣旇緝鍣ㄣ€傚鏋滃睘浜庢煇涓湴鍧€鑼冨洿锛屽垯鏄剧ず涓や釜鍦板潃銆?
 
 :Depends: `addr_idx`
 :Syntax:
@@ -218,40 +218,40 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `nr_addr_cmp` (ro)
 :Trace Registers: From IDR4
 :Notes:
-    地址比较器对的数量
+    鍦板潃姣旇緝鍣ㄥ鐨勬暟閲?
 
 ----
 
 :File:            `sshot_idx` (rw)
 :Trace Registers: None
 :Notes:
-    选择单次触发（single shot）寄存器组。
+    閫夋嫨鍗曟瑙﹀彂锛坰ingle shot锛夊瘎瀛樺櫒缁勩€?
 
 ----
 
 :File:            `sshot_ctrl` (rw)
 :Trace Registers: SSCCR[idx]
 :Notes:
-    访问单次触发比较器控制寄存器。
+    璁块棶鍗曟瑙﹀彂姣旇緝鍣ㄦ帶鍒跺瘎瀛樺櫒銆?
 
 :Depends: `sshot_idx`
 :Syntax:
     `echo val > sshot_ctrl`
 
-    将 val 写入所选控制寄存器。
+    灏?val 鍐欏叆鎵€閫夋帶鍒跺瘎瀛樺櫒銆?
 
 ----
 
 :File:            `sshot_status` (ro)
 :Trace Registers: SSCSR[idx]
 :Notes:
-    读取单次触发比较器状态寄存器
+    璇诲彇鍗曟瑙﹀彂姣旇緝鍣ㄧ姸鎬佸瘎瀛樺櫒
 
 :Depends: `sshot_idx`
 :Syntax:
     `cat sshot_status`
 
-    读取状态。
+    璇诲彇鐘舵€併€?
 :Example:
     `$> cat sshot_status`
 
@@ -262,26 +262,26 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `sshot_pe_ctrl` (rw)
 :Trace Registers: SSPCICR[idx]
 :Notes:
-    访问单次触发 PE 比较器输入控制寄存器。
+    璁块棶鍗曟瑙﹀彂 PE 姣旇緝鍣ㄨ緭鍏ユ帶鍒跺瘎瀛樺櫒銆?
 
 :Depends: `sshot_idx`
 :Syntax:
     `echo val > sshot_pe_ctrl`
 
-    将 val 写入所选控制寄存器。
+    灏?val 鍐欏叆鎵€閫夋帶鍒跺瘎瀛樺櫒銆?
 
 ----
 
 :File:            `ns_exlevel_vinst` (rw)
 :Trace Registers: VICTLR{23:20}
 :Notes:
-    对安全异常级别过滤器进行编程。设置 / 清除 NS
-    异常过滤器位。设置 ‘1’ 将排除该异常级别的跟踪。
+    瀵瑰畨鍏ㄥ紓甯哥骇鍒繃婊ゅ櫒杩涜缂栫▼銆傝缃?/ 娓呴櫎 NS
+    寮傚父杩囨护鍣ㄤ綅銆傝缃?鈥?鈥?灏嗘帓闄よ寮傚父绾у埆鐨勮窡韪€?
 
 :Syntax:
     `echo bitfield > ns_exlevel_viinst`
 
-    其中 bitfield 包含用于设置 / 清除 EL0 到 EL2 的位
+    鍏朵腑 bitfield 鍖呭惈鐢ㄤ簬璁剧疆 / 娓呴櫎 EL0 鍒?EL2 鐨勪綅
 :Example:
     `%> echo 0x4 > ns_exlevel_viinst`
 
@@ -292,15 +292,15 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `vinst_pe_cmp_start_stop` (rw)
 :Trace Registers: VIPCSSCTLR
 :Notes:
-    访问 PE 启停比较器输入控制寄存器
+    璁块棶 PE 鍚仠姣旇緝鍣ㄨ緭鍏ユ帶鍒跺瘎瀛樺櫒
 
 ----
 
 :File:            `bb_ctrl` (rw)
 :Trace Registers: BBCTLR
 :Notes:
-    定义分支广播（Branch Broadcast）所作用的范围。
-    默认值 (0x0) 为全部地址。
+    瀹氫箟鍒嗘敮骞挎挱锛圔ranch Broadcast锛夋墍浣滅敤鐨勮寖鍥淬€?
+    榛樿鍊?(0x0) 涓哄叏閮ㄥ湴鍧€銆?
 
 :Depends: BB enabled.
 
@@ -309,8 +309,8 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `cyc_threshold` (rw)
 :Trace Registers: CCCTLR
 :Notes:
-    设置将发出的周期计数阈值。若尝试设置为低于 IDR3 中定义的最小值则报错，
-    并按有效位宽度进行掩码。
+    璁剧疆灏嗗彂鍑虹殑鍛ㄦ湡璁℃暟闃堝€笺€傝嫢灏濊瘯璁剧疆涓轰綆浜?IDR3 涓畾涔夌殑鏈€灏忓€煎垯鎶ラ敊锛?
+    骞舵寜鏈夋晥浣嶅搴﹁繘琛屾帺鐮併€?
 
 :Depends: CC enabled.
 
@@ -319,45 +319,45 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `syncfreq` (rw)
 :Trace Registers: SYNCPR
 :Notes:
-    设置跟踪同步周期。值为 2 的幂，可为 0（关闭）或 8-20。驱动默认值为 12（每 4096 字节）。
+    璁剧疆璺熻釜鍚屾鍛ㄦ湡銆傚€间负 2 鐨勫箓锛屽彲涓?0锛堝叧闂級鎴?8-20銆傞┍鍔ㄩ粯璁ゅ€间负 12锛堟瘡 4096 瀛楄妭锛夈€?
 
 ----
 
 :File:            `cntr_idx` (rw)
 :Trace Registers: none
 :Notes:
-    选择要访问的计数器
+    閫夋嫨瑕佽闂殑璁℃暟鍣?
 
 :Syntax:
     `echo idx > cntr_idx`
 
-    其中 idx < nr_cntr
+    鍏朵腑 idx < nr_cntr
 
 ----
 
 :File:            `cntr_ctrl` (rw)
 :Trace Registers: CNTCTLR[idx]
 :Notes:
-    设置计数器控制值。
+    璁剧疆璁℃暟鍣ㄦ帶鍒跺€笺€?
 
 :Depends: `cntr_idx`
 :Syntax:
     `echo val > cntr_ctrl`
 
-    其中 val 依据 ETMv4 规范。
+    鍏朵腑 val 渚濇嵁 ETMv4 瑙勮寖銆?
 
 ----
 
 :File:            `cntrldvr` (rw)
 :Trace Registers: CNTRLDVR[idx]
 :Notes:
-    设置计数器重装载值。
+    璁剧疆璁℃暟鍣ㄩ噸瑁呰浇鍊笺€?
 
 :Depends: `cntr_idx`
 :Syntax:
     `echo val > cntrldvr`
 
-    其中 val 依据 ETMv4 规范。
+    鍏朵腑 val 渚濇嵁 ETMv4 瑙勮寖銆?
 
 ----
 
@@ -365,26 +365,26 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :Trace Registers: From IDR5
 
 :Notes:
-    已实现的计数器数量。
+    宸插疄鐜扮殑璁℃暟鍣ㄦ暟閲忋€?
 
 ----
 
 :File:            `ctxid_idx` (rw)
 :Trace Registers: None
 :Notes:
-    选择要访问的上下文 ID 比较器
+    閫夋嫨瑕佽闂殑涓婁笅鏂?ID 姣旇緝鍣?
 
 :Syntax:
     `echo idx > ctxid_idx`
 
-    其中 idx < numcidc
+    鍏朵腑 idx < numcidc
 
 ----
 
 :File:            `ctxid_pid` (rw)
 :Trace Registers: CIDCVR[idx]
 :Notes:
-   设置上下文 ID 比较器值
+   璁剧疆涓婁笅鏂?ID 姣旇緝鍣ㄥ€?
 
 :Depends: `ctxid_idx`
 
@@ -393,42 +393,42 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File: `ctxid_masks` (rw)
 :Trace Registers: CIDCCTLR0, CIDCCTLR1, CIDCVR<0-7>
 :Notes:
-    用于设置 1-8 个上下文 ID 比较器字节掩码的值对。会在 CID
-    值寄存器中自动将掩码字节清零。
+    鐢ㄤ簬璁剧疆 1-8 涓笂涓嬫枃 ID 姣旇緝鍣ㄥ瓧鑺傛帺鐮佺殑鍊煎銆備細鍦?CID
+    鍊煎瘎瀛樺櫒涓嚜鍔ㄥ皢鎺╃爜瀛楄妭娓呴浂銆?
 
 :Syntax:
     `echo m3m2m1m0 [m7m6m5m4] > ctxid_masks`
 
-    32 位值由掩码字节组成，其中 mN 表示上下文 ID 比较器 N 的
-    字节掩码值。
+    32 浣嶅€肩敱鎺╃爜瀛楄妭缁勬垚锛屽叾涓?mN 琛ㄧず涓婁笅鏂?ID 姣旇緝鍣?N 鐨?
+    瀛楄妭鎺╃爜鍊笺€?
 
-    在上下文 ID 比较器少于 4 个的系统上不需要第二个值
+    鍦ㄤ笂涓嬫枃 ID 姣旇緝鍣ㄥ皯浜?4 涓殑绯荤粺涓婁笉闇€瑕佺浜屼釜鍊?
 
 ----
 
 :File:            `numcidc` (ro)
 :Trace Registers: From IDR4
 :Notes:
-    上下文 ID 比较器的数量
+    涓婁笅鏂?ID 姣旇緝鍣ㄧ殑鏁伴噺
 
 ----
 
 :File:            `vmid_idx` (rw)
 :Trace Registers: None
 :Notes:
-    选择要访问的 VM ID 比较器。
+    閫夋嫨瑕佽闂殑 VM ID 姣旇緝鍣ㄣ€?
 
 :Syntax:
     `echo idx > vmid_idx`
 
-    其中 idx < numvmidc
+    鍏朵腑 idx < numvmidc
 
 ----
 
 :File:            `vmid_val` (rw)
 :Trace Registers: VMIDCVR[idx]
 :Notes:
-    设置 VM ID 比较器值
+    璁剧疆 VM ID 姣旇緝鍣ㄥ€?
 
 :Depends: `vmid_idx`
 
@@ -437,164 +437,164 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 :File:            `vmid_masks` (rw)
 :Trace Registers: VMIDCCTLR0, VMIDCCTLR1, VMIDCVR<0-7>
 :Notes:
-    用于设置 1-8 个 VM ID 比较器字节掩码的值对。会在 VMID 值寄存器中
-    自动将掩码字节清零。
+    鐢ㄤ簬璁剧疆 1-8 涓?VM ID 姣旇緝鍣ㄥ瓧鑺傛帺鐮佺殑鍊煎銆備細鍦?VMID 鍊煎瘎瀛樺櫒涓?
+    鑷姩灏嗘帺鐮佸瓧鑺傛竻闆躲€?
 
 :Syntax:
     `echo m3m2m1m0 [m7m6m5m4] > vmid_masks`
 
-    其中 mN 表示 VMID 比较器 N 的字节掩码值。在 VMID 比较器少于 4 个的系统上不需要第二个值。
+    鍏朵腑 mN 琛ㄧず VMID 姣旇緝鍣?N 鐨勫瓧鑺傛帺鐮佸€笺€傚湪 VMID 姣旇緝鍣ㄥ皯浜?4 涓殑绯荤粺涓婁笉闇€瑕佺浜屼釜鍊笺€?
 
 ----
 
 :File:            `numvmidc` (ro)
 :Trace Registers: From IDR4
 :Notes:
-    VMID 比较器的数量
+    VMID 姣旇緝鍣ㄧ殑鏁伴噺
 
 ----
 
 :File:            `res_idx` (rw)
 :Trace Registers: None.
 :Notes:
-    选择要访问的资源选择器控制。必须为 2 或更高，因为选择器 0 和 1 是硬连线的。
+    閫夋嫨瑕佽闂殑璧勬簮閫夋嫨鍣ㄦ帶鍒躲€傚繀椤讳负 2 鎴栨洿楂橈紝鍥犱负閫夋嫨鍣?0 鍜?1 鏄‖杩炵嚎鐨勩€?
 
 :Syntax:
     `echo idx > res_idx`
 
-    其中 2 <= idx < nr_resource x 2
+    鍏朵腑 2 <= idx < nr_resource x 2
 
 ----
 
 :File:            `res_ctrl` (rw)
 :Trace Registers: RSCTLR[idx]
 :Notes:
-    设置资源选择器控制值。取值遵循 ETMv4 规范。
+    璁剧疆璧勬簮閫夋嫨鍣ㄦ帶鍒跺€笺€傚彇鍊奸伒寰?ETMv4 瑙勮寖銆?
 
 :Depends: `res_idx`
 :Syntax:
     `echo val > res_cntr`
 
-    其中 val 依据 ETMv4 规范。
+    鍏朵腑 val 渚濇嵁 ETMv4 瑙勮寖銆?
 
 ----
 
 :File:            `nr_resource` (ro)
 :Trace Registers: From IDR4
 :Notes:
-    资源选择器对的数量
+    璧勬簮閫夋嫨鍣ㄥ鐨勬暟閲?
 
 ----
 
 :File:            `event` (rw)
 :Trace Registers: EVENTCTRL0R
 :Notes:
-    设置最多 4 个已实现的事件字段。
+    璁剧疆鏈€澶?4 涓凡瀹炵幇鐨勪簨浠跺瓧娈点€?
 
 :Syntax:
     `echo ev3ev2ev1ev0 > event`
 
-    其中 evN 为一个 8 位事件字段。最多 4 个事件字段组成 32 位输入值。有效字段的数量取决于具体实现，由 IDR0 定义。
+    鍏朵腑 evN 涓轰竴涓?8 浣嶄簨浠跺瓧娈点€傛渶澶?4 涓簨浠跺瓧娈电粍鎴?32 浣嶈緭鍏ュ€笺€傛湁鏁堝瓧娈电殑鏁伴噺鍙栧喅浜庡叿浣撳疄鐜帮紝鐢?IDR0 瀹氫箟銆?
 
 ----
 
 :File: `event_instren` (rw)
 :Trace Registers: EVENTCTRL1R
 :Notes:
-    选择将事件包插入跟踪流的事件。
+    閫夋嫨灏嗕簨浠跺寘鎻掑叆璺熻釜娴佺殑浜嬩欢銆?
 
 :Depends: EVENTCTRL0R
 :Syntax:
     `echo bitfield > event_instren`
 
-    其中 bitfield 根据事件字段的数量最多为 4 位。
+    鍏朵腑 bitfield 鏍规嵁浜嬩欢瀛楁鐨勬暟閲忔渶澶氫负 4 浣嶃€?
 
 ----
 
 :File:            `event_ts` (rw)
 :Trace Registers: TSCTLR
 :Notes:
-    设置将生成时间戳请求的事件。
+    璁剧疆灏嗙敓鎴愭椂闂存埑璇锋眰鐨勪簨浠躲€?
 
 :Depends: `TS activated`
 :Syntax:
     `echo evfield > event_ts`
 
-    其中 evfield 为一个 8 位事件选择器。
+    鍏朵腑 evfield 涓轰竴涓?8 浣嶄簨浠堕€夋嫨鍣ㄣ€?
 
 ----
 
 :File:            `seq_idx` (rw)
 :Trace Registers: None
 :Notes:
-    序列器事件寄存器选择 - 0 到 2
+    搴忓垪鍣ㄤ簨浠跺瘎瀛樺櫒閫夋嫨 - 0 鍒?2
 
 ----
 
 :File:            `seq_state` (rw)
 :Trace Registers: SEQSTR
 :Notes:
-    序列器当前状态 - 0 到 3。
+    搴忓垪鍣ㄥ綋鍓嶇姸鎬?- 0 鍒?3銆?
 
 ----
 
 :File:            `seq_event` (rw)
 :Trace Registers: SEQEVR[idx]
 :Notes:
-    状态转移事件寄存器
+    鐘舵€佽浆绉讳簨浠跺瘎瀛樺櫒
 
 :Depends: `seq_idx`
 :Syntax:
     `echo evBevF > seq_event`
 
-    其中 evBevF 是一个由两位事件选择器组成的 16 位值：
+    鍏朵腑 evBevF 鏄竴涓敱涓や綅浜嬩欢閫夋嫨鍣ㄧ粍鎴愮殑 16 浣嶅€硷細
 
-    - evB : 向后（back）
-    - evF : 向前（forwards）
+    - evB : 鍚戝悗锛坆ack锛?
+    - evF : 鍚戝墠锛坒orwards锛?
 
 ----
 
 :File:            `seq_reset_event` (rw)
 :Trace Registers: SEQRSTEVR
 :Notes:
-    序列器复位事件
+    搴忓垪鍣ㄥ浣嶄簨浠?
 
 :Syntax:
     `echo evfield > seq_reset_event`
 
-    其中 evfield 为一个 8 位事件选择器。
+    鍏朵腑 evfield 涓轰竴涓?8 浣嶄簨浠堕€夋嫨鍣ㄣ€?
 
 ----
 
 :File:            `nrseqstate` (ro)
 :Trace Registers: From IDR5
 :Notes:
-    序列器状态数量（0 或 4）
+    搴忓垪鍣ㄧ姸鎬佹暟閲忥紙0 鎴?4锛?
 
 ----
 
 :File:            `nr_pe_cmp` (ro)
 :Trace Registers: From IDR4
 :Notes:
-    PE 比较器输入的数量
+    PE 姣旇緝鍣ㄨ緭鍏ョ殑鏁伴噺
 
 ----
 
 :File:            `nr_ext_inp` (ro)
 :Trace Registers: From IDR5
 :Notes:
-    外部输入的数量
+    澶栭儴杈撳叆鐨勬暟閲?
 
 ----
 
 :File:            `nr_ss_cmp` (ro)
 :Trace Registers: From IDR4
 :Notes:
-    单次触发控制寄存器的数量
+    鍗曟瑙﹀彂鎺у埗瀵勫瓨鍣ㄧ殑鏁伴噺
 
 ----
 
-**注意：** 在对任意地址比较器进行编程时，驱动会为该比较器打上使用类型的标记 —— 即 RANGE、SINGLE、START、STOP。一旦设置了该标记，则只能使用对其进行编程的同一个 sysfs 文件 / 类型来修改其值。
+**娉ㄦ剰锛?* 鍦ㄥ浠绘剰鍦板潃姣旇緝鍣ㄨ繘琛岀紪绋嬫椂锛岄┍鍔ㄤ細涓鸿姣旇緝鍣ㄦ墦涓婁娇鐢ㄧ被鍨嬬殑鏍囪 鈥斺€?鍗?RANGE銆丼INGLE銆丼TART銆丼TOP銆備竴鏃﹁缃簡璇ユ爣璁帮紝鍒欏彧鑳戒娇鐢ㄥ鍏惰繘琛岀紪绋嬬殑鍚屼竴涓?sysfs 鏂囦欢 / 绫诲瀷鏉ヤ慨鏀瑰叾鍊笺€?
 
 ```
 
@@ -608,7 +608,7 @@ Root: `/sys/bus/coresight/devices/etm<N>`
   % echo 0x3000 > addr_stop	; this is OK
 
 ```
-要清除所有比较器（以及所有其他硬件）上的编程，使用
+瑕佹竻闄ゆ墍鏈夋瘮杈冨櫒锛堜互鍙婃墍鏈夊叾浠栫‖浠讹級涓婄殑缂栫▼锛屼娇鐢?
 ```
 
   % echo 1 > reset
@@ -617,12 +617,12 @@ Root: `/sys/bus/coresight/devices/etm<N>`
 
 ```
 
-### ‘mode’ sysfs 参数。
+### 鈥榤ode鈥?sysfs 鍙傛暟銆?
 
 
-这是一个位字段选择参数，用于设置 ETM 的总体跟踪模式。下表使用驱动源文件中的宏定义来描述各个位，并给出其所代表特性的说明。许多特性是可选的，因此依赖于硬件的实现。
+杩欐槸涓€涓綅瀛楁閫夋嫨鍙傛暟锛岀敤浜庤缃?ETM 鐨勬€讳綋璺熻釜妯″紡銆備笅琛ㄤ娇鐢ㄩ┍鍔ㄦ簮鏂囦欢涓殑瀹忓畾涔夋潵鎻忚堪鍚勪釜浣嶏紝骞剁粰鍑哄叾鎵€浠ｈ〃鐗规€х殑璇存槑銆傝澶氱壒鎬ф槸鍙€夌殑锛屽洜姝や緷璧栦簬纭欢鐨勫疄鐜般€?
 
-位分配如下：-
+浣嶅垎閰嶅涓嬶細-
 
 ----
 
@@ -630,137 +630,137 @@ Root: `/sys/bus/coresight/devices/etm<N>`
     ETM_MODE_EXCLUDE
 
 **description:**
-    这是设置地址范围时包含 / 排除函数的默认值。置 1 表示排除范围。设置 mode
-    参数时，该值会应用到当前索引的地址范围。
+    杩欐槸璁剧疆鍦板潃鑼冨洿鏃跺寘鍚?/ 鎺掗櫎鍑芥暟鐨勯粯璁ゅ€笺€傜疆 1 琛ㄧず鎺掗櫎鑼冨洿銆傝缃?mode
+    鍙傛暟鏃讹紝璇ュ€间細搴旂敤鍒板綋鍓嶇储寮曠殑鍦板潃鑼冨洿銆?
 
 
 **bit (4):**
     ETM_MODE_BB
 
 **description:**
-    若硬件支持 [IDR0] 则设置以启用分支广播。该功能的主要用途是在代码于运行时被动态打补丁、仅使用条件分支可能无法重建完整程序流程的情况下。
+    鑻ョ‖浠舵敮鎸?[IDR0] 鍒欒缃互鍚敤鍒嗘敮骞挎挱銆傝鍔熻兘鐨勪富瑕佺敤閫旀槸鍦ㄤ唬鐮佷簬杩愯鏃惰鍔ㄦ€佹墦琛ヤ竵銆佷粎浣跨敤鏉′欢鍒嗘敮鍙兘鏃犳硶閲嶅缓瀹屾暣绋嬪簭娴佺▼鐨勬儏鍐典笅銆?
 
-    目前 Perf 不支持向解码器提供修改后的二进制文件，因此该功能仅用于调试目的或配合第三方工具使用。
+    鐩墠 Perf 涓嶆敮鎸佸悜瑙ｇ爜鍣ㄦ彁渚涗慨鏀瑰悗鐨勪簩杩涘埗鏂囦欢锛屽洜姝よ鍔熻兘浠呯敤浜庤皟璇曠洰鐨勬垨閰嶅悎绗笁鏂瑰伐鍏蜂娇鐢ㄣ€?
 
-    选择此选项将导致生成的跟踪量显著增加——可能存在溢出风险，或覆盖的指令更少。注意，此选项还会覆盖 ETM_MODE_RETURNSTACK <coresight-return-stack> 的任何设置，因此在分支广播范围与返回栈范围重叠的情况下，该范围内将不可用返回栈。
+    閫夋嫨姝ら€夐」灏嗗鑷寸敓鎴愮殑璺熻釜閲忔樉钁楀鍔犫€斺€斿彲鑳藉瓨鍦ㄦ孩鍑洪闄╋紝鎴栬鐩栫殑鎸囦护鏇村皯銆傛敞鎰忥紝姝ら€夐」杩樹細瑕嗙洊 ETM_MODE_RETURNSTACK <coresight-return-stack> 鐨勪换浣曡缃紝鍥犳鍦ㄥ垎鏀箍鎾寖鍥翠笌杩斿洖鏍堣寖鍥撮噸鍙犵殑鎯呭喌涓嬶紝璇ヨ寖鍥村唴灏嗕笉鍙敤杩斿洖鏍堛€?
 
 
 **bit (5):**
     ETMv4_MODE_CYCACC
 
 **description:**
-    若支持 [IDR0] 则设置以启用周期精确跟踪。
+    鑻ユ敮鎸?[IDR0] 鍒欒缃互鍚敤鍛ㄦ湡绮剧‘璺熻釜銆?
 
 
 **bit (6):**
     ETMv4_MODE_CTXID
 
 **description:**
-    若硬件支持 [IDR2] 则设置以启用上下文 ID 跟踪。
+    鑻ョ‖浠舵敮鎸?[IDR2] 鍒欒缃互鍚敤涓婁笅鏂?ID 璺熻釜銆?
 
 
 **bit (7):**
     ETM_MODE_VMID
 
 **description:**
-    若支持 [IDR2] 则设置以启用虚拟机 ID 跟踪。
+    鑻ユ敮鎸?[IDR2] 鍒欒缃互鍚敤铏氭嫙鏈?ID 璺熻釜銆?
 
 
 **bit (11):**
     ETMv4_MODE_TIMESTAMP
 
 **description:**
-    若支持 [IDR0] 则设置以启用时间戳生成。
+    鑻ユ敮鎸?[IDR0] 鍒欒缃互鍚敤鏃堕棿鎴崇敓鎴愩€?
 
 
 **bit (12):**
     ETM_MODE_RETURNSTACK
 **description:**
-    若支持 [IDR0] 则设置以启用跟踪返回栈。
+    鑻ユ敮鎸?[IDR0] 鍒欒缃互鍚敤璺熻釜杩斿洖鏍堛€?
 
 
 **bit (13-14):**
     ETM_MODE_QELEM(val)
 
 **description:**
-    ‘val’ 决定所启用的 Q 元素支持级别（若由 ETM [IDR0] 实现）。
+    鈥榲al鈥?鍐冲畾鎵€鍚敤鐨?Q 鍏冪礌鏀寔绾у埆锛堣嫢鐢?ETM [IDR0] 瀹炵幇锛夈€?
 
 
 **bit (19):**
     ETM_MODE_ATB_TRIGGER
 
 **description:**
-    若支持 [IDR5] 则设置以在事件控制寄存器 [EVENTCTLR1] 中启用 ATBTRIGGER 位。
+    鑻ユ敮鎸?[IDR5] 鍒欒缃互鍦ㄤ簨浠舵帶鍒跺瘎瀛樺櫒 [EVENTCTLR1] 涓惎鐢?ATBTRIGGER 浣嶃€?
 
 
 **bit (20):**
     ETM_MODE_LPOVERRIDE
 
 **description:**
-    若支持 [IDR5] 则设置以在事件控制寄存器 [EVENTCTLR1] 中启用 LPOVERRIDE 位。
+    鑻ユ敮鎸?[IDR5] 鍒欒缃互鍦ㄤ簨浠舵帶鍒跺瘎瀛樺櫒 [EVENTCTLR1] 涓惎鐢?LPOVERRIDE 浣嶃€?
 
 
 **bit (21):**
     ETM_MODE_ISTALL_EN
 
 **description:**
-    设置以在停顿控制寄存器 [STALLCTLR] 中启用 ISTALL 位。
+    璁剧疆浠ュ湪鍋滈】鎺у埗瀵勫瓨鍣?[STALLCTLR] 涓惎鐢?ISTALL 浣嶃€?
 
 
 **bit (23):**
     ETM_MODE_INSTPRIO
 
 **description:**
-    若支持 [IDR0] 则设置以在停顿控制寄存器 [STALLCTLR] 中启用 INSTPRIORITY 位。
+    鑻ユ敮鎸?[IDR0] 鍒欒缃互鍦ㄥ仠椤挎帶鍒跺瘎瀛樺櫒 [STALLCTLR] 涓惎鐢?INSTPRIORITY 浣嶃€?
 
 
 **bit (24):**
     ETM_MODE_NOOVERFLOW
 
 **description:**
-    若支持 [IDR3] 则设置以在停顿控制寄存器 [STALLCTLR] 中启用 NOOVERFLOW 位。
+    鑻ユ敮鎸?[IDR3] 鍒欒缃互鍦ㄥ仠椤挎帶鍒跺瘎瀛樺櫒 [STALLCTLR] 涓惎鐢?NOOVERFLOW 浣嶃€?
 
 
 **bit (25):**
     ETM_MODE_TRACE_RESET
 
 **description:**
-    若支持 [IDR3] 则设置以在视图指令控制寄存器 [VICTLR] 中启用 TRCRESET 位。
+    鑻ユ敮鎸?[IDR3] 鍒欒缃互鍦ㄨ鍥炬寚浠ゆ帶鍒跺瘎瀛樺櫒 [VICTLR] 涓惎鐢?TRCRESET 浣嶃€?
 
 
 **bit (26):**
     ETM_MODE_TRACE_ERR
 
 **description:**
-    设置以在视图指令控制寄存器 [VICTLR] 中启用 TRCCTRL 位。
+    璁剧疆浠ュ湪瑙嗗浘鎸囦护鎺у埗瀵勫瓨鍣?[VICTLR] 涓惎鐢?TRCCTRL 浣嶃€?
 
 
 **bit (27):**
     ETM_MODE_VIEWINST_STARTSTOP
 
 **description:**
-    设置视图指令控制寄存器 [VICTLR] 中 ViewInst 启停逻辑的初始状态值。
+    璁剧疆瑙嗗浘鎸囦护鎺у埗瀵勫瓨鍣?[VICTLR] 涓?ViewInst 鍚仠閫昏緫鐨勫垵濮嬬姸鎬佸€笺€?
 
 
 **bit (30):**
     ETM_MODE_EXCL_KERN
 
 **description:**
-    设置默认跟踪配置以排除内核模式跟踪（参见注 a）。
+    璁剧疆榛樿璺熻釜閰嶇疆浠ユ帓闄ゅ唴鏍告ā寮忚窡韪紙鍙傝娉?a锛夈€?
 
 
 **bit (31):**
     ETM_MODE_EXCL_USER
 
 **description:**
-    设置默认跟踪配置以排除用户空间跟踪（参见注 a）。
+    璁剧疆榛樿璺熻釜閰嶇疆浠ユ帓闄ょ敤鎴风┖闂磋窡韪紙鍙傝娉?a锛夈€?
 
 ----
 
-**注 a)** 启动时，ETM 被编程为使用地址范围比较器 0 跟踪整个地址空间。‘mode’ 位 30 / 31 会修改此设置，在地址范围比较器中为 NS 状态设置用户空间（EL0）或内核空间（EL1）的 EL 排除位。（默认设置排除所有安全 EL 和 NS EL2）
+**娉?a)** 鍚姩鏃讹紝ETM 琚紪绋嬩负浣跨敤鍦板潃鑼冨洿姣旇緝鍣?0 璺熻釜鏁翠釜鍦板潃绌洪棿銆傗€榤ode鈥?浣?30 / 31 浼氫慨鏀规璁剧疆锛屽湪鍦板潃鑼冨洿姣旇緝鍣ㄤ腑涓?NS 鐘舵€佽缃敤鎴风┖闂达紙EL0锛夋垨鍐呮牳绌洪棿锛圗L1锛夌殑 EL 鎺掗櫎浣嶃€傦紙榛樿璁剧疆鎺掗櫎鎵€鏈夊畨鍏?EL 鍜?NS EL2锛?
 
-一旦使用了 reset 参数，和/或实现了自定义编程——使用这些位将以相同方式设置地址比较器 0 的 EL 位。
+涓€鏃︿娇鐢ㄤ簡 reset 鍙傛暟锛屽拰/鎴栧疄鐜颁簡鑷畾涔夌紪绋嬧€斺€斾娇鐢ㄨ繖浜涗綅灏嗕互鐩稿悓鏂瑰紡璁剧疆鍦板潃姣旇緝鍣?0 鐨?EL 浣嶃€?
 
-**注 b)** 位 2-3、8-10、15-16、18、22 控制仅与数据跟踪协同工作的特性。由于 ETMv4 在架构上禁止 A-profile 数据跟踪，此处将其省略。可能的用途是内核作为异构系统的一部分支持对 R 或 M profile 基础设施进行控制的情况。
+**娉?b)** 浣?2-3銆?-10銆?5-16銆?8銆?2 鎺у埗浠呬笌鏁版嵁璺熻釜鍗忓悓宸ヤ綔鐨勭壒鎬с€傜敱浜?ETMv4 鍦ㄦ灦鏋勪笂绂佹 A-profile 鏁版嵁璺熻釜锛屾澶勫皢鍏剁渷鐣ャ€傚彲鑳界殑鐢ㄩ€旀槸鍐呮牳浣滀负寮傛瀯绯荤粺鐨勪竴閮ㄥ垎鏀寔瀵?R 鎴?M profile 鍩虹璁炬柦杩涜鎺у埗鐨勬儏鍐点€?
 
-位 17、28-29 未使用。
+浣?17銆?8-29 鏈娇鐢ㄣ€?

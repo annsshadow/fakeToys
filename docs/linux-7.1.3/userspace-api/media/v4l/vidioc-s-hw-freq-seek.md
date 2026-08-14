@@ -1,37 +1,37 @@
-######## ioctl VIDIOC_S_HW_FREQ_SEEK
+﻿######## ioctl VIDIOC_S_HW_FREQ_SEEK
 
 
-## 名称
+## 鍚嶇О
 
 
-VIDIOC_S_HW_FREQ_SEEK - 执行硬件频率搜索
+VIDIOC_S_HW_FREQ_SEEK - 鎵ц纭欢棰戠巼鎼滅储
 
-## 概要
+## 姒傝
 
 
 `int ioctl(int fd, VIDIOC_S_HW_FREQ_SEEK, struct v4l2_hw_freq_seek *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `argp`
-    指向 struct `v4l2_hw_freq_seek` 的指针。
+    鎸囧悜 struct `v4l2_hw_freq_seek` 鐨勬寚閽堛€?
 
-## 描述
+## 鎻忚堪
 
 
-从当前频率开始进行硬件频率搜索。为此，应用程序初始化 `tuner`、`type`、`seek_upward`、`wrap_around`、`spacing`、`rangelow` 和 `rangehigh` 字段，将 `reserved` 数组清零，并使用指向该结构的指针调用 `VIDIOC_S_HW_FREQ_SEEK` ioctl。
+浠庡綋鍓嶉鐜囧紑濮嬭繘琛岀‖浠堕鐜囨悳绱€備负姝わ紝搴旂敤绋嬪簭鍒濆鍖?`tuner`銆乣type`銆乣seek_upward`銆乣wrap_around`銆乣spacing`銆乣rangelow` 鍜?`rangehigh` 瀛楁锛屽皢 `reserved` 鏁扮粍娓呴浂锛屽苟浣跨敤鎸囧悜璇ョ粨鏋勭殑鎸囬拡璋冪敤 `VIDIOC_S_HW_FREQ_SEEK` ioctl銆?
 
-`rangelow` 和 `rangehigh` 字段可以设置为非默认值，以告知驱动搜索特定频段。如果 struct `v4l2_tuner` 的 `capability` 字段设置了 `V4L2_TUNER_CAP_HWSEEK_PROG_LIM` 标志，这些值必须落在 VIDIOC_ENUM_FREQ_BANDS 返回的某个频段之内。如果未设置 `V4L2_TUNER_CAP_HWSEEK_PROG_LIM` 标志，则这些值必须精确匹配 VIDIOC_ENUM_FREQ_BANDS 返回的某个频段。如果调谐器的当前频率不在所选频段内，在开始搜索之前它将被限制（clamp）到该频段内。
+`rangelow` 鍜?`rangehigh` 瀛楁鍙互璁剧疆涓洪潪榛樿鍊硷紝浠ュ憡鐭ラ┍鍔ㄦ悳绱㈢壒瀹氶娈点€傚鏋?struct `v4l2_tuner` 鐨?`capability` 瀛楁璁剧疆浜?`V4L2_TUNER_CAP_HWSEEK_PROG_LIM` 鏍囧織锛岃繖浜涘€煎繀椤昏惤鍦?VIDIOC_ENUM_FREQ_BANDS 杩斿洖鐨勬煇涓娈典箣鍐呫€傚鏋滄湭璁剧疆 `V4L2_TUNER_CAP_HWSEEK_PROG_LIM` 鏍囧織锛屽垯杩欎簺鍊煎繀椤荤簿纭尮閰?VIDIOC_ENUM_FREQ_BANDS 杩斿洖鐨勬煇涓娈点€傚鏋滆皟璋愬櫒鐨勫綋鍓嶉鐜囦笉鍦ㄦ墍閫夐娈靛唴锛屽湪寮€濮嬫悳绱箣鍓嶅畠灏嗚闄愬埗锛坈lamp锛夊埌璇ラ娈靛唴銆?
 
-如果返回错误，则将恢复原始频率。
+濡傛灉杩斿洖閿欒锛屽垯灏嗘仮澶嶅師濮嬮鐜囥€?
 
-如果设置了 `V4L2_CAP_HW_FREQ_SEEK` 能力，则支持此 ioctl。
+濡傛灉璁剧疆浜?`V4L2_CAP_HW_FREQ_SEEK` 鑳藉姏锛屽垯鏀寔姝?ioctl銆?
 
-如果此 ioctl 从非阻塞文件句柄调用，则返回 `EAGAIN` 错误码，且不进行搜索。
+濡傛灉姝?ioctl 浠庨潪闃诲鏂囦欢鍙ユ焺璋冪敤锛屽垯杩斿洖 `EAGAIN` 閿欒鐮侊紝涓斾笉杩涜鎼滅储銆?
 
 
 
@@ -42,43 +42,43 @@ VIDIOC_S_HW_FREQ_SEEK - 执行硬件频率搜索
 
     - - __u32
       - `tuner`
-      - 调谐器索引号。这与 struct `v4l2_input` 的 `tuner` 字段以及 struct `v4l2_tuner` 的 `index` 字段中的值相同。
+      - 璋冭皭鍣ㄧ储寮曞彿銆傝繖涓?struct `v4l2_input` 鐨?`tuner` 瀛楁浠ュ強 struct `v4l2_tuner` 鐨?`index` 瀛楁涓殑鍊肩浉鍚屻€?
     - - __u32
       - `type`
-      - 调谐器类型。这与 struct `v4l2_tuner` 的 `type` 字段中的值相同。请参见 `v4l2_tuner_type`
+      - 璋冭皭鍣ㄧ被鍨嬨€傝繖涓?struct `v4l2_tuner` 鐨?`type` 瀛楁涓殑鍊肩浉鍚屻€傝鍙傝 `v4l2_tuner_type`
     - - __u32
       - `seek_upward`
-      - 如果非零，则从当前频率向上搜索，否则向下搜索。
+      - 濡傛灉闈為浂锛屽垯浠庡綋鍓嶉鐜囧悜涓婃悳绱紝鍚﹀垯鍚戜笅鎼滅储銆?
     - - __u32
       - `wrap_around`
-      - 如果非零，在到达频率范围末端时回绕，否则停止搜索。struct `v4l2_tuner` 的 `capability` 字段会告诉你硬件支持什么。
+      - 濡傛灉闈為浂锛屽湪鍒拌揪棰戠巼鑼冨洿鏈鏃跺洖缁曪紝鍚﹀垯鍋滄鎼滅储銆俿truct `v4l2_tuner` 鐨?`capability` 瀛楁浼氬憡璇変綘纭欢鏀寔浠€涔堛€?
     - - __u32
       - `spacing`
-      - 如果非零，定义硬件搜索分辨率（以 Hz 为单位）。驱动选择设备支持的最接近的值。如果 spacing 为零，则使用合理的默认值。
+      - 濡傛灉闈為浂锛屽畾涔夌‖浠舵悳绱㈠垎杈ㄧ巼锛堜互 Hz 涓哄崟浣嶏級銆傞┍鍔ㄩ€夋嫨璁惧鏀寔鐨勬渶鎺ヨ繎鐨勫€笺€傚鏋?spacing 涓洪浂锛屽垯浣跨敤鍚堢悊鐨勯粯璁ゅ€笺€?
     - - __u32
       - `rangelow`
-      - 如果非零，要搜索频段的以 62.5 kHz 为单位的 tunable 最低频率；如果 struct `v4l2_tuner` 的 `capability` 字段设置了 `V4L2_TUNER_CAP_LOW` 标志，则以 62.5 Hz 为单位；如果 struct `v4l2_tuner` 的 `capability` 字段设置了 `V4L2_TUNER_CAP_1HZ` 标志，则以 1 Hz 为单位。如果 `rangelow` 为零，则使用合理的默认值。
+      - 濡傛灉闈為浂锛岃鎼滅储棰戞鐨勪互 62.5 kHz 涓哄崟浣嶇殑 tunable 鏈€浣庨鐜囷紱濡傛灉 struct `v4l2_tuner` 鐨?`capability` 瀛楁璁剧疆浜?`V4L2_TUNER_CAP_LOW` 鏍囧織锛屽垯浠?62.5 Hz 涓哄崟浣嶏紱濡傛灉 struct `v4l2_tuner` 鐨?`capability` 瀛楁璁剧疆浜?`V4L2_TUNER_CAP_1HZ` 鏍囧織锛屽垯浠?1 Hz 涓哄崟浣嶃€傚鏋?`rangelow` 涓洪浂锛屽垯浣跨敤鍚堢悊鐨勯粯璁ゅ€笺€?
     - - __u32
       - `rangehigh`
-      - 如果非零，要搜索频段的以 62.5 kHz 为单位的 tunable 最高频率；如果 struct `v4l2_tuner` 的 `capability` 字段设置了 `V4L2_TUNER_CAP_LOW` 标志，则以 62.5 Hz 为单位；如果 struct `v4l2_tuner` 的 `capability` 字段设置了 `V4L2_TUNER_CAP_1HZ` 标志，则以 1 Hz 为单位。如果 `rangehigh` 为零，则使用合理的默认值。
+      - 濡傛灉闈為浂锛岃鎼滅储棰戞鐨勪互 62.5 kHz 涓哄崟浣嶇殑 tunable 鏈€楂橀鐜囷紱濡傛灉 struct `v4l2_tuner` 鐨?`capability` 瀛楁璁剧疆浜?`V4L2_TUNER_CAP_LOW` 鏍囧織锛屽垯浠?62.5 Hz 涓哄崟浣嶏紱濡傛灉 struct `v4l2_tuner` 鐨?`capability` 瀛楁璁剧疆浜?`V4L2_TUNER_CAP_1HZ` 鏍囧織锛屽垯浠?1 Hz 涓哄崟浣嶃€傚鏋?`rangehigh` 涓洪浂锛屽垯浣跨敤鍚堢悊鐨勯粯璁ゅ€笺€?
     - - __u32
       - `reserved`\ [^5^]
-      - 为未来扩展保留。应用程序必须将数组设置为零。
+      - 涓烘湭鏉ユ墿灞曚繚鐣欍€傚簲鐢ㄧ▼搴忓繀椤诲皢鏁扮粍璁剧疆涓洪浂銆?
 
-## 返回值
+## 杩斿洖鍊?
 
 
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 章节中描述。
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
 
 EINVAL
-    `tuner` 索引越界，`wrap_around` 值不受支持，或 `type`、`rangelow` 或 `rangehigh` 字段中的某个值有误。
+    `tuner` 绱㈠紩瓒婄晫锛宍wrap_around` 鍊间笉鍙楁敮鎸侊紝鎴?`type`銆乣rangelow` 鎴?`rangehigh` 瀛楁涓殑鏌愪釜鍊兼湁璇€?
 
 EAGAIN
-    尝试以非阻塞模式调用 `VIDIOC_S_HW_FREQ_SEEK`。
+    灏濊瘯浠ラ潪闃诲妯″紡璋冪敤 `VIDIOC_S_HW_FREQ_SEEK`銆?
 
 ENODATA
-    硬件搜索未找到任何频道。
+    纭欢鎼滅储鏈壘鍒颁换浣曢閬撱€?
 
 EBUSY
-    另一个硬件搜索已在进行中。
+    鍙︿竴涓‖浠舵悳绱㈠凡鍦ㄨ繘琛屼腑銆?

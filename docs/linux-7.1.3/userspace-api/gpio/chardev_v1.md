@@ -1,88 +1,64 @@
+﻿
+## GPIO 瀛楃璁惧鐢ㄦ埛绌洪棿 API锛坴1锛?
 
-## GPIO 字符设备用户空间 API（v1）
-
-
-   本 API 已被 chardev.rst（v2）取代。
-
-   新开发应使用 v2 API，并鼓励已有开发尽快迁移，因为此 API 将在未来被移除。v2 API 是 v1 API
-   在功能上的超集，因此任何 v1 调用都可以直接翻译为等价的 v2 调用。
-
-   在迁移期间，此接口将继续得到维护，但新特性只会添加到新的 API 中。
-
-首次加入于 4.8。
-
-该 API 围绕三个主要对象构建：gpio-v1-chip、gpio-v1-line-handle 与 gpio-v1-line-event。
-
-当本文档中使用“line event”时，它指的是可以监视一条线路上边沿事件的请求，而不是边沿事件本身。
-
-## 芯片
+   鏈?API 宸茶 chardev.rst锛坴2锛夊彇浠ｃ€?
+   鏂板紑鍙戝簲浣跨敤 v2 API锛屽苟榧撳姳宸叉湁寮€鍙戝敖蹇縼绉伙紝鍥犱负姝?API 灏嗗湪鏈潵琚Щ闄ゃ€倂2 API 鏄?v1 API
+   鍦ㄥ姛鑳戒笂鐨勮秴闆嗭紝鍥犳浠讳綍 v1 璋冪敤閮藉彲浠ョ洿鎺ョ炕璇戜负绛変环鐨?v2 璋冪敤銆?
+   鍦ㄨ縼绉绘湡闂达紝姝ゆ帴鍙ｅ皢缁х画寰楀埌缁存姢锛屼絾鏂扮壒鎬у彧浼氭坊鍔犲埌鏂扮殑 API 涓€?
+棣栨鍔犲叆浜?4.8銆?
+璇?API 鍥寸粫涓変釜涓昏瀵硅薄鏋勫缓锛歡pio-v1-chip銆乬pio-v1-line-handle 涓?gpio-v1-line-event銆?
+褰撴湰鏂囨。涓娇鐢ㄢ€渓ine event鈥濇椂锛屽畠鎸囩殑鏄彲浠ョ洃瑙嗕竴鏉＄嚎璺笂杈规部浜嬩欢鐨勮姹傦紝鑰屼笉鏄竟娌夸簨浠舵湰韬€?
+## 鑺墖
 
 
-Chip 代表一个单独的 GPIO 芯片，并通过形如 `/dev/gpiochipX` 的设备文件暴露给用户空间。
-
-每个芯片支持若干条 GPIO 线，`chip.lines<gpiochip_info>`。芯片上的线由一个在从 0 到
-`chip.lines - 1` 范围内的 `offset` 标识，即 `[0,chip.lines)`。
-
-线通过 gpio-get-linehandle-ioctl.rst 从芯片请求，得到的线句柄用于访问 GPIO 芯片的线；或
-通过 gpio-get-lineevent-ioctl.rst，得到的线事件用于监视一条 GPIO 线上的边沿事件。
-
-在本文档中，在 GPIO 设备文件上调用 `open()` 返回的文件描述符被称为 `chip_fd`。
-
-### 操作
+Chip 浠ｈ〃涓€涓崟鐙殑 GPIO 鑺墖锛屽苟閫氳繃褰㈠ `/dev/gpiochipX` 鐨勮澶囨枃浠舵毚闇茬粰鐢ㄦ埛绌洪棿銆?
+姣忎釜鑺墖鏀寔鑻ュ共鏉?GPIO 绾匡紝`chip.lines<gpiochip_info>`銆傝姱鐗囦笂鐨勭嚎鐢变竴涓湪浠?0 鍒?`chip.lines - 1` 鑼冨洿鍐呯殑 `offset` 鏍囪瘑锛屽嵆 `[0,chip.lines)`銆?
+绾块€氳繃 gpio-get-linehandle-ioctl.rst 浠庤姱鐗囪姹傦紝寰楀埌鐨勭嚎鍙ユ焺鐢ㄤ簬璁块棶 GPIO 鑺墖鐨勭嚎锛涙垨
+閫氳繃 gpio-get-lineevent-ioctl.rst锛屽緱鍒扮殑绾夸簨浠剁敤浜庣洃瑙嗕竴鏉?GPIO 绾夸笂鐨勮竟娌夸簨浠躲€?
+鍦ㄦ湰鏂囨。涓紝鍦?GPIO 璁惧鏂囦欢涓婅皟鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮琚О涓?`chip_fd`銆?
+### 鎿嶄綔
 
 
-可以对芯片执行以下操作：
+鍙互瀵硅姱鐗囨墽琛屼互涓嬫搷浣滐細
 
-- [获取线句柄](gpio-get-linehandle-ioctl)
-- [获取线事件](gpio-get-lineevent-ioctl)
-- [获取芯片信息](gpio-get-chipinfo-ioctl)
-- [获取线信息](gpio-get-lineinfo-ioctl)
-- [监视线信息](gpio-get-lineinfo-watch-ioctl)
-- [取消监视线信息](gpio-get-lineinfo-unwatch-ioctl)
-- [读取线信息变更事件](gpio-lineinfo-changed-read)
+- [鑾峰彇绾垮彞鏌刔(gpio-get-linehandle-ioctl)
+- [鑾峰彇绾夸簨浠禲(gpio-get-lineevent-ioctl)
+- [鑾峰彇鑺墖淇℃伅](gpio-get-chipinfo-ioctl)
+- [鑾峰彇绾夸俊鎭痌(gpio-get-lineinfo-ioctl)
+- [鐩戣绾夸俊鎭痌(gpio-get-lineinfo-watch-ioctl)
+- [鍙栨秷鐩戣绾夸俊鎭痌(gpio-get-lineinfo-unwatch-ioctl)
+- [璇诲彇绾夸俊鎭彉鏇翠簨浠禲(gpio-lineinfo-changed-read)
 
-## 线句柄
+## 绾垮彞鏌?
 
-
-线句柄由 gpio-get-linehandle-ioctl.rst 创建，提供对一组已请求线的访问。线句柄通过
-gpio-get-linehandle-ioctl.rst 在 `request.fd<gpiohandle_request>` 中返回的匿名文件描述符
-暴露给用户空间。
-
-在本文档中，线句柄文件描述符被称为 `handle_fd`。
-
-### 操作
+绾垮彞鏌勭敱 gpio-get-linehandle-ioctl.rst 鍒涘缓锛屾彁渚涘涓€缁勫凡璇锋眰绾跨殑璁块棶銆傜嚎鍙ユ焺閫氳繃
+gpio-get-linehandle-ioctl.rst 鍦?`request.fd<gpiohandle_request>` 涓繑鍥炵殑鍖垮悕鏂囦欢鎻忚堪绗?鏆撮湶缁欑敤鎴风┖闂淬€?
+鍦ㄦ湰鏂囨。涓紝绾垮彞鏌勬枃浠舵弿杩扮琚О涓?`handle_fd`銆?
+### 鎿嶄綔
 
 
-可以对线句柄执行以下操作：
+鍙互瀵圭嚎鍙ユ焺鎵ц浠ヤ笅鎿嶄綔锛?
+- [鑾峰彇绾垮€糫(gpio-handle-get-line-values-ioctl)
+- [璁剧疆绾垮€糫(gpio-handle-set-line-values-ioctl)
+- [閲嶆柊閰嶇疆绾縘(gpio-handle-set-config-ioctl)
 
-- [获取线值](gpio-handle-get-line-values-ioctl)
-- [设置线值](gpio-handle-set-line-values-ioctl)
-- [重新配置线](gpio-handle-set-config-ioctl)
+## 绾夸簨浠?
 
-## 线事件
-
-
-线事件由 gpio-get-lineevent-ioctl.rst 创建，提供对一条已请求线的访问。线事件通过
-gpio-get-lineevent-ioctl.rst 在 `request.fd<gpioevent_request>` 中返回的匿名文件描述符
-暴露给用户空间。
-
-在本文档中，线事件文件描述符被称为 `event_fd`。
-
-### 操作
+绾夸簨浠剁敱 gpio-get-lineevent-ioctl.rst 鍒涘缓锛屾彁渚涘涓€鏉″凡璇锋眰绾跨殑璁块棶銆傜嚎浜嬩欢閫氳繃
+gpio-get-lineevent-ioctl.rst 鍦?`request.fd<gpioevent_request>` 涓繑鍥炵殑鍖垮悕鏂囦欢鎻忚堪绗?鏆撮湶缁欑敤鎴风┖闂淬€?
+鍦ㄦ湰鏂囨。涓紝绾夸簨浠舵枃浠舵弿杩扮琚О涓?`event_fd`銆?
+### 鎿嶄綔
 
 
-可以对线事件执行以下操作：
+鍙互瀵圭嚎浜嬩欢鎵ц浠ヤ笅鎿嶄綔锛?
+- [鑾峰彇绾垮€糫(gpio-handle-get-line-values-ioctl)
+- [璇诲彇绾胯竟娌夸簨浠禲(gpio-lineevent-data-read)
 
-- [获取线值](gpio-handle-get-line-values-ioctl)
-- [读取线边沿事件](gpio-lineevent-data-read)
-
-## 类型
+## 绫诲瀷
 
 
-本节包含 ABI v1 所引用的结构体。
-
-`struct gpiochip_info<gpiochip_info>` 在 ABI v1 与 v2 中通用。
-
+鏈妭鍖呭惈 ABI v1 鎵€寮曠敤鐨勭粨鏋勪綋銆?
+`struct gpiochip_info<gpiochip_info>` 鍦?ABI v1 涓?v2 涓€氱敤銆?
    :identifiers:
     gpioevent_data
     gpioevent_request

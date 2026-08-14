@@ -1,40 +1,26 @@
+﻿
+## Landlock锛氭棤鐗规潈璁块棶鎺у埗
 
-## Landlock：无特权访问控制
 
-
-:Author: Mickaël Salaün
+:Author: Micka毛l Sala眉n
 :Date: March 2026
 
-Landlock 的目标是能够限制一组进程的环境权利（例如全局文件系统或网络访问）。因为 Landlock 是一个可堆叠的 LSM，它使得创建安全沙箱成为可能，作为除现有系统级访问控制之外的新的安全层。这类沙箱有望帮助缓解用户空间应用中缺陷或意外/恶意行为的安全影响。Landlock 赋予任何进程（包括无特权进程）安全地限制自身的能力。
-
-我们可以通过在内核日志中寻找 "landlock: Up and running"（以 root 身份）来快速确认运行中的系统是否启用了 Landlock：
-`dmesg | grep landlock || journalctl -kb -g landlock` 。
-开发者也可以借助相关的系统调用 <landlock_abi_versions> 轻松检查 Landlock 支持情况。
-如果当前不支持 Landlock，我们需要适当地配置内核 <kernel_support>。
-
-## Landlock 规则
+Landlock 鐨勭洰鏍囨槸鑳藉闄愬埗涓€缁勮繘绋嬬殑鐜鏉冨埄锛堜緥濡傚叏灞€鏂囦欢绯荤粺鎴栫綉缁滆闂級銆傚洜涓?Landlock 鏄竴涓彲鍫嗗彔鐨?LSM锛屽畠浣垮緱鍒涘缓瀹夊叏娌欑鎴愪负鍙兘锛屼綔涓洪櫎鐜版湁绯荤粺绾ц闂帶鍒朵箣澶栫殑鏂扮殑瀹夊叏灞傘€傝繖绫绘矙绠辨湁鏈涘府鍔╃紦瑙ｇ敤鎴风┖闂村簲鐢ㄤ腑缂洪櫡鎴栨剰澶?鎭舵剰琛屼负鐨勫畨鍏ㄥ奖鍝嶃€侺andlock 璧嬩簣浠讳綍杩涚▼锛堝寘鎷棤鐗规潈杩涚▼锛夊畨鍏ㄥ湴闄愬埗鑷韩鐨勮兘鍔涖€?
+鎴戜滑鍙互閫氳繃鍦ㄥ唴鏍告棩蹇椾腑瀵绘壘 "landlock: Up and running"锛堜互 root 韬唤锛夋潵蹇€熺‘璁よ繍琛屼腑鐨勭郴缁熸槸鍚﹀惎鐢ㄤ簡 Landlock锛?`dmesg | grep landlock || journalctl -kb -g landlock` 銆?寮€鍙戣€呬篃鍙互鍊熷姪鐩稿叧鐨勭郴缁熻皟鐢?<landlock_abi_versions> 杞绘澗妫€鏌?Landlock 鏀寔鎯呭喌銆?濡傛灉褰撳墠涓嶆敮鎸?Landlock锛屾垜浠渶瑕侀€傚綋鍦伴厤缃唴鏍?<kernel_support>銆?
+## Landlock 瑙勫垯
 
 
-Landlock 规则描述进程打算在对象上执行的一个动作。一组规则被聚合进一个规则集（ruleset），它随后可以限制实施它的线程，以及它未来的子进程。
-
-现有的两类规则为：
-
+Landlock 瑙勫垯鎻忚堪杩涚▼鎵撶畻鍦ㄥ璞′笂鎵ц鐨勪竴涓姩浣溿€備竴缁勮鍒欒鑱氬悎杩涗竴涓鍒欓泦锛坮uleset锛夛紝瀹冮殢鍚庡彲浠ラ檺鍒跺疄鏂藉畠鐨勭嚎绋嬶紝浠ュ強瀹冩湭鏉ョ殑瀛愯繘绋嬨€?
+鐜版湁鐨勪袱绫昏鍒欎负锛?
 Filesystem rules
-    对于这些规则，对象是文件层级，相关的文件系统动作由
-    `filesystem access rights` 定义。
-
+    瀵逛簬杩欎簺瑙勫垯锛屽璞℃槸鏂囦欢灞傜骇锛岀浉鍏崇殑鏂囦欢绯荤粺鍔ㄤ綔鐢?    `filesystem access rights` 瀹氫箟銆?
 Network rules (since ABI v4)
-    对于这些规则，对象是 TCP 端口，相关动作由 `network access rights` 定义。
+    瀵逛簬杩欎簺瑙勫垯锛屽璞℃槸 TCP 绔彛锛岀浉鍏冲姩浣滅敱 `network access rights` 瀹氫箟銆?
+### 瀹氫箟涓庡疄鏂藉畨鍏ㄧ瓥鐣?
 
-### 定义与实施安全策略
-
-
-我们首先需要定义将容纳我们规则的规则集。
-
-在此示例中，规则集将包含只允许文件系统读动作并建立特定 TCP 连接的规则。文件系统写动作与其他 TCP 动作将被拒绝。
-
-规则集随后需要处理这两类动作。这是向后与向前兼容性所必需的（即内核与用户空间可能互不认识对方支持的受限项），因此需要对默认拒绝的访问权限加以明确。
-
+鎴戜滑棣栧厛闇€瑕佸畾涔夊皢瀹圭撼鎴戜滑瑙勫垯鐨勮鍒欓泦銆?
+鍦ㄦ绀轰緥涓紝瑙勫垯闆嗗皢鍖呭惈鍙厑璁告枃浠剁郴缁熻鍔ㄤ綔骞跺缓绔嬬壒瀹?TCP 杩炴帴鐨勮鍒欍€傛枃浠剁郴缁熷啓鍔ㄤ綔涓庡叾浠?TCP 鍔ㄤ綔灏嗚鎷掔粷銆?
+瑙勫垯闆嗛殢鍚庨渶瑕佸鐞嗚繖涓ょ被鍔ㄤ綔銆傝繖鏄悜鍚庝笌鍚戝墠鍏煎鎬ф墍蹇呴渶鐨勶紙鍗冲唴鏍镐笌鐢ㄦ埛绌洪棿鍙兘浜掍笉璁よ瘑瀵规柟鏀寔鐨勫彈闄愰」锛夛紝鍥犳闇€瑕佸榛樿鎷掔粷鐨勮闂潈闄愬姞浠ユ槑纭€?
 
     struct landlock_ruleset_attr ruleset_attr = {
         .handled_access_fs =
@@ -63,10 +49,8 @@ Network rules (since ABI v4)
             LANDLOCK_SCOPE_SIGNAL,
     };
 
-因为我们可能无法知道应用将在哪个内核版本上执行，遵循尽力而为（best-effort）的安全策略更安全。确实，我们应当尽可能多地保护用户，无论他们使用什么内核。
-
-为了与较旧的 Linux 版本兼容，我们检测可用的 Landlock ABI 版本，并仅使用可用的访问权限子集：
-
+鍥犱负鎴戜滑鍙兘鏃犳硶鐭ラ亾搴旂敤灏嗗湪鍝釜鍐呮牳鐗堟湰涓婃墽琛岋紝閬靛惊灏藉姏鑰屼负锛坆est-effort锛夌殑瀹夊叏绛栫暐鏇村畨鍏ㄣ€傜‘瀹烇紝鎴戜滑搴斿綋灏藉彲鑳藉鍦颁繚鎶ょ敤鎴凤紝鏃犺浠栦滑浣跨敤浠€涔堝唴鏍搞€?
+涓轰簡涓庤緝鏃х殑 Linux 鐗堟湰鍏煎锛屾垜浠娴嬪彲鐢ㄧ殑 Landlock ABI 鐗堟湰锛屽苟浠呬娇鐢ㄥ彲鐢ㄧ殑璁块棶鏉冮檺瀛愰泦锛?
 
     int abi;
 
@@ -105,8 +89,7 @@ Network rules (since ABI v4)
         ruleset_attr.handled_access_fs &= ~LANDLOCK_ACCESS_FS_RESOLVE_UNIX;
     }
 
-这就启用了将包含我们规则的、包容式规则集的创建。
-
+杩欏氨鍚敤浜嗗皢鍖呭惈鎴戜滑瑙勫垯鐨勩€佸寘瀹瑰紡瑙勫垯闆嗙殑鍒涘缓銆?
 
     int ruleset_fd;
 
@@ -116,8 +99,7 @@ Network rules (since ABI v4)
         return 1;
     }
 
-我们现在可以借助返回的指代此规则集的文件描述符，向该规则集添加一条新规则。这条规则将允许读取与执行文件层级 `/usr`。若没有另一条规则，写动作随后将被规则集拒绝。为了把 `/usr` 加入规则集，我们用 `O_PATH` 标志打开它，并用此文件描述符填充 &struct landlock_path_beneath_attr。
-
+鎴戜滑鐜板湪鍙互鍊熷姪杩斿洖鐨勬寚浠ｆ瑙勫垯闆嗙殑鏂囦欢鎻忚堪绗︼紝鍚戣瑙勫垯闆嗘坊鍔犱竴鏉℃柊瑙勫垯銆傝繖鏉¤鍒欏皢鍏佽璇诲彇涓庢墽琛屾枃浠跺眰绾?`/usr`銆傝嫢娌℃湁鍙︿竴鏉¤鍒欙紝鍐欏姩浣滈殢鍚庡皢琚鍒欓泦鎷掔粷銆備负浜嗘妸 `/usr` 鍔犲叆瑙勫垯闆嗭紝鎴戜滑鐢?`O_PATH` 鏍囧織鎵撳紑瀹冿紝骞剁敤姝ゆ枃浠舵弿杩扮濉厖 &struct landlock_path_beneath_attr銆?
 
     int err;
     struct landlock_path_beneath_attr path_beneath = {
@@ -142,10 +124,8 @@ Network rules (since ABI v4)
         return 1;
     }
 
-也可能需要根据 Landlock ABI 版本筛选访问权限，遵循与前述规则集创建相同的逻辑来创建规则。在本例中不需要，因为所有请求的 `allowed_access` 权限在 ABI 1 中已可用。
-
-对于网络访问控制，我们可以添加一组允许将某个端口号用于特定动作（HTTPS 连接）的规则。
-
+涔熷彲鑳介渶瑕佹牴鎹?Landlock ABI 鐗堟湰绛涢€夎闂潈闄愶紝閬靛惊涓庡墠杩拌鍒欓泦鍒涘缓鐩稿悓鐨勯€昏緫鏉ュ垱寤鸿鍒欍€傚湪鏈緥涓笉闇€瑕侊紝鍥犱负鎵€鏈夎姹傜殑 `allowed_access` 鏉冮檺鍦?ABI 1 涓凡鍙敤銆?
+瀵逛簬缃戠粶璁块棶鎺у埗锛屾垜浠彲浠ユ坊鍔犱竴缁勫厑璁稿皢鏌愪釜绔彛鍙风敤浜庣壒瀹氬姩浣滐紙HTTPS 杩炴帴锛夌殑瑙勫垯銆?
 
     struct landlock_net_port_attr net_port = {
         .allowed_access = LANDLOCK_ACCESS_NET_CONNECT_TCP,
@@ -155,7 +135,7 @@ Network rules (since ABI v4)
     err = landlock_add_rule(ruleset_fd, LANDLOCK_RULE_NET_PORT,
                             &net_port, 0);
 
-当向 `landlock_restrict_self()` 传入非空的 `flags` 参数时，对 restrict 标志也需要类似的向后兼容性检查（可用标志请参见 sys_landlock_restrict_self() 文档）：
+褰撳悜 `landlock_restrict_self()` 浼犲叆闈炵┖鐨?`flags` 鍙傛暟鏃讹紝瀵?restrict 鏍囧織涔熼渶瑕佺被浼肩殑鍚戝悗鍏煎鎬ф鏌ワ紙鍙敤鏍囧織璇峰弬瑙?sys_landlock_restrict_self() 鏂囨。锛夛細
 
 
     __u32 restrict_flags =
@@ -181,8 +161,7 @@ Network rules (since ABI v4)
         restrict_flags &= ~LANDLOCK_RESTRICT_SELF_TSYNC;
     }
 
-下一步是限制当前线程获取更多特权（例如通过 SUID 二进制）。我们现在有了一个规则集：第一条规则允许对 `/usr` 的读与执行访问，同时拒绝文件系统所有其他被处理的访问；第二条规则允许 HTTPS 连接。
-
+涓嬩竴姝ユ槸闄愬埗褰撳墠绾跨▼鑾峰彇鏇村鐗规潈锛堜緥濡傞€氳繃 SUID 浜岃繘鍒讹級銆傛垜浠幇鍦ㄦ湁浜嗕竴涓鍒欓泦锛氱涓€鏉¤鍒欏厑璁稿 `/usr` 鐨勮涓庢墽琛岃闂紝鍚屾椂鎷掔粷鏂囦欢绯荤粺鎵€鏈夊叾浠栬澶勭悊鐨勮闂紱绗簩鏉¤鍒欏厑璁?HTTPS 杩炴帴銆?
 
     if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
         perror("Failed to restrict privileges");
@@ -190,8 +169,7 @@ Network rules (since ABI v4)
         return 1;
     }
 
-当前线程现在已准备好用规则集自我沙箱化。
-
+褰撳墠绾跨▼鐜板湪宸插噯澶囧ソ鐢ㄨ鍒欓泦鑷垜娌欑鍖栥€?
 
     if (landlock_restrict_self(ruleset_fd, restrict_flags)) {
         perror("Failed to enforce ruleset");
@@ -200,100 +178,67 @@ Network rules (since ABI v4)
     }
     close(ruleset_fd);
 
-如果 `landlock_restrict_self` 系统调用成功，当前线程现在已被限制，并且此策略也将被实施到它随后创建的所有子进程上。一旦线程被 Landlock 化，就没有办法移除它的安全策略；只允许添加更多限制。这些线程现在处于一个新的 Landlock 域中，该域是它们父域（若有）与新规则集的合并。
-
-完整可工作的代码可在 `samples/landlock/sandboxer.c`_ 中找到。
-
-### 良好实践
+濡傛灉 `landlock_restrict_self` 绯荤粺璋冪敤鎴愬姛锛屽綋鍓嶇嚎绋嬬幇鍦ㄥ凡琚檺鍒讹紝骞朵笖姝ょ瓥鐣ヤ篃灏嗚瀹炴柦鍒板畠闅忓悗鍒涘缓鐨勬墍鏈夊瓙杩涚▼涓娿€備竴鏃︾嚎绋嬭 Landlock 鍖栵紝灏辨病鏈夊姙娉曠Щ闄ゅ畠鐨勫畨鍏ㄧ瓥鐣ワ紱鍙厑璁告坊鍔犳洿澶氶檺鍒躲€傝繖浜涚嚎绋嬬幇鍦ㄥ浜庝竴涓柊鐨?Landlock 鍩熶腑锛岃鍩熸槸瀹冧滑鐖跺煙锛堣嫢鏈夛級涓庢柊瑙勫垯闆嗙殑鍚堝苟銆?
+瀹屾暣鍙伐浣滅殑浠ｇ爜鍙湪 `samples/landlock/sandboxer.c`_ 涓壘鍒般€?
+### 鑹ソ瀹炶返
 
 
-建议尽可能将访问权限设置到文件层级的叶节点。例如，与把 `~/` 设为只读层级、把 `~/tmp/` 设为读写层级相比，更好的做法是把 `~/doc/` 设为只读层级、把 `~/tmp/` 设为读写层级。遵循这一良好实践会带来不依赖于其位置（即父目录）的自足层级。这在我们要允许链接或重命名时尤其相关。确实，每个目录拥有一致的访问权限，使得可以在不依赖目标目录访问权限（本操作所需的权限除外，参见 `LANDLOCK_ACCESS_FS_REFER` 文档）的情况下改变这些目录的位置。
+寤鸿灏藉彲鑳藉皢璁块棶鏉冮檺璁剧疆鍒版枃浠跺眰绾х殑鍙惰妭鐐广€備緥濡傦紝涓庢妸 `~/` 璁句负鍙灞傜骇銆佹妸 `~/tmp/` 璁句负璇诲啓灞傜骇鐩告瘮锛屾洿濂界殑鍋氭硶鏄妸 `~/doc/` 璁句负鍙灞傜骇銆佹妸 `~/tmp/` 璁句负璇诲啓灞傜骇銆傞伒寰繖涓€鑹ソ瀹炶返浼氬甫鏉ヤ笉渚濊禆浜庡叾浣嶇疆锛堝嵆鐖剁洰褰曪級鐨勮嚜瓒冲眰绾с€傝繖鍦ㄦ垜浠鍏佽閾炬帴鎴栭噸鍛藉悕鏃跺挨鍏剁浉鍏炽€傜‘瀹烇紝姣忎釜鐩綍鎷ユ湁涓€鑷寸殑璁块棶鏉冮檺锛屼娇寰楀彲浠ュ湪涓嶄緷璧栫洰鏍囩洰褰曡闂潈闄愶紙鏈搷浣滄墍闇€鐨勬潈闄愰櫎澶栵紝鍙傝 `LANDLOCK_ACCESS_FS_REFER` 鏂囨。锛夌殑鎯呭喌涓嬫敼鍙樿繖浜涚洰褰曠殑浣嶇疆銆?
+鎷ユ湁鑷冻灞傜骇涔熸湁鍔╀簬鎶婃墍闇€鐨勮闂潈闄愭敹绱у埌鏈€灏忕殑鏁版嵁闆嗗悎銆傝繖涔熸湁鍔╀簬閬垮厤鈥?sinkhole 鐩綍鈥濓紙鍗虫暟鎹彲浠ヨ閾炬帴鍒板叾涓€佸嵈鏃犳硶浠庝腑閾炬帴鍑烘潵鐨勭洰褰曪級銆傜劧鑰岋紝杩欏彇鍐充簬鏁版嵁缁勭粐锛岃€屾暟鎹粍缁囧彲鑳戒笉鍙楀紑鍙戣€呮帶鍒躲€傚湪杩欑鎯呭喌涓嬶紝鎺堜簣 `~/tmp/` 璇诲啓璁块棶锛堣€岄潪浠呭啓璁块棶锛夛紝浼氭綔鍦ㄥ湴鍏佽鎶?`~/tmp/` 绉诲姩鍒颁竴涓笉鍙鐩綍锛屽悓鏃朵粛淇濈暀鍒楀嚭 `~/tmp/` 鍐呭鐨勮兘鍔涖€?
+### 鏂囦欢璺緞璁块棶鏉冮檺鐨勫眰绾?
 
-拥有自足层级也有助于把所需的访问权限收紧到最小的数据集合。这也有助于避免“ sinkhole 目录”（即数据可以被链接到其中、却无法从中链接出来的目录）。然而，这取决于数据组织，而数据组织可能不受开发者控制。在这种情况下，授予 `~/tmp/` 读写访问（而非仅写访问），会潜在地允许把 `~/tmp/` 移动到一个不可读目录，同时仍保留列出 `~/tmp/` 内容的能力。
-
-### 文件路径访问权限的层级
-
-
-每当一个线程对自身实施一个规则集时，它就用新的一层策略更新它的 Landlock 域。这一补充策略会与任何可能已经在限制此线程的其他规则集堆叠在一起。一个被沙箱化的线程随后可以用一个新实施的规则集安全地为自己添加更多约束。
-
-若某策略层在路径上遭遇的其规则中至少有一条授予该访问，则该策略层授予对文件路径的访问。一个被沙箱化的线程只有在它的所有已实施策略层以及所有其他系统访问控制（例如文件系统 DAC、其它 LSM 策略等）都授予该访问时，才能访问某个文件路径。
-
-### 绑定挂载与 OverlayFS
+姣忓綋涓€涓嚎绋嬪鑷韩瀹炴柦涓€涓鍒欓泦鏃讹紝瀹冨氨鐢ㄦ柊鐨勪竴灞傜瓥鐣ユ洿鏂板畠鐨?Landlock 鍩熴€傝繖涓€琛ュ厖绛栫暐浼氫笌浠讳綍鍙兘宸茬粡鍦ㄩ檺鍒舵绾跨▼鐨勫叾浠栬鍒欓泦鍫嗗彔鍦ㄤ竴璧枫€備竴涓娌欑鍖栫殑绾跨▼闅忓悗鍙互鐢ㄤ竴涓柊瀹炴柦鐨勮鍒欓泦瀹夊叏鍦颁负鑷繁娣诲姞鏇村绾︽潫銆?
+鑻ユ煇绛栫暐灞傚湪璺緞涓婇伃閬囩殑鍏惰鍒欎腑鑷冲皯鏈変竴鏉℃巿浜堣璁块棶锛屽垯璇ョ瓥鐣ュ眰鎺堜簣瀵规枃浠惰矾寰勭殑璁块棶銆備竴涓娌欑鍖栫殑绾跨▼鍙湁鍦ㄥ畠鐨勬墍鏈夊凡瀹炴柦绛栫暐灞備互鍙婃墍鏈夊叾浠栫郴缁熻闂帶鍒讹紙渚嬪鏂囦欢绯荤粺 DAC銆佸叾瀹?LSM 绛栫暐绛夛級閮芥巿浜堣璁块棶鏃讹紝鎵嶈兘璁块棶鏌愪釜鏂囦欢璺緞銆?
+### 缁戝畾鎸傝浇涓?OverlayFS
 
 
-Landlock 能够限制对文件层级的访问，这意味着这些访问权限可以随绑定挂载传播（参见 Documentation/filesystems/sharedsubtree.rst），但不能随 Documentation/filesystems/overlayfs.rst 传播。
-
-绑定挂载将源文件层级镜像到目标。目标层级随后由完全相同的文件组成，Landlock 规则可以绑定到其上，无论是通过源路径还是目标路径。这些规则在路径上遭遇时限制访问，这意味着它们可以同时限制对多个文件层级的访问，无论这些层级是否绑定挂载的结果。
-
-一个 OverlayFS 挂载点由上层与下层组成。这些层在一个合并目录中被组合，该合并目录在挂载点处变得可用。这个合并层级可能包含来自上层与下层的文件，但在合并层级上执行的修改只反映到上层。从 Landlock 策略的角度看，所有 OverlayFS 层与合并层级都是独立的，各自包含自己的一组文件与目录，这与绑定挂载不同。限制某个 OverlayFS 层的策略不会限制由此产生的合并层级，反之亦然。因此 Landlock 用户应当只考虑他们想允许访问的文件层级，而不必管底层文件系统。
-
-### 继承
+Landlock 鑳藉闄愬埗瀵规枃浠跺眰绾х殑璁块棶锛岃繖鎰忓懗鐫€杩欎簺璁块棶鏉冮檺鍙互闅忕粦瀹氭寕杞戒紶鎾紙鍙傝 Documentation/filesystems/sharedsubtree.rst锛夛紝浣嗕笉鑳介殢 Documentation/filesystems/overlayfs.rst 浼犳挱銆?
+缁戝畾鎸傝浇灏嗘簮鏂囦欢灞傜骇闀滃儚鍒扮洰鏍囥€傜洰鏍囧眰绾ч殢鍚庣敱瀹屽叏鐩稿悓鐨勬枃浠剁粍鎴愶紝Landlock 瑙勫垯鍙互缁戝畾鍒板叾涓婏紝鏃犺鏄€氳繃婧愯矾寰勮繕鏄洰鏍囪矾寰勩€傝繖浜涜鍒欏湪璺緞涓婇伃閬囨椂闄愬埗璁块棶锛岃繖鎰忓懗鐫€瀹冧滑鍙互鍚屾椂闄愬埗瀵瑰涓枃浠跺眰绾х殑璁块棶锛屾棤璁鸿繖浜涘眰绾ф槸鍚︾粦瀹氭寕杞界殑缁撴灉銆?
+涓€涓?OverlayFS 鎸傝浇鐐圭敱涓婂眰涓庝笅灞傜粍鎴愩€傝繖浜涘眰鍦ㄤ竴涓悎骞剁洰褰曚腑琚粍鍚堬紝璇ュ悎骞剁洰褰曞湪鎸傝浇鐐瑰鍙樺緱鍙敤銆傝繖涓悎骞跺眰绾у彲鑳藉寘鍚潵鑷笂灞備笌涓嬪眰鐨勬枃浠讹紝浣嗗湪鍚堝苟灞傜骇涓婃墽琛岀殑淇敼鍙弽鏄犲埌涓婂眰銆備粠 Landlock 绛栫暐鐨勮搴︾湅锛屾墍鏈?OverlayFS 灞備笌鍚堝苟灞傜骇閮芥槸鐙珛鐨勶紝鍚勮嚜鍖呭惈鑷繁鐨勪竴缁勬枃浠朵笌鐩綍锛岃繖涓庣粦瀹氭寕杞戒笉鍚屻€傞檺鍒舵煇涓?OverlayFS 灞傜殑绛栫暐涓嶄細闄愬埗鐢辨浜х敓鐨勫悎骞跺眰绾э紝鍙嶄箣浜︾劧銆傚洜姝?Landlock 鐢ㄦ埛搴斿綋鍙€冭檻浠栦滑鎯冲厑璁歌闂殑鏂囦欢灞傜骇锛岃€屼笉蹇呯搴曞眰鏂囦欢绯荤粺銆?
+### 缁ф壙
 
 
-每一个由 `clone(2)` 产生的新线程都从父线程继承 Landlock 域限制。这类似于 seccomp 继承（参见 Documentation/userspace-api/seccomp_filter.rst）或任何处理任务 `credentials(7)` 的其它 LSM。例如，一个进程的某个线程可以对它自身应用 Landlock 规则，但这些规则不会自动应用到其它兄弟线程（不同于 POSIX 线程凭证变更，参见 `nptl(7)`）。
-
-当一个线程自我沙箱化时，我们保证相关安全策略会持续实施在该线程的所有后代上。这使得可以按应用创建独立且模块化的安全策略，它们会根据其运行时父策略自动相互组合。
-
-### Ptrace 限制
+姣忎竴涓敱 `clone(2)` 浜х敓鐨勬柊绾跨▼閮戒粠鐖剁嚎绋嬬户鎵?Landlock 鍩熼檺鍒躲€傝繖绫讳技浜?seccomp 缁ф壙锛堝弬瑙?Documentation/userspace-api/seccomp_filter.rst锛夋垨浠讳綍澶勭悊浠诲姟 `credentials(7)` 鐨勫叾瀹?LSM銆備緥濡傦紝涓€涓繘绋嬬殑鏌愪釜绾跨▼鍙互瀵瑰畠鑷韩搴旂敤 Landlock 瑙勫垯锛屼絾杩欎簺瑙勫垯涓嶄細鑷姩搴旂敤鍒板叾瀹冨厔寮熺嚎绋嬶紙涓嶅悓浜?POSIX 绾跨▼鍑瘉鍙樻洿锛屽弬瑙?`nptl(7)`锛夈€?
+褰撲竴涓嚎绋嬭嚜鎴戞矙绠卞寲鏃讹紝鎴戜滑淇濊瘉鐩稿叧瀹夊叏绛栫暐浼氭寔缁疄鏂藉湪璇ョ嚎绋嬬殑鎵€鏈夊悗浠ｄ笂銆傝繖浣垮緱鍙互鎸夊簲鐢ㄥ垱寤虹嫭绔嬩笖妯″潡鍖栫殑瀹夊叏绛栫暐锛屽畠浠細鏍规嵁鍏惰繍琛屾椂鐖剁瓥鐣ヨ嚜鍔ㄧ浉浜掔粍鍚堛€?
+### Ptrace 闄愬埗
 
 
-一个被沙箱化的进程拥有的特权少于未被沙箱化的进程，因此在操作另一个进程时必须受到额外限制。为了允许在目标进程上使用 `ptrace(2)` 及相关系统调用，一个被沙箱化的进程应当拥有目标进程访问权限的超集，这意味着被跟踪者（tracee）必须处于跟踪者（tracer）的子域中。
+涓€涓娌欑鍖栫殑杩涚▼鎷ユ湁鐨勭壒鏉冨皯浜庢湭琚矙绠卞寲鐨勮繘绋嬶紝鍥犳鍦ㄦ搷浣滃彟涓€涓繘绋嬫椂蹇呴』鍙楀埌棰濆闄愬埗銆備负浜嗗厑璁稿湪鐩爣杩涚▼涓婁娇鐢?`ptrace(2)` 鍙婄浉鍏崇郴缁熻皟鐢紝涓€涓娌欑鍖栫殑杩涚▼搴斿綋鎷ユ湁鐩爣杩涚▼璁块棶鏉冮檺鐨勮秴闆嗭紝杩欐剰鍛崇潃琚窡韪€咃紙tracee锛夊繀椤诲浜庤窡韪€咃紙tracer锛夌殑瀛愬煙涓€?
+### IPC 浣滅敤鍩?
 
-### IPC 作用域
-
-
-类似于隐含的 `Ptrace restrictions`_，我们可能想要进一步限制沙箱之间的交互。因此，在创建规则集时，每个 Landlock 域可以限制某些操作的作用域，使得这些操作只能触及同一 Landlock 域内或嵌套 Landlock 域（“scope”）内的进程。
-
-可受作用域限制的操作有：
+绫讳技浜庨殣鍚殑 `Ptrace restrictions`_锛屾垜浠彲鑳芥兂瑕佽繘涓€姝ラ檺鍒舵矙绠变箣闂寸殑浜や簰銆傚洜姝わ紝鍦ㄥ垱寤鸿鍒欓泦鏃讹紝姣忎釜 Landlock 鍩熷彲浠ラ檺鍒舵煇浜涙搷浣滅殑浣滅敤鍩燂紝浣垮緱杩欎簺鎿嶄綔鍙兘瑙﹀強鍚屼竴 Landlock 鍩熷唴鎴栧祵濂?Landlock 鍩燂紙鈥渟cope鈥濓級鍐呯殑杩涚▼銆?
+鍙彈浣滅敤鍩熼檺鍒剁殑鎿嶄綔鏈夛細
 
 `LANDLOCK_SCOPE_SIGNAL`
-    这限制了向运行于同一或嵌套 Landlock 域内的目标进程发送信号。
-
+    杩欓檺鍒朵簡鍚戣繍琛屼簬鍚屼竴鎴栧祵濂?Landlock 鍩熷唴鐨勭洰鏍囪繘绋嬪彂閫佷俊鍙枫€?
 `LANDLOCK_SCOPE_ABSTRACT_UNIX_SOCKET`
-    这限制了我们可以 `connect(2)` 的抽象 `unix(7)` 套接字集合，仅限由同一或嵌套 Landlock 域内的进程创建的套接字地址。
-
-    对未连接数据报套接字执行 `sendto(2)` 会被当作进行了一次隐含的 `connect(2)`，如果远端并非源自同一或嵌套 Landlock 域，则会被阻塞。
-
-    对之前已连接的套接字执行 `sendto(2)` 不受限制。这对数据报与流套接字都适用。
-
-IPC 作用域不支持通过 `landlock_add_rule(2)` 设置例外。如果一个操作在某个域内受作用域限制，则没有任何规则可以被添加来允许访问作用域之外的资源或进程。
-
-### 截断文件
+    杩欓檺鍒朵簡鎴戜滑鍙互 `connect(2)` 鐨勬娊璞?`unix(7)` 濂楁帴瀛楅泦鍚堬紝浠呴檺鐢卞悓涓€鎴栧祵濂?Landlock 鍩熷唴鐨勮繘绋嬪垱寤虹殑濂楁帴瀛楀湴鍧€銆?
+    瀵规湭杩炴帴鏁版嵁鎶ュ鎺ュ瓧鎵ц `sendto(2)` 浼氳褰撲綔杩涜浜嗕竴娆￠殣鍚殑 `connect(2)`锛屽鏋滆繙绔苟闈炴簮鑷悓涓€鎴栧祵濂?Landlock 鍩燂紝鍒欎細琚樆濉炪€?
+    瀵逛箣鍓嶅凡杩炴帴鐨勫鎺ュ瓧鎵ц `sendto(2)` 涓嶅彈闄愬埗銆傝繖瀵规暟鎹姤涓庢祦濂楁帴瀛楅兘閫傜敤銆?
+IPC 浣滅敤鍩熶笉鏀寔閫氳繃 `landlock_add_rule(2)` 璁剧疆渚嬪銆傚鏋滀竴涓搷浣滃湪鏌愪釜鍩熷唴鍙椾綔鐢ㄥ煙闄愬埗锛屽垯娌℃湁浠讳綍瑙勫垯鍙互琚坊鍔犳潵鍏佽璁块棶浣滅敤鍩熶箣澶栫殑璧勬簮鎴栬繘绋嬨€?
+### 鎴柇鏂囦欢
 
 
-`LANDLOCK_ACCESS_FS_WRITE_FILE` 与 `LANDLOCK_ACCESS_FS_TRUNCATE` 覆盖的操作都会改变文件内容，并且有时会以不直观的方式重叠。强烈建议总是将两者一起指定（要么都授予，要么都不授予）。
+`LANDLOCK_ACCESS_FS_WRITE_FILE` 涓?`LANDLOCK_ACCESS_FS_TRUNCATE` 瑕嗙洊鐨勬搷浣滈兘浼氭敼鍙樻枃浠跺唴瀹癸紝骞朵笖鏈夋椂浼氫互涓嶇洿瑙傜殑鏂瑰紡閲嶅彔銆傚己鐑堝缓璁€绘槸灏嗕袱鑰呬竴璧锋寚瀹氾紙瑕佷箞閮芥巿浜堬紝瑕佷箞閮戒笉鎺堜簣锛夈€?
+涓€涓壒鍒护浜烘儕璁剁殑渚嬪瓙鏄?`creat(2)`銆傚叾鍚嶇О鏆楃ず姝ょ郴缁熻皟鐢ㄩ渶瑕佸垱寤轰笌鍐欏叆鏂囦欢鐨勬潈闄愩€傜劧鑰岋紝濡傛灉鍚屽悕涓嬪凡瀛樺湪鏌愪釜鏂囦欢锛屽畠杩橀渶瑕?truncate 鏉冮檺銆?
+杩樺簲褰撴敞鎰忥紝鎴柇鏂囦欢骞朵笉瑕佹眰 `LANDLOCK_ACCESS_FS_WRITE_FILE` 鏉冮檺銆傞櫎浜?`truncate(2)` 绯荤粺璋冪敤涔嬪锛岃繖涔熷彲浠ラ€氳繃浠?`O_RDONLY | O_TRUNC` 鏍囧織 `open(2)` 鏉ュ畬鎴愩€?
+鍚屾椂锛屽湪鏌愪簺鏂囦欢绯荤粺涓婏紝`fallocate(2)` 鎻愪緵浜嗗湪鏂囦欢浠ュ啓鏂瑰紡鎵撳紑鏃躲€佺敤 `FALLOC_FL_COLLAPSE_RANGE` 缂╃煭鏂囦欢鍐呭鐨勯€斿緞锛屼粠鑰岀粫寮€ `LANDLOCK_ACCESS_FS_TRUNCATE` 鏉冮檺銆?
+truncate 鏉冮檺涓庡凡鎵撳紑鐨勬枃浠跺叧鑱旓紙瑙佷笅鏂囷級銆?
+### 涓庢枃浠舵弿杩扮鍏宠仈鐨勬潈闄?
 
-一个特别令人惊讶的例子是 `creat(2)`。其名称暗示此系统调用需要创建与写入文件的权限。然而，如果同名下已存在某个文件，它还需要 truncate 权限。
+鎵撳紑鏂囦欢鏃讹紝`LANDLOCK_ACCESS_FS_TRUNCATE` 涓?`LANDLOCK_ACCESS_FS_IOCTL_DEV` 鏉冮檺鐨勫彲鐢ㄦ€у叧鑱斿埌鏂板垱寤虹殑鏂囦欢鎻忚堪绗︼紝骞跺皢琚敤浜庨殢鍚庝娇鐢?`ftruncate(2)` 涓?`ioctl(2)` 鐨勬埅鏂笌 ioctl 灏濊瘯銆傚叾琛屼负绫讳技浜庝负璇绘垨鍐欐墦寮€鏂囦欢锛氭潈闄愬湪 `open(2)` 鏃舵鏌ワ紝鑰屽湪闅忓悗鐨?`read(2)` 涓?`write(2)` 璋冪敤鏃朵笉妫€鏌ャ€?
+鍥犳锛屼竴涓繘绋嬪彲鑳芥嫢鏈夊涓寚鍚戝悓涓€鏂囦欢鐨勫凡鎵撳紑鏂囦欢鎻忚堪绗︼紝浣?Landlock 鍦ㄧ敤杩欎簺鏂囦欢鎻忚堪绗︽搷浣滄椂瀹炴柦涓嶅悓鐨勪笢瑗裤€傝繖鍙兘鍙戠敓鍦細鏌愪釜 Landlock 瑙勫垯闆嗚瀹炴柦锛岃€岃杩涚▼淇濈暀浜嗗湪瀹炴柦鍓嶅悗閮芥墦寮€鐨勬枃浠舵弿杩扮銆備篃鍙互鍦ㄨ繖浜涙枃浠舵弿杩扮浜庤繘绋嬮棿浼犻€掓椂淇濈暀鍏?Landlock 灞炴€э紝鍗充娇鏌愪簺鐩稿叧杩涚▼娌℃湁宸插疄鏂界殑 Landlock 瑙勫垯闆嗐€?
+## 鍏煎鎬?
 
-还应当注意，截断文件并不要求 `LANDLOCK_ACCESS_FS_WRITE_FILE` 权限。除了 `truncate(2)` 系统调用之外，这也可以通过以 `O_RDONLY | O_TRUNC` 标志 `open(2)` 来完成。
+### 鍚戝墠涓庡悜鍚庡吋瀹规€?
 
-同时，在某些文件系统上，`fallocate(2)` 提供了在文件以写方式打开时、用 `FALLOC_FL_COLLAPSE_RANGE` 缩短文件内容的途径，从而绕开 `LANDLOCK_ACCESS_FS_TRUNCATE` 权限。
+Landlock 琚璁′负涓庡唴鏍哥殑杩囧幓涓庢湭鏉ョ増鏈吋瀹广€傝繖鏄€氳繃绯荤粺璋冪敤灞炴€у強鍏宠仈鐨勪綅鏍囧織锛堝挨鍏舵槸瑙勫垯闆嗙殑 `handled_access_fs`锛夊疄鐜扮殑銆傛妸琚鐞嗙殑璁块棶鏉冮檺鏄惧紡鍖栵紝浣垮緱鍐呮牳涓庣敤鎴风┖闂村郊姝や箣闂存湁涓€涓竻鏅扮殑绾﹀畾銆傝繖鏄‘淇濇矙绠卞寲涓嶄細鍥犵郴缁熸洿鏂拌€屽彉寰楁洿涓ユ牸锛堥偅鍙兘鐮村潖搴旂敤锛夋墍蹇呴渶鐨勩€?
+寮€鍙戣€呭彲浠ヨ闃?`Landlock mailing list <https://subspace.kernel.org/lists.linux.dev.html>`_ 鏉ユ湁鎰忓湴鐢ㄦ渶鏂板彲鐢ㄧ壒鎬ф洿鏂板苟娴嬭瘯浠栦滑鐨勫簲鐢ㄣ€備负浜嗙敤鎴风殑鍒╃泭锛屽苟涓斿洜涓轰粬浠彲鑳戒娇鐢ㄤ笉鍚岀殑鍐呮牳鐗堟湰锛屽己鐑堝缓璁伒寰敖鍔涜€屼负鐨勫畨鍏ㄧ瓥鐣ワ細鍦ㄨ繍琛屾椂妫€鏌?Landlock ABI 鐗堟湰锛屽苟鍙疄鏂藉彈鏀寔鐨勭壒鎬с€?
 
-truncate 权限与已打开的文件关联（见下文）。
-
-### 与文件描述符关联的权限
-
-
-打开文件时，`LANDLOCK_ACCESS_FS_TRUNCATE` 与 `LANDLOCK_ACCESS_FS_IOCTL_DEV` 权限的可用性关联到新创建的文件描述符，并将被用于随后使用 `ftruncate(2)` 与 `ioctl(2)` 的截断与 ioctl 尝试。其行为类似于为读或写打开文件：权限在 `open(2)` 时检查，而在随后的 `read(2)` 与 `write(2)` 调用时不检查。
-
-因此，一个进程可能拥有多个指向同一文件的已打开文件描述符，但 Landlock 在用这些文件描述符操作时实施不同的东西。这可能发生在：某个 Landlock 规则集被实施，而该进程保留了在实施前后都打开的文件描述符。也可以在这些文件描述符于进程间传递时保留其 Landlock 属性，即使某些相关进程没有已实施的 Landlock 规则集。
-
-## 兼容性
-
-
-### 向前与向后兼容性
+### Landlock ABI 鐗堟湰
 
 
-Landlock 被设计为与内核的过去与未来版本兼容。这是通过系统调用属性及关联的位标志（尤其是规则集的 `handled_access_fs`）实现的。把被处理的访问权限显式化，使得内核与用户空间彼此之间有一个清晰的约定。这是确保沙箱化不会因系统更新而变得更严格（那可能破坏应用）所必需的。
-
-开发者可以订阅 `Landlock mailing list <https://subspace.kernel.org/lists.linux.dev.html>`_ 来有意地用最新可用特性更新并测试他们的应用。为了用户的利益，并且因为他们可能使用不同的内核版本，强烈建议遵循尽力而为的安全策略：在运行时检查 Landlock ABI 版本，并只实施受支持的特性。
-
-
-### Landlock ABI 版本
-
-
-Landlock ABI 版本可以用 sys_landlock_create_ruleset() 系统调用读取：
-
+Landlock ABI 鐗堟湰鍙互鐢?sys_landlock_create_ruleset() 绯荤粺璋冪敤璇诲彇锛?
 
     int abi;
 
@@ -313,12 +258,11 @@ Landlock ABI 版本可以用 sys_landlock_create_ruleset() 系统调用读取：
         printf("Landlock supports LANDLOCK_ACCESS_FS_REFER.\n");
     }
 
-除非其文档中明确注明，所有 Landlock 内核接口都被第一个 ABI 版本支持。
+闄ら潪鍏舵枃妗ｄ腑鏄庣‘娉ㄦ槑锛屾墍鏈?Landlock 鍐呮牳鎺ュ彛閮借绗竴涓?ABI 鐗堟湰鏀寔銆?
+### Landlock 鍕樿
 
-### Landlock 勘误
 
-
-除 ABI 版本外，Landlock 还提供一种勘误（errata）机制，用于跟踪可能影响向后兼容性或需要用户空间知晓的问题修复。勘误位掩码可以用以下方式查询：
+闄?ABI 鐗堟湰澶栵紝Landlock 杩樻彁渚涗竴绉嶅嫎璇紙errata锛夋満鍒讹紝鐢ㄤ簬璺熻釜鍙兘褰卞搷鍚戝悗鍏煎鎬ф垨闇€瑕佺敤鎴风┖闂寸煡鏅撶殑闂淇銆傚嫎璇綅鎺╃爜鍙互鐢ㄤ互涓嬫柟寮忔煡璇細
 
 
     int errata;
@@ -329,22 +273,18 @@ Landlock ABI 版本可以用 sys_landlock_create_ruleset() 系统调用读取：
         return 0;
     }
 
-返回的值是一个位掩码，其中每个位代表一个特定的 erratum。如果第 N 位被置位（`errata & (1 << (N - 1))`），则 erratum N 已在运行中的内核中修复。
+杩斿洖鐨勫€兼槸涓€涓綅鎺╃爜锛屽叾涓瘡涓綅浠ｈ〃涓€涓壒瀹氱殑 erratum銆傚鏋滅 N 浣嶈缃綅锛坄errata & (1 << (N - 1))`锛夛紝鍒?erratum N 宸插湪杩愯涓殑鍐呮牳涓慨澶嶃€?
 
-
-   **大多数应用不应检查勘误。** 在 99.9% 的情况下，检查勘误是不必要的，会增加代码复杂度，并且若被误用还可能降低保护。例如，在某个 erratum 未被修复时禁用沙箱，可能使系统比使用 Landlock 的尽力而为保护更不安全。如有疑问，忽略勘误。
-
+   **澶у鏁板簲鐢ㄤ笉搴旀鏌ュ嫎璇€?* 鍦?99.9% 鐨勬儏鍐典笅锛屾鏌ュ嫎璇槸涓嶅繀瑕佺殑锛屼細澧炲姞浠ｇ爜澶嶆潅搴︼紝骞朵笖鑻ヨ璇敤杩樺彲鑳介檷浣庝繚鎶ゃ€備緥濡傦紝鍦ㄦ煇涓?erratum 鏈淇鏃剁鐢ㄦ矙绠憋紝鍙兘浣跨郴缁熸瘮浣跨敤 Landlock 鐨勫敖鍔涜€屼负淇濇姢鏇翠笉瀹夊叏銆傚鏈夌枒闂紝蹇界暐鍕樿銆?
     :doc: erratum_1
 
     :doc: erratum_2
 
     :doc: erratum_3
 
-#### 如何检查勘误
+#### 濡備綍妫€鏌ュ嫎璇?
 
-
-如果你确定你的应用需要检查特定勘误，使用如下模式：
-
+濡傛灉浣犵‘瀹氫綘鐨勫簲鐢ㄩ渶瑕佹鏌ョ壒瀹氬嫎璇紝浣跨敤濡備笅妯″紡锛?
 
     int errata = landlock_create_ruleset(NULL, 0, LANDLOCK_CREATE_RULESET_ERRATA);
     if (errata >= 0) {
@@ -356,158 +296,117 @@ Landlock ABI 版本可以用 sys_landlock_create_ruleset() 系统调用读取：
         }
     }
 
-**重要：** 只有当你的应用特别依赖于因该修复而改变的行为时，才检查勘误。这些修复通常会让 Landlock 限制更少或更正确，而不是更严格。
+**閲嶈锛?* 鍙湁褰撲綘鐨勫簲鐢ㄧ壒鍒緷璧栦簬鍥犺淇鑰屾敼鍙樼殑琛屼负鏃讹紝鎵嶆鏌ュ嫎璇€傝繖浜涗慨澶嶉€氬父浼氳 Landlock 闄愬埗鏇村皯鎴栨洿姝ｇ‘锛岃€屼笉鏄洿涓ユ牸銆?
+## 鍐呮牳鎺ュ彛
 
-## 内核接口
 
-
-### 访问权限
+### 璁块棶鏉冮檺
 
 
     :identifiers: fs_access net_access scope
 
-### 创建新的规则集
-
+### 鍒涘缓鏂扮殑瑙勫垯闆?
 
     :identifiers: sys_landlock_create_ruleset
 
     :identifiers: landlock_ruleset_attr
 
-### 扩展规则集
-
+### 鎵╁睍瑙勫垯闆?
 
     :identifiers: sys_landlock_add_rule
 
     :identifiers: landlock_rule_type landlock_path_beneath_attr
                   landlock_net_port_attr
 
-### 实施规则集
-
+### 瀹炴柦瑙勫垯闆?
 
     :identifiers: sys_landlock_restrict_self
 
-## 当前限制
+## 褰撳墠闄愬埗
 
 
-### 文件系统拓扑修改
+### 鏂囦欢绯荤粺鎷撴墤淇敼
 
 
-被文件系统限制沙箱化的线程不能修改文件系统拓扑，无论是通过 `mount(2)` 还是 `pivot_root(2)`。然而，`chroot(2)` 调用不会被拒绝。
-
-### 特殊文件系统
-
-
-根据规则集被处理的访问，Landlock 可以限制对常规文件与目录的访问。然而，并非来自用户可见文件系统（例如 pipe、socket）、但仍可通过 `/proc/<pid>/fd/*` 访问的文件，目前无法被显式限制。类似地，某些特殊内核文件系统（如 nsfs，可通过 `/proc/<pid>/ns/*` 访问）目前也无法被显式限制。不过，借助 `ptrace restrictions`_，对此类敏感 `/proc` 文件的访问会根据域层级自动受到限制。未来的 Landlock 演进仍可能通过专门的规则集标志启用对此类路径的显式限制。
-
-### 规则集层级
+琚枃浠剁郴缁熼檺鍒舵矙绠卞寲鐨勭嚎绋嬩笉鑳戒慨鏀规枃浠剁郴缁熸嫇鎵戯紝鏃犺鏄€氳繃 `mount(2)` 杩樻槸 `pivot_root(2)`銆傜劧鑰岋紝`chroot(2)` 璋冪敤涓嶄細琚嫆缁濄€?
+### 鐗规畩鏂囦欢绯荤粺
 
 
-堆叠规则集的层级限制为 16 层。这对于一个希望在其继承的 16 个规则集之外再实施一个新规则集的任务而言可能成问题。一旦达到此限制，sys_landlock_restrict_self() 返回 E2BIG。因此强烈建议在某个线程的生命周期中一次性仔细地构建规则集，特别是对于那些可能启动其它也可能想自我沙箱化的应用的应用（例如 shells、容器管理器等）。
+鏍规嵁瑙勫垯闆嗚澶勭悊鐨勮闂紝Landlock 鍙互闄愬埗瀵瑰父瑙勬枃浠朵笌鐩綍鐨勮闂€傜劧鑰岋紝骞堕潪鏉ヨ嚜鐢ㄦ埛鍙鏂囦欢绯荤粺锛堜緥濡?pipe銆乻ocket锛夈€佷絾浠嶅彲閫氳繃 `/proc/<pid>/fd/*` 璁块棶鐨勬枃浠讹紝鐩墠鏃犳硶琚樉寮忛檺鍒躲€傜被浼煎湴锛屾煇浜涚壒娈婂唴鏍告枃浠剁郴缁燂紙濡?nsfs锛屽彲閫氳繃 `/proc/<pid>/ns/*` 璁块棶锛夌洰鍓嶄篃鏃犳硶琚樉寮忛檺鍒躲€備笉杩囷紝鍊熷姪 `ptrace restrictions`_锛屽姝ょ被鏁忔劅 `/proc` 鏂囦欢鐨勮闂細鏍规嵁鍩熷眰绾ц嚜鍔ㄥ彈鍒伴檺鍒躲€傛湭鏉ョ殑 Landlock 婕旇繘浠嶅彲鑳介€氳繃涓撻棬鐨勮鍒欓泦鏍囧織鍚敤瀵规绫昏矾寰勭殑鏄惧紡闄愬埗銆?
+### 瑙勫垯闆嗗眰绾?
 
-### 内存使用
-
-
-为创建规则集而分配的内核内存会被记账，并可通过 Documentation/admin-guide/cgroup-v1/memory.rst 加以限制。
-
-### IOCTL 支持
+鍫嗗彔瑙勫垯闆嗙殑灞傜骇闄愬埗涓?16 灞傘€傝繖瀵逛簬涓€涓笇鏈涘湪鍏剁户鎵跨殑 16 涓鍒欓泦涔嬪鍐嶅疄鏂戒竴涓柊瑙勫垯闆嗙殑浠诲姟鑰岃█鍙兘鎴愰棶棰樸€備竴鏃﹁揪鍒版闄愬埗锛宻ys_landlock_restrict_self() 杩斿洖 E2BIG銆傚洜姝ゅ己鐑堝缓璁湪鏌愪釜绾跨▼鐨勭敓鍛藉懆鏈熶腑涓€娆℃€т粩缁嗗湴鏋勫缓瑙勫垯闆嗭紝鐗瑰埆鏄浜庨偅浜涘彲鑳藉惎鍔ㄥ叾瀹冧篃鍙兘鎯宠嚜鎴戞矙绠卞寲鐨勫簲鐢ㄧ殑搴旂敤锛堜緥濡?shells銆佸鍣ㄧ鐞嗗櫒绛夛級銆?
+### 鍐呭瓨浣跨敤
 
 
-`LANDLOCK_ACCESS_FS_IOCTL_DEV` 权限限制 `ioctl(2)` 的使用，但它只适用于**新打开的**设备文件。这具体意味着预先存在的文件描述符（如 stdin、stdout 与 stderr）不受影响。
-
-用户应当意识到，TTY 设备传统上允许通过 `TIOCSTI` 与 `TIOCLINUX` IOCTL 命令控制同一 TTY 上的其它进程。这两者都需要现代 Linux 系统上的 `CAP_SYS_ADMIN`，但 `TIOCSTI` 的行为是可配置的。
-
-因此在较旧的系统上，建议关闭继承的 TTY 文件描述符，或尽可能从 `/proc/self/fd/*` 重新打开它们而不带 `LANDLOCK_ACCESS_FS_IOCTL_DEV` 权限。
-
-Landlock 的 IOCTL 支持目前是粗粒度的，但未来可能变得更细粒度。在那之前，建议用户通过文件层级来建立他们所需的保证，只在真正需要的地方允许 `LANDLOCK_ACCESS_FS_IOCTL_DEV` 权限。
-
-## 以往的限制
+涓哄垱寤鸿鍒欓泦鑰屽垎閰嶇殑鍐呮牳鍐呭瓨浼氳璁拌处锛屽苟鍙€氳繃 Documentation/admin-guide/cgroup-v1/memory.rst 鍔犱互闄愬埗銆?
+### IOCTL 鏀寔
 
 
-### 文件重命名与链接（ABI < 2）
+`LANDLOCK_ACCESS_FS_IOCTL_DEV` 鏉冮檺闄愬埗 `ioctl(2)` 鐨勪娇鐢紝浣嗗畠鍙€傜敤浜?*鏂版墦寮€鐨?*璁惧鏂囦欢銆傝繖鍏蜂綋鎰忓懗鐫€棰勫厛瀛樺湪鐨勬枃浠舵弿杩扮锛堝 stdin銆乻tdout 涓?stderr锛変笉鍙楀奖鍝嶃€?
+鐢ㄦ埛搴斿綋鎰忚瘑鍒帮紝TTY 璁惧浼犵粺涓婂厑璁搁€氳繃 `TIOCSTI` 涓?`TIOCLINUX` IOCTL 鍛戒护鎺у埗鍚屼竴 TTY 涓婄殑鍏跺畠杩涚▼銆傝繖涓よ€呴兘闇€瑕佺幇浠?Linux 绯荤粺涓婄殑 `CAP_SYS_ADMIN`锛屼絾 `TIOCSTI` 鐨勮涓烘槸鍙厤缃殑銆?
+鍥犳鍦ㄨ緝鏃х殑绯荤粺涓婏紝寤鸿鍏抽棴缁ф壙鐨?TTY 鏂囦欢鎻忚堪绗︼紝鎴栧敖鍙兘浠?`/proc/self/fd/*` 閲嶆柊鎵撳紑瀹冧滑鑰屼笉甯?`LANDLOCK_ACCESS_FS_IOCTL_DEV` 鏉冮檺銆?
+Landlock 鐨?IOCTL 鏀寔鐩墠鏄矖绮掑害鐨勶紝浣嗘湭鏉ュ彲鑳藉彉寰楁洿缁嗙矑搴︺€傚湪閭ｄ箣鍓嶏紝寤鸿鐢ㄦ埛閫氳繃鏂囦欢灞傜骇鏉ュ缓绔嬩粬浠墍闇€鐨勪繚璇侊紝鍙湪鐪熸闇€瑕佺殑鍦版柟鍏佽 `LANDLOCK_ACCESS_FS_IOCTL_DEV` 鏉冮檺銆?
+## 浠ュ線鐨勯檺鍒?
+
+### 鏂囦欢閲嶅懡鍚嶄笌閾炬帴锛圓BI < 2锛?
+
+鍥犱负 Landlock 闈㈠悜鏃犵壒鏉冭闂帶鍒讹紝瀹冮渶瑕佹伆褰撳湴澶勭悊瑙勫垯鐨勭粍鎴愩€傝繖涓€鎬ц川涔熸剰鍛崇潃瑙勫垯鐨勫祵濂椼€傛伆褰撳湴澶勭悊澶氫釜瑙勫垯闆嗗眰绾э紙姣忎釜閮借兘闄愬埗瀵规枃浠剁殑璁块棶锛夛紝涔熸剰鍛崇潃瑙勫垯闆嗛檺鍒朵粠鐖剁骇鍒板叾灞傜骇鐨勭户鎵裤€傚洜涓烘枃浠堕€氳繃鍏跺眰绾ц璇嗗埆涓庨檺鍒讹紝灏嗕竴涓枃浠朵粠涓€涓洰褰曠Щ鍔ㄦ垨閾炬帴鍒板彟涓€涓洰褰曟剰鍛崇潃灞傜骇绾︽潫鐨勪紶鎾紝鎴栨牴鎹繖浜涘彲鑳戒涪澶辩殑绾︽潫鏉ラ檺鍒惰繖浜涘姩浣溿€備负浜嗛槻姝㈤€氳繃閲嶅懡鍚嶆垨閾炬帴杩涜鏉冮檺鎻愬崌锛屽苟涓斾负浜嗙畝鍗曡捣瑙侊紝Landlock 姝ゅ墠灏嗛摼鎺ヤ笌閲嶅懡鍚嶉檺鍒跺湪鍚屼竴鐩綍鍐呫€備粠 Landlock ABI 鐗堟湰 2 寮€濮嬶紝鐜板湪鍙互鍊熷姪鏂扮殑 `LANDLOCK_ACCESS_FS_REFER` 璁块棶鏉冮檺瀹夊叏鍦版帶鍒堕噸鍛藉悕涓庨摼鎺ャ€?
+### 鏂囦欢鎴柇锛圓BI < 3锛?
+
+鍦ㄧ涓変釜 Landlock ABI 涔嬪墠鏃犳硶鎷掔粷鏂囦欢鎴柇锛屽洜姝ゅ湪浣跨敤鍙敮鎸佺涓€鎴栫浜?ABI 鐨勫唴鏍告椂锛屾埅鏂€绘槸琚厑璁搞€?
+浠?Landlock ABI 鐗堟湰 3 寮€濮嬶紝鐜板湪鍙互鍊熷姪鏂扮殑 `LANDLOCK_ACCESS_FS_TRUNCATE` 璁块棶鏉冮檺瀹夊叏鍦版帶鍒舵埅鏂€?
+### TCP 缁戝畾涓庤繛鎺ワ紙ABI < 4锛?
+
+浠?Landlock ABI 鐗堟湰 4 寮€濮嬶紝鐜板湪鍙互鍊熷姪鏂扮殑 `LANDLOCK_ACCESS_NET_BIND_TCP` 涓?`LANDLOCK_ACCESS_NET_CONNECT_TCP` 璁块棶鏉冮檺锛屽皢 TCP 缁戝畾涓庤繛鎺ュ姩浣滈檺鍒跺埌浠呬竴缁勫厑璁哥殑绔彛銆?
+### 璁惧 IOCTL锛圓BI < 5锛?
+
+鍦ㄧ浜斾釜 Landlock ABI 涔嬪墠鏃犳硶鎷掔粷 IOCTL 鎿嶄綔锛屽洜姝ゅ湪浣跨敤鍙敮鎸佹洿鏃?ABI 鐨勫唴鏍告椂锛宍ioctl(2)` 鎬绘槸琚厑璁搞€?
+浠?Landlock ABI 鐗堟湰 5 寮€濮嬶紝鍙互鍊熷姪鏂扮殑 `LANDLOCK_ACCESS_FS_IOCTL_DEV` 鏉冮檺锛岄檺鍒跺瀛楃璁惧涓庡潡璁惧浣跨敤 `ioctl(2)`銆?
+### 鎶借薄 UNIX 濂楁帴瀛楋紙ABI < 6锛?
+
+浠?Landlock ABI 鐗堟湰 6 寮€濮嬶紝鍙互閫氳繃灏?`LANDLOCK_SCOPE_ABSTRACT_UNIX_SOCKET` 璁剧疆鍒?`scoped` 瑙勫垯闆嗗睘鎬э紝鏉ラ檺鍒跺鎶借薄 `unix(7)` 濂楁帴瀛楃殑杩炴帴銆?
+### 淇″彿锛圓BI < 6锛?
+
+浠?Landlock ABI 鐗堟湰 6 寮€濮嬶紝鍙互閫氳繃灏?`LANDLOCK_SCOPE_SIGNAL` 璁剧疆鍒?`scoped` 瑙勫垯闆嗗睘鎬э紝鏉ラ檺鍒?`signal(7)` 鐨勫彂閫併€?
+### 鏃ュ織锛圓BI < 7锛?
+
+浠?Landlock ABI 鐗堟湰 7 寮€濮嬶紝鍙互閫氳繃浼犲叆 sys_landlock_restrict_self() 鐨?`LANDLOCK_RESTRICT_SELF_LOG_SAME_EXEC_OFF`銆乣LANDLOCK_RESTRICT_SELF_LOG_NEW_EXEC_ON` 涓?`LANDLOCK_RESTRICT_SELF_LOG_SUBDOMAINS_OFF` 鏍囧織锛屾帶鍒?Landlock 瀹¤浜嬩欢鐨勬棩蹇楄褰曘€傚叧浜庡璁＄殑鏇村缁嗚妭璇峰弬瑙?Documentation/admin-guide/LSM/landlock.rst銆?
+### 绾跨▼鍚屾锛圓BI < 8锛?
+
+浠?Landlock ABI 鐗堟湰 8 寮€濮嬶紝鐜板湪鍙互鍊熷姪浼犲叆 sys_landlock_restrict_self() 鐨?`LANDLOCK_RESTRICT_SELF_TSYNC` 鏍囧織锛岃法璋冪敤杩涚▼鐨勬墍鏈夌嚎绋嬪疄鏂?Landlock 瑙勫垯闆嗐€?
+### 璺緞鍚?UNIX 濂楁帴瀛楋紙ABI < 9锛?
+
+浠?Landlock ABI 鐗堟湰 9 寮€濮嬶紝鍙互鍊熷姪鏂扮殑 `LANDLOCK_ACCESS_FS_RESOLVE_UNIX` 鏉冮檺锛岄檺鍒跺璺緞鍚?UNIX 鍩熷鎺ュ瓧锛坄unix(7)`锛夌殑杩炴帴銆?
+
+## 鍐呮牳鏀寔
 
 
-因为 Landlock 面向无特权访问控制，它需要恰当地处理规则的组成。这一性质也意味着规则的嵌套。恰当地处理多个规则集层级（每个都能限制对文件的访问），也意味着规则集限制从父级到其层级的继承。因为文件通过其层级被识别与限制，将一个文件从一个目录移动或链接到另一个目录意味着层级约束的传播，或根据这些可能丢失的约束来限制这些动作。为了防止通过重命名或链接进行权限提升，并且为了简单起见，Landlock 此前将链接与重命名限制在同一目录内。从 Landlock ABI 版本 2 开始，现在可以借助新的 `LANDLOCK_ACCESS_FS_REFER` 访问权限安全地控制重命名与链接。
+### 鏋勫缓鏃堕厤缃?
 
-### 文件截断（ABI < 3）
+Landlock 棣栧厛鍦?Linux 5.13 涓紩鍏ワ紝浣嗗繀椤诲湪鏋勫缓鏃剁敤 `CONFIG_SECURITY_LANDLOCK=y` 閰嶇疆銆侺andlock 涔熷繀椤诲儚鍏跺畠瀹夊叏妯″潡涓€鏍峰湪鍚姩鏃跺惎鐢ㄣ€傞粯璁ゅ惎鐢ㄧ殑瀹夊叏妯″潡鍒楄〃鐢?`CONFIG_LSM` 璁剧疆銆傚洜姝ゅ唴鏍搁厤缃簲褰撳寘鍚?`CONFIG_LSM=landlock,[...]`锛屽叾涓?`[...]` 鏄繍琛岀郴缁熷叾瀹冨彲鑳芥湁鐢ㄧ殑瀹夊叏妯″潡鍒楄〃锛堝弬瑙?`CONFIG_LSM` 鐨勫府鍔╋級銆?
+### 鍚姩鏃堕厤缃?
 
-
-在第三个 Landlock ABI 之前无法拒绝文件截断，因此在使用只支持第一或第二 ABI 的内核时，截断总是被允许。
-
-从 Landlock ABI 版本 3 开始，现在可以借助新的 `LANDLOCK_ACCESS_FS_TRUNCATE` 访问权限安全地控制截断。
-
-### TCP 绑定与连接（ABI < 4）
-
-
-从 Landlock ABI 版本 4 开始，现在可以借助新的 `LANDLOCK_ACCESS_NET_BIND_TCP` 与 `LANDLOCK_ACCESS_NET_CONNECT_TCP` 访问权限，将 TCP 绑定与连接动作限制到仅一组允许的端口。
-
-### 设备 IOCTL（ABI < 5）
-
-
-在第五个 Landlock ABI 之前无法拒绝 IOCTL 操作，因此在使用只支持更早 ABI 的内核时，`ioctl(2)` 总是被允许。
-
-从 Landlock ABI 版本 5 开始，可以借助新的 `LANDLOCK_ACCESS_FS_IOCTL_DEV` 权限，限制对字符设备与块设备使用 `ioctl(2)`。
-
-### 抽象 UNIX 套接字（ABI < 6）
-
-
-从 Landlock ABI 版本 6 开始，可以通过将 `LANDLOCK_SCOPE_ABSTRACT_UNIX_SOCKET` 设置到 `scoped` 规则集属性，来限制对抽象 `unix(7)` 套接字的连接。
-
-### 信号（ABI < 6）
-
-
-从 Landlock ABI 版本 6 开始，可以通过将 `LANDLOCK_SCOPE_SIGNAL` 设置到 `scoped` 规则集属性，来限制 `signal(7)` 的发送。
-
-### 日志（ABI < 7）
-
-
-从 Landlock ABI 版本 7 开始，可以通过传入 sys_landlock_restrict_self() 的 `LANDLOCK_RESTRICT_SELF_LOG_SAME_EXEC_OFF`、`LANDLOCK_RESTRICT_SELF_LOG_NEW_EXEC_ON` 与 `LANDLOCK_RESTRICT_SELF_LOG_SUBDOMAINS_OFF` 标志，控制 Landlock 审计事件的日志记录。关于审计的更多细节请参见 Documentation/admin-guide/LSM/landlock.rst。
-
-### 线程同步（ABI < 8）
-
-
-从 Landlock ABI 版本 8 开始，现在可以借助传入 sys_landlock_restrict_self() 的 `LANDLOCK_RESTRICT_SELF_TSYNC` 标志，跨调用进程的所有线程实施 Landlock 规则集。
-
-### 路径名 UNIX 套接字（ABI < 9）
-
-
-从 Landlock ABI 版本 9 开始，可以借助新的 `LANDLOCK_ACCESS_FS_RESOLVE_UNIX` 权限，限制对路径名 UNIX 域套接字（`unix(7)`）的连接。
-
-
-## 内核支持
-
-
-### 构建时配置
-
-
-Landlock 首先在 Linux 5.13 中引入，但必须在构建时用 `CONFIG_SECURITY_LANDLOCK=y` 配置。Landlock 也必须像其它安全模块一样在启动时启用。默认启用的安全模块列表由 `CONFIG_LSM` 设置。因此内核配置应当包含 `CONFIG_LSM=landlock,[...]`，其中 `[...]` 是运行系统其它可能有用的安全模块列表（参见 `CONFIG_LSM` 的帮助）。
-
-### 启动时配置
-
-
-如果运行中的内核在 `CONFIG_LSM` 中没有 `landlock`，我们可以通过在引导加载程序配置中将 `lsm=landlock,[...]` 添加到 Documentation/admin-guide/kernel-parameters.rst 来启用 Landlock。
-
-例如，如果当前的 built-in 配置是：
+濡傛灉杩愯涓殑鍐呮牳鍦?`CONFIG_LSM` 涓病鏈?`landlock`锛屾垜浠彲浠ラ€氳繃鍦ㄥ紩瀵煎姞杞界▼搴忛厤缃腑灏?`lsm=landlock,[...]` 娣诲姞鍒?Documentation/admin-guide/kernel-parameters.rst 鏉ュ惎鐢?Landlock銆?
+渚嬪锛屽鏋滃綋鍓嶇殑 built-in 閰嶇疆鏄細
 
 ```
     $ zgrep -h "^CONFIG_LSM=" "/boot/config-$(uname -r)" /proc/config.gz 2>/dev/null
     CONFIG_LSM="lockdown,yama,integrity,apparmor"
 ```
 
-……并且如果命令行也不包含 `landlock`：
-
+鈥︹€﹀苟涓斿鏋滃懡浠よ涔熶笉鍖呭惈 `landlock`锛?
 ```
     $ sed -n 's/.**\(\<lsm=\S\+\).**/\1/p' /proc/cmdline
     lsm=lockdown,yama,integrity,apparmor
 ```
 
-……我们应当配置引导加载程序，设置一个扩展 `lsm` 的命令行：
-```
+鈥︹€︽垜浠簲褰撻厤缃紩瀵煎姞杞界▼搴忥紝璁剧疆涓€涓墿灞?`lsm` 鐨勫懡浠よ锛?```
 
   lsm=landlock,lockdown,yama,integrity,apparmor
 
 ```
-重启之后，我们可以通过查看内核日志来确认 Landlock 已启动并运行：
-
+閲嶅惎涔嬪悗锛屾垜浠彲浠ラ€氳繃鏌ョ湅鍐呮牳鏃ュ織鏉ョ‘璁?Landlock 宸插惎鍔ㄥ苟杩愯锛?
 ```
     # dmesg | grep landlock || journalctl -kb -g landlock
     [    0.000000] Command line: [...] lsm=landlock,lockdown,yama,integrity,apparmor
@@ -516,33 +415,25 @@ Landlock 首先在 Linux 5.13 中引入，但必须在构建时用 `CONFIG_SECUR
     [    0.000000] landlock: Up and running.
 ```
 
-内核可能在构建时被配置为总是加载 `lockdown` 与 `capability` LSM。在这种情况下，即便它们没有在引导加载程序中配置，这些 LSM 也会出现在 `LSM: initializing` 日志行开头。
-
-### 网络支持
-
-
-为了能够显式允许 TCP 操作（例如用 `LANDLOCK_ACCESS_NET_BIND_TCP` 添加网络规则），内核必须支持 TCP（`CONFIG_INET=y`）。否则，sys_landlock_add_rule() 会返回一个 `EAFNOSUPPORT` 错误，可以安全地忽略它，因为这类 TCP 操作本来就不可能。
-
-## 问答
+鍐呮牳鍙兘鍦ㄦ瀯寤烘椂琚厤缃负鎬绘槸鍔犺浇 `lockdown` 涓?`capability` LSM銆傚湪杩欑鎯呭喌涓嬶紝鍗充究瀹冧滑娌℃湁鍦ㄥ紩瀵煎姞杞界▼搴忎腑閰嶇疆锛岃繖浜?LSM 涔熶細鍑虹幇鍦?`LSM: initializing` 鏃ュ織琛屽紑澶淬€?
+### 缃戠粶鏀寔
 
 
-### 用户空间沙箱管理器呢？
+涓轰簡鑳藉鏄惧紡鍏佽 TCP 鎿嶄綔锛堜緥濡傜敤 `LANDLOCK_ACCESS_NET_BIND_TCP` 娣诲姞缃戠粶瑙勫垯锛夛紝鍐呮牳蹇呴』鏀寔 TCP锛坄CONFIG_INET=y`锛夈€傚惁鍒欙紝sys_landlock_add_rule() 浼氳繑鍥炰竴涓?`EAFNOSUPPORT` 閿欒锛屽彲浠ュ畨鍏ㄥ湴蹇界暐瀹冿紝鍥犱负杩欑被 TCP 鎿嶄綔鏈潵灏变笉鍙兘銆?
+## 闂瓟
 
 
-使用用户空间进程对内核资源实施限制可能导致竞态条件或不一致的评估（即 `Incorrect mirroring of the OS code and state <https://www.ndss-symposium.org/ndss2003/traps-and-pitfalls-practical-problems-system-call-interposition-based-security-tools/>`_）。
+### 鐢ㄦ埛绌洪棿娌欑绠＄悊鍣ㄥ憿锛?
 
-### 命名空间与容器呢？
+浣跨敤鐢ㄦ埛绌洪棿杩涚▼瀵瑰唴鏍歌祫婧愬疄鏂介檺鍒跺彲鑳藉鑷寸珵鎬佹潯浠舵垨涓嶄竴鑷寸殑璇勪及锛堝嵆 `Incorrect mirroring of the OS code and state <https://www.ndss-symposium.org/ndss2003/traps-and-pitfalls-practical-problems-system-call-interposition-based-security-tools/>`_锛夈€?
+### 鍛藉悕绌洪棿涓庡鍣ㄥ憿锛?
 
+鍛藉悕绌洪棿鏈夊姪浜庡垱寤烘矙绠憋紝浣嗗畠浠苟闈炰负璁块棶鎺у埗鑰岃璁★紝鍥犺€岀己灏戞绫荤敤渚嬫墍闇€鐨勬湁鐢ㄧ壒鎬э紙渚嬪娌℃湁缁嗙矑搴︾殑闄愬埗锛夈€傛澶栵紝瀹冧滑鐨勫鏉傚害鍙兘瀵艰嚧瀹夊叏闂锛屽挨鍏舵槸褰撲笉鍙俊杩涚▼鍙互鎿嶇旱瀹冧滑鏃讹紙鍙傝 `Controlling access to user namespaces <https://lwn.net/Articles/673597/>`_锛夈€?
+### 濡備綍绂佺敤 Landlock 瀹¤璁板綍锛?
 
-命名空间有助于创建沙箱，但它们并非为访问控制而设计，因而缺少此类用例所需的有用特性（例如没有细粒度的限制）。此外，它们的复杂度可能导致安全问题，尤其是当不可信进程可以操纵它们时（参见 `Controlling access to user namespaces <https://lwn.net/Articles/673597/>`_）。
+浣犲彲鑳芥兂鎸夋澶勮鏄庤缃繃婊ゅ櫒锛?Documentation/admin-guide/LSM/landlock.rst
 
-### 如何禁用 Landlock 审计记录？
-
-
-你可能想按此处说明设置过滤器：
-Documentation/admin-guide/LSM/landlock.rst
-
-## 额外文档
+## 棰濆鏂囨。
 
 
 - Documentation/admin-guide/LSM/landlock.rst

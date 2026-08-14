@@ -1,29 +1,23 @@
-
+﻿
 ## rtla-osnoise-top
 
-### 显示操作系统噪声（operating system noise）的摘要
+### 鏄剧ず鎿嶄綔绯荤粺鍣０锛坥perating system noise锛夌殑鎽樿
 
 
 :Manual section: 1
 
-## 概要（SYNOPSIS）
-
+## 姒傝锛圫YNOPSIS锛?
 **rtla osnoise top** [**OPTIONS**]
 
-## 描述（DESCRIPTION）
+## 鎻忚堪锛圖ESCRIPTION锛?
+
+**rtla osnoise top** 浠?**osnoise** tracer 鏀堕泦鍛ㄦ湡鎬ф憳瑕侊紝鍖呮嫭骞叉壈婧愶紙interference source锛夊彂鐢熺殑璁℃暟锛屽苟浠ョ敤鎴峰弸濂界殑鏍煎紡鏄剧ず缁撴灉銆?
+璇ュ伐鍏疯繕鍏佽瀵?**osnoise** tracer 杩涜璁稿閰嶇疆浠ュ強鏀堕泦 tracer 鐨勮緭鍑恒€?
+## 閫夐」锛圤PTIONS锛?
 
 
-**rtla osnoise top** 从 **osnoise** tracer 收集周期性摘要，包括干扰源（interference source）发生的计数，并以用户友好的格式显示结果。
-
-该工具还允许对 **osnoise** tracer 进行许多配置以及收集 tracer 的输出。
-
-## 选项（OPTIONS）
-
-
-
-## 示例（EXAMPLE）
-
-在下面的示例中，**rtla osnoise top** 工具被设置为以实时优先级 **FIFO:1**，在 CPU **0-3** 上运行，每个周期运行 **900ms**（默认 **1s**）。减少运行时间的原因是为了避免使 rtla 工具饿死。该工具还被设置为运行 **一分钟**，并显示
+## 绀轰緥锛圗XAMPLE锛?
+鍦ㄤ笅闈㈢殑绀轰緥涓紝**rtla osnoise top** 宸ュ叿琚缃负浠ュ疄鏃朵紭鍏堢骇 **FIFO:1**锛屽湪 CPU **0-3** 涓婅繍琛岋紝姣忎釜鍛ㄦ湡杩愯 **900ms**锛堥粯璁?**1s**锛夈€傚噺灏戣繍琛屾椂闂寸殑鍘熷洜鏄负浜嗛伩鍏嶄娇 rtla 宸ュ叿楗挎銆傝宸ュ叿杩樿璁剧疆涓鸿繍琛?**涓€鍒嗛挓**锛屽苟鏄剧ず
 ```
 
   [root@f34 ~]# rtla osnoise top -P F:1 -c 0-3 -r 900000 -d 1M -q
@@ -36,14 +30,12 @@
     3 #59         53100000       204935    99.61405        6251           33         290            0        53156         1460           12
 
 ```
-## 参见（SEE ALSO）
-
+## 鍙傝锛圫EE ALSO锛?
 
 **rtla-osnoise**\(1), **rtla-osnoise-hist**\(1)
 
 `Osnoise tracer <https://docs.kernel.org/trace/osnoise-tracer.html>`__
 
-## 作者（AUTHOR）
-
+## 浣滆€咃紙AUTHOR锛?
 
 Written by Daniel Bristot de Oliveira <bristot@kernel.org>

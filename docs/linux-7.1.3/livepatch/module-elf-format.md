@@ -1,27 +1,18 @@
-## Livepatch 模块 ELF 格式
+﻿## Livepatch 妯″潡 ELF 鏍煎紡
 
-本文档概述了 livepatch 模块所必须遵守的 ELF 格式要求。
+鏈枃妗ｆ杩颁簡 livepatch 妯″潡鎵€蹇呴』閬靛畧鐨?ELF 鏍煎紡瑕佹眰銆?
+## 1. 鑳屾櫙涓庡姩鏈?
+鏃╁厛锛宭ivepatch 闇€瑕佸崟鐙殑鏋舵瀯鐩稿叧浠ｇ爜鏉ュ啓鍏ラ噸瀹氫綅椤癸紙relocations锛夈€傜劧鑰岋紝鐢ㄤ簬鍐欏叆閲嶅畾浣嶉」鐨勬灦鏋勭浉鍏充唬鐮佸凡缁忓瓨鍦ㄤ簬妯″潡鍔犺浇鍣ㄤ腑锛屽洜姝よ繖绉嶆棫鏂规硶浜х敓浜嗗啑浣欎唬鐮併€備簬鏄紝livepatch 涓嶅啀閲嶅閫犺疆瀛愩€佷篃涓嶅啀閲嶆柊瀹炵幇妯″潡鍔犺浇鍣ㄥ凡缁忚兘鍋氬埌鐨勪簨鎯咃紝鑰屾槸鍊熷姪妯″潡鍔犺浇鍣ㄤ腑宸叉湁鐨勪唬鐮佹潵瀹屾垚鎵€鏈夋灦鏋勭浉鍏崇殑閲嶅畾浣嶅伐浣溿€傚叿浣撹€岃█锛宭ivepatch 澶嶇敤浜嗘ā鍧楀姞杞藉櫒涓殑 apply_relocate_add() 鍑芥暟鏉ュ啓鍏ラ噸瀹氫綅椤广€傛湰鏂囨。鎵€鎻忚堪鐨勮ˉ涓佹ā鍧?ELF 鏍煎紡锛屼娇寰?livepatch 鑳藉杩欐牱鍋氥€傛垜浠笇鏈涘€熸璁?livepatch 鏇村鏄撶Щ妞嶅埌鍏朵粬鏋舵瀯锛屽苟鍑忓皯灏?livepatch 绉绘鍒版煇涓壒瀹氭灦鏋勬墍闇€鐨勬灦鏋勭浉鍏充唬鐮侀噺銆?
+鐢变簬 apply_relocate_add() 闇€瑕佽闂ā鍧楃殑鑺傚ご琛ㄣ€佺鍙疯〃浠ュ強閲嶅畾浣嶈妭绱㈠紩锛宭ivepatch 妯″潡鐨?ELF 淇℃伅浼氳淇濈暀锛堣绗?5 鑺傦級銆俵ivepatch 绠＄悊瀹冭嚜宸辩殑閲嶅畾浣嶈妭鍜岀鍙凤紝杩欎簺灏嗗湪鏈枃妗ｄ腑鎻忚堪銆傜敤浜庢爣璁?livepatch 绗﹀彿鍜岄噸瀹氫綅鑺傜殑 ELF 甯搁噺锛屾槸鏍规嵁 glibc 鐨勫畾涔変粠 OS 涓撶敤鑼冨洿涓寫閫夌殑銆?
+### 涓轰粈涔?livepatch 闇€瑕佸啓鍏ヨ嚜宸辩殑閲嶅畾浣嶉」锛?
+涓€涓吀鍨嬬殑 livepatch 妯″潡鍖呭惈琚ˉ涓佸寲鍑芥暟鐨勮ˉ涓佺増鏈紝杩欎簺鐗堟湰鍙兘寮曠敤鏈鍑虹殑鍏ㄥ眬绗﹀彿浠ュ強鏈寘鍚繘鏉ョ殑灞€閮ㄧ鍙枫€傚紩鐢ㄨ繖绫荤鍙风殑閲嶅畾浣嶉」涓嶈兘鍘熸牱淇濈暀锛屽洜涓哄唴鏍告ā鍧楀姞杞藉櫒鏃犳硶瑙ｆ瀽瀹冧滑锛屼粠鑰屼細鎷掔粷璇?livepatch 妯″潡銆傛澶栵紝鎴戜滑鏃犳硶瀵硅ˉ涓佹ā鍧楀姞杞芥椂灏氫笉瀛樺湪鐨勬ā鍧楀簲鐢ㄩ噸瀹氫綅锛堜緥濡傚鏌愪釜灏氭湭鍔犺浇鐨勯┍鍔ㄥ仛琛ヤ竵锛夈€傛棭鍏堬紝livepatch 閫氳繃鍦ㄧ敓鎴愮殑琛ヤ竵妯″潡 ELF 杈撳嚭涓祵鍏ョ壒娈婄殑 鈥渄ynrela鈥濓紙鍔ㄦ€?rela锛夎妭鏉ヨВ鍐宠繖涓棶棰樸€傚€熷姪杩欎簺 dynrela 鑺傦紝livepatch 鍙互鍦ㄨ€冭檻绗﹀彿浣滅敤鍩熶互鍙婄鍙锋墍灞炴ā鍧楃殑鍓嶆彁涓嬭В鏋愮鍙凤紝鐒跺悗鎵嬪姩搴旂敤杩欎簺鍔ㄦ€侀噸瀹氫綅銆傜劧鑰岃繖绉嶆柟娉曡姹?livepatch 鎻愪緵鏋舵瀯鐩稿叧浠ｇ爜鏉ュ啓鍏ヨ繖浜涢噸瀹氫綅椤广€傚湪鏂扮殑鏍煎紡涓紝livepatch 鐢ㄨ嚜韬殑 SHT_RELA 閲嶅畾浣嶈妭鍙栦唬 dynrela 鑺傦紝鑰?rela 鎵€寮曠敤鐨勭鍙锋槸鐗规畩鐨?livepatch 绗﹀彿锛堣绗?2銆? 鑺傦級銆傛灦鏋勭浉鍏崇殑 livepatch 閲嶅畾浣嶄唬鐮佽涓€娆″ apply_relocate_add() 鐨勮皟鐢ㄦ墍鍙栦唬銆?
+## 2. Livepatch modinfo 瀛楁
 
-## 1. 背景与动机
+livepatch 妯″潡蹇呴』甯︽湁 鈥渓ivepatch鈥?modinfo 灞炴€с€傚叧浜庡浣曞仛鍒拌繖涓€鐐癸紝璇峰弬瑙?samples/livepatch/ 涓殑绀轰緥 livepatch 妯″潡銆?
+鐢ㄦ埛鍙互浣跨敤 'modinfo' 鍛戒护銆佸苟閫氳繃鏌ユ壘鏄惁瀛樺湪 鈥渓ivepatch鈥?瀛楁鏉ヨ瘑鍒?livepatch 妯″潡銆傝瀛楁涔熻鍐呮牳妯″潡鍔犺浇鍣ㄧ敤浜庤瘑鍒?livepatch 妯″潡銆?
+### Example锛堢ず渚嬶級锛?
 
-早先，livepatch 需要单独的架构相关代码来写入重定位项（relocations）。然而，用于写入重定位项的架构相关代码已经存在于模块加载器中，因此这种旧方法产生了冗余代码。于是，livepatch 不再重复造轮子、也不再重新实现模块加载器已经能做到的事情，而是借助模块加载器中已有的代码来完成所有架构相关的重定位工作。具体而言，livepatch 复用了模块加载器中的 apply_relocate_add() 函数来写入重定位项。本文档所描述的补丁模块 ELF 格式，使得 livepatch 能够这样做。我们希望借此让 livepatch 更容易移植到其他架构，并减少将 livepatch 移植到某个特定架构所需的架构相关代码量。
-
-由于 apply_relocate_add() 需要访问模块的节头表、符号表以及重定位节索引，livepatch 模块的 ELF 信息会被保留（见第 5 节）。livepatch 管理它自己的重定位节和符号，这些将在本文档中描述。用于标记 livepatch 符号和重定位节的 ELF 常量，是根据 glibc 的定义从 OS 专用范围中挑选的。
-
-### 为什么 livepatch 需要写入自己的重定位项？
-
-一个典型的 livepatch 模块包含被补丁化函数的补丁版本，这些版本可能引用未导出的全局符号以及未包含进来的局部符号。引用这类符号的重定位项不能原样保留，因为内核模块加载器无法解析它们，从而会拒绝该 livepatch 模块。此外，我们无法对补丁模块加载时尚不存在的模块应用重定位（例如对某个尚未加载的驱动做补丁）。早先，livepatch 通过在生成的补丁模块 ELF 输出中嵌入特殊的 “dynrela”（动态 rela）节来解决这个问题。借助这些 dynrela 节，livepatch 可以在考虑符号作用域以及符号所属模块的前提下解析符号，然后手动应用这些动态重定位。然而这种方法要求 livepatch 提供架构相关代码来写入这些重定位项。在新的格式中，livepatch 用自身的 SHT_RELA 重定位节取代 dynrela 节，而 rela 所引用的符号是特殊的 livepatch 符号（见第 2、3 节）。架构相关的 livepatch 重定位代码被一次对 apply_relocate_add() 的调用所取代。
-
-## 2. Livepatch modinfo 字段
-
-livepatch 模块必须带有 “livepatch” modinfo 属性。关于如何做到这一点，请参见 samples/livepatch/ 中的示例 livepatch 模块。
-
-用户可以使用 'modinfo' 命令、并通过查找是否存在 “livepatch” 字段来识别 livepatch 模块。该字段也被内核模块加载器用于识别 livepatch 模块。
-
-### Example（示例）：
-
-
-**Modinfo 输出：**
+**Modinfo 杈撳嚭锛?*
 
 ```
 
@@ -34,22 +25,16 @@ livepatch 模块必须带有 “livepatch” modinfo 属性。关于如何做到
 
 ```
 
-## 3. Livepatch 重定位节
+## 3. Livepatch 閲嶅畾浣嶈妭
 
-一个 livepatch 模块管理它自己的 ELF 重定位节，以便在恰当的时机将重定位项应用到模块以及内核（vmlinux）。例如，如果一个补丁模块对某个当前尚未加载的驱动打补丁，livepatch 会在该驱动加载时，将相应的 livepatch 重定位节应用到该驱动。
+涓€涓?livepatch 妯″潡绠＄悊瀹冭嚜宸辩殑 ELF 閲嶅畾浣嶈妭锛屼互渚垮湪鎭板綋鐨勬椂鏈哄皢閲嶅畾浣嶉」搴旂敤鍒版ā鍧椾互鍙婂唴鏍革紙vmlinux锛夈€備緥濡傦紝濡傛灉涓€涓ˉ涓佹ā鍧楀鏌愪釜褰撳墠灏氭湭鍔犺浇鐨勯┍鍔ㄦ墦琛ヤ竵锛宭ivepatch 浼氬湪璇ラ┍鍔ㄥ姞杞芥椂锛屽皢鐩稿簲鐨?livepatch 閲嶅畾浣嶈妭搴旂敤鍒拌椹卞姩銆?
+涓€涓ˉ涓佹ā鍧椾腑鐨勬瘡涓?鈥滃璞♀€濓紙渚嬪 vmlinux锛屾垨涓€涓ā鍧楋級鍙兘鍏宠仈鏈夊涓?livepatch 閲嶅畾浣嶈妭锛堜緥濡傚鍚屼竴瀵硅薄鍐呭涓嚱鏁扮殑琛ヤ竵锛夈€備竴涓?livepatch 閲嶅畾浣嶈妭涓庡畠鎵€搴旂敤鐨勯偅涓洰鏍囪妭锛堥€氬父鏄煇鍑芥暟鐨?text 鑺傦級涔嬮棿瀛樺湪涓€涓€瀵瑰簲鍏崇郴銆備竴涓?livepatch 妯″潡涔熸湁鍙兘娌℃湁浠讳綍 livepatch 閲嶅畾浣嶈妭锛岀ず渚?livepatch 妯″潡灏辨槸杩欑鎯呭喌锛堣 samples/livepatch锛夈€?
+鐢变簬 ELF 淇℃伅浼氬湪 livepatch 妯″潡涓繚鐣欙紙瑙佺 5 鑺傦級锛屼竴涓?livepatch 閲嶅畾浣嶈妭鍙渶鎶婄浉搴旂殑鑺傜储寮曚紶缁?apply_relocate_add() 鍗冲彲琚簲鐢紝鍚庤€呴殢鍚庣敤瀹冩潵璁块棶璇ラ噸瀹氫綅鑺傚苟搴旂敤閲嶅畾浣嶉」銆?
+livepatch 閲嶅畾浣嶈妭涓紝姣忎釜琚?rela 寮曠敤鐨勭鍙烽兘鏄竴涓?livepatch 绗﹀彿銆傚湪 livepatch 璋冪敤 apply_relocate_add() 涔嬪墠锛屽繀椤诲厛瑙ｆ瀽瀹冧滑銆傛洿澶氫俊鎭绗?3 鑺傘€?
+## 3.1 Livepatch 閲嶅畾浣嶈妭鏍煎紡
 
-一个补丁模块中的每个 “对象”（例如 vmlinux，或一个模块）可能关联有多个 livepatch 重定位节（例如对同一对象内多个函数的补丁）。一个 livepatch 重定位节与它所应用的那个目标节（通常是某函数的 text 节）之间存在一一对应关系。一个 livepatch 模块也有可能没有任何 livepatch 重定位节，示例 livepatch 模块就是这种情况（见 samples/livepatch）。
-
-由于 ELF 信息会在 livepatch 模块中保留（见第 5 节），一个 livepatch 重定位节只需把相应的节索引传给 apply_relocate_add() 即可被应用，后者随后用它来访问该重定位节并应用重定位项。
-
-livepatch 重定位节中，每个被 rela 引用的符号都是一个 livepatch 符号。在 livepatch 调用 apply_relocate_add() 之前，必须先解析它们。更多信息见第 3 节。
-
-## 3.1 Livepatch 重定位节格式
-
-livepatch 重定位节必须用 SHF_RELA_LIVEPATCH 节标志标记。定义见 include/uapi/linux/elf.h。模块加载器识别这一标志，并会避免在补丁模块加载时应用这些重定位节。这些节还必须用 SHF_ALLOC 标记，以便模块加载器在加载模块时不丢弃它们（即它们会和其他 SHF_ALLOC 节一起被复制到内存中）。
-
-livepatch 重定位节的名称必须符合以下格式
-```
+livepatch 閲嶅畾浣嶈妭蹇呴』鐢?SHF_RELA_LIVEPATCH 鑺傛爣蹇楁爣璁般€傚畾涔夎 include/uapi/linux/elf.h銆傛ā鍧楀姞杞藉櫒璇嗗埆杩欎竴鏍囧織锛屽苟浼氶伩鍏嶅湪琛ヤ竵妯″潡鍔犺浇鏃跺簲鐢ㄨ繖浜涢噸瀹氫綅鑺傘€傝繖浜涜妭杩樺繀椤荤敤 SHF_ALLOC 鏍囪锛屼互渚挎ā鍧楀姞杞藉櫒鍦ㄥ姞杞芥ā鍧楁椂涓嶄涪寮冨畠浠紙鍗冲畠浠細鍜屽叾浠?SHF_ALLOC 鑺備竴璧疯澶嶅埗鍒板唴瀛樹腑锛夈€?
+livepatch 閲嶅畾浣嶈妭鐨勫悕绉板繀椤荤鍚堜互涓嬫牸寮?```
 
   .klp.rela.objname.section_name
   ^        ^^     ^ ^          ^
@@ -58,18 +43,14 @@ livepatch 重定位节的名称必须符合以下格式
 
 ```
 [A]
-  重定位节名称以字符串 ".klp.rela." 为前缀。
-
+  閲嶅畾浣嶈妭鍚嶇О浠ュ瓧绗︿覆 ".klp.rela." 涓哄墠缂€銆?
 [B]
-  该重定位节所属对象（即 "vmlinux" 或模块名）的名称紧跟在前缀之后。
-
+  璇ラ噸瀹氫綅鑺傛墍灞炲璞★紙鍗?"vmlinux" 鎴栨ā鍧楀悕锛夌殑鍚嶇О绱ц窡鍦ㄥ墠缂€涔嬪悗銆?
 [C]
-  该重定位节所应用到的那个节的实际名称。
+  璇ラ噸瀹氫綅鑺傛墍搴旂敤鍒扮殑閭ｄ釜鑺傜殑瀹為檯鍚嶇О銆?
+### Examples锛堢ず渚嬶級锛?
 
-### Examples（示例）：
-
-
-**Livepatch 重定位节名称：**
+**Livepatch 閲嶅畾浣嶈妭鍚嶇О锛?*
 
 ```
 
@@ -77,8 +58,8 @@ livepatch 重定位节的名称必须符合以下格式
   .klp.rela.vmlinux.text.cmdline_proc_show
 
 ```
-**`readelf --sections` 输出，针对一个对 vmlinux 以及模块 9p、btrfs、ext4 打补丁的
-补丁模块：**
+**`readelf --sections` 杈撳嚭锛岄拡瀵逛竴涓 vmlinux 浠ュ強妯″潡 9p銆乥trfs銆乪xt4 鎵撹ˉ涓佺殑
+琛ヤ竵妯″潡锛?*
 
 ```
 
@@ -98,9 +79,8 @@ livepatch 重定位节的名称必须符合以下格式
 
 ```
 [*]
-  Livepatch 重定位节是 SHT_RELA 节，但带有一些特殊特征。注意它们被标记为 SHF_ALLOC（"A"），这样当模块被加载进内存时不会被丢弃，同时它们也被标记为 SHF_RELA_LIVEPATCH 标志（"o" —— 表示 OS 专用）。
-
-**`readelf --relocs` 输出，针对一个补丁模块：**
+  Livepatch 閲嶅畾浣嶈妭鏄?SHT_RELA 鑺傦紝浣嗗甫鏈変竴浜涚壒娈婄壒寰併€傛敞鎰忓畠浠鏍囪涓?SHF_ALLOC锛?A"锛夛紝杩欐牱褰撴ā鍧楄鍔犺浇杩涘唴瀛樻椂涓嶄細琚涪寮冿紝鍚屾椂瀹冧滑涔熻鏍囪涓?SHF_RELA_LIVEPATCH 鏍囧織锛?o" 鈥斺€?琛ㄧず OS 涓撶敤锛夈€?
+**`readelf --relocs` 杈撳嚭锛岄拡瀵逛竴涓ˉ涓佹ā鍧楋細**
 
 ```
 
@@ -116,18 +96,14 @@ livepatch 重定位节的名称必须符合以下格式
 
 ```
 [*]
-  重定位项所引用的每个符号都是一个 livepatch 符号。
+  閲嶅畾浣嶉」鎵€寮曠敤鐨勬瘡涓鍙烽兘鏄竴涓?livepatch 绗﹀彿銆?
+## 4. Livepatch 绗﹀彿
 
-## 4. Livepatch 符号
+livepatch 绗﹀彿鏄 livepatch 閲嶅畾浣嶈妭鎵€寮曠敤鐨勭鍙枫€傝繖浜涙槸鏉ヨ嚜琛ヤ竵瀵硅薄鐨勬柊鐗堟湰鍑芥暟鎵€璁块棶鐨勭鍙凤紝鍏跺湴鍧€鏃犳硶琚ā鍧楀姞杞藉櫒瑙ｆ瀽锛堝洜涓哄畠浠槸灞€閮ㄧ殑鎴栨湭瀵煎嚭鐨勫叏灞€绗﹀彿锛夈€傜敱浜庢ā鍧楀姞杞藉櫒鍙В鏋愬凡瀵煎嚭鐨勭鍙凤紝鑰屾柊琛ヤ竵鍑芥暟鎵€寮曠敤鐨勭鍙峰苟闈炴瘡涓€涓兘宸插鍑猴紝浜庢槸寮曞叆浜?livepatch 绗﹀彿銆傚湪琛ヤ竵妯″潡鍔犺浇鏃舵垜浠棤娉曠珛鍗冲緱鐭ユ煇涓鍙峰湴鍧€鐨勬儏鍐典笅锛屼篃浼氱敤鍒板畠浠€備緥濡傦紝褰?livepatch 瀵规煇涓皻鏈姞杞界殑妯″潡鎵撹ˉ涓佹椂灏辨槸杩欑鎯呭喌銆傚湪杩欑鎯呭喌涓嬶紝鐩稿叧鐨?livepatch 绗﹀彿浼氬湪鐩爣妯″潡鍔犺浇鏃剁畝鍗曞湴瀹屾垚瑙ｆ瀽銆傛棤璁哄浣曪紝瀵逛簬浠讳綍 livepatch 閲嶅畾浣嶈妭锛岃鑺傛墍寮曠敤鐨勬墍鏈?livepatch 绗﹀彿閮藉繀椤诲湪 livepatch 鑳藉瀵硅閲嶅畾浣嶈妭璋冪敤 apply_relocate_add() 涔嬪墠琚В鏋愩€?
+livepatch 绗﹀彿蹇呴』鐢?SHN_LIVEPATCH 鏍囪锛屼互渚挎ā鍧楀姞杞藉櫒鑳藉璇嗗埆骞跺拷鐣ュ畠浠€俵ivepatch 妯″潡灏嗚繖浜涚鍙蜂繚鐣欏湪瀹冧滑鐨勭鍙疯〃涓紝鑰岀鍙疯〃閫氳繃 module->symtab 鍙樺緱鍙闂€?
+## 4.1 涓€涓?livepatch 妯″潡鐨勭鍙疯〃
 
-livepatch 符号是被 livepatch 重定位节所引用的符号。这些是来自补丁对象的新版本函数所访问的符号，其地址无法被模块加载器解析（因为它们是局部的或未导出的全局符号）。由于模块加载器只解析已导出的符号，而新补丁函数所引用的符号并非每一个都已导出，于是引入了 livepatch 符号。在补丁模块加载时我们无法立即得知某个符号地址的情况下，也会用到它们。例如，当 livepatch 对某个尚未加载的模块打补丁时就是这种情况。在这种情况下，相关的 livepatch 符号会在目标模块加载时简单地完成解析。无论如何，对于任何 livepatch 重定位节，该节所引用的所有 livepatch 符号都必须在 livepatch 能够对该重定位节调用 apply_relocate_add() 之前被解析。
-
-livepatch 符号必须用 SHN_LIVEPATCH 标记，以便模块加载器能够识别并忽略它们。livepatch 模块将这些符号保留在它们的符号表中，而符号表通过 module->symtab 变得可访问。
-
-## 4.1 一个 livepatch 模块的符号表
-
-通常，模块符号表的一个精简副本（仅包含 “核心” 符号）会通过 module->symtab 提供（见 kernel/module/kallsyms.c 中的 layout_symtab()）。对于 livepatch 模块，在模块加载时复制到内存中的符号表必须与补丁模块编译时生成的符号表完全一致。这是因为每个 livepatch 重定位节中的重定位项都是通过各自的符号索引来引用相应符号的，而原始的符号索引（以及符号表的排序）必须被保留，以便 apply_relocate_add() 能找到正确的符号。
-
+閫氬父锛屾ā鍧楃鍙疯〃鐨勪竴涓簿绠€鍓湰锛堜粎鍖呭惈 鈥滄牳蹇冣€?绗﹀彿锛変細閫氳繃 module->symtab 鎻愪緵锛堣 kernel/module/kallsyms.c 涓殑 layout_symtab()锛夈€傚浜?livepatch 妯″潡锛屽湪妯″潡鍔犺浇鏃跺鍒跺埌鍐呭瓨涓殑绗﹀彿琛ㄥ繀椤讳笌琛ヤ竵妯″潡缂栬瘧鏃剁敓鎴愮殑绗﹀彿琛ㄥ畬鍏ㄤ竴鑷淬€傝繖鏄洜涓烘瘡涓?livepatch 閲嶅畾浣嶈妭涓殑閲嶅畾浣嶉」閮芥槸閫氳繃鍚勮嚜鐨勭鍙风储寮曟潵寮曠敤鐩稿簲绗﹀彿鐨勶紝鑰屽師濮嬬殑绗﹀彿绱㈠紩锛堜互鍙婄鍙疯〃鐨勬帓搴忥級蹇呴』琚繚鐣欙紝浠ヤ究 apply_relocate_add() 鑳芥壘鍒版纭殑绗﹀彿銆?
 ```
 
   Relocation section '.klp.rela.btrfs.text.btrfs_feature_attr_show' at offset 0x2ba0 contains 4 entries:
@@ -135,9 +111,8 @@ livepatch 符号必须用 SHN_LIVEPATCH 标记，以便模块加载器能够识�
   000000000000001f  0000005e00000002 R_X86_64_PC32          0000000000000000 .klp.sym.vmlinux.printk,0 - 4
 
 ```
-这个 rela 引用符号 '.klp.sym.vmlinux.printk,0'，符号索引编码在 'Info' 中。这里它的符号索引是 0x5e，即十进制的 94，指向符号索引 94。
-
-而在该补丁模块对应的符号表中，符号索引 94 指向
+杩欎釜 rela 寮曠敤绗﹀彿 '.klp.sym.vmlinux.printk,0'锛岀鍙风储寮曠紪鐮佸湪 'Info' 涓€傝繖閲屽畠鐨勭鍙风储寮曟槸 0x5e锛屽嵆鍗佽繘鍒剁殑 94锛屾寚鍚戠鍙风储寮?94銆?
+鑰屽湪璇ヨˉ涓佹ā鍧楀搴旂殑绗﹀彿琛ㄤ腑锛岀鍙风储寮?94 鎸囧悜
 ```
 
   [ snip ]
@@ -146,10 +121,9 @@ livepatch 符号必须用 SHN_LIVEPATCH 标记，以便模块加载器能够识�
 
 ```
 
-## 4.2 Livepatch 符号格式
+## 4.2 Livepatch 绗﹀彿鏍煎紡
 
-livepatch 符号的节索引必须标记为 SHN_LIVEPATCH，以便模块加载器能够识别它们、并不去尝试解析它们。实际定义见 include/uapi/linux/elf.h。
-
+livepatch 绗﹀彿鐨勮妭绱㈠紩蹇呴』鏍囪涓?SHN_LIVEPATCH锛屼互渚挎ā鍧楀姞杞藉櫒鑳藉璇嗗埆瀹冧滑銆佸苟涓嶅幓灏濊瘯瑙ｆ瀽瀹冧滑銆傚疄闄呭畾涔夎 include/uapi/linux/elf.h銆?
 ```
 
   .klp.sym.objname.symbol_name,sympos
@@ -159,21 +133,16 @@ livepatch 符号的节索引必须标记为 SHN_LIVEPATCH，以便模块加载�
 
 ```
 [A]
-  符号名称以字符串 ".klp.sym." 为前缀。
-
+  绗﹀彿鍚嶇О浠ュ瓧绗︿覆 ".klp.sym." 涓哄墠缂€銆?
 [B]
-  该符号所属对象（即 "vmlinux" 或模块名）的名称紧跟在前缀之后。
-
+  璇ョ鍙锋墍灞炲璞★紙鍗?"vmlinux" 鎴栨ā鍧楀悕锛夌殑鍚嶇О绱ц窡鍦ㄥ墠缂€涔嬪悗銆?
 [C]
-  符号的实际名称。
-
+  绗﹀彿鐨勫疄闄呭悕绉般€?
 [D]
-  符号在对象中的位置（按 kallsyms 计算）。这用于区分同一对象内的重复符号。符号位置以数字表示（0、1、2……）。唯一符号的符号位置为 0。
+  绗﹀彿鍦ㄥ璞′腑鐨勪綅缃紙鎸?kallsyms 璁＄畻锛夈€傝繖鐢ㄤ簬鍖哄垎鍚屼竴瀵硅薄鍐呯殑閲嶅绗﹀彿銆傜鍙蜂綅缃互鏁板瓧琛ㄧず锛?銆?銆?鈥︹€︼級銆傚敮涓€绗﹀彿鐨勭鍙蜂綅缃负 0銆?
+### Examples锛堢ず渚嬶級锛?
 
-### Examples（示例）：
-
-
-**Livepatch 符号名称：**
+**Livepatch 绗﹀彿鍚嶇О锛?*
 
 ```
 
@@ -182,7 +151,7 @@ livepatch 符号的节索引必须标记为 SHN_LIVEPATCH，以便模块加载�
 	.klp.sym.btrfs.btrfs_ktype,0
 
 ```
-**`readelf --symbols` 输出，针对一个补丁模块：**
+**`readelf --symbols` 杈撳嚭锛岄拡瀵逛竴涓ˉ涓佹ā鍧楋細**
 
 ```
 
@@ -199,11 +168,7 @@ livepatch 符号的节索引必须标记为 SHN_LIVEPATCH，以便模块加载�
 
 ```
 [*]
-  注意这些符号的 'Ndx'（节索引）是 SHN_LIVEPATCH（0xff20）。
-  "OS" 表示 OS 专用。
-
-## 5. 符号表与 ELF 节访问
-
-一个 livepatch 模块的符号表可通过 module->symtab 访问。
-
-由于 apply_relocate_add() 需要访问模块的节头、符号表以及重定位节索引，livepatch 模块的 ELF 信息会被保留，并由模块加载器通过 module->klp_info（它是一个 `klp_modinfo` 结构体）提供访问。当一个 livepatch 模块加载时，该结构体由模块加载器填充。
+  娉ㄦ剰杩欎簺绗﹀彿鐨?'Ndx'锛堣妭绱㈠紩锛夋槸 SHN_LIVEPATCH锛?xff20锛夈€?  "OS" 琛ㄧず OS 涓撶敤銆?
+## 5. 绗﹀彿琛ㄤ笌 ELF 鑺傝闂?
+涓€涓?livepatch 妯″潡鐨勭鍙疯〃鍙€氳繃 module->symtab 璁块棶銆?
+鐢变簬 apply_relocate_add() 闇€瑕佽闂ā鍧楃殑鑺傚ご銆佺鍙疯〃浠ュ強閲嶅畾浣嶈妭绱㈠紩锛宭ivepatch 妯″潡鐨?ELF 淇℃伅浼氳淇濈暀锛屽苟鐢辨ā鍧楀姞杞藉櫒閫氳繃 module->klp_info锛堝畠鏄竴涓?`klp_modinfo` 缁撴瀯浣擄級鎻愪緵璁块棶銆傚綋涓€涓?livepatch 妯″潡鍔犺浇鏃讹紝璇ョ粨鏋勪綋鐢辨ā鍧楀姞杞藉櫒濉厖銆?

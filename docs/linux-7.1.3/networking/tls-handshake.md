@@ -1,212 +1,212 @@
-
+﻿
 ## In-Kernel TLS Handshake
 
 
 ## Overview
 
 
-Transport Layer 安全 (TLS) 是 一个 Upper Layer 协议 (ULP) 该 runs
-在…上 TCP. TLS 提供 end-to-end 数据 integrity 和 confidentiality 在
-addition 到 peer authentication.
+Transport Layer 瀹夊叏 (TLS) 鏄?涓€涓?Upper Layer 鍗忚 (ULP) 璇?runs
+鍦ㄢ€︿笂 TCP. TLS 鎻愪緵 end-to-end 鏁版嵁 integrity 鍜?confidentiality 鍦?
+addition 鍒?peer authentication.
 
-The 内核's kTLS implementation handles the TLS record subprotocol, 但
-执行 不 handle the TLS handshake subprotocol 其 是 使用 到 establish
-一个 TLS 会话. 内核 consumers 可 使用 the API 描述 此处 到
-请求 TLS 会话 establishment.
+The 鍐呮牳's kTLS implementation handles the TLS record subprotocol, 浣?
+鎵ц 涓?handle the TLS handshake subprotocol 鍏?鏄?浣跨敤 鍒?establish
+涓€涓?TLS 浼氳瘽. 鍐呮牳 consumers 鍙?浣跨敤 the API 鎻忚堪 姝ゅ 鍒?
+璇锋眰 TLS 浼氳瘽 establishment.
 
-存在 若干 可能 ways 到 提供 一个 handshake service 在 the
-内核. The API 描述 此处 是 designed 到 hide the details 的 那些
-implementations 因此 该 in-kernel TLS consumers 执行 不 需要 到 为
-aware 的 如何 the handshake gets 已完成.
-
-
-## 用户 handshake agent
+瀛樺湪 鑻ュ共 鍙兘 ways 鍒?鎻愪緵 涓€涓?handshake service 鍦?the
+鍐呮牳. The API 鎻忚堪 姝ゅ 鏄?designed 鍒?hide the details 鐨?閭ｄ簺
+implementations 鍥犳 璇?in-kernel TLS consumers 鎵ц 涓?闇€瑕?鍒?涓?
+aware 鐨?濡備綍 the handshake gets 宸插畬鎴?
 
 
-作为 的 此 writing, 存在 无 TLS handshake implementation 在 the
-Linux 内核. 到 提供 一个 handshake service, 一个 handshake agent
-(typically 在 用户空间) 是 started 在 每个 网络 namespace 何处 一个
-内核 consumer 可能 需要 一个 TLS handshake. Handshake agents listen
-用于 事件 sent 来自 the 内核 该 indicate 一个 handshake 请求 是
+## 鐢ㄦ埛 handshake agent
+
+
+浣滀负 鐨?姝?writing, 瀛樺湪 鏃?TLS handshake implementation 鍦?the
+Linux 鍐呮牳. 鍒?鎻愪緵 涓€涓?handshake service, 涓€涓?handshake agent
+(typically 鍦?鐢ㄦ埛绌洪棿) 鏄?started 鍦?姣忎釜 缃戠粶 namespace 浣曞 涓€涓?
+鍐呮牳 consumer 鍙兘 闇€瑕?涓€涓?TLS handshake. Handshake agents listen
+鐢ㄤ簬 浜嬩欢 sent 鏉ヨ嚜 the 鍐呮牳 璇?indicate 涓€涓?handshake 璇锋眰 鏄?
 waiting.
 
-一个 打开 套接字 是 passed 到 一个 handshake agent 通过 一个 netlink 操作,
-其 creates 一个 套接字 描述符 在 the agent's 文件 描述符 表.
-若 the handshake completes successfully, the handshake agent promotes
-the 套接字 到 使用 the TLS ULP 和 sets the 会话 information 使用 the
-SOL_TLS 套接字 选项. The handshake agent returns the 套接字 到 the
-内核 通过 一个 second netlink 操作.
+涓€涓?鎵撳紑 濂楁帴瀛?鏄?passed 鍒?涓€涓?handshake agent 閫氳繃 涓€涓?netlink 鎿嶄綔,
+鍏?creates 涓€涓?濂楁帴瀛?鎻忚堪绗?鍦?the agent's 鏂囦欢 鎻忚堪绗?琛?
+鑻?the handshake completes successfully, the handshake agent promotes
+the 濂楁帴瀛?鍒?浣跨敤 the TLS ULP 鍜?sets the 浼氳瘽 information 浣跨敤 the
+SOL_TLS 濂楁帴瀛?閫夐」. The handshake agent returns the 濂楁帴瀛?鍒?the
+鍐呮牳 閫氳繃 涓€涓?second netlink 鎿嶄綔.
 
 
-## 内核 Handshake API
+## 鍐呮牳 Handshake API
 
 
-一个 内核 TLS consumer initiates 一个 client-side TLS handshake 在 一个 打开
-套接字 由 invoking one 的 the tls_client_hello() 函数. 第一, 它
-fills 在 一个 结构体 该 包含 the 参数 的 the 请求:
+涓€涓?鍐呮牳 TLS consumer initiates 涓€涓?client-side TLS handshake 鍦?涓€涓?鎵撳紑
+濂楁帴瀛?鐢?invoking one 鐨?the tls_client_hello() 鍑芥暟. 绗竴, 瀹?
+fills 鍦?涓€涓?缁撴瀯浣?璇?鍖呭惈 the 鍙傛暟 鐨?the 璇锋眰:
 
 
-  结构体 tls_handshake_args {
-        结构体 套接字   *ta_sock;
-        tls_已完成_func_t ta_已完成;
-        void            *ta_数据;
+  缁撴瀯浣?tls_handshake_args {
+        缁撴瀯浣?濂楁帴瀛?  *ta_sock;
+        tls_宸插畬鎴恄func_t ta_宸插畬鎴?
+        void            *ta_鏁版嵁;
         const char      *ta_peername;
-        unsigned int    ta_超时_ms;
-        key_串行_t    ta_keyring;
-        key_串行_t    ta_my_cert;
-        key_串行_t    ta_my_privkey;
+        unsigned int    ta_瓒呮椂_ms;
+        key_涓茶_t    ta_keyring;
+        key_涓茶_t    ta_my_cert;
+        key_涓茶_t    ta_my_privkey;
         unsigned int    ta_num_peerids;
-        key_串行_t    ta_my_peerids[^5^];
+        key_涓茶_t    ta_my_peerids[^5^];
   };
 
-The @ta_sock 字段 references 一个 打开 和 connected 套接字. The consumer
-必须 hold 一个 参考 在 the 套接字 到 prevent 它 来自 正在 destroyed
-同时 the handshake 是 在 progress. The consumer 必须 也 具有
-instantiated 一个 结构体 文件 在 sock->文件.
+The @ta_sock 瀛楁 references 涓€涓?鎵撳紑 鍜?connected 濂楁帴瀛? The consumer
+蹇呴』 hold 涓€涓?鍙傝€?鍦?the 濂楁帴瀛?鍒?prevent 瀹?鏉ヨ嚜 姝ｅ湪 destroyed
+鍚屾椂 the handshake 鏄?鍦?progress. The consumer 蹇呴』 涔?鍏锋湁
+instantiated 涓€涓?缁撴瀯浣?鏂囦欢 鍦?sock->鏂囦欢.
 
 
-@ta_已完成 包含 一个 回调函数 函数 即 invoked 当 the handshake
-具有 completed. Further explanation 的 此 函数 是 在 the "Handshake
-Completion" sesction 下文.
+@ta_宸插畬鎴?鍖呭惈 涓€涓?鍥炶皟鍑芥暟 鍑芥暟 鍗?invoked 褰?the handshake
+鍏锋湁 completed. Further explanation 鐨?姝?鍑芥暟 鏄?鍦?the "Handshake
+Completion" sesction 涓嬫枃.
 
-The consumer 可 提供 一个 NUL-terminated hostname 在 the @ta_peername
-字段 即 sent 作为 part 的 ClientHello. 若 无 peername 是 provided,
-the DNS hostname associated 与 the server's IP 地址 是 使用 改为.
+The consumer 鍙?鎻愪緵 涓€涓?NUL-terminated hostname 鍦?the @ta_peername
+瀛楁 鍗?sent 浣滀负 part 鐨?ClientHello. 鑻?鏃?peername 鏄?provided,
+the DNS hostname associated 涓?the server's IP 鍦板潃 鏄?浣跨敤 鏀逛负.
 
-The consumer 可 fill 在 the @ta_超时_ms 字段 到 force the servicing
-handshake agent 到 exit 之后 一个 数字 的 milliseconds. 此 enables the
-套接字 到 为 fully closed 一旦 两者 the 内核 和 the handshake agent
-具有 closed 它们的 endpoints.
+The consumer 鍙?fill 鍦?the @ta_瓒呮椂_ms 瀛楁 鍒?force the servicing
+handshake agent 鍒?exit 涔嬪悗 涓€涓?鏁板瓧 鐨?milliseconds. 姝?enables the
+濂楁帴瀛?鍒?涓?fully closed 涓€鏃?涓よ€?the 鍐呮牳 鍜?the handshake agent
+鍏锋湁 closed 瀹冧滑鐨?endpoints.
 
-Authentication material 例如 x.509 certificates, 私有 certificate
-keys, 和 pre-shared keys 是 provided 到 the handshake agent 在 keys
-该 是 instantiated 由 the consumer 之前 making the handshake
-请求. The consumer 可 提供 一个 私有 keyring 即 linked 进入
-the handshake agent's 进程 keyring 在 the @ta_keyring 字段 到 prevent
-access 的 那些 keys 由 其他 子系统.
+Authentication material 渚嬪 x.509 certificates, 绉佹湁 certificate
+keys, 鍜?pre-shared keys 鏄?provided 鍒?the handshake agent 鍦?keys
+璇?鏄?instantiated 鐢?the consumer 涔嬪墠 making the handshake
+璇锋眰. The consumer 鍙?鎻愪緵 涓€涓?绉佹湁 keyring 鍗?linked 杩涘叆
+the handshake agent's 杩涚▼ keyring 鍦?the @ta_keyring 瀛楁 鍒?prevent
+access 鐨?閭ｄ簺 keys 鐢?鍏朵粬 瀛愮郴缁?
 
-到 请求 一个 x.509-authenticated TLS 会话, the consumer fills 在
-the @ta_my_cert 和 @ta_my_privkey 字段 与 the 串行 numbers 的
-keys containing 一个 x.509 certificate 和 the 私有 key 用于 该
-certificate. 然后, 它 invokes 此 函数:
-
-
-  ret = tls_client_hello_x509(args, gfp_标志);
-
-The 函数 returns zero 当 the handshake 请求 是 在…下 way. 一个
-zero return guarantees the 回调函数 函数 @ta_已完成 将 为 invoked
-用于 此 套接字. The 函数 returns 一个 negative errno 若 the handshake
-可以 不 为 started. 一个 negative errno guarantees the 回调函数 函数
-@ta_已完成 将 不 为 invoked 在 此 套接字.
+鍒?璇锋眰 涓€涓?x.509-authenticated TLS 浼氳瘽, the consumer fills 鍦?
+the @ta_my_cert 鍜?@ta_my_privkey 瀛楁 涓?the 涓茶 numbers 鐨?
+keys containing 涓€涓?x.509 certificate 鍜?the 绉佹湁 key 鐢ㄤ簬 璇?
+certificate. 鐒跺悗, 瀹?invokes 姝?鍑芥暟:
 
 
-到 initiate 一个 client-side TLS handshake 与 一个 pre-shared key, 使用:
+  ret = tls_client_hello_x509(args, gfp_鏍囧織);
+
+The 鍑芥暟 returns zero 褰?the handshake 璇锋眰 鏄?鍦ㄢ€︿笅 way. 涓€涓?
+zero return guarantees the 鍥炶皟鍑芥暟 鍑芥暟 @ta_宸插畬鎴?灏?涓?invoked
+鐢ㄤ簬 姝?濂楁帴瀛? The 鍑芥暟 returns 涓€涓?negative errno 鑻?the handshake
+鍙互 涓?涓?started. 涓€涓?negative errno guarantees the 鍥炶皟鍑芥暟 鍑芥暟
+@ta_宸插畬鎴?灏?涓?涓?invoked 鍦?姝?濂楁帴瀛?
 
 
-  ret = tls_client_hello_psk(args, gfp_标志);
-
-然而, 在 此 case, the consumer fills 在 the @ta_my_peerids 数组
-与 串行 numbers 的 keys containing the peer identities 它 wishes
-到 offer, 和 the @ta_num_peerids 字段 与 the 数字 的 数组
-条目 它 具有 filled 在. The 其他 字段 是 filled 在 作为 上文.
+鍒?initiate 涓€涓?client-side TLS handshake 涓?涓€涓?pre-shared key, 浣跨敤:
 
 
-到 initiate 一个 anonymous client-side TLS handshake 使用:
+  ret = tls_client_hello_psk(args, gfp_鏍囧織);
+
+鐒惰€? 鍦?姝?case, the consumer fills 鍦?the @ta_my_peerids 鏁扮粍
+涓?涓茶 numbers 鐨?keys containing the peer identities 瀹?wishes
+鍒?offer, 鍜?the @ta_num_peerids 瀛楁 涓?the 鏁板瓧 鐨?鏁扮粍
+鏉＄洰 瀹?鍏锋湁 filled 鍦? The 鍏朵粬 瀛楁 鏄?filled 鍦?浣滀负 涓婃枃.
 
 
-  ret = tls_client_hello_anon(args, gfp_标志);
-
-The handshake agent presents 无 peer identity information 到 the remote
-期间 此 类型 的 handshake. 仅 server authentication (ie the client
-verifies the server's identity) 是 performed 期间 the handshake. 从而
-the established 会话 uses encryption 仅.
+鍒?initiate 涓€涓?anonymous client-side TLS handshake 浣跨敤:
 
 
-Consumers 该 是 in-kernel servers 使用:
+  ret = tls_client_hello_anon(args, gfp_鏍囧織);
+
+The handshake agent presents 鏃?peer identity information 鍒?the remote
+鏈熼棿 姝?绫诲瀷 鐨?handshake. 浠?server authentication (ie the client
+verifies the server's identity) 鏄?performed 鏈熼棿 the handshake. 浠庤€?
+the established 浼氳瘽 uses encryption 浠?
 
 
-  ret = tls_server_hello_x509(args, gfp_标志);
-
-或
+Consumers 璇?鏄?in-kernel servers 浣跨敤:
 
 
-  ret = tls_server_hello_psk(args, gfp_标志);
+  ret = tls_server_hello_x509(args, gfp_鏍囧織);
 
-The 参数 结构体 是 filled 在 作为 上文.
+鎴?
 
 
-若 the consumer needs 到 cancel the handshake 请求, say, 由于 一个 ^C
-或 其他 exigent 事件, the consumer 可 invoke:
+  ret = tls_server_hello_psk(args, gfp_鏍囧織);
+
+The 鍙傛暟 缁撴瀯浣?鏄?filled 鍦?浣滀负 涓婃枃.
+
+
+鑻?the consumer needs 鍒?cancel the handshake 璇锋眰, say, 鐢变簬 涓€涓?^C
+鎴?鍏朵粬 exigent 浜嬩欢, the consumer 鍙?invoke:
 
 
   bool tls_handshake_cancel(sock);
 
-此 函数 returns true 若 the handshake 请求 associated 与
-@sock 具有 已经 canceled. The consumer's handshake completion 回调函数
-将 不 为 invoked. 若 此 函数 returns false, 然后 the consumer's
-completion 回调函数 具有 已经 已经 invoked.
+姝?鍑芥暟 returns true 鑻?the handshake 璇锋眰 associated 涓?
+@sock 鍏锋湁 宸茬粡 canceled. The consumer's handshake completion 鍥炶皟鍑芥暟
+灏?涓?涓?invoked. 鑻?姝?鍑芥暟 returns false, 鐒跺悗 the consumer's
+completion 鍥炶皟鍑芥暟 鍏锋湁 宸茬粡 宸茬粡 invoked.
 
 
 ## Handshake Completion
 
 
-当 the handshake agent 具有 completed processing, 它 notifies the
-内核 该 the 套接字 可 为 使用 由 the consumer 再次. 在 此 point,
-the consumer's handshake completion 回调函数, provided 在 the @ta_已完成
-字段 在 the tls_handshake_args 结构体, 是 invoked.
+褰?the handshake agent 鍏锋湁 completed processing, 瀹?notifies the
+鍐呮牳 璇?the 濂楁帴瀛?鍙?涓?浣跨敤 鐢?the consumer 鍐嶆. 鍦?姝?point,
+the consumer's handshake completion 鍥炶皟鍑芥暟, provided 鍦?the @ta_宸插畬鎴?
+瀛楁 鍦?the tls_handshake_args 缁撴瀯浣? 鏄?invoked.
 
-The synopsis 的 此 函数 是:
+The synopsis 鐨?姝?鍑芥暟 鏄?
 
 
-  typedef void	(**tls_已完成_func_t)(void **数据, int 状态,
-                                   key_串行_t peerid);
+  typedef void	(**tls_宸插畬鎴恄func_t)(void **鏁版嵁, int 鐘舵€?
+                                   key_涓茶_t peerid);
 
-The consumer 提供 一个 cookie 在 the @ta_数据 字段 的 the
-tls_handshake_args 结构体 即 returned 在 the @数据 参数 的
-此 回调函数. The consumer uses the cookie 到 match the 回调函数 到 the
-线程 waiting 用于 the handshake 到 complete.
+The consumer 鎻愪緵 涓€涓?cookie 鍦?the @ta_鏁版嵁 瀛楁 鐨?the
+tls_handshake_args 缁撴瀯浣?鍗?returned 鍦?the @鏁版嵁 鍙傛暟 鐨?
+姝?鍥炶皟鍑芥暟. The consumer uses the cookie 鍒?match the 鍥炶皟鍑芥暟 鍒?the
+绾跨▼ waiting 鐢ㄤ簬 the handshake 鍒?complete.
 
-The success 状态 的 the handshake 是 returned 通过 the @状态
-参数:
+The success 鐘舵€?鐨?the handshake 鏄?returned 閫氳繃 the @鐘舵€?
+鍙傛暟:
 
 +------------+----------------------------------------------+
-|  状态    |  meaning                                     |
+|  鐘舵€?   |  meaning                                     |
 +============+==============================================+
-|  0         |  TLS 会话 established successfully        |
+|  0         |  TLS 浼氳瘽 established successfully        |
 +------------+----------------------------------------------+
-|  -EACCESS  |  Remote peer rejected the handshake 或       |
+|  -EACCESS  |  Remote peer rejected the handshake 鎴?      |
 |            |  authentication failed                       |
 +------------+----------------------------------------------+
-|  -ENOMEM   |  Temporary resource 分配 failure       |
+|  -ENOMEM   |  Temporary resource 鍒嗛厤 failure       |
 +------------+----------------------------------------------+
-|  -EINVAL   |  Consumer provided 一个 invalid 参数       |
+|  -EINVAL   |  Consumer provided 涓€涓?invalid 鍙傛暟       |
 +------------+----------------------------------------------+
 |  -ENOKEY   |  Missing authentication material             |
 +------------+----------------------------------------------+
-|  -EIO      |  一个 unexpected fault occurred                |
+|  -EIO      |  涓€涓?unexpected fault occurred                |
 +------------+----------------------------------------------+
 
-The @peerid 参数 包含 the 串行 数字 的 一个 key containing the
-remote peer's identity 或 the 值 TLS_无_PEERID 若 the 会话 是 不
+The @peerid 鍙傛暟 鍖呭惈 the 涓茶 鏁板瓧 鐨?涓€涓?key containing the
+remote peer's identity 鎴?the 鍊?TLS_鏃燺PEERID 鑻?the 浼氳瘽 鏄?涓?
 authenticated.
 
-一个 best practice 是 到 关闭 和 destroy the 套接字 immediately 若 the
+涓€涓?best practice 鏄?鍒?鍏抽棴 鍜?destroy the 濂楁帴瀛?immediately 鑻?the
 handshake failed.
 
 
-### 其他 considerations
+### 鍏朵粬 considerations
 
 
-同时 一个 handshake 是 在…下 way, the 内核 consumer 必须 alter the
-套接字's sk_数据_ready 回调函数 函数 到 ignore 全部 incoming 数据.
-一旦 the handshake completion 回调函数 函数 具有 已经 invoked, 正常
-receive 操作 可 为 resumed.
+鍚屾椂 涓€涓?handshake 鏄?鍦ㄢ€︿笅 way, the 鍐呮牳 consumer 蹇呴』 alter the
+濂楁帴瀛?s sk_鏁版嵁_ready 鍥炶皟鍑芥暟 鍑芥暟 鍒?ignore 鍏ㄩ儴 incoming 鏁版嵁.
+涓€鏃?the handshake completion 鍥炶皟鍑芥暟 鍑芥暟 鍏锋湁 宸茬粡 invoked, 姝ｅ父
+receive 鎿嶄綔 鍙?涓?resumed.
 
-一旦 一个 TLS 会话 是 established, the consumer 必须 提供 一个 缓冲区
-用于 和 然后 examine the control message (CMSG) 即 part 的 every
-后续 sock_recvmsg(). 每个 control message indicates 是否 the
-received message 数据 是 TLS record 数据 或 会话 metadata.
+涓€鏃?涓€涓?TLS 浼氳瘽 鏄?established, the consumer 蹇呴』 鎻愪緵 涓€涓?缂撳啿鍖?
+鐢ㄤ簬 鍜?鐒跺悗 examine the control message (CMSG) 鍗?part 鐨?every
+鍚庣画 sock_recvmsg(). 姣忎釜 control message indicates 鏄惁 the
+received message 鏁版嵁 鏄?TLS record 鏁版嵁 鎴?浼氳瘽 metadata.
 
-参见 tls.rst 用于 details 在 如何 一个 kTLS consumer recognizes incoming
-(decrypted) 应用程序 数据, alerts, 和 handshake packets 一旦 the
-套接字 具有 已经 promoted 到 使用 the TLS ULP.
+鍙傝 tls.rst 鐢ㄤ簬 details 鍦?濡備綍 涓€涓?kTLS consumer recognizes incoming
+(decrypted) 搴旂敤绋嬪簭 鏁版嵁, alerts, 鍜?handshake packets 涓€鏃?the
+濂楁帴瀛?鍏锋湁 宸茬粡 promoted 鍒?浣跨敤 the TLS ULP.

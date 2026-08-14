@@ -1,46 +1,46 @@
-## A block layer cache (bcache，块层缓存)
+﻿## A block layer cache (bcache锛屽潡灞傜紦瀛?
 
 
-假设您有一个大而慢的 raid 6，以及一块或三块 ssd。如果能把它们用作缓存岂不美哉……于是有了 bcache。
+鍋囪鎮ㄦ湁涓€涓ぇ鑰屾參鐨?raid 6锛屼互鍙婁竴鍧楁垨涓夊潡 ssd銆傚鏋滆兘鎶婂畠浠敤浣滅紦瀛樺矀涓嶇編鍝夆€︹€︿簬鏄湁浜?bcache銆?
 
-bcache wiki 位于：
+bcache wiki 浣嶄簬锛?
   https://bcache.evilpiepirate.org
 
-这是 bcache-tools 的 git 仓库：
+杩欐槸 bcache-tools 鐨?git 浠撳簱锛?
   https://git.kernel.org/pub/scm/linux/kernel/git/colyli/bcache-tools.git/
 
-最新的 bcache 内核代码可在主线 Linux 内核中找到：
+鏈€鏂扮殑 bcache 鍐呮牳浠ｇ爜鍙湪涓荤嚎 Linux 鍐呮牳涓壘鍒帮細
   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/
 
-它的设计围绕 SSD 的性能特征展开——它只在擦除块（erase block）大小的桶（bucket）中分配，并使用混合的 btree/日志来跟踪缓存的区段（extent）（区段大小可从单个扇区到桶大小不等）。它不遗余力地避免随机写。
+瀹冪殑璁捐鍥寸粫 SSD 鐨勬€ц兘鐗瑰緛灞曞紑鈥斺€斿畠鍙湪鎿﹂櫎鍧楋紙erase block锛夊ぇ灏忕殑妗讹紙bucket锛変腑鍒嗛厤锛屽苟浣跨敤娣峰悎鐨?btree/鏃ュ織鏉ヨ窡韪紦瀛樼殑鍖烘锛坋xtent锛夛紙鍖烘澶у皬鍙粠鍗曚釜鎵囧尯鍒版《澶у皬涓嶇瓑锛夈€傚畠涓嶉仐浣欏姏鍦伴伩鍏嶉殢鏈哄啓銆?
 
-write-through（透写）和 writeback（回写）缓存都受支持。writeback 默认关闭，但可以在运行时任意开启或关闭。bcache 竭力保护您的数据——它能可靠地处理非正常关机。（它甚至没有“干净关机”的概念；bcache 只有在写入到达稳定存储后才会将写操作返回为已完成）。
+write-through锛堥€忓啓锛夊拰 writeback锛堝洖鍐欙級缂撳瓨閮藉彈鏀寔銆倃riteback 榛樿鍏抽棴锛屼絾鍙互鍦ㄨ繍琛屾椂浠绘剰寮€鍚垨鍏抽棴銆俠cache 绔姏淇濇姢鎮ㄧ殑鏁版嵁鈥斺€斿畠鑳藉彲闈犲湴澶勭悊闈炴甯稿叧鏈恒€傦紙瀹冪敋鑷虫病鏈夆€滃共鍑€鍏虫満鈥濈殑姒傚康锛沚cache 鍙湁鍦ㄥ啓鍏ュ埌杈剧ǔ瀹氬瓨鍌ㄥ悗鎵嶄細灏嗗啓鎿嶄綔杩斿洖涓哄凡瀹屾垚锛夈€?
 
-writeback 缓存可以使用大部分缓存来缓冲写操作——将脏数据写入 backing 设备始终是顺序进行的，从索引的起始扫描到末尾。
+writeback 缂撳瓨鍙互浣跨敤澶ч儴鍒嗙紦瀛樻潵缂撳啿鍐欐搷浣溾€斺€斿皢鑴忔暟鎹啓鍏?backing 璁惧濮嬬粓鏄『搴忚繘琛岀殑锛屼粠绱㈠紩鐨勮捣濮嬫壂鎻忓埌鏈熬銆?
 
-由于随机 IO 正是 SSD 所擅长的，缓存大的顺序 IO 通常好处不大。bcache 检测顺序 IO 并跳过它；它还对每个任务的 IO 大小保持滚动平均，只要平均值高于 cutoff 就会跳过该任务的所有 IO——而不是在每次 seek 后缓存前 512k。因此备份和大文件复制应当完全绕过缓存。
+鐢变簬闅忔満 IO 姝ｆ槸 SSD 鎵€鎿呴暱鐨勶紝缂撳瓨澶х殑椤哄簭 IO 閫氬父濂藉涓嶅ぇ銆俠cache 妫€娴嬮『搴?IO 骞惰烦杩囧畠锛涘畠杩樺姣忎釜浠诲姟鐨?IO 澶у皬淇濇寔婊氬姩骞冲潎锛屽彧瑕佸钩鍧囧€奸珮浜?cutoff 灏变細璺宠繃璇ヤ换鍔＄殑鎵€鏈?IO鈥斺€旇€屼笉鏄湪姣忔 seek 鍚庣紦瀛樺墠 512k銆傚洜姝ゅ浠藉拰澶ф枃浠跺鍒跺簲褰撳畬鍏ㄧ粫杩囩紦瀛樸€?
 
-若闪存上发生数据 IO 错误，bcache 会尝试通过从磁盘读取或使缓存条目失效来恢复。对于不可恢复的错误（元数据或脏数据），缓存会自动禁用；若缓存中存在脏数据，它会先禁用 writeback 缓存并等待所有脏数据被刷出。
+鑻ラ棯瀛樹笂鍙戠敓鏁版嵁 IO 閿欒锛宐cache 浼氬皾璇曢€氳繃浠庣鐩樿鍙栨垨浣跨紦瀛樻潯鐩け鏁堟潵鎭㈠銆傚浜庝笉鍙仮澶嶇殑閿欒锛堝厓鏁版嵁鎴栬剰鏁版嵁锛夛紝缂撳瓨浼氳嚜鍔ㄧ鐢紱鑻ョ紦瀛樹腑瀛樺湪鑴忔暟鎹紝瀹冧細鍏堢鐢?writeback 缂撳瓨骞剁瓑寰呮墍鏈夎剰鏁版嵁琚埛鍑恒€?
 
-Getting started（入门）：
-您将需要来自 bcache-tools 仓库的 bcache 工具。cache 设备
+Getting started锛堝叆闂級锛?
+鎮ㄥ皢闇€瑕佹潵鑷?bcache-tools 浠撳簱鐨?bcache 宸ュ叿銆俢ache 璁惧
 ```
   bcache make -B /dev/sdb
   bcache make -C /dev/sdc
 ```
-`bcache make` 能够同时格式化多个设备——如果您同时格式化 backing 设备和 cache 设备，就不会
+`bcache make` 鑳藉鍚屾椂鏍煎紡鍖栧涓澶団€斺€斿鏋滄偍鍚屾椂鏍煎紡鍖?backing 璁惧鍜?cache 璁惧锛屽氨涓嶄細
 ```
   bcache make -B /dev/sda /dev/sdb -C /dev/sdc
 ```
-如果您的 bcache-tools 未更新到最新版本且不具有统一的 `bcache` 工具，您可以使用旧的 `make-bcache` 工具，以相同的 -B 和 -C 参数格式化 bcache 设备。
+濡傛灉鎮ㄧ殑 bcache-tools 鏈洿鏂板埌鏈€鏂扮増鏈笖涓嶅叿鏈夌粺涓€鐨?`bcache` 宸ュ叿锛屾偍鍙互浣跨敤鏃х殑 `make-bcache` 宸ュ叿锛屼互鐩稿悓鐨?-B 鍜?-C 鍙傛暟鏍煎紡鍖?bcache 璁惧銆?
 
-bcache-tools 现在附带 udev 规则，bcache 设备为内核所知
+bcache-tools 鐜板湪闄勫甫 udev 瑙勫垯锛宐cache 璁惧涓哄唴鏍告墍鐭?
 ```
   echo /dev/sdb > /sys/fs/bcache/register
   echo /dev/sdc > /sys/fs/bcache/register
 ```
-注册 backing 设备会使 bcache 设备出现在 /dev 中；您现在可以像平常一样格式化并使用它。但首次使用新的 bcache 设备时，在将其 attach 到缓存之前，它将运行在 passthrough（直通）模式。如果您打算稍后使用 bcache，建议将所有慢速设备都设为不带缓存的 bcache backing 设备，之后您可以选择添加缓存设备。
-参见下文的“ATTACHING”章节。
+娉ㄥ唽 backing 璁惧浼氫娇 bcache 璁惧鍑虹幇鍦?/dev 涓紱鎮ㄧ幇鍦ㄥ彲浠ュ儚骞冲父涓€鏍锋牸寮忓寲骞朵娇鐢ㄥ畠銆備絾棣栨浣跨敤鏂扮殑 bcache 璁惧鏃讹紝鍦ㄥ皢鍏?attach 鍒扮紦瀛樹箣鍓嶏紝瀹冨皢杩愯鍦?passthrough锛堢洿閫氾級妯″紡銆傚鏋滄偍鎵撶畻绋嶅悗浣跨敤 bcache锛屽缓璁皢鎵€鏈夋參閫熻澶囬兘璁句负涓嶅甫缂撳瓨鐨?bcache backing 璁惧锛屼箣鍚庢偍鍙互閫夋嫨娣诲姞缂撳瓨璁惧銆?
+鍙傝涓嬫枃鐨勨€淎TTACHING鈥濈珷鑺傘€?
 
 ```
   /dev/bcache<N>
@@ -53,57 +53,57 @@ bcache-tools 现在附带 udev 规则，bcache 设备为内核所知
   mkfs.ext4 /dev/bcache0
   mount /dev/bcache0 /mnt
 ```
-您可以通过 sysfs 在 /sys/block/bcache<N>/bcache 控制 bcache 设备。您也可以通过 /sys/fs//bcache/<cset-uuid>/ 控制它们。
+鎮ㄥ彲浠ラ€氳繃 sysfs 鍦?/sys/block/bcache<N>/bcache 鎺у埗 bcache 璁惧銆傛偍涔熷彲浠ラ€氳繃 /sys/fs//bcache/<cset-uuid>/ 鎺у埗瀹冧滑銆?
 
-Cache 设备以集合（set）形式管理；每个集合目前还不支持多个缓存，但未来将允许元数据和脏数据的镜像。您的新缓存集合显示为 /sys/fs/bcache/<UUID>
+Cache 璁惧浠ラ泦鍚堬紙set锛夊舰寮忕鐞嗭紱姣忎釜闆嗗悎鐩墠杩樹笉鏀寔澶氫釜缂撳瓨锛屼絾鏈潵灏嗗厑璁稿厓鏁版嵁鍜岃剰鏁版嵁鐨勯暅鍍忋€傛偍鐨勬柊缂撳瓨闆嗗悎鏄剧ず涓?/sys/fs/bcache/<UUID>
 
-### Attaching（附加/绑定）
+### Attaching锛堥檮鍔?缁戝畾锛?
 
 
-在您的 cache 设备和 backing 设备注册后，必须将 backing 设备 attach 到缓存集合以启用缓存。将 backing 设备 attach 到缓存集合的操作如下，使用缓存集合的 UUID 写入
+鍦ㄦ偍鐨?cache 璁惧鍜?backing 璁惧娉ㄥ唽鍚庯紝蹇呴』灏?backing 璁惧 attach 鍒扮紦瀛橀泦鍚堜互鍚敤缂撳瓨銆傚皢 backing 璁惧 attach 鍒扮紦瀛橀泦鍚堢殑鎿嶄綔濡備笅锛屼娇鐢ㄧ紦瀛橀泦鍚堢殑 UUID 鍐欏叆
 ```
   echo <CSET-UUID> > /sys/block/bcache0/bcache/attach
 ```
-这只需做一次。下次重启时，只需重新注册您的所有 bcache 设备。如果某个 backing 设备在某个缓存中有数据，/dev/bcache<N> 设备要等到缓存出现后才会被创建——如果您开启了 writeback 缓存，这一点尤为重要。
+杩欏彧闇€鍋氫竴娆°€備笅娆￠噸鍚椂锛屽彧闇€閲嶆柊娉ㄥ唽鎮ㄧ殑鎵€鏈?bcache 璁惧銆傚鏋滄煇涓?backing 璁惧鍦ㄦ煇涓紦瀛樹腑鏈夋暟鎹紝/dev/bcache<N> 璁惧瑕佺瓑鍒扮紦瀛樺嚭鐜板悗鎵嶄細琚垱寤衡€斺€斿鏋滄偍寮€鍚簡 writeback 缂撳瓨锛岃繖涓€鐐瑰挨涓洪噸瑕併€?
 
-如果您在启动时缓存设备丢失且再也不会回来，您
+濡傛灉鎮ㄥ湪鍚姩鏃剁紦瀛樿澶囦涪澶变笖鍐嶄篃涓嶄細鍥炴潵锛屾偍
 ```
   echo 1 > /sys/block/sdb/bcache/running
 ```
-（您需要使用 /sys/block/sdb（或您的 backing 设备叫什么），而不是 /sys/block/bcache0，因为 bcache0 尚不存在。如果您使用的是分区，bcache 目录将位于 /sys/block/sdb/sdb2/bcache）
+锛堟偍闇€瑕佷娇鐢?/sys/block/sdb锛堟垨鎮ㄧ殑 backing 璁惧鍙粈涔堬級锛岃€屼笉鏄?/sys/block/bcache0锛屽洜涓?bcache0 灏氫笉瀛樺湪銆傚鏋滄偍浣跨敤鐨勬槸鍒嗗尯锛宐cache 鐩綍灏嗕綅浜?/sys/block/sdb/sdb2/bcache锛?
 
-该 backing 设备若将来出现仍会使用那个缓存集合，但所有缓存数据都会被失效。如果缓存中有脏数据，不要指望文件系统可恢复——您将面临大规模的文件系统损坏，尽管 ext4 的 fsck 确实能创造奇迹。
+璇?backing 璁惧鑻ュ皢鏉ュ嚭鐜颁粛浼氫娇鐢ㄩ偅涓紦瀛橀泦鍚堬紝浣嗘墍鏈夌紦瀛樻暟鎹兘浼氳澶辨晥銆傚鏋滅紦瀛樹腑鏈夎剰鏁版嵁锛屼笉瑕佹寚鏈涙枃浠剁郴缁熷彲鎭㈠鈥斺€旀偍灏嗛潰涓村ぇ瑙勬ā鐨勬枃浠剁郴缁熸崯鍧忥紝灏界 ext4 鐨?fsck 纭疄鑳藉垱閫犲杩广€?
 
-### Error Handling（错误处理）
-
-
-bcache 尝试透明地处理进出缓存设备的 IO 错误，而不影响正常操作；如果它看到过多错误（阈值是可配置的，默认为 0），它会关闭缓存设备并将所有 backing 设备切换到 passthrough 模式。
-
- - 对于来自缓存的读，若出错，我们只是从 backing 设备重试该读。
-
- - 对于 write-through 写，若对缓存的写出错，我们只是切换到使缓存中该 lba 的数据失效（即，与绕过缓存的写所做的相同）。
-
- - 对于 writeback 写，我们目前将该错误传回给文件系统/用户空间。这可以得到改进——我们可以将其作为跳过缓存的写来重试，从而不必使该写出错。
-
- - 当我们 detach 时，我们首先尝试刷出任何脏数据（如果我们运行在 writeback 模式）。不过，如果某些脏数据读取失败，它目前不会做任何智能处理。
-
-### Howto/cookbook（操作指南/秘籍）
+### Error Handling锛堥敊璇鐞嗭級
 
 
-A) 使用缺失的缓存设备启动 bcache
+bcache 灏濊瘯閫忔槑鍦板鐞嗚繘鍑虹紦瀛樿澶囩殑 IO 閿欒锛岃€屼笉褰卞搷姝ｅ父鎿嶄綔锛涘鏋滃畠鐪嬪埌杩囧閿欒锛堥槇鍊兼槸鍙厤缃殑锛岄粯璁や负 0锛夛紝瀹冧細鍏抽棴缂撳瓨璁惧骞跺皢鎵€鏈?backing 璁惧鍒囨崲鍒?passthrough 妯″紡銆?
 
-如果注册 backing 设备没有帮助，说明它已经存在，您只需
+ - 瀵逛簬鏉ヨ嚜缂撳瓨鐨勮锛岃嫢鍑洪敊锛屾垜浠彧鏄粠 backing 璁惧閲嶈瘯璇ヨ銆?
+
+ - 瀵逛簬 write-through 鍐欙紝鑻ュ缂撳瓨鐨勫啓鍑洪敊锛屾垜浠彧鏄垏鎹㈠埌浣跨紦瀛樹腑璇?lba 鐨勬暟鎹け鏁堬紙鍗筹紝涓庣粫杩囩紦瀛樼殑鍐欐墍鍋氱殑鐩稿悓锛夈€?
+
+ - 瀵逛簬 writeback 鍐欙紝鎴戜滑鐩墠灏嗚閿欒浼犲洖缁欐枃浠剁郴缁?鐢ㄦ埛绌洪棿銆傝繖鍙互寰楀埌鏀硅繘鈥斺€旀垜浠彲浠ュ皢鍏朵綔涓鸿烦杩囩紦瀛樼殑鍐欐潵閲嶈瘯锛屼粠鑰屼笉蹇呬娇璇ュ啓鍑洪敊銆?
+
+ - 褰撴垜浠?detach 鏃讹紝鎴戜滑棣栧厛灏濊瘯鍒峰嚭浠讳綍鑴忔暟鎹紙濡傛灉鎴戜滑杩愯鍦?writeback 妯″紡锛夈€備笉杩囷紝濡傛灉鏌愪簺鑴忔暟鎹鍙栧け璐ワ紝瀹冪洰鍓嶄笉浼氬仛浠讳綍鏅鸿兘澶勭悊銆?
+
+### Howto/cookbook锛堟搷浣滄寚鍗?绉樼睄锛?
+
+
+A) 浣跨敤缂哄け鐨勭紦瀛樿澶囧惎鍔?bcache
+
+濡傛灉娉ㄥ唽 backing 璁惧娌℃湁甯姪锛岃鏄庡畠宸茬粡瀛樺湪锛屾偍鍙渶
 ```
 	host:~# echo /dev/sdb1 > /sys/fs/bcache/register
 	[  119.844831] bcache: register_bcache() error opening /dev/sdb1: device already registered
 
 ```
-接下来，如果缓存设备存在，您尝试注册它。但如果它缺失，或因某种原因注册失败，您仍然可以
+鎺ヤ笅鏉ワ紝濡傛灉缂撳瓨璁惧瀛樺湪锛屾偍灏濊瘯娉ㄥ唽瀹冦€備絾濡傛灉瀹冪己澶憋紝鎴栧洜鏌愮鍘熷洜娉ㄥ唽澶辫触锛屾偍浠嶇劧鍙互
 ```
 	host:/sys/block/sdb/sdb1/bcache# echo 1 > running
 
 ```
-注意，如果您运行在 writeback 模式，这可能会导致数据丢失。
+娉ㄦ剰锛屽鏋滄偍杩愯鍦?writeback 妯″紡锛岃繖鍙兘浼氬鑷存暟鎹涪澶便€?
 
 ```
 	host:/sys/block/md5/bcache# echo 0226553a-37cf-41d5-b3ce-8b1e944543a8 > attach
@@ -112,34 +112,34 @@ A) 使用缺失的缓存设备启动 bcache
 	[ 1933.478179] : cache set not found
 
 ```
-在这种情况下，缓存设备只是在启动时未注册
+鍦ㄨ繖绉嶆儏鍐典笅锛岀紦瀛樿澶囧彧鏄湪鍚姩鏃舵湭娉ㄥ唽
 ```
 	host:/sys/block/md5/bcache# echo /dev/sdh2 > /sys/fs/bcache/register
 
 
 ```
-C) 损坏的 bcache 在设备注册时导致内核崩溃：
+C) 鎹熷潖鐨?bcache 鍦ㄨ澶囨敞鍐屾椂瀵艰嚧鍐呮牳宕╂簝锛?
 
-这绝不应该发生。如果确实发生了，那么您发现了一个 bug！
-请将其报告给 bcache 开发邮件列表：linux-bcache@vger.kernel.org
+杩欑粷涓嶅簲璇ュ彂鐢熴€傚鏋滅‘瀹炲彂鐢熶簡锛岄偅涔堟偍鍙戠幇浜嗕竴涓?bug锛?
+璇峰皢鍏舵姤鍛婄粰 bcache 寮€鍙戦偖浠跺垪琛細linux-bcache@vger.kernel.org
 
-请务必提供尽可能多的信息，包括内核 dmesg 输出（如果可得），以便我们提供帮助。
+璇峰姟蹇呮彁渚涘敖鍙兘澶氱殑淇℃伅锛屽寘鎷唴鏍?dmesg 杈撳嚭锛堝鏋滃彲寰楋級锛屼互渚挎垜浠彁渚涘府鍔┿€?
 
 
-D) 在没有 bcache 的情况下恢复数据：
+D) 鍦ㄦ病鏈?bcache 鐨勬儏鍐典笅鎭㈠鏁版嵁锛?
 
-如果内核中没有 bcache，backing 设备上的文件系统仍然位于 8KiB 偏移处可用。因此，可以通过用 --offset 8K 创建的 backing 设备的 loopdev，或者通过您最初用 `bcache make` 格式化 bcache 时由 --data-offset 定义的任何值来访问。
+濡傛灉鍐呮牳涓病鏈?bcache锛宐acking 璁惧涓婄殑鏂囦欢绯荤粺浠嶇劧浣嶄簬 8KiB 鍋忕Щ澶勫彲鐢ㄣ€傚洜姝わ紝鍙互閫氳繃鐢?--offset 8K 鍒涘缓鐨?backing 璁惧鐨?loopdev锛屾垨鑰呴€氳繃鎮ㄦ渶鍒濈敤 `bcache make` 鏍煎紡鍖?bcache 鏃剁敱 --data-offset 瀹氫箟鐨勪换浣曞€兼潵璁块棶銆?
 
 ```
 	losetup -o 8192 /dev/loop0 /dev/your_bcache_backing_dev
 
 ```
-这将在 /dev/loop0 中呈现您未修改的 backing 设备数据。
+杩欏皢鍦?/dev/loop0 涓憟鐜版偍鏈慨鏀圭殑 backing 璁惧鏁版嵁銆?
 
-如果您的缓存处于 write-through 模式，那么您可以安全地丢弃缓存设备而不丢失数据。
+濡傛灉鎮ㄧ殑缂撳瓨澶勪簬 write-through 妯″紡锛岄偅涔堟偍鍙互瀹夊叏鍦颁涪寮冪紦瀛樿澶囪€屼笉涓㈠け鏁版嵁銆?
 
 
-E) 擦除缓存设备
+E) 鎿﹂櫎缂撳瓨璁惧
 
 ```
 	host:~# wipefs -a /dev/sdh2
@@ -194,16 +194,16 @@ E) 擦除缓存设备
 
 
 ```
-G) dm-crypt 与 bcache
+G) dm-crypt 涓?bcache
 
-首先设置未加密的 bcache，然后在 /dev/bcache<N> 之上安装 dmcrypt。这比同时 dmcrypt 加密 backing 和 caching 设备再在其上安装 bcache 要快。[benchmarks?]
+棣栧厛璁剧疆鏈姞瀵嗙殑 bcache锛岀劧鍚庡湪 /dev/bcache<N> 涔嬩笂瀹夎 dmcrypt銆傝繖姣斿悓鏃?dmcrypt 鍔犲瘑 backing 鍜?caching 璁惧鍐嶅湪鍏朵笂瀹夎 bcache 瑕佸揩銆俒benchmarks?]
 
 
-H) 停止/释放已注册的 bcache 以擦除和/或重建它
+H) 鍋滄/閲婃斁宸叉敞鍐岀殑 bcache 浠ユ摝闄ゅ拰/鎴栭噸寤哄畠
 
-假设您需要释放所有 bcache 引用，以便运行 fdisk 并重新注册已更改的分区表，而只要上面还有任何活跃的 backing 或 caching 设备，这就无法工作：
+鍋囪鎮ㄩ渶瑕侀噴鏀炬墍鏈?bcache 寮曠敤锛屼互渚胯繍琛?fdisk 骞堕噸鏂版敞鍐屽凡鏇存敼鐨勫垎鍖鸿〃锛岃€屽彧瑕佷笂闈㈣繕鏈変换浣曟椿璺冪殑 backing 鎴?caching 璁惧锛岃繖灏辨棤娉曞伐浣滐細
 
-1) 它是否出现在 /dev/bcache* 中？（有时它不会）
+1) 瀹冩槸鍚﹀嚭鐜板湪 /dev/bcache* 涓紵锛堟湁鏃跺畠涓嶄細锛?
 
 ```
 	host:/sys/block/bcache0/bcache# echo 1 > stop
@@ -240,16 +240,16 @@ H) 停止/释放已注册的 bcache 以擦除和/或重建它
    other purposes.
 
 ```
-### Troubleshooting performance（排查性能问题）
+### Troubleshooting performance锛堟帓鏌ユ€ц兘闂锛?
 
 
-Bcache 有一堆配置选项和可调参数。默认值旨在对典型的桌面和服务器工作负载合理，但在基准测试时想获得尽可能好的数字，它们并不是您想要的。
+Bcache 鏈変竴鍫嗛厤缃€夐」鍜屽彲璋冨弬鏁般€傞粯璁ゅ€兼棬鍦ㄥ鍏稿瀷鐨勬闈㈠拰鏈嶅姟鍣ㄥ伐浣滆礋杞藉悎鐞嗭紝浣嗗湪鍩哄噯娴嬭瘯鏃舵兂鑾峰緱灏藉彲鑳藉ソ鐨勬暟瀛楋紝瀹冧滑骞朵笉鏄偍鎯宠鐨勩€?
 
- - Backing device alignment（backing 设备对齐）
+ - Backing device alignment锛坆acking 璁惧瀵归綈锛?
 
-   在 bcache 中，默认的元数据大小是 8k。如果您的 backing 设备基于 RAID，那么务必使用 `bcache make --data-offset` 按 stride 宽度的倍数对齐。如果您打算将来扩展磁盘阵列，则将一系列素数乘以您的 raid stripe 大小，以获得您想要的磁盘倍数。
+   鍦?bcache 涓紝榛樿鐨勫厓鏁版嵁澶у皬鏄?8k銆傚鏋滄偍鐨?backing 璁惧鍩轰簬 RAID锛岄偅涔堝姟蹇呬娇鐢?`bcache make --data-offset` 鎸?stride 瀹藉害鐨勫€嶆暟瀵归綈銆傚鏋滄偍鎵撶畻灏嗘潵鎵╁睍纾佺洏闃靛垪锛屽垯灏嗕竴绯诲垪绱犳暟涔樹互鎮ㄧ殑 raid stripe 澶у皬锛屼互鑾峰緱鎮ㄦ兂瑕佺殑纾佺洏鍊嶆暟銆?
 
-   例如：如果您有 64k 的 stripe 大小，那么以下偏移量
+   渚嬪锛氬鏋滄偍鏈?64k 鐨?stripe 澶у皬锛岄偅涔堜互涓嬪亸绉婚噺
 
 ```
 
@@ -323,195 +323,195 @@ Bcache 有一堆配置选项和可调参数。默认值旨在对典型的桌面�
 
 ```
 
-### Sysfs - backing device（Sysfs - backing 设备）
+### Sysfs - backing device锛圫ysfs - backing 璁惧锛?
 
 
-位于 /sys/block/<bdev>/bcache、/sys/block/bcache*/bcache 以及（若已 attach）/sys/fs/bcache/<cset-uuid>/bdev*
+浣嶄簬 /sys/block/<bdev>/bcache銆?sys/block/bcache*/bcache 浠ュ強锛堣嫢宸?attach锛?sys/fs/bcache/<cset-uuid>/bdev*
 
 attach
-  将该缓存集合的 UUID 写入此文件以启用缓存。
+  灏嗚缂撳瓨闆嗗悎鐨?UUID 鍐欏叆姝ゆ枃浠朵互鍚敤缂撳瓨銆?
 
 cache_mode
-  可以是 writethrough、writeback、writearound 或 none 之一。
+  鍙互鏄?writethrough銆亀riteback銆亀ritearound 鎴?none 涔嬩竴銆?
 
 clear_stats
-  写入此文件会重置累计统计（不是按天/小时/5 分钟的衰减版本）。
+  鍐欏叆姝ゆ枃浠朵細閲嶇疆绱缁熻锛堜笉鏄寜澶?灏忔椂/5 鍒嗛挓鐨勮“鍑忕増鏈級銆?
 
 detach
-  写入此文件以从缓存集合 detach。如果缓存中有脏数据，会先将其刷出。
+  鍐欏叆姝ゆ枃浠朵互浠庣紦瀛橀泦鍚?detach銆傚鏋滅紦瀛樹腑鏈夎剰鏁版嵁锛屼細鍏堝皢鍏跺埛鍑恒€?
 
 dirty_data
-  此 backing 设备在缓存中的脏数据量。与缓存集合的版本不同，它持续更新，但可能略有偏差。
+  姝?backing 璁惧鍦ㄧ紦瀛樹腑鐨勮剰鏁版嵁閲忋€備笌缂撳瓨闆嗗悎鐨勭増鏈笉鍚岋紝瀹冩寔缁洿鏂帮紝浣嗗彲鑳界暐鏈夊亸宸€?
 
 label
-  底层设备的名称。
+  搴曞眰璁惧鐨勫悕绉般€?
 
 readahead
-  应执行的预读的字节数。默认为 0。若设为例如 1M，它会将缓存未命中的读向上取整到该大小，但不与现有缓存条目重叠。
+  搴旀墽琛岀殑棰勮鐨勫瓧鑺傛暟銆傞粯璁や负 0銆傝嫢璁句负渚嬪 1M锛屽畠浼氬皢缂撳瓨鏈懡涓殑璇诲悜涓婂彇鏁村埌璇ュぇ灏忥紝浣嗕笉涓庣幇鏈夌紦瀛樻潯鐩噸鍙犮€?
 
 running
-  如果 bcache 正在运行则为 1（即 /dev/bcache 设备是否存在，无论它处于 passthrough 模式还是缓存模式）。
+  濡傛灉 bcache 姝ｅ湪杩愯鍒欎负 1锛堝嵆 /dev/bcache 璁惧鏄惁瀛樺湪锛屾棤璁哄畠澶勪簬 passthrough 妯″紡杩樻槸缂撳瓨妯″紡锛夈€?
 
 sequential_cutoff
-  顺序 IO 一旦超过此阈值就会绕过缓存；会跟踪最近 128 次 IO，因此即使不是一次性完成的顺序 IO 也能被检测出来。
+  椤哄簭 IO 涓€鏃﹁秴杩囨闃堝€煎氨浼氱粫杩囩紦瀛橈紱浼氳窡韪渶杩?128 娆?IO锛屽洜姝ゅ嵆浣夸笉鏄竴娆℃€у畬鎴愮殑椤哄簭 IO 涔熻兘琚娴嬪嚭鏉ャ€?
 
 sequential_merge
-  若非零，bcache 保留最近 128 个请求的列表，与所有新请求比较，以确定哪些新请求是先前请求的顺序延续，从而决定顺序 cutoff。如果顺序 cutoff 值大于任何单个请求的最大可接受顺序大小，则这是必要的。
+  鑻ラ潪闆讹紝bcache 淇濈暀鏈€杩?128 涓姹傜殑鍒楄〃锛屼笌鎵€鏈夋柊璇锋眰姣旇緝锛屼互纭畾鍝簺鏂拌姹傛槸鍏堝墠璇锋眰鐨勯『搴忓欢缁紝浠庤€屽喅瀹氶『搴?cutoff銆傚鏋滈『搴?cutoff 鍊煎ぇ浜庝换浣曞崟涓姹傜殑鏈€澶у彲鎺ュ彈椤哄簭澶у皬锛屽垯杩欐槸蹇呰鐨勩€?
 
 state
-  backing 设备可以处于以下四种状态之一：
+  backing 璁惧鍙互澶勪簬浠ヤ笅鍥涚鐘舵€佷箣涓€锛?
 
-  no cache：从未 attach 到缓存集合。
+  no cache锛氫粠鏈?attach 鍒扮紦瀛橀泦鍚堛€?
 
-  clean：缓存集合的一部分，且没有缓存的脏数据。
+  clean锛氱紦瀛橀泦鍚堢殑涓€閮ㄥ垎锛屼笖娌℃湁缂撳瓨鐨勮剰鏁版嵁銆?
 
-  dirty：缓存集合的一部分，且有缓存的脏数据。
+  dirty锛氱紦瀛橀泦鍚堢殑涓€閮ㄥ垎锛屼笖鏈夌紦瀛樼殑鑴忔暟鎹€?
 
-  inconsistent：当存在缓存的脏数据但缓存集合不可用时，用户强行运行了 backing 设备；backing 设备上的任何数据可能都已损坏。
+  inconsistent锛氬綋瀛樺湪缂撳瓨鐨勮剰鏁版嵁浣嗙紦瀛橀泦鍚堜笉鍙敤鏃讹紝鐢ㄦ埛寮鸿杩愯浜?backing 璁惧锛沚acking 璁惧涓婄殑浠讳綍鏁版嵁鍙兘閮藉凡鎹熷潖銆?
 
 stop
-  写入此文件以关闭 bcache 设备并关闭 backing 设备。
+  鍐欏叆姝ゆ枃浠朵互鍏抽棴 bcache 璁惧骞跺叧闂?backing 璁惧銆?
 
 writeback_delay
-  当脏数据写入缓存且其之前不包含任何脏数据时，会等待若干秒后再启动 writeback。默认为 30。
+  褰撹剰鏁版嵁鍐欏叆缂撳瓨涓斿叾涔嬪墠涓嶅寘鍚换浣曡剰鏁版嵁鏃讹紝浼氱瓑寰呰嫢骞茬鍚庡啀鍚姩 writeback銆傞粯璁や负 30銆?
 
 writeback_percent
-  若非零，bcache 尝试通过限制后台 writeback 并使用 PD 控制器平滑调整速率，将此百分比的缓存保持为脏。
+  鑻ラ潪闆讹紝bcache 灏濊瘯閫氳繃闄愬埗鍚庡彴 writeback 骞朵娇鐢?PD 鎺у埗鍣ㄥ钩婊戣皟鏁撮€熺巼锛屽皢姝ょ櫨鍒嗘瘮鐨勭紦瀛樹繚鎸佷负鑴忋€?
 
 writeback_rate
-  以每秒扇区数计的速率——若 writeback_percent 非零，后台 writeback 被限制到此速率。由 bcache 持续调整，但也可由用户设置。
+  浠ユ瘡绉掓墖鍖烘暟璁＄殑閫熺巼鈥斺€旇嫢 writeback_percent 闈為浂锛屽悗鍙?writeback 琚檺鍒跺埌姝ら€熺巼銆傜敱 bcache 鎸佺画璋冩暣锛屼絾涔熷彲鐢辩敤鎴疯缃€?
 
 writeback_running
-  若关闭，脏数据的 writeback 将完全不进行。脏数据仍会被加入缓存直到它几乎满；仅用于基准测试。默认为开启。
+  鑻ュ叧闂紝鑴忔暟鎹殑 writeback 灏嗗畬鍏ㄤ笉杩涜銆傝剰鏁版嵁浠嶄細琚姞鍏ョ紦瀛樼洿鍒板畠鍑犱箮婊★紱浠呯敤浜庡熀鍑嗘祴璇曘€傞粯璁や负寮€鍚€?
 
-#### Sysfs - backing device stats（Sysfs - backing 设备统计）
+#### Sysfs - backing device stats锛圫ysfs - backing 璁惧缁熻锛?
 
 
-存在带有这些数字的目录用于累计总数，以及过去一天、一小时和 5 分钟内衰减的版本；它们也在缓存集合目录中被聚合。
+瀛樺湪甯︽湁杩欎簺鏁板瓧鐨勭洰褰曠敤浜庣疮璁℃€绘暟锛屼互鍙婅繃鍘讳竴澶┿€佷竴灏忔椂鍜?5 鍒嗛挓鍐呰“鍑忕殑鐗堟湰锛涘畠浠篃鍦ㄧ紦瀛橀泦鍚堢洰褰曚腑琚仛鍚堛€?
 
 bypassed
-  绕过缓存的 IO 量（读和写都有）
+  缁曡繃缂撳瓨鐨?IO 閲忥紙璇诲拰鍐欓兘鏈夛級
 
 cache_hits, cache_misses, cache_hit_ratio
-  命中与未命中按 bcache 所见的每个独立 IO 计数；部分命中计为未命中。
+  鍛戒腑涓庢湭鍛戒腑鎸?bcache 鎵€瑙佺殑姣忎釜鐙珛 IO 璁℃暟锛涢儴鍒嗗懡涓涓烘湭鍛戒腑銆?
 
 cache_bypass_hits, cache_bypass_misses
-  针对本应跳过缓存的 IO 的命中与未命中仍会被计数，但在此单独列出。
+  閽堝鏈簲璺宠繃缂撳瓨鐨?IO 鐨勫懡涓笌鏈懡涓粛浼氳璁℃暟锛屼絾鍦ㄦ鍗曠嫭鍒楀嚭銆?
 
 cache_miss_collisions
-  计数数据本将从缓存未命中插入缓存，但与一次写竞争且数据已存在的情况（通常为 0，因为缓存未命中的同步已被重写）
+  璁℃暟鏁版嵁鏈皢浠庣紦瀛樻湭鍛戒腑鎻掑叆缂撳瓨锛屼絾涓庝竴娆″啓绔炰簤涓旀暟鎹凡瀛樺湪鐨勬儏鍐碉紙閫氬父涓?0锛屽洜涓虹紦瀛樻湭鍛戒腑鐨勫悓姝ュ凡琚噸鍐欙級
 
-#### Sysfs - cache set（Sysfs - 缓存集合）
+#### Sysfs - cache set锛圫ysfs - 缂撳瓨闆嗗悎锛?
 
 
-位于 /sys/fs/bcache/<cset-uuid>
+浣嶄簬 /sys/fs/bcache/<cset-uuid>
 
 average_key_size
-  btree 中每个键的平均数据量。
+  btree 涓瘡涓敭鐨勫钩鍧囨暟鎹噺銆?
 
 bdev<0..n>
-  指向每个已 attach 的 backing 设备的符号链接。
+  鎸囧悜姣忎釜宸?attach 鐨?backing 璁惧鐨勭鍙烽摼鎺ャ€?
 
 block_size
-  缓存设备的块大小。
+  缂撳瓨璁惧鐨勫潡澶у皬銆?
 
 btree_cache_size
-  btree 缓存当前使用的内存量
+  btree 缂撳瓨褰撳墠浣跨敤鐨勫唴瀛橀噺
 
 bucket_size
-  桶的大小
+  妗剁殑澶у皬
 
 cache<0..n>
-  指向组成此缓存集合的每个缓存设备的符号链接。
+  鎸囧悜缁勬垚姝ょ紦瀛橀泦鍚堢殑姣忎釜缂撳瓨璁惧鐨勭鍙烽摼鎺ャ€?
 
 cache_available_percent
-  不包含脏数据、可能用于 writeback 的缓存设备百分比。这并不意味此空间未被用于干净的缓存数据；未使用统计（在 priority_stats 中）通常低得多。
+  涓嶅寘鍚剰鏁版嵁銆佸彲鑳界敤浜?writeback 鐨勭紦瀛樿澶囩櫨鍒嗘瘮銆傝繖骞朵笉鎰忓懗姝ょ┖闂存湭琚敤浜庡共鍑€鐨勭紦瀛樻暟鎹紱鏈娇鐢ㄧ粺璁★紙鍦?priority_stats 涓級閫氬父浣庡緱澶氥€?
 
 clear_stats
-  清除与此缓存相关的统计
+  娓呴櫎涓庢缂撳瓨鐩稿叧鐨勭粺璁?
 
 dirty_data
-  缓存中的脏数据量（在垃圾回收运行时更新）。
+  缂撳瓨涓殑鑴忔暟鎹噺锛堝湪鍨冨溇鍥炴敹杩愯鏃舵洿鏂帮級銆?
 
 flash_vol_create
-  将大小（以人类可读单位 k/M/G 回显）写入此文件，会创建一个由缓存集合支撑的精简配置卷。
+  灏嗗ぇ灏忥紙浠ヤ汉绫诲彲璇诲崟浣?k/M/G 鍥炴樉锛夊啓鍏ユ鏂囦欢锛屼細鍒涘缓涓€涓敱缂撳瓨闆嗗悎鏀拺鐨勭簿绠€閰嶇疆鍗枫€?
 
 io_error_halflife, io_error_limit
-  这些决定我们在禁用缓存之前接受多少错误。每个错误按半衰期（以 IO 数计）衰减。如果衰减计数达到 io_error_limit，脏数据会被写出且缓存被禁用。
+  杩欎簺鍐冲畾鎴戜滑鍦ㄧ鐢ㄧ紦瀛樹箣鍓嶆帴鍙楀灏戦敊璇€傛瘡涓敊璇寜鍗婅“鏈燂紙浠?IO 鏁拌锛夎“鍑忋€傚鏋滆“鍑忚鏁拌揪鍒?io_error_limit锛岃剰鏁版嵁浼氳鍐欏嚭涓旂紦瀛樿绂佺敤銆?
 
 journal_delay_ms
-  日志写会延迟至多这些毫秒，除非缓存刷新发生得更早。默认为 100。
+  鏃ュ織鍐欎細寤惰繜鑷冲杩欎簺姣锛岄櫎闈炵紦瀛樺埛鏂板彂鐢熷緱鏇存棭銆傞粯璁や负 100銆?
 
 root_usage_percent
-  根 btree 节点的使用百分比。如果过高，节点会拆分，增加树的深度。
+  鏍?btree 鑺傜偣鐨勪娇鐢ㄧ櫨鍒嗘瘮銆傚鏋滆繃楂橈紝鑺傜偣浼氭媶鍒嗭紝澧炲姞鏍戠殑娣卞害銆?
 
 stop
-  写入此文件以关闭缓存集合——等待所有已 attach 的 backing 设备都被关闭。
+  鍐欏叆姝ゆ枃浠朵互鍏抽棴缂撳瓨闆嗗悎鈥斺€旂瓑寰呮墍鏈夊凡 attach 鐨?backing 璁惧閮借鍏抽棴銆?
 
 tree_depth
-  btree 的深度（单节点 btree 深度为 0）。
+  btree 鐨勬繁搴︼紙鍗曡妭鐐?btree 娣卞害涓?0锛夈€?
 
 unregister
-  分离所有 backing 设备并关闭缓存设备；如果存在脏数据，它会禁用 writeback 缓存并等待其被刷出。
+  鍒嗙鎵€鏈?backing 璁惧骞跺叧闂紦瀛樿澶囷紱濡傛灉瀛樺湪鑴忔暟鎹紝瀹冧細绂佺敤 writeback 缂撳瓨骞剁瓑寰呭叾琚埛鍑恒€?
 
-#### Sysfs - cache set internal（Sysfs - 缓存集合内部）
+#### Sysfs - cache set internal锛圫ysfs - 缂撳瓨闆嗗悎鍐呴儴锛?
 
 
-此目录还暴露了许多内部操作的计时，分别有平均时长、平均频率、最近发生和最大时长的文件：垃圾回收、btree 读、btree 节点排序和 btree 拆分。
+姝ょ洰褰曡繕鏆撮湶浜嗚澶氬唴閮ㄦ搷浣滅殑璁℃椂锛屽垎鍒湁骞冲潎鏃堕暱銆佸钩鍧囬鐜囥€佹渶杩戝彂鐢熷拰鏈€澶ф椂闀跨殑鏂囦欢锛氬瀮鍦惧洖鏀躲€乥tree 璇汇€乥tree 鑺傜偣鎺掑簭鍜?btree 鎷嗗垎銆?
 
 active_journal_entries
-  比索引更新的日志条目数。
+  姣旂储寮曟洿鏂扮殑鏃ュ織鏉＄洰鏁般€?
 
 btree_nodes
-  btree 中的节点总数。
+  btree 涓殑鑺傜偣鎬绘暟銆?
 
 btree_used_percent
-  btree 平均使用比例。
+  btree 骞冲潎浣跨敤姣斾緥銆?
 
 bset_tree_stats
-  关于辅助搜索树的统计
+  鍏充簬杈呭姪鎼滅储鏍戠殑缁熻
 
 btree_cache_max_chain
-  btree 节点缓存的哈希表中最长的链
+  btree 鑺傜偣缂撳瓨鐨勫搱甯岃〃涓渶闀跨殑閾?
 
 cache_read_races
-  计数在从缓存读取数据期间，桶被重用并失效的情况——即读取完成后指针已失效。发生此情况时，数据会从 backing 设备重新读取。
+  璁℃暟鍦ㄤ粠缂撳瓨璇诲彇鏁版嵁鏈熼棿锛屾《琚噸鐢ㄥ苟澶辨晥鐨勬儏鍐碘€斺€斿嵆璇诲彇瀹屾垚鍚庢寚閽堝凡澶辨晥銆傚彂鐢熸鎯呭喌鏃讹紝鏁版嵁浼氫粠 backing 璁惧閲嶆柊璇诲彇銆?
 
 trigger_gc
-  写入此文件会强制运行垃圾回收。
+  鍐欏叆姝ゆ枃浠朵細寮哄埗杩愯鍨冨溇鍥炴敹銆?
 
-#### Sysfs - Cache device（Sysfs - 缓存设备）
+#### Sysfs - Cache device锛圫ysfs - 缂撳瓨璁惧锛?
 
 
-位于 /sys/block/<cdev>/bcache
+浣嶄簬 /sys/block/<cdev>/bcache
 
 block_size
-  写操作的最小粒度——应与硬件扇区大小匹配。
+  鍐欐搷浣滅殑鏈€灏忕矑搴︹€斺€斿簲涓庣‖浠舵墖鍖哄ぇ灏忓尮閰嶃€?
 
 btree_written
-  所有 btree 写的总和，以（千/兆/吉）字节计
+  鎵€鏈?btree 鍐欑殑鎬诲拰锛屼互锛堝崈/鍏?鍚夛級瀛楄妭璁?
 
 bucket_size
-  桶的大小
+  妗剁殑澶у皬
 
 cache_replacement_policy
-  为 lru、fifo 或 random 之一。
+  涓?lru銆乫ifo 鎴?random 涔嬩竴銆?
 
 freelist_percent
-  空闲列表大小占 nbuckets 的百分比。可写入以增加空闲列表上保留的桶数，从而让您在运行时人为减小缓存大小。主要用于测试目的（即测试不同大小的缓存如何影响您的命中率）。
+  绌洪棽鍒楄〃澶у皬鍗?nbuckets 鐨勭櫨鍒嗘瘮銆傚彲鍐欏叆浠ュ鍔犵┖闂插垪琛ㄤ笂淇濈暀鐨勬《鏁帮紝浠庤€岃鎮ㄥ湪杩愯鏃朵汉涓哄噺灏忕紦瀛樺ぇ灏忋€備富瑕佺敤浜庢祴璇曠洰鐨勶紙鍗虫祴璇曚笉鍚屽ぇ灏忕殑缂撳瓨濡備綍褰卞搷鎮ㄧ殑鍛戒腑鐜囷級銆?
 
 io_errors
-  已发生的错误数，按 io_error_halflife 衰减。
+  宸插彂鐢熺殑閿欒鏁帮紝鎸?io_error_halflife 琛板噺銆?
 
 metadata_written
-  所有非数据写的总和（btree 写和所有其他元数据）。
+  鎵€鏈夐潪鏁版嵁鍐欑殑鎬诲拰锛坆tree 鍐欏拰鎵€鏈夊叾浠栧厓鏁版嵁锛夈€?
 
 nbuckets
-  此缓存中的桶总数
+  姝ょ紦瀛樹腑鐨勬《鎬绘暟
 
 priority_stats
-  关于缓存中数据最近被访问情况的统计。这可以揭示您的工作集大小。Unused 是不包含任何数据的缓存的百分比。Metadata 是 bcache 的元数据开销。Average 是缓存桶的平均优先级。Next 是一个带有每个优先级阈值的分位数列表。
+  鍏充簬缂撳瓨涓暟鎹渶杩戣璁块棶鎯呭喌鐨勭粺璁°€傝繖鍙互鎻ず鎮ㄧ殑宸ヤ綔闆嗗ぇ灏忋€俇nused 鏄笉鍖呭惈浠讳綍鏁版嵁鐨勭紦瀛樼殑鐧惧垎姣斻€侻etadata 鏄?bcache 鐨勫厓鏁版嵁寮€閿€銆侫verage 鏄紦瀛樻《鐨勫钩鍧囦紭鍏堢骇銆侼ext 鏄竴涓甫鏈夋瘡涓紭鍏堢骇闃堝€肩殑鍒嗕綅鏁板垪琛ㄣ€?
 
 written
-  已写入缓存的所有数据的总和；与 btree_written 比较可得 bcache 中的写膨胀量。
+  宸插啓鍏ョ紦瀛樼殑鎵€鏈夋暟鎹殑鎬诲拰锛涗笌 btree_written 姣旇緝鍙緱 bcache 涓殑鍐欒啫鑳€閲忋€?
 

@@ -1,17 +1,17 @@
-## 安全文档
+﻿## 瀹夊叏鏂囨。
 
 
-本页汇集 Linux 内核安全子系统的文档索引，涵盖凭据管理、完整性度量（IMA）、密钥管理、LSM（Linux 安全模块）、自保护机制以及可信执行环境等内容。
+鏈〉姹囬泦 Linux 鍐呮牳瀹夊叏瀛愮郴缁熺殑鏂囨。绱㈠紩锛屾兜鐩栧嚟鎹鐞嗐€佸畬鏁存€у害閲忥紙IMA锛夈€佸瘑閽ョ鐞嗐€丩SM锛圠inux 瀹夊叏妯″潡锛夈€佽嚜淇濇姢鏈哄埗浠ュ強鍙俊鎵ц鐜绛夊唴瀹广€?
 
 - [credentials](credentials)
-- [SNP TDX 威胁模型](snp-tdx-threat-model)
-- [IMA 模板](IMA-templates)
+- [SNP TDX 濞佽儊妯″瀷](snp-tdx-threat-model)
+- [IMA 妯℃澘](IMA-templates)
 - [keys/index](keys/index)
 - [lsm](lsm)
-- [LSM 开发](lsm-development)
+- [LSM 寮€鍙慮(lsm-development)
 - [sak](sak)
 - [SCTP](SCTP)
-- [自我保护](self-protection)
+- [鑷垜淇濇姢](self-protection)
 - [siphash](siphash)
 - [tpm/index](tpm/index)
 - [digsig](digsig)

@@ -1,15 +1,11 @@
-
+﻿
 ## Device DAX
 
 
-device-dax 接口使用了 Documentation/mm/vmemmap_dedup.rst 中解释的尾部去重（tail deduplication）技术。
-
-在 powerpc 上，vmemmap 去重仅用于 radix MMU 转换。同样，在使用 64K 页大小时，只有 1G 对齐的 devdax 命名空间使用 vmemmap 去重。
-
-在 2M PMD 级映射下，我们需要 32 个 struct page，而单个 64K vmemmap 页可以包含 1024 个 struct page（64K/sizeof(struct page)）。因此无法进行 vmemmap 去重。
-
-在 1G PUD 级映射下，我们需要 16384 个 struct page，而单个 64K vmemmap 页可以包含 1024 个 struct page（64K/sizeof(struct page)）。因此我们需要 16 个 64K 页的 vmemmap 来映射 1G PUD 级映射的 struct page。
-
+device-dax 鎺ュ彛浣跨敤浜?Documentation/mm/vmemmap_dedup.rst 涓В閲婄殑灏鹃儴鍘婚噸锛坱ail deduplication锛夋妧鏈€?
+鍦?powerpc 涓婏紝vmemmap 鍘婚噸浠呯敤浜?radix MMU 杞崲銆傚悓鏍凤紝鍦ㄤ娇鐢?64K 椤靛ぇ灏忔椂锛屽彧鏈?1G 瀵归綈鐨?devdax 鍛藉悕绌洪棿浣跨敤 vmemmap 鍘婚噸銆?
+鍦?2M PMD 绾ф槧灏勪笅锛屾垜浠渶瑕?32 涓?struct page锛岃€屽崟涓?64K vmemmap 椤靛彲浠ュ寘鍚?1024 涓?struct page锛?4K/sizeof(struct page)锛夈€傚洜姝ゆ棤娉曡繘琛?vmemmap 鍘婚噸銆?
+鍦?1G PUD 绾ф槧灏勪笅锛屾垜浠渶瑕?16384 涓?struct page锛岃€屽崟涓?64K vmemmap 椤靛彲浠ュ寘鍚?1024 涓?struct page锛?4K/sizeof(struct page)锛夈€傚洜姝ゆ垜浠渶瑕?16 涓?64K 椤电殑 vmemmap 鏉ユ槧灏?1G PUD 绾ф槧灏勭殑 struct page銆?
 ```
  +-----------+ ---virt_to_page---> +-----------+   mapping to   +-----------+
  |           |                     |     0     | -------------> |     0     |
@@ -35,8 +31,7 @@ device-dax 接口使用了 Documentation/mm/vmemmap_dedup.rst 中解释的尾部
 
 
 ```
-在使用 4K 页大小时，2M PMD 级映射需要 512 个 struct page，单个 4K vmemmap 页包含 64 个 struct page（4K/sizeof(struct page)）。因此我们需要 8 个 4K 页的 vmemmap 来映射 2M PMD 级映射的 struct page。
-
+鍦ㄤ娇鐢?4K 椤靛ぇ灏忔椂锛?M PMD 绾ф槧灏勯渶瑕?512 涓?struct page锛屽崟涓?4K vmemmap 椤靛寘鍚?64 涓?struct page锛?K/sizeof(struct page)锛夈€傚洜姝ゆ垜浠渶瑕?8 涓?4K 椤电殑 vmemmap 鏉ユ槧灏?2M PMD 绾ф槧灏勭殑 struct page銆?
 ```
 
 
@@ -64,8 +59,7 @@ device-dax 接口使用了 Documentation/mm/vmemmap_dedup.rst 中解释的尾部
 
 
 ```
-在 1G PUD 级映射下，我们需要 262144 个 struct page，单个 4K vmemmap 页可以包含 64 个 struct page（4K/sizeof(struct page)）。因此我们需要 4096 个 4K 页的 vmemmap 来映射 1G PUD 级映射的 struct page。
-
+鍦?1G PUD 绾ф槧灏勪笅锛屾垜浠渶瑕?262144 涓?struct page锛屽崟涓?4K vmemmap 椤靛彲浠ュ寘鍚?64 涓?struct page锛?K/sizeof(struct page)锛夈€傚洜姝ゆ垜浠渶瑕?4096 涓?4K 椤电殑 vmemmap 鏉ユ槧灏?1G PUD 绾ф槧灏勭殑 struct page銆?
 ```
 
  +-----------+ ---virt_to_page---> +-----------+   mapping to   +-----------+

@@ -1,29 +1,29 @@
-## Devlink 自检
+﻿## Devlink 鑷
 
-`devlink-selftests` API 允许在设备上执行自检。
+`devlink-selftests` API 鍏佽鍦ㄨ澶囦笂鎵ц鑷銆?
 
-## 测试掩码
+## 娴嬭瘯鎺╃爜
 
-`devlink-selftests` 命令应配合一个掩码运行，以指示要执行的测试。
+`devlink-selftests` 鍛戒护搴旈厤鍚堜竴涓帺鐮佽繍琛岋紝浠ユ寚绀鸿鎵ц鐨勬祴璇曘€?
 
-## 测试说明
+## 娴嬭瘯璇存槑
 
-以下是驱动可能执行的测试列表。
+浠ヤ笅鏄┍鍔ㄥ彲鑳芥墽琛岀殑娴嬭瘯鍒楄〃銆?
 
    :widths: 5 90
 
-   - - 名称
-     - 说明
+   - - 鍚嶇О
+     - 璇存槑
    - - `DEVLINK_SELFTEST_FLASH`
-     - 设备可能在板载非易失性存储器（例如 flash）上存放固件。该测试用于在设备上执行 flash 自检。
-       测试的具体实现由驱动/固件负责。
+     - 璁惧鍙兘鍦ㄦ澘杞介潪鏄撳け鎬у瓨鍌ㄥ櫒锛堜緥濡?flash锛変笂瀛樻斁鍥轰欢銆傝娴嬭瘯鐢ㄤ簬鍦ㄨ澶囦笂鎵ц flash 鑷銆?
+       娴嬭瘯鐨勫叿浣撳疄鐜扮敱椹卞姩/鍥轰欢璐熻矗銆?
 
-### 使用示例
+### 浣跨敤绀轰緥
 
 
-    # 查询 devlink 设备支持的自检
+    # 鏌ヨ devlink 璁惧鏀寔鐨勮嚜妫€
     $ devlink dev selftests show DEV
-    # 查询所有 devlink 设备支持的自检
+    # 鏌ヨ鎵€鏈?devlink 璁惧鏀寔鐨勮嚜妫€
     $ devlink dev selftests show
-    # 在设备上执行自检
+    # 鍦ㄨ澶囦笂鎵ц鑷
     $ devlink dev selftests run DEV id flash

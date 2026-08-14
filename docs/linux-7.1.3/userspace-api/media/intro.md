@@ -1,35 +1,23 @@
-## 简介
+﻿## 绠€浠?
 
-
-本文档涵盖 Linux 内核提供给用户空间的 API，这些 API 用于视频与无线电
-流媒体设备，包括摄像机、模拟与数字电视接收卡、AM/FM 接收卡、软件定义
-无线电（SDR）、流捕获与输出设备、编解码设备以及遥控控制器。
-
-典型的媒体设备硬件如图所示 typical_media_device。
-
+鏈枃妗ｆ兜鐩?Linux 鍐呮牳鎻愪緵缁欑敤鎴风┖闂寸殑 API锛岃繖浜?API 鐢ㄤ簬瑙嗛涓庢棤绾跨數
+娴佸獟浣撹澶囷紝鍖呮嫭鎽勫儚鏈恒€佹ā鎷熶笌鏁板瓧鐢佃鎺ユ敹鍗°€丄M/FM 鎺ユ敹鍗°€佽蒋浠跺畾涔?鏃犵嚎鐢碉紙SDR锛夈€佹祦鎹曡幏涓庤緭鍑鸿澶囥€佺紪瑙ｇ爜璁惧浠ュ強閬ユ帶鎺у埗鍣ㄣ€?
+鍏稿瀷鐨勫獟浣撹澶囩‖浠跺鍥炬墍绀?typical_media_device銆?
 
     :alt:   typical_media_device.svg
     :align: center
 
-    典型媒体设备
+    鍏稿瀷濯掍綋璁惧
 
-媒体基础设施 API 旨在控制此类设备。它分为五个部分。
-
-1. 第一部分 <v4l2spec> 涵盖无线电、视频捕获与输出、摄像机、模拟电视设备以及编解码器。
-
-2. 第二部分 <dvbapi> 涵盖用于数字电视以及经由多种数字电视标准之一
-   进行互联网接收的 API。虽然它被称为 DVB API，但实际上它涵盖若干
-   不同的视频标准，包括 DVB-T/T2、DVB-S/S2、DVB-C、ATSC、ISDB-T、
-   ISDB-S、DTMB 等。所支持标准的完整列表可在 `fe_delivery_system` 处找到。
-
-3. 第三部分 <remote_controllers> 涵盖遥控控制器 API。
-
-4. 第四部分 <media_controller> 涵盖媒体控制器 API。
-
-5. 第五部分 <cec> 涵盖 CEC（Consumer Electronics Control，消费电子控制）API。
-
-还应注意，媒体设备可能也具有音频组件，例如混音器、PCM 捕获、PCM 回放等，
-它们通过 ALSA API 进行控制。有关更多信息以及最新的开发代码，请参阅：
-`https://linuxtv.org <https://linuxtv.org>`__。有关讨论改进、报告问题、
-发送新驱动等，请发送邮件至：`Linux Media Mailing List (LMML)
-<http://vger.kernel.org/vger-lists.html#linux-media>`__。
+濯掍綋鍩虹璁炬柦 API 鏃ㄥ湪鎺у埗姝ょ被璁惧銆傚畠鍒嗕负浜斾釜閮ㄥ垎銆?
+1. 绗竴閮ㄥ垎 <v4l2spec> 娑电洊鏃犵嚎鐢点€佽棰戞崟鑾蜂笌杈撳嚭銆佹憚鍍忔満銆佹ā鎷熺數瑙嗚澶囦互鍙婄紪瑙ｇ爜鍣ㄣ€?
+2. 绗簩閮ㄥ垎 <dvbapi> 娑电洊鐢ㄤ簬鏁板瓧鐢佃浠ュ強缁忕敱澶氱鏁板瓧鐢佃鏍囧噯涔嬩竴
+   杩涜浜掕仈缃戞帴鏀剁殑 API銆傝櫧鐒跺畠琚О涓?DVB API锛屼絾瀹為檯涓婂畠娑电洊鑻ュ共
+   涓嶅悓鐨勮棰戞爣鍑嗭紝鍖呮嫭 DVB-T/T2銆丏VB-S/S2銆丏VB-C銆丄TSC銆両SDB-T銆?   ISDB-S銆丏TMB 绛夈€傛墍鏀寔鏍囧噯鐨勫畬鏁村垪琛ㄥ彲鍦?`fe_delivery_system` 澶勬壘鍒般€?
+3. 绗笁閮ㄥ垎 <remote_controllers> 娑电洊閬ユ帶鎺у埗鍣?API銆?
+4. 绗洓閮ㄥ垎 <media_controller> 娑电洊濯掍綋鎺у埗鍣?API銆?
+5. 绗簲閮ㄥ垎 <cec> 娑电洊 CEC锛圕onsumer Electronics Control锛屾秷璐圭數瀛愭帶鍒讹級API銆?
+杩樺簲娉ㄦ剰锛屽獟浣撹澶囧彲鑳戒篃鍏锋湁闊抽缁勪欢锛屼緥濡傛贩闊冲櫒銆丳CM 鎹曡幏銆丳CM 鍥炴斁绛夛紝
+瀹冧滑閫氳繃 ALSA API 杩涜鎺у埗銆傛湁鍏虫洿澶氫俊鎭互鍙婃渶鏂扮殑寮€鍙戜唬鐮侊紝璇峰弬闃咃細
+`https://linuxtv.org <https://linuxtv.org>`__銆傛湁鍏宠璁烘敼杩涖€佹姤鍛婇棶棰樸€?鍙戦€佹柊椹卞姩绛夛紝璇峰彂閫侀偖浠惰嚦锛歚Linux Media Mailing List (LMML)
+<http://vger.kernel.org/vger-lists.html#linux-media>`__銆?

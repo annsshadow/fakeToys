@@ -1,215 +1,215 @@
-## OMAP2/3 显示器 子系统
+﻿锘?# OMAP2/3 鏄剧ず鍣?瀛愮郴缁?
 
 
-这是 一个 almost 总计 rewrite 的 the OMAP FB 驱动 在 驱动/视频/omap
-(let's call 它 DSS1). The 主要 differences 之间 DSS1 和 DSS2 是 DSI,
-TV-out 和 多个 显示器 支持, 但 存在 lots 的 small improvements
-也.
+杩欐槸 涓€涓?almost 鎬昏 rewrite 鐨?the OMAP FB 椹卞姩 鍦?椹卞姩/瑙嗛/omap
+(let's call 瀹?DSS1). The 涓昏 differences 涔嬮棿 DSS1 鍜?DSS2 鏄?DSI,
+TV-out 鍜?澶氫釜 鏄剧ず鍣?鏀寔, 浣?瀛樺湪 lots 鐨?small improvements
+涔?
 
-The DSS2 驱动 (omapdss 模块) 是 在 arch/arm/plat-omap/dss/, 和 the FB,
-面板 和 控制器 驱动 是 在 驱动/视频/omap2/. DSS1 和 DSS2 实时
-currently side 由 side, 您可以 choose 其 one 到 使用.
+The DSS2 椹卞姩 (omapdss 妯″潡) 鏄?鍦?arch/arm/plat-omap/dss/, 鍜?the FB,
+闈㈡澘 鍜?鎺у埗鍣?椹卞姩 鏄?鍦?椹卞姩/瑙嗛/omap2/. DSS1 鍜?DSS2 瀹炴椂
+currently side 鐢?side, 鎮ㄥ彲浠?choose 鍏?one 鍒?浣跨敤.
 
-### 特性
+### 鐗规€?
 
 
-Working 和 tested 特性 包含:
+Working 鍜?tested 鐗规€?鍖呭惈:
 
-- MIPI DPI (并行) 输出
-- MIPI DSI 输出 在 命令 模式
-- MIPI DBI (RFBI) 输出
-- SDI 输出
-- TV 输出
-- 全部 pieces 可 为 compiled 作为 一个 模块 或 inside 内核
-- 使用 DISPC 到 更新 任何 的 the outputs
-- 使用 CPU 到 更新 RFBI 或 DSI 输出
+- MIPI DPI (骞惰) 杈撳嚭
+- MIPI DSI 杈撳嚭 鍦?鍛戒护 妯″紡
+- MIPI DBI (RFBI) 杈撳嚭
+- SDI 杈撳嚭
+- TV 杈撳嚭
+- 鍏ㄩ儴 pieces 鍙?涓?compiled 浣滀负 涓€涓?妯″潡 鎴?inside 鍐呮牳
+- 浣跨敤 DISPC 鍒?鏇存柊 浠讳綍 鐨?the outputs
+- 浣跨敤 CPU 鍒?鏇存柊 RFBI 鎴?DSI 杈撳嚭
 - OMAP DISPC planes
 - RGB16, RGB24 packed, RGB24 unpacked
 - YUV2, UYVY
 - Scaling
-- Adjusting DSS FCK 到 find 一个 good pixel clock
-- 使用 DSI DPLL 到 创建 DSS FCK
+- Adjusting DSS FCK 鍒?find 涓€涓?good pixel clock
+- 浣跨敤 DSI DPLL 鍒?鍒涘缓 DSS FCK
 
-Tested boards 包含:
+Tested boards 鍖呭惈:
 - OMAP3 SDP board
 - Beagle board
 - N810
 
-### omapdss 驱动
+### omapdss 椹卞姩
 
 
-The DSS 驱动 执行 不 itself 具有 任何 支持 用于 Linux framebuffer, V4L 或
-此类 类似 the 电流 ones, 但 它 具有 一个 内部 内核 API 该 upper level
-驱动 可 使用.
+The DSS 椹卞姩 鎵ц 涓?itself 鍏锋湁 浠讳綍 鏀寔 鐢ㄤ簬 Linux framebuffer, V4L 鎴?
+姝ょ被 绫讳技 the 鐢垫祦 ones, 浣?瀹?鍏锋湁 涓€涓?鍐呴儴 鍐呮牳 API 璇?upper level
+椹卞姩 鍙?浣跨敤.
 
-The DSS 驱动 models OMAP's overlays, overlay managers 和 displays 在 一个
-flexible way 到 启用 non-common multi-display 配置. 此外 到
-modelling the 硬件 overlays, omapdss supports 虚拟 overlays 和 overlay
-managers. 这些 可 为 使用 当 updating 一个 显示器 与 CPU 或 系统 DMA.
+The DSS 椹卞姩 models OMAP's overlays, overlay managers 鍜?displays 鍦?涓€涓?
+flexible way 鍒?鍚敤 non-common multi-display 閰嶇疆. 姝ゅ 鍒?
+modelling the 纭欢 overlays, omapdss supports 铏氭嫙 overlays 鍜?overlay
+managers. 杩欎簺 鍙?涓?浣跨敤 褰?updating 涓€涓?鏄剧ず鍣?涓?CPU 鎴?绯荤粺 DMA.
 
-### omapdss 驱动 支持 用于 音频
+### omapdss 椹卞姩 鏀寔 鐢ㄤ簬 闊抽
 
-那里 exist 若干 显示器 technologies 和 standards 该 支持 音频 作为
-well. Hence, 它是 relevant 到 更新 the DSS 设备 驱动 到 提供 一个 音频
-接口 该 可 为 使用 由 一个 音频 驱动 或 任何 其他 驱动 interested 在
+閭ｉ噷 exist 鑻ュ共 鏄剧ず鍣?technologies 鍜?standards 璇?鏀寔 闊抽 浣滀负
+well. Hence, 瀹冩槸 relevant 鍒?鏇存柊 the DSS 璁惧 椹卞姩 鍒?鎻愪緵 涓€涓?闊抽
+鎺ュ彛 璇?鍙?涓?浣跨敤 鐢?涓€涓?闊抽 椹卞姩 鎴?浠讳綍 鍏朵粬 椹卞姩 interested 鍦?
 the functionality.
 
-The 音频_启用 函数 是 intended 到 prepare the relevant
-IP 用于 playback (e.g., enabling 一个 音频 FIFO, taking 在/超出 reset
-一些 IP, enabling companion chips, 等). 它是 intended 到 为 called 之前
-音频_启动. The 音频_禁用 函数 performs the reverse 操作 和 是
-intended 到 为 called 之后 音频_停止.
+The 闊抽_鍚敤 鍑芥暟 鏄?intended 鍒?prepare the relevant
+IP 鐢ㄤ簬 playback (e.g., enabling 涓€涓?闊抽 FIFO, taking 鍦?瓒呭嚭 reset
+涓€浜?IP, enabling companion chips, 绛?. 瀹冩槸 intended 鍒?涓?called 涔嬪墠
+闊抽_鍚姩. The 闊抽_绂佺敤 鍑芥暟 performs the reverse 鎿嶄綔 鍜?鏄?
+intended 鍒?涓?called 涔嬪悗 闊抽_鍋滄.
 
-同时 一个 given DSS 设备 驱动 可 支持 音频, 它是 可能 该 用于
-某些 configurations 音频 是 不 受支持 (e.g., 一个 HDMI 显示器 使用 一个
-VESA 视频 timing). The 音频_受支持 函数 是 intended 到 query 是否
-the 电流 配置 的 the 显示器 supports 音频.
+鍚屾椂 涓€涓?given DSS 璁惧 椹卞姩 鍙?鏀寔 闊抽, 瀹冩槸 鍙兘 璇?鐢ㄤ簬
+鏌愪簺 configurations 闊抽 鏄?涓?鍙楁敮鎸?(e.g., 涓€涓?HDMI 鏄剧ず鍣?浣跨敤 涓€涓?
+VESA 瑙嗛 timing). The 闊抽_鍙楁敮鎸?鍑芥暟 鏄?intended 鍒?query 鏄惁
+the 鐢垫祦 閰嶇疆 鐨?the 鏄剧ず鍣?supports 闊抽.
 
-The 音频_配置 函数 是 intended 到 configure 全部 the relevant 音频
-参数 的 the 显示器. 为了 make the 函数 independent 的 任何
-特定 DSS 设备 驱动, 一个 结构体 omap_dss_音频 是 定义. 其 purpose
-是 到 包含 全部 the 必需 参数 用于 音频 配置. 在 the
-moment, 此类 结构体 包含 指针 到 IEC-60958 channel 状态 word
-和 CEA-861 音频 infoframe 结构体. 此 应当 为 enough 到 支持
-HDMI 和 DisplayPort, 作为 两者 是 基于 CEA-861 和 IEC-60958.
+The 闊抽_閰嶇疆 鍑芥暟 鏄?intended 鍒?configure 鍏ㄩ儴 the relevant 闊抽
+鍙傛暟 鐨?the 鏄剧ず鍣? 涓轰簡 make the 鍑芥暟 independent 鐨?浠讳綍
+鐗瑰畾 DSS 璁惧 椹卞姩, 涓€涓?缁撴瀯浣?omap_dss_闊抽 鏄?瀹氫箟. 鍏?purpose
+鏄?鍒?鍖呭惈 鍏ㄩ儴 the 蹇呴渶 鍙傛暟 鐢ㄤ簬 闊抽 閰嶇疆. 鍦?the
+moment, 姝ょ被 缁撴瀯浣?鍖呭惈 鎸囬拡 鍒?IEC-60958 channel 鐘舵€?word
+鍜?CEA-861 闊抽 infoframe 缁撴瀯浣? 姝?搴斿綋 涓?enough 鍒?鏀寔
+HDMI 鍜?DisplayPort, 浣滀负 涓よ€?鏄?鍩轰簬 CEA-861 鍜?IEC-60958.
 
-The 音频_启用/禁用, 音频_配置 和 音频_受支持 函数 可以 为
-implemented 作为 函数 该 可 sleep. Hence, 它们 应当 不 为 called
-同时 holding 一个 自旋锁 或 一个 readlock.
+The 闊抽_鍚敤/绂佺敤, 闊抽_閰嶇疆 鍜?闊抽_鍙楁敮鎸?鍑芥暟 鍙互 涓?
+implemented 浣滀负 鍑芥暟 璇?鍙?sleep. Hence, 瀹冧滑 搴斿綋 涓?涓?called
+鍚屾椂 holding 涓€涓?鑷棆閿?鎴?涓€涓?readlock.
 
-The 音频_启动/音频_停止 函数 是 intended 到 effectively 启动/停止 音频
-playback 之后 the 配置 具有 taken place. 这些 函数 是 designed
-到 为 使用 在 一个 原子 上下文. Hence, 音频_启动 应当 return quickly 和 为
-called 仅 之后 全部 the needed resources 用于 音频 playback (音频 FIFOs,
-DMA channels, companion chips, 等) 具有 已经 已启用 到 begin 数据 transfers.
-音频_停止 是 designed 到 仅 停止 the 音频 transfers. The resources 使用
-用于 playback 是 released 使用 音频_禁用.
+The 闊抽_鍚姩/闊抽_鍋滄 鍑芥暟 鏄?intended 鍒?effectively 鍚姩/鍋滄 闊抽
+playback 涔嬪悗 the 閰嶇疆 鍏锋湁 taken place. 杩欎簺 鍑芥暟 鏄?designed
+鍒?涓?浣跨敤 鍦?涓€涓?鍘熷瓙 涓婁笅鏂? Hence, 闊抽_鍚姩 搴斿綋 return quickly 鍜?涓?
+called 浠?涔嬪悗 鍏ㄩ儴 the needed resources 鐢ㄤ簬 闊抽 playback (闊抽 FIFOs,
+DMA channels, companion chips, 绛? 鍏锋湁 宸茬粡 宸插惎鐢?鍒?begin 鏁版嵁 transfers.
+闊抽_鍋滄 鏄?designed 鍒?浠?鍋滄 the 闊抽 transfers. The resources 浣跨敤
+鐢ㄤ簬 playback 鏄?released 浣跨敤 闊抽_绂佺敤.
 
-The enum omap_dss_音频_状态 可 为 使用 到 help the implementations 的
-the 接口 到 keep track 的 the 音频 状态. The initial 状态 是 _已禁用;
-然后, the 状态 transitions 到 _CONFIGURED, 和 然后, 当 它是 ready 到
-play 音频, 到 _已启用. The 状态 _PLAYING 是 使用 当 the 音频 是 正在
+The enum omap_dss_闊抽_鐘舵€?鍙?涓?浣跨敤 鍒?help the implementations 鐨?
+the 鎺ュ彛 鍒?keep track 鐨?the 闊抽 鐘舵€? The initial 鐘舵€?鏄?_宸茬鐢?
+鐒跺悗, the 鐘舵€?transitions 鍒?_CONFIGURED, 鍜?鐒跺悗, 褰?瀹冩槸 ready 鍒?
+play 闊抽, 鍒?_宸插惎鐢? The 鐘舵€?_PLAYING 鏄?浣跨敤 褰?the 闊抽 鏄?姝ｅ湪
 rendered.
 
 
-### 面板 和 控制器 驱动
+### 闈㈡澘 鍜?鎺у埗鍣?椹卞姩
 
 
-The 驱动 implement 面板 或 控制器 特定 functionality 和 是 不
-通常 visible 到 users except through omapfb 驱动.  它们 注册
-themselves 到 the DSS 驱动.
+The 椹卞姩 implement 闈㈡澘 鎴?鎺у埗鍣?鐗瑰畾 functionality 鍜?鏄?涓?
+閫氬父 visible 鍒?users except through omapfb 椹卞姩.  瀹冧滑 娉ㄥ唽
+themselves 鍒?the DSS 椹卞姩.
 
-### omapfb 驱动
-
-
-The omapfb 驱动 implements arbitrary 数字 的 标准 linux framebuffers.
-这些 framebuffers 可 为 routed flexibly 到 任何 overlays, 从而 allowing very
-动态 显示器 architecture.
-
-The 驱动 exports 一些 omapfb 特定 ioctls, 其 是 compatible 与 the
-ioctls 在 the 旧 驱动.
-
-The rest 的 the non 标准 特性 是 exported 通过 sysfs. 是否 the final
-implementation 将 使用 sysfs, 或 ioctls, 是 仍然 打开.
-
-### V4L2 驱动
+### omapfb 椹卞姩
 
 
-V4L2 是 正在 implemented 在 TI.
+The omapfb 椹卞姩 implements arbitrary 鏁板瓧 鐨?鏍囧噯 linux framebuffers.
+杩欎簺 framebuffers 鍙?涓?routed flexibly 鍒?浠讳綍 overlays, 浠庤€?allowing very
+鍔ㄦ€?鏄剧ず鍣?architecture.
 
-来自 omapdss point 的 view the V4L2 驱动 应当 为 similar 到 framebuffer
-驱动.
+The 椹卞姩 exports 涓€浜?omapfb 鐗瑰畾 ioctls, 鍏?鏄?compatible 涓?the
+ioctls 鍦?the 鏃?椹卞姩.
+
+The rest 鐨?the non 鏍囧噯 鐗规€?鏄?exported 閫氳繃 sysfs. 鏄惁 the final
+implementation 灏?浣跨敤 sysfs, 鎴?ioctls, 鏄?浠嶇劧 鎵撳紑.
+
+### V4L2 椹卞姩
+
+
+V4L2 鏄?姝ｅ湪 implemented 鍦?TI.
+
+鏉ヨ嚜 omapdss point 鐨?view the V4L2 椹卞姩 搴斿綋 涓?similar 鍒?framebuffer
+椹卞姩.
 
 ### Architecture
 
 
-一些 clarification 什么 the 不同 components 执行:
+涓€浜?clarification 浠€涔?the 涓嶅悓 components 鎵ц:
 
-    - Framebuffer 是 一个 内存 area inside OMAP's SRAM/SDRAM 该 包含 the
-      pixel 数据 用于 the image. Framebuffer 具有 width 和 height 和 color
+    - Framebuffer 鏄?涓€涓?鍐呭瓨 area inside OMAP's SRAM/SDRAM 璇?鍖呭惈 the
+      pixel 鏁版嵁 鐢ㄤ簬 the image. Framebuffer 鍏锋湁 width 鍜?height 鍜?color
       depth.
-    - Overlay defines 何处 the pixels 是 读取 来自 和 何处 它们 go 在 the
-      screen. The overlay 可 为 小于 framebuffer, 从而 displaying 仅
-      part 的 the framebuffer. The position 的 the overlay 可 为 changed 若
-      the overlay 是 小于 the 显示器.
-    - Overlay manager combines the overlays 在 到 one image 和 feeds them 到
-      显示器.
-    - 显示器 是 the actual 物理 显示器 设备.
+    - Overlay defines 浣曞 the pixels 鏄?璇诲彇 鏉ヨ嚜 鍜?浣曞 瀹冧滑 go 鍦?the
+      screen. The overlay 鍙?涓?灏忎簬 framebuffer, 浠庤€?displaying 浠?
+      part 鐨?the framebuffer. The position 鐨?the overlay 鍙?涓?changed 鑻?
+      the overlay 鏄?灏忎簬 the 鏄剧ず鍣?
+    - Overlay manager combines the overlays 鍦?鍒?one image 鍜?feeds them 鍒?
+      鏄剧ず鍣?
+    - 鏄剧ず鍣?鏄?the actual 鐗╃悊 鏄剧ず鍣?璁惧.
 
-一个 framebuffer 可 为 connected 到 多个 overlays 到 显示 the 相同 pixel 数据
-在 全部 的 the overlays. 注意 该 在 此 case the overlay 输入 sizes 必须 为
-the 相同, 但, 如果发生 视频 overlays, the 输出 大小 可 为 不同. 任何
-framebuffer 可 为 connected 到 任何 overlay.
+涓€涓?framebuffer 鍙?涓?connected 鍒?澶氫釜 overlays 鍒?鏄剧ず the 鐩稿悓 pixel 鏁版嵁
+鍦?鍏ㄩ儴 鐨?the overlays. 娉ㄦ剰 璇?鍦?姝?case the overlay 杈撳叆 sizes 蹇呴』 涓?
+the 鐩稿悓, 浣? 濡傛灉鍙戠敓 瑙嗛 overlays, the 杈撳嚭 澶у皬 鍙?涓?涓嶅悓. 浠讳綍
+framebuffer 鍙?涓?connected 鍒?浠讳綍 overlay.
 
-一个 overlay 可 为 connected 到 one overlay manager. 也 DISPC overlays 可 为
-connected 仅 到 DISPC overlay managers, 和 虚拟 overlays 可 为 仅
-connected 到 虚拟 overlays.
+涓€涓?overlay 鍙?涓?connected 鍒?one overlay manager. 涔?DISPC overlays 鍙?涓?
+connected 浠?鍒?DISPC overlay managers, 鍜?铏氭嫙 overlays 鍙?涓?浠?
+connected 鍒?铏氭嫙 overlays.
 
-一个 overlay manager 可 为 connected 到 one 显示器. 存在 某些
-restrictions 其 kinds 的 displays 一个 overlay manager 可 为 connected:
+涓€涓?overlay manager 鍙?涓?connected 鍒?one 鏄剧ず鍣? 瀛樺湪 鏌愪簺
+restrictions 鍏?kinds 鐨?displays 涓€涓?overlay manager 鍙?涓?connected:
 
-    - DISPC TV overlay manager 可 为 仅 connected 到 TV 显示器.
-    - 虚拟 overlay managers 可 仅 为 connected 到 DBI 或 DSI displays.
-    - DISPC LCD overlay manager 可 为 connected 到 全部 displays, except TV
-      显示器.
+    - DISPC TV overlay manager 鍙?涓?浠?connected 鍒?TV 鏄剧ず鍣?
+    - 铏氭嫙 overlay managers 鍙?浠?涓?connected 鍒?DBI 鎴?DSI displays.
+    - DISPC LCD overlay manager 鍙?涓?connected 鍒?鍏ㄩ儴 displays, except TV
+      鏄剧ず鍣?
 
 ### Sysfs
 
-The sysfs 接口 是 mainly 使用 用于 testing. I don't think sysfs
-接口 是 the best 用于 此 在 the final 版本, 但 I don't quite know
-什么 将会 为 the best interfaces 用于 这些 things.
+The sysfs 鎺ュ彛 鏄?mainly 浣跨敤 鐢ㄤ簬 testing. I don't think sysfs
+鎺ュ彛 鏄?the best 鐢ㄤ簬 姝?鍦?the final 鐗堟湰, 浣?I don't quite know
+浠€涔?灏嗕細 涓?the best interfaces 鐢ㄤ簬 杩欎簺 things.
 
-The sysfs 接口 是 divided 到 two parts: DSS 和 FB.
+The sysfs 鎺ュ彛 鏄?divided 鍒?two parts: DSS 鍜?FB.
 
-/sys/类/graphics/fb? directory:
-mirror		0=off, 1=在
-rotate		Rotation 0-3 用于 0, 90, 180, 270 degrees
-rotate_类型	0 = DMA rotation, 1 = VRFB rotation
-overlays	列出 的 overlay numbers 到 其 framebuffer pixels go
-phys_addr	物理 地址 的 the framebuffer
-virt_addr	虚拟 地址 的 the framebuffer
-大小		大小 的 the framebuffer
+/sys/绫?graphics/fb? directory:
+mirror		0=off, 1=鍦?
+rotate		Rotation 0-3 鐢ㄤ簬 0, 90, 180, 270 degrees
+rotate_绫诲瀷	0 = DMA rotation, 1 = VRFB rotation
+overlays	鍒楀嚭 鐨?overlay numbers 鍒?鍏?framebuffer pixels go
+phys_addr	鐗╃悊 鍦板潃 鐨?the framebuffer
+virt_addr	铏氭嫙 鍦板潃 鐨?the framebuffer
+澶у皬		澶у皬 鐨?the framebuffer
 
-/sys/设备/platform/omapdss/overlay? directory:
-已启用		0=off, 1=在
-输入_大小	width,height (ie. the framebuffer 大小)
+/sys/璁惧/platform/omapdss/overlay? directory:
+宸插惎鐢?	0=off, 1=鍦?
+杈撳叆_澶у皬	width,height (ie. the framebuffer 澶у皬)
 manager		Destination overlay manager name
 name
-输出_大小	width,height
+杈撳嚭_澶у皬	width,height
 position	x,y
 screen_width	width
-全局_alpha   	全局 alpha 0-255 0=transparent 255=opaque
+鍏ㄥ眬_alpha   	鍏ㄥ眬 alpha 0-255 0=transparent 255=opaque
 
-/sys/设备/platform/omapdss/manager? directory:
-显示器				Destination 显示器
+/sys/璁惧/platform/omapdss/manager? directory:
+鏄剧ず鍣?			Destination 鏄剧ず鍣?
 name
-alpha_blending_已启用		0=off, 1=在
-trans_key_已启用		0=off, 1=在
-trans_key_类型			gfx-destination, video-source
-trans_key_值			transparency color key (RGB24)
-默认_color			默认 background color (RGB24)
+alpha_blending_宸插惎鐢?	0=off, 1=鍦?
+trans_key_宸插惎鐢?	0=off, 1=鍦?
+trans_key_绫诲瀷			gfx-destination, video-source
+trans_key_鍊?		transparency color key (RGB24)
+榛樿_color			榛樿 background color (RGB24)
 
-/sys/设备/platform/omapdss/显示器? directory:
+/sys/璁惧/platform/omapdss/鏄剧ず鍣? directory:
 
 =============== =============================================================
-ctrl_name	控制器 name
-mirror		0=off, 1=在
-更新_模式	0=off, 1=auto, 2=manual
-已启用		0=off, 1=在
+ctrl_name	鎺у埗鍣?name
+mirror		0=off, 1=鍦?
+鏇存柊_妯″紡	0=off, 1=auto, 2=manual
+宸插惎鐢?	0=off, 1=鍦?
 name
-rotate		Rotation 0-3 用于 0, 90, 180, 270 degrees
-timings		显示器 timings (pixclock,xres/hfp/hbp/hsw,yres/vfp/vbp/vsw)
-		当 writing, two 特殊 timings 是 accepted 用于 tv-out:
-		"pal" 和 "ntsc"
-面板_name
-tear_elim	Tearing elimination 0=off, 1=在
-输出_类型	输出 类型 (视频 encoder 仅): "composite" 或 "svideo"
+rotate		Rotation 0-3 鐢ㄤ簬 0, 90, 180, 270 degrees
+timings		鏄剧ず鍣?timings (pixclock,xres/hfp/hbp/hsw,yres/vfp/vbp/vsw)
+		褰?writing, two 鐗规畩 timings 鏄?accepted 鐢ㄤ簬 tv-out:
+		"pal" 鍜?"ntsc"
+闈㈡澘_name
+tear_elim	Tearing elimination 0=off, 1=鍦?
+杈撳嚭_绫诲瀷	杈撳嚭 绫诲瀷 (瑙嗛 encoder 浠?: "composite" 鎴?"svideo"
 =============== =============================================================
 
-存在 也 一些 debugfs 文件 在 <debugfs>/omapdss/ 其 显示 information
-关于 clocks 和 寄存器.
+瀛樺湪 涔?涓€浜?debugfs 鏂囦欢 鍦?<debugfs>/omapdss/ 鍏?鏄剧ず information
+鍏充簬 clocks 鍜?瀵勫瓨鍣?
 
-### 示例
+### 绀轰緥
 
 
 ```
@@ -230,12 +230,12 @@ tear_elim	Tearing elimination 0=off, 1=在
 	fb2=/sys/class/graphics/fb2
 
 ```
-### 默认 setup 在 OMAP3 SDP
+### 榛樿 setup 鍦?OMAP3 SDP
 
 
-此处's the 默认 setup 在 OMAP3 SDP board. 全部 planes go 到 LCD. DVI
-和 TV-out 是 不 在 使用. The columns 来自 left 到 right 是:
-framebuffers, overlays, overlay managers, displays. Framebuffers 是
+姝ゅ's the 榛樿 setup 鍦?OMAP3 SDP board. 鍏ㄩ儴 planes go 鍒?LCD. DVI
+鍜?TV-out 鏄?涓?鍦?浣跨敤. The columns 鏉ヨ嚜 left 鍒?right 鏄?
+framebuffers, overlays, overlay managers, displays. Framebuffers 鏄?
 ```
 
 	FB0 --- GFX  -\            DVI
@@ -243,7 +243,7 @@ framebuffers, overlays, overlay managers, displays. Framebuffers 是
 	FB2 --- VID2 -/   TV ----- TV
 
 ```
-### 示例: Switch 来自 LCD 到 DVI
+### 绀轰緥: Switch 鏉ヨ嚜 LCD 鍒?DVI
 
 
 ```
@@ -266,7 +266,7 @@ framebuffers, overlays, overlay managers, displays. Framebuffers 是
 	FB2 --- VID2 -/   TV ----- TV
 
 ```
-### 示例: Clone GFX overlay 到 LCD 和 TV
+### 绀轰緥: Clone GFX overlay 鍒?LCD 鍜?TV
 
 
 ```
@@ -298,80 +298,80 @@ framebuffers, overlays, overlay managers, displays. Framebuffers 是
 ### Misc notes
 
 
-OMAP FB allocates the framebuffer 内存 使用 the 标准 dma allocator. 您
-可 启用 Contiguous 内存 Allocator (配置_CMA) 到 improve the dma
-allocator, 和 若 CMA 是 已启用, 您 使用 "cma=" 内核 参数 到 increase
-the 全局 内存 area 用于 CMA.
+OMAP FB allocates the framebuffer 鍐呭瓨 浣跨敤 the 鏍囧噯 dma allocator. 鎮?
+鍙?鍚敤 Contiguous 鍐呭瓨 Allocator (閰嶇疆_CMA) 鍒?improve the dma
+allocator, 鍜?鑻?CMA 鏄?宸插惎鐢? 鎮?浣跨敤 "cma=" 鍐呮牳 鍙傛暟 鍒?increase
+the 鍏ㄥ眬 鍐呭瓨 area 鐢ㄤ簬 CMA.
 
-使用 DSI DPLL 到 generate pixel clock 它是 可能 produce the pixel clock
-的 86.5MHz (max 可能), 和 与 该 您 get 1280x1024@57 输出 来自 DVI.
+浣跨敤 DSI DPLL 鍒?generate pixel clock 瀹冩槸 鍙兘 produce the pixel clock
+鐨?86.5MHz (max 鍙兘), 鍜?涓?璇?鎮?get 1280x1024@57 杈撳嚭 鏉ヨ嚜 DVI.
 
-Rotation 和 mirroring currently 仅 supports RGB565 和 RGB8888 modes. VRFB
-执行 不 支持 mirroring.
+Rotation 鍜?mirroring currently 浠?supports RGB565 鍜?RGB8888 modes. VRFB
+鎵ц 涓?鏀寔 mirroring.
 
-VRFB rotation 需要 much 更多 内存 比 non-rotated framebuffer, 因此 您
-probably 需要 到 increase 您的 vram 设置 之前 使用 VRFB rotation. 也,
-许多 applications 可 不 work 与 VRFB 若 它们 执行 不 pay attention 到 全部
-framebuffer 参数.
+VRFB rotation 闇€瑕?much 鏇村 鍐呭瓨 姣?non-rotated framebuffer, 鍥犳 鎮?
+probably 闇€瑕?鍒?increase 鎮ㄧ殑 vram 璁剧疆 涔嬪墠 浣跨敤 VRFB rotation. 涔?
+璁稿 applications 鍙?涓?work 涓?VRFB 鑻?瀹冧滑 鎵ц 涓?pay attention 鍒?鍏ㄩ儴
+framebuffer 鍙傛暟.
 
-### 内核 boot arguments
+### 鍐呮牳 boot arguments
 
 
-omapfb.模式=<显示器>:<模式>[,...]
- - 默认 视频 模式 用于 specified displays. 例如,
-	  "dvi:800x400MR-24@60".  参见 驱动/视频/modedb.c.
-	  存在 也 two 特殊 modes: "pal" 和 "ntsc" 该
-	  可 为 使用 到 tv out.
+omapfb.妯″紡=<鏄剧ず鍣?:<妯″紡>[,...]
+ - 榛樿 瑙嗛 妯″紡 鐢ㄤ簬 specified displays. 渚嬪,
+	  "dvi:800x400MR-24@60".  鍙傝 椹卞姩/瑙嗛/modedb.c.
+	  瀛樺湪 涔?two 鐗规畩 modes: "pal" 鍜?"ntsc" 璇?
+	  鍙?涓?浣跨敤 鍒?tv out.
 
 omapfb.vram=<fbnum>:<size>[@<physaddr>][,...]
- - VRAM allocated 用于 一个 framebuffer. Normally omapfb allocates vram
-	  depending 在 the 显示器 大小. 与 此 您可以 manually allocate
-	  更多 或 定义 the 物理 地址 的 每个 framebuffer. 例如,
-	  "1:4M" 到 allocate 4M 用于 fb1.
+ - VRAM allocated 鐢ㄤ簬 涓€涓?framebuffer. Normally omapfb allocates vram
+	  depending 鍦?the 鏄剧ず鍣?澶у皬. 涓?姝?鎮ㄥ彲浠?manually allocate
+	  鏇村 鎴?瀹氫箟 the 鐗╃悊 鍦板潃 鐨?姣忎釜 framebuffer. 渚嬪,
+	  "1:4M" 鍒?allocate 4M 鐢ㄤ簬 fb1.
 
 omapfb.debug=<y|n>
- - 启用 debug printing. 您 具有 到 具有 OMAPFB debug 支持 已启用
-	  在 内核 配置.
+ - 鍚敤 debug printing. 鎮?鍏锋湁 鍒?鍏锋湁 OMAPFB debug 鏀寔 宸插惎鐢?
+	  鍦?鍐呮牳 閰嶇疆.
 
 omapfb.test=<y|n>
- - Draw test pattern 到 framebuffer whenever framebuffer 设置 change.
-	  您 需要 到 具有 OMAPFB debug 支持 已启用 在 内核 配置.
+ - Draw test pattern 鍒?framebuffer whenever framebuffer 璁剧疆 change.
+	  鎮?闇€瑕?鍒?鍏锋湁 OMAPFB debug 鏀寔 宸插惎鐢?鍦?鍐呮牳 閰嶇疆.
 
 omapfb.vrfb=<y|n>
- - 使用 VRFB rotation 用于 全部 framebuffers.
+ - 浣跨敤 VRFB rotation 鐢ㄤ簬 鍏ㄩ儴 framebuffers.
 
 omapfb.rotate=<angle>
- - 默认 rotation applied 到 全部 framebuffers.
+ - 榛樿 rotation applied 鍒?鍏ㄩ儴 framebuffers.
 	  0 - 0 degree rotation
 	  1 - 90 degree rotation
 	  2 - 180 degree rotation
 	  3 - 270 degree rotation
 
 omapfb.mirror=<y|n>
- - 默认 mirror 用于 全部 framebuffers. 仅 works 与 DMA rotation.
+ - 榛樿 mirror 鐢ㄤ簬 鍏ㄩ儴 framebuffers. 浠?works 涓?DMA rotation.
 
-omapdss.def_disp=<显示器>
- - Name 的 默认 显示器, 到 其 全部 overlays 将 为 connected.
-	  通用 示例 是 "LCD" 或 "tv".
+omapdss.def_disp=<鏄剧ず鍣?
+ - Name 鐨?榛樿 鏄剧ず鍣? 鍒?鍏?鍏ㄩ儴 overlays 灏?涓?connected.
+	  閫氱敤 绀轰緥 鏄?"LCD" 鎴?"tv".
 
 omapdss.debug=<y|n>
- - 启用 debug printing. 您 具有 到 具有 DSS debug 支持 已启用 在
-	  内核 配置.
+ - 鍚敤 debug printing. 鎮?鍏锋湁 鍒?鍏锋湁 DSS debug 鏀寔 宸插惎鐢?鍦?
+	  鍐呮牳 閰嶇疆.
 
 ### TODO
 
 
 DSS locking
 
-错误 checking
+閿欒 checking
 
-- Lots 的 checks 是 missing 或 implemented just 作为 BUG()
+- Lots 鐨?checks 鏄?missing 鎴?implemented just 浣滀负 BUG()
 
-系统 DMA 更新 用于 DSI
+绯荤粺 DMA 鏇存柊 鐢ㄤ簬 DSI
 
-- 可 为 使用 用于 RGB16 和 RGB24P modes. Probably 不 用于 RGB24U (如何
-  到 skip the empty byte?)
+- 鍙?涓?浣跨敤 鐢ㄤ簬 RGB16 鍜?RGB24P modes. Probably 涓?鐢ㄤ簬 RGB24U (濡備綍
+  鍒?skip the empty byte锛?
 
-OMAP1 支持
+OMAP1 鏀寔
 
-- 不 sure 若 needed
+- 涓?sure 鑻?needed

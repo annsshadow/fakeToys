@@ -1,10 +1,10 @@
-## CX18 电视卡列表
+﻿## CX18 鐢佃鍗″垪琛?
 
-本文件列出 Conexant CX18 电视卡驱动所支持的硬件型号清单，供驱动适配与硬件选型时对照查阅。
+鏈枃浠跺垪鍑?Conexant CX18 鐢佃鍗￠┍鍔ㄦ墍鏀寔鐨勭‖浠跺瀷鍙锋竻鍗曪紝渚涢┍鍔ㄩ€傞厤涓庣‖浠堕€夊瀷鏃跺鐓ф煡闃呫€?
 
 
 
-cx18 是 Conexant 的电视卡驱动。以下网卡由 cx18 驱动支持：
+cx18 鏄?Conexant 鐨勭數瑙嗗崱椹卞姩銆備互涓嬬綉鍗＄敱 cx18 椹卞姩鏀寔锛?
 
 - Hauppauge HVR-1600 (ESMT memory)
 - Hauppauge HVR-1600 (Samsung memory)

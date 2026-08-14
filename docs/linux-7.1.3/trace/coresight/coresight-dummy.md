@@ -1,26 +1,20 @@
-
-## Coresight 虚拟跟踪模块
+﻿
+## Coresight 铏氭嫙璺熻釜妯″潡
 
 
     :Author:   Hao Zhang <quic_hazha@quicinc.com>
     :Date:     June 2023
 
-### 简介
+### 绠€浠?
+
+Coresight 铏氭嫙璺熻釜妯″潡閫傜敤浜庡唴鏍告棤鏉冭闂垨閰嶇疆鐨勭壒瀹氳澶囷紝渚嬪
+Qualcomm 骞冲彴涓婄殑 CoreSight TPDM銆傚浜庤繖浜涜澶囷紝闇€瑕佷竴涓櫄鎷熼┍鍔ㄧ▼搴?灏嗗畠浠敞鍐屼负 Coresight 璁惧銆傝妯″潡涔熷彲鐢ㄤ簬瀹氫箟鍙兘娌℃湁浠讳綍缂栫▼鎺ュ彛鐨?缁勪欢锛屼粠鑰屽彲浠ュ湪椹卞姩绋嬪簭涓垱寤鸿矾寰勩€傚畠涓鸿櫄鎷熻澶囦笂鐨勬搷浣滄彁渚?Coresight
+API锛屼緥濡傚惎鐢ㄥ拰绂佺敤瀹冧滑銆傚畠杩樻彁渚涚敤浜庤皟璇曠殑 Coresight 铏氭嫙 sink/source
+璺緞銆?
+### 閰嶇疆璇︽儏
 
 
-Coresight 虚拟跟踪模块适用于内核无权访问或配置的特定设备，例如
-Qualcomm 平台上的 CoreSight TPDM。对于这些设备，需要一个虚拟驱动程序
-将它们注册为 Coresight 设备。该模块也可用于定义可能没有任何编程接口的
-组件，从而可以在驱动程序中创建路径。它为虚拟设备上的操作提供 Coresight
-API，例如启用和禁用它们。它还提供用于调试的 Coresight 虚拟 sink/source
-路径。
-
-### 配置详情
-
-
-有两种类型的节点：虚拟 sink 和虚拟 source。这些节点位于
-`/sys/bus/coresight/devices`。
-
+鏈変袱绉嶇被鍨嬬殑鑺傜偣锛氳櫄鎷?sink 鍜岃櫄鎷?source銆傝繖浜涜妭鐐逛綅浜?`/sys/bus/coresight/devices`銆?
 ```
 
     $ ls -l /sys/bus/coresight/devices | grep dummy

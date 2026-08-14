@@ -1,15 +1,14 @@
-
+﻿
 
 
 ######## ioctl VIDIOC_SUBSCRIBE_EVENT, VIDIOC_UNSUBSCRIBE_EVENT
 
 
-## 名称
+## 鍚嶇О
 
 
-VIDIOC_SUBSCRIBE_EVENT - VIDIOC_UNSUBSCRIBE_EVENT - 订阅或取消订阅事件
-
-## 概要
+VIDIOC_SUBSCRIBE_EVENT - VIDIOC_UNSUBSCRIBE_EVENT - 璁㈤槄鎴栧彇娑堣闃呬簨浠?
+## 姒傝
 
 
 
@@ -18,21 +17,18 @@ VIDIOC_SUBSCRIBE_EVENT - VIDIOC_UNSUBSCRIBE_EVENT - 订阅或取消订阅事件
 
 `int ioctl(int fd, VIDIOC_UNSUBSCRIBE_EVENT, struct v4l2_event_subscription *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
-
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `argp`
-    指向结构体 `v4l2_event_subscription` 的指针。
+    鎸囧悜缁撴瀯浣?`v4l2_event_subscription` 鐨勬寚閽堛€?
+## 鎻忚堪
 
-## 描述
 
-
-订阅或取消订阅 V4L2 事件。已订阅的事件通过 VIDIOC_DQEVENT ioctl 出队。
-
+璁㈤槄鎴栧彇娑堣闃?V4L2 浜嬩欢銆傚凡璁㈤槄鐨勪簨浠堕€氳繃 VIDIOC_DQEVENT ioctl 鍑洪槦銆?
 
 
     :header-rows:  0
@@ -41,22 +37,17 @@ VIDIOC_SUBSCRIBE_EVENT - VIDIOC_UNSUBSCRIBE_EVENT - 订阅或取消订阅事件
 
     - - __u32
       - `type`
-      - 事件的类型，参见 event-type。
-```
-	   ``V4L2_EVENT_ALL`` 可与
-	   :ref:`VIDIOC_UNSUBSCRIBE_EVENT <VIDIOC_SUBSCRIBE_EVENT>` 一起使用，
-	   用于一次性取消订阅所有事件。
-    * - __u32
+      - 浜嬩欢鐨勭被鍨嬶紝鍙傝 event-type銆?```
+	   ``V4L2_EVENT_ALL`` 鍙笌
+	   :ref:`VIDIOC_UNSUBSCRIBE_EVENT <VIDIOC_SUBSCRIBE_EVENT>` 涓€璧蜂娇鐢紝
+	   鐢ㄤ簬涓€娆℃€у彇娑堣闃呮墍鏈変簨浠躲€?    * - __u32
       - ``id``
-      - 事件源的 ID。如果事件源没有关联的 ID，则将其设为 0。事件是否需要 ID
-	取决于事件类型。
-    * - __u32
+      - 浜嬩欢婧愮殑 ID銆傚鏋滀簨浠舵簮娌℃湁鍏宠仈鐨?ID锛屽垯灏嗗叾璁句负 0銆備簨浠舵槸鍚﹂渶瑕?ID
+	鍙栧喅浜庝簨浠剁被鍨嬨€?    * - __u32
       - ``flags``
-      - 事件标志，参见 :ref:`event-flags`。
-    * - __u32
+      - 浜嬩欢鏍囧織锛屽弬瑙?:ref:`event-flags`銆?    * - __u32
       - ``reserved``\ [5]
-      - 保留以备将来扩展。驱动和应用程序都必须将该数组置零。
-
+      - 淇濈暀浠ュ灏嗘潵鎵╁睍銆傞┍鍔ㄥ拰搴旂敤绋嬪簭閮藉繀椤诲皢璇ユ暟缁勭疆闆躲€?
 
 ```
 
@@ -66,22 +57,15 @@ VIDIOC_SUBSCRIBE_EVENT - VIDIOC_UNSUBSCRIBE_EVENT - 订阅或取消订阅事件
 
     - - `V4L2_EVENT_SUB_FL_SEND_INITIAL`
       - 0x0001
-      - 当订阅此事件时，会发送一个包含当前状态的初始事件。这仅对由状态变化触发的事件
-	（如 `V4L2_EVENT_CTRL`）有意义。其他事件会忽略此标志。
-    - - `V4L2_EVENT_SUB_FL_ALLOW_FEEDBACK`
+      - 褰撹闃呮浜嬩欢鏃讹紝浼氬彂閫佷竴涓寘鍚綋鍓嶇姸鎬佺殑鍒濆浜嬩欢銆傝繖浠呭鐢辩姸鎬佸彉鍖栬Е鍙戠殑浜嬩欢
+	锛堝 `V4L2_EVENT_CTRL`锛夋湁鎰忎箟銆傚叾浠栦簨浠朵細蹇界暐姝ゆ爣蹇椼€?    - - `V4L2_EVENT_SUB_FL_ALLOW_FEEDBACK`
       - 0x0002
-      - 若设置，则直接由 ioctl 引起的事件也会发送给调用该 ioctl 的文件句柄。例如，
-	使用 VIDIOC_S_CTRL <VIDIOC_G_CTRL> 改变一个控件会导致一个 V4L2_EVENT_CTRL 被
-	发送回同一个文件句柄。
-	通常此类事件会被抑制，以防止反馈环路：一个应用程序将某个控件改为一个值，
-	然后又改为另一个值，接着收到一个事件告诉它该控件已变回第一个值。
+      - 鑻ヨ缃紝鍒欑洿鎺ョ敱 ioctl 寮曡捣鐨勪簨浠朵篃浼氬彂閫佺粰璋冪敤璇?ioctl 鐨勬枃浠跺彞鏌勩€備緥濡傦紝
+	浣跨敤 VIDIOC_S_CTRL <VIDIOC_G_CTRL> 鏀瑰彉涓€涓帶浠朵細瀵艰嚧涓€涓?V4L2_EVENT_CTRL 琚?	鍙戦€佸洖鍚屼竴涓枃浠跺彞鏌勩€?	閫氬父姝ょ被浜嬩欢浼氳鎶戝埗锛屼互闃叉鍙嶉鐜矾锛氫竴涓簲鐢ㄧ▼搴忓皢鏌愪釜鎺т欢鏀逛负涓€涓€硷紝
+	鐒跺悗鍙堟敼涓哄彟涓€涓€硷紝鎺ョ潃鏀跺埌涓€涓簨浠跺憡璇夊畠璇ユ帶浠跺凡鍙樺洖绗竴涓€笺€?
+	鐢变簬瀹冩棤娉曞垽鏂浜嬩欢鏄敱鍙︿竴涓簲鐢ㄧ▼搴忓紩璧风殑锛岃繕鏄敱 VIDIOC_S_CTRL <VIDIOC_G_CTRL>
+	璋冪敤寮曡捣鐨勶紝鍥犳寰堥毦鍐冲畾鏄皢鎺т欢璁句负浜嬩欢涓殑鍊硷紝杩樻槸蹇界暐瀹冦€?
+	璁剧疆姝ゆ爣蹇楁椂璇蜂粩缁嗚€冭檻锛屼互鍏嶉櫡鍏ユ绫绘儏褰€?
+## 杩斿洖鍊?
 
-	由于它无法判断该事件是由另一个应用程序引起的，还是由 VIDIOC_S_CTRL <VIDIOC_G_CTRL>
-	调用引起的，因此很难决定是将控件设为事件中的值，还是忽略它。
-
-	设置此标志时请仔细考虑，以免陷入此类情形。
-
-## 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在通用错误码 <gen-errors> 一章中描述。
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪閫氱敤閿欒鐮?<gen-errors> 涓€绔犱腑鎻忚堪銆?

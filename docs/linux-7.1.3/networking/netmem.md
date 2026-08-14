@@ -1,72 +1,40 @@
-
-## 网络驱动的 Netmem 支持
-
-
-本文档概述了网络驱动支持 netmem 的要求，netmem 是一种抽象的内存类型，能够支持诸如设备内存 TCP 等
-特性。通过支持 netmem，驱动可以以很少甚至无需修改的方式，配合各种底层内存类型工作。
-
-Netmem 的好处：
-
-- 灵活性：Netmem 可以由不同的内存类型（例如 struct page、DMA-buf）作为后端，使驱动能够支持各种
-  用例，例如设备内存 TCP。
-- 面向未来：带有 netmem 支持的驱动已为依赖它的后续特性做好准备。
-- 简化开发：无论底层内存实现如何，驱动都通过一致的 API 进行交互。
-
-## 驱动 RX 要求
+﻿
+## 缃戠粶椹卞姩鐨?Netmem 鏀寔
 
 
-1. 驱动必须支持 page_pool。
+鏈枃妗ｆ杩颁簡缃戠粶椹卞姩鏀寔 netmem 鐨勮姹傦紝netmem 鏄竴绉嶆娊璞＄殑鍐呭瓨绫诲瀷锛岃兘澶熸敮鎸佽濡傝澶囧唴瀛?TCP 绛?鐗规€с€傞€氳繃鏀寔 netmem锛岄┍鍔ㄥ彲浠ヤ互寰堝皯鐢氳嚦鏃犻渶淇敼鐨勬柟寮忥紝閰嶅悎鍚勭搴曞眰鍐呭瓨绫诲瀷宸ヤ綔銆?
+Netmem 鐨勫ソ澶勶細
 
-2. 驱动必须支持 tcp-data-split ethtool 选项。
+- 鐏垫椿鎬э細Netmem 鍙互鐢变笉鍚岀殑鍐呭瓨绫诲瀷锛堜緥濡?struct page銆丏MA-buf锛変綔涓哄悗绔紝浣块┍鍔ㄨ兘澶熸敮鎸佸悇绉?  鐢ㄤ緥锛屼緥濡傝澶囧唴瀛?TCP銆?- 闈㈠悜鏈潵锛氬甫鏈?netmem 鏀寔鐨勯┍鍔ㄥ凡涓轰緷璧栧畠鐨勫悗缁壒鎬у仛濂藉噯澶囥€?- 绠€鍖栧紑鍙戯細鏃犺搴曞眰鍐呭瓨瀹炵幇濡備綍锛岄┍鍔ㄩ兘閫氳繃涓€鑷寸殑 API 杩涜浜や簰銆?
+## 椹卞姩 RX 瑕佹眰
 
-3. 驱动必须为有效载荷内存使用 page_pool 的 netmem API。netmem API 当前与 page API 一一对应。
-   转换为 netmem 应当可以通过将 page API 切换为 netmem API，并在驱动中通过 netmem_refs 而非
-   struct page * 来跟踪内存来实现：
 
+1. 椹卞姩蹇呴』鏀寔 page_pool銆?
+2. 椹卞姩蹇呴』鏀寔 tcp-data-split ethtool 閫夐」銆?
+3. 椹卞姩蹇呴』涓烘湁鏁堣浇鑽峰唴瀛樹娇鐢?page_pool 鐨?netmem API銆俷etmem API 褰撳墠涓?page API 涓€涓€瀵瑰簲銆?   杞崲涓?netmem 搴斿綋鍙互閫氳繃灏?page API 鍒囨崲涓?netmem API锛屽苟鍦ㄩ┍鍔ㄤ腑閫氳繃 netmem_refs 鑰岄潪
+   struct page * 鏉ヨ窡韪唴瀛樻潵瀹炵幇锛?
    - page_pool_alloc -> page_pool_alloc_netmem
    - page_pool_get_dma_addr -> page_pool_get_dma_addr_netmem
    - page_pool_put_page -> page_pool_put_netmem
 
-   目前并非所有 page API 都有对应的 netmem 版本。如果你的驱动依赖某个缺失的 netmem API，欢迎
-   自行添加并提交到 netdev@，或者联系维护者和/或 almasrymina@google.com 以寻求帮助添加该 netmem API。
-
-4. 驱动必须使用以下 PP_FLAGS：
-
-   - PP_FLAG_DMA_MAP：netmem 不能被驱动进行 dma 映射。驱动必须将 dma 映射委托给 page_pool，它知道
-     何时（或不）适合进行 dma 映射。
-   - PP_FLAG_DMA_SYNC_DEV：netmem 的 dma 地址不一定能被驱动进行 dma 同步。驱动必须将 dma 同步委托给
-     page_pool，它知道何时（或不）适合进行 dma 同步。
-   - PP_FLAG_ALLOW_UNREADABLE_NETMEM。仅当启用了 tcp-data-split 时，驱动才必须指定此标志。
-
-5. 驱动不得假定 netmem 是可读的且/或由页作为后端。page_pool 返回的 netmem 可能是不可读的，此时
-   netmem_address() 将返回 NULL。驱动必须正确处理不可读的 netmem，即当 netmem_address() 为 NULL 时，
-   不要尝试处理其内容。
-
-   理想情况下，驱动不必通过像 netmem_is_net_iov() 这样的辅助函数检查底层 netmem 类型，也不必通过
-   netmem_to_page() 或 netmem_to_net_iov() 将 netmem 转换为它的任何底层类型。在大多数情况下，提供了
-   抽象了这种复杂性的 netmem 或 page_pool 辅助函数（而且还可以添加更多）。
-
-6. 驱动必须使用 page_pool_dma_sync_netmem_for_cpu() 来代替 dma_sync_single_range_for_cpu()。对于某些
-   内存提供方，面向 CPU 的 dma 同步将由 page_pool 完成；对于其他提供方（特别是 dmabuf 内存提供方），
-   面向 CPU 的 dma 同步由使用 dmabuf API 的用户空间负责。驱动必须将整个 dma 同步操作委托给 page_pool，
-   它会正确地完成。
-
-7. 避免基于 page_pool 实现驱动特定的回收。驱动不能持有一个 struct page 来做自己的回收，因为 netmem
-   可能不是由 struct page 作为后端的。不过，你可以为此目的通过 page_pool_fragment_netmem() 或
-   page_pool_ref_netmem() 持有一个 page_pool 引用，但要注意某些 netmem 类型可能有更长的流转时间，
-   例如在零拷贝场景中用户空间持有引用时。
-
-## 驱动 TX 要求
+   鐩墠骞堕潪鎵€鏈?page API 閮芥湁瀵瑰簲鐨?netmem 鐗堟湰銆傚鏋滀綘鐨勯┍鍔ㄤ緷璧栨煇涓己澶辩殑 netmem API锛屾杩?   鑷娣诲姞骞舵彁浜ゅ埌 netdev@锛屾垨鑰呰仈绯荤淮鎶よ€呭拰/鎴?almasrymina@google.com 浠ュ姹傚府鍔╂坊鍔犺 netmem API銆?
+4. 椹卞姩蹇呴』浣跨敤浠ヤ笅 PP_FLAGS锛?
+   - PP_FLAG_DMA_MAP锛歯etmem 涓嶈兘琚┍鍔ㄨ繘琛?dma 鏄犲皠銆傞┍鍔ㄥ繀椤诲皢 dma 鏄犲皠濮旀墭缁?page_pool锛屽畠鐭ラ亾
+     浣曟椂锛堟垨涓嶏級閫傚悎杩涜 dma 鏄犲皠銆?   - PP_FLAG_DMA_SYNC_DEV锛歯etmem 鐨?dma 鍦板潃涓嶄竴瀹氳兘琚┍鍔ㄨ繘琛?dma 鍚屾銆傞┍鍔ㄥ繀椤诲皢 dma 鍚屾濮旀墭缁?     page_pool锛屽畠鐭ラ亾浣曟椂锛堟垨涓嶏級閫傚悎杩涜 dma 鍚屾銆?   - PP_FLAG_ALLOW_UNREADABLE_NETMEM銆備粎褰撳惎鐢ㄤ簡 tcp-data-split 鏃讹紝椹卞姩鎵嶅繀椤绘寚瀹氭鏍囧織銆?
+5. 椹卞姩涓嶅緱鍋囧畾 netmem 鏄彲璇荤殑涓?鎴栫敱椤典綔涓哄悗绔€俻age_pool 杩斿洖鐨?netmem 鍙兘鏄笉鍙鐨勶紝姝ゆ椂
+   netmem_address() 灏嗚繑鍥?NULL銆傞┍鍔ㄥ繀椤绘纭鐞嗕笉鍙鐨?netmem锛屽嵆褰?netmem_address() 涓?NULL 鏃讹紝
+   涓嶈灏濊瘯澶勭悊鍏跺唴瀹广€?
+   鐞嗘兂鎯呭喌涓嬶紝椹卞姩涓嶅繀閫氳繃鍍?netmem_is_net_iov() 杩欐牱鐨勮緟鍔╁嚱鏁版鏌ュ簳灞?netmem 绫诲瀷锛屼篃涓嶅繀閫氳繃
+   netmem_to_page() 鎴?netmem_to_net_iov() 灏?netmem 杞崲涓哄畠鐨勪换浣曞簳灞傜被鍨嬨€傚湪澶у鏁版儏鍐典笅锛屾彁渚涗簡
+   鎶借薄浜嗚繖绉嶅鏉傛€х殑 netmem 鎴?page_pool 杈呭姪鍑芥暟锛堣€屼笖杩樺彲浠ユ坊鍔犳洿澶氾級銆?
+6. 椹卞姩蹇呴』浣跨敤 page_pool_dma_sync_netmem_for_cpu() 鏉ヤ唬鏇?dma_sync_single_range_for_cpu()銆傚浜庢煇浜?   鍐呭瓨鎻愪緵鏂癸紝闈㈠悜 CPU 鐨?dma 鍚屾灏嗙敱 page_pool 瀹屾垚锛涘浜庡叾浠栨彁渚涙柟锛堢壒鍒槸 dmabuf 鍐呭瓨鎻愪緵鏂癸級锛?   闈㈠悜 CPU 鐨?dma 鍚屾鐢变娇鐢?dmabuf API 鐨勭敤鎴风┖闂磋礋璐ｃ€傞┍鍔ㄥ繀椤诲皢鏁翠釜 dma 鍚屾鎿嶄綔濮旀墭缁?page_pool锛?   瀹冧細姝ｇ‘鍦板畬鎴愩€?
+7. 閬垮厤鍩轰簬 page_pool 瀹炵幇椹卞姩鐗瑰畾鐨勫洖鏀躲€傞┍鍔ㄤ笉鑳芥寔鏈変竴涓?struct page 鏉ュ仛鑷繁鐨勫洖鏀讹紝鍥犱负 netmem
+   鍙兘涓嶆槸鐢?struct page 浣滀负鍚庣鐨勩€備笉杩囷紝浣犲彲浠ヤ负姝ょ洰鐨勯€氳繃 page_pool_fragment_netmem() 鎴?   page_pool_ref_netmem() 鎸佹湁涓€涓?page_pool 寮曠敤锛屼絾瑕佹敞鎰忔煇浜?netmem 绫诲瀷鍙兘鏈夋洿闀跨殑娴佽浆鏃堕棿锛?   渚嬪鍦ㄩ浂鎷疯礉鍦烘櫙涓敤鎴风┖闂存寔鏈夊紩鐢ㄦ椂銆?
+## 椹卞姩 TX 瑕佹眰
 
 
-1. 驱动不得直接将 netmem 的 dma_addr 传递给任何 dma-mapping API。这是因为 netmem 的 dma_addr 可能来自
-   像 dma-buf 这样与 dma-mapping API 不兼容的源。
-
-   应使用像 netmem_dma_unmap_page_attrs() 与 netmem_dma_unmap_addr_set() 这样的辅助函数，来代替
-   dma_unmap_page[_attrs]()、dma_unmap_addr_set()。无论来源如何，netmem 变体都会正确处理 netmem 的
-   dma_addr，并在适当时委托给 dma-mapping API。
-
-   目前并非所有 dma-mapping API 都有对应的 netmem 版本。如果你的驱动依赖某个缺失的 netmem API，欢迎
-   自行添加并提交到 netdev@，或者联系维护者和/或 almasrymina@google.com 以寻求帮助添加该 netmem API。
-
-2. 驱动应通过设置 `netdev->netmem_tx = true` 来声明支持。
+1. 椹卞姩涓嶅緱鐩存帴灏?netmem 鐨?dma_addr 浼犻€掔粰浠讳綍 dma-mapping API銆傝繖鏄洜涓?netmem 鐨?dma_addr 鍙兘鏉ヨ嚜
+   鍍?dma-buf 杩欐牱涓?dma-mapping API 涓嶅吋瀹圭殑婧愩€?
+   搴斾娇鐢ㄥ儚 netmem_dma_unmap_page_attrs() 涓?netmem_dma_unmap_addr_set() 杩欐牱鐨勮緟鍔╁嚱鏁帮紝鏉ヤ唬鏇?   dma_unmap_page[_attrs]()銆乨ma_unmap_addr_set()銆傛棤璁烘潵婧愬浣曪紝netmem 鍙樹綋閮戒細姝ｇ‘澶勭悊 netmem 鐨?   dma_addr锛屽苟鍦ㄩ€傚綋鏃跺鎵樼粰 dma-mapping API銆?
+   鐩墠骞堕潪鎵€鏈?dma-mapping API 閮芥湁瀵瑰簲鐨?netmem 鐗堟湰銆傚鏋滀綘鐨勯┍鍔ㄤ緷璧栨煇涓己澶辩殑 netmem API锛屾杩?   鑷娣诲姞骞舵彁浜ゅ埌 netdev@锛屾垨鑰呰仈绯荤淮鎶よ€呭拰/鎴?almasrymina@google.com 浠ュ姹傚府鍔╂坊鍔犺 netmem API銆?
+2. 椹卞姩搴旈€氳繃璁剧疆 `netdev->netmem_tx = true` 鏉ュ０鏄庢敮鎸併€?

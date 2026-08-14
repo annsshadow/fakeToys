@@ -1,18 +1,14 @@
-
+﻿
 ## batman-adv
 
 
-Batman advanced 是一种不再基于 IP 的无线网络新方法。与 batman 守护进程使用 UDP 包交换信息
-并设置路由表不同，batman-advanced 仅运行在 ISO/OSI 第二层，并使用、路由（或更准确地说：
-桥接）以太网帧。它模拟所有参与节点的虚拟网络交换机。因此所有节点看起来都是链路本地的，
-于是所有更高层的协议都不会受网络内部任何变化的影响。你几乎可以在 batman advanced 之上运行
-任何协议，显著的例子有：IPv4、IPv6、DHCP、IPX。
+Batman advanced 鏄竴绉嶄笉鍐嶅熀浜?IP 鐨勬棤绾跨綉缁滄柊鏂规硶銆備笌 batman 瀹堟姢杩涚▼浣跨敤 UDP 鍖呬氦鎹俊鎭?骞惰缃矾鐢辫〃涓嶅悓锛宐atman-advanced 浠呰繍琛屽湪 ISO/OSI 绗簩灞傦紝骞朵娇鐢ㄣ€佽矾鐢憋紙鎴栨洿鍑嗙‘鍦拌锛?妗ユ帴锛変互澶綉甯с€傚畠妯℃嫙鎵€鏈夊弬涓庤妭鐐圭殑铏氭嫙缃戠粶浜ゆ崲鏈恒€傚洜姝ゆ墍鏈夎妭鐐圭湅璧锋潵閮芥槸閾捐矾鏈湴鐨勶紝
+浜庢槸鎵€鏈夋洿楂樺眰鐨勫崗璁兘涓嶄細鍙楃綉缁滃唴閮ㄤ换浣曞彉鍖栫殑褰卞搷銆備綘鍑犱箮鍙互鍦?batman advanced 涔嬩笂杩愯
+浠讳綍鍗忚锛屾樉钁楃殑渚嬪瓙鏈夛細IPv4銆両Pv6銆丏HCP銆両PX銆?
+Batman advanced 琚疄鐜颁负 Linux 鍐呮牳椹卞姩锛屼互灏嗗紑閿€闄嶅埌鏈€浣庛€傚畠涓嶄緷璧栦换浣曪紙鍏跺畠锛夌綉缁滈┍鍔紝
+鍙敤浜?wifi 浠ュ強浠ュお缃?LAN銆乂PN 绛夆€︹€︼紙浠讳綍鍏锋湁浠ュお缃戦鏍肩浜屽眰鐨勪粙璐級銆?
 
-Batman advanced 被实现为 Linux 内核驱动，以将开销降到最低。它不依赖任何（其它）网络驱动，
-可用于 wifi 以及以太网 LAN、VPN 等……（任何具有以太网风格第二层的介质）。
-
-
-## 配置
+## 閰嶇疆
 
 
 ```
@@ -20,8 +16,8 @@ Batman advanced 被实现为 Linux 内核驱动，以将开销降到最低。它
   $ insmod batman-adv.ko
 
 ```
-模块现在正在等待激活。你必须添加一些 batman-adv 可以在其上运行的接口。batman-adv 网格接口
-可以使用以下命令创建
+妯″潡鐜板湪姝ｅ湪绛夊緟婵€娲汇€備綘蹇呴』娣诲姞涓€浜?batman-adv 鍙互鍦ㄥ叾涓婅繍琛岀殑鎺ュ彛銆俠atman-adv 缃戞牸鎺ュ彛
+鍙互浣跨敤浠ヤ笅鍛戒护鍒涘缓
 ```
 
   $ ip link add name bat0 type batadv
@@ -32,8 +28,7 @@ Batman advanced 被实现为 Linux 内核驱动，以将开销降到最低。它
   $ ip link set dev eth0 master bat0
 
 ```
-对所有希望添加的接口重复此步骤。现在 batman-adv 开始在此/这些接口上使用/广播。
-
+瀵规墍鏈夊笇鏈涙坊鍔犵殑鎺ュ彛閲嶅姝ゆ楠ゃ€傜幇鍦?batman-adv 寮€濮嬪湪姝?杩欎簺鎺ュ彛涓婁娇鐢?骞挎挱銆?
 ```
 
   $ ip link set dev eth0 nomaster
@@ -51,11 +46,9 @@ Batman advanced 被实现为 Linux 内核驱动，以将开销降到最低。它
   batctl -m bat0 interface destroy
 
 ```
-每个 batadv 网格接口、vlan 和 hardif 都有额外的设置，可以使用 batctl 修改。关于此的详细信息
-可在这份手册中找到。
-
-例如，你可以检查当前的源节点间隔（origination interval，以毫秒为单位的值，决定 batman-adv
-发送其广播的频率）
+姣忎釜 batadv 缃戞牸鎺ュ彛銆乿lan 鍜?hardif 閮芥湁棰濆鐨勮缃紝鍙互浣跨敤 batctl 淇敼銆傚叧浜庢鐨勮缁嗕俊鎭?鍙湪杩欎唤鎵嬪唽涓壘鍒般€?
+渚嬪锛屼綘鍙互妫€鏌ュ綋鍓嶇殑婧愯妭鐐归棿闅旓紙origination interval锛屼互姣涓哄崟浣嶇殑鍊硷紝鍐冲畾 batman-adv
+鍙戦€佸叾骞挎挱鐨勯鐜囷級
 ```
 
   $ batctl -M bat0 orig_interval
@@ -67,21 +60,17 @@ Batman advanced 被实现为 Linux 内核驱动，以将开销降到最低。它
   $ batctl -M bat0 orig_interval 3000
 
 ```
-在高度移动的场景中，你可能希望把源节点间隔调低。这将使网格对拓扑变化更敏感，但也会增加开销。
+鍦ㄩ珮搴︾Щ鍔ㄧ殑鍦烘櫙涓紝浣犲彲鑳藉笇鏈涙妸婧愯妭鐐归棿闅旇皟浣庛€傝繖灏嗕娇缃戞牸瀵规嫇鎵戝彉鍖栨洿鏁忔劅锛屼絾涔熶細澧炲姞寮€閿€銆?
+鍏充簬褰撳墠鐘舵€佺殑淇℃伅鍙互閫氳繃 batadv 閫氱敤 netlink 绯诲垪璁块棶銆俠atctl 閫氳繃鍏惰皟璇曡〃锛坉ebug tables锛?瀛愬懡浠ゆ彁渚涗簡涓€涓汉绫诲彲璇荤殑鐗堟湰銆?
 
-关于当前状态的信息可以通过 batadv 通用 netlink 系列访问。batctl 通过其调试表（debug tables）
-子命令提供了一个人类可读的版本。
-
-
-## 使用
+## 浣跨敤
 
 
-要使用你新创建的网格，batman advanced 提供了一个新的接口 "bat0"，从此你应该使用它。所有添加到
-batman advanced 的接口都不再相关，因为 batman 会为你处理它们。基本上，人们通过使用 batman
-接口来“交出”数据，batman 会确保它到达目的地。
-
-"bat0" 接口可以像任何其它常规接口一样使用。它需要一个 IP 地址，可以是静态配置，也可以是
-动态获取（通过使用
+瑕佷娇鐢ㄤ綘鏂板垱寤虹殑缃戞牸锛宐atman advanced 鎻愪緵浜嗕竴涓柊鐨勬帴鍙?"bat0"锛屼粠姝や綘搴旇浣跨敤瀹冦€傛墍鏈夋坊鍔犲埌
+batman advanced 鐨勬帴鍙ｉ兘涓嶅啀鐩稿叧锛屽洜涓?batman 浼氫负浣犲鐞嗗畠浠€傚熀鏈笂锛屼汉浠€氳繃浣跨敤 batman
+鎺ュ彛鏉モ€滀氦鍑衡€濇暟鎹紝batman 浼氱‘淇濆畠鍒拌揪鐩殑鍦般€?
+"bat0" 鎺ュ彛鍙互鍍忎换浣曞叾瀹冨父瑙勬帴鍙ｄ竴鏍蜂娇鐢ㄣ€傚畠闇€瑕佷竴涓?IP 鍦板潃锛屽彲浠ユ槸闈欐€侀厤缃紝涔熷彲浠ユ槸
+鍔ㄦ€佽幏鍙栵紙閫氳繃浣跨敤
 ```
 
   NodeA: ip link set up dev bat0
@@ -92,42 +81,35 @@ batman advanced 的接口都不再相关，因为 batman 会为你处理它们�
   NodeB: ping 192.168.0.1
 
 ```
-注意：为避免问题，请移除之前分配给
-```
+娉ㄦ剰锛氫负閬垮厤闂锛岃绉婚櫎涔嬪墠鍒嗛厤缁?```
 
   $ ip addr flush dev eth0
 
 
 ```
-## 日志/调试
+## 鏃ュ織/璋冭瘯
 
 
-所有错误消息、警告和信息消息都被发送到内核日志。根据你操作系统的发行版，可以通过多种方式来
-读取。尝试使用这些命令：`dmesg`、`logread`，或查看文件 `/var/log/kern.log` 或
-`/var/log/syslog`。所有 batman-adv 消息
+鎵€鏈夐敊璇秷鎭€佽鍛婂拰淇℃伅娑堟伅閮借鍙戦€佸埌鍐呮牳鏃ュ織銆傛牴鎹綘鎿嶄綔绯荤粺鐨勫彂琛岀増锛屽彲浠ラ€氳繃澶氱鏂瑰紡鏉?璇诲彇銆傚皾璇曚娇鐢ㄨ繖浜涘懡浠わ細`dmesg`銆乣logread`锛屾垨鏌ョ湅鏂囦欢 `/var/log/kern.log` 鎴?`/var/log/syslog`銆傛墍鏈?batman-adv 娑堟伅
 ```
 
   $ dmesg | grep batman-adv
 
 ```
-在研究网格网络的问题时，有时需要查看更详细的调试消息。这必须在编译 batman-adv 模块时启用。
-当把 batman-adv 作为内核的一部分构建时，使用 "make menuconfig" 并启用选项
-`B.A.T.M.A.N. debugging`（`CONFIG_BATMAN_ADV_DEBUG=y`）。
-
+鍦ㄧ爺绌剁綉鏍肩綉缁滅殑闂鏃讹紝鏈夋椂闇€瑕佹煡鐪嬫洿璇︾粏鐨勮皟璇曟秷鎭€傝繖蹇呴』鍦ㄧ紪璇?batman-adv 妯″潡鏃跺惎鐢ㄣ€?褰撴妸 batman-adv 浣滀负鍐呮牳鐨勪竴閮ㄥ垎鏋勫缓鏃讹紝浣跨敤 "make menuconfig" 骞跺惎鐢ㄩ€夐」
+`B.A.T.M.A.N. debugging`锛坄CONFIG_BATMAN_ADV_DEBUG=y`锛夈€?
 ```
 
   $ trace-cmd stream -e batadv:batadv_dbg
 
 ```
-额外调试输出默认是关闭的。它可以在
-```
+棰濆璋冭瘯杈撳嚭榛樿鏄叧闂殑銆傚畠鍙互鍦?```
 
   $ batctl -m bat0 loglevel routes tt
 
 ```
-时启用，将为路由和转换表（translation table）条目变化时启用调试消息。
-
-进入和离开 batman-adv 的不同类型数据包的计数器
+鏃跺惎鐢紝灏嗕负璺敱鍜岃浆鎹㈣〃锛坱ranslation table锛夋潯鐩彉鍖栨椂鍚敤璋冭瘯娑堟伅銆?
+杩涘叆鍜岀寮€ batman-adv 鐨勪笉鍚岀被鍨嬫暟鎹寘鐨勮鏁板櫒
 ```
 
   $ ethtool --statistics bat0
@@ -137,27 +119,20 @@ batman advanced 的接口都不再相关，因为 batman 会为你处理它们�
 ## batctl
 
 
-由于 batman advanced 运行在第二层，参与虚拟交换机的所有主机对所有第二层之上的协议完全透明。
-因此常用的诊断工具无法按预期工作。为了克服这些问题，创建了 batctl。目前 batctl 包含 ping、
-traceroute、tcpdump 以及到内核模块设置的接口。
+鐢变簬 batman advanced 杩愯鍦ㄧ浜屽眰锛屽弬涓庤櫄鎷熶氦鎹㈡満鐨勬墍鏈変富鏈哄鎵€鏈夌浜屽眰涔嬩笂鐨勫崗璁畬鍏ㄩ€忔槑銆?鍥犳甯哥敤鐨勮瘖鏂伐鍏锋棤娉曟寜棰勬湡宸ヤ綔銆備负浜嗗厠鏈嶈繖浜涢棶棰橈紝鍒涘缓浜?batctl銆傜洰鍓?batctl 鍖呭惈 ping銆?traceroute銆乼cpdump 浠ュ強鍒板唴鏍告ā鍧楄缃殑鎺ュ彛銆?
+鏇村淇℃伅璇峰弬闃呮墜鍐岄〉锛坄man batctl`锛夈€?
+batctl 鍙湪 https://www.open-mesh.org/ 鑾峰彇銆?
 
-更多信息请参阅手册页（`man batctl`）。
-
-batctl 可在 https://www.open-mesh.org/ 获取。
+## 鑱旂郴鏂瑰紡
 
 
-## 联系方式
-
-
-请向我们发送评论、经验、问题，任何内容都可以 :)
+璇峰悜鎴戜滑鍙戦€佽瘎璁恒€佺粡楠屻€侀棶棰橈紝浠讳綍鍐呭閮藉彲浠?:)
 
 IRC:
   #batadv on ircs://irc.hackint.org/
 Mailing-list:
-  b.a.t.m.a.n@lists.open-mesh.org（可选订阅地址：
-  https://lists.open-mesh.org/mailman3/postorius/lists/b.a.t.m.a.n.lists.open-mesh.org/）
-
-你也可以联系作者：
+  b.a.t.m.a.n@lists.open-mesh.org锛堝彲閫夎闃呭湴鍧€锛?  https://lists.open-mesh.org/mailman3/postorius/lists/b.a.t.m.a.n.lists.open-mesh.org/锛?
+浣犱篃鍙互鑱旂郴浣滆€咃細
 
 - Marek Lindner <marek.lindner@mailbox.org>
 - Simon Wunderlich <sw@simonwunderlich.de>

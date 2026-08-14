@@ -1,20 +1,12 @@
-## Shrinker Debugfs 接口
+﻿## Shrinker Debugfs 鎺ュ彛
 
 
-Shrinker debugfs 接口提供了对内核内存 shrinker（内存回收器）子系统的
-可见性，并允许获取单个 shrinker 的信息以及与之交互。
+Shrinker debugfs 鎺ュ彛鎻愪緵浜嗗鍐呮牳鍐呭瓨 shrinker锛堝唴瀛樺洖鏀跺櫒锛夊瓙绯荤粺鐨?鍙鎬э紝骞跺厑璁歌幏鍙栧崟涓?shrinker 鐨勪俊鎭互鍙婁笌涔嬩氦浜掋€?
+绯荤粺涓敞鍐岀殑姣忎釜 shrinker 閮戒細鍦?**<debugfs>/shrinker/** 涓嬪垱寤轰竴涓洰褰曘€?鐩綍鍚嶇敱 shrinker 鐨勫悕绉板拰涓€涓敮涓€ id 缁勬垚锛氫緥濡?**kfree_rcu-0** 鎴?**sb-xfs:vda1-36**銆?
+姣忎釜 shrinker 鐩綍鍖呭惈 **count** 鍜?**scan** 鏂囦欢锛岀敤浜庝负姣忎釜 memcg 鍜?numa 鑺傜偣锛堝閫傜敤锛夎Е鍙?**count_objects()** 鍜?**scan_objects()** 鍥炶皟銆?
+### 鐢ㄦ硶锛?
 
-系统中注册的每个 shrinker 都会在 **<debugfs>/shrinker/** 下创建一个目录。
-目录名由 shrinker 的名称和一个唯一 id 组成：例如 **kfree_rcu-0** 或
-**sb-xfs:vda1-36**。
-
-每个 shrinker 目录包含 **count** 和 **scan** 文件，用于为每个 memcg 和
-numa 节点（如适用）触发 **count_objects()** 和 **scan_objects()** 回调。
-
-### 用法：
-
-
-1. **列出已注册的 shrinker**
+1. **鍒楀嚭宸叉敞鍐岀殑 shrinker**
 
 ```
     $ cd /sys/kernel/debug/shrinker/
@@ -34,7 +26,7 @@ numa 节点（如适用）触发 **count_objects()** 和 **scan_objects()** 回�
     sb-debugfs-7        sb-proc-46       sb-tmpfs-40
 ```
 
-2. **获取特定 shrinker 的信息**
+2. **鑾峰彇鐗瑰畾 shrinker 鐨勪俊鎭?*
 
 ```
     $ cd sb-btrfs\:vda2-24/
@@ -42,7 +34,7 @@ numa 节点（如适用）触发 **count_objects()** 和 **scan_objects()** 回�
     count            scan
 ```
 
-3. **统计对象**
+3. **缁熻瀵硅薄**
 
 ```
     <cgroup inode id> <nr of objects on node 0> <nr of objects on node 1> ...
@@ -100,7 +92,7 @@ numa 节点（如适用）触发 **count_objects()** 和 **scan_objects()** 回�
     735 8 0
 ```
 
-4. **扫描对象**
+4. **鎵弿瀵硅薄**
 
 ```
     <cgroup inode id> <numa id> <number of objects to scan>

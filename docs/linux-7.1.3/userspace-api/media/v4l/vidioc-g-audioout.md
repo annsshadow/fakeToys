@@ -1,12 +1,11 @@
-######## ioctl VIDIOC_G_AUDOUT, VIDIOC_S_AUDOUT
+﻿######## ioctl VIDIOC_G_AUDOUT, VIDIOC_S_AUDOUT
 
 
-## 名称
+## 鍚嶇О
 
 
-VIDIOC_G_AUDOUT - VIDIOC_S_AUDOUT - 查询或选择当前的音频输出
-
-## 摘要
+VIDIOC_G_AUDOUT - VIDIOC_S_AUDOUT - 鏌ヨ鎴栭€夋嫨褰撳墠鐨勯煶棰戣緭鍑?
+## 鎽樿
 
 
 `int ioctl(int fd, VIDIOC_G_AUDOUT, struct v4l2_audioout *argp)`
@@ -14,32 +13,24 @@ VIDIOC_G_AUDOUT - VIDIOC_S_AUDOUT - 查询或选择当前的音频输出
 
 `int ioctl(int fd, VIDIOC_S_AUDOUT, const struct v4l2_audioout *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
-
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `argp`
-    指向 struct `v4l2_audioout` 的指针。
-
-## 描述
-
-
-要查询当前的音频输出，应用程序需将一个 struct `v4l2_audioout` 的 `reserved`
-数组清零，并以指向该结构的指针调用 `VIDIOC_G_AUDOUT` ioctl。驱动会填充结构的
-其余部分；当设备没有音频输入，或与当前视频输出无法组合时，则返回 `EINVAL`
-错误码。
-
-音频输出没有可写属性。不过，要选择当前的音频输出，应用程序可以初始化一个
-struct `v4l2_audioout` 结构的 `index` 字段和 `reserved` 数组（未来可能包含
-可写属性），然后调用 `VIDIOC_S_AUDOUT` ioctl。驱动会切换到所请求的输出，或当
-index 越界时返回 `EINVAL` 错误码。这是一个只写 ioctl，它不会像 `VIDIOC_G_AUDOUT`
-那样返回当前音频输出的属性。
+    鎸囧悜 struct `v4l2_audioout` 鐨勬寚閽堛€?
+## 鎻忚堪
 
 
-   TV 卡上用于把接收到的音频信号环回到声卡的接口不属于此意义上的音频输出。
+瑕佹煡璇㈠綋鍓嶇殑闊抽杈撳嚭锛屽簲鐢ㄧ▼搴忛渶灏嗕竴涓?struct `v4l2_audioout` 鐨?`reserved`
+鏁扮粍娓呴浂锛屽苟浠ユ寚鍚戣缁撴瀯鐨勬寚閽堣皟鐢?`VIDIOC_G_AUDOUT` ioctl銆傞┍鍔ㄤ細濉厖缁撴瀯鐨?鍏朵綑閮ㄥ垎锛涘綋璁惧娌℃湁闊抽杈撳叆锛屾垨涓庡綋鍓嶈棰戣緭鍑烘棤娉曠粍鍚堟椂锛屽垯杩斿洖 `EINVAL`
+閿欒鐮併€?
+闊抽杈撳嚭娌℃湁鍙啓灞炴€с€備笉杩囷紝瑕侀€夋嫨褰撳墠鐨勯煶棰戣緭鍑猴紝搴旂敤绋嬪簭鍙互鍒濆鍖栦竴涓?struct `v4l2_audioout` 缁撴瀯鐨?`index` 瀛楁鍜?`reserved` 鏁扮粍锛堟湭鏉ュ彲鑳藉寘鍚?鍙啓灞炴€э級锛岀劧鍚庤皟鐢?`VIDIOC_S_AUDOUT` ioctl銆傞┍鍔ㄤ細鍒囨崲鍒版墍璇锋眰鐨勮緭鍑猴紝鎴栧綋
+index 瓒婄晫鏃惰繑鍥?`EINVAL` 閿欒鐮併€傝繖鏄竴涓彧鍐?ioctl锛屽畠涓嶄細鍍?`VIDIOC_G_AUDOUT`
+閭ｆ牱杩斿洖褰撳墠闊抽杈撳嚭鐨勫睘鎬с€?
 
+   TV 鍗′笂鐢ㄤ簬鎶婃帴鏀跺埌鐨勯煶棰戜俊鍙风幆鍥炲埌澹板崱鐨勬帴鍙ｄ笉灞炰簬姝ゆ剰涔変笂鐨勯煶棰戣緭鍑恒€?
 
     :header-rows:  0
     :stub-columns: 0
@@ -47,27 +38,19 @@ index 越界时返回 `EINVAL` 错误码。这是一个只写 ioctl，它不会�
 
     - - __u32
       - `index`
-      - 标识音频输出，由驱动或应用程序设置。
-    - - __u8
+      - 鏍囪瘑闊抽杈撳嚭锛岀敱椹卞姩鎴栧簲鐢ㄧ▼搴忚缃€?    - - __u8
       - `name`\ [^32^]
-      - 音频输出的名称，一个以 NUL 结尾的 ASCII 字符串，例如：“Line Out”。
-	此信息供用户参考，最好是设备本身的接口标签。
-    - - __u32
+      - 闊抽杈撳嚭鐨勫悕绉帮紝涓€涓互 NUL 缁撳熬鐨?ASCII 瀛楃涓诧紝渚嬪锛氣€淟ine Out鈥濄€?	姝や俊鎭緵鐢ㄦ埛鍙傝€冿紝鏈€濂芥槸璁惧鏈韩鐨勬帴鍙ｆ爣绛俱€?    - - __u32
       - `capability`
-      - 音频能力标志，目前尚未定义。驱动必须将本字段设置为零。
-    - - __u32
+      - 闊抽鑳藉姏鏍囧織锛岀洰鍓嶅皻鏈畾涔夈€傞┍鍔ㄥ繀椤诲皢鏈瓧娈佃缃负闆躲€?    - - __u32
       - `mode`
-      - 音频模式，目前尚未定义。驱动和应用程序（在 `VIDIOC_S_AUDOUT` 时）
-	必须将本字段设置为零。
-    - - __u32
+      - 闊抽妯″紡锛岀洰鍓嶅皻鏈畾涔夈€傞┍鍔ㄥ拰搴旂敤绋嬪簭锛堝湪 `VIDIOC_S_AUDOUT` 鏃讹級
+	蹇呴』灏嗘湰瀛楁璁剧疆涓洪浂銆?    - - __u32
       - `reserved`\ [^2^]
-      - 为未来扩展保留。驱动和应用程序必须将本数组设置为零。
+      - 涓烘湭鏉ユ墿灞曚繚鐣欍€傞┍鍔ㄥ拰搴旂敤绋嬪簭蹇呴』灏嗘湰鏁扮粍璁剧疆涓洪浂銆?
+## 杩斿洖鍊?
 
-## 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 章节中描述。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
 EINVAL
-    没有与当前视频输出组合的音频输出，或者所选音频输出的编号越界，或无法组合。
+    娌℃湁涓庡綋鍓嶈棰戣緭鍑虹粍鍚堢殑闊抽杈撳嚭锛屾垨鑰呮墍閫夐煶棰戣緭鍑虹殑缂栧彿瓒婄晫锛屾垨鏃犳硶缁勫悎銆?

@@ -1,11 +1,11 @@
-
+﻿
 
 
 ## Kernel driver dell-smm-hwmon
 
-本页介绍 Dell 笔记本上 dell-smm-hwmon 内核驱动，说明如何通过系统管理模式（SMM）BIOS 读取风扇与温度传感器状态，并经由标准 hwmon sysfs 接口向用户空间暴露相关监测属性。
+鏈〉浠嬬粛 Dell 绗旇鏈笂 dell-smm-hwmon 鍐呮牳椹卞姩锛岃鏄庡浣曢€氳繃绯荤粺绠＄悊妯″紡锛圫MM锛塀IOS 璇诲彇椋庢墖涓庢俯搴︿紶鎰熷櫒鐘舵€侊紝骞剁粡鐢辨爣鍑?hwmon sysfs 鎺ュ彛鍚戠敤鎴风┖闂存毚闇茬浉鍏崇洃娴嬪睘鎬с€?
 
-## 内核驱动 dell-smm-hwmon
+## 鍐呮牳椹卞姩 dell-smm-hwmon
 
 
 :Copyright: |copy| 2002-2005 Massimo Dal Zotto <dz@debian.org>
@@ -13,7 +13,7 @@
 
 ### Description
 
-### 描述
+### 鎻忚堪
 
 
 On many Dell laptops the System Management Mode (SMM) BIOS can be
@@ -23,15 +23,15 @@ userspace suite `i8kutils`__ can also be used to read the sensors and
 automatically adjust fan speed (please notice that it currently uses
 the deprecated `/proc/i8k` interface).
 
-在许多 Dell 笔记本上，可以查询系统管理模式（SMM）BIOS 以获取风扇和温度传感器的状态。
-可以使用诸如 `sensors` 这样的用户空间工具来返回读数。用户空间的 `i8kutils`__ 套件
-也可用于读取传感器并自动调节风扇速度（请注意，它目前使用已废弃的 `/proc/i8k` 接口）。
+鍦ㄨ澶?Dell 绗旇鏈笂锛屽彲浠ユ煡璇㈢郴缁熺鐞嗘ā寮忥紙SMM锛塀IOS 浠ヨ幏鍙栭鎵囧拰娓╁害浼犳劅鍣ㄧ殑鐘舵€併€?
+鍙互浣跨敤璇稿 `sensors` 杩欐牱鐨勭敤鎴风┖闂村伐鍏锋潵杩斿洖璇绘暟銆傜敤鎴风┖闂寸殑 `i8kutils`__ 濂椾欢
+涔熷彲鐢ㄤ簬璇诲彇浼犳劅鍣ㄥ苟鑷姩璋冭妭椋庢墖閫熷害锛堣娉ㄦ剰锛屽畠鐩墠浣跨敤宸插簾寮冪殑 `/proc/i8k` 鎺ュ彛锛夈€?
 
  __ https://github.com/vitorafsr/i8kutils
 
 ### ``sysfs`` interface
 
-### ``sysfs`` 接口
+### ``sysfs`` 鎺ュ彛
 
 
 Temperature sensors and fans can be queried and set via the standard
@@ -40,10 +40,10 @@ Temperature sensors and fans can be queried and set via the standard
 `X` such that `/sys/class/hwmon/hwmonX/name` has content
 `dell_smm`). A number of other attributes can be read or written:
 
-温度和风扇可以通过 `sysfs` 上标准 `hwmon` 接口进行查询和设置，位于目录
-`/sys/class/hwmon/hwmonX`（其中 `X` 为某个值）下（查找使得
-`/sys/class/hwmon/hwmonX/name` 内容为 `dell_smm` 的那个 `X`）。还有许多其他
-属性可以读取或写入：
+娓╁害鍜岄鎵囧彲浠ラ€氳繃 `sysfs` 涓婃爣鍑?`hwmon` 鎺ュ彛杩涜鏌ヨ鍜岃缃紝浣嶄簬鐩綍
+`/sys/class/hwmon/hwmonX`锛堝叾涓?`X` 涓烘煇涓€硷級涓嬶紙鏌ユ壘浣垮緱
+`/sys/class/hwmon/hwmonX/name` 鍐呭涓?`dell_smm` 鐨勯偅涓?`X`锛夈€傝繕鏈夎澶氬叾浠?
+灞炴€у彲浠ヨ鍙栨垨鍐欏叆锛?
 
 =============================== ======= =======================================
 Name				Perm	Description
@@ -65,39 +65,39 @@ temp[1-10]_label                RO      Temperature sensor label.
 Due to the nature of the SMM interface, each pwmX attribute controls
 fan number X.
 
-由于 SMM 接口的特性，每个 pwmX 属性控制编号为 X 的风扇。
+鐢变簬 SMM 鎺ュ彛鐨勭壒鎬э紝姣忎釜 pwmX 灞炴€ф帶鍒剁紪鍙蜂负 X 鐨勯鎵囥€?
 
 ### Enabling/Disabling automatic BIOS fan control
 
-### 启用/禁用 BIOS 自动风扇控制
+### 鍚敤/绂佺敤 BIOS 鑷姩椋庢墖鎺у埗
 
 
 There exist two methods for enabling/disabling automatic BIOS fan control:
 
-有两种方法来启用/禁用 BIOS 自动风扇控制：
+鏈変袱绉嶆柟娉曟潵鍚敤/绂佺敤 BIOS 鑷姩椋庢墖鎺у埗锛?
 
 1. Separate SMM commands to enable/disable automatic BIOS fan control for all fans.
 
-1. 使用独立的 SMM 命令为所有风扇启用/禁用 BIOS 自动风扇控制。
+1. 浣跨敤鐙珛鐨?SMM 鍛戒护涓烘墍鏈夐鎵囧惎鐢?绂佺敤 BIOS 鑷姩椋庢墖鎺у埗銆?
 
 2. A special fan state that enables automatic BIOS fan control for a individual fan.
 
-2. 一种特殊的风扇状态，可为单个风扇启用 BIOS 自动风扇控制。
+2. 涓€绉嶇壒娈婄殑椋庢墖鐘舵€侊紝鍙负鍗曚釜椋庢墖鍚敤 BIOS 鑷姩椋庢墖鎺у埗銆?
 
 The driver cannot reliably detect what method should be used on a given
 device, so instead the following heuristic is used:
 
-驱动无法可靠地检测在某个给定设备上应当使用哪种方法，因此改用以下启发式规则：
+椹卞姩鏃犳硶鍙潬鍦版娴嬪湪鏌愪釜缁欏畾璁惧涓婂簲褰撲娇鐢ㄥ摢绉嶆柟娉曪紝鍥犳鏀圭敤浠ヤ笅鍚彂寮忚鍒欙細
 
 - use fan state 3 for enabling BIOS fan control if the maximum fan state
   setable by the user is smaller than 3 (default setting).
 
-- 如果用户可设置的最大风扇状态小于 3（默认设置），则使用风扇状态 3 来启用 BIOS 风扇
-  控制。
+- 濡傛灉鐢ㄦ埛鍙缃殑鏈€澶ч鎵囩姸鎬佸皬浜?3锛堥粯璁よ缃級锛屽垯浣跨敤椋庢墖鐘舵€?3 鏉ュ惎鐢?BIOS 椋庢墖
+  鎺у埗銆?
 
 - use separate SMM commands if device is whitelisted to support them.
 
-- 如果设备在白名单中支持独立 SMM 命令，则使用独立 SMM 命令。
+- 濡傛灉璁惧鍦ㄧ櫧鍚嶅崟涓敮鎸佺嫭绔?SMM 鍛戒护锛屽垯浣跨敤鐙珛 SMM 鍛戒护銆?
 
 When using the first method, each fan will have a standard `pwmX_enable`
 sysfs attribute. Writing `1` into this attribute will disable automatic
@@ -106,18 +106,18 @@ BIOS fan control again can be achieved by writing `2` into this attribute.
 Reading this sysfs attributes returns the current setting as reported by
 the underlying hardware.
 
-使用第一种方法时，每个风扇会有一个标准的 `pwmX_enable` sysfs 属性。向该属性写入 `1`
-会禁用对应风扇的 BIOS 自动风扇控制，并将其设为最大速度。再次启用 BIOS 风扇控制可
-通过向该属性写入 `2` 来实现。读取此 sysfs 属性会返回底层硬件报告的当前设置。
+浣跨敤绗竴绉嶆柟娉曟椂锛屾瘡涓鎵囦細鏈変竴涓爣鍑嗙殑 `pwmX_enable` sysfs 灞炴€с€傚悜璇ュ睘鎬у啓鍏?`1`
+浼氱鐢ㄥ搴旈鎵囩殑 BIOS 鑷姩椋庢墖鎺у埗锛屽苟灏嗗叾璁句负鏈€澶ч€熷害銆傚啀娆″惎鐢?BIOS 椋庢墖鎺у埗鍙?
+閫氳繃鍚戣灞炴€у啓鍏?`2` 鏉ュ疄鐜般€傝鍙栨 sysfs 灞炴€т細杩斿洖搴曞眰纭欢鎶ュ憡鐨勫綋鍓嶈缃€?
 
 When using the second method however, only the `pwm1_enable` sysfs attribute
 will be available to enable/disable automatic BIOS fan control globaly for all
 fans available on a given device. Additionally, this sysfs attribute is write-only
 as there exists no SMM command for reading the current fan control setting.
 
-然而，使用第二种方法时，只有 `pwm1_enable` sysfs 属性可用于全局启用/禁用给定设备上
-所有风扇的 BIOS 自动风扇控制。此外，此 sysfs 属性是只写的，因为不存在用于读取当前
-风扇控制设置的 SMM 命令。
+鐒惰€岋紝浣跨敤绗簩绉嶆柟娉曟椂锛屽彧鏈?`pwm1_enable` sysfs 灞炴€у彲鐢ㄤ簬鍏ㄥ眬鍚敤/绂佺敤缁欏畾璁惧涓?
+鎵€鏈夐鎵囩殑 BIOS 鑷姩椋庢墖鎺у埗銆傛澶栵紝姝?sysfs 灞炴€ф槸鍙啓鐨勶紝鍥犱负涓嶅瓨鍦ㄧ敤浜庤鍙栧綋鍓?
+椋庢墖鎺у埗璁剧疆鐨?SMM 鍛戒护銆?
 
 If no `pwmX_enable` attributes are available, then it means that the driver
 cannot use the first method and the SMM codes for enabling and disabling automatic
@@ -125,9 +125,9 @@ BIOS fan control are not whitelisted for your device. It is possible that codes
 that work for other laptops actually work for yours as well, or that you have to
 discover new codes.
 
-如果没有 `pwmX_enable` 属性可用，则意味着驱动无法使用第一种方法，并且用于启用和禁用
-BIOS 自动风扇控制的 SMM 代码未列入你设备的白名单。适用于其他笔记本的代码可能也适用
-于你的设备，或者你可能需要发现新的代码。
+濡傛灉娌℃湁 `pwmX_enable` 灞炴€у彲鐢紝鍒欐剰鍛崇潃椹卞姩鏃犳硶浣跨敤绗竴绉嶆柟娉曪紝骞朵笖鐢ㄤ簬鍚敤鍜岀鐢?
+BIOS 鑷姩椋庢墖鎺у埗鐨?SMM 浠ｇ爜鏈垪鍏ヤ綘璁惧鐨勭櫧鍚嶅崟銆傞€傜敤浜庡叾浠栫瑪璁版湰鐨勪唬鐮佸彲鑳戒篃閫傜敤
+浜庝綘鐨勮澶囷紝鎴栬€呬綘鍙兘闇€瑕佸彂鐜版柊鐨勪唬鐮併€?
 
 Check the list `i8k_whitelist_fan_control` in file
 `drivers/hwmon/dell-smm-hwmon.c` in the kernel tree: as a first
@@ -139,42 +139,42 @@ can benefit from it. Please see
 Documentation/process/submitting-patches.rst <submittingpatches>
 for information on submitting patches.
 
-请查看内核树中文件 `drivers/hwmon/dell-smm-hwmon.c` 里的列表
-`i8k_whitelist_fan_control`：作为首次尝试，你可以试着添加你的机器并使用一对已知的
-代码。如果在重新编译内核后，你发现 `pwm1_enable` 存在且工作正常（即你可以手动控制
-风扇速度），请将你的发现作为内核补丁提交，以便其他用户也能受益。关于提交补丁的信息，
-请参阅 Documentation/process/submitting-patches.rst <submittingpatches>。
+璇锋煡鐪嬪唴鏍告爲涓枃浠?`drivers/hwmon/dell-smm-hwmon.c` 閲岀殑鍒楄〃
+`i8k_whitelist_fan_control`锛氫綔涓洪娆″皾璇曪紝浣犲彲浠ヨ瘯鐫€娣诲姞浣犵殑鏈哄櫒骞朵娇鐢ㄤ竴瀵瑰凡鐭ョ殑
+浠ｇ爜銆傚鏋滃湪閲嶆柊缂栬瘧鍐呮牳鍚庯紝浣犲彂鐜?`pwm1_enable` 瀛樺湪涓斿伐浣滄甯革紙鍗充綘鍙互鎵嬪姩鎺у埗
+椋庢墖閫熷害锛夛紝璇峰皢浣犵殑鍙戠幇浣滀负鍐呮牳琛ヤ竵鎻愪氦锛屼互渚垮叾浠栫敤鎴蜂篃鑳藉彈鐩娿€傚叧浜庢彁浜よˉ涓佺殑淇℃伅锛?
+璇峰弬闃?Documentation/process/submitting-patches.rst <submittingpatches>銆?
 
 If no known code works on your machine, you need to resort to do some
 probing, because unfortunately Dell does not publish datasheets for
 its SMM. You can experiment with the code in `this repository`__ to
 probe the BIOS on your machine and discover the appropriate codes.
 
-如果没有已知代码在你的机器上工作，你需要进行一些探测，因为遗憾的是 Dell 没有发布其
-SMM 的数据手册。你可以用 `this repository`__ 中的代码在你机器上探测 BIOS 并发现
-相应的代码。
+濡傛灉娌℃湁宸茬煡浠ｇ爜鍦ㄤ綘鐨勬満鍣ㄤ笂宸ヤ綔锛屼綘闇€瑕佽繘琛屼竴浜涙帰娴嬶紝鍥犱负閬楁喚鐨勬槸 Dell 娌℃湁鍙戝竷鍏?
+SMM 鐨勬暟鎹墜鍐屻€備綘鍙互鐢?`this repository`__ 涓殑浠ｇ爜鍦ㄤ綘鏈哄櫒涓婃帰娴?BIOS 骞跺彂鐜?
+鐩稿簲鐨勪唬鐮併€?
 
  __ https://github.com/clopez/dellfan/
 
 Again, when you find new codes, we'd be happy to have your patches!
 
-同样，当你发现新代码时，我们很乐意收到你的补丁！
+鍚屾牱锛屽綋浣犲彂鐜版柊浠ｇ爜鏃讹紝鎴戜滑寰堜箰鎰忔敹鍒颁綘鐨勮ˉ涓侊紒
 
 ### ``thermal`` interface
 
-### ``thermal`` 接口
+### ``thermal`` 鎺ュ彛
 
 
 The driver also exports the fans as thermal cooling devices with
 `type` set to `dell-smm-fan[1-4]`. This allows for easy fan control
 using one of the thermal governors.
 
-该驱动还将风扇导出为散热冷却设备，其 `type` 设为 `dell-smm-fan[1-4]`。这使得使用
-某个 thermal governor 可以轻松控制风扇。
+璇ラ┍鍔ㄨ繕灏嗛鎵囧鍑轰负鏁ｇ儹鍐峰嵈璁惧锛屽叾 `type` 璁句负 `dell-smm-fan[1-4]`銆傝繖浣垮緱浣跨敤
+鏌愪釜 thermal governor 鍙互杞绘澗鎺у埗椋庢墖銆?
 
 ### Module parameters
 
-### 模块参数
+### 妯″潡鍙傛暟
 
 
 - force:bool
@@ -182,14 +182,14 @@ using one of the thermal governors.
                    models. (default: 0)
 
 - force:bool
-                   强制加载而不检查受支持的型号。（默认：0）
+                   寮哄埗鍔犺浇鑰屼笉妫€鏌ュ彈鏀寔鐨勫瀷鍙枫€傦紙榛樿锛?锛?
 
 - ignore_dmi:bool
                    Continue probing hardware even if DMI data does not
                    match. (default: 0)
 
 - ignore_dmi:bool
-                   即使 DMI 数据不匹配也继续探测硬件。（默认：0）
+                   鍗充娇 DMI 鏁版嵁涓嶅尮閰嶄篃缁х画鎺㈡祴纭欢銆傦紙榛樿锛?锛?
 
 - restricted:bool
                    Allow fan control only to processes with the
@@ -203,44 +203,44 @@ using one of the thermal governors.
                    with `CONFIG_I8K`)
 
 - restricted:bool
-                   仅允许具有 `CAP_SYS_ADMIN` 能力的进程，或在使用旧的
-                   `/proc/i8k` 接口时以 root 运行的进程控制风扇。在这种情况下，普通用户
-                   能够读取温度和风扇状态，但不能控制风扇。如果你的笔记本与其他用户共享
-                   且你不信任他们，你可能会想使用此选项。（默认：1，仅在
-                   `CONFIG_I8K` 下可用）
+                   浠呭厑璁稿叿鏈?`CAP_SYS_ADMIN` 鑳藉姏鐨勮繘绋嬶紝鎴栧湪浣跨敤鏃х殑
+                   `/proc/i8k` 鎺ュ彛鏃朵互 root 杩愯鐨勮繘绋嬫帶鍒堕鎵囥€傚湪杩欑鎯呭喌涓嬶紝鏅€氱敤鎴?
+                   鑳藉璇诲彇娓╁害鍜岄鎵囩姸鎬侊紝浣嗕笉鑳芥帶鍒堕鎵囥€傚鏋滀綘鐨勭瑪璁版湰涓庡叾浠栫敤鎴峰叡浜?
+                   涓斾綘涓嶄俊浠讳粬浠紝浣犲彲鑳戒細鎯充娇鐢ㄦ閫夐」銆傦紙榛樿锛?锛屼粎鍦?
+                   `CONFIG_I8K` 涓嬪彲鐢級
 
 - power_status:bool
                    Report AC status in `/proc/i8k`. (default: 0,
                    only available with `CONFIG_I8K`)
 
 - power_status:bool
-                   在 `/proc/i8k` 中报告交流电源状态。（默认：0，仅在
-                   `CONFIG_I8K` 下可用）
+                   鍦?`/proc/i8k` 涓姤鍛婁氦娴佺數婧愮姸鎬併€傦紙榛樿锛?锛屼粎鍦?
+                   `CONFIG_I8K` 涓嬪彲鐢級
 
 - fan_mult:uint
                    Factor to multiply fan speed with. (default:
                    autodetect)
 
 - fan_mult:uint
-                   用于乘以风扇速度的系数。（默认：自动检测）
+                   鐢ㄤ簬涔樹互椋庢墖閫熷害鐨勭郴鏁般€傦紙榛樿锛氳嚜鍔ㄦ娴嬶級
 
 - fan_max:uint
                    Maximum configurable fan speed. (default:
                    autodetect)
 
 - fan_max:uint
-                   可配置的最大风扇速度。（默认：自动检测）
+                   鍙厤缃殑鏈€澶ч鎵囬€熷害銆傦紙榛樿锛氳嚜鍔ㄦ娴嬶級
 
 ### Legacy ``/proc`` interface
 
-### 旧版 ``/proc`` 接口
+### 鏃х増 ``/proc`` 鎺ュ彛
 
 
              used in new applications. This interface is only
              available when kernel is compiled with option
              `CONFIG_I8K`.
 
-             用于新应用中。此接口仅在以内核选项 `CONFIG_I8K` 编译时才可用。
+             鐢ㄤ簬鏂板簲鐢ㄤ腑銆傛鎺ュ彛浠呭湪浠ュ唴鏍搁€夐」 `CONFIG_I8K` 缂栬瘧鏃舵墠鍙敤銆?
 
 The information provided by the kernel driver can be accessed by
 ```
@@ -269,7 +269,7 @@ A negative value, for example -22, indicates that the BIOS doesn't
 return the corresponding information. This is normal on some
 models/BIOSes.
 
-负值，例如 -22，表示 BIOS 没有返回相应的信息。在某些型号/BIOS 上是正常的。
+璐熷€硷紝渚嬪 -22锛岃〃绀?BIOS 娌℃湁杩斿洖鐩稿簲鐨勪俊鎭€傚湪鏌愪簺鍨嬪彿/BIOS 涓婃槸姝ｅ父鐨勩€?
 
 For performance reasons the `/proc/i8k` doesn't report by default
 the AC status since this SMM call takes a long time to execute and is
@@ -278,9 +278,9 @@ you must explictitly enable this option by passing the
 `power_status=1` parameter to insmod. If AC status is not
 available -1 is printed instead.
 
-出于性能原因，`/proc/i8k` 默认不报告交流电源状态，因为此 SMM 调用执行时间较长且并非
-真正需要。如果你想在 `/proc/i8k` 中看到交流电源状态，必须通过向 insmod 传递
-`power_status=1` 参数来显式启用此选项。如果交流电源状态不可用，则打印 -1。
+鍑轰簬鎬ц兘鍘熷洜锛宍/proc/i8k` 榛樿涓嶆姤鍛婁氦娴佺數婧愮姸鎬侊紝鍥犱负姝?SMM 璋冪敤鎵ц鏃堕棿杈冮暱涓斿苟闈?
+鐪熸闇€瑕併€傚鏋滀綘鎯冲湪 `/proc/i8k` 涓湅鍒颁氦娴佺數婧愮姸鎬侊紝蹇呴』閫氳繃鍚?insmod 浼犻€?
+`power_status=1` 鍙傛暟鏉ユ樉寮忓惎鐢ㄦ閫夐」銆傚鏋滀氦娴佺數婧愮姸鎬佷笉鍙敤锛屽垯鎵撳嵃 -1銆?
 
 The driver provides also an ioctl interface which can be used to
 obtain the same information and to control the fan status. The ioctl
@@ -288,19 +288,19 @@ interface can be accessed from C programs or from shell using the
 i8kctl utility. See the source file of `i8kutils` for more
 information on how to use the ioctl interface.
 
-该驱动还提供了一个 ioctl 接口，可用于获取相同的信息并控制风扇状态。该 ioctl 接口
-可从 C 程序或通过使用 i8kctl 工具的 shell 访问。关于如何使用 ioctl 接口的更多信息，
-请参阅 `i8kutils` 的源文件。
+璇ラ┍鍔ㄨ繕鎻愪緵浜嗕竴涓?ioctl 鎺ュ彛锛屽彲鐢ㄤ簬鑾峰彇鐩稿悓鐨勪俊鎭苟鎺у埗椋庢墖鐘舵€併€傝 ioctl 鎺ュ彛
+鍙粠 C 绋嬪簭鎴栭€氳繃浣跨敤 i8kctl 宸ュ叿鐨?shell 璁块棶銆傚叧浜庡浣曚娇鐢?ioctl 鎺ュ彛鐨勬洿澶氫俊鎭紝
+璇峰弬闃?`i8kutils` 鐨勬簮鏂囦欢銆?
 
 ### SMM Interface
 
-### SMM 接口
+### SMM 鎺ュ彛
 
 
              since Dell did not provide any Documentation,
              please keep that in mind.
 
-             由于 Dell 没有提供任何文档，请记住这一点。
+             鐢变簬 Dell 娌℃湁鎻愪緵浠讳綍鏂囨。锛岃璁颁綇杩欎竴鐐广€?
 
 The driver uses the SMM interface to send commands to the system BIOS.
 This interface is normally used by Dell's 32-bit diagnostic program or
@@ -308,16 +308,16 @@ on newer notebook models by the buildin BIOS diagnostics.
 The SMM may cause short hangs when the BIOS code is taking too long to
 execute.
 
-该驱动使用 SMM 接口向系统 BIOS 发送命令。此接口通常由 Dell 的 32 位诊断程序，或在
-较新的笔记本型号上由内置的 BIOS 诊断功能使用。当 BIOS 代码执行时间过长时，SMM 可能
-导致短暂的挂起。
+璇ラ┍鍔ㄤ娇鐢?SMM 鎺ュ彛鍚戠郴缁?BIOS 鍙戦€佸懡浠ゃ€傛鎺ュ彛閫氬父鐢?Dell 鐨?32 浣嶈瘖鏂▼搴忥紝鎴栧湪
+杈冩柊鐨勭瑪璁版湰鍨嬪彿涓婄敱鍐呯疆鐨?BIOS 璇婃柇鍔熻兘浣跨敤銆傚綋 BIOS 浠ｇ爜鎵ц鏃堕棿杩囬暱鏃讹紝SMM 鍙兘
+瀵艰嚧鐭殏鐨勬寕璧枫€?
 
 The SMM handler inside the system BIOS looks at the contents of the
 `eax`, `ebx`, `ecx`, `edx`, `esi` and `edi` registers.
 Each register has a special purpose:
 
-系统 BIOS 中的 SMM 处理程序会查看 `eax`、`ebx`、`ecx`、`edx`、`esi` 和 `edi`
-寄存器的内容。每个寄存器都有特殊用途：
+绯荤粺 BIOS 涓殑 SMM 澶勭悊绋嬪簭浼氭煡鐪?`eax`銆乣ebx`銆乣ecx`銆乣edx`銆乣esi` 鍜?`edi`
+瀵勫瓨鍣ㄧ殑鍐呭銆傛瘡涓瘎瀛樺櫒閮芥湁鐗规畩鐢ㄩ€旓細
 
 =============== ==================================
 Register        Purpose
@@ -333,36 +333,36 @@ edi             Unknown, set to 0.
 
 The SMM handler can signal a failure by either:
 
-SMM 处理程序可以通过以下任一方式发出失败信号：
+SMM 澶勭悊绋嬪簭鍙互閫氳繃浠ヤ笅浠讳竴鏂瑰紡鍙戝嚭澶辫触淇″彿锛?
 
 - setting the lower sixteen bits of `eax` to `0xffff`
 - not modifying `eax` at all
 - setting the carry flag (legacy SMM interface only)
 
-- 将 `eax` 的低 16 位设为 `0xffff`
-- 完全不修改 `eax`
-- 设置进位标志（仅旧版 SMM 接口）
+- 灏?`eax` 鐨勪綆 16 浣嶈涓?`0xffff`
+- 瀹屽叏涓嶄慨鏀?`eax`
+- 璁剧疆杩涗綅鏍囧織锛堜粎鏃х増 SMM 鎺ュ彛锛?
 
 ### Legacy SMM Interface
 
-### 旧版 SMM 接口
+### 鏃х増 SMM 鎺ュ彛
 
 
 When using the legacy SMM interface, a SMM is triggered by writing the least significant byte
 of the command code to the special ioports `0xb2` and `0x84`. This interface is not
 described inside the ACPI tables and can thus only be detected by issuing a test SMM call.
 
-使用旧版 SMM 接口时，向特殊 ioport `0xb2` 和 `0x84` 写入命令码的最低有效字节来触发
-SMM。此接口不在 ACPI 表中描述，因此只能通过发出测试 SMM 调用来检测。
+浣跨敤鏃х増 SMM 鎺ュ彛鏃讹紝鍚戠壒娈?ioport `0xb2` 鍜?`0x84` 鍐欏叆鍛戒护鐮佺殑鏈€浣庢湁鏁堝瓧鑺傛潵瑙﹀彂
+SMM銆傛鎺ュ彛涓嶅湪 ACPI 琛ㄤ腑鎻忚堪锛屽洜姝ゅ彧鑳介€氳繃鍙戝嚭娴嬭瘯 SMM 璋冪敤鏉ユ娴嬨€?
 
 ### WMI SMM Interface
 
-### WMI SMM 接口
+### WMI SMM 鎺ュ彛
 
 
 On modern Dell machines, the SMM calls are done over ACPI WMI:
 
-在现代 Dell 机器上，SMM 调用通过 ACPI WMI 完成：
+鍦ㄧ幇浠?Dell 鏈哄櫒涓婏紝SMM 璋冪敤閫氳繃 ACPI WMI 瀹屾垚锛?
 
 ```
 
@@ -387,13 +387,13 @@ The driver automatically detects which interfaces are present and will use the W
 if the legacy SMM interface is not present. The WMI SMM interface is usually slower than the
 legacy SMM interface since ACPI methods need to be called in order to trigger a SMM.
 
-有些机器只支持 WMI SMM 接口，而有些机器两种接口都支持。驱动会自动检测存在哪些接口，
-如果旧版 SMM 接口不存在，则使用 WMI SMM 接口。WMI SMM 接口通常比旧版 SMM 接口慢，因为
-需要调用 ACPI 方法来触发 SMM。
+鏈変簺鏈哄櫒鍙敮鎸?WMI SMM 鎺ュ彛锛岃€屾湁浜涙満鍣ㄤ袱绉嶆帴鍙ｉ兘鏀寔銆傞┍鍔ㄤ細鑷姩妫€娴嬪瓨鍦ㄥ摢浜涙帴鍙ｏ紝
+濡傛灉鏃х増 SMM 鎺ュ彛涓嶅瓨鍦紝鍒欎娇鐢?WMI SMM 鎺ュ彛銆俉MI SMM 鎺ュ彛閫氬父姣旀棫鐗?SMM 鎺ュ彛鎱紝鍥犱负
+闇€瑕佽皟鐢?ACPI 鏂规硶鏉ヨЕ鍙?SMM銆?
 
 ### SMM command codes
 
-### SMM 命令码
+### SMM 鍛戒护鐮?
 
 
 =============== ======================= ================================================
@@ -492,8 +492,8 @@ disabling (`0x30a3` or `0x34a3`) automatic fan speed control.
 The commands are however causing severe sideeffects on many machines, so
 they are not used by default.
 
-还有用于启用（`0x31a3` 或 `0x35a3`）和禁用（`0x30a3` 或 `0x34a3`）自动风扇速度控制的
-额外命令。然而这些命令在许多机器上会造成严重的副作用，因此默认不使用。
+杩樻湁鐢ㄤ簬鍚敤锛坄0x31a3` 鎴?`0x35a3`锛夊拰绂佺敤锛坄0x30a3` 鎴?`0x34a3`锛夎嚜鍔ㄩ鎵囬€熷害鎺у埗鐨?
+棰濆鍛戒护銆傜劧鑰岃繖浜涘懡浠ゅ湪璁稿鏈哄櫒涓婁細閫犳垚涓ラ噸鐨勫壇浣滅敤锛屽洜姝ら粯璁や笉浣跨敤銆?
 
 On several machines (Inspiron 3505, Precision 490, Vostro 1720, ...), the
 fans supports a 4th "magic" state, which signals the BIOS that automatic
@@ -502,19 +502,19 @@ However there are also some machines who do support a 4th regular fan state too,
 but in case of the "magic" state, the nominal RPM reported for this state is a
 placeholder value, which however is not always detectable.
 
-在若干机器上（Inspiron 3505、Precision 490、Vostro 1720 等），风扇支持第 4 个"魔法"
-状态，它向 BIOS 发出信号，应为特定风扇启用自动风扇控制。不过也有一些机器同时支持
-第 4 个常规风扇状态，但在"魔法"状态下，为此状态报告的标称 RPM 是一个占位值，然而这
-并非总是可检测的。
+鍦ㄨ嫢骞叉満鍣ㄤ笂锛圛nspiron 3505銆丳recision 490銆乂ostro 1720 绛夛級锛岄鎵囨敮鎸佺 4 涓?榄旀硶"
+鐘舵€侊紝瀹冨悜 BIOS 鍙戝嚭淇″彿锛屽簲涓虹壒瀹氶鎵囧惎鐢ㄨ嚜鍔ㄩ鎵囨帶鍒躲€備笉杩囦篃鏈変竴浜涙満鍣ㄥ悓鏃舵敮鎸?
+绗?4 涓父瑙勯鎵囩姸鎬侊紝浣嗗湪"榄旀硶"鐘舵€佷笅锛屼负姝ょ姸鎬佹姤鍛婄殑鏍囩О RPM 鏄竴涓崰浣嶅€硷紝鐒惰€岃繖
+骞堕潪鎬绘槸鍙娴嬬殑銆?
 
 ### Firmware Bugs
 
-### 固件缺陷
+### 鍥轰欢缂洪櫡
 
 
 The SMM calls can behave erratic on some machines:
 
-SMM 调用在某些机器上表现可能不稳定：
+SMM 璋冪敤鍦ㄦ煇浜涙満鍣ㄤ笂琛ㄧ幇鍙兘涓嶇ǔ瀹氾細
 
 ======================================================= =================
 Firmware Bug                                            Affected Machines
@@ -543,12 +543,12 @@ Fan-related SMM calls take too long (about 500ms).      Inspiron 7720
 In case you experience similar issues on your Dell machine, please
 submit a bugreport on bugzilla to we can apply workarounds.
 
-如果你在 Dell 机器上遇到类似问题，请在 bugzilla 上提交 bugreport，以便我们应用变通
-方法。
+濡傛灉浣犲湪 Dell 鏈哄櫒涓婇亣鍒扮被浼奸棶棰橈紝璇峰湪 bugzilla 涓婃彁浜?bugreport锛屼互渚挎垜浠簲鐢ㄥ彉閫?
+鏂规硶銆?
 
 ### Limitations
 
-### 限制
+### 闄愬埗
 
 
 The SMM calls can take too long to execute on some machines, causing
@@ -558,6 +558,6 @@ the automatic mode settings.
 When reading a temperature sensor, values above 127 degrees indicate
 a BIOS read error or a deactivated sensor.
 
-SMM 调用在某些机器上执行可能耗时过长，导致短暂的挂起和/或音频故障。此外，风扇状态
-需要在挂起后恢复，自动模式设置也是如此。读取温度传感器时，高于 127 度的值表示 BIOS
-读取错误或传感器被停用。
+SMM 璋冪敤鍦ㄦ煇浜涙満鍣ㄤ笂鎵ц鍙兘鑰楁椂杩囬暱锛屽鑷寸煭鏆傜殑鎸傝捣鍜?鎴栭煶棰戞晠闅溿€傛澶栵紝椋庢墖鐘舵€?
+闇€瑕佸湪鎸傝捣鍚庢仮澶嶏紝鑷姩妯″紡璁剧疆涔熸槸濡傛銆傝鍙栨俯搴︿紶鎰熷櫒鏃讹紝楂樹簬 127 搴︾殑鍊艰〃绀?BIOS
+璇诲彇閿欒鎴栦紶鎰熷櫒琚仠鐢ㄣ€?

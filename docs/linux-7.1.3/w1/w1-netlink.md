@@ -1,72 +1,51 @@
-## 基于 connector 的用户空间通信协议
+﻿## 鍩轰簬 connector 鐨勭敤鎴风┖闂撮€氫俊鍗忚
 
 
-## 消息类型
+## 娑堟伅绫诲瀷
 
 
-w1 核心与用户空间之间有三种类型的消息：
+w1 鏍稿績涓庣敤鎴风┖闂翠箣闂存湁涓夌绫诲瀷鐨勬秷鎭細
 
-1. 事件。每当通过自动或请求式搜索发现一个新的主设备或从设备时生成。
-2. 用户空间命令。
-3. 对用户空间命令的回复。
+1. 浜嬩欢銆傛瘡褰撻€氳繃鑷姩鎴栬姹傚紡鎼滅储鍙戠幇涓€涓柊鐨勪富璁惧鎴栦粠璁惧鏃剁敓鎴愩€?2. 鐢ㄦ埛绌洪棿鍛戒护銆?3. 瀵圭敤鎴风┖闂村懡浠ょ殑鍥炲銆?
 
-
-## 协议
+## 鍗忚
 
 
 ```
 
-  [struct cn_msg] - connector 头部。
-	其 length 字段等于附带数据的大小
-  [struct w1_netlink_msg] - w1 netlink 头部。
-	__u8 type 	- 消息类型。
-			W1_LIST_MASTERS
-				列出当前的总线主设备
-			W1_SLAVE_ADD/W1_SLAVE_REMOVE
-				从设备添加/移除事件
+  [struct cn_msg] - connector 澶撮儴銆?	鍏?length 瀛楁绛変簬闄勫甫鏁版嵁鐨勫ぇ灏?  [struct w1_netlink_msg] - w1 netlink 澶撮儴銆?	__u8 type 	- 娑堟伅绫诲瀷銆?			W1_LIST_MASTERS
+				鍒楀嚭褰撳墠鐨勬€荤嚎涓昏澶?			W1_SLAVE_ADD/W1_SLAVE_REMOVE
+				浠庤澶囨坊鍔?绉婚櫎浜嬩欢
 			W1_MASTER_ADD/W1_MASTER_REMOVE
-				主设备添加/移除事件
+				涓昏澶囨坊鍔?绉婚櫎浜嬩欢
 			W1_MASTER_CMD
-				面向总线主设备的用户空间命令
-				（搜索/报警搜索）
-			W1_SLAVE_CMD
-				面向从设备的用户空间命令
-				（读/写/触摸）
-	__u8 status	- 来自内核的错误指示
-	__u16 len	- 附加到此头部数据的数据大小
-	union {
-		__u8 id[8];			 - 从设备唯一 id
+				闈㈠悜鎬荤嚎涓昏澶囩殑鐢ㄦ埛绌洪棿鍛戒护
+				锛堟悳绱?鎶ヨ鎼滅储锛?			W1_SLAVE_CMD
+				闈㈠悜浠庤澶囩殑鐢ㄦ埛绌洪棿鍛戒护
+				锛堣/鍐?瑙︽懜锛?	__u8 status	- 鏉ヨ嚜鍐呮牳鐨勯敊璇寚绀?	__u16 len	- 闄勫姞鍒版澶撮儴鏁版嵁鐨勬暟鎹ぇ灏?	union {
+		__u8 id[8];			 - 浠庤澶囧敮涓€ id
 		struct w1_mst {
-			__u32		id;	 - 主设备 id
-			__u32		res;	 - 保留
+			__u32		id;	 - 涓昏澶?id
+			__u32		res;	 - 淇濈暀
 		} mst;
 	} id;
 
-  [struct w1_netlink_cmd] - 给定主设备或从设备的命令。
-	__u8 cmd	- 命令操作码。
-			W1_CMD_READ 	- 读命令
-			W1_CMD_WRITE	- 写命令
-			W1_CMD_SEARCH	- 搜索命令
-			W1_CMD_ALARM_SEARCH - 报警搜索命令
-			W1_CMD_TOUCH	- 触摸命令
-				（写数据并将采样结果返回用户空间）
-			W1_CMD_RESET	- 发送总线复位
-			W1_CMD_SLAVE_ADD	- 将 slave 添加到内核列表
-			W1_CMD_SLAVE_REMOVE	- 从内核列表移除 slave
-			W1_CMD_LIST_SLAVES	- 从内核获取 slave 列表
-	__u8 res	- 保留
-	__u16 len	- 此命令的数据长度
+  [struct w1_netlink_cmd] - 缁欏畾涓昏澶囨垨浠庤澶囩殑鍛戒护銆?	__u8 cmd	- 鍛戒护鎿嶄綔鐮併€?			W1_CMD_READ 	- 璇诲懡浠?			W1_CMD_WRITE	- 鍐欏懡浠?			W1_CMD_SEARCH	- 鎼滅储鍛戒护
+			W1_CMD_ALARM_SEARCH - 鎶ヨ鎼滅储鍛戒护
+			W1_CMD_TOUCH	- 瑙︽懜鍛戒护
+				锛堝啓鏁版嵁骞跺皢閲囨牱缁撴灉杩斿洖鐢ㄦ埛绌洪棿锛?			W1_CMD_RESET	- 鍙戦€佹€荤嚎澶嶄綅
+			W1_CMD_SLAVE_ADD	- 灏?slave 娣诲姞鍒板唴鏍稿垪琛?			W1_CMD_SLAVE_REMOVE	- 浠庡唴鏍稿垪琛ㄧЩ闄?slave
+			W1_CMD_LIST_SLAVES	- 浠庡唴鏍歌幏鍙?slave 鍒楄〃
+	__u8 res	- 淇濈暀
+	__u16 len	- 姝ゅ懡浠ょ殑鏁版嵁闀垮害
 		For read command data must be allocated like for write command
-	__u8 data[0]	- 此命令的数据
+	__u8 data[0]	- 姝ゅ懡浠ょ殑鏁版嵁
 
 
 ```
-每个 connector 消息可以包含一个或多个 w1_netlink_msg，以及零个或多个附带的 w1_netlink_cmd 消息。
-
-对于事件消息，没有嵌入的 w1_netlink_cmd 结构，只有 connector 头部和 w1_netlink_msg 结构，其中 "len" 字段为零，并填充了类型（事件类型之一）和 id：要么是主机字节序的 8 字节从设备唯一 id，要么是主设备的 id（在将其添加到 w1 核心时分配给总线主设备）。
-
-目前仅对读命令请求生成对用户空间命令的回复。每个 w1_netlink_cmd 读请求恰好生成一个回复。发送时回复不会合并——即典型的回复
-```
+姣忎釜 connector 娑堟伅鍙互鍖呭惈涓€涓垨澶氫釜 w1_netlink_msg锛屼互鍙婇浂涓垨澶氫釜闄勫甫鐨?w1_netlink_cmd 娑堟伅銆?
+瀵逛簬浜嬩欢娑堟伅锛屾病鏈夊祵鍏ョ殑 w1_netlink_cmd 缁撴瀯锛屽彧鏈?connector 澶撮儴鍜?w1_netlink_msg 缁撴瀯锛屽叾涓?"len" 瀛楁涓洪浂锛屽苟濉厖浜嗙被鍨嬶紙浜嬩欢绫诲瀷涔嬩竴锛夊拰 id锛氳涔堟槸涓绘満瀛楄妭搴忕殑 8 瀛楄妭浠庤澶囧敮涓€ id锛岃涔堟槸涓昏澶囩殑 id锛堝湪灏嗗叾娣诲姞鍒?w1 鏍稿績鏃跺垎閰嶇粰鎬荤嚎涓昏澶囷級銆?
+鐩墠浠呭璇诲懡浠よ姹傜敓鎴愬鐢ㄦ埛绌洪棿鍛戒护鐨勫洖澶嶃€傛瘡涓?w1_netlink_cmd 璇昏姹傛伆濂界敓鎴愪竴涓洖澶嶃€傚彂閫佹椂鍥炲涓嶄細鍚堝苟鈥斺€斿嵆鍏稿瀷鐨勫洖澶?```
 
   [cn_msg][w1_netlink_msg][w1_netlink_cmd]
   cn_msg.len = sizeof(struct w1_netlink_msg) +
@@ -76,20 +55,18 @@ w1 核心与用户空间之间有三种类型的消息：
   w1_netlink_cmd.len = cmd->len;
 
 ```
-对 W1_LIST_MASTERS 的回复应向用户空间发回一条消息，其中包含以下形式的所有已注册主设备 id 列表
+瀵?W1_LIST_MASTERS 鐨勫洖澶嶅簲鍚戠敤鎴风┖闂村彂鍥炰竴鏉℃秷鎭紝鍏朵腑鍖呭惈浠ヤ笅褰㈠紡鐨勬墍鏈夊凡娉ㄥ唽涓昏澶?id 鍒楄〃
 ```
 
-	cn_msg (CN_W1_IDX.CN_W1_VAL 作为 id，len 等于 sizeof(struct
-	w1_netlink_msg) 加上主设备数量乘以 4)
-	w1_netlink_msg (type: W1_LIST_MASTERS, len 等于
-		主设备数量乘以 4 (u32 大小))
+	cn_msg (CN_W1_IDX.CN_W1_VAL 浣滀负 id锛宭en 绛変簬 sizeof(struct
+	w1_netlink_msg) 鍔犱笂涓昏澶囨暟閲忎箻浠?4)
+	w1_netlink_msg (type: W1_LIST_MASTERS, len 绛変簬
+		涓昏澶囨暟閲忎箻浠?4 (u32 澶у皬))
 	id0 ... idN
 
 ```
-每条消息最大为 4k，因此如果主设备数量超过此值，它将被拆分为多条消息。
-
-W1 搜索和报警搜索命令。
-```
+姣忔潯娑堟伅鏈€澶т负 4k锛屽洜姝ゅ鏋滀富璁惧鏁伴噺瓒呰繃姝ゅ€硷紝瀹冨皢琚媶鍒嗕负澶氭潯娑堟伅銆?
+W1 鎼滅储鍜屾姤璀︽悳绱㈠懡浠ゃ€?```
 
   [cn_msg]
     [w1_netlink_msg type = W1_MASTER_CMD
@@ -107,9 +84,8 @@ W1 搜索和报警搜索命令。
   [64bit-id0 ... 64bit-idN]
 
 ```
-每个头部中的长度对应于其后面数据的大小，因此
-w1_netlink_cmd->len = N * 8；其中 N 是本消息中 ID 的数量。可以为零。
-```
+姣忎釜澶撮儴涓殑闀垮害瀵瑰簲浜庡叾鍚庨潰鏁版嵁鐨勫ぇ灏忥紝鍥犳
+w1_netlink_cmd->len = N * 8锛涘叾涓?N 鏄湰娑堟伅涓?ID 鐨勬暟閲忋€傚彲浠ヤ负闆躲€?```
 
   w1_netlink_msg->len = sizeof(struct w1_netlink_cmd) + N * 8;
   cn_msg->len = sizeof(struct w1_netlink_msg) +
@@ -126,42 +102,31 @@ w1_netlink_cmd->len = N * 8；其中 N 是本消息中 ID 的数量。可以为�
 
 
 ```
-## 命令状态回复
+## 鍛戒护鐘舵€佸洖澶?
+
+姣忎釜鍛戒护锛堟棤璁烘槸 root銆乵aster 杩樻槸 slave锛屾棤璁烘槸鍚﹀甫鏈?w1_netlink_cmd 缁撴瀯锛夐兘浼氳 w1 鏍稿績鈥滅‘璁も€濓紙acked锛夈€傚洖澶嶇殑鏍煎紡涓庤姹傛秷鎭浉鍚岋紝鍙槸闀垮害鍙傛暟涓嶈鍏ョ敤鎴疯姹傜殑鏁版嵁锛屽嵆璇?鍐?瑙︽懜 IO 璇锋眰灏嗕笉鍖呭惈鏁版嵁锛屽洜姝?w1_netlink_cmd.len 灏嗕负 0锛寃1_netlink_msg.len 灏嗕负 w1_netlink_cmd 缁撴瀯鐨勫ぇ灏忥紝鑰?cn_msg.len 灏嗙瓑浜?sizeof(struct w1_netlink_msg) 涓?sizeof(struct w1_netlink_cmd) 涔嬪拰銆傚鏋滃洖澶嶆槸涓?master 鎴?root 鍛戒护锛堜笉甯?w1_netlink_cmd锛夌敓鎴愮殑锛屽垯鍥炲浠呭寘鍚?cn_msg 鍜?w1_netlink_msg 缁撴瀯銆?
+w1_netlink_msg.status 瀛楁灏嗘惡甯︽鐨勯敊璇€硷紙渚嬪 EINVAL锛夋垨鎴愬姛鏃剁殑 0銆?
+姣忎釜缁撴瀯涓殑鎵€鏈夊叾浠栧瓧娈靛皢闀滃儚璇锋眰娑堟伅涓殑鐩稿悓鍙傛暟锛堥櫎涓婅堪闀垮害澶栵級銆?
+浼氫负 w1_netlink_msg 涓祵鍏ョ殑姣忎釜 w1_netlink_cmd 鐢熸垚鐘舵€佸洖澶嶏紱濡傛灉娌℃湁 w1_netlink_cmd 缁撴瀯锛屽垯灏嗕负 w1_netlink_msg 鐢熸垚鍥炲銆?
+鍦ㄦ瘡涓?w1_netlink_msg 涓紝鎵€鏈?w1_netlink_cmd 鍛戒护缁撴瀯閮戒細琚鐞嗭紝鍗充娇瀛樺湪閿欒锛屽彧鏈夐暱搴︿笉鍖归厤鎵嶄細涓柇娑堟伅澶勭悊銆?
+
+## 褰撴帴鏀跺埌鏂板懡浠ゆ椂 w1 鏍稿績涓殑鎿嶄綔姝ラ
 
 
-每个命令（无论是 root、master 还是 slave，无论是否带有 w1_netlink_cmd 结构）都会被 w1 核心“确认”（acked）。回复的格式与请求消息相同，只是长度参数不计入用户请求的数据，即读/写/触摸 IO 请求将不包含数据，因此 w1_netlink_cmd.len 将为 0，w1_netlink_msg.len 将为 w1_netlink_cmd 结构的大小，而 cn_msg.len 将等于 sizeof(struct w1_netlink_msg) 与 sizeof(struct w1_netlink_cmd) 之和。如果回复是为 master 或 root 命令（不带 w1_netlink_cmd）生成的，则回复仅包含 cn_msg 和 w1_netlink_msg 结构。
+褰撴帴鏀跺埌鏂版秷鎭紙w1_netlink_msg锛夋椂锛寃1 鏍稿績鏍规嵁 w1_netlink_msg.type 瀛楁妫€娴嬪畠鏄?master 杩樻槸 slave 璇锋眰銆傜劧鍚庢悳绱?master 鎴?slave 璁惧銆傛壘鍒板悗锛宮aster 璁惧锛堣璇锋眰鐨勶紝鎴栨槸鎵惧埌 slave 璁惧鐨勯偅涓級琚攣瀹氥€傚鏋滆姹傜殑鏄?slave 鍛戒护锛屽垯鍚姩澶嶄綅/閫夋嫨锛坮eset/select锛夎繃绋嬩互閫夋嫨缁欏畾璁惧銆?
+鐒跺悗 w1_netlink_msg 涓姹傜殑鎵€鏈夋搷浣滆閫愪竴鎵ц銆傚鏋滃懡浠ら渶瑕佸洖澶嶏紙濡傝鍛戒护锛夛紝鍒欏湪鍛戒护瀹屾垚鏃跺彂閫併€?
+褰撴墍鏈夊懡浠わ紙w1_netlink_cmd锛夊鐞嗗畬姣曞悗锛宮aster 璁惧琚В閿侊紝骞跺紑濮嬪鐞嗕笅涓€涓?w1_netlink_msg 澶撮儴銆?
 
-w1_netlink_msg.status 字段将携带正的错误值（例如 EINVAL）或成功时的 0。
-
-每个结构中的所有其他字段将镜像请求消息中的相同参数（除上述长度外）。
-
-会为 w1_netlink_msg 中嵌入的每个 w1_netlink_cmd 生成状态回复；如果没有 w1_netlink_cmd 结构，则将为 w1_netlink_msg 生成回复。
-
-在每个 w1_netlink_msg 中，所有 w1_netlink_cmd 命令结构都会被处理，即使存在错误，只有长度不匹配才会中断消息处理。
+## Connector [1] 鐗瑰畾鏂囨。
 
 
-## 当接收到新命令时 w1 核心中的操作步骤
+姣忎釜 connector 娑堟伅鍖呭惈涓や釜 u32 瀛楁浣滀负鈥滃湴鍧€鈥濄€倃1 浣跨敤鍦?include/linux/connector.h 澶存枃浠朵腑瀹氫箟鐨?CN_W1_IDX 鍜?CN_W1_VAL銆傛瘡涓秷鎭繕鍖呭惈搴忓垪鍙峰拰纭鍙枫€?
+浜嬩欢娑堟伅鐨勫簭鍒楀彿鏄浉搴旂殑鎬荤嚎涓昏澶囧簭鍒楀彿锛屾瘡閫氳繃璇ヤ富璁惧鍙戦€佷竴鏉′簨浠舵秷鎭氨閫掑銆傜敤鎴风┖闂磋姹傜殑搴忓垪鍙风敱鐢ㄦ埛绌洪棿搴旂敤绋嬪簭璁剧疆銆傚洖澶嶇殑搴忓垪鍙蜂笌璇锋眰涓殑鐩稿悓锛岀‘璁ゅ彿璁句负 seq+1銆?
 
-
-当接收到新消息（w1_netlink_msg）时，w1 核心根据 w1_netlink_msg.type 字段检测它是 master 还是 slave 请求。然后搜索 master 或 slave 设备。找到后，master 设备（被请求的，或是找到 slave 设备的那个）被锁定。如果请求的是 slave 命令，则启动复位/选择（reset/select）过程以选择给定设备。
-
-然后 w1_netlink_msg 中请求的所有操作被逐一执行。如果命令需要回复（如读命令），则在命令完成时发送。
-
-当所有命令（w1_netlink_cmd）处理完毕后，master 设备被解锁，并开始处理下一个 w1_netlink_msg 头部。
-
-
-## Connector [1] 特定文档
-
-
-每个 connector 消息包含两个 u32 字段作为“地址”。w1 使用在 include/linux/connector.h 头文件中定义的 CN_W1_IDX 和 CN_W1_VAL。每个消息还包含序列号和确认号。
-
-事件消息的序列号是相应的总线主设备序列号，每通过该主设备发送一条事件消息就递增。用户空间请求的序列号由用户空间应用程序设置。回复的序列号与请求中的相同，确认号设为 seq+1。
-
-
-## 附加文档、源代码示例
+## 闄勫姞鏂囨。銆佹簮浠ｇ爜绀轰緥
 
 
 1. Documentation/driver-api/connector.rst
 2. https://github.com/bioothod/w1
 
-   此归档包含用户空间应用程序 w1d.c，它使用读/写/搜索命令操作总线上找到的所有 master/slave 设备。
+   姝ゅ綊妗ｅ寘鍚敤鎴风┖闂村簲鐢ㄧ▼搴?w1d.c锛屽畠浣跨敤璇?鍐?鎼滅储鍛戒护鎿嶄綔鎬荤嚎涓婃壘鍒扮殑鎵€鏈?master/slave 璁惧銆?

@@ -1,11 +1,11 @@
-
+﻿
 ## The PCI Express Advanced Error Reporting Driver Guide HOWTO
 
 
-:作者: - T. Long Nguyen <tom.l.nguyen@intel.com>
+:浣滆€? - T. Long Nguyen <tom.l.nguyen@intel.com>
           - Yanmin Zhang <yanmin.zhang@intel.com>
 
-:版权: |copy| 2006 Intel Corporation
+:鐗堟潈: |copy| 2006 Intel Corporation
 
 ## Overview
 
@@ -13,25 +13,25 @@
 ### About this guide
 
 
-本指南描述 PCI Express（PCIe）高级错误报告（Advanced Error Reporting，AER）驱动的基础
-知识，并提供有关如何使用它，以及如何使端点设备驱动符合 PCIe AER 驱动的信息。
+鏈寚鍗楁弿杩?PCI Express锛圥CIe锛夐珮绾ч敊璇姤鍛婏紙Advanced Error Reporting锛孉ER锛夐┍鍔ㄧ殑鍩虹
+鐭ヨ瘑锛屽苟鎻愪緵鏈夊叧濡備綍浣跨敤瀹冿紝浠ュ強濡備綍浣跨鐐硅澶囬┍鍔ㄧ鍚?PCIe AER 椹卞姩鐨勪俊鎭€?
 
 
 ### What is the PCIe AER Driver?
 
 
-PCIe 错误信号可以发生在 PCIe 链路本身上，也可以代表在链路上发起的事务。PCIe 定义了两种
-错误报告范式：基线能力（baseline capability）和高级错误报告能力。所有 PCIe 组件都必须
-提供基线能力，它定义了一组最小错误报告要求。高级错误报告能力通过 PCIe 高级错误报告扩展
-能力结构实现，提供更健壮的错误报告。
+PCIe 閿欒淇″彿鍙互鍙戠敓鍦?PCIe 閾捐矾鏈韩涓婏紝涔熷彲浠ヤ唬琛ㄥ湪閾捐矾涓婂彂璧风殑浜嬪姟銆侾CIe 瀹氫箟浜嗕袱绉?
+閿欒鎶ュ憡鑼冨紡锛氬熀绾胯兘鍔涳紙baseline capability锛夊拰楂樼骇閿欒鎶ュ憡鑳藉姏銆傛墍鏈?PCIe 缁勪欢閮藉繀椤?
+鎻愪緵鍩虹嚎鑳藉姏锛屽畠瀹氫箟浜嗕竴缁勬渶灏忛敊璇姤鍛婅姹傘€傞珮绾ч敊璇姤鍛婅兘鍔涢€氳繃 PCIe 楂樼骇閿欒鎶ュ憡鎵╁睍
+鑳藉姏缁撴瀯瀹炵幇锛屾彁渚涙洿鍋ュ．鐨勯敊璇姤鍛娿€?
 
-PCIe AER 驱动提供了支持 PCIe 高级错误报告能力的基础设施。PCIe AER 驱动提供三个基本功能：
+PCIe AER 椹卞姩鎻愪緵浜嗘敮鎸?PCIe 楂樼骇閿欒鎶ュ憡鑳藉姏鐨勫熀纭€璁炬柦銆侾CIe AER 椹卞姩鎻愪緵涓変釜鍩烘湰鍔熻兘锛?
 
-  - 如果发生错误，收集全面的错误信息。
-  - 向用户报告错误。
-  - 执行错误恢复操作。
+  - 濡傛灉鍙戠敓閿欒锛屾敹闆嗗叏闈㈢殑閿欒淇℃伅銆?
+  - 鍚戠敤鎴锋姤鍛婇敊璇€?
+  - 鎵ц閿欒鎭㈠鎿嶄綔銆?
 
-AER 驱动只挂接到支持 PCIe AER 能力的 Root Port 和 RCEC 上。
+AER 椹卞姩鍙寕鎺ュ埌鏀寔 PCIe AER 鑳藉姏鐨?Root Port 鍜?RCEC 涓娿€?
 
 
 ## User Guide
@@ -40,22 +40,22 @@ AER 驱动只挂接到支持 PCIe AER 能力的 Root Port 和 RCEC 上。
 ### Include the PCIe AER Root Driver into the Linux Kernel
 
 
-PCIe AER 驱动是一个通过 PCIe Port Bus 驱动挂接的 Root Port 服务驱动。如果用户想使用它，
-必须编译该驱动。它由 CONFIG_PCIEAER 启用，而 CONFIG_PCIEAER 依赖于 CONFIG_PCIEPORTBUS。
+PCIe AER 椹卞姩鏄竴涓€氳繃 PCIe Port Bus 椹卞姩鎸傛帴鐨?Root Port 鏈嶅姟椹卞姩銆傚鏋滅敤鎴锋兂浣跨敤瀹冿紝
+蹇呴』缂栬瘧璇ラ┍鍔ㄣ€傚畠鐢?CONFIG_PCIEAER 鍚敤锛岃€?CONFIG_PCIEAER 渚濊禆浜?CONFIG_PCIEPORTBUS銆?
 
 ### Load PCIe AER Root Driver
 
 
-某些系统的固件中带有 AER 支持。在固件处理 AER 的同时启用 Linux 的 AER 支持会导致不可预测
-的行为。因此，除非固件通过 ACPI _OSC 方法将 AER 控制权授予操作系统，否则 Linux 不处理
-AER 事件。有关 _OSC 用法的详细信息，请参阅 PCI 固件规范。
+鏌愪簺绯荤粺鐨勫浐浠朵腑甯︽湁 AER 鏀寔銆傚湪鍥轰欢澶勭悊 AER 鐨勫悓鏃跺惎鐢?Linux 鐨?AER 鏀寔浼氬鑷翠笉鍙娴?
+鐨勮涓恒€傚洜姝わ紝闄ら潪鍥轰欢閫氳繃 ACPI _OSC 鏂规硶灏?AER 鎺у埗鏉冩巿浜堟搷浣滅郴缁燂紝鍚﹀垯 Linux 涓嶅鐞?
+AER 浜嬩欢銆傛湁鍏?_OSC 鐢ㄦ硶鐨勮缁嗕俊鎭紝璇峰弬闃?PCI 鍥轰欢瑙勮寖銆?
 
 ### AER error output
 
 
-当捕获到 PCIe AER 错误时，会向控制台输出一条错误消息。如果是可纠正错误（correctable
-error），则作为警告消息输出。否则，作为错误消息打印。因此用户可以选择不同的日志级别来
-过滤掉可纠正错误消息。
+褰撴崟鑾峰埌 PCIe AER 閿欒鏃讹紝浼氬悜鎺у埗鍙拌緭鍑轰竴鏉￠敊璇秷鎭€傚鏋滄槸鍙籂姝ｉ敊璇紙correctable
+error锛夛紝鍒欎綔涓鸿鍛婃秷鎭緭鍑恒€傚惁鍒欙紝浣滀负閿欒娑堟伅鎵撳嵃銆傚洜姝ょ敤鎴峰彲浠ラ€夋嫨涓嶅悓鐨勬棩蹇楃骇鍒潵
+杩囨护鎺夊彲绾犳閿欒娑堟伅銆?
 
 ```
 
@@ -65,11 +65,11 @@ error），则作为警告消息输出。否则，作为错误消息打印。因
   0000:50:00.0:   TLP Header: 0x04000001 0x00200a03 0x05010000 0x00050100
 
 ```
-在示例中，“Requester ID”指将错误消息发送给 Root Port 的设备的 ID。其他字段请参阅 PCIe
-规范。
+鍦ㄧず渚嬩腑锛屸€淩equester ID鈥濇寚灏嗛敊璇秷鎭彂閫佺粰 Root Port 鐨勮澶囩殑 ID銆傚叾浠栧瓧娈佃鍙傞槄 PCIe
+瑙勮寖銆?
 
-“TLP Header”是引起错误的 TLP 的原始十六进制格式的前缀/头部。要将 TLP Header 解码为可读
-形式，可以使用 tlp-tool：
+鈥淭LP Header鈥濇槸寮曡捣閿欒鐨?TLP 鐨勫師濮嬪崄鍏繘鍒舵牸寮忕殑鍓嶇紑/澶撮儴銆傝灏?TLP Header 瑙ｇ爜涓哄彲璇?
+褰㈠紡锛屽彲浠ヤ娇鐢?tlp-tool锛?
 
 https://github.com/mmpg-x86/tlp-tool
 
@@ -81,48 +81,48 @@ https://github.com/mmpg-x86/tlp-tool
 ### AER Ratelimits
 
 
-由于每个事务都可能产生错误消息，我们可能会看到大量报告的错误。为了防止多话的设备淹没
-控制台/停滞执行，消息按设备和错误类型（可纠正 vs. 非致命不可纠正）进行限流。致命错误
-（包括 DPC 错误）不受速率限制。
+鐢变簬姣忎釜浜嬪姟閮藉彲鑳戒骇鐢熼敊璇秷鎭紝鎴戜滑鍙兘浼氱湅鍒板ぇ閲忔姤鍛婄殑閿欒銆備负浜嗛槻姝㈠璇濈殑璁惧娣规病
+鎺у埗鍙?鍋滄粸鎵ц锛屾秷鎭寜璁惧鍜岄敊璇被鍨嬶紙鍙籂姝?vs. 闈炶嚧鍛戒笉鍙籂姝ｏ級杩涜闄愭祦銆傝嚧鍛介敊璇?
+锛堝寘鎷?DPC 閿欒锛変笉鍙楅€熺巼闄愬埗銆?
 
-AER 使用默认的速率限制：DEFAULT_RATELIMIT_BURST（10 个事件）在 DEFAULT_RATELIMIT_INTERVAL
-（5 秒）内。
+AER 浣跨敤榛樿鐨勯€熺巼闄愬埗锛欴EFAULT_RATELIMIT_BURST锛?0 涓簨浠讹級鍦?DEFAULT_RATELIMIT_INTERVAL
+锛? 绉掞級鍐呫€?
 
-速率限制以 sysfs 属性的形式暴露，并且可配置。请参阅
-Documentation/ABI/testing/sysfs-bus-pci-devices-aer。
+閫熺巼闄愬埗浠?sysfs 灞炴€х殑褰㈠紡鏆撮湶锛屽苟涓斿彲閰嶇疆銆傝鍙傞槄
+Documentation/ABI/testing/sysfs-bus-pci-devices-aer銆?
 
 ### AER Statistics / Counters
 
 
-当捕获到 PCIe AER 错误时，计数器/统计信息也以 sysfs 属性的形式暴露，记录于
-Documentation/ABI/testing/sysfs-bus-pci-devices-aer。
+褰撴崟鑾峰埌 PCIe AER 閿欒鏃讹紝璁℃暟鍣?缁熻淇℃伅涔熶互 sysfs 灞炴€х殑褰㈠紡鏆撮湶锛岃褰曚簬
+Documentation/ABI/testing/sysfs-bus-pci-devices-aer銆?
 
 ## Developer Guide
 
 
-要启用错误恢复，软件驱动必须提供回调函数。
+瑕佸惎鐢ㄩ敊璇仮澶嶏紝杞欢椹卞姩蹇呴』鎻愪緵鍥炶皟鍑芥暟銆?
 
-为了更好地理解 AER，开发者需要了解 AER 的工作原理。
+涓轰簡鏇村ソ鍦扮悊瑙?AER锛屽紑鍙戣€呴渶瑕佷簡瑙?AER 鐨勫伐浣滃師鐞嗐€?
 
-PCIe 错误分为两类：可纠正错误和不可纠正错误。这种分类基于这些错误的影响，可能导致性能
-下降或功能失效。
+PCIe 閿欒鍒嗕负涓ょ被锛氬彲绾犳閿欒鍜屼笉鍙籂姝ｉ敊璇€傝繖绉嶅垎绫诲熀浜庤繖浜涢敊璇殑褰卞搷锛屽彲鑳藉鑷存€ц兘
+涓嬮檷鎴栧姛鑳藉け鏁堛€?
 
-可纠正错误对接口的功能没有任何影响。PCIe 协议可以在不需要任何软件干预或任何数据丢失的
-情况下恢复。这些错误由硬件检测并纠正。
+鍙籂姝ｉ敊璇鎺ュ彛鐨勫姛鑳芥病鏈変换浣曞奖鍝嶃€侾CIe 鍗忚鍙互鍦ㄤ笉闇€瑕佷换浣曡蒋浠跺共棰勬垨浠讳綍鏁版嵁涓㈠け鐨?
+鎯呭喌涓嬫仮澶嶃€傝繖浜涢敊璇敱纭欢妫€娴嬪苟绾犳銆?
 
-与可纠正错误不同，不可纠正错误会影响接口的功能。不可纠正错误可能导致特定事务或特定 PCIe
-链路不可靠。根据这些错误状况，不可纠正错误进一步分为非致命错误（non-fatal error）和致命
-错误（fatal error）。非致命错误导致特定事务不可靠，但 PCIe 链路本身完全正常。另一方面，
-致命错误导致链路不可靠。
+涓庡彲绾犳閿欒涓嶅悓锛屼笉鍙籂姝ｉ敊璇細褰卞搷鎺ュ彛鐨勫姛鑳姐€備笉鍙籂姝ｉ敊璇彲鑳藉鑷寸壒瀹氫簨鍔℃垨鐗瑰畾 PCIe
+閾捐矾涓嶅彲闈犮€傛牴鎹繖浜涢敊璇姸鍐碉紝涓嶅彲绾犳閿欒杩涗竴姝ュ垎涓洪潪鑷村懡閿欒锛坣on-fatal error锛夊拰鑷村懡
+閿欒锛坒atal error锛夈€傞潪鑷村懡閿欒瀵艰嚧鐗瑰畾浜嬪姟涓嶅彲闈狅紝浣?PCIe 閾捐矾鏈韩瀹屽叏姝ｅ父銆傚彟涓€鏂归潰锛?
+鑷村懡閿欒瀵艰嚧閾捐矾涓嶅彲闈犮€?
 
-当启用 PCIe 错误报告时，设备捕获到错误后会自动向上面的 Root Port 发送一条错误消息。Root
-Port 在收到错误报告消息后，会在其 AER 能力结构中内部处理并记录该错误消息。被记录的错误
-信息包括将错误报告代理的 Requester ID 存入错误源识别寄存器，并相应地设置 Root Error
-Status 寄存器的错误位。如果在 Root Error Command 寄存器中启用了 AER 错误报告，Root Port
-在检测到错误时会生成一个中断。
+褰撳惎鐢?PCIe 閿欒鎶ュ憡鏃讹紝璁惧鎹曡幏鍒伴敊璇悗浼氳嚜鍔ㄥ悜涓婇潰鐨?Root Port 鍙戦€佷竴鏉￠敊璇秷鎭€俁oot
+Port 鍦ㄦ敹鍒伴敊璇姤鍛婃秷鎭悗锛屼細鍦ㄥ叾 AER 鑳藉姏缁撴瀯涓唴閮ㄥ鐞嗗苟璁板綍璇ラ敊璇秷鎭€傝璁板綍鐨勯敊璇?
+淇℃伅鍖呮嫭灏嗛敊璇姤鍛婁唬鐞嗙殑 Requester ID 瀛樺叆閿欒婧愯瘑鍒瘎瀛樺櫒锛屽苟鐩稿簲鍦拌缃?Root Error
+Status 瀵勫瓨鍣ㄧ殑閿欒浣嶃€傚鏋滃湪 Root Error Command 瀵勫瓨鍣ㄤ腑鍚敤浜?AER 閿欒鎶ュ憡锛孯oot Port
+鍦ㄦ娴嬪埌閿欒鏃朵細鐢熸垚涓€涓腑鏂€?
 
-注意，上述错误与 PCIe 层级结构和链路有关。这些错误不包括任何设备特定的错误，因为设备特定
-错误仍会直接发送给设备驱动。
+娉ㄦ剰锛屼笂杩伴敊璇笌 PCIe 灞傜骇缁撴瀯鍜岄摼璺湁鍏炽€傝繖浜涢敊璇笉鍖呮嫭浠讳綍璁惧鐗瑰畾鐨勯敊璇紝鍥犱负璁惧鐗瑰畾
+閿欒浠嶄細鐩存帴鍙戦€佺粰璁惧椹卞姩銆?
 
 ### Provide callbacks
 
@@ -130,80 +130,80 @@ Status 寄存器的错误位。如果在 Root Error Command 寄存器中启用�
 #### PCI error-recovery callbacks
 
 
-PCIe AER Root 驱动在执行错误恢复操作时，使用错误回调来与所涉及层级结构中的下游设备驱动
-协调。
+PCIe AER Root 椹卞姩鍦ㄦ墽琛岄敊璇仮澶嶆搷浣滄椂锛屼娇鐢ㄩ敊璇洖璋冩潵涓庢墍娑夊強灞傜骇缁撴瀯涓殑涓嬫父璁惧椹卞姩
+鍗忚皟銆?
 
-数据结构 pci_driver 有一个指针 err_handler，指向 pci_error_handlers，后者由几个回调函数
-指针组成。除了 PCIe 特定的部分外（见下文），AER 驱动遵循 pci-error-recovery.rst 中定义的
-规则。有关回调的详细定义，请参阅 pci-error-recovery.rst。
+鏁版嵁缁撴瀯 pci_driver 鏈変竴涓寚閽?err_handler锛屾寚鍚?pci_error_handlers锛屽悗鑰呯敱鍑犱釜鍥炶皟鍑芥暟
+鎸囬拡缁勬垚銆傞櫎浜?PCIe 鐗瑰畾鐨勯儴鍒嗗锛堣涓嬫枃锛夛紝AER 椹卞姩閬靛惊 pci-error-recovery.rst 涓畾涔夌殑
+瑙勫垯銆傛湁鍏冲洖璋冪殑璇︾粏瀹氫箟锛岃鍙傞槄 pci-error-recovery.rst銆?
 
-以下各节说明了何时调用错误回调函数。
+浠ヤ笅鍚勮妭璇存槑浜嗕綍鏃惰皟鐢ㄩ敊璇洖璋冨嚱鏁般€?
 
 #### Correctable errors
 
 
-可纠正错误对接口的功能没有任何影响。PCIe 协议可以在不需要任何软件干预或任何数据丢失的
-情况下恢复。这些错误不需要任何恢复操作。AER 驱动相应地清除设备的可纠正错误状态寄存器，并
-记录这些错误。
+鍙籂姝ｉ敊璇鎺ュ彛鐨勫姛鑳芥病鏈変换浣曞奖鍝嶃€侾CIe 鍗忚鍙互鍦ㄤ笉闇€瑕佷换浣曡蒋浠跺共棰勬垨浠讳綍鏁版嵁涓㈠け鐨?
+鎯呭喌涓嬫仮澶嶃€傝繖浜涢敊璇笉闇€瑕佷换浣曟仮澶嶆搷浣溿€侫ER 椹卞姩鐩稿簲鍦版竻闄よ澶囩殑鍙籂姝ｉ敊璇姸鎬佸瘎瀛樺櫒锛屽苟
+璁板綍杩欎簺閿欒銆?
 
 #### Uncorrectable (non-fatal and fatal) errors
 
 
-AER 驱动执行一次 Secondary Bus Reset（次级总线复位）以从不可纠正错误中恢复。复位应用于
-发起设备之上的端口：如果发起设备是一个端点（Endpoint），则只复位该端点。另一方面，如果发起
-设备有从属设备，那些设备也会全部受到复位影响。
+AER 椹卞姩鎵ц涓€娆?Secondary Bus Reset锛堟绾ф€荤嚎澶嶄綅锛変互浠庝笉鍙籂姝ｉ敊璇腑鎭㈠銆傚浣嶅簲鐢ㄤ簬
+鍙戣捣璁惧涔嬩笂鐨勭鍙ｏ細濡傛灉鍙戣捣璁惧鏄竴涓鐐癸紙Endpoint锛夛紝鍒欏彧澶嶄綅璇ョ鐐广€傚彟涓€鏂归潰锛屽鏋滃彂璧?
+璁惧鏈変粠灞炶澶囷紝閭ｄ簺璁惧涔熶細鍏ㄩ儴鍙楀埌澶嶄綅褰卞搷銆?
 
-如果发起设备是一个 Root Complex Integrated Endpoint（根复合体集成端点），则没有可以应用
-Secondary Bus Reset 的端口之上。在这种情况下，AER 驱动改为应用 Function Level Reset（功能
-级复位）。
+濡傛灉鍙戣捣璁惧鏄竴涓?Root Complex Integrated Endpoint锛堟牴澶嶅悎浣撻泦鎴愮鐐癸級锛屽垯娌℃湁鍙互搴旂敤
+Secondary Bus Reset 鐨勭鍙ｄ箣涓娿€傚湪杩欑鎯呭喌涓嬶紝AER 椹卞姩鏀逛负搴旂敤 Function Level Reset锛堝姛鑳?
+绾у浣嶏級銆?
 
-如果错误消息指示非致命错误，则不需要在上游执行复位。AER 驱动向某个层级结构中关联的所有
-驱动调用 error_detected(dev, pci_channel_io_normal)
+濡傛灉閿欒娑堟伅鎸囩ず闈炶嚧鍛介敊璇紝鍒欎笉闇€瑕佸湪涓婃父鎵ц澶嶄綅銆侫ER 椹卞姩鍚戞煇涓眰绾х粨鏋勪腑鍏宠仈鐨勬墍鏈?
+椹卞姩璋冪敤 error_detected(dev, pci_channel_io_normal)
 ```
 
   Endpoint <==> Downstream Port B <==> Upstream Port A <==> Root Port
 
 ```
-如果 Upstream Port A 捕获了一个 AER 错误，则该层级结构由 Downstream Port B 和 Endpoint 组成。
+濡傛灉 Upstream Port A 鎹曡幏浜嗕竴涓?AER 閿欒锛屽垯璇ュ眰绾х粨鏋勭敱 Downstream Port B 鍜?Endpoint 缁勬垚銆?
 
-驱动可以返回 PCI_ERS_RESULT_CAN_RECOVER、PCI_ERS_RESULT_DISCONNECT 或
-PCI_ERS_RESULT_NEED_RESET，具体取决于它是否可以在不复位的情况下恢复、认为设备不可恢复，或
-需要复位才能恢复。如果所有受影响的驱动都同意可以在不复位的情况下恢复，则跳过复位。只要有一
-个驱动请求复位，就会覆盖所有其他驱动。
+椹卞姩鍙互杩斿洖 PCI_ERS_RESULT_CAN_RECOVER銆丳CI_ERS_RESULT_DISCONNECT 鎴?
+PCI_ERS_RESULT_NEED_RESET锛屽叿浣撳彇鍐充簬瀹冩槸鍚﹀彲浠ュ湪涓嶅浣嶇殑鎯呭喌涓嬫仮澶嶃€佽涓鸿澶囦笉鍙仮澶嶏紝鎴?
+闇€瑕佸浣嶆墠鑳芥仮澶嶃€傚鏋滄墍鏈夊彈褰卞搷鐨勯┍鍔ㄩ兘鍚屾剰鍙互鍦ㄤ笉澶嶄綅鐨勬儏鍐典笅鎭㈠锛屽垯璺宠繃澶嶄綅銆傚彧瑕佹湁涓€
+涓┍鍔ㄨ姹傚浣嶏紝灏变細瑕嗙洊鎵€鏈夊叾浠栭┍鍔ㄣ€?
 
-如果错误消息指示致命错误，内核将向某个层级结构中的所有驱动广播 error_detected(dev,
-pci_channel_io_frozen)。然后，必须在上游执行复位。如果 error_detected 返回
-PCI_ERS_RESULT_CAN_RECOVER 表示可以在不复位的情况下恢复，错误处理将进入 mmio_enabled，但
-之后仍会执行复位。
+濡傛灉閿欒娑堟伅鎸囩ず鑷村懡閿欒锛屽唴鏍稿皢鍚戞煇涓眰绾х粨鏋勪腑鐨勬墍鏈夐┍鍔ㄥ箍鎾?error_detected(dev,
+pci_channel_io_frozen)銆傜劧鍚庯紝蹇呴』鍦ㄤ笂娓告墽琛屽浣嶃€傚鏋?error_detected 杩斿洖
+PCI_ERS_RESULT_CAN_RECOVER 琛ㄧず鍙互鍦ㄤ笉澶嶄綅鐨勬儏鍐典笅鎭㈠锛岄敊璇鐞嗗皢杩涘叆 mmio_enabled锛屼絾
+涔嬪悗浠嶄細鎵ц澶嶄綅銆?
 
-换句话说，对于非致命错误，驱动可以选择进行复位。但对于致命错误，基于链路不可靠的假设，它们
-不能选择不进行复位。
+鎹㈠彞璇濊锛屽浜庨潪鑷村懡閿欒锛岄┍鍔ㄥ彲浠ラ€夋嫨杩涜澶嶄綅銆備絾瀵逛簬鑷村懡閿欒锛屽熀浜庨摼璺笉鍙潬鐨勫亣璁撅紝瀹冧滑
+涓嶈兘閫夋嫨涓嶈繘琛屽浣嶃€?
 
 ### Frequently Asked Questions
 
 
-问：
-  如果 PCIe 设备驱动没有提供错误恢复处理程序（pci_driver->err_handler 等于 NULL），会
-  发生什么？
+闂細
+  濡傛灉 PCIe 璁惧椹卞姩娌℃湁鎻愪緵閿欒鎭㈠澶勭悊绋嬪簭锛坧ci_driver->err_handler 绛変簬 NULL锛夛紝浼?
+  鍙戠敓浠€涔堬紵
 
-答：
-  与该驱动关联的设备将无法被恢复。内核将打印出信息性消息来识别不可恢复的设备。
+绛旓細
+  涓庤椹卞姩鍏宠仈鐨勮澶囧皢鏃犳硶琚仮澶嶃€傚唴鏍稿皢鎵撳嵃鍑轰俊鎭€ф秷鎭潵璇嗗埆涓嶅彲鎭㈠鐨勮澶囥€?
 
 
 ## Software error injection
 
 
-调试 PCIe AER 错误恢复代码相当困难，因为很难触发真实的硬件错误。可以使用基于软件的错误注入
-来伪造各种 PCIe 错误。
+璋冭瘯 PCIe AER 閿欒鎭㈠浠ｇ爜鐩稿綋鍥伴毦锛屽洜涓哄緢闅捐Е鍙戠湡瀹炵殑纭欢閿欒銆傚彲浠ヤ娇鐢ㄥ熀浜庤蒋浠剁殑閿欒娉ㄥ叆
+鏉ヤ吉閫犲悇绉?PCIe 閿欒銆?
 
-首先你应在内核配置中启用 PCIe AER 软件错误注入，即你的 .config 中应包含以下项。
+棣栧厛浣犲簲鍦ㄥ唴鏍搁厤缃腑鍚敤 PCIe AER 杞欢閿欒娉ㄥ叆锛屽嵆浣犵殑 .config 涓簲鍖呭惈浠ヤ笅椤广€?
 
 CONFIG_PCIEAER_INJECT=y or CONFIG_PCIEAER_INJECT=m
 
-用新内核重启或插入模块后，应创建一个名为 /dev/aer_inject 的设备文件。
+鐢ㄦ柊鍐呮牳閲嶅惎鎴栨彃鍏ユā鍧楀悗锛屽簲鍒涘缓涓€涓悕涓?/dev/aer_inject 鐨勮澶囨枃浠躲€?
 
-然后，你需要一个名为 aer-inject 的用户空间工具，可从以下地址获取：
+鐒跺悗锛屼綘闇€瑕佷竴涓悕涓?aer-inject 鐨勭敤鎴风┖闂村伐鍏凤紝鍙粠浠ヤ笅鍦板潃鑾峰彇锛?
 
     https://github.com/intel/aer-inject.git
 
-有关 aer-inject 的更多信息可在其源代码中的文档找到。
+鏈夊叧 aer-inject 鐨勬洿澶氫俊鎭彲鍦ㄥ叾婧愪唬鐮佷腑鐨勬枃妗ｆ壘鍒般€?

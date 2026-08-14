@@ -1,44 +1,34 @@
-
+﻿
 ######## ioctl VIDIOC_G_ENC_INDEX
 
 
-## 名称
+## 鍚嶇О
 
 
-VIDIOC_G_ENC_INDEX - 获取压缩视频流的元数据
-
-## 摘要
+VIDIOC_G_ENC_INDEX - 鑾峰彇鍘嬬缉瑙嗛娴佺殑鍏冩暟鎹?
+## 鎽樿
 
 
 `int ioctl(int fd, VIDIOC_G_ENC_INDEX, struct v4l2_enc_idx *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
-
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `argp`
-    指向 struct `v4l2_enc_idx` 的指针。
+    鎸囧悜 struct `v4l2_enc_idx` 鐨勬寚閽堛€?
+## 鎻忚堪
 
-## 描述
 
-
-VIDIOC_G_ENC_INDEX <VIDIOC_G_ENC_INDEX> ioctl 提供关于当前由本驱动或另一应用程序从
-驱动读取的压缩视频流的元数据，这对于无需解码即可随机访问该流非常有用。
-
-为了读取数据，应用程序必须调用 VIDIOC_G_ENC_INDEX <VIDIOC_G_ENC_INDEX>，并传入一个
-指向 struct `v4l2_enc_idx` 的指针。成功时，驱动会填充 `entry` 数组，
-将写入的元素个数存入 `entries` 字段，并初始化 `entries_cap` 字段。
-
-`entry` 数组的每个元素包含一幅图像的元数据。一次 VIDIOC_G_ENC_INDEX <VIDIOC_G_ENC_INDEX>
-调用会从驱动缓冲区中读取最多 `V4L2_ENC_IDX_ENTRIES` 个条目，该缓冲区最多可容纳
-`entries_cap` 个条目。该数字可以高于或低于 `V4L2_ENC_IDX_ENTRIES`，但不能为零。当
-应用程序未能及时读取元数据时，最旧的条目将会丢失。当缓冲区为空或没有进行捕获/编码时，
-`entries` 将为零。
-
-目前此 ioctl 仅针对 MPEG-2 program stream 与 video elementary stream 定义。
-
+VIDIOC_G_ENC_INDEX <VIDIOC_G_ENC_INDEX> ioctl 鎻愪緵鍏充簬褰撳墠鐢辨湰椹卞姩鎴栧彟涓€搴旂敤绋嬪簭浠?椹卞姩璇诲彇鐨勫帇缂╄棰戞祦鐨勫厓鏁版嵁锛岃繖瀵逛簬鏃犻渶瑙ｇ爜鍗冲彲闅忔満璁块棶璇ユ祦闈炲父鏈夌敤銆?
+涓轰簡璇诲彇鏁版嵁锛屽簲鐢ㄧ▼搴忓繀椤昏皟鐢?VIDIOC_G_ENC_INDEX <VIDIOC_G_ENC_INDEX>锛屽苟浼犲叆涓€涓?鎸囧悜 struct `v4l2_enc_idx` 鐨勬寚閽堛€傛垚鍔熸椂锛岄┍鍔ㄤ細濉厖 `entry` 鏁扮粍锛?灏嗗啓鍏ョ殑鍏冪礌涓暟瀛樺叆 `entries` 瀛楁锛屽苟鍒濆鍖?`entries_cap` 瀛楁銆?
+`entry` 鏁扮粍鐨勬瘡涓厓绱犲寘鍚竴骞呭浘鍍忕殑鍏冩暟鎹€備竴娆?VIDIOC_G_ENC_INDEX <VIDIOC_G_ENC_INDEX>
+璋冪敤浼氫粠椹卞姩缂撳啿鍖轰腑璇诲彇鏈€澶?`V4L2_ENC_IDX_ENTRIES` 涓潯鐩紝璇ョ紦鍐插尯鏈€澶氬彲瀹圭撼
+`entries_cap` 涓潯鐩€傝鏁板瓧鍙互楂樹簬鎴栦綆浜?`V4L2_ENC_IDX_ENTRIES`锛屼絾涓嶈兘涓洪浂銆傚綋
+搴旂敤绋嬪簭鏈兘鍙婃椂璇诲彇鍏冩暟鎹椂锛屾渶鏃х殑鏉＄洰灏嗕細涓㈠け銆傚綋缂撳啿鍖轰负绌烘垨娌℃湁杩涜鎹曡幏/缂栫爜鏃讹紝
+`entries` 灏嗕负闆躲€?
+鐩墠姝?ioctl 浠呴拡瀵?MPEG-2 program stream 涓?video elementary stream 瀹氫箟銆?
 
 
     :header-rows:  0
@@ -47,18 +37,13 @@ VIDIOC_G_ENC_INDEX <VIDIOC_G_ENC_INDEX> ioctl 提供关于当前由本驱动或�
 
     - - __u32
       - `entries`
-      - 驱动存入 `entry` 数组的条目数量。
-    - - __u32
+      - 椹卞姩瀛樺叆 `entry` 鏁扮粍鐨勬潯鐩暟閲忋€?    - - __u32
       - `entries_cap`
-      - 驱动可缓冲的条目数量。必须大于零。
-    - - __u32
+      - 椹卞姩鍙紦鍐茬殑鏉＄洰鏁伴噺銆傚繀椤诲ぇ浜庨浂銆?    - - __u32
       - `reserved`\ [^4^]
-      - 保留供将来扩展。驱动必须将数组置零。
-    - - struct `v4l2_enc_idx_entry`
+      - 淇濈暀渚涘皢鏉ユ墿灞曘€傞┍鍔ㄥ繀椤诲皢鏁扮粍缃浂銆?    - - struct `v4l2_enc_idx_entry`
       - `entry`\ [`V4L2_ENC_IDX_ENTRIES`]
-      - 关于压缩视频流的元数据。数组的每个元素对应一幅图像，按
-	其 `offset` 升序排列。
-
+      - 鍏充簬鍘嬬缉瑙嗛娴佺殑鍏冩暟鎹€傛暟缁勭殑姣忎釜鍏冪礌瀵瑰簲涓€骞呭浘鍍忥紝鎸?	鍏?`offset` 鍗囧簭鎺掑垪銆?
 
 
     :header-rows:  0
@@ -67,23 +52,16 @@ VIDIOC_G_ENC_INDEX <VIDIOC_G_ENC_INDEX> ioctl 提供关于当前由本驱动或�
 
     - - __u64
       - `offset`
-      - 从压缩视频流开头到本幅图像开头的字节偏移量，即 mpeg2part1
-	中定义的 *PES 包头部*，或 mpeg2part2 中定义的 **图像头部*。
-	当编码器停止时，驱动将偏移量重置为零。
-    - - __u64
+      - 浠庡帇缂╄棰戞祦寮€澶村埌鏈箙鍥惧儚寮€澶寸殑瀛楄妭鍋忕Щ閲忥紝鍗?mpeg2part1
+	涓畾涔夌殑 *PES 鍖呭ご閮?锛屾垨 mpeg2part2 涓畾涔夌殑 **鍥惧儚澶撮儴*銆?	褰撶紪鐮佸櫒鍋滄鏃讹紝椹卞姩灏嗗亸绉婚噺閲嶇疆涓洪浂銆?    - - __u64
       - `pts`
-      - 本幅图像的 33 位 **显示时间戳（Presentation Time Stamp）**，
-	定义见 mpeg2part1。
-    - - __u32
+      - 鏈箙鍥惧儚鐨?33 浣?**鏄剧ず鏃堕棿鎴筹紙Presentation Time Stamp锛?*锛?	瀹氫箟瑙?mpeg2part1銆?    - - __u32
       - `length`
-      - 本幅图像的字节长度。
-    - - __u32
+      - 鏈箙鍥惧儚鐨勫瓧鑺傞暱搴︺€?    - - __u32
       - `flags`
-      - 包含本幅图像编码类型的标志位，参见 enc-idx-flags。
-    - - __u32
+      - 鍖呭惈鏈箙鍥惧儚缂栫爜绫诲瀷鐨勬爣蹇椾綅锛屽弬瑙?enc-idx-flags銆?    - - __u32
       - `reserved`\ [^2^]
-      - 保留供将来扩展。驱动必须将数组置零。
-
+      - 淇濈暀渚涘皢鏉ユ墿灞曘€傞┍鍔ㄥ繀椤诲皢鏁扮粍缃浂銆?
 
 
     :header-rows:  0
@@ -92,19 +70,13 @@ VIDIOC_G_ENC_INDEX <VIDIOC_G_ENC_INDEX> ioctl 提供关于当前由本驱动或�
 
     - - `V4L2_ENC_IDX_FRAME_I`
       - 0x00
-      - 这是帧内编码图像（I 帧）。
-    - - `V4L2_ENC_IDX_FRAME_P`
+      - 杩欐槸甯у唴缂栫爜鍥惧儚锛圛 甯э級銆?    - - `V4L2_ENC_IDX_FRAME_P`
       - 0x01
-      - 这是前向预测编码图像（P 帧）。
-    - - `V4L2_ENC_IDX_FRAME_B`
+      - 杩欐槸鍓嶅悜棰勬祴缂栫爜鍥惧儚锛圥 甯э級銆?    - - `V4L2_ENC_IDX_FRAME_B`
       - 0x02
-      - 这是双向预测编码图像（B 帧）。
-    - - `V4L2_ENC_IDX_FRAME_MASK`
+      - 杩欐槸鍙屽悜棰勬祴缂栫爜鍥惧儚锛圔 甯э級銆?    - - `V4L2_ENC_IDX_FRAME_MASK`
       - 0x0F
-      - 将 flags 字段与此掩码做 **AND** 运算即可得到图像编码类型。
+      - 灏?flags 瀛楁涓庢鎺╃爜鍋?**AND** 杩愮畻鍗冲彲寰楀埌鍥惧儚缂栫爜绫诲瀷銆?
+## 杩斿洖鍊?
 
-## 返回值
-
-
-成功时返回 0，出错时返回 -1 并设置 `errno` 变量。
-通用错误码在 Generic Error Codes <gen-errors> 一章中描述。
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞惰缃?`errno` 鍙橀噺銆?閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 涓€绔犱腑鎻忚堪銆?

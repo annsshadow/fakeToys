@@ -1,26 +1,26 @@
-## drm/v3d Broadcom V3D 图形驱动
+﻿## drm/v3d Broadcom V3D 鍥惧舰椹卞姩
 
 
-本文件记录 Broadcom V3D 图形驱动的内核 API 文档。
+鏈枃浠惰褰?Broadcom V3D 鍥惧舰椹卞姩鐨勫唴鏍?API 鏂囨。銆?
 
    :doc: Broadcom V3D Graphics Driver
 
-### GPU 缓冲区对象（BO）管理
+### GPU 缂撳啿鍖哄璞★紙BO锛夌鐞?
 
 
    :doc: V3D GEM BO management support
 
-## 地址空间管理
+## 鍦板潃绌洪棿绠＄悊
 
 
    :doc: Broadcom V3D MMU
 
-## GPU 调度
+## GPU 璋冨害
 
 
    :doc: Broadcom V3D scheduling
 
-### 中断
+### 涓柇
 
 
    :doc: Interrupt management for the V3D engine

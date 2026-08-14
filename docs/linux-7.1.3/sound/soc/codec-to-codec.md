@@ -1,8 +1,7 @@
-## 为 ALSA dapm 创建 codec 到 codec 的 dai link
+﻿## 涓?ALSA dapm 鍒涘缓 codec 鍒?codec 鐨?dai link
 
 
-大多数情况下，音频流总是从 CPU 到 codec，因此你的系统看起来如下：
-```
+澶у鏁版儏鍐典笅锛岄煶棰戞祦鎬绘槸浠?CPU 鍒?codec锛屽洜姝や綘鐨勭郴缁熺湅璧锋潵濡備笅锛?```
 
    ---------          ---------
   |         |  dai   |         |
@@ -11,7 +10,7 @@
    ---------          ---------
 
 ```
-如果你的系统看起来如下：
+濡傛灉浣犵殑绯荤粺鐪嬭捣鏉ュ涓嬶細
 ```
 
                        ---------
@@ -37,16 +36,13 @@
                        ---------
 
 ```
-假设 codec-2 是一个蓝牙芯片，codec-3 连接到一个扬声器，并且你有以下场景：
-codec-2 将接收音频数据，而用户希望不经过 CPU 就通过 codec-3 播放该音频。上述情况正是应该使用 codec 到 codec 连接的理想情形。
-
-你的 dai_link 在你的机器文件中应如下所示：
+鍋囪 codec-2 鏄竴涓摑鐗欒姱鐗囷紝codec-3 杩炴帴鍒颁竴涓壃澹板櫒锛屽苟涓斾綘鏈変互涓嬪満鏅細
+codec-2 灏嗘帴鏀堕煶棰戞暟鎹紝鑰岀敤鎴峰笇鏈涗笉缁忚繃 CPU 灏遍€氳繃 codec-3 鎾斁璇ラ煶棰戙€備笂杩版儏鍐垫鏄簲璇ヤ娇鐢?codec 鍒?codec 杩炴帴鐨勭悊鎯虫儏褰€?
+浣犵殑 dai_link 鍦ㄤ綘鐨勬満鍣ㄦ枃浠朵腑搴斿涓嬫墍绀猴細
 ```
 
  /*
-  * 此 pcm 流仅支持 24 bit、2 通道和
-  * 48k 采样率。
-  */
+  * 姝?pcm 娴佷粎鏀寔 24 bit銆? 閫氶亾鍜?  * 48k 閲囨牱鐜囥€?  */
  static const struct snd_soc_pcm_stream dsp_codec_params = {
         .formats = SNDRV_PCM_FMTBIT_S24_LE,
         .rate_min = 48000,
@@ -82,14 +78,9 @@ codec-2 将接收音频数据，而用户希望不经过 CPU 就通过 codec-3 �
  },
 
 ```
-上述代码片段的灵感来自 sound/soc/samsung/speyside.c。
-
-注意 “c2c_params” 回调，它让 dapm 知道此 dai_link 是一个 codec 到 codec 的连接。
-
-在 dapm 核心中，会在 cpu_dai 播放（playback）widget 和 codec_dai 捕获（capture）widget 之间创建一条路由用于播放路径，反之亦然用于捕获路径。为了使上述这条路由被触发，DAPM 需要找到一个有效的端点，该端点可以分别是对应于播放和捕获路径的 sink 或 source widget。
-
-为了触发此 dai_link widget，可以为扬声器放大器创建一个轻量的 codec 驱动，如 wm8727.c 文件所示，即使不需要任何控制，它也会为设备设置适当的约束。
-
-确保将相应的 cpu 和 codec 播放与捕获 dai 名称分别以 “Playback” 和 “Capture” 结尾命名，因为 dapm 核心会根据名称链接并为这些 dai 供电。
-
-在 “simple-audio-card” 中，当链接上的所有 DAI 都属于 codec 组件时，该 dai_link 会被自动识别为 codec 到 codec。该 dai_link 将使用链接上所有 DAI 支持的流参数（通道数、格式、采样率）的子集进行初始化。由于在设备树中无法提供这些参数，这主要用于与简单的固定功能 codec 通信，例如蓝牙控制器或蜂窝调制解调器。
+涓婅堪浠ｇ爜鐗囨鐨勭伒鎰熸潵鑷?sound/soc/samsung/speyside.c銆?
+娉ㄦ剰 鈥渃2c_params鈥?鍥炶皟锛屽畠璁?dapm 鐭ラ亾姝?dai_link 鏄竴涓?codec 鍒?codec 鐨勮繛鎺ャ€?
+鍦?dapm 鏍稿績涓紝浼氬湪 cpu_dai 鎾斁锛坧layback锛墂idget 鍜?codec_dai 鎹曡幏锛坈apture锛墂idget 涔嬮棿鍒涘缓涓€鏉¤矾鐢辩敤浜庢挱鏀捐矾寰勶紝鍙嶄箣浜︾劧鐢ㄤ簬鎹曡幏璺緞銆備负浜嗕娇涓婅堪杩欐潯璺敱琚Е鍙戯紝DAPM 闇€瑕佹壘鍒颁竴涓湁鏁堢殑绔偣锛岃绔偣鍙互鍒嗗埆鏄搴斾簬鎾斁鍜屾崟鑾疯矾寰勭殑 sink 鎴?source widget銆?
+涓轰簡瑙﹀彂姝?dai_link widget锛屽彲浠ヤ负鎵０鍣ㄦ斁澶у櫒鍒涘缓涓€涓交閲忕殑 codec 椹卞姩锛屽 wm8727.c 鏂囦欢鎵€绀猴紝鍗充娇涓嶉渶瑕佷换浣曟帶鍒讹紝瀹冧篃浼氫负璁惧璁剧疆閫傚綋鐨勭害鏉熴€?
+纭繚灏嗙浉搴旂殑 cpu 鍜?codec 鎾斁涓庢崟鑾?dai 鍚嶇О鍒嗗埆浠?鈥淧layback鈥?鍜?鈥淐apture鈥?缁撳熬鍛藉悕锛屽洜涓?dapm 鏍稿績浼氭牴鎹悕绉伴摼鎺ュ苟涓鸿繖浜?dai 渚涚數銆?
+鍦?鈥渟imple-audio-card鈥?涓紝褰撻摼鎺ヤ笂鐨勬墍鏈?DAI 閮藉睘浜?codec 缁勪欢鏃讹紝璇?dai_link 浼氳鑷姩璇嗗埆涓?codec 鍒?codec銆傝 dai_link 灏嗕娇鐢ㄩ摼鎺ヤ笂鎵€鏈?DAI 鏀寔鐨勬祦鍙傛暟锛堥€氶亾鏁般€佹牸寮忋€侀噰鏍风巼锛夌殑瀛愰泦杩涜鍒濆鍖栥€傜敱浜庡湪璁惧鏍戜腑鏃犳硶鎻愪緵杩欎簺鍙傛暟锛岃繖涓昏鐢ㄤ簬涓庣畝鍗曠殑鍥哄畾鍔熻兘 codec 閫氫俊锛屼緥濡傝摑鐗欐帶鍒跺櫒鎴栬渹绐濊皟鍒惰В璋冨櫒銆?

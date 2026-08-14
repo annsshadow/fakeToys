@@ -1,31 +1,19 @@
-## PXA 摄像头主机驱动
+﻿## PXA 鎽勫儚澶翠富鏈洪┍鍔?
+
+浣滆€? Robert Jarzmik <robert.jarzmik@free.fr>
+
+### 绾︽潫
 
 
-作者: Robert Jarzmik <robert.jarzmik@free.fr>
+a) YUV422P 鏍煎紡鐨勫浘鍍忓昂瀵?   鎵€鏈?YUV422P 鍥惧儚閮借寮哄埗瑕佹眰 width x height % 16 = 0銆?   杩欐槸鐢变簬 DMA 绾︽潫锛屽畠鍙紶杈?8 瀛楄妭鍊嶆暟鐨勫钩闈€?
+### 鍏ㄥ眬瑙嗛宸ヤ綔娴?
 
-### 约束
-
-
-a) YUV422P 格式的图像尺寸
-   所有 YUV422P 图像都被强制要求 width x height % 16 = 0。
-   这是由于 DMA 约束，它只传输 8 字节倍数的平面。
-
-### 全局视频工作流
-
-
-a) QCI 已停止
-   最初，QCI 接口是停止的。
-   当一个缓冲区被排队时，调用 start_streaming，QCI 启动。
-
-b) QCI 已启动
-   在 QCI 已启动的情况下，可以排队更多缓冲区而不会停止捕获。新缓冲区被“追加”到 DMA 链的尾部，并
-   平滑地一帧接一帧捕获。
-
-   一旦一个缓冲区在 QCI 接口中被填满，它会被标记为“DONE”并从活动缓冲区列表中移除。然后它可以由用户空间应用程序重新排队或出队。
-
-   一旦最后一个缓冲区被填满，QCI 接口停止。
-
-c) 捕获全局有限状态机示意
+a) QCI 宸插仠姝?   鏈€鍒濓紝QCI 鎺ュ彛鏄仠姝㈢殑銆?   褰撲竴涓紦鍐插尯琚帓闃熸椂锛岃皟鐢?start_streaming锛孮CI 鍚姩銆?
+b) QCI 宸插惎鍔?   鍦?QCI 宸插惎鍔ㄧ殑鎯呭喌涓嬶紝鍙互鎺掗槦鏇村缂撳啿鍖鸿€屼笉浼氬仠姝㈡崟鑾枫€傛柊缂撳啿鍖鸿鈥滆拷鍔犫€濆埌 DMA 閾剧殑灏鹃儴锛屽苟
+   骞虫粦鍦颁竴甯ф帴涓€甯ф崟鑾枫€?
+   涓€鏃︿竴涓紦鍐插尯鍦?QCI 鎺ュ彛涓濉弧锛屽畠浼氳鏍囪涓衡€淒ONE鈥濆苟浠庢椿鍔ㄧ紦鍐插尯鍒楄〃涓Щ闄ゃ€傜劧鍚庡畠鍙互鐢辩敤鎴风┖闂村簲鐢ㄧ▼搴忛噸鏂版帓闃熸垨鍑洪槦銆?
+   涓€鏃︽渶鍚庝竴涓紦鍐插尯琚～婊★紝QCI 鎺ュ彛鍋滄銆?
+c) 鎹曡幏鍏ㄥ眬鏈夐檺鐘舵€佹満绀烘剰
 
 
 	+----+                             +---+  +----+
@@ -67,49 +55,34 @@ c) 捕获全局有限状态机示意
 	| DMA: run           |             | DMA: stop            |
 	+--------------------+             +----------------------+
 
-	Legend（图例）: - 每个方框是一个 FSM 状态
-  - 每个箭头是转换到另一个状态的条件
-  - 带注释的箭头是强制转换（无条件）
-  - 箭头 "Q" 表示：一个缓冲区已被入队
-  - 箭头 "DQ" 表示：一个缓冲区已被出队
-  - "QCI: stop" 表示 QCI 接口未使能
-  - "DMA: stop" 表示所有 3 个 DMA 通道都停止
-  - "DMA: run" 表示至少有一个 DMA 通道仍在运行
+	Legend锛堝浘渚嬶級: - 姣忎釜鏂规鏄竴涓?FSM 鐘舵€?  - 姣忎釜绠ご鏄浆鎹㈠埌鍙︿竴涓姸鎬佺殑鏉′欢
+  - 甯︽敞閲婄殑绠ご鏄己鍒惰浆鎹紙鏃犳潯浠讹級
+  - 绠ご "Q" 琛ㄧず锛氫竴涓紦鍐插尯宸茶鍏ラ槦
+  - 绠ご "DQ" 琛ㄧず锛氫竴涓紦鍐插尯宸茶鍑洪槦
+  - "QCI: stop" 琛ㄧず QCI 鎺ュ彛鏈娇鑳?  - "DMA: stop" 琛ㄧず鎵€鏈?3 涓?DMA 閫氶亾閮藉仠姝?  - "DMA: run" 琛ㄧず鑷冲皯鏈変竴涓?DMA 閫氶亾浠嶅湪杩愯
 
-### DMA 使用
+### DMA 浣跨敤
 
 
-a) DMA 流
-     - 第一个排队的捕获缓冲区
-       一旦第一个缓冲区被排队用于捕获，QCI 启动，但数据传输未启动。在“帧结束（End Of Frame）”中断时，irq 处理程序
-       启动 DMA 链。
-     - 一个 videobuffer 的捕获
-       DMA 链开始将数据传输到 videobuffer 的 RAM 页中。
-       当所有页都传输完毕时，在 “ENDINTR” 状态下引发 DMA irq
-     - 完成一个 videobuffer
-       DMA irq 处理程序将 videobuffer 标记为“done”，并将其从活动运行队列中移除
-       同时，下一个 videobuffer（如果有）由 DMA 传输
-     - 完成最后一个 videobuffer
-       在最后一个 videobuffer 的 DMA irq 上，QCI 停止。
-
-b) 准备好的 DMA 缓冲区将具有如下结构
+a) DMA 娴?     - 绗竴涓帓闃熺殑鎹曡幏缂撳啿鍖?       涓€鏃︾涓€涓紦鍐插尯琚帓闃熺敤浜庢崟鑾凤紝QCI 鍚姩锛屼絾鏁版嵁浼犺緭鏈惎鍔ㄣ€傚湪鈥滃抚缁撴潫锛圗nd Of Frame锛夆€濅腑鏂椂锛宨rq 澶勭悊绋嬪簭
+       鍚姩 DMA 閾俱€?     - 涓€涓?videobuffer 鐨勬崟鑾?       DMA 閾惧紑濮嬪皢鏁版嵁浼犺緭鍒?videobuffer 鐨?RAM 椤典腑銆?       褰撴墍鏈夐〉閮戒紶杈撳畬姣曟椂锛屽湪 鈥淓NDINTR鈥?鐘舵€佷笅寮曞彂 DMA irq
+     - 瀹屾垚涓€涓?videobuffer
+       DMA irq 澶勭悊绋嬪簭灏?videobuffer 鏍囪涓衡€渄one鈥濓紝骞跺皢鍏朵粠娲诲姩杩愯闃熷垪涓Щ闄?       鍚屾椂锛屼笅涓€涓?videobuffer锛堝鏋滄湁锛夌敱 DMA 浼犺緭
+     - 瀹屾垚鏈€鍚庝竴涓?videobuffer
+       鍦ㄦ渶鍚庝竴涓?videobuffer 鐨?DMA irq 涓婏紝QCI 鍋滄銆?
+b) 鍑嗗濂界殑 DMA 缂撳啿鍖哄皢鍏锋湁濡備笅缁撴瀯
 
 
      +------------+-----+---------------+-----------------+
      | desc-sg[^0^] | ... | desc-sg[last] | finisher/linker |
      +------------+-----+---------------+-----------------+
 
-该结构由 dma->sg_cpu 指向。
-描述符的用法如下：
+璇ョ粨鏋勭敱 dma->sg_cpu 鎸囧悜銆?鎻忚堪绗︾殑鐢ㄦ硶濡備笅锛?
+- desc-sg[i]: 绗?i 涓弿杩扮锛屽皢绗?i 涓?sg 鍏冪礌浼犺緭鍒拌棰戠紦鍐插尯鐨勫垎鏁?鑱氶泦
+- finisher: 鍏锋湁 ddadr=DADDR_STOP, dcmd=ENDIRQEN
+- linker: 鍏锋湁 ddadr= 涓嬩竴涓棰戠紦鍐插尯鐨?desc-sg[^0^]锛宒cmd=0
 
-- desc-sg[i]: 第 i 个描述符，将第 i 个 sg 元素传输到视频缓冲区的分散/聚集
-- finisher: 具有 ddadr=DADDR_STOP, dcmd=ENDIRQEN
-- linker: 具有 ddadr= 下一个视频缓冲区的 desc-sg[^0^]，dcmd=0
-
-对于下一个示意图，假设 d0=desc-sg[^0^] .. dN=desc-sg[N]，
-“f” 代表 finisher，“l” 代表 linker。
-一个典型的运行链是：
-
+瀵逛簬涓嬩竴涓ず鎰忓浘锛屽亣璁?d0=desc-sg[^0^] .. dN=desc-sg[N]锛?鈥渇鈥?浠ｈ〃 finisher锛屸€渓鈥?浠ｈ〃 linker銆?涓€涓吀鍨嬬殑杩愯閾炬槸锛?
 
          Videobuffer 1         Videobuffer 2
      +---------+----+---+  +----+----+----+---+
@@ -118,8 +91,7 @@ b) 准备好的 DMA 缓冲区将具有如下结构
                       |    |
                       +----+
 
-链接完成后，该链看起来像：
-
+閾炬帴瀹屾垚鍚庯紝璇ラ摼鐪嬭捣鏉ュ儚锛?
 
          Videobuffer 1         Videobuffer 2         Videobuffer 3
      +---------+----+---+  +----+----+----+---+  +----+----+----+---+
@@ -129,14 +101,13 @@ b) 准备好的 DMA 缓冲区将具有如下结构
                       +----+                +----+
                                            new_link
 
-c) DMA 热链接（hot chaining）时间片问题
+c) DMA 鐑摼鎺ワ紙hot chaining锛夋椂闂寸墖闂
 
-由于 DMA 链接是在 DMA 运行期间完成的，链接可能发生在 DMA 从一个 Videobuffer 跳到另一个时。在示意图上，如果
-遇到以下序列，那将是个问题：
+鐢变簬 DMA 閾炬帴鏄湪 DMA 杩愯鏈熼棿瀹屾垚鐨勶紝閾炬帴鍙兘鍙戠敓鍦?DMA 浠庝竴涓?Videobuffer 璺冲埌鍙︿竴涓椂銆傚湪绀烘剰鍥句笂锛屽鏋?閬囧埌浠ヤ笅搴忓垪锛岄偅灏嗘槸涓棶棰橈細
 
-- DMA 链是 Videobuffer1 + Videobuffer2
-- 调用 pxa_videobuf_queue() 排队 Videobuffer3
-- DMA 控制器完成 Videobuffer2，DMA 停止
+- DMA 閾炬槸 Videobuffer1 + Videobuffer2
+- 璋冪敤 pxa_videobuf_queue() 鎺掗槦 Videobuffer3
+- DMA 鎺у埗鍣ㄥ畬鎴?Videobuffer2锛孌MA 鍋滄
 
 
       =>
@@ -145,14 +116,11 @@ c) DMA 热链接（hot chaining）时间片问题
      | d0 | .. | dN | l |  | d0 | .. | dN | f |
      +---------+----+-|-+  ^----+----+----+-^-+
                       |    |                |
-                      +----+                +-- DMA DDADR 加载 DDADR_STOP
+                      +----+                +-- DMA DDADR 鍔犺浇 DDADR_STOP
 
-- 调用 pxa_dma_add_tail_buf()，Videobuffer2 的 “finisher” 被
-  替换为指向 Videobuffer3 的 “linker”（创建 new_link）
-- pxa_videobuf_queue() 结束
-- 调用 DMA irq 处理程序，它终止 Videobuffer2
-- Videobuffer3 捕获未被安排在 DMA 链上（因为它停止了！！！）
-
+- 璋冪敤 pxa_dma_add_tail_buf()锛孷ideobuffer2 鐨?鈥渇inisher鈥?琚?  鏇挎崲涓烘寚鍚?Videobuffer3 鐨?鈥渓inker鈥濓紙鍒涘缓 new_link锛?- pxa_videobuf_queue() 缁撴潫
+- 璋冪敤 DMA irq 澶勭悊绋嬪簭锛屽畠缁堟 Videobuffer2
+- Videobuffer3 鎹曡幏鏈瀹夋帓鍦?DMA 閾句笂锛堝洜涓哄畠鍋滄浜嗭紒锛侊紒锛?
 
          Videobuffer 1         Videobuffer 2         Videobuffer 3
      +---------+----+---+  +----+----+----+---+  +----+----+----+---+
@@ -161,13 +129,12 @@ c) DMA 热链接（hot chaining）时间片问题
                       |    |                |    |
                       +----+                +----+
                                            new_link
-                                          DMA DDADR 仍然是 DDADR_STOP
+                                          DMA DDADR 浠嶇劧鏄?DDADR_STOP
 
-- 调用 pxa_camera_check_link_miss()
-  这会检查 DMA 是否已完成且缓冲区仍在 pcdev->capture 列表上。如果是这样，捕获将被重启，
-  并且 Videobuffer3 被安排在 DMA 链上。
-- DMA irq 处理程序结束
+- 璋冪敤 pxa_camera_check_link_miss()
+  杩欎細妫€鏌?DMA 鏄惁宸插畬鎴愪笖缂撳啿鍖轰粛鍦?pcdev->capture 鍒楄〃涓娿€傚鏋滄槸杩欐牱锛屾崟鑾峰皢琚噸鍚紝
+  骞朵笖 Videobuffer3 琚畨鎺掑湪 DMA 閾句笂銆?- DMA irq 澶勭悊绋嬪簭缁撴潫
 
 
-     如果在 pxa_camera_check_link_miss() 读取 DDADR() 值后 DMA 刚好停止，我们就有保证：当 DMA 完成该缓冲区时，
-     DMA irq 处理程序会被回调，并且 pxa_camera_check_link_miss() 将被再次调用，以重新安排 Videobuffer3。
+     濡傛灉鍦?pxa_camera_check_link_miss() 璇诲彇 DDADR() 鍊煎悗 DMA 鍒氬ソ鍋滄锛屾垜浠氨鏈変繚璇侊細褰?DMA 瀹屾垚璇ョ紦鍐插尯鏃讹紝
+     DMA irq 澶勭悊绋嬪簭浼氳鍥炶皟锛屽苟涓?pxa_camera_check_link_miss() 灏嗚鍐嶆璋冪敤锛屼互閲嶆柊瀹夋帓 Videobuffer3銆?

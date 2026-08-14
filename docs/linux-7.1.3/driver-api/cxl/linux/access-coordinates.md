@@ -1,18 +1,13 @@
-
-## CXL 访问坐标计算
-
-
-## 延迟与带宽计算
+﻿
+## CXL 璁块棶鍧愭爣璁＄畻
 
 
-一个内存区域的性能坐标（延迟和带宽）通常通过 ACPI 表 [SRAT <../platform/acpi/srat>](SRAT <../platform/acpi/srat>) 和 [HMAT <../platform/acpi/hmat>](HMAT <../platform/acpi/hmat>) 提供。然而，平台固件（BIOS）无法为热插拔的 CXL 设备标注这些信息，因为它们在平台固件初始化期间并不存在。CXL 驱动可以通过从多个组件检索数据来计算性能坐标。
+## 寤惰繜涓庡甫瀹借绠?
 
-[SRAT <../platform/acpi/srat>](SRAT <../platform/acpi/srat>) 提供了一个 Generic Port Affinity 子表，它把一个 proximity domain 绑定到一个设备句柄，在此情况下即为 CXL hostbridge。利用这种关联，可以从 [HMAT <../platform/acpi/hmat>](HMAT <../platform/acpi/hmat>) 子表检索 Generic Port 的性能坐标。这一部分表示从 CPU 到 Generic Port（CXL hostbridge）之间的性能坐标。
-
-[CDAT <../platform/cdat>](CDAT <../platform/cdat>) 提供 CXL 设备本身的性能坐标。即访问该设备内存区域的带宽和延迟。DSMAS 子表提供一个与设备物理地址（DPA）范围绑定的 DSMADHandle。DSLBIS 子表提供与 DSMADhandle 绑定的性能坐标，这把两个表项联系在一起，为每个 DPA 区域提供性能坐标。例如，如果一个设备导出了一个 DRAM 区域和一个 PMEM 区域，那么这些区域中的每一个都会有不同性能特征。
-
-如果拓扑中有一个 CXL 交换机，则交换机的性能坐标由 SSLBIS 子表提供。它提供在交换机上游端口（upstream port）和指向端点设备的交换机下游端口（downstream port）之间穿越交换机的带宽和延迟。
-
+涓€涓唴瀛樺尯鍩熺殑鎬ц兘鍧愭爣锛堝欢杩熷拰甯﹀锛夐€氬父閫氳繃 ACPI 琛?[SRAT <../platform/acpi/srat>](SRAT <../platform/acpi/srat>) 鍜?[HMAT <../platform/acpi/hmat>](HMAT <../platform/acpi/hmat>) 鎻愪緵銆傜劧鑰岋紝骞冲彴鍥轰欢锛圔IOS锛夋棤娉曚负鐑彃鎷旂殑 CXL 璁惧鏍囨敞杩欎簺淇℃伅锛屽洜涓哄畠浠湪骞冲彴鍥轰欢鍒濆鍖栨湡闂村苟涓嶅瓨鍦ㄣ€侰XL 椹卞姩鍙互閫氳繃浠庡涓粍浠舵绱㈡暟鎹潵璁＄畻鎬ц兘鍧愭爣銆?
+[SRAT <../platform/acpi/srat>](SRAT <../platform/acpi/srat>) 鎻愪緵浜嗕竴涓?Generic Port Affinity 瀛愯〃锛屽畠鎶婁竴涓?proximity domain 缁戝畾鍒颁竴涓澶囧彞鏌勶紝鍦ㄦ鎯呭喌涓嬪嵆涓?CXL hostbridge銆傚埄鐢ㄨ繖绉嶅叧鑱旓紝鍙互浠?[HMAT <../platform/acpi/hmat>](HMAT <../platform/acpi/hmat>) 瀛愯〃妫€绱?Generic Port 鐨勬€ц兘鍧愭爣銆傝繖涓€閮ㄥ垎琛ㄧず浠?CPU 鍒?Generic Port锛圕XL hostbridge锛変箣闂寸殑鎬ц兘鍧愭爣銆?
+[CDAT <../platform/cdat>](CDAT <../platform/cdat>) 鎻愪緵 CXL 璁惧鏈韩鐨勬€ц兘鍧愭爣銆傚嵆璁块棶璇ヨ澶囧唴瀛樺尯鍩熺殑甯﹀鍜屽欢杩熴€侱SMAS 瀛愯〃鎻愪緵涓€涓笌璁惧鐗╃悊鍦板潃锛圖PA锛夎寖鍥寸粦瀹氱殑 DSMADHandle銆侱SLBIS 瀛愯〃鎻愪緵涓?DSMADhandle 缁戝畾鐨勬€ц兘鍧愭爣锛岃繖鎶婁袱涓〃椤硅仈绯诲湪涓€璧凤紝涓烘瘡涓?DPA 鍖哄煙鎻愪緵鎬ц兘鍧愭爣銆備緥濡傦紝濡傛灉涓€涓澶囧鍑轰簡涓€涓?DRAM 鍖哄煙鍜屼竴涓?PMEM 鍖哄煙锛岄偅涔堣繖浜涘尯鍩熶腑鐨勬瘡涓€涓兘浼氭湁涓嶅悓鎬ц兘鐗瑰緛銆?
+濡傛灉鎷撴墤涓湁涓€涓?CXL 浜ゆ崲鏈猴紝鍒欎氦鎹㈡満鐨勬€ц兘鍧愭爣鐢?SSLBIS 瀛愯〃鎻愪緵銆傚畠鎻愪緵鍦ㄤ氦鎹㈡満涓婃父绔彛锛坲pstream port锛夊拰鎸囧悜绔偣璁惧鐨勪氦鎹㈡満涓嬫父绔彛锛坉ownstream port锛変箣闂寸┛瓒婁氦鎹㈡満鐨勫甫瀹藉拰寤惰繜銆?
 ```
 
  GP0/HB0/ACPI0016-0
@@ -28,44 +23,24 @@
         EP0
 
 ```
-在此示例中，端点与根端口之间有一个 CXL 交换机。此示例中的延迟计算如下：
-L(EP0) - 来自 EP0 CDAT DSMAS+DSLBIS 的延迟
-L(L1) - EP0 与 SW0DSP0 之间的链路延迟
-L(SW0) - 来自 SW0 CDAT SSLBIS 的交换机延迟。
-L(L0) - SW0 与 RP0 之间的链路延迟
-L(RP0) - 经由 SRAT 和 HMAT（Generic Port）从根端口到 CPU 的延迟。
-总读、写延迟是上述所有部分之和。
-
-此示例中的带宽计算如下：
-B(EP0) - 来自 EP0 CDAT DSMAS+DSLBIS 的带宽
-B(L1) - EP0 与 SW0DSP0 之间的链路带宽
-B(SW0) - 来自 SW0 CDAT SSLBIS 的交换机带宽。
-B(L0) - SW0 与 RP0 之间的链路带宽
-B(RP0) - 经由 SRAT 和 HMAT（Generic Port）从根端口到 CPU 的带宽。
-总读、写带宽是上述所有部分的最小值（min()）。
-
-要计算链路带宽：
-LinkOperatingFrequency (GT/s) 是当前协商的链路速度。
-DataRatePerLink (MB/s) = LinkOperatingFrequency / 8
+鍦ㄦ绀轰緥涓紝绔偣涓庢牴绔彛涔嬮棿鏈変竴涓?CXL 浜ゆ崲鏈恒€傛绀轰緥涓殑寤惰繜璁＄畻濡備笅锛?L(EP0) - 鏉ヨ嚜 EP0 CDAT DSMAS+DSLBIS 鐨勫欢杩?L(L1) - EP0 涓?SW0DSP0 涔嬮棿鐨勯摼璺欢杩?L(SW0) - 鏉ヨ嚜 SW0 CDAT SSLBIS 鐨勪氦鎹㈡満寤惰繜銆?L(L0) - SW0 涓?RP0 涔嬮棿鐨勯摼璺欢杩?L(RP0) - 缁忕敱 SRAT 鍜?HMAT锛圙eneric Port锛変粠鏍圭鍙ｅ埌 CPU 鐨勫欢杩熴€?鎬昏銆佸啓寤惰繜鏄笂杩版墍鏈夐儴鍒嗕箣鍜屻€?
+姝ょず渚嬩腑鐨勫甫瀹借绠楀涓嬶細
+B(EP0) - 鏉ヨ嚜 EP0 CDAT DSMAS+DSLBIS 鐨勫甫瀹?B(L1) - EP0 涓?SW0DSP0 涔嬮棿鐨勯摼璺甫瀹?B(SW0) - 鏉ヨ嚜 SW0 CDAT SSLBIS 鐨勪氦鎹㈡満甯﹀銆?B(L0) - SW0 涓?RP0 涔嬮棿鐨勯摼璺甫瀹?B(RP0) - 缁忕敱 SRAT 鍜?HMAT锛圙eneric Port锛変粠鏍圭鍙ｅ埌 CPU 鐨勫甫瀹姐€?鎬昏銆佸啓甯﹀鏄笂杩版墍鏈夐儴鍒嗙殑鏈€灏忓€硷紙min()锛夈€?
+瑕佽绠楅摼璺甫瀹斤細
+LinkOperatingFrequency (GT/s) 鏄綋鍓嶅崗鍟嗙殑閾捐矾閫熷害銆?DataRatePerLink (MB/s) = LinkOperatingFrequency / 8
 Bandwidth (MB/s) = PCIeCurrentLinkWidth * DataRatePerLink
-其中 PCIeCurrentLinkWidth 是链路中的通道数。
-
-要计算链路延迟：
+鍏朵腑 PCIeCurrentLinkWidth 鏄摼璺腑鐨勯€氶亾鏁般€?
+瑕佽绠楅摼璺欢杩燂細
 LinkLatency (picoseconds) = FlitSize / LinkBandwidth (MB/s)
 
-细节请参见 `CXL Memory Device SW Guide r1.0 <https://www.intel.com/content/www/us/en/content-details/643805/cxl-memory-device-software-guide.html>`_ 第 2.11.3 和 2.11.4 节。
-
-最终，所构造内存区域的访问坐标由一个或多个 CXL 设备的各个内存分区计算得出。
-
-## 共享上游链路计算
+缁嗚妭璇峰弬瑙?`CXL Memory Device SW Guide r1.0 <https://www.intel.com/content/www/us/en/content-details/643805/cxl-memory-device-software-guide.html>`_ 绗?2.11.3 鍜?2.11.4 鑺傘€?
+鏈€缁堬紝鎵€鏋勯€犲唴瀛樺尯鍩熺殑璁块棶鍧愭爣鐢变竴涓垨澶氫釜 CXL 璁惧鐨勫悇涓唴瀛樺垎鍖鸿绠楀緱鍑恒€?
+## 鍏变韩涓婃父閾捐矾璁＄畻
 
 
-对于某些端点位于 CXL 交换机（SW）或根端口（RP）之后的 CXL 区域构造，所有位于交换机之后的端点的总带宽有可能超过交换机上游链路。在主机内部、根端口上游也可能出现类似情况。CXL 驱动在所有目标都已到达某个区域后，会执行一个额外的遍历，以便在考虑上游链路可能成为限制因素的情况下重新计算带宽。
-
-该算法假设配置是对称拓扑，因为这样能最大化性能。当检测到非对称拓扑时，计算中止。非对称拓扑是在拓扑遍历期间检测到的：检测为祖父节点的 RP 数量不等于在同一遍历循环中迭代的设备数量。其假设是属性上细微的不对称不会发生，且到 EP 的所有路径都相等。
-
-一个 RP 下可以有多个交换机。一个 CXL Host Bridge（HB）下可以有多个 RP。一个 [CEDT <../platform/acpi/cedt>](CEDT <../platform/acpi/cedt>) 中的 CXL Fixed Memory Window Structure（CFMWS）下可以有多个 HB。
-
+瀵逛簬鏌愪簺绔偣浣嶄簬 CXL 浜ゆ崲鏈猴紙SW锛夋垨鏍圭鍙ｏ紙RP锛変箣鍚庣殑 CXL 鍖哄煙鏋勯€狅紝鎵€鏈変綅浜庝氦鎹㈡満涔嬪悗鐨勭鐐圭殑鎬诲甫瀹芥湁鍙兘瓒呰繃浜ゆ崲鏈轰笂娓搁摼璺€傚湪涓绘満鍐呴儴銆佹牴绔彛涓婃父涔熷彲鑳藉嚭鐜扮被浼兼儏鍐点€侰XL 椹卞姩鍦ㄦ墍鏈夌洰鏍囬兘宸插埌杈炬煇涓尯鍩熷悗锛屼細鎵ц涓€涓澶栫殑閬嶅巻锛屼互渚垮湪鑰冭檻涓婃父閾捐矾鍙兘鎴愪负闄愬埗鍥犵礌鐨勬儏鍐典笅閲嶆柊璁＄畻甯﹀銆?
+璇ョ畻娉曞亣璁鹃厤缃槸瀵圭О鎷撴墤锛屽洜涓鸿繖鏍疯兘鏈€澶у寲鎬ц兘銆傚綋妫€娴嬪埌闈炲绉版嫇鎵戞椂锛岃绠椾腑姝€傞潪瀵圭О鎷撴墤鏄湪鎷撴墤閬嶅巻鏈熼棿妫€娴嬪埌鐨勶細妫€娴嬩负绁栫埗鑺傜偣鐨?RP 鏁伴噺涓嶇瓑浜庡湪鍚屼竴閬嶅巻寰幆涓凯浠ｇ殑璁惧鏁伴噺銆傚叾鍋囪鏄睘鎬т笂缁嗗井鐨勪笉瀵圭О涓嶄細鍙戠敓锛屼笖鍒?EP 鐨勬墍鏈夎矾寰勯兘鐩哥瓑銆?
+涓€涓?RP 涓嬪彲浠ユ湁澶氫釜浜ゆ崲鏈恒€備竴涓?CXL Host Bridge锛圚B锛変笅鍙互鏈夊涓?RP銆備竴涓?[CEDT <../platform/acpi/cedt>](CEDT <../platform/acpi/cedt>) 涓殑 CXL Fixed Memory Window Structure锛圕FMWS锛変笅鍙互鏈夊涓?HB銆?
 ```
 
                 CFMWS 0
@@ -82,7 +57,7 @@ LinkLatency (picoseconds) = FlitSize / LinkBandwidth (MB/s)
  EP0 EP1    EP2 EP3  EP4  EP5    EP6 EP7
 
 ```
-示例层次结构的计算：
+绀轰緥灞傛缁撴瀯鐨勮绠楋細
 
 Min (GP0 to CPU BW,
      Min(SW 0 Upstream Link to RP0 BW,
@@ -99,17 +74,12 @@ Min (GP1 to CPU BW,
          Min(SW3SSLBIS for SW3DSP0 (EP6), EP6 DSLBIS, EP6 Upstream Link) +
          Min(SW3SSLBIS for SW3DSP1 (EP7), EP7 DSLBIS, EP7 Upstream link))))
 
-计算从 cxl_region_shared_upstream_perf_update() 开始。创建一个 xarray 来通过 cxl_endpoint_gather_bandwidth() 函数收集所有端点带宽。计算来自端点 CDAT 的带宽与上游链路带宽的最小值（min()）。如果端点的父节点是一个 CXL 交换机，则计算带宽与关联到该端点的交换机下游端口的 SSLBIS 带宽的最小值。最终带宽存储在 xarray 中由设备指针索引的 ‘struct cxl_perf_ctx’ 里。如果端点直接挂接到根端口（RP），设备指针将是一个 RP 设备。如果端点位于交换机之后，设备指针将是父交换机的上游设备。
-
-在下一个阶段，代码遍历拓扑中一个或多个（如果存在）交换机。对于直接挂接到 RP 的端点，跳过此步。如果上游还有另一个交换机，代码取当前收集到的带宽与上游链路带宽的最小值。如果上游有交换机，则取上游交换机的 SSLBIS。
-
-一旦拓扑遍历到达 RP（无论是直接挂接的端点，还是经由交换机遍历），就会调用 cxl_rp_gather_bandwidth()。此时所有带宽按每个 host bridge 聚合，这也是结果 xarray 的索引。
-
-下一步是取每个 host bridge 的带宽与 Generic Port（GP）带宽的最小值。GP 的带宽通过 ACPI 表（[SRAT <../platform/acpi/srat>](SRAT <../platform/acpi/srat>) 和 [HMAT <../platform/acpi/hmat>](HMAT <../platform/acpi/hmat>)）检索。最小带宽在同一个 ACPI0017 设备下聚合，形成一个新的 xarray。
-
-最后，调用 cxl_region_update_bandwidth()，并将最后一个 xarray 中所有成员的聚合带宽更新到驻留在 cxl 区域（cxlr）上下文中的访问坐标。
-
+璁＄畻浠?cxl_region_shared_upstream_perf_update() 寮€濮嬨€傚垱寤轰竴涓?xarray 鏉ラ€氳繃 cxl_endpoint_gather_bandwidth() 鍑芥暟鏀堕泦鎵€鏈夌鐐瑰甫瀹姐€傝绠楁潵鑷鐐?CDAT 鐨勫甫瀹戒笌涓婃父閾捐矾甯﹀鐨勬渶灏忓€硷紙min()锛夈€傚鏋滅鐐圭殑鐖惰妭鐐规槸涓€涓?CXL 浜ゆ崲鏈猴紝鍒欒绠楀甫瀹戒笌鍏宠仈鍒拌绔偣鐨勪氦鎹㈡満涓嬫父绔彛鐨?SSLBIS 甯﹀鐨勬渶灏忓€笺€傛渶缁堝甫瀹藉瓨鍌ㄥ湪 xarray 涓敱璁惧鎸囬拡绱㈠紩鐨?鈥榮truct cxl_perf_ctx鈥?閲屻€傚鏋滅鐐圭洿鎺ユ寕鎺ュ埌鏍圭鍙ｏ紙RP锛夛紝璁惧鎸囬拡灏嗘槸涓€涓?RP 璁惧銆傚鏋滅鐐逛綅浜庝氦鎹㈡満涔嬪悗锛岃澶囨寚閽堝皢鏄埗浜ゆ崲鏈虹殑涓婃父璁惧銆?
+鍦ㄤ笅涓€涓樁娈碉紝浠ｇ爜閬嶅巻鎷撴墤涓竴涓垨澶氫釜锛堝鏋滃瓨鍦級浜ゆ崲鏈恒€傚浜庣洿鎺ユ寕鎺ュ埌 RP 鐨勭鐐癸紝璺宠繃姝ゆ銆傚鏋滀笂娓歌繕鏈夊彟涓€涓氦鎹㈡満锛屼唬鐮佸彇褰撳墠鏀堕泦鍒扮殑甯﹀涓庝笂娓搁摼璺甫瀹界殑鏈€灏忓€笺€傚鏋滀笂娓告湁浜ゆ崲鏈猴紝鍒欏彇涓婃父浜ゆ崲鏈虹殑 SSLBIS銆?
+涓€鏃︽嫇鎵戦亶鍘嗗埌杈?RP锛堟棤璁烘槸鐩存帴鎸傛帴鐨勭鐐癸紝杩樻槸缁忕敱浜ゆ崲鏈洪亶鍘嗭級锛屽氨浼氳皟鐢?cxl_rp_gather_bandwidth()銆傛鏃舵墍鏈夊甫瀹芥寜姣忎釜 host bridge 鑱氬悎锛岃繖涔熸槸缁撴灉 xarray 鐨勭储寮曘€?
+涓嬩竴姝ユ槸鍙栨瘡涓?host bridge 鐨勫甫瀹戒笌 Generic Port锛圙P锛夊甫瀹界殑鏈€灏忓€笺€侴P 鐨勫甫瀹介€氳繃 ACPI 琛紙[SRAT <../platform/acpi/srat>](SRAT <../platform/acpi/srat>) 鍜?[HMAT <../platform/acpi/hmat>](HMAT <../platform/acpi/hmat>)锛夋绱€傛渶灏忓甫瀹藉湪鍚屼竴涓?ACPI0017 璁惧涓嬭仛鍚堬紝褰㈡垚涓€涓柊鐨?xarray銆?
+鏈€鍚庯紝璋冪敤 cxl_region_update_bandwidth()锛屽苟灏嗘渶鍚庝竴涓?xarray 涓墍鏈夋垚鍛樼殑鑱氬悎甯﹀鏇存柊鍒伴┗鐣欏湪 cxl 鍖哄煙锛坈xlr锛変笂涓嬫枃涓殑璁块棶鍧愭爣銆?
 ## QTG ID
 
 
-每个 [CEDT <../platform/acpi/cedt>](CEDT <../platform/acpi/cedt>) 都有一个 QTG ID 字段。该字段提供与 CFMWS 窗口的 QoS Throttling Group（QTG）关联的 ID。一旦计算出访问坐标，就可以向 ACPI0016 设备发出一个 ACPI Device Specific Method，以根据所提供的访问坐标检索 QTG ID。设备的 QTG ID 可用作匹配 CFMWS 的指引，以便为设备性能设置最佳的 Linux 根解码器。
+姣忎釜 [CEDT <../platform/acpi/cedt>](CEDT <../platform/acpi/cedt>) 閮芥湁涓€涓?QTG ID 瀛楁銆傝瀛楁鎻愪緵涓?CFMWS 绐楀彛鐨?QoS Throttling Group锛圦TG锛夊叧鑱旂殑 ID銆備竴鏃﹁绠楀嚭璁块棶鍧愭爣锛屽氨鍙互鍚?ACPI0016 璁惧鍙戝嚭涓€涓?ACPI Device Specific Method锛屼互鏍规嵁鎵€鎻愪緵鐨勮闂潗鏍囨绱?QTG ID銆傝澶囩殑 QTG ID 鍙敤浣滃尮閰?CFMWS 鐨勬寚寮曪紝浠ヤ究涓鸿澶囨€ц兘璁剧疆鏈€浣崇殑 Linux 鏍硅В鐮佸櫒銆?

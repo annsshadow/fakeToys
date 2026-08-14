@@ -1,98 +1,98 @@
-
+﻿
 ## Getting Started
 
 
-此 页 包含 一个 overview 的 the kunit_tool 和 KUnit framework,
-teaching 如何 到 运行 existing tests 和 然后 如何 到 写入 一个 简单 test case,
-和 covers 通用 problems users face 当 使用 KUnit 用于 the 第一 time.
+姝?椤?鍖呭惈 涓€涓?overview 鐨?the kunit_tool 鍜?KUnit framework,
+teaching 濡備綍 鍒?杩愯 existing tests 鍜?鐒跺悗 濡備綍 鍒?鍐欏叆 涓€涓?绠€鍗?test case,
+鍜?covers 閫氱敤 problems users face 褰?浣跨敤 KUnit 鐢ㄤ簬 the 绗竴 time.
 
 ## Installing Dependencies
 
-KUnit 具有 the 相同 dependencies 作为 the Linux 内核. 只要 您可以
-build the 内核, 您可以 运行 KUnit.
+KUnit 鍏锋湁 the 鐩稿悓 dependencies 浣滀负 the Linux 鍐呮牳. 鍙 鎮ㄥ彲浠?
+build the 鍐呮牳, 鎮ㄥ彲浠?杩愯 KUnit.
 
-## 运行中 tests 与 kunit_tool
+## 杩愯涓?tests 涓?kunit_tool
 
-kunit_tool 是 一个 Python script, 其 configures 和 builds 一个 内核, runs
-tests, 和 formats the test results. 来自 the 内核 repository, 您
-可 运行 kunit_tool:
-
-
-	./tools/testing/kunit/kunit.py 运行
-
-	您 可 参见 the 以下 错误:
-	"The source tree 是 不 clean, 请 运行 'make ARCH=um mrproper'"
-
-	此 happens 因为 internally kunit.py specifies `.kunit`
-	(默认 选项) 作为 the build directory 在 the 命令 `make O=output/dir`
-	through the 参数 `--build_dir`.  Hence, 之前 starting 一个
-	out-of-tree build, the source tree 必须 为 clean.
-
-	存在 也 the 相同 caveat mentioned 在 the "Build directory 用于
-	the 内核" section 的 the [admin-guide </admin-guide/README>](admin-guide </admin-guide/README>),
-	即, 其 使用, 它 必须 为 使用 用于 全部 invocations 的 `make`.
-	The good news 是 该 它 可 indeed 为 solved 由 运行中
-	`make ARCH=um mrproper`, just 为 aware 该 此 将 删除 the
-	电流 配置 和 全部 generated 文件.
-
-若 everything worked correctly, 您 应当 参见 the 以下:
+kunit_tool 鏄?涓€涓?Python script, 鍏?configures 鍜?builds 涓€涓?鍐呮牳, runs
+tests, 鍜?formats the test results. 鏉ヨ嚜 the 鍐呮牳 repository, 鎮?
+鍙?杩愯 kunit_tool:
 
 
-	Configuring KUnit 内核 ...
-	Building KUnit 内核 ...
-	Starting KUnit 内核 ...
+	./tools/testing/kunit/kunit.py 杩愯
 
-The tests 将 pass 或 fail.
+	鎮?鍙?鍙傝 the 浠ヤ笅 閿欒:
+	"The source tree 鏄?涓?clean, 璇?杩愯 'make ARCH=um mrproper'"
 
-   因为 它是 building 一个 lot 的 sources 用于 the 第一 time,
-   the `Building KUnit Kernel` step 可 take 一个 同时.
+	姝?happens 鍥犱负 internally kunit.py specifies `.kunit`
+	(榛樿 閫夐」) 浣滀负 the build directory 鍦?the 鍛戒护 `make O=output/dir`
+	through the 鍙傛暟 `--build_dir`.  Hence, 涔嬪墠 starting 涓€涓?
+	out-of-tree build, the source tree 蹇呴』 涓?clean.
 
-用于 detailed information 在 此 wrapper, 参见:
-Documentation/dev-tools/kunit/运行_wrapper.rst.
+	瀛樺湪 涔?the 鐩稿悓 caveat mentioned 鍦?the "Build directory 鐢ㄤ簬
+	the 鍐呮牳" section 鐨?the [admin-guide </admin-guide/README>](admin-guide </admin-guide/README>),
+	鍗? 鍏?浣跨敤, 瀹?蹇呴』 涓?浣跨敤 鐢ㄤ簬 鍏ㄩ儴 invocations 鐨?`make`.
+	The good news 鏄?璇?瀹?鍙?indeed 涓?solved 鐢?杩愯涓?
+	`make ARCH=um mrproper`, just 涓?aware 璇?姝?灏?鍒犻櫎 the
+	鐢垫祦 閰嶇疆 鍜?鍏ㄩ儴 generated 鏂囦欢.
 
-### Selecting 其 tests 到 运行
+鑻?everything worked correctly, 鎮?搴斿綋 鍙傝 the 浠ヤ笅:
 
 
-默认情况下, kunit_tool runs 全部 tests reachable 与 minimal 配置,
-即, 使用 默认 值 用于 大多数 的 the kconfig 选项.  然而,
-您可以 select 其 tests 到 运行 由:
+	Configuring KUnit 鍐呮牳 ...
+	Building KUnit 鍐呮牳 ...
+	Starting KUnit 鍐呮牳 ...
 
-- `Customizing Kconfig`_ 使用 到 compile the 内核, 或
-- `Filtering tests by name`_ 到 select specifically 其 compiled tests 到 运行.
+The tests 灏?pass 鎴?fail.
+
+   鍥犱负 瀹冩槸 building 涓€涓?lot 鐨?sources 鐢ㄤ簬 the 绗竴 time,
+   the `Building KUnit Kernel` step 鍙?take 涓€涓?鍚屾椂.
+
+鐢ㄤ簬 detailed information 鍦?姝?wrapper, 鍙傝:
+Documentation/dev-tools/kunit/杩愯_wrapper.rst.
+
+### Selecting 鍏?tests 鍒?杩愯
+
+
+榛樿鎯呭喌涓? kunit_tool runs 鍏ㄩ儴 tests reachable 涓?minimal 閰嶇疆,
+鍗? 浣跨敤 榛樿 鍊?鐢ㄤ簬 澶у鏁?鐨?the kconfig 閫夐」.  鐒惰€?
+鎮ㄥ彲浠?select 鍏?tests 鍒?杩愯 鐢?
+
+- `Customizing Kconfig`_ 浣跨敤 鍒?compile the 鍐呮牳, 鎴?
+- `Filtering tests by name`_ 鍒?select specifically 鍏?compiled tests 鍒?杩愯.
 
 #### Customizing Kconfig
 
-一个 good starting point 用于 the `.kunitconfig` 是 the KUnit 默认 配置.
-若 您 didn't 运行 `kunit.py run` 尚未, 您可以 generate 它 由 运行中:
+涓€涓?good starting point 鐢ㄤ簬 the `.kunitconfig` 鏄?the KUnit 榛樿 閰嶇疆.
+鑻?鎮?didn't 杩愯 `kunit.py run` 灏氭湭, 鎮ㄥ彲浠?generate 瀹?鐢?杩愯涓?
 
 
-	cd $PATH_到_LINUX_REPO
-	tools/testing/kunit/kunit.py 配置
+	cd $PATH_鍒癬LINUX_REPO
+	tools/testing/kunit/kunit.py 閰嶇疆
 	cat .kunit/.kunitconfig
 
-   `.kunitconfig` lives 在 the `--build_dir` 使用 由 kunit.py, 其 是
-   `.kunit` 默认情况下.
+   `.kunitconfig` lives 鍦?the `--build_dir` 浣跨敤 鐢?kunit.py, 鍏?鏄?
+   `.kunit` 榛樿鎯呭喌涓?
 
-之前 运行中 the tests, kunit_tool ensures 该 全部 配置 选项
-set 在 `.kunitconfig` 是 set 在 the 内核 `.config`. 它 将 warn
-您 若 您 具有 不 included dependencies 用于 the 选项 使用.
+涔嬪墠 杩愯涓?the tests, kunit_tool ensures 璇?鍏ㄩ儴 閰嶇疆 閫夐」
+set 鍦?`.kunitconfig` 鏄?set 鍦?the 鍐呮牳 `.config`. 瀹?灏?warn
+鎮?鑻?鎮?鍏锋湁 涓?included dependencies 鐢ㄤ簬 the 閫夐」 浣跨敤.
 
-存在 许多 ways 到 customize the configurations:
+瀛樺湪 璁稿 ways 鍒?customize the configurations:
 
-一个. Edit `.kunit/.kunitconfig`. The 文件 应当 包含 the 列出 的 kconfig
-   选项 必需 到 运行 the desired tests, including 它们的 dependencies.
-   您 可 希望 到 remove 配置_KUNIT_全部_TESTS 来自 the `.kunitconfig` 作为
-   它 将 启用 一个 数字 的 额外 tests 该 您 可 不 希望.
-   若 您 需要 到 运行 在 一个 architecture 其他 比 UML 参见 kunit-on-qemu.
+涓€涓? Edit `.kunit/.kunitconfig`. The 鏂囦欢 搴斿綋 鍖呭惈 the 鍒楀嚭 鐨?kconfig
+   閫夐」 蹇呴渶 鍒?杩愯 the desired tests, including 瀹冧滑鐨?dependencies.
+   鎮?鍙?甯屾湜 鍒?remove 閰嶇疆_KUNIT_鍏ㄩ儴_TESTS 鏉ヨ嚜 the `.kunitconfig` 浣滀负
+   瀹?灏?鍚敤 涓€涓?鏁板瓧 鐨?棰濆 tests 璇?鎮?鍙?涓?甯屾湜.
+   鑻?鎮?闇€瑕?鍒?杩愯 鍦?涓€涓?architecture 鍏朵粬 姣?UML 鍙傝 kunit-on-qemu.
 
-b. 启用 额外 kconfig 选项 在…之上 `.kunit/.kunitconfig`.
+b. 鍚敤 棰濆 kconfig 閫夐」 鍦ㄢ€︿箣涓?`.kunit/.kunitconfig`.
 ```
 
 	./tools/testing/kunit/kunit.py run \
 		--kconfig_add CONFIG_LIST_KUNIT_TEST=y
 
 ```
-c. 提供 the path 的 one 或 更多 .kunitconfig 文件 来自 the tree.
+c. 鎻愪緵 the path 鐨?one 鎴?鏇村 .kunitconfig 鏂囦欢 鏉ヨ嚜 the tree.
 ```
 
 	./tools/testing/kunit/kunit.py run \
@@ -100,10 +100,10 @@ c. 提供 the path 的 one 或 更多 .kunitconfig 文件 来自 the tree.
 		--kunitconfig ./fs/ext4/.kunitconfig
 
 ```
-d. 若 您 change the `.kunitconfig`, kunit.py 将 trigger 一个 rebuild 的 the
-   `.config` 文件. 但 您可以 edit the `.config` 文件 directly 或 与
-   tools 类似 `make menuconfig O=.kunit`. 只要 其 一个 superset 的
-   `.kunitconfig`, kunit.py won't overwrite 您的 changes.
+d. 鑻?鎮?change the `.kunitconfig`, kunit.py 灏?trigger 涓€涓?rebuild 鐨?the
+   `.config` 鏂囦欢. 浣?鎮ㄥ彲浠?edit the `.config` 鏂囦欢 directly 鎴?涓?
+   tools 绫讳技 `make menuconfig O=.kunit`. 鍙 鍏?涓€涓?superset 鐨?
+   `.kunitconfig`, kunit.py won't overwrite 鎮ㄧ殑 changes.
 
 
 
@@ -113,182 +113,182 @@ d. 若 您 change the `.kunitconfig`, kunit.py 将 trigger 一个 rebuild 的 th
 		cp .kunit/defconfig .kunit/.kunitconfig
 
 ```
-#### Filtering tests 由 name
+#### Filtering tests 鐢?name
 
-若 您 希望 到 为 更多 特定 比 Kconfig 可 提供, 它是 也 可能
-到 select 其 tests 到 execute 在 boot-time 由 passing 一个 glob filter
-(读取 instructions regarding the pattern 在 the manpage `glob(7)`).
-若 存在 一个 `"."` (period) 在 the filter, 它 将 为 interpreted 作为 一个
-separator 之间 the name 的 the test suite 和 the test case,
-否则, 它 将 为 interpreted 作为 the name 的 the test suite.
-例如, let's assume 我们 是 使用 the 默认 配置:
+鑻?鎮?甯屾湜 鍒?涓?鏇村 鐗瑰畾 姣?Kconfig 鍙?鎻愪緵, 瀹冩槸 涔?鍙兘
+鍒?select 鍏?tests 鍒?execute 鍦?boot-time 鐢?passing 涓€涓?glob filter
+(璇诲彇 instructions regarding the pattern 鍦?the manpage `glob(7)`).
+鑻?瀛樺湪 涓€涓?`"."` (period) 鍦?the filter, 瀹?灏?涓?interpreted 浣滀负 涓€涓?
+separator 涔嬮棿 the name 鐨?the test suite 鍜?the test case,
+鍚﹀垯, 瀹?灏?涓?interpreted 浣滀负 the name 鐨?the test suite.
+渚嬪, let's assume 鎴戜滑 鏄?浣跨敤 the 榛樿 閰嶇疆:
 
-一个. inform the name 的 一个 test suite, 类似 `"kunit_executor_test"`,
+涓€涓? inform the name 鐨?涓€涓?test suite, 绫讳技 `"kunit_executor_test"`,
 ```
 
 	./tools/testing/kunit/kunit.py run "kunit_executor_test"
 
 ```
-b. inform the name 的 一个 test case prefixed 由 其 test suite,
+b. inform the name 鐨?涓€涓?test case prefixed 鐢?鍏?test suite,
 ```
 
 	./tools/testing/kunit/kunit.py run "example.example_simple_test"
 
 ```
-c. 使用 wildcard characters (`*?[`) 到 运行 任何 test case 该 matches the pattern,
-   类似 `"**.**64*"` 到 运行 test cases containing `"64"` 在 the name inside
+c. 浣跨敤 wildcard characters (`*?[`) 鍒?杩愯 浠讳綍 test case 璇?matches the pattern,
+   绫讳技 `"**.**64*"` 鍒?杩愯 test cases containing `"64"` 鍦?the name inside
 ```
 
 	./tools/testing/kunit/kunit.py run "*.*64*"
 
 ```
-## 运行中 Tests 无 the KUnit Wrapper
+## 杩愯涓?Tests 鏃?the KUnit Wrapper
 
-若 您 执行 不 希望 到 使用 the KUnit Wrapper (例如: 您 希望 code
-在…下 test 到 integrate 与 其他 系统, 或 使用 一个 不同/
-不受支持 architecture 或 配置), KUnit 可 为 included 在
-任何 内核, 和 the results 是 读取 out 和 parsed manually.
+鑻?鎮?鎵ц 涓?甯屾湜 鍒?浣跨敤 the KUnit Wrapper (渚嬪: 鎮?甯屾湜 code
+鍦ㄢ€︿笅 test 鍒?integrate 涓?鍏朵粬 绯荤粺, 鎴?浣跨敤 涓€涓?涓嶅悓/
+涓嶅彈鏀寔 architecture 鎴?閰嶇疆), KUnit 鍙?涓?included 鍦?
+浠讳綍 鍐呮牳, 鍜?the results 鏄?璇诲彇 out 鍜?parsed manually.
 
-   `CONFIG_KUNIT` 应当 不 为 已启用 在 一个 production environment.
-   Enabling KUnit disables 内核 Address-Space Layout Randomization
-   (KASLR), 和 tests 可 affect the 状态 的 the 内核 在 ways 不
-   suitable 用于 production.
+   `CONFIG_KUNIT` 搴斿綋 涓?涓?宸插惎鐢?鍦?涓€涓?production environment.
+   Enabling KUnit disables 鍐呮牳 Address-Space Layout Randomization
+   (KASLR), 鍜?tests 鍙?affect the 鐘舵€?鐨?the 鍐呮牳 鍦?ways 涓?
+   suitable 鐢ㄤ簬 production.
 
-### Configuring the 内核
+### Configuring the 鍐呮牳
 
-到 启用 KUnit itself, 您 需要 到 启用 the `CONFIG_KUNIT` Kconfig
-选项 (在…下 内核 Hacking/内核 Testing 和 Coverage 在
-`menuconfig`). 来自 那里, 您可以 启用 任何 KUnit tests. 它们
-通常 具有 配置 选项 ending 在 `_KUNIT_TEST`.
+鍒?鍚敤 KUnit itself, 鎮?闇€瑕?鍒?鍚敤 the `CONFIG_KUNIT` Kconfig
+閫夐」 (鍦ㄢ€︿笅 鍐呮牳 Hacking/鍐呮牳 Testing 鍜?Coverage 鍦?
+`menuconfig`). 鏉ヨ嚜 閭ｉ噷, 鎮ㄥ彲浠?鍚敤 浠讳綍 KUnit tests. 瀹冧滑
+閫氬父 鍏锋湁 閰嶇疆 閫夐」 ending 鍦?`_KUNIT_TEST`.
 
-KUnit 和 KUnit tests 可 为 compiled 作为 模块. The tests 在 一个 模块
-将 运行 当 the 模块 是 loaded.
+KUnit 鍜?KUnit tests 鍙?涓?compiled 浣滀负 妯″潡. The tests 鍦?涓€涓?妯″潡
+灏?杩愯 褰?the 妯″潡 鏄?loaded.
 
-### 运行中 Tests (无 KUnit Wrapper)
+### 杩愯涓?Tests (鏃?KUnit Wrapper)
 
-Build 和 运行 您的 内核. 在 the 内核 log, the test 输出 是 printed
-out 在 the TAP 格式. 此 将 仅 happen 默认情况下 若 KUnit/tests
-是 built-in. 否则 the 模块 将 需要 到 为 loaded.
+Build 鍜?杩愯 鎮ㄧ殑 鍐呮牳. 鍦?the 鍐呮牳 log, the test 杈撳嚭 鏄?printed
+out 鍦?the TAP 鏍煎紡. 姝?灏?浠?happen 榛樿鎯呭喌涓?鑻?KUnit/tests
+鏄?built-in. 鍚﹀垯 the 妯″潡 灏?闇€瑕?鍒?涓?loaded.
 
-   一些 lines 和/或 数据 可 get interspersed 在 the TAP 输出.
+   涓€浜?lines 鍜?鎴?鏁版嵁 鍙?get interspersed 鍦?the TAP 杈撳嚭.
 
-## Writing 您的 第一 Test
+## Writing 鎮ㄧ殑 绗竴 Test
 
-在 您的 内核 repository, let's add 一些 code 该 我们可以 test.
+鍦?鎮ㄧ殑 鍐呮牳 repository, let's add 涓€浜?code 璇?鎴戜滑鍙互 test.
 
-1. 创建 一个 文件 `drivers/misc/example.h`, 其 包含:
-
-
-	int misc_示例_add(int left, int right);
-
-2. 创建 一个 文件 `drivers/misc/example.c`, 其 包含:
+1. 鍒涘缓 涓€涓?鏂囦欢 `drivers/misc/example.h`, 鍏?鍖呭惈:
 
 
-	#包含 <linux/errno.h>
+	int misc_绀轰緥_add(int left, int right);
 
-	#包含 "示例.h"
+2. 鍒涘缓 涓€涓?鏂囦欢 `drivers/misc/example.c`, 鍏?鍖呭惈:
 
-	int misc_示例_add(int left, int right)
+
+	#鍖呭惈 <linux/errno.h>
+
+	#鍖呭惈 "绀轰緥.h"
+
+	int misc_绀轰緥_add(int left, int right)
 	{
 		return left + right;
 	}
 
-3. Add the 以下 lines 到 `drivers/misc/Kconfig`:
+3. Add the 浠ヤ笅 lines 鍒?`drivers/misc/Kconfig`:
 
 
-	配置 MISC_示例
-		bool "My 示例"
+	閰嶇疆 MISC_绀轰緥
+		bool "My 绀轰緥"
 
-4. Add the 以下 lines 到 `drivers/misc/Makefile`:
-
-
-	obj-$(配置_MISC_示例) += 示例.o
-
-现在 我们 是 ready 到 写入 the test cases.
-
-1. Add the 下文 test case 在 `drivers/misc/example_test.c`:
+4. Add the 浠ヤ笅 lines 鍒?`drivers/misc/Makefile`:
 
 
-	#包含 <kunit/test.h>
-	#包含 "示例.h"
+	obj-$(閰嶇疆_MISC_绀轰緥) += 绀轰緥.o
 
-	/** 定义 the test cases. **/
+鐜板湪 鎴戜滑 鏄?ready 鍒?鍐欏叆 the test cases.
 
-	静态 void misc_示例_add_test_基本(结构体 kunit *test)
+1. Add the 涓嬫枃 test case 鍦?`drivers/misc/example_test.c`:
+
+
+	#鍖呭惈 <kunit/test.h>
+	#鍖呭惈 "绀轰緥.h"
+
+	/** 瀹氫箟 the test cases. **/
+
+	闈欐€?void misc_绀轰緥_add_test_鍩烘湰(缁撴瀯浣?kunit *test)
 	{
-		KUNIT_EXPECT_EQ(test, 1, misc_示例_add(1, 0));
-		KUNIT_EXPECT_EQ(test, 2, misc_示例_add(1, 1));
-		KUNIT_EXPECT_EQ(test, 0, misc_示例_add(-1, 1));
-		KUNIT_EXPECT_EQ(test, INT_MAX, misc_示例_add(0, INT_MAX));
-		KUNIT_EXPECT_EQ(test, -1, misc_示例_add(INT_MAX, INT_MIN));
+		KUNIT_EXPECT_EQ(test, 1, misc_绀轰緥_add(1, 0));
+		KUNIT_EXPECT_EQ(test, 2, misc_绀轰緥_add(1, 1));
+		KUNIT_EXPECT_EQ(test, 0, misc_绀轰緥_add(-1, 1));
+		KUNIT_EXPECT_EQ(test, INT_MAX, misc_绀轰緥_add(0, INT_MAX));
+		KUNIT_EXPECT_EQ(test, -1, misc_绀轰緥_add(INT_MAX, INT_MIN));
 	}
 
-	静态 void misc_示例_test_failure(结构体 kunit *test)
+	闈欐€?void misc_绀轰緥_test_failure(缁撴瀯浣?kunit *test)
 	{
-		KUNIT_FAIL(test, "此 test 从不 passes.");
+		KUNIT_FAIL(test, "姝?test 浠庝笉 passes.");
 	}
 
-	静态 结构体 kunit_case misc_示例_test_cases[] = {
-		KUNIT_CASE(misc_示例_add_test_基本),
-		KUNIT_CASE(misc_示例_test_failure),
+	闈欐€?缁撴瀯浣?kunit_case misc_绀轰緥_test_cases[] = {
+		KUNIT_CASE(misc_绀轰緥_add_test_鍩烘湰),
+		KUNIT_CASE(misc_绀轰緥_test_failure),
 		{}
 	};
 
-	静态 结构体 kunit_suite misc_示例_test_suite = {
+	闈欐€?缁撴瀯浣?kunit_suite misc_绀轰緥_test_suite = {
 		.name = "misc-example",
-		.test_cases = misc_示例_test_cases,
+		.test_cases = misc_绀轰緥_test_cases,
 	};
-	kunit_test_suite(misc_示例_test_suite);
+	kunit_test_suite(misc_绀轰緥_test_suite);
 
-	模块_LICENSE("GPL");
+	妯″潡_LICENSE("GPL");
 
-2. Add the 以下 lines 到 `drivers/misc/Kconfig`:
-
-
-	配置 MISC_示例_TEST
-		tristate "Test 用于 my 示例" 若 !KUNIT_全部_TESTS
-		depends 在 MISC_示例 && KUNIT
-		默认 KUNIT_全部_TESTS
-
-注意: 若 您的 test 执行 不 支持 正在 built 作为 一个 loadable 模块 (其 是
-discouraged), replace tristate 由 bool, 和 depend 在 KUNIT=y 而非 KUNIT.
-
-3. Add the 以下 lines 到 `drivers/misc/Makefile`:
+2. Add the 浠ヤ笅 lines 鍒?`drivers/misc/Kconfig`:
 
 
-	obj-$(配置_MISC_示例_TEST) += 示例_test.o
+	閰嶇疆 MISC_绀轰緥_TEST
+		tristate "Test 鐢ㄤ簬 my 绀轰緥" 鑻?!KUNIT_鍏ㄩ儴_TESTS
+		depends 鍦?MISC_绀轰緥 && KUNIT
+		榛樿 KUNIT_鍏ㄩ儴_TESTS
 
-4. Add the 以下 lines 到 `.kunit/.kunitconfig`:
+娉ㄦ剰: 鑻?鎮ㄧ殑 test 鎵ц 涓?鏀寔 姝ｅ湪 built 浣滀负 涓€涓?loadable 妯″潡 (鍏?鏄?
+discouraged), replace tristate 鐢?bool, 鍜?depend 鍦?KUNIT=y 鑰岄潪 KUNIT.
+
+3. Add the 浠ヤ笅 lines 鍒?`drivers/misc/Makefile`:
 
 
-	配置_MISC_示例=y
-	配置_MISC_示例_TEST=y
+	obj-$(閰嶇疆_MISC_绀轰緥_TEST) += 绀轰緥_test.o
 
-5. 运行 the test:
+4. Add the 浠ヤ笅 lines 鍒?`.kunit/.kunitconfig`:
 
 
-	./tools/testing/kunit/kunit.py 运行
+	閰嶇疆_MISC_绀轰緥=y
+	閰嶇疆_MISC_绀轰緥_TEST=y
 
-您 应当 参见 the 以下 failure:
+5. 杩愯 the test:
+
+
+	./tools/testing/kunit/kunit.py 杩愯
+
+鎮?搴斿綋 鍙傝 the 浠ヤ笅 failure:
 
 
 	...
-	[16:08:57] [PASSED] misc-example:misc_示例_add_test_基本
-	[16:08:57] [FAILED] misc-example:misc_示例_test_failure
-	[16:08:57] EXPECTATION FAILED 在 驱动/misc/example-test.c:17
-	[16:08:57]      此 test 从不 passes.
+	[16:08:57] [PASSED] misc-example:misc_绀轰緥_add_test_鍩烘湰
+	[16:08:57] [FAILED] misc-example:misc_绀轰緥_test_failure
+	[16:08:57] EXPECTATION FAILED 鍦?椹卞姩/misc/example-test.c:17
+	[16:08:57]      姝?test 浠庝笉 passes.
 	...
 
-Congrats! 您 just wrote 您的 第一 KUnit test.
+Congrats! 鎮?just wrote 鎮ㄧ殑 绗竴 KUnit test.
 
-## 接下来 Steps
+## 鎺ヤ笅鏉?Steps
 
 
-若 您're interested 在 使用 一些 的 the 更多 高级 特性 的 kunit.py,
-take 一个 look 在 Documentation/dev-tools/kunit/运行_wrapper.rst
+鑻?鎮?re interested 鍦?浣跨敤 涓€浜?鐨?the 鏇村 楂樼骇 鐗规€?鐨?kunit.py,
+take 涓€涓?look 鍦?Documentation/dev-tools/kunit/杩愯_wrapper.rst
 
-若 您'd 类似 到 运行 tests 无 使用 kunit.py, check out
-Documentation/dev-tools/kunit/运行_manual.rst
+鑻?鎮?d 绫讳技 鍒?杩愯 tests 鏃?浣跨敤 kunit.py, check out
+Documentation/dev-tools/kunit/杩愯_manual.rst
 
-用于 更多 information 在 writing KUnit tests (including 一些 通用 techniques
-用于 testing 不同 things), 参见 Documentation/dev-tools/kunit/usage.rst
+鐢ㄤ簬 鏇村 information 鍦?writing KUnit tests (including 涓€浜?閫氱敤 techniques
+鐢ㄤ簬 testing 涓嶅悓 things), 鍙傝 Documentation/dev-tools/kunit/usage.rst

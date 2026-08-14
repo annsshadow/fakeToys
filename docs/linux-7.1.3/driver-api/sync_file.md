@@ -1,29 +1,29 @@
-## Sync File API 指南
+﻿## Sync File API 鎸囧崡
 
 
 :Author: Gustavo Padovan <gustavo at padovan dot org>
 
-本文档作为设备驱动编写者的指南，说明 sync_file API 是什么，以及驱动如何支持它。Sync file 是同步（struct dma_fence）的载体，这些同步是在驱动之间或跨进程边界进行同步所必需的。
+鏈枃妗ｄ綔涓鸿澶囬┍鍔ㄧ紪鍐欒€呯殑鎸囧崡锛岃鏄?sync_file API 鏄粈涔堬紝浠ュ強椹卞姩濡備綍鏀寔瀹冦€係ync file 鏄悓姝ワ紙struct dma_fence锛夌殑杞戒綋锛岃繖浜涘悓姝ユ槸鍦ㄩ┍鍔ㄤ箣闂存垨璺ㄨ繘绋嬭竟鐣岃繘琛屽悓姝ユ墍蹇呴渶鐨勩€?
 
-sync_file API 旨在用于向用户空间发送和从用户空间接收 fence 信息。它使用户空间能够进行显式围栏（fencing），即生产者驱动（如 GPU 或 V4L 驱动）不是将 fence 附加到缓冲区，而是通过 sync_file 将与该缓冲区相关的 fence 发送给用户空间。
+sync_file API 鏃ㄥ湪鐢ㄤ簬鍚戠敤鎴风┖闂村彂閫佸拰浠庣敤鎴风┖闂存帴鏀?fence 淇℃伅銆傚畠浣跨敤鎴风┖闂磋兘澶熻繘琛屾樉寮忓洿鏍忥紙fencing锛夛紝鍗崇敓浜ц€呴┍鍔紙濡?GPU 鎴?V4L 椹卞姩锛変笉鏄皢 fence 闄勫姞鍒扮紦鍐插尯锛岃€屾槸閫氳繃 sync_file 灏嗕笌璇ョ紦鍐插尯鐩稿叧鐨?fence 鍙戦€佺粰鐢ㄦ埛绌洪棿銆?
 
-然后该 sync_file 可以被发送给消费者（例如 DRM 驱动），在 fence 发出信号之前，该消费者不会对缓冲区做任何事情——即发出 fence 的驱动不再使用/处理该缓冲区，因此它发出信号表示该缓冲区已可使用。对于消费者 -> 生产者的循环部分反之亦然。
+鐒跺悗璇?sync_file 鍙互琚彂閫佺粰娑堣垂鑰咃紙渚嬪 DRM 椹卞姩锛夛紝鍦?fence 鍙戝嚭淇″彿涔嬪墠锛岃娑堣垂鑰呬笉浼氬缂撳啿鍖哄仛浠讳綍浜嬫儏鈥斺€斿嵆鍙戝嚭 fence 鐨勯┍鍔ㄤ笉鍐嶄娇鐢?澶勭悊璇ョ紦鍐插尯锛屽洜姝ゅ畠鍙戝嚭淇″彿琛ㄧず璇ョ紦鍐插尯宸插彲浣跨敤銆傚浜庢秷璐硅€?-> 鐢熶骇鑰呯殑寰幆閮ㄥ垎鍙嶄箣浜︾劧銆?
 
-Sync file 使用户空间能够感知驱动之间缓冲区共享的同步。
+Sync file 浣跨敤鎴风┖闂磋兘澶熸劅鐭ラ┍鍔ㄤ箣闂寸紦鍐插尯鍏变韩鐨勫悓姝ャ€?
 
-Sync file 最初添加于 Android 内核，但当前 Linux 桌面也能从中获益良多。
+Sync file 鏈€鍒濇坊鍔犱簬 Android 鍐呮牳锛屼絾褰撳墠 Linux 妗岄潰涔熻兘浠庝腑鑾风泭鑹銆?
 
-### in-fence 与 out-fence
-
-
-Sync file 既可以发往用户空间，也可以来自用户空间。当 sync_file 从驱动发送到用户空间时，我们称其包含的 fence 为“out-fence”。它们与一个驱动正在处理或即将处理的缓冲区相关，因此驱动创建一个 out-fence，以便能够在它通过 dma_fence_signal() 完成使用该缓冲区（或处理完）时通知。Out-fence 是驱动创建的 fence。
-
-另一方面，如果驱动通过 sync_file 从用户空间接收到 fence，我们称这些 fence 为“in-fence”。接收到 in-fence 意味着我们需要在使用该 in-fence 相关的任何缓冲区之前，等待该 fence 发出信号。
-
-### 创建 Sync File
+### in-fence 涓?out-fence
 
 
-当驱动需要向用户空间发送 out-fence 时，它创建一个 sync_file。
+Sync file 鏃㈠彲浠ュ彂寰€鐢ㄦ埛绌洪棿锛屼篃鍙互鏉ヨ嚜鐢ㄦ埛绌洪棿銆傚綋 sync_file 浠庨┍鍔ㄥ彂閫佸埌鐢ㄦ埛绌洪棿鏃讹紝鎴戜滑绉板叾鍖呭惈鐨?fence 涓衡€渙ut-fence鈥濄€傚畠浠笌涓€涓┍鍔ㄦ鍦ㄥ鐞嗘垨鍗冲皢澶勭悊鐨勭紦鍐插尯鐩稿叧锛屽洜姝ら┍鍔ㄥ垱寤轰竴涓?out-fence锛屼互渚胯兘澶熷湪瀹冮€氳繃 dma_fence_signal() 瀹屾垚浣跨敤璇ョ紦鍐插尯锛堟垨澶勭悊瀹岋級鏃堕€氱煡銆侽ut-fence 鏄┍鍔ㄥ垱寤虹殑 fence銆?
+
+鍙︿竴鏂归潰锛屽鏋滈┍鍔ㄩ€氳繃 sync_file 浠庣敤鎴风┖闂存帴鏀跺埌 fence锛屾垜浠О杩欎簺 fence 涓衡€渋n-fence鈥濄€傛帴鏀跺埌 in-fence 鎰忓懗鐫€鎴戜滑闇€瑕佸湪浣跨敤璇?in-fence 鐩稿叧鐨勪换浣曠紦鍐插尯涔嬪墠锛岀瓑寰呰 fence 鍙戝嚭淇″彿銆?
+
+### 鍒涘缓 Sync File
+
+
+褰撻┍鍔ㄩ渶瑕佸悜鐢ㄦ埛绌洪棿鍙戦€?out-fence 鏃讹紝瀹冨垱寤轰竴涓?sync_file銆?
 
 ```
 
@@ -31,7 +31,7 @@ Sync file 既可以发往用户空间，也可以来自用户空间。当 sync_f
 
 ```
 
-调用者传入 out-fence，取回 sync_file。这只是第一步，接下来它需要在 sync_file->file 上安装一个 fd。因此它获取一个
+璋冪敤鑰呬紶鍏?out-fence锛屽彇鍥?sync_file銆傝繖鍙槸绗竴姝ワ紝鎺ヤ笅鏉ュ畠闇€瑕佸湪 sync_file->file 涓婂畨瑁呬竴涓?fd銆傚洜姝ゅ畠鑾峰彇涓€涓?
 ```
 
 	fd = get_unused_fd_flags(O_CLOEXEC);
@@ -43,14 +43,14 @@ Sync file 既可以发往用户空间，也可以来自用户空间。当 sync_f
 
 ```
 
-该 sync_file fd 现在可以被发送给用户空间。
+璇?sync_file fd 鐜板湪鍙互琚彂閫佺粰鐢ㄦ埛绌洪棿銆?
 
-如果创建过程失败，或者由于任何其他原因需要释放 sync_file，应使用 fput(sync_file->file)。
+濡傛灉鍒涘缓杩囩▼澶辫触锛屾垨鑰呯敱浜庝换浣曞叾浠栧師鍥犻渶瑕侀噴鏀?sync_file锛屽簲浣跨敤 fput(sync_file->file)銆?
 
-### 从用户空间接收 Sync File
+### 浠庣敤鎴风┖闂存帴鏀?Sync File
 
 
-当用户空间需要向驱动发送 in-fence 时，它将 Sync File 的文件描述符传递给内核。内核随后可以从中检索 fence。
+褰撶敤鎴风┖闂撮渶瑕佸悜椹卞姩鍙戦€?in-fence 鏃讹紝瀹冨皢 Sync File 鐨勬枃浠舵弿杩扮浼犻€掔粰鍐呮牳銆傚唴鏍搁殢鍚庡彲浠ヤ粠涓绱?fence銆?
 
 ```
 
@@ -59,9 +59,9 @@ Sync file 既可以发往用户空间，也可以来自用户空间。当 sync_f
 
 ```
 
-返回的引用由调用者拥有，之后必须使用 dma_fence_put() 释放。在出错的情况下，返回的是 NULL 而非引用。
+杩斿洖鐨勫紩鐢ㄧ敱璋冪敤鑰呮嫢鏈夛紝涔嬪悗蹇呴』浣跨敤 dma_fence_put() 閲婃斁銆傚湪鍑洪敊鐨勬儏鍐典笅锛岃繑鍥炵殑鏄?NULL 鑰岄潪寮曠敤銆?
 
-参考：
+鍙傝€冿細
 
-1. include/linux/sync_file.h 中的 struct sync_file
-2. 上述所有接口均定义在 include/linux/sync_file.h 中
+1. include/linux/sync_file.h 涓殑 struct sync_file
+2. 涓婅堪鎵€鏈夋帴鍙ｅ潎瀹氫箟鍦?include/linux/sync_file.h 涓?

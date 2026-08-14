@@ -1,44 +1,28 @@
-#### USB DMA
+﻿#### USB DMA
 
 
-在 Linux 2.5 内核（及更高版本）中，USB 设备驱动对如何使用 DMA 来执行 I/O 操作有了
-更多的控制。这些 API 在内核 USB 编程指南（kerneldoc，来自源代码）中有详细说明。
-
-## API 概览
-
-
-总体情况是，USB 驱动可以继续忽略大多数 DMA 问题，尽管它们仍然必须提供 DMA 就绪的
-缓冲区（参见 Documentation/core-api/dma-api-howto.rst）。这就是它们在 2.4（及更早）
-内核中的工作方式，或者它们现在也可以感知 DMA。
-
-感知 DMA 的 USB 驱动：
-
-- 新增的调用使感知 DMA 的驱动能够分配 dma 缓冲区，并为已有的 dma 就绪缓冲区管理
-  dma 映射（见下文）。
-
-- URB 有一个额外的 "transfer_dma" 字段，以及一个指示其是否有效的 transfer_flags
-  位。（控制请求也有 "setup_dma"，但驱动不得使用它。）
-
-- 如果感知 DMA 的驱动没有抢先完成映射并设置 `URB_NO_TRANSFER_DMA_MAP`，则
-  "usbcore" 会映射此 DMA 地址。HCD 不为 URB 管理 dma 映射。
-
-- 有一个新的“通用 DMA API”，其中部分可供 USB 设备驱动使用。绝不要在任何 USB 接口
-  或设备上使用 dma_set_mask()；那可能会破坏共享该总线的所有设备。
-
-## 消除拷贝
+鍦?Linux 2.5 鍐呮牳锛堝強鏇撮珮鐗堟湰锛変腑锛孶SB 璁惧椹卞姩瀵瑰浣曚娇鐢?DMA 鏉ユ墽琛?I/O 鎿嶄綔鏈変簡
+鏇村鐨勬帶鍒躲€傝繖浜?API 鍦ㄥ唴鏍?USB 缂栫▼鎸囧崡锛坘erneldoc锛屾潵鑷簮浠ｇ爜锛変腑鏈夎缁嗚鏄庛€?
+## API 姒傝
 
 
-避免让 CPU 不必要地拷贝数据是好事。代价会累积，而像缓存颠簸（cache-trashing）这类
-影响会施加微妙的惩罚。
+鎬讳綋鎯呭喌鏄紝USB 椹卞姩鍙互缁х画蹇界暐澶у鏁?DMA 闂锛屽敖绠″畠浠粛鐒跺繀椤绘彁渚?DMA 灏辩华鐨?缂撳啿鍖猴紙鍙傝 Documentation/core-api/dma-api-howto.rst锛夈€傝繖灏辨槸瀹冧滑鍦?2.4锛堝強鏇存棭锛?鍐呮牳涓殑宸ヤ綔鏂瑰紡锛屾垨鑰呭畠浠幇鍦ㄤ篃鍙互鎰熺煡 DMA銆?
+鎰熺煡 DMA 鐨?USB 椹卞姩锛?
+- 鏂板鐨勮皟鐢ㄤ娇鎰熺煡 DMA 鐨勯┍鍔ㄨ兘澶熷垎閰?dma 缂撳啿鍖猴紝骞朵负宸叉湁鐨?dma 灏辩华缂撳啿鍖虹鐞?  dma 鏄犲皠锛堣涓嬫枃锛夈€?
+- URB 鏈変竴涓澶栫殑 "transfer_dma" 瀛楁锛屼互鍙婁竴涓寚绀哄叾鏄惁鏈夋晥鐨?transfer_flags
+  浣嶃€傦紙鎺у埗璇锋眰涔熸湁 "setup_dma"锛屼絾椹卞姩涓嶅緱浣跨敤瀹冦€傦級
 
-- 如果你一直从同一个缓冲区进行大量小数据传输，在使用 IOMMU 管理 DMA 映射的系统上，
-  这真的会消耗大量资源。与执行 I/O 相比，为每个请求建立和拆除 IOMMU 映射的代价可能
-  要高得多！
+- 濡傛灉鎰熺煡 DMA 鐨勯┍鍔ㄦ病鏈夋姠鍏堝畬鎴愭槧灏勫苟璁剧疆 `URB_NO_TRANSFER_DMA_MAP`锛屽垯
+  "usbcore" 浼氭槧灏勬 DMA 鍦板潃銆侶CD 涓嶄负 URB 绠＄悊 dma 鏄犲皠銆?
+- 鏈変竴涓柊鐨勨€滈€氱敤 DMA API鈥濓紝鍏朵腑閮ㄥ垎鍙緵 USB 璁惧椹卞姩浣跨敤銆傜粷涓嶈鍦ㄤ换浣?USB 鎺ュ彛
+  鎴栬澶囦笂浣跨敤 dma_set_mask()锛涢偅鍙兘浼氱牬鍧忓叡浜鎬荤嚎鐨勬墍鏈夎澶囥€?
+## 娑堥櫎鎷疯礉
 
-  对于这些特定情况，USB 提供了分配开销更低的内存的原语。它们的工作方式类似于
-  kmalloc 和 kfree 版本，为你提供可存入 urb->transfer_buffer 和 urb->transfer_dma
-  的正确类型的地址。
-```
+
+閬垮厤璁?CPU 涓嶅繀瑕佸湴鎷疯礉鏁版嵁鏄ソ浜嬨€備唬浠蜂細绱Н锛岃€屽儚缂撳瓨棰犵案锛坈ache-trashing锛夎繖绫?褰卞搷浼氭柦鍔犲井濡欑殑鎯╃綒銆?
+- 濡傛灉浣犱竴鐩翠粠鍚屼竴涓紦鍐插尯杩涜澶ч噺灏忔暟鎹紶杈擄紝鍦ㄤ娇鐢?IOMMU 绠＄悊 DMA 鏄犲皠鐨勭郴缁熶笂锛?  杩欑湡鐨勪細娑堣€楀ぇ閲忚祫婧愩€備笌鎵ц I/O 鐩告瘮锛屼负姣忎釜璇锋眰寤虹珛鍜屾媶闄?IOMMU 鏄犲皠鐨勪唬浠峰彲鑳?  瑕侀珮寰楀锛?
+  瀵逛簬杩欎簺鐗瑰畾鎯呭喌锛孶SB 鎻愪緵浜嗗垎閰嶅紑閿€鏇翠綆鐨勫唴瀛樼殑鍘熻銆傚畠浠殑宸ヤ綔鏂瑰紡绫讳技浜?  kmalloc 鍜?kfree 鐗堟湰锛屼负浣犳彁渚涘彲瀛樺叆 urb->transfer_buffer 鍜?urb->transfer_dma
+  鐨勬纭被鍨嬬殑鍦板潃銆?```
 
 	void *usb_alloc_coherent (struct usb_device *dev, size_t size,
 		int mem_flags, dma_addr_t *dma);
@@ -46,42 +30,27 @@
 	void usb_free_coherent (struct usb_device *dev, size_t size,
 		void *addr, dma_addr_t dma);
 
-  大多数驱动**不应**使用这些原语；它们不需要使用这类内存（“dma-coherent”），而从
-  :c:func:`kmalloc` 返回的内存也能正常工作。
+  澶у鏁伴┍鍔?*涓嶅簲**浣跨敤杩欎簺鍘熻锛涘畠浠笉闇€瑕佷娇鐢ㄨ繖绫诲唴瀛橈紙鈥渄ma-coherent鈥濓級锛岃€屼粠
+  :c:func:`kmalloc` 杩斿洖鐨勫唴瀛樹篃鑳芥甯稿伐浣溿€?
+  杩斿洖鐨勫唴瀛樼紦鍐插尯鏄€渄ma-coherent鈥濈殑锛涙湁鏃朵綘鍙兘闇€瑕侀€氳繃浣跨敤鍐呭瓨灞忛殰鏉ュ己鍒朵竴鑷寸殑
+  鍐呭瓨璁块棶椤哄簭銆傚畠娌℃湁浣跨敤娴佸紡锛坰treaming锛塂MA 鏄犲皠锛屽洜姝ら€傜敤浜庡湪鍚﹀垯浼氶绨?IOMMU
+  鏄犲皠鐨勭郴缁熶笂杩涜灏忎紶杈撱€傦紙鏈夊叧鈥渃oherent鈥濆拰鈥渟treaming鈥滵MA 鏄犲皠鐨勫畾涔夛紝璇峰弬闃?  Documentation/core-api/dma-api-howto.rst銆傦級
 
-  返回的内存缓冲区是“dma-coherent”的；有时你可能需要通过使用内存屏障来强制一致的
-  内存访问顺序。它没有使用流式（streaming）DMA 映射，因此适用于在否则会颠簸 IOMMU
-  映射的系统上进行小传输。（有关“coherent”和“streaming”DMA 映射的定义，请参阅
-  Documentation/core-api/dma-api-howto.rst。）
-
-  申请 1/N 页（以及申请 N 页）在空间上是相当高效的。
-
-  在大多数系统上，返回的内存将是未缓存的，因为 dma-coherent 内存的语义要求要么绕过
-  CPU 缓存，要么使用带有总线侦听（bus-snooping）支持的缓存硬件。虽然 x86 硬件具有
-  这种总线侦听能力，但许多其他系统使用软件来刷新缓存行以防止 DMA 冲突。
-
+  鐢宠 1/N 椤碉紙浠ュ強鐢宠 N 椤碉級鍦ㄧ┖闂翠笂鏄浉褰撻珮鏁堢殑銆?
+  鍦ㄥぇ澶氭暟绯荤粺涓婏紝杩斿洖鐨勫唴瀛樺皢鏄湭缂撳瓨鐨勶紝鍥犱负 dma-coherent 鍐呭瓨鐨勮涔夎姹傝涔堢粫杩?  CPU 缂撳瓨锛岃涔堜娇鐢ㄥ甫鏈夋€荤嚎渚﹀惉锛坆us-snooping锛夋敮鎸佺殑缂撳瓨纭欢銆傝櫧鐒?x86 纭欢鍏锋湁
+  杩欑鎬荤嚎渚﹀惉鑳藉姏锛屼絾璁稿鍏朵粬绯荤粺浣跨敤杞欢鏉ュ埛鏂扮紦瀛樿浠ラ槻姝?DMA 鍐茬獊銆?
 ```
-- 某些 EHCI 控制器上的设备可以处理对高端内存（high memory）的 DMA 输入输出。
+- 鏌愪簺 EHCI 鎺у埗鍣ㄤ笂鐨勮澶囧彲浠ュ鐞嗗楂樼鍐呭瓨锛坔igh memory锛夌殑 DMA 杈撳叆杈撳嚭銆?
+  閬楁喚鐨勬槸锛屽綋鍓嶇殑 Linux DMA 鍩虹璁炬柦娌℃湁鍚堢悊鐨勬柟寮忔潵鏆撮湶杩欎簺鑳藉姏鈥︹€﹁€屼笖鏃犺濡備綍锛?  HIGHMEM 鍦ㄥ緢澶х▼搴︿笂鏄?x86_32 鐗规湁鐨勪竴涓璁＄己闄枫€傛墍浠ヤ綘鏈€濂界殑鍔炴硶鏄‘淇濈粷涓嶅皢
+  楂樼鍐呭瓨缂撳啿鍖轰紶鍏?USB 椹卞姩銆傝繖寰堝鏄擄紱瀹冩槸榛樿琛屼负銆傚彧鏄笉瑕佽鐩栧畠锛屼緥濡備娇鐢?  `NETIF_F_HIGHDMA`銆?
+  杩欏彲鑳戒細杩娇浣犵殑璋冪敤鑰呭仛涓€浜涘弽寮圭紦鍐诧紙bounce buffering锛夛紝浠庨珮绔唴瀛樺鍒跺埌鈥滄櫘閫氣€?  DMA 鍐呭瓨銆傚鏋滀綘鑳芥兂鍑鸿В鍐虫闂锛堥拡瀵瑰唴瀛樿秴杩?1 GByte 鐨?x86_32 鏈哄櫒锛夌殑濂藉姙娉曪紝
+  娆㈣繋鎻愪氦琛ヤ竵銆?
+## 浣跨敤宸叉湁缂撳啿鍖?
 
-  遗憾的是，当前的 Linux DMA 基础设施没有合理的方式来暴露这些能力……而且无论如何，
-  HIGHMEM 在很大程度上是 x86_32 特有的一个设计缺陷。所以你最好的办法是确保绝不将
-  高端内存缓冲区传入 USB 驱动。这很容易；它是默认行为。只是不要覆盖它，例如使用
-  `NETIF_F_HIGHDMA`。
+宸叉湁缂撳啿鍖哄湪棣栧厛琚槧灏勫埌璁惧鐨?DMA 鍦板潃绌洪棿涔嬪墠锛屼笉鑳界敤浜?DMA銆傜劧鑰岋紝浼犻€掔粰浣犵殑
+椹卞姩鐨勫ぇ澶氭暟缂撳啿鍖洪兘鍙互瀹夊叏鍦扮敤浜庤繖鏍风殑 DMA 鏄犲皠銆傦紙璇峰弬闃?Documentation/core-api/dma-api-howto.rst 鐨勭涓€鑺傦紝鏍囬涓衡€滃摢浜涘唴瀛樺彲鐢ㄤ簬 DMA锛熲€濓級
 
-  这可能会迫使你的调用者做一些反弹缓冲（bounce buffering），从高端内存复制到“普通”
-  DMA 内存。如果你能想出解决此问题（针对内存超过 1 GByte 的 x86_32 机器）的好办法，
-  欢迎提交补丁。
-
-## 使用已有缓冲区
-
-
-已有缓冲区在首先被映射到设备的 DMA 地址空间之前，不能用于 DMA。然而，传递给你的
-驱动的大多数缓冲区都可以安全地用于这样的 DMA 映射。（请参阅
-Documentation/core-api/dma-api-howto.rst 的第一节，标题为“哪些内存可用于 DMA？”）
-
-- 当你拥有已为 USB 控制器映射好的 scatterlist 时，可以使用新的 `usb_sg_*()` 调用，
-  它会将 scatterlist 转换为
-```
+- 褰撲綘鎷ユ湁宸蹭负 USB 鎺у埗鍣ㄦ槧灏勫ソ鐨?scatterlist 鏃讹紝鍙互浣跨敤鏂扮殑 `usb_sg_*()` 璋冪敤锛?  瀹冧細灏?scatterlist 杞崲涓?```
 
 	int usb_sg_init(struct usb_sg_request *io, struct usb_device *dev,
 		unsigned pipe, unsigned	period, struct scatterlist *sg,
@@ -91,7 +60,6 @@ Documentation/core-api/dma-api-howto.rst 的第一节，标题为“哪些内存
 
 	void usb_sg_cancel(struct usb_sg_request *io);
 
-  当 USB 控制器不支持 DMA 时，只要 scatterlist 中的页不在 Highmem 中，``usb_sg_init()``
-  就会尝试以 PIO 方式提交 URB，而在现代架构上这种情况非常罕见。
-
+  褰?USB 鎺у埗鍣ㄤ笉鏀寔 DMA 鏃讹紝鍙 scatterlist 涓殑椤典笉鍦?Highmem 涓紝``usb_sg_init()``
+  灏变細灏濊瘯浠?PIO 鏂瑰紡鎻愪氦 URB锛岃€屽湪鐜颁唬鏋舵瀯涓婅繖绉嶆儏鍐甸潪甯哥綍瑙併€?
 ```

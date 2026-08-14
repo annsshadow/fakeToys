@@ -1,105 +1,105 @@
-## （取消）补丁回调
+﻿## 锛堝彇娑堬級琛ヤ竵鍥炶皟
 
 
-Livepatch（取消）补丁回调（(un)patch-callbacks）提供了一种机制，使 livepatch 模块在
-内核对象被（取消）打补丁时执行回调函数。它们可以被视为一项**强力特性**，它**扩展了
-livepatching 的能力**，使其包含：
+Livepatch锛堝彇娑堬級琛ヤ竵鍥炶皟锛?un)patch-callbacks锛夋彁渚涗簡涓€绉嶆満鍒讹紝浣?livepatch 妯″潡鍦?
+鍐呮牳瀵硅薄琚紙鍙栨秷锛夋墦琛ヤ竵鏃舵墽琛屽洖璋冨嚱鏁般€傚畠浠彲浠ヨ瑙嗕负涓€椤?*寮哄姏鐗规€?*锛屽畠**鎵╁睍浜?
+livepatching 鐨勮兘鍔?*锛屼娇鍏跺寘鍚細
 
-  - 对全局数据的安全更新
+  - 瀵瑰叏灞€鏁版嵁鐨勫畨鍏ㄦ洿鏂?
 
-  - 对 init 和 probe 函数的"补丁"
+  - 瀵?init 鍜?probe 鍑芥暟鐨?琛ヤ竵"
 
-  - 对其它无法打补丁的代码（即汇编）打补丁
+  - 瀵瑰叾瀹冩棤娉曟墦琛ヤ竵鐨勪唬鐮侊紙鍗虫眹缂栵級鎵撹ˉ涓?
 
-在大多数情况下，（取消）补丁回调需要与内存屏障和内核同步原语（如 mutex/spinlock，甚至
-stop_machine()）配合使用，以避免并发问题。
+鍦ㄥぇ澶氭暟鎯呭喌涓嬶紝锛堝彇娑堬級琛ヤ竵鍥炶皟闇€瑕佷笌鍐呭瓨灞忛殰鍜屽唴鏍稿悓姝ュ師璇紙濡?mutex/spinlock锛岀敋鑷?
+stop_machine()锛夐厤鍚堜娇鐢紝浠ラ伩鍏嶅苟鍙戦棶棰樸€?
 
-## 1. 动机
-
-
-回调不同于现有的内核设施：
-
-  - 在禁用和重新启用一个补丁时，模块 init/exit 代码不会运行。
-
-  - 模块通知器（notifier）无法阻止一个待打补丁的模块加载。
-
-回调是 klp_object 结构的一部分，其实现特定于该 klp_object。其它 livepatch 对象可能
-被打补丁，也可能没有，与目标 klp_object 的当前状态无关。
-
-## 2. 回调类型
+## 1. 鍔ㄦ満
 
 
-可以为以下 livepatch 动作注册回调：
+鍥炶皟涓嶅悓浜庣幇鏈夌殑鍐呮牳璁炬柦锛?
 
-  - Pre-patch（补丁前）
-                 - 在 klp_object 被打补丁之前
+  - 鍦ㄧ鐢ㄥ拰閲嶆柊鍚敤涓€涓ˉ涓佹椂锛屾ā鍧?init/exit 浠ｇ爜涓嶄細杩愯銆?
 
-  - Post-patch（补丁后）
-                 - 在 klp_object 被打补丁且跨所有任务处于活动状态之后
+  - 妯″潡閫氱煡鍣紙notifier锛夋棤娉曢樆姝竴涓緟鎵撹ˉ涓佺殑妯″潡鍔犺浇銆?
 
-  - Pre-unpatch（取消补丁前）
-                 - 在 klp_object 被取消补丁之前（即打补丁的代码仍然活动），
-                   用于清理 post-patch 回调的资源
+鍥炶皟鏄?klp_object 缁撴瀯鐨勪竴閮ㄥ垎锛屽叾瀹炵幇鐗瑰畾浜庤 klp_object銆傚叾瀹?livepatch 瀵硅薄鍙兘
+琚墦琛ヤ竵锛屼篃鍙兘娌℃湁锛屼笌鐩爣 klp_object 鐨勫綋鍓嶇姸鎬佹棤鍏炽€?
 
-  - Post-unpatch（取消补丁后）
-                 - 在 klp_object 被取消补丁、所有代码已恢复且没有任何任务在运行
-                   打补丁的代码之后，用于清理 pre-patch 回调的资源
-
-## 3. 工作原理
+## 2. 鍥炶皟绫诲瀷
 
 
-每个回调都是可选的，省略其中一个并不妨碍指定任何其它回调。然而，livepatching 核心以
-对称方式执行这些处理程序：pre-patch 回调有一个 post-unpatch 对应项，post-patch 回调
-有一个 pre-unpatch 对应项。只有当其对应的补丁回调被执行过时，才会执行取消补丁回调。
-典型的使用场景是将一个获取并配置资源的补丁处理程序，与一个拆除并释放相同资源的取消
-补丁处理程序配对。
+鍙互涓轰互涓?livepatch 鍔ㄤ綔娉ㄥ唽鍥炶皟锛?
 
-只有当其所属的 klp_object 被加载时，回调才会执行。对于内核内的 vmlinux 目标，这意味着
-当 livepatch 被启用/禁用时，回调总是会执行。对于补丁目标内核模块，只有当目标模块被加载时
-回调才会执行。当一个模块目标被（取消）加载时，仅当 livepatch 模块已启用时其回调才会执行。
+  - Pre-patch锛堣ˉ涓佸墠锛?
+                 - 鍦?klp_object 琚墦琛ヤ竵涔嬪墠
 
-pre-patch 回调（如果指定）应当返回一个状态码（成功为 0，错误为 -ERRNO）。错误状态码
-向 livepatching 核心表明当前 klp_object 的补丁操作不安全，并停止当前的补丁请求。（当
-没有提供 pre-patch 回调时，假定转换为安全。）如果 pre-patch 回调返回失败，内核的模块
-加载器将会：
+  - Post-patch锛堣ˉ涓佸悗锛?
+                 - 鍦?klp_object 琚墦琛ヤ竵涓旇法鎵€鏈変换鍔″浜庢椿鍔ㄧ姸鎬佷箣鍚?
 
-  - 如果 livepatch 在目标代码之后加载，则拒绝加载 livepatch；
+  - Pre-unpatch锛堝彇娑堣ˉ涓佸墠锛?
+                 - 鍦?klp_object 琚彇娑堣ˉ涓佷箣鍓嶏紙鍗虫墦琛ヤ竵鐨勪唬鐮佷粛鐒舵椿鍔級锛?
+                   鐢ㄤ簬娓呯悊 post-patch 鍥炶皟鐨勮祫婧?
 
-    或者：
+  - Post-unpatch锛堝彇娑堣ˉ涓佸悗锛?
+                 - 鍦?klp_object 琚彇娑堣ˉ涓併€佹墍鏈変唬鐮佸凡鎭㈠涓旀病鏈変换浣曚换鍔″湪杩愯
+                   鎵撹ˉ涓佺殑浠ｇ爜涔嬪悗锛岀敤浜庢竻鐞?pre-patch 鍥炶皟鐨勮祫婧?
 
-  - 如果 livepatch 已经成功加载，则拒绝加载模块。
-
-对于某个给定的 klp_object，如果对象打补丁失败（由于失败的 pre_patch 回调或任何其它
-原因），则不会执行任何 post-patch、pre-unpatch 或 post-unpatch 回调。
-
-如果补丁转换被逆转，则不会运行任何 pre-unpatch 处理程序（这遵循前面提到的对称性——
-pre-unpatch 回调只有在其对应的 post-patch 回调执行过时才会出现）。
-
-如果对象确实成功打了补丁，但补丁转换由于某种原因从未开始（例如，如果另一个对象打补丁
-失败），则只会调用 post-unpatch 回调。
-
-## 4. 使用场景
+## 3. 宸ヤ綔鍘熺悊
 
 
-演示回调 API 的示例 livepatch 模块可以在 samples/livepatch/ 目录中找到。这些示例被
-修改为用于 kselftests，可以在 lib/livepatch 目录中找到。
+姣忎釜鍥炶皟閮芥槸鍙€夌殑锛岀渷鐣ュ叾涓竴涓苟涓嶅Θ纰嶆寚瀹氫换浣曞叾瀹冨洖璋冦€傜劧鑰岋紝livepatching 鏍稿績浠?
+瀵圭О鏂瑰紡鎵ц杩欎簺澶勭悊绋嬪簭锛歱re-patch 鍥炶皟鏈変竴涓?post-unpatch 瀵瑰簲椤癸紝post-patch 鍥炶皟
+鏈変竴涓?pre-unpatch 瀵瑰簲椤广€傚彧鏈夊綋鍏跺搴旂殑琛ヤ竵鍥炶皟琚墽琛岃繃鏃讹紝鎵嶄細鎵ц鍙栨秷琛ヤ竵鍥炶皟銆?
+鍏稿瀷鐨勪娇鐢ㄥ満鏅槸灏嗕竴涓幏鍙栧苟閰嶇疆璧勬簮鐨勮ˉ涓佸鐞嗙▼搴忥紝涓庝竴涓媶闄ゅ苟閲婃斁鐩稿悓璧勬簮鐨勫彇娑?
+琛ヤ竵澶勭悊绋嬪簭閰嶅銆?
 
-### 全局数据更新
+鍙湁褰撳叾鎵€灞炵殑 klp_object 琚姞杞芥椂锛屽洖璋冩墠浼氭墽琛屻€傚浜庡唴鏍稿唴鐨?vmlinux 鐩爣锛岃繖鎰忓懗鐫€
+褰?livepatch 琚惎鐢?绂佺敤鏃讹紝鍥炶皟鎬绘槸浼氭墽琛屻€傚浜庤ˉ涓佺洰鏍囧唴鏍告ā鍧楋紝鍙湁褰撶洰鏍囨ā鍧楄鍔犺浇鏃?
+鍥炶皟鎵嶄細鎵ц銆傚綋涓€涓ā鍧楃洰鏍囪锛堝彇娑堬級鍔犺浇鏃讹紝浠呭綋 livepatch 妯″潡宸插惎鐢ㄦ椂鍏跺洖璋冩墠浼氭墽琛屻€?
+
+pre-patch 鍥炶皟锛堝鏋滄寚瀹氾級搴斿綋杩斿洖涓€涓姸鎬佺爜锛堟垚鍔熶负 0锛岄敊璇负 -ERRNO锛夈€傞敊璇姸鎬佺爜
+鍚?livepatching 鏍稿績琛ㄦ槑褰撳墠 klp_object 鐨勮ˉ涓佹搷浣滀笉瀹夊叏锛屽苟鍋滄褰撳墠鐨勮ˉ涓佽姹傘€傦紙褰?
+娌℃湁鎻愪緵 pre-patch 鍥炶皟鏃讹紝鍋囧畾杞崲涓哄畨鍏ㄣ€傦級濡傛灉 pre-patch 鍥炶皟杩斿洖澶辫触锛屽唴鏍哥殑妯″潡
+鍔犺浇鍣ㄥ皢浼氾細
+
+  - 濡傛灉 livepatch 鍦ㄧ洰鏍囦唬鐮佷箣鍚庡姞杞斤紝鍒欐嫆缁濆姞杞?livepatch锛?
+
+    鎴栬€咃細
+
+  - 濡傛灉 livepatch 宸茬粡鎴愬姛鍔犺浇锛屽垯鎷掔粷鍔犺浇妯″潡銆?
+
+瀵逛簬鏌愪釜缁欏畾鐨?klp_object锛屽鏋滃璞℃墦琛ヤ竵澶辫触锛堢敱浜庡け璐ョ殑 pre_patch 鍥炶皟鎴栦换浣曞叾瀹?
+鍘熷洜锛夛紝鍒欎笉浼氭墽琛屼换浣?post-patch銆乸re-unpatch 鎴?post-unpatch 鍥炶皟銆?
+
+濡傛灉琛ヤ竵杞崲琚€嗚浆锛屽垯涓嶄細杩愯浠讳綍 pre-unpatch 澶勭悊绋嬪簭锛堣繖閬靛惊鍓嶉潰鎻愬埌鐨勫绉版€р€斺€?
+pre-unpatch 鍥炶皟鍙湁鍦ㄥ叾瀵瑰簲鐨?post-patch 鍥炶皟鎵ц杩囨椂鎵嶄細鍑虹幇锛夈€?
+
+濡傛灉瀵硅薄纭疄鎴愬姛鎵撲簡琛ヤ竵锛屼絾琛ヤ竵杞崲鐢变簬鏌愮鍘熷洜浠庢湭寮€濮嬶紙渚嬪锛屽鏋滃彟涓€涓璞℃墦琛ヤ竵
+澶辫触锛夛紝鍒欏彧浼氳皟鐢?post-unpatch 鍥炶皟銆?
+
+## 4. 浣跨敤鍦烘櫙
 
 
-pre-patch 回调可用于更新全局变量。例如，提交 75ff39ccc1bd（"tcp: make challenge acks
-less predictable"）修改了一个全局 sysctl，同时也给 tcp_send_challenge_ack() 函数打了补丁。
+婕旂ず鍥炶皟 API 鐨勭ず渚?livepatch 妯″潡鍙互鍦?samples/livepatch/ 鐩綍涓壘鍒般€傝繖浜涚ず渚嬭
+淇敼涓虹敤浜?kselftests锛屽彲浠ュ湪 lib/livepatch 鐩綍涓壘鍒般€?
 
-在这种情况下，如果我们极度谨慎，也许可以在打补丁完成之后用 post-patch 回调来修补数据，
-这样 tcp_send_challenge_ack() 可以首先被改为使用 READ_ONCE 读取
-sysctl_tcp_challenge_ack_limit。
-
-### __init 和 probe 函数补丁支持
+### 鍏ㄥ眬鏁版嵁鏇存柊
 
 
-尽管 __init 和 probe 函数不能直接被 livepatch，但有可能通过 pre/post-patch 回调实现
-类似的更新。
+pre-patch 鍥炶皟鍙敤浜庢洿鏂板叏灞€鍙橀噺銆備緥濡傦紝鎻愪氦 75ff39ccc1bd锛?tcp: make challenge acks
+less predictable"锛変慨鏀逛簡涓€涓叏灞€ sysctl锛屽悓鏃朵篃缁?tcp_send_challenge_ack() 鍑芥暟鎵撲簡琛ヤ竵銆?
 
-提交 48900cb6af42（"virtio-net: drop NETIF_F_FRAGLIST"）改变了 virtnet_probe() 初始化
-其驱动 net_device 特性的方式。一个 pre/post-patch 回调可以遍历所有此类设备，对它们的
-hw_features 值做类似的修改。（该值的客户端函数可能需要相应更新。）
+鍦ㄨ繖绉嶆儏鍐典笅锛屽鏋滄垜浠瀬搴﹁皑鎱庯紝涔熻鍙互鍦ㄦ墦琛ヤ竵瀹屾垚涔嬪悗鐢?post-patch 鍥炶皟鏉ヤ慨琛ユ暟鎹紝
+杩欐牱 tcp_send_challenge_ack() 鍙互棣栧厛琚敼涓轰娇鐢?READ_ONCE 璇诲彇
+sysctl_tcp_challenge_ack_limit銆?
+
+### __init 鍜?probe 鍑芥暟琛ヤ竵鏀寔
+
+
+灏界 __init 鍜?probe 鍑芥暟涓嶈兘鐩存帴琚?livepatch锛屼絾鏈夊彲鑳介€氳繃 pre/post-patch 鍥炶皟瀹炵幇
+绫讳技鐨勬洿鏂般€?
+
+鎻愪氦 48900cb6af42锛?virtio-net: drop NETIF_F_FRAGLIST"锛夋敼鍙樹簡 virtnet_probe() 鍒濆鍖?
+鍏堕┍鍔?net_device 鐗规€х殑鏂瑰紡銆備竴涓?pre/post-patch 鍥炶皟鍙互閬嶅巻鎵€鏈夋绫昏澶囷紝瀵瑰畠浠殑
+hw_features 鍊煎仛绫讳技鐨勪慨鏀广€傦紙璇ュ€肩殑瀹㈡埛绔嚱鏁板彲鑳介渶瑕佺浉搴旀洿鏂般€傦級

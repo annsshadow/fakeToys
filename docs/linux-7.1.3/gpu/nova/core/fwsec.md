@@ -1,22 +1,14 @@
+﻿
+## FWSEC锛堝浐浠跺畨鍏?/ Firmware Security锛?
 
-## FWSEC（固件安全 / Firmware Security）
-
-
-本文档从概念上简要描述 FWSEC（Firmware Security，固件安全）镜像及其在 GPU 启动序列中的作用。因此，这些信息将来可能会发生变化，且仅仅是截至安培（Ampere）GPU 系列时的情况。不过，希望其中描述的概念能帮助理解内核中处理它的相关代码。所有信息均来自公开可用的资料，例如公开的驱动和文档。
-
-FWSEC 的作用是提供一个安全启动过程。它运行在“Heavy-secure（高安全）”模式下，并在 GPU 复位后、将各种 ucode（微码）镜像加载到其他 GPU 微控制器（如 PMU 和 GSP）之前，执行固件验证。
-
-FWSEC 本身是一个存储在 VBIOS ROM 中 ROM 的 FWSEC 分区里的应用程序（详见 vbios.rst）。它包含不同的命令，如 FRTS（Firmware Runtime Services，固件运行时服务）和 SB（Secure Booting，复位后安全启动其他微控制器并为它们加载非 FWSEC 的其他 ucode）。内核驱动只需要执行 FRTS，因为安全启动（SB）在驱动加载时已经完成。
-
-FRTS 命令划分出 WPR2 区域（写保护区域），其中包含电源管理所需的数据。一旦设置完成，只有 HS（High Secure，高安全）模式的 ucode 才能访问它（特权级别详见 falcon.rst）。
-
-FWSEC 镜像位于 VBIOS ROM 中包含各种 ucode 镜像（也称为应用程序）的分区中——其中之一便是 FWSEC。关于它如何被提取，请参阅 vbios.rst 和 vbios.rs 源代码。
-
-每个 ucode 镜像（包括 FWSEC 镜像）的 Falcon 数据由头部、数据段（DMEM）和指令代码段（IMEM）组合而成。所有这些 ucode 镜像都存储在同一个 ROM 分区中，并通过 PMU 表根据其应用 ID（application ID）来查找要加载的应用程序（详见 vbios.rs）。
-
-对于 nova-core 驱动，FWSEC 包含一个名为 DMEMMAPPER 的“应用程序接口”（application interface）。该接口除了其他用途外，还用于执行“FWSEC-FRTS”命令。对于安培架构，FWSEC 运行在 GSP 上的 Heavy-secure 模式并执行 FRTS。
-
-### FWSEC 内存布局
+鏈枃妗ｄ粠姒傚康涓婄畝瑕佹弿杩?FWSEC锛團irmware Security锛屽浐浠跺畨鍏級闀滃儚鍙婂叾鍦?GPU 鍚姩搴忓垪涓殑浣滅敤銆傚洜姝わ紝杩欎簺淇℃伅灏嗘潵鍙兘浼氬彂鐢熷彉鍖栵紝涓斾粎浠呮槸鎴嚦瀹夊煿锛圓mpere锛塆PU 绯诲垪鏃剁殑鎯呭喌銆備笉杩囷紝甯屾湜鍏朵腑鎻忚堪鐨勬蹇佃兘甯姪鐞嗚В鍐呮牳涓鐞嗗畠鐨勭浉鍏充唬鐮併€傛墍鏈変俊鎭潎鏉ヨ嚜鍏紑鍙敤鐨勮祫鏂欙紝渚嬪鍏紑鐨勯┍鍔ㄥ拰鏂囨。銆?
+FWSEC 鐨勪綔鐢ㄦ槸鎻愪緵涓€涓畨鍏ㄥ惎鍔ㄨ繃绋嬨€傚畠杩愯鍦ㄢ€淗eavy-secure锛堥珮瀹夊叏锛夆€濇ā寮忎笅锛屽苟鍦?GPU 澶嶄綅鍚庛€佸皢鍚勭 ucode锛堝井鐮侊級闀滃儚鍔犺浇鍒板叾浠?GPU 寰帶鍒跺櫒锛堝 PMU 鍜?GSP锛変箣鍓嶏紝鎵ц鍥轰欢楠岃瘉銆?
+FWSEC 鏈韩鏄竴涓瓨鍌ㄥ湪 VBIOS ROM 涓?ROM 鐨?FWSEC 鍒嗗尯閲岀殑搴旂敤绋嬪簭锛堣瑙?vbios.rst锛夈€傚畠鍖呭惈涓嶅悓鐨勫懡浠わ紝濡?FRTS锛團irmware Runtime Services锛屽浐浠惰繍琛屾椂鏈嶅姟锛夊拰 SB锛圫ecure Booting锛屽浣嶅悗瀹夊叏鍚姩鍏朵粬寰帶鍒跺櫒骞朵负瀹冧滑鍔犺浇闈?FWSEC 鐨勫叾浠?ucode锛夈€傚唴鏍搁┍鍔ㄥ彧闇€瑕佹墽琛?FRTS锛屽洜涓哄畨鍏ㄥ惎鍔紙SB锛夊湪椹卞姩鍔犺浇鏃跺凡缁忓畬鎴愩€?
+FRTS 鍛戒护鍒掑垎鍑?WPR2 鍖哄煙锛堝啓淇濇姢鍖哄煙锛夛紝鍏朵腑鍖呭惈鐢垫簮绠＄悊鎵€闇€鐨勬暟鎹€備竴鏃﹁缃畬鎴愶紝鍙湁 HS锛圚igh Secure锛岄珮瀹夊叏锛夋ā寮忕殑 ucode 鎵嶈兘璁块棶瀹冿紙鐗规潈绾у埆璇﹁ falcon.rst锛夈€?
+FWSEC 闀滃儚浣嶄簬 VBIOS ROM 涓寘鍚悇绉?ucode 闀滃儚锛堜篃绉颁负搴旂敤绋嬪簭锛夌殑鍒嗗尯涓€斺€斿叾涓箣涓€渚挎槸 FWSEC銆傚叧浜庡畠濡備綍琚彁鍙栵紝璇峰弬闃?vbios.rst 鍜?vbios.rs 婧愪唬鐮併€?
+姣忎釜 ucode 闀滃儚锛堝寘鎷?FWSEC 闀滃儚锛夌殑 Falcon 鏁版嵁鐢卞ご閮ㄣ€佹暟鎹锛圖MEM锛夊拰鎸囦护浠ｇ爜娈碉紙IMEM锛夌粍鍚堣€屾垚銆傛墍鏈夎繖浜?ucode 闀滃儚閮藉瓨鍌ㄥ湪鍚屼竴涓?ROM 鍒嗗尯涓紝骞堕€氳繃 PMU 琛ㄦ牴鎹叾搴旂敤 ID锛坅pplication ID锛夋潵鏌ユ壘瑕佸姞杞界殑搴旂敤绋嬪簭锛堣瑙?vbios.rs锛夈€?
+瀵逛簬 nova-core 椹卞姩锛孎WSEC 鍖呭惈涓€涓悕涓?DMEMMAPPER 鐨勨€滃簲鐢ㄧ▼搴忔帴鍙ｂ€濓紙application interface锛夈€傝鎺ュ彛闄や簡鍏朵粬鐢ㄩ€斿锛岃繕鐢ㄤ簬鎵ц鈥淔WSEC-FRTS鈥濆懡浠ゃ€傚浜庡畨鍩规灦鏋勶紝FWSEC 杩愯鍦?GSP 涓婄殑 Heavy-secure 妯″紡骞舵墽琛?FRTS銆?
+### FWSEC 鍐呭瓨甯冨眬
 
 ```
 
@@ -146,6 +138,5 @@ FWSEC 镜像位于 VBIOS ROM 中包含各种 ucode 镜像（也称为应用程�
    +---------------------------------------------------------------+
 
 ```
-   以上以 GA-102 安培 GPU 为例，未来的 GPU 可能会有所不同。
-
-   FWSEC 镜像还在内存擦除（ECC 初始化）和 VPR（Video Protected Region，视频保护区）初始化中发挥作用。在 nova-core 驱动加载之前，FWSEC 镜像就已经运行在 GSP 上的 heavy-secure 模式。devinit 序列完成后，它会进行 VRAM 内存擦除（ECC 初始化）。在消费级 GPU 上，它只擦除部分内存，然后发起“异步擦除”（async scrubbing）。在该异步擦除完成之前，未擦除的 VRAM 不能用于分配（因此 DRM 内存分配器需要等待该擦除完成）。
+   浠ヤ笂浠?GA-102 瀹夊煿 GPU 涓轰緥锛屾湭鏉ョ殑 GPU 鍙兘浼氭湁鎵€涓嶅悓銆?
+   FWSEC 闀滃儚杩樺湪鍐呭瓨鎿﹂櫎锛圗CC 鍒濆鍖栵級鍜?VPR锛圴ideo Protected Region锛岃棰戜繚鎶ゅ尯锛夊垵濮嬪寲涓彂鎸ヤ綔鐢ㄣ€傚湪 nova-core 椹卞姩鍔犺浇涔嬪墠锛孎WSEC 闀滃儚灏卞凡缁忚繍琛屽湪 GSP 涓婄殑 heavy-secure 妯″紡銆俤evinit 搴忓垪瀹屾垚鍚庯紝瀹冧細杩涜 VRAM 鍐呭瓨鎿﹂櫎锛圗CC 鍒濆鍖栵級銆傚湪娑堣垂绾?GPU 涓婏紝瀹冨彧鎿﹂櫎閮ㄥ垎鍐呭瓨锛岀劧鍚庡彂璧封€滃紓姝ユ摝闄も€濓紙async scrubbing锛夈€傚湪璇ュ紓姝ユ摝闄ゅ畬鎴愪箣鍓嶏紝鏈摝闄ょ殑 VRAM 涓嶈兘鐢ㄤ簬鍒嗛厤锛堝洜姝?DRM 鍐呭瓨鍒嗛厤鍣ㄩ渶瑕佺瓑寰呰鎿﹂櫎瀹屾垚锛夈€?

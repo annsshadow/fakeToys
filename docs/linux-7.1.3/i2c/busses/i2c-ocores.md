@@ -1,23 +1,19 @@
-## 内核驱动 i2c-ocores
+﻿## 鍐呮牳椹卞姩 i2c-ocores
 
 
-支持的适配器：
-  - OpenCores.org 由 Richard Herveille 设计的 I2C 控制器（参见数据手册链接）
-    https://opencores.org/project/i2c/overview
+鏀寔鐨勯€傞厤鍣細
+  - OpenCores.org 鐢?Richard Herveille 璁捐鐨?I2C 鎺у埗鍣紙鍙傝鏁版嵁鎵嬪唽閾炬帴锛?    https://opencores.org/project/i2c/overview
 
-作者：Peter Korsgaard <peter@korsgaard.com>
+浣滆€咃細Peter Korsgaard <peter@korsgaard.com>
 
-### 描述
-
-
-i2c-ocores 是针对 Richard Herveille 设计的 OpenCores.org I2C 控制器 IP 核的 i2c 总线驱动。
-
-### 用法
+### 鎻忚堪
 
 
-i2c-ocores 使用 platform 总线，因此你需要提供一个带有基地址和中断号的 struct platform_device。设备的 dev.platform_data 还应指向一个 struct ocores_i2c_platform_data（参见 linux/platform_data/i2c-ocores.h），用于描述寄存器之间的间隔以及输入时钟速度。
-也可以附加一个 i2c_board_info 列表，i2c-ocores 驱动在创建时将其添加到总线上。
+i2c-ocores 鏄拡瀵?Richard Herveille 璁捐鐨?OpenCores.org I2C 鎺у埗鍣?IP 鏍哥殑 i2c 鎬荤嚎椹卞姩銆?
+### 鐢ㄦ硶
 
+
+i2c-ocores 浣跨敤 platform 鎬荤嚎锛屽洜姝や綘闇€瑕佹彁渚涗竴涓甫鏈夊熀鍦板潃鍜屼腑鏂彿鐨?struct platform_device銆傝澶囩殑 dev.platform_data 杩樺簲鎸囧悜涓€涓?struct ocores_i2c_platform_data锛堝弬瑙?linux/platform_data/i2c-ocores.h锛夛紝鐢ㄤ簬鎻忚堪瀵勫瓨鍣ㄤ箣闂寸殑闂撮殧浠ュ強杈撳叆鏃堕挓閫熷害銆?涔熷彲浠ラ檮鍔犱竴涓?i2c_board_info 鍒楄〃锛宨2c-ocores 椹卞姩鍦ㄥ垱寤烘椂灏嗗叾娣诲姞鍒版€荤嚎涓娿€?
 ```
 
   static struct resource ocores_resources[] = {

@@ -1,29 +1,20 @@
+﻿
+## Amlogic C3 鍥惧儚淇″彿澶勭悊锛圕3ISP锛夐┍鍔?
 
-## Amlogic C3 图像信号处理（C3ISP）驱动
+## 绠€浠?
 
-
-## 简介
-
-
-本文件记录位于 drivers/media/platform/amlogic/c3/isp 下的 Amlogic C3ISP 驱动。
-
-当前版本的驱动支持 Amlogic C308L 处理器上的 C3ISP。
-
-该驱动实现 V4L2、Media controller 与 V4L2 子设备接口。支持内核中使用 V4L2 子设备接口的
-摄像头传感器。
-
-该驱动已在 AW419-C308L-Socket 平台上测试。
-
+鏈枃浠惰褰曚綅浜?drivers/media/platform/amlogic/c3/isp 涓嬬殑 Amlogic C3ISP 椹卞姩銆?
+褰撳墠鐗堟湰鐨勯┍鍔ㄦ敮鎸?Amlogic C308L 澶勭悊鍣ㄤ笂鐨?C3ISP銆?
+璇ラ┍鍔ㄥ疄鐜?V4L2銆丮edia controller 涓?V4L2 瀛愯澶囨帴鍙ｃ€傛敮鎸佸唴鏍镐腑浣跨敤 V4L2 瀛愯澶囨帴鍙ｇ殑
+鎽勫儚澶翠紶鎰熷櫒銆?
+璇ラ┍鍔ㄥ凡鍦?AW419-C308L-Socket 骞冲彴涓婃祴璇曘€?
 ## Amlogic C3 ISP
 
 
-C308L 处理器上由驱动支持的摄像头硬件包括：
+C308L 澶勭悊鍣ㄤ笂鐢遍┍鍔ㄦ敮鎸佺殑鎽勫儚澶寸‖浠跺寘鎷細
 
-- 1 个 MIPI-CSI-2 模块：处理 MIPI CSI-2 接收器的物理层，并从连接的摄像头传感器接收数据。
-- 1 个 MIPI-ADAPTER 模块：组织 MIPI 数据以满足 ISP 输入要求，并将 MIPI 数据发送给 ISP。
-- 1 个 ISP（图像信号处理）模块：包含一条图像处理硬件块流水线。ISP 流水线末端有三个
-  缩放器，每个缩放器都连接到一个 DMA 接口，将输出数据写入内存。
-
+- 1 涓?MIPI-CSI-2 妯″潡锛氬鐞?MIPI CSI-2 鎺ユ敹鍣ㄧ殑鐗╃悊灞傦紝骞朵粠杩炴帴鐨勬憚鍍忓ご浼犳劅鍣ㄦ帴鏀舵暟鎹€?- 1 涓?MIPI-ADAPTER 妯″潡锛氱粍缁?MIPI 鏁版嵁浠ユ弧瓒?ISP 杈撳叆瑕佹眰锛屽苟灏?MIPI 鏁版嵁鍙戦€佺粰 ISP銆?- 1 涓?ISP锛堝浘鍍忎俊鍙峰鐞嗭級妯″潡锛氬寘鍚竴鏉″浘鍍忓鐞嗙‖浠跺潡娴佹按绾裤€侷SP 娴佹按绾挎湯绔湁涓変釜
+  缂╂斁鍣紝姣忎釜缂╂斁鍣ㄩ兘杩炴帴鍒颁竴涓?DMA 鎺ュ彛锛屽皢杈撳嚭鏁版嵁鍐欏叆鍐呭瓨銆?
 ```
 
                                                                    +----------+    +-------+
@@ -37,46 +28,37 @@ C308L 处理器上由驱动支持的摄像头硬件包括：
                                                                    +----------+    +-------+
 
 ```
-## 驱动架构与设计
+## 椹卞姩鏋舵瀯涓庤璁?
 
+涓轰簡瀵规ā鍧椾箣闂寸殑纭欢閾炬帴寤烘ā锛屽苟鏆撮湶涓€涓竻鏅般€佸悎涔庨€昏緫涓旀槗鐢ㄧ殑鎺ュ彛锛岃椹卞姩娉ㄥ唽浠ヤ笅
+V4L2 瀛愯澶囷細
 
-为了对模块之间的硬件链接建模，并暴露一个清晰、合乎逻辑且易用的接口，该驱动注册以下
-V4L2 子设备：
+- 1 涓?`c3-mipi-csi2` 瀛愯澶?- MIPI CSI-2 鎺ユ敹鍣?- 1 涓?`c3-mipi-adapter` 瀛愯澶?- MIPI 閫傞厤鍣?- 1 涓?`c3-isp-core` 瀛愯澶?- ISP 鏍稿績
+- 3 涓?`c3-isp-resizer` 瀛愯澶?- ISP 缂╂斁鍣?
+`c3-isp-core` 瀛愯澶囬摼鎺ュ埌 2 涓棰戣澶囪妭鐐癸紝鍒嗗埆鐢ㄤ簬缁熻淇℃伅鎹曡幏涓庡弬鏁扮紪绋嬶細
 
-- 1 个 `c3-mipi-csi2` 子设备 - MIPI CSI-2 接收器
-- 1 个 `c3-mipi-adapter` 子设备 - MIPI 适配器
-- 1 个 `c3-isp-core` 子设备 - ISP 核心
-- 3 个 `c3-isp-resizer` 子设备 - ISP 缩放器
+- 鐢ㄤ簬缁熻淇℃伅鎹曡幏鐨?`c3-isp-stats` 鎹曡幏瑙嗛璁惧鑺傜偣
+- 鐢ㄤ簬鍙傛暟缂栫▼鐨?`c3-isp-params` 杈撳嚭瑙嗛璁惧
 
-`c3-isp-core` 子设备链接到 2 个视频设备节点，分别用于统计信息捕获与参数编程：
+姣忎釜 `c3-isp-resizer` 瀛愯澶囬摼鎺ュ埌涓€涓敤浜庢崟鑾峰抚鐨勬崟鑾疯棰戣澶囪妭鐐癸細
 
-- 用于统计信息捕获的 `c3-isp-stats` 捕获视频设备节点
-- 用于参数编程的 `c3-isp-params` 输出视频设备
+- `c3-isp-resizer0` 閾炬帴鍒?`c3-isp-cap0` 鎹曡幏瑙嗛璁惧
+- `c3-isp-resizer1` 閾炬帴鍒?`c3-isp-cap1` 鎹曡幏瑙嗛璁惧
+- `c3-isp-resizer2` 閾炬帴鍒?`c3-isp-cap2` 鎹曡幏瑙嗛璁惧
 
-每个 `c3-isp-resizer` 子设备链接到一个用于捕获帧的捕获视频设备节点：
-
-- `c3-isp-resizer0` 链接到 `c3-isp-cap0` 捕获视频设备
-- `c3-isp-resizer1` 链接到 `c3-isp-cap1` 捕获视频设备
-- `c3-isp-resizer2` 链接到 `c3-isp-cap2` 捕获视频设备
-
-媒体控制器流水线图如下（连接了 IMX290 摄像头传感器）：
+濯掍綋鎺у埗鍣ㄦ祦姘寸嚎鍥惧涓嬶紙杩炴帴浜?IMX290 鎽勫儚澶翠紶鎰熷櫒锛夛細
 
 
     :alt:   c3-isp.dot
     :align: center
 
-    媒体流水线拓扑
+    濯掍綋娴佹按绾挎嫇鎵?
+## 瀹炵幇
 
-## 实现
 
-
-ISP 硬件的运行时配置在 `c3-isp-params` 视频设备节点上执行，使用 :ref:`V4L2_META_FMT_C3ISP_PARAMS
-<v4l2-meta-fmt-c3isp-params>` 作为数据格式。缓冲区结构由 `c3_isp_params_cfg` 定义。
-
-统计信息使用 V4L2_META_FMT_C3ISP_STATS <v4l2-meta-fmt-c3isp-stats> 数据格式从
-`c3-isp-stats` 视频设备节点捕获。
-
-最终的图片尺寸与格式使用 `c3-isp-cap[0, 2]` 视频设备节点上的 V4L2 视频捕获接口配置。
-
-Amlogic C3 ISP 由 `libcamera <https://libcamera.org>`_ 支持，带有一个专用的流水线处理器
-以及执行运行时图像校正与增强的算法。
+ISP 纭欢鐨勮繍琛屾椂閰嶇疆鍦?`c3-isp-params` 瑙嗛璁惧鑺傜偣涓婃墽琛岋紝浣跨敤 :ref:`V4L2_META_FMT_C3ISP_PARAMS
+<v4l2-meta-fmt-c3isp-params>` 浣滀负鏁版嵁鏍煎紡銆傜紦鍐插尯缁撴瀯鐢?`c3_isp_params_cfg` 瀹氫箟銆?
+缁熻淇℃伅浣跨敤 V4L2_META_FMT_C3ISP_STATS <v4l2-meta-fmt-c3isp-stats> 鏁版嵁鏍煎紡浠?`c3-isp-stats` 瑙嗛璁惧鑺傜偣鎹曡幏銆?
+鏈€缁堢殑鍥剧墖灏哄涓庢牸寮忎娇鐢?`c3-isp-cap[0, 2]` 瑙嗛璁惧鑺傜偣涓婄殑 V4L2 瑙嗛鎹曡幏鎺ュ彛閰嶇疆銆?
+Amlogic C3 ISP 鐢?`libcamera <https://libcamera.org>`_ 鏀寔锛屽甫鏈変竴涓笓鐢ㄧ殑娴佹按绾垮鐞嗗櫒
+浠ュ強鎵ц杩愯鏃跺浘鍍忔牎姝ｄ笌澧炲己鐨勭畻娉曘€?

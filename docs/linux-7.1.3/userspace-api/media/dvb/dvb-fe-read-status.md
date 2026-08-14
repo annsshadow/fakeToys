@@ -1,11 +1,11 @@
-######## 查询前端状态与统计信息
+﻿######## 鏌ヨ鍓嶇鐘舵€佷笌缁熻淇℃伅
 
 
-一旦调用 FE_SET_PROPERTY <FE_GET_PROPERTY>，前端将运行一个内核线程，周期性地检查调谐器锁定状态并提供信号质量的统计信息。
+涓€鏃﹁皟鐢?FE_SET_PROPERTY <FE_GET_PROPERTY>锛屽墠绔皢杩愯涓€涓唴鏍哥嚎绋嬶紝鍛ㄦ湡鎬у湴妫€鏌ヨ皟璋愬櫒閿佸畾鐘舵€佸苟鎻愪緵淇″彿璐ㄩ噺鐨勭粺璁′俊鎭€?
 
-前端调谐器的锁定状态信息可通过 FE_READ_STATUS 查询。
+鍓嶇璋冭皭鍣ㄧ殑閿佸畾鐘舵€佷俊鎭彲閫氳繃 FE_READ_STATUS 鏌ヨ銆?
 
-信号统计信息通过 FE_GET_PROPERTY 提供。
+淇″彿缁熻淇℃伅閫氳繃 FE_GET_PROPERTY 鎻愪緵銆?
 
 
-   大多数统计信息要求解调器已完全锁定（例如设置了 `FE_HAS_LOCK <fe_status>` 位）。更多细节请参阅 Frontend statistics indicators <frontend-stat-properties>。
+   澶у鏁扮粺璁′俊鎭姹傝В璋冨櫒宸插畬鍏ㄩ攣瀹氾紙渚嬪璁剧疆浜?`FE_HAS_LOCK <fe_status>` 浣嶏級銆傛洿澶氱粏鑺傝鍙傞槄 Frontend statistics indicators <frontend-stat-properties>銆?

@@ -1,20 +1,20 @@
-## 设计与实现
+﻿## 璁捐涓庡疄鐜?
 
 
 
-本页列出音频子系统的设计与实现相关文档。
+鏈〉鍒楀嚭闊抽瀛愮郴缁熺殑璁捐涓庡疄鐜扮浉鍏虫枃妗ｃ€?
 
-- [控制名称](control-names)
-- [声道映射 API](channel-mapping-api)
-- [压缩加速](compress-accel)
-- [压缩卸载](compress-offload)
+- [鎺у埗鍚嶇О](control-names)
+- [澹伴亾鏄犲皠 API](channel-mapping-api)
+- [鍘嬬缉鍔犻€焆(compress-accel)
+- [鍘嬬缉鍗歌浇](compress-offload)
 - [timestamping](timestamping)
-- [Jack 控件](jack-controls)
+- [Jack 鎺т欢](jack-controls)
 - [tracepoints](tracepoints)
 - [procfile](procfile)
 - [powersave](powersave)
-- [OSS 仿真](oss-emulation)
+- [OSS 浠跨湡](oss-emulation)
 - [seq-oss](seq-oss)
-- [Jack 注入](jack-injection)
+- [Jack 娉ㄥ叆](jack-injection)
 - [midi-2.0](midi-2.0)
 

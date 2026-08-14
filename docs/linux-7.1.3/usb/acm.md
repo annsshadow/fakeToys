@@ -1,34 +1,28 @@
-## Linux ACM 驱动 v0.16
+﻿## Linux ACM 椹卞姩 v0.16
 
 
 Copyright (c) 1999 Vojtech Pavlik <vojtech@suse.cz>
 
-由 SuSE 赞助
+鐢?SuSE 璧炲姪
 
-#### 0. 免责声明
+#### 0. 鍏嶈矗澹版槑
 
-本程序是自由软件；您可以在自由软件基金会发布的 GNU 通用公共许可证条款下
-重新发布和/或修改它；许可证版本为第 2 版，或（根据您的选择）任何更高版本。
+鏈▼搴忔槸鑷敱杞欢锛涙偍鍙互鍦ㄨ嚜鐢辫蒋浠跺熀閲戜細鍙戝竷鐨?GNU 閫氱敤鍏叡璁稿彲璇佹潯娆句笅
+閲嶆柊鍙戝竷鍜?鎴栦慨鏀瑰畠锛涜鍙瘉鐗堟湰涓虹 2 鐗堬紝鎴栵紙鏍规嵁鎮ㄧ殑閫夋嫨锛変换浣曟洿楂樼増鏈€?
+鏈▼搴忕殑鍒嗗彂甯屾湜瀹冩湁鐢紝浣嗘病鏈変换浣曟媴淇濓紱鐢氳嚦娌℃湁瀵归€傞攢鎬ф垨鐗瑰畾鐢ㄩ€旈€傜敤鎬х殑
+闅愬惈鎷呬繚銆傛湁鍏虫洿澶氱粏鑺傦紝璇峰弬闃?GNU 閫氱敤鍏叡璁稿彲璇併€?
+鎮ㄥ簲璇ュ凡缁忛殢鏈▼搴忔敹鍒颁簡涓€浠?GNU 閫氱敤鍏叡璁稿彲璇侊紱濡傛灉娌℃湁锛岃鍐欎俊缁欒嚜鐢辫蒋浠?鍩洪噾浼氾紝鍦板潃锛欼nc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-本程序的分发希望它有用，但没有任何担保；甚至没有对适销性或特定用途适用性的
-隐含担保。有关更多细节，请参阅 GNU 通用公共许可证。
-
-您应该已经随本程序收到了一份 GNU 通用公共许可证；如果没有，请写信给自由软件
-基金会，地址：Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
-
-如果您需要联系我（作者），可以通过电子邮件——将您的消息发送到
-<vojtech@suse.cz>——或者通过纸质邮件：Vojtech Pavlik，Ucitelska 1576,
+濡傛灉鎮ㄩ渶瑕佽仈绯绘垜锛堜綔鑰咃級锛屽彲浠ラ€氳繃鐢靛瓙閭欢鈥斺€斿皢鎮ㄧ殑娑堟伅鍙戦€佸埌
+<vojtech@suse.cz>鈥斺€旀垨鑰呴€氳繃绾歌川閭欢锛歏ojtech Pavlik锛孶citelska 1576,
 Prague 8, 182 00 Czech Republic
 
-为方便起见，GNU 通用公共许可证第 2 版的文本已包含在软件包中：请参阅
-COPYING 文件。
+涓烘柟渚胯捣瑙侊紝GNU 閫氱敤鍏叡璁稿彲璇佺 2 鐗堢殑鏂囨湰宸插寘鍚湪杞欢鍖呬腑锛氳鍙傞槄
+COPYING 鏂囦欢銆?
+#### 1. 鐢ㄦ硶
 
-#### 1. 用法
-
-drivers/usb/class/cdc-acm.c 驱动适用于符合通用串行总线通信设备类抽象控制模型
-（USB CDC ACM）规范的 USB 调制解调器和 USB ISDN 终端适配器。
-
-许多调制解调器都符合，以下是我所知道的型号列表：
+drivers/usb/class/cdc-acm.c 椹卞姩閫傜敤浜庣鍚堥€氱敤涓茶鎬荤嚎閫氫俊璁惧绫绘娊璞℃帶鍒舵ā鍨?锛圲SB CDC ACM锛夎鑼冪殑 USB 璋冨埗瑙ｈ皟鍣ㄥ拰 USB ISDN 缁堢閫傞厤鍣ㄣ€?
+璁稿璋冨埗瑙ｈ皟鍣ㄩ兘绗﹀悎锛屼互涓嬫槸鎴戞墍鐭ラ亾鐨勫瀷鍙峰垪琛細
 
  - 3Com OfficeConnect 56k
  - 3Com Voice FaxModem Pro
@@ -38,29 +32,24 @@ drivers/usb/class/cdc-acm.c 驱动适用于符合通用串行总线通信设备�
  - Compaq 56k FaxModem
  - ELSA Microlink 56k
 
-我知道有一款 ISDN TA 可以与 acm 驱动配合使用：
-
+鎴戠煡閬撴湁涓€娆?ISDN TA 鍙互涓?acm 椹卞姩閰嶅悎浣跨敤锛?
  - 3Com USR ISDN Pro TA
 
-一些手机也通过 USB 连接。我知道以下手机可以工作：
-
+涓€浜涙墜鏈轰篃閫氳繃 USB 杩炴帴銆傛垜鐭ラ亾浠ヤ笅鎵嬫満鍙互宸ヤ綔锛?
  - SonyEricsson K800i
 
-遗憾的是，许多调制解调器和大多数 ISDN TA 使用专有接口，因此无法与该驱动配合
-工作。购买前请确认是否符合 ACM 规范。
-
+閬楁喚鐨勬槸锛岃澶氳皟鍒惰В璋冨櫒鍜屽ぇ澶氭暟 ISDN TA 浣跨敤涓撴湁鎺ュ彛锛屽洜姝ゆ棤娉曚笌璇ラ┍鍔ㄩ厤鍚?宸ヤ綔銆傝喘涔板墠璇风‘璁ゆ槸鍚︾鍚?ACM 瑙勮寖銆?
 ```
 	usbcore.ko
 	uhci-hcd.ko ohci-hcd.ko or ehci-hcd.ko
 	cdc-acm.ko
 ```
 
-之后，调制解调器应当可被访问。您应当能够使用 minicom、ppp 和 mgetty 来操作它们。
+涔嬪悗锛岃皟鍒惰В璋冨櫒搴斿綋鍙璁块棶銆傛偍搴斿綋鑳藉浣跨敤 minicom銆乸pp 鍜?mgetty 鏉ユ搷浣滃畠浠€?
+#### 2. 楠岃瘉鏄惁宸ヤ綔
 
-#### 2. 验证是否工作
 
-
-第一步应当检查 /sys/kernel/debug/usb/devices，其内容应当类似如下
+绗竴姝ュ簲褰撴鏌?/sys/kernel/debug/usb/devices锛屽叾鍐呭搴斿綋绫讳技濡備笅
 
 ```
   T:  Bus=01 Lev=00 Prnt=00 Port=00 Cnt=00 Dev#=  1 Spd=12  MxCh= 2
@@ -91,9 +80,7 @@ drivers/usb/class/cdc-acm.c 驱动适用于符合通用串行总线通信设备�
   E:  Ad=04(O) Atr=02(Bulk) MxPS=  64 Ivl=  0ms
 ```
 
-这三行（以及 Cls= 'comm' 和 'data' 类）的存在很重要，它表示这是一个 ACM 设备。
-Driver=acm 表示 acm 驱动正被用于该设备。如果您只看到 Cls=ff(vend.)，那么您就
-
+杩欎笁琛岋紙浠ュ強 Cls= 'comm' 鍜?'data' 绫伙級鐨勫瓨鍦ㄥ緢閲嶈锛屽畠琛ㄧず杩欐槸涓€涓?ACM 璁惧銆?Driver=acm 琛ㄧず acm 椹卞姩姝ｈ鐢ㄤ簬璇ヨ澶囥€傚鏋滄偍鍙湅鍒?Cls=ff(vend.)锛岄偅涔堟偍灏?
 ```
   D:  Ver= 1.00 Cls=02(comm.) Sub=00 Prot=00 MxPS= 8 #Cfgs=  2
   I:  If#= 0 Alt= 0 #EPs= 1 Cls=02(comm.) Sub=02 Prot=01 Driver=acm
@@ -120,5 +107,5 @@ Driver=acm 表示 acm 驱动正被用于该设备。如果您只看到 Cls=ff(ve
   usb.c: acm driver claimed interface c7691fa0
 ```
 
-如果一切看起来正常，启动 minicom 并把它设置为与 ttyACM 设备通信，然后试着输入
-'at'。如果它返回 'OK'，那么一切都在正常工作。
+濡傛灉涓€鍒囩湅璧锋潵姝ｅ父锛屽惎鍔?minicom 骞舵妸瀹冭缃负涓?ttyACM 璁惧閫氫俊锛岀劧鍚庤瘯鐫€杈撳叆
+'at'銆傚鏋滃畠杩斿洖 'OK'锛岄偅涔堜竴鍒囬兘鍦ㄦ甯稿伐浣溿€?

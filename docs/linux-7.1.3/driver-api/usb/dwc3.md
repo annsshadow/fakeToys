@@ -1,31 +1,30 @@
-## Synopsys DesignWare Core SuperSpeed USB 3.0 控制器
+﻿## Synopsys DesignWare Core SuperSpeed USB 3.0 鎺у埗鍣?
 
-本文档介绍 Synopsys DesignWare Core SuperSpeed USB 3.0（DWC3）控制器在 Linux 中的驱动实现，涵盖其外设/主机/双角色等配置模式、驱动设计与已知限制，供 USB 驱动开发者参考。
-
+鏈枃妗ｄ粙缁?Synopsys DesignWare Core SuperSpeed USB 3.0锛圖WC3锛夋帶鍒跺櫒鍦?Linux 涓殑椹卞姩瀹炵幇锛屾兜鐩栧叾澶栬/涓绘満/鍙岃鑹茬瓑閰嶇疆妯″紡銆侀┍鍔ㄨ璁′笌宸茬煡闄愬埗锛屼緵 USB 椹卞姩寮€鍙戣€呭弬鑰冦€?
 
 
 :Author: Felipe Balbi <felipe.balbi@linux.intel.com>
 :Date: April 2017
 
-## 简介
+## 绠€浠?
 
 
-**Synopsys DesignWare Core SuperSpeed USB 3.0 控制器**
-（以下简称 **DWC3**）是一个符合 USB SuperSpeed 规范的
-控制器，可通过以下 4 种方式之一进行配置：
+**Synopsys DesignWare Core SuperSpeed USB 3.0 鎺у埗鍣?*
+锛堜互涓嬬畝绉?**DWC3**锛夋槸涓€涓鍚?USB SuperSpeed 瑙勮寖鐨?
+鎺у埗鍣紝鍙€氳繃浠ヤ笅 4 绉嶆柟寮忎箣涓€杩涜閰嶇疆锛?
 
- 1. 仅外设（Peripheral-only）配置
- 2. 仅主机（Host-only）配置
- 3. 双角色（Dual-Role）配置
- 4. 集线器（Hub）配置
+ 1. 浠呭璁撅紙Peripheral-only锛夐厤缃?
+ 2. 浠呬富鏈猴紙Host-only锛夐厤缃?
+ 3. 鍙岃鑹诧紙Dual-Role锛夐厤缃?
+ 4. 闆嗙嚎鍣紙Hub锛夐厤缃?
 
-Linux 目前支持该控制器的多个版本。
-你 SoC 中的版本极有可能已经受支持。在撰写本文时，
-已知经过测试的版本范围从 2.02a 到 3.10a。
-作为经验法则，高于 2.02a 的版本应该都能稳定工作。
+Linux 鐩墠鏀寔璇ユ帶鍒跺櫒鐨勫涓増鏈€?
+浣?SoC 涓殑鐗堟湰鏋佹湁鍙兘宸茬粡鍙楁敮鎸併€傚湪鎾板啓鏈枃鏃讹紝
+宸茬煡缁忚繃娴嬭瘯鐨勭増鏈寖鍥翠粠 2.02a 鍒?3.10a銆?
+浣滀负缁忛獙娉曞垯锛岄珮浜?2.02a 鐨勭増鏈簲璇ラ兘鑳界ǔ瀹氬伐浣溿€?
 
-目前，该驱动有许多已知用户。按字母
-顺序排列如下：
+鐩墠锛岃椹卞姩鏈夎澶氬凡鐭ョ敤鎴枫€傛寜瀛楁瘝
+椤哄簭鎺掑垪濡備笅锛?
 
  1. Cavium
  2. Intel Corporation
@@ -36,103 +35,103 @@ Linux 目前支持该控制器的多个版本。
  7. Texas Instruments
  8. Xilinx
 
-## 特性概述
+## 鐗规€ф杩?
 
 
-有关你的 DWC3 版本所支持特性的详细信息，请咨询
-你的 IP 团队和/或 *Synopsys DesignWare Core SuperSpeed USB 3.0
-Controller Databook*。以下是撰写本文时驱动所支持的
-特性列表：
+鏈夊叧浣犵殑 DWC3 鐗堟湰鎵€鏀寔鐗规€х殑璇︾粏淇℃伅锛岃鍜ㄨ
+浣犵殑 IP 鍥㈤槦鍜?鎴?*Synopsys DesignWare Core SuperSpeed USB 3.0
+Controller Databook*銆備互涓嬫槸鎾板啓鏈枃鏃堕┍鍔ㄦ墍鏀寔鐨?
+鐗规€у垪琛細
 
- 1. 最多 16 个双向端点（包括控制
-	   管道 - ep0）
- 2. 灵活的端点配置
- 3. 同时支持 IN 和 OUT 传输
- 4. 散列表（Scatter-list）支持
- 5. 每个端点最多 256 个 TRB [#trb]_
- 6. 支持所有传输类型（**Control**、**Bulk**、
-	   **Interrupt** 和 **Isochronous**）
- 7. SuperSpeed 批量流（Bulk Streams）
- 8. 链路电源管理（Link Power Management）
- 9. 用于调试的 Trace Events
- 10. DebugFS [#debugfs]_ 接口
+ 1. 鏈€澶?16 涓弻鍚戠鐐癸紙鍖呮嫭鎺у埗
+	   绠￠亾 - ep0锛?
+ 2. 鐏垫椿鐨勭鐐归厤缃?
+ 3. 鍚屾椂鏀寔 IN 鍜?OUT 浼犺緭
+ 4. 鏁ｅ垪琛紙Scatter-list锛夋敮鎸?
+ 5. 姣忎釜绔偣鏈€澶?256 涓?TRB [#trb]_
+ 6. 鏀寔鎵€鏈変紶杈撶被鍨嬶紙**Control**銆?*Bulk**銆?
+	   **Interrupt** 鍜?**Isochronous**锛?
+ 7. SuperSpeed 鎵归噺娴侊紙Bulk Streams锛?
+ 8. 閾捐矾鐢垫簮绠＄悊锛圠ink Power Management锛?
+ 9. 鐢ㄤ簬璋冭瘯鐨?Trace Events
+ 10. DebugFS [#debugfs]_ 鎺ュ彛
 
-这些特性都已通过许多**树内**（in-tree）
-gadget 驱动进行了验证。我们已验证 **ConfigFS** [#configfs]_ 和
-传统的 gadget 驱动。
+杩欎簺鐗规€ч兘宸查€氳繃璁稿**鏍戝唴**锛坕n-tree锛?
+gadget 椹卞姩杩涜浜嗛獙璇併€傛垜浠凡楠岃瘉 **ConfigFS** [#configfs]_ 鍜?
+浼犵粺鐨?gadget 椹卞姩銆?
 
-## 驱动设计
-
-
-DWC3 驱动位于 **drivers/usb/dwc3/** 目录。所有文件
-都与此驱动相关并位于同一目录中。这使得
-新手能够轻松阅读代码并理解其行为。
-
-由于 DWC3 的配置灵活性，该驱动在某些地方
-略显复杂，但整体仍应相当
-易于理解。
-
-该驱动最主要的部分涉及 Gadget API。
-
-## 已知限制
+## 椹卞姩璁捐
 
 
-与任何其他硬件一样，DWC3 也有其自身的一组限制。为了
-避免不断被问及此类问题，我们决定在此
-记录它们，并提供一个统一的指引位置供用户参考。
+DWC3 椹卞姩浣嶄簬 **drivers/usb/dwc3/** 鐩綍銆傛墍鏈夋枃浠?
+閮戒笌姝ら┍鍔ㄧ浉鍏冲苟浣嶄簬鍚屼竴鐩綍涓€傝繖浣垮緱
+鏂版墜鑳藉杞绘澗闃呰浠ｇ爜骞剁悊瑙ｅ叾琛屼负銆?
 
-### OUT 传输大小要求
+鐢变簬 DWC3 鐨勯厤缃伒娲绘€э紝璇ラ┍鍔ㄥ湪鏌愪簺鍦版柟
+鐣ユ樉澶嶆潅锛屼絾鏁翠綋浠嶅簲鐩稿綋
+鏄撲簬鐞嗚В銆?
 
+璇ラ┍鍔ㄦ渶涓昏鐨勯儴鍒嗘秹鍙?Gadget API銆?
 
-根据 Synopsys Databook，所有 OUT 传输 TRB [#trb]_ 必须
-将其 **size** 字段设置为一个能被端点 **wMaxPacketSize**
-整除的值。这意味着，例如，为了
-接收 Mass Storage 的 **CBW** [#cbw]_，req->length 必须设置为
-一个能被 **wMaxPacketSize** 整除的值（SuperSpeed 下为 1024，
-HighSpeed 下为 512 等），或者 DWC3 驱动必须添加一个指向
-废弃缓冲区的链式 TRB 以处理剩余长度。否则，OUT
-传输将**无法**启动。
-
-请注意，截至撰写本文时，这不会成为问题，因为 DWC3
-完全能够为剩余长度追加一个链式 TRB，并
-向 gadget 驱动完全隐藏这一细节。但仍有必要
-提及，因为这似乎是有关 DWC3 以及
-**传输无法工作**的最大疑问来源。
-
-### TRB 环大小限制
+## 宸茬煡闄愬埗
 
 
-目前，我们对每个端点有 256 个 TRB [#trb]_ 的硬性限制，
-最后一个 TRB 是一个指回
-第一个的 Link TRB [#link_trb]_。该限制是任意设定的，但其好处是
-总和恰好为 4096 字节，即 1 个页（Page）。
+涓庝换浣曞叾浠栫‖浠朵竴鏍凤紝DWC3 涔熸湁鍏惰嚜韬殑涓€缁勯檺鍒躲€備负浜?
+閬垮厤涓嶆柇琚棶鍙婃绫婚棶棰橈紝鎴戜滑鍐冲畾鍦ㄦ
+璁板綍瀹冧滑锛屽苟鎻愪緵涓€涓粺涓€鐨勬寚寮曚綅缃緵鐢ㄦ埛鍙傝€冦€?
 
-DWC3 驱动会尽力处理超过 255 个请求的情况，并且
-在大多数情况下应能正常工作。但这并不是
-经常被频繁测试验证的部分。如果你遇到任何问题，请参阅下文 **报告缺陷** 一节。
-
-## 报告缺陷
+### OUT 浼犺緭澶у皬瑕佹眰
 
 
-每当你遇到 DWC3 的问题时，首先应
-确保：
+鏍规嵁 Synopsys Databook锛屾墍鏈?OUT 浼犺緭 TRB [#trb]_ 蹇呴』
+灏嗗叾 **size** 瀛楁璁剧疆涓轰竴涓兘琚鐐?**wMaxPacketSize**
+鏁撮櫎鐨勫€笺€傝繖鎰忓懗鐫€锛屼緥濡傦紝涓轰簡
+鎺ユ敹 Mass Storage 鐨?**CBW** [#cbw]_锛宺eq->length 蹇呴』璁剧疆涓?
+涓€涓兘琚?**wMaxPacketSize** 鏁撮櫎鐨勫€硷紙SuperSpeed 涓嬩负 1024锛?
+HighSpeed 涓嬩负 512 绛夛級锛屾垨鑰?DWC3 椹卞姩蹇呴』娣诲姞涓€涓寚鍚?
+搴熷純缂撳啿鍖虹殑閾惧紡 TRB 浠ュ鐞嗗墿浣欓暱搴︺€傚惁鍒欙紝OUT
+浼犺緭灏?*鏃犳硶**鍚姩銆?
 
- 1. 你正在运行 `Linus' tree`_ 的最新标签
- 2. 你能够在不对 DWC3 做任何树外（out-of-tree）修改的情况下
-	   复现该错误
- 3. 你已确认该问题并非主机（host）端的故障
+璇锋敞鎰忥紝鎴嚦鎾板啓鏈枃鏃讹紝杩欎笉浼氭垚涓洪棶棰橈紝鍥犱负 DWC3
+瀹屽叏鑳藉涓哄墿浣欓暱搴﹁拷鍔犱竴涓摼寮?TRB锛屽苟
+鍚?gadget 椹卞姩瀹屽叏闅愯棌杩欎竴缁嗚妭銆備絾浠嶆湁蹇呰
+鎻愬強锛屽洜涓鸿繖浼间箮鏄湁鍏?DWC3 浠ュ強
+**浼犺緭鏃犳硶宸ヤ綔**鐨勬渶澶х枒闂潵婧愩€?
 
-在以上各项都确认之后，下面介绍如何收集足够的信息以便我们能为你提供帮助。
-
-### 所需信息
+### TRB 鐜ぇ灏忛檺鍒?
 
 
-DWC3 完全依赖 Trace Events 进行调试。相关信息
-都在其中暴露出来，另有部分额外信息暴露在 DebugFS
-[#debugfs]_ 中。
+鐩墠锛屾垜浠姣忎釜绔偣鏈?256 涓?TRB [#trb]_ 鐨勭‖鎬ч檺鍒讹紝
+鏈€鍚庝竴涓?TRB 鏄竴涓寚鍥?
+绗竴涓殑 Link TRB [#link_trb]_銆傝闄愬埗鏄换鎰忚瀹氱殑锛屼絾鍏跺ソ澶勬槸
+鎬诲拰鎭板ソ涓?4096 瀛楄妭锛屽嵆 1 涓〉锛圥age锛夈€?
 
-为了捕获 DWC3 的 Trace Events，你应在
-将 USB 线缆插入主机**之前**运行以下命令：
+DWC3 椹卞姩浼氬敖鍔涘鐞嗚秴杩?255 涓姹傜殑鎯呭喌锛屽苟涓?
+鍦ㄥぇ澶氭暟鎯呭喌涓嬪簲鑳芥甯稿伐浣溿€備絾杩欏苟涓嶆槸
+缁忓父琚绻佹祴璇曢獙璇佺殑閮ㄥ垎銆傚鏋滀綘閬囧埌浠讳綍闂锛岃鍙傞槄涓嬫枃 **鎶ュ憡缂洪櫡** 涓€鑺傘€?
+
+## 鎶ュ憡缂洪櫡
+
+
+姣忓綋浣犻亣鍒?DWC3 鐨勯棶棰樻椂锛岄鍏堝簲
+纭繚锛?
+
+ 1. 浣犳鍦ㄨ繍琛?`Linus' tree`_ 鐨勬渶鏂版爣绛?
+ 2. 浣犺兘澶熷湪涓嶅 DWC3 鍋氫换浣曟爲澶栵紙out-of-tree锛変慨鏀圭殑鎯呭喌涓?
+	   澶嶇幇璇ラ敊璇?
+ 3. 浣犲凡纭璇ラ棶棰樺苟闈炰富鏈猴紙host锛夌鐨勬晠闅?
+
+鍦ㄤ互涓婂悇椤归兘纭涔嬪悗锛屼笅闈粙缁嶅浣曟敹闆嗚冻澶熺殑淇℃伅浠ヤ究鎴戜滑鑳戒负浣犳彁渚涘府鍔┿€?
+
+### 鎵€闇€淇℃伅
+
+
+DWC3 瀹屽叏渚濊禆 Trace Events 杩涜璋冭瘯銆傜浉鍏充俊鎭?
+閮藉湪鍏朵腑鏆撮湶鍑烘潵锛屽彟鏈夐儴鍒嗛澶栦俊鎭毚闇插湪 DebugFS
+[#debugfs]_ 涓€?
+
+涓轰簡鎹曡幏 DWC3 鐨?Trace Events锛屼綘搴斿湪
+灏?USB 绾跨紗鎻掑叆涓绘満**涔嬪墠**杩愯浠ヤ笅鍛戒护锛?
 
 
 		 # mkdir -p /d
@@ -142,26 +141,26 @@ DWC3 完全依赖 Trace Events 进行调试。相关信息
 		 # echo 81920 > /t/buffer_size_kb
 		 # echo 1 > /t/events/dwc3/enable
 
-完成上述操作后，你可以连接 USB 线缆并复现问题。
-一旦复现了故障，请像下面这样复制
-`trace` 和 `regdump` 文件：
+瀹屾垚涓婅堪鎿嶄綔鍚庯紝浣犲彲浠ヨ繛鎺?USB 绾跨紗骞跺鐜伴棶棰樸€?
+涓€鏃﹀鐜颁簡鏁呴殰锛岃鍍忎笅闈㈣繖鏍峰鍒?
+`trace` 鍜?`regdump` 鏂囦欢锛?
 
 
 		# cp /t/trace /root/trace.txt
 		# cat /d/**dwc3**/regdump > /root/regdump.txt
 
-请务必将 `trace.txt` 和 `regdump.txt` 压缩为一个 tar 包，
-并通过电子邮件发送给 `me`_，同时抄送（Cc）`linux-usb`_。如果你想更
-为了确保我能帮助你，请按以下格式撰写邮件主题：
+璇峰姟蹇呭皢 `trace.txt` 鍜?`regdump.txt` 鍘嬬缉涓轰竴涓?tar 鍖咃紝
+骞堕€氳繃鐢靛瓙閭欢鍙戦€佺粰 `me`_锛屽悓鏃舵妱閫侊紙Cc锛塦linux-usb`_銆傚鏋滀綘鎯虫洿
+涓轰簡纭繚鎴戣兘甯姪浣狅紝璇锋寜浠ヤ笅鏍煎紡鎾板啓閭欢涓婚锛?
 
 	**[BUG REPORT] usb: dwc3: Bug while doing XYZ**
 
-在邮件正文中，请务必详细说明你在做什么、使用的是哪个 gadget
-驱动、如何复现问题、使用的是哪个 SoC、以及主机上运行的是哪个操作系统（及其版本）。
+鍦ㄩ偖浠舵鏂囦腑锛岃鍔″繀璇︾粏璇存槑浣犲湪鍋氫粈涔堛€佷娇鐢ㄧ殑鏄摢涓?gadget
+椹卞姩銆佸浣曞鐜伴棶棰樸€佷娇鐢ㄧ殑鏄摢涓?SoC銆佷互鍙婁富鏈轰笂杩愯鐨勬槸鍝釜鎿嶄綔绯荤粺锛堝強鍏剁増鏈級銆?
 
-有了以上全部信息，我们应该能够理解问题所在并为你提供帮助。
+鏈変簡浠ヤ笂鍏ㄩ儴淇℃伅锛屾垜浠簲璇ヨ兘澶熺悊瑙ｉ棶棰樻墍鍦ㄥ苟涓轰綘鎻愪緵甯姪銆?
 
-## 调试
+## 璋冭瘯
 
 
 ```
@@ -172,24 +171,24 @@ DWC3 完全依赖 Trace Events 进行调试。相关信息
   current format.
 
 ```
-说完上述免责声明，我们继续。
+璇村畬涓婅堪鍏嶈矗澹版槑锛屾垜浠户缁€?
 
-如果你愿意自己调试问题，那值得为你鼓掌 :-)
+濡傛灉浣犳効鎰忚嚜宸辫皟璇曢棶棰橈紝閭ｅ€煎緱涓轰綘榧撴帉 :-)
 
-总之，除了 Trace Events 对排查 DWC3 的问题确实很有帮助之外，这里没什么可多说的。此外，能够
-查阅 Synopsys Databook 在这种情况下也**非常**有价值。
+鎬讳箣锛岄櫎浜?Trace Events 瀵规帓鏌?DWC3 鐨勯棶棰樼‘瀹炲緢鏈夊府鍔╀箣澶栵紝杩欓噷娌′粈涔堝彲澶氳鐨勩€傛澶栵紝鑳藉
+鏌ラ槄 Synopsys Databook 鍦ㄨ繖绉嶆儏鍐典笅涔?*闈炲父**鏈変环鍊笺€?
 
-USB 抓包工具（Sniffer）有时会有帮助，但并非完全必需，很多信息无需查看线路即可理解。
+USB 鎶撳寘宸ュ叿锛圫niffer锛夋湁鏃朵細鏈夊府鍔╋紝浣嗗苟闈炲畬鍏ㄥ繀闇€锛屽緢澶氫俊鎭棤闇€鏌ョ湅绾胯矾鍗冲彲鐞嗚В銆?
 
-如果你需要任何帮助，随时可以发送电子邮件给 `me`_ 并抄送 `linux-usb`_。
+濡傛灉浣犻渶瑕佷换浣曞府鍔╋紝闅忔椂鍙互鍙戦€佺數瀛愰偖浠剁粰 `me`_ 骞舵妱閫?`linux-usb`_銆?
 
 ### ``DebugFS``
 
 
-`DebugFS` 非常适合用于获取当前运行状态的快照。
+`DebugFS` 闈炲父閫傚悎鐢ㄤ簬鑾峰彇褰撳墠杩愯鐘舵€佺殑蹇収銆?
 
-在 DWC3 的 `DebugFS` 目录中，你会找到以下
-文件和目录：
+鍦?DWC3 鐨?`DebugFS` 鐩綍涓紝浣犱細鎵惧埌浠ヤ笅
+鏂囦欢鍜岀洰褰曪細
 
 `ep[0..15]{in,out}/`
 `link_state`
@@ -199,39 +198,39 @@ USB 抓包工具（Sniffer）有时会有帮助，但并非完全必需，很多
 `link_state`
 ``````````````
 
-读取时，`link_state` 将打印出 `U0`、`U1`、
-`U2`、`U3`、`SS.Disabled`、`RX.Detect`、`SS.Inactive`、
-`Polling`、`Recovery`、`Hot Reset`、`Compliance`、
-`Loopback`、`Reset`、`Resume` 或 `UNKNOWN link state` 之一。
+璇诲彇鏃讹紝`link_state` 灏嗘墦鍗板嚭 `U0`銆乣U1`銆?
+`U2`銆乣U3`銆乣SS.Disabled`銆乣RX.Detect`銆乣SS.Inactive`銆?
+`Polling`銆乣Recovery`銆乣Hot Reset`銆乣Compliance`銆?
+`Loopback`銆乣Reset`銆乣Resume` 鎴?`UNKNOWN link state` 涔嬩竴銆?
 
-该文件也可以被写入，以强制链路进入
-上述某个状态。
+璇ユ枃浠朵篃鍙互琚啓鍏ワ紝浠ュ己鍒堕摼璺繘鍏?
+涓婅堪鏌愪釜鐘舵€併€?
 
 `regdump`
 `````````````
 
-文件名不言自明。读取时，`regdump` 将打印出
-DWC3 的寄存器转储（register dump）。请注意，可以对该文件
-执行 grep 以查找所需信息。
+鏂囦欢鍚嶄笉瑷€鑷槑銆傝鍙栨椂锛宍regdump` 灏嗘墦鍗板嚭
+DWC3 鐨勫瘎瀛樺櫒杞偍锛坮egister dump锛夈€傝娉ㄦ剰锛屽彲浠ュ璇ユ枃浠?
+鎵ц grep 浠ユ煡鎵炬墍闇€淇℃伅銆?
 
 `testmode`
 ``````````````
 
-读取时，`testmode` 将打印出指定
-USB 2.0 测试模式之一（`test_j`、`test_k`、`test_se0_nak`、
-`test_packet`、`test_force_enable`），或者在没有测试正在执行时
-打印字符串 `no test`。
+璇诲彇鏃讹紝`testmode` 灏嗘墦鍗板嚭鎸囧畾
+USB 2.0 娴嬭瘯妯″紡涔嬩竴锛坄test_j`銆乣test_k`銆乣test_se0_nak`銆?
+`test_packet`銆乣test_force_enable`锛夛紝鎴栬€呭湪娌℃湁娴嬭瘯姝ｅ湪鎵ц鏃?
+鎵撳嵃瀛楃涓?`no test`銆?
 
-要启动这些测试模式中的任意一个，可以将相同的字符串
-写入该文件，DWC3 将进入所请求的测试模式。
+瑕佸惎鍔ㄨ繖浜涙祴璇曟ā寮忎腑鐨勪换鎰忎竴涓紝鍙互灏嗙浉鍚岀殑瀛楃涓?
+鍐欏叆璇ユ枃浠讹紝DWC3 灏嗚繘鍏ユ墍璇锋眰鐨勬祴璇曟ā寮忋€?
 
 
 `ep[0..15]{in,out}`
 ``````````````````````
 
-对于每个端点，我们按照
-`ep$num$dir`（ep0in、ep0out、ep1in……）的命名约定暴露一个目录。在这些
-目录中，你会找到以下文件：
+瀵逛簬姣忎釜绔偣锛屾垜浠寜鐓?
+`ep$num$dir`锛坋p0in銆乪p0out銆乪p1in鈥︹€︼級鐨勫懡鍚嶇害瀹氭毚闇蹭竴涓洰褰曘€傚湪杩欎簺
+鐩綍涓紝浣犱細鎵惧埌浠ヤ笅鏂囦欢锛?
 
 `descriptor_fetch_queue`
 `event_queue`
@@ -243,22 +242,22 @@ USB 2.0 测试模式之一（`test_j`、`test_k`、`test_se0_nak`、
 `tx_fifo_queue`
 `tx_request_queue`
 
-借助 Synopsys Databook，你可以解码其中的
-信息。
+鍊熷姪 Synopsys Databook锛屼綘鍙互瑙ｇ爜鍏朵腑鐨?
+淇℃伅銆?
 
 #### ``transfer_type``
 
 
-读取时，`transfer_type` 将根据端点描述符的内容打印出
-`control`、`bulk`、`interrupt` 或 `isochronous` 之一。
-如果端点尚未被启用，则打印 `--`。
+璇诲彇鏃讹紝`transfer_type` 灏嗘牴鎹鐐规弿杩扮鐨勫唴瀹规墦鍗板嚭
+`control`銆乣bulk`銆乣interrupt` 鎴?`isochronous` 涔嬩竴銆?
+濡傛灉绔偣灏氭湭琚惎鐢紝鍒欐墦鍗?`--`銆?
 
 #### ``trb_ring``
 
 
-读取时，`trb_ring` 将打印出环上所有 TRB 的详细信息。
-它还会告诉你我们的入队（enqueue）和出队（dequeue）指针
-在环中的位置：
+璇诲彇鏃讹紝`trb_ring` 灏嗘墦鍗板嚭鐜笂鎵€鏈?TRB 鐨勮缁嗕俊鎭€?
+瀹冭繕浼氬憡璇変綘鎴戜滑鐨勫叆闃燂紙enqueue锛夊拰鍑洪槦锛坉equeue锛夋寚閽?
+鍦ㄧ幆涓殑浣嶇疆锛?
 
 
 		buffer_addr,size,type,ioc,isp_imi,csp,chn,lst,hwo
@@ -523,23 +522,23 @@ USB 2.0 测试模式之一（`test_j`、`test_k`、`test_se0_nak`、
 ### Trace Events
 
 
-DWC3 还提供了多个 trace events，帮助我们在运行时
-收集关于驱动行为的信息。
+DWC3 杩樻彁渚涗簡澶氫釜 trace events锛屽府鍔╂垜浠湪杩愯鏃?
+鏀堕泦鍏充簬椹卞姩琛屼负鐨勪俊鎭€?
 
-要使用这些事件，你必须在
-内核配置中启用 `CONFIG_FTRACE`。
+瑕佷娇鐢ㄨ繖浜涗簨浠讹紝浣犲繀椤诲湪
+鍐呮牳閰嶇疆涓惎鐢?`CONFIG_FTRACE`銆?
 
-关于如何启用 DWC3 事件的详细信息，请参阅
-“报告缺陷”一节。
+鍏充簬濡備綍鍚敤 DWC3 浜嬩欢鐨勮缁嗕俊鎭紝璇峰弬闃?
+鈥滄姤鍛婄己闄封€濅竴鑺傘€?
 
-以下小节将详细介绍 DWC3 定义的
-每个事件类（Event Class）和每个事件。
+浠ヤ笅灏忚妭灏嗚缁嗕粙缁?DWC3 瀹氫箟鐨?
+姣忎釜浜嬩欢绫伙紙Event Class锛夊拰姣忎釜浜嬩欢銆?
 
 MMIO
 ```````
 
-在查找缺陷时，查看每一次 MMIO 访问有时很有用。
-因此，DWC3 提供了两个 Trace Events（一个用于读操作，一个用于写操作）：
+鍦ㄦ煡鎵剧己闄锋椂锛屾煡鐪嬫瘡涓€娆?MMIO 璁块棶鏈夋椂寰堟湁鐢ㄣ€?
+鍥犳锛孌WC3 鎻愪緵浜嗕袱涓?Trace Events锛堜竴涓敤浜庤鎿嶄綔锛屼竴涓敤浜庡啓鎿嶄綔锛夛細
 ```
 
   TP_printk("addr %p value %08x", __entry->base + __entry->offset,
@@ -549,8 +548,8 @@ MMIO
 Interrupt Events
 ````````````````
 
-每个 IRQ 事件都可以被记录并解码为可读
-字符串。由于每个事件都不同，我们这里不给出示例。
+姣忎釜 IRQ 浜嬩欢閮藉彲浠ヨ璁板綍骞惰В鐮佷负鍙
+瀛楃涓层€傜敱浜庢瘡涓簨浠堕兘涓嶅悓锛屾垜浠繖閲屼笉缁欏嚭绀轰緥銆?
 ```
 
   TP_printk("event (%08x): %s", __entry->event,
@@ -560,7 +559,7 @@ Interrupt Events
 Control Request
 `````````````````
 
-每个 USB 控制请求（Control Request）都可以被记录到 trace 缓冲区中。
+姣忎釜 USB 鎺у埗璇锋眰锛圕ontrol Request锛夐兘鍙互琚褰曞埌 trace 缂撳啿鍖轰腑銆?
 ```
 
   TP_printk("%s", dwc3_decode_ctrl(__entry->bRequestType,
@@ -569,16 +568,16 @@ Control Request
   )
 
 ```
-注意，标准控制请求（Standard Control Requests）将被解码为
-带各自参数的可读字符串。类（Class）和
-厂商（Vendor）请求将以十六进制格式
-打印出 8 字节序列。
+娉ㄦ剰锛屾爣鍑嗘帶鍒惰姹傦紙Standard Control Requests锛夊皢琚В鐮佷负
+甯﹀悇鑷弬鏁扮殑鍙瀛楃涓层€傜被锛圕lass锛夊拰
+鍘傚晢锛圴endor锛夎姹傚皢浠ュ崄鍏繘鍒舵牸寮?
+鎵撳嵃鍑?8 瀛楄妭搴忓垪銆?
 
 Lifetime of a `struct usb_request`
 ```````````````````````````````````````
 
-`struct usb_request` 的整个生命周期都可以在 trace 缓冲区中被跟踪。
-我们为分配（allocation）、释放（free）等操作提供了 trace 事件。
+`struct usb_request` 鐨勬暣涓敓鍛藉懆鏈熼兘鍙互鍦?trace 缂撳啿鍖轰腑琚窡韪€?
+鎴戜滑涓哄垎閰嶏紙allocation锛夈€侀噴鏀撅紙free锛夌瓑鎿嶄綔鎻愪緵浜?trace 浜嬩欢銆?
 ```
 
   TP_printk("%s: req %p length %u/%u %s%s%s ==> %d",
@@ -593,7 +592,7 @@ Lifetime of a `struct usb_request`
 Generic Commands
 ````````````````````
 
-我们可以记录并解码每个通用命令（Generic Command）及其完成
+鎴戜滑鍙互璁板綍骞惰В鐮佹瘡涓€氱敤鍛戒护锛圙eneric Command锛夊強鍏跺畬鎴?
 ```
 
   TP_printk("cmd '%s' [%x] param %08x --> status: %s",
@@ -606,7 +605,7 @@ Generic Commands
 Endpoint Commands
 ````````````````````
 
-端点命令（Endpoint Commands）也可以与完成状态一同被记录
+绔偣鍛戒护锛圗ndpoint Commands锛変篃鍙互涓庡畬鎴愮姸鎬佷竴鍚岃璁板綍
 ```
 
   TP_printk("%s: cmd '%s' [%d] params %08x %08x %08x --> status: %s",
@@ -620,8 +619,8 @@ Endpoint Commands
 Lifetime of a `TRB`
 ``````````````````````
 
-`TRB` 的生命周期很简单。我们要么在准备一个 `TRB`，要么
-在完成它。通过这两个事件，我们可以看到 `TRB` 如何变化
+`TRB` 鐨勭敓鍛藉懆鏈熷緢绠€鍗曘€傛垜浠涔堝湪鍑嗗涓€涓?`TRB`锛岃涔?
+鍦ㄥ畬鎴愬畠銆傞€氳繃杩欎袱涓簨浠讹紝鎴戜滑鍙互鐪嬪埌 `TRB` 濡備綍鍙樺寲
 ```
 
   TP_printk("%s: %d/%d trb %p buf %08x%08x size %s%d ctrl %08x (%c%c%c%c:%c%c:%s)",
@@ -660,7 +659,7 @@ Lifetime of a `TRB`
 Lifetime of an Endpoint
 ```````````````````````
 
-端点的生命周期通过启用（enable）和禁用（disable）来概括
+绔偣鐨勭敓鍛藉懆鏈熼€氳繃鍚敤锛坋nable锛夊拰绂佺敤锛坉isable锛夋潵姒傛嫭
 ```
 
   TP_printk("%s: mps %d/%d streams %d burst %d ring %d/%d flags %c:%c%c%c%c%c:%c:%c",
@@ -679,7 +678,7 @@ Lifetime of an Endpoint
 
 
 ```
-## 结构体、方法与定义
+## 缁撴瀯浣撱€佹柟娉曚笌瀹氫箟
 
 
    :doc: main data structures

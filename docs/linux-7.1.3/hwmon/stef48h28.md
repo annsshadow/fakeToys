@@ -1,8 +1,8 @@
+﻿
+## 鍐呮牳椹卞姩 stef48h28
 
-## 内核驱动 stef48h28
 
-
-支持的芯片：
+鏀寔鐨勮姱鐗囷細
 
   - Analog Devices STEF48H28
 
@@ -17,47 +17,29 @@ Author:
   - Charles Hsu <hsu.yungteng@gmail.com>
 
 
-### 描述
+### 鎻忚堪
 
 
-STEF48H28 是一款面向 9-80 V DC 电源轨的 30 A 集成 e-fuse。它提供涌入电流控制（inrush control）、欠压/过压锁定（undervoltage/overvoltage lockout）以及使用自适应（I x t）方案的过流保护，该方案允许 CPU/GPU 负载典型的短时大电流脉冲。
-
-该器件提供模拟电流监视输出与片上温度监视信号用于系统监管。启动行为可通过插入延迟（insertion-delay）与软启动（soft-start）设置进行编程。
-
-附加特性包括电源良好（power-good）指示、自检（self-diagnostics）、热关断（thermal shutdown）以及用于遥测（telemetry）与状态报告的 PMBus 接口。
-
-### 平台数据支持
+STEF48H28 鏄竴娆鹃潰鍚?9-80 V DC 鐢垫簮杞ㄧ殑 30 A 闆嗘垚 e-fuse銆傚畠鎻愪緵娑屽叆鐢垫祦鎺у埗锛坕nrush control锛夈€佹瑺鍘?杩囧帇閿佸畾锛坲ndervoltage/overvoltage lockout锛変互鍙婁娇鐢ㄨ嚜閫傚簲锛圛 x t锛夋柟妗堢殑杩囨祦淇濇姢锛岃鏂规鍏佽 CPU/GPU 璐熻浇鍏稿瀷鐨勭煭鏃跺ぇ鐢垫祦鑴夊啿銆?
+璇ュ櫒浠舵彁渚涙ā鎷熺數娴佺洃瑙嗚緭鍑轰笌鐗囦笂娓╁害鐩戣淇″彿鐢ㄤ簬绯荤粺鐩戠銆傚惎鍔ㄨ涓哄彲閫氳繃鎻掑叆寤惰繜锛坕nsertion-delay锛変笌杞惎鍔紙soft-start锛夎缃繘琛岀紪绋嬨€?
+闄勫姞鐗规€у寘鎷數婧愯壇濂斤紙power-good锛夋寚绀恒€佽嚜妫€锛坰elf-diagnostics锛夈€佺儹鍏虫柇锛坱hermal shutdown锛変互鍙婄敤浜庨仴娴嬶紙telemetry锛変笌鐘舵€佹姤鍛婄殑 PMBus 鎺ュ彛銆?
+### 骞冲彴鏁版嵁鏀寔
 
 
-该驱动支持标准的 PMBus 驱动平台数据。
-
-### Sysfs 接口
+璇ラ┍鍔ㄦ敮鎸佹爣鍑嗙殑 PMBus 椹卞姩骞冲彴鏁版嵁銆?
+### Sysfs 鎺ュ彛
 
 
 ======================  ========================================================
 in1_label		"vin".
-in1_input		测得的电压。来自 READ_VIN 寄存器。
-in1_min			最小电压。来自 VIN_UV_WARN_LIMIT 寄存器。
-in1_max			最大电压。来自 VIN_OV_WARN_LIMIT 寄存器。
-
+in1_input		娴嬪緱鐨勭數鍘嬨€傛潵鑷?READ_VIN 瀵勫瓨鍣ㄣ€?in1_min			鏈€灏忕數鍘嬨€傛潵鑷?VIN_UV_WARN_LIMIT 瀵勫瓨鍣ㄣ€?in1_max			鏈€澶х數鍘嬨€傛潵鑷?VIN_OV_WARN_LIMIT 瀵勫瓨鍣ㄣ€?
 in2_label		"vout1".
-in2_input		测得的电压。来自 READ_VOUT 寄存器。
-in2_min			最小电压。来自 VOUT_UV_WARN_LIMIT 寄存器。
-in2_max			最大电压。来自 VOUT_OV_WARN_LIMIT 寄存器。
-
-curr1_label "iin".      curr1_input 测得的电流。来自 READ_IIN 寄存器。
-
-curr2_label "iout1".    curr2_input 测得的电流。来自 READ_IOUT 寄存器。
-
+in2_input		娴嬪緱鐨勭數鍘嬨€傛潵鑷?READ_VOUT 瀵勫瓨鍣ㄣ€?in2_min			鏈€灏忕數鍘嬨€傛潵鑷?VOUT_UV_WARN_LIMIT 瀵勫瓨鍣ㄣ€?in2_max			鏈€澶х數鍘嬨€傛潵鑷?VOUT_OV_WARN_LIMIT 瀵勫瓨鍣ㄣ€?
+curr1_label "iin".      curr1_input 娴嬪緱鐨勭數娴併€傛潵鑷?READ_IIN 瀵勫瓨鍣ㄣ€?
+curr2_label "iout1".    curr2_input 娴嬪緱鐨勭數娴併€傛潵鑷?READ_IOUT 瀵勫瓨鍣ㄣ€?
 power1_label		"pin"
-power1_input		测得的输入功率。来自 READ_PIN 寄存器。
-
+power1_input		娴嬪緱鐨勮緭鍏ュ姛鐜囥€傛潵鑷?READ_PIN 瀵勫瓨鍣ㄣ€?
 power2_label		"pout1"
-power2_input		测得的输出功率。来自 READ_POUT 寄存器。
-
-temp1_input		测得的温度。来自 READ_TEMPERATURE_1 寄存器。
-temp1_max		最大温度。来自 OT_WARN_LIMIT 寄存器。
-temp1_crit		临界高温。来自 OT_FAULT_LIMIT 寄存器。
-
-temp2_input		测得的温度。来自 READ_TEMPERATURE_2 寄存器。
-======================  ========================================================
+power2_input		娴嬪緱鐨勮緭鍑哄姛鐜囥€傛潵鑷?READ_POUT 瀵勫瓨鍣ㄣ€?
+temp1_input		娴嬪緱鐨勬俯搴︺€傛潵鑷?READ_TEMPERATURE_1 瀵勫瓨鍣ㄣ€?temp1_max		鏈€澶ф俯搴︺€傛潵鑷?OT_WARN_LIMIT 瀵勫瓨鍣ㄣ€?temp1_crit		涓寸晫楂樻俯銆傛潵鑷?OT_FAULT_LIMIT 瀵勫瓨鍣ㄣ€?
+temp2_input		娴嬪緱鐨勬俯搴︺€傛潵鑷?READ_TEMPERATURE_2 瀵勫瓨鍣ㄣ€?======================  ========================================================

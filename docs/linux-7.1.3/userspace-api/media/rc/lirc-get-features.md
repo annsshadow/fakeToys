@@ -1,11 +1,11 @@
-
+﻿
 
 ######## ioctl LIRC_GET_FEATURES
 
 
-## 名称
+## 鍚嶇О
 
-LIRC_GET_FEATURES - 获取底层硬件设备的特性
+LIRC_GET_FEATURES - 鑾峰彇搴曞眰纭欢璁惧鐨勭壒鎬?
 
 
 ## Synopsis
@@ -16,110 +16,110 @@ LIRC_GET_FEATURES - 获取底层硬件设备的特性
 ## Arguments
 
 `fd`
-由 open() 返回的文件描述符。
+鐢?open() 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `features`
-LIRC 特性的位掩码。
+LIRC 鐗规€х殑浣嶆帺鐮併€?
 
 
-## 描述
+## 鎻忚堪
 
-获取底层硬件设备的特性。驱动会宣告它所支持的某些特性，调用方再据此发起相应的 ioctl。
+鑾峰彇搴曞眰纭欢璁惧鐨勭壒鎬с€傞┍鍔ㄤ細瀹ｅ憡瀹冩墍鏀寔鐨勬煇浜涚壒鎬э紝璋冪敤鏂瑰啀鎹鍙戣捣鐩稿簲鐨?ioctl銆?
 
 
-## LIRC 特性
+## LIRC 鐗规€?
 
 
 `LIRC_CAN_REC_RAW`
 
-未使用。保留仅为避免破坏 uAPI。
+鏈娇鐢ㄣ€備繚鐣欎粎涓洪伩鍏嶇牬鍧?uAPI銆?
 
 
 `LIRC_CAN_REC_PULSE`
 
-未使用。保留仅为避免破坏 uAPI。在发送时使用 `LIRC_MODE_PULSE` <lirc-模式-pulse>。
+鏈娇鐢ㄣ€備繚鐣欎粎涓洪伩鍏嶇牬鍧?uAPI銆傚湪鍙戦€佹椂浣跨敤 `LIRC_MODE_PULSE` <lirc-妯″紡-pulse>銆?
 
 
 `LIRC_CAN_REC_MODE2`
 
-原始 IR 驱动接收时使用。意味着使用 `LIRC_MODE_MODE2` <lirc-模式-MODE2>。同时也意味着支持 `LIRC_MODE_SCANCODE` <lirc-模式-SCANCODE>，只要内核版本足够新。可使用 `lirc_set_rec_mode` 切换模式。
+鍘熷 IR 椹卞姩鎺ユ敹鏃朵娇鐢ㄣ€傛剰鍛崇潃浣跨敤 `LIRC_MODE_MODE2` <lirc-妯″紡-MODE2>銆傚悓鏃朵篃鎰忓懗鐫€鏀寔 `LIRC_MODE_SCANCODE` <lirc-妯″紡-SCANCODE>锛屽彧瑕佸唴鏍哥増鏈冻澶熸柊銆傚彲浣跨敤 `lirc_set_rec_mode` 鍒囨崲妯″紡銆?
 
 
 `LIRC_CAN_REC_LIRCCODE`
 
-未使用。保留仅为避免破坏 uAPI。
+鏈娇鐢ㄣ€備繚鐣欎粎涓洪伩鍏嶇牬鍧?uAPI銆?
 
 
 `LIRC_CAN_REC_SCANCODE`
 
-scancode 驱动接收时使用。意味着使用 `LIRC_MODE_SCANCODE` <lirc-模式-SCANCODE>。
+scancode 椹卞姩鎺ユ敹鏃朵娇鐢ㄣ€傛剰鍛崇潃浣跨敤 `LIRC_MODE_SCANCODE` <lirc-妯″紡-SCANCODE>銆?
 
 
 `LIRC_CAN_SET_SEND_CARRIER`
 
-驱动支持使用 ioctl `LIRC_SET_SEND_CARRIER` <LIRC_SET_SEND_CARRIER> 改变调制频率。
+椹卞姩鏀寔浣跨敤 ioctl `LIRC_SET_SEND_CARRIER` <LIRC_SET_SEND_CARRIER> 鏀瑰彉璋冨埗棰戠巼銆?
 
 
 `LIRC_CAN_SET_SEND_DUTY_CYCLE`
 
-驱动支持使用 ioctl `LIRC_SET_SEND_DUTY_CYCLE` <LIRC_SET_SEND_DUTY_CYCLE> 改变占空比。
+椹卞姩鏀寔浣跨敤 ioctl `LIRC_SET_SEND_DUTY_CYCLE` <LIRC_SET_SEND_DUTY_CYCLE> 鏀瑰彉鍗犵┖姣斻€?
 
 
 `LIRC_CAN_SET_TRANSMITTER_MASK`
 
-驱动支持使用 ioctl `LIRC_SET_TRANSMITTER_MASK` <LIRC_SET_TRANSMITTER_MASK> 改变激活的发送器。
+椹卞姩鏀寔浣跨敤 ioctl `LIRC_SET_TRANSMITTER_MASK` <LIRC_SET_TRANSMITTER_MASK> 鏀瑰彉婵€娲荤殑鍙戦€佸櫒銆?
 
 
 `LIRC_CAN_SET_REC_CARRIER`
 
-驱动支持使用 ioctl `LIRC_SET_REC_CARRIER` <LIRC_SET_REC_CARRIER> 设置接收载波频率。
+椹卞姩鏀寔浣跨敤 ioctl `LIRC_SET_REC_CARRIER` <LIRC_SET_REC_CARRIER> 璁剧疆鎺ユ敹杞芥尝棰戠巼銆?
 
 
 `LIRC_CAN_SET_REC_CARRIER_RANGE`
 
-驱动支持 ioctl `LIRC_SET_REC_CARRIER_RANGE` <LIRC_SET_REC_CARRIER_RANGE>。
+椹卞姩鏀寔 ioctl `LIRC_SET_REC_CARRIER_RANGE` <LIRC_SET_REC_CARRIER_RANGE>銆?
 
 
 `LIRC_CAN_GET_REC_RESOLUTION`
 
-驱动支持 ioctl `LIRC_GET_REC_RESOLUTION` <LIRC_GET_REC_RESOLUTION>。
+椹卞姩鏀寔 ioctl `LIRC_GET_REC_RESOLUTION` <LIRC_GET_REC_RESOLUTION>銆?
 
 
 `LIRC_CAN_SET_REC_TIMEOUT`
 
-驱动支持 ioctl `LIRC_SET_REC_TIMEOUT` <LIRC_SET_REC_TIMEOUT>。
+椹卞姩鏀寔 ioctl `LIRC_SET_REC_TIMEOUT` <LIRC_SET_REC_TIMEOUT>銆?
 
 
 `LIRC_CAN_MEASURE_CARRIER`
 
-驱动支持使用 ioctl `LIRC_SET_MEASURE_CARRIER_MODE` <LIRC_SET_MEASURE_CARRIER_MODE> 测量调制频率。
+椹卞姩鏀寔浣跨敤 ioctl `LIRC_SET_MEASURE_CARRIER_MODE` <LIRC_SET_MEASURE_CARRIER_MODE> 娴嬮噺璋冨埗棰戠巼銆?
 
 
 `LIRC_CAN_USE_WIDEBAND_RECEIVER`
 
-驱动支持使用 ioctl `LIRC_SET_WIDEBAND_RECEIVER` <LIRC_SET_WIDEBAND_RECEIVER> 进入学习模式。
+椹卞姩鏀寔浣跨敤 ioctl `LIRC_SET_WIDEBAND_RECEIVER` <LIRC_SET_WIDEBAND_RECEIVER> 杩涘叆瀛︿範妯″紡銆?
 
 
 `LIRC_CAN_SEND_RAW`
 
-未使用。保留仅为避免破坏 uAPI。
+鏈娇鐢ㄣ€備繚鐣欎粎涓洪伩鍏嶇牬鍧?uAPI銆?
 
 
 `LIRC_CAN_SEND_PULSE`
 
-驱动支持使用 `LIRC_MODE_PULSE` <lirc-模式-pulse> 发送（亦称 IR blasting / IR 发射）。意味着支持使用 `LIRC_MODE_SCANCODE` <lirc-模式-SCANCODE> 发送，只要内核版本足够新。可使用 `lirc_set_send_mode` 切换模式。
+椹卞姩鏀寔浣跨敤 `LIRC_MODE_PULSE` <lirc-妯″紡-pulse> 鍙戦€侊紙浜︾О IR blasting / IR 鍙戝皠锛夈€傛剰鍛崇潃鏀寔浣跨敤 `LIRC_MODE_SCANCODE` <lirc-妯″紡-SCANCODE> 鍙戦€侊紝鍙鍐呮牳鐗堟湰瓒冲鏂般€傚彲浣跨敤 `lirc_set_send_mode` 鍒囨崲妯″紡銆?
 
 
 `LIRC_CAN_SEND_MODE2`
 
-未使用。保留仅为避免破坏 uAPI。在接收时使用 `LIRC_MODE_MODE2` <lirc-模式-mode2>。
+鏈娇鐢ㄣ€備繚鐣欎粎涓洪伩鍏嶇牬鍧?uAPI銆傚湪鎺ユ敹鏃朵娇鐢?`LIRC_MODE_MODE2` <lirc-妯″紡-mode2>銆?
 
 
 `LIRC_CAN_SEND_LIRCCODE`
 
-未使用。保留仅为避免破坏 uAPI。
+鏈娇鐢ㄣ€備繚鐣欎粎涓洪伩鍏嶇牬鍧?uAPI銆?
 
 
-## 返回值
+## 杩斿洖鍊?
 
-成功时返回 0，出错时返回 -1，并相应地设置 `errno` 变量。通用的错误码在《Generic 错误 Codes》<gen-错误> 章节中描述。
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆傞€氱敤鐨勯敊璇爜鍦ㄣ€奊eneric 閿欒 Codes銆?gen-閿欒> 绔犺妭涓弿杩般€?

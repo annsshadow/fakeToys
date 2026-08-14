@@ -1,65 +1,43 @@
-## Ramoops oops/panic 记录器
-
+﻿## Ramoops oops/panic 璁板綍鍣?
 
 Sergiu Iordache <sergiu@chromium.org>
 
 Updated: 10 Feb 2021
 
-### 简介
+### 绠€浠?
+
+Ramoops 鏄竴涓?oops/panic 璁板綍鍣紝鍦ㄧ郴缁熷穿婧冨墠灏嗗叾鏃ュ織鍐欏叆 RAM銆傚畠閫氳繃鍦ㄧ幆褰?缂撳啿鍖轰腑璁板綍 oops 鍜?panic 鏉ュ伐浣溿€俁amoops 闇€瑕佺郴缁熷叿澶囨寔涔?RAM锛屼互渚胯鍖哄煙鐨?鍐呭鍦ㄩ噸鍚悗鑳藉淇濈暀銆?
+### Ramoops 姒傚康
 
 
-Ramoops 是一个 oops/panic 记录器，在系统崩溃前将其日志写入 RAM。它通过在环形
-缓冲区中记录 oops 和 panic 来工作。Ramoops 需要系统具备持久 RAM，以便该区域的
-内容在重启后能够保留。
-
-### Ramoops 概念
-
-
-Ramoops 使用预定义的内存区域来存储转储。该内存区域的起始、大小和类型通过以下
-三个变量设置：
-
-  - `mem_address` 表示起始地址
-  - `mem_size` 表示大小。内存大小会向下取整为 2 的幂。
-  - `mem_type` 用于指定内存类型（默认是 pgprot_writecombine）。
-  - `mem_name` 用于指定由 `reserve_mem` 命令行参数定义的内存区域。
-
-通常应使用 `mem_type=0` 的默认值，因为这会将 pstore 映射设置为
-pgprot_writecombine。设置 `mem_type=1` 会尝试使用 `pgprot_noncached`，这仅在
-某些平台上有效。这是因为 pstore 依赖于原子操作。至少在 ARM 上，pgprot_noncached
-会使内存被映射为强有序（strongly ordered），而对强有序内存的原子操作是依实现
-而定的，并且在许多 ARM（如 omaps）上无法工作。设置 `mem_type=2` 会尝试将该内存
-区域当作普通内存处理，从而启用其上的完整缓存。这可以提升性能。
-
-该内存区域被划分为 `record_size` 大小的块（同样向下取整为 2 的幂），每次 kmesg
-转储会写入一个 `record_size` 大小的信息块。
-
-可以通过 `max_reason` 值来限制存储哪些类型的 kmsg 转储，该值定义于
-include/linux/kmsg_dump.h 的 `enum kmsg_dump_reason`。例如，要同时存储 Oops 和
-Panic，`max_reason` 应设为 2（KMSG_DUMP_OOPS）；要只存储 Panic，`max_reason`
-应设为 1（KMSG_DUMP_PANIC）。将其设为 0（KMSG_DUMP_UNDEF）时，原因过滤将由
-`printk.always_kmsg_dump` 启动参数控制：若未设置，则为 KMSG_DUMP_OOPS，否则
-为 KMSG_DUMP_MAX。
-
-该模块使用一个计数器来记录多次转储，但计数器会在重启时重置（即重启后的新转储
-会覆盖旧的）。
-
-Ramoops 还支持对持久内存区域的软件 ECC 保护。当使用硬件复位使机器恢复（例如
-看门狗触发）时，这可能很有用。在这种情况下，RAM 可能略有损坏，但通常可以恢复。
-
-### 设置参数
+Ramoops 浣跨敤棰勫畾涔夌殑鍐呭瓨鍖哄煙鏉ュ瓨鍌ㄨ浆鍌ㄣ€傝鍐呭瓨鍖哄煙鐨勮捣濮嬨€佸ぇ灏忓拰绫诲瀷閫氳繃浠ヤ笅
+涓変釜鍙橀噺璁剧疆锛?
+  - `mem_address` 琛ㄧず璧峰鍦板潃
+  - `mem_size` 琛ㄧず澶у皬銆傚唴瀛樺ぇ灏忎細鍚戜笅鍙栨暣涓?2 鐨勫箓銆?  - `mem_type` 鐢ㄤ簬鎸囧畾鍐呭瓨绫诲瀷锛堥粯璁ゆ槸 pgprot_writecombine锛夈€?  - `mem_name` 鐢ㄤ簬鎸囧畾鐢?`reserve_mem` 鍛戒护琛屽弬鏁板畾涔夌殑鍐呭瓨鍖哄煙銆?
+閫氬父搴斾娇鐢?`mem_type=0` 鐨勯粯璁ゅ€硷紝鍥犱负杩欎細灏?pstore 鏄犲皠璁剧疆涓?pgprot_writecombine銆傝缃?`mem_type=1` 浼氬皾璇曚娇鐢?`pgprot_noncached`锛岃繖浠呭湪
+鏌愪簺骞冲彴涓婃湁鏁堛€傝繖鏄洜涓?pstore 渚濊禆浜庡師瀛愭搷浣溿€傝嚦灏戝湪 ARM 涓婏紝pgprot_noncached
+浼氫娇鍐呭瓨琚槧灏勪负寮烘湁搴忥紙strongly ordered锛夛紝鑰屽寮烘湁搴忓唴瀛樼殑鍘熷瓙鎿嶄綔鏄緷瀹炵幇
+鑰屽畾鐨勶紝骞朵笖鍦ㄨ澶?ARM锛堝 omaps锛変笂鏃犳硶宸ヤ綔銆傝缃?`mem_type=2` 浼氬皾璇曞皢璇ュ唴瀛?鍖哄煙褰撲綔鏅€氬唴瀛樺鐞嗭紝浠庤€屽惎鐢ㄥ叾涓婄殑瀹屾暣缂撳瓨銆傝繖鍙互鎻愬崌鎬ц兘銆?
+璇ュ唴瀛樺尯鍩熻鍒掑垎涓?`record_size` 澶у皬鐨勫潡锛堝悓鏍峰悜涓嬪彇鏁翠负 2 鐨勫箓锛夛紝姣忔 kmesg
+杞偍浼氬啓鍏ヤ竴涓?`record_size` 澶у皬鐨勪俊鎭潡銆?
+鍙互閫氳繃 `max_reason` 鍊兼潵闄愬埗瀛樺偍鍝簺绫诲瀷鐨?kmsg 杞偍锛岃鍊煎畾涔変簬
+include/linux/kmsg_dump.h 鐨?`enum kmsg_dump_reason`銆備緥濡傦紝瑕佸悓鏃跺瓨鍌?Oops 鍜?Panic锛宍max_reason` 搴旇涓?2锛圞MSG_DUMP_OOPS锛夛紱瑕佸彧瀛樺偍 Panic锛宍max_reason`
+搴旇涓?1锛圞MSG_DUMP_PANIC锛夈€傚皢鍏惰涓?0锛圞MSG_DUMP_UNDEF锛夋椂锛屽師鍥犺繃婊ゅ皢鐢?`printk.always_kmsg_dump` 鍚姩鍙傛暟鎺у埗锛氳嫢鏈缃紝鍒欎负 KMSG_DUMP_OOPS锛屽惁鍒?涓?KMSG_DUMP_MAX銆?
+璇ユā鍧椾娇鐢ㄤ竴涓鏁板櫒鏉ヨ褰曞娆¤浆鍌紝浣嗚鏁板櫒浼氬湪閲嶅惎鏃堕噸缃紙鍗抽噸鍚悗鐨勬柊杞偍
+浼氳鐩栨棫鐨勶級銆?
+Ramoops 杩樻敮鎸佸鎸佷箙鍐呭瓨鍖哄煙鐨勮蒋浠?ECC 淇濇姢銆傚綋浣跨敤纭欢澶嶄綅浣挎満鍣ㄦ仮澶嶏紙渚嬪
+鐪嬮棬鐙楄Е鍙戯級鏃讹紝杩欏彲鑳藉緢鏈夌敤銆傚湪杩欑鎯呭喌涓嬶紝RAM 鍙兘鐣ユ湁鎹熷潖锛屼絾閫氬父鍙互鎭㈠銆?
+### 璁剧疆鍙傛暟
 
 
-设置 ramoops 参数有几种不同的方式：
-
+璁剧疆 ramoops 鍙傛暟鏈夊嚑绉嶄笉鍚岀殑鏂瑰紡锛?
 ```
- A. 使用模块参数（其名称即前述变量名）。为了快速调试，您也可以在启动期间保留
- 部分内存，然后将保留的内存用于 ramoops。例如，假设一台内存大于 128 MB 的机器，
- 以下内核命令行将告诉内核只使用前 128 MB 内存，并将 ECC 保护的
-
+ A. 浣跨敤妯″潡鍙傛暟锛堝叾鍚嶇О鍗冲墠杩板彉閲忓悕锛夈€備负浜嗗揩閫熻皟璇曪紝鎮ㄤ篃鍙互鍦ㄥ惎鍔ㄦ湡闂翠繚鐣? 閮ㄥ垎鍐呭瓨锛岀劧鍚庡皢淇濈暀鐨勫唴瀛樼敤浜?ramoops銆備緥濡傦紝鍋囪涓€鍙板唴瀛樺ぇ浜?128 MB 鐨勬満鍣紝
+ 浠ヤ笅鍐呮牳鍛戒护琛屽皢鍛婅瘔鍐呮牳鍙娇鐢ㄥ墠 128 MB 鍐呭瓨锛屽苟灏?ECC 淇濇姢鐨?
 	mem=128M ramoops.mem_address=0x8000000 ramoops.ecc=1
 
- B. 使用设备树绑定，如 ``Documentation/devicetree/bindings/reserved-memory/ramoops.yaml``
- 所述。例如：
+ B. 浣跨敤璁惧鏍戠粦瀹氾紝濡?``Documentation/devicetree/bindings/reserved-memory/ramoops.yaml``
+ 鎵€杩般€備緥濡傦細
 
 	reserved-memory {
 		#address-cells = <2>;
@@ -74,7 +52,7 @@ Ramoops 还支持对持久内存区域的软件 ECC 保护。当使用硬件复�
 		};
 	};
 
- C. 使用平台设备并设置平台数据。然后可以通过该平台数据设置参数。示例如下：
+ C. 浣跨敤骞冲彴璁惧骞惰缃钩鍙版暟鎹€傜劧鍚庡彲浠ラ€氳繃璇ュ钩鍙版暟鎹缃弬鏁般€傜ず渚嬪涓嬶細
 
  .. code-block:: c
 
@@ -106,15 +84,12 @@ Ramoops 还支持对持久内存区域的软件 ECC 保护。当使用硬件复�
 	return ret;
   }
 
- D. 使用通过 ``reserve_mem`` 命令行参数保留的内存区域。地址和大小由 ``reserve_mem``
- 参数定义。请注意，``reserve_mem`` 不一定总是在同一位置分配内存，因此不可依赖。
- 需要进行测试，并且它可能并非在每台机器或每个内核上都有效。请将此视为"尽力而为"
- 的方式。``reserve_mem`` 选项接受大小、对齐和名称作为参数。该名称用于将内存映射
- 到一个标签，ramoops 可据此检索。
-
+ D. 浣跨敤閫氳繃 ``reserve_mem`` 鍛戒护琛屽弬鏁颁繚鐣欑殑鍐呭瓨鍖哄煙銆傚湴鍧€鍜屽ぇ灏忕敱 ``reserve_mem``
+ 鍙傛暟瀹氫箟銆傝娉ㄦ剰锛宍`reserve_mem`` 涓嶄竴瀹氭€绘槸鍦ㄥ悓涓€浣嶇疆鍒嗛厤鍐呭瓨锛屽洜姝や笉鍙緷璧栥€? 闇€瑕佽繘琛屾祴璇曪紝骞朵笖瀹冨彲鑳藉苟闈炲湪姣忓彴鏈哄櫒鎴栨瘡涓唴鏍镐笂閮芥湁鏁堛€傝灏嗘瑙嗕负"灏藉姏鑰屼负"
+ 鐨勬柟寮忋€俙`reserve_mem`` 閫夐」鎺ュ彈澶у皬銆佸榻愬拰鍚嶇О浣滀负鍙傛暟銆傝鍚嶇О鐢ㄤ簬灏嗗唴瀛樻槧灏? 鍒颁竴涓爣绛撅紝ramoops 鍙嵁姝ゆ绱€?
 	reserve_mem=2M:4096:oops  ramoops.mem_name=oops
 ```
-您可以指定 RAM 或外设的内存。但是，当指定 RAM 时，请务必通过发出 memblock_reserve()
+鎮ㄥ彲浠ユ寚瀹?RAM 鎴栧璁剧殑鍐呭瓨銆備絾鏄紝褰撴寚瀹?RAM 鏃讹紝璇峰姟蹇呴€氳繃鍙戝嚭 memblock_reserve()
 
 ```
 	#include <linux/memblock.h>
@@ -122,22 +97,18 @@ Ramoops 还支持对持久内存区域的软件 ECC 保护。当使用硬件复�
 	memblock_reserve(ramoops_data.mem_address, ramoops_data.mem_size);
 
 ```
-### 转储格式
+### 杞偍鏍煎紡
 
 
-数据转储以一个头部开始，当前定义为 `====`，后跟时间戳和换行符。随后是实际数据。
-
-### 读取数据
-
-
-转储数据可以从 pstore 文件系统读取。这些文件的格式为 `dmesg-ramoops-N`，其中
-N 是内存中的记录号。要从 RAM 中删除已存储的记录，只需取消链接相应的 pstore 文件。
-
-### 持久函数跟踪
+鏁版嵁杞偍浠ヤ竴涓ご閮ㄥ紑濮嬶紝褰撳墠瀹氫箟涓?`====`锛屽悗璺熸椂闂存埑鍜屾崲琛岀銆傞殢鍚庢槸瀹為檯鏁版嵁銆?
+### 璇诲彇鏁版嵁
 
 
-持久函数跟踪可能有助于调试与软件或硬件相关的挂起。函数调用链日志存储在
-`ftrace-ramoops`
+杞偍鏁版嵁鍙互浠?pstore 鏂囦欢绯荤粺璇诲彇銆傝繖浜涙枃浠剁殑鏍煎紡涓?`dmesg-ramoops-N`锛屽叾涓?N 鏄唴瀛樹腑鐨勮褰曞彿銆傝浠?RAM 涓垹闄ゅ凡瀛樺偍鐨勮褰曪紝鍙渶鍙栨秷閾炬帴鐩稿簲鐨?pstore 鏂囦欢銆?
+### 鎸佷箙鍑芥暟璺熻釜
+
+
+鎸佷箙鍑芥暟璺熻釜鍙兘鏈夊姪浜庤皟璇曚笌杞欢鎴栫‖浠剁浉鍏崇殑鎸傝捣銆傚嚱鏁拌皟鐢ㄩ摼鏃ュ織瀛樺偍鍦?`ftrace-ramoops`
 
 ```
  # mount -t debugfs debugfs /sys/kernel/debug/

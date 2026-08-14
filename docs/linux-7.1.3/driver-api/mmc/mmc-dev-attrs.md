@@ -1,76 +1,44 @@
-## SD 与 MMC 块设备属性
+﻿## SD 涓?MMC 鍧楄澶囧睘鎬?
 
-
-这些属性为与 SD 或 MMC 设备相关联的块设备定义。
-
-以下属性可读写。
-
+杩欎簺灞炴€т负涓?SD 鎴?MMC 璁惧鐩稿叧鑱旂殑鍧楄澶囧畾涔夈€?
+浠ヤ笅灞炴€у彲璇诲啓銆?
 	========		===============================================
-	force_ro		即使写保护开关关闭，也强制只读访问。
-	========		===============================================
+	force_ro		鍗充娇鍐欎繚鎶ゅ紑鍏冲叧闂紝涔熷己鍒跺彧璇昏闂€?	========		===============================================
 
-## SD 与 MMC 设备属性
+## SD 涓?MMC 璁惧灞炴€?
 
-
-所有属性均为只读。
-
+鎵€鏈夊睘鎬у潎涓哄彧璇汇€?
 	======================	===============================================
-	cid			卡识别寄存器（Card Identification Register）
-	csd			卡特定数据寄存器（Card Specific Data Register）
-	scr			SD 卡配置寄存器（仅 SD）
-	date			制造日期（来自 CID 寄存器）
-	fwrev			固件/产品修订版本（来自 CID 寄存器）
-				（仅 SD 和 MMCv1）
-	hwrev			硬件/产品修订版本（来自 CID 寄存器）
-				（仅 SD 和 MMCv1）
-	manfid			制造商 ID（来自 CID 寄存器）
-	name			产品名称（来自 CID 寄存器）
-	oemid			OEM/应用 ID（来自 CID 寄存器）
-	prv			产品修订版本（来自 CID 寄存器）
-				（仅 SD 和 MMCv4）
-	serial			产品序列号（来自 CID 寄存器）
-	erase_size		擦除组大小
-	preferred_erase_size	首选擦除大小
-	raw_rpmb_size_mult	RPMB 分区大小
-	rel_sectors		可靠写入扇区计数
-	ocr 			Operation Conditions Register（工作条件寄存器）
-	dsr			Driver Stage Register（驱动级寄存器）
-	cmdq_en			命令队列已启用：
+	cid			鍗¤瘑鍒瘎瀛樺櫒锛圕ard Identification Register锛?	csd			鍗＄壒瀹氭暟鎹瘎瀛樺櫒锛圕ard Specific Data Register锛?	scr			SD 鍗￠厤缃瘎瀛樺櫒锛堜粎 SD锛?	date			鍒堕€犳棩鏈燂紙鏉ヨ嚜 CID 瀵勫瓨鍣級
+	fwrev			鍥轰欢/浜у搧淇鐗堟湰锛堟潵鑷?CID 瀵勫瓨鍣級
+				锛堜粎 SD 鍜?MMCv1锛?	hwrev			纭欢/浜у搧淇鐗堟湰锛堟潵鑷?CID 瀵勫瓨鍣級
+				锛堜粎 SD 鍜?MMCv1锛?	manfid			鍒堕€犲晢 ID锛堟潵鑷?CID 瀵勫瓨鍣級
+	name			浜у搧鍚嶇О锛堟潵鑷?CID 瀵勫瓨鍣級
+	oemid			OEM/搴旂敤 ID锛堟潵鑷?CID 瀵勫瓨鍣級
+	prv			浜у搧淇鐗堟湰锛堟潵鑷?CID 瀵勫瓨鍣級
+				锛堜粎 SD 鍜?MMCv4锛?	serial			浜у搧搴忓垪鍙凤紙鏉ヨ嚜 CID 瀵勫瓨鍣級
+	erase_size		鎿﹂櫎缁勫ぇ灏?	preferred_erase_size	棣栭€夋摝闄ゅぇ灏?	raw_rpmb_size_mult	RPMB 鍒嗗尯澶у皬
+	rel_sectors		鍙潬鍐欏叆鎵囧尯璁℃暟
+	ocr 			Operation Conditions Register锛堝伐浣滄潯浠跺瘎瀛樺櫒锛?	dsr			Driver Stage Register锛堥┍鍔ㄧ骇瀵勫瓨鍣級
+	cmdq_en			鍛戒护闃熷垪宸插惎鐢細
 
-					1 => 已启用，0 => 未启用
-	======================	===============================================
+					1 => 宸插惎鐢紝0 => 鏈惎鐢?	======================	===============================================
 
-关于 Erase Size 与 Preferred Erase Size 的说明：
+鍏充簬 Erase Size 涓?Preferred Erase Size 鐨勮鏄庯細
 
-	“erase_size” 是擦除操作的最小字节数。对于 MMC，“erase_size” 是
-	卡报告的擦除组大小。注意 “erase_size” 不适用于 trim 或安全 trim
-	操作，后者的最小大小始终为一个 512 字节扇区。对于 SD，若卡为块寻址，
-	“erase_size” 为 512，否则为 0。
+	鈥渆rase_size鈥?鏄摝闄ゆ搷浣滅殑鏈€灏忓瓧鑺傛暟銆傚浜?MMC锛屸€渆rase_size鈥?鏄?	鍗℃姤鍛婄殑鎿﹂櫎缁勫ぇ灏忋€傛敞鎰?鈥渆rase_size鈥?涓嶉€傜敤浜?trim 鎴栧畨鍏?trim
+	鎿嶄綔锛屽悗鑰呯殑鏈€灏忓ぇ灏忓缁堜负涓€涓?512 瀛楄妭鎵囧尯銆傚浜?SD锛岃嫢鍗′负鍧楀鍧€锛?	鈥渆rase_size鈥?涓?512锛屽惁鍒欎负 0銆?
+	SD/MMC 鍗″彲浠ユ摝闄や换鎰忓ぇ鐨勫尯鍩燂紝鐩磋嚦骞跺寘鎷暣寮犲崱銆傛摝闄ゅぇ鍖哄煙鏃讹紝鍑轰簬
+	浠ヤ笅涓変釜鍘熷洜锛屽彲鑳藉笇鏈涘皢鍏跺垎鎴愭洿灏忕殑鍧楄繘琛岋細
 
-	SD/MMC 卡可以擦除任意大的区域，直至并包括整张卡。擦除大区域时，出于
-	以下三个原因，可能希望将其分成更小的块进行：
+      1. 鍗曟潯鎿﹂櫎鍛戒护浼氫娇鍗′笂鐨勬墍鏈夊叾浠?I/O 绛夊緟銆傝嫢鎿﹂櫎鏁村紶鍗¤繖涓嶆垚闂锛?		浣嗘摝闄や竴涓垎鍖轰細浣垮悓涓€鍗′笂鍙︿竴涓垎鍖虹殑 I/O 鍦ㄦ摝闄ゆ寔缁湡闂寸瓑寰呪€斺€?		杩欏彲鑳介暱杈炬暟鍒嗛挓銆?      2. 鑳藉鍚戠敤鎴锋姤鍛婃摝闄よ繘搴︺€?      3. 鎿﹂櫎瓒呮椂鏃堕棿鍙樺緱杩囧ぇ鑰屽け鍘诲疄鐢ㄤ环鍊笺€傚洜涓烘摝闄よ秴鏃跺寘鍚竴涓綑閲忥紝璇?		浣欓噺涔樹互鎿﹂櫎鍖哄煙鐨勫ぇ灏忥紝瀵逛簬澶у尯鍩熻鍊兼渶缁堝彲鑳借揪鍒版暟鍒嗛挓銆?
+	鈥渆rase_size鈥?骞堕潪鏈€鏈夋晥鐨勬摝闄ゅ崟浣嶏紙灏ゅ叾瀵逛簬 SD锛屽畠鍙槸涓€涓墖鍖猴級锛?	鍥犳 鈥減referred_erase_size鈥?涓烘摝闄ゅぇ鍖哄煙鎻愪緵浜嗕竴涓壇濂界殑鍧楀ぇ灏忋€?
+	瀵逛簬 MMC锛屸€減referred_erase_size鈥?鏄崱鎸囧畾鐨勯珮瀹归噺鎿﹂櫎澶у皬锛堣嫢鎸囧畾锛夛紝
+	鍚﹀垯鍩轰簬鍗＄殑瀹归噺銆?
+	瀵逛簬 SD锛屸€減referred_erase_size鈥?鏄崱鎸囧畾鐨勫垎閰嶅崟鍏冨ぇ灏忋€?
+	鈥減referred_erase_size鈥?浠ュ瓧鑺備负鍗曚綅銆?
+鍏充簬 raw_rpmb_size_mult 鐨勮鏄庯細
 
-      1. 单条擦除命令会使卡上的所有其他 I/O 等待。若擦除整张卡这不成问题，
-		但擦除一个分区会使同一卡上另一个分区的 I/O 在擦除持续期间等待——
-		这可能长达数分钟。
-      2. 能够向用户报告擦除进度。
-      3. 擦除超时时间变得过大而失去实用价值。因为擦除超时包含一个余量，该
-		余量乘以擦除区域的大小，对于大区域该值最终可能达到数分钟。
-
-	“erase_size” 并非最有效的擦除单位（尤其对于 SD，它只是一个扇区），
-	因此 “preferred_erase_size” 为擦除大区域提供了一个良好的块大小。
-
-	对于 MMC，“preferred_erase_size” 是卡指定的高容量擦除大小（若指定），
-	否则基于卡的容量。
-
-	对于 SD，“preferred_erase_size” 是卡指定的分配单元大小。
-
-	“preferred_erase_size” 以字节为单位。
-
-关于 raw_rpmb_size_mult 的说明：
-
-	“raw_rpmb_size_mult” 是 128kB 块的倍数。
-
-	RPMB 大小（字节）通过以下等式计算：
-
-		RPMB 分区大小 = 128kB x raw_rpmb_size_mult
+	鈥渞aw_rpmb_size_mult鈥?鏄?128kB 鍧楃殑鍊嶆暟銆?
+	RPMB 澶у皬锛堝瓧鑺傦級閫氳繃浠ヤ笅绛夊紡璁＄畻锛?
+		RPMB 鍒嗗尯澶у皬 = 128kB x raw_rpmb_size_mult

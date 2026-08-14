@@ -1,13 +1,13 @@
-
+﻿
 
 
 ######## V4L2_PIX_FMT_RAW_CRU10 ('CR10'), V4L2_PIX_FMT_RAW_CRU12 ('CR12'), V4L2_PIX_FMT_RAW_CRU14 ('CR14'), V4L2_PIX_FMT_RAW_CRU20 ('CR20')
 
-本文档描述 V4L2 中 Renesas RZ/V2H SoC 摄像头接收单元（CRU）的 RAW 像素格式（CR10/CR12/CR14/CR20）。这些格式将像素连续打包进 64 位单元并以高位作填充；文中给出其位级布局与字节序，供视频采集驱动开发与像素格式适配时参考。
+鏈枃妗ｆ弿杩?V4L2 涓?Renesas RZ/V2H SoC 鎽勫儚澶存帴鏀跺崟鍏冿紙CRU锛夌殑 RAW 鍍忕礌鏍煎紡锛圕R10/CR12/CR14/CR20锛夈€傝繖浜涙牸寮忓皢鍍忕礌杩炵画鎵撳寘杩?64 浣嶅崟鍏冨苟浠ラ珮浣嶄綔濉厖锛涙枃涓粰鍑哄叾浣嶇骇甯冨眬涓庡瓧鑺傚簭锛屼緵瑙嗛閲囬泦椹卞姩寮€鍙戜笌鍍忕礌鏍煎紡閫傞厤鏃跺弬鑰冦€?
 
 
 
-## Renesas RZ/V2H 摄像头接收单元 64 位打包像素格式
+## Renesas RZ/V2H 鎽勫儚澶存帴鏀跺崟鍏?64 浣嶆墦鍖呭儚绱犳牸寮?
 
 
 | V4L2_PIX_FMT_RAW_CRU10 (CR10)
@@ -15,12 +15,12 @@
 | V4L2_PIX_FMT_RAW_CRU14 (CR14)
 | V4L2_PIX_FMT_RAW_CRU20 (CR20)
 
-## 描述
+## 鎻忚堪
 
 
-这些像素格式是 Renesas RZ/V2H SoC 中 Camera Receiver Unit（摄像头接收单元）的部分 RAW 输出格式。它们是原始格式，将像素连续打包进 64 位单元，并以 4 或 8 个最高有效位作为填充。
+杩欎簺鍍忕礌鏍煎紡鏄?Renesas RZ/V2H SoC 涓?Camera Receiver Unit锛堟憚鍍忓ご鎺ユ敹鍗曞厓锛夌殑閮ㄥ垎 RAW 杈撳嚭鏍煎紡銆傚畠浠槸鍘熷鏍煎紡锛屽皢鍍忕礌杩炵画鎵撳寘杩?64 浣嶅崟鍏冿紝骞朵互 4 鎴?8 涓渶楂樻湁鏁堜綅浣滀负濉厖銆?
 
-**字节序**
+**瀛楄妭搴?*
 
     :header-rows:  2
     :stub-columns: 0

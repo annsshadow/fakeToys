@@ -1,87 +1,87 @@
-
-## Open Firmware Devicetree 单元测试
-
-
-作者：Gaurav Minocha <gaurav.minocha.os@gmail.com>
-
-## 1. 引言
+﻿
+## Open Firmware Devicetree 鍗曞厓娴嬭瘯
 
 
-本文档说明执行 OF 单元测试所需的测试数据
-如何动态地附加到活动树（live tree）上，而与机器的
-体系结构无关。
+浣滆€咃細Gaurav Minocha <gaurav.minocha.os@gmail.com>
 
-建议在继续之前阅读以下文档。
+## 1. 寮曡█
+
+
+鏈枃妗ｈ鏄庢墽琛?OF 鍗曞厓娴嬭瘯鎵€闇€鐨勬祴璇曟暟鎹?
+濡備綍鍔ㄦ€佸湴闄勫姞鍒版椿鍔ㄦ爲锛坙ive tree锛変笂锛岃€屼笌鏈哄櫒鐨?
+浣撶郴缁撴瀯鏃犲叧銆?
+
+寤鸿鍦ㄧ户缁箣鍓嶉槄璇讳互涓嬫枃妗ｃ€?
 
 (1) Documentation/devicetree/usage-model.rst
 (2) http://www.devicetree.org/Device_Tree_Usage
 
-OF Selftest 旨在测试提供给设备驱动开发者的接口（include/linux/of.h），
-以从中获取设备信息等。
-该接口从展开（unflattened）的设备树数据结构中获取信息，被
-大多数设备驱动在各种用例中使用。
+OF Selftest 鏃ㄥ湪娴嬭瘯鎻愪緵缁欒澶囬┍鍔ㄥ紑鍙戣€呯殑鎺ュ彛锛坕nclude/linux/of.h锛夛紝
+浠ヤ粠涓幏鍙栬澶囦俊鎭瓑銆?
+璇ユ帴鍙ｄ粠灞曞紑锛坲nflattened锛夌殑璁惧鏍戞暟鎹粨鏋勪腑鑾峰彇淇℃伅锛岃
+澶у鏁拌澶囬┍鍔ㄥ湪鍚勭鐢ㄤ緥涓娇鐢ㄣ€?
 
 
-## 2. 详细输出（EXPECT）
+## 2. 璇︾粏杈撳嚭锛圗XPECT锛?
 
 
-如果 unittest 检测到问题，它会向控制台打印警告或错误消息。
-Unittest 还会故意使用错误的测试数据来触发来自其他
-内核代码的警告和错误消息。这导致了
-混淆：被触发的消息究竟是测试的
-预期结果，还是存在与 unittest 无关的真正问题。
+濡傛灉 unittest 妫€娴嬪埌闂锛屽畠浼氬悜鎺у埗鍙版墦鍗拌鍛婃垨閿欒娑堟伅銆?
+Unittest 杩樹細鏁呮剰浣跨敤閿欒鐨勬祴璇曟暟鎹潵瑙﹀彂鏉ヨ嚜鍏朵粬
+鍐呮牳浠ｇ爜鐨勮鍛婂拰閿欒娑堟伅銆傝繖瀵艰嚧浜?
+娣锋穯锛氳瑙﹀彂鐨勬秷鎭┒绔熸槸娴嬭瘯鐨?
+棰勬湡缁撴灉锛岃繕鏄瓨鍦ㄤ笌 unittest 鏃犲叧鐨勭湡姝ｉ棶棰樸€?
 
-已向 unittest 中添加 'EXPECT \ : text'（开始）和 'EXPECT / : text'（结束）消息，
-以报告某个警告或错误是预期之中的。其
-中开始消息在触发警告或错误之前打印，结束消息
-在触发之后打印。
+宸插悜 unittest 涓坊鍔?'EXPECT \ : text'锛堝紑濮嬶級鍜?'EXPECT / : text'锛堢粨鏉燂級娑堟伅锛?
+浠ユ姤鍛婃煇涓鍛婃垨閿欒鏄鏈熶箣涓殑銆傚叾
+涓紑濮嬫秷鎭湪瑙﹀彂璀﹀憡鎴栭敊璇箣鍓嶆墦鍗帮紝缁撴潫娑堟伅
+鍦ㄨЕ鍙戜箣鍚庢墦鍗般€?
 
-EXPECT 消息会导致控制台输出非常嘈杂、难以
-阅读。为此创建了脚本 scripts/dtc/of_unittest_expect 来过滤
-这些冗余信息，并高亮显示被触发的警告和错误
-与预期警告和错误之间的不匹配。更多信息可
-通过 'scripts/dtc/of_unittest_expect --help' 获取。
-
-
-## 3. 测试数据
+EXPECT 娑堟伅浼氬鑷存帶鍒跺彴杈撳嚭闈炲父鍢堟潅銆侀毦浠?
+闃呰銆備负姝ゅ垱寤轰簡鑴氭湰 scripts/dtc/of_unittest_expect 鏉ヨ繃婊?
+杩欎簺鍐椾綑淇℃伅锛屽苟楂樹寒鏄剧ず琚Е鍙戠殑璀﹀憡鍜岄敊璇?
+涓庨鏈熻鍛婂拰閿欒涔嬮棿鐨勪笉鍖归厤銆傛洿澶氫俊鎭彲
+閫氳繃 'scripts/dtc/of_unittest_expect --help' 鑾峰彇銆?
 
 
-设备树源文件（drivers/of/unittest-data/testcases.dtso）包含
-执行自动化单元测试所需的
+## 3. 娴嬭瘯鏁版嵁
+
+
+璁惧鏍戞簮鏂囦欢锛坉rivers/of/unittest-data/testcases.dtso锛夊寘鍚?
+鎵ц鑷姩鍖栧崟鍏冩祴璇曟墍闇€鐨?
 ```
 
     drivers/of/unittest-data/tests-*.dtsi
 
 ```
-针对 testcases.dtso 中所包含的 Device Tree Source Include 文件（.dtsi）的
+閽堝 testcases.dtso 涓墍鍖呭惈鐨?Device Tree Source Include 鏂囦欢锛?dtsi锛夌殑
 
-当内核在启用 CONFIG_OF_UNITTEST 的情况下构建时，会使用以下 make
+褰撳唴鏍稿湪鍚敤 CONFIG_OF_UNITTEST 鐨勬儏鍐典笅鏋勫缓鏃讹紝浼氫娇鐢ㄤ互涓?make
 ```
 
     $(obj)/%.dtbo: $(src)/%.dtso $(DTC) FORCE
 	    $(call if_changed_dep,dtc)
 
 ```
-将 DT 源文件（testcases.dtso）编译为二进制 blob
-（testcases.dtbo），也称为扁平化 DT（flattened DT）。
+灏?DT 婧愭枃浠讹紙testcases.dtso锛夌紪璇戜负浜岃繘鍒?blob
+锛坱estcases.dtbo锛夛紝涔熺О涓烘墎骞冲寲 DT锛坒lattened DT锛夈€?
 
-之后，使用以下规则将上述二进制 blob 包装为
+涔嬪悗锛屼娇鐢ㄤ互涓嬭鍒欏皢涓婅堪浜岃繘鍒?blob 鍖呰涓?
 ```
 
     $(obj)/%.dtbo.S: $(obj)/%.dtbo FORCE
 	    $(call if_changed,wrap_S_dtb)
 
 ```
-该汇编文件被编译为目标文件（testcases.dtbo.o），并
-链接进内核镜像。
+璇ユ眹缂栨枃浠惰缂栬瘧涓虹洰鏍囨枃浠讹紙testcases.dtbo.o锛夛紝骞?
+閾炬帴杩涘唴鏍搁暅鍍忋€?
 
 
-### 3.1 添加测试数据
+### 3.1 娣诲姞娴嬭瘯鏁版嵁
 
 
-展开的设备树结构：
+灞曞紑鐨勮澶囨爲缁撴瀯锛?
 
-展开的设备树由以树形连接的 device_node 组成，
+灞曞紑鐨勮澶囨爲鐢变互鏍戝舰杩炴帴鐨?device_node 缁勬垚锛?
 ```
 
     // following struct members are used to construct the tree
@@ -94,11 +94,11 @@ EXPECT 消息会导致控制台输出非常嘈杂、难以
     };
 
 ```
-图 1 描述了机器展开设备树的通用结构，
-仅考虑子节点与兄弟节点指针。还存在另一个指针
-`*parent`，用于反向遍历树。因此，在
-特定层级上，子节点与所有兄弟节点都会有一个指向
-公共节点的父指针（例如 child1、sibling2、sibling3、sibling4 的
+鍥?1 鎻忚堪浜嗘満鍣ㄥ睍寮€璁惧鏍戠殑閫氱敤缁撴瀯锛?
+浠呰€冭檻瀛愯妭鐐逛笌鍏勫紵鑺傜偣鎸囬拡銆傝繕瀛樺湪鍙︿竴涓寚閽?
+`*parent`锛岀敤浜庡弽鍚戦亶鍘嗘爲銆傚洜姝わ紝鍦?
+鐗瑰畾灞傜骇涓婏紝瀛愯妭鐐逛笌鎵€鏈夊厔寮熻妭鐐归兘浼氭湁涓€涓寚鍚?
+鍏叡鑺傜偣鐨勭埗鎸囬拡锛堜緥濡?child1銆乻ibling2銆乻ibling3銆乻ibling4 鐨?
 ```
 
     root ('/')
@@ -124,25 +124,25 @@ EXPECT 消息会导致控制台输出非常嘈杂、难以
 			    null
 
 ```
-图 1：展开设备树的通用结构
+鍥?1锛氬睍寮€璁惧鏍戠殑閫氱敤缁撴瀯
 
 
-在执行 OF unittest 之前，需要将测试数据附加到
-机器的设备树（如果存在）。因此，当调用 selftest_data_add() 时，
-它首先读取链接进内核镜像的展开设备树数据，
+鍦ㄦ墽琛?OF unittest 涔嬪墠锛岄渶瑕佸皢娴嬭瘯鏁版嵁闄勫姞鍒?
+鏈哄櫒鐨勮澶囨爲锛堝鏋滃瓨鍦級銆傚洜姝わ紝褰撹皟鐢?selftest_data_add() 鏃讹紝
+瀹冮鍏堣鍙栭摼鎺ヨ繘鍐呮牳闀滃儚鐨勫睍寮€璁惧鏍戞暟鎹紝
 ```
 
     __dtb_testcases_begin - address marking the start of test data blob
     __dtb_testcases_end   - address marking the end of test data blob
 
 ```
-其次，它调用 of_fdt_unflatten_tree() 来展开（unflatten）
-blob。最后，如果机器的设备树（即 live tree）存在，
-则它将展开后的测试数据树附加到 live tree；否则
-它将自身作为 live 设备树附加。
+鍏舵锛屽畠璋冪敤 of_fdt_unflatten_tree() 鏉ュ睍寮€锛坲nflatten锛?
+blob銆傛渶鍚庯紝濡傛灉鏈哄櫒鐨勮澶囨爲锛堝嵆 live tree锛夊瓨鍦紝
+鍒欏畠灏嗗睍寮€鍚庣殑娴嬭瘯鏁版嵁鏍戦檮鍔犲埌 live tree锛涘惁鍒?
+瀹冨皢鑷韩浣滀负 live 璁惧鏍戦檮鍔犮€?
 
-attach_node_and_children() 使用 of_attach_node() 将节点附加到
-live tree，如下所述。为说明这一点，下面描述的测试数据树
+attach_node_and_children() 浣跨敤 of_attach_node() 灏嗚妭鐐归檮鍔犲埌
+live tree锛屽涓嬫墍杩般€備负璇存槑杩欎竴鐐癸紝涓嬮潰鎻忚堪鐨勬祴璇曟暟鎹爲
 ```
 
     root ('/')
@@ -155,16 +155,16 @@ live tree，如下所述。为说明这一点，下面描述的测试数据树
 
 
 ```
-图 2：要附加到 live tree 的示例测试数据树。
+鍥?2锛氳闄勫姞鍒?live tree 鐨勭ず渚嬫祴璇曟暟鎹爲銆?
 
-根据上述场景，live tree 已经存在，因此无需
-附加根（'/'）节点。所有其他节点通过调用
-每个节点上的 of_attach_node() 来附加。
+鏍规嵁涓婅堪鍦烘櫙锛宭ive tree 宸茬粡瀛樺湪锛屽洜姝ゆ棤闇€
+闄勫姞鏍癸紙'/'锛夎妭鐐广€傛墍鏈夊叾浠栬妭鐐归€氳繃璋冪敤
+姣忎釜鑺傜偣涓婄殑 of_attach_node() 鏉ラ檮鍔犮€?
 
-在 of_attach_node() 函数中，新节点作为给定父节点
-的子节点附加到 live tree。但是，如果父节点已有子节点，则新节点
-会替换当前子节点，并将其变为自己的兄弟节点。因此，当将上述
-测试数据节点附加到上面的 live tree（图 1）时，最终结构为
+鍦?of_attach_node() 鍑芥暟涓紝鏂拌妭鐐逛綔涓虹粰瀹氱埗鑺傜偣
+鐨勫瓙鑺傜偣闄勫姞鍒?live tree銆備絾鏄紝濡傛灉鐖惰妭鐐瑰凡鏈夊瓙鑺傜偣锛屽垯鏂拌妭鐐?
+浼氭浛鎹㈠綋鍓嶅瓙鑺傜偣锛屽苟灏嗗叾鍙樹负鑷繁鐨勫厔寮熻妭鐐广€傚洜姝わ紝褰撳皢涓婅堪
+娴嬭瘯鏁版嵁鑺傜偣闄勫姞鍒颁笂闈㈢殑 live tree锛堝浘 1锛夋椂锛屾渶缁堢粨鏋勪负
 ```
 
     root ('/')
@@ -201,31 +201,31 @@ live tree，如下所述。为说明这一点，下面描述的测试数据树
 
 
 ```
-图 3：附加测试数据后的 live 设备树结构。
+鍥?3锛氶檮鍔犳祴璇曟暟鎹悗鐨?live 璁惧鏍戠粨鏋勩€?
 
 
-细心的读者会注意到，test-child0 节点变成了
-与先前结构（图 2）相比的最后一个兄弟节点。在附加第一个
-test-child0 之后，附加 test-sibling1 会将子节点
-（即 test-child0）推为兄弟节点，并使自身成为子节点，
-如上所述。
+缁嗗績鐨勮鑰呬細娉ㄦ剰鍒帮紝test-child0 鑺傜偣鍙樻垚浜?
+涓庡厛鍓嶇粨鏋勶紙鍥?2锛夌浉姣旂殑鏈€鍚庝竴涓厔寮熻妭鐐广€傚湪闄勫姞绗竴涓?
+test-child0 涔嬪悗锛岄檮鍔?test-sibling1 浼氬皢瀛愯妭鐐?
+锛堝嵆 test-child0锛夋帹涓哄厔寮熻妭鐐癸紝骞朵娇鑷韩鎴愪负瀛愯妭鐐癸紝
+濡備笂鎵€杩般€?
 
-如果发现重复节点（即存在具有相同 full_name 属性的节点
-已经存在于 live tree 中），则该节点不会被附加，而是将其
-属性通过调用函数
-update_node_properties() 更新到 live tree 的节点上。
-
-
-### 3.2 移除测试数据
+濡傛灉鍙戠幇閲嶅鑺傜偣锛堝嵆瀛樺湪鍏锋湁鐩稿悓 full_name 灞炴€х殑鑺傜偣
+宸茬粡瀛樺湪浜?live tree 涓級锛屽垯璇ヨ妭鐐逛笉浼氳闄勫姞锛岃€屾槸灏嗗叾
+灞炴€ч€氳繃璋冪敤鍑芥暟
+update_node_properties() 鏇存柊鍒?live tree 鐨勮妭鐐逛笂銆?
 
 
-一旦测试用例执行完成，就会调用 selftest_data_remove
-以移除最初附加的设备节点（首先分离叶节点，
-然后向上移除父节点，最终移除
-整棵树）。selftest_data_remove() 调用 detach_node_and_children()，后者使用
-of_detach_node() 将节点从 live 设备树中分离。
+### 3.2 绉婚櫎娴嬭瘯鏁版嵁
 
-要分离一个节点，of_detach_node() 要么更新给定节点父节点的子指针
-为其兄弟节点，要么将前一个兄弟节点附加到给定节点的
-兄弟节点上，视情况而定。就是这样 :)
+
+涓€鏃︽祴璇曠敤渚嬫墽琛屽畬鎴愶紝灏变細璋冪敤 selftest_data_remove
+浠ョЩ闄ゆ渶鍒濋檮鍔犵殑璁惧鑺傜偣锛堥鍏堝垎绂诲彾鑺傜偣锛?
+鐒跺悗鍚戜笂绉婚櫎鐖惰妭鐐癸紝鏈€缁堢Щ闄?
+鏁存５鏍戯級銆俿elftest_data_remove() 璋冪敤 detach_node_and_children()锛屽悗鑰呬娇鐢?
+of_detach_node() 灏嗚妭鐐逛粠 live 璁惧鏍戜腑鍒嗙銆?
+
+瑕佸垎绂讳竴涓妭鐐癸紝of_detach_node() 瑕佷箞鏇存柊缁欏畾鑺傜偣鐖惰妭鐐圭殑瀛愭寚閽?
+涓哄叾鍏勫紵鑺傜偣锛岃涔堝皢鍓嶄竴涓厔寮熻妭鐐归檮鍔犲埌缁欏畾鑺傜偣鐨?
+鍏勫紵鑺傜偣涓婏紝瑙嗘儏鍐佃€屽畾銆傚氨鏄繖鏍?:)
 

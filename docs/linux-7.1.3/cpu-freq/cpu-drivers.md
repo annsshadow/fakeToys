@@ -1,6 +1,5 @@
-
-## 如何实现一个新的 CPUFreq 处理器驱动
-
+﻿
+## 濡備綍瀹炵幇涓€涓柊鐨?CPUFreq 澶勭悊鍣ㄩ┍鍔?
 
 Authors:
 
@@ -9,237 +8,157 @@ Authors:
  - Viresh Kumar <viresh.kumar@linaro.org>
 
 
-   1. 该做什么？
-   1.1  初始化
-   1.2  每 CPU 初始化
-   1.3  verify
-   1.4  target/target_index 还是 setpolicy？
-   1.5  target/target_index
+   1. 璇ュ仛浠€涔堬紵
+   1.1  鍒濆鍖?   1.2  姣?CPU 鍒濆鍖?   1.3  verify
+   1.4  target/target_index 杩樻槸 setpolicy锛?   1.5  target/target_index
    1.6  setpolicy
-   1.7  get_intermediate 与 target_intermediate
-   2. 频率表辅助工具
+   1.7  get_intermediate 涓?target_intermediate
+   2. 棰戠巼琛ㄨ緟鍔╁伐鍏?
 
 
-
-## 1. 该做什么？
-
-
-那么，你刚拿到一块全新的 CPU / 芯片组以及它的数据手册，并想为这颗 CPU /
-芯片组添加 cpufreq 支持？太好了。下面是一些关于必要工作的提示：
+## 1. 璇ュ仛浠€涔堬紵
 
 
-### 1.1 初始化
+閭ｄ箞锛屼綘鍒氭嬁鍒颁竴鍧楀叏鏂扮殑 CPU / 鑺墖缁勪互鍙婂畠鐨勬暟鎹墜鍐岋紝骞舵兂涓鸿繖棰?CPU /
+鑺墖缁勬坊鍔?cpufreq 鏀寔锛熷お濂戒簡銆備笅闈㈡槸涓€浜涘叧浜庡繀瑕佸伐浣滅殑鎻愮ず锛?
 
+### 1.1 鍒濆鍖?
 
-首先，在一个 __initcall 第 7 级（module_init()）或更晚的函数中，检查当前
-内核是否运行在正确的 CPU 和正确的芯片组上。如果是，则使用
-cpufreq_register_driver() 向 CPUfreq 核心注册一个 struct cpufreq_driver。
+棣栧厛锛屽湪涓€涓?__initcall 绗?7 绾э紙module_init()锛夋垨鏇存櫄鐨勫嚱鏁颁腑锛屾鏌ュ綋鍓?鍐呮牳鏄惁杩愯鍦ㄦ纭殑 CPU 鍜屾纭殑鑺墖缁勪笂銆傚鏋滄槸锛屽垯浣跨敤
+cpufreq_register_driver() 鍚?CPUfreq 鏍稿績娉ㄥ唽涓€涓?struct cpufreq_driver銆?
+杩欎釜 struct cpufreq_driver 搴斿綋鍖呭惈浠€涔堬紵
 
-这个 struct cpufreq_driver 应当包含什么？
+ .name - 璇ラ┍鍔ㄧ殑鍚嶇О銆?
+ .init - 鎸囧悜姣忕瓥鐣ワ紙per-policy锛夊垵濮嬪寲鍑芥暟鐨勬寚閽堛€?
+ .verify - 鎸囧悜涓€涓€滈獙璇佲€濆嚱鏁扮殑鎸囬拡銆?
+ .setpolicy _鎴朹 .fast_switch _鎴朹 .target _鎴朹 .target_index - 鍏充簬宸紓
+ 瑙佷笅鏂囥€?
+浠ュ強鍙€夌殑
 
- .name - 该驱动的名称。
+ .flags - 鎻愪緵缁?cpufreq 鏍稿績鐨勬彁绀恒€?
+ .driver_data - cpufreq 椹卞姩鐗规湁鐨勬暟鎹€?
+ .get_intermediate 鍜?target_intermediate - 鐢ㄤ簬鍦ㄦ敼鍙?CPU 棰戠巼鏃跺垏鎹㈠埌
+ 绋冲畾棰戠巼銆?
+ .get - 杩斿洖 CPU 鐨勫綋鍓嶉鐜囥€?
+ .bios_limit - 杩斿洖 CPU 鐨勭‖浠?BIOS 鏈€澶ч鐜囬檺鍒躲€?
+ .exit - 鎸囧悜涓€涓瘡绛栫暐娓呯悊鍑芥暟鐨勬寚閽堬紝鍦?CPU 鐑彃鎷旇繃绋嬬殑 CPU_POST_DEAD
+ 闃舵琚皟鐢ㄣ€?
+ .suspend - 鎸囧悜涓€涓瘡绛栫暐鎸傝捣鍑芥暟鐨勬寚閽堬紝鍦ㄥ叧闂腑鏂€佷笖璋冭妭鍣紙governor锛? 涓鸿绛栫暐鍋滄_涔嬪悗_琚皟鐢ㄣ€?
+ .resume - 鎸囧悜涓€涓瘡绛栫暐鎭㈠鍑芥暟鐨勬寚閽堬紝鍦ㄥ叧闂腑鏂€佷笖璋冭妭鍣ㄤ负璇ョ瓥鐣? 閲嶆柊鍚姩_涔嬪墠_琚皟鐢ㄣ€?
+ .ready - 鎸囧悜涓€涓瘡绛栫暐灏辩华鍑芥暟鐨勬寚閽堬紝鍦ㄧ瓥鐣ュ畬鍏ㄥ垵濮嬪寲涔嬪悗琚皟鐢ㄣ€?
+ .attr - 鎸囧悜涓€涓?NULL 缁撳熬鐨?"struct freq_attr" 鍒楄〃鐨勬寚閽堬紝鐢ㄤ簬灏嗗€? 瀵煎嚭鍒?sysfs銆?
+ .boost_enabled - 鑻ョ疆浣嶏紝鍒欏惎鐢?boost 棰戠巼銆?
+ .set_boost - 鎸囧悜涓€涓瘡绛栫暐鍑芥暟鐨勬寚閽堬紝鐢ㄤ簬鍚敤/绂佺敤 boost 棰戠巼銆?
 
- .init - 指向每策略（per-policy）初始化函数的指针。
+### 1.2 姣?CPU 鍒濆鍖?
 
- .verify - 指向一个“验证”函数的指针。
+姣忓綋涓€涓柊鐨?CPU 琚敞鍐屽埌璁惧妯″瀷锛屾垨鑰呭湪 cpufreq 椹卞姩娉ㄥ唽鑷韩涔嬪悗锛屽鏋?璇?CPU 杩樹笉瀛樺湪 cpufreq 绛栫暐锛屽氨浼氳皟鐢ㄦ瘡绛栫暐鍒濆鍖栧嚱鏁?cpufreq_driver.init銆?娉ㄦ剰锛?init() 鍜?.exit() 渚嬬▼鍙拡瀵圭瓥鐣ヨ璋冪敤涓€娆★紝鑰屼笉鏄拡瀵硅绛栫暐绠＄悊鐨?姣忎釜 CPU 璋冪敤銆傚畠鎺ュ彈涓€涓?``struct cpufreq_policy *policy`` 浣滀负鍙傛暟銆傜幇鍦ㄨ
+鍋氫粈涔堬紵
 
- .setpolicy _或_ .fast_switch _或_ .target _或_ .target_index - 关于差异
- 见下文。
-
-以及可选的
-
- .flags - 提供给 cpufreq 核心的提示。
-
- .driver_data - cpufreq 驱动特有的数据。
-
- .get_intermediate 和 target_intermediate - 用于在改变 CPU 频率时切换到
- 稳定频率。
-
- .get - 返回 CPU 的当前频率。
-
- .bios_limit - 返回 CPU 的硬件/BIOS 最大频率限制。
-
- .exit - 指向一个每策略清理函数的指针，在 CPU 热插拔过程的 CPU_POST_DEAD
- 阶段被调用。
-
- .suspend - 指向一个每策略挂起函数的指针，在关闭中断、且调节器（governor）
- 为该策略停止_之后_被调用。
-
- .resume - 指向一个每策略恢复函数的指针，在关闭中断、且调节器为该策略
- 重新启动_之前_被调用。
-
- .ready - 指向一个每策略就绪函数的指针，在策略完全初始化之后被调用。
-
- .attr - 指向一个 NULL 结尾的 "struct freq_attr" 列表的指针，用于将值
- 导出到 sysfs。
-
- .boost_enabled - 若置位，则启用 boost 频率。
-
- .set_boost - 指向一个每策略函数的指针，用于启用/禁用 boost 频率。
-
-
-### 1.2 每 CPU 初始化
-
-
-每当一个新的 CPU 被注册到设备模型，或者在 cpufreq 驱动注册自身之后，如果
-该 CPU 还不存在 cpufreq 策略，就会调用每策略初始化函数 cpufreq_driver.init。
-注意，.init() 和 .exit() 例程只针对策略被调用一次，而不是针对该策略管理的
-每个 CPU 调用。它接受一个 ``struct cpufreq_policy *policy`` 作为参数。现在该
-做什么？
-
-如果有必要，在你的 CPU 上激活 CPUfreq 支持。
-
-接着，驱动必须填入以下值：
+濡傛灉鏈夊繀瑕侊紝鍦ㄤ綘鐨?CPU 涓婃縺娲?CPUfreq 鏀寔銆?
+鎺ョ潃锛岄┍鍔ㄥ繀椤诲～鍏ヤ互涓嬪€硷細
 
 +-----------------------------------+--------------------------------------+
-|policy->cpuinfo.min_freq _以及_    |					   |
-|policy->cpuinfo.max_freq	    | 该 CPU 支持的最小和最大频率	   |
-|				    | （单位 kHz）			   |
+|policy->cpuinfo.min_freq _浠ュ強_    |					   |
+|policy->cpuinfo.max_freq	    | 璇?CPU 鏀寔鐨勬渶灏忓拰鏈€澶ч鐜?   |
+|				    | 锛堝崟浣?kHz锛?		   |
 +-----------------------------------+--------------------------------------+
-|policy->cpuinfo.transition_latency | 该 CPU 在两种频率之间切换所需的	   |
-|				    | 时间，单位纳秒			   |
+|policy->cpuinfo.transition_latency | 璇?CPU 鍦ㄤ袱绉嶉鐜囦箣闂村垏鎹㈡墍闇€鐨?   |
+|				    | 鏃堕棿锛屽崟浣嶇撼绉?		   |
 +-----------------------------------+--------------------------------------+
-|policy->cur			    | 该 CPU 的当前运行频率		   |
-|				    | （如适用）			   |
+|policy->cur			    | 璇?CPU 鐨勫綋鍓嶈繍琛岄鐜?	   |
+|				    | 锛堝閫傜敤锛?		   |
 +-----------------------------------+--------------------------------------+
 |policy->min,			    |					   |
 |policy->max,			    |					   |
-|policy->policy 以及必要时	    |					   |
-|policy->governor		    | 必须包含该 CPU 的“默认策略”。稍后   |
-|				    | cpufreq_driver.verify 以及二者之一  |
-|				    | cpufreq_driver.setpolicy 或	   |
+|policy->policy 浠ュ強蹇呰鏃?    |					   |
+|policy->governor		    | 蹇呴』鍖呭惈璇?CPU 鐨勨€滈粯璁ょ瓥鐣モ€濄€傜◢鍚?  |
+|				    | cpufreq_driver.verify 浠ュ強浜岃€呬箣涓€  |
+|				    | cpufreq_driver.setpolicy 鎴?   |
 |				    | cpufreq_driver.target/target_index  |
-|				    | 会以这些值被调用。		   |
+|				    | 浼氫互杩欎簺鍊艰璋冪敤銆?	   |
 +-----------------------------------+--------------------------------------+
-|policy->cpus			    | 用（在线 + 离线）CPU 的掩码更新它，|
-|				    | 这些 CPU 与该 CPU 一起进行 DVFS	   |
-|				    | （即与它在同一时钟/电压轨上）。	   |
+|policy->cpus			    | 鐢紙鍦ㄧ嚎 + 绂荤嚎锛塁PU 鐨勬帺鐮佹洿鏂板畠锛寍
+|				    | 杩欎簺 CPU 涓庤 CPU 涓€璧疯繘琛?DVFS	   |
+|				    | 锛堝嵆涓庡畠鍦ㄥ悓涓€鏃堕挓/鐢靛帇杞ㄤ笂锛夈€?   |
 +-----------------------------------+--------------------------------------+
 
-对于设置其中某些值（cpuinfo.min[max]_freq、policy->min[max]），频率表辅助工具
-可能会有帮助。关于它们的更多信息，请参阅第 2 节。
-
+瀵逛簬璁剧疆鍏朵腑鏌愪簺鍊硷紙cpuinfo.min[max]_freq銆乸olicy->min[max]锛夛紝棰戠巼琛ㄨ緟鍔╁伐鍏?鍙兘浼氭湁甯姪銆傚叧浜庡畠浠殑鏇村淇℃伅锛岃鍙傞槄绗?2 鑺傘€?
 
 ### 1.3 verify
 
 
-当用户决定设置一个新的策略（由 "policy、governor、min、max" 组成）时，必须
-对这个策略进行校验，以便把不兼容的值纠正过来。用于校验这些值，函数
+褰撶敤鎴峰喅瀹氳缃竴涓柊鐨勭瓥鐣ワ紙鐢?"policy銆乬overnor銆乵in銆乵ax" 缁勬垚锛夋椂锛屽繀椤?瀵硅繖涓瓥鐣ヨ繘琛屾牎楠岋紝浠ヤ究鎶婁笉鍏煎鐨勫€肩籂姝ｈ繃鏉ャ€傜敤浜庢牎楠岃繖浜涘€硷紝鍑芥暟
 cpufreq_verify_within_limits(`struct cpufreq_policy *policy`,
-`unsigned int min_freq`, `unsigned int max_freq`) 可能会有帮助。关于频率表
-辅助工具的细节，请参阅第 2 节。
+`unsigned int min_freq`, `unsigned int max_freq`) 鍙兘浼氭湁甯姪銆傚叧浜庨鐜囪〃
+杈呭姪宸ュ叿鐨勭粏鑺傦紝璇峰弬闃呯 2 鑺傘€?
+浣犻渶瑕佺‘淇濊嚦灏戞湁涓€涓湁鏁堢殑棰戠巼锛堟垨宸ヤ綔鑼冨洿锛夎惤鍦?policy->min 鍜?policy->max
+涔嬮棿銆傚鏈夊繀瑕侊紝鍏堝澶?policy->max锛屽彧鏈夊湪杩欎篃鏃犳硶瑙ｅ喅鏃讹紝鎵嶉檷浣?policy->min銆?
 
-你需要确保至少有一个有效的频率（或工作范围）落在 policy->min 和 policy->max
-之间。如有必要，先增大 policy->max，只有在这也无法解决时，才降低 policy->min。
+### 1.4 target 杩樻槸 target_index 杩樻槸 setpolicy 杩樻槸 fast_switch锛?
 
-
-### 1.4 target 还是 target_index 还是 setpolicy 还是 fast_switch？
-
-
-大多数 cpufreq 驱动，甚至大多数 CPU 频率调节算法，只允许将 CPU 频率设置为
-预定义的固定值。对于这些，你使用 ->target()、->target_index() 或
-->fast_switch() 回调。
-
-一些支持 cpufreq 的处理器会在某些限制之间自行切换频率。这些应当使用
-->setpolicy() 回调。
-
+澶у鏁?cpufreq 椹卞姩锛岀敋鑷冲ぇ澶氭暟 CPU 棰戠巼璋冭妭绠楁硶锛屽彧鍏佽灏?CPU 棰戠巼璁剧疆涓?棰勫畾涔夌殑鍥哄畾鍊笺€傚浜庤繖浜涳紝浣犱娇鐢?->target()銆?>target_index() 鎴?->fast_switch() 鍥炶皟銆?
+涓€浜涙敮鎸?cpufreq 鐨勫鐞嗗櫒浼氬湪鏌愪簺闄愬埗涔嬮棿鑷鍒囨崲棰戠巼銆傝繖浜涘簲褰撲娇鐢?->setpolicy() 鍥炶皟銆?
 
 ### 1.5. target/target_index
 
 
-target_index 调用有两个参数：`struct cpufreq_policy *policy` 和 `unsigned
-int` index（索引到所暴露的频率表中）。
+target_index 璋冪敤鏈変袱涓弬鏁帮細`struct cpufreq_policy *policy` 鍜?`unsigned
+int` index锛堢储寮曞埌鎵€鏆撮湶鐨勯鐜囪〃涓級銆?
+CPUfreq 椹卞姩蹇呴』鍦ㄨ繖閲岃璋冪敤鏃惰缃柊鐨勯鐜囥€傚疄闄呴鐜囧繀椤荤敱
+freq_table[index].frequency 纭畾銆?
+鍗充娇鍦ㄤ箣鍓嶅垏鎹㈠埌浜嗕腑闂撮鐜囷紝涔熷簲褰撳湪鍑洪敊鏃舵仮澶嶅埌鏇存棭鐨勯鐜囷紙鍗?policy->restore_freq锛夈€?
+### 宸插簾寮?
 
-CPUfreq 驱动必须在这里被调用时设置新的频率。实际频率必须由
-freq_table[index].frequency 确定。
+target 璋冪敤鏈変笁涓弬鏁帮細`struct cpufreq_policy *policy`銆乽nsigned int
+target_frequency銆乽nsigned int relation銆?
+CPUfreq 椹卞姩蹇呴』鍦ㄨ繖閲岃璋冪敤鏃惰缃柊鐨勯鐜囥€傚疄闄呴鐜囧繀椤讳緷鎹互涓嬭鍒欑‘瀹氾細
 
-即使在之前切换到了中间频率，也应当在出错时恢复到更早的频率（即
-policy->restore_freq）。
+- 灏介噺鎺ヨ繎 "target_freq"
+- policy->min <= new_freq <= policy->max锛堣繖蹇呴』鎴愮珛锛侊紒锛侊級
+- 鑻?relation==CPUFREQ_REL_L锛屽皾璇曢€夋嫨涓€涓ぇ浜庣瓑浜?target_freq 鐨?new_freq銆?  锛堚€淟 琛ㄧず lowest锛屼絾涓嶄綆浜庘€濓級
+- 鑻?relation==CPUFREQ_REL_H锛屽皾璇曢€夋嫨涓€涓皬浜庣瓑浜?target_freq 鐨?new_freq銆?  锛堚€淗 琛ㄧず highest锛屼絾涓嶉珮浜庘€濓級
 
-### 已废弃
-
-
-target 调用有三个参数：`struct cpufreq_policy *policy`、unsigned int
-target_frequency、unsigned int relation。
-
-CPUfreq 驱动必须在这里被调用时设置新的频率。实际频率必须依据以下规则确定：
-
-- 尽量接近 "target_freq"
-- policy->min <= new_freq <= policy->max（这必须成立！！！）
-- 若 relation==CPUFREQ_REL_L，尝试选择一个大于等于 target_freq 的 new_freq。
-  （“L 表示 lowest，但不低于”）
-- 若 relation==CPUFREQ_REL_H，尝试选择一个小于等于 target_freq 的 new_freq。
-  （“H 表示 highest，但不高于”）
-
-这里频率表辅助工具同样可以帮到你 —— 详情见第 2 节。
-
+杩欓噷棰戠巼琛ㄨ緟鍔╁伐鍏峰悓鏍峰彲浠ュ府鍒颁綘 鈥斺€?璇︽儏瑙佺 2 鑺傘€?
 
 ### 1.6. fast_switch
 
 
-这个函数用于从调度器上下文中进行频率切换。并非所有驱动都要求实现它，因为
-在这个回调内部不允许睡眠。这个回调必须被高度优化，以尽快完成切换。
-
-这个函数有两个参数：`struct cpufreq_policy *policy` 和 `unsigned int
-target_frequency`。
-
+杩欎釜鍑芥暟鐢ㄤ簬浠庤皟搴﹀櫒涓婁笅鏂囦腑杩涜棰戠巼鍒囨崲銆傚苟闈炴墍鏈夐┍鍔ㄩ兘瑕佹眰瀹炵幇瀹冿紝鍥犱负
+鍦ㄨ繖涓洖璋冨唴閮ㄤ笉鍏佽鐫＄湢銆傝繖涓洖璋冨繀椤昏楂樺害浼樺寲锛屼互灏藉揩瀹屾垚鍒囨崲銆?
+杩欎釜鍑芥暟鏈変袱涓弬鏁帮細`struct cpufreq_policy *policy` 鍜?`unsigned int
+target_frequency`銆?
 
 ### 1.7 setpolicy
 
 
-setpolicy 调用只接受一个 `struct cpufreq_policy *policy` 作为参数。你需要把
-处理器内或芯片组内动态频率切换的下限设为 policy->min，上限设为 policy->max，
-并且——如果支持的话——在 policy->policy 为 CPUFREQ_POLICY_PERFORMANCE 时选择
-面向性能的设置，在 CPUFREQ_POLICY_POWERSAVE 时选择面向节能的设置。同时请参考
-drivers/cpufreq/longrun.c 中的参考实现。
+setpolicy 璋冪敤鍙帴鍙椾竴涓?`struct cpufreq_policy *policy` 浣滀负鍙傛暟銆備綘闇€瑕佹妸
+澶勭悊鍣ㄥ唴鎴栬姱鐗囩粍鍐呭姩鎬侀鐜囧垏鎹㈢殑涓嬮檺璁句负 policy->min锛屼笂闄愯涓?policy->max锛?骞朵笖鈥斺€斿鏋滄敮鎸佺殑璇濃€斺€斿湪 policy->policy 涓?CPUFREQ_POLICY_PERFORMANCE 鏃堕€夋嫨
+闈㈠悜鎬ц兘鐨勮缃紝鍦?CPUFREQ_POLICY_POWERSAVE 鏃堕€夋嫨闈㈠悜鑺傝兘鐨勮缃€傚悓鏃惰鍙傝€?drivers/cpufreq/longrun.c 涓殑鍙傝€冨疄鐜般€?
+
+### 1.8 get_intermediate 涓?target_intermediate
 
 
-### 1.8 get_intermediate 与 target_intermediate
+浠呴€傜敤浜庢湭璁剧疆 target_index() 鍜?CPUFREQ_ASYNC_NOTIFICATION 鐨勯┍鍔ㄣ€?
+get_intermediate 搴斿綋杩斿洖涓€涓钩鍙版兂鍒囨崲鍒扮殑绋冲畾涓棿棰戠巼锛岃€?target_intermediate()
+搴斿綋鍦ㄨ烦杞埌涓?'index' 瀵瑰簲鐨勯鐜囦箣鍓嶏紝鎶?CPU 璁剧疆鍒伴偅涓鐜囥€傛牳蹇冧細璐熻矗鍙戦€?閫氱煡锛岄┍鍔ㄤ笉蹇呭湪 target_intermediate() 鎴?target_index() 涓鐞嗗畠浠€?
+濡傛灉椹卞姩涓嶅笇鏈涗负鏌愪釜鐩爣棰戠巼鍒囨崲鍒颁腑闂撮鐜囷紝鍙互浠?get_intermediate() 杩斿洖
+'0'銆傝繖绉嶆儏鍐典笅锛屾牳蹇冧細鐩存帴璋冪敤 ->target_index()銆?
+娉ㄦ剰锛?>target_index() 鍦ㄥけ璐ユ椂搴斿綋鎭㈠鍒?policy->restore_freq锛屽洜涓烘牳蹇冧細
+涓哄畠鍙戦€侀€氱煡銆?
 
+## 2. 棰戠巼琛ㄨ緟鍔╁伐鍏?
 
-仅适用于未设置 target_index() 和 CPUFREQ_ASYNC_NOTIFICATION 的驱动。
-
-get_intermediate 应当返回一个平台想切换到的稳定中间频率，而 target_intermediate()
-应当在跳转到与 'index' 对应的频率之前，把 CPU 设置到那个频率。核心会负责发送
-通知，驱动不必在 target_intermediate() 或 target_index() 中处理它们。
-
-如果驱动不希望为某个目标频率切换到中间频率，可以从 get_intermediate() 返回
-'0'。这种情况下，核心会直接调用 ->target_index()。
-
-注意：->target_index() 在失败时应当恢复到 policy->restore_freq，因为核心会
-为它发送通知。
-
-
-## 2. 频率表辅助工具
-
-
-由于大多数 cpufreq 处理器只允许被设置为少数几个特定频率，带有一些函数的
-“频率表”可以在处理器驱动的某些工作中提供帮助。这样一个“频率表”由一个
-struct cpufreq_frequency_table 条目数组组成，其中在 "driver_data" 中保存驱动
-特定的值，在 "frequency" 中保存对应的频率，并设置 flags。在表的末尾，你需要
-添加一个 frequency 设为 CPUFREQ_TABLE_END 的 cpufreq_frequency_table 条目。而
-如果你想跳过表中的某个条目，就把频率设为 CPUFREQ_ENTRY_INVALID。条目不需要按
-任何特定顺序排列，但如果排了序，cpufreq 核心对它们做 DVFS 会快一些，因为查找
-最佳匹配更快。
-
-如果策略在其 policy->freq_table 字段中包含有效指针，cpufreq 表会由核心自动
-校验。
-
-cpufreq_frequency_table_verify() 确保至少有一个有效频率落在 policy->min 和
-policy->max 之间，并且满足所有其他标准。这对 ->verify 调用很有帮助。
-
-cpufreq_frequency_table_target() 是对应于 ->target 阶段的频率表辅助工具。
-只需把值传递给这个函数，它就会返回包含 CPU 应被设置到的频率的频率表条目。
-
-以下宏可用作遍历 cpufreq_frequency_table 的迭代器：
-
-cpufreq_for_each_entry(pos, table) - 遍历频率表的所有条目。
-
-cpufreq_for_each_valid_entry(pos, table) - 遍历所有条目，但排除
-CPUFREQ_ENTRY_INVALID 频率。
-使用参数 "pos" —— 作为循环游标的 `cpufreq_frequency_table *`，以及 "table" ——
-你想要遍历的 `cpufreq_frequency_table *`。
-
+鐢变簬澶у鏁?cpufreq 澶勭悊鍣ㄥ彧鍏佽琚缃负灏戞暟鍑犱釜鐗瑰畾棰戠巼锛屽甫鏈変竴浜涘嚱鏁扮殑
+鈥滈鐜囪〃鈥濆彲浠ュ湪澶勭悊鍣ㄩ┍鍔ㄧ殑鏌愪簺宸ヤ綔涓彁渚涘府鍔┿€傝繖鏍蜂竴涓€滈鐜囪〃鈥濈敱涓€涓?struct cpufreq_frequency_table 鏉＄洰鏁扮粍缁勬垚锛屽叾涓湪 "driver_data" 涓繚瀛橀┍鍔?鐗瑰畾鐨勫€硷紝鍦?"frequency" 涓繚瀛樺搴旂殑棰戠巼锛屽苟璁剧疆 flags銆傚湪琛ㄧ殑鏈熬锛屼綘闇€瑕?娣诲姞涓€涓?frequency 璁句负 CPUFREQ_TABLE_END 鐨?cpufreq_frequency_table 鏉＄洰銆傝€?濡傛灉浣犳兂璺宠繃琛ㄤ腑鐨勬煇涓潯鐩紝灏辨妸棰戠巼璁句负 CPUFREQ_ENTRY_INVALID銆傛潯鐩笉闇€瑕佹寜
+浠讳綍鐗瑰畾椤哄簭鎺掑垪锛屼絾濡傛灉鎺掍簡搴忥紝cpufreq 鏍稿績瀵瑰畠浠仛 DVFS 浼氬揩涓€浜涳紝鍥犱负鏌ユ壘
+鏈€浣冲尮閰嶆洿蹇€?
+濡傛灉绛栫暐鍦ㄥ叾 policy->freq_table 瀛楁涓寘鍚湁鏁堟寚閽堬紝cpufreq 琛ㄤ細鐢辨牳蹇冭嚜鍔?鏍￠獙銆?
+cpufreq_frequency_table_verify() 纭繚鑷冲皯鏈変竴涓湁鏁堥鐜囪惤鍦?policy->min 鍜?policy->max 涔嬮棿锛屽苟涓旀弧瓒虫墍鏈夊叾浠栨爣鍑嗐€傝繖瀵?->verify 璋冪敤寰堟湁甯姪銆?
+cpufreq_frequency_table_target() 鏄搴斾簬 ->target 闃舵鐨勯鐜囪〃杈呭姪宸ュ叿銆?鍙渶鎶婂€间紶閫掔粰杩欎釜鍑芥暟锛屽畠灏变細杩斿洖鍖呭惈 CPU 搴旇璁剧疆鍒扮殑棰戠巼鐨勯鐜囪〃鏉＄洰銆?
+浠ヤ笅瀹忓彲鐢ㄤ綔閬嶅巻 cpufreq_frequency_table 鐨勮凯浠ｅ櫒锛?
+cpufreq_for_each_entry(pos, table) - 閬嶅巻棰戠巼琛ㄧ殑鎵€鏈夋潯鐩€?
+cpufreq_for_each_valid_entry(pos, table) - 閬嶅巻鎵€鏈夋潯鐩紝浣嗘帓闄?CPUFREQ_ENTRY_INVALID 棰戠巼銆?浣跨敤鍙傛暟 "pos" 鈥斺€?浣滀负寰幆娓告爣鐨?`cpufreq_frequency_table *`锛屼互鍙?"table" 鈥斺€?浣犳兂瑕侀亶鍘嗙殑 `cpufreq_frequency_table *`銆?
 ```
 	struct cpufreq_frequency_table *pos, *driver_freq_table;
 
@@ -248,6 +167,4 @@ CPUFREQ_ENTRY_INVALID 频率。
 		pos->frequency = ...
 	}
 ```
-如果你需要使用 pos 在 driver_freq_table 中的位置，不要对指针做相减，因为这
-相当耗费资源。相反，请使用宏 cpufreq_for_each_entry_idx() 和
-cpufreq_for_each_valid_entry_idx()。
+濡傛灉浣犻渶瑕佷娇鐢?pos 鍦?driver_freq_table 涓殑浣嶇疆锛屼笉瑕佸鎸囬拡鍋氱浉鍑忥紝鍥犱负杩?鐩稿綋鑰楄垂璧勬簮銆傜浉鍙嶏紝璇蜂娇鐢ㄥ畯 cpufreq_for_each_entry_idx() 鍜?cpufreq_for_each_valid_entry_idx()銆?

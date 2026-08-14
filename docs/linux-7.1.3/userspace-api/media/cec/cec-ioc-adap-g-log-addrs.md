@@ -1,15 +1,15 @@
+﻿
 
 
-
-######## ioctl CEC_ADAP_G_LOG_ADDRS 与 CEC_ADAP_S_LOG_ADDRS
-
-
-## 名称
+######## ioctl CEC_ADAP_G_LOG_ADDRS 涓?CEC_ADAP_S_LOG_ADDRS
 
 
-CEC_ADAP_G_LOG_ADDRS、CEC_ADAP_S_LOG_ADDRS - 获取或设置逻辑地址
+## 鍚嶇О
 
-## 概要
+
+CEC_ADAP_G_LOG_ADDRS銆丆EC_ADAP_S_LOG_ADDRS - 鑾峰彇鎴栬缃€昏緫鍦板潃
+
+## 姒傝
 
 
 `int ioctl(int fd, CEC_ADAP_G_LOG_ADDRS, struct cec_log_addrs *argp)`
@@ -17,34 +17,24 @@ CEC_ADAP_G_LOG_ADDRS、CEC_ADAP_S_LOG_ADDRS - 获取或设置逻辑地址
 
 `int ioctl(int fd, CEC_ADAP_S_LOG_ADDRS, struct cec_log_addrs *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    `open()` 返回的文件描述符。
-
+    `open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `argp`
-    指向 struct `cec_log_addrs` 的指针。
+    鎸囧悜 struct `cec_log_addrs` 鐨勬寚閽堛€?
+## 鎻忚堪
 
-## 描述
 
-
-要查询当前的 CEC 逻辑地址，应用程序以指向 struct `cec_log_addrs` 的指针调用
-ioctl CEC_ADAP_G_LOG_ADDRS <CEC_ADAP_G_LOG_ADDRS>，驱动在其中存储逻辑地址。
-
-要设置新的逻辑地址，应用程序填写 struct `cec_log_addrs` 并以指向此结构的指针调用 ioctl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS>。ioctl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS>
-仅在设置了 `CEC_CAP_LOG_ADDRS` 时可用（否则返回 `ENOTTY` 错误码）。ioctl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS>
-只能由处于发起者模式的文件描述符调用（见 CEC_S_MODE），否则将返回 `EBUSY` 错误码。
-
-要清除现有的逻辑地址，将 `num_log_addrs` 设为 0。此时所有其他字段都将被忽略。适配器将进入未配置状态，且
-`cec_version`、`vendor_id` 和 `osd_name` 字段都被重置为其默认值（CEC 版本 2.0、无厂商 ID 和空的 OSD 名称）。
-
-如果物理地址有效（见 ioctl CEC_ADAP_S_PHYS_ADDR <CEC_ADAP_S_PHYS_ADDR>），则此 ioctl 会阻塞，直到所有请求的逻辑地址都被认领。如果文件描述符处于非阻塞模式，则它不会等待逻辑地址被认领，而是直接返回 0。
-
-当逻辑地址被认领或清除时，会发送一个 CEC_EVENT_STATE_CHANGE <CEC-EVENT-STATE-CHANGE> 事件。
-
-在逻辑地址类型已定义的情况下尝试调用 ioctl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS> 将返回错误 `EBUSY`。
-
+瑕佹煡璇㈠綋鍓嶇殑 CEC 閫昏緫鍦板潃锛屽簲鐢ㄧ▼搴忎互鎸囧悜 struct `cec_log_addrs` 鐨勬寚閽堣皟鐢?ioctl CEC_ADAP_G_LOG_ADDRS <CEC_ADAP_G_LOG_ADDRS>锛岄┍鍔ㄥ湪鍏朵腑瀛樺偍閫昏緫鍦板潃銆?
+瑕佽缃柊鐨勯€昏緫鍦板潃锛屽簲鐢ㄧ▼搴忓～鍐?struct `cec_log_addrs` 骞朵互鎸囧悜姝ょ粨鏋勭殑鎸囬拡璋冪敤 ioctl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS>銆俰octl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS>
+浠呭湪璁剧疆浜?`CEC_CAP_LOG_ADDRS` 鏃跺彲鐢紙鍚﹀垯杩斿洖 `ENOTTY` 閿欒鐮侊級銆俰octl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS>
+鍙兘鐢卞浜庡彂璧疯€呮ā寮忕殑鏂囦欢鎻忚堪绗﹁皟鐢紙瑙?CEC_S_MODE锛夛紝鍚﹀垯灏嗚繑鍥?`EBUSY` 閿欒鐮併€?
+瑕佹竻闄ょ幇鏈夌殑閫昏緫鍦板潃锛屽皢 `num_log_addrs` 璁句负 0銆傛鏃舵墍鏈夊叾浠栧瓧娈甸兘灏嗚蹇界暐銆傞€傞厤鍣ㄥ皢杩涘叆鏈厤缃姸鎬侊紝涓?`cec_version`銆乣vendor_id` 鍜?`osd_name` 瀛楁閮借閲嶇疆涓哄叾榛樿鍊硷紙CEC 鐗堟湰 2.0銆佹棤鍘傚晢 ID 鍜岀┖鐨?OSD 鍚嶇О锛夈€?
+濡傛灉鐗╃悊鍦板潃鏈夋晥锛堣 ioctl CEC_ADAP_S_PHYS_ADDR <CEC_ADAP_S_PHYS_ADDR>锛夛紝鍒欐 ioctl 浼氶樆濉烇紝鐩村埌鎵€鏈夎姹傜殑閫昏緫鍦板潃閮借璁ら銆傚鏋滄枃浠舵弿杩扮澶勪簬闈為樆濉炴ā寮忥紝鍒欏畠涓嶄細绛夊緟閫昏緫鍦板潃琚棰嗭紝鑰屾槸鐩存帴杩斿洖 0銆?
+褰撻€昏緫鍦板潃琚棰嗘垨娓呴櫎鏃讹紝浼氬彂閫佷竴涓?CEC_EVENT_STATE_CHANGE <CEC-EVENT-STATE-CHANGE> 浜嬩欢銆?
+鍦ㄩ€昏緫鍦板潃绫诲瀷宸插畾涔夌殑鎯呭喌涓嬪皾璇曡皟鐢?ioctl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS> 灏嗚繑鍥為敊璇?`EBUSY`銆?
 
 
     :header-rows:  0
@@ -53,57 +43,35 @@ ioctl CEC_ADAP_G_LOG_ADDRS <CEC_ADAP_G_LOG_ADDRS>，驱动在其中存储逻辑�
 
     - - __u8
       - `log_addr[CEC_MAX_LOG_ADDRS]`
-      - 被认领的实际逻辑地址。由驱动设置。如果无法认领任何逻辑地址，则将其设为
-	`CEC_LOG_ADDR_INVALID`。如果此适配器是未注册的，则
-	`log_addr[^0^]` 设为 0xf，所有其他地址设为
-	`CEC_LOG_ADDR_INVALID`。
-    - - __u16
+      - 琚棰嗙殑瀹為檯閫昏緫鍦板潃銆傜敱椹卞姩璁剧疆銆傚鏋滄棤娉曡棰嗕换浣曢€昏緫鍦板潃锛屽垯灏嗗叾璁句负
+	`CEC_LOG_ADDR_INVALID`銆傚鏋滄閫傞厤鍣ㄦ槸鏈敞鍐岀殑锛屽垯
+	`log_addr[^0^]` 璁句负 0xf锛屾墍鏈夊叾浠栧湴鍧€璁句负
+	`CEC_LOG_ADDR_INVALID`銆?    - - __u16
       - `log_addr_mask`
-      - 此适配器已认领的所有逻辑地址的位掩码。如果此适配器是未注册的，则 `log_addr_mask` 置位第 15 位
-	并清除所有其他位。如果此适配器根本未配置，则 `log_addr_mask` 设为 0。由驱动设置。
-    - - __u8
+      - 姝ら€傞厤鍣ㄥ凡璁ら鐨勬墍鏈夐€昏緫鍦板潃鐨勪綅鎺╃爜銆傚鏋滄閫傞厤鍣ㄦ槸鏈敞鍐岀殑锛屽垯 `log_addr_mask` 缃綅绗?15 浣?	骞舵竻闄ゆ墍鏈夊叾浠栦綅銆傚鏋滄閫傞厤鍣ㄦ牴鏈湭閰嶇疆锛屽垯 `log_addr_mask` 璁句负 0銆傜敱椹卞姩璁剧疆銆?    - - __u8
       - `cec_version`
-      - 此适配器应当使用的 CEC 版本。见
-	cec-versions。用于实现
-	`CEC_MSG_CEC_VERSION` 和 `CEC_MSG_REPORT_FEATURES` 消息。
-	注意 CEC_OP_CEC_VERSION_1_3A <CEC-OP-CEC-VERSION-1-3A> 不被 CEC 框架允许。
-    - - __u8
+      - 姝ら€傞厤鍣ㄥ簲褰撲娇鐢ㄧ殑 CEC 鐗堟湰銆傝
+	cec-versions銆傜敤浜庡疄鐜?	`CEC_MSG_CEC_VERSION` 鍜?`CEC_MSG_REPORT_FEATURES` 娑堟伅銆?	娉ㄦ剰 CEC_OP_CEC_VERSION_1_3A <CEC-OP-CEC-VERSION-1-3A> 涓嶈 CEC 妗嗘灦鍏佽銆?    - - __u8
       - `num_log_addrs`
-      - 要设置的 logical 地址数量。必须 ≤
-	CEC_ADAP_G_CAPS 返回的
-	`available_log_addrs`。此结构中的所有数组只填充到索引
-	`available_log_addrs`-1。其余数组元素将被忽略。注意 CEC 2.0 标准允许最多 2 个逻辑地址，尽管某些硬件支持更多。
-	`CEC_MAX_LOG_ADDRS` 为 4。驱动将返回它实际能够认领的逻辑地址数量，可能少于所请求的。如果此字段设为 0，则 CEC
-	适配器应清除所有已认领的逻辑地址，并且所有其他字段都将被忽略。
-    - - __u32
+      - 瑕佽缃殑 logical 鍦板潃鏁伴噺銆傚繀椤?鈮?	CEC_ADAP_G_CAPS 杩斿洖鐨?	`available_log_addrs`銆傛缁撴瀯涓殑鎵€鏈夋暟缁勫彧濉厖鍒扮储寮?	`available_log_addrs`-1銆傚叾浣欐暟缁勫厓绱犲皢琚拷鐣ャ€傛敞鎰?CEC 2.0 鏍囧噯鍏佽鏈€澶?2 涓€昏緫鍦板潃锛屽敖绠℃煇浜涚‖浠舵敮鎸佹洿澶氥€?	`CEC_MAX_LOG_ADDRS` 涓?4銆傞┍鍔ㄥ皢杩斿洖瀹冨疄闄呰兘澶熻棰嗙殑閫昏緫鍦板潃鏁伴噺锛屽彲鑳藉皯浜庢墍璇锋眰鐨勩€傚鏋滄瀛楁璁句负 0锛屽垯 CEC
+	閫傞厤鍣ㄥ簲娓呴櫎鎵€鏈夊凡璁ら鐨勯€昏緫鍦板潃锛屽苟涓旀墍鏈夊叾浠栧瓧娈甸兘灏嗚蹇界暐銆?    - - __u32
       - `vendor_id`
-      - 厂商 ID 是一个 24 位的数字，用于标识特定的厂商或实体。基于此 ID 可以定义厂商特定的命令。如果你不想要厂商 ID，则将其设为
-	`CEC_VENDOR_ID_NONE`。
-    - - __u32
+      - 鍘傚晢 ID 鏄竴涓?24 浣嶇殑鏁板瓧锛岀敤浜庢爣璇嗙壒瀹氱殑鍘傚晢鎴栧疄浣撱€傚熀浜庢 ID 鍙互瀹氫箟鍘傚晢鐗瑰畾鐨勫懡浠ゃ€傚鏋滀綘涓嶆兂瑕佸巶鍟?ID锛屽垯灏嗗叾璁句负
+	`CEC_VENDOR_ID_NONE`銆?    - - __u32
       - `flags`
-      - 标志。可用标志列表见 cec-log-addrs-flags。
-    - - char
+      - 鏍囧織銆傚彲鐢ㄦ爣蹇楀垪琛ㄨ cec-log-addrs-flags銆?    - - char
       - `osd_name[^15^]`
-      - 由 `CEC_MSG_SET_OSD_NAME` 消息返回的屏上显示名称。
-    - - __u8
+      - 鐢?`CEC_MSG_SET_OSD_NAME` 娑堟伅杩斿洖鐨勫睆涓婃樉绀哄悕绉般€?    - - __u8
       - `primary_device_type[CEC_MAX_LOG_ADDRS]`
-      - 每个逻辑地址的主设备类型。可能类型见
-	cec-prim-dev-types。
-    - - __u8
+      - 姣忎釜閫昏緫鍦板潃鐨勪富璁惧绫诲瀷銆傚彲鑳界被鍨嬭
+	cec-prim-dev-types銆?    - - __u8
       - `log_addr_type[CEC_MAX_LOG_ADDRS]`
-      - 逻辑地址类型。可能类型见 cec-log-addr-types。
-	驱动会用它实际认领的逻辑地址类型更新此字段（例如它可能需要回退到 CEC_LOG_ADDR_TYPE_UNREGISTERED <CEC-LOG-ADDR-TYPE-UNREGISTERED>）。
-    - - __u8
+      - 閫昏緫鍦板潃绫诲瀷銆傚彲鑳界被鍨嬭 cec-log-addr-types銆?	椹卞姩浼氱敤瀹冨疄闄呰棰嗙殑閫昏緫鍦板潃绫诲瀷鏇存柊姝ゅ瓧娈碉紙渚嬪瀹冨彲鑳介渶瑕佸洖閫€鍒?CEC_LOG_ADDR_TYPE_UNREGISTERED <CEC-LOG-ADDR-TYPE-UNREGISTERED>锛夈€?    - - __u8
       - `all_device_types[CEC_MAX_LOG_ADDRS]`
-      - CEC 2.0 特有：所有设备类型的位掩码。见
-	cec-all-dev-types-flags。它用于 CEC 2.0 的
-	`CEC_MSG_REPORT_FEATURES` 消息。对于 CEC 1.4，你可以将此字段保留为 0，或者按照 CEC 2.0 的指南填写，以向 CEC 框架提供关于设备类型的更多信息，即使框架不会在 CEC 消息中直接使用它。
-    - - __u8
+      - CEC 2.0 鐗规湁锛氭墍鏈夎澶囩被鍨嬬殑浣嶆帺鐮併€傝
+	cec-all-dev-types-flags銆傚畠鐢ㄤ簬 CEC 2.0 鐨?	`CEC_MSG_REPORT_FEATURES` 娑堟伅銆傚浜?CEC 1.4锛屼綘鍙互灏嗘瀛楁淇濈暀涓?0锛屾垨鑰呮寜鐓?CEC 2.0 鐨勬寚鍗楀～鍐欙紝浠ュ悜 CEC 妗嗘灦鎻愪緵鍏充簬璁惧绫诲瀷鐨勬洿澶氫俊鎭紝鍗充娇妗嗘灦涓嶄細鍦?CEC 娑堟伅涓洿鎺ヤ娇鐢ㄥ畠銆?    - - __u8
       - `features[CEC_MAX_LOG_ADDRS][^12^]`
-      - 每个逻辑地址的特性。它用于 CEC 2.0 的
-	`CEC_MSG_REPORT_FEATURES` 消息。这 12 个字节同时包含
-	RC Profile 和设备特性。对于 CEC 1.4，你可以将此字段保留为全 0，或者按照 CEC 2.0 的指南填写，以向 CEC 框架提供关于设备类型的更多信息，即使框架不会在 CEC 消息中直接使用它。
-
+      - 姣忎釜閫昏緫鍦板潃鐨勭壒鎬с€傚畠鐢ㄤ簬 CEC 2.0 鐨?	`CEC_MSG_REPORT_FEATURES` 娑堟伅銆傝繖 12 涓瓧鑺傚悓鏃跺寘鍚?	RC Profile 鍜岃澶囩壒鎬с€傚浜?CEC 1.4锛屼綘鍙互灏嗘瀛楁淇濈暀涓哄叏 0锛屾垨鑰呮寜鐓?CEC 2.0 鐨勬寚鍗楀～鍐欙紝浠ュ悜 CEC 妗嗘灦鎻愪緵鍏充簬璁惧绫诲瀷鐨勬洿澶氫俊鎭紝鍗充娇妗嗘灦涓嶄細鍦?CEC 娑堟伅涓洿鎺ヤ娇鐢ㄥ畠銆?
 
 
     :header-rows:  0
@@ -114,21 +82,17 @@ ioctl CEC_ADAP_G_LOG_ADDRS <CEC_ADAP_G_LOG_ADDRS>，驱动在其中存储逻辑�
 
       - `CEC_LOG_ADDRS_FL_ALLOW_UNREG_FALLBACK`
       - 1
-      - 默认情况下，如果无法认领所请求类型的逻辑地址，则它将回到未配置状态。如果设置了此标志，则它会回退到未注册的逻辑地址。注意，如果显式请求了未注册的逻辑地址，则此标志不起作用。
-    - .. _`CEC-LOG-ADDRS-FL-ALLOW-RC-PASSTHRU`:
+      - 榛樿鎯呭喌涓嬶紝濡傛灉鏃犳硶璁ら鎵€璇锋眰绫诲瀷鐨勯€昏緫鍦板潃锛屽垯瀹冨皢鍥炲埌鏈厤缃姸鎬併€傚鏋滆缃簡姝ゆ爣蹇楋紝鍒欏畠浼氬洖閫€鍒版湭娉ㄥ唽鐨勯€昏緫鍦板潃銆傛敞鎰忥紝濡傛灉鏄惧紡璇锋眰浜嗘湭娉ㄥ唽鐨勯€昏緫鍦板潃锛屽垯姝ゆ爣蹇椾笉璧蜂綔鐢ㄣ€?    - .. _`CEC-LOG-ADDRS-FL-ALLOW-RC-PASSTHRU`:
 
       - `CEC_LOG_ADDRS_FL_ALLOW_RC_PASSTHRU`
       - 2
-      - 默认情况下，`CEC_MSG_USER_CONTROL_PRESSED` 和 `CEC_MSG_USER_CONTROL_RELEASED`
-        消息只传递给 follower（如果有）。如果设置了此标志，则这些消息也会传递给远程控制输入子系统，并作为按键出现。此特性需要显式启用。如果 CEC 用于输入密码等，你可能不想启用此特性，以避免对按键的简单嗅探。
-    - .. _`CEC-LOG-ADDRS-FL-CDC-ONLY`:
+      - 榛樿鎯呭喌涓嬶紝`CEC_MSG_USER_CONTROL_PRESSED` 鍜?`CEC_MSG_USER_CONTROL_RELEASED`
+        娑堟伅鍙紶閫掔粰 follower锛堝鏋滄湁锛夈€傚鏋滆缃簡姝ゆ爣蹇楋紝鍒欒繖浜涙秷鎭篃浼氫紶閫掔粰杩滅▼鎺у埗杈撳叆瀛愮郴缁燂紝骞朵綔涓烘寜閿嚭鐜般€傛鐗规€ч渶瑕佹樉寮忓惎鐢ㄣ€傚鏋?CEC 鐢ㄤ簬杈撳叆瀵嗙爜绛夛紝浣犲彲鑳戒笉鎯冲惎鐢ㄦ鐗规€э紝浠ラ伩鍏嶅鎸夐敭鐨勭畝鍗曞梾鎺€?    - .. _`CEC-LOG-ADDRS-FL-CDC-ONLY`:
 
       - `CEC_LOG_ADDRS_FL_CDC_ONLY`
       - 4
-      - 如果设置了此标志，则该设备是 CDC-Only（仅 CDC）。CDC-Only 的 CEC 设备是只能处理 CDC 消息的 CEC 设备。
-
-	所有其他消息都被忽略。
-
+      - 濡傛灉璁剧疆浜嗘鏍囧織锛屽垯璇ヨ澶囨槸 CDC-Only锛堜粎 CDC锛夈€侰DC-Only 鐨?CEC 璁惧鏄彧鑳藉鐞?CDC 娑堟伅鐨?CEC 璁惧銆?
+	鎵€鏈夊叾浠栨秷鎭兘琚拷鐣ャ€?
 
 
     :header-rows:  0
@@ -139,18 +103,15 @@ ioctl CEC_ADAP_G_LOG_ADDRS <CEC_ADAP_G_LOG_ADDRS>，驱动在其中存储逻辑�
 
       - `CEC_OP_CEC_VERSION_1_3A`
       - 4
-      - 根据 HDMI 1.3a 标准的 CEC 版本。
-    - .. _`CEC-OP-CEC-VERSION-1-4B`:
+      - 鏍规嵁 HDMI 1.3a 鏍囧噯鐨?CEC 鐗堟湰銆?    - .. _`CEC-OP-CEC-VERSION-1-4B`:
 
       - `CEC_OP_CEC_VERSION_1_4B`
       - 5
-      - 根据 HDMI 1.4b 标准的 CEC 版本。
-    - .. _`CEC-OP-CEC-VERSION-2-0`:
+      - 鏍规嵁 HDMI 1.4b 鏍囧噯鐨?CEC 鐗堟湰銆?    - .. _`CEC-OP-CEC-VERSION-2-0`:
 
       - `CEC_OP_CEC_VERSION_2_0`
       - 6
-      - 根据 HDMI 2.0 标准的 CEC 版本。
-
+      - 鏍规嵁 HDMI 2.0 鏍囧噯鐨?CEC 鐗堟湰銆?
 
 
     :header-rows:  0
@@ -161,38 +122,31 @@ ioctl CEC_ADAP_G_LOG_ADDRS <CEC_ADAP_G_LOG_ADDRS>，驱动在其中存储逻辑�
 
       - `CEC_OP_PRIM_DEVTYPE_TV`
       - 0
-      - 用于电视。
-    - .. _`CEC-OP-PRIM-DEVTYPE-RECORD`:
+      - 鐢ㄤ簬鐢佃銆?    - .. _`CEC-OP-PRIM-DEVTYPE-RECORD`:
 
       - `CEC_OP_PRIM_DEVTYPE_RECORD`
       - 1
-      - 用于录像设备。
-    - .. _`CEC-OP-PRIM-DEVTYPE-TUNER`:
+      - 鐢ㄤ簬褰曞儚璁惧銆?    - .. _`CEC-OP-PRIM-DEVTYPE-TUNER`:
 
       - `CEC_OP_PRIM_DEVTYPE_TUNER`
       - 3
-      - 用于带调谐器的设备。
-    - .. _`CEC-OP-PRIM-DEVTYPE-PLAYBACK`:
+      - 鐢ㄤ簬甯﹁皟璋愬櫒鐨勮澶囥€?    - .. _`CEC-OP-PRIM-DEVTYPE-PLAYBACK`:
 
       - `CEC_OP_PRIM_DEVTYPE_PLAYBACK`
       - 4
-      - 用于播放设备。
-    - .. _`CEC-OP-PRIM-DEVTYPE-AUDIOSYSTEM`:
+      - 鐢ㄤ簬鎾斁璁惧銆?    - .. _`CEC-OP-PRIM-DEVTYPE-AUDIOSYSTEM`:
 
       - `CEC_OP_PRIM_DEVTYPE_AUDIOSYSTEM`
       - 5
-      - 用于音频系统（例如音频/视频接收器）。
-    - .. _`CEC-OP-PRIM-DEVTYPE-SWITCH`:
+      - 鐢ㄤ簬闊抽绯荤粺锛堜緥濡傞煶棰?瑙嗛鎺ユ敹鍣級銆?    - .. _`CEC-OP-PRIM-DEVTYPE-SWITCH`:
 
       - `CEC_OP_PRIM_DEVTYPE_SWITCH`
       - 6
-      - 用于 CEC 开关。
-    - .. _`CEC-OP-PRIM-DEVTYPE-VIDEOPROC`:
+      - 鐢ㄤ簬 CEC 寮€鍏炽€?    - .. _`CEC-OP-PRIM-DEVTYPE-VIDEOPROC`:
 
       - `CEC_OP_PRIM_DEVTYPE_VIDEOPROC`
       - 7
-      - 用于视频处理器设备。
-
+      - 鐢ㄤ簬瑙嗛澶勭悊鍣ㄨ澶囥€?
 
 
     :header-rows:  0
@@ -203,38 +157,31 @@ ioctl CEC_ADAP_G_LOG_ADDRS <CEC_ADAP_G_LOG_ADDRS>，驱动在其中存储逻辑�
 
       - `CEC_LOG_ADDR_TYPE_TV`
       - 0
-      - 用于电视。
-    - .. _`CEC-LOG-ADDR-TYPE-RECORD`:
+      - 鐢ㄤ簬鐢佃銆?    - .. _`CEC-LOG-ADDR-TYPE-RECORD`:
 
       - `CEC_LOG_ADDR_TYPE_RECORD`
       - 1
-      - 用于录像设备。
-    - .. _`CEC-LOG-ADDR-TYPE-TUNER`:
+      - 鐢ㄤ簬褰曞儚璁惧銆?    - .. _`CEC-LOG-ADDR-TYPE-TUNER`:
 
       - `CEC_LOG_ADDR_TYPE_TUNER`
       - 2
-      - 用于调谐器设备。
-    - .. _`CEC-LOG-ADDR-TYPE-PLAYBACK`:
+      - 鐢ㄤ簬璋冭皭鍣ㄨ澶囥€?    - .. _`CEC-LOG-ADDR-TYPE-PLAYBACK`:
 
       - `CEC_LOG_ADDR_TYPE_PLAYBACK`
       - 3
-      - 用于播放设备。
-    - .. _`CEC-LOG-ADDR-TYPE-AUDIOSYSTEM`:
+      - 鐢ㄤ簬鎾斁璁惧銆?    - .. _`CEC-LOG-ADDR-TYPE-AUDIOSYSTEM`:
 
       - `CEC_LOG_ADDR_TYPE_AUDIOSYSTEM`
       - 4
-      - 用于音频系统设备。
-    - .. _`CEC-LOG-ADDR-TYPE-SPECIFIC`:
+      - 鐢ㄤ簬闊抽绯荤粺璁惧銆?    - .. _`CEC-LOG-ADDR-TYPE-SPECIFIC`:
 
       - `CEC_LOG_ADDR_TYPE_SPECIFIC`
       - 5
-      - 用于第二台电视或视频处理器设备。
-    - .. _`CEC-LOG-ADDR-TYPE-UNREGISTERED`:
+      - 鐢ㄤ簬绗簩鍙扮數瑙嗘垨瑙嗛澶勭悊鍣ㄨ澶囥€?    - .. _`CEC-LOG-ADDR-TYPE-UNREGISTERED`:
 
       - `CEC_LOG_ADDR_TYPE_UNREGISTERED`
       - 6
-      - 如果你只想保持未注册，则使用此类型。用于纯 CEC 开关或仅 CDC 设备（CDC：能力发现与控制）。
-
+      - 濡傛灉浣犲彧鎯充繚鎸佹湭娉ㄥ唽锛屽垯浣跨敤姝ょ被鍨嬨€傜敤浜庣函 CEC 寮€鍏虫垨浠?CDC 璁惧锛圕DC锛氳兘鍔涘彂鐜颁笌鎺у埗锛夈€?
 
 
     :header-rows:  0
@@ -245,47 +192,36 @@ ioctl CEC_ADAP_G_LOG_ADDRS <CEC_ADAP_G_LOG_ADDRS>，驱动在其中存储逻辑�
 
       - `CEC_OP_ALL_DEVTYPE_TV`
       - 0x80
-      - 支持 TV 类型。
-    - .. _`CEC-OP-ALL-DEVTYPE-RECORD`:
+      - 鏀寔 TV 绫诲瀷銆?    - .. _`CEC-OP-ALL-DEVTYPE-RECORD`:
 
       - `CEC_OP_ALL_DEVTYPE_RECORD`
       - 0x40
-      - 支持录制类型。
-    - .. _`CEC-OP-ALL-DEVTYPE-TUNER`:
+      - 鏀寔褰曞埗绫诲瀷銆?    - .. _`CEC-OP-ALL-DEVTYPE-TUNER`:
 
       - `CEC_OP_ALL_DEVTYPE_TUNER`
       - 0x20
-      - 支持调谐器类型。
-    - .. _`CEC-OP-ALL-DEVTYPE-PLAYBACK`:
+      - 鏀寔璋冭皭鍣ㄧ被鍨嬨€?    - .. _`CEC-OP-ALL-DEVTYPE-PLAYBACK`:
 
       - `CEC_OP_ALL_DEVTYPE_PLAYBACK`
       - 0x10
-      - 支持播放类型。
-    - .. _`CEC-OP-ALL-DEVTYPE-AUDIOSYSTEM`:
+      - 鏀寔鎾斁绫诲瀷銆?    - .. _`CEC-OP-ALL-DEVTYPE-AUDIOSYSTEM`:
 
       - `CEC_OP_ALL_DEVTYPE_AUDIOSYSTEM`
       - 0x08
-      - 支持音频系统类型。
-    - .. _`CEC-OP-ALL-DEVTYPE-SWITCH`:
+      - 鏀寔闊抽绯荤粺绫诲瀷銆?    - .. _`CEC-OP-ALL-DEVTYPE-SWITCH`:
 
       - `CEC_OP_ALL_DEVTYPE_SWITCH`
       - 0x04
-      - 支持 CEC 开关或视频处理类型。
+      - 鏀寔 CEC 寮€鍏虫垨瑙嗛澶勭悊绫诲瀷銆?
+## 杩斿洖鍊?
 
-## 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中描述。
-
-ioctl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS> 可以返回以下错误码：
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑鎻忚堪銆?
+ioctl CEC_ADAP_S_LOG_ADDRS <CEC_ADAP_S_LOG_ADDRS> 鍙互杩斿洖浠ヤ笅閿欒鐮侊細
 
 ENOTTY
-    未设置 `CEC_CAP_LOG_ADDRS` 能力，因此不支持此 ioctl。
-
+    鏈缃?`CEC_CAP_LOG_ADDRS` 鑳藉姏锛屽洜姝や笉鏀寔姝?ioctl銆?
 EBUSY
-    CEC 适配器当前正在自行配置，或者它已经配置且
-    `num_log_addrs` 非零，或者另一个文件句柄处于独占 follower 或发起者模式，或者文件句柄处于 `CEC_MODE_NO_INITIATOR` 模式。
-
+    CEC 閫傞厤鍣ㄥ綋鍓嶆鍦ㄨ嚜琛岄厤缃紝鎴栬€呭畠宸茬粡閰嶇疆涓?    `num_log_addrs` 闈為浂锛屾垨鑰呭彟涓€涓枃浠跺彞鏌勫浜庣嫭鍗?follower 鎴栧彂璧疯€呮ā寮忥紝鎴栬€呮枃浠跺彞鏌勫浜?`CEC_MODE_NO_INITIATOR` 妯″紡銆?
 EINVAL
-    struct `cec_log_addrs` 的内容无效。
+    struct `cec_log_addrs` 鐨勫唴瀹规棤鏁堛€?

@@ -1,12 +1,10 @@
-## HugeTLB Controller
+﻿## HugeTLB Controller
 
 
-HugeTLB 控制器可以通过先挂载 cgroup 文件系统来创建。
-
+HugeTLB 鎺у埗鍣ㄥ彲浠ラ€氳繃鍏堟寕杞?cgroup 鏂囦欢绯荤粺鏉ュ垱寤恒€?
 # mount -t cgroup -o hugetlb none /sys/fs/cgroup
 
-经过上述步骤，初始的或父 HugeTLB 组在 /sys/fs/cgroup 处可见。在启动（bootup）时，该组包含系统中所有任务。/sys/fs/cgroup/tasks 列出了该 cgroup 中的任务。
-
+缁忚繃涓婅堪姝ラ锛屽垵濮嬬殑鎴栫埗 HugeTLB 缁勫湪 /sys/fs/cgroup 澶勫彲瑙併€傚湪鍚姩锛坆ootup锛夋椂锛岃缁勫寘鍚郴缁熶腑鎵€鏈変换鍔°€?sys/fs/cgroup/tasks 鍒楀嚭浜嗚 cgroup 涓殑浠诲姟銆?
 ```
 
   # cd /sys/fs/cgroup
@@ -14,8 +12,7 @@ HugeTLB 控制器可以通过先挂载 cgroup 文件系统来创建。
   # echo $$ > g1/tasks
 
 ```
-上述步骤创建了一个新组 g1，并把当前 shell 进程（bash）移入其中。
-
+涓婅堪姝ラ鍒涘缓浜嗕竴涓柊缁?g1锛屽苟鎶婂綋鍓?shell 杩涚▼锛坆ash锛夌Щ鍏ュ叾涓€?
 ```
 
  hugetlb.<hugepagesize>.rsvd.limit_in_bytes            # set/show limit of "hugepagesize" hugetlb reservations
@@ -29,8 +26,7 @@ HugeTLB 控制器可以通过先挂载 cgroup 文件系统来创建。
  hugetlb.<hugepagesize>.numa_stat                      # show the numa information of the hugetlb memory charged to this cgroup
 
 ```
-对于支持三种大页大小（64k、32M 和 1G）的系统，控制
-```
+瀵逛簬鏀寔涓夌澶ч〉澶у皬锛?4k銆?2M 鍜?1G锛夌殑绯荤粺锛屾帶鍒?```
 
   hugetlb.1GB.limit_in_bytes
   hugetlb.1GB.max_usage_in_bytes
@@ -73,8 +69,7 @@ HugeTLB 控制器可以通过先挂载 cgroup 文件系统来创建。
   hugetlb.<hugepagesize>.failcnt
 
 ```
-HugeTLB 控制器允许用户限制每个控制组的 HugeTLB 使用量（page fault），并在缺页时强制执行限制。由于 HugeTLB 不支持页面回收（page reclaim），在缺页时强制限制意味着，如果应用程序试图缺页调入超出其限制的 HugeTLB 页面，它将收到 SIGBUS 信号。因此应用程序需要事先确切知道自己使用了多少 HugeTLB 页面，并且系统管理员需要确保机器上有足够的可用页面供所有用户使用，以避免进程收到 SIGBUS。
-
+HugeTLB 鎺у埗鍣ㄥ厑璁哥敤鎴烽檺鍒舵瘡涓帶鍒剁粍鐨?HugeTLB 浣跨敤閲忥紙page fault锛夛紝骞跺湪缂洪〉鏃跺己鍒舵墽琛岄檺鍒躲€傜敱浜?HugeTLB 涓嶆敮鎸侀〉闈㈠洖鏀讹紙page reclaim锛夛紝鍦ㄧ己椤垫椂寮哄埗闄愬埗鎰忓懗鐫€锛屽鏋滃簲鐢ㄧ▼搴忚瘯鍥剧己椤佃皟鍏ヨ秴鍑哄叾闄愬埗鐨?HugeTLB 椤甸潰锛屽畠灏嗘敹鍒?SIGBUS 淇″彿銆傚洜姝ゅ簲鐢ㄧ▼搴忛渶瑕佷簨鍏堢‘鍒囩煡閬撹嚜宸变娇鐢ㄤ簡澶氬皯 HugeTLB 椤甸潰锛屽苟涓旂郴缁熺鐞嗗憳闇€瑕佺‘淇濇満鍣ㄤ笂鏈夎冻澶熺殑鍙敤椤甸潰渚涙墍鏈夌敤鎴蜂娇鐢紝浠ラ伩鍏嶈繘绋嬫敹鍒?SIGBUS銆?
 
 2. Reservation accounting
 
@@ -86,24 +81,19 @@ HugeTLB 控制器允许用户限制每个控制组的 HugeTLB 使用量（page f
   hugetlb.<hugepagesize>.rsvd.failcnt
 
 ```
-HugeTLB 控制器允许限制每个控制组的 HugeTLB 预留，并在预留时以及为不存在预留的 HugeTLB 内存缺页时强制执行控制器限制。由于预留限制在预留时（mmap 或 shget 时）强制执行，如果内存事先已预留，预留限制永远不会导致应用程序收到 SIGBUS 信号。对于 MAP_NORESERVE 分配，预留限制的行为与缺页限制相同，在缺页时强制执行内存使用，并在越过限制时导致应用程序收到 SIGBUS。
-
-预留限制优于上面描述的缺页限制，因为预留限制在预留时（mmap 或 shget 时）强制执行，如果内存事先已预留，就永远不会导致应用程序收到 SIGBUS 信号。这使得更容易回退到替代方案，例如非 HugeTLB 内存。而在缺页记账的情况下，由于系统管理员需要精确知道系统中所有任务的 HugeTLB 使用量并确保在所有请求前有足够页面，要避免进程收到 SIGBUS 非常困难。在过量承诺（overcommitted）的系统上，用缺页记账实际上不可能避免任务收到 SIGBUS。
-
+HugeTLB 鎺у埗鍣ㄥ厑璁搁檺鍒舵瘡涓帶鍒剁粍鐨?HugeTLB 棰勭暀锛屽苟鍦ㄩ鐣欐椂浠ュ強涓轰笉瀛樺湪棰勭暀鐨?HugeTLB 鍐呭瓨缂洪〉鏃跺己鍒舵墽琛屾帶鍒跺櫒闄愬埗銆傜敱浜庨鐣欓檺鍒跺湪棰勭暀鏃讹紙mmap 鎴?shget 鏃讹級寮哄埗鎵ц锛屽鏋滃唴瀛樹簨鍏堝凡棰勭暀锛岄鐣欓檺鍒舵案杩滀笉浼氬鑷村簲鐢ㄧ▼搴忔敹鍒?SIGBUS 淇″彿銆傚浜?MAP_NORESERVE 鍒嗛厤锛岄鐣欓檺鍒剁殑琛屼负涓庣己椤甸檺鍒剁浉鍚岋紝鍦ㄧ己椤垫椂寮哄埗鎵ц鍐呭瓨浣跨敤锛屽苟鍦ㄨ秺杩囬檺鍒舵椂瀵艰嚧搴旂敤绋嬪簭鏀跺埌 SIGBUS銆?
+棰勭暀闄愬埗浼樹簬涓婇潰鎻忚堪鐨勭己椤甸檺鍒讹紝鍥犱负棰勭暀闄愬埗鍦ㄩ鐣欐椂锛坢map 鎴?shget 鏃讹級寮哄埗鎵ц锛屽鏋滃唴瀛樹簨鍏堝凡棰勭暀锛屽氨姘歌繙涓嶄細瀵艰嚧搴旂敤绋嬪簭鏀跺埌 SIGBUS 淇″彿銆傝繖浣垮緱鏇村鏄撳洖閫€鍒版浛浠ｆ柟妗堬紝渚嬪闈?HugeTLB 鍐呭瓨銆傝€屽湪缂洪〉璁拌处鐨勬儏鍐典笅锛岀敱浜庣郴缁熺鐞嗗憳闇€瑕佺簿纭煡閬撶郴缁熶腑鎵€鏈変换鍔＄殑 HugeTLB 浣跨敤閲忓苟纭繚鍦ㄦ墍鏈夎姹傚墠鏈夎冻澶熼〉闈紝瑕侀伩鍏嶈繘绋嬫敹鍒?SIGBUS 闈炲父鍥伴毦銆傚湪杩囬噺鎵胯锛坥vercommitted锛夌殑绯荤粺涓婏紝鐢ㄧ己椤佃璐﹀疄闄呬笂涓嶅彲鑳介伩鍏嶄换鍔℃敹鍒?SIGBUS銆?
 
 3. Caveats with shared memory
 
-对于共享的 HugeTLB 内存，HugeTLB 预留和缺页都计入第一个导致该内存被预留或缺页的任务，而随后对该已预留或已缺页内存的所有使用都不计入。
+瀵逛簬鍏变韩鐨?HugeTLB 鍐呭瓨锛孒ugeTLB 棰勭暀鍜岀己椤甸兘璁″叆绗竴涓鑷磋鍐呭瓨琚鐣欐垨缂洪〉鐨勪换鍔★紝鑰岄殢鍚庡璇ュ凡棰勭暀鎴栧凡缂洪〉鍐呭瓨鐨勬墍鏈変娇鐢ㄩ兘涓嶈鍏ャ€?
 
-
-共享的 HugeTLB 内存只有在被解除预留或释放时才解除计费。这通常发生在 HugeTLB 文件被删除时，而不是在导致预留或缺页的任务退出时。
-
+鍏变韩鐨?HugeTLB 鍐呭瓨鍙湁鍦ㄨ瑙ｉ櫎棰勭暀鎴栭噴鏀炬椂鎵嶈В闄よ璐广€傝繖閫氬父鍙戠敓鍦?HugeTLB 鏂囦欢琚垹闄ゆ椂锛岃€屼笉鏄湪瀵艰嚧棰勭暀鎴栫己椤电殑浠诲姟閫€鍑烘椂銆?
 
 4. Caveats with HugeTLB cgroup offline.
 
-当一个 HugeTLB cgroup 在仍有某些预留或缺页计入它的情况下下线时，行为如下：
+褰撲竴涓?HugeTLB cgroup 鍦ㄤ粛鏈夋煇浜涢鐣欐垨缂洪〉璁″叆瀹冪殑鎯呭喌涓嬩笅绾挎椂锛岃涓哄涓嬶細
 
-- 缺页计费被计入父 HugeTLB cgroup（重新归属，reparented），
-- 预留计费保留在该离线的 HugeTLB cgroup 上。
-
-这意味着，如果一个 HugeTLB cgroup 在下线时仍有 HugeTLB 预留计入，该 cgroup 会作为僵尸（zombie）一直存在，直到所有 HugeTLB 预留都解除计费。HugeTLB 预留以这种方式工作，是为了与内存控制器保持一致，后者的 cgroup 也会作为僵尸一直存在，直到所有计费内存都解除计费。此外，与追踪 HugeTLB 缺页相比，追踪 HugeTLB 预留要更复杂一些，因此在下线时重新归属预留也要困难得多。
+- 缂洪〉璁¤垂琚鍏ョ埗 HugeTLB cgroup锛堥噸鏂板綊灞烇紝reparented锛夛紝
+- 棰勭暀璁¤垂淇濈暀鍦ㄨ绂荤嚎鐨?HugeTLB cgroup 涓娿€?
+杩欐剰鍛崇潃锛屽鏋滀竴涓?HugeTLB cgroup 鍦ㄤ笅绾挎椂浠嶆湁 HugeTLB 棰勭暀璁″叆锛岃 cgroup 浼氫綔涓哄兊灏革紙zombie锛変竴鐩村瓨鍦紝鐩村埌鎵€鏈?HugeTLB 棰勭暀閮借В闄よ璐广€侶ugeTLB 棰勭暀浠ヨ繖绉嶆柟寮忓伐浣滐紝鏄负浜嗕笌鍐呭瓨鎺у埗鍣ㄤ繚鎸佷竴鑷达紝鍚庤€呯殑 cgroup 涔熶細浣滀负鍍靛案涓€鐩村瓨鍦紝鐩村埌鎵€鏈夎璐瑰唴瀛橀兘瑙ｉ櫎璁¤垂銆傛澶栵紝涓庤拷韪?HugeTLB 缂洪〉鐩告瘮锛岃拷韪?HugeTLB 棰勭暀瑕佹洿澶嶆潅涓€浜涳紝鍥犳鍦ㄤ笅绾挎椂閲嶆柊褰掑睘棰勭暀涔熻鍥伴毦寰楀銆?

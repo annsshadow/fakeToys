@@ -1,213 +1,213 @@
-
+﻿
 ## NFSv4 client identifier
 
 
-此 document explains 如何 the NFSv4 协议 identifies client
-instances 为了 maintain 文件 打开 和 锁 状态 期间
-系统 restarts. 一个 特殊 identifier 和 principal 是 maintained
-在 每个 client. 这些 可 为 set 由 administrators, scripts
-provided 由 site administrators, 或 tools provided 由 Linux
+姝?document explains 濡備綍 the NFSv4 鍗忚 identifies client
+instances 涓轰簡 maintain 鏂囦欢 鎵撳紑 鍜?閿?鐘舵€?鏈熼棿
+绯荤粺 restarts. 涓€涓?鐗规畩 identifier 鍜?principal 鏄?maintained
+鍦?姣忎釜 client. 杩欎簺 鍙?涓?set 鐢?administrators, scripts
+provided 鐢?site administrators, 鎴?tools provided 鐢?Linux
 distributors.
 
-存在 risks 若 一个 client's NFSv4 identifier 和 其 principal
-是 不 chosen carefully.
+瀛樺湪 risks 鑻?涓€涓?client's NFSv4 identifier 鍜?鍏?principal
+鏄?涓?chosen carefully.
 
 
 ### Introduction
 
 
-The NFSv4 协议 uses "lease-based 文件 locking". Leases help
-NFSv4 servers 提供 文件 锁 guarantees 和 manage 它们的
+The NFSv4 鍗忚 uses "lease-based 鏂囦欢 locking". Leases help
+NFSv4 servers 鎻愪緵 鏂囦欢 閿?guarantees 鍜?manage 瀹冧滑鐨?
 resources.
 
-Simply put, 一个 NFSv4 server creates 一个 lease 用于 每个 NFSv4 client.
-The server collects 每个 client's 文件 打开 和 锁 状态 在…下
-the lease 用于 该 client.
+Simply put, 涓€涓?NFSv4 server creates 涓€涓?lease 鐢ㄤ簬 姣忎釜 NFSv4 client.
+The server collects 姣忎釜 client's 鏂囦欢 鎵撳紑 鍜?閿?鐘舵€?鍦ㄢ€︿笅
+the lease 鐢ㄤ簬 璇?client.
 
-The client 是 responsible 用于 periodically renewing 其 leases.
-同时 一个 lease remains valid, the server holding 该 lease
-guarantees the 文件 锁 the client 具有 已创建 remain 在 place.
+The client 鏄?responsible 鐢ㄤ簬 periodically renewing 鍏?leases.
+鍚屾椂 涓€涓?lease remains valid, the server holding 璇?lease
+guarantees the 鏂囦欢 閿?the client 鍏锋湁 宸插垱寤?remain 鍦?place.
 
-若 一个 client stops renewing 其 lease (例如, 若 它 crashes),
-the NFSv4 协议 allows the server 到 remove the client's 打开
-和 锁 状态 之后 一个 某些 period 的 time. 当 一个 client
-restarts, 它 indicates 到 servers 该 打开 和 锁 状态
-associated 与 其 前一个 leases 是 无 longer valid 和 可 为
+鑻?涓€涓?client stops renewing 鍏?lease (渚嬪, 鑻?瀹?crashes),
+the NFSv4 鍗忚 allows the server 鍒?remove the client's 鎵撳紑
+鍜?閿?鐘舵€?涔嬪悗 涓€涓?鏌愪簺 period 鐨?time. 褰?涓€涓?client
+restarts, 瀹?indicates 鍒?servers 璇?鎵撳紑 鍜?閿?鐘舵€?
+associated 涓?鍏?鍓嶄竴涓?leases 鏄?鏃?longer valid 鍜?鍙?涓?
 destroyed immediately.
 
-此外, 每个 NFSv4 server manages 一个 persistent 列出 的 client
-leases. 当 the server restarts 和 clients attempt 到 recover
-它们的 状态, the server uses 此 列出 到 distinguish amongst
-clients 该 held 状态 之前 the server restarted 和 clients
-sending fresh 打开 和 锁 requests. 此 enables 文件 锁 到
+姝ゅ, 姣忎釜 NFSv4 server manages 涓€涓?persistent 鍒楀嚭 鐨?client
+leases. 褰?the server restarts 鍜?clients attempt 鍒?recover
+瀹冧滑鐨?鐘舵€? the server uses 姝?鍒楀嚭 鍒?distinguish amongst
+clients 璇?held 鐘舵€?涔嬪墠 the server restarted 鍜?clients
+sending fresh 鎵撳紑 鍜?閿?requests. 姝?enables 鏂囦欢 閿?鍒?
 persist safely across server restarts.
 
 ### NFSv4 client identifiers
 
 
-每个 NFSv4 client presents 一个 identifier 到 NFSv4 servers 因此 该
-它们 可 associate the client 与 其 lease. 每个 client's
-identifier consists 的 two elements:
+姣忎釜 NFSv4 client presents 涓€涓?identifier 鍒?NFSv4 servers 鍥犳 璇?
+瀹冧滑 鍙?associate the client 涓?鍏?lease. 姣忎釜 client's
+identifier consists 鐨?two elements:
 
-  - co_ownerid: 一个 arbitrary 但 fixed 字符串.
+  - co_ownerid: 涓€涓?arbitrary 浣?fixed 瀛楃涓?
 
-  - boot verifier: 一个 64-位 incarnation verifier 该 enables 一个
-    server 到 distinguish successive boot epochs 的 the 相同 client.
+  - boot verifier: 涓€涓?64-浣?incarnation verifier 璇?enables 涓€涓?
+    server 鍒?distinguish successive boot epochs 鐨?the 鐩稿悓 client.
 
-The NFSv4.0 specification refers 到 这些 two items 作为 一个
-"nfs_client_id4". The NFSv4.1 specification refers 到 这些 two
-items 作为 一个 "client_owner4".
+The NFSv4.0 specification refers 鍒?杩欎簺 two items 浣滀负 涓€涓?
+"nfs_client_id4". The NFSv4.1 specification refers 鍒?杩欎簺 two
+items 浣滀负 涓€涓?"client_owner4".
 
-NFSv4 servers tie 此 identifier 到 the principal 和 安全
-flavor 该 the client 使用 当 presenting 它. Servers 使用 此
-principal 到 authorize 后续 lease modification 操作
-sent 由 the client. Effectively 此 principal 是 一个 third element 的
+NFSv4 servers tie 姝?identifier 鍒?the principal 鍜?瀹夊叏
+flavor 璇?the client 浣跨敤 褰?presenting 瀹? Servers 浣跨敤 姝?
+principal 鍒?authorize 鍚庣画 lease modification 鎿嶄綔
+sent 鐢?the client. Effectively 姝?principal 鏄?涓€涓?third element 鐨?
 the identifier.
 
-作为 part 的 the identity presented 到 servers, 一个 good
-"co_ownerid" 字符串 具有 若干 重要 properties:
+浣滀负 part 鐨?the identity presented 鍒?servers, 涓€涓?good
+"co_ownerid" 瀛楃涓?鍏锋湁 鑻ュ共 閲嶈 properties:
 
-  - The "co_ownerid" 字符串 identifies the client 期间 reboot
-    recovery, 因此 the 字符串 是 persistent across client
+  - The "co_ownerid" 瀛楃涓?identifies the client 鏈熼棿 reboot
+    recovery, 鍥犳 the 瀛楃涓?鏄?persistent across client
     reboots.
-  - The "co_ownerid" 字符串 helps servers distinguish the client
-    来自 others, 因此 the 字符串 是 globally unique. 注意
-    该 存在 无 central authority 该 assigns "co_ownerid"
+  - The "co_ownerid" 瀛楃涓?helps servers distinguish the client
+    鏉ヨ嚜 others, 鍥犳 the 瀛楃涓?鏄?globally unique. 娉ㄦ剰
+    璇?瀛樺湪 鏃?central authority 璇?assigns "co_ownerid"
     strings.
-  - 因为 它 通常 appears 在 the 网络 在 the clear, the
-    "co_ownerid" 字符串 执行 不 reveal 私有 information 关于
+  - 鍥犱负 瀹?閫氬父 appears 鍦?the 缃戠粶 鍦?the clear, the
+    "co_ownerid" 瀛楃涓?鎵ц 涓?reveal 绉佹湁 information 鍏充簬
     the client itself.
-  - The content 的 the "co_ownerid" 字符串 是 set 和 unchanging
-    之前 the client attempts NFSv4 mounts 之后 一个 restart.
-  - The NFSv4 协议 places 一个 1024-byte limit 在 the 大小 的 the
-    "co_ownerid" 字符串.
+  - The content 鐨?the "co_ownerid" 瀛楃涓?鏄?set 鍜?unchanging
+    涔嬪墠 the client attempts NFSv4 mounts 涔嬪悗 涓€涓?restart.
+  - The NFSv4 鍗忚 places 涓€涓?1024-byte limit 鍦?the 澶у皬 鐨?the
+    "co_ownerid" 瀛楃涓?
 
-### Protecting NFSv4 lease 状态
+### Protecting NFSv4 lease 鐘舵€?
 
 
-NFSv4 servers utilize the "client_owner4" 作为 描述 上文 到
-assign 一个 unique lease 到 每个 client. 在…下 此 scheme, 存在
-circumstances 何处 clients 可 interfere 与 每个 其他. 这是
-referred 到 作为 "lease stealing".
+NFSv4 servers utilize the "client_owner4" 浣滀负 鎻忚堪 涓婃枃 鍒?
+assign 涓€涓?unique lease 鍒?姣忎釜 client. 鍦ㄢ€︿笅 姝?scheme, 瀛樺湪
+circumstances 浣曞 clients 鍙?interfere 涓?姣忎釜 鍏朵粬. 杩欐槸
+referred 鍒?浣滀负 "lease stealing".
 
-若 distinct clients present the 相同 "co_ownerid" 字符串 和 使用
-the 相同 principal (例如, AUTH_SYS 和 UID 0), 一个 server 是
-unable 到 tell 该 the clients 是 不 the 相同. 每个 distinct
-client presents 一个 不同 boot verifier, 因此 它 appears 到 the
-server 作为 若 存在 one client 即 rebooting frequently.
-两者都不 client 可 maintain 打开 或 锁 状态 在 此 scenario.
+鑻?distinct clients present the 鐩稿悓 "co_ownerid" 瀛楃涓?鍜?浣跨敤
+the 鐩稿悓 principal (渚嬪, AUTH_SYS 鍜?UID 0), 涓€涓?server 鏄?
+unable 鍒?tell 璇?the clients 鏄?涓?the 鐩稿悓. 姣忎釜 distinct
+client presents 涓€涓?涓嶅悓 boot verifier, 鍥犳 瀹?appears 鍒?the
+server 浣滀负 鑻?瀛樺湪 one client 鍗?rebooting frequently.
+涓よ€呴兘涓?client 鍙?maintain 鎵撳紑 鎴?閿?鐘舵€?鍦?姝?scenario.
 
-若 distinct clients present the 相同 "co_ownerid" 字符串 和 使用
-distinct principals, the server 是 likely 到 允许 the 第一 client
-到 operate normally 但 reject 后续 clients 与 the 相同
-"co_ownerid" 字符串.
+鑻?distinct clients present the 鐩稿悓 "co_ownerid" 瀛楃涓?鍜?浣跨敤
+distinct principals, the server 鏄?likely 鍒?鍏佽 the 绗竴 client
+鍒?operate normally 浣?reject 鍚庣画 clients 涓?the 鐩稿悓
+"co_ownerid" 瀛楃涓?
 
-若 一个 client's "co_ownerid" 字符串 或 principal 是 不 stable,
-状态 recovery 之后 一个 server 或 client reboot 是 不 guaranteed.
-若 一个 client unexpectedly restarts 但 presents 一个 不同
-"co_ownerid" 字符串 或 principal 到 the server, the server orphans
-the client's 前一个 打开 和 锁 状态. 此 块 access 到
-locked 文件 直到 the server removes the orphaned 状态.
+鑻?涓€涓?client's "co_ownerid" 瀛楃涓?鎴?principal 鏄?涓?stable,
+鐘舵€?recovery 涔嬪悗 涓€涓?server 鎴?client reboot 鏄?涓?guaranteed.
+鑻?涓€涓?client unexpectedly restarts 浣?presents 涓€涓?涓嶅悓
+"co_ownerid" 瀛楃涓?鎴?principal 鍒?the server, the server orphans
+the client's 鍓嶄竴涓?鎵撳紑 鍜?閿?鐘舵€? 姝?鍧?access 鍒?
+locked 鏂囦欢 鐩村埌 the server removes the orphaned 鐘舵€?
 
-若 the server restarts 和 一个 client presents 一个 changed "co_ownerid"
-字符串 或 principal 到 the server, the server 将 不 允许 the
-client 到 reclaim 其 打开 和 锁 状态, 和 可 give 那些 锁
-到 其他 clients 在 the meantime. 这是 referred 到 作为 "锁
+鑻?the server restarts 鍜?涓€涓?client presents 涓€涓?changed "co_ownerid"
+瀛楃涓?鎴?principal 鍒?the server, the server 灏?涓?鍏佽 the
+client 鍒?reclaim 鍏?鎵撳紑 鍜?閿?鐘舵€? 鍜?鍙?give 閭ｄ簺 閿?
+鍒?鍏朵粬 clients 鍦?the meantime. 杩欐槸 referred 鍒?浣滀负 "閿?
 stealing".
 
-Lease stealing 和 锁 stealing increase the potential 用于 denial
-的 service 和 在 rare cases even 数据 corruption.
+Lease stealing 鍜?閿?stealing increase the potential 鐢ㄤ簬 denial
+鐨?service 鍜?鍦?rare cases even 鏁版嵁 corruption.
 
-### Selecting 一个 appropriate client identifier
+### Selecting 涓€涓?appropriate client identifier
 
 
-默认情况下, the Linux NFSv4 client implementation constructs 其
-"co_ownerid" 字符串 starting 与 the words "Linux NFS" followed 由
-the client's UTS node name (the 相同 node name, incidentally, 该
-是 使用 作为 the "machine name" 在 一个 AUTH_SYS credential). 在 small
-deployments, 此 construction 是 通常 adequate. 通常, 然而,
-the node name 由 itself 是 不 adequately unique, 和 可 change
-unexpectedly. Problematic situations 包含:
+榛樿鎯呭喌涓? the Linux NFSv4 client implementation constructs 鍏?
+"co_ownerid" 瀛楃涓?starting 涓?the words "Linux NFS" followed 鐢?
+the client's UTS node name (the 鐩稿悓 node name, incidentally, 璇?
+鏄?浣跨敤 浣滀负 the "machine name" 鍦?涓€涓?AUTH_SYS credential). 鍦?small
+deployments, 姝?construction 鏄?閫氬父 adequate. 閫氬父, 鐒惰€?
+the node name 鐢?itself 鏄?涓?adequately unique, 鍜?鍙?change
+unexpectedly. Problematic situations 鍖呭惈:
 
-  - NFS-root (diskless) clients, 何处 the 本地 DHCP server (或
-    equivalent) 执行 不 提供 一个 unique host name.
+  - NFS-root (diskless) clients, 浣曞 the 鏈湴 DHCP server (鎴?
+    equivalent) 鎵ц 涓?鎻愪緵 涓€涓?unique host name.
 
-  - "Containers" 之内 一个 单个 Linux host.  若 每个 container 具有
-    一个 separate 网络 namespace, 但 执行 不 使用 the UTS namespace
-    到 提供 一个 unique host name, 然后 那里 可 为 多个 NFS
-    client instances 与 the 相同 host name.
+  - "Containers" 涔嬪唴 涓€涓?鍗曚釜 Linux host.  鑻?姣忎釜 container 鍏锋湁
+    涓€涓?separate 缃戠粶 namespace, 浣?鎵ц 涓?浣跨敤 the UTS namespace
+    鍒?鎻愪緵 涓€涓?unique host name, 鐒跺悗 閭ｉ噷 鍙?涓?澶氫釜 NFS
+    client instances 涓?the 鐩稿悓 host name.
 
-  - Clients across 多个 administrative domains 该 access 一个
-    通用 NFS server. 若 hostnames 是 不 assigned centrally
-    然后 uniqueness cannot 为 guaranteed 除非 一个 domain name 是
-    included 在 the hostname.
+  - Clients across 澶氫釜 administrative domains 璇?access 涓€涓?
+    閫氱敤 NFS server. 鑻?hostnames 鏄?涓?assigned centrally
+    鐒跺悗 uniqueness cannot 涓?guaranteed 闄ら潪 涓€涓?domain name 鏄?
+    included 鍦?the hostname.
 
-Linux 提供 two mechanisms 到 add uniqueness 到 其 "co_ownerid"
-字符串:
+Linux 鎻愪緵 two mechanisms 鍒?add uniqueness 鍒?鍏?"co_ownerid"
+瀛楃涓?
 
     nfs.nfs4_unique_id
-      此 模块 参数 可 set 一个 arbitrary uniquifier 字符串
-      通过 the 内核 命令 line, 或 当 the "nfs" 模块 是
+      姝?妯″潡 鍙傛暟 鍙?set 涓€涓?arbitrary uniquifier 瀛楃涓?
+      閫氳繃 the 鍐呮牳 鍛戒护 line, 鎴?褰?the "nfs" 妯″潡 鏄?
       loaded.
 
     /sys/fs/nfs/net/nfs_client/identifier
-      此 虚拟 文件, 可用 since Linux 5.3, 是 本地 到 the
-      网络 namespace 在 其 它是 accessed 和 因此 可 提供
-      distinction 之间 网络 namespaces (containers) 当 the
+      姝?铏氭嫙 鏂囦欢, 鍙敤 since Linux 5.3, 鏄?鏈湴 鍒?the
+      缃戠粶 namespace 鍦?鍏?瀹冩槸 accessed 鍜?鍥犳 鍙?鎻愪緵
+      distinction 涔嬮棿 缃戠粶 namespaces (containers) 褰?the
       hostname remains uniform.
 
-注意 该 此 文件 是 empty 在 name-space creation. 若 the
-container 系统 具有 access 到 一些 sort 的 per-container identity
-然后 该 uniquifier 可 为 使用. 例如, 一个 uniquifier 可能
-为 formed 在 boot 使用 the container's 内部 identifier:
+娉ㄦ剰 璇?姝?鏂囦欢 鏄?empty 鍦?name-space creation. 鑻?the
+container 绯荤粺 鍏锋湁 access 鍒?涓€浜?sort 鐨?per-container identity
+鐒跺悗 璇?uniquifier 鍙?涓?浣跨敤. 渚嬪, 涓€涓?uniquifier 鍙兘
+涓?formed 鍦?boot 浣跨敤 the container's 鍐呴儴 identifier:
 
-    sha256sum /等/machine-id | awk '{print $1}' \\
+    sha256sum /绛?machine-id | awk '{print $1}' \\
         > /sys/fs/nfs/net/nfs_client/identifier
 
-### 安全 considerations
+### 瀹夊叏 considerations
 
 
-The 使用 的 cryptographic 安全 用于 lease 管理 操作
-是 strongly encouraged.
+The 浣跨敤 鐨?cryptographic 瀹夊叏 鐢ㄤ簬 lease 绠＄悊 鎿嶄綔
+鏄?strongly encouraged.
 
-若 NFS 与 Kerberos 是 不 configured, 一个 Linux NFSv4 client uses
-AUTH_SYS 和 UID 0 作为 the principal part 的 其 client identity.
-此 配置 是 不 仅 insecure, 它 increases the risk 的
-lease 和 锁 stealing. 然而, 它 可能 为 the 仅 choice 用于
-client configurations 该 具有 无 本地 persistent storage.
-"co_ownerid" 字符串 uniqueness 和 persistence 是 critical 在 此
+鑻?NFS 涓?Kerberos 鏄?涓?configured, 涓€涓?Linux NFSv4 client uses
+AUTH_SYS 鍜?UID 0 浣滀负 the principal part 鐨?鍏?client identity.
+姝?閰嶇疆 鏄?涓?浠?insecure, 瀹?increases the risk 鐨?
+lease 鍜?閿?stealing. 鐒惰€? 瀹?鍙兘 涓?the 浠?choice 鐢ㄤ簬
+client configurations 璇?鍏锋湁 鏃?鏈湴 persistent storage.
+"co_ownerid" 瀛楃涓?uniqueness 鍜?persistence 鏄?critical 鍦?姝?
 case.
 
-当 一个 Kerberos keytab 是 present 在 一个 Linux NFS client, the client
-attempts 到 使用 one 的 the principals 在 该 keytab 当
-identifying itself 到 servers. The "sec=" mount 选项 执行 不
-control 此 behavior. Alternately, 一个 single-user client 与 一个
-Kerberos principal 可 使用 该 principal 在 place 的 the client's
+褰?涓€涓?Kerberos keytab 鏄?present 鍦?涓€涓?Linux NFS client, the client
+attempts 鍒?浣跨敤 one 鐨?the principals 鍦?璇?keytab 褰?
+identifying itself 鍒?servers. The "sec=" mount 閫夐」 鎵ц 涓?
+control 姝?behavior. Alternately, 涓€涓?single-user client 涓?涓€涓?
+Kerberos principal 鍙?浣跨敤 璇?principal 鍦?place 鐨?the client's
 host principal.
 
-使用 Kerberos 用于 此 purpose enables the client 和 server 到
-使用 the 相同 lease 用于 操作 covered 由 全部 "sec=" 设置.
-Additionally, the Linux NFS client uses the RPCSEC_GSS 安全
-flavor 与 Kerberos 和 the integrity QOS 到 prevent in-transit
-modification 的 lease modification requests.
+浣跨敤 Kerberos 鐢ㄤ簬 姝?purpose enables the client 鍜?server 鍒?
+浣跨敤 the 鐩稿悓 lease 鐢ㄤ簬 鎿嶄綔 covered 鐢?鍏ㄩ儴 "sec=" 璁剧疆.
+Additionally, the Linux NFS client uses the RPCSEC_GSS 瀹夊叏
+flavor 涓?Kerberos 鍜?the integrity QOS 鍒?prevent in-transit
+modification 鐨?lease modification requests.
 
-### 额外 notes
+### 棰濆 notes
 
-The Linux NFSv4 client establishes 一个 单个 lease 在 每个 NFSv4
-server 它 accesses. NFSv4 mounts 来自 一个 Linux NFSv4 client 的 一个
-特定 server 然后 share 该 lease.
+The Linux NFSv4 client establishes 涓€涓?鍗曚釜 lease 鍦?姣忎釜 NFSv4
+server 瀹?accesses. NFSv4 mounts 鏉ヨ嚜 涓€涓?Linux NFSv4 client 鐨?涓€涓?
+鐗瑰畾 server 鐒跺悗 share 璇?lease.
 
-一旦 一个 client establishes 打开 和 锁 状态, the NFSv4 协议
-enables lease 状态 到 transition 到 其他 servers, 以下 数据
-该 具有 已经 migrated. 此 hides 数据 migration completely 来自
-运行中 applications. The Linux NFSv4 client facilitates 状态
-migration 由 presenting the 相同 "client_owner4" 到 全部 servers 它
+涓€鏃?涓€涓?client establishes 鎵撳紑 鍜?閿?鐘舵€? the NFSv4 鍗忚
+enables lease 鐘舵€?鍒?transition 鍒?鍏朵粬 servers, 浠ヤ笅 鏁版嵁
+璇?鍏锋湁 宸茬粡 migrated. 姝?hides 鏁版嵁 migration completely 鏉ヨ嚜
+杩愯涓?applications. The Linux NFSv4 client facilitates 鐘舵€?
+migration 鐢?presenting the 鐩稿悓 "client_owner4" 鍒?鍏ㄩ儴 servers 瀹?
 encounters.
 
-## 参见 也
+## 鍙傝 涔?
 
 
   - nfs(5)
   - kerberos(7)
-  - RFC 7530 用于 the NFSv4.0 specification
-  - RFC 8881 用于 the NFSv4.1 specification.
+  - RFC 7530 鐢ㄤ簬 the NFSv4.0 specification
+  - RFC 8881 鐢ㄤ簬 the NFSv4.1 specification.

@@ -1,23 +1,15 @@
-## 一致性设备属性表（CDAT）
+﻿## 涓€鑷存€ц澶囧睘鎬ц〃锛圕DAT锛?
 
+CDAT 鎻愪緵璇稿 CXL 鍔犻€熷櫒銆佷氦鎹㈡満鎴栫鐐圭瓑璁惧鐨勫姛鑳戒笌鎬ц兘灞炴€с€傚叾琛ㄦ牸寮忕被浼间簬
+ACPI 琛ㄣ€侰DAT 鏁版嵁鍙敱 BIOS 鍦ㄥ惎鍔ㄦ椂瑙ｆ瀽锛屼篃鍙湪杩愯鏃舵灇涓撅紙渚嬪璁惧鐑彃鎷斾箣鍚庯級銆?
+鏈锛?DPA 鈥?璁惧鐗╃悊鍦板潃锛圖evice Physical Address锛夛紝鐢?CXL 璁惧鐢ㄦ潵琛ㄧず璇ヨ澶囨墍鏀寔鐨勫湴鍧€銆?
+DSMADHandle 鈥?涓庣敱 DSMAS 琛ㄥ畾涔夌殑 DPA 鑼冨洿鐩稿叧鑱旂殑璁惧鍞竴鍙ユ焺銆?
 
-CDAT 提供诸如 CXL 加速器、交换机或端点等设备的功能与性能属性。其表格式类似于
-ACPI 表。CDAT 数据可由 BIOS 在启动时解析，也可在运行时枚举（例如设备热插拔之后）。
+## 璁惧浣滅敤鍩熷唴瀛樹翰鍜屾€х粨鏋勶紙DSMAS锛?
 
-术语：
-DPA — 设备物理地址（Device Physical Address），由 CXL 设备用来表示该设备所支持的地址。
-
-DSMADHandle — 与由 DSMAS 表定义的 DPA 范围相关联的设备唯一句柄。
-
-
-## 设备作用域内存亲和性结构（DSMAS）
-
-
-DSMAS 包含诸如 DSMADHandle、DPA 基地址（DPA Base）和 DPA 长度（DPA Length）等信息。
-
-该表由 Linux 与设备作用域延迟与带宽信息结构（DSLBIS）结合使用，以确定 CXL 设备
-自身的性能属性。
-
+DSMAS 鍖呭惈璇稿 DSMADHandle銆丏PA 鍩哄湴鍧€锛圖PA Base锛夊拰 DPA 闀垮害锛圖PA Length锛夌瓑淇℃伅銆?
+璇ヨ〃鐢?Linux 涓庤澶囦綔鐢ㄥ煙寤惰繜涓庡甫瀹戒俊鎭粨鏋勶紙DSLBIS锛夌粨鍚堜娇鐢紝浠ョ‘瀹?CXL 璁惧
+鑷韩鐨勬€ц兘灞炴€с€?
 ```
 
  Structure Type : 00 [DSMAS]
@@ -31,12 +23,10 @@ DSMAS 包含诸如 DSMADHandle、DPA 基地址（DPA Base）和 DPA 长度（DPA
 
 
 ```
-## 设备作用域延迟与带宽信息结构（DSLBIS）
+## 璁惧浣滅敤鍩熷欢杩熶笌甯﹀淇℃伅缁撴瀯锛圖SLBIS锛?
 
-
-该表由 Linux 与 DSMAS 结合使用，以确定 CXL 设备的性能属性。DSLBIS 包含基于
-DSMADHandle 匹配的延迟与带宽信息。
-
+璇ヨ〃鐢?Linux 涓?DSMAS 缁撳悎浣跨敤锛屼互纭畾 CXL 璁惧鐨勬€ц兘灞炴€с€侱SLBIS 鍖呭惈鍩轰簬
+DSMADHandle 鍖归厤鐨勫欢杩熶笌甯﹀淇℃伅銆?
 ```
 
    Structure Type : 01 [DSLBIS]
@@ -61,13 +51,10 @@ DSMADHandle 匹配的延迟与带宽信息。
 
 
 ```
-## 交换机作用域延迟与带宽信息结构（SSLBIS）
+## 浜ゆ崲鏈轰綔鐢ㄥ煙寤惰繜涓庡甫瀹戒俊鎭粨鏋勶紙SSLBIS锛?
 
-
-SSLBIS 包含有关交换机延迟和带宽的信息。
-
-该表由 Linux 用于计算从设备到根端口的 CXL 路径的性能坐标，其中交换机是路径的一部分。
-
+SSLBIS 鍖呭惈鏈夊叧浜ゆ崲鏈哄欢杩熷拰甯﹀鐨勪俊鎭€?
+璇ヨ〃鐢?Linux 鐢ㄤ簬璁＄畻浠庤澶囧埌鏍圭鍙ｇ殑 CXL 璺緞鐨勬€ц兘鍧愭爣锛屽叾涓氦鎹㈡満鏄矾寰勭殑涓€閮ㄥ垎銆?
 ```
 
   Structure Type : 05 [SSLBIS]
@@ -103,4 +90,4 @@ SSLBIS 包含有关交换机延迟和带宽的信息。
         Reserved : 0000
 
 ```
-CXL 驱动结合使用 CDAT、HMAT、SRAT 以及其他数据，为 CXL 设备生成“整条路径性能”数据。
+CXL 椹卞姩缁撳悎浣跨敤 CDAT銆丠MAT銆丼RAT 浠ュ強鍏朵粬鏁版嵁锛屼负 CXL 璁惧鐢熸垚鈥滄暣鏉¤矾寰勬€ц兘鈥濇暟鎹€?

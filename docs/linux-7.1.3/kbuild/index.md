@@ -1,20 +1,20 @@
+﻿
+## 鍐呮牳鏋勫缓绯荤粺
 
-## 内核构建系统
-
-本文档集合介绍 Linux 内核构建系统（kbuild）及其配置语言 Kconfig 的概念、用法与实现。
+鏈枃妗ｉ泦鍚堜粙缁?Linux 鍐呮牳鏋勫缓绯荤粺锛坘build锛夊強鍏堕厤缃瑷€ Kconfig 鐨勬蹇点€佺敤娉曚笌瀹炵幇銆?
 
 
-- [Kconfig 语言](kconfig-language)
-- [Kconfig 宏语言](kconfig-macro-language)
+- [Kconfig 璇█](kconfig-language)
+- [Kconfig 瀹忚瑷€](kconfig-macro-language)
 - [kbuild](kbuild)
 - [kconfig](kconfig)
 - [makefiles](makefiles)
 - [modules](modules)
 - [headers_install](headers_install)
-- [问题](issues)
-- [可复现构建](reproducible-builds)
-- [GCC 插件](gcc-plugins)
+- [闂](issues)
+- [鍙鐜版瀯寤篯(reproducible-builds)
+- [GCC 鎻掍欢](gcc-plugins)
 - [llvm](llvm)
 - [gendwarfksyms](gendwarfksyms)
-- [Bash 补全](bash-completion)
+- [Bash 琛ュ叏](bash-completion)
 

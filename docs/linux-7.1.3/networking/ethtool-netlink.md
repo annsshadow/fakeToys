@@ -1,44 +1,44 @@
-## ethtool 的 Netlink 接口
+﻿## ethtool 鐨?Netlink 鎺ュ彛
 
 
-## 基本信息
+## 鍩烘湰淇℃伅
 
 
-ethtool 的 netlink 接口使用名为 `ethtool` 的 generic netlink 系列
-（用户态应用程序应使用在 `<linux/ethtool_netlink.h>` uapi 头文件中定义的宏
-`ETHTOOL_GENL_NAME` 与 `ETHTOOL_GENL_VERSION`）。该系列不使用特定的头部，请求与
-回复中的所有信息均通过 netlink 属性传递。
+ethtool 鐨?netlink 鎺ュ彛浣跨敤鍚嶄负 `ethtool` 鐨?generic netlink 绯诲垪
+锛堢敤鎴锋€佸簲鐢ㄧ▼搴忓簲浣跨敤鍦?`<linux/ethtool_netlink.h>` uapi 澶存枃浠朵腑瀹氫箟鐨勫畯
+`ETHTOOL_GENL_NAME` 涓?`ETHTOOL_GENL_VERSION`锛夈€傝绯诲垪涓嶄娇鐢ㄧ壒瀹氱殑澶撮儴锛岃姹備笌
+鍥炲涓殑鎵€鏈変俊鎭潎閫氳繃 netlink 灞炴€т紶閫掋€?
 
-ethtool netlink 接口使用扩展 ACK（extended ACK）来上报错误与警告，建议用户态应用
-程序开发者以合适的方式将这些消息呈现给用户。
+ethtool netlink 鎺ュ彛浣跨敤鎵╁睍 ACK锛坋xtended ACK锛夋潵涓婃姤閿欒涓庤鍛婏紝寤鸿鐢ㄦ埛鎬佸簲鐢?
+绋嬪簭寮€鍙戣€呬互鍚堥€傜殑鏂瑰紡灏嗚繖浜涙秷鎭憟鐜扮粰鐢ㄦ埛銆?
 
-请求可分为三类：“get”（获取信息）、“set”（设置参数）与“action”（执行某个动作）。
+璇锋眰鍙垎涓轰笁绫伙細鈥済et鈥濓紙鑾峰彇淇℃伅锛夈€佲€渟et鈥濓紙璁剧疆鍙傛暟锛変笌鈥渁ction鈥濓紙鎵ц鏌愪釜鍔ㄤ綔锛夈€?
 
-所有“set”与“action”类型的请求都需要管理员权限（命名空间内的
-`CAP_NET_ADMIN`）。大多数“get”类型的请求允许任何人调用，但也有例外（当回复中包含
-敏感信息时）。在某些情况下，请求本身对任何人都是允许的，但非特权用户会被省略掉
-包含敏感信息的属性（例如唤醒局域网密码）。
-
-
-## 约定
+鎵€鏈夆€渟et鈥濅笌鈥渁ction鈥濈被鍨嬬殑璇锋眰閮介渶瑕佺鐞嗗憳鏉冮檺锛堝懡鍚嶇┖闂村唴鐨?
+`CAP_NET_ADMIN`锛夈€傚ぇ澶氭暟鈥済et鈥濈被鍨嬬殑璇锋眰鍏佽浠讳綍浜鸿皟鐢紝浣嗕篃鏈変緥澶栵紙褰撳洖澶嶄腑鍖呭惈
+鏁忔劅淇℃伅鏃讹級銆傚湪鏌愪簺鎯呭喌涓嬶紝璇锋眰鏈韩瀵逛换浣曚汉閮芥槸鍏佽鐨勶紝浣嗛潪鐗规潈鐢ㄦ埛浼氳鐪佺暐鎺?
+鍖呭惈鏁忔劅淇℃伅鐨勫睘鎬э紙渚嬪鍞ら啋灞€鍩熺綉瀵嗙爜锛夈€?
 
 
-表示布尔值的属性通常沿用 NLA_U8 类型，以便区分三种状态：“on”（开）、“off”（关）
-与“not present”（不存在，即“get”请求中信息不可用，或“set”请求中无需改变该值）。
-对于这些属性，“true”（真）值应以数字 1 传递，但接收方应将任何非零值都理解为“true”。
-在下方的表中，“bool”表示以此方式解释的 NLA_U8 属性。
-
-在下面的消息结构描述中，若某属性名带有“+”后缀，则表示其父嵌套中可以包含多个相同
-类型的属性。这实现了一个条目数组。
-
-需要由设备驱动填充、并依据其是否有效来dump到用户空间的属性，不应使用零作为有效值。
-这样可以避免在设备驱动 API 中显式标识该属性的有效性。
+## 绾﹀畾
 
 
-## 请求头
+琛ㄧず甯冨皵鍊肩殑灞炴€ч€氬父娌跨敤 NLA_U8 绫诲瀷锛屼互渚垮尯鍒嗕笁绉嶇姸鎬侊細鈥渙n鈥濓紙寮€锛夈€佲€渙ff鈥濓紙鍏筹級
+涓庘€渘ot present鈥濓紙涓嶅瓨鍦紝鍗斥€済et鈥濊姹備腑淇℃伅涓嶅彲鐢紝鎴栤€渟et鈥濊姹備腑鏃犻渶鏀瑰彉璇ュ€硷級銆?
+瀵逛簬杩欎簺灞炴€э紝鈥渢rue鈥濓紙鐪燂級鍊煎簲浠ユ暟瀛?1 浼犻€掞紝浣嗘帴鏀舵柟搴斿皢浠讳綍闈為浂鍊奸兘鐞嗚В涓衡€渢rue鈥濄€?
+鍦ㄤ笅鏂圭殑琛ㄤ腑锛屸€渂ool鈥濊〃绀轰互姝ゆ柟寮忚В閲婄殑 NLA_U8 灞炴€с€?
+
+鍦ㄤ笅闈㈢殑娑堟伅缁撴瀯鎻忚堪涓紝鑻ユ煇灞炴€у悕甯︽湁鈥?鈥濆悗缂€锛屽垯琛ㄧず鍏剁埗宓屽涓彲浠ュ寘鍚涓浉鍚?
+绫诲瀷鐨勫睘鎬с€傝繖瀹炵幇浜嗕竴涓潯鐩暟缁勩€?
+
+闇€瑕佺敱璁惧椹卞姩濉厖銆佸苟渚濇嵁鍏舵槸鍚︽湁鏁堟潵dump鍒扮敤鎴风┖闂寸殑灞炴€э紝涓嶅簲浣跨敤闆朵綔涓烘湁鏁堝€笺€?
+杩欐牱鍙互閬垮厤鍦ㄨ澶囬┍鍔?API 涓樉寮忔爣璇嗚灞炴€х殑鏈夋晥鎬с€?
 
 
-每个请求或回复消息都包含一个带有公共头部的嵌套属性。该头部的结构如下：
+## 璇锋眰澶?
+
+
+姣忎釜璇锋眰鎴栧洖澶嶆秷鎭兘鍖呭惈涓€涓甫鏈夊叕鍏卞ご閮ㄧ殑宓屽灞炴€с€傝澶撮儴鐨勭粨鏋勫涓嬶細
 
   ==============================  ======  =============================
   `ETHTOOL_A_HEADER_DEV_INDEX`  u32     device ifindex
@@ -47,46 +47,46 @@ ethtool netlink 接口使用扩展 ACK（extended ACK）来上报错误与警告
   `ETHTOOL_A_HEADER_PHY_INDEX`  u32     phy device index
   ==============================  ======  =============================
 
-`ETHTOOL_A_HEADER_DEV_INDEX` 与 `ETHTOOL_A_HEADER_DEV_NAME` 用于标识消息所关联的
-设备。在请求中提供其中一个即可；若两者都提供，则它们必须指向同一设备。某些请求
-（例如全局字符串集）不需要设备标识。大多数 `GET` 请求也允许不带设备标识的 dump
-请求，以查询提供该信息的全部设备（每个设备单独一条消息）。
+`ETHTOOL_A_HEADER_DEV_INDEX` 涓?`ETHTOOL_A_HEADER_DEV_NAME` 鐢ㄤ簬鏍囪瘑娑堟伅鎵€鍏宠仈鐨?
+璁惧銆傚湪璇锋眰涓彁渚涘叾涓竴涓嵆鍙紱鑻ヤ袱鑰呴兘鎻愪緵锛屽垯瀹冧滑蹇呴』鎸囧悜鍚屼竴璁惧銆傛煇浜涜姹?
+锛堜緥濡傚叏灞€瀛楃涓查泦锛変笉闇€瑕佽澶囨爣璇嗐€傚ぇ澶氭暟 `GET` 璇锋眰涔熷厑璁镐笉甯﹁澶囨爣璇嗙殑 dump
+璇锋眰锛屼互鏌ヨ鎻愪緵璇ヤ俊鎭殑鍏ㄩ儴璁惧锛堟瘡涓澶囧崟鐙竴鏉℃秷鎭級銆?
 
-`ETHTOOL_A_HEADER_FLAGS` 是一个对所有请求类型通用的请求标志位图。这些标志的解释
-对所有请求类型都相同，但某些标志可能不适用于特定请求。已识别的标志如下：
+`ETHTOOL_A_HEADER_FLAGS` 鏄竴涓鎵€鏈夎姹傜被鍨嬮€氱敤鐨勮姹傛爣蹇椾綅鍥俱€傝繖浜涙爣蹇楃殑瑙ｉ噴
+瀵规墍鏈夎姹傜被鍨嬮兘鐩稿悓锛屼絾鏌愪簺鏍囧織鍙兘涓嶉€傜敤浜庣壒瀹氳姹傘€傚凡璇嗗埆鐨勬爣蹇楀涓嬶細
 
   =================================  ===================================
-  `ETHTOOL_FLAG_COMPACT_BITSETS`   回复中使用紧凑格式位集
-  `ETHTOOL_FLAG_OMIT_REPLY`        省略可选回复（_SET 与 _ACT）
-  `ETHTOOL_FLAG_STATS`             包含可选的设备统计信息
+  `ETHTOOL_FLAG_COMPACT_BITSETS`   鍥炲涓娇鐢ㄧ揣鍑戞牸寮忎綅闆?
+  `ETHTOOL_FLAG_OMIT_REPLY`        鐪佺暐鍙€夊洖澶嶏紙_SET 涓?_ACT锛?
+  `ETHTOOL_FLAG_STATS`             鍖呭惈鍙€夌殑璁惧缁熻淇℃伅
   =================================  ===================================
 
-新的请求标志应遵循一个总体原则：若未设置该标志，则行为保持向后兼容，即来自不了解
-该标志的旧客户端发出的请求，应按客户端期望的方式解释。客户端不得设置它所不了解的
-标志。
+鏂扮殑璇锋眰鏍囧織搴旈伒寰竴涓€讳綋鍘熷垯锛氳嫢鏈缃鏍囧織锛屽垯琛屼负淇濇寔鍚戝悗鍏煎锛屽嵆鏉ヨ嚜涓嶄簡瑙?
+璇ユ爣蹇楃殑鏃у鎴风鍙戝嚭鐨勮姹傦紝搴旀寜瀹㈡埛绔湡鏈涚殑鏂瑰紡瑙ｉ噴銆傚鎴风涓嶅緱璁剧疆瀹冩墍涓嶄簡瑙ｇ殑
+鏍囧織銆?
 
-`ETHTOOL_A_HEADER_PHY_INDEX` 标识消息所关联的以太网 PHY。由于有大量命令与 PHY 配置
-相关，且链路上可能存在多个 PHY，对于需要它的命令，可以在请求中传入 PHY 索引。但
-这并非强制要求；如果针对 PHY 的命令未传入该值，则会使用 net_device.phydev 指针。
+`ETHTOOL_A_HEADER_PHY_INDEX` 鏍囪瘑娑堟伅鎵€鍏宠仈鐨勪互澶綉 PHY銆傜敱浜庢湁澶ч噺鍛戒护涓?PHY 閰嶇疆
+鐩稿叧锛屼笖閾捐矾涓婂彲鑳藉瓨鍦ㄥ涓?PHY锛屽浜庨渶瑕佸畠鐨勫懡浠わ紝鍙互鍦ㄨ姹備腑浼犲叆 PHY 绱㈠紩銆備絾
+杩欏苟闈炲己鍒惰姹傦紱濡傛灉閽堝 PHY 鐨勫懡浠ゆ湭浼犲叆璇ュ€硷紝鍒欎細浣跨敤 net_device.phydev 鎸囬拡銆?
 
-## 位集合
+## 浣嶉泦鍚?
 
 
-对于长度（相对）固定的短位图，使用标准的 `NLA_BITFIELD32` 类型。对于任意长度的位图，
-ethtool netlink 使用一种嵌套属性，其内容采用两种形式之一：紧凑形式（两个二进制位图，
-分别表示位值与受影响位的掩码）与逐位形式（由索引或名称标识的位列表）。
+瀵逛簬闀垮害锛堢浉瀵癸級鍥哄畾鐨勭煭浣嶅浘锛屼娇鐢ㄦ爣鍑嗙殑 `NLA_BITFIELD32` 绫诲瀷銆傚浜庝换鎰忛暱搴︾殑浣嶅浘锛?
+ethtool netlink 浣跨敤涓€绉嶅祵濂楀睘鎬э紝鍏跺唴瀹归噰鐢ㄤ袱绉嶅舰寮忎箣涓€锛氱揣鍑戝舰寮忥紙涓や釜浜岃繘鍒朵綅鍥撅紝
+鍒嗗埆琛ㄧず浣嶅€间笌鍙楀奖鍝嶄綅鐨勬帺鐮侊級涓庨€愪綅褰㈠紡锛堢敱绱㈠紩鎴栧悕绉版爣璇嗙殑浣嶅垪琛級銆?
 
-详细（逐位）位集允许将位的符号名与其值一同发送，从而省去一次往返（当位集在请求中传递时）
-或至少省去一次额外请求（当位集在回复中时）。这对于传统 ethtool 命令这类一次性应用很有
-用处。另一方面，像 ethtool monitor（显示通知）或网络管理守护进程这类长期运行的应用，
-可能更倾向于仅获取一次名称，并使用紧凑形式以减小消息体积。ethtool netlink 接口发出的
-通知始终对位集使用紧凑形式。
+璇︾粏锛堥€愪綅锛変綅闆嗗厑璁稿皢浣嶇殑绗﹀彿鍚嶄笌鍏跺€间竴鍚屽彂閫侊紝浠庤€岀渷鍘讳竴娆″線杩旓紙褰撲綅闆嗗湪璇锋眰涓紶閫掓椂锛?
+鎴栬嚦灏戠渷鍘讳竴娆￠澶栬姹傦紙褰撲綅闆嗗湪鍥炲涓椂锛夈€傝繖瀵逛簬浼犵粺 ethtool 鍛戒护杩欑被涓€娆℃€у簲鐢ㄥ緢鏈?
+鐢ㄥ銆傚彟涓€鏂归潰锛屽儚 ethtool monitor锛堟樉绀洪€氱煡锛夋垨缃戠粶绠＄悊瀹堟姢杩涚▼杩欑被闀挎湡杩愯鐨勫簲鐢紝
+鍙兘鏇村€惧悜浜庝粎鑾峰彇涓€娆″悕绉帮紝骞朵娇鐢ㄧ揣鍑戝舰寮忎互鍑忓皬娑堟伅浣撶Н銆俥thtool netlink 鎺ュ彛鍙戝嚭鐨?
+閫氱煡濮嬬粓瀵逛綅闆嗕娇鐢ㄧ揣鍑戝舰寮忋€?
 
-一个位集既可以表示一个值/掩码对（`ETHTOOL_A_BITSET_NOMASK` 未设置），也可以表示单个
-位图（`ETHTOOL_A_BITSET_NOMASK` 已设置）。在修改位图的请求中，前者将掩码中位对应的位
-修改为值中设置的位，其余保持不变；后者则将位图中设置的位设为 1，其余清 0。
+涓€涓綅闆嗘棦鍙互琛ㄧず涓€涓€?鎺╃爜瀵癸紙`ETHTOOL_A_BITSET_NOMASK` 鏈缃級锛屼篃鍙互琛ㄧず鍗曚釜
+浣嶅浘锛坄ETHTOOL_A_BITSET_NOMASK` 宸茶缃級銆傚湪淇敼浣嶅浘鐨勮姹備腑锛屽墠鑰呭皢鎺╃爜涓綅瀵瑰簲鐨勪綅
+淇敼涓哄€间腑璁剧疆鐨勪綅锛屽叾浣欎繚鎸佷笉鍙橈紱鍚庤€呭垯灏嗕綅鍥句腑璁剧疆鐨勪綅璁句负 1锛屽叾浣欐竻 0銆?
 
-紧凑形式：嵌套（位集）属性的内容：
+绱у噾褰㈠紡锛氬祵濂楋紙浣嶉泦锛夊睘鎬х殑鍐呭锛?
 
   ============================  ======  ============================
   `ETHTOOL_A_BITSET_NOMASK`   flag    no mask, only a list
@@ -95,19 +95,19 @@ ethtool netlink 使用一种嵌套属性，其内容采用两种形式之一：�
   `ETHTOOL_A_BITSET_MASK`     binary  bitmap of valid bits
   ============================  ======  ============================
 
-值和掩码的长度必须至少为 `ETHTOOL_A_BITSET_SIZE` 个位，并向上取整到 32 位的整数倍。
-它们由以主机字节序存放的 32 位字组成，字从最低有效到最高有效排序（即与 ioctl 接口
-传递位图的方式相同）。
+鍊煎拰鎺╃爜鐨勯暱搴﹀繀椤昏嚦灏戜负 `ETHTOOL_A_BITSET_SIZE` 涓綅锛屽苟鍚戜笂鍙栨暣鍒?32 浣嶇殑鏁存暟鍊嶃€?
+瀹冧滑鐢变互涓绘満瀛楄妭搴忓瓨鏀剧殑 32 浣嶅瓧缁勬垚锛屽瓧浠庢渶浣庢湁鏁堝埌鏈€楂樻湁鏁堟帓搴忥紙鍗充笌 ioctl 鎺ュ彛
+浼犻€掍綅鍥剧殑鏂瑰紡鐩稿悓锛夈€?
 
-对于紧凑形式，`ETHTOOL_A_BITSET_SIZE` 与 `ETHTOOL_A_BITSET_VALUE` 是必填的。
-当 `ETHTOOL_A_BITSET_NOMASK` 未设置时（位集表示一个值/掩码对），`ETHTOOL_A_BITSET_MASK`
-属性为必填；若 `ETHTOOL_A_BITSET_NOMASK` 未设置，`ETHTOOL_A_BITSET_MASK` 则不允许出现
-（位集表示一个单独位图）。
+瀵逛簬绱у噾褰㈠紡锛宍ETHTOOL_A_BITSET_SIZE` 涓?`ETHTOOL_A_BITSET_VALUE` 鏄繀濉殑銆?
+褰?`ETHTOOL_A_BITSET_NOMASK` 鏈缃椂锛堜綅闆嗚〃绀轰竴涓€?鎺╃爜瀵癸級锛宍ETHTOOL_A_BITSET_MASK`
+灞炴€т负蹇呭～锛涜嫢 `ETHTOOL_A_BITSET_NOMASK` 鏈缃紝`ETHTOOL_A_BITSET_MASK` 鍒欎笉鍏佽鍑虹幇
+锛堜綅闆嗚〃绀轰竴涓崟鐙綅鍥撅級銆?
 
-如果较旧的应用程序运行在较新的内核上，或反之，内核的位集长度可能与用户空间的长度不同。
-若用户空间的位图更长，仅当请求实际试图设置某些内核无法识别的位的值时，才会返回错误。
+濡傛灉杈冩棫鐨勫簲鐢ㄧ▼搴忚繍琛屽湪杈冩柊鐨勫唴鏍镐笂锛屾垨鍙嶄箣锛屽唴鏍哥殑浣嶉泦闀垮害鍙兘涓庣敤鎴风┖闂寸殑闀垮害涓嶅悓銆?
+鑻ョ敤鎴风┖闂寸殑浣嶅浘鏇撮暱锛屼粎褰撹姹傚疄闄呰瘯鍥捐缃煇浜涘唴鏍告棤娉曡瘑鍒殑浣嶇殑鍊兼椂锛屾墠浼氳繑鍥為敊璇€?
 
-逐位形式：嵌套（位集）属性的内容：
+閫愪綅褰㈠紡锛氬祵濂楋紙浣嶉泦锛夊睘鎬х殑鍐呭锛?
 
  +------------------------------------+--------+-----------------------------+
  | `ETHTOOL_A_BITSET_NOMASK`        | flag   | no mask, only a list        |
@@ -125,180 +125,180 @@ ethtool netlink 使用一种嵌套属性，其内容采用两种形式之一：�
  | | | `ETHTOOL_A_BITSET_BIT_VALUE` | flag   | present if bit is set       |
  +-+-+--------------------------------+--------+-----------------------------+
 
-对于逐位形式，`ETHTOOL_A_BITSET_SIZE` 是可选的，`ETHTOOL_A_BITSET_BITS` 为必填。
-`ETHTOOL_A_BITSET_BITS` 嵌套中只能包含 `ETHTOOL_A_BITSET_BITS_BIT` 属性，但其数量
-可以任意。一个位可以通过其索引或名称来标识。在请求中使用时，所列出的位会根据
-`ETHTOOL_A_BITSET_BIT_VALUE` 被设为 0 或 1，其余保持不变。
+瀵逛簬閫愪綅褰㈠紡锛宍ETHTOOL_A_BITSET_SIZE` 鏄彲閫夌殑锛宍ETHTOOL_A_BITSET_BITS` 涓哄繀濉€?
+`ETHTOOL_A_BITSET_BITS` 宓屽涓彧鑳藉寘鍚?`ETHTOOL_A_BITSET_BITS_BIT` 灞炴€э紝浣嗗叾鏁伴噺
+鍙互浠绘剰銆備竴涓綅鍙互閫氳繃鍏剁储寮曟垨鍚嶇О鏉ユ爣璇嗐€傚湪璇锋眰涓娇鐢ㄦ椂锛屾墍鍒楀嚭鐨勪綅浼氭牴鎹?
+`ETHTOOL_A_BITSET_BIT_VALUE` 琚涓?0 鎴?1锛屽叾浣欎繚鎸佷笉鍙樸€?
 
-如果索引超出了内核的位长度，或者名称无法识别，请求将失败。若名称和索引同时设置，且
-它们指向不同的位，请求也会失败。
+濡傛灉绱㈠紩瓒呭嚭浜嗗唴鏍哥殑浣嶉暱搴︼紝鎴栬€呭悕绉版棤娉曡瘑鍒紝璇锋眰灏嗗け璐ャ€傝嫢鍚嶇О鍜岀储寮曞悓鏃惰缃紝涓?
+瀹冧滑鎸囧悜涓嶅悓鐨勪綅锛岃姹備篃浼氬け璐ャ€?
 
-当 `ETHTOOL_A_BITSET_NOMASK` 标志存在时，位集被解释为一个简单位图。这种情况下不使用
-`ETHTOOL_A_BITSET_BIT_VALUE` 属性。此类位集表示一个位图，其中所列出的位被置位，其余
-为 0。
+褰?`ETHTOOL_A_BITSET_NOMASK` 鏍囧織瀛樺湪鏃讹紝浣嶉泦琚В閲婁负涓€涓畝鍗曚綅鍥俱€傝繖绉嶆儏鍐典笅涓嶄娇鐢?
+`ETHTOOL_A_BITSET_BIT_VALUE` 灞炴€с€傛绫讳綅闆嗚〃绀轰竴涓綅鍥撅紝鍏朵腑鎵€鍒楀嚭鐨勪綅琚疆浣嶏紝鍏朵綑
+涓?0銆?
 
-在请求中，应用程序可以使用任意一种形式。内核在回复中使用的形式由请求头 flags 字段中的
-`ETHTOOL_FLAG_COMPACT_BITSETS` 标志决定。值与掩码的语义取决于具体属性。
-
-
-## 消息类型列表
+鍦ㄨ姹備腑锛屽簲鐢ㄧ▼搴忓彲浠ヤ娇鐢ㄤ换鎰忎竴绉嶅舰寮忋€傚唴鏍稿湪鍥炲涓娇鐢ㄧ殑褰㈠紡鐢辫姹傚ご flags 瀛楁涓殑
+`ETHTOOL_FLAG_COMPACT_BITSETS` 鏍囧織鍐冲畾銆傚€间笌鎺╃爜鐨勮涔夊彇鍐充簬鍏蜂綋灞炴€с€?
 
 
-所有标识消息类型的常量都使用 `ETHTOOL_CMD_` 前缀，并根据消息用途使用相应的后缀：
+## 娑堟伅绫诲瀷鍒楄〃
+
+
+鎵€鏈夋爣璇嗘秷鎭被鍨嬬殑甯搁噺閮戒娇鐢?`ETHTOOL_CMD_` 鍓嶇紑锛屽苟鏍规嵁娑堟伅鐢ㄩ€斾娇鐢ㄧ浉搴旂殑鍚庣紑锛?
 
   ==============    ======================================
-  `_GET`          用户空间用于获取数据的请求
-  `_SET`          用户空间用于设置数据的请求
-  `_ACT`          用户空间用于执行某个动作的请求
-  `_GET_REPLY`    内核对 `GET` 请求的回复
-  `_SET_REPLY`    内核对 `SET` 请求的回复
-  `_ACT_REPLY`    内核对 `ACT` 请求的回复
-  `_NTF`          内核通知
+  `_GET`          鐢ㄦ埛绌洪棿鐢ㄤ簬鑾峰彇鏁版嵁鐨勮姹?
+  `_SET`          鐢ㄦ埛绌洪棿鐢ㄤ簬璁剧疆鏁版嵁鐨勮姹?
+  `_ACT`          鐢ㄦ埛绌洪棿鐢ㄤ簬鎵ц鏌愪釜鍔ㄤ綔鐨勮姹?
+  `_GET_REPLY`    鍐呮牳瀵?`GET` 璇锋眰鐨勫洖澶?
+  `_SET_REPLY`    鍐呮牳瀵?`SET` 璇锋眰鐨勫洖澶?
+  `_ACT_REPLY`    鍐呮牳瀵?`ACT` 璇锋眰鐨勫洖澶?
+  `_NTF`          鍐呮牳閫氱煡
   ==============    ======================================
 
-用户空间到内核：
+鐢ㄦ埛绌洪棿鍒板唴鏍革細
 
   ===================================== =================================
-  `ETHTOOL_MSG_STRSET_GET`            获取字符串集
-  `ETHTOOL_MSG_LINKINFO_GET`          获取链路设置
-  `ETHTOOL_MSG_LINKINFO_SET`          设置链路设置
-  `ETHTOOL_MSG_LINKMODES_GET`         获取链路模式信息
-  `ETHTOOL_MSG_LINKMODES_SET`         设置链路模式信息
-  `ETHTOOL_MSG_LINKSTATE_GET`         获取链路状态
-  `ETHTOOL_MSG_DEBUG_GET`             获取调试设置
-  `ETHTOOL_MSG_DEBUG_SET`             设置调试设置
-  `ETHTOOL_MSG_WOL_GET`               获取唤醒局域网设置
-  `ETHTOOL_MSG_WOL_SET`               设置唤醒局域网设置
-  `ETHTOOL_MSG_FEATURES_GET`          获取设备特性
-  `ETHTOOL_MSG_FEATURES_SET`          设置设备特性
-  `ETHTOOL_MSG_PRIVFLAGS_GET`         获取私有标志
-  `ETHTOOL_MSG_PRIVFLAGS_SET`         设置私有标志
-  `ETHTOOL_MSG_RINGS_GET`             获取环形队列大小
-  `ETHTOOL_MSG_RINGS_SET`             设置环形队列大小
-  `ETHTOOL_MSG_CHANNELS_GET`          获取通道数量
-  `ETHTOOL_MSG_CHANNELS_SET`          设置通道数量
-  `ETHTOOL_MSG_COALESCE_GET`          获取中断聚合参数
-  `ETHTOOL_MSG_COALESCE_SET`          设置中断聚合参数
-  `ETHTOOL_MSG_PAUSE_GET`             获取暂停参数
-  `ETHTOOL_MSG_PAUSE_SET`             设置暂停参数
-  `ETHTOOL_MSG_EEE_GET`               获取 EEE 设置
-  `ETHTOOL_MSG_EEE_SET`               设置 EEE 设置
-  `ETHTOOL_MSG_TSINFO_GET`		获取时间戳信息
-  `ETHTOOL_MSG_CABLE_TEST_ACT`        动作：启动线缆测试
-  `ETHTOOL_MSG_CABLE_TEST_TDR_ACT`    动作：启动原始 TDR 线缆测试
-  `ETHTOOL_MSG_TUNNEL_INFO_GET`       获取隧道卸载信息
-  `ETHTOOL_MSG_FEC_GET`               获取 FEC 设置
-  `ETHTOOL_MSG_FEC_SET`               设置 FEC 设置
-  `ETHTOOL_MSG_MODULE_EEPROM_GET`     读取 SFP 模块 EEPROM
-  `ETHTOOL_MSG_STATS_GET`             获取标准统计信息
-  `ETHTOOL_MSG_PHC_VCLOCKS_GET`       获取 PHC 虚拟时钟信息
-  `ETHTOOL_MSG_MODULE_SET`            设置收发器模块参数
-  `ETHTOOL_MSG_MODULE_GET`            获取收发器模块参数
-  `ETHTOOL_MSG_PSE_SET`               设置 PSE 参数
-  `ETHTOOL_MSG_PSE_GET`               获取 PSE 参数
-  `ETHTOOL_MSG_RSS_GET`               获取 RSS 设置
-  `ETHTOOL_MSG_PLCA_GET_CFG`          获取 PLCA RS 参数
-  `ETHTOOL_MSG_PLCA_SET_CFG`          设置 PLCA RS 参数
-  `ETHTOOL_MSG_PLCA_GET_STATUS`       获取 PLCA RS 状态
-  `ETHTOOL_MSG_MM_GET`                获取 MAC 合并层状态
-  `ETHTOOL_MSG_MM_SET`                设置 MAC 合并层参数
-  `ETHTOOL_MSG_MODULE_FW_FLASH_ACT`   烧录收发器模块固件
-  `ETHTOOL_MSG_PHY_GET`               获取以太网 PHY 信息
-  `ETHTOOL_MSG_TSCONFIG_GET`          获取硬件时间戳配置
-  `ETHTOOL_MSG_TSCONFIG_SET`          设置硬件时间戳配置
-  `ETHTOOL_MSG_RSS_SET`               设置 RSS 设置
-  `ETHTOOL_MSG_RSS_CREATE_ACT`        创建额外的 RSS 上下文
-  `ETHTOOL_MSG_RSS_DELETE_ACT`        删除额外的 RSS 上下文
-  `ETHTOOL_MSG_MSE_GET`               获取 MSE 诊断数据
+  `ETHTOOL_MSG_STRSET_GET`            鑾峰彇瀛楃涓查泦
+  `ETHTOOL_MSG_LINKINFO_GET`          鑾峰彇閾捐矾璁剧疆
+  `ETHTOOL_MSG_LINKINFO_SET`          璁剧疆閾捐矾璁剧疆
+  `ETHTOOL_MSG_LINKMODES_GET`         鑾峰彇閾捐矾妯″紡淇℃伅
+  `ETHTOOL_MSG_LINKMODES_SET`         璁剧疆閾捐矾妯″紡淇℃伅
+  `ETHTOOL_MSG_LINKSTATE_GET`         鑾峰彇閾捐矾鐘舵€?
+  `ETHTOOL_MSG_DEBUG_GET`             鑾峰彇璋冭瘯璁剧疆
+  `ETHTOOL_MSG_DEBUG_SET`             璁剧疆璋冭瘯璁剧疆
+  `ETHTOOL_MSG_WOL_GET`               鑾峰彇鍞ら啋灞€鍩熺綉璁剧疆
+  `ETHTOOL_MSG_WOL_SET`               璁剧疆鍞ら啋灞€鍩熺綉璁剧疆
+  `ETHTOOL_MSG_FEATURES_GET`          鑾峰彇璁惧鐗规€?
+  `ETHTOOL_MSG_FEATURES_SET`          璁剧疆璁惧鐗规€?
+  `ETHTOOL_MSG_PRIVFLAGS_GET`         鑾峰彇绉佹湁鏍囧織
+  `ETHTOOL_MSG_PRIVFLAGS_SET`         璁剧疆绉佹湁鏍囧織
+  `ETHTOOL_MSG_RINGS_GET`             鑾峰彇鐜舰闃熷垪澶у皬
+  `ETHTOOL_MSG_RINGS_SET`             璁剧疆鐜舰闃熷垪澶у皬
+  `ETHTOOL_MSG_CHANNELS_GET`          鑾峰彇閫氶亾鏁伴噺
+  `ETHTOOL_MSG_CHANNELS_SET`          璁剧疆閫氶亾鏁伴噺
+  `ETHTOOL_MSG_COALESCE_GET`          鑾峰彇涓柇鑱氬悎鍙傛暟
+  `ETHTOOL_MSG_COALESCE_SET`          璁剧疆涓柇鑱氬悎鍙傛暟
+  `ETHTOOL_MSG_PAUSE_GET`             鑾峰彇鏆傚仠鍙傛暟
+  `ETHTOOL_MSG_PAUSE_SET`             璁剧疆鏆傚仠鍙傛暟
+  `ETHTOOL_MSG_EEE_GET`               鑾峰彇 EEE 璁剧疆
+  `ETHTOOL_MSG_EEE_SET`               璁剧疆 EEE 璁剧疆
+  `ETHTOOL_MSG_TSINFO_GET`		鑾峰彇鏃堕棿鎴充俊鎭?
+  `ETHTOOL_MSG_CABLE_TEST_ACT`        鍔ㄤ綔锛氬惎鍔ㄧ嚎缂嗘祴璇?
+  `ETHTOOL_MSG_CABLE_TEST_TDR_ACT`    鍔ㄤ綔锛氬惎鍔ㄥ師濮?TDR 绾跨紗娴嬭瘯
+  `ETHTOOL_MSG_TUNNEL_INFO_GET`       鑾峰彇闅ч亾鍗歌浇淇℃伅
+  `ETHTOOL_MSG_FEC_GET`               鑾峰彇 FEC 璁剧疆
+  `ETHTOOL_MSG_FEC_SET`               璁剧疆 FEC 璁剧疆
+  `ETHTOOL_MSG_MODULE_EEPROM_GET`     璇诲彇 SFP 妯″潡 EEPROM
+  `ETHTOOL_MSG_STATS_GET`             鑾峰彇鏍囧噯缁熻淇℃伅
+  `ETHTOOL_MSG_PHC_VCLOCKS_GET`       鑾峰彇 PHC 铏氭嫙鏃堕挓淇℃伅
+  `ETHTOOL_MSG_MODULE_SET`            璁剧疆鏀跺彂鍣ㄦā鍧楀弬鏁?
+  `ETHTOOL_MSG_MODULE_GET`            鑾峰彇鏀跺彂鍣ㄦā鍧楀弬鏁?
+  `ETHTOOL_MSG_PSE_SET`               璁剧疆 PSE 鍙傛暟
+  `ETHTOOL_MSG_PSE_GET`               鑾峰彇 PSE 鍙傛暟
+  `ETHTOOL_MSG_RSS_GET`               鑾峰彇 RSS 璁剧疆
+  `ETHTOOL_MSG_PLCA_GET_CFG`          鑾峰彇 PLCA RS 鍙傛暟
+  `ETHTOOL_MSG_PLCA_SET_CFG`          璁剧疆 PLCA RS 鍙傛暟
+  `ETHTOOL_MSG_PLCA_GET_STATUS`       鑾峰彇 PLCA RS 鐘舵€?
+  `ETHTOOL_MSG_MM_GET`                鑾峰彇 MAC 鍚堝苟灞傜姸鎬?
+  `ETHTOOL_MSG_MM_SET`                璁剧疆 MAC 鍚堝苟灞傚弬鏁?
+  `ETHTOOL_MSG_MODULE_FW_FLASH_ACT`   鐑у綍鏀跺彂鍣ㄦā鍧楀浐浠?
+  `ETHTOOL_MSG_PHY_GET`               鑾峰彇浠ュお缃?PHY 淇℃伅
+  `ETHTOOL_MSG_TSCONFIG_GET`          鑾峰彇纭欢鏃堕棿鎴抽厤缃?
+  `ETHTOOL_MSG_TSCONFIG_SET`          璁剧疆纭欢鏃堕棿鎴抽厤缃?
+  `ETHTOOL_MSG_RSS_SET`               璁剧疆 RSS 璁剧疆
+  `ETHTOOL_MSG_RSS_CREATE_ACT`        鍒涘缓棰濆鐨?RSS 涓婁笅鏂?
+  `ETHTOOL_MSG_RSS_DELETE_ACT`        鍒犻櫎棰濆鐨?RSS 涓婁笅鏂?
+  `ETHTOOL_MSG_MSE_GET`               鑾峰彇 MSE 璇婃柇鏁版嵁
   ===================================== =================================
 
-内核到用户空间：
+鍐呮牳鍒扮敤鎴风┖闂达細
 
   ======================================== =================================
-  `ETHTOOL_MSG_STRSET_GET_REPLY`         字符串集内容
-  `ETHTOOL_MSG_LINKINFO_GET_REPLY`       链路设置
-  `ETHTOOL_MSG_LINKINFO_NTF`             链路设置通知
-  `ETHTOOL_MSG_LINKMODES_GET_REPLY`      链路模式信息
-  `ETHTOOL_MSG_LINKMODES_NTF`            链路模式通知
-  `ETHTOOL_MSG_LINKSTATE_GET_REPLY`      链路状态信息
-  `ETHTOOL_MSG_DEBUG_GET_REPLY`          调试设置
-  `ETHTOOL_MSG_DEBUG_NTF`                调试设置通知
-  `ETHTOOL_MSG_WOL_GET_REPLY`            唤醒局域网设置
-  `ETHTOOL_MSG_WOL_NTF`                  唤醒局域网设置通知
-  `ETHTOOL_MSG_FEATURES_GET_REPLY`       设备特性
-  `ETHTOOL_MSG_FEATURES_SET_REPLY`       针对 FEATURES_SET 的可选回复
-  `ETHTOOL_MSG_FEATURES_NTF`             网络设备特性通知
-  `ETHTOOL_MSG_PRIVFLAGS_GET_REPLY`      私有标志
-  `ETHTOOL_MSG_PRIVFLAGS_NTF`            私有标志
-  `ETHTOOL_MSG_RINGS_GET_REPLY`          环形队列大小
-  `ETHTOOL_MSG_RINGS_NTF`                环形队列大小
-  `ETHTOOL_MSG_CHANNELS_GET_REPLY`       通道数量
-  `ETHTOOL_MSG_CHANNELS_NTF`             通道数量
-  `ETHTOOL_MSG_COALESCE_GET_REPLY`       中断聚合参数
-  `ETHTOOL_MSG_COALESCE_NTF`             中断聚合参数
-  `ETHTOOL_MSG_PAUSE_GET_REPLY`          暂停参数
-  `ETHTOOL_MSG_PAUSE_NTF`                暂停参数
-  `ETHTOOL_MSG_EEE_GET_REPLY`            EEE 设置
-  `ETHTOOL_MSG_EEE_NTF`                  EEE 设置
-  `ETHTOOL_MSG_TSINFO_GET_REPLY`         时间戳信息
-  `ETHTOOL_MSG_CABLE_TEST_NTF`           线缆测试结果
-  `ETHTOOL_MSG_CABLE_TEST_TDR_NTF`       线缆测试 TDR 结果
-  `ETHTOOL_MSG_TUNNEL_INFO_GET_REPLY`    隧道卸载信息
-  `ETHTOOL_MSG_FEC_GET_REPLY`            FEC 设置
-  `ETHTOOL_MSG_FEC_NTF`                  FEC 设置
-  `ETHTOOL_MSG_MODULE_EEPROM_GET_REPLY`  读取 SFP 模块 EEPROM
-  `ETHTOOL_MSG_STATS_GET_REPLY`          标准统计信息
-  `ETHTOOL_MSG_PHC_VCLOCKS_GET_REPLY`     PHC 虚拟时钟信息
-  `ETHTOOL_MSG_MODULE_GET_REPLY`         收发器模块参数
-  `ETHTOOL_MSG_PSE_GET_REPLY`            PSE 参数
-  `ETHTOOL_MSG_RSS_GET_REPLY`            RSS 设置
-  `ETHTOOL_MSG_RSS_NTF`                  RSS 设置
-  `ETHTOOL_MSG_PLCA_GET_CFG_REPLY`       PLCA RS 参数
-  `ETHTOOL_MSG_PLCA_GET_STATUS_REPLY`    PLCA RS 状态
-  `ETHTOOL_MSG_PLCA_NTF`                 PLCA RS 参数
-  `ETHTOOL_MSG_MM_GET_REPLY`             MAC 合并层状态
-  `ETHTOOL_MSG_MODULE_FW_FLASH_NTF`      收发器模块固件更新
-  `ETHTOOL_MSG_PHY_GET_REPLY`            以太网 PHY 信息
-  `ETHTOOL_MSG_PHY_NTF`                  以太网 PHY 信息变更
-  `ETHTOOL_MSG_TSCONFIG_GET_REPLY`       硬件时间戳配置
-  `ETHTOOL_MSG_TSCONFIG_SET_REPLY`       新的硬件时间戳配置
-  `ETHTOOL_MSG_PSE_NTF`                  PSE 事件通知
-  `ETHTOOL_MSG_RSS_NTF`                  RSS 设置通知
-  `ETHTOOL_MSG_RSS_CREATE_ACT_REPLY`     创建额外的 RSS 上下文
-  `ETHTOOL_MSG_RSS_CREATE_NTF`           已创建额外的 RSS 上下文
-  `ETHTOOL_MSG_RSS_DELETE_NTF`           已删除额外的 RSS 上下文
-  `ETHTOOL_MSG_MSE_GET_REPLY`            MSE 诊断数据
+  `ETHTOOL_MSG_STRSET_GET_REPLY`         瀛楃涓查泦鍐呭
+  `ETHTOOL_MSG_LINKINFO_GET_REPLY`       閾捐矾璁剧疆
+  `ETHTOOL_MSG_LINKINFO_NTF`             閾捐矾璁剧疆閫氱煡
+  `ETHTOOL_MSG_LINKMODES_GET_REPLY`      閾捐矾妯″紡淇℃伅
+  `ETHTOOL_MSG_LINKMODES_NTF`            閾捐矾妯″紡閫氱煡
+  `ETHTOOL_MSG_LINKSTATE_GET_REPLY`      閾捐矾鐘舵€佷俊鎭?
+  `ETHTOOL_MSG_DEBUG_GET_REPLY`          璋冭瘯璁剧疆
+  `ETHTOOL_MSG_DEBUG_NTF`                璋冭瘯璁剧疆閫氱煡
+  `ETHTOOL_MSG_WOL_GET_REPLY`            鍞ら啋灞€鍩熺綉璁剧疆
+  `ETHTOOL_MSG_WOL_NTF`                  鍞ら啋灞€鍩熺綉璁剧疆閫氱煡
+  `ETHTOOL_MSG_FEATURES_GET_REPLY`       璁惧鐗规€?
+  `ETHTOOL_MSG_FEATURES_SET_REPLY`       閽堝 FEATURES_SET 鐨勫彲閫夊洖澶?
+  `ETHTOOL_MSG_FEATURES_NTF`             缃戠粶璁惧鐗规€ч€氱煡
+  `ETHTOOL_MSG_PRIVFLAGS_GET_REPLY`      绉佹湁鏍囧織
+  `ETHTOOL_MSG_PRIVFLAGS_NTF`            绉佹湁鏍囧織
+  `ETHTOOL_MSG_RINGS_GET_REPLY`          鐜舰闃熷垪澶у皬
+  `ETHTOOL_MSG_RINGS_NTF`                鐜舰闃熷垪澶у皬
+  `ETHTOOL_MSG_CHANNELS_GET_REPLY`       閫氶亾鏁伴噺
+  `ETHTOOL_MSG_CHANNELS_NTF`             閫氶亾鏁伴噺
+  `ETHTOOL_MSG_COALESCE_GET_REPLY`       涓柇鑱氬悎鍙傛暟
+  `ETHTOOL_MSG_COALESCE_NTF`             涓柇鑱氬悎鍙傛暟
+  `ETHTOOL_MSG_PAUSE_GET_REPLY`          鏆傚仠鍙傛暟
+  `ETHTOOL_MSG_PAUSE_NTF`                鏆傚仠鍙傛暟
+  `ETHTOOL_MSG_EEE_GET_REPLY`            EEE 璁剧疆
+  `ETHTOOL_MSG_EEE_NTF`                  EEE 璁剧疆
+  `ETHTOOL_MSG_TSINFO_GET_REPLY`         鏃堕棿鎴充俊鎭?
+  `ETHTOOL_MSG_CABLE_TEST_NTF`           绾跨紗娴嬭瘯缁撴灉
+  `ETHTOOL_MSG_CABLE_TEST_TDR_NTF`       绾跨紗娴嬭瘯 TDR 缁撴灉
+  `ETHTOOL_MSG_TUNNEL_INFO_GET_REPLY`    闅ч亾鍗歌浇淇℃伅
+  `ETHTOOL_MSG_FEC_GET_REPLY`            FEC 璁剧疆
+  `ETHTOOL_MSG_FEC_NTF`                  FEC 璁剧疆
+  `ETHTOOL_MSG_MODULE_EEPROM_GET_REPLY`  璇诲彇 SFP 妯″潡 EEPROM
+  `ETHTOOL_MSG_STATS_GET_REPLY`          鏍囧噯缁熻淇℃伅
+  `ETHTOOL_MSG_PHC_VCLOCKS_GET_REPLY`     PHC 铏氭嫙鏃堕挓淇℃伅
+  `ETHTOOL_MSG_MODULE_GET_REPLY`         鏀跺彂鍣ㄦā鍧楀弬鏁?
+  `ETHTOOL_MSG_PSE_GET_REPLY`            PSE 鍙傛暟
+  `ETHTOOL_MSG_RSS_GET_REPLY`            RSS 璁剧疆
+  `ETHTOOL_MSG_RSS_NTF`                  RSS 璁剧疆
+  `ETHTOOL_MSG_PLCA_GET_CFG_REPLY`       PLCA RS 鍙傛暟
+  `ETHTOOL_MSG_PLCA_GET_STATUS_REPLY`    PLCA RS 鐘舵€?
+  `ETHTOOL_MSG_PLCA_NTF`                 PLCA RS 鍙傛暟
+  `ETHTOOL_MSG_MM_GET_REPLY`             MAC 鍚堝苟灞傜姸鎬?
+  `ETHTOOL_MSG_MODULE_FW_FLASH_NTF`      鏀跺彂鍣ㄦā鍧楀浐浠舵洿鏂?
+  `ETHTOOL_MSG_PHY_GET_REPLY`            浠ュお缃?PHY 淇℃伅
+  `ETHTOOL_MSG_PHY_NTF`                  浠ュお缃?PHY 淇℃伅鍙樻洿
+  `ETHTOOL_MSG_TSCONFIG_GET_REPLY`       纭欢鏃堕棿鎴抽厤缃?
+  `ETHTOOL_MSG_TSCONFIG_SET_REPLY`       鏂扮殑纭欢鏃堕棿鎴抽厤缃?
+  `ETHTOOL_MSG_PSE_NTF`                  PSE 浜嬩欢閫氱煡
+  `ETHTOOL_MSG_RSS_NTF`                  RSS 璁剧疆閫氱煡
+  `ETHTOOL_MSG_RSS_CREATE_ACT_REPLY`     鍒涘缓棰濆鐨?RSS 涓婁笅鏂?
+  `ETHTOOL_MSG_RSS_CREATE_NTF`           宸插垱寤洪澶栫殑 RSS 涓婁笅鏂?
+  `ETHTOOL_MSG_RSS_DELETE_NTF`           宸插垹闄ら澶栫殑 RSS 涓婁笅鏂?
+  `ETHTOOL_MSG_MSE_GET_REPLY`            MSE 璇婃柇鏁版嵁
   ======================================== =================================
 
-`GET` 请求由用户空间应用程序发出，用于获取设备信息。它们通常不包含任何消息特定的
-属性。内核通过相应的“GET_REPLY”消息回复。对于大多数类型，不带设备标识、并设置
-`NLM_F_DUMP` 的 `GET` 请求可用于查询所有支持该请求的设备的对应信息。
+`GET` 璇锋眰鐢辩敤鎴风┖闂村簲鐢ㄧ▼搴忓彂鍑猴紝鐢ㄤ簬鑾峰彇璁惧淇℃伅銆傚畠浠€氬父涓嶅寘鍚换浣曟秷鎭壒瀹氱殑
+灞炴€с€傚唴鏍搁€氳繃鐩稿簲鐨勨€淕ET_REPLY鈥濇秷鎭洖澶嶃€傚浜庡ぇ澶氭暟绫诲瀷锛屼笉甯﹁澶囨爣璇嗐€佸苟璁剧疆
+`NLM_F_DUMP` 鐨?`GET` 璇锋眰鍙敤浜庢煡璇㈡墍鏈夋敮鎸佽璇锋眰鐨勮澶囩殑瀵瑰簲淇℃伅銆?
 
-如果数据也可以被修改，则使用具有相同布局（与相应 `GET_REPLY` 一致）的 `SET` 消息来
-请求更改。此类请求中仅包含请求了更改的属性（当然，也并非所有属性都可被更改）。对大多数
-`SET` 请求的回复仅包含错误码与 extack；若内核提供额外数据，则会以相应 `SET_REPLY`
-消息的形式发送，可通过在请求头中设置 `ETHTOOL_FLAG_OMIT_REPLY` 标志来抑制该回复。
+濡傛灉鏁版嵁涔熷彲浠ヨ淇敼锛屽垯浣跨敤鍏锋湁鐩稿悓甯冨眬锛堜笌鐩稿簲 `GET_REPLY` 涓€鑷达級鐨?`SET` 娑堟伅鏉?
+璇锋眰鏇存敼銆傛绫昏姹備腑浠呭寘鍚姹備簡鏇存敼鐨勫睘鎬э紙褰撶劧锛屼篃骞堕潪鎵€鏈夊睘鎬ч兘鍙鏇存敼锛夈€傚澶у鏁?
+`SET` 璇锋眰鐨勫洖澶嶄粎鍖呭惈閿欒鐮佷笌 extack锛涜嫢鍐呮牳鎻愪緵棰濆鏁版嵁锛屽垯浼氫互鐩稿簲 `SET_REPLY`
+娑堟伅鐨勫舰寮忓彂閫侊紝鍙€氳繃鍦ㄨ姹傚ご涓缃?`ETHTOOL_FLAG_OMIT_REPLY` 鏍囧織鏉ユ姂鍒惰鍥炲銆?
 
-数据修改还会触发发送一条包含通知的 `NTF` 消息。这些消息通常只携带受该更改影响的属性
-子集。如果使用其他方式（主要是 ioctl ethtool 接口）修改了数据，也会发出相同的通知。
-与仅在数据实际发生变化时才发送的 ethtool netlink 代码通知不同，由 ioctl 接口触发的
-通知即使请求实际上没有改变任何数据也可能被发送。
+鏁版嵁淇敼杩樹細瑙﹀彂鍙戦€佷竴鏉″寘鍚€氱煡鐨?`NTF` 娑堟伅銆傝繖浜涙秷鎭€氬父鍙惡甯﹀彈璇ユ洿鏀瑰奖鍝嶇殑灞炴€?
+瀛愰泦銆傚鏋滀娇鐢ㄥ叾浠栨柟寮忥紙涓昏鏄?ioctl ethtool 鎺ュ彛锛変慨鏀逛簡鏁版嵁锛屼篃浼氬彂鍑虹浉鍚岀殑閫氱煡銆?
+涓庝粎鍦ㄦ暟鎹疄闄呭彂鐢熷彉鍖栨椂鎵嶅彂閫佺殑 ethtool netlink 浠ｇ爜閫氱煡涓嶅悓锛岀敱 ioctl 鎺ュ彛瑙﹀彂鐨?
+閫氱煡鍗充娇璇锋眰瀹為檯涓婃病鏈夋敼鍙樹换浣曟暟鎹篃鍙兘琚彂閫併€?
 
-`ACT` 消息请求内核（驱动）执行某个特定动作。如果内核上报了某些信息（可通过在请求头中
-设置 `ETHTOOL_FLAG_OMIT_REPLY` 标志来抑制），则该回复以 `ACT_REPLY` 消息的形式呈现。
-执行动作还会触发一条通知（`NTF` 消息）。
+`ACT` 娑堟伅璇锋眰鍐呮牳锛堥┍鍔級鎵ц鏌愪釜鐗瑰畾鍔ㄤ綔銆傚鏋滃唴鏍镐笂鎶ヤ簡鏌愪簺淇℃伅锛堝彲閫氳繃鍦ㄨ姹傚ご涓?
+璁剧疆 `ETHTOOL_FLAG_OMIT_REPLY` 鏍囧織鏉ユ姂鍒讹級锛屽垯璇ュ洖澶嶄互 `ACT_REPLY` 娑堟伅鐨勫舰寮忓憟鐜般€?
+鎵ц鍔ㄤ綔杩樹細瑙﹀彂涓€鏉￠€氱煡锛坄NTF` 娑堟伅锛夈€?
 
-后续章节将描述这些消息的格式与语义。
+鍚庣画绔犺妭灏嗘弿杩拌繖浜涙秷鎭殑鏍煎紡涓庤涔夈€?
 
 
 ## STRSET_GET
 
 
-请求 ioctl 命令 `ETHTOOL_GSSET_INFO` 与 `ETHTOOL_GSTRINGS` 所提供的字符串集内容。
-字符串集不可由用户写入，因此相应的 `STRSET_SET` 消息仅在内核回复中使用。字符串集分为
-两类：全局的（与设备无关，例如设备特性名称）与设备特定的（例如设备私有标志）。
+璇锋眰 ioctl 鍛戒护 `ETHTOOL_GSSET_INFO` 涓?`ETHTOOL_GSTRINGS` 鎵€鎻愪緵鐨勫瓧绗︿覆闆嗗唴瀹广€?
+瀛楃涓查泦涓嶅彲鐢辩敤鎴峰啓鍏ワ紝鍥犳鐩稿簲鐨?`STRSET_SET` 娑堟伅浠呭湪鍐呮牳鍥炲涓娇鐢ㄣ€傚瓧绗︿覆闆嗗垎涓?
+涓ょ被锛氬叏灞€鐨勶紙涓庤澶囨棤鍏筹紝渚嬪璁惧鐗规€у悕绉帮級涓庤澶囩壒瀹氱殑锛堜緥濡傝澶囩鏈夋爣蹇楋級銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
  +---------------------------------------+--------+------------------------+
  | `ETHTOOL_A_STRSET_HEADER`           | nested | request header         |
@@ -310,7 +310,7 @@ ethtool netlink 使用一种嵌套属性，其内容采用两种形式之一：�
  | | | `ETHTOOL_A_STRINGSET_ID`        | u32    | set id                 |
  +-+-+-----------------------------------+--------+------------------------+
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
  +---------------------------------------+--------+-----------------------+
  | `ETHTOOL_A_STRSET_HEADER`           | nested | reply header          |
@@ -334,31 +334,31 @@ ethtool netlink 使用一种嵌套属性，其内容采用两种形式之一：�
  | `ETHTOOL_A_STRSET_COUNTS_ONLY`      | flag   | return only counts    |
  +---------------------------------------+--------+-----------------------+
 
-请求头中的设备标识是可选的。根据其是否存在以及 `NLM_F_DUMP` 标志，存在三种类型的
-`STRSET_GET` 请求：
+璇锋眰澶翠腑鐨勮澶囨爣璇嗘槸鍙€夌殑銆傛牴鎹叾鏄惁瀛樺湪浠ュ強 `NLM_F_DUMP` 鏍囧織锛屽瓨鍦ㄤ笁绉嶇被鍨嬬殑
+`STRSET_GET` 璇锋眰锛?
 
- - 无 `NLM_F_DUMP,` 无设备：获取“全局”字符串集
- - 无 `NLM_F_DUMP`，带设备：获取与该设备相关的字符串集
- - `NLM_F_DUMP`，无设备：获取所有设备的设备相关字符串集
+ - 鏃?`NLM_F_DUMP,` 鏃犺澶囷細鑾峰彇鈥滃叏灞€鈥濆瓧绗︿覆闆?
+ - 鏃?`NLM_F_DUMP`锛屽甫璁惧锛氳幏鍙栦笌璇ヨ澶囩浉鍏崇殑瀛楃涓查泦
+ - `NLM_F_DUMP`锛屾棤璁惧锛氳幏鍙栨墍鏈夎澶囩殑璁惧鐩稿叧瀛楃涓查泦
 
-如果没有 `ETHTOOL_A_STRSET_STRINGSETS` 数组，则返回所有请求类型的字符串集，否则仅
-返回请求中指定的那些。`ETHTOOL_A_STRSET_COUNTS_ONLY` 标志告知内核只返回字符串集的
-计数，而非实际的字符串。
+濡傛灉娌℃湁 `ETHTOOL_A_STRSET_STRINGSETS` 鏁扮粍锛屽垯杩斿洖鎵€鏈夎姹傜被鍨嬬殑瀛楃涓查泦锛屽惁鍒欎粎
+杩斿洖璇锋眰涓寚瀹氱殑閭ｄ簺銆俙ETHTOOL_A_STRSET_COUNTS_ONLY` 鏍囧織鍛婄煡鍐呮牳鍙繑鍥炲瓧绗︿覆闆嗙殑
+璁℃暟锛岃€岄潪瀹為檯鐨勫瓧绗︿覆銆?
 
 
 ## LINKINFO_GET
 
 
-请求链路设置，与 `ETHTOOL_GLINKSETTINGS` 提供的内容相同，但不包括链路模式与自协商
-相关的信息。该请求不使用任何属性。
+璇锋眰閾捐矾璁剧疆锛屼笌 `ETHTOOL_GLINKSETTINGS` 鎻愪緵鐨勫唴瀹圭浉鍚岋紝浣嗕笉鍖呮嫭閾捐矾妯″紡涓庤嚜鍗忓晢
+鐩稿叧鐨勪俊鎭€傝璇锋眰涓嶄娇鐢ㄤ换浣曞睘鎬с€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_LINKINFO_HEADER`         nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_LINKINFO_HEADER`         nested  reply header
@@ -369,17 +369,17 @@ ethtool netlink 使用一种嵌套属性，其内容采用两种形式之一：�
   `ETHTOOL_A_LINKINFO_TRANSCEIVER`    u8      transceiver
   ====================================  ======  ==========================
 
-各属性及其取值与相应 ioctl 结构体中对应的成员含义相同。
+鍚勫睘鎬у強鍏跺彇鍊间笌鐩稿簲 ioctl 缁撴瀯浣撲腑瀵瑰簲鐨勬垚鍛樺惈涔夌浉鍚屻€?
 
-`LINKINFO_GET` 允许 dump 请求（内核为所有支持该请求的设备返回回复消息）。
+`LINKINFO_GET` 鍏佽 dump 璇锋眰锛堝唴鏍镐负鎵€鏈夋敮鎸佽璇锋眰鐨勮澶囪繑鍥炲洖澶嶆秷鎭級銆?
 
 
 ## LINKINFO_SET
 
 
-`LINKINFO_SET` 请求允许设置 `LINKINFO_GET` 所上报的部分属性。
+`LINKINFO_SET` 璇锋眰鍏佽璁剧疆 `LINKINFO_GET` 鎵€涓婃姤鐨勯儴鍒嗗睘鎬с€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_LINKINFO_HEADER`         nested  request header
@@ -388,22 +388,22 @@ ethtool netlink 使用一种嵌套属性，其内容采用两种形式之一：�
   `ETHTOOL_A_LINKINFO_TP_MDIX_CTRL`   u8      MDI(-X) control
   ====================================  ======  ==========================
 
-MDI(-X) 状态与收发器不可设置，携带相应属性的请求将被拒绝。
+MDI(-X) 鐘舵€佷笌鏀跺彂鍣ㄤ笉鍙缃紝鎼哄甫鐩稿簲灞炴€х殑璇锋眰灏嗚鎷掔粷銆?
 
 
 ## LINKMODES_GET
 
 
-请求链路模式（支持的、通告的以及对端通告的）以及相关信息（自协商状态、链路速率与双工），
-与 `ETHTOOL_GLINKSETTINGS` 提供的内容相同。该请求不使用任何属性。
+璇锋眰閾捐矾妯″紡锛堟敮鎸佺殑銆侀€氬憡鐨勪互鍙婂绔€氬憡鐨勶級浠ュ強鐩稿叧淇℃伅锛堣嚜鍗忓晢鐘舵€併€侀摼璺€熺巼涓庡弻宸ワ級锛?
+涓?`ETHTOOL_GLINKSETTINGS` 鎻愪緵鐨勫唴瀹圭浉鍚屻€傝璇锋眰涓嶄娇鐢ㄤ换浣曞睘鎬с€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_LINKMODES_HEADER`        nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ==========================================  ======  ==========================
   `ETHTOOL_A_LINKMODES_HEADER`              nested  reply header
@@ -417,16 +417,16 @@ MDI(-X) 状态与收发器不可设置，携带相应属性的请求将被拒绝
   `ETHTOOL_A_LINKMODES_RATE_MATCHING`       u8      PHY rate matching
   ==========================================  ======  ==========================
 
-对于 `ETHTOOL_A_LINKMODES_OURS`，值表示通告的模式，掩码表示支持的模式。回复中的
-`ETHTOOL_A_LINKMODES_PEER` 是一个位列表。
+瀵逛簬 `ETHTOOL_A_LINKMODES_OURS`锛屽€艰〃绀洪€氬憡鐨勬ā寮忥紝鎺╃爜琛ㄧず鏀寔鐨勬ā寮忋€傚洖澶嶄腑鐨?
+`ETHTOOL_A_LINKMODES_PEER` 鏄竴涓綅鍒楄〃銆?
 
-`LINKMODES_GET` 允许 dump 请求（内核为所有支持该请求的设备返回回复消息）。
+`LINKMODES_GET` 鍏佽 dump 璇锋眰锛堝唴鏍镐负鎵€鏈夋敮鎸佽璇锋眰鐨勮澶囪繑鍥炲洖澶嶆秷鎭級銆?
 
 
 ## LINKMODES_SET
 
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ==========================================  ======  ==========================
   `ETHTOOL_A_LINKMODES_HEADER`              nested  request header
@@ -440,27 +440,27 @@ MDI(-X) 状态与收发器不可设置，携带相应属性的请求将被拒绝
   `ETHTOOL_A_LINKMODES_LANES`               u32     lanes
   ==========================================  ======  ==========================
 
-`ETHTOOL_A_LINKMODES_OURS` 位集允许设置通告的链路模式。如果自协商处于开启状态（无论是
-本次设置还是沿用之前的设置），且通告模式未改变（无 `ETHTOOL_A_LINKMODES_OURS` 属性），
-并且至少指定了速率、双工与通道（lanes）中的一项，内核会将通告模式调整为所有匹配所指定
-的速率、双工、通道（或全部，视指定情况而定）的支持模式。这种自动选择是在使用 ioctl 接口
-时由 ethtool 一侧完成的；netlink 接口则旨在允许在不知道内核具体支持什么的情况下请求更改。
+`ETHTOOL_A_LINKMODES_OURS` 浣嶉泦鍏佽璁剧疆閫氬憡鐨勯摼璺ā寮忋€傚鏋滆嚜鍗忓晢澶勪簬寮€鍚姸鎬侊紙鏃犺鏄?
+鏈璁剧疆杩樻槸娌跨敤涔嬪墠鐨勮缃級锛屼笖閫氬憡妯″紡鏈敼鍙橈紙鏃?`ETHTOOL_A_LINKMODES_OURS` 灞炴€э級锛?
+骞朵笖鑷冲皯鎸囧畾浜嗛€熺巼銆佸弻宸ヤ笌閫氶亾锛坙anes锛変腑鐨勪竴椤癸紝鍐呮牳浼氬皢閫氬憡妯″紡璋冩暣涓烘墍鏈夊尮閰嶆墍鎸囧畾
+鐨勯€熺巼銆佸弻宸ャ€侀€氶亾锛堟垨鍏ㄩ儴锛岃鎸囧畾鎯呭喌鑰屽畾锛夌殑鏀寔妯″紡銆傝繖绉嶈嚜鍔ㄩ€夋嫨鏄湪浣跨敤 ioctl 鎺ュ彛
+鏃剁敱 ethtool 涓€渚у畬鎴愮殑锛沶etlink 鎺ュ彛鍒欐棬鍦ㄥ厑璁稿湪涓嶇煡閬撳唴鏍稿叿浣撴敮鎸佷粈涔堢殑鎯呭喌涓嬭姹傛洿鏀广€?
 
 
 ## LINKSTATE_GET
 
 
-请求链路状态信息。提供了链路 up/down 标志（由 `ETHTOOL_GLINK` ioctl 命令提供）。
-可选地，也可能提供扩展状态。总体上，扩展状态描述了端口为何处于 down 状态，或为何以
-某种非显而易见的方式运行。该请求没有任何属性。
+璇锋眰閾捐矾鐘舵€佷俊鎭€傛彁渚涗簡閾捐矾 up/down 鏍囧織锛堢敱 `ETHTOOL_GLINK` ioctl 鍛戒护鎻愪緵锛夈€?
+鍙€夊湴锛屼篃鍙兘鎻愪緵鎵╁睍鐘舵€併€傛€讳綋涓婏紝鎵╁睍鐘舵€佹弿杩颁簡绔彛涓轰綍澶勪簬 down 鐘舵€侊紝鎴栦负浣曚互
+鏌愮闈炴樉鑰屾槗瑙佺殑鏂瑰紡杩愯銆傝璇锋眰娌℃湁浠讳綍灞炴€с€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_LINKSTATE_HEADER`        nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ====================================  ======  ============================
   `ETHTOOL_A_LINKSTATE_HEADER`        nested  reply header
@@ -472,168 +472,168 @@ MDI(-X) 状态与收发器不可设置，携带相应属性的请求将被拒绝
   `ETHTOOL_A_LINKSTATE_EXT_DOWN_CNT`  u32     count of link down events
   ====================================  ======  ============================
 
-对于大多数 NIC 驱动，`ETHTOOL_A_LINKSTATE_LINK` 的值返回由 `netif_carrier_ok()`
-提供的载波标志，但也存在自行定义处理函数的驱动。
+瀵逛簬澶у鏁?NIC 椹卞姩锛宍ETHTOOL_A_LINKSTATE_LINK` 鐨勫€艰繑鍥炵敱 `netif_carrier_ok()`
+鎻愪緵鐨勮浇娉㈡爣蹇楋紝浣嗕篃瀛樺湪鑷瀹氫箟澶勭悊鍑芥暟鐨勯┍鍔ㄣ€?
 
-`ETHTOOL_A_LINKSTATE_EXT_STATE` 与 `ETHTOOL_A_LINKSTATE_EXT_SUBSTATE` 为可选值。
-ethtool 核心可以既提供 `ETHTOOL_A_LINKSTATE_EXT_STATE` 又提供
-`ETHTOOL_A_LINKSTATE_EXT_SUBSTATE`，或只提供 `ETHTOOL_A_LINKSTATE_EXT_STATE`，或
-两者都不提供。
+`ETHTOOL_A_LINKSTATE_EXT_STATE` 涓?`ETHTOOL_A_LINKSTATE_EXT_SUBSTATE` 涓哄彲閫夊€笺€?
+ethtool 鏍稿績鍙互鏃㈡彁渚?`ETHTOOL_A_LINKSTATE_EXT_STATE` 鍙堟彁渚?
+`ETHTOOL_A_LINKSTATE_EXT_SUBSTATE`锛屾垨鍙彁渚?`ETHTOOL_A_LINKSTATE_EXT_STATE`锛屾垨
+涓よ€呴兘涓嶆彁渚涖€?
 
-`LINKSTATE_GET` 允许 dump 请求（内核为所有支持该请求的设备返回回复消息）。
+`LINKSTATE_GET` 鍏佽 dump 璇锋眰锛堝唴鏍镐负鎵€鏈夋敮鎸佽璇锋眰鐨勮澶囪繑鍥炲洖澶嶆秷鎭級銆?
 
 
-链路扩展状态：
+閾捐矾鎵╁睍鐘舵€侊細
 
   ================================================      ============================================
-  `ETHTOOL_LINK_EXT_STATE_AUTONEG`                    与自协商或其中存在的问题相关的状态
+  `ETHTOOL_LINK_EXT_STATE_AUTONEG`                    涓庤嚜鍗忓晢鎴栧叾涓瓨鍦ㄧ殑闂鐩稿叧鐨勭姸鎬?
 
-  `ETHTOOL_LINK_EXT_STATE_LINK_TRAINING_FAILURE`      链路训练期间失败
+  `ETHTOOL_LINK_EXT_STATE_LINK_TRAINING_FAILURE`      閾捐矾璁粌鏈熼棿澶辫触
 
-  `ETHTOOL_LINK_EXT_STATE_LINK_LOGICAL_MISMATCH`      物理编码子层或前向纠错子层中的逻辑不匹配
+  `ETHTOOL_LINK_EXT_STATE_LINK_LOGICAL_MISMATCH`      鐗╃悊缂栫爜瀛愬眰鎴栧墠鍚戠籂閿欏瓙灞備腑鐨勯€昏緫涓嶅尮閰?
 
-  `ETHTOOL_LINK_EXT_STATE_BAD_SIGNAL_INTEGRITY`       信号完整性问题
+  `ETHTOOL_LINK_EXT_STATE_BAD_SIGNAL_INTEGRITY`       淇″彿瀹屾暣鎬ч棶棰?
 
-  `ETHTOOL_LINK_EXT_STATE_NO_CABLE`                   未连接线缆
+  `ETHTOOL_LINK_EXT_STATE_NO_CABLE`                   鏈繛鎺ョ嚎缂?
 
-  `ETHTOOL_LINK_EXT_STATE_CABLE_ISSUE`                故障与线缆相关，例如不支持的线缆
+  `ETHTOOL_LINK_EXT_STATE_CABLE_ISSUE`                鏁呴殰涓庣嚎缂嗙浉鍏筹紝渚嬪涓嶆敮鎸佺殑绾跨紗
 
-  `ETHTOOL_LINK_EXT_STATE_EEPROM_ISSUE`               故障与 EEPROM 相关，例如在读取或解析数据时失败
+  `ETHTOOL_LINK_EXT_STATE_EEPROM_ISSUE`               鏁呴殰涓?EEPROM 鐩稿叧锛屼緥濡傚湪璇诲彇鎴栬В鏋愭暟鎹椂澶辫触
 
-  `ETHTOOL_LINK_EXT_STATE_CALIBRATION_FAILURE`        校准算法期间失败
+  `ETHTOOL_LINK_EXT_STATE_CALIBRATION_FAILURE`        鏍″噯绠楁硶鏈熼棿澶辫触
 
-  `ETHTOOL_LINK_EXT_STATE_POWER_BUDGET_EXCEEDED`      硬件无法提供线缆或模块所需的功率
+  `ETHTOOL_LINK_EXT_STATE_POWER_BUDGET_EXCEEDED`      纭欢鏃犳硶鎻愪緵绾跨紗鎴栨ā鍧楁墍闇€鐨勫姛鐜?
 
-  `ETHTOOL_LINK_EXT_STATE_OVERHEAT`                   模块过热
+  `ETHTOOL_LINK_EXT_STATE_OVERHEAT`                   妯″潡杩囩儹
 
-  `ETHTOOL_LINK_EXT_STATE_MODULE`                     收发器模块问题
+  `ETHTOOL_LINK_EXT_STATE_MODULE`                     鏀跺彂鍣ㄦā鍧楅棶棰?
   ================================================      ============================================
 
-链路扩展子状态：
+閾捐矾鎵╁睍瀛愮姸鎬侊細
 
-  自协商子状态：
+  鑷崗鍟嗗瓙鐘舵€侊細
 
   ===============================================================   ================================
-  `ETHTOOL_LINK_EXT_SUBSTATE_AN_NO_PARTNER_DETECTED`              对端处于 down 状态
+  `ETHTOOL_LINK_EXT_SUBSTATE_AN_NO_PARTNER_DETECTED`              瀵圭澶勪簬 down 鐘舵€?
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_AN_ACK_NOT_RECEIVED`                 未收到对端的 Ack
+  `ETHTOOL_LINK_EXT_SUBSTATE_AN_ACK_NOT_RECEIVED`                 鏈敹鍒板绔殑 Ack
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_AN_NEXT_PAGE_EXCHANGE_FAILED`        下一页交换失败
+  `ETHTOOL_LINK_EXT_SUBSTATE_AN_NEXT_PAGE_EXCHANGE_FAILED`        涓嬩竴椤典氦鎹㈠け璐?
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_AN_NO_PARTNER_DETECTED_FORCE_MODE`   在强制模式期间对端处于 down 状态，或速率未达成一致
+  `ETHTOOL_LINK_EXT_SUBSTATE_AN_NO_PARTNER_DETECTED_FORCE_MODE`   鍦ㄥ己鍒舵ā寮忔湡闂村绔浜?down 鐘舵€侊紝鎴栭€熺巼鏈揪鎴愪竴鑷?
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_AN_FEC_MISMATCH_DURING_OVERRIDE`     双方的前向纠错模式不匹配
+  `ETHTOOL_LINK_EXT_SUBSTATE_AN_FEC_MISMATCH_DURING_OVERRIDE`     鍙屾柟鐨勫墠鍚戠籂閿欐ā寮忎笉鍖归厤
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_AN_NO_HCD`                           无最高公分母（Highest Common Denominator）
+  `ETHTOOL_LINK_EXT_SUBSTATE_AN_NO_HCD`                           鏃犳渶楂樺叕鍒嗘瘝锛圚ighest Common Denominator锛?
   ===============================================================   ================================
 
-  链路训练子状态：
+  閾捐矾璁粌瀛愮姸鎬侊細
 
   ===========================================================================   ====================
-  `ETHTOOL_LINK_EXT_SUBSTATE_LT_KR_FRAME_LOCK_NOT_ACQUIRED`                    帧未被识别，锁定失败
+  `ETHTOOL_LINK_EXT_SUBSTATE_LT_KR_FRAME_LOCK_NOT_ACQUIRED`                    甯ф湭琚瘑鍒紝閿佸畾澶辫触
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_LT_KR_LINK_INHIBIT_TIMEOUT`                       在超时前未完成锁定
+  `ETHTOOL_LINK_EXT_SUBSTATE_LT_KR_LINK_INHIBIT_TIMEOUT`                       鍦ㄨ秴鏃跺墠鏈畬鎴愰攣瀹?
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_LT_KR_LINK_PARTNER_DID_NOT_SET_RECEIVER_READY`    训练过程后对端未发出就绪信号
+  `ETHTOOL_LINK_EXT_SUBSTATE_LT_KR_LINK_PARTNER_DID_NOT_SET_RECEIVER_READY`    璁粌杩囩▼鍚庡绔湭鍙戝嚭灏辩华淇″彿
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_LT_REMOTE_FAULT`                                  远端尚未就绪
+  `ETHTOOL_LINK_EXT_SUBSTATE_LT_REMOTE_FAULT`                                  杩滅灏氭湭灏辩华
   ===========================================================================   ====================
 
-  链路逻辑不匹配子状态：
+  閾捐矾閫昏緫涓嶅尮閰嶅瓙鐘舵€侊細
 
   ================================================================   ===============================
-  `ETHTOOL_LINK_EXT_SUBSTATE_LLM_PCS_DID_NOT_ACQUIRE_BLOCK_LOCK`  物理编码子层在第一阶段未锁定——块锁
+  `ETHTOOL_LINK_EXT_SUBSTATE_LLM_PCS_DID_NOT_ACQUIRE_BLOCK_LOCK`  鐗╃悊缂栫爜瀛愬眰鍦ㄧ涓€闃舵鏈攣瀹氣€斺€斿潡閿?
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_LLM_PCS_DID_NOT_ACQUIRE_AM_LOCK`     物理编码子层在第二阶段未锁定——对齐标记锁
+  `ETHTOOL_LINK_EXT_SUBSTATE_LLM_PCS_DID_NOT_ACQUIRE_AM_LOCK`     鐗╃悊缂栫爜瀛愬眰鍦ㄧ浜岄樁娈垫湭閿佸畾鈥斺€斿榻愭爣璁伴攣
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_LLM_PCS_DID_NOT_GET_ALIGN_STATUS`    物理编码子层未获得对齐状态
+  `ETHTOOL_LINK_EXT_SUBSTATE_LLM_PCS_DID_NOT_GET_ALIGN_STATUS`    鐗╃悊缂栫爜瀛愬眰鏈幏寰楀榻愮姸鎬?
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_LLM_FC_FEC_IS_NOT_LOCKED`            FC 前向纠错未锁定
+  `ETHTOOL_LINK_EXT_SUBSTATE_LLM_FC_FEC_IS_NOT_LOCKED`            FC 鍓嶅悜绾犻敊鏈攣瀹?
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_LLM_RS_FEC_IS_NOT_LOCKED`            RS 前向纠错未锁定
+  `ETHTOOL_LINK_EXT_SUBSTATE_LLM_RS_FEC_IS_NOT_LOCKED`            RS 鍓嶅悜绾犻敊鏈攣瀹?
   ================================================================   ===============================
 
-  信号完整性差子状态：
+  淇″彿瀹屾暣鎬у樊瀛愮姸鎬侊細
 
   =================================================================    =============================
-  `ETHTOOL_LINK_EXT_SUBSTATE_BSI_LARGE_NUMBER_OF_PHYSICAL_ERRORS`    大量物理错误
+  `ETHTOOL_LINK_EXT_SUBSTATE_BSI_LARGE_NUMBER_OF_PHYSICAL_ERRORS`    澶ч噺鐗╃悊閿欒
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_BSI_UNSUPPORTED_RATE`                   系统尝试以不被正式支持的速率运行线缆，导致信号完整性问题
+  `ETHTOOL_LINK_EXT_SUBSTATE_BSI_UNSUPPORTED_RATE`                   绯荤粺灏濊瘯浠ヤ笉琚寮忔敮鎸佺殑閫熺巼杩愯绾跨紗锛屽鑷翠俊鍙峰畬鏁存€ч棶棰?
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_BSI_SERDES_REFERENCE_CLOCK_LOST`        SerDes 的外部时钟信号过弱或不可用
+  `ETHTOOL_LINK_EXT_SUBSTATE_BSI_SERDES_REFERENCE_CLOCK_LOST`        SerDes 鐨勫閮ㄦ椂閽熶俊鍙疯繃寮辨垨涓嶅彲鐢?
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_BSI_SERDES_ALOS`                        SerDes 的接收信号因模拟信号丢失而过弱
+  `ETHTOOL_LINK_EXT_SUBSTATE_BSI_SERDES_ALOS`                        SerDes 鐨勬帴鏀朵俊鍙峰洜妯℃嫙淇″彿涓㈠け鑰岃繃寮?
   =================================================================    =============================
 
-  线缆问题子状态：
+  绾跨紗闂瀛愮姸鎬侊細
 
   ===================================================   ============================================
-  `ETHTOOL_LINK_EXT_SUBSTATE_CI_UNSUPPORTED_CABLE`    不支持的线缆
+  `ETHTOOL_LINK_EXT_SUBSTATE_CI_UNSUPPORTED_CABLE`    涓嶆敮鎸佺殑绾跨紗
 
-  `ETHTOOL_LINK_EXT_SUBSTATE_CI_CABLE_TEST_FAILURE`   线缆测试失败
+  `ETHTOOL_LINK_EXT_SUBSTATE_CI_CABLE_TEST_FAILURE`   绾跨紗娴嬭瘯澶辫触
   ===================================================   ============================================
 
-  收发器模块问题子状态：
+  鏀跺彂鍣ㄦā鍧楅棶棰樺瓙鐘舵€侊細
 
   ===================================================   ============================================
-  `ETHTOOL_LINK_EXT_SUBSTATE_MODULE_CMIS_NOT_READY`   CMIS 模块状态机未到达 ModuleReady 状态，例如模块停留在 ModuleFault 状态
+  `ETHTOOL_LINK_EXT_SUBSTATE_MODULE_CMIS_NOT_READY`   CMIS 妯″潡鐘舵€佹満鏈埌杈?ModuleReady 鐘舵€侊紝渚嬪妯″潡鍋滅暀鍦?ModuleFault 鐘舵€?
   ===================================================   ============================================
 
 ## DEBUG_GET
 
 
-请求设备的调试设置。目前仅提供消息掩码。
+璇锋眰璁惧鐨勮皟璇曡缃€傜洰鍓嶄粎鎻愪緵娑堟伅鎺╃爜銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_DEBUG_HEADER`            nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_DEBUG_HEADER`            nested  reply header
   `ETHTOOL_A_DEBUG_MSGMASK`           bitset  message mask
   ====================================  ======  ==========================
 
-消息掩码（`ETHTOOL_A_DEBUG_MSGMASK`）等同于 ioctl 接口中由 `ETHTOOL_GMSGLVL` 提供、
-并由 `ETHTOOL_SMSGLVL` 设置的消息级别。虽然出于历史原因在那里被称为消息级别，但大多数
-驱动以及几乎所有较新的驱动都将其用作启用消息类别的掩码（由 `NETIF_MSG_*` 常量表示）；
-因此 netlink 接口遵循其实际用法。
+娑堟伅鎺╃爜锛坄ETHTOOL_A_DEBUG_MSGMASK`锛夌瓑鍚屼簬 ioctl 鎺ュ彛涓敱 `ETHTOOL_GMSGLVL` 鎻愪緵銆?
+骞剁敱 `ETHTOOL_SMSGLVL` 璁剧疆鐨勬秷鎭骇鍒€傝櫧鐒跺嚭浜庡巻鍙插師鍥犲湪閭ｉ噷琚О涓烘秷鎭骇鍒紝浣嗗ぇ澶氭暟
+椹卞姩浠ュ強鍑犱箮鎵€鏈夎緝鏂扮殑椹卞姩閮藉皢鍏剁敤浣滃惎鐢ㄦ秷鎭被鍒殑鎺╃爜锛堢敱 `NETIF_MSG_*` 甯搁噺琛ㄧず锛夛紱
+鍥犳 netlink 鎺ュ彛閬靛惊鍏跺疄闄呯敤娉曘€?
 
-`DEBUG_GET` 允许 dump 请求（内核为所有支持该请求的设备返回回复消息）。
+`DEBUG_GET` 鍏佽 dump 璇锋眰锛堝唴鏍镐负鎵€鏈夋敮鎸佽璇锋眰鐨勮澶囪繑鍥炲洖澶嶆秷鎭級銆?
 
 
 ## DEBUG_SET
 
 
-设置或更新设备的调试设置。目前仅支持消息掩码。
+璁剧疆鎴栨洿鏂拌澶囩殑璋冭瘯璁剧疆銆傜洰鍓嶄粎鏀寔娑堟伅鎺╃爜銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_DEBUG_HEADER`            nested  request header
   `ETHTOOL_A_DEBUG_MSGMASK`           bitset  message mask
   ====================================  ======  ==========================
 
-`ETHTOOL_A_DEBUG_MSGMASK` 位集允许设置或修改设备已启用的调试消息类型的掩码。
+`ETHTOOL_A_DEBUG_MSGMASK` 浣嶉泦鍏佽璁剧疆鎴栦慨鏀硅澶囧凡鍚敤鐨勮皟璇曟秷鎭被鍨嬬殑鎺╃爜銆?
 
 
 ## WOL_GET
 
 
-查询设备的唤醒局域网（wake-on-lan）设置。与大多数“GET”类型的请求不同，
-`ETHTOOL_MSG_WOL_GET` 需要（netns 的）`CAP_NET_ADMIN` 权限，因为它（可能）会提供
-保密的 SecureOn(tm) 密码。
+鏌ヨ璁惧鐨勫敜閱掑眬鍩熺綉锛坵ake-on-lan锛夎缃€備笌澶у鏁扳€淕ET鈥濈被鍨嬬殑璇锋眰涓嶅悓锛?
+`ETHTOOL_MSG_WOL_GET` 闇€瑕侊紙netns 鐨勶級`CAP_NET_ADMIN` 鏉冮檺锛屽洜涓哄畠锛堝彲鑳斤級浼氭彁渚?
+淇濆瘑鐨?SecureOn(tm) 瀵嗙爜銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_WOL_HEADER`              nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_WOL_HEADER`              nested  reply header
@@ -641,16 +641,16 @@ ethtool 核心可以既提供 `ETHTOOL_A_LINKSTATE_EXT_STATE` 又提供
   `ETHTOOL_A_WOL_SOPASS`              binary  SecureOn(tm) password
   ====================================  ======  ==========================
 
-在回复中，`ETHTOOL_A_WOL_MODES` 掩码由设备支持的模式，以及其中已启用的模式值组成。
-仅当支持 `WAKE_MAGICSECURE` 模式时，`ETHTOOL_A_WOL_SOPASS` 才会包含在回复中。
+鍦ㄥ洖澶嶄腑锛宍ETHTOOL_A_WOL_MODES` 鎺╃爜鐢辫澶囨敮鎸佺殑妯″紡锛屼互鍙婂叾涓凡鍚敤鐨勬ā寮忓€肩粍鎴愩€?
+浠呭綋鏀寔 `WAKE_MAGICSECURE` 妯″紡鏃讹紝`ETHTOOL_A_WOL_SOPASS` 鎵嶄細鍖呭惈鍦ㄥ洖澶嶄腑銆?
 
 
 ## WOL_SET
 
 
-设置或更新唤醒局域网（wake-on-lan）设置。
+璁剧疆鎴栨洿鏂板敜閱掑眬鍩熺綉锛坵ake-on-lan锛夎缃€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_WOL_HEADER`              nested  request header
@@ -658,21 +658,21 @@ ethtool 核心可以既提供 `ETHTOOL_A_LINKSTATE_EXT_STATE` 又提供
   `ETHTOOL_A_WOL_SOPASS`              binary  SecureOn(tm) password
   ====================================  ======  ==========================
 
-`ETHTOOL_A_WOL_SOPASS` 仅允许用于支持 `WAKE_MAGICSECURE` 模式的设备。
+`ETHTOOL_A_WOL_SOPASS` 浠呭厑璁哥敤浜庢敮鎸?`WAKE_MAGICSECURE` 妯″紡鐨勮澶囥€?
 
 
 ## FEATURES_GET
 
 
-获取网络设备特性，类似于 `ETHTOOL_GFEATURES` ioctl 请求。
+鑾峰彇缃戠粶璁惧鐗规€э紝绫讳技浜?`ETHTOOL_GFEATURES` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_FEATURES_HEADER`         nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_FEATURES_HEADER`         nested  reply header
@@ -683,26 +683,26 @@ ethtool 核心可以既提供 `ETHTOOL_A_LINKSTATE_EXT_STATE` 又提供
   ====================================  ======  ==========================
 
 
-内核响应中的位图与 ioctl 接口中使用的位图含义相同，但属性名称不同（它们基于
-struct net_device 的对应成员）。旧式的“flags”不会被提供；如果用户空间需要它们
-（很可能只有 ethtool 为了向后兼容），它可以根据相关的特性位自行计算其值。
-ETHA_FEATURES_HW 使用的掩码由内核识别的所有特性组成（以便在使用详细位图格式时提供
-全部名称），其余三个则不使用掩码（仅作为简单的位列表）。
+鍐呮牳鍝嶅簲涓殑浣嶅浘涓?ioctl 鎺ュ彛涓娇鐢ㄧ殑浣嶅浘鍚箟鐩稿悓锛屼絾灞炴€у悕绉颁笉鍚岋紙瀹冧滑鍩轰簬
+struct net_device 鐨勫搴旀垚鍛橈級銆傛棫寮忕殑鈥渇lags鈥濅笉浼氳鎻愪緵锛涘鏋滅敤鎴风┖闂撮渶瑕佸畠浠?
+锛堝緢鍙兘鍙湁 ethtool 涓轰簡鍚戝悗鍏煎锛夛紝瀹冨彲浠ユ牴鎹浉鍏崇殑鐗规€т綅鑷璁＄畻鍏跺€笺€?
+ETHA_FEATURES_HW 浣跨敤鐨勬帺鐮佺敱鍐呮牳璇嗗埆鐨勬墍鏈夌壒鎬х粍鎴愶紙浠ヤ究鍦ㄤ娇鐢ㄨ缁嗕綅鍥炬牸寮忔椂鎻愪緵
+鍏ㄩ儴鍚嶇О锛夛紝鍏朵綑涓変釜鍒欎笉浣跨敤鎺╃爜锛堜粎浣滀负绠€鍗曠殑浣嶅垪琛級銆?
 
 
 ## FEATURES_SET
 
 
-请求设置网络设备特性，类似于 `ETHTOOL_SFEATURES` ioctl 请求。
+璇锋眰璁剧疆缃戠粶璁惧鐗规€э紝绫讳技浜?`ETHTOOL_SFEATURES` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_FEATURES_HEADER`         nested  request header
   `ETHTOOL_A_FEATURES_WANTED`         bitset  requested features
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_FEATURES_HEADER`         nested  reply header
@@ -710,158 +710,158 @@ ETHA_FEATURES_HW 使用的掩码由内核识别的所有特性组成（以便在
   `ETHTOOL_A_FEATURES_ACTIVE`         bitset  diff old vs. new active
   ====================================  ======  ==========================
 
-请求中只包含一个位集，它可以是值/掩码对（请求更改特定的特性位而保留其余）或仅一个值
-（请求将所有特性设置为指定的集合）。
+璇锋眰涓彧鍖呭惈涓€涓綅闆嗭紝瀹冨彲浠ユ槸鍊?鎺╃爜瀵癸紙璇锋眰鏇存敼鐗瑰畾鐨勭壒鎬т綅鑰屼繚鐣欏叾浣欙級鎴栦粎涓€涓€?
+锛堣姹傚皢鎵€鏈夌壒鎬ц缃负鎸囧畾鐨勯泦鍚堬級銆?
 
-由于请求要接受 netdev_change_features() 的合理性检查，可选的内核回复（可通过请求头中的
-`ETHTOOL_FLAG_OMIT_REPLY` 标志抑制）会告知客户端实际结果。`ETHTOOL_A_FEATURES_WANTED`
-报告客户端请求与实际结果之间的差异：掩码由请求的特性与结果（操作后 dev->features）之间
-不同的位组成，值由这些位在请求中的取值组成（即来自结果特性的取反值）。
-`ETHTOOL_A_FEATURES_ACTIVE` 报告新旧 dev->features 之间的差异：掩码由发生变化的位组成，
-值为这些位在新的 dev->features（操作后）中的取值。
+鐢变簬璇锋眰瑕佹帴鍙?netdev_change_features() 鐨勫悎鐞嗘€ф鏌ワ紝鍙€夌殑鍐呮牳鍥炲锛堝彲閫氳繃璇锋眰澶翠腑鐨?
+`ETHTOOL_FLAG_OMIT_REPLY` 鏍囧織鎶戝埗锛変細鍛婄煡瀹㈡埛绔疄闄呯粨鏋溿€俙ETHTOOL_A_FEATURES_WANTED`
+鎶ュ憡瀹㈡埛绔姹備笌瀹為檯缁撴灉涔嬮棿鐨勫樊寮傦細鎺╃爜鐢辫姹傜殑鐗规€т笌缁撴灉锛堟搷浣滃悗 dev->features锛変箣闂?
+涓嶅悓鐨勪綅缁勬垚锛屽€肩敱杩欎簺浣嶅湪璇锋眰涓殑鍙栧€肩粍鎴愶紙鍗虫潵鑷粨鏋滅壒鎬х殑鍙栧弽鍊硷級銆?
+`ETHTOOL_A_FEATURES_ACTIVE` 鎶ュ憡鏂版棫 dev->features 涔嬮棿鐨勫樊寮傦細鎺╃爜鐢卞彂鐢熷彉鍖栫殑浣嶇粍鎴愶紝
+鍊间负杩欎簺浣嶅湪鏂扮殑 dev->features锛堟搷浣滃悗锛変腑鐨勫彇鍊笺€?
 
-`ETHTOOL_MSG_FEATURES_NTF` 通知不仅在通过 `ETHTOOL_MSG_FEATURES_SET` 请求或修改
-ethtool ioctl 请求来修改设备特性时发送，也会在每次通过 netdev_update_features() 或
-netdev_change_features() 修改特性时发送。
+`ETHTOOL_MSG_FEATURES_NTF` 閫氱煡涓嶄粎鍦ㄩ€氳繃 `ETHTOOL_MSG_FEATURES_SET` 璇锋眰鎴栦慨鏀?
+ethtool ioctl 璇锋眰鏉ヤ慨鏀硅澶囩壒鎬ф椂鍙戦€侊紝涔熶細鍦ㄦ瘡娆￠€氳繃 netdev_update_features() 鎴?
+netdev_change_features() 淇敼鐗规€ф椂鍙戦€併€?
 
 
 ## PRIVFLAGS_GET
 
 
-获取私有标志，类似于 `ETHTOOL_GPFLAGS` ioctl 请求。
+鑾峰彇绉佹湁鏍囧織锛岀被浼间簬 `ETHTOOL_GPFLAGS` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_PRIVFLAGS_HEADER`        nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_PRIVFLAGS_HEADER`        nested  reply header
   `ETHTOOL_A_PRIVFLAGS_FLAGS`         bitset  private flags
   ====================================  ======  ==========================
 
-`ETHTOOL_A_PRIVFLAGS_FLAGS` 是一个带有设备私有标志值的位集。这些标志由驱动定义，其数量
-与名称（以及含义）取决于具体设备。对于紧凑位集格式，名称可通过 `ETH_SS_PRIV_FLAGS`
-字符串集获取。如果请求了详细位集格式，响应会使用设备支持的全部私有标志作为掩码，从而
-客户端无需再去获取带有名称的字符串集即可获得完整信息。
+`ETHTOOL_A_PRIVFLAGS_FLAGS` 鏄竴涓甫鏈夎澶囩鏈夋爣蹇楀€肩殑浣嶉泦銆傝繖浜涙爣蹇楃敱椹卞姩瀹氫箟锛屽叾鏁伴噺
+涓庡悕绉帮紙浠ュ強鍚箟锛夊彇鍐充簬鍏蜂綋璁惧銆傚浜庣揣鍑戜綅闆嗘牸寮忥紝鍚嶇О鍙€氳繃 `ETH_SS_PRIV_FLAGS`
+瀛楃涓查泦鑾峰彇銆傚鏋滆姹備簡璇︾粏浣嶉泦鏍煎紡锛屽搷搴斾細浣跨敤璁惧鏀寔鐨勫叏閮ㄧ鏈夋爣蹇椾綔涓烘帺鐮侊紝浠庤€?
+瀹㈡埛绔棤闇€鍐嶅幓鑾峰彇甯︽湁鍚嶇О鐨勫瓧绗︿覆闆嗗嵆鍙幏寰楀畬鏁翠俊鎭€?
 
 
 ## PRIVFLAGS_SET
 
 
-设置或修改设备私有标志的值，类似于 `ETHTOOL_SPFLAGS` ioctl 请求。
+璁剧疆鎴栦慨鏀硅澶囩鏈夋爣蹇楃殑鍊硷紝绫讳技浜?`ETHTOOL_SPFLAGS` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_PRIVFLAGS_HEADER`        nested  request header
   `ETHTOOL_A_PRIVFLAGS_FLAGS`         bitset  private flags
   ====================================  ======  ==========================
 
-`ETHTOOL_A_PRIVFLAGS_FLAGS` 既可以设置整个私有标志集合，也可以只修改其中部分标志的值。
+`ETHTOOL_A_PRIVFLAGS_FLAGS` 鏃㈠彲浠ヨ缃暣涓鏈夋爣蹇楅泦鍚堬紝涔熷彲浠ュ彧淇敼鍏朵腑閮ㄥ垎鏍囧織鐨勫€笺€?
 
 
 ## RINGS_GET
 
 
-获取环形队列大小，类似于 `ETHTOOL_GRINGPARAM` ioctl 请求。
+鑾峰彇鐜舰闃熷垪澶у皬锛岀被浼间簬 `ETHTOOL_GRINGPARAM` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_RINGS_HEADER`            nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   =======================================   ======  ===========================
   `ETHTOOL_A_RINGS_HEADER`                nested  reply header
-  `ETHTOOL_A_RINGS_RX_MAX`                u32     接收（RX）环形队列最大大小
-  `ETHTOOL_A_RINGS_RX_MINI_MAX`           u32     RX mini 环形队列最大大小
-  `ETHTOOL_A_RINGS_RX_JUMBO_MAX`          u32     RX jumbo 环形队列最大大小
-  `ETHTOOL_A_RINGS_TX_MAX`                u32     发送（TX）环形队列最大大小
-  `ETHTOOL_A_RINGS_RX`                    u32     RX 环形队列大小
-  `ETHTOOL_A_RINGS_RX_MINI`               u32     RX mini 环形队列大小
-  `ETHTOOL_A_RINGS_RX_JUMBO`              u32     RX jumbo 环形队列大小
-  `ETHTOOL_A_RINGS_TX`                    u32     TX 环形队列大小
-  `ETHTOOL_A_RINGS_RX_BUF_LEN`            u32     环形队列上缓冲区的大小
-  `ETHTOOL_A_RINGS_TCP_DATA_SPLIT`        u8      TCP 头 / 数据分离
-  `ETHTOOL_A_RINGS_CQE_SIZE`              u32     TX/RX CQE 的大小
-  `ETHTOOL_A_RINGS_TX_PUSH`               u8      TX Push 模式标志
-  `ETHTOOL_A_RINGS_RX_PUSH`               u8      RX Push 模式标志
-  `ETHTOOL_A_RINGS_TX_PUSH_BUF_LEN`       u32     TX push 缓冲区大小
-  `ETHTOOL_A_RINGS_TX_PUSH_BUF_LEN_MAX`   u32     TX push 缓冲区最大大小
-  `ETHTOOL_A_RINGS_HDS_THRESH`            u32     头 / 数据分离阈值
-  `ETHTOOL_A_RINGS_HDS_THRESH_MAX`        u32     头 / 数据分离最大阈值
+  `ETHTOOL_A_RINGS_RX_MAX`                u32     鎺ユ敹锛圧X锛夌幆褰㈤槦鍒楁渶澶уぇ灏?
+  `ETHTOOL_A_RINGS_RX_MINI_MAX`           u32     RX mini 鐜舰闃熷垪鏈€澶уぇ灏?
+  `ETHTOOL_A_RINGS_RX_JUMBO_MAX`          u32     RX jumbo 鐜舰闃熷垪鏈€澶уぇ灏?
+  `ETHTOOL_A_RINGS_TX_MAX`                u32     鍙戦€侊紙TX锛夌幆褰㈤槦鍒楁渶澶уぇ灏?
+  `ETHTOOL_A_RINGS_RX`                    u32     RX 鐜舰闃熷垪澶у皬
+  `ETHTOOL_A_RINGS_RX_MINI`               u32     RX mini 鐜舰闃熷垪澶у皬
+  `ETHTOOL_A_RINGS_RX_JUMBO`              u32     RX jumbo 鐜舰闃熷垪澶у皬
+  `ETHTOOL_A_RINGS_TX`                    u32     TX 鐜舰闃熷垪澶у皬
+  `ETHTOOL_A_RINGS_RX_BUF_LEN`            u32     鐜舰闃熷垪涓婄紦鍐插尯鐨勫ぇ灏?
+  `ETHTOOL_A_RINGS_TCP_DATA_SPLIT`        u8      TCP 澶?/ 鏁版嵁鍒嗙
+  `ETHTOOL_A_RINGS_CQE_SIZE`              u32     TX/RX CQE 鐨勫ぇ灏?
+  `ETHTOOL_A_RINGS_TX_PUSH`               u8      TX Push 妯″紡鏍囧織
+  `ETHTOOL_A_RINGS_RX_PUSH`               u8      RX Push 妯″紡鏍囧織
+  `ETHTOOL_A_RINGS_TX_PUSH_BUF_LEN`       u32     TX push 缂撳啿鍖哄ぇ灏?
+  `ETHTOOL_A_RINGS_TX_PUSH_BUF_LEN_MAX`   u32     TX push 缂撳啿鍖烘渶澶уぇ灏?
+  `ETHTOOL_A_RINGS_HDS_THRESH`            u32     澶?/ 鏁版嵁鍒嗙闃堝€?
+  `ETHTOOL_A_RINGS_HDS_THRESH_MAX`        u32     澶?/ 鏁版嵁鍒嗙鏈€澶ч槇鍊?
   =======================================   ======  ===========================
 
-`ETHTOOL_A_RINGS_TCP_DATA_SPLIT` 指示该设备是否可与页翻转（page-flipping）的 TCP 零拷贝
-接收（`getsockopt(TCP_ZEROCOPY_RECEIVE)`）配合使用。若启用，设备被配置为将帧头与数据
-放入独立的缓冲区。设备配置必须能够接收完整的内存页数据，例如因为 MTU 足够大或通过
-HW-GRO。
+`ETHTOOL_A_RINGS_TCP_DATA_SPLIT` 鎸囩ず璇ヨ澶囨槸鍚﹀彲涓庨〉缈昏浆锛坧age-flipping锛夌殑 TCP 闆舵嫹璐?
+鎺ユ敹锛坄getsockopt(TCP_ZEROCOPY_RECEIVE)`锛夐厤鍚堜娇鐢ㄣ€傝嫢鍚敤锛岃澶囪閰嶇疆涓哄皢甯уご涓庢暟鎹?
+鏀惧叆鐙珛鐨勭紦鍐插尯銆傝澶囬厤缃繀椤昏兘澶熸帴鏀跺畬鏁寸殑鍐呭瓨椤垫暟鎹紝渚嬪鍥犱负 MTU 瓒冲澶ф垨閫氳繃
+HW-GRO銆?
 
-`ETHTOOL_A_RINGS_[RX|TX]_PUSH` 标志用于启用描述符快速路径来发送或接收数据包。在普通路径
-中，驱动在 DRAM 中填充描述符并通知 NIC 硬件。在快速路径中，驱动通过 MMIO 写操作将描述符
-推送到设备，从而降低延迟。然而，启用该特性可能增加 CPU 开销。驱动可能会施加额外的逐包
-资格检查（例如依据包大小）。
+`ETHTOOL_A_RINGS_[RX|TX]_PUSH` 鏍囧織鐢ㄤ簬鍚敤鎻忚堪绗﹀揩閫熻矾寰勬潵鍙戦€佹垨鎺ユ敹鏁版嵁鍖呫€傚湪鏅€氳矾寰?
+涓紝椹卞姩鍦?DRAM 涓～鍏呮弿杩扮骞堕€氱煡 NIC 纭欢銆傚湪蹇€熻矾寰勪腑锛岄┍鍔ㄩ€氳繃 MMIO 鍐欐搷浣滃皢鎻忚堪绗?
+鎺ㄩ€佸埌璁惧锛屼粠鑰岄檷浣庡欢杩熴€傜劧鑰岋紝鍚敤璇ョ壒鎬у彲鑳藉鍔?CPU 寮€閿€銆傞┍鍔ㄥ彲鑳戒細鏂藉姞棰濆鐨勯€愬寘
+璧勬牸妫€鏌ワ紙渚嬪渚濇嵁鍖呭ぇ灏忥級銆?
 
-`ETHTOOL_A_RINGS_TX_PUSH_BUF_LEN` 指定驱动可以直接推送到底层设备（‘push’模式）的发送包
-的最大字节数。将部分载荷字节推送到设备具有减少小包延迟（避免 DMA 映射，与
-`ETHTOOL_A_RINGS_TX_PUSH` 参数相同）以及允许底层设备在处理其载荷之前先处理包头的优势。
-这可以帮助设备基于包头快速采取行动。这与“tx-copybreak”参数类似，后者将包复制到预分配的
-DMA 内存区域而非映射新内存。然而，tx-push-buff 参数将包直接复制到设备，以让设备能对包
-采取更快的动作。
+`ETHTOOL_A_RINGS_TX_PUSH_BUF_LEN` 鎸囧畾椹卞姩鍙互鐩存帴鎺ㄩ€佸埌搴曞眰璁惧锛堚€榩ush鈥欐ā寮忥級鐨勫彂閫佸寘
+鐨勬渶澶у瓧鑺傛暟銆傚皢閮ㄥ垎杞借嵎瀛楄妭鎺ㄩ€佸埌璁惧鍏锋湁鍑忓皯灏忓寘寤惰繜锛堥伩鍏?DMA 鏄犲皠锛屼笌
+`ETHTOOL_A_RINGS_TX_PUSH` 鍙傛暟鐩稿悓锛変互鍙婂厑璁稿簳灞傝澶囧湪澶勭悊鍏惰浇鑽蜂箣鍓嶅厛澶勭悊鍖呭ご鐨勪紭鍔裤€?
+杩欏彲浠ュ府鍔╄澶囧熀浜庡寘澶村揩閫熼噰鍙栬鍔ㄣ€傝繖涓庘€渢x-copybreak鈥濆弬鏁扮被浼硷紝鍚庤€呭皢鍖呭鍒跺埌棰勫垎閰嶇殑
+DMA 鍐呭瓨鍖哄煙鑰岄潪鏄犲皠鏂板唴瀛樸€傜劧鑰岋紝tx-push-buff 鍙傛暟灏嗗寘鐩存帴澶嶅埗鍒拌澶囷紝浠ヨ璁惧鑳藉鍖?
+閲囧彇鏇村揩鐨勫姩浣溿€?
 
 ## RINGS_SET
 
 
-设置环形队列大小，类似于 `ETHTOOL_SRINGPARAM` ioctl 请求。
+璁剧疆鐜舰闃熷垪澶у皬锛岀被浼间簬 `ETHTOOL_SRINGPARAM` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ===========================
   `ETHTOOL_A_RINGS_HEADER`            nested  reply header
-  `ETHTOOL_A_RINGS_RX`                u32     RX 环形队列大小
-  `ETHTOOL_A_RINGS_RX_MINI`           u32     RX mini 环形队列大小
-  `ETHTOOL_A_RINGS_RX_JUMBO`          u32     RX jumbo 环形队列大小
-  `ETHTOOL_A_RINGS_TX`                u32     TX 环形队列大小
-  `ETHTOOL_A_RINGS_RX_BUF_LEN`        u32     环形队列上缓冲区的大小
-  `ETHTOOL_A_RINGS_TCP_DATA_SPLIT`    u8      TCP 头 / 数据分离
-  `ETHTOOL_A_RINGS_CQE_SIZE`          u32     TX/RX CQE 的大小
-  `ETHTOOL_A_RINGS_TX_PUSH`           u8      TX Push 模式标志
-  `ETHTOOL_A_RINGS_RX_PUSH`           u8      RX Push 模式标志
-  `ETHTOOL_A_RINGS_TX_PUSH_BUF_LEN`   u32     TX push 缓冲区大小
-  `ETHTOOL_A_RINGS_HDS_THRESH`        u32     头 / 数据分离阈值
+  `ETHTOOL_A_RINGS_RX`                u32     RX 鐜舰闃熷垪澶у皬
+  `ETHTOOL_A_RINGS_RX_MINI`           u32     RX mini 鐜舰闃熷垪澶у皬
+  `ETHTOOL_A_RINGS_RX_JUMBO`          u32     RX jumbo 鐜舰闃熷垪澶у皬
+  `ETHTOOL_A_RINGS_TX`                u32     TX 鐜舰闃熷垪澶у皬
+  `ETHTOOL_A_RINGS_RX_BUF_LEN`        u32     鐜舰闃熷垪涓婄紦鍐插尯鐨勫ぇ灏?
+  `ETHTOOL_A_RINGS_TCP_DATA_SPLIT`    u8      TCP 澶?/ 鏁版嵁鍒嗙
+  `ETHTOOL_A_RINGS_CQE_SIZE`          u32     TX/RX CQE 鐨勫ぇ灏?
+  `ETHTOOL_A_RINGS_TX_PUSH`           u8      TX Push 妯″紡鏍囧織
+  `ETHTOOL_A_RINGS_RX_PUSH`           u8      RX Push 妯″紡鏍囧織
+  `ETHTOOL_A_RINGS_TX_PUSH_BUF_LEN`   u32     TX push 缂撳啿鍖哄ぇ灏?
+  `ETHTOOL_A_RINGS_HDS_THRESH`        u32     澶?/ 鏁版嵁鍒嗙闃堝€?
   ====================================  ======  ===========================
 
-内核会检查请求的环形队列大小不超过驱动上报的限制。驱动可能施加额外的约束，也可能不支持
-所有属性。
+鍐呮牳浼氭鏌ヨ姹傜殑鐜舰闃熷垪澶у皬涓嶈秴杩囬┍鍔ㄤ笂鎶ョ殑闄愬埗銆傞┍鍔ㄥ彲鑳芥柦鍔犻澶栫殑绾︽潫锛屼篃鍙兘涓嶆敮鎸?
+鎵€鏈夊睘鎬с€?
 
 
-`ETHTOOL_A_RINGS_CQE_SIZE` 指定完成队列事件（Completion Queue Event）的大小。完成队列
-事件（CQE）是 NIC 发出的、用于指示包发送（如发送成功或出错）或接收（如包片段指针）完成
-状态的事件。CQE 大小参数可在 NIC 支持时修改默认的 CQE 大小。更大的 CQE 可以携带更多的接收
-缓冲区指针，进而 NIC 可从线路上传输更大的帧。基于 NIC 硬件，若修改了 CQE 大小，整体完成
-队列大小可在驱动中调整。
+`ETHTOOL_A_RINGS_CQE_SIZE` 鎸囧畾瀹屾垚闃熷垪浜嬩欢锛圕ompletion Queue Event锛夌殑澶у皬銆傚畬鎴愰槦鍒?
+浜嬩欢锛圕QE锛夋槸 NIC 鍙戝嚭鐨勩€佺敤浜庢寚绀哄寘鍙戦€侊紙濡傚彂閫佹垚鍔熸垨鍑洪敊锛夋垨鎺ユ敹锛堝鍖呯墖娈垫寚閽堬級瀹屾垚
+鐘舵€佺殑浜嬩欢銆侰QE 澶у皬鍙傛暟鍙湪 NIC 鏀寔鏃朵慨鏀归粯璁ょ殑 CQE 澶у皬銆傛洿澶х殑 CQE 鍙互鎼哄甫鏇村鐨勬帴鏀?
+缂撳啿鍖烘寚閽堬紝杩涜€?NIC 鍙粠绾胯矾涓婁紶杈撴洿澶х殑甯с€傚熀浜?NIC 纭欢锛岃嫢淇敼浜?CQE 澶у皬锛屾暣浣撳畬鎴?
+闃熷垪澶у皬鍙湪椹卞姩涓皟鏁淬€?
 
-`ETHTOOL_A_RINGS_HDS_THRESH` 指定头 / 数据分离特性的阈值。若接收到的包大小大于该阈值，
-则头与数据将被分离。
+`ETHTOOL_A_RINGS_HDS_THRESH` 鎸囧畾澶?/ 鏁版嵁鍒嗙鐗规€х殑闃堝€笺€傝嫢鎺ユ敹鍒扮殑鍖呭ぇ灏忓ぇ浜庤闃堝€硷紝
+鍒欏ご涓庢暟鎹皢琚垎绂汇€?
 
 ## CHANNELS_GET
 
 
-获取通道数量，类似于 `ETHTOOL_GCHANNELS` ioctl 请求。
+鑾峰彇閫氶亾鏁伴噺锛岀被浼间簬 `ETHTOOL_GCHANNELS` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_CHANNELS_HEADER`         nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_CHANNELS_HEADER`          nested  reply header
@@ -879,9 +879,9 @@ DMA 内存区域而非映射新内存。然而，tx-push-buff 参数将包直接
 ## CHANNELS_SET
 
 
-设置通道数量，类似于 `ETHTOOL_SCHANNELS` ioctl 请求。
+璁剧疆閫氶亾鏁伴噺锛岀被浼间簬 `ETHTOOL_SCHANNELS` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_CHANNELS_HEADER`          nested  request header
@@ -891,153 +891,153 @@ DMA 内存区域而非映射新内存。然而，tx-push-buff 参数将包直接
   `ETHTOOL_A_CHANNELS_COMBINED_COUNT`  u32     combined channel count
   =====================================  ======  ==========================
 
-内核会检查请求的通道数量不超过驱动上报的限制。驱动可能施加额外的约束，也可能不支持所有
-属性。
+鍐呮牳浼氭鏌ヨ姹傜殑閫氶亾鏁伴噺涓嶈秴杩囬┍鍔ㄤ笂鎶ョ殑闄愬埗銆傞┍鍔ㄥ彲鑳芥柦鍔犻澶栫殑绾︽潫锛屼篃鍙兘涓嶆敮鎸佹墍鏈?
+灞炴€с€?
 
 
 ## COALESCE_GET
 
 
-获取中断聚合参数，类似于 `ETHTOOL_GCOALESCE` ioctl 请求。
+鑾峰彇涓柇鑱氬悎鍙傛暟锛岀被浼间簬 `ETHTOOL_GCOALESCE` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_COALESCE_HEADER`         nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ===========================================  ======  =======================
   `ETHTOOL_A_COALESCE_HEADER`                nested  reply header
-  `ETHTOOL_A_COALESCE_RX_USECS`              u32     延迟（微秒），普通 Rx
-  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES`         u32     最大包数，普通 Rx
-  `ETHTOOL_A_COALESCE_RX_USECS_IRQ`          u32     延迟（微秒），IRQ 中的 Rx
-  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES_IRQ`     u32     最大包数，IRQ 中的 Rx
-  `ETHTOOL_A_COALESCE_TX_USECS`              u32     延迟（微秒），普通 Tx
-  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES`         u32     最大包数，普通 Tx
-  `ETHTOOL_A_COALESCE_TX_USECS_IRQ`          u32     延迟（微秒），IRQ 中的 Tx
-  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES_IRQ`     u32     IRQ 中的包数，Tx
-  `ETHTOOL_A_COALESCE_STATS_BLOCK_USECS`     u32     统计更新延迟
-  `ETHTOOL_A_COALESCE_USE_ADAPTIVE_RX`       bool    自适应 Rx 聚合
-  `ETHTOOL_A_COALESCE_USE_ADAPTIVE_TX`       bool    自适应 Tx 聚合
-  `ETHTOOL_A_COALESCE_PKT_RATE_LOW`          u32     低速率阈值
-  `ETHTOOL_A_COALESCE_RX_USECS_LOW`          u32     延迟（微秒），低速 Rx
-  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES_LOW`     u32     最大包数，低速 Rx
-  `ETHTOOL_A_COALESCE_TX_USECS_LOW`          u32     延迟（微秒），低速 Tx
-  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES_LOW`     u32     最大包数，低速 Tx
-  `ETHTOOL_A_COALESCE_PKT_RATE_HIGH`         u32     高速率阈值
-  `ETHTOOL_A_COALESCE_RX_USECS_HIGH`         u32     延迟（微秒），高速 Rx
-  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES_HIGH`    u32     最大包数，高速 Rx
-  `ETHTOOL_A_COALESCE_TX_USECS_HIGH`         u32     延迟（微秒），高速 Tx
-  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES_HIGH`    u32     最大包数，高速 Tx
-  `ETHTOOL_A_COALESCE_RATE_SAMPLE_INTERVAL`  u32     速率采样间隔
-  `ETHTOOL_A_COALESCE_USE_CQE_TX`            bool    定时器重置模式，Tx
-  `ETHTOOL_A_COALESCE_USE_CQE_RX`            bool    定时器重置模式，Rx
-  `ETHTOOL_A_COALESCE_TX_AGGR_MAX_BYTES`     u32     最大聚合大小，Tx
-  `ETHTOOL_A_COALESCE_TX_AGGR_MAX_FRAMES`    u32     最大聚合包数，Tx
-  `ETHTOOL_A_COALESCE_TX_AGGR_TIME_USECS`    u32     时间（微秒），聚合，Tx
-  `ETHTOOL_A_COALESCE_RX_PROFILE`            nested  DIM 配置文件，Rx
-  `ETHTOOL_A_COALESCE_TX_PROFILE`            nested  DIM 配置文件，Tx
-  `ETHTOOL_A_COALESCE_RX_CQE_FRAMES`         u32     最大包数，Rx CQE
-  `ETHTOOL_A_COALESCE_RX_CQE_NSECS`          u32     延迟（纳秒），Rx CQE
+  `ETHTOOL_A_COALESCE_RX_USECS`              u32     寤惰繜锛堝井绉掞級锛屾櫘閫?Rx
+  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES`         u32     鏈€澶у寘鏁帮紝鏅€?Rx
+  `ETHTOOL_A_COALESCE_RX_USECS_IRQ`          u32     寤惰繜锛堝井绉掞級锛孖RQ 涓殑 Rx
+  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES_IRQ`     u32     鏈€澶у寘鏁帮紝IRQ 涓殑 Rx
+  `ETHTOOL_A_COALESCE_TX_USECS`              u32     寤惰繜锛堝井绉掞級锛屾櫘閫?Tx
+  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES`         u32     鏈€澶у寘鏁帮紝鏅€?Tx
+  `ETHTOOL_A_COALESCE_TX_USECS_IRQ`          u32     寤惰繜锛堝井绉掞級锛孖RQ 涓殑 Tx
+  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES_IRQ`     u32     IRQ 涓殑鍖呮暟锛孴x
+  `ETHTOOL_A_COALESCE_STATS_BLOCK_USECS`     u32     缁熻鏇存柊寤惰繜
+  `ETHTOOL_A_COALESCE_USE_ADAPTIVE_RX`       bool    鑷€傚簲 Rx 鑱氬悎
+  `ETHTOOL_A_COALESCE_USE_ADAPTIVE_TX`       bool    鑷€傚簲 Tx 鑱氬悎
+  `ETHTOOL_A_COALESCE_PKT_RATE_LOW`          u32     浣庨€熺巼闃堝€?
+  `ETHTOOL_A_COALESCE_RX_USECS_LOW`          u32     寤惰繜锛堝井绉掞級锛屼綆閫?Rx
+  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES_LOW`     u32     鏈€澶у寘鏁帮紝浣庨€?Rx
+  `ETHTOOL_A_COALESCE_TX_USECS_LOW`          u32     寤惰繜锛堝井绉掞級锛屼綆閫?Tx
+  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES_LOW`     u32     鏈€澶у寘鏁帮紝浣庨€?Tx
+  `ETHTOOL_A_COALESCE_PKT_RATE_HIGH`         u32     楂橀€熺巼闃堝€?
+  `ETHTOOL_A_COALESCE_RX_USECS_HIGH`         u32     寤惰繜锛堝井绉掞級锛岄珮閫?Rx
+  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES_HIGH`    u32     鏈€澶у寘鏁帮紝楂橀€?Rx
+  `ETHTOOL_A_COALESCE_TX_USECS_HIGH`         u32     寤惰繜锛堝井绉掞級锛岄珮閫?Tx
+  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES_HIGH`    u32     鏈€澶у寘鏁帮紝楂橀€?Tx
+  `ETHTOOL_A_COALESCE_RATE_SAMPLE_INTERVAL`  u32     閫熺巼閲囨牱闂撮殧
+  `ETHTOOL_A_COALESCE_USE_CQE_TX`            bool    瀹氭椂鍣ㄩ噸缃ā寮忥紝Tx
+  `ETHTOOL_A_COALESCE_USE_CQE_RX`            bool    瀹氭椂鍣ㄩ噸缃ā寮忥紝Rx
+  `ETHTOOL_A_COALESCE_TX_AGGR_MAX_BYTES`     u32     鏈€澶ц仛鍚堝ぇ灏忥紝Tx
+  `ETHTOOL_A_COALESCE_TX_AGGR_MAX_FRAMES`    u32     鏈€澶ц仛鍚堝寘鏁帮紝Tx
+  `ETHTOOL_A_COALESCE_TX_AGGR_TIME_USECS`    u32     鏃堕棿锛堝井绉掞級锛岃仛鍚堬紝Tx
+  `ETHTOOL_A_COALESCE_RX_PROFILE`            nested  DIM 閰嶇疆鏂囦欢锛孯x
+  `ETHTOOL_A_COALESCE_TX_PROFILE`            nested  DIM 閰嶇疆鏂囦欢锛孴x
+  `ETHTOOL_A_COALESCE_RX_CQE_FRAMES`         u32     鏈€澶у寘鏁帮紝Rx CQE
+  `ETHTOOL_A_COALESCE_RX_CQE_NSECS`          u32     寤惰繜锛堢撼绉掞級锛孯x CQE
   ===========================================  ======  =======================
 
-仅当属性的值不为零，或 **对应位在 ``ethtool_ops`` 的 ``supported_coalesce_params`` 中**
-被设置（即被驱动声明为支持）时，该属性才会包含在回复中。
+浠呭綋灞炴€х殑鍊间笉涓洪浂锛屾垨 **瀵瑰簲浣嶅湪 ``ethtool_ops`` 鐨?``supported_coalesce_params`` 涓?*
+琚缃紙鍗宠椹卞姩澹版槑涓烘敮鎸侊級鏃讹紝璇ュ睘鎬ф墠浼氬寘鍚湪鍥炲涓€?
 
-定时器重置模式（`ETHTOOL_A_COALESCE_USE_CQE_TX` 与 `ETHTOOL_A_COALESCE_USE_CQE_RX`）
-控制包到达与各个基于时间的延迟参数之间的交互。默认情况下，定时器应限制任意包到达/离开
-与相应中断之间的最大延迟。在此模式下，定时器应由包到达（有时是上一次中断的投递）启动，
-并在中断投递时重置。将相应属性设置为 1 将启用 `CQE` 模式，其中每个包事件都会重置定时器。
-在此模式下，定时器用于防止队列空闲时强制产生中断，而繁忙的队列则依赖包上限来触发中断。
+瀹氭椂鍣ㄩ噸缃ā寮忥紙`ETHTOOL_A_COALESCE_USE_CQE_TX` 涓?`ETHTOOL_A_COALESCE_USE_CQE_RX`锛?
+鎺у埗鍖呭埌杈句笌鍚勪釜鍩轰簬鏃堕棿鐨勫欢杩熷弬鏁颁箣闂寸殑浜や簰銆傞粯璁ゆ儏鍐典笅锛屽畾鏃跺櫒搴旈檺鍒朵换鎰忓寘鍒拌揪/绂诲紑
+涓庣浉搴斾腑鏂箣闂寸殑鏈€澶у欢杩熴€傚湪姝ゆā寮忎笅锛屽畾鏃跺櫒搴旂敱鍖呭埌杈撅紙鏈夋椂鏄笂涓€娆′腑鏂殑鎶曢€掞級鍚姩锛?
+骞跺湪涓柇鎶曢€掓椂閲嶇疆銆傚皢鐩稿簲灞炴€ц缃负 1 灏嗗惎鐢?`CQE` 妯″紡锛屽叾涓瘡涓寘浜嬩欢閮戒細閲嶇疆瀹氭椂鍣ㄣ€?
+鍦ㄦ妯″紡涓嬶紝瀹氭椂鍣ㄧ敤浜庨槻姝㈤槦鍒楃┖闂叉椂寮哄埗浜х敓涓柇锛岃€岀箒蹇欑殑闃熷垪鍒欎緷璧栧寘涓婇檺鏉ヨЕ鍙戜腑鏂€?
 
-Tx 聚合是指将帧复制到连续的缓冲区中，以便作为一个单独的 IO 操作提交。
-`ETHTOOL_A_COALESCE_TX_AGGR_MAX_BYTES` 描述提交缓冲区的最大字节数。
-`ETHTOOL_A_COALESCE_TX_AGGR_MAX_FRAMES` 描述可聚合到单个缓冲区中的最大帧数。
-`ETHTOOL_A_COALESCE_TX_AGGR_TIME_USECS` 描述自聚合块中第一个包到达起算的时间（微秒），
-超过该时间后应发送该块。此特性主要对某些不能很好处理频繁小尺寸 URB 传输的特定 USB 设备
-有意义。
+Tx 鑱氬悎鏄寚灏嗗抚澶嶅埗鍒拌繛缁殑缂撳啿鍖轰腑锛屼互渚夸綔涓轰竴涓崟鐙殑 IO 鎿嶄綔鎻愪氦銆?
+`ETHTOOL_A_COALESCE_TX_AGGR_MAX_BYTES` 鎻忚堪鎻愪氦缂撳啿鍖虹殑鏈€澶у瓧鑺傛暟銆?
+`ETHTOOL_A_COALESCE_TX_AGGR_MAX_FRAMES` 鎻忚堪鍙仛鍚堝埌鍗曚釜缂撳啿鍖轰腑鐨勬渶澶у抚鏁般€?
+`ETHTOOL_A_COALESCE_TX_AGGR_TIME_USECS` 鎻忚堪鑷仛鍚堝潡涓涓€涓寘鍒拌揪璧风畻鐨勬椂闂达紙寰锛夛紝
+瓒呰繃璇ユ椂闂村悗搴斿彂閫佽鍧椼€傛鐗规€т富瑕佸鏌愪簺涓嶈兘寰堝ソ澶勭悊棰戠箒灏忓昂瀵?URB 浼犺緭鐨勭壒瀹?USB 璁惧
+鏈夋剰涔夈€?
 
-`ETHTOOL_A_COALESCE_RX_PROFILE` 与 `ETHTOOL_A_COALESCE_TX_PROFILE` 引用 DIM 参数，
-参见 `Generic Network Dynamic Interrupt Moderation (Net DIM)
-<https://www.kernel.org/doc/Documentation/networking/net_dim.rst>`_。
+`ETHTOOL_A_COALESCE_RX_PROFILE` 涓?`ETHTOOL_A_COALESCE_TX_PROFILE` 寮曠敤 DIM 鍙傛暟锛?
+鍙傝 `Generic Network Dynamic Interrupt Moderation (Net DIM)
+<https://www.kernel.org/doc/Documentation/networking/net_dim.rst>`_銆?
 
-Rx CQE 聚合允许多个接收到的包被聚合到单个完成队列条目（CQE）或描述符回写中。
-`ETHTOOL_A_COALESCE_RX_CQE_FRAMES` 描述可聚合到 CQE 或回写中的最大帧数。
-`ETHTOOL_A_COALESCE_RX_CQE_NSECS` 描述聚合的 CQE 或回写自第一个包到达起、被发送前的
-最大时间（纳秒）。
+Rx CQE 鑱氬悎鍏佽澶氫釜鎺ユ敹鍒扮殑鍖呰鑱氬悎鍒板崟涓畬鎴愰槦鍒楁潯鐩紙CQE锛夋垨鎻忚堪绗﹀洖鍐欎腑銆?
+`ETHTOOL_A_COALESCE_RX_CQE_FRAMES` 鎻忚堪鍙仛鍚堝埌 CQE 鎴栧洖鍐欎腑鐨勬渶澶у抚鏁般€?
+`ETHTOOL_A_COALESCE_RX_CQE_NSECS` 鎻忚堪鑱氬悎鐨?CQE 鎴栧洖鍐欒嚜绗竴涓寘鍒拌揪璧枫€佽鍙戦€佸墠鐨?
+鏈€澶ф椂闂达紙绾崇锛夈€?
 
 ## COALESCE_SET
 
 
-设置中断聚合参数，类似于 `ETHTOOL_SCOALESCE` ioctl 请求。
+璁剧疆涓柇鑱氬悎鍙傛暟锛岀被浼间簬 `ETHTOOL_SCOALESCE` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ===========================================  ======  =======================
   `ETHTOOL_A_COALESCE_HEADER`                nested  request header
-  `ETHTOOL_A_COALESCE_RX_USECS`              u32     延迟（微秒），普通 Rx
-  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES`         u32     最大包数，普通 Rx
-  `ETHTOOL_A_COALESCE_RX_USECS_IRQ`          u32     延迟（微秒），IRQ 中的 Rx
-  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES_IRQ`     u32     最大包数，IRQ 中的 Rx
-  `ETHTOOL_A_COALESCE_TX_USECS`              u32     延迟（微秒），普通 Tx
-  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES`         u32     最大包数，普通 Tx
-  `ETHTOOL_A_COALESCE_TX_USECS_IRQ`          u32     延迟（微秒），IRQ 中的 Tx
-  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES_IRQ`     u32     IRQ 中的包数，Tx
-  `ETHTOOL_A_COALESCE_STATS_BLOCK_USECS`     u32     统计更新延迟
-  `ETHTOOL_A_COALESCE_USE_ADAPTIVE_RX`       bool    自适应 Rx 聚合
-  `ETHTOOL_A_COALESCE_USE_ADAPTIVE_TX`       bool    自适应 Tx 聚合
-  `ETHTOOL_A_COALESCE_PKT_RATE_LOW`          u32     低速率阈值
-  `ETHTOOL_A_COALESCE_RX_USECS_LOW`          u32     延迟（微秒），低速 Rx
-  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES_LOW`     u32     最大包数，低速 Rx
-  `ETHTOOL_A_COALESCE_TX_USECS_LOW`          u32     延迟（微秒），低速 Tx
-  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES_LOW`     u32     最大包数，低速 Tx
-  `ETHTOOL_A_COALESCE_PKT_RATE_HIGH`         u32     高速率阈值
-  `ETHTOOL_A_COALESCE_RX_USECS_HIGH`         u32     延迟（微秒），高速 Rx
-  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES_HIGH`    u32     最大包数，高速 Rx
-  `ETHTOOL_A_COALESCE_TX_USECS_HIGH`         u32     延迟（微秒），高速 Tx
-  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES_HIGH`    u32     最大包数，高速 Tx
-  `ETHTOOL_A_COALESCE_RATE_SAMPLE_INTERVAL`  u32     速率采样间隔
-  `ETHTOOL_A_COALESCE_USE_CQE_TX`            bool    定时器重置模式，Tx
-  `ETHTOOL_A_COALESCE_USE_CQE_RX`            bool    定时器重置模式，Rx
-  `ETHTOOL_A_COALESCE_TX_AGGR_MAX_BYTES`     u32     最大聚合大小，Tx
-  `ETHTOOL_A_COALESCE_TX_AGGR_MAX_FRAMES`    u32     最大聚合包数，Tx
-  `ETHTOOL_A_COALESCE_TX_AGGR_TIME_USECS`    u32     时间（微秒），聚合，Tx
-  `ETHTOOL_A_COALESCE_RX_PROFILE`            nested  DIM 配置文件，Rx
-  `ETHTOOL_A_COALESCE_TX_PROFILE`            nested  DIM 配置文件，Tx
-  `ETHTOOL_A_COALESCE_RX_CQE_FRAMES`         u32     最大包数，Rx CQE
-  `ETHTOOL_A_COALESCE_RX_CQE_NSECS`          u32     延迟（纳秒），Rx CQE
+  `ETHTOOL_A_COALESCE_RX_USECS`              u32     寤惰繜锛堝井绉掞級锛屾櫘閫?Rx
+  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES`         u32     鏈€澶у寘鏁帮紝鏅€?Rx
+  `ETHTOOL_A_COALESCE_RX_USECS_IRQ`          u32     寤惰繜锛堝井绉掞級锛孖RQ 涓殑 Rx
+  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES_IRQ`     u32     鏈€澶у寘鏁帮紝IRQ 涓殑 Rx
+  `ETHTOOL_A_COALESCE_TX_USECS`              u32     寤惰繜锛堝井绉掞級锛屾櫘閫?Tx
+  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES`         u32     鏈€澶у寘鏁帮紝鏅€?Tx
+  `ETHTOOL_A_COALESCE_TX_USECS_IRQ`          u32     寤惰繜锛堝井绉掞級锛孖RQ 涓殑 Tx
+  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES_IRQ`     u32     IRQ 涓殑鍖呮暟锛孴x
+  `ETHTOOL_A_COALESCE_STATS_BLOCK_USECS`     u32     缁熻鏇存柊寤惰繜
+  `ETHTOOL_A_COALESCE_USE_ADAPTIVE_RX`       bool    鑷€傚簲 Rx 鑱氬悎
+  `ETHTOOL_A_COALESCE_USE_ADAPTIVE_TX`       bool    鑷€傚簲 Tx 鑱氬悎
+  `ETHTOOL_A_COALESCE_PKT_RATE_LOW`          u32     浣庨€熺巼闃堝€?
+  `ETHTOOL_A_COALESCE_RX_USECS_LOW`          u32     寤惰繜锛堝井绉掞級锛屼綆閫?Rx
+  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES_LOW`     u32     鏈€澶у寘鏁帮紝浣庨€?Rx
+  `ETHTOOL_A_COALESCE_TX_USECS_LOW`          u32     寤惰繜锛堝井绉掞級锛屼綆閫?Tx
+  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES_LOW`     u32     鏈€澶у寘鏁帮紝浣庨€?Tx
+  `ETHTOOL_A_COALESCE_PKT_RATE_HIGH`         u32     楂橀€熺巼闃堝€?
+  `ETHTOOL_A_COALESCE_RX_USECS_HIGH`         u32     寤惰繜锛堝井绉掞級锛岄珮閫?Rx
+  `ETHTOOL_A_COALESCE_RX_MAX_FRAMES_HIGH`    u32     鏈€澶у寘鏁帮紝楂橀€?Rx
+  `ETHTOOL_A_COALESCE_TX_USECS_HIGH`         u32     寤惰繜锛堝井绉掞級锛岄珮閫?Tx
+  `ETHTOOL_A_COALESCE_TX_MAX_FRAMES_HIGH`    u32     鏈€澶у寘鏁帮紝楂橀€?Tx
+  `ETHTOOL_A_COALESCE_RATE_SAMPLE_INTERVAL`  u32     閫熺巼閲囨牱闂撮殧
+  `ETHTOOL_A_COALESCE_USE_CQE_TX`            bool    瀹氭椂鍣ㄩ噸缃ā寮忥紝Tx
+  `ETHTOOL_A_COALESCE_USE_CQE_RX`            bool    瀹氭椂鍣ㄩ噸缃ā寮忥紝Rx
+  `ETHTOOL_A_COALESCE_TX_AGGR_MAX_BYTES`     u32     鏈€澶ц仛鍚堝ぇ灏忥紝Tx
+  `ETHTOOL_A_COALESCE_TX_AGGR_MAX_FRAMES`    u32     鏈€澶ц仛鍚堝寘鏁帮紝Tx
+  `ETHTOOL_A_COALESCE_TX_AGGR_TIME_USECS`    u32     鏃堕棿锛堝井绉掞級锛岃仛鍚堬紝Tx
+  `ETHTOOL_A_COALESCE_RX_PROFILE`            nested  DIM 閰嶇疆鏂囦欢锛孯x
+  `ETHTOOL_A_COALESCE_TX_PROFILE`            nested  DIM 閰嶇疆鏂囦欢锛孴x
+  `ETHTOOL_A_COALESCE_RX_CQE_FRAMES`         u32     鏈€澶у寘鏁帮紝Rx CQE
+  `ETHTOOL_A_COALESCE_RX_CQE_NSECS`          u32     寤惰繜锛堢撼绉掞級锛孯x CQE
   ===========================================  ======  =======================
 
-如果请求包含被驱动声明为不支持的属性（即 **相应位在 ``ethtool_ops`` 的
-``supported_coalesce_params`` 中未设置**），则无论其值如何请求都会被拒绝。驱动可能对
-聚合参数及其取值施加额外的约束。
+濡傛灉璇锋眰鍖呭惈琚┍鍔ㄥ０鏄庝负涓嶆敮鎸佺殑灞炴€э紙鍗?**鐩稿簲浣嶅湪 ``ethtool_ops`` 鐨?
+``supported_coalesce_params`` 涓湭璁剧疆**锛夛紝鍒欐棤璁哄叾鍊煎浣曡姹傞兘浼氳鎷掔粷銆傞┍鍔ㄥ彲鑳藉
+鑱氬悎鍙傛暟鍙婂叾鍙栧€兼柦鍔犻澶栫殑绾︽潫銆?
 
-与通过 `ioctl()` 发出的请求相比，该请求的 netlink 版本会更努力地确保用户指定的值已被
-应用，并可能调用驱动两次。
+涓庨€氳繃 `ioctl()` 鍙戝嚭鐨勮姹傜浉姣旓紝璇ヨ姹傜殑 netlink 鐗堟湰浼氭洿鍔姏鍦扮‘淇濈敤鎴锋寚瀹氱殑鍊煎凡琚?
+搴旂敤锛屽苟鍙兘璋冪敤椹卞姩涓ゆ銆?
 
 
 ## PAUSE_GET
 
 
-获取暂停帧设置，类似于 `ETHTOOL_GPAUSEPARAM` ioctl 请求。
+鑾峰彇鏆傚仠甯ц缃紝绫讳技浜?`ETHTOOL_GPAUSEPARAM` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_PAUSE_HEADER`             nested  request header
   `ETHTOOL_A_PAUSE_STATS_SRC`          u32     source of statistics
   =====================================  ======  ==========================
 
-`ETHTOOL_A_PAUSE_STATS_SRC` 是可选的。它取值自：
+`ETHTOOL_A_PAUSE_STATS_SRC` 鏄彲閫夌殑銆傚畠鍙栧€艰嚜锛?
 
     :identifiers: ethtool_mac_stats_src
 
-若请求中缺省，则响应中会带有一个等于 `ETHTOOL_MAC_STATS_SRC_AGGREGATE` 的
-`ETHTOOL_A_PAUSE_STATS_SRC` 属性来提供统计信息。
+鑻ヨ姹備腑缂虹渷锛屽垯鍝嶅簲涓細甯︽湁涓€涓瓑浜?`ETHTOOL_MAC_STATS_SRC_AGGREGATE` 鐨?
+`ETHTOOL_A_PAUSE_STATS_SRC` 灞炴€ф潵鎻愪緵缁熻淇℃伅銆?
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_PAUSE_HEADER`             nested  request header
@@ -1047,21 +1047,21 @@ Rx CQE 聚合允许多个接收到的包被聚合到单个完成队列条目（C
   `ETHTOOL_A_PAUSE_STATS`              nested  pause statistics
   =====================================  ======  ==========================
 
-若 `ETHTOOL_A_HEADER_FLAGS` 中设置了 `ETHTOOL_FLAG_STATS`，则会报告
-`ETHTOOL_A_PAUSE_STATS`。如果驱动未报告任何统计信息，它将是空的。驱动在以下结构中填写
-统计信息：
+鑻?`ETHTOOL_A_HEADER_FLAGS` 涓缃簡 `ETHTOOL_FLAG_STATS`锛屽垯浼氭姤鍛?
+`ETHTOOL_A_PAUSE_STATS`銆傚鏋滈┍鍔ㄦ湭鎶ュ憡浠讳綍缁熻淇℃伅锛屽畠灏嗘槸绌虹殑銆傞┍鍔ㄥ湪浠ヤ笅缁撴瀯涓～鍐?
+缁熻淇℃伅锛?
 
     :identifiers: ethtool_pause_stats
 
-每个成员都有对应的已定义属性。
+姣忎釜鎴愬憳閮芥湁瀵瑰簲鐨勫凡瀹氫箟灞炴€с€?
 
 
 ## PAUSE_SET
 
 
-设置暂停参数，类似于 `ETHTOOL_GPAUSEPARAM` ioctl 请求。
+璁剧疆鏆傚仠鍙傛暟锛岀被浼间簬 `ETHTOOL_GPAUSEPARAM` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_PAUSE_HEADER`             nested  request header
@@ -1074,15 +1074,15 @@ Rx CQE 聚合允许多个接收到的包被聚合到单个完成队列条目（C
 ## EEE_GET
 
 
-获取高效以太网（Energy Efficient Ethernet）设置，类似于 `ETHTOOL_GEEE` ioctl 请求。
+鑾峰彇楂樻晥浠ュお缃戯紙Energy Efficient Ethernet锛夎缃紝绫讳技浜?`ETHTOOL_GEEE` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_EEE_HEADER`               nested  request header
   =====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_EEE_HEADER`               nested  request header
@@ -1094,17 +1094,17 @@ Rx CQE 聚合允许多个接收到的包被聚合到单个完成队列条目（C
   `ETHTOOL_A_EEE_TX_LPI_TIMER`         u32     Tx lpi timeout (in us)
   =====================================  ======  ==========================
 
-在 `ETHTOOL_A_EEE_MODES_OURS` 中，掩码由启用 EEE 的链路模式组成，值为通告了 EEE 的链路
-模式。对端通告了 EEE 的链路模式列在 `ETHTOOL_A_EEE_MODES_PEER` 中（无掩码）。netlink
-接口允许报告所有链路模式的 EEE 状态，但目前只有前 32 个由 `ethtool_ops` 回调提供。
+鍦?`ETHTOOL_A_EEE_MODES_OURS` 涓紝鎺╃爜鐢卞惎鐢?EEE 鐨勯摼璺ā寮忕粍鎴愶紝鍊间负閫氬憡浜?EEE 鐨勯摼璺?
+妯″紡銆傚绔€氬憡浜?EEE 鐨勯摼璺ā寮忓垪鍦?`ETHTOOL_A_EEE_MODES_PEER` 涓紙鏃犳帺鐮侊級銆俷etlink
+鎺ュ彛鍏佽鎶ュ憡鎵€鏈夐摼璺ā寮忕殑 EEE 鐘舵€侊紝浣嗙洰鍓嶅彧鏈夊墠 32 涓敱 `ethtool_ops` 鍥炶皟鎻愪緵銆?
 
 
 ## EEE_SET
 
 
-设置高效以太网参数，类似于 `ETHTOOL_SEEE` ioctl 请求。
+璁剧疆楂樻晥浠ュお缃戝弬鏁帮紝绫讳技浜?`ETHTOOL_SEEE` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_EEE_HEADER`               nested  request header
@@ -1114,24 +1114,24 @@ Rx CQE 聚合允许多个接收到的包被聚合到单个完成队列条目（C
   `ETHTOOL_A_EEE_TX_LPI_TIMER`         u32     Tx lpi timeout (in us)
   =====================================  ======  ==========================
 
-`ETHTOOL_A_EEE_MODES_OURS` 用于列出要通告 EEE 的链路模式（若无掩码），或指定对该列表的
-更改（若有掩码）。netlink 接口允许报告所有链路模式的 EEE 状态，但目前只能设置前 32 个，
-因为 `ethtool_ops` 回调仅支持这么多。
+`ETHTOOL_A_EEE_MODES_OURS` 鐢ㄤ簬鍒楀嚭瑕侀€氬憡 EEE 鐨勯摼璺ā寮忥紙鑻ユ棤鎺╃爜锛夛紝鎴栨寚瀹氬璇ュ垪琛ㄧ殑
+鏇存敼锛堣嫢鏈夋帺鐮侊級銆俷etlink 鎺ュ彛鍏佽鎶ュ憡鎵€鏈夐摼璺ā寮忕殑 EEE 鐘舵€侊紝浣嗙洰鍓嶅彧鑳借缃墠 32 涓紝
+鍥犱负 `ethtool_ops` 鍥炶皟浠呮敮鎸佽繖涔堝銆?
 
 
 ## TSINFO_GET
 
 
-获取时间戳信息，类似于 `ETHTOOL_GET_TS_INFO` ioctl 请求。
+鑾峰彇鏃堕棿鎴充俊鎭紝绫讳技浜?`ETHTOOL_GET_TS_INFO` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ========================================  ======  ============================
   `ETHTOOL_A_TSINFO_HEADER`               nested  request header
   `ETHTOOL_A_TSINFO_HWTSTAMP_PROVIDER`    nested  PTP hw clock provider
   ========================================  ======  ============================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_TSINFO_HEADER`            nested  request header
@@ -1142,37 +1142,37 @@ Rx CQE 聚合允许多个接收到的包被聚合到单个完成队列条目（C
   `ETHTOOL_A_TSINFO_STATS`             nested  HW timestamping statistics
   =====================================  ======  ==========================
 
-若无关联的 PHC，则 `ETHTOOL_A_TSINFO_PHC_INDEX` 缺省（此情况无特殊取值）。若位集属性将
-为空（无任何位被设置），则会被省略。
+鑻ユ棤鍏宠仈鐨?PHC锛屽垯 `ETHTOOL_A_TSINFO_PHC_INDEX` 缂虹渷锛堟鎯呭喌鏃犵壒娈婂彇鍊硷級銆傝嫢浣嶉泦灞炴€у皢
+涓虹┖锛堟棤浠讳綍浣嶈璁剧疆锛夛紝鍒欎細琚渷鐣ャ€?
 
-额外的硬件时间戳统计响应内容：
+棰濆鐨勭‖浠舵椂闂存埑缁熻鍝嶅簲鍐呭锛?
 
   ==================================================  ======  =====================
-  `ETHTOOL_A_TS_STAT_TX_PKTS`                       uint    带 Tx 硬件时间戳的包
-  `ETHTOOL_A_TS_STAT_TX_LOST`                       uint    未到达的 Tx 硬件时间戳计数
-  `ETHTOOL_A_TS_STAT_TX_ERR`                        uint    硬件错误请求的 Tx 时间戳计数
-  `ETHTOOL_A_TS_STAT_TX_ONESTEP_PKTS_UNCONFIRMED`   uint    带一步（one-step）硬件 Tx 时间戳、投递未确认的包
+  `ETHTOOL_A_TS_STAT_TX_PKTS`                       uint    甯?Tx 纭欢鏃堕棿鎴崇殑鍖?
+  `ETHTOOL_A_TS_STAT_TX_LOST`                       uint    鏈埌杈剧殑 Tx 纭欢鏃堕棿鎴宠鏁?
+  `ETHTOOL_A_TS_STAT_TX_ERR`                        uint    纭欢閿欒璇锋眰鐨?Tx 鏃堕棿鎴宠鏁?
+  `ETHTOOL_A_TS_STAT_TX_ONESTEP_PKTS_UNCONFIRMED`   uint    甯︿竴姝ワ紙one-step锛夌‖浠?Tx 鏃堕棿鎴炽€佹姇閫掓湭纭鐨勫寘
   ==================================================  ======  =====================
 
 ## CABLE_TEST
 
 
-启动线缆测试。
+鍚姩绾跨紗娴嬭瘯銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_CABLE_TEST_HEADER`       nested  request header
   ====================================  ======  ==========================
 
-通知内容：
+閫氱煡鍐呭锛?
 
-一条以太网线缆通常包含 1、2 或 4 对线。只有在某对线存在故障从而发生反射时，才能测量该对
-线的长度。具体硬件可能不提供故障信息。因此通知消息的内容大多是可选的。这些属性可以以
-任意次数、任意顺序，针对任意数量的线对重复出现。
+涓€鏉′互澶綉绾跨紗閫氬父鍖呭惈 1銆? 鎴?4 瀵圭嚎銆傚彧鏈夊湪鏌愬绾垮瓨鍦ㄦ晠闅滀粠鑰屽彂鐢熷弽灏勬椂锛屾墠鑳芥祴閲忚瀵?
+绾跨殑闀垮害銆傚叿浣撶‖浠跺彲鑳戒笉鎻愪緵鏁呴殰淇℃伅銆傚洜姝ら€氱煡娑堟伅鐨勫唴瀹瑰ぇ澶氭槸鍙€夌殑銆傝繖浜涘睘鎬у彲浠ヤ互
+浠绘剰娆℃暟銆佷换鎰忛『搴忥紝閽堝浠绘剰鏁伴噺鐨勭嚎瀵归噸澶嶅嚭鐜般€?
 
-示例展示了对 T2 线缆（即两对线）完成测试时发送的通知。其中一对正常，因此没有长度信息。
-第二对存在故障，因此带有长度信息。
+绀轰緥灞曠ず浜嗗 T2 绾跨紗锛堝嵆涓ゅ绾匡級瀹屾垚娴嬭瘯鏃跺彂閫佺殑閫氱煡銆傚叾涓竴瀵规甯革紝鍥犳娌℃湁闀垮害淇℃伅銆?
+绗簩瀵瑰瓨鍦ㄦ晠闅滐紝鍥犳甯︽湁闀垮害淇℃伅銆?
 
  +---------------------------------------------+--------+---------------------+
  | `ETHTOOL_A_CABLE_TEST_HEADER`             | nested | reply header        |
@@ -1207,9 +1207,9 @@ Rx CQE 聚合允许多个接收到的包被聚合到单个完成队列条目（C
 ## CABLE_TEST TDR
 
 
-启动线缆测试并上报原始 TDR 数据
+鍚姩绾跨紗娴嬭瘯骞朵笂鎶ュ師濮?TDR 鏁版嵁
 
-请求内容：
+璇锋眰鍐呭锛?
 
  +--------------------------------------------+--------+-----------------------+
  | `ETHTOOL_A_CABLE_TEST_TDR_HEADER`        | nested | reply header          |
@@ -1225,29 +1225,29 @@ Rx CQE 聚合允许多个接收到的包被聚合到单个完成队列条目（C
  | | `ETHTOOL_A_CABLE_TEST_TDR_CFG_PAIR`    | u8     | pair to test          |
  +-+-+----------------------------------------+--------+-----------------------+
 
-ETHTOOL_A_CABLE_TEST_TDR_CFG 及其嵌套中的全部成员均为可选。所有距离都以厘米表示。PHY 将
-这些距离作为参考，并取整到它实际支持的最近距离。如果传入某对线，则只测试该对线；否则测试
-所有对线。
+ETHTOOL_A_CABLE_TEST_TDR_CFG 鍙婂叾宓屽涓殑鍏ㄩ儴鎴愬憳鍧囦负鍙€夈€傛墍鏈夎窛绂婚兘浠ュ帢绫宠〃绀恒€侾HY 灏?
+杩欎簺璺濈浣滀负鍙傝€冿紝骞跺彇鏁村埌瀹冨疄闄呮敮鎸佺殑鏈€杩戣窛绂汇€傚鏋滀紶鍏ユ煇瀵圭嚎锛屽垯鍙祴璇曡瀵圭嚎锛涘惁鍒欐祴璇?
+鎵€鏈夊绾裤€?
 
-通知内容：
+閫氱煡鍐呭锛?
 
-原始 TDR 数据通过向线缆发送脉冲并记录给定距离的反射脉冲幅度来采集。
+鍘熷 TDR 鏁版嵁閫氳繃鍚戠嚎缂嗗彂閫佽剦鍐插苟璁板綍缁欏畾璺濈鐨勫弽灏勮剦鍐插箙搴︽潵閲囬泦銆?
 
-如果以 1 米间隔探测完整的 100 米，采集 TDR 数据可能需要若干秒。测试启动时会发送一条
-仅包含 ETHTOOL_A_CABLE_TEST_TDR_STATUS、且值为
-ETHTOOL_A_CABLE_TEST_NTF_STATUS_STARTED 的通知。
+濡傛灉浠?1 绫抽棿闅旀帰娴嬪畬鏁寸殑 100 绫筹紝閲囬泦 TDR 鏁版嵁鍙兘闇€瑕佽嫢骞茬銆傛祴璇曞惎鍔ㄦ椂浼氬彂閫佷竴鏉?
+浠呭寘鍚?ETHTOOL_A_CABLE_TEST_TDR_STATUS銆佷笖鍊间负
+ETHTOOL_A_CABLE_TEST_NTF_STATUS_STARTED 鐨勯€氱煡銆?
 
-测试完成时会发送第二条通知，包含 ETHTOOL_A_CABLE_TEST_TDR_STATUS（值为
-ETHTOOL_A_CABLE_TEST_NTF_STATUS_COMPLETED）以及 TDR 数据。
+娴嬭瘯瀹屾垚鏃朵細鍙戦€佺浜屾潯閫氱煡锛屽寘鍚?ETHTOOL_A_CABLE_TEST_TDR_STATUS锛堝€间负
+ETHTOOL_A_CABLE_TEST_NTF_STATUS_COMPLETED锛変互鍙?TDR 鏁版嵁銆?
 
-消息可能可选地包含沿线缆发送的脉冲幅度。它以 mV 计量。反射不应大于发送的脉冲。
+娑堟伅鍙兘鍙€夊湴鍖呭惈娌跨嚎缂嗗彂閫佺殑鑴夊啿骞呭害銆傚畠浠?mV 璁￠噺銆傚弽灏勪笉搴斿ぇ浜庡彂閫佺殑鑴夊啿銆?
 
-在原始 TDR 数据之前应有一个 ETHTOOL_A_CABLE_TDR_NEST_STEP 嵌套，其中包含关于首次读取、
-末次读取以及每次读取之间步进距离的信息。距离以厘米计量。这些应为 PHY 使用的精确值。如果
-原生测量分辨率大于 1 cm，这些值可能与用户请求的不同。
+鍦ㄥ師濮?TDR 鏁版嵁涔嬪墠搴旀湁涓€涓?ETHTOOL_A_CABLE_TDR_NEST_STEP 宓屽锛屽叾涓寘鍚叧浜庨娆¤鍙栥€?
+鏈璇诲彇浠ュ強姣忔璇诲彇涔嬮棿姝ヨ繘璺濈鐨勪俊鎭€傝窛绂讳互鍘樼背璁￠噺銆傝繖浜涘簲涓?PHY 浣跨敤鐨勭簿纭€笺€傚鏋?
+鍘熺敓娴嬮噺鍒嗚鲸鐜囧ぇ浜?1 cm锛岃繖浜涘€煎彲鑳戒笌鐢ㄦ埛璇锋眰鐨勪笉鍚屻€?
 
-对于线缆上的每一步，使用一个 ETHTOOL_A_CABLE_TDR_NEST_AMPLITUDE 来报告给定对线上的反射
-幅度。
+瀵逛簬绾跨紗涓婄殑姣忎竴姝ワ紝浣跨敤涓€涓?ETHTOOL_A_CABLE_TDR_NEST_AMPLITUDE 鏉ユ姤鍛婄粰瀹氬绾夸笂鐨勫弽灏?
+骞呭害銆?
 
  +---------------------------------------------+--------+----------------------+
  | `ETHTOOL_A_CABLE_TEST_TDR_HEADER`         | nested | reply header         |
@@ -1290,15 +1290,15 @@ ETHTOOL_A_CABLE_TEST_NTF_STATUS_COMPLETED）以及 TDR 数据。
 ## TUNNEL_INFO
 
 
-获取 NIC 所感知的隧道状态信息。
+鑾峰彇 NIC 鎵€鎰熺煡鐨勯毀閬撶姸鎬佷俊鎭€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_TUNNEL_INFO_HEADER`       nested  request header
   =====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
  +---------------------------------------------+--------+---------------------+
  | `ETHTOOL_A_TUNNEL_INFO_HEADER`            | nested | reply header        |
@@ -1320,21 +1320,21 @@ ETHTOOL_A_CABLE_TEST_NTF_STATUS_COMPLETED）以及 TDR 数据。
  | | | | `ETHTOOL_A_TUNNEL_UDP_ENTRY_TYPE`   | u32    | tunnel type         |
  +-+-+-+---------------------------------------+--------+---------------------+
 
-对于 UDP 隧道表，空的 `ETHTOOL_A_TUNNEL_UDP_TABLE_TYPES` 表示该表包含由 NIC 硬编码的
-静态条目。
+瀵逛簬 UDP 闅ч亾琛紝绌虹殑 `ETHTOOL_A_TUNNEL_UDP_TABLE_TYPES` 琛ㄧず璇ヨ〃鍖呭惈鐢?NIC 纭紪鐮佺殑
+闈欐€佹潯鐩€?
 
 ## FEC_GET
 
 
-获取 FEC 配置与状态，类似于 `ETHTOOL_GFECPARAM` ioctl 请求。
+鑾峰彇 FEC 閰嶇疆涓庣姸鎬侊紝绫讳技浜?`ETHTOOL_GFECPARAM` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_FEC_HEADER`               nested  request header
   =====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_FEC_HEADER`               nested  request header
@@ -1344,40 +1344,40 @@ ETHTOOL_A_CABLE_TEST_NTF_STATUS_COMPLETED）以及 TDR 数据。
   `ETHTOOL_A_FEC_STATS`                nested  FEC statistics
   =====================================  ======  ==========================
 
-`ETHTOOL_A_FEC_ACTIVE` 是当前在接口上处于活动状态的 FEC 链路模式的位索引。若设备不支持
-FEC，该属性可能不存在。
+`ETHTOOL_A_FEC_ACTIVE` 鏄綋鍓嶅湪鎺ュ彛涓婂浜庢椿鍔ㄧ姸鎬佺殑 FEC 閾捐矾妯″紡鐨勪綅绱㈠紩銆傝嫢璁惧涓嶆敮鎸?
+FEC锛岃灞炴€у彲鑳戒笉瀛樺湪銆?
 
-`ETHTOOL_A_FEC_MODES` 与 `ETHTOOL_A_FEC_AUTO` 仅在禁用自协商时才有意义。若
-`ETHTOOL_A_FEC_AUTO` 非零，驱动将根据 SFP 模块的参数自动选择 FEC 模式。这等价于 ioctl
-接口的 `ETHTOOL_FEC_AUTO` 位。`ETHTOOL_A_FEC_MODES` 使用链路模式位（而非旧的
-`ETHTOOL_FEC_*` 位）携带当前的 FEC 配置。
+`ETHTOOL_A_FEC_MODES` 涓?`ETHTOOL_A_FEC_AUTO` 浠呭湪绂佺敤鑷崗鍟嗘椂鎵嶆湁鎰忎箟銆傝嫢
+`ETHTOOL_A_FEC_AUTO` 闈為浂锛岄┍鍔ㄥ皢鏍规嵁 SFP 妯″潡鐨勫弬鏁拌嚜鍔ㄩ€夋嫨 FEC 妯″紡銆傝繖绛変环浜?ioctl
+鎺ュ彛鐨?`ETHTOOL_FEC_AUTO` 浣嶃€俙ETHTOOL_A_FEC_MODES` 浣跨敤閾捐矾妯″紡浣嶏紙鑰岄潪鏃х殑
+`ETHTOOL_FEC_*` 浣嶏級鎼哄甫褰撳墠鐨?FEC 閰嶇疆銆?
 
-若 `ETHTOOL_A_HEADER_FLAGS` 中设置了 `ETHTOOL_FLAG_STATS`，则会报告
-`ETHTOOL_A_FEC_STATS`。每个属性携带一个由 64 位统计组成的数组。数组的第一个条目包含端口
-上的事件总数，后续条目则对应通道/PCS 实例的计数器。数组中的条目数将为：
+鑻?`ETHTOOL_A_HEADER_FLAGS` 涓缃簡 `ETHTOOL_FLAG_STATS`锛屽垯浼氭姤鍛?
+`ETHTOOL_A_FEC_STATS`銆傛瘡涓睘鎬ф惡甯︿竴涓敱 64 浣嶇粺璁＄粍鎴愮殑鏁扮粍銆傛暟缁勭殑绗竴涓潯鐩寘鍚鍙?
+涓婄殑浜嬩欢鎬绘暟锛屽悗缁潯鐩垯瀵瑰簲閫氶亾/PCS 瀹炰緥鐨勮鏁板櫒銆傛暟缁勪腑鐨勬潯鐩暟灏嗕负锛?
 
 +--------------+---------------------------------------------+
-| `0`          | 设备不支持 FEC 统计                          |
+| `0`          | 璁惧涓嶆敮鎸?FEC 缁熻                          |
 +--------------+---------------------------------------------+
-| `1`          | 设备不支持按通道细分                          |
+| `1`          | 璁惧涓嶆敮鎸佹寜閫氶亾缁嗗垎                          |
 +--------------+---------------------------------------------+
-| `1 + #lanes` | 设备完全支持 FEC 统计                          |
+| `1 + #lanes` | 璁惧瀹屽叏鏀寔 FEC 缁熻                          |
 +--------------+---------------------------------------------+
 
-驱动在以下结构中填写统计信息：
+椹卞姩鍦ㄤ互涓嬬粨鏋勪腑濉啓缁熻淇℃伅锛?
 
     :identifiers: ethtool_fec_stats
 
-统计可能带有 FEC 分箱直方图属性 `ETHTOOL_A_FEC_STAT_HIST`，其定义见 IEEE 802.3ck-2022
-与 802.3df-2024。嵌套属性将包含该分箱内 FEC 错误的范围（含边界）以及该分箱内的错误事件
-数量。
+缁熻鍙兘甯︽湁 FEC 鍒嗙鐩存柟鍥惧睘鎬?`ETHTOOL_A_FEC_STAT_HIST`锛屽叾瀹氫箟瑙?IEEE 802.3ck-2022
+涓?802.3df-2024銆傚祵濂楀睘鎬у皢鍖呭惈璇ュ垎绠卞唴 FEC 閿欒鐨勮寖鍥达紙鍚竟鐣岋級浠ュ強璇ュ垎绠卞唴鐨勯敊璇簨浠?
+鏁伴噺銆?
 
 ## FEC_SET
 
 
-设置 FEC 参数，类似于 `ETHTOOL_SFECPARAM` ioctl 请求。
+璁剧疆 FEC 鍙傛暟锛岀被浼间簬 `ETHTOOL_SFECPARAM` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_FEC_HEADER`               nested  request header
@@ -1385,22 +1385,22 @@ FEC，该属性可能不存在。
   `ETHTOOL_A_FEC_AUTO`                 bool    FEC mode auto selection
   =====================================  ======  ==========================
 
-`FEC_SET` 仅在禁用自协商时有意义。否则 FEC 模式将作为自协商的一部分被选择。
+`FEC_SET` 浠呭湪绂佺敤鑷崗鍟嗘椂鏈夋剰涔夈€傚惁鍒?FEC 妯″紡灏嗕綔涓鸿嚜鍗忓晢鐨勪竴閮ㄥ垎琚€夋嫨銆?
 
 
-`ETHTOOL_A_FEC_MODES` 选择应使用哪种 FEC 模式。建议只设置一位；若设置了多位，驱动可能
-以具体实现相关的方式在其中选择。
+`ETHTOOL_A_FEC_MODES` 閫夋嫨搴斾娇鐢ㄥ摢绉?FEC 妯″紡銆傚缓璁彧璁剧疆涓€浣嶏紱鑻ヨ缃簡澶氫綅锛岄┍鍔ㄥ彲鑳?
+浠ュ叿浣撳疄鐜扮浉鍏崇殑鏂瑰紡鍦ㄥ叾涓€夋嫨銆?
 
-`ETHTOOL_A_FEC_AUTO` 请求驱动根据 SFP 模块参数选择 FEC 模式。这并不代表自协商。
+`ETHTOOL_A_FEC_AUTO` 璇锋眰椹卞姩鏍规嵁 SFP 妯″潡鍙傛暟閫夋嫨 FEC 妯″紡銆傝繖骞朵笉浠ｈ〃鑷崗鍟嗐€?
 
 ## MODULE_EEPROM_GET
 
 
-获取模块 EEPROM 数据转储。此接口设计为每次最多允许转储 1/2 页。这意味着只允许转储
-128（或更少）字节，且不得跨越位于偏移 128 处的半页边界。对于 0 之外的其它页，只有高
-128 字节可访问。
+鑾峰彇妯″潡 EEPROM 鏁版嵁杞偍銆傛鎺ュ彛璁捐涓烘瘡娆℃渶澶氬厑璁歌浆鍌?1/2 椤点€傝繖鎰忓懗鐫€鍙厑璁歌浆鍌?
+128锛堟垨鏇村皯锛夊瓧鑺傦紝涓斾笉寰楄法瓒婁綅浜庡亸绉?128 澶勭殑鍗婇〉杈圭晫銆傚浜?0 涔嬪鐨勫叾瀹冮〉锛屽彧鏈夐珮
+128 瀛楄妭鍙闂€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =======================================  ======  ==========================
   `ETHTOOL_A_MODULE_EEPROM_HEADER`       nested  request header
@@ -1411,9 +1411,9 @@ FEC，该属性可能不存在。
   `ETHTOOL_A_MODULE_EEPROM_I2C_ADDRESS`  u8      page I2C address
   =======================================  ======  ==========================
 
-若未指定 `ETHTOOL_A_MODULE_EEPROM_BANK`，则假定为 bank 0。
+鑻ユ湭鎸囧畾 `ETHTOOL_A_MODULE_EEPROM_BANK`锛屽垯鍋囧畾涓?bank 0銆?
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
  +---------------------------------------------+--------+---------------------+
  | `ETHTOOL_A_MODULE_EEPROM_HEADER`          | nested | reply header        |
@@ -1422,14 +1422,14 @@ FEC，该属性可能不存在。
  |                                             |        | module EEPROM       |
  +---------------------------------------------+--------+---------------------+
 
-`ETHTOOL_A_MODULE_EEPROM_DATA` 的属性长度等于驱动实际读取的字节数。
+`ETHTOOL_A_MODULE_EEPROM_DATA` 鐨勫睘鎬ч暱搴︾瓑浜庨┍鍔ㄥ疄闄呰鍙栫殑瀛楄妭鏁般€?
 
 ## STATS_GET
 
 
-获取接口的标准统计信息。注意，这不是对暴露驱动定义统计的 `ETHTOOL_GSTATS` 的重新实现。
+鑾峰彇鎺ュ彛鐨勬爣鍑嗙粺璁′俊鎭€傛敞鎰忥紝杩欎笉鏄鏆撮湶椹卞姩瀹氫箟缁熻鐨?`ETHTOOL_GSTATS` 鐨勯噸鏂板疄鐜般€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =======================================  ======  ==========================
   `ETHTOOL_A_STATS_HEADER`               nested  request header
@@ -1437,7 +1437,7 @@ FEC，该属性可能不存在。
   `ETHTOOL_A_STATS_GROUPS`               bitset  requested groups of stats
   =======================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
  +-----------------------------------+--------+--------------------------------+
  | `ETHTOOL_A_STATS_HEADER`        | nested | reply header                   |
@@ -1457,7 +1457,7 @@ FEC，该属性可能不存在。
  | | `ETHTOOL_A_STATS_GRP_HIST_TX` | nested | histogram statistic (Tx)       |
  +-+---------------------------------+--------+--------------------------------+
 
-用户通过 `ETHTOOL_A_STATS_GROUPS` 位集指定他们请求的统计分组。当前已定义的值如下：
+鐢ㄦ埛閫氳繃 `ETHTOOL_A_STATS_GROUPS` 浣嶉泦鎸囧畾浠栦滑璇锋眰鐨勭粺璁″垎缁勩€傚綋鍓嶅凡瀹氫箟鐨勫€煎涓嬶細
 
  ====================== ======== ===============================================
  ETHTOOL_STATS_ETH_MAC  eth-mac  Basic IEEE 802.3 MAC statistics (30.3.1.1.*)
@@ -1467,20 +1467,20 @@ FEC，该属性可能不存在。
  ETHTOOL_STATS_PHY      phy      Additional PHY statistics, not defined by IEEE
  ====================== ======== ===============================================
 
-每个分组应在回复中有一个对应的 `ETHTOOL_A_STATS_GRP`。`ETHTOOL_A_STATS_GRP_ID` 标识该
-分组的统计嵌套包含了什么。`ETHTOOL_A_STATS_GRP_SS_ID` 标识分组内统计名称的字符串集 ID
-（若可用）。
+姣忎釜鍒嗙粍搴斿湪鍥炲涓湁涓€涓搴旂殑 `ETHTOOL_A_STATS_GRP`銆俙ETHTOOL_A_STATS_GRP_ID` 鏍囪瘑璇?
+鍒嗙粍鐨勭粺璁″祵濂楀寘鍚簡浠€涔堛€俙ETHTOOL_A_STATS_GRP_SS_ID` 鏍囪瘑鍒嗙粍鍐呯粺璁″悕绉扮殑瀛楃涓查泦 ID
+锛堣嫢鍙敤锛夈€?
 
-统计被添加到 `ETHTOOL_A_STATS_GRP` 嵌套下的 `ETHTOOL_A_STATS_GRP_STAT`。
-`ETHTOOL_A_STATS_GRP_STAT` 内部应包含一个 8 字节（u64）属性——该属性的类型即为统计 ID，
-值为该统计的值。每个分组对统计 ID 有自己的解释。属性 ID 对应于由 `ETHTOOL_A_STATS_GRP_SS_ID`
-标识的字符串集中的字符串。复杂统计（例如 RMON 直方图条目）也列在 `ETHTOOL_A_STATS_GRP`
-内，且未在字符串集中定义字符串。
+缁熻琚坊鍔犲埌 `ETHTOOL_A_STATS_GRP` 宓屽涓嬬殑 `ETHTOOL_A_STATS_GRP_STAT`銆?
+`ETHTOOL_A_STATS_GRP_STAT` 鍐呴儴搴斿寘鍚竴涓?8 瀛楄妭锛坲64锛夊睘鎬р€斺€旇灞炴€х殑绫诲瀷鍗充负缁熻 ID锛?
+鍊间负璇ョ粺璁＄殑鍊笺€傛瘡涓垎缁勫缁熻 ID 鏈夎嚜宸辩殑瑙ｉ噴銆傚睘鎬?ID 瀵瑰簲浜庣敱 `ETHTOOL_A_STATS_GRP_SS_ID`
+鏍囪瘑鐨勫瓧绗︿覆闆嗕腑鐨勫瓧绗︿覆銆傚鏉傜粺璁★紙渚嬪 RMON 鐩存柟鍥炬潯鐩級涔熷垪鍦?`ETHTOOL_A_STATS_GRP`
+鍐咃紝涓旀湭鍦ㄥ瓧绗︿覆闆嗕腑瀹氫箟瀛楃涓层€?
 
-RMON “直方图”计数器统计给定大小范围内的包数量。由于 RFC 未规定超出标准 1518 MTU 的范围，
-各设备对桶的定义有所不同。因此包范围的定义交由各驱动决定。
+RMON 鈥滅洿鏂瑰浘鈥濊鏁板櫒缁熻缁欏畾澶у皬鑼冨洿鍐呯殑鍖呮暟閲忋€傜敱浜?RFC 鏈瀹氳秴鍑烘爣鍑?1518 MTU 鐨勮寖鍥达紝
+鍚勮澶囧妗剁殑瀹氫箟鏈夋墍涓嶅悓銆傚洜姝ゅ寘鑼冨洿鐨勫畾涔変氦鐢卞悇椹卞姩鍐冲畾銆?
 
-`ETHTOOL_A_STATS_GRP_HIST_RX` 与 `ETHTOOL_A_STATS_GRP_HIST_TX` 嵌套包含以下属性：
+`ETHTOOL_A_STATS_GRP_HIST_RX` 涓?`ETHTOOL_A_STATS_GRP_HIST_TX` 宓屽鍖呭惈浠ヤ笅灞炴€э細
 
  ================================= ====== ===================================
  ETHTOOL_A_STATS_RMON_HIST_BKT_LOW u32    low bound of the packet size bucket
@@ -1488,7 +1488,7 @@ RMON “直方图”计数器统计给定大小范围内的包数量。由于 RF
  ETHTOOL_A_STATS_RMON_HIST_VAL     u64    packet counter
  ================================= ====== ===================================
 
-下界与上界均为含边界，例如：
+涓嬬晫涓庝笂鐣屽潎涓哄惈杈圭晫锛屼緥濡傦細
 
  ============================= ==== ====
  RFC statistic                 low  high
@@ -1497,22 +1497,22 @@ RMON “直方图”计数器统计给定大小范围内的包数量。由于 RF
  etherStatsPkts512to1023Octets 512  1023
  ============================= ==== ====
 
-`ETHTOOL_A_STATS_SRC` 是可选的。与 `PAUSE_GET` 类似，它取值自 `enum ethtool_mac_stats_src`。
-若请求中缺省，则响应中会带有一个等于 `ETHTOOL_MAC_STATS_SRC_AGGREGATE` 的
-`ETHTOOL_A_STATS_SRC` 属性来提供统计信息。
+`ETHTOOL_A_STATS_SRC` 鏄彲閫夌殑銆備笌 `PAUSE_GET` 绫讳技锛屽畠鍙栧€艰嚜 `enum ethtool_mac_stats_src`銆?
+鑻ヨ姹備腑缂虹渷锛屽垯鍝嶅簲涓細甯︽湁涓€涓瓑浜?`ETHTOOL_MAC_STATS_SRC_AGGREGATE` 鐨?
+`ETHTOOL_A_STATS_SRC` 灞炴€ф潵鎻愪緵缁熻淇℃伅銆?
 
 ## PHC_VCLOCKS_GET
 
 
-查询设备 PHC 虚拟时钟信息。
+鏌ヨ璁惧 PHC 铏氭嫙鏃堕挓淇℃伅銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_PHC_VCLOCKS_HEADER`      nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_PHC_VCLOCKS_HEADER`      nested  reply header
@@ -1523,15 +1523,15 @@ RMON “直方图”计数器统计给定大小范围内的包数量。由于 RF
 ## MODULE_GET
 
 
-获取收发器模块参数。
+鑾峰彇鏀跺彂鍣ㄦā鍧楀弬鏁般€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_MODULE_HEADER`            nested  request header
   =====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ======================================  ======  ==========================
   `ETHTOOL_A_MODULE_HEADER`             nested  reply header
@@ -1539,100 +1539,100 @@ RMON “直方图”计数器统计给定大小范围内的包数量。由于 RF
   `ETHTOOL_A_MODULE_POWER_MODE`         u8      operational power mode
   ======================================  ======  ==========================
 
-可选的 `ETHTOOL_A_MODULE_POWER_MODE_POLICY` 属性编码了由主机强制执行的收发器模块电源模式
-策略。默认策略取决于驱动，但“auto”是推荐的默认值，新驱动以及不要求兼容旧行为的驱动都应
-实现它。
+鍙€夌殑 `ETHTOOL_A_MODULE_POWER_MODE_POLICY` 灞炴€х紪鐮佷簡鐢变富鏈哄己鍒舵墽琛岀殑鏀跺彂鍣ㄦā鍧楃數婧愭ā寮?
+绛栫暐銆傞粯璁ょ瓥鐣ュ彇鍐充簬椹卞姩锛屼絾鈥渁uto鈥濇槸鎺ㄨ崘鐨勯粯璁ゅ€硷紝鏂伴┍鍔ㄤ互鍙婁笉瑕佹眰鍏煎鏃ц涓虹殑椹卞姩閮藉簲
+瀹炵幇瀹冦€?
 
-可选的 `ETHTOOL_A_MODULE_POWER_MODE` 属性编码了收发器模块的操作电源模式策略。它仅在插入
-模块时才被上报。可能的取值为：
+鍙€夌殑 `ETHTOOL_A_MODULE_POWER_MODE` 灞炴€х紪鐮佷簡鏀跺彂鍣ㄦā鍧楃殑鎿嶄綔鐢垫簮妯″紡绛栫暐銆傚畠浠呭湪鎻掑叆
+妯″潡鏃舵墠琚笂鎶ャ€傚彲鑳界殑鍙栧€间负锛?
 
     :identifiers: ethtool_module_power_mode
 
 ## MODULE_SET
 
 
-设置收发器模块参数。
+璁剧疆鏀跺彂鍣ㄦā鍧楀弬鏁般€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ======================================  ======  ==========================
   `ETHTOOL_A_MODULE_HEADER`             nested  request header
   `ETHTOOL_A_MODULE_POWER_MODE_POLICY`  u8      power mode policy
   ======================================  ======  ==========================
 
-设置时，可选的 `ETHTOOL_A_MODULE_POWER_MODE_POLICY` 属性用于设置由主机强制执行的收发器
-模块电源策略。可能的取值为：
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_MODULE_POWER_MODE_POLICY` 灞炴€х敤浜庤缃敱涓绘満寮哄埗鎵ц鐨勬敹鍙戝櫒
+妯″潡鐢垫簮绛栫暐銆傚彲鑳界殑鍙栧€间负锛?
 
     :identifiers: ethtool_module_power_mode_policy
 
-对于 SFF-8636 模块，低功耗模式由主机根据规范 2.10a 修订版的表 6-10 强制设置。
+瀵逛簬 SFF-8636 妯″潡锛屼綆鍔熻€楁ā寮忕敱涓绘満鏍规嵁瑙勮寖 2.10a 淇鐗堢殑琛?6-10 寮哄埗璁剧疆銆?
 
-对于 CMIS 模块，低功耗模式由主机根据规范 5.0 修订版的表 6-12 强制设置。
+瀵逛簬 CMIS 妯″潡锛屼綆鍔熻€楁ā寮忕敱涓绘満鏍规嵁瑙勮寖 5.0 淇鐗堢殑琛?6-12 寮哄埗璁剧疆銆?
 
 ## PSE_GET
 
 
-获取 PSE 属性。
+鑾峰彇 PSE 灞炴€с€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_PSE_HEADER`               nested  request header
   =====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ==========================================  ======  =============================
   `ETHTOOL_A_PSE_HEADER`                    nested  reply header
-  `ETHTOOL_A_PODL_PSE_ADMIN_STATE`             u32  PoDL PSE 功能的操作状态
-  `ETHTOOL_A_PODL_PSE_PW_D_STATUS`             u32  PoDL PSE 的供电检测状态
-  `ETHTOOL_A_C33_PSE_ADMIN_STATE`              u32  PoE PSE 功能的操作状态
-  `ETHTOOL_A_C33_PSE_PW_D_STATUS`              u32  PoE PSE 的供电检测状态
-  `ETHTOOL_A_C33_PSE_PW_CLASS`                 u32  PoE PSE 的功率等级
-  `ETHTOOL_A_C33_PSE_ACTUAL_PW`                u32  PoE PSE 上实际消耗的功率
-  `ETHTOOL_A_C33_PSE_EXT_STATE`                u32  PoE PSE 的扩展错误状态
-  `ETHTOOL_A_C33_PSE_EXT_SUBSTATE`             u32  PoE PSE 的扩展错误子状态
-  `ETHTOOL_A_C33_PSE_AVAIL_PW_LIMIT`           u32  PoE PSE 当前配置的功率限制
-  `ETHTOOL_A_C33_PSE_PW_LIMIT_RANGES`       nested  支持的功率限制配置范围
-  `ETHTOOL_A_PSE_PW_D_ID`                      u32  PSE 供电域的索引
-  `ETHTOOL_A_PSE_PRIO_MAX`                     u32  PoE PSE 上可配置的最大优先级
-  `ETHTOOL_A_PSE_PRIO`                         u32  PoE PSE 当前配置的优先级
+  `ETHTOOL_A_PODL_PSE_ADMIN_STATE`             u32  PoDL PSE 鍔熻兘鐨勬搷浣滅姸鎬?
+  `ETHTOOL_A_PODL_PSE_PW_D_STATUS`             u32  PoDL PSE 鐨勪緵鐢垫娴嬬姸鎬?
+  `ETHTOOL_A_C33_PSE_ADMIN_STATE`              u32  PoE PSE 鍔熻兘鐨勬搷浣滅姸鎬?
+  `ETHTOOL_A_C33_PSE_PW_D_STATUS`              u32  PoE PSE 鐨勪緵鐢垫娴嬬姸鎬?
+  `ETHTOOL_A_C33_PSE_PW_CLASS`                 u32  PoE PSE 鐨勫姛鐜囩瓑绾?
+  `ETHTOOL_A_C33_PSE_ACTUAL_PW`                u32  PoE PSE 涓婂疄闄呮秷鑰楃殑鍔熺巼
+  `ETHTOOL_A_C33_PSE_EXT_STATE`                u32  PoE PSE 鐨勬墿灞曢敊璇姸鎬?
+  `ETHTOOL_A_C33_PSE_EXT_SUBSTATE`             u32  PoE PSE 鐨勬墿灞曢敊璇瓙鐘舵€?
+  `ETHTOOL_A_C33_PSE_AVAIL_PW_LIMIT`           u32  PoE PSE 褰撳墠閰嶇疆鐨勫姛鐜囬檺鍒?
+  `ETHTOOL_A_C33_PSE_PW_LIMIT_RANGES`       nested  鏀寔鐨勫姛鐜囬檺鍒堕厤缃寖鍥?
+  `ETHTOOL_A_PSE_PW_D_ID`                      u32  PSE 渚涚數鍩熺殑绱㈠紩
+  `ETHTOOL_A_PSE_PRIO_MAX`                     u32  PoE PSE 涓婂彲閰嶇疆鐨勬渶澶т紭鍏堢骇
+  `ETHTOOL_A_PSE_PRIO`                         u32  PoE PSE 褰撳墠閰嶇疆鐨勪紭鍏堢骇
   ==========================================  ======  =============================
 
-设置时，可选的 `ETHTOOL_A_PODL_PSE_ADMIN_STATE` 属性标识 PoDL PSE 功能的操作状态。PSE
-功能的操作状态可使用 `ETHTOOL_A_PODL_PSE_ADMIN_CONTROL` 动作更改。该属性对应于
-`IEEE 802.3-2018` 30.15.1.1.2 aPoDLPSEAdminState。可能的取值为：
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_PODL_PSE_ADMIN_STATE` 灞炴€ф爣璇?PoDL PSE 鍔熻兘鐨勬搷浣滅姸鎬併€侾SE
+鍔熻兘鐨勬搷浣滅姸鎬佸彲浣跨敤 `ETHTOOL_A_PODL_PSE_ADMIN_CONTROL` 鍔ㄤ綔鏇存敼銆傝灞炴€у搴斾簬
+`IEEE 802.3-2018` 30.15.1.1.2 aPoDLPSEAdminState銆傚彲鑳界殑鍙栧€间负锛?
 
     :identifiers: ethtool_podl_pse_admin_state
 
-`ETHTOOL_A_C33_PSE_ADMIN_STATE` 同理，实现了 `IEEE 802.3-2022` 30.9.1.1.2
-aPSEAdminState。
+`ETHTOOL_A_C33_PSE_ADMIN_STATE` 鍚岀悊锛屽疄鐜颁簡 `IEEE 802.3-2022` 30.9.1.1.2
+aPSEAdminState銆?
 
     :identifiers: ethtool_c33_pse_admin_state
 
-设置时，可选的 `ETHTOOL_A_PODL_PSE_PW_D_STATUS` 属性标识 PoDL PSE 的供电检测状态。该状态
-取决于内部 PSE 状态机与自动 PD 分类支持情况。该属性对应于 `IEEE 802.3-2018`
-30.15.1.1.3 aPoDLPSEPowerDetectionStatus。可能的取值为：
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_PODL_PSE_PW_D_STATUS` 灞炴€ф爣璇?PoDL PSE 鐨勪緵鐢垫娴嬬姸鎬併€傝鐘舵€?
+鍙栧喅浜庡唴閮?PSE 鐘舵€佹満涓庤嚜鍔?PD 鍒嗙被鏀寔鎯呭喌銆傝灞炴€у搴斾簬 `IEEE 802.3-2018`
+30.15.1.1.3 aPoDLPSEPowerDetectionStatus銆傚彲鑳界殑鍙栧€间负锛?
 
     :identifiers: ethtool_podl_pse_pw_d_status
 
-`ETHTOOL_A_C33_PSE_ADMIN_PW_D_STATUS` 同理，实现了 `IEEE 802.3-2022` 30.9.1.1.5
-aPSEPowerDetectionStatus。
+`ETHTOOL_A_C33_PSE_ADMIN_PW_D_STATUS` 鍚岀悊锛屽疄鐜颁簡 `IEEE 802.3-2022` 30.9.1.1.5
+aPSEPowerDetectionStatus銆?
 
     :identifiers: ethtool_c33_pse_pw_d_status
 
-设置时，可选的 `ETHTOOL_A_C33_PSE_PW_CLASS` 属性标识 C33 PSE 的功率等级。它取决于 PSE 与
-PD 之间协商得到的等级。该属性对应于 `IEEE 802.3-2022` 30.9.1.1.8 aPSEPowerClassification。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_C33_PSE_PW_CLASS` 灞炴€ф爣璇?C33 PSE 鐨勫姛鐜囩瓑绾с€傚畠鍙栧喅浜?PSE 涓?
+PD 涔嬮棿鍗忓晢寰楀埌鐨勭瓑绾с€傝灞炴€у搴斾簬 `IEEE 802.3-2022` 30.9.1.1.8 aPSEPowerClassification銆?
 
-设置时，可选的 `ETHTOOL_A_C33_PSE_ACTUAL_PW` 属性标识 C33 PSE 实际消耗的功率。该属性对应于
-`IEEE 802.3-2022` 30.9.1.1.23 aPSEActualPower。实际功率以 mW 报告。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_C33_PSE_ACTUAL_PW` 灞炴€ф爣璇?C33 PSE 瀹為檯娑堣€楃殑鍔熺巼銆傝灞炴€у搴斾簬
+`IEEE 802.3-2022` 30.9.1.1.23 aPSEActualPower銆傚疄闄呭姛鐜囦互 mW 鎶ュ憡銆?
 
-设置时，可选的 `ETHTOOL_A_C33_PSE_EXT_STATE` 属性标识 C33 PSE 的扩展错误状态。可能的取值为：
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_C33_PSE_EXT_STATE` 灞炴€ф爣璇?C33 PSE 鐨勬墿灞曢敊璇姸鎬併€傚彲鑳界殑鍙栧€间负锛?
 
     :identifiers: ethtool_c33_pse_ext_state
 
-设置时，可选的 `ETHTOOL_A_C33_PSE_EXT_SUBSTATE` 属性标识 C33 PSE 的扩展错误子状态。可能的
-取值为：
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_C33_PSE_EXT_SUBSTATE` 灞炴€ф爣璇?C33 PSE 鐨勬墿灞曢敊璇瓙鐘舵€併€傚彲鑳界殑
+鍙栧€间负锛?
 
     :identifiers: ethtool_c33_pse_ext_substate_class_num_events
 		  ethtool_c33_pse_ext_substate_error_condition
@@ -1644,24 +1644,24 @@ PD 之间协商得到的等级。该属性对应于 `IEEE 802.3-2022` 30.9.1.1.8
 		  ethtool_c33_pse_ext_substate_power_not_available
 		  ethtool_c33_pse_ext_substate_short_detected
 
-设置时，可选的 `ETHTOOL_A_C33_PSE_AVAIL_PW_LIMIT` 属性标识以 mW 为单位的 C33 PSE 功率限制。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_C33_PSE_AVAIL_PW_LIMIT` 灞炴€ф爣璇嗕互 mW 涓哄崟浣嶇殑 C33 PSE 鍔熺巼闄愬埗銆?
 
-设置时，可选的 `ETHTOOL_A_C33_PSE_PW_LIMIT_RANGES` 嵌套属性通过
-`ETHTOOL_A_C33_PSE_PWR_VAL_LIMIT_RANGE_MIN` 与 `ETHTOOL_A_C33_PSE_PWR_VAL_LIMIT_RANGE_MAX`
-标识 C33 PSE 功率限制范围。若控制器以固定等级工作，最小值与最大值将相等。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_C33_PSE_PW_LIMIT_RANGES` 宓屽灞炴€ч€氳繃
+`ETHTOOL_A_C33_PSE_PWR_VAL_LIMIT_RANGE_MIN` 涓?`ETHTOOL_A_C33_PSE_PWR_VAL_LIMIT_RANGE_MAX`
+鏍囪瘑 C33 PSE 鍔熺巼闄愬埗鑼冨洿銆傝嫢鎺у埗鍣ㄤ互鍥哄畾绛夌骇宸ヤ綔锛屾渶灏忓€间笌鏈€澶у€煎皢鐩哥瓑銆?
 
-`ETHTOOL_A_PSE_PW_D_ID` 属性标识 PSE 供电域的索引。
+`ETHTOOL_A_PSE_PW_D_ID` 灞炴€ф爣璇?PSE 渚涚數鍩熺殑绱㈠紩銆?
 
-设置时，可选的 `ETHTOOL_A_PSE_PRIO_MAX` 属性标识 PSE 最大优先级值。设置时，可选的
-`ETHTOOL_A_PSE_PRIO` 属性用于标识当前配置的 PSE 优先级。有关 PSE 优先级属性的说明，参见
-`PSE_SET`。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_PSE_PRIO_MAX` 灞炴€ф爣璇?PSE 鏈€澶т紭鍏堢骇鍊笺€傝缃椂锛屽彲閫夌殑
+`ETHTOOL_A_PSE_PRIO` 灞炴€х敤浜庢爣璇嗗綋鍓嶉厤缃殑 PSE 浼樺厛绾с€傛湁鍏?PSE 浼樺厛绾у睘鎬х殑璇存槑锛屽弬瑙?
+`PSE_SET`銆?
 
 ## PSE_SET
 
 
-设置 PSE 参数。
+璁剧疆 PSE 鍙傛暟銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ======================================  ======  =============================
   `ETHTOOL_A_PSE_HEADER`                nested  request header
@@ -1673,52 +1673,52 @@ PD 之间协商得到的等级。该属性对应于 `IEEE 802.3-2022` 30.9.1.1.8
                                                   PoE PSE
   ======================================  ======  =============================
 
-设置时，可选的 `ETHTOOL_A_PODL_PSE_ADMIN_CONTROL` 属性用于控制 PoDL PSE 管理功能。该选项
-实现了 `IEEE 802.3-2018` 30.15.1.2.1 acPoDLPSEAdminControl。支持的取值参见
-`ETHTOOL_A_PODL_PSE_ADMIN_STATE`。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_PODL_PSE_ADMIN_CONTROL` 灞炴€х敤浜庢帶鍒?PoDL PSE 绠＄悊鍔熻兘銆傝閫夐」
+瀹炵幇浜?`IEEE 802.3-2018` 30.15.1.2.1 acPoDLPSEAdminControl銆傛敮鎸佺殑鍙栧€煎弬瑙?
+`ETHTOOL_A_PODL_PSE_ADMIN_STATE`銆?
 
-`ETHTOOL_A_C33_PSE_ADMIN_CONTROL` 同理，实现了 `IEEE 802.3-2022` 30.9.1.2.1
-acPSEAdminControl。
+`ETHTOOL_A_C33_PSE_ADMIN_CONTROL` 鍚岀悊锛屽疄鐜颁簡 `IEEE 802.3-2022` 30.9.1.2.1
+acPSEAdminControl銆?
 
-设置时，可选的 `ETHTOOL_A_C33_PSE_AVAIL_PWR_LIMIT` 属性用于控制 C33 PSE 以毫瓦为单位的可用
-功率值限制。该属性对应于 `IEEE 802.3-2022` 33.2.4.4 变量与 145.2.5.4 变量中描述的
-`pse_available_power` 变量与 `pse_avail_pwr` 变量，二者以功率等级描述。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_C33_PSE_AVAIL_PWR_LIMIT` 灞炴€х敤浜庢帶鍒?C33 PSE 浠ユ鐡︿负鍗曚綅鐨勫彲鐢?
+鍔熺巼鍊奸檺鍒躲€傝灞炴€у搴斾簬 `IEEE 802.3-2022` 33.2.4.4 鍙橀噺涓?145.2.5.4 鍙橀噺涓弿杩扮殑
+`pse_available_power` 鍙橀噺涓?`pse_avail_pwr` 鍙橀噺锛屼簩鑰呬互鍔熺巼绛夌骇鎻忚堪銆?
 
-决定在本接口中使用毫瓦，是为了与其它同样使用毫瓦的功率监控接口统一，并与各类以瓦（而非
-等级）记录功耗的现有产品保持一致。如果确实需要基于等级的功率限制配置，可以在用户空间进行
-转换，例如通过 ethtool。
+鍐冲畾鍦ㄦ湰鎺ュ彛涓娇鐢ㄦ鐡︼紝鏄负浜嗕笌鍏跺畠鍚屾牱浣跨敤姣摝鐨勫姛鐜囩洃鎺ф帴鍙ｇ粺涓€锛屽苟涓庡悇绫讳互鐡︼紙鑰岄潪
+绛夌骇锛夎褰曞姛鑰楃殑鐜版湁浜у搧淇濇寔涓€鑷淬€傚鏋滅‘瀹為渶瑕佸熀浜庣瓑绾х殑鍔熺巼闄愬埗閰嶇疆锛屽彲浠ュ湪鐢ㄦ埛绌洪棿杩涜
+杞崲锛屼緥濡傞€氳繃 ethtool銆?
 
-设置时，可选的 `ETHTOOL_A_PSE_PRIO` 属性用于控制 PSE 优先级。允许的优先级取值介于 0 与
-`ETHTOOL_A_PSE_PRIO_MAX` 属性值之间。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_PSE_PRIO` 灞炴€х敤浜庢帶鍒?PSE 浼樺厛绾с€傚厑璁哥殑浼樺厛绾у彇鍊间粙浜?0 涓?
+`ETHTOOL_A_PSE_PRIO_MAX` 灞炴€у€间箣闂淬€?
 
-较小的值表示更高的优先级，即优先级值为 0 对应最高端口优先级。端口优先级有两个作用：
+杈冨皬鐨勫€艰〃绀烘洿楂樼殑浼樺厛绾э紝鍗充紭鍏堢骇鍊间负 0 瀵瑰簲鏈€楂樼鍙ｄ紭鍏堢骇銆傜鍙ｄ紭鍏堢骇鏈変袱涓綔鐢細
 
- - 上电顺序：复位后，端口按其优先级从高到低依次上电。优先级更高（值更小）的端口先上电。
- - 关闭顺序：当功率预算超限时，优先级更低（值更大）的端口先被关闭。
+ - 涓婄數椤哄簭锛氬浣嶅悗锛岀鍙ｆ寜鍏朵紭鍏堢骇浠庨珮鍒颁綆渚濇涓婄數銆備紭鍏堢骇鏇撮珮锛堝€兼洿灏忥級鐨勭鍙ｅ厛涓婄數銆?
+ - 鍏抽棴椤哄簭锛氬綋鍔熺巼棰勭畻瓒呴檺鏃讹紝浼樺厛绾ф洿浣庯紙鍊兼洿澶э級鐨勭鍙ｅ厛琚叧闂€?
 
 ## PSE_NTF
 
 
-通知 PSE 事件。
+閫氱煡 PSE 浜嬩欢銆?
 
-通知内容：
+閫氱煡鍐呭锛?
 
   ===============================  ======  ========================
   `ETHTOOL_A_PSE_HEADER`         nested  request header
   `ETHTOOL_A_PSE_EVENTS`         bitset  PSE events
   ===============================  ======  ========================
 
-设置时，可选的 `ETHTOOL_A_PSE_EVENTS` 属性标识 PSE 事件。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_PSE_EVENTS` 灞炴€ф爣璇?PSE 浜嬩欢銆?
 
     :identifiers: ethtool_pse_event
 
 ## RSS_GET
 
 
-获取与接口某个 RSS 上下文相关的间接表、哈希密钥与哈希函数信息，类似于 `ETHTOOL_GRSSH`
-ioctl 请求。
+鑾峰彇涓庢帴鍙ｆ煇涓?RSS 涓婁笅鏂囩浉鍏崇殑闂存帴琛ㄣ€佸搱甯屽瘑閽ヤ笌鍝堝笇鍑芥暟淇℃伅锛岀被浼间簬 `ETHTOOL_GRSSH`
+ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
 =====================================  ======  ============================
   `ETHTOOL_A_RSS_HEADER`             nested  request header
@@ -1726,12 +1726,12 @@ ioctl 请求。
   `ETHTOOL_A_RSS_START_CONTEXT`      u32     start context number (dumps)
 =====================================  ======  ============================
 
-`ETHTOOL_A_RSS_CONTEXT` 指定要查询的 RSS 上下文编号；若未设置，则查询上下文 0（主上下文）。
-dump 可以按设备过滤（只列出给定 netdev 的上下文）。不支持过滤单个上下文编号，但可以使用
-`ETHTOOL_A_RSS_START_CONTEXT` 从该编号开始 dump 上下文（主要用于忽略上下文 0、只 dump
-额外的上下文）。
+`ETHTOOL_A_RSS_CONTEXT` 鎸囧畾瑕佹煡璇㈢殑 RSS 涓婁笅鏂囩紪鍙凤紱鑻ユ湭璁剧疆锛屽垯鏌ヨ涓婁笅鏂?0锛堜富涓婁笅鏂囷級銆?
+dump 鍙互鎸夎澶囪繃婊わ紙鍙垪鍑虹粰瀹?netdev 鐨勪笂涓嬫枃锛夈€備笉鏀寔杩囨护鍗曚釜涓婁笅鏂囩紪鍙凤紝浣嗗彲浠ヤ娇鐢?
+`ETHTOOL_A_RSS_START_CONTEXT` 浠庤缂栧彿寮€濮?dump 涓婁笅鏂囷紙涓昏鐢ㄤ簬蹇界暐涓婁笅鏂?0銆佸彧 dump
+棰濆鐨勪笂涓嬫枃锛夈€?
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
 =====================================  ======  ===============================
   `ETHTOOL_A_RSS_HEADER`             nested  reply header
@@ -1743,16 +1743,16 @@ dump 可以按设备过滤（只列出给定 netdev 的上下文）。不支持�
   `ETHTOOL_A_RSS_FLOW_HASH`          nested  Header fields included in hash
 =====================================  ======  ===============================
 
-ETHTOOL_A_RSS_HFUNC 属性是指示所用哈希函数的位图。当前支持的选项有 toeplitz、xor 或 crc32。
-ETHTOOL_A_RSS_INDIR 属性返回 RSS 间接表，其中每个字节表示一个队列编号。
-ETHTOOL_A_RSS_INPUT_XFRM 属性是一个位图，指示在送给 RSS hfunc 之前对输入协议字段所应用的
-转换类型。当前支持的选项有 symmetric-xor 与 symmetric-or-xor。
-ETHTOOL_A_RSS_FLOW_HASH 携带每个流类型的位掩码，指示哪些头字段被包含在哈希计算中。
+ETHTOOL_A_RSS_HFUNC 灞炴€ф槸鎸囩ず鎵€鐢ㄥ搱甯屽嚱鏁扮殑浣嶅浘銆傚綋鍓嶆敮鎸佺殑閫夐」鏈?toeplitz銆亁or 鎴?crc32銆?
+ETHTOOL_A_RSS_INDIR 灞炴€ц繑鍥?RSS 闂存帴琛紝鍏朵腑姣忎釜瀛楄妭琛ㄧず涓€涓槦鍒楃紪鍙枫€?
+ETHTOOL_A_RSS_INPUT_XFRM 灞炴€ф槸涓€涓綅鍥撅紝鎸囩ず鍦ㄩ€佺粰 RSS hfunc 涔嬪墠瀵硅緭鍏ュ崗璁瓧娈垫墍搴旂敤鐨?
+杞崲绫诲瀷銆傚綋鍓嶆敮鎸佺殑閫夐」鏈?symmetric-xor 涓?symmetric-or-xor銆?
+ETHTOOL_A_RSS_FLOW_HASH 鎼哄甫姣忎釜娴佺被鍨嬬殑浣嶆帺鐮侊紝鎸囩ず鍝簺澶村瓧娈佃鍖呭惈鍦ㄥ搱甯岃绠椾腑銆?
 
 ## RSS_SET
 
 
-请求内容：
+璇锋眰鍐呭锛?
 
 =====================================  ======  ==============================
   `ETHTOOL_A_RSS_HEADER`             nested  request header
@@ -1764,15 +1764,15 @@ ETHTOOL_A_RSS_FLOW_HASH 携带每个流类型的位掩码，指示哪些头字�
   `ETHTOOL_A_RSS_FLOW_HASH`          nested  Header fields included in hash
 =====================================  ======  ==============================
 
-`ETHTOOL_A_RSS_INDIR` 是用户期望的最小 RSS 表。若其小于设备支持的最小表大小，内核与设备
-驱动可能会复制该表。例如，若用户请求 `[0, 1]`，但设备至少需要 8 个条目，则实际使用的表将
-变为 `[0, 1, 0, 1, 0, 1, 0, 1]`。大多数设备要求表大小为 2 的幂，因此大小不是 2 的幂的表
-很可能被拒绝。使用大小为 0 的表会将间接表重置为默认值。
+`ETHTOOL_A_RSS_INDIR` 鏄敤鎴锋湡鏈涚殑鏈€灏?RSS 琛ㄣ€傝嫢鍏跺皬浜庤澶囨敮鎸佺殑鏈€灏忚〃澶у皬锛屽唴鏍镐笌璁惧
+椹卞姩鍙兘浼氬鍒惰琛ㄣ€備緥濡傦紝鑻ョ敤鎴疯姹?`[0, 1]`锛屼絾璁惧鑷冲皯闇€瑕?8 涓潯鐩紝鍒欏疄闄呬娇鐢ㄧ殑琛ㄥ皢
+鍙樹负 `[0, 1, 0, 1, 0, 1, 0, 1]`銆傚ぇ澶氭暟璁惧瑕佹眰琛ㄥぇ灏忎负 2 鐨勫箓锛屽洜姝ゅぇ灏忎笉鏄?2 鐨勫箓鐨勮〃
+寰堝彲鑳借鎷掔粷銆備娇鐢ㄥぇ灏忎负 0 鐨勮〃浼氬皢闂存帴琛ㄩ噸缃负榛樿鍊笺€?
 
 ## RSS_CREATE_ACT
 
 
-请求内容：
+璇锋眰鍐呭锛?
 
 =====================================  ======  ==============================
   `ETHTOOL_A_RSS_HEADER`             nested  request header
@@ -1783,39 +1783,39 @@ ETHTOOL_A_RSS_FLOW_HASH 携带每个流类型的位掩码，指示哪些头字�
   `ETHTOOL_A_RSS_INPUT_XFRM`         u32     RSS input data transformation
 =====================================  ======  ==============================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
 =====================================  ======  ==============================
   `ETHTOOL_A_RSS_HEADER`             nested  request header
   `ETHTOOL_A_RSS_CONTEXT`            u32     context number
 =====================================  ======  ==============================
 
-创建一个额外的 RSS 上下文；若未指定 `ETHTOOL_A_RSS_CONTEXT`，内核将自动分配一个。
+鍒涘缓涓€涓澶栫殑 RSS 涓婁笅鏂囷紱鑻ユ湭鎸囧畾 `ETHTOOL_A_RSS_CONTEXT`锛屽唴鏍稿皢鑷姩鍒嗛厤涓€涓€?
 
 ## RSS_DELETE_ACT
 
 
-请求内容：
+璇锋眰鍐呭锛?
 
 =====================================  ======  ==============================
   `ETHTOOL_A_RSS_HEADER`             nested  request header
   `ETHTOOL_A_RSS_CONTEXT`            u32     context number
 =====================================  ======  ==============================
 
-删除一个额外的 RSS 上下文。
+鍒犻櫎涓€涓澶栫殑 RSS 涓婁笅鏂囥€?
 
 ## PLCA_GET_CFG
 
 
-获取 IEEE 802.3cg-2019 第 148 条物理层冲突避免（PLCA）协调子层（RS）属性。
+鑾峰彇 IEEE 802.3cg-2019 绗?148 鏉＄墿鐞嗗眰鍐茬獊閬垮厤锛圥LCA锛夊崗璋冨瓙灞傦紙RS锛夊睘鎬с€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_PLCA_HEADER`              nested  request header
   =====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ======================================  ======  =============================
   `ETHTOOL_A_PLCA_HEADER`               nested  reply header
@@ -1836,46 +1836,46 @@ ETHTOOL_A_RSS_FLOW_HASH 携带每个流类型的位掩码，指示哪些头字�
                                                   terminating the burst
   ======================================  ======  =============================
 
-设置时，可选的 `ETHTOOL_A_PLCA_VERSION` 属性指示 PLCA 管理接口所符合的标准与版本。若未设置，
-该接口为供应商特定的，并（可能）由驱动提供。OPEN Alliance SIG 为内嵌 PLCA 协调子层的
-10BASE-T1S PHY 规定了标准寄存器映射。参见 https://www.opensig.org/about/specifications/ 上的
-“10BASE-T1S PLCA Management Registers”。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_PLCA_VERSION` 灞炴€ф寚绀?PLCA 绠＄悊鎺ュ彛鎵€绗﹀悎鐨勬爣鍑嗕笌鐗堟湰銆傝嫢鏈缃紝
+璇ユ帴鍙ｄ负渚涘簲鍟嗙壒瀹氱殑锛屽苟锛堝彲鑳斤級鐢遍┍鍔ㄦ彁渚涖€侽PEN Alliance SIG 涓哄唴宓?PLCA 鍗忚皟瀛愬眰鐨?
+10BASE-T1S PHY 瑙勫畾浜嗘爣鍑嗗瘎瀛樺櫒鏄犲皠銆傚弬瑙?https://www.opensig.org/about/specifications/ 涓婄殑
+鈥?0BASE-T1S PLCA Management Registers鈥濄€?
 
-设置时，可选的 `ETHTOOL_A_PLCA_ENABLED` 属性指示 PLCA RS 的管理状态。若未设置，节点运行在
-“plain” CSMA/CD 模式下。该选项对应于 `IEEE 802.3cg-2019` 30.16.1.1.1
-aPLCAAdminState / 30.16.1.2.1 acPLCAAdminControl。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_PLCA_ENABLED` 灞炴€ф寚绀?PLCA RS 鐨勭鐞嗙姸鎬併€傝嫢鏈缃紝鑺傜偣杩愯鍦?
+鈥減lain鈥?CSMA/CD 妯″紡涓嬨€傝閫夐」瀵瑰簲浜?`IEEE 802.3cg-2019` 30.16.1.1.1
+aPLCAAdminState / 30.16.1.2.1 acPLCAAdminControl銆?
 
-设置时，可选的 `ETHTOOL_A_PLCA_NODE_ID` 属性指示 PHY 配置好的本地节点 ID。该 ID 决定了为
-节点预留用于发送的发送机会（TO）。该选项对应于 `IEEE 802.3cg-2019` 30.16.1.1.4
-aPLCALocalNodeID。该属性的有效范围为 [0 .. 255]，其中 255 表示“未配置”。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_PLCA_NODE_ID` 灞炴€ф寚绀?PHY 閰嶇疆濂界殑鏈湴鑺傜偣 ID銆傝 ID 鍐冲畾浜嗕负
+鑺傜偣棰勭暀鐢ㄤ簬鍙戦€佺殑鍙戦€佹満浼氾紙TO锛夈€傝閫夐」瀵瑰簲浜?`IEEE 802.3cg-2019` 30.16.1.1.4
+aPLCALocalNodeID銆傝灞炴€х殑鏈夋晥鑼冨洿涓?[0 .. 255]锛屽叾涓?255 琛ㄧず鈥滄湭閰嶇疆鈥濄€?
 
-设置时，可选的 `ETHTOOL_A_PLCA_NODE_CNT` 属性指示混合段上配置的 PLCA 节点最大数量。该数字
-决定了在一个 PLCA 周期内生成的发送机会总数。该属性仅与 PLCA 协调器（即 aPLCALocalNodeID
-设为 0 的节点）相关，跟随节点忽略此设置。该选项对应于 `IEEE 802.3cg-2019` 30.16.1.1.3
-aPLCANodeCount。该属性的有效范围为 [1 .. 255]。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_PLCA_NODE_CNT` 灞炴€ф寚绀烘贩鍚堟涓婇厤缃殑 PLCA 鑺傜偣鏈€澶ф暟閲忋€傝鏁板瓧
+鍐冲畾浜嗗湪涓€涓?PLCA 鍛ㄦ湡鍐呯敓鎴愮殑鍙戦€佹満浼氭€绘暟銆傝灞炴€т粎涓?PLCA 鍗忚皟鍣紙鍗?aPLCALocalNodeID
+璁句负 0 鐨勮妭鐐癸級鐩稿叧锛岃窡闅忚妭鐐瑰拷鐣ユ璁剧疆銆傝閫夐」瀵瑰簲浜?`IEEE 802.3cg-2019` 30.16.1.1.3
+aPLCANodeCount銆傝灞炴€х殑鏈夋晥鑼冨洿涓?[1 .. 255]銆?
 
-设置时，可选的 `ETHTOOL_A_PLCA_TO_TMR` 属性指示以位时间（bit-times）为单位的发送机会定时器
-配置值。为了让 PLCA 正常工作，共享介质的所有节点此值必须设为相等。该选项对应于
-`IEEE 802.3cg-2019` 30.16.1.1.5 aPLCATransmitOpportunityTimer。该属性的有效范围为 [0 .. 255]。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_PLCA_TO_TMR` 灞炴€ф寚绀轰互浣嶆椂闂达紙bit-times锛変负鍗曚綅鐨勫彂閫佹満浼氬畾鏃跺櫒
+閰嶇疆鍊笺€備负浜嗚 PLCA 姝ｅ父宸ヤ綔锛屽叡浜粙璐ㄧ殑鎵€鏈夎妭鐐规鍊煎繀椤昏涓虹浉绛夈€傝閫夐」瀵瑰簲浜?
+`IEEE 802.3cg-2019` 30.16.1.1.5 aPLCATransmitOpportunityTimer銆傝灞炴€х殑鏈夋晥鑼冨洿涓?[0 .. 255]銆?
 
-设置时，可选的 `ETHTOOL_A_PLCA_BURST_CNT` 属性指示节点在单个发送机会内允许发送的额外包数量。
-默认情况下该属性为 0，表示节点每个 TO 只能发送单个帧。当大于 0 时，PLCA RS 会在任意发送后
-保持该 TO，等待 MAC 在最多 aPLCABurstTimer 个位时间内发送新帧。在一个 PLCA 周期内这种情况
-最多发生本参数所指定次数，之后突发结束，正常的 TO 计数恢复。该选项对应于 `IEEE 802.3cg-2019`
-30.16.1.1.6 aPLCAMaxBurstCount。该属性的有效范围为 [0 .. 255]。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_PLCA_BURST_CNT` 灞炴€ф寚绀鸿妭鐐瑰湪鍗曚釜鍙戦€佹満浼氬唴鍏佽鍙戦€佺殑棰濆鍖呮暟閲忋€?
+榛樿鎯呭喌涓嬭灞炴€т负 0锛岃〃绀鸿妭鐐规瘡涓?TO 鍙兘鍙戦€佸崟涓抚銆傚綋澶т簬 0 鏃讹紝PLCA RS 浼氬湪浠绘剰鍙戦€佸悗
+淇濇寔璇?TO锛岀瓑寰?MAC 鍦ㄦ渶澶?aPLCABurstTimer 涓綅鏃堕棿鍐呭彂閫佹柊甯с€傚湪涓€涓?PLCA 鍛ㄦ湡鍐呰繖绉嶆儏鍐?
+鏈€澶氬彂鐢熸湰鍙傛暟鎵€鎸囧畾娆℃暟锛屼箣鍚庣獊鍙戠粨鏉燂紝姝ｅ父鐨?TO 璁℃暟鎭㈠銆傝閫夐」瀵瑰簲浜?`IEEE 802.3cg-2019`
+30.16.1.1.6 aPLCAMaxBurstCount銆傝灞炴€х殑鏈夋晥鑼冨洿涓?[0 .. 255]銆?
 
-设置时，可选的 `ETHTOOL_A_PLCA_BURST_TMR` 属性指示当 aPLCAMaxBurstCount 大于 0 时，PLCA RS
-等待 MAC 发起新发送的位时间数。若 MAC 在此时间内未能发送新帧，突发结束，TO 计数恢复。否则，
-新帧作为当前突发的一部分被发送。该选项对应于 `IEEE 802.3cg-2019` 30.16.1.1.7
-aPLCABurstTimer。该属性的有效范围为 [0 .. 255]。不过，为了让 PLCA 突发模式按预期工作，该值
-应设置为大于 MAC 的帧间间隔（IFG）时间（并留有一定余量）。
+璁剧疆鏃讹紝鍙€夌殑 `ETHTOOL_A_PLCA_BURST_TMR` 灞炴€ф寚绀哄綋 aPLCAMaxBurstCount 澶т簬 0 鏃讹紝PLCA RS
+绛夊緟 MAC 鍙戣捣鏂板彂閫佺殑浣嶆椂闂存暟銆傝嫢 MAC 鍦ㄦ鏃堕棿鍐呮湭鑳藉彂閫佹柊甯э紝绐佸彂缁撴潫锛孴O 璁℃暟鎭㈠銆傚惁鍒欙紝
+鏂板抚浣滀负褰撳墠绐佸彂鐨勪竴閮ㄥ垎琚彂閫併€傝閫夐」瀵瑰簲浜?`IEEE 802.3cg-2019` 30.16.1.1.7
+aPLCABurstTimer銆傝灞炴€х殑鏈夋晥鑼冨洿涓?[0 .. 255]銆備笉杩囷紝涓轰簡璁?PLCA 绐佸彂妯″紡鎸夐鏈熷伐浣滐紝璇ュ€?
+搴旇缃负澶т簬 MAC 鐨勫抚闂撮棿闅旓紙IFG锛夋椂闂达紙骞剁暀鏈変竴瀹氫綑閲忥級銆?
 
 ## PLCA_SET_CFG
 
 
-设置 PLCA RS 参数。
+璁剧疆 PLCA RS 鍙傛暟銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ======================================  ======  =============================
   `ETHTOOL_A_PLCA_HEADER`               nested  request header
@@ -1894,85 +1894,85 @@ aPLCABurstTimer。该属性的有效范围为 [0 .. 255]。不过，为了让 PL
                                                   terminating the burst
   ======================================  ======  =============================
 
-各属性的说明参见 `PLCA_GET_CFG`。
+鍚勫睘鎬х殑璇存槑鍙傝 `PLCA_GET_CFG`銆?
 
 ## PLCA_GET_STATUS
 
 
-获取 PLCA RS 状态信息。
+鑾峰彇 PLCA RS 鐘舵€佷俊鎭€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =====================================  ======  ==========================
   `ETHTOOL_A_PLCA_HEADER`              nested  request header
   =====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ======================================  ======  =============================
   `ETHTOOL_A_PLCA_HEADER`               nested  reply header
   `ETHTOOL_A_PLCA_STATUS`               u8      PLCA RS operational status
   ======================================  ======  =============================
 
-设置时，`ETHTOOL_A_PLCA_STATUS` 属性指示节点是否检测到网络上 BEACON 的存在。该标志对应于
-`IEEE 802.3cg-2019` 30.16.1.1.2 aPLCAStatus。
+璁剧疆鏃讹紝`ETHTOOL_A_PLCA_STATUS` 灞炴€ф寚绀鸿妭鐐规槸鍚︽娴嬪埌缃戠粶涓?BEACON 鐨勫瓨鍦ㄣ€傝鏍囧織瀵瑰簲浜?
+`IEEE 802.3cg-2019` 30.16.1.1.2 aPLCAStatus銆?
 
 ## MM_GET
 
 
-获取 802.3 MAC 合并（MAC Merge）参数。
+鑾峰彇 802.3 MAC 鍚堝苟锛圡AC Merge锛夊弬鏁般€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_MM_HEADER`               nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   =================================  ======  ===================================
   `ETHTOOL_A_MM_HEADER`            nested  request header
-  `ETHTOOL_A_MM_PMAC_ENABLED`      bool    若启用可抢占帧与 SMD-V 帧的接收则置位
-  `ETHTOOL_A_MM_TX_ENABLED`        bool    若管理上启用了可抢占帧的发送则置位
-                                            （若验证失败可能未激活）
-  `ETHTOOL_A_MM_TX_ACTIVE`         bool    若操作上启用了可抢占帧的发送则置位
-  `ETHTOOL_A_MM_TX_MIN_FRAG_SIZE`  u32     发送的非末尾片段的最小大小，以八位组计
-  `ETHTOOL_A_MM_RX_MIN_FRAG_SIZE`  u32     接收的非末尾片段的最小大小，以八位组计
-  `ETHTOOL_A_MM_VERIFY_ENABLED`    bool    若管理上启用了 SMD-V 帧的发送则置位
-  `ETHTOOL_A_MM_VERIFY_STATUS`     u8      verification 功能的状态
-  `ETHTOOL_A_MM_VERIFY_TIME`       u32     两次验证尝试之间的延迟
+  `ETHTOOL_A_MM_PMAC_ENABLED`      bool    鑻ュ惎鐢ㄥ彲鎶㈠崰甯т笌 SMD-V 甯х殑鎺ユ敹鍒欑疆浣?
+  `ETHTOOL_A_MM_TX_ENABLED`        bool    鑻ョ鐞嗕笂鍚敤浜嗗彲鎶㈠崰甯х殑鍙戦€佸垯缃綅
+                                            锛堣嫢楠岃瘉澶辫触鍙兘鏈縺娲伙級
+  `ETHTOOL_A_MM_TX_ACTIVE`         bool    鑻ユ搷浣滀笂鍚敤浜嗗彲鎶㈠崰甯х殑鍙戦€佸垯缃綅
+  `ETHTOOL_A_MM_TX_MIN_FRAG_SIZE`  u32     鍙戦€佺殑闈炴湯灏剧墖娈电殑鏈€灏忓ぇ灏忥紝浠ュ叓浣嶇粍璁?
+  `ETHTOOL_A_MM_RX_MIN_FRAG_SIZE`  u32     鎺ユ敹鐨勯潪鏈熬鐗囨鐨勬渶灏忓ぇ灏忥紝浠ュ叓浣嶇粍璁?
+  `ETHTOOL_A_MM_VERIFY_ENABLED`    bool    鑻ョ鐞嗕笂鍚敤浜?SMD-V 甯х殑鍙戦€佸垯缃綅
+  `ETHTOOL_A_MM_VERIFY_STATUS`     u8      verification 鍔熻兘鐨勭姸鎬?
+  `ETHTOOL_A_MM_VERIFY_TIME`       u32     涓ゆ楠岃瘉灏濊瘯涔嬮棿鐨勫欢杩?
   `ETHTOOL_A_MM_MAX_VERIFY_TIME``  u32     maximum verification interval
                                              supported by device
-  `ETHTOOL_A_MM_STATS`             nested  IEEE 802.3-2018 子条款 30.14.1
-                                             oMACMergeEntity 统计计数器
+  `ETHTOOL_A_MM_STATS`             nested  IEEE 802.3-2018 瀛愭潯娆?30.14.1
+                                             oMACMergeEntity 缁熻璁℃暟鍣?
   =================================  ======  ===================================
 
-这些属性由设备驱动通过以下结构填充：
+杩欎簺灞炴€х敱璁惧椹卞姩閫氳繃浠ヤ笅缁撴瀯濉厖锛?
 
     :identifiers: ethtool_mm_state
 
-`ETHTOOL_A_MM_VERIFY_STATUS` 将报告来自以下取值之一：
+`ETHTOOL_A_MM_VERIFY_STATUS` 灏嗘姤鍛婃潵鑷互涓嬪彇鍊间箣涓€锛?
 
     :identifiers: ethtool_mm_verify_status
 
-若在 `MM_SET` 命令中 `ETHTOOL_A_MM_VERIFY_ENABLED` 以 false 传入，则
-`ETHTOOL_A_MM_VERIFY_STATUS` 将报告 `ETHTOOL_MM_VERIFY_STATUS_INITIAL` 或
-`ETHTOOL_MM_VERIFY_STATUS_DISABLED`，否则应报告其它某个状态。
+鑻ュ湪 `MM_SET` 鍛戒护涓?`ETHTOOL_A_MM_VERIFY_ENABLED` 浠?false 浼犲叆锛屽垯
+`ETHTOOL_A_MM_VERIFY_STATUS` 灏嗘姤鍛?`ETHTOOL_MM_VERIFY_STATUS_INITIAL` 鎴?
+`ETHTOOL_MM_VERIFY_STATUS_DISABLED`锛屽惁鍒欏簲鎶ュ憡鍏跺畠鏌愪釜鐘舵€併€?
 
-建议驱动以 pMAC 禁用状态启动，并在用户空间请求时启用它。同时建议用户空间不要依赖
-`ETHTOOL_MSG_MM_GET` 请求的默认值。
+寤鸿椹卞姩浠?pMAC 绂佺敤鐘舵€佸惎鍔紝骞跺湪鐢ㄦ埛绌洪棿璇锋眰鏃跺惎鐢ㄥ畠銆傚悓鏃跺缓璁敤鎴风┖闂翠笉瑕佷緷璧?
+`ETHTOOL_MSG_MM_GET` 璇锋眰鐨勯粯璁ゅ€笺€?
 
-若 `ETHTOOL_A_HEADER_FLAGS` 中设置了 `ETHTOOL_FLAG_STATS`，则会报告 `ETHTOOL_A_MM_STATS`。
-如果驱动未报告任何统计信息，该属性将为空。驱动在以下结构中填写统计信息：
+鑻?`ETHTOOL_A_HEADER_FLAGS` 涓缃簡 `ETHTOOL_FLAG_STATS`锛屽垯浼氭姤鍛?`ETHTOOL_A_MM_STATS`銆?
+濡傛灉椹卞姩鏈姤鍛婁换浣曠粺璁′俊鎭紝璇ュ睘鎬у皢涓虹┖銆傞┍鍔ㄥ湪浠ヤ笅缁撴瀯涓～鍐欑粺璁′俊鎭細
 
     :identifiers: ethtool_mm_stats
 
 ## MM_SET
 
 
-修改 802.3 MAC 合并层的配置。
+淇敼 802.3 MAC 鍚堝苟灞傜殑閰嶇疆銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =================================  ======  ==========================
   `ETHTOOL_A_MM_VERIFY_TIME`       u32     see MM_GET description
@@ -1982,16 +1982,16 @@ aPLCABurstTimer。该属性的有效范围为 [0 .. 255]。不过，为了让 PL
   `ETHTOOL_A_MM_TX_MIN_FRAG_SIZE`  u32     see MM_GET description
   =================================  ======  ==========================
 
-这些属性通过以下结构传播给驱动：
+杩欎簺灞炴€ч€氳繃浠ヤ笅缁撴瀯浼犳挱缁欓┍鍔細
 
     :identifiers: ethtool_mm_cfg
 
 ## MODULE_FW_FLASH_ACT
 
 
-烧录收发器模块固件。
+鐑у綍鏀跺彂鍣ㄦā鍧楀浐浠躲€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   =======================================  ======  ===========================
   `ETHTOOL_A_MODULE_FW_FLASH_HEADER`     nested  request header
@@ -1999,28 +1999,28 @@ aPLCABurstTimer。该属性的有效范围为 [0 .. 255]。不过，为了让 PL
   `ETHTOOL_A_MODULE_FW_FLASH_PASSWORD`   u32     transceiver module password
   =======================================  ===========================
 
-固件更新过程由三个逻辑步骤组成：
+鍥轰欢鏇存柊杩囩▼鐢变笁涓€昏緫姝ラ缁勬垚锛?
 
-1. 将固件映像下载到收发器模块并校验它。
-2. 运行固件映像。
-3. 提交固件映像，使其在复位后运行。
+1. 灏嗗浐浠舵槧鍍忎笅杞藉埌鏀跺彂鍣ㄦā鍧楀苟鏍￠獙瀹冦€?
+2. 杩愯鍥轰欢鏄犲儚銆?
+3. 鎻愪氦鍥轰欢鏄犲儚锛屼娇鍏跺湪澶嶄綅鍚庤繍琛屻€?
 
-给定烧录命令后，这三个步骤按顺序执行。
+缁欏畾鐑у綍鍛戒护鍚庯紝杩欎笁涓楠ゆ寜椤哄簭鎵ц銆?
 
-该消息仅调度更新过程并立即返回，不会阻塞。随后该过程异步运行。由于完成可能需要数分钟，
-在更新过程中内核会向用户空间发出通知，更新其状态与进度。
+璇ユ秷鎭粎璋冨害鏇存柊杩囩▼骞剁珛鍗宠繑鍥烇紝涓嶄細闃诲銆傞殢鍚庤杩囩▼寮傛杩愯銆傜敱浜庡畬鎴愬彲鑳介渶瑕佹暟鍒嗛挓锛?
+鍦ㄦ洿鏂拌繃绋嬩腑鍐呮牳浼氬悜鐢ㄦ埛绌洪棿鍙戝嚭閫氱煡锛屾洿鏂板叾鐘舵€佷笌杩涘害銆?
 
-`ETHTOOL_A_MODULE_FW_FLASH_FILE_NAME` 属性编码固件映像文件名。固件映像被下载到收发器模块、
-校验、运行并提交。
+`ETHTOOL_A_MODULE_FW_FLASH_FILE_NAME` 灞炴€х紪鐮佸浐浠舵槧鍍忔枃浠跺悕銆傚浐浠舵槧鍍忚涓嬭浇鍒版敹鍙戝櫒妯″潡銆?
+鏍￠獙銆佽繍琛屽苟鎻愪氦銆?
 
-可选的 `ETHTOOL_A_MODULE_FW_FLASH_PASSWORD` 属性编码一个密码，该密码可能作为收发器模块
-固件更新过程的一部分被需要。
+鍙€夌殑 `ETHTOOL_A_MODULE_FW_FLASH_PASSWORD` 灞炴€х紪鐮佷竴涓瘑鐮侊紝璇ュ瘑鐮佸彲鑳戒綔涓烘敹鍙戝櫒妯″潡
+鍥轰欢鏇存柊杩囩▼鐨勪竴閮ㄥ垎琚渶瑕併€?
 
-固件更新过程可能需要数分钟才能完成。因此，在更新过程中内核会向用户空间发出通知，更新其
-状态与进度。
+鍥轰欢鏇存柊杩囩▼鍙兘闇€瑕佹暟鍒嗛挓鎵嶈兘瀹屾垚銆傚洜姝わ紝鍦ㄦ洿鏂拌繃绋嬩腑鍐呮牳浼氬悜鐢ㄦ埛绌洪棿鍙戝嚭閫氱煡锛屾洿鏂板叾
+鐘舵€佷笌杩涘害銆?
 
 
-通知内容：
+閫氱煡鍐呭锛?
 
  +---------------------------------------------------+--------+----------------+
  | `ETHTOOL_A_MODULE_FW_FLASH_HEADER`              | nested | reply header   |
@@ -2034,61 +2034,61 @@ aPLCABurstTimer。该属性的有效范围为 [0 .. 255]。不过，为了让 PL
  | `ETHTOOL_A_MODULE_FW_FLASH_TOTAL`               | uint   | total          |
  +---------------------------------------------------+--------+----------------+
 
-`ETHTOOL_A_MODULE_FW_FLASH_STATUS` 属性编码固件更新过程的当前状态。可能的取值为：
+`ETHTOOL_A_MODULE_FW_FLASH_STATUS` 灞炴€х紪鐮佸浐浠舵洿鏂拌繃绋嬬殑褰撳墠鐘舵€併€傚彲鑳界殑鍙栧€间负锛?
 
     :identifiers: ethtool_module_fw_flash_status
 
-`ETHTOOL_A_MODULE_FW_FLASH_STATUS_MSG` 属性编码状态消息字符串。
+`ETHTOOL_A_MODULE_FW_FLASH_STATUS_MSG` 灞炴€х紪鐮佺姸鎬佹秷鎭瓧绗︿覆銆?
 
-`ETHTOOL_A_MODULE_FW_FLASH_DONE` 与 `ETHTOOL_A_MODULE_FW_FLASH_TOTAL` 属性分别编码已完成与
-总的工作量。
+`ETHTOOL_A_MODULE_FW_FLASH_DONE` 涓?`ETHTOOL_A_MODULE_FW_FLASH_TOTAL` 灞炴€у垎鍒紪鐮佸凡瀹屾垚涓?
+鎬荤殑宸ヤ綔閲忋€?
 
 ## PHY_GET
 
 
-获取链路上给定以太网 PHY 的信息。DO 操作返回关于 dev->phydev 的所有可用信息。用户也可以
-指定 PHY_INDEX，此时 DO 请求返回关于该特定 PHY 的信息。
+鑾峰彇閾捐矾涓婄粰瀹氫互澶綉 PHY 鐨勪俊鎭€侱O 鎿嶄綔杩斿洖鍏充簬 dev->phydev 鐨勬墍鏈夊彲鐢ㄤ俊鎭€傜敤鎴蜂篃鍙互
+鎸囧畾 PHY_INDEX锛屾鏃?DO 璇锋眰杩斿洖鍏充簬璇ョ壒瀹?PHY 鐨勪俊鎭€?
 
-由于可能存在多于一个 PHY，可以使用 DUMP 操作，通过在 dump 请求中传入接口索引或名称，来
-列出给定接口上存在的 PHY。
+鐢变簬鍙兘瀛樺湪澶氫簬涓€涓?PHY锛屽彲浠ヤ娇鐢?DUMP 鎿嶄綔锛岄€氳繃鍦?dump 璇锋眰涓紶鍏ユ帴鍙ｇ储寮曟垨鍚嶇О锛屾潵
+鍒楀嚭缁欏畾鎺ュ彛涓婂瓨鍦ㄧ殑 PHY銆?
 
-更多信息参见 phy_link_topology。
+鏇村淇℃伅鍙傝 phy_link_topology銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_PHY_HEADER`              nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ===================================== ======  ===============================
   `ETHTOOL_A_PHY_HEADER`              nested  request header
-  `ETHTOOL_A_PHY_INDEX`               u32     phy 的唯一索引，可用于针对该 phy 的请求
-  `ETHTOOL_A_PHY_DRVNAME`             string  该 phy 的驱动名
-  `ETHTOOL_A_PHY_NAME`                string  该 phy 的设备名
-  `ETHTOOL_A_PHY_UPSTREAM_TYPE`       u32     该 phy 所连接设备的类型
-  `ETHTOOL_A_PHY_UPSTREAM_INDEX`      u32     上游 PHY 的 PHY 索引
-  `ETHTOOL_A_PHY_UPSTREAM_SFP_NAME`   string  若该 PHY 通过 SFP 总线连接到其父 PHY，该 sfp 总线的名称
-  `ETHTOOL_A_PHY_DOWNSTREAM_SFP_NAME` string  若该 phy 控制一个 sfp 总线，该 sfp 总线的名称
+  `ETHTOOL_A_PHY_INDEX`               u32     phy 鐨勫敮涓€绱㈠紩锛屽彲鐢ㄤ簬閽堝璇?phy 鐨勮姹?
+  `ETHTOOL_A_PHY_DRVNAME`             string  璇?phy 鐨勯┍鍔ㄥ悕
+  `ETHTOOL_A_PHY_NAME`                string  璇?phy 鐨勮澶囧悕
+  `ETHTOOL_A_PHY_UPSTREAM_TYPE`       u32     璇?phy 鎵€杩炴帴璁惧鐨勭被鍨?
+  `ETHTOOL_A_PHY_UPSTREAM_INDEX`      u32     涓婃父 PHY 鐨?PHY 绱㈠紩
+  `ETHTOOL_A_PHY_UPSTREAM_SFP_NAME`   string  鑻ヨ PHY 閫氳繃 SFP 鎬荤嚎杩炴帴鍒板叾鐖?PHY锛岃 sfp 鎬荤嚎鐨勫悕绉?
+  `ETHTOOL_A_PHY_DOWNSTREAM_SFP_NAME` string  鑻ヨ phy 鎺у埗涓€涓?sfp 鎬荤嚎锛岃 sfp 鎬荤嚎鐨勫悕绉?
   ===================================== ======  ===============================
 
-当 `ETHTOOL_A_PHY_UPSTREAM_TYPE` 为 PHY_UPSTREAM_PHY 时，该 PHY 的父级是另一个 PHY。
+褰?`ETHTOOL_A_PHY_UPSTREAM_TYPE` 涓?PHY_UPSTREAM_PHY 鏃讹紝璇?PHY 鐨勭埗绾ф槸鍙︿竴涓?PHY銆?
 
 ## TSCONFIG_GET
 
 
-获取当前硬件时间戳源与配置的相关信息。
+鑾峰彇褰撳墠纭欢鏃堕棿鎴虫簮涓庨厤缃殑鐩稿叧淇℃伅銆?
 
-它类似于已废弃的 `SIOCGHWTSTAMP` ioctl 请求。
+瀹冪被浼间簬宸插簾寮冪殑 `SIOCGHWTSTAMP` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ==========================
   `ETHTOOL_A_TSCONFIG_HEADER`         nested  request header
   ====================================  ======  ==========================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ======================================== ======  ============================
   `ETHTOOL_A_TSCONFIG_HEADER`            nested  request header
@@ -2098,35 +2098,25 @@ aPLCABurstTimer。该属性的有效范围为 [0 .. 255]。不过，为了让 PL
   `ETHTOOL_A_TSCONFIG_HWTSTAMP_FLAGS`	   u32     hwtstamp flags
   ======================================== ======  ============================
 
-设置时，`ETHTOOL_A_TSCONFIG_HWTSTAMP_PROVIDER` 属性标识硬件时间戳提供者的来源。它由描述 PTP
-设备索引的 `ETHTOOL_A_TS_HWTSTAMP_PROVIDER_INDEX` 属性，以及描述时间戳限定符的
-`ETHTOOL_A_TS_HWTSTAMP_PROVIDER_QUALIFIER` 属性组成。
+璁剧疆鏃讹紝`ETHTOOL_A_TSCONFIG_HWTSTAMP_PROVIDER` 灞炴€ф爣璇嗙‖浠舵椂闂存埑鎻愪緵鑰呯殑鏉ユ簮銆傚畠鐢辨弿杩?PTP
+璁惧绱㈠紩鐨?`ETHTOOL_A_TS_HWTSTAMP_PROVIDER_INDEX` 灞炴€э紝浠ュ強鎻忚堪鏃堕棿鎴抽檺瀹氱鐨?
+`ETHTOOL_A_TS_HWTSTAMP_PROVIDER_QUALIFIER` 灞炴€х粍鎴愩€?
 
-设置时，`ETHTOOL_A_TSCONFIG_TX_TYPES`、`ETHTOOL_A_TSCONFIG_RX_FILTERS` 与
-`ETHTOOL_A_TSCONFIG_HWTSTAMP_FLAGS` 属性标识当前硬件时间戳提供者所配置的 Tx 类型、Rx 过滤器
-与标志。这些属性通过以下结构传播给驱动：
+璁剧疆鏃讹紝`ETHTOOL_A_TSCONFIG_TX_TYPES`銆乣ETHTOOL_A_TSCONFIG_RX_FILTERS` 涓?
+`ETHTOOL_A_TSCONFIG_HWTSTAMP_FLAGS` 灞炴€ф爣璇嗗綋鍓嶇‖浠舵椂闂存埑鎻愪緵鑰呮墍閰嶇疆鐨?Tx 绫诲瀷銆丷x 杩囨护鍣?
+涓庢爣蹇椼€傝繖浜涘睘鎬ч€氳繃浠ヤ笅缁撴瀯浼犳挱缁欓┍鍔細
 
     :identifiers: kernel_hwtstamp_config
 
 ## TSCONFIG_SET
 
 
-设置当前硬件时间戳源与配置的相关信息。
+璁剧疆褰撳墠纭欢鏃堕棿鎴虫簮涓庨厤缃殑鐩稿叧淇℃伅銆?
 
-它类似于已废弃的 `SIOCSHWTSTAMP` ioctl 请求。
+瀹冪被浼间簬宸插簾寮冪殑 `SIOCSHWTSTAMP` ioctl 璇锋眰銆?
 
-请求内容：
+璇锋眰鍐呭锛?
 
-
-  ======================================== ======  ============================
-  `ETHTOOL_A_TSCONFIG_HEADER`            nested  request header
-  `ETHTOOL_A_TSCONFIG_HWTSTAMP_PROVIDER` nested  PTP hw clock provider
-  `ETHTOOL_A_TSCONFIG_TX_TYPES`          bitset  hwtstamp Tx type
-  `ETHTOOL_A_TSCONFIG_RX_FILTERS`        bitset  hwtstamp Rx filter
-  `ETHTOOL_A_TSCONFIG_HWTSTAMP_FLAGS`	   u32     hwtstamp flags
-  ======================================== ======  ============================
-
-内核响应内容：
 
   ======================================== ======  ============================
   `ETHTOOL_A_TSCONFIG_HEADER`            nested  request header
@@ -2136,68 +2126,78 @@ aPLCABurstTimer。该属性的有效范围为 [0 .. 255]。不过，为了让 PL
   `ETHTOOL_A_TSCONFIG_HWTSTAMP_FLAGS`	   u32     hwtstamp flags
   ======================================== ======  ============================
 
-各属性的说明参见 `TSCONFIG_GET`。
+鍐呮牳鍝嶅簲鍐呭锛?
+
+  ======================================== ======  ============================
+  `ETHTOOL_A_TSCONFIG_HEADER`            nested  request header
+  `ETHTOOL_A_TSCONFIG_HWTSTAMP_PROVIDER` nested  PTP hw clock provider
+  `ETHTOOL_A_TSCONFIG_TX_TYPES`          bitset  hwtstamp Tx type
+  `ETHTOOL_A_TSCONFIG_RX_FILTERS`        bitset  hwtstamp Rx filter
+  `ETHTOOL_A_TSCONFIG_HWTSTAMP_FLAGS`	   u32     hwtstamp flags
+  ======================================== ======  ============================
+
+鍚勫睘鎬х殑璇存槑鍙傝 `TSCONFIG_GET`銆?
 
 ## MSE_GET
 
 
-从 PHY 获取详细的平均平方误差（Mean Square Error，MSE）诊断信息。
+浠?PHY 鑾峰彇璇︾粏鐨勫钩鍧囧钩鏂硅宸紙Mean Square Error锛孧SE锛夎瘖鏂俊鎭€?
 
-请求内容：
+璇锋眰鍐呭锛?
 
   ====================================  ======  ============================
   `ETHTOOL_A_MSE_HEADER`              nested  request header
   ====================================  ======  ============================
 
-内核响应内容：
+鍐呮牳鍝嶅簲鍐呭锛?
 
   ====================================  ======  ================================
   `ETHTOOL_A_MSE_HEADER`              nested  reply header
-  `ETHTOOL_A_MSE_CAPABILITIES`        nested  MSE 测量的能力/比例信息
-  `ETHTOOL_A_MSE_CHANNEL_A`           nested  Channel A 的快照
-  `ETHTOOL_A_MSE_CHANNEL_B`           nested  Channel B 的快照
-  `ETHTOOL_A_MSE_CHANNEL_C`           nested  Channel C 的快照
-  `ETHTOOL_A_MSE_CHANNEL_D`           nested  Channel D 的快照
-  `ETHTOOL_A_MSE_WORST_CHANNEL`       nested  最差通道的快照
-  `ETHTOOL_A_MSE_LINK`                nested  链路级聚合的快照
+  `ETHTOOL_A_MSE_CAPABILITIES`        nested  MSE 娴嬮噺鐨勮兘鍔?姣斾緥淇℃伅
+  `ETHTOOL_A_MSE_CHANNEL_A`           nested  Channel A 鐨勫揩鐓?
+  `ETHTOOL_A_MSE_CHANNEL_B`           nested  Channel B 鐨勫揩鐓?
+  `ETHTOOL_A_MSE_CHANNEL_C`           nested  Channel C 鐨勫揩鐓?
+  `ETHTOOL_A_MSE_CHANNEL_D`           nested  Channel D 鐨勫揩鐓?
+  `ETHTOOL_A_MSE_WORST_CHANNEL`       nested  鏈€宸€氶亾鐨勫揩鐓?
+  `ETHTOOL_A_MSE_LINK`                nested  閾捐矾绾ц仛鍚堢殑蹇収
   ====================================  ======  ================================
 
-### MSE 能力
+### MSE 鑳藉姏
 
 
-这个嵌套属性报告用于解释快照值的能力 / 缩放属性。
+杩欎釜宓屽灞炴€ф姤鍛婄敤浜庤В閲婂揩鐓у€肩殑鑳藉姏 / 缂╂斁灞炴€с€?
 
   ============================================== ======  =========================
-  `ETHTOOL_A_MSE_CAPABILITIES_MAX_AVERAGE_MSE` uint    最大 avg_mse 比例
-  `ETHTOOL_A_MSE_CAPABILITIES_MAX_PEAK_MSE`    uint    最大 peak_mse 比例
-  `ETHTOOL_A_MSE_CAPABILITIES_REFRESH_RATE_PS` uint    采样率（皮秒）
-  `ETHTOOL_A_MSE_CAPABILITIES_NUM_SYMBOLS`     uint    每个硬件采样的符号数
+  `ETHTOOL_A_MSE_CAPABILITIES_MAX_AVERAGE_MSE` uint    鏈€澶?avg_mse 姣斾緥
+  `ETHTOOL_A_MSE_CAPABILITIES_MAX_PEAK_MSE`    uint    鏈€澶?peak_mse 姣斾緥
+  `ETHTOOL_A_MSE_CAPABILITIES_REFRESH_RATE_PS` uint    閲囨牱鐜囷紙鐨锛?
+  `ETHTOOL_A_MSE_CAPABILITIES_NUM_SYMBOLS`     uint    姣忎釜纭欢閲囨牱鐨勭鍙锋暟
   ============================================== ======  =========================
 
-max-average/peak 字段仅在 PHY 支持相应指标时才包含。它们的缺失表示该指标不可用。
+max-average/peak 瀛楁浠呭湪 PHY 鏀寔鐩稿簲鎸囨爣鏃舵墠鍖呭惈銆傚畠浠殑缂哄け琛ㄧず璇ユ寚鏍囦笉鍙敤銆?
 
-参见 `include/linux/phy.h` 中 `struct phy_mse_capability` 的内核文档。
+鍙傝 `include/linux/phy.h` 涓?`struct phy_mse_capability` 鐨勫唴鏍告枃妗ｃ€?
 
-### MSE 快照
+### MSE 蹇収
 
 
-每个每通道嵌套包含该选择器（通道 A/B/C/D、最差通道或链路）的 MSE 值的原子快照。
+姣忎釜姣忛€氶亾宓屽鍖呭惈璇ラ€夋嫨鍣紙閫氶亾 A/B/C/D銆佹渶宸€氶亾鎴栭摼璺級鐨?MSE 鍊肩殑鍘熷瓙蹇収銆?
 
   ==========================================  ======  ===================
-  `ETHTOOL_A_MSE_SNAPSHOT_AVERAGE_MSE`      uint    平均 MSE 值
-  `ETHTOOL_A_MSE_SNAPSHOT_PEAK_MSE`         uint    当前峰值 MSE
-  `ETHTOOL_A_MSE_SNAPSHOT_WORST_PEAK_MSE`   uint    最坏情况峰值 MSE
+  `ETHTOOL_A_MSE_SNAPSHOT_AVERAGE_MSE`      uint    骞冲潎 MSE 鍊?
+  `ETHTOOL_A_MSE_SNAPSHOT_PEAK_MSE`         uint    褰撳墠宄板€?MSE
+  `ETHTOOL_A_MSE_SNAPSHOT_WORST_PEAK_MSE`   uint    鏈€鍧忔儏鍐靛嘲鍊?MSE
   ==========================================  ======  ===================
 
-在每个通道嵌套中，仅会出现 PHY 所支持的指标。
+鍦ㄦ瘡涓€氶亾宓屽涓紝浠呬細鍑虹幇 PHY 鎵€鏀寔鐨勬寚鏍囥€?
 
-参见 `include/linux/phy.h` 中 `struct phy_mse_snapshot` 的内核文档。
+鍙傝 `include/linux/phy.h` 涓?`struct phy_mse_snapshot` 鐨勫唴鏍告枃妗ｃ€?
 
-## 请求翻译
+## 璇锋眰缈昏瘧
 
 
-下表将 ioctl 命令映射到提供其功能的 netlink 命令。右列为“n/a”的条目是尚无 netlink 替代
-的命令。左列为“n/a”的条目则仅存在于 netlink。
+涓嬭〃灏?ioctl 鍛戒护鏄犲皠鍒版彁渚涘叾鍔熻兘鐨?netlink 鍛戒护銆傚彸鍒椾负鈥渘/a鈥濈殑鏉＄洰鏄皻鏃?netlink 鏇夸唬
+鐨勫懡浠ゃ€傚乏鍒椾负鈥渘/a鈥濈殑鏉＄洰鍒欎粎瀛樺湪浜?netlink銆?
 
   =================================== =====================================
   ioctl command                       netlink command

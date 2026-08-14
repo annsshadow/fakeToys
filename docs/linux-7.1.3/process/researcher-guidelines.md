@@ -1,122 +1,122 @@
-
+﻿锘?
 
 Researcher Guidelines
 +++++++++++++++++++++
 
-The Linux 内核 community welcomes transparent research 在 the Linux
-内核, the activities involved 在 producing 它, 和 任何 其他 byproducts
-的 其 development. Linux benefits greatly 来自 此 kind 的 research, 和
-大多数 aspects 的 Linux 是 driven 由 research 在 one form 或 another.
+The Linux 鍐呮牳 community welcomes transparent research 鍦?the Linux
+鍐呮牳, the activities involved 鍦?producing 瀹? 鍜?浠讳綍 鍏朵粬 byproducts
+鐨?鍏?development. Linux benefits greatly 鏉ヨ嚜 姝?kind 鐨?research, 鍜?
+澶у鏁?aspects 鐨?Linux 鏄?driven 鐢?research 鍦?one form 鎴?another.
 
-The community greatly appreciates 若 researchers 可 share preliminary
-findings 之前 making 它们的 results 公共, especially 若 此类 research
-involves 安全. Getting involved early helps 两者 improve the quality
-的 research 和 ability 用于 Linux 到 improve 来自 它. 在 任何 case,
-sharing 打开 access copies 的 the published research 与 the community
-是 recommended.
+The community greatly appreciates 鑻?researchers 鍙?share preliminary
+findings 涔嬪墠 making 瀹冧滑鐨?results 鍏叡, especially 鑻?姝ょ被 research
+involves 瀹夊叏. Getting involved early helps 涓よ€?improve the quality
+鐨?research 鍜?ability 鐢ㄤ簬 Linux 鍒?improve 鏉ヨ嚜 瀹? 鍦?浠讳綍 case,
+sharing 鎵撳紑 access copies 鐨?the published research 涓?the community
+鏄?recommended.
 
-此 document seeks 到 clarify 什么 the Linux 内核 community considers
-acceptable 和 non-acceptable practices 当 conducting 此类 research. 在
-the very least, 此类 research 和 related activities 应当 follow
-标准 research ethics rules. 用于 更多 background 在 research ethics
-generally, ethics 在 technology, 和 research 的 developer communities
-特别是, 参见:
+姝?document seeks 鍒?clarify 浠€涔?the Linux 鍐呮牳 community considers
+acceptable 鍜?non-acceptable practices 褰?conducting 姝ょ被 research. 鍦?
+the very least, 姝ょ被 research 鍜?related activities 搴斿綋 follow
+鏍囧噯 research ethics rules. 鐢ㄤ簬 鏇村 background 鍦?research ethics
+generally, ethics 鍦?technology, 鍜?research 鐨?developer communities
+鐗瑰埆鏄? 鍙傝:
 
 - `History of Research Ethics <https://www.unlv.edu/research/ORI-HSR/history-ethics>`_
 - `IEEE Ethics <https://www.ieee.org/about/ethics/index.html>`_
 - `Developer and Researcher Views on the Ethics of Experiments on Open-Source Projects <https://arxiv.org/pdf/2112.13217.pdf>`_
 
-The Linux 内核 community expects 该 everyone interacting 与 the
-project 是 participating 在 good faith 到 make Linux better. Research 在
-任何 publicly-available artifact (including, 但 不 limited 到 source
-code) produced 由 the Linux 内核 community 是 welcome, though research
-在 developers 必须 为 distinctly opt-in.
+The Linux 鍐呮牳 community expects 璇?everyone interacting 涓?the
+project 鏄?participating 鍦?good faith 鍒?make Linux better. Research 鍦?
+浠讳綍 publicly-available artifact (including, 浣?涓?limited 鍒?source
+code) produced 鐢?the Linux 鍐呮牳 community 鏄?welcome, though research
+鍦?developers 蹇呴』 涓?distinctly opt-in.
 
-Passive research 即 based entirely 在 publicly 可用 sources,
-including posts 到 公共 mailing 列表 和 commits 到 公共
-repositories, 是 clearly permissible. Though, 作为 与 任何 research,
-标准 ethics 必须 仍然 为 followed.
+Passive research 鍗?based entirely 鍦?publicly 鍙敤 sources,
+including posts 鍒?鍏叡 mailing 鍒楄〃 鍜?commits 鍒?鍏叡
+repositories, 鏄?clearly permissible. Though, 浣滀负 涓?浠讳綍 research,
+鏍囧噯 ethics 蹇呴』 浠嶇劧 涓?followed.
 
-Active research 在 developer behavior, 然而, 必须 为 已完成 与 the
-explicit agreement 的, 和 full disclosure 到, the 各个 developers
-involved. Developers cannot 为 interacted 与/experimented 在 无
-consent; 此, too, 是 标准 research ethics.
+Active research 鍦?developer behavior, 鐒惰€? 蹇呴』 涓?宸插畬鎴?涓?the
+explicit agreement 鐨? 鍜?full disclosure 鍒? the 鍚勪釜 developers
+involved. Developers cannot 涓?interacted 涓?experimented 鍦?鏃?
+consent; 姝? too, 鏄?鏍囧噯 research ethics.
 
 ## Surveys
 
 
-Research 通常 takes the form 的 surveys sent 到 maintainers 或
-contributors.  作为 一个 通用 rule, though, the 内核 community derives
-little 值 来自 这些 surveys.  The 内核 development 进程 works
-因为 every developer benefits 来自 它们的 participation, even working
-与 others 谁 具有 不同 goals.  Responding 到 一个 survey, though, 是 一个
-one-way demand placed 在 busy developers 与 无 corresponding benefit 到
-themselves 或 到 the 内核 community 作为 一个 whole.  用于 此 reason, 此
-方法 的 research 是 discouraged.
+Research 閫氬父 takes the form 鐨?surveys sent 鍒?maintainers 鎴?
+contributors.  浣滀负 涓€涓?閫氱敤 rule, though, the 鍐呮牳 community derives
+little 鍊?鏉ヨ嚜 杩欎簺 surveys.  The 鍐呮牳 development 杩涚▼ works
+鍥犱负 every developer benefits 鏉ヨ嚜 瀹冧滑鐨?participation, even working
+涓?others 璋?鍏锋湁 涓嶅悓 goals.  Responding 鍒?涓€涓?survey, though, 鏄?涓€涓?
+one-way demand placed 鍦?busy developers 涓?鏃?corresponding benefit 鍒?
+themselves 鎴?鍒?the 鍐呮牳 community 浣滀负 涓€涓?whole.  鐢ㄤ簬 姝?reason, 姝?
+鏂规硶 鐨?research 鏄?discouraged.
 
-内核 community members 已经 receive far too much email 和 是 likely
-到 perceive survey requests 作为 just another demand 在 它们的 time.  Sending
-此类 requests deprives the community 的 valuable contributor time 和 是
-unlikely 到 yield 一个 statistically useful 响应.
+鍐呮牳 community members 宸茬粡 receive far too much email 鍜?鏄?likely
+鍒?perceive survey requests 浣滀负 just another demand 鍦?瀹冧滑鐨?time.  Sending
+姝ょ被 requests deprives the community 鐨?valuable contributor time 鍜?鏄?
+unlikely 鍒?yield 涓€涓?statistically useful 鍝嶅簲.
 
-作为 一个 alternative, researchers 应当 consider attending developer 事件,
-hosting sessions 何处 the research project 和 其 benefits 到 the
-participants 可 为 explained, 和 interacting directly 与 the community
-那里.  The information received 将 为 far richer 比 该 obtained 来自
-一个 email survey, 和 the community 将 gain 来自 the ability 到 learn 来自
-您的 insights 作为 well.
+浣滀负 涓€涓?alternative, researchers 搴斿綋 consider attending developer 浜嬩欢,
+hosting sessions 浣曞 the research project 鍜?鍏?benefits 鍒?the
+participants 鍙?涓?explained, 鍜?interacting directly 涓?the community
+閭ｉ噷.  The information received 灏?涓?far richer 姣?璇?obtained 鏉ヨ嚜
+涓€涓?email survey, 鍜?the community 灏?gain 鏉ヨ嚜 the ability 鍒?learn 鏉ヨ嚜
+鎮ㄧ殑 insights 浣滀负 well.
 
 ## Patches
 
 
-到 help clarify: sending patches 到 developers **是** interacting
-与 them, 但 它们 具有 已经 consented 到 receiving *good faith
-contributions*. Sending intentionally flawed/vulnerable patches 或
-contributing misleading information 到 discussions 是 不 consented
-到. 此类 communication 可 为 damaging 到 the developer (e.g. draining
-time, effort, 和 morale) 和 damaging 到 the project 由 eroding
-the entire developer community's trust 在 the contributor (和 the
-contributor's organization 作为 一个 whole), undermining efforts 到 提供
-constructive feedback 到 contributors, 和 putting end users 在 risk 的
-软件 flaws.
+鍒?help clarify: sending patches 鍒?developers **鏄?* interacting
+涓?them, 浣?瀹冧滑 鍏锋湁 宸茬粡 consented 鍒?receiving *good faith
+contributions*. Sending intentionally flawed/vulnerable patches 鎴?
+contributing misleading information 鍒?discussions 鏄?涓?consented
+鍒? 姝ょ被 communication 鍙?涓?damaging 鍒?the developer (e.g. draining
+time, effort, 鍜?morale) 鍜?damaging 鍒?the project 鐢?eroding
+the entire developer community's trust 鍦?the contributor (鍜?the
+contributor's organization 浣滀负 涓€涓?whole), undermining efforts 鍒?鎻愪緵
+constructive feedback 鍒?contributors, 鍜?putting end users 鍦?risk 鐨?
+杞欢 flaws.
 
-Participation 在 the development 的 Linux itself 由 researchers, 作为
-与 anyone, 是 welcomed 和 encouraged. Research 进入 Linux code 是
-一个 通用 practice, especially 当 它 comes 到 developing 或 运行中
-analysis tools 该 produce actionable results.
+Participation 鍦?the development 鐨?Linux itself 鐢?researchers, 浣滀负
+涓?anyone, 鏄?welcomed 鍜?encouraged. Research 杩涘叆 Linux code 鏄?
+涓€涓?閫氱敤 practice, especially 褰?瀹?comes 鍒?developing 鎴?杩愯涓?
+analysis tools 璇?produce actionable results.
 
-当 engaging 与 the developer community, sending 一个 patch 具有
-traditionally 已经 the best way 到 make 一个 impact. Linux 已经 具有
-plenty 的 known bugs -- 什么's much 更多 helpful 是 having vetted fixes.
-之前 contributing, carefully 读取 the appropriate documentation:
+褰?engaging 涓?the developer community, sending 涓€涓?patch 鍏锋湁
+traditionally 宸茬粡 the best way 鍒?make 涓€涓?impact. Linux 宸茬粡 鍏锋湁
+plenty 鐨?known bugs -- 浠€涔?s much 鏇村 helpful 鏄?having vetted fixes.
+涔嬪墠 contributing, carefully 璇诲彇 the appropriate documentation:
 
-- Documentation/进程/development-process.rst
-- Documentation/进程/submitting-patches.rst
+- Documentation/杩涚▼/development-process.rst
+- Documentation/杩涚▼/submitting-patches.rst
 - Documentation/admin-guide/reporting-issues.rst
-- Documentation/进程/security-bugs.rst
+- Documentation/杩涚▼/security-bugs.rst
 
-然后 send 一个 patch (including 一个 commit log 与 全部 the details listed
-下文) 和 follow up 在 任何 feedback 来自 其他 developers.
+鐒跺悗 send 涓€涓?patch (including 涓€涓?commit log 涓?鍏ㄩ儴 the details listed
+涓嬫枃) 鍜?follow up 鍦?浠讳綍 feedback 鏉ヨ嚜 鍏朵粬 developers.
 
-当 sending patches produced 来自 research, the commit logs 应当
-包含 至少 the 以下 details, 因此 该 developers 具有
-appropriate 上下文 用于 understanding the contribution. Answer:
+褰?sending patches produced 鏉ヨ嚜 research, the commit logs 搴斿綋
+鍖呭惈 鑷冲皯 the 浠ヤ笅 details, 鍥犳 璇?developers 鍏锋湁
+appropriate 涓婁笅鏂?鐢ㄤ簬 understanding the contribution. Answer:
 
-- 什么 是 the 特定 problem 该 具有 已经 found?
-- 如何 可以 the problem 为 reached 在 一个 运行中 系统?
-- 什么 effect 将会 encountering the problem 具有 在 the 系统?
-- 如何 曾是 the problem found? Specifically 包含 details 关于 任何
-  testing, 静态 或 动态 analysis programs, 和 任何 其他 tools 或
-  方法 使用 到 perform the work.
-- 其 版本 的 Linux 曾是 the problem found 在? 使用 the 大多数 recent
-  释放 或 一个 recent linux-next branch 是 strongly preferred (参见
-  Documentation/进程/howto.rst).
-- 什么 曾是 changed 到 fix the problem, 和 为何 它是 believed 到 为 correct?
-- 如何 曾是 the change build tested 和 run-time tested?
-- 什么 prior commit 执行 此 change fix? 此 应当 go 在 一个 "Fixes:"
-  tag 作为 the documentation describes.
-- 谁 else 具有 reviewed 此 patch? 此 应当 go 在 appropriate
-  "Reviewed-by:" tags; 参见 下文.
+- 浠€涔?鏄?the 鐗瑰畾 problem 璇?鍏锋湁 宸茬粡 found?
+- 濡備綍 鍙互 the problem 涓?reached 鍦?涓€涓?杩愯涓?绯荤郴缁?
+- 浠€涔?effect 灏嗕細 encountering the problem 鍏锋湁 鍦?the 绯荤郴缁?
+- 濡備綍 鏇炬槸 the problem found? Specifically 鍖呭惈 details 鍏充簬 浠讳綍
+  testing, 闈欐€?鎴?鍔ㄦ€?analysis programs, 鍜?浠讳綍 鍏朵粬 tools 鎴?
+  鏂规硶 浣跨敤 鍒?perform the work.
+- 鍏?鐗堟湰 鐨?Linux 鏇炬槸 the problem found 鍦? 浣跨敤 the 澶у鏁?recent
+  閲婃斁 鎴?涓€涓?recent linux-next branch 鏄?strongly preferred (鍙傝
+  Documentation/杩涚▼/howto.rst).
+- 浠€涔?鏇炬槸 changed 鍒?fix the problem, 鍜?涓轰綍 瀹冩槸 believed 鍒?涓?correct?
+- 濡備綍 鏇炬槸 the change build tested 鍜?run-time tested?
+- 浠€涔?prior commit 鎵ц 姝?change fix? 姝?搴斿綋 go 鍦?涓€涓?"Fixes:"
+  tag 浣滀负 the documentation describes.
+- 璋?else 鍏锋湁 reviewed 姝?patch? 姝?搴斿綋 go 鍦?appropriate
+  "Reviewed-by:" tags; 鍙傝 涓嬫枃.
 
 ```
 
@@ -152,18 +152,18 @@ appropriate 上下文 用于 understanding the contribution. Answer:
   Reviewed-by: Reviewer <reviewer@email>
 
 ```
-若 您 是 一个 第一 time contributor 它是 recommended 该 the patch
-itself 为 vetted 由 others privately 之前 正在 posted 到 公共 列表.
-(这是 必需 若 您 具有 已经 explicitly told 您的 patches 需要
-更多 careful 内部 review.) 这些 people 是 expected 到 具有 它们的
-"Reviewed-by" tag included 在 the resulting patch. Finding another
-developer familiar 与 Linux contribution, especially 之内 您的 own
-organization, 和 having them help 与 reviews 之前 sending them 到
-the 公共 mailing 列表 tends 到 significantly improve the quality 的 the
-resulting patches, 和 那里 由 reduces the burden 在 其他 developers.
+鑻?鎮?鏄?涓€涓?绗竴 time contributor 瀹冩槸 recommended 璇?the patch
+itself 涓?vetted 鐢?others privately 涔嬪墠 姝ｅ湪 posted 鍒?鍏叡 鍒楄〃.
+(杩欐槸 蹇呴渶 鑻?鎮?鍏锋湁 宸茬粡 explicitly told 鎮ㄧ殑 patches 闇€瑕?
+鏇村 careful 鍐呴儴 review.) 杩欎簺 people 鏄?expected 鍒?鍏锋湁 瀹冧滑鐨?
+"Reviewed-by" tag included 鍦?the resulting patch. Finding another
+developer familiar 涓?Linux contribution, especially 涔嬪唴 鎮ㄧ殑 own
+organization, 鍜?having them help 涓?reviews 涔嬪墠 sending them 鍒?
+the 鍏叡 mailing 鍒楄〃 tends 鍒?significantly improve the quality 鐨?the
+resulting patches, 鍜?閭ｉ噷 鐢?reduces the burden 鍦?鍏朵粬 developers.
 
-若 无 one 可 为 found 到 internally review patches 和 您 需要
-help finding 此类 一个 person, 或 若 您 具有 任何 其他 questions
-related 到 此 document 和 the developer community's expectations,
-请 reach out 到 the 私有 Technical Advisory Board mailing 列出:
+鑻?鏃?one 鍙?涓?found 鍒?internally review patches 鍜?鎮?闇€瑕?
+help finding 姝ょ被 涓€涓?person, 鎴?鑻?鎮?鍏锋湁 浠讳綍 鍏朵粬 questions
+related 鍒?姝?document 鍜?the developer community's expectations,
+璇?reach out 鍒?the 绉佹湁 Technical Advisory Board mailing 鍒楀嚭:
 <tech-board@groups.linuxfoundation.org>.

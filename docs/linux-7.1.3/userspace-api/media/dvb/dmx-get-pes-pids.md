@@ -1,4 +1,4 @@
-## DMX_GET_PES_PIDS
+﻿## DMX_GET_PES_PIDS
 
 
 ### Name
@@ -15,16 +15,13 @@ DMX_GET_PES_PIDS
 
 
 `fd`
-    `open()` 返回的文件描述符。
-
+    `open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `pids`
-    用于存储 5 个节目 ID（Program ID）的数组。
-
+    鐢ㄤ簬瀛樺偍 5 涓妭鐩?ID锛圥rogram ID锛夌殑鏁扮粍銆?
 ### Description
 
 
-该 ioctl 用于查询 DVB 设备，以返回给定服务中音频、视频、图文电视（teletext）、字幕和 PCR 节目所使用的第一个 PID。它们按如下方式存储：
-
+璇?ioctl 鐢ㄤ簬鏌ヨ DVB 璁惧锛屼互杩斿洖缁欏畾鏈嶅姟涓煶棰戙€佽棰戙€佸浘鏂囩數瑙嗭紙teletext锛夈€佸瓧骞曞拰 PCR 鑺傜洰鎵€浣跨敤鐨勭涓€涓?PID銆傚畠浠寜濡備笅鏂瑰紡瀛樺偍锛?
 =======================	========	=======================================
 PID  element		position	content
 =======================	========	=======================================
@@ -36,13 +33,10 @@ pids[DMX_PES_PCR]	4		first Program Clock Reference PID
 =======================	========	=======================================
 
 
-	等于 0xffff 的值表示该 PID 未被内核（Kernel）填充。
-
+	绛変簬 0xffff 鐨勫€艰〃绀鸿 PID 鏈鍐呮牳锛圞ernel锛夊～鍏呫€?
 ### Return Value
 
 
-成功时返回 0。
-
-出错时返回 -1，并相应地设置 `errno` 变量。
-
-通用错误码在 Generic Error Codes <gen-errors> 章节中描述。
+鎴愬姛鏃惰繑鍥?0銆?
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?

@@ -1,16 +1,16 @@
-## MUCSE(R) 千兆 PCI Express 适配器 Linux 基础驱动
+﻿## MUCSE(R) 鍗冨厗 PCI Express 閫傞厤鍣?Linux 鍩虹椹卞姩
 
 
-## 目录
+## 鐩綍
 
 
-- 识别你的适配器
+- 璇嗗埆浣犵殑閫傞厤鍣?
 
 
-## 识别你的适配器
+## 璇嗗埆浣犵殑閫傞厤鍣?
 
 
-该驱动兼容基于以下设备的产品：
+璇ラ┍鍔ㄥ吋瀹瑰熀浜庝互涓嬭澶囩殑浜у搧锛?
 
  - MUCSE(R) Ethernet Controller N210 series
  - MUCSE(R) Ethernet Controller N500 series

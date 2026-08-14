@@ -1,22 +1,17 @@
-## OMAP PM 接口
+﻿## OMAP PM 鎺ュ彛
 
 
-本文档描述了临时的 OMAP PM 接口。驱动开发者使用这些函数，向内核电源管理代码传达最低延迟或吞吐量约束。长远目标是把 OMAP PM 接口的特性合并到 Linux PM QoS 代码之中。
+鏈枃妗ｆ弿杩颁簡涓存椂鐨?OMAP PM 鎺ュ彛銆傞┍鍔ㄥ紑鍙戣€呬娇鐢ㄨ繖浜涘嚱鏁帮紝鍚戝唴鏍哥數婧愮鐞嗕唬鐮佷紶杈炬渶浣庡欢杩熸垨鍚炲悙閲忕害鏉熴€傞暱杩滅洰鏍囨槸鎶?OMAP PM 鎺ュ彛鐨勭壒鎬у悎骞跺埌 Linux PM QoS 浠ｇ爜涔嬩腑銆?
+椹卞姩闇€瑕佽〃杈炬弧瓒充互涓嬫潯浠剁殑鐢垫簮绠＄悊鍙傛暟锛?
+- 鏀寔 TI SRF 涓瓨鍦ㄧ殑鐢垫簮绠＄悊鍙傛暟鑼冨洿锛?
+- 灏嗛┍鍔ㄤ笌搴曞眰鐨?PM 鍙傛暟瀹炵幇鐩稿垎绂伙紝鏃犺鍏舵槸 TI SRF銆丩inux PM QoS銆丩inux 寤惰繜妗嗘灦锛岃繕鏄叾浠栧疄鐜帮紱
 
-驱动需要表达满足以下条件的电源管理参数：
+- 浠ュ熀鏈崟浣嶏紙渚嬪寤惰繜鍜屽悶鍚愰噺锛夛紝鑰岄潪 OMAP 涓撴湁鎴栫壒瀹?OMAP 鍙樹綋涓撴湁鐨勫崟浣嶆潵鎸囧畾 PM 鍙傛暟锛?
+- 鍏佽涓庡叾浠栨灦鏋勶紙渚嬪 DaVinci锛夊叡浜殑椹卞姩锛屼互涓嶅奖鍝嶉潪 OMAP 绯荤粺鐨勬柟寮忔坊鍔犺繖浜涚害鏉燂紱
 
-- 支持 TI SRF 中存在的电源管理参数范围；
+- 鑳藉绔嬪嵆瀹炵幇锛屼笖瀵瑰叾浠栨灦鏋勭殑骞叉壈鏈€灏忋€?
 
-- 将驱动与底层的 PM 参数实现相分离，无论其是 TI SRF、Linux PM QoS、Linux 延迟框架，还是其他实现；
-
-- 以基本单位（例如延迟和吞吐量），而非 OMAP 专有或特定 OMAP 变体专有的单位来指定 PM 参数；
-
-- 允许与其他架构（例如 DaVinci）共享的驱动，以不影响非 OMAP 系统的方式添加这些约束；
-
-- 能够立即实现，且对其他架构的干扰最小。
-
-
-本文档提出 OMAP PM 接口，包含供驱动代码使用的以下五个电源管理函数：
+鏈枃妗ｆ彁鍑?OMAP PM 鎺ュ彛锛屽寘鍚緵椹卞姩浠ｇ爜浣跨敤鐨勪互涓嬩簲涓數婧愮鐞嗗嚱鏁帮細
 
 ```
    (*pdata->set_max_mpu_wakeup_lat)(struct device *dev, unsigned long t)
@@ -34,28 +29,23 @@
    (*pdata->get_dev_context_loss_count)(struct device *dev)
 ```
 
-所有 OMAP PM 接口函数的进一步文档可在 arch/arm/plat-omap/include/mach/omap-pm.h 中找到。
+鎵€鏈?OMAP PM 鎺ュ彛鍑芥暟鐨勮繘涓€姝ユ枃妗ｅ彲鍦?arch/arm/plat-omap/include/mach/omap-pm.h 涓壘鍒般€?
+
+### OMAP PM 灞傝璁′负涓存椂鏂规
 
 
-### OMAP PM 层设计为临时方案
+鐩爣鏄渶缁堢敱 Linux PM QoS 灞傛敮鎸?OMAP3 涓瓨鍦ㄧ殑鐢垫簮绠＄悊鐗规€ц寖鍥淬€傞殢鐫€杩欎竴鐩爣瀹炵幇锛屼娇鐢?OMAP PM 鎺ュ彛鐨勬棦鏈夐┍鍔ㄥ彲浠ヤ慨鏀逛负浣跨敤 Linux PM QoS 浠ｇ爜锛涘眾鏃?OMAP PM 鎺ュ彛渚垮彲琚Щ闄ゃ€?
 
+### 椹卞姩瀵?OMAP PM 鍑芥暟鐨勪娇鐢?
 
-目标是最终由 Linux PM QoS 层支持 OMAP3 中存在的电源管理特性范围。随着这一目标实现，使用 OMAP PM 接口的既有驱动可以修改为使用 Linux PM QoS 代码；届时 OMAP PM 接口便可被移除。
-
-
-### 驱动对 OMAP PM 函数的使用
-
-
-正如上述示例中的 'pdata' 所示，这些函数通过驱动 `.platform_data` 结构中的函数指针暴露给驱动。这些函数指针由 `board-*.c` 文件初始化，指向相应的 OMAP PM 函数：
-
-- set_max_dev_wakeup_lat 将指向 omap_pm_set_max_dev_wakeup_lat() 等。不支持这些函数的其他架构应将这类函数指针保持为 NULL。
-
+姝ｅ涓婅堪绀轰緥涓殑 'pdata' 鎵€绀猴紝杩欎簺鍑芥暟閫氳繃椹卞姩 `.platform_data` 缁撴瀯涓殑鍑芥暟鎸囬拡鏆撮湶缁欓┍鍔ㄣ€傝繖浜涘嚱鏁版寚閽堢敱 `board-*.c` 鏂囦欢鍒濆鍖栵紝鎸囧悜鐩稿簲鐨?OMAP PM 鍑芥暟锛?
+- set_max_dev_wakeup_lat 灏嗘寚鍚?omap_pm_set_max_dev_wakeup_lat() 绛夈€備笉鏀寔杩欎簺鍑芥暟鐨勫叾浠栨灦鏋勫簲灏嗚繖绫诲嚱鏁版寚閽堜繚鎸佷负 NULL銆?
 ```
         if (pdata->set_max_dev_wakeup_lat)
             (*pdata->set_max_dev_wakeup_lat)(dev, t);
 ```
 
-这些函数最常见的用法大概是：指定从中断发生到设备变为可访问之间的最大时间。为此，驱动编写者应使 set_max_mpu_wakeup_lat() 函数约束 MPU 唤醒延迟，并使用 set_max_dev_wakeup_lat() 函数约束设备唤醒延迟（从 clk_enable() 到可访问）。例如：
+杩欎簺鍑芥暟鏈€甯歌鐨勭敤娉曞ぇ姒傛槸锛氭寚瀹氫粠涓柇鍙戠敓鍒拌澶囧彉涓哄彲璁块棶涔嬮棿鐨勬渶澶ф椂闂淬€備负姝わ紝椹卞姩缂栧啓鑰呭簲浣?set_max_mpu_wakeup_lat() 鍑芥暟绾︽潫 MPU 鍞ら啋寤惰繜锛屽苟浣跨敤 set_max_dev_wakeup_lat() 鍑芥暟绾︽潫璁惧鍞ら啋寤惰繜锛堜粠 clk_enable() 鍒板彲璁块棶锛夈€備緥濡傦細
 
 ```
         /* Limit MPU wakeup latency */
@@ -69,15 +59,13 @@
         /* total wakeup latency in this example: (tc + td) */
 ```
 
-可以通过再次调用该函数并传入新值来覆盖 PM 参数。可以通过将 t 参数设为 -1 来移除设置（set_max_bus_tput() 除外，它应以 r 参数设为 0 来调用）。
+鍙互閫氳繃鍐嶆璋冪敤璇ュ嚱鏁板苟浼犲叆鏂板€兼潵瑕嗙洊 PM 鍙傛暟銆傚彲浠ラ€氳繃灏?t 鍙傛暟璁句负 -1 鏉ョЩ闄よ缃紙set_max_bus_tput() 闄ゅ锛屽畠搴斾互 r 鍙傛暟璁句负 0 鏉ヨ皟鐢級銆?
+涓婅堪绗簲涓嚱鏁?omap_pm_get_dev_context_loss_count()锛屾棬鍦ㄤ綔涓轰竴绉嶄紭鍖栵紝浣块┍鍔ㄨ兘澶熷垽鏂澶囨槸鍚﹀凡涓㈠け鍏跺唴閮ㄤ笂涓嬫枃銆傚鏋滀笂涓嬫枃宸蹭涪澶憋紝椹卞姩蹇呴』鍦ㄧ户缁箣鍓嶆仮澶嶅叾鍐呴儴涓婁笅鏂囥€?
 
-上述第五个函数 omap_pm_get_dev_context_loss_count()，旨在作为一种优化，使驱动能够判断设备是否已丢失其内部上下文。如果上下文已丢失，驱动必须在继续之前恢复其内部上下文。
-
-
-### 其他专用接口函数
+### 鍏朵粬涓撶敤鎺ュ彛鍑芥暟
 
 
-上面列出的五个函数旨在供任何设备驱动使用。DSPBridge 和 CPUFreq 有一些特殊需求。DSPBridge 以 OPP ID 的形式表达目标 DSP 性能级别。CPUFreq 以 MPU 频率的形式表达目标 MPU 性能级别。OMAP PM 接口为这些专用场景提供了函数，用于将该输入信息（OPP/MPU 频率）转换为底层电源管理实现所需的形式：
+涓婇潰鍒楀嚭鐨勪簲涓嚱鏁版棬鍦ㄤ緵浠讳綍璁惧椹卞姩浣跨敤銆侱SPBridge 鍜?CPUFreq 鏈変竴浜涚壒娈婇渶姹傘€侱SPBridge 浠?OPP ID 鐨勫舰寮忚〃杈剧洰鏍?DSP 鎬ц兘绾у埆銆侰PUFreq 浠?MPU 棰戠巼鐨勫舰寮忚〃杈剧洰鏍?MPU 鎬ц兘绾у埆銆侽MAP PM 鎺ュ彛涓鸿繖浜涗笓鐢ㄥ満鏅彁渚涗簡鍑芥暟锛岀敤浜庡皢璇ヨ緭鍏ヤ俊鎭紙OPP/MPU 棰戠巼锛夎浆鎹负搴曞眰鐢垫簮绠＄悊瀹炵幇鎵€闇€鐨勫舰寮忥細
 
 6. `(*pdata->dsp_get_opp_table)(void)`
 
@@ -91,15 +79,14 @@
 
 11. `(*pdata->cpu_get_freq)(void)`
 
-## 为平台定制 OPP
+## 涓哄钩鍙板畾鍒?OPP
 
-定义 CONFIG_PM 应当会为硅片启用 OPP 层，并且 OPP 表的注册应当自动进行。然而在特殊情况下，默认的 OPP 表可能需要调整，例如：
+瀹氫箟 CONFIG_PM 搴斿綋浼氫负纭呯墖鍚敤 OPP 灞傦紝骞朵笖 OPP 琛ㄧ殑娉ㄥ唽搴斿綋鑷姩杩涜銆傜劧鑰屽湪鐗规畩鎯呭喌涓嬶紝榛樿鐨?OPP 琛ㄥ彲鑳介渶瑕佽皟鏁达紝渚嬪锛?
+ - 鍚敤榛樿琚鐢ㄣ€佷絾鍦ㄦ煇骞冲彴涓婂彲浠ュ惎鐢ㄧ殑榛樿 OPP
+ - 鍦ㄨ骞冲彴涓婄鐢ㄤ竴涓笉鍙楁敮鎸佺殑 OPP
+ - 瀹氫箟骞舵坊鍔犺嚜瀹氫箟鐨?OPP 琛ㄩ」
 
- - 启用默认被禁用、但在某平台上可以启用的默认 OPP
- - 在该平台上禁用一个不受支持的 OPP
- - 定义并添加自定义的 OPP 表项
-
-在这些情况下，板级文件需要执行如下额外步骤：
+鍦ㄨ繖浜涙儏鍐典笅锛屾澘绾ф枃浠堕渶瑕佹墽琛屽涓嬮澶栨楠わ細
 
 ```
 	#include "pm.h"
@@ -114,5 +101,4 @@
 	}
 ```
 
-注意：
-  omapx_opp_init 将依据 omap 系列成为 omap3_opp_init 或相应名称。
+娉ㄦ剰锛?  omapx_opp_init 灏嗕緷鎹?omap 绯诲垪鎴愪负 omap3_opp_init 鎴栫浉搴斿悕绉般€?

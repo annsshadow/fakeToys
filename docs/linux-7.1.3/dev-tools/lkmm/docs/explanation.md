@@ -1,11 +1,11 @@
+﻿
+### 璇存槑
 
-### 说明
-
-本文档收录 Linux 内核内存模型（LKMM）的说明性内容，引入 explanation.txt 逐节阐释内存屏障、读写依赖与一致性语义，供理解并发与内存序的开发者参考。
+鏈枃妗ｆ敹褰?Linux 鍐呮牳鍐呭瓨妯″瀷锛圠KMM锛夌殑璇存槑鎬у唴瀹癸紝寮曞叆 explanation.txt 閫愯妭闃愰噴鍐呭瓨灞忛殰銆佽鍐欎緷璧栦笌涓€鑷存€ц涔夛紝渚涚悊瑙ｅ苟鍙戜笌鍐呭瓨搴忕殑寮€鍙戣€呭弬鑰冦€?
 
 
 
-字面包含 `tools/memory-model/Documentation/explanation.txt`.
+瀛楅潰鍖呭惈 `tools/memory-model/Documentation/explanation.txt`.
 
 ------------------------------------------------------------------
 

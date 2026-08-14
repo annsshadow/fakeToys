@@ -1,73 +1,59 @@
+﻿
 
-
-## LG Gram 笔记本额外特性
-
+## LG Gram 绗旇鏈澶栫壒鎬?
 
 By Matan Ziv-Av <matan@svgalib.org>
 
 
-### 热键
+### 鐑敭
 
 
-以下 FN 键在没有此驱动时会被内核忽略：
+浠ヤ笅 FN 閿湪娌℃湁姝ら┍鍔ㄦ椂浼氳鍐呮牳蹇界暐锛?
+- FN-F1锛圠G 鎺у埗闈㈡澘锛?  - 浜х敓 F15
+- FN-F5锛堣Е鎽告澘寮€鍏筹級    - 浜х敓 F21
+- FN-F6锛堥琛屾ā寮忥級      - 浜х敓 RFKILL
+- FN-F9锛堥槄璇绘ā寮忥級      - 浜х敓 F14
 
-- FN-F1（LG 控制面板）   - 产生 F15
-- FN-F5（触摸板开关）    - 产生 F21
-- FN-F6（飞行模式）      - 产生 RFKILL
-- FN-F9（阅读模式）      - 产生 F14
+鍏朵綑 FN 閿棤闇€鐗规畩椹卞姩鍗冲彲宸ヤ綔銆?
 
-其余 FN 键无需特殊驱动即可工作。
-
-
-### 阅读模式
+### 闃呰妯″紡
 
 
-向 /sys/devices/platform/lg-laptop/reader_mode 写入 0/1 可禁用/启用阅读模式。在此模式下屏幕颜色会改变（蓝色减少），并且阅读模式指示灯 LED（位于 F9 键上）亮起。
+鍚?/sys/devices/platform/lg-laptop/reader_mode 鍐欏叆 0/1 鍙鐢?鍚敤闃呰妯″紡銆傚湪姝ゆā寮忎笅灞忓箷棰滆壊浼氭敼鍙橈紙钃濊壊鍑忓皯锛夛紝骞朵笖闃呰妯″紡鎸囩ず鐏?LED锛堜綅浜?F9 閿笂锛変寒璧枫€?
+
+### FN 閿佸畾
 
 
-### FN 锁定
+鍚?/sys/devices/platform/lg-laptop/fn_lock 鍐欏叆 0/1 鍙鐢?鍚敤 FN 閿佸畾銆?
+
+### 鐢垫睜淇濆吇涓婇檺
 
 
-向 /sys/devices/platform/lg-laptop/fn_lock 写入 0/1 可禁用/启用 FN 锁定。
+鍚?/sys/class/power_supply/CMB0/charge_control_end_threshold 鍐欏叆 80/100 鍙缃數姹犲厖鐢电殑鏈€澶у閲忋€傞檺鍒跺厖鐢靛彲鍑忓皯鐢垫睜瀹归噺闅忔椂闂存崯鑰椼€?
+璇ュ€煎湪 kernel 寮曞鏃堕噸缃负 100銆?
+
+### 椋庢墖妯″紡
 
 
-### 电池保养上限
+鍚?/sys/devices/platform/lg-laptop/fan_mode 鍐欏叆 0/1/2 鍙垎鍒皢椋庢墖妯″紡璁句负 鏈€浼?闈欓煶/鎬ц兘銆?
+
+### USB 鍏呯數
 
 
-向 /sys/class/power_supply/CMB0/charge_control_end_threshold 写入 80/100 可设置电池充电的最大容量。限制充电可减少电池容量随时间损耗。
-
-该值在 kernel 引导时重置为 100。
-
-
-### 风扇模式
-
-
-向 /sys/devices/platform/lg-laptop/fan_mode 写入 0/1/2 可分别将风扇模式设为 最优/静音/性能。
-
-
-### USB 充电
-
-
-向 /sys/devices/platform/lg-laptop/usb_charge 写入 0/1 可在设备关机时禁用/启用从 USB 端口为另一台设备充电。
-
-该值在 kernel 引导时重置为 0。
-
+鍚?/sys/devices/platform/lg-laptop/usb_charge 鍐欏叆 0/1 鍙湪璁惧鍏虫満鏃剁鐢?鍚敤浠?USB 绔彛涓哄彟涓€鍙拌澶囧厖鐢点€?
+璇ュ€煎湪 kernel 寮曞鏃堕噸缃负 0銆?
 
 #### LED
 
 
-驱动支持两个 LED 设备：
+椹卞姩鏀寔涓や釜 LED 璁惧锛?
+
+### 閿洏鑳屽厜鐏?
+
+涓€涓悕涓?kbd_led 鐨?led 璁惧鎺у埗閿洏鑳屽厜鐏€傚叡鏈変笁涓寒搴︾骇鍒細鍏抽棴锛?锛夈€佷綆锛?27锛夊拰楂橈紙255锛夈€?
+閿洏鑳屽厜鐏篃鐢辨寜閿粍鍚?FN-F8 鎺у埗锛岃缁勫悎鍦ㄨ繖浜涚骇鍒棿寰幆鍒囨崲銆?
+
+### 瑙︽懜鏉挎寚绀虹伅 LED
 
 
-### 键盘背光灯
-
-
-一个名为 kbd_led 的 led 设备控制键盘背光灯。共有三个亮度级别：关闭（0）、低（127）和高（255）。
-
-键盘背光灯也由按键组合 FN-F8 控制，该组合在这些级别间循环切换。
-
-
-### 触摸板指示灯 LED
-
-
-位于 F5 键上。由名为 tpad_led 的 led 设备控制。
+浣嶄簬 F5 閿笂銆傜敱鍚嶄负 tpad_led 鐨?led 璁惧鎺у埗銆?

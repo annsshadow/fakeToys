@@ -1,24 +1,24 @@
-## Firewire 驱动
+﻿## Firewire 椹卞姩
 
 
-媒体子系统还提供了一个用于数字电视的 firewire 驱动：
+濯掍綋瀛愮郴缁熻繕鎻愪緵浜嗕竴涓敤浜庢暟瀛楃數瑙嗙殑 firewire 椹卞姩锛?
 
 =======  =====================
-驱动     名称
+椹卞姩     鍚嶇О
 =======  =====================
-firedtv  FireDTV 和 FloppyDTV
+firedtv  FireDTV 鍜?FloppyDTV
 =======  =====================
 
-## 测试驱动
+## 娴嬭瘯椹卞姩
 
 
-为了测试用户空间应用程序，有一系列虚拟驱动，提供测试功能，模拟真实硬件设备：
+涓轰簡娴嬭瘯鐢ㄦ埛绌洪棿搴旂敤绋嬪簭锛屾湁涓€绯诲垪铏氭嫙椹卞姩锛屾彁渚涙祴璇曞姛鑳斤紝妯℃嫙鐪熷疄纭欢璁惧锛?
 
 =======  ======================================
-驱动     名称
+椹卞姩     鍚嶇О
 =======  ======================================
-vicodec  Virtual Codec Driver（虚拟编解码驱动）
-vim2m    Virtual Memory-to-Memory Driver（虚拟内存到内存驱动）
-vimc     Virtual Media Controller Driver (VIMC)（虚拟媒体控制器驱动）
-vivid    Virtual Video Test Driver（虚拟视频测试驱动）
+vicodec  Virtual Codec Driver锛堣櫄鎷熺紪瑙ｇ爜椹卞姩锛?
+vim2m    Virtual Memory-to-Memory Driver锛堣櫄鎷熷唴瀛樺埌鍐呭瓨椹卞姩锛?
+vimc     Virtual Media Controller Driver (VIMC)锛堣櫄鎷熷獟浣撴帶鍒跺櫒椹卞姩锛?
+vivid    Virtual Video Test Driver锛堣櫄鎷熻棰戞祴璇曢┍鍔級
 =======  ======================================

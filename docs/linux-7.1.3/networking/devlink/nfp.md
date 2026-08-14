@@ -1,14 +1,13 @@
-
-## nfp devlink 支持
-
-
-本文档描述 `nfp` 设备驱动实现的 devlink 特性。
-
-## 参数
+﻿
+## nfp devlink 鏀寔
 
 
-   - - 名称
-     - 模式
+鏈枃妗ｆ弿杩?`nfp` 璁惧椹卞姩瀹炵幇鐨?devlink 鐗规€с€?
+## 鍙傛暟
+
+
+   - - 鍚嶇О
+     - 妯″紡
    - - `fw_load_policy`
      - permanent
    - - `reset_dev_on_drv_probe`
@@ -17,46 +16,44 @@
 ## Info versions
 
 
-`nfp` 驱动上报以下版本
+`nfp` 椹卞姩涓婃姤浠ヤ笅鐗堟湰
 
    :widths: 5 5 90
 
-   - - 名称
-     - 类型
-     - 描述
+   - - 鍚嶇О
+     - 绫诲瀷
+     - 鎻忚堪
    - - `board.id`
      - fixed
-     - 板卡设计标识符
-   - - `board.rev`
+     - 鏉垮崱璁捐鏍囪瘑绗?   - - `board.rev`
      - fixed
-     - 板卡设计修订号
-   - - `board.manufacture`
+     - 鏉垮崱璁捐淇鍙?   - - `board.manufacture`
      - fixed
-     - 板卡设计厂商
+     - 鏉垮崱璁捐鍘傚晢
    - - `board.model`
      - fixed
-     - 板卡设计型号名称
+     - 鏉垮崱璁捐鍨嬪彿鍚嶇О
    - - `board.part_number`
      - fixed
-     - 板卡及其组件的部件号
+     - 鏉垮崱鍙婂叾缁勪欢鐨勯儴浠跺彿
    - - `fw.bundle_id`
      - stored, running
-     - 固件 bundle id
+     - 鍥轰欢 bundle id
    - - `fw.mgmt`
      - stored, running
-     - 管理固件版本
+     - 绠＄悊鍥轰欢鐗堟湰
    - - `fw.cpld`
      - stored, running
-     - CPLD 固件组件版本
+     - CPLD 鍥轰欢缁勪欢鐗堟湰
    - - `fw.app`
      - stored, running
-     - APP 固件组件版本
+     - APP 鍥轰欢缁勪欢鐗堟湰
    - - `fw.undi`
      - stored, running
-     - UNDI 固件组件版本
+     - UNDI 鍥轰欢缁勪欢鐗堟湰
    - - `fw.ncsi`
      - stored, running
-     - NSCI 固件组件版本
+     - NSCI 鍥轰欢缁勪欢鐗堟湰
    - - `chip.init`
      - stored, running
-     - CFGR 固件组件版本
+     - CFGR 鍥轰欢缁勪欢鐗堟湰

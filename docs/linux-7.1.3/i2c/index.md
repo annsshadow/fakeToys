@@ -1,47 +1,45 @@
-## I2C/SMBus 子系统
+﻿## I2C/SMBus 瀛愮郴缁?
 
+## 绠€浠?
 
-## 简介
-
-
-- [概述](summary)
-- [i2c 协议](i2c-protocol)
-- [smbus 协议](smbus-protocol)
-- [实例化设备](instantiating-devices)
-- [总线索引](busses/index)
-- [i2c 拓扑](i2c-topology)
-- [多路复用器/i2c-mux-gpio](muxes/i2c-mux-gpio)
+- [姒傝堪](summary)
+- [i2c 鍗忚](i2c-protocol)
+- [smbus 鍗忚](smbus-protocol)
+- [瀹炰緥鍖栬澶嘳(instantiating-devices)
+- [鎬荤嚎绱㈠紩](busses/index)
+- [i2c 鎷撴墤](i2c-topology)
+- [澶氳矾澶嶇敤鍣?i2c-mux-gpio](muxes/i2c-mux-gpio)
 - [i2c sysfs](i2c-sysfs)
-- [i2c 地址转换器](i2c-address-translators)
+- [i2c 鍦板潃杞崲鍣╙(i2c-address-translators)
 
-## 编写设备驱动
-
-
-- [编写客户端](writing-clients)
-- [设备接口](dev-interface)
-- [DMA 注意事项](dma-considerations)
-- [错误码](fault-codes)
-- [功能](functionality)
-
-## 调试
+## 缂栧啓璁惧椹卞姩
 
 
-- [gpio 故障注入](gpio-fault-injection)
-- [i2c 桩](i2c-stub)
+- [缂栧啓瀹㈡埛绔痌(writing-clients)
+- [璁惧鎺ュ彛](dev-interface)
+- [DMA 娉ㄦ剰浜嬮」](dma-considerations)
+- [閿欒鐮乚(fault-codes)
+- [鍔熻兘](functionality)
 
-## 从属 I2C
-
-
-- [从属接口](slave-interface)
-- [从属 eeprom 后端](slave-eeprom-backend)
-- [从属 testunit 后端](slave-testunit-backend)
-
-## 高级主题
+## 璋冭瘯
 
 
-- [十位地址](ten-bit-addresses)
+- [gpio 鏁呴殰娉ㄥ叆](gpio-fault-injection)
+- [i2c 妗(i2c-stub)
 
-## 遗留文档
+## 浠庡睘 I2C
 
 
-- [旧的模块参数](old-module-parameters)
+- [浠庡睘鎺ュ彛](slave-interface)
+- [浠庡睘 eeprom 鍚庣](slave-eeprom-backend)
+- [浠庡睘 testunit 鍚庣](slave-testunit-backend)
+
+## 楂樼骇涓婚
+
+
+- [鍗佷綅鍦板潃](ten-bit-addresses)
+
+## 閬楃暀鏂囨。
+
+
+- [鏃х殑妯″潡鍙傛暟](old-module-parameters)

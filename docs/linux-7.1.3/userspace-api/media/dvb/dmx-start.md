@@ -1,39 +1,33 @@
-
+﻿
 
 
 ## DMX_START
 
 
-### 名称
+### 鍚嶇О
 
 
 DMX_START
 
-### 概要
+### 姒傝
 
 
 
 `int ioctl(int fd, DMX_START)`
 
-### 参数
+### 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
-
-### 描述
-
-
-此 ioctl 调用用于启动通过 ioctl 调用 DMX_SET_FILTER 或
-DMX_SET_PES_FILTER 定义的实际过滤操作。
-
-### 返回值
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+### 鎻忚堪
 
 
-成功时返回 0。
+姝?ioctl 璋冪敤鐢ㄤ簬鍚姩閫氳繃 ioctl 璋冪敤 DMX_SET_FILTER 鎴?DMX_SET_PES_FILTER 瀹氫箟鐨勫疄闄呰繃婊ゆ搷浣溿€?
+### 杩斿洖鍊?
 
-出错时返回 -1，并相应地设置 `errno` 变量。
-
+鎴愬姛鏃惰繑鍥?0銆?
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
 
     :header-rows:  0
     :stub-columns: 0
@@ -42,14 +36,12 @@ DMX_SET_PES_FILTER 定义的实际过滤操作。
 
        - `EINVAL`
 
-       - 无效参数，即未通过 DMX_SET_FILTER 或 DMX_SET_PES_FILTER ioctl
-	  提供任何过滤参数。
-
+       - 鏃犳晥鍙傛暟锛屽嵆鏈€氳繃 DMX_SET_FILTER 鎴?DMX_SET_PES_FILTER ioctl
+	  鎻愪緵浠讳綍杩囨护鍙傛暟銆?
     - .. row 2
 
        - `EBUSY`
 
-       - 此错误码表示存在冲突请求。有活动的过滤器正在从另一个输入源
-	 过滤数据。在启动此过滤器之前，请确保这些过滤器已停止。
-
-通用错误码的描述见通用错误码 <gen-errors> 章节。
+       - 姝ら敊璇爜琛ㄧず瀛樺湪鍐茬獊璇锋眰銆傛湁娲诲姩鐨勮繃婊ゅ櫒姝ｅ湪浠庡彟涓€涓緭鍏ユ簮
+	 杩囨护鏁版嵁銆傚湪鍚姩姝よ繃婊ゅ櫒涔嬪墠锛岃纭繚杩欎簺杩囨护鍣ㄥ凡鍋滄銆?
+閫氱敤閿欒鐮佺殑鎻忚堪瑙侀€氱敤閿欒鐮?<gen-errors> 绔犺妭銆?

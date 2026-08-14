@@ -1,9 +1,8 @@
+﻿
+## BusLogic FlashPoint SCSI 椹卞姩
 
-## BusLogic FlashPoint SCSI 驱动
 
-
-BusLogic FlashPoint SCSI 主机适配器如今已在 Linux 上得到完全支持。下文所述的升级计划已于 1997 年 3 月 31 日因不再需要而正式终止。
-
+BusLogic FlashPoint SCSI 涓绘満閫傞厤鍣ㄥ浠婂凡鍦?Linux 涓婂緱鍒板畬鍏ㄦ敮鎸併€備笅鏂囨墍杩扮殑鍗囩骇璁″垝宸蹭簬 1997 骞?3 鏈?31 鏃ュ洜涓嶅啀闇€瑕佽€屾寮忕粓姝€?
 ```
 
   	  MYLEX INTRODUCES LINUX OPERATING SYSTEM SUPPORT FOR ITS
@@ -25,23 +24,18 @@ BusLogic FlashPoint SCSI 主机适配器如今已在 Linux 上得到完全支持
 
 ```
 
-## Linux 操作系统
+## Linux 鎿嶄綔绯荤粺
 
 
-Linux 是一个自由分发的 UNIX 实现，适用于 Intel x86、Sun SPARC、SGI MIPS、Motorola 68k、Digital Alpha AXP 以及 Motorola PowerPC 机器。它支持广泛的软件，包括 X Window System、Emacs 和 TCP/IP 网络。更多信息可在 http://www.linux.org 和 http://www.ssc.com/ 获取。
+Linux 鏄竴涓嚜鐢卞垎鍙戠殑 UNIX 瀹炵幇锛岄€傜敤浜?Intel x86銆丼un SPARC銆丼GI MIPS銆丮otorola 68k銆丏igital Alpha AXP 浠ュ強 Motorola PowerPC 鏈哄櫒銆傚畠鏀寔骞挎硾鐨勮蒋浠讹紝鍖呮嫭 X Window System銆丒macs 鍜?TCP/IP 缃戠粶銆傛洿澶氫俊鎭彲鍦?http://www.linux.org 鍜?http://www.ssc.com/ 鑾峰彇銆?
+## FlashPoint 涓绘満閫傞厤鍣?
 
-## FlashPoint 主机适配器
-
-
-为工作站和文件服务器环境设计的 FlashPoint 系列 Ultra SCSI 主机适配器，有窄型、宽型、双通道以及双通道宽型版本。这些适配器具有 SeqEngine 自动化技术，可将 SCSI 命令开销降至最低，并减少向 CPU 产生的中断数量。
-
-## 关于 Mylex
+涓哄伐浣滅珯鍜屾枃浠舵湇鍔″櫒鐜璁捐鐨?FlashPoint 绯诲垪 Ultra SCSI 涓绘満閫傞厤鍣紝鏈夌獎鍨嬨€佸鍨嬨€佸弻閫氶亾浠ュ強鍙岄€氶亾瀹藉瀷鐗堟湰銆傝繖浜涢€傞厤鍣ㄥ叿鏈?SeqEngine 鑷姩鍖栨妧鏈紝鍙皢 SCSI 鍛戒护寮€閿€闄嶈嚦鏈€浣庯紝骞跺噺灏戝悜 CPU 浜х敓鐨勪腑鏂暟閲忋€?
+## 鍏充簬 Mylex
 
 
-Mylex 公司（NASDAQ/NM 代码：MYLX）成立于 1983 年，是 RAID 技术和网络管理产品的领先生产商。该公司生产高性能磁盘阵列（RAID）控制器，以及用于网络服务器、大容量存储系统、工作站和系统板的配套计算机产品。通过其广泛的 RAID 控制器产品线以及 BusLogic 系列 Ultra SCSI 主机适配器产品，Mylex 提供了赋能的智能 I/O 技术，可增强网络管理控制、提升 CPU 利用率、优化 I/O 性能，并确保数据安全与可用性。产品通过 OEM、主要分销商、VAR 和系统集成商网络在全球销售。Mylex 公司总部位于加州弗里蒙特 Ardenwood Blvd. 34551 号。
-
-## 联系方式：
-
+Mylex 鍏徃锛圢ASDAQ/NM 浠ｇ爜锛歁YLX锛夋垚绔嬩簬 1983 骞达紝鏄?RAID 鎶€鏈拰缃戠粶绠＄悊浜у搧鐨勯鍏堢敓浜у晢銆傝鍏徃鐢熶骇楂樻€ц兘纾佺洏闃靛垪锛圧AID锛夋帶鍒跺櫒锛屼互鍙婄敤浜庣綉缁滄湇鍔″櫒銆佸ぇ瀹归噺瀛樺偍绯荤粺銆佸伐浣滅珯鍜岀郴缁熸澘鐨勯厤濂楄绠楁満浜у搧銆傞€氳繃鍏跺箍娉涚殑 RAID 鎺у埗鍣ㄤ骇鍝佺嚎浠ュ強 BusLogic 绯诲垪 Ultra SCSI 涓绘満閫傞厤鍣ㄤ骇鍝侊紝Mylex 鎻愪緵浜嗚祴鑳界殑鏅鸿兘 I/O 鎶€鏈紝鍙寮虹綉缁滅鐞嗘帶鍒躲€佹彁鍗?CPU 鍒╃敤鐜囥€佷紭鍖?I/O 鎬ц兘锛屽苟纭繚鏁版嵁瀹夊叏涓庡彲鐢ㄦ€с€備骇鍝侀€氳繃 OEM銆佷富瑕佸垎閿€鍟嗐€乂AR 鍜岀郴缁熼泦鎴愬晢缃戠粶鍦ㄥ叏鐞冮攢鍞€侻ylex 鍏徃鎬婚儴浣嶄簬鍔犲窞寮楅噷钂欑壒 Ardenwood Blvd. 34551 鍙枫€?
+## 鑱旂郴鏂瑰紡锛?
 
 ```
 

@@ -1,14 +1,14 @@
-## 随机数生成器（RNG）
+﻿## 闅忔満鏁扮敓鎴愬櫒锛圧NG锛?
 
 
-以下为内核随机数生成器（RNG）子系统对外提供的 API 文档。
+浠ヤ笅涓哄唴鏍搁殢鏈烘暟鐢熸垚鍣紙RNG锛夊瓙绯荤粺瀵瑰鎻愪緵鐨?API 鏂囨。銆?
 
-### 随机数算法定义
+### 闅忔満鏁扮畻娉曞畾涔?
 
 
    :functions: rng_alg
 
-### Crypto API 随机数 API
+### Crypto API 闅忔満鏁?API
 
 
    :doc: Random number generator API

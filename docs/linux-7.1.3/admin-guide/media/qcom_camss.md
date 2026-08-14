@@ -1,127 +1,87 @@
-
-## Qualcomm 摄像头子系统驱动
-
-
-### 简介
+﻿
+## Qualcomm 鎽勫儚澶村瓙绯荤粺椹卞姩
 
 
-本文件记录了位于 drivers/media/platform/qcom/camss 下的 Qualcomm 摄像头
-子系统驱动。
+### 绠€浠?
 
-当前版本的驱动支持在 Qualcomm MSM8916/APQ8016 以及 MSM8996/APQ8096
-处理器上发现的摄像头子系统。
+鏈枃浠惰褰曚簡浣嶄簬 drivers/media/platform/qcom/camss 涓嬬殑 Qualcomm 鎽勫儚澶?瀛愮郴缁熼┍鍔ㄣ€?
+褰撳墠鐗堟湰鐨勯┍鍔ㄦ敮鎸佸湪 Qualcomm MSM8916/APQ8016 浠ュ強 MSM8996/APQ8096
+澶勭悊鍣ㄤ笂鍙戠幇鐨勬憚鍍忓ご瀛愮郴缁熴€?
+璇ラ┍鍔ㄥ疄鐜颁簡 V4L2銆丮edia controller锛堝獟浣撴帶鍒跺櫒锛変互鍙?V4L2 subdev 鎺ュ彛銆?鏀寔鍦ㄥ唴鏍镐腑浣跨敤 V4L2 subdev 鎺ュ彛鐨勬憚鍍忓ご浼犳劅鍣ㄣ€?
+璇ラ┍鍔ㄤ互 Code Linaro 涓殑 Qualcomm 鎽勫儚澶村瓙绯荤粺 Android 椹卞姩 [#f1]_ [#f2]_
+浣滀负鍙傝€冨疄鐜般€?
 
-该驱动实现了 V4L2、Media controller（媒体控制器）以及 V4L2 subdev 接口。
-支持在内核中使用 V4L2 subdev 接口的摄像头传感器。
-
-该驱动以 Code Linaro 中的 Qualcomm 摄像头子系统 Android 驱动 [#f1]_ [#f2]_
-作为参考实现。
-
-
-### Qualcomm 摄像头子系统硬件
+### Qualcomm 鎽勫儚澶村瓙绯荤粺纭欢
 
 
-驱动所支持的 8x16 / 8x96 处理器上的摄像头子系统硬件由以下部分组成：
+椹卞姩鎵€鏀寔鐨?8x16 / 8x96 澶勭悊鍣ㄤ笂鐨勬憚鍍忓ご瀛愮郴缁熺‖浠剁敱浠ヤ笅閮ㄥ垎缁勬垚锛?
+- 2 / 3 涓?CSIPHY 妯″潡銆傚畠浠鐞?CSI2 鎺ユ敹鍣ㄧ殑鐗╃悊灞傘€傛瘡涓?CSIPHY 妯″潡
+  鍙繛鎺ヤ竴涓嫭绔嬬殑鎽勫儚澶翠紶鎰熷櫒锛?- 2 / 4 涓?CSID锛圕SI 瑙ｇ爜鍣級妯″潡銆傚畠浠鐞?CSI2 鎺ユ敹鍣ㄧ殑鍗忚灞備笌搴旂敤
+  灞傘€備竴涓?CSID 鍙互瑙ｇ爜鏉ヨ嚜浠绘剰 CSIPHY 鐨勬暟鎹祦銆傛瘡涓?CSID 杩樺寘鍚竴涓?  TG锛堟祴璇曠敓鎴愬櫒锛夊潡锛屽彲鐢ㄤ簬鐢熸垚浜哄伐杈撳叆鏁版嵁浠ヨ繘琛屾祴璇曪紱
+- ISPIF锛圛SP 鎺ュ彛锛夋ā鍧椼€傝礋璐ｅ皢鏁版嵁娴佷粠 CSID 璺敱鍒?VFE 鐨勮緭鍏ョ锛?- 1 / 2 涓?VFE锛堣棰戝墠绔級妯″潡銆傚寘鍚竴鏉″浘鍍忓鐞嗙殑纭欢鍧楁祦姘寸嚎銆俈FE
+  鍏锋湁澶氱杈撳叆鎺ュ彛銆侾IX锛堝儚绱狅級杈撳叆鎺ュ彛灏嗚緭鍏ユ暟鎹€佸叆鍥惧儚澶勭悊娴佹按绾裤€?  鍥惧儚澶勭悊娴佹按绾挎湯绔繕鍖呭惈涓€涓缉鏀句笌瑁佸壀妯″潡銆備笁涓?RDI锛圧aw Dump
+  Interface锛屽師濮嬭浆鍌ㄦ帴鍙ｏ級杈撳叆鎺ュ彛浼氱粫杩囧浘鍍忓鐞嗘祦姘寸嚎銆俈FE 杩樺寘鍚?  灏嗚緭鍑烘暟鎹啓鍏ュ唴瀛樼殑 AXI 鎬荤嚎鎺ュ彛銆?
 
-- 2 / 3 个 CSIPHY 模块。它们处理 CSI2 接收器的物理层。每个 CSIPHY 模块
-  可连接一个独立的摄像头传感器；
-- 2 / 4 个 CSID（CSI 解码器）模块。它们处理 CSI2 接收器的协议层与应用
-  层。一个 CSID 可以解码来自任意 CSIPHY 的数据流。每个 CSID 还包含一个
-  TG（测试生成器）块，可用于生成人工输入数据以进行测试；
-- ISPIF（ISP 接口）模块。负责将数据流从 CSID 路由到 VFE 的输入端；
-- 1 / 2 个 VFE（视频前端）模块。包含一条图像处理的硬件块流水线。VFE
-  具有多种输入接口。PIX（像素）输入接口将输入数据送入图像处理流水线。
-  图像处理流水线末端还包含一个缩放与裁剪模块。三个 RDI（Raw Dump
-  Interface，原始转储接口）输入接口会绕过图像处理流水线。VFE 还包含
-  将输出数据写入内存的 AXI 总线接口。
+### 鏀寔鐨勫姛鑳?
 
+褰撳墠鐗堟湰鐨勯┍鍔ㄦ敮鎸侊細
 
-### 支持的功能
+- 閫氳繃 CSIPHY 鏉ヨ嚜鎽勫儚澶翠紶鎰熷櫒鐨勮緭鍏ワ紱
+- 鐢?CSID 涓殑 TG 鐢熸垚娴嬭瘯杈撳叆鏁版嵁锛?- VFE 鐨?RDI 鎺ュ彛
 
+  - 灏嗚緭鍏ユ暟鎹師濮嬭浆鍌ㄥ埌鍐呭瓨銆?
+    鏀寔鐨勬牸寮忥細
 
-当前版本的驱动支持：
-
-- 通过 CSIPHY 来自摄像头传感器的输入；
-- 由 CSID 中的 TG 生成测试输入数据；
-- VFE 的 RDI 接口
-
-  - 将输入数据原始转储到内存。
-
-    支持的格式：
-
-    - YUYV/UYVY/YVYU/VYUY（打包 YUV 4:2:2 - V4L2_PIX_FMT_YUYV /
-      V4L2_PIX_FMT_UYVY / V4L2_PIX_FMT_YVYU / V4L2_PIX_FMT_VYUY）；
-    - MIPI RAW8（8 位 Bayer RAW - V4L2_PIX_FMT_SRGGB8 /
-      V4L2_PIX_FMT_SGRBG8 / V4L2_PIX_FMT_SGBRG8 / V4L2_PIX_FMT_SBGGR8）；
-    - MIPI RAW10（10 位打包 Bayer RAW - V4L2_PIX_FMT_SBGGR10P /
+    - YUYV/UYVY/YVYU/VYUY锛堟墦鍖?YUV 4:2:2 - V4L2_PIX_FMT_YUYV /
+      V4L2_PIX_FMT_UYVY / V4L2_PIX_FMT_YVYU / V4L2_PIX_FMT_VYUY锛夛紱
+    - MIPI RAW8锛? 浣?Bayer RAW - V4L2_PIX_FMT_SRGGB8 /
+      V4L2_PIX_FMT_SGRBG8 / V4L2_PIX_FMT_SGBRG8 / V4L2_PIX_FMT_SBGGR8锛夛紱
+    - MIPI RAW10锛?0 浣嶆墦鍖?Bayer RAW - V4L2_PIX_FMT_SBGGR10P /
       V4L2_PIX_FMT_SGBRG10P / V4L2_PIX_FMT_SGRBG10P / V4L2_PIX_FMT_SRGGB10P /
-      V4L2_PIX_FMT_Y10P）；
-    - MIPI RAW12（12 位打包 Bayer RAW - V4L2_PIX_FMT_SRGGB12P /
-      V4L2_PIX_FMT_SGBRG12P / V4L2_PIX_FMT_SGRBG12P / V4L2_PIX_FMT_SRGGB12P）。
-    - （仅 8x96）MIPI RAW14（14 位打包 Bayer RAW - V4L2_PIX_FMT_SRGGB14P /
-      V4L2_PIX_FMT_SGBRG14P / V4L2_PIX_FMT_SGRBG14P / V4L2_PIX_FMT_SRGGB14P）。
+      V4L2_PIX_FMT_Y10P锛夛紱
+    - MIPI RAW12锛?2 浣嶆墦鍖?Bayer RAW - V4L2_PIX_FMT_SRGGB12P /
+      V4L2_PIX_FMT_SGBRG12P / V4L2_PIX_FMT_SGRBG12P / V4L2_PIX_FMT_SRGGB12P锛夈€?    - 锛堜粎 8x96锛塎IPI RAW14锛?4 浣嶆墦鍖?Bayer RAW - V4L2_PIX_FMT_SRGGB14P /
+      V4L2_PIX_FMT_SGBRG14P / V4L2_PIX_FMT_SGRBG14P / V4L2_PIX_FMT_SRGGB14P锛夈€?
+  - 锛堜粎 8x96锛夎緭鍏ユ暟鎹殑鏍煎紡杞崲銆?
+    鏀寔鐨勮緭鍏ユ牸寮忥細
 
-  - （仅 8x96）输入数据的格式转换。
+    - MIPI RAW10锛?0 浣嶆墦鍖?Bayer RAW - V4L2_PIX_FMT_SBGGR10P / V4L2_PIX_FMT_Y10P锛夈€?
+    鏀寔鐨勮緭鍑烘牸寮忥細
 
-    支持的输入格式：
+    - Plain16 RAW10锛?0 浣嶉潪鎵撳寘 Bayer RAW - V4L2_PIX_FMT_SBGGR10 / V4L2_PIX_FMT_Y10锛夈€?
+- VFE 鐨?PIX 鎺ュ彛
 
-    - MIPI RAW10（10 位打包 Bayer RAW - V4L2_PIX_FMT_SBGGR10P / V4L2_PIX_FMT_Y10P）。
+  - 杈撳叆鏁版嵁鐨勬牸寮忚浆鎹€?
+    鏀寔鐨勮緭鍏ユ牸寮忥細
 
-    支持的输出格式：
+    - YUYV/UYVY/YVYU/VYUY锛堟墦鍖?YUV 4:2:2 - V4L2_PIX_FMT_YUYV /
+      V4L2_PIX_FMT_UYVY / V4L2_PIX_FMT_YVYU / V4L2_PIX_FMT_VYUY锛夈€?
+    鏀寔鐨勮緭鍑烘牸寮忥細
 
-    - Plain16 RAW10（10 位非打包 Bayer RAW - V4L2_PIX_FMT_SBGGR10 / V4L2_PIX_FMT_Y10）。
+    - NV12/NV21锛堝弻骞抽潰 YUV 4:2:0 - V4L2_PIX_FMT_NV12 / V4L2_PIX_FMT_NV21锛夛紱
+    - NV16/NV61锛堝弻骞抽潰 YUV 4:2:2 - V4L2_PIX_FMT_NV16 / V4L2_PIX_FMT_NV61锛夈€?    - 锛堜粎 8x96锛塝UYV/UYVY/YVYU/VYUY锛堟墦鍖?YUV 4:2:2 - V4L2_PIX_FMT_YUYV /
+      V4L2_PIX_FMT_UYVY / V4L2_PIX_FMT_YVYU / V4L2_PIX_FMT_VYUY锛夈€?
+  - 缂╂斁鏀寔銆傞厤缃?VFE Encoder Scale 妯″潡浠ヨ繘琛屾渶楂?16x 鐨勭缉灏忋€?
+  - 瑁佸壀鏀寔銆傞厤缃?VFE Encoder Crop 妯″潡銆?
+- 涓や釜锛?x96锛氫笁涓級鏁版嵁杈撳叆鐨勫苟鍙戜笌鐙珛浣跨敤鈥斺€斿彲浠ユ槸鎽勫儚澶翠紶鎰熷櫒
+  鍜?鎴?TG銆?
 
-- VFE 的 PIX 接口
+### 椹卞姩鏋舵瀯涓庤璁?
 
-  - 输入数据的格式转换。
+璇ラ┍鍔ㄥ疄鐜颁簡 V4L2 subdev 鎺ュ彛銆備负浜嗗妯″潡涔嬮棿鐨勭‖浠惰繛鎺ヨ繘琛屽缓妯★紝骞?鏆撮湶涓€涓共鍑€銆佸悎涔庨€昏緫涓斿彲鐢ㄧ殑鎺ュ彛锛岄┍鍔ㄦ寜濡備笅鏂瑰紡鎷嗗垎涓?V4L2 瀛愯澶?锛?x16 / 8x96锛夛細
 
-    支持的输入格式：
+- 2 / 3 涓?CSIPHY 瀛愯澶団€斺€旀瘡涓?CSIPHY 鐢变竴涓嫭绔嬬殑瀛愯澶囪〃绀猴紱
+- 2 / 4 涓?CSID 瀛愯澶団€斺€旀瘡涓?CSID 鐢变竴涓嫭绔嬬殑瀛愯澶囪〃绀猴紱
+- 2 / 4 涓?ISPIF 瀛愯澶団€斺€擨SPIF 鐢辨暟閲忎笌 CSID 瀛愯澶囩浉绛夌殑瀛愯澶囪〃绀猴紱
+- 4 / 8 涓?VFE 瀛愯澶団€斺€擵FE 鐢辨暟閲忎笌杈撳叆鎺ュ彛鏁扮浉绛夌殑瀛愯澶囪〃绀猴紙姣忎釜
+  VFE 鏈?3 涓?RDI 鍜?1 涓?PIX锛夈€?
+浠ユ鐗瑰畾鏂瑰紡鎷嗗垎椹卞姩鐨勭悊鐢卞涓嬶細
 
-    - YUYV/UYVY/YVYU/VYUY（打包 YUV 4:2:2 - V4L2_PIX_FMT_YUYV /
-      V4L2_PIX_FMT_UYVY / V4L2_PIX_FMT_YVYU / V4L2_PIX_FMT_VYUY）。
-
-    支持的输出格式：
-
-    - NV12/NV21（双平面 YUV 4:2:0 - V4L2_PIX_FMT_NV12 / V4L2_PIX_FMT_NV21）；
-    - NV16/NV61（双平面 YUV 4:2:2 - V4L2_PIX_FMT_NV16 / V4L2_PIX_FMT_NV61）。
-    - （仅 8x96）YUYV/UYVY/YVYU/VYUY（打包 YUV 4:2:2 - V4L2_PIX_FMT_YUYV /
-      V4L2_PIX_FMT_UYVY / V4L2_PIX_FMT_YVYU / V4L2_PIX_FMT_VYUY）。
-
-  - 缩放支持。配置 VFE Encoder Scale 模块以进行最高 16x 的缩小。
-
-  - 裁剪支持。配置 VFE Encoder Crop 模块。
-
-- 两个（8x96：三个）数据输入的并发与独立使用——可以是摄像头传感器
-  和/或 TG。
-
-
-### 驱动架构与设计
-
-
-该驱动实现了 V4L2 subdev 接口。为了对模块之间的硬件连接进行建模，并
-暴露一个干净、合乎逻辑且可用的接口，驱动按如下方式拆分为 V4L2 子设备
-（8x16 / 8x96）：
-
-- 2 / 3 个 CSIPHY 子设备——每个 CSIPHY 由一个独立的子设备表示；
-- 2 / 4 个 CSID 子设备——每个 CSID 由一个独立的子设备表示；
-- 2 / 4 个 ISPIF 子设备——ISPIF 由数量与 CSID 子设备相等的子设备表示；
-- 4 / 8 个 VFE 子设备——VFE 由数量与输入接口数相等的子设备表示（每个
-  VFE 有 3 个 RDI 和 1 个 PIX）。
-
-以此特定方式拆分驱动的理由如下：
-
-- 将 CSIPHY 和 CSID 模块各自表示为一个独立的子设备，可以对这些模块之间
-  的硬件连接进行建模；
-- 将 VFE 的每个输入接口表示为独立的子设备，可以并发且独立地使用这些
-  输入接口，正如硬件所支持的那样；
-- 将 ISPIF 表示为数量与 CSID 子设备相等的子设备，可以在同时使用两个
-  摄像头时创建线性的媒体控制器流水线。这避免了流水线中的分支，否则
-  分支会要求 a) 用户空间以及 b) 媒体框架（例如上电/下电操作）对从单个
-  媒体实体的 sink pad 到 source pad 的数据流做出假设。
-
-每个 VFE 子设备都连接到一个独立的视频设备节点。
-
-媒体控制器流水线图如下（连接了两个 / 三个 OV5645 摄像头传感器）：
+- 灏?CSIPHY 鍜?CSID 妯″潡鍚勮嚜琛ㄧず涓轰竴涓嫭绔嬬殑瀛愯澶囷紝鍙互瀵硅繖浜涙ā鍧椾箣闂?  鐨勭‖浠惰繛鎺ヨ繘琛屽缓妯★紱
+- 灏?VFE 鐨勬瘡涓緭鍏ユ帴鍙ｈ〃绀轰负鐙珛鐨勫瓙璁惧锛屽彲浠ュ苟鍙戜笖鐙珛鍦颁娇鐢ㄨ繖浜?  杈撳叆鎺ュ彛锛屾濡傜‖浠舵墍鏀寔鐨勯偅鏍凤紱
+- 灏?ISPIF 琛ㄧず涓烘暟閲忎笌 CSID 瀛愯澶囩浉绛夌殑瀛愯澶囷紝鍙互鍦ㄥ悓鏃朵娇鐢ㄤ袱涓?  鎽勫儚澶存椂鍒涘缓绾挎€х殑濯掍綋鎺у埗鍣ㄦ祦姘寸嚎銆傝繖閬垮厤浜嗘祦姘寸嚎涓殑鍒嗘敮锛屽惁鍒?  鍒嗘敮浼氳姹?a) 鐢ㄦ埛绌洪棿浠ュ強 b) 濯掍綋妗嗘灦锛堜緥濡備笂鐢?涓嬬數鎿嶄綔锛夊浠庡崟涓?  濯掍綋瀹炰綋鐨?sink pad 鍒?source pad 鐨勬暟鎹祦鍋氬嚭鍋囪銆?
+姣忎釜 VFE 瀛愯澶囬兘杩炴帴鍒颁竴涓嫭绔嬬殑瑙嗛璁惧鑺傜偣銆?
+濯掍綋鎺у埗鍣ㄦ祦姘寸嚎鍥惧涓嬶紙杩炴帴浜嗕袱涓?/ 涓変釜 OV5645 鎽勫儚澶翠紶鎰熷櫒锛夛細
 
 
     :alt:   qcom_camss_graph.dot
@@ -135,29 +95,19 @@
     Media pipeline graph 8x96
 
 
-### 实现
+### 瀹炵幇
 
 
-当前所支持的功能并不需要硬件的运行时配置（在流传输过程中更新设置）。
-每个硬件模块的完整配置都在 STREAMON ioctl 时，根据当前激活的媒体链路、
-格式和已设置的控制项进行应用。
+褰撳墠鎵€鏀寔鐨勫姛鑳藉苟涓嶉渶瑕佺‖浠剁殑杩愯鏃堕厤缃紙鍦ㄦ祦浼犺緭杩囩▼涓洿鏂拌缃級銆?姣忎釜纭欢妯″潡鐨勫畬鏁撮厤缃兘鍦?STREAMON ioctl 鏃讹紝鏍规嵁褰撳墠婵€娲荤殑濯掍綋閾捐矾銆?鏍煎紡鍜屽凡璁剧疆鐨勬帶鍒堕」杩涜搴旂敤銆?
+VFE 涓缉鏀惧櫒妯″潡鐨勮緭鍑哄昂瀵革紝鐢?'msm_vfe0_pix' 瀹炰綋鐨?sink pad 涓婂疄闄呯殑
+compose 閫夊尯鐭╁舰鏉ラ厤缃€?
+VFE 涓鍓ā鍧楃殑杈撳嚭瑁佸壀鍖哄煙锛岀敱 'msm_vfe0_pix' 瀹炰綋鐨?source pad 涓?瀹為檯鐨?crop 閫夊尯鐭╁舰鏉ラ厤缃€?
 
-VFE 中缩放器模块的输出尺寸，由 'msm_vfe0_pix' 实体的 sink pad 上实际的
-compose 选区矩形来配置。
-
-VFE 中裁剪模块的输出裁剪区域，由 'msm_vfe0_pix' 实体的 source pad 上
-实际的 crop 选区矩形来配置。
+### 鏂囨。
 
 
-### 文档
-
-
-APQ8016 规格：
-https://developer.qualcomm.com/download/sd410/snapdragon-410-processor-device-specification.pdf
-引用日期 2016-11-24。
-
-APQ8096 规格：
-https://developer.qualcomm.com/download/sd820e/qualcomm-snapdragon-820e-processor-apq8096sge-device-specification.pdf
-引用日期 2018-06-22。
-
-### 参考
+APQ8016 瑙勬牸锛?https://developer.qualcomm.com/download/sd410/snapdragon-410-processor-device-specification.pdf
+寮曠敤鏃ユ湡 2016-11-24銆?
+APQ8096 瑙勬牸锛?https://developer.qualcomm.com/download/sd820e/qualcomm-snapdragon-820e-processor-apq8096sge-device-specification.pdf
+寮曠敤鏃ユ湡 2018-06-22銆?
+### 鍙傝€?

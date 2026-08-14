@@ -1,9 +1,9 @@
-## 中断（IRQ）
+﻿## 涓柇锛圛RQ锛?
 
-本页面汇总中断子系统相关文档。
+鏈〉闈㈡眹鎬讳腑鏂瓙绯荤粺鐩稿叧鏂囨。銆?
 
-- [中断概念](concepts)
-- [中断亲和力](irq-affinity)
-- [中断域](irq-domain)
-- [中断标志追踪](irqflags-tracing)
-- [托管中断](managed_irq)
+- [涓柇姒傚康](concepts)
+- [涓柇浜插拰鍔沒(irq-affinity)
+- [涓柇鍩焆(irq-domain)
+- [涓柇鏍囧織杩借釜](irqflags-tracing)
+- [鎵樼涓柇](managed_irq)

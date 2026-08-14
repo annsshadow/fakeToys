@@ -1,25 +1,25 @@
-## STM32 ARM Linux 概述
+﻿## STM32 ARM Linux 姒傝堪
 
 
-### 简介
+### 绠€浠?
 
 
-意法半导体（STMicroelectronics）的 STM32 系列 Cortex-A 微处理器（MPU）和 Cortex-M 微控制器（MCU）由 ARM Linux 的 'STM32' 平台提供支持。
+鎰忔硶鍗婂浣擄紙STMicroelectronics锛夌殑 STM32 绯诲垪 Cortex-A 寰鐞嗗櫒锛圡PU锛夊拰 Cortex-M 寰帶鍒跺櫒锛圡CU锛夌敱 ARM Linux 鐨?'STM32' 骞冲彴鎻愪緵鏀寔銆?
 
-### 配置
+### 閰嶇疆
 
 
-对于 MCU，使用提供的默认配置：
+瀵逛簬 MCU锛屼娇鐢ㄦ彁渚涚殑榛樿閰嶇疆锛?
         make stm32_defconfig
-对于 MPU，使用 multi_v7 配置：
+瀵逛簬 MPU锛屼娇鐢?multi_v7 閰嶇疆锛?
         make multi_v7_defconfig
 
-### 布局
+### 甯冨眬
 
 
-多个机器系列的所有文件都位于 arch/arm/mach-stm32 内的平台代码中。
+澶氫釜鏈哄櫒绯诲垪鐨勬墍鏈夋枃浠堕兘浣嶄簬 arch/arm/mach-stm32 鍐呯殑骞冲彴浠ｇ爜涓€?
 
-mach 文件夹中有一个通用的 board-dt.c，支持扁平设备树（Flattened Device Tree），这意味着它可以与任何兼容的设备树板卡配合工作。
+mach 鏂囦欢澶逛腑鏈変竴涓€氱敤鐨?board-dt.c锛屾敮鎸佹墎骞宠澶囨爲锛團lattened Device Tree锛夛紝杩欐剰鍛崇潃瀹冨彲浠ヤ笌浠讳綍鍏煎鐨勮澶囨爲鏉垮崱閰嶅悎宸ヤ綔銆?
 
 :Authors:
 

@@ -1,30 +1,30 @@
-## STM32H750 概述
+﻿## STM32H750 姒傝堪
 
 
-### 简介
+### 绠€浠?
 
 
-STM32H750 是面向各种应用的 Cortex-M7 MCU。它具有以下特性：
+STM32H750 鏄潰鍚戝悇绉嶅簲鐢ㄧ殑 Cortex-M7 MCU銆傚畠鍏锋湁浠ヤ笅鐗规€э細
 
-- 运行频率最高达 480MHz 的 Cortex-M7 核心
-- 128K 内部 flash，1MB 内部 RAM
-- 用于连接 SDRAM、NOR 和 NAND 存储器的 FMC 控制器
-- 双模式 QSPI
-- SD/MMC/SDIO 支持
-- 以太网控制器
-- USB OTFG FS & HS 控制器
-- I2C、SPI、CAN 总线支持
-- 多个 16 位与 32 位通用定时器
-- 串行音频接口
-- LCD 控制器
+- 杩愯棰戠巼鏈€楂樿揪 480MHz 鐨?Cortex-M7 鏍稿績
+- 128K 鍐呴儴 flash锛?MB 鍐呴儴 RAM
+- 鐢ㄤ簬杩炴帴 SDRAM銆丯OR 鍜?NAND 瀛樺偍鍣ㄧ殑 FMC 鎺у埗鍣?
+- 鍙屾ā寮?QSPI
+- SD/MMC/SDIO 鏀寔
+- 浠ュお缃戞帶鍒跺櫒
+- USB OTFG FS & HS 鎺у埗鍣?
+- I2C銆丼PI銆丆AN 鎬荤嚎鏀寔
+- 澶氫釜 16 浣嶄笌 32 浣嶉€氱敤瀹氭椂鍣?
+- 涓茶闊抽鎺ュ彛
+- LCD 鎺у埗鍣?
 - HDMI-CEC
 - SPDIFRX
 - DFSDM
 
-### 资源
+### 璧勬簮
 
 
-数据手册与参考手册在 ST 官网公开提供（STM32H750_）。
+鏁版嵁鎵嬪唽涓庡弬鑰冩墜鍐屽湪 ST 瀹樼綉鍏紑鎻愪緵锛圫TM32H750_锛夈€?
 
 
 :Authors: Dillon Min <dillon.minfei@gmail.com>

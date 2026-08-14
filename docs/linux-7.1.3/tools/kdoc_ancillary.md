@@ -1,22 +1,14 @@
-## 辅助类（Ancillary classes）
+﻿## 杈呭姪绫伙紙Ancillary classes锛?
 
 
-## Argparse 格式化器类
-
-
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-## 正则表达式类处理器
+## Argparse 鏍煎紡鍖栧櫒绫?
 
 
    :members:
    :show-inheritance:
    :undoc-members:
 
-
-## C 分词器（tokenizer）
+## 姝ｅ垯琛ㄨ揪寮忕被澶勭悊鍣?
 
 
    :members:
@@ -24,28 +16,36 @@
    :undoc-members:
 
 
-## 中文、日文和韩文可变字体处理器
+## C 鍒嗚瘝鍣紙tokenizer锛?
 
 
    :members:
    :show-inheritance:
    :undoc-members:
 
-## 内核 C 文件包含逻辑
+
+## 涓枃銆佹棩鏂囧拰闊╂枃鍙彉瀛椾綋澶勭悊鍣?
 
 
    :members:
    :show-inheritance:
    :undoc-members:
 
-## Python 版本辅助方法
+## 鍐呮牳 C 鏂囦欢鍖呭惈閫昏緫
 
 
    :members:
    :show-inheritance:
    :undoc-members:
 
-## 将输出写入 YAML 文件
+## Python 鐗堟湰杈呭姪鏂规硶
+
+
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+## 灏嗚緭鍑哄啓鍏?YAML 鏂囦欢
 
 
    :members:

@@ -1,20 +1,20 @@
-## /proc/sys/abi/ 文档
+﻿## /proc/sys/abi/ 鏂囨。
 
 
 Copyright (c) 2020, Stephen Kitt
 
-一般性信息，请参见 Documentation/admin-guide/sysctl/index.rst。
+涓€鑸€т俊鎭紝璇峰弬瑙?Documentation/admin-guide/sysctl/index.rst銆?
 
 ------------------------------------------------------------------------------
 
-`/proc/sys/abi` 中的文件可用于查看和修改与 ABI 相关的设置。
+`/proc/sys/abi` 涓殑鏂囦欢鍙敤浜庢煡鐪嬪拰淇敼涓?ABI 鐩稿叧鐨勮缃€?
 
-目前，这些文件可能（取决于你的配置）出现在 `/proc/sys/kernel` 中：
-
-
-## vsyscall32（x86）
+鐩墠锛岃繖浜涙枃浠跺彲鑳斤紙鍙栧喅浜庝綘鐨勯厤缃級鍑虹幇鍦?`/proc/sys/kernel` 涓細
 
 
-确定内核是否将 vDSO 页面映射到 32 位进程中；可设为 1 启用，或设为 0 禁用。若设置了 `CONFIG_COMPAT_VDSO` 则默认启用，否则默认禁用。
+## vsyscall32锛坸86锛?
 
-这与 `vdso32` 内核启动参数控制的设置相同。
+
+纭畾鍐呮牳鏄惁灏?vDSO 椤甸潰鏄犲皠鍒?32 浣嶈繘绋嬩腑锛涘彲璁句负 1 鍚敤锛屾垨璁句负 0 绂佺敤銆傝嫢璁剧疆浜?`CONFIG_COMPAT_VDSO` 鍒欓粯璁ゅ惎鐢紝鍚﹀垯榛樿绂佺敤銆?
+
+杩欎笌 `vdso32` 鍐呮牳鍚姩鍙傛暟鎺у埗鐨勮缃浉鍚屻€?

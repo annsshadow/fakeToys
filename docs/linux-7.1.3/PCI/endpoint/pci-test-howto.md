@@ -1,16 +1,14 @@
-
-## PCI 测试用户指南
+﻿
+## PCI 娴嬭瘯鐢ㄦ埛鎸囧崡
 
 
 :Author: Kishon Vijay Abraham I <kishon@ti.com>
 
-本文档是一份指南，帮助用户使用 pci-epf-test 功能驱动与 pci_endpoint_test 主机驱动来测试 PCI。下面给出在主机侧与 EP 侧需要遵循的步骤列表。
+鏈枃妗ｆ槸涓€浠芥寚鍗楋紝甯姪鐢ㄦ埛浣跨敤 pci-epf-test 鍔熻兘椹卞姩涓?pci_endpoint_test 涓绘満椹卞姩鏉ユ祴璇?PCI銆備笅闈㈢粰鍑哄湪涓绘満渚т笌 EP 渚ч渶瑕侀伒寰殑姝ラ鍒楄〃銆?
+## 绔偣璁惧
 
-## 端点设备
 
-
-### 端点控制器设备
-
+### 绔偣鎺у埗鍣ㄨ澶?
 
 ```
 
@@ -26,7 +24,7 @@
 
 ```
 
-### 端点功能驱动
+### 绔偣鍔熻兘椹卞姩
 
 
 ```
@@ -43,10 +41,10 @@
 
 ```
 
-### 创建 pci-epf-test 设备
+### 鍒涘缓 pci-epf-test 璁惧
 
 
-可以使用 configfs 创建 PCI 端点功能设备。要创建设备，执行以下命令：
+鍙互浣跨敤 configfs 鍒涘缓 PCI 绔偣鍔熻兘璁惧銆傝鍒涘缓璁惧锛屾墽琛屼互涓嬪懡浠わ細
 
 ```
 
@@ -56,10 +54,8 @@
 
 ```
 
-上面的 "mkdir func1" 将创建 pci-epf-test 功能设备，该设备会被 pci_epf_test 驱动探测到。
-
-PCI 端点框架会在该目录下填充以下内容：
-
+涓婇潰鐨?"mkdir func1" 灏嗗垱寤?pci-epf-test 鍔熻兘璁惧锛岃璁惧浼氳 pci_epf_test 椹卞姩鎺㈡祴鍒般€?
+PCI 绔偣妗嗘灦浼氬湪璇ョ洰褰曚笅濉厖浠ヤ笅鍐呭锛?
 ```
 
 	# ls functions/pci_epf_test/func1
@@ -69,7 +65,7 @@ PCI 端点框架会在该目录下填充以下内容：
 
 ```
 
-当设备绑定到驱动时，PCI 端点功能驱动会用默认值填充这些条目。pci-epf-test 驱动会用类似以下的值填充这些条目：
+褰撹澶囩粦瀹氬埌椹卞姩鏃讹紝PCI 绔偣鍔熻兘椹卞姩浼氱敤榛樿鍊煎～鍏呰繖浜涙潯鐩€俻ci-epf-test 椹卞姩浼氱敤绫讳技浠ヤ笅鐨勫€煎～鍏呰繖浜涙潯鐩細
 
 ```
 
@@ -81,10 +77,10 @@ PCI 端点框架会在该目录下填充以下内容：
 
 ```
 
-### 配置 pci-epf-test 设备
+### 閰嶇疆 pci-epf-test 璁惧
 
 
-用户可以使用 configfs 条目配置 pci-epf-test 设备。要修改功能所使用的 vendorid 与 MSI 中断数量，执行以下命令：
+鐢ㄦ埛鍙互浣跨敤 configfs 鏉＄洰閰嶇疆 pci-epf-test 璁惧銆傝淇敼鍔熻兘鎵€浣跨敤鐨?vendorid 涓?MSI 涓柇鏁伴噺锛屾墽琛屼互涓嬪懡浠わ細
 
 ```
 
@@ -111,15 +107,12 @@ PCI 端点框架会在该目录下填充以下内容：
 
 ```
 
-覆盖默认的 BAR 大小只能在将 pci-epf-test 设备绑定到 PCI 端点控制器驱动之前进行。
+瑕嗙洊榛樿鐨?BAR 澶у皬鍙兘鍦ㄥ皢 pci-epf-test 璁惧缁戝畾鍒?PCI 绔偣鎺у埗鍣ㄩ┍鍔ㄤ箣鍓嶈繘琛屻€?
+娉ㄦ剰锛氭煇浜涚鐐规帶鍒跺櫒鍙兘鍏锋湁鍥哄畾澶у皬鎴栦繚鐣欑殑 BAR锛涘浜庤繖绫绘帶鍒跺櫒锛宑onfigfs 涓搴旂殑 BAR 澶у皬灏嗚蹇界暐銆?
 
-注意：某些端点控制器可能具有固定大小或保留的 BAR；对于这类控制器，configfs 中对应的 BAR 大小将被忽略。
+### 灏?pci-epf-test 璁惧缁戝畾鍒?EP 鎺у埗鍣?
 
-
-### 将 pci-epf-test 设备绑定到 EP 控制器
-
-
-为了让端点功能设备可用，必须将其绑定到 PCI 端点控制器驱动。使用 configfs 绑定该功能：
+涓轰簡璁╃鐐瑰姛鑳借澶囧彲鐢紝蹇呴』灏嗗叾缁戝畾鍒?PCI 绔偣鎺у埗鍣ㄩ┍鍔ㄣ€備娇鐢?configfs 缁戝畾璇ュ姛鑳斤細
 
 ```
 
@@ -127,14 +120,12 @@ PCI 端点框架会在该目录下填充以下内容：
 
 ```
 
-完成上述步骤后，PCI 端点即可准备与主机建立链路。
+瀹屾垚涓婅堪姝ラ鍚庯紝PCI 绔偣鍗冲彲鍑嗗涓庝富鏈哄缓绔嬮摼璺€?
+
+### 鍚姩閾捐矾
 
 
-### 启动链路
-
-
-端点设备要与主机建立链路，需向 start 属性写入 1：
-
+绔偣璁惧瑕佷笌涓绘満寤虹珛閾捐矾锛岄渶鍚?start 灞炴€у啓鍏?1锛?
 ```
 
 	# echo 1 > controllers/51000000.pcie_ep/start
@@ -142,13 +133,13 @@ PCI 端点框架会在该目录下填充以下内容：
 
 ```
 
-## RootComplex 设备
+## RootComplex 璁惧
 
 
-### lspci 输出
+### lspci 杈撳嚭
 
 
-请注意，此处列出的设备对应于前文配置中填充的值：
+璇锋敞鎰忥紝姝ゅ鍒楀嚭鐨勮澶囧搴斾簬鍓嶆枃閰嶇疆涓～鍏呯殑鍊硷細
 
 ```
 
@@ -158,10 +149,10 @@ PCI 端点框架会在该目录下填充以下内容：
 
 ```
 
-### 使用端点测试功能设备
+### 浣跨敤绔偣娴嬭瘯鍔熻兘璁惧
 
 
-tools/testing/selftests/pci_endpoint 中加入的 Kselftest 可用于运行所有默认的 PCI 端点测试。要构建 PCI 端点的 Kselftest，执行：
+tools/testing/selftests/pci_endpoint 涓姞鍏ョ殑 Kselftest 鍙敤浜庤繍琛屾墍鏈夐粯璁ょ殑 PCI 绔偣娴嬭瘯銆傝鏋勫缓 PCI 绔偣鐨?Kselftest锛屾墽琛岋細
 
 ```
 
@@ -176,9 +167,8 @@ tools/testing/selftests/pci_endpoint 中加入的 Kselftest 可用于运行所�
 
 ```
 
-测试程序将位于 <rootfs>/usr/bin/ 目录下。
-
-#### Kselftest 输出
+娴嬭瘯绋嬪簭灏嗕綅浜?<rootfs>/usr/bin/ 鐩綍涓嬨€?
+#### Kselftest 杈撳嚭
 
 ```
 
@@ -240,8 +230,7 @@ tools/testing/selftests/pci_endpoint 中加入的 Kselftest 可用于运行所�
 
 ```
 
-对于大多数支持 DMA 的端点控制器，测试用例 16（pci_ep_data_transfer.dma.COPY_TEST）会因缺少基于 DMA 的 MEMCPY 而失败。对于这类控制器，建议使用以下命令跳过该测试用例：
-
+瀵逛簬澶у鏁版敮鎸?DMA 鐨勭鐐规帶鍒跺櫒锛屾祴璇曠敤渚?16锛坧ci_ep_data_transfer.dma.COPY_TEST锛変細鍥犵己灏戝熀浜?DMA 鐨?MEMCPY 鑰屽け璐ャ€傚浜庤繖绫绘帶鍒跺櫒锛屽缓璁娇鐢ㄤ互涓嬪懡浠よ烦杩囪娴嬭瘯鐢ㄤ緥锛?
 ```
 
 	# pci_endpoint_test -f pci_ep_bar -f pci_ep_basic -v memcpy -T COPY_TEST -v dma
@@ -251,8 +240,7 @@ tools/testing/selftests/pci_endpoint 中加入的 Kselftest 可用于运行所�
 #### Kselftest EP Doorbell
 
 
-如果端点 MSI 控制器用于 doorbell（门铃）用例，请运行以下命令进行测试：
-
+濡傛灉绔偣 MSI 鎺у埗鍣ㄧ敤浜?doorbell锛堥棬閾冿級鐢ㄤ緥锛岃杩愯浠ヤ笅鍛戒护杩涜娴嬭瘯锛?
 	# pci_endpoint_test -f pcie_ep_doorbell
 
 	# Starting 1 tests from 1 test cases.

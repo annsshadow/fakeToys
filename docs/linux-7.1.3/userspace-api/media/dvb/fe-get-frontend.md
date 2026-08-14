@@ -1,38 +1,38 @@
-######## FE_GET_FRONTEND
+﻿######## FE_GET_FRONTEND
 
 
-## 名称
+## 鍚嶇О
 
 
 FE_GET_FRONTEND
 
 
-## 摘要
+## 鎽樿
 
 
 
 `int ioctl(int fd, FE_GET_FRONTEND, struct dvb_frontend_parameters *p)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `p`
-    指向调谐操作参数的指针。
+    鎸囧悜璋冭皭鎿嶄綔鍙傛暟鐨勬寚閽堛€?
 
-## 说明
-
-
-该 ioctl 调用查询当前生效的前端参数。对于该命令，对设备的只读访问即已足够。
-
-## 返回值
+## 璇存槑
 
 
-成功时返回 0。
+璇?ioctl 璋冪敤鏌ヨ褰撳墠鐢熸晥鐨勫墠绔弬鏁般€傚浜庤鍛戒护锛屽璁惧鐨勫彧璇昏闂嵆宸茶冻澶熴€?
 
-出错时返回 -1，并相应地设置 `errno` 变量。
+## 杩斿洖鍊?
+
+
+鎴愬姛鏃惰繑鍥?0銆?
+
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
 
     :header-rows:  0
     :stub-columns: 0
@@ -41,6 +41,6 @@ FE_GET_FRONTEND
 
        - `EINVAL`
 
-       - 已达到支持的最大符号率。
+       - 宸茶揪鍒版敮鎸佺殑鏈€澶х鍙风巼銆?
 
-通用错误码在 Generic Error Codes <gen-errors> 章节中描述。
+閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?

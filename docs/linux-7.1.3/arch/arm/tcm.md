@@ -1,63 +1,63 @@
-## Linux 中的 ARM TCM（紧耦合内存）处理
+﻿## Linux 涓殑 ARM TCM锛堢揣鑰﹀悎鍐呭瓨锛夊鐞?
 
 
 Written by Linus Walleij <linus.walleij@stericsson.com>
 
-一些 ARM SoC 具有所谓的 TCM（Tightly-Coupled Memory，紧耦合内存）。
-这通常是 ARM 处理器内部仅几（4-64）KiB 的 RAM。
+涓€浜?ARM SoC 鍏锋湁鎵€璋撶殑 TCM锛圱ightly-Coupled Memory锛岀揣鑰﹀悎鍐呭瓨锛夈€?
+杩欓€氬父鏄?ARM 澶勭悊鍣ㄥ唴閮ㄤ粎鍑狅紙4-64锛塊iB 鐨?RAM銆?
 
-由于内嵌于 CPU 内部，TCM 具有哈佛（Harvard）架构，因此有一个 ITCM（指令 TCM）
-和一个 DTCM（数据 TCM）。DTCM 不能包含任何指令，但 ITCM 实际上可以包含数据。
-DTCM 或 ITCM 的最小尺寸为 4KiB，因此典型的配置是 4KiB ITCM 和 4KiB DTCM。
+鐢变簬鍐呭祵浜?CPU 鍐呴儴锛孴CM 鍏锋湁鍝堜經锛圚arvard锛夋灦鏋勶紝鍥犳鏈変竴涓?ITCM锛堟寚浠?TCM锛?
+鍜屼竴涓?DTCM锛堟暟鎹?TCM锛夈€侱TCM 涓嶈兘鍖呭惈浠讳綍鎸囦护锛屼絾 ITCM 瀹為檯涓婂彲浠ュ寘鍚暟鎹€?
+DTCM 鎴?ITCM 鐨勬渶灏忓昂瀵镐负 4KiB锛屽洜姝ゅ吀鍨嬬殑閰嶇疆鏄?4KiB ITCM 鍜?4KiB DTCM銆?
 
-ARM CPU 有专门的寄存器来读出 TCM 内存的状态、物理位置和大小。arch/arm/include/asm/cputype.h
-定义了一个 CPUID_TCM 寄存器，你可以从系统控制协处理器中读出。ARM 的文档可以在 http://infocenter.arm.com,
-找到，搜索 "TCM Status Register" 可查看所有 CPU 的文档。读取该寄存器你可以确定机器中
-是否存在 ITCM（位 1-0）和/或 DTCM（位 17-16）。
+ARM CPU 鏈変笓闂ㄧ殑瀵勫瓨鍣ㄦ潵璇诲嚭 TCM 鍐呭瓨鐨勭姸鎬併€佺墿鐞嗕綅缃拰澶у皬銆俛rch/arm/include/asm/cputype.h
+瀹氫箟浜嗕竴涓?CPUID_TCM 瀵勫瓨鍣紝浣犲彲浠ヤ粠绯荤粺鎺у埗鍗忓鐞嗗櫒涓鍑恒€侫RM 鐨勬枃妗ｅ彲浠ュ湪 http://infocenter.arm.com,
+鎵惧埌锛屾悳绱?"TCM Status Register" 鍙煡鐪嬫墍鏈?CPU 鐨勬枃妗ｃ€傝鍙栬瀵勫瓨鍣ㄤ綘鍙互纭畾鏈哄櫒涓?
+鏄惁瀛樺湪 ITCM锛堜綅 1-0锛夊拰/鎴?DTCM锛堜綅 17-16锛夈€?
 
-还有一个 TCM 区域寄存器（在 ARM 站点搜索 "TCM Region Registers"），可以在运行时报告并
-修改 TCM 内存的位置和大小。这用于读出和修改 TCM 的位置与大小。注意这不是 MMU 页表：你
-实际上是把 TCM 的物理位置移动了。在你放置它的地方，它会屏蔽掉 CPU 底层任何 RAM，因此通常
-最好不要让任何物理 RAM 与 TCM 重叠。
+杩樻湁涓€涓?TCM 鍖哄煙瀵勫瓨鍣紙鍦?ARM 绔欑偣鎼滅储 "TCM Region Registers"锛夛紝鍙互鍦ㄨ繍琛屾椂鎶ュ憡骞?
+淇敼 TCM 鍐呭瓨鐨勪綅缃拰澶у皬銆傝繖鐢ㄤ簬璇诲嚭鍜屼慨鏀?TCM 鐨勪綅缃笌澶у皬銆傛敞鎰忚繖涓嶆槸 MMU 椤佃〃锛氫綘
+瀹為檯涓婃槸鎶?TCM 鐨勭墿鐞嗕綅缃Щ鍔ㄤ簡銆傚湪浣犳斁缃畠鐨勫湴鏂癸紝瀹冧細灞忚斀鎺?CPU 搴曞眰浠讳綍 RAM锛屽洜姝ら€氬父
+鏈€濂戒笉瑕佽浠讳綍鐗╃悊 RAM 涓?TCM 閲嶅彔銆?
 
-然后可以使用 MMU 把 TCM 内存再次重映射到另一个地址，但请注意 TCM 经常用于 MMU 被关闭的
-情况。为避免混淆，当前 Linux 实现会把 TCM 从物理内存到虚拟内存按内核指定的位置做 1 对 1
-映射。目前 Linux 会把 ITCM 映射到 0xfffe0000 及之后，把 DTCM 映射到 0xfffe8000 及之后，
-最多支持 32KiB 的 ITCM 和 32KiB 的 DTCM。
+鐒跺悗鍙互浣跨敤 MMU 鎶?TCM 鍐呭瓨鍐嶆閲嶆槧灏勫埌鍙︿竴涓湴鍧€锛屼絾璇锋敞鎰?TCM 缁忓父鐢ㄤ簬 MMU 琚叧闂殑
+鎯呭喌銆備负閬垮厤娣锋穯锛屽綋鍓?Linux 瀹炵幇浼氭妸 TCM 浠庣墿鐞嗗唴瀛樺埌铏氭嫙鍐呭瓨鎸夊唴鏍告寚瀹氱殑浣嶇疆鍋?1 瀵?1
+鏄犲皠銆傜洰鍓?Linux 浼氭妸 ITCM 鏄犲皠鍒?0xfffe0000 鍙婁箣鍚庯紝鎶?DTCM 鏄犲皠鍒?0xfffe8000 鍙婁箣鍚庯紝
+鏈€澶氭敮鎸?32KiB 鐨?ITCM 鍜?32KiB 鐨?DTCM銆?
 
-更新版本的区域寄存器还支持把这些 TCM 分成两个独立的 bank，例如一个 8KiB 的 ITCM 被分成
-两个 4KiB 的 bank，各有自己的控制寄存器。其思路是能够锁定并隐藏其中一个 bank 供安全世界
-（TrustZone）使用。
+鏇存柊鐗堟湰鐨勫尯鍩熷瘎瀛樺櫒杩樻敮鎸佹妸杩欎簺 TCM 鍒嗘垚涓や釜鐙珛鐨?bank锛屼緥濡備竴涓?8KiB 鐨?ITCM 琚垎鎴?
+涓や釜 4KiB 鐨?bank锛屽悇鏈夎嚜宸辩殑鎺у埗瀵勫瓨鍣ㄣ€傚叾鎬濊矾鏄兘澶熼攣瀹氬苟闅愯棌鍏朵腑涓€涓?bank 渚涘畨鍏ㄤ笘鐣?
+锛圱rustZone锛変娇鐢ㄣ€?
 
-TCM 用于以下几方面：
+TCM 鐢ㄤ簬浠ヤ笅鍑犳柟闈細
 
-- FIQ 以及其它需要确定性时序且不能等待缓存未命中的中断处理程序。
+- FIQ 浠ュ強鍏跺畠闇€瑕佺‘瀹氭€ф椂搴忎笖涓嶈兘绛夊緟缂撳瓨鏈懡涓殑涓柇澶勭悊绋嬪簭銆?
 
-- 所有外部 RAM 都进入自刷新保持模式的空闲循环，因此 CPU 只能访问片上 RAM，然后我们
-  挂起在 ITCM 内等待中断。
+- 鎵€鏈夊閮?RAM 閮借繘鍏ヨ嚜鍒锋柊淇濇寔妯″紡鐨勭┖闂插惊鐜紝鍥犳 CPU 鍙兘璁块棶鐗囦笂 RAM锛岀劧鍚庢垜浠?
+  鎸傝捣鍦?ITCM 鍐呯瓑寰呬腑鏂€?
 
-- 其它意味着关闭或重新配置外部 RAM 控制器的操作。
+- 鍏跺畠鎰忓懗鐫€鍏抽棴鎴栭噸鏂伴厤缃閮?RAM 鎺у埗鍣ㄧ殑鎿嶄綔銆?
 
-在 <asm/tcm.h> 中有一个用于 ARM 架构上使用 TCM 的接口。使用该接口可以：
+鍦?<asm/tcm.h> 涓湁涓€涓敤浜?ARM 鏋舵瀯涓婁娇鐢?TCM 鐨勬帴鍙ｃ€備娇鐢ㄨ鎺ュ彛鍙互锛?
 
-- 定义 ITCM 和 DTCM 的物理地址和大小。
+- 瀹氫箟 ITCM 鍜?DTCM 鐨勭墿鐞嗗湴鍧€鍜屽ぇ灏忋€?
 
-- 标记要被编译进 ITCM 的函数。
+- 鏍囪瑕佽缂栬瘧杩?ITCM 鐨勫嚱鏁般€?
 
-- 标记要分配到 DTCM 和 ITCM 的数据和常量。
+- 鏍囪瑕佸垎閰嶅埌 DTCM 鍜?ITCM 鐨勬暟鎹拰甯搁噺銆?
 
-- 把剩余的 TCM RAM 通过 gen_pool_create() 和 gen_pool_add() 添加到一个特殊的分配池，
-  并为此内存提供 tcm_alloc() 和 tcm_free()。这样的堆非常适合在关闭设备电源域时保存
-  设备状态之类的事情。
+- 鎶婂墿浣欑殑 TCM RAM 閫氳繃 gen_pool_create() 鍜?gen_pool_add() 娣诲姞鍒颁竴涓壒娈婄殑鍒嗛厤姹狅紝
+  骞朵负姝ゅ唴瀛樻彁渚?tcm_alloc() 鍜?tcm_free()銆傝繖鏍风殑鍫嗛潪甯搁€傚悎鍦ㄥ叧闂澶囩數婧愬煙鏃朵繚瀛?
+  璁惧鐘舵€佷箣绫荤殑浜嬫儏銆?
 
-拥有 TCM 内存的机器应当为自己从 arch/arm/Kconfig 中选择 HAVE_TCM。需要使用 TCM 的代码应当
+鎷ユ湁 TCM 鍐呭瓨鐨勬満鍣ㄥ簲褰撲负鑷繁浠?arch/arm/Kconfig 涓€夋嫨 HAVE_TCM銆傞渶瑕佷娇鐢?TCM 鐨勪唬鐮佸簲褰?
 #include <asm/tcm.h>
 
-要进入 itcm 的函数可以这样标记：
+瑕佽繘鍏?itcm 鐨勫嚱鏁板彲浠ヨ繖鏍锋爣璁帮細
 int __tcmfunc foo(int bar);
 
-由于这些被标记为 long_calls，而你可能希望 TCM 内部以本地方式调用函数而不浪费空间，因此
-还有 __tcmlocalfunc 前缀，它会让调用变为相对调用。
+鐢变簬杩欎簺琚爣璁颁负 long_calls锛岃€屼綘鍙兘甯屾湜 TCM 鍐呴儴浠ユ湰鍦版柟寮忚皟鐢ㄥ嚱鏁拌€屼笉娴垂绌洪棿锛屽洜姝?
+杩樻湁 __tcmlocalfunc 鍓嶇紑锛屽畠浼氳璋冪敤鍙樹负鐩稿璋冪敤銆?
 
 ```
 

@@ -1,26 +1,18 @@
-
+﻿
 ## TTY
 
 
-电传打字机（TTY）层负责处理所有那些串行设备，包括像伪终端（PTY）这样的虚拟设备。
+鐢典紶鎵撳瓧鏈猴紙TTY锛夊眰璐熻矗澶勭悊鎵€鏈夐偅浜涗覆琛岃澶囷紝鍖呮嫭鍍忎吉缁堢锛圥TY锛夎繖鏍风殑铏氭嫙璁惧銆?
+## TTY 缁撴瀯
 
-## TTY 结构
 
-
-有若干主要的 TTY 结构。系统中的每个 TTY 设备都有一个对应的 struct tty_port。这些
-设备由一个 TTY 驱动（即 struct tty_driver）维护。该结构描述了驱动，同时还包含对
-可在 TTY 上执行的操作的引用，即 struct tty_operations。然后，在打开时，会分配一个
-struct tty_struct，并一直存活到最终关闭。在此期间，TTY 层会调用 struct
-tty_operations 中的若干回调。
-
-内核接收到的每个字符（来自设备和用户两方）都会通过一个预选的
-[tty_ldisc](tty_ldisc)（简称 ldisc；在 C 中为 struct tty_ldisc_ops）传递。它的
-任务是对字符进行转换，转换方式由特定的 ldisc 或用户定义。默认的是 n_tty，它实现了
-回显、信号处理、作业控制、特殊字符处理等。转换后的字符会根据来源进一步传递给
-用户/设备。
-
-对上述命名 TTY 结构的详细描述在各独立文档中：
-
+鏈夎嫢骞蹭富瑕佺殑 TTY 缁撴瀯銆傜郴缁熶腑鐨勬瘡涓?TTY 璁惧閮芥湁涓€涓搴旂殑 struct tty_port銆傝繖浜?璁惧鐢变竴涓?TTY 椹卞姩锛堝嵆 struct tty_driver锛夌淮鎶ゃ€傝缁撴瀯鎻忚堪浜嗛┍鍔紝鍚屾椂杩樺寘鍚
+鍙湪 TTY 涓婃墽琛岀殑鎿嶄綔鐨勫紩鐢紝鍗?struct tty_operations銆傜劧鍚庯紝鍦ㄦ墦寮€鏃讹紝浼氬垎閰嶄竴涓?struct tty_struct锛屽苟涓€鐩村瓨娲诲埌鏈€缁堝叧闂€傚湪姝ゆ湡闂达紝TTY 灞備細璋冪敤 struct
+tty_operations 涓殑鑻ュ共鍥炶皟銆?
+鍐呮牳鎺ユ敹鍒扮殑姣忎釜瀛楃锛堟潵鑷澶囧拰鐢ㄦ埛涓ゆ柟锛夐兘浼氶€氳繃涓€涓閫夌殑
+[tty_ldisc](tty_ldisc)锛堢畝绉?ldisc锛涘湪 C 涓负 struct tty_ldisc_ops锛変紶閫掋€傚畠鐨?浠诲姟鏄瀛楃杩涜杞崲锛岃浆鎹㈡柟寮忕敱鐗瑰畾鐨?ldisc 鎴栫敤鎴峰畾涔夈€傞粯璁ょ殑鏄?n_tty锛屽畠瀹炵幇浜?鍥炴樉銆佷俊鍙峰鐞嗐€佷綔涓氭帶鍒躲€佺壒娈婂瓧绗﹀鐞嗙瓑銆傝浆鎹㈠悗鐨勫瓧绗︿細鏍规嵁鏉ユ簮杩涗竴姝ヤ紶閫掔粰
+鐢ㄦ埛/璁惧銆?
+瀵逛笂杩板懡鍚?TTY 缁撴瀯鐨勮缁嗘弿杩板湪鍚勭嫭绔嬫枃妗ｄ腑锛?
 - [tty_driver](tty_driver)
 - [tty_port](tty_port)
 - [tty_struct](tty_struct)
@@ -30,29 +22,20 @@ tty_operations 中的若干回调。
 - [tty_internals](tty_internals)
 - [console](console)
 
-## 编写 TTY 驱动
+## 缂栧啓 TTY 椹卞姩
 
 
-在着手编写 TTY 驱动之前，必须先考虑 [Serial <../serial/driver>](Serial
-<../serial/driver>) 与 [USB Serial <../../usb/usb-serial>](USB Serial
-<../../usb/usb-serial>) 层。串行设备的驱动通常可以使用这些特定层之一来实现一个
-串行驱动。只有特殊设备才应由 TTY 层直接处理。如果你打算编写这样的驱动，请继续阅读。
+鍦ㄧ潃鎵嬬紪鍐?TTY 椹卞姩涔嬪墠锛屽繀椤诲厛鑰冭檻 [Serial <../serial/driver>](Serial
+<../serial/driver>) 涓?[USB Serial <../../usb/usb-serial>](USB Serial
+<../../usb/usb-serial>) 灞傘€備覆琛岃澶囩殑椹卞姩閫氬父鍙互浣跨敤杩欎簺鐗瑰畾灞備箣涓€鏉ュ疄鐜颁竴涓?涓茶椹卞姩銆傚彧鏈夌壒娈婅澶囨墠搴旂敱 TTY 灞傜洿鎺ュ鐞嗐€傚鏋滀綘鎵撶畻缂栧啓杩欐牱鐨勯┍鍔紝璇风户缁槄璇汇€?
+涓€涓?TTY 椹卞姩鎵ц鐨?*鍏稿瀷**搴忓垪濡備笅锛?
+#. 鍒嗛厤骞舵敞鍐屼竴涓?TTY 椹卞姩锛堟ā鍧楀垵濮嬪寲锛?#. 鍦ㄦ帰娴嬪埌鏃跺垱寤哄苟娉ㄥ唽 TTY 璁惧锛坧robe 鍑芥暟锛?#. 澶勭悊 TTY 鎿嶄綔涓庝簨浠讹紙濡備腑鏂級锛堝墠鑰呯敱 TTY 鏍稿績璋冪敤锛屽悗鑰呯敱璁惧璋冪敤锛?#. 鍦ㄨ澶囩Щ闄ゆ椂绉婚櫎瀹冧滑锛坮emove 鍑芥暟锛?#. 娉ㄩ攢骞堕噴鏀?TTY 椹卞姩锛堟ā鍧楅€€鍑猴級
 
-一个 TTY 驱动执行的**典型**序列如下：
-
-#. 分配并注册一个 TTY 驱动（模块初始化）
-#. 在探测到时创建并注册 TTY 设备（probe 函数）
-#. 处理 TTY 操作与事件（如中断）（前者由 TTY 核心调用，后者由设备调用）
-#. 在设备移除时移除它们（remove 函数）
-#. 注销并释放 TTY 驱动（模块退出）
-
-有关驱动的步骤（即 1.、3. 与 5.）在 [tty_driver](tty_driver) 中有详细描述。对于
-另外两步（设备处理），请参阅 [tty_port](tty_port)。
-
-## 其它文档
+鏈夊叧椹卞姩鐨勬楠わ紙鍗?1.銆?. 涓?5.锛夊湪 [tty_driver](tty_driver) 涓湁璇︾粏鎻忚堪銆傚浜?鍙﹀涓ゆ锛堣澶囧鐞嗭級锛岃鍙傞槄 [tty_port](tty_port)銆?
+## 鍏跺畠鏂囨。
 
 
-其它杂项文档可进一步在这些文档中找到：
+鍏跺畠鏉傞」鏂囨。鍙繘涓€姝ュ湪杩欎簺鏂囨。涓壘鍒帮細
 
 - [moxa-smartio](moxa-smartio)
 - [n_gsm](n_gsm)

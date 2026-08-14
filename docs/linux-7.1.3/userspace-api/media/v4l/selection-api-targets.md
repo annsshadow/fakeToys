@@ -1,14 +1,14 @@
-
-######## 选择目标
+﻿
+######## 閫夋嫨鐩爣
 
 
 
     :alt:   selection.svg
     :align: center
 
-    裁剪与合成目标
+    瑁佸壀涓庡悎鎴愮洰鏍?
 
-    裁剪、合成与缩放过程所使用的目标
+    瑁佸壀銆佸悎鎴愪笌缂╂斁杩囩▼鎵€浣跨敤鐨勭洰鏍?
 
 
-更多信息参见 v4l2-selection-targets。
+鏇村淇℃伅鍙傝 v4l2-selection-targets銆?

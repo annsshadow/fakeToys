@@ -1,52 +1,26 @@
-
+﻿
 ## Porting an architecture to support PREEMPT_RT
 
 
 :Author: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
-下面列出了为了启用 PREEMPT_RT 而必须实现的、与体系架构相关的需求。一旦所有必需的特性都实现完毕，就可以在该体系架构的 Kconfig 中选择 ARCH_SUPPORTS_RT，从而使 PREEMPT_RT 可选。
-许多前置条件（例如 genirq 支持）由公共代码强制要求，此处不再赘述。
-
-可选特性并非严格必需，但仍值得考虑。
-
+涓嬮潰鍒楀嚭浜嗕负浜嗗惎鐢?PREEMPT_RT 鑰屽繀椤诲疄鐜扮殑銆佷笌浣撶郴鏋舵瀯鐩稿叧鐨勯渶姹傘€備竴鏃︽墍鏈夊繀闇€鐨勭壒鎬ч兘瀹炵幇瀹屾瘯锛屽氨鍙互鍦ㄨ浣撶郴鏋舵瀯鐨?Kconfig 涓€夋嫨 ARCH_SUPPORTS_RT锛屼粠鑰屼娇 PREEMPT_RT 鍙€夈€?璁稿鍓嶇疆鏉′欢锛堜緥濡?genirq 鏀寔锛夌敱鍏叡浠ｇ爜寮哄埗瑕佹眰锛屾澶勪笉鍐嶈禈杩般€?
+鍙€夌壒鎬у苟闈炰弗鏍煎繀闇€锛屼絾浠嶅€煎緱鑰冭檻銆?
 ### Requirements
 
 
-强制线程化中断（Forced threaded interrupts）
-  CONFIG_IRQ_FORCED_THREADING 必须被选中。任何必须保留在硬 IRQ（hard-IRQ）上下文中的中断，必须用 IRQF_NO_THREAD 标记。例如，这一要求适用于时钟源事件中断、perf 中断以及级联中断控制器处理程序。
-
-抢占（PREEMPTION）支持
-  必须支持内核抢占，并且要求 CONFIG_ARCH_NO_PREEMPT 保持未选中状态。调度请求（例如从中断或其他异常处理器发出的请求）必须被立即处理。
-
-POSIX CPU 定时器与 KVM
-  POSIX CPU 定时器必须从线程上下文到期，而不是直接在定时器中断内部到期。通过设置配置选项 CONFIG_HAVE_POSIX_CPU_TIMERS_TASK_WORK 可以启用这一行为。
-  当启用虚拟化支持（例如 KVM）时，还必须设置 CONFIG_VIRT_XFER_TO_GUEST_WORK，以确保任何待处理的工作（例如 POSIX 定时器到期）在进入客户机模式之前得到处理。
-
-硬 IRQ 与软 IRQ 栈
-  软中断在引发它们的线程上下文中被处理。如果软中断是从硬 IRQ 上下文触发的，它的执行会被推迟到 ksoftirqd 线程。在软中断处理期间，抢占永远不会被禁用，这使得软中断是可抢占的。
-  如果某个体系架构提供了使用独立栈的自定义 __do_softirq() 实现，它必须选择 CONFIG_HAVE_SOFTIRQ_ON_OWN_STACK。该功能只应在设置了 CONFIG_SOFTIRQ_ON_OWN_STACK 时启用。
-
-内核模式下的 FPU 与 SIMD 访问
-  FPU 和 SIMD 寄存器通常不会在内核模式中使用，因此在内核抢占时不会被保存。因此，任何使用这些寄存器的内核代码都必须包含在 kernel_fpu_begin() 与 kernel_fpu_end() 区段之内。
-  kernel_fpu_begin() 函数通常会调用 local_bh_disable()，以防止来自软中断的打断，并禁用常规抢占。这允许受保护的代码在线程和软中断两种上下文中都安全运行。
-  然而，在 PREEMPT_RT 内核上，kernel_fpu_begin() 不能调用 local_bh_disable()。相反，它应该使用 preempt_disable()，因为在 PREEMPT_RT 下，软中断总是在线程上下文中处理。在这种情况下，仅禁用抢占就足够了。
-  crypto 子系统操作内存页，并要求用户在处理请求时对这些页进行"遍历和映射"。这一操作必须发生在 kernel_fpu_begin()/kernel_fpu_end() 区段之外，因为它需要启用抢占。这些抢占点通常足以避免过度的调度延迟。
-
-异常处理器（Exception handlers）
-  异常处理器（例如缺页处理器）通常会提前启用中断，然后再调用任何用于处理该异常的通用代码。这是必要的，因为处理缺页可能涉及可能休眠的操作。在 PREEMPT_RT 上启用中断尤为重要，因为在 PREEMPT_RT 下，某些锁（例如 spinlock_t）变成了可睡眠的。例如，处理非法操作码可能会导致向用户任务发送 SIGILL 信号。调试异常会发送 SIGTRAP 信号。
-  在这两种情况下，如果异常发生在用户空间，提前启用中断是安全的。发送信号需要同时启用中断和内核抢占。
-
+寮哄埗绾跨▼鍖栦腑鏂紙Forced threaded interrupts锛?  CONFIG_IRQ_FORCED_THREADING 蹇呴』琚€変腑銆備换浣曞繀椤讳繚鐣欏湪纭?IRQ锛坔ard-IRQ锛変笂涓嬫枃涓殑涓柇锛屽繀椤荤敤 IRQF_NO_THREAD 鏍囪銆備緥濡傦紝杩欎竴瑕佹眰閫傜敤浜庢椂閽熸簮浜嬩欢涓柇銆乸erf 涓柇浠ュ強绾ц仈涓柇鎺у埗鍣ㄥ鐞嗙▼搴忋€?
+鎶㈠崰锛圥REEMPTION锛夋敮鎸?  蹇呴』鏀寔鍐呮牳鎶㈠崰锛屽苟涓旇姹?CONFIG_ARCH_NO_PREEMPT 淇濇寔鏈€変腑鐘舵€併€傝皟搴﹁姹傦紙渚嬪浠庝腑鏂垨鍏朵粬寮傚父澶勭悊鍣ㄥ彂鍑虹殑璇锋眰锛夊繀椤昏绔嬪嵆澶勭悊銆?
+POSIX CPU 瀹氭椂鍣ㄤ笌 KVM
+  POSIX CPU 瀹氭椂鍣ㄥ繀椤讳粠绾跨▼涓婁笅鏂囧埌鏈燂紝鑰屼笉鏄洿鎺ュ湪瀹氭椂鍣ㄤ腑鏂唴閮ㄥ埌鏈熴€傞€氳繃璁剧疆閰嶇疆閫夐」 CONFIG_HAVE_POSIX_CPU_TIMERS_TASK_WORK 鍙互鍚敤杩欎竴琛屼负銆?  褰撳惎鐢ㄨ櫄鎷熷寲鏀寔锛堜緥濡?KVM锛夋椂锛岃繕蹇呴』璁剧疆 CONFIG_VIRT_XFER_TO_GUEST_WORK锛屼互纭繚浠讳綍寰呭鐞嗙殑宸ヤ綔锛堜緥濡?POSIX 瀹氭椂鍣ㄥ埌鏈燂級鍦ㄨ繘鍏ュ鎴锋満妯″紡涔嬪墠寰楀埌澶勭悊銆?
+纭?IRQ 涓庤蒋 IRQ 鏍?  杞腑鏂湪寮曞彂瀹冧滑鐨勭嚎绋嬩笂涓嬫枃涓澶勭悊銆傚鏋滆蒋涓柇鏄粠纭?IRQ 涓婁笅鏂囪Е鍙戠殑锛屽畠鐨勬墽琛屼細琚帹杩熷埌 ksoftirqd 绾跨▼銆傚湪杞腑鏂鐞嗘湡闂达紝鎶㈠崰姘歌繙涓嶄細琚鐢紝杩欎娇寰楄蒋涓柇鏄彲鎶㈠崰鐨勩€?  濡傛灉鏌愪釜浣撶郴鏋舵瀯鎻愪緵浜嗕娇鐢ㄧ嫭绔嬫爤鐨勮嚜瀹氫箟 __do_softirq() 瀹炵幇锛屽畠蹇呴』閫夋嫨 CONFIG_HAVE_SOFTIRQ_ON_OWN_STACK銆傝鍔熻兘鍙簲鍦ㄨ缃簡 CONFIG_SOFTIRQ_ON_OWN_STACK 鏃跺惎鐢ㄣ€?
+鍐呮牳妯″紡涓嬬殑 FPU 涓?SIMD 璁块棶
+  FPU 鍜?SIMD 瀵勫瓨鍣ㄩ€氬父涓嶄細鍦ㄥ唴鏍告ā寮忎腑浣跨敤锛屽洜姝ゅ湪鍐呮牳鎶㈠崰鏃朵笉浼氳淇濆瓨銆傚洜姝わ紝浠讳綍浣跨敤杩欎簺瀵勫瓨鍣ㄧ殑鍐呮牳浠ｇ爜閮藉繀椤诲寘鍚湪 kernel_fpu_begin() 涓?kernel_fpu_end() 鍖烘涔嬪唴銆?  kernel_fpu_begin() 鍑芥暟閫氬父浼氳皟鐢?local_bh_disable()锛屼互闃叉鏉ヨ嚜杞腑鏂殑鎵撴柇锛屽苟绂佺敤甯歌鎶㈠崰銆傝繖鍏佽鍙椾繚鎶ょ殑浠ｇ爜鍦ㄧ嚎绋嬪拰杞腑鏂袱绉嶄笂涓嬫枃涓兘瀹夊叏杩愯銆?  鐒惰€岋紝鍦?PREEMPT_RT 鍐呮牳涓婏紝kernel_fpu_begin() 涓嶈兘璋冪敤 local_bh_disable()銆傜浉鍙嶏紝瀹冨簲璇ヤ娇鐢?preempt_disable()锛屽洜涓哄湪 PREEMPT_RT 涓嬶紝杞腑鏂€绘槸鍦ㄧ嚎绋嬩笂涓嬫枃涓鐞嗐€傚湪杩欑鎯呭喌涓嬶紝浠呯鐢ㄦ姠鍗犲氨瓒冲浜嗐€?  crypto 瀛愮郴缁熸搷浣滃唴瀛橀〉锛屽苟瑕佹眰鐢ㄦ埛鍦ㄥ鐞嗚姹傛椂瀵硅繖浜涢〉杩涜"閬嶅巻鍜屾槧灏?銆傝繖涓€鎿嶄綔蹇呴』鍙戠敓鍦?kernel_fpu_begin()/kernel_fpu_end() 鍖烘涔嬪锛屽洜涓哄畠闇€瑕佸惎鐢ㄦ姠鍗犮€傝繖浜涙姠鍗犵偣閫氬父瓒充互閬垮厤杩囧害鐨勮皟搴﹀欢杩熴€?
+寮傚父澶勭悊鍣紙Exception handlers锛?  寮傚父澶勭悊鍣紙渚嬪缂洪〉澶勭悊鍣級閫氬父浼氭彁鍓嶅惎鐢ㄤ腑鏂紝鐒跺悗鍐嶈皟鐢ㄤ换浣曠敤浜庡鐞嗚寮傚父鐨勯€氱敤浠ｇ爜銆傝繖鏄繀瑕佺殑锛屽洜涓哄鐞嗙己椤靛彲鑳芥秹鍙婂彲鑳戒紤鐪犵殑鎿嶄綔銆傚湪 PREEMPT_RT 涓婂惎鐢ㄤ腑鏂挨涓洪噸瑕侊紝鍥犱负鍦?PREEMPT_RT 涓嬶紝鏌愪簺閿侊紙渚嬪 spinlock_t锛夊彉鎴愪簡鍙潯鐪犵殑銆備緥濡傦紝澶勭悊闈炴硶鎿嶄綔鐮佸彲鑳戒細瀵艰嚧鍚戠敤鎴蜂换鍔″彂閫?SIGILL 淇″彿銆傝皟璇曞紓甯镐細鍙戦€?SIGTRAP 淇″彿銆?  鍦ㄨ繖涓ょ鎯呭喌涓嬶紝濡傛灉寮傚父鍙戠敓鍦ㄧ敤鎴风┖闂达紝鎻愬墠鍚敤涓柇鏄畨鍏ㄧ殑銆傚彂閫佷俊鍙烽渶瑕佸悓鏃跺惎鐢ㄤ腑鏂拰鍐呮牳鎶㈠崰銆?
 ### Optional features
 
 
-定时器与时钟源
-  建议使用高分辨率时钟源和 clock event 设备。clock event 设备应支持 CLOCK_EVT_FEAT_ONESHOT 特性，以获得最佳的定时器行为。在大多数情况下，微秒级的精度已经足够。
-
-惰性抢占（Lazy preemption）
-  该机制允许将针对非实时任务的内核调度请求延迟到该任务即将返回用户空间时。它有助于避免在发出调度请求时抢占一个持有睡眠锁的任务。
-  在启用 CONFIG_GENERIC_IRQ_ENTRY 的情况下，支持该特性需要为 TIF_NEED_RESCHED_LAZY 定义一个位，最好放在 TIF_NEED_RESCHED 附近。
-
-使用 NBCON 的串口控制台
-  在启用 PREEMPT_RT 的情况下，所有控制台输出都由专用线程处理，而不是直接在调用 printk() 的上下文中进行。这种设计允许 printk() 在原子上下文中安全使用。
-  然而，这也意味着，如果内核崩溃且无法切换到打印线程，则不会有任何输出可见，从而使系统无法打印其最终的消息。
-  对于立即输出存在例外情况，例如在 panic() 处理期间。为了支持这一点，控制台驱动必须实现新式的锁处理。这涉及在 console::flags 中设置 CON_NBCON 标志，并提供 write_atomic、write_thread、device_lock 和 device_unlock 回调的实现。
+瀹氭椂鍣ㄤ笌鏃堕挓婧?  寤鸿浣跨敤楂樺垎杈ㄧ巼鏃堕挓婧愬拰 clock event 璁惧銆俢lock event 璁惧搴旀敮鎸?CLOCK_EVT_FEAT_ONESHOT 鐗规€э紝浠ヨ幏寰楁渶浣崇殑瀹氭椂鍣ㄨ涓恒€傚湪澶у鏁版儏鍐典笅锛屽井绉掔骇鐨勭簿搴﹀凡缁忚冻澶熴€?
+鎯版€ф姠鍗狅紙Lazy preemption锛?  璇ユ満鍒跺厑璁稿皢閽堝闈炲疄鏃朵换鍔＄殑鍐呮牳璋冨害璇锋眰寤惰繜鍒拌浠诲姟鍗冲皢杩斿洖鐢ㄦ埛绌洪棿鏃躲€傚畠鏈夊姪浜庨伩鍏嶅湪鍙戝嚭璋冨害璇锋眰鏃舵姠鍗犱竴涓寔鏈夌潯鐪犻攣鐨勪换鍔°€?  鍦ㄥ惎鐢?CONFIG_GENERIC_IRQ_ENTRY 鐨勬儏鍐典笅锛屾敮鎸佽鐗规€ч渶瑕佷负 TIF_NEED_RESCHED_LAZY 瀹氫箟涓€涓綅锛屾渶濂芥斁鍦?TIF_NEED_RESCHED 闄勮繎銆?
+浣跨敤 NBCON 鐨勪覆鍙ｆ帶鍒跺彴
+  鍦ㄥ惎鐢?PREEMPT_RT 鐨勬儏鍐典笅锛屾墍鏈夋帶鍒跺彴杈撳嚭閮界敱涓撶敤绾跨▼澶勭悊锛岃€屼笉鏄洿鎺ュ湪璋冪敤 printk() 鐨勪笂涓嬫枃涓繘琛屻€傝繖绉嶈璁″厑璁?printk() 鍦ㄥ師瀛愪笂涓嬫枃涓畨鍏ㄤ娇鐢ㄣ€?  鐒惰€岋紝杩欎篃鎰忓懗鐫€锛屽鏋滃唴鏍稿穿婧冧笖鏃犳硶鍒囨崲鍒版墦鍗扮嚎绋嬶紝鍒欎笉浼氭湁浠讳綍杈撳嚭鍙锛屼粠鑰屼娇绯荤粺鏃犳硶鎵撳嵃鍏舵渶缁堢殑娑堟伅銆?  瀵逛簬绔嬪嵆杈撳嚭瀛樺湪渚嬪鎯呭喌锛屼緥濡傚湪 panic() 澶勭悊鏈熼棿銆備负浜嗘敮鎸佽繖涓€鐐癸紝鎺у埗鍙伴┍鍔ㄥ繀椤诲疄鐜版柊寮忕殑閿佸鐞嗐€傝繖娑夊強鍦?console::flags 涓缃?CON_NBCON 鏍囧織锛屽苟鎻愪緵 write_atomic銆亀rite_thread銆乨evice_lock 鍜?device_unlock 鍥炶皟鐨勫疄鐜般€?

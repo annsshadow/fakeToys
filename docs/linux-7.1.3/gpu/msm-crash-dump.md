@@ -1,85 +1,59 @@
-:orphan:
+﻿:orphan:
 
-## MSM 崩溃转储格式
+## MSM 宕╂簝杞偍鏍煎紡
 
 
-在 GPU 挂起之后，MSM 驱动通过 /sys/kernel/dri/X/show 或通过 devcoredump
-（/sys/class/devcoredump/dcdX/data）输出调试信息。本文档描述输出的格式。
-
-每个条目都是 key: value 的形式。节的标题没有值，并且该节的所有内容会从标题缩进
-两个空格。每个节可能有多个数组条目，数组条目的开始由一个 (-) 标记。
-
-### 映射（Mappings）
-
+鍦?GPU 鎸傝捣涔嬪悗锛孧SM 椹卞姩閫氳繃 /sys/kernel/dri/X/show 鎴栭€氳繃 devcoredump
+锛?sys/class/devcoredump/dcdX/data锛夎緭鍑鸿皟璇曚俊鎭€傛湰鏂囨。鎻忚堪杈撳嚭鐨勬牸寮忋€?
+姣忎釜鏉＄洰閮芥槸 key: value 鐨勫舰寮忋€傝妭鐨勬爣棰樻病鏈夊€硷紝骞朵笖璇ヨ妭鐨勬墍鏈夊唴瀹逛細浠庢爣棰樼缉杩?涓や釜绌烘牸銆傛瘡涓妭鍙兘鏈夊涓暟缁勬潯鐩紝鏁扮粍鏉＄洰鐨勫紑濮嬬敱涓€涓?(-) 鏍囪銆?
+### 鏄犲皠锛圡appings锛?
 
 kernel
-	生成该转储的内核版本（UTS_RELEASE）。
-
+	鐢熸垚璇ヨ浆鍌ㄧ殑鍐呮牳鐗堟湰锛圲TS_RELEASE锛夈€?
 module
-	生成该崩溃转储的模块。
-
+	鐢熸垚璇ュ穿婧冭浆鍌ㄧ殑妯″潡銆?
 time
-	崩溃时的内核时间，格式为 秒.微秒。
-
+	宕╂簝鏃剁殑鍐呮牳鏃堕棿锛屾牸寮忎负 绉?寰銆?
 comm
-	产生故障的二进制文件的 comm 字符串。
-
+	浜х敓鏁呴殰鐨勪簩杩涘埗鏂囦欢鐨?comm 瀛楃涓层€?
 cmdline
-	产生故障的二进制文件的命令行。
-
+	浜х敓鏁呴殰鐨勪簩杩涘埗鏂囦欢鐨勫懡浠よ銆?
 revision
-	产生崩溃的 GPU 的 ID，格式为 core.major.minor.patchlevel，以句点分隔。
-
+	浜х敓宕╂簝鐨?GPU 鐨?ID锛屾牸寮忎负 core.major.minor.patchlevel锛屼互鍙ョ偣鍒嗛殧銆?
 rbbm-status
-	RBBM_STATUS 的当前值，显示崩溃时正在使用的顶层 GPU 组件。
-
+	RBBM_STATUS 鐨勫綋鍓嶅€硷紝鏄剧ず宕╂簝鏃舵鍦ㄤ娇鐢ㄧ殑椤跺眰 GPU 缁勪欢銆?
 ringbuffer
-	包含每个 ringbuffer 内容的节。每个 ringbuffer 用一个 id 编号标识。
-
+	鍖呭惈姣忎釜 ringbuffer 鍐呭鐨勮妭銆傛瘡涓?ringbuffer 鐢ㄤ竴涓?id 缂栧彿鏍囪瘑銆?
 	id
-		Ringbuffer ID（从 0 开始的索引）。该节中的每个 ringbuffer 都有
-		自己唯一的 id。
-	iova
-		ringbuffer 的 GPU 地址。
-
+		Ringbuffer ID锛堜粠 0 寮€濮嬬殑绱㈠紩锛夈€傝鑺備腑鐨勬瘡涓?ringbuffer 閮芥湁
+		鑷繁鍞竴鐨?id銆?	iova
+		ringbuffer 鐨?GPU 鍦板潃銆?
 	last-fence
-		在该 ringbuffer 上发出的最后一个 fence
+		鍦ㄨ ringbuffer 涓婂彂鍑虹殑鏈€鍚庝竴涓?fence
 
 	retired-fence
-		在该 ringbuffer 上退役的最后一个 fence。
-
+		鍦ㄨ ringbuffer 涓婇€€褰圭殑鏈€鍚庝竴涓?fence銆?
 	rptr
-		该 ringbuffer 的当前读指针（rptr）。
-
+		璇?ringbuffer 鐨勫綋鍓嶈鎸囬拡锛坮ptr锛夈€?
 	wptr
-		该 ringbuffer 的当前写指针（wptr）。
-
+		璇?ringbuffer 鐨勫綋鍓嶅啓鎸囬拡锛坵ptr锛夈€?
 	size
-		在硬件中编程的 ringbuffer 的最大大小。
-
+		鍦ㄧ‖浠朵腑缂栫▼鐨?ringbuffer 鐨勬渶澶уぇ灏忋€?
 	data
-		以 ascii85 编码的 ring 内容。只会打印 ring 中被使用的部分。
-
+		浠?ascii85 缂栫爜鐨?ring 鍐呭銆傚彧浼氭墦鍗?ring 涓浣跨敤鐨勯儴鍒嗐€?
 bo
-	来自挂起提交的缓冲区列表（如果可用）。每个缓冲区对象会有一个唯一的 iova。
-
+	鏉ヨ嚜鎸傝捣鎻愪氦鐨勭紦鍐插尯鍒楄〃锛堝鏋滃彲鐢級銆傛瘡涓紦鍐插尯瀵硅薄浼氭湁涓€涓敮涓€鐨?iova銆?
 	iova
-		缓冲区对象的 GPU 地址。
-
+		缂撳啿鍖哄璞＄殑 GPU 鍦板潃銆?
 	size
-		缓冲区对象分配的大小。
-
+		缂撳啿鍖哄璞″垎閰嶇殑澶у皬銆?
 	data
-		以 ascii85 编码的缓冲区对象内容。只会跳过缓冲区末尾的尾随零。
-
+		浠?ascii85 缂栫爜鐨勭紦鍐插尯瀵硅薄鍐呭銆傚彧浼氳烦杩囩紦鍐插尯鏈熬鐨勫熬闅忛浂銆?
 registers
-	一组寄存器值。每个条目独占一行，用括号 { } 括起来。
-
+	涓€缁勫瘎瀛樺櫒鍊笺€傛瘡涓潯鐩嫭鍗犱竴琛岋紝鐢ㄦ嫭鍙?{ } 鎷捣鏉ャ€?
 	offset
-		寄存器距 GPU 内存区域起始处的字节偏移。
-
+		瀵勫瓨鍣ㄨ窛 GPU 鍐呭瓨鍖哄煙璧峰澶勭殑瀛楄妭鍋忕Щ銆?
 	value
-		寄存器的十六进制值。
-
+		瀵勫瓨鍣ㄧ殑鍗佸叚杩涘埗鍊笺€?
 registers-hlsq
-		（仅 5xx）来自 HLSQ 孔径的寄存器值。格式与 register 节相同。
+		锛堜粎 5xx锛夋潵鑷?HLSQ 瀛斿緞鐨勫瘎瀛樺櫒鍊笺€傛牸寮忎笌 register 鑺傜浉鍚屻€?

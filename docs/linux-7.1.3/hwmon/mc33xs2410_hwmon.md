@@ -1,7 +1,7 @@
-## 内核驱动 mc33xs2410_hwmon
+﻿## 鍐呮牳椹卞姩 mc33xs2410_hwmon
 
 
-支持的设备：
+鏀寔鐨勮澶囷細
 
   - NXPs MC33XS2410
 
@@ -11,20 +11,20 @@ Authors:
 
 	Dimitri Fedrau <dimitri.fedrau@liebherr.com>
 
-### 说明
+### 璇存槑
 
 
-MC33XS2410 是一款四通道自保护高边开关（high-side switch），具备硬件监控功能，可对四个通道各自的温度、电流和电压进行监控。
+MC33XS2410 鏄竴娆惧洓閫氶亾鑷繚鎶ら珮杈瑰紑鍏筹紙high-side switch锛夛紝鍏峰纭欢鐩戞帶鍔熻兘锛屽彲瀵瑰洓涓€氶亾鍚勮嚜鐨勬俯搴︺€佺數娴佸拰鐢靛帇杩涜鐩戞帶銆?
 
-### Sysfs 条目
+### Sysfs 鏉＄洰
 
 
 ======================= ======================================================
-temp1_label		"中央芯片温度"（Central die temperature）
-temp1_input		中央芯片的测量温度
+temp1_label		"涓ぎ鑺墖娓╁害"锛圕entral die temperature锛?
+temp1_input		涓ぎ鑺墖鐨勬祴閲忔俯搴?
 
-temp[2-5]_label		"通道 [1-4] 温度"
-temp[2-5]_input		单个通道的测量温度
-temp[2-5]_alarm		温度告警
-temp[2-5]_max		最高温度
+temp[2-5]_label		"閫氶亾 [1-4] 娓╁害"
+temp[2-5]_input		鍗曚釜閫氶亾鐨勬祴閲忔俯搴?
+temp[2-5]_alarm		娓╁害鍛婅
+temp[2-5]_max		鏈€楂樻俯搴?
 ======================= ======================================================

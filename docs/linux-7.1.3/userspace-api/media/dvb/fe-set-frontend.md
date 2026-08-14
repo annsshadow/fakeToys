@@ -1,4 +1,4 @@
-######## FE_SET_FRONTEND
+﻿######## FE_SET_FRONTEND
 
 
 ## Name
@@ -15,23 +15,18 @@ FE_SET_FRONTEND
 
 
 `fd`
-    `open()` 返回的文件描述符。
-
+    `open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `p`
-    指向调谐（tuning）操作所需参数的指针。
-
+    鎸囧悜璋冭皭锛坱uning锛夋搷浣滄墍闇€鍙傛暟鐨勬寚閽堛€?
 ## Description
 
 
-该 ioctl 调用使用指定的参数启动一次调谐操作。如果参数有效且能够启动调谐，则该调用的结果将成功。然而，调谐操作本身的结果将作为事件异步到达（参见 FE_GET_EVENT 与 FrontendEvent 的文档）。如果在前一个操作完成之前发起了新的 FE_SET_FRONTEND 操作，则前一个操作将被中止，以便执行新的操作。该命令需要对设备具有读写访问权限。
-
+璇?ioctl 璋冪敤浣跨敤鎸囧畾鐨勫弬鏁板惎鍔ㄤ竴娆¤皟璋愭搷浣溿€傚鏋滃弬鏁版湁鏁堜笖鑳藉鍚姩璋冭皭锛屽垯璇ヨ皟鐢ㄧ殑缁撴灉灏嗘垚鍔熴€傜劧鑰岋紝璋冭皭鎿嶄綔鏈韩鐨勭粨鏋滃皢浣滀负浜嬩欢寮傛鍒拌揪锛堝弬瑙?FE_GET_EVENT 涓?FrontendEvent 鐨勬枃妗ｏ級銆傚鏋滃湪鍓嶄竴涓搷浣滃畬鎴愪箣鍓嶅彂璧蜂簡鏂扮殑 FE_SET_FRONTEND 鎿嶄綔锛屽垯鍓嶄竴涓搷浣滃皢琚腑姝紝浠ヤ究鎵ц鏂扮殑鎿嶄綔銆傝鍛戒护闇€瑕佸璁惧鍏锋湁璇诲啓璁块棶鏉冮檺銆?
 ## Return Value
 
 
-成功时返回 0。
-
-出错时返回 -1，并相应地设置 `errno` 变量。
-
+鎴愬姛鏃惰繑鍥?0銆?
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
 
     :header-rows:  0
     :stub-columns: 0
@@ -41,7 +36,6 @@ FE_SET_FRONTEND
 
        - `EINVAL`
 
-       - 达到所支持的最大符号率（symbol rate）。
-
+       - 杈惧埌鎵€鏀寔鐨勬渶澶х鍙风巼锛坰ymbol rate锛夈€?
 Generic error codes are described at the
 Generic Error Codes <gen-errors> chapter.

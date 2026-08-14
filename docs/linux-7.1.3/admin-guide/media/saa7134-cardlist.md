@@ -1,15 +1,15 @@
-本文档列出受 saa7134 系列视频捕获驱动支持的电视卡与视频采集卡设备清单。表格按驱动子模块、厂商与产品标识、设备名称三列组织，便于用户与开发者在移植或排错时核对硬件型号。设备名称中的描述性部分已译为中文，品牌与型号等专有标识保留英文原文；表格上方的说明文字亦已译为中文。该列表随内核版本演进而持续补充，具体支持情况以当前内核源码中的驱动实现为准，若遇到未列出的设备可参考相应驱动源码中的标识定义。
+﻿鏈枃妗ｅ垪鍑哄彈 saa7134 绯诲垪瑙嗛鎹曡幏椹卞姩鏀寔鐨勭數瑙嗗崱涓庤棰戦噰闆嗗崱璁惧娓呭崟銆傝〃鏍兼寜椹卞姩瀛愭ā鍧椼€佸巶鍟嗕笌浜у搧鏍囪瘑銆佽澶囧悕绉颁笁鍒楃粍缁囷紝渚夸簬鐢ㄦ埛涓庡紑鍙戣€呭湪绉绘鎴栨帓閿欐椂鏍稿纭欢鍨嬪彿銆傝澶囧悕绉颁腑鐨勬弿杩版€ч儴鍒嗗凡璇戜负涓枃锛屽搧鐗屼笌鍨嬪彿绛変笓鏈夋爣璇嗕繚鐣欒嫳鏂囧師鏂囷紱琛ㄦ牸涓婃柟鐨勮鏄庢枃瀛椾害宸茶瘧涓轰腑鏂囥€傝鍒楄〃闅忓唴鏍哥増鏈紨杩涜€屾寔缁ˉ鍏咃紝鍏蜂綋鏀寔鎯呭喌浠ュ綋鍓嶅唴鏍告簮鐮佷腑鐨勯┍鍔ㄥ疄鐜颁负鍑嗭紝鑻ラ亣鍒版湭鍒楀嚭鐨勮澶囧彲鍙傝€冪浉搴旈┍鍔ㄦ簮鐮佷腑鐨勬爣璇嗗畾涔夈€?
 
-本页随内核版本演进而更新，具体字段含义以当前内核源码为准。
+鏈〉闅忓唴鏍哥増鏈紨杩涜€屾洿鏂帮紝鍏蜂綋瀛楁鍚箟浠ュ綋鍓嶅唴鏍告簮鐮佷负鍑嗐€?
 
-如需进一步信息，请结合内核源码树中的对应实现与提交记录进行核对。
+濡傞渶杩涗竴姝ヤ俊鎭紝璇风粨鍚堝唴鏍告簮鐮佹爲涓殑瀵瑰簲瀹炵幇涓庢彁浜よ褰曡繘琛屾牳瀵广€?
 
-本页内容以结构化表格为主，表头与说明已译为中文，字段中的标识符与专有名称保留英文原文，以便与内核源码及文档交叉引用保持一致。
+鏈〉鍐呭浠ョ粨鏋勫寲琛ㄦ牸涓轰富锛岃〃澶翠笌璇存槑宸茶瘧涓轰腑鏂囷紝瀛楁涓殑鏍囪瘑绗︿笌涓撴湁鍚嶇О淇濈暀鑻辨枃鍘熸枃锛屼互渚夸笌鍐呮牳婧愮爜鍙婃枃妗ｄ氦鍙夊紩鐢ㄤ繚鎸佷竴鑷淬€?
 
-本页列出受 saa7134 系列视频捕获驱动支持的电视卡与采集卡设备，包含驱动模块、厂商与产品标识以及设备名称。设备名称中的描述性词汇已译为中文，品牌与型号标识符保留原文；表头已译为中文。
+鏈〉鍒楀嚭鍙?saa7134 绯诲垪瑙嗛鎹曡幏椹卞姩鏀寔鐨勭數瑙嗗崱涓庨噰闆嗗崱璁惧锛屽寘鍚┍鍔ㄦā鍧椼€佸巶鍟嗕笌浜у搧鏍囪瘑浠ュ強璁惧鍚嶇О銆傝澶囧悕绉颁腑鐨勬弿杩版€ц瘝姹囧凡璇戜负涓枃锛屽搧鐗屼笌鍨嬪彿鏍囪瘑绗︿繚鐣欏師鏂囷紱琛ㄥご宸茶瘧涓轰腑鏂囥€?
 
 
-## SAA7134 卡片列表
+## SAA7134 鍗＄墖鍒楄〃
 
 
 
@@ -17,16 +17,16 @@
    :widths: 2 19 18
    :stub-columns: 0
 
-   - - 卡片编号
-     - 卡片名称
-     - PCI 子系统 ID
+   - - 鍗＄墖缂栧彿
+     - 鍗＄墖鍚嶇О
+     - PCI 瀛愮郴缁?ID
 
    - - 0
-     - 未知/GENERIC
+     - 鏈煡/GENERIC
      -
 
    - - 1
-     - Proteus 专业版 [philips 参考设计]
+     - Proteus 涓撲笟鐗?[philips 鍙傝€冭璁
      - 1131:2001, 1131:2001
 
    - - 2
@@ -71,7 +71,7 @@
 
    - - 12
      - Medion 7134
-     - 16为:0003, 16为:5000
+     - 16涓?0003, 16涓?5000
 
    - - 13
      - Typhoon TV+Radio 90031
@@ -83,18 +83,18 @@
 
    - - 15
      - ELSA EX-VISION 500TV
-     - 1048:226一个
+     - 1048:226涓€涓?
 
    - - 16
      - ASUS TV-FM 7134
      - 1043:4842, 1043:4830, 1043:4840
 
    - - 17
-     - AOPEN VA1000 电源
+     - AOPEN VA1000 鐢垫簮
      - 1131:7133
 
    - - 18
-     - BMK MPEX 无 Tuner
+     - BMK MPEX 鏃?Tuner
      -
 
    - - 19
@@ -106,12 +106,12 @@
      - 102B:48d0
 
    - - 21
-     - 10MOONS PCI TV CAPTURE 卡
+     - 10MOONS PCI TV CAPTURE 鍗?
      - 1131:2001
 
    - - 22
      - AverMedia M156 / Medion 2819
-     - 1461:一个70b
+     - 1461:涓€涓?0b
 
    - - 23
      - BMK MPEX Tuner
@@ -119,7 +119,7 @@
 
    - - 24
      - KNC One TV-Station DVR
-     - 1894:一个006
+     - 1894:涓€涓?06
 
    - - 25
      - ASUS TV-FM 7133
@@ -142,11 +142,11 @@
      - 1461:050c
 
    - - 30
-     - Elitegroup ECS TVP3XP FM1216 Tuner 卡(PAL-BG,FM)
+     - Elitegroup ECS TVP3XP FM1216 Tuner 鍗?PAL-BG,FM)
      - 1019:4cb4
 
    - - 31
-     - Elitegroup ECS TVP3XP FM1236 Tuner 卡 (NTSC,FM)
+     - Elitegroup ECS TVP3XP FM1236 Tuner 鍗?(NTSC,FM)
      - 1019:4cb5
 
    - - 32
@@ -170,7 +170,7 @@
      - 12ab:0800
 
    - - 37
-     - Items MuchTV 增强版 / IT-005
+     - Items MuchTV 澧炲己鐗?/ IT-005
      -
 
    - - 38
@@ -178,7 +178,7 @@
      - 153b:1152
 
    - - 39
-     - LifeView FlyTV Platinum 迷你
+     - LifeView FlyTV Platinum 杩蜂綘
      - 5168:0212, 4e42:0212, 5169:1502
 
    - - 40
@@ -210,7 +210,7 @@
      - 1461:d6ee
 
    - - 47
-     - Terratec Cinergy 400 移动
+     - Terratec Cinergy 400 绉诲姩
      - 153b:1162
 
    - - 48
@@ -247,7 +247,7 @@
 
    - - 56
      - Avermedia AVerTV 307
-     - 1461:一个70一个
+     - 1461:涓€涓?0涓€涓?
 
    - - 57
      - Avermedia AVerTV GO 007 FM
@@ -266,7 +266,7 @@
      - 5168:0502, 4e42:0502, 1489:0502
 
    - - 61
-     - Philips TOUGH DVB-T 参考设计
+     - Philips TOUGH DVB-T 鍙傝€冭璁?
      - 1131:2004
 
    - - 62
@@ -278,7 +278,7 @@
      -
 
    - - 64
-     - FlyTV 迷你 Asus Digimatrix
+     - FlyTV 杩蜂綘 Asus Digimatrix
      - 1043:0210
 
    - - 65
@@ -298,7 +298,7 @@
      - 5456:7135
 
    - - 69
-     - Philips EUROPA V3 参考设计
+     - Philips EUROPA V3 鍙傝€冭璁?
      - 1131:2004
 
    - - 70
@@ -318,15 +318,15 @@
      - 1435:7330
 
    - - 74
-     - LifeView FlyTV Platinum 迷你2
+     - LifeView FlyTV Platinum 杩蜂綘2
      - 14c0:1212
 
    - - 75
-     - AVerMedia AVerTVHD MCE 一个180
+     - AVerMedia AVerTVHD MCE 涓€涓?80
      - 1461:1044
 
    - - 76
-     - SKNet MonsterTV 移动
+     - SKNet MonsterTV 绉诲姩
      - 1131:4ee9
 
    - - 77
@@ -346,11 +346,11 @@
      - 1043:0210
 
    - - 81
-     - Philips Tiger 参考设计
+     - Philips Tiger 鍙傝€冭璁?
      - 1131:2018
 
    - - 82
-     - MSI TV@Anywhere 增强版
+     - MSI TV@Anywhere 澧炲己鐗?
      - 1462:6231, 1462:8624
 
    - - 83
@@ -386,19 +386,19 @@
      - 17de:7350, 17de:7352
 
    - - 91
-     - AVerMedia 一个169 B
+     - AVerMedia 涓€涓?69 B
      - 1461:7360
 
    - - 92
-     - AVerMedia 一个169 B1
+     - AVerMedia 涓€涓?69 B1
      - 1461:6360
 
    - - 93
      - Medion 7134 Bridge #2
-     - 16为:0005
+     - 16涓?0005
 
    - - 94
-     - LifeView FlyDVB-T Hybrid Cardbus/MSI TV @nywhere 一个/D NB
+     - LifeView FlyDVB-T Hybrid Cardbus/MSI TV @nywhere 涓€涓?D NB
      - 5168:3306, 5168:3502, 5168:3307, 4e42:3502
 
    - - 95
@@ -407,18 +407,18 @@
 
    - - 96
      - Medion Md8800 Quadro
-     - 16为:0007, 16为:0008, 16为:000d
+     - 16涓?0007, 16涓?0008, 16涓?000d
 
    - - 97
      - LifeView FlyDVB-S /Acorp TV134DS
      - 5168:0300, 4e42:0300
 
    - - 98
-     - Proteus 专业版 2309
+     - Proteus 涓撲笟鐗?2309
      - 0919:2003
 
    - - 99
-     - AVerMedia TV Hybrid 一个16AR
+     - AVerMedia TV Hybrid 涓€涓?6AR
      - 1461:2c00
 
    - - 100
@@ -434,7 +434,7 @@
      - 1461:9715
 
    - - 103
-     - Compro Videomate DVB-T200一个
+     - Compro Videomate DVB-T200涓€涓?
      -
 
    - - 104
@@ -458,7 +458,7 @@
      - 153b:1175
 
    - - 109
-     - Philips Tiger - S 参考设计
+     - Philips Tiger - S 鍙傝€冭璁?
      -
 
    - - 110
@@ -474,7 +474,7 @@
      - 1043:4876
 
    - - 113
-     - Elitegroup ECS TVP3XP FM1246 Tuner 卡 (PAL,FM)
+     - Elitegroup ECS TVP3XP FM1246 Tuner 鍗?(PAL,FM)
      - 1019:4cb6
 
    - - 114
@@ -486,7 +486,7 @@
      - 0919:2003
 
    - - 116
-     - 10MOONS TM300 TV 卡
+     - 10MOONS TM300 TV 鍗?
      - 1131:2304
 
    - - 117
@@ -554,15 +554,15 @@
      -
 
    - - 133
-     - NXP Snake DVB-S 参考设计
+     - NXP Snake DVB-S 鍙傝€冭璁?
      -
 
    - - 134
      - Medion/Creatix CTX953 Hybrid
-     - 16为:0010
+     - 16涓?0010
 
    - - 135
-     - MSI TV@nywhere 一个/D v1.1
+     - MSI TV@nywhere 涓€涓?D v1.1
      - 1462:8625
 
    - - 136
@@ -570,24 +570,24 @@
      - 1461:f436
 
    - - 137
-     - AVerMedia Hybrid TV/Radio (一个16D)
+     - AVerMedia Hybrid TV/Radio (涓€涓?6D)
      - 1461:f936
 
    - - 138
      - Avermedia M115
-     - 1461:一个836
+     - 1461:涓€涓?36
 
    - - 139
      - Compro VideoMate T750
      - 185b:c900
 
    - - 140
-     - Avermedia DVB-S 专业版 一个700
-     - 1461:一个7一个1
+     - Avermedia DVB-S 涓撲笟鐗?涓€涓?00
+     - 1461:涓€涓?涓€涓?
 
    - - 141
-     - Avermedia DVB-S Hybrid+FM 一个700
-     - 1461:一个7一个2
+     - Avermedia DVB-S Hybrid+FM 涓€涓?00
+     - 1461:涓€涓?涓€涓?
 
    - - 142
      - Beholder BeholdTV H6
@@ -610,15 +610,15 @@
      -
 
    - - 147
-     - Asus Tiger 3在1
+     - Asus Tiger 3鍦?
      - 1043:4878
 
    - - 148
      - Encore ENLTV-FM v5.3
-     - 1一个7f:2008
+     - 1涓€涓?f:2008
 
    - - 149
-     - Avermedia PCI pure analog (M135一个)
+     - Avermedia PCI pure analog (M135涓€涓?
      - 1461:f11d
 
    - - 150
@@ -634,11 +634,11 @@
      - 1043:4857
 
    - - 153
-     - Kworld 增强版 TV Analog Lite PCI
+     - Kworld 澧炲己鐗?TV Analog Lite PCI
      - 17de:7128
 
    - - 154
-     - Avermedia AVerTV GO 007 FM 增强版
+     - Avermedia AVerTV GO 007 FM 澧炲己鐗?
      - 1461:f31d
 
    - - 155
@@ -647,11 +647,11 @@
 
    - - 156
      - Hauppauge WinTV-HVR1120 DVB-T/Hybrid
-     - 0070:6707, 0070:6709, 0070:670一个
+     - 0070:6707, 0070:6709, 0070:670涓€涓?
 
    - - 157
      - Avermedia AVerTV Studio 507UA
-     - 1461:一个11b
+     - 1461:涓€涓?1b
 
    - - 158
      - AVerMedia Cardbus TV/Radio (E501R)
@@ -703,14 +703,14 @@
 
    - - 170
      - AverMedia AverTV Studio 505
-     - 1461:一个115
+     - 1461:涓€涓?15
 
    - - 171
      - Beholder BeholdTV X7
      - 5ace:7595
 
    - - 172
-     - RoverMedia TV Link 专业版 FM
+     - RoverMedia TV Link 涓撲笟鐗?FM
      - 19d1:0138
 
    - - 173
@@ -738,11 +738,11 @@
      - 5ace:7190
 
    - - 179
-     - Beholder BeholdTV 一个7
+     - Beholder BeholdTV 涓€涓?
      - 5ace:7090
 
    - - 180
-     - Avermedia PCI M733一个
+     - Avermedia PCI M733涓€涓?
      - 1461:4155, 1461:4255
 
    - - 181
@@ -759,10 +759,10 @@
 
    - - 184
      - Encore ENLTV-FM 3
-     - 1一个7f:2108
+     - 1涓€涓?f:2108
 
    - - 185
-     - MagicPro ProHDTV 专业版2 DMB-TH/Hybrid
+     - MagicPro ProHDTV 涓撲笟鐗? DMB-TH/Hybrid
      - 17de:d136
 
    - - 186
@@ -779,7 +779,7 @@
 
    - - 189
      - Kworld PC150-U
-     - 17de:一个134
+     - 17de:涓€涓?34
 
    - - 190
      - Asus My Cinema PS3-100
@@ -790,21 +790,21 @@
      -
 
    - - 192
-     - AverMedia AverTV Satellite Hybrid+FM 一个706
+     - AverMedia AverTV Satellite Hybrid+FM 涓€涓?06
      - 1461:2055
 
    - - 193
-     - WIS Voyager 或 compatible
+     - WIS Voyager 鎴?compatible
      - 1905:7007
 
    - - 194
      - AverMedia AverTV/505
-     - 1461:一个10一个
+     - 1461:涓€涓?0涓€涓?
 
    - - 195
      - Leadtek Winfast TV2100 FM
-     - 107d:6f3一个
+     - 107d:6f3涓€涓?
 
    - - 196
-     - SnaZio* TVPVR 专业版
+     - SnaZio* TVPVR 涓撲笟鐗?
      - 1779:13cf

@@ -1,30 +1,20 @@
-## power allocator 调节器可调参数
+﻿## power allocator 璋冭妭鍣ㄥ彲璋冨弬鏁?
 
+### 瑙﹀彂鐐癸紙Trip points锛?
 
-### 触发点（Trip points）
+璇ヨ皟鑺傚櫒鍦ㄥ叿鏈変互涓嬩袱涓鍔ㄨЕ鍙戠偣鏃跺伐浣滄渶浣筹細
 
+1. 鈥渟witch on鈥濓紙寮€鍚級瑙﹀彂鐐癸細娓╁害楂樹簬姝ゅ€兼椂锛岃皟鑺傚櫒鐨勬帶鍒跺惊鐜紑濮嬭繍琛屻€?   杩欐槸鐑尯锛坱hermal zone锛夌殑绗竴涓鍔ㄨЕ鍙戠偣銆?
+2. 鈥渄esired temperature鈥濓紙鏈熸湜娓╁害锛夎Е鍙戠偣锛氬畠搴斿綋楂樹簬鈥渟witch on鈥濊Е鍙戠偣銆?   杩欐槸璋冭妭鍣ㄦ墍鎺у埗鐨勭洰鏍囨俯搴︺€傝繖鏄儹鍖虹殑鏈€鍚庝竴涓鍔ㄨЕ鍙戠偣銆?
 
-该调节器在具有以下两个被动触发点时工作最佳：
+### PID 鎺у埗鍣?
 
-1. “switch on”（开启）触发点：温度高于此值时，调节器的控制循环开始运行。
-   这是热区（thermal zone）的第一个被动触发点。
-
-2. “desired temperature”（期望温度）触发点：它应当高于“switch on”触发点。
-   这是调节器所控制的目标温度。这是热区的最后一个被动触发点。
-
-
-### PID 控制器
-
-
-power allocator 调节器实现了一个比例-积分-导数控制器（PID 控制器），以温度为
-控制输入、以功率为受控输出：
+power allocator 璋冭妭鍣ㄥ疄鐜颁簡涓€涓瘮渚?绉垎-瀵兼暟鎺у埗鍣紙PID 鎺у埗鍣級锛屼互娓╁害涓?鎺у埗杈撳叆銆佷互鍔熺巼涓哄彈鎺ц緭鍑猴細
 
     P_max = k_p ** e + k_i ** err_integral + k_d * diff_err + sustainable_power
 
-其中
-   - e = desired_temperature - current_temperature（期望温度 - 当前温度）
-   - err_integral 是之前所有误差的累加和
-   - diff_err = e - previous_error（当前误差 - 上一次误差）
+鍏朵腑
+   - e = desired_temperature - current_temperature锛堟湡鏈涙俯搴?- 褰撳墠娓╁害锛?   - err_integral 鏄箣鍓嶆墍鏈夎宸殑绱姞鍜?   - diff_err = e - previous_error锛堝綋鍓嶈宸?- 涓婁竴娆¤宸級
 
 ```
 				      k_d
@@ -53,19 +43,13 @@ power allocator 调节器实现了一个比例-积分-导数控制器（PID 控�
 		      k_po/k_pu
 ```
 
-### 可持续功率（Sustainable power）
+### 鍙寔缁姛鐜囷紙Sustainable power锛?
 
-
-在注册热区时，应当提供一个可持续耗散功率（单位 mW）的估计值。它估计了在期望的
-控制温度下可以耗散的持续功率。这是在期望的最高温度下可分配的最大持续功率。实际
-持续功率可能会因为多种原因而变化。闭环控制器会处理诸如环境条件，以及与硅片速度
-等级（speed-grade）相关的一些因素所带来的变化。因此 `sustainable_power` 仅仅是一
-个估计值，并且可以被调优以影响热爬升（thermal ramp）的激进程度。作为参考，一部
-4 英寸手机的可持续功率通常为 2000mW，而一台 10 英寸平板约为 4500mW（可能随屏幕
-尺寸而变）。也可以用一个抽象的标度来表达功率值。持续功率应当与相关冷却设备所使用的
-标度对齐。
-
-如果你使用的是设备树，请把它作为
+鍦ㄦ敞鍐岀儹鍖烘椂锛屽簲褰撴彁渚涗竴涓彲鎸佺画鑰楁暎鍔熺巼锛堝崟浣?mW锛夌殑浼拌鍊笺€傚畠浼拌浜嗗湪鏈熸湜鐨?鎺у埗娓╁害涓嬪彲浠ヨ€楁暎鐨勬寔缁姛鐜囥€傝繖鏄湪鏈熸湜鐨勬渶楂樻俯搴︿笅鍙垎閰嶇殑鏈€澶ф寔缁姛鐜囥€傚疄闄?鎸佺画鍔熺巼鍙兘浼氬洜涓哄绉嶅師鍥犺€屽彉鍖栥€傞棴鐜帶鍒跺櫒浼氬鐞嗚濡傜幆澧冩潯浠讹紝浠ュ強涓庣鐗囬€熷害
+绛夌骇锛坰peed-grade锛夌浉鍏崇殑涓€浜涘洜绱犳墍甯︽潵鐨勫彉鍖栥€傚洜姝?`sustainable_power` 浠呬粎鏄竴
+涓及璁″€硷紝骞朵笖鍙互琚皟浼樹互褰卞搷鐑埇鍗囷紙thermal ramp锛夌殑婵€杩涚▼搴︺€備綔涓哄弬鑰冿紝涓€閮?4 鑻卞鎵嬫満鐨勫彲鎸佺画鍔熺巼閫氬父涓?2000mW锛岃€屼竴鍙?10 鑻卞骞虫澘绾︿负 4500mW锛堝彲鑳介殢灞忓箷
+灏哄鑰屽彉锛夈€備篃鍙互鐢ㄤ竴涓娊璞＄殑鏍囧害鏉ヨ〃杈惧姛鐜囧€笺€傛寔缁姛鐜囧簲褰撲笌鐩稿叧鍐峰嵈璁惧鎵€浣跨敤鐨?鏍囧害瀵归綈銆?
+濡傛灉浣犱娇鐢ㄧ殑鏄澶囨爲锛岃鎶婂畠浣滀负
 ```
 	thermal-zones {
 		soc_thermal {
@@ -74,161 +58,118 @@ power allocator 调节器实现了一个比例-积分-导数控制器（PID 控�
 			sustainable-power = <2500>;
 			...
 ```
-的属性来添加。
-
-相反，如果热区是从平台代码注册的，则传入一个带有 `sustainable_power` 的
-`thermal_zone_params`。如果原本没有传入 `thermal_zone_params`，那么类似下面这样
-```
+鐨勫睘鎬ф潵娣诲姞銆?
+鐩稿弽锛屽鏋滅儹鍖烘槸浠庡钩鍙颁唬鐮佹敞鍐岀殑锛屽垯浼犲叆涓€涓甫鏈?`sustainable_power` 鐨?`thermal_zone_params`銆傚鏋滃師鏈病鏈変紶鍏?`thermal_zone_params`锛岄偅涔堢被浼间笅闈㈣繖鏍?```
 	static const struct thermal_zone_params tz_params = {
 		.sustainable_power = 3500,
 	};
 ```
-然后，把 `tz_params` 作为第 5 个参数传给 `thermal_zone_device_register()`。
+鐒跺悗锛屾妸 `tz_params` 浣滀负绗?5 涓弬鏁颁紶缁?`thermal_zone_device_register()`銆?
+
+### k_po 涓?k_pu
 
 
-### k_po 与 k_pu
-
-
-power allocator 热调节器中 PID 控制器的实现允许配置两个比例项常数：`k_po` 和
-`k_pu`。`k_po` 是温度超调期间（当前温度高于“desired temperature”触发点）的
-比例项常数。反之，`k_pu` 是温度欠调期间（当前温度低于“desired temperature”触发点）
-的比例项常数。
-
-这些控制项旨在作为配置系统允许的thermal “ramp”（热爬升）的主要机制。例如，较低
-的 `k_pu` 值会提供更慢的爬升，代价是在低温下限制可用容量。另一方面，较高的
-`k_pu` 值会导致调节器在温度较低时授予非常高的功率，并可能导致温度超调。
-
+power allocator 鐑皟鑺傚櫒涓?PID 鎺у埗鍣ㄧ殑瀹炵幇鍏佽閰嶇疆涓や釜姣斾緥椤瑰父鏁帮細`k_po` 鍜?`k_pu`銆俙k_po` 鏄俯搴﹁秴璋冩湡闂达紙褰撳墠娓╁害楂樹簬鈥渄esired temperature鈥濊Е鍙戠偣锛夌殑
+姣斾緥椤瑰父鏁般€傚弽涔嬶紝`k_pu` 鏄俯搴︽瑺璋冩湡闂达紙褰撳墠娓╁害浣庝簬鈥渄esired temperature鈥濊Е鍙戠偣锛?鐨勬瘮渚嬮」甯告暟銆?
+杩欎簺鎺у埗椤规棬鍦ㄤ綔涓洪厤缃郴缁熷厑璁哥殑thermal 鈥渞amp鈥濓紙鐑埇鍗囷級鐨勪富瑕佹満鍒躲€備緥濡傦紝杈冧綆
+鐨?`k_pu` 鍊间細鎻愪緵鏇存參鐨勭埇鍗囷紝浠ｄ环鏄湪浣庢俯涓嬮檺鍒跺彲鐢ㄥ閲忋€傚彟涓€鏂归潰锛岃緝楂樼殑
+`k_pu` 鍊间細瀵艰嚧璋冭妭鍣ㄥ湪娓╁害杈冧綆鏃舵巿浜堥潪甯搁珮鐨勫姛鐜囷紝骞跺彲鑳藉鑷存俯搴﹁秴璋冦€?
 ```
     2 * sustainable_power / (desired_temperature - switch_on_temp)
 ```
-这意味着在 `switch_on_temp` 处，控制器比例项的输出将是 2 * `sustainable_power`。
-默认值
-```
+杩欐剰鍛崇潃鍦?`switch_on_temp` 澶勶紝鎺у埗鍣ㄦ瘮渚嬮」鐨勮緭鍑哄皢鏄?2 * `sustainable_power`銆?榛樿鍊?```
     sustainable_power / (desired_temperature - switch_on_temp)
 ```
-关注 PID 的比例项和前馈值
-```
+鍏虫敞 PID 鐨勬瘮渚嬮」鍜屽墠棣堝€?```
     P_max = k_p * e + sustainable_power
 ```
-比例项与期望温度和当前温度之差成正比。当当前温度就是期望温度时，比例分量为零，
-`P_max` = `sustainable_power`。也就是说，在恒定负载下，系统应当运行在热平衡状态。
-`sustainable_power` 仅仅是一个估计值，这正是需要此类闭环控制的原因。
-
+姣斾緥椤逛笌鏈熸湜娓╁害鍜屽綋鍓嶆俯搴︿箣宸垚姝ｆ瘮銆傚綋褰撳墠娓╁害灏辨槸鏈熸湜娓╁害鏃讹紝姣斾緥鍒嗛噺涓洪浂锛?`P_max` = `sustainable_power`銆備篃灏辨槸璇达紝鍦ㄦ亽瀹氳礋杞戒笅锛岀郴缁熷簲褰撹繍琛屽湪鐑钩琛＄姸鎬併€?`sustainable_power` 浠呬粎鏄竴涓及璁″€硷紝杩欐鏄渶瑕佹绫婚棴鐜帶鍒剁殑鍘熷洜銆?
 ```
     P_max = 2 * sustainable_power * (T_set - T) / (T_set - T_on) +
 	sustainable_power
 ```
-其中：
-
-    - T_set 是期望温度
-    - T 是当前温度
-    - T_on 是开启温度（switch on temperature）
-
-当当前温度就是 switch_on 温度时，上式
+鍏朵腑锛?
+    - T_set 鏄湡鏈涙俯搴?    - T 鏄綋鍓嶆俯搴?    - T_on 鏄紑鍚俯搴︼紙switch on temperature锛?
+褰撳綋鍓嶆俯搴﹀氨鏄?switch_on 娓╁害鏃讹紝涓婂紡
 ```
     P_max = 2 * sustainable_power * (T_set - T_on) / (T_set - T_on) +
 	sustainable_power = 2 * sustainable_power + sustainable_power =
 	3 * sustainable_power
 ```
-因此，仅比例项就会随着温度从开启温度升高到期望温度，将功率从 3 * `sustainable_power`
-线性降低到 `sustainable_power`。
+鍥犳锛屼粎姣斾緥椤瑰氨浼氶殢鐫€娓╁害浠庡紑鍚俯搴﹀崌楂樺埌鏈熸湜娓╁害锛屽皢鍔熺巼浠?3 * `sustainable_power`
+绾挎€ч檷浣庡埌 `sustainable_power`銆?
+
+### k_i 涓?integral_cutoff
 
 
-### k_i 与 integral_cutoff
-
-
-`k_i` 配置 PID 循环的积分项常数。这一项使 PID 控制器能够补偿长期漂移，以及输出的
-量化特性：冷却设备无法设置调节器所请求的精确功率。当温度误差低于 `integral_cutoff`
-时，误差被累加进积分项。这一项随后乘以 `k_i`，其结果被加到控制器的输出中。通常
-`k_i` 设得较低（1 或 2），而 `integral_cutoff` 为 0。
-
+`k_i` 閰嶇疆 PID 寰幆鐨勭Н鍒嗛」甯告暟銆傝繖涓€椤逛娇 PID 鎺у埗鍣ㄨ兘澶熻ˉ鍋块暱鏈熸紓绉伙紝浠ュ強杈撳嚭鐨?閲忓寲鐗规€э細鍐峰嵈璁惧鏃犳硶璁剧疆璋冭妭鍣ㄦ墍璇锋眰鐨勭簿纭姛鐜囥€傚綋娓╁害璇樊浣庝簬 `integral_cutoff`
+鏃讹紝璇樊琚疮鍔犺繘绉垎椤广€傝繖涓€椤归殢鍚庝箻浠?`k_i`锛屽叾缁撴灉琚姞鍒版帶鍒跺櫒鐨勮緭鍑轰腑銆傞€氬父
+`k_i` 璁惧緱杈冧綆锛? 鎴?2锛夛紝鑰?`integral_cutoff` 涓?0銆?
 
 ### k_d
 
 
-`k_d` 配置 PID 循环的导数项常数。建议保持默认值：0。
+`k_d` 閰嶇疆 PID 寰幆鐨勫鏁伴」甯告暟銆傚缓璁繚鎸侀粯璁ゅ€硷細0銆?
+
+## 鍐峰嵈璁惧鍔熺巼 API
 
 
-## 冷却设备功率 API
-
-
-由该调节器控制的冷却设备必须在其 `cooling_device_ops` 中提供额外的“power” API。
-它由三个操作组成：
-
+鐢辫璋冭妭鍣ㄦ帶鍒剁殑鍐峰嵈璁惧蹇呴』鍦ㄥ叾 `cooling_device_ops` 涓彁渚涢澶栫殑鈥減ower鈥?API銆?瀹冪敱涓変釜鎿嶄綔缁勬垚锛?
 ```
     int get_requested_power(struct thermal_cooling_device *cdev,
 			    struct thermal_zone_device *tz, u32 *power);
 ```
 @cdev:
-	`struct thermal_cooling_device` 指针
+	`struct thermal_cooling_device` 鎸囬拡
 @tz:
-	当前所处的热区
+	褰撳墠鎵€澶勭殑鐑尯
 @power:
-	用于存放计算所得功率的指针
+	鐢ㄤ簬瀛樻斁璁＄畻鎵€寰楀姛鐜囩殑鎸囬拡
 
-`get_requested_power()` 计算设备所请求的功率（单位毫瓦）并存入 @power。成功时返回
-0，失败时返回 -E*。目前 power allocator 调节器用它通过计算要给每个冷却设备分配多少
-功率。
-
+`get_requested_power()` 璁＄畻璁惧鎵€璇锋眰鐨勫姛鐜囷紙鍗曚綅姣摝锛夊苟瀛樺叆 @power銆傛垚鍔熸椂杩斿洖
+0锛屽け璐ユ椂杩斿洖 -E*銆傜洰鍓?power allocator 璋冭妭鍣ㄧ敤瀹冮€氳繃璁＄畻瑕佺粰姣忎釜鍐峰嵈璁惧鍒嗛厤澶氬皯
+鍔熺巼銆?
 ```
 	int state2power(struct thermal_cooling_device *cdev, struct
 			thermal_zone_device *tz, unsigned long state,
 			u32 *power);
 ```
 @cdev:
-	`struct thermal_cooling_device` 指针
+	`struct thermal_cooling_device` 鎸囬拡
 @tz:
-	当前所处的热区
+	褰撳墠鎵€澶勭殑鐑尯
 @state:
-	一个冷却设备状态
-@power:
-	用于存放等效功率的指针
-
-把冷却设备状态 @state 转换为功耗（毫瓦）并存入 @power。成功时返回 0，失败时返回
--E*。目前 thermal core 用它通过计算一个执行体（actor）能够消耗的最大功率。
-
+	涓€涓喎鍗磋澶囩姸鎬?@power:
+	鐢ㄤ簬瀛樻斁绛夋晥鍔熺巼鐨勬寚閽?
+鎶婂喎鍗磋澶囩姸鎬?@state 杞崲涓哄姛鑰楋紙姣摝锛夊苟瀛樺叆 @power銆傛垚鍔熸椂杩斿洖 0锛屽け璐ユ椂杩斿洖
+-E*銆傜洰鍓?thermal core 鐢ㄥ畠閫氳繃璁＄畻涓€涓墽琛屼綋锛坅ctor锛夎兘澶熸秷鑰楃殑鏈€澶у姛鐜囥€?
 ```
 	int power2state(struct thermal_cooling_device *cdev, u32 power,
 			unsigned long *state);
 ```
 @cdev:
-	`struct thermal_cooling_device` 指针
+	`struct thermal_cooling_device` 鎸囬拡
 @power:
-	功率（毫瓦）
+	鍔熺巼锛堟鐡︼級
 @state:
-	用于存放所得状态的指针
+	鐢ㄤ簬瀛樻斁鎵€寰楃姸鎬佺殑鎸囬拡
 
-计算一个冷却设备状态，使该设备最多消耗 @power 毫瓦，并存入 @state。成功时返回 0，
-失败时返回 -E*。目前 thermal core 用它通过把 power allocator 调节器设定的某个功率
-转换为冷却设备能够设置的状态。它是一个函数，因为这种转换可能依赖于可能发生变化的
-外部因素，因此该函数应当在“当前情况”下给出最佳转换。
+璁＄畻涓€涓喎鍗磋澶囩姸鎬侊紝浣胯璁惧鏈€澶氭秷鑰?@power 姣摝锛屽苟瀛樺叆 @state銆傛垚鍔熸椂杩斿洖 0锛?澶辫触鏃惰繑鍥?-E*銆傜洰鍓?thermal core 鐢ㄥ畠閫氳繃鎶?power allocator 璋冭妭鍣ㄨ瀹氱殑鏌愪釜鍔熺巼
+杞崲涓哄喎鍗磋澶囪兘澶熻缃殑鐘舵€併€傚畠鏄竴涓嚱鏁帮紝鍥犱负杩欑杞崲鍙兘渚濊禆浜庡彲鑳藉彂鐢熷彉鍖栫殑
+澶栭儴鍥犵礌锛屽洜姝よ鍑芥暟搴斿綋鍦ㄢ€滃綋鍓嶆儏鍐碘€濅笅缁欏嚭鏈€浣宠浆鎹€?
 
-
-### 冷却设备权重
+### 鍐峰嵈璁惧鏉冮噸
 
 
-权重是一种在冷却设备之间偏置分配的机制。它们表达了不同冷却设备的相对功率效率。
-可以用较高的权重来表达较高的功率效率。权重是相对的，如果每个冷却设备的权重都是
-1，则认为它们相等。这在异构系统中尤其有用，例如两个冷却设备可能执行同类计算，但
-效率不同。例如一个拥有两种不同类型处理器的系统。
+鏉冮噸鏄竴绉嶅湪鍐峰嵈璁惧涔嬮棿鍋忕疆鍒嗛厤鐨勬満鍒躲€傚畠浠〃杈句簡涓嶅悓鍐峰嵈璁惧鐨勭浉瀵瑰姛鐜囨晥鐜囥€?鍙互鐢ㄨ緝楂樼殑鏉冮噸鏉ヨ〃杈捐緝楂樼殑鍔熺巼鏁堢巼銆傛潈閲嶆槸鐩稿鐨勶紝濡傛灉姣忎釜鍐峰嵈璁惧鐨勬潈閲嶉兘鏄?1锛屽垯璁や负瀹冧滑鐩哥瓑銆傝繖鍦ㄥ紓鏋勭郴缁熶腑灏ゅ叾鏈夌敤锛屼緥濡備袱涓喎鍗磋澶囧彲鑳芥墽琛屽悓绫昏绠楋紝浣?鏁堢巼涓嶅悓銆備緥濡備竴涓嫢鏈変袱绉嶄笉鍚岀被鍨嬪鐞嗗櫒鐨勭郴缁熴€?
+濡傛灉鐑尯鏄€氳繃 `thermal_zone_device_register()`锛堝嵆骞冲彴浠ｇ爜锛夋敞鍐岀殑锛岄偅涔堟潈閲?浣滀负鐑尯鐨?`thermal_bind_parameters` 鐨勪竴閮ㄥ垎浼犲叆銆傚鏋滃钩鍙版槸閫氳繃璁惧鏍戞敞鍐岀殑锛?閭ｄ箞瀹冧滑浣滀负 `cooling-maps` 鑺傜偣涓瘡涓?map 鐨?`contribution` 灞炴€т紶鍏ャ€?
 
-如果热区是通过 `thermal_zone_device_register()`（即平台代码）注册的，那么权重
-作为热区的 `thermal_bind_parameters` 的一部分传入。如果平台是通过设备树注册的，
-那么它们作为 `cooling-maps` 节点中每个 map 的 `contribution` 属性传入。
+## power allocator 璋冭妭鍣ㄧ殑灞€闄愭€?
 
+power allocator 璋冭妭鍣ㄧ殑 PID 鎺у埗鍣ㄥ湪瀛樺湪鍛ㄦ湡鎬?tick 鏃跺伐浣滄渶浣炽€傚鏋滀綘鏈変竴涓?椹卞姩鍙嶅璋冪敤 `thermal_zone_device_update()`锛堟垨浠讳綍鏈€缁堜細璋冪敤璋冭妭鍣?`throttle()`
+鍑芥暟鐨勪笢瑗匡級锛岃皟鑺傚櫒鐨勫搷搴斿氨涓嶄細寰堝ソ銆傛敞鎰忥紝杩欏苟闈炶璋冭妭鍣ㄧ壒鏈夆€斺€攕tep-wise 璋冭妭鍣?涔熸槸濡傛锛屽鏋滀綘姣旀甯哥殑 thermal 妗嗘灦 tick 鏇撮绻佸湴璋冪敤瀹冪殑 throttle()锛堜緥濡傜敱浜?涓柇锛夛紝瀹冧篃浼氳涓哄紓甯革紝鍥犱负瀹冧細鍙嶅簲杩囧害銆?
 
-## power allocator 调节器的局限性
+## Energy Model 瑕佹眰
 
 
-power allocator 调节器的 PID 控制器在存在周期性 tick 时工作最佳。如果你有一个
-驱动反复调用 `thermal_zone_device_update()`（或任何最终会调用调节器 `throttle()`
-函数的东西），调节器的响应就不会很好。注意，这并非该调节器特有——step-wise 调节器
-也是如此，如果你比正常的 thermal 框架 tick 更频繁地调用它的 throttle()（例如由于
-中断），它也会行为异常，因为它会反应过度。
-
-
-## Energy Model 要求
-
-
-另一件重要的事情是冷却设备所提供的功率值标度要一致。单个热区中的所有冷却设备，其
-功率值应当要么以毫瓦报告，要么缩放到相同的“抽象标度”。
+鍙︿竴浠堕噸瑕佺殑浜嬫儏鏄喎鍗磋澶囨墍鎻愪緵鐨勫姛鐜囧€兼爣搴﹁涓€鑷淬€傚崟涓儹鍖轰腑鐨勬墍鏈夊喎鍗磋澶囷紝鍏?鍔熺巼鍊煎簲褰撹涔堜互姣摝鎶ュ憡锛岃涔堢缉鏀惧埌鐩稿悓鐨勨€滄娊璞℃爣搴︹€濄€?

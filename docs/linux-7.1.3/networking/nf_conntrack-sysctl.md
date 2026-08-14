@@ -1,209 +1,147 @@
+﻿
+## Netfilter 杩炴帴璺熻釜 Sysfs 鍙橀噺
 
-## Netfilter 连接跟踪 Sysfs 变量
 
-
-## /proc/sys/net/netfilter/nf_conntrack_* 变量：
-
+## /proc/sys/net/netfilter/nf_conntrack_* 鍙橀噺锛?
 
 nf_conntrack_acct - BOOLEAN
- - 0 - 禁用（默认）
- - 非 0 - 启用
+ - 0 - 绂佺敤锛堥粯璁わ級
+ - 闈?0 - 鍚敤
 
-	启用连接跟踪流记账。会为每个流添加 64 位字节与包计数器。
-
+	鍚敤杩炴帴璺熻釜娴佽璐︺€備細涓烘瘡涓祦娣诲姞 64 浣嶅瓧鑺備笌鍖呰鏁板櫒銆?
 nf_conntrack_buckets - INTEGER
-	哈希表的大小。如果在模块加载时未作为参数指定，默认大小通过将总内存除以 16384
-	来确定桶的数量。哈希表永远不会少于 1024 个桶，也永远不会多于 262144 个桶。
-	该 sysctl 仅在初始网络命名空间中可写。
-
+	鍝堝笇琛ㄧ殑澶у皬銆傚鏋滃湪妯″潡鍔犺浇鏃舵湭浣滀负鍙傛暟鎸囧畾锛岄粯璁ゅぇ灏忛€氳繃灏嗘€诲唴瀛橀櫎浠?16384
+	鏉ョ‘瀹氭《鐨勬暟閲忋€傚搱甯岃〃姘歌繙涓嶄細灏戜簬 1024 涓《锛屼篃姘歌繙涓嶄細澶氫簬 262144 涓《銆?	璇?sysctl 浠呭湪鍒濆缃戠粶鍛藉悕绌洪棿涓彲鍐欍€?
 nf_conntrack_checksum - BOOLEAN
- - 0 - 禁用
- - 非 0 - 启用（默认）
+ - 0 - 绂佺敤
+ - 闈?0 - 鍚敤锛堥粯璁わ級
 
-	校验入包校验和。校验和错误的包处于 INVALID 状态。如果启用此选项，此类包将不被
-	考虑用于连接跟踪。
-
-nf_conntrack_count - INTEGER（只读）
-	当前已分配的流条目数量。
-
+	鏍￠獙鍏ュ寘鏍￠獙鍜屻€傛牎楠屽拰閿欒鐨勫寘澶勪簬 INVALID 鐘舵€併€傚鏋滃惎鐢ㄦ閫夐」锛屾绫诲寘灏嗕笉琚?	鑰冭檻鐢ㄤ簬杩炴帴璺熻釜銆?
+nf_conntrack_count - INTEGER锛堝彧璇伙級
+	褰撳墠宸插垎閰嶇殑娴佹潯鐩暟閲忋€?
 nf_conntrack_events - BOOLEAN
- - 0 - 禁用
- - 1 - 启用
- - 2 - 自动（默认）
+ - 0 - 绂佺敤
+ - 1 - 鍚敤
+ - 2 - 鑷姩锛堥粯璁わ級
 
-	如果启用此选项，连接跟踪代码将通过 ctnetlink 向用户空间提供连接跟踪事件。默认
-	情况下，如果有用户空间程序正在监听 ctnetlink 事件，则分配该扩展。
-
+	濡傛灉鍚敤姝ら€夐」锛岃繛鎺ヨ窡韪唬鐮佸皢閫氳繃 ctnetlink 鍚戠敤鎴风┖闂存彁渚涜繛鎺ヨ窡韪簨浠躲€傞粯璁?	鎯呭喌涓嬶紝濡傛灉鏈夌敤鎴风┖闂寸▼搴忔鍦ㄧ洃鍚?ctnetlink 浜嬩欢锛屽垯鍒嗛厤璇ユ墿灞曘€?
 nf_conntrack_expect_max - INTEGER
-	期望（expectation）表的最大大小。默认值为 nf_conntrack_buckets / 256。最小值为 1。
-
+	鏈熸湜锛坋xpectation锛夎〃鐨勬渶澶уぇ灏忋€傞粯璁ゅ€间负 nf_conntrack_buckets / 256銆傛渶灏忓€间负 1銆?
 nf_conntrack_frag6_high_thresh - INTEGER
 	default 262144
 
-	用于重组 IPv6 分片的最大内存。当为上述目的分配了 nf_conntrack_frag6_high_thresh
-	字节的内存时，分片处理程序将丢弃包，直到达到 nf_conntrack_frag6_low_thresh。
-
+	鐢ㄤ簬閲嶇粍 IPv6 鍒嗙墖鐨勬渶澶у唴瀛樸€傚綋涓轰笂杩扮洰鐨勫垎閰嶄簡 nf_conntrack_frag6_high_thresh
+	瀛楄妭鐨勫唴瀛樻椂锛屽垎鐗囧鐞嗙▼搴忓皢涓㈠純鍖咃紝鐩村埌杈惧埌 nf_conntrack_frag6_low_thresh銆?
 nf_conntrack_frag6_low_thresh - INTEGER
 	default 196608
 
-	参见 nf_conntrack_frag6_low_thresh
+	鍙傝 nf_conntrack_frag6_low_thresh
 
-nf_conntrack_frag6_timeout - INTEGER（秒）
-	default 60
+nf_conntrack_frag6_timeout - INTEGER锛堢锛?	default 60
 
-	在内存中保留 IPv6 分片的时长。
+	鍦ㄥ唴瀛樹腑淇濈暀 IPv6 鍒嗙墖鐨勬椂闀裤€?
+nf_conntrack_generic_timeout - INTEGER锛堢锛?	default 600
 
-nf_conntrack_generic_timeout - INTEGER（秒）
-	default 600
+	閫氱敤瓒呮椂鐨勯粯璁ゅ€笺€傝繖鎸囩殑鏄 4 灞傛湭鐭?涓嶆敮鎸佺殑鍗忚銆?
+nf_conntrack_icmp_timeout - INTEGER锛堢锛?	default 30
 
-	通用超时的默认值。这指的是第 4 层未知/不支持的协议。
+	ICMP 瓒呮椂鐨勯粯璁ゅ€笺€?
+nf_conntrack_icmpv6_timeout - INTEGER锛堢锛?	default 30
 
-nf_conntrack_icmp_timeout - INTEGER（秒）
-	default 30
-
-	ICMP 超时的默认值。
-
-nf_conntrack_icmpv6_timeout - INTEGER（秒）
-	default 30
-
-	ICMP6 超时的默认值。
-
+	ICMP6 瓒呮椂鐨勯粯璁ゅ€笺€?
 nf_conntrack_log_invalid - INTEGER
- - 0   - 禁用（默认）
- - 1   - 记录 ICMP 包
- - 6   - 记录 TCP 包
- - 17  - 记录 UDP 包
- - 41  - 记录 ICMPv6 包
- - 136 - 记录 UDPLITE 包
- - 255 - 记录任意协议的包
+ - 0   - 绂佺敤锛堥粯璁わ級
+ - 1   - 璁板綍 ICMP 鍖? - 6   - 璁板綍 TCP 鍖? - 17  - 璁板綍 UDP 鍖? - 41  - 璁板綍 ICMPv6 鍖? - 136 - 璁板綍 UDPLITE 鍖? - 255 - 璁板綍浠绘剰鍗忚鐨勫寘
 
-	记录由值指定的类型的无效包。
-
+	璁板綍鐢卞€兼寚瀹氱殑绫诲瀷鐨勬棤鏁堝寘銆?
 nf_conntrack_max - INTEGER
-        允许的连跟踪条目的最大数量。默认情况下该值设为 nf_conntrack_buckets。注意，
-        连接跟踪条目会被加入表中两次——一次用于原始方向，一次用于回复方向（即地址
-        反转）。这意味着默认设置下，表满时的平均哈希链长度为 2，而不是 1。
-
+        鍏佽鐨勮繛璺熻釜鏉＄洰鐨勬渶澶ф暟閲忋€傞粯璁ゆ儏鍐典笅璇ュ€艰涓?nf_conntrack_buckets銆傛敞鎰忥紝
+        杩炴帴璺熻釜鏉＄洰浼氳鍔犲叆琛ㄤ腑涓ゆ鈥斺€斾竴娆＄敤浜庡師濮嬫柟鍚戯紝涓€娆＄敤浜庡洖澶嶆柟鍚戯紙鍗冲湴鍧€
+        鍙嶈浆锛夈€傝繖鎰忓懗鐫€榛樿璁剧疆涓嬶紝琛ㄦ弧鏃剁殑骞冲潎鍝堝笇閾鹃暱搴︿负 2锛岃€屼笉鏄?1銆?
 nf_conntrack_tcp_be_liberal - BOOLEAN
- - 0 - 禁用（默认）
- - 非 0 - 启用
+ - 0 - 绂佺敤锛堥粯璁わ級
+ - 闈?0 - 鍚敤
 
-	严于律己，宽以待人（在你要做的事上保守，在从他人处接受的东西上宽松）。如果非零，
-	我们只将窗口外的 RST 段标记为 INVALID。
-
+	涓ヤ簬寰嬪繁锛屽浠ュ緟浜猴紙鍦ㄤ綘瑕佸仛鐨勪簨涓婁繚瀹堬紝鍦ㄤ粠浠栦汉澶勬帴鍙楃殑涓滆タ涓婂鏉撅級銆傚鏋滈潪闆讹紝
+	鎴戜滑鍙皢绐楀彛澶栫殑 RST 娈垫爣璁颁负 INVALID銆?
 nf_conntrack_tcp_ignore_invalid_rst - BOOLEAN
- - 0 - 禁用（默认）
- - 1 - 启用
+ - 0 - 绂佺敤锛堥粯璁わ級
+ - 1 - 鍚敤
 
-	如果为 1，我们不将窗口外的 RST 段标记为 INVALID。
-
+	濡傛灉涓?1锛屾垜浠笉灏嗙獥鍙ｅ鐨?RST 娈垫爣璁颁负 INVALID銆?
 nf_conntrack_tcp_loose - BOOLEAN
- - 0 - 禁用
- - 非 0 - 启用（默认）
+ - 0 - 绂佺敤
+ - 闈?0 - 鍚敤锛堥粯璁わ級
 
-	如果设为 0，我们将禁用拾取（pick up）已建立的连接。
-
+	濡傛灉璁句负 0锛屾垜浠皢绂佺敤鎷惧彇锛坧ick up锛夊凡寤虹珛鐨勮繛鎺ャ€?
 nf_conntrack_tcp_max_retrans - INTEGER
 	default 3
 
-	在未收到来自目的地的（可接受的）ACK 的情况下可以重传的最大包数。如果达到此数，
-	将启动一个更短的定时器。
+	鍦ㄦ湭鏀跺埌鏉ヨ嚜鐩殑鍦扮殑锛堝彲鎺ュ彈鐨勶級ACK 鐨勬儏鍐典笅鍙互閲嶄紶鐨勬渶澶у寘鏁般€傚鏋滆揪鍒版鏁帮紝
+	灏嗗惎鍔ㄤ竴涓洿鐭殑瀹氭椂鍣ㄣ€?
+nf_conntrack_tcp_timeout_close - INTEGER锛堢锛?	default 10
 
-nf_conntrack_tcp_timeout_close - INTEGER（秒）
-	default 10
+nf_conntrack_tcp_timeout_close_wait - INTEGER锛堢锛?	default 60
 
-nf_conntrack_tcp_timeout_close_wait - INTEGER（秒）
-	default 60
+nf_conntrack_tcp_timeout_established - INTEGER锛堢锛?	default 432000锛? 澶╋級
 
-nf_conntrack_tcp_timeout_established - INTEGER（秒）
-	default 432000（5 天）
+nf_conntrack_tcp_timeout_fin_wait - INTEGER锛堢锛?	default 120
 
-nf_conntrack_tcp_timeout_fin_wait - INTEGER（秒）
-	default 120
+nf_conntrack_tcp_timeout_last_ack - INTEGER锛堢锛?	default 30
 
-nf_conntrack_tcp_timeout_last_ack - INTEGER（秒）
-	default 30
+nf_conntrack_tcp_timeout_max_retrans - INTEGER锛堢锛?	default 300
 
-nf_conntrack_tcp_timeout_max_retrans - INTEGER（秒）
-	default 300
+nf_conntrack_tcp_timeout_syn_recv - INTEGER锛堢锛?	default 60
 
-nf_conntrack_tcp_timeout_syn_recv - INTEGER（秒）
-	default 60
+nf_conntrack_tcp_timeout_syn_sent - INTEGER锛堢锛?	default 120
 
-nf_conntrack_tcp_timeout_syn_sent - INTEGER（秒）
-	default 120
+nf_conntrack_tcp_timeout_time_wait - INTEGER锛堢锛?	default 120
 
-nf_conntrack_tcp_timeout_time_wait - INTEGER（秒）
-	default 120
-
-nf_conntrack_tcp_timeout_unacknowledged - INTEGER（秒）
-	default 300
+nf_conntrack_tcp_timeout_unacknowledged - INTEGER锛堢锛?	default 300
 
 nf_conntrack_timestamp - BOOLEAN
- - 0 - 禁用（默认）
- - 非 0 - 启用
+ - 0 - 绂佺敤锛堥粯璁わ級
+ - 闈?0 - 鍚敤
 
-	启用连接跟踪流时间戳。
+	鍚敤杩炴帴璺熻釜娴佹椂闂存埑銆?
+nf_conntrack_sctp_timeout_closed - INTEGER锛堢锛?	default 10
 
-nf_conntrack_sctp_timeout_closed - INTEGER（秒）
-	default 10
+nf_conntrack_sctp_timeout_cookie_wait - INTEGER锛堢锛?	default 3
 
-nf_conntrack_sctp_timeout_cookie_wait - INTEGER（秒）
-	default 3
+nf_conntrack_sctp_timeout_cookie_echoed - INTEGER锛堢锛?	default 3
 
-nf_conntrack_sctp_timeout_cookie_echoed - INTEGER（秒）
-	default 3
+nf_conntrack_sctp_timeout_established - INTEGER锛堢锛?	default 210
 
-nf_conntrack_sctp_timeout_established - INTEGER（秒）
-	default 210
+	榛樿鍊艰涓?(hb_interval * path_max_retrans + rto_max)
 
-	默认值设为 (hb_interval * path_max_retrans + rto_max)
+nf_conntrack_sctp_timeout_shutdown_sent - INTEGER锛堢锛?	default 3
 
-nf_conntrack_sctp_timeout_shutdown_sent - INTEGER（秒）
-	default 3
+nf_conntrack_sctp_timeout_shutdown_recd - INTEGER锛堢锛?	default 3
 
-nf_conntrack_sctp_timeout_shutdown_recd - INTEGER（秒）
-	default 3
+nf_conntrack_sctp_timeout_shutdown_ack_sent - INTEGER锛堢锛?	default 3
 
-nf_conntrack_sctp_timeout_shutdown_ack_sent - INTEGER（秒）
-	default 3
+nf_conntrack_sctp_timeout_heartbeat_sent - INTEGER锛堢锛?	default 30
 
-nf_conntrack_sctp_timeout_heartbeat_sent - INTEGER（秒）
-	default 30
+	璇ヨ秴鏃剁敤浜庡湪杈呭姪璺緞涓婂缓绔嬭繛鎺ヨ窡韪潯鐩€傞粯璁ゅ€艰涓?hb_interval銆?
+nf_conntrack_udp_timeout - INTEGER锛堢锛?	default 30
 
-	该超时用于在辅助路径上建立连接跟踪条目。默认值设为 hb_interval。
+nf_conntrack_udp_timeout_stream - INTEGER锛堢锛?	default 120
 
-nf_conntrack_udp_timeout - INTEGER（秒）
-	default 30
+	鍦ㄦ娴嬪埌 UDP 娴佺殑鎯呭喌涓嬪皢浣跨敤姝ゆ墿灞曡秴鏃躲€?
+nf_conntrack_gre_timeout - INTEGER锛堢锛?	default 30
 
-nf_conntrack_udp_timeout_stream - INTEGER（秒）
-	default 120
+nf_conntrack_gre_timeout_stream - INTEGER锛堢锛?	default 180
 
-	在检测到 UDP 流的情况下将使用此扩展超时。
-
-nf_conntrack_gre_timeout - INTEGER（秒）
-	default 30
-
-nf_conntrack_gre_timeout_stream - INTEGER（秒）
-	default 180
-
-	在检测到 GRE 流的情况下将使用此扩展超时。
-
+	鍦ㄦ娴嬪埌 GRE 娴佺殑鎯呭喌涓嬪皢浣跨敤姝ゆ墿灞曡秴鏃躲€?
 nf_hooks_lwtunnel - BOOLEAN
- - 0 - 禁用（默认）
- - 非 0 - 启用
+ - 0 - 绂佺敤锛堥粯璁わ級
+ - 闈?0 - 鍚敤
 
-	如果启用此选项，轻量级隧道（lightweight tunnel）netfilter 钩子被启用。一旦启用，
-	此选项无法被禁用。
+	濡傛灉鍚敤姝ら€夐」锛岃交閲忕骇闅ч亾锛坙ightweight tunnel锛塶etfilter 閽╁瓙琚惎鐢ㄣ€備竴鏃﹀惎鐢紝
+	姝ら€夐」鏃犳硶琚鐢ㄣ€?
+nf_flowtable_tcp_timeout - INTEGER锛堢锛?        default 30
 
-nf_flowtable_tcp_timeout - INTEGER（秒）
-        default 30
+        鎺у埗 TCP 杩炴帴鐨勫嵏杞借秴鏃躲€俆CP 杩炴帴鍙互浠?nf conntrack 鍗歌浇鍒?nf flow table銆?        涓€鏃﹁€佸寲锛岃繛鎺ュ皢杩斿洖鍒?nf conntrack銆?
+nf_flowtable_udp_timeout - INTEGER锛堢锛?        default 30
 
-        控制 TCP 连接的卸载超时。TCP 连接可以从 nf conntrack 卸载到 nf flow table。
-        一旦老化，连接将返回到 nf conntrack。
-
-nf_flowtable_udp_timeout - INTEGER（秒）
-        default 30
-
-        控制 UDP 连接的卸载超时。UDP 连接可以从 nf conntrack 卸载到 nf flow table。
-        一旦老化，连接将返回到 nf conntrack。
+        鎺у埗 UDP 杩炴帴鐨勫嵏杞借秴鏃躲€俇DP 杩炴帴鍙互浠?nf conntrack 鍗歌浇鍒?nf flow table銆?        涓€鏃﹁€佸寲锛岃繛鎺ュ皢杩斿洖鍒?nf conntrack銆?

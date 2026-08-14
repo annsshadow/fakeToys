@@ -1,56 +1,32 @@
-## Yama
+﻿## Yama
 
 
-Yama 是一个 Linux 安全模块（Linux Security Module），它收集核心内核本身未处理的、系统范围的
-DAC 安全保护。它可以在构建时通过 `CONFIG_SECURITY_YAMA` 选择，并可在运行时通过
-`/proc/sys/kernel/yama` 中的 sysctl 进行控制：
-
+Yama 鏄竴涓?Linux 瀹夊叏妯″潡锛圠inux Security Module锛夛紝瀹冩敹闆嗘牳蹇冨唴鏍告湰韬湭澶勭悊鐨勩€佺郴缁熻寖鍥寸殑
+DAC 瀹夊叏淇濇姢銆傚畠鍙互鍦ㄦ瀯寤烘椂閫氳繃 `CONFIG_SECURITY_YAMA` 閫夋嫨锛屽苟鍙湪杩愯鏃堕€氳繃
+`/proc/sys/kernel/yama` 涓殑 sysctl 杩涜鎺у埗锛?
 ## ptrace_scope
 
 
-随着 Linux 日益流行，它将成为恶意软件更大的目标。Linux 进程接口一个特别令人担忧的弱点是，
-单个用户可以检查其任何进程的内存和运行状态。例如，如果某个应用程序（如 Pidgin）被攻破，攻击
-者就可以附加到其他正在运行的进程（如 Firefox、SSH 会话、GPG agent 等），以提取额外的凭据，
-并在不借助用户协助的网络钓鱼的情况下继续扩大攻击范围。
-
-这并非一个理论问题。`SSH session hijacking
+闅忕潃 Linux 鏃ョ泭娴佽锛屽畠灏嗘垚涓烘伓鎰忚蒋浠舵洿澶х殑鐩爣銆侺inux 杩涚▼鎺ュ彛涓€涓壒鍒护浜烘媴蹇х殑寮辩偣鏄紝
+鍗曚釜鐢ㄦ埛鍙互妫€鏌ュ叾浠讳綍杩涚▼鐨勫唴瀛樺拰杩愯鐘舵€併€備緥濡傦紝濡傛灉鏌愪釜搴旂敤绋嬪簭锛堝 Pidgin锛夎鏀荤牬锛屾敾鍑?鑰呭氨鍙互闄勫姞鍒板叾浠栨鍦ㄨ繍琛岀殑杩涚▼锛堝 Firefox銆丼SH 浼氳瘽銆丟PG agent 绛夛級锛屼互鎻愬彇棰濆鐨勫嚟鎹紝
+骞跺湪涓嶅€熷姪鐢ㄦ埛鍗忓姪鐨勭綉缁滈挀楸肩殑鎯呭喌涓嬬户缁墿澶ф敾鍑昏寖鍥淬€?
+杩欏苟闈炰竴涓悊璁洪棶棰樸€俙SSH session hijacking
 <https://www.blackhat.com/presentations/bh-usa-05/bh-us-05-boileau.pdf>`_
-和 `arbitrary code injection
+鍜?`arbitrary code injection
 <https://c-skills.blogspot.com/2007/05/injectso.html>`_
-攻击已经存在，并且如果 ptrace 被允许像以前一样运行，它们仍然可能发生。由于 ptrace 很少被非
-开发者和非管理员使用，应允许系统构建者选择禁用此调试系统。
-
-作为解决方案，一些应用程序使用 `prctl(PR_SET_DUMPABLE, ...)` 专门禁止此类 ptrace 附加
-（例如 ssh-agent），但许多应用程序没有这样做。一个更通用的解决方案是只允许从父进程直接对子
-进程进行 ptrace（即直接的 “gdb EXE” 和 “strace EXE” 仍然有效），或者需要 `CAP_SYS_PTRACE`
-（即 “gdb --pid=PID” 和 “strace -p PID” 作为 root 仍然有效）。
-
-在模式 1 下，定义了调试进程与其下级（inferior）之间应用特定关系的软件（崩溃处理程序等）可以
-使用 `prctl(PR_SET_PTRACER, pid, ...)`。一个下级可以声明允许哪些其他进程（及其后代）对其调用
-`PTRACE_ATTACH`。每个下级一次只能存在一个这样的已声明调试进程。例如，KDE、Chromium 和 Firefox
-的崩溃处理程序，以及 Wine（用于只允许 Wine 进程之间相互 ptrace）使用了它。如果一个进程希望
-完全禁用这些 ptrace 限制，它可以调用 `prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, ...)`，以便
-任何其他本应被允许的进程（即使是外部 pid 命名空间中的进程）都可以附加。
-
-sysctl 设置（只有 `CAP_SYS_PTRACE` 才能写入）为：
-
-0 - 经典 ptrace 权限：
-    一个进程可以 `PTRACE_ATTACH` 到任何在相同 uid 下运行的其他进程，只要它是可转储的（即
-    没有切换过 uid、没有以特权启动，或没有已经调用过 `prctl(PR_SET_DUMPABLE...)`）。类似地，
-    `PTRACE_TRACEME` 不变。
-
-1 - 受限 ptrace：
-    一个进程必须与其想要调用 `PTRACE_ATTACH` 的下级有预定义的关系。默认情况下，这种关系是
-    仅当上述经典条件也满足时的后代关系。要更改关系，下级可以调用
-    `prctl(PR_SET_PTRACER, debugger, ...)` 来声明一个被允许的调试器 PID 对该下级调用
-    `PTRACE_ATTACH`。使用 `PTRACE_TRACEME` 不变。
-
-2 - 仅管理员附加：
-    只有带有 `CAP_SYS_PTRACE` 的进程可以使用 ptrace，无论是通过 `PTRACE_ATTACH` 还是通过
-    子进程调用 `PTRACE_TRACEME`。
-
-3 - 禁止附加：
-    没有任何进程可以使用 `PTRACE_ATTACH` 或通过 `PTRACE_TRACEME` 使用 ptrace。一旦设置，此
-    sysctl 值无法更改。
-
-最初的仅子进程逻辑基于 grsecurity 中的限制。
+鏀诲嚮宸茬粡瀛樺湪锛屽苟涓斿鏋?ptrace 琚厑璁稿儚浠ュ墠涓€鏍疯繍琛岋紝瀹冧滑浠嶇劧鍙兘鍙戠敓銆傜敱浜?ptrace 寰堝皯琚潪
+寮€鍙戣€呭拰闈炵鐞嗗憳浣跨敤锛屽簲鍏佽绯荤粺鏋勫缓鑰呴€夋嫨绂佺敤姝よ皟璇曠郴缁熴€?
+浣滀负瑙ｅ喅鏂规锛屼竴浜涘簲鐢ㄧ▼搴忎娇鐢?`prctl(PR_SET_DUMPABLE, ...)` 涓撻棬绂佹姝ょ被 ptrace 闄勫姞
+锛堜緥濡?ssh-agent锛夛紝浣嗚澶氬簲鐢ㄧ▼搴忔病鏈夎繖鏍峰仛銆備竴涓洿閫氱敤鐨勮В鍐虫柟妗堟槸鍙厑璁镐粠鐖惰繘绋嬬洿鎺ュ瀛?杩涚▼杩涜 ptrace锛堝嵆鐩存帴鐨?鈥済db EXE鈥?鍜?鈥渟trace EXE鈥?浠嶇劧鏈夋晥锛夛紝鎴栬€呴渶瑕?`CAP_SYS_PTRACE`
+锛堝嵆 鈥済db --pid=PID鈥?鍜?鈥渟trace -p PID鈥?浣滀负 root 浠嶇劧鏈夋晥锛夈€?
+鍦ㄦā寮?1 涓嬶紝瀹氫箟浜嗚皟璇曡繘绋嬩笌鍏朵笅绾э紙inferior锛変箣闂村簲鐢ㄧ壒瀹氬叧绯荤殑杞欢锛堝穿婧冨鐞嗙▼搴忕瓑锛夊彲浠?浣跨敤 `prctl(PR_SET_PTRACER, pid, ...)`銆備竴涓笅绾у彲浠ュ０鏄庡厑璁稿摢浜涘叾浠栬繘绋嬶紙鍙婂叾鍚庝唬锛夊鍏惰皟鐢?`PTRACE_ATTACH`銆傛瘡涓笅绾т竴娆″彧鑳藉瓨鍦ㄤ竴涓繖鏍风殑宸插０鏄庤皟璇曡繘绋嬨€備緥濡傦紝KDE銆丆hromium 鍜?Firefox
+鐨勫穿婧冨鐞嗙▼搴忥紝浠ュ強 Wine锛堢敤浜庡彧鍏佽 Wine 杩涚▼涔嬮棿鐩镐簰 ptrace锛変娇鐢ㄤ簡瀹冦€傚鏋滀竴涓繘绋嬪笇鏈?瀹屽叏绂佺敤杩欎簺 ptrace 闄愬埗锛屽畠鍙互璋冪敤 `prctl(PR_SET_PTRACER, PR_SET_PTRACER_ANY, ...)`锛屼互渚?浠讳綍鍏朵粬鏈簲琚厑璁哥殑杩涚▼锛堝嵆浣挎槸澶栭儴 pid 鍛藉悕绌洪棿涓殑杩涚▼锛夐兘鍙互闄勫姞銆?
+sysctl 璁剧疆锛堝彧鏈?`CAP_SYS_PTRACE` 鎵嶈兘鍐欏叆锛変负锛?
+0 - 缁忓吀 ptrace 鏉冮檺锛?    涓€涓繘绋嬪彲浠?`PTRACE_ATTACH` 鍒颁换浣曞湪鐩稿悓 uid 涓嬭繍琛岀殑鍏朵粬杩涚▼锛屽彧瑕佸畠鏄彲杞偍鐨勶紙鍗?    娌℃湁鍒囨崲杩?uid銆佹病鏈変互鐗规潈鍚姩锛屾垨娌℃湁宸茬粡璋冪敤杩?`prctl(PR_SET_DUMPABLE...)`锛夈€傜被浼煎湴锛?    `PTRACE_TRACEME` 涓嶅彉銆?
+1 - 鍙楅檺 ptrace锛?    涓€涓繘绋嬪繀椤讳笌鍏舵兂瑕佽皟鐢?`PTRACE_ATTACH` 鐨勪笅绾ф湁棰勫畾涔夌殑鍏崇郴銆傞粯璁ゆ儏鍐典笅锛岃繖绉嶅叧绯绘槸
+    浠呭綋涓婅堪缁忓吀鏉′欢涔熸弧瓒虫椂鐨勫悗浠ｅ叧绯汇€傝鏇存敼鍏崇郴锛屼笅绾у彲浠ヨ皟鐢?    `prctl(PR_SET_PTRACER, debugger, ...)` 鏉ュ０鏄庝竴涓鍏佽鐨勮皟璇曞櫒 PID 瀵硅涓嬬骇璋冪敤
+    `PTRACE_ATTACH`銆備娇鐢?`PTRACE_TRACEME` 涓嶅彉銆?
+2 - 浠呯鐞嗗憳闄勫姞锛?    鍙湁甯︽湁 `CAP_SYS_PTRACE` 鐨勮繘绋嬪彲浠ヤ娇鐢?ptrace锛屾棤璁烘槸閫氳繃 `PTRACE_ATTACH` 杩樻槸閫氳繃
+    瀛愯繘绋嬭皟鐢?`PTRACE_TRACEME`銆?
+3 - 绂佹闄勫姞锛?    娌℃湁浠讳綍杩涚▼鍙互浣跨敤 `PTRACE_ATTACH` 鎴栭€氳繃 `PTRACE_TRACEME` 浣跨敤 ptrace銆備竴鏃﹁缃紝姝?    sysctl 鍊兼棤娉曟洿鏀广€?
+鏈€鍒濈殑浠呭瓙杩涚▼閫昏緫鍩轰簬 grsecurity 涓殑闄愬埗銆?

@@ -1,96 +1,96 @@
-## CDROM ioctl 调用摘要
+﻿## CDROM ioctl 璋冪敤鎽樿
 
 
 - Edward A. Falk <efalk@google.com>
 
 November, 2004
 
-本文档试图描述 CDROM 层支持的 ioctl(2) 调用。这些调用大体上（截至 Linux 2.6）
-实现于 drivers/cdrom/cdrom.c 和 drivers/block/scsi_ioctl.c。
+鏈枃妗ｈ瘯鍥炬弿杩?CDROM 灞傛敮鎸佺殑 ioctl(2) 璋冪敤銆傝繖浜涜皟鐢ㄥぇ浣撲笂锛堟埅鑷?Linux 2.6锛?
+瀹炵幇浜?drivers/cdrom/cdrom.c 鍜?drivers/block/scsi_ioctl.c銆?
 
-ioctl 值列在 <linux/cdrom.h> 中。截至本文撰写时，它们如下所示：
+ioctl 鍊煎垪鍦?<linux/cdrom.h> 涓€傛埅鑷虫湰鏂囨挵鍐欐椂锛屽畠浠涓嬫墍绀猴細
 
 	========================  ===============================================
-	CDROMPAUSE		  暂停音频操作
-	CDROMRESUME		  恢复已暂停的音频操作
-	CDROMPLAYMSF		  播放音频 MSF (struct cdrom_msf)
-	CDROMPLAYTRKIND		  播放音频音轨/索引 (struct cdrom_ti)
-	CDROMREADTOCHDR		  读取 TOC 头 (struct cdrom_tochdr)
-	CDROMREADTOCENTRY	  读取 TOC 条目 (struct cdrom_tocentry)
-	CDROMSTOP		  停止 cdrom 驱动器
-	CDROMSTART		  启动 cdrom 驱动器
-	CDROMEJECT		  弹出 cdrom 介质
-	CDROMVOLCTRL		  控制输出音量（struct cdrom_volctrl）
-	CDROMSUBCHNL		  读取子通道数据 (struct cdrom_subchnl)
-	CDROMREADMODE2		  读取 CDROM 模式 2 数据（2336 字节）
+	CDROMPAUSE		  鏆傚仠闊抽鎿嶄綔
+	CDROMRESUME		  鎭㈠宸叉殏鍋滅殑闊抽鎿嶄綔
+	CDROMPLAYMSF		  鎾斁闊抽 MSF (struct cdrom_msf)
+	CDROMPLAYTRKIND		  鎾斁闊抽闊宠建/绱㈠紩 (struct cdrom_ti)
+	CDROMREADTOCHDR		  璇诲彇 TOC 澶?(struct cdrom_tochdr)
+	CDROMREADTOCENTRY	  璇诲彇 TOC 鏉＄洰 (struct cdrom_tocentry)
+	CDROMSTOP		  鍋滄 cdrom 椹卞姩鍣?
+	CDROMSTART		  鍚姩 cdrom 椹卞姩鍣?
+	CDROMEJECT		  寮瑰嚭 cdrom 浠嬭川
+	CDROMVOLCTRL		  鎺у埗杈撳嚭闊抽噺锛坰truct cdrom_volctrl锛?
+	CDROMSUBCHNL		  璇诲彇瀛愰€氶亾鏁版嵁 (struct cdrom_subchnl)
+	CDROMREADMODE2		  璇诲彇 CDROM 妯″紡 2 鏁版嵁锛?336 瀛楄妭锛?
 				  (struct cdrom_read)
-	CDROMREADMODE1		  读取 CDROM 模式 1 数据（2048 字节）
+	CDROMREADMODE1		  璇诲彇 CDROM 妯″紡 1 鏁版嵁锛?048 瀛楄妭锛?
 				  (struct cdrom_read)
 	CDROMREADAUDIO		  (struct cdrom_read_audio)
-	CDROMEJECT_SW		  启用(1)/禁用(0) 自动弹出
+	CDROMEJECT_SW		  鍚敤(1)/绂佺敤(0) 鑷姩寮瑰嚭
 	CDROMMULTISESSION	  Obtain the start-of-last-session
 				  address of multi session disks
 				  (struct cdrom_multisession)
-	CDROM_GET_MCN		  获取“通用产品代码”（Universal Product Code）
-				  如果可用 (struct cdrom_mcn)
+	CDROM_GET_MCN		  鑾峰彇鈥滈€氱敤浜у搧浠ｇ爜鈥濓紙Universal Product Code锛?
+				  濡傛灉鍙敤 (struct cdrom_mcn)
 	CDROM_GET_UPC		  Deprecated, use CDROM_GET_MCN instead.
-	CDROMRESET		  硬复位驱动器
-	CDROMVOLREAD		  获取驱动器的音量设置
+	CDROMRESET		  纭浣嶉┍鍔ㄥ櫒
+	CDROMVOLREAD		  鑾峰彇椹卞姩鍣ㄧ殑闊抽噺璁剧疆
 				  (struct cdrom_volctrl)
-	CDROMREADRAW		  以原始模式读取数据（2352 字节）
+	CDROMREADRAW		  浠ュ師濮嬫ā寮忚鍙栨暟鎹紙2352 瀛楄妭锛?
 				  (struct cdrom_read)
-	CDROMREADCOOKED		  以 cooked（熟）模式读取数据
-	CDROMSEEK		  定位到 msf 地址
-	CDROMPLAYBLK		  仅 scsi-cd, (struct cdrom_blk)
-	CDROMREADALL		  读取全部 2646 字节
+	CDROMREADCOOKED		  浠?cooked锛堢啛锛夋ā寮忚鍙栨暟鎹?
+	CDROMSEEK		  瀹氫綅鍒?msf 鍦板潃
+	CDROMPLAYBLK		  浠?scsi-cd, (struct cdrom_blk)
+	CDROMREADALL		  璇诲彇鍏ㄩ儴 2646 瀛楄妭
 	CDROMGETSPINDOWN	  return 4-bit spindown value
 	CDROMSETSPINDOWN	  set 4-bit spindown value
-	CDROMCLOSETRAY		  CDROMEJECT 的对应操作
-	CDROM_SET_OPTIONS	  设置行为选项
-	CDROM_CLEAR_OPTIONS	  清除行为选项
-	CDROM_SELECT_SPEED	  设置 CD-ROM 速度
-	CDROM_SELECT_DISC	  选择光盘（用于自动换盘机）
-	CDROM_MEDIA_CHANGED	  检查介质是否已更改
+	CDROMCLOSETRAY		  CDROMEJECT 鐨勫搴旀搷浣?
+	CDROM_SET_OPTIONS	  璁剧疆琛屼负閫夐」
+	CDROM_CLEAR_OPTIONS	  娓呴櫎琛屼负閫夐」
+	CDROM_SELECT_SPEED	  璁剧疆 CD-ROM 閫熷害
+	CDROM_SELECT_DISC	  閫夋嫨鍏夌洏锛堢敤浜庤嚜鍔ㄦ崲鐩樻満锛?
+	CDROM_MEDIA_CHANGED	  妫€鏌ヤ粙璐ㄦ槸鍚﹀凡鏇存敼
 	CDROM_TIMED_MEDIA_CHANGE  Check if media changed
 				  since given time
 				  (struct cdrom_timed_media_change_info)
-	CDROM_DRIVE_STATUS	  获取托盘位置等
-	CDROM_DISC_STATUS	  获取光盘类型等
-	CDROM_CHANGER_NSLOTS	  获取插槽数量
-	CDROM_LOCKDOOR		  锁定或解锁托盘门
-	CDROM_DEBUG		  打开/关闭调试消息
-	CDROM_GET_CAPABILITY	  获取能力
-	CDROMAUDIOBUFSIZ	  设置音频缓冲区大小
-	DVD_READ_STRUCT		  读取结构
-	DVD_WRITE_STRUCT	  写入结构
-	DVD_AUTH		  身份验证
-	CDROM_SEND_PACKET	  向驱动器发送数据包
-	CDROM_NEXT_WRITABLE	  获取下一个可写块
-	CDROM_LAST_WRITTEN	  获取光盘上最后写入的块
+	CDROM_DRIVE_STATUS	  鑾峰彇鎵樼洏浣嶇疆绛?
+	CDROM_DISC_STATUS	  鑾峰彇鍏夌洏绫诲瀷绛?
+	CDROM_CHANGER_NSLOTS	  鑾峰彇鎻掓Ы鏁伴噺
+	CDROM_LOCKDOOR		  閿佸畾鎴栬В閿佹墭鐩橀棬
+	CDROM_DEBUG		  鎵撳紑/鍏抽棴璋冭瘯娑堟伅
+	CDROM_GET_CAPABILITY	  鑾峰彇鑳藉姏
+	CDROMAUDIOBUFSIZ	  璁剧疆闊抽缂撳啿鍖哄ぇ灏?
+	DVD_READ_STRUCT		  璇诲彇缁撴瀯
+	DVD_WRITE_STRUCT	  鍐欏叆缁撴瀯
+	DVD_AUTH		  韬唤楠岃瘉
+	CDROM_SEND_PACKET	  鍚戦┍鍔ㄥ櫒鍙戦€佹暟鎹寘
+	CDROM_NEXT_WRITABLE	  鑾峰彇涓嬩竴涓彲鍐欏潡
+	CDROM_LAST_WRITTEN	  鑾峰彇鍏夌洏涓婃渶鍚庡啓鍏ョ殑鍧?
 	========================  ===============================================
 
 
-以下信息是通过阅读内核源代码确定的。随着时间的推移，可能会进行一些更正。
+浠ヤ笅淇℃伅鏄€氳繃闃呰鍐呮牳婧愪唬鐮佺‘瀹氱殑銆傞殢鐫€鏃堕棿鐨勬帹绉伙紝鍙兘浼氳繘琛屼竴浜涙洿姝ｃ€?
 
 ------------------------------------------------------------------------------
 
-General（通用说明）：
+General锛堥€氱敤璇存槑锛夛細
 
-	除非另有说明，所有 ioctl 调用在成功时返回 0，出错时返回 -1 并将
-	errno 设置为适当的值。（某些 ioctl 返回非负的数据值。）
+	闄ら潪鍙︽湁璇存槑锛屾墍鏈?ioctl 璋冪敤鍦ㄦ垚鍔熸椂杩斿洖 0锛屽嚭閿欐椂杩斿洖 -1 骞跺皢
+	errno 璁剧疆涓洪€傚綋鐨勫€笺€傦紙鏌愪簺 ioctl 杩斿洖闈炶礋鐨勬暟鎹€笺€傦級
 
-	除非另有说明，所有 ioctl 调用在尝试向用户地址空间复制数据或从中复制
-	数据失败时返回 -1，并将 errno 设置为 EFAULT。
+	闄ら潪鍙︽湁璇存槑锛屾墍鏈?ioctl 璋冪敤鍦ㄥ皾璇曞悜鐢ㄦ埛鍦板潃绌洪棿澶嶅埗鏁版嵁鎴栦粠涓鍒?
+	鏁版嵁澶辫触鏃惰繑鍥?-1锛屽苟灏?errno 璁剧疆涓?EFAULT銆?
 
-	各个驱动可能返回此处未列出的错误码。
+	鍚勪釜椹卞姩鍙兘杩斿洖姝ゅ鏈垪鍑虹殑閿欒鐮併€?
 
-	除非另有说明，所有数据结构和常量都定义在 <linux/cdrom.h> 中
+	闄ら潪鍙︽湁璇存槑锛屾墍鏈夋暟鎹粨鏋勫拰甯搁噺閮藉畾涔夊湪 <linux/cdrom.h> 涓?
 
 ------------------------------------------------------------------------------
 
 
 CDROMPAUSE
-	暂停音频操作
+	鏆傚仠闊抽鎿嶄綔
 
 
 ```
@@ -112,7 +112,7 @@ CDROMPAUSE
 
 ```
 CDROMRESUME
-	恢复已暂停的音频操作
+	鎭㈠宸叉殏鍋滅殑闊抽鎿嶄綔
 
 
 ```
@@ -134,7 +134,7 @@ CDROMRESUME
 
 ```
 CDROMPLAYMSF
-	播放音频 MSF
+	鎾斁闊抽 MSF
 
 	(struct cdrom_msf)
 
@@ -166,7 +166,7 @@ CDROMPLAYMSF
 
 ```
 CDROMPLAYTRKIND
-	播放音频音轨/索引
+	鎾斁闊抽闊宠建/绱㈠紩
 
 	(struct cdrom_ti)
 
@@ -196,7 +196,7 @@ CDROMPLAYTRKIND
 
 ```
 CDROMREADTOCHDR
-	读取 TOC 头
+	璇诲彇 TOC 澶?
 
 	(struct cdrom_tochdr)
 
@@ -222,7 +222,7 @@ CDROMREADTOCHDR
 
 ```
 CDROMREADTOCENTRY
-	读取 TOC 条目
+	璇诲彇 TOC 鏉＄洰
 
 	(struct cdrom_tocentry)
 
@@ -256,7 +256,7 @@ CDROMREADTOCENTRY
 
 ```
 CDROMSTOP
-	停止 cdrom 驱动器
+	鍋滄 cdrom 椹卞姩鍣?
 
 
 ```
@@ -282,7 +282,7 @@ CDROMSTOP
 
 ```
 CDROMSTART
-	启动 cdrom 驱动器
+	鍚姩 cdrom 椹卞姩鍣?
 
 
 ```
@@ -309,7 +309,7 @@ CDROMSTART
 
 ```
 CDROMEJECT
- - 弹出 cdrom 介质
+ - 寮瑰嚭 cdrom 浠嬭川
 
 
 ```
@@ -337,7 +337,7 @@ CDROMEJECT
 
 ```
 CDROMCLOSETRAY
-	CDROMEJECT 的对应操作
+	CDROMEJECT 鐨勫搴旀搷浣?
 
 
 ```
@@ -365,7 +365,7 @@ CDROMCLOSETRAY
 
 ```
 CDROMVOLCTRL
-	控制输出音量（struct cdrom_volctrl）
+	鎺у埗杈撳嚭闊抽噺锛坰truct cdrom_volctrl锛?
 
 
 ```
@@ -389,7 +389,7 @@ CDROMVOLCTRL
 
 ```
 CDROMVOLREAD
-	获取驱动器的音量设置
+	鑾峰彇椹卞姩鍣ㄧ殑闊抽噺璁剧疆
 
 	(struct cdrom_volctrl)
 
@@ -415,7 +415,7 @@ CDROMVOLREAD
 
 ```
 CDROMSUBCHNL
-	读取子通道数据
+	璇诲彇瀛愰€氶亾鏁版嵁
 
 	(struct cdrom_subchnl)
 
@@ -446,7 +446,7 @@ CDROMSUBCHNL
 
 ```
 CDROMREADRAW
-	以原始模式读取数据（2352 字节）
+	浠ュ師濮嬫ā寮忚鍙栨暟鎹紙2352 瀛楄妭锛?
 
 	(struct cdrom_read)
 
@@ -487,24 +487,24 @@ CDROMREADRAW
 
 ```
 CDROMREADMODE1
-	读取 CDROM 模式 1 数据（2048 字节）
+	璇诲彇 CDROM 妯″紡 1 鏁版嵁锛?048 瀛楄妭锛?
 
 	(struct cdrom_read)
 
 	notes:
-		与 CDROMREADRAW 相同，只是块大小为
-		CD_FRAMESIZE（2048）字节
+		涓?CDROMREADRAW 鐩稿悓锛屽彧鏄潡澶у皬涓?
+		CD_FRAMESIZE锛?048锛夊瓧鑺?
 
 
 
 CDROMREADMODE2
-	读取 CDROM 模式 2 数据（2336 字节）
+	璇诲彇 CDROM 妯″紡 2 鏁版嵁锛?336 瀛楄妭锛?
 
 	(struct cdrom_read)
 
 	notes:
-		与 CDROMREADRAW 相同，只是块大小为
-		CD_FRAMESIZE_RAW0（2336）字节
+		涓?CDROMREADRAW 鐩稿悓锛屽彧鏄潡澶у皬涓?
+		CD_FRAMESIZE_RAW0锛?336锛夊瓧鑺?
 
 
 
@@ -534,7 +534,7 @@ CDROMREADAUDIO
 
 ```
 CDROMEJECT_SW
-	启用(1)/禁用(0) 自动弹出
+	鍚敤(1)/绂佺敤(0) 鑷姩寮瑰嚭
 
 
 ```
@@ -560,7 +560,7 @@ CDROMEJECT_SW
 
 ```
 CDROMMULTISESSION
-	获取多会话光盘最后一个会话的起始地址
+	鑾峰彇澶氫細璇濆厜鐩樻渶鍚庝竴涓細璇濈殑璧峰鍦板潃
 
 	(struct cdrom_multisession)
 
@@ -585,8 +585,8 @@ CDROMMULTISESSION
 
 ```
 CDROM_GET_MCN
-	获取“通用产品代码”（Universal Product Code）
-	如果可用
+	鑾峰彇鈥滈€氱敤浜у搧浠ｇ爜鈥濓紙Universal Product Code锛?
+	濡傛灉鍙敤
 
 	(struct cdrom_mcn)
 
@@ -622,15 +622,15 @@ CDROM_GET_MCN
 
 ```
 CDROM_GET_UPC
-	CDROM_GET_MCN（已弃用）
+	CDROM_GET_MCN锛堝凡寮冪敤锛?
 
 
-	未实现，截至 2.6.8.1
+	鏈疄鐜帮紝鎴嚦 2.6.8.1
 
 
 
 CDROMRESET
-	硬复位驱动器
+	纭浣嶉┍鍔ㄥ櫒
 
 
 ```
@@ -655,7 +655,7 @@ CDROMRESET
 
 ```
 CDROMREADCOOKED
-	以 cooked（熟）模式读取数据
+	浠?cooked锛堢啛锛夋ā寮忚鍙栨暟鎹?
 
 
 ```
@@ -681,15 +681,15 @@ CDROMREADCOOKED
 
 ```
 CDROMREADALL
-	读取全部 2646 字节
+	璇诲彇鍏ㄩ儴 2646 瀛楄妭
 
 
-	与 CDROMREADCOOKED 相同，但读取 2646 字节。
+	涓?CDROMREADCOOKED 鐩稿悓锛屼絾璇诲彇 2646 瀛楄妭銆?
 
 
 
 CDROMSEEK
-	定位到 msf 地址
+	瀹氫綅鍒?msf 鍦板潃
 
 
 ```
@@ -710,7 +710,7 @@ CDROMSEEK
 
 ```
 CDROMPLAYBLK
-	仅 scsi-cd
+	浠?scsi-cd
 
 	(struct cdrom_blk)
 
@@ -733,7 +733,7 @@ CDROMPLAYBLK
 
 ```
 CDROMGETSPINDOWN
-	已过时，曾仅用于 ide-cd
+	宸茶繃鏃讹紝鏇句粎鐢ㄤ簬 ide-cd
 
 
 ```
@@ -755,7 +755,7 @@ CDROMGETSPINDOWN
 
 ```
 CDROMSETSPINDOWN
-	已过时，曾仅用于 ide-cd
+	宸茶繃鏃讹紝鏇句粎鐢ㄤ簬 ide-cd
 
 
 ```
@@ -778,7 +778,7 @@ CDROMSETSPINDOWN
 
 ```
 CDROM_SET_OPTIONS
-	设置行为选项
+	璁剧疆琛屼负閫夐」
 
 
 ```
@@ -810,15 +810,15 @@ CDROM_SET_OPTIONS
 
 ```
 CDROM_CLEAR_OPTIONS
-	清除行为选项
+	娓呴櫎琛屼负閫夐」
 
 
-	与 CDROM_SET_OPTIONS 相同，只是所选选项被关闭。
+	涓?CDROM_SET_OPTIONS 鐩稿悓锛屽彧鏄墍閫夐€夐」琚叧闂€?
 
 
 
 CDROM_SELECT_SPEED
-	设置 CD-ROM 速度
+	璁剧疆 CD-ROM 閫熷害
 
 
 ```
@@ -842,7 +842,7 @@ CDROM_SELECT_SPEED
 
 ```
 CDROM_SELECT_DISC
-	选择光盘（用于自动换盘机）
+	閫夋嫨鍏夌洏锛堢敤浜庤嚜鍔ㄦ崲鐩樻満锛?
 
 
 ```
@@ -866,7 +866,7 @@ CDROM_SELECT_DISC
 
 ```
 CDROM_MEDIA_CHANGED
-	检查介质是否已更改
+	妫€鏌ヤ粙璐ㄦ槸鍚﹀凡鏇存敼
 
 
 ```
@@ -894,7 +894,7 @@ CDROM_MEDIA_CHANGED
 
 ```
 CDROM_DRIVE_STATUS
-	获取托盘位置等
+	鑾峰彇鎵樼洏浣嶇疆绛?
 
 
 ```
@@ -932,7 +932,7 @@ CDROM_DRIVE_STATUS
 
 ```
 CDROM_DISC_STATUS
-	获取光盘类型等
+	鑾峰彇鍏夌洏绫诲瀷绛?
 
 
 ```
@@ -987,7 +987,7 @@ CDROM_DISC_STATUS
 
 ```
 CDROM_CHANGER_NSLOTS
-	获取插槽数量
+	鑾峰彇鎻掓Ы鏁伴噺
 
 
 ```
@@ -1010,7 +1010,7 @@ CDROM_CHANGER_NSLOTS
 
 ```
 CDROM_LOCKDOOR
-	锁定或解锁托盘门
+	閿佸畾鎴栬В閿佹墭鐩橀棬
 
 
 ```
@@ -1048,7 +1048,7 @@ CDROM_LOCKDOOR
 
 ```
 CDROM_DEBUG
-	打开/关闭调试消息
+	鎵撳紑/鍏抽棴璋冭瘯娑堟伅
 
 
 ```
@@ -1072,7 +1072,7 @@ CDROM_DEBUG
 
 ```
 CDROM_GET_CAPABILITY
-	获取能力
+	鑾峰彇鑳藉姏
 
 
 ```
@@ -1092,7 +1092,7 @@ CDROM_GET_CAPABILITY
 
 ```
 CDROMAUDIOBUFSIZ
-	设置音频缓冲区大小
+	璁剧疆闊抽缂撳啿鍖哄ぇ灏?
 
 
 ```
@@ -1119,7 +1119,7 @@ CDROMAUDIOBUFSIZ
 
 
 ```
-DVD_READ_STRUCT			读取结构
+DVD_READ_STRUCT			璇诲彇缁撴瀯
 
 ```
 
@@ -1158,13 +1158,13 @@ DVD_READ_STRUCT			读取结构
 
 
 ```
-DVD_WRITE_STRUCT		写入结构
+DVD_WRITE_STRUCT		鍐欏叆缁撴瀯
 
-	未实现，截至 2.6.8.1
+	鏈疄鐜帮紝鎴嚦 2.6.8.1
 
 
 
-DVD_AUTH			身份验证
+DVD_AUTH			韬唤楠岃瘉
 
 ```
 
@@ -1187,7 +1187,7 @@ DVD_AUTH			身份验证
 
 ```
 CDROM_SEND_PACKET
-	向驱动器发送数据包
+	鍚戦┍鍔ㄥ櫒鍙戦€佹暟鎹寘
 
 
 ```
@@ -1223,7 +1223,7 @@ CDROM_SEND_PACKET
 
 ```
 CDROM_NEXT_WRITABLE
-	获取下一个可写块
+	鑾峰彇涓嬩竴涓彲鍐欏潡
 
 
 ```
@@ -1249,7 +1249,7 @@ CDROM_NEXT_WRITABLE
 
 ```
 CDROM_LAST_WRITTEN
-	获取光盘上最后写入的块
+	鑾峰彇鍏夌洏涓婃渶鍚庡啓鍏ョ殑鍧?
 
 
 ```

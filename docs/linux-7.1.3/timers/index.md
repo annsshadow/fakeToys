@@ -1,10 +1,10 @@
+﻿
+## 瀹氭椂鍣?
 
-## 定时器
 
-
-- [高分辨率定时器](highres)
-- [高精度事件定时器（HPET）](hpet)
-- [高精度定时器（hrtimers）](hrtimers)
-- [无滴答模式（NO_HZ）](no_hz)
-- [时间保持](timekeeping)
-- [延迟与睡眠函数](delay_sleep_functions)
+- [楂樺垎杈ㄧ巼瀹氭椂鍣╙(highres)
+- [楂樼簿搴︿簨浠跺畾鏃跺櫒锛圚PET锛塢(hpet)
+- [楂樼簿搴﹀畾鏃跺櫒锛坔rtimers锛塢(hrtimers)
+- [鏃犳淮绛旀ā寮忥紙NO_HZ锛塢(no_hz)
+- [鏃堕棿淇濇寔](timekeeping)
+- [寤惰繜涓庣潯鐪犲嚱鏁癩(delay_sleep_functions)

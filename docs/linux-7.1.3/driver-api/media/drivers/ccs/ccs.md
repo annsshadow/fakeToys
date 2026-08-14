@@ -1,50 +1,33 @@
-## MIPI CCS 摄像头传感器驱动
+﻿## MIPI CCS 鎽勫儚澶翠紶鎰熷櫒椹卞姩
 
 
-MIPI CCS 摄像头传感器驱动是一个面向 `MIPI CCS <https://www.mipi.org/specifications/camera-command-set>`_
-兼容摄像头传感器的通用驱动。
+MIPI CCS 鎽勫儚澶翠紶鎰熷櫒椹卞姩鏄竴涓潰鍚?`MIPI CCS <https://www.mipi.org/specifications/camera-command-set>`_
+鍏煎鎽勫儚澶翠紶鎰熷櫒鐨勯€氱敤椹卞姩銆?
+鍙﹁鍙傞槄 CCS 椹卞姩 UAPI 鏂囨。 <media-ccs-uapi>銆?
+### CCS 闈欐€佹暟鎹?
 
-另请参阅 CCS 驱动 UAPI 文档 <media-ccs-uapi>。
-
-### CCS 静态数据
-
-
-MIPI CCS 驱动支持所有兼容设备的 CCS 静态数据，不仅包括兼容 CCS 1.1 的设备，也包括 CCS 1.0 和
-SMIA(++)。对于 CCS，文件名构成为
-
-	ccs/ccs-sensor-vvvv-mmmm-rrrr.fw（传感器）以及
-	ccs/ccs-module-vvvv-mmmm-rrrr.fw（模块）。
-
-对于兼容 SMIA++ 的设备，相应的文件名为
-
-	ccs/smiapp-sensor-vv-mmmm-rr.fw（传感器）以及
-	ccs/smiapp-module-vv-mmmm-rrrr.fw（模块）。
-
-对于兼容 SMIA（非 ++）的设备，静态数据文件名为
-
-	ccs/smia-sensor-vv-mmmm-rr.fw（传感器）。
-
-vvvv 或 vv 分别表示 MIPI 和 SMIA 厂商 ID，mmmm 为型号 ID，rrrr 或 rr 为版本号。
-
-#### CCS 工具
+MIPI CCS 椹卞姩鏀寔鎵€鏈夊吋瀹硅澶囩殑 CCS 闈欐€佹暟鎹紝涓嶄粎鍖呮嫭鍏煎 CCS 1.1 鐨勮澶囷紝涔熷寘鎷?CCS 1.0 鍜?SMIA(++)銆傚浜?CCS锛屾枃浠跺悕鏋勬垚涓?
+	ccs/ccs-sensor-vvvv-mmmm-rrrr.fw锛堜紶鎰熷櫒锛変互鍙?	ccs/ccs-module-vvvv-mmmm-rrrr.fw锛堟ā鍧楋級銆?
+瀵逛簬鍏煎 SMIA++ 鐨勮澶囷紝鐩稿簲鐨勬枃浠跺悕涓?
+	ccs/smiapp-sensor-vv-mmmm-rr.fw锛堜紶鎰熷櫒锛変互鍙?	ccs/smiapp-module-vv-mmmm-rrrr.fw锛堟ā鍧楋級銆?
+瀵逛簬鍏煎 SMIA锛堥潪 ++锛夌殑璁惧锛岄潤鎬佹暟鎹枃浠跺悕涓?
+	ccs/smia-sensor-vv-mmmm-rr.fw锛堜紶鎰熷櫒锛夈€?
+vvvv 鎴?vv 鍒嗗埆琛ㄧず MIPI 鍜?SMIA 鍘傚晢 ID锛宮mmm 涓哄瀷鍙?ID锛宺rrr 鎴?rr 涓虹増鏈彿銆?
+#### CCS 宸ュ叿
 
 
-`CCS tools <https://github.com/MIPI-Alliance/ccs-tools/>`_ 是一组用于处理 CCS 静态数据文件的
-工具。CCS tools 包含人类可读的 CCS 静态数据 YAML 格式的定义，并包含一个将其转换为二进制的
-程序。
-
-### 寄存器定义生成器
-
-
-ccs-regs.asc 文件包含 MIPI CCS 寄存器定义，用于生成更便于 C 语言程序使用的 C 源代码定义文件。
-由于生成的文件之间存在许多依赖关系，请不要手动修改它们，因为那容易出错且徒劳无功，而应修改
-生成它们的脚本。
-
-#### 用法
+`CCS tools <https://github.com/MIPI-Alliance/ccs-tools/>`_ 鏄竴缁勭敤浜庡鐞?CCS 闈欐€佹暟鎹枃浠剁殑
+宸ュ叿銆侰CS tools 鍖呭惈浜虹被鍙鐨?CCS 闈欐€佹暟鎹?YAML 鏍煎紡鐨勫畾涔夛紝骞跺寘鍚竴涓皢鍏惰浆鎹负浜岃繘鍒剁殑
+绋嬪簭銆?
+### 瀵勫瓨鍣ㄥ畾涔夌敓鎴愬櫒
 
 
-按照惯例，脚本以如下方式调用来更新 CCS 驱动定义：
+ccs-regs.asc 鏂囦欢鍖呭惈 MIPI CCS 瀵勫瓨鍣ㄥ畾涔夛紝鐢ㄤ簬鐢熸垚鏇翠究浜?C 璇█绋嬪簭浣跨敤鐨?C 婧愪唬鐮佸畾涔夋枃浠躲€?鐢变簬鐢熸垚鐨勬枃浠朵箣闂村瓨鍦ㄨ澶氫緷璧栧叧绯伙紝璇蜂笉瑕佹墜鍔ㄤ慨鏀瑰畠浠紝鍥犱负閭ｅ鏄撳嚭閿欎笖寰掑姵鏃犲姛锛岃€屽簲淇敼
+鐢熸垚瀹冧滑鐨勮剼鏈€?
+#### 鐢ㄦ硶
 
+
+鎸夌収鎯緥锛岃剼鏈互濡備笅鏂瑰紡璋冪敤鏉ユ洿鏂?CCS 椹卞姩瀹氫箟锛?
 
 	$ Documentation/driver-api/media/drivers/ccs/mk-ccs-regs -k \
 		-e drivers/media/i2c/ccs/ccs-regs.h \
@@ -52,13 +35,9 @@ ccs-regs.asc 文件包含 MIPI CCS 寄存器定义，用于生成更便于 C 语
 		-l drivers/media/i2c/ccs/ccs-limits.c \
 		-c Documentation/driver-api/media/drivers/ccs/ccs-regs.asc
 
-## CCS PLL 计算器
+## CCS PLL 璁＄畻鍣?
 
-
-CCS PLL 计算器用于在给定传感器能力、板配置以及用户指定配置的情况下计算 PLL 配置。由于涵盖所有
-这些配置的配置空间非常庞大，PLL 计算器并非完全简单。但对于驱动而言它相对易于使用。
-
-PLL 计算器实现的 PLL 模型对应于 MIPI CCS 1.1。
-
+CCS PLL 璁＄畻鍣ㄧ敤浜庡湪缁欏畾浼犳劅鍣ㄨ兘鍔涖€佹澘閰嶇疆浠ュ強鐢ㄦ埛鎸囧畾閰嶇疆鐨勬儏鍐典笅璁＄畻 PLL 閰嶇疆銆傜敱浜庢兜鐩栨墍鏈?杩欎簺閰嶇疆鐨勯厤缃┖闂撮潪甯稿簽澶э紝PLL 璁＄畻鍣ㄥ苟闈炲畬鍏ㄧ畝鍗曘€備絾瀵逛簬椹卞姩鑰岃█瀹冪浉瀵规槗浜庝娇鐢ㄣ€?
+PLL 璁＄畻鍣ㄥ疄鐜扮殑 PLL 妯″瀷瀵瑰簲浜?MIPI CCS 1.1銆?
 
 **Copyright** |copy| 2020 Intel Corporation

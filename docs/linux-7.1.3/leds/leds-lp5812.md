@@ -1,42 +1,42 @@
+﻿
+## 鍐呮牳椹卞姩 lp5812
 
-## 内核驱动 lp5812
 
-
-- TI/National Semiconductor LP5812 LED 驱动
+- TI/National Semiconductor LP5812 LED 椹卞姩
 - Datasheet: https://www.ti.com/product/LP5812#tech-docs
 
 Authors: Jared Zhou <jared-zhou@ti.com>
 
-## 描述
+## 鎻忚堪
 
 
-LP5812 是一个 4x3 矩阵 LED 驱动，支持手动和自主动画控制。该驱动提供 sysfs 接口来控制和配置 LP5812 设备及其 LED 通道。
+LP5812 鏄竴涓?4x3 鐭╅樀 LED 椹卞姩锛屾敮鎸佹墜鍔ㄥ拰鑷富鍔ㄧ敾鎺у埗銆傝椹卞姩鎻愪緵 sysfs 鎺ュ彛鏉ユ帶鍒跺拰閰嶇疆 LP5812 璁惧鍙婂叾 LED 閫氶亾銆?
 
-## Sysfs 接口
-
-
-该驱动使用 Documentation/ABI/testing/sysfs-class-led-multicolor.rst 中定义的标准多色 LED class 接口。
-
-每个 LP5812 LED 输出出现在 `/sys/class/leds/` 下，带有其分配的标签（例如 `LED_A`）。
-
-暴露以下属性：
-  - multi_intensity：每通道 RGB 强度控制
-  - brightness：标准亮度控制（0-255）
-
-## 自主控制模式
+## Sysfs 鎺ュ彛
 
 
-该驱动还支持通过设备树中定义的模式配置（例如 direct、tcmscan 或 mixscan 模式）进行自主控制。配置后，LP5812 可以在没有 CPU 干预的情况下生成过渡和颜色效果。
+璇ラ┍鍔ㄤ娇鐢?Documentation/ABI/testing/sysfs-class-led-multicolor.rst 涓畾涔夌殑鏍囧噯澶氳壊 LED class 鎺ュ彛銆?
 
-有关有效的模式字符串和配置示例，请参阅设备树绑定文档。
+姣忎釜 LP5812 LED 杈撳嚭鍑虹幇鍦?`/sys/class/leds/` 涓嬶紝甯︽湁鍏跺垎閰嶇殑鏍囩锛堜緥濡?`LED_A`锛夈€?
 
-## 示例使用
+鏆撮湶浠ヤ笅灞炴€э細
+  - multi_intensity锛氭瘡閫氶亾 RGB 寮哄害鎺у埗
+  - brightness锛氭爣鍑嗕寒搴︽帶鍒讹紙0-255锛?
+
+## 鑷富鎺у埗妯″紡
+
+
+璇ラ┍鍔ㄨ繕鏀寔閫氳繃璁惧鏍戜腑瀹氫箟鐨勬ā寮忛厤缃紙渚嬪 direct銆乼cmscan 鎴?mixscan 妯″紡锛夎繘琛岃嚜涓绘帶鍒躲€傞厤缃悗锛孡P5812 鍙互鍦ㄦ病鏈?CPU 骞查鐨勬儏鍐典笅鐢熸垚杩囨浮鍜岄鑹叉晥鏋溿€?
+
+鏈夊叧鏈夋晥鐨勬ā寮忓瓧绗︿覆鍜岄厤缃ず渚嬶紝璇峰弬闃呰澶囨爲缁戝畾鏂囨。銆?
+
+## 绀轰緥浣跨敤
 
 
 ```
-    # 设置 RGB 强度（R=50, G=50, B=50）
+    # 璁剧疆 RGB 寮哄害锛圧=50, G=50, B=50锛?
     echo 50 50 50 > /sys/class/leds/LED_A/multi_intensity
-    # 设置整体亮度为最大
+    # 璁剧疆鏁翠綋浜害涓烘渶澶?
     echo 255 > /sys/class/leds/LED_A/brightness
 
 ```

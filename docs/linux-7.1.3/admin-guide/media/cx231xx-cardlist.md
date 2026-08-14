@@ -1,10 +1,10 @@
+﻿
+## cx231xx 纭欢鍗″垪琛?
 
-## cx231xx 硬件卡列表
-
-本文件列出 cx231xx 驱动所支持的硬件型号清单，包含厂商、产品名称与 USB ID，供驱动适配、硬件选型与设备排查时对照查阅。
+鏈枃浠跺垪鍑?cx231xx 椹卞姩鎵€鏀寔鐨勭‖浠跺瀷鍙锋竻鍗曪紝鍖呭惈鍘傚晢銆佷骇鍝佸悕绉颁笌 USB ID锛屼緵椹卞姩閫傞厤銆佺‖浠堕€夊瀷涓庤澶囨帓鏌ユ椂瀵圭収鏌ラ槄銆?
 
 
-本页面列出受相应驱动支持的硬件设备卡，并给出各设备的名称与 USB 标识（USB ID），供用户对照硬件进行配置与排查。
+鏈〉闈㈠垪鍑哄彈鐩稿簲椹卞姩鏀寔鐨勭‖浠惰澶囧崱锛屽苟缁欏嚭鍚勮澶囩殑鍚嶇О涓?USB 鏍囪瘑锛圲SB ID锛夛紝渚涚敤鎴峰鐓х‖浠惰繘琛岄厤缃笌鎺掓煡銆?
 
 
 
@@ -12,50 +12,50 @@
    :widths: 2 12 19
    :stub-columns: 0
 
-   - - 卡编号
-     - 卡名称
+   - - 鍗＄紪鍙?
+     - 鍗″悕绉?
      - USB ID
    - - 0
-     - Unknown cx231xx 视频采集器
+     - Unknown cx231xx 瑙嗛閲囬泦鍣?
      - 0572:5A3C
    - - 1
-     - Conexant 混合电视 - CARRAERA
+     - Conexant 娣峰悎鐢佃 - CARRAERA
      - 0572:58A2
    - - 2
-     - Conexant 混合电视 - SHELBY
+     - Conexant 娣峰悎鐢佃 - SHELBY
      - 0572:58A1
    - - 3
-     - Conexant 混合电视 - RDE253S
+     - Conexant 娣峰悎鐢佃 - RDE253S
      - 0572:58A4
    - - 4
-     - Conexant 混合电视 - RDU253S
+     - Conexant 娣峰悎鐢佃 - RDU253S
      - 0572:58A5
    - - 5
-     - Conexant 视频采集器
+     - Conexant 瑙嗛閲囬泦鍣?
      - 0572:58A6, 07ca:c039
    - - 6
-     - Conexant 混合电视 - rde 250
+     - Conexant 娣峰悎鐢佃 - rde 250
      - 0572:589E
    - - 7
-     - Conexant 混合电视 - RDU 250
+     - Conexant 娣峰悎鐢佃 - RDU 250
      - 0572:58A0
    - - 8
      - Hauppauge EXETER
      - 2040:b120, 2040:b140
    - - 9
-     - Hauppauge USB 直播 2
+     - Hauppauge USB 鐩存挱 2
      - 2040:c200
    - - 10
-     - Pixelview PlayTV USB 混合
+     - Pixelview PlayTV USB 娣峰悎
      - 4000:4001
    - - 11
      - Pixelview Xcapture USB
      - 1D19:6109, 4000:4001
    - - 12
-     - Kworld UB430 USB 混合
+     - Kworld UB430 USB 娣峰悎
      - 1b80:e424
    - - 13
-     - Iconbit 模拟 接收棒 U100 FM
+     - Iconbit 妯℃嫙 鎺ユ敹妫?U100 FM
      - 1f4d:0237
    - - 14
      - Hauppauge WinTV USB2 FM (PAL)
@@ -64,13 +64,13 @@
      - Hauppauge WinTV USB2 FM (NTSC)
      - 2040:b111
    - - 16
-     - Elgato 视频 采集 V2
+     - Elgato 瑙嗛 閲囬泦 V2
      - 0fd9:0037
    - - 17
      - Geniatech OTG102
      - 1f4d:0102
    - - 18
-     - Kworld UB445 USB 混合
+     - Kworld UB445 USB 娣峰悎
      - 1b80:e421
    - - 19
      - Hauppauge WinTV 930C-HD (1113xx) / HVR-900H (111xxx) / PCTV QuatroStick 521e
@@ -85,7 +85,7 @@
      - Terratec Grabby
      - 1f4d:0102
    - - 23
-     - Evromedia USB 全 混合 全 高清
+     - Evromedia USB 鍏?娣峰悎 鍏?楂樻竻
      - 1b80:d3b2
    - - 24
      - Astrometa T2hybrid

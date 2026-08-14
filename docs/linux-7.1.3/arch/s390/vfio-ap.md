@@ -1,20 +1,20 @@
-## Adjunct Processor (AP) facility
+﻿## Adjunct Processor (AP) facility
 
-## 辅助处理器（AP）设施
+## 杈呭姪澶勭悊鍣紙AP锛夎鏂?
 
 
 ## Introduction
 
-## 简介
+## 绠€浠?
 
 The Adjunct Processor (AP) facility is an IBM Z cryptographic facility comprised
 of three AP instructions and from 1 up to 256 PCIe cryptographic adapter cards.
 The AP devices provide cryptographic functions to all CPUs assigned to a
 linux system running in an IBM Z system LPAR.
 
-辅助处理器（AP）设施是 IBM Z 的密码学设施，由三条 AP 指令以及 1 到 256 块
-PCIe 密码适配器卡组成。AP 设备为分配给运行在 IBM Z 系统 LPAR 中的 Linux 系统的
-所有 CPU 提供密码学功能。
+杈呭姪澶勭悊鍣紙AP锛夎鏂芥槸 IBM Z 鐨勫瘑鐮佸璁炬柦锛岀敱涓夋潯 AP 鎸囦护浠ュ強 1 鍒?256 鍧?
+PCIe 瀵嗙爜閫傞厤鍣ㄥ崱缁勬垚銆侫P 璁惧涓哄垎閰嶇粰杩愯鍦?IBM Z 绯荤粺 LPAR 涓殑 Linux 绯荤粺鐨?
+鎵€鏈?CPU 鎻愪緵瀵嗙爜瀛﹀姛鑳姐€?
 
 The AP adapter cards are exposed via the AP bus. The motivation for vfio-ap
 is to make AP cards available to KVM guests using the VFIO mediated device
@@ -22,22 +22,22 @@ framework. This implementation relies considerably on the s390 virtualization
 facilities which do most of the hard work of providing direct access to AP
 devices.
 
-AP 适配器卡通过 AP 总线暴露。vfio-ap 的动机是使用 VFIO 中介（mediated）设备
-框架使 AP 卡对 KVM 客户机可用。该实现在很大程度上依赖 s390 的虚拟化设施，后者
-完成了提供 AP 设备直接访问的大部分艰难工作。
+AP 閫傞厤鍣ㄥ崱閫氳繃 AP 鎬荤嚎鏆撮湶銆倂fio-ap 鐨勫姩鏈烘槸浣跨敤 VFIO 涓粙锛坢ediated锛夎澶?
+妗嗘灦浣?AP 鍗″ KVM 瀹㈡埛鏈哄彲鐢ㄣ€傝瀹炵幇鍦ㄥ緢澶х▼搴︿笂渚濊禆 s390 鐨勮櫄鎷熷寲璁炬柦锛屽悗鑰?
+瀹屾垚浜嗘彁渚?AP 璁惧鐩存帴璁块棶鐨勫ぇ閮ㄥ垎鑹伴毦宸ヤ綔銆?
 
 ## AP Architectural Overview
 
-## AP 架构概述
+## AP 鏋舵瀯姒傝堪
 
 To facilitate the comprehension of the design, let's start with some
 definitions:
 
-为了便于理解该设计，让我们从一些定义开始：
+涓轰簡渚夸簬鐞嗚В璇ヨ璁★紝璁╂垜浠粠涓€浜涘畾涔夊紑濮嬶細
 
 - AP adapter
 
-- AP 适配器
+- AP 閫傞厤鍣?
 
   An AP adapter is an IBM Z adapter card that can perform cryptographic
   functions. There can be from 0 to 256 adapters assigned to an LPAR. Adapters
@@ -47,11 +47,11 @@ definitions:
   When installed, an AP adapter is accessed by AP instructions executed by any
   CPU.
 
-  一个 AP 适配器是一块能够执行密码学功能的 IBM Z 适配器卡。可以分配给一个 LPAR
-  的适配器数量从 0 到 256 不等。分配给运行 Linux 主机的 LPAR 的适配器将对
-  Linux 主机可用。每个适配器由一个 0 到 255 之间的数字标识；不过，最大适配器号
-  由机型（machine model）和/或适配器类型决定。安装后，AP 适配器由任何 CPU 执行的
-  AP 指令访问。
+  涓€涓?AP 閫傞厤鍣ㄦ槸涓€鍧楄兘澶熸墽琛屽瘑鐮佸鍔熻兘鐨?IBM Z 閫傞厤鍣ㄥ崱銆傚彲浠ュ垎閰嶇粰涓€涓?LPAR
+  鐨勯€傞厤鍣ㄦ暟閲忎粠 0 鍒?256 涓嶇瓑銆傚垎閰嶇粰杩愯 Linux 涓绘満鐨?LPAR 鐨勯€傞厤鍣ㄥ皢瀵?
+  Linux 涓绘満鍙敤銆傛瘡涓€傞厤鍣ㄧ敱涓€涓?0 鍒?255 涔嬮棿鐨勬暟瀛楁爣璇嗭紱涓嶈繃锛屾渶澶ч€傞厤鍣ㄥ彿
+  鐢辨満鍨嬶紙machine model锛夊拰/鎴栭€傞厤鍣ㄧ被鍨嬪喅瀹氥€傚畨瑁呭悗锛孉P 閫傞厤鍣ㄧ敱浠讳綍 CPU 鎵ц鐨?
+  AP 鎸囦护璁块棶銆?
 
   The AP adapter cards are assigned to a given LPAR via the system's Activation
   Profile which can be edited via the HMC. When the linux host system is IPL'd
@@ -59,10 +59,10 @@ definitions:
   creates a sysfs device for each assigned adapter. For example, if AP adapters
   4 and 10 (0x0a) are assigned to the LPAR, the AP bus will create the following
 
-  AP 适配器卡通过系统的激活概要（Activation Profile）分配给给定的 LPAR，该概要
-  可通过 HMC 编辑。当 Linux 主机系统在该 LPAR 中 IPL 后，AP 总线会检测分配给该
-  LPAR 的 AP 适配器卡，并为每个被分配的适配器创建一个 sysfs 设备。例如，如果
-  AP 适配器 4 和 10（0x0a）被分配给该 LPAR，AP 总线将创建以下
+  AP 閫傞厤鍣ㄥ崱閫氳繃绯荤粺鐨勬縺娲绘瑕侊紙Activation Profile锛夊垎閰嶇粰缁欏畾鐨?LPAR锛岃姒傝
+  鍙€氳繃 HMC 缂栬緫銆傚綋 Linux 涓绘満绯荤粺鍦ㄨ LPAR 涓?IPL 鍚庯紝AP 鎬荤嚎浼氭娴嬪垎閰嶇粰璇?
+  LPAR 鐨?AP 閫傞厤鍣ㄥ崱锛屽苟涓烘瘡涓鍒嗛厤鐨勯€傞厤鍣ㄥ垱寤轰竴涓?sysfs 璁惧銆備緥濡傦紝濡傛灉
+  AP 閫傞厤鍣?4 鍜?10锛?x0a锛夎鍒嗛厤缁欒 LPAR锛孉P 鎬荤嚎灏嗗垱寤轰互涓?
 
 ```
 
@@ -79,7 +79,7 @@ definitions:
 
 - AP domain
 
-- AP 域
+- AP 鍩?
 
   An adapter is partitioned into domains. An adapter can hold up to 256 domains
   depending upon the adapter type and hardware configuration. A domain is
@@ -90,23 +90,23 @@ definitions:
   encryption. A domain is classified in one of two ways depending upon how it
   may be accessed:
 
-  一个适配器被划分为多个域。根据适配器类型和硬件配置，一个适配器最多可容纳 256 个
-  域。一个域由一个 0 到 255 之间的数字标识；不过，最大域名由机型（machine model）
-  和/或适配器类型决定。一个域可以被看作是一组用于处理 AP 命令的硬件寄存器和内存。
-  一个域可以配置一个用于明文密钥（clear key）加密的安全私钥。根据域的访问方式，
-  域被分为两类：
+  涓€涓€傞厤鍣ㄨ鍒掑垎涓哄涓煙銆傛牴鎹€傞厤鍣ㄧ被鍨嬪拰纭欢閰嶇疆锛屼竴涓€傞厤鍣ㄦ渶澶氬彲瀹圭撼 256 涓?
+  鍩熴€備竴涓煙鐢变竴涓?0 鍒?255 涔嬮棿鐨勬暟瀛楁爣璇嗭紱涓嶈繃锛屾渶澶у煙鍚嶇敱鏈哄瀷锛坢achine model锛?
+  鍜?鎴栭€傞厤鍣ㄧ被鍨嬪喅瀹氥€備竴涓煙鍙互琚湅浣滄槸涓€缁勭敤浜庡鐞?AP 鍛戒护鐨勭‖浠跺瘎瀛樺櫒鍜屽唴瀛樸€?
+  涓€涓煙鍙互閰嶇疆涓€涓敤浜庢槑鏂囧瘑閽ワ紙clear key锛夊姞瀵嗙殑瀹夊叏绉侀挜銆傛牴鎹煙鐨勮闂柟寮忥紝
+  鍩熻鍒嗕负涓ょ被锛?
 
     - Usage domains are domains that are targeted by an AP instruction to
       process an AP command.
 
-    - 使用域（Usage domain）是指被 AP 指令作为目标以处理 AP 命令的域。
+    - 浣跨敤鍩燂紙Usage domain锛夋槸鎸囪 AP 鎸囦护浣滀负鐩爣浠ュ鐞?AP 鍛戒护鐨勫煙銆?
 
     - Control domains are domains that are changed by an AP command sent to a
       usage domain; for example, to set the secure private key for the control
       domain.
 
-    - 控制域（Control domain）是指由发往使用域的 AP 命令更改的域；例如，为控制域
-      设置安全私钥。
+    - 鎺у埗鍩燂紙Control domain锛夋槸鎸囩敱鍙戝線浣跨敤鍩熺殑 AP 鍛戒护鏇存敼鐨勫煙锛涗緥濡傦紝涓烘帶鍒跺煙
+      璁剧疆瀹夊叏绉侀挜銆?
 
   The AP usage and control domains are assigned to a given LPAR via the system's
   Activation Profile which can be edited via the HMC. When a linux host system
@@ -118,16 +118,16 @@ definitions:
   /sys/bus/ap/ap_control_domain_mask. The bits in the mask, from most to least
   significant bit, correspond to domains 0-255.
 
-  AP 使用域和控制域通过系统的激活概要分配给给定的 LPAR，该概要可通过 HMC 编辑。
-  当 Linux 主机系统在该 LPAR 中 IPL 后，AP 总线模块会检测分配给该 LPAR 的 AP 使用域
-  和控制域。每个使用域的域名和每个 AP 适配器的适配器号被组合起来创建 AP 队列设备
-  （见下文"AP 队列"一节）。每个控制域的域名将用一个位掩码表示，并存储在 sysfs 文件
-  /sys/bus/ap/ap_control_domain_mask 中。掩码中的位，从最高有效位到最低有效位，
-  分别对应域 0-255。
+  AP 浣跨敤鍩熷拰鎺у埗鍩熼€氳繃绯荤粺鐨勬縺娲绘瑕佸垎閰嶇粰缁欏畾鐨?LPAR锛岃姒傝鍙€氳繃 HMC 缂栬緫銆?
+  褰?Linux 涓绘満绯荤粺鍦ㄨ LPAR 涓?IPL 鍚庯紝AP 鎬荤嚎妯″潡浼氭娴嬪垎閰嶇粰璇?LPAR 鐨?AP 浣跨敤鍩?
+  鍜屾帶鍒跺煙銆傛瘡涓娇鐢ㄥ煙鐨勫煙鍚嶅拰姣忎釜 AP 閫傞厤鍣ㄧ殑閫傞厤鍣ㄥ彿琚粍鍚堣捣鏉ュ垱寤?AP 闃熷垪璁惧
+  锛堣涓嬫枃"AP 闃熷垪"涓€鑺傦級銆傛瘡涓帶鍒跺煙鐨勫煙鍚嶅皢鐢ㄤ竴涓綅鎺╃爜琛ㄧず锛屽苟瀛樺偍鍦?sysfs 鏂囦欢
+  /sys/bus/ap/ap_control_domain_mask 涓€傛帺鐮佷腑鐨勪綅锛屼粠鏈€楂樻湁鏁堜綅鍒版渶浣庢湁鏁堜綅锛?
+  鍒嗗埆瀵瑰簲鍩?0-255銆?
 
 - AP Queue
 
-- AP 队列
+- AP 闃熷垪
 
   An AP queue is the means by which an AP command is sent to a usage domain
   inside a specific adapter. An AP queue is identified by a tuple
@@ -137,19 +137,19 @@ definitions:
   instructions include a field containing the APQN to identify the AP queue to
   which the AP command is to be sent for processing.
 
-  AP 队列是将 AP 命令发送到特定适配器内部使用域的手段。一个 AP 队列由一个元组标识，
-  该元组由 AP 适配器 ID（APID）和 AP 队列索引（APQI）组成。APQI 对应于适配器内
-  给定的使用域号。这个元组构成一个 AP 队列号（APQN），唯一地标识一个 AP 队列。AP
-  指令包含一个存放 APQN 的字段，用于标识要将 AP 命令发往哪个 AP 队列进行处理。
+  AP 闃熷垪鏄皢 AP 鍛戒护鍙戦€佸埌鐗瑰畾閫傞厤鍣ㄥ唴閮ㄤ娇鐢ㄥ煙鐨勬墜娈点€備竴涓?AP 闃熷垪鐢变竴涓厓缁勬爣璇嗭紝
+  璇ュ厓缁勭敱 AP 閫傞厤鍣?ID锛圓PID锛夊拰 AP 闃熷垪绱㈠紩锛圓PQI锛夌粍鎴愩€侫PQI 瀵瑰簲浜庨€傞厤鍣ㄥ唴
+  缁欏畾鐨勪娇鐢ㄥ煙鍙枫€傝繖涓厓缁勬瀯鎴愪竴涓?AP 闃熷垪鍙凤紙APQN锛夛紝鍞竴鍦版爣璇嗕竴涓?AP 闃熷垪銆侫P
+  鎸囦护鍖呭惈涓€涓瓨鏀?APQN 鐨勫瓧娈碉紝鐢ㄤ簬鏍囪瘑瑕佸皢 AP 鍛戒护鍙戝線鍝釜 AP 闃熷垪杩涜澶勭悊銆?
 
   The AP bus will create a sysfs device for each APQN that can be derived from
   the cross product of the AP adapter and usage domain numbers detected when the
   AP bus module is loaded. For example, if adapters 4 and 10 (0x0a) and usage
   domains 6 and 71 (0x47) are assigned to the LPAR, the AP bus will create the
 
-  AP 总线会为可从 AP 总线模块加载时检测到的 AP 适配器号和用法域名叉积推导出的每个
-  APQN 创建一个 sysfs 设备。例如，如果适配器 4 和 10（0x0a）以及使用域 6 和 71
-  （0x47）被分配给该 LPAR，AP 总线将创建以下
+  AP 鎬荤嚎浼氫负鍙粠 AP 鎬荤嚎妯″潡鍔犺浇鏃舵娴嬪埌鐨?AP 閫傞厤鍣ㄥ彿鍜岀敤娉曞煙鍚嶅弶绉帹瀵煎嚭鐨勬瘡涓?
+  APQN 鍒涘缓涓€涓?sysfs 璁惧銆備緥濡傦紝濡傛灉閫傞厤鍣?4 鍜?10锛?x0a锛変互鍙婁娇鐢ㄥ煙 6 鍜?71
+  锛?x47锛夎鍒嗛厤缁欒 LPAR锛孉P 鎬荤嚎灏嗗垱寤轰互涓?
 
 ```
 
@@ -170,63 +170,63 @@ definitions:
 
 - AP Instructions:
 
-- AP 指令：
+- AP 鎸囦护锛?
 
   There are three AP instructions:
 
-  有三条 AP 指令：
+  鏈変笁鏉?AP 鎸囦护锛?
 
   - NQAP: to enqueue an AP command-request message to a queue
   - DQAP: to dequeue an AP command-reply message from a queue
   - PQAP: to administer the queues
 
-  - NQAP：将一个 AP 命令请求消息入队到某个队列
-  - DQAP：从一个队列中将一个 AP 命令应答消息出队
-  - PQAP：管理这些队列
+  - NQAP锛氬皢涓€涓?AP 鍛戒护璇锋眰娑堟伅鍏ラ槦鍒版煇涓槦鍒?
+  - DQAP锛氫粠涓€涓槦鍒椾腑灏嗕竴涓?AP 鍛戒护搴旂瓟娑堟伅鍑洪槦
+  - PQAP锛氱鐞嗚繖浜涢槦鍒?
 
   AP instructions identify the domain that is targeted to process the AP
   command; this must be one of the usage domains. An AP command may modify a
   domain that is not one of the usage domains, but the modified domain
   must be one of the control domains.
 
-  AP 指令标识作为目标处理 AP 命令的域；这必须是使用域之一。一条 AP 命令可以修改一个
-  并非使用域的域，但被修改的域必须是控制域之一。
+  AP 鎸囦护鏍囪瘑浣滀负鐩爣澶勭悊 AP 鍛戒护鐨勫煙锛涜繖蹇呴』鏄娇鐢ㄥ煙涔嬩竴銆備竴鏉?AP 鍛戒护鍙互淇敼涓€涓?
+  骞堕潪浣跨敤鍩熺殑鍩燂紝浣嗚淇敼鐨勫煙蹇呴』鏄帶鍒跺煙涔嬩竴銆?
 
 ## AP and SIE
 
-## AP 与 SIE
+## AP 涓?SIE
 
 Let's now take a look at how AP instructions executed on a guest are interpreted
 by the hardware.
 
-现在让我们看看在客户机上执行的 AP 指令是如何被硬件解释的。
+鐜板湪璁╂垜浠湅鐪嬪湪瀹㈡埛鏈轰笂鎵ц鐨?AP 鎸囦护鏄浣曡纭欢瑙ｉ噴鐨勩€?
 
 A satellite control block called the Crypto Control Block (CRYCB) is attached to
 our main hardware virtualization control block. The CRYCB contains an AP Control
 Block (APCB) that has three fields to identify the adapters, usage domains and
 control domains assigned to the KVM guest:
 
-一个称为密码控制块（Crypto Control Block，CRYCB）的辅助控制块被附加到我们的主硬件
-虚拟化控制块上。CRYCB 包含一个 AP 控制块（APCB），它有三个字段来标识分配给 KVM
-客户机的适配器、使用域和控制域：
+涓€涓О涓哄瘑鐮佹帶鍒跺潡锛圕rypto Control Block锛孋RYCB锛夌殑杈呭姪鎺у埗鍧楄闄勫姞鍒版垜浠殑涓荤‖浠?
+铏氭嫙鍖栨帶鍒跺潡涓娿€侰RYCB 鍖呭惈涓€涓?AP 鎺у埗鍧楋紙APCB锛夛紝瀹冩湁涓変釜瀛楁鏉ユ爣璇嗗垎閰嶇粰 KVM
+瀹㈡埛鏈虹殑閫傞厤鍣ㄣ€佷娇鐢ㄥ煙鍜屾帶鍒跺煙锛?
 
 - The AP Mask (APM) field is a bit mask that identifies the AP adapters assigned
   to the KVM guest. Each bit in the mask, from left to right, corresponds to
   an APID from 0-255. If a bit is set, the corresponding adapter is valid for
   use by the KVM guest.
 
-- AP 掩码（APM）字段是一个位掩码，标识分配给 KVM 客户机的 AP 适配器。掩码中的位，
-  从左到右，分别对应一个从 0-255 的 APID。如果某位被置位，则相应适配器可供 KVM
-  客户机使用。
+- AP 鎺╃爜锛圓PM锛夊瓧娈垫槸涓€涓綅鎺╃爜锛屾爣璇嗗垎閰嶇粰 KVM 瀹㈡埛鏈虹殑 AP 閫傞厤鍣ㄣ€傛帺鐮佷腑鐨勪綅锛?
+  浠庡乏鍒板彸锛屽垎鍒搴斾竴涓粠 0-255 鐨?APID銆傚鏋滄煇浣嶈缃綅锛屽垯鐩稿簲閫傞厤鍣ㄥ彲渚?KVM
+  瀹㈡埛鏈轰娇鐢ㄣ€?
 
 - The AP Queue Mask (AQM) field is a bit mask identifying the AP usage domains
   assigned to the KVM guest. Each bit in the mask, from left to right,
   corresponds to an AP queue index (APQI) from 0-255. If a bit is set, the
   corresponding queue is valid for use by the KVM guest.
 
-- AP 队列掩码（AQM）字段是一个位掩码，标识分配给 KVM 客户机的 AP 使用域。掩码中的
-  位，从左到右，分别对应一个从 0-255 的 AP 队列索引（APQI）。如果某位被置位，则
-  相应队列可供 KVM 客户机使用。
+- AP 闃熷垪鎺╃爜锛圓QM锛夊瓧娈垫槸涓€涓綅鎺╃爜锛屾爣璇嗗垎閰嶇粰 KVM 瀹㈡埛鏈虹殑 AP 浣跨敤鍩熴€傛帺鐮佷腑鐨?
+  浣嶏紝浠庡乏鍒板彸锛屽垎鍒搴斾竴涓粠 0-255 鐨?AP 闃熷垪绱㈠紩锛圓PQI锛夈€傚鏋滄煇浣嶈缃綅锛屽垯
+  鐩稿簲闃熷垪鍙緵 KVM 瀹㈡埛鏈轰娇鐢ㄣ€?
 
 - The AP Domain Mask field is a bit mask that identifies the AP control domains
   assigned to the KVM guest. The ADM bit mask controls which domains can be
@@ -235,10 +235,10 @@ control domains assigned to the KVM guest:
   0-255. If a bit is set, the corresponding domain can be modified by an AP
   command-request message sent to a usage domain.
 
-- AP 域掩码字段是一个位掩码，标识分配给 KVM 客户机的 AP 控制域。ADM 位掩码控制哪些
-  域可以被从客户机发往使用域的 AP 命令请求消息更改。掩码中的位，从左到右，分别对应
-  一个从 0-255 的域。如果某位被置位，则相应域可以被从客户机发往使用域的 AP 命令请求
-  消息修改。
+- AP 鍩熸帺鐮佸瓧娈垫槸涓€涓綅鎺╃爜锛屾爣璇嗗垎閰嶇粰 KVM 瀹㈡埛鏈虹殑 AP 鎺у埗鍩熴€侫DM 浣嶆帺鐮佹帶鍒跺摢浜?
+  鍩熷彲浠ヨ浠庡鎴锋満鍙戝線浣跨敤鍩熺殑 AP 鍛戒护璇锋眰娑堟伅鏇存敼銆傛帺鐮佷腑鐨勪綅锛屼粠宸﹀埌鍙筹紝鍒嗗埆瀵瑰簲
+  涓€涓粠 0-255 鐨勫煙銆傚鏋滄煇浣嶈缃綅锛屽垯鐩稿簲鍩熷彲浠ヨ浠庡鎴锋満鍙戝線浣跨敤鍩熺殑 AP 鍛戒护璇锋眰
+  娑堟伅淇敼銆?
 
 If you recall from the description of an AP Queue, AP instructions include
 an APQN to identify the AP queue to which an AP command-request message is to be
@@ -249,11 +249,11 @@ adapter numbers (APM) with all assigned queue indexes (AQM). For example, if
 adapters 1 and 2 and usage domains 5 and 6 are assigned to a guest, the APQNs
 (1,5), (1,6), (2,5) and (2,6) will be valid for the guest.
 
-如果你还记得 AP 队列的描述，AP 指令包含一个 APQN 以标识要将 AP 命令请求消息发往
-（NQAP 和 PQAP 指令）或从哪个队列接收命令应答消息（DQAP 指令）的 AP 队列。一个
-APQN 的有效性由从 APM 和 AQM 计算出的矩阵定义；它是所有被分配的适配器号（APM）
-与所有被分配的队列索引（AQM）的笛卡尔积。例如，如果适配器 1 和 2 以及使用域 5 和 6
-被分配到一个客户机，那么 APQN (1,5)、(1,6)、(2,5) 和 (2,6) 对该客户机有效。
+濡傛灉浣犺繕璁板緱 AP 闃熷垪鐨勬弿杩帮紝AP 鎸囦护鍖呭惈涓€涓?APQN 浠ユ爣璇嗚灏?AP 鍛戒护璇锋眰娑堟伅鍙戝線
+锛圢QAP 鍜?PQAP 鎸囦护锛夋垨浠庡摢涓槦鍒楁帴鏀跺懡浠ゅ簲绛旀秷鎭紙DQAP 鎸囦护锛夌殑 AP 闃熷垪銆備竴涓?
+APQN 鐨勬湁鏁堟€х敱浠?APM 鍜?AQM 璁＄畻鍑虹殑鐭╅樀瀹氫箟锛涘畠鏄墍鏈夎鍒嗛厤鐨勯€傞厤鍣ㄥ彿锛圓PM锛?
+涓庢墍鏈夎鍒嗛厤鐨勯槦鍒楃储寮曪紙AQM锛夌殑绗涘崱灏旂Н銆備緥濡傦紝濡傛灉閫傞厤鍣?1 鍜?2 浠ュ強浣跨敤鍩?5 鍜?6
+琚垎閰嶅埌涓€涓鎴锋満锛岄偅涔?APQN (1,5)銆?1,6)銆?2,5) 鍜?(2,6) 瀵硅瀹㈡埛鏈烘湁鏁堛€?
 
 The APQNs can provide secure key functionality - i.e., a private key is stored
 on the adapter card for each of its domains - so each APQN must be assigned to
@@ -289,49 +289,49 @@ on the adapter card for each of its domains - so each APQN must be assigned to
 
 ## The Design
 
-## 设计
+## 璁捐
 
 The design introduces three new objects:
 
-该设计引入了三个新对象：
+璇ヨ璁″紩鍏ヤ簡涓変釜鏂板璞★細
 
 1. AP matrix device
 2. VFIO AP device driver (vfio_ap.ko)
 3. VFIO AP mediated pass-through device
 
-1. AP 矩阵设备
-2. VFIO AP 设备驱动（vfio_ap.ko）
-3. VFIO AP 中介直通（pass-through）设备
+1. AP 鐭╅樀璁惧
+2. VFIO AP 璁惧椹卞姩锛坴fio_ap.ko锛?
+3. VFIO AP 涓粙鐩撮€氾紙pass-through锛夎澶?
 
 ### The VFIO AP device driver
 
-### VFIO AP 设备驱动
+### VFIO AP 璁惧椹卞姩
 
 The VFIO AP (vfio_ap) device driver serves the following purposes:
 
-VFIO AP（vfio_ap）设备驱动用于以下目的：
+VFIO AP锛坴fio_ap锛夎澶囬┍鍔ㄧ敤浜庝互涓嬬洰鐨勶細
 
 1. Provides the interfaces to secure APQNs for exclusive use of KVM guests.
 
-1. 提供接口以预留 APQN 供 KVM 客户机独占使用。
+1. 鎻愪緵鎺ュ彛浠ラ鐣?APQN 渚?KVM 瀹㈡埛鏈虹嫭鍗犱娇鐢ㄣ€?
 
 2. Sets up the VFIO mediated device interfaces to manage a vfio_ap mediated
    device and creates the sysfs interfaces for assigning adapters, usage
    domains, and control domains comprising the matrix for a KVM guest.
 
-2. 建立 VFIO 中介设备接口以管理一个 vfio_ap 中介设备，并创建用于分配构成 KVM
-   客户机矩阵的适配器、使用域和控制域的 sysfs 接口。
+2. 寤虹珛 VFIO 涓粙璁惧鎺ュ彛浠ョ鐞嗕竴涓?vfio_ap 涓粙璁惧锛屽苟鍒涘缓鐢ㄤ簬鍒嗛厤鏋勬垚 KVM
+   瀹㈡埛鏈虹煩闃电殑閫傞厤鍣ㄣ€佷娇鐢ㄥ煙鍜屾帶鍒跺煙鐨?sysfs 鎺ュ彛銆?
 
 3. Configures the APM, AQM and ADM in the APCB contained in the CRYCB referenced
    by a KVM guest's SIE state description to grant the guest access to a matrix
    of AP devices
 
-3. 配置位于 KVM 客户机 SIE 状态描述所引用的 CRYCB 中的 APCB 内的 APM、AQM 和 ADM，
-   以授予客户机对一组 AP 设备的访问权限
+3. 閰嶇疆浣嶄簬 KVM 瀹㈡埛鏈?SIE 鐘舵€佹弿杩版墍寮曠敤鐨?CRYCB 涓殑 APCB 鍐呯殑 APM銆丄QM 鍜?ADM锛?
+   浠ユ巿浜堝鎴锋満瀵逛竴缁?AP 璁惧鐨勮闂潈闄?
 
 ### Reserve APQNs for exclusive use of KVM guests
 
-### 为 KVM 客户机独占使用而预留 APQN
+### 涓?KVM 瀹㈡埛鏈虹嫭鍗犱娇鐢ㄨ€岄鐣?APQN
 
 The following block diagram illustrates the mechanism by which APQNs are
 ```
@@ -376,7 +376,7 @@ The following block diagram illustrates the mechanism by which APQNs are
 
 The process for reserving an AP queue for use by a KVM guest is:
 
-为 KVM 客户机预留一个 AP 队列的过程是：
+涓?KVM 瀹㈡埛鏈洪鐣欎竴涓?AP 闃熷垪鐨勮繃绋嬫槸锛?
 
 1. The administrator loads the vfio_ap device driver
 2. The vfio-ap driver during its initialization will register a single 'matrix'
@@ -402,29 +402,29 @@ The process for reserving an AP queue for use by a KVM guest is:
 10. The administrator assigns the adapters, usage domains and control domains
     to be exclusively used by a guest.
 
-1. 管理员加载 vfio_ap 设备驱动
-2. vfio-ap 驱动在其初始化期间将向设备核心（device core）注册一个单一的“矩阵”
-   （matrix）设备。它将作为用于为客户机配置 AP 矩阵的所有 vfio_ap 中介设备的父设备。
-3. /sys/devices/vfio_ap/matrix 设备由设备核心创建
-4. vfio_ap 设备驱动将向 AP 总线注册以处理类型为 10 及更高（CEX4 及更新）的 AP 队列
-   设备。该驱动将提供 vfio_ap 驱动的 probe 和 remove 回调接口。不支持早于 CEX4 队列的
-   设备，这是为了通过不为在相对不久的将来会停止服务、且可用于测试的旧系统很少的旧设备
-   提供支持，从而避免不必要地使设计复杂化，以简化实现。
-5. AP 总线将 vfio_ap 设备驱动注册到设备核心
-6. 管理员编辑 AP 适配器和队列掩码以预留供 vfio_ap 设备驱动使用的 AP 队列。
-7. AP 总线将从默认的 zcrypt cex4queue 驱动中移除为 vfio_ap 驱动预留的 AP 队列。
-8. AP 总线探测 vfio_ap 设备驱动以绑定为其预留的队列。
-9. 管理员创建一个直通类型的 vfio_ap 中介设备供客户机使用
-10. 管理员分配供客户机独占使用的适配器、使用域和控制域。
+1. 绠＄悊鍛樺姞杞?vfio_ap 璁惧椹卞姩
+2. vfio-ap 椹卞姩鍦ㄥ叾鍒濆鍖栨湡闂村皢鍚戣澶囨牳蹇冿紙device core锛夋敞鍐屼竴涓崟涓€鐨勨€滅煩闃碘€?
+   锛坢atrix锛夎澶囥€傚畠灏嗕綔涓虹敤浜庝负瀹㈡埛鏈洪厤缃?AP 鐭╅樀鐨勬墍鏈?vfio_ap 涓粙璁惧鐨勭埗璁惧銆?
+3. /sys/devices/vfio_ap/matrix 璁惧鐢辫澶囨牳蹇冨垱寤?
+4. vfio_ap 璁惧椹卞姩灏嗗悜 AP 鎬荤嚎娉ㄥ唽浠ュ鐞嗙被鍨嬩负 10 鍙婃洿楂橈紙CEX4 鍙婃洿鏂帮級鐨?AP 闃熷垪
+   璁惧銆傝椹卞姩灏嗘彁渚?vfio_ap 椹卞姩鐨?probe 鍜?remove 鍥炶皟鎺ュ彛銆備笉鏀寔鏃╀簬 CEX4 闃熷垪鐨?
+   璁惧锛岃繖鏄负浜嗛€氳繃涓嶄负鍦ㄧ浉瀵逛笉涔呯殑灏嗘潵浼氬仠姝㈡湇鍔°€佷笖鍙敤浜庢祴璇曠殑鏃х郴缁熷緢灏戠殑鏃ц澶?
+   鎻愪緵鏀寔锛屼粠鑰岄伩鍏嶄笉蹇呰鍦颁娇璁捐澶嶆潅鍖栵紝浠ョ畝鍖栧疄鐜般€?
+5. AP 鎬荤嚎灏?vfio_ap 璁惧椹卞姩娉ㄥ唽鍒拌澶囨牳蹇?
+6. 绠＄悊鍛樼紪杈?AP 閫傞厤鍣ㄥ拰闃熷垪鎺╃爜浠ラ鐣欎緵 vfio_ap 璁惧椹卞姩浣跨敤鐨?AP 闃熷垪銆?
+7. AP 鎬荤嚎灏嗕粠榛樿鐨?zcrypt cex4queue 椹卞姩涓Щ闄や负 vfio_ap 椹卞姩棰勭暀鐨?AP 闃熷垪銆?
+8. AP 鎬荤嚎鎺㈡祴 vfio_ap 璁惧椹卞姩浠ョ粦瀹氫负鍏堕鐣欑殑闃熷垪銆?
+9. 绠＄悊鍛樺垱寤轰竴涓洿閫氱被鍨嬬殑 vfio_ap 涓粙璁惧渚涘鎴锋満浣跨敤
+10. 绠＄悊鍛樺垎閰嶄緵瀹㈡埛鏈虹嫭鍗犱娇鐢ㄧ殑閫傞厤鍣ㄣ€佷娇鐢ㄥ煙鍜屾帶鍒跺煙銆?
 
 ### Set up the VFIO mediated device interfaces
 
-### 建立 VFIO 中介设备接口
+### 寤虹珛 VFIO 涓粙璁惧鎺ュ彛
 
 The VFIO AP device driver utilizes the common interfaces of the VFIO mediated
 device core driver to:
 
-VFIO AP 设备驱动利用 VFIO 中介设备核心驱动的通用接口来：
+VFIO AP 璁惧椹卞姩鍒╃敤 VFIO 涓粙璁惧鏍稿績椹卞姩鐨勯€氱敤鎺ュ彛鏉ワ細
 
 - Register an AP mediated bus driver to add a vfio_ap mediated device to and
   remove it from a VFIO group.
@@ -432,10 +432,10 @@ VFIO AP 设备驱动利用 VFIO 中介设备核心驱动的通用接口来：
 - Add a vfio_ap mediated device to and remove it from the AP mediated bus driver
 - Add a vfio_ap mediated device to and remove it from an IOMMU group
 
-- 注册一个 AP 中介总线驱动，以将 vfio_ap 中介设备加入或移出 VFIO 组。
-- 创建并销毁一个 vfio_ap 中介设备
-- 将 vfio_ap 中介设备加入或移出 AP 中介总线驱动
-- 将 vfio_ap 中介设备加入或移出 IOMMU 组
+- 娉ㄥ唽涓€涓?AP 涓粙鎬荤嚎椹卞姩锛屼互灏?vfio_ap 涓粙璁惧鍔犲叆鎴栫Щ鍑?VFIO 缁勩€?
+- 鍒涘缓骞堕攢姣佷竴涓?vfio_ap 涓粙璁惧
+- 灏?vfio_ap 涓粙璁惧鍔犲叆鎴栫Щ鍑?AP 涓粙鎬荤嚎椹卞姩
+- 灏?vfio_ap 涓粙璁惧鍔犲叆鎴栫Щ鍑?IOMMU 缁?
 
 The following high-level block diagram shows the main components and interfaces
 ```
@@ -465,12 +465,12 @@ with an 'mdev_parent_ops' structure that provides the sysfs attribute
 structures, mdev functions and callback interfaces for managing the mediated
 matrix device.
 
-在 vfio_ap 模块的初始化期间，矩阵设备会用一个 'mdev_parent_ops' 结构注册，该结构
-提供用于管理中介矩阵设备的 sysfs 属性结构、mdev 函数和回调接口。
+鍦?vfio_ap 妯″潡鐨勫垵濮嬪寲鏈熼棿锛岀煩闃佃澶囦細鐢ㄤ竴涓?'mdev_parent_ops' 缁撴瀯娉ㄥ唽锛岃缁撴瀯
+鎻愪緵鐢ㄤ簬绠＄悊涓粙鐭╅樀璁惧鐨?sysfs 灞炴€х粨鏋勩€乵dev 鍑芥暟鍜屽洖璋冩帴鍙ｃ€?
 
 - sysfs attribute structures:
 
-- sysfs 属性结构：
+- sysfs 灞炴€х粨鏋勶細
 
   supported_type_groups
     The VFIO mediated device framework supports creation of user-defined
@@ -483,15 +483,15 @@ matrix device.
     provided.
 
   supported_type_groups
-    VFIO 中介设备框架支持创建用户定义的中介设备类型。这些中介设备类型在设备向中介
-    设备框架注册时通过 'supported_type_groups' 结构指定。注册过程会为被注册设备的
-    'mdev_supported_types' 子目录中指定的每种中介设备类型创建 sysfs 结构。连同设备
-    类型，还会提供该中介设备类型的 sysfs 属性。
+    VFIO 涓粙璁惧妗嗘灦鏀寔鍒涘缓鐢ㄦ埛瀹氫箟鐨勪腑浠嬭澶囩被鍨嬨€傝繖浜涗腑浠嬭澶囩被鍨嬪湪璁惧鍚戜腑浠?
+    璁惧妗嗘灦娉ㄥ唽鏃堕€氳繃 'supported_type_groups' 缁撴瀯鎸囧畾銆傛敞鍐岃繃绋嬩細涓鸿娉ㄥ唽璁惧鐨?
+    'mdev_supported_types' 瀛愮洰褰曚腑鎸囧畾鐨勬瘡绉嶄腑浠嬭澶囩被鍨嬪垱寤?sysfs 缁撴瀯銆傝繛鍚岃澶?
+    绫诲瀷锛岃繕浼氭彁渚涜涓粙璁惧绫诲瀷鐨?sysfs 灞炴€с€?
 
     The VFIO AP device driver will register one mediated device type for
     passthrough devices:
 
-    VFIO AP 设备驱动将为直通设备注册一种中介设备类型：
+    VFIO AP 璁惧椹卞姩灏嗕负鐩撮€氳澶囨敞鍐屼竴绉嶄腑浠嬭澶囩被鍨嬶細
 
       /sys/devices/vfio_ap/matrix/mdev_supported_types/vfio_ap-passthrough
 
@@ -505,7 +505,7 @@ matrix device.
 
     Where:
 
-    其中：
+    鍏朵腑锛?
 
 	* name:
 	    specifies the name of the mediated device type
@@ -524,17 +524,17 @@ matrix device.
     sysfs attributes for a vfio_ap mediated device are:
 
 	* name:
-	    指定中介设备类型的名称
+	    鎸囧畾涓粙璁惧绫诲瀷鐨勫悕绉?
 	* device_api:
-	    中介设备类型的 API
+	    涓粙璁惧绫诲瀷鐨?API
 	* available_instances:
-	    可创建的 vfio_ap 中介直通设备数量
+	    鍙垱寤虹殑 vfio_ap 涓粙鐩撮€氳澶囨暟閲?
 	* device_api:
-	    指定 VFIO API
+	    鎸囧畾 VFIO API
   mdev_attr_groups
-    该属性组标识中介设备的用户定义 sysfs 属性。当设备向 VFIO 中介设备框架注册时，
-    在 'mdev_attr_groups' 结构中标识的 sysfs 属性文件将创建在 vfio_ap 中介设备的
-    目录中。vfio_ap 中介设备的 sysfs 属性为：
+    璇ュ睘鎬х粍鏍囪瘑涓粙璁惧鐨勭敤鎴峰畾涔?sysfs 灞炴€с€傚綋璁惧鍚?VFIO 涓粙璁惧妗嗘灦娉ㄥ唽鏃讹紝
+    鍦?'mdev_attr_groups' 缁撴瀯涓爣璇嗙殑 sysfs 灞炴€ф枃浠跺皢鍒涘缓鍦?vfio_ap 涓粙璁惧鐨?
+    鐩綍涓€倂fio_ap 涓粙璁惧鐨?sysfs 灞炴€т负锛?
 
     assign_adapter / unassign_adapter:
       Write-only attributes for assigning/unassigning an AP adapter to/from the
@@ -571,29 +571,29 @@ matrix device.
       control domains. If the given state cannot be set then no changes are
       made to the vfio-ap mediated device.
 
-    assign_adapter / unassign_adapter：
-      用于将 AP 适配器分配/解除分配到 vfio_ap 中介设备的只写属性。要分配/解除分配
-      一个适配器，请将该适配器的 APID 回显（echo）到相应的属性文件。
-    assign_domain / unassign_domain：
-      用于将 AP 使用域分配/解除分配到 vfio_ap 中介设备的只写属性。要分配/解除分配
-      一个域，请将该使用域的域名回显到相应的属性文件。
-    matrix：
-      一个只读文件，用于显示从分配给 vfio_ap 中介设备的适配器和域名笛卡尔积推导出的
-      APQN。
-    guest_matrix：
-      一个只读文件，用于显示从分别分配给 KVM 客户机 CRYCB 的 APM 和 AQM 字段的适配器
-      和域名笛卡尔积推导出的 APQN。如果任何 APQN 未引用绑定到 vfio_ap 设备驱动（即该
-      队列不在主机的 AP 配置中）的队列设备，则它可能与分配给 vfio_ap 中介设备的
-      APQN 不同。
-    assign_control_domain / unassign_control_domain：
-      用于将 AP 控制域分配/解除分配到 vfio_ap 中介设备的只写属性。要分配/解除分配
-      一个控制域，请将要分配/解除分配的域 ID 回显到相应的属性文件。
-    control_domains：
-      一个只读文件，用于显示分配给 vfio_ap 中介设备的控制域名。
-    ap_config：
-      一个读/写文件，写入时允许一次性替换 vfio_ap 中介设备的全部三个 AP 矩阵掩码。
-      提供三个掩码，分别用于适配器、域和控制域。如果给定状态无法设置，则不会对
-      vfio-ap 中介设备做任何更改。
+    assign_adapter / unassign_adapter锛?
+      鐢ㄤ簬灏?AP 閫傞厤鍣ㄥ垎閰?瑙ｉ櫎鍒嗛厤鍒?vfio_ap 涓粙璁惧鐨勫彧鍐欏睘鎬с€傝鍒嗛厤/瑙ｉ櫎鍒嗛厤
+      涓€涓€傞厤鍣紝璇峰皢璇ラ€傞厤鍣ㄧ殑 APID 鍥炴樉锛坋cho锛夊埌鐩稿簲鐨勫睘鎬ф枃浠躲€?
+    assign_domain / unassign_domain锛?
+      鐢ㄤ簬灏?AP 浣跨敤鍩熷垎閰?瑙ｉ櫎鍒嗛厤鍒?vfio_ap 涓粙璁惧鐨勫彧鍐欏睘鎬с€傝鍒嗛厤/瑙ｉ櫎鍒嗛厤
+      涓€涓煙锛岃灏嗚浣跨敤鍩熺殑鍩熷悕鍥炴樉鍒扮浉搴旂殑灞炴€ф枃浠躲€?
+    matrix锛?
+      涓€涓彧璇绘枃浠讹紝鐢ㄤ簬鏄剧ず浠庡垎閰嶇粰 vfio_ap 涓粙璁惧鐨勯€傞厤鍣ㄥ拰鍩熷悕绗涘崱灏旂Н鎺ㄥ鍑虹殑
+      APQN銆?
+    guest_matrix锛?
+      涓€涓彧璇绘枃浠讹紝鐢ㄤ簬鏄剧ず浠庡垎鍒垎閰嶇粰 KVM 瀹㈡埛鏈?CRYCB 鐨?APM 鍜?AQM 瀛楁鐨勯€傞厤鍣?
+      鍜屽煙鍚嶇瑳鍗″皵绉帹瀵煎嚭鐨?APQN銆傚鏋滀换浣?APQN 鏈紩鐢ㄧ粦瀹氬埌 vfio_ap 璁惧椹卞姩锛堝嵆璇?
+      闃熷垪涓嶅湪涓绘満鐨?AP 閰嶇疆涓級鐨勯槦鍒楄澶囷紝鍒欏畠鍙兘涓庡垎閰嶇粰 vfio_ap 涓粙璁惧鐨?
+      APQN 涓嶅悓銆?
+    assign_control_domain / unassign_control_domain锛?
+      鐢ㄤ簬灏?AP 鎺у埗鍩熷垎閰?瑙ｉ櫎鍒嗛厤鍒?vfio_ap 涓粙璁惧鐨勫彧鍐欏睘鎬с€傝鍒嗛厤/瑙ｉ櫎鍒嗛厤
+      涓€涓帶鍒跺煙锛岃灏嗚鍒嗛厤/瑙ｉ櫎鍒嗛厤鐨勫煙 ID 鍥炴樉鍒扮浉搴旂殑灞炴€ф枃浠躲€?
+    control_domains锛?
+      涓€涓彧璇绘枃浠讹紝鐢ㄤ簬鏄剧ず鍒嗛厤缁?vfio_ap 涓粙璁惧鐨勬帶鍒跺煙鍚嶃€?
+    ap_config锛?
+      涓€涓/鍐欐枃浠讹紝鍐欏叆鏃跺厑璁镐竴娆℃€ф浛鎹?vfio_ap 涓粙璁惧鐨勫叏閮ㄤ笁涓?AP 鐭╅樀鎺╃爜銆?
+      鎻愪緵涓変釜鎺╃爜锛屽垎鍒敤浜庨€傞厤鍣ㄣ€佸煙鍜屾帶鍒跺煙銆傚鏋滅粰瀹氱姸鎬佹棤娉曡缃紝鍒欎笉浼氬
+      vfio-ap 涓粙璁惧鍋氫换浣曟洿鏀广€?
 
       The format of the data written to ap_config is as follows:
       {amask},{dmask},{cmask}\n
@@ -619,31 +619,31 @@ matrix device.
       better served using the respective assign/unassign attributes for
       adapters, domains, and control domains.
 
-      写入 ap_config 的数据格式如下：
+      鍐欏叆 ap_config 鐨勬暟鎹牸寮忓涓嬶細
       {amask},{dmask},{cmask}\n
 
-      \n 是一个换行符。
+      \n 鏄竴涓崲琛岀銆?
 
-      amask、dmask 和 cmask 是掩码，标识应将哪些适配器、域和控制域分配给该中介设备。
+      amask銆乨mask 鍜?cmask 鏄帺鐮侊紝鏍囪瘑搴斿皢鍝簺閫傞厤鍣ㄣ€佸煙鍜屾帶鍒跺煙鍒嗛厤缁欒涓粙璁惧銆?
 
-      掩码的格式如下：
+      鎺╃爜鐨勬牸寮忓涓嬶細
       0xNN..NN
 
-      其中 NN..NN 是 64 个十六进制字符，表示一个 256 位值。最左边（最高位）的位
-      表示适配器/域 0。
+      鍏朵腑 NN..NN 鏄?64 涓崄鍏繘鍒跺瓧绗︼紝琛ㄧず涓€涓?256 浣嶅€笺€傛渶宸﹁竟锛堟渶楂樹綅锛夌殑浣?
+      琛ㄧず閫傞厤鍣?鍩?0銆?
 
-      要获取表示你的 mdev 当前配置的一组掩码示例，只需 cat ap_config。
+      瑕佽幏鍙栬〃绀轰綘鐨?mdev 褰撳墠閰嶇疆鐨勪竴缁勬帺鐮佺ず渚嬶紝鍙渶 cat ap_config銆?
 
-      设置一个大于系统所允许最大值的适配器或域名将导致错误。
+      璁剧疆涓€涓ぇ浜庣郴缁熸墍鍏佽鏈€澶у€肩殑閫傞厤鍣ㄦ垨鍩熷悕灏嗗鑷撮敊璇€?
 
-      该属性旨在供自动化使用。最终用户最好使用各自的 assign/unassign 属性来操作
-      适配器、域和控制域。
+      璇ュ睘鎬ф棬鍦ㄤ緵鑷姩鍖栦娇鐢ㄣ€傛渶缁堢敤鎴锋渶濂戒娇鐢ㄥ悇鑷殑 assign/unassign 灞炴€ф潵鎿嶄綔
+      閫傞厤鍣ㄣ€佸煙鍜屾帶鍒跺煙銆?
 
 ```
 
 - functions:
 
-- 函数：
+- 鍑芥暟锛?
 
   create:
     allocates the ap_matrix_mdev structure used by the vfio_ap driver to:
@@ -656,25 +656,25 @@ matrix device.
       referencing queue devices that do not exist, or are not bound to the
       vfio_ap device driver.
 
-  create：
-    分配 vfio_ap 驱动用于以下用途的 ap_matrix_mdev 结构：
+  create锛?
+    鍒嗛厤 vfio_ap 椹卞姩鐢ㄤ簬浠ヤ笅鐢ㄩ€旂殑 ap_matrix_mdev 缁撴瀯锛?
 
-    - 存储使用 mdev 的客户机的 KVM 结构引用
-    - 存储通过相应 sysfs 属性文件分配的适配器、域和控制域的 AP 矩阵配置
-    - 存储客户机可用的适配器、域和控制域的 AP 矩阵配置。不得向客户机提供对引用不存在
-      或未绑定到 vfio_ap 设备驱动的队列设备的 APQN 的访问。
+    - 瀛樺偍浣跨敤 mdev 鐨勫鎴锋満鐨?KVM 缁撴瀯寮曠敤
+    - 瀛樺偍閫氳繃鐩稿簲 sysfs 灞炴€ф枃浠跺垎閰嶇殑閫傞厤鍣ㄣ€佸煙鍜屾帶鍒跺煙鐨?AP 鐭╅樀閰嶇疆
+    - 瀛樺偍瀹㈡埛鏈哄彲鐢ㄧ殑閫傞厤鍣ㄣ€佸煙鍜屾帶鍒跺煙鐨?AP 鐭╅樀閰嶇疆銆備笉寰楀悜瀹㈡埛鏈烘彁渚涘寮曠敤涓嶅瓨鍦?
+      鎴栨湭缁戝畾鍒?vfio_ap 璁惧椹卞姩鐨勯槦鍒楄澶囩殑 APQN 鐨勮闂€?
 
   remove:
     deallocates the vfio_ap mediated device's ap_matrix_mdev structure.
     This will be allowed only if a running guest is not using the mdev.
 
-  remove：
-    释放 vfio_ap 中介设备的 ap_matrix_mdev 结构。
-    仅当没有正在运行的客户机使用该 mdev 时才允许。
+  remove锛?
+    閲婃斁 vfio_ap 涓粙璁惧鐨?ap_matrix_mdev 缁撴瀯銆?
+    浠呭綋娌℃湁姝ｅ湪杩愯鐨勫鎴锋満浣跨敤璇?mdev 鏃舵墠鍏佽銆?
 
 - callback interfaces
 
-- 回调接口
+- 鍥炶皟鎺ュ彛
 
   open_device:
     the open_device callback is invoked by userspace to connect the
@@ -683,34 +683,34 @@ matrix device.
     and configures the guest's access to the AP matrix defined via the
     vfio_ap mediated device's sysfs attribute files.
 
-  open_device：
-    open_device 回调由用户空间调用，以将矩阵 mdev 设备的 VFIO iommu 组连接到 MDEV
-    总线。该回调检索用于配置 KVM 客户机的 KVM 结构，并配置客户机对通过 vfio_ap 中介
-    设备 sysfs 属性文件定义的 AP 矩阵的访问。
+  open_device锛?
+    open_device 鍥炶皟鐢辩敤鎴风┖闂磋皟鐢紝浠ュ皢鐭╅樀 mdev 璁惧鐨?VFIO iommu 缁勮繛鎺ュ埌 MDEV
+    鎬荤嚎銆傝鍥炶皟妫€绱㈢敤浜庨厤缃?KVM 瀹㈡埛鏈虹殑 KVM 缁撴瀯锛屽苟閰嶇疆瀹㈡埛鏈哄閫氳繃 vfio_ap 涓粙
+    璁惧 sysfs 灞炴€ф枃浠跺畾涔夌殑 AP 鐭╅樀鐨勮闂€?
 
   close_device:
     this callback deconfigures the guest's AP matrix.
 
-  close_device：
-    该回调取消配置客户机的 AP 矩阵。
+  close_device锛?
+    璇ュ洖璋冨彇娑堥厤缃鎴锋満鐨?AP 鐭╅樀銆?
 
   ioctl:
     this callback handles the VFIO_DEVICE_GET_INFO and VFIO_DEVICE_RESET ioctls
     defined by the vfio framework.
 
-  ioctl：
-    该回调处理 vfio 框架定义的 VFIO_DEVICE_GET_INFO 和 VFIO_DEVICE_RESET ioctls。
+  ioctl锛?
+    璇ュ洖璋冨鐞?vfio 妗嗘灦瀹氫箟鐨?VFIO_DEVICE_GET_INFO 鍜?VFIO_DEVICE_RESET ioctls銆?
 
 ### Configure the guest's AP resources
 
-### 配置客户机的 AP 资源
+### 閰嶇疆瀹㈡埛鏈虹殑 AP 璧勬簮
 
 Configuring the AP resources for a KVM guest will be performed at the
 time of `open_device` and `close_device`. The guest's AP resources are
 configured via its APCB by:
 
-为 KVM 客户机配置 AP 资源将在 `open_device` 和 `close_device` 时进行。客户机的
-AP 资源通过其 APCB 配置如下：
+涓?KVM 瀹㈡埛鏈洪厤缃?AP 璧勬簮灏嗗湪 `open_device` 鍜?`close_device` 鏃惰繘琛屻€傚鎴锋満鐨?
+AP 璧勬簮閫氳繃鍏?APCB 閰嶇疆濡備笅锛?
 
 - Setting the bits in the APM corresponding to the APIDs assigned to the
   vfio_ap mediated device via its 'assign_adapter' interface.
@@ -719,10 +719,10 @@ AP 资源通过其 APCB 配置如下：
 - Setting the bits in the ADM corresponding to the domain dIDs assigned to the
   vfio_ap mediated device via its 'assign_control_domains' interface.
 
-- 设置 APM 中对应于通过 'assign_adapter' 接口分配给 vfio_ap 中介设备的 APID 的位。
-- 设置 AQM 中对应于通过 'assign_domain' 接口分配给 vfio_ap 中介设备的域的位。
-- 设置 ADM 中对应于通过 'assign_control_domains' 接口分配给 vfio_ap 中介设备的
-  域 dID 的位。
+- 璁剧疆 APM 涓搴斾簬閫氳繃 'assign_adapter' 鎺ュ彛鍒嗛厤缁?vfio_ap 涓粙璁惧鐨?APID 鐨勪綅銆?
+- 璁剧疆 AQM 涓搴斾簬閫氳繃 'assign_domain' 鎺ュ彛鍒嗛厤缁?vfio_ap 涓粙璁惧鐨勫煙鐨勪綅銆?
+- 璁剧疆 ADM 涓搴斾簬閫氳繃 'assign_control_domains' 鎺ュ彛鍒嗛厤缁?vfio_ap 涓粙璁惧鐨?
+  鍩?dID 鐨勪綅銆?
 
 The linux device model precludes passing a device through to a KVM guest that
 is not bound to the device driver facilitating its pass-through. Consequently,
@@ -734,18 +734,18 @@ mediated device via its sysfs 'assign_adapter', 'assign_domain' and
 'assign_control_domain' interfaces will be filtered before providing the AP
 configuration to a guest:
 
-Linux 设备模型不允许将一个未绑定到促成其直通的驱动的设备直通给 KVM 客户机。因此，
-不引用绑定到 vfio_ap 设备驱动的队列设备的 APQN 不会被分配给 KVM 客户机的矩阵。然而，
-AP 架构没有提供从客户机矩阵中过滤单个 APQN 的手段，因此在向客户机提供 AP 配置之前，
-会通过其 sysfs 'assign_adapter'、'assign_domain' 和 'assign_control_domain' 接口分配给
-vfio_ap 中介设备的适配器、域和控制域将被过滤：
+Linux 璁惧妯″瀷涓嶅厑璁稿皢涓€涓湭缁戝畾鍒颁績鎴愬叾鐩撮€氱殑椹卞姩鐨勮澶囩洿閫氱粰 KVM 瀹㈡埛鏈恒€傚洜姝わ紝
+涓嶅紩鐢ㄧ粦瀹氬埌 vfio_ap 璁惧椹卞姩鐨勯槦鍒楄澶囩殑 APQN 涓嶄細琚垎閰嶇粰 KVM 瀹㈡埛鏈虹殑鐭╅樀銆傜劧鑰岋紝
+AP 鏋舵瀯娌℃湁鎻愪緵浠庡鎴锋満鐭╅樀涓繃婊ゅ崟涓?APQN 鐨勬墜娈碉紝鍥犳鍦ㄥ悜瀹㈡埛鏈烘彁渚?AP 閰嶇疆涔嬪墠锛?
+浼氶€氳繃鍏?sysfs 'assign_adapter'銆?assign_domain' 鍜?'assign_control_domain' 鎺ュ彛鍒嗛厤缁?
+vfio_ap 涓粙璁惧鐨勯€傞厤鍣ㄣ€佸煙鍜屾帶鍒跺煙灏嗚杩囨护锛?
 
 - The APIDs of the adapters, the APQIs of the domains and the domain numbers of
   the control domains assigned to the matrix mdev that are not also assigned to
   the host's AP configuration will be filtered.
 
-- 分配给矩阵 mdev 的适配器 APID、域 APQI 和控制域名中，那些未同时分配给主机 AP 配置的
-  部分将被过滤。
+- 鍒嗛厤缁欑煩闃?mdev 鐨勯€傞厤鍣?APID銆佸煙 APQI 鍜屾帶鍒跺煙鍚嶄腑锛岄偅浜涙湭鍚屾椂鍒嗛厤缁欎富鏈?AP 閰嶇疆鐨?
+  閮ㄥ垎灏嗚杩囨护銆?
 
 - Each APQN derived from the Cartesian product of the APIDs and APQIs assigned
   to the vfio_ap mdev is examined and if any one of them does not reference a
@@ -753,13 +753,13 @@ vfio_ap 中介设备的适配器、域和控制域将被过滤：
   plugged into the guest (i.e., the bit corresponding to its APID will not be
   set in the APM of the guest's APCB).
 
-- 检查从分配给 vfio_ap mdev 的 APID 和 APQI 的笛卡尔积推导出的每个 APQN，如果其中
-  任意一个不引用绑定到 vfio_ap 设备驱动的队列设备，则该适配器将不会被插入客户机
-  （即，其 APID 对应的位不会被设置在客户机 APCB 的 APM 中）。
+- 妫€鏌ヤ粠鍒嗛厤缁?vfio_ap mdev 鐨?APID 鍜?APQI 鐨勭瑳鍗″皵绉帹瀵煎嚭鐨勬瘡涓?APQN锛屽鏋滃叾涓?
+  浠绘剰涓€涓笉寮曠敤缁戝畾鍒?vfio_ap 璁惧椹卞姩鐨勯槦鍒楄澶囷紝鍒欒閫傞厤鍣ㄥ皢涓嶄細琚彃鍏ュ鎴锋満
+  锛堝嵆锛屽叾 APID 瀵瑰簲鐨勪綅涓嶄細琚缃湪瀹㈡埛鏈?APCB 鐨?APM 涓級銆?
 
 ### The CPU model features for AP
 
-### 用于 AP 的 CPU 模型特性
+### 鐢ㄤ簬 AP 鐨?CPU 妯″瀷鐗规€?
 
 The AP stack relies on the presence of the AP instructions as well as three
 facilities: The AP Facilities Test (APFT) facility; the AP Query
@@ -767,37 +767,37 @@ Configuration Information (QCI) facility; and the AP Queue Interruption Control
 facility. These features/facilities are made available to a KVM guest via the
 following CPU model features:
 
-AP 协议栈依赖 AP 指令的存在以及三个设施：AP Facilities Test（APFT）设施；AP Query
-Configuration Information（QCI）设施；以及 AP Queue Interruption Control 设施。这些
-特性/设施通过以下 CPU 模型特性提供给 KVM 客户机：
+AP 鍗忚鏍堜緷璧?AP 鎸囦护鐨勫瓨鍦ㄤ互鍙婁笁涓鏂斤細AP Facilities Test锛圓PFT锛夎鏂斤紱AP Query
+Configuration Information锛圦CI锛夎鏂斤紱浠ュ強 AP Queue Interruption Control 璁炬柦銆傝繖浜?
+鐗规€?璁炬柦閫氳繃浠ヤ笅 CPU 妯″瀷鐗规€ф彁渚涚粰 KVM 瀹㈡埛鏈猴細
 
 1. ap: Indicates whether the AP instructions are installed on the guest. This
    feature will be enabled by KVM only if the AP instructions are installed
    on the host.
 
-1. ap：指示客户机上是否安装了 AP 指令。仅当主机上安装了 AP 指令时，KVM 才会启用该
-   特性。
+1. ap锛氭寚绀哄鎴锋満涓婃槸鍚﹀畨瑁呬簡 AP 鎸囦护銆備粎褰撲富鏈轰笂瀹夎浜?AP 鎸囦护鏃讹紝KVM 鎵嶄細鍚敤璇?
+   鐗规€с€?
 
 2. apft: Indicates the APFT facility is available on the guest. This facility
    can be made available to the guest only if it is available on the host (i.e.,
    facility bit 15 is set).
 
-2. apft：指示 APFT 设施在客户机上可用。仅当主机上可用该设施时（即设施位 15 被置位），
-   才能将其提供给客户机。
+2. apft锛氭寚绀?APFT 璁炬柦鍦ㄥ鎴锋満涓婂彲鐢ㄣ€備粎褰撲富鏈轰笂鍙敤璇ヨ鏂芥椂锛堝嵆璁炬柦浣?15 琚疆浣嶏級锛?
+   鎵嶈兘灏嗗叾鎻愪緵缁欏鎴锋満銆?
 
 3. apqci: Indicates the AP QCI facility is available on the guest. This facility
    can be made available to the guest only if it is available on the host (i.e.,
    facility bit 12 is set).
 
-3. apqci：指示 AP QCI 设施在客户机上可用。仅当主机上可用该设施时（即设施位 12 被置位），
-   才能将其提供给客户机。
+3. apqci锛氭寚绀?AP QCI 璁炬柦鍦ㄥ鎴锋満涓婂彲鐢ㄣ€備粎褰撲富鏈轰笂鍙敤璇ヨ鏂芥椂锛堝嵆璁炬柦浣?12 琚疆浣嶏級锛?
+   鎵嶈兘灏嗗叾鎻愪緵缁欏鎴锋満銆?
 
 4. apqi: Indicates AP Queue Interruption Control faclity is available on the
    guest. This facility can be made available to the guest only if it is
    available on the host (i.e., facility bit 65 is set).
 
-4. apqi：指示 AP Queue Interruption Control 设施在客户机上可用。仅当主机上可用该设施时
-   （即设施位 65 被置位），才能将其提供给客户机。
+4. apqi锛氭寚绀?AP Queue Interruption Control 璁炬柦鍦ㄥ鎴锋満涓婂彲鐢ㄣ€備粎褰撲富鏈轰笂鍙敤璇ヨ鏂芥椂
+   锛堝嵆璁炬柦浣?65 琚疆浣嶏級锛屾墠鑳藉皢鍏舵彁渚涚粰瀹㈡埛鏈恒€?
 
 Note: If the user chooses to specify a CPU model different than the 'host'
 model to QEMU, the CPU model features and facilities need to be turned on
@@ -822,27 +822,27 @@ a given AP device. If the APFT facility is not installed on the guest, then no
 adapter or domain devices will get created by the AP bus running on the
 guest because only type 10 and newer devices can be configured for guest use.
 
-注意：如果为客户机关闭了 APFT 设施（apft=off），客户机将看不到任何 AP 设备。客户机
-上注册用于类型 10 及更新 AP 设备（即 cex4card 和 cex4queue 设备驱动）的 zcrypt 设备
-驱动需要 APFT 设施来确定给定 AP 设备上安装的设施。如果客户机上未安装 APFT 设施，那么
-在客户机上运行的 AP 总线将不会创建任何适配器或域设备，因为只能为类型 10 及更新的设备
-配置供客户机使用。
+娉ㄦ剰锛氬鏋滀负瀹㈡埛鏈哄叧闂簡 APFT 璁炬柦锛坅pft=off锛夛紝瀹㈡埛鏈哄皢鐪嬩笉鍒颁换浣?AP 璁惧銆傚鎴锋満
+涓婃敞鍐岀敤浜庣被鍨?10 鍙婃洿鏂?AP 璁惧锛堝嵆 cex4card 鍜?cex4queue 璁惧椹卞姩锛夌殑 zcrypt 璁惧
+椹卞姩闇€瑕?APFT 璁炬柦鏉ョ‘瀹氱粰瀹?AP 璁惧涓婂畨瑁呯殑璁炬柦銆傚鏋滃鎴锋満涓婃湭瀹夎 APFT 璁炬柦锛岄偅涔?
+鍦ㄥ鎴锋満涓婅繍琛岀殑 AP 鎬荤嚎灏嗕笉浼氬垱寤轰换浣曢€傞厤鍣ㄦ垨鍩熻澶囷紝鍥犱负鍙兘涓虹被鍨?10 鍙婃洿鏂扮殑璁惧
+閰嶇疆渚涘鎴锋満浣跨敤銆?
 
 ## Example
 
-## 示例
+## 绀轰緥
 
 Let's now provide an example to illustrate how KVM guests may be given
 access to AP facilities. For this example, we will show how to configure
 three guests such that executing the lszcrypt command on the guests would
 look like this:
 
-现在让我们提供一个示例，说明如何授予 KVM 客户机对 AP 设施的访问权限。在本示例中，我们
-将展示如何配置三个客户机，使得在客户机上执行 lszcrypt 命令时显示如下内容：
+鐜板湪璁╂垜浠彁渚涗竴涓ず渚嬶紝璇存槑濡備綍鎺堜簣 KVM 瀹㈡埛鏈哄 AP 璁炬柦鐨勮闂潈闄愩€傚湪鏈ず渚嬩腑锛屾垜浠?
+灏嗗睍绀哄浣曢厤缃笁涓鎴锋満锛屼娇寰楀湪瀹㈡埛鏈轰笂鎵ц lszcrypt 鍛戒护鏃舵樉绀哄涓嬪唴瀹癸細
 
 ### Guest1
 
-### 客户机1
+### 瀹㈡埛鏈?
 
 =========== ===== ============
 CARD.DOMAIN TYPE  MODE
@@ -857,7 +857,7 @@ CARD.DOMAIN TYPE  MODE
 
 ### Guest2
 
-### 客户机2
+### 瀹㈡埛鏈?
 
 =========== ===== ============
 CARD.DOMAIN TYPE  MODE
@@ -869,7 +869,7 @@ CARD.DOMAIN TYPE  MODE
 
 ### Guest3
 
-### 客户机3
+### 瀹㈡埛鏈?
 
 =========== ===== ============
 CARD.DOMAIN TYPE  MODE
@@ -881,7 +881,7 @@ CARD.DOMAIN TYPE  MODE
 
 These are the steps:
 
-步骤如下：
+姝ラ濡備笅锛?
 
 1. Install the vfio_ap module on the linux host. The dependency chain for the
    vfio_ap module is:
@@ -901,7 +901,7 @@ These are the steps:
    - VFIO
    - KVM
 
-1. 在 Linux 主机上安装 vfio_ap 模块。vfio_ap 模块的依赖链为：
+1. 鍦?Linux 涓绘満涓婂畨瑁?vfio_ap 妯″潡銆倂fio_ap 妯″潡鐨勪緷璧栭摼涓猴細
    - iommu
    - s390
    - zcrypt
@@ -910,7 +910,7 @@ These are the steps:
    - vfio_mdev_device
    - KVM
 
-   要构建 vfio_ap 模块，内核构建必须配置为选中以下 Kconfig 选项：
+   瑕佹瀯寤?vfio_ap 妯″潡锛屽唴鏍告瀯寤哄繀椤婚厤缃负閫変腑浠ヤ笅 Kconfig 閫夐」锛?
    - IOMMU_SUPPORT
    - S390
    - AP
@@ -1058,7 +1058,7 @@ These are the steps:
 
 ### Securing the APQNs for our example
 
-### 为我们的示例预留 APQN
+### 涓烘垜浠殑绀轰緥棰勭暀 APQN
 
    To secure the AP queues 05.0004, 05.0047, 05.00ab, 05.00ff, 06.0004, 06.0047,
    06.00ab, and 06.00ff for use by the vfio_ap device driver, the corresponding
@@ -1177,8 +1177,8 @@ These are the steps:
 4. The administrator now needs to configure the matrixes for the mediated
    devices $uuid1 (for Guest1), $uuid2 (for Guest2) and $uuid3 (for Guest3).
 
-4. 管理员现在需要为中介设备 $uuid1（用于客户机1）、$uuid2（用于客户机2）和 $uuid3
-   （用于客户机3）配置矩阵。
+4. 绠＄悊鍛樼幇鍦ㄩ渶瑕佷负涓粙璁惧 $uuid1锛堢敤浜庡鎴锋満1锛夈€?uuid2锛堢敤浜庡鎴锋満2锛夊拰 $uuid3
+   锛堢敤浜庡鎴锋満3锛夐厤缃煩闃点€?
 
 ```
 
@@ -1298,7 +1298,7 @@ These are the steps:
 
 When the guest is shut down, the vfio_ap mediated devices may be removed.
 
-当客户机关机时，vfio_ap 中介设备可被移除。
+褰撳鎴锋満鍏虫満鏃讹紝vfio_ap 涓粙璁惧鍙绉婚櫎銆?
 
 ```
 
@@ -1322,60 +1322,60 @@ the mdev device itself. To recreate and reconfigure the matrix mdev device,
 all of the steps starting with step 3 will have to be performed again. Note
 that the remove will fail if a guest using the vfio_ap mdev is still running.
 
-这将移除矩阵 mdev 设备的所有 sysfs 结构，包括 mdev 设备本身。要重新创建并重新配置
-矩阵 mdev 设备，必须重新执行从步骤 3 开始的所有步骤。注意，如果正在使用 vfio_ap mdev
-的客户机仍在运行，remove 将失败。
+杩欏皢绉婚櫎鐭╅樀 mdev 璁惧鐨勬墍鏈?sysfs 缁撴瀯锛屽寘鎷?mdev 璁惧鏈韩銆傝閲嶆柊鍒涘缓骞堕噸鏂伴厤缃?
+鐭╅樀 mdev 璁惧锛屽繀椤婚噸鏂版墽琛屼粠姝ラ 3 寮€濮嬬殑鎵€鏈夋楠ゃ€傛敞鎰忥紝濡傛灉姝ｅ湪浣跨敤 vfio_ap mdev
+鐨勫鎴锋満浠嶅湪杩愯锛宺emove 灏嗗け璐ャ€?
 
 It is not necessary to remove a vfio_ap mdev, but one may want to
 remove it if no guest will use it during the remaining lifetime of the linux
 host. If the vfio_ap mdev is removed, one may want to also reconfigure
 the pool of adapters and queues reserved for use by the default drivers.
 
-并非必须移除一个 vfio_ap mdev，但如果在其余的 Linux 主机生命周期内没有客户机会使用
-它，可能会想要移除它。如果移除了 vfio_ap mdev，可能还想要重新配置为默认驱动预留的
-适配器和队列池。
+骞堕潪蹇呴』绉婚櫎涓€涓?vfio_ap mdev锛屼絾濡傛灉鍦ㄥ叾浣欑殑 Linux 涓绘満鐢熷懡鍛ㄦ湡鍐呮病鏈夊鎴锋満浼氫娇鐢?
+瀹冿紝鍙兘浼氭兂瑕佺Щ闄ゅ畠銆傚鏋滅Щ闄や簡 vfio_ap mdev锛屽彲鑳借繕鎯宠閲嶆柊閰嶇疆涓洪粯璁ら┍鍔ㄩ鐣欑殑
+閫傞厤鍣ㄥ拰闃熷垪姹犮€?
 
 ## Hot plug/unplug support:
 
-## 热插拔支持：
+## 鐑彃鎷旀敮鎸侊細
 
 An adapter, domain or control domain may be hot plugged into a running KVM
 guest by assigning it to the vfio_ap mediated device being used by the guest if
 the following conditions are met:
 
-在满足以下条件时，可以通过将适配器、域或控制域分配给客户机正在使用的 vfio_ap 中介
-设备，将其热插入到一个正在运行的 KVM 客户机：
+鍦ㄦ弧瓒充互涓嬫潯浠舵椂锛屽彲浠ラ€氳繃灏嗛€傞厤鍣ㄣ€佸煙鎴栨帶鍒跺煙鍒嗛厤缁欏鎴锋満姝ｅ湪浣跨敤鐨?vfio_ap 涓粙
+璁惧锛屽皢鍏剁儹鎻掑叆鍒颁竴涓鍦ㄨ繍琛岀殑 KVM 瀹㈡埛鏈猴細
 
 - The adapter, domain or control domain must also be assigned to the host's
   AP configuration.
 
-- 该适配器、域或控制域还必须已分配给主机的 AP 配置。
+- 璇ラ€傞厤鍣ㄣ€佸煙鎴栨帶鍒跺煙杩樺繀椤诲凡鍒嗛厤缁欎富鏈虹殑 AP 閰嶇疆銆?
 
 - Each APQN derived from the Cartesian product comprised of the APID of the
   adapter being assigned and the APQIs of the domains assigned must reference a
   queue device bound to the vfio_ap device driver.
 
-- 由被分配适配器的 APID 与已分配域的 APQI 组成的笛卡尔积推导出的每个 APQN 必须引用
-  一个绑定到 vfio_ap 设备驱动的队列设备。
+- 鐢辫鍒嗛厤閫傞厤鍣ㄧ殑 APID 涓庡凡鍒嗛厤鍩熺殑 APQI 缁勬垚鐨勭瑳鍗″皵绉帹瀵煎嚭鐨勬瘡涓?APQN 蹇呴』寮曠敤
+  涓€涓粦瀹氬埌 vfio_ap 璁惧椹卞姩鐨勯槦鍒楄澶囥€?
 
 - To hot plug a domain, each APQN derived from the Cartesian product
   comprised of the APQI of the domain being assigned and the APIDs of the
   adapters assigned must reference a queue device bound to the vfio_ap device
   driver.
 
-- 要热插拔一个域，由被分配域的 APQI 与已分配适配器的 APID 组成的笛卡尔积推导出的每个
-  APQN 必须引用一个绑定到 vfio_ap 设备驱动的队列设备。
+- 瑕佺儹鎻掓嫈涓€涓煙锛岀敱琚垎閰嶅煙鐨?APQI 涓庡凡鍒嗛厤閫傞厤鍣ㄧ殑 APID 缁勬垚鐨勭瑳鍗″皵绉帹瀵煎嚭鐨勬瘡涓?
+  APQN 蹇呴』寮曠敤涓€涓粦瀹氬埌 vfio_ap 璁惧椹卞姩鐨勯槦鍒楄澶囥€?
 
 An adapter, domain or control domain may be hot unplugged from a running KVM
 guest by unassigning it from the vfio_ap mediated device being used by the
 guest.
 
-可以通过将适配器、域或控制域从客户机正在使用的 vfio_ap 中介设备解除分配，将其从正在
-运行的 KVM 客户机热拔出。
+鍙互閫氳繃灏嗛€傞厤鍣ㄣ€佸煙鎴栨帶鍒跺煙浠庡鎴锋満姝ｅ湪浣跨敤鐨?vfio_ap 涓粙璁惧瑙ｉ櫎鍒嗛厤锛屽皢鍏朵粠姝ｅ湪
+杩愯鐨?KVM 瀹㈡埛鏈虹儹鎷斿嚭銆?
 
 ## Over-provisioning of AP queues for a KVM guest:
 
-## 为 KVM 客户机过度配置 AP 队列：
+## 涓?KVM 瀹㈡埛鏈鸿繃搴﹂厤缃?AP 闃熷垪锛?
 
 Over-provisioning is defined herein as the assignment of adapters or domains to
 a vfio_ap mediated device that do not reference AP devices in the host's AP
@@ -1385,42 +1385,42 @@ the vfio_ap mediated device to which it is assigned as long as each new APQN
 resulting from plugging it in references a queue device bound to the vfio_ap
 device driver.
 
-此处将过度配置（Over-provisioning）定义为将不引用主机 AP 配置中 AP 设备的适配器或域
-分配给 vfio_ap 中介设备。这里的想法是，当适配器或域变得可用时，只要插入它所产生的每个
-新 APQN 都引用一个绑定到 vfio_ap 设备驱动的队列设备，它就会被自动热插入到分配给它的
-vfio_ap 中介设备所在的 KVM 客户机。
+姝ゅ灏嗚繃搴﹂厤缃紙Over-provisioning锛夊畾涔変负灏嗕笉寮曠敤涓绘満 AP 閰嶇疆涓?AP 璁惧鐨勯€傞厤鍣ㄦ垨鍩?
+鍒嗛厤缁?vfio_ap 涓粙璁惧銆傝繖閲岀殑鎯虫硶鏄紝褰撻€傞厤鍣ㄦ垨鍩熷彉寰楀彲鐢ㄦ椂锛屽彧瑕佹彃鍏ュ畠鎵€浜х敓鐨勬瘡涓?
+鏂?APQN 閮藉紩鐢ㄤ竴涓粦瀹氬埌 vfio_ap 璁惧椹卞姩鐨勯槦鍒楄澶囷紝瀹冨氨浼氳鑷姩鐑彃鍏ュ埌鍒嗛厤缁欏畠鐨?
+vfio_ap 涓粙璁惧鎵€鍦ㄧ殑 KVM 瀹㈡埛鏈恒€?
 
 ## Driver Features
 
-## 驱动特性
+## 椹卞姩鐗规€?
 
 The vfio_ap driver exposes a sysfs file containing supported features.
 This exists so third party tools (like Libvirt and mdevctl) can query the
 availability of specific features.
 
-vfio_ap 驱动暴露一个包含所支持特性的 sysfs 文件。它的存在是为了让第三方工具（如
-Libvirt 和 mdevctl）能够查询特定特性的可用性。
+vfio_ap 椹卞姩鏆撮湶涓€涓寘鍚墍鏀寔鐗规€х殑 sysfs 鏂囦欢銆傚畠鐨勫瓨鍦ㄦ槸涓轰簡璁╃涓夋柟宸ュ叿锛堝
+Libvirt 鍜?mdevctl锛夎兘澶熸煡璇㈢壒瀹氱壒鎬х殑鍙敤鎬с€?
 
 The features list can be found here: /sys/bus/matrix/devices/matrix/features
 
-特性列表可在此处找到：/sys/bus/matrix/devices/matrix/features
+鐗规€у垪琛ㄥ彲鍦ㄦ澶勬壘鍒帮細/sys/bus/matrix/devices/matrix/features
 
 Entries are space delimited. Each entry consists of a combination of
 alphanumeric and underscore characters.
 
-各项以空格分隔。每一项由字母数字和下划线字符的组合构成。
+鍚勯」浠ョ┖鏍煎垎闅斻€傛瘡涓€椤圭敱瀛楁瘝鏁板瓧鍜屼笅鍒掔嚎瀛楃鐨勭粍鍚堟瀯鎴愩€?
 
 Example:
 cat /sys/bus/matrix/devices/matrix/features
 guest_matrix dyn ap_config
 
-示例：
+绀轰緥锛?
 cat /sys/bus/matrix/devices/matrix/features
 guest_matrix dyn ap_config
 
 the following features are advertised:
 
-将通告以下特性：
+灏嗛€氬憡浠ヤ笅鐗规€э細
 
 ---------------+---------------------------------------------------------------+
 | Flag         | Description                                                   |
@@ -1436,19 +1436,19 @@ the following features are advertised:
 +--------------+---------------------------------------------------------------+
 
 ---------------+---------------------------------------------------------------+
-| 标志         | 描述                                                          |
+| 鏍囧織         | 鎻忚堪                                                          |
 +==============+===============================================================+
-| guest_matrix | guest_matrix 属性存在。它报告当 mdev 附加到客户机时，正在或 |
-|              | 将被直通给该客户机的适配器和域的矩阵。                       |
+| guest_matrix | guest_matrix 灞炴€у瓨鍦ㄣ€傚畠鎶ュ憡褰?mdev 闄勫姞鍒板鎴锋満鏃讹紝姝ｅ湪鎴?|
+|              | 灏嗚鐩撮€氱粰璇ュ鎴锋満鐨勯€傞厤鍣ㄥ拰鍩熺殑鐭╅樀銆?                      |
 +--------------+---------------------------------------------------------------+
-| dyn          | 指示热插拔附加了 mdev 的客户机的 AP 适配器、域和控制域。   |
+| dyn          | 鎸囩ず鐑彃鎷旈檮鍔犱簡 mdev 鐨勫鎴锋満鐨?AP 閫傞厤鍣ㄣ€佸煙鍜屾帶鍒跺煙銆?  |
 +------------+-----------------------------------------------------------------+
-| ap_config    | 用于一次性修改 mdev 配置的 ap_config 接口。                  |
+| ap_config    | 鐢ㄤ簬涓€娆℃€т慨鏀?mdev 閰嶇疆鐨?ap_config 鎺ュ彛銆?                 |
 +--------------+---------------------------------------------------------------+
 
 ## Limitations
 
-## 限制
+## 闄愬埗
 
 Live guest migration is not supported for guests using AP devices without
 intervention by a system administrator. Before a KVM guest can be migrated,
@@ -1457,23 +1457,23 @@ removed manually (i.e., echo 1 > /sys/devices/vfio_ap/matrix/$UUID/remove) while
 the mdev is in use by a KVM guest. If the guest is being emulated by QEMU,
 its mdev can be hot unplugged from the guest in one of two ways:
 
-对于使用 AP 设备的客户机，不支持在系统管理员不干预的情况下进行实时客户机迁移（live
-guest migration）。在 KVM 客户机能够被迁移之前，必须移除 vfio_ap 中介设备。遗憾的是，
-当 mdev 正被 KVM 客户机使用时，无法手动移除它（即 echo 1 >
-/sys/devices/vfio_ap/matrix/$UUID/remove）。如果客户机由 QEMU 模拟，则其 mdev 可以通过以下
-两种方式之一从客户机热拔出：
+瀵逛簬浣跨敤 AP 璁惧鐨勫鎴锋満锛屼笉鏀寔鍦ㄧ郴缁熺鐞嗗憳涓嶅共棰勭殑鎯呭喌涓嬭繘琛屽疄鏃跺鎴锋満杩佺Щ锛坙ive
+guest migration锛夈€傚湪 KVM 瀹㈡埛鏈鸿兘澶熻杩佺Щ涔嬪墠锛屽繀椤荤Щ闄?vfio_ap 涓粙璁惧銆傞仐鎲剧殑鏄紝
+褰?mdev 姝ｈ KVM 瀹㈡埛鏈轰娇鐢ㄦ椂锛屾棤娉曟墜鍔ㄧЩ闄ゅ畠锛堝嵆 echo 1 >
+/sys/devices/vfio_ap/matrix/$UUID/remove锛夈€傚鏋滃鎴锋満鐢?QEMU 妯℃嫙锛屽垯鍏?mdev 鍙互閫氳繃浠ヤ笅
+涓ょ鏂瑰紡涔嬩竴浠庡鎴锋満鐑嫈鍑猴細
 
 1. If the KVM guest was started with libvirt, you can hot unplug the mdev via
    the following commands:
 
-1. 如果 KVM 客户机是用 libvirt 启动的，可以通过以下命令热拔出 mdev：
+1. 濡傛灉 KVM 瀹㈡埛鏈烘槸鐢?libvirt 鍚姩鐨勶紝鍙互閫氳繃浠ヤ笅鍛戒护鐑嫈鍑?mdev锛?
 
       virsh detach-device <guestname> <path-to-device-xml>
 
       For example, to hot unplug mdev 62177883-f1bb-47f0-914d-32a22e3a8804 from
       the guest named 'my-guest':
 
-      例如，要从名为 'my-guest' 的客户机热拔出 mdev 62177883-f1bb-47f0-914d-32a22e3a8804：
+      渚嬪锛岃浠庡悕涓?'my-guest' 鐨勫鎴锋満鐑嫈鍑?mdev 62177883-f1bb-47f0-914d-32a22e3a8804锛?
 
          virsh detach-device my-guest ~/config/my-guest-hostdev.xml
 
@@ -1498,8 +1498,8 @@ guest migration）。在 KVM 客户机能够被迁移之前，必须移除 vfio_
 2. A vfio_ap mediated device can be hot unplugged by attaching the qemu monitor
    to the guest and using the following qemu monitor command:
 
-2. 可以通过将 qemu monitor 连接到客户机并使用以下 qemu monitor 命令来热拔出 vfio_ap
-   中介设备：
+2. 鍙互閫氳繃灏?qemu monitor 杩炴帴鍒板鎴锋満骞朵娇鐢ㄤ互涓?qemu monitor 鍛戒护鏉ョ儹鎷斿嚭 vfio_ap
+   涓粙璁惧锛?
 
       (QEMU) device-del id=<device-id>
 
@@ -1513,22 +1513,22 @@ After live migration of the KVM guest completes, an AP configuration can be
 restored to the KVM guest by hot plugging a vfio_ap mediated device on the target
 system into the guest in one of two ways:
 
-在 KVM 客户机实时迁移完成后，可以通过在目标系统上将 vfio_ap 中介设备热插入到客户机
-来恢复其 AP 配置，有两种方式：
+鍦?KVM 瀹㈡埛鏈哄疄鏃惰縼绉诲畬鎴愬悗锛屽彲浠ラ€氳繃鍦ㄧ洰鏍囩郴缁熶笂灏?vfio_ap 涓粙璁惧鐑彃鍏ュ埌瀹㈡埛鏈?
+鏉ユ仮澶嶅叾 AP 閰嶇疆锛屾湁涓ょ鏂瑰紡锛?
 
 1. If the KVM guest was started with libvirt, you can hot plug a matrix mediated
    device into the guest via the following virsh commands:
 
-1. 如果 KVM 客户机是用 libvirt 启动的，可以通过以下 virsh 命令将矩阵中介设备热插入
-   客户机：
+1. 濡傛灉 KVM 瀹㈡埛鏈烘槸鐢?libvirt 鍚姩鐨勶紝鍙互閫氳繃浠ヤ笅 virsh 鍛戒护灏嗙煩闃典腑浠嬭澶囩儹鎻掑叆
+   瀹㈡埛鏈猴細
 
    virsh attach-device <guestname> <path-to-device-xml>
 
       For example, to hot plug mdev 62177883-f1bb-47f0-914d-32a22e3a8804 into
       the guest named 'my-guest':
 
-      例如，要将 mdev 62177883-f1bb-47f0-914d-32a22e3a8804 热插入名为 'my-guest' 的
-      客户机：
+      渚嬪锛岃灏?mdev 62177883-f1bb-47f0-914d-32a22e3a8804 鐑彃鍏ュ悕涓?'my-guest' 鐨?
+      瀹㈡埛鏈猴細
 
          virsh attach-device my-guest ~/config/my-guest-hostdev.xml
 
@@ -1557,8 +1557,8 @@ system into the guest in one of two ways:
 2. A vfio_ap mediated device can be hot plugged by attaching the qemu monitor
    to the guest and using the following qemu monitor command:
 
-2. 可以通过将 qemu monitor 连接到客户机并使用以下 qemu monitor 命令来热插入 vfio_ap
-   中介设备：
+2. 鍙互閫氳繃灏?qemu monitor 杩炴帴鍒板鎴锋満骞朵娇鐢ㄤ互涓?qemu monitor 鍛戒护鏉ョ儹鎻掑叆 vfio_ap
+   涓粙璁惧锛?
 
       (qemu) device_add "vfio-ap,sysfsdev=<path-to-mdev>,id=<device-id>"
 

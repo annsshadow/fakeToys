@@ -1,36 +1,36 @@
-######## ioctl LIRC_GET_REC_RESOLUTION
+﻿######## ioctl LIRC_GET_REC_RESOLUTION
 
 
-## 名称
+## 鍚嶇О
 
 
-LIRC_GET_REC_RESOLUTION - 获取接收分辨率的值，单位为微秒。
+LIRC_GET_REC_RESOLUTION - 鑾峰彇鎺ユ敹鍒嗚鲸鐜囩殑鍊硷紝鍗曚綅涓哄井绉掋€?
 
-## 概要
+## 姒傝
 
 
 `int ioctl(int fd, LIRC_GET_REC_RESOLUTION, __u32 *microseconds)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    open() 返回的文件描述符。
+    open() 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `microseconds`
-    分辨率，单位为微秒。
+    鍒嗚鲸鐜囷紝鍗曚綅涓哄井绉掋€?
 
-## 描述
-
-
-部分接收器具有由内部采样率或数据格式限制决定的最大分辨率。例如，
-信号通常只能以 50 微秒的步长上报。
-
-本 ioctl 返回具有该分辨率的整数值，可被 lircd 等用户空间应用程序
-用于自动调整容差（tolerance）值。
-
-## 返回值
+## 鎻忚堪
 
 
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。
-通用错误码在 Generic Error Codes <gen-errors> 章节中描述。
+閮ㄥ垎鎺ユ敹鍣ㄥ叿鏈夌敱鍐呴儴閲囨牱鐜囨垨鏁版嵁鏍煎紡闄愬埗鍐冲畾鐨勬渶澶у垎杈ㄧ巼銆備緥濡傦紝
+淇″彿閫氬父鍙兘浠?50 寰鐨勬闀夸笂鎶ャ€?
+
+鏈?ioctl 杩斿洖鍏锋湁璇ュ垎杈ㄧ巼鐨勬暣鏁板€硷紝鍙 lircd 绛夌敤鎴风┖闂村簲鐢ㄧ▼搴?
+鐢ㄤ簬鑷姩璋冩暣瀹瑰樊锛坱olerance锛夊€笺€?
+
+## 杩斿洖鍊?
+
+
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆?
+閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?

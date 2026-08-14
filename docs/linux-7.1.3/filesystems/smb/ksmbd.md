@@ -1,184 +1,184 @@
+﻿
+## KSMBD - SMB3 鍐呮牳 Server
 
-## KSMBD - SMB3 内核 Server
 
-
-KSMBD 是 一个 linux 内核 server 其 implements SMB3 协议 在 内核空间
-用于 sharing 文件 在…上 网络.
+KSMBD 鏄?涓€涓?linux 鍐呮牳 server 鍏?implements SMB3 鍗忚 鍦?鍐呮牳绌洪棿
+鐢ㄤ簬 sharing 鏂囦欢 鍦ㄢ€︿笂 缃戠粶.
 
 ## KSMBD architecture
 
 
-The subset 的 性能 related 操作 belong 在 kernelspace 和
-the 其他 subset 其 belong 到 操作 其 是 不 really related 与
-性能 在 userspace. 因此, DCE/RPC 管理 该 具有 historically resulted
-进入 一个 数字 的 缓冲区 overflow issues 和 dangerous 安全 bugs 和 用户
-account 管理 是 implemented 在 用户空间 作为 ksmbd.mountd.
-文件 操作 该 是 related 与 性能 (打开/读取/写入/关闭 等.)
-在 内核空间 (ksmbd). 此 也 allows 用于 easier integration 与 VFS
-接口 用于 全部 文件 操作.
+The subset 鐨?鎬ц兘 related 鎿嶄綔 belong 鍦?kernelspace 鍜?
+the 鍏朵粬 subset 鍏?belong 鍒?鎿嶄綔 鍏?鏄?涓?really related 涓?
+鎬ц兘 鍦?userspace. 鍥犳, DCE/RPC 绠＄悊 璇?鍏锋湁 historically resulted
+杩涘叆 涓€涓?鏁板瓧 鐨?缂撳啿鍖?overflow issues 鍜?dangerous 瀹夊叏 bugs 鍜?鐢ㄦ埛
+account 绠＄悊 鏄?implemented 鍦?鐢ㄦ埛绌洪棿 浣滀负 ksmbd.mountd.
+鏂囦欢 鎿嶄綔 璇?鏄?related 涓?鎬ц兘 (鎵撳紑/璇诲彇/鍐欏叆/鍏抽棴 绛?)
+鍦?鍐呮牳绌洪棿 (ksmbd). 姝?涔?allows 鐢ㄤ簬 easier integration 涓?VFS
+鎺ュ彛 鐢ㄤ簬 鍏ㄩ儴 鏂囦欢 鎿嶄綔.
 
-### ksmbd (内核 daemon)
-
-
-当 the server daemon 是 started, 它 starts up 一个 forker 线程
-(ksmbd/接口 name) 在 初始化 time 和 打开 一个 dedicated 端口 445
-用于 listening 到 SMB requests. Whenever 新 clients make 一个 请求, the Forker
-线程 将 accept the client 连接 和 fork 一个 新 线程 用于 一个 dedicated
-communication channel 之间 the client 和 the server. 它 allows 用于 并行
-processing 的 SMB requests(命令) 来自 clients 以及 allowing 用于 新
-clients 到 make 新 connections. 每个 实例 是 named ksmbd/1~n(端口 数字)
-到 indicate connected clients. Depending 在 the SMB 请求 types, 每个 新
-线程 可 decide 到 pass through the 命令 到 the 用户空间 (ksmbd.mountd),
-currently DCE/RPC 命令 是 identified 到 为 handled through the 用户空间.
-到 further utilize the linux 内核, 它 具有 已经 chosen 到 进程 the 命令
-作为 workitems 和 到 为 executed 在 the handlers 的 the ksmbd-io kworker 线程.
-它 allows 用于 multiplexing 的 the handlers 作为 the 内核 takes care 的 initiating
-extra worker 线程 若 the 加载 是 increased 和 vice versa, 若 the 加载 是
-decreased 它 destroys the extra worker 线程. 因此, 之后 the 连接 是
-established 与 the client. Dedicated ksmbd/1..n(端口 数字) takes complete
-ownership 的 receiving/parsing 的 SMB 命令. 每个 received 命令 是 worked
-在 并行 i.e., 那里 可 为 多个 client 命令 其 是 worked 在
-并行. 之后 receiving 每个 命令 一个 separated 内核 workitem 是 prepared
-用于 每个 命令 其 是 further queued 到 为 handled 由 ksmbd-io kworkers.
-因此, 每个 SMB workitem 是 queued 到 the kworkers. 此 allows the benefit 的 加载
-sharing 到 为 managed optimally 由 the 默认 内核 和 optimizing client
-性能 由 handling client 命令 在 并行.
-
-### ksmbd.mountd (用户空间 daemon)
+### ksmbd (鍐呮牳 daemon)
 
 
-ksmbd.mountd 是 一个 userspace 进程 到, transfer the 用户 account 和 password 该
-是 registered 使用 ksmbd.adduser (part 的 utils 用于 用户空间). Further 它
-allows sharing information 参数 该 是 parsed 来自 smb.conf 到 ksmbd 在
-内核. 用于 the execution part 它 具有 一个 daemon 其 是 continuously 运行中
-和 connected 到 the 内核 接口 使用 netlink 套接字, 它 waits 用于 the
-requests (dcerpc 和 share/用户 info). 它 handles RPC calls (在 一个 最小 少量
-dozen) 该 是 大多数 重要 用于 文件 server 来自 NetShareEnum 和
-NetServerGetInfo. Complete DCE/RPC 响应 是 prepared 来自 the 用户空间
-和 passed 在…上 到 the associated 内核 线程 用于 the client.
+褰?the server daemon 鏄?started, 瀹?starts up 涓€涓?forker 绾跨▼
+(ksmbd/鎺ュ彛 name) 鍦?鍒濆鍖?time 鍜?鎵撳紑 涓€涓?dedicated 绔彛 445
+鐢ㄤ簬 listening 鍒?SMB requests. Whenever 鏂?clients make 涓€涓?璇锋眰, the Forker
+绾跨▼ 灏?accept the client 杩炴帴 鍜?fork 涓€涓?鏂?绾跨▼ 鐢ㄤ簬 涓€涓?dedicated
+communication channel 涔嬮棿 the client 鍜?the server. 瀹?allows 鐢ㄤ簬 骞惰
+processing 鐨?SMB requests(鍛戒护) 鏉ヨ嚜 clients 浠ュ強 allowing 鐢ㄤ簬 鏂?
+clients 鍒?make 鏂?connections. 姣忎釜 瀹炰緥 鏄?named ksmbd/1~n(绔彛 鏁板瓧)
+鍒?indicate connected clients. Depending 鍦?the SMB 璇锋眰 types, 姣忎釜 鏂?
+绾跨▼ 鍙?decide 鍒?pass through the 鍛戒护 鍒?the 鐢ㄦ埛绌洪棿 (ksmbd.mountd),
+currently DCE/RPC 鍛戒护 鏄?identified 鍒?涓?handled through the 鐢ㄦ埛绌洪棿.
+鍒?further utilize the linux 鍐呮牳, 瀹?鍏锋湁 宸茬粡 chosen 鍒?杩涚▼ the 鍛戒护
+浣滀负 workitems 鍜?鍒?涓?executed 鍦?the handlers 鐨?the ksmbd-io kworker 绾跨▼.
+瀹?allows 鐢ㄤ簬 multiplexing 鐨?the handlers 浣滀负 the 鍐呮牳 takes care 鐨?initiating
+extra worker 绾跨▼ 鑻?the 鍔犺浇 鏄?increased 鍜?vice versa, 鑻?the 鍔犺浇 鏄?
+decreased 瀹?destroys the extra worker 绾跨▼. 鍥犳, 涔嬪悗 the 杩炴帴 鏄?
+established 涓?the client. Dedicated ksmbd/1..n(绔彛 鏁板瓧) takes complete
+ownership 鐨?receiving/parsing 鐨?SMB 鍛戒护. 姣忎釜 received 鍛戒护 鏄?worked
+鍦?骞惰 i.e., 閭ｉ噷 鍙?涓?澶氫釜 client 鍛戒护 鍏?鏄?worked 鍦?
+骞惰. 涔嬪悗 receiving 姣忎釜 鍛戒护 涓€涓?separated 鍐呮牳 workitem 鏄?prepared
+鐢ㄤ簬 姣忎釜 鍛戒护 鍏?鏄?further queued 鍒?涓?handled 鐢?ksmbd-io kworkers.
+鍥犳, 姣忎釜 SMB workitem 鏄?queued 鍒?the kworkers. 姝?allows the benefit 鐨?鍔犺浇
+sharing 鍒?涓?managed optimally 鐢?the 榛樿 鍐呮牳 鍜?optimizing client
+鎬ц兘 鐢?handling client 鍛戒护 鍦?骞惰.
+
+### ksmbd.mountd (鐢ㄦ埛绌洪棿 daemon)
 
 
-## KSMBD 特性 状态
+ksmbd.mountd 鏄?涓€涓?userspace 杩涚▼ 鍒? transfer the 鐢ㄦ埛 account 鍜?password 璇?
+鏄?registered 浣跨敤 ksmbd.adduser (part 鐨?utils 鐢ㄤ簬 鐢ㄦ埛绌洪棿). Further 瀹?
+allows sharing information 鍙傛暟 璇?鏄?parsed 鏉ヨ嚜 smb.conf 鍒?ksmbd 鍦?
+鍐呮牳. 鐢ㄤ簬 the execution part 瀹?鍏锋湁 涓€涓?daemon 鍏?鏄?continuously 杩愯涓?
+鍜?connected 鍒?the 鍐呮牳 鎺ュ彛 浣跨敤 netlink 濂楁帴瀛? 瀹?waits 鐢ㄤ簬 the
+requests (dcerpc 鍜?share/鐢ㄦ埛 info). 瀹?handles RPC calls (鍦?涓€涓?鏈€灏?灏戦噺
+dozen) 璇?鏄?澶у鏁?閲嶈 鐢ㄤ簬 鏂囦欢 server 鏉ヨ嚜 NetShareEnum 鍜?
+NetServerGetInfo. Complete DCE/RPC 鍝嶅簲 鏄?prepared 鏉ヨ嚜 the 鐢ㄦ埛绌洪棿
+鍜?passed 鍦ㄢ€︿笂 鍒?the associated 鍐呮牳 绾跨▼ 鐢ㄤ簬 the client.
+
+
+## KSMBD 鐗规€?鐘舵€?
 
 
 ============================== =================================================
-特性 name                   状态
+鐗规€?name                   鐘舵€?
 ============================== =================================================
-Dialects                       受支持. SMB2.1 SMB3.0, SMB3.1.1 dialects
-                               (intentionally excludes 安全 vulnerable SMB1
+Dialects                       鍙楁敮鎸? SMB2.1 SMB3.0, SMB3.1.1 dialects
+                               (intentionally excludes 瀹夊叏 vulnerable SMB1
                                dialect).
-Auto Negotiation               受支持.
-Compound 请求               受支持.
-Oplock 缓存 Mechanism         受支持.
-SMB2 leases(v1 lease)          受支持.
-Directory leases(v2 lease)     受支持.
-Multi-credits                  受支持.
-NTLM/NTLMv2                    受支持.
-HMAC-SHA256 Signing            受支持.
-Secure negotiate               受支持.
-Signing 更新                 受支持.
-Pre-authentication integrity   受支持.
-SMB3 encryption(CCM, GCM)      受支持. (CCM/GCM128 和 CCM/GCM256 受支持)
-SMB direct(RDMA)               受支持.
-SMB3 Multi-channel             Partially 受支持. Planned 到 implement
-                               replay/retry mechanisms 用于 future.
-Receive Side Scaling 模式      受支持.
-SMB3.1.1 POSIX extension       受支持.
-ACLs                           Partially 受支持. 仅 DACLs 可用, SACLs
-                               (auditing) 是 planned 用于 the future. 用于
+Auto Negotiation               鍙楁敮鎸?
+Compound 璇锋眰               鍙楁敮鎸?
+Oplock 缂撳瓨 Mechanism         鍙楁敮鎸?
+SMB2 leases(v1 lease)          鍙楁敮鎸?
+Directory leases(v2 lease)     鍙楁敮鎸?
+Multi-credits                  鍙楁敮鎸?
+NTLM/NTLMv2                    鍙楁敮鎸?
+HMAC-SHA256 Signing            鍙楁敮鎸?
+Secure negotiate               鍙楁敮鎸?
+Signing 鏇存柊                 鍙楁敮鎸?
+Pre-authentication integrity   鍙楁敮鎸?
+SMB3 encryption(CCM, GCM)      鍙楁敮鎸? (CCM/GCM128 鍜?CCM/GCM256 鍙楁敮鎸?
+SMB direct(RDMA)               鍙楁敮鎸?
+SMB3 Multi-channel             Partially 鍙楁敮鎸? Planned 鍒?implement
+                               replay/retry mechanisms 鐢ㄤ簬 future.
+Receive Side Scaling 妯″紡      鍙楁敮鎸?
+SMB3.1.1 POSIX extension       鍙楁敮鎸?
+ACLs                           Partially 鍙楁敮鎸? 浠?DACLs 鍙敤, SACLs
+                               (auditing) 鏄?planned 鐢ㄤ簬 the future. 鐢ㄤ簬
                                ownership (SIDs) ksmbd generates random subauth
-                               值(然后 store 它 到 disk) 和 使用 uid/gid
-                               get 来自 inode 作为 RID 用于 本地 domain SID.
-                               The 电流 acl implementation 是 limited 到
-                               standalone server, 不 一个 domain member.
-                               Integration 与 Samba tools 是 正在 worked 在
-                               到 允许 future 支持 用于 运行中 作为 一个 domain
+                               鍊?鐒跺悗 store 瀹?鍒?disk) 鍜?浣跨敤 uid/gid
+                               get 鏉ヨ嚜 inode 浣滀负 RID 鐢ㄤ簬 鏈湴 domain SID.
+                               The 鐢垫祦 acl implementation 鏄?limited 鍒?
+                               standalone server, 涓?涓€涓?domain member.
+                               Integration 涓?Samba tools 鏄?姝ｅ湪 worked 鍦?
+                               鍒?鍏佽 future 鏀寔 鐢ㄤ簬 杩愯涓?浣滀负 涓€涓?domain
                                member.
-Kerberos                       受支持.
-Durable handle v1,v2           Planned 用于 future.
-Persistent handle              Planned 用于 future.
-SMB2 notify                    Planned 用于 future.
-Sparse 文件 支持            受支持.
-DCE/RPC 支持                Partially 受支持. 一个 少量 calls(NetShareEnumAll,
-                               NetServerGetInfo, SAMR, LSARPC) 该 是 needed
-                               用于 文件 server handled 通过 netlink 接口
-                               来自 ksmbd.mountd. 额外 integration 与
-                               Samba tools 和 库 通过 upcall 是 正在
-                               investigated 到 允许 支持 用于 额外
-                               DCE/RPC 管理 calls (和 future 支持
-                               用于 Witness 协议 e.g.)
-ksmbd/nfsd interoperability    Planned 用于 future. The 特性 该 ksmbd
-                               支持 是 Leases, Notify, ACLs 和 Share modes.
-SMB3.1.1 Compression           Planned 用于 future.
-SMB3.1.1 在…上 QUIC             Planned 用于 future.
-Signing/Encryption 在…上 RDMA   Planned 用于 future.
-SMB3.1.1 GMAC signing 支持  Planned 用于 future.
+Kerberos                       鍙楁敮鎸?
+Durable handle v1,v2           Planned 鐢ㄤ簬 future.
+Persistent handle              Planned 鐢ㄤ簬 future.
+SMB2 notify                    Planned 鐢ㄤ簬 future.
+Sparse 鏂囦欢 鏀寔            鍙楁敮鎸?
+DCE/RPC 鏀寔                Partially 鍙楁敮鎸? 涓€涓?灏戦噺 calls(NetShareEnumAll,
+                               NetServerGetInfo, SAMR, LSARPC) 璇?鏄?needed
+                               鐢ㄤ簬 鏂囦欢 server handled 閫氳繃 netlink 鎺ュ彛
+                               鏉ヨ嚜 ksmbd.mountd. 棰濆 integration 涓?
+                               Samba tools 鍜?搴?閫氳繃 upcall 鏄?姝ｅ湪
+                               investigated 鍒?鍏佽 鏀寔 鐢ㄤ簬 棰濆
+                               DCE/RPC 绠＄悊 calls (鍜?future 鏀寔
+                               鐢ㄤ簬 Witness 鍗忚 e.g.)
+ksmbd/nfsd interoperability    Planned 鐢ㄤ簬 future. The 鐗规€?璇?ksmbd
+                               鏀寔 鏄?Leases, Notify, ACLs 鍜?Share modes.
+SMB3.1.1 Compression           Planned 鐢ㄤ簬 future.
+SMB3.1.1 鍦ㄢ€︿笂 QUIC             Planned 鐢ㄤ簬 future.
+Signing/Encryption 鍦ㄢ€︿笂 RDMA   Planned 鐢ㄤ簬 future.
+SMB3.1.1 GMAC signing 鏀寔  Planned 鐢ㄤ簬 future.
 ============================== =================================================
 
 
-## 如何 到 运行
+## 濡備綍 鍒?杩愯
 
 
-1. Download ksmbd-tools(https://github.com/cifsd-team/ksmbd-tools/releases) 和
+1. Download ksmbd-tools(https://github.com/cifsd-team/ksmbd-tools/releases) 鍜?
    compile them.
 
-   - 参考 到 README(https://github.com/cifsd-team/ksmbd-tools/blob/master/README.md)
-     到 know 如何 到 使用 ksmbd.mountd/adduser/addshare/control utils
+   - 鍙傝€?鍒?README(https://github.com/cifsd-team/ksmbd-tools/blob/master/README.md)
+     鍒?know 濡備綍 鍒?浣跨敤 ksmbd.mountd/adduser/addshare/control utils
 
      $ ./autogen.sh
-     $ ./configure --with-rundir=/运行
+     $ ./configure --with-rundir=/杩愯
      $ make && sudo make install
 
-2. 创建 /usr/本地/等/ksmbd/ksmbd.conf 文件, add SMB share 在 ksmbd.conf 文件.
+2. 鍒涘缓 /usr/鏈湴/绛?ksmbd/ksmbd.conf 鏂囦欢, add SMB share 鍦?ksmbd.conf 鏂囦欢.
 
-   - 参考 到 ksmbd.conf.示例 在 ksmbd-utils, 参见 ksmbd.conf manpage
-     用于 details 到 configure shares.
+   - 鍙傝€?鍒?ksmbd.conf.绀轰緥 鍦?ksmbd-utils, 鍙傝 ksmbd.conf manpage
+     鐢ㄤ簬 details 鍒?configure shares.
 
         $ man ksmbd.conf
 
-3. 创建 用户/password 用于 SMB share.
+3. 鍒涘缓 鐢ㄦ埛/password 鐢ㄤ簬 SMB share.
 
-   - 参见 ksmbd.adduser manpage.
+   - 鍙傝 ksmbd.adduser manpage.
 
      $ man ksmbd.adduser
-     $ sudo ksmbd.adduser -一个 <Enter USERNAME 用于 SMB share access>
+     $ sudo ksmbd.adduser -涓€涓?<Enter USERNAME 鐢ㄤ簬 SMB share access>
 
-4. Insert the ksmbd.ko 模块 之后 您 build 您的 内核. 无 需要 到 加载 the 模块
-   若 ksmbd 是 built 进入 the 内核.
+4. Insert the ksmbd.ko 妯″潡 涔嬪悗 鎮?build 鎮ㄧ殑 鍐呮牳. 鏃?闇€瑕?鍒?鍔犺浇 the 妯″潡
+   鑻?ksmbd 鏄?built 杩涘叆 the 鍐呮牳.
 
-   - Set ksmbd 在 menuconfig(e.g. $ make menuconfig)
-       [*] 网络 文件 系统  --->
-           <M> SMB3 server 支持 (EXPERIMENTAL)
+   - Set ksmbd 鍦?menuconfig(e.g. $ make menuconfig)
+       [*] 缃戠粶 鏂囦欢 绯荤粺  --->
+           <M> SMB3 server 鏀寔 (EXPERIMENTAL)
 
 	$ sudo modprobe ksmbd.ko
 
-5. 启动 ksmbd 用户空间 daemon
+5. 鍚姩 ksmbd 鐢ㄦ埛绌洪棿 daemon
 
 	$ sudo ksmbd.mountd
 
-6. Access share 来自 Windows 或 Linux 使用 SMB3 client (cifs.ko 或 smbclient 的 samba)
+6. Access share 鏉ヨ嚜 Windows 鎴?Linux 浣跨敤 SMB3 client (cifs.ko 鎴?smbclient 鐨?samba)
 
 ## Shutdown KSMBD
 
 
-1. kill 用户 和 内核空间 daemon
+1. kill 鐢ㄦ埛 鍜?鍐呮牳绌洪棿 daemon
 	# sudo ksmbd.control -s
 
-## 如何 到 turn debug print 在
+## 濡備綍 鍒?turn debug print 鍦?
 
 
-每个 layer
-/sys/类/ksmbd-control/debug
+姣忎釜 layer
+/sys/绫?ksmbd-control/debug
 
-1. 启用 全部 component prints
-	# sudo ksmbd.control -d "全部"
+1. 鍚敤 鍏ㄩ儴 component prints
+	# sudo ksmbd.control -d "鍏ㄩ儴"
 
-2. 启用 one 的 the components (smb, auth, vfs, oplock, ipc, conn, rdma)
+2. 鍚敤 one 鐨?the components (smb, auth, vfs, oplock, ipc, conn, rdma)
 	# sudo ksmbd.control -d "smb"
 
-3. 显示 什么 prints 是 已启用.
-	# cat /sys/类/ksmbd-control/debug
+3. 鏄剧ず 浠€涔?prints 鏄?宸插惎鐢?
+	# cat /sys/绫?ksmbd-control/debug
 	  [smb] auth vfs oplock ipc conn [rdma]
 
-4. 禁用 prints:
-	若 您 try the selected component 一旦 更多, 它是 已禁用 无 brackets.
+4. 绂佺敤 prints:
+	鑻?鎮?try the selected component 涓€鏃?鏇村, 瀹冩槸 宸茬鐢?鏃?brackets.

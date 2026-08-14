@@ -1,81 +1,58 @@
-## dm-ima
+﻿## dm-ima
 
 
-对于给定系统，各种外部服务/基础设施工具（包括证明服务）会与之交互——既在初始化设置期间，也在系统其余运行时段。它们共享敏感数据，和/或在该系统上执行关键工作负载。在将业务关键型数据/工作负载完全托付给该系统之前，外部服务可能希望先验证相关内核子系统的当前运行时状态。
-
-设备映射器（Device mapper）通过在块设备上使用 crypt、verity、integrity 等多种目标类型，为块设备提供各种重要功能，从而在特定系统上发挥着关键作用。这些目标类型各自的功能都可以通过各种属性进行配置。用于配置这些目标类型的属性选择，会显著影响块设备乃至整个系统的安全配置。例如，加密算法的类型和密钥长度决定了给定块设备的加密强度。
-
-因此，在将业务关键型数据/工作负载完全托付给该系统之前，外部服务验证各种块设备的当前状态及其各种目标属性至关重要。
-
-IMA 内核子系统为设备映射器提供了必要的功能，用于度量（measure）各种块设备的状态与配置——
-
-- 由设备映射器自身在内核内部完成，
-- 以一种抗篡改（tamper resistant）的方式，
-- 并在状态/配置发生变化时重新度量。
-
-## 设置 IMA 策略：
-
-为了让 IMA 度量给定系统上的数据，需要更新该系统上的 IMA 策略以包含如下一行内容，并且需要重启系统才能使度量生效。
-
+瀵逛簬缁欏畾绯荤粺锛屽悇绉嶅閮ㄦ湇鍔?鍩虹璁炬柦宸ュ叿锛堝寘鎷瘉鏄庢湇鍔★級浼氫笌涔嬩氦浜掆€斺€旀棦鍦ㄥ垵濮嬪寲璁剧疆鏈熼棿锛屼篃鍦ㄧ郴缁熷叾浣欒繍琛屾椂娈点€傚畠浠叡浜晱鎰熸暟鎹紝鍜?鎴栧湪璇ョ郴缁熶笂鎵ц鍏抽敭宸ヤ綔璐熻浇銆傚湪灏嗕笟鍔″叧閿瀷鏁版嵁/宸ヤ綔璐熻浇瀹屽叏鎵樹粯缁欒绯荤粺涔嬪墠锛屽閮ㄦ湇鍔″彲鑳藉笇鏈涘厛楠岃瘉鐩稿叧鍐呮牳瀛愮郴缁熺殑褰撳墠杩愯鏃剁姸鎬併€?
+璁惧鏄犲皠鍣紙Device mapper锛夐€氳繃鍦ㄥ潡璁惧涓婁娇鐢?crypt銆乿erity銆乮ntegrity 绛夊绉嶇洰鏍囩被鍨嬶紝涓哄潡璁惧鎻愪緵鍚勭閲嶈鍔熻兘锛屼粠鑰屽湪鐗瑰畾绯荤粺涓婂彂鎸ョ潃鍏抽敭浣滅敤銆傝繖浜涚洰鏍囩被鍨嬪悇鑷殑鍔熻兘閮藉彲浠ラ€氳繃鍚勭灞炴€ц繘琛岄厤缃€傜敤浜庨厤缃繖浜涚洰鏍囩被鍨嬬殑灞炴€ч€夋嫨锛屼細鏄捐憲褰卞搷鍧楄澶囦箖鑷虫暣涓郴缁熺殑瀹夊叏閰嶇疆銆備緥濡傦紝鍔犲瘑绠楁硶鐨勭被鍨嬪拰瀵嗛挜闀垮害鍐冲畾浜嗙粰瀹氬潡璁惧鐨勫姞瀵嗗己搴︺€?
+鍥犳锛屽湪灏嗕笟鍔″叧閿瀷鏁版嵁/宸ヤ綔璐熻浇瀹屽叏鎵樹粯缁欒绯荤粺涔嬪墠锛屽閮ㄦ湇鍔￠獙璇佸悇绉嶅潡璁惧鐨勫綋鍓嶇姸鎬佸強鍏跺悇绉嶇洰鏍囧睘鎬ц嚦鍏抽噸瑕併€?
+IMA 鍐呮牳瀛愮郴缁熶负璁惧鏄犲皠鍣ㄦ彁渚涗簡蹇呰鐨勫姛鑳斤紝鐢ㄤ簬搴﹂噺锛坢easure锛夊悇绉嶅潡璁惧鐨勭姸鎬佷笌閰嶇疆鈥斺€?
+- 鐢辫澶囨槧灏勫櫒鑷韩鍦ㄥ唴鏍稿唴閮ㄥ畬鎴愶紝
+- 浠ヤ竴绉嶆姉绡℃敼锛坱amper resistant锛夌殑鏂瑰紡锛?- 骞跺湪鐘舵€?閰嶇疆鍙戠敓鍙樺寲鏃堕噸鏂板害閲忋€?
+## 璁剧疆 IMA 绛栫暐锛?
+涓轰簡璁?IMA 搴﹂噺缁欏畾绯荤粺涓婄殑鏁版嵁锛岄渶瑕佹洿鏂拌绯荤粺涓婄殑 IMA 绛栫暐浠ュ寘鍚涓嬩竴琛屽唴瀹癸紝骞朵笖闇€瑕侀噸鍚郴缁熸墠鑳戒娇搴﹂噺鐢熸晥銆?
 ```
 
  /etc/ima/ima-policy
     measure func=CRITICAL_DATA label=device-mapper template=ima-buf
 
 ```
-度量结果会反映在 IMA 日志中，这些日志位于：
-
+搴﹂噺缁撴灉浼氬弽鏄犲湪 IMA 鏃ュ織涓紝杩欎簺鏃ュ織浣嶄簬锛?
 ```
 
  /sys/kernel/security/integrity/ima/ascii_runtime_measurements
  /sys/kernel/security/integrity/ima/binary_runtime_measurements
 
 ```
-然后 IMA ASCII 度量日志的格式如下：
+鐒跺悗 IMA ASCII 搴﹂噺鏃ュ織鐨勬牸寮忓涓嬶細
 
 ```
 
  <PCR> <TEMPLATE_DATA_DIGEST> <TEMPLATE_NAME> <TEMPLATE_DATA>
 
- PCR := Platform Configuration Register，即平台配置寄存器，值会被登记在其中。
-       这仅在使用了 TPM 芯片时适用。
-
- TEMPLATE_DATA_DIGEST := IMA 记录的模板数据摘要。
- TEMPLATE_NAME := 登记完整性值（integrity value）的模板名称（如 ima-buf）。
-
+ PCR := Platform Configuration Register锛屽嵆骞冲彴閰嶇疆瀵勫瓨鍣紝鍊间細琚櫥璁板湪鍏朵腑銆?       杩欎粎鍦ㄤ娇鐢ㄤ簡 TPM 鑺墖鏃堕€傜敤銆?
+ TEMPLATE_DATA_DIGEST := IMA 璁板綍鐨勬ā鏉挎暟鎹憳瑕併€? TEMPLATE_NAME := 鐧昏瀹屾暣鎬у€硷紙integrity value锛夌殑妯℃澘鍚嶇О锛堝 ima-buf锛夈€?
  TEMPLATE_DATA := <ALG> ":" <EVENT_DIGEST> <EVENT_NAME> <EVENT_DATA>
-                  它包含要以给定模板数据格式进行度量的特定事件数据。
-
- ALG := 用于计算事件摘要的算法
- EVENT_DIGEST := 事件数据的摘要
- EVENT_NAME := 事件的描述（如 'dm_table_load'）。
- EVENT_DATA := 要被度量的事件数据。
-
+                  瀹冨寘鍚浠ョ粰瀹氭ā鏉挎暟鎹牸寮忚繘琛屽害閲忕殑鐗瑰畾浜嬩欢鏁版嵁銆?
+ ALG := 鐢ㄤ簬璁＄畻浜嬩欢鎽樿鐨勭畻娉? EVENT_DIGEST := 浜嬩欢鏁版嵁鐨勬憳瑕? EVENT_NAME := 浜嬩欢鐨勬弿杩帮紙濡?'dm_table_load'锛夈€? EVENT_DATA := 瑕佽搴﹂噺鐨勪簨浠舵暟鎹€?
 ```
 |
 | **NOTE #1:**
-| IMA 子系统度量的 DM 目标数据，也可以通过设置 DM_IMA_MEASUREMENT_FLAG 与 DM_TABLE_STATUS_CMD，从用户空间查询。
-|
+| IMA 瀛愮郴缁熷害閲忕殑 DM 鐩爣鏁版嵁锛屼篃鍙互閫氳繃璁剧疆 DM_IMA_MEASUREMENT_FLAG 涓?DM_TABLE_STATUS_CMD锛屼粠鐢ㄦ埛绌洪棿鏌ヨ銆?|
 |
 | **NOTE #2:**
-| 内核配置项 CONFIG_IMA_DISABLE_HTABLE 允许度量重复记录。
-| 为支持在 IMA 日志中记录重复的 IMA 事件，内核需要配置 CONFIG_IMA_DISABLE_HTABLE=y。
+| 鍐呮牳閰嶇疆椤?CONFIG_IMA_DISABLE_HTABLE 鍏佽搴﹂噺閲嶅璁板綍銆?| 涓烘敮鎸佸湪 IMA 鏃ュ織涓褰曢噸澶嶇殑 IMA 浜嬩欢锛屽唴鏍搁渶瑕侀厤缃?CONFIG_IMA_DISABLE_HTABLE=y銆?
+## 鏀寔鐨勮澶囩姸鎬侊細
 
-## 支持的设备状态：
-
-以下设备状态变更会触发 IMA 度量：
-
+浠ヤ笅璁惧鐘舵€佸彉鏇翠細瑙﹀彂 IMA 搴﹂噺锛?
  1. Table load
  #. Device resume
  #. Device remove
  #. Table clear
  #. Device rename
 
-### 1. 表加载（Table load）：
+### 1. 琛ㄥ姞杞斤紙Table load锛夛細
 
-当一个新的表被加载到设备的非活跃表槽（inactive table slot）时，设备信息以及表中各目标的目标特定细节会被度量。
-
-对于 'dm_table_load'，IMA 度量日志的格式如下：
+褰撲竴涓柊鐨勮〃琚姞杞藉埌璁惧鐨勯潪娲昏穬琛ㄦЫ锛坕nactive table slot锛夋椂锛岃澶囦俊鎭互鍙婅〃涓悇鐩爣鐨勭洰鏍囩壒瀹氱粏鑺備細琚害閲忋€?
+瀵逛簬 'dm_table_load'锛孖MA 搴﹂噺鏃ュ織鐨勬牸寮忓涓嬶細
 
 ```
 
@@ -83,8 +60,7 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  EVENT_DATA := <dm_version_str> ";" <device_metadata> ";" <table_load_data>
 
  dm_version_str := "dm_version=" <N> "." <N> "." <N>
-                  与设备映射器驱动版本相同。
- device_metadata := <device_name> "," <device_uuid> "," <device_major> "," <device_minor> ","
+                  涓庤澶囨槧灏勫櫒椹卞姩鐗堟湰鐩稿悓銆? device_metadata := <device_name> "," <device_uuid> "," <device_major> "," <device_minor> ","
                    <minor_count> "," <num_device_targets> ";"
 
  device_name := "name=" <dm-device-name>
@@ -93,42 +69,29 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  device_minor := "minor=" <N>
  minor_count := "minor_count=" <N>
  num_device_targets := "num_targets=" <N>
- dm-device-name := 设备名称。如果其中包含 '\'、','、';' 等特殊字符，
-                   会在其前面加上 '\' 前缀。
- dm-device-uuid := 设备的 UUID。如果其中包含 '\'、','、';' 等特殊字符，
-                   会在其前面加上 '\' 前缀。
-
+ dm-device-name := 璁惧鍚嶇О銆傚鏋滃叾涓寘鍚?'\'銆?,'銆?;' 绛夌壒娈婂瓧绗︼紝
+                   浼氬湪鍏跺墠闈㈠姞涓?'\' 鍓嶇紑銆? dm-device-uuid := 璁惧鐨?UUID銆傚鏋滃叾涓寘鍚?'\'銆?,'銆?;' 绛夌壒娈婂瓧绗︼紝
+                   浼氬湪鍏跺墠闈㈠姞涓?'\' 鍓嶇紑銆?
  table_load_data := <target_data>
-                    表示正在加载到 DM 设备非活跃表槽中的、来自表中各目标的数据
-                    （以 name=value 对的形式）。
- target_data := <target_data_row> | <target_data><target_data_row>
+                    琛ㄧず姝ｅ湪鍔犺浇鍒?DM 璁惧闈炴椿璺冭〃妲戒腑鐨勩€佹潵鑷〃涓悇鐩爣鐨勬暟鎹?                    锛堜互 name=value 瀵圭殑褰㈠紡锛夈€? target_data := <target_data_row> | <target_data><target_data_row>
 
  target_data_row := <target_index> "," <target_begin> "," <target_len> "," <target_name> ","
                     <target_version> "," <target_attributes> ";"
  target_index := "target_index=" <N>
-                 表示表中的第 n 个目标（范围从 <num_device_targets> 指定的 0 到 N-1）。
-                 如果 N 个目标的数据无法全部放入给定缓冲区，则能够放入缓冲区的那部分数据
-                 （例如从目标 0 到 x）会在一次给定的 IMA 事件中被度量。
-                 其余从目标 x+1 到 N-1 的数据会在后续的 IMA 事件中度量，
-                 其格式与 'dm_table_load' 相同，
-                 即 <dm_version_str> ";" <device_metadata> ";" <table_load_data>。
-
+                 琛ㄧず琛ㄤ腑鐨勭 n 涓洰鏍囷紙鑼冨洿浠?<num_device_targets> 鎸囧畾鐨?0 鍒?N-1锛夈€?                 濡傛灉 N 涓洰鏍囩殑鏁版嵁鏃犳硶鍏ㄩ儴鏀惧叆缁欏畾缂撳啿鍖猴紝鍒欒兘澶熸斁鍏ョ紦鍐插尯鐨勯偅閮ㄥ垎鏁版嵁
+                 锛堜緥濡備粠鐩爣 0 鍒?x锛変細鍦ㄤ竴娆＄粰瀹氱殑 IMA 浜嬩欢涓搴﹂噺銆?                 鍏朵綑浠庣洰鏍?x+1 鍒?N-1 鐨勬暟鎹細鍦ㄥ悗缁殑 IMA 浜嬩欢涓害閲忥紝
+                 鍏舵牸寮忎笌 'dm_table_load' 鐩稿悓锛?                 鍗?<dm_version_str> ";" <device_metadata> ";" <table_load_data>銆?
  target_begin := "target_begin=" <N>
  target_len := "target_len=" <N>
- target_name := 目标的名称。'linear'、'crypt'、'integrity' 等。
-                支持 IMA 度量的目标在下面的“支持的目标”小节中有文档说明。
- target_version := "target_version=" <N> "." <N> "." <N>
- target_attributes := 包含以逗号分隔的、目标特定属性 name=value 对的数据。
-
- 例如，如果使用以下表项创建一个 linear 设备，
-  # dmsetup create linear1
+ target_name := 鐩爣鐨勫悕绉般€?linear'銆?crypt'銆?integrity' 绛夈€?                鏀寔 IMA 搴﹂噺鐨勭洰鏍囧湪涓嬮潰鐨勨€滄敮鎸佺殑鐩爣鈥濆皬鑺備腑鏈夋枃妗ｈ鏄庛€? target_version := "target_version=" <N> "." <N> "." <N>
+ target_attributes := 鍖呭惈浠ラ€楀彿鍒嗛殧鐨勩€佺洰鏍囩壒瀹氬睘鎬?name=value 瀵圭殑鏁版嵁銆?
+ 渚嬪锛屽鏋滀娇鐢ㄤ互涓嬭〃椤瑰垱寤轰竴涓?linear 璁惧锛?  # dmsetup create linear1
   0 2 linear /dev/loop0 512
   2 2 linear /dev/loop0 512
   4 2 linear /dev/loop0 512
   6 2 linear /dev/loop0 512
 
- 那么 IMA ASCII 度量日志中将包含如下条目：
- （为便于阅读，已从 ASCII 转换为文本）
+ 閭ｄ箞 IMA ASCII 搴﹂噺鏃ュ織涓皢鍖呭惈濡備笅鏉＄洰锛? 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  10 a8c5ff755561c7a28146389d1514c318592af49a ima-buf sha256:4d73481ecce5eadba8ab084640d85bb9ca899af4d0a122989252a76efadc5b72
  dm_table_load
@@ -140,35 +103,27 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  target_index=3,target_begin=6,target_len=2,target_name=linear,target_version=1.4.0,device_name=7:0,start=512;
 
 ```
-### 2. 设备恢复（Device resume）：
+### 2. 璁惧鎭㈠锛圖evice resume锛夛細
 
-当被挂起的设备恢复（resume）时，设备信息以及上次加载的活跃表（active table）数据的哈希会被度量。
-
-对于 'dm_device_resume'，IMA 度量日志的格式如下：
+褰撹鎸傝捣鐨勮澶囨仮澶嶏紙resume锛夋椂锛岃澶囦俊鎭互鍙婁笂娆″姞杞界殑娲昏穬琛紙active table锛夋暟鎹殑鍝堝笇浼氳搴﹂噺銆?
+瀵逛簬 'dm_device_resume'锛孖MA 搴﹂噺鏃ュ織鐨勬牸寮忓涓嬶細
 
 ```
 
  EVENT_NAME := "dm_device_resume"
  EVENT_DATA := <dm_version_str> ";" <device_metadata> ";" <active_table_hash> ";" <current_device_capacity> ";"
 
- dm_version_str := 如上面“表加载”小节所述。
- device_metadata := 如上面“表加载”小节所述。
- active_table_hash := "active_table_hash=" <table_hash_alg> ":" <table_hash>
-                      表示正在度量的、该设备活跃表的 IMA 数据的哈希。
- table_hash_alg := 用于计算哈希的算法。
- table_hash := 对 (<dm_version_str> ";" <device_metadata> ";" <table_load_data> ";")
-               的哈希，如上面的 'dm_table_load' 所述。
-               注意：如果 table_load 数据跨越了某个设备的多个 IMA 'dm_table_load'
-               事件，则哈希是结合所有这些事件的数据
-               即 (<dm_version_str> ";" <device_metadata> ";" <table_load_data> ";")
-               计算得到的。
- current_device_capacity := "current_device_capacity=" <N>
+ dm_version_str := 濡備笂闈⑩€滆〃鍔犺浇鈥濆皬鑺傛墍杩般€? device_metadata := 濡備笂闈⑩€滆〃鍔犺浇鈥濆皬鑺傛墍杩般€? active_table_hash := "active_table_hash=" <table_hash_alg> ":" <table_hash>
+                      琛ㄧず姝ｅ湪搴﹂噺鐨勩€佽璁惧娲昏穬琛ㄧ殑 IMA 鏁版嵁鐨勫搱甯屻€? table_hash_alg := 鐢ㄤ簬璁＄畻鍝堝笇鐨勭畻娉曘€? table_hash := 瀵?(<dm_version_str> ";" <device_metadata> ";" <table_load_data> ";")
+               鐨勫搱甯岋紝濡備笂闈㈢殑 'dm_table_load' 鎵€杩般€?               娉ㄦ剰锛氬鏋?table_load 鏁版嵁璺ㄨ秺浜嗘煇涓澶囩殑澶氫釜 IMA 'dm_table_load'
+               浜嬩欢锛屽垯鍝堝笇鏄粨鍚堟墍鏈夎繖浜涗簨浠剁殑鏁版嵁
+               鍗?(<dm_version_str> ";" <device_metadata> ";" <table_load_data> ";")
+               璁＄畻寰楀埌鐨勩€? current_device_capacity := "current_device_capacity=" <N>
 
- 例如，如果使用以下命令恢复一个 linear 设备，
- #dmsetup resume linear1
+ 渚嬪锛屽鏋滀娇鐢ㄤ互涓嬪懡浠ゆ仮澶嶄竴涓?linear 璁惧锛? #dmsetup resume linear1
 
- 那么 IMA ASCII 度量日志中将包含一个条目：
- （为便于阅读，已从 ASCII 转换为文本）
+ 閭ｄ箞 IMA ASCII 搴﹂噺鏃ュ織涓皢鍖呭惈涓€涓潯鐩細
+ 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  10 56c00cc062ffc24ccd9ac2d67d194af3282b934e ima-buf sha256:e7d12c03b958b4e0e53e7363a06376be88d98a1ac191fdbd3baf5e4b77f329b6
  dm_device_resume
@@ -177,11 +132,10 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  active_table_hash=sha256:4d73481ecce5eadba8ab084640d85bb9ca899af4d0a122989252a76efadc5b72;current_device_capacity=8;
 
 ```
-### 3. 设备移除（Device remove）：
+### 3. 璁惧绉婚櫎锛圖evice remove锛夛細
 
-当设备被移除时，设备信息以及活跃表与非活跃表（inactive table）数据的 sha256 哈希会被度量。
-
-对于 'dm_device_remove'，IMA 度量日志的格式如下：
+褰撹澶囪绉婚櫎鏃讹紝璁惧淇℃伅浠ュ強娲昏穬琛ㄤ笌闈炴椿璺冭〃锛坕nactive table锛夋暟鎹殑 sha256 鍝堝笇浼氳搴﹂噺銆?
+瀵逛簬 'dm_device_remove'锛孖MA 搴﹂噺鏃ュ織鐨勬牸寮忓涓嬶細
 
 ```
 
@@ -189,24 +143,13 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  EVENT_DATA := <dm_version_str> ";" <device_active_metadata> ";" <device_inactive_metadata> ";"
                <active_table_hash> "," <inactive_table_hash> "," <remove_all> ";" <current_device_capacity> ";"
 
- dm_version_str := 如上面“表加载”小节所述。
- device_active_metadata := 反映当前已加载活跃表的设备元数据。
-                           其格式与上面“表加载”小节中描述的 'device_metadata' 相同。
- device_inactive_metadata := 反映非活跃表的设备元数据。
-                             其格式与上面“表加载”小节中描述的 'device_metadata' 相同。
- active_table_hash := 当前已加载活跃表的哈希。
-                      其格式与上面“设备恢复”小节中描述的 'active_table_hash' 相同。
- inactive_table_hash :=  非活跃表的哈希。
-                         其格式与上面“设备恢复”小节中描述的 'active_table_hash' 相同。
- remove_all := "remove_all=" <yes_no>
+ dm_version_str := 濡備笂闈⑩€滆〃鍔犺浇鈥濆皬鑺傛墍杩般€? device_active_metadata := 鍙嶆槧褰撳墠宸插姞杞芥椿璺冭〃鐨勮澶囧厓鏁版嵁銆?                           鍏舵牸寮忎笌涓婇潰鈥滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'device_metadata' 鐩稿悓銆? device_inactive_metadata := 鍙嶆槧闈炴椿璺冭〃鐨勮澶囧厓鏁版嵁銆?                             鍏舵牸寮忎笌涓婇潰鈥滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'device_metadata' 鐩稿悓銆? active_table_hash := 褰撳墠宸插姞杞芥椿璺冭〃鐨勫搱甯屻€?                      鍏舵牸寮忎笌涓婇潰鈥滆澶囨仮澶嶁€濆皬鑺備腑鎻忚堪鐨?'active_table_hash' 鐩稿悓銆? inactive_table_hash :=  闈炴椿璺冭〃鐨勫搱甯屻€?                         鍏舵牸寮忎笌涓婇潰鈥滆澶囨仮澶嶁€濆皬鑺備腑鎻忚堪鐨?'active_table_hash' 鐩稿悓銆? remove_all := "remove_all=" <yes_no>
  yes_no := "y" | "n"
  current_device_capacity := "current_device_capacity=" <N>
 
- 例如，如果使用以下命令移除一个 linear 设备，
-  #dmsetup remove l1
+ 渚嬪锛屽鏋滀娇鐢ㄤ互涓嬪懡浠ょЩ闄や竴涓?linear 璁惧锛?  #dmsetup remove l1
 
- 那么 IMA ASCII 度量日志中将包含如下条目：
- （为便于阅读，已从 ASCII 转换为文本）
+ 閭ｄ箞 IMA ASCII 搴﹂噺鏃ュ織涓皢鍖呭惈濡備笅鏉＄洰锛? 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  10 790e830a3a7a31590824ac0642b3b31c2d0e8b38 ima-buf sha256:ab9f3c959367a8f5d4403d6ce9c3627dadfa8f9f0e7ec7899299782388de3840
  dm_device_remove
@@ -218,29 +161,22 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  current_device_capacity=2048;
 
 ```
-### 4. 表清除（Table clear）：
+### 4. 琛ㄦ竻闄わ紙Table clear锛夛細
 
-当非活跃表从设备中清除时，设备信息以及该非活跃表数据的 sha256 哈希会被度量。
-
-对于 'dm_table_clear'，IMA 度量日志的格式如下：
+褰撻潪娲昏穬琛ㄤ粠璁惧涓竻闄ゆ椂锛岃澶囦俊鎭互鍙婅闈炴椿璺冭〃鏁版嵁鐨?sha256 鍝堝笇浼氳搴﹂噺銆?
+瀵逛簬 'dm_table_clear'锛孖MA 搴﹂噺鏃ュ織鐨勬牸寮忓涓嬶細
 
 ```
 
  EVENT_NAME := "dm_table_clear"
  EVENT_DATA := <dm_version_str> ";" <device_inactive_metadata> ";" <inactive_table_hash> ";" <current_device_capacity> ";"
 
- dm_version_str := 如上面“表加载”小节所述。
- device_inactive_metadata := 在加载时捕获的、正被清除的非活跃表的设备元数据。
-                             其格式与上面“表加载”小节中描述的 'device_metadata' 相同。
- inactive_table_hash := 正被从设备清除的非活跃表的哈希。
-                        其格式与上面“设备恢复”小节中描述的 'active_table_hash' 相同。
- current_device_capacity := "current_device_capacity=" <N>
+ dm_version_str := 濡備笂闈⑩€滆〃鍔犺浇鈥濆皬鑺傛墍杩般€? device_inactive_metadata := 鍦ㄥ姞杞芥椂鎹曡幏鐨勩€佹琚竻闄ょ殑闈炴椿璺冭〃鐨勮澶囧厓鏁版嵁銆?                             鍏舵牸寮忎笌涓婇潰鈥滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'device_metadata' 鐩稿悓銆? inactive_table_hash := 姝ｈ浠庤澶囨竻闄ょ殑闈炴椿璺冭〃鐨勫搱甯屻€?                        鍏舵牸寮忎笌涓婇潰鈥滆澶囨仮澶嶁€濆皬鑺備腑鎻忚堪鐨?'active_table_hash' 鐩稿悓銆? current_device_capacity := "current_device_capacity=" <N>
 
- 例如，如果一个 linear 设备的非活跃表被清除，
-  #dmsetup clear l1
+ 渚嬪锛屽鏋滀竴涓?linear 璁惧鐨勯潪娲昏穬琛ㄨ娓呴櫎锛?  #dmsetup clear l1
 
- 那么 IMA ASCII 度量日志中将包含一个条目：
- （为便于阅读，已从 ASCII 转换为文本）
+ 閭ｄ箞 IMA ASCII 搴﹂噺鏃ュ織涓皢鍖呭惈涓€涓潯鐩細
+ 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  10 77d347408f557f68f0041acb0072946bb2367fe5 ima-buf sha256:42f9ca22163fdfa548e6229dece2959bc5ce295c681644240035827ada0e1db5
  dm_table_clear
@@ -249,31 +185,27 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  inactive_table_hash=sha256:75c0dc347063bf474d28a9907037eba060bfe39d8847fc0646d75e149045d545;current_device_capacity=1024;
 
 ```
-### 5. 设备重命名（Device rename）：
+### 5. 璁惧閲嶅懡鍚嶏紙Device rename锛夛細
 
-当设备的 NAME 或 UUID 被更改时，设备信息以及新的 NAME 和 UUID 会被度量。
-
-对于 'dm_device_rename'，IMA 度量日志的格式如下：
+褰撹澶囩殑 NAME 鎴?UUID 琚洿鏀规椂锛岃澶囦俊鎭互鍙婃柊鐨?NAME 鍜?UUID 浼氳搴﹂噺銆?
+瀵逛簬 'dm_device_rename'锛孖MA 搴﹂噺鏃ュ織鐨勬牸寮忓涓嬶細
 
 ```
 
  EVENT_NAME := "dm_device_rename"
  EVENT_DATA := <dm_version_str> ";" <device_active_metadata> ";" <new_device_name> "," <new_device_uuid> ";" <current_device_capacity> ";"
 
- dm_version_str := 如上面“表加载”小节所述。
- device_active_metadata := 反映当前已加载活跃表的设备元数据。
-                           其格式与上面“表加载”小节中描述的 'device_metadata' 相同。
- new_device_name := "new_name=" <dm-device-name>
- dm-device-name := 与上面“表加载”小节中描述的 <dm-device-name> 相同
+ dm_version_str := 濡備笂闈⑩€滆〃鍔犺浇鈥濆皬鑺傛墍杩般€? device_active_metadata := 鍙嶆槧褰撳墠宸插姞杞芥椿璺冭〃鐨勮澶囧厓鏁版嵁銆?                           鍏舵牸寮忎笌涓婇潰鈥滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'device_metadata' 鐩稿悓銆? new_device_name := "new_name=" <dm-device-name>
+ dm-device-name := 涓庝笂闈⑩€滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?<dm-device-name> 鐩稿悓
  new_device_uuid := "new_uuid=" <dm-device-uuid>
- dm-device-uuid := 与上面“表加载”小节中描述的 <dm-device-uuid> 相同
+ dm-device-uuid := 涓庝笂闈⑩€滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?<dm-device-uuid> 鐩稿悓
  current_device_capacity := "current_device_capacity=" <N>
 
- 例 1：如果使用以下命令更改一个 linear 设备的名称，
+ 渚?1锛氬鏋滀娇鐢ㄤ互涓嬪懡浠ゆ洿鏀逛竴涓?linear 璁惧鐨勫悕绉帮紝
   #dmsetup rename linear1 --setuuid 1234-5678
 
- 那么 IMA ASCII 度量日志中将包含一个条目：
- （为便于阅读，已从 ASCII 转换为文本）
+ 閭ｄ箞 IMA ASCII 搴﹂噺鏃ュ織涓皢鍖呭惈涓€涓潯鐩細
+ 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  10 8b0423209b4c66ac1523f4c9848c9b51ee332f48 ima-buf sha256:6847b7258134189531db593e9230b257c84f04038b5a18fd2e1473860e0569ac
  dm_device_rename
@@ -281,11 +213,11 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  name=linear1,uuid=,major=253,minor=2,minor_count=1,num_targets=1;new_name=linear1,new_uuid=1234-5678;
  current_device_capacity=1024;
 
- 例 2：如果使用以下命令更改一个 linear 设备的名称，
+ 渚?2锛氬鏋滀娇鐢ㄤ互涓嬪懡浠ゆ洿鏀逛竴涓?linear 璁惧鐨勫悕绉帮紝
   # dmsetup rename linear1 linear=2
 
- 那么 IMA ASCII 度量日志中将包含一个条目：
- （为便于阅读，已从 ASCII 转换为文本）
+ 閭ｄ箞 IMA ASCII 搴﹂噺鏃ュ織涓皢鍖呭惈涓€涓潯鐩細
+ 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  10 bef70476b99c2bdf7136fae033aa8627da1bf76f ima-buf sha256:8c6f9f53b9ef9dc8f92a2f2cca8910e622543d0f0d37d484870cb16b95111402
  dm_device_rename
@@ -295,10 +227,10 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  current_device_capacity=1024;
 
 ```
-## 支持的目标（targets）：
+## 鏀寔鐨勭洰鏍囷紙targets锛夛細
 
 
-以下目标（targets）支持使用 IMA 度量它们的数据：
+浠ヤ笅鐩爣锛坱argets锛夋敮鎸佷娇鐢?IMA 搴﹂噺瀹冧滑鐨勬暟鎹細
 
  1. cache
  #. crypt
@@ -313,8 +245,7 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
 
 ### 1. cache
 
-作为 EVENT_DATA 一部分在上述“表加载”小节中描述的 'target_attributes'，对于 'cache' 目标具有以下数据格式。
-
+浣滀负 EVENT_DATA 涓€閮ㄥ垎鍦ㄤ笂杩扳€滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'target_attributes'锛屽浜?'cache' 鐩爣鍏锋湁浠ヤ笅鏁版嵁鏍煎紡銆?
 ```
 
  target_attributes := <target_name> "," <target_version> "," <metadata_mode> "," <cache_metadata_device> ","
@@ -333,10 +264,8 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  no_discard_passdown := "no_discard_passdown=" <yes_no>
  yes_no := "y" | "n"
 
- 例如：
- 当加载一个 'cache' 目标时，IMA ASCII 度量日志会有一条类似于下面的条目，
- 展示在 'dm_table_load' 事件的 EVENT_DATA 中度量了哪些 'cache' 属性。
- （为便于阅读，已从 ASCII 转换为文本）
+ 渚嬪锛? 褰撳姞杞戒竴涓?'cache' 鐩爣鏃讹紝IMA ASCII 搴﹂噺鏃ュ織浼氭湁涓€鏉＄被浼间簬涓嬮潰鐨勬潯鐩紝
+ 灞曠ず鍦?'dm_table_load' 浜嬩欢鐨?EVENT_DATA 涓害閲忎簡鍝簺 'cache' 灞炴€с€? 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  dm_version=4.45.0;name=cache1,uuid=cache_uuid,major=253,minor=2,minor_count=1,num_targets=1;
  target_index=0,target_begin=0,target_len=28672,target_name=cache,target_version=2.2.0,metadata_mode=rw,
@@ -347,8 +276,7 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
 ```
 ### 2. crypt
 
-作为 EVENT_DATA 一部分在上述“表加载”小节中描述的 'target_attributes'，对于 'crypt' 目标具有以下数据格式。
-
+浣滀负 EVENT_DATA 涓€閮ㄥ垎鍦ㄤ笂杩扳€滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'target_attributes'锛屽浜?'crypt' 鐩爣鍏锋湁浠ヤ笅鏁版嵁鏍煎紡銆?
 ```
 
  target_attributes := <target_name> "," <target_version> "," <allow_discards> "," <same_cpu_crypt> ","
@@ -375,10 +303,8 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  key_mac_size := "key_mac_size="  <N>
  yes_no := "y" | "n"
 
- 例如：
- 当加载一个 'crypt' 目标时，IMA ASCII 度量日志会有一条类似于下面的条目，
- 展示在 'dm_table_load' 事件的 EVENT_DATA 中度量了哪些 'crypt' 属性。
- （为便于阅读，已从 ASCII 转换为文本）
+ 渚嬪锛? 褰撳姞杞戒竴涓?'crypt' 鐩爣鏃讹紝IMA ASCII 搴﹂噺鏃ュ織浼氭湁涓€鏉＄被浼间簬涓嬮潰鐨勬潯鐩紝
+ 灞曠ず鍦?'dm_table_load' 浜嬩欢鐨?EVENT_DATA 涓害閲忎簡鍝簺 'crypt' 灞炴€с€? 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  dm_version=4.45.0;
  name=crypt1,uuid=crypt_uuid1,major=253,minor=0,minor_count=1,num_targets=1;
@@ -389,8 +315,7 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
 ```
 ### 3. integrity
 
-作为 EVENT_DATA 一部分在上述“表加载”小节中描述的 'target_attributes'，对于 'integrity' 目标具有以下数据格式。
-
+浣滀负 EVENT_DATA 涓€閮ㄥ垎鍦ㄤ笂杩扳€滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'target_attributes'锛屽浜?'integrity' 鐩爣鍏锋湁浠ヤ笅鏁版嵁鏍煎紡銆?
 ```
 
  target_attributes := <target_name> "," <target_version> "," <dev_name> "," <start>
@@ -417,10 +342,8 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  buffer_sectors := "buffer_sectors=" <N>
  yes_no := "y" | "n"
 
- 例如：
- 当加载一个 'integrity' 目标时，IMA ASCII 度量日志会有一条类似于下面的条目，
- 展示在 'dm_table_load' 事件的 EVENT_DATA 中度量了哪些 'integrity' 属性。
- （为便于阅读，已从 ASCII 转换为文本）
+ 渚嬪锛? 褰撳姞杞戒竴涓?'integrity' 鐩爣鏃讹紝IMA ASCII 搴﹂噺鏃ュ織浼氭湁涓€鏉＄被浼间簬涓嬮潰鐨勬潯鐩紝
+ 灞曠ず鍦?'dm_table_load' 浜嬩欢鐨?EVENT_DATA 涓害閲忎簡鍝簺 'integrity' 灞炴€с€? 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  dm_version=4.45.0;
  name=integrity1,uuid=,major=253,minor=1,minor_count=1,num_targets=1;
@@ -432,8 +355,7 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
 ```
 ### 4. linear
 
-作为 EVENT_DATA 一部分在上述“表加载”小节中描述的 'target_attributes'，对于 'linear' 目标具有以下数据格式。
-
+浣滀负 EVENT_DATA 涓€閮ㄥ垎鍦ㄤ笂杩扳€滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'target_attributes'锛屽浜?'linear' 鐩爣鍏锋湁浠ヤ笅鏁版嵁鏍煎紡銆?
 ```
 
  target_attributes := <target_name> "," <target_version> "," <device_name> <,> <start> ";"
@@ -443,10 +365,8 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  device_name := "device_name=" <linear_device_name_str>
  start := "start=" <N>
 
- 例如：
- 当加载一个 'linear' 目标时，IMA ASCII 度量日志会有一条类似于下面的条目，
- 展示在 'dm_table_load' 事件的 EVENT_DATA 中度量了哪些 'linear' 属性。
- （为便于阅读，已从 ASCII 转换为文本）
+ 渚嬪锛? 褰撳姞杞戒竴涓?'linear' 鐩爣鏃讹紝IMA ASCII 搴﹂噺鏃ュ織浼氭湁涓€鏉＄被浼间簬涓嬮潰鐨勬潯鐩紝
+ 灞曠ず鍦?'dm_table_load' 浜嬩欢鐨?EVENT_DATA 涓害閲忎簡鍝簺 'linear' 灞炴€с€? 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  dm_version=4.45.0;
  name=linear1,uuid=linear_uuid1,major=253,minor=2,minor_count=1,num_targets=1;
@@ -456,8 +376,7 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
 ```
 ### 5. mirror
 
-作为 EVENT_DATA 一部分在上述“表加载”小节中描述的 'target_attributes'，对于 'mirror' 目标具有以下数据格式。
-
+浣滀负 EVENT_DATA 涓€閮ㄥ垎鍦ㄤ笂杩扳€滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'target_attributes'锛屽浜?'mirror' 鐩爣鍏锋湁浠ヤ笅鏁版嵁鏍煎紡銆?
 ```
 
  target_attributes := <target_name> "," <target_version> "," <nr_mirrors> ","
@@ -467,22 +386,17 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  target_version := "target_version=" <N> "." <N> "." <N>
  nr_mirrors := "nr_mirrors=" <NR>
  mirror_device_data := <mirror_device_row> | <mirror_device_data><mirror_device_row>
-                       mirror_device_row 会重复 <NR> 次——对应 <nr_mirrors> 中描述的 <NR>。
- mirror_device_row := <mirror_device_name> "," <mirror_device_status>
+                       mirror_device_row 浼氶噸澶?<NR> 娆♀€斺€斿搴?<nr_mirrors> 涓弿杩扮殑 <NR>銆? mirror_device_row := <mirror_device_name> "," <mirror_device_status>
  mirror_device_name := "mirror_device_" <X> "=" <mirror_device_name_str>
-                       其中 <X> 的范围从 0 到 (<NR> -1)——对应 <nr_mirrors> 中描述的 <NR>。
- mirror_device_status := "mirror_device_" <X> "_status=" <mirror_device_status_char>
-                         其中 <X> 的范围从 0 到 (<NR> -1)——对应 <nr_mirrors> 中描述的 <NR>。
- mirror_device_status_char := "A" | "F" | "D" | "S" | "R" | "U"
+                       鍏朵腑 <X> 鐨勮寖鍥翠粠 0 鍒?(<NR> -1)鈥斺€斿搴?<nr_mirrors> 涓弿杩扮殑 <NR>銆? mirror_device_status := "mirror_device_" <X> "_status=" <mirror_device_status_char>
+                         鍏朵腑 <X> 鐨勮寖鍥翠粠 0 鍒?(<NR> -1)鈥斺€斿搴?<nr_mirrors> 涓弿杩扮殑 <NR>銆? mirror_device_status_char := "A" | "F" | "D" | "S" | "R" | "U"
  handle_errors := "handle_errors=" <yes_no>
  keep_log := "keep_log=" <yes_no>
  log_type_status := "log_type_status=" <log_type_status_str>
  yes_no := "y" | "n"
 
- 例如：
- 当加载一个 'mirror' 目标时，IMA ASCII 度量日志会有一条类似于下面的条目，
- 展示在 'dm_table_load' 事件的 EVENT_DATA 中度量了哪些 'mirror' 属性。
- （为便于阅读，已从 ASCII 转换为文本）
+ 渚嬪锛? 褰撳姞杞戒竴涓?'mirror' 鐩爣鏃讹紝IMA ASCII 搴﹂噺鏃ュ織浼氭湁涓€鏉＄被浼间簬涓嬮潰鐨勬潯鐩紝
+ 灞曠ず鍦?'dm_table_load' 浜嬩欢鐨?EVENT_DATA 涓害閲忎簡鍝簺 'mirror' 灞炴€с€? 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  dm_version=4.45.0;
  name=mirror1,uuid=mirror_uuid1,major=253,minor=6,minor_count=1,num_targets=1;
@@ -494,8 +408,7 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
 ```
 ### 6. multipath
 
-作为 EVENT_DATA 一部分在上述“表加载”小节中描述的 'target_attributes'，对于 'multipath' 目标具有以下数据格式。
-
+浣滀负 EVENT_DATA 涓€閮ㄥ垎鍦ㄤ笂杩扳€滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'target_attributes'锛屽浜?'multipath' 鐩爣鍏锋湁浠ヤ笅鏁版嵁鏍煎紡銆?
 ```
 
  target_attributes := <target_name> "," <target_version> "," <nr_priority_groups>
@@ -507,19 +420,14 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  priority_groups := <priority_groups_row>|<priority_groups_row><priority_groups>
  priority_groups_row := "pg_state_" <X> "=" <pg_state_str> "," "nr_pgpaths_" <X>  "=" <NPGP> ","
                         "path_selector_name_" <X> "=" <string> "," <priority_group_paths>
-                        其中 <X> 的范围从 0 到 (<NPG> -1)——对应 <nr_priority_groups> 中描述的 <NPG>。
- pg_state_str := "E" | "A" | "D"
+                        鍏朵腑 <X> 鐨勮寖鍥翠粠 0 鍒?(<NPG> -1)鈥斺€斿搴?<nr_priority_groups> 涓弿杩扮殑 <NPG>銆? pg_state_str := "E" | "A" | "D"
  <priority_group_paths> := <priority_group_paths_row> | <priority_group_paths_row><priority_group_paths>
  priority_group_paths_row := "path_name_" <X> "_" <Y> "=" <string> "," "is_active_" <X> "_" <Y> "=" <is_active_str>
                              "fail_count_" <X> "_" <Y> "=" <N> "," "path_selector_status_" <X> "_" <Y> "=" <path_selector_status_str>
-                             其中 <X> 的范围从 0 到 (<NPG> -1)——对应 <nr_priority_groups> 中描述的 <NPG>，
-                             而 <Y> 的范围从 0 到 (<NPGP> -1)——对应 <priority_groups_row> 中描述的 <NPGP>。
- is_active_str := "A" | "F"
+                             鍏朵腑 <X> 鐨勮寖鍥翠粠 0 鍒?(<NPG> -1)鈥斺€斿搴?<nr_priority_groups> 涓弿杩扮殑 <NPG>锛?                             鑰?<Y> 鐨勮寖鍥翠粠 0 鍒?(<NPGP> -1)鈥斺€斿搴?<priority_groups_row> 涓弿杩扮殑 <NPGP>銆? is_active_str := "A" | "F"
 
- 例如：
- 当加载一个 'multipath' 目标时，IMA ASCII 度量日志会有一条类似于下面的条目，
- 展示在 'dm_table_load' 事件的 EVENT_DATA 中度量了哪些 'multipath' 属性。
- （为便于阅读，已从 ASCII 转换为文本）
+ 渚嬪锛? 褰撳姞杞戒竴涓?'multipath' 鐩爣鏃讹紝IMA ASCII 搴﹂噺鏃ュ織浼氭湁涓€鏉＄被浼间簬涓嬮潰鐨勬潯鐩紝
+ 灞曠ず鍦?'dm_table_load' 浜嬩欢鐨?EVENT_DATA 涓害閲忎簡鍝簺 'multipath' 灞炴€с€? 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  dm_version=4.45.0;
  name=mp,uuid=,major=253,minor=0,minor_count=1,num_targets=1;
@@ -534,8 +442,7 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
 ```
 ### 7. raid
 
-作为 EVENT_DATA 一部分在上述“表加载”小节中描述的 'target_attributes'，对于 'raid' 目标具有以下数据格式。
-
+浣滀负 EVENT_DATA 涓€閮ㄥ垎鍦ㄤ笂杩扳€滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'target_attributes'锛屽浜?'raid' 鐩爣鍏锋湁浠ヤ笅鏁版嵁鏍煎紡銆?
 ```
 
  target_attributes := <target_name> "," <target_version> "," <raid_type> "," <raid_disks> "," <raid_state>
@@ -548,17 +455,13 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  raid_state := "raid_state=" <raid_state_str>
  raid_state_str := "frozen" | "reshape" |"resync" | "check" | "repair" | "recover" | "idle" |"undef"
  raid_device_status := <raid_device_status_row> | <raid_device_status_row><raid_device_status>
-                       <raid_device_status_row> 会重复 <NRD> 次——对应 <raid_disks> 中描述的 <NRD>。
- raid_device_status_row := "raid_device_" <X> "_status=" <raid_device_status_str>
-                           其中 <X> 的范围从 0 到 (<NRD> -1)——对应 <raid_disks> 中描述的 <NRD>。
- raid_device_status_str := "A" | "D" | "a" | "-"
+                       <raid_device_status_row> 浼氶噸澶?<NRD> 娆♀€斺€斿搴?<raid_disks> 涓弿杩扮殑 <NRD>銆? raid_device_status_row := "raid_device_" <X> "_status=" <raid_device_status_str>
+                           鍏朵腑 <X> 鐨勮寖鍥翠粠 0 鍒?(<NRD> -1)鈥斺€斿搴?<raid_disks> 涓弿杩扮殑 <NRD>銆? raid_device_status_str := "A" | "D" | "a" | "-"
  journal_dev_mode := "journal_dev_mode=" <journal_dev_mode_str>
  journal_dev_mode_str := "writethrough" | "writeback" | "invalid"
 
- 例如：
- 当加载一个 'raid' 目标时，IMA ASCII 度量日志会有一条类似于下面的条目，
- 展示在 'dm_table_load' 事件的 EVENT_DATA 中度量了哪些 'raid' 属性。
- （为便于阅读，已从 ASCII 转换为文本）
+ 渚嬪锛? 褰撳姞杞戒竴涓?'raid' 鐩爣鏃讹紝IMA ASCII 搴﹂噺鏃ュ織浼氭湁涓€鏉＄被浼间簬涓嬮潰鐨勬潯鐩紝
+ 灞曠ず鍦?'dm_table_load' 浜嬩欢鐨?EVENT_DATA 涓害閲忎簡鍝簺 'raid' 灞炴€с€? 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  dm_version=4.45.0;
  name=raid_LV1,uuid=uuid_raid_LV1,major=253,minor=12,minor_count=1,num_targets=1;
@@ -573,8 +476,7 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
 ```
 ### 8. snapshot
 
-作为 EVENT_DATA 一部分在上述“表加载”小节中描述的 'target_attributes'，对于 'snapshot' 目标具有以下数据格式。
-
+浣滀负 EVENT_DATA 涓€閮ㄥ垎鍦ㄤ笂杩扳€滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'target_attributes'锛屽浜?'snapshot' 鐩爣鍏锋湁浠ヤ笅鏁版嵁鏍煎紡銆?
 ```
 
  target_attributes := <target_name> "," <target_version> "," <snap_origin_name> ","
@@ -589,10 +491,8 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  snapshot_overflowed := "snapshot_overflowed=" <yes_no>
  yes_no := "y" | "n"
 
- 例如：
- 当加载一个 'snapshot' 目标时，IMA ASCII 度量日志会有一条类似于下面的条目，
- 展示在 'dm_table_load' 事件的 EVENT_DATA 中度量了哪些 'snapshot' 属性。
- （为便于阅读，已从 ASCII 转换为文本）
+ 渚嬪锛? 褰撳姞杞戒竴涓?'snapshot' 鐩爣鏃讹紝IMA ASCII 搴﹂噺鏃ュ織浼氭湁涓€鏉＄被浼间簬涓嬮潰鐨勬潯鐩紝
+ 灞曠ず鍦?'dm_table_load' 浜嬩欢鐨?EVENT_DATA 涓害閲忎簡鍝簺 'snapshot' 灞炴€с€? 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  dm_version=4.45.0;
  name=snap1,uuid=snap_uuid1,major=253,minor=13,minor_count=1,num_targets=1;
@@ -602,8 +502,7 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
 ```
 ### 9. striped
 
-作为 EVENT_DATA 一部分在上述“表加载”小节中描述的 'target_attributes'，对于 'striped' 目标具有以下数据格式。
-
+浣滀负 EVENT_DATA 涓€閮ㄥ垎鍦ㄤ笂杩扳€滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'target_attributes'锛屽浜?'striped' 鐩爣鍏锋湁浠ヤ笅鏁版嵁鏍煎紡銆?
 ```
 
  target_attributes := <target_name> "," <target_version> "," <stripes> "," <chunk_size> ","
@@ -616,17 +515,12 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  stripe_data := <stripe_data_row>|<stripe_data><stripe_data_row>
  stripe_data_row := <stripe_device_name> "," <stripe_physical_start> "," <stripe_status>
  stripe_device_name := "stripe_" <X> "_device_name=" <stripe_device_name_str>
-                       其中 <X> 的范围从 0 到 (<NS> -1)——对应 <stripes> 中描述的 <NS>。
- stripe_physical_start := "stripe_" <X> "_physical_start=" <N>
-                          其中 <X> 的范围从 0 到 (<NS> -1)——对应 <stripes> 中描述的 <NS>。
- stripe_status := "stripe_" <X> "_status=" <stripe_status_str>
-                  其中 <X> 的范围从 0 到 (<NS> -1)——对应 <stripes> 中描述的 <NS>。
- stripe_status_str := "D" | "A"
+                       鍏朵腑 <X> 鐨勮寖鍥翠粠 0 鍒?(<NS> -1)鈥斺€斿搴?<stripes> 涓弿杩扮殑 <NS>銆? stripe_physical_start := "stripe_" <X> "_physical_start=" <N>
+                          鍏朵腑 <X> 鐨勮寖鍥翠粠 0 鍒?(<NS> -1)鈥斺€斿搴?<stripes> 涓弿杩扮殑 <NS>銆? stripe_status := "stripe_" <X> "_status=" <stripe_status_str>
+                  鍏朵腑 <X> 鐨勮寖鍥翠粠 0 鍒?(<NS> -1)鈥斺€斿搴?<stripes> 涓弿杩扮殑 <NS>銆? stripe_status_str := "D" | "A"
 
- 例如：
- 当加载一个 'striped' 目标时，IMA ASCII 度量日志会有一条类似于下面的条目，
- 展示在 'dm_table_load' 事件的 EVENT_DATA 中度量了哪些 'striped' 属性。
- （为便于阅读，已从 ASCII 转换为文本）
+ 渚嬪锛? 褰撳姞杞戒竴涓?'striped' 鐩爣鏃讹紝IMA ASCII 搴﹂噺鏃ュ織浼氭湁涓€鏉＄被浼间簬涓嬮潰鐨勬潯鐩紝
+ 灞曠ず鍦?'dm_table_load' 浜嬩欢鐨?EVENT_DATA 涓害閲忎簡鍝簺 'striped' 灞炴€с€? 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  dm_version=4.45.0;
  name=striped1,uuid=striped_uuid1,major=253,minor=5,minor_count=1,num_targets=1;
@@ -637,8 +531,7 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
 ```
 ### 10. verity
 
-作为 EVENT_DATA 一部分在上述“表加载”小节中描述的 'target_attributes'，对于 'verity' 目标具有以下数据格式。
-
+浣滀负 EVENT_DATA 涓€閮ㄥ垎鍦ㄤ笂杩扳€滆〃鍔犺浇鈥濆皬鑺備腑鎻忚堪鐨?'target_attributes'锛屽浜?'verity' 鐩爣鍏锋湁浠ヤ笅鏁版嵁鏍煎紡銆?
 ```
 
  target_attributes := <target_name> "," <target_version> "," <hash_failed> "," <verity_version> ","
@@ -664,10 +557,8 @@ IMA 内核子系统为设备映射器提供了必要的功能，用于度量（m
  verity_mode_str := "ignore_corruption" | "restart_on_corruption" | "panic_on_corruption" | "invalid"
  yes_no := "y" | "n"
 
- 例如：
- 当加载一个 'verity' 目标时，IMA ASCII 度量日志会有一条类似于下面的条目，
- 展示在 'dm_table_load' 事件的 EVENT_DATA 中度量了哪些 'verity' 属性。
- （为便于阅读，已从 ASCII 转换为文本）
+ 渚嬪锛? 褰撳姞杞戒竴涓?'verity' 鐩爣鏃讹紝IMA ASCII 搴﹂噺鏃ュ織浼氭湁涓€鏉＄被浼间簬涓嬮潰鐨勬潯鐩紝
+ 灞曠ず鍦?'dm_table_load' 浜嬩欢鐨?EVENT_DATA 涓害閲忎簡鍝簺 'verity' 灞炴€с€? 锛堜负渚夸簬闃呰锛屽凡浠?ASCII 杞崲涓烘枃鏈級
 
  dm_version=4.45.0;
  name=test-verity,uuid=,major=253,minor=2,minor_count=1,num_targets=1;

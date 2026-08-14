@@ -1,6 +1,6 @@
-## 变更（Changes）
+﻿## 鍙樻洿锛圕hanges锛?
 
 
-有关按内核版本（及 cifs 内部模块版本）对 CIFS/SMB2/SMB3 支持（对 cifs.ko 模块的改动）的
-修复/改进摘要信息，请参见 https://wiki.samba.org/index.php/LinuxCIFSKernel。这比按发布版本
-解析 “git log fs/smb/client” 的输出更易阅读。
+鏈夊叧鎸夊唴鏍哥増鏈紙鍙?cifs 鍐呴儴妯″潡鐗堟湰锛夊 CIFS/SMB2/SMB3 鏀寔锛堝 cifs.ko 妯″潡鐨勬敼鍔級鐨?
+淇/鏀硅繘鎽樿淇℃伅锛岃鍙傝 https://wiki.samba.org/index.php/LinuxCIFSKernel銆傝繖姣旀寜鍙戝竷鐗堟湰
+瑙ｆ瀽 鈥済it log fs/smb/client鈥?鐨勮緭鍑烘洿鏄撻槄璇汇€?

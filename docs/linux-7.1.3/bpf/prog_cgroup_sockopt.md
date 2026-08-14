@@ -1,69 +1,46 @@
-
+﻿
 ## BPF_PROG_TYPE_CGROUP_SOCKOPT
 
 
-`BPF_PROG_TYPE_CGROUP_SOCKOPT` 程序类型可以附加到两个
-cgroup 钩子（hook）上：
-
-- `BPF_CGROUP_GETSOCKOPT` - 在进程每次执行 `getsockopt`
-  系统调用时调用。
-- `BPF_CGROUP_SETSOCKOPT` - 在进程每次执行 `setsockopt`
-  系统调用时调用。
-
-上下文（`struct bpf_sockopt`）关联了套接字（`sk`）以及
-所有输入参数：`level`、`optname`、`optval` 和 `optlen`。
-
+`BPF_PROG_TYPE_CGROUP_SOCKOPT` 绋嬪簭绫诲瀷鍙互闄勫姞鍒颁袱涓?cgroup 閽╁瓙锛坔ook锛変笂锛?
+- `BPF_CGROUP_GETSOCKOPT` - 鍦ㄨ繘绋嬫瘡娆℃墽琛?`getsockopt`
+  绯荤粺璋冪敤鏃惰皟鐢ㄣ€?- `BPF_CGROUP_SETSOCKOPT` - 鍦ㄨ繘绋嬫瘡娆℃墽琛?`setsockopt`
+  绯荤粺璋冪敤鏃惰皟鐢ㄣ€?
+涓婁笅鏂囷紙`struct bpf_sockopt`锛夊叧鑱斾簡濂楁帴瀛楋紙`sk`锛変互鍙?鎵€鏈夎緭鍏ュ弬鏁帮細`level`銆乣optname`銆乣optval` 鍜?`optlen`銆?
 ## BPF_CGROUP_SETSOCKOPT
 
 
-`BPF_CGROUP_SETSOCKOPT` 在内核处理 sockopt **之前**被触发，
-并且其上下文是可写的：它可以在将提供的参数向下传递给内核之前
-修改这些参数。该钩子可以访问 cgroup
-与套接字本地存储（socket local storage）。
-
-如果 BPF 程序将 `optlen` 设置为 -1，则在 cgroup 链中
-所有其他 BPF 程序执行完毕后，控制将返回用户空间
-（即内核的 `setsockopt` 处理将**不会**被执行）。
-
-注意，`optlen` 不能增加到超过用户提供的
-值。它只能被减小或设置为 -1。任何其他值都会
-触发 `EFAULT`。
-
-### 返回类型
+`BPF_CGROUP_SETSOCKOPT` 鍦ㄥ唴鏍稿鐞?sockopt **涔嬪墠**琚Е鍙戯紝
+骞朵笖鍏朵笂涓嬫枃鏄彲鍐欑殑锛氬畠鍙互鍦ㄥ皢鎻愪緵鐨勫弬鏁板悜涓嬩紶閫掔粰鍐呮牳涔嬪墠
+淇敼杩欎簺鍙傛暟銆傝閽╁瓙鍙互璁块棶 cgroup
+涓庡鎺ュ瓧鏈湴瀛樺偍锛坰ocket local storage锛夈€?
+濡傛灉 BPF 绋嬪簭灏?`optlen` 璁剧疆涓?-1锛屽垯鍦?cgroup 閾句腑
+鎵€鏈夊叾浠?BPF 绋嬪簭鎵ц瀹屾瘯鍚庯紝鎺у埗灏嗚繑鍥炵敤鎴风┖闂?锛堝嵆鍐呮牳鐨?`setsockopt` 澶勭悊灏?*涓嶄細**琚墽琛岋級銆?
+娉ㄦ剰锛宍optlen` 涓嶈兘澧炲姞鍒拌秴杩囩敤鎴锋彁渚涚殑
+鍊笺€傚畠鍙兘琚噺灏忔垨璁剧疆涓?-1銆備换浣曞叾浠栧€奸兘浼?瑙﹀彂 `EFAULT`銆?
+### 杩斿洖绫诲瀷
 
 
-- `0` - 拒绝该 syscall，将向用户空间返回 `EPERM`。
-- `1` - 成功，继续执行 cgroup 链中的下一个 BPF 程序。
-
+- `0` - 鎷掔粷璇?syscall锛屽皢鍚戠敤鎴风┖闂磋繑鍥?`EPERM`銆?- `1` - 鎴愬姛锛岀户缁墽琛?cgroup 閾句腑鐨勪笅涓€涓?BPF 绋嬪簭銆?
 ## BPF_CGROUP_GETSOCKOPT
 
 
-`BPF_CGROUP_GETSOCKOPT` 在内核处理 sockopt **之后**被触发。
-如果 BPF 钩子对内核返回的任何内容感兴趣，它可以观察
-`optval`、`optlen` 和 `retval`。BPF 钩子可以覆盖
-上述值，调整 `optlen` 并将 `retval` 重置为 0。如果 `optlen`
-被增加到超过初始的 `getsockopt` 值（即用户空间缓冲区太小），
-则会返回 `EFAULT`。
-
-该钩子可以访问 cgroup 与套接字本地存储。
-
-注意，可以设置给 `retval` 的唯一可接受值是 0 以及
-内核返回的原始值。任何其他值都会触发 `EFAULT`。
-
-### 返回类型
+`BPF_CGROUP_GETSOCKOPT` 鍦ㄥ唴鏍稿鐞?sockopt **涔嬪悗**琚Е鍙戙€?濡傛灉 BPF 閽╁瓙瀵瑰唴鏍歌繑鍥炵殑浠讳綍鍐呭鎰熷叴瓒ｏ紝瀹冨彲浠ヨ瀵?`optval`銆乣optlen` 鍜?`retval`銆侭PF 閽╁瓙鍙互瑕嗙洊
+涓婅堪鍊硷紝璋冩暣 `optlen` 骞跺皢 `retval` 閲嶇疆涓?0銆傚鏋?`optlen`
+琚鍔犲埌瓒呰繃鍒濆鐨?`getsockopt` 鍊硷紙鍗崇敤鎴风┖闂寸紦鍐插尯澶皬锛夛紝
+鍒欎細杩斿洖 `EFAULT`銆?
+璇ラ挬瀛愬彲浠ヨ闂?cgroup 涓庡鎺ュ瓧鏈湴瀛樺偍銆?
+娉ㄦ剰锛屽彲浠ヨ缃粰 `retval` 鐨勫敮涓€鍙帴鍙楀€兼槸 0 浠ュ強
+鍐呮牳杩斿洖鐨勫師濮嬪€笺€備换浣曞叾浠栧€奸兘浼氳Е鍙?`EFAULT`銆?
+### 杩斿洖绫诲瀷
 
 
-- `0` - 拒绝该 syscall，将向用户空间返回 `EPERM`。
-- `1` - 成功：将 `optval` 和 `optlen` 复制到用户空间，并从
-  syscall 返回 `retval`（注意这可能会被父 cgroup 的
-  BPF 程序覆盖）。
-
-## Cgroup 继承
+- `0` - 鎷掔粷璇?syscall锛屽皢鍚戠敤鎴风┖闂磋繑鍥?`EPERM`銆?- `1` - 鎴愬姛锛氬皢 `optval` 鍜?`optlen` 澶嶅埗鍒扮敤鎴风┖闂达紝骞朵粠
+  syscall 杩斿洖 `retval`锛堟敞鎰忚繖鍙兘浼氳鐖?cgroup 鐨?  BPF 绋嬪簭瑕嗙洊锛夈€?
+## Cgroup 缁ф壙
 
 
-假设存在如下 cgroup 层级，其中每个 cgroup 在每个层级都附加了
-`BPF_CGROUP_GETSOCKOPT`，其中
-```
+鍋囪瀛樺湪濡備笅 cgroup 灞傜骇锛屽叾涓瘡涓?cgroup 鍦ㄦ瘡涓眰绾ч兘闄勫姞浜?`BPF_CGROUP_GETSOCKOPT`锛屽叾涓?```
 
   A (root, parent)
    \
@@ -71,46 +48,32 @@ cgroup 钩子（hook）上：
 
 ```
 
-当应用程序从 cgroup B 调用 `getsockopt` syscall 时，
-程序自底向上执行：B、A。第一个程序
-（B）看到内核 `getsockopt` 的结果。它可以选择性地
-调整 `optval`、`optlen` 并将 `retval` 重置为 0。之后
-控制将传递给第二个（A）程序，该程序将看到
-与 B 相同的上下文，包括任何潜在的修改。
-
-`BPF_CGROUP_SETSOCKOPT` 同理：如果程序被附加到
-A 和 B，触发顺序是 B，然后 A。如果 B 对输入参数
-（`level`、`optname`、`optval`、`optlen`）做了任何修改，
-那么链中的下一个程序（A）将看到那些修改，
-**而非**原始的输入 `setsockopt` 参数。这些可能被
-修改的值随后会被向下传递给内核。
-
-## 较大的 optval
+褰撳簲鐢ㄧ▼搴忎粠 cgroup B 璋冪敤 `getsockopt` syscall 鏃讹紝
+绋嬪簭鑷簳鍚戜笂鎵ц锛欱銆丄銆傜涓€涓▼搴?锛圔锛夌湅鍒板唴鏍?`getsockopt` 鐨勭粨鏋溿€傚畠鍙互閫夋嫨鎬у湴
+璋冩暣 `optval`銆乣optlen` 骞跺皢 `retval` 閲嶇疆涓?0銆備箣鍚?鎺у埗灏嗕紶閫掔粰绗簩涓紙A锛夌▼搴忥紝璇ョ▼搴忓皢鐪嬪埌
+涓?B 鐩稿悓鐨勪笂涓嬫枃锛屽寘鎷换浣曟綔鍦ㄧ殑淇敼銆?
+`BPF_CGROUP_SETSOCKOPT` 鍚岀悊锛氬鏋滅▼搴忚闄勫姞鍒?A 鍜?B锛岃Е鍙戦『搴忔槸 B锛岀劧鍚?A銆傚鏋?B 瀵硅緭鍏ュ弬鏁?锛坄level`銆乣optname`銆乣optval`銆乣optlen`锛夊仛浜嗕换浣曚慨鏀癸紝
+閭ｄ箞閾句腑鐨勪笅涓€涓▼搴忥紙A锛夊皢鐪嬪埌閭ｄ簺淇敼锛?**鑰岄潪**鍘熷鐨勮緭鍏?`setsockopt` 鍙傛暟銆傝繖浜涘彲鑳借
+淇敼鐨勫€奸殢鍚庝細琚悜涓嬩紶閫掔粰鍐呮牳銆?
+## 杈冨ぇ鐨?optval
 
 
-当 `optval` 大于 `PAGE_SIZE` 时，BPF 程序
-只能访问该数据的第一个 `PAGE_SIZE`。因此它有两个选择：
-
-- 将 `optlen` 设置为零，这表示内核应使用
-  来自用户空间的原始缓冲区。BPF 程序对 `optval` 所做的任何修改
-  都将被忽略。
-- 将 `optlen` 设置为小于 `PAGE_SIZE` 的值，这表示
-  内核应使用 BPF 裁剪后的 `optval`。
-
-当 BPF 程序以大于 `PAGE_SIZE` 的 `optlen` 返回时，
-用户空间将收到原始的内核缓冲区，而 BPF 程序可能施加的
-任何修改都不会被应用。
-
-## 示例
+褰?`optval` 澶т簬 `PAGE_SIZE` 鏃讹紝BPF 绋嬪簭
+鍙兘璁块棶璇ユ暟鎹殑绗竴涓?`PAGE_SIZE`銆傚洜姝ゅ畠鏈変袱涓€夋嫨锛?
+- 灏?`optlen` 璁剧疆涓洪浂锛岃繖琛ㄧず鍐呮牳搴斾娇鐢?  鏉ヨ嚜鐢ㄦ埛绌洪棿鐨勫師濮嬬紦鍐插尯銆侭PF 绋嬪簭瀵?`optval` 鎵€鍋氱殑浠讳綍淇敼
+  閮藉皢琚拷鐣ャ€?- 灏?`optlen` 璁剧疆涓哄皬浜?`PAGE_SIZE` 鐨勫€硷紝杩欒〃绀?  鍐呮牳搴斾娇鐢?BPF 瑁佸壀鍚庣殑 `optval`銆?
+褰?BPF 绋嬪簭浠ュぇ浜?`PAGE_SIZE` 鐨?`optlen` 杩斿洖鏃讹紝
+鐢ㄦ埛绌洪棿灏嗘敹鍒板師濮嬬殑鍐呮牳缂撳啿鍖猴紝鑰?BPF 绋嬪簭鍙兘鏂藉姞鐨?浠讳綍淇敼閮戒笉浼氳搴旂敤銆?
+## 绀轰緥
 
 
-处理 BPF 程序的推荐方式如下：
+澶勭悊 BPF 绋嬪簭鐨勬帹鑽愭柟寮忓涓嬶細
 
 
 	SEC("cgroup/getsockopt")
 	int getsockopt(struct bpf_sockopt *ctx)
 	{
-		/** 自定义套接字选项。 **/
+		/** 鑷畾涔夊鎺ュ瓧閫夐」銆?**/
 		if (ctx->level == MY_SOL && ctx->optname == MY_OPTNAME) {
 			ctx->retval = 0;
 			optval[^0^] = ...;
@@ -118,7 +81,7 @@ A 和 B，触发顺序是 B，然后 A。如果 B 对输入参数
 			return 1;
 		}
 
-		/** 修改内核的套接字选项。 **/
+		/** 淇敼鍐呮牳鐨勫鎺ュ瓧閫夐」銆?**/
 		if (ctx->level == SOL_IP && ctx->optname == IP_FREEBIND) {
 			ctx->retval = 0;
 			optval[^0^] = ...;
@@ -126,7 +89,7 @@ A 和 B，触发顺序是 B，然后 A。如果 B 对输入参数
 			return 1;
 		}
 
-		/** optval 大于 PAGE_SIZE 时使用内核缓冲区。 **/
+		/** optval 澶т簬 PAGE_SIZE 鏃朵娇鐢ㄥ唴鏍哥紦鍐插尯銆?**/
 		if (ctx->optlen > PAGE_SIZE)
 			ctx->optlen = 0;
 
@@ -136,25 +99,25 @@ A 和 B，触发顺序是 B，然后 A。如果 B 对输入参数
 	SEC("cgroup/setsockopt")
 	int setsockopt(struct bpf_sockopt *ctx)
 	{
-		/** 自定义套接字选项。 **/
+		/** 鑷畾涔夊鎺ュ瓧閫夐」銆?**/
 		if (ctx->level == MY_SOL && ctx->optname == MY_OPTNAME) {
-			/** 执行某些操作 **/
+			/** 鎵ц鏌愪簺鎿嶄綔 **/
 			ctx->optlen = -1;
 			return 1;
 		}
 
-		/** 修改内核的套接字选项。 **/
+		/** 淇敼鍐呮牳鐨勫鎺ュ瓧閫夐」銆?**/
 		if (ctx->level == SOL_IP && ctx->optname == IP_FREEBIND) {
 			optval[^0^] = ...;
 			return 1;
 		}
 
-		/** optval 大于 PAGE_SIZE 时使用内核缓冲区。 **/
+		/** optval 澶т簬 PAGE_SIZE 鏃朵娇鐢ㄥ唴鏍哥紦鍐插尯銆?**/
 		if (ctx->optlen > PAGE_SIZE)
 			ctx->optlen = 0;
 
 		return 1;
 	}
 
-有关处理套接字选项的 BPF 程序示例，请参见
-`tools/testing/selftests/bpf/progs/sockopt_sk.c`。
+鏈夊叧澶勭悊濂楁帴瀛楅€夐」鐨?BPF 绋嬪簭绀轰緥锛岃鍙傝
+`tools/testing/selftests/bpf/progs/sockopt_sk.c`銆?

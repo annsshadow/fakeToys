@@ -1,30 +1,30 @@
-## Microchip SparX-5 SoC
+﻿## Microchip SparX-5 SoC
 
 
-支持芯片：
+鏀寔鑺墖锛?
 
-  - VSC7546, VSC7549, VSC755, VSC7556, VSC7558（Sparx5 系列）
+  - VSC7546, VSC7549, VSC755, VSC7556, VSC7558锛圫parx5 绯诲垪锛?
 
     Prefix: 'sparx5-temp'
 
     Addresses scanned: -
 
-    Datasheet: 由 Microchip 应要求并在 NDA 下提供
+    Datasheet: 鐢?Microchip 搴旇姹傚苟鍦?NDA 涓嬫彁渚?
 
 Author: Lars Povlsen <lars.povlsen@microchip.com>
 
-### 说明
+### 璇存槑
 
 
-Sparx5 SoC 包含一个基于 MR74060 Moortec IP 的温度传感器。
+Sparx5 SoC 鍖呭惈涓€涓熀浜?MR74060 Moortec IP 鐨勬俯搴︿紶鎰熷櫒銆?
 
-该传感器范围为 -40°C 到 +125°C，精度为 +/-5°C。
+璇ヤ紶鎰熷櫒鑼冨洿涓?-40掳C 鍒?+125掳C锛岀簿搴︿负 +/-5掳C銆?
 
-### Sysfs 条目
+### Sysfs 鏉＄洰
 
 
-支持以下属性。
+鏀寔浠ヤ笅灞炴€с€?
 
 ======================= ========================================================
-temp1_input		芯片温度（单位为毫摄氏度。）
+temp1_input		鑺墖娓╁害锛堝崟浣嶄负姣憚姘忓害銆傦級
 ======================= ========================================================

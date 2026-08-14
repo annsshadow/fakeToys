@@ -1,39 +1,34 @@
-
+﻿
 
 ######## ioctl VIDIOC_G_SLICED_VBI_CAP
 
 
-## 名称
+## 鍚嶇О
 
 
-VIDIOC_G_SLICED_VBI_CAP - 查询切片（sliced）VBI 能力
+VIDIOC_G_SLICED_VBI_CAP - 鏌ヨ鍒囩墖锛坰liced锛塚BI 鑳藉姏
 
-## 摘要
+## 鎽樿
 
 
 `int ioctl(int fd, VIDIOC_G_SLICED_VBI_CAP, struct v4l2_sliced_vbi_cap *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
-
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `argp`
-    指向 struct `v4l2_sliced_vbi_cap` 的指针。
-
-## 描述
-
-
-为了查明切片 VBI 捕获或输出设备支持哪些数据服务，应用程序初始化 struct
-`v4l2_sliced_vbi_cap` 的 `type` 字段，清除 `reserved` 数组，并调用
-VIDIOC_G_SLICED_VBI_CAP <VIDIOC_G_SLICED_VBI_CAP> ioctl。驱动填充其余字段，
-如果切片 VBI API 不受支持或 `type` 无效，则返回 `EINVAL` 错误码。
+    鎸囧悜 struct `v4l2_sliced_vbi_cap` 鐨勬寚閽堛€?
+## 鎻忚堪
 
 
-    `type` 字段是在 Linux 2.6.19 中添加的，并且该 ioctl 从只读变更为了
-    读写。
+涓轰簡鏌ユ槑鍒囩墖 VBI 鎹曡幏鎴栬緭鍑鸿澶囨敮鎸佸摢浜涙暟鎹湇鍔★紝搴旂敤绋嬪簭鍒濆鍖?struct
+`v4l2_sliced_vbi_cap` 鐨?`type` 瀛楁锛屾竻闄?`reserved` 鏁扮粍锛屽苟璋冪敤
+VIDIOC_G_SLICED_VBI_CAP <VIDIOC_G_SLICED_VBI_CAP> ioctl銆傞┍鍔ㄥ～鍏呭叾浣欏瓧娈碉紝
+濡傛灉鍒囩墖 VBI API 涓嶅彈鏀寔鎴?`type` 鏃犳晥锛屽垯杩斿洖 `EINVAL` 閿欒鐮併€?
 
+    `type` 瀛楁鏄湪 Linux 2.6.19 涓坊鍔犵殑锛屽苟涓旇 ioctl 浠庡彧璇诲彉鏇翠负浜?    璇诲啓銆?
 
     :header-rows:  0
     :stub-columns: 0
@@ -41,20 +36,14 @@ VIDIOC_G_SLICED_VBI_CAP <VIDIOC_G_SLICED_VBI_CAP> ioctl。驱动填充其余字�
 
     - - __u16
       - `service_set`
-      - `2` 驱动支持的所有数据服务的集合。
-
-	等于 `service_lines` 数组所有元素的并集。
-    - - __u16
+      - `2` 椹卞姩鏀寔鐨勬墍鏈夋暟鎹湇鍔＄殑闆嗗悎銆?
+	绛変簬 `service_lines` 鏁扮粍鎵€鏈夊厓绱犵殑骞堕泦銆?    - - __u16
       - `service_lines`\ [^2^][^24^]
-      - `2` 此数组的每个元素包含一个数据服务集合，硬件可以在特定扫描
-	行上查找或插入这些服务。数据服务在 vbi-services 中定义。
-	数组索引映射到 ITU-R 行号\ [#f1]_，如下所示：
+      - `2` 姝ゆ暟缁勭殑姣忎釜鍏冪礌鍖呭惈涓€涓暟鎹湇鍔￠泦鍚堬紝纭欢鍙互鍦ㄧ壒瀹氭壂鎻?	琛屼笂鏌ユ壘鎴栨彃鍏ヨ繖浜涙湇鍔°€傛暟鎹湇鍔″湪 vbi-services 涓畾涔夈€?	鏁扮粍绱㈠紩鏄犲皠鍒?ITU-R 琛屽彿\ [#f1]_锛屽涓嬫墍绀猴細
 #     * -
 
-      - 元素
-      - 525 行系统
-      - 625 行系统
-#     * -
+      - 鍏冪礌
+      - 525 琛岀郴缁?      - 625 琛岀郴缁?#     * -
 
       - `service_lines`\ [^0^][^1^]
       - 1
@@ -77,29 +66,17 @@ VIDIOC_G_SLICED_VBI_CAP <VIDIOC_G_SLICED_VBI_CAP> ioctl。驱动填充其余字�
     - -
 #     * -
 
-      - `2` 硬件每帧可以捕获或输出的 VBI 行数，或者它能在给定行上识别的
-	服务数量可能是受限的。例如，在 PAL 第 16 行上，硬件可能能够查找
-	VPS 或 Teletext 信号，但不能同时查找两者。应用程序可以使用
-	VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl（如 sliced 中所述）来了解这些限制。
-    - -
+      - `2` 纭欢姣忓抚鍙互鎹曡幏鎴栬緭鍑虹殑 VBI 琛屾暟锛屾垨鑰呭畠鑳藉湪缁欏畾琛屼笂璇嗗埆鐨?	鏈嶅姟鏁伴噺鍙兘鏄彈闄愮殑銆備緥濡傦紝鍦?PAL 绗?16 琛屼笂锛岀‖浠跺彲鑳借兘澶熸煡鎵?	VPS 鎴?Teletext 淇″彿锛屼絾涓嶈兘鍚屾椂鏌ユ壘涓よ€呫€傚簲鐢ㄧ▼搴忓彲浠ヤ娇鐢?	VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl锛堝 sliced 涓墍杩帮級鏉ヤ簡瑙ｈ繖浜涢檺鍒躲€?    - -
 #     * -
 
-      - `2` 驱动必须将 `service_lines` [^0^][^0^] 和
-	`service_lines`\ [^1^][^0^] 设为零。
-    - - __u32
+      - `2` 椹卞姩蹇呴』灏?`service_lines` [^0^][^0^] 鍜?	`service_lines`\ [^1^][^0^] 璁句负闆躲€?    - - __u32
       - `type`
-      - 数据流的类型，见 `v4l2_buf_type`。应为
-	`V4L2_BUF_TYPE_SLICED_VBI_CAPTURE` 或
-	`V4L2_BUF_TYPE_SLICED_VBI_OUTPUT`。
-    - - __u32
+      - 鏁版嵁娴佺殑绫诲瀷锛岃 `v4l2_buf_type`銆傚簲涓?	`V4L2_BUF_TYPE_SLICED_VBI_CAPTURE` 鎴?	`V4L2_BUF_TYPE_SLICED_VBI_OUTPUT`銆?    - - __u32
       - `reserved`\ [^3^]
-      - `2` 此数组为将来扩展保留。
+      - `2` 姝ゆ暟缁勪负灏嗘潵鎵╁睍淇濈暀銆?
+	搴旂敤绋嬪簭鍜岄┍鍔ㄥ繀椤诲皢鍏惰涓洪浂銆?
 
-	应用程序和驱动必须将其设为零。
-
-
-   另见 vbi-525 和 vbi-625。
-
+   鍙﹁ vbi-525 鍜?vbi-625銆?
 
     \scriptsize
 
@@ -109,67 +86,51 @@ VIDIOC_G_SLICED_VBI_CAP <VIDIOC_G_SLICED_VBI_CAP> ioctl。驱动填充其余字�
     :stub-columns: 0
     :widths:       2 1 1 2 2
 
-    - - 符号
-      - 值
-      - 参考
-      - 行，通常
-      - 载荷
-    - - `V4L2_SLICED_TELETEXT_B`（Teletext System B）
-      - 0x0001
-      - ets300706、
-
+    - - 绗﹀彿
+      - 鍊?      - 鍙傝€?      - 琛岋紝閫氬父
+      - 杞借嵎
+    - - `V4L2_SLICED_TELETEXT_B`锛圱eletext System B锛?      - 0x0001
+      - ets300706銆?
 	itu653
-      - PAL/SECAM 第 7-22 行、320-335 行（第二场 7-22 行）
-      - 45 字节 Teletext 包的最后 42 字节，即不带时钟
-	引导和成帧码，最低位（lsb）先传输。
-    - - `V4L2_SLICED_VPS`
+      - PAL/SECAM 绗?7-22 琛屻€?20-335 琛岋紙绗簩鍦?7-22 琛岋級
+      - 45 瀛楄妭 Teletext 鍖呯殑鏈€鍚?42 瀛楄妭锛屽嵆涓嶅甫鏃堕挓
+	寮曞鍜屾垚甯х爜锛屾渶浣庝綅锛坙sb锛夊厛浼犺緭銆?    - - `V4L2_SLICED_VPS`
       - 0x0400
       - ets300231
-      - PAL 第 16 行
-      - 根据 ETS 300 231 图 9 的第 3 到 15 字节，最低位先传输。
-    - - `V4L2_SLICED_CAPTION_525`
+      - PAL 绗?16 琛?      - 鏍规嵁 ETS 300 231 鍥?9 鐨勭 3 鍒?15 瀛楄妭锛屾渶浣庝綅鍏堜紶杈撱€?    - - `V4L2_SLICED_CAPTION_525`
       - 0x1000
       - cea608
-      - NTSC 第 21、284 行（第二场 21 行）
-      - 传输顺序的两个字节，包括奇偶校验位，最低位先传输。
-    - - `V4L2_SLICED_WSS_625`
+      - NTSC 绗?21銆?84 琛岋紙绗簩鍦?21 琛岋級
+      - 浼犺緭椤哄簭鐨勪袱涓瓧鑺傦紝鍖呮嫭濂囧伓鏍￠獙浣嶏紝鏈€浣庝綅鍏堜紶杈撱€?    - - `V4L2_SLICED_WSS_625`
       - 0x4000
-      - en300294、
-
+      - en300294銆?
 	itu1119
-      - PAL/SECAM 第 23 行
-      - 见下方的 v4l2-sliced-vbi-cap-wss-625-payload。
-    - - `V4L2_SLICED_VBI_525`
+      - PAL/SECAM 绗?23 琛?      - 瑙佷笅鏂圭殑 v4l2-sliced-vbi-cap-wss-625-payload銆?    - - `V4L2_SLICED_VBI_525`
       - 0x1000
-      - `2` 适用于 525 行系统的服务集合。
-    - - `V4L2_SLICED_VBI_625`
+      - `2` 閫傜敤浜?525 琛岀郴缁熺殑鏈嶅姟闆嗗悎銆?    - - `V4L2_SLICED_VBI_625`
       - 0x4401
-      - `2` 适用于 625 行系统的服务集合。
-
+      - `2` 閫傜敤浜?625 琛岀郴缁熺殑鏈嶅姟闆嗗悎銆?
 
 
     \normalsize
 
 
-#### V4L2_SLICED_VBI_CAP WSS_625 载荷
+#### V4L2_SLICED_VBI_CAP WSS_625 杞借嵎
 
 
-`V4L2_SLICED_WSS_625` 的载荷为：
-
+`V4L2_SLICED_WSS_625` 鐨勮浇鑽蜂负锛?
 	    +-----+------------------+-----------------------+
-	    |字节 |        0         |           1           |
+	    |瀛楄妭 |        0         |           1           |
 	    +-----+--------+---------+-----------+-----------+
 	    |     | msb    | lsb     | msb       | lsb       |
 	    |     +-+-+-+--+--+-+-+--+--+-+--+---+---+--+-+--+
-	    | 位 |7|6|5|4 | 3|2|1|0 | x|x|13|12 | 11|10|9|8 |
+	    | 浣?|7|6|5|4 | 3|2|1|0 | x|x|13|12 | 11|10|9|8 |
 	    +-----+-+-+-+--+--+-+-+--+--+-+--+---+---+--+-+--+
 
 
-## 返回值
+## 杩斿洖鍊?
 
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用的错误码
-在通用错误码 <gen-errors> 章节中描述。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤鐨勯敊璇爜
+鍦ㄩ€氱敤閿欒鐮?<gen-errors> 绔犺妭涓弿杩般€?
 EINVAL
-    `type` 字段中的值错误。
+    `type` 瀛楁涓殑鍊奸敊璇€?

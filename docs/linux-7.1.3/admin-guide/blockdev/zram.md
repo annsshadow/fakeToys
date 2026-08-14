@@ -1,48 +1,48 @@
-## zram：基于内存的压缩块设备
+﻿## zram锛氬熀浜庡唴瀛樼殑鍘嬬缉鍧楄澶?
 
 
-## 简介
+## 绠€浠?
 
 
-zram 模块会创建名为 /dev/zram<id>（<id> = 0, 1, ...）的基于内存的块设备。
-写入这些磁盘的页会被压缩并直接存储在内存中。这些磁盘具有非常快的 I/O
-性能，并且压缩能够带来可观的内存节省。部分使用场景包括 /tmp 存储、用作
-swap 磁盘、/var 下的各种缓存，以及可能更多的用途。:)
+zram 妯″潡浼氬垱寤哄悕涓?/dev/zram<id>锛?id> = 0, 1, ...锛夌殑鍩轰簬鍐呭瓨鐨勫潡璁惧銆?
+鍐欏叆杩欎簺纾佺洏鐨勯〉浼氳鍘嬬缉骞剁洿鎺ュ瓨鍌ㄥ湪鍐呭瓨涓€傝繖浜涚鐩樺叿鏈夐潪甯稿揩鐨?I/O
+鎬ц兘锛屽苟涓斿帇缂╄兘澶熷甫鏉ュ彲瑙傜殑鍐呭瓨鑺傜渷銆傞儴鍒嗕娇鐢ㄥ満鏅寘鎷?/tmp 瀛樺偍銆佺敤浣?
+swap 纾佺洏銆?var 涓嬬殑鍚勭缂撳瓨锛屼互鍙婂彲鑳芥洿澶氱殑鐢ㄩ€斻€?)
 
-各个 zram 设备的统计信息通过 /sys/block/zram<id>/ 下的 sysfs 节点导出。
+鍚勪釜 zram 璁惧鐨勭粺璁′俊鎭€氳繃 /sys/block/zram<id>/ 涓嬬殑 sysfs 鑺傜偣瀵煎嚭銆?
 
-## 用法
-
-
-配置和管理 zram 设备有以下几种方式：
-
-a) 使用 zram 与 zram_control 的 sysfs 属性
-b) 使用 util-linux 提供的 zramctl 工具（util-linux@vger.kernel.org）。
-
-本文档仅描述“手动”配置 zram 的步骤，即 zram 与 zram_control 的 sysfs 属性。
-
-若想进一步了解 zramctl，请查阅 util-linux 的文档、zramctl 手册页或
-`zramctl --help`。请注意，zram 的维护者并不开发/维护 util-linux 或
-zramctl，如有任何问题请联系 util-linux@vger.kernel.org。
-
-下面展示使用 zram 的典型步骤序列。
-
-## 警告
+## 鐢ㄦ硶
 
 
-为简洁起见，下面的大多数示例省略了错误检查部分。但是，处理错误是你的
-全部责任。
+閰嶇疆鍜岀鐞?zram 璁惧鏈変互涓嬪嚑绉嶆柟寮忥細
 
-zram 的 sysfs 属性在出错时总是返回负值。可能的返回码列表如下：
+a) 浣跨敤 zram 涓?zram_control 鐨?sysfs 灞炴€?
+b) 浣跨敤 util-linux 鎻愪緵鐨?zramctl 宸ュ叿锛坲til-linux@vger.kernel.org锛夈€?
+
+鏈枃妗ｄ粎鎻忚堪鈥滄墜鍔ㄢ€濋厤缃?zram 鐨勬楠わ紝鍗?zram 涓?zram_control 鐨?sysfs 灞炴€с€?
+
+鑻ユ兂杩涗竴姝ヤ簡瑙?zramctl锛岃鏌ラ槄 util-linux 鐨勬枃妗ｃ€亃ramctl 鎵嬪唽椤垫垨
+`zramctl --help`銆傝娉ㄦ剰锛寊ram 鐨勭淮鎶よ€呭苟涓嶅紑鍙?缁存姢 util-linux 鎴?
+zramctl锛屽鏈変换浣曢棶棰樿鑱旂郴 util-linux@vger.kernel.org銆?
+
+涓嬮潰灞曠ず浣跨敤 zram 鐨勫吀鍨嬫楠ゅ簭鍒椼€?
+
+## 璀﹀憡
+
+
+涓虹畝娲佽捣瑙侊紝涓嬮潰鐨勫ぇ澶氭暟绀轰緥鐪佺暐浜嗛敊璇鏌ラ儴鍒嗐€備絾鏄紝澶勭悊閿欒鏄綘鐨?
+鍏ㄩ儴璐ｄ换銆?
+
+zram 鐨?sysfs 灞炴€у湪鍑洪敊鏃舵€绘槸杩斿洖璐熷€笺€傚彲鑳界殑杩斿洖鐮佸垪琛ㄥ涓嬶細
 
 ========  =============================================================
--EBUSY	  试图修改设备初始化后无法再更改的属性。请先重置设备。
--ENOMEM	  zram 无法分配足够的内存来满足你的需求。
--EINVAL	  提供了无效的输入。
--EAGAIN	  稍后重试该操作（例如当试图同时执行 recompress 与 writeback 时）。
+-EBUSY	  璇曞浘淇敼璁惧鍒濆鍖栧悗鏃犳硶鍐嶆洿鏀圭殑灞炴€с€傝鍏堥噸缃澶囥€?
+-ENOMEM	  zram 鏃犳硶鍒嗛厤瓒冲鐨勫唴瀛樻潵婊¤冻浣犵殑闇€姹傘€?
+-EINVAL	  鎻愪緵浜嗘棤鏁堢殑杈撳叆銆?
+-EAGAIN	  绋嶅悗閲嶈瘯璇ユ搷浣滐紙渚嬪褰撹瘯鍥惧悓鏃舵墽琛?recompress 涓?writeback 鏃讹級銆?
 ========  =============================================================
 
-如果你使用 'echo'，返回值由 'echo' 工具设置，因此
+濡傛灉浣犱娇鐢?'echo'锛岃繑鍥炲€肩敱 'echo' 宸ュ叿璁剧疆锛屽洜姝?
 
 ```
 	echo foo > /sys/block/zram0/comp_algorithm
@@ -51,104 +51,104 @@ zram 的 sysfs 属性在出错时总是返回负值。可能的返回码列表�
 	fi
 
 ```
-就足够了。
+灏辫冻澶熶簡銆?
 
-## 1) 加载模块
+## 1) 鍔犺浇妯″潡
 
 
 ```
 	modprobe zram num_devices=4
 ```
 
-这会创建 4 个设备：/dev/zram{0,1,2,3}
+杩欎細鍒涘缓 4 涓澶囷細/dev/zram{0,1,2,3}
 
-num_devices 参数是可选的，用于告诉 zram 应预先创建多少设备。默认值：1。
+num_devices 鍙傛暟鏄彲閫夌殑锛岀敤浜庡憡璇?zram 搴旈鍏堝垱寤哄灏戣澶囥€傞粯璁ゅ€硷細1銆?
 
-## 2) 选择压缩算法
+## 2) 閫夋嫨鍘嬬缉绠楁硶
 
 
-通过 comp_algorithm 设备属性，可以查看可用以及当前选中的（以方括号显示）
-压缩算法，或者在设备初始化后更改所选的压缩算法（设备一旦初始化便无法再
-更改压缩算法）。
+閫氳繃 comp_algorithm 璁惧灞炴€э紝鍙互鏌ョ湅鍙敤浠ュ強褰撳墠閫変腑鐨勶紙浠ユ柟鎷彿鏄剧ず锛?
+鍘嬬缉绠楁硶锛屾垨鑰呭湪璁惧鍒濆鍖栧悗鏇存敼鎵€閫夌殑鍘嬬缉绠楁硶锛堣澶囦竴鏃﹀垵濮嬪寲渚挎棤娉曞啀
+鏇存敼鍘嬬缉绠楁硶锛夈€?
 
 ```
-	# 显示支持的压缩算法
+	# 鏄剧ず鏀寔鐨勫帇缂╃畻娉?
 	cat /sys/block/zram0/comp_algorithm
 	lzo [lz4]
 
-	# 选择 lzo 压缩算法
+	# 閫夋嫨 lzo 鍘嬬缉绠楁硶
 	echo lzo > /sys/block/zram0/comp_algorithm
 ```
 
-目前，`comp_algorithm` 的内容仅显示 zram 所支持的压缩算法。
+鐩墠锛宍comp_algorithm` 鐨勫唴瀹逛粎鏄剧ず zram 鎵€鏀寔鐨勫帇缂╃畻娉曘€?
 
-## 3) 设置压缩算法参数：可选
+## 3) 璁剧疆鍘嬬缉绠楁硶鍙傛暟锛氬彲閫?
 
 
-压缩算法可能支持针对特定数据集进行调整的特定参数。ZRAM 提供了一个
-`algorithm_params` 设备属性，用于按算法进行参数配置。
+鍘嬬缉绠楁硶鍙兘鏀寔閽堝鐗瑰畾鏁版嵁闆嗚繘琛岃皟鏁寸殑鐗瑰畾鍙傛暟銆俍RAM 鎻愪緵浜嗕竴涓?
+`algorithm_params` 璁惧灞炴€э紝鐢ㄤ簬鎸夌畻娉曡繘琛屽弬鏁伴厤缃€?
 
-例如，若干压缩算法支持 `level` 参数。此外，某些压缩算法支持预训练字典，
-会显著改变算法的特性。为了让压缩算法使用外部的预训练字典，传入完整的
+渚嬪锛岃嫢骞插帇缂╃畻娉曟敮鎸?`level` 鍙傛暟銆傛澶栵紝鏌愪簺鍘嬬缉绠楁硶鏀寔棰勮缁冨瓧鍏革紝
+浼氭樉钁楁敼鍙樼畻娉曠殑鐗规€с€備负浜嗚鍘嬬缉绠楁硶浣跨敤澶栭儴鐨勯璁粌瀛楀吀锛屼紶鍏ュ畬鏁寸殑
 
 ```
-	# 传入预训练 zstd 字典的路径
+	# 浼犲叆棰勮缁?zstd 瀛楀吀鐨勮矾寰?
 	echo "algo=zstd dict=/etc/dictionary" > /sys/block/zram0/algorithm_params
 
-	# 同样的方式，但使用算法优先级
+	# 鍚屾牱鐨勬柟寮忥紝浣嗕娇鐢ㄧ畻娉曚紭鍏堢骇
 	echo "priority=1 dict=/etc/dictionary" > \
 		/sys/block/zram0/algorithm_params
 
-	# 传入预训练 zstd 字典路径以及压缩级别
+	# 浼犲叆棰勮缁?zstd 瀛楀吀璺緞浠ュ強鍘嬬缉绾у埆
 	echo "algo=zstd level=8 dict=/etc/dictionary" > \
 		/sys/block/zram0/algorithm_params
 ```
 
-参数是算法相关的：并非所有算法都支持预训练字典，也并非所有算法都支持
-`level`。此外，对于某些算法，`level` 控制压缩级别（值越高压缩比越好，
-某些算法甚至可以取负值）；对于另一些算法，`level` 是加速级别（值越高
-压缩比越低）。
+鍙傛暟鏄畻娉曠浉鍏崇殑锛氬苟闈炴墍鏈夌畻娉曢兘鏀寔棰勮缁冨瓧鍏革紝涔熷苟闈炴墍鏈夌畻娉曢兘鏀寔
+`level`銆傛澶栵紝瀵逛簬鏌愪簺绠楁硶锛宍level` 鎺у埗鍘嬬缉绾у埆锛堝€艰秺楂樺帇缂╂瘮瓒婂ソ锛?
+鏌愪簺绠楁硶鐢氳嚦鍙互鍙栬礋鍊硷級锛涘浜庡彟涓€浜涚畻娉曪紝`level` 鏄姞閫熺骇鍒紙鍊艰秺楂?
+鍘嬬缉姣旇秺浣庯級銆?
 
-## 4) 设置磁盘大小
+## 4) 璁剧疆纾佺洏澶у皬
 
 
-通过向 sysfs 节点 'disksize' 写入值来设置磁盘大小。该值可以是字节数，
-也可以使用内存后缀。
+閫氳繃鍚?sysfs 鑺傜偣 'disksize' 鍐欏叆鍊兼潵璁剧疆纾佺洏澶у皬銆傝鍊煎彲浠ユ槸瀛楄妭鏁帮紝
+涔熷彲浠ヤ娇鐢ㄥ唴瀛樺悗缂€銆?
 
 ```
-	# 以 50MB 的磁盘大小初始化 /dev/zram0
+	# 浠?50MB 鐨勭鐩樺ぇ灏忓垵濮嬪寲 /dev/zram0
 	echo $((50*1024*1024)) > /sys/block/zram0/disksize
 
-	# 使用内存后缀
+	# 浣跨敤鍐呭瓨鍚庣紑
 	echo 256K > /sys/block/zram0/disksize
 	echo 512M > /sys/block/zram0/disksize
 	echo 1G > /sys/block/zram0/disksize
 ```
 
-注意：
-由于期望达到 2:1 的压缩比，创建大小超过内存两倍的 zram 意义不大。请注意，
-zram 在未被使用时约占用磁盘大小的 0.1% 内存，因此过大的 zram 是浪费的。
+娉ㄦ剰锛?
+鐢变簬鏈熸湜杈惧埌 2:1 鐨勫帇缂╂瘮锛屽垱寤哄ぇ灏忚秴杩囧唴瀛樹袱鍊嶇殑 zram 鎰忎箟涓嶅ぇ銆傝娉ㄦ剰锛?
+zram 鍦ㄦ湭琚娇鐢ㄦ椂绾﹀崰鐢ㄧ鐩樺ぇ灏忕殑 0.1% 鍐呭瓨锛屽洜姝よ繃澶х殑 zram 鏄氮璐圭殑銆?
 
-## 5) 设置内存上限：可选
+## 5) 璁剧疆鍐呭瓨涓婇檺锛氬彲閫?
 
 
-通过向 sysfs 节点 'mem_limit' 写入值来设置内存上限。该值可以是字节数，
-也可以使用内存后缀。此外，你可以在运行时更改该值。
+閫氳繃鍚?sysfs 鑺傜偣 'mem_limit' 鍐欏叆鍊兼潵璁剧疆鍐呭瓨涓婇檺銆傝鍊煎彲浠ユ槸瀛楄妭鏁帮紝
+涔熷彲浠ヤ娇鐢ㄥ唴瀛樺悗缂€銆傛澶栵紝浣犲彲浠ュ湪杩愯鏃舵洿鏀硅鍊笺€?
 
 ```
-	# 限制 /dev/zram0 使用 50MB 内存
+	# 闄愬埗 /dev/zram0 浣跨敤 50MB 鍐呭瓨
 	echo $((50*1024*1024)) > /sys/block/zram0/mem_limit
 
-	# 使用内存后缀
+	# 浣跨敤鍐呭瓨鍚庣紑
 	echo 256K > /sys/block/zram0/mem_limit
 	echo 512M > /sys/block/zram0/mem_limit
 	echo 1G > /sys/block/zram0/mem_limit
 
-	# 禁用内存上限
+	# 绂佺敤鍐呭瓨涓婇檺
 	echo 0 > /sys/block/zram0/mem_limit
 ```
 
-## 6) 激活
+## 6) 婵€娲?
 
 
 ```
@@ -159,118 +159,118 @@ zram 在未被使用时约占用磁盘大小的 0.1% 内存，因此过大的 zr
 	mount /dev/zram1 /tmp
 ```
 
-## 7) 添加/移除 zram 设备
+## 7) 娣诲姞/绉婚櫎 zram 璁惧
 
 
-zram 提供了一个控制接口，支持动态（按需）添加和移除设备。
+zram 鎻愪緵浜嗕竴涓帶鍒舵帴鍙ｏ紝鏀寔鍔ㄦ€侊紙鎸夐渶锛夋坊鍔犲拰绉婚櫎璁惧銆?
 
-要添加一个新的 /dev/zramX 设备，请对 hot_add 属性执行读操作。该操作会
-返回新设备的设备 id（意味着你可以使用 /dev/zram<id>），或者返回一个错误码。
+瑕佹坊鍔犱竴涓柊鐨?/dev/zramX 璁惧锛岃瀵?hot_add 灞炴€ф墽琛岃鎿嶄綔銆傝鎿嶄綔浼?
+杩斿洖鏂拌澶囩殑璁惧 id锛堟剰鍛崇潃浣犲彲浠ヤ娇鐢?/dev/zram<id>锛夛紝鎴栬€呰繑鍥炰竴涓敊璇爜銆?
 
 ```
 	cat /sys/class/zram-control/hot_add
 	1
 ```
 
-要移除已有的 /dev/zramX 设备（其中 X 为设备 id）
+瑕佺Щ闄ゅ凡鏈夌殑 /dev/zramX 璁惧锛堝叾涓?X 涓鸿澶?id锛?
 
 ```
 	echo X > /sys/class/zram-control/hot_remove
 ```
 
-## 8) 统计信息
+## 8) 缁熻淇℃伅
 
 
-每个设备的统计信息作为 /sys/block/zram<id>/ 下的各种节点导出。
+姣忎釜璁惧鐨勭粺璁′俊鎭綔涓?/sys/block/zram<id>/ 涓嬬殑鍚勭鑺傜偣瀵煎嚭銆?
 
-下面是已导出设备属性的简要说明。更多细节请阅读
-Documentation/ABI/testing/sysfs-block-zram。
+涓嬮潰鏄凡瀵煎嚭璁惧灞炴€х殑绠€瑕佽鏄庛€傛洿澶氱粏鑺傝闃呰
+Documentation/ABI/testing/sysfs-block-zram銆?
 
 ======================  ======  ===============================================
 Name            	access            description
 ======================  ======  ===============================================
-disksize          	RW	显示并设置设备的磁盘大小
-initstate         	RO	显示设备的初始化状态
-reset             	WO	触发设备重置
-mem_used_max      	WO	重置 `mem_used_max` 计数器（见后文）
-mem_limit         	WO	指定 ZRAM 可用于存储压缩数据的最大内存量
-writeback_limit   	WO	指定 zram 可以写出到后端设备的最大写 IO
-				量，以 4KB 为单位
-writeback_limit_enable  RW	显示并设置 writeback_limit 功能
-writeback_batch_size	RW	显示并设置最大的在途 writeback 操作数量
-compressed_writeback	RW	显示并设置压缩 writeback 功能
-comp_algorithm    	RW	显示并更改压缩算法
-algorithm_params	WO	设置压缩算法参数
-compact           	WO	触发内存规整
-debug_stat        	RO	该文件用于 zram 调试目的
-backing_dev	  	RW	为 zram 设置用于写出的后端存储
-idle		  	WO	将已分配的槽位标记为 idle
+disksize          	RW	鏄剧ず骞惰缃澶囩殑纾佺洏澶у皬
+initstate         	RO	鏄剧ず璁惧鐨勫垵濮嬪寲鐘舵€?
+reset             	WO	瑙﹀彂璁惧閲嶇疆
+mem_used_max      	WO	閲嶇疆 `mem_used_max` 璁℃暟鍣紙瑙佸悗鏂囷級
+mem_limit         	WO	鎸囧畾 ZRAM 鍙敤浜庡瓨鍌ㄥ帇缂╂暟鎹殑鏈€澶у唴瀛橀噺
+writeback_limit   	WO	鎸囧畾 zram 鍙互鍐欏嚭鍒板悗绔澶囩殑鏈€澶у啓 IO
+				閲忥紝浠?4KB 涓哄崟浣?
+writeback_limit_enable  RW	鏄剧ず骞惰缃?writeback_limit 鍔熻兘
+writeback_batch_size	RW	鏄剧ず骞惰缃渶澶х殑鍦ㄩ€?writeback 鎿嶄綔鏁伴噺
+compressed_writeback	RW	鏄剧ず骞惰缃帇缂?writeback 鍔熻兘
+comp_algorithm    	RW	鏄剧ず骞舵洿鏀瑰帇缂╃畻娉?
+algorithm_params	WO	璁剧疆鍘嬬缉绠楁硶鍙傛暟
+compact           	WO	瑙﹀彂鍐呭瓨瑙勬暣
+debug_stat        	RO	璇ユ枃浠剁敤浜?zram 璋冭瘯鐩殑
+backing_dev	  	RW	涓?zram 璁剧疆鐢ㄤ簬鍐欏嚭鐨勫悗绔瓨鍌?
+idle		  	WO	灏嗗凡鍒嗛厤鐨勬Ы浣嶆爣璁颁负 idle
 ======================  ======  ===============================================
 
-建议用户空间使用以下文件来读取设备统计信息。
+寤鸿鐢ㄦ埛绌洪棿浣跨敤浠ヤ笅鏂囦欢鏉ヨ鍙栬澶囩粺璁′俊鎭€?
 
-文件 /sys/block/zram<id>/stat
+鏂囦欢 /sys/block/zram<id>/stat
 
-表示块层统计信息。细节请阅读 Documentation/block/stat.rst。
+琛ㄧず鍧楀眰缁熻淇℃伅銆傜粏鑺傝闃呰 Documentation/block/stat.rst銆?
 
-文件 /sys/block/zram<id>/io_stat
+鏂囦欢 /sys/block/zram<id>/io_stat
 
-该 stat 文件表示未被块层统计、因而在 zram<id>/stat 文件中不可用的设备 I/O
-统计信息。它由单行文本组成，包含以下以空白分隔的统计项：
+璇?stat 鏂囦欢琛ㄧず鏈鍧楀眰缁熻銆佸洜鑰屽湪 zram<id>/stat 鏂囦欢涓笉鍙敤鐨勮澶?I/O
+缁熻淇℃伅銆傚畠鐢卞崟琛屾枃鏈粍鎴愶紝鍖呭惈浠ヤ笅浠ョ┖鐧藉垎闅旂殑缁熻椤癸細
 
  =============    =============================================================
- failed_reads     读取失败的次数
- failed_writes    写入失败的次数
- invalid_io       非页大小对齐的 I/O 请求数量
- notify_free      取决于设备使用场景，可能统计
+ failed_reads     璇诲彇澶辫触鐨勬鏁?
+ failed_writes    鍐欏叆澶辫触鐨勬鏁?
+ invalid_io       闈為〉澶у皬瀵归綈鐨?I/O 璇锋眰鏁伴噺
+ notify_free      鍙栧喅浜庤澶囦娇鐢ㄥ満鏅紝鍙兘缁熻
 
-                  a) 由于 swap 槽位释放通知而释放的页数
+                  a) 鐢变簬 swap 妲戒綅閲婃斁閫氱煡鑰岄噴鏀剧殑椤垫暟
 
-                  b) 由于 bio 发送的 REQ_OP_DISCARD 请求而释放的页数。前者在
-                     释放 swap 槽位时发送给 swap 块设备，这意味着该磁盘正被
-                     用作 swap 磁盘。
+                  b) 鐢变簬 bio 鍙戦€佺殑 REQ_OP_DISCARD 璇锋眰鑰岄噴鏀剧殑椤垫暟銆傚墠鑰呭湪
+                     閲婃斁 swap 妲戒綅鏃跺彂閫佺粰 swap 鍧楄澶囷紝杩欐剰鍛崇潃璇ョ鐩樻琚?
+                     鐢ㄤ綔 swap 纾佺洏銆?
 
-                  b) 后者由以 discard 选项挂载的文件系统在丢弃某些数据块时
-                     发送。
+                  b) 鍚庤€呯敱浠?discard 閫夐」鎸傝浇鐨勬枃浠剁郴缁熷湪涓㈠純鏌愪簺鏁版嵁鍧楁椂
+                     鍙戦€併€?
  =============    =============================================================
 
-文件 /sys/block/zram<id>/mm_stat
+鏂囦欢 /sys/block/zram<id>/mm_stat
 
-该 mm_stat 文件表示设备的 mm 统计信息。它由单行文本组成，包含以下以空白
-分隔的统计项：
+璇?mm_stat 鏂囦欢琛ㄧず璁惧鐨?mm 缁熻淇℃伅銆傚畠鐢卞崟琛屾枃鏈粍鎴愶紝鍖呭惈浠ヤ笅浠ョ┖鐧?
+鍒嗛殧鐨勭粺璁￠」锛?
 
  ================ =============================================================
- orig_data_size   存储在该磁盘中的数据的未压缩大小。
-                  单位：字节
- compr_data_size  存储在该磁盘中的数据的压缩后大小
- mem_used_total   为该磁盘分配的内存量。这包含为该磁盘分配的分配器碎片和
-                  元数据开销。因此，可以使用 compr_data_size 和该项统计计算
-                  分配器的空间效率。
-                  单位：字节
- mem_limit         ZRAM 可用于存储压缩数据的最大内存量
- mem_used_max      zram 为存储数据所消耗的最大内存量
- same_pages        写入该磁盘的、被相同元素填充的页数量。
-                   此类页不分配内存。
- pages_compacted   规整过程中释放的页数
- huge_pages	  不可压缩页的数量
- huge_pages_since  zram 建立以来不可压缩页的数量
+ orig_data_size   瀛樺偍鍦ㄨ纾佺洏涓殑鏁版嵁鐨勬湭鍘嬬缉澶у皬銆?
+                  鍗曚綅锛氬瓧鑺?
+ compr_data_size  瀛樺偍鍦ㄨ纾佺洏涓殑鏁版嵁鐨勫帇缂╁悗澶у皬
+ mem_used_total   涓鸿纾佺洏鍒嗛厤鐨勫唴瀛橀噺銆傝繖鍖呭惈涓鸿纾佺洏鍒嗛厤鐨勫垎閰嶅櫒纰庣墖鍜?
+                  鍏冩暟鎹紑閿€銆傚洜姝わ紝鍙互浣跨敤 compr_data_size 鍜岃椤圭粺璁¤绠?
+                  鍒嗛厤鍣ㄧ殑绌洪棿鏁堢巼銆?
+                  鍗曚綅锛氬瓧鑺?
+ mem_limit         ZRAM 鍙敤浜庡瓨鍌ㄥ帇缂╂暟鎹殑鏈€澶у唴瀛橀噺
+ mem_used_max      zram 涓哄瓨鍌ㄦ暟鎹墍娑堣€楃殑鏈€澶у唴瀛橀噺
+ same_pages        鍐欏叆璇ョ鐩樼殑銆佽鐩稿悓鍏冪礌濉厖鐨勯〉鏁伴噺銆?
+                   姝ょ被椤典笉鍒嗛厤鍐呭瓨銆?
+ pages_compacted   瑙勬暣杩囩▼涓噴鏀剧殑椤垫暟
+ huge_pages	  涓嶅彲鍘嬬缉椤电殑鏁伴噺
+ huge_pages_since  zram 寤虹珛浠ユ潵涓嶅彲鍘嬬缉椤电殑鏁伴噺
  ================ =============================================================
 
-文件 /sys/block/zram<id>/bd_stat
+鏂囦欢 /sys/block/zram<id>/bd_stat
 
-该 bd_stat 文件表示设备的后端设备统计信息。它由单行文本组成，包含以下以
-空白分隔的统计项：
+璇?bd_stat 鏂囦欢琛ㄧず璁惧鐨勫悗绔澶囩粺璁′俊鎭€傚畠鐢卞崟琛屾枃鏈粍鎴愶紝鍖呭惈浠ヤ笅浠?
+绌虹櫧鍒嗛殧鐨勭粺璁￠」锛?
 
  ============== =============================================================
- bd_count	写入后端设备的数据大小。
-		单位：4K 字节
- bd_reads	从后端设备读取的次数
-		单位：4K 字节
- bd_writes	写入后端设备的次数
-		单位：4K 字节
+ bd_count	鍐欏叆鍚庣璁惧鐨勬暟鎹ぇ灏忋€?
+		鍗曚綅锛?K 瀛楄妭
+ bd_reads	浠庡悗绔澶囪鍙栫殑娆℃暟
+		鍗曚綅锛?K 瀛楄妭
+ bd_writes	鍐欏叆鍚庣璁惧鐨勬鏁?
+		鍗曚綅锛?K 瀛楄妭
  ============== =============================================================
 
-## 9) 停用
+## 9) 鍋滅敤
 
 
 ```
@@ -278,51 +278,51 @@ idle		  	WO	将已分配的槽位标记为 idle
 	umount /dev/zram1
 ```
 
-## 10) 重置
+## 10) 閲嶇疆
 
 
 ```
 		echo 1 > /sys/block/zram0/reset
 		echo 1 > /sys/block/zram1/reset
 
-		这会释放为该设备分配的所有内存，并将磁盘大小重置为零。
-		在重新使用该设备之前，你必须再次设置磁盘大小。
+		杩欎細閲婃斁涓鸿璁惧鍒嗛厤鐨勬墍鏈夊唴瀛橈紝骞跺皢纾佺洏澶у皬閲嶇疆涓洪浂銆?
+		鍦ㄩ噸鏂颁娇鐢ㄨ璁惧涔嬪墠锛屼綘蹇呴』鍐嶆璁剧疆纾佺洏澶у皬銆?
 ```
 
-## 可选功能
+## 鍙€夊姛鑳?
 
 
-### IDLE 页跟踪
+### IDLE 椤佃窡韪?
 
 
-zram 内置支持 idle 页跟踪（即已分配但未被使用的页）。该功能对例如 zram
-writeback 等非常有用，可
+zram 鍐呯疆鏀寔 idle 椤佃窡韪紙鍗冲凡鍒嗛厤浣嗘湭琚娇鐢ㄧ殑椤碉級銆傝鍔熻兘瀵逛緥濡?zram
+writeback 绛夐潪甯告湁鐢紝鍙?
 
 ```
 	echo all > /sys/block/zramX/idle
 ```
 
-这会将所有已分配的 zram 页标记为 idle。只有当该页（块）被访问（例如被
-覆盖或释放）时，idle 标记才会被移除。此外，当启用 CONFIG_ZRAM_TRACK_ENTRY_ACTIME
-时，可以根据距上次访问已过去的秒数将页标记为 idle：
+杩欎細灏嗘墍鏈夊凡鍒嗛厤鐨?zram 椤垫爣璁颁负 idle銆傚彧鏈夊綋璇ラ〉锛堝潡锛夎璁块棶锛堜緥濡傝
+瑕嗙洊鎴栭噴鏀撅級鏃讹紝idle 鏍囪鎵嶄細琚Щ闄ゃ€傛澶栵紝褰撳惎鐢?CONFIG_ZRAM_TRACK_ENTRY_ACTIME
+鏃讹紝鍙互鏍规嵁璺濅笂娆¤闂凡杩囧幓鐨勭鏁板皢椤垫爣璁颁负 idle锛?
 
 ```
 	echo 86400 > /sys/block/zramX/idle
 ```
 
-在本例中，所有超过 86400 秒（一天）未被访问的页将被标记为 idle。
+鍦ㄦ湰渚嬩腑锛屾墍鏈夎秴杩?86400 绉掞紙涓€澶╋級鏈璁块棶鐨勯〉灏嗚鏍囪涓?idle銆?
 
 ### writeback
 
 
-通过 CONFIG_ZRAM_WRITEBACK，zram 可以将 idle/不可压缩页写入后端存储，而
-不是保留在内存中。
+閫氳繃 CONFIG_ZRAM_WRITEBACK锛寊ram 鍙互灏?idle/涓嶅彲鍘嬬缉椤靛啓鍏ュ悗绔瓨鍌紝鑰?
+涓嶆槸淇濈暀鍦ㄥ唴瀛樹腑銆?
 
 ```
 	echo /dev/sda5 > /sys/block/zramX/backing_dev
 ```
 
-在设置 disksize 之前。目前它仅支持分区。
+鍦ㄨ缃?disksize 涔嬪墠銆傜洰鍓嶅畠浠呮敮鎸佸垎鍖恒€?
 
 ```
 	echo huge > /sys/block/zramX/writeback
@@ -332,30 +332,30 @@ writeback 等非常有用，可
 	echo idle > /sys/block/zramX/writeback
 ```
 
-通过该命令，zram 会将内存中的 idle 页写回存储。
+閫氳繃璇ュ懡浠わ紝zram 浼氬皢鍐呭瓨涓殑 idle 椤靛啓鍥炲瓨鍌ㄣ€?
 
-此外，如果用户选择只写回 huge 和 idle 页，
+姝ゅ锛屽鏋滅敤鎴烽€夋嫨鍙啓鍥?huge 鍜?idle 椤碉紝
 
 ```
         echo huge_idle > /sys/block/zramX/writeback
 ```
 
-如果用户选择只写回不可压缩页（即那些
+濡傛灉鐢ㄦ埛閫夋嫨鍙啓鍥炰笉鍙帇缂╅〉锛堝嵆閭ｄ簺
 
 ```
 	echo incompressible > /sys/block/zramX/writeback
 ```
 
-如果管理员想把 zram 设备中的某个特定页写入后端设备，
+濡傛灉绠＄悊鍛樻兂鎶?zram 璁惧涓殑鏌愪釜鐗瑰畾椤靛啓鍏ュ悗绔澶囷紝
 
 ```
 	echo "page_index=1251" > /sys/block/zramX/writeback
 ```
 
-在 Linux 6.16 中，该接口经历了一些重构。首先，该接口现在对其所有参数
-支持 `key=value` 格式（`type=huge_idle` 等）。其次，引入了对 `page_indexes`
-的支持，用于指定要写回的页的 `LOW-HIGH` 范围（或多个范围）。这减少了系统
-调用的数量，但更重要的是，它使得最优的后处理成为可能：
+鍦?Linux 6.16 涓紝璇ユ帴鍙ｇ粡鍘嗕簡涓€浜涢噸鏋勩€傞鍏堬紝璇ユ帴鍙ｇ幇鍦ㄥ鍏舵墍鏈夊弬鏁?
+鏀寔 `key=value` 鏍煎紡锛坄type=huge_idle` 绛夛級銆傚叾娆★紝寮曞叆浜嗗 `page_indexes`
+鐨勬敮鎸侊紝鐢ㄤ簬鎸囧畾瑕佸啓鍥炵殑椤电殑 `LOW-HIGH` 鑼冨洿锛堟垨澶氫釜鑼冨洿锛夈€傝繖鍑忓皯浜嗙郴缁?
+璋冪敤鐨勬暟閲忥紝浣嗘洿閲嶈鐨勬槸锛屽畠浣垮緱鏈€浼樼殑鍚庡鐞嗘垚涓哄彲鑳斤細
 
 ```
 	echo "type=idle" > /sys/block/zramX/writeback
@@ -363,38 +363,38 @@ writeback 等非常有用，可
 		/sys/block/zramX/writeback
 ```
 
-我们现在还允许每次调用传入多个 page_index 参数，以及混合使用
+鎴戜滑鐜板湪杩樺厑璁告瘡娆¤皟鐢ㄤ紶鍏ュ涓?page_index 鍙傛暟锛屼互鍙婃贩鍚堜娇鐢?
 
 ```
 	echo page_index=42 page_index=99 page_indexes=100-200 \
 		page_indexes=500-700 > /sys/block/zramX/writeback
 ```
 
-如果闪存设备上存在大量写 IO，则可能存在闪存磨损问题，因此管理员需要
-设计写入限制，以保证整个产品生命周期内的存储健康。
+濡傛灉闂瓨璁惧涓婂瓨鍦ㄥぇ閲忓啓 IO锛屽垯鍙兘瀛樺湪闂瓨纾ㄦ崯闂锛屽洜姝ょ鐞嗗憳闇€瑕?
+璁捐鍐欏叆闄愬埗锛屼互淇濊瘉鏁翠釜浜у搧鐢熷懡鍛ㄦ湡鍐呯殑瀛樺偍鍋ュ悍銆?
 
-为解决这个问题，zram 支持 "writeback_limit" 功能。"writeback_limit_enable"
-的默认值为 0，因此不限制任何 writeback。也就是说，如果管理员想要应用
-writeback 预算，他们应当
+涓鸿В鍐宠繖涓棶棰橈紝zram 鏀寔 "writeback_limit" 鍔熻兘銆?writeback_limit_enable"
+鐨勯粯璁ゅ€间负 0锛屽洜姝や笉闄愬埗浠讳綍 writeback銆備篃灏辨槸璇达紝濡傛灉绠＄悊鍛樻兂瑕佸簲鐢?
+writeback 棰勭畻锛屼粬浠簲褰?
 
 ```
 	$ echo 1 > /sys/block/zramX/writeback_limit_enable
 ```
 
-一旦设置了 writeback_limit_enable，在管理员通过 /sys/block/zramX/writeback_limit
-设置预算之前，zram 不允许任何 writeback。
+涓€鏃﹁缃簡 writeback_limit_enable锛屽湪绠＄悊鍛橀€氳繃 /sys/block/zramX/writeback_limit
+璁剧疆棰勭畻涔嬪墠锛寊ram 涓嶅厑璁镐换浣?writeback銆?
 
-（如果管理员没有启用 writeback_limit_enable，那么通过 /sys/block/zramX/writeback_limit
-设置的 writeback_limit 值就没有意义。）
+锛堝鏋滅鐞嗗憳娌℃湁鍚敤 writeback_limit_enable锛岄偅涔堥€氳繃 /sys/block/zramX/writeback_limit
+璁剧疆鐨?writeback_limit 鍊煎氨娌℃湁鎰忎箟銆傦級
 
-如果管理员想在预算耗尽后再次允许写入，
+濡傛灉绠＄悊鍛樻兂鍦ㄩ绠楄€楀敖鍚庡啀娆″厑璁稿啓鍏ワ紝
 
 ```
 	$ echo $((400<<MB_SHIFT>>4K_SHIFT)) > \
 		/sys/block/zram0/writeback_limit
 ```
 
-如果管理员想要限制每天 400M 的 writeback，可以这样做
+濡傛灉绠＄悊鍛樻兂瑕侀檺鍒舵瘡澶?400M 鐨?writeback锛屽彲浠ヨ繖鏍峰仛
 
 ```
 	$ MB_SHIFT=20
@@ -412,110 +412,110 @@ writeback 预算，他们应当
 	$ echo 0 > /sys/block/zramX/writeback_limit_enable
 ```
 
-writeback_limit 计数会在你重置 zram 时（例如系统重启、echo 1 > /sys/block/zramX/reset）
-复位，因此记录重置 zram 之前发生了多少次 writeback，以便在下次设置时分配
-额外的 writeback 预算，是用户的工作。
+writeback_limit 璁℃暟浼氬湪浣犻噸缃?zram 鏃讹紙渚嬪绯荤粺閲嶅惎銆乪cho 1 > /sys/block/zramX/reset锛?
+澶嶄綅锛屽洜姝よ褰曢噸缃?zram 涔嬪墠鍙戠敓浜嗗灏戞 writeback锛屼互渚垮湪涓嬫璁剧疆鏃跺垎閰?
+棰濆鐨?writeback 棰勭畻锛屾槸鐢ㄦ埛鐨勫伐浣溿€?
 
-默认情况下，zram 以解压缩（原始）形式存储写回的页，这意味着 writeback
-操作在写入后端设备之前需要对该页进行解压缩。该行为可以通过启用
-`compressed_writeback` 功能来改变，该功能会让 zram 将压缩后的页写入后端
-设备，从而避免解压缩开销。要启用它，
+榛樿鎯呭喌涓嬶紝zram 浠ヨВ鍘嬬缉锛堝師濮嬶級褰㈠紡瀛樺偍鍐欏洖鐨勯〉锛岃繖鎰忓懗鐫€ writeback
+鎿嶄綔鍦ㄥ啓鍏ュ悗绔澶囦箣鍓嶉渶瑕佸璇ラ〉杩涜瑙ｅ帇缂┿€傝琛屼负鍙互閫氳繃鍚敤
+`compressed_writeback` 鍔熻兘鏉ユ敼鍙橈紝璇ュ姛鑳戒細璁?zram 灏嗗帇缂╁悗鐨勯〉鍐欏叆鍚庣
+璁惧锛屼粠鑰岄伩鍏嶈В鍘嬬缉寮€閿€銆傝鍚敤瀹冿紝
 
 ```
 	$ echo yes > /sys/block/zramX/compressed_writeback
 ```
 
-请注意，该功能应在 `zramX` 设备初始化之前配置。
+璇锋敞鎰忥紝璇ュ姛鑳藉簲鍦?`zramX` 璁惧鍒濆鍖栦箣鍓嶉厤缃€?
 
-根据后端设备的存储类型，writeback 操作可能受益于更多的在途写请求（批量
-写入）。最大的在途 writeback 操作数量可以通过 `writeback_batch_size` 属性
-配置。要更改默认值（为 32），
+鏍规嵁鍚庣璁惧鐨勫瓨鍌ㄧ被鍨嬶紝writeback 鎿嶄綔鍙兘鍙楃泭浜庢洿澶氱殑鍦ㄩ€斿啓璇锋眰锛堟壒閲?
+鍐欏叆锛夈€傛渶澶х殑鍦ㄩ€?writeback 鎿嶄綔鏁伴噺鍙互閫氳繃 `writeback_batch_size` 灞炴€?
+閰嶇疆銆傝鏇存敼榛樿鍊硷紙涓?32锛夛紝
 
 ```
 	$ echo 64 > /sys/block/zramX/writeback_batch_size
 ```
 
-如果管理员想测量某个时间段内的 writeback 计数，可以通过
-/sys/block/zram0/bd_stat 的第三列获知。
+濡傛灉绠＄悊鍛樻兂娴嬮噺鏌愪釜鏃堕棿娈靛唴鐨?writeback 璁℃暟锛屽彲浠ラ€氳繃
+/sys/block/zram0/bd_stat 鐨勭涓夊垪鑾风煡銆?
 
 ### recompression
 
 
-通过 `CONFIG_ZRAM_MULTI_COMP`，zram 可以使用替代（secondary）压缩算法对
-页进行重新压缩。其基本思想是，替代压缩算法可以以（潜在的）更慢的压缩/
-解压缩速度为代价，提供更好的压缩比。例如，替代压缩算法可以更有效地压缩
-huge 页（那些默认算法未能压缩的页）。另一个应用是 idle 页重新压缩——那些
-冷数据并驻留在内存中的页可以使用更有效的算法重新压缩，从而减少 zsmalloc
-的内存占用。
+閫氳繃 `CONFIG_ZRAM_MULTI_COMP`锛寊ram 鍙互浣跨敤鏇夸唬锛坰econdary锛夊帇缂╃畻娉曞
+椤佃繘琛岄噸鏂板帇缂┿€傚叾鍩烘湰鎬濇兂鏄紝鏇夸唬鍘嬬缉绠楁硶鍙互浠ワ紙娼滃湪鐨勶級鏇存參鐨勫帇缂?
+瑙ｅ帇缂╅€熷害涓轰唬浠凤紝鎻愪緵鏇村ソ鐨勫帇缂╂瘮銆備緥濡傦紝鏇夸唬鍘嬬缉绠楁硶鍙互鏇存湁鏁堝湴鍘嬬缉
+huge 椤碉紙閭ｄ簺榛樿绠楁硶鏈兘鍘嬬缉鐨勯〉锛夈€傚彟涓€涓簲鐢ㄦ槸 idle 椤甸噸鏂板帇缂┾€斺€旈偅浜?
+鍐锋暟鎹苟椹荤暀鍦ㄥ唴瀛樹腑鐨勯〉鍙互浣跨敤鏇存湁鏁堢殑绠楁硶閲嶆柊鍘嬬缉锛屼粠鑰屽噺灏?zsmalloc
+鐨勫唴瀛樺崰鐢ㄣ€?
 
-通过 `CONFIG_ZRAM_MULTI_COMP`，zram 最多支持 4 种压缩算法：1 个主算法和
-最多 3 个次级算法。zram 主压缩器在“3) 选择压缩算法”中已说明，次级算法
-通过 recomp_algorithm 设备属性配置。
+閫氳繃 `CONFIG_ZRAM_MULTI_COMP`锛寊ram 鏈€澶氭敮鎸?4 绉嶅帇缂╃畻娉曪細1 涓富绠楁硶鍜?
+鏈€澶?3 涓绾х畻娉曘€倆ram 涓诲帇缂╁櫒鍦ㄢ€?) 閫夋嫨鍘嬬缉绠楁硶鈥濅腑宸茶鏄庯紝娆＄骇绠楁硶
+閫氳繃 recomp_algorithm 璁惧灞炴€ч厤缃€?
 
 ```
-	# 显示支持的重新压缩算法
+	# 鏄剧ず鏀寔鐨勯噸鏂板帇缂╃畻娉?
 	cat /sys/block/zramX/recomp_algorithm
 	#1: lzo lzo-rle lz4 lz4hc [zstd]
 	#2: lzo lzo-rle lz4 [lz4hc] zstd
 ```
 
-替代压缩算法按优先级排序。在上例中，zstd 用作第一个替代算法，优先级为 1，
-而 lz4hc 被配置为优先级 2 的压缩算法。替代压缩算法的优先级是在配置算法时
-提供的：
+鏇夸唬鍘嬬缉绠楁硶鎸変紭鍏堢骇鎺掑簭銆傚湪涓婁緥涓紝zstd 鐢ㄤ綔绗竴涓浛浠ｇ畻娉曪紝浼樺厛绾т负 1锛?
+鑰?lz4hc 琚厤缃负浼樺厛绾?2 鐨勫帇缂╃畻娉曘€傛浛浠ｅ帇缂╃畻娉曠殑浼樺厛绾ф槸鍦ㄩ厤缃畻娉曟椂
+鎻愪緵鐨勶細
 
 ```
-	# 选择 zstd 重新压缩算法，优先级 1
+	# 閫夋嫨 zstd 閲嶆柊鍘嬬缉绠楁硶锛屼紭鍏堢骇 1
 	echo "algo=zstd priority=1" > /sys/block/zramX/recomp_algorithm
 
-	# 选择 deflate 重新压缩算法，优先级 2
+	# 閫夋嫨 deflate 閲嶆柊鍘嬬缉绠楁硶锛屼紭鍏堢骇 2
 	echo "algo=deflate priority=2" > /sys/block/zramX/recomp_algorithm
 ```
 
-`CONFIG_ZRAM_MULTI_COMP` 启用的另一个设备属性是 `recompress`，它控制
-重新压缩。
+`CONFIG_ZRAM_MULTI_COMP` 鍚敤鐨勫彟涓€涓澶囧睘鎬ф槸 `recompress`锛屽畠鎺у埗
+閲嶆柊鍘嬬缉銆?
 
 ```
-	# IDLE 页重新压缩由 `idle` 模式激活
+	# IDLE 椤甸噸鏂板帇缂╃敱 `idle` 妯″紡婵€娲?
 	echo "type=idle priority=1" > /sys/block/zramX/recompress
 
-	# HUGE 页重新压缩由 `huge` 模式激活
+	# HUGE 椤甸噸鏂板帇缂╃敱 `huge` 妯″紡婵€娲?
 	echo "type=huge priority=2" > /sys/block/zram0/recompress
 
-	# HUGE_IDLE 页重新压缩由 `huge_idle` 模式激活
+	# HUGE_IDLE 椤甸噸鏂板帇缂╃敱 `huge_idle` 妯″紡婵€娲?
 	echo "type=huge_idle priority=1" > /sys/block/zramX/recompress
 ```
 
-idle 页的数量可能很大，因此用户空间可以向 recompress 旋钮传入一个大小
-阈值（以字节为单位）：zram 将只重新压缩
+idle 椤电殑鏁伴噺鍙兘寰堝ぇ锛屽洜姝ょ敤鎴风┖闂村彲浠ュ悜 recompress 鏃嬮挳浼犲叆涓€涓ぇ灏?
+闃堝€硷紙浠ュ瓧鑺備负鍗曚綅锛夛細zram 灏嗗彧閲嶆柊鍘嬬缉
 
 ```
-	# 重新压缩大于 3000 字节的所有页
+	# 閲嶆柊鍘嬬缉澶т簬 3000 瀛楄妭鐨勬墍鏈夐〉
 	echo "threshold=3000 priority=1" > /sys/block/zramX/recompress
 
-	# 重新压缩大于 2000 字节的 idle 页
+	# 閲嶆柊鍘嬬缉澶т簬 2000 瀛楄妭鐨?idle 椤?
 	echo "type=idle threshold=2000 priority=1" > \
 		/sys/block/zramX/recompress
 ```
 
-也可以限制 zram 重新压缩的页数：
+涔熷彲浠ラ檺鍒?zram 閲嶆柊鍘嬬缉鐨勯〉鏁帮細
 
 ```
 	echo "type=huge_idle priority=1 max_pages=42" > \
 		/sys/block/zramX/recompress
 ```
 
-建议始终指定 `priority` 参数。虽然也可以指定 `algo` 参数，让 `zram` 通过
-算法名称来确定优先级，但并不推荐这样做，因为当同一算法以不同优先级配置时
-（例如不同参数）可能导致意想不到的结果。`priority` 是保证使用预期算法的
-唯一方式。
+寤鸿濮嬬粓鎸囧畾 `priority` 鍙傛暟銆傝櫧鐒朵篃鍙互鎸囧畾 `algo` 鍙傛暟锛岃 `zram` 閫氳繃
+绠楁硶鍚嶇О鏉ョ‘瀹氫紭鍏堢骇锛屼絾骞朵笉鎺ㄨ崘杩欐牱鍋氾紝鍥犱负褰撳悓涓€绠楁硶浠ヤ笉鍚屼紭鍏堢骇閰嶇疆鏃?
+锛堜緥濡備笉鍚屽弬鏁帮級鍙兘瀵艰嚧鎰忔兂涓嶅埌鐨勭粨鏋溿€俙priority` 鏄繚璇佷娇鐢ㄩ鏈熺畻娉曠殑
+鍞竴鏂瑰紡銆?
 
-## 内存跟踪
+## 鍐呭瓨璺熻釜
 
 
-通过 CONFIG_ZRAM_MEMORY_TRACKING，用户可以了解 zram 块的信息。它对于通过
-*pagemap 捕获进程的冷页或不可压缩页可能很有用。
+閫氳繃 CONFIG_ZRAM_MEMORY_TRACKING锛岀敤鎴峰彲浠ヤ簡瑙?zram 鍧楃殑淇℃伅銆傚畠瀵逛簬閫氳繃
+*pagemap 鎹曡幏杩涚▼鐨勫喎椤垫垨涓嶅彲鍘嬬缉椤靛彲鑳藉緢鏈夌敤銆?
 
-如果启用该功能，你可以通过如下方式查看块状态
+濡傛灉鍚敤璇ュ姛鑳斤紝浣犲彲浠ラ€氳繃濡備笅鏂瑰紡鏌ョ湅鍧楃姸鎬?
 
 ```
 	  300    75.033841 .wh...
@@ -525,29 +525,29 @@ idle 页的数量可能很大，因此用户空间可以向 recompress 旋钮传
 	  304   146.781902 ..hi.n
 ```
 
-第一列
-	zram 的块索引。
-第二列
-	自系统启动以来的访问时间
-第三列
-	块的状态：
+绗竴鍒?
+	zram 鐨勫潡绱㈠紩銆?
+绗簩鍒?
+	鑷郴缁熷惎鍔ㄤ互鏉ョ殑璁块棶鏃堕棿
+绗笁鍒?
+	鍧楃殑鐘舵€侊細
 
 	s:
-		相同页
+		鐩稿悓椤?
 	w:
-		已写入后端存储的页
+		宸插啓鍏ュ悗绔瓨鍌ㄧ殑椤?
 	h:
-		huge 页
+		huge 椤?
 	i:
-		idle 页
+		idle 椤?
 	r:
-		已重新压缩的页（次级压缩算法）
+		宸查噸鏂板帇缂╃殑椤碉紙娆＄骇鍘嬬缉绠楁硶锛?
 	n:
-		没有任何（包括次级的）算法能够压缩它
+		娌℃湁浠讳綍锛堝寘鎷绾х殑锛夌畻娉曡兘澶熷帇缂╁畠
 
-上述示例的第一行表示第 300 个块在 75.033841 秒时被访问，且该块的状态为
-huge，因此它被写回后端存储。这是一个调试功能，任何人都不要依赖它能正常
-工作。
+涓婅堪绀轰緥鐨勭涓€琛岃〃绀虹 300 涓潡鍦?75.033841 绉掓椂琚闂紝涓旇鍧楃殑鐘舵€佷负
+huge锛屽洜姝ゅ畠琚啓鍥炲悗绔瓨鍌ㄣ€傝繖鏄竴涓皟璇曞姛鑳斤紝浠讳綍浜洪兘涓嶈渚濊禆瀹冭兘姝ｅ父
+宸ヤ綔銆?
 
 Nitin Gupta
 ngupta@vflare.org

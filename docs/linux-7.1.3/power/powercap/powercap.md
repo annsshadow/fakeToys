@@ -1,135 +1,129 @@
-## 功耗封顶（Power Capping）框架
+﻿## 鍔熻€楀皝椤讹紙Power Capping锛夋鏋?
+
+鍔熻€楀皝椤舵鏋跺湪鍐呮牳涓庣敤鎴风┖闂翠箣闂存彁渚涗簡涓€鑷寸殑鎺ュ彛锛屼娇寰楀姛鑰楀皝椤堕┍鍔ㄨ兘澶熶互缁熶竴鐨勬柟寮忓皢鐩稿叧璁剧疆鏆撮湶缁欑敤鎴风┖闂淬€?
+## 鏈
 
 
-功耗封顶框架在内核与用户空间之间提供了一致的接口，使得功耗封顶驱动能够以统一的方式将相关设置暴露给用户空间。
-
-## 术语
-
-
-该框架通过 sysfs 以对象树的形式将功耗封顶设备暴露给用户空间。树根层级的对象代表“控制类型（control types）”，对应于不同的功耗封顶方法。例如，intel-rapl 控制类型代表 Intel 的“运行平均功率限制”（Running Average Power Limit，RAPL）技术，而 idle-injection 控制类型则对应于使用空闲注入（idle injection）来控制功耗。
-
-功耗区（power zone）代表系统中可以进行控制和监控的不同部分，使用其所归属的控制类型所确定的功耗封顶方法。它们各自包含用于监控功耗的属性，以及以功耗约束（power constraint）形式表示的控件。如果由不同功耗区所代表的系统各部分之间存在层次关系（即一个较大的部分由多个较小的、各自拥有独立功耗控制的部分组成），那么这些功耗区也可以组织成层次结构：一个父功耗区包含多个子区，以此类推，以反映系统的功耗控制拓扑。在这种情况下，可以通过父功耗区将功耗封顶同时应用于一组设备；如果需要更细粒度的控制，则可以通过子区来施加。
-
+璇ユ鏋堕€氳繃 sysfs 浠ュ璞℃爲鐨勫舰寮忓皢鍔熻€楀皝椤惰澶囨毚闇茬粰鐢ㄦ埛绌洪棿銆傛爲鏍瑰眰绾х殑瀵硅薄浠ｈ〃鈥滄帶鍒剁被鍨嬶紙control types锛夆€濓紝瀵瑰簲浜庝笉鍚岀殑鍔熻€楀皝椤舵柟娉曘€備緥濡傦紝intel-rapl 鎺у埗绫诲瀷浠ｈ〃 Intel 鐨勨€滆繍琛屽钩鍧囧姛鐜囬檺鍒垛€濓紙Running Average Power Limit锛孯APL锛夋妧鏈紝鑰?idle-injection 鎺у埗绫诲瀷鍒欏搴斾簬浣跨敤绌洪棽娉ㄥ叆锛坕dle injection锛夋潵鎺у埗鍔熻€椼€?
+鍔熻€楀尯锛坧ower zone锛変唬琛ㄧ郴缁熶腑鍙互杩涜鎺у埗鍜岀洃鎺х殑涓嶅悓閮ㄥ垎锛屼娇鐢ㄥ叾鎵€褰掑睘鐨勬帶鍒剁被鍨嬫墍纭畾鐨勫姛鑰楀皝椤舵柟娉曘€傚畠浠悇鑷寘鍚敤浜庣洃鎺у姛鑰楃殑灞炴€э紝浠ュ強浠ュ姛鑰楃害鏉燂紙power constraint锛夊舰寮忚〃绀虹殑鎺т欢銆傚鏋滅敱涓嶅悓鍔熻€楀尯鎵€浠ｈ〃鐨勭郴缁熷悇閮ㄥ垎涔嬮棿瀛樺湪灞傛鍏崇郴锛堝嵆涓€涓緝澶х殑閮ㄥ垎鐢卞涓緝灏忕殑銆佸悇鑷嫢鏈夌嫭绔嬪姛鑰楁帶鍒剁殑閮ㄥ垎缁勬垚锛夛紝閭ｄ箞杩欎簺鍔熻€楀尯涔熷彲浠ョ粍缁囨垚灞傛缁撴瀯锛氫竴涓埗鍔熻€楀尯鍖呭惈澶氫釜瀛愬尯锛屼互姝ょ被鎺紝浠ュ弽鏄犵郴缁熺殑鍔熻€楁帶鍒舵嫇鎵戙€傚湪杩欑鎯呭喌涓嬶紝鍙互閫氳繃鐖跺姛鑰楀尯灏嗗姛鑰楀皝椤跺悓鏃跺簲鐢ㄤ簬涓€缁勮澶囷紱濡傛灉闇€瑕佹洿缁嗙矑搴︾殑鎺у埗锛屽垯鍙互閫氳繃瀛愬尯鏉ユ柦鍔犮€?
 ```
   /sys/devices/virtual/powercap
-  └──intel-rapl
-      ├──intel-rapl:0
-      │   ├──constraint_0_name
-      │   ├──constraint_0_power_limit_uw
-      │   ├──constraint_0_time_window_us
-      │   ├──constraint_1_name
-      │   ├──constraint_1_power_limit_uw
-      │   ├──constraint_1_time_window_us
-      │   ├──device -> ../../intel-rapl
-      │   ├──energy_uj
-      │   ├──intel-rapl:0:0
-      │   │   ├──constraint_0_name
-      │   │   ├──constraint_0_power_limit_uw
-      │   │   ├──constraint_0_time_window_us
-      │   │   ├──constraint_1_name
-      │   │   ├──constraint_1_power_limit_uw
-      │   │   ├──constraint_1_time_window_us
-      │   │   ├──device -> ../../intel-rapl:0
-      │   │   ├──energy_uj
-      │   │   ├──max_energy_range_uj
-      │   │   ├──name
-      │   │   ├──enabled
-      │   │   ├──power
-      │   │   │   ├──async
-      │   │   │   []
-      │   │   ├──subsystem -> ../../../../../../class/power_cap
-      │   │   └──uevent
-      │   ├──intel-rapl:0:1
-      │   │   ├──constraint_0_name
-      │   │   ├──constraint_0_power_limit_uw
-      │   │   ├──constraint_0_time_window_us
-      │   │   ├──constraint_1_name
-      │   │   ├──constraint_1_power_limit_uw
-      │   │   ├──constraint_1_time_window_us
-      │   │   ├──device -> ../../intel-rapl:0
-      │   │   ├──energy_uj
-      │   │   ├──max_energy_range_uj
-      │   │   ├──name
-      │   │   ├──enabled
-      │   │   ├──power
-      │   │   │   ├──async
-      │   │   │   []
-      │   │   ├──subsystem -> ../../../../../../class/power_cap
-      │   │   └──uevent
-      │   ├──max_energy_range_uj
-      │   ├──max_power_range_uw
-      │   ├──name
-      │   ├──enabled
-      │   ├──power
-      │   │   ├──async
-      │   │   []
-      │   ├──subsystem -> ../../../../../class/power_cap
-      │   ├──enabled
-      │   ├──uevent
-      ├──intel-rapl:1
-      │   ├──constraint_0_name
-      │   ├──constraint_0_power_limit_uw
-      │   ├──constraint_0_time_window_us
-      │   ├──constraint_1_name
-      │   ├──constraint_1_power_limit_uw
-      │   ├──constraint_1_time_window_us
-      │   ├──device -> ../../intel-rapl
-      │   ├──energy_uj
-      │   ├──intel-rapl:1:0
-      │   │   ├──constraint_0_name
-      │   │   ├──constraint_0_power_limit_uw
-      │   │   ├──constraint_0_time_window_us
-      │   │   ├──constraint_1_name
-      │   │   ├──constraint_1_power_limit_uw
-      │   │   ├──constraint_1_time_window_us
-      │   │   ├──device -> ../../intel-rapl:1
-      │   │   ├──energy_uj
-      │   │   ├──max_energy_range_uj
-      │   │   ├──name
-      │   │   ├──enabled
-      │   │   ├──power
-      │   │   │   ├──async
-      │   │   │   []
-      │   │   ├──subsystem -> ../../../../../../class/power_cap
-      │   │   └──uevent
-      │   ├──intel-rapl:1:1
-      │   │   ├──constraint_0_name
-      │   │   ├──constraint_0_power_limit_uw
-      │   │   ├──constraint_0_time_window_us
-      │   │   ├──constraint_1_name
-      │   │   ├──constraint_1_power_limit_uw
-      │   │   ├──constraint_1_time_window_us
-      │   │   ├──device -> ../../intel-rapl:1
-      │   │   ├──energy_uj
-      │   │   ├──max_energy_range_uj
-      │   │   ├──name
-      │   │   ├──enabled
-      │   │   ├──power
-      │   │   │   ├──async
-      │   │   │   []
-      │   │   ├──subsystem -> ../../../../../../class/power_cap
-      │   │   └──uevent
-      │   ├──max_energy_range_uj
-      │   ├──max_power_range_uw
-      │   ├──name
-      │   ├──enabled
-      │   ├──power
-      │   │   ├──async
-      │   │   []
-      │   ├──subsystem -> ../../../../../class/power_cap
-      │   ├──uevent
-      ├──power
-      │   ├──async
-      │   []
-      ├──subsystem -> ../../../../class/power_cap
-      ├──enabled
-      └──uevent
+  鈹斺攢鈹€intel-rapl
+      鈹溾攢鈹€intel-rapl:0
+      鈹偮犅?鈹溾攢鈹€constraint_0_name
+      鈹偮犅?鈹溾攢鈹€constraint_0_power_limit_uw
+      鈹偮犅?鈹溾攢鈹€constraint_0_time_window_us
+      鈹偮犅?鈹溾攢鈹€constraint_1_name
+      鈹偮犅?鈹溾攢鈹€constraint_1_power_limit_uw
+      鈹偮犅?鈹溾攢鈹€constraint_1_time_window_us
+      鈹偮犅?鈹溾攢鈹€device -> ../../intel-rapl
+      鈹偮犅?鈹溾攢鈹€energy_uj
+      鈹偮犅?鈹溾攢鈹€intel-rapl:0:0
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_0_name
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_0_power_limit_uw
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_0_time_window_us
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_1_name
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_1_power_limit_uw
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_1_time_window_us
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€device -> ../../intel-rapl:0
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€energy_uj
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€max_energy_range_uj
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€name
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€enabled
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€power
+      鈹偮犅?鈹偮犅?鈹偮犅?鈹溾攢鈹€async
+      鈹偮犅?鈹偮犅?鈹偮犅?[]
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€subsystem -> ../../../../../../class/power_cap
+      鈹偮犅?鈹偮犅?鈹斺攢鈹€uevent
+      鈹偮犅?鈹溾攢鈹€intel-rapl:0:1
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_0_name
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_0_power_limit_uw
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_0_time_window_us
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_1_name
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_1_power_limit_uw
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_1_time_window_us
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€device -> ../../intel-rapl:0
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€energy_uj
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€max_energy_range_uj
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€name
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€enabled
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€power
+      鈹偮犅?鈹偮犅?鈹偮犅?鈹溾攢鈹€async
+      鈹偮犅?鈹偮犅?鈹偮犅?[]
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€subsystem -> ../../../../../../class/power_cap
+      鈹偮犅?鈹偮犅?鈹斺攢鈹€uevent
+      鈹偮犅?鈹溾攢鈹€max_energy_range_uj
+      鈹偮犅?鈹溾攢鈹€max_power_range_uw
+      鈹偮犅?鈹溾攢鈹€name
+      鈹偮犅?鈹溾攢鈹€enabled
+      鈹偮犅?鈹溾攢鈹€power
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€async
+      鈹偮犅?鈹偮犅?[]
+      鈹偮犅?鈹溾攢鈹€subsystem -> ../../../../../class/power_cap
+      鈹偮犅?鈹溾攢鈹€enabled
+      鈹偮犅?鈹溾攢鈹€uevent
+      鈹溾攢鈹€intel-rapl:1
+      鈹偮犅?鈹溾攢鈹€constraint_0_name
+      鈹偮犅?鈹溾攢鈹€constraint_0_power_limit_uw
+      鈹偮犅?鈹溾攢鈹€constraint_0_time_window_us
+      鈹偮犅?鈹溾攢鈹€constraint_1_name
+      鈹偮犅?鈹溾攢鈹€constraint_1_power_limit_uw
+      鈹偮犅?鈹溾攢鈹€constraint_1_time_window_us
+      鈹偮犅?鈹溾攢鈹€device -> ../../intel-rapl
+      鈹偮犅?鈹溾攢鈹€energy_uj
+      鈹偮犅?鈹溾攢鈹€intel-rapl:1:0
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_0_name
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_0_power_limit_uw
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_0_time_window_us
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_1_name
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_1_power_limit_uw
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_1_time_window_us
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€device -> ../../intel-rapl:1
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€energy_uj
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€max_energy_range_uj
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€name
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€enabled
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€power
+      鈹偮犅?鈹偮犅?鈹偮犅?鈹溾攢鈹€async
+      鈹偮犅?鈹偮犅?鈹偮犅?[]
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€subsystem -> ../../../../../../class/power_cap
+      鈹偮犅?鈹偮犅?鈹斺攢鈹€uevent
+      鈹偮犅?鈹溾攢鈹€intel-rapl:1:1
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_0_name
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_0_power_limit_uw
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_0_time_window_us
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_1_name
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_1_power_limit_uw
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€constraint_1_time_window_us
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€device -> ../../intel-rapl:1
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€energy_uj
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€max_energy_range_uj
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€name
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€enabled
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€power
+      鈹偮犅?鈹偮犅?鈹偮犅?鈹溾攢鈹€async
+      鈹偮犅?鈹偮犅?鈹偮犅?[]
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€subsystem -> ../../../../../../class/power_cap
+      鈹偮犅?鈹偮犅?鈹斺攢鈹€uevent
+      鈹偮犅?鈹溾攢鈹€max_energy_range_uj
+      鈹偮犅?鈹溾攢鈹€max_power_range_uw
+      鈹偮犅?鈹溾攢鈹€name
+      鈹偮犅?鈹溾攢鈹€enabled
+      鈹偮犅?鈹溾攢鈹€power
+      鈹偮犅?鈹偮犅?鈹溾攢鈹€async
+      鈹偮犅?鈹偮犅?[]
+      鈹偮犅?鈹溾攢鈹€subsystem -> ../../../../../class/power_cap
+      鈹偮犅?鈹溾攢鈹€uevent
+      鈹溾攢鈹€power
+      鈹偮犅?鈹溾攢鈹€async
+      鈹偮犅?[]
+      鈹溾攢鈹€subsystem -> ../../../../class/power_cap
+      鈹溾攢鈹€enabled
+      鈹斺攢鈹€uevent
 ```
 
-上述示例展示了使用 Intel® IA-64 与 IA-32 处理器架构中可用的 Intel RAPL 技术的情况。其中有一个名为 intel-rapl 的控制类型，它包含两个功耗区 intel-rapl:0 与 intel-rapl:1，代表 CPU 封装（package）。每个功耗区又包含两个子区 intel-rapl:j:0 与 intel-rapl:j:1（j = 0, 1），分别代表该 CPU 封装的“核心（core）”与“非核心（uncore）”部分。所有的区与子区都包含能耗监控属性（energy_uj、max_energy_range_uj）以及约束属性（constraint_*），用以施加控制（“封装（package）”功耗区中的约束作用于整个 CPU 封装，而子区约束只分别作用于该封装各自的部分）。由于 Intel RAPL 不提供瞬时功率值，因此没有 power_uw 属性。
-
-此外，每个功耗区还包含一个 name 属性，用于标识该区所代表的系统部分。
-
+涓婅堪绀轰緥灞曠ず浜嗕娇鐢?Intel庐 IA-64 涓?IA-32 澶勭悊鍣ㄦ灦鏋勪腑鍙敤鐨?Intel RAPL 鎶€鏈殑鎯呭喌銆傚叾涓湁涓€涓悕涓?intel-rapl 鐨勬帶鍒剁被鍨嬶紝瀹冨寘鍚袱涓姛鑰楀尯 intel-rapl:0 涓?intel-rapl:1锛屼唬琛?CPU 灏佽锛坧ackage锛夈€傛瘡涓姛鑰楀尯鍙堝寘鍚袱涓瓙鍖?intel-rapl:j:0 涓?intel-rapl:j:1锛坖 = 0, 1锛夛紝鍒嗗埆浠ｈ〃璇?CPU 灏佽鐨勨€滄牳蹇冿紙core锛夆€濅笌鈥滈潪鏍稿績锛坲ncore锛夆€濋儴鍒嗐€傛墍鏈夌殑鍖轰笌瀛愬尯閮藉寘鍚兘鑰楃洃鎺у睘鎬э紙energy_uj銆乵ax_energy_range_uj锛変互鍙婄害鏉熷睘鎬э紙constraint_*锛夛紝鐢ㄤ互鏂藉姞鎺у埗锛堚€滃皝瑁咃紙package锛夆€濆姛鑰楀尯涓殑绾︽潫浣滅敤浜庢暣涓?CPU 灏佽锛岃€屽瓙鍖虹害鏉熷彧鍒嗗埆浣滅敤浜庤灏佽鍚勮嚜鐨勯儴鍒嗭級銆傜敱浜?Intel RAPL 涓嶆彁渚涚灛鏃跺姛鐜囧€硷紝鍥犳娌℃湁 power_uw 灞炴€с€?
+姝ゅ锛屾瘡涓姛鑰楀尯杩樺寘鍚竴涓?name 灞炴€э紝鐢ㄤ簬鏍囪瘑璇ュ尯鎵€浠ｈ〃鐨勭郴缁熼儴鍒嗐€?
 ```
 	cat /sys/class/power_cap/intel-rapl/intel-rapl:0/name
 ```
@@ -137,9 +131,7 @@
 ### package-0
 
 
-根据功耗区的不同，Intel RAPL 技术允许对各个功耗区施加一个或多个约束，例如短期、长期以及峰值功率，并带有不同的时间窗口。
-所有的区都包含代表约束名称、功率限制以及时间窗口大小的属性。注意，时间窗口不适用于峰值功率。这里的 constraint_j_* 属性对应于第 j 个约束（j = 0,1,2）。
-
+鏍规嵁鍔熻€楀尯鐨勪笉鍚岋紝Intel RAPL 鎶€鏈厑璁稿鍚勪釜鍔熻€楀尯鏂藉姞涓€涓垨澶氫釜绾︽潫锛屼緥濡傜煭鏈熴€侀暱鏈熶互鍙婂嘲鍊煎姛鐜囷紝骞跺甫鏈変笉鍚岀殑鏃堕棿绐楀彛銆?鎵€鏈夌殑鍖洪兘鍖呭惈浠ｈ〃绾︽潫鍚嶇О銆佸姛鐜囬檺鍒朵互鍙婃椂闂寸獥鍙ｅぇ灏忕殑灞炴€с€傛敞鎰忥紝鏃堕棿绐楀彛涓嶉€傜敤浜庡嘲鍊煎姛鐜囥€傝繖閲岀殑 constraint_j_* 灞炴€у搴斾簬绗?j 涓害鏉燂紙j = 0,1,2锛夈€?
 ```
 	constraint_0_name
 	constraint_0_power_limit_uw
@@ -152,73 +144,46 @@
 	constraint_2_time_window_us
 ```
 
-## 功耗区属性
+## 鍔熻€楀尯灞炴€?
 
-
-### 监控属性
-
+### 鐩戞帶灞炴€?
 
 energy_uj (rw)
-	当前能耗计数器，单位为微焦（micro joules）。写入 “0” 以重置。
-	如果计数器无法重置，则该属性为只读。
-
+	褰撳墠鑳借€楄鏁板櫒锛屽崟浣嶄负寰劍锛坢icro joules锛夈€傚啓鍏?鈥?鈥?浠ラ噸缃€?	濡傛灉璁℃暟鍣ㄦ棤娉曢噸缃紝鍒欒灞炴€т负鍙銆?
 max_energy_range_uj (ro)
-	上述能耗计数器的范围，单位为微焦。
-
+	涓婅堪鑳借€楄鏁板櫒鐨勮寖鍥达紝鍗曚綅涓哄井鐒︺€?
 power_uw (ro)
-	当前功率，单位为微瓦。
-
+	褰撳墠鍔熺巼锛屽崟浣嶄负寰摝銆?
 max_power_range_uw (ro)
-	上述功率值的范围，单位为微瓦。
-
+	涓婅堪鍔熺巼鍊肩殑鑼冨洿锛屽崟浣嶄负寰摝銆?
 name (ro)
-	本功耗区的名称。
-
-某些域可能同时具有功率范围与能耗计数器范围；不过，二者中只有一个是必须的。
-
-### 约束
+	鏈姛鑰楀尯鐨勫悕绉般€?
+鏌愪簺鍩熷彲鑳藉悓鏃跺叿鏈夊姛鐜囪寖鍥翠笌鑳借€楄鏁板櫒鑼冨洿锛涗笉杩囷紝浜岃€呬腑鍙湁涓€涓槸蹇呴』鐨勩€?
+### 绾︽潫
 
 
 constraint_X_power_limit_uw (rw)
-	功率限制，单位为微瓦，应适用于由 “constraint_X_time_window_us” 指定的
-	时间窗口。
-
+	鍔熺巼闄愬埗锛屽崟浣嶄负寰摝锛屽簲閫傜敤浜庣敱 鈥渃onstraint_X_time_window_us鈥?鎸囧畾鐨?	鏃堕棿绐楀彛銆?
 constraint_X_time_window_us (rw)
-	时间窗口，单位为微秒。
-
+	鏃堕棿绐楀彛锛屽崟浣嶄负寰銆?
 constraint_X_name (ro)
-	约束的可选名称。
-
+	绾︽潫鐨勫彲閫夊悕绉般€?
 constraint_X_max_power_uw (ro)
-	允许的最大功率，单位为微瓦。
-
+	鍏佽鐨勬渶澶у姛鐜囷紝鍗曚綅涓哄井鐡︺€?
 constraint_X_min_power_uw (ro)
-	允许的最小功率，单位为微瓦。
-
+	鍏佽鐨勬渶灏忓姛鐜囷紝鍗曚綅涓哄井鐡︺€?
 constraint_X_max_time_window_us (ro)
-	允许的最大时间窗口，单位为微秒。
-
+	鍏佽鐨勬渶澶ф椂闂寸獥鍙ｏ紝鍗曚綅涓哄井绉掋€?
 constraint_X_min_time_window_us (ro)
-	允许的最小时间窗口，单位为微秒。
+	鍏佽鐨勬渶灏忔椂闂寸獥鍙ｏ紝鍗曚綅涓哄井绉掋€?
+闄?power_limit_uw 涓?time_window_us 澶栵紝鍏朵綑瀛楁鍧囦负鍙€夈€?
+### 閫氱敤鍖轰笌鎺у埗绫诲瀷灞炴€?
 
-除 power_limit_uw 与 time_window_us 外，其余字段均为可选。
-
-### 通用区与控制类型属性
-
-
-enabled (rw)：在区级别或使用某个控制类型对所有区启用/禁用控制。
-
-## 功耗封顶客户端驱动接口
+enabled (rw)锛氬湪鍖虹骇鍒垨浣跨敤鏌愪釜鎺у埗绫诲瀷瀵规墍鏈夊尯鍚敤/绂佺敤鎺у埗銆?
+## 鍔熻€楀皝椤跺鎴风椹卞姩鎺ュ彛
 
 
-API 概要：
-
-调用 powercap_register_control_type() 注册控制类型对象。
-调用 powercap_register_zone() 注册一个功耗区（在某个给定的控制类型下），
-既可以作为顶层功耗区，也可以作为先前注册的另一个功耗区的子区。
-在调用 powercap_register_zone() 注册某个功耗区之前，必须先定义该区中
-约束的数量以及相应的回调函数。
-
-要释放一个功耗区，调用 powercap_unregister_zone()。
-要释放一个控制类型对象，调用 powercap_unregister_control_type()。
-详细的 API 可以通过对 include/linux/powercap.h 使用 kernel-doc 生成。
+API 姒傝锛?
+璋冪敤 powercap_register_control_type() 娉ㄥ唽鎺у埗绫诲瀷瀵硅薄銆?璋冪敤 powercap_register_zone() 娉ㄥ唽涓€涓姛鑰楀尯锛堝湪鏌愪釜缁欏畾鐨勬帶鍒剁被鍨嬩笅锛夛紝
+鏃㈠彲浠ヤ綔涓洪《灞傚姛鑰楀尯锛屼篃鍙互浣滀负鍏堝墠娉ㄥ唽鐨勫彟涓€涓姛鑰楀尯鐨勫瓙鍖恒€?鍦ㄨ皟鐢?powercap_register_zone() 娉ㄥ唽鏌愪釜鍔熻€楀尯涔嬪墠锛屽繀椤诲厛瀹氫箟璇ュ尯涓?绾︽潫鐨勬暟閲忎互鍙婄浉搴旂殑鍥炶皟鍑芥暟銆?
+瑕侀噴鏀句竴涓姛鑰楀尯锛岃皟鐢?powercap_unregister_zone()銆?瑕侀噴鏀句竴涓帶鍒剁被鍨嬪璞★紝璋冪敤 powercap_unregister_control_type()銆?璇︾粏鐨?API 鍙互閫氳繃瀵?include/linux/powercap.h 浣跨敤 kernel-doc 鐢熸垚銆?

@@ -1,14 +1,14 @@
-## WMI 内嵌二进制 MOF 驱动
+﻿## WMI 鍐呭祵浜岃繘鍒?MOF 椹卞姩
 
 
-## 简介
+## 绠€浠?
 
 
-许多机器内嵌了用于描述其 ACPI WMI 接口细节的 WMI 二进制 MOF（Managed Object Format）元数据。这些数据可通过 `bmfdec <https://github.com/pali/bmfdec>`_ 之类的工具解码，以获得可读性良好的 WMI 接口描述，这对开发新的 WMI 驱动很有用。
+璁稿鏈哄櫒鍐呭祵浜嗙敤浜庢弿杩板叾 ACPI WMI 鎺ュ彛缁嗚妭鐨?WMI 浜岃繘鍒?MOF锛圡anaged Object Format锛夊厓鏁版嵁銆傝繖浜涙暟鎹彲閫氳繃 `bmfdec <https://github.com/pali/bmfdec>`_ 涔嬬被鐨勫伐鍏疯В鐮侊紝浠ヨ幏寰楀彲璇绘€ц壇濂界殑 WMI 鎺ュ彛鎻忚堪锛岃繖瀵瑰紑鍙戞柊鐨?WMI 椹卞姩寰堟湁鐢ㄣ€?
 
-二进制 MOF 数据可从相关 WMI 设备的 `bmof` sysfs 属性中获取。请注意，给定系统上可能存在多个包含二进制 MOF 数据的 WMI 设备。
+浜岃繘鍒?MOF 鏁版嵁鍙粠鐩稿叧 WMI 璁惧鐨?`bmof` sysfs 灞炴€т腑鑾峰彇銆傝娉ㄦ剰锛岀粰瀹氱郴缁熶笂鍙兘瀛樺湪澶氫釜鍖呭惈浜岃繘鍒?MOF 鏁版嵁鐨?WMI 璁惧銆?
 
-## WMI 接口
+## WMI 鎺ュ彛
 
 
-二进制 MOF WMI 设备由 WMI GUID `05901221-D566-11D1-B2F0-00A0C9062910` 标识。二进制 MOF 可通过执行 WMI 数据块查询获取。结果随后以可变大小的 ACPI 缓冲区形式返回。
+浜岃繘鍒?MOF WMI 璁惧鐢?WMI GUID `05901221-D566-11D1-B2F0-00A0C9062910` 鏍囪瘑銆備簩杩涘埗 MOF 鍙€氳繃鎵ц WMI 鏁版嵁鍧楁煡璇㈣幏鍙栥€傜粨鏋滈殢鍚庝互鍙彉澶у皬鐨?ACPI 缂撳啿鍖哄舰寮忚繑鍥炪€?

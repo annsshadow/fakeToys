@@ -1,37 +1,29 @@
+﻿
+## 鍐呮牳椹卞姩 i2c-sis630
 
-## 内核驱动 i2c-sis630
 
-
-支持适配器：
+鏀寔閫傞厤鍣細
   - Silicon Integrated Systems Corp (SiS)
-	630 芯片组（Datasheet: available at http://www.sfr-fresh.com/linux）
-	730 芯片组
-	964 芯片组
-  - 可能还有其他 SiS 芯片组？
+	630 鑺墖缁勶紙Datasheet: available at http://www.sfr-fresh.com/linux锛?	730 鑺墖缁?	964 鑺墖缁?  - 鍙兘杩樻湁鍏朵粬 SiS 鑺墖缁勶紵
 
 Author:
         - Alexander Malysh <amalysh@web.de>
- - Amaury Decrême <amaury.decreme@gmail.com> - SiS964 支持
+ - Amaury Decr锚me <amaury.decreme@gmail.com> - SiS964 鏀寔
 
-### 模块参数
+### 妯″潡鍙傛暟
 
 
 ==================      =====================================================
-force = [1|0]           强制启用 SIS630。危险！
-                        这对于上述未列出的芯片组可能有用，以检查它是否适用于你的
-                        芯片组，但很危险！
-
-high_clock = [1|0]      强制将主机主时钟设为 56KHz（默认即你的 BIOS 所用值）。危险！
-			这应该会稍快一些，但会使某些系统（如我的笔记本）死机。
-			SIS630/730 芯片专用。
-==================      =====================================================
+force = [1|0]           寮哄埗鍚敤 SIS630銆傚嵄闄╋紒
+                        杩欏浜庝笂杩版湭鍒楀嚭鐨勮姱鐗囩粍鍙兘鏈夌敤锛屼互妫€鏌ュ畠鏄惁閫傜敤浜庝綘鐨?                        鑺墖缁勶紝浣嗗緢鍗遍櫓锛?
+high_clock = [1|0]      寮哄埗灏嗕富鏈轰富鏃堕挓璁句负 56KHz锛堥粯璁ゅ嵆浣犵殑 BIOS 鎵€鐢ㄥ€硷級銆傚嵄闄╋紒
+			杩欏簲璇ヤ細绋嶅揩涓€浜涳紝浣嗕細浣挎煇浜涚郴缁燂紙濡傛垜鐨勭瑪璁版湰锛夋鏈恒€?			SIS630/730 鑺墖涓撶敤銆?==================      =====================================================
 
 
-### 描述
+### 鎻忚堪
 
 
-已知该仅支持 SMBus 的驱动可在使用上述芯片组的主板上工作。
-
+宸茬煡璇ヤ粎鏀寔 SMBus 鐨勯┍鍔ㄥ彲鍦ㄤ娇鐢ㄤ笂杩拌姱鐗囩粍鐨勪富鏉夸笂宸ヤ綔銆?
 ```
 
   00:00.0 Host bridge: Silicon Integrated Systems [SiS] 630 Host (rev 31)
@@ -49,14 +41,13 @@ high_clock = [1|0]      强制将主机主时钟设为 56KHz（默认即你的 B
 							LPC Controller (rev 36)
 
 ```
-若上述输出出现在你的 `lspci` 输出中，则本驱动适用于你的芯片组。
-
-### 致谢
+鑻ヤ笂杩拌緭鍑哄嚭鐜板湪浣犵殑 `lspci` 杈撳嚭涓紝鍒欐湰椹卞姩閫傜敤浜庝綘鐨勮姱鐗囩粍銆?
+### 鑷磋阿
 
 
 Philip Edelbrock <phil@netroedge.com>
-- 测试 SiS730 支持
+- 娴嬭瘯 SiS730 鏀寔
 Mark M. Hoffman <mhoffman@lightlink.com>
-- bug 修复
+- bug 淇
 
-也感谢这里被我遗漏的任何人 ;)
+涔熸劅璋㈣繖閲岃鎴戦仐婕忕殑浠讳綍浜?;)

@@ -1,256 +1,177 @@
-
-## x86 拓扑
-
-
-本文档记录并阐明了 x86 拓扑在内核中的建模与表示的主要方面。在对相应代码进行更改时，请同步更新/修改本文档。
-
-架构无关的拓扑定义位于 Documentation/admin-guide/cputopology.rst。本文件保存的是 x86 特有的差异/特殊性，这些不一定适用于通用定义。因此，在 x86 上了解 Linux 拓扑的方法是：先阅读通用定义，同时对照本文件查看 x86 特有的部分。
-
-不用说，代码应当使用通用的函数——本文件**仅仅**是为了**记录** x86 拓扑的内部运作机制。
-
-由 Thomas Gleixner <tglx@kernel.org> 与 Borislav Petkov <bp@alien8.de> 发起。
-
-拓扑设施的主要目标是向那些需要了解/查询/使用运行系统的结构（涉及线程、核、封装等）的代码，提供恰当的接口。
-
-内核并不关心物理插槽（socket）这一概念，因为插槽与软件无关，它只是一个机电组件。过去一个插槽总是包含一个封装（见下文），但随着多芯片模块（MCM）的出现，一个插槽可以容纳多个封装。因此代码中可能仍有对插槽的引用，但它们属于历史遗留，应当被清理掉。
-
-系统的拓扑用以下单位描述：
-
-    - 封装（packages）
-    - 核（cores）
-    - 线程（threads）
-
-## 封装（Package）
+﻿
+## x86 鎷撴墤
 
 
-封装包含一个或多个核以及共享资源，例如 DRAM 控制器、共享缓存等。
+鏈枃妗ｈ褰曞苟闃愭槑浜?x86 鎷撴墤鍦ㄥ唴鏍镐腑鐨勫缓妯′笌琛ㄧず鐨勪富瑕佹柟闈€傚湪瀵圭浉搴斾唬鐮佽繘琛屾洿鏀规椂锛岃鍚屾鏇存柊/淇敼鏈枃妗ｃ€?
+鏋舵瀯鏃犲叧鐨勬嫇鎵戝畾涔変綅浜?Documentation/admin-guide/cputopology.rst銆傛湰鏂囦欢淇濆瓨鐨勬槸 x86 鐗规湁鐨勫樊寮?鐗规畩鎬э紝杩欎簺涓嶄竴瀹氶€傜敤浜庨€氱敤瀹氫箟銆傚洜姝わ紝鍦?x86 涓婁簡瑙?Linux 鎷撴墤鐨勬柟娉曟槸锛氬厛闃呰閫氱敤瀹氫箟锛屽悓鏃跺鐓ф湰鏂囦欢鏌ョ湅 x86 鐗规湁鐨勯儴鍒嗐€?
+涓嶇敤璇达紝浠ｇ爜搴斿綋浣跨敤閫氱敤鐨勫嚱鏁扳€斺€旀湰鏂囦欢**浠呬粎**鏄负浜?*璁板綍** x86 鎷撴墤鐨勫唴閮ㄨ繍浣滄満鍒躲€?
+鐢?Thomas Gleixner <tglx@kernel.org> 涓?Borislav Petkov <bp@alien8.de> 鍙戣捣銆?
+鎷撴墤璁炬柦鐨勪富瑕佺洰鏍囨槸鍚戦偅浜涢渶瑕佷簡瑙?鏌ヨ/浣跨敤杩愯绯荤粺鐨勭粨鏋勶紙娑夊強绾跨▼銆佹牳銆佸皝瑁呯瓑锛夌殑浠ｇ爜锛屾彁渚涙伆褰撶殑鎺ュ彛銆?
+鍐呮牳骞朵笉鍏冲績鐗╃悊鎻掓Ы锛坰ocket锛夎繖涓€姒傚康锛屽洜涓烘彃妲戒笌杞欢鏃犲叧锛屽畠鍙槸涓€涓満鐢电粍浠躲€傝繃鍘讳竴涓彃妲芥€绘槸鍖呭惈涓€涓皝瑁咃紙瑙佷笅鏂囷級锛屼絾闅忕潃澶氳姱鐗囨ā鍧楋紙MCM锛夌殑鍑虹幇锛屼竴涓彃妲藉彲浠ュ绾冲涓皝瑁呫€傚洜姝や唬鐮佷腑鍙兘浠嶆湁瀵规彃妲界殑寮曠敤锛屼絾瀹冧滑灞炰簬鍘嗗彶閬楃暀锛屽簲褰撹娓呯悊鎺夈€?
+绯荤粺鐨勬嫇鎵戠敤浠ヤ笅鍗曚綅鎻忚堪锛?
+    - 灏佽锛坧ackages锛?    - 鏍革紙cores锛?    - 绾跨▼锛坱hreads锛?
+## 灏佽锛圥ackage锛?
 
-现代系统也可能用术语 “Die” 来表示封装。
-
-AMD 对封装的术语是 “Node”。
-
-内核中与封装相关的拓扑信息：
+灏佽鍖呭惈涓€涓垨澶氫釜鏍镐互鍙婂叡浜祫婧愶紝渚嬪 DRAM 鎺у埗鍣ㄣ€佸叡浜紦瀛樼瓑銆?
+鐜颁唬绯荤粺涔熷彲鑳界敤鏈 鈥淒ie鈥?鏉ヨ〃绀哄皝瑁呫€?
+AMD 瀵瑰皝瑁呯殑鏈鏄?鈥淣ode鈥濄€?
+鍐呮牳涓笌灏佽鐩稿叧鐨勬嫇鎵戜俊鎭細
 
   - topology_num_threads_per_package()
 
-    一个封装中的线程数量。
-
+    涓€涓皝瑁呬腑鐨勭嚎绋嬫暟閲忋€?
   - topology_num_cores_per_package()
 
-    一个封装中的核数量。
-
+    涓€涓皝瑁呬腑鐨勬牳鏁伴噺銆?
   - topology_max_dies_per_package()
 
-    一个封装中 die 的最大数量。
-
+    涓€涓皝瑁呬腑 die 鐨勬渶澶ф暟閲忋€?
   - cpuinfo_x86.topo.die_id:
 
-    die 的物理 ID。
-
+    die 鐨勭墿鐞?ID銆?
   - cpuinfo_x86.topo.pkg_id:
 
-    封装的物理 ID。该信息通过 CPUID 获取，并由封装中各个核的 APIC ID 推导而来。
-
-    现代系统将此值用于插槽。一个插槽内可能存在多个封装。该值可能与 topo.die_id 不同。
-
+    灏佽鐨勭墿鐞?ID銆傝淇℃伅閫氳繃 CPUID 鑾峰彇锛屽苟鐢卞皝瑁呬腑鍚勪釜鏍哥殑 APIC ID 鎺ㄥ鑰屾潵銆?
+    鐜颁唬绯荤粺灏嗘鍊肩敤浜庢彃妲姐€備竴涓彃妲藉唴鍙兘瀛樺湪澶氫釜灏佽銆傝鍊煎彲鑳戒笌 topo.die_id 涓嶅悓銆?
   - cpuinfo_x86.topo.logical_pkg_id:
 
-    封装的逻辑 ID。由于我们不信任 BIOS 以一致的方式枚举封装，因此引入了逻辑封装 ID 的概念，这样我们就能合理地计算出系统中最大可能的封装数量，并让封装被线性枚举。
-
+    灏佽鐨勯€昏緫 ID銆傜敱浜庢垜浠笉淇′换 BIOS 浠ヤ竴鑷寸殑鏂瑰紡鏋氫妇灏佽锛屽洜姝ゅ紩鍏ヤ簡閫昏緫灏佽 ID 鐨勬蹇碉紝杩欐牱鎴戜滑灏辫兘鍚堢悊鍦拌绠楀嚭绯荤粺涓渶澶у彲鑳界殑灏佽鏁伴噺锛屽苟璁╁皝瑁呰绾挎€ф灇涓俱€?
   - topology_max_packages():
 
-    系统中可能的封装最大数量。对于按封装的设施而言，可用于预分配每个封装的信息。
-
+    绯荤粺涓彲鑳界殑灏佽鏈€澶ф暟閲忋€傚浜庢寜灏佽鐨勮鏂借€岃█锛屽彲鐢ㄤ簬棰勫垎閰嶆瘡涓皝瑁呯殑淇℃伅銆?
   - cpuinfo_x86.topo.llc_id:
 
-      - 在 Intel 上，是共享末级缓存（Last Level Cache）的 CPU 列表中的第一个 APIC ID。
+      - 鍦?Intel 涓婏紝鏄叡浜湯绾х紦瀛橈紙Last Level Cache锛夌殑 CPU 鍒楄〃涓殑绗竴涓?APIC ID銆?
+      - 鍦?AMD 涓婏紝鏄寘鍚湯绾х紦瀛樼殑 Node ID 鎴?Core Complex ID銆備竴鑸潵璇达紝瀹冩槸涓€涓兘鍦ㄧ郴缁熶笂鍞竴鏍囪瘑涓€涓?LLC 鐨勭紪鍙枫€?
+## 鏍革紙Cores锛?
 
-      - 在 AMD 上，是包含末级缓存的 Node ID 或 Core Complex ID。一般来说，它是一个能在系统上唯一标识一个 LLC 的编号。
+涓€涓牳鐢?1 涓垨澶氫釜绾跨▼缁勬垚銆傜嚎绋嬫槸 SMT 绫诲瀷杩樻槸 CMT 绫诲瀷骞舵棤褰卞搷銆?
+AMD 瀵?CMT 鏍哥殑鏈鏄?鈥淐ompute Unit鈥濄€傚唴鏍稿缁堜娇鐢?鈥渃ore鈥濄€?
+## 绾跨▼锛圱hreads锛?
 
-## 核（Cores）
-
-
-一个核由 1 个或多个线程组成。线程是 SMT 类型还是 CMT 类型并无影响。
-
-AMD 对 CMT 核的术语是 “Compute Unit”。内核始终使用 “core”。
-
-## 线程（Threads）
-
-
-一个线程是一个单一的调度单元。它等价于一个逻辑 Linux CPU。
-
-AMD 对 CMT 线程的术语是 “Compute Unit Core”。内核始终使用 “thread”。
-
-内核中与线程相关的拓扑信息：
+涓€涓嚎绋嬫槸涓€涓崟涓€鐨勮皟搴﹀崟鍏冦€傚畠绛変环浜庝竴涓€昏緫 Linux CPU銆?
+AMD 瀵?CMT 绾跨▼鐨勬湳璇槸 鈥淐ompute Unit Core鈥濄€傚唴鏍稿缁堜娇鐢?鈥渢hread鈥濄€?
+鍐呮牳涓笌绾跨▼鐩稿叧鐨勬嫇鎵戜俊鎭細
 
   - topology_core_cpumask():
 
-    cpumask 包含该线程所属封装中的所有在线线程。
-
-    在线线程的数量也会打印在 /proc/cpuinfo 的 “siblings” 中。
-
+    cpumask 鍖呭惈璇ョ嚎绋嬫墍灞炲皝瑁呬腑鐨勬墍鏈夊湪绾跨嚎绋嬨€?
+    鍦ㄧ嚎绾跨▼鐨勬暟閲忎篃浼氭墦鍗板湪 /proc/cpuinfo 鐨?鈥渟iblings鈥?涓€?
   - topology_sibling_cpumask():
 
-    cpumask 包含该线程所属核中的所有在线线程。
-
+    cpumask 鍖呭惈璇ョ嚎绋嬫墍灞炴牳涓殑鎵€鏈夊湪绾跨嚎绋嬨€?
   - topology_logical_package_id():
 
-    该线程所属的逻辑封装 ID。
-
+    璇ョ嚎绋嬫墍灞炵殑閫昏緫灏佽 ID銆?
   - topology_physical_package_id():
 
-    该线程所属的物理封装 ID。
-
+    璇ョ嚎绋嬫墍灞炵殑鐗╃悊灏佽 ID銆?
   - topology_core_id();
 
-    该线程所属核的 ID。它也会打印在 /proc/cpuinfo 的 “core_id” 中。
-
+    璇ョ嚎绋嬫墍灞炴牳鐨?ID銆傚畠涔熶細鎵撳嵃鍦?/proc/cpuinfo 鐨?鈥渃ore_id鈥?涓€?
   - topology_logical_core_id();
 
-    该线程所属的逻辑核 ID。
+    璇ョ嚎绋嬫墍灞炵殑閫昏緫鏍?ID銆?
 
 
+## 绯荤粺鎷撴墤鏋氫妇
 
-## 系统拓扑枚举
 
-
-x86 系统上的拓扑可以通过组合各厂商特定的 CPUID 叶子（leaf）来发现，这些叶子枚举了处理器拓扑与缓存层次结构。
-
-各 x86 厂商在解析时优先顺序如下的 CPUID 叶子：
-
+x86 绯荤粺涓婄殑鎷撴墤鍙互閫氳繃缁勫悎鍚勫巶鍟嗙壒瀹氱殑 CPUID 鍙跺瓙锛坙eaf锛夋潵鍙戠幇锛岃繖浜涘彾瀛愭灇涓句簡澶勭悊鍣ㄦ嫇鎵戜笌缂撳瓨灞傛缁撴瀯銆?
+鍚?x86 鍘傚晢鍦ㄨВ鏋愭椂浼樺厛椤哄簭濡備笅鐨?CPUID 鍙跺瓙锛?
 1) AMD
 
    1) CPUID leaf 0x80000026 [Extended CPU Topology] (Core::X86::Cpuid::ExCpuTopology)
 
-      扩展 CPUID 叶子 0x80000026 是 CPUID 叶子 0xB 的扩展，提供了每一层级中 Core、Complex、CCD（Die）和 Socket 的拓扑信息。
-
-      通过检查最大扩展 CPUID 级别是否 >= 0x80000026，然后检查特定层级（从 0 开始）的 `EBX[15:0]` 中的 `LogProcAtThisLevel` 是否非零，来发现对该叶子的支持。
-
-      该层级中 `ECX[15:8]` 里的 `LevelType` 给出了该层级所描述的拓扑域——Core、Complex、CCD（Die）或 Socket。
-
-      内核使用 `EAX[4:0]` 中的 `CoreMaskWidth` 来获知需要从 `EDX[31:0]` 中的 `ExtendedLocalApicId` 右移多少位，以得到该拓扑层级的唯一拓扑 ID。具有相同拓扑 ID 的 CPU 共享该层级的资源。
-
-      CPUID 叶子 0x80000026 还提供了关于功耗与效能等级、以及具有异构特性的 AMD 处理器上核类型方面的更多信息。
-
-      如果支持 CPUID 叶子 0x80000026，则无需进一步解析。
-
+      鎵╁睍 CPUID 鍙跺瓙 0x80000026 鏄?CPUID 鍙跺瓙 0xB 鐨勬墿灞曪紝鎻愪緵浜嗘瘡涓€灞傜骇涓?Core銆丆omplex銆丆CD锛圖ie锛夊拰 Socket 鐨勬嫇鎵戜俊鎭€?
+      閫氳繃妫€鏌ユ渶澶ф墿灞?CPUID 绾у埆鏄惁 >= 0x80000026锛岀劧鍚庢鏌ョ壒瀹氬眰绾э紙浠?0 寮€濮嬶級鐨?`EBX[15:0]` 涓殑 `LogProcAtThisLevel` 鏄惁闈為浂锛屾潵鍙戠幇瀵硅鍙跺瓙鐨勬敮鎸併€?
+      璇ュ眰绾т腑 `ECX[15:8]` 閲岀殑 `LevelType` 缁欏嚭浜嗚灞傜骇鎵€鎻忚堪鐨勬嫇鎵戝煙鈥斺€擟ore銆丆omplex銆丆CD锛圖ie锛夋垨 Socket銆?
+      鍐呮牳浣跨敤 `EAX[4:0]` 涓殑 `CoreMaskWidth` 鏉ヨ幏鐭ラ渶瑕佷粠 `EDX[31:0]` 涓殑 `ExtendedLocalApicId` 鍙崇Щ澶氬皯浣嶏紝浠ュ緱鍒拌鎷撴墤灞傜骇鐨勫敮涓€鎷撴墤 ID銆傚叿鏈夌浉鍚屾嫇鎵?ID 鐨?CPU 鍏变韩璇ュ眰绾х殑璧勬簮銆?
+      CPUID 鍙跺瓙 0x80000026 杩樻彁渚涗簡鍏充簬鍔熻€椾笌鏁堣兘绛夌骇銆佷互鍙婂叿鏈夊紓鏋勭壒鎬х殑 AMD 澶勭悊鍣ㄤ笂鏍哥被鍨嬫柟闈㈢殑鏇村淇℃伅銆?
+      濡傛灉鏀寔 CPUID 鍙跺瓙 0x80000026锛屽垯鏃犻渶杩涗竴姝ヨВ鏋愩€?
    2) CPUID leaf 0x0000000B [Extended Topology Enumeration] (Core::X86::Cpuid::ExtTopEnum)
 
-      扩展 CPUID 叶子 0x0000000B 是扩展 CPUID 叶子 0x80000026 的前身，仅描述处理器拓扑的核与插槽域。
-
-      通过检查最大支持的 CPUID 级别是否 >= 0xB，然后检查特定层级（从 0 开始）的 `EBX[31:0]` 是否非零，来发现对该叶子的支持。
-
-      该层级中 `ECX[15:8]` 里的 `LevelType` 给出了该层级所描述的拓扑域——Thread 或 Processor（Socket）。
-
-      内核使用 `EAX[4:0]` 中的 `CoreMaskWidth` 来获知需要从 `EDX[31:0]` 中的 `ExtendedLocalApicId` 右移多少位，以得到该拓扑层级的唯一拓扑 ID。共享该拓扑 ID 的 CPU 共享该层级的资源。
-
-      如果支持 CPUID 叶子 0xB，则无需进一步解析。
-
+      鎵╁睍 CPUID 鍙跺瓙 0x0000000B 鏄墿灞?CPUID 鍙跺瓙 0x80000026 鐨勫墠韬紝浠呮弿杩板鐞嗗櫒鎷撴墤鐨勬牳涓庢彃妲藉煙銆?
+      閫氳繃妫€鏌ユ渶澶ф敮鎸佺殑 CPUID 绾у埆鏄惁 >= 0xB锛岀劧鍚庢鏌ョ壒瀹氬眰绾э紙浠?0 寮€濮嬶級鐨?`EBX[31:0]` 鏄惁闈為浂锛屾潵鍙戠幇瀵硅鍙跺瓙鐨勬敮鎸併€?
+      璇ュ眰绾т腑 `ECX[15:8]` 閲岀殑 `LevelType` 缁欏嚭浜嗚灞傜骇鎵€鎻忚堪鐨勬嫇鎵戝煙鈥斺€擳hread 鎴?Processor锛圫ocket锛夈€?
+      鍐呮牳浣跨敤 `EAX[4:0]` 涓殑 `CoreMaskWidth` 鏉ヨ幏鐭ラ渶瑕佷粠 `EDX[31:0]` 涓殑 `ExtendedLocalApicId` 鍙崇Щ澶氬皯浣嶏紝浠ュ緱鍒拌鎷撴墤灞傜骇鐨勫敮涓€鎷撴墤 ID銆傚叡浜鎷撴墤 ID 鐨?CPU 鍏变韩璇ュ眰绾х殑璧勬簮銆?
+      濡傛灉鏀寔 CPUID 鍙跺瓙 0xB锛屽垯鏃犻渶杩涗竴姝ヨВ鏋愩€?
 
    3) CPUID leaf 0x80000008 ECX [Size Identifiers] (Core::X86::Cpuid::SizeId)
 
-      如果既不支持 CPUID 叶子 0x80000026 也不支持 0xB，则使用 Size Identifier 叶子 0x80000008 ECX 来检测封装上的 CPU 数量。
-
-      通过检查支持的扩展 CPUID 级别是否 >= 0x80000008，来发现对该叶子的支持。
-
-      若 `ECX[15:12]` 中的 `ApicIdSize` 字段非零，则从 APIC ID 到 Socket ID 的位移量由该字段计算得出。
-
-      如果 `ApicIdSize` 报告为零，则位移量按 `ECX[7:0]` 中 `NC` 字段（描述封装上 `线程数 - 1`）计算出的 `线程数` 的阶来计算。
-
-      除非支持 Extended APIC ID，否则用于查找 Socket ID 的 APIC ID 来自 CPUID 叶子 0x00000001 `EBX[31:24]` 中的 `LocalApicId` 字段。
-
-      拓扑解析将继续检测是否支持 Extended APIC ID。
-
+      濡傛灉鏃笉鏀寔 CPUID 鍙跺瓙 0x80000026 涔熶笉鏀寔 0xB锛屽垯浣跨敤 Size Identifier 鍙跺瓙 0x80000008 ECX 鏉ユ娴嬪皝瑁呬笂鐨?CPU 鏁伴噺銆?
+      閫氳繃妫€鏌ユ敮鎸佺殑鎵╁睍 CPUID 绾у埆鏄惁 >= 0x80000008锛屾潵鍙戠幇瀵硅鍙跺瓙鐨勬敮鎸併€?
+      鑻?`ECX[15:12]` 涓殑 `ApicIdSize` 瀛楁闈為浂锛屽垯浠?APIC ID 鍒?Socket ID 鐨勪綅绉婚噺鐢辫瀛楁璁＄畻寰楀嚭銆?
+      濡傛灉 `ApicIdSize` 鎶ュ憡涓洪浂锛屽垯浣嶇Щ閲忔寜 `ECX[7:0]` 涓?`NC` 瀛楁锛堟弿杩板皝瑁呬笂 `绾跨▼鏁?- 1`锛夎绠楀嚭鐨?`绾跨▼鏁癭 鐨勯樁鏉ヨ绠椼€?
+      闄ら潪鏀寔 Extended APIC ID锛屽惁鍒欑敤浜庢煡鎵?Socket ID 鐨?APIC ID 鏉ヨ嚜 CPUID 鍙跺瓙 0x00000001 `EBX[31:24]` 涓殑 `LocalApicId` 瀛楁銆?
+      鎷撴墤瑙ｆ瀽灏嗙户缁娴嬫槸鍚︽敮鎸?Extended APIC ID銆?
 
    4) CPUID leaf 0x8000001E [Extended APIC ID, Core Identifiers, Node Identifiers]
       (Core::X86::Cpuid::{ExtApicId,CoreId,NodeId})
 
-      可以通过检查 CPUID 叶子 0x80000001 [Feature Identifiers]
-      (Core::X86::Cpuid::FeatureExtIdEcx) 的 `ECX[^22^]` 中是否存在 `TopologyExtensions`，来检测对 Extended APIC ID 的支持。
+      鍙互閫氳繃妫€鏌?CPUID 鍙跺瓙 0x80000001 [Feature Identifiers]
+      (Core::X86::Cpuid::FeatureExtIdEcx) 鐨?`ECX[^22^]` 涓槸鍚﹀瓨鍦?`TopologyExtensions`锛屾潵妫€娴嬪 Extended APIC ID 鐨勬敮鎸併€?
+      濡傛灉鏀寔 Topology Extensions锛屽垯搴斾紭鍏堜娇鐢?CPUID 鍙跺瓙 0x8000001E `EAX[31:0]` 涓?`ExtendedApicId` 鐨?APIC ID锛岃€岄潪鏉ヨ嚜 CPUID 鍙跺瓙 0x00000001 `EBX[31:24]` 涓?`LocalApicId` 瀛楁鐨?APIC ID锛岀敤浜庢嫇鎵戞灇涓俱€?
+      鍦?Family 0x17 鍙婁互涓娿€佷笖涓嶆敮鎸?CPUID 鍙跺瓙 0x80000026 鎴?CPUID 鍙跺瓙 0xB 鐨勫鐞嗗櫒涓婏紝浠?APIC ID 鍒?Core ID 鐨勪綅绉婚噺浣跨敤 `EBX[15:8]` 涓?`ThreadsPerCore` 瀛楁锛堟弿杩?`姣忔牳绾跨▼鏁?- 1`锛夎绠楀嚭鐨?`姣忔牳绾跨▼鏁癭 鐨勯樁鏉ヨ绠椼€?
+      鍦?Family 0x15 鐨勫鐞嗗櫒涓婏紝`EBX[7:0]` 涓殑 Core ID 琚敤浣?`cu_id`锛圕ompute Unit ID锛夛紝浠ユ娴嬪叡浜绠楀崟鍏冪殑 CPU銆?
 
-      如果支持 Topology Extensions，则应优先使用 CPUID 叶子 0x8000001E `EAX[31:0]` 中 `ExtendedApicId` 的 APIC ID，而非来自 CPUID 叶子 0x00000001 `EBX[31:24]` 中 `LocalApicId` 字段的 APIC ID，用于拓扑枚举。
-
-      在 Family 0x17 及以上、且不支持 CPUID 叶子 0x80000026 或 CPUID 叶子 0xB 的处理器上，从 APIC ID 到 Core ID 的位移量使用 `EBX[15:8]` 中 `ThreadsPerCore` 字段（描述 `每核线程数 - 1`）计算出的 `每核线程数` 的阶来计算。
-
-      在 Family 0x15 的处理器上，`EBX[7:0]` 中的 Core ID 被用作 `cu_id`（Compute Unit ID），以检测共享计算单元的 CPU。
-
-
-   所有支持 `TopologyExtensions` 特性的 AMD 处理器都会将 CPUID 叶子 0x8000001E
-   `ECX[7:0]` 中的 `NodeId` (Core::X86::Cpuid::NodeId) 存储为每 CPU 的 `node_id`。在较旧的处理器上，`node_id` 是通过 MSR_FAM10H_NODE_ID MSR（MSR
-   0x0xc001_100c）发现的。NODE_ID MSR 的存在是通过检查 CPUID 叶子 0x80000001 [Feature Identifiers]
-   (Core::X86::Cpuid::FeatureExtIdEcx) 的 `ECX[^19^]` 来检测的。
-
+   鎵€鏈夋敮鎸?`TopologyExtensions` 鐗规€х殑 AMD 澶勭悊鍣ㄩ兘浼氬皢 CPUID 鍙跺瓙 0x8000001E
+   `ECX[7:0]` 涓殑 `NodeId` (Core::X86::Cpuid::NodeId) 瀛樺偍涓烘瘡 CPU 鐨?`node_id`銆傚湪杈冩棫鐨勫鐞嗗櫒涓婏紝`node_id` 鏄€氳繃 MSR_FAM10H_NODE_ID MSR锛圡SR
+   0x0xc001_100c锛夊彂鐜扮殑銆侼ODE_ID MSR 鐨勫瓨鍦ㄦ槸閫氳繃妫€鏌?CPUID 鍙跺瓙 0x80000001 [Feature Identifiers]
+   (Core::X86::Cpuid::FeatureExtIdEcx) 鐨?`ECX[^19^]` 鏉ユ娴嬬殑銆?
 
 2) Intel
 
-   在 Intel 平台上，枚举处理器拓扑的 CPUID 叶子如下：
-
+   鍦?Intel 骞冲彴涓婏紝鏋氫妇澶勭悊鍣ㄦ嫇鎵戠殑 CPUID 鍙跺瓙濡備笅锛?
    1) CPUID leaf 0x1F (V2 Extended Topology Enumeration Leaf)
 
-      CPUID 叶子 0x1F 是 CPUID 叶子 0xB 的扩展，提供了每一层级中 Core、Module、Tile、Die、DieGrp 和 Socket 的拓扑信息。
-
-      通过检查支持的 CPUID 级别是否 >= 0x1F，然后特定层级（从 0 开始）的 `EBX[31:0]` 是否非零，来发现对该叶子的支持。
-
-      子叶子中 `ECX[15:8]` 里的 `Domain Type` 给出了该层级所描述的拓扑域——Core、Module、Tile、Die、DieGrp 和 Socket。
-
-      内核使用 `EAX[4:0]` 中的值来获知需要从 `EDX[31:0]` 中的 `x2APIC ID` 右移多少位，以得到该拓扑层级的唯一拓扑 ID。具有相同拓扑 ID 的 CPU 共享该层级的资源。
-
-      如果支持 CPUID 叶子 0x1F，则无需进一步解析。
-
+      CPUID 鍙跺瓙 0x1F 鏄?CPUID 鍙跺瓙 0xB 鐨勬墿灞曪紝鎻愪緵浜嗘瘡涓€灞傜骇涓?Core銆丮odule銆乀ile銆丏ie銆丏ieGrp 鍜?Socket 鐨勬嫇鎵戜俊鎭€?
+      閫氳繃妫€鏌ユ敮鎸佺殑 CPUID 绾у埆鏄惁 >= 0x1F锛岀劧鍚庣壒瀹氬眰绾э紙浠?0 寮€濮嬶級鐨?`EBX[31:0]` 鏄惁闈為浂锛屾潵鍙戠幇瀵硅鍙跺瓙鐨勬敮鎸併€?
+      瀛愬彾瀛愪腑 `ECX[15:8]` 閲岀殑 `Domain Type` 缁欏嚭浜嗚灞傜骇鎵€鎻忚堪鐨勬嫇鎵戝煙鈥斺€擟ore銆丮odule銆乀ile銆丏ie銆丏ieGrp 鍜?Socket銆?
+      鍐呮牳浣跨敤 `EAX[4:0]` 涓殑鍊兼潵鑾风煡闇€瑕佷粠 `EDX[31:0]` 涓殑 `x2APIC ID` 鍙崇Щ澶氬皯浣嶏紝浠ュ緱鍒拌鎷撴墤灞傜骇鐨勫敮涓€鎷撴墤 ID銆傚叿鏈夌浉鍚屾嫇鎵?ID 鐨?CPU 鍏变韩璇ュ眰绾х殑璧勬簮銆?
+      濡傛灉鏀寔 CPUID 鍙跺瓙 0x1F锛屽垯鏃犻渶杩涗竴姝ヨВ鏋愩€?
 
    2) CPUID leaf 0x0000000B (Extended Topology Enumeration Leaf)
 
-      扩展 CPUID 叶子 0x0000000B 是 V2 扩展拓扑枚举叶子 0x1F 的前身，仅描述处理器拓扑的核与插槽域。
-
-      通过检查支持的 CPUID 级别是否 >= 0xB，然后检查特定层级（从 0 开始）的 `EBX[31:0]` 是否非零，来发现对该叶子的支持。
-
-      CPUID 叶子 0x0000000B 与 CPUID 叶子 0x1F 具有相同的布局，应以类似方式枚举。
-
-      如果支持 CPUID 叶子 0xB，则无需进一步解析。
-
+      鎵╁睍 CPUID 鍙跺瓙 0x0000000B 鏄?V2 鎵╁睍鎷撴墤鏋氫妇鍙跺瓙 0x1F 鐨勫墠韬紝浠呮弿杩板鐞嗗櫒鎷撴墤鐨勬牳涓庢彃妲藉煙銆?
+      閫氳繃妫€鏌ユ敮鎸佺殑 CPUID 绾у埆鏄惁 >= 0xB锛岀劧鍚庢鏌ョ壒瀹氬眰绾э紙浠?0 寮€濮嬶級鐨?`EBX[31:0]` 鏄惁闈為浂锛屾潵鍙戠幇瀵硅鍙跺瓙鐨勬敮鎸併€?
+      CPUID 鍙跺瓙 0x0000000B 涓?CPUID 鍙跺瓙 0x1F 鍏锋湁鐩稿悓鐨勫竷灞€锛屽簲浠ョ被浼兼柟寮忔灇涓俱€?
+      濡傛灉鏀寔 CPUID 鍙跺瓙 0xB锛屽垯鏃犻渶杩涗竴姝ヨВ鏋愩€?
 
    3) CPUID leaf 0x00000004 (Deterministic Cache Parameters Leaf)
 
-      在既不支持 CPUID 叶子 0x1F 也不支持 CPUID 叶子 0xB 的 Intel 处理器上，SMT 域的位移量使用共享 L1 缓存的 CPU 数量来计算。
-
-      支持超线程（Hyper-Threading）的处理器通过 CPUID 叶子 0x1（Basic CPUID Information）的 `EDX[^28^]` 来检测。
-
-      来自 CPUID 0x4 第 0 层 `EAX[25:14]` 的 `Maximum number of addressable IDs for logical processors sharing this cache` 的阶，提供了从 APIC ID 计算 Core ID 所需的位移量。
-
-      APIC ID 与封装信息使用来自 CPUID 叶子 0x1 的数据计算。
-
+      鍦ㄦ棦涓嶆敮鎸?CPUID 鍙跺瓙 0x1F 涔熶笉鏀寔 CPUID 鍙跺瓙 0xB 鐨?Intel 澶勭悊鍣ㄤ笂锛孲MT 鍩熺殑浣嶇Щ閲忎娇鐢ㄥ叡浜?L1 缂撳瓨鐨?CPU 鏁伴噺鏉ヨ绠椼€?
+      鏀寔瓒呯嚎绋嬶紙Hyper-Threading锛夌殑澶勭悊鍣ㄩ€氳繃 CPUID 鍙跺瓙 0x1锛圔asic CPUID Information锛夌殑 `EDX[^28^]` 鏉ユ娴嬨€?
+      鏉ヨ嚜 CPUID 0x4 绗?0 灞?`EAX[25:14]` 鐨?`Maximum number of addressable IDs for logical processors sharing this cache` 鐨勯樁锛屾彁渚涗簡浠?APIC ID 璁＄畻 Core ID 鎵€闇€鐨勪綅绉婚噺銆?
+      APIC ID 涓庡皝瑁呬俊鎭娇鐢ㄦ潵鑷?CPUID 鍙跺瓙 0x1 鐨勬暟鎹绠椼€?
 
    4) CPUID leaf 0x00000001 (Basic CPUID Information)
 
-      用于推导物理封装（插槽）ID 的掩码与位移，使用 CPUID 叶子 0x1 `EBX[23:16]` 中的 `Maximum number of addressable IDs for logical processors in this physical package` 来计算。
+      鐢ㄤ簬鎺ㄥ鐗╃悊灏佽锛堟彃妲斤級ID 鐨勬帺鐮佷笌浣嶇Щ锛屼娇鐢?CPUID 鍙跺瓙 0x1 `EBX[23:16]` 涓殑 `Maximum number of addressable IDs for logical processors in this physical package` 鏉ヨ绠椼€?
+     浼犵粺骞冲彴涓婄殑 APIC ID 鐢?CPUID 鍙跺瓙 0x1 `EBX[31:24]` 涓殑 `Initial APIC ID` 瀛楁鎺ㄥ銆?
 
-     传统平台上的 APIC ID 由 CPUID 叶子 0x1 `EBX[31:24]` 中的 `Initial APIC ID` 字段推导。
+3) Centaur 涓?Zhaoxin
 
-
-3) Centaur 与 Zhaoxin
-
-   与 Intel 类似，Centaur 与 Zhaoxin 使用 CPUID 叶子 0x00000004（Deterministic Cache Parameters Leaf）与 CPUID 叶子 0x00000001（Basic CPUID Information）的组合来推导拓扑信息。
+   涓?Intel 绫讳技锛孋entaur 涓?Zhaoxin 浣跨敤 CPUID 鍙跺瓙 0x00000004锛圖eterministic Cache Parameters Leaf锛変笌 CPUID 鍙跺瓙 0x00000001锛圔asic CPUID Information锛夌殑缁勫悎鏉ユ帹瀵兼嫇鎵戜俊鎭€?
 
 
+## 绯荤粺鎷撴墤绀轰緥
 
-## 系统拓扑示例
 
-
-  Linux 的另一种 CPU 枚举方式取决于 BIOS 如何枚举线程。许多 BIOS 会先枚举所有的线程 0，然后再枚举所有的线程 1。这样做有一个“好处”：无论是否启用线程，线程 0 的逻辑 Linux CPU 编号都保持不变。这仅仅是一个实现细节，没有实际影响。
-
+  Linux 鐨勫彟涓€绉?CPU 鏋氫妇鏂瑰紡鍙栧喅浜?BIOS 濡備綍鏋氫妇绾跨▼銆傝澶?BIOS 浼氬厛鏋氫妇鎵€鏈夌殑绾跨▼ 0锛岀劧鍚庡啀鏋氫妇鎵€鏈夌殑绾跨▼ 1銆傝繖鏍峰仛鏈変竴涓€滃ソ澶勨€濓細鏃犺鏄惁鍚敤绾跨▼锛岀嚎绋?0 鐨勯€昏緫 Linux CPU 缂栧彿閮戒繚鎸佷笉鍙樸€傝繖浠呬粎鏄竴涓疄鐜扮粏鑺傦紝娌℃湁瀹為檯褰卞搷銆?
 ```
 
    [package 0] -> [core 0] -> [thread 0] -> Linux CPU 0
 
 ```
-2) 单封装，双核
+2) 鍗曞皝瑁咃紝鍙屾牳
 
 ```
 
 	[package 0] -> [core 0] -> [thread 0] -> Linux CPU 0
 		    -> [core 1] -> [thread 0] -> Linux CPU 1
 
-   b) 每核两个线程::
+   b) 姣忔牳涓や釜绾跨▼::
 
 	[package 0] -> [core 0] -> [thread 0] -> Linux CPU 0
 				-> [thread 1] -> Linux CPU 1
@@ -272,7 +193,7 @@ x86 系统上的拓扑可以通过组合各厂商特定的 CPUID 叶子（leaf�
 				     -> [Compute Unit Core 1] -> Linux CPU 3
 
 ```
-4) 双封装，双核
+4) 鍙屽皝瑁咃紝鍙屾牳
 
 ```
 
@@ -282,7 +203,7 @@ x86 系统上的拓扑可以通过组合各厂商特定的 CPUID 叶子（leaf�
 	[package 1] -> [core 0] -> [thread 0] -> Linux CPU 2
 		    -> [core 1] -> [thread 0] -> Linux CPU 3
 
-   b) 每核两个线程::
+   b) 姣忔牳涓や釜绾跨▼::
 
 	[package 0] -> [core 0] -> [thread 0] -> Linux CPU 0
 				-> [thread 1] -> Linux CPU 1

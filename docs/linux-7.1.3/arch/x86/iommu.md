@@ -1,101 +1,71 @@
-## x86 IOMMU 支持
+﻿## x86 IOMMU 鏀寔
 
 
-架构规范可以从厂商网站获取。搜索以下文档以获取最新版本：
+鏋舵瀯瑙勮寖鍙互浠庡巶鍟嗙綉绔欒幏鍙栥€傛悳绱互涓嬫枃妗ｄ互鑾峰彇鏈€鏂扮増鏈細
 
-- Intel：Intel Virtualization Technology for Directed I/O Architecture Specification（ID: D51397）
-- AMD：AMD I/O Virtualization Technology (IOMMU) Specification（ID: 48882）
-
-本指南为一些基本理解提供快速备忘单。
-
-### 基础内容
+- Intel锛欼ntel Virtualization Technology for Directed I/O Architecture Specification锛圛D: D51397锛?- AMD锛欰MD I/O Virtualization Technology (IOMMU) Specification锛圛D: 48882锛?
+鏈寚鍗椾负涓€浜涘熀鏈悊瑙ｆ彁渚涘揩閫熷蹇樺崟銆?
+### 鍩虹鍐呭
 
 
-ACPI 枚举并列出平台上不同的 IOMMU，以及设备与哪个 IOMMU 控制它们之间的
-设备作用域（device scope）关系。
+ACPI 鏋氫妇骞跺垪鍑哄钩鍙颁笂涓嶅悓鐨?IOMMU锛屼互鍙婅澶囦笌鍝釜 IOMMU 鎺у埗瀹冧滑涔嬮棿鐨?璁惧浣滅敤鍩燂紙device scope锛夊叧绯汇€?
+涓€浜?ACPI 鍏抽敭瀛楋細
 
-一些 ACPI 关键字：
+- DMAR - Intel DMA 閲嶆槧灏勮〃锛圖MA Remapping table锛?- DRHD - Intel DMA 閲嶆槧灏勭‖浠跺崟鍏冨畾涔夛紙DMA Remapping Hardware Unit Definition锛?- RMRR - Intel 淇濈暀鍐呭瓨鍖哄煙鎶ュ憡缁撴瀯锛圧eserved Memory Region Reporting Structure锛?- IVRS - AMD I/O 铏氭嫙鍖栨姤鍛婄粨鏋勶紙I/O Virtualization Reporting Structure锛?- IVDB - AMD I/O 铏氭嫙鍖栧畾涔夊潡锛圛/O Virtualization Definition Block锛?- IVHD - AMD I/O 铏氭嫙鍖栫‖浠跺畾涔夛紙I/O Virtualization Hardware Definition锛?
+##### 浠€涔堟槸 Intel RMRR锛?
 
-- DMAR - Intel DMA 重映射表（DMA Remapping table）
-- DRHD - Intel DMA 重映射硬件单元定义（DMA Remapping Hardware Unit Definition）
-- RMRR - Intel 保留内存区域报告结构（Reserved Memory Region Reporting Structure）
-- IVRS - AMD I/O 虚拟化报告结构（I/O Virtualization Reporting Structure）
-- IVDB - AMD I/O 虚拟化定义块（I/O Virtualization Definition Block）
-- IVHD - AMD I/O 虚拟化硬件定义（I/O Virtualization Hardware Definition）
+鏈変竴浜涜澶囩敱 BIOS 鎺у埗锛屼緥濡?USB 璁惧鐢ㄤ簬鎵ц PS2 浠跨湡銆傜敤浜庤繖浜涜澶囩殑鍐呭瓨
+鍖哄煙鍦?e820 鏄犲皠涓鏍囪涓轰繚鐣欍€傚綋鎴戜滑寮€鍚?DMA 杞崲鏃讹紝瀵硅繖浜涘尯鍩熺殑 DMA 灏?澶辫触銆傚洜姝?BIOS 浣跨敤 RMRR 鏉ユ寚瀹氳繖浜涘尯鍩熶互鍙婇渶瑕佽闂繖浜涘尯鍩熺殑璁惧銆侽S 搴斿綋
+涓鸿繖浜涘尯鍩熻缃粺涓€鏄犲皠锛坲nity mapping锛夛紝浠ヤ究杩欎簺璁惧璁块棶杩欎簺鍖哄煙銆?
+##### 浠€涔堟槸 AMD IVRS锛?
 
-##### 什么是 Intel RMRR？
+璇ユ灦鏋勫畾涔変簡涓€涓О涓?I/O 铏氭嫙鍖栨姤鍛婄粨鏋勶紙IVRS锛夌殑 ACPI 鍏煎鏁版嵁缁撴瀯锛岀敤浜庡悜
+绯荤粺杞欢浼犺揪涓?I/O 铏氭嫙鍖栫浉鍏崇殑淇℃伅銆侷VRS 鎻忚堪浜嗗钩鍙颁腑鍖呭惈鐨?IOMMU 鐨勯厤缃笌
+鑳藉姏锛屼互鍙婃瘡涓?IOMMU 铏氭嫙鍖栫殑璁惧鐨勪俊鎭€?
+IVRS 鎻愪緵浠ヤ笅鍏充簬浠ヤ笅鏂归潰鐨勪俊鎭細
 
-
-有一些设备由 BIOS 控制，例如 USB 设备用于执行 PS2 仿真。用于这些设备的内存
-区域在 e820 映射中被标记为保留。当我们开启 DMA 转换时，对这些区域的 DMA 将
-失败。因此 BIOS 使用 RMRR 来指定这些区域以及需要访问这些区域的设备。OS 应当
-为这些区域设置统一映射（unity mapping），以便这些设备访问这些区域。
-
-##### 什么是 AMD IVRS？
-
-
-该架构定义了一个称为 I/O 虚拟化报告结构（IVRS）的 ACPI 兼容数据结构，用于向
-系统软件传达与 I/O 虚拟化相关的信息。IVRS 描述了平台中包含的 IOMMU 的配置与
-能力，以及每个 IOMMU 虚拟化的设备的信息。
-
-IVRS 提供以下关于以下方面的信息：
-
-- 平台中存在的 IOMMU，包括它们的能力与正确配置
-- 与每个 IOMMU 相关的系统 I/O 拓扑
-- 无法以其他方式枚举的外设
-- SMI/SMM、平台固件与平台硬件使用的内存区域。这些通常是需要由系统软件配置的
-  排除范围。
-
-### 如何生成 I/O 虚拟地址（IOVA）？
+- 骞冲彴涓瓨鍦ㄧ殑 IOMMU锛屽寘鎷畠浠殑鑳藉姏涓庢纭厤缃?- 涓庢瘡涓?IOMMU 鐩稿叧鐨勭郴缁?I/O 鎷撴墤
+- 鏃犳硶浠ュ叾浠栨柟寮忔灇涓剧殑澶栬
+- SMI/SMM銆佸钩鍙板浐浠朵笌骞冲彴纭欢浣跨敤鐨勫唴瀛樺尯鍩熴€傝繖浜涢€氬父鏄渶瑕佺敱绯荤粺杞欢閰嶇疆鐨?  鎺掗櫎鑼冨洿銆?
+### 濡備綍鐢熸垚 I/O 铏氭嫙鍦板潃锛圛OVA锛夛紵
 
 
-行为良好的驱动在发送需要执行 DMA 的命令到设备之前调用 dma_map_*() 调用。一旦
-DMA 完成且不再需要映射，驱动执行 dma_unmap_*() 调用以取消映射该区域。
-
-### Intel 特定说明
+琛屼负鑹ソ鐨勯┍鍔ㄥ湪鍙戦€侀渶瑕佹墽琛?DMA 鐨勫懡浠ゅ埌璁惧涔嬪墠璋冪敤 dma_map_*() 璋冪敤銆備竴鏃?DMA 瀹屾垚涓斾笉鍐嶉渶瑕佹槧灏勶紝椹卞姩鎵ц dma_unmap_*() 璋冪敤浠ュ彇娑堟槧灏勮鍖哄煙銆?
+### Intel 鐗瑰畾璇存槑
 
 
-##### 图形问题？
+##### 鍥惧舰闂锛?
+
+濡傛灉浣犻亣鍒板浘褰㈣澶囩殑闂锛屽彲浠ュ皾璇曟坊鍔犻€夐」 intel_iommu=igfx_off 鏉ュ叧闂泦鎴?鍥惧舰寮曟搸銆傚鏋滆繖淇浜嗕换浣曢棶棰橈紝璇风‘淇濅綘鎻愪氦涓€涓?bug 鎶ュ憡璇ラ棶棰樸€?
+##### IOVA 鐨勪竴浜涗緥澶?
+
+涓柇鑼冨洿涓嶈鍦板潃杞崲锛?xfee00000 - 0xfeefffff锛夈€傚绛夛紙peer to peer锛変簨鍔′篃
+鍚屾牱濡傛銆傚洜姝ゆ垜浠繚鐣欐潵鑷?PCI MMIO 鑼冨洿鐨勫湴鍧€锛屼娇瀹冧滑涓嶈鍒嗛厤缁?IOVA 鍦板潃銆?
+### AMD 鐗瑰畾璇存槑
 
 
-如果你遇到图形设备的问题，可以尝试添加选项 intel_iommu=igfx_off 来关闭集成
-图形引擎。如果这修复了任何问题，请确保你提交一个 bug 报告该问题。
+##### 鍥惧舰闂锛?
 
-##### IOVA 的一些例外
-
-
-中断范围不被地址转换（0xfee00000 - 0xfeefffff）。对等（peer to peer）事务也
-同样如此。因此我们保留来自 PCI MMIO 范围的地址，使它们不被分配给 IOVA 地址。
-
-### AMD 特定说明
+濡傛灉浣犻亣鍒伴泦鎴愬浘褰㈣澶囩殑闂锛屽彲浠ュ皾璇曞湪鍐呮牳鍛戒护琛屼笂娣诲姞閫夐」 iommu=pt锛屽
+IOMMU 浣跨敤 1:1 鏄犲皠銆傚鏋滆繖淇浜嗕换浣曢棶棰橈紝璇风‘淇濅綘鎻愪氦涓€涓?bug 鎶ュ憡璇ラ棶棰樸€?
+### 鏁呴殰鎶ュ憡
 
 
-##### 图形问题？
+褰撴姤鍛婇敊璇椂锛孖OMMU 閫氳繃涓柇鍙戝嚭淇″彿銆傚鑷存晠闅滅殑鍘熷洜鍜岃ō鍌欎細鎵撳嵃鍦ㄦ帶鍒跺彴涓娿€?
+### 鍐呮牳鏃ュ織鏍蜂緥
 
 
-如果你遇到集成图形设备的问题，可以尝试在内核命令行上添加选项 iommu=pt，对
-IOMMU 使用 1:1 映射。如果这修复了任何问题，请确保你提交一个 bug 报告该问题。
-
-### 故障报告
+##### Intel 鍚姩娑堟伅
 
 
-当报告错误时，IOMMU 通过中断发出信号。导致故障的原因和設備会打印在控制台上。
-
-### 内核日志样例
-
-
-##### Intel 启动消息
-
-
-会打印类似以下内容，指示 ACPI 中存在 DMAR 表：
+浼氭墦鍗扮被浼间互涓嬪唴瀹癸紝鎸囩ず ACPI 涓瓨鍦?DMAR 琛細
 
 ```
 
 	ACPI: DMAR (v001 A M I  OEMDMAR  0x00000001 MSFT 0x00000097) @ 0x000000007f5b5ef0
 
 ```
-当 DMAR 被 ACPI 处理并初始化时，打印 DMAR 位置以及任何已处理的 RMRR：
-
+褰?DMAR 琚?ACPI 澶勭悊骞跺垵濮嬪寲鏃讹紝鎵撳嵃 DMAR 浣嶇疆浠ュ強浠讳綍宸插鐞嗙殑 RMRR锛?
 ```
 
 	ACPI DMAR:Host address width 36
@@ -106,14 +76,13 @@ IOMMU 使用 1:1 映射。如果这修复了任何问题，请确保你提交一
 	ACPI DMAR:RMRR base: 0x000000007f600000 end: 0x000000007fffffff
 
 ```
-当 DMAR 被启用使用时，你会注意到：
-
+褰?DMAR 琚惎鐢ㄤ娇鐢ㄦ椂锛屼綘浼氭敞鎰忓埌锛?
 ```
 
 	PCI-DMA: Using DMAR IOMMU
 
 ```
-##### Intel 故障报告
+##### Intel 鏁呴殰鎶ュ憡
 
 ```
 
@@ -123,10 +92,10 @@ IOMMU 使用 1:1 映射。如果这修复了任何问题，请确保你提交一
 	DMAR:[fault reason 05] PTE Write access is not set
 
 ```
-##### AMD 启动消息
+##### AMD 鍚姩娑堟伅
 
 
-会打印类似以下内容，指示 IOMMU 的存在：
+浼氭墦鍗扮被浼间互涓嬪唴瀹癸紝鎸囩ず IOMMU 鐨勫瓨鍦細
 
 ```
 
@@ -134,7 +103,7 @@ IOMMU 使用 1:1 映射。如果这修复了任何问题，请确保你提交一
 	iommu: DMA domain TLB invalidation policy: lazy mode
 
 ```
-##### AMD 故障报告
+##### AMD 鏁呴殰鎶ュ憡
 
 ```
 

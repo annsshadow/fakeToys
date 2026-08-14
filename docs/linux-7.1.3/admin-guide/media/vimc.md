@@ -1,24 +1,22 @@
+﻿
+## 铏氭嫙濯掍綋鎺у埗鍣ㄩ┍鍔紙vimc锛?
 
-## 虚拟媒体控制器驱动（vimc）
-
-
-vimc 驱动使用 V4L2 API 和 Media API 模拟复杂的视频硬件。它有一个捕获设备以及三个子设备：sensor（传感器）、debayer（去拜耳）和 scaler（缩放器）。
-
-### 拓扑
+vimc 椹卞姩浣跨敤 V4L2 API 鍜?Media API 妯℃嫙澶嶆潅鐨勮棰戠‖浠躲€傚畠鏈変竴涓崟鑾疯澶囦互鍙婁笁涓瓙璁惧锛歴ensor锛堜紶鎰熷櫒锛夈€乨ebayer锛堝幓鎷滆€筹級鍜?scaler锛堢缉鏀惧櫒锛夈€?
+### 鎷撴墤
 
 
-拓扑是硬编码的，不过你可以修改 vimc-core 并重新编译驱动来实现自己的拓扑。这是默认拓扑：
+鎷撴墤鏄‖缂栫爜鐨勶紝涓嶈繃浣犲彲浠ヤ慨鏀?vimc-core 骞堕噸鏂扮紪璇戦┍鍔ㄦ潵瀹炵幇鑷繁鐨勬嫇鎵戙€傝繖鏄粯璁ゆ嫇鎵戯細
 
 
-    :alt:   默认媒体流水线拓扑图
+    :alt:   榛樿濯掍綋娴佹按绾挎嫇鎵戝浘
     :align: center
 
-    vimc 上的媒体流水线图
+    vimc 涓婄殑濯掍綋娴佹按绾垮浘
 
-#### 配置拓扑
+#### 閰嶇疆鎷撴墤
 
 
-每个子设备都会带有其默认配置（pixelformat、height、width 等）。需要配置该拓扑，使每个被链接子设备上的配置相互匹配，才能通过流水线流式传输帧。如果配置不匹配，流将失败。`v4l-utils` 软件包是一组用户空间应用程序的集合，自带 `media-ctl` 和 `v4l2-ctl`，可用于配置 vimc 配置。以下命令序列适用于默认拓扑：
+姣忎釜瀛愯澶囬兘浼氬甫鏈夊叾榛樿閰嶇疆锛坧ixelformat銆乭eight銆亀idth 绛夛級銆傞渶瑕侀厤缃鎷撴墤锛屼娇姣忎釜琚摼鎺ュ瓙璁惧涓婄殑閰嶇疆鐩镐簰鍖归厤锛屾墠鑳介€氳繃娴佹按绾挎祦寮忎紶杈撳抚銆傚鏋滈厤缃笉鍖归厤锛屾祦灏嗗け璐ャ€俙v4l-utils` 杞欢鍖呮槸涓€缁勭敤鎴风┖闂村簲鐢ㄧ▼搴忕殑闆嗗悎锛岃嚜甯?`media-ctl` 鍜?`v4l2-ctl`锛屽彲鐢ㄤ簬閰嶇疆 vimc 閰嶇疆銆備互涓嬪懡浠ゅ簭鍒楅€傜敤浜庨粯璁ゆ嫇鎵戯細
 
 
         media-ctl -d platform:vimc -V '"Sensor A":0[fmt:SBGGR8_1X8/640x480]'
@@ -29,20 +27,15 @@ vimc 驱动使用 V4L2 API 和 Media API 模拟复杂的视频硬件。它有一
         v4l2-ctl -z platform:vimc -d "RGB/YUV Capture" -v width=300,height=700
         v4l2-ctl -z platform:vimc -d "Raw Capture 0" -v pixelformat=BA81
 
-### 子设备
+### 瀛愯澶?
 
-
-子设备定义了拓扑中实体（entity）的行为。根据子设备的不同，实体可以具有多个 source 或 sink 类型的 pad。
-
+瀛愯澶囧畾涔変簡鎷撴墤涓疄浣擄紙entity锛夌殑琛屼负銆傛牴鎹瓙璁惧鐨勪笉鍚岋紝瀹炰綋鍙互鍏锋湁澶氫釜 source 鎴?sink 绫诲瀷鐨?pad銆?
 vimc-sensor:
-	使用视频测试图案生成器以多种格式生成图像。
-	暴露：
-
- - 1 个 source pad
+	浣跨敤瑙嗛娴嬭瘯鍥炬鐢熸垚鍣ㄤ互澶氱鏍煎紡鐢熸垚鍥惧儚銆?	鏆撮湶锛?
+ - 1 涓?source pad
 
 vimc-lens:
-	传感器的辅助镜头。支持自动对焦控制。使用辅助链接（ancillary link）连接到 vimc-sensor。该镜头支持 FOCUS_ABSOLUTE 控制。
-
+	浼犳劅鍣ㄧ殑杈呭姪闀滃ご銆傛敮鎸佽嚜鍔ㄥ鐒︽帶鍒躲€備娇鐢ㄨ緟鍔╅摼鎺ワ紙ancillary link锛夎繛鎺ュ埌 vimc-sensor銆傝闀滃ご鏀寔 FOCUS_ABSOLUTE 鎺у埗銆?
 
 	media-ctl -p
 	...
@@ -57,34 +50,26 @@ vimc-lens:
 
 
 vimc-debayer:
-	将拜耳（bayer）格式的图像转换为非拜耳格式。
-	暴露：
-
- - 1 个 sink pad
- - 1 个 source pad
+	灏嗘嫓鑰筹紙bayer锛夋牸寮忕殑鍥惧儚杞崲涓洪潪鎷滆€虫牸寮忋€?	鏆撮湶锛?
+ - 1 涓?sink pad
+ - 1 涓?source pad
 
 vimc-scaler:
-	重新调整图像大小以匹配 source pad 的分辨率。例如：如果 sink pad 配置为 360x480 而 source 配置为 1280x720，图像将被拉伸以适配 source 分辨率。适用于 vimc 限制内的任何分辨率（必要时甚至缩小图像）。
-	暴露：
-
- - 1 个 sink pad
- - 1 个 source pad
+	閲嶆柊璋冩暣鍥惧儚澶у皬浠ュ尮閰?source pad 鐨勫垎杈ㄧ巼銆備緥濡傦細濡傛灉 sink pad 閰嶇疆涓?360x480 鑰?source 閰嶇疆涓?1280x720锛屽浘鍍忓皢琚媺浼镐互閫傞厤 source 鍒嗚鲸鐜囥€傞€傜敤浜?vimc 闄愬埗鍐呯殑浠讳綍鍒嗚鲸鐜囷紙蹇呰鏃剁敋鑷崇缉灏忓浘鍍忥級銆?	鏆撮湶锛?
+ - 1 涓?sink pad
+ - 1 涓?source pad
 
 vimc-capture:
-	暴露节点 /dev/videoX 以允许用户空间捕获流。
-	暴露：
+	鏆撮湶鑺傜偣 /dev/videoX 浠ュ厑璁哥敤鎴风┖闂存崟鑾锋祦銆?	鏆撮湶锛?
+ - 1 涓?sink pad
+ - 1 涓?source pad
 
- - 1 个 sink pad
- - 1 个 source pad
-
-### 模块参数
+### 妯″潡鍙傛暟
 
 
-Vimc 有一个用于配置驱动的模块参数。
-
+Vimc 鏈変竴涓敤浜庨厤缃┍鍔ㄧ殑妯″潡鍙傛暟銆?
 - `allocator=<unsigned int>`
 
-	内存分配器选择，默认为 0。它指定缓冲区的分配方式。
-
+	鍐呭瓨鍒嗛厤鍣ㄩ€夋嫨锛岄粯璁や负 0銆傚畠鎸囧畾缂撳啿鍖虹殑鍒嗛厤鏂瑰紡銆?
   - 0: vmalloc
   - 1: dma-contig

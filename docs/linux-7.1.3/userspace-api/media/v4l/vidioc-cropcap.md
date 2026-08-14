@@ -1,37 +1,29 @@
-
+﻿
 ######## ioctl VIDIOC_CROPCAP
 
 
-## 名称
+## 鍚嶇О
 
 
-VIDIOC_CROPCAP - 关于视频裁剪与缩放能力的信息
+VIDIOC_CROPCAP - 鍏充簬瑙嗛瑁佸壀涓庣缉鏀捐兘鍔涚殑淇℃伅
 
-## 语法
+## 璇硶
 
 
 `int ioctl(int fd, VIDIOC_CROPCAP, struct v4l2_cropcap *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
-
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `argp`
-    指向 struct `v4l2_cropcap` 的指针。
+    鎸囧悜 struct `v4l2_cropcap` 鐨勬寚閽堛€?
+## 鎻忚堪
 
-## 描述
 
-
-应用程序使用此函数查询裁剪限制、图像像素宽高比并计算缩放因子。它们将 v4l2_cropcap 结构的
-`type` 字段设为相应的缓冲区（流）类型，并以指向该结构的指针调用 VIDIOC_CROPCAP ioctl。
-驱动填充结构的其余部分。除切换视频标准外，结果是恒定的。请记住，切换视频输入或输出时
-可能会隐式发生这种切换。
-
-该 ioctl 必须由支持裁剪和/或缩放和/或具有非方形像素的视频捕获或输出设备，以及覆盖（overlay）
-设备实现。
-
+搴旂敤绋嬪簭浣跨敤姝ゅ嚱鏁版煡璇㈣鍓檺鍒躲€佸浘鍍忓儚绱犲楂樻瘮骞惰绠楃缉鏀惧洜瀛愩€傚畠浠皢 v4l2_cropcap 缁撴瀯鐨?`type` 瀛楁璁句负鐩稿簲鐨勭紦鍐插尯锛堟祦锛夌被鍨嬶紝骞朵互鎸囧悜璇ョ粨鏋勭殑鎸囬拡璋冪敤 VIDIOC_CROPCAP ioctl銆?椹卞姩濉厖缁撴瀯鐨勫叾浣欓儴鍒嗐€傞櫎鍒囨崲瑙嗛鏍囧噯澶栵紝缁撴灉鏄亽瀹氱殑銆傝璁颁綇锛屽垏鎹㈣棰戣緭鍏ユ垨杈撳嚭鏃?鍙兘浼氶殣寮忓彂鐢熻繖绉嶅垏鎹€?
+璇?ioctl 蹇呴』鐢辨敮鎸佽鍓拰/鎴栫缉鏀惧拰/鎴栧叿鏈夐潪鏂瑰舰鍍忕礌鐨勮棰戞崟鑾锋垨杈撳嚭璁惧锛屼互鍙婅鐩栵紙overlay锛?璁惧瀹炵幇銆?
 
 
     :header-rows:  0
@@ -40,33 +32,18 @@ VIDIOC_CROPCAP - 关于视频裁剪与缩放能力的信息
 
     - - __u32
       - `type`
-      - 数据流的类型，由应用程序设置。此处仅以下类型有效：`V4L2_BUF_TYPE_VIDEO_CAPTURE`、
-	`V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE`、`V4L2_BUF_TYPE_VIDEO_OUTPUT`、
-	`V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE` 与 `V4L2_BUF_TYPE_VIDEO_OVERLAY`。
-	参见 `v4l2_buf_type` 及下面的说明。
-    - - struct v4l2_rect <v4l2-rect-crop>
+      - 鏁版嵁娴佺殑绫诲瀷锛岀敱搴旂敤绋嬪簭璁剧疆銆傛澶勪粎浠ヤ笅绫诲瀷鏈夋晥锛歚V4L2_BUF_TYPE_VIDEO_CAPTURE`銆?	`V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE`銆乣V4L2_BUF_TYPE_VIDEO_OUTPUT`銆?	`V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE` 涓?`V4L2_BUF_TYPE_VIDEO_OVERLAY`銆?	鍙傝 `v4l2_buf_type` 鍙婁笅闈㈢殑璇存槑銆?    - - struct v4l2_rect <v4l2-rect-crop>
       - `bounds`
-      - 定义可进行捕获或输出的窗口，这可能排除例如水平和垂直消隐区。裁剪矩形不能超过这些
-	限制。宽度与高度以像素定义，驱动编写者可自由选择在模拟域中坐标系的原点与单位。
-    - - struct v4l2_rect <v4l2-rect-crop>
+      - 瀹氫箟鍙繘琛屾崟鑾锋垨杈撳嚭鐨勭獥鍙ｏ紝杩欏彲鑳芥帓闄や緥濡傛按骞冲拰鍨傜洿娑堥殣鍖恒€傝鍓煩褰笉鑳借秴杩囪繖浜?	闄愬埗銆傚搴︿笌楂樺害浠ュ儚绱犲畾涔夛紝椹卞姩缂栧啓鑰呭彲鑷敱閫夋嫨鍦ㄦā鎷熷煙涓潗鏍囩郴鐨勫師鐐逛笌鍗曚綅銆?    - - struct v4l2_rect <v4l2-rect-crop>
       - `defrect`
-      - 默认裁剪矩形，它应覆盖“整幅画面”。假设像素宽高比为 1/1，对于 NTSC 可以是例如
-	640 × 480 的矩形，对于 PAL 与 SECAM 可以是居中于活动画面区域的 768 × 576 矩形。
-	使用与 `bounds` 相同的坐标系。
-    - - struct `v4l2_fract`
+      - 榛樿瑁佸壀鐭╁舰锛屽畠搴旇鐩栤€滄暣骞呯敾闈⑩€濄€傚亣璁惧儚绱犲楂樻瘮涓?1/1锛屽浜?NTSC 鍙互鏄緥濡?	640 脳 480 鐨勭煩褰紝瀵逛簬 PAL 涓?SECAM 鍙互鏄眳涓簬娲诲姩鐢婚潰鍖哄煙鐨?768 脳 576 鐭╁舰銆?	浣跨敤涓?`bounds` 鐩稿悓鐨勫潗鏍囩郴銆?    - - struct `v4l2_fract`
       - `pixelaspect`
-      - 这是未应用缩放时的像素宽高比（y / x），即实际采样频率与获得方形像素所需频率之比。
-
-	当裁剪坐标指向方形像素时，驱动将 `pixelaspect` 设为 1/1。其他常见值为 PAL 与 SECAM
-	的 54/59，以及按 [itu601] 采样的 NTSC 的 11/10。
-
-   不幸的是，在多平面缓冲区类型（`V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE` 与
-   `V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE`）的情况下，关于应如何填写 `v4l2_cropcap` 的
-   `type` 字段，该 API 存在混乱。某些驱动只接受 `_MPLANE` 缓冲区类型，而其他驱动只接受
-   非多平面缓冲区类型（即末尾不带 `_MPLANE`）。
-
-   从内核 4.13 起，两种变体都允许。
-
+      - 杩欐槸鏈簲鐢ㄧ缉鏀炬椂鐨勫儚绱犲楂樻瘮锛坹 / x锛夛紝鍗冲疄闄呴噰鏍烽鐜囦笌鑾峰緱鏂瑰舰鍍忕礌鎵€闇€棰戠巼涔嬫瘮銆?
+	褰撹鍓潗鏍囨寚鍚戞柟褰㈠儚绱犳椂锛岄┍鍔ㄥ皢 `pixelaspect` 璁句负 1/1銆傚叾浠栧父瑙佸€间负 PAL 涓?SECAM
+	鐨?54/59锛屼互鍙婃寜 [itu601] 閲囨牱鐨?NTSC 鐨?11/10銆?
+   涓嶅垢鐨勬槸锛屽湪澶氬钩闈㈢紦鍐插尯绫诲瀷锛坄V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE` 涓?   `V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE`锛夌殑鎯呭喌涓嬶紝鍏充簬搴斿浣曞～鍐?`v4l2_cropcap` 鐨?   `type` 瀛楁锛岃 API 瀛樺湪娣蜂贡銆傛煇浜涢┍鍔ㄥ彧鎺ュ彈 `_MPLANE` 缂撳啿鍖虹被鍨嬶紝鑰屽叾浠栭┍鍔ㄥ彧鎺ュ彈
+   闈炲骞抽潰缂撳啿鍖虹被鍨嬶紙鍗虫湯灏句笉甯?`_MPLANE`锛夈€?
+   浠庡唴鏍?4.13 璧凤紝涓ょ鍙樹綋閮藉厑璁搞€?
 
 
     :header-rows:  0
@@ -75,25 +52,18 @@ VIDIOC_CROPCAP - 关于视频裁剪与缩放能力的信息
 
     - - __s32
       - `left`
-      - 矩形左上角的水平偏移，以像素计。
-    - - __s32
+      - 鐭╁舰宸︿笂瑙掔殑姘村钩鍋忕Щ锛屼互鍍忕礌璁°€?    - - __s32
       - `top`
-      - 矩形左上角的垂直偏移，以像素计。
-    - - __u32
+      - 鐭╁舰宸︿笂瑙掔殑鍨傜洿鍋忕Щ锛屼互鍍忕礌璁°€?    - - __u32
       - `width`
-      - 矩形的宽度，以像素计。
-    - - __u32
+      - 鐭╁舰鐨勫搴︼紝浠ュ儚绱犺銆?    - - __u32
       - `height`
-      - 矩形的高度，以像素计。
+      - 鐭╁舰鐨勯珮搴︼紝浠ュ儚绱犺銆?
+## 杩斿洖鍊?
 
-## 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 章节中描述。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
 EINVAL
-    struct `v4l2_cropcap` 的 `type` 无效。
-
+    struct `v4l2_cropcap` 鐨?`type` 鏃犳晥銆?
 ENODATA
-    该输入或输出不支持裁剪。
+    璇ヨ緭鍏ユ垨杈撳嚭涓嶆敮鎸佽鍓€?

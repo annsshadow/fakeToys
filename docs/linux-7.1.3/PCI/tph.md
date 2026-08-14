@@ -1,5 +1,5 @@
-
-## TPH 支持
+﻿
+## TPH 鏀寔
 
 
 :Copyright: 2024 Advanced Micro Devices, Inc.
@@ -7,31 +7,23 @@
           - Wei Huang <wei.huang2@amd.com>
 
 
-## 概述
+## 姒傝堪
 
 
-TPH（TLP Processing Hints，TLP 处理提示）是一项 PCIe 特性，它允许端点设备为指向内存空间的
-请求提供优化提示。这些提示以一种称为转向标签（Steering Tags，STs）的格式嵌入到请求方的 TLP
-头中，使系统硬件（如根复合体 Root Complex）能够更好地为这些请求管理平台资源。
+TPH锛圱LP Processing Hints锛孴LP 澶勭悊鎻愮ず锛夋槸涓€椤?PCIe 鐗规€э紝瀹冨厑璁哥鐐硅澶囦负鎸囧悜鍐呭瓨绌洪棿鐨?璇锋眰鎻愪緵浼樺寲鎻愮ず銆傝繖浜涙彁绀轰互涓€绉嶇О涓鸿浆鍚戞爣绛撅紙Steering Tags锛孲Ts锛夌殑鏍煎紡宓屽叆鍒拌姹傛柟鐨?TLP
+澶翠腑锛屼娇绯荤粺纭欢锛堝鏍瑰鍚堜綋 Root Complex锛夎兘澶熸洿濂藉湴涓鸿繖浜涜姹傜鐞嗗钩鍙拌祫婧愩€?
+渚嬪锛屽湪鏀寔鍩轰簬 TPH 鐨勭洿鎺ユ暟鎹紦瀛樻敞鍏ョ殑骞冲彴涓婏紝绔偣璁惧鍙互鍦ㄥ叾 DMA 娴侀噺涓寘鍚€傚綋鐨?ST锛?浠ユ寚瀹氭暟鎹簲琚啓鍏ュ摢涓紦瀛樸€傝繖浣垮緱 CPU 鏍稿績鏈夋洿楂樼殑姒傜巼浠庣紦瀛樹腑鑾峰彇鏁版嵁锛屼粠鑰屽彲鑳芥彁鍗囨€ц兘骞?闄嶄綆鏁版嵁澶勭悊涓殑寤惰繜銆?
 
-例如，在支持基于 TPH 的直接数据缓存注入的平台上，端点设备可以在其 DMA 流量中包含适当的 ST，
-以指定数据应被写入哪个缓存。这使得 CPU 核心有更高的概率从缓存中获取数据，从而可能提升性能并
-降低数据处理中的延迟。
+## 濡備綍浣跨敤 TPH
 
 
-## 如何使用 TPH
+TPH 鍦?PCIe 涓〃鐜颁负涓€涓彲閫夌殑鎵╁睍鑳藉姏銆侺inux 鍐呮牳鍦ㄥ惎鍔ㄦ椂澶勭悊 TPH 鐨勫彂鐜帮紝浣嗚澶囬┍鍔ㄨ嫢瑕?浣跨敤 TPH锛屽垯闇€鑷璇锋眰鍚敤 TPH銆備竴鏃﹀惎鐢紝椹卞姩浣跨敤鎻愪緵鐨?API 鑾峰彇鐩爣鍐呭瓨鐨勮浆鍚戞爣绛撅紙Steering
+Tag锛夛紝骞跺皢璇?ST 缂栫▼鍒拌澶囩殑 ST 琛ㄤ腑銆?
+### 鍦?Linux 涓惎鐢?TPH 鏀寔
 
 
-TPH 在 PCIe 中表现为一个可选的扩展能力。Linux 内核在启动时处理 TPH 的发现，但设备驱动若要
-使用 TPH，则需自行请求启用 TPH。一旦启用，驱动使用提供的 API 获取目标内存的转向标签（Steering
-Tag），并将该 ST 编程到设备的 ST 表中。
-
-### 在 Linux 中启用 TPH 支持
-
-
-要支持 TPH，内核必须启用 CONFIG_PCIE_TPH 选项来构建。
-
-### 管理 TPH
+瑕佹敮鎸?TPH锛屽唴鏍稿繀椤诲惎鐢?CONFIG_PCIE_TPH 閫夐」鏉ユ瀯寤恒€?
+### 绠＄悊 TPH
 
 
 ```
@@ -39,52 +31,40 @@ Tag），并将该 ST 编程到设备的 ST 表中。
   int pcie_enable_tph(struct pci_dev *pdev, int mode);
 
 ```
-此函数为设备启用具有特定 ST 模式的 TPH 支持。当前支持的模式包括：
+姝ゅ嚱鏁颁负璁惧鍚敤鍏锋湁鐗瑰畾 ST 妯″紡鐨?TPH 鏀寔銆傚綋鍓嶆敮鎸佺殑妯″紡鍖呮嫭锛?
+  - PCI_TPH_ST_NS_MODE - 鏃?ST 妯″紡
+  - PCI_TPH_ST_IV_MODE - 涓柇鍚戦噺妯″紡
+  - PCI_TPH_ST_DS_MODE - 璁惧鐗瑰畾妯″紡
 
-  - PCI_TPH_ST_NS_MODE - 无 ST 模式
-  - PCI_TPH_ST_IV_MODE - 中断向量模式
-  - PCI_TPH_ST_DS_MODE - 设备特定模式
-
-`pcie_enable_tph()` 在启用前会检查设备是否实际支持所请求的模式。设备驱动可以根据
-`pcie_enable_tph()` 的返回值判断支持哪种 TPH 模式，并据此正确地启用。
-
+`pcie_enable_tph()` 鍦ㄥ惎鐢ㄥ墠浼氭鏌ヨ澶囨槸鍚﹀疄闄呮敮鎸佹墍璇锋眰鐨勬ā寮忋€傝澶囬┍鍔ㄥ彲浠ユ牴鎹?`pcie_enable_tph()` 鐨勮繑鍥炲€煎垽鏂敮鎸佸摢绉?TPH 妯″紡锛屽苟鎹姝ｇ‘鍦板惎鐢ㄣ€?
 ```
 
   void pcie_disable_tph(struct pci_dev *pdev);
 
 ```
-### 管理 ST
+### 绠＄悊 ST
 
 
-转向标签（Steering Tags）是平台特定的。PCIe 规范并未规定 ST 来自何处。相反，PCI 固件规范
-定义了一个 ACPI _DSM 方法（参见 `Revised _DSM for Cache Locality TPH Features ECN
-<https://members.pcisig.com/wg/PCI-SIG/document/15470>`_），用于检索具有各种属性的目标内存的
-ST。本实现支持的就是此方法。
-
-要检索与特定 CPU 关联的目标内存的转向标签，使用
-```
+杞悜鏍囩锛圫teering Tags锛夋槸骞冲彴鐗瑰畾鐨勩€侾CIe 瑙勮寖骞舵湭瑙勫畾 ST 鏉ヨ嚜浣曞銆傜浉鍙嶏紝PCI 鍥轰欢瑙勮寖
+瀹氫箟浜嗕竴涓?ACPI _DSM 鏂规硶锛堝弬瑙?`Revised _DSM for Cache Locality TPH Features ECN
+<https://members.pcisig.com/wg/PCI-SIG/document/15470>`_锛夛紝鐢ㄤ簬妫€绱㈠叿鏈夊悇绉嶅睘鎬х殑鐩爣鍐呭瓨鐨?ST銆傛湰瀹炵幇鏀寔鐨勫氨鏄鏂规硶銆?
+瑕佹绱笌鐗瑰畾 CPU 鍏宠仈鐨勭洰鏍囧唴瀛樼殑杞悜鏍囩锛屼娇鐢?```
 
   int pcie_tph_get_cpu_st(struct pci_dev *pdev, enum tph_mem_type type,
                           unsigned int cpu, u16 *tag);
 
 ```
-`type` 参数用于指定目标内存的类型，可以是易失性（volatile）或持久性（persistent）。
-`cpu` 参数指定内存所关联的 CPU。
-
-检索到 ST 值后，设备驱动可以使用以下函数
-```
+`type` 鍙傛暟鐢ㄤ簬鎸囧畾鐩爣鍐呭瓨鐨勭被鍨嬶紝鍙互鏄槗澶辨€э紙volatile锛夋垨鎸佷箙鎬э紙persistent锛夈€?`cpu` 鍙傛暟鎸囧畾鍐呭瓨鎵€鍏宠仈鐨?CPU銆?
+妫€绱㈠埌 ST 鍊煎悗锛岃澶囬┍鍔ㄥ彲浠ヤ娇鐢ㄤ互涓嬪嚱鏁?```
 
   int pcie_tph_set_st_entry(struct pci_dev *pdev, unsigned int index,
                             u16 tag);
 
 ```
-`index` 参数是 ST 标签将被写入的 ST 表条目索引。`pcie_tph_set_st_entry()` 会确定 ST 表的
-正确位置（无论是在 MSI-X 表中还是在 TPH 扩展能力空间中），并将转向标签写入由 `index` 参数
-指向的 ST 条目。
-
-如何使用这些 TPH 函数完全由驱动决定。例如，网络设备的驱动可以在 RX/TX 队列的中断亲和性
-发生改变时，使用上述 TPH API 来更新转向标签。下面是一个中断亲和性通知器的示例代码：
-
+`index` 鍙傛暟鏄?ST 鏍囩灏嗚鍐欏叆鐨?ST 琛ㄦ潯鐩储寮曘€俙pcie_tph_set_st_entry()` 浼氱‘瀹?ST 琛ㄧ殑
+姝ｇ‘浣嶇疆锛堟棤璁烘槸鍦?MSI-X 琛ㄤ腑杩樻槸鍦?TPH 鎵╁睍鑳藉姏绌洪棿涓級锛屽苟灏嗚浆鍚戞爣绛惧啓鍏ョ敱 `index` 鍙傛暟
+鎸囧悜鐨?ST 鏉＄洰銆?
+濡備綍浣跨敤杩欎簺 TPH 鍑芥暟瀹屽叏鐢遍┍鍔ㄥ喅瀹氥€備緥濡傦紝缃戠粶璁惧鐨勯┍鍔ㄥ彲浠ュ湪 RX/TX 闃熷垪鐨勪腑鏂翰鍜屾€?鍙戠敓鏀瑰彉鏃讹紝浣跨敤涓婅堪 TPH API 鏉ユ洿鏂拌浆鍚戞爣绛俱€備笅闈㈡槸涓€涓腑鏂翰鍜屾€ч€氱煡鍣ㄧ殑绀轰緥浠ｇ爜锛?
 
     static void irq_affinity_notified(struct irq_affinity_notify *notify,
                                       const cpumask_t *mask)
@@ -96,7 +76,7 @@ ST。本实现支持的就是此方法。
          irq = container_of(notify, struct drv_irq, affinity_notify);
          cpumask_copy(irq->cpu_mask, mask);
 
-         /** 选择一个合适的 CPU 作为目标 - 这里仅作示例 **/
+         /** 閫夋嫨涓€涓悎閫傜殑 CPU 浣滀负鐩爣 - 杩欓噷浠呬綔绀轰緥 **/
          cpu_id = cpumask_first(irq->cpu_mask);
 
          if (pcie_tph_get_cpu_st(irq->pdev, TPH_MEM_TYPE_VM, cpu_id,
@@ -107,8 +87,8 @@ ST。本实现支持的就是此方法。
              return;
     }
 
-### 系统范围内禁用 TPH
+### 绯荤粺鑼冨洿鍐呯鐢?TPH
 
 
-有一个可用的内核命令行选项来控制 TPH 特性：
-    - "notph"：TPH 将对所有端点设备禁用。
+鏈変竴涓彲鐢ㄧ殑鍐呮牳鍛戒护琛岄€夐」鏉ユ帶鍒?TPH 鐗规€э細
+    - "notph"锛歍PH 灏嗗鎵€鏈夌鐐硅澶囩鐢ㄣ€?

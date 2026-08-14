@@ -1,29 +1,24 @@
-## 为 Zorro 设备编写设备驱动
+﻿## 涓?Zorro 璁惧缂栧啓璁惧椹卞姩
 
 
 :Author: Written by Geert Uytterhoeven <geert@linux-m68k.org>
 :Last revised: September 5, 2003
 
 
-### 简介
+### 绠€浠?
+
+Zorro 鎬荤嚎鏄?Amiga 绯诲垪璁＄畻鏈轰腑浣跨敤鐨勬€荤嚎銆傚緱鐩婁簬 AutoConfig(tm)锛屽畠鏄?100%
+鍗虫彃鍗崇敤锛圥lug-and-Play锛夌殑銆?
+Zorro 鎬荤嚎鏈変袱绉嶇被鍨嬶紝Zorro II 涓?Zorro III锛?
+  - Zorro II 鍦板潃绌洪棿鏄?24 浣嶇殑锛屼綅浜?Amiga 鍦板潃鏄犲皠鐨勫墠 16 MB 鍐呫€?
+  - Zorro III 鏄?Zorro II 鐨?32 浣嶆墿灞曪紝鍚戝悗鍏煎 Zorro II銆俍orro III 鍦板潃绌洪棿
+    浣嶄簬鍓?16 MB 涔嬪銆?
+
+### 鎺㈡祴 Zorro 璁惧
 
 
-Zorro 总线是 Amiga 系列计算机中使用的总线。得益于 AutoConfig(tm)，它是 100%
-即插即用（Plug-and-Play）的。
-
-Zorro 总线有两种类型，Zorro II 与 Zorro III：
-
-  - Zorro II 地址空间是 24 位的，位于 Amiga 地址映射的前 16 MB 内。
-
-  - Zorro III 是 Zorro II 的 32 位扩展，向后兼容 Zorro II。Zorro III 地址空间
-    位于前 16 MB 之外。
-
-
-### 探测 Zorro 设备
-
-
-通过调用 `zorro_find_device()` 来发现 Zorro 设备，该函数返回指向具有指定 Zorro ID
-的`下一个` Zorro 设备的指针。探测循环如下：
+閫氳繃璋冪敤 `zorro_find_device()` 鏉ュ彂鐜?Zorro 璁惧锛岃鍑芥暟杩斿洖鎸囧悜鍏锋湁鎸囧畾 Zorro ID
+鐨刞涓嬩竴涓猔 Zorro 璁惧鐨勬寚閽堛€傛帰娴嬪惊鐜涓嬶細
 
 ```
 
@@ -36,7 +31,7 @@ Zorro 总线有两种类型，Zorro II 与 Zorro III：
     }
 
 ```
-`ZORRO_WILDCARD` 充当通配符，可以找到任意 Zorro 设备。如果你的驱动如下：
+`ZORRO_WILDCARD` 鍏呭綋閫氶厤绗︼紝鍙互鎵惧埌浠绘剰 Zorro 璁惧銆傚鏋滀綘鐨勯┍鍔ㄥ涓嬶細
 
 ```
 
@@ -52,11 +47,11 @@ Zorro 总线有两种类型，Zorro II 与 Zorro III：
 
 
 ```
-### Zorro 资源
+### Zorro 璧勬簮
 
 
-在你访问 Zorro 设备的寄存器之前，必须确保它尚未被使用。这是通过 I/O 内存空间
-资源管理完成的：
+鍦ㄤ綘璁块棶 Zorro 璁惧鐨勫瘎瀛樺櫒涔嬪墠锛屽繀椤荤‘淇濆畠灏氭湭琚娇鐢ㄣ€傝繖鏄€氳繃 I/O 鍐呭瓨绌洪棿
+璧勬簮绠＄悊瀹屾垚鐨勶細
 
 ```
 
@@ -71,24 +66,21 @@ Zorro 总线有两种类型，Zorro II 与 Zorro III：
 
 
 ```
-### 访问 Zorro 地址空间
+### 璁块棶 Zorro 鍦板潃绌洪棿
 
 
-Zorro 设备资源中的地址区域是 Zorro 总线地址区域。由于 Zorro 总线上总线-物理地址的
-恒等映射，它们同时也是 CPU 物理地址。
+Zorro 璁惧璧勬簮涓殑鍦板潃鍖哄煙鏄?Zorro 鎬荤嚎鍦板潃鍖哄煙銆傜敱浜?Zorro 鎬荤嚎涓婃€荤嚎-鐗╃悊鍦板潃鐨?鎭掔瓑鏄犲皠锛屽畠浠悓鏃朵篃鏄?CPU 鐗╃悊鍦板潃銆?
+瀵硅繖浜涘尯鍩熺殑澶勭悊鍙栧喅浜?Zorro 绌洪棿鐨勭被鍨嬶細
 
-对这些区域的处理取决于 Zorro 空间的类型：
-
-  - Zorro II 地址空间总是被映射的，不需要使用 z_ioremap() 显式映射。
-
-    从总线/物理 Zorro II 地址到内核虚拟地址的转换：
+  - Zorro II 鍦板潃绌洪棿鎬绘槸琚槧灏勭殑锛屼笉闇€瑕佷娇鐢?z_ioremap() 鏄惧紡鏄犲皠銆?
+    浠庢€荤嚎/鐗╃悊 Zorro II 鍦板潃鍒板唴鏍歌櫄鎷熷湴鍧€鐨勮浆鎹細
 
 ```
 
 	virt_addr = ZTWO_VADDR(bus_addr);
 	bus_addr = ZTWO_PADDR(virt_addr);
 
-  - Zorro III 地址空间必须先使用 z_ioremap() 显式映射，然后才能访问::
+  - Zorro III 鍦板潃绌洪棿蹇呴』鍏堜娇鐢?z_ioremap() 鏄惧紡鏄犲皠锛岀劧鍚庢墠鑳借闂?:
 
 	virt_addr = z_ioremap(bus_addr, size);
 	...
@@ -96,8 +88,7 @@ Zorro 设备资源中的地址区域是 Zorro 总线地址区域。由于 Zorro 
 
 
 ```
-### 参考资料
-
+### 鍙傝€冭祫鏂?
 
 #. linux/include/linux/zorro.h
 #. linux/include/uapi/linux/zorro.h

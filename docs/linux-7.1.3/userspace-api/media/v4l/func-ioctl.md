@@ -1,46 +1,37 @@
-
+﻿
 ######## V4L2 ioctl()
 
 
-## 名称
+## 鍚嶇О
 
 
-v4l2-ioctl - 编程 V4L2 设备
+v4l2-ioctl - 缂栫▼ V4L2 璁惧
 
-## 概要
+## 姒傝
 
 
     #include <sys/ioctl.h>
 
 `int ioctl(int fd, int request, void *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    `open()` 返回的文件描述符。
-
+    `open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `request`
-    在 `videodev2.h` 头文件中定义的 V4L2 ioctl 请求码，例如
-    VIDIOC_QUERYCAP。
-
+    鍦?`videodev2.h` 澶存枃浠朵腑瀹氫箟鐨?V4L2 ioctl 璇锋眰鐮侊紝渚嬪
+    VIDIOC_QUERYCAP銆?
 `argp`
-    指向函数参数的指针，通常是一个结构。
-
-## 描述
-
-
-ioctl() <func-ioctl> 函数用于编程 V4L2 设备。参数 `fd` 必须是一个已打开的
-文件描述符。ioctl `request` 中编码了参数是输入、输出还是读写参数，以及
-参数 `argp` 的大小（字节数）。指定 V4L2 ioctl 请求的宏与 define 位于
-`videodev2.h` 头文件中。应用程序应使用自己的副本，而非包含其编译所在系统
-内核源码中的版本。所有 V4L2 ioctl 请求及其各自的函数与参数在 user-func 中
-说明。
-
-## 返回值
+    鎸囧悜鍑芥暟鍙傛暟鐨勬寚閽堬紝閫氬父鏄竴涓粨鏋勩€?
+## 鎻忚堪
 
 
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 章节中描述。
+ioctl() <func-ioctl> 鍑芥暟鐢ㄤ簬缂栫▼ V4L2 璁惧銆傚弬鏁?`fd` 蹇呴』鏄竴涓凡鎵撳紑鐨?鏂囦欢鎻忚堪绗︺€俰octl `request` 涓紪鐮佷簡鍙傛暟鏄緭鍏ャ€佽緭鍑鸿繕鏄鍐欏弬鏁帮紝浠ュ強
+鍙傛暟 `argp` 鐨勫ぇ灏忥紙瀛楄妭鏁帮級銆傛寚瀹?V4L2 ioctl 璇锋眰鐨勫畯涓?define 浣嶄簬
+`videodev2.h` 澶存枃浠朵腑銆傚簲鐢ㄧ▼搴忓簲浣跨敤鑷繁鐨勫壇鏈紝鑰岄潪鍖呭惈鍏剁紪璇戞墍鍦ㄧ郴缁?鍐呮牳婧愮爜涓殑鐗堟湰銆傛墍鏈?V4L2 ioctl 璇锋眰鍙婂叾鍚勮嚜鐨勫嚱鏁颁笌鍙傛暟鍦?user-func 涓?璇存槑銆?
+## 杩斿洖鍊?
 
-当采用输出或读写参数的 ioctl 失败时，该参数保持不变。
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+褰撻噰鐢ㄨ緭鍑烘垨璇诲啓鍙傛暟鐨?ioctl 澶辫触鏃讹紝璇ュ弬鏁颁繚鎸佷笉鍙樸€?

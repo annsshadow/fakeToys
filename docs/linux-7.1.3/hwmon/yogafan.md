@@ -1,76 +1,52 @@
-
-## 内核驱动 yogafan
-
-
-支持的设备：
-
-  - Lenovo Yoga、Legion、IdeaPad、Slim、Flex 以及 LOQ 嵌入式控制器
-  - 前缀：'yogafan'
-  - 地址：ACPI 句柄（见下文数据库）
-
-作者：Sergio Melas <sergiomelas@gmail.com>
-
-### 描述
+﻿
+## 鍐呮牳椹卞姩 yogafan
 
 
-本驱动为现代 Lenovo 消费级笔记本提供风扇转速监控。大多数 Lenovo 笔记本不通过标准的
-ISA/LPC 硬件监控芯片提供风扇转速计数据。相反，数据存储在嵌入式控制器（EC）中并通过
-ACPI 暴露。
+鏀寔鐨勮澶囷細
 
-该驱动实现了一个**限速率滞后（RLLag）**滤波器，用于处理 Lenovo EC 固件中低分辨率、有
-抖动的采样。
+  - Lenovo Yoga銆丩egion銆両deaPad銆丼lim銆丗lex 浠ュ強 LOQ 宓屽叆寮忔帶鍒跺櫒
+  - 鍓嶇紑锛?yogafan'
+  - 鍦板潃锛欰CPI 鍙ユ焺锛堣涓嬫枃鏁版嵁搴擄級
 
-### 硬件识别与倍率逻辑
+浣滆€咃細Sergio Melas <sergiomelas@gmail.com>
 
-
-该驱动支持两种不同的 EC 架构。区分在探测阶段通过 DMI 产品系列 quirk 表确定性地完成，
-无需运行时启发式。
-
-1. 8 位 EC 架构（倍率：100）
-
-   - **系列：** Yoga、IdeaPad、Slim、Flex。
-   - **技术细节：** 这些型号为转速计数据分配单个 8 位寄存器。由于 8 位字段的最大值为 255，
-      BIOS 以 100 RPM 为单位存储风扇转速（例如，42 = 4200 RPM）。
-
-2. 16 位 EC 架构（倍率：1）
-
-   - **系列：** Legion、LOQ。
-   - **技术细节：** 高性能游戏型号需要更高的精度来应对超过 6000 RPM 的风扇。它们使用
-     一个 16 位字（2 字节）直接存储原始 RPM 值。
-
-### 滤波器细节
+### 鎻忚堪
 
 
-RLLag 滤波器是一个被动的离散时间一阶滞后模型，它确保：
-  - **平滑：** 低分辨率的步进增量被平滑为 1-RPM 的增量。
-  - **压摆率限制：** 通过将变化限制在 1500 RPM/s，防止不真实的读数，以匹配物理风扇的
-    惯性。
-  - **轮询无关性：** 滤波器数学基于用户空间读取之间的时间差进行缩放，确保无论轮询频率
-    如何都保持一致的物理曲线。
-
-### 挂起与恢复
+鏈┍鍔ㄤ负鐜颁唬 Lenovo 娑堣垂绾х瑪璁版湰鎻愪緵椋庢墖杞€熺洃鎺с€傚ぇ澶氭暟 Lenovo 绗旇鏈笉閫氳繃鏍囧噯鐨?ISA/LPC 纭欢鐩戞帶鑺墖鎻愪緵椋庢墖杞€熻鏁版嵁銆傜浉鍙嶏紝鏁版嵁瀛樺偍鍦ㄥ祵鍏ュ紡鎺у埗鍣紙EC锛変腑骞堕€氳繃
+ACPI 鏆撮湶銆?
+璇ラ┍鍔ㄥ疄鐜颁簡涓€涓?*闄愰€熺巼婊炲悗锛圧LLag锛?*婊ゆ尝鍣紝鐢ㄤ簬澶勭悊 Lenovo EC 鍥轰欢涓綆鍒嗚鲸鐜囥€佹湁
+鎶栧姩鐨勯噰鏍枫€?
+### 纭欢璇嗗埆涓庡€嶇巼閫昏緫
 
 
-该驱动使用 boottime 时钟（ktime_get_boottime()）来计算采样间隔。这确保了系统挂起期间
-所花费的时间被计入。如果间隔超过 5 秒（例如笔记本唤醒后），滤波器会自动重置为当前硬件
-值，以防止报告来自睡眠状态之前的"幽灵" RPM 数据。
+璇ラ┍鍔ㄦ敮鎸佷袱绉嶄笉鍚岀殑 EC 鏋舵瀯銆傚尯鍒嗗湪鎺㈡祴闃舵閫氳繃 DMI 浜у搧绯诲垪 quirk 琛ㄧ‘瀹氭€у湴瀹屾垚锛?鏃犻渶杩愯鏃跺惎鍙戝紡銆?
+1. 8 浣?EC 鏋舵瀯锛堝€嶇巼锛?00锛?
+   - **绯诲垪锛?* Yoga銆両deaPad銆丼lim銆丗lex銆?   - **鎶€鏈粏鑺傦細** 杩欎簺鍨嬪彿涓鸿浆閫熻鏁版嵁鍒嗛厤鍗曚釜 8 浣嶅瘎瀛樺櫒銆傜敱浜?8 浣嶅瓧娈电殑鏈€澶у€间负 255锛?      BIOS 浠?100 RPM 涓哄崟浣嶅瓨鍌ㄩ鎵囪浆閫燂紙渚嬪锛?2 = 4200 RPM锛夈€?
+2. 16 浣?EC 鏋舵瀯锛堝€嶇巼锛?锛?
+   - **绯诲垪锛?* Legion銆丩OQ銆?   - **鎶€鏈粏鑺傦細** 楂樻€ц兘娓告垙鍨嬪彿闇€瑕佹洿楂樼殑绮惧害鏉ュ簲瀵硅秴杩?6000 RPM 鐨勯鎵囥€傚畠浠娇鐢?     涓€涓?16 浣嶅瓧锛? 瀛楄妭锛夌洿鎺ュ瓨鍌ㄥ師濮?RPM 鍊笺€?
+### 婊ゆ尝鍣ㄧ粏鑺?
 
-### 用法
+RLLag 婊ゆ尝鍣ㄦ槸涓€涓鍔ㄧ殑绂绘暎鏃堕棿涓€闃舵粸鍚庢ā鍨嬶紝瀹冪‘淇濓細
+  - **骞虫粦锛?* 浣庡垎杈ㄧ巼鐨勬杩涘閲忚骞虫粦涓?1-RPM 鐨勫閲忋€?  - **鍘嬫憜鐜囬檺鍒讹細** 閫氳繃灏嗗彉鍖栭檺鍒跺湪 1500 RPM/s锛岄槻姝笉鐪熷疄鐨勮鏁帮紝浠ュ尮閰嶇墿鐞嗛鎵囩殑
+    鎯€с€?  - **杞鏃犲叧鎬э細** 婊ゆ尝鍣ㄦ暟瀛﹀熀浜庣敤鎴风┖闂磋鍙栦箣闂寸殑鏃堕棿宸繘琛岀缉鏀撅紝纭繚鏃犺杞棰戠巼
+    濡備綍閮戒繚鎸佷竴鑷寸殑鐗╃悊鏇茬嚎銆?
+### 鎸傝捣涓庢仮澶?
+
+璇ラ┍鍔ㄤ娇鐢?boottime 鏃堕挓锛坘time_get_boottime()锛夋潵璁＄畻閲囨牱闂撮殧銆傝繖纭繚浜嗙郴缁熸寕璧锋湡闂?鎵€鑺辫垂鐨勬椂闂磋璁″叆銆傚鏋滈棿闅旇秴杩?5 绉掞紙渚嬪绗旇鏈敜閱掑悗锛夛紝婊ゆ尝鍣ㄤ細鑷姩閲嶇疆涓哄綋鍓嶇‖浠?鍊硷紝浠ラ槻姝㈡姤鍛婃潵鑷潯鐪犵姸鎬佷箣鍓嶇殑"骞界伒" RPM 鏁版嵁銆?
+### 鐢ㄦ硶
 
 
-该驱动暴露标准的 hwmon sysfs 属性：
+璇ラ┍鍔ㄦ毚闇叉爣鍑嗙殑 hwmon sysfs 灞炴€э細
 
 ===============   ============================
-属性             描述
-fanX_input        过滤后的风扇转速，单位为 RPM。
-===============   ============================
+灞炴€?            鎻忚堪
+fanX_input        杩囨护鍚庣殑椋庢墖杞€燂紝鍗曚綅涓?RPM銆?===============   ============================
 
 
-注意：如果硬件报告 0 RPM，滤波器会被旁路并立即报告 0，以确保用户知道风扇已停止。
+娉ㄦ剰锛氬鏋滅‖浠舵姤鍛?0 RPM锛屾护娉㈠櫒浼氳鏃佽矾骞剁珛鍗虫姤鍛?0锛屼互纭繚鐢ㄦ埛鐭ラ亾椋庢墖宸插仠姝€?
 
-
-##                  LENOVO 风扇控制器：主参考数据库（2026）
-
+##                  LENOVO 椋庢墖鎺у埗鍣細涓诲弬鑰冩暟鎹簱锛?026锛?
 
 ```
 
@@ -92,35 +68,20 @@ fanX_input        过滤后的风扇转速，单位为 RPM。
  ----------------------------------------------------------------------------------------------------
 
 ```
-方法与识别：
+鏂规硶涓庤瘑鍒細
 
-1. DSDT 分析（路径）：
-   使用 'iasl' 分析 BIOS ACPI 表，并与公开 dump 交叉引用。内部标签（FANS、FAN0、FA2S）
-   被映射到 EmbeddedControl OperationRegion 偏移。
+1. DSDT 鍒嗘瀽锛堣矾寰勶級锛?   浣跨敤 'iasl' 鍒嗘瀽 BIOS ACPI 琛紝骞朵笌鍏紑 dump 浜ゅ弶寮曠敤銆傚唴閮ㄦ爣绛撅紙FANS銆丗AN0銆丗A2S锛?   琚槧灏勫埌 EmbeddedControl OperationRegion 鍋忕Щ銆?
+2. EC 鍐呭瓨鏄犲皠锛堝亸绉伙級锛?   閫氳繃灏?NBFC锛圢oteBook FanControl锛夌殑 XML 閫昏緫涓?BIOS 鍥轰欢涓殑 DSDT Field 瀹氫箟鐩稿尮閰?   杩涜楠岃瘉銆?
+3. 鏁版嵁瀹藉害鍒嗘瀽锛堝€嶇巼锛夛細
+   - 8 浣嶏紙鍊嶇巼 100锛夛細Yoga/IdeaPad 鐨勬爣鍑嗐€傚師濮嬪€硷紙0-255锛夈€?   - 16 浣嶏紙鍊嶇巼 1锛夛細Legion/LOQ 鐨勬爣鍑嗐€備袱涓瘎瀛樺櫒锛?xFE/0xFF锛夈€?
 
-2. EC 内存映射（偏移）：
-   通过将 NBFC（NoteBook FanControl）的 XML 逻辑与 BIOS 固件中的 DSDT Field 定义相匹配
-   进行验证。
+### 鍙傝€?
 
-3. 数据宽度分析（倍率）：
-   - 8 位（倍率 100）：Yoga/IdeaPad 的标准。原始值（0-255）。
-   - 16 位（倍率 1）：Legion/LOQ 的标准。两个寄存器（0xFE/0xFF）。
+1. **ACPI 瑙勮寖锛團ield Objects锛夛細** 鍏充簬鍦?OperationRegions 涓浣曡闂?8 浣嶄笌 16 浣?   瀛楁鐨勬枃妗ｃ€?   https://uefi.org/specs/ACPI/6.5/05_ACPI_Software_Programming_Model.html#field-objects
 
+2. **NBFC 椤圭洰锛?* 鐢辩ぞ鍖洪┍鍔ㄧ殑銆佸 Lenovo Legion/LOQ EC 鍐呭瓨鏄犲皠锛?6 浣嶅師濮嬪瘎瀛樺櫒锛夌殑
+   閫嗗悜宸ョ▼銆?   https://github.com/hirschmann/nbfc/tree/master/Configs
 
-### 参考
+3. **Linux 鍐呮牳鏃堕棿淇濇寔 API锛?* 鍏充簬 ktime_get_boottime() 浠ュ強璺ㄦ寕璧风姸鎬佸鐞嗘椂闂村樊鐨?   鏂囨。銆?   https://www.kernel.org/doc/html/latest/core-api/timekeeping.html
 
-
-1. **ACPI 规范（Field Objects）：** 关于在 OperationRegions 中如何访问 8 位与 16 位
-   字段的文档。
-   https://uefi.org/specs/ACPI/6.5/05_ACPI_Software_Programming_Model.html#field-objects
-
-2. **NBFC 项目：** 由社区驱动的、对 Lenovo Legion/LOQ EC 内存映射（16 位原始寄存器）的
-   逆向工程。
-   https://github.com/hirschmann/nbfc/tree/master/Configs
-
-3. **Linux 内核时间保持 API：** 关于 ktime_get_boottime() 以及跨挂起状态处理时间差的
-   文档。
-   https://www.kernel.org/doc/html/latest/core-api/timekeeping.html
-
-4. **Lenovo IdeaPad 笔记本驱动：** 关于 Lenovo 笔记本中基于 DMI 的硬件特性门控的参考。
-   https://github.com/torvalds/linux/blob/master/drivers/platform/x86/lenovo/ideapad-laptop.c
+4. **Lenovo IdeaPad 绗旇鏈┍鍔細** 鍏充簬 Lenovo 绗旇鏈腑鍩轰簬 DMI 鐨勭‖浠剁壒鎬ч棬鎺х殑鍙傝€冦€?   https://github.com/torvalds/linux/blob/master/drivers/platform/x86/lenovo/ideapad-laptop.c

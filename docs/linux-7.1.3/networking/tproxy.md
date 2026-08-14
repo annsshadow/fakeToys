@@ -1,17 +1,12 @@
-
-## 透明代理支持
-
-
-此特性为当前内核添加了类似 Linux 2.2 的透明代理支持。要使用该特性，请在你的内核配置中
-启用 socket 匹配与 TPROXY 目标。你还需要策略路由，因此请务必也启用它。
-
-从 Linux 4.18 起，nf_tables 中也提供了透明代理支持。
-
-## 1. 让非本地套接字工作
+﻿
+## 閫忔槑浠ｇ悊鏀寔
 
 
-其思路是：你通过策略路由识别目的地址匹配本地某个地址的数据包，从而让这些数据包
-```
+姝ょ壒鎬т负褰撳墠鍐呮牳娣诲姞浜嗙被浼?Linux 2.2 鐨勯€忔槑浠ｇ悊鏀寔銆傝浣跨敤璇ョ壒鎬э紝璇峰湪浣犵殑鍐呮牳閰嶇疆涓?鍚敤 socket 鍖归厤涓?TPROXY 鐩爣銆備綘杩橀渶瑕佺瓥鐣ヨ矾鐢憋紝鍥犳璇峰姟蹇呬篃鍚敤瀹冦€?
+浠?Linux 4.18 璧凤紝nf_tables 涓篃鎻愪緵浜嗛€忔槑浠ｇ悊鏀寔銆?
+## 1. 璁╅潪鏈湴濂楁帴瀛楀伐浣?
+
+鍏舵€濊矾鏄細浣犻€氳繃绛栫暐璺敱璇嗗埆鐩殑鍦板潃鍖归厤鏈湴鏌愪釜鍦板潃鐨勬暟鎹寘锛屼粠鑰岃杩欎簺鏁版嵁鍖?```
 
     # iptables -t mangle -N DIVERT
     # iptables -t mangle -A PREROUTING -p tcp -m socket --transparent -j DIVERT
@@ -26,15 +21,15 @@
     # nft add rule filter divert meta l4proto tcp socket transparent 1 meta mark set 1 accept
 
 ```
-然后通过策略路由匹配该值，使那些数据包
+鐒跺悗閫氳繃绛栫暐璺敱鍖归厤璇ュ€硷紝浣块偅浜涙暟鎹寘
 ```
 
     # ip rule add fwmark 1 lookup 100
     # ip route add local 0.0.0.0/0 dev lo table 100
 
 ```
-由于 IPv4 路由输出代码的某些限制，你将不得不修改你的应用程序，以允许它_从_非本地 IP
-地址发送数据报。你只需启用（SOL_IP, IP_TRANSPARENT）套接字选项
+鐢变簬 IPv4 璺敱杈撳嚭浠ｇ爜鐨勬煇浜涢檺鍒讹紝浣犲皢涓嶅緱涓嶄慨鏀逛綘鐨勫簲鐢ㄧ▼搴忥紝浠ュ厑璁稿畠_浠巁闈炴湰鍦?IP
+鍦板潃鍙戦€佹暟鎹姤銆備綘鍙渶鍚敤锛圫OL_IP, IP_TRANSPARENT锛夊鎺ュ瓧閫夐」
 ```
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -48,18 +43,15 @@
     bind(fd, &name, sizeof(name));
 
 ```
-netcat 的一个简单补丁可在此处获取：
+netcat 鐨勪竴涓畝鍗曡ˉ涓佸彲鍦ㄦ澶勮幏鍙栵細
 http://people.netfilter.org/hidden/tproxy/netcat-ip_transparent-support.patch
 
-## 2. 重定向流量
+## 2. 閲嶅畾鍚戞祦閲?
 
+閫忔槑浠ｇ悊閫氬父娑夊強鍦ㄨ矾鐢卞櫒涓娾€滄嫤鎴€濇祦閲忋€傝繖閫氬父閫氳繃 iptables 鐨?REDIRECT 鐩爣瀹屾垚锛涚劧鑰岋紝
+璇ユ柟娉曞瓨鍦ㄤ弗閲嶅眬闄愩€傚叾涓竴涓富瑕侀棶棰樻槸锛屽畠瀹為檯涓婁細淇敼鏁版嵁鍖呬互鏀瑰彉鐩殑鍦板潃鈥斺€旇繖鍦ㄦ煇浜?鎯呭喌涓嬪彲鑳戒笉鍙帴鍙椼€傦紙渚嬪鎯虫兂浠ｇ悊 UDP锛氫綘灏嗘棤娉曡幏鐭ュ師濮嬬洰鐨勫湴鍧€銆傚嵆渚垮浜?TCP锛岃幏鍙?鍘熷鐩殑鍦板潃涔熷瓨鍦ㄧ珵浜夋潯浠躲€傦級
 
-透明代理通常涉及在路由器上“拦截”流量。这通常通过 iptables 的 REDIRECT 目标完成；然而，
-该方法存在严重局限。其中一个主要问题是，它实际上会修改数据包以改变目的地址——这在某些
-情况下可能不可接受。（例如想想代理 UDP：你将无法获知原始目的地址。即便对于 TCP，获取
-原始目的地址也存在竞争条件。）
-
-'TPROXY' 目标提供了类似的功能，且不依赖 NAT。只需
+'TPROXY' 鐩爣鎻愪緵浜嗙被浼肩殑鍔熻兘锛屼笖涓嶄緷璧?NAT銆傚彧闇€
 ```
 
     # iptables -t mangle -A PREROUTING -p tcp --dport 80 -j TPROXY \
@@ -71,32 +63,25 @@ http://people.netfilter.org/hidden/tproxy/netcat-ip_transparent-support.patch
     # nft add rule filter divert tcp dport 80 tproxy to :50080 meta mark set 1 accept
 
 ```
-注意，要使其工作，你必须修改代理，为监听套接字启用（SOL_IP, IP_TRANSPARENT）。
-
-作为示例实现，tcprdr 可在此处获取：
-https://git.breakpoint.cc/cgit/fw/tcprdr.git/
-该工具由 Florian Westphal 编写，并在 nf_tables 实现期间用于测试。
-
-## 3. Iptables 与 nf_tables 扩展
+娉ㄦ剰锛岃浣垮叾宸ヤ綔锛屼綘蹇呴』淇敼浠ｇ悊锛屼负鐩戝惉濂楁帴瀛楀惎鐢紙SOL_IP, IP_TRANSPARENT锛夈€?
+浣滀负绀轰緥瀹炵幇锛宼cprdr 鍙湪姝ゅ鑾峰彇锛?https://git.breakpoint.cc/cgit/fw/tcprdr.git/
+璇ュ伐鍏风敱 Florian Westphal 缂栧啓锛屽苟鍦?nf_tables 瀹炵幇鏈熼棿鐢ㄤ簬娴嬭瘯銆?
+## 3. Iptables 涓?nf_tables 鎵╁睍
 
 
-要使用 tproxy，你需要为 iptables 编译以下模块：
-
+瑕佷娇鐢?tproxy锛屼綘闇€瑕佷负 iptables 缂栬瘧浠ヤ笅妯″潡锛?
  - NETFILTER_XT_MATCH_SOCKET
  - NETFILTER_XT_TARGET_TPROXY
 
-或为 nf_tables 编译以下模块：
-
+鎴栦负 nf_tables 缂栬瘧浠ヤ笅妯″潡锛?
  - NFT_SOCKET
  - NFT_TPROXY
 
-## 4. 应用程序支持
+## 4. 搴旂敤绋嬪簭鏀寔
 
 
 ### 4.1. Squid
 
 
-Squid 3.HEAD 已内置支持。要使用它，请将 '--enable-linux-netfilter' 传给 configure，
-并在你通过 TPROXY iptables 目标重定向流量到的 HTTP 监听器上设置 'tproxy' 选项。
-
-更多信息请查阅 Squid wiki 上的以下页面：http://wiki.squid-cache.org/Features/Tproxy4
+Squid 3.HEAD 宸插唴缃敮鎸併€傝浣跨敤瀹冿紝璇峰皢 '--enable-linux-netfilter' 浼犵粰 configure锛?骞跺湪浣犻€氳繃 TPROXY iptables 鐩爣閲嶅畾鍚戞祦閲忓埌鐨?HTTP 鐩戝惉鍣ㄤ笂璁剧疆 'tproxy' 閫夐」銆?
+鏇村淇℃伅璇锋煡闃?Squid wiki 涓婄殑浠ヤ笅椤甸潰锛歨ttp://wiki.squid-cache.org/Features/Tproxy4

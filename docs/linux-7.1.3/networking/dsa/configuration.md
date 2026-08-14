@@ -1,80 +1,66 @@
+﻿
+## 浠庣敤鎴风┖闂撮厤缃?DSA 浜ゆ崲鏈?
 
-## 从用户空间配置 DSA 交换机
+鐩墠锛孌SA 浜ゆ崲鏈洪厤缃皻鏈泦鎴愬埌涓绘祦鐨勭敤鎴风┖闂寸綉缁滈厤缃浠朵腑锛屽繀椤绘墜鍔ㄨ繘琛屻€?
 
-
-目前，DSA 交换机配置尚未集成到主流的用户空间网络配置套件中，必须手动进行。
-
-
-### 配置示例
+### 閰嶇疆绀轰緥
 
 
-要配置一个 DSA 交换机，需要执行若干命令。本文档将一些常见配置场景作为示例进行讲解：
+瑕侀厤缃竴涓?DSA 浜ゆ崲鏈猴紝闇€瑕佹墽琛岃嫢骞插懡浠ゃ€傛湰鏂囨。灏嗕竴浜涘父瑙侀厤缃満鏅綔涓虹ず渚嬭繘琛岃瑙ｏ細
 
-**单端口（single port）**
-  每个交换机端口都作为一个可配置的独立以太网端口
+**鍗曠鍙ｏ紙single port锛?*
+  姣忎釜浜ゆ崲鏈虹鍙ｉ兘浣滀负涓€涓彲閰嶇疆鐨勭嫭绔嬩互澶綉绔彛
 
-**桥接（bridge）**
-  每个交换机端口都是一个可配置以太网桥的一部分
+**妗ユ帴锛坆ridge锛?*
+  姣忎釜浜ゆ崲鏈虹鍙ｉ兘鏄竴涓彲閰嶇疆浠ュお缃戞ˉ鐨勪竴閮ㄥ垎
 
-**网关（gateway）**
-  除一个上游端口外的每个交换机端口都是可配置以太网桥的一部分。
-  上游端口作为一个可配置的独立以太网端口。
-
-所有配置都使用来自 iproute2 的工具完成，iproute2 可在
-https://www.kernel.org/pub/linux/utils/net/iproute2/ 获取。
-
-通过 DSA，交换机的每个端口都像普通的 Linux 以太网接口一样被处理。CPU 端口是连接到以太网 MAC
-芯片的交换机端口。相应的 Linux 以太网接口称为 conduit 接口（导管接口）。所有其他相应的 Linux
-接口称为用户接口。
-
-用户接口依赖于 conduit 接口处于 up 状态才能发送或接收流量。在内核 v5.12 之前，conduit 接口的
-状态必须由用户显式管理。从内核 v5.12 开始，行为如下：
-
-- 当一个 DSA 用户接口被拉起（up）时，conduit 接口会被自动拉起。
-- 当 conduit 接口被关闭（down）时，所有 DSA 用户接口会被自动关闭。
-
-本文档中使用以下以太网接口：
+**缃戝叧锛坓ateway锛?*
+  闄や竴涓笂娓哥鍙ｅ鐨勬瘡涓氦鎹㈡満绔彛閮芥槸鍙厤缃互澶綉妗ョ殑涓€閮ㄥ垎銆?  涓婃父绔彛浣滀负涓€涓彲閰嶇疆鐨勭嫭绔嬩互澶綉绔彛銆?
+鎵€鏈夐厤缃兘浣跨敤鏉ヨ嚜 iproute2 鐨勫伐鍏峰畬鎴愶紝iproute2 鍙湪
+https://www.kernel.org/pub/linux/utils/net/iproute2/ 鑾峰彇銆?
+閫氳繃 DSA锛屼氦鎹㈡満鐨勬瘡涓鍙ｉ兘鍍忔櫘閫氱殑 Linux 浠ュお缃戞帴鍙ｄ竴鏍疯澶勭悊銆侰PU 绔彛鏄繛鎺ュ埌浠ュお缃?MAC
+鑺墖鐨勪氦鎹㈡満绔彛銆傜浉搴旂殑 Linux 浠ュお缃戞帴鍙ｇО涓?conduit 鎺ュ彛锛堝绠℃帴鍙ｏ級銆傛墍鏈夊叾浠栫浉搴旂殑 Linux
+鎺ュ彛绉颁负鐢ㄦ埛鎺ュ彛銆?
+鐢ㄦ埛鎺ュ彛渚濊禆浜?conduit 鎺ュ彛澶勪簬 up 鐘舵€佹墠鑳藉彂閫佹垨鎺ユ敹娴侀噺銆傚湪鍐呮牳 v5.12 涔嬪墠锛宑onduit 鎺ュ彛鐨?鐘舵€佸繀椤荤敱鐢ㄦ埛鏄惧紡绠＄悊銆備粠鍐呮牳 v5.12 寮€濮嬶紝琛屼负濡備笅锛?
+- 褰撲竴涓?DSA 鐢ㄦ埛鎺ュ彛琚媺璧凤紙up锛夋椂锛宑onduit 鎺ュ彛浼氳鑷姩鎷夎捣銆?- 褰?conduit 鎺ュ彛琚叧闂紙down锛夋椂锛屾墍鏈?DSA 鐢ㄦ埛鎺ュ彛浼氳鑷姩鍏抽棴銆?
+鏈枃妗ｄ腑浣跨敤浠ヤ笅浠ュお缃戞帴鍙ｏ細
 
 **eth0**
-  conduit 接口
+  conduit 鎺ュ彛
 
 **eth1**
-  另一个 conduit 接口
+  鍙︿竴涓?conduit 鎺ュ彛
 
 **lan1**
-  一个用户接口
-
+  涓€涓敤鎴锋帴鍙?
 **lan2**
-  另一个用户接口
-
+  鍙︿竴涓敤鎴锋帴鍙?
 **lan3**
-  第三个用户接口
-
+  绗笁涓敤鎴锋帴鍙?
 **wan**
-  专用于上游流量的用户接口
+  涓撶敤浜庝笂娓告祦閲忕殑鐢ㄦ埛鎺ュ彛
 
-可以进一步以类似方式配置其他以太网接口。配置的 IP 与网络如下：
+鍙互杩涗竴姝ヤ互绫讳技鏂瑰紡閰嶇疆鍏朵粬浠ュお缃戞帴鍙ｃ€傞厤缃殑 IP 涓庣綉缁滃涓嬶細
 
-**单端口**
+**鍗曠鍙?*
   - lan1: 192.0.2.1/30 (192.0.2.0 - 192.0.2.3)
   - lan2: 192.0.2.5/30 (192.0.2.4 - 192.0.2.7)
   - lan3: 192.0.2.9/30 (192.0.2.8 - 192.0.2.11)
 
-**桥接**
+**妗ユ帴**
   - br0: 192.0.2.129/25 (192.0.2.128 - 192.0.2.255)
 
-**网关**
+**缃戝叧**
   - br0: 192.0.2.129/25 (192.0.2.128 - 192.0.2.255)
   - wan: 192.0.2.1/30 (192.0.2.0 - 192.0.2.3)
 
 
-### 带标记支持的配置
+### 甯︽爣璁版敮鎸佺殑閰嶇疆
 
 
-基于标记（tagging）的配置是大多数 DSA 交换机所期望并支持的。这些交换机能够在不使用基于 VLAN
-配置的情况下，对 incoming 和 outgoing 流量进行标记。
-
-**单端口**
+鍩轰簬鏍囪锛坱agging锛夌殑閰嶇疆鏄ぇ澶氭暟 DSA 浜ゆ崲鏈烘墍鏈熸湜骞舵敮鎸佺殑銆傝繖浜涗氦鎹㈡満鑳藉鍦ㄤ笉浣跨敤鍩轰簬 VLAN
+閰嶇疆鐨勬儏鍐典笅锛屽 incoming 鍜?outgoing 娴侀噺杩涜鏍囪銆?
+**鍗曠鍙?*
   .. code-block:: sh
 
     # configure each interface
@@ -91,7 +77,7 @@ https://www.kernel.org/pub/linux/utils/net/iproute2/ 获取。
     ip link set lan2 up
     ip link set lan3 up
 
-**桥接**
+**妗ユ帴**
   .. code-block:: sh
 
     # For kernels earlier than v5.12, the conduit interface needs to be
@@ -117,7 +103,7 @@ https://www.kernel.org/pub/linux/utils/net/iproute2/ 获取。
     # bring up the bridge
     ip link set dev br0 up
 
-**网关**
+**缃戝叧**
   .. code-block:: sh
 
     # For kernels earlier than v5.12, the conduit interface needs to be
@@ -146,14 +132,11 @@ https://www.kernel.org/pub/linux/utils/net/iproute2/ 获取。
     ip link set dev br0 up
 
 
-### 不带标记支持的配置
+### 涓嶅甫鏍囪鏀寔鐨勯厤缃?
 
-
-少数交换机无法使用标记协议（DSA_TAG_PROTO_NONE）。这些交换机可以通过基于 VLAN 的配置进行配置。
-
-**单端口**
-  该配置只能通过 VLAN 标记和桥接设置来建立。
-
+灏戞暟浜ゆ崲鏈烘棤娉曚娇鐢ㄦ爣璁板崗璁紙DSA_TAG_PROTO_NONE锛夈€傝繖浜涗氦鎹㈡満鍙互閫氳繃鍩轰簬 VLAN 鐨勯厤缃繘琛岄厤缃€?
+**鍗曠鍙?*
+  璇ラ厤缃彧鑳介€氳繃 VLAN 鏍囪鍜屾ˉ鎺ヨ缃潵寤虹珛銆?
   .. code-block:: sh
 
     # tag traffic on CPU port
@@ -198,7 +181,7 @@ https://www.kernel.org/pub/linux/utils/net/iproute2/ 获取。
     ip link set br0 up
 
 
-**桥接**
+**妗ユ帴**
   .. code-block:: sh
 
     # tag traffic on CPU port
@@ -237,7 +220,7 @@ https://www.kernel.org/pub/linux/utils/net/iproute2/ 获取。
     # bring up the bridge
     ip link set dev br0 up
 
-**网关**
+**缃戝叧**
   .. code-block:: sh
 
     # tag traffic on CPU port
@@ -279,26 +262,20 @@ https://www.kernel.org/pub/linux/utils/net/iproute2/ 获取。
     # bring up the bridge devices
     ip link set br0 up
 
-### 转发数据库（FDB）管理
+### 杞彂鏁版嵁搴擄紙FDB锛夌鐞?
 
-
-现有的 DSA 交换机没有必要的硬件支持来使桥接的软件 FDB 与硬件表保持同步，因此这两个表是分开
-管理的（`bridge fdb show` 会查询两者，并且根据使用的是 `self` 还是 `master` 标志，``bridge fdb
-add`` 或 `bridge fdb del`` 命令作用于其中一个或两个表里的条目）。
-
-直到内核 v4.14，DSA 仅支持使用桥接旁路操作（这些操作不更新软件 FDB，只更新硬件 FDB）来由用户
-空间管理桥接 FDB 条目，使用 `self` 标志（该标志是可选的，可以省略）。
-
+鐜版湁鐨?DSA 浜ゆ崲鏈烘病鏈夊繀瑕佺殑纭欢鏀寔鏉ヤ娇妗ユ帴鐨勮蒋浠?FDB 涓庣‖浠惰〃淇濇寔鍚屾锛屽洜姝よ繖涓や釜琛ㄦ槸鍒嗗紑
+绠＄悊鐨勶紙`bridge fdb show` 浼氭煡璇袱鑰咃紝骞朵笖鏍规嵁浣跨敤鐨勬槸 `self` 杩樻槸 `master` 鏍囧織锛宍`bridge fdb
+add`` 鎴?`bridge fdb del`` 鍛戒护浣滅敤浜庡叾涓竴涓垨涓や釜琛ㄩ噷鐨勬潯鐩級銆?
+鐩村埌鍐呮牳 v4.14锛孌SA 浠呮敮鎸佷娇鐢ㄦˉ鎺ユ梺璺搷浣滐紙杩欎簺鎿嶄綔涓嶆洿鏂拌蒋浠?FDB锛屽彧鏇存柊纭欢 FDB锛夋潵鐢辩敤鎴?绌洪棿绠＄悊妗ユ帴 FDB 鏉＄洰锛屼娇鐢?`self` 鏍囧織锛堣鏍囧織鏄彲閫夌殑锛屽彲浠ョ渷鐣ワ級銆?
   .. code-block:: sh
 
     bridge fdb add dev swp0 00:01:02:03:04:05 self static
     # or shorthand
     bridge fdb add dev swp0 00:01:02:03:04:05 static
 
-由于一个 bug，DSA 提供的桥接旁路 FDB 实现没有区分 `static` 与 `local` FDB 条目（`static` 旨在
-被转发，而 `local` 旨在被本地终结，即发往主机端口）。相反，所有带有 `self` 标志（隐式或显式）
-的 FDB 条目都被 DSA 当作 `static` 处理，即使它们实际上是 `local`。
-
+鐢变簬涓€涓?bug锛孌SA 鎻愪緵鐨勬ˉ鎺ユ梺璺?FDB 瀹炵幇娌℃湁鍖哄垎 `static` 涓?`local` FDB 鏉＄洰锛坄static` 鏃ㄥ湪
+琚浆鍙戯紝鑰?`local` 鏃ㄥ湪琚湰鍦扮粓缁擄紝鍗冲彂寰€涓绘満绔彛锛夈€傜浉鍙嶏紝鎵€鏈夊甫鏈?`self` 鏍囧織锛堥殣寮忔垨鏄惧紡锛?鐨?FDB 鏉＄洰閮借 DSA 褰撲綔 `static` 澶勭悊锛屽嵆浣垮畠浠疄闄呬笂鏄?`local`銆?
   .. code-block:: sh
 
     # This command:
@@ -309,18 +286,14 @@ add`` 或 `bridge fdb del`` 命令作用于其中一个或两个表里的条目�
     # specified, it also behaves the same as:
     bridge fdb add dev swp0 00:01:02:03:04:05
 
-最后一条命令是使用桥接旁路操作向 DSA 交换机添加静态桥接 FDB 条目的不正确方式，它碰巧能够工作。
-其他驱动会将同一命令添加的 FDB 条目当作 `local` 处理，因此不会转发它，这与 DSA 不同。
-
-在内核 v4.14 到 v5.14 之间，DSA 并行支持两种向交换机添加桥接 FDB 条目的模式：上文讨论的桥接
-旁路，以及一种使用 `master` 标志的新模式，该模式也会将 FDB 条目安装进软件桥。
-
+鏈€鍚庝竴鏉″懡浠ゆ槸浣跨敤妗ユ帴鏃佽矾鎿嶄綔鍚?DSA 浜ゆ崲鏈烘坊鍔犻潤鎬佹ˉ鎺?FDB 鏉＄洰鐨勪笉姝ｇ‘鏂瑰紡锛屽畠纰板阀鑳藉宸ヤ綔銆?鍏朵粬椹卞姩浼氬皢鍚屼竴鍛戒护娣诲姞鐨?FDB 鏉＄洰褰撲綔 `local` 澶勭悊锛屽洜姝や笉浼氳浆鍙戝畠锛岃繖涓?DSA 涓嶅悓銆?
+鍦ㄥ唴鏍?v4.14 鍒?v5.14 涔嬮棿锛孌SA 骞惰鏀寔涓ょ鍚戜氦鎹㈡満娣诲姞妗ユ帴 FDB 鏉＄洰鐨勬ā寮忥細涓婃枃璁ㄨ鐨勬ˉ鎺?鏃佽矾锛屼互鍙婁竴绉嶄娇鐢?`master` 鏍囧織鐨勬柊妯″紡锛岃妯″紡涔熶細灏?FDB 鏉＄洰瀹夎杩涜蒋浠舵ˉ銆?
   .. code-block:: sh
 
     bridge fdb add dev swp0 00:01:02:03:04:05 master static
 
-自内核 v5.14 起，DSA 获得了与桥接软件 FDB 更强的集成，并且对桥接旁路 FDB 实现（使用 `self`
-标志）的支持已被移除。这导致了以下变化：
+鑷唴鏍?v5.14 璧凤紝DSA 鑾峰緱浜嗕笌妗ユ帴杞欢 FDB 鏇村己鐨勯泦鎴愶紝骞朵笖瀵规ˉ鎺ユ梺璺?FDB 瀹炵幇锛堜娇鐢?`self`
+鏍囧織锛夌殑鏀寔宸茶绉婚櫎銆傝繖瀵艰嚧浜嗕互涓嬪彉鍖栵細
 
   .. code-block:: sh
 
@@ -333,31 +306,20 @@ add`` 或 `bridge fdb del`` 命令作用于其中一个或两个表里的条目�
     # This command no longer installs a static FDB entry to hardware:
     bridge fdb add dev swp0 00:01:02:03:04:05 static
 
-因此，脚本编写者在处理 DSA 交换机接口上的桥接 FDB 条目时，鼓励使用 `master static` 这组标志。
+鍥犳锛岃剼鏈紪鍐欒€呭湪澶勭悊 DSA 浜ゆ崲鏈烘帴鍙ｄ笂鐨勬ˉ鎺?FDB 鏉＄洰鏃讹紝榧撳姳浣跨敤 `master static` 杩欑粍鏍囧織銆?
+### 鐢ㄦ埛绔彛鍒?CPU 绔彛鐨勪翰鍜屾€?
 
-### 用户端口到 CPU 端口的亲和性
-
-
-通常，DSA 交换机通过单个以太网接口连接到主机，但在交换机芯片是分立（discrete）的情况下，硬件
-设计可能允许多达 2 个或更多端口连接到主机，以提高终结吞吐量。
-
-DSA 可以通过两种方式利用多个 CPU 端口。首先，可以静态地将与某个用户端口相关联的终结流量分配
-给某个特定的 CPU 端口处理。这样，用户空间可以通过根据可用的 CPU 端口来分散亲和性，实现用户端口
-之间静态负载均衡的自定义策略。
-
-其次，可以在每个数据包的基础上而不是静态地将用户端口分配给 CPU 端口，从而在 CPU 端口之间执行
-负载均衡。这可以通过将 DSA conduit 置于一个 LAG 接口（bonding 或 team）下来实现。DSA 监控此
-操作，并在构成 LAG 从设备的、面向物理 DSA conduit 的 CPU 端口上创建该软件 LAG 的镜像。
-
-为了利用多个 CPU 端口，交换机的固件（设备树）描述必须使用 `ethernet` 引用/phandle 标记所有
-CPU 端口与其 DSA conduit 之间的链接。在启动时，只会使用一个单一的 CPU 端口和 DSA conduit ——
-即固件描述中数值上第一个带有 `ethernet` 属性的端口。由用户来配置系统以使交换机使用其他 conduit。
-
-DSA 使用 `rtnl_link_ops` 机制（带有 "dsa" `kind`）来允许更改用户端口的 DSA conduit。`IFLA_DSA_CONDUIT`
-u32 netlink 属性包含处理每个用户设备的 conduit 设备的 ifindex。DSA conduit 必须是一个基于固件
-节点信息的有效候选，或者一个只包含有效候选作为从设备的 LAG 接口。
-
-使用 iproute2，可以进行以下操作：
+閫氬父锛孌SA 浜ゆ崲鏈洪€氳繃鍗曚釜浠ュお缃戞帴鍙ｈ繛鎺ュ埌涓绘満锛屼絾鍦ㄤ氦鎹㈡満鑺墖鏄垎绔嬶紙discrete锛夌殑鎯呭喌涓嬶紝纭欢
+璁捐鍙兘鍏佽澶氳揪 2 涓垨鏇村绔彛杩炴帴鍒颁富鏈猴紝浠ユ彁楂樼粓缁撳悶鍚愰噺銆?
+DSA 鍙互閫氳繃涓ょ鏂瑰紡鍒╃敤澶氫釜 CPU 绔彛銆傞鍏堬紝鍙互闈欐€佸湴灏嗕笌鏌愪釜鐢ㄦ埛绔彛鐩稿叧鑱旂殑缁堢粨娴侀噺鍒嗛厤
+缁欐煇涓壒瀹氱殑 CPU 绔彛澶勭悊銆傝繖鏍凤紝鐢ㄦ埛绌洪棿鍙互閫氳繃鏍规嵁鍙敤鐨?CPU 绔彛鏉ュ垎鏁ｄ翰鍜屾€э紝瀹炵幇鐢ㄦ埛绔彛
+涔嬮棿闈欐€佽礋杞藉潎琛＄殑鑷畾涔夌瓥鐣ャ€?
+鍏舵锛屽彲浠ュ湪姣忎釜鏁版嵁鍖呯殑鍩虹涓婅€屼笉鏄潤鎬佸湴灏嗙敤鎴风鍙ｅ垎閰嶇粰 CPU 绔彛锛屼粠鑰屽湪 CPU 绔彛涔嬮棿鎵ц
+璐熻浇鍧囪　銆傝繖鍙互閫氳繃灏?DSA conduit 缃簬涓€涓?LAG 鎺ュ彛锛坆onding 鎴?team锛変笅鏉ュ疄鐜般€侱SA 鐩戞帶姝?鎿嶄綔锛屽苟鍦ㄦ瀯鎴?LAG 浠庤澶囩殑銆侀潰鍚戠墿鐞?DSA conduit 鐨?CPU 绔彛涓婂垱寤鸿杞欢 LAG 鐨勯暅鍍忋€?
+涓轰簡鍒╃敤澶氫釜 CPU 绔彛锛屼氦鎹㈡満鐨勫浐浠讹紙璁惧鏍戯級鎻忚堪蹇呴』浣跨敤 `ethernet` 寮曠敤/phandle 鏍囪鎵€鏈?CPU 绔彛涓庡叾 DSA conduit 涔嬮棿鐨勯摼鎺ャ€傚湪鍚姩鏃讹紝鍙細浣跨敤涓€涓崟涓€鐨?CPU 绔彛鍜?DSA conduit 鈥斺€?鍗冲浐浠舵弿杩颁腑鏁板€间笂绗竴涓甫鏈?`ethernet` 灞炴€х殑绔彛銆傜敱鐢ㄦ埛鏉ラ厤缃郴缁熶互浣夸氦鎹㈡満浣跨敤鍏朵粬 conduit銆?
+DSA 浣跨敤 `rtnl_link_ops` 鏈哄埗锛堝甫鏈?"dsa" `kind`锛夋潵鍏佽鏇存敼鐢ㄦ埛绔彛鐨?DSA conduit銆俙IFLA_DSA_CONDUIT`
+u32 netlink 灞炴€у寘鍚鐞嗘瘡涓敤鎴疯澶囩殑 conduit 璁惧鐨?ifindex銆侱SA conduit 蹇呴』鏄竴涓熀浜庡浐浠?鑺傜偣淇℃伅鐨勬湁鏁堝€欓€夛紝鎴栬€呬竴涓彧鍖呭惈鏈夋晥鍊欓€変綔涓轰粠璁惧鐨?LAG 鎺ュ彛銆?
+浣跨敤 iproute2锛屽彲浠ヨ繘琛屼互涓嬫搷浣滐細
 
   .. code-block:: sh
 
@@ -391,16 +353,9 @@ u32 netlink 属性包含处理每个用户设备的 conduit 设备的 ifindex。
         (...)
         dsa master bond0
 
-注意，在 CPU 端口位于 LAG 之下的情况下，使用 `IFLA_DSA_CONDUIT` netlink 属性并非严格需要，相反，
-DSA 会对其当前 conduit（`eth0`）的 `IFLA_MASTER` 属性变更做出反应，并将所有用户端口迁移到 `eth0`
-的新上层 `bond0`。类似地，当使用 `RTM_DELLINK` 销毁 `bond0` 时，DSA 会将其分配的用户端口迁移到
-基于固件描述符合条件的第一个物理 DSA conduit（它实际上会回退到启动配置）。
-
-因此，在具有超过 2 个物理 CPU 端口的设置中，可以将静态的用户到 CPU 端口分配与 DSA conduit 之间的
-LAG 混合使用。不可能将用户端口静态分配给具有任何上层接口（这包括 LAG 设备——此时 conduit 必须
-始终是该 LAG）的 DSA conduit。
-
-允许在运行时更改用户端口的 DSA conduit（以及 CPU 端口）亲和性，以允许根据流量进行动态重新分配。
-
-物理 DSA conduit 可以随时加入和离开用作 DSA conduit 的 LAG 接口；但是，除非该 LAG 接口至少有一个
-物理 DSA conduit 作为从设备，否则 DSA 会拒绝将其作为 DSA conduit 的有效候选。
+娉ㄦ剰锛屽湪 CPU 绔彛浣嶄簬 LAG 涔嬩笅鐨勬儏鍐典笅锛屼娇鐢?`IFLA_DSA_CONDUIT` netlink 灞炴€у苟闈炰弗鏍奸渶瑕侊紝鐩稿弽锛?DSA 浼氬鍏跺綋鍓?conduit锛坄eth0`锛夌殑 `IFLA_MASTER` 灞炴€у彉鏇村仛鍑哄弽搴旓紝骞跺皢鎵€鏈夌敤鎴风鍙ｈ縼绉诲埌 `eth0`
+鐨勬柊涓婂眰 `bond0`銆傜被浼煎湴锛屽綋浣跨敤 `RTM_DELLINK` 閿€姣?`bond0` 鏃讹紝DSA 浼氬皢鍏跺垎閰嶇殑鐢ㄦ埛绔彛杩佺Щ鍒?鍩轰簬鍥轰欢鎻忚堪绗﹀悎鏉′欢鐨勭涓€涓墿鐞?DSA conduit锛堝畠瀹為檯涓婁細鍥為€€鍒板惎鍔ㄩ厤缃級銆?
+鍥犳锛屽湪鍏锋湁瓒呰繃 2 涓墿鐞?CPU 绔彛鐨勮缃腑锛屽彲浠ュ皢闈欐€佺殑鐢ㄦ埛鍒?CPU 绔彛鍒嗛厤涓?DSA conduit 涔嬮棿鐨?LAG 娣峰悎浣跨敤銆備笉鍙兘灏嗙敤鎴风鍙ｉ潤鎬佸垎閰嶇粰鍏锋湁浠讳綍涓婂眰鎺ュ彛锛堣繖鍖呮嫭 LAG 璁惧鈥斺€旀鏃?conduit 蹇呴』
+濮嬬粓鏄 LAG锛夌殑 DSA conduit銆?
+鍏佽鍦ㄨ繍琛屾椂鏇存敼鐢ㄦ埛绔彛鐨?DSA conduit锛堜互鍙?CPU 绔彛锛変翰鍜屾€э紝浠ュ厑璁告牴鎹祦閲忚繘琛屽姩鎬侀噸鏂板垎閰嶃€?
+鐗╃悊 DSA conduit 鍙互闅忔椂鍔犲叆鍜岀寮€鐢ㄤ綔 DSA conduit 鐨?LAG 鎺ュ彛锛涗絾鏄紝闄ら潪璇?LAG 鎺ュ彛鑷冲皯鏈変竴涓?鐗╃悊 DSA conduit 浣滀负浠庤澶囷紝鍚﹀垯 DSA 浼氭嫆缁濆皢鍏朵綔涓?DSA conduit 鐨勬湁鏁堝€欓€夈€?

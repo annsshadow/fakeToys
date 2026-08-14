@@ -1,24 +1,24 @@
-## Interaction 的 Suspend code (S3) 与 the CPU hotplug infrastructure
+﻿锘?# Interaction 鐨?Suspend code (S3) 涓?the CPU hotplug infrastructure
 
 
 (C) 2011 - 2014 Srivatsa S. Bhat <srivatsa.bhat@linux.vnet.ibm.com>
 
 
-## I. Differences 之间 CPU hotplug 和 Suspend-to-RAM
+## I. Differences 涔嬮棿 CPU hotplug 鍜?Suspend-to-RAM
 
 
-如何 执行 the regular CPU hotplug code differ 来自 如何 the Suspend-to-RAM
-infrastructure uses 它 internally? 和 何处 执行 它们 share 通用 code?
+濡備綍 鎵ц the regular CPU hotplug code differ 鏉ヨ嚜 濡備綍 the Suspend-to-RAM
+infrastructure uses 瀹?internally? 鍜?浣曞 鎵ц 瀹冧滑 share 閫氱敤 code?
 
-Well, 一个 picture 是 worth 一个 thousand words... 因此 ASCII art follows :-)
+Well, 涓€涓?picture 鏄?worth 涓€涓?thousand words... 鍥犳 ASCII art follows :-)
 
-[此 depicts the 电流 design 在 the 内核, 和 focuses 仅 在 the
-interactions involving the freezer 和 CPU hotplug 和 也 tries 到 explain
-the locking involved. 它 outlines the notifications involved 作为 well.
-但 请 注意 该 此处, 仅 the call paths 是 illustrated, 与 the aim
-的 describing 何处 它们 take 不同 paths 和 何处 它们 share code.
-什么 happens 当 regular CPU hotplug 和 Suspend-to-RAM race 与 每个 其他
-是 不 depicted 此处.]
+[姝?depicts the 鐢垫祦 design 鍦?the 鍐呮牳, 鍜?focuses 浠?鍦?the
+interactions involving the freezer 鍜?CPU hotplug 鍜?涔?tries 鍒?explain
+the locking involved. 瀹?outlines the notifications involved 浣滀负 well.
+浣?璇?娉ㄦ剰 璇?姝ゅ, 浠?the call paths 鏄?illustrated, 涓?the aim
+鐨?describing 浣曞 瀹冧滑 take 涓嶅悓 paths 鍜?浣曞 瀹冧滑 share code.
+浠€涔?happens 褰?regular CPU hotplug 鍜?Suspend-to-RAM race 涓?姣忎釜 鍏朵粬
+鏄?涓?depicted 姝ゅ.]
 
 ```
 
@@ -91,8 +91,8 @@ the locking involved. 它 outlines the notifications involved 作为 well.
 
 
 ```
-Resuming back 是 likewise, 与 the counterparts 正在 (在 the order 的
-execution 期间 resume):
+Resuming back 鏄?likewise, 涓?the counterparts 姝ｅ湪 (鍦?the order 鐨?
+execution 鏈熼棿 resume):
 
 ```
 
@@ -105,12 +105,12 @@ execution 期间 resume):
 ```
 - thaw tasks
 - send PM_POST_SUSPEND notifications
-- 释放 系统_transition_互斥体 锁.
+- 閲婃斁 绯荤粺_transition_浜掓枼浣?閿?
 
 
-它是 到 为 noted 此处 该 the 系统_transition_互斥体 锁 是 acquired 在 the
-very beginning, 当 我们 是 just starting out 到 suspend, 和 然后 released 仅
-之后 the entire cycle 是 complete (i.e., suspend + resume).
+瀹冩槸 鍒?涓?noted 姝ゅ 璇?the 绯荤粺_transition_浜掓枼浣?閿?鏄?acquired 鍦?the
+very beginning, 褰?鎴戜滑 鏄?just starting out 鍒?suspend, 鍜?鐒跺悗 released 浠?
+涔嬪悗 the entire cycle 鏄?complete (i.e., suspend + resume).
 
 ```
 
@@ -153,138 +153,138 @@ very beginning, 当 我们 是 just starting out 到 suspend, 和 然后 release
 
 
 ```
-因此, 作为 可 为 seen 来自 the two diagrams (the parts marked 作为 "通用 code"),
-regular CPU hotplug 和 the suspend code path converge 在 the _CPU_down() 和
-_CPU_up() 函数. 它们 differ 在 the arguments passed 到 这些 函数,
-在 该 期间 regular CPU hotplug, 0 是 passed 用于 the 'tasks_frozen'
-参数. 但 期间 suspend, since the tasks 是 已经 frozen 由 the time
-the non-boot CPUs 是 offlined 或 onlined, the _CPU_*() 函数 是 called
-与 the 'tasks_frozen' 参数 set 到 1.
-[参见 下文 用于 一些 known issues regarding 此.]
+鍥犳, 浣滀负 鍙?涓?seen 鏉ヨ嚜 the two diagrams (the parts marked 浣滀负 "閫氱敤 code"),
+regular CPU hotplug 鍜?the suspend code path converge 鍦?the _CPU_down() 鍜?
+_CPU_up() 鍑芥暟. 瀹冧滑 differ 鍦?the arguments passed 鍒?杩欎簺 鍑芥暟,
+鍦?璇?鏈熼棿 regular CPU hotplug, 0 鏄?passed 鐢ㄤ簬 the 'tasks_frozen'
+鍙傛暟. 浣?鏈熼棿 suspend, since the tasks 鏄?宸茬粡 frozen 鐢?the time
+the non-boot CPUs 鏄?offlined 鎴?onlined, the _CPU_*() 鍑芥暟 鏄?called
+涓?the 'tasks_frozen' 鍙傛暟 set 鍒?1.
+[鍙傝 涓嬫枃 鐢ㄤ簬 涓€浜?known issues regarding 姝?]
 
 
-### 重要 文件 和 函数/条目 points:
+### 閲嶈 鏂囦欢 鍜?鍑芥暟/鏉＄洰 points:
 
 
-- 内核/电源/进程.c : freeze_进程(), thaw_进程()
-- 内核/电源/suspend.c : suspend_prepare(), suspend_enter(), suspend_finish()
-- 内核/CPU.c: CPU_[up|down](), _CPU_[up|down](),
-  [禁用|启用]_nonboot_cpus()
+- 鍐呮牳/鐢垫簮/杩涚▼.c : freeze_杩涚▼(), thaw_杩涚▼()
+- 鍐呮牳/鐢垫簮/suspend.c : suspend_prepare(), suspend_enter(), suspend_finish()
+- 鍐呮牳/CPU.c: CPU_[up|down](), _CPU_[up|down](),
+  [绂佺敤|鍚敤]_nonboot_cpus()
 
 
 
-### II. 什么 是 the issues involved 在 CPU hotplug?
+### II. 浠€涔?鏄?the issues involved 鍦?CPU hotplug?
 
 
-存在 一些 interesting situations involving CPU hotplug 和 microcode
-更新 在 the CPUs, 作为 discussed 下文:
+瀛樺湪 涓€浜?interesting situations involving CPU hotplug 鍜?microcode
+鏇存柊 鍦?the CPUs, 浣滀负 discussed 涓嬫枃:
 
-[请 bear 在 mind 该 the 内核 requests the microcode images 来自
-userspace, 使用 the 请求_固件() 函数 定义 在
-驱动/base/固件_loader/主要.c]
-
-
-一个. 当 全部 the CPUs 是 identical:
-
-   这是 the 大多数 通用 situation 和 它是 quite straightforward: 我们 希望
-   到 apply the 相同 microcode revision 到 每个 的 the CPUs.
-   到 give 一个 示例 的 x86, the collect_CPU_info() 函数 定义 在
-   arch/x86/内核/microcode_核心.c helps 在 discovering the 类型 的 the CPU
-   和 thereby 在 applying the correct microcode revision 到 它.
-   但 注意 该 the 内核 执行 不 maintain 一个 通用 microcode image 用于 the
-   全部 CPUs, 为了 handle case 'b' 描述 下文.
+[璇?bear 鍦?mind 璇?the 鍐呮牳 requests the microcode images 鏉ヨ嚜
+userspace, 浣跨敤 the 璇锋眰_鍥轰欢() 鍑芥暟 瀹氫箟 鍦?
+椹卞姩/base/鍥轰欢_loader/涓昏.c]
 
 
-b. 当 一些 的 the CPUs 是 不同 比 the rest:
+涓€涓? 褰?鍏ㄩ儴 the CPUs 鏄?identical:
 
-   在 此 case since 我们 probably 需要 到 apply 不同 microcode revisions
-   到 不同 CPUs, the 内核 maintains 一个 copy 的 the correct microcode
-   image 用于 每个 CPU (之后 appropriate CPU 类型/型号 discovery 使用
-   函数 例如 collect_CPU_info()).
-
-
-c. 当 一个 CPU 是 physically hot-unplugged 和 一个 新 (和 possibly 不同
-   类型 的) CPU 是 hot-plugged 进入 the 系统:
-
-   在 the 电流 design 的 the 内核, whenever 一个 CPU 是 taken offline 期间
-   一个 regular CPU hotplug 操作, upon receiving the CPU_DEAD notification
-   (其 是 sent 由 the CPU hotplug code), the microcode 更新 驱动's
-   回调函数 用于 该 事件 reacts 由 freeing the 内核's copy 的 the
-   microcode image 用于 该 CPU.
-
-   Hence, 当 一个 新 CPU 是 brought online, since the 内核 finds 该 它
-   doesn't 具有 the microcode image, 它 执行 the CPU 类型/型号 discovery
-   afresh 和 然后 requests the userspace 用于 the appropriate microcode image
-   用于 该 CPU, 其 是 subsequently applied.
-
-   例如, 在 x86, the mc_CPU_回调函数() 函数 (其 是 the microcode
-   更新 驱动's 回调函数 registered 用于 CPU hotplug 事件) calls
-   microcode_更新_CPU() 其 将会 call microcode_初始化_CPU() 在 此 case,
-   而非 microcode_resume_CPU() 当 它 finds 该 the 内核 doesn't
-   具有 一个 valid microcode image. 此 ensures 该 the CPU 类型/型号
-   discovery 是 performed 和 the right microcode 是 applied 到 the CPU 之后
-   getting 它 来自 userspace.
+   杩欐槸 the 澶у鏁?閫氱敤 situation 鍜?瀹冩槸 quite straightforward: 鎴戜滑 甯屾湜
+   鍒?apply the 鐩稿悓 microcode revision 鍒?姣忎釜 鐨?the CPUs.
+   鍒?give 涓€涓?绀轰緥 鐨?x86, the collect_CPU_info() 鍑芥暟 瀹氫箟 鍦?
+   arch/x86/鍐呮牳/microcode_鏍稿績.c helps 鍦?discovering the 绫诲瀷 鐨?the CPU
+   鍜?thereby 鍦?applying the correct microcode revision 鍒?瀹?
+   浣?娉ㄦ剰 璇?the 鍐呮牳 鎵ц 涓?maintain 涓€涓?閫氱敤 microcode image 鐢ㄤ簬 the
+   鍏ㄩ儴 CPUs, 涓轰簡 handle case 'b' 鎻忚堪 涓嬫枃.
 
 
-d. Handling microcode 更新 期间 suspend/hibernate:
+b. 褰?涓€浜?鐨?the CPUs 鏄?涓嶅悓 姣?the rest:
 
-   Strictly speaking, 期间 一个 CPU hotplug 操作 其 执行 不 involve
-   physically removing 或 inserting CPUs, the CPUs 是 不 actually powered
-   off 期间 一个 CPU offline. 它们是 just put 到 the lowest C-states 可能.
-   Hence, 在 此类 一个 case, 它是 不 really 必要 到 re-apply microcode
-   当 the CPUs 是 brought back online, since 它们 wouldn't 具有 lost the
-   image 期间 the CPU offline 操作.
+   鍦?姝?case since 鎴戜滑 probably 闇€瑕?鍒?apply 涓嶅悓 microcode revisions
+   鍒?涓嶅悓 CPUs, the 鍐呮牳 maintains 涓€涓?copy 鐨?the correct microcode
+   image 鐢ㄤ簬 姣忎釜 CPU (涔嬪悗 appropriate CPU 绫诲瀷/鍨嬪彿 discovery 浣跨敤
+   鍑芥暟 渚嬪 collect_CPU_info()).
 
-   这是 the usual scenario encountered 期间 一个 resume 之后 一个 suspend.
-   然而, 在该情况下 的 hibernation, since 全部 the CPUs 是 completely
-   powered off, 期间 restore 它 becomes 必要 到 apply the microcode
-   images 到 全部 the CPUs.
 
-   [注意 该 我们 don't expect someone 到 physically pull out nodes 和 insert
-   nodes 与 一个 不同 类型 的 CPUs in-between 一个 suspend-resume 或 一个
+c. 褰?涓€涓?CPU 鏄?physically hot-unplugged 鍜?涓€涓?鏂?(鍜?possibly 涓嶅悓
+   绫诲瀷 鐨? CPU 鏄?hot-plugged 杩涘叆 the 绯荤粺:
+
+   鍦?the 鐢垫祦 design 鐨?the 鍐呮牳, whenever 涓€涓?CPU 鏄?taken offline 鏈熼棿
+   涓€涓?regular CPU hotplug 鎿嶄綔, upon receiving the CPU_DEAD notification
+   (鍏?鏄?sent 鐢?the CPU hotplug code), the microcode 鏇存柊 椹卞姩's
+   鍥炶皟鍑芥暟 鐢ㄤ簬 璇?浜嬩欢 reacts 鐢?freeing the 鍐呮牳's copy 鐨?the
+   microcode image 鐢ㄤ簬 璇?CPU.
+
+   Hence, 褰?涓€涓?鏂?CPU 鏄?brought online, since the 鍐呮牳 finds 璇?瀹?
+   doesn't 鍏锋湁 the microcode image, 瀹?鎵ц the CPU 绫诲瀷/鍨嬪彿 discovery
+   afresh 鍜?鐒跺悗 requests the userspace 鐢ㄤ簬 the appropriate microcode image
+   鐢ㄤ簬 璇?CPU, 鍏?鏄?subsequently applied.
+
+   渚嬪, 鍦?x86, the mc_CPU_鍥炶皟鍑芥暟() 鍑芥暟 (鍏?鏄?the microcode
+   鏇存柊 椹卞姩's 鍥炶皟鍑芥暟 registered 鐢ㄤ簬 CPU hotplug 浜嬩欢) calls
+   microcode_鏇存柊_CPU() 鍏?灏嗕細 call microcode_鍒濆鍖朹CPU() 鍦?姝?case,
+   鑰岄潪 microcode_resume_CPU() 褰?瀹?finds 璇?the 鍐呮牳 doesn't
+   鍏锋湁 涓€涓?valid microcode image. 姝?ensures 璇?the CPU 绫诲瀷/鍨嬪彿
+   discovery 鏄?performed 鍜?the right microcode 鏄?applied 鍒?the CPU 涔嬪悗
+   getting 瀹?鏉ヨ嚜 userspace.
+
+
+d. Handling microcode 鏇存柊 鏈熼棿 suspend/hibernate:
+
+   Strictly speaking, 鏈熼棿 涓€涓?CPU hotplug 鎿嶄綔 鍏?鎵ц 涓?involve
+   physically removing 鎴?inserting CPUs, the CPUs 鏄?涓?actually powered
+   off 鏈熼棿 涓€涓?CPU offline. 瀹冧滑鏄?just put 鍒?the lowest C-states 鍙兘.
+   Hence, 鍦?姝ょ被 涓€涓?case, 瀹冩槸 涓?really 蹇呰 鍒?re-apply microcode
+   褰?the CPUs 鏄?brought back online, since 瀹冧滑 wouldn't 鍏锋湁 lost the
+   image 鏈熼棿 the CPU offline 鎿嶄綔.
+
+   杩欐槸 the usual scenario encountered 鏈熼棿 涓€涓?resume 涔嬪悗 涓€涓?suspend.
+   鐒惰€? 鍦ㄨ鎯呭喌涓?鐨?hibernation, since 鍏ㄩ儴 the CPUs 鏄?completely
+   powered off, 鏈熼棿 restore 瀹?becomes 蹇呰 鍒?apply the microcode
+   images 鍒?鍏ㄩ儴 the CPUs.
+
+   [娉ㄦ剰 璇?鎴戜滑 don't expect someone 鍒?physically pull out nodes 鍜?insert
+   nodes 涓?涓€涓?涓嶅悓 绫诲瀷 鐨?CPUs in-between 涓€涓?suspend-resume 鎴?涓€涓?
    hibernate/restore cycle.]
 
-   在 the 电流 design 的 the 内核 然而, 期间 一个 CPU offline 操作
-   作为 part 的 the suspend/hibernate cycle (cpuhp_tasks_frozen 是 set),
-   the existing copy 的 microcode image 在 the 内核 是 不 freed up.
-   和 期间 the CPU online 操作 (期间 resume/restore), since the
-   内核 finds 该 它 已经 具有 copies 的 the microcode images 用于 全部 the
-   CPUs, 它 just applies them 到 the CPUs, avoiding 任何 re-discovery 的 CPU
-   类型/型号 和 the 需要 用于 validating 是否 the microcode revisions 是
-   right 用于 the CPUs 或 不 (由于 the 上文 assumption 该 物理 CPU
-   hotplug 将 不 为 已完成 in-between suspend/resume 或 hibernate/restore
+   鍦?the 鐢垫祦 design 鐨?the 鍐呮牳 鐒惰€? 鏈熼棿 涓€涓?CPU offline 鎿嶄綔
+   浣滀负 part 鐨?the suspend/hibernate cycle (cpuhp_tasks_frozen 鏄?set),
+   the existing copy 鐨?microcode image 鍦?the 鍐呮牳 鏄?涓?freed up.
+   鍜?鏈熼棿 the CPU online 鎿嶄綔 (鏈熼棿 resume/restore), since the
+   鍐呮牳 finds 璇?瀹?宸茬粡 鍏锋湁 copies 鐨?the microcode images 鐢ㄤ簬 鍏ㄩ儴 the
+   CPUs, 瀹?just applies them 鍒?the CPUs, avoiding 浠讳綍 re-discovery 鐨?CPU
+   绫诲瀷/鍨嬪彿 鍜?the 闇€瑕?鐢ㄤ簬 validating 鏄惁 the microcode revisions 鏄?
+   right 鐢ㄤ簬 the CPUs 鎴?涓?(鐢变簬 the 涓婃枃 assumption 璇?鐗╃悊 CPU
+   hotplug 灏?涓?涓?宸插畬鎴?in-between suspend/resume 鎴?hibernate/restore
    cycles).
 
 
 ## III. Known problems
 
 
-是 那里 任何 known problems 当 regular CPU hotplug 和 suspend race
-与 每个 其他?
+鏄?閭ｉ噷 浠讳綍 known problems 褰?regular CPU hotplug 鍜?suspend race
+涓?姣忎釜 鍏朵粬.
 
-Yes, 它们是 listed 下文:
+Yes, 瀹冧滑鏄?listed 涓嬫枃:
 
-1. 当 invoking regular CPU hotplug, the 'tasks_frozen' 参数 passed 到
-   the _CPU_down() 和 _CPU_up() 函数 是 **始终** 0.
-   此 可能 不 reflect the true 电流 状态 的 the 系统, since the
-   tasks 可以 具有 已经 frozen 由 一个 out-of-band 事件 例如 一个 suspend
-   操作 在 progress. Hence, the cpuhp_tasks_frozen variable 将 不
-   reflect the frozen 状态 和 the CPU hotplug callbacks 其 evaluate
-   该 variable 可能 execute the wrong code path.
+1. 褰?invoking regular CPU hotplug, the 'tasks_frozen' 鍙傛暟 passed 鍒?
+   the _CPU_down() 鍜?_CPU_up() 鍑芥暟 鏄?**濮嬬粓** 0.
+   姝?鍙兘 涓?reflect the true 鐢垫祦 鐘舵€?鐨?the 绯荤粺, since the
+   tasks 鍙互 鍏锋湁 宸茬粡 frozen 鐢?涓€涓?out-of-band 浜嬩欢 渚嬪 涓€涓?suspend
+   鎿嶄綔 鍦?progress. Hence, the cpuhp_tasks_frozen variable 灏?涓?
+   reflect the frozen 鐘舵€?鍜?the CPU hotplug callbacks 鍏?evaluate
+   璇?variable 鍙兘 execute the wrong code path.
 
-2. 若 一个 regular CPU hotplug stress test happens 到 race 与 the freezer due
-   到 一个 suspend 操作 在 progress 同时, 然后 我们 可以 hit the
-   situation 描述 下文:
+2. 鑻?涓€涓?regular CPU hotplug stress test happens 鍒?race 涓?the freezer due
+   鍒?涓€涓?suspend 鎿嶄綔 鍦?progress 鍚屾椂, 鐒跺悗 鎴戜滑 鍙互 hit the
+   situation 鎻忚堪 涓嬫枃:
 
-    - 一个 regular CPU online 操作 continues 其 journey 来自 userspace
-      进入 the 内核, since the freezing 具有 不 尚未 begun.
-    - 然后 freezer gets 到 work 和 freezes userspace.
-    - 若 CPU online 具有 不 尚未 completed the microcode 更新 stuff 由 现在,
-      它 将 现在 启动 waiting 在 the frozen userspace 在 the
-      TASK_UNINTERRUPTIBLE 状态, 为了 get the microcode image.
-    - 现在 the freezer continues 和 tries 到 freeze the remaining tasks. 但
-      由于 此 wait mentioned 上文, the freezer won't 为 able 到 freeze
-      the CPU online hotplug task 和 hence freezing 的 tasks fails.
+    - 涓€涓?regular CPU online 鎿嶄綔 continues 鍏?journey 鏉ヨ嚜 userspace
+      杩涘叆 the 鍐呮牳, since the freezing 鍏锋湁 涓?灏氭湭 begun.
+    - 鐒跺悗 freezer gets 鍒?work 鍜?freezes userspace.
+    - 鑻?CPU online 鍏锋湁 涓?灏氭湭 completed the microcode 鏇存柊 stuff 鐢?鐜板湪,
+      瀹?灏?鐜板湪 鍚姩 waiting 鍦?the frozen userspace 鍦?the
+      TASK_UNINTERRUPTIBLE 鐘舵€? 涓轰簡 get the microcode image.
+    - 鐜板湪 the freezer continues 鍜?tries 鍒?freeze the remaining tasks. 浣?
+      鐢变簬 姝?wait mentioned 涓婃枃, the freezer won't 涓?able 鍒?freeze
+      the CPU online hotplug task 鍜?hence freezing 鐨?tasks fails.
 
-   因此 的 此 task freezing failure, the suspend 操作 gets
+   鍥犳 鐨?姝?task freezing failure, the suspend 鎿嶄綔 gets
    aborted.

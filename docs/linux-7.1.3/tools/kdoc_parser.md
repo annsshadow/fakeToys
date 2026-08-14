@@ -1,30 +1,30 @@
-## 内核文档（kernel-doc）解析器阶段
+﻿## 鍐呮牳鏂囨。锛坘ernel-doc锛夎В鏋愬櫒闃舵
 
 
-本文件描述 kernel-doc 解析器的实现结构。
+鏈枃浠舵弿杩?kernel-doc 瑙ｆ瀽鍣ㄧ殑瀹炵幇缁撴瀯銆?
 
-## 解析器使用的 C 替换规则
-
-
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
-## 文件处理类
+## 瑙ｆ瀽鍣ㄤ娇鐢ㄧ殑 C 鏇挎崲瑙勫垯
 
 
    :members:
    :show-inheritance:
    :undoc-members:
 
-## 已解析项数据类
+## 鏂囦欢澶勭悊绫?
 
 
    :members:
    :show-inheritance:
    :undoc-members:
 
-## 解析器类与方法
+## 宸茶В鏋愰」鏁版嵁绫?
+
+
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+## 瑙ｆ瀽鍣ㄧ被涓庢柟娉?
 
 
    :members:

@@ -1,22 +1,16 @@
+﻿
+## Linux 涓嬬殑澶氳壊 LED 澶勭悊
 
-## Linux 下的多色 LED 处理
 
+## 鎻忚堪
 
-## 描述
-
-多色 LED 类将单色 LED 归为一组，并允许控制最终合成颜色的两个方面：色相（hue）和亮度（lightness）。前者通过 multi_intensity 数组文件控制，后者通过 brightness 文件控制。
-
-## 多色类控制
-
-多色类以数组索引的方式将颜色归为一组并提供相应文件。这些文件是 led_class 框架创建的 LED 父节点下的子项。led_class 框架的文档见本文档目录中的 led-class.rst。
-
-每个彩色 LED 都会在 `multi_*` 文件下建立索引。颜色的顺序是任意的。可以读取 `multi_index` 文件以确定颜色名称对应的索引值。
-
-`multi_index` 文件是一个数组，包含在每个 `multi_*` 数组文件中定义的颜色字符串列表。
-
-`multi_intensity` 是一个可读写的数组，用于设置各个颜色强度。必须按顺序写入该数组的所有元素，颜色 LED 强度才会更新。
-
-## 目录布局示例
+澶氳壊 LED 绫诲皢鍗曡壊 LED 褰掍负涓€缁勶紝骞跺厑璁告帶鍒舵渶缁堝悎鎴愰鑹茬殑涓や釜鏂归潰锛氳壊鐩革紙hue锛夊拰浜害锛坙ightness锛夈€傚墠鑰呴€氳繃 multi_intensity 鏁扮粍鏂囦欢鎺у埗锛屽悗鑰呴€氳繃 brightness 鏂囦欢鎺у埗銆?
+## 澶氳壊绫绘帶鍒?
+澶氳壊绫讳互鏁扮粍绱㈠紩鐨勬柟寮忓皢棰滆壊褰掍负涓€缁勫苟鎻愪緵鐩稿簲鏂囦欢銆傝繖浜涙枃浠舵槸 led_class 妗嗘灦鍒涘缓鐨?LED 鐖惰妭鐐逛笅鐨勫瓙椤广€俵ed_class 妗嗘灦鐨勬枃妗ｈ鏈枃妗ｇ洰褰曚腑鐨?led-class.rst銆?
+姣忎釜褰╄壊 LED 閮戒細鍦?`multi_*` 鏂囦欢涓嬪缓绔嬬储寮曘€傞鑹茬殑椤哄簭鏄换鎰忕殑銆傚彲浠ヨ鍙?`multi_index` 鏂囦欢浠ョ‘瀹氶鑹插悕绉板搴旂殑绱㈠紩鍊笺€?
+`multi_index` 鏂囦欢鏄竴涓暟缁勶紝鍖呭惈鍦ㄦ瘡涓?`multi_*` 鏁扮粍鏂囦欢涓畾涔夌殑棰滆壊瀛楃涓插垪琛ㄣ€?
+`multi_intensity` 鏄竴涓彲璇诲啓鐨勬暟缁勶紝鐢ㄤ簬璁剧疆鍚勪釜棰滆壊寮哄害銆傚繀椤绘寜椤哄簭鍐欏叆璇ユ暟缁勭殑鎵€鏈夊厓绱狅紝棰滆壊 LED 寮哄害鎵嶄細鏇存柊銆?
+## 鐩綍甯冨眬绀轰緥
 
 
     root:/sys/class/leds/multicolor:status# ls -lR
@@ -27,15 +21,11 @@
 
 ..
 
-## 多色类亮度控制
-
-每个 LED 的亮度级别根据“颜色 LED 强度设置 ÷ 全局 max_brightness 设置 × 请求的亮度”计算。
-
+## 澶氳壊绫讳寒搴︽帶鍒?
+姣忎釜 LED 鐨勪寒搴︾骇鍒牴鎹€滈鑹?LED 寮哄害璁剧疆 梅 鍏ㄥ眬 max_brightness 璁剧疆 脳 璇锋眰鐨勪寒搴︹€濊绠椼€?
 `led_brightness = brightness * multi_intensity/max_brightness`
 
-示例：
-用户首先向 multi_intensity 文件写入各个 LED 的亮度级别，这些级别是实现某个多色 LED 组特定颜色输出所必需的。
-
+绀轰緥锛?鐢ㄦ埛棣栧厛鍚?multi_intensity 鏂囦欢鍐欏叆鍚勪釜 LED 鐨勪寒搴︾骇鍒紝杩欎簺绾у埆鏄疄鐜版煇涓鑹?LED 缁勭壒瀹氶鑹茶緭鍑烘墍蹇呴渶鐨勩€?
     # cat /sys/class/leds/multicolor:status/multi_index
     green blue red
 
@@ -53,8 +43,7 @@
 
 ..
 
-用户可以通过写入全局 'brightness' 控制项来控制该多色 LED 组的亮度。假定 max_brightness 为 255，用户可能希望将该颜色组调暗一半。用户应向全局 brightness 文件写入值 128，随后写入每个 LED 的值会基于该值进行调整。
-
+鐢ㄦ埛鍙互閫氳繃鍐欏叆鍏ㄥ眬 'brightness' 鎺у埗椤规潵鎺у埗璇ュ鑹?LED 缁勭殑浜害銆傚亣瀹?max_brightness 涓?255锛岀敤鎴峰彲鑳藉笇鏈涘皢璇ラ鑹茬粍璋冩殫涓€鍗娿€傜敤鎴峰簲鍚戝叏灞€ brightness 鏂囦欢鍐欏叆鍊?128锛岄殢鍚庡啓鍏ユ瘡涓?LED 鐨勫€间細鍩轰簬璇ュ€艰繘琛岃皟鏁淬€?
     # cat /sys/class/leds/multicolor:status/max_brightness
     255
     # echo 128 > /sys/class/leds/multicolor:status/brightness
@@ -67,8 +56,7 @@
 
 ..
 
-读取全局 brightness 文件将返回该颜色 LED 组的当前亮度值。
-
+璇诲彇鍏ㄥ眬 brightness 鏂囦欢灏嗚繑鍥炶棰滆壊 LED 缁勭殑褰撳墠浜害鍊笺€?
     # cat /sys/class/leds/multicolor:status/brightness
     128
 

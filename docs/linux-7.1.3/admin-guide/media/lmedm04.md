@@ -1,88 +1,77 @@
+﻿
+## lmedm04 缃戝崱鐨勫浐浠舵枃浠?
 
-## lmedm04 网卡的固件文件
-
-
-要为 DM04/QQBOX 提取固件，需将下列文件复制到本目录。
-
-### 适用于 DM04+/QQBOX LME2510C（Sharp 7395 调谐器）
+瑕佷负 DM04/QQBOX 鎻愬彇鍥轰欢锛岄渶灏嗕笅鍒楁枃浠跺鍒跺埌鏈洰褰曘€?
+### 閫傜敤浜?DM04+/QQBOX LME2510C锛圫harp 7395 璋冭皭鍣級
 
 
-Sharp 7395 驱动可在 windows/system32/drivers 中找到
+Sharp 7395 椹卞姩鍙湪 windows/system32/drivers 涓壘鍒?
+US2A0D.sys锛堟棩鏈?2009 骞?3 鏈?17 鏃ワ級
 
-US2A0D.sys（日期 2009 年 3 月 17 日）
 
-
-然后运行：
-
+鐒跺悗杩愯锛?
 
 	scripts/get_dvb_firmware lme2510c_s7395
 
-会生成 dvb-usb-lme2510c-s7395.fw
+浼氱敓鎴?dvb-usb-lme2510c-s7395.fw
 
-另一份较旧的固件可在驱动光盘 DVB-S_EN_3.5A 的 BDADriver/driver 中找到
+鍙︿竴浠借緝鏃х殑鍥轰欢鍙湪椹卞姩鍏夌洏 DVB-S_EN_3.5A 鐨?BDADriver/driver 涓壘鍒?
+LMEBDA_DVBS7395C.sys锛堟棩鏈?2008 骞?1 鏈?18 鏃ワ級
 
-LMEBDA_DVBS7395C.sys（日期 2008 年 1 月 18 日）
 
-
-然后运行：
-
+鐒跺悗杩愯锛?
 
 	./get_dvb_firmware lme2510c_s7395_old
 
-会生成 dvb-usb-lme2510c-s7395.fw
+浼氱敓鎴?dvb-usb-lme2510c-s7395.fw
 
-LG 固件可在驱动光盘 DM04+_5.1A[LG] 的 BDADriver/driver 中找到
-
-### 适用于 DM04 LME2510（LG 调谐器）
-
-
-LMEBDA_DVBS.sys（日期 2007 年 11 月 13 日）
+LG 鍥轰欢鍙湪椹卞姩鍏夌洏 DM04+_5.1A[LG] 鐨?BDADriver/driver 涓壘鍒?
+### 閫傜敤浜?DM04 LME2510锛圠G 璋冭皭鍣級
 
 
-然后运行：
+LMEBDA_DVBS.sys锛堟棩鏈?2007 骞?11 鏈?13 鏃ワ級
 
+
+鐒跺悗杩愯锛?
 
 	./get_dvb_firmware lme2510_lg
 
-会生成 dvb-usb-lme2510-lg.fw
+浼氱敓鎴?dvb-usb-lme2510-lg.fw
 
 
-其他 LG 固件只能从 windows/system32/drivers 中的 US280D.sys 手动提取
+鍏朵粬 LG 鍥轰欢鍙兘浠?windows/system32/drivers 涓殑 US280D.sys 鎵嬪姩鎻愬彇
 
 dd if=US280D.sys ibs=1 skip=42360 count=3924 of=dvb-usb-lme2510-lg.fw
 
-### 适用于 DM04 LME2510C（LG 调谐器）
+### 閫傜敤浜?DM04 LME2510C锛圠G 璋冭皭鍣級
 
 
 	dd if=US280D.sys ibs=1 skip=35200 count=3850 of=dvb-usb-lme2510c-lg.fw
 
 
-Sharp 0194 调谐器驱动可在 windows/system32/drivers 中找到
+Sharp 0194 璋冭皭鍣ㄩ┍鍔ㄥ彲鍦?windows/system32/drivers 涓壘鍒?
+US290D.sys锛堟棩鏈?2009 骞?4 鏈?9 鏃ワ級
 
-US290D.sys（日期 2009 年 4 月 9 日）
-
-### 适用于 LME2510
+### 閫傜敤浜?LME2510
 
 
 	dd if=US290D.sys ibs=1 skip=36856 count=3976 of=dvb-usb-lme2510-s0194.fw
 
 
-### 适用于 LME2510C
+### 閫傜敤浜?LME2510C
 
 
 	dd if=US290D.sys ibs=1 skip=33152 count=3697 of=dvb-usb-lme2510c-s0194.fw
 
 
-m88rs2000 调谐器驱动可在 windows/system32/drivers 中找到
-
-US2B0D.sys（日期 2010 年 6 月 29 日）
+m88rs2000 璋冭皭鍣ㄩ┍鍔ㄥ彲鍦?windows/system32/drivers 涓壘鍒?
+US2B0D.sys锛堟棩鏈?2010 骞?6 鏈?29 鏃ワ級
 
 
 	dd if=US2B0D.sys ibs=1 skip=34432 count=3871 of=dvb-usb-lme2510c-rs2000.fw
 
-我们需要修改 rs2000 固件的 id，否则它将以热启动 id 3344:1120 启动。
-
+鎴戜滑闇€瑕佷慨鏀?rs2000 鍥轰欢鐨?id锛屽惁鍒欏畠灏嗕互鐑惎鍔?id 3344:1120 鍚姩銆?
 
 	echo -ne \\xF0\\x22 | dd conv=notrunc bs=1 count=2 seek=266 of=dvb-usb-lme2510c-rs2000.fw
 
-将固件文件复制到 /lib/firmware
+灏嗗浐浠舵枃浠跺鍒跺埌 /lib/firmware

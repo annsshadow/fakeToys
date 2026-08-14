@@ -1,15 +1,15 @@
-## 内核驱动 coretemp
+﻿## 鍐呮牳椹卞姩 coretemp
 
-本页介绍 coretemp 硬件监控驱动，说明其如何读取 Intel Core/Atom 处理器内置数字温度传感器（DTS）的核心与封装温度，列出所支持的 CPU 型号（按 CPUID family 0x6 区分）及温度读取方式，供硬件监控与散热管理参考。
+鏈〉浠嬬粛 coretemp 纭欢鐩戞帶椹卞姩锛岃鏄庡叾濡備綍璇诲彇 Intel Core/Atom 澶勭悊鍣ㄥ唴缃暟瀛楁俯搴︿紶鎰熷櫒锛圖TS锛夌殑鏍稿績涓庡皝瑁呮俯搴︼紝鍒楀嚭鎵€鏀寔鐨?CPU 鍨嬪彿锛堟寜 CPUID family 0x6 鍖哄垎锛夊強娓╁害璇诲彇鏂瑰紡锛屼緵纭欢鐩戞帶涓庢暎鐑鐞嗗弬鑰冦€?
 
 
 
-支持的芯片：
-  - 所有内置数字温度传感器（DTS）的 Intel Core 系列与 Atom 处理器
+鏀寔鐨勮姱鐗囷細
+  - 鎵€鏈夊唴缃暟瀛楁俯搴︿紶鎰熷櫒锛圖TS锛夌殑 Intel Core 绯诲垪涓?Atom 澶勭悊鍣?
 
-    前缀（Prefix）：'coretemp'
+    鍓嶇紑锛圥refix锛夛細'coretemp'
 
-    CPUID：family 0x6，具备 X86_FEATURE_DTHERM 特性的型号，包括：
+    CPUID锛歠amily 0x6锛屽叿澶?X86_FEATURE_DTHERM 鐗规€х殑鍨嬪彿锛屽寘鎷細
 
        - 0xe (Pentium M DC), 0xf (Core 2 DC 65nm),
        - 0x16 (Core 2 SC 65nm), 0x17 (Penryn 45nm),
@@ -21,51 +21,51 @@
        - 0x7a (Gemini Lake Atom),
        - 0x96 (Elkhart Lake Atom), 0x9c (Jasper Lake Atom)
 
-    数据手册（Datasheet）：
+    鏁版嵁鎵嬪唽锛圖atasheet锛夛細
 
 	       Intel 64 and IA-32 Architectures Software Developer's Manual
 	       Volume 3A: System Programming Guide
 
 	       http://softwarecommunity.intel.com/Wiki/Mobility/720.htm
 
-作者（Author）：Rudolf Marek
+浣滆€咃紙Author锛夛細Rudolf Marek
 
-### 描述
+### 鎻忚堪
 
 
-该驱动允许读取内置于 Intel CPU 中的 DTS（数字温度传感器）。该驱动可以使用
-相应的传感器读取每核与每封装的温度。每封装传感器在 Sandy Bridge 及所有更新
-的处理器上可用。该驱动会在 hwmon 内的单个设备目录下显示封装内所有核的温度。
+璇ラ┍鍔ㄥ厑璁歌鍙栧唴缃簬 Intel CPU 涓殑 DTS锛堟暟瀛楁俯搴︿紶鎰熷櫒锛夈€傝椹卞姩鍙互浣跨敤
+鐩稿簲鐨勪紶鎰熷櫒璇诲彇姣忔牳涓庢瘡灏佽鐨勬俯搴︺€傛瘡灏佽浼犳劅鍣ㄥ湪 Sandy Bridge 鍙婃墍鏈夋洿鏂?
+鐨勫鐞嗗櫒涓婂彲鐢ㄣ€傝椹卞姩浼氬湪 hwmon 鍐呯殑鍗曚釜璁惧鐩綍涓嬫樉绀哄皝瑁呭唴鎵€鏈夋牳鐨勬俯搴︺€?
 
-温度以摄氏度度量，测量分辨率为 1 摄氏度。有效温度范围为 0 到 TjMax 摄氏度，
-因为温度寄存器的实际值实际上是相对 TjMax 的差值。
+娓╁害浠ユ憚姘忓害搴﹂噺锛屾祴閲忓垎杈ㄧ巼涓?1 鎽勬皬搴︺€傛湁鏁堟俯搴﹁寖鍥翠负 0 鍒?TjMax 鎽勬皬搴︼紝
+鍥犱负娓╁害瀵勫瓨鍣ㄧ殑瀹為檯鍊煎疄闄呬笂鏄浉瀵?TjMax 鐨勫樊鍊笺€?
 
-称为 TjMax 的温度是处理器的最大结温，取决于 CPU 型号。见表下方。达到该温度
-时，保护机制会执行动作以强制为处理器降温。如果温度上升到足以触发 Out-Of-Spec
-位（超过 TjMax），可能会发出告警。下表汇总了导出的 sysfs 文件：
+绉颁负 TjMax 鐨勬俯搴︽槸澶勭悊鍣ㄧ殑鏈€澶х粨娓╋紝鍙栧喅浜?CPU 鍨嬪彿銆傝琛ㄤ笅鏂广€傝揪鍒拌娓╁害
+鏃讹紝淇濇姢鏈哄埗浼氭墽琛屽姩浣滀互寮哄埗涓哄鐞嗗櫒闄嶆俯銆傚鏋滄俯搴︿笂鍗囧埌瓒充互瑙﹀彂 Out-Of-Spec
+浣嶏紙瓒呰繃 TjMax锛夛紝鍙兘浼氬彂鍑哄憡璀︺€備笅琛ㄦ眹鎬讳簡瀵煎嚭鐨?sysfs 鏂囦欢锛?
 
-所有 sysfs 条目均以各自的 core_id 命名（此处用 'X' 表示）。
+鎵€鏈?sysfs 鏉＄洰鍧囦互鍚勮嚜鐨?core_id 鍛藉悕锛堟澶勭敤 'X' 琛ㄧず锛夈€?
 
 ================= ========================================================
-tempX_input	  核心温度（单位为毫摄氏度）。
-tempX_max	  应开启全部散热设备（在 Core2 上）。
-tempX_crit	  最高结温（单位为毫摄氏度）。
-tempX_crit_alarm  当 Out-of-spec 位置位时置起，且不会自动清除。
-		  此时无法再保证 CPU 的正确运行。
-tempX_label	  包含字符串 "Core X"，其中 X 为处理器编号。
-		  对于封装温度，该值为 "Physical id Y"，
-		  其中 Y 为封装编号。
+tempX_input	  鏍稿績娓╁害锛堝崟浣嶄负姣憚姘忓害锛夈€?
+tempX_max	  搴斿紑鍚叏閮ㄦ暎鐑澶囷紙鍦?Core2 涓婏級銆?
+tempX_crit	  鏈€楂樼粨娓╋紙鍗曚綅涓烘鎽勬皬搴︼級銆?
+tempX_crit_alarm  褰?Out-of-spec 浣嶇疆浣嶆椂缃捣锛屼笖涓嶄細鑷姩娓呴櫎銆?
+		  姝ゆ椂鏃犳硶鍐嶄繚璇?CPU 鐨勬纭繍琛屻€?
+tempX_label	  鍖呭惈瀛楃涓?"Core X"锛屽叾涓?X 涓哄鐞嗗櫒缂栧彿銆?
+		  瀵逛簬灏佽娓╁害锛岃鍊间负 "Physical id Y"锛?
+		  鍏朵腑 Y 涓哄皝瑁呯紪鍙枫€?
 ================= ========================================================
 
-在现代 CPU（Nehalem 及更新）上，TjMax 从 MSR_IA32_TEMPERATURE_TARGET 寄存器
-读取。在没有该 MSR 的旧型号上，TjMax 通过查找表或启发式方法确定。如果这些对
-您的 CPU 不起作用，可以将正确的 TjMax 值作为模块参数（tjmax）传入。
+鍦ㄧ幇浠?CPU锛圢ehalem 鍙婃洿鏂帮級涓婏紝TjMax 浠?MSR_IA32_TEMPERATURE_TARGET 瀵勫瓨鍣?
+璇诲彇銆傚湪娌℃湁璇?MSR 鐨勬棫鍨嬪彿涓婏紝TjMax 閫氳繃鏌ユ壘琛ㄦ垨鍚彂寮忔柟娉曠‘瀹氥€傚鏋滆繖浜涘
+鎮ㄧ殑 CPU 涓嶈捣浣滅敤锛屽彲浠ュ皢姝ｇ‘鐨?TjMax 鍊间綔涓烘ā鍧楀弬鏁帮紙tjmax锛変紶鍏ャ€?
 
-附录 A. 已知 TjMax 列表（待定）：
-部分信息来自 ark.intel.com
+闄勫綍 A. 宸茬煡 TjMax 鍒楄〃锛堝緟瀹氾級锛?
+閮ㄥ垎淇℃伅鏉ヨ嚜 ark.intel.com
 
 =============== =============================================== ================
-制程（Process）	处理器（Processor）					TjMax(°C)
+鍒剁▼锛圥rocess锛?澶勭悊鍣紙Processor锛?				TjMax(掳C)
 
 22nm		Core i5/i7 Processors
 		i7 3920XM, 3820QM, 3720QM, 3667U, 3520M		105

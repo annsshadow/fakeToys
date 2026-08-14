@@ -1,15 +1,15 @@
+﻿
+
+######## ioctl LIRC_GET_MIN_TIMEOUT 鍜?LIRC_GET_MAX_TIMEOUT
 
 
-######## ioctl LIRC_GET_MIN_TIMEOUT 和 LIRC_GET_MAX_TIMEOUT
+## 濮撳悕
 
 
-## 姓名
+LIRC_GET_MIN_TIMEOUT / LIRC_GET_MAX_TIMEOUT - 鑾峰彇鍙兘鐨勮秴鏃舵椂闂?
+绾㈠鎺ユ敹鑼冨洿銆?
 
-
-LIRC_GET_MIN_TIMEOUT / LIRC_GET_MAX_TIMEOUT - 获取可能的超时时间
-红外接收范围。
-
-## 概要
+## 姒傝
 
 
 
@@ -18,32 +18,32 @@ LIRC_GET_MIN_TIMEOUT / LIRC_GET_MAX_TIMEOUT - 获取可能的超时时间
 
 `int ioctl(int fd, LIRC_GET_MAX_TIMEOUT, __u32 *timeout)`
 
-## 论点
+## 璁虹偣
 
 
 `fd`
-open() 返回的文件描述符。
+open() 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `timeout`
-超时，以微秒为单位。
+瓒呮椂锛屼互寰涓哄崟浣嶃€?
 
-## 描述
-
-
-某些设备具有内部定时器，可用于检测何时
-很长一段时间没有IR活动。这可以帮助 lircd
-检测IR信号完成，可以加快解码速度
-过程。返回具有最小/最大超时的整数值
-可以设置。
+## 鎻忚堪
 
 
-有些设备有固定的超时时间，在这种情况下
-即使超时，两个 ioctl 也会返回相同的值
-无法通过 LIRC_SET_REC_TIMEOUT 更改。
+鏌愪簺璁惧鍏锋湁鍐呴儴瀹氭椂鍣紝鍙敤浜庢娴嬩綍鏃?
+寰堥暱涓€娈垫椂闂存病鏈塈R娲诲姩銆傝繖鍙互甯姪 lircd
+妫€娴婭R淇″彿瀹屾垚锛屽彲浠ュ姞蹇В鐮侀€熷害
+杩囩▼銆傝繑鍥炲叿鏈夋渶灏?鏈€澶ц秴鏃剁殑鏁存暟鍊?
+鍙互璁剧疆銆?
 
-## 返回值
+
+鏈変簺璁惧鏈夊浐瀹氱殑瓒呮椂鏃堕棿锛屽湪杩欑鎯呭喌涓?
+鍗充娇瓒呮椂锛屼袱涓?ioctl 涔熶細杩斿洖鐩稿悓鐨勫€?
+鏃犳硶閫氳繃 LIRC_SET_REC_TIMEOUT 鏇存敼銆?
+
+## 杩斿洖鍊?
 
 
-成功时返回 0，错误时返回 -1 并且设置 `errno` 变量
-适当地。通用错误代码的描述见
-通用错误代码 <gen-errors> 章节。
+鎴愬姛鏃惰繑鍥?0锛岄敊璇椂杩斿洖 -1 骞朵笖璁剧疆 `errno` 鍙橀噺
+閫傚綋鍦般€傞€氱敤閿欒浠ｇ爜鐨勬弿杩拌
+閫氱敤閿欒浠ｇ爜 <gen-errors> 绔犺妭銆?

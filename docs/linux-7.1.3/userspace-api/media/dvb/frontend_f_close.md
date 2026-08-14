@@ -1,10 +1,10 @@
-######## Digital TV frontend close()
+﻿######## Digital TV frontend close()
 
 
 ## Name
 
 
-fe-close - 关闭一个前端设备
+fe-close - 鍏抽棴涓€涓墠绔澶?
 
 ## Synopsis
 
@@ -17,18 +17,18 @@ fe-close - 关闭一个前端设备
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 ## Description
 
 
-该系统调用关闭一个先前已打开的前端设备。关闭前端设备后，其对应硬件可能会自动断电。
+璇ョ郴缁熻皟鐢ㄥ叧闂竴涓厛鍓嶅凡鎵撳紑鐨勫墠绔澶囥€傚叧闂墠绔澶囧悗锛屽叾瀵瑰簲纭欢鍙兘浼氳嚜鍔ㄦ柇鐢点€?
 
 ## Return Value
 
 
-成功时返回 0。
+鎴愬姛鏃惰繑鍥?0銆?
 
-出错时返回 -1，并相应地设置 `errno` 变量。
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
 
-通用错误码在 Generic Error Codes <gen-errors> 章节中描述。
+閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?

@@ -1,66 +1,66 @@
-
-## Devlink E-Switch 属性
-
-
-Devlink E-Switch 支持两种操作模式：legacy 与 switchdev。Legacy 模式基于传统的 MAC/VLAN 导向规则运行。切换决策基于 MAC 地址、VLAN 等做出。将切换规则卸载到硬件的能力有限。
-
-另一方面，switchdev 模式允许将 E-Switch 更多地高级卸载能力交给硬件。在 switchdev 模式下，更多的切换规则与逻辑可以被卸载到硬件交换 ASIC 上。它启用了代表设备虚拟功能（VF）或可扩展功能（SF）慢速路径的 representor netdevices。有关更多信息，请参阅 Documentation/networking/switchdev.rst <switchdev> 与 Documentation/networking/representors.rst <representors>。
-
-此外，devlink E-Switch 还附带了下一节列出的其他属性。
-
-## 属性描述
+﻿
+## Devlink E-Switch 灞炴€?
 
 
-以下是 E-Switch 属性的列表。
+Devlink E-Switch 鏀寔涓ょ鎿嶄綔妯″紡锛歭egacy 涓?switchdev銆侺egacy 妯″紡鍩轰簬浼犵粺鐨?MAC/VLAN 瀵煎悜瑙勫垯杩愯銆傚垏鎹㈠喅绛栧熀浜?MAC 鍦板潃銆乂LAN 绛夊仛鍑恒€傚皢鍒囨崲瑙勫垯鍗歌浇鍒扮‖浠剁殑鑳藉姏鏈夐檺銆?
+
+鍙︿竴鏂归潰锛宻witchdev 妯″紡鍏佽灏?E-Switch 鏇村鍦伴珮绾у嵏杞借兘鍔涗氦缁欑‖浠躲€傚湪 switchdev 妯″紡涓嬶紝鏇村鐨勫垏鎹㈣鍒欎笌閫昏緫鍙互琚嵏杞藉埌纭欢浜ゆ崲 ASIC 涓娿€傚畠鍚敤浜嗕唬琛ㄨ澶囪櫄鎷熷姛鑳斤紙VF锛夋垨鍙墿灞曞姛鑳斤紙SF锛夋參閫熻矾寰勭殑 representor netdevices銆傛湁鍏虫洿澶氫俊鎭紝璇峰弬闃?Documentation/networking/switchdev.rst <switchdev> 涓?Documentation/networking/representors.rst <representors>銆?
+
+姝ゅ锛宒evlink E-Switch 杩橀檮甯︿簡涓嬩竴鑺傚垪鍑虹殑鍏朵粬灞炴€с€?
+
+## 灞炴€ф弿杩?
+
+
+浠ヤ笅鏄?E-Switch 灞炴€х殑鍒楄〃銆?
 
    :widths: 8 5 45
 
-   - - 名称
-     - 类型
-     - 描述
+   - - 鍚嶇О
+     - 绫诲瀷
+     - 鎻忚堪
    - - `mode`
      - enum
-     - 设备的模式。模式可以是以下之一：
+     - 璁惧鐨勬ā寮忋€傛ā寮忓彲浠ユ槸浠ヤ笅涔嬩竴锛?
 
-       - `legacy` 基于传统 MAC/VLAN 导向规则运行。
-       - `switchdev` 允许将 E-Switch 更多地高级卸载能力交给硬件。
-       - `switchdev_inactive` switchdev 模式但启动时处于非激活状态，在显式激活前不允许流量通过。此模式对于希望以 switchdev 模式准备设备、但仅在所有配置完成后才激活它的编排器很有用。
+       - `legacy` 鍩轰簬浼犵粺 MAC/VLAN 瀵煎悜瑙勫垯杩愯銆?
+       - `switchdev` 鍏佽灏?E-Switch 鏇村鍦伴珮绾у嵏杞借兘鍔涗氦缁欑‖浠躲€?
+       - `switchdev_inactive` switchdev 妯″紡浣嗗惎鍔ㄦ椂澶勪簬闈炴縺娲荤姸鎬侊紝鍦ㄦ樉寮忔縺娲诲墠涓嶅厑璁告祦閲忛€氳繃銆傛妯″紡瀵逛簬甯屾湜浠?switchdev 妯″紡鍑嗗璁惧銆佷絾浠呭湪鎵€鏈夐厤缃畬鎴愬悗鎵嶆縺娲诲畠鐨勭紪鎺掑櫒寰堟湁鐢ㄣ€?
    - - `inline-mode`
      - enum
-     - 某些硬件需要 VF 驱动将部分数据包头部放入 TX 描述符，以便 e-switch 能够进行正确的匹配与导向。switchdev 模式与 legacy 模式均支持。
+     - 鏌愪簺纭欢闇€瑕?VF 椹卞姩灏嗛儴鍒嗘暟鎹寘澶撮儴鏀惧叆 TX 鎻忚堪绗︼紝浠ヤ究 e-switch 鑳藉杩涜姝ｇ‘鐨勫尮閰嶄笌瀵煎悜銆俿witchdev 妯″紡涓?legacy 妯″紡鍧囨敮鎸併€?
 
-       - `none` 无。
-       - `link` L2 模式。
-       - `network` L3 模式。
-       - `transport` L4 模式。
+       - `none` 鏃犮€?
+       - `link` L2 妯″紡銆?
+       - `network` L3 妯″紡銆?
+       - `transport` L4 妯″紡銆?
    - - `encap-mode`
      - enum
-     - 设备的封装模式。switchdev 模式与 legacy 模式均支持。模式可以是以下之一：
+     - 璁惧鐨勫皝瑁呮ā寮忋€俿witchdev 妯″紡涓?legacy 妯″紡鍧囨敮鎸併€傛ā寮忓彲浠ユ槸浠ヤ笅涔嬩竴锛?
 
-       - `none` 禁用封装支持。
-       - `basic` 启用封装支持。
+       - `none` 绂佺敤灏佽鏀寔銆?
+       - `basic` 鍚敤灏佽鏀寔銆?
 
-## 使用示例
+## 浣跨敤绀轰緥
 
 
-    # 启用 switchdev 模式
+    # 鍚敤 switchdev 妯″紡
     $ devlink dev eswitch set pci/0000:08:00.0 mode switchdev
 
-    # 设置 inline-mode 与 encap-mode
+    # 璁剧疆 inline-mode 涓?encap-mode
     $ devlink dev eswitch set pci/0000:08:00.0 inline-mode none encap-mode basic
 
-    # 显示 devlink 设备的 eswitch 属性
+    # 鏄剧ず devlink 璁惧鐨?eswitch 灞炴€?
     $ devlink dev eswitch show pci/0000:08:00.0
       pci/0000:08:00.0: mode switchdev inline-mode none encap-mode basic
 
-    # 在 legacy 模式下启用 encap-mode
+    # 鍦?legacy 妯″紡涓嬪惎鐢?encap-mode
     $ devlink dev eswitch set pci/0000:08:00.0 mode legacy inline-mode none encap-mode basic
 
-    # 以非激活状态启动 switchdev 模式
+    # 浠ラ潪婵€娲荤姸鎬佸惎鍔?switchdev 妯″紡
     $ devlink dev eswitch set pci/0000:08:00.0 mode switchdev_inactive
 
-    # 配置 switchdev 的设置、representors、FDB 条目等..
+    # 閰嶇疆 switchdev 鐨勮缃€乺epresentors銆丗DB 鏉＄洰绛?.
     ...
 
-    # 激活 switchdev 模式以允许流量通过
+    # 婵€娲?switchdev 妯″紡浠ュ厑璁告祦閲忛€氳繃
     $ devlink dev eswitch set pci/0000:08:00.0 mode switchdev

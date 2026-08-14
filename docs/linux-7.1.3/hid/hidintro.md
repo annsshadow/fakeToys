@@ -1,53 +1,53 @@
+﻿
+## HID 鎶ュ憡鎻忚堪绗︾畝浠?
 
-## HID 报告描述符简介
 
-
-本章旨在广泛概述 HID 报告描述符是什么，以及一个普通的（非内核）程序员如何处理在 Linux
-下工作不正常的 HID 设备。
+鏈珷鏃ㄥ湪骞挎硾姒傝堪 HID 鎶ュ憡鎻忚堪绗︽槸浠€涔堬紝浠ュ強涓€涓櫘閫氱殑锛堥潪鍐呮牳锛夌▼搴忓憳濡備綍澶勭悊鍦?Linux
+涓嬪伐浣滀笉姝ｅ父鐨?HID 璁惧銆?
 
     :local:
     :depth: 2
 
 - [hidreport-parsing](hidreport-parsing)
 
-## 简介
+## 绠€浠?
 
 
-HID 代表 Human Interface Device（人机接口设备），可以是你用来与计算机交互的任何设备，
-无论是鼠标、触摸板、数位板还是麦克风。
+HID 浠ｈ〃 Human Interface Device锛堜汉鏈烘帴鍙ｈ澶囷級锛屽彲浠ユ槸浣犵敤鏉ヤ笌璁＄畻鏈轰氦浜掔殑浠讳綍璁惧锛?
+鏃犺鏄紶鏍囥€佽Е鎽告澘銆佹暟浣嶆澘杩樻槸楹﹀厠椋庛€?
 
-许多 HID 设备开箱即用（out of the box），即使它们的硬件各不相同。例如，鼠标可以有任意
-数量的按钮；它们可能有一个滚轮；不同型号之间的移动灵敏度不同，等等。尽管如此，大多数
-时候一切都能正常工作，而无需为自 1970 年以来开发的每个鼠标型号在内核中编写专门的代码。
+璁稿 HID 璁惧寮€绠卞嵆鐢紙out of the box锛夛紝鍗充娇瀹冧滑鐨勭‖浠跺悇涓嶇浉鍚屻€備緥濡傦紝榧犳爣鍙互鏈変换鎰?
+鏁伴噺鐨勬寜閽紱瀹冧滑鍙兘鏈変竴涓粴杞紱涓嶅悓鍨嬪彿涔嬮棿鐨勭Щ鍔ㄧ伒鏁忓害涓嶅悓锛岀瓑绛夈€傚敖绠″姝わ紝澶у鏁?
+鏃跺€欎竴鍒囬兘鑳芥甯稿伐浣滐紝鑰屾棤闇€涓鸿嚜 1970 骞翠互鏉ュ紑鍙戠殑姣忎釜榧犳爣鍨嬪彿鍦ㄥ唴鏍镐腑缂栧啓涓撻棬鐨勪唬鐮併€?
 
-这是因为现代 HID 设备确实通过其 **HID 报告描述符**（HID report descriptor）——一组
-固定的字节，精确描述设备与主机之间可以发送哪些 **HID 报告**（HID reports）以及这些
-报告中每个单独位的含义——来声明其能力。例如，一个 HID 报告描述符可以指定 “在 ID 为 3
-的报告中，第 8 到 15 位是鼠标的 X 增量坐标”。
+杩欐槸鍥犱负鐜颁唬 HID 璁惧纭疄閫氳繃鍏?**HID 鎶ュ憡鎻忚堪绗?*锛圚ID report descriptor锛夆€斺€斾竴缁?
+鍥哄畾鐨勫瓧鑺傦紝绮剧‘鎻忚堪璁惧涓庝富鏈轰箣闂村彲浠ュ彂閫佸摢浜?**HID 鎶ュ憡**锛圚ID reports锛変互鍙婅繖浜?
+鎶ュ憡涓瘡涓崟鐙綅鐨勫惈涔夆€斺€旀潵澹版槑鍏惰兘鍔涖€備緥濡傦紝涓€涓?HID 鎶ュ憡鎻忚堪绗﹀彲浠ユ寚瀹?鈥滃湪 ID 涓?3
+鐨勬姤鍛婁腑锛岀 8 鍒?15 浣嶆槸榧犳爣鐨?X 澧為噺鍧愭爣鈥濄€?
 
-HID 报告本身随后仅携带实际数据值，没有任何额外的元信息。请注意，HID 报告可以从设备
-发出（"Input Reports"，即输入事件）、发往设备（"Output Reports"，例如用于改变 LED）或
-用于设备配置（"Feature reports"）。一个设备可以支持一个或多个 HID 报告。
+HID 鎶ュ憡鏈韩闅忓悗浠呮惡甯﹀疄闄呮暟鎹€硷紝娌℃湁浠讳綍棰濆鐨勫厓淇℃伅銆傝娉ㄦ剰锛孒ID 鎶ュ憡鍙互浠庤澶?
+鍙戝嚭锛?Input Reports"锛屽嵆杈撳叆浜嬩欢锛夈€佸彂寰€璁惧锛?Output Reports"锛屼緥濡傜敤浜庢敼鍙?LED锛夋垨
+鐢ㄤ簬璁惧閰嶇疆锛?Feature reports"锛夈€備竴涓澶囧彲浠ユ敮鎸佷竴涓垨澶氫釜 HID 鎶ュ憡銆?
 
-HID 子系统负责解析 HID 报告描述符，并将 HID 事件转换为正常的输入设备接口（参见
-Documentation/hid/hid-transport.rst）。设备可能行为异常，原因包括设备提供的 HID 报告
-描述符有误、需要以特殊方式处理，或默认代码未处理某些特殊设备或交互模式。
+HID 瀛愮郴缁熻礋璐ｈВ鏋?HID 鎶ュ憡鎻忚堪绗︼紝骞跺皢 HID 浜嬩欢杞崲涓烘甯哥殑杈撳叆璁惧鎺ュ彛锛堝弬瑙?
+Documentation/hid/hid-transport.rst锛夈€傝澶囧彲鑳借涓哄紓甯革紝鍘熷洜鍖呮嫭璁惧鎻愪緵鐨?HID 鎶ュ憡
+鎻忚堪绗︽湁璇€侀渶瑕佷互鐗规畩鏂瑰紡澶勭悊锛屾垨榛樿浠ｇ爜鏈鐞嗘煇浜涚壒娈婅澶囨垨浜や簰妯″紡銆?
 
-HID 报告描述符的格式由两个文档描述，可从 `USB Implementers Forum
-<https://www.usb.org/>`_ `HID web page <https://www.usb.org/hid>`_ 地址获取：
+HID 鎶ュ憡鎻忚堪绗︾殑鏍煎紡鐢变袱涓枃妗ｆ弿杩帮紝鍙粠 `USB Implementers Forum
+<https://www.usb.org/>`_ `HID web page <https://www.usb.org/hid>`_ 鍦板潃鑾峰彇锛?
 
  - the `HID USB Device Class Definition
    <https://www.usb.org/document-library/device-class-definition-hid-111>`_ (HID Spec from now on)
  - the `HID Usage Tables <https://usb.org/document-library/hid-usage-tables-14>`_ (HUT from now on)
 
-HID 子系统可以处理不同的传输（transport）驱动（USB、I2C、Bluetooth 等）。参见
-Documentation/hid/hid-transport.rst。
+HID 瀛愮郴缁熷彲浠ュ鐞嗕笉鍚岀殑浼犺緭锛坱ransport锛夐┍鍔紙USB銆両2C銆丅luetooth 绛夛級銆傚弬瑙?
+Documentation/hid/hid-transport.rst銆?
 
-## 解析 HID 报告描述符
+## 瑙ｆ瀽 HID 鎶ュ憡鎻忚堪绗?
 
 
-当前 HID 设备的列表可在 `/sys/bus/hid/devices/` 找到。对于每个设备，例如
-`/sys/bus/hid/devices/0003\:093A\:2510.0002/`，
+褰撳墠 HID 璁惧鐨勫垪琛ㄥ彲鍦?`/sys/bus/hid/devices/` 鎵惧埌銆傚浜庢瘡涓澶囷紝渚嬪
+`/sys/bus/hid/devices/0003\:093A\:2510.0002/`锛?
 ```
   $ hexdump -C /sys/bus/hid/devices/0003\:093A\:2510.0002/report_descriptor
   00000000  05 01 09 02 a1 01 09 01  a1 00 05 09 19 01 29 03  |..............).|
@@ -57,30 +57,30 @@ Documentation/hid/hid-transport.rst。
   00000034
 ```
 
-可选：HID 报告描述符也可以通过直接访问 hidraw 驱动 [#hidraw]_ 来读取。
+鍙€夛細HID 鎶ュ憡鎻忚堪绗︿篃鍙互閫氳繃鐩存帴璁块棶 hidraw 椹卞姩 [#hidraw]_ 鏉ヨ鍙栥€?
 
-HID 报告描述符的基本结构在 HID 规范中定义，而 HUT “定义了一组常量，可供应用程序解释以
-识别 HID 报告中数据字段的用途和含义”。每个条目至少由两字节定义，其中第一个字节定义
-后面跟随的值的类型，并在 HID 规范中描述；第二个字节携带实际值，并在 HUT 中描述。
+HID 鎶ュ憡鎻忚堪绗︾殑鍩烘湰缁撴瀯鍦?HID 瑙勮寖涓畾涔夛紝鑰?HUT 鈥滃畾涔変簡涓€缁勫父閲忥紝鍙緵搴旂敤绋嬪簭瑙ｉ噴浠?
+璇嗗埆 HID 鎶ュ憡涓暟鎹瓧娈电殑鐢ㄩ€斿拰鍚箟鈥濄€傛瘡涓潯鐩嚦灏戠敱涓ゅ瓧鑺傚畾涔夛紝鍏朵腑绗竴涓瓧鑺傚畾涔?
+鍚庨潰璺熼殢鐨勫€肩殑绫诲瀷锛屽苟鍦?HID 瑙勮寖涓弿杩帮紱绗簩涓瓧鑺傛惡甯﹀疄闄呭€硷紝骞跺湪 HUT 涓弿杩般€?
 
-原则上，HID 报告描述符可以逐字节地、费力地手工解析。
+鍘熷垯涓婏紝HID 鎶ュ憡鎻忚堪绗﹀彲浠ラ€愬瓧鑺傚湴銆佽垂鍔涘湴鎵嬪伐瑙ｆ瀽銆?
 
-关于如何做到这一点的简短介绍概述于 Documentation/hid/hidreport-parsing.rst；只有当你
-需要修补（patch）HID 报告描述符时才需要理解它。
+鍏充簬濡備綍鍋氬埌杩欎竴鐐圭殑绠€鐭粙缁嶆杩颁簬 Documentation/hid/hidreport-parsing.rst锛涘彧鏈夊綋浣?
+闇€瑕佷慨琛ワ紙patch锛塇ID 鎶ュ憡鎻忚堪绗︽椂鎵嶉渶瑕佺悊瑙ｅ畠銆?
 
-在实践中，你不应手工解析 HID 报告描述符；相反，你应当使用现有的解析器。在所有可用的
-解析器中：
+鍦ㄥ疄璺典腑锛屼綘涓嶅簲鎵嬪伐瑙ｆ瀽 HID 鎶ュ憡鎻忚堪绗︼紱鐩稿弽锛屼綘搴斿綋浣跨敤鐜版湁鐨勮В鏋愬櫒銆傚湪鎵€鏈夊彲鐢ㄧ殑
+瑙ｆ瀽鍣ㄤ腑锛?
 
-  - 在线的 `USB Descriptor and Request Parser
-    <http://eleccelerator.com/usbdescreqparser/>`_；
-  - `hidrdd <https://github.com/abend0c1/hidrdd>`_，
-    它提供非常详细且有些冗长的描述（如果你不熟悉 HID 报告描述符，这种冗长可能很有用）；
-  - `hid-tools <https://gitlab.freedesktop.org/libevdev/hid-tools>`_，
-    一套完整的实用工具集，除其它功能外，允许记录和回放原始的 HID 报告，以及调试和回放
-    HID 设备。它正由 Linux HID 子系统维护者积极开发。
+  - 鍦ㄧ嚎鐨?`USB Descriptor and Request Parser
+    <http://eleccelerator.com/usbdescreqparser/>`_锛?
+  - `hidrdd <https://github.com/abend0c1/hidrdd>`_锛?
+    瀹冩彁渚涢潪甯歌缁嗕笖鏈変簺鍐楅暱鐨勬弿杩帮紙濡傛灉浣犱笉鐔熸倝 HID 鎶ュ憡鎻忚堪绗︼紝杩欑鍐楅暱鍙兘寰堟湁鐢級锛?
+  - `hid-tools <https://gitlab.freedesktop.org/libevdev/hid-tools>`_锛?
+    涓€濂楀畬鏁寸殑瀹炵敤宸ュ叿闆嗭紝闄ゅ叾瀹冨姛鑳藉锛屽厑璁歌褰曞拰鍥炴斁鍘熷鐨?HID 鎶ュ憡锛屼互鍙婅皟璇曞拰鍥炴斁
+    HID 璁惧銆傚畠姝ｇ敱 Linux HID 瀛愮郴缁熺淮鎶よ€呯Н鏋佸紑鍙戙€?
 
-用 `hid-tools <https://gitlab.freedesktop.org/libevdev/hid-tools>`_ 解析鼠标的 HID 报告
-描述符得到：
+鐢?`hid-tools <https://gitlab.freedesktop.org/libevdev/hid-tools>`_ 瑙ｆ瀽榧犳爣鐨?HID 鎶ュ憡
+鎻忚堪绗﹀緱鍒帮細
 ```
     $ ./hid-decode /sys/bus/hid/devices/0003\:093A\:2510.0002/report_descriptor
     # device 0:0
@@ -99,7 +99,7 @@ HID 报告描述符的基本结构在 HID 规范中定义，而 HUT “定义了
     # 0x15, 0x00, 		     //	Logical Minimum (0)		   16
     # 0x25, 0x01, 		     //	Logical Maximum (1)		   18
 ```
-每个按钮可以发送从 0 到包括 1 的值
+姣忎釜鎸夐挳鍙互鍙戦€佷粠 0 鍒板寘鎷?1 鐨勫€?
 ```
     # 0x75, 0x01, 		     //	Report Size (1) 		   20
 ```
@@ -109,8 +109,8 @@ HID 报告描述符的基本结构在 HID 规范中定义，而 HUT “定义了
 ```
     # 0x81, 0x02, 		     //	Input (Data,Var,Abs)		   24
 ```
-它是实际的数据（Data，非常量填充），表示单个变量（Var），其值为绝对（Absolute，而非
-相对）；
+瀹冩槸瀹為檯鐨勬暟鎹紙Data锛岄潪甯搁噺濉厖锛夛紝琛ㄧず鍗曚釜鍙橀噺锛圴ar锛夛紝鍏跺€间负缁濆锛圓bsolute锛岃€岄潪
+鐩稿锛夛紱
 ```
     # 0x75, 0x05, 		     //	Report Size (5) 		   26
 ```
@@ -126,7 +126,7 @@ HID 报告描述符的基本结构在 HID 规范中定义，而 HUT “定义了
     # 0x09, 0x31,		     // Usage (Y)			   36
     # 0x09, 0x38,		     // Usage (Wheel) 		    	   38
 ```
-该鼠标还有两个物理位置（Usage (X)、Usage (Y)）
+璇ラ紶鏍囪繕鏈変袱涓墿鐞嗕綅缃紙Usage (X)銆乁sage (Y)锛?
 ```
     # 0x15, 0x81, 		     //	Logical Minimum (-127)  	   40
     # 0x25, 0x7f, 		     //	Logical Maximum (127)		   42
@@ -140,7 +140,7 @@ HID 报告描述符的基本结构在 HID 规范中定义，而 HUT “定义了
 ```
     # 0x81, 0x06,		     // Input (Data,Var,Rel)  	    	   48
 ```
-这次数据值是相对的（Relative，Rel），即它们表示
+杩欐鏁版嵁鍊兼槸鐩稿鐨勶紙Relative锛孯el锛夛紝鍗冲畠浠〃绀?
 ```
     # 0xc0,			     // End Collection 		    	   50
     # 0xc0,			     // End Collection  		   51
@@ -149,12 +149,12 @@ HID 报告描述符的基本结构在 HID 规范中定义，而 HUT “定义了
     N: device 0:0
     I: 3 0001 0001
 ```
-这个报告描述符告诉我们，鼠标输入将使用四个字节传输：第一个字节用于按钮（使用三位，五位
-用于填充），最后三个字节分别用于鼠标的 X、Y 和滚轮变化。
+杩欎釜鎶ュ憡鎻忚堪绗﹀憡璇夋垜浠紝榧犳爣杈撳叆灏嗕娇鐢ㄥ洓涓瓧鑺備紶杈擄細绗竴涓瓧鑺傜敤浜庢寜閽紙浣跨敤涓変綅锛屼簲浣?
+鐢ㄤ簬濉厖锛夛紝鏈€鍚庝笁涓瓧鑺傚垎鍒敤浜庨紶鏍囩殑 X銆乊 鍜屾粴杞彉鍖栥€?
 
-实际上，对于任何事件，鼠标都会发送一个四字节的 **report**。我们可以通过例如借助来自
-`hid-tools <https://gitlab.freedesktop.org/libevdev/hid-tools>`_ 的 `hid-recorder` 工具
-来检查发送的值：
+瀹為檯涓婏紝瀵逛簬浠讳綍浜嬩欢锛岄紶鏍囬兘浼氬彂閫佷竴涓洓瀛楄妭鐨?**report**銆傛垜浠彲浠ラ€氳繃渚嬪鍊熷姪鏉ヨ嚜
+`hid-tools <https://gitlab.freedesktop.org/libevdev/hid-tools>`_ 鐨?`hid-recorder` 宸ュ叿
+鏉ユ鏌ュ彂閫佺殑鍊硷細
 ```
   $ sudo ./hid-recorder /dev/hidraw1
 
@@ -175,11 +175,11 @@ HID 报告描述符的基本结构在 HID 规范中定义，而 HUT “定义了
   #  Button: 0  0  0 | # | X:    0 | Y:    0 | Wheel:    0
   E: 000005.103864 4 00 00 00 00
 ```
-这个例子表明，当点击按钮 2 时，会发送字节 `02 00 00 00`，而紧随其后的事件
-（`00 00 00 00`）是按钮 2 的释放（没有按钮被按下，请记住数据值是 **绝对**（absolute）
-的）。
+杩欎釜渚嬪瓙琛ㄦ槑锛屽綋鐐瑰嚮鎸夐挳 2 鏃讹紝浼氬彂閫佸瓧鑺?`02 00 00 00`锛岃€岀揣闅忓叾鍚庣殑浜嬩欢
+锛坄00 00 00 00`锛夋槸鎸夐挳 2 鐨勯噴鏀撅紙娌℃湁鎸夐挳琚寜涓嬶紝璇疯浣忔暟鎹€兼槸 **缁濆**锛坅bsolute锛?
+鐨勶級銆?
 
-如果改为先点击并按住按钮 1，然后点击并按住按钮
+濡傛灉鏀逛负鍏堢偣鍑诲苟鎸変綇鎸夐挳 1锛岀劧鍚庣偣鍑诲苟鎸変綇鎸夐挳
 ```
   #  Button: 1  0  0 | # | X:    0 | Y:    0 | Wheel:    0
   E: 000044.175830 4 01 00 00 00
@@ -190,30 +190,30 @@ HID 报告描述符的基本结构在 HID 规范中定义，而 HUT “定义了
   #  Button: 0  0  0 | # | X:    0 | Y:    0 | Wheel:    0
   E: 000049.199919 4 00 00 00 00
 ```
-其中使用 `03 00 00 00` 表示两个按钮都被按下，而随后的 `02 00 00 00` 表示按钮 1 被释放
-而按钮 2 仍处于激活状态。
+鍏朵腑浣跨敤 `03 00 00 00` 琛ㄧず涓や釜鎸夐挳閮借鎸変笅锛岃€岄殢鍚庣殑 `02 00 00 00` 琛ㄧず鎸夐挳 1 琚噴鏀?
+鑰屾寜閽?2 浠嶅浜庢縺娲荤姸鎬併€?
 
-### Output、Input 与 Feature 报告
-
-
-HID 设备可以具有 Input 报告（如鼠标示例）、Output 报告和 Feature 报告。“Output” 意味着
-信息被发往设备。例如，带有力反馈（force feedback）的操纵杆会有某些输出；键盘的 LED 也
-需要输出。“Input” 意味着数据来自设备。
-
-“Feature” 并非供最终用户消费，而是定义设备的配置选项。它们可以从主机查询；当声明为
-**Volatile**（易变）时，它们应由主机更改。
+### Output銆両nput 涓?Feature 鎶ュ憡
 
 
-## 集合（Collections）、报告 ID 与 Evdev 事件
+HID 璁惧鍙互鍏锋湁 Input 鎶ュ憡锛堝榧犳爣绀轰緥锛夈€丱utput 鎶ュ憡鍜?Feature 鎶ュ憡銆傗€淥utput鈥?鎰忓懗鐫€
+淇℃伅琚彂寰€璁惧銆備緥濡傦紝甯︽湁鍔涘弽棣堬紙force feedback锛夌殑鎿嶇旱鏉嗕細鏈夋煇浜涜緭鍑猴紱閿洏鐨?LED 涔?
+闇€瑕佽緭鍑恒€傗€淚nput鈥?鎰忓懗鐫€鏁版嵁鏉ヨ嚜璁惧銆?
+
+鈥淔eature鈥?骞堕潪渚涙渶缁堢敤鎴锋秷璐癸紝鑰屾槸瀹氫箟璁惧鐨勯厤缃€夐」銆傚畠浠彲浠ヤ粠涓绘満鏌ヨ锛涘綋澹版槑涓?
+**Volatile**锛堟槗鍙橈級鏃讹紝瀹冧滑搴旂敱涓绘満鏇存敼銆?
 
 
-单个设备可以在逻辑上将数据分组到不同的独立集合中，称为 **Collection**（集合）。集合可以
-嵌套，并且存在不同类型的集合（详见 HID 规范 6.2.2.6 “Collection, End Collection
-Items”）。
+## 闆嗗悎锛圕ollections锛夈€佹姤鍛?ID 涓?Evdev 浜嬩欢
 
-不同的报告通过不同的 **Report ID**（报告 ID）字段来标识，即一个用于标识紧随其后的报告
-结构编号。每当需要 Report ID 时，它都作为任何报告的第一个字节传输。一个只支持单个 HID
-报告的设备（如上面的鼠标示例）可以省略报告 ID。
+
+鍗曚釜璁惧鍙互鍦ㄩ€昏緫涓婂皢鏁版嵁鍒嗙粍鍒颁笉鍚岀殑鐙珛闆嗗悎涓紝绉颁负 **Collection**锛堥泦鍚堬級銆傞泦鍚堝彲浠?
+宓屽锛屽苟涓斿瓨鍦ㄤ笉鍚岀被鍨嬬殑闆嗗悎锛堣瑙?HID 瑙勮寖 6.2.2.6 鈥淐ollection, End Collection
+Items鈥濓級銆?
+
+涓嶅悓鐨勬姤鍛婇€氳繃涓嶅悓鐨?**Report ID**锛堟姤鍛?ID锛夊瓧娈垫潵鏍囪瘑锛屽嵆涓€涓敤浜庢爣璇嗙揣闅忓叾鍚庣殑鎶ュ憡
+缁撴瀯缂栧彿銆傛瘡褰撻渶瑕?Report ID 鏃讹紝瀹冮兘浣滀负浠讳綍鎶ュ憡鐨勭涓€涓瓧鑺備紶杈撱€備竴涓彧鏀寔鍗曚釜 HID
+鎶ュ憡鐨勮澶囷紙濡備笂闈㈢殑榧犳爣绀轰緥锛夊彲浠ョ渷鐣ユ姤鍛?ID銆?
 
 ```
   05 01 09 02 A1 01 85 01 05 09 19 01 29 05 15 00
@@ -234,12 +234,12 @@ Items”）。
   06 C0 05 0C 09 01 A1 01 85 03 09 05 15 00 26 FF
   00 75 08 95 02 B1 02 C0
 ```
-在解析它之后（试着用建议的工具自己解析！）可以看到，该设备呈现了两个 `Mouse` 应用集合
-（分别由报告 ID 1 和 2 标识）、一个 `Keypad` 应用集合（其报告由报告 ID 5 标识）以及两个
-`Consumer Controls` 应用集合（分别由报告 ID 6 和 3 标识）。但请注意，一个设备可以针对
-同一个应用集合使用不同的报告 ID。
+鍦ㄨВ鏋愬畠涔嬪悗锛堣瘯鐫€鐢ㄥ缓璁殑宸ュ叿鑷繁瑙ｆ瀽锛侊級鍙互鐪嬪埌锛岃璁惧鍛堢幇浜嗕袱涓?`Mouse` 搴旂敤闆嗗悎
+锛堝垎鍒敱鎶ュ憡 ID 1 鍜?2 鏍囪瘑锛夈€佷竴涓?`Keypad` 搴旂敤闆嗗悎锛堝叾鎶ュ憡鐢辨姤鍛?ID 5 鏍囪瘑锛変互鍙婁袱涓?
+`Consumer Controls` 搴旂敤闆嗗悎锛堝垎鍒敱鎶ュ憡 ID 6 鍜?3 鏍囪瘑锛夈€備絾璇锋敞鎰忥紝涓€涓澶囧彲浠ラ拡瀵?
+鍚屼竴涓簲鐢ㄩ泦鍚堜娇鐢ㄤ笉鍚岀殑鎶ュ憡 ID銆?
 
-发送的数据将以报告 ID 字节开头，随后是相应的信息。例如，为以下部分传输的数据：
+鍙戦€佺殑鏁版嵁灏嗕互鎶ュ憡 ID 瀛楄妭寮€澶达紝闅忓悗鏄浉搴旂殑淇℃伅銆備緥濡傦紝涓轰互涓嬮儴鍒嗕紶杈撶殑鏁版嵁锛?
 ```
   0x05, 0x0C,        // Usage Page (Consumer)
   0x09, 0x01,        // Usage (Consumer Control)
@@ -253,19 +253,19 @@ Items”）。
   0xB1, 0x02,        //   Feature (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position,Non-volatile)
   0xC0,              // End Collection
 ```
-将是三个字节：第一个字节是报告 ID（3），接下来的两个字节用于耳机，各为两个
-（`Report Count (2)`）字节（`Report Size (8)`），每个字节的范围从 0（`Logical Minimum
-(0)`）到 255（`Logical Maximum (255)`）。
+灏嗘槸涓変釜瀛楄妭锛氱涓€涓瓧鑺傛槸鎶ュ憡 ID锛?锛夛紝鎺ヤ笅鏉ョ殑涓や釜瀛楄妭鐢ㄤ簬鑰虫満锛屽悇涓轰袱涓?
+锛坄Report Count (2)`锛夊瓧鑺傦紙`Report Size (8)`锛夛紝姣忎釜瀛楄妭鐨勮寖鍥翠粠 0锛坄Logical Minimum
+(0)`锛夊埌 255锛坄Logical Maximum (255)`锛夈€?
 
-设备发送的所有 Input 数据都应被转换为相应的 Evdev 事件，以便协议栈的其余部分能够知道
-发生了什么，例如第一个按钮的位转换为 `EV_KEY/BTN_LEFT` evdev 事件，相对的 X 移动转换为
-`EV_REL/REL_X` evdev 事件。
+璁惧鍙戦€佺殑鎵€鏈?Input 鏁版嵁閮藉簲琚浆鎹负鐩稿簲鐨?Evdev 浜嬩欢锛屼互渚垮崗璁爤鐨勫叾浣欓儴鍒嗚兘澶熺煡閬?
+鍙戠敓浜嗕粈涔堬紝渚嬪绗竴涓寜閽殑浣嶈浆鎹负 `EV_KEY/BTN_LEFT` evdev 浜嬩欢锛岀浉瀵圭殑 X 绉诲姩杞崲涓?
+`EV_REL/REL_X` evdev 浜嬩欢銆?
 
-## 事件
+## 浜嬩欢
 
 
-在 Linux 中，会为每个 ``Application Collection`` 创建一个 `/dev/input/event*`。回到鼠标的
-例子，并重复先点击并按住按钮 1、然后点击并按住的序列：
+鍦?Linux 涓紝浼氫负姣忎釜 ``Application Collection`` 鍒涘缓涓€涓?`/dev/input/event*`銆傚洖鍒伴紶鏍囩殑
+渚嬪瓙锛屽苟閲嶅鍏堢偣鍑诲苟鎸変綇鎸夐挳 1銆佺劧鍚庣偣鍑诲苟鎸変綇鐨勫簭鍒楋細
 ```
   $ sudo libinput record /dev/input/event1
   # libinput record
@@ -336,49 +336,49 @@ Items”）。
       - [  3, 247617,	1, 273,       0] # EV_KEY / BTN_RIGHT		      0
       - [  3, 247617,   0,   0,       0] # ------------ SYN_REPORT (0) ---------- +880ms
 ```
-注意：如果你的系统上没有 `libinput record`，请尝试使用 `evemu-record`。
+娉ㄦ剰锛氬鏋滀綘鐨勭郴缁熶笂娌℃湁 `libinput record`锛岃灏濊瘯浣跨敤 `evemu-record`銆?
 
-## 当某些功能不工作时
-
-
-设备行为不正确的原因可能有很多。例如：
-
-- 设备提供的 HID 报告描述符可能是错误的，例如
-
-  - 它不遵循标准，因此内核将无法理解该 HID 报告描述符；
-  - HID 报告描述符 **与实际** 设备发送的内容不匹配（这可以通过读取原始 HID 数据来验证）；
-- HID 报告描述符可能需要一些 “quirks”（怪癖，见后文）。
-
-因此，可能不会为每个应用集合创建 `/dev/input/event*`，并且/或者其中的事件可能不符合
-你的预期。
+## 褰撴煇浜涘姛鑳戒笉宸ヤ綔鏃?
 
 
-### Quirks（怪癖）
+璁惧琛屼负涓嶆纭殑鍘熷洜鍙兘鏈夊緢澶氥€備緥濡傦細
+
+- 璁惧鎻愪緵鐨?HID 鎶ュ憡鎻忚堪绗﹀彲鑳芥槸閿欒鐨勶紝渚嬪
+
+  - 瀹冧笉閬靛惊鏍囧噯锛屽洜姝ゅ唴鏍稿皢鏃犳硶鐞嗚В璇?HID 鎶ュ憡鎻忚堪绗︼紱
+  - HID 鎶ュ憡鎻忚堪绗?**涓庡疄闄?* 璁惧鍙戦€佺殑鍐呭涓嶅尮閰嶏紙杩欏彲浠ラ€氳繃璇诲彇鍘熷 HID 鏁版嵁鏉ラ獙璇侊級锛?
+- HID 鎶ュ憡鎻忚堪绗﹀彲鑳介渶瑕佷竴浜?鈥渜uirks鈥濓紙鎬櫀锛岃鍚庢枃锛夈€?
+
+鍥犳锛屽彲鑳戒笉浼氫负姣忎釜搴旂敤闆嗗悎鍒涘缓 `/dev/input/event*`锛屽苟涓?鎴栬€呭叾涓殑浜嬩欢鍙兘涓嶇鍚?
+浣犵殑棰勬湡銆?
 
 
-内核知道如何修复的 HID 设备有一些已知的特性——这些被称为 HID quirks，其列表可在
-`include/linux/hid.h` 中找到。
+### Quirks锛堟€櫀锛?
 
-如果是这种情况，对于手头的 HID 设备，只需在内核中添加所需的 quirk 即可。这可以在
-`drivers/hid/hid-quirks.c` 文件中完成。在查看该文件后，如何做应该相对直观。
 
-当前定义的 quirks 列表（来自 `include/linux/hid.h`）是
+鍐呮牳鐭ラ亾濡備綍淇鐨?HID 璁惧鏈変竴浜涘凡鐭ョ殑鐗规€р€斺€旇繖浜涜绉颁负 HID quirks锛屽叾鍒楄〃鍙湪
+`include/linux/hid.h` 涓壘鍒般€?
+
+濡傛灉鏄繖绉嶆儏鍐碉紝瀵逛簬鎵嬪ご鐨?HID 璁惧锛屽彧闇€鍦ㄥ唴鏍镐腑娣诲姞鎵€闇€鐨?quirk 鍗冲彲銆傝繖鍙互鍦?
+`drivers/hid/hid-quirks.c` 鏂囦欢涓畬鎴愩€傚湪鏌ョ湅璇ユ枃浠跺悗锛屽浣曞仛搴旇鐩稿鐩磋銆?
+
+褰撳墠瀹氫箟鐨?quirks 鍒楄〃锛堟潵鑷?`include/linux/hid.h`锛夋槸
 
    :doc: HID quirks
 
-USB 设备的 quirks 可以在加载 usbhid 模块时指定，参见 `modinfo usbhid`，但正确的修复
-应当进入 hid-quirks.c 并 **提交到上游（be submitted upstream）**。关于如何提交补丁的指南，
-请参见 Documentation/process/submitting-patches.rst。其它总线的 quirks 需要进入
-hid-quirks.c。
+USB 璁惧鐨?quirks 鍙互鍦ㄥ姞杞?usbhid 妯″潡鏃舵寚瀹氾紝鍙傝 `modinfo usbhid`锛屼絾姝ｇ‘鐨勪慨澶?
+搴斿綋杩涘叆 hid-quirks.c 骞?**鎻愪氦鍒颁笂娓革紙be submitted upstream锛?*銆傚叧浜庡浣曟彁浜よˉ涓佺殑鎸囧崡锛?
+璇峰弬瑙?Documentation/process/submitting-patches.rst銆傚叾瀹冩€荤嚎鐨?quirks 闇€瑕佽繘鍏?
+hid-quirks.c銆?
 
-### 修补 HID 报告描述符
+### 淇ˉ HID 鎶ュ憡鎻忚堪绗?
 
 
-如果你需要修补 HID 报告描述符，最简单的方法是求助于 eBPF，如 Documentation/hid/hid-bpf.rst
-中所述。
+濡傛灉浣犻渶瑕佷慨琛?HID 鎶ュ憡鎻忚堪绗︼紝鏈€绠€鍗曠殑鏂规硶鏄眰鍔╀簬 eBPF锛屽 Documentation/hid/hid-bpf.rst
+涓墍杩般€?
 
-基本上，你可以更改原始 HID 报告描述符的任何字节。samples/hid 中的示例应该是一个很好的
-起点：
+鍩烘湰涓婏紝浣犲彲浠ユ洿鏀瑰師濮?HID 鎶ュ憡鎻忚堪绗︾殑浠讳綍瀛楄妭銆俿amples/hid 涓殑绀轰緥搴旇鏄竴涓緢濂界殑
+璧风偣锛?
 ```
   SEC("fmod_ret/hid_bpf_rdesc_fixup")
   int BPF_PROG(hid_rdesc_fixup, struct hid_bpf_ctx *hctx)
@@ -389,30 +389,30 @@ hid-quirks.c。
     return 0;
   }
 ```
-当然，这也可以在内核源码中完成，例如参考 `drivers/hid/hid-aureal.c` 或
-`drivers/hid/hid-samsung.c` 以获得稍微复杂一些的文件。
+褰撶劧锛岃繖涔熷彲浠ュ湪鍐呮牳婧愮爜涓畬鎴愶紝渚嬪鍙傝€?`drivers/hid/hid-aureal.c` 鎴?
+`drivers/hid/hid-samsung.c` 浠ヨ幏寰楃◢寰鏉備竴浜涚殑鏂囦欢銆?
 
-如果你在查阅 HID 手册和理解 HID 报告描述符十六进制数字的确切含义方面需要任何帮助，请
-查阅 Documentation/hid/hidreport-parsing.rst。
+濡傛灉浣犲湪鏌ラ槄 HID 鎵嬪唽鍜岀悊瑙?HID 鎶ュ憡鎻忚堪绗﹀崄鍏繘鍒舵暟瀛楃殑纭垏鍚箟鏂归潰闇€瑕佷换浣曞府鍔╋紝璇?
+鏌ラ槄 Documentation/hid/hidreport-parsing.rst銆?
 
-无论你想出什么解决方案，请记住 **将修复提交给 HID 维护者**，以便它能直接整合进内核，使
-那个特定的 HID 设备能对所有其他人正常工作。关于如何做到这一点的指南，请参见
-Documentation/process/submitting-patches.rst。
-
-
-### 动态修改传输的数据
+鏃犺浣犳兂鍑轰粈涔堣В鍐虫柟妗堬紝璇疯浣?**灏嗕慨澶嶆彁浜ょ粰 HID 缁存姢鑰?*锛屼互渚垮畠鑳界洿鎺ユ暣鍚堣繘鍐呮牳锛屼娇
+閭ｄ釜鐗瑰畾鐨?HID 璁惧鑳藉鎵€鏈夊叾浠栦汉姝ｅ父宸ヤ綔銆傚叧浜庡浣曞仛鍒拌繖涓€鐐圭殑鎸囧崡锛岃鍙傝
+Documentation/process/submitting-patches.rst銆?
 
 
-使用 eBPF 还可以修改与设备交换的数据。再次参见 samples/hid 中的示例。
-
-同样地，**请发布你的修复**，以便它能整合进内核！
-
-### 编写专门的驱动
+### 鍔ㄦ€佷慨鏀逛紶杈撶殑鏁版嵁
 
 
-这真的应该是你的最后手段。
+浣跨敤 eBPF 杩樺彲浠ヤ慨鏀逛笌璁惧浜ゆ崲鐨勬暟鎹€傚啀娆″弬瑙?samples/hid 涓殑绀轰緥銆?
 
-例如可参考 `samples/hidraw/hid-example.c` 文件。
+鍚屾牱鍦帮紝**璇峰彂甯冧綘鐨勪慨澶?*锛屼互渚垮畠鑳芥暣鍚堣繘鍐呮牳锛?
+
+### 缂栧啓涓撻棬鐨勯┍鍔?
+
+
+杩欑湡鐨勫簲璇ユ槸浣犵殑鏈€鍚庢墜娈点€?
+
+渚嬪鍙弬鑰?`samples/hidraw/hid-example.c` 鏂囦欢銆?
 ```
     $ sudo ./hid-example
     Report Descriptor Size: 52

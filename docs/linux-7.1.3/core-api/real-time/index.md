@@ -1,8 +1,8 @@
-## 实时抢占（Real-time preemption）
+﻿## 瀹炴椂鎶㈠崰锛圧eal-time preemption锛?
 
 
-本文档面向对 PREEMPT_RT 内部机制感兴趣的 Linux 内核开发人员与贡献者。它解释了关键
-概念，以及与非 PREEMPT_RT 配置相比所需的改动。
+鏈枃妗ｉ潰鍚戝 PREEMPT_RT 鍐呴儴鏈哄埗鎰熷叴瓒ｇ殑 Linux 鍐呮牳寮€鍙戜汉鍛樹笌璐＄尞鑰呫€傚畠瑙ｉ噴浜嗗叧閿?
+姒傚康锛屼互鍙婁笌闈?PREEMPT_RT 閰嶇疆鐩告瘮鎵€闇€鐨勬敼鍔ㄣ€?
 
 - [theory](theory)
 - [differences](differences)

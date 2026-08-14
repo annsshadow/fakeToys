@@ -1,8 +1,8 @@
-
+﻿
 ## RAID
 
-本页面汇总 MD（多设备，Multiple Device）RAID 子系统相关文档。下列条目分别介绍集群 MD、RAID5 写缓存以及 RAID5 PPL（部分奇偶日志，Partial Parity Log）等主题。
+鏈〉闈㈡眹鎬?MD锛堝璁惧锛孧ultiple Device锛塕AID 瀛愮郴缁熺浉鍏虫枃妗ｃ€備笅鍒楁潯鐩垎鍒粙缁嶉泦缇?MD銆丷AID5 鍐欑紦瀛樹互鍙?RAID5 PPL锛堥儴鍒嗗鍋舵棩蹇楋紝Partial Parity Log锛夌瓑涓婚銆?
 
-- [MD 集群](md-cluster)
-- [RAID5 缓存](raid5-cache)
+- [MD 闆嗙兢](md-cluster)
+- [RAID5 缂撳瓨](raid5-cache)
 - [RAID5 PPL](raid5-ppl)

@@ -1,115 +1,71 @@
-## irq_domain 中断号映射库
+﻿## irq_domain 涓柇鍙锋槧灏勫簱
 
-Linux 内核的当前设计使用一个单一的大号段，其中每个独立的中断源都被分配一个唯一的编号。当系统中只有一个中断控制器时，这很简单。但在拥有多个中断控制器的系统中，内核必须确保每个控制器都被分配到互不重叠的 Linux IRQ 编号。
+Linux 鍐呮牳鐨勫綋鍓嶈璁′娇鐢ㄤ竴涓崟涓€鐨勫ぇ鍙锋锛屽叾涓瘡涓嫭绔嬬殑涓柇婧愰兘琚垎閰嶄竴涓敮涓€鐨勭紪鍙枫€傚綋绯荤粺涓彧鏈変竴涓腑鏂帶鍒跺櫒鏃讹紝杩欏緢绠€鍗曘€備絾鍦ㄦ嫢鏈夊涓腑鏂帶鍒跺櫒鐨勭郴缁熶腑锛屽唴鏍稿繀椤荤‘淇濇瘡涓帶鍒跺櫒閮借鍒嗛厤鍒颁簰涓嶉噸鍙犵殑 Linux IRQ 缂栧彿銆?
+琚敞鍐屼负鐙珛 irqchip 鐨勪腑鏂帶鍒跺櫒鐨勬暟閲忓憟涓婂崌瓒嬪娍銆備緥濡傦紝GPIO 鎺у埗鍣ㄧ瓑鍚勭被瀛愰┍鍔ㄩ€氳繃灏嗗叾涓柇澶勭悊绋嬪簭寤烘ā涓?irqchip锛屼粠鑰岄伩鍏嶉噸鏂板疄鐜颁笌 IRQ 鏍稿績绯荤粺鐩稿悓鐨勫洖璋冩満鍒躲€備篃灏辨槸璇达紝瀹為檯涓婂舰鎴愪簡绾ц仈鐨勪腑鏂帶鍒跺櫒銆?
+鍥犳鍦ㄨ繃鍘伙紝IRQ 缂栧彿鍙互閫夋嫨涓轰笌杩涘叆鏍逛腑鏂帶鍒跺櫒鐨勭‖浠?IRQ 绾跨浉鍖归厤锛堝嵆瀹為檯鍚?CPU 瑙﹀彂涓柇绾跨殑缁勪欢锛夈€傝€屽浠婏紝杩欎釜缂栧彿浠呬粎鏄竴涓紪鍙凤紝涓庣‖浠朵腑鏂紪鍙锋病鏈変换浣曞叧绯汇€?
+鍑轰簬杩欎釜鍘熷洜锛屾垜浠渶瑕佷竴绉嶆満鍒讹紝灏嗘帶鍒跺櫒鏈湴鐨勪腑鏂紪鍙凤紙绉颁负纭欢 IRQ锛屽嵆 hwirq锛変笌 Linux IRQ 缂栧彿鍖哄垎寮€鏉ャ€?
+`irq_alloc_desc*()` 鍜?`irq_free_desc*()` 绯诲垪 API 鎻愪緵 IRQ 缂栧彿鐨勫垎閰嶏紝浣嗗畠浠苟涓嶆彁渚涘皢鎺у埗鍣ㄦ湰鍦?IRQ锛坔wirq锛夌紪鍙峰弽鍚戞槧灏勫埌 Linux IRQ 缂栧彿绌洪棿鐨勬敮鎸併€?
+irq_domain 搴撳湪 `irq_alloc_desc*()` API 涔嬩笂澧炲姞浜?hwirq 涓?IRQ 缂栧彿涔嬮棿鐨勬槧灏勩€傜浉姣斾簬涓柇鎺у埗鍣ㄩ┍鍔ㄨ嚜琛岀‖缂栫爜瀹冧滑鑷繁鐨勫弽鍚戞槧灏勬柟妗堬紝鏇存帹鑽愪娇鐢ㄤ竴涓?irq_domain 鏉ョ鐞嗘槧灏勩€?
+irq_domain 杩樺疄鐜颁簡浠庢娊璞＄殑 `struct irq_fwspec` 鍒?hwirq 缂栧彿鐨勮浆鎹紙鐩墠鏀寔 Device Tree銆侀潪 DT 鍥轰欢鑺傜偣銆丄CPI GSI 浠ュ強杞欢鑺傜偣锛夛紝骞朵笖鍙互杞绘澗鎵╁睍浠ユ敮鎸佸叾浠?IRQ 鎷撴墤鏁版嵁婧愩€傝瀹炵幇鏃犻渶浠讳綍棰濆鐨勫钩鍙版敮鎸佷唬鐮佸嵆鍙畬鎴愩€?
+## irq_domain 鐨勪娇鐢?
+`struct irq_domain` 鍙互瀹氫箟涓轰竴涓腑鏂煙鎺у埗鍣ㄣ€備篃灏辨槸璇达紝瀹冭礋璐ｅ鐞嗙粰瀹氫腑鏂煙鍐呯‖浠朵腑鏂紪鍙蜂笌铏氭嫙涓柇缂栧彿涔嬮棿鐨勬槧灏勩€傝鍩熺粨鏋勯€氬父鐢?PIC 浠ｇ爜閽堝鏌愪釜 PIC 瀹炰緥鍒涘缓锛堜笉杩囧鏋滀竴涓煙閲囩敤鎵佸钩缂栧彿妯″瀷锛屽畠涔熷彲浠ヨ鐩栧涓?PIC锛夈€傝礋璐ｅ宸叉槧灏勭殑 irq_desc 璁剧疆 irq_chip 鐨勶紝姝ｆ槸鍩熷洖璋冦€?
+涓绘満浠ｇ爜鍜屾暟鎹粨鏋勪娇鐢?`fwnode_handle` 鎸囬拡鏉ユ爣璇嗗煙銆傚湪鏌愪簺鎯呭喌涓嬶紝骞朵笖涓轰簡淇濇寔婧愪唬鐮佸吋瀹规€э紝杩欎釜 fwnode 鎸囬拡浼氳鈥滃崌绾р€濅负涓€涓?DT `device_node`銆傚浜庨偅浜涙棤娉曚负涓柇鎺у埗鍣ㄦ彁渚涘敮涓€鏍囪瘑绗︾殑鍥轰欢鍩虹璁炬柦锛宨rq_domain 浠ｇ爜鎻愪緵浜嗕竴涓?fwnode 鍒嗛厤鍣ㄣ€?
+涓柇鎺у埗鍣ㄩ┍鍔ㄩ€氳繃璋冪敤鍏朵腑涓€涓?`irq_domain_create_*()` 鍑芥暟鏉ュ垱寤哄苟娉ㄥ唽涓€涓?`struct irq_domain`锛堟瘡绉嶆槧灏勬柟娉曢兘鏈変笉鍚岀殑鍒嗛厤鍑芥暟锛岀◢鍚庤杩帮級銆傝鍑芥暟鍦ㄦ垚鍔熸椂浼氳繑鍥炰竴涓寚鍚?`struct irq_domain` 鐨勬寚閽堛€傝皟鐢ㄨ€呭繀椤诲悜鍒嗛厤鍑芥暟鎻愪緵涓€涓?`struct irq_domain_ops` 鎸囬拡銆?
+鍦ㄥぇ澶氭暟鎯呭喌涓嬶紝irq_domain 鍒濆涓虹┖锛宧wirq 涓?IRQ 缂栧彿涔嬮棿娌℃湁浠讳綍鏄犲皠銆傞€氳繃璋冪敤 `irq_create_mapping()` 鍙互鍚?irq_domain 娣诲姞鏄犲皠锛岃鍑芥暟鎺ュ彈 irq_domain 鍜屼竴涓?hwirq 缂栧彿浣滀负鍙傛暟銆傚鏋滄煇涓?hwirq 鐨勬槧灏勫皻涓嶅瓨鍦紝`irq_create_mapping()` 浼氬垎閰嶄竴涓柊鐨?Linux irq_desc锛屽皢鍏朵笌 hwirq 鍏宠仈锛屽苟璋冪敤 `:c`irq_domain_ops.map()`` 鍥炶皟銆傞┍鍔ㄥ彲浠ュ湪璇ュ洖璋冧腑鎵ц浠讳綍鎵€闇€鐨勭‖浠惰缃€?
+涓€鏃﹀缓绔嬫槧灏勶紝灏卞彲浠ラ€氳繃澶氱鏂规硶妫€绱㈡垨浣跨敤瀹冿細
 
-被注册为独立 irqchip 的中断控制器的数量呈上升趋势。例如，GPIO 控制器等各类子驱动通过将其中断处理程序建模为 irqchip，从而避免重新实现与 IRQ 核心系统相同的回调机制。也就是说，实际上形成了级联的中断控制器。
-
-因此在过去，IRQ 编号可以选择为与进入根中断控制器的硬件 IRQ 线相匹配（即实际向 CPU 触发中断线的组件）。而如今，这个编号仅仅是一个编号，与硬件中断编号没有任何关系。
-
-出于这个原因，我们需要一种机制，将控制器本地的中断编号（称为硬件 IRQ，即 hwirq）与 Linux IRQ 编号区分开来。
-
-`irq_alloc_desc*()` 和 `irq_free_desc*()` 系列 API 提供 IRQ 编号的分配，但它们并不提供将控制器本地 IRQ（hwirq）编号反向映射到 Linux IRQ 编号空间的支持。
-
-irq_domain 库在 `irq_alloc_desc*()` API 之上增加了 hwirq 与 IRQ 编号之间的映射。相比于中断控制器驱动自行硬编码它们自己的反向映射方案，更推荐使用一个 irq_domain 来管理映射。
-
-irq_domain 还实现了从抽象的 `struct irq_fwspec` 到 hwirq 编号的转换（目前支持 Device Tree、非 DT 固件节点、ACPI GSI 以及软件节点），并且可以轻松扩展以支持其他 IRQ 拓扑数据源。该实现无需任何额外的平台支持代码即可完成。
-
-## irq_domain 的使用
-
-`struct irq_domain` 可以定义为一个中断域控制器。也就是说，它负责处理给定中断域内硬件中断编号与虚拟中断编号之间的映射。该域结构通常由 PIC 代码针对某个 PIC 实例创建（不过如果一个域采用扁平编号模型，它也可以覆盖多个 PIC）。负责对已映射的 irq_desc 设置 irq_chip 的，正是域回调。
-
-主机代码和数据结构使用 `fwnode_handle` 指针来标识域。在某些情况下，并且为了保持源代码兼容性，这个 fwnode 指针会被“升级”为一个 DT `device_node`。对于那些无法为中断控制器提供唯一标识符的固件基础设施，irq_domain 代码提供了一个 fwnode 分配器。
-
-中断控制器驱动通过调用其中一个 `irq_domain_create_*()` 函数来创建并注册一个 `struct irq_domain`（每种映射方法都有不同的分配函数，稍后详述）。该函数在成功时会返回一个指向 `struct irq_domain` 的指针。调用者必须向分配函数提供一个 `struct irq_domain_ops` 指针。
-
-在大多数情况下，irq_domain 初始为空，hwirq 与 IRQ 编号之间没有任何映射。通过调用 `irq_create_mapping()` 可以向 irq_domain 添加映射，该函数接受 irq_domain 和一个 hwirq 编号作为参数。如果某个 hwirq 的映射尚不存在，`irq_create_mapping()` 会分配一个新的 Linux irq_desc，将其与 hwirq 关联，并调用 `:c`irq_domain_ops.map()`` 回调。驱动可以在该回调中执行任何所需的硬件设置。
-
-一旦建立映射，就可以通过多种方法检索或使用它：
-
-- `irq_resolve_mapping()` 返回给定域和 hwirq 编号所对应的 irq_desc 结构指针，如果没有映射则返回 NULL。
-- `irq_find_mapping()` 返回给定域和 hwirq 编号对应的 Linux IRQ 编号，如果没有映射则返回 0。
-- `generic_handle_domain_irq()` 处理由某个域和 hwirq 编号描述的中断。
-
-注意，irq_domain 查找必须发生在与 RCU 读侧临界区相兼容的上下文中。
-
-`irq_create_mapping()` 函数必须在任何对 `irq_find_mapping()` 的调用之前**至少调用一次**，否则描述符将不会被分配。
-
-如果驱动拥有 Linux IRQ 编号或 `irq_data` 指针，并且需要获知关联的 hwirq 编号（例如在 irq_chip 回调中），则可以直接从 `:c`irq_data.hwirq`` 获取。
-
-## irq_domain 映射的类型
-
-从 hwirq 到 Linux IRQ 的反向映射有若干可用机制，每种机制使用不同的分配函数。应当使用哪种反向映射类型取决于具体用例。下面描述了每种反向映射类型：
-
-### 线性映射（Linear）
-
+- `irq_resolve_mapping()` 杩斿洖缁欏畾鍩熷拰 hwirq 缂栧彿鎵€瀵瑰簲鐨?irq_desc 缁撴瀯鎸囬拡锛屽鏋滄病鏈夋槧灏勫垯杩斿洖 NULL銆?- `irq_find_mapping()` 杩斿洖缁欏畾鍩熷拰 hwirq 缂栧彿瀵瑰簲鐨?Linux IRQ 缂栧彿锛屽鏋滄病鏈夋槧灏勫垯杩斿洖 0銆?- `generic_handle_domain_irq()` 澶勭悊鐢辨煇涓煙鍜?hwirq 缂栧彿鎻忚堪鐨勪腑鏂€?
+娉ㄦ剰锛宨rq_domain 鏌ユ壘蹇呴』鍙戠敓鍦ㄤ笌 RCU 璇讳晶涓寸晫鍖虹浉鍏煎鐨勪笂涓嬫枃涓€?
+`irq_create_mapping()` 鍑芥暟蹇呴』鍦ㄤ换浣曞 `irq_find_mapping()` 鐨勮皟鐢ㄤ箣鍓?*鑷冲皯璋冪敤涓€娆?*锛屽惁鍒欐弿杩扮灏嗕笉浼氳鍒嗛厤銆?
+濡傛灉椹卞姩鎷ユ湁 Linux IRQ 缂栧彿鎴?`irq_data` 鎸囬拡锛屽苟涓旈渶瑕佽幏鐭ュ叧鑱旂殑 hwirq 缂栧彿锛堜緥濡傚湪 irq_chip 鍥炶皟涓級锛屽垯鍙互鐩存帴浠?`:c`irq_data.hwirq`` 鑾峰彇銆?
+## irq_domain 鏄犲皠鐨勭被鍨?
+浠?hwirq 鍒?Linux IRQ 鐨勫弽鍚戞槧灏勬湁鑻ュ共鍙敤鏈哄埗锛屾瘡绉嶆満鍒朵娇鐢ㄤ笉鍚岀殑鍒嗛厤鍑芥暟銆傚簲褰撲娇鐢ㄥ摢绉嶅弽鍚戞槧灏勭被鍨嬪彇鍐充簬鍏蜂綋鐢ㄤ緥銆備笅闈㈡弿杩颁簡姣忕鍙嶅悜鏄犲皠绫诲瀷锛?
+### 绾挎€ф槧灏勶紙Linear锛?
 ```
 	irq_domain_create_linear()
 
 ```
-线性反向映射维护一个由 hwirq 编号索引的固定大小表。当一个 hwirq 被映射时，会为该 hwirq 分配一个 irq_desc，并将 IRQ 编号存入表中。
-
-当 hwirq 的最大数量固定且相对较小时（约 < 256），线性映射是一个不错的选择。这种映射的优点是对 IRQ 编号的查找时间为常数，并且 irq_desc 仅为正在使用的 IRQ 分配。缺点是该表必须大到足以容纳可能的最大 hwirq 编号。
-
-大多数驱动都应该使用线性映射。
-
-### 树映射（Tree）
-
+绾挎€у弽鍚戞槧灏勭淮鎶や竴涓敱 hwirq 缂栧彿绱㈠紩鐨勫浐瀹氬ぇ灏忚〃銆傚綋涓€涓?hwirq 琚槧灏勬椂锛屼細涓鸿 hwirq 鍒嗛厤涓€涓?irq_desc锛屽苟灏?IRQ 缂栧彿瀛樺叆琛ㄤ腑銆?
+褰?hwirq 鐨勬渶澶ф暟閲忓浐瀹氫笖鐩稿杈冨皬鏃讹紙绾?< 256锛夛紝绾挎€ф槧灏勬槸涓€涓笉閿欑殑閫夋嫨銆傝繖绉嶆槧灏勭殑浼樼偣鏄 IRQ 缂栧彿鐨勬煡鎵炬椂闂翠负甯告暟锛屽苟涓?irq_desc 浠呬负姝ｅ湪浣跨敤鐨?IRQ 鍒嗛厤銆傜己鐐规槸璇ヨ〃蹇呴』澶у埌瓒充互瀹圭撼鍙兘鐨勬渶澶?hwirq 缂栧彿銆?
+澶у鏁伴┍鍔ㄩ兘搴旇浣跨敤绾挎€ф槧灏勩€?
+### 鏍戞槧灏勶紙Tree锛?
 ```
 	irq_domain_create_tree()
 
 ```
-irq_domain 维护一个从 hwirq 编号到 Linux IRQ 的基数树（radix tree）映射。当一个 hwirq 被映射时，会分配一个 irq_desc，并以 hwirq 作为基数树的查找键。
-
-如果 hwirq 编号可能非常大，树映射是一个不错的选择，因为它不需要分配一个与最大 hwirq 编号一样大的表。缺点是从 hwirq 到 IRQ 编号的查找依赖于表中条目的数量。
-
-只有极少数驱动需要使用这种映射。
-
-### 无映射（No Map）
-
+irq_domain 缁存姢涓€涓粠 hwirq 缂栧彿鍒?Linux IRQ 鐨勫熀鏁版爲锛坮adix tree锛夋槧灏勩€傚綋涓€涓?hwirq 琚槧灏勬椂锛屼細鍒嗛厤涓€涓?irq_desc锛屽苟浠?hwirq 浣滀负鍩烘暟鏍戠殑鏌ユ壘閿€?
+濡傛灉 hwirq 缂栧彿鍙兘闈炲父澶э紝鏍戞槧灏勬槸涓€涓笉閿欑殑閫夋嫨锛屽洜涓哄畠涓嶉渶瑕佸垎閰嶄竴涓笌鏈€澶?hwirq 缂栧彿涓€鏍峰ぇ鐨勮〃銆傜己鐐规槸浠?hwirq 鍒?IRQ 缂栧彿鐨勬煡鎵句緷璧栦簬琛ㄤ腑鏉＄洰鐨勬暟閲忋€?
+鍙湁鏋佸皯鏁伴┍鍔ㄩ渶瑕佷娇鐢ㄨ繖绉嶆槧灏勩€?
+### 鏃犳槧灏勶紙No Map锛?
 ```
 	irq_domain_create_nomap()
 
 ```
-无映射用于 hwirq 编号在硬件中可编程的情况。在这种情况下，最好将 Linux IRQ 编号直接编程到硬件本身，从而不需要映射。调用 `irq_create_direct_mapping()` 会分配一个 Linux IRQ 编号并调用 `.map()` 回调，以便驱动能够将 Linux IRQ 编号编程到硬件中。
-
-大多数驱动无法使用这种映射，它现在受 `CONFIG_IRQ_DOMAIN_NOMAP` 选项限制。请避免引入该 API 的新使用者。
-
-### 传统映射（Legacy）
-
+鏃犳槧灏勭敤浜?hwirq 缂栧彿鍦ㄧ‖浠朵腑鍙紪绋嬬殑鎯呭喌銆傚湪杩欑鎯呭喌涓嬶紝鏈€濂藉皢 Linux IRQ 缂栧彿鐩存帴缂栫▼鍒扮‖浠舵湰韬紝浠庤€屼笉闇€瑕佹槧灏勩€傝皟鐢?`irq_create_direct_mapping()` 浼氬垎閰嶄竴涓?Linux IRQ 缂栧彿骞惰皟鐢?`.map()` 鍥炶皟锛屼互渚块┍鍔ㄨ兘澶熷皢 Linux IRQ 缂栧彿缂栫▼鍒扮‖浠朵腑銆?
+澶у鏁伴┍鍔ㄦ棤娉曚娇鐢ㄨ繖绉嶆槧灏勶紝瀹冪幇鍦ㄥ彈 `CONFIG_IRQ_DOMAIN_NOMAP` 閫夐」闄愬埗銆傝閬垮厤寮曞叆璇?API 鐨勬柊浣跨敤鑰呫€?
+### 浼犵粺鏄犲皠锛圠egacy锛?
 ```
 	irq_domain_create_simple()
 	irq_domain_create_legacy()
 
 ```
-传统映射是针对已经为 hwirq 分配了一系列 irq_desc 的驱动的一种特例。当驱动无法立即转换为使用线性映射时使用它。例如，许多嵌入式系统板级支持文件使用一组 `#define` 来定义传递给 `struct device` 注册的 IRQ 编号。在这种情况下，Linux IRQ 编号无法动态分配，因此应当使用传统映射。
-
-顾名思义，`*_legacy()` 函数已被弃用，仅为了便于支持古老的平台而存在。不应再新增使用者。当 `*_simple()` 函数的使用会导致传统行为时，同样不应再新增使用者。
-
-传统映射假设已经为该控制器分配了一段连续的 IRQ 编号范围，并且 IRQ 编号可以通过向 hwirq 编号加上固定偏移量来计算，反之亦然。缺点是它要求中断控制器管理 IRQ 分配，并且要求为每个 hwirq 分配一个 irq_desc，即使该 hwirq 未被使用。
-
-传统映射应当仅在必须支持固定 IRQ 映射时使用。例如，ISA 控制器会使用传统映射来映射 Linux IRQ 0-15，以便现有的 ISA 驱动获得正确的 IRQ 编号。
-
-传统映射的大多数使用者应当使用 `irq_domain_create_simple()`，它仅在系统提供了 IRQ 范围时才使用传统域，否则使用线性域映射。该调用的语义是：如果指定了 IRQ 范围，则会按需为其分配描述符；如果没有指定范围，则回退到 `irq_domain_create_linear()`，这意味着**不会**分配任何 IRQ 描述符。
-
-简单域的一个典型用例是：某个 irqchip 提供者同时支持动态和静态的 IRQ 分配。
-
-为了避免出现“使用了线性域却没有分配任何描述符”的情况，非常重要的是要确保使用简单域的驱动在调用任何 `irq_find_mapping()` 之前先调用 `irq_create_mapping()`，因为后者在静态 IRQ 分配的场景下实际上也能工作。
-
-### 层级 IRQ 域（Hierarchy IRQ Domain）
-
-在某些架构上，从设备将中断投递到目标 CPU 可能涉及多个中断控制器。
-
+浼犵粺鏄犲皠鏄拡瀵瑰凡缁忎负 hwirq 鍒嗛厤浜嗕竴绯诲垪 irq_desc 鐨勯┍鍔ㄧ殑涓€绉嶇壒渚嬨€傚綋椹卞姩鏃犳硶绔嬪嵆杞崲涓轰娇鐢ㄧ嚎鎬ф槧灏勬椂浣跨敤瀹冦€備緥濡傦紝璁稿宓屽叆寮忕郴缁熸澘绾ф敮鎸佹枃浠朵娇鐢ㄤ竴缁?`#define` 鏉ュ畾涔変紶閫掔粰 `struct device` 娉ㄥ唽鐨?IRQ 缂栧彿銆傚湪杩欑鎯呭喌涓嬶紝Linux IRQ 缂栧彿鏃犳硶鍔ㄦ€佸垎閰嶏紝鍥犳搴斿綋浣跨敤浼犵粺鏄犲皠銆?
+椤惧悕鎬濅箟锛宍*_legacy()` 鍑芥暟宸茶寮冪敤锛屼粎涓轰簡渚夸簬鏀寔鍙よ€佺殑骞冲彴鑰屽瓨鍦ㄣ€備笉搴斿啀鏂板浣跨敤鑰呫€傚綋 `*_simple()` 鍑芥暟鐨勪娇鐢ㄤ細瀵艰嚧浼犵粺琛屼负鏃讹紝鍚屾牱涓嶅簲鍐嶆柊澧炰娇鐢ㄨ€呫€?
+浼犵粺鏄犲皠鍋囪宸茬粡涓鸿鎺у埗鍣ㄥ垎閰嶄簡涓€娈佃繛缁殑 IRQ 缂栧彿鑼冨洿锛屽苟涓?IRQ 缂栧彿鍙互閫氳繃鍚?hwirq 缂栧彿鍔犱笂鍥哄畾鍋忕Щ閲忔潵璁＄畻锛屽弽涔嬩害鐒躲€傜己鐐规槸瀹冭姹備腑鏂帶鍒跺櫒绠＄悊 IRQ 鍒嗛厤锛屽苟涓旇姹備负姣忎釜 hwirq 鍒嗛厤涓€涓?irq_desc锛屽嵆浣胯 hwirq 鏈浣跨敤銆?
+浼犵粺鏄犲皠搴斿綋浠呭湪蹇呴』鏀寔鍥哄畾 IRQ 鏄犲皠鏃朵娇鐢ㄣ€備緥濡傦紝ISA 鎺у埗鍣ㄤ細浣跨敤浼犵粺鏄犲皠鏉ユ槧灏?Linux IRQ 0-15锛屼互渚跨幇鏈夌殑 ISA 椹卞姩鑾峰緱姝ｇ‘鐨?IRQ 缂栧彿銆?
+浼犵粺鏄犲皠鐨勫ぇ澶氭暟浣跨敤鑰呭簲褰撲娇鐢?`irq_domain_create_simple()`锛屽畠浠呭湪绯荤粺鎻愪緵浜?IRQ 鑼冨洿鏃舵墠浣跨敤浼犵粺鍩燂紝鍚﹀垯浣跨敤绾挎€у煙鏄犲皠銆傝璋冪敤鐨勮涔夋槸锛氬鏋滄寚瀹氫簡 IRQ 鑼冨洿锛屽垯浼氭寜闇€涓哄叾鍒嗛厤鎻忚堪绗︼紱濡傛灉娌℃湁鎸囧畾鑼冨洿锛屽垯鍥為€€鍒?`irq_domain_create_linear()`锛岃繖鎰忓懗鐫€**涓嶄細**鍒嗛厤浠讳綍 IRQ 鎻忚堪绗︺€?
+绠€鍗曞煙鐨勪竴涓吀鍨嬬敤渚嬫槸锛氭煇涓?irqchip 鎻愪緵鑰呭悓鏃舵敮鎸佸姩鎬佸拰闈欐€佺殑 IRQ 鍒嗛厤銆?
+涓轰簡閬垮厤鍑虹幇鈥滀娇鐢ㄤ簡绾挎€у煙鍗存病鏈夊垎閰嶄换浣曟弿杩扮鈥濈殑鎯呭喌锛岄潪甯搁噸瑕佺殑鏄纭繚浣跨敤绠€鍗曞煙鐨勯┍鍔ㄥ湪璋冪敤浠讳綍 `irq_find_mapping()` 涔嬪墠鍏堣皟鐢?`irq_create_mapping()`锛屽洜涓哄悗鑰呭湪闈欐€?IRQ 鍒嗛厤鐨勫満鏅笅瀹為檯涓婁篃鑳藉伐浣溿€?
+### 灞傜骇 IRQ 鍩燂紙Hierarchy IRQ Domain锛?
+鍦ㄦ煇浜涙灦鏋勪笂锛屼粠璁惧灏嗕腑鏂姇閫掑埌鐩爣 CPU 鍙兘娑夊強澶氫釜涓柇鎺у埗鍣ㄣ€?
 ```
   Device --> IOAPIC -> Interrupt remapping Controller -> Local APIC -> CPU
 
 ```
-其中涉及三个中断控制器：
+鍏朵腑娑夊強涓変釜涓柇鎺у埗鍣細
 
-1) IOAPIC 控制器
-2) 中断重映射控制器（Interrupt remapping controller）
-3) Local APIC 控制器
-
-为了支持这种硬件拓扑并使软件架构与硬件架构相匹配，会为每个中断控制器构建一个 irq_domain 数据结构，并将这些 irq_domain 组织成层级结构。在构建 irq_domain 层级时，最靠近设备的 irq_domain 为子节点，最靠近 CPU 的 irq_domain 为父节点。因此层级结构如下：
+1) IOAPIC 鎺у埗鍣?2) 涓柇閲嶆槧灏勬帶鍒跺櫒锛圛nterrupt remapping controller锛?3) Local APIC 鎺у埗鍣?
+涓轰簡鏀寔杩欑纭欢鎷撴墤骞朵娇杞欢鏋舵瀯涓庣‖浠舵灦鏋勭浉鍖归厤锛屼細涓烘瘡涓腑鏂帶鍒跺櫒鏋勫缓涓€涓?irq_domain 鏁版嵁缁撴瀯锛屽苟灏嗚繖浜?irq_domain 缁勭粐鎴愬眰绾х粨鏋勩€傚湪鏋勫缓 irq_domain 灞傜骇鏃讹紝鏈€闈犺繎璁惧鐨?irq_domain 涓哄瓙鑺傜偣锛屾渶闈犺繎 CPU 鐨?irq_domain 涓虹埗鑺傜偣銆傚洜姝ゅ眰绾х粨鏋勫涓嬶細
 
 ```
 	CPU Vector irq_domain (root irq_domain to manage CPU vectors)
@@ -121,48 +77,28 @@ irq_domain 维护一个从 hwirq 编号到 Linux IRQ 的基数树（radix tree�
 	IOAPIC irq_domain (manage IOAPIC delivery entries/pins)
 
 ```
-使用层级 irq_domain 有四个主要接口：
+浣跨敤灞傜骇 irq_domain 鏈夊洓涓富瑕佹帴鍙ｏ細
 
-1) `irq_domain_alloc_irqs()`：分配 IRQ 描述符以及用于投递这些中断的中断控制器相关资源。
-2) `irq_domain_free_irqs()`：释放与这些中断关联的 IRQ 描述符以及中断控制器相关资源。
-3) `irq_domain_activate_irq()`：激活中断控制器硬件以投递中断。
-4) `irq_domain_deactivate_irq()`：停用中断控制器硬件以停止投递中断。
+1) `irq_domain_alloc_irqs()`锛氬垎閰?IRQ 鎻忚堪绗︿互鍙婄敤浜庢姇閫掕繖浜涗腑鏂殑涓柇鎺у埗鍣ㄧ浉鍏宠祫婧愩€?2) `irq_domain_free_irqs()`锛氶噴鏀句笌杩欎簺涓柇鍏宠仈鐨?IRQ 鎻忚堪绗︿互鍙婁腑鏂帶鍒跺櫒鐩稿叧璧勬簮銆?3) `irq_domain_activate_irq()`锛氭縺娲讳腑鏂帶鍒跺櫒纭欢浠ユ姇閫掍腑鏂€?4) `irq_domain_deactivate_irq()`锛氬仠鐢ㄤ腑鏂帶鍒跺櫒纭欢浠ュ仠姝㈡姇閫掍腑鏂€?
+鏀寔灞傜骇 irq_domain 闇€瑕佷互涓嬫潯浠讹細
 
-支持层级 irq_domain 需要以下条件：
+1) `struct irq_domain` 涓殑 `:c`parent`` 瀛楁鐢ㄤ簬缁存姢 irq_domain 灞傜骇淇℃伅銆?2) `struct irq_data` 涓殑 `:c`parent_data`` 瀛楁鐢ㄤ簬鏋勫缓涓庡眰绾?irq_domain 鐩稿尮閰嶇殑灞傜骇 irq_data銆俙irq_data` 鐢ㄤ簬瀛樺偍 irq_domain 鎸囬拡鍜岀‖浠?irq 缂栧彿銆?3) `struct irq_domain_ops` 涓殑 `:c`alloc()`銆乣:c`free()` 绛夊洖璋冿紝鐢ㄤ簬鏀寔灞傜骇 irq_domain 鎿嶄綔銆?
+鍦ㄥ眰绾?irq_domain 鍜屽眰绾?irq_data 鍑嗗灏辩华鍚庯紝浼氫负姣忎釜涓柇鎺у埗鍣ㄦ瀯寤轰竴涓?irq_domain 缁撴瀯锛屽苟涓烘瘡涓笌鏌愪釜 IRQ 鍏宠仈鐨?irq_domain 鍒嗛厤涓€涓?irq_data 缁撴瀯銆?
+瑕佽涓柇鎺у埗鍣ㄩ┍鍔ㄦ敮鎸佸眰绾?irq_domain锛屽畠闇€瑕侊細
 
-1) `struct irq_domain` 中的 `:c`parent`` 字段用于维护 irq_domain 层级信息。
-2) `struct irq_data` 中的 `:c`parent_data`` 字段用于构建与层级 irq_domain 相匹配的层级 irq_data。`irq_data` 用于存储 irq_domain 指针和硬件 irq 编号。
-3) `struct irq_domain_ops` 中的 `:c`alloc()`、`:c`free()` 等回调，用于支持层级 irq_domain 操作。
+1) 瀹炵幇 `irq_domain_ops.alloc()` 鍜?`irq_domain_ops.free()`銆?2) 鍙€夊湴锛屽疄鐜?`irq_domain_ops.activate()` 鍜?`irq_domain_ops.deactivate()`銆?3) 鍙€夊湴锛屽疄鐜颁竴涓?irq_chip 鏉ョ鐞嗕腑鏂帶鍒跺櫒纭欢銆?4) 涓嶉渶瑕佸疄鐜?`irq_domain_ops.map()` 鍜?`irq_domain_ops.unmap()`銆傚畠浠湪灞傜骇 irq_domain 涓湭琚娇鐢ㄣ€?
+璇锋敞鎰忥紝灞傜骇 irq_domain 缁濋潪 x86 鐗规湁锛屽畠涔熻澶ч噺鐢ㄤ簬鏀寔鍏朵粬鏋舵瀯锛屼緥濡?ARM銆丄RM64 绛夈€?
+#### 鍫嗗彔 irq_chip锛圫tacked irq_chip锛?
+鐜板湪锛屾垜浠彲浠ユ洿杩涗竴姝ヤ互鏀寔鍫嗗彔鐨勶紙灞傜骇鐨勶級irq_chip銆備篃灏辨槸璇达紝娌垮眰绾х粨鏋勭殑姣忎釜 irq_data 閮藉叧鑱斾竴涓?irq_chip銆傚瓙 irq_chip 鍙互閫氳繃鑷韩瀹炵幇鎵€闇€鐨勬搷浣滐紝涔熷彲浠ヤ笌鍏剁埗 irq_chip 鍗忎綔瀹屾垚銆?
+鏈変簡鍫嗗彔鐨?irq_chip锛屼腑鏂帶鍒跺櫒椹卞姩鍙渶澶勭悊鐢辫嚜韬鐞嗙殑纭欢锛屽苟鍦ㄩ渶瑕佹椂鍚戝叾鐖?irq_chip 璇锋眰鏈嶅姟銆傝繖鏍锋垜浠氨鑳借幏寰椾竴涓洿鍔犳竻鏅扮殑杞欢鏋舵瀯銆?
+## 璋冭瘯
 
-在层级 irq_domain 和层级 irq_data 准备就绪后，会为每个中断控制器构建一个 irq_domain 结构，并为每个与某个 IRQ 关联的 irq_domain 分配一个 irq_data 结构。
+IRQ 瀛愮郴缁熺殑澶ч儴鍒嗗唴閮ㄤ俊鎭兘鍙互閫氳繃鎵撳紑 `CONFIG_GENERIC_IRQ_DEBUGFS` 鍦?debugfs 涓毚闇层€?
+## 鎻愪緵鐨勭粨鏋勪笌鍏叡鍑芥暟
 
-要让中断控制器驱动支持层级 irq_domain，它需要：
-
-1) 实现 `irq_domain_ops.alloc()` 和 `irq_domain_ops.free()`。
-2) 可选地，实现 `irq_domain_ops.activate()` 和 `irq_domain_ops.deactivate()`。
-3) 可选地，实现一个 irq_chip 来管理中断控制器硬件。
-4) 不需要实现 `irq_domain_ops.map()` 和 `irq_domain_ops.unmap()`。它们在层级 irq_domain 中未被使用。
-
-请注意，层级 irq_domain 绝非 x86 特有，它也被大量用于支持其他架构，例如 ARM、ARM64 等。
-
-#### 堆叠 irq_chip（Stacked irq_chip）
-
-现在，我们可以更进一步以支持堆叠的（层级的）irq_chip。也就是说，沿层级结构的每个 irq_data 都关联一个 irq_chip。子 irq_chip 可以通过自身实现所需的操作，也可以与其父 irq_chip 协作完成。
-
-有了堆叠的 irq_chip，中断控制器驱动只需处理由自身管理的硬件，并在需要时向其父 irq_chip 请求服务。这样我们就能获得一个更加清晰的软件架构。
-
-## 调试
-
-IRQ 子系统的大部分内部信息都可以通过打开 `CONFIG_GENERIC_IRQ_DEBUGFS` 在 debugfs 中暴露。
-
-## 提供的结构与公共函数
-
-本章包含用于 IRQ 域的结构和导出的内核 API 函数的自动生成文档。
-
+鏈珷鍖呭惈鐢ㄤ簬 IRQ 鍩熺殑缁撴瀯鍜屽鍑虹殑鍐呮牳 API 鍑芥暟鐨勮嚜鍔ㄧ敓鎴愭枃妗ｃ€?
    :export:
 
-## 提供的内部函数
-
-本章包含内部函数的自动生成文档。
-
+## 鎻愪緵鐨勫唴閮ㄥ嚱鏁?
+鏈珷鍖呭惈鍐呴儴鍑芥暟鐨勮嚜鍔ㄧ敓鎴愭枃妗ｃ€?
    :internal:

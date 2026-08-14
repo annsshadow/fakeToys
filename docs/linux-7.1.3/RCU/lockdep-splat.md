@@ -1,17 +1,17 @@
-
+﻿
 ## Lockdep-RCU Splat
 
 
-Lockdep-RCU 于 2010 年初加入 Linux 内核（http://lwn.net/Articles/371986/）。该机制检查一些常见的
-RCU API 误用情况，最典型的是在未加适当保护的情况下使用 rcu_dereference()
-系列之一来访问受 RCU 保护的指针。当检测到此类误用时，会发出一条 lockdep-RCU splat。
+Lockdep-RCU 浜?2010 骞村垵鍔犲叆 Linux 鍐呮牳锛坔ttp://lwn.net/Articles/371986/锛夈€傝鏈哄埗妫€鏌ヤ竴浜涘父瑙佺殑
+RCU API 璇敤鎯呭喌锛屾渶鍏稿瀷鐨勬槸鍦ㄦ湭鍔犻€傚綋淇濇姢鐨勬儏鍐典笅浣跨敤 rcu_dereference()
+绯诲垪涔嬩竴鏉ヨ闂彈 RCU 淇濇姢鐨勬寚閽堛€傚綋妫€娴嬪埌姝ょ被璇敤鏃讹紝浼氬彂鍑轰竴鏉?lockdep-RCU splat銆?
 
-lockdep-RCU splat 通常的成因是有人访问受 RCU 保护的数据结构时，既没有
-（1）处于正确类型的 RCU 读侧临界区，也没有（2）持有正确的更新侧锁。
-因此该问题可能很严重：它可能导致随机的内存覆写或更糟的情况。当然也可能存在
-误报，毕竟这就是现实世界。
+lockdep-RCU splat 閫氬父鐨勬垚鍥犳槸鏈変汉璁块棶鍙?RCU 淇濇姢鐨勬暟鎹粨鏋勬椂锛屾棦娌℃湁
+锛?锛夊浜庢纭被鍨嬬殑 RCU 璇讳晶涓寸晫鍖猴紝涔熸病鏈夛紙2锛夋寔鏈夋纭殑鏇存柊渚ч攣銆?
+鍥犳璇ラ棶棰樺彲鑳藉緢涓ラ噸锛氬畠鍙兘瀵艰嚧闅忔満鐨勫唴瀛樿鍐欐垨鏇寸碂鐨勬儏鍐点€傚綋鐒朵篃鍙兘瀛樺湪
+璇姤锛屾瘯绔熻繖灏辨槸鐜板疄涓栫晫銆?
 
-让我们看一个来自 3.0-rc5 的 RCU lockdep splat 示例，其中一个
+璁╂垜浠湅涓€涓潵鑷?3.0-rc5 鐨?RCU lockdep splat 绀轰緥锛屽叾涓竴涓?
 ```
 
     =============================
@@ -66,23 +66,23 @@ lockdep-RCU splat 通常的成因是有人访问受 RCU 保护的数据结构时
 	if (rcu_dereference(ioc->ioc_data) == cic) {
 
 ```
-该形式表明它必须处于一个普通的原生 RCU 读侧临界区中，但上面的“其他信息”列表
-显示情况并非如此。相反，我们持有三把锁，其中一把可能与 RCU 相关。
-也许那把锁确实保护了这个引用。如果是这样，修复方法是告知 RCU，例如将
-__cfq_exit_single_io_context() 改为从 cfq_exit_queue() 接收 struct request_queue 的“q”作为参数，
+璇ュ舰寮忚〃鏄庡畠蹇呴』澶勪簬涓€涓櫘閫氱殑鍘熺敓 RCU 璇讳晶涓寸晫鍖轰腑锛屼絾涓婇潰鐨勨€滃叾浠栦俊鎭€濆垪琛?
+鏄剧ず鎯呭喌骞堕潪濡傛銆傜浉鍙嶏紝鎴戜滑鎸佹湁涓夋妸閿侊紝鍏朵腑涓€鎶婂彲鑳戒笌 RCU 鐩稿叧銆?
+涔熻閭ｆ妸閿佺‘瀹炰繚鎶や簡杩欎釜寮曠敤銆傚鏋滄槸杩欐牱锛屼慨澶嶆柟娉曟槸鍛婄煡 RCU锛屼緥濡傚皢
+__cfq_exit_single_io_context() 鏀逛负浠?cfq_exit_queue() 鎺ユ敹 struct request_queue 鐨勨€渜鈥濅綔涓哄弬鏁帮紝
 ```
 
 	if (rcu_dereference_protected(ioc->ioc_data,
 				      lockdep_is_held(&q->queue_lock)) == cic) {
 
 ```
-经过此修改，若这段代码是从 RCU 读侧临界区内调用，或是持有了 ->queue_lock，
-就不会再发出 lockdep-RCU splat。尤其是，由于 ->queue_lock 被持有（见上面列表中的 #2），
-这原本就会抑制上述 lockdep-RCU splat。
+缁忚繃姝や慨鏀癸紝鑻ヨ繖娈典唬鐮佹槸浠?RCU 璇讳晶涓寸晫鍖哄唴璋冪敤锛屾垨鏄寔鏈変簡 ->queue_lock锛?
+灏变笉浼氬啀鍙戝嚭 lockdep-RCU splat銆傚挨鍏舵槸锛岀敱浜?->queue_lock 琚寔鏈夛紙瑙佷笂闈㈠垪琛ㄤ腑鐨?#2锛夛紝
+杩欏師鏈氨浼氭姂鍒朵笂杩?lockdep-RCU splat銆?
 
-另一方面，也许我们确实需要一个 RCU 读侧临界区。在这种情况下，临界区必须覆盖
-rcu_dereference() 返回值的整个使用过程，或至少持续到某个引用计数被递增之类的操作完成。
-处理此问题的一种方式是
+鍙︿竴鏂归潰锛屼篃璁告垜浠‘瀹為渶瑕佷竴涓?RCU 璇讳晶涓寸晫鍖恒€傚湪杩欑鎯呭喌涓嬶紝涓寸晫鍖哄繀椤昏鐩?
+rcu_dereference() 杩斿洖鍊肩殑鏁翠釜浣跨敤杩囩▼锛屾垨鑷冲皯鎸佺画鍒版煇涓紩鐢ㄨ鏁拌閫掑涔嬬被鐨勬搷浣滃畬鎴愩€?
+澶勭悊姝ら棶棰樼殑涓€绉嶆柟寮忔槸
 ```
 
 	rcu_read_lock();
@@ -94,16 +94,16 @@ rcu_dereference() 返回值的整个使用过程，或至少持续到某个引�
 	rcu_read_unlock();
 
 ```
-经过此修改，rcu_dereference() 始终位于 RCU 读侧临界区之内，这同样会抑制上述
-lockdep-RCU splat。
+缁忚繃姝や慨鏀癸紝rcu_dereference() 濮嬬粓浣嶄簬 RCU 璇讳晶涓寸晫鍖轰箣鍐咃紝杩欏悓鏍蜂細鎶戝埗涓婅堪
+lockdep-RCU splat銆?
 
-但在这一特定情况下，我们并没有真正解引用 rcu_dereference() 返回的指针。
-相反，该指针只是与 cic 指针进行比较，这意味着 rcu_dereference() 可以替换为
+浣嗗湪杩欎竴鐗瑰畾鎯呭喌涓嬶紝鎴戜滑骞舵病鏈夌湡姝ｈВ寮曠敤 rcu_dereference() 杩斿洖鐨勬寚閽堛€?
+鐩稿弽锛岃鎸囬拡鍙槸涓?cic 鎸囬拡杩涜姣旇緝锛岃繖鎰忓懗鐫€ rcu_dereference() 鍙互鏇挎崲涓?
 ```
 
 	if (rcu_access_pointer(ioc->ioc_data) == cic) {
 
 ```
-由于 rcu_access_pointer() 可以在无保护的情况下合法调用，此修改同样会抑制上述
-lockdep-RCU splat。
+鐢变簬 rcu_access_pointer() 鍙互鍦ㄦ棤淇濇姢鐨勬儏鍐典笅鍚堟硶璋冪敤锛屾淇敼鍚屾牱浼氭姂鍒朵笂杩?
+lockdep-RCU splat銆?
 

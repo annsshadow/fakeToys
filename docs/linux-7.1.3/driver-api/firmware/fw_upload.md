@@ -1,29 +1,22 @@
-
-## 固件上传 API
-
-
-向固件加载器注册的设备驱动会暴露持久的 sysfs 节点，使用户能够发起针对该设备的
-固件更新。对收到的数据进行任何校验，是设备驱动和/或设备本身的责任。固件上传
-使用了固件回退（firmware fallback）文档中所描述的 **loading** 和 **data** 这两个
-sysfs 文件，此外还新增了若干 sysfs 文件，用于提供固件镜像传输到设备过程中的状态信息。
-
-## 注册固件上传
+﻿
+## 鍥轰欢涓婁紶 API
 
 
-设备驱动通过调用 firmware_upload_register() 来注册固件上传。在参数列表中包含
-一个用于在 /sys/class/firmware 下标识该设备的名称。用户可以向目标设备的
-**loading** sysfs 文件写入 1 来发起一次固件上传。接着，用户将固件镜像写入
-**data** sysfs 文件。写完固件数据后，用户向 **loading** sysfs 文件写入 0 表示
-传输完成。向 **loading** 写入 0 还会触发在内存内核工作线程（worker thread）上下文
-中将固件传输给下层设备驱动。
+鍚戝浐浠跺姞杞藉櫒娉ㄥ唽鐨勮澶囬┍鍔ㄤ細鏆撮湶鎸佷箙鐨?sysfs 鑺傜偣锛屼娇鐢ㄦ埛鑳藉鍙戣捣閽堝璇ヨ澶囩殑
+鍥轰欢鏇存柊銆傚鏀跺埌鐨勬暟鎹繘琛屼换浣曟牎楠岋紝鏄澶囬┍鍔ㄥ拰/鎴栬澶囨湰韬殑璐ｄ换銆傚浐浠朵笂浼?浣跨敤浜嗗浐浠跺洖閫€锛坒irmware fallback锛夋枃妗ｄ腑鎵€鎻忚堪鐨?**loading** 鍜?**data** 杩欎袱涓?sysfs 鏂囦欢锛屾澶栬繕鏂板浜嗚嫢骞?sysfs 鏂囦欢锛岀敤浜庢彁渚涘浐浠堕暅鍍忎紶杈撳埌璁惧杩囩▼涓殑鐘舵€佷俊鎭€?
+## 娉ㄥ唽鍥轰欢涓婁紶
 
-要使用固件上传 API，需编写一个实现了若干 ops 的驱动。probe 函数调用
-firmware_upload_register()，remove 函数调用
+
+璁惧椹卞姩閫氳繃璋冪敤 firmware_upload_register() 鏉ユ敞鍐屽浐浠朵笂浼犮€傚湪鍙傛暟鍒楄〃涓寘鍚?涓€涓敤浜庡湪 /sys/class/firmware 涓嬫爣璇嗚璁惧鐨勫悕绉般€傜敤鎴峰彲浠ュ悜鐩爣璁惧鐨?**loading** sysfs 鏂囦欢鍐欏叆 1 鏉ュ彂璧蜂竴娆″浐浠朵笂浼犮€傛帴鐫€锛岀敤鎴峰皢鍥轰欢闀滃儚鍐欏叆
+**data** sysfs 鏂囦欢銆傚啓瀹屽浐浠舵暟鎹悗锛岀敤鎴峰悜 **loading** sysfs 鏂囦欢鍐欏叆 0 琛ㄧず
+浼犺緭瀹屾垚銆傚悜 **loading** 鍐欏叆 0 杩樹細瑙﹀彂鍦ㄥ唴瀛樺唴鏍稿伐浣滅嚎绋嬶紙worker thread锛変笂涓嬫枃
+涓皢鍥轰欢浼犺緭缁欎笅灞傝澶囬┍鍔ㄣ€?
+瑕佷娇鐢ㄥ浐浠朵笂浼?API锛岄渶缂栧啓涓€涓疄鐜颁簡鑻ュ共 ops 鐨勯┍鍔ㄣ€俻robe 鍑芥暟璋冪敤
+firmware_upload_register()锛宺emove 鍑芥暟璋冪敤
 ```
 firmware_upload_unregister()
 ```
-。
-
+銆?
 ```
 	static const struct fw_upload_ops m10bmc_ops = {
 		.prepare = m10bmc_sec_prepare,
@@ -84,33 +77,24 @@ firmware_upload_unregister()
 
    :identifiers: firmware_upload_unregister
 
-### 固件上传 Ops
+### 鍥轰欢涓婁紶 Ops
 
    :identifiers: fw_upload_ops
 
-### 固件上传进度码
-
-以下进度码由固件加载器在内部使用。对应的字符串会通过下文描述的 status sysfs
-节点上报，并在 ABI 文档中有说明。
-
+### 鍥轰欢涓婁紶杩涘害鐮?
+浠ヤ笅杩涘害鐮佺敱鍥轰欢鍔犺浇鍣ㄥ湪鍐呴儴浣跨敤銆傚搴旂殑瀛楃涓蹭細閫氳繃涓嬫枃鎻忚堪鐨?status sysfs
+鑺傜偣涓婃姤锛屽苟鍦?ABI 鏂囨。涓湁璇存槑銆?
    :identifiers: fw_upload_prog
 
-### 固件上传错误码
-
-在失败时，驱动 ops 可能返回以下错误码：
+### 鍥轰欢涓婁紶閿欒鐮?
+鍦ㄥけ璐ユ椂锛岄┍鍔?ops 鍙兘杩斿洖浠ヤ笅閿欒鐮侊細
 
    :identifiers: fw_upload_err
 
-## Sysfs 属性
+## Sysfs 灞炴€?
 
-
-除了 **loading** 和 **data** 这两个 sysfs 文件外，还有额外的 sysfs 文件用于监视
-数据传输到目标设备的状态，并确定传输最终的成功/失败状态。根据设备及固件镜像
-大小的不同，一次固件更新可能耗时数毫秒到数分钟不等。
-
-额外的 sysfs 文件如下：
-
-- status - 提供固件更新进度的指示
-- error - 提供失败固件更新的错误信息
-- remaining_size - 跟踪一次更新中数据传输的部分
-- cancel - 向该文件写入 1 以取消更新
+闄や簡 **loading** 鍜?**data** 杩欎袱涓?sysfs 鏂囦欢澶栵紝杩樻湁棰濆鐨?sysfs 鏂囦欢鐢ㄤ簬鐩戣
+鏁版嵁浼犺緭鍒扮洰鏍囪澶囩殑鐘舵€侊紝骞剁‘瀹氫紶杈撴渶缁堢殑鎴愬姛/澶辫触鐘舵€併€傛牴鎹澶囧強鍥轰欢闀滃儚
+澶у皬鐨勪笉鍚岋紝涓€娆″浐浠舵洿鏂板彲鑳借€楁椂鏁版绉掑埌鏁板垎閽熶笉绛夈€?
+棰濆鐨?sysfs 鏂囦欢濡備笅锛?
+- status - 鎻愪緵鍥轰欢鏇存柊杩涘害鐨勬寚绀?- error - 鎻愪緵澶辫触鍥轰欢鏇存柊鐨勯敊璇俊鎭?- remaining_size - 璺熻釜涓€娆℃洿鏂颁腑鏁版嵁浼犺緭鐨勯儴鍒?- cancel - 鍚戣鏂囦欢鍐欏叆 1 浠ュ彇娑堟洿鏂?

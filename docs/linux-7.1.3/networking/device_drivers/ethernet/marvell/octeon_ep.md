@@ -1,34 +1,28 @@
+﻿
+## Linux 鍐呮牳闈㈠悜 Marvell Octeon PCI Endpoint NIC 鐨勭綉缁滈┍鍔?
 
-## Linux 内核面向 Marvell Octeon PCI Endpoint NIC 的网络驱动
+Marvell Octeon PCI EndPoint NIC 鐨勭綉缁滈┍鍔ㄣ€傜増鏉?(c) 2020 Marvell International Ltd.
 
-
-Marvell Octeon PCI EndPoint NIC 的网络驱动。版权 (c) 2020 Marvell International Ltd.
-
-## 目录
+## 鐩綍
 
 
 - `Overview`_
 - `Supported Devices`_
 - `Interface Control`_
 
-## 概述
+## 姒傝堪
 
-该驱动实现 Marvell Octeon PCI EndPoint NIC 的网络功能。
+璇ラ┍鍔ㄥ疄鐜?Marvell Octeon PCI EndPoint NIC 鐨勭綉缁滃姛鑳姐€?
+## 鏀寔鐨勮澶?
+鐩墠锛岃椹卞姩鏀寔浠ヤ笅璁惧锛? - 缃戠粶鎺у埗鍣細Cavium, Inc. Device b100
+ - 缃戠粶鎺у埗鍣細Cavium, Inc. Device b200
+ - 缃戠粶鎺у埗鍣細Cavium, Inc. Device b400
+ - 缃戠粶鎺у埗鍣細Cavium, Inc. Device b900
+ - 缃戠粶鎺у埗鍣細Cavium, Inc. Device ba00
+ - 缃戠粶鎺у埗鍣細Cavium, Inc. Device bc00
+ - 缃戠粶鎺у埗鍣細Cavium, Inc. Device bd00
 
-## 支持的设备
+## 鎺ュ彛鎺у埗
 
-目前，该驱动支持以下设备：
- - 网络控制器：Cavium, Inc. Device b100
- - 网络控制器：Cavium, Inc. Device b200
- - 网络控制器：Cavium, Inc. Device b400
- - 网络控制器：Cavium, Inc. Device b900
- - 网络控制器：Cavium, Inc. Device ba00
- - 网络控制器：Cavium, Inc. Device bc00
- - 网络控制器：Cavium, Inc. Device bd00
-
-## 接口控制
-
-网络接口控制（如更改 mtu、链路速率、链路 down/up）通过将命令写入邮箱命令队列
-完成，该邮箱接口通过 BAR4 中的保留区域实现。该驱动将命令写入邮箱，Octeon 设备
-上的固件处理它们。固件还通过作为邮箱接口一部分实现的通知队列，向驱动发送链路
-变化等事件的非请求通知。
+缃戠粶鎺ュ彛鎺у埗锛堝鏇存敼 mtu銆侀摼璺€熺巼銆侀摼璺?down/up锛夐€氳繃灏嗗懡浠ゅ啓鍏ラ偖绠卞懡浠ら槦鍒?瀹屾垚锛岃閭鎺ュ彛閫氳繃 BAR4 涓殑淇濈暀鍖哄煙瀹炵幇銆傝椹卞姩灏嗗懡浠ゅ啓鍏ラ偖绠憋紝Octeon 璁惧
+涓婄殑鍥轰欢澶勭悊瀹冧滑銆傚浐浠惰繕閫氳繃浣滀负閭鎺ュ彛涓€閮ㄥ垎瀹炵幇鐨勯€氱煡闃熷垪锛屽悜椹卞姩鍙戦€侀摼璺?鍙樺寲绛変簨浠剁殑闈炶姹傞€氱煡銆?

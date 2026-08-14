@@ -1,8 +1,8 @@
-## BPF 标准化
+﻿## BPF 鏍囧噯鍖?
 
 
-本目录包含作为与 IETF 的 BPF 标准化工作一部分而正在迭代的文档。有关工作组章程、文档等，
-请参见 `IETF BPF Working Group`_ 页面。
+鏈洰褰曞寘鍚綔涓轰笌 IETF 鐨?BPF 鏍囧噯鍖栧伐浣滀竴閮ㄥ垎鑰屾鍦ㄨ凯浠ｇ殑鏂囨。銆傛湁鍏冲伐浣滅粍绔犵▼銆佹枃妗ｇ瓑锛?
+璇峰弬瑙?`IETF BPF Working Group`_ 椤甸潰銆?
 
 - [instruction-set](instruction-set)
 - [abi](abi)

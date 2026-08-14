@@ -1,26 +1,26 @@
+﻿
+## TTY 鍐呴儴瀹炵幇
 
-## TTY 内部实现
 
-
-本文件记录 TTY 子系统的内部实现与 API。
+鏈枃浠惰褰?TTY 瀛愮郴缁熺殑鍐呴儴瀹炵幇涓?API銆?
 
 ## Kopen
 
 
-这些函数用于从内核空间打开一个 TTY：
+杩欎簺鍑芥暟鐢ㄤ簬浠庡唴鏍哥┖闂存墦寮€涓€涓?TTY锛?
 
       :identifiers: tty_kopen_exclusive tty_kopen_shared tty_kclose
 
 ----
 
-## 导出的内部函数
+## 瀵煎嚭鐨勫唴閮ㄥ嚱鏁?
 
 
    :identifiers: tty_release_struct tty_dev_name_to_number tty_get_icount
 
 ----
 
-## 内部函数
+## 鍐呴儴鍑芥暟
 
 
    :internal:

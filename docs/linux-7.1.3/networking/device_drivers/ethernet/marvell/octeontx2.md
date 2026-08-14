@@ -1,10 +1,10 @@
-
-## Marvell OcteonTx2 RVU 内核驱动
+﻿
+## Marvell OcteonTx2 RVU 鍐呮牳椹卞姩
 
 
 Copyright (c) 2020 Marvell International Ltd.
 
-## 目录
+## 鐩綍
 
 
 - `Overview`_
@@ -14,165 +14,85 @@ Copyright (c) 2020 Marvell International Ltd.
 - `Quality of service`_
 - `RVU representors`_
 
-## 概述
+## 姒傝堪
 
 
-Marvell 的 OcteonTX2 SOC 上的资源虚拟化单元（RVU）将来自网络、加密以及其他
-功能块的硬件资源映射为 PCI 兼容的物理与虚拟功能。每个功能块又拥有多个本地
-功能（LFs），供分配给 PCI 设备使用。RVU 支持多个 PCIe SRIOV 物理功能（PFs）与
-虚拟功能（VFs）。PF0 被称为管理/管理功能（AF），并拥有将 RVU 功能块的 LFs 分配给
-各个 PF/VF 的特权。
+Marvell 鐨?OcteonTX2 SOC 涓婄殑璧勬簮铏氭嫙鍖栧崟鍏冿紙RVU锛夊皢鏉ヨ嚜缃戠粶銆佸姞瀵嗕互鍙婂叾浠?鍔熻兘鍧楃殑纭欢璧勬簮鏄犲皠涓?PCI 鍏煎鐨勭墿鐞嗕笌铏氭嫙鍔熻兘銆傛瘡涓姛鑳藉潡鍙堟嫢鏈夊涓湰鍦?鍔熻兘锛圠Fs锛夛紝渚涘垎閰嶇粰 PCI 璁惧浣跨敤銆俁VU 鏀寔澶氫釜 PCIe SRIOV 鐗╃悊鍔熻兘锛圥Fs锛変笌
+铏氭嫙鍔熻兘锛圴Fs锛夈€侾F0 琚О涓虹鐞?绠＄悊鍔熻兘锛圓F锛夛紝骞舵嫢鏈夊皢 RVU 鍔熻兘鍧楃殑 LFs 鍒嗛厤缁?鍚勪釜 PF/VF 鐨勭壒鏉冦€?
+RVU 绠＄悊鐨勭綉缁滃姛鑳藉潡
+ - 缃戠粶姹犳垨缂撳啿鍖哄垎閰嶅櫒锛圢PA锛? - 缃戠粶鎺ュ彛鎺у埗鍣紙NIX锛? - 缃戠粶瑙ｆ瀽鍣?CAM锛圢PC锛? - 璋冨害/鍚屾/鎺掑簭鍗曞厓锛圫SO锛? - 鍥炵幆鎺ュ彛锛圠BK锛?
+RVU 绠＄悊鐨勯潪缃戠粶鍔熻兘鍧? - 鍔犲瘑鍔犻€熷櫒锛圕PT锛? - 璋冨害瀹氭椂鍣ㄥ崟鍏冿紙TIM锛? - 璋冨害/鍚屾/鎺掑簭鍗曞厓锛圫SO锛?   鍚屾椂鐢ㄤ簬缃戠粶涓庨潪缃戠粶鍦烘櫙
 
-RVU 管理的网络功能块
- - 网络池或缓冲区分配器（NPA）
- - 网络接口控制器（NIX）
- - 网络解析器 CAM（NPC）
- - 调度/同步/排序单元（SSO）
- - 回环接口（LBK）
-
-RVU 管理的非网络功能块
- - 加密加速器（CPT）
- - 调度定时器单元（TIM）
- - 调度/同步/排序单元（SSO）
-   同时用于网络与非网络场景
-
-资源分配示例
- - 带有 NIX-LF 与 NPA-LF 资源的 PF/VF 作为纯网络设备工作
- - 带有 CPT-LF 资源的 PF/VF 作为纯加密卸载设备工作
-
-RVU 功能块可根据软件需求高度配置。
-
-固件在内核启动前完成以下设置
- - 根据物理链路的数量启用所需数量的 RVU PF。
- - 每个 PF 的 VF 数量在编译时是静态或可调的。根据配置，固件将 VF 分配给各个
-   PF。
- - 同时为每个 PF 与 VF 分配 MSIX 向量。
- - 这些在内核启动后不再改变。
-
-## 驱动
+璧勬簮鍒嗛厤绀轰緥
+ - 甯︽湁 NIX-LF 涓?NPA-LF 璧勬簮鐨?PF/VF 浣滀负绾綉缁滆澶囧伐浣? - 甯︽湁 CPT-LF 璧勬簮鐨?PF/VF 浣滀负绾姞瀵嗗嵏杞借澶囧伐浣?
+RVU 鍔熻兘鍧楀彲鏍规嵁杞欢闇€姹傞珮搴﹂厤缃€?
+鍥轰欢鍦ㄥ唴鏍稿惎鍔ㄥ墠瀹屾垚浠ヤ笅璁剧疆
+ - 鏍规嵁鐗╃悊閾捐矾鐨勬暟閲忓惎鐢ㄦ墍闇€鏁伴噺鐨?RVU PF銆? - 姣忎釜 PF 鐨?VF 鏁伴噺鍦ㄧ紪璇戞椂鏄潤鎬佹垨鍙皟鐨勩€傛牴鎹厤缃紝鍥轰欢灏?VF 鍒嗛厤缁欏悇涓?   PF銆? - 鍚屾椂涓烘瘡涓?PF 涓?VF 鍒嗛厤 MSIX 鍚戦噺銆? - 杩欎簺鍦ㄥ唴鏍稿惎鍔ㄥ悗涓嶅啀鏀瑰彉銆?
+## 椹卞姩
 
 
-Linux 内核将会有多个驱动注册到 RVU 的不同 PF 与 VF。就网络而言，将会有 3 种
-风格的驱动。
-
-### 管理功能驱动
+Linux 鍐呮牳灏嗕細鏈夊涓┍鍔ㄦ敞鍐屽埌 RVU 鐨勪笉鍚?PF 涓?VF銆傚氨缃戠粶鑰岃█锛屽皢浼氭湁 3 绉?椋庢牸鐨勯┍鍔ㄣ€?
+### 绠＄悊鍔熻兘椹卞姩
 
 
-如上所述，RVU PF0 被称为管理功能（AF），该驱动支持功能块的资源分配与配置。
-它不处理任何 I/O。它设置少量基础事项，但大部分功能是通过来自 PF 与 VF 的配置
-请求来实现的。
+濡備笂鎵€杩帮紝RVU PF0 琚О涓虹鐞嗗姛鑳斤紙AF锛夛紝璇ラ┍鍔ㄦ敮鎸佸姛鑳藉潡鐨勮祫婧愬垎閰嶄笌閰嶇疆銆?瀹冧笉澶勭悊浠讳綍 I/O銆傚畠璁剧疆灏戦噺鍩虹浜嬮」锛屼絾澶ч儴鍒嗗姛鑳芥槸閫氳繃鏉ヨ嚜 PF 涓?VF 鐨勯厤缃?璇锋眰鏉ュ疄鐜扮殑銆?
+PF/VF 閫氳繃涓€娈靛叡浜唴瀛樺尯鍩燂紙閭锛変笌 AF 閫氫俊銆傛敹鍒拌姹傚悗锛孉F 杩涜璧勬簮鍒嗛厤浠ュ強
+鍏朵粬纭欢閰嶇疆銆侫F 濮嬬粓鎸傛帴鍦ㄤ富鏈哄唴鏍镐笂锛屼絾 PF 鍙婂叾 VF 鍙兘鐢变富鏈哄唴鏍歌嚜韬娇鐢紝
+鎴栬€呰鎸傛帴鍒?VM 鎴?DPDK 绛夌敤鎴风┖闂村簲鐢ㄧ▼搴忋€傚洜姝?AF 蹇呴』澶勭悊鏉ヨ嚜浠讳綍鍩熶腑浠讳綍
+璁惧鍙戦€佺殑璧勬簮鍒嗛厤/閰嶇疆璇锋眰銆?
+AF 椹卞姩杩樹笌搴曞眰鍥轰欢浜や簰浠? - 绠＄悊鐗╃悊浠ュお缃戦摼璺紝鍗?CGX LMAC銆? - 鑾峰彇閫熷害銆佸弻宸ャ€佽嚜鍗忓晢绛変俊鎭? - 鑾峰彇 PHY EEPROM 涓庣粺璁′俊鎭€? - 閰嶇疆 FEC銆丳AM 妯″紡
+ - 绛夌瓑
 
-PF/VF 通过一段共享内存区域（邮箱）与 AF 通信。收到请求后，AF 进行资源分配以及
-其他硬件配置。AF 始终挂接在主机内核上，但 PF 及其 VF 可能由主机内核自身使用，
-或者被挂接到 VM 或 DPDK 等用户空间应用程序。因此 AF 必须处理来自任何域中任何
-设备发送的资源分配/配置请求。
-
-AF 驱动还与底层固件交互以
- - 管理物理以太网链路，即 CGX LMAC。
- - 获取速度、双工、自协商等信息
- - 获取 PHY EEPROM 与统计信息。
- - 配置 FEC、PAM 模式
- - 等等
-
-从纯网络角度看，AF 驱动支持以下功能。
- - 将物理链路映射到注册了 netdev 的 RVU PF。
- - 将 NIX 与 NPA 块的 LFs 挂接到 RVU PF/VF，以提供用于常规网络功能的缓冲区池、
-   RQ、SQ。
- - 流控（暂停帧）的启用/禁用/配置。
- - 与硬件 PTP 时间戳相关的配置。
- - NPC 解析器配置文件配置，即如何解析数据包以及提取什么信息。
- - NPC 提取配置文件配置，即从数据包中提取什么内容以匹配 MCAM 表项中的数据。
- - 管理 NPC MCAM 表项，在收到请求时可以为请求的包转发规则构建并安装。
- - 定义接收端缩放（RSS）算法。
- - 定义分段卸载算法（如 TSO）
- - VLAN 剥离、捕获与插入配置。
- - SSO 与 TIM 块配置，提供包调度支持。
- - Debugfs 支持，用于检查当前资源分配、NPA 池、NIX RQ、SQ 与 CQ 的当前状态、
-   各种统计信息等，以帮助调试问题。
- - 以及更多。
-
-### 物理功能驱动
+浠庣函缃戠粶瑙掑害鐪嬶紝AF 椹卞姩鏀寔浠ヤ笅鍔熻兘銆? - 灏嗙墿鐞嗛摼璺槧灏勫埌娉ㄥ唽浜?netdev 鐨?RVU PF銆? - 灏?NIX 涓?NPA 鍧楃殑 LFs 鎸傛帴鍒?RVU PF/VF锛屼互鎻愪緵鐢ㄤ簬甯歌缃戠粶鍔熻兘鐨勭紦鍐插尯姹犮€?   RQ銆丼Q銆? - 娴佹帶锛堟殏鍋滃抚锛夌殑鍚敤/绂佺敤/閰嶇疆銆? - 涓庣‖浠?PTP 鏃堕棿鎴崇浉鍏崇殑閰嶇疆銆? - NPC 瑙ｆ瀽鍣ㄩ厤缃枃浠堕厤缃紝鍗冲浣曡В鏋愭暟鎹寘浠ュ強鎻愬彇浠€涔堜俊鎭€? - NPC 鎻愬彇閰嶇疆鏂囦欢閰嶇疆锛屽嵆浠庢暟鎹寘涓彁鍙栦粈涔堝唴瀹逛互鍖归厤 MCAM 琛ㄩ」涓殑鏁版嵁銆? - 绠＄悊 NPC MCAM 琛ㄩ」锛屽湪鏀跺埌璇锋眰鏃跺彲浠ヤ负璇锋眰鐨勫寘杞彂瑙勫垯鏋勫缓骞跺畨瑁呫€? - 瀹氫箟鎺ユ敹绔缉鏀撅紙RSS锛夌畻娉曘€? - 瀹氫箟鍒嗘鍗歌浇绠楁硶锛堝 TSO锛? - VLAN 鍓ョ銆佹崟鑾蜂笌鎻掑叆閰嶇疆銆? - SSO 涓?TIM 鍧楅厤缃紝鎻愪緵鍖呰皟搴︽敮鎸併€? - Debugfs 鏀寔锛岀敤浜庢鏌ュ綋鍓嶈祫婧愬垎閰嶃€丯PA 姹犮€丯IX RQ銆丼Q 涓?CQ 鐨勫綋鍓嶇姸鎬併€?   鍚勭缁熻淇℃伅绛夛紝浠ュ府鍔╄皟璇曢棶棰樸€? - 浠ュ強鏇村銆?
+### 鐗╃悊鍔熻兘椹卞姩
 
 
-该 RVU PF 处理 IO，被映射到一个物理以太网链路，并且该驱动注册一个 netdev。它
-支持 SR-IOV。如上所述，该驱动通过邮箱与 AF 通信。为了从物理链路获取信息，该
-驱动与 AF 交谈，AF 再从固件获取信息并回应回来，即它不能直接与固件交谈。
-
-支持 ethtool 用于配置链路、RSS、队列数量、队列大小、流控、ntuple 过滤器、转储
-PHY EEPROM、配置 FEC 等。
-
-### 虚拟功能驱动
+璇?RVU PF 澶勭悊 IO锛岃鏄犲皠鍒颁竴涓墿鐞嗕互澶綉閾捐矾锛屽苟涓旇椹卞姩娉ㄥ唽涓€涓?netdev銆傚畠
+鏀寔 SR-IOV銆傚涓婃墍杩帮紝璇ラ┍鍔ㄩ€氳繃閭涓?AF 閫氫俊銆備负浜嗕粠鐗╃悊閾捐矾鑾峰彇淇℃伅锛岃
+椹卞姩涓?AF 浜よ皥锛孉F 鍐嶄粠鍥轰欢鑾峰彇淇℃伅骞跺洖搴斿洖鏉ワ紝鍗冲畠涓嶈兘鐩存帴涓庡浐浠朵氦璋堛€?
+鏀寔 ethtool 鐢ㄤ簬閰嶇疆閾捐矾銆丷SS銆侀槦鍒楁暟閲忋€侀槦鍒楀ぇ灏忋€佹祦鎺с€乶tuple 杩囨护鍣ㄣ€佽浆鍌?PHY EEPROM銆侀厤缃?FEC 绛夈€?
+### 铏氭嫙鍔熻兘椹卞姩
 
 
-有两种类型的 VF，与其父 SR-IOV PF 共享物理链路的 VF，以及使用内部硬件回环通道
-（LBK）成对工作的 VF。
-
-类型 1：
- - 这些 VF 及其父 PF 共享一条物理链路，用于与外部通信。
- - VF 不能直接与 AF 通信，它们将 mbox 消息发送给 PF，PF 再将其转发给 AF。AF 处理
-   之后，将回应返回给 PF，PF 再将回复转发给 VF。
- - 从功能角度看，PF 与 VF 之间没有区别，因为相同的硬件资源被挂接到两者。但用户
-   只能从 PF 配置少量内容，因为 PF 被视为链路的所有者/管理员。
-
-类型 2：
- - RVU PF0，即管理功能，创建这些 VF 并将它们映射到回环块的通道。
- - 一组两个 VF（VF0 与 VF1、VF2 与 VF3……依此类推）成对工作，即从 VF0 发出的包
-   会被 VF1 接收，反之亦然。
- - 这些 VF 可被应用程序或虚拟机用来在它们之间通信而无需将流量发往外部。硬件中
-   不存在交换机，因此提供了对回环 VF 的支持。
- - 这些 VF 通过 mbox 直接与 AF（PF0）通信。
-
-除了用于包收发所用的 IO 通道或链路之外，这些 VF 类型之间没有其他区别。AF 驱动
-负责 IO 通道映射，因此同一个 VF 驱动对两类设备都能工作。
-
-## 基本包流
+鏈変袱绉嶇被鍨嬬殑 VF锛屼笌鍏剁埗 SR-IOV PF 鍏变韩鐗╃悊閾捐矾鐨?VF锛屼互鍙婁娇鐢ㄥ唴閮ㄧ‖浠跺洖鐜€氶亾
+锛圠BK锛夋垚瀵瑰伐浣滅殑 VF銆?
+绫诲瀷 1锛? - 杩欎簺 VF 鍙婂叾鐖?PF 鍏变韩涓€鏉＄墿鐞嗛摼璺紝鐢ㄤ簬涓庡閮ㄩ€氫俊銆? - VF 涓嶈兘鐩存帴涓?AF 閫氫俊锛屽畠浠皢 mbox 娑堟伅鍙戦€佺粰 PF锛孭F 鍐嶅皢鍏惰浆鍙戠粰 AF銆侫F 澶勭悊
+   涔嬪悗锛屽皢鍥炲簲杩斿洖缁?PF锛孭F 鍐嶅皢鍥炲杞彂缁?VF銆? - 浠庡姛鑳借搴︾湅锛孭F 涓?VF 涔嬮棿娌℃湁鍖哄埆锛屽洜涓虹浉鍚岀殑纭欢璧勬簮琚寕鎺ュ埌涓よ€呫€備絾鐢ㄦ埛
+   鍙兘浠?PF 閰嶇疆灏戦噺鍐呭锛屽洜涓?PF 琚涓洪摼璺殑鎵€鏈夎€?绠＄悊鍛樸€?
+绫诲瀷 2锛? - RVU PF0锛屽嵆绠＄悊鍔熻兘锛屽垱寤鸿繖浜?VF 骞跺皢瀹冧滑鏄犲皠鍒板洖鐜潡鐨勯€氶亾銆? - 涓€缁勪袱涓?VF锛圴F0 涓?VF1銆乂F2 涓?VF3鈥︹€︿緷姝ょ被鎺級鎴愬宸ヤ綔锛屽嵆浠?VF0 鍙戝嚭鐨勫寘
+   浼氳 VF1 鎺ユ敹锛屽弽涔嬩害鐒躲€? - 杩欎簺 VF 鍙搴旂敤绋嬪簭鎴栬櫄鎷熸満鐢ㄦ潵鍦ㄥ畠浠箣闂撮€氫俊鑰屾棤闇€灏嗘祦閲忓彂寰€澶栭儴銆傜‖浠朵腑
+   涓嶅瓨鍦ㄤ氦鎹㈡満锛屽洜姝ゆ彁渚涗簡瀵瑰洖鐜?VF 鐨勬敮鎸併€? - 杩欎簺 VF 閫氳繃 mbox 鐩存帴涓?AF锛圥F0锛夐€氫俊銆?
+闄や簡鐢ㄤ簬鍖呮敹鍙戞墍鐢ㄧ殑 IO 閫氶亾鎴栭摼璺箣澶栵紝杩欎簺 VF 绫诲瀷涔嬮棿娌℃湁鍏朵粬鍖哄埆銆侫F 椹卞姩
+璐熻矗 IO 閫氶亾鏄犲皠锛屽洜姝ゅ悓涓€涓?VF 椹卞姩瀵逛袱绫昏澶囬兘鑳藉伐浣溿€?
+## 鍩烘湰鍖呮祦
 
 
-### 入向
+### 鍏ュ悜
 
 
-1. CGX LMAC 接收数据包。
-2. 将数据包转发给 NIX 块。
-3. 随后提交给 NPC 块进行解析，再进行 MCAM 查找以获得目标 RVU 设备。
-4. 挂接到目标 RVU 设备的 NIX LF 从 NPA 块 LF 的 RQ 映射缓冲区池中分配一个缓冲区。
-5. RQ 可由 RSS 选择，或通过配置带 RQ 号的 MCAM 规则来选择。
-6. 数据包被 DMA，并通知驱动。
-
-### 出向
+1. CGX LMAC 鎺ユ敹鏁版嵁鍖呫€?2. 灏嗘暟鎹寘杞彂缁?NIX 鍧椼€?3. 闅忓悗鎻愪氦缁?NPC 鍧楄繘琛岃В鏋愶紝鍐嶈繘琛?MCAM 鏌ユ壘浠ヨ幏寰楃洰鏍?RVU 璁惧銆?4. 鎸傛帴鍒扮洰鏍?RVU 璁惧鐨?NIX LF 浠?NPA 鍧?LF 鐨?RQ 鏄犲皠缂撳啿鍖烘睜涓垎閰嶄竴涓紦鍐插尯銆?5. RQ 鍙敱 RSS 閫夋嫨锛屾垨閫氳繃閰嶇疆甯?RQ 鍙风殑 MCAM 瑙勫垯鏉ラ€夋嫨銆?6. 鏁版嵁鍖呰 DMA锛屽苟閫氱煡椹卞姩銆?
+### 鍑哄悜
 
 
-1. 驱动准备一个发送描述符并提交给 SQ 以进行传输。
-2. 该 SQ 已被（AF）配置为在特定链路/通道上传输。
-3. SQ 描述符环由从 NPA 块 LF 的 SQ 映射池中分配的缓冲区维护。
-4. NIX 块在指定通道上传输该包。
-5. 可以安装 NPC MCAM 表项以将包改道到不同的通道。
+1. 椹卞姩鍑嗗涓€涓彂閫佹弿杩扮骞舵彁浜ょ粰 SQ 浠ヨ繘琛屼紶杈撱€?2. 璇?SQ 宸茶锛圓F锛夐厤缃负鍦ㄧ壒瀹氶摼璺?閫氶亾涓婁紶杈撱€?3. SQ 鎻忚堪绗︾幆鐢变粠 NPA 鍧?LF 鐨?SQ 鏄犲皠姹犱腑鍒嗛厤鐨勭紦鍐插尯缁存姢銆?4. NIX 鍧楀湪鎸囧畾閫氶亾涓婁紶杈撹鍖呫€?5. 鍙互瀹夎 NPC MCAM 琛ㄩ」浠ュ皢鍖呮敼閬撳埌涓嶅悓鐨勯€氶亾銆?
+## Devlink 鍋ュ悍鎶ュ憡鍣?
 
-## Devlink 健康报告器
+### NPA 鎶ュ憡鍣?
 
+NPA 鎶ュ憡鍣ㄨ礋璐ｆ姤鍛婂苟鎭㈠浠ヤ笅涓€缁勯敊璇細
 
-### NPA 报告器
+1. GENERAL 浜嬩欢
 
+   - 鍥犳湭鏄犲皠 PF 鐨勬搷浣滃鑷寸殑閿欒銆?   - 鍥犲叾浠?HW 鍧楋紙NIX銆丼SO銆乀IM銆丏PI 涓?AURA锛夌殑鍒嗛厤/閲婃斁琚鐢ㄥ鑷寸殑閿欒銆?
+2. ERROR 浜嬩欢
 
-NPA 报告器负责报告并恢复以下一组错误：
+   - 鍥?NPA_AQ_INST_S 璇绘垨 NPA_AQ_RES_S 鍐欏鑷寸殑鏁呴殰銆?   - AQ Doorbell 閿欒銆?
+3. RAS 浜嬩欢
 
-1. GENERAL 事件
+   - 閽堝 NPA_AQ_INST_S/NPA_AQ_RES_S 鐨?RAS 閿欒鎶ュ憡銆?
+4. RVU 浜嬩欢
 
-   - 因未映射 PF 的操作导致的错误。
-   - 因其他 HW 块（NIX、SSO、TIM、DPI 与 AURA）的分配/释放被禁用导致的错误。
-
-2. ERROR 事件
-
-   - 因 NPA_AQ_INST_S 读或 NPA_AQ_RES_S 写导致的故障。
-   - AQ Doorbell 错误。
-
-3. RAS 事件
-
-   - 针对 NPA_AQ_INST_S/NPA_AQ_RES_S 的 RAS 错误报告。
-
-4. RVU 事件
-
-   - 因未映射槽位导致的错误。
-
+   - 鍥犳湭鏄犲皠妲戒綅瀵艰嚧鐨勯敊璇€?
 ```
 
 	~# devlink health
@@ -187,12 +107,10 @@ NPA 报告器负责报告并恢复以下一组错误：
 	      state healthy error 0 recover 0 last_dump_date 2020-12-10 last_dump_time 09:32:40 grace_period 0 auto_recover true auto_dump true
 
 ```
-每个报告器转储出
+姣忎釜鎶ュ憡鍣ㄨ浆鍌ㄥ嚭
 
- - 错误类型
- - 错误寄存器值
- - 文字形式的缘由
-
+ - 閿欒绫诲瀷
+ - 閿欒瀵勫瓨鍣ㄥ€? - 鏂囧瓧褰㈠紡鐨勭紭鐢?
 ```
 
 	~# devlink health dump show  pci/0002:01:00.0 reporter hw_npa_gen
@@ -210,34 +128,22 @@ NPA 报告器负责报告并恢复以下一组错误：
 
 
 ```
-### NIX 报告器
+### NIX 鎶ュ憡鍣?
 
+NIX 鎶ュ憡鍣ㄨ礋璐ｆ姤鍛婂苟鎭㈠浠ヤ笅涓€缁勯敊璇細
 
-NIX 报告器负责报告并恢复以下一组错误：
+1. GENERAL 浜嬩欢
 
-1. GENERAL 事件
+   - 鍥犵紦鍐插尯涓嶈冻瀵艰嚧鐨勬帴鏀堕暅鍍?缁勬挱鍖呬涪寮冦€?   - SMQ Flush 鎿嶄綔銆?
+2. ERROR 浜嬩欢
 
-   - 因缓冲区不足导致的接收镜像/组播包丢弃。
-   - SMQ Flush 操作。
+   - 鍥犱粠缁勬挱/闀滃儚缂撳啿鍖鸿鍐?WQE 瀵艰嚧鐨勫唴瀛橀敊璇€?   - 鎺ユ敹缁勬挱/闀滃儚澶嶅埗鍒楄〃閿欒銆?   - 鍦ㄦ湭鏄犲皠鐨?PF 涓婃帴鏀舵暟鎹寘銆?   - 鍥?NIX_AQ_INST_S 璇绘垨 NIX_AQ_RES_S 鍐欏鑷寸殑鏁呴殰銆?   - AQ Doorbell 閿欒銆?
+3. RAS 浜嬩欢
 
-2. ERROR 事件
+   - 閽堝 NIX 鎺ユ敹缁勬挱/闀滃儚鏉＄洰缁撴瀯鐨?RAS 閿欒鎶ュ憡銆?   - 閽堝浠庣粍鎾?闀滃儚缂撳啿鍖鸿鍑虹殑 WQE/鍖呮暟鎹殑 RAS 閿欒鎶ュ憡銆?   - 閽堝 NIX_AQ_INST_S/NIX_AQ_RES_S 鐨?RAS 閿欒鎶ュ憡銆?
+4. RVU 浜嬩欢
 
-   - 因从组播/镜像缓冲区读写 WQE 导致的内存错误。
-   - 接收组播/镜像复制列表错误。
-   - 在未映射的 PF 上接收数据包。
-   - 因 NIX_AQ_INST_S 读或 NIX_AQ_RES_S 写导致的故障。
-   - AQ Doorbell 错误。
-
-3. RAS 事件
-
-   - 针对 NIX 接收组播/镜像条目结构的 RAS 错误报告。
-   - 针对从组播/镜像缓冲区读出的 WQE/包数据的 RAS 错误报告。
-   - 针对 NIX_AQ_INST_S/NIX_AQ_RES_S 的 RAS 错误报告。
-
-4. RVU 事件
-
-   - 因未映射槽位导致的错误。
-
+   - 鍥犳湭鏄犲皠妲戒綅瀵艰嚧鐨勯敊璇€?
 ```
 
 	~# ./devlink health
@@ -260,12 +166,10 @@ NIX 报告器负责报告并恢复以下一组错误：
 	    state healthy error 409 recover 409 last_dump_date 2021-01-19 last_dump_time 05:43:16 grace_period 0 auto_recover true auto_dump true
 
 ```
-每个报告器转储出
+姣忎釜鎶ュ憡鍣ㄨ浆鍌ㄥ嚭
 
- - 错误类型
- - 错误寄存器值
- - 文字形式的缘由
-
+ - 閿欒绫诲瀷
+ - 閿欒瀵勫瓨鍣ㄥ€? - 鏂囧瓧褰㈠紡鐨勭紭鐢?
 ```
 
 	~# devlink health dump show pci/0002:01:00.0 reporter hw_nix_intr
@@ -283,27 +187,20 @@ NIX 报告器负责报告并恢复以下一组错误：
 
 
 ```
-## 服务质量
+## 鏈嶅姟璐ㄩ噺
 
 
-### 调度中使用的硬件算法
+### 璋冨害涓娇鐢ㄧ殑纭欢绠楁硶
 
 
-octeontx2 硅片与 CN10K 传输接口由五个传输层级组成，从 SMQ/MDQ、TL4 到 TL1。每个
-数据包会遍历 MDQ、TL4 到 TL1 各层级。每个层级包含一个队列数组以支持调度与整形。
-硬件根据调度器队列的优先级使用下述算法。一旦用户创建了具有不同优先级的 tc 类，
-驱动就用指定的优先级以及速率限制配置来配置分配给该类的调度器。
+octeontx2 纭呯墖涓?CN10K 浼犺緭鎺ュ彛鐢变簲涓紶杈撳眰绾х粍鎴愶紝浠?SMQ/MDQ銆乀L4 鍒?TL1銆傛瘡涓?鏁版嵁鍖呬細閬嶅巻 MDQ銆乀L4 鍒?TL1 鍚勫眰绾с€傛瘡涓眰绾у寘鍚竴涓槦鍒楁暟缁勪互鏀寔璋冨害涓庢暣褰€?纭欢鏍规嵁璋冨害鍣ㄩ槦鍒楃殑浼樺厛绾т娇鐢ㄤ笅杩扮畻娉曘€備竴鏃︾敤鎴峰垱寤轰簡鍏锋湁涓嶅悓浼樺厛绾х殑 tc 绫伙紝
+椹卞姩灏辩敤鎸囧畾鐨勪紭鍏堢骇浠ュ強閫熺巼闄愬埗閰嶇疆鏉ラ厤缃垎閰嶇粰璇ョ被鐨勮皟搴﹀櫒銆?
+1. 涓ユ牸浼樺厛绾?
+      - 涓€鏃﹀寘琚彁浜ょ粰 MDQ锛岀‖浠朵細浣跨敤涓ユ牸浼樺厛绾ч€夊彇鎵€鏈夊叿鏈変笉鍚屼紭鍏堢骇鐨勬椿璺?MDQ銆?
+2. 杞锛圧ound Robin锛?
+      - 鍏锋湁鐩稿悓浼樺厛绾х殑娲昏穬 MDQ 浣跨敤杞鏂瑰紡閫夊彇銆?
 
-1. 严格优先级
-
-      - 一旦包被提交给 MDQ，硬件会使用严格优先级选取所有具有不同优先级的活跃 MDQ。
-
-2. 轮询（Round Robin）
-
-      - 具有相同优先级的活跃 MDQ 使用轮询方式选取。
-
-
-### 配置 HTB 卸载
+### 閰嶇疆 HTB 鍗歌浇
 
 
 ```
@@ -337,20 +234,13 @@ octeontx2 硅片与 CN10K 传输接口由五个传输层级组成，从 SMQ/MDQ�
 ## RVU Representors
 
 
-RVU representor 驱动添加了对系统中为 RVU PF 的 VF 创建 representor 设备的支持。
-当用户启用 switchdev 模式时，会创建 representor 设备。在设置 SRIOV numVFs 之前或
-之后都可以启用 switchdev 模式。所有 representor 设备共享单个 NIXLF，但每个都拥有
-专用的 Rx/Tx 队列。RVU PF representor 驱动为每个 Rx/Tx 队列对注册一个独立的 netdev。
-
-当前硬件不支持能够进行 L2 学习与在 representee 与 representor 之间转发数据包的
-内置交换机。因此，representee 与其 representor 之间的包路径是通过设置合适的 NPC
-MCAM 过滤器实现的。匹配这些过滤器的传输数据包会通过硬件回环通道/接口（即，而非
-从 MAC 接口发往外部）被回环。这会再次匹配已安装的过滤器并被转发。以此方式实现
-representee => representor 以及 representor => representee 的包路径。这些规则在
-representor 被创建时安装，并根据 representor/representee 接口状态而激活/停用。
-
-使用示例：
-
+RVU representor 椹卞姩娣诲姞浜嗗绯荤粺涓负 RVU PF 鐨?VF 鍒涘缓 representor 璁惧鐨勬敮鎸併€?褰撶敤鎴峰惎鐢?switchdev 妯″紡鏃讹紝浼氬垱寤?representor 璁惧銆傚湪璁剧疆 SRIOV numVFs 涔嬪墠鎴?涔嬪悗閮藉彲浠ュ惎鐢?switchdev 妯″紡銆傛墍鏈?representor 璁惧鍏变韩鍗曚釜 NIXLF锛屼絾姣忎釜閮芥嫢鏈?涓撶敤鐨?Rx/Tx 闃熷垪銆俁VU PF representor 椹卞姩涓烘瘡涓?Rx/Tx 闃熷垪瀵规敞鍐屼竴涓嫭绔嬬殑 netdev銆?
+褰撳墠纭欢涓嶆敮鎸佽兘澶熻繘琛?L2 瀛︿範涓庡湪 representee 涓?representor 涔嬮棿杞彂鏁版嵁鍖呯殑
+鍐呯疆浜ゆ崲鏈恒€傚洜姝わ紝representee 涓庡叾 representor 涔嬮棿鐨勫寘璺緞鏄€氳繃璁剧疆鍚堥€傜殑 NPC
+MCAM 杩囨护鍣ㄥ疄鐜扮殑銆傚尮閰嶈繖浜涜繃婊ゅ櫒鐨勪紶杈撴暟鎹寘浼氶€氳繃纭欢鍥炵幆閫氶亾/鎺ュ彛锛堝嵆锛岃€岄潪
+浠?MAC 鎺ュ彛鍙戝線澶栭儴锛夎鍥炵幆銆傝繖浼氬啀娆″尮閰嶅凡瀹夎鐨勮繃婊ゅ櫒骞惰杞彂銆備互姝ゆ柟寮忓疄鐜?representee => representor 浠ュ強 representor => representee 鐨勫寘璺緞銆傝繖浜涜鍒欏湪
+representor 琚垱寤烘椂瀹夎锛屽苟鏍规嵁 representor/representee 鎺ュ彛鐘舵€佽€屾縺娲?鍋滅敤銆?
+浣跨敤绀轰緥锛?
 ```
 
 	# devlink dev eswitch set pci/0002:1c:00.0 mode switchdev
@@ -366,16 +256,14 @@ representor 被创建时安装，并根据 representor/representee 接口状态�
 
 
 ```
-要从系统中删除 representor 设备，将设备切换为 legacy 模式。
-
+瑕佷粠绯荤粺涓垹闄?representor 璁惧锛屽皢璁惧鍒囨崲涓?legacy 妯″紡銆?
 ```
 
 	# devlink dev eswitch set pci/0002:1c:00.0 mode legacy
 
 ```
-RVU representors 可以使用 devlink 端口
-（参见 Documentation/networking/devlink/devlink-port.rst <devlink_port>）接口进行管理。
-
+RVU representors 鍙互浣跨敤 devlink 绔彛
+锛堝弬瑙?Documentation/networking/devlink/devlink-port.rst <devlink_port>锛夋帴鍙ｈ繘琛岀鐞嗐€?
 ```
 
 	# devlink port
@@ -385,18 +273,15 @@ RVU representors 可以使用 devlink 端口
 	pci/0002:1c:00.0/3: type eth netdev Rpf1vf3 flavour pcivf controller 0 pfnum 1 vfnum 3 external false splittable false
 
 ```
-## 功能属性
+## 鍔熻兘灞炴€?
+
+RVU representor 鏀寔 representor 鐨勫姛鑳藉睘鎬с€俽epresentor 鐨勭鍙ｅ姛鑳介厤缃€氳繃 devlink
+eswitch 绔彛鏀寔銆?
+### MAC 鍦板潃閰嶇疆
 
 
-RVU representor 支持 representor 的功能属性。representor 的端口功能配置通过 devlink
-eswitch 端口支持。
-
-### MAC 地址配置
-
-
-RVU representor 驱动支持通过 devlink 端口功能属性机制来配置 MAC 地址。（参见
-Documentation/networking/devlink/devlink-port.rst）
-
+RVU representor 椹卞姩鏀寔閫氳繃 devlink 绔彛鍔熻兘灞炴€ф満鍒舵潵閰嶇疆 MAC 鍦板潃銆傦紙鍙傝
+Documentation/networking/devlink/devlink-port.rst锛?
 ```
 
 	# devlink port function set pci/0002:1c:00.0/2 hw_addr 5c:a1:1b:5e:43:11
@@ -407,11 +292,10 @@ Documentation/networking/devlink/devlink-port.rst）
 
 
 ```
-## TC 卸载
+## TC 鍗歌浇
 
 
-rvu representor 驱动实现了使用端口 representor 卸载 tc 规则的支持。
-
+rvu representor 椹卞姩瀹炵幇浜嗕娇鐢ㄧ鍙?representor 鍗歌浇 tc 瑙勫垯鐨勬敮鎸併€?
 ```
 
 	# tc filter add dev Rpf1vf0 protocol 802.1Q parent ffff: flower vlan_id 3 vlan_ethtype ipv4 skip_sw action drop

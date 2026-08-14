@@ -1,6 +1,6 @@
-### 索引节点表（Inode Table）
+﻿### 绱㈠紩鑺傜偣琛紙Inode Table锛?
 
 
-索引节点表在 mkfs 时静态分配。每个块组描述符指向表的起始位置，超级块记录每个组的
-索引节点数量。有关索引节点表布局的更多信息，请参见
-[inode documentation <inodes>](inode documentation <inodes>)。
+绱㈠紩鑺傜偣琛ㄥ湪 mkfs 鏃堕潤鎬佸垎閰嶃€傛瘡涓潡缁勬弿杩扮鎸囧悜琛ㄧ殑璧峰浣嶇疆锛岃秴绾у潡璁板綍姣忎釜缁勭殑
+绱㈠紩鑺傜偣鏁伴噺銆傛湁鍏崇储寮曡妭鐐硅〃甯冨眬鐨勬洿澶氫俊鎭紝璇峰弬瑙?
+[inode documentation <inodes>](inode documentation <inodes>)銆?

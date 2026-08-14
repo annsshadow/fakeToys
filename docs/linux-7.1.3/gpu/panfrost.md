@@ -1,15 +1,15 @@
-
-##  drm/Panfrost Mali 驱动
-
-
-## Panfrost DRM 客户端使用统计实现
+﻿
+##  drm/Panfrost Mali 椹卞姩
 
 
-drm/Panfrost 驱动实现了 DRM 客户端使用统计规范，如
-drm-client-usage-stats 中所述。
+## Panfrost DRM 瀹㈡埛绔娇鐢ㄧ粺璁″疄鐜?
 
-以下示例展示了已实现的键值对以及当前
-所有可能的格式选项：
+
+drm/Panfrost 椹卞姩瀹炵幇浜?DRM 瀹㈡埛绔娇鐢ㄧ粺璁¤鑼冿紝濡?
+drm-client-usage-stats 涓墍杩般€?
+
+浠ヤ笅绀轰緥灞曠ず浜嗗凡瀹炵幇鐨勯敭鍊煎浠ュ強褰撳墠
+鎵€鏈夊彲鑳界殑鏍煎紡閫夐」锛?
 
 ```
       pos:    0
@@ -33,15 +33,15 @@ drm-client-usage-stats 中所述。
       drm-purgeable-memory:   128 KiB
 
 ```
-可能的 `drm-engine-` 键名为：`fragment`，以及 `vertex-tiler`。
-`drm-curfreq-` 值表示该引擎当前的运行频率。
+鍙兘鐨?`drm-engine-` 閿悕涓猴細`fragment`锛屼互鍙?`vertex-tiler`銆?
+`drm-curfreq-` 鍊艰〃绀鸿寮曟搸褰撳墠鐨勮繍琛岄鐜囥€?
 
-用户必须注意，出于省电考虑，引擎和周期采样默认是禁用的，
-`fdinfo` 用户和基准测试应用程序在查询 fdinfo 文件时
-必须确保切换任务的性能分析状态：
+鐢ㄦ埛蹇呴』娉ㄦ剰锛屽嚭浜庣渷鐢佃€冭檻锛屽紩鎿庡拰鍛ㄦ湡閲囨牱榛樿鏄鐢ㄧ殑锛?
+`fdinfo` 鐢ㄦ埛鍜屽熀鍑嗘祴璇曞簲鐢ㄧ▼搴忓湪鏌ヨ fdinfo 鏂囦欢鏃?
+蹇呴』纭繚鍒囨崲浠诲姟鐨勬€ц兘鍒嗘瀽鐘舵€侊細
 
 ```
     echo <N> > /sys/bus/platform/drivers/panfrost/[a-f0-9]*.gpu/profiling
 
 ```
-其中 `N` 为 `0` 或 `1`，取决于期望的启用状态。
+鍏朵腑 `N` 涓?`0` 鎴?`1`锛屽彇鍐充簬鏈熸湜鐨勫惎鐢ㄧ姸鎬併€?

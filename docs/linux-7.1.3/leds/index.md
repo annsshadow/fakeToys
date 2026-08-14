@@ -1,22 +1,22 @@
+﻿
+## LED锛圠EDs锛?
 
-## LED（LEDs）
-
-本页是 LED 子系统的文档索引，汇总 LED 类（含闪光、多彩）及各类 LED 设备驱动的参考文档链接，便于读者按设备类型快速定位相关的驱动说明。
-
-
-本页汇总 LED（发光二极管）子系统类以及各类 LED 设备驱动的文档链接。
+鏈〉鏄?LED 瀛愮郴缁熺殑鏂囨。绱㈠紩锛屾眹鎬?LED 绫伙紙鍚棯鍏夈€佸褰╋級鍙婂悇绫?LED 璁惧椹卞姩鐨勫弬鑰冩枃妗ｉ摼鎺ワ紝渚夸簬璇昏€呮寜璁惧绫诲瀷蹇€熷畾浣嶇浉鍏崇殑椹卞姩璇存槑銆?
 
 
-本页汇总 LED 子系统类以及各类 LED 设备驱动的文档。
+鏈〉姹囨€?LED锛堝彂鍏変簩鏋佺锛夊瓙绯荤粺绫讳互鍙婂悇绫?LED 璁惧椹卞姩鐨勬枃妗ｉ摼鎺ャ€?
+
+
+鏈〉姹囨€?LED 瀛愮郴缁熺被浠ュ強鍚勭被 LED 璁惧椹卞姩鐨勬枃妗ｃ€?
 
 
 
-- [LED 类](leds-class)
-- [LED 类闪光灯](leds-class-flash)
-- [LED 类多彩](leds-class-multicolor)
-- [LED 单触发触发器](ledtrig-oneshot)
-- [LED 瞬态触发器](ledtrig-transient)
-- [LED USB 端口触发器](ledtrig-usbport)
+- [LED 绫籡(leds-class)
+- [LED 绫婚棯鍏夌伅](leds-class-flash)
+- [LED 绫诲褰(leds-class-multicolor)
+- [LED 鍗曡Е鍙戣Е鍙戝櫒](ledtrig-oneshot)
+- [LED 鐬€佽Е鍙戝櫒](ledtrig-transient)
+- [LED USB 绔彛瑙﹀彂鍣╙(ledtrig-usbport)
 - [uleds](uleds)
 - [LED BlinkM](leds-blinkm)
 - [Intel Cherry Trail Whiskey Cove LED](leds-cht-wcove)

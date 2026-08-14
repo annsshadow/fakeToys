@@ -1,19 +1,15 @@
+﻿
+## PCI 闈為€忔槑妗ワ紙NTB锛夌鐐瑰姛鑳斤紙EPF锛夌敤鎴锋寚鍗?
 
-## PCI 非透明桥（NTB）端点功能（EPF）用户指南
+:浣滆€? Frank Li <Frank.Li@nxp.com>
 
-
-:作者: Frank Li <Frank.Li@nxp.com>
-
-本文档是一份指南，帮助用户使用 pci-epf-vntb 功能驱动和 ntb_hw_epf 主机驱动
-来实现 NTB 功能。下面给出了在主机侧和 EP 侧需要遵循的步骤列表。有关使用
-可配置端点的 NTB 的硬件配置与内部机制，请参见
-Documentation/PCI/endpoint/pci-vntb-function.rst。
-
-## 端点设备
+鏈枃妗ｆ槸涓€浠芥寚鍗楋紝甯姪鐢ㄦ埛浣跨敤 pci-epf-vntb 鍔熻兘椹卞姩鍜?ntb_hw_epf 涓绘満椹卞姩
+鏉ュ疄鐜?NTB 鍔熻兘銆備笅闈㈢粰鍑轰簡鍦ㄤ富鏈轰晶鍜?EP 渚ч渶瑕侀伒寰殑姝ラ鍒楄〃銆傛湁鍏充娇鐢?鍙厤缃鐐圭殑 NTB 鐨勭‖浠堕厤缃笌鍐呴儴鏈哄埗锛岃鍙傝
+Documentation/PCI/endpoint/pci-vntb-function.rst銆?
+## 绔偣璁惧
 
 
-### 端点控制器设备
-
+### 绔偣鎺у埗鍣ㄨ澶?
 
 ```
 
@@ -27,7 +23,7 @@ Documentation/PCI/endpoint/pci-vntb-function.rst。
           5f010000.pcie_ep
 
 ```
-### 端点功能驱动
+### 绔偣鍔熻兘椹卞姩
 
 
 ```
@@ -43,10 +39,10 @@ Documentation/PCI/endpoint/pci-vntb-function.rst。
 
 
 ```
-### 创建 pci-epf-vntb 设备
+### 鍒涘缓 pci-epf-vntb 璁惧
 
 
-PCI 端点功能设备可以使用 configfs 创建。要创建
+PCI 绔偣鍔熻兘璁惧鍙互浣跨敤 configfs 鍒涘缓銆傝鍒涘缓
 ```
 
 	# mount -t configfs none /sys/kernel/config
@@ -54,9 +50,8 @@ PCI 端点功能设备可以使用 configfs 创建。要创建
 	# mkdir functions/pci_epf_vntb/func1
 
 ```
-上面的 "mkdir func1" 创建了将由 pci_epf_vntb 驱动探测的 pci-epf-vntb 功能设备。
-
-PCI 端点框架会使用以下内容填充该目录
+涓婇潰鐨?"mkdir func1" 鍒涘缓浜嗗皢鐢?pci_epf_vntb 椹卞姩鎺㈡祴鐨?pci-epf-vntb 鍔熻兘璁惧銆?
+PCI 绔偣妗嗘灦浼氫娇鐢ㄤ互涓嬪唴瀹瑰～鍏呰鐩綍
 ```
 
 	# ls functions/pci_epf_vntb/func1
@@ -66,9 +61,8 @@ PCI 端点框架会使用以下内容填充该目录
 	revid             subclass_code     subsys_vendor_id
 
 ```
-PCI 端点功能驱动在设备绑定到驱动时，会用默认值填充这些条目。pci-epf-vntb
-驱动会填充
-```
+PCI 绔偣鍔熻兘椹卞姩鍦ㄨ澶囩粦瀹氬埌椹卞姩鏃讹紝浼氱敤榛樿鍊煎～鍏呰繖浜涙潯鐩€俻ci-epf-vntb
+椹卞姩浼氬～鍏?```
 
 	# cat functions/pci_epf_vntb/func1/vendorid
 	0xffff
@@ -77,20 +71,17 @@ PCI 端点功能驱动在设备绑定到驱动时，会用默认值填充这些�
 
 
 ```
-### 配置 pci-epf-vntb 设备
+### 閰嶇疆 pci-epf-vntb 璁惧
 
 
-用户可以使用其 configfs 条目配置 pci-epf-vntb 设备。为了更改 vendorid 和
-deviceid，请执行以下
+鐢ㄦ埛鍙互浣跨敤鍏?configfs 鏉＄洰閰嶇疆 pci-epf-vntb 璁惧銆備负浜嗘洿鏀?vendorid 鍜?deviceid锛岃鎵ц浠ヤ笅
 ```
 
 	# echo 0x1957 > functions/pci_epf_vntb/func1/vendorid
 	# echo 0x0809 > functions/pci_epf_vntb/func1/deviceid
 
 ```
-PCI 端点框架还会在功能属性目录中自动创建一个子目录。该子目录与功能设备的
-名称相同，并填充有以下 NTB 特定的
-```
+PCI 绔偣妗嗘灦杩樹細鍦ㄥ姛鑳藉睘鎬х洰褰曚腑鑷姩鍒涘缓涓€涓瓙鐩綍銆傝瀛愮洰褰曚笌鍔熻兘璁惧鐨?鍚嶇О鐩稿悓锛屽苟濉厖鏈変互涓?NTB 鐗瑰畾鐨?```
 
 	# ls functions/pci_epf_vntb/func1/pci_epf_vntb.0/
 	ctrl_bar  db_count  mw1_bar  mw2_bar  mw3_bar  mw4_bar	spad_count
@@ -106,9 +97,7 @@ PCI 端点框架还会在功能属性目录中自动创建一个子目录。该�
 	# echo 0x100000 > functions/pci_epf_vntb/func1/pci_epf_vntb.0/mw1
 
 ```
-默认情况下，每个构造（construct）会按需并按顺序分配一个 BAR。如果平台需要
-特定的 BAR 设置，可以使用相关的 `XYZ_bar` 条目将 BAR 分配给每个构造。
-
+榛樿鎯呭喌涓嬶紝姣忎釜鏋勯€狅紙construct锛変細鎸夐渶骞舵寜椤哄簭鍒嗛厤涓€涓?BAR銆傚鏋滃钩鍙伴渶瑕?鐗瑰畾鐨?BAR 璁剧疆锛屽彲浠ヤ娇鐢ㄧ浉鍏崇殑 `XYZ_bar` 鏉＄洰灏?BAR 鍒嗛厤缁欐瘡涓瀯閫犮€?
 ```
 
 	# echo 0x1957 > functions/pci_epf_vntb/func1/pci_epf_vntb.0/vntb_vid
@@ -116,58 +105,47 @@ PCI 端点框架还会在功能属性目录中自动创建一个子目录。该�
 	# echo 0x10 > functions/pci_epf_vntb/func1/pci_epf_vntb.0/vbus_number
 
 ```
-### 将 pci-epf-vntb 设备绑定到 EP 控制器
+### 灏?pci-epf-vntb 璁惧缁戝畾鍒?EP 鎺у埗鍣?
 
-
-NTB 功能设备应附着到连接到主机的 PCI 端点控制器。
-
+NTB 鍔熻兘璁惧搴旈檮鐫€鍒拌繛鎺ュ埌涓绘満鐨?PCI 绔偣鎺у埗鍣ㄣ€?
 	# ln -s controllers/5f010000.pcie_ep functions/pci_epf_vntb/func1/primary
 
-完成上述步骤后，PCI 端点控制器已准备好与主机建立链路。
+瀹屾垚涓婅堪姝ラ鍚庯紝PCI 绔偣鎺у埗鍣ㄥ凡鍑嗗濂戒笌涓绘満寤虹珛閾捐矾銆?
+### 鍚姩閾捐矾
 
-### 启动链路
 
-
-为了让端点设备与主机建立链路，应将 _start_ 字段填充为 '1'。对于 NTB，两个
-PCI 端点控制器都需要
-```
+涓轰簡璁╃鐐硅澶囦笌涓绘満寤虹珛閾捐矾锛屽簲灏?_start_ 瀛楁濉厖涓?'1'銆傚浜?NTB锛屼袱涓?PCI 绔偣鎺у埗鍣ㄩ兘闇€瑕?```
 
 	# echo 1 > controllers/5f010000.pcie_ep/start
 
 ```
-## 根复合体（RootComplex）设备
+## 鏍瑰鍚堜綋锛圧ootComplex锛夎澶?
+
+### 涓绘満渚х殑 lspci 杈撳嚭
 
 
-### 主机侧的 lspci 输出
-
-
-注意，此处列出的设备对应于在以下位置填充的值
-```
+娉ㄦ剰锛屾澶勫垪鍑虹殑璁惧瀵瑰簲浜庡湪浠ヤ笅浣嶇疆濉厖鐨勫€?```
 
 	# lspci
         00:00.0 PCI bridge: Freescale Semiconductor Inc Device 0000 (rev 01)
         01:00.0 RAM memory: Freescale Semiconductor Inc Device 0809
 
 ```
-## 端点设备 / 虚拟 PCI 总线
+## 绔偣璁惧 / 铏氭嫙 PCI 鎬荤嚎
 
 
-### EP 侧 / 虚拟 PCI 总线的 lspci 输出
+### EP 渚?/ 铏氭嫙 PCI 鎬荤嚎鐨?lspci 杈撳嚭
 
 
-注意，此处列出的设备对应于在以下位置填充的值
-```
+娉ㄦ剰锛屾澶勫垪鍑虹殑璁惧瀵瑰簲浜庡湪浠ヤ笅浣嶇疆濉厖鐨勫€?```
 
         # lspci
         10:00.0 Unassigned class [ffff]: Dawicontrol Computersysteme GmbH Device 1234 (rev ff)
 
 ```
-### 使用 ntb_hw_epf 设备
+### 浣跨敤 ntb_hw_epf 璁惧
 
 
-主机侧软件遵循 Linux 中标准的 NTB 软件架构。所有现有的客户端 NTB 实用工具，
-如 NTB Transport Client、NTB Netdev、NTB Ping Pong Test Client 和 NTB Tool
-Test Client，都可以与 NTB 功能设备一起使用。
-
-有关 NTB 的更多信息，请参见
-[Non-Transparent Bridge <../../driver-api/ntb>](Non-Transparent Bridge <../../driver-api/ntb>)
+涓绘満渚ц蒋浠堕伒寰?Linux 涓爣鍑嗙殑 NTB 杞欢鏋舵瀯銆傛墍鏈夌幇鏈夌殑瀹㈡埛绔?NTB 瀹炵敤宸ュ叿锛?濡?NTB Transport Client銆丯TB Netdev銆丯TB Ping Pong Test Client 鍜?NTB Tool
+Test Client锛岄兘鍙互涓?NTB 鍔熻兘璁惧涓€璧蜂娇鐢ㄣ€?
+鏈夊叧 NTB 鐨勬洿澶氫俊鎭紝璇峰弬瑙?[Non-Transparent Bridge <../../driver-api/ntb>](Non-Transparent Bridge <../../driver-api/ntb>)

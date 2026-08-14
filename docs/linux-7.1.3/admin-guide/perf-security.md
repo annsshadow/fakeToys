@@ -1,81 +1,50 @@
+﻿
+## Perf 浜嬩欢涓庡伐鍏峰畨鍏?
 
-## Perf 事件与工具安全
-
-
-### 概述
-
-
-Linux 的性能计数器（perf_events）[^1^]_ 、 [^2^]_ , [^3^]_ 的使用可能带来相当大的
-风险，导致被监控进程访问的敏感数据泄露。无论是在直接使用 perf_events 系统调用
-API [^2^]_ 的场景中，还是通过 Perf 工具用户态实用程序（Perf）[^3^]_ , [^4^]_ 生成
-的数据文件中，都可能发生数据泄露。该风险取决于 perf_events 性能监控单元（PMU）
-[^2^]_ 与 Perf 为性能分析所采集和暴露的数据的性质。所采集的系统与性能数据可
-分为以下几类：
-
-1. 系统硬件与软件配置数据，例如：CPU 型号及其缓存配置、可用内存大小及其
-   拓扑、所用的内核与 Perf 版本、性能监控设置（含实验时间、事件配置、Perf
-   命令行参数等）。
-
-2. 用户态与内核模块路径及其加载地址与大小、进程与线程名及其 PID 和 TID、
-   所捕获硬件与软件事件的时间戳。
-
-3. 内核软件计数器的内容（例如上下文切换、缺页、CPU 迁移）、架构硬件性能
-   计数器（PMC）[^8^]_ 以及机器特定寄存器（MSR）[^9^]_ —— 它们为系统中各类
-   被监控部分（例如内存控制器（IMC）、互连（QPI/UPI）或外设（PCIe）uncore
-   计数器）提供执行度量，而不直接归属于任何执行上下文状态。
-
-4. 架构执行上下文寄存器的内容（例如 x86_64 上的 RIP、RSP、RBP）、进程的用户
-   态与内核态内存地址及数据，以及捕获此类别数据的各类架构 MSR 的内容。
-
-属于第四类的数据可能包含敏感进程数据。如果某些监控模式下的 PMU 捕获执行上下文
-寄存器的值或进程内存中的数据，那么对此类监控模式的访问必须被正确排序和安全
-保护。因此，perf_events 性能监控与可观测性操作是安全访问控制管理的对象 [^5^]_ 。
-
-### perf_events 访问控制
+### 姒傝堪
 
 
-为了执行安全检查，Linux 的实现将进程分为两类 [^6^]_ ：a）特权进程（其有效用户
-ID 为 0，即超级用户或 root），以及 b）非特权进程（其有效 UID 非零）。特权进程
-绕过所有内核安全权限检查，因此 perf_events 性能监控对特权进程完全开放，不受
-访问、范围与资源限制。
-
-非特权进程则要进行基于进程凭据 [^5^]_ （通常是：有效 UID、有效 GID 以及附加
-组列表）的完整安全权限检查。
-
-Linux 将传统上与超级用户关联的特权划分为不同的单元，称为 capabilities [^6^]_ ，
-它们可以在非特权用户的进程和文件上按线程独立地启用和禁用。
-
-启用了 CAP_PERFMON capability 的非特权进程，在 perf_events 性能监控与可观测性
-操作方面被视为特权进程，从而绕过内核中的 **范围（scope）** 权限检查。CAP_PERFMON
-在内核中为性能监控与可观测性操作实现了最小特权原则 [^13^]_ （POSIX 1003.1e:
-2.2.2.39），并提供了一种安全的系统性能监控与可观测性方法。
-
-出于向后兼容的考虑，对 perf_events 监控与可观测性操作的访问也对 CAP_SYS_ADMIN
-特权进程开放，但相比 CAP_PERFMON capability，不建议将 CAP_SYS_ADMIN 用于安全
-监控与可观测性场景。如果某进程使用 perf_events 系统调用 API 的系统审计记录 [^14^]_
-同时包含获取 CAP_PERFMON 与 CAP_SYS_ADMIN 两种 capability 的拒绝记录，则建议
-单独为该进程提供 CAP_PERFMON capability，作为解决性能监控与可观测性使用相关
-双重访问拒绝日志的首选安全方法。
-
-在 Linux v5.9 之前，使用 perf_events 系统调用的非特权进程还须接受
-PTRACE_MODE_READ_REALCREDS ptrace 访问模式检查 [^7^]_ ，其结果决定是否允许监控。
-因此，提供了 CAP_SYS_PTRACE capability 的非特权进程实际上能够通过该检查。从
-Linux v5.9 起，不再需要 CAP_SYS_PTRACE capability，只要为进程提供 CAP_PERFMON
-就足以进行性能监控与可观测性操作。
-
-授予非特权进程的其他 capability 可以有效启用对后续被监控进程或系统性能分析所需
-额外数据的采集。例如，CAP_SYSLOG capability 允许从 /proc/kallsyms 文件读取
-内核态内存地址。
-
-### 特权 Perf 用户组
+Linux 鐨勬€ц兘璁℃暟鍣紙perf_events锛塠^1^]_ 銆?[^2^]_ , [^3^]_ 鐨勪娇鐢ㄥ彲鑳藉甫鏉ョ浉褰撳ぇ鐨?椋庨櫓锛屽鑷磋鐩戞帶杩涚▼璁块棶鐨勬晱鎰熸暟鎹硠闇层€傛棤璁烘槸鍦ㄧ洿鎺ヤ娇鐢?perf_events 绯荤粺璋冪敤
+API [^2^]_ 鐨勫満鏅腑锛岃繕鏄€氳繃 Perf 宸ュ叿鐢ㄦ埛鎬佸疄鐢ㄧ▼搴忥紙Perf锛塠^3^]_ , [^4^]_ 鐢熸垚
+鐨勬暟鎹枃浠朵腑锛岄兘鍙兘鍙戠敓鏁版嵁娉勯湶銆傝椋庨櫓鍙栧喅浜?perf_events 鎬ц兘鐩戞帶鍗曞厓锛圥MU锛?[^2^]_ 涓?Perf 涓烘€ц兘鍒嗘瀽鎵€閲囬泦鍜屾毚闇茬殑鏁版嵁鐨勬€ц川銆傛墍閲囬泦鐨勭郴缁熶笌鎬ц兘鏁版嵁鍙?鍒嗕负浠ヤ笅鍑犵被锛?
+1. 绯荤粺纭欢涓庤蒋浠堕厤缃暟鎹紝渚嬪锛欳PU 鍨嬪彿鍙婂叾缂撳瓨閰嶇疆銆佸彲鐢ㄥ唴瀛樺ぇ灏忓強鍏?   鎷撴墤銆佹墍鐢ㄧ殑鍐呮牳涓?Perf 鐗堟湰銆佹€ц兘鐩戞帶璁剧疆锛堝惈瀹為獙鏃堕棿銆佷簨浠堕厤缃€丳erf
+   鍛戒护琛屽弬鏁扮瓑锛夈€?
+2. 鐢ㄦ埛鎬佷笌鍐呮牳妯″潡璺緞鍙婂叾鍔犺浇鍦板潃涓庡ぇ灏忋€佽繘绋嬩笌绾跨▼鍚嶅強鍏?PID 鍜?TID銆?   鎵€鎹曡幏纭欢涓庤蒋浠朵簨浠剁殑鏃堕棿鎴炽€?
+3. 鍐呮牳杞欢璁℃暟鍣ㄧ殑鍐呭锛堜緥濡備笂涓嬫枃鍒囨崲銆佺己椤点€丆PU 杩佺Щ锛夈€佹灦鏋勭‖浠舵€ц兘
+   璁℃暟鍣紙PMC锛塠^8^]_ 浠ュ強鏈哄櫒鐗瑰畾瀵勫瓨鍣紙MSR锛塠^9^]_ 鈥斺€?瀹冧滑涓虹郴缁熶腑鍚勭被
+   琚洃鎺ч儴鍒嗭紙渚嬪鍐呭瓨鎺у埗鍣紙IMC锛夈€佷簰杩烇紙QPI/UPI锛夋垨澶栬锛圥CIe锛塽ncore
+   璁℃暟鍣級鎻愪緵鎵ц搴﹂噺锛岃€屼笉鐩存帴褰掑睘浜庝换浣曟墽琛屼笂涓嬫枃鐘舵€併€?
+4. 鏋舵瀯鎵ц涓婁笅鏂囧瘎瀛樺櫒鐨勫唴瀹癸紙渚嬪 x86_64 涓婄殑 RIP銆丷SP銆丷BP锛夈€佽繘绋嬬殑鐢ㄦ埛
+   鎬佷笌鍐呮牳鎬佸唴瀛樺湴鍧€鍙婃暟鎹紝浠ュ強鎹曡幏姝ょ被鍒暟鎹殑鍚勭被鏋舵瀯 MSR 鐨勫唴瀹广€?
+灞炰簬绗洓绫荤殑鏁版嵁鍙兘鍖呭惈鏁忔劅杩涚▼鏁版嵁銆傚鏋滄煇浜涚洃鎺фā寮忎笅鐨?PMU 鎹曡幏鎵ц涓婁笅鏂?瀵勫瓨鍣ㄧ殑鍊兼垨杩涚▼鍐呭瓨涓殑鏁版嵁锛岄偅涔堝姝ょ被鐩戞帶妯″紡鐨勮闂繀椤昏姝ｇ‘鎺掑簭鍜屽畨鍏?淇濇姢銆傚洜姝わ紝perf_events 鎬ц兘鐩戞帶涓庡彲瑙傛祴鎬ф搷浣滄槸瀹夊叏璁块棶鎺у埗绠＄悊鐨勫璞?[^5^]_ 銆?
+### perf_events 璁块棶鎺у埗
 
 
-capabilities 机制、特权 capability-dumb 文件 [^6^]_ 、文件系统 ACL [^10^]_ 以及
-sudo [^15^]_ 实用程序可用来创建专用的特权 Perf 用户组，这些用户被允许无限制地
-执行性能监控与可观测性。可以采取以下步骤来创建这样的特权 Perf 用户组。
+涓轰簡鎵ц瀹夊叏妫€鏌ワ紝Linux 鐨勫疄鐜板皢杩涚▼鍒嗕负涓ょ被 [^6^]_ 锛歛锛夌壒鏉冭繘绋嬶紙鍏舵湁鏁堢敤鎴?ID 涓?0锛屽嵆瓒呯骇鐢ㄦ埛鎴?root锛夛紝浠ュ強 b锛夐潪鐗规潈杩涚▼锛堝叾鏈夋晥 UID 闈為浂锛夈€傜壒鏉冭繘绋?缁曡繃鎵€鏈夊唴鏍稿畨鍏ㄦ潈闄愭鏌ワ紝鍥犳 perf_events 鎬ц兘鐩戞帶瀵圭壒鏉冭繘绋嬪畬鍏ㄥ紑鏀撅紝涓嶅彈
+璁块棶銆佽寖鍥翠笌璧勬簮闄愬埗銆?
+闈炵壒鏉冭繘绋嬪垯瑕佽繘琛屽熀浜庤繘绋嬪嚟鎹?[^5^]_ 锛堥€氬父鏄細鏈夋晥 UID銆佹湁鏁?GID 浠ュ強闄勫姞
+缁勫垪琛級鐨勫畬鏁村畨鍏ㄦ潈闄愭鏌ャ€?
+Linux 灏嗕紶缁熶笂涓庤秴绾х敤鎴峰叧鑱旂殑鐗规潈鍒掑垎涓轰笉鍚岀殑鍗曞厓锛岀О涓?capabilities [^6^]_ 锛?瀹冧滑鍙互鍦ㄩ潪鐗规潈鐢ㄦ埛鐨勮繘绋嬪拰鏂囦欢涓婃寜绾跨▼鐙珛鍦板惎鐢ㄥ拰绂佺敤銆?
+鍚敤浜?CAP_PERFMON capability 鐨勯潪鐗规潈杩涚▼锛屽湪 perf_events 鎬ц兘鐩戞帶涓庡彲瑙傛祴鎬?鎿嶄綔鏂归潰琚涓虹壒鏉冭繘绋嬶紝浠庤€岀粫杩囧唴鏍镐腑鐨?**鑼冨洿锛坰cope锛?* 鏉冮檺妫€鏌ャ€侰AP_PERFMON
+鍦ㄥ唴鏍镐腑涓烘€ц兘鐩戞帶涓庡彲瑙傛祴鎬ф搷浣滃疄鐜颁簡鏈€灏忕壒鏉冨師鍒?[^13^]_ 锛圥OSIX 1003.1e:
+2.2.2.39锛夛紝骞舵彁渚涗簡涓€绉嶅畨鍏ㄧ殑绯荤粺鎬ц兘鐩戞帶涓庡彲瑙傛祴鎬ф柟娉曘€?
+鍑轰簬鍚戝悗鍏煎鐨勮€冭檻锛屽 perf_events 鐩戞帶涓庡彲瑙傛祴鎬ф搷浣滅殑璁块棶涔熷 CAP_SYS_ADMIN
+鐗规潈杩涚▼寮€鏀撅紝浣嗙浉姣?CAP_PERFMON capability锛屼笉寤鸿灏?CAP_SYS_ADMIN 鐢ㄤ簬瀹夊叏
+鐩戞帶涓庡彲瑙傛祴鎬у満鏅€傚鏋滄煇杩涚▼浣跨敤 perf_events 绯荤粺璋冪敤 API 鐨勭郴缁熷璁¤褰?[^14^]_
+鍚屾椂鍖呭惈鑾峰彇 CAP_PERFMON 涓?CAP_SYS_ADMIN 涓ょ capability 鐨勬嫆缁濊褰曪紝鍒欏缓璁?鍗曠嫭涓鸿杩涚▼鎻愪緵 CAP_PERFMON capability锛屼綔涓鸿В鍐虫€ц兘鐩戞帶涓庡彲瑙傛祴鎬т娇鐢ㄧ浉鍏?鍙岄噸璁块棶鎷掔粷鏃ュ織鐨勯閫夊畨鍏ㄦ柟娉曘€?
+鍦?Linux v5.9 涔嬪墠锛屼娇鐢?perf_events 绯荤粺璋冪敤鐨勯潪鐗规潈杩涚▼杩橀』鎺ュ彈
+PTRACE_MODE_READ_REALCREDS ptrace 璁块棶妯″紡妫€鏌?[^7^]_ 锛屽叾缁撴灉鍐冲畾鏄惁鍏佽鐩戞帶銆?鍥犳锛屾彁渚涗簡 CAP_SYS_PTRACE capability 鐨勯潪鐗规潈杩涚▼瀹為檯涓婅兘澶熼€氳繃璇ユ鏌ャ€備粠
+Linux v5.9 璧凤紝涓嶅啀闇€瑕?CAP_SYS_PTRACE capability锛屽彧瑕佷负杩涚▼鎻愪緵 CAP_PERFMON
+灏辫冻浠ヨ繘琛屾€ц兘鐩戞帶涓庡彲瑙傛祴鎬ф搷浣溿€?
+鎺堜簣闈炵壒鏉冭繘绋嬬殑鍏朵粬 capability 鍙互鏈夋晥鍚敤瀵瑰悗缁鐩戞帶杩涚▼鎴栫郴缁熸€ц兘鍒嗘瀽鎵€闇€
+棰濆鏁版嵁鐨勯噰闆嗐€備緥濡傦紝CAP_SYSLOG capability 鍏佽浠?/proc/kallsyms 鏂囦欢璇诲彇
+鍐呮牳鎬佸唴瀛樺湴鍧€銆?
+### 鐗规潈 Perf 鐢ㄦ埛缁?
 
-1. 创建特权 Perf 用户组 perf_users，将 perf_users 组分配给 Perf 工具可执行文件，
-   并限制系统中不在 perf_users 组内的其他用户访问该可执行文件：
+capabilities 鏈哄埗銆佺壒鏉?capability-dumb 鏂囦欢 [^6^]_ 銆佹枃浠剁郴缁?ACL [^10^]_ 浠ュ強
+sudo [^15^]_ 瀹炵敤绋嬪簭鍙敤鏉ュ垱寤轰笓鐢ㄧ殑鐗规潈 Perf 鐢ㄦ埛缁勶紝杩欎簺鐢ㄦ埛琚厑璁告棤闄愬埗鍦?鎵ц鎬ц兘鐩戞帶涓庡彲瑙傛祴鎬с€傚彲浠ラ噰鍙栦互涓嬫楠ゆ潵鍒涘缓杩欐牱鐨勭壒鏉?Perf 鐢ㄦ埛缁勩€?
+1. 鍒涘缓鐗规潈 Perf 鐢ㄦ埛缁?perf_users锛屽皢 perf_users 缁勫垎閰嶇粰 Perf 宸ュ叿鍙墽琛屾枃浠讹紝
+   骞堕檺鍒剁郴缁熶腑涓嶅湪 perf_users 缁勫唴鐨勫叾浠栫敤鎴疯闂鍙墽琛屾枃浠讹細
 
 ```
    # groupadd perf_users
@@ -89,9 +58,7 @@ sudo [^15^]_ 实用程序可用来创建专用的特权 Perf 用户组，这些�
    -rwxr-x---  2 root perf_users  11M Oct 19 15:12 perf
 ```
 
-2. 为 Perf 工具可执行文件分配所需的 capabilities，并使 perf_users 组成员具备
-   监控与可观测性特权 [^6^]_ ：
-
+2. 涓?Perf 宸ュ叿鍙墽琛屾枃浠跺垎閰嶆墍闇€鐨?capabilities锛屽苟浣?perf_users 缁勬垚鍛樺叿澶?   鐩戞帶涓庡彲瑙傛祴鎬х壒鏉?[^6^]_ 锛?
 ```
    # setcap "cap_perfmon,cap_sys_ptrace,cap_syslog=ep" perf
    # setcap -v "cap_perfmon,cap_sys_ptrace,cap_syslog=ep" perf
@@ -100,41 +67,31 @@ sudo [^15^]_ 实用程序可用来创建专用的特权 Perf 用户组，这些�
    perf = cap_sys_ptrace,cap_syslog,cap_perfmon+ep
 ```
 
-如果安装的 libcap [^16^]_ 尚不支持 "cap_perfmon"，则改用 "38"，即：
-
+濡傛灉瀹夎鐨?libcap [^16^]_ 灏氫笉鏀寔 "cap_perfmon"锛屽垯鏀圭敤 "38"锛屽嵆锛?
 ```
    # setcap "38,cap_ipc_lock,cap_sys_ptrace,cap_syslog=ep" perf
 ```
 
-注意，对于 'perf top' 这类工具，你可能需要在组合中加入 'cap_ipc_lock'，或者
-改用 'perf top -m N' 以减少其用于 perf 环形缓冲区的内存，详见下文的“内存分配”
-一节。
-
-使用不支持 CAP_PERFMON 的 libcap 会导致 cap_get_flag(caps, 38, CAP_EFFECTIVE,
-&val) 失败，进而使默认事件变为 'cycles:u'，因此作为变通，请显式请求 'cycles'
-事件，即：
-
+娉ㄦ剰锛屽浜?'perf top' 杩欑被宸ュ叿锛屼綘鍙兘闇€瑕佸湪缁勫悎涓姞鍏?'cap_ipc_lock'锛屾垨鑰?鏀圭敤 'perf top -m N' 浠ュ噺灏戝叾鐢ㄤ簬 perf 鐜舰缂撳啿鍖虹殑鍐呭瓨锛岃瑙佷笅鏂囩殑鈥滃唴瀛樺垎閰嶁€?涓€鑺傘€?
+浣跨敤涓嶆敮鎸?CAP_PERFMON 鐨?libcap 浼氬鑷?cap_get_flag(caps, 38, CAP_EFFECTIVE,
+&val) 澶辫触锛岃繘鑰屼娇榛樿浜嬩欢鍙樹负 'cycles:u'锛屽洜姝や綔涓哄彉閫氾紝璇锋樉寮忚姹?'cycles'
+浜嬩欢锛屽嵆锛?
 ```
   # perf top -e cycles
 ```
 
-以便仅带 CAP_PERFMON 的 perf 二进制也能获得内核与用户样本。
+浠ヤ究浠呭甫 CAP_PERFMON 鐨?perf 浜岃繘鍒朵篃鑳借幏寰楀唴鏍镐笌鐢ㄦ埛鏍锋湰銆?
+杩欐牱涓€鏉ワ紝perf_users 缁勬垚鍛樹究鑳藉浣跨敤鎵€閰嶇疆 Perf 宸ュ叿鍙墽琛屾枃浠剁殑鍔熻兘杩涜鎬ц兘
+鐩戞帶涓庡彲瑙傛祴鎬э紝璇ュ彲鎵ц鏂囦欢鍦ㄦ墽琛屾椂浼氶€氳繃 perf_events 瀛愮郴缁熺殑鑼冨洿妫€鏌ャ€?
+濡傛灉鏃犳硶涓?Perf 宸ュ叿鍙墽琛屾枃浠跺垎閰嶆墍闇€鐨?capabilities锛堜緥濡傛枃浠剁郴缁熶互 nosuid
+閫夐」鎸傝浇锛屾垨鏂囦欢绯荤粺涓嶆敮鎸佹墿灞曞睘鎬э級锛岄偅涔堝彲浠ュ垱寤?capabilities 鐗规潈鐜锛堣嚜鐒?灏辨槸 shell锛夈€傝 shell 涓哄唴閮ㄨ繘绋嬫彁渚?CAP_PERFMON 鍙婂叾浠栨墍闇€ capabilities锛屼粠鑰?鍦ㄨ鐜涓棤闄愬埗鍦拌繘琛屾€ц兘鐩戞帶涓庡彲瑙傛祴鎬ф搷浣溿€備粎 perf_users 缁勬垚鍛樺彲閫氳繃 sudo
+瀹炵敤绋嬪簭杩涘叆璇ョ幆澧冦€備负鍒涘缓杩欐牱鐨勭幆澧冿細
 
-这样一来，perf_users 组成员便能够使用所配置 Perf 工具可执行文件的功能进行性能
-监控与可观测性，该可执行文件在执行时会通过 perf_events 子系统的范围检查。
-
-如果无法为 Perf 工具可执行文件分配所需的 capabilities（例如文件系统以 nosuid
-选项挂载，或文件系统不支持扩展属性），那么可以创建 capabilities 特权环境（自然
-就是 shell）。该 shell 为内部进程提供 CAP_PERFMON 及其他所需 capabilities，从而
-在该环境中无限制地进行性能监控与可观测性操作。仅 perf_users 组成员可通过 sudo
-实用程序进入该环境。为创建这样的环境：
-
-1. 创建使用 capsh 实用程序 [^16^]_ 的 shell 脚本，将 CAP_PERFMON 及其他所需
-   capabilities 放入 shell 进程的环境 capability 集（ambient capability set），
-   在启用 SECBIT_NO_SETUID_FIXUP、SECBIT_NOROOT 与 SECBIT_NO_CAP_AMBIENT_RAISE
-   位后锁定进程安全位，然后将进程身份切换为该脚本的 sudo 调用者（其本质上应为
-   perf_users 组成员）：
-
+1. 鍒涘缓浣跨敤 capsh 瀹炵敤绋嬪簭 [^16^]_ 鐨?shell 鑴氭湰锛屽皢 CAP_PERFMON 鍙婂叾浠栨墍闇€
+   capabilities 鏀惧叆 shell 杩涚▼鐨勭幆澧?capability 闆嗭紙ambient capability set锛夛紝
+   鍦ㄥ惎鐢?SECBIT_NO_SETUID_FIXUP銆丼ECBIT_NOROOT 涓?SECBIT_NO_CAP_AMBIENT_RAISE
+   浣嶅悗閿佸畾杩涚▼瀹夊叏浣嶏紝鐒跺悗灏嗚繘绋嬭韩浠藉垏鎹负璇ヨ剼鏈殑 sudo 璋冪敤鑰咃紙鍏舵湰璐ㄤ笂搴斾负
+   perf_users 缁勬垚鍛橈級锛?
 ```
    # ls -alh /usr/local/bin/perf.shell
    -rwxr-xr-x. 1 root root 83 Oct 13 23:57 /usr/local/bin/perf.shell
@@ -142,17 +99,13 @@ sudo [^15^]_ 实用程序可用来创建专用的特权 Perf 用户组，这些�
    exec /usr/sbin/capsh --iab=^cap_perfmon --secbits=239 --user=$SUDO_USER -- -l
 ```
 
-2. 在 /etc/sudoers 文件中为 perf_users 组扩展 sudo 策略：
-
+2. 鍦?/etc/sudoers 鏂囦欢涓负 perf_users 缁勬墿灞?sudo 绛栫暐锛?
 ```
    # grep perf_users /etc/sudoers
    %perf_users    ALL=/usr/local/bin/perf.shell
 ```
 
-3. 检查 perf_users 组成员是否能够访问该特权 shell，并在内部进程的允许（permitted）、
-   有效（effective）与环境（ambient）capability 集中启用了 CAP_PERFMON 及其他
-   所需 capabilities：
-
+3. 妫€鏌?perf_users 缁勬垚鍛樻槸鍚﹁兘澶熻闂鐗规潈 shell锛屽苟鍦ㄥ唴閮ㄨ繘绋嬬殑鍏佽锛坧ermitted锛夈€?   鏈夋晥锛坋ffective锛変笌鐜锛坅mbient锛塩apability 闆嗕腑鍚敤浜?CAP_PERFMON 鍙婂叾浠?   鎵€闇€ capabilities锛?
 ```
   $ id
   uid=1003(capsh_test) gid=1004(capsh_test) groups=1004(capsh_test),1000(perf_users) context=unconfined_u:unconfined_r:unconfined_t:s0-s0:c0.c1023
@@ -168,74 +121,44 @@ sudo [^15^]_ 实用程序可用来创建专用的特权 Perf 用户组，这些�
   0x0000004000000000=cap_perfmon
 ```
 
-这样一来，perf_users 组成员就能访问该特权环境，在其中使用受 CAP_PERFMON Linux
-capability 管控的性能监控 API 的工具。
+杩欐牱涓€鏉ワ紝perf_users 缁勬垚鍛樺氨鑳借闂鐗规潈鐜锛屽湪鍏朵腑浣跨敤鍙?CAP_PERFMON Linux
+capability 绠℃帶鐨勬€ц兘鐩戞帶 API 鐨勫伐鍏枫€?
+杩欑鐗瑰畾鐨勮闂帶鍒剁鐞嗕粎瀵逛互 CAP_SETPCAP銆丆AP_SETFCAP [^6^]_ capabilities 杩愯鐨?瓒呯骇鐢ㄦ埛鎴?root 杩涚▼鍙敤銆?
+### 闈炵壒鏉冪敤鎴?
 
-这种特定的访问控制管理仅对以 CAP_SETPCAP、CAP_SETFCAP [^6^]_ capabilities 运行的
-超级用户或 root 进程可用。
-
-### 非特权用户
-
-
-非特权进程的 perf_events **范围（scope）** 与 **访问（access）** 控制受
-perf_event_paranoid [^2^]_ 设置管控：
-
+闈炵壒鏉冭繘绋嬬殑 perf_events **鑼冨洿锛坰cope锛?* 涓?**璁块棶锛坅ccess锛?* 鎺у埗鍙?perf_event_paranoid [^2^]_ 璁剧疆绠℃帶锛?
 -1:
-     对 perf_events 性能监控不施加任何 **范围** 与 **访问** 限制。在为存储
-     性能数据分配内存缓冲区时，忽略每用户每 CPU 的 perf_event_mlock_kb [^2^]_
-     锁定限制。这是最不安全的模式，因为允许的监控 **范围** 被最大化，且对用于
-     性能监控的 **资源** 不施加任何 perf_events 特定的限制。
-
+     瀵?perf_events 鎬ц兘鐩戞帶涓嶆柦鍔犱换浣?**鑼冨洿** 涓?**璁块棶** 闄愬埗銆傚湪涓哄瓨鍌?     鎬ц兘鏁版嵁鍒嗛厤鍐呭瓨缂撳啿鍖烘椂锛屽拷鐣ユ瘡鐢ㄦ埛姣?CPU 鐨?perf_event_mlock_kb [^2^]_
+     閿佸畾闄愬埗銆傝繖鏄渶涓嶅畨鍏ㄧ殑妯″紡锛屽洜涓哄厑璁哥殑鐩戞帶 **鑼冨洿** 琚渶澶у寲锛屼笖瀵圭敤浜?     鎬ц兘鐩戞帶鐨?**璧勬簮** 涓嶆柦鍔犱换浣?perf_events 鐗瑰畾鐨勯檺鍒躲€?
 >=0:
-     **范围** 包含每进程与系统范围的性能监控，但排除原始 tracepoint 与 ftrace
-     函数 tracepoint 监控。在用户态或内核态执行时发生的 CPU 与系统事件都可以
-     被监控和捕获以供后续分析。会施加每用户每 CPU 的 perf_event_mlock_kb 锁定
-     限制，但拥有 CAP_IPC_LOCK [^6^]_ capability 的非特权进程会忽略该限制。
-
+     **鑼冨洿** 鍖呭惈姣忚繘绋嬩笌绯荤粺鑼冨洿鐨勬€ц兘鐩戞帶锛屼絾鎺掗櫎鍘熷 tracepoint 涓?ftrace
+     鍑芥暟 tracepoint 鐩戞帶銆傚湪鐢ㄦ埛鎬佹垨鍐呮牳鎬佹墽琛屾椂鍙戠敓鐨?CPU 涓庣郴缁熶簨浠堕兘鍙互
+     琚洃鎺у拰鎹曡幏浠ヤ緵鍚庣画鍒嗘瀽銆備細鏂藉姞姣忕敤鎴锋瘡 CPU 鐨?perf_event_mlock_kb 閿佸畾
+     闄愬埗锛屼絾鎷ユ湁 CAP_IPC_LOCK [^6^]_ capability 鐨勯潪鐗规潈杩涚▼浼氬拷鐣ヨ闄愬埗銆?
 >=1:
-     **范围** 仅包含每进程性能监控，排除系统范围的性能监控。在用户态或内核态
-     执行时发生的 CPU 与系统事件都可以被监控和捕获以供后续分析。会施加每用户
-     每 CPU 的 perf_event_mlock_kb 锁定限制，但拥有 CAP_IPC_LOCK capability 的
-     非特权进程会忽略该限制。
-
+     **鑼冨洿** 浠呭寘鍚瘡杩涚▼鎬ц兘鐩戞帶锛屾帓闄ょ郴缁熻寖鍥寸殑鎬ц兘鐩戞帶銆傚湪鐢ㄦ埛鎬佹垨鍐呮牳鎬?     鎵ц鏃跺彂鐢熺殑 CPU 涓庣郴缁熶簨浠堕兘鍙互琚洃鎺у拰鎹曡幏浠ヤ緵鍚庣画鍒嗘瀽銆備細鏂藉姞姣忕敤鎴?     姣?CPU 鐨?perf_event_mlock_kb 閿佸畾闄愬埗锛屼絾鎷ユ湁 CAP_IPC_LOCK capability 鐨?     闈炵壒鏉冭繘绋嬩細蹇界暐璇ラ檺鍒躲€?
 >=2:
-     **范围** 仅包含每进程性能监控。只有执行于用户态时发生的 CPU 与系统事件
-     可以被监控和捕获以供后续分析。会施加每用户每 CPU 的 perf_event_mlock_kb
-     锁定限制，但拥有 CAP_IPC_LOCK capability 的非特权进程会忽略该限制。
-
-### 资源控制
+     **鑼冨洿** 浠呭寘鍚瘡杩涚▼鎬ц兘鐩戞帶銆傚彧鏈夋墽琛屼簬鐢ㄦ埛鎬佹椂鍙戠敓鐨?CPU 涓庣郴缁熶簨浠?     鍙互琚洃鎺у拰鎹曡幏浠ヤ緵鍚庣画鍒嗘瀽銆備細鏂藉姞姣忕敤鎴锋瘡 CPU 鐨?perf_event_mlock_kb
+     閿佸畾闄愬埗锛屼絾鎷ユ湁 CAP_IPC_LOCK capability 鐨勯潪鐗规潈杩涚▼浼氬拷鐣ヨ闄愬埗銆?
+### 璧勬簮鎺у埗
 
 
-打开的文件描述符
+鎵撳紑鐨勬枃浠舵弿杩扮
 +++++++++++++++++++++
 
-perf_events 系统调用 API [^2^]_ 为每个配置的 PMU 事件分配文件描述符。打开的
-文件描述符是一项按进程核算的资源，受 RLIMIT_NOFILE [^11^]_ 限制（ulimit -n）
-管控，该限制通常源自登录 shell 进程。当在大型服务器系统上为长事件列表配置 Perf
-采集时，很容易触及此限制，从而阻止所需的监控配置。RLIMIT_NOFILE 限制可以按用户
-修改 limits.conf 文件 [^12^]_ 的内容来提高。通常，一次 Perf 采样会话（perf
-record）所需的打开 perf_event 文件描述符数量不少于被监控事件数乘以被监控 CPU 数。
-
-内存分配
+perf_events 绯荤粺璋冪敤 API [^2^]_ 涓烘瘡涓厤缃殑 PMU 浜嬩欢鍒嗛厤鏂囦欢鎻忚堪绗︺€傛墦寮€鐨?鏂囦欢鎻忚堪绗︽槸涓€椤规寜杩涚▼鏍哥畻鐨勮祫婧愶紝鍙?RLIMIT_NOFILE [^11^]_ 闄愬埗锛坲limit -n锛?绠℃帶锛岃闄愬埗閫氬父婧愯嚜鐧诲綍 shell 杩涚▼銆傚綋鍦ㄥぇ鍨嬫湇鍔″櫒绯荤粺涓婁负闀夸簨浠跺垪琛ㄩ厤缃?Perf
+閲囬泦鏃讹紝寰堝鏄撹Е鍙婃闄愬埗锛屼粠鑰岄樆姝㈡墍闇€鐨勭洃鎺ч厤缃€俁LIMIT_NOFILE 闄愬埗鍙互鎸夌敤鎴?淇敼 limits.conf 鏂囦欢 [^12^]_ 鐨勫唴瀹规潵鎻愰珮銆傞€氬父锛屼竴娆?Perf 閲囨牱浼氳瘽锛坧erf
+record锛夋墍闇€鐨勬墦寮€ perf_event 鏂囦欢鎻忚堪绗︽暟閲忎笉灏戜簬琚洃鎺т簨浠舵暟涔樹互琚洃鎺?CPU 鏁般€?
+鍐呭瓨鍒嗛厤
 +++++++++++++++++
 
-用户进程可用于捕获性能监控数据的内存量受 perf_event_mlock_kb [^2^]_ 设置管控。
-这一 perf_events 特定的资源设置定义了允许用户进程为了执行性能监控而进行映射的
-整体每 CPU 内存上限。该设置本质上扩展了 RLIMIT_MEMLOCK [^11^]_ 限制，但仅针对
-专为捕获被监控性能事件及相关数据而映射的内存区域。
-
-例如，如果一台机器有八个核心，且 perf_event_mlock_kb 限制设为 516 KiB，那么用户
-进程可获得超出 RLIMIT_MEMLOCK 限制（ulimit -l）的 516 KiB * 8 = 4128 KiB 内存用于
-perf_event mmap 缓冲区。特别地，这意味着如果用户想启动两个或更多性能监控进程，
-就需要手动在监控进程之间分配可用的 4128 KiB，例如使用 Perf record 模式选项
---mmap-pages。否则，第一个启动的性能监控进程会分配掉全部可用的 4128 KiB，而其他
-进程将因内存不足而无法继续。
-
-RLIMIT_MEMLOCK 与 perf_event_mlock_kb 资源约束对拥有 CAP_IPC_LOCK capability 的
-进程被忽略。因此，通过为 Perf 可执行文件提供 CAP_IPC_LOCK capability，可以为
-perf_events/Perf 特权用户提供超出这些约束的内存，用于 perf_events/Perf 性能监控
-目的。
-
-### 参考文献
-
+鐢ㄦ埛杩涚▼鍙敤浜庢崟鑾锋€ц兘鐩戞帶鏁版嵁鐨勫唴瀛橀噺鍙?perf_event_mlock_kb [^2^]_ 璁剧疆绠℃帶銆?杩欎竴 perf_events 鐗瑰畾鐨勮祫婧愯缃畾涔変簡鍏佽鐢ㄦ埛杩涚▼涓轰簡鎵ц鎬ц兘鐩戞帶鑰岃繘琛屾槧灏勭殑
+鏁翠綋姣?CPU 鍐呭瓨涓婇檺銆傝璁剧疆鏈川涓婃墿灞曚簡 RLIMIT_MEMLOCK [^11^]_ 闄愬埗锛屼絾浠呴拡瀵?涓撲负鎹曡幏琚洃鎺ф€ц兘浜嬩欢鍙婄浉鍏虫暟鎹€屾槧灏勭殑鍐呭瓨鍖哄煙銆?
+渚嬪锛屽鏋滀竴鍙版満鍣ㄦ湁鍏釜鏍稿績锛屼笖 perf_event_mlock_kb 闄愬埗璁句负 516 KiB锛岄偅涔堢敤鎴?杩涚▼鍙幏寰楄秴鍑?RLIMIT_MEMLOCK 闄愬埗锛坲limit -l锛夌殑 516 KiB * 8 = 4128 KiB 鍐呭瓨鐢ㄤ簬
+perf_event mmap 缂撳啿鍖恒€傜壒鍒湴锛岃繖鎰忓懗鐫€濡傛灉鐢ㄦ埛鎯冲惎鍔ㄤ袱涓垨鏇村鎬ц兘鐩戞帶杩涚▼锛?灏遍渶瑕佹墜鍔ㄥ湪鐩戞帶杩涚▼涔嬮棿鍒嗛厤鍙敤鐨?4128 KiB锛屼緥濡備娇鐢?Perf record 妯″紡閫夐」
+--mmap-pages銆傚惁鍒欙紝绗竴涓惎鍔ㄧ殑鎬ц兘鐩戞帶杩涚▼浼氬垎閰嶆帀鍏ㄩ儴鍙敤鐨?4128 KiB锛岃€屽叾浠?杩涚▼灏嗗洜鍐呭瓨涓嶈冻鑰屾棤娉曠户缁€?
+RLIMIT_MEMLOCK 涓?perf_event_mlock_kb 璧勬簮绾︽潫瀵规嫢鏈?CAP_IPC_LOCK capability 鐨?杩涚▼琚拷鐣ャ€傚洜姝わ紝閫氳繃涓?Perf 鍙墽琛屾枃浠舵彁渚?CAP_IPC_LOCK capability锛屽彲浠ヤ负
+perf_events/Perf 鐗规潈鐢ㄦ埛鎻愪緵瓒呭嚭杩欎簺绾︽潫鐨勫唴瀛橈紝鐢ㄤ簬 perf_events/Perf 鎬ц兘鐩戞帶
+鐩殑銆?
+### 鍙傝€冩枃鐚?
 

@@ -1,19 +1,19 @@
-## 内核驱动w1-gpio
+﻿## 鍐呮牳椹卞姩w1-gpio
 
 
-作者：Ville Syrjala <syrjala@sci.fi>
+浣滆€咃細Ville Syrjala <syrjala@sci.fi>
 
 
-### 描述
+### 鎻忚堪
 
 
-GPIO 1 线总线主驱动器。驱动程序使用 GPIO API 来控制
-可以使用 GPIO 机器描述符表指定线路和 GPIO 引脚。
-也可以使用设备树定义主设备，请参见
-文档/devicetree/bindings/w1/w1-gpio.yaml
+GPIO 1 绾挎€荤嚎涓婚┍鍔ㄥ櫒銆傞┍鍔ㄧ▼搴忎娇鐢?GPIO API 鏉ユ帶鍒?
+鍙互浣跨敤 GPIO 鏈哄櫒鎻忚堪绗﹁〃鎸囧畾绾胯矾鍜?GPIO 寮曡剼銆?
+涔熷彲浠ヤ娇鐢ㄨ澶囨爲瀹氫箟涓昏澶囷紝璇峰弬瑙?
+鏂囨。/devicetree/bindings/w1/w1-gpio.yaml
 
 
-### 示例（mach-at91）
+### 绀轰緥锛坢ach-at91锛?
 
 
 ```

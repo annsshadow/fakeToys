@@ -1,19 +1,19 @@
-
-## Uacce (Unified/用户-space-访问-intended Accelerator Framework)
-
-
-### 简介
+﻿
+## Uacce (Unified/鐢ㄦ埛-space-璁块棶-intended Accelerator Framework)
 
 
-Uacce (Unified/用户-space-访问-intended Accelerator Framework) targets
-提供 Shared 虚拟 Addressing (SVA) accelerators 进程.
-accelerator 访问 数据 结构体 main 处理器.
-differs 数据 sharing 处理器 io 设备, share
-数据 content rather 地址.
-unified 地址, 硬件 用户空间 进程
-share same 虚拟地址 communication.
-Uacce takes 硬件 accelerator heterogeneous processor,
-IOMMU share same CPU 页 表 result same translation
+### 绠€浠?
+
+
+Uacce (Unified/鐢ㄦ埛-space-璁块棶-intended Accelerator Framework) targets
+鎻愪緵 Shared 铏氭嫙 Addressing (SVA) accelerators 杩涚▼.
+accelerator 璁块棶 鏁版嵁 缁撴瀯浣?main 澶勭悊鍣?
+differs 鏁版嵁 sharing 澶勭悊鍣?io 璁惧, share
+鏁版嵁 content rather 鍦板潃.
+unified 鍦板潃, 纭欢 鐢ㄦ埛绌洪棿 杩涚▼
+share same 铏氭嫙鍦板潃 communication.
+Uacce takes 纭欢 accelerator heterogeneous processor,
+IOMMU share same CPU 椤?琛?result same translation
 va pa.
 
 ```
@@ -41,18 +41,18 @@ va pa.
 
 
 ```
-### 架构
+### 鏋舵瀯
 
 
-Uacce 内核 模块, taking charge iommu 地址 sharing.
-用户 驱动 libraries called WarpDrive.
+Uacce 鍐呮牳 妯″潡, taking charge iommu 鍦板潃 sharing.
+鐢ㄦ埛 椹卞姩 libraries called WarpDrive.
 
-uacce 设备, built around IOMMU SVA API, 访问 multiple
-地址 spaces, including one PASID.
+uacce 璁惧, built around IOMMU SVA API, 璁块棶 multiple
+鍦板潃 spaces, including one PASID.
 
-虚拟 concept, 队列, 使用 communication. 提供
-FIFO-like 接口. maintains unified 地址 space
-application involved 硬件.
+铏氭嫙 concept, 闃熷垪, 浣跨敤 communication. 鎻愪緵
+FIFO-like 鎺ュ彛. maintains unified 鍦板潃 space
+application involved 纭欢.
 
 ```
 
@@ -93,17 +93,17 @@ application involved 硬件.
 
 Uacce uses mmap IOMMU play trick.
 
-Uacce 创建 chrdev every 设备 registered . New 队列
-created 用户 application 打开 chrdev. 文件 描述符 使用
-用户 处理 队列.
-accelerator 设备 present itself Uacce object, exports
-chrdev 用户空间. 用户 application communicates
-硬件 ioctl ( 控制 path) share 内存 ( 数据 path).
+Uacce 鍒涘缓 chrdev every 璁惧 registered . New 闃熷垪
+created 鐢ㄦ埛 application 鎵撳紑 chrdev. 鏂囦欢 鎻忚堪绗?浣跨敤
+鐢ㄦ埛 澶勭悊 闃熷垪.
+accelerator 璁惧 present itself Uacce object, exports
+chrdev 鐢ㄦ埛绌洪棿. 鐢ㄦ埛 application communicates
+纭欢 ioctl ( 鎺у埗 path) share 鍐呭瓨 ( 鏁版嵁 path).
 
-控制 path 硬件 文件 操作, 数据 path
-mmap space 队列 fd.
+鎺у埗 path 纭欢 鏂囦欢 鎿嶄綔, 鏁版嵁 path
+mmap space 闃熷垪 fd.
 
-队列 文件 地址 space:
+闃熷垪 鏂囦欢 鍦板潃 space:
 
 ```
 
@@ -118,21 +118,21 @@ mmap space 队列 fd.
   };
 
 ```
-regions 可选 differ 设备 类型 类型.
-region mmapped once, otherwise -EEXIST 返回.
+regions 鍙€?differ 璁惧 绫诲瀷 绫诲瀷.
+region mmapped once, otherwise -EEXIST 杩斿洖.
 
-设备 mmio region mapped 硬件 mmio space. generally
-使用 doorbell notification 硬件. fast enough
-数据 channel.
+璁惧 mmio region mapped 纭欢 mmio space. generally
+浣跨敤 doorbell notification 纭欢. fast enough
+鏁版嵁 channel.
 
-设备 用户 share region 使用 share 数据 缓冲区 用户 进程
-设备.
-
-
-### Uacce 寄存器 API
+璁惧 鐢ㄦ埛 share region 浣跨敤 share 鏁版嵁 缂撳啿鍖?鐢ㄦ埛 杩涚▼
+璁惧.
 
 
-寄存器 API defined uacce.h.
+### Uacce 瀵勫瓨鍣?API
+
+
+瀵勫瓨鍣?API defined uacce.h.
 
 ```
 
@@ -143,7 +143,7 @@ region mmapped once, otherwise -EEXIST 返回.
   };
 
 ```
-According IOMMU capability, uacce_interface 标志 :
+According IOMMU capability, uacce_interface 鏍囧織 :
 
 ```
 
@@ -163,21 +163,21 @@ According IOMMU capability, uacce_interface 标志 :
 ```
 uacce_register results :
 
-. uacce 模块 compiled, ERR_PTR(-ENODEV)
+. uacce 妯″潡 compiled, ERR_PTR(-ENODEV)
 
-b. Succeed desired 标志
+b. Succeed desired 鏍囧織
 
-c. Succeed negotiated 标志, 示例
+c. Succeed negotiated 鏍囧織, 绀轰緥
 
-uacce_interface.标志 = UACCE_DEV_SVA uacce->标志 = ~UACCE_DEV_SVA
+uacce_interface.鏍囧織 = UACCE_DEV_SVA uacce->鏍囧織 = ~UACCE_DEV_SVA
 
-用户 驱动 need 检查 返回 值 well negotiated uacce->标志.
-
-
-### 用户 驱动
+鐢ㄦ埛 椹卞姩 need 妫€鏌?杩斿洖 鍊?well negotiated uacce->鏍囧織.
 
 
-队列 文件 mmap space need 用户 驱动 wrap communication
-协议. Uacce 提供 attributes sysfs 用户 驱动
+### 鐢ㄦ埛 椹卞姩
+
+
+闃熷垪 鏂囦欢 mmap space need 鐢ㄦ埛 椹卞姩 wrap communication
+鍗忚. Uacce 鎻愪緵 attributes sysfs 鐢ㄦ埛 椹卞姩
 match right accelerator accordingly.
-More details 文档/ABI/testing/sysfs-驱动-uacce.
+More details 鏂囨。/ABI/testing/sysfs-椹卞姩-uacce.

@@ -1,18 +1,18 @@
-## dm-linear
+﻿## dm-linear
 
 
-Device-Mapper 的 "linear" 目标将 Device-Mapper 设备的一个线性区间映射到
-另一个设备的线性区间上。这是逻辑卷管理器的基本构建块。
+Device-Mapper 鐨?"linear" 鐩爣灏?Device-Mapper 璁惧鐨勪竴涓嚎鎬у尯闂存槧灏勫埌
+鍙︿竴涓澶囩殑绾挎€у尯闂翠笂銆傝繖鏄€昏緫鍗风鐞嗗櫒鐨勫熀鏈瀯寤哄潡銆?
 
-参数：<dev path> <offset>
-    <dev path>：
-	底层块设备的完整路径名，或
-        "major:minor" 设备号。
-    <offset>：
-	设备内的起始扇区。
+鍙傛暟锛?dev path> <offset>
+    <dev path>锛?
+	搴曞眰鍧楄澶囩殑瀹屾暣璺緞鍚嶏紝鎴?
+        "major:minor" 璁惧鍙枫€?
+    <offset>锛?
+	璁惧鍐呯殑璧峰鎵囧尯銆?
 
 
-## 示例脚本
+## 绀轰緥鑴氭湰
 
 
 ```

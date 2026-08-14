@@ -1,192 +1,192 @@
+﻿
+## net_璁惧 缁撴瀯浣撳揩閫熻矾寰勪娇鐢ㄦ媶瑙?
 
-## net_设备 结构体快速路径使用拆解
-
-本页以缓存行（cacheline）为维度，拆解 `struct net_device` 各字段在发送与接收快速路径中的访问方式，供性能分析与缓存热点优化参考。表格从左到右依次列出字段的类型、名称，以及该字段在发送（tx）与接收（rx）快速路径中被访问的位置（多为 `read_mostly` 或具体的内核函数），最后一列为简要说明。
+鏈〉浠ョ紦瀛樿锛坈acheline锛変负缁村害锛屾媶瑙?`struct net_device` 鍚勫瓧娈靛湪鍙戦€佷笌鎺ユ敹蹇€熻矾寰勪腑鐨勮闂柟寮忥紝渚涙€ц兘鍒嗘瀽涓庣紦瀛樼儹鐐逛紭鍖栧弬鑰冦€傝〃鏍间粠宸﹀埌鍙充緷娆″垪鍑哄瓧娈电殑绫诲瀷銆佸悕绉帮紝浠ュ強璇ュ瓧娈靛湪鍙戦€侊紙tx锛変笌鎺ユ敹锛坮x锛夊揩閫熻矾寰勪腑琚闂殑浣嶇疆锛堝涓?`read_mostly` 鎴栧叿浣撶殑鍐呮牳鍑芥暟锛夛紝鏈€鍚庝竴鍒椾负绠€瑕佽鏄庛€?
 
 
 =================================== =========================== =================== =================== ===================================================================================
-类型                               名称                        发送快速路径访问     接收快速路径访问    说明
+绫诲瀷                               鍚嶇О                        鍙戦€佸揩閫熻矾寰勮闂?    鎺ユ敹蹇€熻矾寰勮闂?   璇存槑
 =================================== =========================== =================== =================== ===================================================================================
-unsigned_long:32                    priv_标志                  读取_mostly                             __dev_队列_xmit(tx)
-unsigned_long:1                     lltx                        读取_mostly                             HARD_TX_锁,HARD_TX_TRYLOCK,HARD_TX_解锁(tx)
-unsigned long:1                     netmem_tx:1;                读取_mostly
+unsigned_long:32                    priv_鏍囧織                  璇诲彇_mostly                             __dev_闃熷垪_xmit(tx)
+unsigned_long:1                     lltx                        璇诲彇_mostly                             HARD_TX_閿?HARD_TX_TRYLOCK,HARD_TX_瑙ｉ攣(tx)
+unsigned long:1                     netmem_tx:1;                璇诲彇_mostly
 char                                name[^16^]
-结构体 netdev_name_node*            name_node
-结构体 dev_ifalias*                 ifalias
+缁撴瀯浣?netdev_name_node*            name_node
+缁撴瀯浣?dev_ifalias*                 ifalias
 unsigned_long                       mem_end
-unsigned_long                       mem_启动
+unsigned_long                       mem_鍚姩
 unsigned_long                       base_addr
-unsigned_long                       状态                       读取_mostly         读取_mostly         netif_运行中(dev)
-结构体 列出_head                    dev_列出
-结构体 列出_head                    napi_列出
-结构体 列出_head                    unreg_列出
-结构体 列出_head                    关闭_列出
-结构体 列出_head                    ptype_全部                   读取_mostly                             dev_nit_active(tx)
-结构体 列出_head                    ptype_特定                                  读取_mostly         deliver_ptype_列出_skb/__netif_receive_skb_核心(rx)
-结构体                              adj_列出
-unsigned_int                        标志                       读取_mostly         读取_mostly         __dev_队列_xmit,__dev_xmit_skb,ip6_输出,__ip6_finish_输出(tx);ip6_rcv_核心(rx)
-xdp_特性_t                      xdp_特性
-结构体 net_设备_ops*              netdev_ops                  读取_mostly                             netdev_核心_pick_tx,netdev_启动_xmit(tx)
-结构体 xdp_metadata_ops*            xdp_metadata_ops
-int                                 ifindex                                         读取_mostly         ip6_rcv_核心
+unsigned_long                       鐘舵€?                      璇诲彇_mostly         璇诲彇_mostly         netif_杩愯涓?dev)
+缁撴瀯浣?鍒楀嚭_head                    dev_鍒楀嚭
+缁撴瀯浣?鍒楀嚭_head                    napi_鍒楀嚭
+缁撴瀯浣?鍒楀嚭_head                    unreg_鍒楀嚭
+缁撴瀯浣?鍒楀嚭_head                    鍏抽棴_鍒楀嚭
+缁撴瀯浣?鍒楀嚭_head                    ptype_鍏ㄩ儴                   璇诲彇_mostly                             dev_nit_active(tx)
+缁撴瀯浣?鍒楀嚭_head                    ptype_鐗瑰畾                                  璇诲彇_mostly         deliver_ptype_鍒楀嚭_skb/__netif_receive_skb_鏍稿績(rx)
+缁撴瀯浣?                             adj_鍒楀嚭
+unsigned_int                        鏍囧織                       璇诲彇_mostly         璇诲彇_mostly         __dev_闃熷垪_xmit,__dev_xmit_skb,ip6_杈撳嚭,__ip6_finish_杈撳嚭(tx);ip6_rcv_鏍稿績(rx)
+xdp_鐗规€t                      xdp_鐗规€?
+缁撴瀯浣?net_璁惧_ops*              netdev_ops                  璇诲彇_mostly                             netdev_鏍稿績_pick_tx,netdev_鍚姩_xmit(tx)
+缁撴瀯浣?xdp_metadata_ops*            xdp_metadata_ops
+int                                 ifindex                                         璇诲彇_mostly         ip6_rcv_鏍稿績
 unsigned_short                      gflags
-unsigned_short                      hard_header_len             读取_mostly         读取_mostly         ip6_xmit(tx);gro_列出_prepare(rx)
-unsigned_int                        mtu                         读取_mostly                             ip_finish_输出2
-unsigned_short                      needed_headroom             读取_mostly                             LL_RESERVED_SPACE/ip_finish_输出2
+unsigned_short                      hard_header_len             璇诲彇_mostly         璇诲彇_mostly         ip6_xmit(tx);gro_鍒楀嚭_prepare(rx)
+unsigned_int                        mtu                         璇诲彇_mostly                             ip_finish_杈撳嚭2
+unsigned_short                      needed_headroom             璇诲彇_mostly                             LL_RESERVED_SPACE/ip_finish_杈撳嚭2
 unsigned_short                      needed_tailroom
-netdev_特性_t                   特性                    读取_mostly         读取_mostly         HARD_TX_锁,netif_skb_特性,sk_setup_caps(tx);netif_elide_gro(rx)
-netdev_特性_t                   hw_特性
-netdev_特性_t                   wanted_特性
-netdev_特性_t                   vlan_特性
-netdev_特性_t                   hw_enc_特性                                                     netif_skb_特性
-netdev_特性_t                   mpls_特性
-netdev_特性_t                   gso_partial_特性        读取_mostly                             gso_特性_check
+netdev_鐗规€t                   鐗规€?                   璇诲彇_mostly         璇诲彇_mostly         HARD_TX_閿?netif_skb_鐗规€?sk_setup_caps(tx);netif_elide_gro(rx)
+netdev_鐗规€t                   hw_鐗规€?
+netdev_鐗规€t                   wanted_鐗规€?
+netdev_鐗规€t                   vlan_鐗规€?
+netdev_鐗规€t                   hw_enc_鐗规€?                                                    netif_skb_鐗规€?
+netdev_鐗规€t                   mpls_鐗规€?
+netdev_鐗规€t                   gso_partial_鐗规€?       璇诲彇_mostly                             gso_鐗规€check
 unsigned_int                        min_mtu
 unsigned_int                        max_mtu
-unsigned_short                      类型
+unsigned_short                      绫诲瀷
 unsigned_char                       min_header_len
-unsigned_char                       name_assign_类型
+unsigned_char                       name_assign_绫诲瀷
 int                                 group
-结构体 net_设备_stats             stats
-结构体 net_设备_核心_stats*       核心_stats
-原子_t                            carrier_up_count
-原子_t                            carrier_down_count
-结构体 iw_处理程序_def*              无线_handlers
-结构体 ethtool_ops*                 ethtool_ops
-结构体 l3mdev_ops*                  l3mdev_ops
-结构体 ndisc_ops*                   ndisc_ops
-结构体 xfrmdev_ops*                 xfrmdev_ops
-结构体 tlsdev_ops*                  tlsdev_ops
-结构体 header_ops*                  header_ops                  读取_mostly                             ip_finish_输出2,ip6_finish_输出2(tx)
+缁撴瀯浣?net_璁惧_stats             stats
+缁撴瀯浣?net_璁惧_鏍稿績_stats*       鏍稿績_stats
+鍘熷瓙_t                            carrier_up_count
+鍘熷瓙_t                            carrier_down_count
+缁撴瀯浣?iw_澶勭悊绋嬪簭_def*              鏃犵嚎_handlers
+缁撴瀯浣?ethtool_ops*                 ethtool_ops
+缁撴瀯浣?l3mdev_ops*                  l3mdev_ops
+缁撴瀯浣?ndisc_ops*                   ndisc_ops
+缁撴瀯浣?xfrmdev_ops*                 xfrmdev_ops
+缁撴瀯浣?tlsdev_ops*                  tlsdev_ops
+缁撴瀯浣?header_ops*                  header_ops                  璇诲彇_mostly                             ip_finish_杈撳嚭2,ip6_finish_杈撳嚭2(tx)
 unsigned_char                       operstate
-unsigned_char                       link_模式
-unsigned_char                       若_端口
+unsigned_char                       link_妯″紡
+unsigned_char                       鑻绔彛
 unsigned_char                       dma
 unsigned_char                       perm_addr[^32^]
-unsigned_char                       addr_assign_类型
+unsigned_char                       addr_assign_绫诲瀷
 unsigned_char                       addr_len
 unsigned_char                       upper_level
 unsigned_char                       lower_level
-u8                                  threaded                                                            napi_poll(napi_启用,netif_set_threaded)
+u8                                  threaded                                                            napi_poll(napi_鍚敤,netif_set_threaded)
 unsigned_short                      neigh_priv_len
 unsigned_short                      padded
 unsigned_short                      dev_id
-unsigned_short                      dev_端口
-自旋锁_t                          addr_列出_锁
+unsigned_short                      dev_绔彛
+鑷棆閿乢t                          addr_鍒楀嚭_閿?
 int                                 irq
-结构体 netdev_hw_addr_列出          uc
-结构体 netdev_hw_addr_列出          mc
-结构体 netdev_hw_addr_列出          dev_addrs
-结构体 kset*                        queues_kset
-结构体 列出_head                    unlink_列出
+缁撴瀯浣?netdev_hw_addr_鍒楀嚭          uc
+缁撴瀯浣?netdev_hw_addr_鍒楀嚭          mc
+缁撴瀯浣?netdev_hw_addr_鍒楀嚭          dev_addrs
+缁撴瀯浣?kset*                        queues_kset
+缁撴瀯浣?鍒楀嚭_head                    unlink_鍒楀嚭
 unsigned_int                        promiscuity
 unsigned_int                        allmulti
 bool                                uc_promisc
 unsigned_char                       nested_level
-结构体 在_设备*                   ip_ptr                      读取_mostly         读取_mostly         __在_dev_get
-结构体 hlist_head                   fib_nh_head
-结构体 inet6_dev*                   ip6_ptr                     读取_mostly         读取_mostly         __在6_dev_get
-结构体 vlan_info*                   vlan_info
-结构体 dsa_端口*                    dsa_ptr
-结构体 tipc_bearer*                 tipc_ptr
+缁撴瀯浣?鍦╛璁惧*                   ip_ptr                      璇诲彇_mostly         璇诲彇_mostly         __鍦╛dev_get
+缁撴瀯浣?hlist_head                   fib_nh_head
+缁撴瀯浣?inet6_dev*                   ip6_ptr                     璇诲彇_mostly         璇诲彇_mostly         __鍦?_dev_get
+缁撴瀯浣?vlan_info*                   vlan_info
+缁撴瀯浣?dsa_绔彛*                    dsa_ptr
+缁撴瀯浣?tipc_bearer*                 tipc_ptr
 void*                               atalk_ptr
 void*                               ax25_ptr
-结构体 无线_dev*                ieee80211_ptr
-结构体 wpan_dev*                    ieee802154_ptr
-结构体 mpls_dev*                    mpls_ptr
-结构体 mctp_dev*                    mctp_ptr
+缁撴瀯浣?鏃犵嚎_dev*                ieee80211_ptr
+缁撴瀯浣?wpan_dev*                    ieee802154_ptr
+缁撴瀯浣?mpls_dev*                    mpls_ptr
+缁撴瀯浣?mctp_dev*                    mctp_ptr
 unsigned_char*                      dev_addr
-结构体 netdev_队列*                _rx                         读取_mostly                             netdev_get_rx_队列(rx)
+缁撴瀯浣?netdev_闃熷垪*                _rx                         璇诲彇_mostly                             netdev_get_rx_闃熷垪(rx)
 unsigned_int                        num_rx_queues
-unsigned_int                        real_num_rx_queues                              读取_mostly         get_rps_CPU
-结构体 bpf_prog*                    xdp_prog                                        读取_mostly         netif_elide_gro()
-unsigned_long                       gro_flush_超时                               读取_mostly         napi_complete_已完成
-u32                                 napi_defer_hard_irqs                            读取_mostly         napi_complete_已完成
-unsigned_int                        gro_max_大小                                    读取_mostly         skb_gro_receive
-unsigned_int                        gro_ipv4_max_大小                               读取_mostly         skb_gro_receive
-rx_处理程序_func_t*                  rx_处理程序                  读取_mostly                             __netif_receive_skb_核心
-void*                               rx_处理程序_数据             读取_mostly
-结构体 netdev_队列*                ingress_队列               读取_mostly
-结构体 bpf_mprog_条目              tcx_ingress                                     读取_mostly         sch_handle_ingress
-结构体 nf_hook_条目*             nf_hooks_ingress
+unsigned_int                        real_num_rx_queues                              璇诲彇_mostly         get_rps_CPU
+缁撴瀯浣?bpf_prog*                    xdp_prog                                        璇诲彇_mostly         netif_elide_gro()
+unsigned_long                       gro_flush_瓒呮椂                               璇诲彇_mostly         napi_complete_宸插畬鎴?
+u32                                 napi_defer_hard_irqs                            璇诲彇_mostly         napi_complete_宸插畬鎴?
+unsigned_int                        gro_max_澶у皬                                    璇诲彇_mostly         skb_gro_receive
+unsigned_int                        gro_ipv4_max_澶у皬                               璇诲彇_mostly         skb_gro_receive
+rx_澶勭悊绋嬪簭_func_t*                  rx_澶勭悊绋嬪簭                  璇诲彇_mostly                             __netif_receive_skb_鏍稿績
+void*                               rx_澶勭悊绋嬪簭_鏁版嵁             璇诲彇_mostly
+缁撴瀯浣?netdev_闃熷垪*                ingress_闃熷垪               璇诲彇_mostly
+缁撴瀯浣?bpf_mprog_鏉＄洰              tcx_ingress                                     璇诲彇_mostly         sch_handle_ingress
+缁撴瀯浣?nf_hook_鏉＄洰*             nf_hooks_ingress
 unsigned_char                       broadcast[^32^]
-结构体 CPU_rmap*                    rx_CPU_rmap
-结构体 hlist_node                   索引_hlist
-结构体 netdev_队列*                _tx                         读取_mostly                             netdev_get_tx_队列(tx)
+缁撴瀯浣?CPU_rmap*                    rx_CPU_rmap
+缁撴瀯浣?hlist_node                   绱㈠紩_hlist
+缁撴瀯浣?netdev_闃熷垪*                _tx                         璇诲彇_mostly                             netdev_get_tx_闃熷垪(tx)
 unsigned_int                        num_tx_queues
-unsigned_int                        real_num_tx_queues          读取_mostly                             skb_tx_hash,netdev_核心_pick_tx(tx)
-unsigned_int                        tx_队列_len
-自旋锁_t                          tx_全局_锁
-结构体 xdp_dev_bulk_队列__percpu*  xdp_bulkq
-结构体 xps_dev_maps*                xps_maps[^2^]                 读取_mostly                             __netif_set_xps_队列
-结构体 bpf_mprog_条目              tcx_egress                  读取_mostly                             sch_handle_egress
-结构体 nf_hook_条目*             nf_hooks_egress             读取_mostly
-结构体 hlist_head                   qdisc_hash[^16^]
-结构体 timer_列出                   watchdog_timer
+unsigned_int                        real_num_tx_queues          璇诲彇_mostly                             skb_tx_hash,netdev_鏍稿績_pick_tx(tx)
+unsigned_int                        tx_闃熷垪_len
+鑷棆閿乢t                          tx_鍏ㄥ眬_閿?
+缁撴瀯浣?xdp_dev_bulk_闃熷垪__percpu*  xdp_bulkq
+缁撴瀯浣?xps_dev_maps*                xps_maps[^2^]                 璇诲彇_mostly                             __netif_set_xps_闃熷垪
+缁撴瀯浣?bpf_mprog_鏉＄洰              tcx_egress                  璇诲彇_mostly                             sch_handle_egress
+缁撴瀯浣?nf_hook_鏉＄洰*             nf_hooks_egress             璇诲彇_mostly
+缁撴瀯浣?hlist_head                   qdisc_hash[^16^]
+缁撴瀯浣?timer_鍒楀嚭                   watchdog_timer
 int                                 watchdog_timeo
 u32                                 proto_down_reason
-结构体 列出_head                    todo_列出
+缁撴瀯浣?鍒楀嚭_head                    todo_鍒楀嚭
 int__percpu*                        pcpu_refcnt
 refcount_t                          dev_refcnt
-结构体 ref_tracker_dir              refcnt_tracker
-结构体 列出_head                    link_watch_列出
-enum:8                              reg_状态
+缁撴瀯浣?ref_tracker_dir              refcnt_tracker
+缁撴瀯浣?鍒楀嚭_head                    link_watch_鍒楀嚭
+enum:8                              reg_鐘舵€?
 bool                                dismantle
 bool                                rtnl_link_initilizing
 bool                                needs_free_netdev
-void*priv_destructor                结构体 net_设备
-结构体 netpoll_info*                npinfo                                          读取_mostly         napi_poll/napi_poll_锁
-可能_net_t                      nd_net                                          读取_mostly         (dev_net)napi_busy_loop,tcp_v(4/6)_rcv,ip(v6)_rcv,ip(6)_输入,ip(6)_输入_finish
+void*priv_destructor                缁撴瀯浣?net_璁惧
+缁撴瀯浣?netpoll_info*                npinfo                                          璇诲彇_mostly         napi_poll/napi_poll_閿?
+鍙兘_net_t                      nd_net                                          璇诲彇_mostly         (dev_net)napi_busy_loop,tcp_v(4/6)_rcv,ip(v6)_rcv,ip(6)_杈撳叆,ip(6)_杈撳叆_finish
 void*                               ml_priv
-enum_netdev_ml_priv_类型            ml_priv_类型
-结构体 pcpu_lstats__percpu*         lstats                      读取_mostly                             dev_lstats_add()
-结构体 pcpu_sw_netstats__percpu*    tstats                      读取_mostly                             dev_sw_netstats_tx_add()
-结构体 pcpu_dstats__percpu*         dstats
-结构体 garp_端口*                   garp_端口
-结构体 mrp_端口*                    mrp_端口
-结构体 dm_hw_stat_delta*            dm_私有
-结构体 设备                       dev
-结构体 attribute_group*             sysfs_groups[^4^]
-结构体 attribute_group*             sysfs_rx_队列_group
-结构体 rtnl_link_ops*               rtnl_link_ops
-unsigned_int                        gso_max_大小                读取_mostly                             sk_dst_gso_max_大小
-unsigned_int                        tso_max_大小
-u16                                 gso_max_segs                读取_mostly                             gso_max_segs
+enum_netdev_ml_priv_绫诲瀷            ml_priv_绫诲瀷
+缁撴瀯浣?pcpu_lstats__percpu*         lstats                      璇诲彇_mostly                             dev_lstats_add()
+缁撴瀯浣?pcpu_sw_netstats__percpu*    tstats                      璇诲彇_mostly                             dev_sw_netstats_tx_add()
+缁撴瀯浣?pcpu_dstats__percpu*         dstats
+缁撴瀯浣?garp_绔彛*                   garp_绔彛
+缁撴瀯浣?mrp_绔彛*                    mrp_绔彛
+缁撴瀯浣?dm_hw_stat_delta*            dm_绉佹湁
+缁撴瀯浣?璁惧                       dev
+缁撴瀯浣?attribute_group*             sysfs_groups[^4^]
+缁撴瀯浣?attribute_group*             sysfs_rx_闃熷垪_group
+缁撴瀯浣?rtnl_link_ops*               rtnl_link_ops
+unsigned_int                        gso_max_澶у皬                璇诲彇_mostly                             sk_dst_gso_max_澶у皬
+unsigned_int                        tso_max_澶у皬
+u16                                 gso_max_segs                璇诲彇_mostly                             gso_max_segs
 u16                                 tso_max_segs
-unsigned_int                        gso_ipv4_max_大小           读取_mostly                             sk_dst_gso_max_大小
-结构体 dcbnl_rtnl_ops*              dcbnl_ops
-s16                                 num_tc                      读取_mostly                             skb_tx_hash
-结构体 netdev_tc_txq                tc_到_txq[^16^]               读取_mostly                             skb_tx_hash
+unsigned_int                        gso_ipv4_max_澶у皬           璇诲彇_mostly                             sk_dst_gso_max_澶у皬
+缁撴瀯浣?dcbnl_rtnl_ops*              dcbnl_ops
+s16                                 num_tc                      璇诲彇_mostly                             skb_tx_hash
+缁撴瀯浣?netdev_tc_txq                tc_鍒癬txq[^16^]               璇诲彇_mostly                             skb_tx_hash
 u8                                  prio_tc_map[^16^]
 unsigned_int                        fcoe_ddp_xid
-结构体 netprio_map*                 priomap
-结构体 phy_设备*                  phydev
-结构体 sfp_总线*                     sfp_总线
-结构体 锁_类_key*              qdisc_tx_busylock
+缁撴瀯浣?netprio_map*                 priomap
+缁撴瀯浣?phy_璁惧*                  phydev
+缁撴瀯浣?sfp_鎬荤嚎*                     sfp_鎬荤嚎
+缁撴瀯浣?閿乢绫籣key*              qdisc_tx_busylock
 bool                                proto_down
-unsigned:1                          wol_已启用
-unsigned_long:1                     参见_全部_hwtstamp_requests
+unsigned:1                          wol_宸插惎鐢?
+unsigned_long:1                     鍙傝_鍏ㄩ儴_hwtstamp_requests
 unsigned_long:1                     change_proto_down
 unsigned_long:1                     netns_immutable
 unsigned_long:1                     fcoe_mtu
-结构体 列出_head                    net_notifier_列出
-结构体 macsec_ops*                  macsec_ops
-结构体 udp_tunnel_nic_info*         udp_tunnel_nic_info
-结构体 udp_tunnel_nic*              udp_tunnel_nic
+缁撴瀯浣?鍒楀嚭_head                    net_notifier_鍒楀嚭
+缁撴瀯浣?macsec_ops*                  macsec_ops
+缁撴瀯浣?udp_tunnel_nic_info*         udp_tunnel_nic_info
+缁撴瀯浣?udp_tunnel_nic*              udp_tunnel_nic
 unsigned_int                        xdp_zc_max_segs
-结构体 bpf_xdp_entity               xdp_状态[^3^]
+缁撴瀯浣?bpf_xdp_entity               xdp_鐘舵€乕^3^]
 u8                                  dev_addr_shadow[^32^]
 netdevice_tracker                   linkwatch_dev_tracker
 netdevice_tracker                   watchdog_dev_tracker
 netdevice_tracker                   dev_registered_tracker
-结构体 rtnl_hw_stats64*             offload_xstats_l3
-结构体 devlink_端口*                devlink_端口
-结构体 dpll_pin*                    dpll_pin
-结构体 hlist_head                   页_pools
-结构体 dim_irq_moder*               irq_moder
+缁撴瀯浣?rtnl_hw_stats64*             offload_xstats_l3
+缁撴瀯浣?devlink_绔彛*                devlink_绔彛
+缁撴瀯浣?dpll_pin*                    dpll_pin
+缁撴瀯浣?hlist_head                   椤礯pools
+缁撴瀯浣?dim_irq_moder*               irq_moder
 u64                                 max_pacing_offload_horizon
-结构体_napi_配置*                 napi_配置
-unsigned_long                       gro_flush_超时
+缁撴瀯浣揰napi_閰嶇疆*                 napi_閰嶇疆
+unsigned_long                       gro_flush_瓒呮椂
 u32                                 napi_defer_hard_irqs
-结构体 hlist_head                   neighbours[^2^]
+缁撴瀯浣?hlist_head                   neighbours[^2^]
 =================================== =========================== =================== =================== ===================================================================================

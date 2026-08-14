@@ -1,92 +1,92 @@
-
-## 多路径 TCP（MPTCP）
-
-
-## 简介
+﻿
+## 澶氳矾寰?TCP锛圡PTCP锛?
 
 
-多路径 TCP（Multipath TCP，简称 MPTCP）是标准 TCP 的一个扩展，在 `RFC 8684 (MPTCPv1) <https://www.rfc-editor.org/rfc/rfc8684.html>`_ 中进行了描述。它允许设备同时利用多个接口，在单个 MPTCP 连接上发送和接收 TCP 数据包。MPTCP 可以聚合多个接口的带宽，或者优先选择延迟最低的那个。当某条路径中断时，它还允许故障转移，流量会无缝地重新注入其它路径。
-
-有关 Linux 内核中多路径 TCP 的更多细节，请参阅官方网站：`mptcp.dev <https://www.mptcp.dev>`_。
+## 绠€浠?
 
 
-## 使用场景
+澶氳矾寰?TCP锛圡ultipath TCP锛岀畝绉?MPTCP锛夋槸鏍囧噯 TCP 鐨勪竴涓墿灞曪紝鍦?`RFC 8684 (MPTCPv1) <https://www.rfc-editor.org/rfc/rfc8684.html>`_ 涓繘琛屼簡鎻忚堪銆傚畠鍏佽璁惧鍚屾椂鍒╃敤澶氫釜鎺ュ彛锛屽湪鍗曚釜 MPTCP 杩炴帴涓婂彂閫佸拰鎺ユ敹 TCP 鏁版嵁鍖呫€侻PTCP 鍙互鑱氬悎澶氫釜鎺ュ彛鐨勫甫瀹斤紝鎴栬€呬紭鍏堥€夋嫨寤惰繜鏈€浣庣殑閭ｄ釜銆傚綋鏌愭潯璺緞涓柇鏃讹紝瀹冭繕鍏佽鏁呴殰杞Щ锛屾祦閲忎細鏃犵紳鍦伴噸鏂版敞鍏ュ叾瀹冭矾寰勩€?
+
+鏈夊叧 Linux 鍐呮牳涓璺緞 TCP 鐨勬洿澶氱粏鑺傦紝璇峰弬闃呭畼鏂圭綉绔欙細`mptcp.dev <https://www.mptcp.dev>`_銆?
 
 
-得益于 MPTCP，与 TCP 相比，能够并行或同时使用多条路径带来了新的使用场景：
-
-- 无缝切换：在保持已建立连接的同时从一条路径切换到另一条路径，例如可用于智能手机等移动场景。
-- 最佳网络选择：根据某些条件（如延迟、丢包、成本、带宽等）使用“最佳”可用路径。
-- 网络聚合：同时使用多条路径以获得更高的吞吐量，例如组合固定网络与移动网络以更快地发送文件。
+## 浣跨敤鍦烘櫙
 
 
-## 概念
+寰楃泭浜?MPTCP锛屼笌 TCP 鐩告瘮锛岃兘澶熷苟琛屾垨鍚屾椂浣跨敤澶氭潯璺緞甯︽潵浜嗘柊鐨勪娇鐢ㄥ満鏅細
+
+- 鏃犵紳鍒囨崲锛氬湪淇濇寔宸插缓绔嬭繛鎺ョ殑鍚屾椂浠庝竴鏉¤矾寰勫垏鎹㈠埌鍙︿竴鏉¤矾寰勶紝渚嬪鍙敤浜庢櫤鑳芥墜鏈虹瓑绉诲姩鍦烘櫙銆?
+- 鏈€浣崇綉缁滈€夋嫨锛氭牴鎹煇浜涙潯浠讹紙濡傚欢杩熴€佷涪鍖呫€佹垚鏈€佸甫瀹界瓑锛変娇鐢ㄢ€滄渶浣斥€濆彲鐢ㄨ矾寰勩€?
+- 缃戠粶鑱氬悎锛氬悓鏃朵娇鐢ㄥ鏉¤矾寰勪互鑾峰緱鏇撮珮鐨勫悶鍚愰噺锛屼緥濡傜粍鍚堝浐瀹氱綉缁滀笌绉诲姩缃戠粶浠ユ洿蹇湴鍙戦€佹枃浠躲€?
 
 
-从技术上讲，当使用 `IPPROTO_MPTCP` 协议（Linux 特有）创建一个新套接字时，会创建一个**子流（subflow）**（或**路径**）。该**子流**由一个常规的 TCP 连接组成，用于通过一个接口传输数据。后续可以在主机之间协商建立额外的**子流**。为了让远端主机能够检测到 MPTCP 的使用，到底层 TCP **子流**的 TCP **选项（option）**字段中添加了一个新字段。除其它内容外，该字段包含一个 `MP_CAPABLE` 选项，告诉对端若其支持则使用 MPTCP。如果对端主机或中间的任何中间盒（middlebox）不支持，返回的 `SYN+ACK` 数据包的 TCP **选项**字段中将不包含 MPTCP 选项。在这种情况下，连接将被“降级”为普通 TCP，并继续以单条路径运行。
-
-这种行为由两个内部组件实现：路径管理器（path manager）和数据包调度器（packet scheduler）。
-
-### 路径管理器
+## 姒傚康
 
 
-路径管理器负责**子流**的创建与删除，以及地址通告。通常，由客户端发起子流，由服务端通过 `ADD_ADDR` 和 `REMOVE_ADDR` 选项通告额外的地址。
+浠庢妧鏈笂璁诧紝褰撲娇鐢?`IPPROTO_MPTCP` 鍗忚锛圠inux 鐗规湁锛夊垱寤轰竴涓柊濂楁帴瀛楁椂锛屼細鍒涘缓涓€涓?*瀛愭祦锛坰ubflow锛?*锛堟垨**璺緞**锛夈€傝**瀛愭祦**鐢变竴涓父瑙勭殑 TCP 杩炴帴缁勬垚锛岀敤浜庨€氳繃涓€涓帴鍙ｄ紶杈撴暟鎹€傚悗缁彲浠ュ湪涓绘満涔嬮棿鍗忓晢寤虹珛棰濆鐨?*瀛愭祦**銆備负浜嗚杩滅涓绘満鑳藉妫€娴嬪埌 MPTCP 鐨勪娇鐢紝鍒板簳灞?TCP **瀛愭祦**鐨?TCP **閫夐」锛坥ption锛?*瀛楁涓坊鍔犱簡涓€涓柊瀛楁銆傞櫎鍏跺畠鍐呭澶栵紝璇ュ瓧娈靛寘鍚竴涓?`MP_CAPABLE` 閫夐」锛屽憡璇夊绔嫢鍏舵敮鎸佸垯浣跨敤 MPTCP銆傚鏋滃绔富鏈烘垨涓棿鐨勪换浣曚腑闂寸洅锛坢iddlebox锛変笉鏀寔锛岃繑鍥炵殑 `SYN+ACK` 鏁版嵁鍖呯殑 TCP **閫夐」**瀛楁涓皢涓嶅寘鍚?MPTCP 閫夐」銆傚湪杩欑鎯呭喌涓嬶紝杩炴帴灏嗚鈥滈檷绾р€濅负鏅€?TCP锛屽苟缁х画浠ュ崟鏉¤矾寰勮繍琛屻€?
 
-路径管理器由 `net.mptcp.path_manager` sysctl 旋钮控制——参见 mptcp-sysctl.rst。有两种类型：内核态的（`kernel`），对所有连接应用相同规则（参见：`ip mptcp`）；以及用户态的（`userspace`），由用户态守护进程（即 `mptcpd <https://mptcpd.mptcp.dev/>`_）控制，可以对每个连接应用不同的规则。路径管理器可通过 Netlink API 控制；参见 ../netlink/specs/mptcp_pm.rst。
+杩欑琛屼负鐢变袱涓唴閮ㄧ粍浠跺疄鐜帮細璺緞绠＄悊鍣紙path manager锛夊拰鏁版嵁鍖呰皟搴﹀櫒锛坧acket scheduler锛夈€?
 
-为了能够在主机上使用多个 IP 地址来创建多个**子流**（路径），默认的内核态 MPTCP 路径管理器需要知道哪些 IP 地址可以使用。这可以通过 `ip mptcp endpoint` 等命令进行配置。
-
-### 数据包调度器
+### 璺緞绠＄悊鍣?
 
 
-数据包调度器负责选择使用哪个可用的**子流（subflow）**来发送下一个数据包。它可以决定最大限度地利用可用带宽，或者只选择延迟最低的路径，或者根据配置采用任何其它策略。
+璺緞绠＄悊鍣ㄨ礋璐?*瀛愭祦**鐨勫垱寤轰笌鍒犻櫎锛屼互鍙婂湴鍧€閫氬憡銆傞€氬父锛岀敱瀹㈡埛绔彂璧峰瓙娴侊紝鐢辨湇鍔＄閫氳繃 `ADD_ADDR` 鍜?`REMOVE_ADDR` 閫夐」閫氬憡棰濆鐨勫湴鍧€銆?
 
-数据包调度器由 `net.mptcp.scheduler` sysctl 旋钮控制——参见 mptcp-sysctl.rst。
+璺緞绠＄悊鍣ㄧ敱 `net.mptcp.path_manager` sysctl 鏃嬮挳鎺у埗鈥斺€斿弬瑙?mptcp-sysctl.rst銆傛湁涓ょ绫诲瀷锛氬唴鏍告€佺殑锛坄kernel`锛夛紝瀵规墍鏈夎繛鎺ュ簲鐢ㄧ浉鍚岃鍒欙紙鍙傝锛歚ip mptcp`锛夛紱浠ュ強鐢ㄦ埛鎬佺殑锛坄userspace`锛夛紝鐢辩敤鎴锋€佸畧鎶よ繘绋嬶紙鍗?`mptcpd <https://mptcpd.mptcp.dev/>`_锛夋帶鍒讹紝鍙互瀵规瘡涓繛鎺ュ簲鐢ㄤ笉鍚岀殑瑙勫垯銆傝矾寰勭鐞嗗櫒鍙€氳繃 Netlink API 鎺у埗锛涘弬瑙?../netlink/specs/mptcp_pm.rst銆?
 
+涓轰簡鑳藉鍦ㄤ富鏈轰笂浣跨敤澶氫釜 IP 鍦板潃鏉ュ垱寤哄涓?*瀛愭祦**锛堣矾寰勶級锛岄粯璁ょ殑鍐呮牳鎬?MPTCP 璺緞绠＄悊鍣ㄩ渶瑕佺煡閬撳摢浜?IP 鍦板潃鍙互浣跨敤銆傝繖鍙互閫氳繃 `ip mptcp endpoint` 绛夊懡浠よ繘琛岄厤缃€?
 
-## 套接字 API
-
-
-### 创建 MPTCP 套接字
+### 鏁版嵁鍖呰皟搴﹀櫒
 
 
-在 Linux 上，可以在创建 `socket` 时选择 MPTCP 而非 TCP 来使用 MPTCP：
+鏁版嵁鍖呰皟搴﹀櫒璐熻矗閫夋嫨浣跨敤鍝釜鍙敤鐨?*瀛愭祦锛坰ubflow锛?*鏉ュ彂閫佷笅涓€涓暟鎹寘銆傚畠鍙互鍐冲畾鏈€澶ч檺搴﹀湴鍒╃敤鍙敤甯﹀锛屾垨鑰呭彧閫夋嫨寤惰繜鏈€浣庣殑璺緞锛屾垨鑰呮牴鎹厤缃噰鐢ㄤ换浣曞叾瀹冪瓥鐣ャ€?
+
+鏁版嵁鍖呰皟搴﹀櫒鐢?`net.mptcp.scheduler` sysctl 鏃嬮挳鎺у埗鈥斺€斿弬瑙?mptcp-sysctl.rst銆?
+
+
+## 濂楁帴瀛?API
+
+
+### 鍒涘缓 MPTCP 濂楁帴瀛?
+
+
+鍦?Linux 涓婏紝鍙互鍦ㄥ垱寤?`socket` 鏃堕€夋嫨 MPTCP 鑰岄潪 TCP 鏉ヤ娇鐢?MPTCP锛?
 
 
     int sd = socket(AF_INET(6), SOCK_STREAM, IPPROTO_MPTCP);
 
-注意 `IPPROTO_MPTCP` 被定义为 `262`。
+娉ㄦ剰 `IPPROTO_MPTCP` 琚畾涔変负 `262`銆?
 
-如果 MPTCP 不受支持，`errno` 将被设置为：
+濡傛灉 MPTCP 涓嶅彈鏀寔锛宍errno` 灏嗚璁剧疆涓猴細
 
-- `EINVAL`：（**无效参数**）：在 < 5.6 的内核上 MPTCP 不可用。
-- `EPROTONOSUPPORT`（**协议不支持**）：在 >= v5.6 的内核上 MPTCP 未被编译进内核。
-- `ENOPROTOOPT`（**协议不可用**）：MPTCP 已通过 `net.mptcp.enabled` sysctl 旋钮被禁用；参见 mptcp-sysctl.rst。
+- `EINVAL`锛氾紙**鏃犳晥鍙傛暟**锛夛細鍦?< 5.6 鐨勫唴鏍镐笂 MPTCP 涓嶅彲鐢ㄣ€?
+- `EPROTONOSUPPORT`锛?*鍗忚涓嶆敮鎸?*锛夛細鍦?>= v5.6 鐨勫唴鏍镐笂 MPTCP 鏈缂栬瘧杩涘唴鏍搞€?
+- `ENOPROTOOPT`锛?*鍗忚涓嶅彲鐢?*锛夛細MPTCP 宸查€氳繃 `net.mptcp.enabled` sysctl 鏃嬮挳琚鐢紱鍙傝 mptcp-sysctl.rst銆?
 
-MPTCP 因此是选择启用的（opt-in）：应用程序需要显式请求它。注意，应用程序可以通过不同的技术被强制使用 MPTCP，例如 `LD_PRELOAD`（参见 `mptcpize`）、eBPF（参见 `mptcpify`）、SystemTAP、`GODEBUG`（`GODEBUG=multipathtcp=1`）等。
+MPTCP 鍥犳鏄€夋嫨鍚敤鐨勶紙opt-in锛夛細搴旂敤绋嬪簭闇€瑕佹樉寮忚姹傚畠銆傛敞鎰忥紝搴旂敤绋嬪簭鍙互閫氳繃涓嶅悓鐨勬妧鏈寮哄埗浣跨敤 MPTCP锛屼緥濡?`LD_PRELOAD`锛堝弬瑙?`mptcpize`锛夈€乪BPF锛堝弬瑙?`mptcpify`锛夈€丼ystemTAP銆乣GODEBUG`锛坄GODEBUG=multipathtcp=1`锛夌瓑銆?
 
-切换到 `IPPROTO_MPTCP` 而非 `IPPROTO_TCP` 对用户空间应用程序应当尽可能透明。
+鍒囨崲鍒?`IPPROTO_MPTCP` 鑰岄潪 `IPPROTO_TCP` 瀵圭敤鎴风┖闂村簲鐢ㄧ▼搴忓簲褰撳敖鍙兘閫忔槑銆?
 
-### 套接字选项
-
-
-MPTCP 支持 TCP 处理的大多数套接字选项。可能某些不太常见的选项不受支持，但欢迎贡献。
-
-通常，相同的值会传播到所有子流，包括在调用 `setsockopt()` 之后创建的子流。eBPF 可用于为每个子流设置不同的值。
-
-在 `SOL_MPTCP`（284）层级有一些 MPTCP 特有的套接字选项用于获取信息。它们填充 `getsockopt()` 系统调用的 `optval` 缓冲区：
-
-- `MPTCP_INFO`：使用 `struct mptcp_info`。
-- `MPTCP_TCPINFO`：使用 `struct mptcp_subflow_data`，后接一个 `struct tcp_info` 数组。
-- `MPTCP_SUBFLOW_ADDRS`：使用 `struct mptcp_subflow_data`，后接一个 `mptcp_subflow_addrs` 数组。
-- `MPTCP_FULL_INFO`：使用 `struct mptcp_full_info`，其中一个指针指向 `struct mptcp_subflow_info` 数组（包含 `struct mptcp_subflow_addrs`），另一个指针指向 `struct tcp_info` 数组，后接 `struct mptcp_info` 的内容。
-
-注意，在 TCP 层级，`TCP_IS_MPTCP` 套接字选项可用于获知当前是否正在使用 MPTCP：如果是，该值将被设为 1。
+### 濂楁帴瀛楅€夐」
 
 
-## 设计选择
+MPTCP 鏀寔 TCP 澶勭悊鐨勫ぇ澶氭暟濂楁帴瀛楅€夐」銆傚彲鑳芥煇浜涗笉澶父瑙佺殑閫夐」涓嶅彈鏀寔锛屼絾娆㈣繋璐＄尞銆?
+
+閫氬父锛岀浉鍚岀殑鍊间細浼犳挱鍒版墍鏈夊瓙娴侊紝鍖呮嫭鍦ㄨ皟鐢?`setsockopt()` 涔嬪悗鍒涘缓鐨勫瓙娴併€俥BPF 鍙敤浜庝负姣忎釜瀛愭祦璁剧疆涓嶅悓鐨勫€笺€?
+
+鍦?`SOL_MPTCP`锛?84锛夊眰绾ф湁涓€浜?MPTCP 鐗规湁鐨勫鎺ュ瓧閫夐」鐢ㄤ簬鑾峰彇淇℃伅銆傚畠浠～鍏?`getsockopt()` 绯荤粺璋冪敤鐨?`optval` 缂撳啿鍖猴細
+
+- `MPTCP_INFO`锛氫娇鐢?`struct mptcp_info`銆?
+- `MPTCP_TCPINFO`锛氫娇鐢?`struct mptcp_subflow_data`锛屽悗鎺ヤ竴涓?`struct tcp_info` 鏁扮粍銆?
+- `MPTCP_SUBFLOW_ADDRS`锛氫娇鐢?`struct mptcp_subflow_data`锛屽悗鎺ヤ竴涓?`mptcp_subflow_addrs` 鏁扮粍銆?
+- `MPTCP_FULL_INFO`锛氫娇鐢?`struct mptcp_full_info`锛屽叾涓竴涓寚閽堟寚鍚?`struct mptcp_subflow_info` 鏁扮粍锛堝寘鍚?`struct mptcp_subflow_addrs`锛夛紝鍙︿竴涓寚閽堟寚鍚?`struct tcp_info` 鏁扮粍锛屽悗鎺?`struct mptcp_info` 鐨勫唴瀹广€?
+
+娉ㄦ剰锛屽湪 TCP 灞傜骇锛宍TCP_IS_MPTCP` 濂楁帴瀛楅€夐」鍙敤浜庤幏鐭ュ綋鍓嶆槸鍚︽鍦ㄤ娇鐢?MPTCP锛氬鏋滄槸锛岃鍊煎皢琚涓?1銆?
 
 
-为用户空间-facing 套接字新增了一种 MPTCP 套接字类型。内核负责创建子流套接字：它们是 TCP 套接字，其行为通过 TCP-ULP 进行修改。
+## 璁捐閫夋嫨
 
-如果来自客户端的连接请求没有要求 MPTCP，MPTCP 监听套接字将创建“普通”的**已接受（accepted）** TCP 套接字，从而在默认启用 MPTCP 时将性能影响降到最低。
+
+涓虹敤鎴风┖闂?facing 濂楁帴瀛楁柊澧炰簡涓€绉?MPTCP 濂楁帴瀛楃被鍨嬨€傚唴鏍歌礋璐ｅ垱寤哄瓙娴佸鎺ュ瓧锛氬畠浠槸 TCP 濂楁帴瀛楋紝鍏惰涓洪€氳繃 TCP-ULP 杩涜淇敼銆?
+
+濡傛灉鏉ヨ嚜瀹㈡埛绔殑杩炴帴璇锋眰娌℃湁瑕佹眰 MPTCP锛孧PTCP 鐩戝惉濂楁帴瀛楀皢鍒涘缓鈥滄櫘閫氣€濈殑**宸叉帴鍙楋紙accepted锛?* TCP 濂楁帴瀛楋紝浠庤€屽湪榛樿鍚敤 MPTCP 鏃跺皢鎬ц兘褰卞搷闄嶅埌鏈€浣庛€?

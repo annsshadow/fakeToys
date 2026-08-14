@@ -1,20 +1,14 @@
+﻿
+## Uniwill 绗旇鏈┍鍔紙uniwill-laptop锛?
 
-## Uniwill 笔记本驱动（uniwill-laptop）
+## 绠€浠?
 
-
-## 简介
-
-
-Uniwill 制造的许多笔记本（无论是直接制造还是作为 ODM）提供了一个 EC 接口，
-用于控制传感器和风扇控制等各类平台设置。该接口被 `uniwill-laptop` 驱动用来
-将这些功能映射到标准的内核接口上。
-
-## EC WMI 接口描述
+Uniwill 鍒堕€犵殑璁稿绗旇鏈紙鏃犺鏄洿鎺ュ埗閫犺繕鏄綔涓?ODM锛夋彁渚涗簡涓€涓?EC 鎺ュ彛锛?鐢ㄤ簬鎺у埗浼犳劅鍣ㄥ拰椋庢墖鎺у埗绛夊悇绫诲钩鍙拌缃€傝鎺ュ彛琚?`uniwill-laptop` 椹卞姩鐢ㄦ潵
+灏嗚繖浜涘姛鑳芥槧灏勫埌鏍囧噯鐨勫唴鏍告帴鍙ｄ笂銆?
+## EC WMI 鎺ュ彛鎻忚堪
 
 
-EC WMI 接口描述可以使用 `bmfdec <https://github.com/pali/bmfdec>`_ 工具从
-内嵌的二进制 MOF（bmof）数据中解码出来：
-
+EC WMI 鎺ュ彛鎻忚堪鍙互浣跨敤 `bmfdec <https://github.com/pali/bmfdec>`_ 宸ュ叿浠?鍐呭祵鐨勪簩杩涘埗 MOF锛坆mof锛夋暟鎹腑瑙ｇ爜鍑烘潵锛?
 ```
 
   [WMI, Dynamic, Provider("WmiProv"), Locale("MS\\0x409"),
@@ -45,64 +39,48 @@ EC WMI 接口描述可以使用 `bmfdec <https://github.com/pali/bmfdec>`_ 工�
   };
 
 ```
-大部分 WMI 相关代码是从 Windows 驱动示例复制而来的，遗憾的是这意味着该
-WMI-GUID 并不唯一。这使得该 WMI-GUID 无法用于自动加载。
-
-### WMI 方法 GetULong()
+澶ч儴鍒?WMI 鐩稿叧浠ｇ爜鏄粠 Windows 椹卞姩绀轰緥澶嶅埗鑰屾潵鐨勶紝閬楁喚鐨勬槸杩欐剰鍛崇潃璇?WMI-GUID 骞朵笉鍞竴銆傝繖浣垮緱璇?WMI-GUID 鏃犳硶鐢ㄤ簬鑷姩鍔犺浇銆?
+### WMI 鏂规硶 GetULong()
 
 
-此 WMI 方法是从 Windows 驱动示例复制而来，没有实际功能。
-
-### WMI 方法 SetULong()
-
-
-此 WMI 方法是从 Windows 驱动示例复制而来，没有实际功能。
-
-### WMI 方法 FireULong()
+姝?WMI 鏂规硶鏄粠 Windows 椹卞姩绀轰緥澶嶅埗鑰屾潵锛屾病鏈夊疄闄呭姛鑳姐€?
+### WMI 鏂规硶 SetULong()
 
 
-此 WMI 方法允许注入一个带有 32 位负载的 WMI 事件。其主要用途似乎是调试。
-
-### WMI 方法 GetSetULong()
-
-
-此 WMI 方法用于与 EC 通信。`Data` 参数包含以下信息（从最低有效字节开始）：
-
-1. 16 位地址
-2. 16 位数据（读取时设为 `0x0000`）
-3. 16 位操作（`0x0100` 表示读取，`0x0000` 表示写入）
-4. 16 位保留（设为 `0x0000`）
-
-`Return` 值的前 8 位包含在读取时 EC 返回的数据。特殊值 `0xFEFEFEFE` 用于
-指示与 EC 通信失败。
-
-### WMI 方法 GetButton()
+姝?WMI 鏂规硶鏄粠 Windows 椹卞姩绀轰緥澶嶅埗鑰屾潵锛屾病鏈夊疄闄呭姛鑳姐€?
+### WMI 鏂规硶 FireULong()
 
 
-此 WMI 方法并非在所有机器上都已实现，用途未知。
+姝?WMI 鏂规硶鍏佽娉ㄥ叆涓€涓甫鏈?32 浣嶈礋杞界殑 WMI 浜嬩欢銆傚叾涓昏鐢ㄩ€斾技涔庢槸璋冭瘯銆?
+### WMI 鏂规硶 GetSetULong()
 
-## 逆向工程 EC WMI 接口
+
+姝?WMI 鏂规硶鐢ㄤ簬涓?EC 閫氫俊銆俙Data` 鍙傛暟鍖呭惈浠ヤ笅淇℃伅锛堜粠鏈€浣庢湁鏁堝瓧鑺傚紑濮嬶級锛?
+1. 16 浣嶅湴鍧€
+2. 16 浣嶆暟鎹紙璇诲彇鏃惰涓?`0x0000`锛?3. 16 浣嶆搷浣滐紙`0x0100` 琛ㄧず璇诲彇锛宍0x0000` 琛ㄧず鍐欏叆锛?4. 16 浣嶄繚鐣欙紙璁句负 `0x0000`锛?
+`Return` 鍊肩殑鍓?8 浣嶅寘鍚湪璇诲彇鏃?EC 杩斿洖鐨勬暟鎹€傜壒娈婂€?`0xFEFEFEFE` 鐢ㄤ簬
+鎸囩ず涓?EC 閫氫俊澶辫触銆?
+### WMI 鏂规硶 GetButton()
 
 
-             存在副作用，请小心。
+姝?WMI 鏂规硶骞堕潪鍦ㄦ墍鏈夋満鍣ㄤ笂閮藉凡瀹炵幇锛岀敤閫旀湭鐭ャ€?
+## 閫嗗悜宸ョ▼ EC WMI 鎺ュ彛
 
-`GetSetULong` 方法背后的 EC 由制造商提供的 OEM 软件使用。由于该软件使用了
-混淆器，逆向工程比较困难，但其中部分内容并未被混淆。在这种情况下，`dnSpy
-<https://github.com/dnSpy/dnSpy>`_ 也可能有所帮助。
 
-在 Windows 下可以使用 powershell（需要管理员权限）访问 EC：
-
+             瀛樺湪鍓綔鐢紝璇峰皬蹇冦€?
+`GetSetULong` 鏂规硶鑳屽悗鐨?EC 鐢卞埗閫犲晢鎻愪緵鐨?OEM 杞欢浣跨敤銆傜敱浜庤杞欢浣跨敤浜?娣锋穯鍣紝閫嗗悜宸ョ▼姣旇緝鍥伴毦锛屼絾鍏朵腑閮ㄥ垎鍐呭骞舵湭琚贩娣嗐€傚湪杩欑鎯呭喌涓嬶紝`dnSpy
+<https://github.com/dnSpy/dnSpy>`_ 涔熷彲鑳芥湁鎵€甯姪銆?
+鍦?Windows 涓嬪彲浠ヤ娇鐢?powershell锛堥渶瑕佺鐞嗗憳鏉冮檺锛夎闂?EC锛?
 ```
 
   > $obj = Get-CimInstance -Namespace root/wmi -ClassName AcpiTest_MULong | Select-Object -First 1
   > Invoke-CimMethod -InputObject $obj -MethodName GetSetULong -Arguments @{Data = <input>}
 
 ```
-## WMI 事件接口描述
+## WMI 浜嬩欢鎺ュ彛鎻忚堪
 
 
-WMI 接口描述同样可以从内嵌的二进制 MOF（bmof）数据中解码：
-
+WMI 鎺ュ彛鎻忚堪鍚屾牱鍙互浠庡唴宓岀殑浜岃繘鍒?MOF锛坆mof锛夋暟鎹腑瑙ｇ爜锛?
 ```
 
   [WMI, Dynamic, Provider("WmiProv"), Locale("MS\\0x409"),
@@ -116,76 +94,52 @@ WMI 接口描述同样可以从内嵌的二进制 MOF（bmof）数据中解码�
   };
 
 ```
-大部分 WMI 相关代码同样是从 Windows 驱动示例复制而来，导致此 WMI 接口受到
-与上述 EC WMI 接口相同的限制。
-
-### WMI 事件数据
-
-
-WMI 事件数据包含一个单独的 32 位值，用于指示各种平台事件。
-
-## 逆向工程 Uniwill WMI 事件接口
+澶ч儴鍒?WMI 鐩稿叧浠ｇ爜鍚屾牱鏄粠 Windows 椹卞姩绀轰緥澶嶅埗鑰屾潵锛屽鑷存 WMI 鎺ュ彛鍙楀埌
+涓庝笂杩?EC WMI 鎺ュ彛鐩稿悓鐨勯檺鍒躲€?
+### WMI 浜嬩欢鏁版嵁
 
 
-驱动在收到 WMI 事件时会记录调试消息。因此启用调试消息有助于查找未知的事件
-代码。
-
-## EC ACPI 接口描述
+WMI 浜嬩欢鏁版嵁鍖呭惈涓€涓崟鐙殑 32 浣嶅€硷紝鐢ㄤ簬鎸囩ず鍚勭骞冲彴浜嬩欢銆?
+## 閫嗗悜宸ョ▼ Uniwill WMI 浜嬩欢鎺ュ彛
 
 
-`INOU0000` ACPI 设备是一个虚拟设备，用于访问 Uniwill 制造的笔记本上可用的
-各种硬件寄存器。通过调用 ACPI 控制方法来读写这些寄存器。`uniwill-laptop`
-驱动使用此设备与 EC 通信，因为 ACPI 控制方法比上述 WMI 方法更快。
-
-用于读取寄存器的 ACPI 控制方法接受一个包含待读取寄存器地址的 ACPI 整数，
-并返回一个包含该寄存器内数据的 ACPI 整数。而用于写入寄存器的 ACPI 控制方法
-则接受两个 ACPI 整数，额外的 ACPI 整数包含要写入寄存器的数据。此类 ACPI 控制
-方法不返回任何内容。
-
-### 系统内存
+椹卞姩鍦ㄦ敹鍒?WMI 浜嬩欢鏃朵細璁板綍璋冭瘯娑堟伅銆傚洜姝ゅ惎鐢ㄨ皟璇曟秷鎭湁鍔╀簬鏌ユ壘鏈煡鐨勪簨浠?浠ｇ爜銆?
+## EC ACPI 鎺ュ彛鎻忚堪
 
 
-系统内存可以以单字节粒度访问（`MMRB` 用于读取，`MMWB` 用于写入），或以四字节
-粒度访问（`MMRD` 用于读取，`MMWD` 用于写入）。这些 ACPI 控制方法未被使用，因为
-与内核提供的原生内存访问函数相比，它们没有提供任何好处。
+`INOU0000` ACPI 璁惧鏄竴涓櫄鎷熻澶囷紝鐢ㄤ簬璁块棶 Uniwill 鍒堕€犵殑绗旇鏈笂鍙敤鐨?鍚勭纭欢瀵勫瓨鍣ㄣ€傞€氳繃璋冪敤 ACPI 鎺у埗鏂规硶鏉ヨ鍐欒繖浜涘瘎瀛樺櫒銆俙uniwill-laptop`
+椹卞姩浣跨敤姝よ澶囦笌 EC 閫氫俊锛屽洜涓?ACPI 鎺у埗鏂规硶姣斾笂杩?WMI 鏂规硶鏇村揩銆?
+鐢ㄤ簬璇诲彇瀵勫瓨鍣ㄧ殑 ACPI 鎺у埗鏂规硶鎺ュ彈涓€涓寘鍚緟璇诲彇瀵勫瓨鍣ㄥ湴鍧€鐨?ACPI 鏁存暟锛?骞惰繑鍥炰竴涓寘鍚瀵勫瓨鍣ㄥ唴鏁版嵁鐨?ACPI 鏁存暟銆傝€岀敤浜庡啓鍏ュ瘎瀛樺櫒鐨?ACPI 鎺у埗鏂规硶
+鍒欐帴鍙椾袱涓?ACPI 鏁存暟锛岄澶栫殑 ACPI 鏁存暟鍖呭惈瑕佸啓鍏ュ瘎瀛樺櫒鐨勬暟鎹€傛绫?ACPI 鎺у埗
+鏂规硶涓嶈繑鍥炰换浣曞唴瀹广€?
+### 绯荤粺鍐呭瓨
 
+
+绯荤粺鍐呭瓨鍙互浠ュ崟瀛楄妭绮掑害璁块棶锛坄MMRB` 鐢ㄤ簬璇诲彇锛宍MMWB` 鐢ㄤ簬鍐欏叆锛夛紝鎴栦互鍥涘瓧鑺?绮掑害璁块棶锛坄MMRD` 鐢ㄤ簬璇诲彇锛宍MMWD` 鐢ㄤ簬鍐欏叆锛夈€傝繖浜?ACPI 鎺у埗鏂规硶鏈浣跨敤锛屽洜涓?涓庡唴鏍告彁渚涚殑鍘熺敓鍐呭瓨璁块棶鍑芥暟鐩告瘮锛屽畠浠病鏈夋彁渚涗换浣曞ソ澶勩€?
 ### EC RAM
 
 
-EC 的内部 RAM 可以使用 `ECRR`（读）和 `ECRW`（写）ACPI 控制方法以单字节粒度
-访问，最大寄存器地址为 `0xFFF`。OEM 软件在调用其中一个 ACPI 控制方法后会等待
-6 ms，可能是为了避免通过 LPC 连接时使 EC 过载。
-
-### PCI 配置空间
-
-
-PCI 配置空间可以使用 `PCRD`（读）和 `PCWD`（写）ACPI 控制方法以四字节粒度访问。
-确切的地址格式未知，并且随意探测随机 PCI 设备可能会扰乱 PCI 子系统。因此这些
-ACPI 控制方法未被使用。
-
-### IO 端口
+EC 鐨勫唴閮?RAM 鍙互浣跨敤 `ECRR`锛堣锛夊拰 `ECRW`锛堝啓锛堿CPI 鎺у埗鏂规硶浠ュ崟瀛楄妭绮掑害
+璁块棶锛屾渶澶у瘎瀛樺櫒鍦板潃涓?`0xFFF`銆侽EM 杞欢鍦ㄨ皟鐢ㄥ叾涓竴涓?ACPI 鎺у埗鏂规硶鍚庝細绛夊緟
+6 ms锛屽彲鑳芥槸涓轰簡閬垮厤閫氳繃 LPC 杩炴帴鏃朵娇 EC 杩囪浇銆?
+### PCI 閰嶇疆绌洪棿
 
 
-IO 端口可以使用 `IORD`（读）和 `IOWD`（写）ACPI 控制方法以四字节粒度访问。这些
-ACPI 控制方法未被使用，因为与内核提供的原生 IO 端口访问函数相比，它们没有提供
-任何好处。
+PCI 閰嶇疆绌洪棿鍙互浣跨敤 `PCRD`锛堣锛夊拰 `PCWD`锛堝啓锛堿CPI 鎺у埗鏂规硶浠ュ洓瀛楄妭绮掑害璁块棶銆?纭垏鐨勫湴鍧€鏍煎紡鏈煡锛屽苟涓旈殢鎰忔帰娴嬮殢鏈?PCI 璁惧鍙兘浼氭壈涔?PCI 瀛愮郴缁熴€傚洜姝よ繖浜?ACPI 鎺у埗鏂规硶鏈浣跨敤銆?
+### IO 绔彛
 
+
+IO 绔彛鍙互浣跨敤 `IORD`锛堣锛夊拰 `IOWD`锛堝啓锛堿CPI 鎺у埗鏂规硶浠ュ洓瀛楄妭绮掑害璁块棶銆傝繖浜?ACPI 鎺у埗鏂规硶鏈浣跨敤锛屽洜涓轰笌鍐呮牳鎻愪緵鐨勫師鐢?IO 绔彛璁块棶鍑芥暟鐩告瘮锛屽畠浠病鏈夋彁渚?浠讳綍濂藉銆?
 ### CMOS RAM
 
 
-CMOS RAM 可以使用 `RCMS`（读）和 `WCMS` ACPI 控制方法以单字节粒度访问。由于使用
-了索引 IO，使用这些 ACPI 方法可能会干扰内核提供的原生 CMOS RAM 访问函数，因此
-它们未被使用。
-
-### 索引 IO
+CMOS RAM 鍙互浣跨敤 `RCMS`锛堣锛夊拰 `WCMS` ACPI 鎺у埗鏂规硶浠ュ崟瀛楄妭绮掑害璁块棶銆傜敱浜庝娇鐢?浜嗙储寮?IO锛屼娇鐢ㄨ繖浜?ACPI 鏂规硶鍙兘浼氬共鎵板唴鏍告彁渚涚殑鍘熺敓 CMOS RAM 璁块棶鍑芥暟锛屽洜姝?瀹冧滑鏈浣跨敤銆?
+### 绱㈠紩 IO
 
 
-使用 IO 端口、以单字节粒度的索引 IO 可以通过 `RIOP`（读）和 `WIOP`（写）ACPI 控制
-方法执行。这些 ACPI 方法未被使用，因为与内核提供的原生 IO 端口访问函数相比，它们
-没有提供任何好处。
-
-特此感谢 github 用户 `pobrn`，其开发的 `qc71_laptop
-<https://github.com/pobrn/qc71_laptop>`_ 驱动是本驱动的部分基础。Tuxedo Computers
-也是如此，其开发的 `tuxedo-drivers
-<https://gitlab.com/tuxedocomputers/development/packages/tuxedo-drivers>`_ 软件包
-也作为本驱动的基础。
+浣跨敤 IO 绔彛銆佷互鍗曞瓧鑺傜矑搴︾殑绱㈠紩 IO 鍙互閫氳繃 `RIOP`锛堣锛夊拰 `WIOP`锛堝啓锛堿CPI 鎺у埗
+鏂规硶鎵ц銆傝繖浜?ACPI 鏂规硶鏈浣跨敤锛屽洜涓轰笌鍐呮牳鎻愪緵鐨勫師鐢?IO 绔彛璁块棶鍑芥暟鐩告瘮锛屽畠浠?娌℃湁鎻愪緵浠讳綍濂藉銆?
+鐗规鎰熻阿 github 鐢ㄦ埛 `pobrn`锛屽叾寮€鍙戠殑 `qc71_laptop
+<https://github.com/pobrn/qc71_laptop>`_ 椹卞姩鏄湰椹卞姩鐨勯儴鍒嗗熀纭€銆俆uxedo Computers
+涔熸槸濡傛锛屽叾寮€鍙戠殑 `tuxedo-drivers
+<https://gitlab.com/tuxedocomputers/development/packages/tuxedo-drivers>`_ 杞欢鍖?涔熶綔涓烘湰椹卞姩鐨勫熀纭€銆?

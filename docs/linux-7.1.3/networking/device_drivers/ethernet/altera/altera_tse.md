@@ -1,55 +1,37 @@
+﻿
 
-
-## Altera 三速以太网 MAC 驱动
+## Altera 涓夐€熶互澶綉 MAC 椹卞姩
 
 
 Copyright |copy| 2008-2014 Altera Corporation
 
-这是用于 Altera 三速以太网（TSE）控制器、使用 SGDMA 和 MSGDMA 软 DMA IP 组件的驱动。该驱动使用平台
-总线获取组件资源。用于测试此驱动的设计是针对 Cyclone(R) V SOC FPGA 板、Cyclone(R) V FPGA 板构建的，
-并分别使用 ARM 和 NIOS 处理器主机进行了测试。预期用例是嵌入式系统与外部对等体之间进行简单的通信，
-用于状态报告和嵌入式系统的简单配置。
-
-更多信息请访问 www.altera.com 和 www.rocketboards.org。关于此驱动的支持论坛可以在 www.rocketboards.org
-找到，用于测试此驱动的设计也可以在那里找到。此驱动的维护者（见 MAINTAINERS）也提供支持。
-
-三速以太网、SGDMA 和 MSGDMA 组件都是软 IP 组件，可以使用 Altera Quartus 工具链组装并构建到 FPGA 中。
-构建此驱动所针对的设计使用了 Quartus 13.1 和 14.0。sopc2dts 工具用于为驱动创建设备树，可以在
-rocketboards.org 找到。
-
-驱动探测（probe）函数检查设备树，并确定三速以太网实例是使用 SGDMA 还是 MSGDMA 组件。探测函数随后安装
-相应的一组 DMA 例程，以初始化、建立发送、接收和中断处理原语，用于各自的配置。
-
-SGDMA 组件在不久的将来（截至本文撰写时 2014 年初的接下来 1-2 年内）将被弃用，转而使用 MSGDMA 组件。
-包含 SGDMA 支持是为了现有设计和参考，以防开发者希望支持他们自己的软 DMA 逻辑和驱动支持。任何新设计
-都不应使用 SGDMA。
-
-SGDMA 一次只支持单个发送或接收操作，因此与 MSGDMA 软 IP 相比性能较差。有关已知的、有文档记录的 SGDMA
-勘误表，请访问 www.altera.com。
-
-目前 SGDMA 和 MSGDMA 均不支持分散/聚集（scatter-gather）DMA。分散/聚集 DMA 将被添加到此驱动的未来维护
-更新中。
-
-目前不支持巨型帧（jumbo frame）。
-
-驱动将 PHY 操作限制为 10/100Mbps，并且尚未针对 1Gbps 完全测试。此支持将被添加到未来的维护更新中。
-
-## 1. 内核配置
+杩欐槸鐢ㄤ簬 Altera 涓夐€熶互澶綉锛圱SE锛夋帶鍒跺櫒銆佷娇鐢?SGDMA 鍜?MSGDMA 杞?DMA IP 缁勪欢鐨勯┍鍔ㄣ€傝椹卞姩浣跨敤骞冲彴
+鎬荤嚎鑾峰彇缁勪欢璧勬簮銆傜敤浜庢祴璇曟椹卞姩鐨勮璁℃槸閽堝 Cyclone(R) V SOC FPGA 鏉裤€丆yclone(R) V FPGA 鏉挎瀯寤虹殑锛?骞跺垎鍒娇鐢?ARM 鍜?NIOS 澶勭悊鍣ㄤ富鏈鸿繘琛屼簡娴嬭瘯銆傞鏈熺敤渚嬫槸宓屽叆寮忕郴缁熶笌澶栭儴瀵圭瓑浣撲箣闂磋繘琛岀畝鍗曠殑閫氫俊锛?鐢ㄤ簬鐘舵€佹姤鍛婂拰宓屽叆寮忕郴缁熺殑绠€鍗曢厤缃€?
+鏇村淇℃伅璇疯闂?www.altera.com 鍜?www.rocketboards.org銆傚叧浜庢椹卞姩鐨勬敮鎸佽鍧涘彲浠ュ湪 www.rocketboards.org
+鎵惧埌锛岀敤浜庢祴璇曟椹卞姩鐨勮璁′篃鍙互鍦ㄩ偅閲屾壘鍒般€傛椹卞姩鐨勭淮鎶よ€咃紙瑙?MAINTAINERS锛変篃鎻愪緵鏀寔銆?
+涓夐€熶互澶綉銆丼GDMA 鍜?MSGDMA 缁勪欢閮芥槸杞?IP 缁勪欢锛屽彲浠ヤ娇鐢?Altera Quartus 宸ュ叿閾剧粍瑁呭苟鏋勫缓鍒?FPGA 涓€?鏋勫缓姝ら┍鍔ㄦ墍閽堝鐨勮璁′娇鐢ㄤ簡 Quartus 13.1 鍜?14.0銆俿opc2dts 宸ュ叿鐢ㄤ簬涓洪┍鍔ㄥ垱寤鸿澶囨爲锛屽彲浠ュ湪
+rocketboards.org 鎵惧埌銆?
+椹卞姩鎺㈡祴锛坧robe锛夊嚱鏁版鏌ヨ澶囨爲锛屽苟纭畾涓夐€熶互澶綉瀹炰緥鏄娇鐢?SGDMA 杩樻槸 MSGDMA 缁勪欢銆傛帰娴嬪嚱鏁伴殢鍚庡畨瑁?鐩稿簲鐨勪竴缁?DMA 渚嬬▼锛屼互鍒濆鍖栥€佸缓绔嬪彂閫併€佹帴鏀跺拰涓柇澶勭悊鍘熻锛岀敤浜庡悇鑷殑閰嶇疆銆?
+SGDMA 缁勪欢鍦ㄤ笉涔呯殑灏嗘潵锛堟埅鑷虫湰鏂囨挵鍐欐椂 2014 骞村垵鐨勬帴涓嬫潵 1-2 骞村唴锛夊皢琚純鐢紝杞€屼娇鐢?MSGDMA 缁勪欢銆?鍖呭惈 SGDMA 鏀寔鏄负浜嗙幇鏈夎璁″拰鍙傝€冿紝浠ラ槻寮€鍙戣€呭笇鏈涙敮鎸佷粬浠嚜宸辩殑杞?DMA 閫昏緫鍜岄┍鍔ㄦ敮鎸併€備换浣曟柊璁捐
+閮戒笉搴斾娇鐢?SGDMA銆?
+SGDMA 涓€娆″彧鏀寔鍗曚釜鍙戦€佹垨鎺ユ敹鎿嶄綔锛屽洜姝や笌 MSGDMA 杞?IP 鐩告瘮鎬ц兘杈冨樊銆傛湁鍏冲凡鐭ョ殑銆佹湁鏂囨。璁板綍鐨?SGDMA
+鍕樿琛紝璇疯闂?www.altera.com銆?
+鐩墠 SGDMA 鍜?MSGDMA 鍧囦笉鏀寔鍒嗘暎/鑱氶泦锛坰catter-gather锛塂MA銆傚垎鏁?鑱氶泦 DMA 灏嗚娣诲姞鍒版椹卞姩鐨勬湭鏉ョ淮鎶?鏇存柊涓€?
+鐩墠涓嶆敮鎸佸法鍨嬪抚锛坖umbo frame锛夈€?
+椹卞姩灏?PHY 鎿嶄綔闄愬埗涓?10/100Mbps锛屽苟涓斿皻鏈拡瀵?1Gbps 瀹屽叏娴嬭瘯銆傛鏀寔灏嗚娣诲姞鍒版湭鏉ョ殑缁存姢鏇存柊涓€?
+## 1. 鍐呮牳閰嶇疆
 
 
-内核配置选项是 ALTERA_TSE：
-
+鍐呮牳閰嶇疆閫夐」鏄?ALTERA_TSE锛?
  Device Drivers ---> Network device support ---> Ethernet driver support --->
  Altera Triple-Speed Ethernet MAC support (ALTERA_TSE)
 
-## 2. 驱动参数列表
+## 2. 椹卞姩鍙傛暟鍒楄〃
 
 
- - debug: 消息级别（0：无输出，16：全部）；
- - dma_rx_num: RX 列表中的描述符数量（默认为 64）；
- - dma_tx_num: TX 列表中的描述符数量（默认为 64）。
-
-## 3. 命令行选项
+ - debug: 娑堟伅绾у埆锛?锛氭棤杈撳嚭锛?6锛氬叏閮級锛? - dma_rx_num: RX 鍒楄〃涓殑鎻忚堪绗︽暟閲忥紙榛樿涓?64锛夛紱
+ - dma_tx_num: TX 鍒楄〃涓殑鎻忚堪绗︽暟閲忥紙榛樿涓?64锛夈€?
+## 3. 鍛戒护琛岄€夐」
 
 
 ```
@@ -58,160 +40,90 @@ SGDMA 一次只支持单个发送或接收操作，因此与 MSGDMA 软 IP 相�
 
 ```
 
-## 4. 驱动信息和注意事项
+## 4. 椹卞姩淇℃伅鍜屾敞鎰忎簨椤?
 
+### 4.1. 鍙戦€佽繃绋?
+褰撳唴鏍歌皟鐢ㄩ┍鍔ㄧ殑鍙戦€佷緥绋嬫椂锛屽畠閫氳繃璋冪敤搴曞眰 DMA 鍙戦€佷緥绋嬶紙SGDMA 鎴?MSGDMA锛夊缓绔嬩竴涓彂閫佹弿杩扮锛屽苟
+鍚姩涓€涓彂閫佹搷浣溿€備竴鏃﹀彂閫佸畬鎴愶紝鍙戦€?DMA 閫昏緫浼氶┍鍔ㄤ竴涓腑鏂€傞┍鍔ㄥ湪涓柇澶勭悊閾句笂涓嬫枃涓鐞嗗彂閫佸畬鎴愶紝
+閫氳繃鍥炴敹鍙戦€佸拰璺熻釜鎵€璇锋眰鐨勫彂閫佹搷浣滄墍闇€鐨勮祫婧愩€?
+### 4.2. 鎺ユ敹杩囩▼
 
-### 4.1. 发送过程
+椹卞姩灏嗗湪椹卞姩鍒濆鍖栨湡闂村悜鎺ユ敹 DMA 閫昏緫鎶曢€掓帴鏀剁紦鍐插尯銆傛牴鎹簳灞?DMA 閫昏緫锛圡SGDMA 鑳藉鎺掗槦鎺ユ敹缂撳啿鍖猴紝
+SGDMA 鏃犳硶鍚?SGDMA 鎺ユ敹閫昏緫鎺掗槦鎺ユ敹缂撳啿鍖猴級锛屾帴鏀剁紦鍐插尯鍙兘鎺掗槦涔熷彲鑳戒笉鎺掗槦銆傚綋鏀跺埌涓€涓暟鎹寘鏃讹紝DMA
+閫昏緫鐢熸垚涓€涓腑鏂€傞┍鍔ㄩ€氳繃鑾峰彇 DMA 鎺ユ敹閫昏緫鐘舵€佹潵澶勭悊鎺ユ敹涓柇锛屾敹鍓叉帴鏀跺畬鎴愰」锛岀洿鍒版病鏈夋洿澶氭帴鏀跺畬鎴?椤瑰彲鐢ㄣ€?
+### 4.3. 涓柇缂撳拰
 
-当内核调用驱动的发送例程时，它通过调用底层 DMA 发送例程（SGDMA 或 MSGDMA）建立一个发送描述符，并
-启动一个发送操作。一旦发送完成，发送 DMA 逻辑会驱动一个中断。驱动在中断处理链上下文中处理发送完成，
-通过回收发送和跟踪所请求的发送操作所需的资源。
+椹卞姩鑳藉浣跨敤 NAPI 涓烘帴鏀舵搷浣滅紦鍜屽叾 DMA 涓柇鏁伴噺銆傜洰鍓嶄笉鏀寔鍙戦€佹搷浣滅殑涓柇缂撳拰锛屼絾灏嗚娣诲姞鍒版湭鏉ョ殑
+缁存姢鐗堟湰涓€?
+### 4.4) Ethtool 鏀寔
 
-### 4.2. 接收过程
+鏀寔 Ethtool銆傚彲浠ヤ娇鐢?ethtool -S ethX 鍛戒护鑾峰彇椹卞姩缁熻淇℃伅鍜屽唴閮ㄩ敊璇€傚彲浠ヨ浆鍌ㄥ瘎瀛樺櫒绛夈€?
+### 4.5) PHY 鏀寔
 
-驱动将在驱动初始化期间向接收 DMA 逻辑投递接收缓冲区。根据底层 DMA 逻辑（MSGDMA 能够排队接收缓冲区，
-SGDMA 无法向 SGDMA 接收逻辑排队接收缓冲区），接收缓冲区可能排队也可能不排队。当收到一个数据包时，DMA
-逻辑生成一个中断。驱动通过获取 DMA 接收逻辑状态来处理接收中断，收割接收完成项，直到没有更多接收完成
-项可用。
-
-### 4.3. 中断缓和
-
-驱动能够使用 NAPI 为接收操作缓和其 DMA 中断数量。目前不支持发送操作的中断缓和，但将被添加到未来的
-维护版本中。
-
-### 4.4) Ethtool 支持
-
-支持 Ethtool。可以使用 ethtool -S ethX 命令获取驱动统计信息和内部错误。可以转储寄存器等。
-
-### 4.5) PHY 支持
-
-驱动与 PAL 兼容，可与 PHY 和 GPHY 设备一起工作。
-
-### 4.7) 源文件列表：
+椹卞姩涓?PAL 鍏煎锛屽彲涓?PHY 鍜?GPHY 璁惧涓€璧峰伐浣溿€?
+### 4.7) 婧愭枃浠跺垪琛細
 
  - Kconfig
  - Makefile
- - altera_tse_main.c: 主网络设备故障驱动
- - altera_tse_ethtool.c: ethtool 支持
- - altera_tse.h: 私有驱动结构和常见定义
- - altera_msgdma.h: MSGDMA 实现函数定义
- - altera_sgdma.h: SGDMA 实现函数定义
- - altera_msgdma.c: MSGDMA 实现
- - altera_sgdma.c: SGDMA 实现
- - altera_sgdmahw.h: SGDMA 寄存器和描述符定义
- - altera_msgdmahw.h: MSGDMA 寄存器和描述符定义
- - altera_utils.c: 驱动工具函数
- - altera_utils.h: 驱动工具函数定义
+ - altera_tse_main.c: 涓荤綉缁滆澶囨晠闅滈┍鍔? - altera_tse_ethtool.c: ethtool 鏀寔
+ - altera_tse.h: 绉佹湁椹卞姩缁撴瀯鍜屽父瑙佸畾涔? - altera_msgdma.h: MSGDMA 瀹炵幇鍑芥暟瀹氫箟
+ - altera_sgdma.h: SGDMA 瀹炵幇鍑芥暟瀹氫箟
+ - altera_msgdma.c: MSGDMA 瀹炵幇
+ - altera_sgdma.c: SGDMA 瀹炵幇
+ - altera_sgdmahw.h: SGDMA 瀵勫瓨鍣ㄥ拰鎻忚堪绗﹀畾涔? - altera_msgdmahw.h: MSGDMA 瀵勫瓨鍣ㄥ拰鎻忚堪绗﹀畾涔? - altera_utils.c: 椹卞姩宸ュ叿鍑芥暟
+ - altera_utils.h: 椹卞姩宸ュ叿鍑芥暟瀹氫箟
 
-## 5. 调试信息
+## 5. 璋冭瘯淇℃伅
 
 
-驱动导出调试信息，例如内部统计、调试信息、MAC 和 DMA 寄存器等。
+椹卞姩瀵煎嚭璋冭瘯淇℃伅锛屼緥濡傚唴閮ㄧ粺璁°€佽皟璇曚俊鎭€丮AC 鍜?DMA 瀵勫瓨鍣ㄧ瓑銆?
+鐢ㄦ埛鍙互浣跨敤 ethtool 鏀寔鏉ヨ幏鍙栫粺璁′俊鎭細
+渚嬪浣跨敤锛歟thtool -S ethX锛堟樉绀虹粺璁¤鏁板櫒锛?鎴栨煡鐪?MAC 瀵勫瓨鍣細渚嬪浣跨敤锛歟thtool -d ethX
 
-用户可以使用 ethtool 支持来获取统计信息：
-例如使用：ethtool -S ethX（显示统计计数器）
-或查看 MAC 寄存器：例如使用：ethtool -d ethX
-
-开发者还可以使用“debug”模块参数来获取更多调试信息。
-
-## 6. 统计支持
+寮€鍙戣€呰繕鍙互浣跨敤鈥渄ebug鈥濇ā鍧楀弬鏁版潵鑾峰彇鏇村璋冭瘯淇℃伅銆?
+## 6. 缁熻鏀寔
 
 
-控制器和驱动支持 IEEE 标准定义的统计、RFC 定义的统计以及驱动或 Altera 定义的统计的混合。包含这些统计
-标准定义的四个规范如下：
+鎺у埗鍣ㄥ拰椹卞姩鏀寔 IEEE 鏍囧噯瀹氫箟鐨勭粺璁°€丷FC 瀹氫箟鐨勭粺璁′互鍙婇┍鍔ㄦ垨 Altera 瀹氫箟鐨勭粺璁＄殑娣峰悎銆傚寘鍚繖浜涚粺璁?鏍囧噯瀹氫箟鐨勫洓涓鑼冨涓嬶細
 
- - IEEE 802.3-2012 - IEEE 以太网标准。
- - RFC 2863，位于 http://www.rfc-editor.org/rfc/rfc2863.txt。
- - RFC 2819，位于 http://www.rfc-editor.org/rfc/rfc2819.txt。
- - Altera 三速以太网用户指南，位于 http://www.altera.com
+ - IEEE 802.3-2012 - IEEE 浠ュお缃戞爣鍑嗐€? - RFC 2863锛屼綅浜?http://www.rfc-editor.org/rfc/rfc2863.txt銆? - RFC 2819锛屼綅浜?http://www.rfc-editor.org/rfc/rfc2819.txt銆? - Altera 涓夐€熶互澶綉鐢ㄦ埛鎸囧崡锛屼綅浜?http://www.altera.com
 
-TSE 和设备驱动支持的统计如下：
-
-"tx_packets" 等价于 IEEE 802.3-2012 第 5.2.2.1.2 节中定义的 aFramesTransmittedOK。此统计是成功发送的
-帧的计数。
-
-"rx_packets" 等价于 IEEE 802.3-2012 第 5.2.2.1.5 节中定义的 aFramesReceivedOK。此统计是成功接收到的
-帧的计数。此计数不包括任何错误包，例如 CRC 错误、长度错误或对齐错误。
-
-"rx_crc_errors" 等价于 IEEE 802.3-2012 第 5.2.2.1.6 节中定义的 aFrameCheckSequenceErrors。此统计是
-在接收时长度为整数个字节且未通过 CRC 检验的帧的计数。
-
-"rx_align_errors" 等价于 IEEE 802.3-2012 第 5.2.2.1.7 节中定义的 aAlignmentErrors。此统计是长度不是整数
-个字节且在接收时未通过 CRC 检验的帧的计数。
-
-"tx_bytes" 等价于 IEEE 802.3-2012 第 5.2.2.1.8 节中定义的 aOctetsTransmittedOK。此统计是从接口成功发送的
-数据和填充字节的计数。
-
-"rx_bytes" 等价于 IEEE 802.3-2012 第 5.2.2.1.14 节中定义的 aOctetsReceivedOK。此统计是控制器成功接收的
-数据和填充字节的计数。
-
-"tx_pause" 等价于 IEEE 802.3-2012 第 30.3.4.2 节中定义的 aPAUSEMACCtrlFramesTransmitted。此统计是从网络
-控制器发送的 PAUSE 帧的计数。
-
-"rx_pause" 等价于 IEEE 802.3-2012 第 30.3.4.3 节中定义的 aPAUSEMACCtrlFramesReceived。此统计是网络控制器
-接收的 PAUSE 帧的计数。
-
-"rx_errors" 等价于 RFC 2863 中定义的 ifInErrors。此统计是接收到的、因包含错误而无法递交给更高层协议的
-数据包的数量。
-
-"tx_errors" 等价于 RFC 2863 中定义的 ifOutErrors。此统计是因错误而无法发送的报文数量。
-
-"rx_unicast" 等价于 RFC 2863 中定义的 ifInUcastPkts。此统计是接收到的、未寻址到广播地址或多播组的报文
-数量。
-
-"rx_multicast" 等价于 RFC 2863 中定义的 ifInMulticastPkts。此统计是接收到的、寻址到多播地址组的报文
-数量。
-
-"rx_broadcast" 等价于 RFC 2863 中定义的 ifInBroadcastPkts。此统计是接收到的、寻址到广播地址的报文数量。
-
-"tx_discards" 等价于 RFC 2863 中定义的 ifOutDiscards。此统计是即使未检测到错误也未发送的出站数据包数量。
-可能发生这种情况的一个例子是为了释放内部缓冲区空间。
-
-"tx_unicast" 等价于 RFC 2863 中定义的 ifOutUcastPkts。此统计计数未寻址到多播组或广播地址的已发送报文
-数量。
-
-"tx_multicast" 等价于 RFC 2863 中定义的 ifOutMulticastPkts。此统计计数寻址到多播组的已发送报文数量。
-
-"tx_broadcast" 等价于 RFC 2863 中定义的 ifOutBroadcastPkts。此统计计数寻址到广播地址的已发送报文数量。
-
-"ether_drops" 等价于 RFC 2819 中定义的 etherStatsDropEvents。此统计因缺乏内部控制器资源而丢弃的数据包
-数量。
-
-"rx_total_bytes" 等价于 RFC 2819 中定义的 etherStatsOctets。此统计计数控制器接收的总字节数，包括错误和
-丢弃的数据包。
-
-"rx_total_packets" 等价于 RFC 2819 中定义的 etherStatsPkts。此统计计数控制器接收的总数据包数，包括错误、
-丢弃、单播、多播和广播数据包。
-
-"rx_undersize" 等价于 RFC 2819 中定义的 etherStatsUndersizePkts。此统计计数接收到的、长度小于 64 字节的
-格式正确的数据包数量。
-
-"rx_oversize" 等价于 RFC 2819 中定义的 etherStatsOversizePkts。此统计计数接收到的、长度大于 1518 字节的
-格式正确的数据包数量。
-
-"rx_64_bytes" 等价于 RFC 2819 中定义的 etherStatsPkts64Octets。此统计计数接收到的、长度为 64 字节的数据包
-总数。
-
-"rx_65_127_bytes" 等价于 RFC 2819 中定义的 etherStatsPkts65to127Octets。此统计计数接收到的、长度在 65 到
-127 字节（含）之间的数据包总数。
-
-"rx_128_255_bytes" 等价于 RFC 2819 中定义的 etherStatsPkts128to255Octets。此统计计数接收到的、长度在 128 到
-255 字节（含）之间的数据包总数。
-
-"rx_256_511_bytes" 等价于 RFC 2819 中定义的 etherStatsPkts256to511Octets。此统计计数接收到的、长度在 256 到
-511 字节（含）之间的数据包总数。
-
-"rx_512_1023_bytes" 等价于 RFC 2819 中定义的 etherStatsPkts512to1023Octets。此统计计数接收到的、长度在 512 到
-1023 字节（含）之间的数据包总数。
-
-"rx_1024_1518_bytes" 等价于 RFC 2819 中定义的 etherStatsPkts1024to1518Octets。此统计计数接收到的、长度在 1024 到
-1518 字节（含）之间的数据包总数。
-
-"rx_gte_1519_bytes" 是 Altera TSE 特有行为定义的统计。此统计计数长度在 1519 和 frm_length 寄存器中配置的最大
-帧长度之间接收到的正常和错误帧的数量。更多细节请参阅 Altera TSE 用户指南。
-
-"rx_jabbers" 等价于 RFC 2819 中定义的 etherStatsJabbers。此统计计数接收到的、长度大于 1518 字节、并且具有
-整数个字节的错误 CRC（CRC 错误）或非整数个字节的错误 CRC（对齐错误）的数据包总数。
-
-"rx_runts" 等价于 RFC 2819 中定义的 etherStatsFragments。此统计计数接收到的、长度小于 64 字节、并且具有整数
-个字节的错误 CRC（CRC 错误）或非整数个字节的错误 CRC（对齐错误）的数据包总数。
+TSE 鍜岃澶囬┍鍔ㄦ敮鎸佺殑缁熻濡備笅锛?
+"tx_packets" 绛変环浜?IEEE 802.3-2012 绗?5.2.2.1.2 鑺備腑瀹氫箟鐨?aFramesTransmittedOK銆傛缁熻鏄垚鍔熷彂閫佺殑
+甯х殑璁℃暟銆?
+"rx_packets" 绛変环浜?IEEE 802.3-2012 绗?5.2.2.1.5 鑺備腑瀹氫箟鐨?aFramesReceivedOK銆傛缁熻鏄垚鍔熸帴鏀跺埌鐨?甯х殑璁℃暟銆傛璁℃暟涓嶅寘鎷换浣曢敊璇寘锛屼緥濡?CRC 閿欒銆侀暱搴﹂敊璇垨瀵归綈閿欒銆?
+"rx_crc_errors" 绛変环浜?IEEE 802.3-2012 绗?5.2.2.1.6 鑺備腑瀹氫箟鐨?aFrameCheckSequenceErrors銆傛缁熻鏄?鍦ㄦ帴鏀舵椂闀垮害涓烘暣鏁颁釜瀛楄妭涓旀湭閫氳繃 CRC 妫€楠岀殑甯х殑璁℃暟銆?
+"rx_align_errors" 绛変环浜?IEEE 802.3-2012 绗?5.2.2.1.7 鑺備腑瀹氫箟鐨?aAlignmentErrors銆傛缁熻鏄暱搴︿笉鏄暣鏁?涓瓧鑺備笖鍦ㄦ帴鏀舵椂鏈€氳繃 CRC 妫€楠岀殑甯х殑璁℃暟銆?
+"tx_bytes" 绛変环浜?IEEE 802.3-2012 绗?5.2.2.1.8 鑺備腑瀹氫箟鐨?aOctetsTransmittedOK銆傛缁熻鏄粠鎺ュ彛鎴愬姛鍙戦€佺殑
+鏁版嵁鍜屽～鍏呭瓧鑺傜殑璁℃暟銆?
+"rx_bytes" 绛変环浜?IEEE 802.3-2012 绗?5.2.2.1.14 鑺備腑瀹氫箟鐨?aOctetsReceivedOK銆傛缁熻鏄帶鍒跺櫒鎴愬姛鎺ユ敹鐨?鏁版嵁鍜屽～鍏呭瓧鑺傜殑璁℃暟銆?
+"tx_pause" 绛変环浜?IEEE 802.3-2012 绗?30.3.4.2 鑺備腑瀹氫箟鐨?aPAUSEMACCtrlFramesTransmitted銆傛缁熻鏄粠缃戠粶
+鎺у埗鍣ㄥ彂閫佺殑 PAUSE 甯х殑璁℃暟銆?
+"rx_pause" 绛変环浜?IEEE 802.3-2012 绗?30.3.4.3 鑺備腑瀹氫箟鐨?aPAUSEMACCtrlFramesReceived銆傛缁熻鏄綉缁滄帶鍒跺櫒
+鎺ユ敹鐨?PAUSE 甯х殑璁℃暟銆?
+"rx_errors" 绛変环浜?RFC 2863 涓畾涔夌殑 ifInErrors銆傛缁熻鏄帴鏀跺埌鐨勩€佸洜鍖呭惈閿欒鑰屾棤娉曢€掍氦缁欐洿楂樺眰鍗忚鐨?鏁版嵁鍖呯殑鏁伴噺銆?
+"tx_errors" 绛変环浜?RFC 2863 涓畾涔夌殑 ifOutErrors銆傛缁熻鏄洜閿欒鑰屾棤娉曞彂閫佺殑鎶ユ枃鏁伴噺銆?
+"rx_unicast" 绛変环浜?RFC 2863 涓畾涔夌殑 ifInUcastPkts銆傛缁熻鏄帴鏀跺埌鐨勩€佹湭瀵诲潃鍒板箍鎾湴鍧€鎴栧鎾粍鐨勬姤鏂?鏁伴噺銆?
+"rx_multicast" 绛変环浜?RFC 2863 涓畾涔夌殑 ifInMulticastPkts銆傛缁熻鏄帴鏀跺埌鐨勩€佸鍧€鍒板鎾湴鍧€缁勭殑鎶ユ枃
+鏁伴噺銆?
+"rx_broadcast" 绛変环浜?RFC 2863 涓畾涔夌殑 ifInBroadcastPkts銆傛缁熻鏄帴鏀跺埌鐨勩€佸鍧€鍒板箍鎾湴鍧€鐨勬姤鏂囨暟閲忋€?
+"tx_discards" 绛変环浜?RFC 2863 涓畾涔夌殑 ifOutDiscards銆傛缁熻鏄嵆浣挎湭妫€娴嬪埌閿欒涔熸湭鍙戦€佺殑鍑虹珯鏁版嵁鍖呮暟閲忋€?鍙兘鍙戠敓杩欑鎯呭喌鐨勪竴涓緥瀛愭槸涓轰簡閲婃斁鍐呴儴缂撳啿鍖虹┖闂淬€?
+"tx_unicast" 绛変环浜?RFC 2863 涓畾涔夌殑 ifOutUcastPkts銆傛缁熻璁℃暟鏈鍧€鍒板鎾粍鎴栧箍鎾湴鍧€鐨勫凡鍙戦€佹姤鏂?鏁伴噺銆?
+"tx_multicast" 绛変环浜?RFC 2863 涓畾涔夌殑 ifOutMulticastPkts銆傛缁熻璁℃暟瀵诲潃鍒板鎾粍鐨勫凡鍙戦€佹姤鏂囨暟閲忋€?
+"tx_broadcast" 绛変环浜?RFC 2863 涓畾涔夌殑 ifOutBroadcastPkts銆傛缁熻璁℃暟瀵诲潃鍒板箍鎾湴鍧€鐨勫凡鍙戦€佹姤鏂囨暟閲忋€?
+"ether_drops" 绛変环浜?RFC 2819 涓畾涔夌殑 etherStatsDropEvents銆傛缁熻鍥犵己涔忓唴閮ㄦ帶鍒跺櫒璧勬簮鑰屼涪寮冪殑鏁版嵁鍖?鏁伴噺銆?
+"rx_total_bytes" 绛変环浜?RFC 2819 涓畾涔夌殑 etherStatsOctets銆傛缁熻璁℃暟鎺у埗鍣ㄦ帴鏀剁殑鎬诲瓧鑺傛暟锛屽寘鎷敊璇拰
+涓㈠純鐨勬暟鎹寘銆?
+"rx_total_packets" 绛変环浜?RFC 2819 涓畾涔夌殑 etherStatsPkts銆傛缁熻璁℃暟鎺у埗鍣ㄦ帴鏀剁殑鎬绘暟鎹寘鏁帮紝鍖呮嫭閿欒銆?涓㈠純銆佸崟鎾€佸鎾拰骞挎挱鏁版嵁鍖呫€?
+"rx_undersize" 绛変环浜?RFC 2819 涓畾涔夌殑 etherStatsUndersizePkts銆傛缁熻璁℃暟鎺ユ敹鍒扮殑銆侀暱搴﹀皬浜?64 瀛楄妭鐨?鏍煎紡姝ｇ‘鐨勬暟鎹寘鏁伴噺銆?
+"rx_oversize" 绛変环浜?RFC 2819 涓畾涔夌殑 etherStatsOversizePkts銆傛缁熻璁℃暟鎺ユ敹鍒扮殑銆侀暱搴﹀ぇ浜?1518 瀛楄妭鐨?鏍煎紡姝ｇ‘鐨勬暟鎹寘鏁伴噺銆?
+"rx_64_bytes" 绛変环浜?RFC 2819 涓畾涔夌殑 etherStatsPkts64Octets銆傛缁熻璁℃暟鎺ユ敹鍒扮殑銆侀暱搴︿负 64 瀛楄妭鐨勬暟鎹寘
+鎬绘暟銆?
+"rx_65_127_bytes" 绛変环浜?RFC 2819 涓畾涔夌殑 etherStatsPkts65to127Octets銆傛缁熻璁℃暟鎺ユ敹鍒扮殑銆侀暱搴﹀湪 65 鍒?127 瀛楄妭锛堝惈锛変箣闂寸殑鏁版嵁鍖呮€绘暟銆?
+"rx_128_255_bytes" 绛変环浜?RFC 2819 涓畾涔夌殑 etherStatsPkts128to255Octets銆傛缁熻璁℃暟鎺ユ敹鍒扮殑銆侀暱搴﹀湪 128 鍒?255 瀛楄妭锛堝惈锛変箣闂寸殑鏁版嵁鍖呮€绘暟銆?
+"rx_256_511_bytes" 绛変环浜?RFC 2819 涓畾涔夌殑 etherStatsPkts256to511Octets銆傛缁熻璁℃暟鎺ユ敹鍒扮殑銆侀暱搴﹀湪 256 鍒?511 瀛楄妭锛堝惈锛変箣闂寸殑鏁版嵁鍖呮€绘暟銆?
+"rx_512_1023_bytes" 绛変环浜?RFC 2819 涓畾涔夌殑 etherStatsPkts512to1023Octets銆傛缁熻璁℃暟鎺ユ敹鍒扮殑銆侀暱搴﹀湪 512 鍒?1023 瀛楄妭锛堝惈锛変箣闂寸殑鏁版嵁鍖呮€绘暟銆?
+"rx_1024_1518_bytes" 绛変环浜?RFC 2819 涓畾涔夌殑 etherStatsPkts1024to1518Octets銆傛缁熻璁℃暟鎺ユ敹鍒扮殑銆侀暱搴﹀湪 1024 鍒?1518 瀛楄妭锛堝惈锛変箣闂寸殑鏁版嵁鍖呮€绘暟銆?
+"rx_gte_1519_bytes" 鏄?Altera TSE 鐗规湁琛屼负瀹氫箟鐨勭粺璁°€傛缁熻璁℃暟闀垮害鍦?1519 鍜?frm_length 瀵勫瓨鍣ㄤ腑閰嶇疆鐨勬渶澶?甯ч暱搴︿箣闂存帴鏀跺埌鐨勬甯稿拰閿欒甯х殑鏁伴噺銆傛洿澶氱粏鑺傝鍙傞槄 Altera TSE 鐢ㄦ埛鎸囧崡銆?
+"rx_jabbers" 绛変环浜?RFC 2819 涓畾涔夌殑 etherStatsJabbers銆傛缁熻璁℃暟鎺ユ敹鍒扮殑銆侀暱搴﹀ぇ浜?1518 瀛楄妭銆佸苟涓斿叿鏈?鏁存暟涓瓧鑺傜殑閿欒 CRC锛圕RC 閿欒锛夋垨闈炴暣鏁颁釜瀛楄妭鐨勯敊璇?CRC锛堝榻愰敊璇級鐨勬暟鎹寘鎬绘暟銆?
+"rx_runts" 绛変环浜?RFC 2819 涓畾涔夌殑 etherStatsFragments銆傛缁熻璁℃暟鎺ユ敹鍒扮殑銆侀暱搴﹀皬浜?64 瀛楄妭銆佸苟涓斿叿鏈夋暣鏁?涓瓧鑺傜殑閿欒 CRC锛圕RC 閿欒锛夋垨闈炴暣鏁颁釜瀛楄妭鐨勯敊璇?CRC锛堝榻愰敊璇級鐨勬暟鎹寘鎬绘暟銆?

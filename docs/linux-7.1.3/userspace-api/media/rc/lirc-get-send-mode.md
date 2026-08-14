@@ -1,12 +1,11 @@
-######## ioctls LIRC_GET_SEND_MODE and LIRC_SET_SEND_MODE
+﻿######## ioctls LIRC_GET_SEND_MODE and LIRC_SET_SEND_MODE
 
 
-## 名称
+## 鍚嶇О
 
 
-LIRC_GET_SEND_MODE/LIRC_SET_SEND_MODE - 获取/设置当前发送模式。
-
-## 概要
+LIRC_GET_SEND_MODE/LIRC_SET_SEND_MODE - 鑾峰彇/璁剧疆褰撳墠鍙戦€佹ā寮忋€?
+## 姒傝
 
 
 `int ioctl(int fd, LIRC_GET_SEND_MODE, __u32 *mode)`
@@ -14,24 +13,19 @@ LIRC_GET_SEND_MODE/LIRC_SET_SEND_MODE - 获取/设置当前发送模式。
 
 `int ioctl(int fd, LIRC_SET_SEND_MODE, __u32 *mode)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    open() 返回的文件描述符。
-
+    open() 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `mode`
-    用于发送的 mode。
+    鐢ㄤ簬鍙戦€佺殑 mode銆?
+## 鎻忚堪
 
-## 描述
 
-
-获取/设置当前发送模式。
-
-根据驱动的不同，IR 发送仅支持 LIRC_MODE_PULSE <lirc-mode-pulse> 与 LIRC_MODE_SCANCODE <lirc-mode-scancode>。使用 lirc_get_features 可查明驱动支持哪些模式。
-
-## 返回值
-
+鑾峰彇/璁剧疆褰撳墠鍙戦€佹ā寮忋€?
+鏍规嵁椹卞姩鐨勪笉鍚岋紝IR 鍙戦€佷粎鏀寔 LIRC_MODE_PULSE <lirc-mode-pulse> 涓?LIRC_MODE_SCANCODE <lirc-mode-scancode>銆備娇鐢?lirc_get_features 鍙煡鏄庨┍鍔ㄦ敮鎸佸摢浜涙ā寮忋€?
+## 杩斿洖鍊?
 
     :header-rows:  0
     :stub-columns: 0
@@ -40,16 +34,14 @@ LIRC_GET_SEND_MODE/LIRC_SET_SEND_MODE - 获取/设置当前发送模式。
 
        - `ENODEV`
 
-       - 设备不可用。
-
+       - 璁惧涓嶅彲鐢ㄣ€?
     - .. row 2
 
        - `ENOTTY`
 
-       - 设备不支持发送。
-
+       - 璁惧涓嶆敮鎸佸彂閫併€?
     - .. row 3
 
        - `EINVAL`
 
-       - 无效的模式或该设备的无效模式。
+       - 鏃犳晥鐨勬ā寮忔垨璇ヨ澶囩殑鏃犳晥妯″紡銆?

@@ -1,51 +1,41 @@
-
+﻿
 
 
 ######## cec ioctl()
 
 
-## 名称
+## 鍚嶇О
 
 
-cec-ioctl - 控制 cec 设备
+cec-ioctl - 鎺у埗 cec 璁惧
 
-## 概要
+## 姒傝
 
 
     #include <sys/ioctl.h>
 
 `int ioctl(int fd, int request, void *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    `open()` 返回的文件描述符。
-
+    `open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `request`
-    在 cec.h 头文件中定义的 CEC ioctl 请求码，例如
-    CEC_ADAP_G_CAPS <CEC_ADAP_G_CAPS>。
-
+    鍦?cec.h 澶存枃浠朵腑瀹氫箟鐨?CEC ioctl 璇锋眰鐮侊紝渚嬪
+    CEC_ADAP_G_CAPS <CEC_ADAP_G_CAPS>銆?
 `argp`
-    指向请求特定结构的指针。
-
-## 描述
-
-
-`ioctl()` 函数操纵 cec 设备参数。参数 `fd` 必须是一个已打开的文件描述符。
-
-ioctl `request` 码指定要调用的 cec 函数。其中编码了参数是输入、输出还是
-读写参数，以及参数 `argp` 的大小（字节数）。
-
-指定 cec ioctl 请求及其参数的宏与结构定义位于 cec.h 头文件中。所有 cec
-ioctl 请求及其各自的函数与参数在 cec-user-func 中说明。
-
-## 返回值
+    鎸囧悜璇锋眰鐗瑰畾缁撴瀯鐨勬寚閽堛€?
+## 鎻忚堪
 
 
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 章节中描述。
+`ioctl()` 鍑芥暟鎿嶇旱 cec 璁惧鍙傛暟銆傚弬鏁?`fd` 蹇呴』鏄竴涓凡鎵撳紑鐨勬枃浠舵弿杩扮銆?
+ioctl `request` 鐮佹寚瀹氳璋冪敤鐨?cec 鍑芥暟銆傚叾涓紪鐮佷簡鍙傛暟鏄緭鍏ャ€佽緭鍑鸿繕鏄?璇诲啓鍙傛暟锛屼互鍙婂弬鏁?`argp` 鐨勫ぇ灏忥紙瀛楄妭鏁帮級銆?
+鎸囧畾 cec ioctl 璇锋眰鍙婂叾鍙傛暟鐨勫畯涓庣粨鏋勫畾涔変綅浜?cec.h 澶存枃浠朵腑銆傛墍鏈?cec
+ioctl 璇锋眰鍙婂叾鍚勮嚜鐨勫嚱鏁颁笌鍙傛暟鍦?cec-user-func 涓鏄庛€?
+## 杩斿洖鍊?
 
-请求特定的错误码在各请求的描述中列出。
-
-当采用输出或读写参数的 ioctl 失败时，该参数保持不变。
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+璇锋眰鐗瑰畾鐨勯敊璇爜鍦ㄥ悇璇锋眰鐨勬弿杩颁腑鍒楀嚭銆?
+褰撻噰鐢ㄨ緭鍑烘垨璇诲啓鍙傛暟鐨?ioctl 澶辫触鏃讹紝璇ュ弬鏁颁繚鎸佷笉鍙樸€?

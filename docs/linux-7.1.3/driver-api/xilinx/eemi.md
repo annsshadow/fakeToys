@@ -1,29 +1,29 @@
-## Xilinx Zynq MPSoC EEMI 文档
+﻿## Xilinx Zynq MPSoC EEMI 鏂囨。
 
 
-### Xilinx Zynq MPSoC 固件接口
+### Xilinx Zynq MPSoC 鍥轰欢鎺ュ彛
 
-zynqmp-firmware 节点描述了与平台固件（platform firmware）的接口。ZynqMP 有一个与安全管理固件通信的接口。固件驱动提供了访问固件 API 的接口。任何驱动都可以使用接口 API 与 PMC（平台管理控制器，Platform Management Controller）通信。
+zynqmp-firmware 鑺傜偣鎻忚堪浜嗕笌骞冲彴鍥轰欢锛坧latform firmware锛夌殑鎺ュ彛銆俍ynqMP 鏈変竴涓笌瀹夊叏绠＄悊鍥轰欢閫氫俊鐨勬帴鍙ｃ€傚浐浠堕┍鍔ㄦ彁渚涗簡璁块棶鍥轰欢 API 鐨勬帴鍙ｃ€備换浣曢┍鍔ㄩ兘鍙互浣跨敤鎺ュ彛 API 涓?PMC锛堝钩鍙扮鐞嗘帶鍒跺櫒锛孭latform Management Controller锛夐€氫俊銆?
 
-### 嵌入式能源管理接口（EEMI）
+### 宓屽叆寮忚兘婧愮鐞嗘帴鍙ｏ紙EEMI锛?
 
-嵌入式能源管理接口用于允许在芯片或设备上不同处理簇上运行的软件组件与设备上的电源管理控制器（PMC）通信，以发出或响应电源管理请求。
+宓屽叆寮忚兘婧愮鐞嗘帴鍙ｇ敤浜庡厑璁稿湪鑺墖鎴栬澶囦笂涓嶅悓澶勭悊绨囦笂杩愯鐨勮蒋浠剁粍浠朵笌璁惧涓婄殑鐢垫簮绠＄悊鎺у埗鍣紙PMC锛夐€氫俊锛屼互鍙戝嚭鎴栧搷搴旂數婧愮鐞嗚姹傘€?
 
-任何希望通过 EEMI API 与 PMC 通信的驱动都使用为每个函数提供的函数。
+浠讳綍甯屾湜閫氳繃 EEMI API 涓?PMC 閫氫俊鐨勯┍鍔ㄩ兘浣跨敤涓烘瘡涓嚱鏁版彁渚涚殑鍑芥暟銆?
 
 ### IOCTL
 
-IOCTL API 用于设备控制和配置。它不是系统 IOCTL，而是 EEMI API。该 API 可由主设备（master）用于控制任何特定于设备的配置。IOCTL 定义可能特定于平台。该 API 还管理共享设备配置。
+IOCTL API 鐢ㄤ簬璁惧鎺у埗鍜岄厤缃€傚畠涓嶆槸绯荤粺 IOCTL锛岃€屾槸 EEMI API銆傝 API 鍙敱涓昏澶囷紙master锛夌敤浜庢帶鍒朵换浣曠壒瀹氫簬璁惧鐨勯厤缃€侷OCTL 瀹氫箟鍙兘鐗瑰畾浜庡钩鍙般€傝 API 杩樼鐞嗗叡浜澶囬厤缃€?
 
-以下 IOCTL ID 对设备控制有效：
+浠ヤ笅 IOCTL ID 瀵硅澶囨帶鍒舵湁鏁堬細
 - IOCTL_SET_PLL_FRAC_MODE	8
 - IOCTL_GET_PLL_FRAC_MODE	9
 - IOCTL_SET_PLL_FRAC_DATA	10
 - IOCTL_GET_PLL_FRAC_DATA	11
 
-有关 IOCTL 特定参数和其他 EEMI API，请参阅 EEMI API 指南[^0^]。
+鏈夊叧 IOCTL 鐗瑰畾鍙傛暟鍜屽叾浠?EEMI API锛岃鍙傞槄 EEMI API 鎸囧崡[^0^]銆?
 
-### 参考
+### 鍙傝€?
 
-[^0^] 嵌入式能源管理接口（EEMI）API 指南：
+[^0^] 宓屽叆寮忚兘婧愮鐞嗘帴鍙ｏ紙EEMI锛堿PI 鎸囧崡锛?
     https://www.xilinx.com/support/documentation/user_guides/ug1200-eemi-api.pdf

@@ -1,104 +1,92 @@
-## btmrvl 驱动
+﻿## btmrvl 椹卞姩
 
 
-所有命令都通过 debugfs 接口使用。
+鎵€鏈夊懡浠ら兘閫氳繃 debugfs 鎺ュ彛浣跨敤銆?
+## 璁剧疆/鑾峰彇椹卞姩閰嶇疆
 
-## 设置/获取驱动配置
 
-
-路径：/debug/btmrvl/config/
+璺緞锛?debug/btmrvl/config/
 
 gpiogap=[n], hscfgcmd
 ```
 	bit 8:0  -- Gap
 	bit 16:8 -- GPIO
 
-	其中 GPIO 是用于唤醒主机的 GPIO 引脚编号。
-	可以是任意有效 GPIO 引脚号（例如 0-7）或 0xff（此时改用 SDIO 接口
-	来唤醒）。
+	鍏朵腑 GPIO 鏄敤浜庡敜閱掍富鏈虹殑 GPIO 寮曡剼缂栧彿銆?	鍙互鏄换鎰忔湁鏁?GPIO 寮曡剼鍙凤紙渚嬪 0-7锛夋垨 0xff锛堟鏃舵敼鐢?SDIO 鎺ュ彛
+	鏉ュ敜閱掞級銆?
+	鍏朵腑 Gap 鏄敜閱掍俊鍙蜂笌鍞ら啋浜嬩欢涔嬮棿鐨勯棿闅旓紙鍗曚綅涓烘绉掞級锛屾垨涓?0xff
+	琛ㄧず鐗规畩鐨勫涓荤潯鐪狅紙host sleep锛夎缃€?
+	鐢ㄦ硶::
 
-	其中 Gap 是唤醒信号与唤醒事件之间的间隔（单位为毫秒），或为 0xff
-	表示特殊的宿主睡眠（host sleep）设置。
-
-	用法::
-
-		# 使用 SDIO 接口唤醒主机并将 GAP 设为 0x80：
-		echo 0xff80 > /debug/btmrvl/config/gpiogap
+		# 浣跨敤 SDIO 鎺ュ彛鍞ら啋涓绘満骞跺皢 GAP 璁句负 0x80锛?		echo 0xff80 > /debug/btmrvl/config/gpiogap
 		echo 1 > /debug/btmrvl/config/hscfgcmd
 
-		# 使用 GPIO 引脚 #3 唤醒主机并将 GAP 设为 0xff：
-		echo 0x03ff >  /debug/btmrvl/config/gpiogap
+		# 浣跨敤 GPIO 寮曡剼 #3 鍞ら啋涓绘満骞跺皢 GAP 璁句负 0xff锛?		echo 0x03ff >  /debug/btmrvl/config/gpiogap
 		echo 1 > /debug/btmrvl/config/hscfgcmd
 
 ```
 psmode=[n], pscmd
-	这些命令用于启用/禁用自动睡眠模式
+	杩欎簺鍛戒护鐢ㄤ簬鍚敤/绂佺敤鑷姩鐫＄湢妯″紡
 
 ```
 
-			1 	-- 启用自动睡眠模式
-			0 	-- 禁用自动睡眠模式
+			1 	-- 鍚敤鑷姩鐫＄湢妯″紡
+			0 	-- 绂佺敤鑷姩鐫＄湢妯″紡
 
-	用法::
+	鐢ㄦ硶::
 
-		# 启用自动睡眠模式
+		# 鍚敤鑷姩鐫＄湢妯″紡
 		echo 1 > /debug/btmrvl/config/psmode
 		echo 1 > /debug/btmrvl/config/pscmd
 
-		# 禁用自动睡眠模式
+		# 绂佺敤鑷姩鐫＄湢妯″紡
 		echo 0 > /debug/btmrvl/config/psmode
 		echo 1 > /debug/btmrvl/config/pscmd
 
 
 ```
 hsmode=[n], hscmd
-	这些命令用于启用宿主睡眠或唤醒固件
-
+	杩欎簺鍛戒护鐢ㄤ簬鍚敤瀹夸富鐫＄湢鎴栧敜閱掑浐浠?
 ```
 
-			1	-- 启用宿主睡眠
-			0	-- 唤醒固件
+			1	-- 鍚敤瀹夸富鐫＄湢
+			0	-- 鍞ら啋鍥轰欢
 
-	用法::
+	鐢ㄦ硶::
 
-		# 启用宿主睡眠
+		# 鍚敤瀹夸富鐫＄湢
 		echo 1 > /debug/btmrvl/config/hsmode
 		echo 1 > /debug/btmrvl/config/hscmd
 
-		# 唤醒固件
+		# 鍞ら啋鍥轰欢
 		echo 0 > /debug/btmrvl/config/hsmode
 		echo 1 > /debug/btmrvl/config/hscmd
 
 
 ```
-## 获取驱动状态
+## 鑾峰彇椹卞姩鐘舵€?
 
-
-路径：/debug/btmrvl/status/
+璺緞锛?debug/btmrvl/status/
 
 ```
 
 	cat /debug/btmrvl/status/<args>
 
 ```
-其中 args 为：
+鍏朵腑 args 涓猴細
 
 curpsmode
-	该命令显示当前的自动睡眠状态。
-
+	璇ュ懡浠ゆ樉绀哄綋鍓嶇殑鑷姩鐫＄湢鐘舵€併€?
 psstate
-	该命令显示电源节省状态。
-
+	璇ュ懡浠ゆ樉绀虹數婧愯妭鐪佺姸鎬併€?
 hsstate
-	该命令显示宿主睡眠状态。
-
+	璇ュ懡浠ゆ樉绀哄涓荤潯鐪犵姸鎬併€?
 txdnldrdy
-	该命令显示 Tx 下载就绪标志的值。
+	璇ュ懡浠ゆ樉绀?Tx 涓嬭浇灏辩华鏍囧織鐨勫€笺€?
+## 鍙戝嚭鍘熷 HCI 鍛戒护
 
-## 发出原始 HCI 命令
 
-
-使用 hcitool 发出原始 HCI 命令，请参阅 hcitool 手册
+浣跨敤 hcitool 鍙戝嚭鍘熷 HCI 鍛戒护锛岃鍙傞槄 hcitool 鎵嬪唽
 
 ```
 
@@ -107,23 +95,21 @@ txdnldrdy
 ```
 ```
 
-	hcitool cmd 0x3f 0x5b 0xf5 0x01 0x00    --启用全部接口
-	hcitool cmd 0x3f 0x5b 0xf5 0x01 0x01    --启用 Wlan 接口
-	hcitool cmd 0x3f 0x5b 0xf5 0x01 0x02    --启用 BT 接口
-	hcitool cmd 0x3f 0x5b 0xf5 0x00 0x00    --禁用全部接口
-	hcitool cmd 0x3f 0x5b 0xf5 0x00 0x01    --禁用 Wlan 接口
-	hcitool cmd 0x3f 0x5b 0xf5 0x00 0x02    --禁用 BT 接口
+	hcitool cmd 0x3f 0x5b 0xf5 0x01 0x00    --鍚敤鍏ㄩ儴鎺ュ彛
+	hcitool cmd 0x3f 0x5b 0xf5 0x01 0x01    --鍚敤 Wlan 鎺ュ彛
+	hcitool cmd 0x3f 0x5b 0xf5 0x01 0x02    --鍚敤 BT 鎺ュ彛
+	hcitool cmd 0x3f 0x5b 0xf5 0x00 0x00    --绂佺敤鍏ㄩ儴鎺ュ彛
+	hcitool cmd 0x3f 0x5b 0xf5 0x00 0x01    --绂佺敤 Wlan 鎺ュ彛
+	hcitool cmd 0x3f 0x5b 0xf5 0x00 0x02    --绂佺敤 BT 鎺ュ彛
 
 ```
-## SD8688 固件
+## SD8688 鍥轰欢
 
 
-镜像文件：
-
+闀滃儚鏂囦欢锛?
 - /lib/firmware/sd8688_helper.bin
 - /lib/firmware/sd8688.bin
 
 
-这些镜像可以从以下地址下载：
-
+杩欎簺闀滃儚鍙互浠庝互涓嬪湴鍧€涓嬭浇锛?
 git.infradead.org/users/dwmw2/linux-firmware.git/libertas/

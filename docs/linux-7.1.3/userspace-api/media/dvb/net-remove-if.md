@@ -1,10 +1,10 @@
-######## ioctl NET_REMOVE_IF
+﻿######## ioctl NET_REMOVE_IF
 
 
 ## Name
 
 
-NET_REMOVE_IF - 移除一个网络接口。
+NET_REMOVE_IF - 绉婚櫎涓€涓綉缁滄帴鍙ｃ€?
 
 ## Synopsis
 
@@ -16,21 +16,21 @@ NET_REMOVE_IF - 移除一个网络接口。
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `net_if`
-    要移除的接口编号
+    瑕佺Щ闄ょ殑鎺ュ彛缂栧彿
 
 ## Description
 
 
-NET_REMOVE_IF ioctl 删除之前通过 NET_ADD_IF <net> 创建的接口。
+NET_REMOVE_IF ioctl 鍒犻櫎涔嬪墠閫氳繃 NET_ADD_IF <net> 鍒涘缓鐨勬帴鍙ｃ€?
 
 ## Return Value
 
 
-成功时返回 0，并填充 `ca_slot_info`。
+鎴愬姛鏃惰繑鍥?0锛屽苟濉厖 `ca_slot_info`銆?
 
-出错时返回 -1，并相应地设置 `errno` 变量。
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
 
-通用错误码在 Generic Error Codes <gen-errors> 章节中描述。
+閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?

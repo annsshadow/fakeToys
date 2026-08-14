@@ -1,5 +1,5 @@
-
-## 视频 模式 Selection 支持 2.13
+﻿锘?
+## 瑙嗛 妯″紡 Selection 鏀寔 2.13
 
 
 :Copyright: |copy| 1995--1999 Martin Mares, <mj@ucw.cz>
@@ -7,22 +7,22 @@
 #### Intro
 
 
-此 small document describes the "视频 模式 Selection" 特性 其
-allows the 使用 的 各种 特殊 视频 modes 受支持 由 the 视频 BIOS. Due
-到 usage 的 the BIOS, the selection 是 limited 到 boot time (之前 the
-内核 decompression starts) 和 works 仅 在 80X86 machines 该 是
-booted through BIOS 固件 (相对于 through UEFI, kexec, 等.).
+姝?small document describes the "瑙嗛 妯″紡 Selection" 鐗规€?鍏?
+allows the 浣跨敤 鐨?鍚勭 鐗规畩 瑙嗛 modes 鍙楁敮鎸?鐢?the 瑙嗛 BIOS. Due
+鍒?usage 鐨?the BIOS, the selection 鏄?limited 鍒?boot time (涔嬪墠 the
+鍐呮牳 decompression starts) 鍜?works 浠?鍦?80X86 machines 璇?鏄?
+booted through BIOS 鍥轰欢 (鐩稿浜?through UEFI, kexec, 绛?).
 
 
-   Short intro 用于 the impatient: Just 使用 vga=ask 用于 the 第一 time,
-   enter `scan` 在 the 视频 模式 prompt, pick the 模式 您 希望 到 使用,
-   remember 其 模式 ID (the four-digit hexadecimal 数字) 和 然后
-   set the vga 参数 到 此 数字 (converted 到 decimal 第一).
+   Short intro 鐢ㄤ簬 the impatient: Just 浣跨敤 vga=ask 鐢ㄤ簬 the 绗竴 time,
+   enter `scan` 鍦?the 瑙嗛 妯″紡 prompt, pick the 妯″紡 鎮?甯屾湜 鍒?浣跨敤,
+   remember 鍏?妯″紡 ID (the four-digit hexadecimal 鏁板瓧) 鍜?鐒跺悗
+   set the vga 鍙傛暟 鍒?姝?鏁板瓧 (converted 鍒?decimal 绗竴).
 
-The 视频 模式 到 为 使用 是 selected 由 一个 内核 参数 其 可 为
-specified 在 the 内核 Makefile (the SVGA_模式=... line) 或 由 the "vga=..."
-选项 的 LILO (或 一些 其他 boot loader 您 使用) 或 由 the "xrandr" utility
-(present 在 标准 Linux utility packages). 您可以 使用 the 以下 值
+The 瑙嗛 妯″紡 鍒?涓?浣跨敤 鏄?selected 鐢?涓€涓?鍐呮牳 鍙傛暟 鍏?鍙?涓?
+specified 鍦?the 鍐呮牳 Makefile (the SVGA_妯″紡=... line) 鎴?鐢?the "vga=..."
+閫夐」 鐨?LILO (鎴?涓€浜?鍏朵粬 boot loader 鎮?浣跨敤) 鎴?鐢?the "xrandr" utility
+(present 鍦?鏍囧噯 Linux utility packages). 鎮ㄥ彲浠?浣跨敤 the 浠ヤ笅 鍊?
 ```
 
    NORMAL_VGA - Standard 80x25 mode available on all display adapters.
@@ -46,11 +46,11 @@ specified 在 the 内核 Makefile (the SVGA_模式=... line) 或 由 the "vga=..
 #### Menu
 
 
-The ASK_VGA 模式 causes the 内核 到 offer 一个 视频 模式 menu upon
-bootup. 它 displays 一个 "Press <RETURN> 到 参见 视频 modes 可用, <SPACE>
-到 continue 或 wait 30 secs" message. 若 您 press <RETURN>, 您 enter the
-menu, 若 您 press <SPACE> 或 wait 30 seconds, the 内核 将 boot up 在
-the 标准 80x25 模式.
+The ASK_VGA 妯″紡 causes the 鍐呮牳 鍒?offer 涓€涓?瑙嗛 妯″紡 menu upon
+bootup. 瀹?displays 涓€涓?"Press <RETURN> 鍒?鍙傝 瑙嗛 modes 鍙敤, <SPACE>
+鍒?continue 鎴?wait 30 secs" message. 鑻?鎮?press <RETURN>, 鎮?enter the
+menu, 鑻?鎮?press <SPACE> 鎴?wait 30 seconds, the 鍐呮牳 灏?boot up 鍦?
+the 鏍囧噯 80x25 妯″紡.
 
 ```
 
@@ -64,52 +64,52 @@ the 标准 80x25 模式.
 	Enter mode number or ``scan``: <flashing-cursor-here>
 
 ```
-<name-of-detected-video-adapter> tells 什么 视频 adapter did Linux detect
--- 它's 任一个 一个 generic adapter name (MDA, CGA, HGC, EGA, VGA, VESA VGA [一个 VGA
-与 VESA-compliant BIOS]) 或 一个 chipset name (e.g., Trident). Direct detection
-的 chipsets 是 turned off 默认情况下 作为 它's inherently unreliable 由于
+<name-of-detected-video-adapter> tells 浠€涔?瑙嗛 adapter did Linux detect
+-- 瀹?s 浠讳竴涓?涓€涓?generic adapter name (MDA, CGA, HGC, EGA, VGA, VESA VGA [涓€涓?VGA
+涓?VESA-compliant BIOS]) 鎴?涓€涓?chipset name (e.g., Trident). Direct detection
+鐨?chipsets 鏄?turned off 榛樿鎯呭喌涓?浣滀负 瀹?s inherently unreliable 鐢变簬
 absolutely insane PC design.
 
-"0  0F00  80x25" means 该 the 第一 menu item (the menu items 是 numbered
-来自 "0" 到 "9" 和 来自 "一个" 到 "z") 是 一个 80x25 模式 与 ID=0x0f00 (参见 the
-接下来 section 用于 一个 description 的 模式 IDs).
+"0  0F00  80x25" means 璇?the 绗竴 menu item (the menu items 鏄?numbered
+鏉ヨ嚜 "0" 鍒?"9" 鍜?鏉ヨ嚜 "涓€涓? 鍒?"z") 鏄?涓€涓?80x25 妯″紡 涓?ID=0x0f00 (鍙傝 the
+鎺ヤ笅鏉?section 鐢ㄤ簬 涓€涓?description 鐨?妯″紡 IDs).
 
-<flashing-cursor-here> encourages 您 到 enter the item 数字 或 模式 ID
-您 wish 到 set 和 press <RETURN>. 若 the computer complains something 关于
-"未知 模式 ID", 它是 trying 到 tell 您 该 它 isn't 可能 到 set 此类
-一个 模式. 它's 也 可能 到 press 仅 <RETURN> 其 leaves the 电流 模式.
+<flashing-cursor-here> encourages 鎮?鍒?enter the item 鏁板瓧 鎴?妯″紡 ID
+鎮?wish 鍒?set 鍜?press <RETURN>. 鑻?the computer complains something 鍏充簬
+"鏈煡 妯″紡 ID", 瀹冩槸 trying 鍒?tell 鎮?璇?瀹?isn't 鍙兘 鍒?set 姝ょ被
+涓€涓?妯″紡. 瀹?s 涔?鍙兘 鍒?press 浠?<RETURN> 鍏?leaves the 鐢垫祦 妯″紡.
 
-The 模式 列出 通常 包含 一个 少量 基本 modes 和 一些 VESA modes.  在
-case 您的 chipset 具有 已经 detected, 一些 chipset-specific modes 是 shown 作为
-well (一些 的 这些 可能 为 missing 或 unusable 在 您的 machine 作为 不同
-BIOSes 是 通常 shipped 与 the 相同 卡 和 the 模式 numbers depend purely
-在 the VGA BIOS).
+The 妯″紡 鍒楀嚭 閫氬父 鍖呭惈 涓€涓?灏戦噺 鍩烘湰 modes 鍜?涓€浜?VESA modes.  鍦?
+case 鎮ㄧ殑 chipset 鍏锋湁 宸茬粡 detected, 涓€浜?chipset-specific modes 鏄?shown 浣滀负
+well (涓€浜?鐨?杩欎簺 鍙兘 涓?missing 鎴?unusable 鍦?鎮ㄧ殑 machine 浣滀负 涓嶅悓
+BIOSes 鏄?閫氬父 shipped 涓?the 鐩稿悓 鍗?鍜?the 妯″紡 numbers depend purely
+鍦?the VGA BIOS).
 
-The modes displayed 在 the menu 是 partially sorted: The 列出 starts 与
-the 标准 modes (80x25 和 80x50) followed 由 "特殊" modes (80x28 和
-80x43), 本地 modes (若 the 本地 modes 特性 是 已启用), VESA modes 和
-finally SVGA modes 用于 the auto-detected adapter.
+The modes displayed 鍦?the menu 鏄?partially sorted: The 鍒楀嚭 starts 涓?
+the 鏍囧噯 modes (80x25 鍜?80x50) followed 鐢?"鐗规畩" modes (80x28 鍜?
+80x43), 鏈湴 modes (鑻?the 鏈湴 modes 鐗规€?鏄?宸插惎鐢?, VESA modes 鍜?
+finally SVGA modes 鐢ㄤ簬 the auto-detected adapter.
 
-若 您 是 不 happy 与 the 模式 列出 offered (e.g., 若 您 think 您的 卡
-是 able 到 执行 更多), 您可以 enter "scan" 而非 item 数字 / 模式 ID.  The
-program 将 try 到 ask the BIOS 用于 全部 可能 视频 模式 numbers 和 test
-什么 happens 然后. The screen 将 为 probably flashing wildly 用于 一些 time 和
-strange noises 将 为 heard 来自 inside the 监视器 和 因此 在 和 然后, really
-全部 consistent 视频 modes 受支持 由 您的 BIOS 将 appear (增强版 maybe 一些
-`ghost modes`). 若 您 是 afraid 此 可以 damage 您的 监视器, don't 使用
-此 函数.
+鑻?鎮?鏄?涓?happy 涓?the 妯″紡 鍒楀嚭 offered (e.g., 鑻?鎮?think 鎮ㄧ殑 鍗?
+鏄?able 鍒?鎵ц 鏇村), 鎮ㄥ彲浠?enter "scan" 鑰岄潪 item 鏁板瓧 / 妯″紡 ID.  The
+program 灏?try 鍒?ask the BIOS 鐢ㄤ簬 鍏ㄩ儴 鍙兘 瑙嗛 妯″紡 numbers 鍜?test
+浠€涔?happens 鐒跺悗. The screen 灏?涓?probably flashing wildly 鐢ㄤ簬 涓€浜?time 鍜?
+strange noises 灏?涓?heard 鏉ヨ嚜 inside the 鐩戣鍣?鍜?鍥犳 鍦?鍜?鐒跺悗, really
+鍏ㄩ儴 consistent 瑙嗛 modes 鍙楁敮鎸?鐢?鎮ㄧ殑 BIOS 灏?appear (澧炲己鐗?maybe 涓€浜?
+`ghost modes`). 鑻?鎮?鏄?afraid 姝?鍙互 damage 鎮ㄧ殑 鐩戣鍣? don't 浣跨敤
+姝?鍑芥暟.
 
-之后 scanning, the 模式 ordering 是 一个 位 不同: the auto-detected SVGA
-modes 是 不 listed 在 全部 和 the modes revealed 由 `scan` 是 shown 之前
-全部 VESA modes.
+涔嬪悗 scanning, the 妯″紡 ordering 鏄?涓€涓?浣?涓嶅悓: the auto-detected SVGA
+modes 鏄?涓?listed 鍦?鍏ㄩ儴 鍜?the modes revealed 鐢?`scan` 鏄?shown 涔嬪墠
+鍏ㄩ儴 VESA modes.
 
-#### 模式 IDs
+#### 妯″紡 IDs
 
 
-因为 的 the complexity 的 全部 the 视频 stuff, the 视频 模式 IDs
-使用 此处 是 也 一个 位 复杂. 一个 视频 模式 ID 是 一个 16-位 数字 通常
-expressed 在 一个 hexadecimal notation (starting 与 "0x"). 您可以 set 一个 模式
-由 entering 其 模式 directly 若 您 know 它 even 若 它 isn't shown 在 the menu.
+鍥犱负 鐨?the complexity 鐨?鍏ㄩ儴 the 瑙嗛 stuff, the 瑙嗛 妯″紡 IDs
+浣跨敤 姝ゅ 鏄?涔?涓€涓?浣?澶嶆潅. 涓€涓?瑙嗛 妯″紡 ID 鏄?涓€涓?16-浣?鏁板瓧 閫氬父
+expressed 鍦?涓€涓?hexadecimal notation (starting 涓?"0x"). 鎮ㄥ彲浠?set 涓€涓?妯″紡
+鐢?entering 鍏?妯″紡 directly 鑻?鎮?know 瀹?even 鑻?瀹?isn't shown 鍦?the menu.
 
 ```
 
@@ -151,100 +151,100 @@ expressed 在 一个 hexadecimal notation (starting 与 "0x"). 您可以 set 一
 	0xfffe	equivalent to 0x0f01 (EGA 80x43 or VGA 80x50)
 
 ```
-若 您 add 0x8000 到 the 模式 ID, the program 将 try 到 recalculate
-vertical 显示器 timing 根据 模式 参数, 其 可 为 使用 到
-eliminate 一些 annoying bugs 的 某些 VGA BIOSes (通常 那些 使用 用于
-卡 与 S3 chipsets 和 旧 Cirrus Logic BIOSes) -- mainly extra lines 在 the
-end 的 the 显示器.
+鑻?鎮?add 0x8000 鍒?the 妯″紡 ID, the program 灏?try 鍒?recalculate
+vertical 鏄剧ず鍣?timing 鏍规嵁 妯″紡 鍙傛暟, 鍏?鍙?涓?浣跨敤 鍒?
+eliminate 涓€浜?annoying bugs 鐨?鏌愪簺 VGA BIOSes (閫氬父 閭ｄ簺 浣跨敤 鐢ㄤ簬
+鍗?涓?S3 chipsets 鍜?鏃?Cirrus Logic BIOSes) -- mainly extra lines 鍦?the
+end 鐨?the 鏄剧ず鍣?
 
-#### 选项
-
-
-Build 选项 用于 arch/x86/boot/* 是 selected 由 the 内核 kconfig
-utility 和 the 内核 .配置 文件.
-
-视频_GFX_HACK - 包含 特殊 hack 用于 设置 的 graphics modes
-到 为 使用 稍后 由 特殊 驱动.
-Allows 到 set _任何_ BIOS 模式 including graphic ones 和 forcing 特定
-text screen resolution 而非 peeking 它 来自 BIOS variables. Don't 使用
-除非 您 think 您 know 什么 您're doing. 到 activate 此 setup, 使用
-模式 数字 0x0f08 (参见 the 模式 IDs section 上文).
-
-#### 仍然 doesn't work?
+#### 閫夐」
 
 
-当 the 模式 detection doesn't work (e.g., the 模式 列出 是 incorrect 或
-the machine hangs 而非 displaying the menu), try 到 switch off 一些 的
-the 配置 选项 listed 在…下 "选项". 若 它 fails, 您可以 仍然 使用
-您的 内核 与 the 视频 模式 set directly 通过 the 内核 参数.
+Build 閫夐」 鐢ㄤ簬 arch/x86/boot/* 鏄?selected 鐢?the 鍐呮牳 kconfig
+utility 鍜?the 鍐呮牳 .閰嶇疆 鏂囦欢.
 
-在 任一个 case, 请 send me 一个 bug report containing 什么 _exactly_
-happens 和 如何 执行 the 配置 switches affect the behaviour 的 the bug.
+瑙嗛_GFX_HACK - 鍖呭惈 鐗规畩 hack 鐢ㄤ簬 璁剧疆 鐨?graphics modes
+鍒?涓?浣跨敤 绋嶅悗 鐢?鐗规畩 椹卞姩.
+Allows 鍒?set _浠讳綍_ BIOS 妯″紡 including graphic ones 鍜?forcing 鐗瑰畾
+text screen resolution 鑰岄潪 peeking 瀹?鏉ヨ嚜 BIOS variables. Don't 浣跨敤
+闄ら潪 鎮?think 鎮?know 浠€涔?鎮?re doing. 鍒?activate 姝?setup, 浣跨敤
+妯″紡 鏁板瓧 0x0f08 (鍙傝 the 妯″紡 IDs section 涓婃枃).
 
-若 您 启动 Linux 来自 M$-DOS, 您 可能 也 使用 一些 DOS tools 用于
-视频 模式 设置. 在 此 case, 您 必须 specify the 0x0f04 模式 ("leave
-电流 设置") 到 Linux, 因为 若 您 don't 和 您 使用 任何 non-standard
-模式, Linux 将 switch 到 80x25 automatically.
+#### 浠嶇劧 doesn't work?
 
-若 您 set 一些 extended 模式 和 那里's one 或 更多 extra lines 在 the
-bottom 的 the 显示器 containing 已经 scrolled-out text, 您的 VGA BIOS
-包含 the 大多数 通用 视频 BIOS bug called "incorrect vertical 显示器
-end 设置". Adding 0x8000 到 the 模式 ID 可能 fix the problem. Unfortunately,
-此 必须 为 已完成 manually -- 无 autodetection mechanisms 是 可用.
+
+褰?the 妯″紡 detection doesn't work (e.g., the 妯″紡 鍒楀嚭 鏄?incorrect 鎴?
+the machine hangs 鑰岄潪 displaying the menu), try 鍒?switch off 涓€浜?鐨?
+the 閰嶇疆 閫夐」 listed 鍦ㄢ€︿笅 "閫夐」". 鑻?瀹?fails, 鎮ㄥ彲浠?浠嶇劧 浣跨敤
+鎮ㄧ殑 鍐呮牳 涓?the 瑙嗛 妯″紡 set directly 閫氳繃 the 鍐呮牳 鍙傛暟.
+
+鍦?浠讳竴涓?case, 璇?send me 涓€涓?bug report containing 浠€涔?_exactly_
+happens 鍜?濡備綍 鎵ц the 閰嶇疆 switches affect the behaviour 鐨?the bug.
+
+鑻?鎮?鍚姩 Linux 鏉ヨ嚜 M$-DOS, 鎮?鍙兘 涔?浣跨敤 涓€浜?DOS tools 鐢ㄤ簬
+瑙嗛 妯″紡 璁剧疆. 鍦?姝?case, 鎮?蹇呴』 specify the 0x0f04 妯″紡 ("leave
+鐢垫祦 璁剧疆") 鍒?Linux, 鍥犱负 鑻?鎮?don't 鍜?鎮?浣跨敤 浠讳綍 non-standard
+妯″紡, Linux 灏?switch 鍒?80x25 automatically.
+
+鑻?鎮?set 涓€浜?extended 妯″紡 鍜?閭ｉ噷's one 鎴?鏇村 extra lines 鍦?the
+bottom 鐨?the 鏄剧ず鍣?containing 宸茬粡 scrolled-out text, 鎮ㄧ殑 VGA BIOS
+鍖呭惈 the 澶у鏁?閫氱敤 瑙嗛 BIOS bug called "incorrect vertical 鏄剧ず鍣?
+end 璁剧疆". Adding 0x8000 鍒?the 妯″紡 ID 鍙兘 fix the problem. Unfortunately,
+姝?蹇呴』 涓?宸插畬鎴?manually -- 鏃?autodetection mechanisms 鏄?鍙敤.
 
 #### History
 
 
 =============== ================================================================
-1.0 (??-Nov-95)	第一 版本 supporting 全部 adapters 受支持 由 the 旧
-		setup.S + Cirrus Logic 54XX. Present 在 一些 1.3.4? kernels
-		和 然后 removed 由于 instability 在 一些 machines.
-2.0 (28-Jan-96)	Rewritten 来自 scratch. Cirrus Logic 64XX 支持 added, almost
-		everything 是 configurable, the VESA 支持 应当 为 much 更多
-		stable, explicit 模式 numbering allowed, "scan" implemented 等.
-2.1 (30-Jan-96) VESA modes moved 到 0x200-0x3ff. 模式 selection 由 resolution
-		受支持. 少量 bugs fixed. VESA modes 是 listed prior 到
-		modes supplied 由 SVGA autodetection 作为 它们是 更多 reliable.
-		CLGD autodetect works better. Doesn't depend 在 80x25 正在
-		active 当 started. Scanning fixed. 80x43 (任何 VGA) added.
+1.0 锛?-Nov-95)	绗竴 鐗堟湰 supporting 鍏ㄩ儴 adapters 鍙楁敮鎸?鐢?the 鏃?
+		setup.S + Cirrus Logic 54XX. Present 鍦?涓€浜?1.3.4? kernels
+		鍜?鐒跺悗 removed 鐢变簬 instability 鍦?涓€浜?machines.
+2.0 (28-Jan-96)	Rewritten 鏉ヨ嚜 scratch. Cirrus Logic 64XX 鏀寔 added, almost
+		everything 鏄?configurable, the VESA 鏀寔 搴斿綋 涓?much 鏇村
+		stable, explicit 妯″紡 numbering allowed, "scan" implemented 绛?
+2.1 (30-Jan-96) VESA modes moved 鍒?0x200-0x3ff. 妯″紡 selection 鐢?resolution
+		鍙楁敮鎸? 灏戦噺 bugs fixed. VESA modes 鏄?listed prior 鍒?
+		modes supplied 鐢?SVGA autodetection 浣滀负 瀹冧滑鏄?鏇村 reliable.
+		CLGD autodetect works better. Doesn't depend 鍦?80x25 姝ｅ湪
+		active 褰?started. Scanning fixed. 80x43 (浠讳綍 VGA) added.
 		Code cleaned up.
-2.2 (01-Feb-96)	EGA 80x43 fixed. VESA extended 到 0x200-0x4ff (non-standard 02XX
-		VESA modes work 现在). 显示器 end bug workaround 受支持.
-		特殊 modes renumbered 到 允许 adding 的 the "recalculate"
-		标志, 0xffff 和 0xfffe became aliases 而非 real IDs.
-		Screen contents retained 期间 模式 changes.
-2.3 (15-Mar-96)	Changed 到 work 与 1.3.74 内核.
-2.4 (18-Mar-96)	Added patches 由 Hans Lermen fixing 一个 内存 overwrite problem
-		与 一些 boot loaders. 内存 管理 rewritten 到 reflect
-		这些 changes. Unfortunately, screen contents retaining works
-		仅 与 一些 loaders 现在.
-		Added 一个 Tseng 132x60 模式.
-2.5 (19-Mar-96)	Fixed 一个 VESA 模式 scanning bug introduced 在 2.4.
-2.6 (25-Mar-96)	一些 VESA BIOS 错误 不 reported -- 它 fixes 错误 reports 在
-		若干 卡 与 broken VESA code (e.g., ATI VGA).
-2.7 (09-Apr-96)	- Accepted 全部 VESA modes 在 range 0x100 到 0x7ff, 因为 一些
-		  卡 使用 very strange 模式 numbers.
-  - Added Realtek VGA modes (thanks 到 Gonzalo Tornaria).
-  - 硬件 testing order slightly changed, tests 基于 ROM
-		  contents 已完成 作为 第一.
-  - Added 支持 用于 特殊 视频7 模式 switching 函数
-		  (thanks 到 Tom Vander Aa).
-  - Added 480-scanline modes (especially useful 用于 notebooks,
-		  original 版本 written 由 hhanemaa@cs.ruu.nl, patched 由
-		  Jeff Chua, rewritten 由 me).
+2.2 (01-Feb-96)	EGA 80x43 fixed. VESA extended 鍒?0x200-0x4ff (non-standard 02XX
+		VESA modes work 鐜板湪). 鏄剧ず鍣?end bug workaround 鍙楁敮鎸?
+		鐗规畩 modes renumbered 鍒?鍏佽 adding 鐨?the "recalculate"
+		鏍囧織, 0xffff 鍜?0xfffe became aliases 鑰岄潪 real IDs.
+		Screen contents retained 鏈熼棿 妯″紡 changes.
+2.3 (15-Mar-96)	Changed 鍒?work 涓?1.3.74 鍐呮牳.
+2.4 (18-Mar-96)	Added patches 鐢?Hans Lermen fixing 涓€涓?鍐呭瓨 overwrite problem
+		涓?涓€浜?boot loaders. 鍐呭瓨 绠＄悊 rewritten 鍒?reflect
+		杩欎簺 changes. Unfortunately, screen contents retaining works
+		浠?涓?涓€浜?loaders 鐜板湪.
+		Added 涓€涓?Tseng 132x60 妯″紡.
+2.5 (19-Mar-96)	Fixed 涓€涓?VESA 妯″紡 scanning bug introduced 鍦?2.4.
+2.6 (25-Mar-96)	涓€浜?VESA BIOS 閿欒 涓?reported -- 瀹?fixes 閿欒 reports 鍦?
+		鑻ュ共 鍗?涓?broken VESA code (e.g., ATI VGA).
+2.7 (09-Apr-96)	- Accepted 鍏ㄩ儴 VESA modes 鍦?range 0x100 鍒?0x7ff, 鍥犱负 涓€浜?
+		  鍗?浣跨敤 very strange 妯″紡 numbers.
+  - Added Realtek VGA modes (thanks 鍒?Gonzalo Tornaria).
+  - 纭欢 testing order slightly changed, tests 鍩轰簬 ROM
+		  contents 宸插畬鎴?浣滀负 绗竴.
+  - Added 鏀寔 鐢ㄤ簬 鐗规畩 瑙嗛7 妯″紡 switching 鍑芥暟
+		  (thanks 鍒?Tom Vander Aa).
+  - Added 480-scanline modes (especially useful 鐢ㄤ簬 notebooks,
+		  original 鐗堟湰 written 鐢?hhanemaa@cs.ruu.nl, patched 鐢?
+		  Jeff Chua, rewritten 鐢?me).
   - Screen store/restore fixed.
-2.8 (14-Apr-96) - 前一个 释放 曾是 不 compilable 无 配置_视频_SVGA.
-  - Better recognition 的 text modes 期间 模式 scan.
-2.9 (12-May-96)	- Ignored VESA modes 0x80 - 0xff (更多 VESA BIOS bugs!)
-2.10(11-Nov-96) - The whole thing made 可选.
-  - Added the 配置_视频_400_HACK switch.
-  - Added the 配置_视频_GFX_HACK switch.
+2.8 (14-Apr-96) - 鍓嶄竴涓?閲婃斁 鏇炬槸 涓?compilable 鏃?閰嶇疆_瑙嗛_SVGA.
+  - Better recognition 鐨?text modes 鏈熼棿 妯″紡 scan.
+2.9 (12-May-96)	- Ignored VESA modes 0x80 - 0xff (鏇村 VESA BIOS bugs!)
+2.10(11-Nov-96) - The whole thing made 鍙€?
+  - Added the 閰嶇疆_瑙嗛_400_HACK switch.
+  - Added the 閰嶇疆_瑙嗛_GFX_HACK switch.
   - Code cleanup.
-2.11(03-May-97) - 尚未 another cleanup, 现在 including 也 the documentation.
-  - Direct testing 的 SVGA adapters turned off 默认情况下, `scan`
-		  offered explicitly 在 the prompt line.
-  - Removed the doc section describing adding 的 新 probing
-		  函数 作为 I try 到 get rid 的 _全部_ 硬件 probing 此处.
-2.12(25-May-98) Added 支持 用于 VESA 帧 缓冲区 graphics.
-2.13(14-May-99) 次要 documentation fixes.
+2.11(03-May-97) - 灏氭湭 another cleanup, 鐜板湪 including 涔?the documentation.
+  - Direct testing 鐨?SVGA adapters turned off 榛樿鎯呭喌涓? `scan`
+		  offered explicitly 鍦?the prompt line.
+  - Removed the doc section describing adding 鐨?鏂?probing
+		  鍑芥暟 浣滀负 I try 鍒?get rid 鐨?_鍏ㄩ儴_ 纭欢 probing 姝ゅ.
+2.12(25-May-98) Added 鏀寔 鐢ㄤ簬 VESA 甯?缂撳啿鍖?graphics.
+2.13(14-May-99) 娆¤ documentation fixes.
 =============== ================================================================

@@ -1,35 +1,29 @@
-
+﻿
 ######## ioctl VIDIOC_ENUM_FREQ_BANDS
 
 
-## 名称
+## 鍚嶇О
 
 
-VIDIOC_ENUM_FREQ_BANDS - 枚举支持的频段
-
-## 语法
+VIDIOC_ENUM_FREQ_BANDS - 鏋氫妇鏀寔鐨勯娈?
+## 璇硶
 
 
 `int ioctl(int fd, VIDIOC_ENUM_FREQ_BANDS, struct v4l2_frequency_band *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
-
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `argp`
-    指向 struct `v4l2_frequency_band` 的指针。
+    鎸囧悜 struct `v4l2_frequency_band` 鐨勬寚閽堛€?
+## 鎻忚堪
 
-## 描述
 
-
-枚举调谐器或调制器支持的频段。为此，应用程序初始化 struct `v4l2_frequency_band` 的
-`tuner`、`type` 与 `index` 字段，并将 `reserved` 数组清零，然后以指向该结构的指针调用
-VIDIOC_ENUM_FREQ_BANDS ioctl。
-
-如果相应调谐器/调制器的 `V4L2_TUNER_CAP_FREQ_BANDS` 能力被设置，则该 ioctl 受支持。
-
+鏋氫妇璋冭皭鍣ㄦ垨璋冨埗鍣ㄦ敮鎸佺殑棰戞銆備负姝わ紝搴旂敤绋嬪簭鍒濆鍖?struct `v4l2_frequency_band` 鐨?`tuner`銆乣type` 涓?`index` 瀛楁锛屽苟灏?`reserved` 鏁扮粍娓呴浂锛岀劧鍚庝互鎸囧悜璇ョ粨鏋勭殑鎸囬拡璋冪敤
+VIDIOC_ENUM_FREQ_BANDS ioctl銆?
+濡傛灉鐩稿簲璋冭皭鍣?璋冨埗鍣ㄧ殑 `V4L2_TUNER_CAP_FREQ_BANDS` 鑳藉姏琚缃紝鍒欒 ioctl 鍙楁敮鎸併€?
 
 
     :header-rows:  0
@@ -38,48 +32,36 @@ VIDIOC_ENUM_FREQ_BANDS ioctl。
 
     - - __u32
       - `tuner`
-      - 调谐器或调制器索引号。该值与 struct `v4l2_input` 的 `tuner` 字段、struct
-	`v4l2_tuner` 的 `index` 字段、struct `v4l2_output` 的 `modulator` 字段以及
-	struct `v4l2_modulator` 的 `index` 字段相同。
-    - - __u32
+      - 璋冭皭鍣ㄦ垨璋冨埗鍣ㄧ储寮曞彿銆傝鍊间笌 struct `v4l2_input` 鐨?`tuner` 瀛楁銆乻truct
+	`v4l2_tuner` 鐨?`index` 瀛楁銆乻truct `v4l2_output` 鐨?`modulator` 瀛楁浠ュ強
+	struct `v4l2_modulator` 鐨?`index` 瀛楁鐩稿悓銆?    - - __u32
       - `type`
-      - 调谐器类型。该值与 struct `v4l2_tuner` 的 `type` 字段相同。对于 `/dev/radioX`
-	设备节点，该类型必须设为 `V4L2_TUNER_RADIO`；对于所有其他节点，设为
-	`V4L2_TUNER_ANALOG_TV`。对于调制器，将该字段设为 `V4L2_TUNER_RADIO`（目前只支持
-	无线电调制器）。参见 `v4l2_tuner_type`
+      - 璋冭皭鍣ㄧ被鍨嬨€傝鍊间笌 struct `v4l2_tuner` 鐨?`type` 瀛楁鐩稿悓銆傚浜?`/dev/radioX`
+	璁惧鑺傜偣锛岃绫诲瀷蹇呴』璁句负 `V4L2_TUNER_RADIO`锛涘浜庢墍鏈夊叾浠栬妭鐐癸紝璁句负
+	`V4L2_TUNER_ANALOG_TV`銆傚浜庤皟鍒跺櫒锛屽皢璇ュ瓧娈佃涓?`V4L2_TUNER_RADIO`锛堢洰鍓嶅彧鏀寔
+	鏃犵嚎鐢佃皟鍒跺櫒锛夈€傚弬瑙?`v4l2_tuner_type`
     - - __u32
       - `index`
-      - 标识频段，由应用程序设置。
-    - - __u32
+      - 鏍囪瘑棰戞锛岀敱搴旂敤绋嬪簭璁剧疆銆?    - - __u32
       - `capability`
-      - `2` 该频段对应的调谐器/调制器能力标志，参见 tuner-capability。所选
-	调谐器/调制器的所有频段必须一致地设置 `V4L2_TUNER_CAP_LOW` 或
-	`V4L2_TUNER_CAP_1HZ` 能力。也就是说，要么所有频段都设置该能力，要么都不设置。
-    - - __u32
+      - `2` 璇ラ娈靛搴旂殑璋冭皭鍣?璋冨埗鍣ㄨ兘鍔涙爣蹇楋紝鍙傝 tuner-capability銆傛墍閫?	璋冭皭鍣?璋冨埗鍣ㄧ殑鎵€鏈夐娈靛繀椤讳竴鑷村湴璁剧疆 `V4L2_TUNER_CAP_LOW` 鎴?	`V4L2_TUNER_CAP_1HZ` 鑳藉姏銆備篃灏辨槸璇达紝瑕佷箞鎵€鏈夐娈甸兘璁剧疆璇ヨ兘鍔涳紝瑕佷箞閮戒笉璁剧疆銆?    - - __u32
       - `rangelow`
-      - `2` 该频段最低可调节频率，单位为 62.5 kHz；若设置了 `capability` 标志
-	`V4L2_TUNER_CAP_LOW`，则单位为 62.5 Hz。当设置了 `capability` 标志
-	`V4L2_TUNER_CAP_1HZ` 时，使用 1 Hz 单位。
-    - - __u32
+      - `2` 璇ラ娈垫渶浣庡彲璋冭妭棰戠巼锛屽崟浣嶄负 62.5 kHz锛涜嫢璁剧疆浜?`capability` 鏍囧織
+	`V4L2_TUNER_CAP_LOW`锛屽垯鍗曚綅涓?62.5 Hz銆傚綋璁剧疆浜?`capability` 鏍囧織
+	`V4L2_TUNER_CAP_1HZ` 鏃讹紝浣跨敤 1 Hz 鍗曚綅銆?    - - __u32
       - `rangehigh`
-      - `2` 该频段最高可调节频率，单位为 62.5 kHz；若设置了 `capability` 标志
-	`V4L2_TUNER_CAP_LOW`，则单位为 62.5 Hz。当设置了 `capability` 标志
-	`V4L2_TUNER_CAP_1HZ` 时，使用 1 Hz 单位。
-    - - __u32
+      - `2` 璇ラ娈垫渶楂樺彲璋冭妭棰戠巼锛屽崟浣嶄负 62.5 kHz锛涜嫢璁剧疆浜?`capability` 鏍囧織
+	`V4L2_TUNER_CAP_LOW`锛屽垯鍗曚綅涓?62.5 Hz銆傚綋璁剧疆浜?`capability` 鏍囧織
+	`V4L2_TUNER_CAP_1HZ` 鏃讹紝浣跨敤 1 Hz 鍗曚綅銆?    - - __u32
       - `modulation`
-      - `2` 该频段支持的调制系统，参见 band-modulation。
-
+      - `2` 璇ラ娈垫敮鎸佺殑璋冨埗绯荤粺锛屽弬瑙?band-modulation銆?
 ```
 
-	  目前每个频段只支持一种调制系统。若需要支持多种调制系统，还需要做更多工作。
-	  如果你需要此类功能，请联系 linux-media 邮件列表
-	  (`https://linuxtv.org/lists.php <https://linuxtv.org/lists.php>`__)。
-    * - __u32
+	  鐩墠姣忎釜棰戞鍙敮鎸佷竴绉嶈皟鍒剁郴缁熴€傝嫢闇€瑕佹敮鎸佸绉嶈皟鍒剁郴缁燂紝杩橀渶瑕佸仛鏇村宸ヤ綔銆?	  濡傛灉浣犻渶瑕佹绫诲姛鑳斤紝璇疯仈绯?linux-media 閭欢鍒楄〃
+	  (`https://linuxtv.org/lists.php <https://linuxtv.org/lists.php>`__)銆?    * - __u32
       - ``reserved``\ [9]
-      - 为将来扩展保留。
-
-	应用程序与驱动都必须将数组置零。
-
+      - 涓哄皢鏉ユ墿灞曚繚鐣欍€?
+	搴旂敤绋嬪簭涓庨┍鍔ㄩ兘蹇呴』灏嗘暟缁勭疆闆躲€?
 
 ```
 
@@ -89,19 +71,14 @@ VIDIOC_ENUM_FREQ_BANDS ioctl。
 
     - - `V4L2_BAND_MODULATION_VSB`
       - 0x02
-      - 残留边带（Vestigial Sideband）调制，用于模拟电视。
-    - - `V4L2_BAND_MODULATION_FM`
+      - 娈嬬暀杈瑰甫锛圴estigial Sideband锛夎皟鍒讹紝鐢ㄤ簬妯℃嫙鐢佃銆?    - - `V4L2_BAND_MODULATION_FM`
       - 0x04
-      - 调频（Frequency Modulation），常用于模拟无线电。
-    - - `V4L2_BAND_MODULATION_AM`
+      - 璋冮锛團requency Modulation锛夛紝甯哥敤浜庢ā鎷熸棤绾跨數銆?    - - `V4L2_BAND_MODULATION_AM`
       - 0x08
-      - 调幅（Amplitude Modulation），常用于模拟无线电。
+      - 璋冨箙锛圓mplitude Modulation锛夛紝甯哥敤浜庢ā鎷熸棤绾跨數銆?
+## 杩斿洖鍊?
 
-## 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 章节中描述。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
 EINVAL
-    `tuner` 或 `index` 越界，或 `type` 字段错误。
+    `tuner` 鎴?`index` 瓒婄晫锛屾垨 `type` 瀛楁閿欒銆?

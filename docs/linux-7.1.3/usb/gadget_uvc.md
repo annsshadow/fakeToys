@@ -1,31 +1,22 @@
-## Linux UVC Gadget 驱动
+﻿## Linux UVC Gadget 椹卞姩
 
-### Overview（概述）
+### Overview锛堟杩帮級
 
-UVC Gadget 驱动是一个用于 USB 连接中 **设备（device）** 侧硬件的驱动。它意在运行在具备 USB 设备侧硬件（例如带有 OTG 端口的开发板）的 Linux 系统上。
+UVC Gadget 椹卞姩鏄竴涓敤浜?USB 杩炴帴涓?**璁惧锛坉evice锛?* 渚х‖浠剁殑椹卞姩銆傚畠鎰忓湪杩愯鍦ㄥ叿澶?USB 璁惧渚х‖浠讹紙渚嬪甯︽湁 OTG 绔彛鐨勫紑鍙戞澘锛夌殑 Linux 绯荤粺涓娿€?
+鍦ㄨ澶囩郴缁熶笂锛屼竴鏃﹂┍鍔ㄨ缁戝畾锛屽畠灏变細琛ㄧ幇涓轰竴涓叿鏈夎緭鍑鸿兘鍔涚殑 V4L2 璁惧銆?
+鍦ㄤ富鏈轰晶锛堜竴鏃﹂€氳繃 USB 绾跨紗杩炴帴锛夛紝杩愯 UVC Gadget 椹卞姩 **骞剁敱鎭板綋鐨勭敤鎴风┖闂寸▼搴忔帶鍒?* 鐨勮澶囧簲褰撹〃鐜颁负涓€涓鍚?UVC 瑙勮寖鐨勬憚鍍忓ご锛屽苟鑳戒笌浠讳綍涓哄鐞嗚繖绫昏澶囪€岃璁＄殑绋嬪簭姝ｅ父閰嶅悎宸ヤ綔銆傝繍琛屽湪璁惧绯荤粺涓婄殑鐢ㄦ埛绌洪棿绋嬪簭鍙互浠庡悇绉嶆潵婧愭帓闃熷浘鍍忕紦鍐插尯锛屼互渚块€氳繃 USB 杩炴帴浼犺緭銆傞€氬父杩欐剰鍛崇潃浠庢憚鍍忓ご浼犳劅鍣ㄥ璁捐浆鍙戠紦鍐插尯锛屼絾缂撳啿鍖虹殑鏉ユ簮瀹屽叏鍙栧喅浜庣敤鎴风┖闂寸殑閰嶅绋嬪簭銆?
+### Configuring the device kernel锛堥厤缃澶囧唴鏍革級
 
-在设备系统上，一旦驱动被绑定，它就会表现为一个具有输出能力的 V4L2 设备。
+蹇呴』閫変腑 Kconfig 閫夐」 USB_CONFIGFS銆乁SB_LIBCOMPOSITE銆乁SB_CONFIGFS_F_UVC 鍜?USB_F_UVC 浠ュ惎鐢ㄥ UVC gadget 鐨勬敮鎸併€?
+### Configuring the gadget through configfs锛堥€氳繃 configfs 閰嶇疆 gadget锛?
+UVC Gadget 鏈熸湜閫氳繃 configfs 浣跨敤 UVC 鍑芥暟鏉ラ厤缃€傝繖鎻愪緵浜嗙浉褰撶▼搴︾殑鐏垫椿鎬э紝鍥犱负 UVC 璁惧鐨勮澶氳缃兘鍙互閫氳繃杩欑鏂瑰紡鏉ユ帶鍒躲€?
+姝ゅ骞舵湭鎻忚堪鎵€鏈夊彲鐢ㄥ睘鎬с€傚畬鏁寸殑鏋氫妇璇疯 Documentation/ABI/testing/configfs-usb-gadget-uvc
 
-在主机侧（一旦通过 USB 线缆连接），运行 UVC Gadget 驱动 **并由恰当的用户空间程序控制** 的设备应当表现为一个符合 UVC 规范的摄像头，并能与任何为处理这类设备而设计的程序正常配合工作。运行在设备系统上的用户空间程序可以从各种来源排队图像缓冲区，以便通过 USB 连接传输。通常这意味着从摄像头传感器外设转发缓冲区，但缓冲区的来源完全取决于用户空间的配套程序。
+#### Assumptions锛堝墠鎻愬亣璁撅級
 
-### Configuring the device kernel（配置设备内核）
-
-必须选中 Kconfig 选项 USB_CONFIGFS、USB_LIBCOMPOSITE、USB_CONFIGFS_F_UVC 和 USB_F_UVC 以启用对 UVC gadget 的支持。
-
-### Configuring the gadget through configfs（通过 configfs 配置 gadget）
-
-UVC Gadget 期望通过 configfs 使用 UVC 函数来配置。这提供了相当程度的灵活性，因为 UVC 设备的许多设置都可以通过这种方式来控制。
-
-此处并未描述所有可用属性。完整的枚举请见 Documentation/ABI/testing/configfs-usb-gadget-uvc
-
-#### Assumptions（前提假设）
-
-本节假设您已将 configfs 挂载到 `/sys/kernel/config`，并已将某个 gadget 创建为 `/sys/kernel/config/usb_gadget/g1`。
-
-#### The UVC Function（UVC 函数）
-
-第一步是创建 UVC 函数：
-
+鏈妭鍋囪鎮ㄥ凡灏?configfs 鎸傝浇鍒?`/sys/kernel/config`锛屽苟宸插皢鏌愪釜 gadget 鍒涘缓涓?`/sys/kernel/config/usb_gadget/g1`銆?
+#### The UVC Function锛圲VC 鍑芥暟锛?
+绗竴姝ユ槸鍒涘缓 UVC 鍑芥暟锛?
 
 	# These variables will be assumed throughout the rest of the document
 	CONFIGFS="/sys/kernel/config"
@@ -34,11 +25,10 @@ UVC Gadget 期望通过 configfs 使用 UVC 函数来配置。这提供了相当
 
 	mkdir -p $FUNCTION
 
-#### Formats and Frames（格式与帧）
+#### Formats and Frames锛堟牸寮忎笌甯э級
 
-您必须通过告知 gadget 您所支持的格式，以及每种格式所支持的帧大小与帧间隔，来配置 gadget。在当前实现中，gadget 没有办法拒绝主机指令它设置的某个格式，因此本步骤 **准确地** 完成非常重要，以确保主机永远不会请求一个无法提供的格式。
-
-格式创建于 streaming/uncompressed 和 streaming/mjpeg 这两个 configfs 组之下，帧大小则创建于格式之下，其结构如下：
+鎮ㄥ繀椤婚€氳繃鍛婄煡 gadget 鎮ㄦ墍鏀寔鐨勬牸寮忥紝浠ュ強姣忕鏍煎紡鎵€鏀寔鐨勫抚澶у皬涓庡抚闂撮殧锛屾潵閰嶇疆 gadget銆傚湪褰撳墠瀹炵幇涓紝gadget 娌℃湁鍔炴硶鎷掔粷涓绘満鎸囦护瀹冭缃殑鏌愪釜鏍煎紡锛屽洜姝ゆ湰姝ラ **鍑嗙‘鍦?* 瀹屾垚闈炲父閲嶈锛屼互纭繚涓绘満姘歌繙涓嶄細璇锋眰涓€涓棤娉曟彁渚涚殑鏍煎紡銆?
+鏍煎紡鍒涘缓浜?streaming/uncompressed 鍜?streaming/mjpeg 杩欎袱涓?configfs 缁勪箣涓嬶紝甯уぇ灏忓垯鍒涘缓浜庢牸寮忎箣涓嬶紝鍏剁粨鏋勫涓嬶細
 
 ```
 
@@ -64,7 +54,7 @@ UVC Gadget 期望通过 configfs 使用 UVC 函数来配置。这提供了相当
 
 ```
 
-每个帧随后可以配置宽度和高度，加上存储单帧所需的最大缓冲区大小，最后是相应格式和帧大小所支持的帧间隔。宽度和高度以像素为单位枚举，帧间隔以 100ns 为单位。例如，要为上面对每个帧大小创建含 2、15 和 100 fps 帧间隔的结构，您可以这样做：
+姣忎釜甯ч殢鍚庡彲浠ラ厤缃搴﹀拰楂樺害锛屽姞涓婂瓨鍌ㄥ崟甯ф墍闇€鐨勬渶澶х紦鍐插尯澶у皬锛屾渶鍚庢槸鐩稿簲鏍煎紡鍜屽抚澶у皬鎵€鏀寔鐨勫抚闂撮殧銆傚搴﹀拰楂樺害浠ュ儚绱犱负鍗曚綅鏋氫妇锛屽抚闂撮殧浠?100ns 涓哄崟浣嶃€備緥濡傦紝瑕佷负涓婇潰瀵规瘡涓抚澶у皬鍒涘缓鍚?2銆?5 鍜?100 fps 甯ч棿闅旂殑缁撴瀯锛屾偍鍙互杩欐牱鍋氾細
 
 
 	create_frame() {
@@ -94,13 +84,10 @@ UVC Gadget 期望通过 configfs 使用 UVC 函数来配置。这提供了相当
 	create_frame 1280 720 uncompressed yuyv
 	create_frame 1920 1080 uncompressed yuyv
 
-当前唯一支持的非压缩格式是 YUYV，其细节见 Documentation/userspace-api/media/v4l/pixfmt-packed-yuv.rst。
-
-#### Color Matching Descriptors（色彩匹配描述符）
-
-可以为您创建的每个格式指定一些色度（colorimetry）信息。这一步是可选的，如果跳过，将包含默认信息；这些默认值遵循 UVC 规范中 “色彩匹配描述符”（Color Matching Descriptor）一节的定义。
-
-要创建一个色彩匹配描述符，需创建一个 configfs 项并将其三个属性设为期望的设置，然后从您希望它关联到的格式处建立指向它的链接：
+褰撳墠鍞竴鏀寔鐨勯潪鍘嬬缉鏍煎紡鏄?YUYV锛屽叾缁嗚妭瑙?Documentation/userspace-api/media/v4l/pixfmt-packed-yuv.rst銆?
+#### Color Matching Descriptors锛堣壊褰╁尮閰嶆弿杩扮锛?
+鍙互涓烘偍鍒涘缓鐨勬瘡涓牸寮忔寚瀹氫竴浜涜壊搴︼紙colorimetry锛変俊鎭€傝繖涓€姝ユ槸鍙€夌殑锛屽鏋滆烦杩囷紝灏嗗寘鍚粯璁や俊鎭紱杩欎簺榛樿鍊奸伒寰?UVC 瑙勮寖涓?鈥滆壊褰╁尮閰嶆弿杩扮鈥濓紙Color Matching Descriptor锛変竴鑺傜殑瀹氫箟銆?
+瑕佸垱寤轰竴涓壊褰╁尮閰嶆弿杩扮锛岄渶鍒涘缓涓€涓?configfs 椤瑰苟灏嗗叾涓変釜灞炴€ц涓烘湡鏈涚殑璁剧疆锛岀劧鍚庝粠鎮ㄥ笇鏈涘畠鍏宠仈鍒扮殑鏍煎紡澶勫缓绔嬫寚鍚戝畠鐨勯摼鎺ワ細
 
 
 	# Create a new Color Matching Descriptor
@@ -117,12 +104,11 @@ UVC Gadget 期望通过 configfs 使用 UVC 函数来配置。这提供了相当
 	# Create a symlink to the Color Matching Descriptor from the format's config item
 	ln -s $FUNCTION/streaming/color_matching/yuyv $FUNCTION/streaming/uncompressed/yuyv
 
-有关有效取值的详细说明，请查阅 UVC 规范。注意，存在一个默认的色彩匹配描述符，并被任何没有链接到其他色彩匹配描述符的格式所使用。可以更改默认描述符的属性设置，因此请记住，如果您这样做，就是在更改任何未链接到其他描述符的格式的默认值。
+鏈夊叧鏈夋晥鍙栧€肩殑璇︾粏璇存槑锛岃鏌ラ槄 UVC 瑙勮寖銆傛敞鎰忥紝瀛樺湪涓€涓粯璁ょ殑鑹插僵鍖归厤鎻忚堪绗︼紝骞惰浠讳綍娌℃湁閾炬帴鍒板叾浠栬壊褰╁尮閰嶆弿杩扮鐨勬牸寮忔墍浣跨敤銆傚彲浠ユ洿鏀归粯璁ゆ弿杩扮鐨勫睘鎬ц缃紝鍥犳璇疯浣忥紝濡傛灉鎮ㄨ繖鏍峰仛锛屽氨鏄湪鏇存敼浠讳綍鏈摼鎺ュ埌鍏朵粬鎻忚堪绗︾殑鏍煎紡鐨勯粯璁ゅ€笺€?
 
+#### Header linking锛堝ご閮ㄩ摼鎺ワ級
 
-#### Header linking（头部链接）
-
-UVC 规范要求 Format 和 Frame 描述符之前要有 Header，用于描述诸如下文不同 Format 描述符的数量与累计大小等信息。这一步以及类似的操作，在 configfs 中通过链接代表 header 的 configfs 项与代表那些其他描述符的 config 项来实现，方式如下：
+UVC 瑙勮寖瑕佹眰 Format 鍜?Frame 鎻忚堪绗︿箣鍓嶈鏈?Header锛岀敤浜庢弿杩拌濡備笅鏂囦笉鍚?Format 鎻忚堪绗︾殑鏁伴噺涓庣疮璁″ぇ灏忕瓑淇℃伅銆傝繖涓€姝ヤ互鍙婄被浼肩殑鎿嶄綔锛屽湪 configfs 涓€氳繃閾炬帴浠ｈ〃 header 鐨?configfs 椤逛笌浠ｈ〃閭ｄ簺鍏朵粬鎻忚堪绗︾殑 config 椤规潵瀹炵幇锛屾柟寮忓涓嬶細
 
 
 	mkdir $FUNCTION/streaming/header/h
@@ -148,11 +134,10 @@ UVC 规范要求 Format 和 Frame 描述符之前要有 Header，用于描述诸
 	ln -s header/h class/ss
 
 
-#### Extension Unit Support（扩展单元支持）
+#### Extension Unit Support锛堟墿灞曞崟鍏冩敮鎸侊級
 
-一个 UVC 扩展单元（XU）本质上提供了一个独立的单元，控制 set 和 get 请求可以寻址到它。这些控制请求的含义完全取决于实现，但可用于控制在 UVC 规范之外的设置（例如启用或禁用视频特效）。一个 XU 可以插入到 UVC 单元链中，也可以保持游离。
-
-配置扩展单元涉及在相应的目录中创建一个条目并恰当地设置其属性，如下所示：
+涓€涓?UVC 鎵╁睍鍗曞厓锛圶U锛夋湰璐ㄤ笂鎻愪緵浜嗕竴涓嫭绔嬬殑鍗曞厓锛屾帶鍒?set 鍜?get 璇锋眰鍙互瀵诲潃鍒板畠銆傝繖浜涙帶鍒惰姹傜殑鍚箟瀹屽叏鍙栧喅浜庡疄鐜帮紝浣嗗彲鐢ㄤ簬鎺у埗鍦?UVC 瑙勮寖涔嬪鐨勮缃紙渚嬪鍚敤鎴栫鐢ㄨ棰戠壒鏁堬級銆備竴涓?XU 鍙互鎻掑叆鍒?UVC 鍗曞厓閾句腑锛屼篃鍙互淇濇寔娓哥銆?
+閰嶇疆鎵╁睍鍗曞厓娑夊強鍦ㄧ浉搴旂殑鐩綍涓垱寤轰竴涓潯鐩苟鎭板綋鍦拌缃叾灞炴€э紝濡備笅鎵€绀猴細
 
 
 	mkdir $FUNCTION/control/extensions/xu.0
@@ -177,7 +162,7 @@ UVC 规范要求 Format 和 Frame 描述符之前要有 Header，用于描述诸
 
 	popd
 
-bmControls 属性和 baSourceID 属性是多值属性。这意味着您可以向它们写入多个以换行分隔的值。例如要将第 1、2、9、10 个控制标记为可用，您需要向 bmControls 写入两个值，如下所示：
+bmControls 灞炴€у拰 baSourceID 灞炴€ф槸澶氬€煎睘鎬с€傝繖鎰忓懗鐫€鎮ㄥ彲浠ュ悜瀹冧滑鍐欏叆澶氫釜浠ユ崲琛屽垎闅旂殑鍊笺€備緥濡傝灏嗙 1銆?銆?銆?0 涓帶鍒舵爣璁颁负鍙敤锛屾偍闇€瑕佸悜 bmControls 鍐欏叆涓や釜鍊硷紝濡備笅鎵€绀猴細
 
 
 	cat << EOF > bmControls
@@ -185,9 +170,8 @@ bmControls 属性和 baSourceID 属性是多值属性。这意味着您可以向
 	0x03
 	EOF
 
-baSourceID 属性的多值特性掩盖了 XU 可以是多输入这一事实，不过请注意，目前这并没有什么显著影响。
-
-bControlSize 属性反映了 bmControls 属性的大小，类似地，bNrInPins 反映了 baSourceID 属性的大小。当您设置 bmControls 和 baSourceID 时，这两个属性都会自动增大/减小。也可以手动增大或减小 bControlSize，其效果是将条目截断到新大小，或用 0x00 填充条目，例如：
+baSourceID 灞炴€х殑澶氬€肩壒鎬ф帺鐩栦簡 XU 鍙互鏄杈撳叆杩欎竴浜嬪疄锛屼笉杩囪娉ㄦ剰锛岀洰鍓嶈繖骞舵病鏈変粈涔堟樉钁楀奖鍝嶃€?
+bControlSize 灞炴€у弽鏄犱簡 bmControls 灞炴€х殑澶у皬锛岀被浼煎湴锛宐NrInPins 鍙嶆槧浜?baSourceID 灞炴€х殑澶у皬銆傚綋鎮ㄨ缃?bmControls 鍜?baSourceID 鏃讹紝杩欎袱涓睘鎬ч兘浼氳嚜鍔ㄥ澶?鍑忓皬銆備篃鍙互鎵嬪姩澧炲ぇ鎴栧噺灏?bControlSize锛屽叾鏁堟灉鏄皢鏉＄洰鎴柇鍒版柊澶у皬锛屾垨鐢?0x00 濉厖鏉＄洰锛屼緥濡傦細
 
 ```
 
@@ -209,12 +193,9 @@ bControlSize 属性反映了 bmControls 属性的大小，类似地，bNrInPins 
 
 ```
 
-bNrInPins 和 baSourceID 以相同方式工作。
-
-#### Configuring Supported Controls for Camera Terminal and Processing Unit（为 Camera Terminal 和 Processing Unit 配置受支持的控制）
-
-UVC 链中的 Camera Terminal 和 Processing Unit 也拥有 bmControls 属性，其作用类似于扩展单元中的同名字段。不过与 XU 不同的是，这些单元的位标志含义在 UVC 规范中有定义；您应当查阅 “Camera Terminal Descriptor” 和 “Processing Unit Descriptor” 两节以获取这些标志的枚举。
-
+bNrInPins 鍜?baSourceID 浠ョ浉鍚屾柟寮忓伐浣溿€?
+#### Configuring Supported Controls for Camera Terminal and Processing Unit锛堜负 Camera Terminal 鍜?Processing Unit 閰嶇疆鍙楁敮鎸佺殑鎺у埗锛?
+UVC 閾句腑鐨?Camera Terminal 鍜?Processing Unit 涔熸嫢鏈?bmControls 灞炴€э紝鍏朵綔鐢ㄧ被浼间簬鎵╁睍鍗曞厓涓殑鍚屽悕瀛楁銆備笉杩囦笌 XU 涓嶅悓鐨勬槸锛岃繖浜涘崟鍏冪殑浣嶆爣蹇楀惈涔夊湪 UVC 瑙勮寖涓湁瀹氫箟锛涙偍搴斿綋鏌ラ槄 鈥淐amera Terminal Descriptor鈥?鍜?鈥淧rocessing Unit Descriptor鈥?涓よ妭浠ヨ幏鍙栬繖浜涙爣蹇楃殑鏋氫妇銆?
 
         # Set the Processing Unit's bmControls, flagging Brightness, Contrast
         # and Hue as available controls:
@@ -224,14 +205,11 @@ UVC 链中的 Camera Terminal 和 Processing Unit 也拥有 bmControls 属性，
         # Focus Relative as available controls:
         echo 0x60 > $FUNCTION/control/terminal/camera/default/bmControls
 
-如果您不设置这些字段，默认情况下 Camera Terminal 的 Auto-Exposure Mode 控制和 Processing Unit 的 Brightness 控制会被标记为可用；如果它们不被支持，您应当将该字段设为 0x00。
+濡傛灉鎮ㄤ笉璁剧疆杩欎簺瀛楁锛岄粯璁ゆ儏鍐典笅 Camera Terminal 鐨?Auto-Exposure Mode 鎺у埗鍜?Processing Unit 鐨?Brightness 鎺у埗浼氳鏍囪涓哄彲鐢紱濡傛灉瀹冧滑涓嶈鏀寔锛屾偍搴斿綋灏嗚瀛楁璁句负 0x00銆?
+娉ㄦ剰锛孋amera Terminal 鎴?Processing Unit 鐨?bmControls 瀛楁鐨勫ぇ灏忕敱 UVC 瑙勮寖鍥哄畾锛屽洜姝よ繖閲岀殑 bControlSize 灞炴€ф槸鍙鐨勩€?
+#### Custom Strings Support锛堣嚜瀹氫箟瀛楃涓叉敮鎸侊級
 
-注意，Camera Terminal 或 Processing Unit 的 bmControls 字段的大小由 UVC 规范固定，因此这里的 bControlSize 属性是只读的。
-
-#### Custom Strings Support（自定义字符串支持）
-
-为 USB 设备各部分提供文字描述的字符串描述符，可以在 USB configfs 中通常的位置定义，然后可以从 UVC 函数根目录或扩展单元目录链接过去，以将这些字符串指派为描述符：
-
+涓?USB 璁惧鍚勯儴鍒嗘彁渚涙枃瀛楁弿杩扮殑瀛楃涓叉弿杩扮锛屽彲浠ュ湪 USB configfs 涓€氬父鐨勪綅缃畾涔夛紝鐒跺悗鍙互浠?UVC 鍑芥暟鏍圭洰褰曟垨鎵╁睍鍗曞厓鐩綍閾炬帴杩囧幓锛屼互灏嗚繖浜涘瓧绗︿覆鎸囨淳涓烘弿杩扮锛?
 
 	# Create a string descriptor in us-EN and link to it from the function
 	# root. The name of the link is significant here, as it declares this
@@ -251,16 +229,15 @@ UVC 链中的 Camera Terminal 和 Processing Unit 也拥有 bmControls 属性，
 	echo -n "A Very Useful Extension Unit" > $GADGET/strings/0x409/xu.0/s
 	ln -s $GADGET/strings/0x409/xu.0 $FUNCTION/control/extensions/xu.0
 
-#### The interrupt endpoint（中断端点）
+#### The interrupt endpoint锛堜腑鏂鐐癸級
 
-VideoControl 接口有一个可选的中断端点，默认是禁用的。它旨在支持 UVC 的延迟响应控制 set 请求（应当通过该中断端点而非占用端点 0 来响应）。目前尚不支持通过该端点发送数据，因此将其保持禁用以免混淆。如果您希望启用它，可以通过 configfs 属性来做到：
-
+VideoControl 鎺ュ彛鏈変竴涓彲閫夌殑涓柇绔偣锛岄粯璁ゆ槸绂佺敤鐨勩€傚畠鏃ㄥ湪鏀寔 UVC 鐨勫欢杩熷搷搴旀帶鍒?set 璇锋眰锛堝簲褰撻€氳繃璇ヤ腑鏂鐐硅€岄潪鍗犵敤绔偣 0 鏉ュ搷搴旓級銆傜洰鍓嶅皻涓嶆敮鎸侀€氳繃璇ョ鐐瑰彂閫佹暟鎹紝鍥犳灏嗗叾淇濇寔绂佺敤浠ュ厤娣锋穯銆傚鏋滄偍甯屾湜鍚敤瀹冿紝鍙互閫氳繃 configfs 灞炴€ф潵鍋氬埌锛?
 
 	echo 1 > $FUNCTION/control/enable_interrupt_ep
 
-#### Bandwidth configuration（带宽配置）
+#### Bandwidth configuration锛堝甫瀹介厤缃級
 
-有三个属性控制 USB 连接的带宽。它们位于函数根目录，可以在限制范围内设置：
+鏈変笁涓睘鎬ф帶鍒?USB 杩炴帴鐨勫甫瀹姐€傚畠浠綅浜庡嚱鏁版牴鐩綍锛屽彲浠ュ湪闄愬埗鑼冨洿鍐呰缃細
 
 
 	# streaming_interval sets bInterval. Values range from 1..255
@@ -273,8 +250,7 @@ VideoControl 接口有一个可选的中断端点，默认是禁用的。它旨�
 	echo 1 > $FUNCTION/streaming_maxburst
 
 
-这里传入的值会根据 UVC 规范（取决于 USB 连接的速度）被钳制到有效值。要理解这些设置如何影响带宽，您应当查阅 UVC 规范，但一条经验法则是：增大 streaming_maxpacket 设置会提升带宽（从而提升最大可能的帧率），在 USB 连接运行于 SuperSpeed 时，streaming_maxburst 同理。增大 streaming_interval 会降低带宽和帧率。
+杩欓噷浼犲叆鐨勫€间細鏍规嵁 UVC 瑙勮寖锛堝彇鍐充簬 USB 杩炴帴鐨勯€熷害锛夎閽冲埗鍒版湁鏁堝€笺€傝鐞嗚В杩欎簺璁剧疆濡備綍褰卞搷甯﹀锛屾偍搴斿綋鏌ラ槄 UVC 瑙勮寖锛屼絾涓€鏉＄粡楠屾硶鍒欐槸锛氬澶?streaming_maxpacket 璁剧疆浼氭彁鍗囧甫瀹斤紙浠庤€屾彁鍗囨渶澶у彲鑳界殑甯х巼锛夛紝鍦?USB 杩炴帴杩愯浜?SuperSpeed 鏃讹紝streaming_maxburst 鍚岀悊銆傚澶?streaming_interval 浼氶檷浣庡甫瀹藉拰甯х巼銆?
+### The userspace application锛堢敤鎴风┖闂村簲鐢ㄧ▼搴忥級
 
-### The userspace application（用户空间应用程序）
-
-单凭 UVC Gadget 驱动本身无法做任何特别有趣的事。它必须与一个响应用 UVC 控制请求、并填充缓冲区以便排队到驱动所创建的 V4L2 设备的用户空间程序配合使用。这些事情如何达成取决于具体实现，超出了本文档的范围，但可以在 https://gitlab.freedesktop.org/camera/uvc-gadget 找到一个参考应用程序
+鍗曞嚟 UVC Gadget 椹卞姩鏈韩鏃犳硶鍋氫换浣曠壒鍒湁瓒ｇ殑浜嬨€傚畠蹇呴』涓庝竴涓搷搴旂敤 UVC 鎺у埗璇锋眰銆佸苟濉厖缂撳啿鍖轰互渚挎帓闃熷埌椹卞姩鎵€鍒涘缓鐨?V4L2 璁惧鐨勭敤鎴风┖闂寸▼搴忛厤鍚堜娇鐢ㄣ€傝繖浜涗簨鎯呭浣曡揪鎴愬彇鍐充簬鍏蜂綋瀹炵幇锛岃秴鍑轰簡鏈枃妗ｇ殑鑼冨洿锛屼絾鍙互鍦?https://gitlab.freedesktop.org/camera/uvc-gadget 鎵惧埌涓€涓弬鑰冨簲鐢ㄧ▼搴?

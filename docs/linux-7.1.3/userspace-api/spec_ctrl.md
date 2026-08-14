@@ -1,14 +1,10 @@
-## Speculation Control
+﻿## Speculation Control
 
 
-相当多的 CPU 具有与推测执行（speculation）相关的缺陷特性，这些实际上是在各种形式下导致数据泄漏的漏洞，甚至会跨越特权域。
-
-内核以各种形式提供针对此类漏洞的缓解（mitigation）措施。其中一些缓解措施在编译时可配置，一些可以通过内核命令行提供。
-
-还有一类缓解措施非常昂贵，但可以将它们限制在受控环境中的某组进程或任务上。控制这些缓解措施的机制是通过 `prctl(2)`。
-
-有两个与此相关的 prctl 选项：
-
+鐩稿綋澶氱殑 CPU 鍏锋湁涓庢帹娴嬫墽琛岋紙speculation锛夌浉鍏崇殑缂洪櫡鐗规€э紝杩欎簺瀹為檯涓婃槸鍦ㄥ悇绉嶅舰寮忎笅瀵艰嚧鏁版嵁娉勬紡鐨勬紡娲烇紝鐢氳嚦浼氳法瓒婄壒鏉冨煙銆?
+鍐呮牳浠ュ悇绉嶅舰寮忔彁渚涢拡瀵规绫绘紡娲炵殑缂撹В锛坢itigation锛夋帾鏂姐€傚叾涓竴浜涚紦瑙ｆ帾鏂藉湪缂栬瘧鏃跺彲閰嶇疆锛屼竴浜涘彲浠ラ€氳繃鍐呮牳鍛戒护琛屾彁渚涖€?
+杩樻湁涓€绫荤紦瑙ｆ帾鏂介潪甯告槀璐碉紝浣嗗彲浠ュ皢瀹冧滑闄愬埗鍦ㄥ彈鎺х幆澧冧腑鐨勬煇缁勮繘绋嬫垨浠诲姟涓娿€傛帶鍒惰繖浜涚紦瑙ｆ帾鏂界殑鏈哄埗鏄€氳繃 `prctl(2)`銆?
+鏈変袱涓笌姝ょ浉鍏崇殑 prctl 閫夐」锛?
  - PR_GET_SPECULATION_CTRL
 
  - PR_SET_SPECULATION_CTRL
@@ -16,86 +12,63 @@
 ### PR_GET_SPECULATION_CTRL
 
 
-PR_GET_SPECULATION_CTRL 返回由 prctl(2) 的 arg2 选择的推测执行缺陷特性的状态。返回值使用位 0-3，含义如下（但要注意，PR_SPEC_L1D_FLUSH 的语义不那么直观，请参阅下面该特定控制的文档）：
+PR_GET_SPECULATION_CTRL 杩斿洖鐢?prctl(2) 鐨?arg2 閫夋嫨鐨勬帹娴嬫墽琛岀己闄风壒鎬х殑鐘舵€併€傝繑鍥炲€间娇鐢ㄤ綅 0-3锛屽惈涔夊涓嬶紙浣嗚娉ㄦ剰锛孭R_SPEC_L1D_FLUSH 鐨勮涔変笉閭ｄ箞鐩磋锛岃鍙傞槄涓嬮潰璇ョ壒瀹氭帶鍒剁殑鏂囨。锛夛細
 
 ==== ====================== ==================================================
 Bit  Define                 Description
 ==== ====================== ==================================================
-0    PR_SPEC_PRCTL          Mitigation 可通过 PR_SET_SPECULATION_CTRL 按任务控制。
-1    PR_SPEC_ENABLE         推测特性已启用，缓解措施已禁用。
-2    PR_SPEC_DISABLE        推测特性已禁用，缓解措施已启用。
-3    PR_SPEC_FORCE_DISABLE  与 PR_SPEC_DISABLE 相同，但不可撤销。后续的
-                            prctl(..., PR_SPEC_ENABLE) 将会失败。
-4    PR_SPEC_DISABLE_NOEXEC 与 PR_SPEC_DISABLE 相同，但该状态会在 `execve(2)` 时清除。
-==== ====================== ==================================================
+0    PR_SPEC_PRCTL          Mitigation 鍙€氳繃 PR_SET_SPECULATION_CTRL 鎸変换鍔℃帶鍒躲€?1    PR_SPEC_ENABLE         鎺ㄦ祴鐗规€у凡鍚敤锛岀紦瑙ｆ帾鏂藉凡绂佺敤銆?2    PR_SPEC_DISABLE        鎺ㄦ祴鐗规€у凡绂佺敤锛岀紦瑙ｆ帾鏂藉凡鍚敤銆?3    PR_SPEC_FORCE_DISABLE  涓?PR_SPEC_DISABLE 鐩稿悓锛屼絾涓嶅彲鎾ら攢銆傚悗缁殑
+                            prctl(..., PR_SPEC_ENABLE) 灏嗕細澶辫触銆?4    PR_SPEC_DISABLE_NOEXEC 涓?PR_SPEC_DISABLE 鐩稿悓锛屼絾璇ョ姸鎬佷細鍦?`execve(2)` 鏃舵竻闄ゃ€?==== ====================== ==================================================
 
-如果所有位都为 0，则该 CPU 不受该推测执行缺陷特性的影响。
-
-如果设置了 PR_SPEC_PRCTL，则可以使用按任务的缓解控制。如果未设置，对该推测执行缺陷特性调用 prctl(PR_SET_SPECULATION_CTRL) 将会失败。
-
+濡傛灉鎵€鏈変綅閮戒负 0锛屽垯璇?CPU 涓嶅彈璇ユ帹娴嬫墽琛岀己闄风壒鎬х殑褰卞搷銆?
+濡傛灉璁剧疆浜?PR_SPEC_PRCTL锛屽垯鍙互浣跨敤鎸変换鍔＄殑缂撹В鎺у埗銆傚鏋滄湭璁剧疆锛屽璇ユ帹娴嬫墽琛岀己闄风壒鎬ц皟鐢?prctl(PR_SET_SPECULATION_CTRL) 灏嗕細澶辫触銆?
 
 ### PR_SET_SPECULATION_CTRL
 
 
-PR_SET_SPECULATION_CTRL 允许控制由 `prctl(2)` 的 arg2 按任务选择的推测执行缺陷特性。arg3 用于传入控制值，即 PR_SPEC_ENABLE 或 PR_SPEC_DISABLE 或 PR_SPEC_FORCE_DISABLE。
-
+PR_SET_SPECULATION_CTRL 鍏佽鎺у埗鐢?`prctl(2)` 鐨?arg2 鎸変换鍔￠€夋嫨鐨勬帹娴嬫墽琛岀己闄风壒鎬с€俛rg3 鐢ㄤ簬浼犲叆鎺у埗鍊硷紝鍗?PR_SPEC_ENABLE 鎴?PR_SPEC_DISABLE 鎴?PR_SPEC_FORCE_DISABLE銆?
 ### Common error codes
 
 ======= =================================================================
 Value   Meaning
 ======= =================================================================
-EINVAL  该 prctl 未由架构实现，或未使用的 prctl(2) 参数不为 0。
-
-ENODEV  arg2 选择了一个不受支持的推测执行缺陷特性。
-======= =================================================================
+EINVAL  璇?prctl 鏈敱鏋舵瀯瀹炵幇锛屾垨鏈娇鐢ㄧ殑 prctl(2) 鍙傛暟涓嶄负 0銆?
+ENODEV  arg2 閫夋嫨浜嗕竴涓笉鍙楁敮鎸佺殑鎺ㄦ祴鎵ц缂洪櫡鐗规€с€?======= =================================================================
 
 ### PR_SET_SPECULATION_CTRL error codes
 
 ======= =================================================================
 Value   Meaning
 ======= =================================================================
-0       成功
+0       鎴愬姛
 
-ERANGE  arg3 不正确，即它既不是 PR_SPEC_ENABLE 也不是
-        PR_SPEC_DISABLE 也不是 PR_SPEC_FORCE_DISABLE。
-
-ENXIO   对于 PR_SPEC_STORE_BYPASS：由于系统的启动配置，无法通过 prctl
-        控制所选的推测执行缺陷特性。
-
-EPERM   已经使用 PR_SPEC_FORCE_DISABLE 禁用了推测，而调用者试图再次
-        启用它。
-
-EPERM   对于 PR_SPEC_L1D_FLUSH 和 PR_SPEC_INDIRECT_BRANCH：由于系统的启动
-        配置，无法控制缓解措施。
-
+ERANGE  arg3 涓嶆纭紝鍗冲畠鏃笉鏄?PR_SPEC_ENABLE 涔熶笉鏄?        PR_SPEC_DISABLE 涔熶笉鏄?PR_SPEC_FORCE_DISABLE銆?
+ENXIO   瀵逛簬 PR_SPEC_STORE_BYPASS锛氱敱浜庣郴缁熺殑鍚姩閰嶇疆锛屾棤娉曢€氳繃 prctl
+        鎺у埗鎵€閫夌殑鎺ㄦ祴鎵ц缂洪櫡鐗规€с€?
+EPERM   宸茬粡浣跨敤 PR_SPEC_FORCE_DISABLE 绂佺敤浜嗘帹娴嬶紝鑰岃皟鐢ㄨ€呰瘯鍥惧啀娆?        鍚敤瀹冦€?
+EPERM   瀵逛簬 PR_SPEC_L1D_FLUSH 鍜?PR_SPEC_INDIRECT_BRANCH锛氱敱浜庣郴缁熺殑鍚姩
+        閰嶇疆锛屾棤娉曟帶鍒剁紦瑙ｆ帾鏂姐€?
 ======= =================================================================
 
 ### Speculation misfeature controls
 
-- PR_SPEC_STORE_BYPASS: 推测性存储绕过（Speculative Store Bypass）
-
-  调用方式：
-   - prctl(PR_GET_SPECULATION_CTRL, PR_SPEC_STORE_BYPASS, 0, 0, 0);
+- PR_SPEC_STORE_BYPASS: 鎺ㄦ祴鎬у瓨鍌ㄧ粫杩囷紙Speculative Store Bypass锛?
+  璋冪敤鏂瑰紡锛?   - prctl(PR_GET_SPECULATION_CTRL, PR_SPEC_STORE_BYPASS, 0, 0, 0);
    - prctl(PR_SET_SPECULATION_CTRL, PR_SPEC_STORE_BYPASS, PR_SPEC_ENABLE, 0, 0);
    - prctl(PR_SET_SPECULATION_CTRL, PR_SPEC_STORE_BYPASS, PR_SPEC_DISABLE, 0, 0);
    - prctl(PR_SET_SPECULATION_CTRL, PR_SPEC_STORE_BYPASS, PR_SPEC_FORCE_DISABLE, 0, 0);
    - prctl(PR_SET_SPECULATION_CTRL, PR_SPEC_STORE_BYPASS, PR_SPEC_DISABLE_NOEXEC, 0, 0);
 
-- PR_SPEC_INDIR_BRANCH: 用户进程中的间接分支推测
-                        （缓解针对用户进程的 Spectre V2 风格攻击）
-
-  调用方式：
-   - prctl(PR_GET_SPECULATION_CTRL, PR_SPEC_INDIRECT_BRANCH, 0, 0, 0);
+- PR_SPEC_INDIR_BRANCH: 鐢ㄦ埛杩涚▼涓殑闂存帴鍒嗘敮鎺ㄦ祴
+                        锛堢紦瑙ｉ拡瀵圭敤鎴疯繘绋嬬殑 Spectre V2 椋庢牸鏀诲嚮锛?
+  璋冪敤鏂瑰紡锛?   - prctl(PR_GET_SPECULATION_CTRL, PR_SPEC_INDIRECT_BRANCH, 0, 0, 0);
    - prctl(PR_SET_SPECULATION_CTRL, PR_SPEC_INDIRECT_BRANCH, PR_SPEC_ENABLE, 0, 0);
    - prctl(PR_SET_SPECULATION_CTRL, PR_SPEC_INDIRECT_BRANCH, PR_SPEC_DISABLE, 0, 0);
    - prctl(PR_SET_SPECULATION_CTRL, PR_SPEC_INDIRECT_BRANCH, PR_SPEC_FORCE_DISABLE, 0, 0);
 
-- PR_SPEC_L1D_FLUSH: 在任务上下文切换出去时刷新 L1D 缓存
-                        （仅在任务运行在非 SMT 核心上时有效）
-
-对于这个控制，PR_SPEC_ENABLE 表示**缓解措施**已启用（L1D 被刷新），PR_SPEC_DISABLE 表示它已禁用。
-
-  调用方式：
-   - prctl(PR_GET_SPECULATION_CTRL, PR_SPEC_L1D_FLUSH, 0, 0, 0);
+- PR_SPEC_L1D_FLUSH: 鍦ㄤ换鍔′笂涓嬫枃鍒囨崲鍑哄幓鏃跺埛鏂?L1D 缂撳瓨
+                        锛堜粎鍦ㄤ换鍔¤繍琛屽湪闈?SMT 鏍稿績涓婃椂鏈夋晥锛?
+瀵逛簬杩欎釜鎺у埗锛孭R_SPEC_ENABLE 琛ㄧず**缂撹В鎺柦**宸插惎鐢紙L1D 琚埛鏂帮級锛孭R_SPEC_DISABLE 琛ㄧず瀹冨凡绂佺敤銆?
+  璋冪敤鏂瑰紡锛?   - prctl(PR_GET_SPECULATION_CTRL, PR_SPEC_L1D_FLUSH, 0, 0, 0);
    - prctl(PR_SET_SPECULATION_CTRL, PR_SPEC_L1D_FLUSH, PR_SPEC_ENABLE, 0, 0);
    - prctl(PR_SET_SPECULATION_CTRL, PR_SPEC_L1D_FLUSH, PR_SPEC_DISABLE, 0, 0);

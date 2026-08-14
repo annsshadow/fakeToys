@@ -1,16 +1,16 @@
+﻿
+## KVM 鍐呮牳铏氭嫙鏈?
 
-## KVM 内核虚拟机
-
-本页面为该分类的文档索引，汇总相关的条目链接；链接目标与标识符保持原文以便于检索。
+鏈〉闈负璇ュ垎绫荤殑鏂囨。绱㈠紩锛屾眹鎬荤浉鍏崇殑鏉＄洰閾炬帴锛涢摼鎺ョ洰鏍囦笌鏍囪瘑绗︿繚鎸佸師鏂囦互渚夸簬妫€绱€?
 
 
 - [API](api)
-- [设备/索引](devices/index)
-- [ARM/索引](arm/index)
-- [s390/索引](s390/index)
+- [璁惧/绱㈠紩](devices/index)
+- [ARM/绱㈠紩](arm/index)
+- [s390/绱㈠紩](s390/index)
 - [ppc-pv](ppc-pv)
-- [x86/索引](x86/index)
-- [loongarch/索引](loongarch/index)
+- [x86/绱㈠紩](x86/index)
+- [loongarch/绱㈠紩](loongarch/index)
 - [locking](locking)
 - [vcpu-requests](vcpu-requests)
 - [halt-polling](halt-polling)

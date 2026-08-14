@@ -1,26 +1,26 @@
-## 网络
+﻿## 缃戠粶
 
-本页是 Linux 网络子系统文档的总索引，汇总了从桥接、bonding、IP 路由到 TLS、MPTCP、XDP 等协议与机制的参考文档入口，便于网络开发者与维护者按主题快速定位。
-
-
-本文档为自动生成的结构化条目索引，条目名称以英文术语保留以便检索。
-
-本文档为自动生成的结构化条目索引，条目名称以英文术语保留以便检索。
+鏈〉鏄?Linux 缃戠粶瀛愮郴缁熸枃妗ｇ殑鎬荤储寮曪紝姹囨€讳簡浠庢ˉ鎺ャ€乥onding銆両P 璺敱鍒?TLS銆丮PTCP銆乆DP 绛夊崗璁笌鏈哄埗鐨勫弬鑰冩枃妗ｅ叆鍙ｏ紝渚夸簬缃戠粶寮€鍙戣€呬笌缁存姢鑰呮寜涓婚蹇€熷畾浣嶃€?
 
 
-有关 netdev 开发流程的具体指南，请参阅 netdev-FAQ。
+鏈枃妗ｄ负鑷姩鐢熸垚鐨勭粨鏋勫寲鏉＄洰绱㈠紩锛屾潯鐩悕绉颁互鑻辨枃鏈淇濈暀浠ヤ究妫€绱€?
 
-目录：
+鏈枃妗ｄ负鑷姩鐢熸垚鐨勭粨鏋勫寲鏉＄洰绱㈠紩锛屾潯鐩悕绉颁互鑻辨枃鏈淇濈暀浠ヤ究妫€绱€?
+
+
+鏈夊叧 netdev 寮€鍙戞祦绋嬬殑鍏蜂綋鎸囧崡锛岃鍙傞槄 netdev-FAQ銆?
+
+鐩綍锛?
 
 -[af_xdp](af_xdp)
 -[bareudp](bareudp)
 -[batman-adv](batman-adv)
 -[](can)
 -[can_ucan_protocol](can_ucan_protocol)
--[device_drivers/索引](device_drivers/index)
--[diagnostic/索引](diagnostic/index)
--[dsa/索引](dsa/index)
--[devlink/索引](devlink/index)
+-[device_drivers/绱㈠紩](device_drivers/index)
+-[diagnostic/绱㈠紩](diagnostic/index)
+-[dsa/绱㈠紩](dsa/index)
+-[devlink/绱㈠紩](devlink/index)
 -[ethtool-netlink](ethtool-netlink)
 -[ieee802154](ieee802154)
 -[iso15765-2](iso15765-2)
@@ -44,7 +44,7 @@
 -[tls-handshake](tls-handshake)
 -[nfc](nfc)
 -[6lowpan](6lowpan)
--[arcnet-硬件](arcnet-hardware)
+-[arcnet-纭欢](arcnet-hardware)
 -[arcnet](arcnet)
 -[atm](atm)
 -[bonding](bonding)
@@ -52,13 +52,13 @@
 -[dctcp](dctcp)
 -[devmem](devmem)
 -[dns_resolver](dns_resolver)
--[驱动](driver)
+-[椹卞姩](driver)
 -[eql](eql)
 -[fib_trie](fib_trie)
 -[filter](filter)
 -[generic-hdlc](generic-hdlc)
 -[generic_netlink](generic_netlink)
--[../netlink/specs/索引](../netlink/specs/index)
+-[../netlink/specs/绱㈠紩](../netlink/specs/index)
 -[gen_stats](gen_stats)
 -[gtp](gtp)
 -[ila](ila)
@@ -72,7 +72,7 @@
 -[ipvs-sysctl](ipvs-sysctl)
 -[kcm](kcm)
 -[l2tp](l2tp)
--[lapb-模块](lapb-module)
+-[lapb-妯″潡](lapb-module)
 -[mac80211-injection](mac80211-injection)
 -[mctp](mctp)
 -[mpls-sysctl](mpls-sysctl)
@@ -81,9 +81,9 @@
 -[multiqueue](multiqueue)
 -[multi-pf-netdev](multi-pf-netdev)
 -[napi](napi)
--[net_cachelines/索引](net_cachelines/index)
+-[net_cachelines/绱㈠紩](net_cachelines/index)
 -[netconsole](netconsole)
--[netdev-特性](netdev-features)
+-[netdev-鐗规€(netdev-features)
 -[netdevices](netdevices)
 -[netfilter-sysctl](netfilter-sysctl)
 -[netif-msg](netif-msg)
@@ -97,12 +97,12 @@
 -[packet_mmap](packet_mmap)
 -[phonet](phonet)
 -[phy-link-topology](phy-link-topology)
--[phy-端口](phy-port)
+-[phy-绔彛](phy-port)
 -[pktgen](pktgen)
 -[plip](plip)
 -[ppp_generic](ppp_generic)
 -[proc_net_tcp](proc_net_tcp)
--[pse-pd/索引](pse-pd/index)
+-[pse-pd/绱㈠紩](pse-pd/index)
 -[psp](psp)
 -[radiotap-headers](radiotap-headers)
 -[rds](rds)
@@ -120,7 +120,7 @@
 -[switchdev](switchdev)
 -[sysfs-tagging](sysfs-tagging)
 -[tc-actions-env-rules](tc-actions-env-rules)
--[tc-队列-filters](tc-queue-filters)
+-[tc-闃熷垪-filters](tc-queue-filters)
 -[tcp_ao](tcp_ao)
 -[tcp-thin](tcp-thin)
 -[team](team)
@@ -133,6 +133,6 @@
 -[vxlan](vxlan)
 -[x25](x25)
 -[x25-iface](x25-iface)
--[xfrm/索引](xfrm/index)
+-[xfrm/绱㈠紩](xfrm/index)
 -[xdp-rx-metadata](xdp-rx-metadata)
 -[xsk-tx-metadata](xsk-tx-metadata)

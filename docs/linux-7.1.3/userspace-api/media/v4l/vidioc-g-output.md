@@ -1,11 +1,11 @@
-
+﻿
 ######## ioctl VIDIOC_G_OUTPUT, VIDIOC_S_OUTPUT
 
 
 ## Name
 
 
-VIDIOC_G_OUTPUT - VIDIOC_S_OUTPUT - 查询或选择当前的视频输出
+VIDIOC_G_OUTPUT - VIDIOC_S_OUTPUT - 鏌ヨ鎴栭€夋嫨褰撳墠鐨勮棰戣緭鍑?
 
 ## Synopsis
 
@@ -19,33 +19,33 @@ VIDIOC_G_OUTPUT - VIDIOC_S_OUTPUT - 查询或选择当前的视频输出
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `argp`
-    指向包含输出索引的整数的指针。
+    鎸囧悜鍖呭惈杈撳嚭绱㈠紩鐨勬暣鏁扮殑鎸囬拡銆?
 
 ## Description
 
 
-要查询当前的视频输出，应用程序需调用
-VIDIOC_G_OUTPUT <VIDIOC_G_OUTPUT> ioctl，并传入一个指向整数的指针，驱动会
-将输出编号存入其中，如同结构体
-`v4l2_output` 的 `index` 字段一样。该 ioctl 仅在没有视频输出时才会
-失败，并返回 `EINVAL` 错误码。
+瑕佹煡璇㈠綋鍓嶇殑瑙嗛杈撳嚭锛屽簲鐢ㄧ▼搴忛渶璋冪敤
+VIDIOC_G_OUTPUT <VIDIOC_G_OUTPUT> ioctl锛屽苟浼犲叆涓€涓寚鍚戞暣鏁扮殑鎸囬拡锛岄┍鍔ㄤ細
+灏嗚緭鍑虹紪鍙峰瓨鍏ュ叾涓紝濡傚悓缁撴瀯浣?
+`v4l2_output` 鐨?`index` 瀛楁涓€鏍枫€傝 ioctl 浠呭湪娌℃湁瑙嗛杈撳嚭鏃舵墠浼?
+澶辫触锛屽苟杩斿洖 `EINVAL` 閿欒鐮併€?
 
-要选择某个视频输出，应用程序需将要选择的输出编号存入一个整数，并调用 VIDIOC_S_OUTPUT <VIDIOC_G_OUTPUT> ioctl，传入
-指向该整数的指针。这可能会产生副作用。例如，不同的输出可能支持不同的视频标准，因此驱动可能会隐式地
-切换当前标准。由于这些可能的副作用，应用程序必须先选择一个输出，然后再查询或
-协商任何其他参数。
+瑕侀€夋嫨鏌愪釜瑙嗛杈撳嚭锛屽簲鐢ㄧ▼搴忛渶灏嗚閫夋嫨鐨勮緭鍑虹紪鍙峰瓨鍏ヤ竴涓暣鏁帮紝骞惰皟鐢?VIDIOC_S_OUTPUT <VIDIOC_G_OUTPUT> ioctl锛屼紶鍏?
+鎸囧悜璇ユ暣鏁扮殑鎸囬拡銆傝繖鍙兘浼氫骇鐢熷壇浣滅敤銆備緥濡傦紝涓嶅悓鐨勮緭鍑哄彲鑳芥敮鎸佷笉鍚岀殑瑙嗛鏍囧噯锛屽洜姝ら┍鍔ㄥ彲鑳戒細闅愬紡鍦?
+鍒囨崲褰撳墠鏍囧噯銆傜敱浜庤繖浜涘彲鑳界殑鍓綔鐢紝搴旂敤绋嬪簭蹇呴』鍏堥€夋嫨涓€涓緭鍑猴紝鐒跺悗鍐嶆煡璇㈡垨
+鍗忓晢浠讳綍鍏朵粬鍙傛暟銆?
 
-有关视频输出的信息可通过
-VIDIOC_ENUMOUTPUT ioctl 获取。
+鏈夊叧瑙嗛杈撳嚭鐨勪俊鎭彲閫氳繃
+VIDIOC_ENUMOUTPUT ioctl 鑾峰彇銆?
 
 ## Return Value
 
 
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 章节中描述。
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
 
 EINVAL
-    视频输出的编号越界，或者根本没有任何视频输出。
+    瑙嗛杈撳嚭鐨勭紪鍙疯秺鐣岋紝鎴栬€呮牴鏈病鏈変换浣曡棰戣緭鍑恒€?

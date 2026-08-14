@@ -1,5 +1,5 @@
-
-######## 压缩格式
+﻿
+######## 鍘嬬缉鏍煎紡
 
 
 
@@ -10,256 +10,149 @@
     :stub-columns: 0
     :widths:       3 1 4
 
-    - - 标识符
-      - 代码
-      - 说明
+    - - 鏍囪瘑绗?      - 浠ｇ爜
+      - 璇存槑
     - .. _V4L2-PIX-FMT-JPEG:
 
       - `V4L2_PIX_FMT_JPEG`
       - 'JPEG'
-      - 待定。另请参阅 VIDIOC_G_JPEGCOMP <VIDIOC_G_JPEGCOMP>、
-	VIDIOC_S_JPEGCOMP <VIDIOC_G_JPEGCOMP>。
-    - .. _V4L2-PIX-FMT-MPEG:
+      - 寰呭畾銆傚彟璇峰弬闃?VIDIOC_G_JPEGCOMP <VIDIOC_G_JPEGCOMP>銆?	VIDIOC_S_JPEGCOMP <VIDIOC_G_JPEGCOMP>銆?    - .. _V4L2-PIX-FMT-MPEG:
 
       - `V4L2_PIX_FMT_MPEG`
       - 'MPEG'
-      - MPEG 多路复用流。实际格式由扩展控制
-	`V4L2_CID_MPEG_STREAM_TYPE` 决定，参见
-	mpeg-control-id。
-    - .. _V4L2-PIX-FMT-H264:
+      - MPEG 澶氳矾澶嶇敤娴併€傚疄闄呮牸寮忕敱鎵╁睍鎺у埗
+	`V4L2_CID_MPEG_STREAM_TYPE` 鍐冲畾锛屽弬瑙?	mpeg-control-id銆?    - .. _V4L2-PIX-FMT-H264:
 
       - `V4L2_PIX_FMT_H264`
       - 'H264'
-      - H264 访问单元（Access Unit）。
-	解码器期望每个缓冲区包含一个访问单元。
-	编码器为每个缓冲区生成一个访问单元。
-	如果 VIDIOC_ENUM_FMT 报告 `V4L2_FMT_FLAG_CONTINUOUS_BYTESTREAM`，
-	则解码器没有特殊要求，因为它可以从原始字节流中解析出所有
-	信息。
-    - .. _V4L2-PIX-FMT-H264-NO-SC:
+      - H264 璁块棶鍗曞厓锛圓ccess Unit锛夈€?	瑙ｇ爜鍣ㄦ湡鏈涙瘡涓紦鍐插尯鍖呭惈涓€涓闂崟鍏冦€?	缂栫爜鍣ㄤ负姣忎釜缂撳啿鍖虹敓鎴愪竴涓闂崟鍏冦€?	濡傛灉 VIDIOC_ENUM_FMT 鎶ュ憡 `V4L2_FMT_FLAG_CONTINUOUS_BYTESTREAM`锛?	鍒欒В鐮佸櫒娌℃湁鐗规畩瑕佹眰锛屽洜涓哄畠鍙互浠庡師濮嬪瓧鑺傛祦涓В鏋愬嚭鎵€鏈?	淇℃伅銆?    - .. _V4L2-PIX-FMT-H264-NO-SC:
 
       - `V4L2_PIX_FMT_H264_NO_SC`
       - 'AVC1'
-      - 不带起始码的 H264 视频基本流。
-    - .. _V4L2-PIX-FMT-H264-MVC:
+      - 涓嶅甫璧峰鐮佺殑 H264 瑙嗛鍩烘湰娴併€?    - .. _V4L2-PIX-FMT-H264-MVC:
 
       - `V4L2_PIX_FMT_H264_MVC`
       - 'M264'
-      - H264 MVC 视频基本流。
-    - .. _V4L2-PIX-FMT-H264-SLICE:
+      - H264 MVC 瑙嗛鍩烘湰娴併€?    - .. _V4L2-PIX-FMT-H264-SLICE:
 
       - `V4L2_PIX_FMT_H264_SLICE`
       - 'S264'
-      - 经过解析的 H264 slice 数据，包含 slice 头，可带也可不带
-	起始码，提取自 H264 比特流。
-	该格式适用于通过 stateless_decoder 实现 H264
-	流水线的无状态（stateless）视频解码器。
-	此像素格式有两个修改量，必须至少通过
+      - 缁忚繃瑙ｆ瀽鐨?H264 slice 鏁版嵁锛屽寘鍚?slice 澶达紝鍙甫涔熷彲涓嶅甫
+	璧峰鐮侊紝鎻愬彇鑷?H264 姣旂壒娴併€?	璇ユ牸寮忛€傜敤浜庨€氳繃 stateless_decoder 瀹炵幇 H264
+	娴佹按绾跨殑鏃犵姸鎬侊紙stateless锛夎棰戣В鐮佸櫒銆?	姝ゅ儚绱犳牸寮忔湁涓や釜淇敼閲忥紝蹇呴』鑷冲皯閫氳繃
 	`V4L2_CID_STATELESS_H264_DECODE_MODE`
-        和 `V4L2_CID_STATELESS_H264_START_CODE` 控件设置一次。
-	此外，与待解码帧相关的元数据必须通过
-	`V4L2_CID_STATELESS_H264_SPS`、
-	`V4L2_CID_STATELESS_H264_PPS`、
-	`V4L2_CID_STATELESS_H264_SCALING_MATRIX`、
-	`V4L2_CID_STATELESS_H264_SLICE_PARAMS` 和
-	`V4L2_CID_STATELESS_H264_DECODE_PARAMS` 控件传入。参见
-	相关的 Codec Control IDs <v4l2-codec-stateless-h264>。
-        使用此像素格式时必须提供恰好一个输出缓冲区和一个捕获缓冲区。
-	输出缓冲区必须包含适当数量的宏块，以解码出与对应捕获缓冲区
-	相匹配的完整帧。
-
-	该格式的语法记录在 h264 规范的
-	7.3.2.8 节“Slice layer without partitioning RBSP syntax”及
-	后续章节中。
-
+        鍜?`V4L2_CID_STATELESS_H264_START_CODE` 鎺т欢璁剧疆涓€娆°€?	姝ゅ锛屼笌寰呰В鐮佸抚鐩稿叧鐨勫厓鏁版嵁蹇呴』閫氳繃
+	`V4L2_CID_STATELESS_H264_SPS`銆?	`V4L2_CID_STATELESS_H264_PPS`銆?	`V4L2_CID_STATELESS_H264_SCALING_MATRIX`銆?	`V4L2_CID_STATELESS_H264_SLICE_PARAMS` 鍜?	`V4L2_CID_STATELESS_H264_DECODE_PARAMS` 鎺т欢浼犲叆銆傚弬瑙?	鐩稿叧鐨?Codec Control IDs <v4l2-codec-stateless-h264>銆?        浣跨敤姝ゅ儚绱犳牸寮忔椂蹇呴』鎻愪緵鎭板ソ涓€涓緭鍑虹紦鍐插尯鍜屼竴涓崟鑾风紦鍐插尯銆?	杈撳嚭缂撳啿鍖哄繀椤诲寘鍚€傚綋鏁伴噺鐨勫畯鍧楋紝浠ヨВ鐮佸嚭涓庡搴旀崟鑾风紦鍐插尯
+	鐩稿尮閰嶇殑瀹屾暣甯с€?
+	璇ユ牸寮忕殑璇硶璁板綍鍦?h264 瑙勮寖鐨?	7.3.2.8 鑺傗€淪lice layer without partitioning RBSP syntax鈥濆強
+	鍚庣画绔犺妭涓€?
     - .. _V4L2-PIX-FMT-H263:
 
       - `V4L2_PIX_FMT_H263`
       - 'H263'
-      - H263 视频基本流。
-    - .. _V4L2-PIX-FMT-SPK:
+      - H263 瑙嗛鍩烘湰娴併€?    - .. _V4L2-PIX-FMT-SPK:
 
       - `V4L2_PIX_FMT_SPK`
       - 'SPK0'
-      - Sorenson Spark 是 H.263 的一种实现，用于 Flash Video 和 Adobe Flash 文件。
-    - .. _V4L2-PIX-FMT-MPEG1:
+      - Sorenson Spark 鏄?H.263 鐨勪竴绉嶅疄鐜帮紝鐢ㄤ簬 Flash Video 鍜?Adobe Flash 鏂囦欢銆?    - .. _V4L2-PIX-FMT-MPEG1:
 
       - `V4L2_PIX_FMT_MPEG1`
       - 'MPG1'
-      - MPEG1 图像。每个缓冲区以 Picture 头开始，随后根据需要包含
-	其他头，并以 Picture 数据结束。
-	如果 VIDIOC_ENUM_FMT 报告 `V4L2_FMT_FLAG_CONTINUOUS_BYTESTREAM`，
-	则解码器没有特殊要求，因为它可以从原始字节流中解析出所有
-	信息。
-    - .. _V4L2-PIX-FMT-MPEG2:
+      - MPEG1 鍥惧儚銆傛瘡涓紦鍐插尯浠?Picture 澶村紑濮嬶紝闅忓悗鏍规嵁闇€瑕佸寘鍚?	鍏朵粬澶达紝骞朵互 Picture 鏁版嵁缁撴潫銆?	濡傛灉 VIDIOC_ENUM_FMT 鎶ュ憡 `V4L2_FMT_FLAG_CONTINUOUS_BYTESTREAM`锛?	鍒欒В鐮佸櫒娌℃湁鐗规畩瑕佹眰锛屽洜涓哄畠鍙互浠庡師濮嬪瓧鑺傛祦涓В鏋愬嚭鎵€鏈?	淇℃伅銆?    - .. _V4L2-PIX-FMT-MPEG2:
 
       - `V4L2_PIX_FMT_MPEG2`
       - 'MPG2'
-      - MPEG2 图像。每个缓冲区以 Picture 头开始，随后根据需要包含
-	其他头，并以 Picture 数据结束。
-	如果 VIDIOC_ENUM_FMT 报告 `V4L2_FMT_FLAG_CONTINUOUS_BYTESTREAM`，
-	则解码器没有特殊要求，因为它可以从原始字节流中解析出所有
-	信息。
-    - .. _V4L2-PIX-FMT-MPEG2-SLICE:
+      - MPEG2 鍥惧儚銆傛瘡涓紦鍐插尯浠?Picture 澶村紑濮嬶紝闅忓悗鏍规嵁闇€瑕佸寘鍚?	鍏朵粬澶达紝骞朵互 Picture 鏁版嵁缁撴潫銆?	濡傛灉 VIDIOC_ENUM_FMT 鎶ュ憡 `V4L2_FMT_FLAG_CONTINUOUS_BYTESTREAM`锛?	鍒欒В鐮佸櫒娌℃湁鐗规畩瑕佹眰锛屽洜涓哄畠鍙互浠庡師濮嬪瓧鑺傛祦涓В鏋愬嚭鎵€鏈?	淇℃伅銆?    - .. _V4L2-PIX-FMT-MPEG2-SLICE:
 
       - `V4L2_PIX_FMT_MPEG2_SLICE`
       - 'MG2S'
-      - 经过解析的 MPEG-2 slice 数据，提取自 MPEG-2 比特流。
-	该格式适用于通过 stateless_decoder 实现 MPEG-2
-	流水线的无状态视频解码器。
-	与待解码帧相关的元数据必须通过
-	`V4L2_CID_STATELESS_MPEG2_SEQUENCE` 和
-        `V4L2_CID_STATELESS_MPEG2_PICTURE` 控件传入。
-        量化矩阵可通过
-	`V4L2_CID_STATELESS_MPEG2_QUANTISATION` 控件可选地指定。
-	参见相关的 Codec Control IDs <v4l2-codec-stateless-mpeg2>。
-	使用此像素格式时必须提供恰好一个输出缓冲区和一个捕获缓冲区。
-	输出缓冲区必须包含适当数量的宏块，以解码出与对应捕获缓冲区
-	相匹配的完整帧。
-    - .. _V4L2-PIX-FMT-MPEG4:
+      - 缁忚繃瑙ｆ瀽鐨?MPEG-2 slice 鏁版嵁锛屾彁鍙栬嚜 MPEG-2 姣旂壒娴併€?	璇ユ牸寮忛€傜敤浜庨€氳繃 stateless_decoder 瀹炵幇 MPEG-2
+	娴佹按绾跨殑鏃犵姸鎬佽棰戣В鐮佸櫒銆?	涓庡緟瑙ｇ爜甯х浉鍏崇殑鍏冩暟鎹繀椤婚€氳繃
+	`V4L2_CID_STATELESS_MPEG2_SEQUENCE` 鍜?        `V4L2_CID_STATELESS_MPEG2_PICTURE` 鎺т欢浼犲叆銆?        閲忓寲鐭╅樀鍙€氳繃
+	`V4L2_CID_STATELESS_MPEG2_QUANTISATION` 鎺т欢鍙€夊湴鎸囧畾銆?	鍙傝鐩稿叧鐨?Codec Control IDs <v4l2-codec-stateless-mpeg2>銆?	浣跨敤姝ゅ儚绱犳牸寮忔椂蹇呴』鎻愪緵鎭板ソ涓€涓緭鍑虹紦鍐插尯鍜屼竴涓崟鑾风紦鍐插尯銆?	杈撳嚭缂撳啿鍖哄繀椤诲寘鍚€傚綋鏁伴噺鐨勫畯鍧楋紝浠ヨВ鐮佸嚭涓庡搴旀崟鑾风紦鍐插尯
+	鐩稿尮閰嶇殑瀹屾暣甯с€?    - .. _V4L2-PIX-FMT-MPEG4:
 
       - `V4L2_PIX_FMT_MPEG4`
       - 'MPG4'
-      - MPEG4 视频基本流。
-    - .. _V4L2-PIX-FMT-XVID:
+      - MPEG4 瑙嗛鍩烘湰娴併€?    - .. _V4L2-PIX-FMT-XVID:
 
       - `V4L2_PIX_FMT_XVID`
       - 'XVID'
-      - Xvid 视频基本流。
-    - .. _V4L2-PIX-FMT-VC1-ANNEX-G:
+      - Xvid 瑙嗛鍩烘湰娴併€?    - .. _V4L2-PIX-FMT-VC1-ANNEX-G:
 
       - `V4L2_PIX_FMT_VC1_ANNEX_G`
       - 'VC1G'
-      - VC1，符合 SMPTE 421M Annex G 的流。
-    - .. _V4L2-PIX-FMT-VC1-ANNEX-L:
+      - VC1锛岀鍚?SMPTE 421M Annex G 鐨勬祦銆?    - .. _V4L2-PIX-FMT-VC1-ANNEX-L:
 
       - `V4L2_PIX_FMT_VC1_ANNEX_L`
       - 'VC1L'
-      - VC1，符合 SMPTE 421M Annex L 的流。
-    - .. _V4L2-PIX-FMT-VP8:
+      - VC1锛岀鍚?SMPTE 421M Annex L 鐨勬祦銆?    - .. _V4L2-PIX-FMT-VP8:
 
       - `V4L2_PIX_FMT_VP8`
       - 'VP80'
-      - VP8 压缩视频帧。编码器为每个缓冲区生成一个压缩帧，
-	解码器每个缓冲区需要一个压缩帧。
-    - .. _V4L2-PIX-FMT-VP8-FRAME:
+      - VP8 鍘嬬缉瑙嗛甯с€傜紪鐮佸櫒涓烘瘡涓紦鍐插尯鐢熸垚涓€涓帇缂╁抚锛?	瑙ｇ爜鍣ㄦ瘡涓紦鍐插尯闇€瑕佷竴涓帇缂╁抚銆?    - .. _V4L2-PIX-FMT-VP8-FRAME:
 
       - `V4L2_PIX_FMT_VP8_FRAME`
       - 'VP8F'
-      - 经过解析的 VP8 帧，包含帧头，提取自容器。
-	该格式适用于通过 stateless_decoder 实现 VP8
-	流水线的无状态视频解码器。
-	与待解码帧相关的元数据必须通过
-	`V4L2_CID_STATELESS_VP8_FRAME` 控件传入。
-	参见相关的 Codec Control IDs <v4l2-codec-stateless-vp8>。
-	使用此像素格式时必须提供恰好一个输出缓冲区和一个捕获缓冲区。
-	输出缓冲区必须包含适当数量的宏块，以解码出与对应捕获缓冲区
-	相匹配的完整帧。
-
+      - 缁忚繃瑙ｆ瀽鐨?VP8 甯э紝鍖呭惈甯уご锛屾彁鍙栬嚜瀹瑰櫒銆?	璇ユ牸寮忛€傜敤浜庨€氳繃 stateless_decoder 瀹炵幇 VP8
+	娴佹按绾跨殑鏃犵姸鎬佽棰戣В鐮佸櫒銆?	涓庡緟瑙ｇ爜甯х浉鍏崇殑鍏冩暟鎹繀椤婚€氳繃
+	`V4L2_CID_STATELESS_VP8_FRAME` 鎺т欢浼犲叆銆?	鍙傝鐩稿叧鐨?Codec Control IDs <v4l2-codec-stateless-vp8>銆?	浣跨敤姝ゅ儚绱犳牸寮忔椂蹇呴』鎻愪緵鎭板ソ涓€涓緭鍑虹紦鍐插尯鍜屼竴涓崟鑾风紦鍐插尯銆?	杈撳嚭缂撳啿鍖哄繀椤诲寘鍚€傚綋鏁伴噺鐨勫畯鍧楋紝浠ヨВ鐮佸嚭涓庡搴旀崟鑾风紦鍐插尯
+	鐩稿尮閰嶇殑瀹屾暣甯с€?
     - .. _V4L2-PIX-FMT-VP9:
 
       - `V4L2_PIX_FMT_VP9`
       - 'VP90'
-      - VP9 压缩视频帧。编码器为每个缓冲区生成一个压缩帧，
-	解码器每个缓冲区需要一个压缩帧。
-    - .. _V4L2-PIX-FMT-VP9-FRAME:
+      - VP9 鍘嬬缉瑙嗛甯с€傜紪鐮佸櫒涓烘瘡涓紦鍐插尯鐢熸垚涓€涓帇缂╁抚锛?	瑙ｇ爜鍣ㄦ瘡涓紦鍐插尯闇€瑕佷竴涓帇缂╁抚銆?    - .. _V4L2-PIX-FMT-VP9-FRAME:
 
       - `V4L2_PIX_FMT_VP9_FRAME`
       - 'VP9F'
-      - 经过解析的 VP9 帧，包含帧头，提取自容器。
-	该格式适用于通过 stateless_decoder 实现 VP9
-	流水线的无状态视频解码器。
-	与待解码帧相关的元数据必须通过
-	`V4L2_CID_STATELESS_VP9_FRAME` 和
-	`V4L2_CID_STATELESS_VP9_COMPRESSED_HDR` 控件传入。
-	参见相关的 Codec Control IDs <v4l2-codec-stateless-vp9>。
-	使用此像素格式时必须提供恰好一个输出缓冲区和一个捕获缓冲区。
-	输出缓冲区必须包含适当数量的宏块，以解码出与对应捕获缓冲区
-	相匹配的完整帧。
-    - .. _V4L2-PIX-FMT-HEVC:
+      - 缁忚繃瑙ｆ瀽鐨?VP9 甯э紝鍖呭惈甯уご锛屾彁鍙栬嚜瀹瑰櫒銆?	璇ユ牸寮忛€傜敤浜庨€氳繃 stateless_decoder 瀹炵幇 VP9
+	娴佹按绾跨殑鏃犵姸鎬佽棰戣В鐮佸櫒銆?	涓庡緟瑙ｇ爜甯х浉鍏崇殑鍏冩暟鎹繀椤婚€氳繃
+	`V4L2_CID_STATELESS_VP9_FRAME` 鍜?	`V4L2_CID_STATELESS_VP9_COMPRESSED_HDR` 鎺т欢浼犲叆銆?	鍙傝鐩稿叧鐨?Codec Control IDs <v4l2-codec-stateless-vp9>銆?	浣跨敤姝ゅ儚绱犳牸寮忔椂蹇呴』鎻愪緵鎭板ソ涓€涓緭鍑虹紦鍐插尯鍜屼竴涓崟鑾风紦鍐插尯銆?	杈撳嚭缂撳啿鍖哄繀椤诲寘鍚€傚綋鏁伴噺鐨勫畯鍧楋紝浠ヨВ鐮佸嚭涓庡搴旀崟鑾风紦鍐插尯
+	鐩稿尮閰嶇殑瀹屾暣甯с€?    - .. _V4L2-PIX-FMT-HEVC:
 
       - `V4L2_PIX_FMT_HEVC`
       - 'HEVC'
-      - HEVC/H.265 访问单元。
-	解码器期望每个缓冲区包含一个访问单元。
-	编码器为每个缓冲区生成一个访问单元。
-	如果 VIDIOC_ENUM_FMT 报告 `V4L2_FMT_FLAG_CONTINUOUS_BYTESTREAM`，
-	则解码器没有特殊要求，因为它可以从原始字节流中解析出所有
-	信息。
-    - .. _V4L2-PIX-FMT-HEVC-SLICE:
+      - HEVC/H.265 璁块棶鍗曞厓銆?	瑙ｇ爜鍣ㄦ湡鏈涙瘡涓紦鍐插尯鍖呭惈涓€涓闂崟鍏冦€?	缂栫爜鍣ㄤ负姣忎釜缂撳啿鍖虹敓鎴愪竴涓闂崟鍏冦€?	濡傛灉 VIDIOC_ENUM_FMT 鎶ュ憡 `V4L2_FMT_FLAG_CONTINUOUS_BYTESTREAM`锛?	鍒欒В鐮佸櫒娌℃湁鐗规畩瑕佹眰锛屽洜涓哄畠鍙互浠庡師濮嬪瓧鑺傛祦涓В鏋愬嚭鎵€鏈?	淇℃伅銆?    - .. _V4L2-PIX-FMT-HEVC-SLICE:
 
       - `V4L2_PIX_FMT_HEVC_SLICE`
       - 'S265'
-      - 经过解析的 HEVC slice 数据，提取自 HEVC 比特流。
-	该格式适用于实现 HEVC 流水线（使用 mem2mem 和
-	media-request-api）的无状态视频解码器。
-	此像素格式有两个修改量，必须至少通过
+      - 缁忚繃瑙ｆ瀽鐨?HEVC slice 鏁版嵁锛屾彁鍙栬嚜 HEVC 姣旂壒娴併€?	璇ユ牸寮忛€傜敤浜庡疄鐜?HEVC 娴佹按绾匡紙浣跨敤 mem2mem 鍜?	media-request-api锛夌殑鏃犵姸鎬佽棰戣В鐮佸櫒銆?	姝ゅ儚绱犳牸寮忔湁涓や釜淇敼閲忥紝蹇呴』鑷冲皯閫氳繃
 	`V4L2_CID_MPEG_VIDEO_HEVC_DECODE_MODE`
-        和 `V4L2_CID_MPEG_VIDEO_HEVC_START_CODE` 控件设置一次。
-	与待解码帧相关的元数据必须通过以下控件传入：
-        `V4L2_CID_MPEG_VIDEO_HEVC_SPS`、
-        `V4L2_CID_MPEG_VIDEO_HEVC_PPS` 和
-        `V4L2_CID_MPEG_VIDEO_HEVC_SLICE_PARAMS`。
-	参见相关的 Codec Control IDs <v4l2-codec-stateless-hevc>。
-	与此像素格式关联的缓冲区必须包含适当数量的宏块，
-	以解码出完整的对应帧。
-    - .. _V4L2-PIX-FMT-FWHT:
+        鍜?`V4L2_CID_MPEG_VIDEO_HEVC_START_CODE` 鎺т欢璁剧疆涓€娆°€?	涓庡緟瑙ｇ爜甯х浉鍏崇殑鍏冩暟鎹繀椤婚€氳繃浠ヤ笅鎺т欢浼犲叆锛?        `V4L2_CID_MPEG_VIDEO_HEVC_SPS`銆?        `V4L2_CID_MPEG_VIDEO_HEVC_PPS` 鍜?        `V4L2_CID_MPEG_VIDEO_HEVC_SLICE_PARAMS`銆?	鍙傝鐩稿叧鐨?Codec Control IDs <v4l2-codec-stateless-hevc>銆?	涓庢鍍忕礌鏍煎紡鍏宠仈鐨勭紦鍐插尯蹇呴』鍖呭惈閫傚綋鏁伴噺鐨勫畯鍧楋紝
+	浠ヨВ鐮佸嚭瀹屾暣鐨勫搴斿抚銆?    - .. _V4L2-PIX-FMT-FWHT:
 
       - `V4L2_PIX_FMT_FWHT`
       - 'FWHT'
-      - 使用基于快速 Walsh-Hadamard 变换（Fast Walsh Hadamard
-        Transform）的编解码器生成的视频基本流。该编解码器由
-	vicodec（'Virtual Codec'）驱动实现。更多细节参见
-	codec-fwht.h 头文件。
-	VIDIOC_ENUM_FMT 报告 `V4L2_FMT_FLAG_CONTINUOUS_BYTESTREAM`，
-	因为解码器可以从原始字节流中解析出所有信息。
-    - .. _V4L2-PIX-FMT-FWHT-STATELESS:
+      - 浣跨敤鍩轰簬蹇€?Walsh-Hadamard 鍙樻崲锛團ast Walsh Hadamard
+        Transform锛夌殑缂栬В鐮佸櫒鐢熸垚鐨勮棰戝熀鏈祦銆傝缂栬В鐮佸櫒鐢?	vicodec锛?Virtual Codec'锛夐┍鍔ㄥ疄鐜般€傛洿澶氱粏鑺傚弬瑙?	codec-fwht.h 澶存枃浠躲€?	VIDIOC_ENUM_FMT 鎶ュ憡 `V4L2_FMT_FLAG_CONTINUOUS_BYTESTREAM`锛?	鍥犱负瑙ｇ爜鍣ㄥ彲浠ヤ粠鍘熷瀛楄妭娴佷腑瑙ｆ瀽鍑烘墍鏈変俊鎭€?    - .. _V4L2-PIX-FMT-FWHT-STATELESS:
 
       - `V4L2_PIX_FMT_FWHT_STATELESS`
       - 'SFWH'
-      - 格式与 V4L2_PIX_FMT_FWHT 相同，但要求无状态编解码器实现。
-        与待解码帧相关的元数据必须通过
-        `V4L2_CID_STATELESS_FWHT_PARAMS` 控件传入。
-	参见相关的 Codec Control ID <codec-stateless-fwht>。
-    - .. _V4L2-PIX-FMT-RV30:
+      - 鏍煎紡涓?V4L2_PIX_FMT_FWHT 鐩稿悓锛屼絾瑕佹眰鏃犵姸鎬佺紪瑙ｇ爜鍣ㄥ疄鐜般€?        涓庡緟瑙ｇ爜甯х浉鍏崇殑鍏冩暟鎹繀椤婚€氳繃
+        `V4L2_CID_STATELESS_FWHT_PARAMS` 鎺т欢浼犲叆銆?	鍙傝鐩稿叧鐨?Codec Control ID <codec-stateless-fwht>銆?    - .. _V4L2-PIX-FMT-RV30:
 
       - `V4L2_PIX_FMT_RV30`
       - 'RV30'
-      - RealVideo（也拼作 Real Video）是一套由 RealNetworks
-        开发的专有视频压缩格式，具体格式随版本变化。
-        RealVideo 编解码器由四字符代码（FourCC）标识。
-        RV30 对应 RealVideo 8，推测主要基于 H.264 的早期草案。
-    - .. _V4L2-PIX-FMT-RV40:
+      - RealVideo锛堜篃鎷间綔 Real Video锛夋槸涓€濂楃敱 RealNetworks
+        寮€鍙戠殑涓撴湁瑙嗛鍘嬬缉鏍煎紡锛屽叿浣撴牸寮忛殢鐗堟湰鍙樺寲銆?        RealVideo 缂栬В鐮佸櫒鐢卞洓瀛楃浠ｇ爜锛團ourCC锛夋爣璇嗐€?        RV30 瀵瑰簲 RealVideo 8锛屾帹娴嬩富瑕佸熀浜?H.264 鐨勬棭鏈熻崏妗堛€?    - .. _V4L2-PIX-FMT-RV40:
 
       - `V4L2_PIX_FMT_RV40`
       - 'RV40'
-      - RV40 代表 RealVideo 9 和 RealVideo 10。
-        RealVideo 9 推测基于 H.264。
-        RealVideo 10（又名 RV9 EHQ）指对 RV9 格式的改进编码器，
-	它与 RV9 播放器完全向后兼容——格式和解码器没有变化，
-	只有编码器发生了变化。因此，它使用相同的 FourCC。
-
+      - RV40 浠ｈ〃 RealVideo 9 鍜?RealVideo 10銆?        RealVideo 9 鎺ㄦ祴鍩轰簬 H.264銆?        RealVideo 10锛堝張鍚?RV9 EHQ锛夋寚瀵?RV9 鏍煎紡鐨勬敼杩涚紪鐮佸櫒锛?	瀹冧笌 RV9 鎾斁鍣ㄥ畬鍏ㄥ悜鍚庡吋瀹光€斺€旀牸寮忓拰瑙ｇ爜鍣ㄦ病鏈夊彉鍖栵紝
+	鍙湁缂栫爜鍣ㄥ彂鐢熶簡鍙樺寲銆傚洜姝わ紝瀹冧娇鐢ㄧ浉鍚岀殑 FourCC銆?
     - .. _V4L2-PIX-FMT-AV1-FRAME:
 
       - `V4L2_PIX_FMT_AV1_FRAME`
       - 'AV1F'
-      - 经过解析的 AV1 帧，包含帧头，提取自容器。
-        该格式适用于通过 stateless_decoder 实现 AV1
-        流水线的无状态视频解码器。与待解码帧相关的元数据必须通过
-        `V4L2_CID_STATELESS_AV1_SEQUENCE`、`V4L2_CID_STATELESS_AV1_FRAME`、
-        和 `V4L2_CID_STATELESS_AV1_TILE_GROUP_ENTRY` 控件传入。
-        参见相关的 Codec Control IDs <v4l2-codec-stateless-av1>。
-        使用此像素格式时必须提供恰好一个输出缓冲区和一个捕获缓冲区。
-	输出缓冲区必须包含适当数量的宏块，以解码出与对应捕获缓冲区
-	相匹配的完整帧。
-
+      - 缁忚繃瑙ｆ瀽鐨?AV1 甯э紝鍖呭惈甯уご锛屾彁鍙栬嚜瀹瑰櫒銆?        璇ユ牸寮忛€傜敤浜庨€氳繃 stateless_decoder 瀹炵幇 AV1
+        娴佹按绾跨殑鏃犵姸鎬佽棰戣В鐮佸櫒銆備笌寰呰В鐮佸抚鐩稿叧鐨勫厓鏁版嵁蹇呴』閫氳繃
+        `V4L2_CID_STATELESS_AV1_SEQUENCE`銆乣V4L2_CID_STATELESS_AV1_FRAME`銆?        鍜?`V4L2_CID_STATELESS_AV1_TILE_GROUP_ENTRY` 鎺т欢浼犲叆銆?        鍙傝鐩稿叧鐨?Codec Control IDs <v4l2-codec-stateless-av1>銆?        浣跨敤姝ゅ儚绱犳牸寮忔椂蹇呴』鎻愪緵鎭板ソ涓€涓緭鍑虹紦鍐插尯鍜屼竴涓崟鑾风紦鍐插尯銆?	杈撳嚭缂撳啿鍖哄繀椤诲寘鍚€傚綋鏁伴噺鐨勫畯鍧楋紝浠ヨВ鐮佸嚭涓庡搴旀崟鑾风紦鍐插尯
+	鐩稿尮閰嶇殑瀹屾暣甯с€?
     - .. _V4L2-PIX-FMT-AV1:
 
       - `V4L2_PIX_FMT_AV1`
       - 'AV01'
-      - AV1 压缩视频帧。该格式适用于实现 AV1 流水线。
-        解码器实现的是有状态（stateful）视频解码器，期望每个缓冲区
-	在 OBU 流格式中包含一个时间单元（temporal unit）。
-        编码器为每个缓冲区生成一个时间单元。
-
+      - AV1 鍘嬬缉瑙嗛甯с€傝鏍煎紡閫傜敤浜庡疄鐜?AV1 娴佹按绾裤€?        瑙ｇ爜鍣ㄥ疄鐜扮殑鏄湁鐘舵€侊紙stateful锛夎棰戣В鐮佸櫒锛屾湡鏈涙瘡涓紦鍐插尯
+	鍦?OBU 娴佹牸寮忎腑鍖呭惈涓€涓椂闂村崟鍏冿紙temporal unit锛夈€?        缂栫爜鍣ㄤ负姣忎釜缂撳啿鍖虹敓鎴愪竴涓椂闂村崟鍏冦€?
     \normalsize

@@ -1,7 +1,5 @@
-## EP93xx LCD 控制器驱动
-
-EP93xx LCD 控制器可以同时驱动标准的桌面显示器和嵌入式 LCD 显示屏。如果你拥有标准的
-桌面显示器，那么
+﻿## EP93xx LCD 鎺у埗鍣ㄩ┍鍔?
+EP93xx LCD 鎺у埗鍣ㄥ彲浠ュ悓鏃堕┍鍔ㄦ爣鍑嗙殑妗岄潰鏄剧ず鍣ㄥ拰宓屽叆寮?LCD 鏄剧ず灞忋€傚鏋滀綘鎷ユ湁鏍囧噯鐨?妗岄潰鏄剧ず鍣紝閭ｄ箞
 ```
 
 	static struct ep93xxfb_mach_info some_board_fb_info = {
@@ -10,8 +8,7 @@ EP93xx LCD 控制器可以同时驱动标准的桌面显示器和嵌入式 LCD �
 	};
 
 ```
-如果你拥有嵌入式 LCD 显示屏，则需要定义一段视频
-```
+濡傛灉浣犳嫢鏈夊祵鍏ュ紡 LCD 鏄剧ず灞忥紝鍒欓渶瑕佸畾涔変竴娈佃棰?```
 
 	static struct fb_videomode some_board_video_modes[] = {
 		{
@@ -21,10 +18,9 @@ EP93xx LCD 控制器可以同时驱动标准的桌面显示器和嵌入式 LCD �
 	};
 
 ```
-注意像素时钟值以皮秒（pico-seconds）为单位。你可以使用 KHZ2PICOS 宏来转换像素时钟
-值。大多数其它值以像素时钟为单位。更多细节参见 Documentation/fb/framebuffer.rst。
-
-你板卡的 ep93xxfb_mach_info 结构应类似于
+娉ㄦ剰鍍忕礌鏃堕挓鍊间互鐨锛坧ico-seconds锛変负鍗曚綅銆備綘鍙互浣跨敤 KHZ2PICOS 瀹忔潵杞崲鍍忕礌鏃堕挓
+鍊笺€傚ぇ澶氭暟鍏跺畠鍊间互鍍忕礌鏃堕挓涓哄崟浣嶃€傛洿澶氱粏鑺傚弬瑙?Documentation/fb/framebuffer.rst銆?
+浣犳澘鍗＄殑 ep93xxfb_mach_info 缁撴瀯搴旂被浼间簬
 ```
 
 	static struct ep93xxfb_mach_info some_board_fb_info = {
@@ -35,17 +31,14 @@ EP93xx LCD 控制器可以同时驱动标准的桌面显示器和嵌入式 LCD �
 	};
 
 ```
-可以通过在下面添加以下内容来注册帧缓冲设备
-```
+鍙互閫氳繃鍦ㄤ笅闈㈡坊鍔犱互涓嬪唴瀹规潵娉ㄥ唽甯х紦鍐茶澶?```
 
 	ep93xx_register_fb(&some_board_fb_info);
 
 ```
-## 视频属性标志
-
-ep93xxfb_mach_info 结构有一个 flags 字段，可用于配置控制器。视频属性标志在 EP93xx
-用户指南的第 7 节中有完整说明。可用的标志如下：
-
+## 瑙嗛灞炴€ф爣蹇?
+ep93xxfb_mach_info 缁撴瀯鏈変竴涓?flags 瀛楁锛屽彲鐢ㄤ簬閰嶇疆鎺у埗鍣ㄣ€傝棰戝睘鎬ф爣蹇楀湪 EP93xx
+鐢ㄦ埛鎸囧崡鐨勭 7 鑺備腑鏈夊畬鏁磋鏄庛€傚彲鐢ㄧ殑鏍囧織濡備笅锛?
 =============================== ==========================================
 EP93XXFB_PCLK_FALLING		Clock data on the falling edge of the
 				pixel clock. The default is to clock
@@ -61,7 +54,7 @@ EP93XXFB_SYNC_VERT_HIGH		Vertical sync is active high. By
 				default the vertical sync is active high.
 =============================== ==========================================
 
-帧缓冲区的物理地址可以使用以下标志来控制：
+甯х紦鍐插尯鐨勭墿鐞嗗湴鍧€鍙互浣跨敤浠ヤ笅鏍囧織鏉ユ帶鍒讹細
 
 =============================== ======================================
 EP93XXFB_USE_SDCSN0		Use SDCSn[^0^] for the framebuffer. This
@@ -74,15 +67,12 @@ EP93XXFB_USE_SDCSN2		Use SDCSn[^2^] for the framebuffer.
 EP93XXFB_USE_SDCSN3		Use SDCSn[^3^] for the framebuffer.
 =============================== ======================================
 
-## 平台回调
+## 骞冲彴鍥炶皟
 
-EP93xx 帧缓冲驱动支持三个可选的平台回调：setup、teardown 和 blank。setup 和 teardown
-函数分别在帧缓冲驱动被安装和移除时调用。blank 函数在显示器被消隐（blank）或取消消隐
-（unblank）时调用。
-
-setup 和 teardown 设备将 platform_device 结构作为参数传入。fb_info 和
-ep93xxfb_mach_info 结构可以从
-```
+EP93xx 甯х紦鍐查┍鍔ㄦ敮鎸佷笁涓彲閫夌殑骞冲彴鍥炶皟锛歴etup銆乼eardown 鍜?blank銆俿etup 鍜?teardown
+鍑芥暟鍒嗗埆鍦ㄥ抚缂撳啿椹卞姩琚畨瑁呭拰绉婚櫎鏃惰皟鐢ㄣ€俠lank 鍑芥暟鍦ㄦ樉绀哄櫒琚秷闅愶紙blank锛夋垨鍙栨秷娑堥殣
+锛坲nblank锛夋椂璋冪敤銆?
+setup 鍜?teardown 璁惧灏?platform_device 缁撴瀯浣滀负鍙傛暟浼犲叆銆俧b_info 鍜?ep93xxfb_mach_info 缁撴瀯鍙互浠?```
 
 	static int some_board_fb_setup(struct platform_device *pdev)
 	{
@@ -93,40 +83,33 @@ ep93xxfb_mach_info 结构可以从
 	}
 
 ```
-## 设置视频模式
+## 璁剧疆瑙嗛妯″紡
 
 ```
 
 	video=XRESxYRES[-BPP][@REFRESH]
 
 ```
-如果 EP93xx 视频驱动是内建的，则视频模式在
-```
+濡傛灉 EP93xx 瑙嗛椹卞姩鏄唴寤虹殑锛屽垯瑙嗛妯″紡鍦?```
 
 	video=ep93xx-fb:800x600-16@60
 
 ```
-中设置。如果 EP93xx 视频驱动是作为模块构建的，则视频模式在
-```
+涓缃€傚鏋?EP93xx 瑙嗛椹卞姩鏄綔涓烘ā鍧楁瀯寤虹殑锛屽垯瑙嗛妯″紡鍦?```
 
 	modprobe ep93xx-fb video=320x240
 
 ```
-中设置。
-## Screenpage 缺陷（bug）
-
-至少在 EP9315 上存在一个硅缺陷，会导致 VIDSCRNPAGE（帧缓冲物理偏移）的第 27 位被
-固定为低电平。存在
-```
+涓缃€?## Screenpage 缂洪櫡锛坆ug锛?
+鑷冲皯鍦?EP9315 涓婂瓨鍦ㄤ竴涓缂洪櫡锛屼細瀵艰嚧 VIDSCRNPAGE锛堝抚缂撳啿鐗╃悊鍋忕Щ锛夌殑绗?27 浣嶈
+鍥哄畾涓轰綆鐢靛钩銆傚瓨鍦?```
 
 	https://marc.info/?l=linux-arm-kernel&m=110061245502000&w=2
 
 ```
-默认情况下，EP93xx 帧缓冲驱动会检查已分配的物理地址的第 27 位是否被设置。如果设置了，
-则释放该内存并返回错误。可以通过将以下内容添加来禁用该检查
-```
+榛樿鎯呭喌涓嬶紝EP93xx 甯х紦鍐查┍鍔ㄤ細妫€鏌ュ凡鍒嗛厤鐨勭墿鐞嗗湴鍧€鐨勭 27 浣嶆槸鍚﹁璁剧疆銆傚鏋滆缃簡锛?鍒欓噴鏀捐鍐呭瓨骞惰繑鍥為敊璇€傚彲浠ラ€氳繃灏嗕互涓嬪唴瀹规坊鍔犳潵绂佺敤璇ユ鏌?```
 
       ep93xx-fb.check_screenpage_bug=0
 
 ```
-在某些情况下，可以重新配置你的 SDRAM 布局来规避此缺陷。详见 EP93xx 用户指南第 13 节。
+鍦ㄦ煇浜涙儏鍐典笅锛屽彲浠ラ噸鏂伴厤缃綘鐨?SDRAM 甯冨眬鏉ヨ閬挎缂洪櫡銆傝瑙?EP93xx 鐢ㄦ埛鎸囧崡绗?13 鑺傘€?

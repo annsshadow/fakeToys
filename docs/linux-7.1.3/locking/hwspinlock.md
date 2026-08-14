@@ -1,177 +1,177 @@
-## 硬件自旋锁框架
+﻿## 纭欢鑷棆閿佹鏋?
 
 
-## 简介
+## 绠€浠?
 
 
-硬件自旋锁模块为异构处理器之间、以及那些不在单一共享操作系统下运行的处理器之间，提供用于同步与互斥的硬件辅助。
+纭欢鑷棆閿佹ā鍧椾负寮傛瀯澶勭悊鍣ㄤ箣闂淬€佷互鍙婇偅浜涗笉鍦ㄥ崟涓€鍏变韩鎿嶄綔绯荤粺涓嬭繍琛岀殑澶勭悊鍣ㄤ箣闂达紝鎻愪緵鐢ㄤ簬鍚屾涓庝簰鏂ョ殑纭欢杈呭姪銆?
 
-例如，OMAP4 拥有双核 Cortex-A9、双核 Cortex-M3 以及一个 C64x+ DSP，每一个都运行着不同的操作系统（主核 A9 通常运行 Linux，而从核 M3 与 DSP 运行某种 RTOS）。
+渚嬪锛孫MAP4 鎷ユ湁鍙屾牳 Cortex-A9銆佸弻鏍?Cortex-M3 浠ュ強涓€涓?C64x+ DSP锛屾瘡涓€涓兘杩愯鐫€涓嶅悓鐨勬搷浣滅郴缁燂紙涓绘牳 A9 閫氬父杩愯 Linux锛岃€屼粠鏍?M3 涓?DSP 杩愯鏌愮 RTOS锛夈€?
 
-通用的 hwspinlock 框架允许与平台无关的驱动使用 hwspinlock 设备，以访问在远程处理器之间共享的数据结构——否则这些处理器没有其他机制来完成同步与互斥操作。
+閫氱敤鐨?hwspinlock 妗嗘灦鍏佽涓庡钩鍙版棤鍏崇殑椹卞姩浣跨敤 hwspinlock 璁惧锛屼互璁块棶鍦ㄨ繙绋嬪鐞嗗櫒涔嬮棿鍏变韩鐨勬暟鎹粨鏋勨€斺€斿惁鍒欒繖浜涘鐞嗗櫒娌℃湁鍏朵粬鏈哄埗鏉ュ畬鎴愬悓姝ヤ笌浜掓枼鎿嶄綔銆?
 
-例如，这对于处理器间通信是必要的：在 OMAP4 上，CPU 密集的多媒体任务由主核卸载到远程的 M3 和/或 C64x+ 从核处理器（通过一个名为 Syslink 的 IPC 子系统）。
+渚嬪锛岃繖瀵逛簬澶勭悊鍣ㄩ棿閫氫俊鏄繀瑕佺殑锛氬湪 OMAP4 涓婏紝CPU 瀵嗛泦鐨勫濯掍綋浠诲姟鐢变富鏍稿嵏杞藉埌杩滅▼鐨?M3 鍜?鎴?C64x+ 浠庢牳澶勭悊鍣紙閫氳繃涓€涓悕涓?Syslink 鐨?IPC 瀛愮郴缁燂級銆?
 
-为了实现快速的基于消息的通信，需要最小化的内核支持，以将来自远程处理器的消息投递给相应的用户进程。
+涓轰簡瀹炵幇蹇€熺殑鍩轰簬娑堟伅鐨勯€氫俊锛岄渶瑕佹渶灏忓寲鐨勫唴鏍告敮鎸侊紝浠ュ皢鏉ヨ嚜杩滅▼澶勭悊鍣ㄧ殑娑堟伅鎶曢€掔粰鐩稿簲鐨勭敤鎴疯繘绋嬨€?
 
-这种通信基于在远程处理器之间共享的简单数据结构，对其访问使用 hwspinlock 模块进行同步（远程处理器直接将新消息放入该共享数据结构中）。
+杩欑閫氫俊鍩轰簬鍦ㄨ繙绋嬪鐞嗗櫒涔嬮棿鍏变韩鐨勭畝鍗曟暟鎹粨鏋勶紝瀵瑰叾璁块棶浣跨敤 hwspinlock 妯″潡杩涜鍚屾锛堣繙绋嬪鐞嗗櫒鐩存帴灏嗘柊娑堟伅鏀惧叆璇ュ叡浜暟鎹粨鏋勪腑锛夈€?
 
-通用的 hwspinlock 接口使得编写通用的、与平台无关的驱动成为可能。
+閫氱敤鐨?hwspinlock 鎺ュ彛浣垮緱缂栧啓閫氱敤鐨勩€佷笌骞冲彴鏃犲叧鐨勯┍鍔ㄦ垚涓哄彲鑳姐€?
 
-## 用户 API
+## 鐢ㄦ埛 API
 
 
 ```
   struct hwspinlock *hwspin_lock_request_specific(unsigned int id);
 ```
-分配一个特定的 hwspinlock id 并返回其地址，如果该 hwspinlock 已被占用则返回 NULL。通常板级代码会调用此函数来为预定义的目的保留特定的 hwspinlock id。
+鍒嗛厤涓€涓壒瀹氱殑 hwspinlock id 骞惰繑鍥炲叾鍦板潃锛屽鏋滆 hwspinlock 宸茶鍗犵敤鍒欒繑鍥?NULL銆傞€氬父鏉跨骇浠ｇ爜浼氳皟鐢ㄦ鍑芥暟鏉ヤ负棰勫畾涔夌殑鐩殑淇濈暀鐗瑰畾鐨?hwspinlock id銆?
 
-应从进程上下文调用（可能睡眠）。
+搴斾粠杩涚▼涓婁笅鏂囪皟鐢紙鍙兘鐫＄湢锛夈€?
 
 ```
   int of_hwspin_lock_get_id(struct device_node *np, int index);
 ```
-检索基于 DT phandle 的特定锁的全局锁 id。该函数为 hwspinlock 模块的 DT 用户提供了一种获取特定 hwspinlock 全局锁 id 的方式，从而可以使用常规的 hwspin_lock_request_specific() API 来请求它。
+妫€绱㈠熀浜?DT phandle 鐨勭壒瀹氶攣鐨勫叏灞€閿?id銆傝鍑芥暟涓?hwspinlock 妯″潡鐨?DT 鐢ㄦ埛鎻愪緵浜嗕竴绉嶈幏鍙栫壒瀹?hwspinlock 鍏ㄥ眬閿?id 鐨勬柟寮忥紝浠庤€屽彲浠ヤ娇鐢ㄥ父瑙勭殑 hwspin_lock_request_specific() API 鏉ヨ姹傚畠銆?
 
-该函数成功时返回一个锁 id 号，若 hwspinlock 设备尚未向核心注册则返回 -EPROBE_DEFER，其他情况下返回其他错误值。
+璇ュ嚱鏁版垚鍔熸椂杩斿洖涓€涓攣 id 鍙凤紝鑻?hwspinlock 璁惧灏氭湭鍚戞牳蹇冩敞鍐屽垯杩斿洖 -EPROBE_DEFER锛屽叾浠栨儏鍐典笅杩斿洖鍏朵粬閿欒鍊笺€?
 
-应从进程上下文调用（可能睡眠）。
+搴斾粠杩涚▼涓婁笅鏂囪皟鐢紙鍙兘鐫＄湢锛夈€?
 
 ```
   int hwspin_lock_free(struct hwspinlock *hwlock);
 ```
-释放先前分配的 hwspinlock；成功时返回 0，失败时返回相应的错误码（例如，若该 hwspinlock 已经空闲，则返回 -EINVAL）。
+閲婃斁鍏堝墠鍒嗛厤鐨?hwspinlock锛涙垚鍔熸椂杩斿洖 0锛屽け璐ユ椂杩斿洖鐩稿簲鐨勯敊璇爜锛堜緥濡傦紝鑻ヨ hwspinlock 宸茬粡绌洪棽锛屽垯杩斿洖 -EINVAL锛夈€?
 
-应从进程上下文调用（可能睡眠）。
+搴斾粠杩涚▼涓婁笅鏂囪皟鐢紙鍙兘鐫＄湢锛夈€?
 
 ```
   int hwspin_lock_bust(struct hwspinlock *hwlock, unsigned int id);
 ```
-在验证 hwspinlock 的拥有者之后，释放一个先前获取的 hwspinlock；成功时返回 0，失败时返回相应的错误码（例如，若该 bust 操作对特定 hwspinlock 未定义，则返回 -EOPNOTSUPP）。
+鍦ㄩ獙璇?hwspinlock 鐨勬嫢鏈夎€呬箣鍚庯紝閲婃斁涓€涓厛鍓嶈幏鍙栫殑 hwspinlock锛涙垚鍔熸椂杩斿洖 0锛屽け璐ユ椂杩斿洖鐩稿簲鐨勯敊璇爜锛堜緥濡傦紝鑻ヨ bust 鎿嶄綔瀵圭壒瀹?hwspinlock 鏈畾涔夛紝鍒欒繑鍥?-EOPNOTSUPP锛夈€?
 
-应从进程上下文调用（可能睡眠）。
+搴斾粠杩涚▼涓婁笅鏂囪皟鐢紙鍙兘鐫＄湢锛夈€?
 
 ```
   int hwspin_lock_timeout(struct hwspinlock *hwlock, unsigned int timeout);
 ```
-以超时限制（以毫秒为单位）锁定一个先前分配的 hwspinlock。如果该 hwspinlock 已被占用，函数会忙等以等待其释放，但在超时耗尽时放弃。成功从此函数返回后，抢占被禁用，因此调用者不得睡眠，并建议尽快释放 hwspinlock，以最小化远程核在硬件互连上的轮询。
+浠ヨ秴鏃堕檺鍒讹紙浠ユ绉掍负鍗曚綅锛夐攣瀹氫竴涓厛鍓嶅垎閰嶇殑 hwspinlock銆傚鏋滆 hwspinlock 宸茶鍗犵敤锛屽嚱鏁颁細蹇欑瓑浠ョ瓑寰呭叾閲婃斁锛屼絾鍦ㄨ秴鏃惰€楀敖鏃舵斁寮冦€傛垚鍔熶粠姝ゅ嚱鏁拌繑鍥炲悗锛屾姠鍗犺绂佺敤锛屽洜姝よ皟鐢ㄨ€呬笉寰楃潯鐪狅紝骞跺缓璁敖蹇噴鏀?hwspinlock锛屼互鏈€灏忓寲杩滅▼鏍稿湪纭欢浜掕繛涓婄殑杞銆?
 
-成功时返回 0，否则返回相应的错误码（最典型的是 -ETIMEDOUT，表示超时毫秒后该 hwspinlock 仍然忙）。该函数永远不会睡眠。
+鎴愬姛鏃惰繑鍥?0锛屽惁鍒欒繑鍥炵浉搴旂殑閿欒鐮侊紙鏈€鍏稿瀷鐨勬槸 -ETIMEDOUT锛岃〃绀鸿秴鏃舵绉掑悗璇?hwspinlock 浠嶇劧蹇欙級銆傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
 ```
   int hwspin_lock_timeout_irq(struct hwspinlock *hwlock, unsigned int timeout);
 ```
-以超时限制（以毫秒为单位）锁定一个先前分配的 hwspinlock。如果该 hwspinlock 已被占用，函数会忙等以等待其释放，但在超时耗尽时放弃。成功从此函数返回后，抢占与本地中断被禁用，因此调用者不得睡眠，并建议尽快释放 hwspinlock。
+浠ヨ秴鏃堕檺鍒讹紙浠ユ绉掍负鍗曚綅锛夐攣瀹氫竴涓厛鍓嶅垎閰嶇殑 hwspinlock銆傚鏋滆 hwspinlock 宸茶鍗犵敤锛屽嚱鏁颁細蹇欑瓑浠ョ瓑寰呭叾閲婃斁锛屼絾鍦ㄨ秴鏃惰€楀敖鏃舵斁寮冦€傛垚鍔熶粠姝ゅ嚱鏁拌繑鍥炲悗锛屾姠鍗犱笌鏈湴涓柇琚鐢紝鍥犳璋冪敤鑰呬笉寰楃潯鐪狅紝骞跺缓璁敖蹇噴鏀?hwspinlock銆?
 
-成功时返回 0，否则返回相应的错误码（最典型的是 -ETIMEDOUT，表示超时毫秒后该 hwspinlock 仍然忙）。该函数永远不会睡眠。
+鎴愬姛鏃惰繑鍥?0锛屽惁鍒欒繑鍥炵浉搴旂殑閿欒鐮侊紙鏈€鍏稿瀷鐨勬槸 -ETIMEDOUT锛岃〃绀鸿秴鏃舵绉掑悗璇?hwspinlock 浠嶇劧蹇欙級銆傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
 ```
   int hwspin_lock_timeout_irqsave(struct hwspinlock *hwlock, unsigned int to,
 				  unsigned long *flags);
 ```
-以超时限制（以毫秒为单位）锁定一个先前分配的 hwspinlock。如果该 hwspinlock 已被占用，函数会忙等以等待其释放，但在超时耗尽时放弃。成功从此函数返回后，抢占被禁用，本地中断被禁用，其先前的状态保存在给定的 flags 占位符中。调用者不得睡眠，并建议尽快释放 hwspinlock。
+浠ヨ秴鏃堕檺鍒讹紙浠ユ绉掍负鍗曚綅锛夐攣瀹氫竴涓厛鍓嶅垎閰嶇殑 hwspinlock銆傚鏋滆 hwspinlock 宸茶鍗犵敤锛屽嚱鏁颁細蹇欑瓑浠ョ瓑寰呭叾閲婃斁锛屼絾鍦ㄨ秴鏃惰€楀敖鏃舵斁寮冦€傛垚鍔熶粠姝ゅ嚱鏁拌繑鍥炲悗锛屾姠鍗犺绂佺敤锛屾湰鍦颁腑鏂绂佺敤锛屽叾鍏堝墠鐨勭姸鎬佷繚瀛樺湪缁欏畾鐨?flags 鍗犱綅绗︿腑銆傝皟鐢ㄨ€呬笉寰楃潯鐪狅紝骞跺缓璁敖蹇噴鏀?hwspinlock銆?
 
-成功时返回 0，否则返回相应的错误码（最典型的是 -ETIMEDOUT，表示超时毫秒后该 hwspinlock 仍然忙）。该函数永远不会睡眠。
+鎴愬姛鏃惰繑鍥?0锛屽惁鍒欒繑鍥炵浉搴旂殑閿欒鐮侊紙鏈€鍏稿瀷鐨勬槸 -ETIMEDOUT锛岃〃绀鸿秴鏃舵绉掑悗璇?hwspinlock 浠嶇劧蹇欙級銆傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
 ```
   int hwspin_lock_timeout_raw(struct hwspinlock *hwlock, unsigned int timeout);
 ```
-以超时限制（以毫秒为单位）锁定一个先前分配的 hwspinlock。如果该 hwspinlock 已被占用，函数会忙等以等待其释放，但在超时耗尽时放弃。
+浠ヨ秴鏃堕檺鍒讹紙浠ユ绉掍负鍗曚綅锛夐攣瀹氫竴涓厛鍓嶅垎閰嶇殑 hwspinlock銆傚鏋滆 hwspinlock 宸茶鍗犵敤锛屽嚱鏁颁細蹇欑瓑浠ョ瓑寰呭叾閲婃斁锛屼絾鍦ㄨ秴鏃惰€楀敖鏃舵斁寮冦€?
 
-注意：用户必须用互斥体或自旋锁保护获取硬件锁的例程，以避免死锁，从而让用户能够在硬件锁下执行一些耗时的或可睡眠的操作。
+娉ㄦ剰锛氱敤鎴峰繀椤荤敤浜掓枼浣撴垨鑷棆閿佷繚鎶よ幏鍙栫‖浠堕攣鐨勪緥绋嬶紝浠ラ伩鍏嶆閿侊紝浠庤€岃鐢ㄦ埛鑳藉鍦ㄧ‖浠堕攣涓嬫墽琛屼竴浜涜€楁椂鐨勬垨鍙潯鐪犵殑鎿嶄綔銆?
 
-成功时返回 0，否则返回相应的错误码（最典型的是 -ETIMEDOUT，表示超时毫秒后该 hwspinlock 仍然忙）。该函数永远不会睡眠。
+鎴愬姛鏃惰繑鍥?0锛屽惁鍒欒繑鍥炵浉搴旂殑閿欒鐮侊紙鏈€鍏稿瀷鐨勬槸 -ETIMEDOUT锛岃〃绀鸿秴鏃舵绉掑悗璇?hwspinlock 浠嶇劧蹇欙級銆傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
 ```
   int hwspin_lock_timeout_in_atomic(struct hwspinlock *hwlock, unsigned int to);
 ```
-以超时限制（以毫秒为单位）锁定一个先前分配的 hwspinlock。如果该 hwspinlock 已被占用，函数会忙等以等待其释放，但在超时耗尽时放弃。
+浠ヨ秴鏃堕檺鍒讹紙浠ユ绉掍负鍗曚綅锛夐攣瀹氫竴涓厛鍓嶅垎閰嶇殑 hwspinlock銆傚鏋滆 hwspinlock 宸茶鍗犵敤锛屽嚱鏁颁細蹇欑瓑浠ョ瓑寰呭叾閲婃斁锛屼絾鍦ㄨ秴鏃惰€楀敖鏃舵斁寮冦€?
 
-此函数只能从原子上下文调用，且超时值不应超过几毫秒。
+姝ゅ嚱鏁板彧鑳戒粠鍘熷瓙涓婁笅鏂囪皟鐢紝涓旇秴鏃跺€间笉搴旇秴杩囧嚑姣銆?
 
-成功时返回 0，否则返回相应的错误码（最典型的是 -ETIMEDOUT，表示超时毫秒后该 hwspinlock 仍然忙）。该函数永远不会睡眠。
+鎴愬姛鏃惰繑鍥?0锛屽惁鍒欒繑鍥炵浉搴旂殑閿欒鐮侊紙鏈€鍏稿瀷鐨勬槸 -ETIMEDOUT锛岃〃绀鸿秴鏃舵绉掑悗璇?hwspinlock 浠嶇劧蹇欙級銆傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
 ```
   int hwspin_trylock(struct hwspinlock *hwlock);
 ```
-尝试锁定一个先前分配的 hwspinlock，但如果它已被占用则立即失败。
+灏濊瘯閿佸畾涓€涓厛鍓嶅垎閰嶇殑 hwspinlock锛屼絾濡傛灉瀹冨凡琚崰鐢ㄥ垯绔嬪嵆澶辫触銆?
 
-成功从此函数返回后，抢占被禁用，因此调用者不得睡眠，并建议尽快释放 hwspinlock，以最小化远程核在硬件互连上的轮询。
+鎴愬姛浠庢鍑芥暟杩斿洖鍚庯紝鎶㈠崰琚鐢紝鍥犳璋冪敤鑰呬笉寰楃潯鐪狅紝骞跺缓璁敖蹇噴鏀?hwspinlock锛屼互鏈€灏忓寲杩滅▼鏍稿湪纭欢浜掕繛涓婄殑杞銆?
 
-成功时返回 0，否则返回相应的错误码（最典型的是 -EBUSY，表示该 hwspinlock 已被占用）。该函数永远不会睡眠。
+鎴愬姛鏃惰繑鍥?0锛屽惁鍒欒繑鍥炵浉搴旂殑閿欒鐮侊紙鏈€鍏稿瀷鐨勬槸 -EBUSY锛岃〃绀鸿 hwspinlock 宸茶鍗犵敤锛夈€傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
 ```
   int hwspin_trylock_irq(struct hwspinlock *hwlock);
 ```
-尝试锁定一个先前分配的 hwspinlock，但如果它已被占用则立即失败。
+灏濊瘯閿佸畾涓€涓厛鍓嶅垎閰嶇殑 hwspinlock锛屼絾濡傛灉瀹冨凡琚崰鐢ㄥ垯绔嬪嵆澶辫触銆?
 
-成功从此函数返回后，抢占与本地中断被禁用，因此调用者不得睡眠，并建议尽快释放 hwspinlock。
+鎴愬姛浠庢鍑芥暟杩斿洖鍚庯紝鎶㈠崰涓庢湰鍦颁腑鏂绂佺敤锛屽洜姝よ皟鐢ㄨ€呬笉寰楃潯鐪狅紝骞跺缓璁敖蹇噴鏀?hwspinlock銆?
 
-成功时返回 0，否则返回相应的错误码（最典型的是 -EBUSY，表示该 hwspinlock 已被占用）。该函数永远不会睡眠。
+鎴愬姛鏃惰繑鍥?0锛屽惁鍒欒繑鍥炵浉搴旂殑閿欒鐮侊紙鏈€鍏稿瀷鐨勬槸 -EBUSY锛岃〃绀鸿 hwspinlock 宸茶鍗犵敤锛夈€傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
 ```
   int hwspin_trylock_irqsave(struct hwspinlock *hwlock, unsigned long *flags);
 ```
-尝试锁定一个先前分配的 hwspinlock，但如果它已被占用则立即失败。
+灏濊瘯閿佸畾涓€涓厛鍓嶅垎閰嶇殑 hwspinlock锛屼絾濡傛灉瀹冨凡琚崰鐢ㄥ垯绔嬪嵆澶辫触銆?
 
-成功从此函数返回后，抢占被禁用，本地中断被禁用，其先前的状态保存在给定的 flags 占位符中。调用者不得睡眠，并建议尽快释放 hwspinlock。
+鎴愬姛浠庢鍑芥暟杩斿洖鍚庯紝鎶㈠崰琚鐢紝鏈湴涓柇琚鐢紝鍏跺厛鍓嶇殑鐘舵€佷繚瀛樺湪缁欏畾鐨?flags 鍗犱綅绗︿腑銆傝皟鐢ㄨ€呬笉寰楃潯鐪狅紝骞跺缓璁敖蹇噴鏀?hwspinlock銆?
 
-成功时返回 0，否则返回相应的错误码（最典型的是 -EBUSY，表示该 hwspinlock 已被占用）。该函数永远不会睡眠。
+鎴愬姛鏃惰繑鍥?0锛屽惁鍒欒繑鍥炵浉搴旂殑閿欒鐮侊紙鏈€鍏稿瀷鐨勬槸 -EBUSY锛岃〃绀鸿 hwspinlock 宸茶鍗犵敤锛夈€傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
 ```
   int hwspin_trylock_raw(struct hwspinlock *hwlock);
 ```
-尝试锁定一个先前分配的 hwspinlock，但如果它已被占用则立即失败。
+灏濊瘯閿佸畾涓€涓厛鍓嶅垎閰嶇殑 hwspinlock锛屼絾濡傛灉瀹冨凡琚崰鐢ㄥ垯绔嬪嵆澶辫触銆?
 
-注意：用户必须用互斥体或自旋锁保护获取硬件锁的例程，以避免死锁，从而让用户能够在硬件锁下执行一些耗时的或可睡眠的操作。
+娉ㄦ剰锛氱敤鎴峰繀椤荤敤浜掓枼浣撴垨鑷棆閿佷繚鎶よ幏鍙栫‖浠堕攣鐨勪緥绋嬶紝浠ラ伩鍏嶆閿侊紝浠庤€岃鐢ㄦ埛鑳藉鍦ㄧ‖浠堕攣涓嬫墽琛屼竴浜涜€楁椂鐨勬垨鍙潯鐪犵殑鎿嶄綔銆?
 
-成功时返回 0，否则返回相应的错误码（最典型的是 -EBUSY，表示该 hwspinlock 已被占用）。该函数永远不会睡眠。
+鎴愬姛鏃惰繑鍥?0锛屽惁鍒欒繑鍥炵浉搴旂殑閿欒鐮侊紙鏈€鍏稿瀷鐨勬槸 -EBUSY锛岃〃绀鸿 hwspinlock 宸茶鍗犵敤锛夈€傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
 ```
   int hwspin_trylock_in_atomic(struct hwspinlock *hwlock);
 ```
-尝试锁定一个先前分配的 hwspinlock，但如果它已被占用则立即失败。
+灏濊瘯閿佸畾涓€涓厛鍓嶅垎閰嶇殑 hwspinlock锛屼絾濡傛灉瀹冨凡琚崰鐢ㄥ垯绔嬪嵆澶辫触銆?
 
-此函数只能从原子上下文调用。
+姝ゅ嚱鏁板彧鑳戒粠鍘熷瓙涓婁笅鏂囪皟鐢ㄣ€?
 
-成功时返回 0，否则返回相应的错误码（最典型的是 -EBUSY，表示该 hwspinlock 已被占用）。该函数永远不会睡眠。
+鎴愬姛鏃惰繑鍥?0锛屽惁鍒欒繑鍥炵浉搴旂殑閿欒鐮侊紙鏈€鍏稿瀷鐨勬槸 -EBUSY锛岃〃绀鸿 hwspinlock 宸茶鍗犵敤锛夈€傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
 ```
   void hwspin_unlock(struct hwspinlock *hwlock);
 ```
-解锁一个先前锁定的 hwspinlock。总是成功，并且可以从任何上下文调用（该函数永远不会睡眠）。
+瑙ｉ攣涓€涓厛鍓嶉攣瀹氱殑 hwspinlock銆傛€绘槸鎴愬姛锛屽苟涓斿彲浠ヤ粠浠讳綍涓婁笅鏂囪皟鐢紙璇ュ嚱鏁版案杩滀笉浼氱潯鐪狅級銆?
 
 
-  代码**绝不应**去解锁一个已经解锁的 hwspinlock（对此没有任何保护）。
+  浠ｇ爜**缁濅笉搴?*鍘昏В閿佷竴涓凡缁忚В閿佺殑 hwspinlock锛堝姝ゆ病鏈変换浣曚繚鎶わ級銆?
 
 ```
   void hwspin_unlock_irq(struct hwspinlock *hwlock);
 ```
-解锁一个先前锁定的 hwspinlock 并启用本地中断。调用者**绝不应**去解锁一个已经解锁的 hwspinlock。这样做被视为一个缺陷（对此没有任何保护）。成功从此函数返回后，抢占与本地中断被启用。该函数永远不会睡眠。
+瑙ｉ攣涓€涓厛鍓嶉攣瀹氱殑 hwspinlock 骞跺惎鐢ㄦ湰鍦颁腑鏂€傝皟鐢ㄨ€?*缁濅笉搴?*鍘昏В閿佷竴涓凡缁忚В閿佺殑 hwspinlock銆傝繖鏍峰仛琚涓轰竴涓己闄凤紙瀵规娌℃湁浠讳綍淇濇姢锛夈€傛垚鍔熶粠姝ゅ嚱鏁拌繑鍥炲悗锛屾姠鍗犱笌鏈湴涓柇琚惎鐢ㄣ€傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
 ```
   void
   hwspin_unlock_irqrestore(struct hwspinlock *hwlock, unsigned long *flags);
 ```
-解锁一个先前锁定的 hwspinlock。
+瑙ｉ攣涓€涓厛鍓嶉攣瀹氱殑 hwspinlock銆?
 
-调用者**绝不应**去解锁一个已经解锁的 hwspinlock。这样做被视为一个缺陷（对此没有任何保护）。成功从此函数返回后，抢占被重新启用，本地中断的状态被恢复到保存在给定 flags 中的状态。该函数永远不会睡眠。
+璋冪敤鑰?*缁濅笉搴?*鍘昏В閿佷竴涓凡缁忚В閿佺殑 hwspinlock銆傝繖鏍峰仛琚涓轰竴涓己闄凤紙瀵规娌℃湁浠讳綍淇濇姢锛夈€傛垚鍔熶粠姝ゅ嚱鏁拌繑鍥炲悗锛屾姠鍗犺閲嶆柊鍚敤锛屾湰鍦颁腑鏂殑鐘舵€佽鎭㈠鍒颁繚瀛樺湪缁欏畾 flags 涓殑鐘舵€併€傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
 ```
   void hwspin_unlock_raw(struct hwspinlock *hwlock);
 ```
-解锁一个先前锁定的 hwspinlock。
+瑙ｉ攣涓€涓厛鍓嶉攣瀹氱殑 hwspinlock銆?
 
-调用者**绝不应**去解锁一个已经解锁的 hwspinlock。这样做被视为一个缺陷（对此没有任何保护）。该函数永远不会睡眠。
+璋冪敤鑰?*缁濅笉搴?*鍘昏В閿佷竴涓凡缁忚В閿佺殑 hwspinlock銆傝繖鏍峰仛琚涓轰竴涓己闄凤紙瀵规娌℃湁浠讳綍淇濇姢锛夈€傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
 ```
   void hwspin_unlock_in_atomic(struct hwspinlock *hwlock);
 ```
-解锁一个先前锁定的 hwspinlock。
+瑙ｉ攣涓€涓厛鍓嶉攣瀹氱殑 hwspinlock銆?
 
-调用者**绝不应**去解锁一个已经解锁的 hwspinlock。这样做被视为一个缺陷（对此没有任何保护）。该函数永远不会睡眠。
+璋冪敤鑰?*缁濅笉搴?*鍘昏В閿佷竴涓凡缁忚В閿佺殑 hwspinlock銆傝繖鏍峰仛琚涓轰竴涓己闄凤紙瀵规娌℃湁浠讳綍淇濇姢锛夈€傝鍑芥暟姘歌繙涓嶄細鐫＄湢銆?
 
-## 典型用法
+## 鍏稿瀷鐢ㄦ硶
 
 
 ```
@@ -213,30 +213,30 @@
 		return ret;
 	}
 ```
-## 面向实现者的 API
+## 闈㈠悜瀹炵幇鑰呯殑 API
 
 
 ```
   int hwspin_lock_register(struct hwspinlock_device *bank, struct device *dev,
 		const struct hwspinlock_ops *ops, int base_id, int num_locks);
 ```
-由底层的平台特定实现调用，以注册一个新的 hwspinlock 设备（通常是一组数量众多的锁）。应从进程上下文调用（该函数可能睡眠）。
+鐢卞簳灞傜殑骞冲彴鐗瑰畾瀹炵幇璋冪敤锛屼互娉ㄥ唽涓€涓柊鐨?hwspinlock 璁惧锛堥€氬父鏄竴缁勬暟閲忎紬澶氱殑閿侊級銆傚簲浠庤繘绋嬩笂涓嬫枃璋冪敤锛堣鍑芥暟鍙兘鐫＄湢锛夈€?
 
-成功时返回 0，失败时返回相应的错误码。
+鎴愬姛鏃惰繑鍥?0锛屽け璐ユ椂杩斿洖鐩稿簲鐨勯敊璇爜銆?
 
 ```
   int hwspin_lock_unregister(struct hwspinlock_device *bank);
 ```
-由底层的厂商特定实现调用，以注销一个 hwspinlock 设备（通常是一组数量众多的锁）。
+鐢卞簳灞傜殑鍘傚晢鐗瑰畾瀹炵幇璋冪敤锛屼互娉ㄩ攢涓€涓?hwspinlock 璁惧锛堥€氬父鏄竴缁勬暟閲忎紬澶氱殑閿侊級銆?
 
-应从进程上下文调用（该函数可能睡眠）。
+搴斾粠杩涚▼涓婁笅鏂囪皟鐢紙璇ュ嚱鏁板彲鑳界潯鐪狅級銆?
 
-成功时返回 hwspinlock 的地址，错误时返回 NULL（例如，若该 hwspinlock 仍在使用中）。
+鎴愬姛鏃惰繑鍥?hwspinlock 鐨勫湴鍧€锛岄敊璇椂杩斿洖 NULL锛堜緥濡傦紝鑻ヨ hwspinlock 浠嶅湪浣跨敤涓級銆?
 
-## 重要结构体
+## 閲嶈缁撴瀯浣?
 
 
-struct hwspinlock_device 是一个通常包含一组硬件锁的设备。它由底层的 hwspinlock 实现通过 hwspin_lock_register() API 注册。
+struct hwspinlock_device 鏄竴涓€氬父鍖呭惈涓€缁勭‖浠堕攣鐨勮澶囥€傚畠鐢卞簳灞傜殑 hwspinlock 瀹炵幇閫氳繃 hwspin_lock_register() API 娉ㄥ唽銆?
 
 ```
 	/**
@@ -255,7 +255,7 @@ struct hwspinlock_device 是一个通常包含一组硬件锁的设备。它由�
 		struct hwspinlock lock[0];
 	};
 ```
-struct hwspinlock_device 包含一个 hwspinlock 结构体数组，每个
+struct hwspinlock_device 鍖呭惈涓€涓?hwspinlock 缁撴瀯浣撴暟缁勶紝姣忎釜
 ```
 	/**
 	* struct hwspinlock - this struct represents a single hwspinlock instance
@@ -269,9 +269,9 @@ struct hwspinlock_device 包含一个 hwspinlock 结构体数组，每个
 		void *priv;
 	};
 ```
-注册一组锁时，hwspinlock 驱动只需要设置各锁的 priv 成员。其余成员由 hwspinlock 核心自身设置并初始化。
+娉ㄥ唽涓€缁勯攣鏃讹紝hwspinlock 椹卞姩鍙渶瑕佽缃悇閿佺殑 priv 鎴愬憳銆傚叾浣欐垚鍛樼敱 hwspinlock 鏍稿績鑷韩璁剧疆骞跺垵濮嬪寲銆?
 
-## 实现回调
+## 瀹炵幇鍥炶皟
 
 
 ```
@@ -281,10 +281,10 @@ struct hwspinlock_device 包含一个 hwspinlock 结构体数组，每个
 		void (*relax)(struct hwspinlock *lock);
 	};
 ```
-前两个回调是强制的：
+鍓嶄袱涓洖璋冩槸寮哄埗鐨勶細
 
-->trylock() 回调应尝试一次获取锁，失败时返回 0，成功时返回 1。该回调**不得**睡眠。
+->trylock() 鍥炶皟搴斿皾璇曚竴娆¤幏鍙栭攣锛屽け璐ユ椂杩斿洖 0锛屾垚鍔熸椂杩斿洖 1銆傝鍥炶皟**涓嶅緱**鐫＄湢銆?
 
-->unlock() 回调释放锁。它总是成功，并且同样**不得**睡眠。
+->unlock() 鍥炶皟閲婃斁閿併€傚畠鎬绘槸鎴愬姛锛屽苟涓斿悓鏍?*涓嶅緱**鐫＄湢銆?
 
-->relax() 回调是可选的。当 hwspinlock 核心在某把锁上自旋时会被调用，底层的实现可以用它来强制在两次连续的 ->trylock() 调用之间插入延迟。它**不得**睡眠。
+->relax() 鍥炶皟鏄彲閫夌殑銆傚綋 hwspinlock 鏍稿績鍦ㄦ煇鎶婇攣涓婅嚜鏃嬫椂浼氳璋冪敤锛屽簳灞傜殑瀹炵幇鍙互鐢ㄥ畠鏉ュ己鍒跺湪涓ゆ杩炵画鐨?->trylock() 璋冪敤涔嬮棿鎻掑叆寤惰繜銆傚畠**涓嶅緱**鐫＄湢銆?

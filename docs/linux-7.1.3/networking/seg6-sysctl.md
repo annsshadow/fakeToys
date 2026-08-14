@@ -1,40 +1,40 @@
+﻿
+## Seg6 Sysfs 鍙橀噺
 
-## Seg6 Sysfs 变量
 
 
-
-## /proc/sys/net/conf/<iface>/seg6_* 变量：
+## /proc/sys/net/conf/<iface>/seg6_* 鍙橀噺锛?
 
 
 seg6_enabled - BOOL
-在此接口上接受或丢弃启用 SR 的 IPv6 数据包。
+鍦ㄦ鎺ュ彛涓婃帴鍙楁垨涓㈠純鍚敤 SR 鐨?IPv6 鏁版嵁鍖呫€?
 
-相关数据包是具有 SRH 且 DA = 本地的数据包。
+鐩稿叧鏁版嵁鍖呮槸鍏锋湁 SRH 涓?DA = 鏈湴鐨勬暟鎹寘銆?
 
- - 0 - 禁用（默认）
- - 非 0 - 启用
+ - 0 - 绂佺敤锛堥粯璁わ級
+ - 闈?0 - 鍚敤
 
-seg6_require_hmac - 整数
-为该接口上启用 SR 的入口数据包定义 HMAC 策略。
+seg6_require_hmac - 鏁存暟
+涓鸿鎺ュ彛涓婂惎鐢?SR 鐨勫叆鍙ｆ暟鎹寘瀹氫箟 HMAC 绛栫暐銆?
 
- - -1 - 忽略 HMAC 字段
- - 0 - 接受不带 HMAC 的 SR 数据包，使用 HMAC 验证 SR 数据包
- - 1 - 丢弃没有 HMAC 的 SR 数据包，使用 HMAC 验证 SR 数据包
+ - -1 - 蹇界暐 HMAC 瀛楁
+ - 0 - 鎺ュ彈涓嶅甫 HMAC 鐨?SR 鏁版嵁鍖咃紝浣跨敤 HMAC 楠岃瘉 SR 鏁版嵁鍖?
+ - 1 - 涓㈠純娌℃湁 HMAC 鐨?SR 鏁版嵁鍖咃紝浣跨敤 HMAC 楠岃瘉 SR 鏁版嵁鍖?
 
-默认值为 0。
+榛樿鍊间负 0銆?
 
-## /proc/sys/net/ipv6/seg6_* 变量：
+## /proc/sys/net/ipv6/seg6_* 鍙橀噺锛?
 
 
-seg6_flowlabel - 整数
-控制计算外部流标签的行为
-SR T.encaps 情况下的 IPv6 标头
+seg6_flowlabel - 鏁存暟
+鎺у埗璁＄畻澶栭儴娴佹爣绛剧殑琛屼负
+SR T.encaps 鎯呭喌涓嬬殑 IPv6 鏍囧ご
 
 	 == =======================================================
--1 将流标签设置为零。
-0 在内部 IPv6 的情况下从内部数据包复制流标签
-（如果是 IPv4/L2，则将 flowlabel 设置为 0）
-1 使用 seg6_make_flowlabel() 计算 flowlabel
+-1 灏嗘祦鏍囩璁剧疆涓洪浂銆?
+0 鍦ㄥ唴閮?IPv6 鐨勬儏鍐典笅浠庡唴閮ㄦ暟鎹寘澶嶅埗娴佹爣绛?
+锛堝鏋滄槸 IPv4/L2锛屽垯灏?flowlabel 璁剧疆涓?0锛?
+1 浣跨敤 seg6_make_flowlabel() 璁＄畻 flowlabel
 	 == =======================================================
 
-默认值为 0。
+榛樿鍊间负 0銆?

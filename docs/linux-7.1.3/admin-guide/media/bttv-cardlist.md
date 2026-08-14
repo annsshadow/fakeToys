@@ -1,15 +1,15 @@
-本页随内核版本演进而更新，具体字段含义以当前内核源码为准。
+﻿鏈〉闅忓唴鏍哥増鏈紨杩涜€屾洿鏂帮紝鍏蜂綋瀛楁鍚箟浠ュ綋鍓嶅唴鏍告簮鐮佷负鍑嗐€?
 
-如需进一步信息，请结合内核源码树中的对应实现与提交记录进行核对。
+濡傞渶杩涗竴姝ヤ俊鎭紝璇风粨鍚堝唴鏍告簮鐮佹爲涓殑瀵瑰簲瀹炵幇涓庢彁浜よ褰曡繘琛屾牳瀵广€?
 
-本页内容以结构化表格为主，表头与说明已译为中文，字段中的标识符与专有名称保留英文原文，以便与内核源码及文档交叉引用保持一致。
+鏈〉鍐呭浠ョ粨鏋勫寲琛ㄦ牸涓轰富锛岃〃澶翠笌璇存槑宸茶瘧涓轰腑鏂囷紝瀛楁涓殑鏍囪瘑绗︿笌涓撴湁鍚嶇О淇濈暀鑻辨枃鍘熸枃锛屼互渚夸笌鍐呮牳婧愮爜鍙婃枃妗ｄ氦鍙夊紩鐢ㄤ繚鎸佷竴鑷淬€?
 
-本页列出受 bttv 驱动支持的 Bt8x8 系列电视卡设备，包含驱动子模块、厂商与产品标识以及设备名称。描述性词汇已译为中文，型号标识符保留原文；表头已译为中文。
+鏈〉鍒楀嚭鍙?bttv 椹卞姩鏀寔鐨?Bt8x8 绯诲垪鐢佃鍗¤澶囷紝鍖呭惈椹卞姩瀛愭ā鍧椼€佸巶鍟嗕笌浜у搧鏍囪瘑浠ュ強璁惧鍚嶇О銆傛弿杩版€ц瘝姹囧凡璇戜负涓枃锛屽瀷鍙锋爣璇嗙淇濈暀鍘熸枃锛涜〃澶村凡璇戜负涓枃銆?
 
 
-## BTTV 卡列表
+## BTTV 鍗″垪琛?
 
-本文件列出受 bttv 驱动支持的 Bt8x8 系列电视卡设备型号清单，包含卡号、卡名称与 PCI 子系统 ID，供驱动适配、硬件识别以及通过 card 模块参数指定设备时查阅。
+鏈枃浠跺垪鍑哄彈 bttv 椹卞姩鏀寔鐨?Bt8x8 绯诲垪鐢佃鍗¤澶囧瀷鍙锋竻鍗曪紝鍖呭惈鍗″彿銆佸崱鍚嶇О涓?PCI 瀛愮郴缁?ID锛屼緵椹卞姩閫傞厤銆佺‖浠惰瘑鍒互鍙婇€氳繃 card 妯″潡鍙傛暟鎸囧畾璁惧鏃舵煡闃呫€?
 
 
 
@@ -18,12 +18,12 @@
    :widths: 2 19 18
    :stub-columns: 0
 
-   - - 卡号
-     - 卡名称
-     - PCI 子系统 ID
+   - - 鍗″彿
+     - 鍗″悕绉?
+     - PCI 瀛愮郴缁?ID
 
    - - 0
-     - *** 未知/GENERIC ***
+     - *** 鏈煡/GENERIC ***
      -
 
    - - 1
@@ -39,7 +39,7 @@
      -
 
    - - 4
-     - Intel 创建 和 Share PCI/ Smart 视频 Recorder III
+     - Intel 鍒涘缓 鍜?Share PCI/ Smart 瑙嗛 Recorder III
      -
 
    - - 5
@@ -55,7 +55,7 @@
      -
 
    - - 8
-     - Lifeview FlyVideo II (Bt848) LR26 / MAXI TV 视频 PCI2 LR26
+     - Lifeview FlyVideo II (Bt848) LR26 / MAXI TV 瑙嗛 PCI2 LR26
      -
 
    - - 9
@@ -67,7 +67,7 @@
      - 0070:13eb, 0070:3900, 2636:10b4
 
    - - 11
-     - MIRO PCTV 专业版
+     - MIRO PCTV 涓撲笟鐗?
      -
 
    - - 12
@@ -79,12 +79,12 @@
      - 1461:0002, 1461:0004, 1461:0300
 
    - - 14
-     - Aimslab 视频 Highway Xtreme (VHX)
+     - Aimslab 瑙嗛 Highway Xtreme (VHX)
      -
 
    - - 15
      - Zoltrix TV-Max
-     - 一个1一个0:一个0fc
+     - 涓€涓?涓€涓?:涓€涓?fc
 
    - - 16
      - Prolink Pixelview PlayTV (bt878)
@@ -99,11 +99,11 @@
      -
 
    - - 19
-     - Lifeview FlyVideo II EZ /FlyKit LR38 Bt848 (capture 仅)
+     - Lifeview FlyVideo II EZ /FlyKit LR38 Bt848 (capture 浠?
      -
 
    - - 20
-     - CEI Raffles 卡
+     - CEI Raffles 鍗?
      -
 
    - - 21
@@ -119,11 +119,11 @@
      - 14c7:0101
 
    - - 24
-     - Askey CPH05X/06X (bt878) [许多 vendors]
+     - Askey CPH05X/06X (bt878) [璁稿 vendors]
      - 144f:3002, 144f:3005, 144f:5000, 14ff:3000
 
    - - 25
-     - Terratec TerraTV+ 版本 1.0 (Bt848)/ Terra TValue 版本 1.0/ Vobis TV-Boostar
+     - Terratec TerraTV+ 鐗堟湰 1.0 (Bt848)/ Terra TValue 鐗堟湰 1.0/ Vobis TV-Boostar
      -
 
    - - 26
@@ -131,16 +131,16 @@
      -
 
    - - 27
-     - Lifeview FlyVideo 98/ MAXI TV 视频 PCI2 LR50
+     - Lifeview FlyVideo 98/ MAXI TV 瑙嗛 PCI2 LR50
      -
 
    - - 28
-     - Terratec TerraTV+ 版本 1.1 (bt878)
+     - Terratec TerraTV+ 鐗堟湰 1.1 (bt878)
      - 153b:1127, 1852:1852
 
    - - 29
      - Imagenation PXC200
-     - 1295:200一个
+     - 1295:200涓€涓?
 
    - - 30
      - Lifeview FlyVideo 98 LR50
@@ -151,32 +151,32 @@
      -
 
    - - 32
-     - Intel 创建 和 Share PCI/ Smart 视频 Recorder III
+     - Intel 鍒涘缓 鍜?Share PCI/ Smart 瑙嗛 Recorder III
      -
 
    - - 33
-     - Terratec TerraTValue 版本 Bt878
-     - 153b:1117, 153b:1118, 153b:1119, 153b:111一个, 153b:1134, 153b:5018
+     - Terratec TerraTValue 鐗堟湰 Bt878
+     - 153b:1117, 153b:1118, 153b:1119, 153b:111涓€涓? 153b:1134, 153b:5018
 
    - - 34
      - Leadtek WinFast 2000/ WinFast 2000 XP
      - 107d:6606, 107d:6609, 6606:217d, f6ff:fff6
 
    - - 35
-     - Lifeview FlyVideo 98 LR50 / Chronos 视频 Shuttle II
-     - 1851:1850, 1851:一个050
+     - Lifeview FlyVideo 98 LR50 / Chronos 瑙嗛 Shuttle II
+     - 1851:1850, 1851:涓€涓?50
 
    - - 36
      - Lifeview FlyVideo 98FM LR50 / Typhoon TView TV/FM Tuner
      - 1852:1852
 
    - - 37
-     - Prolink PixelView PlayTV 专业版
+     - Prolink PixelView PlayTV 涓撲笟鐗?
      -
 
    - - 38
      - Askey CPH06X TView99
-     - 144f:3000, 144f:一个005, 一个04f:一个0fc
+     - 144f:3000, 144f:涓€涓?05, 涓€涓?4f:涓€涓?fc
 
    - - 39
      - Pinnacle PCTV Studio/Rave
@@ -184,7 +184,7 @@
 
    - - 40
      - STB TV PCI FM, Gateway P/N 6000704 (bt878), 3Dfx VoodooTV 100
-     - 10b4:2636, 10b4:2645, 121一个:3060
+     - 10b4:2636, 10b4:2645, 121涓€涓?3060
 
    - - 41
      - AVerMedia TVPhone 98
@@ -208,7 +208,7 @@
 
    - - 46
      - Zoltrix Genie TV/FM
-     - 15b0:4000, 15b0:400一个, 15b0:400d, 15b0:4010, 15b0:4016
+     - 15b0:4000, 15b0:400涓€涓? 15b0:400d, 15b0:4010, 15b0:4016
 
    - - 47
      - Terratec TV/Radio+
@@ -227,11 +227,11 @@
      -
 
    - - 51
-     - Eagle 无线 Capricorn2 (bt878一个)
+     - Eagle 鏃犵嚎 Capricorn2 (bt878涓€涓?
      -
 
    - - 52
-     - Pinnacle PCTV Studio 专业版
+     - Pinnacle PCTV Studio 涓撲笟鐗?
      -
 
    - - 53
@@ -239,7 +239,7 @@
      -
 
    - - 54
-     - Lifeview FlyVideo 2000 /FlyVideo 一个2/ Lifetec LT 9415 TV [LR90]
+     - Lifeview FlyVideo 2000 /FlyVideo 涓€涓?/ Lifetec LT 9415 TV [LR90]
      -
 
    - - 55
@@ -248,14 +248,14 @@
 
    - - 56
      - Lifeview FlyVideo 98FM LR50
-     - 一个051:41一个0
+     - 涓€涓?51:41涓€涓?
 
    - - 57
-     - GrandTec 'Grand 视频 Capture' (Bt848)
+     - GrandTec 'Grand 瑙嗛 Capture' (Bt848)
      - 4344:4142
 
    - - 58
-     - Askey CPH060/ Phoebe TV Master 仅 (无 FM)
+     - Askey CPH060/ Phoebe TV Master 浠?(鏃?FM)
      -
 
    - - 59
@@ -307,11 +307,11 @@
      -
 
    - - 71
-     - Lifeview FlyVideo 98EZ (capture 仅) LR51
+     - Lifeview FlyVideo 98EZ (capture 浠? LR51
      - 1851:1851
 
    - - 72
-     - Prolink Pixelview PV-BT878P+9B (PlayTV 专业版 rev.9B FM+NICAM)
+     - Prolink Pixelview PV-BT878P+9B (PlayTV 涓撲笟鐗?rev.9B FM+NICAM)
      - 1554:4011
 
    - - 73
@@ -331,12 +331,12 @@
      - 0e11:0079
 
    - - 77
-     - GrandTec Multi Capture 卡 (Bt878)
+     - GrandTec Multi Capture 鍗?(Bt878)
      -
 
    - - 78
      - Jetway TV/Capture JW-TV878-FBK, Kworld KW-TV878RF
-     - 0一个01:17de
+     - 0涓€涓?1:17de
 
    - - 79
      - DSP Design TCVIDEO
@@ -427,12 +427,12 @@
      -
 
    - - 101
-     - Pace TV & Radio 卡
+     - Pace TV & Radio 鍗?
      -
 
    - - 102
      - IVC-200
-     - 0000:一个155, 0001:一个155, 0002:一个155, 0003:一个155, 0100:一个155, 0101:一个155, 0102:一个155, 0103:一个155, 0800:一个155, 0801:一个155, 0802:一个155, 0803:一个155
+     - 0000:涓€涓?55, 0001:涓€涓?55, 0002:涓€涓?55, 0003:涓€涓?55, 0100:涓€涓?55, 0101:涓€涓?55, 0102:涓€涓?55, 0103:涓€涓?55, 0800:涓€涓?55, 0801:涓€涓?55, 0802:涓€涓?55, 0803:涓€涓?55
 
    - - 103
      - Grand X-Guard / Trust 814PCI
@@ -464,11 +464,11 @@
 
    - - 110
      - IVC-100
-     - ff00:一个132
+     - ff00:涓€涓?32
 
    - - 111
      - IVC-120G
-     - ff00:一个182, ff01:一个182, ff02:一个182, ff03:一个182, ff04:一个182, ff05:一个182, ff06:一个182, ff07:一个182, ff08:一个182, ff09:一个182, ff0一个:一个182, ff0b:一个182, ff0c:一个182, ff0d:一个182, ff0e:一个182, ff0f:一个182
+     - ff00:涓€涓?82, ff01:涓€涓?82, ff02:涓€涓?82, ff03:涓€涓?82, ff04:涓€涓?82, ff05:涓€涓?82, ff06:涓€涓?82, ff07:涓€涓?82, ff08:涓€涓?82, ff09:涓€涓?82, ff0涓€涓?涓€涓?82, ff0b:涓€涓?82, ff0c:涓€涓?82, ff0d:涓€涓?82, ff0e:涓€涓?82, ff0f:涓€涓?82
 
    - - 112
      - pcHDTV HD-2000 TV
@@ -488,7 +488,7 @@
 
    - - 116
      - SIMUS GVC1100
-     - aa6一个:82b2
+     - aa6涓€涓?82b2
 
    - - 117
      - NGS NGSTV+
@@ -499,7 +499,7 @@
      -
 
    - - 119
-     - Tekram M205 专业版
+     - Tekram M205 涓撲笟鐗?
      -
 
    - - 120
@@ -547,7 +547,7 @@
      -
 
    - - 131
-     - Tibet 系统 'Progress DVR' CS16
+     - Tibet 绯荤粺 'Progress DVR' CS16
      -
 
    - - 132
@@ -591,7 +591,7 @@
      -
 
    - - 142
-     - Sabrent TV-FM (bttv 版本)
+     - Sabrent TV-FM (bttv 鐗堟湰)
      -
 
    - - 143
@@ -603,16 +603,16 @@
      -
 
    - - 145
-     - SSAI 安全 视频 接口
+     - SSAI 瀹夊叏 瑙嗛 鎺ュ彛
      - 4149:5353
 
    - - 146
-     - SSAI Ultrasound 视频 接口
-     - 414一个:5353
+     - SSAI Ultrasound 瑙嗛 鎺ュ彛
+     - 414涓€涓?5353
 
    - - 147
      - VoodooTV 200 (USA)
-     - 121一个:3000
+     - 121涓€涓?3000
 
    - - 148
      - DViCO FusionHDTV 2
@@ -624,7 +624,7 @@
 
    - - 150
      - Geovision GV-600
-     - 008一个:763c
+     - 008涓€涓?763c
 
    - - 151
      - Kozumi KTV-01C
@@ -652,7 +652,7 @@
 
    - - 157
      - Geovision GV-800(S) (master)
-     - 800一个:763d
+     - 800涓€涓?763d
 
    - - 158
      - Geovision GV-800(S) (slave)
@@ -663,7 +663,7 @@
      - 1830:1540, 1831:1540, 1832:1540, 1833:1540, 1834:1540, 1835:1540, 1836:1540, 1837:1540
 
    - - 160
-     - Tongwei 视频 Technology TD-3116
+     - Tongwei 瑙嗛 Technology TD-3116
      - f200:3116
 
    - - 161

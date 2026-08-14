@@ -1,24 +1,24 @@
-
-## dm-pcache — 持久化缓存（Persistent Cache）
-
-
-**作者：Dongsheng Yang <dongsheng.yang@linux.dev>**
-
-本文档描述 **dm-pcache**，这是一个 Device-Mapper 目标，它让一个可按字节寻址的 **DAX**（持久内存，“pmem”）区域充当位于较慢块设备之前的、高性能且崩溃持久化的缓存。相关代码位于 `drivers/md/dm-pcache/`。
-
-## 特性速览
+﻿
+## dm-pcache 鈥?鎸佷箙鍖栫紦瀛橈紙Persistent Cache锛?
 
 
-- **回写（write-back）** 缓存（目前唯一支持的模式）。
-- 在 pmem 设备上分配的 **16 MiB 段（segment）**。
-- **数据 CRC32** 校验（可选，按缓存设置）。
-- 崩溃安全：每个元数据结构都做了双份复制（`PCACHE_META_INDEX_MAX == 2`），并使用 CRC 加序列号进行保护。
-- **多树索引**（按逻辑地址分片的索引树），以获得较高的 PMem 并行度
-- 纯 **DAX 路径** I/O —— 没有额外的 BIO 往返
-- **日志结构回写（log-structured write-back）**，保持后端崩溃一致性
+**浣滆€咃細Dongsheng Yang <dongsheng.yang@linux.dev>**
+
+鏈枃妗ｆ弿杩?**dm-pcache**锛岃繖鏄竴涓?Device-Mapper 鐩爣锛屽畠璁╀竴涓彲鎸夊瓧鑺傚鍧€鐨?**DAX**锛堟寔涔呭唴瀛橈紝鈥減mem鈥濓級鍖哄煙鍏呭綋浣嶄簬杈冩參鍧楄澶囦箣鍓嶇殑銆侀珮鎬ц兘涓斿穿婧冩寔涔呭寲鐨勭紦瀛樸€傜浉鍏充唬鐮佷綅浜?`drivers/md/dm-pcache/`銆?
+
+## 鐗规€ч€熻
 
 
-## 构造函数
+- **鍥炲啓锛坵rite-back锛?* 缂撳瓨锛堢洰鍓嶅敮涓€鏀寔鐨勬ā寮忥級銆?
+- 鍦?pmem 璁惧涓婂垎閰嶇殑 **16 MiB 娈碉紙segment锛?*銆?
+- **鏁版嵁 CRC32** 鏍￠獙锛堝彲閫夛紝鎸夌紦瀛樿缃級銆?
+- 宕╂簝瀹夊叏锛氭瘡涓厓鏁版嵁缁撴瀯閮藉仛浜嗗弻浠藉鍒讹紙`PCACHE_META_INDEX_MAX == 2`锛夛紝骞朵娇鐢?CRC 鍔犲簭鍒楀彿杩涜淇濇姢銆?
+- **澶氭爲绱㈠紩**锛堟寜閫昏緫鍦板潃鍒嗙墖鐨勭储寮曟爲锛夛紝浠ヨ幏寰楄緝楂樼殑 PMem 骞惰搴?
+- 绾?**DAX 璺緞** I/O 鈥斺€?娌℃湁棰濆鐨?BIO 寰€杩?
+- **鏃ュ織缁撴瀯鍥炲啓锛坙og-structured write-back锛?*锛屼繚鎸佸悗绔穿婧冧竴鑷存€?
+
+
+## 鏋勯€犲嚱鏁?
 
 
 ```
@@ -27,7 +27,7 @@
 
 ```
 =========================  ====================================================
-`cache_dev`               Any DAX-capable block device (`/dev/pmem0`…).
+`cache_dev`               Any DAX-capable block device (`/dev/pmem0`鈥?.
                             All metadata **and** cached blocks are stored here.
 
 `backing_dev`             The slow block device to be cached.
@@ -37,25 +37,25 @@
 
 `data_crc`                Optional, default to `false`
 
-                            - `true`  – store CRC32 for every cached entry
+                            - `true`  鈥?store CRC32 for every cached entry
 			      and verify on reads
-                            - `false` – skip CRC (faster)
+                            - `false` 鈥?skip CRC (faster)
 =========================  ====================================================
 
-### 示例
+### 绀轰緥
 
 
 
    dmsetup create pcache_sdb --table \
      "0 $(blockdev --getsz /dev/sdb) pcache /dev/pmem0 /dev/sdb 4 cache_mode writeback data_crc true"
 
-首次使用某个 pmem 设备时，dm-pcache 会自动格式化它（超级块、cache_info 等）。
+棣栨浣跨敤鏌愪釜 pmem 璁惧鏃讹紝dm-pcache 浼氳嚜鍔ㄦ牸寮忓寲瀹冿紙瓒呯骇鍧椼€乧ache_info 绛夛級銆?
 
 
-## 状态行
+## 鐘舵€佽
 
 
-`dmsetup status <device>`（`STATUSTYPE_INFO`）会打印：
+`dmsetup status <device>`锛坄STATUSTYPE_INFO`锛変細鎵撳嵃锛?
 
 ```
 
@@ -66,7 +66,7 @@
    <key_tail_seg>:<key_tail_off>
 
 ```
-### 字段含义
+### 瀛楁鍚箟
 
 
 ===============================  =============================================
@@ -80,9 +80,9 @@
 
 `gc_percent`                   Current GC high-water mark (0-90).
 
-`cache_flags`                  Bit 0 – DATA_CRC enabled
-                                 Bit 1 – INIT_DONE (cache initialised)
-                                 Bits 2-5 – cache mode (0 == WB).
+`cache_flags`                  Bit 0 鈥?DATA_CRC enabled
+                                 Bit 1 鈥?INIT_DONE (cache initialised)
+                                 Bits 2-5 鈥?cache mode (0 == WB).
 
 `key_head`                     Where new key-sets are being written.
 
@@ -93,10 +93,10 @@
 ===============================  =============================================
 
 
-## 消息
+## 娑堟伅
 
 
-**更改 GC 触发阈值**
+**鏇存敼 GC 瑙﹀彂闃堝€?*
 
 ```
 
@@ -104,10 +104,10 @@
 
 
 ```
-## 工作原理
+## 宸ヤ綔鍘熺悊
 
 
-### 子设备
+### 瀛愯澶?
 
 
 ====================  =========================================================
@@ -115,69 +115,69 @@ backing_dev             Any block device (SSD/HDD/loop/LVM, etc.).
 cache_dev               DAX device; must expose direct-access memory.
 ====================  =========================================================
 
-### 段与键集合（key-set）
+### 娈典笌閿泦鍚堬紙key-set锛?
 
 
-- pmem 空间被划分为 **16 MiB 段（segment）**。
-- 每次写入会从段内每个 CPU 的 **data_head** 分配空间。
-- 一个 **cache-key（缓存键）** 记录了源设备上的一段逻辑范围，以及它在 pmem 中的位置（段 + 偏移 + 代（generation））。
-- 128 个键组成一个 **key-set（kset）**；kset 在 pmem 中顺序写入，并且自身是崩溃安全的（CRC）。
-- 这一对 **(key_tail, dirty_tail)** 界定了干净/脏以及存活/死亡 kset 的边界。
+- pmem 绌洪棿琚垝鍒嗕负 **16 MiB 娈碉紙segment锛?*銆?
+- 姣忔鍐欏叆浼氫粠娈靛唴姣忎釜 CPU 鐨?**data_head** 鍒嗛厤绌洪棿銆?
+- 涓€涓?**cache-key锛堢紦瀛橀敭锛?* 璁板綍浜嗘簮璁惧涓婄殑涓€娈甸€昏緫鑼冨洿锛屼互鍙婂畠鍦?pmem 涓殑浣嶇疆锛堟 + 鍋忕Щ + 浠ｏ紙generation锛夛級銆?
+- 128 涓敭缁勬垚涓€涓?**key-set锛坘set锛?*锛沰set 鍦?pmem 涓『搴忓啓鍏ワ紝骞朵笖鑷韩鏄穿婧冨畨鍏ㄧ殑锛圕RC锛夈€?
+- 杩欎竴瀵?**(key_tail, dirty_tail)** 鐣屽畾浜嗗共鍑€/鑴忎互鍙婂瓨娲?姝讳骸 kset 鐨勮竟鐣屻€?
 
-### 回写
-
-
-脏键被排入一棵树中；一个后台工作线程将数据复制回 backing_dev，并推进 **dirty_tail**。来自上层的 FLUSH/FUA bio 会强制立即提交元数据。
-
-### 垃圾回收
+### 鍥炲啓
 
 
-当 `segs_used >= seg_total * gc_percent / 100` 时，GC 启动。它从 **key_tail** 开始遍历，释放其中每个键都已失效的段，并推进 **key_tail**。
+鑴忛敭琚帓鍏ヤ竴妫垫爲涓紱涓€涓悗鍙板伐浣滅嚎绋嬪皢鏁版嵁澶嶅埗鍥?backing_dev锛屽苟鎺ㄨ繘 **dirty_tail**銆傛潵鑷笂灞傜殑 FLUSH/FUA bio 浼氬己鍒剁珛鍗虫彁浜ゅ厓鏁版嵁銆?
 
-### CRC 校验
-
-
-若 `data_crc 已启用`，dm-pcache 会在每次插入时为每个缓存数据范围计算 CRC32，并将其存储在介质上的键中。读取时会在复制到调用者之前验证 CRC。
+### 鍨冨溇鍥炴敹
 
 
-## 故障处理
+褰?`segs_used >= seg_total * gc_percent / 100` 鏃讹紝GC 鍚姩銆傚畠浠?**key_tail** 寮€濮嬮亶鍘嗭紝閲婃斁鍏朵腑姣忎釜閿兘宸插け鏁堢殑娈碉紝骞舵帹杩?**key_tail**銆?
+
+### CRC 鏍￠獙
 
 
-- **pmem 介质错误** —— 所有元数据副本都通过 `copy_mc_to_kernel` 读取；不可纠正的错误会记录日志并中止初始化。
-- **缓存已满** —— 如果找不到空闲段，写入返回 `-EBUSY`；dm-pcache 会在内部重试（请求延迟）。
-- **系统崩溃** —— 在挂载时，驱动会从 **key_tail** 重放 kset 以重建内存中的树；每个段的代（generation）可防止出现悬空（use-after-free）键。
+鑻?`data_crc 宸插惎鐢╜锛宒m-pcache 浼氬湪姣忔鎻掑叆鏃朵负姣忎釜缂撳瓨鏁版嵁鑼冨洿璁＄畻 CRC32锛屽苟灏嗗叾瀛樺偍鍦ㄤ粙璐ㄤ笂鐨勯敭涓€傝鍙栨椂浼氬湪澶嶅埗鍒拌皟鐢ㄨ€呬箣鍓嶉獙璇?CRC銆?
 
 
-## 限制与 TODO
+## 鏁呴殰澶勭悊
 
 
-- 仅 **回写** 模式；其它模式在计划中。
-- 仅 FIFO 缓存失效；其它（LRU、ARC……）在计划中。
-- 目前不支持表重载（table reload）。
-- 丢弃（discard）在计划中。
+- **pmem 浠嬭川閿欒** 鈥斺€?鎵€鏈夊厓鏁版嵁鍓湰閮介€氳繃 `copy_mc_to_kernel` 璇诲彇锛涗笉鍙籂姝ｇ殑閿欒浼氳褰曟棩蹇楀苟涓鍒濆鍖栥€?
+- **缂撳瓨宸叉弧** 鈥斺€?濡傛灉鎵句笉鍒扮┖闂叉锛屽啓鍏ヨ繑鍥?`-EBUSY`锛沝m-pcache 浼氬湪鍐呴儴閲嶈瘯锛堣姹傚欢杩燂級銆?
+- **绯荤粺宕╂簝** 鈥斺€?鍦ㄦ寕杞芥椂锛岄┍鍔ㄤ細浠?**key_tail** 閲嶆斁 kset 浠ラ噸寤哄唴瀛樹腑鐨勬爲锛涙瘡涓鐨勪唬锛坓eneration锛夊彲闃叉鍑虹幇鎮┖锛坲se-after-free锛夐敭銆?
 
 
-## 示例工作流
+## 闄愬埗涓?TODO
+
+
+- 浠?**鍥炲啓** 妯″紡锛涘叾瀹冩ā寮忓湪璁″垝涓€?
+- 浠?FIFO 缂撳瓨澶辨晥锛涘叾瀹冿紙LRU銆丄RC鈥︹€︼級鍦ㄨ鍒掍腑銆?
+- 鐩墠涓嶆敮鎸佽〃閲嶈浇锛坱able reload锛夈€?
+- 涓㈠純锛坉iscard锛夊湪璁″垝涓€?
+
+
+## 绀轰緥宸ヤ綔娴?
 
 
 
-   # 1.  创建设备
+   # 1.  鍒涘缓璁惧
    dmsetup create pcache_sdb --table \
      "0 $(blockdev --getsz /dev/sdb) pcache /dev/pmem0 /dev/sdb 4 cache_mode writeback data_crc true"
 
-   # 2.  在其上创建文件系统
+   # 2.  鍦ㄥ叾涓婂垱寤烘枃浠剁郴缁?
    mkfs.ext4 /dev/mapper/pcache_sdb
    mount /dev/mapper/pcache_sdb /mnt
 
-   # 3.  将 GC 阈值调整为 80%
+   # 3.  灏?GC 闃堝€艰皟鏁翠负 80%
    dmsetup message pcache_sdb 0 gc_percent 80
 
-   # 4.  观察状态
+   # 4.  瑙傚療鐘舵€?
    watch -n1 'dmsetup status pcache_sdb'
 
-   # 5.  关闭
+   # 5.  鍏抽棴
    umount /mnt
    dmsetup remove pcache_sdb
 
 
-`dm-pcache` 仍在积极开发中；非常欢迎反馈、bug 报告和补丁！
+`dm-pcache` 浠嶅湪绉瀬寮€鍙戜腑锛涢潪甯告杩庡弽棣堛€乥ug 鎶ュ憡鍜岃ˉ涓侊紒

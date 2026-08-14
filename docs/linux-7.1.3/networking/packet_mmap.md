@@ -1,56 +1,41 @@
-## Packet MMAP（Packet 内存映射）
+﻿## Packet MMAP锛圥acket 鍐呭瓨鏄犲皠锛?
+
+## 鎽樿
 
 
-## 摘要
-
-
-本文件记录了 PACKET 套接字接口所提供的 mmap() 机制。这类套接字用于：
-
-i) 使用 tcpdump 之类的工具捕获网络流量，
-ii) 发送网络流量，或任何其他需要直接（raw）
-    访问网络接口的场景。
-
-使用方法的详细介绍可在以下地址找到：
-
+鏈枃浠惰褰曚簡 PACKET 濂楁帴瀛楁帴鍙ｆ墍鎻愪緵鐨?mmap() 鏈哄埗銆傝繖绫诲鎺ュ瓧鐢ㄤ簬锛?
+i) 浣跨敤 tcpdump 涔嬬被鐨勫伐鍏锋崟鑾风綉缁滄祦閲忥紝
+ii) 鍙戦€佺綉缁滄祦閲忥紝鎴栦换浣曞叾浠栭渶瑕佺洿鎺ワ紙raw锛?    璁块棶缃戠粶鎺ュ彛鐨勫満鏅€?
+浣跨敤鏂规硶鐨勮缁嗕粙缁嶅彲鍦ㄤ互涓嬪湴鍧€鎵惧埌锛?
     https://web.archive.org/web/20220404160947/https://sites.google.com/site/packetmmap/
 
-请将您的意见发送给我们：
-    - Ulisses Alonso Camaró <uaca@i.hate.spam.alumni.uv.es>
+璇峰皢鎮ㄧ殑鎰忚鍙戦€佺粰鎴戜滑锛?    - Ulisses Alonso Camar贸 <uaca@i.hate.spam.alumni.uv.es>
     - Johann Baudy
 
-## 为什么要使用 PACKET_MMAP
+## 涓轰粈涔堣浣跨敤 PACKET_MMAP
 
 
-不使用 PACKET_MMAP 的捕获过程（纯 AF_PACKET）效率非常低。它使用非常有限
-的缓冲区，并且每捕获一个数据包就需要一次系统调用；若还想获取数据包的时间戳
-（libpcap 总是如此），则需要两次系统调用。
-
-相反，PACKET_MMAP 的效率很高。PACKET_MMAP 提供了一个大小可配置、映射到用户空间
-的环形缓冲区（circular buffer），可用于接收或发送数据包。这样读取数据包只需等待
-它们到来，大多数情况下不需要发出任何系统调用。在发送方面，可以通过一次系统调用
-发送多个数据包以获得最高带宽。由于在内核与用户之间使用了共享缓冲区，还带来了
-减少数据包拷贝次数的好处。
-
-使用 PACKET_MMAP 来提升捕获和发送过程的性能是合适的，但它并非全部。至少，如果你在
-高速（相对于 CPU 速度而言）捕获，应当检查你的网卡（network interface card）设备驱动是否
-支持某种中断负载缓解机制，或者（更好）是否支持 NAPI，并且确保它已启用。对于发送，
-请检查你的网络设备所使用和支持的 MTU（Maximum Transmission Unit，最大传输单元）。将你的
-网卡中断（IRQ）绑定到特定 CPU 也会带来好处。
-
-## 如何使用 mmap() 提升捕获过程
+涓嶄娇鐢?PACKET_MMAP 鐨勬崟鑾疯繃绋嬶紙绾?AF_PACKET锛夋晥鐜囬潪甯镐綆銆傚畠浣跨敤闈炲父鏈夐檺
+鐨勭紦鍐插尯锛屽苟涓旀瘡鎹曡幏涓€涓暟鎹寘灏遍渶瑕佷竴娆＄郴缁熻皟鐢紱鑻ヨ繕鎯宠幏鍙栨暟鎹寘鐨勬椂闂存埑
+锛坙ibpcap 鎬绘槸濡傛锛夛紝鍒欓渶瑕佷袱娆＄郴缁熻皟鐢ㄣ€?
+鐩稿弽锛孭ACKET_MMAP 鐨勬晥鐜囧緢楂樸€侾ACKET_MMAP 鎻愪緵浜嗕竴涓ぇ灏忓彲閰嶇疆銆佹槧灏勫埌鐢ㄦ埛绌洪棿
+鐨勭幆褰㈢紦鍐插尯锛坈ircular buffer锛夛紝鍙敤浜庢帴鏀舵垨鍙戦€佹暟鎹寘銆傝繖鏍疯鍙栨暟鎹寘鍙渶绛夊緟
+瀹冧滑鍒版潵锛屽ぇ澶氭暟鎯呭喌涓嬩笉闇€瑕佸彂鍑轰换浣曠郴缁熻皟鐢ㄣ€傚湪鍙戦€佹柟闈紝鍙互閫氳繃涓€娆＄郴缁熻皟鐢?鍙戦€佸涓暟鎹寘浠ヨ幏寰楁渶楂樺甫瀹姐€傜敱浜庡湪鍐呮牳涓庣敤鎴蜂箣闂翠娇鐢ㄤ簡鍏变韩缂撳啿鍖猴紝杩樺甫鏉ヤ簡
+鍑忓皯鏁版嵁鍖呮嫹璐濇鏁扮殑濂藉銆?
+浣跨敤 PACKET_MMAP 鏉ユ彁鍗囨崟鑾峰拰鍙戦€佽繃绋嬬殑鎬ц兘鏄悎閫傜殑锛屼絾瀹冨苟闈炲叏閮ㄣ€傝嚦灏戯紝濡傛灉浣犲湪
+楂橀€燂紙鐩稿浜?CPU 閫熷害鑰岃█锛夋崟鑾凤紝搴斿綋妫€鏌ヤ綘鐨勭綉鍗★紙network interface card锛夎澶囬┍鍔ㄦ槸鍚?鏀寔鏌愮涓柇璐熻浇缂撹В鏈哄埗锛屾垨鑰咃紙鏇村ソ锛夋槸鍚︽敮鎸?NAPI锛屽苟涓旂‘淇濆畠宸插惎鐢ㄣ€傚浜庡彂閫侊紝
+璇锋鏌ヤ綘鐨勭綉缁滆澶囨墍浣跨敤鍜屾敮鎸佺殑 MTU锛圡aximum Transmission Unit锛屾渶澶т紶杈撳崟鍏冿級銆傚皢浣犵殑
+缃戝崱涓柇锛圛RQ锛夌粦瀹氬埌鐗瑰畾 CPU 涔熶細甯︽潵濂藉銆?
+## 濡備綍浣跨敤 mmap() 鎻愬崌鎹曡幏杩囩▼
 
 
-从用户的角度看，你应该使用更高层的 libpcap 库，它是事实上的标准，几乎可移植到
-包括 Win32 在内的所有操作系统。
-
-Packet MMAP 的支持大约是在 1.3.0 版本时集成进 libpcap 的；TPACKET_V3 的支持在
-1.5.0 版本中加入。
-
-## 如何直接使用 mmap() 提升捕获过程
+浠庣敤鎴风殑瑙掑害鐪嬶紝浣犲簲璇ヤ娇鐢ㄦ洿楂樺眰鐨?libpcap 搴擄紝瀹冩槸浜嬪疄涓婄殑鏍囧噯锛屽嚑涔庡彲绉绘鍒?鍖呮嫭 Win32 鍦ㄥ唴鐨勬墍鏈夋搷浣滅郴缁熴€?
+Packet MMAP 鐨勬敮鎸佸ぇ绾︽槸鍦?1.3.0 鐗堟湰鏃堕泦鎴愯繘 libpcap 鐨勶紱TPACKET_V3 鐨勬敮鎸佸湪
+1.5.0 鐗堟湰涓姞鍏ャ€?
+## 濡備綍鐩存帴浣跨敤 mmap() 鎻愬崌鎹曡幏杩囩▼
 
 
-从系统调用的角度看，PACKET_MMAP 的使用涉及
-```
+浠庣郴缁熻皟鐢ㄧ殑瑙掑害鐪嬶紝PACKET_MMAP 鐨勪娇鐢ㄦ秹鍙?```
 
     [setup]     socket() -------> creation of the capture socket
 		setsockopt() ---> allocation of the circular buffer (ring)
@@ -66,27 +51,20 @@ Packet MMAP 的支持大约是在 1.3.0 版本时集成进 libpcap 的；TPACKET
 
 
 ```
-套接字的创建与销毁都很直接，通过如下方式完成
+濂楁帴瀛楃殑鍒涘缓涓庨攢姣侀兘寰堢洿鎺ワ紝閫氳繃濡備笅鏂瑰紡瀹屾垚
 ```
 
  int fd = socket(PF_PACKET, mode, htons(ETH_P_ALL));
 
 ```
-其中 mode 为 SOCK_RAW 表示原始（raw）接口，可捕获链路层信息；或为 SOCK_DGRAM
-表示“熟”（cooked）接口，其中不支持捕获链路层信息，而是由内核提供一个链路层
-伪头部（pseudo-header）。
-
-套接字及所有相关资源的销毁通过简单地调用 close(fd) 来完成。
-
-与使用 PACKET_MMAP 无关，也可以用一个套接字同时进行捕获和发送。这只需用一次
-mmap() 调用同时映射已分配的 RX 和 TX 缓冲区环（ring）即可。参见“环形缓冲区（ring）
-的映射与使用”。
-
-接下来我将描述 PACKET_MMAP 的设置及其约束，以及环形缓冲区在用户进程中的映射
-和该缓冲区的使用。
-
-## 如何直接使用 mmap() 提升发送过程
-```
+鍏朵腑 mode 涓?SOCK_RAW 琛ㄧず鍘熷锛坮aw锛夋帴鍙ｏ紝鍙崟鑾烽摼璺眰淇℃伅锛涙垨涓?SOCK_DGRAM
+琛ㄧず鈥滅啛鈥濓紙cooked锛夋帴鍙ｏ紝鍏朵腑涓嶆敮鎸佹崟鑾烽摼璺眰淇℃伅锛岃€屾槸鐢卞唴鏍告彁渚涗竴涓摼璺眰
+浼ご閮紙pseudo-header锛夈€?
+濂楁帴瀛楀強鎵€鏈夌浉鍏宠祫婧愮殑閿€姣侀€氳繃绠€鍗曞湴璋冪敤 close(fd) 鏉ュ畬鎴愩€?
+涓庝娇鐢?PACKET_MMAP 鏃犲叧锛屼篃鍙互鐢ㄤ竴涓鎺ュ瓧鍚屾椂杩涜鎹曡幏鍜屽彂閫併€傝繖鍙渶鐢ㄤ竴娆?mmap() 璋冪敤鍚屾椂鏄犲皠宸插垎閰嶇殑 RX 鍜?TX 缂撳啿鍖虹幆锛坮ing锛夊嵆鍙€傚弬瑙佲€滅幆褰㈢紦鍐插尯锛坮ing锛?鐨勬槧灏勪笌浣跨敤鈥濄€?
+鎺ヤ笅鏉ユ垜灏嗘弿杩?PACKET_MMAP 鐨勮缃強鍏剁害鏉燂紝浠ュ強鐜舰缂撳啿鍖哄湪鐢ㄦ埛杩涚▼涓殑鏄犲皠
+鍜岃缂撳啿鍖虹殑浣跨敤銆?
+## 濡備綍鐩存帴浣跨敤 mmap() 鎻愬崌鍙戦€佽繃绋?```
 
     [setup]         socket() -------> creation of the transmission socket
 		    setsockopt() ---> allocation of the circular buffer (ring)
@@ -105,19 +83,16 @@ mmap() 调用同时映射已分配的 RX 和 TX 缓冲区环（ring）即可。�
 				      deallocation of all associated resources.
 
 ```
-套接字的创建与销毁同样很直接，通过如下方式完成
+濂楁帴瀛楃殑鍒涘缓涓庨攢姣佸悓鏍峰緢鐩存帴锛岄€氳繃濡備笅鏂瑰紡瀹屾垚
 ```
 
  int fd = socket(PF_PACKET, mode, 0);
 
 ```
-如果我们只通过该套接字发送，协议（protocol）可以可选地设为 0，从而避免一次昂贵的
-packet_rcv() 调用。这种情况下，你还需要将 TX_RING 与 sll_protocol = 0 进行
-bind(2) 绑定。否则，例如使用 htons(ETH_P_ALL) 或任何其他协议。
-
-将套接字绑定到你的网络接口是必须的（采用零拷贝时），以便获知环形缓冲区中使用的
-帧头部大小。
-```
+濡傛灉鎴戜滑鍙€氳繃璇ュ鎺ュ瓧鍙戦€侊紝鍗忚锛坧rotocol锛夊彲浠ュ彲閫夊湴璁句负 0锛屼粠鑰岄伩鍏嶄竴娆℃槀璐电殑
+packet_rcv() 璋冪敤銆傝繖绉嶆儏鍐典笅锛屼綘杩橀渶瑕佸皢 TX_RING 涓?sll_protocol = 0 杩涜
+bind(2) 缁戝畾銆傚惁鍒欙紝渚嬪浣跨敤 htons(ETH_P_ALL) 鎴栦换浣曞叾浠栧崗璁€?
+灏嗗鎺ュ瓧缁戝畾鍒颁綘鐨勭綉缁滄帴鍙ｆ槸蹇呴』鐨勶紙閲囩敤闆舵嫹璐濇椂锛夛紝浠ヤ究鑾风煡鐜舰缂撳啿鍖轰腑浣跨敤鐨?甯уご閮ㄥぇ灏忋€?```
 
     --------------------
     | struct tpacket_hdr | Header. It contains the status of
@@ -159,21 +134,18 @@ bind(2) 绑定。否则，例如使用 htons(ETH_P_ALL) 或任何其他协议。
  frame base + TPACKET_HDRLEN - sizeof(struct sockaddr_ll)
 
 ```
-因此，无论你为套接字模式选择什么（SOCK_DGRAM 或 SOCK_RAW），
+鍥犳锛屾棤璁轰綘涓哄鎺ュ瓧妯″紡閫夋嫨浠€涔堬紙SOCK_DGRAM 鎴?SOCK_RAW锛夛紝
 ```
 
  frame base + TPACKET_ALIGN(sizeof(struct tpacket_hdr))
 
 ```
-如果你想将用户数据放在距离帧起始处的自定义偏移位置（例如为了与 SOCK_RAW 模式下的
-负载对齐），可以设置 tp_net（配合 SOCK_DGRAM）或 tp_mac（配合 SOCK_RAW）。为了使其
-生效，必须事先通过 setsockopt() 及 PACKET_TX_HAS_OFF 选项启用它。
-
-## PACKET_MMAP 设置
+濡傛灉浣犳兂灏嗙敤鎴锋暟鎹斁鍦ㄨ窛绂诲抚璧峰澶勭殑鑷畾涔夊亸绉讳綅缃紙渚嬪涓轰簡涓?SOCK_RAW 妯″紡涓嬬殑
+璐熻浇瀵归綈锛夛紝鍙互璁剧疆 tp_net锛堥厤鍚?SOCK_DGRAM锛夋垨 tp_mac锛堥厤鍚?SOCK_RAW锛夈€備负浜嗕娇鍏?鐢熸晥锛屽繀椤讳簨鍏堥€氳繃 setsockopt() 鍙?PACKET_TX_HAS_OFF 閫夐」鍚敤瀹冦€?
+## PACKET_MMAP 璁剧疆
 
 
-要在用户级代码中设置 PACKET_MMAP，是通过类似如下的调用来完成的
-
+瑕佸湪鐢ㄦ埛绾т唬鐮佷腑璁剧疆 PACKET_MMAP锛屾槸閫氳繃绫讳技濡備笅鐨勮皟鐢ㄦ潵瀹屾垚鐨?
 ```
 
      setsockopt(fd, SOL_PACKET, PACKET_RX_RING, (void *) &req, sizeof(req))
@@ -183,8 +155,7 @@ bind(2) 绑定。否则，例如使用 htons(ETH_P_ALL) 或任何其他协议。
      setsockopt(fd, SOL_PACKET, PACKET_TX_RING, (void *) &req, sizeof(req))
 
 ```
-上述调用中最重要的参数是 req 参数，
-```
+涓婅堪璋冪敤涓渶閲嶈鐨勫弬鏁版槸 req 鍙傛暟锛?```
 
     struct tpacket_req
     {
@@ -195,15 +166,10 @@ bind(2) 绑定。否则，例如使用 htons(ETH_P_ALL) 或任何其他协议。
     };
 
 ```
-该结构定义在 /usr/include/linux/if_packet.h 中，它建立了一个不可换出（unswappable）
-内存的环形缓冲区（ring）。
-
-它被映射到捕获进程后，允许在不发出系统调用的情况下读取已捕获的帧以及时间戳等
-相关元信息。
-
-帧被分组到块（block）中。每个块是一段物理连续的内存区域，包含
-tp_block_size/tp_frame_size 个帧。总数量满足
-```
+璇ョ粨鏋勫畾涔夊湪 /usr/include/linux/if_packet.h 涓紝瀹冨缓绔嬩簡涓€涓笉鍙崲鍑猴紙unswappable锛?鍐呭瓨鐨勭幆褰㈢紦鍐插尯锛坮ing锛夈€?
+瀹冭鏄犲皠鍒版崟鑾疯繘绋嬪悗锛屽厑璁稿湪涓嶅彂鍑虹郴缁熻皟鐢ㄧ殑鎯呭喌涓嬭鍙栧凡鎹曡幏鐨勫抚浠ュ強鏃堕棿鎴崇瓑
+鐩稿叧鍏冧俊鎭€?
+甯ц鍒嗙粍鍒板潡锛坆lock锛変腑銆傛瘡涓潡鏄竴娈电墿鐞嗚繛缁殑鍐呭瓨鍖哄煙锛屽寘鍚?tp_block_size/tp_frame_size 涓抚銆傛€绘暟閲忔弧瓒?```
 
     frames_per_block = tp_block_size/tp_frame_size
 
@@ -234,25 +200,18 @@ tp_block_size/tp_frame_size 个帧。总数量满足
     +---------+---------+    +---------+---------+
 
 ```
-一个帧可以是任意大小，唯一条件是它能放入一个块中。一个块只能容纳整数个帧，换句话说，
-一个帧不能跨越两个块，因此在选择 frame_size 时有些细节需要注意。参见“环形缓冲区（ring）
-的映射与使用”。
-
-## PACKET_MMAP 设置约束
+涓€涓抚鍙互鏄换鎰忓ぇ灏忥紝鍞竴鏉′欢鏄畠鑳芥斁鍏ヤ竴涓潡涓€備竴涓潡鍙兘瀹圭撼鏁存暟涓抚锛屾崲鍙ヨ瘽璇达紝
+涓€涓抚涓嶈兘璺ㄨ秺涓や釜鍧楋紝鍥犳鍦ㄩ€夋嫨 frame_size 鏃舵湁浜涚粏鑺傞渶瑕佹敞鎰忋€傚弬瑙佲€滅幆褰㈢紦鍐插尯锛坮ing锛?鐨勬槧灏勪笌浣跨敤鈥濄€?
+## PACKET_MMAP 璁剧疆绾︽潫
 
 
-在内核版本 2.4.26 之前（针对 2.4 分支）和 2.6.5 之前（2.6 分支），PACKET_MMAP 缓冲区在
-32 位架构上最多只能容纳 32768 个帧，在 64 位架构上最多只能容纳 16384 个帧。
+鍦ㄥ唴鏍哥増鏈?2.4.26 涔嬪墠锛堥拡瀵?2.4 鍒嗘敮锛夊拰 2.6.5 涔嬪墠锛?.6 鍒嗘敮锛夛紝PACKET_MMAP 缂撳啿鍖哄湪
+32 浣嶆灦鏋勪笂鏈€澶氬彧鑳藉绾?32768 涓抚锛屽湪 64 浣嶆灦鏋勪笂鏈€澶氬彧鑳藉绾?16384 涓抚銆?
+### 鍧楀ぇ灏忛檺鍒?
 
-### 块大小限制
-
-
-如前所述，每个块都是一段连续的物理内存区域。这些内存区域是通过调用
-__get_free_pages() 函数分配的。顾名思义，该函数分配内存页，第二个参数是“order”，即
-2 的幂次页数量，也就是（当 PAGE_SIZE == 4096 时）order=0 ==> 4096 字节，order=1 ==>
-8192 字节，order=2 ==> 16384 字节，依此类推。由 __get_free_pages 分配的区域的最大大小
-由 MAX_PAGE_ORDER 宏决定。
-```
+濡傚墠鎵€杩帮紝姣忎釜鍧楅兘鏄竴娈佃繛缁殑鐗╃悊鍐呭瓨鍖哄煙銆傝繖浜涘唴瀛樺尯鍩熸槸閫氳繃璋冪敤
+__get_free_pages() 鍑芥暟鍒嗛厤鐨勩€傞【鍚嶆€濅箟锛岃鍑芥暟鍒嗛厤鍐呭瓨椤碉紝绗簩涓弬鏁版槸鈥渙rder鈥濓紝鍗?2 鐨勫箓娆￠〉鏁伴噺锛屼篃灏辨槸锛堝綋 PAGE_SIZE == 4096 鏃讹級order=0 ==> 4096 瀛楄妭锛宱rder=1 ==>
+8192 瀛楄妭锛宱rder=2 ==> 16384 瀛楄妭锛屼緷姝ょ被鎺ㄣ€傜敱 __get_free_pages 鍒嗛厤鐨勫尯鍩熺殑鏈€澶уぇ灏?鐢?MAX_PAGE_ORDER 瀹忓喅瀹氥€?```
 
    PAGE_SIZE << MAX_PAGE_ORDER
 
@@ -261,19 +220,13 @@ __get_free_pages() 函数分配的。顾名思义，该函数分配内存页，�
    In a 2.6/i386 kernel MAX_PAGE_ORDER is 11
 
 ```
-因此在 2.4/2.6 内核中，配合 i386 架构，get_free_pages 最多可分配 4MB 或 8MB。
+鍥犳鍦?2.4/2.6 鍐呮牳涓紝閰嶅悎 i386 鏋舵瀯锛実et_free_pages 鏈€澶氬彲鍒嗛厤 4MB 鎴?8MB銆?
+鐢ㄦ埛绌洪棿绋嬪簭鍙互鍖呭惈 /usr/include/sys/user.h 鍜?/usr/include/linux/mmzone.h 鏉ヨ幏鍙?PAGE_SIZE銆丮AX_PAGE_ORDER 鐨勫０鏄庛€?
+椤靛ぇ灏忎篃鍙互閫氳繃 getpagesize (2) 绯荤粺璋冪敤鍔ㄦ€佺‘瀹氥€?
+### 鍧楁暟閲忛檺鍒?
 
-用户空间程序可以包含 /usr/include/sys/user.h 和 /usr/include/linux/mmzone.h 来获取
-PAGE_SIZE、MAX_PAGE_ORDER 的声明。
-
-页大小也可以通过 getpagesize (2) 系统调用动态确定。
-
-### 块数量限制
-
-
-为了理解 PACKET_MMAP 的约束，我们需要查看用于保存每个块指针的结构。
-
-目前，该结构是一个用 kmalloc 动态分配的向量
+涓轰簡鐞嗚В PACKET_MMAP 鐨勭害鏉燂紝鎴戜滑闇€瑕佹煡鐪嬬敤浜庝繚瀛樻瘡涓潡鎸囬拡鐨勭粨鏋勩€?
+鐩墠锛岃缁撴瀯鏄竴涓敤 kmalloc 鍔ㄦ€佸垎閰嶇殑鍚戦噺
 ```
 
     +---+---+---+---+
@@ -287,23 +240,20 @@ PAGE_SIZE、MAX_PAGE_ORDER 的声明。
      block #1
 
 ```
-kmalloc 从一组预先确定的大小的内存池中分配任意字节数的物理连续内存。该内存池由
-slab 分配器维护，最终由它负责完成分配，因此也由它限制了 kmalloc 能分配的最大内存。
-
-在 2.4/2.6 内核和 i386 架构上，限制为 131072 字节。kmalloc 使用的预定大小可以在
-/proc/slabinfo 的“size-<bytes>”条目中查看。
-
-在 32 位架构上，指针长度为 4 字节，因此总块数为
+kmalloc 浠庝竴缁勯鍏堢‘瀹氱殑澶у皬鐨勫唴瀛樻睜涓垎閰嶄换鎰忓瓧鑺傛暟鐨勭墿鐞嗚繛缁唴瀛樸€傝鍐呭瓨姹犵敱
+slab 鍒嗛厤鍣ㄧ淮鎶わ紝鏈€缁堢敱瀹冭礋璐ｅ畬鎴愬垎閰嶏紝鍥犳涔熺敱瀹冮檺鍒朵簡 kmalloc 鑳藉垎閰嶇殑鏈€澶у唴瀛樸€?
+鍦?2.4/2.6 鍐呮牳鍜?i386 鏋舵瀯涓婏紝闄愬埗涓?131072 瀛楄妭銆俴malloc 浣跨敤鐨勯瀹氬ぇ灏忓彲浠ュ湪
+/proc/slabinfo 鐨勨€渟ize-<bytes>鈥濇潯鐩腑鏌ョ湅銆?
+鍦?32 浣嶆灦鏋勪笂锛屾寚閽堥暱搴︿负 4 瀛楄妭锛屽洜姝ゆ€诲潡鏁颁负
 ```
 
      131072/4 = 32768 blocks
 
 ```
-## PACKET_MMAP 缓冲区大小计算器
+## PACKET_MMAP 缂撳啿鍖哄ぇ灏忚绠楀櫒
 
 
-定义：
-
+瀹氫箟锛?
 ==============  ================================================================
 <size-max>      is the maximum size of allocable with kmalloc
 		(see /proc/slabinfo)
@@ -329,8 +279,7 @@ slab 分配器维护，最终由它负责完成分配，因此也由它限制了
 	<block number> * <block size> / <frame size>
 
 ```
-假设有以下参数，适用于 2.6 内核和
-```
+鍋囪鏈変互涓嬪弬鏁帮紝閫傜敤浜?2.6 鍐呮牳鍜?```
 
 	<size-max> = 131072 bytes
 	<pointer size> = 4 bytes
@@ -344,21 +293,15 @@ slab 分配器维护，最终由它负责完成分配，因此也由它限制了
 	<block size> = 4096 << 11 = 8 MiB.
 
 ```
-因此缓冲区将有 262144 MiB 大小。它可以容纳 262144 MiB / 2048 字节 = 134217728 个帧。
-
-实际上，这个缓冲区大小在 i386 架构上是不可能的。记住，内存是在内核空间分配的，对于
-i386 内核，内存大小限制为 1GiB。
-
-所有内存分配都不会被释放，直到套接字关闭。内存分配以 GFP_KERNEL 优先级进行，这基本上
-意味着分配可以等待并换出其他进程的内存以分配所需内存，因此通常可以达到上限。
-
-### 其他约束
+鍥犳缂撳啿鍖哄皢鏈?262144 MiB 澶у皬銆傚畠鍙互瀹圭撼 262144 MiB / 2048 瀛楄妭 = 134217728 涓抚銆?
+瀹為檯涓婏紝杩欎釜缂撳啿鍖哄ぇ灏忓湪 i386 鏋舵瀯涓婃槸涓嶅彲鑳界殑銆傝浣忥紝鍐呭瓨鏄湪鍐呮牳绌洪棿鍒嗛厤鐨勶紝瀵逛簬
+i386 鍐呮牳锛屽唴瀛樺ぇ灏忛檺鍒朵负 1GiB銆?
+鎵€鏈夊唴瀛樺垎閰嶉兘涓嶄細琚噴鏀撅紝鐩村埌濂楁帴瀛楀叧闂€傚唴瀛樺垎閰嶄互 GFP_KERNEL 浼樺厛绾ц繘琛岋紝杩欏熀鏈笂
+鎰忓懗鐫€鍒嗛厤鍙互绛夊緟骞舵崲鍑哄叾浠栬繘绋嬬殑鍐呭瓨浠ュ垎閰嶆墍闇€鍐呭瓨锛屽洜姝ら€氬父鍙互杈惧埌涓婇檺銆?
+### 鍏朵粬绾︽潫
 
 
-如果你查看源代码，你会看到我这里画成“帧”的并不只是链路层帧。在每个帧的开头有一个
-称为 struct tpacket_hdr 的头部，用于 PACKET_MMAP 中保存链路层帧的元信息，如时间戳。
-所以我们这里画的“帧”实际上是
-```
+濡傛灉浣犳煡鐪嬫簮浠ｇ爜锛屼綘浼氱湅鍒版垜杩欓噷鐢绘垚鈥滃抚鈥濈殑骞朵笉鍙槸閾捐矾灞傚抚銆傚湪姣忎釜甯х殑寮€澶存湁涓€涓?绉颁负 struct tpacket_hdr 鐨勫ご閮紝鐢ㄤ簬 PACKET_MMAP 涓繚瀛橀摼璺眰甯х殑鍏冧俊鎭紝濡傛椂闂存埑銆?鎵€浠ユ垜浠繖閲岀敾鐨勨€滃抚鈥濆疄闄呬笂鏄?```
 
  /*
    Frame structure:
@@ -375,31 +318,25 @@ i386 内核，内存大小限制为 1GiB。
  */
 
 ```
-以下是 packet_set_ring 中会检查的条件
+浠ヤ笅鏄?packet_set_ring 涓細妫€鏌ョ殑鏉′欢
 
    - tp_block_size must be a multiple of PAGE_SIZE (1)
    - tp_frame_size must be greater than TPACKET_HDRLEN (obvious)
    - tp_frame_size must be a multiple of TPACKET_ALIGNMENT
    - tp_frame_nr   must be exactly frames_per_block*tp_block_nr
 
-注意 tp_block_size 应选择为 2 的幂，否则会浪费内存。
+娉ㄦ剰 tp_block_size 搴旈€夋嫨涓?2 鐨勫箓锛屽惁鍒欎細娴垂鍐呭瓨銆?
+### 鐜舰缂撳啿鍖猴紙ring锛夌殑鏄犲皠涓庝娇鐢?
 
-### 环形缓冲区（ring）的映射与使用
-
-
-缓冲区在用户进程中的映射是通过常规的 mmap 函数完成的。即使环形缓冲区由若干物理上
-不连续的内存块组成，它们在用户空间看来是连续的，因此
+缂撳啿鍖哄湪鐢ㄦ埛杩涚▼涓殑鏄犲皠鏄€氳繃甯歌鐨?mmap 鍑芥暟瀹屾垚鐨勩€傚嵆浣跨幆褰㈢紦鍐插尯鐢辫嫢骞茬墿鐞嗕笂
+涓嶈繛缁殑鍐呭瓨鍧楃粍鎴愶紝瀹冧滑鍦ㄧ敤鎴风┖闂寸湅鏉ユ槸杩炵画鐨勶紝鍥犳
 ```
 
     mmap(0, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
 
 ```
-如果 tp_frame_size 是 tp_block_size 的约数，帧将按 tp_frame_size 字节间隔连续排列。
-如果不是，则每 tp_block_size/tp_frame_size 个帧之间会有一个间隙（gap）。这是因为一个
-帧不能跨越两个块。
-
-要在一个套接字上同时进行捕获和发送，对两者的映射为
-```
+濡傛灉 tp_frame_size 鏄?tp_block_size 鐨勭害鏁帮紝甯у皢鎸?tp_frame_size 瀛楄妭闂撮殧杩炵画鎺掑垪銆?濡傛灉涓嶆槸锛屽垯姣?tp_block_size/tp_frame_size 涓抚涔嬮棿浼氭湁涓€涓棿闅欙紙gap锛夈€傝繖鏄洜涓轰竴涓?甯т笉鑳借法瓒婁袱涓潡銆?
+瑕佸湪涓€涓鎺ュ瓧涓婂悓鏃惰繘琛屾崟鑾峰拰鍙戦€侊紝瀵逛袱鑰呯殑鏄犲皠涓?```
 
     ...
     setsockopt(fd, SOL_PACKET, PACKET_RX_RING, &foo, sizeof(foo));
@@ -409,12 +346,9 @@ i386 内核，内存大小限制为 1GiB。
     tx_ring = rx_ring + size;
 
 ```
-RX 必须在前，因为内核紧接着 RX 之后映射 TX 环内存。
-
-在每个帧的开头有一个状态字段（参见 struct tpacket_hdr）。如果该字段为 0，表示该帧
-可供内核使用；否则，存在一个用户可读的帧，适用以下标志：
-
-##### 捕获过程
+RX 蹇呴』鍦ㄥ墠锛屽洜涓哄唴鏍哥揣鎺ョ潃 RX 涔嬪悗鏄犲皠 TX 鐜唴瀛樸€?
+鍦ㄦ瘡涓抚鐨勫紑澶存湁涓€涓姸鎬佸瓧娈碉紙鍙傝 struct tpacket_hdr锛夈€傚鏋滆瀛楁涓?0锛岃〃绀鸿甯?鍙緵鍐呮牳浣跨敤锛涘惁鍒欙紝瀛樺湪涓€涓敤鎴峰彲璇荤殑甯э紝閫傜敤浠ヤ笅鏍囧織锛?
+##### 鎹曡幏杩囩▼
 ```
 
      #define TP_STATUS_COPY          (1 << 1)
@@ -459,12 +393,9 @@ TP_STATUS_CSUM_VALID	This flag indicates that at least the transport
      #define TP_STATUS_USER          1
 
 ```
-内核将所有帧初始化为 TP_STATUS_KERNEL，当内核接收到一个数据包时，它将其放入缓冲区，
-并更新状态为至少包含 TP_STATUS_USER 标志。然后用户可以读取该数据包，读取完后用户必须
-将状态字段清零，以便内核可以再次使用该帧缓冲区。
-
-用户可以使用 poll（其他变体也应适用）来检查是否有新
-```
+鍐呮牳灏嗘墍鏈夊抚鍒濆鍖栦负 TP_STATUS_KERNEL锛屽綋鍐呮牳鎺ユ敹鍒颁竴涓暟鎹寘鏃讹紝瀹冨皢鍏舵斁鍏ョ紦鍐插尯锛?骞舵洿鏂扮姸鎬佷负鑷冲皯鍖呭惈 TP_STATUS_USER 鏍囧織銆傜劧鍚庣敤鎴峰彲浠ヨ鍙栬鏁版嵁鍖咃紝璇诲彇瀹屽悗鐢ㄦ埛蹇呴』
+灏嗙姸鎬佸瓧娈垫竻闆讹紝浠ヤ究鍐呮牳鍙互鍐嶆浣跨敤璇ュ抚缂撳啿鍖恒€?
+鐢ㄦ埛鍙互浣跨敤 poll锛堝叾浠栧彉浣撲篃搴旈€傜敤锛夋潵妫€鏌ユ槸鍚︽湁鏂?```
 
     struct pollfd pfd;
 
@@ -476,10 +407,8 @@ TP_STATUS_CSUM_VALID	This flag indicates that at least the transport
 	retval = poll(&pfd, 1, timeout);
 
 ```
-先检查状态值再 poll 等待帧，并不会产生竞争条件。
-
-##### 发送过程
-```
+鍏堟鏌ョ姸鎬佸€煎啀 poll 绛夊緟甯э紝骞朵笉浼氫骇鐢熺珵浜夋潯浠躲€?
+##### 鍙戦€佽繃绋?```
 
      #define TP_STATUS_AVAILABLE        0 // Frame is available
      #define TP_STATUS_SEND_REQUEST     1 // Frame will be sent on next send()
@@ -487,22 +416,15 @@ TP_STATUS_CSUM_VALID	This flag indicates that at least the transport
      #define TP_STATUS_WRONG_FORMAT     4 // Frame format is not correct
 
 ```
-首先，内核将所有帧初始化为 TP_STATUS_AVAILABLE。要发送一个数据包，用户填充一个
-可用帧的数据缓冲区，将 tp_len 设为当前数据缓冲区大小，并将其状态字段设为
-TP_STATUS_SEND_REQUEST。这可以在多个帧上完成。一旦用户准备好发送，就调用 send()。
-然后所有状态等于 TP_STATUS_SEND_REQUEST 的缓冲区被转发到网络设备。内核将每个已发送
-帧的状态更新为 TP_STATUS_SENDING，直到传输结束。
-
-每次传输结束时，缓冲区状态恢复为 TP_STATUS_AVAILABLE。
-```
+棣栧厛锛屽唴鏍稿皢鎵€鏈夊抚鍒濆鍖栦负 TP_STATUS_AVAILABLE銆傝鍙戦€佷竴涓暟鎹寘锛岀敤鎴峰～鍏呬竴涓?鍙敤甯х殑鏁版嵁缂撳啿鍖猴紝灏?tp_len 璁句负褰撳墠鏁版嵁缂撳啿鍖哄ぇ灏忥紝骞跺皢鍏剁姸鎬佸瓧娈佃涓?TP_STATUS_SEND_REQUEST銆傝繖鍙互鍦ㄥ涓抚涓婂畬鎴愩€備竴鏃︾敤鎴峰噯澶囧ソ鍙戦€侊紝灏辫皟鐢?send()銆?鐒跺悗鎵€鏈夌姸鎬佺瓑浜?TP_STATUS_SEND_REQUEST 鐨勭紦鍐插尯琚浆鍙戝埌缃戠粶璁惧銆傚唴鏍稿皢姣忎釜宸插彂閫?甯х殑鐘舵€佹洿鏂颁负 TP_STATUS_SENDING锛岀洿鍒颁紶杈撶粨鏉熴€?
+姣忔浼犺緭缁撴潫鏃讹紝缂撳啿鍖虹姸鎬佹仮澶嶄负 TP_STATUS_AVAILABLE銆?```
 
     header->tp_len = in_i_size;
     header->tp_status = TP_STATUS_SEND_REQUEST;
     retval = send(this->socket, NULL, 0, 0);
 
 ```
-用户也可以使用 poll() 来检查缓冲区是否可用：
-
+鐢ㄦ埛涔熷彲浠ヤ娇鐢?poll() 鏉ユ鏌ョ紦鍐插尯鏄惁鍙敤锛?
 (status == TP_STATUS_SENDING)
 ```
 
@@ -513,7 +435,7 @@ TP_STATUS_SEND_REQUEST。这可以在多个帧上完成。一旦用户准备好�
     retval = poll(&pfd, 1, timeout);
 
 ```
-## 有哪些 TPACKET 版本可用，何时使用它们？
+## 鏈夊摢浜?TPACKET 鐗堟湰鍙敤锛屼綍鏃朵娇鐢ㄥ畠浠紵
 ```
 
  int val = tpacket_version;
@@ -521,68 +443,48 @@ TP_STATUS_SEND_REQUEST。这可以在多个帧上完成。一旦用户准备好�
  getsockopt(fd, SOL_PACKET, PACKET_VERSION, &val, sizeof(val));
 
 ```
-其中 'tpacket_version' 可以是 TPACKET_V1（默认）、TPACKET_V2、TPACKET_V3。
+鍏朵腑 'tpacket_version' 鍙互鏄?TPACKET_V1锛堥粯璁わ級銆乀PACKET_V2銆乀PACKET_V3銆?
+TPACKET_V1锛? - 鑻ユ湭閫氳繃 setsockopt(2) 鍙﹁鎸囧畾锛屽垯涓洪粯璁ょ増鏈? - 鎻愪緵 RX_RING銆乀X_RING
 
-TPACKET_V1：
- - 若未通过 setsockopt(2) 另行指定，则为默认版本
- - 提供 RX_RING、TX_RING
+TPACKET_V1 --> TPACKET_V2锛? - 鐢变簬 TPACKET_V1 缁撴瀯涓娇鐢ㄤ簡 unsigned long锛屾敼涓?64 浣嶅共鍑€锛?4 bit clean锛夛紝
+	  鍥犳涔熻兘鍦?64 浣嶅唴鏍?+ 32 浣嶇敤鎴风┖闂寸瓑缁勫悎涓嬪伐浣? - 鏃堕棿鎴冲垎杈ㄧ巼鐢卞井绉掓敼涓虹撼绉? - 鎻愪緵 RX_RING銆乀X_RING
+ - 鏁版嵁鍖呯殑 VLAN 鍏冧俊鎭彲鐢?	  锛圱P_STATUS_VLAN_VALID銆乀P_STATUS_VLAN_TPID_VALID锛夛紝
+	  鍦?tpacket2_hdr 缁撴瀯涓細
 
-TPACKET_V1 --> TPACKET_V2：
- - 由于 TPACKET_V1 结构中使用了 unsigned long，改为 64 位干净（64 bit clean），
-	  因此也能在 64 位内核 + 32 位用户空间等组合下工作
- - 时间戳分辨率由微秒改为纳秒
- - 提供 RX_RING、TX_RING
- - 数据包的 VLAN 元信息可用
-	  （TP_STATUS_VLAN_VALID、TP_STATUS_VLAN_TPID_VALID），
-	  在 tpacket2_hdr 结构中：
-
-  - tp_status 字段中设置了 TP_STATUS_VLAN_VALID 位，表示
-		  tp_vlan_tci 字段含有有效的 VLAN TCI 值
-  - tp_status 字段中设置了 TP_STATUS_VLAN_TPID_VALID 位，表示
-		  tp_vlan_tpid 字段含有有效的 VLAN TPID 值
-
- - 如何切换到 TPACKET_V2：
-
-  1. 用 struct tpacket2_hdr 替换 struct tpacket_hdr
-  2. 查询并保存头部长度
-  3. 将协议版本设为 2，照常建立 ring
-  4. 获取 sockaddr_ll 时，
-		   使用 `(void *)hdr + TPACKET_ALIGN(hdrlen)` 而非
+  - tp_status 瀛楁涓缃簡 TP_STATUS_VLAN_VALID 浣嶏紝琛ㄧず
+		  tp_vlan_tci 瀛楁鍚湁鏈夋晥鐨?VLAN TCI 鍊?  - tp_status 瀛楁涓缃簡 TP_STATUS_VLAN_TPID_VALID 浣嶏紝琛ㄧず
+		  tp_vlan_tpid 瀛楁鍚湁鏈夋晥鐨?VLAN TPID 鍊?
+ - 濡備綍鍒囨崲鍒?TPACKET_V2锛?
+  1. 鐢?struct tpacket2_hdr 鏇挎崲 struct tpacket_hdr
+  2. 鏌ヨ骞朵繚瀛樺ご閮ㄩ暱搴?  3. 灏嗗崗璁増鏈涓?2锛岀収甯稿缓绔?ring
+  4. 鑾峰彇 sockaddr_ll 鏃讹紝
+		   浣跨敤 `(void *)hdr + TPACKET_ALIGN(hdrlen)` 鑰岄潪
 		   `(void *)hdr + TPACKET_ALIGN(sizeof(struct tpacket_hdr))`
 
-TPACKET_V2 --> TPACKET_V3：
- - RX_RING 的灵活缓冲区实现：
-  1. 块可配置为非静态帧大小
-  2. 读/poll 在块级别（而非包级别）进行
-  3. 增加了 poll 超时，避免用户空间在空闲链路上无限等待
-  4. 增加了用户可配置的参数：
+TPACKET_V2 --> TPACKET_V3锛? - RX_RING 鐨勭伒娲荤紦鍐插尯瀹炵幇锛?  1. 鍧楀彲閰嶇疆涓洪潪闈欐€佸抚澶у皬
+  2. 璇?poll 鍦ㄥ潡绾у埆锛堣€岄潪鍖呯骇鍒級杩涜
+  3. 澧炲姞浜?poll 瓒呮椂锛岄伩鍏嶇敤鎴风┖闂村湪绌洪棽閾捐矾涓婃棤闄愮瓑寰?  4. 澧炲姞浜嗙敤鎴峰彲閰嶇疆鐨勫弬鏁帮細
 
 			4.1 block::timeout
 			4.2 tpkt_hdr::sk_rxhash
 
- - 用户空间可获取 RX Hash 数据
- - TX_RING 语义在概念上类似于 TPACKET_V2；
-	  使用 tpacket3_hdr 而非 tpacket2_hdr，以及 TPACKET3_HDRLEN
-	  而非 TPACKET2_HDRLEN。在当前实现中，tpacket3_hdr 中的 tp_next_offset
-	  字段必须设为零，表示 ring 不保存可变大小的帧。tp_next_offset 非零的
-	  数据包将被丢弃。
-
-## AF_PACKET fanout 模式
+ - 鐢ㄦ埛绌洪棿鍙幏鍙?RX Hash 鏁版嵁
+ - TX_RING 璇箟鍦ㄦ蹇典笂绫讳技浜?TPACKET_V2锛?	  浣跨敤 tpacket3_hdr 鑰岄潪 tpacket2_hdr锛屼互鍙?TPACKET3_HDRLEN
+	  鑰岄潪 TPACKET2_HDRLEN銆傚湪褰撳墠瀹炵幇涓紝tpacket3_hdr 涓殑 tp_next_offset
+	  瀛楁蹇呴』璁句负闆讹紝琛ㄧず ring 涓嶄繚瀛樺彲鍙樺ぇ灏忕殑甯с€倀p_next_offset 闈為浂鐨?	  鏁版嵁鍖呭皢琚涪寮冦€?
+## AF_PACKET fanout 妯″紡
 
 
-在 AF_PACKET fanout 模式下，数据包接收可以在多个进程间进行负载均衡。这也可以与
-packet 套接字上的 mmap(2) 结合使用。
+鍦?AF_PACKET fanout 妯″紡涓嬶紝鏁版嵁鍖呮帴鏀跺彲浠ュ湪澶氫釜杩涚▼闂磋繘琛岃礋杞藉潎琛°€傝繖涔熷彲浠ヤ笌
+packet 濂楁帴瀛椾笂鐨?mmap(2) 缁撳悎浣跨敤銆?
+褰撳墠宸插疄鐜扮殑 fanout 绛栫暐鏈夛細
 
-当前已实现的 fanout 策略有：
+  - PACKET_FANOUT_HASH锛氭寜 skb 鐨勬暟鎹寘鍝堝笇璋冨害鍒板鎺ュ瓧
+  - PACKET_FANOUT_LB锛氭寜杞锛坮ound-robin锛夎皟搴﹀埌濂楁帴瀛?  - PACKET_FANOUT_CPU锛氭寜鏁版嵁鍖呭埌杈剧殑 CPU 璋冨害鍒板鎺ュ瓧
+  - PACKET_FANOUT_RND锛氭寜闅忔満閫夋嫨璋冨害鍒板鎺ュ瓧
+  - PACKET_FANOUT_ROLLOVER锛氳嫢鏌愪釜濂楁帴瀛楀凡婊★紝鍒欐粴鍔ㄥ埌鍙︿竴涓?  - PACKET_FANOUT_QM锛氭寜 skb 璁板綍鐨?queue_mapping 璋冨害鍒板鎺ュ瓧
 
-  - PACKET_FANOUT_HASH：按 skb 的数据包哈希调度到套接字
-  - PACKET_FANOUT_LB：按轮询（round-robin）调度到套接字
-  - PACKET_FANOUT_CPU：按数据包到达的 CPU 调度到套接字
-  - PACKET_FANOUT_RND：按随机选择调度到套接字
-  - PACKET_FANOUT_ROLLOVER：若某个套接字已满，则滚动到另一个
-  - PACKET_FANOUT_QM：按 skb 记录的 queue_mapping 调度到套接字
-
-由 David S. Miller 提供的最小示例代码（可以尝试 "./test eth0 hash" 之类）：
+鐢?David S. Miller 鎻愪緵鐨勬渶灏忕ず渚嬩唬鐮侊紙鍙互灏濊瘯 "./test eth0 hash" 涔嬬被锛夛細
 ```
 
     #include <stddef.h>
@@ -724,24 +626,19 @@ packet 套接字上的 mmap(2) 结合使用。
     }
 
 ```
-## AF_PACKET TPACKET_V3 示例
+## AF_PACKET TPACKET_V3 绀轰緥
 
 
-AF_PACKET 的 TPACKET_V3 环形缓冲区可配置为使用非静态帧大小，通过它自身的内存管理
-实现。它基于块（block）工作，轮询（polling）按每块进行，而非像 TPACKET_V2 及其前身
-那样按每个 ring 进行。
-
-据说 TPACKET_V3 带来以下好处：
-
- - CPU 使用率降低约 15% - 20%
- - 数据包捕获率提升约 20%
- - 数据包密度提升约 2 倍
- - 端口聚合分析
- - 非静态帧大小以捕获完整的数据包负载
-
-因此它似乎是配合 packet fanout 使用的良好候选。
-
-由 Daniel Borkmann 基于 Chetan Loke 的 lolpcap 提供的最小示例代码（编译
+AF_PACKET 鐨?TPACKET_V3 鐜舰缂撳啿鍖哄彲閰嶇疆涓轰娇鐢ㄩ潪闈欐€佸抚澶у皬锛岄€氳繃瀹冭嚜韬殑鍐呭瓨绠＄悊
+瀹炵幇銆傚畠鍩轰簬鍧楋紙block锛夊伐浣滐紝杞锛坧olling锛夋寜姣忓潡杩涜锛岃€岄潪鍍?TPACKET_V2 鍙婂叾鍓嶈韩
+閭ｆ牱鎸夋瘡涓?ring 杩涜銆?
+鎹 TPACKET_V3 甯︽潵浠ヤ笅濂藉锛?
+ - CPU 浣跨敤鐜囬檷浣庣害 15% - 20%
+ - 鏁版嵁鍖呮崟鑾风巼鎻愬崌绾?20%
+ - 鏁版嵁鍖呭瘑搴︽彁鍗囩害 2 鍊? - 绔彛鑱氬悎鍒嗘瀽
+ - 闈為潤鎬佸抚澶у皬浠ユ崟鑾峰畬鏁寸殑鏁版嵁鍖呰礋杞?
+鍥犳瀹冧技涔庢槸閰嶅悎 packet fanout 浣跨敤鐨勮壇濂藉€欓€夈€?
+鐢?Daniel Borkmann 鍩轰簬 Chetan Loke 鐨?lolpcap 鎻愪緵鐨勬渶灏忕ず渚嬩唬鐮侊紙缂栬瘧
 ```
 
     /* Written from scratch, but kernel-to-user space API usage
@@ -978,69 +875,55 @@ AF_PACKET 的 TPACKET_V3 环形缓冲区可配置为使用非静态帧大小，�
 ## PACKET_QDISC_BYPASS
 
 
-如果有需求像 pktgen 那样用大量数据包灌满网络，你可以在创建套接字后设置如下
-选项
+濡傛灉鏈夐渶姹傚儚 pktgen 閭ｆ牱鐢ㄥぇ閲忔暟鎹寘鐏屾弧缃戠粶锛屼綘鍙互鍦ㄥ垱寤哄鎺ュ瓧鍚庤缃涓?閫夐」
 ```
 
     int one = 1;
     setsockopt(fd, SOL_PACKET, PACKET_QDISC_BYPASS, &one, sizeof(one));
 
 ```
-这有一个副作用：通过 PF_PACKET 发送的数据包会绕过内核的 qdisc 层，被强制直接推给
-驱动。也就是说，数据包不会被缓冲，tc 规则（disciplines）被忽略，可能会增加丢包，并且
-这类数据包对其他 PF_PACKET 套接字也不再可见。因此，这里已提醒你；一般来说，这对
-压力测试系统的各个组件会很有用。
-
-默认情况下，PACKET_QDISC_BYPASS 是禁用的，需要在 PF_PACKET 套接字上显式启用。
-
+杩欐湁涓€涓壇浣滅敤锛氶€氳繃 PF_PACKET 鍙戦€佺殑鏁版嵁鍖呬細缁曡繃鍐呮牳鐨?qdisc 灞傦紝琚己鍒剁洿鎺ユ帹缁?椹卞姩銆備篃灏辨槸璇达紝鏁版嵁鍖呬笉浼氳缂撳啿锛宼c 瑙勫垯锛坉isciplines锛夎蹇界暐锛屽彲鑳戒細澧炲姞涓㈠寘锛屽苟涓?杩欑被鏁版嵁鍖呭鍏朵粬 PF_PACKET 濂楁帴瀛椾篃涓嶅啀鍙銆傚洜姝わ紝杩欓噷宸叉彁閱掍綘锛涗竴鑸潵璇达紝杩欏
+鍘嬪姏娴嬭瘯绯荤粺鐨勫悇涓粍浠朵細寰堟湁鐢ㄣ€?
+榛樿鎯呭喌涓嬶紝PACKET_QDISC_BYPASS 鏄鐢ㄧ殑锛岄渶瑕佸湪 PF_PACKET 濂楁帴瀛椾笂鏄惧紡鍚敤銆?
 ## PACKET_TIMESTAMP
 
 
-PACKET_TIMESTAMP 设置决定了 mmap(2) 映射的 RX_RING 和 TX_RING 中数据包元信息的
-时间戳来源。如果你的 NIC 能够在硬件中对数据包打时间戳，你可以请求使用这些硬件
-时间戳。注意：你可能需要通过 SIOCSHWTSTAMP 启用硬件时间戳的生成（参见
-Documentation/networking/timestamping.rst 中的相关信息）。
-```
+PACKET_TIMESTAMP 璁剧疆鍐冲畾浜?mmap(2) 鏄犲皠鐨?RX_RING 鍜?TX_RING 涓暟鎹寘鍏冧俊鎭殑
+鏃堕棿鎴虫潵婧愩€傚鏋滀綘鐨?NIC 鑳藉鍦ㄧ‖浠朵腑瀵规暟鎹寘鎵撴椂闂存埑锛屼綘鍙互璇锋眰浣跨敤杩欎簺纭欢
+鏃堕棿鎴炽€傛敞鎰忥細浣犲彲鑳介渶瑕侀€氳繃 SIOCSHWTSTAMP 鍚敤纭欢鏃堕棿鎴崇殑鐢熸垚锛堝弬瑙?Documentation/networking/timestamping.rst 涓殑鐩稿叧淇℃伅锛夈€?```
 
     int req = SOF_TIMESTAMPING_RAW_HARDWARE;
     setsockopt(fd, SOL_PACKET, PACKET_TIMESTAMP, (void *) &req, sizeof(req))
 
 ```
-对于 mmap(2) 映射的环形缓冲区，这类时间戳存储在 `tpacket{,2,3}_hdr` 结构的 tp_sec
-和 `tp_{n,u}sec` 成员中。要确定报告了哪种时间戳，tp_status 字段与以下可能的位进行
-二进制或运算……
-
+瀵逛簬 mmap(2) 鏄犲皠鐨勭幆褰㈢紦鍐插尯锛岃繖绫绘椂闂存埑瀛樺偍鍦?`tpacket{,2,3}_hdr` 缁撴瀯鐨?tp_sec
+鍜?`tp_{n,u}sec` 鎴愬憳涓€傝纭畾鎶ュ憡浜嗗摢绉嶆椂闂存埑锛宼p_status 瀛楁涓庝互涓嬪彲鑳界殑浣嶈繘琛?浜岃繘鍒舵垨杩愮畻鈥︹€?
 ```
 
     TP_STATUS_TS_RAW_HARDWARE
     TP_STATUS_TS_SOFTWARE
 
 ```
-……它们等价于其 `SOF_TIMESTAMPING_*` 对应的位。对于 RX_RING，如果两者都没有设置
-（即未设置 PACKET_TIMESTAMP），则在 PF_PACKET 的处理代码内部调用了软件回退（精度较低）。
+鈥︹€﹀畠浠瓑浠蜂簬鍏?`SOF_TIMESTAMPING_*` 瀵瑰簲鐨勪綅銆傚浜?RX_RING锛屽鏋滀袱鑰呴兘娌℃湁璁剧疆
+锛堝嵆鏈缃?PACKET_TIMESTAMP锛夛紝鍒欏湪 PF_PACKET 鐨勫鐞嗕唬鐮佸唴閮ㄨ皟鐢ㄤ簡杞欢鍥為€€锛堢簿搴﹁緝浣庯級銆?
+鑾峰彇 TX_RING 鐨勬椂闂存埑杩囩▼濡備笅锛歩) 濉厖 ring 甯э紝ii) 璋冪敤 sendto()锛屼緥濡傚湪闃诲妯″紡涓嬶紝
+iii) 绛夊緟鐩稿叧甯х殑鐘舵€佽鏇存柊锛屽嵆璇ュ抚琚氦鍥炵粰搴旂敤绋嬪簭锛宨v) 閬嶅巻鍚勫抚浠ュ彇鍑哄悇鑷殑纭欢/
+杞欢鏃堕棿鎴炽€?
+鍙湁锛?锛夊湪鍚敤浜嗗彂閫佹椂闂存埑鏃讹紝杩欎簺浣嶆墠浼氫笌 TP_STATUS_AVAILABLE 杩涜浜岃繘鍒?| 杩愮畻锛?鍥犳浣犲繀椤诲湪搴旂敤绋嬪簭涓鏌ュ畠锛堜緥濡傚厛閫氳繃 !(tp_status & (TP_STATUS_SEND_REQUEST |
+TP_STATUS_SENDING)) 鍒ゆ柇璇ュ抚鏄惁灞炰簬搴旂敤绋嬪簭锛岀劧鍚庡湪绗簩姝ヤ粠 tp_status 涓彁鍙栨椂闂存埑绫诲瀷锛夛紒
 
-获取 TX_RING 的时间戳过程如下：i) 填充 ring 帧，ii) 调用 sendto()，例如在阻塞模式下，
-iii) 等待相关帧的状态被更新，即该帧被交回给应用程序，iv) 遍历各帧以取出各自的硬件/
-软件时间戳。
+濡傛灉浣犱笉鍦ㄤ箮瀹冧滑锛屽嵆淇濇寔绂佺敤锛岄偅涔堟鏌?TP_STATUS_AVAILABLE 鎴?TP_STATUS_WRONG_FORMAT
+灏辫冻澶熶簡銆傚鏋滃湪 TX_RING 閮ㄥ垎鍙缃簡 TP_STATUS_AVAILABLE锛岄偅涔?tp_sec 鍜?tp_{n,u}sec
+鎴愬憳涓嶅寘鍚湁鏁堝€笺€傚浜?TX_RING锛岄粯璁や笉鐢熸垚鏃堕棿鎴筹紒
 
-只有（!）在启用了发送时间戳时，这些位才会与 TP_STATUS_AVAILABLE 进行二进制 | 运算，
-因此你必须在应用程序中检查它（例如先通过 !(tp_status & (TP_STATUS_SEND_REQUEST |
-TP_STATUS_SENDING)) 判断该帧是否属于应用程序，然后在第二步从 tp_status 中提取时间戳类型）！
-
-如果你不在乎它们，即保持禁用，那么检查 TP_STATUS_AVAILABLE 或 TP_STATUS_WRONG_FORMAT
-就足够了。如果在 TX_RING 部分只设置了 TP_STATUS_AVAILABLE，那么 tp_sec 和 tp_{n,u}sec
-成员不包含有效值。对于 TX_RING，默认不生成时间戳！
-
-有关硬件时间戳的更多信息，请参见 include/linux/net_tstamp.h 和
-Documentation/networking/timestamping.rst。
-
-## 杂项
+鏈夊叧纭欢鏃堕棿鎴崇殑鏇村淇℃伅锛岃鍙傝 include/linux/net_tstamp.h 鍜?Documentation/networking/timestamping.rst銆?
+## 鏉傞」
 
 
-- Packet 套接字与 Linux socket 过滤器配合使用得很好，因此你可能也想看看
+- Packet 濂楁帴瀛椾笌 Linux socket 杩囨护鍣ㄩ厤鍚堜娇鐢ㄥ緱寰堝ソ锛屽洜姝や綘鍙兘涔熸兂鐪嬬湅
   Documentation/networking/filter.rst
 
-## 致谢
+## 鑷磋阿
 
 
-   Jesse Brandeburg，感谢他修正了我的语法/拼写错误
+   Jesse Brandeburg锛屾劅璋粬淇浜嗘垜鐨勮娉?鎷煎啓閿欒

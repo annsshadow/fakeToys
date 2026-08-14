@@ -1,49 +1,49 @@
-## Synopsys DesignWare Cores (DWC) PCIe 性能监控单元（PMU）
+﻿## Synopsys DesignWare Cores (DWC) PCIe 鎬ц兘鐩戞帶鍗曞厓锛圥MU锛?
 
 
 ## DesignWare Cores (DWC) PCIe PMU
 
 
-该 PMU 是由每个 PCIe Root Port 在名为 RAS D.E.S（Debug、Error injection、Statistics，调试、错误注入与统计）的厂商特定扩展能力（Vendor-Specific Extended Capability）中提供的 PCIe 配置空间寄存器块。
+璇?PMU 鏄敱姣忎釜 PCIe Root Port 鍦ㄥ悕涓?RAS D.E.S锛圖ebug銆丒rror injection銆丼tatistics锛岃皟璇曘€侀敊璇敞鍏ヤ笌缁熻锛夌殑鍘傚晢鐗瑰畾鎵╁睍鑳藉姏锛圴endor-Specific Extended Capability锛変腑鎻愪緵鐨?PCIe 閰嶇疆绌洪棿瀵勫瓨鍣ㄥ潡銆?
 
-顾名思义，RAS DES 能力支持系统级调试、AER 错误注入以及统计信息的收集。为便于统计信息的收集，Synopsys DesignWare Cores PCIe 控制器提供以下两个特性：
+椤惧悕鎬濅箟锛孯AS DES 鑳藉姏鏀寔绯荤粺绾ц皟璇曘€丄ER 閿欒娉ㄥ叆浠ュ強缁熻淇℃伅鐨勬敹闆嗐€備负渚夸簬缁熻淇℃伅鐨勬敹闆嗭紝Synopsys DesignWare Cores PCIe 鎺у埗鍣ㄦ彁渚涗互涓嬩袱涓壒鎬э細
 
-- 一个用于基于时间分析（RX/TX 数据吞吐量与在各低功耗 LTSSM 状态上花费的时间）的 64 位计数器，以及
-- 每个事件一个 32 位计数器，用于事件计数（指定通道的错误与非错误事件）
+- 涓€涓敤浜庡熀浜庢椂闂村垎鏋愶紙RX/TX 鏁版嵁鍚炲悙閲忎笌鍦ㄥ悇浣庡姛鑰?LTSSM 鐘舵€佷笂鑺辫垂鐨勬椂闂达級鐨?64 浣嶈鏁板櫒锛屼互鍙?
+- 姣忎釜浜嬩欢涓€涓?32 浣嶈鏁板櫒锛岀敤浜庝簨浠惰鏁帮紙鎸囧畾閫氶亾鐨勯敊璇笌闈為敊璇簨浠讹級
 
-注意：计数器溢出没有中断。
+娉ㄦ剰锛氳鏁板櫒婧㈠嚭娌℃湁涓柇銆?
 
-### 基于时间的分析
-
-
-使用该特性，你可以获得有关控制器 RX/TX 数据吞吐量与在各低功耗 LTSSM 状态上花费时间的信息。PMU 将数据的测量分为两类：
-
-- 组#0：控制器停留在 LTSSM 状态的时间百分比。
-- 组#1：处理的数据量（以 16 字节为单位）。
-
-### 通道事件计数器
+### 鍩轰簬鏃堕棿鐨勫垎鏋?
 
 
-使用该特性，你可以获得控制器在特定通道上的错误与非错误信息。PMU 事件由以下全部选择：
+浣跨敤璇ョ壒鎬э紝浣犲彲浠ヨ幏寰楁湁鍏虫帶鍒跺櫒 RX/TX 鏁版嵁鍚炲悙閲忎笌鍦ㄥ悇浣庡姛鑰?LTSSM 鐘舵€佷笂鑺辫垂鏃堕棿鐨勪俊鎭€侾MU 灏嗘暟鎹殑娴嬮噺鍒嗕负涓ょ被锛?
 
-- 组 i
-- 组 i 中的事件 j
-- 通道 k
+- 缁?0锛氭帶鍒跺櫒鍋滅暀鍦?LTSSM 鐘舵€佺殑鏃堕棿鐧惧垎姣斻€?
+- 缁?1锛氬鐞嗙殑鏁版嵁閲忥紙浠?16 瀛楄妭涓哄崟浣嶏級銆?
 
-某些事件仅存在于特定配置中。
-
-## DesignWare Cores (DWC) PCIe PMU 驱动
+### 閫氶亾浜嬩欢璁℃暟鍣?
 
 
-该驱动为每个 PCIe Root Port 添加 PMU 设备，名称基于该 Root Port 的 SBDF。例如，
+浣跨敤璇ョ壒鎬э紝浣犲彲浠ヨ幏寰楁帶鍒跺櫒鍦ㄧ壒瀹氶€氶亾涓婄殑閿欒涓庨潪閿欒淇℃伅銆侾MU 浜嬩欢鐢变互涓嬪叏閮ㄩ€夋嫨锛?
+
+- 缁?i
+- 缁?i 涓殑浜嬩欢 j
+- 閫氶亾 k
+
+鏌愪簺浜嬩欢浠呭瓨鍦ㄤ簬鐗瑰畾閰嶇疆涓€?
+
+## DesignWare Cores (DWC) PCIe PMU 椹卞姩
+
+
+璇ラ┍鍔ㄤ负姣忎釜 PCIe Root Port 娣诲姞 PMU 璁惧锛屽悕绉板熀浜庤 Root Port 鐨?SBDF銆備緥濡傦紝
 
     0001:30:03.0 PCI bridge: Device 1ded:8000 (rev 01)
 
-该 Root Port 的 PMU 设备名称为 dwc_rootport_13018。
+璇?Root Port 鐨?PMU 璁惧鍚嶇О涓?dwc_rootport_13018銆?
 
-DWC PCIe PMU 驱动注册一个 perf PMU 驱动，它在 sysfs 中提供可用事件与配置选项的描述，见 /sys/bus/event_source/devices/dwc_rootport_{sbdf}。
+DWC PCIe PMU 椹卞姩娉ㄥ唽涓€涓?perf PMU 椹卞姩锛屽畠鍦?sysfs 涓彁渚涘彲鐢ㄤ簨浠朵笌閰嶇疆閫夐」鐨勬弿杩帮紝瑙?/sys/bus/event_source/devices/dwc_rootport_{sbdf}銆?
 
-"format" 目录描述 perf_event_attr 结构体的 config 字段格式。"events" 目录为所有已文档化的事件提供配置模板。例如，"rx_pcie_tlp_data_payload" 等价于 "eventid=0x21,type=0x0"。
+"format" 鐩綍鎻忚堪 perf_event_attr 缁撴瀯浣撶殑 config 瀛楁鏍煎紡銆?events" 鐩綍涓烘墍鏈夊凡鏂囨。鍖栫殑浜嬩欢鎻愪緵閰嶇疆妯℃澘銆備緥濡傦紝"rx_pcie_tlp_data_payload" 绛変环浜?"eventid=0x21,type=0x0"銆?
 
 ```
 
@@ -55,7 +55,7 @@ DWC PCIe PMU 驱动注册一个 perf PMU 驱动，它在 sysfs 中提供可用�
 
 ```
 
-### 基于时间的分析事件用法
+### 鍩轰簬鏃堕棿鐨勫垎鏋愪簨浠剁敤娉?
 
 
 ```
@@ -64,19 +64,19 @@ DWC PCIe PMU 驱动注册一个 perf PMU 驱动，它在 sysfs 中提供可用�
 
 ```
 
-平均 RX/TX 带宽可使用以下公式计算：
+骞冲潎 RX/TX 甯﹀鍙娇鐢ㄤ互涓嬪叕寮忚绠楋細
 
     PCIe RX Bandwidth = rx_pcie_tlp_data_payload / Measure_Time_Window
     PCIe TX Bandwidth = tx_pcie_tlp_data_payload / Measure_Time_Window
 
-### 通道事件用法
+### 閫氶亾浜嬩欢鐢ㄦ硶
 
 
-每个通道具有相同的事件集合，为避免生成数百个条目的列表
+姣忎釜閫氶亾鍏锋湁鐩稿悓鐨勪簨浠堕泦鍚堬紝涓洪伩鍏嶇敓鎴愭暟鐧句釜鏉＄洰鐨勫垪琛?
 ```
 
     $# perf stat -a -e dwc_rootport_13018/rx_memory_read,lane=4/
 
 ```
 
-该驱动不支持采样，因此 "perf record" 无法工作。不支持按任务（不带 "-a"）的 perf 会话。
+璇ラ┍鍔ㄤ笉鏀寔閲囨牱锛屽洜姝?"perf record" 鏃犳硶宸ヤ綔銆備笉鏀寔鎸変换鍔★紙涓嶅甫 "-a"锛夌殑 perf 浼氳瘽銆?

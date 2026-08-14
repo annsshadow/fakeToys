@@ -1,113 +1,94 @@
-# Linux Kernel 学习路径
+﻿# Linux Kernel 瀛︿範璺緞
 
-> 从 3934 篇内核文档中精选出的阅读路线图。
-> 按此路径阅读，可在合理时间内建立对内核整体架构的心智模型。
-
+> 浠?3934 绡囧唴鏍告枃妗ｄ腑绮鹃€夊嚭鐨勯槄璇昏矾绾垮浘銆?> 鎸夋璺緞闃呰锛屽彲鍦ㄥ悎鐞嗘椂闂村唴寤虹珛瀵瑰唴鏍告暣浣撴灦鏋勭殑蹇冩櫤妯″瀷銆?
 ---
 
-## 如何使用本指南
-
-- **必读** 标记了建立基础认知不可或缺的文档
-- **选读** 可按兴趣和需求选择阅读
-- 每阶段建议按顺序阅读，但阶段之间可以跳过不需要的领域
-- 链接指向 `docs/` 下的 Markdown 版本（由 `tools/docs/rst-to-md.py` 转换生成）
-
+## 濡備綍浣跨敤鏈寚鍗?
+- **蹇呰** 鏍囪浜嗗缓绔嬪熀纭€璁ょ煡涓嶅彲鎴栫己鐨勬枃妗?- **閫夎** 鍙寜鍏磋叮鍜岄渶姹傞€夋嫨闃呰
+- 姣忛樁娈靛缓璁寜椤哄簭闃呰锛屼絾闃舵涔嬮棿鍙互璺宠繃涓嶉渶瑕佺殑棰嗗煙
+- 閾炬帴鎸囧悜 `docs/` 涓嬬殑 Markdown 鐗堟湰锛堢敱 `tools/docs/rst-to-md.py` 杞崲鐢熸垚锛?
 ---
 
-## 阶段 1：Orientation（必读，约 2 小时）
-
-目标：了解内核是什么、文档在哪里、社区如何运作。
-
-| # | 文档 | 说明 |
+## 闃舵 1锛歄rientation锛堝繀璇伙紝绾?2 灏忔椂锛?
+鐩爣锛氫簡瑙ｅ唴鏍告槸浠€涔堛€佹枃妗ｅ湪鍝噷銆佺ぞ鍖哄浣曡繍浣溿€?
+| # | 鏂囨。 | 璇存槑 |
 |---|------|------|
-| 1 | `README` | 按角色（开发者/研究者/安全专家/系统管理员）给你的入口 |
-| 2 | `Documentation/index.md` | 文档地图，了解整个文档树的组织结构 |
-| 3 | `Documentation/admin-guide/README.md` | "内核是什么"——硬件支持、构建安装、快速概览 |
-| 4 | `Documentation/process/howto.md` | 如何成为内核开发者——工具、邮件列表、社区规范 |
-| 5 | `Documentation/process/development-process.md` | 内核社区如何运作——发布周期、合并窗口、补丁生命周期 |
+| 1 | `README` | 鎸夎鑹诧紙寮€鍙戣€?鐮旂┒鑰?瀹夊叏涓撳/绯荤粺绠＄悊鍛橈級缁欎綘鐨勫叆鍙?|
+| 2 | `Documentation/index.md` | 鏂囨。鍦板浘锛屼簡瑙ｆ暣涓枃妗ｆ爲鐨勭粍缁囩粨鏋?|
+| 3 | `Documentation/admin-guide/README.md` | "鍐呮牳鏄粈涔?鈥斺€旂‖浠舵敮鎸併€佹瀯寤哄畨瑁呫€佸揩閫熸瑙?|
+| 4 | `Documentation/process/howto.md` | 濡備綍鎴愪负鍐呮牳寮€鍙戣€呪€斺€斿伐鍏枫€侀偖浠跺垪琛ㄣ€佺ぞ鍖鸿鑼?|
+| 5 | `Documentation/process/development-process.md` | 鍐呮牳绀惧尯濡備綍杩愪綔鈥斺€斿彂甯冨懆鏈熴€佸悎骞剁獥鍙ｃ€佽ˉ涓佺敓鍛藉懆鏈?|
 
 ---
 
-## 阶段 2：架构基础（必读，约 4-6 小时）
-
-目标：建立对内核执行模型的核心直觉。这是最重要的阶段。
-
-| # | 文档 | 说明 |
+## 闃舵 2锛氭灦鏋勫熀纭€锛堝繀璇伙紝绾?4-6 灏忔椂锛?
+鐩爣锛氬缓绔嬪鍐呮牳鎵ц妯″瀷鐨勬牳蹇冪洿瑙夈€傝繖鏄渶閲嶈鐨勯樁娈点€?
+| # | 鏂囨。 | 璇存槑 |
 |---|------|------|
-| 6 | `Documentation/kernel-hacking/hacking.md` | ⭐ **最重要的单篇文档**：CPU 执行上下文（用户/软中断/硬中断/空闲）、`current` 指针、调度点、基础锁 |
-| 7 | `Documentation/core-api/index.md` | 内核 API 分类图谱——快速扫一遍，知道有什么接口可用 |
-| 8 | `Documentation/mm/index.md` | 内存管理：从物理内存到页表、slab、vmalloc |
-| 9 | `Documentation/scheduler/index.md` | 进程调度：CFS 设计 + 当前 EEVDF 调度器 |
-| 10 | `Documentation/locking/index.md` | 同步原语：自旋锁、互斥锁、RCU 锁的分类与使用场景 |
-| 11 | `Documentation/RCU/index.md` | RCU 机制：读-复制-更新的核心思想与实现 |
-| 12 | `Documentation/core-api/irq/index.md` | 中断处理：IRQ 域、 affinity、 managed IRQ |
+| 6 | `Documentation/kernel-hacking/hacking.md` | 猸?**鏈€閲嶈鐨勫崟绡囨枃妗?*锛欳PU 鎵ц涓婁笅鏂囷紙鐢ㄦ埛/杞腑鏂?纭腑鏂?绌洪棽锛夈€乣current` 鎸囬拡銆佽皟搴︾偣銆佸熀纭€閿?|
+| 7 | `Documentation/core-api/index.md` | 鍐呮牳 API 鍒嗙被鍥捐氨鈥斺€斿揩閫熸壂涓€閬嶏紝鐭ラ亾鏈変粈涔堟帴鍙ｅ彲鐢?|
+| 8 | `Documentation/mm/index.md` | 鍐呭瓨绠＄悊锛氫粠鐗╃悊鍐呭瓨鍒伴〉琛ㄣ€乻lab銆乿malloc |
+| 9 | `Documentation/scheduler/index.md` | 杩涚▼璋冨害锛欳FS 璁捐 + 褰撳墠 EEVDF 璋冨害鍣?|
+| 10 | `Documentation/locking/index.md` | 鍚屾鍘熻锛氳嚜鏃嬮攣銆佷簰鏂ラ攣銆丷CU 閿佺殑鍒嗙被涓庝娇鐢ㄥ満鏅?|
+| 11 | `Documentation/RCU/index.md` | RCU 鏈哄埗锛氳-澶嶅埗-鏇存柊鐨勬牳蹇冩€濇兂涓庡疄鐜?|
+| 12 | `Documentation/core-api/irq/index.md` | 涓柇澶勭悊锛欼RQ 鍩熴€?affinity銆?managed IRQ |
 
-**阅读建议：**
-- 先读 `hacking.md`（第 6 篇），它会在 30 分钟内给你"内核是怎么跑起来"的整体感觉
-- 然后读 `core-api/index.md`（第 7 篇）建立 API 地图
-- 其余 5 篇按你的兴趣顺序阅读
+**闃呰寤鸿锛?*
+- 鍏堣 `hacking.md`锛堢 6 绡囷級锛屽畠浼氬湪 30 鍒嗛挓鍐呯粰浣?鍐呮牳鏄€庝箞璺戣捣鏉?鐨勬暣浣撴劅瑙?- 鐒跺悗璇?`core-api/index.md`锛堢 7 绡囷級寤虹珛 API 鍦板浘
+- 鍏朵綑 5 绡囨寜浣犵殑鍏磋叮椤哄簭闃呰
 
 ---
 
-## 阶段 3：子系统选读（选读，按需深入）
-
-目标：按兴趣深入了解具体子系统。
-
-| # | 文档 | 说明 |
+## 闃舵 3锛氬瓙绯荤粺閫夎锛堥€夎锛屾寜闇€娣卞叆锛?
+鐩爣锛氭寜鍏磋叮娣卞叆浜嗚В鍏蜂綋瀛愮郴缁熴€?
+| # | 鏂囨。 | 璇存槑 |
 |---|------|------|
-| 13 | `Documentation/filesystems/index.md` | 虚拟文件系统（VFS）：superblock/inode/dentry 模型、路径查找、挂载命名空间 |
-| 14 | `Documentation/networking/index.md` | 网络栈：`sk_buff` 生命周期、NAPI、`netdevice` 模型、协议栈 |
-| 15 | `Documentation/driver-api/index.md` | 驱动模型：kobject/device/driver/bus 层次结构 |
-| 16 | `Documentation/power/index.md` | 电源管理：运行时 PM、系统挂起/恢复 |
-| 17 | `Documentation/security/index.md` | 安全架构：LSM 框架、内核自防御机制、凭证管理 |
-| 18 | `Documentation/trace/index.md` | 可观测性：tracepoint、ftrace、kprobes |
+| 13 | `Documentation/filesystems/index.md` | 铏氭嫙鏂囦欢绯荤粺锛圴FS锛夛細superblock/inode/dentry 妯″瀷銆佽矾寰勬煡鎵俱€佹寕杞藉懡鍚嶇┖闂?|
+| 14 | `Documentation/networking/index.md` | 缃戠粶鏍堬細`sk_buff` 鐢熷懡鍛ㄦ湡銆丯API銆乣netdevice` 妯″瀷銆佸崗璁爤 |
+| 15 | `Documentation/driver-api/index.md` | 椹卞姩妯″瀷锛歬object/device/driver/bus 灞傛缁撴瀯 |
+| 16 | `Documentation/power/index.md` | 鐢垫簮绠＄悊锛氳繍琛屾椂 PM銆佺郴缁熸寕璧?鎭㈠ |
+| 17 | `Documentation/security/index.md` | 瀹夊叏鏋舵瀯锛歀SM 妗嗘灦銆佸唴鏍歌嚜闃插尽鏈哄埗銆佸嚟璇佺鐞?|
+| 18 | `Documentation/trace/index.md` | 鍙娴嬫€э細tracepoint銆乫trace銆乲probes |
 
-**阅读建议：**
-- 每个子系统通常只需要读 `index.md` + 1-2 篇核心设计文档
-- 不需要按顺序读，根据你的兴趣或工作需求选择
+**闃呰寤鸿锛?*
+- 姣忎釜瀛愮郴缁熼€氬父鍙渶瑕佽 `index.md` + 1-2 绡囨牳蹇冭璁℃枃妗?- 涓嶉渶瑕佹寜椤哄簭璇伙紝鏍规嵁浣犵殑鍏磋叮鎴栧伐浣滈渶姹傞€夋嫨
 
 ---
 
-## 阶段 4：开发实践（必读，约 2 小时）
-
-目标：了解如何向内核提交代码、遵守的规范、可用的工具。
-
-| # | 文档 | 说明 |
+## 闃舵 4锛氬紑鍙戝疄璺碉紙蹇呰锛岀害 2 灏忔椂锛?
+鐩爣锛氫簡瑙ｅ浣曞悜鍐呮牳鎻愪氦浠ｇ爜銆侀伒瀹堢殑瑙勮寖銆佸彲鐢ㄧ殑宸ュ叿銆?
+| # | 鏂囨。 | 璇存槑 |
 |---|------|------|
-| 19 | `Documentation/process/coding-style.rst` | 内核编码规范——缩进、命名、注释、空格与制表符 |
-| 20 | `Documentation/process/submitting-patches.rst` | 补丁提交流程：git 格式、`git send-email`、`Signed-off-by`、changelog |
-| 21 | `Documentation/kbuild/index.md` | 构建系统：顶层 Makefile、Kconfig 语法、模块构建 |
-| 22 | `Documentation/dev-tools/index.md` | 开发工具：checkpatch、KUnit 单元测试、调试工具 |
+| 19 | `Documentation/process/coding-style.rst` | 鍐呮牳缂栫爜瑙勮寖鈥斺€旂缉杩涖€佸懡鍚嶃€佹敞閲娿€佺┖鏍间笌鍒惰〃绗?|
+| 20 | `Documentation/process/submitting-patches.rst` | 琛ヤ竵鎻愪氦娴佺▼锛歡it 鏍煎紡銆乣git send-email`銆乣Signed-off-by`銆乧hangelog |
+| 21 | `Documentation/kbuild/index.md` | 鏋勫缓绯荤粺锛氶《灞?Makefile銆並config 璇硶銆佹ā鍧楁瀯寤?|
+| 22 | `Documentation/dev-tools/index.md` | 寮€鍙戝伐鍏凤細checkpatch銆並Unit 鍗曞厓娴嬭瘯銆佽皟璇曞伐鍏?|
 
 ---
 
-## 阶段 5：扩展资源（选读）
-
-目标：找到更深入的外部学习材料。
-
-| # | 文档 | 说明 |
+## 闃舵 5锛氭墿灞曡祫婧愶紙閫夎锛?
+鐩爣锛氭壘鍒版洿娣卞叆鐨勫閮ㄥ涔犳潗鏂欍€?
+| # | 鏂囨。 | 璇存槑 |
 |---|------|------|
-| 23 | `Documentation/process/kernel-docs.md` | 外部书籍和论文推荐（Linux Device Drivers、LWN 文章等） |
-| 24 | `Documentation/admin-guide/index.md` | 系统管理员接口：`/proc/sys` 可调参数、启动参数 |
-| 25 | `Documentation/userspace-api/index.md` | 用户空间 API：系统调用、安全接口、`/dev` 设备 |
+| 23 | `Documentation/process/kernel-docs.md` | 澶栭儴涔︾睄鍜岃鏂囨帹鑽愶紙Linux Device Drivers銆丩WN 鏂囩珷绛夛級 |
+| 24 | `Documentation/admin-guide/index.md` | 绯荤粺绠＄悊鍛樻帴鍙ｏ細`/proc/sys` 鍙皟鍙傛暟銆佸惎鍔ㄥ弬鏁?|
+| 25 | `Documentation/userspace-api/index.md` | 鐢ㄦ埛绌洪棿 API锛氱郴缁熻皟鐢ㄣ€佸畨鍏ㄦ帴鍙ｃ€乣/dev` 璁惧 |
 
 ---
 
-## 快速参考：按目标选择
+## 蹇€熷弬鑰冿細鎸夌洰鏍囬€夋嫨
 
-| 你的目标 | 建议路径 |
+| 浣犵殑鐩爣 | 寤鸿璺緞 |
 |----------|----------|
-| 快速了解内核全貌 | 阶段 1 + 阶段 2（第 6 篇必读） |
-| 写第一个内核模块 | 阶段 1 → 阶段 2 → 阶段 4 → `Documentation/driver-api/index.md` |
-| 理解内存管理 | 阶段 1 → 阶段 2 → `Documentation/mm/index.md` → `Documentation/vm/index.md` |
-| 理解文件系统 | 阶段 1 → 阶段 2 → `Documentation/filesystems/index.md` |
-| 理解网络栈 | 阶段 1 → 阶段 2 → `Documentation/networking/index.md` |
-| 准备提交补丁 | 阶段 1 → 阶段 4（第 19-20 篇） |
+| 蹇€熶簡瑙ｅ唴鏍稿叏璨?| 闃舵 1 + 闃舵 2锛堢 6 绡囧繀璇伙級 |
+| 鍐欑涓€涓唴鏍告ā鍧?| 闃舵 1 鈫?闃舵 2 鈫?闃舵 4 鈫?`Documentation/driver-api/index.md` |
+| 鐞嗚В鍐呭瓨绠＄悊 | 闃舵 1 鈫?闃舵 2 鈫?`Documentation/mm/index.md` 鈫?`Documentation/vm/index.md` |
+| 鐞嗚В鏂囦欢绯荤粺 | 闃舵 1 鈫?闃舵 2 鈫?`Documentation/filesystems/index.md` |
+| 鐞嗚В缃戠粶鏍?| 闃舵 1 鈫?闃舵 2 鈫?`Documentation/networking/index.md` |
+| 鍑嗗鎻愪氦琛ヤ竵 | 闃舵 1 鈫?闃舵 4锛堢 19-20 绡囷級 |
 
 ---
 
-## 备注
+## 澶囨敞
 
-- 所有 Markdown 文件由 `tools/docs/rst-to-md.py` 从 Sphinx `.rst` 源文件自动转换生成
-- 如果发现转换质量问题，可以查看原始 `.rst` 文件或修复转换脚本
-- 文档内容随内核版本更新，本指南基于 v7.1.3（"Baby Opossum Posse"）
+- 鎵€鏈?Markdown 鏂囦欢鐢?`tools/docs/rst-to-md.py` 浠?Sphinx `.rst` 婧愭枃浠惰嚜鍔ㄨ浆鎹㈢敓鎴?- 濡傛灉鍙戠幇杞崲璐ㄩ噺闂锛屽彲浠ユ煡鐪嬪師濮?`.rst` 鏂囦欢鎴栦慨澶嶈浆鎹㈣剼鏈?- 鏂囨。鍐呭闅忓唴鏍哥増鏈洿鏂帮紝鏈寚鍗楀熀浜?v7.1.3锛?Baby Opossum Posse"锛?

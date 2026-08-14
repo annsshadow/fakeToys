@@ -1,223 +1,223 @@
-## Sound Blaster Audigy 混音器 / 默认 DSP 代码
+﻿## Sound Blaster Audigy 娣烽煶鍣?/ 榛樿 DSP 浠ｇ爜
 
-本文基于 sb-live-mixer.rst。EMU10K2 芯片包含一个 DSP 部分，它可以被编程以支持多种采样处理方式，本文对此进行描述。（本文不涉及 EMU10K2 芯片的整体功能，详见 manuals 一节。）ALSA 驱动默认会对芯片的这一部分进行编程（之后可以修改），从而提供以下功能：
+鏈枃鍩轰簬 sb-live-mixer.rst銆侲MU10K2 鑺墖鍖呭惈涓€涓?DSP 閮ㄥ垎锛屽畠鍙互琚紪绋嬩互鏀寔澶氱閲囨牱澶勭悊鏂瑰紡锛屾湰鏂囧姝よ繘琛屾弿杩般€傦紙鏈枃涓嶆秹鍙?EMU10K2 鑺墖鐨勬暣浣撳姛鑳斤紝璇﹁ manuals 涓€鑺傘€傦級ALSA 椹卞姩榛樿浼氬鑺墖鐨勮繖涓€閮ㄥ垎杩涜缂栫▼锛堜箣鍚庡彲浠ヤ慨鏀癸級锛屼粠鑰屾彁渚涗互涓嬪姛鑳斤細
 
-## 数字混音器控制
+## 鏁板瓧娣烽煶鍣ㄦ帶鍒?
 
-这些控制由 DSP 指令构建而成，提供了扩展功能。本文仅描述 ALSA 驱动中默认内置的代码。请注意，这些控制用作衰减器（attenuator）：最大值即为不改变信号的中性位置。另请注意，如果多个控制引用了相同的目标（destination），信号会被累加，并可能被削波（clip，即在未做溢出检查的情况下被设为最大或最小值）。
+杩欎簺鎺у埗鐢?DSP 鎸囦护鏋勫缓鑰屾垚锛屾彁渚涗簡鎵╁睍鍔熻兘銆傛湰鏂囦粎鎻忚堪 ALSA 椹卞姩涓粯璁ゅ唴缃殑浠ｇ爜銆傝娉ㄦ剰锛岃繖浜涙帶鍒剁敤浣滆“鍑忓櫒锛坅ttenuator锛夛細鏈€澶у€煎嵆涓轰笉鏀瑰彉淇″彿鐨勪腑鎬т綅缃€傚彟璇锋敞鎰忥紝濡傛灉澶氫釜鎺у埗寮曠敤浜嗙浉鍚岀殑鐩爣锛坉estination锛夛紝淇″彿浼氳绱姞锛屽苟鍙兘琚墛娉紙clip锛屽嵆鍦ㄦ湭鍋氭孩鍑烘鏌ョ殑鎯呭喌涓嬭璁句负鏈€澶ф垨鏈€灏忓€硷級銆?
 
-所用缩写说明：
+鎵€鐢ㄧ缉鍐欒鏄庯細
 
 DAC
-	数字到模拟转换器
+	鏁板瓧鍒版ā鎷熻浆鎹㈠櫒
 ADC
-	模拟到数字转换器
+	妯℃嫙鍒版暟瀛楄浆鎹㈠櫒
 I2S
-	飞利浦半导体公司定义的单向三线串行总线，用于数字音频（该标准用于连接独立的 D/A 与 A/D 转换器）
+	椋炲埄娴﹀崐瀵间綋鍏徃瀹氫箟鐨勫崟鍚戜笁绾夸覆琛屾€荤嚎锛岀敤浜庢暟瀛楅煶棰戯紙璇ユ爣鍑嗙敤浜庤繛鎺ョ嫭绔嬬殑 D/A 涓?A/D 杞崲鍣級
 LFE
-	低频效果（用作低音炮信号）
+	浣庨鏁堟灉锛堢敤浣滀綆闊崇偖淇″彿锛?
 AC97
-	包含模拟混音器、D/A 与 A/D 转换器的芯片
+	鍖呭惈妯℃嫙娣烽煶鍣ㄣ€丏/A 涓?A/D 杞崲鍣ㄧ殑鑺墖
 IEC958
 	S/PDIF
 FX-bus
-	EMU10K2 芯片拥有一条效果总线（FX-bus），包含 64 个累加器（accumulator）。每个合成器声部（voice）都可以将自身输出送入这些累加器，DSP 微控制器则可以对它们的和进行操作。
+	EMU10K2 鑺墖鎷ユ湁涓€鏉℃晥鏋滄€荤嚎锛團X-bus锛夛紝鍖呭惈 64 涓疮鍔犲櫒锛坅ccumulator锛夈€傛瘡涓悎鎴愬櫒澹伴儴锛坴oice锛夐兘鍙互灏嗚嚜韬緭鍑洪€佸叆杩欎簺绱姞鍣紝DSP 寰帶鍒跺櫒鍒欏彲浠ュ瀹冧滑鐨勫拰杩涜鎿嶄綔銆?
 
-### name='PCM Front Playback Volume',索引=0
+### name='PCM Front Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自左、右前置 PCM FX-bus 累加器的采样。在 5.1 声道回放中，ALSA 使用累加器 8 和 9 来处理左、右前置 PCM 采样。处理后的采样被送往前置扬声器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸鍓嶇疆 PCM FX-bus 绱姞鍣ㄧ殑閲囨牱銆傚湪 5.1 澹伴亾鍥炴斁涓紝ALSA 浣跨敤绱姞鍣?8 鍜?9 鏉ュ鐞嗗乏銆佸彸鍓嶇疆 PCM 閲囨牱銆傚鐞嗗悗鐨勯噰鏍疯閫佸線鍓嶇疆鎵０鍣ㄣ€?
 
-### name='PCM Surround Playback Volume',索引=0
+### name='PCM Surround Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自左、右环绕（surround）PCM FX-bus 累加器的采样。在 5.1 声道回放中，ALSA 使用累加器 2 和 3 来处理左、右环绕 PCM 采样。处理后的采样被送往环绕（后置）扬声器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸鐜粫锛坰urround锛塒CM FX-bus 绱姞鍣ㄧ殑閲囨牱銆傚湪 5.1 澹伴亾鍥炴斁涓紝ALSA 浣跨敤绱姞鍣?2 鍜?3 鏉ュ鐞嗗乏銆佸彸鐜粫 PCM 閲囨牱銆傚鐞嗗悗鐨勯噰鏍疯閫佸線鐜粫锛堝悗缃級鎵０鍣ㄣ€?
 
-### name='PCM Side Playback Volume',索引=0
+### name='PCM Side Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自左、右侧面（side）PCM FX-bus 累加器的采样。在 7.1 声道回放中，ALSA 使用累加器 14 和 15 来处理左、右侧面 PCM 采样。处理后的采样被送往侧面扬声器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸渚ч潰锛坰ide锛塒CM FX-bus 绱姞鍣ㄧ殑閲囨牱銆傚湪 7.1 澹伴亾鍥炴斁涓紝ALSA 浣跨敤绱姞鍣?14 鍜?15 鏉ュ鐞嗗乏銆佸彸渚ч潰 PCM 閲囨牱銆傚鐞嗗悗鐨勯噰鏍疯閫佸線渚ч潰鎵０鍣ㄣ€?
 
-### name='PCM Center Playback Volume',索引=0
+### name='PCM Center Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自中央（center）PCM FX-bus 累加器的采样。在 5.1 声道回放中，ALSA 使用累加器 6 来处理中央 PCM 采样。处理后的采样被送往中置扬声器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷腑澶紙center锛塒CM FX-bus 绱姞鍣ㄧ殑閲囨牱銆傚湪 5.1 澹伴亾鍥炴斁涓紝ALSA 浣跨敤绱姞鍣?6 鏉ュ鐞嗕腑澶?PCM 閲囨牱銆傚鐞嗗悗鐨勯噰鏍疯閫佸線涓疆鎵０鍣ㄣ€?
 
-### name='PCM LFE Playback Volume',索引=0
+### name='PCM LFE Playback Volume',绱㈠紩=0
 
-该控制用于衰减 LFE PCM FX-bus 累加器的采样。在 5.1 声道回放中，ALSA 使用累加器 7 来处理 LFE PCM 采样。处理后的采样被送往低音炮。
+璇ユ帶鍒剁敤浜庤“鍑?LFE PCM FX-bus 绱姞鍣ㄧ殑閲囨牱銆傚湪 5.1 澹伴亾鍥炴斁涓紝ALSA 浣跨敤绱姞鍣?7 鏉ュ鐞?LFE PCM 閲囨牱銆傚鐞嗗悗鐨勯噰鏍疯閫佸線浣庨煶鐐€?
 
-### name='PCM Playback Volume',索引=0
+### name='PCM Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自左、右 PCM FX-bus 累加器的采样。在立体声回放中，ALSA 使用累加器 0 和 1 来处理左、右 PCM 采样。处理后的采样被送往前置扬声器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 PCM FX-bus 绱姞鍣ㄧ殑閲囨牱銆傚湪绔嬩綋澹板洖鏀句腑锛孉LSA 浣跨敤绱姞鍣?0 鍜?1 鏉ュ鐞嗗乏銆佸彸 PCM 閲囨牱銆傚鐞嗗悗鐨勯噰鏍疯閫佸線鍓嶇疆鎵０鍣ㄣ€?
 
-### name='PCM Capture Volume',索引=0
+### name='PCM Capture Volume',绱㈠紩=0
 
-该控制用于衰减来自左、右 PCM FX-bus 累加器的采样。在立体声回放中，ALSA 使用累加器 0 和 1 来处理左、右 PCM 采样。处理后的结果被送往标准 capture PCM 设备。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 PCM FX-bus 绱姞鍣ㄧ殑閲囨牱銆傚湪绔嬩綋澹板洖鏀句腑锛孉LSA 浣跨敤绱姞鍣?0 鍜?1 鏉ュ鐞嗗乏銆佸彸 PCM 閲囨牱銆傚鐞嗗悗鐨勭粨鏋滆閫佸線鏍囧噯 capture PCM 璁惧銆?
 
-### name='Music Playback Volume',索引=0
+### name='Music Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自左、右 MIDI FX-bus 累加器的采样。ALSA 使用累加器 4 和 5 来处理左、右 MIDI 采样。处理后的采样被送往虚拟立体声混音器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 MIDI FX-bus 绱姞鍣ㄧ殑閲囨牱銆侫LSA 浣跨敤绱姞鍣?4 鍜?5 鏉ュ鐞嗗乏銆佸彸 MIDI 閲囨牱銆傚鐞嗗悗鐨勯噰鏍疯閫佸線铏氭嫙绔嬩綋澹版贩闊冲櫒銆?
 
-### name='Music Capture Volume',索引=0
+### name='Music Capture Volume',绱㈠紩=0
 
-这些控制用于衰减来自左、右 MIDI FX-bus 累加器的采样。ALSA 使用累加器 4 和 5 来处理左、右 MIDI 采样。处理后的结果被送往标准 capture PCM 设备。
+杩欎簺鎺у埗鐢ㄤ簬琛板噺鏉ヨ嚜宸︺€佸彸 MIDI FX-bus 绱姞鍣ㄧ殑閲囨牱銆侫LSA 浣跨敤绱姞鍣?4 鍜?5 鏉ュ鐞嗗乏銆佸彸 MIDI 閲囨牱銆傚鐞嗗悗鐨勭粨鏋滆閫佸線鏍囧噯 capture PCM 璁惧銆?
 
-### name='Mic Playback Volume',索引=0
+### name='Mic Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自 AC97 编解码器中左、右 Mic 输入的采样。处理后的采样被送往虚拟立体声混音器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷?AC97 缂栬В鐮佸櫒涓乏銆佸彸 Mic 杈撳叆鐨勯噰鏍枫€傚鐞嗗悗鐨勯噰鏍疯閫佸線铏氭嫙绔嬩綋澹版贩闊冲櫒銆?
 
-### name='Mic Capture Volume',索引=0
+### name='Mic Capture Volume',绱㈠紩=0
 
-该控制用于衰减来自 AC97 编解码器中左、右 Mic 输入的采样。处理后的结果被送往标准 capture PCM 设备。原始采样同时被送往 Mic capture PCM 设备（设备 1；16 位 / 8 KHz 单声道），且不受音量控制。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷?AC97 缂栬В鐮佸櫒涓乏銆佸彸 Mic 杈撳叆鐨勯噰鏍枫€傚鐞嗗悗鐨勭粨鏋滆閫佸線鏍囧噯 capture PCM 璁惧銆傚師濮嬮噰鏍峰悓鏃惰閫佸線 Mic capture PCM 璁惧锛堣澶?1锛?6 浣?/ 8 KHz 鍗曞０閬擄級锛屼笖涓嶅彈闊抽噺鎺у埗銆?
 
-### name='Audigy CD Playback Volume',索引=0
+### name='Audigy CD Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自左、右 IEC958 TTL 数字输入的采样（通常由 CDROM 驱动器提供）。处理后的采样被送往虚拟立体声混音器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 IEC958 TTL 鏁板瓧杈撳叆鐨勯噰鏍凤紙閫氬父鐢?CDROM 椹卞姩鍣ㄦ彁渚涳級銆傚鐞嗗悗鐨勯噰鏍疯閫佸線铏氭嫙绔嬩綋澹版贩闊冲櫒銆?
 
-### name='Audigy CD Capture Volume',索引=0
+### name='Audigy CD Capture Volume',绱㈠紩=0
 
-该控制用于衰减来自左、右 IEC958 TTL 数字输入的采样（通常由 CDROM 驱动器提供）。处理后的结果被送往标准 capture PCM 设备。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 IEC958 TTL 鏁板瓧杈撳叆鐨勯噰鏍凤紙閫氬父鐢?CDROM 椹卞姩鍣ㄦ彁渚涳級銆傚鐞嗗悗鐨勭粨鏋滆閫佸線鏍囧噯 capture PCM 璁惧銆?
 
-### name='IEC958 Optical Playback Volume',索引=0
+### name='IEC958 Optical Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自左、右 IEC958 光纤数字输入的采样。处理后的采样被送往虚拟立体声混音器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 IEC958 鍏夌氦鏁板瓧杈撳叆鐨勯噰鏍枫€傚鐞嗗悗鐨勯噰鏍疯閫佸線铏氭嫙绔嬩綋澹版贩闊冲櫒銆?
 
-### name='IEC958 Optical Capture Volume',索引=0
+### name='IEC958 Optical Capture Volume',绱㈠紩=0
 
-该控制用于衰减来自左、右 IEC958 光纤数字输入的采样。处理后的结果被送往标准 capture PCM 设备。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 IEC958 鍏夌氦鏁板瓧杈撳叆鐨勯噰鏍枫€傚鐞嗗悗鐨勭粨鏋滆閫佸線鏍囧噯 capture PCM 璁惧銆?
 
-### name='Line2 Playback Volume',索引=0
+### name='Line2 Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自左、右 I2S ADC 输入的采样（位于 AudigyDrive 上）。处理后的采样被送往虚拟立体声混音器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 I2S ADC 杈撳叆鐨勯噰鏍凤紙浣嶄簬 AudigyDrive 涓婏級銆傚鐞嗗悗鐨勯噰鏍疯閫佸線铏氭嫙绔嬩綋澹版贩闊冲櫒銆?
 
-### name='Line2 Capture Volume',索引=1
+### name='Line2 Capture Volume',绱㈠紩=1
 
-该控制用于衰减来自左、右 I2S ADC 输入的采样（位于 AudigyDrive 上）。处理后的结果被送往标准 capture PCM 设备。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 I2S ADC 杈撳叆鐨勯噰鏍凤紙浣嶄簬 AudigyDrive 涓婏級銆傚鐞嗗悗鐨勭粨鏋滆閫佸線鏍囧噯 capture PCM 璁惧銆?
 
-### name='Analog Mix Playback Volume',索引=0
+### name='Analog Mix Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自 Philips ADC 的左、右 I2S ADC 输入的采样。处理后的采样被送往虚拟立体声混音器。其中包含来自 CD、Line In、Aux 等模拟音源的混音。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷?Philips ADC 鐨勫乏銆佸彸 I2S ADC 杈撳叆鐨勯噰鏍枫€傚鐞嗗悗鐨勯噰鏍疯閫佸線铏氭嫙绔嬩綋澹版贩闊冲櫒銆傚叾涓寘鍚潵鑷?CD銆丩ine In銆丄ux 绛夋ā鎷熼煶婧愮殑娣烽煶銆?
 
-### name='Analog Mix Capture Volume',索引=1
+### name='Analog Mix Capture Volume',绱㈠紩=1
 
-该控制用于衰减来自 Philips ADC 的左、右 I2S ADC 输入的采样。处理后的结果被送往标准 capture PCM 设备。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷?Philips ADC 鐨勫乏銆佸彸 I2S ADC 杈撳叆鐨勯噰鏍枫€傚鐞嗗悗鐨勭粨鏋滆閫佸線鏍囧噯 capture PCM 璁惧銆?
 
-### name='Aux2 Playback Volume',索引=0
+### name='Aux2 Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自左、右 I2S ADC 输入的采样（位于 AudigyDrive 上）。处理后的采样被送往虚拟立体声混音器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 I2S ADC 杈撳叆鐨勯噰鏍凤紙浣嶄簬 AudigyDrive 涓婏級銆傚鐞嗗悗鐨勯噰鏍疯閫佸線铏氭嫙绔嬩綋澹版贩闊冲櫒銆?
 
-### name='Aux2 Capture Volume',索引=1
+### name='Aux2 Capture Volume',绱㈠紩=1
 
-该控制用于衰减来自左、右 I2S ADC 输入的采样（位于 AudigyDrive 上）。处理后的结果被送往标准 capture PCM 设备。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 I2S ADC 杈撳叆鐨勯噰鏍凤紙浣嶄簬 AudigyDrive 涓婏級銆傚鐞嗗悗鐨勭粨鏋滆閫佸線鏍囧噯 capture PCM 璁惧銆?
 
-### name='Front Playback Volume',索引=0
+### name='Front Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自虚拟立体声混音器的采样。处理后的采样被送往前置扬声器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷櫄鎷熺珛浣撳０娣烽煶鍣ㄧ殑閲囨牱銆傚鐞嗗悗鐨勯噰鏍疯閫佸線鍓嶇疆鎵０鍣ㄣ€?
 
-### name='Surround Playback Volume',索引=0
+### name='Surround Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自虚拟立体声混音器的采样。处理后的采样被送往环绕（后置）扬声器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷櫄鎷熺珛浣撳０娣烽煶鍣ㄧ殑閲囨牱銆傚鐞嗗悗鐨勯噰鏍疯閫佸線鐜粫锛堝悗缃級鎵０鍣ㄣ€?
 
-### name='Side Playback Volume',索引=0
+### name='Side Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自虚拟立体声混音器的采样。处理后的采样被送往侧面扬声器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷櫄鎷熺珛浣撳０娣烽煶鍣ㄧ殑閲囨牱銆傚鐞嗗悗鐨勯噰鏍疯閫佸線渚ч潰鎵０鍣ㄣ€?
 
-### name='Center Playback Volume',索引=0
+### name='Center Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自虚拟立体声混音器的采样。处理后的采样被送往中置扬声器。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷櫄鎷熺珛浣撳０娣烽煶鍣ㄧ殑閲囨牱銆傚鐞嗗悗鐨勯噰鏍疯閫佸線涓疆鎵０鍣ㄣ€?
 
-### name='LFE Playback Volume',索引=0
+### name='LFE Playback Volume',绱㈠紩=0
 
-该控制用于衰减来自虚拟立体声混音器的采样。处理后的采样被送往低音炮。
+璇ユ帶鍒剁敤浜庤“鍑忔潵鑷櫄鎷熺珛浣撳０娣烽煶鍣ㄧ殑閲囨牱銆傚鐞嗗悗鐨勯噰鏍疯閫佸線浣庨煶鐐€?
 
-### name='Tone Control - Switch',索引=0
+### name='Tone Control - Switch',绱㈠紩=0
 
-该控制用于开启或关闭音调控制。送往扬声器输出的采样会受影响。
+璇ユ帶鍒剁敤浜庡紑鍚垨鍏抽棴闊宠皟鎺у埗銆傞€佸線鎵０鍣ㄨ緭鍑虹殑閲囨牱浼氬彈褰卞搷銆?
 
-### name='Tone Control - Bass',索引=0
+### name='Tone Control - Bass',绱㈠紩=0
 
-该控制用于设置低音（bass）强度。不存在中性值！一旦音调控制代码被激活，采样总是会被修改。最接近纯净信号的值是 20。
+璇ユ帶鍒剁敤浜庤缃綆闊筹紙bass锛夊己搴︺€備笉瀛樺湪涓€у€硷紒涓€鏃﹂煶璋冩帶鍒朵唬鐮佽婵€娲伙紝閲囨牱鎬绘槸浼氳淇敼銆傛渶鎺ヨ繎绾噣淇″彿鐨勫€兼槸 20銆?
 
-### name='Tone Control - Treble',索引=0
+### name='Tone Control - Treble',绱㈠紩=0
 
-该控制用于设置高音（treble）强度。不存在中性值！一旦音调控制代码被激活，采样总是会被修改。最接近纯净信号的值是 20。
+璇ユ帶鍒剁敤浜庤缃珮闊筹紙treble锛夊己搴︺€備笉瀛樺湪涓€у€硷紒涓€鏃﹂煶璋冩帶鍒朵唬鐮佽婵€娲伙紝閲囨牱鎬绘槸浼氳淇敼銆傛渶鎺ヨ繎绾噣淇″彿鐨勫€兼槸 20銆?
 
-### name='Master Playback Volume',索引=0
+### name='Master Playback Volume',绱㈠紩=0
 
-该控制用于衰减送往扬声器输出的采样。
+璇ユ帶鍒剁敤浜庤“鍑忛€佸線鎵０鍣ㄨ緭鍑虹殑閲囨牱銆?
 
-### name='IEC958 Optical Raw Playback Switch',索引=0
+### name='IEC958 Optical Raw Playback Switch',绱㈠紩=0
 
-若开启此开关，则用于 IEC958（S/PDIF）数字输出的采样仅取自 raw iec958 ALSA PCM 设备（默认情况下它使用累加器 20 和 21 处理左、右 PCM）。
+鑻ュ紑鍚寮€鍏筹紝鍒欑敤浜?IEC958锛圫/PDIF锛夋暟瀛楄緭鍑虹殑閲囨牱浠呭彇鑷?raw iec958 ALSA PCM 璁惧锛堥粯璁ゆ儏鍐典笅瀹冧娇鐢ㄧ疮鍔犲櫒 20 鍜?21 澶勭悊宸︺€佸彸 PCM锛夈€?
 
 
-## 与 PCM 流相关的控制
+## 涓?PCM 娴佺浉鍏崇殑鎺у埗
 
-### name='EMU10K1 PCM Volume',索引 0-31
+### name='EMU10K1 PCM Volume',绱㈠紩 0-31
 
-通道音量衰减，范围 0–0x1fffd。中间值（即无衰减）为默认值。三个值的通道映射如下：
+閫氶亾闊抽噺琛板噺锛岃寖鍥?0鈥?x1fffd銆備腑闂村€硷紙鍗虫棤琛板噺锛変负榛樿鍊笺€備笁涓€肩殑閫氶亾鏄犲皠濡備笅锛?
 
-- 0 - mono，默认 0xffff（无衰减）
-- 1 - left，默认 0xffff（无衰减）
-- 2 - right，默认 0xffff（无衰减）
+- 0 - mono锛岄粯璁?0xffff锛堟棤琛板噺锛?
+- 1 - left锛岄粯璁?0xffff锛堟棤琛板噺锛?
+- 2 - right锛岄粯璁?0xffff锛堟棤琛板噺锛?
 
-### name='EMU10K1 PCM Send Routing',索引 0-31
+### name='EMU10K1 PCM Send Routing',绱㈠紩 0-31
 
-该控制指定目标——即 FX-bus 累加器。此映射中共有 24 个值：
+璇ユ帶鍒舵寚瀹氱洰鏍団€斺€斿嵆 FX-bus 绱姞鍣ㄣ€傛鏄犲皠涓叡鏈?24 涓€硷細
 
-- 0 -  mono，A 目标（FX-bus 0-63），默认 0
-- 1 -  mono，B 目标（FX-bus 0-63），默认 1
-- 2 -  mono，C 目标（FX-bus 0-63），默认 2
-- 3 -  mono，D 目标（FX-bus 0-63），默认 3
-- 4 -  mono，E 目标（FX-bus 0-63），默认 4
-- 5 -  mono，F 目标（FX-bus 0-63），默认 5
-- 6 -  mono，G 目标（FX-bus 0-63），默认 6
-- 7 -  mono，H 目标（FX-bus 0-63），默认 7
-- 8 -  left，A 目标（FX-bus 0-63），默认 0
-- 9 -  left，B 目标（FX-bus 0-63），默认 1
-- 10 -  left，C 目标（FX-bus 0-63），默认 2
-- 11 -  left，D 目标（FX-bus 0-63），默认 3
-- 12 -  left，E 目标（FX-bus 0-63），默认 4
-- 13 -  left，F 目标（FX-bus 0-63），默认 5
-- 14 -  left，G 目标（FX-bus 0-63），默认 6
-- 15 -  left，H 目标（FX-bus 0-63），默认 7
-- 16 -  right，A 目标（FX-bus 0-63），默认 0
-- 17 -  right，B 目标（FX-bus 0-63），默认 1
-- 18 -  right，C 目标（FX-bus 0-63），默认 2
-- 19 -  right，D 目标（FX-bus 0-63），默认 3
-- 20 -  right，E 目标（FX-bus 0-63），默认 4
-- 21 -  right，F 目标（FX-bus 0-63），默认 5
-- 22 -  right，G 目标（FX-bus 0-63），默认 6
-- 23 -  right，H 目标（FX-bus 0-63），默认 7
+- 0 -  mono锛孉 鐩爣锛團X-bus 0-63锛夛紝榛樿 0
+- 1 -  mono锛孊 鐩爣锛團X-bus 0-63锛夛紝榛樿 1
+- 2 -  mono锛孋 鐩爣锛團X-bus 0-63锛夛紝榛樿 2
+- 3 -  mono锛孌 鐩爣锛團X-bus 0-63锛夛紝榛樿 3
+- 4 -  mono锛孍 鐩爣锛團X-bus 0-63锛夛紝榛樿 4
+- 5 -  mono锛孎 鐩爣锛團X-bus 0-63锛夛紝榛樿 5
+- 6 -  mono锛孏 鐩爣锛團X-bus 0-63锛夛紝榛樿 6
+- 7 -  mono锛孒 鐩爣锛團X-bus 0-63锛夛紝榛樿 7
+- 8 -  left锛孉 鐩爣锛團X-bus 0-63锛夛紝榛樿 0
+- 9 -  left锛孊 鐩爣锛團X-bus 0-63锛夛紝榛樿 1
+- 10 -  left锛孋 鐩爣锛團X-bus 0-63锛夛紝榛樿 2
+- 11 -  left锛孌 鐩爣锛團X-bus 0-63锛夛紝榛樿 3
+- 12 -  left锛孍 鐩爣锛團X-bus 0-63锛夛紝榛樿 4
+- 13 -  left锛孎 鐩爣锛團X-bus 0-63锛夛紝榛樿 5
+- 14 -  left锛孏 鐩爣锛團X-bus 0-63锛夛紝榛樿 6
+- 15 -  left锛孒 鐩爣锛團X-bus 0-63锛夛紝榛樿 7
+- 16 -  right锛孉 鐩爣锛團X-bus 0-63锛夛紝榛樿 0
+- 17 -  right锛孊 鐩爣锛團X-bus 0-63锛夛紝榛樿 1
+- 18 -  right锛孋 鐩爣锛團X-bus 0-63锛夛紝榛樿 2
+- 19 -  right锛孌 鐩爣锛團X-bus 0-63锛夛紝榛樿 3
+- 20 -  right锛孍 鐩爣锛團X-bus 0-63锛夛紝榛樿 4
+- 21 -  right锛孎 鐩爣锛團X-bus 0-63锛夛紝榛樿 5
+- 22 -  right锛孏 鐩爣锛團X-bus 0-63锛夛紝榛樿 6
+- 23 -  right锛孒 鐩爣锛團X-bus 0-63锛夛紝榛樿 7
 
-请不要忘记：将同一通道多次分配到相同的 FX-bus 累加器是非法的（即 0=0 && 1=0 是一个无效组合）。
+璇蜂笉瑕佸繕璁帮細灏嗗悓涓€閫氶亾澶氭鍒嗛厤鍒扮浉鍚岀殑 FX-bus 绱姞鍣ㄦ槸闈炴硶鐨勶紙鍗?0=0 && 1=0 鏄竴涓棤鏁堢粍鍚堬級銆?
 
-### name='EMU10K1 PCM Send Volume',索引 0-31
+### name='EMU10K1 PCM Send Volume',绱㈠紩 0-31
 
-它指定给定目标的衰减量（amount），范围 0–255。通道映射如下：
+瀹冩寚瀹氱粰瀹氱洰鏍囩殑琛板噺閲忥紙amount锛夛紝鑼冨洿 0鈥?55銆傞€氶亾鏄犲皠濡備笅锛?
 
-- 0 -  mono，A 目标 attn，默认 255（无衰减）
-- 1 -  mono，B 目标 attn，默认 255（无衰减）
-- 2 -  mono，C 目标 attn，默认 0（静音）
-- 3 -  mono，D 目标 attn，默认 0（静音）
-- 4 -  mono，E 目标 attn，默认 0（静音）
-- 5 -  mono，F 目标 attn，默认 0（静音）
-- 6 -  mono，G 目标 attn，默认 0（静音）
-- 7 -  mono，H 目标 attn，默认 0（静音）
-- 8 -  left，A 目标 attn，默认 255（无衰减）
-- 9 -  left，B 目标 attn，默认 0（静音）
-- 10 -  left，C 目标 attn，默认 0（静音）
-- 11 -  left，D 目标 attn，默认 0（静音）
-- 12 -  left，E 目标 attn，默认 0（静音）
-- 13 -  left，F 目标 attn，默认 0（静音）
-- 14 -  left，G 目标 attn，默认 0（静音）
-- 15 -  left，H 目标 attn，默认 0（静音）
-- 16 -  right，A 目标 attn，默认 0（静音）
-- 17 -  right，B 目标 attn，默认 255（无衰减）
-- 18 -  right，C 目标 attn，默认 0（静音）
-- 19 -  right，D 目标 attn，默认 0（静音）
-- 20 -  right，E 目标 attn，默认 0（静音）
-- 21 -  right，F 目标 attn，默认 0（静音）
-- 22 -  right，G 目标 attn，默认 0（静音）
-- 23 -  right，H 目标 attn，默认 0（静音）
+- 0 -  mono锛孉 鐩爣 attn锛岄粯璁?255锛堟棤琛板噺锛?
+- 1 -  mono锛孊 鐩爣 attn锛岄粯璁?255锛堟棤琛板噺锛?
+- 2 -  mono锛孋 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 3 -  mono锛孌 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 4 -  mono锛孍 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 5 -  mono锛孎 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 6 -  mono锛孏 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 7 -  mono锛孒 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 8 -  left锛孉 鐩爣 attn锛岄粯璁?255锛堟棤琛板噺锛?
+- 9 -  left锛孊 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 10 -  left锛孋 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 11 -  left锛孌 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 12 -  left锛孍 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 13 -  left锛孎 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 14 -  left锛孏 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 15 -  left锛孒 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 16 -  right锛孉 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 17 -  right锛孊 鐩爣 attn锛岄粯璁?255锛堟棤琛板噺锛?
+- 18 -  right锛孋 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 19 -  right锛孌 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 20 -  right锛孍 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 21 -  right锛孎 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 22 -  right锛孏 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
+- 23 -  right锛孒 鐩爣 attn锛岄粯璁?0锛堥潤闊筹級
 
-## 手册 / 专利
+## 鎵嬪唽 / 涓撳埄
 
-参见 sb-live-mixer.rst。
+鍙傝 sb-live-mixer.rst銆?

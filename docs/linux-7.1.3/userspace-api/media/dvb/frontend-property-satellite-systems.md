@@ -1,15 +1,12 @@
-######## 卫星传输系统使用的属性
-
-本文件列出 DVB 卫星传输系统（DVB-S、DVB-S2、Turbo 码等）前端可调谐的属性参数，说明各系统下有效的 DTV 属性集合，供卫星电视接收相关的前端驱动与应用开发者参考。
-
+﻿######## 鍗槦浼犺緭绯荤粺浣跨敤鐨勫睘鎬?
+鏈枃浠跺垪鍑?DVB 鍗槦浼犺緭绯荤粺锛圖VB-S銆丏VB-S2銆乀urbo 鐮佺瓑锛夊墠绔彲璋冭皭鐨勫睘鎬у弬鏁帮紝璇存槑鍚勭郴缁熶笅鏈夋晥鐨?DTV 灞炴€ч泦鍚堬紝渚涘崼鏄熺數瑙嗘帴鏀剁浉鍏崇殑鍓嶇椹卞姩涓庡簲鐢ㄥ紑鍙戣€呭弬鑰冦€?
 
 
 
-## DVB-S 传输系统
+## DVB-S 浼犺緭绯荤粺
 
 
-以下参数对 DVB-S 有效：
-
+浠ヤ笅鍙傛暟瀵?DVB-S 鏈夋晥锛?
 - DTV_API_VERSION <DTV-API-VERSION>
 
 - DTV_DELIVERY_SYSTEM <DTV-DELIVERY-SYSTEM>
@@ -30,9 +27,8 @@
 
 - DTV_TONE <DTV-TONE>
 
-此外，DTV QoS 统计 <frontend-stat-properties> 同样有效。
-
-未来的实现可能会添加以下两个缺失的参数：
+姝ゅ锛孌TV QoS 缁熻 <frontend-stat-properties> 鍚屾牱鏈夋晥銆?
+鏈潵鐨勫疄鐜板彲鑳戒細娣诲姞浠ヤ笅涓や釜缂哄け鐨勫弬鏁帮細
 
 - DTV_DISEQC_MASTER <DTV-DISEQC-MASTER>
 
@@ -40,10 +36,10 @@
 
 
 
-## DVB-S2 传输系统
+## DVB-S2 浼犺緭绯荤粺
 
 
-除所有对 DVB-S 有效的参数外，DVB-S2 还支持以下参数：
+闄ゆ墍鏈夊 DVB-S 鏈夋晥鐨勫弬鏁板锛孌VB-S2 杩樻敮鎸佷互涓嬪弬鏁帮細
 
 - DTV_MODULATION <DTV-MODULATION>
 
@@ -55,24 +51,20 @@
 
 - DTV_SCRAMBLING_SEQUENCE_INDEX <DTV-SCRAMBLING-SEQUENCE-INDEX>
 
-此外，DTV QoS 统计 <frontend-stat-properties> 同样有效。
+姝ゅ锛孌TV QoS 缁熻 <frontend-stat-properties> 鍚屾牱鏈夋晥銆?
 
 
+## Turbo 鐮佷紶杈撶郴缁?
 
-## Turbo 码传输系统
-
-
-除所有对 DVB-S 有效的参数外，turbo 码还支持以下参数：
-
+闄ゆ墍鏈夊 DVB-S 鏈夋晥鐨勫弬鏁板锛宼urbo 鐮佽繕鏀寔浠ヤ笅鍙傛暟锛?
 - DTV_MODULATION <DTV-MODULATION>
 
 
 
-## ISDB-S 传输系统
+## ISDB-S 浼犺緭绯荤粺
 
 
-以下参数对 ISDB-S 有效：
-
+浠ヤ笅鍙傛暟瀵?ISDB-S 鏈夋晥锛?
 - DTV_API_VERSION <DTV-API-VERSION>
 
 - DTV_DELIVERY_SYSTEM <DTV-DELIVERY-SYSTEM>

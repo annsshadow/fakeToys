@@ -1,652 +1,484 @@
-## ACPI 表
+﻿## ACPI 琛?
 
+涓嬮潰瀵瑰悇涓?ACPI 琛ㄧ殑鏈熸湜杩涜浜嗚璁恒€?
+濡傛灉浣跨敤浜嗙珷鑺傚彿锛屽畠鎸囩殑鏄畾涔夎瀵硅薄鐨?ACPI 瑙勮寖涓殑绔犺妭鍙枫€傚鏋滀娇鐢ㄤ簡 "Signature Reserved"锛屽垯琛ㄧ鍚嶏紙琛ㄧ殑鍓嶅洓涓瓧鑺傦級鏄瑙勮寖鍞竴璇嗗埆鐨勯儴鍒嗭紝鑰屽疄闄呰〃鐨勫畾涔夊湪 UEFI Forum 涔嬪锛堝弬瑙佽鑼冪殑 5.2.6 鑺傦級銆?
+瀵逛簬 arm64 涓婄殑 ACPI锛岃〃杩樺垎涓轰互涓嬪嚑绫伙細
 
-下面对各个 ACPI 表的期望进行了讨论。
+       - 蹇呴渶锛圧equired锛? DSDT, FADT, GTDT, MADT, MCFG, RSDP, SPCR, XSDT
 
-如果使用了章节号，它指的是定义该对象的 ACPI 规范中的章节号。如果使用了 "Signature Reserved"，则表签名（表的前四个字节）是该规范唯一识别的部分，而实际表的定义在 UEFI Forum 之外（参见规范的 5.2.6 节）。
+       - 鎺ㄨ崘锛圧ecommended锛? BERT, EINJ, ERST, HEST, PCCT, SSDT
 
-对于 arm64 上的 ACPI，表还分为以下几类：
-
-       - 必需（Required）: DSDT, FADT, GTDT, MADT, MCFG, RSDP, SPCR, XSDT
-
-       - 推荐（Recommended）: BERT, EINJ, ERST, HEST, PCCT, SSDT
-
-       - 可选（Optional）: AGDI, BGRT, CEDT, CPEP, CSRT, DBG2, DRTM, ECDT, FACS, FPDT,
+       - 鍙€夛紙Optional锛? AGDI, BGRT, CEDT, CPEP, CSRT, DBG2, DRTM, ECDT, FACS, FPDT,
           HMAT, IBFT, IORT, MCHI, MPAM, MPST, MSCT, NFIT, PMTT, PPTT, RASF, SBST,
           SDEI, SLIT, SPMI, SRAT, STAO, TCPA, TPM2, UEFI, XENV
 
-       - 不支持（Not supported）: AEST, APMT, BOOT, DBGP, DMAR, ETDT, HPET, IVRS, LPIT,
+       - 涓嶆敮鎸侊紙Not supported锛? AEST, APMT, BOOT, DBGP, DMAR, ETDT, HPET, IVRS, LPIT,
           MSDM, OEMx, PDTT, PSDT, RAS2, RSDT, SLIC, WAET, WDAT, WDRT, WPBT
 
 ====== ========================================================================
-Table  用于 ARMv8 Linux 的用法
-====== ========================================================================
+Table  鐢ㄤ簬 ARMv8 Linux 鐨勭敤娉?====== ========================================================================
 AEST   Signature Reserved (signature == "AEST")
 
-       **Arm 错误源表（Arm Error Source Table）**
+       **Arm 閿欒婧愯〃锛圓rm Error Source Table锛?*
 
-       该表告知操作系统系统中所有符合 Arm RAS 架构的错误节点。
-
+       璇ヨ〃鍛婄煡鎿嶄綔绯荤粺绯荤粺涓墍鏈夌鍚?Arm RAS 鏋舵瀯鐨勯敊璇妭鐐广€?
 AGDI   Signature Reserved (signature == "AGDI")
 
-       **Arm 通用诊断转储与复位设备接口表（Arm Generic diagnostic Dump and Reset Device Interface Table）**
+       **Arm 閫氱敤璇婃柇杞偍涓庡浣嶈澶囨帴鍙ｈ〃锛圓rm Generic diagnostic Dump and Reset Device Interface Table锛?*
 
-       该表描述一个不可屏蔽事件，由平台固件使用，用于请求操作系统生成诊断转储并复位设备。
-
+       璇ヨ〃鎻忚堪涓€涓笉鍙睆钄戒簨浠讹紝鐢卞钩鍙板浐浠朵娇鐢紝鐢ㄤ簬璇锋眰鎿嶄綔绯荤粺鐢熸垚璇婃柇杞偍骞跺浣嶈澶囥€?
 APMT   Signature Reserved (signature == "APMT")
 
-       **Arm 性能监控表（Arm Performance Monitoring Table）**
+       **Arm 鎬ц兘鐩戞帶琛紙Arm Performance Monitoring Table锛?*
 
-       该表描述系统中各组件所实现的 PMU 支持属性。
-
+       璇ヨ〃鎻忚堪绯荤粺涓悇缁勪欢鎵€瀹炵幇鐨?PMU 鏀寔灞炴€с€?
 BERT   Section 18.3 (signature == "BERT")
 
-       **启动错误记录表（Boot Error Record Table）**
+       **鍚姩閿欒璁板綍琛紙Boot Error Record Table锛?*
 
-       如果平台提供 RAS 支持则必须提供。建议提供此表。
-
+       濡傛灉骞冲彴鎻愪緵 RAS 鏀寔鍒欏繀椤绘彁渚涖€傚缓璁彁渚涙琛ㄣ€?
 BOOT   Signature Reserved (signature == "BOOT")
 
-       **简单 BOOT 标志表（simple BOOT flag table）**
+       **绠€鍗?BOOT 鏍囧織琛紙simple BOOT flag table锛?*
 
-       仅微软使用的表，将不被支持。
-
+       浠呭井杞娇鐢ㄧ殑琛紝灏嗕笉琚敮鎸併€?
 BGRT   Section 5.2.22 (signature == "BGRT")
 
-       **启动图形资源表（Boot Graphics Resource Table）**
+       **鍚姩鍥惧舰璧勬簮琛紙Boot Graphics Resource Table锛?*
 
-       可选，当前不支持，对 ARM 服务器没有实际用例。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸侊紝瀵?ARM 鏈嶅姟鍣ㄦ病鏈夊疄闄呯敤渚嬨€?
 CEDT   Signature Reserved (signature == "CEDT")
 
-       **CXL 早期发现表（CXL Early Discovery Table）**
+       **CXL 鏃╂湡鍙戠幇琛紙CXL Early Discovery Table锛?*
 
-       该表允许操作系统发现任何 CXL 主机桥及其主机桥寄存器。
-
+       璇ヨ〃鍏佽鎿嶄綔绯荤粺鍙戠幇浠讳綍 CXL 涓绘満妗ュ強鍏朵富鏈烘ˉ瀵勫瓨鍣ㄣ€?
 CPEP   Section 5.2.18 (signature == "CPEP")
 
-       **已修正平台错误轮询表（Corrected Platform Error Polling table）**
+       **宸蹭慨姝ｅ钩鍙伴敊璇疆璇㈣〃锛圕orrected Platform Error Polling table锛?*
 
-       可选，当前不支持，且在具备 ARM 兼容硬件并适当修改规范之前不建议使用。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸侊紝涓斿湪鍏峰 ARM 鍏煎纭欢骞堕€傚綋淇敼瑙勮寖涔嬪墠涓嶅缓璁娇鐢ㄣ€?
 CSRT   Signature Reserved (signature == "CSRT")
 
-       **核心系统资源表（Core System Resources Table）**
+       **鏍稿績绯荤粺璧勬簮琛紙Core System Resources Table锛?*
 
-       可选，当前不支持。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸併€?
 DBG2   Signature Reserved (signature == "DBG2")
 
-       **调试端口表 2（DeBuG port table 2）**
+       **璋冭瘯绔彛琛?2锛圖eBuG port table 2锛?*
 
-       许可证已变更，应当可用。如果在命令行中替代 earlycon=<device> 使用则为可选。
-
+       璁稿彲璇佸凡鍙樻洿锛屽簲褰撳彲鐢ㄣ€傚鏋滃湪鍛戒护琛屼腑鏇夸唬 earlycon=<device> 浣跨敤鍒欎负鍙€夈€?
 DBGP   Signature Reserved (signature == "DBGP")
 
-       **调试端口表（DeBuG Port table）**
+       **璋冭瘯绔彛琛紙DeBuG Port table锛?*
 
-       仅微软使用的表，将不被支持。
-
+       浠呭井杞娇鐢ㄧ殑琛紝灏嗕笉琚敮鎸併€?
 DSDT   Section 5.2.11.1 (signature == "DSDT")
 
-       **差异化系统描述表（Differentiated System Description Table）**
+       **宸紓鍖栫郴缁熸弿杩拌〃锛圖ifferentiated System Description Table锛?*
 
-       DSDT 是必需的；另见 SSDT。
-
-       ACPI 表只包含一个 DSDT，但可以包含一个或多个可选的 SSDT。每个 SSDT 只能向
-       ACPI 命名空间添加内容，不能修改或替换 DSDT 中的任何内容。
-
+       DSDT 鏄繀闇€鐨勶紱鍙﹁ SSDT銆?
+       ACPI 琛ㄥ彧鍖呭惈涓€涓?DSDT锛屼絾鍙互鍖呭惈涓€涓垨澶氫釜鍙€夌殑 SSDT銆傛瘡涓?SSDT 鍙兘鍚?       ACPI 鍛藉悕绌洪棿娣诲姞鍐呭锛屼笉鑳戒慨鏀规垨鏇挎崲 DSDT 涓殑浠讳綍鍐呭銆?
 DMAR   Signature Reserved (signature == "DMAR")
 
-       **DMA 重映射表（DMA Remapping table）**
+       **DMA 閲嶆槧灏勮〃锛圖MA Remapping table锛?*
 
-       仅 x86 使用的表，将不被支持。
-
+       浠?x86 浣跨敤鐨勮〃锛屽皢涓嶈鏀寔銆?
 DRTM   Signature Reserved (signature == "DRTM")
 
-       **动态度量信任根表（Dynamic Root of Trust for Measurement table）**
+       **鍔ㄦ€佸害閲忎俊浠绘牴琛紙Dynamic Root of Trust for Measurement table锛?*
 
-       可选，当前不支持。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸併€?
 ECDT   Section 5.2.16 (signature == "ECDT")
 
-       **嵌入式控制器描述表（Embedded Controller Description Table）**
+       **宓屽叆寮忔帶鍒跺櫒鎻忚堪琛紙Embedded Controller Description Table锛?*
 
-       可选，当前不支持，但仅在硬件精简模式下使用 GPE_BIT 字段来表示 IRQ 号时才可能在
-       ARM 上使用，因为在硬件精简模式下没有定义 GPE 块。这需要在 ACPI 规范中作出修改。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸侊紝浣嗕粎鍦ㄧ‖浠剁簿绠€妯″紡涓嬩娇鐢?GPE_BIT 瀛楁鏉ヨ〃绀?IRQ 鍙锋椂鎵嶅彲鑳藉湪
+       ARM 涓婁娇鐢紝鍥犱负鍦ㄧ‖浠剁簿绠€妯″紡涓嬫病鏈夊畾涔?GPE 鍧椼€傝繖闇€瑕佸湪 ACPI 瑙勮寖涓綔鍑轰慨鏀广€?
 EINJ   Section 18.6 (signature == "EINJ")
 
-       **错误注入表（Error Injection table）**
+       **閿欒娉ㄥ叆琛紙Error Injection table锛?*
 
-       该表对于测试平台对错误条件的响应非常有用；它允许向系统中注入一个错误，就像它实际
-       发生一样。但是，此表不应随生产系统发布；它应仅在测试期间使用 ACPICA 工具动态加载
-       和执行。
-
+       璇ヨ〃瀵逛簬娴嬭瘯骞冲彴瀵归敊璇潯浠剁殑鍝嶅簲闈炲父鏈夌敤锛涘畠鍏佽鍚戠郴缁熶腑娉ㄥ叆涓€涓敊璇紝灏卞儚瀹冨疄闄?       鍙戠敓涓€鏍枫€備絾鏄紝姝よ〃涓嶅簲闅忕敓浜х郴缁熷彂甯冿紱瀹冨簲浠呭湪娴嬭瘯鏈熼棿浣跨敤 ACPICA 宸ュ叿鍔ㄦ€佸姞杞?       鍜屾墽琛屻€?
 ERST   Section 18.5 (signature == "ERST")
 
-       **错误记录序列化表（Error Record Serialization Table）**
+       **閿欒璁板綍搴忓垪鍖栬〃锛圗rror Record Serialization Table锛?*
 
-       在支持 RAS 的平台上，若其非基于 UEFI，则必须提供此表；若基于 UEFI，则可以提供此表。
-       当没有此表时，将使用 UEFI 运行时服务来在持久化存储中保存和取回硬件错误信息。
-
+       鍦ㄦ敮鎸?RAS 鐨勫钩鍙颁笂锛岃嫢鍏堕潪鍩轰簬 UEFI锛屽垯蹇呴』鎻愪緵姝よ〃锛涜嫢鍩轰簬 UEFI锛屽垯鍙互鎻愪緵姝よ〃銆?       褰撴病鏈夋琛ㄦ椂锛屽皢浣跨敤 UEFI 杩愯鏃舵湇鍔℃潵鍦ㄦ寔涔呭寲瀛樺偍涓繚瀛樺拰鍙栧洖纭欢閿欒淇℃伅銆?
 ETDT   Signature Reserved (signature == "ETDT")
 
-       **事件定时器描述表（Event Timer Description Table）**
+       **浜嬩欢瀹氭椂鍣ㄦ弿杩拌〃锛圗vent Timer Description Table锛?*
 
-       已废弃的表，将不被支持。
-
+       宸插簾寮冪殑琛紝灏嗕笉琚敮鎸併€?
 FACS   Section 5.2.10 (signature == "FACS")
 
-       **固件 ACPI 控制结构（Firmware ACPI Control Structure）**
+       **鍥轰欢 ACPI 鎺у埗缁撴瀯锛團irmware ACPI Control Structure锛?*
 
-       该表不太可能非常有用。如果提供，将不会使用全局锁，因为它不属于硬件精简配置的一部分，
-       并且只有 64 位地址字段会被视为有效。
-
+       璇ヨ〃涓嶅お鍙兘闈炲父鏈夌敤銆傚鏋滄彁渚涳紝灏嗕笉浼氫娇鐢ㄥ叏灞€閿侊紝鍥犱负瀹冧笉灞炰簬纭欢绮剧畝閰嶇疆鐨勪竴閮ㄥ垎锛?       骞朵笖鍙湁 64 浣嶅湴鍧€瀛楁浼氳瑙嗕负鏈夋晥銆?
 FADT   Section 5.2.9 (signature == "FACP")
 
-       **固定 ACPI 描述表（Fixed ACPI Description Table）**
-       对 arm64 是必需的。
+       **鍥哄畾 ACPI 鎻忚堪琛紙Fixed ACPI Description Table锛?*
+       瀵?arm64 鏄繀闇€鐨勩€?
 
-
-       HW_REDUCED_ACPI 标志必须设置。当设置 HW_REDUCED_ACPI 时应忽略的所有字段都应为零。
-
-       如果提供了 FACS 表，应使用 X_FIRMWARE_CTRL 字段，而不是 FIRMWARE_CTRL。
-
-       如果使用 PSCI（如建议），请确保正确填写 ARM_BOOT_ARCH —— 设置 PSCI_COMPLIANT 标志，
-       并根据需要设置或清除 PSCI_USE_HVC（见表 5-37）。
-
-       对于同样必需的 DSDT，应使用 X_DSDT 字段，而不是 DSDT 字段。
-
+       HW_REDUCED_ACPI 鏍囧織蹇呴』璁剧疆銆傚綋璁剧疆 HW_REDUCED_ACPI 鏃跺簲蹇界暐鐨勬墍鏈夊瓧娈甸兘搴斾负闆躲€?
+       濡傛灉鎻愪緵浜?FACS 琛紝搴斾娇鐢?X_FIRMWARE_CTRL 瀛楁锛岃€屼笉鏄?FIRMWARE_CTRL銆?
+       濡傛灉浣跨敤 PSCI锛堝寤鸿锛夛紝璇风‘淇濇纭～鍐?ARM_BOOT_ARCH 鈥斺€?璁剧疆 PSCI_COMPLIANT 鏍囧織锛?       骞舵牴鎹渶瑕佽缃垨娓呴櫎 PSCI_USE_HVC锛堣琛?5-37锛夈€?
+       瀵逛簬鍚屾牱蹇呴渶鐨?DSDT锛屽簲浣跨敤 X_DSDT 瀛楁锛岃€屼笉鏄?DSDT 瀛楁銆?
 FPDT   Section 5.2.23 (signature == "FPDT")
 
-       **固件性能数据表（Firmware Performance Data Table）**
+       **鍥轰欢鎬ц兘鏁版嵁琛紙Firmware Performance Data Table锛?*
 
-       可选，对启动性能分析有用。
-
+       鍙€夛紝瀵瑰惎鍔ㄦ€ц兘鍒嗘瀽鏈夌敤銆?
 GTDT   Section 5.2.24 (signature == "GTDT")
 
-       **通用定时器描述表（Generic Timer Description Table）**
+       **閫氱敤瀹氭椂鍣ㄦ弿杩拌〃锛圙eneric Timer Description Table锛?*
 
-       对 arm64 是必需的。
-
+       瀵?arm64 鏄繀闇€鐨勩€?
 HEST   Section 18.3.2 (signature == "HEST")
 
-       **硬件错误源表（Hardware Error Source Table）**
+       **纭欢閿欒婧愯〃锛圚ardware Error Source Table锛?*
 
-       已经定义了 ARM 特有的错误源；请使用这些，或者使用 PCI 类型，例如类型 6（AER 根端口）、
-       7（AER 端点）或 8（AER 桥），或者使用类型 9（通用硬件错误源）。仅在 arm64 上使用
-       Trusted Firmware 时才可能进行固件优先的错误处理。
-
-       如果平台提供 RAS 支持则必须提供。建议提供此表。
-
+       宸茬粡瀹氫箟浜?ARM 鐗规湁鐨勯敊璇簮锛涜浣跨敤杩欎簺锛屾垨鑰呬娇鐢?PCI 绫诲瀷锛屼緥濡傜被鍨?6锛圓ER 鏍圭鍙ｏ級銆?       7锛圓ER 绔偣锛夋垨 8锛圓ER 妗ワ級锛屾垨鑰呬娇鐢ㄧ被鍨?9锛堥€氱敤纭欢閿欒婧愶級銆備粎鍦?arm64 涓婁娇鐢?       Trusted Firmware 鏃舵墠鍙兘杩涜鍥轰欢浼樺厛鐨勯敊璇鐞嗐€?
+       濡傛灉骞冲彴鎻愪緵 RAS 鏀寔鍒欏繀椤绘彁渚涖€傚缓璁彁渚涙琛ㄣ€?
 HMAT   Section 5.2.28 (signature == "HMAT")
 
-       **异构内存属性表（Heterogeneous Memory Attribute Table）**
+       **寮傛瀯鍐呭瓨灞炴€ц〃锛圚eterogeneous Memory Attribute Table锛?*
 
-       该表描述与内存邻近域相关的内存属性，例如内存侧缓存属性以及带宽和延迟细节。操作系统
-       使用这些信息来优化系统内存配置。
-
+       璇ヨ〃鎻忚堪涓庡唴瀛橀偦杩戝煙鐩稿叧鐨勫唴瀛樺睘鎬э紝渚嬪鍐呭瓨渚х紦瀛樺睘鎬т互鍙婂甫瀹藉拰寤惰繜缁嗚妭銆傛搷浣滅郴缁?       浣跨敤杩欎簺淇℃伅鏉ヤ紭鍖栫郴缁熷唴瀛橀厤缃€?
 HPET   Signature Reserved (signature == "HPET")
 
-       **高精度事件定时器表（High Precision Event timer Table）**
+       **楂樼簿搴︿簨浠跺畾鏃跺櫒琛紙High Precision Event timer Table锛?*
 
-       仅 x86 使用的表，将不被支持。
-
+       浠?x86 浣跨敤鐨勮〃锛屽皢涓嶈鏀寔銆?
 IBFT   Signature Reserved (signature == "IBFT")
 
-       **iSCSI 启动固件表（iSCSI Boot Firmware Table）**
+       **iSCSI 鍚姩鍥轰欢琛紙iSCSI Boot Firmware Table锛?*
 
-       微软定义的表，支持情况待定。
-
+       寰蒋瀹氫箟鐨勮〃锛屾敮鎸佹儏鍐靛緟瀹氥€?
 IORT   Signature Reserved (signature == "IORT")
 
-       **输入输出重映射表（Input Output Remapping Table）**
+       **杈撳叆杈撳嚭閲嶆槧灏勮〃锛圛nput Output Remapping Table锛?*
 
-       仅 arm64 使用的表，用于描述 IO 拓扑、SMMU 和 GIC ITS，以及这些不同组件如何连接在一起，
-       例如标识哪些组件位于哪些 SMMU/ITS 之后。该表仅在特定 SBSA 平台上是必需的（例如使用
-       GICv3-ITS 和 SMMU 时）；在 SBSA Level 0 平台上它仍是可选的。
-
+       浠?arm64 浣跨敤鐨勮〃锛岀敤浜庢弿杩?IO 鎷撴墤銆丼MMU 鍜?GIC ITS锛屼互鍙婅繖浜涗笉鍚岀粍浠跺浣曡繛鎺ュ湪涓€璧凤紝
+       渚嬪鏍囪瘑鍝簺缁勪欢浣嶄簬鍝簺 SMMU/ITS 涔嬪悗銆傝琛ㄤ粎鍦ㄧ壒瀹?SBSA 骞冲彴涓婃槸蹇呴渶鐨勶紙渚嬪浣跨敤
+       GICv3-ITS 鍜?SMMU 鏃讹級锛涘湪 SBSA Level 0 骞冲彴涓婂畠浠嶆槸鍙€夌殑銆?
 IVRS   Signature Reserved (signature == "IVRS")
 
-       **I/O 虚拟化报告结构（I/O Virtualization Reporting Structure）**
+       **I/O 铏氭嫙鍖栨姤鍛婄粨鏋勶紙I/O Virtualization Reporting Structure锛?*
 
-       仅 x86_64（AMD）使用的表，将不被支持。
-
+       浠?x86_64锛圓MD锛変娇鐢ㄧ殑琛紝灏嗕笉琚敮鎸併€?
 LPIT   Signature Reserved (signature == "LPIT")
 
-       **低功耗空闲表（Low Power Idle Table）**
+       **浣庡姛鑰楃┖闂茶〃锛圠ow Power Idle Table锛?*
 
-       在 ACPI 5.1 之前仅 x86 使用的表；从 ACPI 6.0 起，ARM 平台上的处理器描述和电源状态应
-       使用 DSDT 并定义处理器容器设备（_HID ACPI0010，第 8.4 节，更具体地是 8.4.3 和 8.4.4）。
-
+       鍦?ACPI 5.1 涔嬪墠浠?x86 浣跨敤鐨勮〃锛涗粠 ACPI 6.0 璧凤紝ARM 骞冲彴涓婄殑澶勭悊鍣ㄦ弿杩板拰鐢垫簮鐘舵€佸簲
+       浣跨敤 DSDT 骞跺畾涔夊鐞嗗櫒瀹瑰櫒璁惧锛坃HID ACPI0010锛岀 8.4 鑺傦紝鏇村叿浣撳湴鏄?8.4.3 鍜?8.4.4锛夈€?
 MADT   Section 5.2.12 (signature == "APIC")
 
-       **多 APIC 描述表（Multiple APIC Description Table）**
+       **澶?APIC 鎻忚堪琛紙Multiple APIC Description Table锛?*
 
-       对 arm64 是必需的。只应使用 GIC 中断控制器结构（类型 0xA - 0xF）。
-
+       瀵?arm64 鏄繀闇€鐨勩€傚彧搴斾娇鐢?GIC 涓柇鎺у埗鍣ㄧ粨鏋勶紙绫诲瀷 0xA - 0xF锛夈€?
 MCFG   Signature Reserved (signature == "MCFG")
 
-       **内存映射配置空间（Memory-mapped ConFiGuration space）**
+       **鍐呭瓨鏄犲皠閰嶇疆绌洪棿锛圡emory-mapped ConFiGuration space锛?*
 
-       如果平台支持 PCI/PCIe，则需要 MCFG 表。
-
+       濡傛灉骞冲彴鏀寔 PCI/PCIe锛屽垯闇€瑕?MCFG 琛ㄣ€?
 MCHI   Signature Reserved (signature == "MCHI")
 
-       **管理控制器主机接口表（Management Controller Host Interface table）**
+       **绠＄悊鎺у埗鍣ㄤ富鏈烘帴鍙ｈ〃锛圡anagement Controller Host Interface table锛?*
 
-       可选，当前不支持。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸併€?
 MPAM   Signature Reserved (signature == "MPAM")
 
-       **内存分区与监控表（Memory Partitioning And Monitoring table）**
+       **鍐呭瓨鍒嗗尯涓庣洃鎺ц〃锛圡emory Partitioning And Monitoring table锛?*
 
-       该表允许操作系统发现各子系统实现的 MPAM 控制。
-
+       璇ヨ〃鍏佽鎿嶄綔绯荤粺鍙戠幇鍚勫瓙绯荤粺瀹炵幇鐨?MPAM 鎺у埗銆?
 MPST   Section 5.2.21 (signature == "MPST")
 
-       **内存电源状态表（Memory Power State Table）**
+       **鍐呭瓨鐢垫簮鐘舵€佽〃锛圡emory Power State Table锛?*
 
-       可选，当前不支持。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸併€?
 MSCT   Section 5.2.19 (signature == "MSCT")
 
-       **最大系统特性表（Maximum System Characteristic Table）**
+       **鏈€澶х郴缁熺壒鎬ц〃锛圡aximum System Characteristic Table锛?*
 
-       可选，当前不支持。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸併€?
 MSDM   Signature Reserved (signature == "MSDM")
 
-       **微软数据管理表（Microsoft Data Management table）**
+       **寰蒋鏁版嵁绠＄悊琛紙Microsoft Data Management table锛?*
 
-       仅微软使用的表，将不被支持。
-
+       浠呭井杞娇鐢ㄧ殑琛紝灏嗕笉琚敮鎸併€?
 NFIT   Section 5.2.25 (signature == "NFIT")
 
-       **NVDIMM 固件接口表（NVDIMM Firmware Interface Table）**
+       **NVDIMM 鍥轰欢鎺ュ彛琛紙NVDIMM Firmware Interface Table锛?*
 
-       可选，当前不支持。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸併€?
 OEMx   Signature of "OEMx" only
 
-       **OEM 特定表（OEM Specific Tables）**
+       **OEM 鐗瑰畾琛紙OEM Specific Tables锛?*
 
-       所有以 "OEM" 签名的表都保留给 OEM 使用。由于这些表并非用于通用目的，而是限于非常
-       特定的最终用户，因此不建议使用，并且 arm64 的内核也不支持它们。
-
+       鎵€鏈変互 "OEM" 绛惧悕鐨勮〃閮戒繚鐣欑粰 OEM 浣跨敤銆傜敱浜庤繖浜涜〃骞堕潪鐢ㄤ簬閫氱敤鐩殑锛岃€屾槸闄愪簬闈炲父
+       鐗瑰畾鐨勬渶缁堢敤鎴凤紝鍥犳涓嶅缓璁娇鐢紝骞朵笖 arm64 鐨勫唴鏍镐篃涓嶆敮鎸佸畠浠€?
 PCCT   Section 14.1 (signature == "PCCT)
 
-       **平台通信通道表（Platform Communications Channel Table）**
+       **骞冲彴閫氫俊閫氶亾琛紙Platform Communications Channel Table锛?*
 
-       推荐在 arm64 上使用；当使用 CPPC 控制平台处理器的性能和功耗时，建议使用 PCC。
-
+       鎺ㄨ崘鍦?arm64 涓婁娇鐢紱褰撲娇鐢?CPPC 鎺у埗骞冲彴澶勭悊鍣ㄧ殑鎬ц兘鍜屽姛鑰楁椂锛屽缓璁娇鐢?PCC銆?
 PDTT   Section 5.2.29 (signature == "PDTT")
 
-       **平台调试触发表（Platform Debug Trigger Table）**
+       **骞冲彴璋冭瘯瑙﹀彂琛紙Platform Debug Trigger Table锛?*
 
-       该表描述用于收集非架构特性调试日志的 PCC 通道。
-
+       璇ヨ〃鎻忚堪鐢ㄤ簬鏀堕泦闈炴灦鏋勭壒鎬ц皟璇曟棩蹇楃殑 PCC 閫氶亾銆?
 
 PMTT   Section 5.2.21.12 (signature == "PMTT")
 
-       **平台内存拓扑表（Platform Memory Topology Table）**
+       **骞冲彴鍐呭瓨鎷撴墤琛紙Platform Memory Topology Table锛?*
 
-       可选，当前不支持。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸併€?
 PPTT   Section 5.2.30 (signature == "PPTT")
 
-       **处理器属性拓扑表（Processor Properties Topology Table）**
+       **澶勭悊鍣ㄥ睘鎬ф嫇鎵戣〃锛圥rocessor Properties Topology Table锛?*
 
-       该表提供处理器和缓存拓扑。
-
+       璇ヨ〃鎻愪緵澶勭悊鍣ㄥ拰缂撳瓨鎷撴墤銆?
 PSDT   Section 5.2.11.3 (signature == "PSDT")
 
-       **持久系统描述表（Persistent System Description Table）**
+       **鎸佷箙绯荤粺鎻忚堪琛紙Persistent System Description Table锛?*
 
-       已废弃的表，将不被支持。
-
+       宸插簾寮冪殑琛紝灏嗕笉琚敮鎸併€?
 RAS2   Section 5.2.21 (signature == "RAS2")
 
-       **RAS 特性 2 表（RAS Features 2 table）**
+       **RAS 鐗规€?2 琛紙RAS Features 2 table锛?*
 
-       该表为平台实现的 RAS 能力提供接口。
-
+       璇ヨ〃涓哄钩鍙板疄鐜扮殑 RAS 鑳藉姏鎻愪緵鎺ュ彛銆?
 RASF   Section 5.2.20 (signature == "RASF")
 
-       **RAS 特性表（RAS Feature table）**
+       **RAS 鐗规€ц〃锛圧AS Feature table锛?*
 
-       可选，当前不支持。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸併€?
 RSDP   Section 5.2.5 (signature == "RSD PTR")
 
-       **根系统描述指针（Root System Description PoinTeR）**
+       **鏍圭郴缁熸弿杩版寚閽堬紙Root System Description PoinTeR锛?*
 
-       对 arm64 是必需的。
-
+       瀵?arm64 鏄繀闇€鐨勩€?
 RSDT   Section 5.2.7 (signature == "RSDT")
 
-       **根系统描述表（Root System Description Table）**
+       **鏍圭郴缁熸弿杩拌〃锛圧oot System Description Table锛?*
 
-       由于该表只能提供 32 位地址，它在 arm64 上已被废弃，将不会被使用。如果提供，它将被忽略。
-
+       鐢变簬璇ヨ〃鍙兘鎻愪緵 32 浣嶅湴鍧€锛屽畠鍦?arm64 涓婂凡琚簾寮冿紝灏嗕笉浼氳浣跨敤銆傚鏋滄彁渚涳紝瀹冨皢琚拷鐣ャ€?
 SBST   Section 5.2.14 (signature == "SBST")
 
-       **智能电池子系统表（Smart Battery Subsystem Table）**
+       **鏅鸿兘鐢垫睜瀛愮郴缁熻〃锛圫mart Battery Subsystem Table锛?*
 
-       可选，当前不支持。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸併€?
 SDEI   Signature Reserved (signature == "SDEI")
 
-       **软件委托异常接口表（Software Delegated Exception Interface table）**
+       **杞欢濮旀墭寮傚父鎺ュ彛琛紙Software Delegated Exception Interface table锛?*
 
-       该表通告 SDEI 接口的存在。
-
+       璇ヨ〃閫氬憡 SDEI 鎺ュ彛鐨勫瓨鍦ㄣ€?
 SLIC   Signature Reserved (signature == "SLIC")
 
-       **软件许可表（Software LIcensing table）**
+       **杞欢璁稿彲琛紙Software LIcensing table锛?*
 
-       仅微软使用的表，将不被支持。
-
+       浠呭井杞娇鐢ㄧ殑琛紝灏嗕笉琚敮鎸併€?
 SLIT   Section 5.2.17 (signature == "SLIT")
 
-       **系统局部性距离信息表（System Locality distance Information Table）**
+       **绯荤粺灞€閮ㄦ€ц窛绂讳俊鎭〃锛圫ystem Locality distance Information Table锛?*
 
-       一般来说可选，但对 NUMA 系统是必需的。
-
+       涓€鑸潵璇村彲閫夛紝浣嗗 NUMA 绯荤粺鏄繀闇€鐨勩€?
 SPCR   Signature Reserved (signature == "SPCR")
 
-       **串口控制台重定向表（Serial Port Console Redirection table）**
+       **涓插彛鎺у埗鍙伴噸瀹氬悜琛紙Serial Port Console Redirection table锛?*
 
-       对 arm64 是必需的。
-
+       瀵?arm64 鏄繀闇€鐨勩€?
 SPMI   Signature Reserved (signature == "SPMI")
 
-       **服务器平台管理接口表（Server Platform Management Interface table）**
+       **鏈嶅姟鍣ㄥ钩鍙扮鐞嗘帴鍙ｈ〃锛圫erver Platform Management Interface table锛?*
 
-       可选，当前不支持。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸併€?
 SRAT   Section 5.2.16 (signature == "SRAT")
 
-       **系统资源亲和性表（System Resource Affinity Table）**
+       **绯荤粺璧勬簮浜插拰鎬ц〃锛圫ystem Resource Affinity Table锛?*
 
-       可选，但如果使用，则只读取 GICC Affinity 结构。为了支持 arm64 NUMA，此表是必需的。
-
+       鍙€夛紝浣嗗鏋滀娇鐢紝鍒欏彧璇诲彇 GICC Affinity 缁撴瀯銆備负浜嗘敮鎸?arm64 NUMA锛屾琛ㄦ槸蹇呴渶鐨勩€?
 SSDT   Section 5.2.11.2 (signature == "SSDT")
 
-       **辅助系统描述表（Secondary System Description Table）**
+       **杈呭姪绯荤粺鎻忚堪琛紙Secondary System Description Table锛?*
 
-       这些表是 DSDT 的延续；建议将它们用于可以添加到运行中的系统的设备，但也可以起到将
-       设备描述拆分为更易管理的片段的作用。
-
-       SSDT 只能向 ACPI 命名空间添加内容。它不能修改或替换命名空间中已有的设备描述。
-
-       不过这些表是可选的。ACPI 表应只包含一个 DSDT，但可以包含多个 SSDT。
-
+       杩欎簺琛ㄦ槸 DSDT 鐨勫欢缁紱寤鸿灏嗗畠浠敤浜庡彲浠ユ坊鍔犲埌杩愯涓殑绯荤粺鐨勮澶囷紝浣嗕篃鍙互璧峰埌灏?       璁惧鎻忚堪鎷嗗垎涓烘洿鏄撶鐞嗙殑鐗囨鐨勪綔鐢ㄣ€?
+       SSDT 鍙兘鍚?ACPI 鍛藉悕绌洪棿娣诲姞鍐呭銆傚畠涓嶈兘淇敼鎴栨浛鎹㈠懡鍚嶇┖闂翠腑宸叉湁鐨勮澶囨弿杩般€?
+       涓嶈繃杩欎簺琛ㄦ槸鍙€夌殑銆侫CPI 琛ㄥ簲鍙寘鍚竴涓?DSDT锛屼絾鍙互鍖呭惈澶氫釜 SSDT銆?
 STAO   Signature Reserved (signature == "STAO")
 
-       **_STA 覆盖表（_STA Override table）**
+       **_STA 瑕嗙洊琛紙_STA Override table锛?*
 
-       可选，但仅在虚拟化环境中为了向客户机操作系统隐藏设备时才需要。
-
+       鍙€夛紝浣嗕粎鍦ㄨ櫄鎷熷寲鐜涓负浜嗗悜瀹㈡埛鏈烘搷浣滅郴缁熼殣钘忚澶囨椂鎵嶉渶瑕併€?
 TCPA   Signature Reserved (signature == "TCPA")
 
-       **可信计算平台联盟表（Trusted Computing Platform Alliance table）**
+       **鍙俊璁＄畻骞冲彴鑱旂洘琛紙Trusted Computing Platform Alliance table锛?*
 
-       可选，当前不支持，并且可能需要修改才能与 arm64 完全互操作。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸侊紝骞朵笖鍙兘闇€瑕佷慨鏀规墠鑳戒笌 arm64 瀹屽叏浜掓搷浣溿€?
 TPM2   Signature Reserved (signature == "TPM2")
 
-       **可信平台模块 2 表（Trusted Platform Module 2 table）**
+       **鍙俊骞冲彴妯″潡 2 琛紙Trusted Platform Module 2 table锛?*
 
-       可选，当前不支持，并且可能需要修改才能与 arm64 完全互操作。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸侊紝骞朵笖鍙兘闇€瑕佷慨鏀规墠鑳戒笌 arm64 瀹屽叏浜掓搷浣溿€?
 UEFI   Signature Reserved (signature == "UEFI")
 
-       **UEFI ACPI 数据表（UEFI ACPI data table）**
+       **UEFI ACPI 鏁版嵁琛紙UEFI ACPI data table锛?*
 
-       可选，当前不支持。目前对 arm64 没有已知用例。
-
+       鍙€夛紝褰撳墠涓嶆敮鎸併€傜洰鍓嶅 arm64 娌℃湁宸茬煡鐢ㄤ緥銆?
 WAET   Signature Reserved (signature == "WAET")
 
-       **Windows ACPI 模拟设备表（Windows ACPI Emulated devices Table）**
+       **Windows ACPI 妯℃嫙璁惧琛紙Windows ACPI Emulated devices Table锛?*
 
-       仅微软使用的表，将不被支持。
-
+       浠呭井杞娇鐢ㄧ殑琛紝灏嗕笉琚敮鎸併€?
 WDAT   Signature Reserved (signature == "WDAT")
 
-       **看门狗动作表（Watch Dog Action Table）**
+       **鐪嬮棬鐙楀姩浣滆〃锛圵atch Dog Action Table锛?*
 
-       仅微软使用的表，将不被支持。
-
+       浠呭井杞娇鐢ㄧ殑琛紝灏嗕笉琚敮鎸併€?
 WDRT   Signature Reserved (signature == "WDRT")
 
-       **看门狗资源表（Watch Dog Resource Table）**
+       **鐪嬮棬鐙楄祫婧愯〃锛圵atch Dog Resource Table锛?*
 
-       仅微软使用的表，将不被支持。
-
+       浠呭井杞娇鐢ㄧ殑琛紝灏嗕笉琚敮鎸併€?
 WPBT   Signature Reserved (signature == "WPBT")
 
-       **Windows 平台二进制表（Windows Platform Binary Table）**
+       **Windows 骞冲彴浜岃繘鍒惰〃锛圵indows Platform Binary Table锛?*
 
-       仅微软使用的表，将不被支持。
-
+       浠呭井杞娇鐢ㄧ殑琛紝灏嗕笉琚敮鎸併€?
 XENV   Signature Reserved (signature == "XENV")
 
-       **Xen 项目表（Xen project table）**
+       **Xen 椤圭洰琛紙Xen project table锛?*
 
-       可选，目前仅 Xen 使用。
-
+       鍙€夛紝鐩墠浠?Xen 浣跨敤銆?
 XSDT   Section 5.2.8 (signature == "XSDT")
 
-       **扩展系统描述表（eXtended System Description Table）**
+       **鎵╁睍绯荤粺鎻忚堪琛紙eXtended System Description Table锛?*
 
-       对 arm64 是必需的。
-====== ========================================================================
+       瀵?arm64 鏄繀闇€鐨勩€?====== ========================================================================
 
-### ACPI 对象
+### ACPI 瀵硅薄
 
-下面列出了可能使用的各个 ACPI 对象的期望；任何未在下面明确提及的对象都应根据特定平台或特定
-子系统（例如电源管理或 PCI）的需要来使用。
-
+涓嬮潰鍒楀嚭浜嗗彲鑳戒娇鐢ㄧ殑鍚勪釜 ACPI 瀵硅薄鐨勬湡鏈涳紱浠讳綍鏈湪涓嬮潰鏄庣‘鎻愬強鐨勫璞￠兘搴旀牴鎹壒瀹氬钩鍙版垨鐗瑰畾
+瀛愮郴缁燂紙渚嬪鐢垫簮绠＄悊鎴?PCI锛夌殑闇€瑕佹潵浣跨敤銆?
 ===== ================ ========================================================
 Name   Section         Usage for ARMv8 Linux
 ===== ================ ========================================================
-_CCA   6.2.17         该方法必须为 arm64 上所有总线主设备定义 —— 不会对这些设备
-                      是否缓存一致做任何假设。_CCA 值由这些设备的所有后代继承，因此无需
-                      重复定义。在 arm64 上若没有 _CCA，内核不知道该如何为该设备设置 DMA。
+_CCA   6.2.17         璇ユ柟娉曞繀椤讳负 arm64 涓婃墍鏈夋€荤嚎涓昏澶囧畾涔?鈥斺€?涓嶄細瀵硅繖浜涜澶?                      鏄惁缂撳瓨涓€鑷村仛浠讳綍鍋囪銆俖CCA 鍊肩敱杩欎簺璁惧鐨勬墍鏈夊悗浠ｇ户鎵匡紝鍥犳鏃犻渶
+                      閲嶅瀹氫箟銆傚湪 arm64 涓婅嫢娌℃湁 _CCA锛屽唴鏍镐笉鐭ラ亾璇ュ浣曚负璇ヨ澶囪缃?DMA銆?
+                      NB锛氳鏂规硶鎻愪緵榛樿鐨勭紦瀛樹竴鑷存€у睘鎬э紱涓嶈繃锛孲MMU 鐨勫瓨鍦ㄥ彲浠ュ姝よ繘琛?                      淇敼銆備緥濡傦紝鏌愪釜涓昏澶囬粯璁ゅ彲鑳芥槸闈炰竴鑷寸殑锛屼絾閫氳繃閫傚綋鐨?SMMU 閰嶇疆
+                      鍙互鍙樹负涓€鑷寸殑锛堝弬瑙?IORT 瑙勮寖琛?17锛孉RM 鏂囨。 DEN 0049B锛夈€?
+_CID   6.1.2          鎸夐渶浣跨敤锛屽彟瑙?_HID銆?
+_CLS   6.1.3          鎸夐渶浣跨敤锛屽彟瑙?_HID銆?
+_CPC   8.4.7.1        鎸夐渶浣跨敤锛岀壒瀹氫簬鐢垫簮绠＄悊銆傚湪 arm64 涓婃帹鑽愪娇鐢?CPPC銆?
+_CRS   6.2.2          鍦?arm64 涓婃槸蹇呴渶鐨勩€?
+_CSD   8.4.2.2        鎸夐渶浣跨敤锛屼粎涓?_CST 閰嶅悎浣跨敤銆?
+_CST   8.4.2.1        鎺ㄨ崘浣跨敤浣庡姛鑰楃┖闂茬姸鎬侊紙8.4.4锛夎€岄潪 C-states銆?
+_DDN   6.1.4          璇ュ瓧娈靛彲鐢ㄤ簬璁惧鍚嶇О銆備絾鏄紝瀹冩湰鎰忕敤浜?DOS 璁惧鍚嶇О锛堜緥濡?COM1锛夛紝
+                      鍥犳璺ㄦ搷浣滅郴缁熶娇鐢ㄦ椂瑕佸皬蹇冦€?
+_DSD   6.2.5          浣跨敤鏃跺簲璋ㄦ厧銆傚鏋滀娇鐢ㄦ瀵硅薄锛岃灏介噺鍦ㄨ澶囧睘鎬?UUID 宸插畾涔夌殑绾︽潫
+                      鑼冨洿鍐呬娇鐢ㄥ畠銆傚彧鏈夊湪鏋佸皯鏁版儏鍐典笅鎵嶉渶瑕佸垱寤烘柊鐨?_DSD UUID銆?
+                      鏃犺鍝鎯呭喌锛岄兘搴旀彁浜?_DSD 瀹氫箟浠ュ強浠讳綍椹卞姩琛ヤ竵浠ヤ緵璁ㄨ锛屽挨鍏舵槸鍦?                      浣跨敤璁惧灞炴€ф椂銆傛病鏈夌浉搴旂殑 _DSD 鎻忚堪锛岄┍鍔ㄥ皢琚涓轰笉瀹屾暣銆備竴鏃﹁幏寰?                      鍐呮牳缁存姢鑰呮壒鍑嗭紝UUID 鎴栬澶囧睘鎬ц繕蹇呴』鍚?UEFI Forum 娉ㄥ唽锛涚敱浜庝細鏈?                      澶氫釜鎿嶄綔绯荤粺娉ㄥ唽鏉＄洰锛岃繖鍙兘寮曡捣涓€浜涘弽澶嶃€?
+_DSM   9.1.1          涓嶈浣跨敤姝ゆ柟娉曘€傚畠鏈爣鍑嗗寲锛岃繑鍥炲€兼枃妗ｄ笉鍏紝骞朵笖鐩墠鏄绻佺殑閿欒鏉ユ簮銆?
+\_GL   5.7.1          璇ュ璞′笉搴斿湪纭欢绮剧畝妯″紡涓嬩娇鐢紝鍥犳涓嶅簲鍦?arm64 涓婁娇鐢ㄣ€?
+_GLK   6.5.7          璇ュ璞￠渶瑕佸畾涔変竴涓叏灞€閿侊紱鐢变簬 arm64 杩愯鍦ㄧ‖浠剁簿绠€妯″紡涓嬶紝娌℃湁
+                      鍏ㄥ眬閿併€傚洜姝わ紝涓嶈鍦?arm64 涓婁娇鐢ㄦ瀵硅薄銆?
+\_GPE  5.3.1          姝ゅ懡鍚嶇┖闂翠粎鐢ㄤ簬 x86銆備笉瑕佸湪 arm64 涓婁娇鐢ㄥ畠銆?
+_HID   6.1.5          杩欐槸鍦ㄨ澶囨帰娴嬩腑浣跨敤鐨勪富瑕佸璞★紝涓嶈繃涔熷彲浠ヤ娇鐢?_CID 鍜?_CLS銆?
+_INI   6.5.1          闈炲繀闇€锛屼絾褰?UEFI 灏嗚澶囩暀鍦ㄩ┍鍔ㄥ紑濮嬫帰娴嬪墠鍙兘涓嶆湡鏈涚殑鐘舵€佹椂锛屽畠瀵?                      璁剧疆璁惧鍙兘鏈夌敤銆?
+_LPI   8.4.4.3        鎺ㄨ崘鍦?arm64 涓婁笌澶勭悊鍣ㄥ畾涔夛紙_HID ACPI0010锛変竴璧蜂娇鐢ㄣ€傚彟瑙?_RDI銆?
+_MLS   6.1.7          寮虹儓鎺ㄨ崘鐢ㄤ簬鍥介檯鍖栥€?
+_OFF   7.2.2          寤鸿涓轰换浣曞彲浠ユ墦寮€鎴栧叧闂殑璁惧瀹氫箟姝ゆ柟娉曘€?
+_ON    7.2.3          寤鸿涓轰换浣曞彲浠ユ墦寮€鎴栧叧闂殑璁惧瀹氫箟姝ゆ柟娉曘€?
+\_OS   5.7.3          榛樿鎯呭喌涓嬫鏂规硶杩斿洖 "Linux"锛堣繖鏄?Linux 涓婂畯 ACPI_OS_NAME 鐨?                      鍊硷級銆傚懡浠よ鍙傛暟 acpi_os=<string> 鍙敤浜庡皢鍏惰缃负鍏朵粬鍊笺€?
+_OSC   6.2.11         姝ゆ柟娉曞彲浠ユ槸 ACPI 涓殑鍏ㄥ眬鏂规硶锛堝嵆 \_SB._OSC锛夛紝涔熷彲浠ヤ笌鐗瑰畾璁惧鍏宠仈
+                      锛堜緥濡?\_SB.DEV0._OSC锛夛紝鎴栦袱鑰呭吋鍏枫€傚綋鐢ㄤ綔鍏ㄥ眬鏂规硶鏃讹紝鍙厑璁镐娇鐢?ACPI
+                      瑙勮寖涓彂甯冪殑鑳藉姏銆傚綋鐢ㄤ綔璁惧鐗瑰畾鏂规硶鏃讹紝蹇呴』浣跨敤涓轰娇鐢?_DSD 鎵€鎻忚堪鐨?                      杩囩▼鏉ュ垱寤?_OSC 瀹氫箟锛涗笉鍏佽杩涚▼澶栦娇鐢?_OSC銆備篃灏辨槸璇达紝灏嗚澶囩壒瀹氱殑
+                      _OSC 鐢ㄦ硶鎻忚堪浣滀负鍐呮牳椹卞姩鎻愪氦鐨勪竴閮ㄥ垎鎻愪氦锛岃幏寰楀唴鏍哥ぞ鍖烘壒鍑嗭紝鐒跺悗鍚?                      UEFI Forum 娉ㄥ唽銆?
+\_OSI  5.7.2          鍦?ARM64 涓婂凡搴熷純銆傚氨 ACPI 鍥轰欢鑰岃█锛宊OSI 涓嶅簲鐢ㄤ簬纭畾姝ｅ湪浣跨敤浣曠
+		      绯荤粺鎴栨彁渚涗綍绉嶅姛鑳姐€傚簲浣跨敤 _OSC 鏂规硶浠ｆ浛銆?
+_PDC   8.4.1          宸插簾寮冿紝涓嶈鍦?arm64 涓婁娇鐢ㄣ€?
+\_PIC  5.8.1          涓嶅簲浣跨敤姝ゆ柟娉曘€傚湪 arm64 涓婏紝鍞竴鍙敤鐨勪腑鏂ā鍨嬫槸 GIC銆?
+\_PR   5.3.1          姝ゅ懡鍚嶇┖闂翠粎鐢ㄤ簬浼犵粺绯荤粺涓婄殑 x86銆備笉瑕佸湪 arm64 涓婁娇鐢ㄥ畠銆?
+_PRT   6.2.13         浣滀负鎵€鏈?PCI 鏍硅澶囧畾涔夌殑涓€閮ㄥ垎鏄繀闇€鐨勩€?
+_PRx   7.3.8-11       鎸夐渶浣跨敤锛涚壒瀹氫簬鐢垫簮绠＄悊銆傚鏋滃畾涔変簡 _PR0锛屽垯涔熷繀椤诲畾涔?_PR3銆?
+_PSx   7.3.2-5        鎸夐渶浣跨敤锛涚壒瀹氫簬鐢垫簮绠＄悊銆傚鏋滃畾涔変簡 _PS0锛屽垯涔熷繀椤诲畾涔?_PS3銆傚鏋?                      鏃堕挓鎴栬皟鑺傚櫒闇€瑕佽皟鏁翠互涓庡姛鑰椾竴鑷达紝璇峰湪杩欎簺鏂规硶涓洿鏀瑰畠浠€?
+_RDI   8.4.4.4        鎺ㄨ崘鍦?arm64 涓婁笌澶勭悊鍣ㄥ畾涔夛紙_HID ACPI0010锛変竴璧蜂娇鐢ㄣ€傝繖鍙簲涓?		      _LPI 閰嶅悎浣跨敤銆?
+\_REV  5.7.4          濮嬬粓杩斿洖鎵€鏀寔鐨勬渶鏂?ACPI 鐗堟湰銆?
+\_SB   5.3.1          鍦?arm64 涓婃槸蹇呴渶鐨勶紱鎵€鏈夎澶囬兘蹇呴』鍦ㄦ鍛藉悕绌洪棿涓畾涔夈€?
+_SLI   6.2.15         褰撲娇鐢?SLIT 琛ㄦ椂寤鸿浣跨敤銆?
+_STA   6.3.7,         寤鸿涓轰换浣曞彲浠ユ墦寮€鎴栧叧闂殑璁惧瀹氫箟姝ゆ柟娉曘€傚彟瑙?STAO 琛紝瀹冩彁渚涘湪
+       7.2.4          铏氭嫙鍖栫幆澧冧腑闅愯棌璁惧鐨勮鐩栥€?
+_SRS   6.2.16         鎸夐渶浣跨敤锛涘彟瑙?_PRS銆?
+_STR   6.1.10         鎺ㄨ崘鐢ㄤ簬鍚戞渶缁堢敤鎴蜂紶杈捐澶囧悕绉帮紱杩欎紭浜庝娇鐢?_DDN銆?
+_SUB   6.1.9          鎸夐渶浣跨敤锛涗紭鍏堜娇鐢?_HID 鎴?_CID銆?
+_SUN   6.1.11         鎸夐渶浣跨敤锛屼絾寤鸿浣跨敤銆?
+_SWS   7.4.3          鎸夐渶浣跨敤锛涚壒瀹氫簬鐢垫簮绠＄悊锛涘湪 arm64 涓婁娇鐢ㄥ彲鑳介渶瑕佽鑼冨彉鏇淬€?
+_UID   6.1.12         鎺ㄨ崘鐢ㄤ簬鍖哄垎鍚屼竴绫荤殑璁惧锛涘敖鍙兘瀹氫箟瀹冦€?===== ================ ========================================================
+
+
+
+
+### ACPI 浜嬩欢妯″瀷
+
+涓嶈浣跨敤 GPE 鍧楄澶囷紱杩欎簺鍦?arm64 浣跨敤鐨勭‖浠剁簿绠€閰嶇疆涓笉鍙楁敮鎸併€傜敱浜庡湪 ARM 骞冲彴涓婃湭瀹氫箟鐢ㄤ簬
+浣跨敤鐨?GPE 鍧楋紝ACPI 浜嬩欢蹇呴』浠ヤ笉鍚屾柟寮忓彂鍑轰俊鍙枫€?
+鏈変袱绉嶉€夋嫨锛欸PIO 淇″彿涓柇锛堢 5.6.5 鑺傦級鍜屼腑鏂俊鍙蜂簨浠讹紙绗?5.6.9 鑺傦級銆備腑鏂俊鍙蜂簨浠舵槸 ACPI 6.1
+瑙勮寖涓殑鏂扮壒鎬с€傚湪缁欏畾鐨勫钩鍙颁笂鍙互浣跨敤鍏朵腑涓€绉嶆垨涓ょ锛涗娇鐢ㄥ摢绉嶅彲鑳藉彇鍐充簬鐗瑰畾 SoC 鐨勯檺鍒躲€傚鏋?鍙兘锛屽缓璁娇鐢ㄤ腑鏂俊鍙蜂簨浠躲€?
+
+### ACPI 澶勭悊鍣ㄦ帶鍒?
+ACPI 瑙勮寖绗?8 鑺傚湪 6.0 鐗堟湰涓彂鐢熶簡閲嶅ぇ鍙樺寲銆傚鐞嗗櫒鐜板湪搴斿畾涔変负甯︽湁 _HID ACPI0007 鐨?Device
+瀵硅薄锛涗笉瑕佷娇鐢?ASL 涓凡搴熷純鐨?Processor 璇彞銆傛墍鏈夊澶勭悊鍣ㄧ郴缁熻繕搴斾娇鐢ㄥ鐞嗗櫒瀹瑰櫒璁惧
+锛堣绗?8.4.3.1 鑺傦紝_HID ACPI0010锛夊畾涔夊鐞嗗櫒鐨勫眰娆＄粨鏋勶紱涓嶈浣跨敤澶勭悊鍣ㄨ仛鍚堝櫒璁惧锛堢 8.5 鑺傦級
+鏉ユ弿杩板鐞嗗櫒鎷撴墤銆傝鑼冪 8.4 鑺傛弿杩颁簡杩欎簺瀵硅薄瀹氫箟鐨勮涔変互鍙婂畠浠浣曠浉浜掑叧鑱斻€?
+鏈€閲嶈鐨勬槸锛屾墍瀹氫箟鐨勫鐞嗗櫒灞傛缁撴瀯杩樺畾涔変簡骞冲彴鍙敤鐨勪綆鍔熻€楃┖闂茬姸鎬侊紝浠ュ強纭畾鍝簺澶勭悊鍣ㄥ彲浠?鎵撳紑鎴栧叧闂強鍏舵帶鍒舵潯浠剁殑瑙勫垯銆傛病鏈夎繖浜涗俊鎭紝澶勭悊鍣ㄥ皢杩愯鍦?UEFI 灏嗗叾鐣欏湪鐨勪换鎰忕數婧愮姸鎬佷腑銆?
+杩樿娉ㄦ剰锛屾墍瀹氫箟鐨勫鐞嗗櫒 Device 瀵硅薄涓?MADT 涓?GIC 鐨勬潯鐩簲褰撳悓姝ャ€侱evice 瀵硅薄鐨?_UID 蹇呴』
+瀵瑰簲浜?MADT 涓娇鐢ㄧ殑澶勭悊鍣?ID銆?
+寤鸿鍦?arm64 涓婁娇鐢?CPPC锛?.4.5锛変綔涓哄鐞嗗櫒鎬ц兘鎺у埗鐨勪富瑕佹ā鍨嬨€侰-states 鍜?P-states 鍙兘鍦?灏嗘潵鐨勬煇涓椂鍊欏彉寰楀彲鐢紝浣嗙洰鍓嶅ぇ澶氭暟璁捐宸ヤ綔浼间箮鍊惧悜浜?CPPC銆?
+姝ゅ锛孉RMv8 SoC 蹇呴』鎻愪緵鍔熻兘瀹屾暣鐨?PSCI 瀹炵幇锛涜繖灏嗘槸 ACPI 鏀寔鐨勭敤浜庢帶鍒?CPU 鐢垫簮鐘舵€佺殑鍞竴
+鏈哄埗銆備娇鐢?ACPI parking 鍗忚鍚姩杈呭姪 CPU 鏄彲鑳界殑锛屼絾涓嶆帹鑽愶紝鍥犱负 ARM 鏈嶅姟鍣ㄤ粎鏀寔 PSCI銆?
+
+### ACPI 绯荤粺鍦板潃鏄犲皠鎺ュ彛
+
+鍦?ACPI 瑙勮寖绗?15 鑺備腑锛屾彁鍒颁簡鍑犵浣滀负鍚戝唴鏍镐紶閫掑唴瀛樿祫婧愪俊鎭殑鍙兘鏈哄埗鐨勬柟娉曘€傚浜?arm64锛?鎴戜滑灏嗗彧鏀寔浣跨敤 UEFI 閫氳繃 ACPI 鍚姩锛屽洜姝?UEFI GetMemoryMap() 鍚姩鏈嶅姟灏嗘槸鍞竴浣跨敤鐨勬満鍒躲€?
+
+### ACPI 骞冲彴閿欒鎺ュ彛锛圓PEI锛?
+涓婇潰宸叉弿杩版墍鏀寔鐨?APEI 琛ㄣ€?
+APEI 鍦?ARMv8 涓婇渶瑕佺瓑鍚屼簬 SCI 鍜?NMI 鐨勬満鍒躲€係CI 鐢ㄤ簬閫氱煡 OSPM 宸茬粡鍙戠敓浣嗗彲浠ョ籂姝ｇ殑閿欒锛岀郴缁?鍙互缁х画姝ｇ‘杩愯锛屽嵆浣垮彲鑳芥湁鎵€闄嶇骇銆侼MI 鐢ㄤ簬鎸囩ず鏃犳硶绾犳鐨勮嚧鍛介敊璇紝闇€瑕佺珛鍗冲鐞嗐€?
+鐢变簬娌℃湁鐩存帴绛夊悓浜?x86 SCI 鎴?NMI 鐨勬満鍒讹紝arm64 鐨勫鐞嗘柟寮忕暐鏈変笉鍚屻€係CI 浣滀负楂樹紭鍏堢骇涓柇澶勭悊锛?閴翠簬鎶ュ憡鐨勬槸宸茬籂姝ｏ紙鎴栧彲绾犳锛夌殑閿欒锛岃繖宸茬粡瓒冲銆侼MI 琚ā鎷熶负鍙兘鐨勬渶楂樹紭鍏堢骇涓柇銆傝繖鎰忓懗鐫€
+蹇呴』淇濇寔涓€瀹氳皑鎱庯紝鍥犱负鍙兘瀛樺湪鏇撮珮鐗规潈绾х殑涓柇锛岀敋鑷冲瓨鍦ㄤ笌妯℃嫙 NMI 鍚屼紭鍏堢骇鐨勪腑鏂€傚湪 Linux 涓紝
+涓嶅簲鍑虹幇杩欑鎯呭喌锛屼絾搴旀剰璇嗗埌瀹冨彲鑳藉彂鐢熴€?
+
+### ARM64 涓婁笉鏀寔鐨?ACPI 瀵硅薄
+
+铏界劧杩欏湪灏嗘潵鍙兘鏀瑰彉锛屼絾鏈夊嚑绫诲璞″彲浠ュ畾涔夛紝浣嗙洰鍓嶅 ARM 鏈嶅姟鍣ㄦ病鏈夋櫘閬嶆剰涔夈€傚叾涓竴浜涘璞℃湁 x86
+瀵瑰簲鐗╋紝骞朵笖鍙兘鍦?ARM 鏈嶅姟鍣ㄤ笂纭疄鏈夐亾鐞嗐€備絾鏄紝鐩墠瑕佷箞娌℃湁鍙敤鐨勭‖浠讹紝瑕佷箞鐢氳嚦鍙兘杩樻病鏈夐潪
+ARM 鐨勫疄鐜般€傚洜姝わ紝鐩墠涓嶆敮鎸佸畠浠€?
+浠ヤ笅绫诲埆鐨勫璞′笉鍙楁敮鎸侊細
+
+       - 绗?9.2 鑺傦細鐜鍏変紶鎰熷櫒璁惧
+
+       - 绗?9.3 鑺傦細鐢垫睜璁惧
+
+       - 绗?9.4 鑺傦細鐩栵紙渚嬪绗旇鏈洊锛?
+       - 绗?9.8.2 鑺傦細IDE 鎺у埗鍣?
+       - 绗?9.9 鑺傦細杞洏鎺у埗鍣?
+       - 绗?9.10 鑺傦細GPE 鍧楄澶?
+       - 绗?9.15 鑺傦細PC/AT RTC/CMOS 璁惧
 
-                      NB：该方法提供默认的缓存一致性属性；不过，SMMU 的存在可以对此进行
-                      修改。例如，某个主设备默认可能是非一致的，但通过适当的 SMMU 配置
-                      可以变为一致的（参见 IORT 规范表 17，ARM 文档 DEN 0049B）。
+       - 绗?9.16 鑺傦細鐢ㄦ埛瀛樺湪妫€娴嬭澶?
+       - 绗?9.17 鑺傦細I/O APIC 璁惧锛涙墍鏈?GIC 閮藉繀椤诲彲閫氳繃 MADT 鏋氫妇
 
-_CID   6.1.2          按需使用，另见 _HID。
+       - 绗?9.18 鑺傦細鏃堕棿鍜岄椆閽熻澶囷紙瑙?9.15锛?
+       - 绗?10 鑺傦細鐢垫簮鍜屽姛鐜囪璁惧
 
-_CLS   6.1.3          按需使用，另见 _HID。
+       - 绗?11 鑺傦細鐑鐞?
+       - 绗?12 鑺傦細宓屽叆寮忔帶鍒跺櫒鎺ュ彛
 
-_CPC   8.4.7.1        按需使用，特定于电源管理。在 arm64 上推荐使用 CPPC。
+       - 绗?13 鑺傦細SMBus 鎺ュ彛
 
-_CRS   6.2.2          在 arm64 上是必需的。
 
-_CSD   8.4.2.2        按需使用，仅与 _CST 配合使用。
-
-_CST   8.4.2.1        推荐使用低功耗空闲状态（8.4.4）而非 C-states。
-
-_DDN   6.1.4          该字段可用于设备名称。但是，它本意用于 DOS 设备名称（例如 COM1），
-                      因此跨操作系统使用时要小心。
-
-_DSD   6.2.5          使用时应谨慎。如果使用此对象，请尽量在设备属性 UUID 已定义的约束
-                      范围内使用它。只有在极少数情况下才需要创建新的 _DSD UUID。
-
-                      无论哪种情况，都应提交 _DSD 定义以及任何驱动补丁以供讨论，尤其是在
-                      使用设备属性时。没有相应的 _DSD 描述，驱动将被视为不完整。一旦获得
-                      内核维护者批准，UUID 或设备属性还必须向 UEFI Forum 注册；由于会有
-                      多个操作系统注册条目，这可能引起一些反复。
-
-_DSM   9.1.1          不要使用此方法。它未标准化，返回值文档不全，并且目前是频繁的错误来源。
-
-\_GL   5.7.1          该对象不应在硬件精简模式下使用，因此不应在 arm64 上使用。
-
-_GLK   6.5.7          该对象需要定义一个全局锁；由于 arm64 运行在硬件精简模式下，没有
-                      全局锁。因此，不要在 arm64 上使用此对象。
-
-\_GPE  5.3.1          此命名空间仅用于 x86。不要在 arm64 上使用它。
-
-_HID   6.1.5          这是在设备探测中使用的主要对象，不过也可以使用 _CID 和 _CLS。
-
-_INI   6.5.1          非必需，但当 UEFI 将设备留在驱动开始探测前可能不期望的状态时，它对
-                      设置设备可能有用。
-
-_LPI   8.4.4.3        推荐在 arm64 上与处理器定义（_HID ACPI0010）一起使用。另见 _RDI。
-
-_MLS   6.1.7          强烈推荐用于国际化。
-
-_OFF   7.2.2          建议为任何可以打开或关闭的设备定义此方法。
-
-_ON    7.2.3          建议为任何可以打开或关闭的设备定义此方法。
-
-\_OS   5.7.3          默认情况下此方法返回 "Linux"（这是 Linux 上宏 ACPI_OS_NAME 的
-                      值）。命令行参数 acpi_os=<string> 可用于将其设置为其他值。
-
-_OSC   6.2.11         此方法可以是 ACPI 中的全局方法（即 \_SB._OSC），也可以与特定设备关联
-                      （例如 \_SB.DEV0._OSC），或两者兼具。当用作全局方法时，只允许使用 ACPI
-                      规范中发布的能力。当用作设备特定方法时，必须使用为使用 _DSD 所描述的
-                      过程来创建 _OSC 定义；不允许进程外使用 _OSC。也就是说，将设备特定的
-                      _OSC 用法描述作为内核驱动提交的一部分提交，获得内核社区批准，然后向
-                      UEFI Forum 注册。
-
-\_OSI  5.7.2          在 ARM64 上已废弃。就 ACPI 固件而言，_OSI 不应用于确定正在使用何种
-		      系统或提供何种功能。应使用 _OSC 方法代替。
-
-_PDC   8.4.1          已废弃，不要在 arm64 上使用。
-
-\_PIC  5.8.1          不应使用此方法。在 arm64 上，唯一可用的中断模型是 GIC。
-
-\_PR   5.3.1          此命名空间仅用于传统系统上的 x86。不要在 arm64 上使用它。
-
-_PRT   6.2.13         作为所有 PCI 根设备定义的一部分是必需的。
-
-_PRx   7.3.8-11       按需使用；特定于电源管理。如果定义了 _PR0，则也必须定义 _PR3。
-
-_PSx   7.3.2-5        按需使用；特定于电源管理。如果定义了 _PS0，则也必须定义 _PS3。如果
-                      时钟或调节器需要调整以与功耗一致，请在这些方法中更改它们。
-
-_RDI   8.4.4.4        推荐在 arm64 上与处理器定义（_HID ACPI0010）一起使用。这只应与
-		      _LPI 配合使用。
-
-\_REV  5.7.4          始终返回所支持的最新 ACPI 版本。
-
-\_SB   5.3.1          在 arm64 上是必需的；所有设备都必须在此命名空间中定义。
-
-_SLI   6.2.15         当使用 SLIT 表时建议使用。
-
-_STA   6.3.7,         建议为任何可以打开或关闭的设备定义此方法。另见 STAO 表，它提供在
-       7.2.4          虚拟化环境中隐藏设备的覆盖。
-
-_SRS   6.2.16         按需使用；另见 _PRS。
-
-_STR   6.1.10         推荐用于向最终用户传达设备名称；这优于使用 _DDN。
-
-_SUB   6.1.9          按需使用；优先使用 _HID 或 _CID。
-
-_SUN   6.1.11         按需使用，但建议使用。
-
-_SWS   7.4.3          按需使用；特定于电源管理；在 arm64 上使用可能需要规范变更。
-
-_UID   6.1.12         推荐用于区分同一类的设备；尽可能定义它。
-===== ================ ========================================================
-
-
-
-
-### ACPI 事件模型
-
-不要使用 GPE 块设备；这些在 arm64 使用的硬件精简配置中不受支持。由于在 ARM 平台上未定义用于
-使用的 GPE 块，ACPI 事件必须以不同方式发出信号。
-
-有两种选择：GPIO 信号中断（第 5.6.5 节）和中断信号事件（第 5.6.9 节）。中断信号事件是 ACPI 6.1
-规范中的新特性。在给定的平台上可以使用其中一种或两种；使用哪种可能取决于特定 SoC 的限制。如果
-可能，建议使用中断信号事件。
-
-
-### ACPI 处理器控制
-
-ACPI 规范第 8 节在 6.0 版本中发生了重大变化。处理器现在应定义为带有 _HID ACPI0007 的 Device
-对象；不要使用 ASL 中已废弃的 Processor 语句。所有多处理器系统还应使用处理器容器设备
-（见第 8.4.3.1 节，_HID ACPI0010）定义处理器的层次结构；不要使用处理器聚合器设备（第 8.5 节）
-来描述处理器拓扑。规范第 8.4 节描述了这些对象定义的语义以及它们如何相互关联。
-
-最重要的是，所定义的处理器层次结构还定义了平台可用的低功耗空闲状态，以及确定哪些处理器可以
-打开或关闭及其控制条件的规则。没有这些信息，处理器将运行在 UEFI 将其留在的任意电源状态中。
-
-还要注意，所定义的处理器 Device 对象与 MADT 中 GIC 的条目应当同步。Device 对象的 _UID 必须
-对应于 MADT 中使用的处理器 ID。
-
-建议在 arm64 上使用 CPPC（8.4.5）作为处理器性能控制的主要模型。C-states 和 P-states 可能在
-将来的某个时候变得可用，但目前大多数设计工作似乎倾向于 CPPC。
-
-此外，ARMv8 SoC 必须提供功能完整的 PSCI 实现；这将是 ACPI 支持的用于控制 CPU 电源状态的唯一
-机制。使用 ACPI parking 协议启动辅助 CPU 是可能的，但不推荐，因为 ARM 服务器仅支持 PSCI。
-
-
-### ACPI 系统地址映射接口
-
-在 ACPI 规范第 15 节中，提到了几种作为向内核传递内存资源信息的可能机制的方法。对于 arm64，
-我们将只支持使用 UEFI 通过 ACPI 启动，因此 UEFI GetMemoryMap() 启动服务将是唯一使用的机制。
-
-
-### ACPI 平台错误接口（APEI）
-
-上面已描述所支持的 APEI 表。
-
-APEI 在 ARMv8 上需要等同于 SCI 和 NMI 的机制。SCI 用于通知 OSPM 已经发生但可以纠正的错误，系统
-可以继续正确运行，即使可能有所降级。NMI 用于指示无法纠正的致命错误，需要立即处理。
-
-由于没有直接等同于 x86 SCI 或 NMI 的机制，arm64 的处理方式略有不同。SCI 作为高优先级中断处理；
-鉴于报告的是已纠正（或可纠正）的错误，这已经足够。NMI 被模拟为可能的最高优先级中断。这意味着
-必须保持一定谨慎，因为可能存在更高特权级的中断，甚至存在与模拟 NMI 同优先级的中断。在 Linux 中，
-不应出现这种情况，但应意识到它可能发生。
-
-
-### ARM64 上不支持的 ACPI 对象
-
-虽然这在将来可能改变，但有几类对象可以定义，但目前对 ARM 服务器没有普遍意义。其中一些对象有 x86
-对应物，并且可能在 ARM 服务器上确实有道理。但是，目前要么没有可用的硬件，要么甚至可能还没有非
-ARM 的实现。因此，目前不支持它们。
-
-以下类别的对象不受支持：
-
-       - 第 9.2 节：环境光传感器设备
-
-       - 第 9.3 节：电池设备
-
-       - 第 9.4 节：盖（例如笔记本盖）
-
-       - 第 9.8.2 节：IDE 控制器
-
-       - 第 9.9 节：软盘控制器
-
-       - 第 9.10 节：GPE 块设备
-
-       - 第 9.15 节：PC/AT RTC/CMOS 设备
-
-       - 第 9.16 节：用户存在检测设备
-
-       - 第 9.17 节：I/O APIC 设备；所有 GIC 都必须可通过 MADT 枚举
-
-       - 第 9.18 节：时间和闹钟设备（见 9.15）
-
-       - 第 10 节：电源和功率计设备
-
-       - 第 11 节：热管理
-
-       - 第 12 节：嵌入式控制器接口
-
-       - 第 13 节：SMBus 接口
-
-
-这也意味着以下对象不受支持：
-
+杩欎篃鎰忓懗鐫€浠ヤ笅瀵硅薄涓嶅彈鏀寔锛?
 ====   =========================== ====   ==========
 Name   Section                     Name   Section
 ====   =========================== ====   ==========

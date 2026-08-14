@@ -1,15 +1,15 @@
-## 内核开发工具
+﻿## 鍐呮牳寮€鍙戝伐鍏?
 
 
-本文档汇集了可用于内核开发的开发工具相关文档。目前这些文档只是被简单地归拢在一起，并未花大力气将它们整合成一个连贯的整体；欢迎提交补丁！
+鏈枃妗ｆ眹闆嗕簡鍙敤浜庡唴鏍稿紑鍙戠殑寮€鍙戝伐鍏风浉鍏虫枃妗ｃ€傜洰鍓嶈繖浜涙枃妗ｅ彧鏄绠€鍗曞湴褰掓嫝鍦ㄤ竴璧凤紝骞舵湭鑺卞ぇ鍔涙皵灏嗗畠浠暣鍚堟垚涓€涓繛璐殑鏁翠綋锛涙杩庢彁浜よˉ涓侊紒
 
-关于测试专用工具的简要概述可以在
-文档/dev-tools/testing-overview.rst
-中找到。
+鍏充簬娴嬭瘯涓撶敤宸ュ叿鐨勭畝瑕佹杩板彲浠ュ湪
+鏂囨。/dev-tools/testing-overview.rst
+涓壘鍒般€?
 
-调试专用的工具可以在
-文档/流程/调试/index.rst
-中找到。
+璋冭瘯涓撶敤鐨勫伐鍏峰彲浠ュ湪
+鏂囨。/娴佺▼/璋冭瘯/index.rst
+涓壘鍒般€?
 
 - [testing-overview](testing-overview)
 - [checkpatch](checkpatch)
@@ -21,15 +21,15 @@
 - [gcov](gcov)
 - [kasan](kasan)
 - [kmsan](kmsan)
-- ｟ 00010｠
+- 锝?00010锝?
 - [kmemleak](kmemleak)
 - [kcsan](kcsan)
 - [lkmm/index](lkmm/index)
-- ｟00 014｠
+- 锝?0 014锝?
 - [kselftest](kselftest)
 - [kunit/index](kunit/index)
 - [ktap](ktap)
-- ｟0001 8｠
+- 锝?001 8锝?
 - [gpio-sloppy-logic-analyzer](gpio-sloppy-logic-analyzer)
 - [autofdo](autofdo)
 - [propeller](propeller)

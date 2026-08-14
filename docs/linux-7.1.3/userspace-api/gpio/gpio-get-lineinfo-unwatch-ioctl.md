@@ -1,42 +1,42 @@
-######## GPIO_GET_LINEINFO_UNWATCH_IOCTL
+﻿######## GPIO_GET_LINEINFO_UNWATCH_IOCTL
 
 
-## 名称
+## 鍚嶇О
 
 
-GPIO_GET_LINEINFO_UNWATCH_IOCTL - 取消对某一线路其请求状态和配置信息变化的监视。
+GPIO_GET_LINEINFO_UNWATCH_IOCTL - 鍙栨秷瀵规煇涓€绾胯矾鍏惰姹傜姸鎬佸拰閰嶇疆淇℃伅鍙樺寲鐨勭洃瑙嗐€?
 
-## 摘要
+## 鎽樿
 
 
 
 `int ioctl(int chip_fd, GPIO_GET_LINEINFO_UNWATCH_IOCTL, u32 *offset)`
 
-## 参数
+## 鍙傛暟
 
 
 `chip_fd`
-    GPIO 字符设备由 `open()` 返回的文件描述符。
+    GPIO 瀛楃璁惧鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `offset`
-    不再监视的线路偏移量。
+    涓嶅啀鐩戣鐨勭嚎璺亸绉婚噺銆?
 
-## 说明
-
-
-将该线路从此 `chip_fd` 上正在监视的线路列表中移除。
-
-这是 gpio-v2-get-lineinfo-watch-ioctl.rst（v2）和
-gpio-get-lineinfo-watch-ioctl.rst（v1）的逆操作。
-
-对一条未监视的线路取消监视是一个错误（**EBUSY**）。
-
-最初添加于 5.7。
-
-## 返回值
+## 璇存槑
 
 
-成功时返回 0。
+灏嗚绾胯矾浠庢 `chip_fd` 涓婃鍦ㄧ洃瑙嗙殑绾胯矾鍒楄〃涓Щ闄ゃ€?
 
-出错时返回 -1，并相应地设置 `errno` 变量。
-常见错误码在 error-codes.rst 中描述。
+杩欐槸 gpio-v2-get-lineinfo-watch-ioctl.rst锛坴2锛夊拰
+gpio-get-lineinfo-watch-ioctl.rst锛坴1锛夌殑閫嗘搷浣溿€?
+
+瀵逛竴鏉℃湭鐩戣鐨勭嚎璺彇娑堢洃瑙嗘槸涓€涓敊璇紙**EBUSY**锛夈€?
+
+鏈€鍒濇坊鍔犱簬 5.7銆?
+
+## 杩斿洖鍊?
+
+
+鎴愬姛鏃惰繑鍥?0銆?
+
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+甯歌閿欒鐮佸湪 error-codes.rst 涓弿杩般€?

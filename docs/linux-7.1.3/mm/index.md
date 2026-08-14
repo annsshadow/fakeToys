@@ -1,7 +1,7 @@
-## 内存管理文档
+﻿## 鍐呭瓨绠＄悊鏂囨。
 
 
-这是一份帮助你理解 Linux 内存管理子系统的指南。如果你只是想了解如何简单地分配内存，请参阅 memory_allocation。关于控制与调优的指南，请参阅 [管理员指南 <../admin-guide/mm/index>](admin guide <../admin-guide/mm/index>)。
+杩欐槸涓€浠藉府鍔╀綘鐞嗚В Linux 鍐呭瓨绠＄悊瀛愮郴缁熺殑鎸囧崡銆傚鏋滀綘鍙槸鎯充簡瑙ｅ浣曠畝鍗曞湴鍒嗛厤鍐呭瓨锛岃鍙傞槄 memory_allocation銆傚叧浜庢帶鍒朵笌璋冧紭鐨勬寚鍗楋紝璇峰弬闃?[绠＄悊鍛樻寚鍗?<../admin-guide/mm/index>](admin guide <../admin-guide/mm/index>)銆?
 
 - [physical_memory](physical_memory)
 - [page_tables](page_tables)
@@ -18,10 +18,10 @@
 - [shmfs](shmfs)
 - [oom](oom)
 
-## 未分类文档
+## 鏈垎绫绘枃妗?
 
 
-这是一组关于 Linux 内存管理（MM）子系统内部机制的未分类文档，详尽程度不一，既有简单的笔记和邮件列表回复，也有对数据结构和算法的详尽描述。理想情况下，这些内容应当被很好地整合到上述结构化文档中，或者在完成其使命后被删除。
+杩欐槸涓€缁勫叧浜?Linux 鍐呭瓨绠＄悊锛圡M锛夊瓙绯荤粺鍐呴儴鏈哄埗鐨勬湭鍒嗙被鏂囨。锛岃灏界▼搴︿笉涓€锛屾棦鏈夌畝鍗曠殑绗旇鍜岄偖浠跺垪琛ㄥ洖澶嶏紝涔熸湁瀵规暟鎹粨鏋勫拰绠楁硶鐨勮灏芥弿杩般€傜悊鎯虫儏鍐典笅锛岃繖浜涘唴瀹瑰簲褰撹寰堝ソ鍦版暣鍚堝埌涓婅堪缁撴瀯鍖栨枃妗ｄ腑锛屾垨鑰呭湪瀹屾垚鍏朵娇鍛藉悗琚垹闄ゃ€?
 
 - [active_mm](active_mm)
 - [allocation-profiling](allocation-profiling)

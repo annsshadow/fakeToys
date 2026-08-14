@@ -1,21 +1,21 @@
-## Linux 内核中 Marvell Octeon PCI Endpoint NIC VF 的网络驱动
+﻿## Linux 鍐呮牳涓?Marvell Octeon PCI Endpoint NIC VF 鐨勭綉缁滈┍鍔?
 
-本页介绍 Marvell Octeon PCI Endpoint NIC 虚拟功能（VF）的网络设备驱动，说明其支持的设备 PCI ID（如 Cavium b203/b403 等）与驱动概述，供使用该系列网卡 VF 的开发者与运维人员参考。
+鏈〉浠嬬粛 Marvell Octeon PCI Endpoint NIC 铏氭嫙鍔熻兘锛圴F锛夌殑缃戠粶璁惧椹卞姩锛岃鏄庡叾鏀寔鐨勮澶?PCI ID锛堝 Cavium b203/b403 绛夛級涓庨┍鍔ㄦ杩帮紝渚涗娇鐢ㄨ绯诲垪缃戝崱 VF 鐨勫紑鍙戣€呬笌杩愮淮浜哄憳鍙傝€冦€?
 
 
 
-Marvell Octeon PCI EndPoint NIC VF 的网络驱动。
+Marvell Octeon PCI EndPoint NIC VF 鐨勭綉缁滈┍鍔ㄣ€?
 Copyright (c) 2020 Marvell International Ltd.
 
-## 概述
+## 姒傝堪
 
 
-该驱动实现了 Marvell Octeon PCI EndPoint NIC VF 的网络功能。
+璇ラ┍鍔ㄥ疄鐜颁簡 Marvell Octeon PCI EndPoint NIC VF 鐨勭綉缁滃姛鑳姐€?
 
-## 支持的设备
+## 鏀寔鐨勮澶?
 
 
-目前，该驱动支持以下设备：
+鐩墠锛岃椹卞姩鏀寔浠ヤ笅璁惧锛?
  - Network controller: Cavium, Inc. Device b203
  - Network controller: Cavium, Inc. Device b403
  - Network controller: Cavium, Inc. Device b103

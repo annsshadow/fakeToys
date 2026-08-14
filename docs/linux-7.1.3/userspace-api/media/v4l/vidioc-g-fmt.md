@@ -1,4 +1,4 @@
-
+﻿
 
 
 ######## ioctl VIDIOC_G_FMT, VIDIOC_S_FMT, VIDIOC_TRY_FMT
@@ -7,8 +7,7 @@
 ## Name
 
 
-VIDIOC_G_FMT - VIDIOC_S_FMT - VIDIOC_TRY_FMT - 获取或设置数据格式，尝试一种格式
-
+VIDIOC_G_FMT - VIDIOC_S_FMT - VIDIOC_TRY_FMT - 鑾峰彇鎴栬缃暟鎹牸寮忥紝灏濊瘯涓€绉嶆牸寮?
 ## Synopsis
 
 
@@ -25,24 +24,17 @@ VIDIOC_G_FMT - VIDIOC_S_FMT - VIDIOC_TRY_FMT - 获取或设置数据格式，尝
 
 
 `fd`
-    `open()` 返回的文件描述符。
-
+    `open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `argp`
-    指向 struct `v4l2_format` 的指针。
-
+    鎸囧悜 struct `v4l2_format` 鐨勬寚閽堛€?
 ## Description
 
 
-这些 ioctl 用于协商驱动与应用程序之间交换的数据（通常是图像）格式。
-
-要查询当前参数，应用程序将 struct `v4l2_format` 的 `type` 字段设置为相应的缓冲区（流）类型。例如视频采集设备使用 `V4L2_BUF_TYPE_VIDEO_CAPTURE` 或 `V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE`。当应用程序调用带有指向该结构的指针的 VIDIOC_G_FMT <VIDIOC_G_FMT> ioctl 时，驱动会填充 `fmt` 联合的相应成员。对于视频采集设备，该成员是 struct `v4l2_pix_format` 的 `pix` 或 struct `v4l2_pix_format_mplane` 的 `pix_mp` 成员。当所请求的缓冲区类型不受支持时，驱动返回 `EINVAL` 错误码。
-
-要更改当前格式参数，应用程序初始化 `type` 字段以及相应 `fmt` 联合成员的所有字段。细节请参阅 devices 中各种设备类型的文档。好的做法是以先查询当前参数，然后只修改那些不适合应用程序的参数为准。当应用程序调用带有指向 struct `v4l2_format` 结构的指针的 VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 时，驱动会根据硬件能力检查并调整参数。除非 `type` 字段无效，否则驱动不应返回错误码，这是一种探测设备能力并接近应用程序和驱动都可接受参数的机制。成功时，驱动可以编程硬件、分配资源，并通常为数据交换做准备。最后，VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 像 VIDIOC_G_FMT <VIDIOC_G_FMT> 那样返回当前格式参数。非常简单的、不灵活的设备甚至可能忽略所有输入，并总是返回默认参数。然而，所有与应用程序交换数据的 V4L2 设备都必须实现 VIDIOC_G_FMT <VIDIOC_G_FMT> 和 VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl。当所请求的缓冲区类型不受支持时，驱动在 VIDIOC_S_FMT <VIDIOC_G_FMT> 尝试时返回 `EINVAL` 错误码。当 I/O 已在进行中，或因其他原因资源不可用时，驱动返回 `EBUSY` 错误码。
-
-VIDIOC_TRY_FMT <VIDIOC_G_FMT> ioctl 等同于 VIDIOC_S_FMT <VIDIOC_G_FMT>，只有一个例外：它不改变驱动状态。它也可以在任何时候调用，绝不会返回 `EBUSY`。提供此函数是为了在不禁用 I/O 或可能耗时的硬件准备的情况下，协商参数、了解硬件限制。尽管强烈推荐，驱动并不要求实现此 ioctl。
-
-VIDIOC_TRY_FMT <VIDIOC_G_FMT> 返回的格式必须与 VIDIOC_S_FMT <VIDIOC_G_FMT> 对相同输入或输出返回的格式完全相同。
-
+杩欎簺 ioctl 鐢ㄤ簬鍗忓晢椹卞姩涓庡簲鐢ㄧ▼搴忎箣闂翠氦鎹㈢殑鏁版嵁锛堥€氬父鏄浘鍍忥級鏍煎紡銆?
+瑕佹煡璇㈠綋鍓嶅弬鏁帮紝搴旂敤绋嬪簭灏?struct `v4l2_format` 鐨?`type` 瀛楁璁剧疆涓虹浉搴旂殑缂撳啿鍖猴紙娴侊級绫诲瀷銆備緥濡傝棰戦噰闆嗚澶囦娇鐢?`V4L2_BUF_TYPE_VIDEO_CAPTURE` 鎴?`V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE`銆傚綋搴旂敤绋嬪簭璋冪敤甯︽湁鎸囧悜璇ョ粨鏋勭殑鎸囬拡鐨?VIDIOC_G_FMT <VIDIOC_G_FMT> ioctl 鏃讹紝椹卞姩浼氬～鍏?`fmt` 鑱斿悎鐨勭浉搴旀垚鍛樸€傚浜庤棰戦噰闆嗚澶囷紝璇ユ垚鍛樻槸 struct `v4l2_pix_format` 鐨?`pix` 鎴?struct `v4l2_pix_format_mplane` 鐨?`pix_mp` 鎴愬憳銆傚綋鎵€璇锋眰鐨勭紦鍐插尯绫诲瀷涓嶅彈鏀寔鏃讹紝椹卞姩杩斿洖 `EINVAL` 閿欒鐮併€?
+瑕佹洿鏀瑰綋鍓嶆牸寮忓弬鏁帮紝搴旂敤绋嬪簭鍒濆鍖?`type` 瀛楁浠ュ強鐩稿簲 `fmt` 鑱斿悎鎴愬憳鐨勬墍鏈夊瓧娈点€傜粏鑺傝鍙傞槄 devices 涓悇绉嶈澶囩被鍨嬬殑鏂囨。銆傚ソ鐨勫仛娉曟槸浠ュ厛鏌ヨ褰撳墠鍙傛暟锛岀劧鍚庡彧淇敼閭ｄ簺涓嶉€傚悎搴旂敤绋嬪簭鐨勫弬鏁颁负鍑嗐€傚綋搴旂敤绋嬪簭璋冪敤甯︽湁鎸囧悜 struct `v4l2_format` 缁撴瀯鐨勬寚閽堢殑 VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 鏃讹紝椹卞姩浼氭牴鎹‖浠惰兘鍔涙鏌ュ苟璋冩暣鍙傛暟銆傞櫎闈?`type` 瀛楁鏃犳晥锛屽惁鍒欓┍鍔ㄤ笉搴旇繑鍥為敊璇爜锛岃繖鏄竴绉嶆帰娴嬭澶囪兘鍔涘苟鎺ヨ繎搴旂敤绋嬪簭鍜岄┍鍔ㄩ兘鍙帴鍙楀弬鏁扮殑鏈哄埗銆傛垚鍔熸椂锛岄┍鍔ㄥ彲浠ョ紪绋嬬‖浠躲€佸垎閰嶈祫婧愶紝骞堕€氬父涓烘暟鎹氦鎹㈠仛鍑嗗銆傛渶鍚庯紝VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 鍍?VIDIOC_G_FMT <VIDIOC_G_FMT> 閭ｆ牱杩斿洖褰撳墠鏍煎紡鍙傛暟銆傞潪甯哥畝鍗曠殑銆佷笉鐏垫椿鐨勮澶囩敋鑷冲彲鑳藉拷鐣ユ墍鏈夎緭鍏ワ紝骞舵€绘槸杩斿洖榛樿鍙傛暟銆傜劧鑰岋紝鎵€鏈変笌搴旂敤绋嬪簭浜ゆ崲鏁版嵁鐨?V4L2 璁惧閮藉繀椤诲疄鐜?VIDIOC_G_FMT <VIDIOC_G_FMT> 鍜?VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl銆傚綋鎵€璇锋眰鐨勭紦鍐插尯绫诲瀷涓嶅彈鏀寔鏃讹紝椹卞姩鍦?VIDIOC_S_FMT <VIDIOC_G_FMT> 灏濊瘯鏃惰繑鍥?`EINVAL` 閿欒鐮併€傚綋 I/O 宸插湪杩涜涓紝鎴栧洜鍏朵粬鍘熷洜璧勬簮涓嶅彲鐢ㄦ椂锛岄┍鍔ㄨ繑鍥?`EBUSY` 閿欒鐮併€?
+VIDIOC_TRY_FMT <VIDIOC_G_FMT> ioctl 绛夊悓浜?VIDIOC_S_FMT <VIDIOC_G_FMT>锛屽彧鏈変竴涓緥澶栵細瀹冧笉鏀瑰彉椹卞姩鐘舵€併€傚畠涔熷彲浠ュ湪浠讳綍鏃跺€欒皟鐢紝缁濅笉浼氳繑鍥?`EBUSY`銆傛彁渚涙鍑芥暟鏄负浜嗗湪涓嶇鐢?I/O 鎴栧彲鑳借€楁椂鐨勭‖浠跺噯澶囩殑鎯呭喌涓嬶紝鍗忓晢鍙傛暟銆佷簡瑙ｇ‖浠堕檺鍒躲€傚敖绠″己鐑堟帹鑽愶紝椹卞姩骞朵笉瑕佹眰瀹炵幇姝?ioctl銆?
+VIDIOC_TRY_FMT <VIDIOC_G_FMT> 杩斿洖鐨勬牸寮忓繀椤讳笌 VIDIOC_S_FMT <VIDIOC_G_FMT> 瀵圭浉鍚岃緭鍏ユ垨杈撳嚭杩斿洖鐨勬牸寮忓畬鍏ㄧ浉鍚屻€?
 
 
     :header-rows:  0
@@ -50,44 +42,32 @@ VIDIOC_TRY_FMT <VIDIOC_G_FMT> 返回的格式必须与 VIDIOC_S_FMT <VIDIOC_G_FM
 
     - - __u32
       - `type`
-      - 数据流的类型，参见 `v4l2_buf_type`。
-    - - union {
+      - 鏁版嵁娴佺殑绫诲瀷锛屽弬瑙?`v4l2_buf_type`銆?    - - union {
       - `fmt`
     - - struct `v4l2_pix_format`
       - `pix`
-      - 图像格式的定义，参见 pixfmt，用于视频采集和输出设备。
-    - - struct `v4l2_pix_format_mplane`
+      - 鍥惧儚鏍煎紡鐨勫畾涔夛紝鍙傝 pixfmt锛岀敤浜庤棰戦噰闆嗗拰杈撳嚭璁惧銆?    - - struct `v4l2_pix_format_mplane`
       - `pix_mp`
-      - 图像格式的定义，参见 pixfmt，用于支持
-        多平面版本 API <planar-apis> 的视频采集和输出设备。
-    - - struct `v4l2_window`
+      - 鍥惧儚鏍煎紡鐨勫畾涔夛紝鍙傝 pixfmt锛岀敤浜庢敮鎸?        澶氬钩闈㈢増鏈?API <planar-apis> 鐨勮棰戦噰闆嗗拰杈撳嚭璁惧銆?    - - struct `v4l2_window`
       - `win`
-      - 叠加图像的定义，参见 overlay，用于视频叠加设备。
-    - - struct `v4l2_vbi_format`
+      - 鍙犲姞鍥惧儚鐨勫畾涔夛紝鍙傝 overlay锛岀敤浜庤棰戝彔鍔犺澶囥€?    - - struct `v4l2_vbi_format`
       - `vbi`
-      - 原始 VBI 采集或输出参数。这在 raw-vbi 中有更详细的讨论。用于原始 VBI 采集和输出设备。
-    - - struct `v4l2_sliced_vbi_format`
+      - 鍘熷 VBI 閲囬泦鎴栬緭鍑哄弬鏁般€傝繖鍦?raw-vbi 涓湁鏇磋缁嗙殑璁ㄨ銆傜敤浜庡師濮?VBI 閲囬泦鍜岃緭鍑鸿澶囥€?    - - struct `v4l2_sliced_vbi_format`
       - `sliced`
-      - 切片 VBI 采集或输出参数。细节参见 sliced。用于切片 VBI 采集和输出设备。
-    - - struct `v4l2_sdr_format`
+      - 鍒囩墖 VBI 閲囬泦鎴栬緭鍑哄弬鏁般€傜粏鑺傚弬瑙?sliced銆傜敤浜庡垏鐗?VBI 閲囬泦鍜岃緭鍑鸿澶囥€?    - - struct `v4l2_sdr_format`
       - `sdr`
-      - 数据格式的定义，参见 pixfmt，用于 SDR 采集和输出设备。
-    - - struct `v4l2_meta_format`
+      - 鏁版嵁鏍煎紡鐨勫畾涔夛紝鍙傝 pixfmt锛岀敤浜?SDR 閲囬泦鍜岃緭鍑鸿澶囥€?    - - struct `v4l2_meta_format`
       - `meta`
-      - 元数据格式的定义，参见 meta-formats，用于元数据采集设备。
-    - - __u8
+      - 鍏冩暟鎹牸寮忕殑瀹氫箟锛屽弬瑙?meta-formats锛岀敤浜庡厓鏁版嵁閲囬泦璁惧銆?    - - __u8
       - `raw_data`\ [^200^]
-      - 为未来扩展保留的占位符。
-    - - }
+      - 涓烘湭鏉ユ墿灞曚繚鐣欑殑鍗犱綅绗︺€?    - - }
       -
 
 ## Return Value
 
 
-成功时返回 0，出错时返回 -1，并且 `errno` 变量会被相应地设置。通用错误码在 Generic Error Codes <gen-errors> 一章中描述。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1锛屽苟涓?`errno` 鍙橀噺浼氳鐩稿簲鍦拌缃€傞€氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 涓€绔犱腑鎻忚堪銆?
 EINVAL
-    struct `v4l2_format` 的 `type` 字段无效，或所请求的缓冲区类型不受支持。
-
+    struct `v4l2_format` 鐨?`type` 瀛楁鏃犳晥锛屾垨鎵€璇锋眰鐨勭紦鍐插尯绫诲瀷涓嶅彈鏀寔銆?
 EBUSY
-    设备正忙，无法更改格式。这可能是因为设备正在流式传输，或者缓冲区已分配或已入队到驱动。仅与 :ref:`VIDIOC_S_FMT <VIDIOC_G_FMT>` 相关。
+    璁惧姝ｅ繖锛屾棤娉曟洿鏀规牸寮忋€傝繖鍙兘鏄洜涓鸿澶囨鍦ㄦ祦寮忎紶杈擄紝鎴栬€呯紦鍐插尯宸插垎閰嶆垨宸插叆闃熷埌椹卞姩銆備粎涓?:ref:`VIDIOC_S_FMT <VIDIOC_G_FMT>` 鐩稿叧銆?

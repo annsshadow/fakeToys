@@ -1,6 +1,4 @@
-
-## SCSI FC 传输（Transport）
-
+﻿锘?## SCSI FC 浼犺緭锛圱ransport锛?
 
 Date:  11/18/2008
 
@@ -9,17 +7,14 @@ Date:  11/18/2008
 
   rports : <<TBS>>
   vports : 2.6.22
-  bsg support : 2.6.30 (?TBD?)
-
+  bsg support : 2.6.30 锛圱BD锛?
 
 ```
 
-## 简介
+## 绠€浠?
 
-
-本文件记录了 SCSI FC 传输（Transport）的特性和组件。它也提供了
-传输层与 FC LLDD 之间的 API 文档。
-
+鏈枃浠惰褰曚簡 SCSI FC 浼犺緭锛圱ransport锛夌殑鐗规€у拰缁勪欢銆傚畠涔熸彁渚涗簡
+浼犺緭灞備笌 FC LLDD 涔嬮棿鐨?API 鏂囨。銆?
 
 ```
 
@@ -31,69 +26,38 @@ Date:  11/18/2008
 
 ```
 
-本文件位于 Documentation/scsi/scsi_fc_transport.rst
+鏈枃浠朵綅浜?Documentation/scsi/scsi_fc_transport.rst
 
 
-## FC 远程端口（rports）
+## FC 杩滅▼绔彛锛坮ports锛?
 
-
-  在光纤通道（Fibre Channel，FC）子系统中，远程端口（rport）指的是本地端口
-  能够与之通信的远程光纤通道节点。它们通常是存储目标（例如磁盘阵列、磁带机），
-  通过 FC 传输响应 SCSI 命令。
-
-  在 Linux 中，rports 由 FC 传输类管理，并在 sysfs 中以如下路径表示：
-
+  鍦ㄥ厜绾ら€氶亾锛團ibre Channel锛孎C锛夊瓙绯荤粺涓紝杩滅▼绔彛锛坮port锛夋寚鐨勬槸鏈湴绔彛
+  鑳藉涓庝箣閫氫俊鐨勮繙绋嬪厜绾ら€氶亾鑺傜偣銆傚畠浠€氬父鏄瓨鍌ㄧ洰鏍囷紙渚嬪纾佺洏闃靛垪銆佺甯︽満锛夛紝
+  閫氳繃 FC 浼犺緭鍝嶅簲 SCSI 鍛戒护銆?
+  鍦?Linux 涓紝rports 鐢?FC 浼犺緭绫荤鐞嗭紝骞跺湪 sysfs 涓互濡備笅璺緞琛ㄧず锛?
     /sys/class/fc_remote_ports/
 
-  每个 rport 目录包含描述该远程端口的属性，例如端口 ID、节点名、
-  端口状态和链路速度。
+  姣忎釜 rport 鐩綍鍖呭惈鎻忚堪璇ヨ繙绋嬬鍙ｇ殑灞炴€э紝渚嬪绔彛 ID銆佽妭鐐瑰悕銆?  绔彛鐘舵€佸拰閾捐矾閫熷害銆?
+  rports 閫氬父鐢?FC 浼犺緭鍦?fabric 鐧诲綍鎴栨壂鎻忚繃绋嬩腑鍙戠幇鏂拌澶囨椂鍒涘缓锛?  骞朵竴鐩村瓨鍦紝鐩村埌璁惧琚Щ闄ゆ垨閾捐矾涓㈠け銆?
+  甯歌灞炴€э細
+  - node_name锛歐orld Wide Node Name锛圵WNN锛屽叏鐞冭妭鐐瑰悕锛夈€?  - port_name锛歐orld Wide Port Name锛圵WPN锛屽叏鐞冪鍙ｅ悕锛夈€?  - port_id锛氳繙绋嬬鍙ｇ殑 FC 鍦板潃銆?  - roles锛氭寚绀鸿绔彛鏄?initiator锛堝彂璧锋柟锛夈€乼arget锛堢洰鏍囷級锛岃繕鏄袱鑰呭吋澶囥€?  - port_state锛氭樉绀哄綋鍓嶈繍琛岀姸鎬併€?
+  鍙戠幇杩滅▼绔彛鍚庯紝椹卞姩閫氬父浼氬～鍏呬竴涓?fc_rport_identifiers 缁撴瀯锛屽苟璋冪敤
+  fc_remote_port_add() 鏉ラ€氳繃鍏夌氦閫氶亾锛團C锛変紶杈撶被鍒涘缓璇ヨ繙绋嬬鍙ｅ苟鍚?  SCSI 瀛愮郴缁熸敞鍐屻€?
+  rports 涔熷彲浠ラ€氳繃 sysfs 浣滀负 FC 涓绘満閫傞厤鍣ㄧ殑瀛愬璞″彲瑙併€?
+  瀵瑰紑鍙戣€呰€岃█锛氬湪瀹炵幇涓?FC 浼犺緭绫讳氦浜掔殑椹卞姩鏃讹紝璇蜂娇鐢?  fc_remote_port_add() 鍜?fc_remote_port_delete()銆?
 
-  rports 通常由 FC 传输在 fabric 登录或扫描过程中发现新设备时创建，
-  并一直存在，直到设备被移除或链路丢失。
+## FC 铏氭嫙绔彛锛坴ports锛?
 
-  常见属性：
-  - node_name：World Wide Node Name（WWNN，全球节点名）。
-  - port_name：World Wide Port Name（WWPN，全球端口名）。
-  - port_id：远程端口的 FC 地址。
-  - roles：指示该端口是 initiator（发起方）、target（目标），还是两者兼备。
-  - port_state：显示当前运行状态。
-
-  发现远程端口后，驱动通常会填充一个 fc_rport_identifiers 结构，并调用
-  fc_remote_port_add() 来通过光纤通道（FC）传输类创建该远程端口并向
-  SCSI 子系统注册。
-
-  rports 也可以通过 sysfs 作为 FC 主机适配器的子对象可见。
-
-  对开发者而言：在实现与 FC 传输类交互的驱动时，请使用
-  fc_remote_port_add() 和 fc_remote_port_delete()。
+### 姒傝堪
 
 
-## FC 虚拟端口（vports）
-
-
-### 概述
-
-
-  新的 FC 标准定义了允许单个物理端口表现为多个通信端口的机制。使用
-  N_Port Id 虚拟化（NPIV）机制，与 Fabric 的点对点连接可以被分配多于 1 个
-  N_Port_ID。每个 N_Port_ID 对 fabric 上的其他端点而言表现为一个独立的端口，
-  尽管它与交换机共享一条物理链路进行通信。每个 N_Port_ID 可以基于 fabric
-  分区（zoning）和阵列 LUN 掩码拥有对 fabric 的独特视图（就像普通的非 NPIV
-  适配器一样）。使用虚拟 Fabric（VF）机制，为每个帧添加 fabric 头部使端口
-  能够与 Fabric Port 交互以加入多个 fabric。端口将在其加入的每个 fabric 上
-  获得一个 N_Port_ID。每个 fabric 都将拥有自己对端点和配置参数的独特视图。
-  NPIV 可与 VF 一起使用，以便端口能在每个虚拟 fabric 上获得多个 N_Port_ID。
-
-  FC 传输现在引入了一个新的对象——vport。vport 是一个拥有全球唯一的
-  World Wide Port Name（wwpn）和 World Wide Node Name（wwnn）的实体。传输层
-  还允许为 vport 指定 FC4 角色，其中 FCP_Initiator 是预期的主要角色。一旦
-  通过上述某种方法实例化，它将拥有一个独特的 N_Port_ID 以及对 fabric 端点和
-  存储实体的视图。与物理适配器关联的 fc_host 将导出创建 vport 的能力。传输层
-  将在 Linux 设备树中创建 vport 对象，并指示 fc_host 的驱动实例化该虚拟端口。
-  通常，驱动会在 vport 上创建一个新的 scsi_host 实例，从而为 vport 产生一个
-  独特的 <H,C,T,L> 命名空间。因此，无论 FC 端口是基于物理端口还是虚拟端口，
-  每个都将表现为一个具有自己 target 和 LUN 空间的独特 scsi_host。
-
+  鏂扮殑 FC 鏍囧噯瀹氫箟浜嗗厑璁稿崟涓墿鐞嗙鍙ｈ〃鐜颁负澶氫釜閫氫俊绔彛鐨勬満鍒躲€備娇鐢?  N_Port Id 铏氭嫙鍖栵紙NPIV锛夋満鍒讹紝涓?Fabric 鐨勭偣瀵圭偣杩炴帴鍙互琚垎閰嶅浜?1 涓?  N_Port_ID銆傛瘡涓?N_Port_ID 瀵?fabric 涓婄殑鍏朵粬绔偣鑰岃█琛ㄧ幇涓轰竴涓嫭绔嬬殑绔彛锛?  灏界瀹冧笌浜ゆ崲鏈哄叡浜竴鏉＄墿鐞嗛摼璺繘琛岄€氫俊銆傛瘡涓?N_Port_ID 鍙互鍩轰簬 fabric
+  鍒嗗尯锛坺oning锛夊拰闃靛垪 LUN 鎺╃爜鎷ユ湁瀵?fabric 鐨勭嫭鐗硅鍥撅紙灏卞儚鏅€氱殑闈?NPIV
+  閫傞厤鍣ㄤ竴鏍凤級銆備娇鐢ㄨ櫄鎷?Fabric锛圴F锛夋満鍒讹紝涓烘瘡涓抚娣诲姞 fabric 澶撮儴浣跨鍙?  鑳藉涓?Fabric Port 浜や簰浠ュ姞鍏ュ涓?fabric銆傜鍙ｅ皢鍦ㄥ叾鍔犲叆鐨勬瘡涓?fabric 涓?  鑾峰緱涓€涓?N_Port_ID銆傛瘡涓?fabric 閮藉皢鎷ユ湁鑷繁瀵圭鐐瑰拰閰嶇疆鍙傛暟鐨勭嫭鐗硅鍥俱€?  NPIV 鍙笌 VF 涓€璧蜂娇鐢紝浠ヤ究绔彛鑳藉湪姣忎釜铏氭嫙 fabric 涓婅幏寰楀涓?N_Port_ID銆?
+  FC 浼犺緭鐜板湪寮曞叆浜嗕竴涓柊鐨勫璞♀€斺€攙port銆倂port 鏄竴涓嫢鏈夊叏鐞冨敮涓€鐨?  World Wide Port Name锛坵wpn锛夊拰 World Wide Node Name锛坵wnn锛夌殑瀹炰綋銆備紶杈撳眰
+  杩樺厑璁镐负 vport 鎸囧畾 FC4 瑙掕壊锛屽叾涓?FCP_Initiator 鏄鏈熺殑涓昏瑙掕壊銆備竴鏃?  閫氳繃涓婅堪鏌愮鏂规硶瀹炰緥鍖栵紝瀹冨皢鎷ユ湁涓€涓嫭鐗圭殑 N_Port_ID 浠ュ強瀵?fabric 绔偣鍜?  瀛樺偍瀹炰綋鐨勮鍥俱€備笌鐗╃悊閫傞厤鍣ㄥ叧鑱旂殑 fc_host 灏嗗鍑哄垱寤?vport 鐨勮兘鍔涖€備紶杈撳眰
+  灏嗗湪 Linux 璁惧鏍戜腑鍒涘缓 vport 瀵硅薄锛屽苟鎸囩ず fc_host 鐨勯┍鍔ㄥ疄渚嬪寲璇ヨ櫄鎷熺鍙ｃ€?  閫氬父锛岄┍鍔ㄤ細鍦?vport 涓婂垱寤轰竴涓柊鐨?scsi_host 瀹炰緥锛屼粠鑰屼负 vport 浜х敓涓€涓?  鐙壒鐨?<H,C,T,L> 鍛藉悕绌洪棿銆傚洜姝わ紝鏃犺 FC 绔彛鏄熀浜庣墿鐞嗙鍙ｈ繕鏄櫄鎷熺鍙ｏ紝
+  姣忎釜閮藉皢琛ㄧ幇涓轰竴涓叿鏈夎嚜宸?target 鍜?LUN 绌洪棿鐨勭嫭鐗?scsi_host銆?
 
 ```
 
@@ -113,18 +77,14 @@ Date:  11/18/2008
 
 ```
 
-### 设备树与 Vport 对象：
+### 璁惧鏍戜笌 Vport 瀵硅薄锛?
 
-
-  如今，设备树通常包含 scsi_host 对象，其下方是 rports 和 scsi target
-  对象。目前 FC 传输会创建 vport 对象，并将其放置在对应于物理适配器的
-  scsi_host 对象之下。LLDD 会为 vport 分配一个新的 scsi_host，并将其对象
-  链接到 vport 之下。vport 的 scsi_host 之下的其余树结构与非 NPIV 情况相同。
-  传输层的当前实现很容易允许 vport 的父对象不是 scsi_host。未来这可用于将
-  对象链接到特定于虚拟机的设备树。如果 vport 的父对象不是物理端口的
-  scsi_host，则会在物理端口的 scsi_host 中放置一个指向 vport 对象的符号链接。
-
-  以下是设备树中可预期的内容：
+  濡備粖锛岃澶囨爲閫氬父鍖呭惈 scsi_host 瀵硅薄锛屽叾涓嬫柟鏄?rports 鍜?scsi target
+  瀵硅薄銆傜洰鍓?FC 浼犺緭浼氬垱寤?vport 瀵硅薄锛屽苟灏嗗叾鏀剧疆鍦ㄥ搴斾簬鐗╃悊閫傞厤鍣ㄧ殑
+  scsi_host 瀵硅薄涔嬩笅銆侺LDD 浼氫负 vport 鍒嗛厤涓€涓柊鐨?scsi_host锛屽苟灏嗗叾瀵硅薄
+  閾炬帴鍒?vport 涔嬩笅銆倂port 鐨?scsi_host 涔嬩笅鐨勫叾浣欐爲缁撴瀯涓庨潪 NPIV 鎯呭喌鐩稿悓銆?  浼犺緭灞傜殑褰撳墠瀹炵幇寰堝鏄撳厑璁?vport 鐨勭埗瀵硅薄涓嶆槸 scsi_host銆傛湭鏉ヨ繖鍙敤浜庡皢
+  瀵硅薄閾炬帴鍒扮壒瀹氫簬铏氭嫙鏈虹殑璁惧鏍戙€傚鏋?vport 鐨勭埗瀵硅薄涓嶆槸鐗╃悊绔彛鐨?  scsi_host锛屽垯浼氬湪鐗╃悊绔彛鐨?scsi_host 涓斁缃竴涓寚鍚?vport 瀵硅薄鐨勭鍙烽摼鎺ャ€?
+  浠ヤ笅鏄澶囨爲涓彲棰勬湡鐨勫唴瀹癸細
 
 
 ```
@@ -164,123 +124,72 @@ Date:  11/18/2008
 
 ```
 
-### Vport 属性
+### Vport 灞炴€?
 
-
-  新的 fc_vport 类对象具有以下属性：
+  鏂扮殑 fc_vport 绫诲璞″叿鏈変互涓嬪睘鎬э細
 
      node_name:                                                 Read_Only
-       vport 的 WWNN。
-
+       vport 鐨?WWNN銆?
      port_name:                                                 Read_Only
-       vport 的 WWPN。
-
+       vport 鐨?WWPN銆?
      roles:                                                     Read_Only
-       指示在 vport 上启用的 FC4 角色。
-
+       鎸囩ず鍦?vport 涓婂惎鐢ㄧ殑 FC4 瑙掕壊銆?
      symbolic_name:                                             Read_Write
-       一个字符串，附加到驱动的 symbolic port name 字符串之后，该字符串
-       会被注册到交换机以标识 vport。例如，hypervisor 可以将此字符串设置为
-       "Xen Domain 2 VM 5 Vport 2"，这组标识符可在交换机管理界面上看到，
-       用以标识该端口。
-
+       涓€涓瓧绗︿覆锛岄檮鍔犲埌椹卞姩鐨?symbolic port name 瀛楃涓蹭箣鍚庯紝璇ュ瓧绗︿覆
+       浼氳娉ㄥ唽鍒颁氦鎹㈡満浠ユ爣璇?vport銆備緥濡傦紝hypervisor 鍙互灏嗘瀛楃涓茶缃负
+       "Xen Domain 2 VM 5 Vport 2"锛岃繖缁勬爣璇嗙鍙湪浜ゆ崲鏈虹鐞嗙晫闈笂鐪嬪埌锛?       鐢ㄤ互鏍囪瘑璇ョ鍙ｃ€?
      vport_delete:                                              Write_Only
-       写入 "1" 时，将拆除该 vport。
-
+       鍐欏叆 "1" 鏃讹紝灏嗘媶闄よ vport銆?
      vport_disable:                                            Write_Only
-       写入 "1" 时，将把 vport 转换为 disabled（禁用）状态。
-       该 vport 仍会在 Linux 内核中实例化，但不会在 FC 链路上处于活动状态。
-       写入 "0" 时，将启用该 vport。
-
+       鍐欏叆 "1" 鏃讹紝灏嗘妸 vport 杞崲涓?disabled锛堢鐢級鐘舵€併€?       璇?vport 浠嶄細鍦?Linux 鍐呮牳涓疄渚嬪寲锛屼絾涓嶄細鍦?FC 閾捐矾涓婂浜庢椿鍔ㄧ姸鎬併€?       鍐欏叆 "0" 鏃讹紝灏嗗惎鐢ㄨ vport銆?
      vport_last_state:                                         Read_Only
-       指示 vport 的前一个状态。参见下文“Vport 状态”一节。
-
+       鎸囩ず vport 鐨勫墠涓€涓姸鎬併€傚弬瑙佷笅鏂団€淰port 鐘舵€佲€濅竴鑺傘€?
      vport_state:                                              Read_Only
-       指示 vport 的状态。参见下文“Vport 状态”一节。
-
+       鎸囩ず vport 鐨勭姸鎬併€傚弬瑙佷笅鏂団€淰port 鐘舵€佲€濅竴鑺傘€?
      vport_type:                                               Read_Only
-       反映用于创建该虚拟端口的 FC 机制。
-       目前仅支持 NPIV。
+       鍙嶆槧鐢ㄤ簬鍒涘缓璇ヨ櫄鎷熺鍙ｇ殑 FC 鏈哄埗銆?       鐩墠浠呮敮鎸?NPIV銆?
 
-
-  对于 fc_host 类对象，为 vports 添加了以下属性：
+  瀵逛簬 fc_host 绫诲璞★紝涓?vports 娣诲姞浜嗕互涓嬪睘鎬э細
 
      max_npiv_vports:                                          Read_Only
-       指示驱动/适配器在该 fc_host 上能够支持的基于 NPIV 的 vport 的最大数量。
-
+       鎸囩ず椹卞姩/閫傞厤鍣ㄥ湪璇?fc_host 涓婅兘澶熸敮鎸佺殑鍩轰簬 NPIV 鐨?vport 鐨勬渶澶ф暟閲忋€?
      npiv_vports_inuse:                                        Read_Only
-       指示已在 fc_host 上实例化的基于 NPIV 的 vport 数量。
-
+       鎸囩ず宸插湪 fc_host 涓婂疄渚嬪寲鐨勫熀浜?NPIV 鐨?vport 鏁伴噺銆?
      vport_create:                                             Write_Only
-       一个“简单”的创建接口，用于在 fc_host 上实例化一个 vport。
-       向该属性写入一个 "<WWPN>:<WWNN>" 字符串。随后传输层会实例化 vport 对象，
-       并调用 LLDD 以 FCP_Initiator 角色创建该 vport。每个 WWN 指定为 16 个
-       十六进制字符，且**不能**包含任何前缀（例如 0x、x 等）。
-
+       涓€涓€滅畝鍗曗€濈殑鍒涘缓鎺ュ彛锛岀敤浜庡湪 fc_host 涓婂疄渚嬪寲涓€涓?vport銆?       鍚戣灞炴€у啓鍏ヤ竴涓?"<WWPN>:<WWNN>" 瀛楃涓层€傞殢鍚庝紶杈撳眰浼氬疄渚嬪寲 vport 瀵硅薄锛?       骞惰皟鐢?LLDD 浠?FCP_Initiator 瑙掕壊鍒涘缓璇?vport銆傛瘡涓?WWN 鎸囧畾涓?16 涓?       鍗佸叚杩涘埗瀛楃锛屼笖**涓嶈兘**鍖呭惈浠讳綍鍓嶇紑锛堜緥濡?0x銆亁 绛夛級銆?
      vport_delete:                                             Write_Only
-       一个“简单”的删除接口，用于拆除一个 vport。向该属性写入一个
-       "<WWPN>:<WWNN>" 字符串。传输层会在 fc_host 上找到具有相同 WWN 的 vport
-       并将其拆除。每个 WWN 指定为 16 个十六进制字符，且**不能**包含任何前缀
-       （例如 0x、x 等）。
+       涓€涓€滅畝鍗曗€濈殑鍒犻櫎鎺ュ彛锛岀敤浜庢媶闄や竴涓?vport銆傚悜璇ュ睘鎬у啓鍏ヤ竴涓?       "<WWPN>:<WWNN>" 瀛楃涓层€備紶杈撳眰浼氬湪 fc_host 涓婃壘鍒板叿鏈夌浉鍚?WWN 鐨?vport
+       骞跺皢鍏舵媶闄ゃ€傛瘡涓?WWN 鎸囧畾涓?16 涓崄鍏繘鍒跺瓧绗︼紝涓?*涓嶈兘**鍖呭惈浠讳綍鍓嶇紑
+       锛堜緥濡?0x銆亁 绛夛級銆?
 
+### Vport 鐘舵€?
 
-### Vport 状态
+  Vport 瀹炰緥鍖栫敱涓ら儴鍒嗙粍鎴愶細
 
+    - 涓庡唴鏍稿拰 LLDD 涓€璧峰垱寤恒€傝繖鎰忓懗鐫€鎵€鏈変紶杈撳眰鍜岄┍鍔ㄧ殑鏁版嵁缁撴瀯琚缓绔嬶紝
+      骞朵笖璁惧瀵硅薄琚垱寤恒€傝繖绛夋晥浜庡湪閫傞厤鍣ㄤ笂鐨勯┍鍔ㄢ€渁ttach锛堥檮鍔狅級鈥濓紝
+      瀹冧笌閫傞厤鍣ㄧ殑閾捐矾鐘舵€佹棤鍏炽€?    - 閫氳繃 ELS 娴侀噺绛夊湪 FC 閾捐矾涓婂疄渚嬪寲 vport銆傝繖绛夋晥浜庘€渓ink up锛堥摼璺氨缁級鈥?      浠ュ強鎴愬姛鐨勯摼璺垵濮嬪寲銆?
+  鏇村淇℃伅鍙湪涓嬫枃鐨?Vport Creation 鎺ュ彛涓€鑺備腑鎵惧埌銆?
+  涓€鏃?vport 宸蹭笌鍐呮牳/LLDD 涓€璧峰疄渚嬪寲锛屽氨鍙互閫氳繃 sysfs 灞炴€ф姤鍛?vport 鐘舵€併€?  瀛樺湪浠ヤ笅鍑犵鐘舵€侊細
 
-  Vport 实例化由两部分组成：
+    FC_VPORT_UNKNOWN            - Unknown锛堟湭鐭ワ級
+      涓€涓复鏃剁姸鎬侊紝閫氬父浠呭湪 vport 姝ｅ湪涓庡唴鏍稿拰 LLDD 涓€璧峰疄渚嬪寲鏃惰缃€?
+    FC_VPORT_ACTIVE             - Active锛堟椿鍔級
+      vport 宸叉垚鍔熷湪 FC 閾捐矾涓婂垱寤恒€傚畠鍔熻兘瀹屽銆?
+    FC_VPORT_DISABLED           - Disabled锛堢鐢級
+      vport 宸插疄渚嬪寲锛屼絾澶勪簬鈥渄isabled鈥濈姸鎬併€傝 vport 鏈湪 FC 閾捐矾涓婂疄渚嬪寲銆?      杩欑瓑鏁堜簬閾捐矾鈥渄own锛堟柇寮€锛夆€濈殑鐗╃悊绔彛銆?
+    FC_VPORT_LINKDOWN           - Linkdown锛堥摼璺柇寮€锛?      vport 涓嶅彲杩愯锛屽洜涓虹墿鐞嗛摼璺笉鍙繍琛屻€?
+    FC_VPORT_INITIALIZING       - Initializing锛堝垵濮嬪寲涓級
+      vport 姝ｅ湪 FC 閾捐矾涓婂疄渚嬪寲鐨勮繃绋嬩腑銆侺LDD 灏嗗湪寮€濮嬬敤浜庡垱寤?vport 鐨?      ELS 娴侀噺涔嬪墠璁剧疆姝ょ姸鎬併€傛鐘舵€佸皢鎸佺画锛岀洿鍒?vport 鎴愬姛鍒涘缓锛堢姸鎬佸彉涓?      FC_VPORT_ACTIVE锛夋垨澶辫触锛堢姸鎬佸彉涓轰笅杩版煇涓€硷級銆傜敱浜庢鐘舵€佹槸鐬€佺殑锛?      瀹冧笉浼氳淇濈暀鍦?"vport_last_state" 涓€?
+    FC_VPORT_NO_FABRIC_SUPP     - No Fabric Support锛堟棤 Fabric 鏀寔锛?      vport 涓嶅彲杩愯銆傞亣鍒颁簡浠ヤ笅鏉′欢涔嬩竴锛?
+       - FC 鎷撴墤涓嶆槸鐐瑰鐐癸紙Point-to-Point锛夈€?       - FC 绔彛鏈繛鎺ュ埌 F_Port銆?       - F_Port 琛ㄧず涓嶆敮鎸?NPIV銆?
+    FC_VPORT_NO_FABRIC_RSCS     - No Fabric Resources锛堟棤 Fabric 璧勬簮锛?      vport 涓嶅彲杩愯銆侳abric 鐨?FDISC 澶辫触锛屽叾鐘舵€佽〃鏄庡畠娌℃湁瓒冲鐨勮祫婧愭潵瀹屾垚
+      璇ユ搷浣溿€?
+    FC_VPORT_FABRIC_LOGOUT      - Fabric Logout锛團abric 娉ㄩ攢锛?      vport 涓嶅彲杩愯銆侳abric 宸插涓庤 vport 鍏宠仈鐨?N_Port_ID 鎵ц浜?LOGO銆?
+    FC_VPORT_FABRIC_REJ_WWN     - Fabric Rejected WWN锛團abric 鎷掔粷 WWN锛?      vport 涓嶅彲杩愯銆侳abric 鐨?FDISC 澶辫触锛屽叾鐘舵€佽〃鏄?WWN 鏃犳晥銆?
+    FC_VPORT_FAILED             - VPort Failed锛圴Port 澶辫触锛?      vport 涓嶅彲杩愯銆傝繖鏄墍鏈夊叾浠栭敊璇潯浠剁殑鍏滃簳鐘舵€併€?
 
-    - 与内核和 LLDD 一起创建。这意味着所有传输层和驱动的数据结构被建立，
-      并且设备对象被创建。这等效于在适配器上的驱动“attach（附加）”，
-      它与适配器的链路状态无关。
-    - 通过 ELS 流量等在 FC 链路上实例化 vport。这等效于“link up（链路就绪）”
-      以及成功的链路初始化。
-
-  更多信息可在下文的 Vport Creation 接口一节中找到。
-
-  一旦 vport 已与内核/LLDD 一起实例化，就可以通过 sysfs 属性报告 vport 状态。
-  存在以下几种状态：
-
-    FC_VPORT_UNKNOWN            - Unknown（未知）
-      一个临时状态，通常仅在 vport 正在与内核和 LLDD 一起实例化时设置。
-
-    FC_VPORT_ACTIVE             - Active（活动）
-      vport 已成功在 FC 链路上创建。它功能完备。
-
-    FC_VPORT_DISABLED           - Disabled（禁用）
-      vport 已实例化，但处于“disabled”状态。该 vport 未在 FC 链路上实例化。
-      这等效于链路“down（断开）”的物理端口。
-
-    FC_VPORT_LINKDOWN           - Linkdown（链路断开）
-      vport 不可运行，因为物理链路不可运行。
-
-    FC_VPORT_INITIALIZING       - Initializing（初始化中）
-      vport 正在 FC 链路上实例化的过程中。LLDD 将在开始用于创建 vport 的
-      ELS 流量之前设置此状态。此状态将持续，直到 vport 成功创建（状态变为
-      FC_VPORT_ACTIVE）或失败（状态变为下述某个值）。由于此状态是瞬态的，
-      它不会被保留在 "vport_last_state" 中。
-
-    FC_VPORT_NO_FABRIC_SUPP     - No Fabric Support（无 Fabric 支持）
-      vport 不可运行。遇到了以下条件之一：
-
-       - FC 拓扑不是点对点（Point-to-Point）。
-       - FC 端口未连接到 F_Port。
-       - F_Port 表示不支持 NPIV。
-
-    FC_VPORT_NO_FABRIC_RSCS     - No Fabric Resources（无 Fabric 资源）
-      vport 不可运行。Fabric 的 FDISC 失败，其状态表明它没有足够的资源来完成
-      该操作。
-
-    FC_VPORT_FABRIC_LOGOUT      - Fabric Logout（Fabric 注销）
-      vport 不可运行。Fabric 已对与该 vport 关联的 N_Port_ID 执行了 LOGO。
-
-    FC_VPORT_FABRIC_REJ_WWN     - Fabric Rejected WWN（Fabric 拒绝 WWN）
-      vport 不可运行。Fabric 的 FDISC 失败，其状态表明 WWN 无效。
-
-    FC_VPORT_FAILED             - VPort Failed（VPort 失败）
-      vport 不可运行。这是所有其他错误条件的兜底状态。
-
-
-  以下状态表列出了不同的状态转换：
+  浠ヤ笅鐘舵€佽〃鍒楀嚭浜嗕笉鍚岀殑鐘舵€佽浆鎹細
 
    +------------------+--------------------------------+---------------------+
    | State            | Event                          | New State           |
@@ -339,18 +248,14 @@ Date:  11/18/2008
 
 ```
 
-### 传输层 <-> LLDD 接口
+### 浼犺緭灞?<-> LLDD 鎺ュ彛
 
 
-LLDD 对 vport 的支持：
+LLDD 瀵?vport 鐨勬敮鎸侊細
 
-  LLDD 通过在传输模板中提供 vport_create() 函数来表明对 vports 的支持。
-  该函数的存在会导致在 fc_host 上创建新的属性。作为物理端口相对于传输层
-  完成其初始化的一部分，它应当设置 max_npiv_vports 属性，以指示驱动和/或
-  适配器所支持的 vport 的最大数量。
+  LLDD 閫氳繃鍦ㄤ紶杈撴ā鏉夸腑鎻愪緵 vport_create() 鍑芥暟鏉ヨ〃鏄庡 vports 鐨勬敮鎸併€?  璇ュ嚱鏁扮殑瀛樺湪浼氬鑷村湪 fc_host 涓婂垱寤烘柊鐨勫睘鎬с€備綔涓虹墿鐞嗙鍙ｇ浉瀵逛簬浼犺緭灞?  瀹屾垚鍏跺垵濮嬪寲鐨勪竴閮ㄥ垎锛屽畠搴斿綋璁剧疆 max_npiv_vports 灞炴€э紝浠ユ寚绀洪┍鍔ㄥ拰/鎴?  閫傞厤鍣ㄦ墍鏀寔鐨?vport 鐨勬渶澶ф暟閲忋€?
 
-
-Vport 创建（Vport Creation）：
+Vport 鍒涘缓锛圴port Creation锛夛細
 
 ```
 
@@ -438,7 +343,7 @@ Vport 创建（Vport Creation）：
 
 ```
 
-Vport 禁用/启用（Vport Disable/Enable）：
+Vport 绂佺敤/鍚敤锛圴port Disable/Enable锛夛細
 
 ```
 
@@ -471,7 +376,7 @@ Vport 禁用/启用（Vport Disable/Enable）：
 
 ```
 
-Vport 删除（Vport Deletion）：
+Vport 鍒犻櫎锛圴port Deletion锛夛細
 
 ```
 
@@ -497,20 +402,15 @@ Vport 删除（Vport Deletion）：
 
 ```
 
-其他（Other）：
-  fc_host port_type 属性：
-    有一个新的 fc_host port_type 取值——FC_PORTTYPE_NPIV。此取值必须在所有
-    基于 vport 的 fc_host 上设置。通常，在物理端口上，port_type 属性会基于
-    拓扑类型和 fabric 的存在被设置为 NPORT、NLPORT 等。由于这不适用于 vport，
-    因此报告用于创建该 vport 的 FC 机制更为合理。
+鍏朵粬锛圤ther锛夛細
+  fc_host port_type 灞炴€э細
+    鏈変竴涓柊鐨?fc_host port_type 鍙栧€尖€斺€擣C_PORTTYPE_NPIV銆傛鍙栧€煎繀椤诲湪鎵€鏈?    鍩轰簬 vport 鐨?fc_host 涓婅缃€傞€氬父锛屽湪鐗╃悊绔彛涓婏紝port_type 灞炴€т細鍩轰簬
+    鎷撴墤绫诲瀷鍜?fabric 鐨勫瓨鍦ㄨ璁剧疆涓?NPORT銆丯LPORT 绛夈€傜敱浜庤繖涓嶉€傜敤浜?vport锛?    鍥犳鎶ュ憡鐢ㄤ簬鍒涘缓璇?vport 鐨?FC 鏈哄埗鏇翠负鍚堢悊銆?
+  椹卞姩鍗歌浇锛圖river unload锛夛細
+    FC 椹卞姩鍦ㄨ璋冪敤 scsi_remove_host() 涔嬪墠蹇呴』鍏堣皟鐢?fc_remove_host()銆?    杩欏厑璁?fc_host 鍦?scsi_host 琚媶闄や箣鍓嶅厛鎷嗛櫎鎵€鏈夎繙绋嬬鍙ｃ€俧c_remove_host()
+    璋冪敤涔熷凡鏇存柊锛屼細鍚屾椂绉婚櫎璇?fc_host 鐨勬墍鏈?vport銆?
 
-  驱动卸载（Driver unload）：
-    FC 驱动在被调用 scsi_remove_host() 之前必须先调用 fc_remove_host()。
-    这允许 fc_host 在 scsi_host 被拆除之前先拆除所有远程端口。fc_remove_host()
-    调用也已更新，会同时移除该 fc_host 的所有 vport。
-
-
-### 传输层提供的函数
+### 浼犺緭灞傛彁渚涚殑鍑芥暟
 
 
 The following functions are supplied by the FC-transport for use by LLDs.
@@ -550,14 +450,14 @@ The following functions are supplied by the FC-transport for use by LLDs.
 
 ```
 
-## FC BSG 支持（CT & ELS 透传，以及更多）
+## FC BSG 鏀寔锛圕T & ELS 閫忎紶锛屼互鍙婃洿澶氾級
 
 
 << To Be Supplied >>
 
 
 
-## 致谢
+## 鑷磋阿
 
 
 The following people have contributed to this document:

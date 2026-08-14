@@ -1,25 +1,16 @@
-## 网络设备和内核，以及你！
+﻿## 缃戠粶璁惧鍜屽唴鏍革紝浠ュ強浣狅紒
 
 
-## 简介
+## 绠€浠?
+浠ヤ笅鏄叧浜庣綉缁滆澶囩殑涓€浜涢浂鏁ｆ枃妗ｉ泦鍚堛€傚畠闈㈠悜椹卞姩寮€鍙戣€呫€?
+## struct net_device 鐨勭敓鍛藉懆鏈熻鍒?
+缃戠粶璁惧缁撴瀯浣撳嵆浣垮湪妯″潡琚嵏杞藉悗涔熷繀椤绘寔缁瓨鍦紝骞朵笖蹇呴』浣跨敤 alloc_netdev_mqs() 鍙婂叾鐩稿叧鍑芥暟杩涜鍒嗛厤銆傚鏋滆澶囧凡鎴愬姛娉ㄥ唽锛屽畠灏嗗湪鏈€鍚庝竴娆′娇鐢ㄦ椂鐢?free_netdev() 閲婃斁銆傝繖鏄负浜嗚閭ｄ釜鏋佺鎯呭喌锛坧athological case锛夎兘澶熻骞插噣鍦板鐞嗭紙渚嬪锛歚rmmod mydriver </sys/class/net/myeth/mtu`锛夈€?
+alloc_netdev_mqs() / alloc_netdev() 浼氫负椹卞姩绉佹湁鏁版嵁棰勭暀棰濆绌洪棿锛岃绌洪棿鍦ㄧ綉缁滆澶囪閲婃斁鏃朵竴鍚岄噴鏀俱€傚鏋滃垎閰嶇殑鐙珛鏁版嵁琚檮鍔犲埌缃戠粶璁惧锛坣etdev_priv()锛変笂锛屽垯鐢辨ā鍧楅€€鍑哄鐞嗗嚱鏁拌礋璐ｉ噴鏀惧畠銆?
+娉ㄥ唽 struct net_device 鏈変袱缁?API銆傜涓€缁勫彲鐢ㄤ簬 `rtnl_lock` 灏氭湭鎸佹湁鐨勬櫘閫氫笂涓嬫枃锛歳egister_netdev()銆乽nregister_netdev()銆傜浜岀粍鍙敤浜?`rtnl_lock` 宸茬粡鎸佹湁鐨勬儏褰細register_netdevice()銆乽nregister_netdevice()銆乫ree_netdevice()銆?
+### 绠€鍗曢┍鍔?
 
-以下是关于网络设备的一些零散文档集合。它面向驱动开发者。
-
-## struct net_device 的生命周期规则
-
-网络设备结构体即使在模块被卸载后也必须持续存在，并且必须使用 alloc_netdev_mqs() 及其相关函数进行分配。如果设备已成功注册，它将在最后一次使用时由 free_netdev() 释放。这是为了让那个极端情况（pathological case）能够被干净地处理（例如：`rmmod mydriver </sys/class/net/myeth/mtu`）。
-
-alloc_netdev_mqs() / alloc_netdev() 会为驱动私有数据预留额外空间，该空间在网络设备被释放时一同释放。如果分配的独立数据被附加到网络设备（netdev_priv()）上，则由模块退出处理函数负责释放它。
-
-注册 struct net_device 有两组 API。第一组可用于 `rtnl_lock` 尚未持有的普通上下文：register_netdev()、unregister_netdev()。第二组可用于 `rtnl_lock` 已经持有的情形：register_netdevice()、unregister_netdevice()、free_netdevice()。
-
-### 简单驱动
-
-
-大多数驱动（尤其是设备驱动）在 `rtnl_lock` 未被持有（例如驱动的 probe 和 remove 路径）的上下文中处理 struct net_device 的生命周期。
-
-在这种情况下，struct net_device 的注册使用 register_netdev() 和 unregister_netdev() 函数完成：
-
+澶у鏁伴┍鍔紙灏ゅ叾鏄澶囬┍鍔級鍦?`rtnl_lock` 鏈鎸佹湁锛堜緥濡傞┍鍔ㄧ殑 probe 鍜?remove 璺緞锛夌殑涓婁笅鏂囦腑澶勭悊 struct net_device 鐨勭敓鍛藉懆鏈熴€?
+鍦ㄨ繖绉嶆儏鍐典笅锛宻truct net_device 鐨勬敞鍐屼娇鐢?register_netdev() 鍜?unregister_netdev() 鍑芥暟瀹屾垚锛?
 
   int probe()
   {
@@ -31,17 +22,17 @@ alloc_netdev_mqs() / alloc_netdev() 会为驱动私有数据预留额外空间�
       return -ENOMEM;
     priv = netdev_priv(dev);
 
-    /* ... 在调用 register_netdev() 之前完成所有设备设置 ...
+    /* ... 鍦ㄨ皟鐢?register_netdev() 涔嬪墠瀹屾垚鎵€鏈夎澶囪缃?...
      */
 
     err = register_netdev(dev);
     if (err)
       goto err_undo;
 
-    /** net_device 对用户可见！ **/
+    /** net_device 瀵圭敤鎴峰彲瑙侊紒 **/
 
   err_undo:
-    /** ... 撤销设备设置 ... **/
+    /** ... 鎾ら攢璁惧璁剧疆 ... **/
     free_netdev(dev);
     return err;
   }
@@ -52,18 +43,14 @@ alloc_netdev_mqs() / alloc_netdev() 会为驱动私有数据预留额外空间�
     free_netdev(dev);
   }
 
-注意，调用 register_netdev() 之后，设备便在系统中可见。用户可以立即打开它并开始发送/接收流量，或运行任何其他回调，因此所有初始化都必须在注册之前完成。
-
-unregister_netdev() 会关闭设备并等待所有用户使用完毕。struct net_device 自身的内存可能仍被 sysfs 引用，但对该设备的所有操作都会失败。
-
-free_netdev() 可以在 unregister_netdev() 返回之后，或者 register_netdev() 失败时调用。
-
-### 在 RTNL 下的设备管理
+娉ㄦ剰锛岃皟鐢?register_netdev() 涔嬪悗锛岃澶囦究鍦ㄧ郴缁熶腑鍙銆傜敤鎴峰彲浠ョ珛鍗虫墦寮€瀹冨苟寮€濮嬪彂閫?鎺ユ敹娴侀噺锛屾垨杩愯浠讳綍鍏朵粬鍥炶皟锛屽洜姝ゆ墍鏈夊垵濮嬪寲閮藉繀椤诲湪娉ㄥ唽涔嬪墠瀹屾垚銆?
+unregister_netdev() 浼氬叧闂澶囧苟绛夊緟鎵€鏈夌敤鎴蜂娇鐢ㄥ畬姣曘€俿truct net_device 鑷韩鐨勫唴瀛樺彲鑳戒粛琚?sysfs 寮曠敤锛屼絾瀵硅璁惧鐨勬墍鏈夋搷浣滈兘浼氬け璐ャ€?
+free_netdev() 鍙互鍦?unregister_netdev() 杩斿洖涔嬪悗锛屾垨鑰?register_netdev() 澶辫触鏃惰皟鐢ㄣ€?
+### 鍦?RTNL 涓嬬殑璁惧绠＄悊
 
 
-在已经持有 `rtnl_lock` 的上下文中注册 struct net_device 需要格外小心。在这些场景中，大多数驱动会希望利用 struct net_device 的 `needs_free_netdev` 和 `priv_destructor` 成员来释放状态。
-
-在 `rtnl_lock` 下处理 netdev 的示例流程：
+鍦ㄥ凡缁忔寔鏈?`rtnl_lock` 鐨勪笂涓嬫枃涓敞鍐?struct net_device 闇€瑕佹牸澶栧皬蹇冦€傚湪杩欎簺鍦烘櫙涓紝澶у鏁伴┍鍔ㄤ細甯屾湜鍒╃敤 struct net_device 鐨?`needs_free_netdev` 鍜?`priv_destructor` 鎴愬憳鏉ラ噴鏀剧姸鎬併€?
+鍦?`rtnl_lock` 涓嬪鐞?netdev 鐨勭ず渚嬫祦绋嬶細
 
 
   static void my_setup(struct net_device *dev)
@@ -89,7 +76,7 @@ free_netdev() 可以在 unregister_netdev() 返回之后，或者 register_netde
       return -ENOMEM;
     priv = netdev_priv(dev);
 
-    /** 隐式构造函数 **/
+    /** 闅愬紡鏋勯€犲嚱鏁?**/
     err = some_init(priv);
     if (err)
       goto err_free_dev;
@@ -99,17 +86,15 @@ free_netdev() 可以在 unregister_netdev() 返回之后，或者 register_netde
       err = -ENOMEM;
       goto err_some_uninit;
     }
-    /** 构造函数结束，设置析构函数： **/
+    /** 鏋勯€犲嚱鏁扮粨鏉燂紝璁剧疆鏋愭瀯鍑芥暟锛?**/
     dev->priv_destructor = my_destructor;
 
     err = register_netdevice(dev);
     if (err)
-      /** register_netdevice() 会在失败时调用析构函数 **/
+      /** register_netdevice() 浼氬湪澶辫触鏃惰皟鐢ㄦ瀽鏋勫嚱鏁?**/
       goto err_free_dev;
 
-    /* 如果此后有任何失败，unregister_netdevice()（或 unregister_netdev()）
-     - 会负责调用 my_destructor 和 free_netdev()。
-     */
+    /* 濡傛灉姝ゅ悗鏈変换浣曞け璐ワ紝unregister_netdevice()锛堟垨 unregister_netdev()锛?     - 浼氳礋璐ｈ皟鐢?my_destructor 鍜?free_netdev()銆?     */
 
     return 0;
 
@@ -120,188 +105,124 @@ free_netdev() 可以在 unregister_netdev() 返回之后，或者 register_netde
     return err;
   }
 
-如果设置了 struct net_device.priv_destructor，核心代码会在 unregister_netdevice() 之后的某个时刻调用它，如果 register_netdevice() 失败它也会被调用。该回调可能在持有或未持有 `rtnl_lock` 的情况下被调用。
-
-没有显式的构造函数回调，驱动在分配私有 netdev 状态之后、注册之前"构造"它。
-
-设置 struct net_device.needs_free_netdev 会使核心代码在 unregister_netdevice() 之后、当对设备的所有引用都消失时，自动调用 free_netdevice()。它仅在成功调用 register_netdevice() 之后才生效，因此如果 register_netdevice() 失败，驱动负责调用 free_netdev()。
-
-free_netdev() 在出错路径上、紧接 unregister_netdevice() 之后，或 register_netdevice() 失败时，都是安全可调用的。netdev 的（注销）注册过程的某些部分发生在 `rtnl_lock` 释放之后，因此在这些情况下 free_netdev() 会将其部分处理推迟到 `rtnl_lock` 释放之后进行。
-
-从 struct rtnl_link_ops 派生出的设备绝不应直接释放 struct net_device。
-
-#### .ndo_init 和 .ndo_uninit
+濡傛灉璁剧疆浜?struct net_device.priv_destructor锛屾牳蹇冧唬鐮佷細鍦?unregister_netdevice() 涔嬪悗鐨勬煇涓椂鍒昏皟鐢ㄥ畠锛屽鏋?register_netdevice() 澶辫触瀹冧篃浼氳璋冪敤銆傝鍥炶皟鍙兘鍦ㄦ寔鏈夋垨鏈寔鏈?`rtnl_lock` 鐨勬儏鍐典笅琚皟鐢ㄣ€?
+娌℃湁鏄惧紡鐨勬瀯閫犲嚱鏁板洖璋冿紝椹卞姩鍦ㄥ垎閰嶇鏈?netdev 鐘舵€佷箣鍚庛€佹敞鍐屼箣鍓?鏋勯€?瀹冦€?
+璁剧疆 struct net_device.needs_free_netdev 浼氫娇鏍稿績浠ｇ爜鍦?unregister_netdevice() 涔嬪悗銆佸綋瀵硅澶囩殑鎵€鏈夊紩鐢ㄩ兘娑堝け鏃讹紝鑷姩璋冪敤 free_netdevice()銆傚畠浠呭湪鎴愬姛璋冪敤 register_netdevice() 涔嬪悗鎵嶇敓鏁堬紝鍥犳濡傛灉 register_netdevice() 澶辫触锛岄┍鍔ㄨ礋璐ｈ皟鐢?free_netdev()銆?
+free_netdev() 鍦ㄥ嚭閿欒矾寰勪笂銆佺揣鎺?unregister_netdevice() 涔嬪悗锛屾垨 register_netdevice() 澶辫触鏃讹紝閮芥槸瀹夊叏鍙皟鐢ㄧ殑銆俷etdev 鐨勶紙娉ㄩ攢锛夋敞鍐岃繃绋嬬殑鏌愪簺閮ㄥ垎鍙戠敓鍦?`rtnl_lock` 閲婃斁涔嬪悗锛屽洜姝ゅ湪杩欎簺鎯呭喌涓?free_netdev() 浼氬皢鍏堕儴鍒嗗鐞嗘帹杩熷埌 `rtnl_lock` 閲婃斁涔嬪悗杩涜銆?
+浠?struct rtnl_link_ops 娲剧敓鍑虹殑璁惧缁濅笉搴旂洿鎺ラ噴鏀?struct net_device銆?
+#### .ndo_init 鍜?.ndo_uninit
 
 
-`.ndo_init` 和 `.ndo_uninit` 回调在 net_device 注册和注销期间、在 `rtnl_lock` 下被调用。驱动可以在它们初始化过程的某些部分需要在 `rtnl_lock` 下运行时使用这些回调。
-
-`.ndo_init` 在设备于系统中可见之前运行，`.ndo_uninit` 在设备关闭后的注销过程中运行，但其他子系统可能仍然持有对 netdev 的未决引用。
-
+`.ndo_init` 鍜?`.ndo_uninit` 鍥炶皟鍦?net_device 娉ㄥ唽鍜屾敞閿€鏈熼棿銆佸湪 `rtnl_lock` 涓嬭璋冪敤銆傞┍鍔ㄥ彲浠ュ湪瀹冧滑鍒濆鍖栬繃绋嬬殑鏌愪簺閮ㄥ垎闇€瑕佸湪 `rtnl_lock` 涓嬭繍琛屾椂浣跨敤杩欎簺鍥炶皟銆?
+`.ndo_init` 鍦ㄨ澶囦簬绯荤粺涓彲瑙佷箣鍓嶈繍琛岋紝`.ndo_uninit` 鍦ㄨ澶囧叧闂悗鐨勬敞閿€杩囩▼涓繍琛岋紝浣嗗叾浠栧瓙绯荤粺鍙兘浠嶇劧鎸佹湁瀵?netdev 鐨勬湭鍐冲紩鐢ㄣ€?
 ## MTU
 
-每个网络设备都有一个最大传输单元（Maximum Transfer Unit，MTU）。MTU 不包含任何链路层协议开销。上层协议不得向设备传入一个数据量超过 mtu 的套接字缓冲区（skb）来传输。MTU 不包含链路层头部开销，例如标准 MTU 为 1500 字节的以太网，由于以太网头部的存在，实际 skb 最多会包含 1514 字节。设备还应当为 4 字节的 VLAN 头部留出空间。
+姣忎釜缃戠粶璁惧閮芥湁涓€涓渶澶т紶杈撳崟鍏冿紙Maximum Transfer Unit锛孧TU锛夈€侻TU 涓嶅寘鍚换浣曢摼璺眰鍗忚寮€閿€銆備笂灞傚崗璁笉寰楀悜璁惧浼犲叆涓€涓暟鎹噺瓒呰繃 mtu 鐨勫鎺ュ瓧缂撳啿鍖猴紙skb锛夋潵浼犺緭銆侻TU 涓嶅寘鍚摼璺眰澶撮儴寮€閿€锛屼緥濡傛爣鍑?MTU 涓?1500 瀛楄妭鐨勪互澶綉锛岀敱浜庝互澶綉澶撮儴鐨勫瓨鍦紝瀹為檯 skb 鏈€澶氫細鍖呭惈 1514 瀛楄妭銆傝澶囪繕搴斿綋涓?4 瀛楄妭鐨?VLAN 澶撮儴鐣欏嚭绌洪棿銆?
+鍒嗙墖鍗歌浇锛圫egmentation Offload锛孏SO銆乀SO锛夋槸姝よ鍒欑殑涓€涓緥澶栥€備笂灞傚崗璁彲浠ュ悜璁惧鐨勫彂閫佷緥绋嬩紶鍏ヤ竴涓ぇ鐨勫鎺ュ瓧缂撳啿鍖猴紝璁惧浼氭牴鎹綋鍓?MTU 灏嗗叾鎷嗗垎鎴愮嫭绔嬬殑鏁版嵁鍖呫€?
+MTU 鏄绉扮殑锛屽悓鏃堕€傜敤浜庢帴鏀跺拰鍙戦€併€傝澶囧繀椤昏兘澶熸帴鏀惰嚦灏?MTU 鎵€鍏佽鐨勬渶澶у昂瀵哥殑鏁版嵁鍖呫€傜綉缁滆澶囧彲浠ュ皢 MTU 鐢ㄤ綔璋冩暣鎺ユ敹缂撳啿鍖哄ぇ灏忕殑鏈哄埗锛屼絾璁惧搴斿綋鍏佽甯︽湁 VLAN 澶撮儴鐨勬暟鎹寘銆傛爣鍑嗕互澶綉 mtu 涓?1500 瀛楄妭鏃讹紝璁惧搴斿綋鍏佽鏈€澶?1518 瀛楄妭鐨勬暟鎹寘锛?500 + 14 澶撮儴 + 4 鏍囩锛夈€傝澶囧彲浠ワ細涓㈠純銆佹埅鏂紝鎴栧悜涓婁紶閫掕秴澶э紙oversize锛夋暟鎹寘锛屼絾涓㈠純瓒呭ぇ鏁版嵁鍖呮槸棣栭€夈€?
 
-分片卸载（Segmentation Offload，GSO、TSO）是此规则的一个例外。上层协议可以向设备的发送例程传入一个大的套接字缓冲区，设备会根据当前 MTU 将其拆分成独立的数据包。
-
-MTU 是对称的，同时适用于接收和发送。设备必须能够接收至少 MTU 所允许的最大尺寸的数据包。网络设备可以将 MTU 用作调整接收缓冲区大小的机制，但设备应当允许带有 VLAN 头部的数据包。标准以太网 mtu 为 1500 字节时，设备应当允许最多 1518 字节的数据包（1500 + 14 头部 + 4 标签）。设备可以：丢弃、截断，或向上传递超大（oversize）数据包，但丢弃超大数据包是首选。
-
-
-## struct net_device 同步规则
+## struct net_device 鍚屾瑙勫垯
 
 ndo_open:
-	同步：rtnl_lock() 信号量。此外，如果驱动实现了队列管理或整形（shaper）API，还需 netdev 实例锁。
-	上下文：进程
+	鍚屾锛歳tnl_lock() 淇″彿閲忋€傛澶栵紝濡傛灉椹卞姩瀹炵幇浜嗛槦鍒楃鐞嗘垨鏁村舰锛坰haper锛堿PI锛岃繕闇€ netdev 瀹炰緥閿併€?	涓婁笅鏂囷細杩涚▼
 
 ndo_stop:
-	同步：rtnl_lock() 信号量。此外，如果驱动实现了队列管理或整形 API，还需 netdev 实例锁。
-	上下文：进程
-	注意：netif_running() 保证为 false
+	鍚屾锛歳tnl_lock() 淇″彿閲忋€傛澶栵紝濡傛灉椹卞姩瀹炵幇浜嗛槦鍒楃鐞嗘垨鏁村舰 API锛岃繕闇€ netdev 瀹炰緥閿併€?	涓婁笅鏂囷細杩涚▼
+	娉ㄦ剰锛歯etif_running() 淇濊瘉涓?false
 
 ndo_do_ioctl:
-	同步：rtnl_lock() 信号量。
-
-	这仅由网络子系统在内部调用，而不是像 linux-5.14 之前那样由用户空间调用 ioctl 触发。
-
+	鍚屾锛歳tnl_lock() 淇″彿閲忋€?
+	杩欎粎鐢辩綉缁滃瓙绯荤粺鍦ㄥ唴閮ㄨ皟鐢紝鑰屼笉鏄儚 linux-5.14 涔嬪墠閭ｆ牱鐢辩敤鎴风┖闂磋皟鐢?ioctl 瑙﹀彂銆?
 ndo_siocbond:
-	同步：rtnl_lock() 信号量。此外，如果驱动实现了队列管理或整形 API，还需 netdev 实例锁。
-        上下文：进程
+	鍚屾锛歳tnl_lock() 淇″彿閲忋€傛澶栵紝濡傛灉椹卞姩瀹炵幇浜嗛槦鍒楃鐞嗘垨鏁村舰 API锛岃繕闇€ netdev 瀹炰緥閿併€?        涓婁笅鏂囷細杩涚▼
 
-	由 bonding 驱动用于 SIOCBOND 系列的 ioctl 命令。
-
+	鐢?bonding 椹卞姩鐢ㄤ簬 SIOCBOND 绯诲垪鐨?ioctl 鍛戒护銆?
 ndo_siocwandev:
-	同步：rtnl_lock() 信号量。此外，如果驱动实现了队列管理或整形 API，还需 netdev 实例锁。
-	上下文：进程
+	鍚屾锛歳tnl_lock() 淇″彿閲忋€傛澶栵紝濡傛灉椹卞姩瀹炵幇浜嗛槦鍒楃鐞嗘垨鏁村舰 API锛岃繕闇€ netdev 瀹炰緥閿併€?	涓婁笅鏂囷細杩涚▼
 
-	由 drivers/net/wan 框架用于配合 if_settings 结构体处理 SIOCWANDEV ioctl。
-
+	鐢?drivers/net/wan 妗嗘灦鐢ㄤ簬閰嶅悎 if_settings 缁撴瀯浣撳鐞?SIOCWANDEV ioctl銆?
 ndo_siocdevprivate:
-	同步：rtnl_lock() 信号量。此外，如果驱动实现了队列管理或整形 API，还需 netdev 实例锁。
-	上下文：进程
+	鍚屾锛歳tnl_lock() 淇″彿閲忋€傛澶栵紝濡傛灉椹卞姩瀹炵幇浜嗛槦鍒楃鐞嗘垨鏁村舰 API锛岃繕闇€ netdev 瀹炰緥閿併€?	涓婁笅鏂囷細杩涚▼
 
-	这用于实现 SIOCDEVPRIVATE ioctl 辅助函数。不应将其添加到新驱动中，所以不要使用。
-
+	杩欑敤浜庡疄鐜?SIOCDEVPRIVATE ioctl 杈呭姪鍑芥暟銆備笉搴斿皢鍏舵坊鍔犲埌鏂伴┍鍔ㄤ腑锛屾墍浠ヤ笉瑕佷娇鐢ㄣ€?
 ndo_eth_ioctl:
-	同步：rtnl_lock() 信号量。此外，如果驱动实现了队列管理或整形 API，还需 netdev 实例锁。
-	上下文：进程
+	鍚屾锛歳tnl_lock() 淇″彿閲忋€傛澶栵紝濡傛灉椹卞姩瀹炵幇浜嗛槦鍒楃鐞嗘垨鏁村舰 API锛岃繕闇€ netdev 瀹炰緥閿併€?	涓婁笅鏂囷細杩涚▼
 
 ndo_get_stats:
-	同步：RCU（可以与统计信息更新路径并发调用）。
-	上下文：原子（atomic，不能在 RCU 下睡眠）
+	鍚屾锛歊CU锛堝彲浠ヤ笌缁熻淇℃伅鏇存柊璺緞骞跺彂璋冪敤锛夈€?	涓婁笅鏂囷細鍘熷瓙锛坅tomic锛屼笉鑳藉湪 RCU 涓嬬潯鐪狅級
 
 ndo_start_xmit:
-	同步：__netif_tx_lock 自旋锁。
+	鍚屾锛歘_netif_tx_lock 鑷棆閿併€?
+	褰撻┍鍔ㄨ缃?dev->lltx 鏃讹紝杩欏皢鍦ㄤ笉鎸佹湁 netif_tx_lock 鐨勬儏鍐典笅琚皟鐢ㄣ€傝繖绉嶆儏鍐典笅椹卞姩闇€瑕佸湪闇€瑕佹椂鑷鍔犻攣銆?	閭ｉ噷鐨勫姞閿佽繕搴斿綋姝ｇ‘闃叉涓?set_rx_mode 涔嬮棿鐨勭珵浜夈€傝鍛婏細浣跨敤 dev->lltx 宸茶寮冪敤銆備笉瑕佸湪鏂伴┍鍔ㄤ腑浣跨敤瀹冦€?
+	涓婁笅鏂囷細BH 琚鐢ㄦ椂鐨勮繘绋嬫垨 BH锛堝畾鏃跺櫒锛夛紝netconsole 浼氬湪涓柇琚鐢ㄧ殑鎯呭喌涓嬭皟鐢ㄥ畠銆?
+	杩斿洖鐮侊細
 
-	当驱动设置 dev->lltx 时，这将在不持有 netif_tx_lock 的情况下被调用。这种情况下驱动需要在需要时自行加锁。
-	那里的加锁还应当正确防止与 set_rx_mode 之间的竞争。警告：使用 dev->lltx 已被弃用。不要在新驱动中使用它。
-
-	上下文：BH 被禁用时的进程或 BH（定时器），netconsole 会在中断被禁用的情况下调用它。
-
-	返回码：
-
- - NETDEV_TX_OK 一切正常。
- - NETDEV_TX_BUSY 无法发送数据包，稍后重试
-	  通常是一个 bug，意味着驱动中的队列启动/停止流控被破坏。
-	  注意：驱动不得将 skb 放入其 DMA 环中。
-
+ - NETDEV_TX_OK 涓€鍒囨甯搞€? - NETDEV_TX_BUSY 鏃犳硶鍙戦€佹暟鎹寘锛岀◢鍚庨噸璇?	  閫氬父鏄竴涓?bug锛屾剰鍛崇潃椹卞姩涓殑闃熷垪鍚姩/鍋滄娴佹帶琚牬鍧忋€?	  娉ㄦ剰锛氶┍鍔ㄤ笉寰楀皢 skb 鏀惧叆鍏?DMA 鐜腑銆?
 ndo_tx_timeout:
-	同步：netif_tx_lock 自旋锁；所有 TX 队列被冻结。
-	上下文：BH 被禁用
-	注意：netif_queue_stopped() 保证为 true
+	鍚屾锛歯etif_tx_lock 鑷棆閿侊紱鎵€鏈?TX 闃熷垪琚喕缁撱€?	涓婁笅鏂囷細BH 琚鐢?	娉ㄦ剰锛歯etif_queue_stopped() 淇濊瘉涓?true
 
 ndo_set_rx_mode:
-	同步：netif_addr_lock 自旋锁。
-	上下文：BH 被禁用
-	注意：已弃用，推荐使用在进程上下文中运行的 ndo_set_rx_mode_async。
-
+	鍚屾锛歯etif_addr_lock 鑷棆閿併€?	涓婁笅鏂囷細BH 琚鐢?	娉ㄦ剰锛氬凡寮冪敤锛屾帹鑽愪娇鐢ㄥ湪杩涚▼涓婁笅鏂囦腑杩愯鐨?ndo_set_rx_mode_async銆?
 ndo_set_rx_mode_async:
-	同步：rtnl_lock() 信号量。此外，如果驱动实现了队列管理或整形 API，还需 netdev 实例锁。
-	上下文：进程（来自工作队列）
-	注意：ndo_set_rx_mode 的异步版本，在进程上下文中运行。接收单播和组播地址列表的快照。
-
+	鍚屾锛歳tnl_lock() 淇″彿閲忋€傛澶栵紝濡傛灉椹卞姩瀹炵幇浜嗛槦鍒楃鐞嗘垨鏁村舰 API锛岃繕闇€ netdev 瀹炰緥閿併€?	涓婁笅鏂囷細杩涚▼锛堟潵鑷伐浣滈槦鍒楋級
+	娉ㄦ剰锛歯do_set_rx_mode 鐨勫紓姝ョ増鏈紝鍦ㄨ繘绋嬩笂涓嬫枃涓繍琛屻€傛帴鏀跺崟鎾拰缁勬挱鍦板潃鍒楄〃鐨勫揩鐓с€?
 ndo_change_rx_flags:
-	同步：rtnl_lock() 信号量。此外，如果驱动实现了队列管理或整形 API，还需 netdev 实例锁。
-
+	鍚屾锛歳tnl_lock() 淇″彿閲忋€傛澶栵紝濡傛灉椹卞姩瀹炵幇浜嗛槦鍒楃鐞嗘垨鏁村舰 API锛岃繕闇€ netdev 瀹炰緥閿併€?
 ndo_setup_tc:
-	`TC_SETUP_BLOCK` 和 `TC_SETUP_FT` 运行在 NFT 锁下（即没有 `rtnl_lock`，也没有设备实例锁）。其余的 `tc_setup_type` 类型在驱动实现了队列管理或整形 API 时，运行在 netdev 实例锁下。
-
-上面列表未指定的大多数 ndo 回调都运行在 `rtnl_lock` 下。此外，如果驱动实现了队列管理或整形 API，还会同时获取 netdev 实例锁。
-
-## struct napi_struct 同步规则
+	`TC_SETUP_BLOCK` 鍜?`TC_SETUP_FT` 杩愯鍦?NFT 閿佷笅锛堝嵆娌℃湁 `rtnl_lock`锛屼篃娌℃湁璁惧瀹炰緥閿侊級銆傚叾浣欑殑 `tc_setup_type` 绫诲瀷鍦ㄩ┍鍔ㄥ疄鐜颁簡闃熷垪绠＄悊鎴栨暣褰?API 鏃讹紝杩愯鍦?netdev 瀹炰緥閿佷笅銆?
+涓婇潰鍒楄〃鏈寚瀹氱殑澶у鏁?ndo 鍥炶皟閮借繍琛屽湪 `rtnl_lock` 涓嬨€傛澶栵紝濡傛灉椹卞姩瀹炵幇浜嗛槦鍒楃鐞嗘垨鏁村舰 API锛岃繕浼氬悓鏃惰幏鍙?netdev 瀹炰緥閿併€?
+## struct napi_struct 鍚屾瑙勫垯
 
 napi->poll:
-	同步：
-		napi->state 中的 NAPI_STATE_SCHED 位。设备的 ndo_stop 方法会对所有 NAPI 实例调用 napi_disable()，它会针对 NAPI_STATE_SCHED napi->state 位进行睡眠式轮询，等待所有未决的 NAPI 活动停止。
+	鍚屾锛?		napi->state 涓殑 NAPI_STATE_SCHED 浣嶃€傝澶囩殑 ndo_stop 鏂规硶浼氬鎵€鏈?NAPI 瀹炰緥璋冪敤 napi_disable()锛屽畠浼氶拡瀵?NAPI_STATE_SCHED napi->state 浣嶈繘琛岀潯鐪犲紡杞锛岀瓑寰呮墍鏈夋湭鍐崇殑 NAPI 娲诲姩鍋滄銆?
+	涓婁笅鏂囷細
+		杞腑鏂紙softirq锛?		浼氳 netconsole 鍦ㄤ腑鏂绂佺敤鐨勬儏鍐典笅璋冪敤銆?
+## netdev 瀹炰緥閿?
 
-	上下文：
-		软中断（softirq）
-		会被 netconsole 在中断被禁用的情况下调用。
-
-## netdev 实例锁
-
-
-历史上，所有网络控制操作都由一个称为 `rtnl_lock` 的单一全局锁保护。目前有一项持续的努力，要用每个网络命名空间独立的锁来取代这个全局锁。此外，单个 netdev 的属性越来越多地由 per-netdev 锁保护。
-
-对于实现了整形或队列管理 API 的设备驱动，所有控制操作都将在 netdev 实例锁下进行。驱动也可以通过将 `request_ops_lock` 设为 true，显式请求在操作（ops）期间持有实例锁。代码注释和文档将操作在实例锁下被调用的驱动称为"ops locked"（锁定的操作）。另请参阅 struct net_device 的 `lock` 成员的文档。
-
-还存在一种依次获取两个 per-netdev 锁的情况：当 netdev 队列被租借（lease）时，即虚拟设备和物理设备的 netdev 作用域锁都被获取。为防止死锁，虚拟设备的锁必须始终在物理设备的锁之前获取（参见 `netdev_nl_queue_create_doit`）。
-
-将来，会有选项允许各个驱动选择不使用 `rtnl_lock`，而是直接在其 netdev 实例锁下执行控制操作。
-
-鼓励设备驱动尽可能依赖实例锁。
-
-对于需要与原核心栈交互的（主要是软件的）驱动，有两组接口：`dev_xxx`/`netdev_xxx` 和 `netif_xxx`（例如 `dev_set_mtu` 和 `netif_set_mtu`）。`dev_xxx`/`netdev_xxx` 函数自己负责获取实例锁，而 `netif_xxx` 函数假定驱动已经获取了实例锁。
-
+鍘嗗彶涓婏紝鎵€鏈夌綉缁滄帶鍒舵搷浣滈兘鐢变竴涓О涓?`rtnl_lock` 鐨勫崟涓€鍏ㄥ眬閿佷繚鎶ゃ€傜洰鍓嶆湁涓€椤规寔缁殑鍔姏锛岃鐢ㄦ瘡涓綉缁滃懡鍚嶇┖闂寸嫭绔嬬殑閿佹潵鍙栦唬杩欎釜鍏ㄥ眬閿併€傛澶栵紝鍗曚釜 netdev 鐨勫睘鎬ц秺鏉ヨ秺澶氬湴鐢?per-netdev 閿佷繚鎶ゃ€?
+瀵逛簬瀹炵幇浜嗘暣褰㈡垨闃熷垪绠＄悊 API 鐨勮澶囬┍鍔紝鎵€鏈夋帶鍒舵搷浣滈兘灏嗗湪 netdev 瀹炰緥閿佷笅杩涜銆傞┍鍔ㄤ篃鍙互閫氳繃灏?`request_ops_lock` 璁句负 true锛屾樉寮忚姹傚湪鎿嶄綔锛坥ps锛夋湡闂存寔鏈夊疄渚嬮攣銆備唬鐮佹敞閲婂拰鏂囨。灏嗘搷浣滃湪瀹炰緥閿佷笅琚皟鐢ㄧ殑椹卞姩绉颁负"ops locked"锛堥攣瀹氱殑鎿嶄綔锛夈€傚彟璇峰弬闃?struct net_device 鐨?`lock` 鎴愬憳鐨勬枃妗ｃ€?
+杩樺瓨鍦ㄤ竴绉嶄緷娆¤幏鍙栦袱涓?per-netdev 閿佺殑鎯呭喌锛氬綋 netdev 闃熷垪琚鍊燂紙lease锛夋椂锛屽嵆铏氭嫙璁惧鍜岀墿鐞嗚澶囩殑 netdev 浣滅敤鍩熼攣閮借鑾峰彇銆備负闃叉姝婚攣锛岃櫄鎷熻澶囩殑閿佸繀椤诲缁堝湪鐗╃悊璁惧鐨勯攣涔嬪墠鑾峰彇锛堝弬瑙?`netdev_nl_queue_create_doit`锛夈€?
+灏嗘潵锛屼細鏈夐€夐」鍏佽鍚勪釜椹卞姩閫夋嫨涓嶄娇鐢?`rtnl_lock`锛岃€屾槸鐩存帴鍦ㄥ叾 netdev 瀹炰緥閿佷笅鎵ц鎺у埗鎿嶄綔銆?
+榧撳姳璁惧椹卞姩灏藉彲鑳戒緷璧栧疄渚嬮攣銆?
+瀵逛簬闇€瑕佷笌鍘熸牳蹇冩爤浜や簰鐨勶紙涓昏鏄蒋浠剁殑锛夐┍鍔紝鏈変袱缁勬帴鍙ｏ細`dev_xxx`/`netdev_xxx` 鍜?`netif_xxx`锛堜緥濡?`dev_set_mtu` 鍜?`netif_set_mtu`锛夈€俙dev_xxx`/`netdev_xxx` 鍑芥暟鑷繁璐熻矗鑾峰彇瀹炰緥閿侊紝鑰?`netif_xxx` 鍑芥暟鍋囧畾椹卞姩宸茬粡鑾峰彇浜嗗疄渚嬮攣銆?
 ### struct net_device_ops
 
 
-对于大多数驱动，`ndos` 在不持有实例锁的情况下被调用。
-
-对于"ops locked"驱动，大多数 `ndos` 会在实例锁下被调用。
-
+瀵逛簬澶у鏁伴┍鍔紝`ndos` 鍦ㄤ笉鎸佹湁瀹炰緥閿佺殑鎯呭喌涓嬭璋冪敤銆?
+瀵逛簬"ops locked"椹卞姩锛屽ぇ澶氭暟 `ndos` 浼氬湪瀹炰緥閿佷笅琚皟鐢ㄣ€?
 ### struct ethtool_ops
 
 
-与 `ndos` 类似，实例锁仅对选定的驱动持有。对于"ops locked"驱动，所有 ethtool 操作无一例外都应在实例锁下调用。
-
+涓?`ndos` 绫讳技锛屽疄渚嬮攣浠呭閫夊畾鐨勯┍鍔ㄦ寔鏈夈€傚浜?ops locked"椹卞姩锛屾墍鏈?ethtool 鎿嶄綔鏃犱竴渚嬪閮藉簲鍦ㄥ疄渚嬮攣涓嬭皟鐢ㄣ€?
 ### struct netdev_stat_ops
 
 
-对于"ops locked"驱动，"qstat"操作在实例锁下被调用，而对于所有其他驱动则在 rtnl_lock 下调用。
-
+瀵逛簬"ops locked"椹卞姩锛?qstat"鎿嶄綔鍦ㄥ疄渚嬮攣涓嬭璋冪敤锛岃€屽浜庢墍鏈夊叾浠栭┍鍔ㄥ垯鍦?rtnl_lock 涓嬭皟鐢ㄣ€?
 ### struct net_shaper_ops
 
 
-所有网络整形（net shaper）回调在持有 netdev 实例锁时被调用。`rtnl_lock` 可能持有，也可能未持有。
-
-注意，支持网络整形会自动启用"ops locking"（操作锁定）。
-
+鎵€鏈夌綉缁滄暣褰紙net shaper锛夊洖璋冨湪鎸佹湁 netdev 瀹炰緥閿佹椂琚皟鐢ㄣ€俙rtnl_lock` 鍙兘鎸佹湁锛屼篃鍙兘鏈寔鏈夈€?
+娉ㄦ剰锛屾敮鎸佺綉缁滄暣褰細鑷姩鍚敤"ops locking"锛堟搷浣滈攣瀹氾級銆?
 ### struct netdev_queue_mgmt_ops
 
 
-所有队列管理回调在持有 netdev 实例锁时被调用。`rtnl_lock` 可能持有，也可能未持有。
+鎵€鏈夐槦鍒楃鐞嗗洖璋冨湪鎸佹湁 netdev 瀹炰緥閿佹椂琚皟鐢ㄣ€俙rtnl_lock` 鍙兘鎸佹湁锛屼篃鍙兘鏈寔鏈夈€?
+娉ㄦ剰锛屾敮鎸?struct netdev_queue_mgmt_ops 浼氳嚜鍔ㄥ惎鐢?ops locking"锛堟搷浣滈攣瀹氾級銆?
+### 閫氱煡閾撅紙Notifiers锛変笌 netdev 瀹炰緥閿?
 
-注意，支持 struct netdev_queue_mgmt_ops 会自动启用"ops locking"（操作锁定）。
-
-### 通知链（Notifiers）与 netdev 实例锁
-
-
-对于实现了整形或队列管理 API 的设备驱动，部分通知（`enum netdev_cmd`）运行在 netdev 实例锁下。
-
-以下 netdev 通知链总是在实例锁下运行：
+瀵逛簬瀹炵幇浜嗘暣褰㈡垨闃熷垪绠＄悊 API 鐨勮澶囬┍鍔紝閮ㄥ垎閫氱煡锛坄enum netdev_cmd`锛夎繍琛屽湪 netdev 瀹炰緥閿佷笅銆?
+浠ヤ笅 netdev 閫氱煡閾炬€绘槸鍦ㄥ疄渚嬮攣涓嬭繍琛岋細
 - `NETDEV_XDP_FEAT_CHANGE`
 
-对于具有锁定操作的设备，目前只有以下通知链在锁下运行：
-- `NETDEV_CHANGE`
+瀵逛簬鍏锋湁閿佸畾鎿嶄綔鐨勮澶囷紝鐩墠鍙湁浠ヤ笅閫氱煡閾惧湪閿佷笅杩愯锛?- `NETDEV_CHANGE`
 - `NETDEV_REGISTER`
 - `NETDEV_UP`
 
-以下通知链在没有锁的情况下运行：
+浠ヤ笅閫氱煡閾惧湪娌℃湁閿佺殑鎯呭喌涓嬭繍琛岋細
 - `NETDEV_UNREGISTER`
 
-对于其余通知链没有明确的预期。不在列表中的通知链可能带锁或不带锁运行，甚至可能从不同代码路径以带锁和不带锁两种方式调用同一类型的通知链。目标是最终确保所有（或大多数，除少数有文档说明的例外）通知链都在实例锁下运行。每当你对某个通知链下持有锁做出明确假设时，请扩展本文档。
+瀵逛簬鍏朵綑閫氱煡閾炬病鏈夋槑纭殑棰勬湡銆備笉鍦ㄥ垪琛ㄤ腑鐨勯€氱煡閾惧彲鑳藉甫閿佹垨涓嶅甫閿佽繍琛岋紝鐢氳嚦鍙兘浠庝笉鍚屼唬鐮佽矾寰勪互甯﹂攣鍜屼笉甯﹂攣涓ょ鏂瑰紡璋冪敤鍚屼竴绫诲瀷鐨勯€氱煡閾俱€傜洰鏍囨槸鏈€缁堢‘淇濇墍鏈夛紙鎴栧ぇ澶氭暟锛岄櫎灏戞暟鏈夋枃妗ｈ鏄庣殑渚嬪锛夐€氱煡閾鹃兘鍦ㄥ疄渚嬮攣涓嬭繍琛屻€傛瘡褰撲綘瀵规煇涓€氱煡閾句笅鎸佹湁閿佸仛鍑烘槑纭亣璁炬椂锛岃鎵╁睍鏈枃妗ｃ€?
+## NETDEV_INTERNAL 绗﹀彿鍛藉悕绌洪棿
 
-## NETDEV_INTERNAL 符号命名空间
 
-
-以 NETDEV_INTERNAL 导出的符号只能用于网络核心以及与主网络邮件列表和树（tree）直接对接的驱动。注意反之不成立，NETDEV_INTERNAL 之外的大多数符号也不应被 netdev 之外的随机代码使用。符号之所以缺少该标识，可能是因为它们早于命名空间的出现，或者仅仅是由于疏忽。
-
+浠?NETDEV_INTERNAL 瀵煎嚭鐨勭鍙峰彧鑳界敤浜庣綉缁滄牳蹇冧互鍙婁笌涓荤綉缁滈偖浠跺垪琛ㄥ拰鏍戯紙tree锛夌洿鎺ュ鎺ョ殑椹卞姩銆傛敞鎰忓弽涔嬩笉鎴愮珛锛孨ETDEV_INTERNAL 涔嬪鐨勫ぇ澶氭暟绗﹀彿涔熶笉搴旇 netdev 涔嬪鐨勯殢鏈轰唬鐮佷娇鐢ㄣ€傜鍙蜂箣鎵€浠ョ己灏戣鏍囪瘑锛屽彲鑳芥槸鍥犱负瀹冧滑鏃╀簬鍛藉悕绌洪棿鐨勫嚭鐜帮紝鎴栬€呬粎浠呮槸鐢变簬鐤忓拷銆?

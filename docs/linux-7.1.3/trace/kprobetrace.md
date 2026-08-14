@@ -1,25 +1,15 @@
-## 基于 Kprobe 的事件跟踪（Kprobe-based Event Tracing）
-
+﻿## 鍩轰簬 Kprobe 鐨勪簨浠惰窡韪紙Kprobe-based Event Tracing锛?
 :Author: Masami Hiramatsu
 
-### 概述（Overview）
-
-这些事件与基于 tracepoint 的事件类似。与 tracepoint 不同，它基于 kprobe（kprobe 和 kretprobe）。
-因此它可以探测 kprobe 能够探测的任何地方（这意味着，除了带有 `__kprobes`/`nokprobe_inline` 注解以及
-标记为 NOKPROBE_SYMBOL 的函数之外的所有函数）。与基于 tracepoint 的事件不同，它可以动态地、在运行时
-添加和移除。
-
-要启用此功能，请以内核 CONFIG_KPROBE_EVENTS=y 构建你的内核。
-
-与事件跟踪器（event tracer）类似，它不需要通过 current_tracer 激活。取而代之的是，通过
-/sys/kernel/tracing/kprobe_events 添加探测点，并通过
-/sys/kernel/tracing/events/kprobes/<EVENT>/enable 启用它。
-
-你也可以使用 /sys/kernel/tracing/dynamic_events 代替 kprobe_events。该接口也将为其它动态事件提供
-统一的访问方式。
-
-### kprobe_events 语法（Synopsis of kprobe_events）
-
+### 姒傝堪锛圤verview锛?
+杩欎簺浜嬩欢涓庡熀浜?tracepoint 鐨勪簨浠剁被浼笺€備笌 tracepoint 涓嶅悓锛屽畠鍩轰簬 kprobe锛坘probe 鍜?kretprobe锛夈€?鍥犳瀹冨彲浠ユ帰娴?kprobe 鑳藉鎺㈡祴鐨勪换浣曞湴鏂癸紙杩欐剰鍛崇潃锛岄櫎浜嗗甫鏈?`__kprobes`/`nokprobe_inline` 娉ㄨВ浠ュ強
+鏍囪涓?NOKPROBE_SYMBOL 鐨勫嚱鏁颁箣澶栫殑鎵€鏈夊嚱鏁帮級銆備笌鍩轰簬 tracepoint 鐨勪簨浠朵笉鍚岋紝瀹冨彲浠ュ姩鎬佸湴銆佸湪杩愯鏃?娣诲姞鍜岀Щ闄ゃ€?
+瑕佸惎鐢ㄦ鍔熻兘锛岃浠ュ唴鏍?CONFIG_KPROBE_EVENTS=y 鏋勫缓浣犵殑鍐呮牳銆?
+涓庝簨浠惰窡韪櫒锛坋vent tracer锛夌被浼硷紝瀹冧笉闇€瑕侀€氳繃 current_tracer 婵€娲汇€傚彇鑰屼唬涔嬬殑鏄紝閫氳繃
+/sys/kernel/tracing/kprobe_events 娣诲姞鎺㈡祴鐐癸紝骞堕€氳繃
+/sys/kernel/tracing/events/kprobes/<EVENT>/enable 鍚敤瀹冦€?
+浣犱篃鍙互浣跨敤 /sys/kernel/tracing/dynamic_events 浠ｆ浛 kprobe_events銆傝鎺ュ彛涔熷皢涓哄叾瀹冨姩鎬佷簨浠舵彁渚?缁熶竴鐨勮闂柟寮忋€?
+### kprobe_events 璇硶锛圫ynopsis of kprobe_events锛?
 ```
 
   p[:[GRP/][EVENT]] [MOD:]SYM[+offs]|MEMADDR [FETCHARGS]	: Set a probe
@@ -66,89 +56,55 @@
   (\*4) "u" means user-space dereference. See :ref:`user_mem_access`.
 
 ```
-### kretprobe 处的函数参数（Function arguments at kretprobe）
-
-函数参数可以在 kretprobe 处使用 $arg<N> fetch 参数来访问。这对于一次性记录函数参数和返回值，并跟踪
-结构体字段的差异（用于调试某个函数是否正确更新了给定的数据结构）很有用。关于其工作原理，请参见
-fprobe 事件中的示例<fprobetrace_exit_args_sample>。
-
-### 类型（Types）
-
-fetcharg 支持多种类型。Kprobe 跟踪器会按给定类型访问内存。前缀 's' 和 'u' 分别表示这些类型是有符号
-和无符号的。'x' 前缀表示它是无符号的。被跟踪的参数以十进制（'s' 和 'u'）或十六进制（'x'）显示。不
-进行类型转换时，根据架构使用 'x32' 或 'x64'（例如 x86-32 使用 x32，x86-64 使用 x64）。
-
-这些值类型可以是数组。要记录数组数据，你可以给基类型添加 '[N]'（其中 N 是一个小于 64 的固定数字）。
-例如 'x16[^4^]' 表示有 4 个元素的 x16（2 字节十六进制）数组。注意，数组可以应用于内存类型的
-fetcharg，但不能应用于寄存器/栈条目等（例如 '$stack1:x8[^8^]' 是错误的，但 '+8($stack):x8[^8^]'
-是正确的）。
-
-Char 类型可用于显示被跟踪参数的字符值。
-
-String 类型是一种特殊类型，它从内核空间获取一个"以 null 结尾"的字符串。这意味着如果该字符串所在的
-容器已被换出，它将失败并存储 NULL。"ustring" 类型是 string 面向用户空间的替代类型。更多信息参见
-user_mem_access。
-
-字符串数组类型与其它类型略有不同。对于其它基类型，<base-type>[^1^] 等于 <base-type>（例如
-+0(%di):x32[^1^] 与 +0(%di):x32 相同）。但 string[^1^] 不等于 string。string 类型本身表示"字符数组"，
-而字符串数组类型表示"char * 数组"。因此，例如 +0(%di):string[^1^] 等于 +0(+0(%di)):string。
-Bitfield 是另一种特殊类型，它接受 3 个参数：位宽、位偏移和容器大小：
+### kretprobe 澶勭殑鍑芥暟鍙傛暟锛團unction arguments at kretprobe锛?
+鍑芥暟鍙傛暟鍙互鍦?kretprobe 澶勪娇鐢?$arg<N> fetch 鍙傛暟鏉ヨ闂€傝繖瀵逛簬涓€娆℃€ц褰曞嚱鏁板弬鏁板拰杩斿洖鍊硷紝骞惰窡韪?缁撴瀯浣撳瓧娈电殑宸紓锛堢敤浜庤皟璇曟煇涓嚱鏁版槸鍚︽纭洿鏂颁簡缁欏畾鐨勬暟鎹粨鏋勶級寰堟湁鐢ㄣ€傚叧浜庡叾宸ヤ綔鍘熺悊锛岃鍙傝
+fprobe 浜嬩欢涓殑绀轰緥<fprobetrace_exit_args_sample>銆?
+### 绫诲瀷锛圱ypes锛?
+fetcharg 鏀寔澶氱绫诲瀷銆侹probe 璺熻釜鍣ㄤ細鎸夌粰瀹氱被鍨嬭闂唴瀛樸€傚墠缂€ 's' 鍜?'u' 鍒嗗埆琛ㄧず杩欎簺绫诲瀷鏄湁绗﹀彿
+鍜屾棤绗﹀彿鐨勩€?x' 鍓嶇紑琛ㄧず瀹冩槸鏃犵鍙风殑銆傝璺熻釜鐨勫弬鏁颁互鍗佽繘鍒讹紙's' 鍜?'u'锛夋垨鍗佸叚杩涘埗锛?x'锛夋樉绀恒€備笉
+杩涜绫诲瀷杞崲鏃讹紝鏍规嵁鏋舵瀯浣跨敤 'x32' 鎴?'x64'锛堜緥濡?x86-32 浣跨敤 x32锛寈86-64 浣跨敤 x64锛夈€?
+杩欎簺鍊肩被鍨嬪彲浠ユ槸鏁扮粍銆傝璁板綍鏁扮粍鏁版嵁锛屼綘鍙互缁欏熀绫诲瀷娣诲姞 '[N]'锛堝叾涓?N 鏄竴涓皬浜?64 鐨勫浐瀹氭暟瀛楋級銆?渚嬪 'x16[^4^]' 琛ㄧず鏈?4 涓厓绱犵殑 x16锛? 瀛楄妭鍗佸叚杩涘埗锛夋暟缁勩€傛敞鎰忥紝鏁扮粍鍙互搴旂敤浜庡唴瀛樼被鍨嬬殑
+fetcharg锛屼絾涓嶈兘搴旂敤浜庡瘎瀛樺櫒/鏍堟潯鐩瓑锛堜緥濡?'$stack1:x8[^8^]' 鏄敊璇殑锛屼絾 '+8($stack):x8[^8^]'
+鏄纭殑锛夈€?
+Char 绫诲瀷鍙敤浜庢樉绀鸿璺熻釜鍙傛暟鐨勫瓧绗﹀€笺€?
+String 绫诲瀷鏄竴绉嶇壒娈婄被鍨嬶紝瀹冧粠鍐呮牳绌洪棿鑾峰彇涓€涓?浠?null 缁撳熬"鐨勫瓧绗︿覆銆傝繖鎰忓懗鐫€濡傛灉璇ュ瓧绗︿覆鎵€鍦ㄧ殑
+瀹瑰櫒宸茶鎹㈠嚭锛屽畠灏嗗け璐ュ苟瀛樺偍 NULL銆?ustring" 绫诲瀷鏄?string 闈㈠悜鐢ㄦ埛绌洪棿鐨勬浛浠ｇ被鍨嬨€傛洿澶氫俊鎭弬瑙?user_mem_access銆?
+瀛楃涓叉暟缁勭被鍨嬩笌鍏跺畠绫诲瀷鐣ユ湁涓嶅悓銆傚浜庡叾瀹冨熀绫诲瀷锛?base-type>[^1^] 绛変簬 <base-type>锛堜緥濡?+0(%di):x32[^1^] 涓?+0(%di):x32 鐩稿悓锛夈€備絾 string[^1^] 涓嶇瓑浜?string銆俿tring 绫诲瀷鏈韩琛ㄧず"瀛楃鏁扮粍"锛?鑰屽瓧绗︿覆鏁扮粍绫诲瀷琛ㄧず"char * 鏁扮粍"銆傚洜姝わ紝渚嬪 +0(%di):string[^1^] 绛変簬 +0(+0(%di)):string銆?Bitfield 鏄彟涓€绉嶇壒娈婄被鍨嬶紝瀹冩帴鍙?3 涓弬鏁帮細浣嶅銆佷綅鍋忕Щ鍜屽鍣ㄥぇ灏忥細
 ```
 
  b<bit-width>@<bit-offset>/<container-size>
 
 ```
-Symbol 类型（'symbol'）是 u32 或 u64 类型（取决于 BITS_PER_LONG）的别名，以 "symbol+offset" 样式
-显示给定的指针。另一方面，symbol-string 类型（'symstr'）把给定的地址转换为 "symbol+offset/symbolsize"
-样式，并将其作为以 null 结尾的字符串存储。使用 'symstr' 类型，你可以用符号的通配符模式过滤事件，而
-无需自己解析符号名。对于 $comm，默认类型是 "string"；任何其它类型都是无效的。
-
-VFS 层通用类型（%pd/%pD）是一种特殊类型，它从 struct dentry 的地址或 struct file 的地址获取 dentry
-或文件名。
-
-### 用户内存访问（User Memory Access）
-
-Kprobe 事件支持用户空间内存访问。为此，你可以使用用户空间解引用语法或 'ustring' 类型。
-
-用户空间解引用语法允许你访问用户空间中某个数据结构的字段。这是通过给解引用语法添加 "u" 前缀来实现的。
-例如，+u4(%si) 表示它将从寄存器 %si 中地址偏移 4 的位置读取内存，并且该内存预期位于用户空间。你也可以
-把它用于字符串，例如 +u0(%si):string 将从寄存器 %si 中预期位于用户空间的地址读取一个字符串。'ustring'
-是执行相同任务的快捷方式。也就是说，+0(%si):ustring 等价于 +u0(%si):string。
-
-注意，kprobe-event 提供了用户内存访问语法，但它并不会透明地使用它。这意味着如果你对用户内存使用普通的
-解引用或 string 类型，它可能会失败，并且在某些架构上可能总是失败。用户必须仔细检查目标数据是在内核
-空间还是用户空间。
-
-### 每探测事件过滤（Per-Probe Event Filtering）
-
-每探测事件过滤功能允许你在每个探测上设置不同的过滤器，并决定哪些参数会显示在跟踪缓冲区中。如果在
-kprobe_events 中 'p:' 或 'r:' 之后指定了事件名，它会在 tracing/events/kprobes/<EVENT> 下添加一个事件，
-在该目录中你可以看到 'id'、'enable'、'format'、'filter' 和 'trigger'。
-
+Symbol 绫诲瀷锛?symbol'锛夋槸 u32 鎴?u64 绫诲瀷锛堝彇鍐充簬 BITS_PER_LONG锛夌殑鍒悕锛屼互 "symbol+offset" 鏍峰紡
+鏄剧ず缁欏畾鐨勬寚閽堛€傚彟涓€鏂归潰锛宻ymbol-string 绫诲瀷锛?symstr'锛夋妸缁欏畾鐨勫湴鍧€杞崲涓?"symbol+offset/symbolsize"
+鏍峰紡锛屽苟灏嗗叾浣滀负浠?null 缁撳熬鐨勫瓧绗︿覆瀛樺偍銆備娇鐢?'symstr' 绫诲瀷锛屼綘鍙互鐢ㄧ鍙风殑閫氶厤绗︽ā寮忚繃婊や簨浠讹紝鑰?鏃犻渶鑷繁瑙ｆ瀽绗﹀彿鍚嶃€傚浜?$comm锛岄粯璁ょ被鍨嬫槸 "string"锛涗换浣曞叾瀹冪被鍨嬮兘鏄棤鏁堢殑銆?
+VFS 灞傞€氱敤绫诲瀷锛?pd/%pD锛夋槸涓€绉嶇壒娈婄被鍨嬶紝瀹冧粠 struct dentry 鐨勫湴鍧€鎴?struct file 鐨勫湴鍧€鑾峰彇 dentry
+鎴栨枃浠跺悕銆?
+### 鐢ㄦ埛鍐呭瓨璁块棶锛圲ser Memory Access锛?
+Kprobe 浜嬩欢鏀寔鐢ㄦ埛绌洪棿鍐呭瓨璁块棶銆備负姝わ紝浣犲彲浠ヤ娇鐢ㄧ敤鎴风┖闂磋В寮曠敤璇硶鎴?'ustring' 绫诲瀷銆?
+鐢ㄦ埛绌洪棿瑙ｅ紩鐢ㄨ娉曞厑璁镐綘璁块棶鐢ㄦ埛绌洪棿涓煇涓暟鎹粨鏋勭殑瀛楁銆傝繖鏄€氳繃缁欒В寮曠敤璇硶娣诲姞 "u" 鍓嶇紑鏉ュ疄鐜扮殑銆?渚嬪锛?u4(%si) 琛ㄧず瀹冨皢浠庡瘎瀛樺櫒 %si 涓湴鍧€鍋忕Щ 4 鐨勪綅缃鍙栧唴瀛橈紝骞朵笖璇ュ唴瀛橀鏈熶綅浜庣敤鎴风┖闂淬€備綘涔熷彲浠?鎶婂畠鐢ㄤ簬瀛楃涓诧紝渚嬪 +u0(%si):string 灏嗕粠瀵勫瓨鍣?%si 涓鏈熶綅浜庣敤鎴风┖闂寸殑鍦板潃璇诲彇涓€涓瓧绗︿覆銆?ustring'
+鏄墽琛岀浉鍚屼换鍔＄殑蹇嵎鏂瑰紡銆備篃灏辨槸璇达紝+0(%si):ustring 绛変环浜?+u0(%si):string銆?
+娉ㄦ剰锛宬probe-event 鎻愪緵浜嗙敤鎴峰唴瀛樿闂娉曪紝浣嗗畠骞朵笉浼氶€忔槑鍦颁娇鐢ㄥ畠銆傝繖鎰忓懗鐫€濡傛灉浣犲鐢ㄦ埛鍐呭瓨浣跨敤鏅€氱殑
+瑙ｅ紩鐢ㄦ垨 string 绫诲瀷锛屽畠鍙兘浼氬け璐ワ紝骞朵笖鍦ㄦ煇浜涙灦鏋勪笂鍙兘鎬绘槸澶辫触銆傜敤鎴峰繀椤讳粩缁嗘鏌ョ洰鏍囨暟鎹槸鍦ㄥ唴鏍?绌洪棿杩樻槸鐢ㄦ埛绌洪棿銆?
+### 姣忔帰娴嬩簨浠惰繃婊わ紙Per-Probe Event Filtering锛?
+姣忔帰娴嬩簨浠惰繃婊ゅ姛鑳藉厑璁镐綘鍦ㄦ瘡涓帰娴嬩笂璁剧疆涓嶅悓鐨勮繃婊ゅ櫒锛屽苟鍐冲畾鍝簺鍙傛暟浼氭樉绀哄湪璺熻釜缂撳啿鍖轰腑銆傚鏋滃湪
+kprobe_events 涓?'p:' 鎴?'r:' 涔嬪悗鎸囧畾浜嗕簨浠跺悕锛屽畠浼氬湪 tracing/events/kprobes/<EVENT> 涓嬫坊鍔犱竴涓簨浠讹紝
+鍦ㄨ鐩綍涓綘鍙互鐪嬪埌 'id'銆?enable'銆?format'銆?filter' 鍜?'trigger'銆?
 enable:
-  你可以通过向其写入 1 或 0 来启用/禁用该探测。
-
+  浣犲彲浠ラ€氳繃鍚戝叾鍐欏叆 1 鎴?0 鏉ュ惎鐢?绂佺敤璇ユ帰娴嬨€?
 format:
-  这显示该探测事件的格式。
-
+  杩欐樉绀鸿鎺㈡祴浜嬩欢鐨勬牸寮忋€?
 filter:
-  你可以写入该事件的过滤规则。
-
+  浣犲彲浠ュ啓鍏ヨ浜嬩欢鐨勮繃婊よ鍒欍€?
 id:
-  这显示该探测事件的 id。
-
+  杩欐樉绀鸿鎺㈡祴浜嬩欢鐨?id銆?
 trigger:
-  这允许安装当事件命中时执行的触发命令（详情参见 Documentation/trace/events.rst 第 6 节）。
-
-### 事件统计（Event Profiling）
-
-你可以通过 /sys/kernel/tracing/kprobe_profile 查看探测命中和未命中的总次数。第一列是事件名，第二列
-是探测命中次数，第三列是探测未命中次数。
-
-### 内核启动参数（Kernel Boot Parameter）
-
-你可以通过 "kprobe_event=" 参数在内核启动时添加并启用新的 kprobe 事件。该参数接受以分号分隔的 kprobe
-事件，其格式与 kprobe_events 类似。区别在于探测定义参数是以逗号分隔的：
+  杩欏厑璁稿畨瑁呭綋浜嬩欢鍛戒腑鏃舵墽琛岀殑瑙﹀彂鍛戒护锛堣鎯呭弬瑙?Documentation/trace/events.rst 绗?6 鑺傦級銆?
+### 浜嬩欢缁熻锛圗vent Profiling锛?
+浣犲彲浠ラ€氳繃 /sys/kernel/tracing/kprobe_profile 鏌ョ湅鎺㈡祴鍛戒腑鍜屾湭鍛戒腑鐨勬€绘鏁般€傜涓€鍒楁槸浜嬩欢鍚嶏紝绗簩鍒?鏄帰娴嬪懡涓鏁帮紝绗笁鍒楁槸鎺㈡祴鏈懡涓鏁般€?
+### 鍐呮牳鍚姩鍙傛暟锛圞ernel Boot Parameter锛?
+浣犲彲浠ラ€氳繃 "kprobe_event=" 鍙傛暟鍦ㄥ唴鏍稿惎鍔ㄦ椂娣诲姞骞跺惎鐢ㄦ柊鐨?kprobe 浜嬩欢銆傝鍙傛暟鎺ュ彈浠ュ垎鍙峰垎闅旂殑 kprobe
+浜嬩欢锛屽叾鏍煎紡涓?kprobe_events 绫讳技銆傚尯鍒湪浜庢帰娴嬪畾涔夊弬鏁版槸浠ラ€楀彿鍒嗛殧鐨勶細
 ```
 
   p:myprobe do_sys_open dfd=%ax filename=%dx flags=%cx mode=+4($stack)
@@ -160,25 +116,21 @@ trigger:
 
 
 ```
-### 使用示例（Usage examples）
-
-要添加一个新的事件作为探测，向 kprobe_events 写入一个新的定义：
+### 浣跨敤绀轰緥锛圲sage examples锛?
+瑕佹坊鍔犱竴涓柊鐨勪簨浠朵綔涓烘帰娴嬶紝鍚?kprobe_events 鍐欏叆涓€涓柊鐨勫畾涔夛細
 ```
 
   echo 'p:myprobe do_sys_open dfd=%ax filename=%dx flags=%cx mode=+4($stack)' > /sys/kernel/tracing/kprobe_events
 
 ```
-这会在 do_sys_open() 函数顶部设置了一个 kprobe，把第 1 到第 4 个参数记录为 "myprobe" 事件。注意，每个
-函数参数被分配到哪个寄存器/栈条目取决于架构相关的 ABI。如果你不确定 ABI，请尝试使用 perf-tools 的 probe
-子命令（你可以在 tools/perf/ 下找到它）。正如这个示例所示，用户可以为每个参数选择更熟悉的名称。
-```
+杩欎細鍦?do_sys_open() 鍑芥暟椤堕儴璁剧疆浜嗕竴涓?kprobe锛屾妸绗?1 鍒扮 4 涓弬鏁拌褰曚负 "myprobe" 浜嬩欢銆傛敞鎰忥紝姣忎釜
+鍑芥暟鍙傛暟琚垎閰嶅埌鍝釜瀵勫瓨鍣?鏍堟潯鐩彇鍐充簬鏋舵瀯鐩稿叧鐨?ABI銆傚鏋滀綘涓嶇‘瀹?ABI锛岃灏濊瘯浣跨敤 perf-tools 鐨?probe
+瀛愬懡浠わ紙浣犲彲浠ュ湪 tools/perf/ 涓嬫壘鍒板畠锛夈€傛濡傝繖涓ず渚嬫墍绀猴紝鐢ㄦ埛鍙互涓烘瘡涓弬鏁伴€夋嫨鏇寸啛鎮夌殑鍚嶇О銆?```
 
   echo 'r:myretprobe do_sys_open $retval' >> /sys/kernel/tracing/kprobe_events
 
 ```
-这会在 do_sys_open() 函数的返回点设置了一个 kretprobe，把返回值记录为 "myretprobe" 事件。
-你可以通过 /sys/kernel/tracing/events/kprobes/<EVENT>/format 查看这些事件的格式。
-```
+杩欎細鍦?do_sys_open() 鍑芥暟鐨勮繑鍥炵偣璁剧疆浜嗕竴涓?kretprobe锛屾妸杩斿洖鍊艰褰曚负 "myretprobe" 浜嬩欢銆?浣犲彲浠ラ€氳繃 /sys/kernel/tracing/events/kprobes/<EVENT>/format 鏌ョ湅杩欎簺浜嬩欢鐨勬牸寮忋€?```
 
   cat /sys/kernel/tracing/events/kprobes/myprobe/format
   name: myprobe
@@ -201,39 +153,33 @@ trigger:
   REC->dfd, REC->filename, REC->flags, REC->mode
 
 ```
-你可以看到，该事件拥有 4 个参数，正如你所指定的表达式那样。
-```
+浣犲彲浠ョ湅鍒帮紝璇ヤ簨浠舵嫢鏈?4 涓弬鏁帮紝姝ｅ浣犳墍鎸囧畾鐨勮〃杈惧紡閭ｆ牱銆?```
 
   echo > /sys/kernel/tracing/kprobe_events
 
 ```
-这会清除所有探测点。
-
-或者，
+杩欎細娓呴櫎鎵€鏈夋帰娴嬬偣銆?
+鎴栬€咃紝
 ```
 
   echo -:myprobe >> kprobe_events
 
 ```
-这会选择性地清除探测点。
-
-在定义之后，每个事件默认是禁用的。要跟踪这些事件，你需要启用它。
-```
+杩欎細閫夋嫨鎬у湴娓呴櫎鎺㈡祴鐐广€?
+鍦ㄥ畾涔変箣鍚庯紝姣忎釜浜嬩欢榛樿鏄鐢ㄧ殑銆傝璺熻釜杩欎簺浜嬩欢锛屼綘闇€瑕佸惎鐢ㄥ畠銆?```
 
   echo 1 > /sys/kernel/tracing/events/kprobes/myprobe/enable
   echo 1 > /sys/kernel/tracing/events/kprobes/myretprobe/enable
 
 ```
-使用以下命令在一段区间内开始跟踪。
-```
+浣跨敤浠ヤ笅鍛戒护鍦ㄤ竴娈靛尯闂村唴寮€濮嬭窡韪€?```
 
     # echo 1 > tracing_on
     Open something...
     # echo 0 > tracing_on
 
 ```
-你可以通过 /sys/kernel/tracing/trace 查看跟踪到的信息。
-```
+浣犲彲浠ラ€氳繃 /sys/kernel/tracing/trace 鏌ョ湅璺熻釜鍒扮殑淇℃伅銆?```
 
   cat /sys/kernel/tracing/trace
   # tracer: nop
@@ -249,5 +195,5 @@ trigger:
 
 
 ```
-每行显示内核命中一个事件的时刻，而 <- SYMBOL 表示内核从 SYMBOL 返回（例如 "sys_open+0x1b/0x1d <- do_sys_open"
-表示内核从 do_sys_open 返回到 sys_open+0x1b）。
+姣忚鏄剧ず鍐呮牳鍛戒腑涓€涓簨浠剁殑鏃跺埢锛岃€?<- SYMBOL 琛ㄧず鍐呮牳浠?SYMBOL 杩斿洖锛堜緥濡?"sys_open+0x1b/0x1d <- do_sys_open"
+琛ㄧず鍐呮牳浠?do_sys_open 杩斿洖鍒?sys_open+0x1b锛夈€?

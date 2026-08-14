@@ -1,22 +1,19 @@
-
+﻿
 ## Debugging and tracing in the media subsystem
 
 
-本文档作为起点和查阅手册，用于在 media 子系统中调试设备驱动，以及从用户空间调试这些驱动。
-
+鏈枃妗ｄ綔涓鸿捣鐐瑰拰鏌ラ槄鎵嬪唽锛岀敤浜庡湪 media 瀛愮郴缁熶腑璋冭瘯璁惧椹卞姩锛屼互鍙婁粠鐢ㄦ埛绌洪棿璋冭瘯杩欎簺椹卞姩銆?
     :depth: 3
 
 ### General debugging advice
 
 
-一般性建议请参阅 :doc:`通用建议文档 </process/debugging/index>`。
-
-以下各节向你展示一些可用的工具。
-
+涓€鑸€у缓璁鍙傞槄 :doc:`閫氱敤寤鸿鏂囨。 </process/debugging/index>`銆?
+浠ヤ笅鍚勮妭鍚戜綘灞曠ず涓€浜涘彲鐢ㄧ殑宸ュ叿銆?
 ### dev_debug module parameter
 
 
-每个视频设备都提供一个 `dev_debug` 参数，可用于获取
+姣忎釜瑙嗛璁惧閮芥彁渚涗竴涓?`dev_debug` 鍙傛暟锛屽彲鐢ㄤ簬鑾峰彇
 ```
 
   # cat /sys/class/video4linux/video3/name
@@ -29,28 +26,23 @@
   device_caps=0x04204000
 
 ```
-完整文档请参阅 :ref:`driver-api/media/v4l2-dev:video device debugging`
+瀹屾暣鏂囨。璇峰弬闃?:ref:`driver-api/media/v4l2-dev:video device debugging`
 
 ### dev_dbg() / v4l2_dbg()
 
 
-两个特定于设备和 v4l2 子系统的调试打印语句，除非它们对调查具有长期价值，否则不要把它们加入你的最终提交中。
+涓や釜鐗瑰畾浜庤澶囧拰 v4l2 瀛愮郴缁熺殑璋冭瘯鎵撳嵃璇彞锛岄櫎闈炲畠浠璋冩煡鍏锋湁闀挎湡浠峰€硷紝鍚﹀垯涓嶈鎶婂畠浠姞鍏ヤ綘鐨勬渶缁堟彁浜や腑銆?
+姒傝璇峰弬闃?process/debugging/driver_development_debugging_guide:printk() & friends 鎸囧崡銆?
+- 涓よ€呭尯鍒紵
 
-概览请参阅 process/debugging/driver_development_debugging_guide:printk() & friends 指南。
-
-- 两者区别？
-
-  - v4l2_dbg() 底层使用 v4l2_printk()，后者进一步直接使用 printk()，因此无法被 dynamic debug 定位
-  - dev_dbg() 可以被 dynamic debug 定位
-  - v4l2_dbg() 对 media 子系统有更特定的前缀格式，而 dev_dbg 只高亮显示驱动名和日志位置
-
+  - v4l2_dbg() 搴曞眰浣跨敤 v4l2_printk()锛屽悗鑰呰繘涓€姝ョ洿鎺ヤ娇鐢?printk()锛屽洜姝ゆ棤娉曡 dynamic debug 瀹氫綅
+  - dev_dbg() 鍙互琚?dynamic debug 瀹氫綅
+  - v4l2_dbg() 瀵?media 瀛愮郴缁熸湁鏇寸壒瀹氱殑鍓嶇紑鏍煎紡锛岃€?dev_dbg 鍙珮浜樉绀洪┍鍔ㄥ悕鍜屾棩蹇椾綅缃?
 ### Dynamic debug
 
 
-一种根据你的需要裁剪调试输出的方法。
-
-一般性建议请参阅 process/debugging/userspace_debugging_guide:dynamic debug 指南。
-
+涓€绉嶆牴鎹綘鐨勯渶瑕佽鍓皟璇曡緭鍑虹殑鏂规硶銆?
+涓€鑸€у缓璁鍙傞槄 process/debugging/userspace_debugging_guide:dynamic debug 鎸囧崡銆?
 ```
 
   $ alias ddcmd='echo $* > /proc/dynamic_debug/control'
@@ -65,27 +57,20 @@
 ### Ftrace
 
 
-一种可以追踪静态预定义事件、函数调用等的内核内部 tracer。对于在不修改内核的情况下调试问题以及理解子系统的行为非常有用。
-
-一般性建议请参阅 process/debugging/userspace_debugging_guide:ftrace 指南。
-
+涓€绉嶅彲浠ヨ拷韪潤鎬侀瀹氫箟浜嬩欢銆佸嚱鏁拌皟鐢ㄧ瓑鐨勫唴鏍稿唴閮?tracer銆傚浜庡湪涓嶄慨鏀瑰唴鏍哥殑鎯呭喌涓嬭皟璇曢棶棰樹互鍙婄悊瑙ｅ瓙绯荤粺鐨勮涓洪潪甯告湁鐢ㄣ€?
+涓€鑸€у缓璁鍙傞槄 process/debugging/userspace_debugging_guide:ftrace 鎸囧崡銆?
 ### DebugFS
 
 
-该工具允许你把驱动的内部值转储或修改到自定义文件系统中的文件里。
-
-一般性建议请参阅 process/debugging/driver_development_debugging_guide:debugfs 指南。
-
+璇ュ伐鍏峰厑璁镐綘鎶婇┍鍔ㄧ殑鍐呴儴鍊艰浆鍌ㄦ垨淇敼鍒拌嚜瀹氫箟鏂囦欢绯荤粺涓殑鏂囦欢閲屻€?
+涓€鑸€у缓璁鍙傞槄 process/debugging/driver_development_debugging_guide:debugfs 鎸囧崡銆?
 ### Perf & alternatives
 
 
-用于在运行中的系统上测量各种统计信息以诊断问题的工具。
-
-一般性建议请参阅 process/debugging/userspace_debugging_guide:perf & alternatives 指南。
-
-media 设备示例：
-
-收集解码任务的统计数据：（此示例在带有 rkvdec 编解码器驱动、使用 `fluster test suite
+鐢ㄤ簬鍦ㄨ繍琛屼腑鐨勭郴缁熶笂娴嬮噺鍚勭缁熻淇℃伅浠ヨ瘖鏂棶棰樼殑宸ュ叿銆?
+涓€鑸€у缓璁鍙傞槄 process/debugging/userspace_debugging_guide:perf & alternatives 鎸囧崡銆?
+media 璁惧绀轰緥锛?
+鏀堕泦瑙ｇ爜浠诲姟鐨勭粺璁℃暟鎹細锛堟绀轰緥鍦ㄥ甫鏈?rkvdec 缂栬В鐮佸櫒椹卞姩銆佷娇鐢?`fluster test suite
 ```
 
   perf stat -d python3 fluster.py run -d GStreamer-H.264-V4L2SL-Gst1.0 -ts
@@ -113,27 +98,22 @@ media 设备示例：
      6.377221000 seconds sys
 
 ```
-可用事件和指标取决于你所运行的系统。
-
+鍙敤浜嬩欢鍜屾寚鏍囧彇鍐充簬浣犳墍杩愯鐨勭郴缁熴€?
 ### Error checking & panic analysis
 
 
-各种内核配置选项，以增强 Linux 内核的错误检测能力，代价是降低性能。
-
-一般性建议请参阅 :ref:`process/debugging/driver_development_debugging_guide:kasan, ubsan, lockdep and other error checkers` 指南。
-
+鍚勭鍐呮牳閰嶇疆閫夐」锛屼互澧炲己 Linux 鍐呮牳鐨勯敊璇娴嬭兘鍔涳紝浠ｄ环鏄檷浣庢€ц兘銆?
+涓€鑸€у缓璁鍙傞槄 :ref:`process/debugging/driver_development_debugging_guide:kasan, ubsan, lockdep and other error checkers` 鎸囧崡銆?
 ### Driver verification with v4l2-compliance
 
 
-为了验证驱动是否遵循 v4l2 API，使用工具 v4l2-compliance，它是 `v4l_utils <https://git.linuxtv.org/v4l-utils.git>`__ 的一部分，后者是一套用于 media 子系统的用户空间工具。
-
+涓轰簡楠岃瘉椹卞姩鏄惁閬靛惊 v4l2 API锛屼娇鐢ㄥ伐鍏?v4l2-compliance锛屽畠鏄?`v4l_utils <https://git.linuxtv.org/v4l-utils.git>`__ 鐨勪竴閮ㄥ垎锛屽悗鑰呮槸涓€濂楃敤浜?media 瀛愮郴缁熺殑鐢ㄦ埛绌洪棿宸ュ叿銆?
 ```
 
   v4l2-compliance -M /dev/mediaX --verbose
 
 ```
-你也可以对 mediaX 引用的所有设备运行完整的合规性检查
-```
+浣犱篃鍙互瀵?mediaX 寮曠敤鐨勬墍鏈夎澶囪繍琛屽畬鏁寸殑鍚堣鎬ф鏌?```
 
   v4l2-compliance -m /dev/mediaX
 
@@ -141,15 +121,12 @@ media 设备示例：
 ### Debugging problems with receiving video
 
 
-在驱动中实现 vidioc_log_status：这可以把当前状态记录到内核日志。它由 v4l2-ctl --log-status 调用。对于调试接收视频（TV/S-Video/HDMI 等）的问题非常有用，因为视频信号是外部的（因此不可预测）。对于摄像头传感器输入用处较小，因为你可以控制摄像头传感器的行为。
-
+鍦ㄩ┍鍔ㄤ腑瀹炵幇 vidioc_log_status锛氳繖鍙互鎶婂綋鍓嶇姸鎬佽褰曞埌鍐呮牳鏃ュ織銆傚畠鐢?v4l2-ctl --log-status 璋冪敤銆傚浜庤皟璇曟帴鏀惰棰戯紙TV/S-Video/HDMI 绛夛級鐨勯棶棰橀潪甯告湁鐢紝鍥犱负瑙嗛淇″彿鏄閮ㄧ殑锛堝洜姝や笉鍙娴嬶級銆傚浜庢憚鍍忓ご浼犳劅鍣ㄨ緭鍏ョ敤澶勮緝灏忥紝鍥犱负浣犲彲浠ユ帶鍒舵憚鍍忓ご浼犳劅鍣ㄧ殑琛屼负銆?
 ```
 
   .vidioc_log_status  = v4l2_ctrl_log_status,
 
 ```
-但你也可以创建自己的回调，以创建自定义的状态日志。
-
-你可以在 cobalt 驱动中找到一个示例（`drivers/media/pci/cobalt/cobalt-v4l2.c <https://elixir.bootlin.com/linux/v6.11.6/source/drivers/media/pci/cobalt/cobalt-v4l2.c#L567>`__）。
-
-**Copyright** ©2024 : Collabora
+浣嗕綘涔熷彲浠ュ垱寤鸿嚜宸辩殑鍥炶皟锛屼互鍒涘缓鑷畾涔夌殑鐘舵€佹棩蹇椼€?
+浣犲彲浠ュ湪 cobalt 椹卞姩涓壘鍒颁竴涓ず渚嬶紙`drivers/media/pci/cobalt/cobalt-v4l2.c <https://elixir.bootlin.com/linux/v6.11.6/source/drivers/media/pci/cobalt/cobalt-v4l2.c#L567>`__锛夈€?
+**Copyright** 漏2024 : Collabora

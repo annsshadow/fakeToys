@@ -1,127 +1,73 @@
+﻿
+## Linux 鍐呮牳琛ヤ竵鎻愪氦妫€鏌ユ竻鍗?
 
-## Linux 内核补丁提交检查清单
-
-
-如果开发者希望自己的内核补丁提交能够被更快地接受，
-以下是他们应当做到的一些基本事项。
-
-这些都超出了 `Documentation/process/submitting-patches.rst` <submittingpatches>
-以及其他地方关于提交 Linux 内核补丁的文档所提供的要求。
-
-## 审查你的代码
+濡傛灉寮€鍙戣€呭笇鏈涜嚜宸辩殑鍐呮牳琛ヤ竵鎻愪氦鑳藉琚洿蹇湴鎺ュ彈锛?浠ヤ笅鏄粬浠簲褰撳仛鍒扮殑涓€浜涘熀鏈簨椤广€?
+杩欎簺閮借秴鍑轰簡 `Documentation/process/submitting-patches.rst` <submittingpatches>
+浠ュ強鍏朵粬鍦版柟鍏充簬鎻愪氦 Linux 鍐呮牳琛ヤ竵鐨勬枃妗ｆ墍鎻愪緵鐨勮姹傘€?
+## 瀹℃煡浣犵殑浠ｇ爜
 
 
-1) 如果你使用了某个功能（facility），那么请 `#include` 定义/声明
-   该功能所在的头文件。不要依赖其他头文件为你
-   拉入你所使用的头文件。
-
-2) 按照 `Documentation/process/coding-style.rst` <codingstyle>
-   中的详细说明检查补丁的总体风格。
-
-3) 所有内存屏障（例如 `barrier()`、`rmb()`、`wmb()`）都需要在
-   源代码中有注释，解释它们正在做什么以及为什么这样做的逻辑。
-
-## 审查 Kconfig 改动
+1) 濡傛灉浣犱娇鐢ㄤ簡鏌愪釜鍔熻兘锛坒acility锛夛紝閭ｄ箞璇?`#include` 瀹氫箟/澹版槑
+   璇ュ姛鑳芥墍鍦ㄧ殑澶存枃浠躲€備笉瑕佷緷璧栧叾浠栧ご鏂囦欢涓轰綘
+   鎷夊叆浣犳墍浣跨敤鐨勫ご鏂囦欢銆?
+2) 鎸夌収 `Documentation/process/coding-style.rst` <codingstyle>
+   涓殑璇︾粏璇存槑妫€鏌ヨˉ涓佺殑鎬讳綋椋庢牸銆?
+3) 鎵€鏈夊唴瀛樺睆闅滐紙渚嬪 `barrier()`銆乣rmb()`銆乣wmb()`锛夐兘闇€瑕佸湪
+   婧愪唬鐮佷腑鏈夋敞閲婏紝瑙ｉ噴瀹冧滑姝ｅ湪鍋氫粈涔堜互鍙婁负浠€涔堣繖鏍峰仛鐨勯€昏緫銆?
+## 瀹℃煡 Kconfig 鏀瑰姩
 
 
-1) 任何新增或修改的 `CONFIG` 选项都不要弄乱配置菜单，并且
-   除非满足 `Documentation/kbuild/kconfig-language.rst` 中
-   “菜单属性：默认值”所记录的例外标准，否则默认应为关闭（off）。
-
-2) 所有新增的 `Kconfig` 选项都应有帮助文本（help text）。
-
-3) 已经针对相关的 `Kconfig` 组合进行了仔细审查。这一点很难通过
-   测试做对——在这里，脑力思考（brainpower）是值得的。
-
-## 提供文档
+1) 浠讳綍鏂板鎴栦慨鏀圭殑 `CONFIG` 閫夐」閮戒笉瑕佸紕涔遍厤缃彍鍗曪紝骞朵笖
+   闄ら潪婊¤冻 `Documentation/kbuild/kconfig-language.rst` 涓?   鈥滆彍鍗曞睘鎬э細榛樿鍊尖€濇墍璁板綍鐨勪緥澶栨爣鍑嗭紝鍚﹀垯榛樿搴斾负鍏抽棴锛坥ff锛夈€?
+2) 鎵€鏈夋柊澧炵殑 `Kconfig` 閫夐」閮藉簲鏈夊府鍔╂枃鏈紙help text锛夈€?
+3) 宸茬粡閽堝鐩稿叧鐨?`Kconfig` 缁勫悎杩涜浜嗕粩缁嗗鏌ャ€傝繖涓€鐐瑰緢闅鹃€氳繃
+   娴嬭瘯鍋氬鈥斺€斿湪杩欓噷锛岃剳鍔涙€濊€冿紙brainpower锛夋槸鍊煎緱鐨勩€?
+## 鎻愪緵鏂囨。
 
 
-1) 包含 kernel-doc <kernel_doc> 以文档化全局内核 API。
-   （静态函数不要求，但在那里也可以。）
+1) 鍖呭惈 kernel-doc <kernel_doc> 浠ユ枃妗ｅ寲鍏ㄥ眬鍐呮牳 API銆?   锛堥潤鎬佸嚱鏁颁笉瑕佹眰锛屼絾鍦ㄩ偅閲屼篃鍙互銆傦級
 
-2) 所有新增的 `/proc` 条目都在 `Documentation/` 下有文档说明。
+2) 鎵€鏈夋柊澧炵殑 `/proc` 鏉＄洰閮藉湪 `Documentation/` 涓嬫湁鏂囨。璇存槑銆?
+3) 鎵€鏈夋柊澧炵殑鍐呮牳鍚姩鍙傛暟閮藉湪
+   `Documentation/admin-guide/kernel-parameters.rst` 涓湁鏂囨。璇存槑銆?
+4) 鎵€鏈夋柊澧炵殑妯″潡鍙傛暟閮界敤 `MODULE_PARM_DESC()` 杩涜鏂囨。璇存槑銆?
+5) 鎵€鏈夋柊澧炵殑鐢ㄦ埛绌洪棿鎺ュ彛閮藉湪 `Documentation/ABI/` 涓湁鏂囨。璇存槑銆?   鏈夊叧鏇村淇℃伅锛岃鍙傝 Documentation/admin-guide/abi.rst锛堟垨 `Documentation/ABI/README`锛夈€?   淇敼鐢ㄦ埛绌洪棿鎺ュ彛鐨勮ˉ涓佸簲褰撴妱閫侊紙CC锛夊埌
+   linux-api@vger.kernel.org銆?
+6) 濡傛灉琛ヤ竵鏂板浜嗕换浣?ioctl锛岄偅涔堜篃瑕佹洿鏂?   `Documentation/userspace-api/ioctl/ioctl-number.rst`銆?
+## 鐢ㄥ伐鍏锋鏌ヤ綘鐨勪唬鐮?
 
-3) 所有新增的内核启动参数都在
-   `Documentation/admin-guide/kernel-parameters.rst` 中有文档说明。
-
-4) 所有新增的模块参数都用 `MODULE_PARM_DESC()` 进行文档说明。
-
-5) 所有新增的用户空间接口都在 `Documentation/ABI/` 中有文档说明。
-   有关更多信息，请参见 Documentation/admin-guide/abi.rst（或 `Documentation/ABI/README`）。
-   修改用户空间接口的补丁应当抄送（CC）到
-   linux-api@vger.kernel.org。
-
-6) 如果补丁新增了任何 ioctl，那么也要更新
-   `Documentation/userspace-api/ioctl/ioctl-number.rst`。
-
-## 用工具检查你的代码
+1) 鍦ㄦ彁浜や箣鍓嶇敤琛ヤ竵椋庢牸妫€鏌ュ櫒妫€鏌ユ槸鍚﹀瓨鍦ㄧ悙纰庣殑杩濊
+   锛坄scripts/checkpatch.pl`锛夈€?   浣犲簲璇ヨ兘澶熶负琛ヤ竵涓畫鐣欑殑鎵€鏈夎繚瑙勭粰鍑哄悎鐞嗚В閲娿€?
+2) 鐢?sparse 骞插噣鍦伴€氳繃妫€鏌ャ€?
+3) 浣跨敤 `make checkstack` 骞朵慨澶嶅畠鍙戠幇鐨勪换浣曢棶棰樸€?   娉ㄦ剰 `checkstack` 骞朵笉浼氭樉寮忔寚鍑洪棶棰橈紝
+   浣嗕换浣曞湪鏍堜笂浣跨敤瓒呰繃 512 瀛楄妭鐨勫嚱鏁伴兘鏄渶瑕佷慨鏀圭殑鍊欓€夊璞°€?
+## 鏋勫缓浣犵殑浠ｇ爜
 
 
-1) 在提交之前用补丁风格检查器检查是否存在琐碎的违规
-   （`scripts/checkpatch.pl`）。
-   你应该能够为补丁中残留的所有违规给出合理解释。
+1) 骞插噣鍦版瀯寤猴細
 
-2) 用 sparse 干净地通过检查。
-
-3) 使用 `make checkstack` 并修复它发现的任何问题。
-   注意 `checkstack` 并不会显式指出问题，
-   但任何在栈上使用超过 512 字节的函数都是需要修改的候选对象。
-
-## 构建你的代码
-
-
-1) 干净地构建：
-
-  a) 在适用的或已修改的 `CONFIG` 选项分别为 `=y`、`=m` 以及
-     `=n` 时。没有 `gcc` 警告/错误，没有链接器警告/错误。
-
-  b) 通过 `allnoconfig`、`allmodconfig`。
-
-  c) 在使用 `O=builddir` 时构建成功。
-
-  d) 任何 Documentation/ 下的改动都能成功构建，且不产生新的警告/错误。
-     使用 `make htmldocs` 或 `make pdfdocs` 来检查构建并
-     修复任何问题。
-
-2) 通过使用本地交叉编译工具或某个其他构建集群，
-   在多种 CPU 架构上构建。
-   注意，针对不同字长（32 位和 64 位）以及不同字节序
-   （大端和小端）的架构进行测试，能够有效发现由于对
-   可表示数量范围、数据对齐或字节序等做出错误假设而导致的
-   各种可移植性问题。
-
-3) 新增的代码已经用 `gcc -W`（使用
-   `make KCFLAGS=-W`）编译过。这会产生大量噪音，但有利于
-   发现类似“warning: comparison between signed and unsigned”
-   这样的 bug。
-
-4) 如果你修改的源代码依赖或使用了以下 `Kconfig` 符号相关的
-   任何内核 API 或特性，那么请用相关的 `Kconfig` 符号被禁用
-   和/或设为 `=m`（如果该选项可用）来进行多次构建
-   [不需要同时全部设置，只需它们各种随机的组合]：
-
-   `CONFIG_SMP`、`CONFIG_SYSFS`、`CONFIG_PROC_FS`、`CONFIG_INPUT`、
-   `CONFIG_PCI`、`CONFIG_BLOCK`、`CONFIG_PM`、`CONFIG_MAGIC_SYSRQ`、
-   `CONFIG_NET`、`CONFIG_INET=n`（后者搭配 `CONFIG_NET=y`）。
-
-## 测试你的代码
+  a) 鍦ㄩ€傜敤鐨勬垨宸蹭慨鏀圭殑 `CONFIG` 閫夐」鍒嗗埆涓?`=y`銆乣=m` 浠ュ強
+     `=n` 鏃躲€傛病鏈?`gcc` 璀﹀憡/閿欒锛屾病鏈夐摼鎺ュ櫒璀﹀憡/閿欒銆?
+  b) 閫氳繃 `allnoconfig`銆乣allmodconfig`銆?
+  c) 鍦ㄤ娇鐢?`O=builddir` 鏃舵瀯寤烘垚鍔熴€?
+  d) 浠讳綍 Documentation/ 涓嬬殑鏀瑰姩閮借兘鎴愬姛鏋勫缓锛屼笖涓嶄骇鐢熸柊鐨勮鍛?閿欒銆?     浣跨敤 `make htmldocs` 鎴?`make pdfdocs` 鏉ユ鏌ユ瀯寤哄苟
+     淇浠讳綍闂銆?
+2) 閫氳繃浣跨敤鏈湴浜ゅ弶缂栬瘧宸ュ叿鎴栨煇涓叾浠栨瀯寤洪泦缇わ紝
+   鍦ㄥ绉?CPU 鏋舵瀯涓婃瀯寤恒€?   娉ㄦ剰锛岄拡瀵逛笉鍚屽瓧闀匡紙32 浣嶅拰 64 浣嶏級浠ュ強涓嶅悓瀛楄妭搴?   锛堝ぇ绔拰灏忕锛夌殑鏋舵瀯杩涜娴嬭瘯锛岃兘澶熸湁鏁堝彂鐜扮敱浜庡
+   鍙〃绀烘暟閲忚寖鍥淬€佹暟鎹榻愭垨瀛楄妭搴忕瓑鍋氬嚭閿欒鍋囪鑰屽鑷寸殑
+   鍚勭鍙Щ妞嶆€ч棶棰樸€?
+3) 鏂板鐨勪唬鐮佸凡缁忕敤 `gcc -W`锛堜娇鐢?   `make KCFLAGS=-W`锛夌紪璇戣繃銆傝繖浼氫骇鐢熷ぇ閲忓櫔闊筹紝浣嗘湁鍒╀簬
+   鍙戠幇绫讳技鈥渨arning: comparison between signed and unsigned鈥?   杩欐牱鐨?bug銆?
+4) 濡傛灉浣犱慨鏀圭殑婧愪唬鐮佷緷璧栨垨浣跨敤浜嗕互涓?`Kconfig` 绗﹀彿鐩稿叧鐨?   浠讳綍鍐呮牳 API 鎴栫壒鎬э紝閭ｄ箞璇风敤鐩稿叧鐨?`Kconfig` 绗﹀彿琚鐢?   鍜?鎴栬涓?`=m`锛堝鏋滆閫夐」鍙敤锛夋潵杩涜澶氭鏋勫缓
+   [涓嶉渶瑕佸悓鏃跺叏閮ㄨ缃紝鍙渶瀹冧滑鍚勭闅忔満鐨勭粍鍚圿锛?
+   `CONFIG_SMP`銆乣CONFIG_SYSFS`銆乣CONFIG_PROC_FS`銆乣CONFIG_INPUT`銆?   `CONFIG_PCI`銆乣CONFIG_BLOCK`銆乣CONFIG_PM`銆乣CONFIG_MAGIC_SYSRQ`銆?   `CONFIG_NET`銆乣CONFIG_INET=n`锛堝悗鑰呮惌閰?`CONFIG_NET=y`锛夈€?
+## 娴嬭瘯浣犵殑浠ｇ爜
 
 
-1) 已经用 `CONFIG_PREEMPT`、`CONFIG_DEBUG_PREEMPT`、
-   `CONFIG_SLUB_DEBUG`、`CONFIG_DEBUG_PAGEALLOC`、`CONFIG_DEBUG_MUTEXES`、
-   `CONFIG_DEBUG_SPINLOCK`、`CONFIG_DEBUG_ATOMIC_SLEEP`、
-   `CONFIG_PROVE_RCU` 以及 `CONFIG_DEBUG_OBJECTS_RCU_HEAD`
-   全部同时启用进行测试。
-
-2) 已经用和不用 `CONFIG_SMP` 与
-   `CONFIG_PREEMPT` 进行了构建与运行时测试。
-
-3) 所有代码路径都已在启用所有 lockdep 特性的情况下被执行过。
-
-4) 已经通过至少注入 slab 与页分配
-   失败进行检查。参见 `Documentation/fault-injection/`。
-   如果新代码量很大，添加子系统特定的故障注入可能是合适的。
-
-5) 已用 linux-next 最新的标签进行测试，以确保它仍能
-   与所有其他已排队的补丁以及 VM、
-   VFS 和其他子系统中的各种变动协同工作。
+1) 宸茬粡鐢?`CONFIG_PREEMPT`銆乣CONFIG_DEBUG_PREEMPT`銆?   `CONFIG_SLUB_DEBUG`銆乣CONFIG_DEBUG_PAGEALLOC`銆乣CONFIG_DEBUG_MUTEXES`銆?   `CONFIG_DEBUG_SPINLOCK`銆乣CONFIG_DEBUG_ATOMIC_SLEEP`銆?   `CONFIG_PROVE_RCU` 浠ュ強 `CONFIG_DEBUG_OBJECTS_RCU_HEAD`
+   鍏ㄩ儴鍚屾椂鍚敤杩涜娴嬭瘯銆?
+2) 宸茬粡鐢ㄥ拰涓嶇敤 `CONFIG_SMP` 涓?   `CONFIG_PREEMPT` 杩涜浜嗘瀯寤轰笌杩愯鏃舵祴璇曘€?
+3) 鎵€鏈変唬鐮佽矾寰勯兘宸插湪鍚敤鎵€鏈?lockdep 鐗规€х殑鎯呭喌涓嬭鎵ц杩囥€?
+4) 宸茬粡閫氳繃鑷冲皯娉ㄥ叆 slab 涓庨〉鍒嗛厤
+   澶辫触杩涜妫€鏌ャ€傚弬瑙?`Documentation/fault-injection/`銆?   濡傛灉鏂颁唬鐮侀噺寰堝ぇ锛屾坊鍔犲瓙绯荤粺鐗瑰畾鐨勬晠闅滄敞鍏ュ彲鑳芥槸鍚堥€傜殑銆?
+5) 宸茬敤 linux-next 鏈€鏂扮殑鏍囩杩涜娴嬭瘯锛屼互纭繚瀹冧粛鑳?   涓庢墍鏈夊叾浠栧凡鎺掗槦鐨勮ˉ涓佷互鍙?VM銆?   VFS 鍜屽叾浠栧瓙绯荤粺涓殑鍚勭鍙樺姩鍗忓悓宸ヤ綔銆?

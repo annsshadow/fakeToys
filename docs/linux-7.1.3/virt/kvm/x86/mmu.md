@@ -1,92 +1,60 @@
+﻿
+## x86 kvm 褰卞瓙 mmu
 
-## x86 kvm 影子 mmu
 
+mmu锛堜綅浜?arch/x86/kvm锛屾枃浠?mmu.[ch] 涓?paging_tmpl.h锛夎礋璐ｅ悜 guest 鍛堢幇涓€涓爣鍑嗙殑 x86 mmu锛屽悓鏃跺皢 guest 鐗╃悊鍦板潃杞崲涓?host 鐗╃悊鍦板潃銆?
+mmu 浠ｇ爜鍔涙眰婊¤冻浠ヤ笅瑕佹眰锛?
+- 姝ｇ‘鎬э紙correctness锛夛細
+	       闄や簡鏃跺簭涔嬪锛実uest 涓嶅簲鑳藉鍒ゆ柇瀹冭繍琛屽湪妯℃嫙鐨?mmu 涔嬩笂锛堟垜浠瘯鍥剧鍚堣鑼冿紝鑰岄潪妯℃嫙鏌愪釜鐗瑰畾瀹炵幇鐨勭壒鎬э紝渚嬪 tlb 澶у皬锛?- 瀹夊叏鎬э紙security锛夛細
+	       guest 涓嶅緱鑳藉瑙︾鏈垎閰嶇粰瀹冪殑 host 鍐呭瓨
+- 鎬ц兘锛坧erformance锛夛細
+               灏?mmu 甯︽潵鐨勬€ц兘寮€閿€闄嶅埌鏈€浣?- 鍙墿灞曟€э紙scaling锛夛細
+               闇€瑕佽兘鎵╁睍鍒板叿鏈夊ぇ鍐呭瓨鍜屽ぇ vcpu 鐨?guest
+- 纭欢锛坔ardware锛夛細
+               鏀寔鍏ㄧ郴鍒楃殑 x86 铏氭嫙鍖栫‖浠?- 闆嗘垚锛坕ntegration锛夛細
+               Linux 鍐呭瓨绠＄悊浠ｇ爜蹇呴』鎺屾帶 guest 鍐呭瓨锛屼互渚夸氦鎹紙swapping锛夈€侀〉杩佺Щ銆侀〉鍚堝苟銆侀€忔槑澶ч〉锛坱ransparent hugepages锛夊強绫讳技鐗规€ф棤闇€淇敼鍗冲彲宸ヤ綔
+- 鑴忛〉璺熻釜锛坉irty tracking锛夛細
+               鎶ュ憡瀵?guest 鍐呭瓨鐨勫啓鍏ワ紝浠ュ惎鐢ㄥ疄鏃惰縼绉诲拰鍩轰簬甯х紦鍐茬殑鏄剧ず
+- 鍐呭瓨鍗犵敤锛坒ootprint锛夛細
+               淇濇寔鍥哄畾鐨勫唴鏍稿唴瀛橀噺杈冧綆锛堝ぇ閮ㄥ垎鍐呭瓨搴斿綋鏄彲鍥炴敹鐨勶級
+- 鍙潬鎬э紙reliability锛夛細
+               閬垮厤浣跨敤澶氶〉鎴?GFP_ATOMIC 鍒嗛厤
 
-mmu（位于 arch/x86/kvm，文件 mmu.[ch] 与 paging_tmpl.h）负责向 guest 呈现一个标准的 x86 mmu，同时将 guest 物理地址转换为 host 物理地址。
-
-mmu 代码力求满足以下要求：
-
-- 正确性（correctness）：
-	       除了时序之外，guest 不应能够判断它运行在模拟的 mmu 之上（我们试图符合规范，而非模拟某个特定实现的特性，例如 tlb 大小）
-- 安全性（security）：
-	       guest 不得能够触碰未分配给它的 host 内存
-- 性能（performance）：
-               将 mmu 带来的性能开销降到最低
-- 可扩展性（scaling）：
-               需要能扩展到具有大内存和大 vcpu 的 guest
-- 硬件（hardware）：
-               支持全系列的 x86 虚拟化硬件
-- 集成（integration）：
-               Linux 内存管理代码必须掌控 guest 内存，以便交换（swapping）、页迁移、页合并、透明大页（transparent hugepages）及类似特性无需修改即可工作
-- 脏页跟踪（dirty tracking）：
-               报告对 guest 内存的写入，以启用实时迁移和基于帧缓冲的显示
-- 内存占用（footprint）：
-               保持固定的内核内存量较低（大部分内存应当是可回收的）
-- 可靠性（reliability）：
-               避免使用多页或 GFP_ATOMIC 分配
-
-## 缩写
+## 缂╁啓
 
 ====  ====================================================================
-pfn   host page frame number（宿主页帧号）
-hpa   host physical address（宿主物理地址）
-hva   host virtual address（宿主虚拟地址）
-gfn   guest frame number（客户机页帧号）
-gpa   guest physical address（客户机物理地址）
-gva   guest virtual address（客户机虚拟地址）
-ngpa  nested guest physical address（嵌套客户机物理地址）
-ngva  nested guest virtual address（嵌套客户机虚拟地址）
-pte   page table entry（页表项，也用于泛指地指代分页结构条目）
-gpte  guest pte（指向 gfn）
-spte  shadow pte（指向 pfn）
-tdp   two dimensional paging（二维分页，NPT 与 EPT 的厂商中立术语）
+pfn   host page frame number锛堝涓婚〉甯у彿锛?hpa   host physical address锛堝涓荤墿鐞嗗湴鍧€锛?hva   host virtual address锛堝涓昏櫄鎷熷湴鍧€锛?gfn   guest frame number锛堝鎴锋満椤靛抚鍙凤級
+gpa   guest physical address锛堝鎴锋満鐗╃悊鍦板潃锛?gva   guest virtual address锛堝鎴锋満铏氭嫙鍦板潃锛?ngpa  nested guest physical address锛堝祵濂楀鎴锋満鐗╃悊鍦板潃锛?ngva  nested guest virtual address锛堝祵濂楀鎴锋満铏氭嫙鍦板潃锛?pte   page table entry锛堥〉琛ㄩ」锛屼篃鐢ㄤ簬娉涙寚鍦版寚浠ｅ垎椤电粨鏋勬潯鐩級
+gpte  guest pte锛堟寚鍚?gfn锛?spte  shadow pte锛堟寚鍚?pfn锛?tdp   two dimensional paging锛堜簩缁村垎椤碉紝NPT 涓?EPT 鐨勫巶鍟嗕腑绔嬫湳璇級
 ====  ====================================================================
 
-## 支持的虚拟与实际硬件
+## 鏀寔鐨勮櫄鎷熶笌瀹為檯纭欢
 
-mmu 支持第一代 mmu 硬件，它允许在 guest 进入时原子地切换当前的 paging 模式与 cr3，同时也支持二维分页（AMD 的 NPT 与 Intel 的 EPT）。它所模拟的硬件是传统的 2/3/4 级 x86 mmu，支持全局页、pae、pse、pse36、cr0.wp 以及 1GB 页。模拟的硬件也能够在支持 NPT 的宿主上暴露支持 NPT 的硬件。
+mmu 鏀寔绗竴浠?mmu 纭欢锛屽畠鍏佽鍦?guest 杩涘叆鏃跺師瀛愬湴鍒囨崲褰撳墠鐨?paging 妯″紡涓?cr3锛屽悓鏃朵篃鏀寔浜岀淮鍒嗛〉锛圓MD 鐨?NPT 涓?Intel 鐨?EPT锛夈€傚畠鎵€妯℃嫙鐨勭‖浠舵槸浼犵粺鐨?2/3/4 绾?x86 mmu锛屾敮鎸佸叏灞€椤点€乸ae銆乸se銆乸se36銆乧r0.wp 浠ュ強 1GB 椤点€傛ā鎷熺殑纭欢涔熻兘澶熷湪鏀寔 NPT 鐨勫涓讳笂鏆撮湶鏀寔 NPT 鐨勭‖浠躲€?
+## 杞崲
 
-## 转换
+mmu 鐨勪富瑕佸伐浣滄槸瀵瑰鐞嗗櫒鐨?mmu 杩涜缂栫▼锛屼互涓?guest 杞崲鍦板潃銆傚湪涓嶅悓鐨勬椂闂撮渶瑕佷笉鍚岀殑杞崲锛?
+- 褰?guest paging 琚鐢ㄦ椂锛屾垜浠皢 guest 鐗╃悊鍦板潃杞崲涓?host 鐗╃悊鍦板潃锛坓pa->hpa锛?- 褰?guest paging 琚惎鐢ㄦ椂锛屾垜浠皢 guest 铏氭嫙鍦板潃杞崲涓?guest 鐗╃悊鍦板潃锛屽啀杞崲涓?host 鐗╃悊鍦板潃锛坓va->gpa->hpa锛?- 褰?guest 鍚姩瀹冭嚜宸辩殑 guest 鏃讹紝鎴戜滑灏嗗祵濂?guest 铏氭嫙鍦板潃杞崲涓哄祵濂?guest 鐗╃悊鍦板潃锛屽啀杞崲涓?guest 鐗╃悊鍦板潃锛屽啀杞崲涓?host 鐗╃悊鍦板潃锛坣gva->ngpa->gpa->hpa锛?
+涓昏鐨勬寫鎴樻槸灏?1 鍒?3 绉嶈浆鎹㈢紪鐮佸埌鍙敮鎸?1 绉嶏紙浼犵粺锛夊拰 2 绉嶏紙tdp锛夎浆鎹㈢殑纭欢涓€傚綋鎵€闇€杞崲鐨勬暟閲忎笌纭欢鍖归厤鏃讹紝mmu 浠ョ洿鎺ユā寮忥紙direct mode锛夎繍琛岋紱鍚﹀垯浠ュ奖瀛愭ā寮忥紙shadow mode锛夎繍琛岋紙瑙佷笅鏂囷級銆?
+## 鍐呭瓨
 
-mmu 的主要工作是对处理器的 mmu 进行编程，以为 guest 转换地址。在不同的时间需要不同的转换：
+guest 鍐呭瓨锛坓pa锛夋槸浣跨敤 kvm 鐨勮繘绋嬬殑鐢ㄦ埛鍦板潃绌洪棿鐨勪竴閮ㄥ垎銆傜敤鎴风┖闂村畾涔変簡 guest 鍦板潃涓庣敤鎴峰湴鍧€涔嬮棿鐨勮浆鎹紙gpa->hva锛夛紱娉ㄦ剰涓や釜 gpa 鍙兘鍒悕鍒板悓涓€涓?hva锛屼絾鍙嶄箣鍒欎笉鐒躲€?
+杩欎簺 hva 鍙互浣跨敤瀹夸富鍙敤鐨勪换浣曟柟娉曚綔涓哄悗绔細鍖垮悕鍐呭瓨銆佹枃浠跺悗绔唴瀛樹互鍙婅澶囧唴瀛樸€傚唴瀛樺彲鑳介殢鏃惰瀹夸富鎹㈤〉銆?
+## 浜嬩欢
 
-- 当 guest paging 被禁用时，我们将 guest 物理地址转换为 host 物理地址（gpa->hpa）
-- 当 guest paging 被启用时，我们将 guest 虚拟地址转换为 guest 物理地址，再转换为 host 物理地址（gva->gpa->hpa）
-- 当 guest 启动它自己的 guest 时，我们将嵌套 guest 虚拟地址转换为嵌套 guest 物理地址，再转换为 guest 物理地址，再转换为 host 物理地址（ngva->ngpa->gpa->hpa）
+mmu 鐢变簨浠堕┍鍔紝閮ㄥ垎鏉ヨ嚜 guest锛岄儴鍒嗘潵鑷?host銆?
+鏉ヨ嚜 guest 鐨勪簨浠讹細
 
-主要的挑战是将 1 到 3 种转换编码到只支持 1 种（传统）和 2 种（tdp）转换的硬件中。当所需转换的数量与硬件匹配时，mmu 以直接模式（direct mode）运行；否则以影子模式（shadow mode）运行（见下文）。
+- 瀵规帶鍒跺瘎瀛樺櫒鐨勫啓鍏ワ紙灏ゅ叾鏄?cr3锛?- invlpg/invlpga 鎸囦护鐨勬墽琛?- 瀵圭己澶辨垨鍙椾繚鎶よ浆鎹㈢殑璁块棶
 
-## 内存
+鏉ヨ嚜 host 鐨勪簨浠讹細
 
-guest 内存（gpa）是使用 kvm 的进程的用户地址空间的一部分。用户空间定义了 guest 地址与用户地址之间的转换（gpa->hva）；注意两个 gpa 可能别名到同一个 hva，但反之则不然。
-
-这些 hva 可以使用宿主可用的任何方法作为后端：匿名内存、文件后端内存以及设备内存。内存可能随时被宿主换页。
-
-## 事件
-
-mmu 由事件驱动，部分来自 guest，部分来自 host。
-
-来自 guest 的事件：
-
-- 对控制寄存器的写入（尤其是 cr3）
-- invlpg/invlpga 指令的执行
-- 对缺失或受保护转换的访问
-
-来自 host 的事件：
-
-- gpa->hpa 转换的变化（通过 gpa->hva 变化或 hva->hpa 变化）
-- 内存压力（shrinker）
-
-## 影子页
-
-主要的数据结构是影子页（shadow page），即 'struct kvm_mmu_page'。一个影子页包含 512 个 spte，可以是叶子（leaf）或非叶子（nonleaf）spte。一个影子页可以混合包含 leaf 和 nonleaf spte。
-
-nonleaf spte 让硬件 mmu 能够到达 leaf 页，并不直接与某个转换相关。它指向其他影子页。
-
-leaf spte 对应于编码到一个分页结构条目中的一到两个转换。它们始终是转换栈的最低层，可选的高层转换留给 NPT/EPT。leaf pte 指向 guest 页。
-
-下表显示了由 leaf pte 编码的转换，高层转换在括号中：
-
+- gpa->hpa 杞崲鐨勫彉鍖栵紙閫氳繃 gpa->hva 鍙樺寲鎴?hva->hpa 鍙樺寲锛?- 鍐呭瓨鍘嬪姏锛坰hrinker锛?
+## 褰卞瓙椤?
+涓昏鐨勬暟鎹粨鏋勬槸褰卞瓙椤碉紙shadow page锛夛紝鍗?'struct kvm_mmu_page'銆備竴涓奖瀛愰〉鍖呭惈 512 涓?spte锛屽彲浠ユ槸鍙跺瓙锛坙eaf锛夋垨闈炲彾瀛愶紙nonleaf锛塻pte銆備竴涓奖瀛愰〉鍙互娣峰悎鍖呭惈 leaf 鍜?nonleaf spte銆?
+nonleaf spte 璁╃‖浠?mmu 鑳藉鍒拌揪 leaf 椤碉紝骞朵笉鐩存帴涓庢煇涓浆鎹㈢浉鍏炽€傚畠鎸囧悜鍏朵粬褰卞瓙椤点€?
+leaf spte 瀵瑰簲浜庣紪鐮佸埌涓€涓垎椤电粨鏋勬潯鐩腑鐨勪竴鍒颁袱涓浆鎹€傚畠浠缁堟槸杞崲鏍堢殑鏈€浣庡眰锛屽彲閫夌殑楂樺眰杞崲鐣欑粰 NPT/EPT銆俵eaf pte 鎸囧悜 guest 椤点€?
+涓嬭〃鏄剧ず浜嗙敱 leaf pte 缂栫爜鐨勮浆鎹紝楂樺眰杞崲鍦ㄦ嫭鍙蜂腑锛?
 ```
 
   nonpaging:     gpa->hpa
@@ -102,202 +70,93 @@ leaf spte 对应于编码到一个分页结构条目中的一到两个转换。�
       tables if npt is not present
 
 ```
-影子页包含以下信息：
-  role.level：
-    此影子页所属的影子分页层级中的级别。
-    1=4k spte，2=2M spte，3=1G spte，依此类推。
-  role.direct：
-    如果设置，则从此页可达的 leaf spte 对应于一个线性范围。
-    示例包括实模式转换、由小而宿主页支持的大 guest 页，以及 NPT 或 EPT 活跃时的 gpa->hpa 转换。
-    线性范围起始于 (gfn << PAGE_SHIFT)，其大小由 role.level 决定（第一级为 2MB，第二级为 1GB，第三级为 0.5TB，第四级为 256TB）
-    如果清除，此页对应于由 gfn 字段表示的 guest 页表。
-  role.quadrant：
-    当 role.has_4_byte_gpte=1 时，guest 使用 32 位 gpte，而 host 使用 64 位 spte。这意味着 guest 页表包含的 pte 比 host 多，因此需要一个以上的影子页来影子一个 guest 页。
-    对于第一级影子页，role.quadrant 可以为 0 或 1，表示 guest 页表中的第一或第二个 512-gpte 块。对于第二级页表，每个 32 位 gpte 被转换为两个 64 位 spte（因为每个第一级 guest 页由两个第一级影子页影子），因此 role.quadrant 取值在 0..3 范围内。每个象限映射 1GB 虚拟地址空间。
-  role.access：
-    以 uwx 形式从父 pte 继承的 guest 访问权限。注意执行权限是正向的，而非负向的。
-  role.invalid：
-    该页无效，不应被使用。它是一个当前被固定的根页（由指向它的某个 cpu 硬件寄存器）；一旦解除固定，它将被销毁。
-  role.has_4_byte_gpte：
-    反映该页所适用的 guest PTE 的大小，即如果使用直接映射或 64 位 gpte，则为 '0'，如果使用 32 位 gpte，则为 '1'。
-  role.efer_nx：
-    包含该页所适用的 efer.nx 的值。
-  role.cr0_wp：
-    包含该页所适用的 cr0.wp 的值。
-  role.smep_andnot_wp：
-    包含该页所适用的 cr4.smep && !cr0.wp 的值（此值为真的页与其他页不同；见下文对 cr0.wp=0 的处理）。
-  role.smap_andnot_wp：
-    包含该页所适用的 cr4.smap && !cr0.wp 的值（此值为真的页与其他页不同；见下文对 cr0.wp=0 的处理）。
-  role.smm：
-    如果该页在系统管理模式（system management mode）下有效，则为 1。此字段决定使用 kvm_memslots 数组中的哪一个来构建此影子页；它也用于通过 kvm_memslots_for_spte_role 宏与 __gfn_to_memslot 从一个 struct kvm_mmu_page 回到一个 memslot。
-  role.ad_disabled：
-    如果 MMU 实例不能使用 A/D 位，则为 1。EPT 在 Haswell 之前没有 A/D 位；如果 L1 hypervisor 未启用 A/D 位，影子 EPT 页表也不能使用 A/D 位。
-  role.guest_mode：
-    指示该影子页是为嵌套 guest 创建的。
-  role.passthrough：
-    该页不是由 guest 页表作为后端的，但其第一个条目指向一个 guest 页表。当 NPT 使用 5 级页表（host CR4.LA57=1）且正在影子 L1 的 4 级 NPT（L1 CR4.LA57=0）时设置此字段。
-  mmu_valid_gen：
-    该页的 MMU 代（generation），用于在不长时间阻塞 vCPU 的情况下快速清空（zap）一个 VM 内的所有 MMU 页。具体而言，KVM 更新每个 VM 的有效 MMU 代，这会导致每个 mmu 页的 mmu_valid_gen 失配。这使得所有现有的 MMU 页变得过时。过时的页不能被使用。因此，vCPU 必须在重新进入 guest 之前加载一个新的有效根。MMU 代只可能是 '0' 或 '1'。注意，TDP MMU 不使用此字段，因为非根的 TDP MMU 页只能从其所属的根到达。因此对于 TDP MMU，在根页中使用 role.invalid 来使所有 MMU 页失效就足够了。
-  gfn：
-    要么包含被此页影子的转换的 guest 页表，要么是线性转换的基页帧。参见 role.direct。
-  spt：
-    一整页的 64 位 spte，包含此页的转换。由 kvm 与硬件两者访问。
-    spt 所指向的页将其 page->private 指回影子页结构。
-    spt 中的 spte 要么指向 guest 页，要么指向更低层的影子页。
-    具体而言，如果 sp1 和 sp2 是影子页，则 sp1->spt[n] 可能指向 __pa(sp2->spt)。sp2 将通过 parent_pte 指回 sp1。
-    spt 数组构成一个以影子页为节点、以 guest 页为叶子的 DAG 结构。
-  shadowed_translation：
-    一个包含 512 个影子转换条目的数组，每个存在的 pte 对应一个。用于执行从 pte 到 gfn 的反向映射及其访问权限。当设置 role.direct 时，不会分配 shadow_translation 数组。这是因为此数组中任何元素的 gfn 在使用时都可以从 gfn 字段计算出来。此外，当设置 role.direct 时，KVM 不会跟踪每个 gfn 的访问权限。参见 role.direct 与 gfn。
-  root_count / tdp_mmu_root_count：
-     root_count 是 Shadow MMU 中根影子页的引用计数器。vCPU 在获取将被用作根页（即将被直接加载到硬件中的页，如 CR3、PDPTRs、nCR3 EPTP）的影子页时提升引用计数。根页在其引用计数非零时不能被销毁。参见 role.invalid。tdp_mmu_root_count 类似，但专用于 TDP MMU 中作为原子引用计数。
-  parent_ptes：
-    指向此页 spt 的 pte/ptes 的反向映射。如果 parent_ptes 的 bit 0 为零，则只有一个 spte 指向此页，并且 parent_ptes 指向这个单一的 spte；否则，存在多个指向此页的 spte，且 (parent_ptes & ~0x1) 指向一个包含父 spte 列表的数据结构。
-  ptep：
-    指向此影子页的 SPTE 的内核虚拟地址。专由 TDP MMU 使用，此字段与 parent_ptes 是联合体。
-  unsync：
-    如果为真，则此页中的转换可能与 guest 的转换不匹配。这等价于当 pte 被改变但尚未刷新 tlb 条目时 tlb 的状态。相应地，当 guest 执行 invlpg 或通过其他方式刷新其 tlb 时，unsync pte 会被同步。对 leaf 页有效。
-  unsync_children：
-    此页中有多少个 spte 指向 unsync（或具有未同步子节点）的页。
-  unsync_child_bitmap：
-    一个位图，指示 spt 中的哪些 spte（直接或间接）指向可能未同步的页。用于快速定位从给定页可达的所有未同步页。
-  clear_spte_count：
-    仅存在于 32 位宿主上，因为 64 位 spte 无法被原子写入。读者在脱离 MMU 锁运行时使用它来检测正在进行的更新，并在写入者完成写入之前重试。
-  write_flooding_count：
-    guest 可能多次写入一个页表，如果该页需要被写保护（见下文的“同步与未同步页”），将导致大量模拟（emulation）。leaf 页可以是未同步的，这样就不会触发频繁的模拟，但这对于非叶子页是不可能的。此字段统计自上次实际使用页表以来发生的模拟次数；如果在此页上触发模拟过于频繁，KVM 将取消映射该页，以避免将来的模拟。
-  tdp_mmu_page：
-    如果该影子页是 TDP MMU 页，则为 1。此变量用于在遍历可能包含来自 TDP MMU 和影子 MMU 两者的页的任何数据结构时，对 KVM 的控制流进行分叉。
+褰卞瓙椤靛寘鍚互涓嬩俊鎭細
+  role.level锛?    姝ゅ奖瀛愰〉鎵€灞炵殑褰卞瓙鍒嗛〉灞傜骇涓殑绾у埆銆?    1=4k spte锛?=2M spte锛?=1G spte锛屼緷姝ょ被鎺ㄣ€?  role.direct锛?    濡傛灉璁剧疆锛屽垯浠庢椤靛彲杈剧殑 leaf spte 瀵瑰簲浜庝竴涓嚎鎬ц寖鍥淬€?    绀轰緥鍖呮嫭瀹炴ā寮忚浆鎹€佺敱灏忚€屽涓婚〉鏀寔鐨勫ぇ guest 椤碉紝浠ュ強 NPT 鎴?EPT 娲昏穬鏃剁殑 gpa->hpa 杞崲銆?    绾挎€ц寖鍥磋捣濮嬩簬 (gfn << PAGE_SHIFT)锛屽叾澶у皬鐢?role.level 鍐冲畾锛堢涓€绾т负 2MB锛岀浜岀骇涓?1GB锛岀涓夌骇涓?0.5TB锛岀鍥涚骇涓?256TB锛?    濡傛灉娓呴櫎锛屾椤靛搴斾簬鐢?gfn 瀛楁琛ㄧず鐨?guest 椤佃〃銆?  role.quadrant锛?    褰?role.has_4_byte_gpte=1 鏃讹紝guest 浣跨敤 32 浣?gpte锛岃€?host 浣跨敤 64 浣?spte銆傝繖鎰忓懗鐫€ guest 椤佃〃鍖呭惈鐨?pte 姣?host 澶氾紝鍥犳闇€瑕佷竴涓互涓婄殑褰卞瓙椤垫潵褰卞瓙涓€涓?guest 椤点€?    瀵逛簬绗竴绾у奖瀛愰〉锛宺ole.quadrant 鍙互涓?0 鎴?1锛岃〃绀?guest 椤佃〃涓殑绗竴鎴栫浜屼釜 512-gpte 鍧椼€傚浜庣浜岀骇椤佃〃锛屾瘡涓?32 浣?gpte 琚浆鎹负涓や釜 64 浣?spte锛堝洜涓烘瘡涓涓€绾?guest 椤电敱涓や釜绗竴绾у奖瀛愰〉褰卞瓙锛夛紝鍥犳 role.quadrant 鍙栧€煎湪 0..3 鑼冨洿鍐呫€傛瘡涓薄闄愭槧灏?1GB 铏氭嫙鍦板潃绌洪棿銆?  role.access锛?    浠?uwx 褰㈠紡浠庣埗 pte 缁ф壙鐨?guest 璁块棶鏉冮檺銆傛敞鎰忔墽琛屾潈闄愭槸姝ｅ悜鐨勶紝鑰岄潪璐熷悜鐨勩€?  role.invalid锛?    璇ラ〉鏃犳晥锛屼笉搴旇浣跨敤銆傚畠鏄竴涓綋鍓嶈鍥哄畾鐨勬牴椤碉紙鐢辨寚鍚戝畠鐨勬煇涓?cpu 纭欢瀵勫瓨鍣級锛涗竴鏃﹁В闄ゅ浐瀹氾紝瀹冨皢琚攢姣併€?  role.has_4_byte_gpte锛?    鍙嶆槧璇ラ〉鎵€閫傜敤鐨?guest PTE 鐨勫ぇ灏忥紝鍗冲鏋滀娇鐢ㄧ洿鎺ユ槧灏勬垨 64 浣?gpte锛屽垯涓?'0'锛屽鏋滀娇鐢?32 浣?gpte锛屽垯涓?'1'銆?  role.efer_nx锛?    鍖呭惈璇ラ〉鎵€閫傜敤鐨?efer.nx 鐨勫€笺€?  role.cr0_wp锛?    鍖呭惈璇ラ〉鎵€閫傜敤鐨?cr0.wp 鐨勫€笺€?  role.smep_andnot_wp锛?    鍖呭惈璇ラ〉鎵€閫傜敤鐨?cr4.smep && !cr0.wp 鐨勫€硷紙姝ゅ€间负鐪熺殑椤典笌鍏朵粬椤典笉鍚岋紱瑙佷笅鏂囧 cr0.wp=0 鐨勫鐞嗭級銆?  role.smap_andnot_wp锛?    鍖呭惈璇ラ〉鎵€閫傜敤鐨?cr4.smap && !cr0.wp 鐨勫€硷紙姝ゅ€间负鐪熺殑椤典笌鍏朵粬椤典笉鍚岋紱瑙佷笅鏂囧 cr0.wp=0 鐨勫鐞嗭級銆?  role.smm锛?    濡傛灉璇ラ〉鍦ㄧ郴缁熺鐞嗘ā寮忥紙system management mode锛変笅鏈夋晥锛屽垯涓?1銆傛瀛楁鍐冲畾浣跨敤 kvm_memslots 鏁扮粍涓殑鍝竴涓潵鏋勫缓姝ゅ奖瀛愰〉锛涘畠涔熺敤浜庨€氳繃 kvm_memslots_for_spte_role 瀹忎笌 __gfn_to_memslot 浠庝竴涓?struct kvm_mmu_page 鍥炲埌涓€涓?memslot銆?  role.ad_disabled锛?    濡傛灉 MMU 瀹炰緥涓嶈兘浣跨敤 A/D 浣嶏紝鍒欎负 1銆侲PT 鍦?Haswell 涔嬪墠娌℃湁 A/D 浣嶏紱濡傛灉 L1 hypervisor 鏈惎鐢?A/D 浣嶏紝褰卞瓙 EPT 椤佃〃涔熶笉鑳戒娇鐢?A/D 浣嶃€?  role.guest_mode锛?    鎸囩ず璇ュ奖瀛愰〉鏄负宓屽 guest 鍒涘缓鐨勩€?  role.passthrough锛?    璇ラ〉涓嶆槸鐢?guest 椤佃〃浣滀负鍚庣鐨勶紝浣嗗叾绗竴涓潯鐩寚鍚戜竴涓?guest 椤佃〃銆傚綋 NPT 浣跨敤 5 绾ч〉琛紙host CR4.LA57=1锛変笖姝ｅ湪褰卞瓙 L1 鐨?4 绾?NPT锛圠1 CR4.LA57=0锛夋椂璁剧疆姝ゅ瓧娈点€?  mmu_valid_gen锛?    璇ラ〉鐨?MMU 浠ｏ紙generation锛夛紝鐢ㄤ簬鍦ㄤ笉闀挎椂闂撮樆濉?vCPU 鐨勬儏鍐典笅蹇€熸竻绌猴紙zap锛変竴涓?VM 鍐呯殑鎵€鏈?MMU 椤点€傚叿浣撹€岃█锛孠VM 鏇存柊姣忎釜 VM 鐨勬湁鏁?MMU 浠ｏ紝杩欎細瀵艰嚧姣忎釜 mmu 椤电殑 mmu_valid_gen 澶遍厤銆傝繖浣垮緱鎵€鏈夌幇鏈夌殑 MMU 椤靛彉寰楄繃鏃躲€傝繃鏃剁殑椤典笉鑳借浣跨敤銆傚洜姝わ紝vCPU 蹇呴』鍦ㄩ噸鏂拌繘鍏?guest 涔嬪墠鍔犺浇涓€涓柊鐨勬湁鏁堟牴銆侻MU 浠ｅ彧鍙兘鏄?'0' 鎴?'1'銆傛敞鎰忥紝TDP MMU 涓嶄娇鐢ㄦ瀛楁锛屽洜涓洪潪鏍圭殑 TDP MMU 椤靛彧鑳戒粠鍏舵墍灞炵殑鏍瑰埌杈俱€傚洜姝ゅ浜?TDP MMU锛屽湪鏍归〉涓娇鐢?role.invalid 鏉ヤ娇鎵€鏈?MMU 椤靛け鏁堝氨瓒冲浜嗐€?  gfn锛?    瑕佷箞鍖呭惈琚椤靛奖瀛愮殑杞崲鐨?guest 椤佃〃锛岃涔堟槸绾挎€ц浆鎹㈢殑鍩洪〉甯с€傚弬瑙?role.direct銆?  spt锛?    涓€鏁撮〉鐨?64 浣?spte锛屽寘鍚椤电殑杞崲銆傜敱 kvm 涓庣‖浠朵袱鑰呰闂€?    spt 鎵€鎸囧悜鐨勯〉灏嗗叾 page->private 鎸囧洖褰卞瓙椤电粨鏋勩€?    spt 涓殑 spte 瑕佷箞鎸囧悜 guest 椤碉紝瑕佷箞鎸囧悜鏇翠綆灞傜殑褰卞瓙椤点€?    鍏蜂綋鑰岃█锛屽鏋?sp1 鍜?sp2 鏄奖瀛愰〉锛屽垯 sp1->spt[n] 鍙兘鎸囧悜 __pa(sp2->spt)銆俿p2 灏嗛€氳繃 parent_pte 鎸囧洖 sp1銆?    spt 鏁扮粍鏋勬垚涓€涓互褰卞瓙椤典负鑺傜偣銆佷互 guest 椤典负鍙跺瓙鐨?DAG 缁撴瀯銆?  shadowed_translation锛?    涓€涓寘鍚?512 涓奖瀛愯浆鎹㈡潯鐩殑鏁扮粍锛屾瘡涓瓨鍦ㄧ殑 pte 瀵瑰簲涓€涓€傜敤浜庢墽琛屼粠 pte 鍒?gfn 鐨勫弽鍚戞槧灏勫強鍏惰闂潈闄愩€傚綋璁剧疆 role.direct 鏃讹紝涓嶄細鍒嗛厤 shadow_translation 鏁扮粍銆傝繖鏄洜涓烘鏁扮粍涓换浣曞厓绱犵殑 gfn 鍦ㄤ娇鐢ㄦ椂閮藉彲浠ヤ粠 gfn 瀛楁璁＄畻鍑烘潵銆傛澶栵紝褰撹缃?role.direct 鏃讹紝KVM 涓嶄細璺熻釜姣忎釜 gfn 鐨勮闂潈闄愩€傚弬瑙?role.direct 涓?gfn銆?  root_count / tdp_mmu_root_count锛?     root_count 鏄?Shadow MMU 涓牴褰卞瓙椤电殑寮曠敤璁℃暟鍣ㄣ€倂CPU 鍦ㄨ幏鍙栧皢琚敤浣滄牴椤碉紙鍗冲皢琚洿鎺ュ姞杞藉埌纭欢涓殑椤碉紝濡?CR3銆丳DPTRs銆乶CR3 EPTP锛夌殑褰卞瓙椤垫椂鎻愬崌寮曠敤璁℃暟銆傛牴椤靛湪鍏跺紩鐢ㄨ鏁伴潪闆舵椂涓嶈兘琚攢姣併€傚弬瑙?role.invalid銆倀dp_mmu_root_count 绫讳技锛屼絾涓撶敤浜?TDP MMU 涓綔涓哄師瀛愬紩鐢ㄨ鏁般€?  parent_ptes锛?    鎸囧悜姝ら〉 spt 鐨?pte/ptes 鐨勫弽鍚戞槧灏勩€傚鏋?parent_ptes 鐨?bit 0 涓洪浂锛屽垯鍙湁涓€涓?spte 鎸囧悜姝ら〉锛屽苟涓?parent_ptes 鎸囧悜杩欎釜鍗曚竴鐨?spte锛涘惁鍒欙紝瀛樺湪澶氫釜鎸囧悜姝ら〉鐨?spte锛屼笖 (parent_ptes & ~0x1) 鎸囧悜涓€涓寘鍚埗 spte 鍒楄〃鐨勬暟鎹粨鏋勩€?  ptep锛?    鎸囧悜姝ゅ奖瀛愰〉鐨?SPTE 鐨勫唴鏍歌櫄鎷熷湴鍧€銆備笓鐢?TDP MMU 浣跨敤锛屾瀛楁涓?parent_ptes 鏄仈鍚堜綋銆?  unsync锛?    濡傛灉涓虹湡锛屽垯姝ら〉涓殑杞崲鍙兘涓?guest 鐨勮浆鎹笉鍖归厤銆傝繖绛変环浜庡綋 pte 琚敼鍙樹絾灏氭湭鍒锋柊 tlb 鏉＄洰鏃?tlb 鐨勭姸鎬併€傜浉搴斿湴锛屽綋 guest 鎵ц invlpg 鎴栭€氳繃鍏朵粬鏂瑰紡鍒锋柊鍏?tlb 鏃讹紝unsync pte 浼氳鍚屾銆傚 leaf 椤垫湁鏁堛€?  unsync_children锛?    姝ら〉涓湁澶氬皯涓?spte 鎸囧悜 unsync锛堟垨鍏锋湁鏈悓姝ュ瓙鑺傜偣锛夌殑椤点€?  unsync_child_bitmap锛?    涓€涓綅鍥撅紝鎸囩ず spt 涓殑鍝簺 spte锛堢洿鎺ユ垨闂存帴锛夋寚鍚戝彲鑳芥湭鍚屾鐨勯〉銆傜敤浜庡揩閫熷畾浣嶄粠缁欏畾椤靛彲杈剧殑鎵€鏈夋湭鍚屾椤点€?  clear_spte_count锛?    浠呭瓨鍦ㄤ簬 32 浣嶅涓讳笂锛屽洜涓?64 浣?spte 鏃犳硶琚師瀛愬啓鍏ャ€傝鑰呭湪鑴辩 MMU 閿佽繍琛屾椂浣跨敤瀹冩潵妫€娴嬫鍦ㄨ繘琛岀殑鏇存柊锛屽苟鍦ㄥ啓鍏ヨ€呭畬鎴愬啓鍏ヤ箣鍓嶉噸璇曘€?  write_flooding_count锛?    guest 鍙兘澶氭鍐欏叆涓€涓〉琛紝濡傛灉璇ラ〉闇€瑕佽鍐欎繚鎶わ紙瑙佷笅鏂囩殑鈥滃悓姝ヤ笌鏈悓姝ラ〉鈥濓級锛屽皢瀵艰嚧澶ч噺妯℃嫙锛坋mulation锛夈€俵eaf 椤靛彲浠ユ槸鏈悓姝ョ殑锛岃繖鏍峰氨涓嶄細瑙﹀彂棰戠箒鐨勬ā鎷燂紝浣嗚繖瀵逛簬闈炲彾瀛愰〉鏄笉鍙兘鐨勩€傛瀛楁缁熻鑷笂娆″疄闄呬娇鐢ㄩ〉琛ㄤ互鏉ュ彂鐢熺殑妯℃嫙娆℃暟锛涘鏋滃湪姝ら〉涓婅Е鍙戞ā鎷熻繃浜庨绻侊紝KVM 灏嗗彇娑堟槧灏勮椤碉紝浠ラ伩鍏嶅皢鏉ョ殑妯℃嫙銆?  tdp_mmu_page锛?    濡傛灉璇ュ奖瀛愰〉鏄?TDP MMU 椤碉紝鍒欎负 1銆傛鍙橀噺鐢ㄤ簬鍦ㄩ亶鍘嗗彲鑳藉寘鍚潵鑷?TDP MMU 鍜屽奖瀛?MMU 涓よ€呯殑椤电殑浠讳綍鏁版嵁缁撴瀯鏃讹紝瀵?KVM 鐨勬帶鍒舵祦杩涜鍒嗗弶銆?
+## 鍙嶅悜鏄犲皠
 
-## 反向映射
+mmu 缁存姢涓€涓弽鍚戞槧灏勶紝鐢辨缁欏畾鍏?gfn 鍙互鍒拌揪鏄犲皠璇ラ〉鐨勬墍鏈?pte銆備緥濡傦紝杩欏湪鎹㈠嚭涓€涓〉鏃朵娇鐢ㄣ€?
+## 鍚屾涓庢湭鍚屾椤?
+guest 浣跨敤涓や釜浜嬩欢鏉ュ悓姝ュ叾 tlb 涓庨〉琛細tlb 鍒锋柊涓庨〉澶辨晥锛坕nvlpg锛夈€?
+tlb 鍒锋柊鎰忓懗鐫€鎴戜滑闇€瑕佸悓姝ヤ粠 guest 鐨?cr3 鍙揪鐨勬墍鏈?spte銆傝繖寮€閿€寰堝ぇ锛屽洜姝ゆ垜浠皢鎵€鏈?guest 椤佃〃淇濇寔鍐欎繚鎶わ紝骞跺湪鍐欏叆 gpte 鏃跺悓姝?spte 鍒?gpte銆?
+涓€绉嶇壒娈婃儏鍐垫槸锛屽綋 guest 椤佃〃鍙粠褰撳墠 guest cr3 鍒拌揪鏃躲€傚湪杩欑鎯呭喌涓嬶紝guest 鏈変箟鍔″湪浣跨敤璇ヨ浆鎹箣鍓嶅彂鍑轰竴鏉?invlpg 鎸囦护銆傛垜浠埄鐢ㄨ繖涓€鐐癸紝绉婚櫎瀵?guest 椤电殑鍐欎繚鎶わ紝骞跺厑璁?guest 鑷敱淇敼瀹冦€傚綋 guest 璋冪敤 invlpg 鏃讹紝鎴戜滑鍚屾琚慨鏀圭殑 gpte銆傝繖鍑忓皯浜嗗綋 guest 淇敼澶氫釜 gpte锛屾垨鑰呭綋鏌愪釜 guest 椤典笉鍐嶇敤浣滈〉琛ㄨ€岃鐢ㄤ簬闅忔満 guest 鏁版嵁鏃讹紝鎴戜滑蹇呴』杩涜鐨勬ā鎷熼噺銆?
+浣滀负鍓綔鐢紝鎴戜滑蹇呴』鍦?tlb 鍒锋柊鏃堕噸鏂板悓姝ユ墍鏈夊彲杈剧殑鏈悓姝ュ奖瀛愰〉銆?
+## 瀵逛簨浠剁殑鍝嶅簲
 
-mmu 维护一个反向映射，由此给定其 gfn 可以到达映射该页的所有 pte。例如，这在换出一个页时使用。
+- guest 椤甸敊璇紙鎴?npt 椤甸敊璇紝鎴?ept violation锛?
+杩欐槸鏈€澶嶆潅鐨勪簨浠躲€傞〉閿欒鐨勫師鍥犲彲鑳芥槸锛?
+  - 鐪熸鐨?guest 閿欒锛坓uest 杞崲涓嶅厑璁告璁块棶锛?*)
+  - 瀵圭己澶辫浆鎹㈢殑璁块棶
+  - 瀵瑰彈淇濇姢杞崲鐨勮闂?    - 褰撹褰曡剰椤垫椂锛屽唴瀛樿鍐欎繚鎶?    - 鍚屾鐨勫奖瀛愰〉琚啓淇濇姢 (*)
+  - 瀵逛笉鍙浆鎹㈠唴瀛橈紙mmio锛夌殑璁块棶
 
-## 同步与未同步页
+  (*) 鍦ㄧ洿鎺ユā寮忎笅涓嶉€傜敤
 
-guest 使用两个事件来同步其 tlb 与页表：tlb 刷新与页失效（invlpg）。
+澶勭悊椤甸敊璇殑鏂规硶濡備笅锛?
+ - 濡傛灉閿欒鐮佺殑 RSV 浣嶈璁剧疆锛屽垯椤甸敊璇槸鐢?guest 璁块棶 MMIO 寮曡捣鐨勶紝骞朵笖鍙敤鐨勭紦瀛?MMIO 淇℃伅銆?
+   - 閬嶅巻褰卞瓙椤佃〃
+   - 妫€鏌?spte 涓湁鏁堢殑浠ｇ紪鍙凤紙瑙佷笅鏂囩殑鈥淢MIO spte 鐨勫揩閫熷け鏁堚€濓級
+   - 灏嗕俊鎭紦瀛樺埌 vcpu->arch.mmio_gva銆乿cpu->arch.mmio_access 涓?vcpu->arch.mmio_gfn锛屽苟璋冪敤妯℃嫙鍣紙emulator锛?
+ - 濡傛灉閿欒鐮佺殑 P 浣嶄笌 R/W 浣嶉兘琚缃紝杩欏彲鑳藉彲浠ヤ綔涓衡€滃揩閫熼〉閿欒鈥濓紙fast page fault锛屾棤闇€鑾峰彇 MMU 閿佸嵆鍙慨澶嶏級鏉ュ鐞嗐€傚弬瑙?Documentation/virt/kvm/locking.rst 涓殑鎻忚堪銆?
+ - 蹇呰鏃讹紝閬嶅巻 guest 椤佃〃浠ョ‘瀹?guest 杞崲锛坓va->gpa 鎴?ngpa->gpa锛?
+   - 濡傛灉鏉冮檺涓嶈冻锛屽皢閿欒鍙嶅皠鍥?guest
 
-tlb 刷新意味着我们需要同步从 guest 的 cr3 可达的所有 spte。这开销很大，因此我们将所有 guest 页表保持写保护，并在写入 gpte 时同步 spte 到 gpte。
+ - 纭畾 host 椤?
+   - 濡傛灉杩欐槸涓€涓?mmio 璇锋眰锛屽垯娌℃湁 host 椤碉紱灏嗕俊鎭紦瀛樺埌 vcpu->arch.mmio_gva銆乿cpu->arch.mmio_access 涓?vcpu->arch.mmio_gfn
 
-一种特殊情况是，当 guest 页表可从当前 guest cr3 到达时。在这种情况下，guest 有义务在使用该转换之前发出一条 invlpg 指令。我们利用这一点，移除对 guest 页的写保护，并允许 guest 自由修改它。当 guest 调用 invlpg 时，我们同步被修改的 gpte。这减少了当 guest 修改多个 gpte，或者当某个 guest 页不再用作页表而被用于随机 guest 数据时，我们必须进行的模拟量。
+ - 閬嶅巻褰卞瓙椤佃〃浠ユ壘鍒拌杞崲鐨?spte锛屽繀瑕佹椂瀹炰緥鍖栫己澶辩殑涓棿椤佃〃
 
-作为副作用，我们必须在 tlb 刷新时重新同步所有可达的未同步影子页。
+   - 濡傛灉杩欐槸涓€涓?mmio 璇锋眰锛屽皢 mmio 淇℃伅缂撳瓨鍒?spte 骞惰缃 spte 涓婄殑鏌愪釜淇濈暀浣嶏紙鍙傝 kvm_mmu_set_mmio_spte_mask 鐨勮皟鐢ㄨ€咃級
 
-## 对事件的响应
+ - 灏濊瘯浣胯椤垫湭鍚屾锛坲nsynchronize锛?
+   - 濡傛灉鎴愬姛锛屾垜浠彲浠ヨ guest 缁х画骞朵慨鏀?gpte
 
-- guest 页错误（或 npt 页错误，或 ept violation）
+ - 妯℃嫙璇ユ寚浠?
+   - 濡傛灉澶辫触锛屽彇娑堝奖瀛愬寲锛坲nshadow锛夎椤靛苟璁?guest 缁х画
 
-这是最复杂的事件。页错误的原因可能是：
+ - 鏇存柊琚鎸囦护淇敼鐨勪换浣曡浆鎹?
+invlpg 澶勭悊锛?
+  - 閬嶅巻褰卞瓙椤靛眰绾у苟涓㈠純鍙楀奖鍝嶇殑杞崲
+  - 灏濊瘯閲嶆柊瀹炰緥鍖栨墍鎸囩ず鐨勮浆鎹紝鏈熸湜 guest 鍦ㄤ笉涔呯殑灏嗘潵浼氫娇鐢ㄥ畠
 
-  - 真正的 guest 错误（guest 转换不允许此访问）(*)
-  - 对缺失转换的访问
-  - 对受保护转换的访问
-    - 当记录脏页时，内存被写保护
-    - 同步的影子页被写保护 (*)
-  - 对不可转换内存（mmio）的访问
-
-  (*) 在直接模式下不适用
-
-处理页错误的方法如下：
-
- - 如果错误码的 RSV 位被设置，则页错误是由 guest 访问 MMIO 引起的，并且可用的缓存 MMIO 信息。
-
-   - 遍历影子页表
-   - 检查 spte 中有效的代编号（见下文的“MMIO spte 的快速失效”）
-   - 将信息缓存到 vcpu->arch.mmio_gva、vcpu->arch.mmio_access 与 vcpu->arch.mmio_gfn，并调用模拟器（emulator）
-
- - 如果错误码的 P 位与 R/W 位都被设置，这可能可以作为“快速页错误”（fast page fault，无需获取 MMU 锁即可修复）来处理。参见 Documentation/virt/kvm/locking.rst 中的描述。
-
- - 必要时，遍历 guest 页表以确定 guest 转换（gva->gpa 或 ngpa->gpa）
-
-   - 如果权限不足，将错误反射回 guest
-
- - 确定 host 页
-
-   - 如果这是一个 mmio 请求，则没有 host 页；将信息缓存到 vcpu->arch.mmio_gva、vcpu->arch.mmio_access 与 vcpu->arch.mmio_gfn
-
- - 遍历影子页表以找到该转换的 spte，必要时实例化缺失的中间页表
-
-   - 如果这是一个 mmio 请求，将 mmio 信息缓存到 spte 并设置该 spte 上的某个保留位（参见 kvm_mmu_set_mmio_spte_mask 的调用者）
-
- - 尝试使该页未同步（unsynchronize）
-
-   - 如果成功，我们可以让 guest 继续并修改 gpte
-
- - 模拟该指令
-
-   - 如果失败，取消影子化（unshadow）该页并让 guest 继续
-
- - 更新被该指令修改的任何转换
-
-invlpg 处理：
-
-  - 遍历影子页层级并丢弃受影响的转换
-  - 尝试重新实例化所指示的转换，期望 guest 在不久的将来会使用它
-
-guest 控制寄存器更新：
+guest 鎺у埗瀵勫瓨鍣ㄦ洿鏂帮細
 
 - mov to cr3
 
-  - 查找新的影子根
-  - 同步新可达的影子页
-
+  - 鏌ユ壘鏂扮殑褰卞瓙鏍?  - 鍚屾鏂板彲杈剧殑褰卞瓙椤?
 - mov to cr0/cr4/efer
 
-  - 为新的 paging 模式建立 mmu 上下文
-  - 查找新的影子根
-  - 同步新可达的影子页
+  - 涓烘柊鐨?paging 妯″紡寤虹珛 mmu 涓婁笅鏂?  - 鏌ユ壘鏂扮殑褰卞瓙鏍?  - 鍚屾鏂板彲杈剧殑褰卞瓙椤?
+host 杞崲鏇存柊锛?
+  - 浠ユ洿鏂板悗鐨?hva 璋冪敤 mmu notifier
+  - 閫氳繃鍙嶅悜鏄犲皠鏌ユ壘鍙楀奖鍝嶇殑 spte
+  - 涓㈠純锛堟垨鏇存柊锛夎浆鎹?
+## 妯℃嫙 cr0.wp
 
-host 转换更新：
+濡傛灉鏈惎鐢?tdp锛宧ost 蹇呴』淇濇寔 cr0.wp=1锛屼互渚块〉鍐欎繚鎶ゅ guest 鍐呮牳鐢熸晥锛岃€岄潪 guest 鐢ㄦ埛绌洪棿銆傚綋 guest cr0.wp=1 鏃讹紝杩欎笉浼氬嚭鐜伴棶椤屻€傜劧鑰屽綋 guest cr0.wp=0 鏃讹紝鎴戜滑鏃犳硶灏?gpte.u=1銆乬pte.w=0 鐨勬潈闄愭槧灏勫埌浠讳綍 spte锛堝叾璇箟瑕佹眰鍏佽浠讳綍 guest 鍐呮牳璁块棶鍔犱笂鐢ㄦ埛璇昏闂級銆?
+鎴戜滑閫氳繃鏍规嵁閿欒绫诲瀷灏嗘潈闄愭槧灏勫埌涓ょ鍙兘鐨?spte 鏉ュ鐞嗭細
 
-  - 以更新后的 hva 调用 mmu notifier
-  - 通过反向映射查找受影响的 spte
-  - 丢弃（或更新）转换
+- 鍐呮牳鍐欓敊璇細spte.u=0锛宻pte.w=1锛堝厑璁稿畬鏁寸殑鍐呮牳璁块棶锛岀姝㈢敤鎴疯闂級
+- 璇婚敊璇細spte.u=1锛宻pte.w=0锛堝厑璁稿畬鏁磋璁块棶锛岀姝㈠唴鏍稿啓璁块棶锛?
+锛堢敤鎴峰啓閿欒浼氫骇鐢?#PF锛?
+鍦ㄧ涓€绉嶆儏鍐典笅鏈変袱涓澶栫殑澶嶆潅涔嬪锛?
+- 濡傛灉鍚敤浜?CR4.SMEP锛氱敱浜庢垜浠皢璇ラ〉鍙樻垚浜嗗唴鏍搁〉锛屽唴鏍哥幇鍦ㄥ彲鑳芥墽琛屽畠銆傛垜浠€氳繃鍚屾椂璁剧疆 spte.nx 鏉ュ鐞嗐€傚鏋滄垜浠亣鍒扮敤鎴峰彇鎸囨垨璇婚敊璇紝鎴戜滑浼氬皢 spte.u=1 鍜?spte.nx=gpte.nx 鏀瑰洖銆備负浜嗕娇杩欑敓鏁堬紝褰撲娇鐢ㄥ奖瀛愬垎椤垫椂锛孠VM 寮哄埗 EFER.NX 涓?1銆?- 濡傛灉绂佺敤浜?CR4.SMAP锛氱敱浜庤椤靛凡琚敼涓哄唴鏍搁〉锛屽綋 CR4.SMAP 鍚敤鏃跺畠涓嶈兘琚鐢ㄣ€傛垜浠皢 CR4.SMAP && !CR0.WP 鏀惧叆褰卞瓙椤电殑 role 涓互閬垮厤杩欑鎯呭喌銆傛敞鎰忥紝杩欓噷鎴戜滑涓嶅叧蹇?CR4.SMAP 鍚敤鐨勬儏鍐碉紝鍥犱负 KVM 浼氱敱浜庢潈闄愭鏌ュけ璐ヨ€岀洿鎺ュ悜 guest 娉ㄥ叆 #PF銆?
+涓轰簡闃叉涓€涓杞崲涓?cr0.wp=0 鐨勫唴鏍搁〉鍦?cr0.wp 鍙樹负 1 涔嬪悗琚唴鏍稿啓鍏ワ紝鎴戜滑灏?cr0.wp 鐨勫€间綔涓洪〉 role 鐨勪竴閮ㄥ垎銆傝繖鎰忓懗鐫€鐢ㄦ煇涓?cr0.wp 鍊煎垱寤虹殑 spte 涓嶈兘鍦?cr0.wp 鍙栦笉鍚屽€兼椂浣跨敤鈥斺€斿畠灏嗚褰卞瓙椤垫煡鎵句唬鐮佺畝鍗曞湴蹇界暐銆傚綋鐢?cr0.wp=0 鍜?cr4.smep=0 鍒涘缓鐨?spte 鍦ㄥ皢 cr4.smep 鏀逛负 1 涔嬪悗琚娇鐢ㄦ椂锛屽瓨鍦ㄧ被浼肩殑闂銆備负閬垮厤杩欑鎯呭喌锛?cr0.wp && cr4.smep 鐨勫€间篃琚綔涓洪〉 role 鐨勪竴閮ㄥ垎銆?
+## 澶ч〉
 
-## 模拟 cr0.wp
+mmu 鏀寔澶?guest 椤典笌灏?host 椤点€佷互鍙婂ぇ host 椤典笌灏?guest 椤电殑鎵€鏈夌粍鍚堛€傛敮鎸佺殑椤靛ぇ灏忓寘鎷?4k銆?M銆?M 涓?1G銆傜敱浜?mmu 濮嬬粓浣跨敤 PAE 鍒嗛〉锛?M 椤佃瑙嗕负涓や釜鐙珛鐨?2M 椤碉紝鍦?guest 涓?host 涓婄殕濡傛銆?
+瑕佸疄渚嬪寲涓€涓ぇ鐨?spte锛屽繀椤绘弧瓒冲洓涓害鏉燂細
 
-如果未启用 tdp，host 必须保持 cr0.wp=1，以便页写保护对 guest 内核生效，而非 guest 用户空间。当 guest cr0.wp=1 时，这不会出现问題。然而当 guest cr0.wp=0 时，我们无法将 gpte.u=1、gpte.w=0 的权限映射到任何 spte（其语义要求允许任何 guest 内核访问加上用户读访问）。
+- spte 蹇呴』鎸囧悜涓€涓ぇ鐨?host 椤?- guest pte 蹇呴』鑷冲皯鏄瓑鏁堝ぇ灏忕殑澶?pte锛堝鏋滃惎鐢?tdp锛屽垯涓嶅瓨鍦?guest pte锛屾鏉′欢鑷劧婊¤冻锛?- 濡傛灉 spte 灏嗘槸鍙啓鐨勶紝鍒欏ぇ椤靛抚涓嶅緱涓庝换浣曞啓淇濇姢椤甸噸鍙?- guest 椤靛繀椤诲畬鍏ㄥ寘鍚湪涓€涓崟鐙殑鍐呭瓨妲斤紙memory slot锛変腑
 
-我们通过根据错误类型将权限映射到两种可能的 spte 来处理：
+涓轰簡妫€鏌ュ悗涓や釜鏉′欢锛宮mu 涓烘瘡涓唴瀛樻Ы涓庢瘡涓ぇ椤靛ぇ灏忕淮鎶や竴缁?->disallow_lpage 鏁扮粍銆傛瘡涓啓淇濇姢椤甸兘浼氫娇鍏?disallow_lpage 閫掑锛屼粠鑰岄樆姝㈠ぇ spte 鐨勫疄渚嬪寲銆傛湭瀵归綈鍐呭瓨妲芥湯灏剧殑甯ц浜轰负鍦板澶т簡 ->disallow_lpages锛屽洜姝ゅ畠浠案杩滄棤娉曡瀹炰緥鍖栥€?
+## MMIO spte 鐨勫揩閫熷け鏁?
+濡備笂鏂団€滃浜嬩欢鐨勫搷搴斺€濅腑鎵€杩帮紝kvm 浼氬皢 MMIO 淇℃伅缂撳瓨鍦?leaf spte 涓€傚綋鏂板涓€涓?memslot 鎴栨洿鏀逛竴涓幇鏈夌殑 memslot 鏃讹紝姝や俊鎭彲鑳藉彉寰楄繃鏃讹紝闇€瑕佸け鏁堛€傝繖杩樿姹傚湪鎵€鏈夊奖瀛愰〉閬嶅巻鏃舵寔鏈?MMU 閿侊紝骞堕€氳繃绫讳技鐨勬妧鏈娇鍏舵洿鍏峰彲鎵╁睍鎬с€?
+MMIO spte 鏈夊嚑涓┖闂蹭綅锛岀敤浜庡瓨鍌ㄤ竴涓唬缂栧彿锛坓eneration number锛夈€傚叏灞€浠ｇ紪鍙峰瓨鍌ㄥ湪 kvm_memslots(kvm)->generation 涓紝骞跺湪 guest 鍐呭瓨淇℃伅鍙戠敓鍙樺寲鏃堕€掑銆?
+褰?KVM 鎵惧埌涓€涓?MMIO spte 鏃讹紝瀹冧細妫€鏌ヨ spte 鐨勪唬缂栧彿銆傚鏋?spte 鐨勪唬缂栧彿涓嶇瓑浜庡叏灞€浠ｇ紪鍙凤紝瀹冨皢蹇界暐缂撳瓨鐨?MMIO 淇℃伅锛屽苟閫氳繃鎱㈤€熻矾寰勫鐞嗛〉閿欒銆?
+鐢变簬 mmio spte 涓婂彧浣跨敤 18 浣嶆潵瀛樺偍浠ｇ紪鍙凤紝鍙戠敓婧㈠嚭鏃朵細娓呯┖鎵€鏈夐〉銆?
+閬楁喚鐨勬槸锛屽崟娆″唴瀛樿闂彲鑳戒細澶氭璁块棶 kvm_memslots(kvm)锛屾渶鍚庝竴娆″彂鐢熷湪浠ｇ紪鍙疯鍙栧嚭骞跺瓨鍏?MMIO spte 鏃躲€傚洜姝わ紝MMIO spte 鍙兘鍩轰簬杩囨湡鐨勪俊鎭垱寤猴紝浣嗗甫鏈夋渶鏂扮殑浠ｇ紪鍙枫€?
+涓洪伩鍏嶈繖绉嶆儏鍐碉紝浠ｇ紪鍙峰湪 synchronize_srcu 杩斿洖鍚庡啀娆￠€掑锛涘洜姝わ紝kvm_memslots(kvm)->generation 鐨?bit 63 浠呭湪 memslot 鏇存柊鏈熼棿琚涓?1锛岃€屾煇浜?SRCU 璇昏€呭彲鑳芥鍦ㄤ娇鐢ㄦ棫鍓湰銆傛垜浠笉甯屾湜浣跨敤浠ュ鏁颁唬缂栧彿鍒涘缓鐨?MMIO spte锛岃€屾垜浠彲浠ュ湪涓嶆崯澶?MMIO spte 涓竴涓綅鐨勬儏鍐典笅鍋氬埌杩欎竴鐐广€備唬鐨勨€滄洿鏂拌繘琛屼腑鈥濅綅涓嶅瓨鍌ㄥ湪 MMIO spte 涓紝鍥犳鍦ㄤ粠 spte 鍙栧嚭浠ｆ椂瀹冮殣寮忎负闆躲€傚鏋?KVM 涓嶈蛋杩愶紝鍦ㄦ洿鏂拌繘琛屾湡闂村垱寤轰簡涓€涓?MMIO spte锛屽垯涓嬩竴娆″璇?spte 鐨勮闂皢濮嬬粓鏄紦瀛樻湭鍛戒腑銆備緥濡傦紝鍦ㄦ洿鏂扮獥鍙ｆ湡闂寸殑鍚庣画璁块棶灏嗙敱浜庤繘琛屼腑鏍囧織涓嶅悓鑰岀己澶憋紝鑰屾洿鏂扮獥鍙ｅ叧闂悗鐨勮闂皢鍏锋湁鏇撮珮鐨勪唬缂栧彿锛堢浉瀵逛簬 spte 鑰岃█锛夈€?
+## 寤朵几闃呰
 
-- 内核写错误：spte.u=0，spte.w=1（允许完整的内核访问，禁止用户访问）
-- 读错误：spte.u=1，spte.w=0（允许完整读访问，禁止内核写访问）
-
-（用户写错误会产生 #PF）
-
-在第一种情况下有两个额外的复杂之处：
-
-- 如果启用了 CR4.SMEP：由于我们将该页变成了内核页，内核现在可能执行它。我们通过同时设置 spte.nx 来处理。如果我们遇到用户取指或读错误，我们会将 spte.u=1 和 spte.nx=gpte.nx 改回。为了使这生效，当使用影子分页时，KVM 强制 EFER.NX 为 1。
-- 如果禁用了 CR4.SMAP：由于该页已被改为内核页，当 CR4.SMAP 启用时它不能被复用。我们将 CR4.SMAP && !CR0.WP 放入影子页的 role 中以避免这种情况。注意，这里我们不关心 CR4.SMAP 启用的情况，因为 KVM 会由于权限检查失败而直接向 guest 注入 #PF。
-
-为了防止一个被转换为 cr0.wp=0 的内核页在 cr0.wp 变为 1 之后被内核写入，我们将 cr0.wp 的值作为页 role 的一部分。这意味着用某个 cr0.wp 值创建的 spte 不能在 cr0.wp 取不同值时使用——它将被影子页查找代码简单地忽略。当用 cr0.wp=0 和 cr4.smep=0 创建的 spte 在将 cr4.smep 改为 1 之后被使用时，存在类似的问题。为避免这种情况，!cr0.wp && cr4.smep 的值也被作为页 role 的一部分。
-
-## 大页
-
-mmu 支持大 guest 页与小 host 页、以及大 host 页与小 guest 页的所有组合。支持的页大小包括 4k、2M、4M 与 1G。由于 mmu 始终使用 PAE 分页，4M 页被视为两个独立的 2M 页，在 guest 与 host 上皆如此。
-
-要实例化一个大的 spte，必须满足四个约束：
-
-- spte 必须指向一个大的 host 页
-- guest pte 必须至少是等效大小的大 pte（如果启用 tdp，则不存在 guest pte，此条件自然满足）
-- 如果 spte 将是可写的，则大页帧不得与任何写保护页重叠
-- guest 页必须完全包含在一个单独的内存槽（memory slot）中
-
-为了检查后两个条件，mmu 为每个内存槽与每个大页大小维护一组 ->disallow_lpage 数组。每个写保护页都会使其 disallow_lpage 递增，从而阻止大 spte 的实例化。未对齐内存槽末尾的帧被人为地增大了 ->disallow_lpages，因此它们永远无法被实例化。
-
-## MMIO spte 的快速失效
-
-如上文“对事件的响应”中所述，kvm 会将 MMIO 信息缓存在 leaf spte 中。当新增一个 memslot 或更改一个现有的 memslot 时，此信息可能变得过时，需要失效。这还要求在所有影子页遍历时持有 MMU 锁，并通过类似的技术使其更具可扩展性。
-
-MMIO spte 有几个空闲位，用于存储一个代编号（generation number）。全局代编号存储在 kvm_memslots(kvm)->generation 中，并在 guest 内存信息发生变化时递增。
-
-当 KVM 找到一个 MMIO spte 时，它会检查该 spte 的代编号。如果 spte 的代编号不等于全局代编号，它将忽略缓存的 MMIO 信息，并通过慢速路径处理页错误。
-
-由于 mmio spte 上只使用 18 位来存储代编号，发生溢出时会清空所有页。
-
-遗憾的是，单次内存访问可能会多次访问 kvm_memslots(kvm)，最后一次发生在代编号被取出并存入 MMIO spte 时。因此，MMIO spte 可能基于过期的信息创建，但带有最新的代编号。
-
-为避免这种情况，代编号在 synchronize_srcu 返回后再次递增；因此，kvm_memslots(kvm)->generation 的 bit 63 仅在 memslot 更新期间被设为 1，而某些 SRCU 读者可能正在使用旧副本。我们不希望使用以奇数代编号创建的 MMIO spte，而我们可以在不损失 MMIO spte 中一个位的情况下做到这一点。代的“更新进行中”位不存储在 MMIO spte 中，因此在从 spte 取出代时它隐式为零。如果 KVM 不走运，在更新进行期间创建了一个 MMIO spte，则下一次对该 spte 的访问将始终是缓存未命中。例如，在更新窗口期间的后续访问将由于进行中标志不同而缺失，而更新窗口关闭后的访问将具有更高的代编号（相对于 spte 而言）。
-
-## 延伸阅读
-
-- KVM Forum 2008 上的 NPT 演讲
+- KVM Forum 2008 涓婄殑 NPT 婕旇
   https://www.linux-kvm.org/images/c/c8/KvmForum2008%24kdf2008_21.pdf

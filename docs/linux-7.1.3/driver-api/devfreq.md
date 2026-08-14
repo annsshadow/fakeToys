@@ -1,20 +1,20 @@
-
-## 设备频率调节（Device Frequency Scaling）
-
-
-### 简介
+﻿
+## 璁惧棰戠巼璋冭妭锛圖evice Frequency Scaling锛?
 
 
-该框架为任意设备上的动态电压与频率调节（DVFS）提供标准的内核接口。
+### 绠€浠?
 
-它通过 sysfs 文件暴露用于调整频率的控制接口，类似于 cpufreq 子系统。
 
-对于可以测量当前使用情况的设备，其频率可由调节器（governor）自动调整。
+璇ユ鏋朵负浠绘剰璁惧涓婄殑鍔ㄦ€佺數鍘嬩笌棰戠巼璋冭妭锛圖VFS锛夋彁渚涙爣鍑嗙殑鍐呮牳鎺ュ彛銆?
+
+瀹冮€氳繃 sysfs 鏂囦欢鏆撮湶鐢ㄤ簬璋冩暣棰戠巼鐨勬帶鍒舵帴鍙ｏ紝绫讳技浜?cpufreq 瀛愮郴缁熴€?
+
+瀵逛簬鍙互娴嬮噺褰撳墠浣跨敤鎯呭喌鐨勮澶囷紝鍏堕鐜囧彲鐢辫皟鑺傚櫒锛坓overnor锛夎嚜鍔ㄨ皟鏁淬€?
 
 ### API
 
 
-设备驱动需要初始化一个 `devfreq_profile` 并调用 `devfreq_add_device` 函数来创建一个 `devfreq` 实例。
+璁惧椹卞姩闇€瑕佸垵濮嬪寲涓€涓?`devfreq_profile` 骞惰皟鐢?`devfreq_add_device` 鍑芥暟鏉ュ垱寤轰竴涓?`devfreq` 瀹炰緥銆?
 
         :export:
         :export:

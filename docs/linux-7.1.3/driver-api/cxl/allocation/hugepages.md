@@ -1,24 +1,24 @@
-## 大页（Huge Pages）
+﻿## 澶ч〉锛圚uge Pages锛?
 
 
-## 连续内存分配器（Contiguous Memory Allocator）
+## 杩炵画鍐呭瓨鍒嗛厤鍣紙Contiguous Memory Allocator锛?
 
 
-在早期启动阶段作为 SystemRAM 上线的 CXL 内存可用于 CMA，因为在 CMA 划分出连续容量时，承载该容量的 NUMA 节点处于 `Online` 状态。
+鍦ㄦ棭鏈熷惎鍔ㄩ樁娈典綔涓?SystemRAM 涓婄嚎鐨?CXL 鍐呭瓨鍙敤浜?CMA锛屽洜涓哄湪 CMA 鍒掑垎鍑鸿繛缁閲忔椂锛屾壙杞借瀹归噺鐨?NUMA 鑺傜偣澶勪簬 `Online` 鐘舵€併€?
 
-延迟到 CXL 驱动进行配置的 CXL 内存，其容量无法由 CMA 分配——因为在 CMA 划分出连续容量时（即 `__init` 时刻），承载该容量的 NUMA 节点处于 `Offline` 状态。
+寤惰繜鍒?CXL 椹卞姩杩涜閰嶇疆鐨?CXL 鍐呭瓨锛屽叾瀹归噺鏃犳硶鐢?CMA 鍒嗛厤鈥斺€斿洜涓哄湪 CMA 鍒掑垎鍑鸿繛缁閲忔椂锛堝嵆 `__init` 鏃跺埢锛夛紝鎵胯浇璇ュ閲忕殑 NUMA 鑺傜偣澶勪簬 `Offline` 鐘舵€併€?
 
 ## HugeTLB
 
 
-不同的大页尺寸允许不同的内存配置。
+涓嶅悓鐨勫ぇ椤靛昂瀵稿厑璁镐笉鍚岀殑鍐呭瓨閰嶇疆銆?
 
-### 2MB 大页
+### 2MB 澶ч〉
 
-无论配置时间或内存区域（zone）如何，所有 CXL 容量都可用于 2MB 大页。
+鏃犺閰嶇疆鏃堕棿鎴栧唴瀛樺尯鍩燂紙zone锛夊浣曪紝鎵€鏈?CXL 瀹归噺閮藉彲鐢ㄤ簬 2MB 澶ч〉銆?
 
-### 1GB 大页
+### 1GB 澶ч〉
 
-在 `ZONE_NORMAL` 中上线的 CXL 容量可用于 1GB 巨型页（Gigantic Page）分配。
+鍦?`ZONE_NORMAL` 涓笂绾跨殑 CXL 瀹归噺鍙敤浜?1GB 宸ㄥ瀷椤碉紙Gigantic Page锛夊垎閰嶃€?
 
-在 `ZONE_MOVABLE` 中上线的 CXL 容量不能用于 1GB 巨型页分配。
+鍦?`ZONE_MOVABLE` 涓笂绾跨殑 CXL 瀹归噺涓嶈兘鐢ㄤ簬 1GB 宸ㄥ瀷椤靛垎閰嶃€?

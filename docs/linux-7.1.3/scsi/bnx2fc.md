@@ -1,34 +1,20 @@
-
-## 使用 bnx2fc 运行 FCoE
-
-
-通过 bnx2fc 实现的博通（Broadcom）FCoE 卸载是一种全状态硬件卸载，它与 Linux 生态系统中为 FC/FCoE 和 SCSI 控制器提供的所有接口协同工作。因此，一旦启用，FCoE 功能在很大程度上是透明的。在 SAN 上发现的设备会自动向高层存储层注册和注销。
-
-尽管博通的 FCoE 卸载是完全卸载的，但它确实依赖于网络接口的运行状态。因此，与 FCoE 卸载启动器关联的网络接口（例如 eth0）必须处于 'up' 状态。建议将网络接口配置为在启动时自动启用。
-
-此外，博通 FCoE 卸载方案会创建 VLAN 接口，以支持为 FCoE 操作发现的 VLAN（例如 eth0.1001-fcoe）。不要删除或禁用这些接口，否则 FCoE 操作将中断。
-
-## 驱动使用模型：
+﻿
+## 浣跨敤 bnx2fc 杩愯 FCoE
 
 
-1. 确保已安装 fcoe-utils 软件包。
+閫氳繃 bnx2fc 瀹炵幇鐨勫崥閫氾紙Broadcom锛塅CoE 鍗歌浇鏄竴绉嶅叏鐘舵€佺‖浠跺嵏杞斤紝瀹冧笌 Linux 鐢熸€佺郴缁熶腑涓?FC/FCoE 鍜?SCSI 鎺у埗鍣ㄦ彁渚涚殑鎵€鏈夋帴鍙ｅ崗鍚屽伐浣溿€傚洜姝わ紝涓€鏃﹀惎鐢紝FCoE 鍔熻兘鍦ㄥ緢澶х▼搴︿笂鏄€忔槑鐨勩€傚湪 SAN 涓婂彂鐜扮殑璁惧浼氳嚜鍔ㄥ悜楂樺眰瀛樺偍灞傛敞鍐屽拰娉ㄩ攢銆?
+灏界鍗氶€氱殑 FCoE 鍗歌浇鏄畬鍏ㄥ嵏杞界殑锛屼絾瀹冪‘瀹炰緷璧栦簬缃戠粶鎺ュ彛鐨勮繍琛岀姸鎬併€傚洜姝わ紝涓?FCoE 鍗歌浇鍚姩鍣ㄥ叧鑱旂殑缃戠粶鎺ュ彛锛堜緥濡?eth0锛夊繀椤诲浜?'up' 鐘舵€併€傚缓璁皢缃戠粶鎺ュ彛閰嶇疆涓哄湪鍚姩鏃惰嚜鍔ㄥ惎鐢ㄣ€?
+姝ゅ锛屽崥閫?FCoE 鍗歌浇鏂规浼氬垱寤?VLAN 鎺ュ彛锛屼互鏀寔涓?FCoE 鎿嶄綔鍙戠幇鐨?VLAN锛堜緥濡?eth0.1001-fcoe锛夈€備笉瑕佸垹闄ゆ垨绂佺敤杩欎簺鎺ュ彛锛屽惁鍒?FCoE 鎿嶄綔灏嗕腑鏂€?
+## 椹卞姩浣跨敤妯″瀷锛?
 
-2. 配置 bnx2fc 驱动需要运行的接口。
-配置步骤如下：
-
+1. 纭繚宸插畨瑁?fcoe-utils 杞欢鍖呫€?
+2. 閰嶇疆 bnx2fc 椹卞姩闇€瑕佽繍琛岀殑鎺ュ彛銆?閰嶇疆姝ラ濡備笅锛?
 	a. cd /etc/fcoe
-	b. 如果需要在 eth5 上启用 FCoE，将 cfg-ethx 复制为 cfg-eth5。
-	c. 对所有需要启用 FCoE 的接口重复此操作。
-	d. 编辑所有 cfg-eth 文件，将 DCB_REQUIRED** 字段设为 "no"，将
-	   AUTO_VLAN 设为 "yes"。
-	e. 其他配置参数保持默认即可。
-
-3. 确保 "bnx2fc" 位于 /etc/fcoe/config 的 SUPPORTED_DRIVERS 列表中。
-
-4. 启动 fcoe 服务。（service fcoe start）。如果系统中存在博通设备，bnx2fc 驱动会自动占用这些接口，开始 vlan 发现并登录到目标。
-
-5. 'fcoeadm -i' 输出中的 "Symbolic Name" 会显示 bnx2fc 是否已占用该接口。
-
+	b. 濡傛灉闇€瑕佸湪 eth5 涓婂惎鐢?FCoE锛屽皢 cfg-ethx 澶嶅埗涓?cfg-eth5銆?	c. 瀵规墍鏈夐渶瑕佸惎鐢?FCoE 鐨勬帴鍙ｉ噸澶嶆鎿嶄綔銆?	d. 缂栬緫鎵€鏈?cfg-eth 鏂囦欢锛屽皢 DCB_REQUIRED** 瀛楁璁句负 "no"锛屽皢
+	   AUTO_VLAN 璁句负 "yes"銆?	e. 鍏朵粬閰嶇疆鍙傛暟淇濇寔榛樿鍗冲彲銆?
+3. 纭繚 "bnx2fc" 浣嶄簬 /etc/fcoe/config 鐨?SUPPORTED_DRIVERS 鍒楄〃涓€?
+4. 鍚姩 fcoe 鏈嶅姟銆傦紙service fcoe start锛夈€傚鏋滅郴缁熶腑瀛樺湪鍗氶€氳澶囷紝bnx2fc 椹卞姩浼氳嚜鍔ㄥ崰鐢ㄨ繖浜涙帴鍙ｏ紝寮€濮?vlan 鍙戠幇骞剁櫥褰曞埌鐩爣銆?
+5. 'fcoeadm -i' 杈撳嚭涓殑 "Symbolic Name" 浼氭樉绀?bnx2fc 鏄惁宸插崰鐢ㄨ鎺ュ彛銆?
 ```
 
  [root@bh2 ~]# fcoeadm -i
@@ -51,13 +37,11 @@
         State:             Online
 
 ```
-6. 通过运行 ifconfig 并留意会自动创建的 <INTERFACE>.<VLAN>-fcoe 接口，验证是否已执行 vlan 发现。
+6. 閫氳繃杩愯 ifconfig 骞剁暀鎰忎細鑷姩鍒涘缓鐨?<INTERFACE>.<VLAN>-fcoe 鎺ュ彛锛岄獙璇佹槸鍚﹀凡鎵ц vlan 鍙戠幇銆?
+鏈夊叧 fcoeadm 鎿嶄綔鐢ㄦ潵鍒涘缓/閿€姣佹帴鍙ｆ垨鏄剧ず lun/鐩爣淇℃伅鐨勬洿澶氫俊鎭紝璇峰弬闃?fcoeadm 鎵嬪唽椤点€?
+## 娉ㄦ剰
 
-有关 fcoeadm 操作用来创建/销毁接口或显示 lun/目标信息的更多信息，请参阅 fcoeadm 手册页。
-
-## 注意
-
-** 支持博通 FCoE 的设备在芯片上实现了 DCBX/LLDP 客户端。每个接口只允许有一个 LLDP 客户端。为正常运行，必须禁用所有基于主机软件的 DCBX/LLDP 客户端（例如 lldpad）。要禁用 lldpad，请使用
+** 鏀寔鍗氶€?FCoE 鐨勮澶囧湪鑺墖涓婂疄鐜颁簡 DCBX/LLDP 瀹㈡埛绔€傛瘡涓帴鍙ｅ彧鍏佽鏈変竴涓?LLDP 瀹㈡埛绔€備负姝ｅ父杩愯锛屽繀椤荤鐢ㄦ墍鏈夊熀浜庝富鏈鸿蒋浠剁殑 DCBX/LLDP 瀹㈡埛绔紙渚嬪 lldpad锛夈€傝绂佺敤 lldpad锛岃浣跨敤
 ```
 
 	lldptool set-lldp -i <interface_name> adminStatus=disabled

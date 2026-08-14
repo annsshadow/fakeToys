@@ -1,36 +1,36 @@
-
-## vidtv：虚拟数字电视驱动
-
-
-作者：Daniel W. S. Almeida <dwlsalmeida@gmail.com>，2020 年 6 月。
-
-### 背景
+﻿
+## vidtv锛氳櫄鎷熸暟瀛楃數瑙嗛┍鍔?
 
 
-Vidtv 是一个虚拟 DVB 驱动，旨在作为驱动开发者的参考模板。它还用于验证现有的媒体 DVB API，从而帮助上层应用程序的开发者。
+浣滆€咃細Daniel W. S. Almeida <dwlsalmeida@gmail.com>锛?020 骞?6 鏈堛€?
 
-目前，它由以下部分组成：
-
-- 一个虚拟调谐器（tuner）驱动，如果所选频率距离某个特定传输系统的有效频率表过远，它会报告较差的信号质量。
-
-- 一个虚拟解调器（demod）驱动，它会持续轮询调谐器返回的虚拟信号质量，模拟一个可以根据 CNR 水平丢失/重新获取信号锁定的设备。
-
-- 一个虚拟桥接（bridge）驱动，它负责 modprobe 加载虚拟调谐器和解调器模块，并实现解复用（demux）逻辑。该模块在初始化时接收参数，这些参数将决定模拟的行为。
-
-- 负责编码一个有效 MPEG 传输流（Transport Stream）的代码，该流随后被传递给桥接驱动。这个虚拟流包含一些硬编码内容。目前，我们有一个单独的、仅含音频的频道，其中包含一个 MPEG 基本流（Elementary Stream），它又包含一个 SMPTE 302m 编码的正弦波。请注意，选择这个特定的编码器是因为它是在 MPEG 传输流中编码 PCM 音频数据最简单的方式。
+### 鑳屾櫙
 
 
-### 构建 vidtv
+Vidtv 鏄竴涓櫄鎷?DVB 椹卞姩锛屾棬鍦ㄤ綔涓洪┍鍔ㄥ紑鍙戣€呯殑鍙傝€冩ā鏉裤€傚畠杩樼敤浜庨獙璇佺幇鏈夌殑濯掍綋 DVB API锛屼粠鑰屽府鍔╀笂灞傚簲鐢ㄧ▼搴忕殑寮€鍙戣€呫€?
+
+鐩墠锛屽畠鐢变互涓嬮儴鍒嗙粍鎴愶細
+
+- 涓€涓櫄鎷熻皟璋愬櫒锛坱uner锛夐┍鍔紝濡傛灉鎵€閫夐鐜囪窛绂绘煇涓壒瀹氫紶杈撶郴缁熺殑鏈夋晥棰戠巼琛ㄨ繃杩滐紝瀹冧細鎶ュ憡杈冨樊鐨勪俊鍙疯川閲忋€?
+
+- 涓€涓櫄鎷熻В璋冨櫒锛坉emod锛夐┍鍔紝瀹冧細鎸佺画杞璋冭皭鍣ㄨ繑鍥炵殑铏氭嫙淇″彿璐ㄩ噺锛屾ā鎷熶竴涓彲浠ユ牴鎹?CNR 姘村钩涓㈠け/閲嶆柊鑾峰彇淇″彿閿佸畾鐨勮澶囥€?
+
+- 涓€涓櫄鎷熸ˉ鎺ワ紙bridge锛夐┍鍔紝瀹冭礋璐?modprobe 鍔犺浇铏氭嫙璋冭皭鍣ㄥ拰瑙ｈ皟鍣ㄦā鍧楋紝骞跺疄鐜拌В澶嶇敤锛坉emux锛夐€昏緫銆傝妯″潡鍦ㄥ垵濮嬪寲鏃舵帴鏀跺弬鏁帮紝杩欎簺鍙傛暟灏嗗喅瀹氭ā鎷熺殑琛屼负銆?
+
+- 璐熻矗缂栫爜涓€涓湁鏁?MPEG 浼犺緭娴侊紙Transport Stream锛夌殑浠ｇ爜锛岃娴侀殢鍚庤浼犻€掔粰妗ユ帴椹卞姩銆傝繖涓櫄鎷熸祦鍖呭惈涓€浜涚‖缂栫爜鍐呭銆傜洰鍓嶏紝鎴戜滑鏈変竴涓崟鐙殑銆佷粎鍚煶棰戠殑棰戦亾锛屽叾涓寘鍚竴涓?MPEG 鍩烘湰娴侊紙Elementary Stream锛夛紝瀹冨張鍖呭惈涓€涓?SMPTE 302m 缂栫爜鐨勬寮︽尝銆傝娉ㄦ剰锛岄€夋嫨杩欎釜鐗瑰畾鐨勭紪鐮佸櫒鏄洜涓哄畠鏄湪 MPEG 浼犺緭娴佷腑缂栫爜 PCM 闊抽鏁版嵁鏈€绠€鍗曠殑鏂瑰紡銆?
 
 
-vidtv 是一个测试驱动，因此在编译内核时**默认不**启用。
+### 鏋勫缓 vidtv
 
-为了启用 vidtv 的编译：
 
-- 启用 **DVB_TEST_DRIVERS**，然后
-- 启用 **DVB_VIDTV**
+vidtv 鏄竴涓祴璇曢┍鍔紝鍥犳鍦ㄧ紪璇戝唴鏍告椂**榛樿涓?*鍚敤銆?
 
-当编译为模块时，预期会生成以下 .ko 文件：
+涓轰簡鍚敤 vidtv 鐨勭紪璇戯細
+
+- 鍚敤 **DVB_TEST_DRIVERS**锛岀劧鍚?
+- 鍚敤 **DVB_VIDTV**
+
+褰撶紪璇戜负妯″潡鏃讹紝棰勬湡浼氱敓鎴愪互涓?.ko 鏂囦欢锛?
 
 - dvb_vidtv_tuner.ko
 
@@ -39,170 +39,170 @@ vidtv 是一个测试驱动，因此在编译内核时**默认不**启用。
 - dvb_vidtv_bridge.ko
 
 
-### 运行 vidtv
+### 杩愯 vidtv
 
 
 ```
 	modprobe vidtv
 ```
-就是这样！桥接驱动会在它自身的初始化过程中初始化调谐器和解调器驱动。
+灏辨槸杩欐牱锛佹ˉ鎺ラ┍鍔ㄤ細鍦ㄥ畠鑷韩鐨勫垵濮嬪寲杩囩▼涓垵濮嬪寲璋冭皭鍣ㄥ拰瑙ｈ皟鍣ㄩ┍鍔ㄣ€?
 
-默认情况下，它将接受以下频率：
+榛樿鎯呭喌涓嬶紝瀹冨皢鎺ュ彈浠ヤ笅棰戠巼锛?
 
- - 474 MHz，对应 DVB-T/T2/C；
- - 11,362 GHz，对应 DVB-S/S2。
+ - 474 MHz锛屽搴?DVB-T/T2/C锛?
+ - 11,362 GHz锛屽搴?DVB-S/S2銆?
 
-对于卫星系统，该驱动模拟一个通用的扩展型 LNBf，其频率位于 Ku 波段，范围从 10.7 GHz 到 12.75 GHz。
+瀵逛簬鍗槦绯荤粺锛岃椹卞姩妯℃嫙涓€涓€氱敤鐨勬墿灞曞瀷 LNBf锛屽叾棰戠巼浣嶄簬 Ku 娉㈡锛岃寖鍥翠粠 10.7 GHz 鍒?12.75 GHz銆?
 
-你可以选择性地为 vidtv 定义一些命令行参数。
-
-
-### vidtv 的命令行参数
+浣犲彲浠ラ€夋嫨鎬у湴涓?vidtv 瀹氫箟涓€浜涘懡浠よ鍙傛暟銆?
 
 
-以下是可以提供给 vidtv 的所有参数列表：
+### vidtv 鐨勫懡浠よ鍙傛暟
+
+
+浠ヤ笅鏄彲浠ユ彁渚涚粰 vidtv 鐨勬墍鏈夊弬鏁板垪琛細
 
 drop_tslock_prob_on_low_snr
-	当信号质量差时丢失 TS 锁定的概率。
-	这个概率会被虚拟解调器驱动使用，以便在信号质量不好时
-	最终返回一个 0 状态。
+	褰撲俊鍙疯川閲忓樊鏃朵涪澶?TS 閿佸畾鐨勬鐜囥€?
+	杩欎釜姒傜巼浼氳铏氭嫙瑙ｈ皟鍣ㄩ┍鍔ㄤ娇鐢紝浠ヤ究鍦ㄤ俊鍙疯川閲忎笉濂芥椂
+	鏈€缁堣繑鍥炰竴涓?0 鐘舵€併€?
 
 recover_tslock_prob_on_good_snr:
-	当信号改善时恢复 TS 锁定的概率。这个
-	概率会被虚拟解调器驱动使用，以便在信号质量改善时/若改善时
-	最终返回一个 0x1f 状态。
+	褰撲俊鍙锋敼鍠勬椂鎭㈠ TS 閿佸畾鐨勬鐜囥€傝繖涓?
+	姒傜巼浼氳铏氭嫙瑙ｈ皟鍣ㄩ┍鍔ㄤ娇鐢紝浠ヤ究鍦ㄤ俊鍙疯川閲忔敼鍠勬椂/鑻ユ敼鍠勬椂
+	鏈€缁堣繑鍥炰竴涓?0x1f 鐘舵€併€?
 
 mock_power_up_delay_msec
-	模拟上电延迟。默认值：0。
+	妯℃嫙涓婄數寤惰繜銆傞粯璁ゅ€硷細0銆?
 
 mock_tune_delay_msec
-	模拟调谐延迟。默认值 0。
+	妯℃嫙璋冭皭寤惰繜銆傞粯璁ゅ€?0銆?
 
 vidtv_valid_dvb_t_freqs
-	要模拟的有效 DVB-T 频率，单位为 Hz。
+	瑕佹ā鎷熺殑鏈夋晥 DVB-T 棰戠巼锛屽崟浣嶄负 Hz銆?
 
 vidtv_valid_dvb_c_freqs
-	要模拟的有效 DVB-C 频率，单位为 Hz。
+	瑕佹ā鎷熺殑鏈夋晥 DVB-C 棰戠巼锛屽崟浣嶄负 Hz銆?
 
 vidtv_valid_dvb_s_freqs
-	要模拟的位于 Ku 波段的有效 DVB-S/S2 频率，单位为 kHz。
+	瑕佹ā鎷熺殑浣嶄簬 Ku 娉㈡鐨勬湁鏁?DVB-S/S2 棰戠巼锛屽崟浣嶄负 kHz銆?
 
 max_frequency_shift_hz,
-	调谐到某个频道时允许的最大偏移量，单位为 Hz。
+	璋冭皭鍒版煇涓閬撴椂鍏佽鐨勬渶澶у亸绉婚噺锛屽崟浣嶄负 Hz銆?
 
 si_period_msec
-	发送 SI 包的频率。默认值：40ms。
+	鍙戦€?SI 鍖呯殑棰戠巼銆傞粯璁ゅ€硷細40ms銆?
 
 pcr_period_msec
-	发送 PCR 包的频率。默认值：40ms。
+	鍙戦€?PCR 鍖呯殑棰戠巼銆傞粯璁ゅ€硷細40ms銆?
 
 mux_rate_kbytes_sec
-	如有必要，通过插入 TS 空包来维持该比特率。默认值：4096。
+	濡傛湁蹇呰锛岄€氳繃鎻掑叆 TS 绌哄寘鏉ョ淮鎸佽姣旂壒鐜囥€傞粯璁ゅ€硷細4096銆?
 
 pcr_pid,
-	所有频道的 PCR PID。默认值：0x200。
+	鎵€鏈夐閬撶殑 PCR PID銆傞粯璁ゅ€硷細0x200銆?
 
 mux_buf_sz_pkts,
-	复用缓冲区大小，以 188 字节为单位。
+	澶嶇敤缂撳啿鍖哄ぇ灏忥紝浠?188 瀛楄妭涓哄崟浣嶃€?
 
-### vidtv 内部结构
+### vidtv 鍐呴儴缁撴瀯
 
 
-内核模块按以下方式拆分：
+鍐呮牳妯″潡鎸変互涓嬫柟寮忔媶鍒嗭細
 
 vidtv_tuner.[ch]
-	实现一个虚拟调谐器 DVB 驱动。
+	瀹炵幇涓€涓櫄鎷熻皟璋愬櫒 DVB 椹卞姩銆?
 
 vidtv_demod.[ch]
-	实现一个虚拟解调器 DVB 驱动。
+	瀹炵幇涓€涓櫄鎷熻В璋冨櫒 DVB 椹卞姩銆?
 
 vidtv_bridge.[ch]
-	实现一个桥接驱动。
+	瀹炵幇涓€涓ˉ鎺ラ┍鍔ㄣ€?
 
-与 MPEG 相关的代码按以下方式拆分：
+涓?MPEG 鐩稿叧鐨勪唬鐮佹寜浠ヤ笅鏂瑰紡鎷嗗垎锛?
 
 vidtv_ts.[ch]
-	处理 MPEG TS 包的代码，例如 TS 头、适配字段、
-	PCR 包和 NULL 包。
+	澶勭悊 MPEG TS 鍖呯殑浠ｇ爜锛屼緥濡?TS 澶淬€侀€傞厤瀛楁銆?
+	PCR 鍖呭拰 NULL 鍖呫€?
 
 vidtv_psi.[ch]
-	这是 PSI 生成器。PSI 包包含关于 MPEG 传输流的
-	一般信息。需要一个 PSI 生成器，这样上层应用才能
-	获取关于传输流的信息，并最终调谐到一个（虚拟）频道。
+	杩欐槸 PSI 鐢熸垚鍣ㄣ€侾SI 鍖呭寘鍚叧浜?MPEG 浼犺緭娴佺殑
+	涓€鑸俊鎭€傞渶瑕佷竴涓?PSI 鐢熸垚鍣紝杩欐牱涓婂眰搴旂敤鎵嶈兘
+	鑾峰彇鍏充簬浼犺緭娴佺殑淇℃伅锛屽苟鏈€缁堣皟璋愬埌涓€涓紙铏氭嫙锛夐閬撱€?
 
-	由于该生成器实现在一个单独的文件中，它可以在媒体子系统的其他地方被复用。
+	鐢变簬璇ョ敓鎴愬櫒瀹炵幇鍦ㄤ竴涓崟鐙殑鏂囦欢涓紝瀹冨彲浠ュ湪濯掍綋瀛愮郴缁熺殑鍏朵粬鍦版柟琚鐢ㄣ€?
 
-	目前 vidtv 支持处理 5 种 PSI 表：PAT、PMT、
-	SDT、NIT 和 EIT。
+	鐩墠 vidtv 鏀寔澶勭悊 5 绉?PSI 琛細PAT銆丳MT銆?
+	SDT銆丯IT 鍜?EIT銆?
 
-	PAT 与 PMT 的规范可参见 *ISO 13818-1:
-	Systems**，而 SDT、NIT、EIT 的规范可参见 **ETSI
+	PAT 涓?PMT 鐨勮鑼冨彲鍙傝 *ISO 13818-1:
+	Systems**锛岃€?SDT銆丯IT銆丒IT 鐨勮鑼冨彲鍙傝 **ETSI
 	EN 300 468: Specification for Service Information (SI) in DVB
-	systems*。
+	systems*銆?
 
-	这并非严格必要，但在调试 PSI 表时使用一个真实的 TS 文件会很有帮助。Vidtv 目前尝试复制此文件中的 PSI 结构：`TS1Globo.ts
-	<https://tsduck.io/streams/brazil-isdb-tb/TS1globo.ts>`_。
+	杩欏苟闈炰弗鏍煎繀瑕侊紝浣嗗湪璋冭瘯 PSI 琛ㄦ椂浣跨敤涓€涓湡瀹炵殑 TS 鏂囦欢浼氬緢鏈夊府鍔┿€俈idtv 鐩墠灏濊瘯澶嶅埗姝ゆ枃浠朵腑鐨?PSI 缁撴瀯锛歚TS1Globo.ts
+	<https://tsduck.io/streams/brazil-isdb-tb/TS1globo.ts>`_銆?
 
-	一种可视化流结构的好方法是使用
-	`DVBInspector <https://sourceforge.net/projects/dvbinspector/>`_。
+	涓€绉嶅彲瑙嗗寲娴佺粨鏋勭殑濂芥柟娉曟槸浣跨敤
+	`DVBInspector <https://sourceforge.net/projects/dvbinspector/>`_銆?
 
 vidtv_pes.[ch]
-	实现 PES 逻辑，将编码器数据转换为 MPEG TS 包。
-	这些包随后可以被送入 TS 复用器，并最终进入用户空间。
+	瀹炵幇 PES 閫昏緫锛屽皢缂栫爜鍣ㄦ暟鎹浆鎹负 MPEG TS 鍖呫€?
+	杩欎簺鍖呴殢鍚庡彲浠ヨ閫佸叆 TS 澶嶇敤鍣紝骞舵渶缁堣繘鍏ョ敤鎴风┖闂淬€?
 
 vidtv_encoder.h
-	vidtv 编码器的接口。可以通过实现此文件中的调用来向该驱动添加新的编码器。
+	vidtv 缂栫爜鍣ㄧ殑鎺ュ彛銆傚彲浠ラ€氳繃瀹炵幇姝ゆ枃浠朵腑鐨勮皟鐢ㄦ潵鍚戣椹卞姩娣诲姞鏂扮殑缂栫爜鍣ㄣ€?
 
 vidtv_s302m.[ch]
-	实现一个 S302M 编码器，以便将 PCM 音频数据插入生成的
-	MPEG 传输流中。相关规范可在线获取，名为 *SMPTE 302M-2007:
-	Television - Mapping of AES3 Data into MPEG-2 Transport Stream*。
+	瀹炵幇涓€涓?S302M 缂栫爜鍣紝浠ヤ究灏?PCM 闊抽鏁版嵁鎻掑叆鐢熸垚鐨?
+	MPEG 浼犺緭娴佷腑銆傜浉鍏宠鑼冨彲鍦ㄧ嚎鑾峰彇锛屽悕涓?*SMPTE 302M-2007:
+	Television - Mapping of AES3 Data into MPEG-2 Transport Stream*銆?
 
 
-	生成结果 MPEG 基本流通过附带一个 S302M 注册描述符的私有流传送。
+	鐢熸垚缁撴灉 MPEG 鍩烘湰娴侀€氳繃闄勫甫涓€涓?S302M 娉ㄥ唽鎻忚堪绗︾殑绉佹湁娴佷紶閫併€?
 
-	这样就可以将音频信号传入用户空间，从而被媒体软件解码和播放。ffmpeg 中对应的解码器位于 'libavcodec/s302m.c'，目前仍是实验性的。
+	杩欐牱灏卞彲浠ュ皢闊抽淇″彿浼犲叆鐢ㄦ埛绌洪棿锛屼粠鑰岃濯掍綋杞欢瑙ｇ爜鍜屾挱鏀俱€俧fmpeg 涓搴旂殑瑙ｇ爜鍣ㄤ綅浜?'libavcodec/s302m.c'锛岀洰鍓嶄粛鏄疄楠屾€х殑銆?
 
 vidtv_channel.[ch]
-	实现一个“频道（channel）”抽象。
+	瀹炵幇涓€涓€滈閬擄紙channel锛夆€濇娊璞°€?
 
-	当 vidtv 启动时，它会创建一些硬编码的频道：
+	褰?vidtv 鍚姩鏃讹紝瀹冧細鍒涘缓涓€浜涚‖缂栫爜鐨勯閬擄細
 
-	#. 它们的服务会被拼接起来以填充 SDT。
+	#. 瀹冧滑鐨勬湇鍔′細琚嫾鎺ヨ捣鏉ヤ互濉厖 SDT銆?
 
-	#. 它们的节目会被拼接起来以填充 PAT。
+	#. 瀹冧滑鐨勮妭鐩細琚嫾鎺ヨ捣鏉ヤ互濉厖 PAT銆?
 
-	#. 它们的事件会被拼接起来以填充 EIT。
+	#. 瀹冧滑鐨勪簨浠朵細琚嫾鎺ヨ捣鏉ヤ互濉厖 EIT銆?
 
-	#. 对于 PAT 中的每个节目，都会创建一个 PMT 段。
+	#. 瀵逛簬 PAT 涓殑姣忎釜鑺傜洰锛岄兘浼氬垱寤轰竴涓?PMT 娈点€?
 
-	#. 某个频道的 PMT 段会被分配它的流。
+	#. 鏌愪釜棰戦亾鐨?PMT 娈典細琚垎閰嶅畠鐨勬祦銆?
 
-	#. 每个流都会在其对应的编码器上被循环轮询以产生 TS 包。
-	   这些包可能被复用器交错，然后传递给桥接驱动。
+	#. 姣忎釜娴侀兘浼氬湪鍏跺搴旂殑缂栫爜鍣ㄤ笂琚惊鐜疆璇互浜х敓 TS 鍖呫€?
+	   杩欎簺鍖呭彲鑳借澶嶇敤鍣ㄤ氦閿欙紝鐒跺悗浼犻€掔粰妗ユ帴椹卞姩銆?
 
 vidtv_mux.[ch]
-	实现一个 MPEG TS 复用器，大致基于 ffmpeg 在
-	"libavcodec/mpegtsenc.c" 中的实现。
+	瀹炵幇涓€涓?MPEG TS 澶嶇敤鍣紝澶ц嚧鍩轰簬 ffmpeg 鍦?
+	"libavcodec/mpegtsenc.c" 涓殑瀹炵幇銆?
 
-	复用器运行一个循环，负责：
+	澶嶇敤鍣ㄨ繍琛屼竴涓惊鐜紝璐熻矗锛?
 
-	#. 跟踪自上次迭代以来经过的时间量。
+	#. 璺熻釜鑷笂娆¤凯浠ｄ互鏉ョ粡杩囩殑鏃堕棿閲忋€?
 
-	#. 轮询编码器以获取“elapsed_time”大小的数据。
+	#. 杞缂栫爜鍣ㄤ互鑾峰彇鈥渆lapsed_time鈥濆ぇ灏忕殑鏁版嵁銆?
 
-	#. 如有需要，插入 PSI 和/或 PCR 包。
+	#. 濡傛湁闇€瑕侊紝鎻掑叆 PSI 鍜?鎴?PCR 鍖呫€?
 
-	#. 如有必要，用 NULL 包填充结果流，以维持所选的比特率。
+	#. 濡傛湁蹇呰锛岀敤 NULL 鍖呭～鍏呯粨鏋滄祦锛屼互缁存寔鎵€閫夌殑姣旂壒鐜囥€?
 
-	#. 将结果 TS 包传递给桥接驱动，以便它能将它们传给解复用器。
-
-
-### 使用 v4l-utils 测试 vidtv
+	#. 灏嗙粨鏋?TS 鍖呬紶閫掔粰妗ユ帴椹卞姩锛屼互渚垮畠鑳藉皢瀹冧滑浼犵粰瑙ｅ鐢ㄥ櫒銆?
 
 
-使用 v4l-utils 中的工具是测试和检查 vidtv 输出的好方法。它托管在这里：`v4l-utils Documentation
-<https://linuxtv.org/wiki/index.php/V4l-utils>`_。
+### 浣跨敤 v4l-utils 娴嬭瘯 vidtv
+
+
+浣跨敤 v4l-utils 涓殑宸ュ叿鏄祴璇曞拰妫€鏌?vidtv 杈撳嚭鐨勫ソ鏂规硶銆傚畠鎵樼鍦ㄨ繖閲岋細`v4l-utils Documentation
+<https://linuxtv.org/wiki/index.php/V4l-utils>`_銆?
 
 ```
 	The v4l-utils are a series of packages for handling media devices.
@@ -216,10 +216,10 @@ vidtv_mux.[ch]
 ```
 	modprobe dvb_vidtv_bridge
 ```
-如果驱动正常，它应当会被加载，并且它的探测代码会运行。这会将调谐器和解调器驱动一并拉入。
+濡傛灉椹卞姩姝ｅ父锛屽畠搴斿綋浼氳鍔犺浇锛屽苟涓斿畠鐨勬帰娴嬩唬鐮佷細杩愯銆傝繖浼氬皢璋冭皭鍣ㄥ拰瑙ｈ皟鍣ㄩ┍鍔ㄤ竴骞舵媺鍏ャ€?
 
 
-#### 使用 dvb-fe-tool
+#### 浣跨敤 dvb-fe-tool
 
 
 ```
@@ -305,17 +305,17 @@ vidtv_mux.[ch]
 		....
 
 ```
-有关 dvb-fe-tools 的更多信息，请查看其在线文档：
+鏈夊叧 dvb-fe-tools 鐨勬洿澶氫俊鎭紝璇锋煡鐪嬪叾鍦ㄧ嚎鏂囨。锛?
 `dvb-fe-tool Documentation
-<https://www.linuxtv.org/wiki/index.php/Dvb-fe-tool>`_。
+<https://www.linuxtv.org/wiki/index.php/Dvb-fe-tool>`_銆?
 
 
-#### 使用 dvb-scan
+#### 浣跨敤 dvb-scan
 
 
-为了调谐到某个频道并读取 PSI 表，我们可以使用 dvb-scan。
+涓轰簡璋冭皭鍒版煇涓閬撳苟璇诲彇 PSI 琛紝鎴戜滑鍙互浣跨敤 dvb-scan銆?
 
-为此，需要提供一份称为“扫描文件（scan file）”的配置文件，
+涓烘锛岄渶瑕佹彁渚涗竴浠界О涓衡€滄壂鎻忔枃浠讹紙scan file锛夆€濈殑閰嶇疆鏂囦欢锛?
 ```
 	[Channel]
 	FREQUENCY = 474000000
@@ -324,12 +324,12 @@ vidtv_mux.[ch]
 	INNER_FEC = AUTO
 	DELIVERY_SYSTEM = DVBC/ANNEX_A
 ```
-	参数取决于你所测试的电视标准。
+	鍙傛暟鍙栧喅浜庝綘鎵€娴嬭瘯鐨勭數瑙嗘爣鍑嗐€?
 
-	Vidtv 是一个虚拟驱动，不会对扫描文件中的大部分信息进行验证。对于 DVB-T/DVB-T2，只需指定 'FREQUENCY' 和 'DELIVERY_SYSTEM' 就足够了。不过对于 DVB-S/DVB-C，你还应当提供 'SYMBOL_RATE'。
+	Vidtv 鏄竴涓櫄鎷熼┍鍔紝涓嶄細瀵规壂鎻忔枃浠朵腑鐨勫ぇ閮ㄥ垎淇℃伅杩涜楠岃瘉銆傚浜?DVB-T/DVB-T2锛屽彧闇€鎸囧畾 'FREQUENCY' 鍜?'DELIVERY_SYSTEM' 灏辫冻澶熶簡銆備笉杩囧浜?DVB-S/DVB-C锛屼綘杩樺簲褰撴彁渚?'SYMBOL_RATE'銆?
 
-你可以在线浏览扫描表：`dvb-scan-tables
-<https://git.linuxtv.org/dtv-scan-tables.git>`_。
+浣犲彲浠ュ湪绾挎祻瑙堟壂鎻忚〃锛歚dvb-scan-tables
+<https://git.linuxtv.org/dtv-scan-tables.git>`_銆?
 
 ```
 	$ dvbv5-scan channel.conf
@@ -342,14 +342,14 @@ vidtv_mux.[ch]
 	Lock   (0x1f) Signal= -34.45dBm C/N= 33.74dB UCB= 0
 	Service Beethoven, provider LinuxTV.org: digital television
 ```
-有关 dvb-scan 的更多信息，请查看其在线文档：
-`dvb-scan Documentation <https://www.linuxtv.org/wiki/index.php/Dvbscan>`_。
+鏈夊叧 dvb-scan 鐨勬洿澶氫俊鎭紝璇锋煡鐪嬪叾鍦ㄧ嚎鏂囨。锛?
+`dvb-scan Documentation <https://www.linuxtv.org/wiki/index.php/Dvbscan>`_銆?
 
 
-#### 使用 dvb-zap
+#### 浣跨敤 dvb-zap
 
 
-dvbv5-zap 是一个命令行工具，可用于将 MPEG-TS 录制到磁盘。典型用法是调谐到某个频道并将其置于录制模式。示例
+dvbv5-zap 鏄竴涓懡浠よ宸ュ叿锛屽彲鐢ㄤ簬灏?MPEG-TS 褰曞埗鍒扮鐩樸€傚吀鍨嬬敤娉曟槸璋冭皭鍒版煇涓閬撳苟灏嗗叾缃簬褰曞埗妯″紡銆傜ず渚?
 ```
 	$ dvbv5-zap -c dvb_channel.conf "beethoven" -o music.ts -P -t 10
 	using demux 'dvb0.demux0'
@@ -364,12 +364,12 @@ dvbv5-zap 是一个命令行工具，可用于将 MPEG-TS 录制到磁盘。典�
 	received 24587768 bytes (2401 Kbytes/sec)
 	Lock   (0x1f) Quality= Good Signal= -34.42dBm C/N= 33.89dB UCB= 0 postBER= 0 preBER= 2.44x10^-3 PER= 0
 ```
-       针对 music.ts 文件。
+       閽堝 music.ts 鏂囦欢銆?
 
 
-可以通过使用能识别 MPEG-TS 格式的播放器（例如 `mplayer` 或 `vlc`）播放流的内容来观看该频道。
+鍙互閫氳繃浣跨敤鑳借瘑鍒?MPEG-TS 鏍煎紡鐨勬挱鏀惧櫒锛堜緥濡?`mplayer` 鎴?`vlc`锛夋挱鏀炬祦鐨勫唴瀹规潵瑙傜湅璇ラ閬撱€?
 
-通过播放流的内容，可以直观地检查
+閫氳繃鎾斁娴佺殑鍐呭锛屽彲浠ョ洿瑙傚湴妫€鏌?
 ```
 	$ mplayer music.ts
 ```
@@ -379,53 +379,53 @@ dvbv5-zap 是一个命令行工具，可用于将 MPEG-TS 录制到磁盘。典�
 ```
 	$ mplayer /dev/dvb/adapter0/dvr0
 ```
-有关 dvb-zap 的更多信息，请查看其在线文档：
+鏈夊叧 dvb-zap 鐨勬洿澶氫俊鎭紝璇锋煡鐪嬪叾鍦ㄧ嚎鏂囨。锛?
 `dvb-zap Documentation
-<https://www.linuxtv.org/wiki/index.php/Dvbv5-zap>`_。
-另见：`zap <https://www.linuxtv.org/wiki/index.php/Zap>`_。
+<https://www.linuxtv.org/wiki/index.php/Dvbv5-zap>`_銆?
+鍙﹁锛歚zap <https://www.linuxtv.org/wiki/index.php/Zap>`_銆?
 
 
-### vidtv 中仍可改进之处
+### vidtv 涓粛鍙敼杩涗箣澶?
 
 
-#### 添加 *debugfs* 集成
+#### 娣诲姞 *debugfs* 闆嗘垚
 
 
-尽管前端驱动通过 .read_status 调用提供 DVBv5 统计信息，一个不错的补充是通过 debugfs 向上层空间提供额外的统计信息，debugfs 是一个简单易用、基于 RAM 的文件系统，专门用于调试目的。
+灏界鍓嶇椹卞姩閫氳繃 .read_status 璋冪敤鎻愪緵 DVBv5 缁熻淇℃伅锛屼竴涓笉閿欑殑琛ュ厖鏄€氳繃 debugfs 鍚戜笂灞傜┖闂存彁渚涢澶栫殑缁熻淇℃伅锛宒ebugfs 鏄竴涓畝鍗曟槗鐢ㄣ€佸熀浜?RAM 鐨勬枃浠剁郴缁燂紝涓撻棬鐢ㄤ簬璋冭瘯鐩殑銆?
 
-为了避免污染前端驱动，这部分逻辑应实现在一个单独的文件中。这些统计信息是驱动特定的，在测试期间可能很有用。
+涓轰簡閬垮厤姹℃煋鍓嶇椹卞姩锛岃繖閮ㄥ垎閫昏緫搴斿疄鐜板湪涓€涓崟鐙殑鏂囦欢涓€傝繖浜涚粺璁′俊鎭槸椹卞姩鐗瑰畾鐨勶紝鍦ㄦ祴璇曟湡闂村彲鑳藉緢鏈夌敤銆?
 
-Siano 驱动是使用 debugfs 向用户空间传递驱动特定统计信息的一个例子，可以作为参考。
+Siano 椹卞姩鏄娇鐢?debugfs 鍚戠敤鎴风┖闂翠紶閫掗┍鍔ㄧ壒瀹氱粺璁′俊鎭殑涓€涓緥瀛愶紝鍙互浣滀负鍙傝€冦€?
 
-为了方便，这应当进一步通过一个 Kconfig 选项来启用和禁用。
-
-
-#### 添加测试视频的方法
+涓轰簡鏂逛究锛岃繖搴斿綋杩涗竴姝ラ€氳繃涓€涓?Kconfig 閫夐」鏉ュ惎鐢ㄥ拰绂佺敤銆?
 
 
-目前，vidtv 只能编码 PCM 音频。如果能实现一个最简版本的 MPEG-2 视频编码，我们就可以同时测试视频，那将非常好。首先应当查阅 *ISO 13818-2：信息技术——运动图像及其伴音信息的通用编码——第 2 部分：视频*，其中涵盖了 MPEG 传输流中压缩视频的编码。
+#### 娣诲姞娴嬭瘯瑙嗛鐨勬柟娉?
 
-这可以选择性地使用 Video4Linux2 测试图案生成器 v4l2-tpg，
+
+鐩墠锛寁idtv 鍙兘缂栫爜 PCM 闊抽銆傚鏋滆兘瀹炵幇涓€涓渶绠€鐗堟湰鐨?MPEG-2 瑙嗛缂栫爜锛屾垜浠氨鍙互鍚屾椂娴嬭瘯瑙嗛锛岄偅灏嗛潪甯稿ソ銆傞鍏堝簲褰撴煡闃?*ISO 13818-2锛氫俊鎭妧鏈€斺€旇繍鍔ㄥ浘鍍忓強鍏朵即闊充俊鎭殑閫氱敤缂栫爜鈥斺€旂 2 閮ㄥ垎锛氳棰?锛屽叾涓兜鐩栦簡 MPEG 浼犺緭娴佷腑鍘嬬缉瑙嗛鐨勭紪鐮併€?
+
+杩欏彲浠ラ€夋嫨鎬у湴浣跨敤 Video4Linux2 娴嬭瘯鍥炬鐢熸垚鍣?v4l2-tpg锛?
 ```
 	drivers/media/common/v4l2-tpg/
 ```
 
 
-#### 添加白噪声模拟
+#### 娣诲姞鐧藉櫔澹版ā鎷?
 
 
-vidtv 调谐器已经有代码来识别所选频率是否距离有效频率表过远。目前，这意味着解调器最终可能会丢失信号锁定，因为调谐器会报告较差的信号质量。
+vidtv 璋冭皭鍣ㄥ凡缁忔湁浠ｇ爜鏉ヨ瘑鍒墍閫夐鐜囨槸鍚﹁窛绂绘湁鏁堥鐜囪〃杩囪繙銆傜洰鍓嶏紝杩欐剰鍛崇潃瑙ｈ皟鍣ㄦ渶缁堝彲鑳戒細涓㈠け淇″彿閿佸畾锛屽洜涓鸿皟璋愬櫒浼氭姤鍛婅緝宸殑淇″彿璐ㄩ噺銆?
 
-一个不错的补充是在信号质量差时模拟一些噪声：
+涓€涓笉閿欑殑琛ュ厖鏄湪淇″彿璐ㄩ噺宸椂妯℃嫙涓€浜涘櫔澹帮細
 
-- 随机丢弃一些 TS 包。如果连续性计数器被更新但包没有被传递给解复用器，这将触发一个连续性错误。
+- 闅忔満涓㈠純涓€浜?TS 鍖呫€傚鏋滆繛缁€ц鏁板櫒琚洿鏂颁絾鍖呮病鏈夎浼犻€掔粰瑙ｅ鐢ㄥ櫒锛岃繖灏嗚Е鍙戜竴涓繛缁€ч敊璇€?
 
-- 相应地更新错误统计信息（例如 BER 等）。
+- 鐩稿簲鍦版洿鏂伴敊璇粺璁′俊鎭紙渚嬪 BER 绛夛級銆?
 
-- 在编码数据中模拟一些噪声。
+- 鍦ㄧ紪鐮佹暟鎹腑妯℃嫙涓€浜涘櫔澹般€?
 
 
-### vidtv 中使用的函数和结构体
+### vidtv 涓娇鐢ㄧ殑鍑芥暟鍜岀粨鏋勪綋
 
 
 

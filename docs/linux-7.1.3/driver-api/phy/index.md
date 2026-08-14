@@ -1,7 +1,7 @@
+﻿
+## 閫氱敤 PHY 妗嗘灦
 
-## 通用 PHY 框架
-
-通用 PHY 框架（Generic PHY Framework）为各类物理层（PHY）设备提供统一的驱动模型、绑定与 API。
+閫氱敤 PHY 妗嗘灦锛圙eneric PHY Framework锛変负鍚勭被鐗╃悊灞傦紙PHY锛夎澶囨彁渚涚粺涓€鐨勯┍鍔ㄦā鍨嬨€佺粦瀹氫笌 API銆?
 
 
 - [PHY](phy)

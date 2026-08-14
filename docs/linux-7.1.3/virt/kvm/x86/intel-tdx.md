@@ -1,33 +1,25 @@
+﻿
+## Intel 淇′换鍩熸墿灞曪紙TDX锛?
 
-## Intel 信任域扩展（TDX）
+## 姒傝堪
 
 
-## 概述
-
-
-Intel 的信任域扩展（TDX）保护机密客户机 VM 免受主机和物理攻击。一个名为
-“TDX module”的、经由 CPU 证明的软件模块运行在一个新的 CPU 隔离范围内，
-提供管理和运行受保护 VM（即 TDX 客户机或 TD）的功能。
-
-白皮书、规范及其他资源请参考 [^1^]。
-
-本文档描述 TDX 特有的 KVM ABI。TDX module 需要先进行初始化，之后才能被 KVM
-用于运行任何 TDX 客户机。宿主核心内核提供对 TDX module 初始化的支持，相关
-说明见 Documentation/arch/x86/tdx.rst。
-
-## API 描述
+Intel 鐨勪俊浠诲煙鎵╁睍锛圱DX锛変繚鎶ゆ満瀵嗗鎴锋満 VM 鍏嶅彈涓绘満鍜岀墿鐞嗘敾鍑汇€備竴涓悕涓?鈥淭DX module鈥濈殑銆佺粡鐢?CPU 璇佹槑鐨勮蒋浠舵ā鍧楄繍琛屽湪涓€涓柊鐨?CPU 闅旂鑼冨洿鍐咃紝
+鎻愪緵绠＄悊鍜岃繍琛屽彈淇濇姢 VM锛堝嵆 TDX 瀹㈡埛鏈烘垨 TD锛夌殑鍔熻兘銆?
+鐧界毊涔︺€佽鑼冨強鍏朵粬璧勬簮璇峰弬鑰?[^1^]銆?
+鏈枃妗ｆ弿杩?TDX 鐗规湁鐨?KVM ABI銆俆DX module 闇€瑕佸厛杩涜鍒濆鍖栵紝涔嬪悗鎵嶈兘琚?KVM
+鐢ㄤ簬杩愯浠讳綍 TDX 瀹㈡埛鏈恒€傚涓绘牳蹇冨唴鏍告彁渚涘 TDX module 鍒濆鍖栫殑鏀寔锛岀浉鍏?璇存槑瑙?Documentation/arch/x86/tdx.rst銆?
+## API 鎻忚堪
 
 
 ### KVM_MEMORY_ENCRYPT_OP
 
 :Type: vm ioctl, vcpu ioctl
 
-对于 TDX 操作，KVM_MEMORY_ENCRYPT_OP 被重新用作一个通用的 ioctl，携带
-TDX 特定的子 ioctl() 命令。
-
+瀵逛簬 TDX 鎿嶄綔锛孠VM_MEMORY_ENCRYPT_OP 琚噸鏂扮敤浣滀竴涓€氱敤鐨?ioctl锛屾惡甯?TDX 鐗瑰畾鐨勫瓙 ioctl() 鍛戒护銆?
 ```
 
-  /* Trust Domain Extensions 子 ioctl() 命令。 */
+  /* Trust Domain Extensions 瀛?ioctl() 鍛戒护銆?*/
   enum kvm_tdx_cmd_id {
           KVM_TDX_CAPABILITIES = 0,
           KVM_TDX_INIT_VM,
@@ -42,17 +34,14 @@ TDX 特定的子 ioctl() 命令。
   struct kvm_tdx_cmd {
         /* enum kvm_tdx_cmd_id */
         __u32 id;
-        /* 子命令的标志位。若子命令不使用，置零。 */
+        /* 瀛愬懡浠ょ殑鏍囧織浣嶃€傝嫢瀛愬懡浠や笉浣跨敤锛岀疆闆躲€?*/
         __u32 flags;
         /*
-         * 每个子命令的数据。进程虚拟地址中实际数据的立即数或指针。
-         * 若子命令不使用，置零。
-         */
+         * 姣忎釜瀛愬懡浠ょ殑鏁版嵁銆傝繘绋嬭櫄鎷熷湴鍧€涓疄闄呮暟鎹殑绔嬪嵆鏁版垨鎸囬拡銆?         * 鑻ュ瓙鍛戒护涓嶄娇鐢紝缃浂銆?         */
         __u64 data;
         /*
-         * 辅助错误码。除了 -Exxx 之外，子命令还可能返回 TDX SEAMCALL
-         * 的状态码。
-         */
+         * 杈呭姪閿欒鐮併€傞櫎浜?-Exxx 涔嬪锛屽瓙鍛戒护杩樺彲鑳借繑鍥?TDX SEAMCALL
+         * 鐨勭姸鎬佺爜銆?         */
         __u64 hw_error;
   };
 
@@ -60,15 +49,13 @@ TDX 特定的子 ioctl() 命令。
 ### KVM_TDX_CAPABILITIES
 
 :Type: vm ioctl
-:Returns: 成功返回 0，错误返回 <0
+:Returns: 鎴愬姛杩斿洖 0锛岄敊璇繑鍥?<0
 
-返回当前 KVM 在系统中加载特定 TDX module 后所支持的 TDX 能力。它报告哪些
-特性/能力被允许配置给 TDX 客户机。
-
+杩斿洖褰撳墠 KVM 鍦ㄧ郴缁熶腑鍔犺浇鐗瑰畾 TDX module 鍚庢墍鏀寔鐨?TDX 鑳藉姏銆傚畠鎶ュ憡鍝簺
+鐗规€?鑳藉姏琚厑璁搁厤缃粰 TDX 瀹㈡埛鏈恒€?
 - id: KVM_TDX_CAPABILITIES
-- flags: 必须为 0
-- data: 指向 struct kvm_tdx_capabilities 的指针
-- hw_error: 必须为 0
+- flags: 蹇呴』涓?0
+- data: 鎸囧悜 struct kvm_tdx_capabilities 鐨勬寚閽?- hw_error: 蹇呴』涓?0
 
 ```
 
@@ -76,17 +63,17 @@ TDX 特定的子 ioctl() 命令。
         __u64 supported_attrs;
         __u64 supported_xfam;
 
-        /* 分别在内核中执行并转发到用户空间的 TDG.VP.VMCALL 超级调用 */
+        /* 鍒嗗埆鍦ㄥ唴鏍镐腑鎵ц骞惰浆鍙戝埌鐢ㄦ埛绌洪棿鐨?TDG.VP.VMCALL 瓒呯骇璋冪敤 */
         __u64 kernel_tdvmcallinfo_1_r11;
         __u64 user_tdvmcallinfo_1_r11;
 
-        /* 分别在内核中执行并转发到用户空间的 TDG.VP.VMCALL 指令执行子功能 */
+        /* 鍒嗗埆鍦ㄥ唴鏍镐腑鎵ц骞惰浆鍙戝埌鐢ㄦ埛绌洪棿鐨?TDG.VP.VMCALL 鎸囦护鎵ц瀛愬姛鑳?*/
         __u64 kernel_tdvmcallinfo_1_r12;
         __u64 user_tdvmcallinfo_1_r12;
 
         __u64 reserved[250];
 
-        /* 供用户空间配置的可配置 CPUID 位 */
+        /* 渚涚敤鎴风┖闂撮厤缃殑鍙厤缃?CPUID 浣?*/
         struct kvm_cpuid2 cpuid;
   };
 
@@ -95,35 +82,28 @@ TDX 特定的子 ioctl() 命令。
 ### KVM_TDX_INIT_VM
 
 :Type: vm ioctl
-:Returns: 成功返回 0，错误返回 <0
+:Returns: 鎴愬姛杩斿洖 0锛岄敊璇繑鍥?<0
 
-执行 TDX 特定的 VM 初始化。这需要在 KVM_CREATE_VM 之后、创建任何 VCPU 之前调用。
-
+鎵ц TDX 鐗瑰畾鐨?VM 鍒濆鍖栥€傝繖闇€瑕佸湪 KVM_CREATE_VM 涔嬪悗銆佸垱寤轰换浣?VCPU 涔嬪墠璋冪敤銆?
 - id: KVM_TDX_INIT_VM
-- flags: 必须为 0
-- data: 指向 struct kvm_tdx_init_vm 的指针
-- hw_error: 必须为 0
+- flags: 蹇呴』涓?0
+- data: 鎸囧悜 struct kvm_tdx_init_vm 鐨勬寚閽?- hw_error: 蹇呴』涓?0
 
 ```
 
   struct kvm_tdx_init_vm {
           __u64 attributes;
           __u64 xfam;
-          __u64 mrconfigid[6];          /* sha384 摘要 */
-          __u64 mrowner[6];             /* sha384 摘要 */
-          __u64 mrownerconfig[6];       /* sha384 摘要 */
+          __u64 mrconfigid[6];          /* sha384 鎽樿 */
+          __u64 mrowner[6];             /* sha384 鎽樿 */
+          __u64 mrownerconfig[6];       /* sha384 鎽樿 */
 
-          /* TD_PARAMS 中 CPUID 之前的总空间为 256 字节 */
+          /* TD_PARAMS 涓?CPUID 涔嬪墠鐨勬€荤┖闂翠负 256 瀛楄妭 */
           __u64 reserved[12];
 
         /*
-         * 在创建 vcpu 之前、即 KVM_SET_CPUID2 之前调用 KVM_TDX_INIT_VM。
-         * 该配置会取代 VCPU 的 KVM_SET_CPUID2，因为 TDX module 直接
-         * 虚拟化那些 CPUID，而不经由 VMM。用户空间 VMM（例如 qemu）应使
-         * KVM_SET_CPUID2 与这些值保持一致。如果不一致，KVM 可能对客户机的
-         * vCPUID 产生错误认识，并可能错误地模拟 TDX module 未虚拟化的
-         * CPUID 或 MSR。
-         */
+         * 鍦ㄥ垱寤?vcpu 涔嬪墠銆佸嵆 KVM_SET_CPUID2 涔嬪墠璋冪敤 KVM_TDX_INIT_VM銆?         * 璇ラ厤缃細鍙栦唬 VCPU 鐨?KVM_SET_CPUID2锛屽洜涓?TDX module 鐩存帴
+         * 铏氭嫙鍖栭偅浜?CPUID锛岃€屼笉缁忕敱 VMM銆傜敤鎴风┖闂?VMM锛堜緥濡?qemu锛夊簲浣?         * KVM_SET_CPUID2 涓庤繖浜涘€间繚鎸佷竴鑷淬€傚鏋滀笉涓€鑷达紝KVM 鍙兘瀵瑰鎴锋満鐨?         * vCPUID 浜х敓閿欒璁よ瘑锛屽苟鍙兘閿欒鍦版ā鎷?TDX module 鏈櫄鎷熷寲鐨?         * CPUID 鎴?MSR銆?         */
           struct kvm_cpuid2 cpuid;
   };
 
@@ -132,32 +112,24 @@ TDX 特定的子 ioctl() 命令。
 ### KVM_TDX_INIT_VCPU
 
 :Type: vcpu ioctl
-:Returns: 成功返回 0，错误返回 <0
+:Returns: 鎴愬姛杩斿洖 0锛岄敊璇繑鍥?<0
 
-执行 TDX 特定的 VCPU 初始化。
-
+鎵ц TDX 鐗瑰畾鐨?VCPU 鍒濆鍖栥€?
 - id: KVM_TDX_INIT_VCPU
-- flags: 必须为 0
-- data: 客户机 TD VCPU RCX 的初始值
-- hw_error: 必须为 0
+- flags: 蹇呴』涓?0
+- data: 瀹㈡埛鏈?TD VCPU RCX 鐨勫垵濮嬪€?- hw_error: 蹇呴』涓?0
 
 ### KVM_TDX_INIT_MEM_REGION
 
 :Type: vcpu ioctl
-:Returns: 成功返回 0，错误返回 <0
+:Returns: 鎴愬姛杩斿洖 0锛岄敊璇繑鍥?<0
 
-用来自 @source_addr 的用户空间提供数据，初始化从 @gpa 开始的 @nr_pages 个
-TDX 客户机私有内存页。@source_addr 必须按 PAGE_SIZE 对齐。
-
-注意，在调用此子命令之前，范围 [gpa, gpa + nr_pages] 的内存属性需要是私有的。
-用户空间可以使用 KVM_SET_MEMORY_ATTRIBUTES 来设置该属性。
-
-如果指定了 KVM_TDX_MEASURE_MEMORY_REGION 标志，它还会扩展度量（measurement）。
-
+鐢ㄦ潵鑷?@source_addr 鐨勭敤鎴风┖闂存彁渚涙暟鎹紝鍒濆鍖栦粠 @gpa 寮€濮嬬殑 @nr_pages 涓?TDX 瀹㈡埛鏈虹鏈夊唴瀛橀〉銆侤source_addr 蹇呴』鎸?PAGE_SIZE 瀵归綈銆?
+娉ㄦ剰锛屽湪璋冪敤姝ゅ瓙鍛戒护涔嬪墠锛岃寖鍥?[gpa, gpa + nr_pages] 鐨勫唴瀛樺睘鎬ч渶瑕佹槸绉佹湁鐨勩€?鐢ㄦ埛绌洪棿鍙互浣跨敤 KVM_SET_MEMORY_ATTRIBUTES 鏉ヨ缃灞炴€с€?
+濡傛灉鎸囧畾浜?KVM_TDX_MEASURE_MEMORY_REGION 鏍囧織锛屽畠杩樹細鎵╁睍搴﹂噺锛坢easurement锛夈€?
 - id: KVM_TDX_INIT_MEM_REGION
-- flags: 目前仅定义了 KVM_TDX_MEASURE_MEMORY_REGION
-- data: 指向 struct kvm_tdx_init_mem_region 的指针
-- hw_error: 必须为 0
+- flags: 鐩墠浠呭畾涔変簡 KVM_TDX_MEASURE_MEMORY_REGION
+- data: 鎸囧悜 struct kvm_tdx_init_mem_region 鐨勬寚閽?- hw_error: 蹇呴』涓?0
 
 ```
 
@@ -174,29 +146,25 @@ TDX 客户机私有内存页。@source_addr 必须按 PAGE_SIZE 对齐。
 ### KVM_TDX_FINALIZE_VM
 
 :Type: vm ioctl
-:Returns: 成功返回 0，错误返回 <0
+:Returns: 鎴愬姛杩斿洖 0锛岄敊璇繑鍥?<0
 
-完成初始 TD 内容的度量，并将其标记为可运行。
-
+瀹屾垚鍒濆 TD 鍐呭鐨勫害閲忥紝骞跺皢鍏舵爣璁颁负鍙繍琛屻€?
 - id: KVM_TDX_FINALIZE_VM
-- flags: 必须为 0
-- data: 必须为 0
-- hw_error: 必须为 0
+- flags: 蹇呴』涓?0
+- data: 蹇呴』涓?0
+- hw_error: 蹇呴』涓?0
 
 
 ### KVM_TDX_GET_CPUID
 
 :Type: vcpu ioctl
-:Returns: 成功返回 0，错误返回 <0
+:Returns: 鎴愬姛杩斿洖 0锛岄敊璇繑鍥?<0
 
-获取 TDX module 为 TD 客户机虚拟化的 CPUID 值。当它返回 -E2BIG 时，用户空间
-应分配更大的缓冲并重试。最小缓冲大小会在 struct kvm_cpuid2 的 nent 字段中更新。
-
+鑾峰彇 TDX module 涓?TD 瀹㈡埛鏈鸿櫄鎷熷寲鐨?CPUID 鍊笺€傚綋瀹冭繑鍥?-E2BIG 鏃讹紝鐢ㄦ埛绌洪棿
+搴斿垎閰嶆洿澶х殑缂撳啿骞堕噸璇曘€傛渶灏忕紦鍐插ぇ灏忎細鍦?struct kvm_cpuid2 鐨?nent 瀛楁涓洿鏂般€?
 - id: KVM_TDX_GET_CPUID
-- flags: 必须为 0
-- data: 指向 struct kvm_cpuid2 的指针（in/out）
-- hw_error: 必须为 0（out）
-
+- flags: 蹇呴』涓?0
+- data: 鎸囧悜 struct kvm_cpuid2 鐨勬寚閽堬紙in/out锛?- hw_error: 蹇呴』涓?0锛坥ut锛?
 ```
 
   struct kvm_cpuid2 {
@@ -217,41 +185,27 @@ TDX 客户机私有内存页。@source_addr 必须按 PAGE_SIZE 对齐。
   };
 
 ```
-## KVM TDX 创建流程
+## KVM TDX 鍒涘缓娴佺▼
 
 
-除了标准的 KVM 流程外，还需要调用新的 TDX ioctl。控制流如下：
+闄や簡鏍囧噯鐨?KVM 娴佺▼澶栵紝杩橀渶瑕佽皟鐢ㄦ柊鐨?TDX ioctl銆傛帶鍒舵祦濡備笅锛?
+#. 妫€鏌ョ郴缁熺骇鑳藉姏
 
-#. 检查系统级能力
-
-   - KVM_CAP_VM_TYPES：检查 VM 类型是否受支持，以及 KVM_X86_TDX_VM 是否受支持。
-
-#. 创建 VM
+   - KVM_CAP_VM_TYPES锛氭鏌?VM 绫诲瀷鏄惁鍙楁敮鎸侊紝浠ュ強 KVM_X86_TDX_VM 鏄惁鍙楁敮鎸併€?
+#. 鍒涘缓 VM
 
    - KVM_CREATE_VM
-   - KVM_TDX_CAPABILITIES：查询用于创建 TDX 客户机的能力。
-   - KVM_CHECK_EXTENSION(KVM_CAP_MAX_VCPUS)：查询 TD 在 VM 级别可支持的最大 VCPU
-     数量（TDX 对此有自身限制）。
-   - KVM_SET_TSC_KHZ：如果希望使用与宿主不同的 TSC 频率，则配置 TD 的 TSC 频率。
-     这是可选的。
-   - KVM_TDX_INIT_VM：传入 TDX 特定的 VM 参数。
-
-#. 创建 VCPU
+   - KVM_TDX_CAPABILITIES锛氭煡璇㈢敤浜庡垱寤?TDX 瀹㈡埛鏈虹殑鑳藉姏銆?   - KVM_CHECK_EXTENSION(KVM_CAP_MAX_VCPUS)锛氭煡璇?TD 鍦?VM 绾у埆鍙敮鎸佺殑鏈€澶?VCPU
+     鏁伴噺锛圱DX 瀵规鏈夎嚜韬檺鍒讹級銆?   - KVM_SET_TSC_KHZ锛氬鏋滃笇鏈涗娇鐢ㄤ笌瀹夸富涓嶅悓鐨?TSC 棰戠巼锛屽垯閰嶇疆 TD 鐨?TSC 棰戠巼銆?     杩欐槸鍙€夌殑銆?   - KVM_TDX_INIT_VM锛氫紶鍏?TDX 鐗瑰畾鐨?VM 鍙傛暟銆?
+#. 鍒涘缓 VCPU
 
    - KVM_CREATE_VCPU
-   - KVM_TDX_INIT_VCPU：传入 TDX 特定的 VCPU 参数。
-   - KVM_SET_CPUID2：配置 TD 的 CPUID。
-   - KVM_SET_MSRS：配置 TD 的 MSR。
+   - KVM_TDX_INIT_VCPU锛氫紶鍏?TDX 鐗瑰畾鐨?VCPU 鍙傛暟銆?   - KVM_SET_CPUID2锛氶厤缃?TD 鐨?CPUID銆?   - KVM_SET_MSRS锛氶厤缃?TD 鐨?MSR銆?
+#. 鍒濆鍖栧垵濮嬪鎴锋満鍐呭瓨
 
-#. 初始化初始客户机内存
+   - 鍑嗗鍒濆瀹㈡埛鏈哄唴瀛樼殑鍐呭銆?   - KVM_TDX_INIT_MEM_REGION锛氭坊鍔犲垵濮嬪鎴锋満鍐呭瓨銆?   - KVM_TDX_FINALIZE_VM锛氬畬鎴?TDX 瀹㈡埛鏈虹殑搴﹂噺銆?
+#. 杩愯 VCPU
 
-   - 准备初始客户机内存的内容。
-   - KVM_TDX_INIT_MEM_REGION：添加初始客户机内存。
-   - KVM_TDX_FINALIZE_VM：完成 TDX 客户机的度量。
-
-#. 运行 VCPU
-
-## 参考
-
+## 鍙傝€?
 
 https://www.intel.com/content/www/us/en/developer/tools/trust-domain-extensions/documentation.html

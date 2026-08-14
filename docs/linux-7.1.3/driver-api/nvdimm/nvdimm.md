@@ -1,132 +1,79 @@
-## LIBNVDIMM：非易失性设备
-
-libnvdimm - 内核 / libndctl - 用户空间辅助库
-
+﻿## LIBNVDIMM锛氶潪鏄撳け鎬ц澶?
+libnvdimm - 鍐呮牳 / libndctl - 鐢ㄦ埛绌洪棿杈呭姪搴?
 nvdimm@lists.linux.dev
 
-版本 13
+鐗堟湰 13
 
-	术语表
-	概述
-	    相关文档
-	    Git 代码树
-	LIBNVDIMM PMEM
-	    PMEM-REGION、原子扇区与 DAX
-	NVDIMM 平台示例
-	LIBNVDIMM 内核设备模型与 LIBNDCTL 用户空间 API
-	    LIBNDCTL：上下文
-	        libndctl：实例化新的库上下文示例
-	    LIBNVDIMM/LIBNDCTL：总线（Bus）
-	        libnvdimm：/sys/class 中的控制类设备
-	        libnvdimm：总线（bus）
-	        libndctl：总线枚举示例
-	    LIBNVDIMM/LIBNDCTL：DIMM（NMEM）
-	        libnvdimm：DIMM（NMEM）
-	        libndctl：DIMM 枚举示例
-	    LIBNVDIMM/LIBNDCTL：Region
-	        libnvdimm：region
-	        libndctl：region 枚举示例
-	        为何不把 Region 类型编码进 Region 名称？
-	        如何确定一个 Region 的主要类型？
-	    LIBNVDIMM/LIBNDCTL：Namespace
-	        libnvdimm：namespace
-	        libndctl：namespace 枚举示例
-	        libndctl：namespace 创建示例
-	        为何使用术语 "namespace"？
-	    LIBNVDIMM/LIBNDCTL：块转换表 "btt"
-	        libnvdimm：btt 布局
-	        libndctl：btt 创建示例
-	LIBNDCTL 图表示意总结
+	鏈琛?	姒傝堪
+	    鐩稿叧鏂囨。
+	    Git 浠ｇ爜鏍?	LIBNVDIMM PMEM
+	    PMEM-REGION銆佸師瀛愭墖鍖轰笌 DAX
+	NVDIMM 骞冲彴绀轰緥
+	LIBNVDIMM 鍐呮牳璁惧妯″瀷涓?LIBNDCTL 鐢ㄦ埛绌洪棿 API
+	    LIBNDCTL锛氫笂涓嬫枃
+	        libndctl锛氬疄渚嬪寲鏂扮殑搴撲笂涓嬫枃绀轰緥
+	    LIBNVDIMM/LIBNDCTL锛氭€荤嚎锛圔us锛?	        libnvdimm锛?sys/class 涓殑鎺у埗绫昏澶?	        libnvdimm锛氭€荤嚎锛坆us锛?	        libndctl锛氭€荤嚎鏋氫妇绀轰緥
+	    LIBNVDIMM/LIBNDCTL锛欴IMM锛圢MEM锛?	        libnvdimm锛欴IMM锛圢MEM锛?	        libndctl锛欴IMM 鏋氫妇绀轰緥
+	    LIBNVDIMM/LIBNDCTL锛歊egion
+	        libnvdimm锛歳egion
+	        libndctl锛歳egion 鏋氫妇绀轰緥
+	        涓轰綍涓嶆妸 Region 绫诲瀷缂栫爜杩?Region 鍚嶇О锛?	        濡備綍纭畾涓€涓?Region 鐨勪富瑕佺被鍨嬶紵
+	    LIBNVDIMM/LIBNDCTL锛歂amespace
+	        libnvdimm锛歯amespace
+	        libndctl锛歯amespace 鏋氫妇绀轰緥
+	        libndctl锛歯amespace 鍒涘缓绀轰緥
+	        涓轰綍浣跨敤鏈 "namespace"锛?	    LIBNVDIMM/LIBNDCTL锛氬潡杞崲琛?"btt"
+	        libnvdimm锛歜tt 甯冨眬
+	        libndctl锛歜tt 鍒涘缓绀轰緥
+	LIBNDCTL 鍥捐〃绀烘剰鎬荤粨
 
-## 术语表
+## 鏈琛?
+PMEM锛?  涓€涓郴缁熺墿鐞嗗湴鍧€鑼冨洿锛屽叾涓殑鍐欏叆鏄寔涔呭寲鐨勩€傜敱 PMEM 缁勬垚鐨勫潡璁惧
+  鑳藉鏀寔 DAX銆備竴涓?PMEM 鍦板潃鑼冨洿鍙互璺ㄥ涓?DIMM 鐨勪氦缁囥€?
+DPA锛?  DIMM Physical Address锛圖IMM 鐗╃悊鍦板潃锛夛紝鏄浉瀵逛簬 DIMM 鐨勫亸绉婚噺銆?  褰撶郴缁熶腑鍙湁涓€涓?DIMM 鏃讹紝绯荤粺鐗╃悊鍦板潃涓?DPA 涔嬮棿鏄?1:1 鐨勫搴斿叧绯汇€?  涓€鏃﹀姞鍏ユ洿澶?DIMM锛屽氨蹇呴』瀵瑰唴瀛樻帶鍒跺櫒浜ょ粐杩涜瑙ｇ爜锛屼互纭畾涓庣粰瀹?  绯荤粺鐗╃悊鍦板潃鐩稿叧鑱旂殑 DPA銆?
+DAX锛?  鏂囦欢绯荤粺鎵╁睍锛岀敤浜庣粫杩囬〉缂撳瓨鍜屽潡灞傦紝灏嗘潵鑷?PMEM 鍧楄澶囩殑鎸佷箙鍖栧唴瀛?  鐩存帴 mmap 鍒拌繘绋嬪湴鍧€绌洪棿涓€?
+DSM锛?  Device Specific Method锛堣澶囩壒瀹氭柟娉曪級锛氱敤浜庢帶鍒剁壒瀹氳澶囩殑 ACPI 鏂规硶
+  鈥斺€斿湪姝や緥涓嵆鍥轰欢銆?
+DCR锛?  NVDIMM Control Region Structure锛圢VDIMM 鎺у埗鍖哄煙缁撴瀯锛夛紝瀹氫箟浜?ACPI 6
+  绗?5.2.25.5 鑺傘€傚畠涓轰竴涓粰瀹氱殑 DIMM 瀹氫箟浜?vendor-id銆乨evice-id 浠ュ強
+  鎺ュ彛鏍煎紡銆?
+BTT锛?  Block Translation Table锛堝潡杞崲琛級锛氭寔涔呭寲鍐呭瓨鏄彲鎸夊瓧鑺傚鍧€鐨勩€?  鐜版湁鐨勮蒋浠跺彲鑳芥湡鏈涘啓鍏ョ殑鎺夌數鍘熷瓙鎬ц嚦灏戜负涓€涓墖鍖猴紝鍗?512 瀛楄妭銆侭TT 鏄?  涓€涓叿鏈夊師瀛愭洿鏂拌涔夌殑閲嶆槧灏勮〃锛屼綅浜?PMEM 鍧楄澶囬┍鍔ㄤ箣鍓嶏紝浠ュ憟鐜颁换鎰忕殑
+  鍘熷瓙鎵囧尯澶у皬銆?
+LABEL锛?  瀛樺偍鍦?DIMM 璁惧涓婄殑鍏冩暟鎹紝鐢ㄤ簬瀵瑰垎閰嶇粰涓嶅悓 PMEM namespace 鐨勫閲忚繘琛?  鍒嗗尯骞舵爣璇嗭紙鎸佷箙鍛藉悕锛夈€傚畠杩樻寚绀烘槸鍚﹀ namespace 搴旂敤浜嗗儚 BTT 杩欐牱鐨?  鍦板潃鎶借薄銆傛敞鎰忥紝浼犵粺鐨勫垎鍖鸿〃 GPT/MBR 鏄彔鍔犲湪 PMEM namespace 涔嬩笂锛屾垨鍦?  瀛樺湪鏃跺彔鍔犲湪鍍?BTT 杩欐牱鐨勫湴鍧€鎶借薄涔嬩笂锛屼絾鍒嗗尯鏀寔浠婂悗灏嗚寮冪敤銆?
+## 姒傝堪
 
-PMEM：
-  一个系统物理地址范围，其中的写入是持久化的。由 PMEM 组成的块设备
-  能够支持 DAX。一个 PMEM 地址范围可以跨多个 DIMM 的交织。
+LIBNVDIMM 瀛愮郴缁熶负骞冲彴鍥轰欢鎴栬澶囬┍鍔ㄦ墍鎻忚堪鐨?PMEM 鎻愪緵鏀寔銆傚湪鍩轰簬 ACPI 鐨?绯荤粺涓婏紝骞冲彴鍥轰欢閫氳繃 ACPI 6 涓殑 ACPI NFIT锛?NVDIMM Firmware Interface
+Table"锛孨VDIMM 鍥轰欢鎺ュ彛琛級浼犻€掓寔涔呭寲鍐呭瓨璧勬簮銆傝櫧鐒?LIBNVDIMM 瀛愮郴缁熺殑瀹炵幇
+鏄€氱敤鐨勫苟鏀寔 NFIT 涔嬪墠鐨勫钩鍙帮紝浣嗗畠鍙楀埌浜嗘敮鎸佹 ACPI 6 瀵?NVDIMM 璧勬簮瀹氫箟
+鎵€闇€鑳藉姏鍏ㄩ泦鐨勬寚瀵笺€傛渶鍒濈殑瀹炵幇鏀寔 NFIT 涓弿杩扮殑 block-window-aperture锛堝潡
+绐楀彛瀛斿緞锛夎兘鍔涳紝浣嗚鏀寔鍚庢潵宸茶鏀惧純锛屼粠鏈湪浠讳綍浜у搧涓彂甯冦€?
+### 鐩稿叧鏂囨。
 
-DPA：
-  DIMM Physical Address（DIMM 物理地址），是相对于 DIMM 的偏移量。
-  当系统中只有一个 DIMM 时，系统物理地址与 DPA 之间是 1:1 的对应关系。
-  一旦加入更多 DIMM，就必须对内存控制器交织进行解码，以确定与给定
-  系统物理地址相关联的 DPA。
+ACPI 6锛?	https://www.uefi.org/sites/default/files/resources/ACPI_6.0.pdf
+NVDIMM Namespace锛?	https://pmem.io/documents/NVDIMM_Namespace_Spec.pdf
+DSM Interface Example锛?	https://pmem.io/documents/NVDIMM_DSM_Interface_Example.pdf
+Driver Writer's Guide锛?	https://pmem.io/documents/NVDIMM_Driver_Writers_Guide.pdf
 
-DAX：
-  文件系统扩展，用于绕过页缓存和块层，将来自 PMEM 块设备的持久化内存
-  直接 mmap 到进程地址空间中。
-
-DSM：
-  Device Specific Method（设备特定方法）：用于控制特定设备的 ACPI 方法
-  ——在此例中即固件。
-
-DCR：
-  NVDIMM Control Region Structure（NVDIMM 控制区域结构），定义于 ACPI 6
-  第 5.2.25.5 节。它为一个给定的 DIMM 定义了 vendor-id、device-id 以及
-  接口格式。
-
-BTT：
-  Block Translation Table（块转换表）：持久化内存是可按字节寻址的。
-  现有的软件可能期望写入的掉电原子性至少为一个扇区，即 512 字节。BTT 是
-  一个具有原子更新语义的重映射表，位于 PMEM 块设备驱动之前，以呈现任意的
-  原子扇区大小。
-
-LABEL：
-  存储在 DIMM 设备上的元数据，用于对分配给不同 PMEM namespace 的容量进行
-  分区并标识（持久命名）。它还指示是否对 namespace 应用了像 BTT 这样的
-  地址抽象。注意，传统的分区表 GPT/MBR 是叠加在 PMEM namespace 之上，或在
-  存在时叠加在像 BTT 这样的地址抽象之上，但分区支持今后将被弃用。
-
-## 概述
-
-LIBNVDIMM 子系统为平台固件或设备驱动所描述的 PMEM 提供支持。在基于 ACPI 的
-系统上，平台固件通过 ACPI 6 中的 ACPI NFIT（"NVDIMM Firmware Interface
-Table"，NVDIMM 固件接口表）传递持久化内存资源。虽然 LIBNVDIMM 子系统的实现
-是通用的并支持 NFIT 之前的平台，但它受到了支持此 ACPI 6 对 NVDIMM 资源定义
-所需能力全集的指导。最初的实现支持 NFIT 中描述的 block-window-aperture（块
-窗口孔径）能力，但该支持后来已被放弃，从未在任何产品中发布。
-
-### 相关文档
-
-ACPI 6：
-	https://www.uefi.org/sites/default/files/resources/ACPI_6.0.pdf
-NVDIMM Namespace：
-	https://pmem.io/documents/NVDIMM_Namespace_Spec.pdf
-DSM Interface Example：
-	https://pmem.io/documents/NVDIMM_DSM_Interface_Example.pdf
-Driver Writer's Guide：
-	https://pmem.io/documents/NVDIMM_Driver_Writers_Guide.pdf
-
-### Git 代码树
-
-LIBNVDIMM：
-	https://git.kernel.org/cgit/linux/kernel/git/nvdimm/nvdimm.git
-LIBNDCTL：
-	https://github.com/pmem/ndctl.git
+### Git 浠ｇ爜鏍?
+LIBNVDIMM锛?	https://git.kernel.org/cgit/linux/kernel/git/nvdimm/nvdimm.git
+LIBNDCTL锛?	https://github.com/pmem/ndctl.git
 
 ## LIBNVDIMM PMEM
 
-在 NFIT 出现之前，非易失性内存以各种临时的方式描述给系统。通常只提供最
-基本的要素，即一个系统物理地址范围，其中的写入预期在系统掉电后仍然持久。
-现在，NFIT 规范不仅标准化了 PMEM 的描述，还标准化了用于控制和配置的
-平台消息传递入口点。
+鍦?NFIT 鍑虹幇涔嬪墠锛岄潪鏄撳け鎬у唴瀛樹互鍚勭涓存椂鐨勬柟寮忔弿杩扮粰绯荤粺銆傞€氬父鍙彁渚涙渶
+鍩烘湰鐨勮绱狅紝鍗充竴涓郴缁熺墿鐞嗗湴鍧€鑼冨洿锛屽叾涓殑鍐欏叆棰勬湡鍦ㄧ郴缁熸帀鐢靛悗浠嶇劧鎸佷箙銆?鐜板湪锛孨FIT 瑙勮寖涓嶄粎鏍囧噯鍖栦簡 PMEM 鐨勬弿杩帮紝杩樻爣鍑嗗寲浜嗙敤浜庢帶鍒跺拰閰嶇疆鐨?骞冲彴娑堟伅浼犻€掑叆鍙ｇ偣銆?
+PMEM锛坣d_pmem.ko锛夛細椹卞姩涓€涓郴缁熺墿鐞嗗湴鍧€鑼冨洿銆傝鑼冨洿鍦ㄧ郴缁熷唴瀛樹腑鏄繛缁殑锛?骞朵笖鍙互璺ㄥ涓?DIMM 杩涜浜ょ粐锛堢‖浠跺唴瀛樻帶鍒跺櫒鏉″甫鍖栵級銆傚綋杩涜浜ょ粐鏃讹紝骞冲彴
+鍙互閫夋嫨鎻愪緵鍝簺 DIMM 鍙備笌浜嗚浜ょ粐鐨勭粏鑺傘€?
+鍊煎緱娉ㄦ剰鐨勬槸锛屽綋妫€娴嬪埌鏍囨敞锛坙abeling锛夎兘鍔涙椂锛堟壘鍒颁簡涓€涓?EFI namespace
+label index block锛夛紝榛樿涓嶄細鍒涘缓浠讳綍鍧楄澶囷紝鍥犱负鐢ㄦ埛绌洪棿鑷冲皯闇€瑕佸
+PMEM 鑼冨洿杩涜涓€娆?DPA 鍒嗛厤銆傜浉姣斾箣涓嬶紝涓€鏃︽敞鍐岋紝ND_NAMESPACE_IO 鑼冨洿鍙互
+绔嬪嵆鎸傝浇鍒?nd_pmem銆傚悗涓€绉嶆ā寮忕О涓烘棤鏍囨敞锛坙abel-less锛夋垨"legacy"锛堜紶缁燂級銆?
+### PMEM-REGION銆佸師瀛愭墖鍖轰笌 DAX
 
-PMEM（nd_pmem.ko）：驱动一个系统物理地址范围。该范围在系统内存中是连续的，
-并且可以跨多个 DIMM 进行交织（硬件内存控制器条带化）。当进行交织时，平台
-可以选择提供哪些 DIMM 参与了该交织的细节。
+瀵逛簬搴旂敤绋嬪簭鎴栨枃浠剁郴缁熶粛闇€瑕佸師瀛愭墖鍖烘洿鏂颁繚璇佺殑鎯呭喌锛屽畠鍙互鍦?PMEM 璁惧鎴?鍒嗗尯涓婃敞鍐屼竴涓?BTT銆傚弬瑙?LIBNVDIMM/NDCTL锛欱lock Translation Table "btt"銆?
+## NVDIMM 骞冲彴绀轰緥
 
-值得注意的是，当检测到标注（labeling）能力时（找到了一个 EFI namespace
-label index block），默认不会创建任何块设备，因为用户空间至少需要对
-PMEM 范围进行一次 DPA 分配。相比之下，一旦注册，ND_NAMESPACE_IO 范围可以
-立即挂载到 nd_pmem。后一种模式称为无标注（label-less）或"legacy"（传统）。
-
-### PMEM-REGION、原子扇区与 DAX
-
-对于应用程序或文件系统仍需要原子扇区更新保证的情况，它可以在 PMEM 设备或
-分区上注册一个 BTT。参见 LIBNVDIMM/NDCTL：Block Translation Table "btt"。
-
-## NVDIMM 平台示例
-
-本文档的其余部分将使用以下示意图：
-
+鏈枃妗ｇ殑鍏朵綑閮ㄥ垎灏嗕娇鐢ㄤ互涓嬬ず鎰忓浘锛?
 ```
 
                                (a)               (b)           DIMM
@@ -145,36 +92,23 @@ PMEM 范围进行一次 DPA 分配。相比之下，一旦注册，ND_NAMESPACE_
             +----------------------------+--------+--------+
 
 ```
-在该平台上，我们在单个插槽中有四个 DIMM 和两个内存控制器。每个 PMEM 交织
-集由一个具有动态分配 id 的 region 设备标识。
+鍦ㄨ骞冲彴涓婏紝鎴戜滑鍦ㄥ崟涓彃妲戒腑鏈夊洓涓?DIMM 鍜屼袱涓唴瀛樻帶鍒跺櫒銆傛瘡涓?PMEM 浜ょ粐
+闆嗙敱涓€涓叿鏈夊姩鎬佸垎閰?id 鐨?region 璁惧鏍囪瘑銆?
+    1. DIMM0 鍜?DIMM1 鐨勫墠鍗婇儴鍒嗕綔涓?REGION0 浜ょ粐鍦ㄤ竴璧枫€備竴涓崟涓€鐨?       PMEM namespace 鍒涘缓浜?REGION0-SPA-range 涓紝瀹冩í璺ㄥぇ閮ㄥ垎 DIMM0 鍜?       DIMM1锛岀敤鎴锋寚瀹氱殑鍚嶇О涓?"pm0.0"銆傞儴鍒嗕氦缁囩殑绯荤粺鐗╃悊鍦板潃鑼冨洿琚暀浣?       绌洪棽锛屼互渚垮畾涔夊彟涓€涓?PMEM namespace銆?
+    2. 鍦?DIMM0 鍜?DIMM1 鐨勬渶鍚庨儴鍒嗭紝鎴戜滑鏈変竴涓氦缁囩殑绯荤粺鐗╃悊鍦板潃鑼冨洿
+       REGION1锛屽畠妯法杩欎袱涓?DIMM 浠ュ強 DIMM2 鍜?DIMM3銆俁EGION1 鐨勪竴閮ㄥ垎琚垎閰?       缁欎竴涓悕涓?"pm1.0" 鐨?PMEM namespace銆?
+    璇ユ€荤嚎鐢卞唴鏍稿湪鍔犺浇鏉ヨ嚜 tools/testing/nvdimm 鐨?nfit_test.ko 妯″潡鏃讹紝
+    浜庤澶?/sys/devices/platform/nfit_test.0 涓嬫彁渚涖€傝妯″潡鏄?LIBNVDIMM 鍜?    acpi_nfit.ko 椹卞姩鐨勪竴涓崟鍏冩祴璇曘€?
+## LIBNVDIMM 鍐呮牳璁惧妯″瀷涓?LIBNDCTL 鐢ㄦ埛绌洪棿 API
 
-    1. DIMM0 和 DIMM1 的前半部分作为 REGION0 交织在一起。一个单一的
-       PMEM namespace 创建于 REGION0-SPA-range 中，它横跨大部分 DIMM0 和
-       DIMM1，用户指定的名称为 "pm0.0"。部分交织的系统物理地址范围被留作
-       空闲，以便定义另一个 PMEM namespace。
+涓嬮潰鏄 LIBNVDIMM sysfs 甯冨眬浠ュ強閫氳繃 LIBNDCTL API 鏌ョ湅鐨勭浉搴斿璞″眰绾?绀烘剰鍥剧殑鎻忚堪銆傜ず渚?sysfs 璺緞鍜岀ず鎰忓浘鏄浉瀵逛簬 NVDIMM 骞冲彴绀轰緥鐨勶紝璇ョず渚?鍚屾椂涔熸槸 LIBNDCTL 鍗曞厓娴嬭瘯涓娇鐢ㄧ殑 LIBNVDIMM 鎬荤嚎銆?
+### LIBNDCTL锛氫笂涓嬫枃
 
-    2. 在 DIMM0 和 DIMM1 的最后部分，我们有一个交织的系统物理地址范围
-       REGION1，它横跨这两个 DIMM 以及 DIMM2 和 DIMM3。REGION1 的一部分被分配
-       给一个名为 "pm1.0" 的 PMEM namespace。
-
-    该总线由内核在加载来自 tools/testing/nvdimm 的 nfit_test.ko 模块时，
-    于设备 /sys/devices/platform/nfit_test.0 下提供。该模块是 LIBNVDIMM 和
-    acpi_nfit.ko 驱动的一个单元测试。
-
-## LIBNVDIMM 内核设备模型与 LIBNDCTL 用户空间 API
-
-下面是对 LIBNVDIMM sysfs 布局以及通过 LIBNDCTL API 查看的相应对象层级
-示意图的描述。示例 sysfs 路径和示意图是相对于 NVDIMM 平台示例的，该示例
-同时也是 LIBNDCTL 单元测试中使用的 LIBNVDIMM 总线。
-
-### LIBNDCTL：上下文
-
-LIBNDCTL 库中的每个 API 调用都需要一个 context（上下文），它保存日志参数和
-其他库实例状态。该库基于 libabc 模板：
-
+LIBNDCTL 搴撲腑鐨勬瘡涓?API 璋冪敤閮介渶瑕佷竴涓?context锛堜笂涓嬫枃锛夛紝瀹冧繚瀛樻棩蹇楀弬鏁板拰
+鍏朵粬搴撳疄渚嬬姸鎬併€傝搴撳熀浜?libabc 妯℃澘锛?
 	https://git.kernel.org/cgit/linux/kernel/git/kay/libabc.git
 
-##### LIBNDCTL：实例化新的库上下文示例
+##### LIBNDCTL锛氬疄渚嬪寲鏂扮殑搴撲笂涓嬫枃绀轰緥
 
 ```
 	struct ndctl_ctx *ctx;
@@ -185,17 +119,11 @@ LIBNDCTL 库中的每个 API 调用都需要一个 context（上下文），它�
 		return NULL;
 ```
 
-### LIBNVDIMM/LIBNDCTL：总线（Bus）
-
-一个总线（bus）与一个 NFIT 之间存在 1:1 的关系。对于基于 ACPI 的系统，当前
-的预期是只有一个平台全局的 NFIT。也就是说，注册多个 NFIT 是轻而易举的，规范
-并不排除这种情况。该基础设施支持多个总线，我们在单元测试中利用这一能力来
-测试多种 NFIT 配置。
-
-### LIBNVDIMM：/sys/class 中的控制类设备
-
-该字符设备接受要传递给 DIMM 的 DSM 消息：
-
+### LIBNVDIMM/LIBNDCTL锛氭€荤嚎锛圔us锛?
+涓€涓€荤嚎锛坆us锛変笌涓€涓?NFIT 涔嬮棿瀛樺湪 1:1 鐨勫叧绯汇€傚浜庡熀浜?ACPI 鐨勭郴缁燂紝褰撳墠
+鐨勯鏈熸槸鍙湁涓€涓钩鍙板叏灞€鐨?NFIT銆備篃灏辨槸璇达紝娉ㄥ唽澶氫釜 NFIT 鏄交鑰屾槗涓剧殑锛岃鑼?骞朵笉鎺掗櫎杩欑鎯呭喌銆傝鍩虹璁炬柦鏀寔澶氫釜鎬荤嚎锛屾垜浠湪鍗曞厓娴嬭瘯涓埄鐢ㄨ繖涓€鑳藉姏鏉?娴嬭瘯澶氱 NFIT 閰嶇疆銆?
+### LIBNVDIMM锛?sys/class 涓殑鎺у埗绫昏澶?
+璇ュ瓧绗﹁澶囨帴鍙楄浼犻€掔粰 DIMM 鐨?DSM 娑堟伅锛?
 ```
 	/sys/class/nd/ndctl0
 	|-- dev
@@ -203,8 +131,7 @@ LIBNDCTL 库中的每个 API 调用都需要一个 context（上下文），它�
 	|-- subsystem -> ../../../../../../../class/nd
 ```
 
-### LIBNVDIMM：总线（bus）
-
+### LIBNVDIMM锛氭€荤嚎锛坆us锛?
 ```
 	struct nvdimm_bus *nvdimm_bus_register(struct device *parent,
 	       struct nvdimm_bus_descriptor *nfit_desc);
@@ -231,7 +158,7 @@ LIBNDCTL 库中的每个 API 调用都需要一个 context（上下文），它�
 	`-- wait_probe
 ```
 
-##### LIBNDCTL：总线枚举示例
+##### LIBNDCTL锛氭€荤嚎鏋氫妇绀轰緥
 
 ```
 	static struct ndctl_bus *get_bus_by_provider(struct ndctl_ctx *ctx,
@@ -249,18 +176,12 @@ LIBNDCTL 库中的每个 API 调用都需要一个 context（上下文），它�
 	bus = get_bus_by_provider(ctx, "nfit_test.0");
 ```
 
-### LIBNVDIMM/LIBNDCTL：DIMM（NMEM）
-
-DIMM 设备提供了一个字符设备用于向硬件发送命令，并且它是 LABEL 的容器。如果
-DIMM 由 NFIT 定义，则提供一个可选的 'nfit' 属性子目录来添加 NFIT 特有的内容。
-
-注意，"DIMM"的内核设备名是 "nmemX"。NFIT 通过"Memory Device to System
-Physical Address Range Mapping Structure"（内存设备到系统物理地址范围映射
-结构）描述这些设备，并且不要求它们实际上必须是物理 DIMM，因此我们使用了一个
-更通用的名称。
-
-##### LIBNVDIMM：DIMM（NMEM）
-
+### LIBNVDIMM/LIBNDCTL锛欴IMM锛圢MEM锛?
+DIMM 璁惧鎻愪緵浜嗕竴涓瓧绗﹁澶囩敤浜庡悜纭欢鍙戦€佸懡浠わ紝骞朵笖瀹冩槸 LABEL 鐨勫鍣ㄣ€傚鏋?DIMM 鐢?NFIT 瀹氫箟锛屽垯鎻愪緵涓€涓彲閫夌殑 'nfit' 灞炴€у瓙鐩綍鏉ユ坊鍔?NFIT 鐗规湁鐨勫唴瀹广€?
+娉ㄦ剰锛?DIMM"鐨勫唴鏍歌澶囧悕鏄?"nmemX"銆侼FIT 閫氳繃"Memory Device to System
+Physical Address Range Mapping Structure"锛堝唴瀛樿澶囧埌绯荤粺鐗╃悊鍦板潃鑼冨洿鏄犲皠
+缁撴瀯锛夋弿杩拌繖浜涜澶囷紝骞朵笖涓嶈姹傚畠浠疄闄呬笂蹇呴』鏄墿鐞?DIMM锛屽洜姝ゆ垜浠娇鐢ㄤ簡涓€涓?鏇撮€氱敤鐨勫悕绉般€?
+##### LIBNVDIMM锛欴IMM锛圢MEM锛?
 ```
 	struct nvdimm *nvdimm_create(struct nvdimm_bus *nvdimm_bus, void *provider_data,
 			const struct attribute_group **groups, unsigned long flags,
@@ -291,17 +212,17 @@ Physical Address Range Mapping Structure"（内存设备到系统物理地址范
 	[..]
 ```
 
-##### LIBNDCTL：DIMM 枚举示例
+##### LIBNDCTL锛欴IMM 鏋氫妇绀轰緥
 
-注意，在此示例中我们假设的是由 NFIT 定义的 DIMM，它们由一个 32 位值的
-"nfit_handle" 标识，其中：
+娉ㄦ剰锛屽湪姝ょず渚嬩腑鎴戜滑鍋囪鐨勬槸鐢?NFIT 瀹氫箟鐨?DIMM锛屽畠浠敱涓€涓?32 浣嶅€肩殑
+"nfit_handle" 鏍囪瘑锛屽叾涓細
 
-   - Bit 3:0 内存通道内的 DIMM 编号
-   - Bit 7:4 内存通道编号
-   - Bit 11:8 内存控制器 ID
-   - Bit 15:12 插槽 ID（如果存在节点控制器，则在节点控制器范围内）
-   - Bit 27:16 节点控制器 ID
-   - Bit 31:28 保留
+   - Bit 3:0 鍐呭瓨閫氶亾鍐呯殑 DIMM 缂栧彿
+   - Bit 7:4 鍐呭瓨閫氶亾缂栧彿
+   - Bit 11:8 鍐呭瓨鎺у埗鍣?ID
+   - Bit 15:12 鎻掓Ы ID锛堝鏋滃瓨鍦ㄨ妭鐐规帶鍒跺櫒锛屽垯鍦ㄨ妭鐐规帶鍒跺櫒鑼冨洿鍐咃級
+   - Bit 27:16 鑺傜偣鎺у埗鍣?ID
+   - Bit 31:28 淇濈暀
 
 ```
 	static struct ndctl_dimm *get_dimm_by_handle(struct ndctl_bus *bus,
@@ -323,21 +244,13 @@ Physical Address Range Mapping Structure"（内存设备到系统物理地址范
 	dimm = get_dimm_by_handle(bus, DIMM_HANDLE(0, 0, 0, 0, 0));
 ```
 
-### LIBNVDIMM/LIBNDCTL：Region
+### LIBNVDIMM/LIBNDCTL锛歊egion
 
-为每个 PMEM 交织集/范围注册一个通用的 REGION 设备。按示例，在 "nfit_test.0"
-总线上有 2 个 PMEM region。region 的主要角色是作为 "mappings"（映射）的容器。
-一个 mapping 是一个元组 <DIMM, DPA-start-offset, length>。
-
-LIBNVDIMM 为 REGION 设备提供了一个内置驱动。该驱动负责解析所有 LABEL（如果
-存在），然后发出供 nd_pmem 驱动使用的 NAMESPACE 设备。
-
-除了 "mapping"、"interleave_ways"（交织路数）和 "size"（大小）这些通用属性
-外，REGION 设备还导出了一些便利属性。"nstype" 指示该 region 发出的
-namespace 设备的整数类型；"devtype" 复制了 udev 在 'add' 事件时存储的
-DEVTYPE 变量；"modalias" 复制了 udev 在 'add' 事件时存储的 MODALIAS 变量；
-最后，在 region 由 SPA 定义的情况下，提供可选的 "spa_index"。
-
+涓烘瘡涓?PMEM 浜ょ粐闆?鑼冨洿娉ㄥ唽涓€涓€氱敤鐨?REGION 璁惧銆傛寜绀轰緥锛屽湪 "nfit_test.0"
+鎬荤嚎涓婃湁 2 涓?PMEM region銆俽egion 鐨勪富瑕佽鑹叉槸浣滀负 "mappings"锛堟槧灏勶級鐨勫鍣ㄣ€?涓€涓?mapping 鏄竴涓厓缁?<DIMM, DPA-start-offset, length>銆?
+LIBNVDIMM 涓?REGION 璁惧鎻愪緵浜嗕竴涓唴缃┍鍔ㄣ€傝椹卞姩璐熻矗瑙ｆ瀽鎵€鏈?LABEL锛堝鏋?瀛樺湪锛夛紝鐒跺悗鍙戝嚭渚?nd_pmem 椹卞姩浣跨敤鐨?NAMESPACE 璁惧銆?
+闄や簡 "mapping"銆?interleave_ways"锛堜氦缁囪矾鏁帮級鍜?"size"锛堝ぇ灏忥級杩欎簺閫氱敤灞炴€?澶栵紝REGION 璁惧杩樺鍑轰簡涓€浜涗究鍒╁睘鎬с€?nstype" 鎸囩ず璇?region 鍙戝嚭鐨?namespace 璁惧鐨勬暣鏁扮被鍨嬶紱"devtype" 澶嶅埗浜?udev 鍦?'add' 浜嬩欢鏃跺瓨鍌ㄧ殑
+DEVTYPE 鍙橀噺锛?modalias" 澶嶅埗浜?udev 鍦?'add' 浜嬩欢鏃跺瓨鍌ㄧ殑 MODALIAS 鍙橀噺锛?鏈€鍚庯紝鍦?region 鐢?SPA 瀹氫箟鐨勬儏鍐典笅锛屾彁渚涘彲閫夌殑 "spa_index"銆?
 ```
 	struct nd_region *nvdimm_pmem_region_create(struct nvdimm_bus *nvdimm_bus,
 			struct nd_region_desc *ndr_desc);
@@ -370,10 +283,9 @@ DEVTYPE 变量；"modalias" 复制了 udev 在 'add' 事件时存储的 MODALIAS
 	[..]
 ```
 
-##### LIBNDCTL：region 枚举示例
+##### LIBNDCTL锛歳egion 鏋氫妇绀轰緥
 
-基于 NFIT 唯一数据（如 "spa_index"，即交织集 id）的示例 region 检索例程。
-
+鍩轰簬 NFIT 鍞竴鏁版嵁锛堝 "spa_index"锛屽嵆浜ょ粐闆?id锛夌殑绀轰緥 region 妫€绱緥绋嬨€?
 ```
 	static struct ndctl_region *get_pmem_region_by_spa_index(struct ndctl_bus *bus,
 			unsigned int spa_index)
@@ -390,18 +302,14 @@ DEVTYPE 变量；"modalias" 复制了 udev 在 'add' 事件时存储的 MODALIAS
 	}
 ```
 
-### LIBNVDIMM/LIBNDCTL：Namespace
+### LIBNVDIMM/LIBNDCTL锛歂amespace
 
-一个 REGION 在解析完 DPA 别名和 LABEL 指定的边界后，会呈现出一个或多个
-"namespace" 设备。"namespace" 设备的出现当前会触发 nd_pmem 驱动加载并注册
-一个磁盘/块设备。
+涓€涓?REGION 鍦ㄨВ鏋愬畬 DPA 鍒悕鍜?LABEL 鎸囧畾鐨勮竟鐣屽悗锛屼細鍛堢幇鍑轰竴涓垨澶氫釜
+"namespace" 璁惧銆?namespace" 璁惧鐨勫嚭鐜板綋鍓嶄細瑙﹀彂 nd_pmem 椹卞姩鍔犺浇骞舵敞鍐?涓€涓鐩?鍧楄澶囥€?
+##### LIBNVDIMM锛歯amespace
 
-##### LIBNVDIMM：namespace
-
-以下是两大类 NAMESPACE 的示例布局，其中 namespace0.0 代表由 DIMM 信息支撑的
-PMEM（注意它有一个 'uuid' 属性），而 namespace1.0 代表一个匿名的 PMEM
-namespace（注意由于没有 LABEL 支持，它没有 'uuid' 属性）。
-
+浠ヤ笅鏄袱澶х被 NAMESPACE 鐨勭ず渚嬪竷灞€锛屽叾涓?namespace0.0 浠ｈ〃鐢?DIMM 淇℃伅鏀拺鐨?PMEM锛堟敞鎰忓畠鏈変竴涓?'uuid' 灞炴€э級锛岃€?namespace1.0 浠ｈ〃涓€涓尶鍚嶇殑 PMEM
+namespace锛堟敞鎰忕敱浜庢病鏈?LABEL 鏀寔锛屽畠娌℃湁 'uuid' 灞炴€э級銆?
 ```
 	/sys/devices/platform/nfit_test.0/ndbus0/region0/namespace0.0
 	|-- alt_name
@@ -431,12 +339,9 @@ namespace（注意由于没有 LABEL 支持，它没有 'uuid' 属性）。
 	`-- uevent
 ```
 
-##### LIBNDCTL：namespace 枚举示例
+##### LIBNDCTL锛歯amespace 鏋氫妇绀轰緥
 
-Namespace 是相对于其父 region 建立索引的，示例如下。这些索引从启动到启动大多
-是静态的，但子系统在这方面不作任何保证。要获得静态的 namespace 标识符，请使用
-其 'uuid' 属性。
-
+Namespace 鏄浉瀵逛簬鍏剁埗 region 寤虹珛绱㈠紩鐨勶紝绀轰緥濡備笅銆傝繖浜涚储寮曚粠鍚姩鍒板惎鍔ㄥぇ澶?鏄潤鎬佺殑锛屼絾瀛愮郴缁熷湪杩欐柟闈笉浣滀换浣曚繚璇併€傝鑾峰緱闈欐€佺殑 namespace 鏍囪瘑绗︼紝璇蜂娇鐢?鍏?'uuid' 灞炴€с€?
 ```
   static struct ndctl_namespace
   *get_namespace_by_id(struct ndctl_region *region, unsigned int id)
@@ -451,13 +356,10 @@ Namespace 是相对于其父 region 建立索引的，示例如下。这些索�
   }
 ```
 
-##### LIBNDCTL：namespace 创建示例
+##### LIBNDCTL锛歯amespace 鍒涘缓绀轰緥
 
-如果给定 region 有足够的可用容量来创建新的 namespace，空闲的 namespace 会由
-内核自动创建。namespace 实例化涉及找到一个空闲 namespace 并配置它。在大多数
-情况下，namespace 属性的设置可以以任意顺序进行，唯一的约束是 'uuid' 必须在
-'size' 之前设置。这使得内核能够跟踪 DPA 分配。
-
+濡傛灉缁欏畾 region 鏈夎冻澶熺殑鍙敤瀹归噺鏉ュ垱寤烘柊鐨?namespace锛岀┖闂茬殑 namespace 浼氱敱
+鍐呮牳鑷姩鍒涘缓銆俷amespace 瀹炰緥鍖栨秹鍙婃壘鍒颁竴涓┖闂?namespace 骞堕厤缃畠銆傚湪澶у鏁?鎯呭喌涓嬶紝namespace 灞炴€х殑璁剧疆鍙互浠ヤ换鎰忛『搴忚繘琛岋紝鍞竴鐨勭害鏉熸槸 'uuid' 蹇呴』鍦?'size' 涔嬪墠璁剧疆銆傝繖浣垮緱鍐呮牳鑳藉璺熻釜 DPA 鍒嗛厤銆?
 ```
   static int configure_namespace(struct ndctl_region *region,
                   struct ndctl_namespace *ndns,
@@ -469,34 +371,27 @@ Namespace 是相对于其父 region 建立索引的，示例如下。这些索�
                           ndctl_region_get_id(region), parameters->id);
 
           ndctl_namespace_set_alt_name(ndns, devname);
-          /* 'uuid' 必须在设置 size 之前设置！ */
+          /* 'uuid' 蹇呴』鍦ㄨ缃?size 涔嬪墠璁剧疆锛?*/
           ndctl_namespace_set_uuid(ndns, parameters->uuid);
           ndctl_namespace_set_size(ndns, parameters->size);
-          /* 与 pmem namespace 不同，blk namespace 有一个扇区大小 */
+          /* 涓?pmem namespace 涓嶅悓锛宐lk namespace 鏈変竴涓墖鍖哄ぇ灏?*/
           if (parameters->lbasize)
                   ndctl_namespace_set_sector_size(ndns, parameters->lbasize);
           ndctl_namespace_enable(ndns);
   }
 ```
 
-##### 为何使用术语 "namespace"？
+##### 涓轰綍浣跨敤鏈 "namespace"锛?
+    1. 渚嬪涓轰粈涔堜笉鐢?"volume"锛堝嵎锛夛紵"volume" 鏈夊皢 ND锛坙ibnvdimm 瀛愮郴缁燂級涓?       鍍?device-mapper 杩欐牱鐨勫嵎绠＄悊鍣ㄦ贩娣嗙殑椋庨櫓銆?
+    2. 璇ユ湳璇捣婧愪簬鎻忚堪鍙湪 NVME 鎺у埗鍣ㄥ唴鍒涘缓鐨勫瓙璁惧锛堝弬瑙?nvme 瑙勮寖锛?       https://www.nvmexpress.org/specifications/锛夛紝鑰?NFIT namespace 鏃ㄥ湪
+       涓?NVME-namespace 鐨勮兘鍔涘拰鍙€氳繃閰嶇疆鎬х浉骞宠銆?
+### LIBNVDIMM/LIBNDCTL锛氬潡杞崲琛?"btt"
 
-    1. 例如为什么不用 "volume"（卷）？"volume" 有将 ND（libnvdimm 子系统）与
-       像 device-mapper 这样的卷管理器混淆的风险。
+BTT锛堣璁℃枃妗ｏ細https://pmem.io/2014/09/23/btt.html锛夋槸涓€涓?namespace 鐨?personality 椹卞姩锛屽畠灏嗘暣涓?namespace 浣滀负"鍦板潃鎶借薄"鍛堢幇浜庡墠绔€?
+##### LIBNVDIMM锛歜tt 甯冨眬
 
-    2. 该术语起源于描述可在 NVME 控制器内创建的子设备（参见 nvme 规范：
-       https://www.nvmexpress.org/specifications/），而 NFIT namespace 旨在
-       与 NVME-namespace 的能力和可通过配置性相平行。
-
-### LIBNVDIMM/LIBNDCTL：块转换表 "btt"
-
-BTT（设计文档：https://pmem.io/2014/09/23/btt.html）是一个 namespace 的
-personality 驱动，它将整个 namespace 作为"地址抽象"呈现于前端。
-
-##### LIBNVDIMM：btt 布局
-
-每个 region 一开始至少会有一个 BTT 设备，即种子（seed）设备。要激活它，需设置
-"namespace"、"uuid" 和 "sector_size" 属性，然后将设备绑定到 nd_pmem 或：
+姣忎釜 region 涓€寮€濮嬭嚦灏戜細鏈変竴涓?BTT 璁惧锛屽嵆绉嶅瓙锛坰eed锛夎澶囥€傝婵€娲诲畠锛岄渶璁剧疆
+"namespace"銆?uuid" 鍜?"sector_size" 灞炴€э紝鐒跺悗灏嗚澶囩粦瀹氬埌 nd_pmem 鎴栵細
 
 ```
 	/sys/devices/platform/nfit_test.1/ndbus0/region0/btt0/
@@ -511,12 +406,10 @@ personality 驱动，它将整个 namespace 作为"地址抽象"呈现于前端�
 	`-- uuid
 ```
 
-##### LIBNDCTL：btt 创建示例
+##### LIBNDCTL锛歜tt 鍒涘缓绀轰緥
 
-与 namespace 类似，每个 region 会自动创建一个空闲的 BTT 设备。每次配置并启用
-这个"种子"btt 设备时，都会创建一个新的种子。创建一个 BTT 配置涉及两步：找到
-空闲 BTT 并将其分配以消费一个 namespace。
-
+涓?namespace 绫讳技锛屾瘡涓?region 浼氳嚜鍔ㄥ垱寤轰竴涓┖闂茬殑 BTT 璁惧銆傛瘡娆￠厤缃苟鍚敤
+杩欎釜"绉嶅瓙"btt 璁惧鏃讹紝閮戒細鍒涘缓涓€涓柊鐨勭瀛愩€傚垱寤轰竴涓?BTT 閰嶇疆娑夊強涓ゆ锛氭壘鍒?绌洪棽 BTT 骞跺皢鍏跺垎閰嶄互娑堣垂涓€涓?namespace銆?
 ```
 	static struct ndctl_btt *get_idle_btt(struct ndctl_region *region)
 	{
@@ -538,24 +431,20 @@ personality 驱动，它将整个 namespace 作为"地址抽象"呈现于前端�
 		ndctl_btt_set_uuid(btt, parameters->uuid);
 		ndctl_btt_set_sector_size(btt, parameters->sector_size);
 		ndctl_btt_set_namespace(btt, parameters->ndns);
-		/* 关闭原始模式设备 */
+		/* 鍏抽棴鍘熷妯″紡璁惧 */
 		ndctl_namespace_disable(parameters->ndns);
-		/* 开启 btt 访问 */
+		/* 寮€鍚?btt 璁块棶 */
 		ndctl_btt_enable(btt);
 	}
 ```
 
-一旦实例化，一个新的未激活 btt 种子设备将出现在 region 之下。
+涓€鏃﹀疄渚嬪寲锛屼竴涓柊鐨勬湭婵€娲?btt 绉嶅瓙璁惧灏嗗嚭鐜板湪 region 涔嬩笅銆?
+涓€鏃︿竴涓?"namespace" 浠?BTT 涓Щ闄わ紝璇?BTT 璁惧瀹炰緥灏嗚鍒犻櫎鎴栦互鍏朵粬鏂瑰紡閲嶇疆涓?榛樿鍊笺€傝繖绉嶅垹闄や粎鍙戠敓鍦ㄨ澶囨ā鍨嬪眰闈€備负浜嗛攢姣佷竴涓?BTT锛岄渶瑕侀攢姣佸叾 "info
+block"锛堜俊鎭潡锛夈€傛敞鎰忥紝瑕侀攢姣佷竴涓?BTT锛岄渶瑕佷互鍘熷妯″紡鍐欏叆浠嬭川銆傞粯璁ゆ儏鍐典笅锛?鍐呮牳浼氳嚜鍔ㄦ娴?BTT 鐨勫瓨鍦ㄥ苟绂佺敤鍘熷妯″紡銆傛鑷姩妫€娴嬭涓哄彲浠ラ€氳繃涓?namespace
+鍚敤鍘熷妯″紡鏉ユ姂鍒讹紝浣跨敤 ndctl_namespace_set_raw_mode() API銆?
+### LIBNDCTL 鍥捐〃绀烘剰鎬荤粨
 
-一旦一个 "namespace" 从 BTT 中移除，该 BTT 设备实例将被删除或以其他方式重置为
-默认值。这种删除仅发生在设备模型层面。为了销毁一个 BTT，需要销毁其 "info
-block"（信息块）。注意，要销毁一个 BTT，需要以原始模式写入介质。默认情况下，
-内核会自动检测 BTT 的存在并禁用原始模式。此自动检测行为可以通过为 namespace
-启用原始模式来抑制，使用 ndctl_namespace_set_raw_mode() API。
-
-### LIBNDCTL 图表示意总结
-
-对于上面给出的示例，以下是该对象通过 API 所看到的视图：
+瀵逛簬涓婇潰缁欏嚭鐨勭ず渚嬶紝浠ヤ笅鏄瀵硅薄閫氳繃 API 鎵€鐪嬪埌鐨勮鍥撅細
 
 ```
               +---+

@@ -1,9 +1,8 @@
-
+﻿
 ## APEI output format
 
 
-APEI 使用 printk 作为硬件错误报告接口，其输出格式如下：
-
+APEI 浣跨敤 printk 浣滀负纭欢閿欒鎶ュ憡鎺ュ彛锛屽叾杈撳嚭鏍煎紡濡備笅锛?
 ```
         <error record> :=
         APEI generic hardware error status
@@ -126,21 +125,18 @@ APEI 使用 printk 作为硬件错误报告接口，其输出格式如下：
         Receiver ID | Requester ID | Completer ID | Transmitter ID
 
 ```
-其中，方括号 [] 表示相应内容为可选项。
-
+鍏朵腑锛屾柟鎷彿 [] 琛ㄧず鐩稿簲鍐呭涓哄彲閫夐」銆?
 ```
 
         field: <integer>, <field string>
 
 ```
-其中 <integer> 的值应为 "string" 在 <field string> 描述中的位置。否则，<field string> 将为 "unknown"。
-
+鍏朵腑 <integer> 鐨勫€煎簲涓?"string" 鍦?<field string> 鎻忚堪涓殑浣嶇疆銆傚惁鍒欙紝<field string> 灏嗕负 "unknown"銆?
 ```
 
         field: <integer>
         <field strings>
 
 ```
-其中 <fields strings> 中的每个字符串对应于 <integer> 的一个被置位的位。位的位置即为 "string" 在 <field strings> 描述中的位置。
-
-关于每个字段的更详细说明，请参阅 UEFI 规范 2.3 或更高版本，附录 N：通用平台错误记录（Common Platform Error Record）。
+鍏朵腑 <fields strings> 涓殑姣忎釜瀛楃涓插搴斾簬 <integer> 鐨勪竴涓缃綅鐨勪綅銆備綅鐨勪綅缃嵆涓?"string" 鍦?<field strings> 鎻忚堪涓殑浣嶇疆銆?
+鍏充簬姣忎釜瀛楁鐨勬洿璇︾粏璇存槑锛岃鍙傞槄 UEFI 瑙勮寖 2.3 鎴栨洿楂樼増鏈紝闄勫綍 N锛氶€氱敤骞冲彴閿欒璁板綍锛圕ommon Platform Error Record锛夈€?

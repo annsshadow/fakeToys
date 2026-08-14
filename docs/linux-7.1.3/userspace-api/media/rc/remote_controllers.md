@@ -1,33 +1,33 @@
-# 第三部分 - 遥控器 API
+﻿# 绗笁閮ㄥ垎 - 閬ユ帶鍣?API
 
-本页汇总 Linux 遥控器（Remote Controller）子系统相关文档的链接，涵盖 RC 核心、sysfs 节点、协议、键码表及其修改方式，以及 LIRC 设备接口。
+鏈〉姹囨€?Linux 閬ユ帶鍣紙Remote Controller锛夊瓙绯荤粺鐩稿叧鏂囨。鐨勯摼鎺ワ紝娑电洊 RC 鏍稿績銆乻ysfs 鑺傜偣銆佸崗璁€侀敭鐮佽〃鍙婂叾淇敼鏂瑰紡锛屼互鍙?LIRC 璁惧鎺ュ彛銆?
 
-- [RC 简介](rc-intro)
-- [RC sysfs 节点](rc-sysfs-nodes)
-- [RC 协议](rc-protos)
-- [RC 键码表](rc-tables)
-- [RC 键码表修改](rc-table-change)
-- [LIRC 设备](lirc-dev)
+- [RC 绠€浠媇(rc-intro)
+- [RC sysfs 鑺傜偣](rc-sysfs-nodes)
+- [RC 鍗忚](rc-protos)
+- [RC 閿爜琛╙(rc-tables)
+- [RC 閿爜琛ㄤ慨鏀筣(rc-table-change)
+- [LIRC 璁惧](lirc-dev)
 
-######## 修订与版权
+######## 淇涓庣増鏉?
 
 
-作者：
+浣滆€咃細
 
 - Carvalho Chehab, Mauro <mchehab@kernel.org>
 
- - 初始版本。
+ - 鍒濆鐗堟湰銆?
 
 **Copyright** |copy| 2009-2016 : Mauro Carvalho Chehab
 
-######## 修订历史
+######## 淇鍘嗗彶
 
 
 :revision: 3.15 / 2014-02-06 (**mcc**)
 
-添加了接口描述和 RC sysfs 类描述。
+娣诲姞浜嗘帴鍙ｆ弿杩板拰 RC sysfs 绫绘弿杩般€?
 
 
 :revision: 1.0 / 2009-09-06 (**mcc**)
 
-初始修订
+鍒濆淇

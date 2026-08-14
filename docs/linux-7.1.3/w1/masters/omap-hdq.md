@@ -1,32 +1,23 @@
-## 面向 omap HDQ/1-wire 模块的内核驱动
+﻿## 闈㈠悜 omap HDQ/1-wire 妯″潡鐨勫唴鏍搁┍鍔?
 
+## 鏀寔鐨勮姱鐗囷細
 
-## 支持的芯片：
-
-TI OMAP 2430/3430 平台上的 HDQ/1-wire 控制器。
-
-## 关于 HDQ 基础的有用链接：
+TI OMAP 2430/3430 骞冲彴涓婄殑 HDQ/1-wire 鎺у埗鍣ㄣ€?
+## 鍏充簬 HDQ 鍩虹鐨勬湁鐢ㄩ摼鎺ワ細
 
 http://focus.ti.com/lit/an/slua408a/slua408a.pdf
 
-## 描述：
-
-TI OMAP2430/3430 平台上的 HDQ/1-Wire 模块实现了 Benchmark HDQ 与 Dallas Semiconductor 1-Wire 协议的主设备（master）功能的硬件协议。这些协议使用单根线在主机（HDQ/1-Wire 控制器）与从机（HDQ/1-Wire 外部兼容设备）之间进行通信。
-
-HDQ/1-Wire 模块的一个典型应用是与电池监视器（电量计，gas gauge）集成电路通信。
-
-该控制器支持 HDQ 与 1-wire 两种模式运行。HDQ 与 1-wire 模式之间的本质区别在于从设备如何响应初始化脉冲。在 HDQ 模式下，固件不要求主机向从机创建初始化脉冲。不过，可以通过使用初始化脉冲（也称为 break 脉冲）来复位从机。与 1-Wire 协议不同，从机不会以存在脉冲（presence pulse）响应。
-
-## 备注：
-
-该驱动（drivers/w1/masters/omap_hdq.c）支持控制器的 HDQ 模式。在此模式下，由于我们无法读取遵循 W1 规范（family:id:crc）的 ID，可以向驱动传递一个模块参数，用于计算 CRC 并向 W1 核心回传一个合适的从机 ID。
-
-默认情况下，主设备驱动与 BQ 从机接口驱动（drivers/w1/slaves/w1_bq27000.c）将 ID 设为 1。请注意，如有必要，可以用不同的 ID 加载这两个模块，但要注意主设备与从设备驱动加载时使用的 ID 应当相同。
-
+## 鎻忚堪锛?
+TI OMAP2430/3430 骞冲彴涓婄殑 HDQ/1-Wire 妯″潡瀹炵幇浜?Benchmark HDQ 涓?Dallas Semiconductor 1-Wire 鍗忚鐨勪富璁惧锛坢aster锛夊姛鑳界殑纭欢鍗忚銆傝繖浜涘崗璁娇鐢ㄥ崟鏍圭嚎鍦ㄤ富鏈猴紙HDQ/1-Wire 鎺у埗鍣級涓庝粠鏈猴紙HDQ/1-Wire 澶栭儴鍏煎璁惧锛変箣闂磋繘琛岄€氫俊銆?
+HDQ/1-Wire 妯″潡鐨勪竴涓吀鍨嬪簲鐢ㄦ槸涓庣數姹犵洃瑙嗗櫒锛堢數閲忚锛実as gauge锛夐泦鎴愮數璺€氫俊銆?
+璇ユ帶鍒跺櫒鏀寔 HDQ 涓?1-wire 涓ょ妯″紡杩愯銆侶DQ 涓?1-wire 妯″紡涔嬮棿鐨勬湰璐ㄥ尯鍒湪浜庝粠璁惧濡備綍鍝嶅簲鍒濆鍖栬剦鍐层€傚湪 HDQ 妯″紡涓嬶紝鍥轰欢涓嶈姹備富鏈哄悜浠庢満鍒涘缓鍒濆鍖栬剦鍐层€備笉杩囷紝鍙互閫氳繃浣跨敤鍒濆鍖栬剦鍐诧紙涔熺О涓?break 鑴夊啿锛夋潵澶嶄綅浠庢満銆備笌 1-Wire 鍗忚涓嶅悓锛屼粠鏈轰笉浼氫互瀛樺湪鑴夊啿锛坧resence pulse锛夊搷搴斻€?
+## 澶囨敞锛?
+璇ラ┍鍔紙drivers/w1/masters/omap_hdq.c锛夋敮鎸佹帶鍒跺櫒鐨?HDQ 妯″紡銆傚湪姝ゆā寮忎笅锛岀敱浜庢垜浠棤娉曡鍙栭伒寰?W1 瑙勮寖锛坒amily:id:crc锛夌殑 ID锛屽彲浠ュ悜椹卞姩浼犻€掍竴涓ā鍧楀弬鏁帮紝鐢ㄤ簬璁＄畻 CRC 骞跺悜 W1 鏍稿績鍥炰紶涓€涓悎閫傜殑浠庢満 ID銆?
+榛樿鎯呭喌涓嬶紝涓昏澶囬┍鍔ㄤ笌 BQ 浠庢満鎺ュ彛椹卞姩锛坉rivers/w1/slaves/w1_bq27000.c锛夊皢 ID 璁句负 1銆傝娉ㄦ剰锛屽鏈夊繀瑕侊紝鍙互鐢ㄤ笉鍚岀殑 ID 鍔犺浇杩欎袱涓ā鍧楋紝浣嗚娉ㄦ剰涓昏澶囦笌浠庤澶囬┍鍔ㄥ姞杞芥椂浣跨敤鐨?ID 搴斿綋鐩稿悓銆?
 ```
 
   insmod omap_hdq.ko W1_ID=2
   insmod w1_bq27000.ko F_ID=2
 
 ```
-该驱动也支持 1-wire 模式。在此模式下，无需将从机 ID 作为参数传递。驱动会使用 SEARCH_ROM 过程自动检测连接到总线上的从机。可以通过将 DT 中的 "ti,mode" 属性设为 "1w" 来选择 1-wire 模式（详见 Documentation/devicetree/bindings/w1/omap-hdq.txt）。默认情况下驱动处于 HDQ 模式。
+璇ラ┍鍔ㄤ篃鏀寔 1-wire 妯″紡銆傚湪姝ゆā寮忎笅锛屾棤闇€灏嗕粠鏈?ID 浣滀负鍙傛暟浼犻€掋€傞┍鍔ㄤ細浣跨敤 SEARCH_ROM 杩囩▼鑷姩妫€娴嬭繛鎺ュ埌鎬荤嚎涓婄殑浠庢満銆傚彲浠ラ€氳繃灏?DT 涓殑 "ti,mode" 灞炴€ц涓?"1w" 鏉ラ€夋嫨 1-wire 妯″紡锛堣瑙?Documentation/devicetree/bindings/w1/omap-hdq.txt锛夈€傞粯璁ゆ儏鍐典笅椹卞姩澶勪簬 HDQ 妯″紡銆?

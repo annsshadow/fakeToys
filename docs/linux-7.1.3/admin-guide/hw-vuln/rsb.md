@@ -1,169 +1,169 @@
+﻿
+## 涓?RSB 鐩稿叧鐨勭紦瑙ｆ帾鏂?
 
-## 与 RSB 相关的缓解措施
 
+   璇蜂繚鎸佹湰鏂囨。涓烘渶鏂扮姸鎬侊紝鍚﹀垯鎮ㄥ皢琚€滆嚜鎰库€濊礋璐ｆ洿鏂板畠锛屽苟灏嗗叾杞崲涓?
+   bugs.c 涓竴涓潪甯搁暱鐨勬敞閲婏紒
 
-   请保持本文档为最新状态，否则您将被“自愿”负责更新它，并将其转换为
-   bugs.c 中一个非常长的注释！
+鑷?2018 骞翠互鏉ワ紝宸茬粡鍑虹幇浜嗚澶氫笌杩斿洖鏍堢紦鍐插尯锛圧eturn Stack Buffer锛孯SB锛?
+鑷?2018 骞翠互鏉ワ紝宸茬粡鍑虹幇浜嗚澶氫笌杩斿洖鏍?
+缂撳啿鍖猴紙RSB锛孯eturn Stack Buffer锛屾湁鏃跺湪 AMD 涓?
+绉颁负杩斿洖鍦板潃鏍堬紙RAS锛夋垨杩斿洖鍦板潃棰勬祴鍣紙RAP锛夛級鐩稿叧鐨?Spectre CVE銆?
+鍏充簬杩欎簺 CVE 浠ュ強濡備綍缂撹В瀹冧滑鐨勪俊鎭垎鏁ｅ湪澶ч噺鐗瑰畾浜庡井鏋舵瀯鐨勬枃妗ｄ腑銆?
+鍏充簬杩欎簺 CVE 鍙婂叾缂撹В鏂规硶鐨勪俊鎭垎鏁ｅ湪
+澶ч噺涓庡井浣撶郴缁撴瀯鐩稿叧鐨勬枃妗ｄ腑銆?
+瀹冨姏姹傚敖鍙兘绠€娲侊紝鍙叧娉ㄥ綋鍓嶅唴鏍哥殑缂撹В鎺柦锛歊SB 鐩稿叧鐨勬敾鍑诲悜閲忔槸浠€涔堬紝浠ュ強
+鏈枃妗ｈ瘯鍥惧皢鎵€鏈夌浉鍏充俊鎭眹鎬诲埌
+涓€澶勶紝骞堕槓鏄庡綋鍓嶄笌 RSB 鐩稿叧鐨?
+缂撹В鎺柦鑳屽悗鐨勭紭鐢便€傛湰鏂囧姏姹傚敖鍙兘绠€娲侊紝浠呰仛鐒︿簬
+褰撳墠鍐呮牳鐨勭紦瑙ｆ帾鏂斤細鏈夊摢浜涗笌 RSB 鐩稿叧鐨勬敾鍑婚€斿緞锛?
+浠ュ強鐩墠鍒嗗埆鏄浣曠紦瑙ｇ殑锛?
+鐩稿弽锛岃繖鍩烘湰涓婃槸涓€涓缇庡寲鐨勬敞閲婏紝浣嗗張澶暱鑰屾棤娉曠湡姝ｆ垚涓烘敞閲娿€傚洜姝わ紝褰撲笅涓€涓?
+鏈枃**骞堕潪**鎰忓湪鎻忚堪 RSB 鏈哄埗濡備綍杩愪綔鎴栨紡娲炲埄鐢?
+濡備綍宸ヤ綔銆傛湁鍏宠繖涓よ€呯殑鏇村缁嗚妭鍙湪涓嬫枃
+鐨勫弬鑰冩枃鐚腑鎵惧埌銆?
+瀵逛簬姣忎釜鏀诲嚮鍚戦噺锛堜互鍙婇€傜敤鐨勫井鏋舵瀯锛夛紝蹇呴』鍒嗗埆鑰冭檻瀹冧滑銆?
+鐩稿弽锛岃繖鏈川涓婃槸涓€娈佃缇庡寲鐨勬敞閲婏紝浣嗙瘒骞呰繃闀夸互鑷充簬
+鏃犳硶浣滀负鐪熸鐨勬敞閲婂瓨鍦ㄣ€傚洜姝わ紝褰撲笅涓€涓?CVE 鍑虹幇鏃讹紝鍐呮牳寮€鍙戣€呭彲浠?
+蹇€熷弬鑰冩湰鏂囷紝浠ュ洖椤炬垜浠疄闄呭湪鍋氫粈涔?
+浠ュ強涓轰粈涔堣繖鏍峰仛銆?
 
-自 2018 年以来，已经出现了许多与返回栈缓冲区（Return Stack Buffer，RSB）
-自 2018 年以来，已经出现了许多与返回栈
-缓冲区（RSB，Return Stack Buffer，有时在 AMD 上
-称为返回地址栈（RAS）或返回地址预测器（RAP））相关的 Spectre CVE。
-关于这些 CVE 以及如何缓解它们的信息分散在大量特定于微架构的文档中。
-关于这些 CVE 及其缓解方法的信息分散在
-大量与微体系结构相关的文档中。
-它力求尽可能简洁，只关注当前内核的缓解措施：RSB 相关的攻击向量是什么，以及
-本文档试图将所有相关信息汇总到
-一处，并阐明当前与 RSB 相关的
-缓解措施背后的缘由。本文力求尽可能简洁，仅聚焦于
-当前内核的缓解措施：有哪些与 RSB 相关的攻击途径，
-以及目前分别是如何缓解的？
-相反，这基本上是一个被美化的注释，但又太长而无法真正成为注释。因此，当下一个
-本文**并非**意在描述 RSB 机制如何运作或漏洞利用
-如何工作。有关这两者的更多细节可在下文
-的参考文献中找到。
-对于每个攻击向量（以及适用的微架构），必须分别考虑它们。
-相反，这本质上是一段被美化的注释，但篇幅过长以至于
-无法作为真正的注释存在。因此，当下一个 CVE 出现时，内核开发者可以
-快速参考本文，以回顾我们实际在做什么
-以及为什么这样做。
-
-总体而言，RSB 攻击有两类：RSB 投毒
-（Intel 和 AMD）以及 RSB 下溢（仅 Intel）。它们必须分别针对
-每种攻击途径（以及适用的微体系结构）
-进行考虑。
-RSB 投毒是 SpectreRSB [#spectre-rsb]_ 使用的一种技术，攻击者通过它投毒一个 RSB 条目，
+鎬讳綋鑰岃█锛孯SB 鏀诲嚮鏈変袱绫伙細RSB 鎶曟瘨
+锛圛ntel 鍜?AMD锛変互鍙?RSB 涓嬫孩锛堜粎 Intel锛夈€傚畠浠繀椤诲垎鍒拡瀵?
+姣忕鏀诲嚮閫斿緞锛堜互鍙婇€傜敤鐨勫井浣撶郴缁撴瀯锛?
+杩涜鑰冭檻銆?
+RSB 鎶曟瘨鏄?SpectreRSB [#spectre-rsb]_ 浣跨敤鐨勪竴绉嶆妧鏈紝鏀诲嚮鑰呴€氳繃瀹冩姇姣掍竴涓?RSB 鏉＄洰锛?
 ----
-不平衡的 CALL/RET 时，就可能发生这种情况。
-## RSB 投毒（Intel 和 AMD）
-- 所有攻击向量都可以潜在地通过在不信任域和信任域之间转换时，使用 RSB 填充序列
-  [#intel-rsb-filling]_ [#amd-rsb-filling]_ 冲刷掉任何被投毒的 RSB 条目来缓解。
+涓嶅钩琛＄殑 CALL/RET 鏃讹紝灏卞彲鑳藉彂鐢熻繖绉嶆儏鍐点€?
+## RSB 鎶曟瘨锛圛ntel 鍜?AMD锛?
+- 鎵€鏈夋敾鍑诲悜閲忛兘鍙互娼滃湪鍦伴€氳繃鍦ㄤ笉淇′换鍩熷拰淇′换鍩熶箣闂磋浆鎹㈡椂锛屼娇鐢?RSB 濉厖搴忓垪
+  [#intel-rsb-filling]_ [#amd-rsb-filling]_ 鍐插埛鎺変换浣曡鎶曟瘨鐨?RSB 鏉＄洰鏉ョ紦瑙ｃ€?
 #### SpectreRSB
 
 ```
-RSB 投毒是 SpectreRSB [#spectre-rsb]_ 使用的一种技术，攻击者
-通过污染 RSB 表项，使受害者的返回指令
-推测执行到攻击者控制的地址。当
-上下文切换或 VMEXIT 之后存在不平衡的 CALL/RET 时，就可能发生。
+RSB 鎶曟瘨鏄?SpectreRSB [#spectre-rsb]_ 浣跨敤鐨勪竴绉嶆妧鏈紝鏀诲嚮鑰?
+閫氳繃姹℃煋 RSB 琛ㄩ」锛屼娇鍙楀鑰呯殑杩斿洖鎸囦护
+鎺ㄦ祴鎵ц鍒版敾鍑昏€呮帶鍒剁殑鍦板潃銆傚綋
+涓婁笅鏂囧垏鎹㈡垨 VMEXIT 涔嬪悗瀛樺湪涓嶅钩琛＄殑 CALL/RET 鏃讹紝灏卞彲鑳藉彂鐢熴€?
 ```
-- 所有攻击途径都可以通过刷新
-  时，确保 RSB 被填充或清除：
+- 鎵€鏈夋敾鍑婚€斿緞閮藉彲浠ラ€氳繃鍒锋柊
+  鏃讹紝纭繚 RSB 琚～鍏呮垨娓呴櫎锛?
 
   - AMD:
-	在 Zen 4 及以上，IBPB（或使用的 SBPB [#amd-sbpb]_）会清除 RSB。
-	这由 CPUID 中的 IBPB_RET 指示 [#amd-ibpb-rsb]_。
+	鍦?Zen 4 鍙婁互涓婏紝IBPB锛堟垨浣跨敤鐨?SBPB [#amd-sbpb]_锛変細娓呴櫎 RSB銆?
+	杩欑敱 CPUID 涓殑 IBPB_RET 鎸囩ず [#amd-ibpb-rsb]_銆?
 
-	在 Zen < 4 上，除了 IBPB [#amd-ibpb-no-rsb]_ 之外，还必须
-	始终执行 RSB 填充序列 [#amd-rsb-filling]_。这由 X86_BUG_IBPB_NO_RET 指示。
+	鍦?Zen < 4 涓婏紝闄や簡 IBPB [#amd-ibpb-no-rsb]_ 涔嬪锛岃繕蹇呴』
+	濮嬬粓鎵ц RSB 濉厖搴忓垪 [#amd-rsb-filling]_銆傝繖鐢?X86_BUG_IBPB_NO_RET 鎸囩ず銆?
 
   - Intel:
-	IBPB 总是清除 RSB：
+	IBPB 鎬绘槸娓呴櫎 RSB锛?
 
-- 在上下文切换时，user->user 缓解需要确保
-	执行的间接分支的预测目标。此上下文中的间接分支一词包括 near return 指令，
-	因此这些预测目标可能来自 RSB。” [#intel-ibpb-rsb]_
+- 鍦ㄤ笂涓嬫枃鍒囨崲鏃讹紝user->user 缂撹В闇€瑕佺‘淇?
+	鎵ц鐨勯棿鎺ュ垎鏀殑棰勬祴鐩爣銆傛涓婁笅鏂囦腑鐨勯棿鎺ュ垎鏀竴璇嶅寘鎷?near return 鎸囦护锛?
+	鍥犳杩欎簺棰勬祴鐩爣鍙兘鏉ヨ嚜 RSB銆傗€?[#intel-ibpb-rsb]_
 
-  - AMD：
-  地址。由于 TASK_SIZE_MAX 保留的用户规范地址空间末尾的页面间隙，连非规范地址也
-  无法插入。指令获取时的 SMEP #PF 会阻止内核推测执行用户空间。
+  - AMD锛?
+  鍦板潃銆傜敱浜?TASK_SIZE_MAX 淇濈暀鐨勭敤鎴疯鑼冨湴鍧€绌洪棿鏈熬鐨勯〉闈㈤棿闅欙紝杩為潪瑙勮寖鍦板潃涔?
+  鏃犳硶鎻掑叆銆傛寚浠よ幏鍙栨椂鐨?SMEP #PF 浼氶樆姝㈠唴鏍告帹娴嬫墽琛岀敤鎴风┖闂淬€?
 
   - AMD:
-	“最后，被预测为 ‘ret’ 指令的分支，其预测目标来自返回地址预测器（RAP）。
-	AMD 建议软件使用 RAP 填充序列（[2] 中的缓解措施 V2-3）和/或管理模式执行保护
-	（SMEP），以确保 RAP 中的地址对推测执行是安全的。我们将这些缓解措施统称为
-  - Intel：
+	鈥滄渶鍚庯紝琚娴嬩负 鈥榬et鈥?鎸囦护鐨勫垎鏀紝鍏堕娴嬬洰鏍囨潵鑷繑鍥炲湴鍧€棰勬祴鍣紙RAP锛夈€?
+	AMD 寤鸿杞欢浣跨敤 RAP 濉厖搴忓垪锛圼2] 涓殑缂撹В鎺柦 V2-3锛夊拰/鎴栫鐞嗘ā寮忔墽琛屼繚鎶?
+	锛圫MEP锛夛紝浠ョ‘淇?RAP 涓殑鍦板潃瀵规帹娴嬫墽琛屾槸瀹夊叏鐨勩€傛垜浠皢杩欎簺缂撹В鎺柦缁熺О涓?
+  - Intel锛?
 
   - Intel:
-	“在带有增强型 IBRS 的处理器上，RSB 覆盖序列可能不足以阻止 near return 的
-	预测目标使用在特权较低预测模式下创建的 RSB 条目。软件可以通过启用 SMEP
-	（用于从用户模式到管理模式转换）并在 VM 退出期间设置 IA32_SPEC_CTRL.IBRS
-	来防止这种情况。” [#intel-smep-rsb]_
+	鈥滃湪甯︽湁澧炲己鍨?IBRS 鐨勫鐞嗗櫒涓婏紝RSB 瑕嗙洊搴忓垪鍙兘涓嶈冻浠ラ樆姝?near return 鐨?
+	棰勬祴鐩爣浣跨敤鍦ㄧ壒鏉冭緝浣庨娴嬫ā寮忎笅鍒涘缓鐨?RSB 鏉＄洰銆傝蒋浠跺彲浠ラ€氳繃鍚敤 SMEP
+	锛堢敤浜庝粠鐢ㄦ埛妯″紡鍒扮鐞嗘ā寮忚浆鎹級骞跺湪 VM 閫€鍑烘湡闂磋缃?IA32_SPEC_CTRL.IBRS
+	鏉ラ槻姝㈣繖绉嶆儏鍐点€傗€?[#intel-smep-rsb]_
 
-- 在 VMEXIT 时，guest->host 攻击由 eIBRS（以及必要时 PBRSB 缓解）缓解：
-- 在上下文切换时，user->kernel 攻击由 SMEP 阻止。用户
+- 鍦?VMEXIT 鏃讹紝guest->host 鏀诲嚮鐢?eIBRS锛堜互鍙婂繀瑕佹椂 PBRSB 缂撹В锛夌紦瑙ｏ細
+- 鍦ㄤ笂涓嬫枃鍒囨崲鏃讹紝user->kernel 鏀诲嚮鐢?SMEP 闃绘銆傜敤鎴?
   - AMD:
-	“当启用 Automatic IBRS 时，用于返回地址预测的返回地址栈会在 VMEXIT 时
-	被清除。” [#amd-eibrs-vmexit]_
+	鈥滃綋鍚敤 Automatic IBRS 鏃讹紝鐢ㄤ簬杩斿洖鍦板潃棰勬祴鐨勮繑鍥炲湴鍧€鏍堜細鍦?VMEXIT 鏃?
+	琚竻闄ゃ€傗€?[#amd-eibrs-vmexit]_
 
   - Intel:
-	“在带有增强型 IBRS 的处理器上，RSB 覆盖序列可能不足以阻止 near return 的
-  - AMD：
-	（用于从用户模式到管理模式转换）并在 VM 退出期间设置 IA32_SPEC_CTRL.IBRS
-	来防止这种情况。带有增强型 IBRS 的处理器仍然支持只在 OS/VMM 中设置 IBRS 的
-	使用模式，用于启用了 SMEP 的操作系统。为此，此类处理器将确保一旦设置了 IBRS，
-	即使在 VM 退出时未设置 IBRS，guest 行为也无法在 VM 退出后控制 RSB。”
+	鈥滃湪甯︽湁澧炲己鍨?IBRS 鐨勫鐞嗗櫒涓婏紝RSB 瑕嗙洊搴忓垪鍙兘涓嶈冻浠ラ樆姝?near return 鐨?
+  - AMD锛?
+	锛堢敤浜庝粠鐢ㄦ埛妯″紡鍒扮鐞嗘ā寮忚浆鎹級骞跺湪 VM 閫€鍑烘湡闂磋缃?IA32_SPEC_CTRL.IBRS
+	鏉ラ槻姝㈣繖绉嶆儏鍐点€傚甫鏈夊寮哄瀷 IBRS 鐨勫鐞嗗櫒浠嶇劧鏀寔鍙湪 OS/VMM 涓缃?IBRS 鐨?
+	浣跨敤妯″紡锛岀敤浜庡惎鐢ㄤ簡 SMEP 鐨勬搷浣滅郴缁熴€備负姝わ紝姝ょ被澶勭悊鍣ㄥ皢纭繚涓€鏃﹁缃簡 IBRS锛?
+	鍗充娇鍦?VM 閫€鍑烘椂鏈缃?IBRS锛実uest 琛屼负涔熸棤娉曞湪 VM 閫€鍑哄悗鎺у埗 RSB銆傗€?
 	[#intel-eibrs-vmexit]_
 
-    注意，某些 Intel CPU 容易受到后屏障返回栈缓冲区预测（Post-barrier Return
-    Stack Buffer Predictions，PBRSB）[#intel-pbrsb]_ 的影响，其中来自 guest 的最后
-  - Intel：
-    PBRSB 缓解。
+    娉ㄦ剰锛屾煇浜?Intel CPU 瀹规槗鍙楀埌鍚庡睆闅滆繑鍥炴爤缂撳啿鍖洪娴嬶紙Post-barrier Return
+    Stack Buffer Predictions锛孭BRSB锛塠#intel-pbrsb]_ 鐨勫奖鍝嶏紝鍏朵腑鏉ヨ嚜 guest 鐨勬渶鍚?
+  - Intel锛?
+    PBRSB 缂撹В銆?
 
 #### AMD RETBleed / SRSO / Branch Type Confusion
 
 
-在 AMD 上，被投毒的 RSB 条目也可能由 AMD RETBleed 变体 [#retbleed-paper]_ [#amd-btc]_
-或推测性返回栈溢出（Speculative Return Stack Overflow，SRSO）[#amd-srso]_
-- 在 VMEXIT 时，guest->host 攻击由 eIBRS（以及 PBRSB
-RET 的分支来保护自己。
+鍦?AMD 涓婏紝琚姇姣掔殑 RSB 鏉＄洰涔熷彲鑳界敱 AMD RETBleed 鍙樹綋 [#retbleed-paper]_ [#amd-btc]_
+鎴栨帹娴嬫€ц繑鍥炴爤婧㈠嚭锛圫peculative Return Stack Overflow锛孲RSO锛塠#amd-srso]_
+- 鍦?VMEXIT 鏃讹紝guest->host 鏀诲嚮鐢?eIBRS锛堜互鍙?PBRSB
+RET 鐨勫垎鏀潵淇濇姢鑷繁銆?
 
-  - AMD：
+  - AMD锛?
 
-## RSB 下溢（仅 Intel）
-
-
-  - Intel：
+## RSB 涓嬫孩锛堜粎 Intel锛?
 
 
-某些 Intel Skylake 代 CPU 容易受到 RETBleed 的 Intel 变体 [#retbleed-paper]_
-（返回栈缓冲区下溢，RSBU [#intel-rsbu]_）的影响。如果在 RSB 缓冲区由于 CALL/RET
-不匹配或从深层调用栈返回而为空时执行 RET，分支预测器可能会回退到使用分支目标
-缓冲区（Branch Target Buffer，BTB）。如果用户强制发生 BTB 冲突，那么 RET 就可能
-推测性地分支到用户控制的地址。
+  - Intel锛?
 
-- 注意，RSB 填充并不能完全缓解此问题。如果存在足够多的不平衡 RET，RSB 仍可能
-  下溢并回退到使用被投毒的 BTB 条目。
 
-- 在上下文切换时，user->user 下溢攻击由上下文切换时的条件 IBPB [#cond-ibpb]_ 缓解，
-  它有效地清除了 BTB：
+鏌愪簺 Intel Skylake 浠?CPU 瀹规槗鍙楀埌 RETBleed 鐨?Intel 鍙樹綋 [#retbleed-paper]_
+锛堣繑鍥炴爤缂撳啿鍖轰笅婧紝RSBU [#intel-rsbu]_锛夌殑褰卞搷銆傚鏋滃湪 RSB 缂撳啿鍖虹敱浜?CALL/RET
+涓嶅尮閰嶆垨浠庢繁灞傝皟鐢ㄦ爤杩斿洖鑰屼负绌烘椂鎵ц RET锛屽垎鏀娴嬪櫒鍙兘浼氬洖閫€鍒颁娇鐢ㄥ垎鏀洰鏍?
+缂撳啿鍖猴紙Branch Target Buffer锛孊TB锛夈€傚鏋滅敤鎴峰己鍒跺彂鐢?BTB 鍐茬獊锛岄偅涔?RET 灏卞彲鑳?
+鎺ㄦ祴鎬у湴鍒嗘敮鍒扮敤鎴锋帶鍒剁殑鍦板潃銆?
 
-  - “间接分支预测屏障（IBPB）是一种间接分支控制机制，它建立一个屏障，阻止在屏障
-    之前运行的软件控制同一逻辑处理器上在屏障之后执行的间接分支的预测目标。”
+- 娉ㄦ剰锛孯SB 濉厖骞朵笉鑳藉畬鍏ㄧ紦瑙ｆ闂銆傚鏋滃瓨鍦ㄨ冻澶熷鐨勪笉骞宠　 RET锛孯SB 浠嶅彲鑳?
+  涓嬫孩骞跺洖閫€鍒颁娇鐢ㄨ鎶曟瘨鐨?BTB 鏉＄洰銆?
+
+- 鍦ㄤ笂涓嬫枃鍒囨崲鏃讹紝user->user 涓嬫孩鏀诲嚮鐢变笂涓嬫枃鍒囨崲鏃剁殑鏉′欢 IBPB [#cond-ibpb]_ 缂撹В锛?
+  瀹冩湁鏁堝湴娓呴櫎浜?BTB锛?
+
+  - 鈥滈棿鎺ュ垎鏀娴嬪睆闅滐紙IBPB锛夋槸涓€绉嶉棿鎺ュ垎鏀帶鍒舵満鍒讹紝瀹冨缓绔嬩竴涓睆闅滐紝闃绘鍦ㄥ睆闅?
+    涔嬪墠杩愯鐨勮蒋浠舵帶鍒跺悓涓€閫昏緫澶勭悊鍣ㄤ笂鍦ㄥ睆闅滀箣鍚庢墽琛岀殑闂存帴鍒嗘敮鐨勯娴嬬洰鏍囥€傗€?
     [#intel-ibpb-btb]_
-#### AMD RETBleed / SRSO / 分支类型混淆
-- 在上下文切换和 VMEXIT 时，user->kernel 和 guest->host 的 RSB 下溢由 IBRS 或
-  eIBRS 缓解：
-在 AMD 上，被污染的 RSB 表项也可能由 AMD RETBleed
-变体 [#retbleed-paper]_ [#amd-btc]_ 或推测性返回栈
-溢出 [#amd-srso]_（Inception [#inception-paper]_）造成。内核
-通过将内核中每一条 RET 替换为跳转到单个
-安全 RET 来保护自身。
-  但是，请注意 eIBRS 和 IBRS 并不能缓解同模式（intra-mode）攻击。与下文的 RRSBA
+#### AMD RETBleed / SRSO / 鍒嗘敮绫诲瀷娣锋穯
+- 鍦ㄤ笂涓嬫枃鍒囨崲鍜?VMEXIT 鏃讹紝user->kernel 鍜?guest->host 鐨?RSB 涓嬫孩鐢?IBRS 鎴?
+  eIBRS 缂撹В锛?
+鍦?AMD 涓婏紝琚薄鏌撶殑 RSB 琛ㄩ」涔熷彲鑳界敱 AMD RETBleed
+鍙樹綋 [#retbleed-paper]_ [#amd-btc]_ 鎴栨帹娴嬫€ц繑鍥炴爤
+婧㈠嚭 [#amd-srso]_锛圛nception [#inception-paper]_锛夐€犳垚銆傚唴鏍?
+閫氳繃灏嗗唴鏍镐腑姣忎竴鏉?RET 鏇挎崲涓鸿烦杞埌鍗曚釜
+瀹夊叏 RET 鏉ヤ繚鎶よ嚜韬€?
+  浣嗘槸锛岃娉ㄦ剰 eIBRS 鍜?IBRS 骞朵笉鑳界紦瑙ｅ悓妯″紡锛坕ntra-mode锛夋敾鍑汇€備笌涓嬫枃鐨?RRSBA
 ----
 
-## RSB 下溢（仅 Intel）
-  结合）来跟踪内核返回，并在 RSB 接近为空时填充它。
+## RSB 涓嬫孩锛堜粎 Intel锛?
+  缁撳悎锛夋潵璺熻釜鍐呮牳杩斿洖锛屽苟鍦?RSB 鎺ヨ繎涓虹┖鏃跺～鍏呭畠銆?
 
-#### RSBA Alternate（RSBA，“Intel Retbleed”）
+#### RSBA Alternate锛圧SBA锛屸€淚ntel Retbleed鈥濓級
 
 
-某些 Intel Skylake 代 CPU 容易受到 Intel 变体的
-RETBleed [#retbleed-paper]_（返回栈缓冲区下溢
-[#intel-rsbu]_）影响。如果在 RSB 缓冲区因
-CALL/RET 不匹配或从深层调用栈返回而为空时执行 RET，
-分支预测器会回退到使用分支目标缓冲区（BTB）。如果用户
-强制制造 BTB 冲突，则 RET 可能会推测性地分支到
-用户控制的地址。
+鏌愪簺 Intel Skylake 浠?CPU 瀹规槗鍙楀埌 Intel 鍙樹綋鐨?
+RETBleed [#retbleed-paper]_锛堣繑鍥炴爤缂撳啿鍖轰笅婧?
+[#intel-rsbu]_锛夊奖鍝嶃€傚鏋滃湪 RSB 缂撳啿鍖哄洜
+CALL/RET 涓嶅尮閰嶆垨浠庢繁灞傝皟鐢ㄦ爤杩斿洖鑰屼负绌烘椂鎵ц RET锛?
+鍒嗘敮棰勬祴鍣ㄤ細鍥為€€鍒颁娇鐢ㄥ垎鏀洰鏍囩紦鍐插尯锛圔TB锛夈€傚鏋滅敤鎴?
+寮哄埗鍒堕€?BTB 鍐茬獊锛屽垯 RET 鍙兘浼氭帹娴嬫€у湴鍒嗘敮鍒?
+鐢ㄦ埛鎺у埗鐨勫湴鍧€銆?
 
-- 请注意，填充 RSB 并不能完全缓解此问题。如果
-[#intel-bhi]_ 影响时，RSB 下溢可用于同模式 BTI 攻击。这通过在进入内核时清除 BHB
-来缓解。
+- 璇锋敞鎰忥紝濉厖 RSB 骞朵笉鑳藉畬鍏ㄧ紦瑙ｆ闂銆傚鏋?
+[#intel-bhi]_ 褰卞搷鏃讹紝RSB 涓嬫孩鍙敤浜庡悓妯″紡 BTI 鏀诲嚮銆傝繖閫氳繃鍦ㄨ繘鍏ュ唴鏍告椂娓呴櫎 BHB
+鏉ョ紦瑙ｃ€?
 
-- 在上下文切换时，user->user 下溢攻击由
+- 鍦ㄤ笂涓嬫枃鍒囨崲鏃讹紝user->user 涓嬫孩鏀诲嚮鐢?
 
-- “当软件将 retpoline 用作针对 BHI 或同模式 BTI 的缓解措施，且处理器既枚举了
-  RRSBA 又枚举了 RRSBA_DIS 控制位时，它应禁用此行为。” [#intel-retpoline-rrsba]_
-  - “间接分支预测器屏障（IBPB）是一种间接分支
+- 鈥滃綋杞欢灏?retpoline 鐢ㄤ綔閽堝 BHI 鎴栧悓妯″紡 BTI 鐨勭紦瑙ｆ帾鏂斤紝涓斿鐞嗗櫒鏃㈡灇涓句簡
+  RRSBA 鍙堟灇涓句簡 RRSBA_DIS 鎺у埗浣嶆椂锛屽畠搴旂鐢ㄦ琛屼负銆傗€?[#intel-retpoline-rrsba]_
+  - 鈥滈棿鎺ュ垎鏀娴嬪櫒灞忛殰锛圛BPB锛夋槸涓€绉嶉棿鎺ュ垎鏀?
 ----
 
-## 参考文献
+## 鍙傝€冩枃鐚?

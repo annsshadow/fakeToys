@@ -1,31 +1,31 @@
-## Samsung S5P/EXYNOS4 FIMC 驱动
+﻿## Samsung S5P/EXYNOS4 FIMC 椹卞姩
 
-本文档面向媒体子系统开发者，介绍 Samsung S5P/Exynos4 平台 FIMC（数码图像处理控制器）驱动的代码组织与文件划分，列出媒体设备、相机采集、MIPI-CSI2 接收器与视频后处理器等模块对应的源文件，便于驱动开发与维护时快速定位实现。
+鏈枃妗ｉ潰鍚戝獟浣撳瓙绯荤粺寮€鍙戣€咃紝浠嬬粛 Samsung S5P/Exynos4 骞冲彴 FIMC锛堟暟鐮佸浘鍍忓鐞嗘帶鍒跺櫒锛夐┍鍔ㄧ殑浠ｇ爜缁勭粐涓庢枃浠跺垝鍒嗭紝鍒楀嚭濯掍綋璁惧銆佺浉鏈洪噰闆嗐€丮IPI-CSI2 鎺ユ敹鍣ㄤ笌瑙嗛鍚庡鐞嗗櫒绛夋ā鍧楀搴旂殑婧愭枃浠讹紝渚夸簬椹卞姩寮€鍙戜笌缁存姢鏃跺揩閫熷畾浣嶅疄鐜般€?
 
 
 
 Copyright |copy| 2012 - 2013 Samsung Electronics Co., Ltd.
 
-### 文件划分
+### 鏂囦欢鍒掑垎
 
 
-- 媒体设备驱动
+- 濯掍綋璁惧椹卞姩
 
   drivers/media/platform/samsung/exynos4-is/media-dev.[ch]
 
-- 相机采集视频设备驱动
+- 鐩告満閲囬泦瑙嗛璁惧椹卞姩
 
   drivers/media/platform/samsung/exynos4-is/fimc-capture.c
 
-- MIPI-CSI2 接收器子设备
+- MIPI-CSI2 鎺ユ敹鍣ㄥ瓙璁惧
 
   drivers/media/platform/samsung/exynos4-is/mipi-csis.[ch]
 
-- 视频后处理器（mem-to-mem）
+- 瑙嗛鍚庡鐞嗗櫒锛坢em-to-mem锛?
 
   drivers/media/platform/samsung/exynos4-is/fimc-core.c
 
-- 公共文件
+- 鍏叡鏂囦欢
 
   drivers/media/platform/samsung/exynos4-is/fimc-core.h
   drivers/media/platform/samsung/exynos4-is/fimc-reg.h

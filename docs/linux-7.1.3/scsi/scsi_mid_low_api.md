@@ -1,56 +1,56 @@
-
-## SCSI 中间层 - 底层驱动接口
-
-
-## 简介
-
-本文档概述了 Linux SCSI 中间层（mid level）与 SCSI 底层驱动（lower level driver）之间的接口。底层驱动（LLD）也被称为主机总线适配器（HBA）驱动和主机驱动（HD）。在此语境下，"主机（host）"是计算机 IO 总线（例如 PCI 或 ISA）与 SCSI 传输层上单个 SCSI 发起者端口之间的桥。发起者（"initiator"）端口（SCSI 术语，参见 SAM-3，网址 http://www.t10.org）向"目标（target）"SCSI 端口（例如磁盘）发送 SCSI 命令。在一个运行中的系统中可以存在许多 LLD，但每种硬件类型只能有一个。大多数 LLD 可以控制一个或多个 SCSI HBA。某些 HBA 包含多个主机。
-
-在某些情况下，SCSI 传输层是一条在 Linux 中已经拥有自身子系统的外部总线（例如 USB 和 ieee1394）。在这种情况下，SCSI 子系统的 LLD 是通往另一个驱动子系统的软件桥。例子有 usb-storage 驱动（位于 drivers/usb/storage 目录）以及 ieee1394/sbp2 驱动（位于 drivers/ieee1394 目录）。
-
-例如，aic7xxx LLD 控制基于该公司 7xxx 系列芯片的 Adaptec SCSI 并行接口（SPI）控制器。aic7xxx LLD 可以编译进内核或作为模块加载。一个 Linux 系统中只能有一个 aic7xxx LLD 在运行，但它可能控制许多 HBA。这些 HBA 可能位于 PCI 子卡上，或集成在主板上（或两者兼有）。某些基于 aic7xxx 的 HBA 是双控制器，因此代表两个主机。像大多数现代 HBA 一样，每个 aic7xxx 主机都有自己的 PCI 设备地址。[SCSI 主机与 PCI 设备之间的一一对应关系很常见，但并非必需（例如 ISA 适配器）。]
-
-SCSI 中间层将 LLD 与 SCSI 上层驱动和块层等其他层隔离开来。本文档的此版本大致对应 Linux 内核版本 2.6.8。
+﻿锘?
+## SCSI 涓棿灞?- 搴曞眰椹卞姩鎺ュ彛
 
 
-## 文档
+## 绠€浠?
 
-内核源码树中包含一个 SCSI 文档目录，通常是 Documentation/scsi。大多数文档采用 reStructuredText 格式。本文件名为 scsi_mid_low_api.rst，可在该目录中找到。本文档较新的副本可在 https://docs.kernel.org/scsi/scsi_mid_low_api.html 找到。许多 LLD 在 Documentation/scsi 中有文档（例如 aic7xxx.rst）。SCSI 中间层在 scsi.rst 中有简要说明，其中包含描述 Linux 内核 2.4 系列 SCSI 子系统的文档的 URL。该目录中有两份上层驱动的文档：st.rst（SCSI 磁带驱动）和 scsi-generic.rst（针对 sg 驱动）。
+鏈枃妗ｆ杩颁簡 Linux SCSI 涓棿灞傦紙mid level锛変笌 SCSI 搴曞眰椹卞姩锛坙ower level driver锛変箣闂寸殑鎺ュ彛銆傚簳灞傞┍鍔紙LLD锛変篃琚О涓轰富鏈烘€荤嚎閫傞厤鍣紙HBA锛夐┍鍔ㄥ拰涓绘満椹卞姩锛圚D锛夈€傚湪姝よ澧冧笅锛?涓绘満锛坔ost锛?鏄绠楁満 IO 鎬荤嚎锛堜緥濡?PCI 鎴?ISA锛変笌 SCSI 浼犺緭灞備笂鍗曚釜 SCSI 鍙戣捣鑰呯鍙ｄ箣闂寸殑妗ャ€傚彂璧疯€咃紙"initiator"锛夌鍙ｏ紙SCSI 鏈锛屽弬瑙?SAM-3锛岀綉鍧€ http://www.t10.org锛夊悜"鐩爣锛坱arget锛?SCSI 绔彛锛堜緥濡傜鐩橈級鍙戦€?SCSI 鍛戒护銆傚湪涓€涓繍琛屼腑鐨勭郴缁熶腑鍙互瀛樺湪璁稿 LLD锛屼絾姣忕纭欢绫诲瀷鍙兘鏈変竴涓€傚ぇ澶氭暟 LLD 鍙互鎺у埗涓€涓垨澶氫釜 SCSI HBA銆傛煇浜?HBA 鍖呭惈澶氫釜涓绘満銆?
 
-某些 LLD 的文档（或 URL）可以在 C 源码中找到，或者在与 C 源码相同的目录中找到。例如，要找到关于 USB 大容量存储驱动的 URL，请查看 /usr/src/linux/drivers/usb/storage 目录。
+鍦ㄦ煇浜涙儏鍐典笅锛孲CSI 浼犺緭灞傛槸涓€鏉″湪 Linux 涓凡缁忔嫢鏈夎嚜韬瓙绯荤粺鐨勫閮ㄦ€荤嚎锛堜緥濡?USB 鍜?ieee1394锛夈€傚湪杩欑鎯呭喌涓嬶紝SCSI 瀛愮郴缁熺殑 LLD 鏄€氬線鍙︿竴涓┍鍔ㄥ瓙绯荤粺鐨勮蒋浠舵ˉ銆備緥瀛愭湁 usb-storage 椹卞姩锛堜綅浜?drivers/usb/storage 鐩綍锛変互鍙?ieee1394/sbp2 椹卞姩锛堜綅浜?drivers/ieee1394 鐩綍锛夈€?
+
+渚嬪锛宎ic7xxx LLD 鎺у埗鍩轰簬璇ュ叕鍙?7xxx 绯诲垪鑺墖鐨?Adaptec SCSI 骞惰鎺ュ彛锛圫PI锛夋帶鍒跺櫒銆俛ic7xxx LLD 鍙互缂栬瘧杩涘唴鏍告垨浣滀负妯″潡鍔犺浇銆備竴涓?Linux 绯荤粺涓彧鑳芥湁涓€涓?aic7xxx LLD 鍦ㄨ繍琛岋紝浣嗗畠鍙兘鎺у埗璁稿 HBA銆傝繖浜?HBA 鍙兘浣嶄簬 PCI 瀛愬崱涓婏紝鎴栭泦鎴愬湪涓绘澘涓婏紙鎴栦袱鑰呭吋鏈夛級銆傛煇浜涘熀浜?aic7xxx 鐨?HBA 鏄弻鎺у埗鍣紝鍥犳浠ｈ〃涓や釜涓绘満銆傚儚澶у鏁扮幇浠?HBA 涓€鏍凤紝姣忎釜 aic7xxx 涓绘満閮芥湁鑷繁鐨?PCI 璁惧鍦板潃銆俒SCSI 涓绘満涓?PCI 璁惧涔嬮棿鐨勪竴涓€瀵瑰簲鍏崇郴寰堝父瑙侊紝浣嗗苟闈炲繀闇€锛堜緥濡?ISA 閫傞厤鍣級銆俔
+
+SCSI 涓棿灞傚皢 LLD 涓?SCSI 涓婂眰椹卞姩鍜屽潡灞傜瓑鍏朵粬灞傞殧绂诲紑鏉ャ€傛湰鏂囨。鐨勬鐗堟湰澶ц嚧瀵瑰簲 Linux 鍐呮牳鐗堟湰 2.6.8銆?
 
 
-## 驱动结构
+## 鏂囨。
 
-传统上，SCSI 子系统的 LLD 在 drivers/scsi 目录中至少有两份文件。例如，名为 "xyz" 的驱动有一个头文件 "xyz.h" 和一个源文件 "xyz.c"。[实际上没有充分的理由不能把所有内容放在一个文件中；头文件是多余的。]一些已移植到多个操作系统的驱动有超过两份文件。例如 aic7xxx 驱动有为通用代码和特定于操作系统的代码（例如 FreeBSD 和 Linux）分别准备的独立文件。这类驱动往往在 drivers/scsi 目录下拥有自己的子目录。
+鍐呮牳婧愮爜鏍戜腑鍖呭惈涓€涓?SCSI 鏂囨。鐩綍锛岄€氬父鏄?Documentation/scsi銆傚ぇ澶氭暟鏂囨。閲囩敤 reStructuredText 鏍煎紡銆傛湰鏂囦欢鍚嶄负 scsi_mid_low_api.rst锛屽彲鍦ㄨ鐩綍涓壘鍒般€傛湰鏂囨。杈冩柊鐨勫壇鏈彲鍦?https://docs.kernel.org/scsi/scsi_mid_low_api.html 鎵惧埌銆傝澶?LLD 鍦?Documentation/scsi 涓湁鏂囨。锛堜緥濡?aic7xxx.rst锛夈€係CSI 涓棿灞傚湪 scsi.rst 涓湁绠€瑕佽鏄庯紝鍏朵腑鍖呭惈鎻忚堪 Linux 鍐呮牳 2.4 绯诲垪 SCSI 瀛愮郴缁熺殑鏂囨。鐨?URL銆傝鐩綍涓湁涓や唤涓婂眰椹卞姩鐨勬枃妗ｏ細st.rst锛圫CSI 纾佸甫椹卞姩锛夊拰 scsi-generic.rst锛堥拡瀵?sg 椹卞姩锛夈€?
 
-向 Linux 添加一个新的 LLD 时，以下文件（位于 drivers/scsi 目录中）需要加以注意：Makefile 和 Kconfig。最好是研究现有 LLD 是如何组织的。
+鏌愪簺 LLD 鐨勬枃妗ｏ紙鎴?URL锛夊彲浠ュ湪 C 婧愮爜涓壘鍒帮紝鎴栬€呭湪涓?C 婧愮爜鐩稿悓鐨勭洰褰曚腑鎵惧埌銆備緥濡傦紝瑕佹壘鍒板叧浜?USB 澶у閲忓瓨鍌ㄩ┍鍔ㄧ殑 URL锛岃鏌ョ湅 /usr/src/linux/drivers/usb/storage 鐩綍銆?
 
-随着 2.5 系列开发内核演进为 2.6 系列生产内核，此接口也在发生变化。其中一个例子就是驱动初始化代码，现在有两种模型可用。较旧的模型类似于 Linux 2.4 系列中的做法，基于在 HBA 驱动加载时检测到的主机。这被称为"被动（passive）"初始化模型。较新的模型允许在 LLD 的生命周期内热插拔（以及热拔）HBA，被称为"热插拔（hotplug）"初始化模型。较新的模型更受青睐，因为它既能处理永久连接的传统 SCSI 设备，也能处理热插拔的现代"SCSI"设备（例如通过 USB 或 IEEE 1394 连接的数码相机）。两种初始化模型将在后续各节中讨论。
 
-LLD 通过以下几种方式与 SCSI 子系统交互：
+## 椹卞姩缁撴瀯
 
-  a) 直接调用中间层提供的函数
-  b) 向中间层提供的注册函数传入一组函数指针。中间层随后会在将来的某个时刻调用这些函数。LLD 需要提供这些函数的实现。
-  c) 直接访问由中间层维护的知名数据结构实例
+浼犵粺涓婏紝SCSI 瀛愮郴缁熺殑 LLD 鍦?drivers/scsi 鐩綍涓嚦灏戞湁涓や唤鏂囦欢銆備緥濡傦紝鍚嶄负 "xyz" 鐨勯┍鍔ㄦ湁涓€涓ご鏂囦欢 "xyz.h" 鍜屼竴涓簮鏂囦欢 "xyz.c"銆俒瀹為檯涓婃病鏈夊厖鍒嗙殑鐞嗙敱涓嶈兘鎶婃墍鏈夊唴瀹规斁鍦ㄤ竴涓枃浠朵腑锛涘ご鏂囦欢鏄浣欑殑銆俔涓€浜涘凡绉绘鍒板涓搷浣滅郴缁熺殑椹卞姩鏈夎秴杩囦袱浠芥枃浠躲€備緥濡?aic7xxx 椹卞姩鏈変负閫氱敤浠ｇ爜鍜岀壒瀹氫簬鎿嶄綔绯荤粺鐨勪唬鐮侊紙渚嬪 FreeBSD 鍜?Linux锛夊垎鍒噯澶囩殑鐙珛鏂囦欢銆傝繖绫婚┍鍔ㄥ線寰€鍦?drivers/scsi 鐩綍涓嬫嫢鏈夎嚜宸辩殑瀛愮洰褰曘€?
 
-a) 组中的函数在下文名为"中间层提供的函数"的小节中列出。
+鍚?Linux 娣诲姞涓€涓柊鐨?LLD 鏃讹紝浠ヤ笅鏂囦欢锛堜綅浜?drivers/scsi 鐩綍涓級闇€瑕佸姞浠ユ敞鎰忥細Makefile 鍜?Kconfig銆傛渶濂芥槸鐮旂┒鐜版湁 LLD 鏄浣曠粍缁囩殑銆?
 
-b) 组中的函数在下文名为"接口函数"的小节中列出。它们的函数指针被放置到 "struct scsi_host_template" 的成员中，该结构的一个实例会被传入 scsi_host_alloc()。对于那些 LLD 不希望提供的接口函数，应在 struct scsi_host_template 的相应成员中填入 NULL。在文件作用域定义 struct scsi_host_template 实例会导致未显式初始化的函数指针成员被填入 NULL。
+闅忕潃 2.5 绯诲垪寮€鍙戝唴鏍告紨杩涗负 2.6 绯诲垪鐢熶骇鍐呮牳锛屾鎺ュ彛涔熷湪鍙戠敓鍙樺寲銆傚叾涓竴涓緥瀛愬氨鏄┍鍔ㄥ垵濮嬪寲浠ｇ爜锛岀幇鍦ㄦ湁涓ょ妯″瀷鍙敤銆傝緝鏃х殑妯″瀷绫讳技浜?Linux 2.4 绯诲垪涓殑鍋氭硶锛屽熀浜庡湪 HBA 椹卞姩鍔犺浇鏃舵娴嬪埌鐨勪富鏈恒€傝繖琚О涓?琚姩锛坧assive锛?鍒濆鍖栨ā鍨嬨€傝緝鏂扮殑妯″瀷鍏佽鍦?LLD 鐨勭敓鍛藉懆鏈熷唴鐑彃鎷旓紙浠ュ強鐑嫈锛塇BA锛岃绉颁负"鐑彃鎷旓紙hotplug锛?鍒濆鍖栨ā鍨嬨€傝緝鏂扮殑妯″瀷鏇村彈闈掔潗锛屽洜涓哄畠鏃㈣兘澶勭悊姘镐箙杩炴帴鐨勪紶缁?SCSI 璁惧锛屼篃鑳藉鐞嗙儹鎻掓嫈鐨勭幇浠?SCSI"璁惧锛堜緥濡傞€氳繃 USB 鎴?IEEE 1394 杩炴帴鐨勬暟鐮佺浉鏈猴級銆備袱绉嶅垵濮嬪寲妯″瀷灏嗗湪鍚庣画鍚勮妭涓璁恒€?
 
-c) 组中的用法应当谨慎处理，尤其是在"热插拔"环境中。LLD 应当了解与中间层和其他层共享的实例的生命周期。
+LLD 閫氳繃浠ヤ笅鍑犵鏂瑰紡涓?SCSI 瀛愮郴缁熶氦浜掞細
 
-LLD 内定义的所有函数以及文件作用域定义的所有数据都应为 static。例如，名为 "xxx" 的 LLD 中的 sdev_init() 函数可以定义为
+  a) 鐩存帴璋冪敤涓棿灞傛彁渚涚殑鍑芥暟
+  b) 鍚戜腑闂村眰鎻愪緵鐨勬敞鍐屽嚱鏁颁紶鍏ヤ竴缁勫嚱鏁版寚閽堛€備腑闂村眰闅忓悗浼氬湪灏嗘潵鐨勬煇涓椂鍒昏皟鐢ㄨ繖浜涘嚱鏁般€侺LD 闇€瑕佹彁渚涜繖浜涘嚱鏁扮殑瀹炵幇銆?
+  c) 鐩存帴璁块棶鐢变腑闂村眰缁存姢鐨勭煡鍚嶆暟鎹粨鏋勫疄渚?
+
+a) 缁勪腑鐨勫嚱鏁板湪涓嬫枃鍚嶄负"涓棿灞傛彁渚涚殑鍑芥暟"鐨勫皬鑺備腑鍒楀嚭銆?
+
+b) 缁勪腑鐨勫嚱鏁板湪涓嬫枃鍚嶄负"鎺ュ彛鍑芥暟"鐨勫皬鑺備腑鍒楀嚭銆傚畠浠殑鍑芥暟鎸囬拡琚斁缃埌 "struct scsi_host_template" 鐨勬垚鍛樹腑锛岃缁撴瀯鐨勪竴涓疄渚嬩細琚紶鍏?scsi_host_alloc()銆傚浜庨偅浜?LLD 涓嶅笇鏈涙彁渚涚殑鎺ュ彛鍑芥暟锛屽簲鍦?struct scsi_host_template 鐨勭浉搴旀垚鍛樹腑濉叆 NULL銆傚湪鏂囦欢浣滅敤鍩熷畾涔?struct scsi_host_template 瀹炰緥浼氬鑷存湭鏄惧紡鍒濆鍖栫殑鍑芥暟鎸囬拡鎴愬憳琚～鍏?NULL銆?
+
+c) 缁勪腑鐨勭敤娉曞簲褰撹皑鎱庡鐞嗭紝灏ゅ叾鏄湪"鐑彃鎷?鐜涓€侺LD 搴斿綋浜嗚В涓庝腑闂村眰鍜屽叾浠栧眰鍏变韩鐨勫疄渚嬬殑鐢熷懡鍛ㄦ湡銆?
+
+LLD 鍐呭畾涔夌殑鎵€鏈夊嚱鏁颁互鍙婃枃浠朵綔鐢ㄥ煙瀹氫箟鐨勬墍鏈夋暟鎹兘搴斾负 static銆備緥濡傦紝鍚嶄负 "xxx" 鐨?LLD 涓殑 sdev_init() 鍑芥暟鍙互瀹氫箟涓?
 `static int xxx_sdev_init(struct scsi_device ** sdev) { /** code */ }`
 
 
-## 热插拔初始化模型
+## 鐑彃鎷斿垵濮嬪寲妯″瀷
 
-在此模型中，LLD 控制着 SCSI 主机何时被引入和从 SCSI 子系统移除。主机最早可以在驱动初始化时引入，最晚可以在驱动关闭时移除。通常，驱动会响应一个 sysfs probe() 回调，该回调表示检测到一个 HBA。在确认新设备是 LLD 想要控制的设备后，LLD 会初始化该 HBA，然后向 SCSI 中间层注册一个新主机。
+鍦ㄦ妯″瀷涓紝LLD 鎺у埗鐫€ SCSI 涓绘満浣曟椂琚紩鍏ュ拰浠?SCSI 瀛愮郴缁熺Щ闄ゃ€備富鏈烘渶鏃╁彲浠ュ湪椹卞姩鍒濆鍖栨椂寮曞叆锛屾渶鏅氬彲浠ュ湪椹卞姩鍏抽棴鏃剁Щ闄ゃ€傞€氬父锛岄┍鍔ㄤ細鍝嶅簲涓€涓?sysfs probe() 鍥炶皟锛岃鍥炶皟琛ㄧず妫€娴嬪埌涓€涓?HBA銆傚湪纭鏂拌澶囨槸 LLD 鎯宠鎺у埗鐨勮澶囧悗锛孡LD 浼氬垵濮嬪寲璇?HBA锛岀劧鍚庡悜 SCSI 涓棿灞傛敞鍐屼竴涓柊涓绘満銆?
 
-在 LLD 初始化期间，驱动应当向它所期望找到 HBA 的相应 IO 总线（例如 PCI 总线）注册自身。这大概可以通过 sysfs 完成。任何驱动参数（尤其是那些在驱动加载后仍可写的参数）也可以在这一步通过 sysfs 注册。SCSI 中间层是在 LLD 注册其第一个 HBA 时才首次得知该 LLD 的存在。
+鍦?LLD 鍒濆鍖栨湡闂达紝椹卞姩搴斿綋鍚戝畠鎵€鏈熸湜鎵惧埌 HBA 鐨勭浉搴?IO 鎬荤嚎锛堜緥濡?PCI 鎬荤嚎锛夋敞鍐岃嚜韬€傝繖澶ф鍙互閫氳繃 sysfs 瀹屾垚銆備换浣曢┍鍔ㄥ弬鏁帮紙灏ゅ叾鏄偅浜涘湪椹卞姩鍔犺浇鍚庝粛鍙啓鐨勫弬鏁帮級涔熷彲浠ュ湪杩欎竴姝ラ€氳繃 sysfs 娉ㄥ唽銆係CSI 涓棿灞傛槸鍦?LLD 娉ㄥ唽鍏剁涓€涓?HBA 鏃舵墠棣栨寰楃煡璇?LLD 鐨勫瓨鍦ㄣ€?
 
-在稍后的某个时刻，LLD 得知一个 HBA，接下来是 LLD 与中间层之间典型的调用序列。此示例展示了中间层为新引入的 HBA 扫描出 3
+鍦ㄧ◢鍚庣殑鏌愪釜鏃跺埢锛孡LD 寰楃煡涓€涓?HBA锛屾帴涓嬫潵鏄?LLD 涓庝腑闂村眰涔嬮棿鍏稿瀷鐨勮皟鐢ㄥ簭鍒椼€傛绀轰緥灞曠ず浜嗕腑闂村眰涓烘柊寮曞叆鐨?HBA 鎵弿鍑?3
 
 ```
 	HBA PROBE: assume 2 SCSI devices found in scan
@@ -75,9 +75,9 @@ LLD 内定义的所有函数以及文件作用域定义的所有数据都应为 
 
 ```
 
-如果 LLD 想调整默认队列设置，可以在其 sdev_configure() 例程中调用 scsi_change_queue_depth()。
+濡傛灉 LLD 鎯宠皟鏁撮粯璁ら槦鍒楄缃紝鍙互鍦ㄥ叾 sdev_configure() 渚嬬▼涓皟鐢?scsi_change_queue_depth()銆?
 
-当 HBA 被移除时，这可能是与 LLD 模块被卸载（例如使用 "rmmod" 命令）相关的有序关闭的一部分，也可能是响应 sysfs 的 remove() 回调被调用所表示的"热拔"。无论哪种情况，序列都是
+褰?HBA 琚Щ闄ゆ椂锛岃繖鍙兘鏄笌 LLD 妯″潡琚嵏杞斤紙渚嬪浣跨敤 "rmmod" 鍛戒护锛夌浉鍏崇殑鏈夊簭鍏抽棴鐨勪竴閮ㄥ垎锛屼篃鍙兘鏄搷搴?sysfs 鐨?remove() 鍥炶皟琚皟鐢ㄦ墍琛ㄧず鐨?鐑嫈"銆傛棤璁哄摢绉嶆儏鍐碉紝搴忓垪閮芥槸
 
 ```
 	    HBA REMOVE: assume 2 SCSI devices attached
@@ -91,12 +91,12 @@ LLD 内定义的所有函数以及文件作用域定义的所有数据都应为 
 
 ```
 
-LLD 跟踪 struct Scsi_Host 实例（指针由 scsi_host_alloc() 返回）可能是有用的。此类实例由中间层"拥有"。当引用计数降为零时，struct Scsi_Host 实例会在 scsi_host_put() 中被释放。
+LLD 璺熻釜 struct Scsi_Host 瀹炰緥锛堟寚閽堢敱 scsi_host_alloc() 杩斿洖锛夊彲鑳芥槸鏈夌敤鐨勩€傛绫诲疄渚嬬敱涓棿灞?鎷ユ湁"銆傚綋寮曠敤璁℃暟闄嶄负闆舵椂锛宻truct Scsi_Host 瀹炰緥浼氬湪 scsi_host_put() 涓閲婃斁銆?
 
-热拔一个控制着在处理已挂载文件系统上的 SCSI 命令的磁盘的 HBA，是一种有趣的情形。中间层正在引入引用计数逻辑来应对所涉及的许多问题。请参阅下文关于引用计数的小节。
+鐑嫈涓€涓帶鍒剁潃鍦ㄥ鐞嗗凡鎸傝浇鏂囦欢绯荤粺涓婄殑 SCSI 鍛戒护鐨勭鐩樼殑 HBA锛屾槸涓€绉嶆湁瓒ｇ殑鎯呭舰銆備腑闂村眰姝ｅ湪寮曞叆寮曠敤璁℃暟閫昏緫鏉ュ簲瀵规墍娑夊強鐨勮澶氶棶棰樸€傝鍙傞槄涓嬫枃鍏充簬寮曠敤璁℃暟鐨勫皬鑺傘€?
 
 
-热插拔的概念可以扩展到 SCSI 设备。当前，当添加一个 HBA 时，scsi_scan_host() 函数会触发对连接到该 HBA 的 SCSI 传输层的 SCSI 设备扫描。在较新的 SCSI 传输层上，HBA 可能在扫描完成_之后_才得知一个新的 SCSI 设备。
+鐑彃鎷旂殑姒傚康鍙互鎵╁睍鍒?SCSI 璁惧銆傚綋鍓嶏紝褰撴坊鍔犱竴涓?HBA 鏃讹紝scsi_scan_host() 鍑芥暟浼氳Е鍙戝杩炴帴鍒拌 HBA 鐨?SCSI 浼犺緭灞傜殑 SCSI 璁惧鎵弿銆傚湪杈冩柊鐨?SCSI 浼犺緭灞備笂锛孒BA 鍙兘鍦ㄦ壂鎻忓畬鎴恄涔嬪悗_鎵嶅緱鐭ヤ竴涓柊鐨?SCSI 璁惧銆?
 
 ```
 		    SCSI DEVICE hotplug
@@ -109,7 +109,7 @@ LLD 跟踪 struct Scsi_Host 实例（指针由 scsi_host_alloc() 返回）可能
 
 ```
 
-类似地，LLD 可能会得知一个 SCSI 设备已被移除（拔出），或者到它的连接已被中断。一些现有的 SCSI 传输层（例如 SPI）可能直到后续 SCSI 命令失败才会得知 SCSI 设备已被移除，而该命令失败很可能会导致中间层将该设备置为离线。检测到 SCSI 设备被移除的 LLD 可以主动将其从
+绫讳技鍦帮紝LLD 鍙兘浼氬緱鐭ヤ竴涓?SCSI 璁惧宸茶绉婚櫎锛堟嫈鍑猴級锛屾垨鑰呭埌瀹冪殑杩炴帴宸茶涓柇銆備竴浜涚幇鏈夌殑 SCSI 浼犺緭灞傦紙渚嬪 SPI锛夊彲鑳界洿鍒板悗缁?SCSI 鍛戒护澶辫触鎵嶄細寰楃煡 SCSI 璁惧宸茶绉婚櫎锛岃€岃鍛戒护澶辫触寰堝彲鑳戒細瀵艰嚧涓棿灞傚皢璇ヨ澶囩疆涓虹绾裤€傛娴嬪埌 SCSI 璁惧琚Щ闄ょ殑 LLD 鍙互涓诲姩灏嗗叾浠?
 
 ```
 		    SCSI DEVICE hot unplug
@@ -121,59 +121,59 @@ LLD 跟踪 struct Scsi_Host 实例（指针由 scsi_host_alloc() 返回）可能
 
 ```
 
-LLD 跟踪 struct scsi_device 实例（指针作为 sdev_init() 和 sdev_configure() 回调的参数传入）可能是有用的。此类实例由中间层"拥有"。struct scsi_device 实例会在 sdev_destroy() 之后被释放。
+LLD 璺熻釜 struct scsi_device 瀹炰緥锛堟寚閽堜綔涓?sdev_init() 鍜?sdev_configure() 鍥炶皟鐨勫弬鏁颁紶鍏ワ級鍙兘鏄湁鐢ㄧ殑銆傛绫诲疄渚嬬敱涓棿灞?鎷ユ湁"銆俿truct scsi_device 瀹炰緥浼氬湪 sdev_destroy() 涔嬪悗琚噴鏀俱€?
 
 
-## 引用计数
+## 寮曠敤璁℃暟
 
-Scsi_Host 结构已经添加了引用计数基础设施。这实际上将 struct Scsi_Host 实例的所有权分散到使用它们的各个 SCSI 层。此前此类实例完全由中间层拥有。LLD 通常不需要直接操作这些引用计数，但在某些情况下可能需要。
+Scsi_Host 缁撴瀯宸茬粡娣诲姞浜嗗紩鐢ㄨ鏁板熀纭€璁炬柦銆傝繖瀹為檯涓婂皢 struct Scsi_Host 瀹炰緥鐨勬墍鏈夋潈鍒嗘暎鍒颁娇鐢ㄥ畠浠殑鍚勪釜 SCSI 灞傘€傛鍓嶆绫诲疄渚嬪畬鍏ㄧ敱涓棿灞傛嫢鏈夈€侺LD 閫氬父涓嶉渶瑕佺洿鎺ユ搷浣滆繖浜涘紩鐢ㄨ鏁帮紝浣嗗湪鏌愪簺鎯呭喌涓嬪彲鑳介渶瑕併€?
 
-与 struct Scsi_Host 相关的、值得关注的引用计数函数有 3 个：
+涓?struct Scsi_Host 鐩稿叧鐨勩€佸€煎緱鍏虫敞鐨勫紩鐢ㄨ鏁板嚱鏁版湁 3 涓細
 
-  - scsi_host_alloc()：
-	返回一个指向新 struct Scsi_Host 实例的指针，其引用计数 ^^ 被设为 1
+  - scsi_host_alloc()锛?
+	杩斿洖涓€涓寚鍚戞柊 struct Scsi_Host 瀹炰緥鐨勬寚閽堬紝鍏跺紩鐢ㄨ鏁?^^ 琚涓?1
 
-  - scsi_host_get()：
-	将给定实例的引用计数加 1
+  - scsi_host_get()锛?
+	灏嗙粰瀹氬疄渚嬬殑寮曠敤璁℃暟鍔?1
 
-  - scsi_host_put()：
-	将给定实例的引用计数减 1。如果引用计数达到 0，则释放该实例
+  - scsi_host_put()锛?
+	灏嗙粰瀹氬疄渚嬬殑寮曠敤璁℃暟鍑?1銆傚鏋滃紩鐢ㄨ鏁拌揪鍒?0锛屽垯閲婃斁璇ュ疄渚?
 
-scsi_device 结构已经添加了引用计数基础设施。这实际上将 struct scsi_device 实例的所有权分散到使用它们的各个 SCSI 层。此前此类实例完全由中间层拥有。请参阅 include/scsi/scsi_device.h 末尾声明的访问函数。如果 LLD 想保留一个指向 scsi_device 实例的指针副本，它应当使用 scsi_device_get() 来增加其引用计数。当不再需要该指针时，可以使用 scsi_device_put() 来减少其引用计数（并可能将其删除）。
-
-
-   struct Scsi_Host 实际上有 2 个引用计数，由这些函数并行操作。
+scsi_device 缁撴瀯宸茬粡娣诲姞浜嗗紩鐢ㄨ鏁板熀纭€璁炬柦銆傝繖瀹為檯涓婂皢 struct scsi_device 瀹炰緥鐨勬墍鏈夋潈鍒嗘暎鍒颁娇鐢ㄥ畠浠殑鍚勪釜 SCSI 灞傘€傛鍓嶆绫诲疄渚嬪畬鍏ㄧ敱涓棿灞傛嫢鏈夈€傝鍙傞槄 include/scsi/scsi_device.h 鏈熬澹版槑鐨勮闂嚱鏁般€傚鏋?LLD 鎯充繚鐣欎竴涓寚鍚?scsi_device 瀹炰緥鐨勬寚閽堝壇鏈紝瀹冨簲褰撲娇鐢?scsi_device_get() 鏉ュ鍔犲叾寮曠敤璁℃暟銆傚綋涓嶅啀闇€瑕佽鎸囬拡鏃讹紝鍙互浣跨敤 scsi_device_put() 鏉ュ噺灏戝叾寮曠敤璁℃暟锛堝苟鍙兘灏嗗叾鍒犻櫎锛夈€?
 
 
-## 约定
-
-首先，Linus Torvalds 关于 C 编码风格的看法可以在 Documentation/process/coding-style.rst 文件中找到。
-
-此外，在大多数相关 gcc 编译器支持的程度上鼓励使用 C99 增强特性。因此，在适当的地方鼓励使用 C99 风格的结构和数组初始化器。但不要太过分，变长数组（VLA）尚未得到妥善支持。对此的一个例外是 `//` 风格的注释；在 Linux 中仍然更偏好 `/**...**/` 风格的注释。
-
-编写良好、经过测试且有文档的代码，无需为符合上述约定而重新格式化。例如，aic7xxx 驱动是从 FreeBSD 和 Adaptec 自己的实验室来到 Linux 的。毫无疑问，FreeBSD 和 Adaptec 有它们自己的编码约定。
+   struct Scsi_Host 瀹為檯涓婃湁 2 涓紩鐢ㄨ鏁帮紝鐢辫繖浜涘嚱鏁板苟琛屾搷浣溿€?
 
 
-## 中间层提供的函数
+## 绾﹀畾
 
-这些函数由 SCSI 中间层提供，供 LLD 使用。这些函数的名称（即入口点）被导出，因此作为模块的 LLD 可以访问它们。内核会安排在任何 LLD 初始化之前加载并初始化 SCSI 中间层。以下函数按字母顺序列出，它们的名称都以 `scsi_` 开头。
+棣栧厛锛孡inus Torvalds 鍏充簬 C 缂栫爜椋庢牸鐨勭湅娉曞彲浠ュ湪 Documentation/process/coding-style.rst 鏂囦欢涓壘鍒般€?
 
-摘要：
+姝ゅ锛屽湪澶у鏁扮浉鍏?gcc 缂栬瘧鍣ㄦ敮鎸佺殑绋嬪害涓婇紦鍔变娇鐢?C99 澧炲己鐗规€с€傚洜姝わ紝鍦ㄩ€傚綋鐨勫湴鏂归紦鍔变娇鐢?C99 椋庢牸鐨勭粨鏋勫拰鏁扮粍鍒濆鍖栧櫒銆備絾涓嶈澶繃鍒嗭紝鍙橀暱鏁扮粍锛圴LA锛夊皻鏈緱鍒板Ε鍠勬敮鎸併€傚姝ょ殑涓€涓緥澶栨槸 `//` 椋庢牸鐨勬敞閲婏紱鍦?Linux 涓粛鐒舵洿鍋忓ソ `/**...**/` 椋庢牸鐨勬敞閲娿€?
 
-  - scsi_add_device - 创建一个新的 scsi 设备（lu）实例
-  - scsi_add_host - 执行 sysfs 注册并设置传输类
-  - scsi_change_queue_depth - 更改 SCSI 设备上的队列深度
-  - scsi_bios_ptable - 返回块设备分区表的副本
-  - scsi_block_requests - 阻止向给定主机排入更多命令
-  - scsi_host_alloc - 返回一个 refcount==1 的新 scsi_host 实例
-  - scsi_host_get - 递增 Scsi_Host 实例的引用计数
-  - scsi_host_put - 递减 Scsi_Host 实例的引用计数（若为 0 则释放）
-  - scsi_remove_device - 分离并移除一个 SCSI 设备
-  - scsi_remove_host - 分离并移除主机拥有的所有 SCSI 设备
-  - scsi_report_bus_reset - 报告观察到的 scsi _总线_ 复位
-  - scsi_scan_host - 扫描 SCSI 总线
-  - scsi_track_queue_full - 跟踪连续的 QUEUE_FULL 事件
-  - scsi_unblock_requests - 允许向给定主机排入更多命令
+缂栧啓鑹ソ銆佺粡杩囨祴璇曚笖鏈夋枃妗ｇ殑浠ｇ爜锛屾棤闇€涓虹鍚堜笂杩扮害瀹氳€岄噸鏂版牸寮忓寲銆備緥濡傦紝aic7xxx 椹卞姩鏄粠 FreeBSD 鍜?Adaptec 鑷繁鐨勫疄楠屽鏉ュ埌 Linux 鐨勩€傛鏃犵枒闂紝FreeBSD 鍜?Adaptec 鏈夊畠浠嚜宸辩殑缂栫爜绾﹀畾銆?
+
+
+## 涓棿灞傛彁渚涚殑鍑芥暟
+
+杩欎簺鍑芥暟鐢?SCSI 涓棿灞傛彁渚涳紝渚?LLD 浣跨敤銆傝繖浜涘嚱鏁扮殑鍚嶇О锛堝嵆鍏ュ彛鐐癸級琚鍑猴紝鍥犳浣滀负妯″潡鐨?LLD 鍙互璁块棶瀹冧滑銆傚唴鏍镐細瀹夋帓鍦ㄤ换浣?LLD 鍒濆鍖栦箣鍓嶅姞杞藉苟鍒濆鍖?SCSI 涓棿灞傘€備互涓嬪嚱鏁版寜瀛楁瘝椤哄簭鍒楀嚭锛屽畠浠殑鍚嶇О閮戒互 `scsi_` 寮€澶淬€?
+
+鎽樿锛?
+
+  - scsi_add_device - 鍒涘缓涓€涓柊鐨?scsi 璁惧锛坙u锛夊疄渚?
+  - scsi_add_host - 鎵ц sysfs 娉ㄥ唽骞惰缃紶杈撶被
+  - scsi_change_queue_depth - 鏇存敼 SCSI 璁惧涓婄殑闃熷垪娣卞害
+  - scsi_bios_ptable - 杩斿洖鍧楄澶囧垎鍖鸿〃鐨勫壇鏈?
+  - scsi_block_requests - 闃绘鍚戠粰瀹氫富鏈烘帓鍏ユ洿澶氬懡浠?
+  - scsi_host_alloc - 杩斿洖涓€涓?refcount==1 鐨勬柊 scsi_host 瀹炰緥
+  - scsi_host_get - 閫掑 Scsi_Host 瀹炰緥鐨勫紩鐢ㄨ鏁?
+  - scsi_host_put - 閫掑噺 Scsi_Host 瀹炰緥鐨勫紩鐢ㄨ鏁帮紙鑻ヤ负 0 鍒欓噴鏀撅級
+  - scsi_remove_device - 鍒嗙骞剁Щ闄や竴涓?SCSI 璁惧
+  - scsi_remove_host - 鍒嗙骞剁Щ闄や富鏈烘嫢鏈夌殑鎵€鏈?SCSI 璁惧
+  - scsi_report_bus_reset - 鎶ュ憡瑙傚療鍒扮殑 scsi _鎬荤嚎_ 澶嶄綅
+  - scsi_scan_host - 鎵弿 SCSI 鎬荤嚎
+  - scsi_track_queue_full - 璺熻釜杩炵画鐨?QUEUE_FULL 浜嬩欢
+  - scsi_unblock_requests - 鍏佽鍚戠粰瀹氫富鏈烘帓鍏ユ洿澶氬懡浠?
 
 
 ```
@@ -361,7 +361,7 @@ scsi_device 结构已经添加了引用计数基础设施。这实际上将 stru
     * scsi_remove_host - detach and remove all SCSI devices owned by host
     * @shost:      a pointer to a scsi host instance
     *
-    *      Returns value: 0 on success, 1 on failure (e.g. LLD busy ??)
+    *      Returns value: 0 on success, 1 on failure (e.g. LLD busy ?锛?
     *
     *      Might block: yes
     *
@@ -446,36 +446,36 @@ scsi_device 结构已经添加了引用计数基础设施。这实际上将 stru
 
 
 ```
-## 接口函数
+## 鎺ュ彛鍑芥暟
 
-接口函数由 LLD 提供（定义），它们的函数指针被放置到 struct scsi_host_template 的一个实例中，该实例会被传入 scsi_host_alloc()。其中一些是必需的。接口函数应声明为 static。公认的约定是，驱动 "xyz" 会声明它的 sdev_configure()
+鎺ュ彛鍑芥暟鐢?LLD 鎻愪緵锛堝畾涔夛級锛屽畠浠殑鍑芥暟鎸囬拡琚斁缃埌 struct scsi_host_template 鐨勪竴涓疄渚嬩腑锛岃瀹炰緥浼氳浼犲叆 scsi_host_alloc()銆傚叾涓竴浜涙槸蹇呴渶鐨勩€傛帴鍙ｅ嚱鏁板簲澹版槑涓?static銆傚叕璁ょ殑绾﹀畾鏄紝椹卞姩 "xyz" 浼氬０鏄庡畠鐨?sdev_configure()
 
 ```
     static int xyz_sdev_configure(struct scsi_device * sdev);
 
 ```
 
-下文列出的所有接口函数以此类推。指向该函数的指针应被放入 "struct scsi_host_template" 实例的 'sdev_configure' 成员中。指向此类实例的指针应被传入中间层的 scsi_host_alloc()。
+涓嬫枃鍒楀嚭鐨勬墍鏈夋帴鍙ｅ嚱鏁颁互姝ょ被鎺ㄣ€傛寚鍚戣鍑芥暟鐨勬寚閽堝簲琚斁鍏?"struct scsi_host_template" 瀹炰緥鐨?'sdev_configure' 鎴愬憳涓€傛寚鍚戞绫诲疄渚嬬殑鎸囬拡搴旇浼犲叆涓棿灞傜殑 scsi_host_alloc()銆?
 
-接口函数也在 include/scsi/scsi_host.h 文件中、位于 "struct scsi_host_template" 中它们定义点的上方有描述。在某些情况下，scsi_host.h 中给出的细节比下文更多。
+鎺ュ彛鍑芥暟涔熷湪 include/scsi/scsi_host.h 鏂囦欢涓€佷綅浜?"struct scsi_host_template" 涓畠浠畾涔夌偣鐨勪笂鏂规湁鎻忚堪銆傚湪鏌愪簺鎯呭喌涓嬶紝scsi_host.h 涓粰鍑虹殑缁嗚妭姣斾笅鏂囨洿澶氥€?
 
-接口函数按字母顺序列在下方。
+鎺ュ彛鍑芥暟鎸夊瓧姣嶉『搴忓垪鍦ㄤ笅鏂广€?
 
-摘要：
+鎽樿锛?
 
-  - bios_param - 获取磁盘的磁头、扇区、柱面信息
-  - eh_timed_out - 通知主机某个命令的定时器已超时
-  - eh_abort_handler - 中止给定的命令
-  - eh_bus_reset_handler - 发起 SCSI 总线复位
-  - eh_device_reset_handler - 发起 SCSI 设备复位
-  - eh_host_reset_handler - 复位主机（主机总线适配器）
-  - info - 提供关于给定主机的信息
-  - ioctl - 驱动可以响应 ioctl
-  - proc_info - 支持 /proc/scsi/{driver_name}/{host_no}
-  - queuecommand - 将 scsi 命令入队，完成时调用 'done'
-  - sdev_init - 在向新设备发送任何命令之前
-  - sdev_configure - 设备连接后针对给定设备的驱动微调
-  - sdev_destroy - 给定设备即将关闭
+  - bios_param - 鑾峰彇纾佺洏鐨勭澶淬€佹墖鍖恒€佹煴闈俊鎭?
+  - eh_timed_out - 閫氱煡涓绘満鏌愪釜鍛戒护鐨勫畾鏃跺櫒宸茶秴鏃?
+  - eh_abort_handler - 涓缁欏畾鐨勫懡浠?
+  - eh_bus_reset_handler - 鍙戣捣 SCSI 鎬荤嚎澶嶄綅
+  - eh_device_reset_handler - 鍙戣捣 SCSI 璁惧澶嶄綅
+  - eh_host_reset_handler - 澶嶄綅涓绘満锛堜富鏈烘€荤嚎閫傞厤鍣級
+  - info - 鎻愪緵鍏充簬缁欏畾涓绘満鐨勪俊鎭?
+  - ioctl - 椹卞姩鍙互鍝嶅簲 ioctl
+  - proc_info - 鏀寔 /proc/scsi/{driver_name}/{host_no}
+  - queuecommand - 灏?scsi 鍛戒护鍏ラ槦锛屽畬鎴愭椂璋冪敤 'done'
+  - sdev_init - 鍦ㄥ悜鏂拌澶囧彂閫佷换浣曞懡浠や箣鍓?
+  - sdev_configure - 璁惧杩炴帴鍚庨拡瀵圭粰瀹氳澶囩殑椹卞姩寰皟
+  - sdev_destroy - 缁欏畾璁惧鍗冲皢鍏抽棴
 
 
 ```
@@ -842,140 +842,140 @@ scsi_device 结构已经添加了引用计数基础设施。这实际上将 stru
 
 
 ```
-## 数据结构
+## 鏁版嵁缁撴瀯
 
 ### struct scsi_host_template
 
-每个 LLD 有一个 "struct scsi_host_template" 实例 [#]_。它通常作为驱动头文件中的文件作用域 static 被初始化。这样，未显式初始化的成员会被设为 0 或 NULL。值得关注的成员：
+姣忎釜 LLD 鏈変竴涓?"struct scsi_host_template" 瀹炰緥 [#]_銆傚畠閫氬父浣滀负椹卞姩澶存枃浠朵腑鐨勬枃浠朵綔鐢ㄥ煙 static 琚垵濮嬪寲銆傝繖鏍凤紝鏈樉寮忓垵濮嬪寲鐨勬垚鍛樹細琚涓?0 鎴?NULL銆傚€煎緱鍏虫敞鐨勬垚鍛橈細
 
     name
-   - 驱动名称（可包含空格，请限制在 80 个字符以内）
+   - 椹卞姩鍚嶇О锛堝彲鍖呭惈绌烘牸锛岃闄愬埗鍦?80 涓瓧绗︿互鍐咃級
 
     proc_name
-   - 用于 "/proc/scsi/<proc_name>/<host_no>" 的名称，也由 sysfs 在其某个 "drivers" 目录中使用。因此 "proc_name" 只能包含 Unix 文件名可接受的字符。
+   - 鐢ㄤ簬 "/proc/scsi/<proc_name>/<host_no>" 鐨勫悕绉帮紝涔熺敱 sysfs 鍦ㄥ叾鏌愪釜 "drivers" 鐩綍涓娇鐢ㄣ€傚洜姝?"proc_name" 鍙兘鍖呭惈 Unix 鏂囦欢鍚嶅彲鎺ュ彈鐨勫瓧绗︺€?
 
    `(*queuecommand)()`
-   - 中间层用来向 LLD 注入 SCSI 命令的主要回调。
+   - 涓棿灞傜敤鏉ュ悜 LLD 娉ㄥ叆 SCSI 鍛戒护鐨勪富瑕佸洖璋冦€?
 
     vendor_id
-   - 一个唯一值，用于标识为 Scsi_Host 提供 LLD 的厂商。最常用于校验厂商特定的消息请求。值由一个标识符类型和一个厂商特定值组成。有效格式说明见 scsi_netlink.h。
+   - 涓€涓敮涓€鍊硷紝鐢ㄤ簬鏍囪瘑涓?Scsi_Host 鎻愪緵 LLD 鐨勫巶鍟嗐€傛渶甯哥敤浜庢牎楠屽巶鍟嗙壒瀹氱殑娑堟伅璇锋眰銆傚€肩敱涓€涓爣璇嗙绫诲瀷鍜屼竴涓巶鍟嗙壒瀹氬€肩粍鎴愩€傛湁鏁堟牸寮忚鏄庤 scsi_netlink.h銆?
 
-该结构在 include/scsi/scsi_host.h 中定义并附有注释
+璇ョ粨鏋勫湪 include/scsi/scsi_host.h 涓畾涔夊苟闄勬湁娉ㄩ噴
 
-      如果它控制几类不同的硬件（例如一个同时处理 ISA 和 PCI 卡、并为每类硬件单独准备一份 struct scsi_host_template 实例的 LLD）。
+      濡傛灉瀹冩帶鍒跺嚑绫讳笉鍚岀殑纭欢锛堜緥濡備竴涓悓鏃跺鐞?ISA 鍜?PCI 鍗°€佸苟涓烘瘡绫荤‖浠跺崟鐙噯澶囦竴浠?struct scsi_host_template 瀹炰緥鐨?LLD锛夈€?
 
 ### struct Scsi_Host
 
-LLD 控制的每个主机（HBA）有一个 struct Scsi_Host 实例。struct Scsi_Host 结构与 "struct scsi_host_template" 有许多共同成员。当创建一个新的 struct Scsi_Host 实例时（在 hosts.c 的 scsi_host_alloc() 中），那些共同成员会从驱动的 struct scsi_host_template 实例初始化而来。值得关注的成员：
+LLD 鎺у埗鐨勬瘡涓富鏈猴紙HBA锛夋湁涓€涓?struct Scsi_Host 瀹炰緥銆俿truct Scsi_Host 缁撴瀯涓?"struct scsi_host_template" 鏈夎澶氬叡鍚屾垚鍛樸€傚綋鍒涘缓涓€涓柊鐨?struct Scsi_Host 瀹炰緥鏃讹紙鍦?hosts.c 鐨?scsi_host_alloc() 涓級锛岄偅浜涘叡鍚屾垚鍛樹細浠庨┍鍔ㄧ殑 struct scsi_host_template 瀹炰緥鍒濆鍖栬€屾潵銆傚€煎緱鍏虫敞鐨勬垚鍛橈細
 
     host_no
-   - 系统范围内唯一的编号，用于标识此主机。从 0 开始按升序分配。
+   - 绯荤粺鑼冨洿鍐呭敮涓€鐨勭紪鍙凤紝鐢ㄤ簬鏍囪瘑姝や富鏈恒€備粠 0 寮€濮嬫寜鍗囧簭鍒嗛厤銆?
     can_queue
-   - 必须大于 0；不要向适配器发送超过 can_queue 条命令。
+   - 蹇呴』澶т簬 0锛涗笉瑕佸悜閫傞厤鍣ㄥ彂閫佽秴杩?can_queue 鏉″懡浠ゃ€?
     this_id
-   - 主机的 scsi id（scsi 发起者），若未知则为 -1
+   - 涓绘満鐨?scsi id锛坰csi 鍙戣捣鑰咃級锛岃嫢鏈煡鍒欎负 -1
     sg_tablesize
-   - 主机允许的最大分散/聚集（scatter gather）元素数量。将其设为 SG_ALL 或更小以避免链式 SG 列表。必须至少为 1。
+   - 涓绘満鍏佽鐨勬渶澶у垎鏁?鑱氶泦锛坰catter gather锛夊厓绱犳暟閲忋€傚皢鍏惰涓?SG_ALL 鎴栨洿灏忎互閬垮厤閾惧紡 SG 鍒楄〃銆傚繀椤昏嚦灏戜负 1銆?
     max_sectors
-   - 单条 SCSI 命令允许的最大扇区数（通常为 512 字节）。默认值 0 会导致设置为 SCSI_DEFAULT_MAX_SECTORS（在 scsi_host.h 中定义），当前设为 1024。因此当未定义 max_sectors 时，磁盘的最大传输大小为 512 KB。注意此大小可能不足以进行磁盘固件上传。
+   - 鍗曟潯 SCSI 鍛戒护鍏佽鐨勬渶澶ф墖鍖烘暟锛堥€氬父涓?512 瀛楄妭锛夈€傞粯璁ゅ€?0 浼氬鑷磋缃负 SCSI_DEFAULT_MAX_SECTORS锛堝湪 scsi_host.h 涓畾涔夛級锛屽綋鍓嶈涓?1024銆傚洜姝ゅ綋鏈畾涔?max_sectors 鏃讹紝纾佺洏鐨勬渶澶т紶杈撳ぇ灏忎负 512 KB銆傛敞鎰忔澶у皬鍙兘涓嶈冻浠ヨ繘琛岀鐩樺浐浠朵笂浼犮€?
     cmd_per_lun
-   - 主机控制的设备上可以排队的最大命令数。会被 LLD 对 scsi_change_queue_depth() 的调用覆盖。
+   - 涓绘満鎺у埗鐨勮澶囦笂鍙互鎺掗槦鐨勬渶澶у懡浠ゆ暟銆備細琚?LLD 瀵?scsi_change_queue_depth() 鐨勮皟鐢ㄨ鐩栥€?
     hostt
-   - 指向生成此 struct Scsi_Host 实例的驱动 struct scsi_host_template 的指针
+   - 鎸囧悜鐢熸垚姝?struct Scsi_Host 瀹炰緥鐨勯┍鍔?struct scsi_host_template 鐨勬寚閽?
     hostt->proc_name
-   - LLD 的名称。这是 sysfs 使用的驱动名称。
+   - LLD 鐨勫悕绉般€傝繖鏄?sysfs 浣跨敤鐨勯┍鍔ㄥ悕绉般€?
     transportt
-   - 指向驱动 struct scsi_transport_template 实例的指针（如果有）。当前支持 FC 和 SPI 传输层。
+   - 鎸囧悜椹卞姩 struct scsi_transport_template 瀹炰緥鐨勬寚閽堬紙濡傛灉鏈夛級銆傚綋鍓嶆敮鎸?FC 鍜?SPI 浼犺緭灞傘€?
     hostdata[^0^]
-   - 在 struct Scsi_Host 末尾为 LLD 保留的区域。大小由传入 scsi_host_alloc() 的第二个参数（名为 'privsize'）设置。
+   - 鍦?struct Scsi_Host 鏈熬涓?LLD 淇濈暀鐨勫尯鍩熴€傚ぇ灏忕敱浼犲叆 scsi_host_alloc() 鐨勭浜屼釜鍙傛暟锛堝悕涓?'privsize'锛夎缃€?
 
-scsi_host 结构在 include/scsi/scsi_host.h 中定义
+scsi_host 缁撴瀯鍦?include/scsi/scsi_host.h 涓畾涔?
 
 ### struct scsi_device
 
-通常，主机上每个 SCSI 逻辑单元都有一个此结构的实例。连接到主机的 SCSI 设备由通道号、目标 id 和逻辑单元号（lun）唯一标识。该结构在 include/scsi/scsi_device.h 中定义。
+閫氬父锛屼富鏈轰笂姣忎釜 SCSI 閫昏緫鍗曞厓閮芥湁涓€涓缁撴瀯鐨勫疄渚嬨€傝繛鎺ュ埌涓绘満鐨?SCSI 璁惧鐢遍€氶亾鍙枫€佺洰鏍?id 鍜岄€昏緫鍗曞厓鍙凤紙lun锛夊敮涓€鏍囪瘑銆傝缁撴瀯鍦?include/scsi/scsi_device.h 涓畾涔夈€?
 
 ### struct scsi_cmnd
 
-此结构的实例将 SCSI 命令传递给 LLD，并将响应返回给中间层。SCSI 中间层会确保排入 LLD 的 SCSI 命令不超过 **scsi_change_queue_depth()（或 struct Scsi_Host**：cmd_per_lun）所指示的数量。每个 SCSI 设备至少会有一个 struct scsi_cmnd 实例可用。值得关注的成员：
+姝ょ粨鏋勭殑瀹炰緥灏?SCSI 鍛戒护浼犻€掔粰 LLD锛屽苟灏嗗搷搴旇繑鍥炵粰涓棿灞傘€係CSI 涓棿灞備細纭繚鎺掑叆 LLD 鐨?SCSI 鍛戒护涓嶈秴杩?**scsi_change_queue_depth()锛堟垨 struct Scsi_Host**锛歝md_per_lun锛夋墍鎸囩ず鐨勬暟閲忋€傛瘡涓?SCSI 璁惧鑷冲皯浼氭湁涓€涓?struct scsi_cmnd 瀹炰緥鍙敤銆傚€煎緱鍏虫敞鐨勬垚鍛橈細
 
     cmnd
-   - 包含 SCSI 命令的数组
+   - 鍖呭惈 SCSI 鍛戒护鐨勬暟缁?
     cmd_len
-   - SCSI 命令的长度（字节）
+   - SCSI 鍛戒护鐨勯暱搴︼紙瀛楄妭锛?
     sc_data_direction
-   - 数据阶段数据传输的方向。参见 include/linux/dma-mapping.h 中的 "enum dma_data_direction"
+   - 鏁版嵁闃舵鏁版嵁浼犺緭鐨勬柟鍚戙€傚弬瑙?include/linux/dma-mapping.h 涓殑 "enum dma_data_direction"
     result
-   - 应在调用 'done' 之前由 LLD 设置。值 0 表示命令成功完成（且所有数据（如果有）已传向或从 SCSI 目标设备传出）。'result' 是一个 32 位无符号整数，可视为两个相关的字节。SCSI 状态值在最低字节（LSB）中。参见 include/scsi/scsi.h 中的 status_byte() 和 host_byte() 宏及相关常量。
+   - 搴斿湪璋冪敤 'done' 涔嬪墠鐢?LLD 璁剧疆銆傚€?0 琛ㄧず鍛戒护鎴愬姛瀹屾垚锛堜笖鎵€鏈夋暟鎹紙濡傛灉鏈夛級宸蹭紶鍚戞垨浠?SCSI 鐩爣璁惧浼犲嚭锛夈€?result' 鏄竴涓?32 浣嶆棤绗﹀彿鏁存暟锛屽彲瑙嗕负涓や釜鐩稿叧鐨勫瓧鑺傘€係CSI 鐘舵€佸€煎湪鏈€浣庡瓧鑺傦紙LSB锛変腑銆傚弬瑙?include/scsi/scsi.h 涓殑 status_byte() 鍜?host_byte() 瀹忓強鐩稿叧甯搁噺銆?
     sense_buffer
-   - 一个数组（最大大小：SCSI_SENSE_BUFFERSIZE 字节），当 SCSI 状态（'result' 的 LSB）被设为 CHECK_CONDITION (2) 时应被写入。当设置了 CHECK_CONDITION 时，如果 sense_buffer[^0^] 的高半字节值为 7，则中间层会假定 sense_buffer 数组包含有效的 SCSI sense 缓冲；否则中间层会发出一条 REQUEST_SENSE SCSI 命令来取回 sense 缓冲。后一种策略在存在命令排队时容易出错，因此 LLD 应当始终"自动感知（auto-sense）"。
+   - 涓€涓暟缁勶紙鏈€澶уぇ灏忥細SCSI_SENSE_BUFFERSIZE 瀛楄妭锛夛紝褰?SCSI 鐘舵€侊紙'result' 鐨?LSB锛夎璁句负 CHECK_CONDITION (2) 鏃跺簲琚啓鍏ャ€傚綋璁剧疆浜?CHECK_CONDITION 鏃讹紝濡傛灉 sense_buffer[^0^] 鐨勯珮鍗婂瓧鑺傚€间负 7锛屽垯涓棿灞備細鍋囧畾 sense_buffer 鏁扮粍鍖呭惈鏈夋晥鐨?SCSI sense 缂撳啿锛涘惁鍒欎腑闂村眰浼氬彂鍑轰竴鏉?REQUEST_SENSE SCSI 鍛戒护鏉ュ彇鍥?sense 缂撳啿銆傚悗涓€绉嶇瓥鐣ュ湪瀛樺湪鍛戒护鎺掗槦鏃跺鏄撳嚭閿欙紝鍥犳 LLD 搴斿綋濮嬬粓"鑷姩鎰熺煡锛坅uto-sense锛?銆?
     device
-   - 指向此命令所关联的 scsi_device 对象的指针。
-    resid_len   （通过调用 scsi_set_resid() / scsi_get_resid() 访问）
-   - LLD 应将此无符号整数设为请求的传输长度（即 'request_bufflen'）减去实际传输的字节数。'resid_len' 预设为 0，因此如果 LLD 无法检测欠载（不应报告过载），可以忽略它。LLD 应在调用 'done' 之前设置 'resid_len'。最值得关注的情形是从 SCSI 目标设备（例如 READ）传输出来的、发生欠载的数据传输。
+   - 鎸囧悜姝ゅ懡浠ゆ墍鍏宠仈鐨?scsi_device 瀵硅薄鐨勬寚閽堛€?
+    resid_len   锛堥€氳繃璋冪敤 scsi_set_resid() / scsi_get_resid() 璁块棶锛?
+   - LLD 搴斿皢姝ゆ棤绗﹀彿鏁存暟璁句负璇锋眰鐨勪紶杈撻暱搴︼紙鍗?'request_bufflen'锛夊噺鍘诲疄闄呬紶杈撶殑瀛楄妭鏁般€?resid_len' 棰勮涓?0锛屽洜姝ゅ鏋?LLD 鏃犳硶妫€娴嬫瑺杞斤紙涓嶅簲鎶ュ憡杩囪浇锛夛紝鍙互蹇界暐瀹冦€侺LD 搴斿湪璋冪敤 'done' 涔嬪墠璁剧疆 'resid_len'銆傛渶鍊煎緱鍏虫敞鐨勬儏褰㈡槸浠?SCSI 鐩爣璁惧锛堜緥濡?READ锛変紶杈撳嚭鏉ョ殑銆佸彂鐢熸瑺杞界殑鏁版嵁浼犺緭銆?
     underflow
-   - 如果实际传输的字节数小于此值，LLD 应将 (DID_ERROR << 16) 放入 'result'。实现此检查的 LLD 不多，而其中一些只是向日志输出一条错误消息，而不是报告 DID_ERROR。LLD 最好实现 'resid_len'。
+   - 濡傛灉瀹為檯浼犺緭鐨勫瓧鑺傛暟灏忎簬姝ゅ€硷紝LLD 搴斿皢 (DID_ERROR << 16) 鏀惧叆 'result'銆傚疄鐜版妫€鏌ョ殑 LLD 涓嶅锛岃€屽叾涓竴浜涘彧鏄悜鏃ュ織杈撳嚭涓€鏉￠敊璇秷鎭紝鑰屼笉鏄姤鍛?DID_ERROR銆侺LD 鏈€濂藉疄鐜?'resid_len'銆?
 
-建议 LLD 在来自 SCSI 目标设备（例如 READ）的数据传输上设置 'resid_len'。当这类数据传输具有 MEDIUM ERROR 和 HARDWARE ERROR（以及可能的 RECOVERED ERROR）的 sense 键时，设置 'resid_len' 尤为重要。在这些情况下，如果 LLD 不确定已接收到多少数据，最安全的做法是表明没有接收到任何字节。例如：要表明没有接收到有效数据
+寤鸿 LLD 鍦ㄦ潵鑷?SCSI 鐩爣璁惧锛堜緥濡?READ锛夌殑鏁版嵁浼犺緭涓婅缃?'resid_len'銆傚綋杩欑被鏁版嵁浼犺緭鍏锋湁 MEDIUM ERROR 鍜?HARDWARE ERROR锛堜互鍙婂彲鑳界殑 RECOVERED ERROR锛夌殑 sense 閿椂锛岃缃?'resid_len' 灏や负閲嶈銆傚湪杩欎簺鎯呭喌涓嬶紝濡傛灉 LLD 涓嶇‘瀹氬凡鎺ユ敹鍒板灏戞暟鎹紝鏈€瀹夊叏鐨勫仛娉曟槸琛ㄦ槑娌℃湁鎺ユ敹鍒颁换浣曞瓧鑺傘€備緥濡傦細瑕佽〃鏄庢病鏈夋帴鏀跺埌鏈夋晥鏁版嵁
 
 ```
     scsi_set_resid(SCpnt, scsi_bufflen(SCpnt));
 
 ```
 
-其中 'SCpnt' 是指向 scsi_cmnd 对象的指针。要表明仅有三个 512
+鍏朵腑 'SCpnt' 鏄寚鍚?scsi_cmnd 瀵硅薄鐨勬寚閽堛€傝琛ㄦ槑浠呮湁涓変釜 512
 
 ```
     scsi_set_resid(SCpnt, scsi_bufflen(SCpnt) - (3 * 512));
 
 ```
 
-scsi_cmnd 结构在 include/scsi/scsi_cmnd.h 中定义
+scsi_cmnd 缁撴瀯鍦?include/scsi/scsi_cmnd.h 涓畾涔?
 
 
-## 锁
+## 閿?
 
-每个 struct Scsi_Host 实例都有一个名为 struct
+姣忎釜 struct Scsi_Host 瀹炰緥閮芥湁涓€涓悕涓?struct
 **Scsi_Host**
-: default_lock 的自旋锁，在 scsi_host_alloc() [位于
-**hosts.c] 中初始化。在同一函数中，struct Scsi_Host**
-: host_lock 指针
-被初始化为指向 default_lock。此后，中间层执行的加锁与解锁
-**操作使用 struct Scsi_Host**
+: default_lock 鐨勮嚜鏃嬮攣锛屽湪 scsi_host_alloc() [浣嶄簬
+**hosts.c] 涓垵濮嬪寲銆傚湪鍚屼竴鍑芥暟涓紝struct Scsi_Host**
+: host_lock 鎸囬拡
+琚垵濮嬪寲涓烘寚鍚?default_lock銆傛鍚庯紝涓棿灞傛墽琛岀殑鍔犻攣涓庤В閿?
+**鎿嶄綔浣跨敤 struct Scsi_Host**
 : host_lock
-指针。以前驱动可以覆盖 host_lock 指针，但现在不再允许。
+鎸囬拡銆備互鍓嶉┍鍔ㄥ彲浠ヨ鐩?host_lock 鎸囬拡锛屼絾鐜板湪涓嶅啀鍏佽銆?
 
 
-## 自动感知（Autosense）
+## 鑷姩鎰熺煡锛圓utosense锛?
 
-自动感知（Autosense，或 auto-sense）在 SAM-2 文档中被定义为：当发生 CHECK CONDITION 状态时，"在 SCSI 命令完成时自动将 sense 数据返回给应用程序客户端"。LLD 应当执行自动感知。这应在 LLD 检测到 CHECK CONDITION 状态时通过以下任一方式完成：
+鑷姩鎰熺煡锛圓utosense锛屾垨 auto-sense锛夊湪 SAM-2 鏂囨。涓瀹氫箟涓猴細褰撳彂鐢?CHECK CONDITION 鐘舵€佹椂锛?鍦?SCSI 鍛戒护瀹屾垚鏃惰嚜鍔ㄥ皢 sense 鏁版嵁杩斿洖缁欏簲鐢ㄧ▼搴忓鎴风"銆侺LD 搴斿綋鎵ц鑷姩鎰熺煡銆傝繖搴斿湪 LLD 妫€娴嬪埌 CHECK CONDITION 鐘舵€佹椂閫氳繃浠ヤ笅浠讳竴鏂瑰紡瀹屾垚锛?
 
-    a) 指示 SCSI 协议（例如 SCSI 并行接口（SPI））对此类响应执行一个额外的数据输入阶段
-    b) 或者，由 LLD 自己发出一条 REQUEST SENSE 命令
+    a) 鎸囩ず SCSI 鍗忚锛堜緥濡?SCSI 骞惰鎺ュ彛锛圫PI锛夛級瀵规绫诲搷搴旀墽琛屼竴涓澶栫殑鏁版嵁杈撳叆闃舵
+    b) 鎴栬€咃紝鐢?LLD 鑷繁鍙戝嚭涓€鏉?REQUEST SENSE 鍛戒护
 
-无论哪种方式，当检测到 CHECK CONDITION 状态时，中间层通过检查 struct
+鏃犺鍝鏂瑰紡锛屽綋妫€娴嬪埌 CHECK CONDITION 鐘舵€佹椂锛屼腑闂村眰閫氳繃妫€鏌?struct
 **scsi_cmnd**
-: sense_buffer[^0^] 来判断 LLD 是否已执行自动感知。如果该字节的高半字节为 7（或 0xf），则假定已执行自动感知。如果它是其他值（并且该字节在每条命令之前被初始化为 0），则中间层会发出一条 REQUEST SENSE 命令。
+: sense_buffer[^0^] 鏉ュ垽鏂?LLD 鏄惁宸叉墽琛岃嚜鍔ㄦ劅鐭ャ€傚鏋滆瀛楄妭鐨勯珮鍗婂瓧鑺備负 7锛堟垨 0xf锛夛紝鍒欏亣瀹氬凡鎵ц鑷姩鎰熺煡銆傚鏋滃畠鏄叾浠栧€硷紙骞朵笖璇ュ瓧鑺傚湪姣忔潯鍛戒护涔嬪墠琚垵濮嬪寲涓?0锛夛紝鍒欎腑闂村眰浼氬彂鍑轰竴鏉?REQUEST SENSE 鍛戒护銆?
 
-在存在排队命令的情况下，维护失败命令的 sense 缓冲数据直到后续 REQUEST SENSE 的"nexus"可能会失去同步。这就是为什么 LLD 最好执行自动感知。
-
-
-## 相对于 Linux 内核 2.4 系列的变更
-
-io_request_lock 已被若干个更细粒度的锁取代。与 LLD **相关的是 struct Scsi_Host**: host_lock，每个 SCSI 主机各有一个。
-
-旧的错误处理机制已被移除。这意味着 LLD 接口函数 abort() 和 reset() 已被移除。**struct scsi_host_template**: use_new_eh_code 标志已被移除。
-
-在 2.4 系列中，SCSI 子系统的配置说明与所有其他 Linux 子系统的配置说明聚合在 Documentation/Configure.help 文件中。在 2.6 系列中，SCSI 子系统现在拥有自己的（小得多的）drivers/scsi/Kconfig 文件，其中同时包含配置和帮助信息。
-
-struct SHT 已重命名为 struct scsi_host_template。
-
-增加了"热插拔初始化模型"以及许多用于支持它的额外函数。
+鍦ㄥ瓨鍦ㄦ帓闃熷懡浠ょ殑鎯呭喌涓嬶紝缁存姢澶辫触鍛戒护鐨?sense 缂撳啿鏁版嵁鐩村埌鍚庣画 REQUEST SENSE 鐨?nexus"鍙兘浼氬け鍘诲悓姝ャ€傝繖灏辨槸涓轰粈涔?LLD 鏈€濂芥墽琛岃嚜鍔ㄦ劅鐭ャ€?
 
 
-## 致谢
+## 鐩稿浜?Linux 鍐呮牳 2.4 绯诲垪鐨勫彉鏇?
 
-以下人士对本文档做出了贡献：
+io_request_lock 宸茶鑻ュ共涓洿缁嗙矑搴︾殑閿佸彇浠ｃ€備笌 LLD **鐩稿叧鐨勬槸 struct Scsi_Host**: host_lock锛屾瘡涓?SCSI 涓绘満鍚勬湁涓€涓€?
+
+鏃х殑閿欒澶勭悊鏈哄埗宸茶绉婚櫎銆傝繖鎰忓懗鐫€ LLD 鎺ュ彛鍑芥暟 abort() 鍜?reset() 宸茶绉婚櫎銆?*struct scsi_host_template**: use_new_eh_code 鏍囧織宸茶绉婚櫎銆?
+
+鍦?2.4 绯诲垪涓紝SCSI 瀛愮郴缁熺殑閰嶇疆璇存槑涓庢墍鏈夊叾浠?Linux 瀛愮郴缁熺殑閰嶇疆璇存槑鑱氬悎鍦?Documentation/Configure.help 鏂囦欢涓€傚湪 2.6 绯诲垪涓紝SCSI 瀛愮郴缁熺幇鍦ㄦ嫢鏈夎嚜宸辩殑锛堝皬寰楀鐨勶級drivers/scsi/Kconfig 鏂囦欢锛屽叾涓悓鏃跺寘鍚厤缃拰甯姪淇℃伅銆?
+
+struct SHT 宸查噸鍛藉悕涓?struct scsi_host_template銆?
+
+澧炲姞浜?鐑彃鎷斿垵濮嬪寲妯″瀷"浠ュ強璁稿鐢ㄤ簬鏀寔瀹冪殑棰濆鍑芥暟銆?
+
+
+## 鑷磋阿
+
+浠ヤ笅浜哄＋瀵规湰鏂囨。鍋氬嚭浜嗚础鐚細
 
  - Mike Anderson <andmike at us dot ibm dot com>
  - James Bottomley <James dot Bottomley at hansenpartnership dot com>

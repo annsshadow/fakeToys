@@ -1,35 +1,35 @@
+﻿
+## saa7134 椹卞姩
 
-## saa7134 驱动
-
-本文面向驱动开发者，记录 saa7134 多媒体视频采集芯片驱动的实现细节，涵盖不同芯片型号（saa7130/7133/7134/7135）的差异、晶振配置，以及 LifeView 等板卡的 GPIO 接线说明。
+鏈枃闈㈠悜椹卞姩寮€鍙戣€咃紝璁板綍 saa7134 澶氬獟浣撹棰戦噰闆嗚姱鐗囬┍鍔ㄧ殑瀹炵幇缁嗚妭锛屾兜鐩栦笉鍚岃姱鐗囧瀷鍙凤紙saa7130/7133/7134/7135锛夌殑宸紓銆佹櫠鎸厤缃紝浠ュ強 LifeView 绛夋澘鍗＄殑 GPIO 鎺ョ嚎璇存槑銆?
 
 
 
 Author Gerd Hoffmann
 
 
-### 芯片型号差异：
+### 鑺墖鍨嬪彿宸紓锛?
 
 
-电视卡可以使用以下两种晶振（xtal）之一：
+鐢佃鍗″彲浠ヤ娇鐢ㄤ互涓嬩袱绉嶆櫠鎸紙xtal锛変箣涓€锛?
 
 - 32.11 MHz -> .audio_clock=0x187de7
 - 24.576MHz -> .audio_clock=0x200000 (xtal * .audio_clock = 51539600)
 
-关于 30/34/35 的一些细节：
+鍏充簬 30/34/35 鐨勪竴浜涚粏鑺傦細
 
-- saa7130 - 低价芯片，没有静音功能，因此所有这些
-  卡的 tuner 结构体中应定义 .mute 字段。
+- saa7130 - 浣庝环鑺墖锛屾病鏈夐潤闊冲姛鑳斤紝鍥犳鎵€鏈夎繖浜?
+  鍗＄殑 tuner 缁撴瀯浣撲腑搴斿畾涔?.mute 瀛楁銆?
 
-- saa7134 - 常见芯片
+- saa7134 - 甯歌鑺墖
 
-- saa7133/35 - saa7135 可能是一个市场决策，因为所有这些
-  芯片在 pci 上标识自身为 33。
+- saa7133/35 - saa7135 鍙兘鏄竴涓競鍦哄喅绛栵紝鍥犱负鎵€鏈夎繖浜?
+  鑺墖鍦?pci 涓婃爣璇嗚嚜韬负 33銆?
 
 ### LifeView GPIO
 
 
-本节由 Peter Missel <peter.missel@onlinehome.de> 撰写
+鏈妭鐢?Peter Missel <peter.missel@onlinehome.de> 鎾板啓
 
 - LifeView FlyTV Platinum FM (LR214WF)
 
@@ -49,8 +49,8 @@ Author Gerd Hoffmann
     - GP16    Strap "GP6"=High
 
  - 0=Radio 1=TV
- - 驱动 SA630D ENCH1 和 HEF4052 A1 引脚，通过
-	  SIF 输入实现 FM 收音
+ - 椹卞姩 SA630D ENCH1 鍜?HEF4052 A1 寮曡剼锛岄€氳繃
+	  SIF 杈撳叆瀹炵幇 FM 鏀堕煶
 
     - GP15    nc
     - GP14    nc
@@ -62,9 +62,9 @@ Author Gerd Hoffmann
     - GP08    Strap "GP1" = Low
     - GP07.00 nc
 
-### 致谢
+### 鑷磋阿
 
 
-andrew.stevens@philips.com + werner.leeb@philips.com 提供了
-saa7134 硬件规格和样例板。
+andrew.stevens@philips.com + werner.leeb@philips.com 鎻愪緵浜?
+saa7134 纭欢瑙勬牸鍜屾牱渚嬫澘銆?
 

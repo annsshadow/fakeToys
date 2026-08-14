@@ -1,68 +1,52 @@
+﻿
+## GPIO 瀛楃璁惧鐢ㄦ埛绌洪棿 API
 
-## GPIO 字符设备用户空间 API
 
-
-这是字符设备 API 的最新版本（v2），如 `include/uapi/linux/gpio.h.` 所定义。
-
-首次添加于 5.10。
-
-   不要滥用用户空间 API 来控制已有合适内核驱动的硬件。可能已经有适合你用例的驱动，而现有的内核驱动必定比从用户空间位操作（bitbashing）提供更优的方案。
-
-   请阅读 Documentation/driver-api/gpio/drivers-on-gpio.rst 以避免在用户空间中重新发明内核轮子。
-
-   同样，对于多功能线路，可能有其他子系统，如 Documentation/spi/index.rst、Documentation/i2c/index.rst、Documentation/driver-api/pwm.rst、Documentation/w1/index.rst 等，为你的硬件提供合适的驱动和 API。
-
-使用字符设备 API 的基本示例可在 `tools/gpio/*` 中找到。
-
-该 API 围绕两个主要对象构建：gpio-v2-chip 和 gpio-v2-line-request。
-
+杩欐槸瀛楃璁惧 API 鐨勬渶鏂扮増鏈紙v2锛夛紝濡?`include/uapi/linux/gpio.h.` 鎵€瀹氫箟銆?
+棣栨娣诲姞浜?5.10銆?
+   涓嶈婊ョ敤鐢ㄦ埛绌洪棿 API 鏉ユ帶鍒跺凡鏈夊悎閫傚唴鏍搁┍鍔ㄧ殑纭欢銆傚彲鑳藉凡缁忔湁閫傚悎浣犵敤渚嬬殑椹卞姩锛岃€岀幇鏈夌殑鍐呮牳椹卞姩蹇呭畾姣斾粠鐢ㄦ埛绌洪棿浣嶆搷浣滐紙bitbashing锛夋彁渚涙洿浼樼殑鏂规銆?
+   璇烽槄璇?Documentation/driver-api/gpio/drivers-on-gpio.rst 浠ラ伩鍏嶅湪鐢ㄦ埛绌洪棿涓噸鏂板彂鏄庡唴鏍歌疆瀛愩€?
+   鍚屾牱锛屽浜庡鍔熻兘绾胯矾锛屽彲鑳芥湁鍏朵粬瀛愮郴缁燂紝濡?Documentation/spi/index.rst銆丏ocumentation/i2c/index.rst銆丏ocumentation/driver-api/pwm.rst銆丏ocumentation/w1/index.rst 绛夛紝涓轰綘鐨勭‖浠舵彁渚涘悎閫傜殑椹卞姩鍜?API銆?
+浣跨敤瀛楃璁惧 API 鐨勫熀鏈ず渚嬪彲鍦?`tools/gpio/*` 涓壘鍒般€?
+璇?API 鍥寸粫涓や釜涓昏瀵硅薄鏋勫缓锛歡pio-v2-chip 鍜?gpio-v2-line-request銆?
 
 ## Chip
 
 
-Chip 代表单个 GPIO 芯片，并通过形如 `/dev/gpiochipX` 的设备文件暴露给用户空间。
-
-每个芯片支持一定数量的 GPIO 线路，`chip.lines<gpiochip_info>`。芯片上的线路通过范围从 0 到 `chip.lines - 1` 的 `offset` 标识，即 `[0,chip.lines)`。
-
-线路通过 gpio-v2-get-line-ioctl.rst 从芯片请求，所得的行请求用于访问 GPIO 芯片的线路或监视线路的边沿事件。
-
-在本文档中，在 GPIO 设备文件上调用 `open()` 返回的文件描述符称为 `chip_fd`。
-
-### 操作
+Chip 浠ｈ〃鍗曚釜 GPIO 鑺墖锛屽苟閫氳繃褰㈠ `/dev/gpiochipX` 鐨勮澶囨枃浠舵毚闇茬粰鐢ㄦ埛绌洪棿銆?
+姣忎釜鑺墖鏀寔涓€瀹氭暟閲忕殑 GPIO 绾胯矾锛宍chip.lines<gpiochip_info>`銆傝姱鐗囦笂鐨勭嚎璺€氳繃鑼冨洿浠?0 鍒?`chip.lines - 1` 鐨?`offset` 鏍囪瘑锛屽嵆 `[0,chip.lines)`銆?
+绾胯矾閫氳繃 gpio-v2-get-line-ioctl.rst 浠庤姱鐗囪姹傦紝鎵€寰楃殑琛岃姹傜敤浜庤闂?GPIO 鑺墖鐨勭嚎璺垨鐩戣绾胯矾鐨勮竟娌夸簨浠躲€?
+鍦ㄦ湰鏂囨。涓紝鍦?GPIO 璁惧鏂囦欢涓婅皟鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮绉颁负 `chip_fd`銆?
+### 鎿嶄綔
 
 
-可对 chip 执行以下操作：
-
-- [获取线路](gpio-v2-get-line-ioctl)
-- [获取芯片信息](gpio-get-chipinfo-ioctl)
-- [获取线路信息](gpio-v2-get-lineinfo-ioctl)
-- [监视线路信息](gpio-v2-get-lineinfo-watch-ioctl)
-- [取消监视线路信息](gpio-get-lineinfo-unwatch-ioctl)
-- [读取线路信息变更事件](gpio-v2-lineinfo-changed-read)
-
-
-## 行请求（Line Request）
+鍙 chip 鎵ц浠ヤ笅鎿嶄綔锛?
+- [鑾峰彇绾胯矾](gpio-v2-get-line-ioctl)
+- [鑾峰彇鑺墖淇℃伅](gpio-get-chipinfo-ioctl)
+- [鑾峰彇绾胯矾淇℃伅](gpio-v2-get-lineinfo-ioctl)
+- [鐩戣绾胯矾淇℃伅](gpio-v2-get-lineinfo-watch-ioctl)
+- [鍙栨秷鐩戣绾胯矾淇℃伅](gpio-get-lineinfo-unwatch-ioctl)
+- [璇诲彇绾胯矾淇℃伅鍙樻洿浜嬩欢](gpio-v2-lineinfo-changed-read)
 
 
-行请求由 gpio-v2-get-line-ioctl.rst 创建，并提供对一组被请求线路的访问。行请求通过 gpio-v2-get-line-ioctl.rst 在 `request.fd<gpio_v2_line_request>` 中返回的匿名文件描述符暴露给用户空间。
+## 琛岃姹傦紙Line Request锛?
 
-在本文档中，行请求文件描述符称为 `req_fd`。
-
-### 操作
-
-
-可对行请求执行以下操作：
-
-- [获取线路值](gpio-v2-line-get-values-ioctl)
-- [设置线路值](gpio-v2-line-set-values-ioctl)
-- [读取线路边沿事件](gpio-v2-line-event-read)
-- [重新配置线路](gpio-v2-line-set-config-ioctl)
-
-## 类型
+琛岃姹傜敱 gpio-v2-get-line-ioctl.rst 鍒涘缓锛屽苟鎻愪緵瀵逛竴缁勮璇锋眰绾胯矾鐨勮闂€傝璇锋眰閫氳繃 gpio-v2-get-line-ioctl.rst 鍦?`request.fd<gpio_v2_line_request>` 涓繑鍥炵殑鍖垮悕鏂囦欢鎻忚堪绗︽毚闇茬粰鐢ㄦ埛绌洪棿銆?
+鍦ㄦ湰鏂囨。涓紝琛岃姹傛枃浠舵弿杩扮绉颁负 `req_fd`銆?
+### 鎿嶄綔
 
 
-本节包含 API v2 所引用的结构体和枚举，定义于 `include/uapi/linux/gpio.h`。
+鍙琛岃姹傛墽琛屼互涓嬫搷浣滐細
 
+- [鑾峰彇绾胯矾鍊糫(gpio-v2-line-get-values-ioctl)
+- [璁剧疆绾胯矾鍊糫(gpio-v2-line-set-values-ioctl)
+- [璇诲彇绾胯矾杈规部浜嬩欢](gpio-v2-line-event-read)
+- [閲嶆柊閰嶇疆绾胯矾](gpio-v2-line-set-config-ioctl)
+
+## 绫诲瀷
+
+
+鏈妭鍖呭惈 API v2 鎵€寮曠敤鐨勭粨鏋勪綋鍜屾灇涓撅紝瀹氫箟浜?`include/uapi/linux/gpio.h`銆?
    :identifiers:
     gpio_v2_line_attr_id
     gpio_v2_line_attribute
@@ -78,4 +62,4 @@ Chip 代表单个 GPIO 芯片，并通过形如 `/dev/gpiochipX` 的设备文件
     gpio_v2_line_values
     gpiochip_info
 
-- [错误码](error-codes)
+- [閿欒鐮乚(error-codes)

@@ -1,22 +1,22 @@
+﻿
+## 濯掍綋瀛愮郴缁熺鐞嗕笌鐢ㄦ埛鎸囧崡
 
-## 媒体子系统管理与用户指南
 
+鏈妭鍖呭惈鏈夊叧濯掍綋瀛愮郴缁熷強鍏舵敮鎸侀┍鍔ㄧ殑浣跨敤淇℃伅銆?
 
-本节包含有关媒体子系统及其支持驱动的使用信息。
-
-请参阅：
+璇峰弬闃咃細
 
 Documentation/userspace-api/media/index.rst
 
-  - 有关媒体设备所用用户空间 API 的内容。
+  - 鏈夊叧濯掍綋璁惧鎵€鐢ㄧ敤鎴风┖闂?API 鐨勫唴瀹广€?
 
 Documentation/driver-api/media/index.rst
 
-  - 有关驱动开发信息以及媒体设备所用内核 API 的内容；
+  - 鏈夊叧椹卞姩寮€鍙戜俊鎭互鍙婂獟浣撹澶囨墍鐢ㄥ唴鏍?API 鐨勫唴瀹癸紱
 
 Documentation/process/debugging/media_specific_debugging_guide.rst
 
-  - 有关调试此子系统中驱动的基本工具和技术建议
+  - 鏈夊叧璋冭瘯姝ゅ瓙绯荤粺涓┍鍔ㄧ殑鍩烘湰宸ュ叿鍜屾妧鏈缓璁?
 
 - [intro](intro)
 - [building](building)
@@ -27,7 +27,7 @@ Documentation/process/debugging/media_specific_debugging_guide.rst
 - [v4l-drivers](v4l-drivers)
 - [dvb-drivers](dvb-drivers)
 
-**版权** |copy| 1999-2020 : LinuxTV Developers
+**鐗堟潈** |copy| 1999-2020 : LinuxTV Developers
 
 ```
   This documentation is free software; you can redistribute it and/or modify it

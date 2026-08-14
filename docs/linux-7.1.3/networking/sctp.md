@@ -1,27 +1,27 @@
-
-## Linux 内核 SCTP
-
-
-这是 Linux 内核 SCTP 参考实现的当前 BETA 版本。
-
-SCTP（流控制传输协议，Stream Control Transmission Protocol）是一种基于 IP 的、面向消息的、可靠的传输协议，具有拥塞控制、对透明多宿主（multi-homing）的支持，以及多路有序的消息流。RFC2960 定义了核心协议。IETF SIGTRAN 工作组最初开发了 SCTP 协议，后来将协议移交给传输领域（TSVWG）工作组，以作为通用传输协议继续演进 SCTP。
-
-有关 SCTP 的更多文档，请参阅 IETF 网站（http://www.ietf.org）。参阅 http://www.ietf.org/rfc/rfc2960.txt
-
-最初的项目目标是创建一个符合 RFC 2960 的 Linux 内核 SCTP 参考实现，并提供称为 SCTP 套接字扩展的 UDP 风格 API 的编程接口，如 IETF Internet-Drafts 中所提议。
-
-## 注意事项
+﻿
+## Linux 鍐呮牳 SCTP
 
 
-- lksctp 可以静态构建或作为模块构建。但是，请注意，移除 lksctp 模块目前还不是一项安全的操作。
+杩欐槸 Linux 鍐呮牳 SCTP 鍙傝€冨疄鐜扮殑褰撳墠 BETA 鐗堟湰銆?
 
-- 对 IPv6 有试探性支持，但大部分工作都投入到了 IPv4 上 lksctp 的实现和测试。
+SCTP锛堟祦鎺у埗浼犺緭鍗忚锛孲tream Control Transmission Protocol锛夋槸涓€绉嶅熀浜?IP 鐨勩€侀潰鍚戞秷鎭殑銆佸彲闈犵殑浼犺緭鍗忚锛屽叿鏈夋嫢濉炴帶鍒躲€佸閫忔槑澶氬涓伙紙multi-homing锛夌殑鏀寔锛屼互鍙婂璺湁搴忕殑娑堟伅娴併€俁FC2960 瀹氫箟浜嗘牳蹇冨崗璁€侷ETF SIGTRAN 宸ヤ綔缁勬渶鍒濆紑鍙戜簡 SCTP 鍗忚锛屽悗鏉ュ皢鍗忚绉讳氦缁欎紶杈撻鍩燂紙TSVWG锛夊伐浣滅粍锛屼互浣滀负閫氱敤浼犺緭鍗忚缁х画婕旇繘 SCTP銆?
+
+鏈夊叧 SCTP 鐨勬洿澶氭枃妗ｏ紝璇峰弬闃?IETF 缃戠珯锛坔ttp://www.ietf.org锛夈€傚弬闃?http://www.ietf.org/rfc/rfc2960.txt
+
+鏈€鍒濈殑椤圭洰鐩爣鏄垱寤轰竴涓鍚?RFC 2960 鐨?Linux 鍐呮牳 SCTP 鍙傝€冨疄鐜帮紝骞舵彁渚涚О涓?SCTP 濂楁帴瀛楁墿灞曠殑 UDP 椋庢牸 API 鐨勭紪绋嬫帴鍙ｏ紝濡?IETF Internet-Drafts 涓墍鎻愯銆?
+
+## 娉ㄦ剰浜嬮」
 
 
-更多信息，请访问 lksctp 项目网站：
+- lksctp 鍙互闈欐€佹瀯寤烘垨浣滀负妯″潡鏋勫缓銆備絾鏄紝璇锋敞鎰忥紝绉婚櫎 lksctp 妯″潡鐩墠杩樹笉鏄竴椤瑰畨鍏ㄧ殑鎿嶄綔銆?
+
+- 瀵?IPv6 鏈夎瘯鎺㈡€ф敮鎸侊紝浣嗗ぇ閮ㄥ垎宸ヤ綔閮芥姇鍏ュ埌浜?IPv4 涓?lksctp 鐨勫疄鐜板拰娴嬭瘯銆?
+
+
+鏇村淇℃伅锛岃璁块棶 lksctp 椤圭洰缃戠珯锛?
 
    http://www.sf.net/projects/lksctp
 
-或通过邮件列表联系 lksctp 开发者：
+鎴栭€氳繃閭欢鍒楄〃鑱旂郴 lksctp 寮€鍙戣€咃細
 
    <linux-sctp@vger.kernel.org>

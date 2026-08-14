@@ -1,10 +1,10 @@
-## LSM/SeLinux secid
+﻿## LSM/SeLinux secid
 
 
-flowi 结构体：
+flowi 缁撴瀯浣擄細
 
-flow 结构体中的 secid 成员用于 LSM（如 SELinux）以指示该流的标签。该流的标签目前用于选择匹配的带标签 xfrm。
+flow 缁撴瀯浣撲腑鐨?secid 鎴愬憳鐢ㄤ簬 LSM锛堝 SELinux锛変互鎸囩ず璇ユ祦鐨勬爣绛俱€傝娴佺殑鏍囩鐩墠鐢ㄤ簬閫夋嫨鍖归厤鐨勫甫鏍囩 xfrm銆?
 
-如果这是一个出站流（outbound），标签来自套接字（如果有），或来自生成此流作为响应的入站数据包（如 tcp reset、timewait ack 等）。在某些特殊情况下，标签也可能来自其他来源，如进程上下文、设备等，视情况而定。
+濡傛灉杩欐槸涓€涓嚭绔欐祦锛坥utbound锛夛紝鏍囩鏉ヨ嚜濂楁帴瀛楋紙濡傛灉鏈夛級锛屾垨鏉ヨ嚜鐢熸垚姝ゆ祦浣滀负鍝嶅簲鐨勫叆绔欐暟鎹寘锛堝 tcp reset銆乼imewait ack 绛夛級銆傚湪鏌愪簺鐗规畩鎯呭喌涓嬶紝鏍囩涔熷彲鑳芥潵鑷叾浠栨潵婧愶紝濡傝繘绋嬩笂涓嬫枃銆佽澶囩瓑锛岃鎯呭喌鑰屽畾銆?
 
-如果这是一个入站流（inbound），标签来自数据包所使用的 IPSec 安全关联（security associations，如果有）。
+濡傛灉杩欐槸涓€涓叆绔欐祦锛坕nbound锛夛紝鏍囩鏉ヨ嚜鏁版嵁鍖呮墍浣跨敤鐨?IPSec 瀹夊叏鍏宠仈锛坰ecurity associations锛屽鏋滄湁锛夈€?

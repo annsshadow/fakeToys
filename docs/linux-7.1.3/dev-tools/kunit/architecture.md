@@ -1,38 +1,38 @@
-
-# KUnit 架构
-
-
-## KUnit 架构分为两个部分：
-
-- `内核内测试框架`_ 
-- `kunit_tool（命令行测试工具）`_
-
-## 内核内测试框架
+﻿
+# KUnit 鏋舵瀯
 
 
-内核测试库支持使用 KUnit 以 C 语言编写的 KUnit 测试。这些 KUnit 测试是内核代码。KUnit 执行以下任务：
+## KUnit 鏋舵瀯鍒嗕负涓や釜閮ㄥ垎锛?
 
-- 组织测试
-- 报告测试结果
-- 提供测试工具
+- `鍐呮牳鍐呮祴璇曟鏋禶_ 
+- `kunit_tool锛堝懡浠よ娴嬭瘯宸ュ叿锛塦_
 
-## 测试用例
-
-
-测试用例是 KUnit 中的基本单元。KUnit 测试用例被组织成测试套件（suite）。一个 KUnit 测试用例是一个类型为 `void (**)(struct kunit **test)` 的函数。这些测试用例函数被包装在一个名为 struct kunit_case 的结构体中。
-
-	`generate_params` 对于非参数化测试是可选的。
-
-每个 KUnit 测试用例都会接收一个 `struct kunit` 上下文对象，用于跟踪正在运行的测试。KUnit 断言宏和其他 KUnit 工具使用 `struct kunit` 上下文对象。作为一个例外，有两个字段：
-
-- `->priv`：初始化（setup）函数可以用它来存储任意的测试用户数据。
-
-- `->param_value`：它包含可以在参数化测试中检索到的参数值。
-
-## 测试套件
+## 鍐呮牳鍐呮祴璇曟鏋?
 
 
-一个 KUnit 套件包含一组测试用例。KUnit 套件由 `struct kunit_suite` 表示。例如：
+鍐呮牳娴嬭瘯搴撴敮鎸佷娇鐢?KUnit 浠?C 璇█缂栧啓鐨?KUnit 娴嬭瘯銆傝繖浜?KUnit 娴嬭瘯鏄唴鏍镐唬鐮併€侹Unit 鎵ц浠ヤ笅浠诲姟锛?
+
+- 缁勭粐娴嬭瘯
+- 鎶ュ憡娴嬭瘯缁撴灉
+- 鎻愪緵娴嬭瘯宸ュ叿
+
+## 娴嬭瘯鐢ㄤ緥
+
+
+娴嬭瘯鐢ㄤ緥鏄?KUnit 涓殑鍩烘湰鍗曞厓銆侹Unit 娴嬭瘯鐢ㄤ緥琚粍缁囨垚娴嬭瘯濂椾欢锛坰uite锛夈€備竴涓?KUnit 娴嬭瘯鐢ㄤ緥鏄竴涓被鍨嬩负 `void (**)(struct kunit **test)` 鐨勫嚱鏁般€傝繖浜涙祴璇曠敤渚嬪嚱鏁拌鍖呰鍦ㄤ竴涓悕涓?struct kunit_case 鐨勭粨鏋勪綋涓€?
+
+	`generate_params` 瀵逛簬闈炲弬鏁板寲娴嬭瘯鏄彲閫夌殑銆?
+
+姣忎釜 KUnit 娴嬭瘯鐢ㄤ緥閮戒細鎺ユ敹涓€涓?`struct kunit` 涓婁笅鏂囧璞★紝鐢ㄤ簬璺熻釜姝ｅ湪杩愯鐨勬祴璇曘€侹Unit 鏂█瀹忓拰鍏朵粬 KUnit 宸ュ叿浣跨敤 `struct kunit` 涓婁笅鏂囧璞°€備綔涓轰竴涓緥澶栵紝鏈変袱涓瓧娈碉細
+
+- `->priv`锛氬垵濮嬪寲锛坰etup锛夊嚱鏁板彲浠ョ敤瀹冩潵瀛樺偍浠绘剰鐨勬祴璇曠敤鎴锋暟鎹€?
+
+- `->param_value`锛氬畠鍖呭惈鍙互鍦ㄥ弬鏁板寲娴嬭瘯涓绱㈠埌鐨勫弬鏁板€笺€?
+
+## 娴嬭瘯濂椾欢
+
+
+涓€涓?KUnit 濂椾欢鍖呭惈涓€缁勬祴璇曠敤渚嬨€侹Unit 濂椾欢鐢?`struct kunit_suite` 琛ㄧず銆備緥濡傦細
 
 
 	static struct kunit_case example_test_cases[] = {
@@ -50,62 +50,62 @@
 	};
 	kunit_test_suite(example_test_suite);
 
-在上面的例子中，测试套件 `example_test_suite` 运行测试用例 `example_test_foo`、`example_test_bar` 和 `example_test_baz`。在运行测试之前，会调用 `example_test_init`，在运行测试之后，会调用 `example_test_exit`。`kunit_test_suite(example_test_suite)` 将该测试套件注册到 KUnit 测试框架中。
+鍦ㄤ笂闈㈢殑渚嬪瓙涓紝娴嬭瘯濂椾欢 `example_test_suite` 杩愯娴嬭瘯鐢ㄤ緥 `example_test_foo`銆乣example_test_bar` 鍜?`example_test_baz`銆傚湪杩愯娴嬭瘯涔嬪墠锛屼細璋冪敤 `example_test_init`锛屽湪杩愯娴嬭瘯涔嬪悗锛屼細璋冪敤 `example_test_exit`銆俙kunit_test_suite(example_test_suite)` 灏嗚娴嬭瘯濂椾欢娉ㄥ唽鍒?KUnit 娴嬭瘯妗嗘灦涓€?
 
-## 执行器（Executor）
-
-
-KUnit 执行器可以在启动时列出并运行内置的 KUnit 测试。这些测试套件存储在一个名为 `.kunit_test_suites` 的链接器段（linker section）中。相关代码参见 `include/asm-generic/vmlinux.lds.h <https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/asm-generic/vmlinux.lds.h?h=v6.0#n950>`_ 中的 `KUNIT_TABLE()` 宏定义。该链接器段由一个指向 `struct kunit_suite` 的指针数组组成，并由 `kunit_test_suites()` 宏填充。KUnit 执行器遍历该链接器段数组，以运行编译进内核的所有测试。
-
-## :alt:	KUnit 套件内存
-
-## KUnit 套件内存图
-
-在内核启动时，KUnit 执行器使用该段的起始和结束地址来遍历并运行所有测试。有关执行器的实现，请参见 `lib/kunit/executor.c <https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/lib/kunit/executor.c>`_。当以内核模块形式构建时，`kunit_test_suites()` 宏会定义一个 `module_init()` 函数，该函数运行编译单元中的所有测试，而不是使用执行器。
-
-在 KUnit 测试中，某些错误类不会影响其他测试或内核的其他部分，每个 KUnit 用例在独立的线程上下文中执行。请参见 `lib/kunit/try-catch.c <https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/lib/kunit/try-catch.c?h=v5.15#n58>`_ 中的 `kunit_try_catch_run()` 函数。
-
-## 断言宏
+## 鎵ц鍣紙Executor锛?
 
 
-KUnit 测试使用期望（expectation）/断言（assertion）来验证状态。所有期望/断言的格式为：
+KUnit 鎵ц鍣ㄥ彲浠ュ湪鍚姩鏃跺垪鍑哄苟杩愯鍐呯疆鐨?KUnit 娴嬭瘯銆傝繖浜涙祴璇曞浠跺瓨鍌ㄥ湪涓€涓悕涓?`.kunit_test_suites` 鐨勯摼鎺ュ櫒娈碉紙linker section锛変腑銆傜浉鍏充唬鐮佸弬瑙?`include/asm-generic/vmlinux.lds.h <https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/include/asm-generic/vmlinux.lds.h?h=v6.0#n950>`_ 涓殑 `KUNIT_TABLE()` 瀹忓畾涔夈€傝閾炬帴鍣ㄦ鐢变竴涓寚鍚?`struct kunit_suite` 鐨勬寚閽堟暟缁勭粍鎴愶紝骞剁敱 `kunit_test_suites()` 瀹忓～鍏呫€侹Unit 鎵ц鍣ㄩ亶鍘嗚閾炬帴鍣ㄦ鏁扮粍锛屼互杩愯缂栬瘧杩涘唴鏍哥殑鎵€鏈夋祴璇曘€?
+
+## :alt:	KUnit 濂椾欢鍐呭瓨
+
+## KUnit 濂椾欢鍐呭瓨鍥?
+
+鍦ㄥ唴鏍稿惎鍔ㄦ椂锛孠Unit 鎵ц鍣ㄤ娇鐢ㄨ娈电殑璧峰鍜岀粨鏉熷湴鍧€鏉ラ亶鍘嗗苟杩愯鎵€鏈夋祴璇曘€傛湁鍏虫墽琛屽櫒鐨勫疄鐜帮紝璇峰弬瑙?`lib/kunit/executor.c <https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/lib/kunit/executor.c>`_銆傚綋浠ュ唴鏍告ā鍧楀舰寮忔瀯寤烘椂锛宍kunit_test_suites()` 瀹忎細瀹氫箟涓€涓?`module_init()` 鍑芥暟锛岃鍑芥暟杩愯缂栬瘧鍗曞厓涓殑鎵€鏈夋祴璇曪紝鑰屼笉鏄娇鐢ㄦ墽琛屽櫒銆?
+
+鍦?KUnit 娴嬭瘯涓紝鏌愪簺閿欒绫讳笉浼氬奖鍝嶅叾浠栨祴璇曟垨鍐呮牳鐨勫叾浠栭儴鍒嗭紝姣忎釜 KUnit 鐢ㄤ緥鍦ㄧ嫭绔嬬殑绾跨▼涓婁笅鏂囦腑鎵ц銆傝鍙傝 `lib/kunit/try-catch.c <https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/lib/kunit/try-catch.c?h=v5.15#n58>`_ 涓殑 `kunit_try_catch_run()` 鍑芥暟銆?
+
+## 鏂█瀹?
+
+
+KUnit 娴嬭瘯浣跨敤鏈熸湜锛坋xpectation锛?鏂█锛坅ssertion锛夋潵楠岃瘉鐘舵€併€傛墍鏈夋湡鏈?鏂█鐨勬牸寮忎负锛?
 `KUNIT_{EXPECT|ASSERT}_<op>[_MSG](kunit, property[, message])`
 
-- `{EXPECT|ASSERT}` 决定该检查是断言还是期望。在失败时，测试流程的区别如下：
+- `{EXPECT|ASSERT}` 鍐冲畾璇ユ鏌ユ槸鏂█杩樻槸鏈熸湜銆傚湪澶辫触鏃讹紝娴嬭瘯娴佺▼鐨勫尯鍒涓嬶細
 
- - 对于期望，测试被标记为失败，并记录该失败。
+ - 瀵逛簬鏈熸湜锛屾祴璇曡鏍囪涓哄け璐ワ紝骞惰褰曡澶辫触銆?
 
- - 另一方面，断言失败会导致测试用例立即终止。
+ - 鍙︿竴鏂归潰锛屾柇瑷€澶辫触浼氬鑷存祴璇曠敤渚嬬珛鍗崇粓姝€?
 
-  - 断言会调用函数：
-		  `void __noreturn __kunit_abort(struct kunit *)`。
+  - 鏂█浼氳皟鐢ㄥ嚱鏁帮細
+		  `void __noreturn __kunit_abort(struct kunit *)`銆?
 
-  - `__kunit_abort` 调用函数：
-		  `void __noreturn kunit_try_catch_throw(struct kunit_try_catch *try_catch)`。
+  - `__kunit_abort` 璋冪敤鍑芥暟锛?
+		  `void __noreturn kunit_try_catch_throw(struct kunit_try_catch *try_catch)`銆?
 
-  - `kunit_try_catch_throw` 调用函数：
+  - `kunit_try_catch_throw` 璋冪敤鍑芥暟锛?
 		  `void kthread_complete_and_exit(struct completion *, long) __noreturn;`
-		  并终止该特殊线程上下文。
+		  骞剁粓姝㈣鐗规畩绾跨▼涓婁笅鏂囥€?
 
-- `<op>` 表示带有以下选项的检查：`TRUE`（所提供的属性具有布尔值 “true”）、`EQ`（所提供的两个属性相等）、`NOT_ERR_OR_NULL`（所提供的指针不为空且不包含 “err” 值）。
+- `<op>` 琛ㄧず甯︽湁浠ヤ笅閫夐」鐨勬鏌ワ細`TRUE`锛堟墍鎻愪緵鐨勫睘鎬у叿鏈夊竷灏斿€?鈥渢rue鈥濓級銆乣EQ`锛堟墍鎻愪緵鐨勪袱涓睘鎬х浉绛夛級銆乣NOT_ERR_OR_NULL`锛堟墍鎻愪緵鐨勬寚閽堜笉涓虹┖涓斾笉鍖呭惈 鈥渆rr鈥?鍊硷級銆?
 
-- `[_MSG]` 在失败时打印自定义消息。
+- `[_MSG]` 鍦ㄥけ璐ユ椂鎵撳嵃鑷畾涔夋秷鎭€?
 
-## 测试结果报告
+## 娴嬭瘯缁撴灉鎶ュ憡
 
-KUnit 以 KTAP 格式打印测试结果。KTAP 基于 TAP14，参见 Documentation/dev-tools/ktap.rst。KTAP 可与 KUnit 和 Kselftest 配合使用。KUnit 执行器将 KTAP 结果打印到 dmesg 和 debugfs（如果已配置）。
+KUnit 浠?KTAP 鏍煎紡鎵撳嵃娴嬭瘯缁撴灉銆侹TAP 鍩轰簬 TAP14锛屽弬瑙?Documentation/dev-tools/ktap.rst銆侹TAP 鍙笌 KUnit 鍜?Kselftest 閰嶅悎浣跨敤銆侹Unit 鎵ц鍣ㄥ皢 KTAP 缁撴灉鎵撳嵃鍒?dmesg 鍜?debugfs锛堝鏋滃凡閰嶇疆锛夈€?
 
-## 参数化测试
-
-
-每个 KUnit 参数化测试都关联一组参数。该测试会被多次调用，每个参数值调用一次，并且参数存储在 `param_value` 字段中。测试用例包含一个接受生成器函数的 KUNIT_CASE_PARAM() 宏。生成器函数接收前一个参数并返回下一个参数。它还包含一个用于生成基于数组的常见情况生成器的宏。
-
-## kunit_tool（命令行测试工具）
+## 鍙傛暟鍖栨祴璇?
 
 
-`kunit_tool` 是一个 Python 脚本，位于 `tools/testing/kunit/kunit.py`。它用于配置、构建、执行、解析测试结果，并按正确顺序运行前面所有命令（即配置、构建、执行和解析）。运行 KUnit 测试有两种选择：要么构建一个启用了 KUnit 的内核并手动解析结果（参见 Documentation/dev-tools/kunit/run_manual.rst），要么使用 `kunit_tool`（参见 Documentation/dev-tools/kunit/run_wrapper.rst）。
+姣忎釜 KUnit 鍙傛暟鍖栨祴璇曢兘鍏宠仈涓€缁勫弬鏁般€傝娴嬭瘯浼氳澶氭璋冪敤锛屾瘡涓弬鏁板€艰皟鐢ㄤ竴娆★紝骞朵笖鍙傛暟瀛樺偍鍦?`param_value` 瀛楁涓€傛祴璇曠敤渚嬪寘鍚竴涓帴鍙楃敓鎴愬櫒鍑芥暟鐨?KUNIT_CASE_PARAM() 瀹忋€傜敓鎴愬櫒鍑芥暟鎺ユ敹鍓嶄竴涓弬鏁板苟杩斿洖涓嬩竴涓弬鏁般€傚畠杩樺寘鍚竴涓敤浜庣敓鎴愬熀浜庢暟缁勭殑甯歌鎯呭喌鐢熸垚鍣ㄧ殑瀹忋€?
 
-- `configure` 命令从 `.kunitconfig` 文件（以及任何架构特定的选项）生成内核 `.config`。`qemu_configs` 文件夹中提供的 Python 脚本（例如 `tools/testing/kunit/qemu configs/powerpc.py`）包含特定架构的额外配置选项。它会解析现有的 `.config` 和 `.kunitconfig` 文件，以确保 `.config` 是 `.kunitconfig` 的超集。如果不是，它会将两者合并并运行 `make olddefconfig` 来重新生成 `.config` 文件。然后它检查 `.config` 是否已成为超集。这验证了所有 Kconfig 依赖项都在 `.kunitconfig` 文件中正确指定。`kunit_config.py` 脚本包含解析 Kconfig 的代码。运行 `make olddefconfig` 的代码属于 `kunit_kernel.py` 脚本的一部分。你可以通过以下命令调用此命令：`./tools/testing/kunit/kunit.py config`，并生成 `.config` 文件。
-- `build` 在内核树上使用所需选项（取决于架构和某些选项，例如 build_dir）运行 `make`，并报告任何错误。要从当前的 `.config` 构建 KUnit 内核，你可以使用 `build` 参数：`./tools/testing/kunit/kunit.py build`。
-- `exec` 命令直接（使用 User-mode Linux 配置）或通过 QEMU 等模拟器执行内核结果。它使用标准输出（stdout）从日志中读取结果，并将其传递给 `parse` 进行解析。如果你已经构建了一个带有内置 KUnit 测试的内核，可以使用 `exec` 参数运行内核并显示测试结果：`./tools/testing/kunit/kunit.py exec`。
-- `parse` 从内核日志中提取 KTAP 输出，解析测试结果，并打印摘要。对于失败的测试，会包含任何诊断输出。
+## kunit_tool锛堝懡浠よ娴嬭瘯宸ュ叿锛?
+
+
+`kunit_tool` 鏄竴涓?Python 鑴氭湰锛屼綅浜?`tools/testing/kunit/kunit.py`銆傚畠鐢ㄤ簬閰嶇疆銆佹瀯寤恒€佹墽琛屻€佽В鏋愭祴璇曠粨鏋滐紝骞舵寜姝ｇ‘椤哄簭杩愯鍓嶉潰鎵€鏈夊懡浠わ紙鍗抽厤缃€佹瀯寤恒€佹墽琛屽拰瑙ｆ瀽锛夈€傝繍琛?KUnit 娴嬭瘯鏈変袱绉嶉€夋嫨锛氳涔堟瀯寤轰竴涓惎鐢ㄤ簡 KUnit 鐨勫唴鏍稿苟鎵嬪姩瑙ｆ瀽缁撴灉锛堝弬瑙?Documentation/dev-tools/kunit/run_manual.rst锛夛紝瑕佷箞浣跨敤 `kunit_tool`锛堝弬瑙?Documentation/dev-tools/kunit/run_wrapper.rst锛夈€?
+
+- `configure` 鍛戒护浠?`.kunitconfig` 鏂囦欢锛堜互鍙婁换浣曟灦鏋勭壒瀹氱殑閫夐」锛夌敓鎴愬唴鏍?`.config`銆俙qemu_configs` 鏂囦欢澶逛腑鎻愪緵鐨?Python 鑴氭湰锛堜緥濡?`tools/testing/kunit/qemu configs/powerpc.py`锛夊寘鍚壒瀹氭灦鏋勭殑棰濆閰嶇疆閫夐」銆傚畠浼氳В鏋愮幇鏈夌殑 `.config` 鍜?`.kunitconfig` 鏂囦欢锛屼互纭繚 `.config` 鏄?`.kunitconfig` 鐨勮秴闆嗐€傚鏋滀笉鏄紝瀹冧細灏嗕袱鑰呭悎骞跺苟杩愯 `make olddefconfig` 鏉ラ噸鏂扮敓鎴?`.config` 鏂囦欢銆傜劧鍚庡畠妫€鏌?`.config` 鏄惁宸叉垚涓鸿秴闆嗐€傝繖楠岃瘉浜嗘墍鏈?Kconfig 渚濊禆椤归兘鍦?`.kunitconfig` 鏂囦欢涓纭寚瀹氥€俙kunit_config.py` 鑴氭湰鍖呭惈瑙ｆ瀽 Kconfig 鐨勪唬鐮併€傝繍琛?`make olddefconfig` 鐨勪唬鐮佸睘浜?`kunit_kernel.py` 鑴氭湰鐨勪竴閮ㄥ垎銆備綘鍙互閫氳繃浠ヤ笅鍛戒护璋冪敤姝ゅ懡浠わ細`./tools/testing/kunit/kunit.py config`锛屽苟鐢熸垚 `.config` 鏂囦欢銆?
+- `build` 鍦ㄥ唴鏍告爲涓婁娇鐢ㄦ墍闇€閫夐」锛堝彇鍐充簬鏋舵瀯鍜屾煇浜涢€夐」锛屼緥濡?build_dir锛夎繍琛?`make`锛屽苟鎶ュ憡浠讳綍閿欒銆傝浠庡綋鍓嶇殑 `.config` 鏋勫缓 KUnit 鍐呮牳锛屼綘鍙互浣跨敤 `build` 鍙傛暟锛歚./tools/testing/kunit/kunit.py build`銆?
+- `exec` 鍛戒护鐩存帴锛堜娇鐢?User-mode Linux 閰嶇疆锛夋垨閫氳繃 QEMU 绛夋ā鎷熷櫒鎵ц鍐呮牳缁撴灉銆傚畠浣跨敤鏍囧噯杈撳嚭锛坰tdout锛変粠鏃ュ織涓鍙栫粨鏋滐紝骞跺皢鍏朵紶閫掔粰 `parse` 杩涜瑙ｆ瀽銆傚鏋滀綘宸茬粡鏋勫缓浜嗕竴涓甫鏈夊唴缃?KUnit 娴嬭瘯鐨勫唴鏍革紝鍙互浣跨敤 `exec` 鍙傛暟杩愯鍐呮牳骞舵樉绀烘祴璇曠粨鏋滐細`./tools/testing/kunit/kunit.py exec`銆?
+- `parse` 浠庡唴鏍告棩蹇椾腑鎻愬彇 KTAP 杈撳嚭锛岃В鏋愭祴璇曠粨鏋滐紝骞舵墦鍗版憳瑕併€傚浜庡け璐ョ殑娴嬭瘯锛屼細鍖呭惈浠讳綍璇婃柇杈撳嚭銆?

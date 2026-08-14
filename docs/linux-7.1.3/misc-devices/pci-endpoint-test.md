@@ -1,43 +1,32 @@
-## PCI 端点测试功能驱动
+﻿## PCI 绔偣娴嬭瘯鍔熻兘椹卞姩
 
 
-如果根复合体连接到运行 `pci_epf_test` 功能驱动的可配置 PCI 端点（按照 [^1^]_
-配置），则该驱动应作为主机端驱动使用。
+濡傛灉鏍瑰鍚堜綋杩炴帴鍒拌繍琛?`pci_epf_test` 鍔熻兘椹卞姩鐨勫彲閰嶇疆 PCI 绔偣锛堟寜鐓?[^1^]_
+閰嶇疆锛夛紝鍒欒椹卞姩搴斾綔涓轰富鏈虹椹卞姩浣跨敤銆?
+鈥減ci_endpoint_test鈥濋┍鍔ㄥ彲鐢ㄤ簬鎵ц浠ヤ笅娴嬭瘯銆?
+娴嬭瘯璁惧鐨?PCI 椹卞姩鎵ц浠ヤ笅娴嬭瘯锛?
+	#) 楠岃瘉 BAR 涓紪绋嬬殑鍦板潃
+	#) 瑙﹀彂浼犵粺 IRQ
+	#) 瑙﹀彂 MSI IRQ
+	#) 瑙﹀彂 MSI-X IRQ
+	#) 璇诲彇鏁版嵁
+	#) 鍐欏叆鏁版嵁
+	#) 澶嶅埗鏁版嵁
 
-“pci_endpoint_test”驱动可用于执行以下测试。
-
-测试设备的 PCI 驱动执行以下测试：
-
-	#) 验证 BAR 中编程的地址
-	#) 触发传统 IRQ
-	#) 触发 MSI IRQ
-	#) 触发 MSI-X IRQ
-	#) 读取数据
-	#) 写入数据
-	#) 复制数据
-
-该 misc 驱动为每个连接到根复合体的 `pci_epf_test` 功能创建
-/dev/pci-endpoint-test.<num>，并应使用“ioctls”来执行上述测试。
-
+璇?misc 椹卞姩涓烘瘡涓繛鎺ュ埌鏍瑰鍚堜綋鐨?`pci_epf_test` 鍔熻兘鍒涘缓
+/dev/pci-endpoint-test.<num>锛屽苟搴斾娇鐢ㄢ€渋octls鈥濇潵鎵ц涓婅堪娴嬭瘯銆?
 ### ioctl
 
 
  PCITEST_BAR:
-	      测试 BAR。应传入要测试的 BAR 编号作为参数。
- PCITEST_LEGACY_IRQ:
-	      测试传统 IRQ
+	      娴嬭瘯 BAR銆傚簲浼犲叆瑕佹祴璇曠殑 BAR 缂栧彿浣滀负鍙傛暟銆? PCITEST_LEGACY_IRQ:
+	      娴嬭瘯浼犵粺 IRQ
  PCITEST_MSI:
-	      测试消息信号中断。应传入要测试的 MSI 编号作为参数。
- PCITEST_MSIX:
-	      测试消息信号中断。应传入要测试的 MSI-X 编号作为参数。
- PCITEST_SET_IRQTYPE:
-	      更改驱动 IRQ 类型配置。应传入 IRQ 类型作为参数
-	      （0：Legacy，1：MSI，2：MSI-X）。
- PCITEST_GET_IRQTYPE:
-	      获取驱动 IRQ 类型配置。
- PCITEST_WRITE:
-	      执行写测试。应传入缓冲区大小作为参数。
- PCITEST_READ:
-	      执行读测试。应传入缓冲区大小作为参数。
- PCITEST_COPY:
-	      执行读测试。应传入缓冲区大小作为参数。
+	      娴嬭瘯娑堟伅淇″彿涓柇銆傚簲浼犲叆瑕佹祴璇曠殑 MSI 缂栧彿浣滀负鍙傛暟銆? PCITEST_MSIX:
+	      娴嬭瘯娑堟伅淇″彿涓柇銆傚簲浼犲叆瑕佹祴璇曠殑 MSI-X 缂栧彿浣滀负鍙傛暟銆? PCITEST_SET_IRQTYPE:
+	      鏇存敼椹卞姩 IRQ 绫诲瀷閰嶇疆銆傚簲浼犲叆 IRQ 绫诲瀷浣滀负鍙傛暟
+	      锛?锛歀egacy锛?锛歁SI锛?锛歁SI-X锛夈€? PCITEST_GET_IRQTYPE:
+	      鑾峰彇椹卞姩 IRQ 绫诲瀷閰嶇疆銆? PCITEST_WRITE:
+	      鎵ц鍐欐祴璇曘€傚簲浼犲叆缂撳啿鍖哄ぇ灏忎綔涓哄弬鏁般€? PCITEST_READ:
+	      鎵ц璇绘祴璇曘€傚簲浼犲叆缂撳啿鍖哄ぇ灏忎綔涓哄弬鏁般€? PCITEST_COPY:
+	      鎵ц璇绘祴璇曘€傚簲浼犲叆缂撳啿鍖哄ぇ灏忎綔涓哄弬鏁般€?

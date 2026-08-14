@@ -1,7 +1,7 @@
-## 内核驱动 POWERZ
+﻿## 鍐呮牳椹卞姩 POWERZ
 
 
-支持的芯片：
+鏀寔鐨勮姱鐗囷細
 
   - ChargerLAB POWER-Z KM003C
 
@@ -9,17 +9,17 @@
 
     Addresses scanned: -
 
-作者：
+浣滆€咃細
 
-  - Thomas Weißschuh <linux@weissschuh.net>
+  - Thomas Wei脽schuh <linux@weissschuh.net>
 
 ### Description
 
 
-该驱动实现了对 ChargerLAB POWER-Z USB-C 电源测试系列的支持。
+璇ラ┍鍔ㄥ疄鐜颁簡瀵?ChargerLAB POWER-Z USB-C 鐢垫簮娴嬭瘯绯诲垪鐨勬敮鎸併€?
 
-设备通过 USB 上的自定义协议进行通信。
+璁惧閫氳繃 USB 涓婄殑鑷畾涔夊崗璁繘琛岄€氫俊銆?
 
-通过 hwmon 暴露的通道标签与设备上显示屏以及官方 POWER-Z PC 软件使用的标签一致。
+閫氳繃 hwmon 鏆撮湶鐨勯€氶亾鏍囩涓庤澶囦笂鏄剧ず灞忎互鍙婂畼鏂?POWER-Z PC 杞欢浣跨敤鐨勬爣绛句竴鑷淬€?
 
-由于电流可双向流经测试仪，通道 "curr1_input"（标签 "IBUS"）的符号表示方向。
+鐢变簬鐢垫祦鍙弻鍚戞祦缁忔祴璇曚华锛岄€氶亾 "curr1_input"锛堟爣绛?"IBUS"锛夌殑绗﹀彿琛ㄧず鏂瑰悜銆?

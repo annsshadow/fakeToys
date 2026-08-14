@@ -1,23 +1,23 @@
-
+﻿
 ## Block
 
 
 
-本页列出块设备（block）子系统相关的文档。
+鏈〉鍒楀嚭鍧楄澶囷紙block锛夊瓙绯荤粺鐩稿叧鐨勬枃妗ｃ€?
 
-- [BFQ I/O 调度器](bfq-iosched)
+- [BFQ I/O 璋冨害鍣╙(bfq-iosched)
 - [biovecs](biovecs)
 - [blk-mq](blk-mq)
-- [命令行分区](cmdline-partition)
-- [数据完整性](data-integrity)
-- [截止时间 I/O 调度器](deadline-iosched)
-- [内联加密](inline-encryption)
-- [I/O 优先级](ioprio)
-- [Kyber I/O 调度器](kyber-iosched)
+- [鍛戒护琛屽垎鍖篯(cmdline-partition)
+- [鏁版嵁瀹屾暣鎬(data-integrity)
+- [鎴鏃堕棿 I/O 璋冨害鍣╙(deadline-iosched)
+- [鍐呰仈鍔犲瘑](inline-encryption)
+- [I/O 浼樺厛绾(ioprio)
+- [Kyber I/O 璋冨害鍣╙(kyber-iosched)
 - [null_blk](null_blk)
 - [pr](pr)
 - [stat](stat)
-- [切换调度器](switching-sched)
+- [鍒囨崲璋冨害鍣╙(switching-sched)
 - [writeback_cache_control](writeback_cache_control)
 - [ublk](ublk)
 

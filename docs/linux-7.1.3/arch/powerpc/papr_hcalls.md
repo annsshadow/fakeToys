@@ -1,85 +1,85 @@
+﻿
+## 瓒呯骇璋冪敤鎿嶄綔鐮侊紙hcalls锛?
 
-## 超级调用操作码（hcalls）
 
+## 姒傝堪
 
-## 概述
+64 浣?Power Book3S 骞冲彴涓婄殑铏氭嫙鍖栧熀浜?PAPR 瑙勮寖 [^1^]_锛岃瑙勮寖鎻忚堪浜嗗鎴锋満
+鎿嶄綔绯荤粺鐨勮繍琛屾椂鐜锛屼互鍙婂鎴锋満搴斿浣曚笌 hypervisor 浜や簰浠ユ墽琛岀壒鏉冩搷浣溿€傜洰鍓?
+鏈変袱绉嶇鍚?PAPR 鐨?hypervisor锛?
 
-64 位 Power Book3S 平台上的虚拟化基于 PAPR 规范 [^1^]_，该规范描述了客户机
-操作系统的运行时环境，以及客户机应如何与 hypervisor 交互以执行特权操作。目前
-有两种符合 PAPR 的 hypervisor：
+- **IBM PowerVM (PHYP)**锛欼BM 鐨勪笓鏈?hypervisor锛屾敮鎸佸皢 AIX銆両BM-i 鍜?Linux
+  浣滀负鍙楁敮鎸佺殑瀹㈡埛鏈猴紙绉颁负閫昏緫鍒嗗尯鎴?LPARS锛夈€傚畠鏀寔瀹屾暣鐨?PAPR 瑙勮寖銆?
 
-- **IBM PowerVM (PHYP)**：IBM 的专有 hypervisor，支持将 AIX、IBM-i 和 Linux
-  作为受支持的客户机（称为逻辑分区或 LPARS）。它支持完整的 PAPR 规范。
+- **Qemu/KVM**锛氭敮鎸佽繍琛屽湪 PPC64 Linux 瀹夸富鏈轰笂鐨?PPC64 Linux 瀹㈡埛鏈恒€備笉杩囧畠
+  浠呭疄鐜颁簡 PAPR 瑙勮寖鐨勪竴涓悕涓?LoPAPR 鐨勫瓙闆?[^2^]_銆?
 
-- **Qemu/KVM**：支持运行在 PPC64 Linux 宿主机上的 PPC64 Linux 客户机。不过它
-  仅实现了 PAPR 规范的一个名为 LoPAPR 的子集 [^2^]_。
+鍦?PPC64 鏋舵瀯涓婏紝杩愯浜?PAPR hypervisor 涔嬩笂鐨勫鎴锋満鍐呮牳绉颁负 **pSeries 瀹㈡埛鏈?*銆?
+pSeries 瀹㈡埛鏈鸿繍琛屽湪鐗规潈绾фā寮忥紙HV=0锛変笅锛屾瘡褰撻渶瑕佹墽琛?hypervisor 鐗规潈鎿嶄綔 [^3^]_
+鎴?hypervisor 绠＄悊鐨勫叾浠栨湇鍔℃椂锛岄兘蹇呴』鍚?hypervisor 鍙戝嚭瓒呯骇璋冪敤銆?
 
-在 PPC64 架构上，运行于 PAPR hypervisor 之上的客户机内核称为 **pSeries 客户机**。
-pSeries 客户机运行在特权级模式（HV=0）下，每当需要执行 hypervisor 特权操作 [^3^]_
-或 hypervisor 管理的其他服务时，都必须向 hypervisor 发出超级调用。
-
-因此，超级调用（hcall）本质上是 pSeries 客户机请求 hypervisor 代表客户机执行特权
-操作。客户机发出调用并提供必要的输入操作数。hypervisor 执行完特权操作后，将状态码
-和输出操作数返回给客户机。
+鍥犳锛岃秴绾ц皟鐢紙hcall锛夋湰璐ㄤ笂鏄?pSeries 瀹㈡埛鏈鸿姹?hypervisor 浠ｈ〃瀹㈡埛鏈烘墽琛岀壒鏉?
+鎿嶄綔銆傚鎴锋満鍙戝嚭璋冪敤骞舵彁渚涘繀瑕佺殑杈撳叆鎿嶄綔鏁般€俬ypervisor 鎵ц瀹岀壒鏉冩搷浣滃悗锛屽皢鐘舵€佺爜
+鍜岃緭鍑烘搷浣滄暟杩斿洖缁欏鎴锋満銆?
 
 ## HCALL ABI
 
-hcall 的 ABI 规范（pseries 客户机与 PAPR hypervisor 之间）在参考文献 [^2^]_ 的
-第 14.5.3 节中描述。切换到 Hypervisor 上下文通过指令 **HVCS** 完成，该指令要求将
-hcall 的操作码设置在 **r3** 中，hcall 的任何输入参数在寄存器 **r4-r12** 中提供。
-如果需要通过内存缓冲区传递值，存储在该缓冲区中的数据应采用大端字节序。
+hcall 鐨?ABI 瑙勮寖锛坧series 瀹㈡埛鏈轰笌 PAPR hypervisor 涔嬮棿锛夊湪鍙傝€冩枃鐚?[^2^]_ 鐨?
+绗?14.5.3 鑺備腑鎻忚堪銆傚垏鎹㈠埌 Hypervisor 涓婁笅鏂囬€氳繃鎸囦护 **HVCS** 瀹屾垚锛岃鎸囦护瑕佹眰灏?
+hcall 鐨勬搷浣滅爜璁剧疆鍦?**r3** 涓紝hcall 鐨勪换浣曡緭鍏ュ弬鏁板湪瀵勫瓨鍣?**r4-r12** 涓彁渚涖€?
+濡傛灉闇€瑕侀€氳繃鍐呭瓨缂撳啿鍖轰紶閫掑€硷紝瀛樺偍鍦ㄨ缂撳啿鍖轰腑鐨勬暟鎹簲閲囩敤澶х瀛楄妭搴忋€?
 
-一旦 hypervisor 处理完 'HVCS' 指令并将控制权返回给客户机，hcall 的返回值可在
-**r3** 中获取，任何输出值在寄存器 **r4-r12** 中返回。与输入参数类似，存储在内存
-缓冲区中的任何输出值都将采用大端字节序。
+涓€鏃?hypervisor 澶勭悊瀹?'HVCS' 鎸囦护骞跺皢鎺у埗鏉冭繑鍥炵粰瀹㈡埛鏈猴紝hcall 鐨勮繑鍥炲€煎彲鍦?
+**r3** 涓幏鍙栵紝浠讳綍杈撳嚭鍊煎湪瀵勫瓨鍣?**r4-r12** 涓繑鍥炪€備笌杈撳叆鍙傛暟绫讳技锛屽瓨鍌ㄥ湪鍐呭瓨
+缂撳啿鍖轰腑鐨勪换浣曡緭鍑哄€奸兘灏嗛噰鐢ㄥぇ绔瓧鑺傚簭銆?
 
-PowerPC 架构代码提供了名为 **plpar_hcall_xxx** 的便捷封装函数，定义在架构特定的
-头文件中 [^4^]_，用于从作为 pSeries 客户机运行的 Linux 内核中发出 hcall。
+PowerPC 鏋舵瀯浠ｇ爜鎻愪緵浜嗗悕涓?**plpar_hcall_xxx** 鐨勪究鎹峰皝瑁呭嚱鏁帮紝瀹氫箟鍦ㄦ灦鏋勭壒瀹氱殑
+澶存枃浠朵腑 [^4^]_锛岀敤浜庝粠浣滀负 pSeries 瀹㈡埛鏈鸿繍琛岀殑 Linux 鍐呮牳涓彂鍑?hcall銆?
 
-## 寄存器约定
+## 瀵勫瓨鍣ㄧ害瀹?
 
-任何 hcall 都应遵循 "64-Bit ELF V2 ABI Specification: Power Architecture"[^5^]_
-第 2.2.1.1 节中描述的相同寄存器约定。下表汇总了这些约定：
+浠讳綍 hcall 閮藉簲閬靛惊 "64-Bit ELF V2 ABI Specification: Power Architecture"[^5^]_
+绗?2.2.1.1 鑺備腑鎻忚堪鐨勭浉鍚屽瘎瀛樺櫒绾﹀畾銆備笅琛ㄦ眹鎬讳簡杩欎簺绾﹀畾锛?
 
 +----------+----------+-------------------------------------------+
 | Register |Volatile  |  Purpose                                  |
 | Range    |(Y/N)     |                                           |
 +==========+==========+===========================================+
-|   r0     |    Y     |  可选用途                                 |
+|   r0     |    Y     |  鍙€夌敤閫?                                |
 +----------+----------+-------------------------------------------+
-|   r1     |    N     |  栈指针                                   |
+|   r1     |    N     |  鏍堟寚閽?                                  |
 +----------+----------+-------------------------------------------+
 |   r2     |    N     |  TOC                                      |
 +----------+----------+-------------------------------------------+
-|   r3     |    Y     |  hcall 操作码/返回值                       |
+|   r3     |    Y     |  hcall 鎿嶄綔鐮?杩斿洖鍊?                      |
 +----------+----------+-------------------------------------------+
-|  r4-r10  |    Y     |  输入与输出值                             |
+|  r4-r10  |    Y     |  杈撳叆涓庤緭鍑哄€?                            |
 +----------+----------+-------------------------------------------+
-|   r11    |    Y     |  可选用途/环境指针                         |
+|   r11    |    Y     |  鍙€夌敤閫?鐜鎸囬拡                         |
 +----------+----------+-------------------------------------------+
-|   r12    |    Y     |  可选用途/全局入口点处的函数入口地址       |
+|   r12    |    Y     |  鍙€夌敤閫?鍏ㄥ眬鍏ュ彛鐐瑰鐨勫嚱鏁板叆鍙ｅ湴鍧€       |
 |          |          |                                           |
 +----------+----------+-------------------------------------------+
-|   r13    |    N     |  线程指针                                 |
+|   r13    |    N     |  绾跨▼鎸囬拡                                 |
 +----------+----------+-------------------------------------------+
-|  r14-r31 |    N     |  局部变量                                 |
+|  r14-r31 |    N     |  灞€閮ㄥ彉閲?                                |
 +----------+----------+-------------------------------------------+
-|    LR    |    Y     |  链接寄存器                               |
+|    LR    |    Y     |  閾炬帴瀵勫瓨鍣?                              |
 +----------+----------+-------------------------------------------+
-|   CTR    |    Y     |  循环计数器                               |
+|   CTR    |    Y     |  寰幆璁℃暟鍣?                              |
 +----------+----------+-------------------------------------------+
-|   XER    |    Y     |  定点异常寄存器                           |
+|   XER    |    Y     |  瀹氱偣寮傚父瀵勫瓨鍣?                          |
 +----------+----------+-------------------------------------------+
-|  CR0-1   |    Y     |  条件寄存器字段                           |
+|  CR0-1   |    Y     |  鏉′欢瀵勫瓨鍣ㄥ瓧娈?                          |
 +----------+----------+-------------------------------------------+
-|  CR2-4   |    N     |  条件寄存器字段                           |
+|  CR2-4   |    N     |  鏉′欢瀵勫瓨鍣ㄥ瓧娈?                          |
 +----------+----------+-------------------------------------------+
-|  CR5-7   |    Y     |  条件寄存器字段                           |
+|  CR5-7   |    Y     |  鏉′欢瀵勫瓨鍣ㄥ瓧娈?                          |
 +----------+----------+-------------------------------------------+
 |  Others  |    N     |                                           |
 +----------+----------+-------------------------------------------+
 
-## DRC 与 DRC 索引
+## DRC 涓?DRC 绱㈠紩
 
 ```
 
@@ -94,210 +94,210 @@ PowerPC 架构代码提供了名为 **plpar_hcall_xxx** 的便捷封装函数，
      +--+  DRC2  +------------+         +---------+
 
 ```
-PAPR hypervisor 将 LPAR 可用的共享硬件资源（如 PCI 设备、NVDIMM 等）称为动态资源
-（Dynamic Resource，DR）。当 DR 分配给某个 LPAR 时，PHYP 会创建一个名为动态资源
-连接器（Dynamic Resource Connector，DRC）的数据结构来管理 LPAR 的访问。LPAR 通过
-称为 DRC-Index 的不透明 32 位数值来引用 DRC。DRC-index 值通过设备树（device-tree）
-提供给 LPAR，作为与 DR 关联的设备树节点的一个属性存在。
+PAPR hypervisor 灏?LPAR 鍙敤鐨勫叡浜‖浠惰祫婧愶紙濡?PCI 璁惧銆丯VDIMM 绛夛級绉颁负鍔ㄦ€佽祫婧?
+锛圖ynamic Resource锛孌R锛夈€傚綋 DR 鍒嗛厤缁欐煇涓?LPAR 鏃讹紝PHYP 浼氬垱寤轰竴涓悕涓哄姩鎬佽祫婧?
+杩炴帴鍣紙Dynamic Resource Connector锛孌RC锛夌殑鏁版嵁缁撴瀯鏉ョ鐞?LPAR 鐨勮闂€侺PAR 閫氳繃
+绉颁负 DRC-Index 鐨勪笉閫忔槑 32 浣嶆暟鍊兼潵寮曠敤 DRC銆侱RC-index 鍊奸€氳繃璁惧鏍戯紙device-tree锛?
+鎻愪緵缁?LPAR锛屼綔涓轰笌 DR 鍏宠仈鐨勮澶囨爲鑺傜偣鐨勪竴涓睘鎬у瓨鍦ㄣ€?
 
-## HCALL 返回值
+## HCALL 杩斿洖鍊?
 
-处理完 hcall 后，hypervisor 在 **r3** 中设置返回值，表示 hcall 成功或失败。若失败，
-错误码指示出错原因。这些码在架构特定的头文件中定义和记录 [^4^]_。
+澶勭悊瀹?hcall 鍚庯紝hypervisor 鍦?**r3** 涓缃繑鍥炲€硷紝琛ㄧず hcall 鎴愬姛鎴栧け璐ャ€傝嫢澶辫触锛?
+閿欒鐮佹寚绀哄嚭閿欏師鍥犮€傝繖浜涚爜鍦ㄦ灦鏋勭壒瀹氱殑澶存枃浠朵腑瀹氫箟鍜岃褰?[^4^]_銆?
 
-在某些情况下，hcall 可能需要很长时间，并且需要多次发出才能被完全处理。这些 hcall
-通常会在其参数列表中接受一个不透明值 **continue-token**，返回值为 **H_CONTINUE**
-表示 hypervisor 尚未完成对该 hcall 的处理。
+鍦ㄦ煇浜涙儏鍐典笅锛宧call 鍙兘闇€瑕佸緢闀挎椂闂达紝骞朵笖闇€瑕佸娆″彂鍑烘墠鑳借瀹屽叏澶勭悊銆傝繖浜?hcall
+閫氬父浼氬湪鍏跺弬鏁板垪琛ㄤ腑鎺ュ彈涓€涓笉閫忔槑鍊?**continue-token**锛岃繑鍥炲€间负 **H_CONTINUE**
+琛ㄧず hypervisor 灏氭湭瀹屾垚瀵硅 hcall 鐨勫鐞嗐€?
 
-为发出此类 hcall，客户机需要在初次调用时设置 **continue-token == 0**，并在每次
-后续 hcall 中使用 hypervisor 返回的 **continue-token** 值，直到 hypervisor 返回
-一个非 **H_CONTINUE** 的返回值。
+涓哄彂鍑烘绫?hcall锛屽鎴锋満闇€瑕佸湪鍒濇璋冪敤鏃惰缃?**continue-token == 0**锛屽苟鍦ㄦ瘡娆?
+鍚庣画 hcall 涓娇鐢?hypervisor 杩斿洖鐨?**continue-token** 鍊硷紝鐩村埌 hypervisor 杩斿洖
+涓€涓潪 **H_CONTINUE** 鐨勮繑鍥炲€笺€?
 
-## HCALL 操作码
+## HCALL 鎿嶄綔鐮?
 
-以下是 PHYP 支持的 HCALL 的部分列表。对应的操作码值请查阅架构特定的头文件 [^4^]_：
+浠ヤ笅鏄?PHYP 鏀寔鐨?HCALL 鐨勯儴鍒嗗垪琛ㄣ€傚搴旂殑鎿嶄綔鐮佸€艰鏌ラ槄鏋舵瀯鐗瑰畾鐨勫ご鏂囦欢 [^4^]_锛?
 
 **H_SCM_READ_METADATA**
 
-| 输入： **drcIndex, offset, buffer-address, numBytesToRead**
-| 输出： **numBytesRead**
-| 返回值： **H_Success, H_Parameter, H_P2, H_P3, H_Hardware**
+| 杈撳叆锛?**drcIndex, offset, buffer-address, numBytesToRead**
+| 杈撳嚭锛?**numBytesRead**
+| 杩斿洖鍊硷細 **H_Success, H_Parameter, H_P2, H_P3, H_Hardware**
 
-给定一个 NVDIMM 的 DRC 索引，从与其关联的元数据区中在指定偏移处读取 N 字节，并复制到
-所提供的缓冲区。元数据区存储配置信息，如标签信息、坏块等。元数据区位于 NVDIMM 存储区
-带外，因此提供了单独的访问语义。
+缁欏畾涓€涓?NVDIMM 鐨?DRC 绱㈠紩锛屼粠涓庡叾鍏宠仈鐨勫厓鏁版嵁鍖轰腑鍦ㄦ寚瀹氬亸绉诲璇诲彇 N 瀛楄妭锛屽苟澶嶅埗鍒?
+鎵€鎻愪緵鐨勭紦鍐插尯銆傚厓鏁版嵁鍖哄瓨鍌ㄩ厤缃俊鎭紝濡傛爣绛句俊鎭€佸潖鍧楃瓑銆傚厓鏁版嵁鍖轰綅浜?NVDIMM 瀛樺偍鍖?
+甯﹀锛屽洜姝ゆ彁渚涗簡鍗曠嫭鐨勮闂涔夈€?
 
 **H_SCM_WRITE_METADATA**
 
-| 输入： **drcIndex, offset, data, numBytesToWrite**
-| 输出： **None**
-| 返回值： **H_Success, H_Parameter, H_P2, H_P4, H_Hardware**
+| 杈撳叆锛?**drcIndex, offset, data, numBytesToWrite**
+| 杈撳嚭锛?**None**
+| 杩斿洖鍊硷細 **H_Success, H_Parameter, H_P2, H_P4, H_Hardware**
 
-给定一个 NVDIMM 的 DRC 索引，在指定偏移处将 N 字节写入与其关联的元数据区，数据来自
-所提供的缓冲区。
+缁欏畾涓€涓?NVDIMM 鐨?DRC 绱㈠紩锛屽湪鎸囧畾鍋忕Щ澶勫皢 N 瀛楄妭鍐欏叆涓庡叾鍏宠仈鐨勫厓鏁版嵁鍖猴紝鏁版嵁鏉ヨ嚜
+鎵€鎻愪緵鐨勭紦鍐插尯銆?
 
 **H_SCM_BIND_MEM**
 
-| 输入： **drcIndex, startingScmBlockIndex, numScmBlocksToBind,**
+| 杈撳叆锛?**drcIndex, startingScmBlockIndex, numScmBlocksToBind,**
 | **targetLogicalMemoryAddress, continue-token**
-| 输出： **continue-token, targetLogicalMemoryAddress, numScmBlocksToBound**
-| 返回值： **H_Success, H_Parameter, H_P2, H_P3, H_P4, H_Overlap,**
+| 杈撳嚭锛?**continue-token, targetLogicalMemoryAddress, numScmBlocksToBound**
+| 杩斿洖鍊硷細 **H_Success, H_Parameter, H_P2, H_P3, H_P4, H_Overlap,**
 | **H_Too_Big, H_P5, H_Busy**
 
-给定一个 NVDIMM 的 DRC 索引，将一段连续的 SCM 块范围
-**(startingScmBlockIndex, startingScmBlockIndex+numScmBlocksToBind)** 映射到客户机
-物理地址空间中的 **targetLogicalMemoryAddress** 处。如果
-**targetLogicalMemoryAddress == 0xFFFFFFFF_FFFFFFFF**，则由 hypervisor 为客户机分配
-目标地址。如果客户机对被绑定的 SCM 块存在活跃的 PTE 条目，该 HCALL 可能失败。
+缁欏畾涓€涓?NVDIMM 鐨?DRC 绱㈠紩锛屽皢涓€娈佃繛缁殑 SCM 鍧楄寖鍥?
+**(startingScmBlockIndex, startingScmBlockIndex+numScmBlocksToBind)** 鏄犲皠鍒板鎴锋満
+鐗╃悊鍦板潃绌洪棿涓殑 **targetLogicalMemoryAddress** 澶勩€傚鏋?
+**targetLogicalMemoryAddress == 0xFFFFFFFF_FFFFFFFF**锛屽垯鐢?hypervisor 涓哄鎴锋満鍒嗛厤
+鐩爣鍦板潃銆傚鏋滃鎴锋満瀵硅缁戝畾鐨?SCM 鍧楀瓨鍦ㄦ椿璺冪殑 PTE 鏉＄洰锛岃 HCALL 鍙兘澶辫触銆?
 
 **H_SCM_UNBIND_MEM**
-| 输入： drcIndex, startingScmLogicalMemoryAddress, numScmBlocksToUnbind
-| 输出： numScmBlocksUnbound
-| 返回值： **H_Success, H_Parameter, H_P2, H_P3, H_In_Use, H_Overlap,**
+| 杈撳叆锛?drcIndex, startingScmLogicalMemoryAddress, numScmBlocksToUnbind
+| 杈撳嚭锛?numScmBlocksUnbound
+| 杩斿洖鍊硷細 **H_Success, H_Parameter, H_P2, H_P3, H_In_Use, H_Overlap,**
 | **H_Busy, H_LongBusyOrder1mSec, H_LongBusyOrder10mSec**
 
-给定一个 NVDIMM 的 DRC 索引，从客户机物理地址空间取消映射从
-**startingScmLogicalMemoryAddress** 开始的 **numScmBlocksToUnbind** 个 SCM 块。
-如果客户机对被解绑的 SCM 块存在活跃的 PTE 条目，该 HCALL 可能失败。
+缁欏畾涓€涓?NVDIMM 鐨?DRC 绱㈠紩锛屼粠瀹㈡埛鏈虹墿鐞嗗湴鍧€绌洪棿鍙栨秷鏄犲皠浠?
+**startingScmLogicalMemoryAddress** 寮€濮嬬殑 **numScmBlocksToUnbind** 涓?SCM 鍧椼€?
+濡傛灉瀹㈡埛鏈哄琚В缁戠殑 SCM 鍧楀瓨鍦ㄦ椿璺冪殑 PTE 鏉＄洰锛岃 HCALL 鍙兘澶辫触銆?
 
 **H_SCM_QUERY_BLOCK_MEM_BINDING**
 
-| 输入： **drcIndex, scmBlockIndex**
-| 输出： **Guest-Physical-Address**
-| 返回值： **H_Success, H_Parameter, H_P2, H_NotFound**
+| 杈撳叆锛?**drcIndex, scmBlockIndex**
+| 杈撳嚭锛?**Guest-Physical-Address**
+| 杩斿洖鍊硷細 **H_Success, H_Parameter, H_P2, H_NotFound**
 
-给定一个 DRC 索引和 SCM 块索引，返回该 SCM 块所映射到的客户机物理地址。
+缁欏畾涓€涓?DRC 绱㈠紩鍜?SCM 鍧楃储寮曪紝杩斿洖璇?SCM 鍧楁墍鏄犲皠鍒扮殑瀹㈡埛鏈虹墿鐞嗗湴鍧€銆?
 
 **H_SCM_QUERY_LOGICAL_MEM_BINDING**
 
-| 输入： **Guest-Physical-Address**
-| 输出： **drcIndex, scmBlockIndex**
-| 返回值： **H_Success, H_Parameter, H_P2, H_NotFound**
+| 杈撳叆锛?**Guest-Physical-Address**
+| 杈撳嚭锛?**drcIndex, scmBlockIndex**
+| 杩斿洖鍊硷細 **H_Success, H_Parameter, H_P2, H_NotFound**
 
-给定一个客户机物理地址，返回映射到该地址的 DRC 索引和 SCM 块。
+缁欏畾涓€涓鎴锋満鐗╃悊鍦板潃锛岃繑鍥炴槧灏勫埌璇ュ湴鍧€鐨?DRC 绱㈠紩鍜?SCM 鍧椼€?
 
 **H_SCM_UNBIND_ALL**
 
-| 输入： **scmTargetScope, drcIndex**
-| 输出： **None**
-| 返回值： **H_Success, H_Parameter, H_P2, H_P3, H_In_Use, H_Busy,**
+| 杈撳叆锛?**scmTargetScope, drcIndex**
+| 杈撳嚭锛?**None**
+| 杩斿洖鍊硷細 **H_Success, H_Parameter, H_P2, H_P3, H_In_Use, H_Busy,**
 | **H_LongBusyOrder1mSec, H_LongBusyOrder10mSec**
 
-根据目标范围，从 LPAR 内存中取消映射属于所有 NVDIMM 的所有 SCM 块，或属于由 drcIndex
-标识的单个 NVDIMM 的所有 SCM 块。
+鏍规嵁鐩爣鑼冨洿锛屼粠 LPAR 鍐呭瓨涓彇娑堟槧灏勫睘浜庢墍鏈?NVDIMM 鐨勬墍鏈?SCM 鍧楋紝鎴栧睘浜庣敱 drcIndex
+鏍囪瘑鐨勫崟涓?NVDIMM 鐨勬墍鏈?SCM 鍧椼€?
 
 **H_SCM_HEALTH**
 
-| 输入： drcIndex
-| 输出： **health-bitmap (r4), health-bit-valid-bitmap (r5)**
-| 返回值： **H_Success, H_Parameter, H_Hardware**
+| 杈撳叆锛?drcIndex
+| 杈撳嚭锛?**health-bitmap (r4), health-bit-valid-bitmap (r5)**
+| 杩斿洖鍊硷細 **H_Success, H_Parameter, H_Hardware**
 
-给定一个 DRC 索引，返回 PMEM 设备的预测性故障和整体健康信息。health-bitmap 中置位的
-位指示 PMEM 设备的一个或多个状态（如下表所述），health-bit-valid-bitmap 指示
-health-bitmap 中的哪些位有效。位以逆序位序报告，例如值 0xC400000000000000 表示位
-0、1 和 5 有效。
+缁欏畾涓€涓?DRC 绱㈠紩锛岃繑鍥?PMEM 璁惧鐨勯娴嬫€ф晠闅滃拰鏁翠綋鍋ュ悍淇℃伅銆俬ealth-bitmap 涓疆浣嶇殑
+浣嶆寚绀?PMEM 璁惧鐨勪竴涓垨澶氫釜鐘舵€侊紙濡備笅琛ㄦ墍杩帮級锛宧ealth-bit-valid-bitmap 鎸囩ず
+health-bitmap 涓殑鍝簺浣嶆湁鏁堛€備綅浠ラ€嗗簭浣嶅簭鎶ュ憡锛屼緥濡傚€?0xC400000000000000 琛ㄧず浣?
+0銆? 鍜?5 鏈夋晥銆?
 
-健康位图标志：
+鍋ュ悍浣嶅浘鏍囧織锛?
 
 +------+-----------------------------------------------------------------------+
 |  Bit |               Definition                                              |
 +======+=======================================================================+
-|  00  |  PMEM 设备无法持久化内存内容。如果系统断电，则不会保存任何内容。      |
+|  00  |  PMEM 璁惧鏃犳硶鎸佷箙鍖栧唴瀛樺唴瀹广€傚鏋滅郴缁熸柇鐢碉紝鍒欎笉浼氫繚瀛樹换浣曞唴瀹广€?     |
 |      |                                                                       |
 +------+-----------------------------------------------------------------------+
-|  01  |  PMEM 设备未能持久化内存内容。要么断电时内容未成功保存，要么上电时未  |
-|      |  正确恢复。                                                            |
+|  01  |  PMEM 璁惧鏈兘鎸佷箙鍖栧唴瀛樺唴瀹广€傝涔堟柇鐢垫椂鍐呭鏈垚鍔熶繚瀛橈紝瑕佷箞涓婄數鏃舵湭  |
+|      |  姝ｇ‘鎭㈠銆?                                                           |
 +------+-----------------------------------------------------------------------+
-|  02  |  PMEM 设备内容已从先前的 IPL 持久化。上次启动的数据已成功恢复。        |
+|  02  |  PMEM 璁惧鍐呭宸蹭粠鍏堝墠鐨?IPL 鎸佷箙鍖栥€備笂娆″惎鍔ㄧ殑鏁版嵁宸叉垚鍔熸仮澶嶃€?       |
 |      |                                                                       |
 +------+-----------------------------------------------------------------------+
-|  03  |  PMEM 设备内容未从先前的 IPL 持久化。上次启动没有可恢复的数据。        |
+|  03  |  PMEM 璁惧鍐呭鏈粠鍏堝墠鐨?IPL 鎸佷箙鍖栥€備笂娆″惎鍔ㄦ病鏈夊彲鎭㈠鐨勬暟鎹€?       |
 |      |                                                                       |
 +------+-----------------------------------------------------------------------+
-|  04  |  PMEM 设备剩余内存寿命极低                                            |
+|  04  |  PMEM 璁惧鍓╀綑鍐呭瓨瀵垮懡鏋佷綆                                            |
 +------+-----------------------------------------------------------------------+
-|  05  |  由于故障，PMEM 设备将在下次 IPL 时被隔离（garded off）               |
+|  05  |  鐢变簬鏁呴殰锛孭MEM 璁惧灏嗗湪涓嬫 IPL 鏃惰闅旂锛坓arded off锛?              |
 +------+-----------------------------------------------------------------------+
-|  06  |  由于当前平台健康状态，PMEM 设备内容无法持久化。硬件故障可能阻止数据  |
-|      |  的保存或恢复。                                                        |
+|  06  |  鐢变簬褰撳墠骞冲彴鍋ュ悍鐘舵€侊紝PMEM 璁惧鍐呭鏃犳硶鎸佷箙鍖栥€傜‖浠舵晠闅滃彲鑳介樆姝㈡暟鎹? |
+|      |  鐨勪繚瀛樻垨鎭㈠銆?                                                       |
 +------+-----------------------------------------------------------------------+
-|  07  |  在某些条件下 PMEM 设备无法持久化内存内容                             |
+|  07  |  鍦ㄦ煇浜涙潯浠朵笅 PMEM 璁惧鏃犳硶鎸佷箙鍖栧唴瀛樺唴瀹?                            |
 +------+-----------------------------------------------------------------------+
-|  08  |  PMEM 设备已加密                                                      |
+|  08  |  PMEM 璁惧宸插姞瀵?                                                     |
 +------+-----------------------------------------------------------------------+
-|  09  |  PMEM 设备已成功完成请求的擦除或安全擦除过程。                        |
+|  09  |  PMEM 璁惧宸叉垚鍔熷畬鎴愯姹傜殑鎿﹂櫎鎴栧畨鍏ㄦ摝闄よ繃绋嬨€?                       |
 |      |                                                                       |
 +------+-----------------------------------------------------------------------+
-|10:63 |  保留 / 未使用                                                        |
+|10:63 |  淇濈暀 / 鏈娇鐢?                                                       |
 +------+-----------------------------------------------------------------------+
 
 **H_SCM_PERFORMANCE_STATS**
 
-| 输入： drcIndex, resultBuffer Addr
-| 输出： None
-| 返回值：  **H_Success, H_Parameter, H_Unsupported, H_Hardware, H_Authority, H_Privilege**
+| 杈撳叆锛?drcIndex, resultBuffer Addr
+| 杈撳嚭锛?None
+| 杩斿洖鍊硷細  **H_Success, H_Parameter, H_Unsupported, H_Hardware, H_Authority, H_Privilege**
 
-给定一个 DRC 索引，收集 NVDIMM 的性能统计信息并将其复制到 resultBuffer。
+缁欏畾涓€涓?DRC 绱㈠紩锛屾敹闆?NVDIMM 鐨勬€ц兘缁熻淇℃伅骞跺皢鍏跺鍒跺埌 resultBuffer銆?
 
 **H_SCM_FLUSH**
 
-| 输入： **drcIndex, continue-token**
-| 输出： **continue-token**
-| 返回值： **H_SUCCESS, H_Parameter, H_P2, H_BUSY**
+| 杈撳叆锛?**drcIndex, continue-token**
+| 杈撳嚭锛?**continue-token**
+| 杩斿洖鍊硷細 **H_SUCCESS, H_Parameter, H_P2, H_BUSY**
 
-给定一个 DRC 索引，将数据刷新到后端 NVDIMM 设备。
+缁欏畾涓€涓?DRC 绱㈠紩锛屽皢鏁版嵁鍒锋柊鍒板悗绔?NVDIMM 璁惧銆?
 
-当刷新耗时较长时，hcall 返回 H_BUSY，并且需要多次发出该 hcall 才能被完全处理。来自
-输出的 **continue-token** 应传入后续发给 hypervisor 的 hcall 的参数列表中，直到 hcall
-被完全处理，此时 hypervisor 返回 H_SUCCESS 或其他错误。
+褰撳埛鏂拌€楁椂杈冮暱鏃讹紝hcall 杩斿洖 H_BUSY锛屽苟涓旈渶瑕佸娆″彂鍑鸿 hcall 鎵嶈兘琚畬鍏ㄥ鐞嗐€傛潵鑷?
+杈撳嚭鐨?**continue-token** 搴斾紶鍏ュ悗缁彂缁?hypervisor 鐨?hcall 鐨勫弬鏁板垪琛ㄤ腑锛岀洿鍒?hcall
+琚畬鍏ㄥ鐞嗭紝姝ゆ椂 hypervisor 杩斿洖 H_SUCCESS 鎴栧叾浠栭敊璇€?
 
 **H_HTM**
 
-| 输入： flags, target, operation (op), op-param1, op-param2, op-param3
-| 输出： **dumphtmbufferdata**
-| 返回值： *H_Success,H_Busy,H_LongBusyOrder,H_Partial,H_Parameter,
+| 杈撳叆锛?flags, target, operation (op), op-param1, op-param2, op-param3
+| 杈撳嚭锛?**dumphtmbufferdata**
+| 杩斿洖鍊硷細 *H_Success,H_Busy,H_LongBusyOrder,H_Partial,H_Parameter,
 		 H_P2,H_P3,H_P4,H_P5,H_P6,H_State,H_Not_Available,H_Authority*
 
-H_HTM 支持硬件跟踪宏（Hardware Trace Macro，HTM）功能及其数据的设置、配置、控制和
-转储。HTM 缓冲区存储核心指令、核心 LLAT 和 nest 等功能的跟踪数据。
+H_HTM 鏀寔纭欢璺熻釜瀹忥紙Hardware Trace Macro锛孒TM锛夊姛鑳藉強鍏舵暟鎹殑璁剧疆銆侀厤缃€佹帶鍒跺拰
+杞偍銆侶TM 缂撳啿鍖哄瓨鍌ㄦ牳蹇冩寚浠ゃ€佹牳蹇?LLAT 鍜?nest 绛夊姛鑳界殑璺熻釜鏁版嵁銆?
 
 **H_PKS_GEN_KEY**
 
-| 输入： authorization, objectlabel, objectlabellen, policy, out, outlen
-| 输出： **Hypervisor 生成的密钥，或当设置了包装密钥策略时为 None**
-| 返回值： *H_SUCCESS, H_Function, H_State, H_R_State, H_Parameter, H_P2,
+| 杈撳叆锛?authorization, objectlabel, objectlabellen, policy, out, outlen
+| 杈撳嚭锛?**Hypervisor 鐢熸垚鐨勫瘑閽ワ紝鎴栧綋璁剧疆浜嗗寘瑁呭瘑閽ョ瓥鐣ユ椂涓?None**
+| 杩斿洖鍊硷細 *H_SUCCESS, H_Function, H_State, H_R_State, H_Parameter, H_P2,
                 H_P3, H_P4, H_P5, H_P6, H_Authority, H_Nomem, H_Busy, H_Resource,
                 H_Aborted*
 
-H_PKS_GEN_KEY 用于让 hypervisor 生成一个新随机密钥。该密钥作为对象存储在 Power LPAR
-平台密钥库（Platform KeyStore）中，带有提供的对象标签。设置包装密钥策略后，该密钥仅
-对 hypervisor 可见，而密钥的标签对用户仍可见。包装密钥的生成仅支持 32 字节的密钥大小。
+H_PKS_GEN_KEY 鐢ㄤ簬璁?hypervisor 鐢熸垚涓€涓柊闅忔満瀵嗛挜銆傝瀵嗛挜浣滀负瀵硅薄瀛樺偍鍦?Power LPAR
+骞冲彴瀵嗛挜搴擄紙Platform KeyStore锛変腑锛屽甫鏈夋彁渚涚殑瀵硅薄鏍囩銆傝缃寘瑁呭瘑閽ョ瓥鐣ュ悗锛岃瀵嗛挜浠?
+瀵?hypervisor 鍙锛岃€屽瘑閽ョ殑鏍囩瀵圭敤鎴蜂粛鍙銆傚寘瑁呭瘑閽ョ殑鐢熸垚浠呮敮鎸?32 瀛楄妭鐨勫瘑閽ュぇ灏忋€?
 
 **H_PKS_WRAP_OBJECT**
 
-| 输入： authorization, wrapkeylabel, wrapkeylabellen, objectwrapflags, in,
+| 杈撳叆锛?authorization, wrapkeylabel, wrapkeylabellen, objectwrapflags, in,
 |        inlen, out, outlen, continue-token
-| 输出： **continue-token, 包装后对象的字节大小, 包装后的对象**
-| 返回值： *H_SUCCESS, H_Function, H_State, H_R_State, H_Parameter, H_P2,
+| 杈撳嚭锛?**continue-token, 鍖呰鍚庡璞＄殑瀛楄妭澶у皬, 鍖呰鍚庣殑瀵硅薄**
+| 杩斿洖鍊硷細 *H_SUCCESS, H_Function, H_State, H_R_State, H_Parameter, H_P2,
                 H_P3, H_P4, H_P5, H_P6, H_P7, H_P8, H_P9, H_Authority, H_Invalid_Key,
                 H_NOT_FOUND, H_Busy, H_LongBusy, H_Aborted*
 
-H_PKS_WRAP_OBJECT 用于使用存储在 Power LPAR 平台密钥库中的包装密钥对对象进行包装，并将
-包装后的对象返回给调用者。调用者提供带有 'wrapping key' 策略设置的包装密钥标签，该密钥
-必须已使用 H_PKS_GEN_KEY 预先创建。然后对提供的对象使用包装密钥和附加元数据进行加密，
-并将结果返回给调用者。
+H_PKS_WRAP_OBJECT 鐢ㄤ簬浣跨敤瀛樺偍鍦?Power LPAR 骞冲彴瀵嗛挜搴撲腑鐨勫寘瑁呭瘑閽ュ瀵硅薄杩涜鍖呰锛屽苟灏?
+鍖呰鍚庣殑瀵硅薄杩斿洖缁欒皟鐢ㄨ€呫€傝皟鐢ㄨ€呮彁渚涘甫鏈?'wrapping key' 绛栫暐璁剧疆鐨勫寘瑁呭瘑閽ユ爣绛撅紝璇ュ瘑閽?
+蹇呴』宸蹭娇鐢?H_PKS_GEN_KEY 棰勫厛鍒涘缓銆傜劧鍚庡鎻愪緵鐨勫璞′娇鐢ㄥ寘瑁呭瘑閽ュ拰闄勫姞鍏冩暟鎹繘琛屽姞瀵嗭紝
+骞跺皢缁撴灉杩斿洖缁欒皟鐢ㄨ€呫€?
 
 **H_PKS_UNWRAP_OBJECT**
 
-| 输入： authorization, objectwrapflags, in, inlen, out, outlen, continue-token
-| 输出： **continue-token, 解包后对象的字节大小, 解包后的对象**
-| 返回值： *H_SUCCESS, H_Function, H_State, H_R_State, H_Parameter, H_P2,
+| 杈撳叆锛?authorization, objectwrapflags, in, inlen, out, outlen, continue-token
+| 杈撳嚭锛?**continue-token, 瑙ｅ寘鍚庡璞＄殑瀛楄妭澶у皬, 瑙ｅ寘鍚庣殑瀵硅薄**
+| 杩斿洖鍊硷細 *H_SUCCESS, H_Function, H_State, H_R_State, H_Parameter, H_P2,
                 H_P3, H_P4, H_P5, H_P6, H_P7, H_Authority, H_Unsupported, H_Bad_Data,
                 H_NOT_FOUND, H_Invalid_Key, H_Busy, H_LongBusy, H_Aborted*
 
-H_PKS_UNWRAP_OBJECT 用于解包先前使用 H_PKS_WRAP_OBJECT 包装的对象。
+H_PKS_UNWRAP_OBJECT 鐢ㄤ簬瑙ｅ寘鍏堝墠浣跨敤 H_PKS_WRAP_OBJECT 鍖呰鐨勫璞°€?
 
-## 参考文献
+## 鍙傝€冩枃鐚?
 
        https://en.wikipedia.org/wiki/Power_Architecture_Platform_Reference
        https://members.openpowerfoundation.org/document/dl/469

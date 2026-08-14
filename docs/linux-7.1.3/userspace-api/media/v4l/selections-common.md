@@ -1,9 +1,9 @@
-## 通用选择定义
+﻿## 閫氱敤閫夋嫨瀹氫箟
 
 
-虽然 V4L2 selection API <selection-api> 和 V4L2 subdev selection APIs <v4l2-subdev-selections> 非常相似，但两者之间有一个根本区别。在子设备 API 上，选择矩形指的是媒体总线格式，并绑定到子设备的 pad。在 V4L2 接口上，选择矩形指的是内存中的像素格式。
+铏界劧 V4L2 selection API <selection-api> 鍜?V4L2 subdev selection APIs <v4l2-subdev-selections> 闈炲父鐩镐技锛屼絾涓よ€呬箣闂存湁涓€涓牴鏈尯鍒€傚湪瀛愯澶?API 涓婏紝閫夋嫨鐭╁舰鎸囩殑鏄獟浣撴€荤嚎鏍煎紡锛屽苟缁戝畾鍒板瓙璁惧鐨?pad銆傚湪 V4L2 鎺ュ彛涓婏紝閫夋嫨鐭╁舰鎸囩殑鏄唴瀛樹腑鐨勫儚绱犳牸寮忋€?
 
-本节定义了这两个 API 上选择接口的通用定义。
+鏈妭瀹氫箟浜嗚繖涓や釜 API 涓婇€夋嫨鎺ュ彛鐨勯€氱敤瀹氫箟銆?
 
 
 - [v4l2-selection-targets](v4l2-selection-targets)

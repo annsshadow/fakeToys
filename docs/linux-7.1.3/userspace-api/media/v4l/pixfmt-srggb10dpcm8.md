@@ -1,4 +1,4 @@
-######## V4L2_PIX_FMT_SBGGR10DPCM8 ('bBA8'), V4L2_PIX_FMT_SGBRG10DPCM8 ('bGA8'), V4L2_PIX_FMT_SGRBG10DPCM8 ('BD10'), V4L2_PIX_FMT_SRGGB10DPCM8 ('bRA8'),
+﻿######## V4L2_PIX_FMT_SBGGR10DPCM8 ('bBA8'), V4L2_PIX_FMT_SGBRG10DPCM8 ('bGA8'), V4L2_PIX_FMT_SGRBG10DPCM8 ('BD10'), V4L2_PIX_FMT_SRGGB10DPCM8 ('bRA8'),
 
 
 **man V4L2_PIX_FMT_SBGGR10DPCM8(2)**
@@ -6,10 +6,10 @@
 V4L2_PIX_FMT_SGBRG10DPCM8
 V4L2_PIX_FMT_SGRBG10DPCM8
 V4L2_PIX_FMT_SRGGB10DPCM8
-10-bit Bayer 格式压缩至 8 位
+10-bit Bayer 鏍煎紡鍘嬬缉鑷?8 浣?
 
 
 ## Description
 
 
-这四种像素格式是每颜色 10 位的原始 sRGB / Bayer 格式，使用 DPCM 压缩算法压缩到每个分量 8 位。DPCM（差分脉冲编码调制）是有损的。每个颜色分量占用 8 位内存。在其他方面，该格式与 V4L2-PIX-FMT-SRGGB10 类似。
+杩欏洓绉嶅儚绱犳牸寮忔槸姣忛鑹?10 浣嶇殑鍘熷 sRGB / Bayer 鏍煎紡锛屼娇鐢?DPCM 鍘嬬缉绠楁硶鍘嬬缉鍒版瘡涓垎閲?8 浣嶃€侱PCM锛堝樊鍒嗚剦鍐茬紪鐮佽皟鍒讹級鏄湁鎹熺殑銆傛瘡涓鑹插垎閲忓崰鐢?8 浣嶅唴瀛樸€傚湪鍏朵粬鏂归潰锛岃鏍煎紡涓?V4L2-PIX-FMT-SRGGB10 绫讳技銆?

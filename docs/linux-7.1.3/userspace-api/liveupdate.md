@@ -1,11 +1,11 @@
-## 实时更新 uAPI
+﻿## 瀹炴椂鏇存柊 uAPI
 
 
-本文件描述实时更新（Live Update）的用户空间 API。
+鏈枃浠舵弿杩板疄鏃舵洿鏂帮紙Live Update锛夌殑鐢ㄦ埛绌洪棿 API銆?
 
 :Author: Pasha Tatashin <pasha.tatashin@soleen.com>
 
-## ioctl 接口
+## ioctl 鎺ュ彛
 
 
    :doc: LUO ioctl Interface
@@ -14,7 +14,7 @@
 
 
 
-## 另请参阅
+## 鍙﹁鍙傞槄
 
 
 - [Live Update Orchestrator](/core-api/liveupdate)

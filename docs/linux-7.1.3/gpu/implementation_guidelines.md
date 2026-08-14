@@ -1,6 +1,6 @@
-## DRM 驱动 uAPI 与功能实现指南
+﻿## DRM 椹卞姩 uAPI 涓庡姛鑳藉疄鐜版寚鍗?
 
-本页面汇总 DRM 驱动用户态 ABI 与功能实现相关指南。
+鏈〉闈㈡眹鎬?DRM 椹卞姩鐢ㄦ埛鎬?ABI 涓庡姛鑳藉疄鐜扮浉鍏虫寚鍗椼€?
 
-- [DRM 异步虚拟内存绑定](drm-vm-bind-async)
-- [DRM 虚拟内存绑定锁机制](drm-vm-bind-locking)
+- [DRM 寮傛铏氭嫙鍐呭瓨缁戝畾](drm-vm-bind-async)
+- [DRM 铏氭嫙鍐呭瓨缁戝畾閿佹満鍒禲(drm-vm-bind-locking)

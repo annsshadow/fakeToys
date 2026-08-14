@@ -1,55 +1,35 @@
+﻿
+## Ramfs銆乺ootfs 涓?initramfs
 
-## Ramfs、rootfs 与 initramfs
-
-2005 年 10 月 17 日
-
+2005 骞?10 鏈?17 鏃?
 :Author: Rob Landley <rob@landley.net>
 
-### 什么是 ramfs？
+### 浠€涔堟槸 ramfs锛?
+ramfs 鏄竴涓潪甯哥畝鍗曠殑鏂囦欢绯荤粺锛屽畠灏?Linux 鐨勭鐩樼紦瀛樻満鍒讹紙page cache 涓?dentry cache锛変綔涓轰竴涓彲鍔ㄦ€佽皟鏁村ぇ灏忕殑銆佸熀浜?RAM 鐨勬枃浠剁郴缁熷鍑恒€?
+閫氬父锛孡inux 浼氬皢鎵€鏈夋枃浠剁紦瀛樺湪鍐呭瓨涓€備粠鍚庡瀛樺偍锛坆acking store锛岄€氬父鏄枃浠剁郴缁熸寕杞藉叾涓婄殑鍧楄澶囷級璇诲嚭鐨勬暟鎹〉浼氳淇濈暀锛屼互澶囧啀娆￠渶瑕佹椂浣跨敤锛屼絾鍚屾椂浼氳鏍囪涓?clean锛堝彲閲婃斁锛夛紝浠ヤ究铏氭嫙鍐呭瓨锛圴irtual Memory锛夌郴缁熷湪闇€瑕佸唴瀛樺仛鍏朵粬鐢ㄩ€旀椂灏嗗叾鍥炴敹銆傜被浼煎湴锛屽啓鍏ユ枃浠剁殑鏁版嵁涓€鏃﹀啓鍏ュ悗澶囧瓨鍌ㄥ氨浼氳鏍囪涓?clean锛屼絾浼氫负浜嗙紦瀛樼洰鐨勮€屼繚鐣欙紝鐩村埌 VM 閲嶆柊鍒嗛厤璇ュ唴瀛樸€傜被浼肩殑鏈哄埗锛坉entry cache锛夊ぇ澶у姞蹇簡璁块棶鐩綍鐨勯€熷害銆?
+瀵逛簬 ramfs锛屾病鏈夊悗澶囧瓨鍌ㄣ€傚啓鍏?ramfs 鐨勬枃浠朵細鍍忓線甯镐竴鏍峰垎閰?dentry 涓?page cache锛屼絾鍗存病鏈夊湴鏂瑰彲浠ュ啓鍏ャ€傝繖鎰忓懗鐫€杩欎簺椤垫案杩滀笉浼氳鏍囪涓?clean锛屽洜姝ゅ綋 VM 鎯宠鍥炴敹鍐呭瓨鏃舵棤娉曢噴鏀惧畠浠€?
+瀹炵幇 ramfs 鎵€闇€鐨勪唬鐮侀噺闈炲父灏忥紝鍥犱负鎵€鏈夊伐浣滈兘鐢辩幇鏈夌殑 Linux 缂撳瓨鍩虹璁炬柦瀹屾垚銆備粠鏍规湰涓婅锛屼綘灏辨槸鎶婄鐩樼紦瀛樺綋浣滄枃浠剁郴缁熸寕杞姐€傛鍥犲姝わ紝ramfs 涓嶆槸涓€涓彲閫氳繃 menuconfig 绉婚櫎鐨勫彲閫夌粍浠讹紝鍥犱负閭ｆ牱鑺傜渷鐨勭┖闂村井涔庡叾寰€?
+### ramfs 涓?ramdisk锛堝唴瀛樼洏锛?
+杈冭€佺殑 "ram disk"锛堝唴瀛樼洏锛夋満鍒朵粠涓€鍧?RAM 鍖哄煙涓垱寤轰竴涓悎鎴愮殑鍧楄澶囷紝骞跺皢鍏剁敤浣滄枃浠剁郴缁熺殑鍚庡瀛樺偍銆傝繖涓潡璁惧澶у皬鍥哄畾锛屽洜姝ゆ寕杞藉叾涓婄殑鏂囦欢绯荤粺澶у皬涔熷浐瀹氥€備娇鐢?ram disk 杩橀渶瑕佷笉蹇呰鍦版妸鍐呭瓨浠庨偅涓亣鐨勫潡璁惧澶嶅埗鍒?page cache锛堝苟鎶婃敼鍔ㄥ鍒跺洖鍘伙級锛屼互鍙婂垱寤哄拰閿€姣?dentry銆傛澶栵紝瀹冭繕闇€瑕佷竴涓枃浠剁郴缁熼┍鍔紙濡?ext2锛夋潵鏍煎紡鍖栧苟瑙ｆ瀽杩欎簺鏁版嵁銆?
+涓?ramfs 鐩告瘮锛岃繖浼氭氮璐瑰唴瀛橈紙浠ュ強鍐呭瓨鎬荤嚎甯﹀锛夛紝缁?CPU 甯︽潵涓嶅繀瑕佺殑宸ヤ綔锛屽苟姹℃煋 CPU 缂撳瓨銆傦紙铏界劧鏈変竴浜涢€氳繃鎿嶄綔椤佃〃鏉ラ伩鍏嶈繖绉嶅鍒剁殑鎶€宸э紝浣嗗畠浠鏉傚緱浠や汉涓嶅揩锛岃€屼笖缁撴灉璇佹槑浠ｄ环涓庡鍒跺樊涓嶅銆傦級鏇村叧閿殑鏄紝ramfs 鎵€鍋氱殑鎵€鏈夊伐浣滄棤璁哄浣曢兘蹇呴』鍙戠敓锛屽洜涓烘墍鏈夋枃浠惰闂兘瑕佺粡杩?page 涓?dentry 缂撳瓨銆俁AM disk 鏍规湰灏辨槸澶氫綑鐨勶紱ramfs 鍦ㄥ唴閮ㄨ绠€鍗曞緱澶氥€?
+ramdisk 鍗婅繃鏃剁殑鍙︿竴涓師鍥犳槸锛宭oopback 璁惧锛堝洖鐜澶囷級鐨勫紩鍏ユ彁渚涗簡涓€绉嶆洿鐏垫椿銆佹洿鏂逛究鐨勬柟寮忔潵鍒涘缓鍚堟垚鍧楄澶団€斺€旂幇鍦ㄤ粠鏂囦欢鑰屼笉鏄粠鍐呭瓨鍧楀垱寤恒€傝瑙?losetup(8)銆?
+### ramfs 涓?tmpfs
 
-ramfs 是一个非常简单的文件系统，它将 Linux 的磁盘缓存机制（page cache 与 dentry cache）作为一个可动态调整大小的、基于 RAM 的文件系统导出。
+ramfs 鐨勪竴涓己鐐规槸锛屼綘鍙互涓€鐩村悜鍏朵腑鍐欏叆鏁版嵁锛岀洿鍒板～婊℃墍鏈夊唴瀛橈紝鑰?VM 鏃犳硶閲婃斁瀹冿紝鍥犱负 VM 璁や负鏂囦欢搴斿綋琚啓鍏ュ悗澶囧瓨鍌紙鑰岄潪浜ゆ崲绌洪棿锛夛紝浣?ramfs 娌℃湁浠讳綍鍚庡瀛樺偍銆傚洜姝わ紝鍙簲鍏佽 root锛堟垨涓€涓彈淇′换鐨勭敤鎴凤級瀵?ramfs 鎸傝浇鐐规嫢鏈夊啓璁块棶鏉冦€?
+涓€涓悕涓?tmpfs 鐨?ramfs 琛嶇敓鐗╄鍒涢€犲嚭鏉ワ紝鐢ㄤ簬澧炲姞澶у皬闄愬埗锛屼互鍙婂皢鏁版嵁鍐欏叆浜ゆ崲绌洪棿鐨勮兘鍔涖€傛櫘閫氱敤鎴峰彲浠ヨ鍏佽瀵?tmpfs 鎸傝浇鐐规嫢鏈夊啓璁块棶鏉冦€傛洿澶氫俊鎭鍙傞槄 Documentation/filesystems/tmpfs.rst銆?
+### 浠€涔堟槸 rootfs锛?
+rootfs 鏄?ramfs锛堣嫢鍚敤浜?tmpfs锛屽垯涓?tmpfs锛夌殑涓€涓壒娈婂疄渚嬶紝瀹冨缁堝瓨鍦ㄤ簬 Linux 绯荤粺涓€傚唴鏍镐娇鐢ㄤ竴涓悕涓?nullfs 鐨勪笉鍙彉鐨勭┖鏂囦欢绯荤粺浣滀负 VFS 灞傜骇缁撴瀯鐨勭湡姝ｆ牴锛岃€屽彲鍙樼殑 rootfs锛坱mpfs/ramfs锛夋寕杞藉湪瀹冧箣涓娿€傝繖浣垮緱 pivot_root() 涓?initramfs 鐨勫嵏杞借兘澶熸甯稿伐浣溿€?
+澶у鏁扮郴缁熷彧鏄妸鍙︿竴涓枃浠剁郴缁熸寕杞藉埌 rootfs 涔嬩笂锛岀劧鍚庡拷鐣ュ畠銆備竴涓┖鐨?ramfs 瀹炰緥鎵€鍗犵敤鐨勭┖闂存瀬灏忋€?
+濡傛灉鍚敤浜?CONFIG_TMPFS锛宺ootfs 榛樿灏嗕娇鐢?tmpfs 鑰岄潪 ramfs銆傝嫢瑕佸己鍒朵娇鐢?ramfs锛屽彲鍦ㄥ唴鏍稿懡浠よ涓姞鍏?"rootfstype=ramfs"銆?
+### 浠€涔堟槸 initramfs锛?
+鎵€鏈?2.6 鐗堟湰鐨?Linux 鍐呮牳閮藉寘鍚竴涓?gzip 鍘嬬缉鐨?"cpio" 鏍煎紡褰掓。锛屽畠浼氬湪鍐呮牳鍚姩鏃惰В鍘嬪埌 rootfs 涓€傝В鍘嬩箣鍚庯紝鍐呮牳妫€鏌?rootfs 鏄惁鍖呭惈涓€涓悕涓?"init" 鐨勬枃浠讹紝濡傛灉鏄紝灏辨妸瀹冧綔涓?PID 1 鎵ц銆傝嫢璇?init 杩涚▼瀛樺湪锛屽畠璐熻矗灏嗙郴缁熺殑鍏朵綑閮ㄥ垎鍚姩璧锋潵锛屽寘鎷畾浣嶅苟鎸傝浇鐪熸鐨勬牴璁惧锛堝鏋滄湁锛夈€傚鏋滃唴宓岀殑 cpio 褰掓。瑙ｅ帇鍒?rootfs 涔嬪悗锛宺ootfs 涓粛涓嶅寘鍚?init 绋嬪簭锛屽唴鏍稿氨浼氶€€鍥炲埌杈冩棫鐨勪唬鐮侊紝鍘诲畾浣嶅苟鎸傝浇涓€涓牴鍒嗗尯锛岀劧鍚庝粠涓?exec 鏌愪釜鍙樹綋鐨?/sbin/init銆?
+杩欎竴鍒囦笌鏃х殑 initrd 鍦ㄥ嚑涓柟闈㈡湁鎵€涓嶅悓锛?
+  - 鏃х殑 initrd 濮嬬粓鏄竴涓嫭绔嬬殑鏂囦欢锛岃€?initramfs 褰掓。琚摼鎺ヨ繘 Linux 鍐呮牳鏄犲儚涓€傦紙`linux-*/usr` 鐩綍灏变笓闂ㄧ敤浜庡湪鍐呮牳鏋勫缓鏈熼棿鐢熸垚杩欎釜褰掓。銆傦級
 
-通常，Linux 会将所有文件缓存在内存中。从后备存储（backing store，通常是文件系统挂载其上的块设备）读出的数据页会被保留，以备再次需要时使用，但同时会被标记为 clean（可释放），以便虚拟内存（Virtual Memory）系统在需要内存做其他用途时将其回收。类似地，写入文件的数据一旦写入后备存储就会被标记为 clean，但会为了缓存目的而保留，直到 VM 重新分配该内存。类似的机制（dentry cache）大大加快了访问目录的速度。
+  - 鏃х殑 initrd 鏂囦欢鏄竴涓?gzip 鍘嬬缉鐨勬枃浠剁郴缁熸槧鍍忥紙閲囩敤鏌愮鏂囦欢鏍煎紡锛屽 ext2锛岄渶瑕佸唴鏍稿唴寤洪┍鍔級锛岃€屾柊鐨?initramfs 褰掓。鏄竴涓?gzip 鍘嬬缉鐨?cpio 褰掓。锛堢被浼?tar锛屼絾鏇寸畝鍗曪紝鍙傝 cpio(1) 涓?Documentation/driver-api/early-userspace/buffer-format.rst锛夈€傚唴鏍哥殑 cpio 瑙ｅ帇浠ｇ爜涓嶄粎鏋佸叾灏忓阀锛岃€屼笖灞炰簬 __init 鏂囨湰涓庢暟鎹紝鍙互鍦ㄥ惎鍔ㄨ繃绋嬩腑琚涪寮冦€?
+  - 鏃х殑 initrd 杩愯鐨勭▼搴忥紙鍚嶄负 /initrd锛岃€岄潪 /init锛変細鍋氫竴浜涜缃紝鐒跺悗杩斿洖鍐呮牳锛涜€屾潵鑷?initramfs 鐨?init 绋嬪簭涓嶅簲杩斿洖鍐呮牳銆傦紙濡傛灉 /init 闇€瑕佷氦鍑烘帶鍒舵潈锛屽畠鍙互鐢ㄤ竴涓柊鐨勬牴璁惧瑕嗙洊鎸傝浇 / 骞?exec 鍙︿竴涓?init 绋嬪簭銆傚弬瑙佷笅鏂囩殑 switch_root 宸ュ叿銆傦級
 
-对于 ramfs，没有后备存储。写入 ramfs 的文件会像往常一样分配 dentry 与 page cache，但却没有地方可以写入。这意味着这些页永远不会被标记为 clean，因此当 VM 想要回收内存时无法释放它们。
-
-实现 ramfs 所需的代码量非常小，因为所有工作都由现有的 Linux 缓存基础设施完成。从根本上说，你就是把磁盘缓存当作文件系统挂载。正因如此，ramfs 不是一个可通过 menuconfig 移除的可选组件，因为那样节省的空间微乎其微。
-
-### ramfs 与 ramdisk（内存盘）
-
-较老的 "ram disk"（内存盘）机制从一块 RAM 区域中创建一个合成的块设备，并将其用作文件系统的后备存储。这个块设备大小固定，因此挂载其上的文件系统大小也固定。使用 ram disk 还需要不必要地把内存从那个假的块设备复制到 page cache（并把改动复制回去），以及创建和销毁 dentry。此外，它还需要一个文件系统驱动（如 ext2）来格式化并解析这些数据。
-
-与 ramfs 相比，这会浪费内存（以及内存总线带宽），给 CPU 带来不必要的工作，并污染 CPU 缓存。（虽然有一些通过操作页表来避免这种复制的技巧，但它们复杂得令人不快，而且结果证明代价与复制差不多。）更关键的是，ramfs 所做的所有工作无论如何都必须发生，因为所有文件访问都要经过 page 与 dentry 缓存。RAM disk 根本就是多余的；ramfs 在内部要简单得多。
-
-ramdisk 半过时的另一个原因是，loopback 设备（回环设备）的引入提供了一种更灵活、更方便的方式来创建合成块设备——现在从文件而不是从内存块创建。详见 losetup(8)。
-
-### ramfs 与 tmpfs
-
-ramfs 的一个缺点是，你可以一直向其中写入数据，直到填满所有内存，而 VM 无法释放它，因为 VM 认为文件应当被写入后备存储（而非交换空间），但 ramfs 没有任何后备存储。因此，只应允许 root（或一个受信任的用户）对 ramfs 挂载点拥有写访问权。
-
-一个名为 tmpfs 的 ramfs 衍生物被创造出来，用于增加大小限制，以及将数据写入交换空间的能力。普通用户可以被允许对 tmpfs 挂载点拥有写访问权。更多信息请参阅 Documentation/filesystems/tmpfs.rst。
-
-### 什么是 rootfs？
-
-rootfs 是 ramfs（若启用了 tmpfs，则为 tmpfs）的一个特殊实例，它始终存在于 Linux 系统中。内核使用一个名为 nullfs 的不可变的空文件系统作为 VFS 层级结构的真正根，而可变的 rootfs（tmpfs/ramfs）挂载在它之上。这使得 pivot_root() 与 initramfs 的卸载能够正常工作。
-
-大多数系统只是把另一个文件系统挂载到 rootfs 之上，然后忽略它。一个空的 ramfs 实例所占用的空间极小。
-
-如果启用了 CONFIG_TMPFS，rootfs 默认将使用 tmpfs 而非 ramfs。若要强制使用 ramfs，可在内核命令行中加入 "rootfstype=ramfs"。
-
-### 什么是 initramfs？
-
-所有 2.6 版本的 Linux 内核都包含一个 gzip 压缩的 "cpio" 格式归档，它会在内核启动时解压到 rootfs 中。解压之后，内核检查 rootfs 是否包含一个名为 "init" 的文件，如果是，就把它作为 PID 1 执行。若该 init 进程存在，它负责将系统的其余部分启动起来，包括定位并挂载真正的根设备（如果有）。如果内嵌的 cpio 归档解压到 rootfs 之后，rootfs 中仍不包含 init 程序，内核就会退回到较旧的代码，去定位并挂载一个根分区，然后从中 exec 某个变体的 /sbin/init。
-
-这一切与旧的 initrd 在几个方面有所不同：
-
-  - 旧的 initrd 始终是一个独立的文件，而 initramfs 归档被链接进 Linux 内核映像中。（`linux-*/usr` 目录就专门用于在内核构建期间生成这个归档。）
-
-  - 旧的 initrd 文件是一个 gzip 压缩的文件系统映像（采用某种文件格式，如 ext2，需要内核内建驱动），而新的 initramfs 归档是一个 gzip 压缩的 cpio 归档（类似 tar，但更简单，参见 cpio(1) 与 Documentation/driver-api/early-userspace/buffer-format.rst）。内核的 cpio 解压代码不仅极其小巧，而且属于 __init 文本与数据，可以在启动过程中被丢弃。
-
-  - 旧的 initrd 运行的程序（名为 /initrd，而非 /init）会做一些设置，然后返回内核；而来自 initramfs 的 init 程序不应返回内核。（如果 /init 需要交出控制权，它可以用一个新的根设备覆盖挂载 / 并 exec 另一个 init 程序。参见下文的 switch_root 工具。）
-
-  - 当切换到另一个根设备时，initrd 会执行 pivot_root，然后 umount 该 ramdisk。由于 nullfs 是真正的根，pivot_root() 可以正常工作
+  - 褰撳垏鎹㈠埌鍙︿竴涓牴璁惧鏃讹紝initrd 浼氭墽琛?pivot_root锛岀劧鍚?umount 璇?ramdisk銆傜敱浜?nullfs 鏄湡姝ｇ殑鏍癸紝pivot_root() 鍙互姝ｅ父宸ヤ綔
 
 ```
       chdir(new_root);
@@ -60,12 +40,10 @@ rootfs 是 ramfs（若启用了 tmpfs，则为 tmpfs）的一个特殊实例，�
 
 ```
 
-### 填充 initramfs
+### 濉厖 initramfs
 
-2.6 内核的构建过程总是创建一个 gzip 压缩的 cpio 格式 initramfs 归档，并将其链接进最终的内核二进制文件中。默认情况下，这个归档是空的（在 x86 上占用 134 字节）。
-
-配置选项 CONFIG_INITRAMFS_SOURCE（位于 menuconfig 的 General Setup 中，定义于 usr/Kconfig）可用于指定 initramfs 归档的来源，它会自动被并入最终二进制文件中。该选项可以指向一个已有的 gzip 压缩 cpio 归档、一个包含待归档文件的目录，或一个文本文件
-
+2.6 鍐呮牳鐨勬瀯寤鸿繃绋嬫€绘槸鍒涘缓涓€涓?gzip 鍘嬬缉鐨?cpio 鏍煎紡 initramfs 褰掓。锛屽苟灏嗗叾閾炬帴杩涙渶缁堢殑鍐呮牳浜岃繘鍒舵枃浠朵腑銆傞粯璁ゆ儏鍐典笅锛岃繖涓綊妗ｆ槸绌虹殑锛堝湪 x86 涓婂崰鐢?134 瀛楄妭锛夈€?
+閰嶇疆閫夐」 CONFIG_INITRAMFS_SOURCE锛堜綅浜?menuconfig 鐨?General Setup 涓紝瀹氫箟浜?usr/Kconfig锛夊彲鐢ㄤ簬鎸囧畾 initramfs 褰掓。鐨勬潵婧愶紝瀹冧細鑷姩琚苟鍏ユ渶缁堜簩杩涘埗鏂囦欢涓€傝閫夐」鍙互鎸囧悜涓€涓凡鏈夌殑 gzip 鍘嬬缉 cpio 褰掓。銆佷竴涓寘鍚緟褰掓。鏂囦欢鐨勭洰褰曪紝鎴栦竴涓枃鏈枃浠?
 ```
   dir /dev 755 0 0
   nod /dev/console 644 0 0 c 5 1
@@ -80,22 +58,18 @@ rootfs 是 ramfs（若启用了 tmpfs，则为 tmpfs）的一个特殊实例，�
 
 ```
 
-在内核构建之后运行 "usr/gen_init_cpio" 可以获取描述上述文件格式的使用说明。
+鍦ㄥ唴鏍告瀯寤轰箣鍚庤繍琛?"usr/gen_init_cpio" 鍙互鑾峰彇鎻忚堪涓婅堪鏂囦欢鏍煎紡鐨勪娇鐢ㄨ鏄庛€?
+閰嶇疆鏂囦欢鐨勪竴涓紭鐐规槸锛屽湪鏂板綊妗ｄ腑璁剧疆鏉冮檺鎴栧垱寤鸿澶囪妭鐐逛笉闇€瑕?root 鏉冮檺銆傦紙娉ㄦ剰锛岄偅涓や釜绀轰緥 "file" 鏉＄洰鏈熸湜鍦?linux-2.6.* 鐩綍涓嬪悕涓?"initramfs" 鐨勫瓙鐩綍涓壘鍒板悕涓?"init.sh" 涓?"busybox" 鐨勬枃浠躲€傛洿澶氱粏鑺傝鍙傞槄 Documentation/driver-api/early-userspace/early_userspace_support.rst銆傦級
 
-配置文件的一个优点是，在新归档中设置权限或创建设备节点不需要 root 权限。（注意，那两个示例 "file" 条目期望在 linux-2.6.* 目录下名为 "initramfs" 的子目录中找到名为 "init.sh" 与 "busybox" 的文件。更多细节请参阅 Documentation/driver-api/early-userspace/early_userspace_support.rst。）
-
-内核并不依赖外部的 cpio 工具。如果你指定的是一个目录而不是配置文件，内核的构建基础设施会由该目录生成一个配置文件（usr/Makefile 调用 usr/gen_initramfs.sh），然后继续使用该配置文件打包该目录（将其喂给 usr/gen_init_cpio，后者由 usr/gen_init_cpio.c 生成）。内核在构建时创建 cpio 的代码是完全自包含的，内核在启动时的解压器同样（显然）是自包含的。
-
-你唯一可能需要安装外部 cpio 工具的情况是，要创建或解压你自己预先准备好的、喂给内核构建的 cpio 文件（而不是用配置文件或目录）。
-
-以下命令行可以解压一个 cpio 映像（无论是通过上面的脚本
-
+鍐呮牳骞朵笉渚濊禆澶栭儴鐨?cpio 宸ュ叿銆傚鏋滀綘鎸囧畾鐨勬槸涓€涓洰褰曡€屼笉鏄厤缃枃浠讹紝鍐呮牳鐨勬瀯寤哄熀纭€璁炬柦浼氱敱璇ョ洰褰曠敓鎴愪竴涓厤缃枃浠讹紙usr/Makefile 璋冪敤 usr/gen_initramfs.sh锛夛紝鐒跺悗缁х画浣跨敤璇ラ厤缃枃浠舵墦鍖呰鐩綍锛堝皢鍏跺杺缁?usr/gen_init_cpio锛屽悗鑰呯敱 usr/gen_init_cpio.c 鐢熸垚锛夈€傚唴鏍稿湪鏋勫缓鏃跺垱寤?cpio 鐨勪唬鐮佹槸瀹屽叏鑷寘鍚殑锛屽唴鏍稿湪鍚姩鏃剁殑瑙ｅ帇鍣ㄥ悓鏍凤紙鏄剧劧锛夋槸鑷寘鍚殑銆?
+浣犲敮涓€鍙兘闇€瑕佸畨瑁呭閮?cpio 宸ュ叿鐨勬儏鍐垫槸锛岃鍒涘缓鎴栬В鍘嬩綘鑷繁棰勫厛鍑嗗濂界殑銆佸杺缁欏唴鏍告瀯寤虹殑 cpio 鏂囦欢锛堣€屼笉鏄敤閰嶇疆鏂囦欢鎴栫洰褰曪級銆?
+浠ヤ笅鍛戒护琛屽彲浠ヨВ鍘嬩竴涓?cpio 鏄犲儚锛堟棤璁烘槸閫氳繃涓婇潰鐨勮剼鏈?
 ```
   cpio -i -d -H newc -F initramfs_data.cpio --no-absolute-filenames
 
 ```
 
-以下 shell 脚本可以创建一个预构建的 cpio 归档，你可以
+浠ヤ笅 shell 鑴氭湰鍙互鍒涘缓涓€涓鏋勫缓鐨?cpio 褰掓。锛屼綘鍙互
 
 ```
   #!/bin/sh
@@ -120,30 +94,24 @@ rootfs 是 ramfs（若启用了 tmpfs，则为 tmpfs）的一个特殊实例，�
 
 ```
 
-    cpio 的 man 手册页包含一些糟糕的建议，如果你照做会破坏你的 initramfs 归档。它说"生成文件名列表的典型方式是使用 find 命令；你应该给 find 加上 -depth 选项，以尽量减少对不可写或不可搜索目录的权限问题。"在创建 initramfs.cpio.gz 映像时切勿这样做，那样是行不通的。Linux 内核的 cpio 解压器不会在不存在的目录中创建文件，因此目录条目必须出现在该目录中的文件之前。上面的脚本以正确的顺序生成它们。
+    cpio 鐨?man 鎵嬪唽椤靛寘鍚竴浜涚碂绯曠殑寤鸿锛屽鏋滀綘鐓у仛浼氱牬鍧忎綘鐨?initramfs 褰掓。銆傚畠璇?鐢熸垚鏂囦欢鍚嶅垪琛ㄧ殑鍏稿瀷鏂瑰紡鏄娇鐢?find 鍛戒护锛涗綘搴旇缁?find 鍔犱笂 -depth 閫夐」锛屼互灏介噺鍑忓皯瀵逛笉鍙啓鎴栦笉鍙悳绱㈢洰褰曠殑鏉冮檺闂銆?鍦ㄥ垱寤?initramfs.cpio.gz 鏄犲儚鏃跺垏鍕胯繖鏍峰仛锛岄偅鏍锋槸琛屼笉閫氱殑銆侺inux 鍐呮牳鐨?cpio 瑙ｅ帇鍣ㄤ笉浼氬湪涓嶅瓨鍦ㄧ殑鐩綍涓垱寤烘枃浠讹紝鍥犳鐩綍鏉＄洰蹇呴』鍑虹幇鍦ㄨ鐩綍涓殑鏂囦欢涔嬪墠銆備笂闈㈢殑鑴氭湰浠ユ纭殑椤哄簭鐢熸垚瀹冧滑銆?
+### 澶栭儴 initramfs 鏄犲儚
 
-### 外部 initramfs 映像
-
-如果内核启用了 initrd 支持，也可以把一个外部的 cpio.gz 归档当作 initrd 传入 2.6 内核。在这种情况下，内核会自动检测其类型（initramfs，而非 initrd），并在尝试运行 /init 之前将该外部 cpio 归档解压到 rootfs 中。
-
-这具有 initramfs 的内存效率优势（没有 ramdisk 块设备），同时又有 initrd 的独立打包特性（如果你想从 initramfs 运行非 GPL 的代码，而又不把它与以 GPL 许可的 Linux 内核二进制混在一起，这就很方便）。
-
-### initramfs 的内容
-
-initramfs 归档是一个完整、自包含的 Linux 根文件系统。如果你还不了解要让一个最小根文件系统启动运行需要哪些共享库、设备和路径，可以参考以下资料：
+濡傛灉鍐呮牳鍚敤浜?initrd 鏀寔锛屼篃鍙互鎶婁竴涓閮ㄧ殑 cpio.gz 褰掓。褰撲綔 initrd 浼犲叆 2.6 鍐呮牳銆傚湪杩欑鎯呭喌涓嬶紝鍐呮牳浼氳嚜鍔ㄦ娴嬪叾绫诲瀷锛坕nitramfs锛岃€岄潪 initrd锛夛紝骞跺湪灏濊瘯杩愯 /init 涔嬪墠灏嗚澶栭儴 cpio 褰掓。瑙ｅ帇鍒?rootfs 涓€?
+杩欏叿鏈?initramfs 鐨勫唴瀛樻晥鐜囦紭鍔匡紙娌℃湁 ramdisk 鍧楄澶囷級锛屽悓鏃跺張鏈?initrd 鐨勭嫭绔嬫墦鍖呯壒鎬э紙濡傛灉浣犳兂浠?initramfs 杩愯闈?GPL 鐨勪唬鐮侊紝鑰屽張涓嶆妸瀹冧笌浠?GPL 璁稿彲鐨?Linux 鍐呮牳浜岃繘鍒舵贩鍦ㄤ竴璧凤紝杩欏氨寰堟柟渚匡級銆?
+### initramfs 鐨勫唴瀹?
+initramfs 褰掓。鏄竴涓畬鏁淬€佽嚜鍖呭惈鐨?Linux 鏍规枃浠剁郴缁熴€傚鏋滀綘杩樹笉浜嗚В瑕佽涓€涓渶灏忔牴鏂囦欢绯荤粺鍚姩杩愯闇€瑕佸摢浜涘叡浜簱銆佽澶囧拰璺緞锛屽彲浠ュ弬鑰冧互涓嬭祫鏂欙細
 
 - https://www.tldp.org/HOWTO/Bootdisk-HOWTO/
 - https://www.tldp.org/HOWTO/From-PowerUp-To-Bash-Prompt-HOWTO.html
 - http://www.linuxfromscratch.org/lfs/view/stable/
 
-"klibc" 软件包（https://www.kernel.org/pub/linux/libs/klibc）被设计成一个极小的 C 库，用于早期用户空间代码的静态链接，并附带一些相关的工具。它采用 BSD 许可。
+"klibc" 杞欢鍖咃紙https://www.kernel.org/pub/linux/libs/klibc锛夎璁捐鎴愪竴涓瀬灏忕殑 C 搴擄紝鐢ㄤ簬鏃╂湡鐢ㄦ埛绌洪棿浠ｇ爜鐨勯潤鎬侀摼鎺ワ紝骞堕檮甯︿竴浜涚浉鍏崇殑宸ュ叿銆傚畠閲囩敤 BSD 璁稿彲銆?
+鎴戣嚜宸变娇鐢?uClibc锛坔ttps://www.uclibc.org锛変笌 busybox锛坔ttps://www.busybox.net锛夈€傚畠浠垎鍒噰鐢?LGPL 涓?GPL 璁稿彲銆傦紙busybox 1.3 鐗堟湰璁″垝鎻愪緵涓€涓嚜鍖呭惈鐨?initramfs 杞欢鍖呫€傦級
 
-我自己使用 uClibc（https://www.uclibc.org）与 busybox（https://www.busybox.net）。它们分别采用 LGPL 与 GPL 许可。（busybox 1.3 版本计划提供一个自包含的 initramfs 软件包。）
+鐞嗚涓婁綘鍙互浣跨敤 glibc锛屼絾瀹冨苟涓嶉€傚悎杩欑被灏忓瀷宓屽叆寮忕敤閫斻€傦紙涓€涓潤鎬侀摼鎺?glibc 鐨?"hello world" 绋嬪簭瓒呰繃 400k锛岃€岀敤 uClibc 鍙湁 7k銆傝繕瑕佹敞鎰忥紝glibc 浼氶€氳繃 dlopen 鍔犺浇 libnss 鏉ュ仛鍚嶇О鏌ユ壘锛屽嵆浣垮叾浠栧湴鏂规槸闈欐€侀摼鎺ョ殑銆傦級
 
-理论上你可以使用 glibc，但它并不适合这类小型嵌入式用途。（一个静态链接 glibc 的 "hello world" 程序超过 400k，而用 uClibc 只有 7k。还要注意，glibc 会通过 dlopen 加载 libnss 来做名称查找，即使其他地方是静态链接的。）
-
-一个好的第一步是让 initramfs 运行一个静态链接的 "hello world" 程序作为 init，并在 qemu（www.qemu.org）之类的模拟器下测试它，或者
-
+涓€涓ソ鐨勭涓€姝ユ槸璁?initramfs 杩愯涓€涓潤鎬侀摼鎺ョ殑 "hello world" 绋嬪簭浣滀负 init锛屽苟鍦?qemu锛坵ww.qemu.org锛変箣绫荤殑妯℃嫙鍣ㄤ笅娴嬭瘯瀹冿紝鎴栬€?
 ```
   cat > hello.c << EOF
   #include <stdio.h>
@@ -162,51 +130,40 @@ initramfs 归档是一个完整、自包含的 Linux 根文件系统。如果你
 
 ```
 
-在调试一个普通根文件系统时，能够用 "init=/bin/sh" 启动是很方便的。initramfs 的等价做法是 "rdinit=/bin/sh"，它同样有用。
-
-### 为什么用 cpio 而不是 tar？
-
-这一决定是在 2001 年 12 月做出的。讨论始于此处：
+鍦ㄨ皟璇曚竴涓櫘閫氭牴鏂囦欢绯荤粺鏃讹紝鑳藉鐢?"init=/bin/sh" 鍚姩鏄緢鏂逛究鐨勩€俰nitramfs 鐨勭瓑浠峰仛娉曟槸 "rdinit=/bin/sh"锛屽畠鍚屾牱鏈夌敤銆?
+### 涓轰粈涔堢敤 cpio 鑰屼笉鏄?tar锛?
+杩欎竴鍐冲畾鏄湪 2001 骞?12 鏈堝仛鍑虹殑銆傝璁哄浜庢澶勶細
 
 - https://lore.kernel.org/lkml/a03cke$640$1@cesium.transmeta.com/
 
-并由此引发了第二个讨论串（专门关于 tar 与 cpio 的对比），始于此处：
+骞剁敱姝ゅ紩鍙戜簡绗簩涓璁轰覆锛堜笓闂ㄥ叧浜?tar 涓?cpio 鐨勫姣旓級锛屽浜庢澶勶細
 
 - https://lore.kernel.org/lkml/3C25a06d.7030408@zytor.com/
 
-简明扼要的总结版本（不能替代阅读上述讨论串）如下：
+绠€鏄庢壖瑕佺殑鎬荤粨鐗堟湰锛堜笉鑳芥浛浠ｉ槄璇讳笂杩拌璁轰覆锛夊涓嬶細
 
-1) cpio 是一个标准。它已有几十年历史（可追溯到 AT&T 时代），并且已经在 Linux 上被广泛使用（在 RPM、Red Hat 的设备驱动盘内）。这里有一篇 1996 年关于它的 Linux Journal 文章：
-
+1) cpio 鏄竴涓爣鍑嗐€傚畠宸叉湁鍑犲崄骞村巻鍙诧紙鍙拷婧埌 AT&T 鏃朵唬锛夛紝骞朵笖宸茬粡鍦?Linux 涓婅骞挎硾浣跨敤锛堝湪 RPM銆丷ed Hat 鐨勮澶囬┍鍔ㄧ洏鍐咃級銆傝繖閲屾湁涓€绡?1996 骞村叧浜庡畠鐨?Linux Journal 鏂囩珷锛?
       http://www.linuxjournal.com/article/1213
 
-   它不如 tar 流行，是因为传统的 cpio 命令行工具需要 _truly_hideous_（极其丑陋）的命令行参数。但这对归档格式本身的好与坏并无任何说明，而且还有替代工具，例如：
+   瀹冧笉濡?tar 娴佽锛屾槸鍥犱负浼犵粺鐨?cpio 鍛戒护琛屽伐鍏烽渶瑕?_truly_hideous_锛堟瀬鍏朵笐闄嬶級鐨勫懡浠よ鍙傛暟銆備絾杩欏褰掓。鏍煎紡鏈韩鐨勫ソ涓庡潖骞舵棤浠讳綍璇存槑锛岃€屼笖杩樻湁鏇夸唬宸ュ叿锛屼緥濡傦細
 
       https://linux.die.net/man/1/afio
 
-2) 内核所选的 cpio 归档格式比任何一种（真有几十种）tar 归档格式都更简单、更干净（因而也更容易创建和解析）。完整的 initramfs 归档格式在 buffer-format.rst 中有说明，由 usr/gen_init_cpio.c 生成，并由 init/initramfs.c 解压。三者合在一起，人类可读文本总量不到 26k。
-
-3) GNU 项目将 tar 标准化，其相关性大约等同于 Windows 将 zip 标准化。Linux 不属于其中任何一方，可以自由做出自己的技术决策。
-
-4) 既然这是内核内部格式，它本可以轻易地是一种全新的东西。无论如何，内核都提供了自己的工具来创建和解压这种格式。使用现有标准是更可取的，但并非必要。
-
-5) 这一决定由 Al Viro 做出（引文："tar is ugly as hell and not going to be supported on the kernel side"（tar 丑陋至极，内核侧不会提供支持））：
-
+2) 鍐呮牳鎵€閫夌殑 cpio 褰掓。鏍煎紡姣斾换浣曚竴绉嶏紙鐪熸湁鍑犲崄绉嶏級tar 褰掓。鏍煎紡閮芥洿绠€鍗曘€佹洿骞插噣锛堝洜鑰屼篃鏇村鏄撳垱寤哄拰瑙ｆ瀽锛夈€傚畬鏁寸殑 initramfs 褰掓。鏍煎紡鍦?buffer-format.rst 涓湁璇存槑锛岀敱 usr/gen_init_cpio.c 鐢熸垚锛屽苟鐢?init/initramfs.c 瑙ｅ帇銆備笁鑰呭悎鍦ㄤ竴璧凤紝浜虹被鍙鏂囨湰鎬婚噺涓嶅埌 26k銆?
+3) GNU 椤圭洰灏?tar 鏍囧噯鍖栵紝鍏剁浉鍏虫€уぇ绾︾瓑鍚屼簬 Windows 灏?zip 鏍囧噯鍖栥€侺inux 涓嶅睘浜庡叾涓换浣曚竴鏂癸紝鍙互鑷敱鍋氬嚭鑷繁鐨勬妧鏈喅绛栥€?
+4) 鏃㈢劧杩欐槸鍐呮牳鍐呴儴鏍煎紡锛屽畠鏈彲浠ヨ交鏄撳湴鏄竴绉嶅叏鏂扮殑涓滆タ銆傛棤璁哄浣曪紝鍐呮牳閮芥彁渚涗簡鑷繁鐨勫伐鍏锋潵鍒涘缓鍜岃В鍘嬭繖绉嶆牸寮忋€備娇鐢ㄧ幇鏈夋爣鍑嗘槸鏇村彲鍙栫殑锛屼絾骞堕潪蹇呰銆?
+5) 杩欎竴鍐冲畾鐢?Al Viro 鍋氬嚭锛堝紩鏂囷細"tar is ugly as hell and not going to be supported on the kernel side"锛坱ar 涓戦檵鑷虫瀬锛屽唴鏍镐晶涓嶄細鎻愪緵鏀寔锛夛級锛?
     - https://lore.kernel.org/lkml/Pine.GSO.4.21.0112222109050.21702-100000@weyl.math.psu.edu/
 
-   他解释了自己的理由：
+   浠栬В閲婁簡鑷繁鐨勭悊鐢憋細
 
     - https://lore.kernel.org/lkml/Pine.GSO.4.21.0112222240530.21702-100000@weyl.math.psu.edu/
     - https://lore.kernel.org/lkml/Pine.GSO.4.21.0112230849550.23300-100000@weyl.math.psu.edu/
 
-   并且，最重要的是，他设计并实现了 initramfs 代码。
+   骞朵笖锛屾渶閲嶈鐨勬槸锛屼粬璁捐骞跺疄鐜颁簡 initramfs 浠ｇ爜銆?
+### 鏈潵鏂瑰悜
 
-### 未来方向
-
-如今（2.6.16），initramfs 总是被编译进内核，但并不总是被使用。内核会回退到传统启动代码，而该代码只有在 initramfs 不包含 /init 程序时才会被触及。这个回退代码是遗留代码，用于确保平滑过渡，并允许早期启动功能逐步迁移到 "early userspace"（即 initramfs）。
-
-向 early userspace 迁移是必要的，因为查找并挂载真正的根设备十分复杂。根分区可以跨越多个设备（raid 或独立日志）。它们可以位于网络上（需要 dhcp、设置特定 MAC 地址、登录服务器等）。它们可以位于可移动介质上，带有动态分配的 major/minor 号以及持久命名问题，需要完整的 udev 实现来理顺。它们可以是压缩的、加密的、写时复制的、loopback 挂载的、以奇特方式分区的，等等。
-
-这类复杂性（不可避免地包含策略）应当在用户空间中妥善处理。klibc 与 busybox/uClibc 都在开发可以放入内核构建的简单 initramfs 软件包。
-
-klibc 软件包现在已被接受进入 Andrew Morton 的 2.6.17-mm 树。内核当前的早期启动代码（分区检测等）很可能会被迁移到一个默认的 initramfs 中，由内核构建自动创建并使用。
+濡備粖锛?.6.16锛夛紝initramfs 鎬绘槸琚紪璇戣繘鍐呮牳锛屼絾骞朵笉鎬绘槸琚娇鐢ㄣ€傚唴鏍镐細鍥為€€鍒颁紶缁熷惎鍔ㄤ唬鐮侊紝鑰岃浠ｇ爜鍙湁鍦?initramfs 涓嶅寘鍚?/init 绋嬪簭鏃舵墠浼氳瑙﹀強銆傝繖涓洖閫€浠ｇ爜鏄仐鐣欎唬鐮侊紝鐢ㄤ簬纭繚骞虫粦杩囨浮锛屽苟鍏佽鏃╂湡鍚姩鍔熻兘閫愭杩佺Щ鍒?"early userspace"锛堝嵆 initramfs锛夈€?
+鍚?early userspace 杩佺Щ鏄繀瑕佺殑锛屽洜涓烘煡鎵惧苟鎸傝浇鐪熸鐨勬牴璁惧鍗佸垎澶嶆潅銆傛牴鍒嗗尯鍙互璺ㄨ秺澶氫釜璁惧锛坮aid 鎴栫嫭绔嬫棩蹇楋級銆傚畠浠彲浠ヤ綅浜庣綉缁滀笂锛堥渶瑕?dhcp銆佽缃壒瀹?MAC 鍦板潃銆佺櫥褰曟湇鍔″櫒绛夛級銆傚畠浠彲浠ヤ綅浜庡彲绉诲姩浠嬭川涓婏紝甯︽湁鍔ㄦ€佸垎閰嶇殑 major/minor 鍙蜂互鍙婃寔涔呭懡鍚嶉棶棰橈紝闇€瑕佸畬鏁寸殑 udev 瀹炵幇鏉ョ悊椤恒€傚畠浠彲浠ユ槸鍘嬬缉鐨勩€佸姞瀵嗙殑銆佸啓鏃跺鍒剁殑銆乴oopback 鎸傝浇鐨勩€佷互濂囩壒鏂瑰紡鍒嗗尯鐨勶紝绛夌瓑銆?
+杩欑被澶嶆潅鎬э紙涓嶅彲閬垮厤鍦板寘鍚瓥鐣ワ級搴斿綋鍦ㄧ敤鎴风┖闂翠腑濡ュ杽澶勭悊銆俴libc 涓?busybox/uClibc 閮藉湪寮€鍙戝彲浠ユ斁鍏ュ唴鏍告瀯寤虹殑绠€鍗?initramfs 杞欢鍖呫€?
+klibc 杞欢鍖呯幇鍦ㄥ凡琚帴鍙楄繘鍏?Andrew Morton 鐨?2.6.17-mm 鏍戙€傚唴鏍稿綋鍓嶇殑鏃╂湡鍚姩浠ｇ爜锛堝垎鍖烘娴嬬瓑锛夊緢鍙兘浼氳杩佺Щ鍒颁竴涓粯璁ょ殑 initramfs 涓紝鐢卞唴鏍告瀯寤鸿嚜鍔ㄥ垱寤哄苟浣跨敤銆?

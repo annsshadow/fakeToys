@@ -1,8 +1,8 @@
+﻿
+######## SDR 鏍煎紡
 
-######## SDR 格式
 
-
-这些格式仅用于 SDR <SDR> 接口。
+杩欎簺鏍煎紡浠呯敤浜?SDR <SDR> 鎺ュ彛銆?
 
 
 - [pixfmt-sdr-cu08](pixfmt-sdr-cu08)
@@ -14,4 +14,4 @@
 - [pixfmt-sdr-pcu18be](pixfmt-sdr-pcu18be)
 - [pixfmt-sdr-pcu20be](pixfmt-sdr-pcu20be)
 
-本页面为中文本地化条目，其余链接、标识符与代码均保持原始英文以便检索。
+鏈〉闈负涓枃鏈湴鍖栨潯鐩紝鍏朵綑閾炬帴銆佹爣璇嗙涓庝唬鐮佸潎淇濇寔鍘熷鑻辨枃浠ヤ究妫€绱€?

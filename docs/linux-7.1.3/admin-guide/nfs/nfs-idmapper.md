@@ -1,42 +1,31 @@
-## NFS ID 映射器
+﻿## NFS ID 鏄犲皠鍣?
+
+Id 鏄犲皠鍣ㄨ NFS 鐢ㄤ簬灏嗙敤鎴峰拰缁?id 杞崲涓哄悕绉帮紝骞跺皢鐢ㄦ埛鍜岀粍鍚嶇О杞崲涓?id銆?璇ヨ浆鎹㈢殑涓€閮ㄥ垎娑夊強鍚戠敤鎴锋€佸彂璧?upcall 浠ヨ姹備俊鎭€侼FS 鍙€氳繃涓ょ鏂瑰紡鑾峰彇
+杩欎簺淇℃伅锛氳皟鐢?/sbin/request-key锛屾垨璋冪敤 rpc.idmap 瀹堟姢杩涚▼銆?
+NFS 浼氬厛灏濊瘯璋冪敤 /sbin/request-key銆傝嫢鎴愬姛锛岀粨鏋滃皢浣跨敤閫氱敤鐨?request-key
+缂撳瓨杩涜缂撳瓨銆傚彧鏈夊綋 /etc/request-key.conf 鏈负 id_resolver 瀵嗛挜绫诲瀷閰嶇疆鏃?璇ヨ皟鐢ㄦ墠浼氬け璐ワ紝鑻ユ兂浣跨敤 request-key 鏂规硶锛岃鍙傝涓嬫枃鈥滈厤缃€濅竴鑺傘€?
+鑻ュ /sbin/request-key 鐨勮皟鐢ㄥけ璐ワ紙鍗?/etc/request-key.conf 鏈娇鐢?id_resolver 瀵嗛挜绫诲瀷閰嶇疆锛夛紝鍒?id 鏄犲皠鍣ㄥ皢鍚戦仐鐣欑殑 rpc.idmap 瀹堟姢杩涚▼璇锋眰
+id 鏄犲皠銆傝缁撴灉灏嗗瓨鍌ㄥ湪鑷畾涔夌殑 NFS idmap 缂撳瓨涓€?
+## 閰嶇疆
 
 
-Id 映射器被 NFS 用于将用户和组 id 转换为名称，并将用户和组名称转换为 id。
-该转换的一部分涉及向用户态发起 upcall 以请求信息。NFS 可通过两种方式获取
-这些信息：调用 /sbin/request-key，或调用 rpc.idmap 守护进程。
-
-NFS 会先尝试调用 /sbin/request-key。若成功，结果将使用通用的 request-key
-缓存进行缓存。只有当 /etc/request-key.conf 未为 id_resolver 密钥类型配置时
-该调用才会失败，若想使用 request-key 方法，请参见下文“配置”一节。
-
-若对 /sbin/request-key 的调用失败（即 /etc/request-key.conf 未使用
-id_resolver 密钥类型配置），则 id 映射器将向遗留的 rpc.idmap 守护进程请求
-id 映射。该结果将存储在自定义的 NFS idmap 缓存中。
-
-## 配置
-
-
-需要修改文件 /etc/request-key.conf，以便 /sbin/request-key 能够引导该
-upcall。应添加以下行：
+闇€瑕佷慨鏀规枃浠?/etc/request-key.conf锛屼互渚?/sbin/request-key 鑳藉寮曞璇?upcall銆傚簲娣诲姞浠ヤ笅琛岋細
 
 `#OP	TYPE	DESCRIPTION	CALLOUT INFO	PROGRAM ARG1 ARG2 ARG3 ...`
 `#======	=======	===============	===============	===============================`
 `create	id_resolver	**	**		/usr/sbin/nfs.idmap %k %d 600`
 
 
-这将把所有 id_resolver 请求导向程序 /usr/sbin/nfs.idmap。最后一个参数 600
-定义了密钥将在未来多少秒后过期。该参数对 /usr/sbin/nfs.idmap 是可选的。
-未指定超时时，nfs.idmap 默认使用 600 秒。
-
+杩欏皢鎶婃墍鏈?id_resolver 璇锋眰瀵煎悜绋嬪簭 /usr/sbin/nfs.idmap銆傛渶鍚庝竴涓弬鏁?600
+瀹氫箟浜嗗瘑閽ュ皢鍦ㄦ湭鏉ュ灏戠鍚庤繃鏈熴€傝鍙傛暟瀵?/usr/sbin/nfs.idmap 鏄彲閫夌殑銆?鏈寚瀹氳秴鏃舵椂锛宯fs.idmap 榛樿浣跨敤 600 绉掋€?
 ```
-  uid:  查找给定用户的 UID
-  gid:  查找给定组的 GID
- user:  查找给定 UID 的用户名
-group:  查找给定 GID 的组名
-
+  uid:  鏌ユ壘缁欏畾鐢ㄦ埛鐨?UID
+  gid:  鏌ユ壘缁欏畾缁勭殑 GID
+ user:  鏌ユ壘缁欏畾 UID 鐨勭敤鎴峰悕
+group:  鏌ユ壘缁欏畾 GID 鐨勭粍鍚?
 ```
-你可以单独处理其中任意一种，而不必使用通用的 upcall 程序。若想使用自己的程序
-进行 uid 查找，可以编辑 request-key.conf，使其类似如下：
+浣犲彲浠ュ崟鐙鐞嗗叾涓换鎰忎竴绉嶏紝鑰屼笉蹇呬娇鐢ㄩ€氱敤鐨?upcall 绋嬪簭銆傝嫢鎯充娇鐢ㄨ嚜宸辩殑绋嬪簭
+杩涜 uid 鏌ユ壘锛屽彲浠ョ紪杈?request-key.conf锛屼娇鍏剁被浼煎涓嬶細
 
 `#OP	TYPE	DESCRIPTION	CALLOUT INFO	PROGRAM ARG1 ARG2 ARG3 ...`
 `#======	=======	===============	===============	===============================`
@@ -44,20 +33,13 @@ group:  查找给定 GID 的组名
 `create	id_resolver	**	**		/usr/sbin/nfs.idmap %k %d 600`
 
 
-注意新行被添加在通用程序所在行之上。request-key 会找到第一个匹配的行及相应
-的程序。在此例中，/some/other/program 将处理所有 uid 查找，而
-/usr/sbin/nfs.idmap 将处理 gid、user 和 group 查找。
-
-有关 request-key 函数的更多信息，请参见 Documentation/security/keys/request-key.rst。
-
+娉ㄦ剰鏂拌琚坊鍔犲湪閫氱敤绋嬪簭鎵€鍦ㄨ涔嬩笂銆俽equest-key 浼氭壘鍒扮涓€涓尮閰嶇殑琛屽強鐩稿簲
+鐨勭▼搴忋€傚湪姝や緥涓紝/some/other/program 灏嗗鐞嗘墍鏈?uid 鏌ユ壘锛岃€?/usr/sbin/nfs.idmap 灏嗗鐞?gid銆乽ser 鍜?group 鏌ユ壘銆?
+鏈夊叧 request-key 鍑芥暟鐨勬洿澶氫俊鎭紝璇峰弬瑙?Documentation/security/keys/request-key.rst銆?
 ## nfs.idmap
 
 
-nfs.idmap 设计为由 request-key 调用，不应“手动”运行。该程序接受两个参数，
-一个序列化的密钥和一个密钥描述。序列化密钥首先被转换为 key_serial_t，然后
-作为参数传递给 keyctl_instantiate（二者都是 keyutils.h 的一部分）。
-
-实际的查找由 nfsidmap.h 中的函数执行。nfs.idmap 通过查看描述字符串的第一部分
-来确定要调用的正确函数。例如，uid 查找描述将形如 “uid:user@domain”。
-
-若密钥被实例化，nfs.idmap 返回 0，否则返回非 0。
+nfs.idmap 璁捐涓虹敱 request-key 璋冪敤锛屼笉搴斺€滄墜鍔ㄢ€濊繍琛屻€傝绋嬪簭鎺ュ彈涓や釜鍙傛暟锛?涓€涓簭鍒楀寲鐨勫瘑閽ュ拰涓€涓瘑閽ユ弿杩般€傚簭鍒楀寲瀵嗛挜棣栧厛琚浆鎹负 key_serial_t锛岀劧鍚?浣滀负鍙傛暟浼犻€掔粰 keyctl_instantiate锛堜簩鑰呴兘鏄?keyutils.h 鐨勪竴閮ㄥ垎锛夈€?
+瀹為檯鐨勬煡鎵剧敱 nfsidmap.h 涓殑鍑芥暟鎵ц銆俷fs.idmap 閫氳繃鏌ョ湅鎻忚堪瀛楃涓茬殑绗竴閮ㄥ垎
+鏉ョ‘瀹氳璋冪敤鐨勬纭嚱鏁般€備緥濡傦紝uid 鏌ユ壘鎻忚堪灏嗗舰濡?鈥渦id:user@domain鈥濄€?
+鑻ュ瘑閽ヨ瀹炰緥鍖栵紝nfs.idmap 杩斿洖 0锛屽惁鍒欒繑鍥為潪 0銆?

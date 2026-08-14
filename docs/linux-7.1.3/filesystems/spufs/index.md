@@ -1,7 +1,7 @@
+﻿
+## SPU 鏂囦欢绯荤粺
 
-## SPU 文件系统
-
-本页收录 SPU 文件系统（spufs）相关文档，包含文件系统本身及 `spu_create`、`spu_run` 等接口说明。
+鏈〉鏀跺綍 SPU 鏂囦欢绯荤粺锛坰pufs锛夌浉鍏虫枃妗ｏ紝鍖呭惈鏂囦欢绯荤粺鏈韩鍙?`spu_create`銆乣spu_run` 绛夋帴鍙ｈ鏄庛€?
 
 
 - [SPUFS](spufs)

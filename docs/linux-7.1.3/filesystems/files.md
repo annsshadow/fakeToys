@@ -1,23 +1,13 @@
+﻿
+## Linux 鍐呮牳涓殑鏂囦欢绠＄悊
 
-## Linux 内核中的文件管理
 
+鏈枃妗ｄ粙缁嶆枃浠讹紙`struct file`锛変笌鏂囦欢鎻忚堪绗﹁〃锛坄struct files`锛夌殑鍔犻攣鏈哄埗鏄浣曞伐浣滅殑銆?
+鍦?2.6.12 涔嬪墠锛屾枃浠舵弿杩扮琛ㄧ敱涓€鎶婇攣锛坒iles->file_lock锛夊拰寮曠敤璁℃暟锛坒iles->count锛変繚鎶ゃ€?->file_lock 淇濇姢瀵硅〃涓墍鏈変笌鏂囦欢鐩稿叧瀛楁鐨勮闂€?>count 鐢ㄤ簬鍦ㄩ€氳繃 CLONE_FILES 鏍囧織鍏嬮殕鐨勪换鍔′箣闂村叡浜?鏂囦欢鎻忚堪绗﹁〃銆傚浜?POSIX 绾跨▼閫氬父灏辨槸杩欑鎯呭喌銆備笌鍐呮牳涓父瑙佺殑寮曠敤璁℃暟妯″瀷涓€鏍凤紝鏈€鍚庝竴涓墽琛?put_files_struct() 鐨勪换鍔￠噴鏀炬枃浠舵弿杩扮锛坒d锛夎〃銆傛枃浠讹紙`struct file`锛夋湰韬娇鐢ㄥ紩鐢ㄨ鏁帮紙->f_count锛変繚鎶ゃ€?
+鍦ㄦ枃浠舵弿杩扮绠＄悊鏂扮殑鏃犻攣妯″瀷涓紝寮曠敤璁℃暟鏂瑰紡绫讳技锛屼絾鍔犻攣鍩轰簬 RCU銆傛枃浠舵弿杩扮琛ㄥ寘鍚涓厓绱犫€斺€?fd 闆嗗悎锛坥pen_fds 涓?close_on_exec锛夈€佹枃浠舵寚閽堟暟缁勩€侀泦鍚堜笌鏁扮粍鐨勫ぇ灏忕瓑銆備负浜嗕娇鏇存柊瀵规棤閿佽鍙栬€?鍛堢幇鍘熷瓙鎬э紝鏂囦欢鎻忚堪绗﹁〃鐨勬墍鏈夊厓绱犻兘鏀惧湪涓€涓嫭绔嬬殑缁撴瀯浣?struct fdtable 涓€俧iles_struct 鍖呭惈涓€涓?鎸囧悜 struct fdtable 鐨勬寚閽堬紝瀹為檯鐨?fd 琛ㄩ€氳繃璇ユ寚閽堣闂€傛渶鍒?fdtable 宓屽叆鍦?files_struct 鑷韩涓€?鍦ㄥ悗缁?fdtable 鎵╁睍鏃讹紝浼氬垎閰嶄竴涓柊鐨?fdtable 缁撴瀯锛宖iles->fdtab 鎸囧悜鏂扮粨鏋勩€俧dtable 缁撴瀯閫氳繃
+RCU 閲婃斁锛屾棤閿佽鍙栬€呰涔堢湅鍒版棫鐨?fdtable锛岃涔堢湅鍒版柊鐨?fdtable锛屼粠鑰屼娇鏇存柊鍛堢幇鍘熷瓙鎬с€?浠ヤ笅鏄?fdtable 缁撴瀯鐨勫姞閿佽鍒欙細
 
-本文档介绍文件（`struct file`）与文件描述符表（`struct files`）的加锁机制是如何工作的。
-
-在 2.6.12 之前，文件描述符表由一把锁（files->file_lock）和引用计数（files->count）保护。
-->file_lock 保护对表中所有与文件相关字段的访问。->count 用于在通过 CLONE_FILES 标志克隆的任务之间共享
-文件描述符表。对于 POSIX 线程通常就是这种情况。与内核中常见的引用计数模型一样，最后一个执行
-put_files_struct() 的任务释放文件描述符（fd）表。文件（`struct file`）本身使用引用计数（->f_count）保护。
-
-在文件描述符管理新的无锁模型中，引用计数方式类似，但加锁基于 RCU。文件描述符表包含多个元素——
-fd 集合（open_fds 与 close_on_exec）、文件指针数组、集合与数组的大小等。为了使更新对无锁读取者
-呈现原子性，文件描述符表的所有元素都放在一个独立的结构体 struct fdtable 中。files_struct 包含一个
-指向 struct fdtable 的指针，实际的 fd 表通过该指针访问。最初 fdtable 嵌入在 files_struct 自身中。
-在后续 fdtable 扩展时，会分配一个新的 fdtable 结构，files->fdtab 指向新结构。fdtable 结构通过
-RCU 释放，无锁读取者要么看到旧的 fdtable，要么看到新的 fdtable，从而使更新呈现原子性。
-以下是 fdtable 结构的加锁规则：
-
-1. 所有对 fdtable 的引用都必须通过
+1. 鎵€鏈夊 fdtable 鐨勫紩鐢ㄩ兘蹇呴』閫氳繃
 
 ```
 
@@ -32,18 +22,12 @@ RCU 释放，无锁读取者要么看到旧的 fdtable，要么看到新的 fdta
 	...
 	rcu_read_unlock();
 
-   files_fdtable() 使用 rcu_dereference() 宏，该宏负责处理无锁解引用所需的内存屏障要求。
-   fdtable 指针必须在读端临界区内部读取。
-
+   files_fdtable() 浣跨敤 rcu_dereference() 瀹忥紝璇ュ畯璐熻矗澶勭悊鏃犻攣瑙ｅ紩鐢ㄦ墍闇€鐨勫唴瀛樺睆闅滆姹傘€?   fdtable 鎸囬拡蹇呴』鍦ㄨ绔复鐣屽尯鍐呴儴璇诲彇銆?
 ```
 
-2. 上述对 fdtable 的读取必须由 rcu_read_lock()/rcu_read_unlock() 保护。
-
-3. 对于任何对 fd 表的更新，必须持有 files->file_lock。
-
-4. 给定一个 fd 查找 file 结构时，读取者必须使用 lookup_fdget_rcu() 或 files_lookup_fdget_rcu() API。
-   它们负责处理因无锁查找而产生的屏障要求。
-
+2. 涓婅堪瀵?fdtable 鐨勮鍙栧繀椤荤敱 rcu_read_lock()/rcu_read_unlock() 淇濇姢銆?
+3. 瀵逛簬浠讳綍瀵?fd 琛ㄧ殑鏇存柊锛屽繀椤绘寔鏈?files->file_lock銆?
+4. 缁欏畾涓€涓?fd 鏌ユ壘 file 缁撴瀯鏃讹紝璇诲彇鑰呭繀椤讳娇鐢?lookup_fdget_rcu() 鎴?files_lookup_fdget_rcu() API銆?   瀹冧滑璐熻矗澶勭悊鍥犳棤閿佹煡鎵捐€屼骇鐢熺殑灞忛殰瑕佹眰銆?
 ```
 
 	struct file *file;
@@ -59,34 +43,26 @@ RCU 释放，无锁读取者要么看到旧的 fdtable，要么看到新的 fdta
 
 ```
 
-5. 由于 fdtable 与 file 结构都可以无锁查找，它们必须使用 rcu_assign_pointer() API 安装。
-   如果它们被无锁查找，则必须使用 rcu_dereference()。不过建议使用 files_fdtable() 以及
-   lookup_fdget_rcu()/files_lookup_fdget_rcu()，它们会处理这些问题。
-
-6. 在更新时，fdtable 指针必须在持有 files->file_lock 的情况下查找。如果释放了 ->file_lock，则
-   另一个线程可能扩展 files，从而创建一个新的 fdtable 并使先前的 fdtable 指针失效。
-
+5. 鐢变簬 fdtable 涓?file 缁撴瀯閮藉彲浠ユ棤閿佹煡鎵撅紝瀹冧滑蹇呴』浣跨敤 rcu_assign_pointer() API 瀹夎銆?   濡傛灉瀹冧滑琚棤閿佹煡鎵撅紝鍒欏繀椤讳娇鐢?rcu_dereference()銆備笉杩囧缓璁娇鐢?files_fdtable() 浠ュ強
+   lookup_fdget_rcu()/files_lookup_fdget_rcu()锛屽畠浠細澶勭悊杩欎簺闂銆?
+6. 鍦ㄦ洿鏂版椂锛宖dtable 鎸囬拡蹇呴』鍦ㄦ寔鏈?files->file_lock 鐨勬儏鍐典笅鏌ユ壘銆傚鏋滈噴鏀句簡 ->file_lock锛屽垯
+   鍙︿竴涓嚎绋嬪彲鑳芥墿灞?files锛屼粠鑰屽垱寤轰竴涓柊鐨?fdtable 骞朵娇鍏堝墠鐨?fdtable 鎸囬拡澶辨晥銆?
 ```
 
 	spin_lock(&files->file_lock);
 	fd = locate_fd(files, file, start);
 	if (fd >= 0) {
-		/* locate_fd() 可能已扩展 fdtable，加载该指针 */
+		/* locate_fd() 鍙兘宸叉墿灞?fdtable锛屽姞杞借鎸囬拡 */
 		fdt = files_fdtable(files);
 		__set_open_fd(fd, fdt);
 		__clear_close_on_exec(fd, fdt);
 		spin_unlock(&files->file_lock);
 	.....
 
-   由于 locate_fd() 可能释放 ->file_lock（并重新获取 ->file_lock），fdtable 指针（fdt）必须在
-   locate_fd() 之后加载。
-
+   鐢变簬 locate_fd() 鍙兘閲婃斁 ->file_lock锛堝苟閲嶆柊鑾峰彇 ->file_lock锛夛紝fdtable 鎸囬拡锛坒dt锛夊繀椤诲湪
+   locate_fd() 涔嬪悗鍔犺浇銆?
 ```
-在较新的内核中，基于 RCU 的文件查找已切换为依赖 SLAB_TYPESAFE_BY_RCU 而非 call_rcu()。仅仅在 RCU 下
-使用 atomic_long_inc_not_zero() 获取相关文件的引用已经不够，因为该文件可能已经被回收，而其他人可能已经
-增加了引用计数。换句话说，调用者可能看到来自较新用户的引用计数增加。出于这个原因，有必要在引用计数
-增加前后验证指针是相同的。这一模式可见于 get_file_rcu() 与 __files_get_rcu()。
-
-此外，在 RCU 查找下，若未先在文件上获取引用，就无法访问或检查 struct file 中的字段。不这样做一直非常
-不可靠，并且它只适用于 struct file 中的非指针数据。有了 SLAB_TYPESAFE_BY_RCU，调用者有必要要么先
-获取一个引用，要么必须持有 fdtable 的 files_lock。
+鍦ㄨ緝鏂扮殑鍐呮牳涓紝鍩轰簬 RCU 鐨勬枃浠舵煡鎵惧凡鍒囨崲涓轰緷璧?SLAB_TYPESAFE_BY_RCU 鑰岄潪 call_rcu()銆備粎浠呭湪 RCU 涓?浣跨敤 atomic_long_inc_not_zero() 鑾峰彇鐩稿叧鏂囦欢鐨勫紩鐢ㄥ凡缁忎笉澶燂紝鍥犱负璇ユ枃浠跺彲鑳藉凡缁忚鍥炴敹锛岃€屽叾浠栦汉鍙兘宸茬粡
+澧炲姞浜嗗紩鐢ㄨ鏁般€傛崲鍙ヨ瘽璇达紝璋冪敤鑰呭彲鑳界湅鍒版潵鑷緝鏂扮敤鎴风殑寮曠敤璁℃暟澧炲姞銆傚嚭浜庤繖涓師鍥狅紝鏈夊繀瑕佸湪寮曠敤璁℃暟
+澧炲姞鍓嶅悗楠岃瘉鎸囬拡鏄浉鍚岀殑銆傝繖涓€妯″紡鍙浜?get_file_rcu() 涓?__files_get_rcu()銆?
+姝ゅ锛屽湪 RCU 鏌ユ壘涓嬶紝鑻ユ湭鍏堝湪鏂囦欢涓婅幏鍙栧紩鐢紝灏辨棤娉曡闂垨妫€鏌?struct file 涓殑瀛楁銆備笉杩欐牱鍋氫竴鐩撮潪甯?涓嶅彲闈狅紝骞朵笖瀹冨彧閫傜敤浜?struct file 涓殑闈炴寚閽堟暟鎹€傛湁浜?SLAB_TYPESAFE_BY_RCU锛岃皟鐢ㄨ€呮湁蹇呰瑕佷箞鍏?鑾峰彇涓€涓紩鐢紝瑕佷箞蹇呴』鎸佹湁 fdtable 鐨?files_lock銆?

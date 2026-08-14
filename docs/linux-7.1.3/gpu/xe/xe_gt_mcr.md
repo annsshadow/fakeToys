@@ -1,11 +1,11 @@
-## GT 多播/复制（MCR）寄存器支持
+﻿## GT 澶氭挱/澶嶅埗锛圡CR锛夊瘎瀛樺櫒鏀寔
 
 
-本文件记录 xe 驱动中 GT 多播/复制（MCR）寄存器的支持与内核 API。
+鏈枃浠惰褰?xe 椹卞姩涓?GT 澶氭挱/澶嶅埗锛圡CR锛夊瘎瀛樺櫒鐨勬敮鎸佷笌鍐呮牳 API銆?
 
    :doc: GT Multicast/Replicated (MCR) Register Support
 
-## 内部 API
+## 鍐呴儴 API
 
 
 TODO

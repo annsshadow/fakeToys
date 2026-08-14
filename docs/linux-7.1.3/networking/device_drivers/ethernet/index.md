@@ -1,12 +1,12 @@
+﻿
+## 浠ュお缃戣澶囬┍鍔?
 
-## 以太网设备驱动
-
-本页面为该分类的文档索引，汇总相关的条目链接；链接目标与标识符保持原文以便于检索。
+鏈〉闈负璇ュ垎绫荤殑鏂囨。绱㈠紩锛屾眹鎬荤浉鍏崇殑鏉＄洰閾炬帴锛涢摼鎺ョ洰鏍囦笌鏍囪瘑绗︿繚鎸佸師鏂囦互渚夸簬妫€绱€?
 
 
-面向以太网以及基于以太网的虚拟功能（虚拟功能）设备的设备驱动。
+闈㈠悜浠ュお缃戜互鍙婂熀浜庝互澶綉鐨勮櫄鎷熷姛鑳斤紙铏氭嫙鍔熻兘锛夎澶囩殑璁惧椹卞姩銆?
 
-目录（Contents）：
+鐩綍锛圕ontents锛夛細
 
 - [3com/3c509](3com/3c509)
 - [3com/vortex](3com/vortex)
@@ -22,7 +22,7 @@
 - [davicom/dm9000](davicom/dm9000)
 - [dec/dmfe](dec/dmfe)
 - [freescale/dpaa](freescale/dpaa)
-- [freescale/dpaa2/索引](freescale/dpaa2/index)
+- [freescale/dpaa2/绱㈠紩](freescale/dpaa2/index)
 - [freescale/gianfar](freescale/gianfar)
 - [google/gve](google/gve)
 - [huawei/hinic](huawei/hinic)
@@ -42,7 +42,7 @@
 - [marvell/octeontx2](marvell/octeontx2)
 - [marvell/octeon_ep](marvell/octeon_ep)
 - [marvell/octeon_ep_vf](marvell/octeon_ep_vf)
-- [mellanox/mlx5/索引](mellanox/mlx5/index)
+- [mellanox/mlx5/绱㈠紩](mellanox/mlx5/index)
 - [meta/fbnic](meta/fbnic)
 - [microsoft/netvsc](microsoft/netvsc)
 - [mucse/rnpgbe](mucse/rnpgbe)

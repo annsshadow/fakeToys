@@ -1,20 +1,11 @@
-## GPIO 映射
+﻿## GPIO 鏄犲皠
 
 
-本文档说明如何将 GPIO 分配给指定的设备和功能。
-
-所有平台都可以启用 GPIO 库，但如果某个平台严格要求必须提供 GPIO 功能，则需要在其
-Kconfig 中选择 GPIOLIB。之后，GPIO 如何映射取决于该平台使用什么方式来描述其硬件
-布局。目前，映射可以通过设备树（device tree）、ACPI 和平台数据（platform data）来定义。
-
-### 设备树
-
-在设备树中，GPIO 可以很方便地映射到设备和功能上。具体的做法取决于提供这些 GPIO 的
-GPIO 控制器，请参考你的控制器对应的设备树绑定（device tree bindings）。
-
-GPIO 映射定义在消费设备（consumer device）的节点中，位于一个名为
-<function>-gpios 的属性里，其中 <function> 是驱动将请求的那个功能
-```
+鏈枃妗ｈ鏄庡浣曞皢 GPIO 鍒嗛厤缁欐寚瀹氱殑璁惧鍜屽姛鑳姐€?
+鎵€鏈夊钩鍙伴兘鍙互鍚敤 GPIO 搴擄紝浣嗗鏋滄煇涓钩鍙颁弗鏍艰姹傚繀椤绘彁渚?GPIO 鍔熻兘锛屽垯闇€瑕佸湪鍏?Kconfig 涓€夋嫨 GPIOLIB銆備箣鍚庯紝GPIO 濡備綍鏄犲皠鍙栧喅浜庤骞冲彴浣跨敤浠€涔堟柟寮忔潵鎻忚堪鍏剁‖浠?甯冨眬銆傜洰鍓嶏紝鏄犲皠鍙互閫氳繃璁惧鏍戯紙device tree锛夈€丄CPI 鍜屽钩鍙版暟鎹紙platform data锛夋潵瀹氫箟銆?
+### 璁惧鏍?
+鍦ㄨ澶囨爲涓紝GPIO 鍙互寰堟柟渚垮湴鏄犲皠鍒拌澶囧拰鍔熻兘涓娿€傚叿浣撶殑鍋氭硶鍙栧喅浜庢彁渚涜繖浜?GPIO 鐨?GPIO 鎺у埗鍣紝璇峰弬鑰冧綘鐨勬帶鍒跺櫒瀵瑰簲鐨勮澶囨爲缁戝畾锛坉evice tree bindings锛夈€?
+GPIO 鏄犲皠瀹氫箟鍦ㄦ秷璐硅澶囷紙consumer device锛夌殑鑺傜偣涓紝浣嶄簬涓€涓悕涓?<function>-gpios 鐨勫睘鎬ч噷锛屽叾涓?<function> 鏄┍鍔ㄥ皢璇锋眰鐨勯偅涓姛鑳?```
 
 
 	foo_device {
@@ -29,11 +20,9 @@ GPIO 映射定义在消费设备（consumer device）的节点中，位于一个
 
 
 ```
-名为 <function>-gpio 的属性也被认为有效，旧的绑定中使用了它，但仅为兼容性而保留，
-由于已被弃用，新的绑定中不应再使用。
-
-该属性将使 GPIO 15、16 和 17 通过以下方式对驱动可用
-```
+鍚嶄负 <function>-gpio 鐨勫睘鎬т篃琚涓烘湁鏁堬紝鏃х殑缁戝畾涓娇鐢ㄤ簡瀹冿紝浣嗕粎涓哄吋瀹规€ц€屼繚鐣欙紝
+鐢变簬宸茶寮冪敤锛屾柊鐨勭粦瀹氫腑涓嶅簲鍐嶄娇鐢ㄣ€?
+璇ュ睘鎬у皢浣?GPIO 15銆?6 鍜?17 閫氳繃浠ヤ笅鏂瑰紡瀵归┍鍔ㄥ彲鐢?```
 	struct gpio_desc *red, *green, *blue, *power;
 
 	red = gpiod_get_index(dev, "led", 0, GPIOD_OUT_HIGH);
@@ -43,20 +32,15 @@ GPIO 映射定义在消费设备（consumer device）的节点中，位于一个
 	power = gpiod_get(dev, "power", GPIOD_OUT_HIGH);
 
 ```
-led 的 GPIO 将为高电平有效（active high），而 power 的 GPIO 为低电平有效（active low）
-（即 gpiod_is_active_low(power) 将返回 true）。
-
-gpiod_get() 系列函数的第二个参数，即 con_id 字符串，必须是 GPIO 后缀
-（"gpios" 或 "gpio"，由 gpiod 函数在内部自动查找）所对应的 <function>- 前缀，
-该后缀在设备树中使用。以上面的 "led-gpios" 为例，作为 con_id 参数应使用不带 "-"
-的前缀："led"。
-
-在内部，GPIO 子系统会把传入 con_id 的字符串与 GPIO 后缀（"gpios" 或 "gpio"）拼接，
-得到最终的字符串（`snprintf(... "%s-%s", con_id, gpio_suffixes[]`）。
-
+led 鐨?GPIO 灏嗕负楂樼數骞虫湁鏁堬紙active high锛夛紝鑰?power 鐨?GPIO 涓轰綆鐢靛钩鏈夋晥锛坅ctive low锛?锛堝嵆 gpiod_is_active_low(power) 灏嗚繑鍥?true锛夈€?
+gpiod_get() 绯诲垪鍑芥暟鐨勭浜屼釜鍙傛暟锛屽嵆 con_id 瀛楃涓诧紝蹇呴』鏄?GPIO 鍚庣紑
+锛?gpios" 鎴?"gpio"锛岀敱 gpiod 鍑芥暟鍦ㄥ唴閮ㄨ嚜鍔ㄦ煡鎵撅級鎵€瀵瑰簲鐨?<function>- 鍓嶇紑锛?璇ュ悗缂€鍦ㄨ澶囨爲涓娇鐢ㄣ€備互涓婇潰鐨?"led-gpios" 涓轰緥锛屼綔涓?con_id 鍙傛暟搴斾娇鐢ㄤ笉甯?"-"
+鐨勫墠缂€锛?led"銆?
+鍦ㄥ唴閮紝GPIO 瀛愮郴缁熶細鎶婁紶鍏?con_id 鐨勫瓧绗︿覆涓?GPIO 鍚庣紑锛?gpios" 鎴?"gpio"锛夋嫾鎺ワ紝
+寰楀埌鏈€缁堢殑瀛楃涓诧紙`snprintf(... "%s-%s", con_id, gpio_suffixes[]`锛夈€?
 ### ACPI
 
-ACPI 也以类似于 DT 的方式支持 GPIO 的功能名。上面的 DT 示例可以转换为等价的 ACPI 描述
+ACPI 涔熶互绫讳技浜?DT 鐨勬柟寮忔敮鎸?GPIO 鐨勫姛鑳藉悕銆備笂闈㈢殑 DT 绀轰緥鍙互杞崲涓虹瓑浠风殑 ACPI 鎻忚堪
 ```
 
 	Device (FOO) {
@@ -88,40 +72,30 @@ ACPI 也以类似于 DT 的方式支持 GPIO 的功能名。上面的 DT 示例�
 	}
 
 ```
-有关 ACPI GPIO 绑定的更多信息，请参见
-Documentation/firmware-guide/acpi/gpio-properties.rst。
-
-### 软件节点
+鏈夊叧 ACPI GPIO 缁戝畾鐨勬洿澶氫俊鎭紝璇峰弬瑙?Documentation/firmware-guide/acpi/gpio-properties.rst銆?
+### 杞欢鑺傜偣
 
 
-软件节点（software nodes）允许板级特定的代码使用 struct software_node 和 struct
-property_entry 构造一个内存中、类设备树的结构。随后该结构可以与平台设备关联，使驱动
-能够使用标准的设备属性（device properties）API 来查询配置，就像在 ACPI 或设备树系统
-上一样。
-
-由软件节点支持的 GPIO 使用 `PROPERTY_ENTRY_GPIO()` 宏来描述，该宏将代表 GPIO 控制器的
-软件节点与消费设备关联起来。它允许消费方使用常规的 gpiolib API，例如
-gpiod_get()、gpiod_get_optional()。
-
-代表 GPIO 控制器的软件节点必须挂接到 GPIO 控制器设备 —— 既可以作为主固件节点，也可以作为
-次级固件节点。
-
-例如，下面是如何描述一个由单个 GPIO 连接的 LED。这是在旧系统上使用 platform_data 的
-替代方案。
-
+杞欢鑺傜偣锛坰oftware nodes锛夊厑璁告澘绾х壒瀹氱殑浠ｇ爜浣跨敤 struct software_node 鍜?struct
+property_entry 鏋勯€犱竴涓唴瀛樹腑銆佺被璁惧鏍戠殑缁撴瀯銆傞殢鍚庤缁撴瀯鍙互涓庡钩鍙拌澶囧叧鑱旓紝浣块┍鍔?鑳藉浣跨敤鏍囧噯鐨勮澶囧睘鎬э紙device properties锛堿PI 鏉ユ煡璇㈤厤缃紝灏卞儚鍦?ACPI 鎴栬澶囨爲绯荤粺
+涓婁竴鏍枫€?
+鐢辫蒋浠惰妭鐐规敮鎸佺殑 GPIO 浣跨敤 `PROPERTY_ENTRY_GPIO()` 瀹忔潵鎻忚堪锛岃瀹忓皢浠ｈ〃 GPIO 鎺у埗鍣ㄧ殑
+杞欢鑺傜偣涓庢秷璐硅澶囧叧鑱旇捣鏉ャ€傚畠鍏佽娑堣垂鏂逛娇鐢ㄥ父瑙勭殑 gpiolib API锛屼緥濡?gpiod_get()銆乬piod_get_optional()銆?
+浠ｈ〃 GPIO 鎺у埗鍣ㄧ殑杞欢鑺傜偣蹇呴』鎸傛帴鍒?GPIO 鎺у埗鍣ㄨ澶?鈥斺€?鏃㈠彲浠ヤ綔涓轰富鍥轰欢鑺傜偣锛屼篃鍙互浣滀负
+娆＄骇鍥轰欢鑺傜偣銆?
+渚嬪锛屼笅闈㈡槸濡備綍鎻忚堪涓€涓敱鍗曚釜 GPIO 杩炴帴鐨?LED銆傝繖鏄湪鏃х郴缁熶笂浣跨敤 platform_data 鐨?鏇夸唬鏂规銆?
 
 	#include <linux/property.h>
 	#include <linux/gpio/machine.h>
 	#include <linux/gpio/property.h>
 
 	/*
-  - 1. 定义 GPIO 控制器的节点。
-	 */
+  - 1. 瀹氫箟 GPIO 鎺у埗鍣ㄧ殑鑺傜偣銆?	 */
 	static const struct software_node gpio_controller_node = {
 		.name = "gpio-foo",
 	};
 
-	/** 2. 定义 LED 设备的属性。 **/
+	/** 2. 瀹氫箟 LED 璁惧鐨勫睘鎬с€?**/
 	static const struct property_entry led_device_props[] = {
 		PROPERTY_ENTRY_STRING("label", "myboard:green:status"),
 		PROPERTY_ENTRY_STRING("linux,default-trigger", "heartbeat"),
@@ -129,15 +103,14 @@ gpiod_get()、gpiod_get_optional()。
 		{ }
 	};
 
-	/** 3. 定义 LED 设备的软件节点。 **/
+	/** 3. 瀹氫箟 LED 璁惧鐨勮蒋浠惰妭鐐广€?**/
 	static const struct software_node led_device_swnode = {
 		.name = "status-led",
 		.properties = led_device_props,
 	};
 
 	/*
-  - 4. 注册软件节点和平台设备。
-	 */
+  - 4. 娉ㄥ唽杞欢鑺傜偣鍜屽钩鍙拌澶囥€?	 */
 	const struct software_node *swnodes[] = {
 		&gpio_controller_node,
 		&led_device_swnode,
@@ -146,8 +119,7 @@ gpiod_get()、gpiod_get_optional()。
 	software_node_register_node_group(swnodes);
 
 	/*
-  - 5. 将 GPIO 控制器的软件节点挂接到设备并注册它。
-	 */
+  - 5. 灏?GPIO 鎺у埗鍣ㄧ殑杞欢鑺傜偣鎸傛帴鍒拌澶囧苟娉ㄥ唽瀹冦€?	 */
 	 static void gpio_foo_register(void)
 	 {
 		struct platform_device_info pdev_info = {
@@ -159,54 +131,34 @@ gpiod_get()、gpiod_get_optional()。
 		platform_device_register_full(&pdev_info);
 	 }
 
-	// 然后为 "leds-gpio" 注册一个 platform_device，并通过 .fwnode
-	// 将其与 &led_device_swnode 关联。
+	// 鐒跺悗涓?"leds-gpio" 娉ㄥ唽涓€涓?platform_device锛屽苟閫氳繃 .fwnode
+	// 灏嗗叾涓?&led_device_swnode 鍏宠仈銆?
+鍏充簬濡備綍灏嗘澘鏂囦欢杞崲涓轰娇鐢ㄨ蒋浠惰妭鐐圭殑瀹屾暣鎸囧崡锛岃鍙傝
+Documentation/driver-api/gpio/legacy-boards.rst銆?
+### 骞冲彴鏁版嵁
 
-关于如何将板文件转换为使用软件节点的完整指南，请参见
-Documentation/driver-api/gpio/legacy-boards.rst。
-
-### 平台数据
-
-最后，GPIO 还可以通过平台数据绑定到设备和功能。板级代码
-```
+鏈€鍚庯紝GPIO 杩樺彲浠ラ€氳繃骞冲彴鏁版嵁缁戝畾鍒拌澶囧拰鍔熻兘銆傛澘绾т唬鐮?```
 
 	#include <linux/gpio/machine.h>
 
 
 ```
-GPIO 通过查找表（tables of lookups）来映射，表中包含如下实例
-```
+GPIO 閫氳繃鏌ユ壘琛紙tables of lookups锛夋潵鏄犲皠锛岃〃涓寘鍚涓嬪疄渚?```
 
 	GPIO_LOOKUP(key, chip_hwnum, con_id, flags)
 	GPIO_LOOKUP_IDX(key, chip_hwnum, con_id, idx, flags)
 
 
 ```
-其中
+鍏朵腑
 
-  - key 是提供该 GPIO 的 gpiod_chip 实例的标签，或者是 GPIO 线名称
-  - chip_hwnum 是 GPIO 在芯片内的硬件编号，或者 U16_MAX 表示 key 是一个 GPIO 线名称
-  - con_id 是从设备视角看到的 GPIO 功能名称。它可以为 NULL，此时将匹配任意功能。
-  - idx 是 GPIO 在功能内的索引。
-  - flags 用于指定以下属性：
- - GPIO_ACTIVE_HIGH	- GPIO 线为高电平有效
- - GPIO_ACTIVE_LOW	- GPIO 线为低电平有效
- - GPIO_OPEN_DRAIN	- GPIO 线被配置为开漏（open drain）
- - GPIO_OPEN_SOURCE	- GPIO 线被配置为开源（open source）
- - GPIO_PERSISTENT	- GPIO 线在挂起/恢复（suspend/resume）期间保持
-				  其取值不变
- - GPIO_TRANSITORY	- GPIO 线是暂时性的，在挂起/恢复期间可能丢失
-				  其电气状态
-
-将来，这些标志可能会扩展以支持更多属性。
-
-注意：
-  1. GPIO 线名称不保证全局唯一，因此会采用找到的第一个匹配项。
-  2. GPIO_LOOKUP() 只是 GPIO_LOOKUP_IDX() 在 idx = 0 时的简便写法。
-
-然后可以按如下方式定义查找表，以一个空条目表示表的结束。表中的 'dev_id' 字段是将使用
-这些 GPIO 的设备的标识符。它可以为 NULL，此时将匹配以 NULL 设备调用 gpiod_get() 的情况。
-
+  - key 鏄彁渚涜 GPIO 鐨?gpiod_chip 瀹炰緥鐨勬爣绛撅紝鎴栬€呮槸 GPIO 绾垮悕绉?  - chip_hwnum 鏄?GPIO 鍦ㄨ姱鐗囧唴鐨勭‖浠剁紪鍙凤紝鎴栬€?U16_MAX 琛ㄧず key 鏄竴涓?GPIO 绾垮悕绉?  - con_id 鏄粠璁惧瑙嗚鐪嬪埌鐨?GPIO 鍔熻兘鍚嶇О銆傚畠鍙互涓?NULL锛屾鏃跺皢鍖归厤浠绘剰鍔熻兘銆?  - idx 鏄?GPIO 鍦ㄥ姛鑳藉唴鐨勭储寮曘€?  - flags 鐢ㄤ簬鎸囧畾浠ヤ笅灞炴€э細
+ - GPIO_ACTIVE_HIGH	- GPIO 绾夸负楂樼數骞虫湁鏁? - GPIO_ACTIVE_LOW	- GPIO 绾夸负浣庣數骞虫湁鏁? - GPIO_OPEN_DRAIN	- GPIO 绾胯閰嶇疆涓哄紑婕忥紙open drain锛? - GPIO_OPEN_SOURCE	- GPIO 绾胯閰嶇疆涓哄紑婧愶紙open source锛? - GPIO_PERSISTENT	- GPIO 绾垮湪鎸傝捣/鎭㈠锛坰uspend/resume锛夋湡闂翠繚鎸?				  鍏跺彇鍊间笉鍙? - GPIO_TRANSITORY	- GPIO 绾挎槸鏆傛椂鎬х殑锛屽湪鎸傝捣/鎭㈠鏈熼棿鍙兘涓㈠け
+				  鍏剁數姘旂姸鎬?
+灏嗘潵锛岃繖浜涙爣蹇楀彲鑳戒細鎵╁睍浠ユ敮鎸佹洿澶氬睘鎬с€?
+娉ㄦ剰锛?  1. GPIO 绾垮悕绉颁笉淇濊瘉鍏ㄥ眬鍞竴锛屽洜姝や細閲囩敤鎵惧埌鐨勭涓€涓尮閰嶉」銆?  2. GPIO_LOOKUP() 鍙槸 GPIO_LOOKUP_IDX() 鍦?idx = 0 鏃剁殑绠€渚垮啓娉曘€?
+鐒跺悗鍙互鎸夊涓嬫柟寮忓畾涔夋煡鎵捐〃锛屼互涓€涓┖鏉＄洰琛ㄧず琛ㄧ殑缁撴潫銆傝〃涓殑 'dev_id' 瀛楁鏄皢浣跨敤
+杩欎簺 GPIO 鐨勮澶囩殑鏍囪瘑绗︺€傚畠鍙互涓?NULL锛屾鏃跺皢鍖归厤浠?NULL 璁惧璋冪敤 gpiod_get() 鐨勬儏鍐点€?
 
         struct gpiod_lookup_table gpios_table = {
                 .dev_id = "foo.0",
@@ -237,25 +189,17 @@ GPIO 通过查找表（tables of lookups）来映射，表中包含如下实例
 
 
 ```
-由于 "led" 的 GPIO 被映射为高电平有效，本示例将把它们信号置为 1，即点亮 LED。而对于被
-映射为低电平有效的 "power" GPIO，这段代码执行后其实际信号将为 0。与旧的整型 GPIO 接口
-不同，低电平有效（active-low）属性是在映射过程中处理的，因此对 GPIO 消费方是透明的。
+鐢变簬 "led" 鐨?GPIO 琚槧灏勪负楂樼數骞虫湁鏁堬紝鏈ず渚嬪皢鎶婂畠浠俊鍙风疆涓?1锛屽嵆鐐逛寒 LED銆傝€屽浜庤
+鏄犲皠涓轰綆鐢靛钩鏈夋晥鐨?"power" GPIO锛岃繖娈典唬鐮佹墽琛屽悗鍏跺疄闄呬俊鍙峰皢涓?0銆備笌鏃х殑鏁村瀷 GPIO 鎺ュ彛
+涓嶅悓锛屼綆鐢靛钩鏈夋晥锛坅ctive-low锛夊睘鎬ф槸鍦ㄦ槧灏勮繃绋嬩腑澶勭悊鐨勶紝鍥犳瀵?GPIO 娑堣垂鏂规槸閫忔槑鐨勩€?
+涓€缁勮濡?gpiod_set_value() 涔嬬被鐨勫嚱鏁板彲鐢ㄤ簬鎿嶄綔杩欎釜鏂扮殑銆佷互鎻忚堪绗︿负瀵煎悜鐨勬帴鍙ｃ€?
+### 寮曡剼鏁扮粍
 
-一组诸如 gpiod_set_value() 之类的函数可用于操作这个新的、以描述符为导向的接口。
+闄や簡閫愪釜璇锋眰灞炰簬鏌愪釜鍔熻兘鐨勫紩鑴氬锛岃澶囦篃鍙互璇锋眰鍒嗛厤缁欒鍔熻兘鐨勪竴缁勫紩鑴氥€傝繖浜涘紩鑴?濡備綍鏄犲皠鍒拌澶囷紝鍐冲畾浜嗚鏁扮粍鏄惁鏈夎祫鏍艰繘琛屽揩閫熺殑浣嶅浘澶勭悊銆傚鏋滃彲浠ワ紝浣嶅浘灏嗛€氳繃
+get/set 鏁扮粍鍑芥暟鍦ㄨ皟鐢ㄦ柟涓?GPIO 鑺墖鐩稿簲鐨?.get/set_multiple() 鍥炶皟涔嬮棿鐩存帴浼犻€掋€?
+涓轰簡绗﹀悎蹇€熶綅鍥惧鐞嗙殑鏉′欢锛屾暟缁勫繀椤绘弧瓒充互涓嬭姹傦細
 
-### 引脚数组
-
-除了逐个请求属于某个功能的引脚外，设备也可以请求分配给该功能的一组引脚。这些引脚
-如何映射到设备，决定了该数组是否有资格进行快速的位图处理。如果可以，位图将通过
-get/set 数组函数在调用方与 GPIO 芯片相应的 .get/set_multiple() 回调之间直接传递。
-
-为了符合快速位图处理的条件，数组必须满足以下要求：
-
-- 数组成员 0 的引脚硬件编号也必须为 0，
-- 与成员 0 属于同一芯片的连续数组成员的引脚硬件编号，也必须与其数组索引相匹配。
-
-否则不会使用快速位图处理路径，以避免属于同一芯片但硬件顺序不连续的引脚被分开处理。
-
-如果数组符合快速位图处理路径，那么与成员 0 不同芯片的引脚，以及索引与其硬件引脚编号
-不同的引脚，都会被排除在快速路径之外，无论输入还是输出。此外，开漏和开源引脚会被
-排除在快速位图输出处理之外。
+- 鏁扮粍鎴愬憳 0 鐨勫紩鑴氱‖浠剁紪鍙蜂篃蹇呴』涓?0锛?- 涓庢垚鍛?0 灞炰簬鍚屼竴鑺墖鐨勮繛缁暟缁勬垚鍛樼殑寮曡剼纭欢缂栧彿锛屼篃蹇呴』涓庡叾鏁扮粍绱㈠紩鐩稿尮閰嶃€?
+鍚﹀垯涓嶄細浣跨敤蹇€熶綅鍥惧鐞嗚矾寰勶紝浠ラ伩鍏嶅睘浜庡悓涓€鑺墖浣嗙‖浠堕『搴忎笉杩炵画鐨勫紩鑴氳鍒嗗紑澶勭悊銆?
+濡傛灉鏁扮粍绗﹀悎蹇€熶綅鍥惧鐞嗚矾寰勶紝閭ｄ箞涓庢垚鍛?0 涓嶅悓鑺墖鐨勫紩鑴氾紝浠ュ強绱㈠紩涓庡叾纭欢寮曡剼缂栧彿
+涓嶅悓鐨勫紩鑴氾紝閮戒細琚帓闄ゅ湪蹇€熻矾寰勪箣澶栵紝鏃犺杈撳叆杩樻槸杈撳嚭銆傛澶栵紝寮€婕忓拰寮€婧愬紩鑴氫細琚?鎺掗櫎鍦ㄥ揩閫熶綅鍥捐緭鍑哄鐞嗕箣澶栥€?

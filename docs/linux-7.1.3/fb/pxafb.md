@@ -1,8 +1,6 @@
-## PXA25x LCD 控制器驱动
+﻿## PXA25x LCD 鎺у埗鍣ㄩ┍鍔?
 
-
-该驱动支持以下选项，模块方式下通过 `options=<OPTIONS>`，内建方式下通过 `video=pxafb:<OPTIONS>`。
-
+璇ラ┍鍔ㄦ敮鎸佷互涓嬮€夐」锛屾ā鍧楁柟寮忎笅閫氳繃 `options=<OPTIONS>`锛屽唴寤烘柟寮忎笅閫氳繃 `video=pxafb:<OPTIONS>`銆?
 ```
 
 	modprobe pxafb options=vmem:2M,mode:640x480-8,passive
@@ -15,7 +13,7 @@
 ```
 vmem: VIDEO_MEM_SIZE
 
-	要分配的显存大小（可加后缀 K 或 M 表示千字节或兆字节）
+	瑕佸垎閰嶇殑鏄惧瓨澶у皬锛堝彲鍔犲悗缂€ K 鎴?M 琛ㄧず鍗冨瓧鑺傛垨鍏嗗瓧鑺傦級
 
 mode:XRESxYRES[-BPP]
 
@@ -23,13 +21,12 @@ mode:XRESxYRES[-BPP]
 
 	YRES == LLCR2_LPP + 1
 
-		以像素为单位的显示分辨率
+		浠ュ儚绱犱负鍗曚綅鐨勬樉绀哄垎杈ㄧ巼
 
-	BPP == 位深。合法值为 1、2、4、8 和 16。
-
+	BPP == 浣嶆繁銆傚悎娉曞€间负 1銆?銆?銆? 鍜?16銆?
 pixclock:PIXCLOCK
 
-	像素时钟，单位为皮秒
+	鍍忕礌鏃堕挓锛屽崟浣嶄负鐨
 
 left:LEFT == LCCR1_BLW + 1
 
@@ -43,53 +40,39 @@ lower:LOWER == LCCR2_EFR
 
 vsynclen:VSYNC == LCCR2_VSW + 1
 
-	显示边距与同步时间
-
+	鏄剧ず杈硅窛涓庡悓姝ユ椂闂?
 color | mono => LCCR0_CMS
 
-	嗯……
-
+	鍡€︹€?
 active | passive => LCCR0_PAS
 
-	主动（TFT）或被动（STN）显示
-
+	涓诲姩锛圱FT锛夋垨琚姩锛圫TN锛夋樉绀?
 single | dual => LCCR0_SDS
 
-	单面板或双面板被动显示
-
+	鍗曢潰鏉挎垨鍙岄潰鏉胯鍔ㄦ樉绀?
 4pix | 8pix => LCCR0_DPD
 
-	4 或 8 像素单色单面板数据
-
+	4 鎴?8 鍍忕礌鍗曡壊鍗曢潰鏉挎暟鎹?
 hsync:HSYNC, vsync:VSYNC
 
-	水平与垂直同步。0 => 低电平有效，1 => 高电平有效。
-
+	姘村钩涓庡瀭鐩村悓姝ャ€? => 浣庣數骞虫湁鏁堬紝1 => 楂樼數骞虫湁鏁堛€?
 dpc:DPC
 
-	双倍像素时钟。1=>真，0=>假
-
+	鍙屽€嶅儚绱犳椂閽熴€?=>鐪燂紝0=>鍋?
 outputen:POLARITY
 
-	输出使能极性。0 => 低电平有效，1 => 高电平有效
-
+	杈撳嚭浣胯兘鏋佹€с€? => 浣庣數骞虫湁鏁堬紝1 => 楂樼數骞虫湁鏁?
 pixclockpol:POLARITY
 
-	像素时钟极性
-	0 => 下降沿，1 => 上升沿
+	鍍忕礌鏃堕挓鏋佹€?	0 => 涓嬮檷娌匡紝1 => 涓婂崌娌?
 
+## PXA27x 鍙婃洿楂樼増鏈?LCD 鎺у埗鍣ㄧ殑鍙犲姞灞傛敮鎸?
 
-## PXA27x 及更高版本 LCD 控制器的叠加层支持
+  PXA27x 鍙婃洿楂樼増鏈殑澶勭悊鍣ㄥ湪鍩虹甯х紦鍐蹭箣涓婃敮鎸?overlay1 涓?overlay2锛堝綋鐒朵篃鍙互浣嶄簬鍩虹灞備箣涓嬶級銆傚畠浠敮鎸佸甫璋冭壊鏉夸笌鏃犺皟鑹叉澘鐨?RGB 鏍煎紡锛屼互鍙?YUV 鏍煎紡锛堜粎鍦?overlay2 涓婂彲鐢級銆傝繖浜涘彔鍔犲眰鎷ユ湁涓撶敤鐨?DMA 閫氶亾锛岃涓烘柟寮忎笌甯х紦鍐茬被浼笺€?
+  鐒惰€岋紝杩欎簺鍙犲姞灞傚抚缂撳啿涓庢櫘閫氬抚缂撳啿涔嬮棿瀛樺湪涓€浜涘樊寮傦紝濡備笅鎵€绀猴細
 
-
-  PXA27x 及更高版本的处理器在基础帧缓冲之上支持 overlay1 与 overlay2（当然也可以位于基础层之下）。它们支持带调色板与无调色板的 RGB 格式，以及 YUV 格式（仅在 overlay2 上可用）。这些叠加层拥有专用的 DMA 通道，行为方式与帧缓冲类似。
-
-  然而，这些叠加层帧缓冲与普通帧缓冲之间存在一些差异，如下所示：
-
-  1. 叠加层可以起始于基础帧缓冲中 32 位字对齐的位置，这意味着它们具有一个起始坐标 (x, y)。该信息被编码进 `var->nonstd`（注意，`var->xoffset` 和 `var->yoffset` 并非用于此目的）。
-
-  2. 叠加层帧缓冲根据指定的内容动态分配
-
+  1. 鍙犲姞灞傚彲浠ヨ捣濮嬩簬鍩虹甯х紦鍐蹭腑 32 浣嶅瓧瀵归綈鐨勪綅缃紝杩欐剰鍛崇潃瀹冧滑鍏锋湁涓€涓捣濮嬪潗鏍?(x, y)銆傝淇℃伅琚紪鐮佽繘 `var->nonstd`锛堟敞鎰忥紝`var->xoffset` 鍜?`var->yoffset` 骞堕潪鐢ㄤ簬姝ょ洰鐨勶級銆?
+  2. 鍙犲姞灞傚抚缂撳啿鏍规嵁鎸囧畾鐨勫唴瀹瑰姩鎬佸垎閰?
 ```
 
 	var->xres_virtual * var->yres_virtual * bpp
@@ -106,19 +89,15 @@ pixclockpol:POLARITY
 
      NOTE:
 
-     a. 叠加层不支持 x 方向平移，因此
-	var->xres_virtual 将始终等于 var->xres
+     a. 鍙犲姞灞備笉鏀寔 x 鏂瑰悜骞崇Щ锛屽洜姝?	var->xres_virtual 灏嗗缁堢瓑浜?var->xres
 
-     b. 叠加层的行长度必须位于 32 位字边界上，
-	对于 YUV planar 模式，这是针对每像素位数最少的
-	分量而言的要求，例如对于 YUV420，一个像素的 Cr 分量
-	实际为 2 位，这意味着行长度应为 16 像素的整数倍
-
-     c. 起始水平位置（XPOS）应位于 32 位字边界上，
-	否则 fb_check_var() 将直接失败。
-
-     d. 叠加层的矩形区域应位于基础平面之内，
-	否则失败
+     b. 鍙犲姞灞傜殑琛岄暱搴﹀繀椤讳綅浜?32 浣嶅瓧杈圭晫涓婏紝
+	瀵逛簬 YUV planar 妯″紡锛岃繖鏄拡瀵规瘡鍍忕礌浣嶆暟鏈€灏戠殑
+	鍒嗛噺鑰岃█鐨勮姹傦紝渚嬪瀵逛簬 YUV420锛屼竴涓儚绱犵殑 Cr 鍒嗛噺
+	瀹為檯涓?2 浣嶏紝杩欐剰鍛崇潃琛岄暱搴﹀簲涓?16 鍍忕礌鐨勬暣鏁板€?
+     c. 璧峰姘村钩浣嶇疆锛圶POS锛夊簲浣嶄簬 32 浣嶅瓧杈圭晫涓婏紝
+	鍚﹀垯 fb_check_var() 灏嗙洿鎺ュけ璐ャ€?
+     d. 鍙犲姞灞傜殑鐭╁舰鍖哄煙搴斾綅浜庡熀纭€骞抽潰涔嬪唴锛?	鍚﹀垯澶辫触
 
      Applications should follow the sequence below to operate an overlay
      framebuffer:
@@ -128,26 +107,23 @@ pixclockpol:POLARITY
 	 c. modify 'var' with desired parameters:
 
 	    1) var->xres and var->yres
-	    2) 如果需要更多内存（通常用于双缓冲），
-	       增大 var->yres_virtual
-	    3) var->nonstd 用于起始 (x, y) 与颜色格式
-	    4) 若使用 RGB 模式，则设置 var->{red, green, blue, transp}
+	    2) 濡傛灉闇€瑕佹洿澶氬唴瀛橈紙閫氬父鐢ㄤ簬鍙岀紦鍐诧級锛?	       澧炲ぇ var->yres_virtual
+	    3) var->nonstd 鐢ㄤ簬璧峰 (x, y) 涓庨鑹叉牸寮?	    4) 鑻ヤ娇鐢?RGB 妯″紡锛屽垯璁剧疆 var->{red, green, blue, transp}
 
 	 d. ioctl(fd, FBIOPUT_VSCREENINFO, ...)
 	 e. ioctl(fd, FBIOGET_FSCREENINFO, ...)
 	 f. mmap
 	 g. ...
 
-  3. 对于 YUV planar 格式，帧缓冲框架实际上并不支持，应用程序必须自行处理各分量在帧缓冲中的偏移与长度。
-
-  4. `var->nonstd` 用于传递起始 (x, y) 位置与颜色格式，详细的位域如下所示::
+  3. 瀵逛簬 YUV planar 鏍煎紡锛屽抚缂撳啿妗嗘灦瀹為檯涓婂苟涓嶆敮鎸侊紝搴旂敤绋嬪簭蹇呴』鑷澶勭悊鍚勫垎閲忓湪甯х紦鍐蹭腑鐨勫亸绉讳笌闀垮害銆?
+  4. `var->nonstd` 鐢ㄤ簬浼犻€掕捣濮?(x, y) 浣嶇疆涓庨鑹叉牸寮忥紝璇︾粏鐨勪綅鍩熷涓嬫墍绀?:
 
       31                23  20         10          0
        +-----------------+---+----------+----------+
        |  ... unused ... |FOR|   XPOS   |   YPOS   |
        +-----------------+---+----------+----------+
 
-     FOR  - 颜色格式，由 pxafb.h 中的 OVERLAY_FORMAT_* 定义
+     FOR  - 棰滆壊鏍煎紡锛岀敱 pxafb.h 涓殑 OVERLAY_FORMAT_* 瀹氫箟
 
 	  - 0 - RGB
 	  - 1 - YUV444 PACKED
@@ -155,8 +131,8 @@ pixclockpol:POLARITY
 	  - 3 - YUV422 PLANAR
 	  - 4 - YUR420 PLANAR
 
-     XPOS - 起始水平位置
+     XPOS - 璧峰姘村钩浣嶇疆
 
-     YPOS - 起始垂直位置
+     YPOS - 璧峰鍨傜洿浣嶇疆
 
 ```

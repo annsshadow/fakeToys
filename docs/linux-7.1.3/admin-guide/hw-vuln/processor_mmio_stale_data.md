@@ -1,66 +1,37 @@
-## 处理器 MMIO 陈旧数据漏洞（Processor MMIO Stale Data Vulnerabilities）
-
-处理器 MMIO 陈旧数据漏洞（Processor MMIO Stale Data Vulnerabilities）是一类可能暴露数据的
-内存映射 I/O（MMIO）漏洞。暴露数据的操作序列从简单到非常复杂不等。由于大多数漏洞都要求
-攻击者能够访问 MMIO，许多环境并不会受到影响。在使用虚拟化、并向不受信任的 guest 提供 MMIO
-访问的系统环境中，可能需要缓解措施。这些漏洞并非瞬态执行（transient execution）攻击。不过，
-这些漏洞可能会把陈旧数据传播到核心填充缓冲区（core fill buffer）中，之后可能被未缓解的
-瞬态执行攻击推断出来。针对这些漏洞的缓解措施视平台和用法的不同，包含微码（microcode）更新
-与软件改动的组合。其中部分缓解措施与用于缓解微架构数据采样（MDS）或专用寄存器缓冲区数据采样
-（SRBDS）的措施类似。
-
-## 数据传播者（Data Propagators）
-
-传播者（Propagator）是指会把陈旧数据从一个微架构缓冲区或寄存器复制或移动到另一个的操作。
-处理器 MMIO 陈旧数据漏洞是指可能把陈旧数据直接读取到架构化的、软件可见的状态中，或从缓冲区
-或寄存器中采样到的操作。
-
-### 填充缓冲区陈旧数据传播者（FBSDP，Fill Buffer Stale Data Propagator）
-
-在某些非一致写（non-coherent write）操作中，陈旧数据可能会从填充缓冲区（FB）传播到 uncore
-的非一致部分。填充缓冲区传播本身并不会让陈旧数据在架构上可见。陈旧数据必须被传播到一个会被
-读取或采样的位置。
-
-### 边带陈旧数据传播者（SSDP，Sideband Stale Data Propagator）
-
-边带陈旧数据传播者（SSDP）仅限于客户端（包括 Intel Xeon E3 服务器）的 uncore 实现。边带
-响应缓冲区由所有客户端核心共享。对于发往边带目标的非一致读，uncore 逻辑会从事务缓冲区和边带
-响应缓冲区返回 64 字节数据给核心，既包括请求的数据，也包括未被请求的陈旧数据。结果，来自
-边带响应和事务缓冲区的陈旧数据现在可能驻留在核心填充缓冲区中。
-
-### 主陈旧数据传播者（PSDP，Primary Stale Data Propagator）
-
-主陈旧数据传播者（PSDP）仅限于客户端（包括 Intel Xeon E3 服务器）的 uncore 实现。与边带
-响应缓冲区类似，主响应缓冲区由所有客户端核心共享。对于某些处理器，MMIO 主读会返回 64 字节
-数据给核心填充缓冲区，既包括请求的数据，也包括未被请求的陈旧数据。这与边带陈旧数据传播者
-类似。
-
-## 漏洞（Vulnerabilities）
-
-### 设备寄存器部分写（DRPW，Device Register Partial Write）（CVE-2022-21166）
-
-某些端点 MMIO 寄存器对小于寄存器大小的写处理不当。它不会中止写操作，也不会只复制正确的
-字节子集（例如，2 字节写就只复制 2 字节），而是可能写入比写事务所指定的更多字节到寄存器中。
-在受 FBSDP 影响的处理器上，这可能会暴露出创建该写事务的那个核心的填充缓冲区中的陈旧数据。
-
-### 共享缓冲区数据采样（SBDS，Shared Buffers Data Sampling）（CVE-2022-21125）
-
-在传播者可能已经把数据在 uncore 中搬移、并把陈旧数据复制到客户端核心填充缓冲区之后，受 MFBDS
-影响的处理器可以从填充缓冲区泄漏数据。该漏洞仅限于客户端（包括 Intel Xeon E3 服务器）的
-uncore 实现。
-
-### 共享缓冲区数据读（SBDR，Shared Buffers Data Read）（CVE-2022-21123）
-
-它与共享缓冲区数据采样（SBDS）类似，区别在于数据是直接从架构上软件可见的状态中读取的。该
-漏洞仅限于客户端（包括 Intel Xeon E3 服务器）的 uncore 实现。
-
-## 受影响的处理器（Affected Processors）
-
-并非所有 CPU 都会受到所有变体的影响。例如，大多数面向服务器市场的处理器（不包括 Intel Xeon
-E3 处理器）只受设备寄存器部分写（DRPW）影响。
-
-以下是受影响的 Intel 处理器列表 [#f1]_：
-
+﻿## 澶勭悊鍣?MMIO 闄堟棫鏁版嵁婕忔礊锛圥rocessor MMIO Stale Data Vulnerabilities锛?
+澶勭悊鍣?MMIO 闄堟棫鏁版嵁婕忔礊锛圥rocessor MMIO Stale Data Vulnerabilities锛夋槸涓€绫诲彲鑳芥毚闇叉暟鎹殑
+鍐呭瓨鏄犲皠 I/O锛圡MIO锛夋紡娲炪€傛毚闇叉暟鎹殑鎿嶄綔搴忓垪浠庣畝鍗曞埌闈炲父澶嶆潅涓嶇瓑銆傜敱浜庡ぇ澶氭暟婕忔礊閮借姹?鏀诲嚮鑰呰兘澶熻闂?MMIO锛岃澶氱幆澧冨苟涓嶄細鍙楀埌褰卞搷銆傚湪浣跨敤铏氭嫙鍖栥€佸苟鍚戜笉鍙椾俊浠荤殑 guest 鎻愪緵 MMIO
+璁块棶鐨勭郴缁熺幆澧冧腑锛屽彲鑳介渶瑕佺紦瑙ｆ帾鏂姐€傝繖浜涙紡娲炲苟闈炵灛鎬佹墽琛岋紙transient execution锛夋敾鍑汇€備笉杩囷紝
+杩欎簺婕忔礊鍙兘浼氭妸闄堟棫鏁版嵁浼犳挱鍒版牳蹇冨～鍏呯紦鍐插尯锛坈ore fill buffer锛変腑锛屼箣鍚庡彲鑳借鏈紦瑙ｇ殑
+鐬€佹墽琛屾敾鍑绘帹鏂嚭鏉ャ€傞拡瀵硅繖浜涙紡娲炵殑缂撹В鎺柦瑙嗗钩鍙板拰鐢ㄦ硶鐨勪笉鍚岋紝鍖呭惈寰爜锛坢icrocode锛夋洿鏂?涓庤蒋浠舵敼鍔ㄧ殑缁勫悎銆傚叾涓儴鍒嗙紦瑙ｆ帾鏂戒笌鐢ㄤ簬缂撹В寰灦鏋勬暟鎹噰鏍凤紙MDS锛夋垨涓撶敤瀵勫瓨鍣ㄧ紦鍐插尯鏁版嵁閲囨牱
+锛圫RBDS锛夌殑鎺柦绫讳技銆?
+## 鏁版嵁浼犳挱鑰咃紙Data Propagators锛?
+浼犳挱鑰咃紙Propagator锛夋槸鎸囦細鎶婇檲鏃ф暟鎹粠涓€涓井鏋舵瀯缂撳啿鍖烘垨瀵勫瓨鍣ㄥ鍒舵垨绉诲姩鍒板彟涓€涓殑鎿嶄綔銆?澶勭悊鍣?MMIO 闄堟棫鏁版嵁婕忔礊鏄寚鍙兘鎶婇檲鏃ф暟鎹洿鎺ヨ鍙栧埌鏋舵瀯鍖栫殑銆佽蒋浠跺彲瑙佺殑鐘舵€佷腑锛屾垨浠庣紦鍐插尯
+鎴栧瘎瀛樺櫒涓噰鏍峰埌鐨勬搷浣溿€?
+### 濉厖缂撳啿鍖洪檲鏃ф暟鎹紶鎾€咃紙FBSDP锛孎ill Buffer Stale Data Propagator锛?
+鍦ㄦ煇浜涢潪涓€鑷村啓锛坣on-coherent write锛夋搷浣滀腑锛岄檲鏃ф暟鎹彲鑳戒細浠庡～鍏呯紦鍐插尯锛團B锛変紶鎾埌 uncore
+鐨勯潪涓€鑷撮儴鍒嗐€傚～鍏呯紦鍐插尯浼犳挱鏈韩骞朵笉浼氳闄堟棫鏁版嵁鍦ㄦ灦鏋勪笂鍙銆傞檲鏃ф暟鎹繀椤昏浼犳挱鍒颁竴涓細琚?璇诲彇鎴栭噰鏍风殑浣嶇疆銆?
+### 杈瑰甫闄堟棫鏁版嵁浼犳挱鑰咃紙SSDP锛孲ideband Stale Data Propagator锛?
+杈瑰甫闄堟棫鏁版嵁浼犳挱鑰咃紙SSDP锛変粎闄愪簬瀹㈡埛绔紙鍖呮嫭 Intel Xeon E3 鏈嶅姟鍣級鐨?uncore 瀹炵幇銆傝竟甯?鍝嶅簲缂撳啿鍖虹敱鎵€鏈夊鎴风鏍稿績鍏变韩銆傚浜庡彂寰€杈瑰甫鐩爣鐨勯潪涓€鑷磋锛寀ncore 閫昏緫浼氫粠浜嬪姟缂撳啿鍖哄拰杈瑰甫
+鍝嶅簲缂撳啿鍖鸿繑鍥?64 瀛楄妭鏁版嵁缁欐牳蹇冿紝鏃㈠寘鎷姹傜殑鏁版嵁锛屼篃鍖呮嫭鏈璇锋眰鐨勯檲鏃ф暟鎹€傜粨鏋滐紝鏉ヨ嚜
+杈瑰甫鍝嶅簲鍜屼簨鍔＄紦鍐插尯鐨勯檲鏃ф暟鎹幇鍦ㄥ彲鑳介┗鐣欏湪鏍稿績濉厖缂撳啿鍖轰腑銆?
+### 涓婚檲鏃ф暟鎹紶鎾€咃紙PSDP锛孭rimary Stale Data Propagator锛?
+涓婚檲鏃ф暟鎹紶鎾€咃紙PSDP锛変粎闄愪簬瀹㈡埛绔紙鍖呮嫭 Intel Xeon E3 鏈嶅姟鍣級鐨?uncore 瀹炵幇銆備笌杈瑰甫
+鍝嶅簲缂撳啿鍖虹被浼硷紝涓诲搷搴旂紦鍐插尯鐢辨墍鏈夊鎴风鏍稿績鍏变韩銆傚浜庢煇浜涘鐞嗗櫒锛孧MIO 涓昏浼氳繑鍥?64 瀛楄妭
+鏁版嵁缁欐牳蹇冨～鍏呯紦鍐插尯锛屾棦鍖呮嫭璇锋眰鐨勬暟鎹紝涔熷寘鎷湭琚姹傜殑闄堟棫鏁版嵁銆傝繖涓庤竟甯﹂檲鏃ф暟鎹紶鎾€?绫讳技銆?
+## 婕忔礊锛圴ulnerabilities锛?
+### 璁惧瀵勫瓨鍣ㄩ儴鍒嗗啓锛圖RPW锛孌evice Register Partial Write锛夛紙CVE-2022-21166锛?
+鏌愪簺绔偣 MMIO 瀵勫瓨鍣ㄥ灏忎簬瀵勫瓨鍣ㄥぇ灏忕殑鍐欏鐞嗕笉褰撱€傚畠涓嶄細涓鍐欐搷浣滐紝涔熶笉浼氬彧澶嶅埗姝ｇ‘鐨?瀛楄妭瀛愰泦锛堜緥濡傦紝2 瀛楄妭鍐欏氨鍙鍒?2 瀛楄妭锛夛紝鑰屾槸鍙兘鍐欏叆姣斿啓浜嬪姟鎵€鎸囧畾鐨勬洿澶氬瓧鑺傚埌瀵勫瓨鍣ㄤ腑銆?鍦ㄥ彈 FBSDP 褰卞搷鐨勫鐞嗗櫒涓婏紝杩欏彲鑳戒細鏆撮湶鍑哄垱寤鸿鍐欎簨鍔＄殑閭ｄ釜鏍稿績鐨勫～鍏呯紦鍐插尯涓殑闄堟棫鏁版嵁銆?
+### 鍏变韩缂撳啿鍖烘暟鎹噰鏍凤紙SBDS锛孲hared Buffers Data Sampling锛夛紙CVE-2022-21125锛?
+鍦ㄤ紶鎾€呭彲鑳藉凡缁忔妸鏁版嵁鍦?uncore 涓惉绉汇€佸苟鎶婇檲鏃ф暟鎹鍒跺埌瀹㈡埛绔牳蹇冨～鍏呯紦鍐插尯涔嬪悗锛屽彈 MFBDS
+褰卞搷鐨勫鐞嗗櫒鍙互浠庡～鍏呯紦鍐插尯娉勬紡鏁版嵁銆傝婕忔礊浠呴檺浜庡鎴风锛堝寘鎷?Intel Xeon E3 鏈嶅姟鍣級鐨?uncore 瀹炵幇銆?
+### 鍏变韩缂撳啿鍖烘暟鎹锛圫BDR锛孲hared Buffers Data Read锛夛紙CVE-2022-21123锛?
+瀹冧笌鍏变韩缂撳啿鍖烘暟鎹噰鏍凤紙SBDS锛夌被浼硷紝鍖哄埆鍦ㄤ簬鏁版嵁鏄洿鎺ヤ粠鏋舵瀯涓婅蒋浠跺彲瑙佺殑鐘舵€佷腑璇诲彇鐨勩€傝
+婕忔礊浠呴檺浜庡鎴风锛堝寘鎷?Intel Xeon E3 鏈嶅姟鍣級鐨?uncore 瀹炵幇銆?
+## 鍙楀奖鍝嶇殑澶勭悊鍣紙Affected Processors锛?
+骞堕潪鎵€鏈?CPU 閮戒細鍙楀埌鎵€鏈夊彉浣撶殑褰卞搷銆備緥濡傦紝澶у鏁伴潰鍚戞湇鍔″櫒甯傚満鐨勫鐞嗗櫒锛堜笉鍖呮嫭 Intel Xeon
+E3 澶勭悊鍣級鍙彈璁惧瀵勫瓨鍣ㄩ儴鍒嗗啓锛圖RPW锛夊奖鍝嶃€?
+浠ヤ笅鏄彈褰卞搷鐨?Intel 澶勭悊鍣ㄥ垪琛?[#f1]_锛?
    ===================  ============  =========
    Common name          Family_Model  Steppings
    ===================  ============  =========
@@ -84,74 +55,41 @@ E3 处理器）只受设备寄存器部分写（DRPW）影响。
    ROCKETLAKE           06_A7H        1
    ===================  ============  =========
 
-如果某个 CPU 在受影响处理器列表中，但没有受到某个变体的影响，则通过 MSR IA32_ARCH_CAPABILITIES
-中的新位来表示。如后面小节所述，对于所有变体，缓解措施大体相同，即通过 VERW 指令来清空 CPU
-填充缓冲区。
-
-## MSR 中的新位（New bits in MSRs）
-
-较新的处理器以及对现有受影响处理器进行的微码更新，向 IA32_ARCH_CAPABILITIES MSR 添加了新的位。
-这些位可用于枚举处理器 MMIO 陈旧数据漏洞的特定变体，以及缓解能力。
-
+濡傛灉鏌愪釜 CPU 鍦ㄥ彈褰卞搷澶勭悊鍣ㄥ垪琛ㄤ腑锛屼絾娌℃湁鍙楀埌鏌愪釜鍙樹綋鐨勫奖鍝嶏紝鍒欓€氳繃 MSR IA32_ARCH_CAPABILITIES
+涓殑鏂颁綅鏉ヨ〃绀恒€傚鍚庨潰灏忚妭鎵€杩帮紝瀵逛簬鎵€鏈夊彉浣擄紝缂撹В鎺柦澶т綋鐩稿悓锛屽嵆閫氳繃 VERW 鎸囦护鏉ユ竻绌?CPU
+濉厖缂撳啿鍖恒€?
+## MSR 涓殑鏂颁綅锛圢ew bits in MSRs锛?
+杈冩柊鐨勫鐞嗗櫒浠ュ強瀵圭幇鏈夊彈褰卞搷澶勭悊鍣ㄨ繘琛岀殑寰爜鏇存柊锛屽悜 IA32_ARCH_CAPABILITIES MSR 娣诲姞浜嗘柊鐨勪綅銆?杩欎簺浣嶅彲鐢ㄤ簬鏋氫妇澶勭悊鍣?MMIO 闄堟棫鏁版嵁婕忔礊鐨勭壒瀹氬彉浣擄紝浠ュ強缂撹В鑳藉姏銆?
 ### MSR IA32_ARCH_CAPABILITIES
 
-Bit 13 - SBDR_SSDP_NO - 置位时，处理器不受共享缓冲区数据读（SBDR）漏洞，也不受边带陈旧
-	数据传播者（SSDP）的影响。
-Bit 14 - FBSDP_NO - 置位时，处理器不受填充缓冲区陈旧数据传播者（FBSDP）的影响。
-Bit 15 - PSDP_NO - 置位时，处理器不受主陈旧数据传播者（PSDP）的影响。
-Bit 17 - FB_CLEAR - 置位时，VERW 指令将作为 MD_CLEAR 操作的一部分覆盖 CPU 填充缓冲区的
-	值。未枚举 MDS_NO（即受 MDS 影响）但同时枚举了对 L1D_FLUSH 和 MD_CLEAR 支持的处理器，
-	会隐式地把 FB_CLEAR 作为其 MD_CLEAR 支持的一部分进行枚举。
-Bit 18 - FB_CLEAR_CTRL - 处理器支持对 MSR IA32_MCU_OPT_CTRL[FB_CLEAR_DIS] 的读写。在此类
-	处理器上，可以设置 FB_CLEAR_DIS 位，使 VERW 指令不执行 FB_CLEAR 动作。并非所有支持
-	FB_CLEAR 的处理器都支持 FB_CLEAR_CTRL。
-
+Bit 13 - SBDR_SSDP_NO - 缃綅鏃讹紝澶勭悊鍣ㄤ笉鍙楀叡浜紦鍐插尯鏁版嵁璇伙紙SBDR锛夋紡娲烇紝涔熶笉鍙楄竟甯﹂檲鏃?	鏁版嵁浼犳挱鑰咃紙SSDP锛夌殑褰卞搷銆?Bit 14 - FBSDP_NO - 缃綅鏃讹紝澶勭悊鍣ㄤ笉鍙楀～鍏呯紦鍐插尯闄堟棫鏁版嵁浼犳挱鑰咃紙FBSDP锛夌殑褰卞搷銆?Bit 15 - PSDP_NO - 缃綅鏃讹紝澶勭悊鍣ㄤ笉鍙椾富闄堟棫鏁版嵁浼犳挱鑰咃紙PSDP锛夌殑褰卞搷銆?Bit 17 - FB_CLEAR - 缃綅鏃讹紝VERW 鎸囦护灏嗕綔涓?MD_CLEAR 鎿嶄綔鐨勪竴閮ㄥ垎瑕嗙洊 CPU 濉厖缂撳啿鍖虹殑
+	鍊笺€傛湭鏋氫妇 MDS_NO锛堝嵆鍙?MDS 褰卞搷锛変絾鍚屾椂鏋氫妇浜嗗 L1D_FLUSH 鍜?MD_CLEAR 鏀寔鐨勫鐞嗗櫒锛?	浼氶殣寮忓湴鎶?FB_CLEAR 浣滀负鍏?MD_CLEAR 鏀寔鐨勪竴閮ㄥ垎杩涜鏋氫妇銆?Bit 18 - FB_CLEAR_CTRL - 澶勭悊鍣ㄦ敮鎸佸 MSR IA32_MCU_OPT_CTRL[FB_CLEAR_DIS] 鐨勮鍐欍€傚湪姝ょ被
+	澶勭悊鍣ㄤ笂锛屽彲浠ヨ缃?FB_CLEAR_DIS 浣嶏紝浣?VERW 鎸囦护涓嶆墽琛?FB_CLEAR 鍔ㄤ綔銆傚苟闈炴墍鏈夋敮鎸?	FB_CLEAR 鐨勫鐞嗗櫒閮芥敮鎸?FB_CLEAR_CTRL銆?
 ### MSR IA32_MCU_OPT_CTRL
 
-Bit 3 - FB_CLEAR_DIS - 置位时，VERW 指令不执行 FB_CLEAR 动作。在系统软件认为有必要时（例如，
-当性能更为关键，或不受信任的软件没有 MMIO 访问权限时），这可用于降低 FB_CLEAR 带来的性能
-影响。注意，FB_CLEAR_DIS 对枚举没有影响（例如，它不会改变 FB_CLEAR 或 MD_CLEAR 的枚举），
-并且它可能不被所有枚举了 FB_CLEAR 的处理器所支持。
-
-## 缓解措施（Mitigation）
-
-与 MDS 类似，处理器 MMIO 陈旧数据漏洞的所有变体都采用相同的缓解策略：在攻击者能够提取机密
-之前，强制 CPU 清空受影响的缓冲区。
-
-这是通过结合使用原本未使用且已废弃的 VERW 指令与微码更新来实现的。当执行 VERW 指令时，
-微码会清空受影响的 CPU 缓冲区。
-
-内核通过 x86_clear_cpu_buffers() 执行缓冲区清空。
-
-在受 MDS 影响的处理器上，内核已经在内核/用户空间、虚拟机监控器/guest 以及 C-state（空闲）
-切换时调用了 CPU 缓冲区清空。这类处理器上无需额外的缓解措施。
-
-对于不受 MDS 或 TAA 影响的处理器，只有在具有 MMIO 能力的攻击者情况下才需要缓解。因此，
-内核/用户空间不需要 VERW。对于虚拟化场景，VERW 仅需在进入具有 MMIO 能力的 guest 时（VMENTER）
-执行。
-
-### 缓解点（Mitigation points）
-
-##### 返回用户空间（Return to user space）
-
-在受 MDS/TAA 影响时，缓解措施与 MDS 相同；否则不需要缓解。
-
-##### C-State 切换（C-State transition）
-
-CPU 在 C-state 切换期间的控制寄存器写操作可能把数据从填充缓冲区传播到 uncore 缓冲区。在
-C-state 切换之前执行 VERW，以清空 CPU 填充缓冲区。
-
-##### Guest 进入点（Guest entry point）
-
-在处理器同时也受 MDS/TAA 影响时，缓解措施与 MDS 相同；否则，仅对具有 MMIO 能力的 guest 在
-VMENTER 时执行 VERW。在不被 MDS/TAA 影响的处理器上，没有 MMIO 访问能力的 guest 无法利用
-处理器 MMIO 陈旧数据漏洞提取机密，因此对此类 guest 没有必要执行 VERW。
-
-### 内核命令行上的缓解控制（Mitigation control on the kernel command line）
-
-内核命令行允许在启动时通过 "mmio_stale_data=" 选项控制处理器 MMIO 陈旧数据漏洞的缓解。
-该选项的有效参数为：
-
+Bit 3 - FB_CLEAR_DIS - 缃綅鏃讹紝VERW 鎸囦护涓嶆墽琛?FB_CLEAR 鍔ㄤ綔銆傚湪绯荤粺杞欢璁や负鏈夊繀瑕佹椂锛堜緥濡傦紝
+褰撴€ц兘鏇翠负鍏抽敭锛屾垨涓嶅彈淇′换鐨勮蒋浠舵病鏈?MMIO 璁块棶鏉冮檺鏃讹級锛岃繖鍙敤浜庨檷浣?FB_CLEAR 甯︽潵鐨勬€ц兘
+褰卞搷銆傛敞鎰忥紝FB_CLEAR_DIS 瀵规灇涓炬病鏈夊奖鍝嶏紙渚嬪锛屽畠涓嶄細鏀瑰彉 FB_CLEAR 鎴?MD_CLEAR 鐨勬灇涓撅級锛?骞朵笖瀹冨彲鑳戒笉琚墍鏈夋灇涓句簡 FB_CLEAR 鐨勫鐞嗗櫒鎵€鏀寔銆?
+## 缂撹В鎺柦锛圡itigation锛?
+涓?MDS 绫讳技锛屽鐞嗗櫒 MMIO 闄堟棫鏁版嵁婕忔礊鐨勬墍鏈夊彉浣撻兘閲囩敤鐩稿悓鐨勭紦瑙ｇ瓥鐣ワ細鍦ㄦ敾鍑昏€呰兘澶熸彁鍙栨満瀵?涔嬪墠锛屽己鍒?CPU 娓呯┖鍙楀奖鍝嶇殑缂撳啿鍖恒€?
+杩欐槸閫氳繃缁撳悎浣跨敤鍘熸湰鏈娇鐢ㄤ笖宸插簾寮冪殑 VERW 鎸囦护涓庡井鐮佹洿鏂版潵瀹炵幇鐨勩€傚綋鎵ц VERW 鎸囦护鏃讹紝
+寰爜浼氭竻绌哄彈褰卞搷鐨?CPU 缂撳啿鍖恒€?
+鍐呮牳閫氳繃 x86_clear_cpu_buffers() 鎵ц缂撳啿鍖烘竻绌恒€?
+鍦ㄥ彈 MDS 褰卞搷鐨勫鐞嗗櫒涓婏紝鍐呮牳宸茬粡鍦ㄥ唴鏍?鐢ㄦ埛绌洪棿銆佽櫄鎷熸満鐩戞帶鍣?guest 浠ュ強 C-state锛堢┖闂诧級
+鍒囨崲鏃惰皟鐢ㄤ簡 CPU 缂撳啿鍖烘竻绌恒€傝繖绫诲鐞嗗櫒涓婃棤闇€棰濆鐨勭紦瑙ｆ帾鏂姐€?
+瀵逛簬涓嶅彈 MDS 鎴?TAA 褰卞搷鐨勫鐞嗗櫒锛屽彧鏈夊湪鍏锋湁 MMIO 鑳藉姏鐨勬敾鍑昏€呮儏鍐典笅鎵嶉渶瑕佺紦瑙ｃ€傚洜姝わ紝
+鍐呮牳/鐢ㄦ埛绌洪棿涓嶉渶瑕?VERW銆傚浜庤櫄鎷熷寲鍦烘櫙锛孷ERW 浠呴渶鍦ㄨ繘鍏ュ叿鏈?MMIO 鑳藉姏鐨?guest 鏃讹紙VMENTER锛?鎵ц銆?
+### 缂撹В鐐癸紙Mitigation points锛?
+##### 杩斿洖鐢ㄦ埛绌洪棿锛圧eturn to user space锛?
+鍦ㄥ彈 MDS/TAA 褰卞搷鏃讹紝缂撹В鎺柦涓?MDS 鐩稿悓锛涘惁鍒欎笉闇€瑕佺紦瑙ｃ€?
+##### C-State 鍒囨崲锛圕-State transition锛?
+CPU 鍦?C-state 鍒囨崲鏈熼棿鐨勬帶鍒跺瘎瀛樺櫒鍐欐搷浣滃彲鑳芥妸鏁版嵁浠庡～鍏呯紦鍐插尯浼犳挱鍒?uncore 缂撳啿鍖恒€傚湪
+C-state 鍒囨崲涔嬪墠鎵ц VERW锛屼互娓呯┖ CPU 濉厖缂撳啿鍖恒€?
+##### Guest 杩涘叆鐐癸紙Guest entry point锛?
+鍦ㄥ鐞嗗櫒鍚屾椂涔熷彈 MDS/TAA 褰卞搷鏃讹紝缂撹В鎺柦涓?MDS 鐩稿悓锛涘惁鍒欙紝浠呭鍏锋湁 MMIO 鑳藉姏鐨?guest 鍦?VMENTER 鏃舵墽琛?VERW銆傚湪涓嶈 MDS/TAA 褰卞搷鐨勫鐞嗗櫒涓婏紝娌℃湁 MMIO 璁块棶鑳藉姏鐨?guest 鏃犳硶鍒╃敤
+澶勭悊鍣?MMIO 闄堟棫鏁版嵁婕忔礊鎻愬彇鏈哄瘑锛屽洜姝ゅ姝ょ被 guest 娌℃湁蹇呰鎵ц VERW銆?
+### 鍐呮牳鍛戒护琛屼笂鐨勭紦瑙ｆ帶鍒讹紙Mitigation control on the kernel command line锛?
+鍐呮牳鍛戒护琛屽厑璁稿湪鍚姩鏃堕€氳繃 "mmio_stale_data=" 閫夐」鎺у埗澶勭悊鍣?MMIO 闄堟棫鏁版嵁婕忔礊鐨勭紦瑙ｃ€?璇ラ€夐」鐨勬湁鏁堝弬鏁颁负锛?
   ==========  =================================================================
   full        If the CPU is vulnerable, enable mitigation; CPU buffer clearing
               on exit to userspace and when entering a VM. Idle transitions are
@@ -161,17 +99,13 @@ VMENTER 时执行 VERW。在不被 MDS/TAA 影响的处理器上，没有 MMIO �
   off         Disables mitigation completely.
   ==========  =================================================================
 
-如果 CPU 受影响，且内核命令行没有提供 mmio_stale_data=off，那么内核会选择适当的缓解措施。
-
-### 缓解状态信息（Mitigation status information）
-
-Linux 内核提供了一个 sysfs 接口，用于枚举系统当前的漏洞状态：系统是否易受攻击，以及哪些
-缓解措施处于激活状态。相关的 sysfs 文件是：
+濡傛灉 CPU 鍙楀奖鍝嶏紝涓斿唴鏍稿懡浠よ娌℃湁鎻愪緵 mmio_stale_data=off锛岄偅涔堝唴鏍镐細閫夋嫨閫傚綋鐨勭紦瑙ｆ帾鏂姐€?
+### 缂撹В鐘舵€佷俊鎭紙Mitigation status information锛?
+Linux 鍐呮牳鎻愪緵浜嗕竴涓?sysfs 鎺ュ彛锛岀敤浜庢灇涓剧郴缁熷綋鍓嶇殑婕忔礊鐘舵€侊細绯荤粺鏄惁鏄撳彈鏀诲嚮锛屼互鍙婂摢浜?缂撹В鎺柦澶勪簬婵€娲荤姸鎬併€傜浉鍏崇殑 sysfs 鏂囦欢鏄細
 
 	/sys/devices/system/cpu/vulnerabilities/mmio_stale_data
 
-该文件可能的取值为：
-
+璇ユ枃浠跺彲鑳界殑鍙栧€间负锛?
 ```
 
      * - 'Not affected'
@@ -200,15 +134,12 @@ Linux 内核提供了一个 sysfs 接口，用于枚举系统当前的漏洞状�
 	 out of Servicing period. Mitigation is not attempted.
 
 ```
-### 定义（Definitions）：
+### 瀹氫箟锛圖efinitions锛夛細
 
-Servicing period（服务期）：利用 Intel 平台更新（IPU）流程或其它类似机制，向 Intel 处理器或
-平台提供功能和安全更新的过程。
-
-End of Servicing Updates（ESU，服务更新终止）：ESU 是 Intel 不再提供服务（例如通过 IPU 或其它
-类似更新流程）的日期。ESU 日期通常会与季度末对齐。
-
-如果处理器易受攻击，则会在上述信息之后附加以下信息：
+Servicing period锛堟湇鍔℃湡锛夛細鍒╃敤 Intel 骞冲彴鏇存柊锛圛PU锛夋祦绋嬫垨鍏跺畠绫讳技鏈哄埗锛屽悜 Intel 澶勭悊鍣ㄦ垨
+骞冲彴鎻愪緵鍔熻兘鍜屽畨鍏ㄦ洿鏂扮殑杩囩▼銆?
+End of Servicing Updates锛圗SU锛屾湇鍔℃洿鏂扮粓姝級锛欵SU 鏄?Intel 涓嶅啀鎻愪緵鏈嶅姟锛堜緥濡傞€氳繃 IPU 鎴栧叾瀹?绫讳技鏇存柊娴佺▼锛夌殑鏃ユ湡銆侲SU 鏃ユ湡閫氬父浼氫笌瀛ｅ害鏈榻愩€?
+濡傛灉澶勭悊鍣ㄦ槗鍙楁敾鍑伙紝鍒欎細鍦ㄤ笂杩颁俊鎭箣鍚庨檮鍔犱互涓嬩俊鎭細
 
   ========================  ===========================================
   'SMT vulnerable'          SMT is enabled
@@ -216,6 +147,5 @@ End of Servicing Updates（ESU，服务更新终止）：ESU 是 Intel 不再提
   'SMT Host state unknown'  Kernel runs in a VM, Host SMT state unknown
   ========================  ===========================================
 
-### 参考资料（References）
-
+### 鍙傝€冭祫鏂欙紙References锛?
    https://www.intel.com/content/www/us/en/developer/topic-technology/software-security-guidance/processors-affected-consolidated-product-cpu-model.html

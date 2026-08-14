@@ -1,31 +1,22 @@
-
-## ACPICA 跟踪机制（Trace Facility）
-
+﻿
+## ACPICA 璺熻釜鏈哄埗锛圱race Facility锛?
 
 :Copyright: |copy| 2015, Intel Corporation
 :Author: Lv Zheng <lv.zheng@intel.com>
 
 
-## 摘要
+## 鎽樿
 
-本文档描述方法跟踪（method tracing）机制的功能与接口。
+鏈枃妗ｆ弿杩版柟娉曡窡韪紙method tracing锛夋満鍒剁殑鍔熻兘涓庢帴鍙ｃ€?
+## 鍔熻兘涓庝娇鐢ㄧず渚?
 
-## 功能与使用示例
+ACPICA 鎻愪緵浜嗘柟娉曡窡韪兘鍔涖€傜洰鍓嶅熀浜庤鑳藉姏瀹炵幇浜嗕袱涓姛鑳姐€?
+### 鏃ュ織缂╁噺鍣紙Log reducer锛?
 
-
-ACPICA 提供了方法跟踪能力。目前基于该能力实现了两个功能。
-
-### 日志缩减器（Log reducer）
-
-
-当启用 CONFIG_ACPI_DEBUG 时，ACPICA 子系统会输出调试信息。通过 ACPI_DEBUG_PRINT() 宏输出的调试消息可以在两个层级上被缩减——按组件层级（称为 debug layer，通过 /sys/module/acpi/parameters/debug_layer 配置）和按类型层级（称为 debug level，通过 /sys/module/acpi/parameters/debug_level 配置）。
-
-但是，当把特定 layer/level 应用于控制方法求值时，调试输出的数量仍可能大到无法放入内核日志缓冲区。因此产生了这样的思路：仅在控制方法求值开始时启用特定 debug layer/level（通常更详细）的日志，并在控制方法求值停止时禁用详细日志。
-
-以下命令示例说明了“日志缩减器”功能的使用：
-
-a. 当控制方法求值时，过滤掉匹配 debug layer/level 的日志
-```
+褰撳惎鐢?CONFIG_ACPI_DEBUG 鏃讹紝ACPICA 瀛愮郴缁熶細杈撳嚭璋冭瘯淇℃伅銆傞€氳繃 ACPI_DEBUG_PRINT() 瀹忚緭鍑虹殑璋冭瘯娑堟伅鍙互鍦ㄤ袱涓眰绾т笂琚缉鍑忊€斺€旀寜缁勪欢灞傜骇锛堢О涓?debug layer锛岄€氳繃 /sys/module/acpi/parameters/debug_layer 閰嶇疆锛夊拰鎸夌被鍨嬪眰绾э紙绉颁负 debug level锛岄€氳繃 /sys/module/acpi/parameters/debug_level 閰嶇疆锛夈€?
+浣嗘槸锛屽綋鎶婄壒瀹?layer/level 搴旂敤浜庢帶鍒舵柟娉曟眰鍊兼椂锛岃皟璇曡緭鍑虹殑鏁伴噺浠嶅彲鑳藉ぇ鍒版棤娉曟斁鍏ュ唴鏍告棩蹇楃紦鍐插尯銆傚洜姝や骇鐢熶簡杩欐牱鐨勬€濊矾锛氫粎鍦ㄦ帶鍒舵柟娉曟眰鍊煎紑濮嬫椂鍚敤鐗瑰畾 debug layer/level锛堥€氬父鏇磋缁嗭級鐨勬棩蹇楋紝骞跺湪鎺у埗鏂规硶姹傚€煎仠姝㈡椂绂佺敤璇︾粏鏃ュ織銆?
+浠ヤ笅鍛戒护绀轰緥璇存槑浜嗏€滄棩蹇楃缉鍑忓櫒鈥濆姛鑳界殑浣跨敤锛?
+a. 褰撴帶鍒舵柟娉曟眰鍊兼椂锛岃繃婊ゆ帀鍖归厤 debug layer/level 鐨勬棩蹇?```
 
       # cd /sys/module/acpi/parameters
       # echo "0xXXXXXXXX" > trace_debug_layer
@@ -33,8 +24,7 @@ a. 当控制方法求值时，过滤掉匹配 debug layer/level 的日志
       # echo "enable" > trace_state
 
 ```
-b. 当指定的控制方法求值时，过滤掉匹配 debug layer/level 的日志
-```
+b. 褰撴寚瀹氱殑鎺у埗鏂规硶姹傚€兼椂锛岃繃婊ゆ帀鍖归厤 debug layer/level 鐨勬棩蹇?```
 
       # cd /sys/module/acpi/parameters
       # echo "0xXXXXXXXX" > trace_debug_layer
@@ -43,7 +33,7 @@ b. 当指定的控制方法求值时，过滤掉匹配 debug layer/level 的日�
       # echo "method" > /sys/module/acpi/parameters/trace_state
 
 ```
-c. 当指定的控制方法求值时，过滤掉匹配 debug layer/level 的日志（仅一次）
+c. 褰撴寚瀹氱殑鎺у埗鏂规硶姹傚€兼椂锛岃繃婊ゆ帀鍖归厤 debug layer/level 鐨勬棩蹇楋紙浠呬竴娆★級
 ```
 
       # cd /sys/module/acpi/parameters
@@ -53,18 +43,12 @@ c. 当指定的控制方法求值时，过滤掉匹配 debug layer/level 的日�
       # echo "method-once" > /sys/module/acpi/parameters/trace_state
 
 ```
-其中：
-   0xXXXXXXXX/0xYYYYYYYY
-     有关可能的 debug layer/level 掩码取值，请参见 Documentation/firmware-guide/acpi/debug.rst。
-   \PPPP.AAAA.TTTT.HHHH
-     ACPI 命名空间中某个控制方法的完整路径。
-     它不必是控制方法求值的入口。
+鍏朵腑锛?   0xXXXXXXXX/0xYYYYYYYY
+     鏈夊叧鍙兘鐨?debug layer/level 鎺╃爜鍙栧€硷紝璇峰弬瑙?Documentation/firmware-guide/acpi/debug.rst銆?   \PPPP.AAAA.TTTT.HHHH
+     ACPI 鍛藉悕绌洪棿涓煇涓帶鍒舵柟娉曠殑瀹屾暣璺緞銆?     瀹冧笉蹇呮槸鎺у埗鏂规硶姹傚€肩殑鍏ュ彛銆?
+### AML 璺熻釜鍣紙AML tracer锛?
 
-### AML 跟踪器（AML tracer）
-
-
-方法跟踪机制会在 AML 解释器开始/停止执行某个控制方法或某个 AML 操作码（opcode）的“跟踪点”处添加特殊的日志条目。注意这些日志条目的格式为
-```
+鏂规硶璺熻釜鏈哄埗浼氬湪 AML 瑙ｉ噴鍣ㄥ紑濮?鍋滄鎵ц鏌愪釜鎺у埗鏂规硶鎴栨煇涓?AML 鎿嶄綔鐮侊紙opcode锛夌殑鈥滆窡韪偣鈥濆娣诲姞鐗规畩鐨勬棩蹇楁潯鐩€傛敞鎰忚繖浜涙棩蹇楁潯鐩殑鏍煎紡涓?```
 
    [    0.186427]   exdebug-0398 ex_trace_point        : Method Begin [0xf58394d8:\_SB.PCI0.LPCB.ECOK] execution.
    [    0.186630]   exdebug-0398 ex_trace_point        : Opcode Begin [0xf5905c88:If] execution.
@@ -82,12 +66,9 @@ c. 当指定的控制方法求值时，过滤掉匹配 debug layer/level 的日�
    [    0.188903]   exdebug-0398 ex_trace_point        : Method End [0xf58394d8:\_SB.PCI0.LPCB.ECOK] execution.
 
 ```
-开发者可以利用这些特殊日志条目来追踪 AML 解释过程，从而有助于问题调试和性能调优。注意，由于“AML tracer”日志是通过 ACPI_DEBUG_PRINT() 宏实现的，启用“AML tracer”日志同样需要开启 CONFIG_ACPI_DEBUG。
-
-以下命令示例说明了“AML tracer”功能的使用：
-
-a. 当控制方法开始/停止时，过滤出方法开始/停止的“AML tracer”日志
-```
+寮€鍙戣€呭彲浠ュ埄鐢ㄨ繖浜涚壒娈婃棩蹇楁潯鐩潵杩借釜 AML 瑙ｉ噴杩囩▼锛屼粠鑰屾湁鍔╀簬闂璋冭瘯鍜屾€ц兘璋冧紭銆傛敞鎰忥紝鐢变簬鈥淎ML tracer鈥濇棩蹇楁槸閫氳繃 ACPI_DEBUG_PRINT() 瀹忓疄鐜扮殑锛屽惎鐢ㄢ€淎ML tracer鈥濇棩蹇楀悓鏍烽渶瑕佸紑鍚?CONFIG_ACPI_DEBUG銆?
+浠ヤ笅鍛戒护绀轰緥璇存槑浜嗏€淎ML tracer鈥濆姛鑳界殑浣跨敤锛?
+a. 褰撴帶鍒舵柟娉曞紑濮?鍋滄鏃讹紝杩囨护鍑烘柟娉曞紑濮?鍋滄鐨勨€淎ML tracer鈥濇棩蹇?```
 
       # cd /sys/module/acpi/parameters
       # echo "0x80" > trace_debug_layer
@@ -95,8 +76,7 @@ a. 当控制方法开始/停止时，过滤出方法开始/停止的“AML trace
       # echo "enable" > trace_state
 
 ```
-b. 当指定的控制方法开始/停止时，过滤出“AML tracer”日志
-```
+b. 褰撴寚瀹氱殑鎺у埗鏂规硶寮€濮?鍋滄鏃讹紝杩囨护鍑衡€淎ML tracer鈥濇棩蹇?```
 
       # cd /sys/module/acpi/parameters
       # echo "0x80" > trace_debug_layer
@@ -105,7 +85,7 @@ b. 当指定的控制方法开始/停止时，过滤出“AML tracer”日志
       # echo "method" > trace_state
 
 ```
-c. 当指定的控制方法开始/停止时，过滤出“AML tracer”日志（仅一次）
+c. 褰撴寚瀹氱殑鎺у埗鏂规硶寮€濮?鍋滄鏃讹紝杩囨护鍑衡€淎ML tracer鈥濇棩蹇楋紙浠呬竴娆★級
 ```
 
       # cd /sys/module/acpi/parameters
@@ -115,8 +95,7 @@ c. 当指定的控制方法开始/停止时，过滤出“AML tracer”日志（
       # echo "method-once" > trace_state
 
 ```
-d. 当指定的方法/操作码开始/停止时，过滤出“AML tracer”日志
-```
+d. 褰撴寚瀹氱殑鏂规硶/鎿嶄綔鐮佸紑濮?鍋滄鏃讹紝杩囨护鍑衡€淎ML tracer鈥濇棩蹇?```
 
       # cd /sys/module/acpi/parameters
       # echo "0x80" > trace_debug_layer
@@ -125,8 +104,7 @@ d. 当指定的方法/操作码开始/停止时，过滤出“AML tracer”日�
       # echo "opcode" > trace_state
 
 ```
-e. 当指定的方法/操作码开始/停止时，过滤出“AML tracer”日志
-```
+e. 褰撴寚瀹氱殑鏂规硶/鎿嶄綔鐮佸紑濮?鍋滄鏃讹紝杩囨护鍑衡€淎ML tracer鈥濇棩蹇?```
 
       # cd /sys/module/acpi/parameters
       # echo "0x80" > trace_debug_layer
@@ -135,7 +113,7 @@ e. 当指定的方法/操作码开始/停止时，过滤出“AML tracer”日�
       # echo "opcode-opcode" > trace_state
 
 ```
-注意，上述所有方法跟踪机制相关的模块参数也可通过内核启动参数指定
+娉ㄦ剰锛屼笂杩版墍鏈夋柟娉曡窡韪満鍒剁浉鍏崇殑妯″潡鍙傛暟涔熷彲閫氳繃鍐呮牳鍚姩鍙傛暟鎸囧畾
 ```
 
    acpi.trace_debug_layer=0x80 acpi.trace_debug_level=0x10 \
@@ -143,66 +121,45 @@ e. 当指定的方法/操作码开始/停止时，过滤出“AML tracer”日�
 
 
 ```
-## 接口描述
+## 鎺ュ彛鎻忚堪
 
 
-所有方法跟踪功能都可通过 ACPI 模块参数配置，这些参数位于 /sys/module/acpi/parameters/：
-
+鎵€鏈夋柟娉曡窡韪姛鑳介兘鍙€氳繃 ACPI 妯″潡鍙傛暟閰嶇疆锛岃繖浜涘弬鏁颁綅浜?/sys/module/acpi/parameters/锛?
 trace_method_name
-  用户想要跟踪的 AML 方法的完整路径。
-
-  注意完整路径的名称段中不应包含结尾的 “_”，但可以包含 “\” 以构成绝对路径。
-
+  鐢ㄦ埛鎯宠璺熻釜鐨?AML 鏂规硶鐨勫畬鏁磋矾寰勩€?
+  娉ㄦ剰瀹屾暣璺緞鐨勫悕绉版涓笉搴斿寘鍚粨灏剧殑 鈥淿鈥濓紝浣嗗彲浠ュ寘鍚?鈥淺鈥?浠ユ瀯鎴愮粷瀵硅矾寰勩€?
 trace_debug_layer
-  启用跟踪功能时使用的临时 debug_layer。
-
-  默认使用 ACPI_EXECUTER (0x80)，即用于匹配所有“AML tracer”日志的 debug_layer。
-
+  鍚敤璺熻釜鍔熻兘鏃朵娇鐢ㄧ殑涓存椂 debug_layer銆?
+  榛樿浣跨敤 ACPI_EXECUTER (0x80)锛屽嵆鐢ㄤ簬鍖归厤鎵€鏈夆€淎ML tracer鈥濇棩蹇楃殑 debug_layer銆?
 trace_debug_level
-  启用跟踪功能时使用的临时 debug_level。
-
-  默认使用 ACPI_LV_TRACE_POINT (0x10)，即用于匹配所有“AML tracer”日志的 debug_level。
-
+  鍚敤璺熻釜鍔熻兘鏃朵娇鐢ㄧ殑涓存椂 debug_level銆?
+  榛樿浣跨敤 ACPI_LV_TRACE_POINT (0x10)锛屽嵆鐢ㄤ簬鍖归厤鎵€鏈夆€淎ML tracer鈥濇棩蹇楃殑 debug_level銆?
 trace_state
-  跟踪功能的状态。
-
-  用户可通过执行
+  璺熻釜鍔熻兘鐨勭姸鎬併€?
+  鐢ㄦ埛鍙€氳繃鎵ц
 ```
 
    # echo string > /sys/module/acpi/parameters/trace_state
 
 ```
-来启用/禁用该调试跟踪功能。其中 “string” 应为以下之一：
-
+鏉ュ惎鐢?绂佺敤璇ヨ皟璇曡窡韪姛鑳姐€傚叾涓?鈥渟tring鈥?搴斾负浠ヤ笅涔嬩竴锛?
 "disable"
-  禁用方法跟踪功能。
-
+  绂佺敤鏂规硶璺熻釜鍔熻兘銆?
 "enable"
-  启用方法跟踪功能。
-
-  在任意方法执行期间，匹配 “trace_debug_layer/trace_debug_level” 的 ACPICA 调试消息都会被记录。
-
+  鍚敤鏂规硶璺熻釜鍔熻兘銆?
+  鍦ㄤ换鎰忔柟娉曟墽琛屾湡闂达紝鍖归厤 鈥渢race_debug_layer/trace_debug_level鈥?鐨?ACPICA 璋冭瘯娑堟伅閮戒細琚褰曘€?
 "method"
-  启用方法跟踪功能。
-
-  在 “trace_method_name” 的方法执行期间，匹配 “trace_debug_layer/trace_debug_level” 的 ACPICA 调试消息会被记录。
-
+  鍚敤鏂规硶璺熻釜鍔熻兘銆?
+  鍦?鈥渢race_method_name鈥?鐨勬柟娉曟墽琛屾湡闂达紝鍖归厤 鈥渢race_debug_layer/trace_debug_level鈥?鐨?ACPICA 璋冭瘯娑堟伅浼氳璁板綍銆?
 "method-once"
-  启用方法跟踪功能。
-
-  在 “trace_method_name” 的方法执行期间，匹配 “trace_debug_layer/trace_debug_level” 的 ACPICA 调试消息仅会被记录一次。
-
+  鍚敤鏂规硶璺熻釜鍔熻兘銆?
+  鍦?鈥渢race_method_name鈥?鐨勬柟娉曟墽琛屾湡闂达紝鍖归厤 鈥渢race_debug_layer/trace_debug_level鈥?鐨?ACPICA 璋冭瘯娑堟伅浠呬細琚褰曚竴娆°€?
 "opcode"
-  启用方法跟踪功能。
-
-  在 “trace_method_name” 的方法/操作码执行期间，匹配 “trace_debug_layer/trace_debug_level” 的 ACPICA 调试消息会被记录。
-
+  鍚敤鏂规硶璺熻釜鍔熻兘銆?
+  鍦?鈥渢race_method_name鈥?鐨勬柟娉?鎿嶄綔鐮佹墽琛屾湡闂达紝鍖归厤 鈥渢race_debug_layer/trace_debug_level鈥?鐨?ACPICA 璋冭瘯娑堟伅浼氳璁板綍銆?
 "opcode-once"
-  启用方法跟踪功能。
+  鍚敤鏂规硶璺熻釜鍔熻兘銆?
+  鍦?鈥渢race_method_name鈥?鐨勬柟娉?鎿嶄綔鐮佹墽琛屾湡闂达紝鍖归厤 鈥渢race_debug_layer/trace_debug_level鈥?鐨?ACPICA 璋冭瘯娑堟伅浠呬細琚褰曚竴娆°€?
+娉ㄦ剰锛屸€渆nable鈥?涓庡叾浠栧姛鑳藉惎鐢ㄩ€夐」鐨勫尯鍒湪浜庯細
 
-  在 “trace_method_name” 的方法/操作码执行期间，匹配 “trace_debug_layer/trace_debug_level” 的 ACPICA 调试消息仅会被记录一次。
-
-注意，“enable” 与其他功能启用选项的区别在于：
-
-1. 指定 “enable” 时，由于 “trace_debug_layer/trace_debug_level” 会应用于所有控制方法求值，因此在将 “trace_state” 配置为 “enable” 后，“trace_method_name” 会被重置为 NULL。
-2. 指定 “method/opcode” 时，如果在将这些选项配置到 “trace_state” 时 “trace_method_name” 为 NULL，则 “trace_debug_layer/trace_debug_level” 会应用于所有控制方法求值。
+1. 鎸囧畾 鈥渆nable鈥?鏃讹紝鐢变簬 鈥渢race_debug_layer/trace_debug_level鈥?浼氬簲鐢ㄤ簬鎵€鏈夋帶鍒舵柟娉曟眰鍊硷紝鍥犳鍦ㄥ皢 鈥渢race_state鈥?閰嶇疆涓?鈥渆nable鈥?鍚庯紝鈥渢race_method_name鈥?浼氳閲嶇疆涓?NULL銆?2. 鎸囧畾 鈥渕ethod/opcode鈥?鏃讹紝濡傛灉鍦ㄥ皢杩欎簺閫夐」閰嶇疆鍒?鈥渢race_state鈥?鏃?鈥渢race_method_name鈥?涓?NULL锛屽垯 鈥渢race_debug_layer/trace_debug_level鈥?浼氬簲鐢ㄤ簬鎵€鏈夋帶鍒舵柟娉曟眰鍊笺€?

@@ -1,13 +1,13 @@
-## Ampere SoC 性能监控单元（PMU）
+﻿## Ampere SoC 鎬ц兘鐩戞帶鍗曞厓锛圥MU锛?
 
 
-Ampere SoC PMU 是一个遵循 Arm CoreSight PMU 架构的通用 PMU IP。因此，该驱动作为 arm_cspmu 驱动的 submodule 实现。在第一阶段，它用于统计 AmpereOne 上的 MCU 事件。
+Ampere SoC PMU 鏄竴涓伒寰?Arm CoreSight PMU 鏋舵瀯鐨勯€氱敤 PMU IP銆傚洜姝わ紝璇ラ┍鍔ㄤ綔涓?arm_cspmu 椹卞姩鐨?submodule 瀹炵幇銆傚湪绗竴闃舵锛屽畠鐢ㄤ簬缁熻 AmpereOne 涓婄殑 MCU 浜嬩欢銆?
 
 
-### MCU PMU 事件
+### MCU PMU 浜嬩欢
 
 
-PMU 驱动支持为 "rank"、"bank" 和 "threshold" 设置过滤器。注意，过滤器是按 PMU 实例而非按事件设置的。
+PMU 椹卞姩鏀寔涓?"rank"銆?bank" 鍜?"threshold" 璁剧疆杩囨护鍣ㄣ€傛敞鎰忥紝杩囨护鍣ㄦ槸鎸?PMU 瀹炰緥鑰岄潪鎸変簨浠惰缃殑銆?
 
 ```
 

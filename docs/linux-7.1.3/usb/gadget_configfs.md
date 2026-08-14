@@ -1,54 +1,43 @@
-## 通过 configfs 配置的 Linux USB gadget
+﻿## 閫氳繃 configfs 閰嶇疆鐨?Linux USB gadget
 
 
 25th April 2013
 
 
 
-## 概述
+## 姒傝堪
 
 
-一个 Linux USB Gadget 是拥有 UDC（USB Device Controller，USB 设备控制器）的设备，可以
-连接到 USB 主机（Host），以扩展其功能，例如串口或大容量存储能力。
-
-从主机的角度看，一个 gadget 是一组配置（configuration），每个配置包含若干接口（interface），
-从 gadget 的角度看，这些接口被称为功能（function），每个功能代表例如一个串行连接或一块
-SCSI 磁盘。
-
-Linux 为 gadget 提供了一系列可供使用的功能。
-
-创建一个 gadget 意味着决定会有哪些配置，以及每个配置会提供哪些功能。
-
-Configfs（请参见 `Documentation/filesystems/configfs.rst`）非常适合用于向内核告知上述决策。
-本文档讲述如何做到这一点。
-
-它还描述了 configfs 与 gadget 的集成是如何设计的。
+涓€涓?Linux USB Gadget 鏄嫢鏈?UDC锛圲SB Device Controller锛孶SB 璁惧鎺у埗鍣級鐨勮澶囷紝鍙互
+杩炴帴鍒?USB 涓绘満锛圚ost锛夛紝浠ユ墿灞曞叾鍔熻兘锛屼緥濡備覆鍙ｆ垨澶у閲忓瓨鍌ㄨ兘鍔涖€?
+浠庝富鏈虹殑瑙掑害鐪嬶紝涓€涓?gadget 鏄竴缁勯厤缃紙configuration锛夛紝姣忎釜閰嶇疆鍖呭惈鑻ュ共鎺ュ彛锛坕nterface锛夛紝
+浠?gadget 鐨勮搴︾湅锛岃繖浜涙帴鍙ｈ绉颁负鍔熻兘锛坒unction锛夛紝姣忎釜鍔熻兘浠ｈ〃渚嬪涓€涓覆琛岃繛鎺ユ垨涓€鍧?SCSI 纾佺洏銆?
+Linux 涓?gadget 鎻愪緵浜嗕竴绯诲垪鍙緵浣跨敤鐨勫姛鑳姐€?
+鍒涘缓涓€涓?gadget 鎰忓懗鐫€鍐冲畾浼氭湁鍝簺閰嶇疆锛屼互鍙婃瘡涓厤缃細鎻愪緵鍝簺鍔熻兘銆?
+Configfs锛堣鍙傝 `Documentation/filesystems/configfs.rst`锛夐潪甯搁€傚悎鐢ㄤ簬鍚戝唴鏍稿憡鐭ヤ笂杩板喅绛栥€?鏈枃妗ｈ杩板浣曞仛鍒拌繖涓€鐐广€?
+瀹冭繕鎻忚堪浜?configfs 涓?gadget 鐨勯泦鎴愭槸濡備綍璁捐鐨勩€?
 
 
-
-## 要求
-
-
-为了让这一切工作，configfs 必须可用，因此在 .config 中 CONFIGFS_FS 必须为 'y' 或 'm'。
-截至本文撰写时，USB_LIBCOMPOSITE 会自动选择 CONFIGFS_FS。
+## 瑕佹眰
 
 
+涓轰簡璁╄繖涓€鍒囧伐浣滐紝configfs 蹇呴』鍙敤锛屽洜姝ゅ湪 .config 涓?CONFIGFS_FS 蹇呴』涓?'y' 鎴?'m'銆?鎴嚦鏈枃鎾板啓鏃讹紝USB_LIBCOMPOSITE 浼氳嚜鍔ㄩ€夋嫨 CONFIGFS_FS銆?
 
-## 用法
+
+## 鐢ㄦ硶
 
 
-（描述首个通过 configfs 可用的功能的原始帖子可以在这里看到：
-http://www.spinics.net/lists/linux-usb/msg76388.html）
-
+锛堟弿杩伴涓€氳繃 configfs 鍙敤鐨勫姛鑳界殑鍘熷甯栧瓙鍙互鍦ㄨ繖閲岀湅鍒帮細
+http://www.spinics.net/lists/linux-usb/msg76388.html锛?
 ```
 
 	$ modprobe libcomposite
 	$ mount none $CONFIGFS_HOME -t configfs
 
 ```
-其中 CONFIGFS_HOME 是 configfs 的挂载点
+鍏朵腑 CONFIGFS_HOME 鏄?configfs 鐨勬寕杞界偣
 
-### 1. 创建 gadget
+### 1. 鍒涘缓 gadget
 
 
 ```
@@ -73,9 +62,7 @@ http://www.spinics.net/lists/linux-usb/msg76388.html）
 	$ echo <PID> > idProduct
 
 ```
-一个 gadget 还需要它的序列号、厂商名与产品名字符串。为了有地方存放它们，必须创建一个
-strings 子目录
-```
+涓€涓?gadget 杩橀渶瑕佸畠鐨勫簭鍒楀彿銆佸巶鍟嗗悕涓庝骇鍝佸悕瀛楃涓层€備负浜嗘湁鍦版柟瀛樻斁瀹冧滑锛屽繀椤诲垱寤轰竴涓?strings 瀛愮洰褰?```
 
 	$ mkdir strings/0x409
 
@@ -87,27 +74,22 @@ strings 子目录
 	$ echo <product> > strings/0x409/product
 
 ```
-进一步的自定义字符串描述符可以作为该语言目录下的子目录创建，字符串文本被写入 "s" 属性
-```
+杩涗竴姝ョ殑鑷畾涔夊瓧绗︿覆鎻忚堪绗﹀彲浠ヤ綔涓鸿璇█鐩綍涓嬬殑瀛愮洰褰曞垱寤猴紝瀛楃涓叉枃鏈鍐欏叆 "s" 灞炴€?```
 
 	$ mkdir strings/0x409/xu.0
 	$ echo <string text> > strings/0x409/xu.0/s
 
 ```
-在功能驱动支持的情况下，功能可以允许创建指向这些自定义字符串描述符的符号链接，以将这些
-字符串与类描述符关联起来。
-
-### 2. 创建配置
+鍦ㄥ姛鑳介┍鍔ㄦ敮鎸佺殑鎯呭喌涓嬶紝鍔熻兘鍙互鍏佽鍒涘缓鎸囧悜杩欎簺鑷畾涔夊瓧绗︿覆鎻忚堪绗︾殑绗﹀彿閾炬帴锛屼互灏嗚繖浜?瀛楃涓蹭笌绫绘弿杩扮鍏宠仈璧锋潵銆?
+### 2. 鍒涘缓閰嶇疆
 
 
-每个 gadget 由若干配置组成，它们相应的
-```
+姣忎釜 gadget 鐢辫嫢骞查厤缃粍鎴愶紝瀹冧滑鐩稿簲鐨?```
 
         $ mkdir configs/<name>.<number>
 
 ```
-其中 <name> 可以是文件系统中合法的任意字符串，而
-```
+鍏朵腑 <name> 鍙互鏄枃浠剁郴缁熶腑鍚堟硶鐨勪换鎰忓瓧绗︿覆锛岃€?```
 
 	$ mkdir configs/c.1
 
@@ -116,7 +98,7 @@ strings 子目录
 	...
 
 ```
-每个配置也需要它自己的字符串，因此必须创建一个子目录
+姣忎釜閰嶇疆涔熼渶瑕佸畠鑷繁鐨勫瓧绗︿覆锛屽洜姝ゅ繀椤诲垱寤轰竴涓瓙鐩綍
 ```
 
 	$ mkdir configs/c.1/strings/0x409
@@ -132,17 +114,15 @@ strings 子目录
 	$ echo 120 > configs/c.1/MaxPower
 
 ```
-### 3. 创建功能
+### 3. 鍒涘缓鍔熻兘
 
 
-该 gadget 将提供一些功能，每个功能对应的
-```
+璇?gadget 灏嗘彁渚涗竴浜涘姛鑳斤紝姣忎釜鍔熻兘瀵瑰簲鐨?```
 
 	$ mkdir functions/<name>.<instance name>
 
 ```
-其中 <name> 对应于某个允许的功能名，instance name（实例名）
-```
+鍏朵腑 <name> 瀵瑰簲浜庢煇涓厑璁哥殑鍔熻兘鍚嶏紝instance name锛堝疄渚嬪悕锛?```
 
   $ mkdir functions/ncm.usb0 # usb_f_ncm.ko gets loaded with request_module()
 
@@ -151,14 +131,12 @@ strings 子目录
   ...
 
 ```
-每个功能提供其特定的一组属性，可以是只读或读写访问。在适用的情况下，需要以适当的方式
-写入它们。更多信息请参考 Documentation/ABI/testing/configfs-usb-gadget。
-
-### 4. 将功能与配置关联
+姣忎釜鍔熻兘鎻愪緵鍏剁壒瀹氱殑涓€缁勫睘鎬э紝鍙互鏄彧璇绘垨璇诲啓璁块棶銆傚湪閫傜敤鐨勬儏鍐典笅锛岄渶瑕佷互閫傚綋鐨勬柟寮?鍐欏叆瀹冧滑銆傛洿澶氫俊鎭鍙傝€?Documentation/ABI/testing/configfs-usb-gadget銆?
+### 4. 灏嗗姛鑳戒笌閰嶇疆鍏宠仈
 
 
-此刻已经创建了若干 gadget，每个 gadget 都指定了若干配置并提供了若干可用功能。剩下的就是
-指定哪个功能在哪个配置中可用（同一个功能可以在多个配置中使用）。这通过以下方式实现
+姝ゅ埢宸茬粡鍒涘缓浜嗚嫢骞?gadget锛屾瘡涓?gadget 閮芥寚瀹氫簡鑻ュ共閰嶇疆骞舵彁渚涗簡鑻ュ共鍙敤鍔熻兘銆傚墿涓嬬殑灏辨槸
+鎸囧畾鍝釜鍔熻兘鍦ㄥ摢涓厤缃腑鍙敤锛堝悓涓€涓姛鑳藉彲浠ュ湪澶氫釜閰嶇疆涓娇鐢級銆傝繖閫氳繃浠ヤ笅鏂瑰紡瀹炵幇
 ```
 
 	$ ln -s functions/<name>.<instance name> configs/<name>.<number>
@@ -173,11 +151,10 @@ strings 子目录
 	...
 
 ```
-### 5. 启用 gadget
+### 5. 鍚敤 gadget
 
 
-以上所有步骤的目的都是组合出由配置与功能构成的 gadget。
-
+浠ヤ笂鎵€鏈夋楠ょ殑鐩殑閮芥槸缁勫悎鍑虹敱閰嶇疆涓庡姛鑳芥瀯鎴愮殑 gadget銆?
 ```
 
   .
@@ -212,22 +189,20 @@ strings 子目录
 
 
 ```
-这样一个 gadget 最终必须被启用，这样 USB 主机才能枚举它。
-
-为了启用 gadget，必须将它绑定到一个 UDC（USB Device Controller）
-```
+杩欐牱涓€涓?gadget 鏈€缁堝繀椤昏鍚敤锛岃繖鏍?USB 涓绘満鎵嶈兘鏋氫妇瀹冦€?
+涓轰簡鍚敤 gadget锛屽繀椤诲皢瀹冪粦瀹氬埌涓€涓?UDC锛圲SB Device Controller锛?```
 
 	$ echo <udc name> > UDC
 
 ```
-其中 <udc name> 是 /sys/class/udc/* 中找到的名字之一
+鍏朵腑 <udc name> 鏄?/sys/class/udc/* 涓壘鍒扮殑鍚嶅瓧涔嬩竴
 ```
 
 	$ echo s3c-hsotg > UDC
 
 
 ```
-### 6. 禁用 gadget
+### 6. 绂佺敤 gadget
 
 
 ```
@@ -235,7 +210,7 @@ strings 子目录
 	$ echo "" > UDC
 
 ```
-### 7. 清理
+### 7. 娓呯悊
 
 
 ```
@@ -243,8 +218,7 @@ strings 子目录
 	$ rm configs/<config name>.<number>/<function>
 
 ```
-其中 <config name>.<number> 指定配置，<function> 是
-```
+鍏朵腑 <config name>.<number> 鎸囧畾閰嶇疆锛?function> 鏄?```
 
 	$ rm configs/c.1/ncm.usb0
 
@@ -318,18 +292,12 @@ strings 子目录
 
 
 ```
-## 实现设计
+## 瀹炵幇璁捐
 
 
-下面介绍 configfs 是如何工作的。在 configfs 中有 item（项）与 group（组），两者都表示为
-目录。item 与 group 的区别在于，group 可以包含其它的 group。下面的图中只显示了一个 item。
-item 与 group 都可以有属性（attribute），它们表示为文件。用户可以创建和删除目录，但不能
-删除文件，文件可以是只读或读写的，取决于它们所代表的内容。
-
-configfs 的文件系统部分操作的是 config_items/groups 与 configfs_attributes，它们对于
-所有被配置的元素都是通用的、同一类型的。然而，它们被内嵌于特定用途的更大结构中。在下面的
-图中有一个 “cs”，它包含一个 config_item，以及一个 “sa”，它包含一个 configfs_attribute。
-
+涓嬮潰浠嬬粛 configfs 鏄浣曞伐浣滅殑銆傚湪 configfs 涓湁 item锛堥」锛変笌 group锛堢粍锛夛紝涓よ€呴兘琛ㄧず涓?鐩綍銆俰tem 涓?group 鐨勫尯鍒湪浜庯紝group 鍙互鍖呭惈鍏跺畠鐨?group銆備笅闈㈢殑鍥句腑鍙樉绀轰簡涓€涓?item銆?item 涓?group 閮藉彲浠ユ湁灞炴€э紙attribute锛夛紝瀹冧滑琛ㄧず涓烘枃浠躲€傜敤鎴峰彲浠ュ垱寤哄拰鍒犻櫎鐩綍锛屼絾涓嶈兘
+鍒犻櫎鏂囦欢锛屾枃浠跺彲浠ユ槸鍙鎴栬鍐欑殑锛屽彇鍐充簬瀹冧滑鎵€浠ｈ〃鐨勫唴瀹广€?
+configfs 鐨勬枃浠剁郴缁熼儴鍒嗘搷浣滅殑鏄?config_items/groups 涓?configfs_attributes锛屽畠浠浜?鎵€鏈夎閰嶇疆鐨勫厓绱犻兘鏄€氱敤鐨勩€佸悓涓€绫诲瀷鐨勩€傜劧鑰岋紝瀹冧滑琚唴宓屼簬鐗瑰畾鐢ㄩ€旂殑鏇村ぇ缁撴瀯涓€傚湪涓嬮潰鐨?鍥句腑鏈変竴涓?鈥渃s鈥濓紝瀹冨寘鍚竴涓?config_item锛屼互鍙婁竴涓?鈥渟a鈥濓紝瀹冨寘鍚竴涓?configfs_attribute銆?
 ```
 
   ./
@@ -342,12 +310,8 @@ configfs 的文件系统部分操作的是 config_items/groups 与 configfs_attr
      .
 
 ```
-每当用户读取/写入 “sa” 文件时，会调用一个函数，该函数接受一个 struct config_item 与
-一个 struct configfs_attribute。在该函数中，使用众所周知的 container_of 技术取回 “cs”
-与 “sa”，并调用相应的 sa 函数（show 或 store），将 “cs” 与一个字符缓冲区传给它。“show”
-用于显示文件的内容（将数据从 cs 复制到缓冲区），而 “store” 用于修改文件的内容（将数据从
-缓冲区复制到 cs），但这两个函数实际做什么由实现者决定。
-
+姣忓綋鐢ㄦ埛璇诲彇/鍐欏叆 鈥渟a鈥?鏂囦欢鏃讹紝浼氳皟鐢ㄤ竴涓嚱鏁帮紝璇ュ嚱鏁版帴鍙椾竴涓?struct config_item 涓?涓€涓?struct configfs_attribute銆傚湪璇ュ嚱鏁颁腑锛屼娇鐢ㄤ紬鎵€鍛ㄧ煡鐨?container_of 鎶€鏈彇鍥?鈥渃s鈥?涓?鈥渟a鈥濓紝骞惰皟鐢ㄧ浉搴旂殑 sa 鍑芥暟锛坰how 鎴?store锛夛紝灏?鈥渃s鈥?涓庝竴涓瓧绗︾紦鍐插尯浼犵粰瀹冦€傗€渟how鈥?鐢ㄤ簬鏄剧ず鏂囦欢鐨勫唴瀹癸紙灏嗘暟鎹粠 cs 澶嶅埗鍒扮紦鍐插尯锛夛紝鑰?鈥渟tore鈥?鐢ㄤ簬淇敼鏂囦欢鐨勫唴瀹癸紙灏嗘暟鎹粠
+缂撳啿鍖哄鍒跺埌 cs锛夛紝浣嗚繖涓や釜鍑芥暟瀹為檯鍋氫粈涔堢敱瀹炵幇鑰呭喅瀹氥€?
 ```
 
   typedef struct configured_structure cs;
@@ -368,31 +332,19 @@ configfs 的文件系统部分操作的是 config_items/groups 与 configfs_attr
   +-----------------+                .
 
 ```
-文件名由 config item/group 的设计者决定，而目录一般可以随意命名。一个 group 可以有若干
-默认子组被自动创建。
+鏂囦欢鍚嶇敱 config item/group 鐨勮璁¤€呭喅瀹氾紝鑰岀洰褰曚竴鑸彲浠ラ殢鎰忓懡鍚嶃€備竴涓?group 鍙互鏈夎嫢骞?榛樿瀛愮粍琚嚜鍔ㄥ垱寤恒€?
+鏈夊叧 configfs 鐨勬洿澶氫俊鎭紝璇峰弬瑙?`Documentation/filesystems/configfs.rst`銆?
+涓婅堪姒傚康鏄犲皠鍒?USB gadget 涓婂涓嬶細
 
-有关 configfs 的更多信息，请参见 `Documentation/filesystems/configfs.rst`。
+1. 涓€涓?gadget 鏈夊畠鐨?config group锛屽畠鏈変竴浜涘睘鎬э紙idVendor銆乮dProduct 绛夛級浠ュ強榛樿瀛愮粍
+   锛坈onfigs銆乫unctions銆乻trings锛夈€傚啓鍏ヨ繖浜涘睘鎬т細浣夸俊鎭瀛樺偍鍒伴€傚綋鐨勪綅缃€傚湪 configs銆?   functions 涓?strings 瀛愮粍涓紝鐢ㄦ埛鍙互鍒涘缓浠栦滑鑷繁鐨勫瓙缁勶紝浠ヨ〃绀虹粰瀹氳瑷€涓嬬殑閰嶇疆銆佸姛鑳?   涓庡瓧绗︿覆缁勩€?
+2. 鐢ㄦ埛鍒涘缓閰嶇疆涓庡姛鑳斤紝骞跺湪閰嶇疆涓垱寤烘寚鍚戝姛鑳界殑绗﹀彿閾炬帴銆傝繖浜涗俊鎭湪鍐欏叆 gadget 鐨?UDC
+   灞炴€ф椂琚娇鐢紝杩欐剰鍛崇潃灏?gadget 缁戝畾鍒?UDC銆俤rivers/usb/gadget/configfs.c 涓殑浠ｇ爜閬嶅巻
+   鎵€鏈夐厤缃紝骞跺湪姣忎釜閰嶇疆涓亶鍘嗘墍鏈夊姛鑳藉苟灏嗗畠浠粦瀹氥€傝繖鏍锋暣涓?gadget 灏辫缁戝畾浜嗐€?
+3. drivers/usb/gadget/configfs.c 鏂囦欢涓寘鍚敤浜庝互涓嬬敤閫旂殑浠ｇ爜锛?
+ - gadget 鐨?config_group
+ - gadget 鐨勯粯璁ょ粍锛坈onfigs銆乫unctions銆乻trings锛? - 灏嗗姛鑳戒笌閰嶇疆鍏宠仈锛堢鍙烽摼鎺ワ級
 
-上述概念映射到 USB gadget 上如下：
-
-1. 一个 gadget 有它的 config group，它有一些属性（idVendor、idProduct 等）以及默认子组
-   （configs、functions、strings）。写入这些属性会使信息被存储到适当的位置。在 configs、
-   functions 与 strings 子组中，用户可以创建他们自己的子组，以表示给定语言下的配置、功能
-   与字符串组。
-
-2. 用户创建配置与功能，并在配置中创建指向功能的符号链接。这些信息在写入 gadget 的 UDC
-   属性时被使用，这意味着将 gadget 绑定到 UDC。drivers/usb/gadget/configfs.c 中的代码遍历
-   所有配置，并在每个配置中遍历所有功能并将它们绑定。这样整个 gadget 就被绑定了。
-
-3. drivers/usb/gadget/configfs.c 文件中包含用于以下用途的代码：
-
- - gadget 的 config_group
- - gadget 的默认组（configs、functions、strings）
- - 将功能与配置关联（符号链接）
-
-4. 每个 USB 功能自然有它自己想要配置的内容的视图，因此特定功能的 config_groups 定义在各
-   功能的实现文件 drivers/usb/gadget/f_*.c 中。
-
-5. 功能的代码编写方式使得它使用 usb_get_function_instance()，而后者又会调用 request_module。
-   因此，只要 modprobe 能正常工作，特定功能的模块就会被自动加载。请注意反之不成立：在一个
-   gadget 被禁用并拆除之后，模块仍然保持加载状态。
+4. 姣忎釜 USB 鍔熻兘鑷劧鏈夊畠鑷繁鎯宠閰嶇疆鐨勫唴瀹圭殑瑙嗗浘锛屽洜姝ょ壒瀹氬姛鑳界殑 config_groups 瀹氫箟鍦ㄥ悇
+   鍔熻兘鐨勫疄鐜版枃浠?drivers/usb/gadget/f_*.c 涓€?
+5. 鍔熻兘鐨勪唬鐮佺紪鍐欐柟寮忎娇寰楀畠浣跨敤 usb_get_function_instance()锛岃€屽悗鑰呭張浼氳皟鐢?request_module銆?   鍥犳锛屽彧瑕?modprobe 鑳芥甯稿伐浣滐紝鐗瑰畾鍔熻兘鐨勬ā鍧楀氨浼氳鑷姩鍔犺浇銆傝娉ㄦ剰鍙嶄箣涓嶆垚绔嬶細鍦ㄤ竴涓?   gadget 琚鐢ㄥ苟鎷嗛櫎涔嬪悗锛屾ā鍧椾粛鐒朵繚鎸佸姞杞界姸鎬併€?

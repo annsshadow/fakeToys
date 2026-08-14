@@ -1,42 +1,21 @@
+﻿
+##  drm/amdgpu - 鍥惧舰涓庤绠楋紙GC锛?
 
-##  drm/amdgpu - 图形与计算（GC）
-
-
-CPU 与 GPU 之间的关系可以描述为生产者-消费者问题：CPU 将待 GPU（消费者）
-执行的操作填充到缓冲区（生产者）中。缓冲区中请求的操作称为**命令包
-（Command Packets）**，可以概括为向图形控制器传输命令信息的一种压缩方式。
-
-充当 CPU 与 GPU 之间前端组件的称为**命令处理器（CP，Command Processor）**。
-该组件负责为**图形与计算（GC，Graphics and Compute）**提供更大的灵活性，
-因为 CP 使得对 GPU 流水线的各个方面进行编程成为可能。CP 还通过一种名为
-**环形缓冲区（Ring Buffers）**的机制来协调 CPU 与 GPU 之间的通信，其中
-CPU 向缓冲区追加信息，而 GPU 移除操作。CP 还负责处理**间接缓冲区（IB，
-Indirect Buffers）**。
-
-作为参考，CP 在内部由若干子模块组成（CPC - CP compute、CPG - CP graphics，
-以及 CPF - CP fetcher）。其中一些缩写会出现在寄存器名称中，但这更多是
-实现细节，不会直接影响驱动编程或调试。
-
-### 图形（GFX）与计算微控制器
+CPU 涓?GPU 涔嬮棿鐨勫叧绯诲彲浠ユ弿杩颁负鐢熶骇鑰?娑堣垂鑰呴棶棰橈細CPU 灏嗗緟 GPU锛堟秷璐硅€咃級
+鎵ц鐨勬搷浣滃～鍏呭埌缂撳啿鍖猴紙鐢熶骇鑰咃級涓€傜紦鍐插尯涓姹傜殑鎿嶄綔绉颁负**鍛戒护鍖?锛圕ommand Packets锛?*锛屽彲浠ユ鎷负鍚戝浘褰㈡帶鍒跺櫒浼犺緭鍛戒护淇℃伅鐨勪竴绉嶅帇缂╂柟寮忋€?
+鍏呭綋 CPU 涓?GPU 涔嬮棿鍓嶇缁勪欢鐨勭О涓?*鍛戒护澶勭悊鍣紙CP锛孋ommand Processor锛?*銆?璇ョ粍浠惰礋璐ｄ负**鍥惧舰涓庤绠楋紙GC锛孏raphics and Compute锛?*鎻愪緵鏇村ぇ鐨勭伒娲绘€э紝
+鍥犱负 CP 浣垮緱瀵?GPU 娴佹按绾跨殑鍚勪釜鏂归潰杩涜缂栫▼鎴愪负鍙兘銆侰P 杩橀€氳繃涓€绉嶅悕涓?**鐜舰缂撳啿鍖猴紙Ring Buffers锛?*鐨勬満鍒舵潵鍗忚皟 CPU 涓?GPU 涔嬮棿鐨勯€氫俊锛屽叾涓?CPU 鍚戠紦鍐插尯杩藉姞淇℃伅锛岃€?GPU 绉婚櫎鎿嶄綔銆侰P 杩樿礋璐ｅ鐞?*闂存帴缂撳啿鍖猴紙IB锛?Indirect Buffers锛?*銆?
+浣滀负鍙傝€冿紝CP 鍦ㄥ唴閮ㄧ敱鑻ュ共瀛愭ā鍧楃粍鎴愶紙CPC - CP compute銆丆PG - CP graphics锛?浠ュ強 CPF - CP fetcher锛夈€傚叾涓竴浜涚缉鍐欎細鍑虹幇鍦ㄥ瘎瀛樺櫒鍚嶇О涓紝浣嗚繖鏇村鏄?瀹炵幇缁嗚妭锛屼笉浼氱洿鎺ュ奖鍝嶉┍鍔ㄧ紪绋嬫垨璋冭瘯銆?
+### 鍥惧舰锛圙FX锛変笌璁＄畻寰帶鍒跺櫒
 
 
-GC 是一个很大的模块，因此它关联了多个固件。其中一些如下：
+GC 鏄竴涓緢澶х殑妯″潡锛屽洜姝ゅ畠鍏宠仈浜嗗涓浐浠躲€傚叾涓竴浜涘涓嬶細
 
-CP（命令处理器，Command Processor）
-    涵盖 GFX/Compute 流水线前端的硬件模块名称。主要由一组微控制器
-    （PFP、ME、CE、MEC）组成。运行在这些微控制器上的固件提供了与
-    GFX/Compute 引擎交互的驱动接口。
-
-    MEC（MicroEngine Compute，微引擎计算）
-        这是控制 GFX/compute 引擎上计算队列的微控制器。
-
-    MES（MicroEngine Scheduler，微引擎调度器）
-        这是用于管理队列的引擎。更多细节请参阅
-        MicroEngine Scheduler (MES) <amdgpu-mes>。
-
-RLC（RunList Controller，运行列表控制器）
-    这是 GFX/Compute 引擎中的另一个微控制器。它处理 GFX/Compute 引擎内
-    与电源管理相关的功能。该名称是旧硬件的遗留物，当时它最初被加入，
-    与现在该引擎实际所做的事情并没有太大关系。
-
+CP锛堝懡浠ゅ鐞嗗櫒锛孋ommand Processor锛?    娑电洊 GFX/Compute 娴佹按绾垮墠绔殑纭欢妯″潡鍚嶇О銆備富瑕佺敱涓€缁勫井鎺у埗鍣?    锛圥FP銆丮E銆丆E銆丮EC锛夌粍鎴愩€傝繍琛屽湪杩欎簺寰帶鍒跺櫒涓婄殑鍥轰欢鎻愪緵浜嗕笌
+    GFX/Compute 寮曟搸浜や簰鐨勯┍鍔ㄦ帴鍙ｃ€?
+    MEC锛圡icroEngine Compute锛屽井寮曟搸璁＄畻锛?        杩欐槸鎺у埗 GFX/compute 寮曟搸涓婅绠楅槦鍒楃殑寰帶鍒跺櫒銆?
+    MES锛圡icroEngine Scheduler锛屽井寮曟搸璋冨害鍣級
+        杩欐槸鐢ㄤ簬绠＄悊闃熷垪鐨勫紩鎿庛€傛洿澶氱粏鑺傝鍙傞槄
+        MicroEngine Scheduler (MES) <amdgpu-mes>銆?
+RLC锛圧unList Controller锛岃繍琛屽垪琛ㄦ帶鍒跺櫒锛?    杩欐槸 GFX/Compute 寮曟搸涓殑鍙︿竴涓井鎺у埗鍣ㄣ€傚畠澶勭悊 GFX/Compute 寮曟搸鍐?    涓庣數婧愮鐞嗙浉鍏崇殑鍔熻兘銆傝鍚嶇О鏄棫纭欢鐨勯仐鐣欑墿锛屽綋鏃跺畠鏈€鍒濊鍔犲叆锛?    涓庣幇鍦ㄨ寮曟搸瀹為檯鎵€鍋氱殑浜嬫儏骞舵病鏈夊お澶у叧绯汇€?
 - [mes.rst](mes.rst)

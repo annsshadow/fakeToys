@@ -1,30 +1,20 @@
-## 通用 HDLC 层
-
+﻿## 閫氱敤 HDLC 灞?
 
 Krzysztof Halasa <khc@pm.waw.pl>
 
 
-通用 HDLC 层目前支持：
+閫氱敤 HDLC 灞傜洰鍓嶆敮鎸侊細
 
-1. 帧中继（Frame Relay，ANSI、CCITT、Cisco 以及无 LMI）
-
-   - 普通（路由）和以太网桥接（以太网设备仿真）接口可以共享同一个 PVC。
-   - ARP 支持（内核不支持 InARP —— 在以下地址有一个实验性的 InARP 用户态守护进程：
-     http://www.kernel.org/pub/linux/utils/net/hdlc/）。
-
-2. 原始 HDLC —— 可以是 IP（IPv4）接口或以太网设备仿真
-3. Cisco HDLC
+1. 甯т腑缁э紙Frame Relay锛孉NSI銆丆CITT銆丆isco 浠ュ強鏃?LMI锛?
+   - 鏅€氾紙璺敱锛夊拰浠ュお缃戞ˉ鎺ワ紙浠ュお缃戣澶囦豢鐪燂級鎺ュ彛鍙互鍏变韩鍚屼竴涓?PVC銆?   - ARP 鏀寔锛堝唴鏍镐笉鏀寔 InARP 鈥斺€?鍦ㄤ互涓嬪湴鍧€鏈変竴涓疄楠屾€х殑 InARP 鐢ㄦ埛鎬佸畧鎶よ繘绋嬶細
+     http://www.kernel.org/pub/linux/utils/net/hdlc/锛夈€?
+2. 鍘熷 HDLC 鈥斺€?鍙互鏄?IP锛圛Pv4锛夋帴鍙ｆ垨浠ュお缃戣澶囦豢鐪?3. Cisco HDLC
 4. PPP
-5. X.25（使用 X.25 例程）。
+5. X.25锛堜娇鐢?X.25 渚嬬▼锛夈€?
+閫氱敤 HDLC 鍙槸涓€涓崗璁┍鍔?鈥斺€?瀹冮渶瑕侀拡瀵逛綘鐗瑰畾纭欢鐨勪綆灞傞┍鍔ㄣ€?
+浣跨敤 HDLC 鎴栧抚涓户 PVC 鐨勪互澶綉璁惧浠跨湡鍏煎 IEEE 802.1Q锛圴LAN锛夊拰 802.1D锛堜互澶綉妗ユ帴锛夈€?
 
-通用 HDLC 只是一个协议驱动 —— 它需要针对你特定硬件的低层驱动。
-
-使用 HDLC 或帧中继 PVC 的以太网设备仿真兼容 IEEE 802.1Q（VLAN）和 802.1D（以太网桥接）。
-
-
-确保 hdlc.o 和硬件驱动已加载。它应当创建若干个 “hdlc”（hdlc0 等）网络设备，每个
-WAN 端口一个。你需要 “sethdlc” 工具，可从以下地址获取：
-
+纭繚 hdlc.o 鍜岀‖浠堕┍鍔ㄥ凡鍔犺浇銆傚畠搴斿綋鍒涘缓鑻ュ共涓?鈥渉dlc鈥濓紙hdlc0 绛夛級缃戠粶璁惧锛屾瘡涓?WAN 绔彛涓€涓€備綘闇€瑕?鈥渟ethdlc鈥?宸ュ叿锛屽彲浠庝互涓嬪湴鍧€鑾峰彇锛?
 	http://www.kernel.org/pub/linux/utils/net/hdlc/
 
 ```
@@ -32,11 +22,8 @@ WAN 端口一个。你需要 “sethdlc” 工具，可从以下地址获取：
 	gcc -O2 -Wall -o sethdlc sethdlc.c
 
 ```
-确保你使用的是与内核版本匹配的 sethdlc。
-
-使用 sethdlc 来设置物理接口、时钟速率、所使用的 HDLC 模式，并在使用帧中继时添加
-所需的 PVC。
-```
+纭繚浣犱娇鐢ㄧ殑鏄笌鍐呮牳鐗堟湰鍖归厤鐨?sethdlc銆?
+浣跨敤 sethdlc 鏉ヨ缃墿鐞嗘帴鍙ｃ€佹椂閽熼€熺巼銆佹墍浣跨敤鐨?HDLC 妯″紡锛屽苟鍦ㄤ娇鐢ㄥ抚涓户鏃舵坊鍔?鎵€闇€鐨?PVC銆?```
 
 	sethdlc hdlc0 clock int rate 128000
 	sethdlc hdlc0 cisco interval 10 timeout 25
@@ -51,74 +38,53 @@ WAN 端口一个。你需要 “sethdlc” 工具，可从以下地址获取：
 	ifconfig pvc0 localIP pointopoint remoteIP
 
 ```
-在帧中继模式下，在使用 pvc 设备之前，先用 ifconfig 将主 hdlc 设备 up（不要给它分配
-任何 IP 地址）。
+鍦ㄥ抚涓户妯″紡涓嬶紝鍦ㄤ娇鐢?pvc 璁惧涔嬪墠锛屽厛鐢?ifconfig 灏嗕富 hdlc 璁惧 up锛堜笉瑕佺粰瀹冨垎閰?浠讳綍 IP 鍦板潃锛夈€?
 
-
-设置接口：
-
+璁剧疆鎺ュ彛锛?
 - v35 | rs232 | x21 | t1 | e1
-    - 当卡具有软件可选接口时，设置给定端口的物理接口
+    - 褰撳崱鍏锋湁杞欢鍙€夋帴鍙ｆ椂锛岃缃粰瀹氱鍙ｇ殑鐗╃悊鎺ュ彛
   loopback
-    - 激活硬件回环（仅用于测试）
+    - 婵€娲荤‖浠跺洖鐜紙浠呯敤浜庢祴璇曪級
 - clock ext
-    - RX 时钟和 TX 时钟均为外部
+    - RX 鏃堕挓鍜?TX 鏃堕挓鍧囦负澶栭儴
 - clock int
-    - RX 时钟和 TX 时钟均为内部
+    - RX 鏃堕挓鍜?TX 鏃堕挓鍧囦负鍐呴儴
 - clock txint
-    - RX 时钟外部，TX 时钟内部
+    - RX 鏃堕挓澶栭儴锛孴X 鏃堕挓鍐呴儴
 - clock txfromrx
-    - RX 时钟外部，TX 时钟由 RX 时钟派生
+    - RX 鏃堕挓澶栭儴锛孴X 鏃堕挓鐢?RX 鏃堕挓娲剧敓
 - rate
-    - 设置时钟速率（bps）（仅用于 “int” 或 “txint” 时钟）
+    - 璁剧疆鏃堕挓閫熺巼锛坆ps锛夛紙浠呯敤浜?鈥渋nt鈥?鎴?鈥渢xint鈥?鏃堕挓锛?
 
+璁剧疆鍗忚锛?
+- hdlc - 璁剧疆鍘熷 HDLC锛堜粎 IP锛夋ā寮?
+  nrz / nrzi / fm-mark / fm-space / manchester - 璁剧疆浼犺緭缂栫爜
 
-设置协议：
+  no-parity / crc16 / crc16-pr0锛堥缃浂鐨?CRC16锛? crc32-itu
 
-- hdlc - 设置原始 HDLC（仅 IP）模式
+  crc16-itu锛堜娇鐢?ITU-T 澶氶」寮忕殑 CRC16锛? crc16-itu-pr0 - 璁剧疆濂囧伓鏍￠獙
 
-  nrz / nrzi / fm-mark / fm-space / manchester - 设置传输编码
+- hdlc-eth - 浣跨敤 HDLC 鐨勪互澶綉璁惧浠跨湡銆傚鍋舵牎楠屽拰缂栫爜鍚屼笂銆?
+- cisco - 璁剧疆 Cisco HDLC 妯″紡锛堟敮鎸?IP銆両Pv6 鍜?IPX锛?
+  interval - 淇濇椿鍖呬箣闂寸殑鏃堕棿闂撮殧锛堢锛?
+  timeout - 鍦ㄥ亣瀹氶摼璺柇寮€鍓嶏紝璺濇渶鍚庝竴娆℃敹鍒颁繚娲诲寘鐨勬椂闂达紙绉掞級
 
-  no-parity / crc16 / crc16-pr0（预置零的 CRC16）/ crc32-itu
+- ppp - 璁剧疆鍚屾 PPP 妯″紡
 
-  crc16-itu（使用 ITU-T 多项式的 CRC16）/ crc16-itu-pr0 - 设置奇偶校验
+- x25 - 璁剧疆 X.25 妯″紡
 
-- hdlc-eth - 使用 HDLC 的以太网设备仿真。奇偶校验和编码同上。
+- fr - 甯т腑缁фā寮?
+  lmi ansi / ccitt / cisco / none - LMI锛堥摼璺鐞嗭級绫诲瀷
 
-- cisco - 设置 Cisco HDLC 模式（支持 IP、IPv6 和 IPX）
+  dce - 甯т腑缁?DCE锛堢綉缁滀晶锛塋MI锛岃€岄潪榛樿鐨?DTE锛堢敤鎴蜂晶锛夈€?
+  瀹冧笌鏃堕挓姣棤鍏崇郴锛?
+  - t391 - 閾捐矾瀹屾暣鎬ч獙璇佽疆璇㈠畾鏃跺櫒锛堢锛? 鐢ㄦ埛渚?  - t392 - 杞楠岃瘉瀹氭椂鍣紙绉掞級- 缃戠粶渚?  - n391 - 鍏ㄧ姸鎬佽疆璇㈣鏁板櫒 - 鐢ㄦ埛渚?  - n392 - 閿欒闃堝€?- 鐢ㄦ埛渚у拰缃戠粶渚?  - n393 - 鍙楃洃鎺т簨浠惰鏁?- 鐢ㄦ埛渚у拰缃戠粶渚?
+浠呭抚涓户锛?
+- create n | delete n - 娣诲姞/鍒犻櫎 DLCI 涓?#n 鐨?PVC 鎺ュ彛銆?  鏂板垱寤虹殑鎺ュ彛灏嗗懡鍚嶄负 pvc0銆乸vc1 绛夈€?
+- create ether n | delete ether n - 娣诲姞涓€涓敤浜庝互澶綉妗ユ帴甯х殑璁惧銆傝璁惧灏嗗懡鍚嶄负
+  pvceth0銆乸vceth1 绛夈€?
 
-  interval - 保活包之间的时间间隔（秒）
-
-  timeout - 在假定链路断开前，距最后一次收到保活包的时间（秒）
-
-- ppp - 设置同步 PPP 模式
-
-- x25 - 设置 X.25 模式
-
-- fr - 帧中继模式
-
-  lmi ansi / ccitt / cisco / none - LMI（链路管理）类型
-
-  dce - 帧中继 DCE（网络侧）LMI，而非默认的 DTE（用户侧）。
-
-  它与时钟毫无关系！
-
-  - t391 - 链路完整性验证轮询定时器（秒）- 用户侧
-  - t392 - 轮询验证定时器（秒）- 网络侧
-  - n391 - 全状态轮询计数器 - 用户侧
-  - n392 - 错误阈值 - 用户侧和网络侧
-  - n393 - 受监控事件计数 - 用户侧和网络侧
-
-仅帧中继：
-
-- create n | delete n - 添加/删除 DLCI 为 #n 的 PVC 接口。
-  新创建的接口将命名为 pvc0、pvc1 等。
-
-- create ether n | delete ether n - 添加一个用于以太网桥接帧的设备。该设备将命名为
-  pvceth0、pvceth1 等。
-
-
-### 板级特定问题
+### 鏉跨骇鐗瑰畾闂
 
 ```
 
@@ -151,14 +117,10 @@ WAN 端口一个。你需要 “sethdlc” 工具，可从以下地址获取：
 
 
 ```
-如果你在使用 N2、C101 或 PLX200SYN 卡时遇到问题，可以执行
-```
+濡傛灉浣犲湪浣跨敤 N2銆丆101 鎴?PLX200SYN 鍗℃椂閬囧埌闂锛屽彲浠ユ墽琛?```
 
 	sethdlc hdlc0 private
 
 ```
-硬件驱动必须在使用 #define DEBUG_RINGS 编译时构建。将此信息附在 bug 报告中会很有帮助。
-无论如何，如果在使用中遇到问题，请告诉我。
-
-补丁和其它信息见：
-<http://www.kernel.org/pub/linux/utils/net/hdlc/>。
+纭欢椹卞姩蹇呴』鍦ㄤ娇鐢?#define DEBUG_RINGS 缂栬瘧鏃舵瀯寤恒€傚皢姝や俊鎭檮鍦?bug 鎶ュ憡涓細寰堟湁甯姪銆?鏃犺濡備綍锛屽鏋滃湪浣跨敤涓亣鍒伴棶棰橈紝璇峰憡璇夋垜銆?
+琛ヤ竵鍜屽叾瀹冧俊鎭锛?<http://www.kernel.org/pub/linux/utils/net/hdlc/>銆?

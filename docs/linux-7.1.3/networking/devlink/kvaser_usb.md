@@ -1,12 +1,12 @@
-## kvaser_usb devlink 支持
+﻿## kvaser_usb devlink 鏀寔
 
 
-本文档描述了 `kvaser_usb` 设备驱动实现的 devlink 特性。
+鏈枃妗ｆ弿杩颁簡 `kvaser_usb` 璁惧椹卞姩瀹炵幇鐨?devlink 鐗规€с€?
 
 ## Info versions
 
 
-`kvaser_usb` 驱动报告以下版本
+`kvaser_usb` 椹卞姩鎶ュ憡浠ヤ笅鐗堟湰
 
    :widths: 5 5 90
 
@@ -15,13 +15,13 @@
      - Description
    - - `fw`
      - running
-     - 设备上运行的固件版本。也可通过 `ethtool -i` 以 `firmware-version` 获取。
+     - 璁惧涓婅繍琛岀殑鍥轰欢鐗堟湰銆備篃鍙€氳繃 `ethtool -i` 浠?`firmware-version` 鑾峰彇銆?
    - - `board.rev`
      - fixed
-     - 设备硬件修订版本。
+     - 璁惧纭欢淇鐗堟湰銆?
    - - `board.id`
      - fixed
-     - 设备的 EAN（产品编号）。
+     - 璁惧鐨?EAN锛堜骇鍝佺紪鍙凤級銆?
    - - `serial_number`
      - fixed
-     - 设备序列号。
+     - 璁惧搴忓垪鍙枫€?

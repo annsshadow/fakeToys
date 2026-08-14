@@ -1,24 +1,24 @@
-
-## membarrier() 系统调用
-
-
-## MEMBARRIER_CMD_{PRIVATE,GLOBAL}_EXPEDITED - 架构要求
+﻿
+## membarrier() 绯荤粺璋冪敤
 
 
-### 更新 rq->curr 之前的内存屏障
+## MEMBARRIER_CMD_{PRIVATE,GLOBAL}_EXPEDITED - 鏋舵瀯瑕佹眰
 
 
-命令 MEMBARRIER_CMD_PRIVATE_EXPEDITED 和 MEMBARRIER_CMD_GLOBAL_EXPEDITED 要求每个架构在从用户空间返回后、更新 rq->curr 之前具有一个完整内存屏障。该屏障由 __schedule() 中的 rq_lock(); smp_mb__after_spinlock() 序列隐含提供。该屏障与 membarrier 系统调用退出附近的一个完整屏障相匹配，参见 membarrier_{private,global}_expedited()。
-
-### 更新 rq->curr 之后的内存屏障
+### 鏇存柊 rq->curr 涔嬪墠鐨勫唴瀛樺睆闅?
 
 
-命令 MEMBARRIER_CMD_PRIVATE_EXPEDITED 和 MEMBARRIER_CMD_GLOBAL_EXPEDITED 要求每个架构在更新 rq->curr 之后、返回用户空间之前具有一个完整内存屏障。各个架构上提供该屏障的方案如下。
+鍛戒护 MEMBARRIER_CMD_PRIVATE_EXPEDITED 鍜?MEMBARRIER_CMD_GLOBAL_EXPEDITED 瑕佹眰姣忎釜鏋舵瀯鍦ㄤ粠鐢ㄦ埛绌洪棿杩斿洖鍚庛€佹洿鏂?rq->curr 涔嬪墠鍏锋湁涓€涓畬鏁村唴瀛樺睆闅溿€傝灞忛殰鐢?__schedule() 涓殑 rq_lock(); smp_mb__after_spinlock() 搴忓垪闅愬惈鎻愪緵銆傝灞忛殰涓?membarrier 绯荤粺璋冪敤閫€鍑洪檮杩戠殑涓€涓畬鏁村睆闅滅浉鍖归厤锛屽弬瑙?membarrier_{private,global}_expedited()銆?
 
- - alpha、arc、arm、hexagon、mips 依赖 finish_lock_switch() 中 spin_unlock() 隐含的完整屏障。
+### 鏇存柊 rq->curr 涔嬪悗鐨勫唴瀛樺睆闅?
 
- - arm64 依赖 switch_to() 隐含的完整屏障。
 
- - powerpc、riscv、s390、sparc、x86 依赖 switch_mm() 隐含的完整屏障（若 mm 不为 NULL）；否则它们依赖 mmdrop() 隐含的完整屏障。在 powerpc 和 riscv 上，switch_mm() 依赖 membarrier_arch_switch_mm()。
+鍛戒护 MEMBARRIER_CMD_PRIVATE_EXPEDITED 鍜?MEMBARRIER_CMD_GLOBAL_EXPEDITED 瑕佹眰姣忎釜鏋舵瀯鍦ㄦ洿鏂?rq->curr 涔嬪悗銆佽繑鍥炵敤鎴风┖闂翠箣鍓嶅叿鏈変竴涓畬鏁村唴瀛樺睆闅溿€傚悇涓灦鏋勪笂鎻愪緵璇ュ睆闅滅殑鏂规濡備笅銆?
 
-该屏障与 membarrier 系统调用入口附近的一个完整屏障相匹配，参见 membarrier_{private,global}_expedited()。
+ - alpha銆乤rc銆乤rm銆乭exagon銆乵ips 渚濊禆 finish_lock_switch() 涓?spin_unlock() 闅愬惈鐨勫畬鏁村睆闅溿€?
+
+ - arm64 渚濊禆 switch_to() 闅愬惈鐨勫畬鏁村睆闅溿€?
+
+ - powerpc銆乺iscv銆乻390銆乻parc銆亁86 渚濊禆 switch_mm() 闅愬惈鐨勫畬鏁村睆闅滐紙鑻?mm 涓嶄负 NULL锛夛紱鍚﹀垯瀹冧滑渚濊禆 mmdrop() 闅愬惈鐨勫畬鏁村睆闅溿€傚湪 powerpc 鍜?riscv 涓婏紝switch_mm() 渚濊禆 membarrier_arch_switch_mm()銆?
+
+璇ュ睆闅滀笌 membarrier 绯荤粺璋冪敤鍏ュ彛闄勮繎鐨勪竴涓畬鏁村睆闅滅浉鍖归厤锛屽弬瑙?membarrier_{private,global}_expedited()銆?

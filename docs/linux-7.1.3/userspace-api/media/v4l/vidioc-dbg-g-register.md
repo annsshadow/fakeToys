@@ -1,12 +1,12 @@
-######## ioctl VIDIOC_DBG_G_REGISTER, VIDIOC_DBG_S_REGISTER
+﻿######## ioctl VIDIOC_DBG_G_REGISTER, VIDIOC_DBG_S_REGISTER
 
 
-## 名称
+## 鍚嶇О
 
 
-VIDIOC_DBG_G_REGISTER - VIDIOC_DBG_S_REGISTER - 读或写硬件寄存器
+VIDIOC_DBG_G_REGISTER - VIDIOC_DBG_S_REGISTER - 璇绘垨鍐欑‖浠跺瘎瀛樺櫒
 
-## 概要
+## 姒傝
 
 
 
@@ -15,38 +15,38 @@ VIDIOC_DBG_G_REGISTER - VIDIOC_DBG_S_REGISTER - 读或写硬件寄存器
 
 `int ioctl(int fd, VIDIOC_DBG_S_REGISTER, const struct v4l2_dbg_register *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `argp`
-    指向 struct `v4l2_dbg_register` 的指针。
+    鎸囧悜 struct `v4l2_dbg_register` 鐨勬寚閽堛€?
 
-## 描述
+## 鎻忚堪
 
 
 
-    这是一个实验性接口，未来可能会发生变化。
+    杩欐槸涓€涓疄楠屾€ф帴鍙ｏ紝鏈潵鍙兘浼氬彂鐢熷彉鍖栥€?
 
-出于驱动调试目的，这些 ioctl 允许测试应用程序直接访问硬件寄存器。普通应用程序不得使用它们。
+鍑轰簬椹卞姩璋冭瘯鐩殑锛岃繖浜?ioctl 鍏佽娴嬭瘯搴旂敤绋嬪簭鐩存帴璁块棶纭欢瀵勫瓨鍣ㄣ€傛櫘閫氬簲鐢ㄧ▼搴忎笉寰椾娇鐢ㄥ畠浠€?
 
-由于写入甚至读取寄存器都可能危及系统安全、稳定性并损坏硬件，两个 ioctl 都需要超级用户权限。此外，Linux 内核必须编译时启用 `CONFIG_VIDEO_ADV_DEBUG` 选项以启用这些 ioctl。
+鐢变簬鍐欏叆鐢氳嚦璇诲彇瀵勫瓨鍣ㄩ兘鍙兘鍗卞強绯荤粺瀹夊叏銆佺ǔ瀹氭€у苟鎹熷潖纭欢锛屼袱涓?ioctl 閮介渶瑕佽秴绾х敤鎴锋潈闄愩€傛澶栵紝Linux 鍐呮牳蹇呴』缂栬瘧鏃跺惎鐢?`CONFIG_VIDEO_ADV_DEBUG` 閫夐」浠ュ惎鐢ㄨ繖浜?ioctl銆?
 
-要写入一个寄存器，应用程序必须初始化 struct `v4l2_dbg_register` 的所有字段（`size` 除外），并使用指向该结构的指针调用 `VIDIOC_DBG_S_REGISTER`。`match.type` 和 `match.addr` 或 `match.name` 字段选择 TV 卡上的一个芯片，`reg` 字段指定寄存器编号，`val` 字段为要写入寄存器的值。
+瑕佸啓鍏ヤ竴涓瘎瀛樺櫒锛屽簲鐢ㄧ▼搴忓繀椤诲垵濮嬪寲 struct `v4l2_dbg_register` 鐨勬墍鏈夊瓧娈碉紙`size` 闄ゅ锛夛紝骞朵娇鐢ㄦ寚鍚戣缁撴瀯鐨勬寚閽堣皟鐢?`VIDIOC_DBG_S_REGISTER`銆俙match.type` 鍜?`match.addr` 鎴?`match.name` 瀛楁閫夋嫨 TV 鍗′笂鐨勪竴涓姱鐗囷紝`reg` 瀛楁鎸囧畾瀵勫瓨鍣ㄧ紪鍙凤紝`val` 瀛楁涓鸿鍐欏叆瀵勫瓨鍣ㄧ殑鍊笺€?
 
-要读取一个寄存器，应用程序必须初始化 `match.type`、`match.addr` 或 `match.name` 以及 `reg` 字段，并使用指向该结构的指针调用 `VIDIOC_DBG_G_REGISTER`。成功时，驱动将寄存器值存储在 `val` 字段中，并将该值的大小（以字节为单位）存储在 `size` 中。
+瑕佽鍙栦竴涓瘎瀛樺櫒锛屽簲鐢ㄧ▼搴忓繀椤诲垵濮嬪寲 `match.type`銆乣match.addr` 鎴?`match.name` 浠ュ強 `reg` 瀛楁锛屽苟浣跨敤鎸囧悜璇ョ粨鏋勭殑鎸囬拡璋冪敤 `VIDIOC_DBG_G_REGISTER`銆傛垚鍔熸椂锛岄┍鍔ㄥ皢瀵勫瓨鍣ㄥ€煎瓨鍌ㄥ湪 `val` 瀛楁涓紝骞跺皢璇ュ€肩殑澶у皬锛堜互瀛楄妭涓哄崟浣嶏級瀛樺偍鍦?`size` 涓€?
 
-当 `match.type` 为 `V4L2_CHIP_MATCH_BRIDGE` 时，`match.addr` 选择 TV 卡上的第 n 个非子设备芯片。数字零始终选择主芯片，例如连接到 PCI 或 USB 总线的芯片。你可以通过 VIDIOC_DBG_G_CHIP_INFO ioctl 了解存在哪些芯片。
+褰?`match.type` 涓?`V4L2_CHIP_MATCH_BRIDGE` 鏃讹紝`match.addr` 閫夋嫨 TV 鍗′笂鐨勭 n 涓潪瀛愯澶囪姱鐗囥€傛暟瀛楅浂濮嬬粓閫夋嫨涓昏姱鐗囷紝渚嬪杩炴帴鍒?PCI 鎴?USB 鎬荤嚎鐨勮姱鐗囥€備綘鍙互閫氳繃 VIDIOC_DBG_G_CHIP_INFO ioctl 浜嗚В瀛樺湪鍝簺鑺墖銆?
 
-当 `match.type` 为 `V4L2_CHIP_MATCH_SUBDEV` 时，`match.addr` 选择第 n 个子设备。
+褰?`match.type` 涓?`V4L2_CHIP_MATCH_SUBDEV` 鏃讹紝`match.addr` 閫夋嫨绗?n 涓瓙璁惧銆?
 
-这些 ioctl 是可选的，并非所有驱动都可能支持它们。然而，当驱动支持这些 ioctl 时，它也必须支持 VIDIOC_DBG_G_CHIP_INFO。反之，它可能支持 `VIDIOC_DBG_G_CHIP_INFO` 但不支持这些 ioctl。
+杩欎簺 ioctl 鏄彲閫夌殑锛屽苟闈炴墍鏈夐┍鍔ㄩ兘鍙兘鏀寔瀹冧滑銆傜劧鑰岋紝褰撻┍鍔ㄦ敮鎸佽繖浜?ioctl 鏃讹紝瀹冧篃蹇呴』鏀寔 VIDIOC_DBG_G_CHIP_INFO銆傚弽涔嬶紝瀹冨彲鑳芥敮鎸?`VIDIOC_DBG_G_CHIP_INFO` 浣嗕笉鏀寔杩欎簺 ioctl銆?
 
-`VIDIOC_DBG_G_REGISTER` 和 `VIDIOC_DBG_S_REGISTER` 是在 Linux 2.6.21 中引入的，但其 API 在内核 2.6.29 中被更改为此处所描述的版本。
+`VIDIOC_DBG_G_REGISTER` 鍜?`VIDIOC_DBG_S_REGISTER` 鏄湪 Linux 2.6.21 涓紩鍏ョ殑锛屼絾鍏?API 鍦ㄥ唴鏍?2.6.29 涓鏇存敼涓烘澶勬墍鎻忚堪鐨勭増鏈€?
 
-我们建议使用 v4l2-dbg 工具，而不是直接调用这些 ioctl。它可从 LinuxTV v4l-dvb 仓库获取；访问说明见 `https://linuxtv.org/repo/ <https://linuxtv.org/repo/>`__。
+鎴戜滑寤鸿浣跨敤 v4l2-dbg 宸ュ叿锛岃€屼笉鏄洿鎺ヨ皟鐢ㄨ繖浜?ioctl銆傚畠鍙粠 LinuxTV v4l-dvb 浠撳簱鑾峰彇锛涜闂鏄庤 `https://linuxtv.org/repo/ <https://linuxtv.org/repo/>`__銆?
 
 
 
@@ -57,15 +57,15 @@ VIDIOC_DBG_G_REGISTER - VIDIOC_DBG_S_REGISTER - 读或写硬件寄存器
 
     - - __u32
       - `type`
-      - 有关可能的类型列表，请参见 chip-match-types。
+      - 鏈夊叧鍙兘鐨勭被鍨嬪垪琛紝璇峰弬瑙?chip-match-types銆?
     - - union {
       - (anonymous)
     - - __u32
       - `addr`
-      - 按此编号匹配芯片，依据 `type` 字段解释。
+      - 鎸夋缂栧彿鍖归厤鑺墖锛屼緷鎹?`type` 瀛楁瑙ｉ噴銆?
     - - char
       - `name[^32^]`
-      - 按此名称匹配芯片，依据 `type` 字段解释。当前未使用。
+      - 鎸夋鍚嶇О鍖归厤鑺墖锛屼緷鎹?`type` 瀛楁瑙ｉ噴銆傚綋鍓嶆湭浣跨敤銆?
     - - }
       -
 
@@ -74,16 +74,16 @@ VIDIOC_DBG_G_REGISTER - VIDIOC_DBG_S_REGISTER - 读或写硬件寄存器
 
     - - struct v4l2_dbg_match
       - `match`
-      - 如何匹配芯片，请参见 `v4l2_dbg_match`。
+      - 濡備綍鍖归厤鑺墖锛岃鍙傝 `v4l2_dbg_match`銆?
     - - __u32
       - `size`
-      - 寄存器大小（以字节为单位）。
+      - 瀵勫瓨鍣ㄥぇ灏忥紙浠ュ瓧鑺備负鍗曚綅锛夈€?
     - - __u64
       - `reg`
-      - 寄存器编号。
+      - 瀵勫瓨鍣ㄧ紪鍙枫€?
     - - __u64
       - `val`
-      - 从寄存器读取或要写入寄存器的值。
+      - 浠庡瘎瀛樺櫒璇诲彇鎴栬鍐欏叆瀵勫瓨鍣ㄧ殑鍊笺€?
 
 
 
@@ -93,16 +93,16 @@ VIDIOC_DBG_G_REGISTER - VIDIOC_DBG_S_REGISTER - 读或写硬件寄存器
 
     - - `V4L2_CHIP_MATCH_BRIDGE`
       - 0
-      - 匹配卡上的第 n 个芯片，桥接芯片为零。不匹配子设备。
+      - 鍖归厤鍗′笂鐨勭 n 涓姱鐗囷紝妗ユ帴鑺墖涓洪浂銆備笉鍖归厤瀛愯澶囥€?
     - - `V4L2_CHIP_MATCH_SUBDEV`
       - 4
-      - 匹配第 n 个子设备。
+      - 鍖归厤绗?n 涓瓙璁惧銆?
 
-## 返回值
+## 杩斿洖鍊?
 
 
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 章节中描述。
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
 
 EPERM
-    权限不足。执行这些 ioctl 需要 root 权限。
+    鏉冮檺涓嶈冻銆傛墽琛岃繖浜?ioctl 闇€瑕?root 鏉冮檺銆?

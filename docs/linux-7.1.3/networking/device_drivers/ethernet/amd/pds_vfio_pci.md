@@ -1,22 +1,19 @@
+﻿
+## 鐢ㄤ簬 AMD/Pensando(R) DSC 閫傞厤鍣ㄧ郴鍒楃殑 PCI VFIO 椹卞姩
 
-## 用于 AMD/Pensando(R) DSC 适配器系列的 PCI VFIO 驱动
 
-
-AMD/Pensando Linux VFIO PCI 设备驱动
+AMD/Pensando Linux VFIO PCI 璁惧椹卞姩
 Copyright(c) 2023 Advanced Micro Devices, Inc.
 
-## 概述
+## 姒傝堪
 
 
-`pds-vfio-pci` 模块是一个 PCI 驱动，支持 DSC 硬件中具备实时迁移（Live Migration）能力的虚拟功能（VF）设备。
+`pds-vfio-pci` 妯″潡鏄竴涓?PCI 椹卞姩锛屾敮鎸?DSC 纭欢涓叿澶囧疄鏃惰縼绉伙紙Live Migration锛夎兘鍔涚殑铏氭嫙鍔熻兘锛圴F锛夎澶囥€?
+## 浣跨敤璁惧
 
-## 使用设备
 
-
-pds-vfio-pci 设备通过多个配置步骤启用，并依赖 `pds_core` 驱动来创建和启用 SR-IOV 虚拟功能设备。
-
-下面展示了将驱动绑定到一个 VF，以及绑定到由 `pds_core` 驱动创建的关联辅助设备的步骤。此示例假设 pds_core 和 pds-vfio-pci 模块已经加载。
-
+pds-vfio-pci 璁惧閫氳繃澶氫釜閰嶇疆姝ラ鍚敤锛屽苟渚濊禆 `pds_core` 椹卞姩鏉ュ垱寤哄拰鍚敤 SR-IOV 铏氭嫙鍔熻兘璁惧銆?
+涓嬮潰灞曠ず浜嗗皢椹卞姩缁戝畾鍒颁竴涓?VF锛屼互鍙婄粦瀹氬埌鐢?`pds_core` 椹卞姩鍒涘缓鐨勫叧鑱旇緟鍔╄澶囩殑姝ラ銆傛绀轰緥鍋囪 pds_core 鍜?pds-vfio-pci 妯″潡宸茬粡鍔犺浇銆?
   :name: example-setup-script
 
   #!/bin/bash
@@ -25,46 +22,42 @@ pds-vfio-pci 设备通过多个配置步骤启用，并依赖 `pds_core` 驱动�
   PF_BDF="0000:60:00.0"
   VF_BDF="0000:60:00.1"
 
-  # 阻止非 vfio 的 VF 驱动探测 VF 设备
+  # 闃绘闈?vfio 鐨?VF 椹卞姩鎺㈡祴 VF 璁惧
   echo 0 > /sys/class/pci_bus/$PF_BUS/device/$PF_BDF/sriov_drivers_autoprobe
 
-  # 通过 pds_core 创建单个用于实时迁移的 VF
+  # 閫氳繃 pds_core 鍒涘缓鍗曚釜鐢ㄤ簬瀹炴椂杩佺Щ鐨?VF
   echo 1 > /sys/bus/pci/drivers/pds_core/$PF_BDF/sriov_numvfs
 
-  # 允许将 VF 绑定到 pds-vfio-pci 驱动
+  # 鍏佽灏?VF 缁戝畾鍒?pds-vfio-pci 椹卞姩
   echo "pds-vfio-pci" > /sys/class/pci_bus/$PF_BUS/device/$VF_BDF/driver_override
 
-  # 将 VF 绑定到 pds-vfio-pci 驱动
+  # 灏?VF 缁戝畾鍒?pds-vfio-pci 椹卞姩
   echo "$VF_BDF" > /sys/bus/pci/drivers/pds-vfio-pci/bind
 
-执行上述步骤后，应当在 /dev/vfio/<iommu_group> 中创建了一个文件。
+鎵ц涓婅堪姝ラ鍚庯紝搴斿綋鍦?/dev/vfio/<iommu_group> 涓垱寤轰簡涓€涓枃浠躲€?
+
+## 鍚敤椹卞姩
 
 
-## 启用驱动
-
-
-该驱动通过标准的内核配置系统启用，
+璇ラ┍鍔ㄩ€氳繃鏍囧噯鐨勫唴鏍搁厤缃郴缁熷惎鐢紝
 ```
 
   make oldconfig/menuconfig/etc.
 
 ```
-该驱动在菜单结构中的位置为：
+璇ラ┍鍔ㄥ湪鑿滃崟缁撴瀯涓殑浣嶇疆涓猴細
 
-  -> 设备驱动（Device Drivers）
-    -> 非特权用户空间 VFIO 驱动框架（VFIO Non-Privileged userspace driver framework）
-      -> 用于 PDS PCI 设备的 VFIO 支持（VFIO support for PDS PCI devices）
-
-## 支持
+  -> 璁惧椹卞姩锛圖evice Drivers锛?    -> 闈炵壒鏉冪敤鎴风┖闂?VFIO 椹卞姩妗嗘灦锛圴FIO Non-Privileged userspace driver framework锛?      -> 鐢ㄤ簬 PDS PCI 璁惧鐨?VFIO 鏀寔锛圴FIO support for PDS PCI devices锛?
+## 鏀寔
 
 
-对于一般性的 Linux 网络支持，请使用 netdev 邮件列表
+瀵逛簬涓€鑸€х殑 Linux 缃戠粶鏀寔锛岃浣跨敤 netdev 閭欢鍒楄〃
 ```
 
   netdev@vger.kernel.org
 
 ```
-对于更具体的支持需求，请使用 Pensando 驱动支持
+瀵逛簬鏇村叿浣撶殑鏀寔闇€姹傦紝璇蜂娇鐢?Pensando 椹卞姩鏀寔
 ```
 
   drivers@pensando.io

@@ -1,267 +1,267 @@
-
+﻿
 ## Multi-Gen LRU
 
-The multi-gen LRU 是 一个 alternative LRU implementation 该 optimizes
-页 reclaim 和 improves 性能 在…下 内存 pressure. 页
-reclaim decides the 内核's caching policy 和 ability 到 overcommit
-内存. 它 directly impacts the kswapd CPU usage 和 RAM efficiency.
+The multi-gen LRU 鏄?涓€涓?alternative LRU implementation 璇?optimizes
+椤?reclaim 鍜?improves 鎬ц兘 鍦ㄢ€︿笅 鍐呭瓨 pressure. 椤?
+reclaim decides the 鍐呮牳's caching policy 鍜?ability 鍒?overcommit
+鍐呭瓨. 瀹?directly impacts the kswapd CPU usage 鍜?RAM efficiency.
 
 ## Design overview
 
 ### Objectives
 
-The design objectives 是:
+The design objectives 鏄?
 
-- Good representation 的 access recency
-- Try 到 profit 来自 spatial locality
-- Fast paths 到 make obvious choices
-- 简单 self-correcting heuristics
+- Good representation 鐨?access recency
+- Try 鍒?profit 鏉ヨ嚜 spatial locality
+- Fast paths 鍒?make obvious choices
+- 绠€鍗?self-correcting heuristics
 
-The representation 的 access recency 是 在 the 核心 的 全部 LRU
-implementations. 在 the multi-gen LRU, 每个 generation represents 一个
-group 的 页 与 similar access recency. Generations establish 一个
-(time-based) 通用 帧 的 参考 和 因此 help make better
-choices, e.g., 之间 不同 memcgs 在 一个 computer 或 不同
-computers 在 一个 数据 center (用于 job scheduling).
+The representation 鐨?access recency 鏄?鍦?the 鏍稿績 鐨?鍏ㄩ儴 LRU
+implementations. 鍦?the multi-gen LRU, 姣忎釜 generation represents 涓€涓?
+group 鐨?椤?涓?similar access recency. Generations establish 涓€涓?
+(time-based) 閫氱敤 甯?鐨?鍙傝€?鍜?鍥犳 help make better
+choices, e.g., 涔嬮棿 涓嶅悓 memcgs 鍦?涓€涓?computer 鎴?涓嶅悓
+computers 鍦?涓€涓?鏁版嵁 center (鐢ㄤ簬 job scheduling).
 
-Exploiting spatial locality improves efficiency 当 gathering the
-accessed 位. 一个 rmap walk targets 一个 单个 页 和 执行 不 try 到
-profit 来自 discovering 一个 young PTE. 一个 页 表 walk 可 sweep 全部
-the young PTEs 在 一个 地址 space, 但 the 地址 space 可 为 too
-sparse 到 make 一个 profit. The key 是 到 optimize 两者 方法 和 使用
-them 在 combination.
+Exploiting spatial locality improves efficiency 褰?gathering the
+accessed 浣? 涓€涓?rmap walk targets 涓€涓?鍗曚釜 椤?鍜?鎵ц 涓?try 鍒?
+profit 鏉ヨ嚜 discovering 涓€涓?young PTE. 涓€涓?椤?琛?walk 鍙?sweep 鍏ㄩ儴
+the young PTEs 鍦?涓€涓?鍦板潃 space, 浣?the 鍦板潃 space 鍙?涓?too
+sparse 鍒?make 涓€涓?profit. The key 鏄?鍒?optimize 涓よ€?鏂规硶 鍜?浣跨敤
+them 鍦?combination.
 
-Fast paths reduce code complexity 和 runtime overhead. Unmapped 页
-执行 不 需要 TLB flushes; clean 页 执行 不 需要 writeback.
-这些 facts 是 仅 helpful 当 其他 conditions, e.g., access
-recency, 是 similar. 与 generations 作为 一个 通用 帧 的 参考,
-额外 factors stand out. 但 obvious choices 可能 不 为 good
-choices; 从而 self-correction 是 必要.
+Fast paths reduce code complexity 鍜?runtime overhead. Unmapped 椤?
+鎵ц 涓?闇€瑕?TLB flushes; clean 椤?鎵ц 涓?闇€瑕?writeback.
+杩欎簺 facts 鏄?浠?helpful 褰?鍏朵粬 conditions, e.g., access
+recency, 鏄?similar. 涓?generations 浣滀负 涓€涓?閫氱敤 甯?鐨?鍙傝€?
+棰濆 factors stand out. 浣?obvious choices 鍙兘 涓?涓?good
+choices; 浠庤€?self-correction 鏄?蹇呰.
 
-The benefits 的 简单 self-correcting heuristics 是 self-evident.
-再次, 与 generations 作为 一个 通用 帧 的 参考, 此 becomes
-attainable. Specifically, 页 在 the 相同 generation 可 为
-categorized 基于 额外 factors, 和 一个 feedback loop 可
-statistically compare the refault percentages across 那些 categories
-和 infer 其 的 them 是 better choices.
+The benefits 鐨?绠€鍗?self-correcting heuristics 鏄?self-evident.
+鍐嶆, 涓?generations 浣滀负 涓€涓?閫氱敤 甯?鐨?鍙傝€? 姝?becomes
+attainable. Specifically, 椤?鍦?the 鐩稿悓 generation 鍙?涓?
+categorized 鍩轰簬 棰濆 factors, 鍜?涓€涓?feedback loop 鍙?
+statistically compare the refault percentages across 閭ｄ簺 categories
+鍜?infer 鍏?鐨?them 鏄?better choices.
 
 ### Assumptions
 
-The protection 的 hot 页 和 the selection 的 cold 页 是 based
-在 页 access channels 和 patterns. 存在 two access channels:
+The protection 鐨?hot 椤?鍜?the selection 鐨?cold 椤?鏄?based
+鍦?椤?access channels 鍜?patterns. 瀛樺湪 two access channels:
 
-- Accesses through 页 表
-- Accesses through 文件 描述符
+- Accesses through 椤?琛?
+- Accesses through 鏂囦欢 鎻忚堪绗?
 
-The protection 的 the former channel 是 由 design stronger 因为:
+The protection 鐨?the former channel 鏄?鐢?design stronger 鍥犱负:
 
-1. The uncertainty 在 determining the access patterns 的 the former
-   channel 是 higher 由于 the approximation 的 the accessed 位.
-2. The cost 的 evicting the former channel 是 higher 由于 the TLB
-   flushes 必需 和 the likelihood 的 encountering the dirty 位.
-3. The penalty 的 underprotecting the former channel 是 higher 因为
-   applications 通常 执行 不 prepare themselves 用于 主要 页
-   faults 类似 它们 执行 用于 blocked I/O. E.g., GUI applications
-   commonly 使用 dedicated I/O 线程 到 avoid blocking rendering
-   线程.
+1. The uncertainty 鍦?determining the access patterns 鐨?the former
+   channel 鏄?higher 鐢变簬 the approximation 鐨?the accessed 浣?
+2. The cost 鐨?evicting the former channel 鏄?higher 鐢变簬 the TLB
+   flushes 蹇呴渶 鍜?the likelihood 鐨?encountering the dirty 浣?
+3. The penalty 鐨?underprotecting the former channel 鏄?higher 鍥犱负
+   applications 閫氬父 鎵ц 涓?prepare themselves 鐢ㄤ簬 涓昏 椤?
+   faults 绫讳技 瀹冧滑 鎵ц 鐢ㄤ簬 blocked I/O. E.g., GUI applications
+   commonly 浣跨敤 dedicated I/O 绾跨▼ 鍒?avoid blocking rendering
+   绾跨▼.
 
-存在 也 two access patterns:
+瀛樺湪 涔?two access patterns:
 
 - Accesses exhibiting temporal locality
-- Accesses 不 exhibiting temporal locality
+- Accesses 涓?exhibiting temporal locality
 
-用于 the reasons listed 上文, the former channel 是 assumed 到 follow
-the former pattern 除非 `VM_SEQ_READ` 或 `VM_RAND_READ` 是
-present, 和 the latter channel 是 assumed 到 follow the latter
-pattern 除非 outlying refaults 具有 已经 observed.
+鐢ㄤ簬 the reasons listed 涓婃枃, the former channel 鏄?assumed 鍒?follow
+the former pattern 闄ら潪 `VM_SEQ_READ` 鎴?`VM_RAND_READ` 鏄?
+present, 鍜?the latter channel 鏄?assumed 鍒?follow the latter
+pattern 闄ら潪 outlying refaults 鍏锋湁 宸茬粡 observed.
 
 ## Workflow overview
 
-Evictable 页 是 divided 进入 多个 generations 用于 每个
-`lruvec`. The youngest generation 数字 是 stored 在
-`lrugen->max_seq` 用于 两者 anon 和 文件 types 作为 它们是 aged 在
-一个 equal footing. The oldest generation numbers 是 stored 在
-`lrugen->min_seq[]` separately 用于 anon 和 文件 types 作为 clean 文件
-页 可 为 evicted regardless 的 swap constraints. 这些 three
-variables 是 monotonically increasing.
+Evictable 椤?鏄?divided 杩涘叆 澶氫釜 generations 鐢ㄤ簬 姣忎釜
+`lruvec`. The youngest generation 鏁板瓧 鏄?stored 鍦?
+`lrugen->max_seq` 鐢ㄤ簬 涓よ€?anon 鍜?鏂囦欢 types 浣滀负 瀹冧滑鏄?aged 鍦?
+涓€涓?equal footing. The oldest generation numbers 鏄?stored 鍦?
+`lrugen->min_seq[]` separately 鐢ㄤ簬 anon 鍜?鏂囦欢 types 浣滀负 clean 鏂囦欢
+椤?鍙?涓?evicted regardless 鐨?swap constraints. 杩欎簺 three
+variables 鏄?monotonically increasing.
 
-Generation numbers 是 truncated 进入 `order_base_2(MAX_NR_GENS+1)`
-位 为了 fit 进入 the gen counter 在 `folio->flags`. 每个
-truncated generation 数字 是 一个 索引 到 `lrugen->folios[]`. The
-sliding window technique 是 使用 到 track 至少 `MIN_NR_GENS` 和
-至多 `MAX_NR_GENS` generations. The gen counter stores 一个 值
-之内 `[1, MAX_NR_GENS]` 同时 一个 页 是 在 one 的
-`lrugen->folios[]`; 否则 它 stores zero.
+Generation numbers 鏄?truncated 杩涘叆 `order_base_2(MAX_NR_GENS+1)`
+浣?涓轰簡 fit 杩涘叆 the gen counter 鍦?`folio->flags`. 姣忎釜
+truncated generation 鏁板瓧 鏄?涓€涓?绱㈠紩 鍒?`lrugen->folios[]`. The
+sliding window technique 鏄?浣跨敤 鍒?track 鑷冲皯 `MIN_NR_GENS` 鍜?
+鑷冲 `MAX_NR_GENS` generations. The gen counter stores 涓€涓?鍊?
+涔嬪唴 `[1, MAX_NR_GENS]` 鍚屾椂 涓€涓?椤?鏄?鍦?one 鐨?
+`lrugen->folios[]`; 鍚﹀垯 瀹?stores zero.
 
-每个 generation 是 divided 进入 多个 tiers. 一个 页 accessed `N`
-times through 文件 描述符 是 在 tier `order_base_2(N)`. Unlike
-generations, tiers 执行 不 具有 dedicated `lrugen->folios[]`. 在
-contrast 到 moving across generations, 其 需要 the LRU 锁,
-moving across tiers 仅 involves 原子 操作 在
-`folio->flags` 和 因此 具有 一个 negligible cost. 一个 feedback loop
-modeled 之后 the PID 控制器 monitors refaults 在…上 全部 the tiers
-来自 anon 和 文件 types 和 decides 其 tiers 来自 其 types 到
-evict 或 protect. The desired effect 是 到 balance refault percentages
-之间 anon 和 文件 types proportional 到 the swappiness level.
+姣忎釜 generation 鏄?divided 杩涘叆 澶氫釜 tiers. 涓€涓?椤?accessed `N`
+times through 鏂囦欢 鎻忚堪绗?鏄?鍦?tier `order_base_2(N)`. Unlike
+generations, tiers 鎵ц 涓?鍏锋湁 dedicated `lrugen->folios[]`. 鍦?
+contrast 鍒?moving across generations, 鍏?闇€瑕?the LRU 閿?
+moving across tiers 浠?involves 鍘熷瓙 鎿嶄綔 鍦?
+`folio->flags` 鍜?鍥犳 鍏锋湁 涓€涓?negligible cost. 涓€涓?feedback loop
+modeled 涔嬪悗 the PID 鎺у埗鍣?monitors refaults 鍦ㄢ€︿笂 鍏ㄩ儴 the tiers
+鏉ヨ嚜 anon 鍜?鏂囦欢 types 鍜?decides 鍏?tiers 鏉ヨ嚜 鍏?types 鍒?
+evict 鎴?protect. The desired effect 鏄?鍒?balance refault percentages
+涔嬮棿 anon 鍜?鏂囦欢 types proportional 鍒?the swappiness level.
 
-存在 two conceptually independent procedures: the aging 和 the
-eviction. 它们 form 一个 closed-loop 系统, i.e., the 页 reclaim.
+瀛樺湪 two conceptually independent procedures: the aging 鍜?the
+eviction. 瀹冧滑 form 涓€涓?closed-loop 绯荤粺, i.e., the 椤?reclaim.
 
 ### Aging
 
-The aging produces young generations. Given 一个 `lruvec`, 它
-increments `max_seq` 当 `max_seq-min_seq+1` approaches
-`MIN_NR_GENS`. The aging promotes hot 页 到 the youngest
-generation 当 它 finds them accessed through 页 表; the
-demotion 的 cold 页 happens consequently 当 它 increments
-`max_seq`. The aging uses 页 表 walks 和 rmap walks 到 find
-young PTEs. 用于 the former, 它 iterates `lruvec_memcg()->mm_list`
-和 calls `walk_page_range()` 与 每个 `mm_struct` 在 此 列出
-到 scan PTEs, 和 之后 每个 iteration, 它 increments `max_seq`. 用于
-the latter, 当 the eviction walks the rmap 和 finds 一个 young PTE,
-the aging scans the adjacent PTEs. 用于 两者, 在 finding 一个 young PTE,
-the aging clears the accessed 位 和 updates the gen counter 的 the
-页 mapped 由 此 PTE 到 `(max_seq%MAX_NR_GENS)+1`.
+The aging produces young generations. Given 涓€涓?`lruvec`, 瀹?
+increments `max_seq` 褰?`max_seq-min_seq+1` approaches
+`MIN_NR_GENS`. The aging promotes hot 椤?鍒?the youngest
+generation 褰?瀹?finds them accessed through 椤?琛? the
+demotion 鐨?cold 椤?happens consequently 褰?瀹?increments
+`max_seq`. The aging uses 椤?琛?walks 鍜?rmap walks 鍒?find
+young PTEs. 鐢ㄤ簬 the former, 瀹?iterates `lruvec_memcg()->mm_list`
+鍜?calls `walk_page_range()` 涓?姣忎釜 `mm_struct` 鍦?姝?鍒楀嚭
+鍒?scan PTEs, 鍜?涔嬪悗 姣忎釜 iteration, 瀹?increments `max_seq`. 鐢ㄤ簬
+the latter, 褰?the eviction walks the rmap 鍜?finds 涓€涓?young PTE,
+the aging scans the adjacent PTEs. 鐢ㄤ簬 涓よ€? 鍦?finding 涓€涓?young PTE,
+the aging clears the accessed 浣?鍜?updates the gen counter 鐨?the
+椤?mapped 鐢?姝?PTE 鍒?`(max_seq%MAX_NR_GENS)+1`.
 
 ### Eviction
 
-The eviction consumes 旧 generations. Given 一个 `lruvec`, 它
-increments `min_seq` 当 `lrugen->folios[]` indexed 由
-`min_seq%MAX_NR_GENS` becomes empty. 到 select 一个 类型 和 一个 tier 到
-evict 来自, 它 第一 compares `min_seq[]` 到 select the older 类型.
-若 两者 types 是 equally 旧, 它 selects the one whose 第一 tier 具有
-一个 lower refault percentage. The 第一 tier 包含 single-use
-unmapped clean 页, 其 是 the best bet. The eviction sorts 一个
-页 根据 其 gen counter 若 the aging 具有 found 此 页
-accessed through 页 表 和 updated 其 gen counter. 它 也
-moves 一个 页 到 the 接下来 generation, i.e., `min_seq+1`, 若 此 页
-曾是 accessed 多个 times through 文件 描述符 和 the feedback
-loop 具有 detected outlying refaults 来自 the tier 此 页 是 在. 到
-此 end, the feedback loop uses the 第一 tier 作为 the baseline, 用于
-the reason stated 更早.
+The eviction consumes 鏃?generations. Given 涓€涓?`lruvec`, 瀹?
+increments `min_seq` 褰?`lrugen->folios[]` indexed 鐢?
+`min_seq%MAX_NR_GENS` becomes empty. 鍒?select 涓€涓?绫诲瀷 鍜?涓€涓?tier 鍒?
+evict 鏉ヨ嚜, 瀹?绗竴 compares `min_seq[]` 鍒?select the older 绫诲瀷.
+鑻?涓よ€?types 鏄?equally 鏃? 瀹?selects the one whose 绗竴 tier 鍏锋湁
+涓€涓?lower refault percentage. The 绗竴 tier 鍖呭惈 single-use
+unmapped clean 椤? 鍏?鏄?the best bet. The eviction sorts 涓€涓?
+椤?鏍规嵁 鍏?gen counter 鑻?the aging 鍏锋湁 found 姝?椤?
+accessed through 椤?琛?鍜?updated 鍏?gen counter. 瀹?涔?
+moves 涓€涓?椤?鍒?the 鎺ヤ笅鏉?generation, i.e., `min_seq+1`, 鑻?姝?椤?
+鏇炬槸 accessed 澶氫釜 times through 鏂囦欢 鎻忚堪绗?鍜?the feedback
+loop 鍏锋湁 detected outlying refaults 鏉ヨ嚜 the tier 姝?椤?鏄?鍦? 鍒?
+姝?end, the feedback loop uses the 绗竴 tier 浣滀负 the baseline, 鐢ㄤ簬
+the reason stated 鏇存棭.
 
 ### Working set protection
 
-每个 generation 是 timestamped 在 birth. 若 `lru_gen_min_ttl` 是
-set, 一个 `lruvec` 是 protected 来自 the eviction 当 其 oldest
-generation 曾是 born 之内 `lru_gen_min_ttl` milliseconds. 在 其他
-words, 它 prevents the working set 的 `lru_gen_min_ttl` milliseconds
-来自 getting evicted. The OOM killer 是 triggered 若 此 working set
-cannot 为 kept 在 内存.
+姣忎釜 generation 鏄?timestamped 鍦?birth. 鑻?`lru_gen_min_ttl` 鏄?
+set, 涓€涓?`lruvec` 鏄?protected 鏉ヨ嚜 the eviction 褰?鍏?oldest
+generation 鏇炬槸 born 涔嬪唴 `lru_gen_min_ttl` milliseconds. 鍦?鍏朵粬
+words, 瀹?prevents the working set 鐨?`lru_gen_min_ttl` milliseconds
+鏉ヨ嚜 getting evicted. The OOM killer 鏄?triggered 鑻?姝?working set
+cannot 涓?kept 鍦?鍐呭瓨.
 
-此 time-based approach 具有 the 以下 advantages:
+姝?time-based approach 鍏锋湁 the 浠ヤ笅 advantages:
 
-1. 它是 easier 到 configure 因为 它是 agnostic 到 applications
-   和 内存 sizes.
-2. 它是 更多 reliable 因为 它是 directly wired 到 the OOM killer.
+1. 瀹冩槸 easier 鍒?configure 鍥犱负 瀹冩槸 agnostic 鍒?applications
+   鍜?鍐呭瓨 sizes.
+2. 瀹冩槸 鏇村 reliable 鍥犱负 瀹冩槸 directly wired 鍒?the OOM killer.
 
-### ``mm_结构体`` 列出
+### ``mm_缁撴瀯浣揱` 鍒楀嚭
 
-一个 `mm_struct` 列出 是 maintained 用于 每个 memcg, 和 一个
-`mm_struct` follows 其 owner task 到 the 新 memcg 当 此 task
-是 migrated.
+涓€涓?`mm_struct` 鍒楀嚭 鏄?maintained 鐢ㄤ簬 姣忎釜 memcg, 鍜?涓€涓?
+`mm_struct` follows 鍏?owner task 鍒?the 鏂?memcg 褰?姝?task
+鏄?migrated.
 
-一个 页 表 walker iterates `lruvec_memcg()->mm_list` 和 calls
-`walk_page_range()` 与 每个 `mm_struct` 在 此 列出 到 scan
-PTEs. 当 多个 页 表 walkers iterate the 相同 列出, 每个 的
-them gets 一个 unique `mm_struct`, 和 因此 它们 可 运行 在
-并行.
+涓€涓?椤?琛?walker iterates `lruvec_memcg()->mm_list` 鍜?calls
+`walk_page_range()` 涓?姣忎釜 `mm_struct` 鍦?姝?鍒楀嚭 鍒?scan
+PTEs. 褰?澶氫釜 椤?琛?walkers iterate the 鐩稿悓 鍒楀嚭, 姣忎釜 鐨?
+them gets 涓€涓?unique `mm_struct`, 鍜?鍥犳 瀹冧滑 鍙?杩愯 鍦?
+骞惰.
 
-页 表 walkers ignore 任何 misplaced 页, e.g., 若 一个
-`mm_struct` 曾是 migrated, 页 left 在 the 前一个 memcg 将 为
-ignored 当 the 电流 memcg 是 在…下 reclaim. Similarly, 页 表
-walkers 将 ignore 页 来自 nodes 其他 比 the one 在…下 reclaim.
+椤?琛?walkers ignore 浠讳綍 misplaced 椤? e.g., 鑻?涓€涓?
+`mm_struct` 鏇炬槸 migrated, 椤?left 鍦?the 鍓嶄竴涓?memcg 灏?涓?
+ignored 褰?the 鐢垫祦 memcg 鏄?鍦ㄢ€︿笅 reclaim. Similarly, 椤?琛?
+walkers 灏?ignore 椤?鏉ヨ嚜 nodes 鍏朵粬 姣?the one 鍦ㄢ€︿笅 reclaim.
 
-此 infrastructure 也 tracks the usage 的 `mm_struct` 之间
-上下文 switches 因此 该 页 表 walkers 可 skip 进程 该
-具有 已经 sleeping since the 最后 iteration.
+姝?infrastructure 涔?tracks the usage 鐨?`mm_struct` 涔嬮棿
+涓婁笅鏂?switches 鍥犳 璇?椤?琛?walkers 鍙?skip 杩涚▼ 璇?
+鍏锋湁 宸茬粡 sleeping since the 鏈€鍚?iteration.
 
 ### Rmap/PT walk feedback
 
-Searching the rmap 用于 PTEs 映射 每个 页 在 一个 LRU 列出 (到 test
-和 clear the accessed 位) 可 为 expensive 因为 页 来自
-不同 VMAs (PA space) 是 不 缓存 friendly 到 the rmap (VA
-space). 用于 workloads mostly 使用 mapped 页, searching the rmap
-可 incur the highest CPU cost 在 the reclaim path.
+Searching the rmap 鐢ㄤ簬 PTEs 鏄犲皠 姣忎釜 椤?鍦?涓€涓?LRU 鍒楀嚭 (鍒?test
+鍜?clear the accessed 浣? 鍙?涓?expensive 鍥犱负 椤?鏉ヨ嚜
+涓嶅悓 VMAs (PA space) 鏄?涓?缂撳瓨 friendly 鍒?the rmap (VA
+space). 鐢ㄤ簬 workloads mostly 浣跨敤 mapped 椤? searching the rmap
+鍙?incur the highest CPU cost 鍦?the reclaim path.
 
-`lru_gen_look_around()` exploits spatial locality 到 reduce the
-trips 进入 the rmap. 它 scans the adjacent PTEs 的 一个 young PTE 和
-promotes hot 页. 若 the scan 曾是 已完成 cacheline efficiently, 它
-adds the PMD 条目 pointing 到 the PTE 表 到 the Bloom filter. 此
-forms 一个 feedback loop 之间 the eviction 和 the aging.
+`lru_gen_look_around()` exploits spatial locality 鍒?reduce the
+trips 杩涘叆 the rmap. 瀹?scans the adjacent PTEs 鐨?涓€涓?young PTE 鍜?
+promotes hot 椤? 鑻?the scan 鏇炬槸 宸插畬鎴?cacheline efficiently, 瀹?
+adds the PMD 鏉＄洰 pointing 鍒?the PTE 琛?鍒?the Bloom filter. 姝?
+forms 涓€涓?feedback loop 涔嬮棿 the eviction 鍜?the aging.
 
 ### Bloom filters
 
-Bloom filters 是 一个 space 和 内存 efficient 数据 结构体 用于 set
-membership test, i.e., test 若 一个 element 是 不 在 the set 或 可 为
-在 the set.
+Bloom filters 鏄?涓€涓?space 鍜?鍐呭瓨 efficient 鏁版嵁 缁撴瀯浣?鐢ㄤ簬 set
+membership test, i.e., test 鑻?涓€涓?element 鏄?涓?鍦?the set 鎴?鍙?涓?
+鍦?the set.
 
-在 the eviction path, specifically, 在 `lru_gen_look_around()`, 若 一个
-PMD 具有 一个 sufficient 数字 的 hot 页, 其 地址 是 placed 在 the
-filter. 在 the aging path, set membership means 该 the PTE range
-将 为 scanned 用于 young 页.
+鍦?the eviction path, specifically, 鍦?`lru_gen_look_around()`, 鑻?涓€涓?
+PMD 鍏锋湁 涓€涓?sufficient 鏁板瓧 鐨?hot 椤? 鍏?鍦板潃 鏄?placed 鍦?the
+filter. 鍦?the aging path, set membership means 璇?the PTE range
+灏?涓?scanned 鐢ㄤ簬 young 椤?
 
-注意 该 Bloom filters 是 probabilistic 在 set membership. 若 一个 test
-是 false positive, the cost 是 一个 额外 scan 的 一个 range 的 PTEs,
-其 可 yield hot 页 anyway. 参数 的 the filter itself 可
-control the false positive rate 在 the limit.
+娉ㄦ剰 璇?Bloom filters 鏄?probabilistic 鍦?set membership. 鑻?涓€涓?test
+鏄?false positive, the cost 鏄?涓€涓?棰濆 scan 鐨?涓€涓?range 鐨?PTEs,
+鍏?鍙?yield hot 椤?anyway. 鍙傛暟 鐨?the filter itself 鍙?
+control the false positive rate 鍦?the limit.
 
-### PID 控制器
+### PID 鎺у埗鍣?
 
-一个 feedback loop modeled 之后 the Proportional-Integral-Derivative
-(PID) 控制器 monitors refaults 在…上 anon 和 文件 types 和
-decides 其 类型 到 evict 当 两者 types 是 可用 来自 the
-相同 generation.
+涓€涓?feedback loop modeled 涔嬪悗 the Proportional-Integral-Derivative
+(PID) 鎺у埗鍣?monitors refaults 鍦ㄢ€︿笂 anon 鍜?鏂囦欢 types 鍜?
+decides 鍏?绫诲瀷 鍒?evict 褰?涓よ€?types 鏄?鍙敤 鏉ヨ嚜 the
+鐩稿悓 generation.
 
-The PID 控制器 uses generations rather 比 the wall clock 作为 the
-time domain 因为 一个 CPU 可 scan 页 在 不同 rates 在…下
-varying 内存 pressure. 它 calculates 一个 moving average 用于 每个 新
-generation 到 avoid 正在 permanently locked 在 一个 suboptimal 状态.
+The PID 鎺у埗鍣?uses generations rather 姣?the wall clock 浣滀负 the
+time domain 鍥犱负 涓€涓?CPU 鍙?scan 椤?鍦?涓嶅悓 rates 鍦ㄢ€︿笅
+varying 鍐呭瓨 pressure. 瀹?calculates 涓€涓?moving average 鐢ㄤ簬 姣忎釜 鏂?
+generation 鍒?avoid 姝ｅ湪 permanently locked 鍦?涓€涓?suboptimal 鐘舵€?
 
 ### Memcg LRU
 
-一个 memcg LRU 是 一个 per-node LRU 的 memcgs. 它是 也 一个 LRU 的 LRUs,
-since 每个 node 和 memcg combination 具有 一个 LRU 的 folios (参见
-`mem_cgroup_lruvec()`). 其 goal 是 到 improve the scalability 的
-全局 reclaim, 其 是 critical 到 system-wide 内存 overcommit 在
-数据 centers. 注意 该 memcg LRU 仅 applies 到 全局 reclaim.
+涓€涓?memcg LRU 鏄?涓€涓?per-node LRU 鐨?memcgs. 瀹冩槸 涔?涓€涓?LRU 鐨?LRUs,
+since 姣忎釜 node 鍜?memcg combination 鍏锋湁 涓€涓?LRU 鐨?folios (鍙傝
+`mem_cgroup_lruvec()`). 鍏?goal 鏄?鍒?improve the scalability 鐨?
+鍏ㄥ眬 reclaim, 鍏?鏄?critical 鍒?system-wide 鍐呭瓨 overcommit 鍦?
+鏁版嵁 centers. 娉ㄦ剰 璇?memcg LRU 浠?applies 鍒?鍏ㄥ眬 reclaim.
 
-The 基本 结构体 的 一个 memcg LRU 可 为 understood 由 一个 analogy 到
-the active/inactive LRU (的 folios):
+The 鍩烘湰 缁撴瀯浣?鐨?涓€涓?memcg LRU 鍙?涓?understood 鐢?涓€涓?analogy 鍒?
+the active/inactive LRU (鐨?folios):
 
-1. 它 具有 the young 和 the 旧 (generations), i.e., the counterparts
-   到 the active 和 the inactive;
-2. The increment 的 `max_seq` triggers promotion, i.e., the
-   counterpart 到 activation;
-3. 其他 事件 trigger similar 操作, e.g., offlining 一个 memcg
-   triggers demotion, i.e., the counterpart 到 deactivation.
+1. 瀹?鍏锋湁 the young 鍜?the 鏃?(generations), i.e., the counterparts
+   鍒?the active 鍜?the inactive;
+2. The increment 鐨?`max_seq` triggers promotion, i.e., the
+   counterpart 鍒?activation;
+3. 鍏朵粬 浜嬩欢 trigger similar 鎿嶄綔, e.g., offlining 涓€涓?memcg
+   triggers demotion, i.e., the counterpart 鍒?deactivation.
 
-就…而言 全局 reclaim, 它 具有 two distinct 特性:
+灏扁€﹁€岃█ 鍏ㄥ眬 reclaim, 瀹?鍏锋湁 two distinct 鐗规€?
 
-1. Sharding, 其 allows 每个 线程 到 启动 在 一个 random memcg (在
-   the 旧 generation) 和 improves parallelism;
-2. Eventual fairness, 其 allows direct reclaim 到 bail out 在 将
-   和 reduces latency 无 affecting fairness 在…上 一些 time.
+1. Sharding, 鍏?allows 姣忎釜 绾跨▼ 鍒?鍚姩 鍦?涓€涓?random memcg (鍦?
+   the 鏃?generation) 鍜?improves parallelism;
+2. Eventual fairness, 鍏?allows direct reclaim 鍒?bail out 鍦?灏?
+   鍜?reduces latency 鏃?affecting fairness 鍦ㄢ€︿笂 涓€浜?time.
 
-就…而言 traversing memcgs 期间 全局 reclaim, 它 improves the
-best-case complexity 来自 O(n) 到 O(1) 和 执行 不 affect the
-worst-case complexity O(n). 因此, 在 average, 它 具有 一个 sublinear
+灏扁€﹁€岃█ traversing memcgs 鏈熼棿 鍏ㄥ眬 reclaim, 瀹?improves the
+best-case complexity 鏉ヨ嚜 O(n) 鍒?O(1) 鍜?鎵ц 涓?affect the
+worst-case complexity O(n). 鍥犳, 鍦?average, 瀹?鍏锋湁 涓€涓?sublinear
 complexity.
 
 ### Summary
 
-The multi-gen LRU (的 folios) 可 为 disassembled 进入 the 以下
+The multi-gen LRU (鐨?folios) 鍙?涓?disassembled 杩涘叆 the 浠ヤ笅
 parts:
 
 - Generations
 - Rmap walks
-- 页 表 walks 通过 `mm_struct` 列出
-- Bloom filters 用于 rmap/PT walk feedback
-- PID 控制器 用于 refault feedback
+- 椤?琛?walks 閫氳繃 `mm_struct` 鍒楀嚭
+- Bloom filters 鐢ㄤ簬 rmap/PT walk feedback
+- PID 鎺у埗鍣?鐢ㄤ簬 refault feedback
 
-The aging 和 the eviction form 一个 producer-consumer 型号;
-specifically, the latter drives the former 由 the sliding window 在…上
-generations. 之内 the aging, rmap walks drive 页 表 walks 由
-inserting hot densely populated 页 表 到 the Bloom filters.
-之内 the eviction, the PID 控制器 uses refaults 作为 the feedback
-到 select types 到 evict 和 tiers 到 protect.
+The aging 鍜?the eviction form 涓€涓?producer-consumer 鍨嬪彿;
+specifically, the latter drives the former 鐢?the sliding window 鍦ㄢ€︿笂
+generations. 涔嬪唴 the aging, rmap walks drive 椤?琛?walks 鐢?
+inserting hot densely populated 椤?琛?鍒?the Bloom filters.
+涔嬪唴 the eviction, the PID 鎺у埗鍣?uses refaults 浣滀负 the feedback
+鍒?select types 鍒?evict 鍜?tiers 鍒?protect.

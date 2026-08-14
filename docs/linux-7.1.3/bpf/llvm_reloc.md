@@ -1,14 +1,10 @@
+﻿
+## BPF LLVM 閲嶅畾浣?
 
-## BPF LLVM 重定位
+鏈枃妗ｆ弿杩?LLVM BPF 鍚庣鐨勯噸瀹氫綅绫诲瀷銆?
+## 閲嶅畾浣嶈褰?
 
-
-本文档描述 LLVM BPF 后端的重定位类型。
-
-## 重定位记录
-
-
-LLVM BPF 后端使用以下 16 字节记录每个重定位
-```
+LLVM BPF 鍚庣浣跨敤浠ヤ笅 16 瀛楄妭璁板綍姣忎釜閲嶅畾浣?```
 
   typedef struct
   {
@@ -28,7 +24,7 @@ LLVM BPF 后端使用以下 16 字节记录每个重定位
   }
 
 ```
-使用 `clang --target=bpf -O2 -c test.c` 编译，以下是
+浣跨敤 `clang --target=bpf -O2 -c test.c` 缂栬瘧锛屼互涓嬫槸
 ```
 
        0:       18 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 r1 = 0 ll
@@ -49,9 +45,7 @@ LLVM BPF 后端使用以下 16 字节记录每个重定位
       15:       95 00 00 00 00 00 00 00 exit
 
 ```
-上面有四个 `LD_imm64` 指令的四个重定位。以下 `llvm-readelf -r test.o` 显示了这四个的
-二进制值
-```
+涓婇潰鏈夊洓涓?`LD_imm64` 鎸囦护鐨勫洓涓噸瀹氫綅銆備互涓?`llvm-readelf -r test.o` 鏄剧ず浜嗚繖鍥涗釜鐨?浜岃繘鍒跺€?```
 
   Relocation section '.rel.text' at offset 0x190 contains 4 entries:
       Offset             Info             Type               Symbol's Value  Symbol's Name
@@ -61,10 +55,7 @@ LLVM BPF 后端使用以下 16 字节记录每个重定位
   0000000000000058  0000000400000001 R_BPF_64_64            0000000000000000 sec
 
 ```
-每个重定位由 `Offset`（8 字节）和 `Info`（8 字节）表示。例如，第一个重定位对应于第一条
-指令（Offset 0x0），相应的 `Info` 指示了 `R_BPF_64_64`（类型 1）的重定位类型以及符号
-表中的条目（条目 6）。
-```
+姣忎釜閲嶅畾浣嶇敱 `Offset`锛? 瀛楄妭锛夊拰 `Info`锛? 瀛楄妭锛夎〃绀恒€備緥濡傦紝绗竴涓噸瀹氫綅瀵瑰簲浜庣涓€鏉?鎸囦护锛圤ffset 0x0锛夛紝鐩稿簲鐨?`Info` 鎸囩ず浜?`R_BPF_64_64`锛堢被鍨?1锛夌殑閲嶅畾浣嶇被鍨嬩互鍙婄鍙?琛ㄤ腑鐨勬潯鐩紙鏉＄洰 6锛夈€?```
 
   Symbol table '.symtab' contains 8 entries:
      Num:    Value          Size Type    Bind   Vis       Ndx Name
@@ -78,26 +69,18 @@ LLVM BPF 后端使用以下 16 字节记录每个重定位
        7: 0000000000000004     4 OBJECT  GLOBAL DEFAULT     4 g2
 
 ```
-第 6 个条目是值为 0 的全局变量 `g1`。
-
-类似地，第二个重定位位于 `.text` 偏移 `0x18`，指令 3，类型为 `R_BPF_64_64`，并引用符号
-表中的条目 7。第二个重定位解析为全局变量 `g2`，其符号值为 4。该符号值表示存储全局变量
-`g2` 初始值的 `.data` 节起始处的偏移。
-
-第三和第四个重定位引用静态变量 `l1` 和 `l2`。从上面的 `.rel.text` 节看，不清楚它们真正
-引用哪些符号，因为它们都引用符号表条目 4，即符号 `sec`，它具有 `STT_SECTION` 类型并代表
-一个节。因此对于静态变量或函数，节偏移被写入原始 insn 缓冲区，这称为 `A`（addend）。
-查看上面的 insn `7` 和 `11`，它们具有节偏移 `8` 和 `12`。从符号表我们可以找到它们对应于
-`l1` 和 `l2` 的条目 `2` 和 `3`。
-
-一般来说，对于全局变量和函数，`A` 为 0；对于静态变量/函数，`A` 是节偏移或基于节偏移的
-某种计算结果。非节偏移的情况指的是函数调用。更多细节见下文。
-
-## 不同的重定位类型
+绗?6 涓潯鐩槸鍊间负 0 鐨勫叏灞€鍙橀噺 `g1`銆?
+绫讳技鍦帮紝绗簩涓噸瀹氫綅浣嶄簬 `.text` 鍋忕Щ `0x18`锛屾寚浠?3锛岀被鍨嬩负 `R_BPF_64_64`锛屽苟寮曠敤绗﹀彿
+琛ㄤ腑鐨勬潯鐩?7銆傜浜屼釜閲嶅畾浣嶈В鏋愪负鍏ㄥ眬鍙橀噺 `g2`锛屽叾绗﹀彿鍊间负 4銆傝绗﹀彿鍊艰〃绀哄瓨鍌ㄥ叏灞€鍙橀噺
+`g2` 鍒濆鍊肩殑 `.data` 鑺傝捣濮嬪鐨勫亸绉汇€?
+绗笁鍜岀鍥涗釜閲嶅畾浣嶅紩鐢ㄩ潤鎬佸彉閲?`l1` 鍜?`l2`銆備粠涓婇潰鐨?`.rel.text` 鑺傜湅锛屼笉娓呮瀹冧滑鐪熸
+寮曠敤鍝簺绗﹀彿锛屽洜涓哄畠浠兘寮曠敤绗﹀彿琛ㄦ潯鐩?4锛屽嵆绗﹀彿 `sec`锛屽畠鍏锋湁 `STT_SECTION` 绫诲瀷骞朵唬琛?涓€涓妭銆傚洜姝ゅ浜庨潤鎬佸彉閲忔垨鍑芥暟锛岃妭鍋忕Щ琚啓鍏ュ師濮?insn 缂撳啿鍖猴紝杩欑О涓?`A`锛坅ddend锛夈€?鏌ョ湅涓婇潰鐨?insn `7` 鍜?`11`锛屽畠浠叿鏈夎妭鍋忕Щ `8` 鍜?`12`銆備粠绗﹀彿琛ㄦ垜浠彲浠ユ壘鍒板畠浠搴斾簬
+`l1` 鍜?`l2` 鐨勬潯鐩?`2` 鍜?`3`銆?
+涓€鑸潵璇达紝瀵逛簬鍏ㄥ眬鍙橀噺鍜屽嚱鏁帮紝`A` 涓?0锛涘浜庨潤鎬佸彉閲?鍑芥暟锛宍A` 鏄妭鍋忕Щ鎴栧熀浜庤妭鍋忕Щ鐨?鏌愮璁＄畻缁撴灉銆傞潪鑺傚亸绉荤殑鎯呭喌鎸囩殑鏄嚱鏁拌皟鐢ㄣ€傛洿澶氱粏鑺傝涓嬫枃銆?
+## 涓嶅悓鐨勯噸瀹氫綅绫诲瀷
 
 
-支持六种重定位类型。以下是概述和
-```
+鏀寔鍏閲嶅畾浣嶇被鍨嬨€備互涓嬫槸姒傝堪鍜?```
 
   Enum  ELF Reloc Type     Description      BitSize  Offset        Calculation
   0     R_BPF_NONE         None
@@ -108,26 +91,20 @@ LLVM BPF 后端使用以下 16 字节记录每个重定位
   10    R_BPF_64_32        call insn        32       r_offset + 4  (S + A) / 8 - 1
 
 ```
-例如，`R_BPF_64_64` 重定位类型用于 `ld_imm64` 指令。实际待重定位的数据（0 或节偏移）存储
-在 `r_offset + 4`，读/写数据位宽为 32（4 字节）。该重定位可以用符号值加上隐式加数来解析。
-注意 `BitSize` 为 32，这意味着节偏移必须小于或等于 `UINT32_MAX`，这由 LLVM BPF 后端强制
-执行。
-
-在另一种情况下，`R_BPF_64_ABS64` 重定位类型用于普通的 64 位数据。实际待重定位的数据存储
-在 `r_offset`，读/写数据位宽为 64（8 字节）。该重定位可以用符号值加上隐式加数来解析。
-
-`R_BPF_64_ABS32` 和 `R_BPF_64_NODYLD32` 类型都用于 32 位数据。但 `R_BPF_64_NODYLD32`
-特指 `.BTF` 和 `.BTF.ext` 节中的重定位。对于像 bcc 这样涉及 llvm `ExecutionEngine
-RuntimeDyld` 的情况，`R_BPF_64_NODYLD32` 类型的重定位不应解析为实际的函数/变量地址。否则，
-`.BTF` 和 `.BTF.ext` 将变得对 bcc 和内核不可用。
-
-类型 `R_BPF_64_32` 用于 call 指令。call 目标的节偏移存储在 `r_offset + 4`（32 位），并
-计算为 `(S + A) / 8 - 1`。
-
-## 示例
+渚嬪锛宍R_BPF_64_64` 閲嶅畾浣嶇被鍨嬬敤浜?`ld_imm64` 鎸囦护銆傚疄闄呭緟閲嶅畾浣嶇殑鏁版嵁锛? 鎴栬妭鍋忕Щ锛夊瓨鍌?鍦?`r_offset + 4`锛岃/鍐欐暟鎹綅瀹戒负 32锛? 瀛楄妭锛夈€傝閲嶅畾浣嶅彲浠ョ敤绗﹀彿鍊煎姞涓婇殣寮忓姞鏁版潵瑙ｆ瀽銆?娉ㄦ剰 `BitSize` 涓?32锛岃繖鎰忓懗鐫€鑺傚亸绉诲繀椤诲皬浜庢垨绛変簬 `UINT32_MAX`锛岃繖鐢?LLVM BPF 鍚庣寮哄埗
+鎵ц銆?
+鍦ㄥ彟涓€绉嶆儏鍐典笅锛宍R_BPF_64_ABS64` 閲嶅畾浣嶇被鍨嬬敤浜庢櫘閫氱殑 64 浣嶆暟鎹€傚疄闄呭緟閲嶅畾浣嶇殑鏁版嵁瀛樺偍
+鍦?`r_offset`锛岃/鍐欐暟鎹綅瀹戒负 64锛? 瀛楄妭锛夈€傝閲嶅畾浣嶅彲浠ョ敤绗﹀彿鍊煎姞涓婇殣寮忓姞鏁版潵瑙ｆ瀽銆?
+`R_BPF_64_ABS32` 鍜?`R_BPF_64_NODYLD32` 绫诲瀷閮界敤浜?32 浣嶆暟鎹€備絾 `R_BPF_64_NODYLD32`
+鐗规寚 `.BTF` 鍜?`.BTF.ext` 鑺備腑鐨勯噸瀹氫綅銆傚浜庡儚 bcc 杩欐牱娑夊強 llvm `ExecutionEngine
+RuntimeDyld` 鐨勬儏鍐碉紝`R_BPF_64_NODYLD32` 绫诲瀷鐨勯噸瀹氫綅涓嶅簲瑙ｆ瀽涓哄疄闄呯殑鍑芥暟/鍙橀噺鍦板潃銆傚惁鍒欙紝
+`.BTF` 鍜?`.BTF.ext` 灏嗗彉寰楀 bcc 鍜屽唴鏍镐笉鍙敤銆?
+绫诲瀷 `R_BPF_64_32` 鐢ㄤ簬 call 鎸囦护銆俢all 鐩爣鐨勮妭鍋忕Щ瀛樺偍鍦?`r_offset + 4`锛?2 浣嶏級锛屽苟
+璁＄畻涓?`(S + A) / 8 - 1`銆?
+## 绀轰緥
 
 
-类型 `R_BPF_64_64` 和 `R_BPF_64_32` 用于解析 `ld_imm64`
+绫诲瀷 `R_BPF_64_64` 鍜?`R_BPF_64_32` 鐢ㄤ簬瑙ｆ瀽 `ld_imm64`
 ```
 
   __attribute__((noinline)) __attribute__((section("sec1")))
@@ -144,7 +121,7 @@ RuntimeDyld` 的情况，`R_BPF_64_NODYLD32` 类型的重定位不应解析为�
   }
 
 ```
-使用 `clang --target=bpf -O2 -c test.c` 编译，我们将得到
+浣跨敤 `clang --target=bpf -O2 -c test.c` 缂栬瘧锛屾垜浠皢寰楀埌
 ```
 
   Disassembly of section .text:
@@ -179,29 +156,22 @@ RuntimeDyld` 的情况，`R_BPF_64_NODYLD32` 类型的重定位不应解析为�
          5:       95 00 00 00 00 00 00 00 exit
 
 ```
-第一个重定位对应于 `gfunc(a, b)`，其中 `gfunc` 的值为 0，因此 `call` 指令偏移为
-`(0 + 0)/8 - 1 = -1`。第二个重定位对应于 `lfunc(a, b)`，其中 `lfunc` 的节偏移为 `0x18`，
-因此 `call` 指令偏移为 `(0 + 0x18)/8 - 1 = 2`。第三个重定位对应于 `global` 的 ld_imm64，
-其节偏移为 `0`。
-```
+绗竴涓噸瀹氫綅瀵瑰簲浜?`gfunc(a, b)`锛屽叾涓?`gfunc` 鐨勫€间负 0锛屽洜姝?`call` 鎸囦护鍋忕Щ涓?`(0 + 0)/8 - 1 = -1`銆傜浜屼釜閲嶅畾浣嶅搴斾簬 `lfunc(a, b)`锛屽叾涓?`lfunc` 鐨勮妭鍋忕Щ涓?`0x18`锛?鍥犳 `call` 鎸囦护鍋忕Щ涓?`(0 + 0x18)/8 - 1 = 2`銆傜涓変釜閲嶅畾浣嶅搴斾簬 `global` 鐨?ld_imm64锛?鍏惰妭鍋忕Щ涓?`0`銆?```
 
   int global() { return 0; }
   struct t { void *g; } gbl = { global };
 
 ```
-使用 `clang --target=bpf -O2 -g -c test.c` 编译，我们将通过命令在 `.data` 节中看到如下
-重定位
-```
+浣跨敤 `clang --target=bpf -O2 -g -c test.c` 缂栬瘧锛屾垜浠皢閫氳繃鍛戒护鍦?`.data` 鑺備腑鐪嬪埌濡備笅
+閲嶅畾浣?```
 
   Relocation section '.rel.data' at offset 0x458 contains 1 entries:
       Offset             Info             Type               Symbol's Value  Symbol's Name
   0000000000000000  0000000700000002 R_BPF_64_ABS64         0000000000000000 global
 
 ```
-该重定位表示 `.data` 节的前 8 字节应填充为 `global` 变量的地址。
-
-通过 `llvm-readelf` 输出，我们可以看到 dwarf 节有一堆
-```
+璇ラ噸瀹氫綅琛ㄧず `.data` 鑺傜殑鍓?8 瀛楄妭搴斿～鍏呬负 `global` 鍙橀噺鐨勫湴鍧€銆?
+閫氳繃 `llvm-readelf` 杈撳嚭锛屾垜浠彲浠ョ湅鍒?dwarf 鑺傛湁涓€鍫?```
 
   Relocation section '.rel.debug_info' at offset 0x468 contains 13 entries:
       Offset             Info             Type               Symbol's Value  Symbol's Name
@@ -230,37 +200,23 @@ RuntimeDyld` 的情况，`R_BPF_64_NODYLD32` 类型的重定位不应解析为�
 
 ```
 
-## CO-RE 重定位
+## CO-RE 閲嶅畾浣?
 
+浠庣洰鏍囨枃浠剁殑瑙掑害鏉ョ湅锛孋O-RE 鏈哄埗鏄綔涓轰竴缁?CO-RE 鐗瑰畾鐨勯噸瀹氫綅璁板綍瀹炵幇鐨勩€傝繖浜涢噸瀹氫綅璁板綍
+涓?ELF 閲嶅畾浣嶆棤鍏筹紝骞剁紪鐮佸湪 .BTF.ext 鑺備腑銆傛湁鍏?.BTF.ext 缁撴瀯鐨勬洿澶氫俊鎭紝璇峰弬瑙?Documentation/bpf/btf.rst <BTF_Ext_Section>銆?
+CO-RE 閲嶅畾浣嶅簲鐢ㄤ簬 BPF 鎸囦护锛屼互鍦ㄥ姞杞芥椂鐢ㄤ笌鐩爣鍐呮牳鐩稿叧鐨勪俊鎭洿鏂版寚浠ょ殑绔嬪嵆鏁版垨鍋忕Щ瀛楁銆?
+瑕佹墦琛ヤ竵鐨勫瓧娈垫牴鎹寚浠ょ被閫夋嫨锛?
+- 瀵逛簬 BPF_ALU銆丅PF_ALU64銆丅PF_LD锛宍immediate` 瀛楁琚ˉ涓侊紱
+- 瀵逛簬 BPF_LDX銆丅PF_STX銆丅PF_ST锛宍offset` 瀛楁琚ˉ涓侊紱
+- BPF_JMP銆丅PF_JMP32 鎸囦护**涓嶅簲**琚ˉ涓併€?
+## 閲嶅畾浣嶇绫?
 
-从目标文件的角度来看，CO-RE 机制是作为一组 CO-RE 特定的重定位记录实现的。这些重定位记录
-与 ELF 重定位无关，并编码在 .BTF.ext 节中。有关 .BTF.ext 结构的更多信息，请参见
-Documentation/bpf/btf.rst <BTF_Ext_Section>。
+鏈夊嚑绉?CO-RE 閲嶅畾浣嶏紝鍙垎涓轰笁缁勶細
 
-CO-RE 重定位应用于 BPF 指令，以在加载时用与目标内核相关的信息更新指令的立即数或偏移字段。
-
-要打补丁的字段根据指令类选择：
-
-- 对于 BPF_ALU、BPF_ALU64、BPF_LD，`immediate` 字段被补丁；
-- 对于 BPF_LDX、BPF_STX、BPF_ST，`offset` 字段被补丁；
-- BPF_JMP、BPF_JMP32 指令**不应**被补丁。
-
-## 重定位种类
-
-
-有几种 CO-RE 重定位，可分为三组：
-
-- 基于字段 - 用与字段相关的信息补丁指令，例如将 BPF_LDX 指令的 offset 字段更改为反映
-  目标内核中特定结构体字段的偏移。
-
-- 基于类型 - 用与类型相关的信息补丁指令，例如将 BPF_ALU move 指令的 immediate 字段更改为
-  0 或 1，以反映目标内核中是否存在特定类型。
-
-- 基于枚举 - 用与枚举相关的信息补丁指令，例如将 BPF_LD_IMM64 指令的 immediate 字段更改为
-  反映目标内核中特定枚举字面量的值。
-
-重定位种类的完整列表由以下 enum 表示：
-
+- 鍩轰簬瀛楁 - 鐢ㄤ笌瀛楁鐩稿叧鐨勪俊鎭ˉ涓佹寚浠わ紝渚嬪灏?BPF_LDX 鎸囦护鐨?offset 瀛楁鏇存敼涓哄弽鏄?  鐩爣鍐呮牳涓壒瀹氱粨鏋勪綋瀛楁鐨勫亸绉汇€?
+- 鍩轰簬绫诲瀷 - 鐢ㄤ笌绫诲瀷鐩稿叧鐨勪俊鎭ˉ涓佹寚浠わ紝渚嬪灏?BPF_ALU move 鎸囦护鐨?immediate 瀛楁鏇存敼涓?  0 鎴?1锛屼互鍙嶆槧鐩爣鍐呮牳涓槸鍚﹀瓨鍦ㄧ壒瀹氱被鍨嬨€?
+- 鍩轰簬鏋氫妇 - 鐢ㄤ笌鏋氫妇鐩稿叧鐨勪俊鎭ˉ涓佹寚浠わ紝渚嬪灏?BPF_LD_IMM64 鎸囦护鐨?immediate 瀛楁鏇存敼涓?  鍙嶆槧鐩爣鍐呮牳涓壒瀹氭灇涓惧瓧闈㈤噺鐨勫€笺€?
+閲嶅畾浣嶇绫荤殑瀹屾暣鍒楄〃鐢变互涓?enum 琛ㄧず锛?
 enum bpf_core_relo_kind {
 	BPF_CORE_FIELD_BYTE_OFFSET = 0,  /** field byte offset **/
 	BPF_CORE_FIELD_BYTE_SIZE   = 1,  /** field size in bytes **/
@@ -277,10 +233,9 @@ enum bpf_core_relo_kind {
 	BPF_CORE_TYPE_MATCHES      = 12, /** type match in target kernel **/
  };
 
-注意：
-
-- `BPF_CORE_FIELD_LSHIFT_U64` 和 `BPF_CORE_FIELD_RSHIFT_U64` 应该用于使用以下算法读取
-  位域值：
+娉ㄦ剰锛?
+- `BPF_CORE_FIELD_LSHIFT_U64` 鍜?`BPF_CORE_FIELD_RSHIFT_U64` 搴旇鐢ㄤ簬浣跨敤浠ヤ笅绠楁硶璇诲彇
+  浣嶅煙鍊硷細
 
   .. code-block:: c
 
@@ -295,33 +250,21 @@ enum bpf_core_relo_kind {
      v <<= l
      v >>= r
 
-- `BPF_CORE_TYPE_MATCHES` 查询匹配关系，定义如下：
+- `BPF_CORE_TYPE_MATCHES` 鏌ヨ鍖归厤鍏崇郴锛屽畾涔夊涓嬶細
 
-  - 对于整数：类型和符号都匹配则类型匹配；
-  - 对于数组和指针：目标类型被递归匹配；
-  - 对于结构体和联合体：
+  - 瀵逛簬鏁存暟锛氱被鍨嬪拰绗﹀彿閮藉尮閰嶅垯绫诲瀷鍖归厤锛?  - 瀵逛簬鏁扮粍鍜屾寚閽堬細鐩爣绫诲瀷琚€掑綊鍖归厤锛?  - 瀵逛簬缁撴瀯浣撳拰鑱斿悎浣擄細
 
-    - 局部成员需要以相同名称存在于目标中；
+    - 灞€閮ㄦ垚鍛橀渶瑕佷互鐩稿悓鍚嶇О瀛樺湪浜庣洰鏍囦腑锛?
+    - 瀵逛簬姣忎釜鎴愬憳锛屾垜浠€掑綊妫€鏌ュ尮閰嶏紝闄ら潪瀹冨凡缁忓湪鎸囬拡涔嬪悗锛屽湪杩欑鎯呭喌涓嬫垜浠彧妫€鏌ュ尮閰?      鐨勫悕绉板拰鍏煎鐨?kind锛?
+  - 瀵逛簬鏋氫妇锛?
+    - 灞€閮ㄥ彉浣撳繀椤绘寜绗﹀彿鍚嶇О锛堣€岄潪鏁板€硷級鍦ㄧ洰鏍囦腑鏈夊尮閰嶏紱
 
-    - 对于每个成员，我们递归检查匹配，除非它已经在指针之后，在这种情况下我们只检查匹配
-      的名称和兼容的 kind；
+    - 澶у皬蹇呴』鍖归厤锛堜絾 enum 鍙互鍖归厤 enum64锛屽弽涔嬩害鐒讹級锛?
+  - 瀵逛簬鍑芥暟鎸囬拡锛?
+    - 灞€閮ㄧ被鍨嬩腑鍙傛暟鐨勬暟閲忓拰浣嶇疆蹇呴』鍖归厤鐩爣锛?    - 瀵逛簬姣忎釜鍙傛暟鍜岃繑鍥炲€硷紝鎴戜滑閫掑綊妫€鏌ュ尮閰嶃€?
+## CO-RE 閲嶅畾浣嶈褰?
 
-  - 对于枚举：
-
-    - 局部变体必须按符号名称（而非数值）在目标中有匹配；
-
-    - 大小必须匹配（但 enum 可以匹配 enum64，反之亦然）；
-
-  - 对于函数指针：
-
-    - 局部类型中参数的数量和位置必须匹配目标；
-    - 对于每个参数和返回值，我们递归检查匹配。
-
-## CO-RE 重定位记录
-
-
-重定位记录编码为以下结构：
-
+閲嶅畾浣嶈褰曠紪鐮佷负浠ヤ笅缁撴瀯锛?
 struct bpf_core_relo {
 	__u32 insn_off;
 	__u32 type_id;
@@ -329,16 +272,12 @@ struct bpf_core_relo {
 	enum bpf_core_relo_kind kind;
 };
 
-- `insn_off` - 与此重定位关联的代码节内的指令偏移（以字节为单位）；
+- `insn_off` - 涓庢閲嶅畾浣嶅叧鑱旂殑浠ｇ爜鑺傚唴鐨勬寚浠ゅ亸绉伙紙浠ュ瓧鑺備负鍗曚綅锛夛紱
 
-- `type_id` - 可重定位类型或字段的"根"（包含）实体的 BTF 类型 ID；
-
-- `access_str_off` - 对应 .BTF 字符串节内的偏移。字符串的解释取决于具体的重定位种类：
-
-  - 对于基于字段的重定位，字符串使用字段和数组索引的序列（以冒号（:）分隔）来编码被访问
-    的字段。它在概念上非常接近 LLVM 的 `getelementptr <GEP_>`_ 指令用于标识字段偏移的参数。
-    例如，考虑以下 C 代码：
-
+- `type_id` - 鍙噸瀹氫綅绫诲瀷鎴栧瓧娈电殑"鏍?锛堝寘鍚級瀹炰綋鐨?BTF 绫诲瀷 ID锛?
+- `access_str_off` - 瀵瑰簲 .BTF 瀛楃涓茶妭鍐呯殑鍋忕Щ銆傚瓧绗︿覆鐨勮В閲婂彇鍐充簬鍏蜂綋鐨勯噸瀹氫綅绉嶇被锛?
+  - 瀵逛簬鍩轰簬瀛楁鐨勯噸瀹氫綅锛屽瓧绗︿覆浣跨敤瀛楁鍜屾暟缁勭储寮曠殑搴忓垪锛堜互鍐掑彿锛?锛夊垎闅旓級鏉ョ紪鐮佽璁块棶
+    鐨勫瓧娈点€傚畠鍦ㄦ蹇典笂闈炲父鎺ヨ繎 LLVM 鐨?`getelementptr <GEP_>`_ 鎸囦护鐢ㄤ簬鏍囪瘑瀛楁鍋忕Щ鐨勫弬鏁般€?    渚嬪锛岃€冭檻浠ヤ笅 C 浠ｇ爜锛?
     .. code-block:: c
 
        struct sample {
@@ -348,36 +287,22 @@ struct bpf_core_relo {
        } __attribute__((preserve_access_index));
        struct sample *s;
 
-    - 对 `s[^0^].a` 的访问会被编码为 `0:0`：
+    - 瀵?`s[^0^].a` 鐨勮闂細琚紪鐮佷负 `0:0`锛?
+      - `0`锛歚s` 鐨勭涓€涓厓绱狅紙濡傚悓 `s` 鏄竴涓暟缁勶級锛?      - `0`锛歚struct sample` 涓瓧娈?`a` 鐨勭储寮曘€?
+    - 瀵?`s->a` 鐨勮闂篃浼氳缂栫爜涓?`0:0`銆?    - 瀵?`s->b` 鐨勮闂細琚紪鐮佷负 `0:1`锛?
+      - `0`锛歚s` 鐨勭涓€涓厓绱狅紱
+      - `1`锛歚struct sample` 涓瓧娈?`b` 鐨勭储寮曘€?
+    - 瀵?`s[^1^].c[^5^]` 鐨勮闂細琚紪鐮佷负 `1:2:0:5`锛?
+      - `1`锛歚s` 鐨勭浜屼釜鍏冪礌锛?      - `2`锛歚struct sample` 涓尶鍚嶇粨鏋勪綋瀛楁鐨勭储寮曪紱
+      - `0`锛氬尶鍚嶇粨鏋勪綋涓瓧娈?`c` 鐨勭储寮曪紱
+      - `5`锛氳闂暟缁勫厓绱?#5銆?
+  - 瀵逛簬鍩轰簬绫诲瀷鐨勯噸瀹氫綅锛屽瓧绗︿覆搴斾负 "0"锛?
+  - 瀵逛簬鍩轰簬鏋氫妇鍊肩殑閲嶅畾浣嶏紝瀛楃涓插寘鍚叾鏋氫妇绫诲瀷鍐呮灇涓惧€肩殑绱㈠紩锛?
+- `kind` - `enum bpf_core_relo_kind` 涔嬩竴銆?
 
-      - `0`：`s` 的第一个元素（如同 `s` 是一个数组）；
-      - `0`：`struct sample` 中字段 `a` 的索引。
+## CO-RE 閲嶅畾浣嶇ず渚?
 
-    - 对 `s->a` 的访问也会被编码为 `0:0`。
-    - 对 `s->b` 的访问会被编码为 `0:1`：
-
-      - `0`：`s` 的第一个元素；
-      - `1`：`struct sample` 中字段 `b` 的索引。
-
-    - 对 `s[^1^].c[^5^]` 的访问会被编码为 `1:2:0:5`：
-
-      - `1`：`s` 的第二个元素；
-      - `2`：`struct sample` 中匿名结构体字段的索引；
-      - `0`：匿名结构体中字段 `c` 的索引；
-      - `5`：访问数组元素 #5。
-
-  - 对于基于类型的重定位，字符串应为 "0"；
-
-  - 对于基于枚举值的重定位，字符串包含其枚举类型内枚举值的索引；
-
-- `kind` - `enum bpf_core_relo_kind` 之一。
-
-
-## CO-RE 重定位示例
-
-
-对于以下 C 代码：
-
+瀵逛簬浠ヤ笅 C 浠ｇ爜锛?
 struct foo {
    int a;
    int b;
@@ -386,8 +311,7 @@ struct foo {
 
  enum bar { U, V };
 
-使用以下 BTF 定义：
-
+浣跨敤浠ヤ笅 BTF 瀹氫箟锛?
 ...
 [^2^] STRUCT 'foo' size=8 vlen=2
         'a' type_id=3 bits_offset=0
@@ -400,7 +324,7 @@ struct foo {
         'U' val=0
         'V' val=1
 
-当使用 `__attribute__((preserve_access_index))` 时，字段偏移重定位会自动生成，例如：
+褰撲娇鐢?`__attribute__((preserve_access_index))` 鏃讹紝瀛楁鍋忕Щ閲嶅畾浣嶄細鑷姩鐢熸垚锛屼緥濡傦細
 
   void alpha(struct foo **s, volatile unsigned long **g) {
     *g = s->a;
@@ -416,7 +340,7 @@ struct foo {
     3:  exit
 
 
-所有重定位种类都可以通过内置函数请求。例如基于字段的重定位：
+鎵€鏈夐噸瀹氫綅绉嶇被閮藉彲浠ラ€氳繃鍐呯疆鍑芥暟璇锋眰銆備緥濡傚熀浜庡瓧娈电殑閲嶅畾浣嶏細
 
   void bravo(struct foo **s, volatile unsigned long **g) {
     **g = __builtin_preserve_field_info(s->b, 0 /** field byte offset */);
@@ -449,8 +373,7 @@ struct foo {
     16:     exit
 
 
-基于类型的重定位：
-
+鍩轰簬绫诲瀷鐨勯噸瀹氫綅锛?
   void charlie(struct foo **s, volatile unsigned long **g) {
     **g = __builtin_preserve_type_info(**s, 0 /** type existence **/);
     **g = __builtin_preserve_type_info(**s, 1 /** type size **/);
@@ -477,8 +400,7 @@ struct foo {
     28:     **(u64 **)(r2 + 0x0) = r1
     29:     exit
 
-基于枚举的重定位：
-
+鍩轰簬鏋氫妇鐨勯噸瀹氫綅锛?
   void delta(struct foo **s, volatile unsigned long **g) {
     **g = __builtin_preserve_enum_value(**(enum bar **)U, 0 /** enum literal existence */);
     **g = __builtin_preserve_enum_value(**(enum bar **)V, 1 /** enum literal value */);

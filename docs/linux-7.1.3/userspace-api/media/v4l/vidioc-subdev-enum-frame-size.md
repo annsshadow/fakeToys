@@ -1,54 +1,37 @@
-
+﻿
 ######## ioctl VIDIOC_SUBDEV_ENUM_FRAME_SIZE
 
 
-## 名称
+## 鍚嶇О
 
 
-VIDIOC_SUBDEV_ENUM_FRAME_SIZE - 枚举媒体总线帧尺寸
-
-## 语法
+VIDIOC_SUBDEV_ENUM_FRAME_SIZE - 鏋氫妇濯掍綋鎬荤嚎甯у昂瀵?
+## 璇硶
 
 
 `int ioctl(int fd, VIDIOC_SUBDEV_ENUM_FRAME_SIZE, struct v4l2_subdev_frame_size_enum * argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
-
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `argp`
-    指向 struct `v4l2_subdev_frame_size_enum` 的指针。
+    鎸囧悜 struct `v4l2_subdev_frame_size_enum` 鐨勬寚閽堛€?
+## 鎻忚堪
 
-## 描述
 
-
-该 ioctl 允许应用程序访问子设备为指定 pad、指定媒体总线格式所支持的帧尺寸枚举。
-
-支持的格式可通过 VIDIOC_SUBDEV_ENUM_MBUS_CODE ioctl 获取。
-
-枚举由驱动定义，并使用 struct `v4l2_subdev_frame_size_enum` 的 `index` 字段进行索引。
-每一对 `pad` 与 `code` 对应一个独立的枚举。每个枚举从 `index` 为 0 开始，最小的
-无效 index 标志着枚举的结束。
-
-因此，要枚举指定 pad 上、使用指定 mbus 格式所允许的帧尺寸，需将 `pad`、`which` 与
-`code` 字段初始化为期望值，并将 `index` 置为 0。然后以指向该结构的指针调用
-VIDIOC_SUBDEV_ENUM_FRAME_SIZE ioctl。
-
-成功的调用会返回填充好的最小与最大帧尺寸。递增 `index` 重复调用，直到收到 `EINVAL`。
-`EINVAL` 表示枚举中已无更多条目，或某个输入参数无效。
-
-只支持离散帧尺寸的子设备（例如大多数传感器）会返回一个或多个最小与最大值相同的帧尺寸。
-
-在给定 [minimum, maximum] 范围内并非所有可能的尺寸都受支持。例如，使用定点缩放比例的
-缩放器可能无法生成最小与最大值之间的每一个帧尺寸。应用程序必须使用
-VIDIOC_SUBDEV_S_FMT <VIDIOC_SUBDEV_G_FMT> ioctl 来向子设备请求一个确切受支持的
-帧尺寸。
-
-可用的帧尺寸可能取决于子设备其他 pad 上当前的 'try' 格式、当前的活跃链路以及当前
-V4L2 控件的值。关于 try 格式的更多信息，请参见 VIDIOC_SUBDEV_G_FMT。
-
+璇?ioctl 鍏佽搴旂敤绋嬪簭璁块棶瀛愯澶囦负鎸囧畾 pad銆佹寚瀹氬獟浣撴€荤嚎鏍煎紡鎵€鏀寔鐨勫抚灏哄鏋氫妇銆?
+鏀寔鐨勬牸寮忓彲閫氳繃 VIDIOC_SUBDEV_ENUM_MBUS_CODE ioctl 鑾峰彇銆?
+鏋氫妇鐢遍┍鍔ㄥ畾涔夛紝骞朵娇鐢?struct `v4l2_subdev_frame_size_enum` 鐨?`index` 瀛楁杩涜绱㈠紩銆?姣忎竴瀵?`pad` 涓?`code` 瀵瑰簲涓€涓嫭绔嬬殑鏋氫妇銆傛瘡涓灇涓句粠 `index` 涓?0 寮€濮嬶紝鏈€灏忕殑
+鏃犳晥 index 鏍囧織鐫€鏋氫妇鐨勭粨鏉熴€?
+鍥犳锛岃鏋氫妇鎸囧畾 pad 涓娿€佷娇鐢ㄦ寚瀹?mbus 鏍煎紡鎵€鍏佽鐨勫抚灏哄锛岄渶灏?`pad`銆乣which` 涓?`code` 瀛楁鍒濆鍖栦负鏈熸湜鍊硷紝骞跺皢 `index` 缃负 0銆傜劧鍚庝互鎸囧悜璇ョ粨鏋勭殑鎸囬拡璋冪敤
+VIDIOC_SUBDEV_ENUM_FRAME_SIZE ioctl銆?
+鎴愬姛鐨勮皟鐢ㄤ細杩斿洖濉厖濂界殑鏈€灏忎笌鏈€澶у抚灏哄銆傞€掑 `index` 閲嶅璋冪敤锛岀洿鍒版敹鍒?`EINVAL`銆?`EINVAL` 琛ㄧず鏋氫妇涓凡鏃犳洿澶氭潯鐩紝鎴栨煇涓緭鍏ュ弬鏁版棤鏁堛€?
+鍙敮鎸佺鏁ｅ抚灏哄鐨勫瓙璁惧锛堜緥濡傚ぇ澶氭暟浼犳劅鍣級浼氳繑鍥炰竴涓垨澶氫釜鏈€灏忎笌鏈€澶у€肩浉鍚岀殑甯у昂瀵搞€?
+鍦ㄧ粰瀹?[minimum, maximum] 鑼冨洿鍐呭苟闈炴墍鏈夊彲鑳界殑灏哄閮藉彈鏀寔銆備緥濡傦紝浣跨敤瀹氱偣缂╂斁姣斾緥鐨?缂╂斁鍣ㄥ彲鑳芥棤娉曠敓鎴愭渶灏忎笌鏈€澶у€间箣闂寸殑姣忎竴涓抚灏哄銆傚簲鐢ㄧ▼搴忓繀椤讳娇鐢?VIDIOC_SUBDEV_S_FMT <VIDIOC_SUBDEV_G_FMT> ioctl 鏉ュ悜瀛愯澶囪姹備竴涓‘鍒囧彈鏀寔鐨?甯у昂瀵搞€?
+鍙敤鐨勫抚灏哄鍙兘鍙栧喅浜庡瓙璁惧鍏朵粬 pad 涓婂綋鍓嶇殑 'try' 鏍煎紡銆佸綋鍓嶇殑娲昏穬閾捐矾浠ュ強褰撳墠
+V4L2 鎺т欢鐨勫€笺€傚叧浜?try 鏍煎紡鐨勬洿澶氫俊鎭紝璇峰弬瑙?VIDIOC_SUBDEV_G_FMT銆?
 
 
     :header-rows:  0
@@ -57,41 +40,29 @@ V4L2 控件的值。关于 try 格式的更多信息，请参见 VIDIOC_SUBDEV_G
 
     - - __u32
       - `index`
-      - 枚举中属于给定 pad 与格式的帧尺寸索引。由应用程序填充。
-    - - __u32
+      - 鏋氫妇涓睘浜庣粰瀹?pad 涓庢牸寮忕殑甯у昂瀵哥储寮曘€傜敱搴旂敤绋嬪簭濉厖銆?    - - __u32
       - `pad`
-      - 由媒体控制器 API 报告的 pad 编号。由应用程序填充。
-    - - __u32
+      - 鐢卞獟浣撴帶鍒跺櫒 API 鎶ュ憡鐨?pad 缂栧彿銆傜敱搴旂敤绋嬪簭濉厖銆?    - - __u32
       - `code`
-      - 媒体总线格式码，定义于 v4l2-mbus-format。由应用程序填充。
-    - - __u32
+      - 濯掍綋鎬荤嚎鏍煎紡鐮侊紝瀹氫箟浜?v4l2-mbus-format銆傜敱搴旂敤绋嬪簭濉厖銆?    - - __u32
       - `min_width`
-      - 最小帧宽，单位像素。由驱动填充。
-    - - __u32
+      - 鏈€灏忓抚瀹斤紝鍗曚綅鍍忕礌銆傜敱椹卞姩濉厖銆?    - - __u32
       - `max_width`
-      - 最大帧宽，单位像素。由驱动填充。
-    - - __u32
+      - 鏈€澶у抚瀹斤紝鍗曚綅鍍忕礌銆傜敱椹卞姩濉厖銆?    - - __u32
       - `min_height`
-      - 最小帧高，单位像素。由驱动填充。
-    - - __u32
+      - 鏈€灏忓抚楂橈紝鍗曚綅鍍忕礌銆傜敱椹卞姩濉厖銆?    - - __u32
       - `max_height`
-      - 最大帧高，单位像素。由驱动填充。
-    - - __u32
+      - 鏈€澶у抚楂橈紝鍗曚綅鍍忕礌銆傜敱椹卞姩濉厖銆?    - - __u32
       - `which`
-      - 要枚举的帧尺寸，来自枚举 v4l2_subdev_format_whence <v4l2-subdev-format-whence>。
-    - - __u32
+      - 瑕佹灇涓剧殑甯у昂瀵革紝鏉ヨ嚜鏋氫妇 v4l2_subdev_format_whence <v4l2-subdev-format-whence>銆?    - - __u32
       - `stream`
-      - 流标识符。
-    - - __u32
+      - 娴佹爣璇嗙銆?    - - __u32
       - `reserved`\ [^7^]
-      - 为将来扩展保留。应用程序与驱动都必须将数组置零。
+      - 涓哄皢鏉ユ墿灞曚繚鐣欍€傚簲鐢ㄧ▼搴忎笌椹卞姩閮藉繀椤诲皢鏁扮粍缃浂銆?
+## 杩斿洖鍊?
 
-## 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 章节中描述。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
 EINVAL
-    struct `v4l2_subdev_frame_size_enum` 的 `pad` 引用了一个不存在的 pad，`which`
-    字段的值不受支持，`code` 对给定 pad 无效，或 `index` 字段越界。
+    struct `v4l2_subdev_frame_size_enum` 鐨?`pad` 寮曠敤浜嗕竴涓笉瀛樺湪鐨?pad锛宍which`
+    瀛楁鐨勫€间笉鍙楁敮鎸侊紝`code` 瀵圭粰瀹?pad 鏃犳晥锛屾垨 `index` 瀛楁瓒婄晫銆?

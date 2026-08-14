@@ -1,10 +1,10 @@
+﻿
+## 濡備綍缂栧啓鍐呮牳鏂囨。
 
-## 如何编写内核文档
 
-
-- [Sphinx 框架](sphinx)
-- [kernel-doc 工具](kernel-doc)
-- [头文件解析](parse-headers)
-- [贡献指南](contributing)
-- [维护者配置](maintainer-profile)
-- [翻译更新检查](checktransupdate)
+- [Sphinx 妗嗘灦](sphinx)
+- [kernel-doc 宸ュ叿](kernel-doc)
+- [澶存枃浠惰В鏋怾(parse-headers)
+- [璐＄尞鎸囧崡](contributing)
+- [缁存姢鑰呴厤缃甝(maintainer-profile)
+- [缈昏瘧鏇存柊妫€鏌(checktransupdate)

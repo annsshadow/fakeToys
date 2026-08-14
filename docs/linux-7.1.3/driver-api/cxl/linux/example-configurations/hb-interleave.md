@@ -1,16 +1,10 @@
-
-## 主机桥间交错（Inter-Host-Bridge Interleave）
-
-这份 cxl-cli 配置转储展示了如下的主机配置：
-
-- 一个单路（single socket）系统，带有一个 CXL root
-- CXL Root 有四个（4）CXL Host Bridge（主机桥）
-- 其中两个 CXL Host Bridge 各挂载了一个 CXL Memory Expander（内存扩展器）
-- 该 CXL root 被配置为在两个主机桥之间进行交错（interleave）
-
-该输出由 `cxl list -v` 生成，描述了在 `/sys/bus/cxl/devices/` 中暴露的各对象之间的
-关系。
-
+﻿
+## 涓绘満妗ラ棿浜ら敊锛圛nter-Host-Bridge Interleave锛?
+杩欎唤 cxl-cli 閰嶇疆杞偍灞曠ず浜嗗涓嬬殑涓绘満閰嶇疆锛?
+- 涓€涓崟璺紙single socket锛夌郴缁燂紝甯︽湁涓€涓?CXL root
+- CXL Root 鏈夊洓涓紙4锛塁XL Host Bridge锛堜富鏈烘ˉ锛?- 鍏朵腑涓や釜 CXL Host Bridge 鍚勬寕杞戒簡涓€涓?CXL Memory Expander锛堝唴瀛樻墿灞曞櫒锛?- 璇?CXL root 琚厤缃负鍦ㄤ袱涓富鏈烘ˉ涔嬮棿杩涜浜ら敊锛坕nterleave锛?
+璇ヨ緭鍑虹敱 `cxl list -v` 鐢熸垚锛屾弿杩颁簡鍦?`/sys/bus/cxl/devices/` 涓毚闇茬殑鍚勫璞′箣闂寸殑
+鍏崇郴銆?
 ```
 
   [
@@ -42,13 +36,10 @@
         ],
 
 ```
-这段展示了 CXL “bus”（root0）有 4 个连接到 CXL Host Bridge 的下游端口（downstream port）。
-`Root` 可以看作连接到平台内存控制器（memory controller）的单一上游端口（upstream port）——它
-将内存请求路由到自身。
-
-`ports:root0` 部分说明了这些下游端口各自是如何配置的。如果一个端口未被配置（id 为 0 和 1），
-则会被省略。
-
+杩欐灞曠ず浜?CXL 鈥渂us鈥濓紙root0锛夋湁 4 涓繛鎺ュ埌 CXL Host Bridge 鐨勪笅娓哥鍙ｏ紙downstream port锛夈€?`Root` 鍙互鐪嬩綔杩炴帴鍒板钩鍙板唴瀛樻帶鍒跺櫒锛坢emory controller锛夌殑鍗曚竴涓婃父绔彛锛坲pstream port锛夆€斺€斿畠
+灏嗗唴瀛樿姹傝矾鐢卞埌鑷韩銆?
+`ports:root0` 閮ㄥ垎璇存槑浜嗚繖浜涗笅娓哥鍙ｅ悇鑷槸濡備綍閰嶇疆鐨勩€傚鏋滀竴涓鍙ｆ湭琚厤缃紙id 涓?0 鍜?1锛夛紝
+鍒欎細琚渷鐣ャ€?
 ```
 
         "ports:root0":[
@@ -76,8 +67,8 @@
                 ],
 
 ```
-这段展示了与 CXL Host Bridge `port1` 关联的可用下游端口。在本例中，`port1` 有 3 个可用的
-下游端口：`dport1`、`dport2` 与 `dport113`..
+杩欐灞曠ず浜嗕笌 CXL Host Bridge `port1` 鍏宠仈鐨勫彲鐢ㄤ笅娓哥鍙ｃ€傚湪鏈緥涓紝`port1` 鏈?3 涓彲鐢ㄧ殑
+涓嬫父绔彛锛歚dport1`銆乣dport2` 涓?`dport113`..
 
 ```
 
@@ -111,11 +102,9 @@
                 ],
 
 ```
-这段展示了连接到主机桥 `port1` 的端点（endpoint）。
-
-`endpoint5` 包含一个已配置的 decoder `decoder5.0`，其交错配置与 `region0`（稍后展示）相同。
-
-接下来是归属于主机桥的 decoder（解码器）：
+杩欐灞曠ず浜嗚繛鎺ュ埌涓绘満妗?`port1` 鐨勭鐐癸紙endpoint锛夈€?
+`endpoint5` 鍖呭惈涓€涓凡閰嶇疆鐨?decoder `decoder5.0`锛屽叾浜ら敊閰嶇疆涓?`region0`锛堢◢鍚庡睍绀猴級鐩稿悓銆?
+鎺ヤ笅鏉ユ槸褰掑睘浜庝富鏈烘ˉ鐨?decoder锛堣В鐮佸櫒锛夛細
 
 ```
 
@@ -140,10 +129,8 @@
             },
 
 ```
-主机桥 `port1` 有一个 decoder（`decoder1.0`），其唯一目标是 `dport1`——它连接到 `endpoint5`。
-
-接下来的一段展示了主机桥 `port3` 的类似配置，即第二个挂载了内存设备的主机桥。
-
+涓绘満妗?`port1` 鏈変竴涓?decoder锛坄decoder1.0`锛夛紝鍏跺敮涓€鐩爣鏄?`dport1`鈥斺€斿畠杩炴帴鍒?`endpoint5`銆?
+鎺ヤ笅鏉ョ殑涓€娈靛睍绀轰簡涓绘満妗?`port3` 鐨勭被浼奸厤缃紝鍗崇浜屼釜鎸傝浇浜嗗唴瀛樿澶囩殑涓绘満妗ャ€?
 ```
 
             {
@@ -208,8 +195,7 @@
 
 
 ```
-下一段展示了两个没有连接端点的 CXL 主机桥。
-
+涓嬩竴娈靛睍绀轰簡涓や釜娌℃湁杩炴帴绔偣鐨?CXL 涓绘満妗ャ€?
 ```
 
             {
@@ -246,11 +232,8 @@
         ],
 
 ```
-接下来是归属于 `root0` 的 `Root Decoders`（根解码器）。这个根解码器在下游端口 `port1` 与
-`port3` 之间应用交错——粒度为 256 字节。
-
-这些信息由 CXL 驱动读取 ACPI CEDT CFMWS 生成。
-
+鎺ヤ笅鏉ユ槸褰掑睘浜?`root0` 鐨?`Root Decoders`锛堟牴瑙ｇ爜鍣級銆傝繖涓牴瑙ｇ爜鍣ㄥ湪涓嬫父绔彛 `port1` 涓?`port3` 涔嬮棿搴旂敤浜ら敊鈥斺€旂矑搴︿负 256 瀛楄妭銆?
+杩欎簺淇℃伅鐢?CXL 椹卞姩璇诲彇 ACPI CEDT CFMWS 鐢熸垚銆?
 ```
 
         "decoders:root0":[
@@ -279,9 +262,7 @@
                 ],
 
 ```
-最后是关联到 `Root Decoder` `decoder0.0` 的 `Memory Region`（内存区域）。该区域描述了整个
-交错集合（interleave set）的总体交错配置。
-
+鏈€鍚庢槸鍏宠仈鍒?`Root Decoder` `decoder0.0` 鐨?`Memory Region`锛堝唴瀛樺尯鍩燂級銆傝鍖哄煙鎻忚堪浜嗘暣涓?浜ら敊闆嗗悎锛坕nterleave set锛夌殑鎬讳綋浜ら敊閰嶇疆銆?
 ```
 
                 "regions:decoder0.0":[

@@ -1,13 +1,13 @@
-## struct taskstats 结构体
+﻿## struct taskstats 缁撴瀯浣?
 
 
-本文档解释了 struct taskstats 的各字段。
+鏈枃妗ｈВ閲婁簡 struct taskstats 鐨勫悇瀛楁銆?
 
-struct taskstats 中的字段分为三组不同的类别：
+struct taskstats 涓殑瀛楁鍒嗕负涓夌粍涓嶅悓鐨勭被鍒細
 
-1) 通用与基础统计字段
-    若设置了 CONFIG_TASKSTATS，则 taskstats 接口被启用，并且通用字段和基础统计字段会在任务的 do_exit() 时被收集并传递。
-2) 延迟统计字段
+1) 閫氱敤涓庡熀纭€缁熻瀛楁
+    鑻ヨ缃簡 CONFIG_TASKSTATS锛屽垯 taskstats 鎺ュ彛琚惎鐢紝骞朵笖閫氱敤瀛楁鍜屽熀纭€缁熻瀛楁浼氬湪浠诲姟鐨?do_exit() 鏃惰鏀堕泦骞朵紶閫掋€?
+2) 寤惰繜缁熻瀛楁
 ```
 
 	/* Delay accounting fields start */
@@ -18,7 +18,7 @@ struct taskstats 中的字段分为三组不同的类别：
 
     Their values are collected if CONFIG_TASK_DELAY_ACCT is set.
 ```
-3) 扩展统计字段
+3) 鎵╁睍缁熻瀛楁
 ```
 
 	/* Extended accounting fields start */
@@ -30,13 +30,13 @@ struct taskstats 中的字段分为三组不同的类别：
     Their values are collected if CONFIG_TASK_XACCT is set.
 
 ```
-4) 每任务与每线程的上下文切换次数统计
+4) 姣忎换鍔′笌姣忕嚎绋嬬殑涓婁笅鏂囧垏鎹㈡鏁扮粺璁?
 
-5) SMT 机器的计时统计
+5) SMT 鏈哄櫒鐨勮鏃剁粺璁?
 
-6) 用于内存回收的扩展延迟统计字段
+6) 鐢ㄤ簬鍐呭瓨鍥炴敹鐨勬墿灞曞欢杩熺粺璁″瓧娈?
 
-未来的扩展应当把字段添加到 taskstats 结构体的末尾，并且不应改变结构体内每个字段的相对位置。
+鏈潵鐨勬墿灞曞簲褰撴妸瀛楁娣诲姞鍒?taskstats 缁撴瀯浣撶殑鏈熬锛屽苟涓斾笉搴旀敼鍙樼粨鏋勪綋鍐呮瘡涓瓧娈电殑鐩稿浣嶇疆銆?
 
 ```
 

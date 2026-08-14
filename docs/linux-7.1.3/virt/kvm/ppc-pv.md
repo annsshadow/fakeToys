@@ -1,115 +1,115 @@
-
-## PPC KVM 半虚拟化（paravirtual）接口
-
-
-KVM on PowerPC 的基本运行原理是：内核态代码以 PR=1（用户态）方式运行于客户机中。特权指令由此以相应的方式陷入（trap）并被模拟。
-
-但不幸的是，这也有其缺陷。相当一部分特权指令即便本可以不同方式处理，也会不必要地返回到我们的 hypervisor。
-
-PPC PV 接口正是用于解决这一问题。它将特权指令转换为非特权指令来辅助 hypervisor，从而将虚拟化开销在我的基准测试中降低了约 50%。
-
-该接口的代码位于 `arch/powerpc/kernel/kvm*`。
+﻿
+## PPC KVM 鍗婅櫄鎷熷寲锛坧aravirtual锛夋帴鍙?
 
 
-## 查询存在性（Querying existence）
+KVM on PowerPC 鐨勫熀鏈繍琛屽師鐞嗘槸锛氬唴鏍告€佷唬鐮佷互 PR=1锛堢敤鎴锋€侊級鏂瑰紡杩愯浜庡鎴锋満涓€傜壒鏉冩寚浠ょ敱姝や互鐩稿簲鐨勬柟寮忛櫡鍏ワ紙trap锛夊苟琚ā鎷熴€?
 
-要判断自己是否运行于 KVM 之上，可利用设备树（device tree）。在运行于 KVM 的 Linux 中，会存在 `/hypervisor` 节点。该节点包含一个值为 "linux,kvm" 的 `compatible` 属性。
+浣嗕笉骞哥殑鏄紝杩欎篃鏈夊叾缂洪櫡銆傜浉褰撲竴閮ㄥ垎鐗规潈鎸囦护鍗充究鏈彲浠ヤ笉鍚屾柟寮忓鐞嗭紝涔熶細涓嶅繀瑕佸湴杩斿洖鍒版垜浠殑 hypervisor銆?
 
-一旦确定自己运行于支持 PV 的 KVM 之上，即可使用下文描述的 hypercall。
+PPC PV 鎺ュ彛姝ｆ槸鐢ㄤ簬瑙ｅ喅杩欎竴闂銆傚畠灏嗙壒鏉冩寚浠よ浆鎹负闈炵壒鏉冩寚浠ゆ潵杈呭姪 hypervisor锛屼粠鑰屽皢铏氭嫙鍖栧紑閿€鍦ㄦ垜鐨勫熀鍑嗘祴璇曚腑闄嶄綆浜嗙害 50%銆?
+
+璇ユ帴鍙ｇ殑浠ｇ爜浣嶄簬 `arch/powerpc/kernel/kvm*`銆?
+
+
+## 鏌ヨ瀛樺湪鎬э紙Querying existence锛?
+
+瑕佸垽鏂嚜宸辨槸鍚﹁繍琛屼簬 KVM 涔嬩笂锛屽彲鍒╃敤璁惧鏍戯紙device tree锛夈€傚湪杩愯浜?KVM 鐨?Linux 涓紝浼氬瓨鍦?`/hypervisor` 鑺傜偣銆傝鑺傜偣鍖呭惈涓€涓€间负 "linux,kvm" 鐨?`compatible` 灞炴€с€?
+
+涓€鏃︾‘瀹氳嚜宸辫繍琛屼簬鏀寔 PV 鐨?KVM 涔嬩笂锛屽嵆鍙娇鐢ㄤ笅鏂囨弿杩扮殑 hypercall銆?
 
 
 ## KVM hypercalls
 
-在设备树的 `/hypervisor` 节点中，有一个名为 `hypercall-instructions` 的属性。该属性包含构成一次 hypercall 的最多 4 条 opcode。要发起 hypercall，只需执行这些指令即可。
+鍦ㄨ澶囨爲鐨?`/hypervisor` 鑺傜偣涓紝鏈変竴涓悕涓?`hypercall-instructions` 鐨勫睘鎬с€傝灞炴€у寘鍚瀯鎴愪竴娆?hypercall 鐨勬渶澶?4 鏉?opcode銆傝鍙戣捣 hypercall锛屽彧闇€鎵ц杩欎簺鎸囦护鍗冲彲銆?
 
-参数约定如下：
+鍙傛暟绾﹀畾濡備笅锛?
 
 ========	================	================
-寄存器	IN OUT
+瀵勫瓨鍣?IN OUT
 ========	================	================
 r0 - volatile
-r3 1st 参数 返回 code
-r4 2nd 参数 1st output 值
-r5 3rd 参数 2nd output 值
-r6 4th 参数 3rd output 值
-r7 5th 参数 4th output 值
-r8 6th 参数 5th output 值
-r9 7th 参数 6th output 值
-r10 8th 参数 7th output 值
-r11 hypercall 编号	8th output 值
+r3 1st 鍙傛暟 杩斿洖 code
+r4 2nd 鍙傛暟 1st output 鍊?
+r5 3rd 鍙傛暟 2nd output 鍊?
+r6 4th 鍙傛暟 3rd output 鍊?
+r7 5th 鍙傛暟 4th output 鍊?
+r8 6th 鍙傛暟 5th output 鍊?
+r9 7th 鍙傛暟 6th output 鍊?
+r10 8th 鍙傛暟 7th output 鍊?
+r11 hypercall 缂栧彿	8th output 鍊?
 r12 - volatile
 ========	================	================
 
-hypercall 的定义在通用代码中共享，x86 与 powerpc 使用相同的 hypercall 编号；异常情况是，KVM hypercall 需要与 KVM vendor code（42 << 16）做按位或。
+hypercall 鐨勫畾涔夊湪閫氱敤浠ｇ爜涓叡浜紝x86 涓?powerpc 浣跨敤鐩稿悓鐨?hypercall 缂栧彿锛涘紓甯告儏鍐垫槸锛孠VM hypercall 闇€瑕佷笌 KVM vendor code锛?2 << 16锛夊仛鎸変綅鎴栥€?
 
-返回码约定如下：
+杩斿洖鐮佺害瀹氬涓嬶細
 
 ==== =========================
 Code Meaning
 ==== =========================
 0 Success
 12 Hypercall implemented
-<0 错误
+<0 閿欒
 ==== =========================
 
 
-## magic 页
+## magic 椤?
 
-为启用 guest 与 hypervisor 之间的通信，引入了一页新的共享内存，其中包含部分仅 supervisor 可见的寄存器状态。guest 可通过 KVM hypercall `KVM_HC_PPC_MAP_MAGIC_PAGE` 映射该共享页。
+涓哄惎鐢?guest 涓?hypervisor 涔嬮棿鐨勯€氫俊锛屽紩鍏ヤ簡涓€椤垫柊鐨勫叡浜唴瀛橈紝鍏朵腑鍖呭惈閮ㄥ垎浠?supervisor 鍙鐨勫瘎瀛樺櫒鐘舵€併€俫uest 鍙€氳繃 KVM hypercall `KVM_HC_PPC_MAP_MAGIC_PAGE` 鏄犲皠璇ュ叡浜〉銆?
 
-该 hypercall 由 guest 发起后，总是会把 magic 页映射到期望的位置。第一个参数表示启用 MMU 时的有效地址（effective address）；第二个参数表示实模式（real mode）下的地址，适用于相应目标。目前，magic 页总是映射到 -4096 处。这样便可使用绝对加载/存储函数来访问。例如：
+璇?hypercall 鐢?guest 鍙戣捣鍚庯紝鎬绘槸浼氭妸 magic 椤垫槧灏勫埌鏈熸湜鐨勪綅缃€傜涓€涓弬鏁拌〃绀哄惎鐢?MMU 鏃剁殑鏈夋晥鍦板潃锛坋ffective address锛夛紱绗簩涓弬鏁拌〃绀哄疄妯″紡锛坮eal mode锛変笅鐨勫湴鍧€锛岄€傜敤浜庣浉搴旂洰鏍囥€傜洰鍓嶏紝magic 椤垫€绘槸鏄犲皠鍒?-4096 澶勩€傝繖鏍蜂究鍙娇鐢ㄧ粷瀵瑰姞杞?瀛樺偍鍑芥暟鏉ヨ闂€備緥濡傦細
 
 ```
 	ld	rX, -4096(0)
 ```
 
-该接口被设计为可扩展的，以便日后向 magic 页添加更多寄存器。向 magic 页添加字段时，应定义新的 hypercall 特性位来指示 host 提供了更多寄存器。若 host 支持该附加特性，即可加以利用。
+璇ユ帴鍙ｈ璁捐涓哄彲鎵╁睍鐨勶紝浠ヤ究鏃ュ悗鍚?magic 椤垫坊鍔犳洿澶氬瘎瀛樺櫒銆傚悜 magic 椤垫坊鍔犲瓧娈垫椂锛屽簲瀹氫箟鏂扮殑 hypercall 鐗规€т綅鏉ユ寚绀?host 鎻愪緵浜嗘洿澶氬瘎瀛樺櫒銆傝嫢 host 鏀寔璇ラ檮鍔犵壒鎬э紝鍗冲彲鍔犱互鍒╃敤銆?
 
-magic 页的布局由 `arch/powerpc/include/uapi/asm/kvm_para.h` 中的结构体 `kvm_vcpu_arch_shared` 描述。
+magic 椤电殑甯冨眬鐢?`arch/powerpc/include/uapi/asm/kvm_para.h` 涓殑缁撴瀯浣?`kvm_vcpu_arch_shared` 鎻忚堪銆?
 
 
-## Magic 页 特性
+## Magic 椤?鐗规€?
 
-映射 magic 页使用 KVM hypercall `KVM_HC_PPC_MAP_MAGIC_PAGE`，其第二个返回值会传给 guest。第二个返回值包含一个位图，指示 magic 页内可用的特性。
+鏄犲皠 magic 椤典娇鐢?KVM hypercall `KVM_HC_PPC_MAP_MAGIC_PAGE`锛屽叾绗簩涓繑鍥炲€间細浼犵粰 guest銆傜浜屼釜杩斿洖鍊煎寘鍚竴涓綅鍥撅紝鎸囩ず magic 椤靛唴鍙敤鐨勭壒鎬с€?
 
-目前 magic 页可用的增强特性如下：
+鐩墠 magic 椤靛彲鐢ㄧ殑澧炲己鐗规€у涓嬶細
 
 ============================ =======================================
-KVM_MAGIC_FEAT_SR Maps SR 寄存器 r/w magic 页
+KVM_MAGIC_FEAT_SR Maps SR 瀵勫瓨鍣?r/w magic 椤?
 KVM_MAGIC_FEAT_MAS0_TO_SPRG7	Maps MASn, ESR, PIR high SPRGs
 ============================ =======================================
 
-要启用 magic 页的增强特性，请先检查该特性是否存在（使用相应的特性位）！
+瑕佸惎鐢?magic 椤电殑澧炲己鐗规€э紝璇峰厛妫€鏌ヨ鐗规€ф槸鍚﹀瓨鍦紙浣跨敤鐩稿簲鐨勭壒鎬т綅锛夛紒
 
 
-## Magic 页 标志
+## Magic 椤?鏍囧織
 
-除了指示 host 是否支持某个特定特性的"特性"位之外，还存在一种 guest 告知 host "自己也支持某能力"的通道，称为"标志"。
+闄や簡鎸囩ず host 鏄惁鏀寔鏌愪釜鐗瑰畾鐗规€х殑"鐗规€?浣嶄箣澶栵紝杩樺瓨鍦ㄤ竴绉?guest 鍛婄煡 host "鑷繁涔熸敮鎸佹煇鑳藉姏"鐨勯€氶亾锛岀О涓?鏍囧織"銆?
 
-标志通过有效地址（Effective address）的低 12 位传给 host。
+鏍囧織閫氳繃鏈夋晥鍦板潃锛圗ffective address锛夌殑浣?12 浣嶄紶缁?host銆?
 
-目前 guest 可暴露的标志如下：
+鐩墠 guest 鍙毚闇茬殑鏍囧織濡備笅锛?
 
-MAGIC_PAGE_FLAG_NOT_MAPPED_NX Guest 能正确处理 magic 页的 NX 位
+MAGIC_PAGE_FLAG_NOT_MAPPED_NX Guest 鑳芥纭鐞?magic 椤电殑 NX 浣?
 
 
-## MSR 位
+## MSR 浣?
 
-MSR 中包含一些需要 hypervisor 介入的位，以及一些需要直接由 hypervisor 解释、在进入 guest 时不影响 hypervisor 行为的位。
+MSR 涓寘鍚竴浜涢渶瑕?hypervisor 浠嬪叆鐨勪綅锛屼互鍙婁竴浜涢渶瑕佺洿鎺ョ敱 hypervisor 瑙ｉ噴銆佸湪杩涘叆 guest 鏃朵笉褰卞搷 hypervisor 琛屼负鐨勪綅銆?
 
-以下位可在 guest 内安全设置：
+浠ヤ笅浣嶅彲鍦?guest 鍐呭畨鍏ㄨ缃細
 
 - MSR_EE
 - MSR_RI
 
-对 MSR 的位进行修改时，仍请使用 `mtmsr(d)`。
+瀵?MSR 鐨勪綅杩涜淇敼鏃讹紝浠嶈浣跨敤 `mtmsr(d)`銆?
 
 
-## Patched instructions（补丁化指令）
+## Patched instructions锛堣ˉ涓佸寲鎸囦护锛?
 
-"ld" 与 "std" 指令分别被转换为 "lwz" 与 "stw" 指令（在 32 位系统上，并加上偏移量 4 以适应大端序）。
+"ld" 涓?"std" 鎸囦护鍒嗗埆琚浆鎹负 "lwz" 涓?"stw" 鎸囦护锛堝湪 32 浣嶇郴缁熶笂锛屽苟鍔犱笂鍋忕Щ閲?4 浠ラ€傚簲澶х搴忥級銆?
 
-以下是 Linux 内核在 guest 运行时所执行的映射。实现这些映射是可选的——若指令陷入，仍会按共享页方式处理；调用特权指令同样可行。
+浠ヤ笅鏄?Linux 鍐呮牳鍦?guest 杩愯鏃舵墍鎵ц鐨勬槧灏勩€傚疄鐜拌繖浜涙槧灏勬槸鍙€夌殑鈥斺€旇嫢鎸囦护闄峰叆锛屼粛浼氭寜鍏变韩椤垫柟寮忓鐞嗭紱璋冪敤鐗规潈鎸囦护鍚屾牱鍙銆?
 
 ======================= ================================
 mfmsr	rX ld	rX, magic_page->msr
@@ -131,35 +131,35 @@ mtsrr1	rX std	rX, magic_page->srr1
 mtdar	rX std	rX, magic_page->dar
 mtdsisr	rX stw	rX, magic_page->dsisr
 tlbsync nop
-mtmsrd	rX, 0 b	<special mtmsr 章节>
-mtmsr	rX b	<special mtmsr 章节>
-mtmsrd	rX, 1 b	<special mtmsrd 章节>
+mtmsrd	rX, 0 b	<special mtmsr 绔犺妭>
+mtmsr	rX b	<special mtmsr 绔犺妭>
+mtmsrd	rX, 1 b	<special mtmsrd 绔犺妭>
 [Book3S ]
-mtsrin	rX, rY b	<special mtsrin 章节>
+mtsrin	rX, rY b	<special mtsrin 绔犺妭>
 [BookE ]
-wrteei	[0|1] b	<special wrteei 章节>
+wrteei	[0|1] b	<special wrteei 绔犺妭>
 ======================= ================================
 
-对于那些需要更多逻辑来判断是加载还是存储指令被交付的指令，启用补丁（patching）后，会在实时翻译指令的 RAM 周围保留空间。其过程如下：
+瀵逛簬閭ｄ簺闇€瑕佹洿澶氶€昏緫鏉ュ垽鏂槸鍔犺浇杩樻槸瀛樺偍鎸囦护琚氦浠樼殑鎸囦护锛屽惎鐢ㄨˉ涓侊紙patching锛夊悗锛屼細鍦ㄥ疄鏃剁炕璇戞寚浠ょ殑 RAM 鍛ㄥ洿淇濈暀绌洪棿銆傚叾杩囩▼濡備笅锛?
 
-1) 将模拟代码复制到内存
-2) 补丁化代码以适配被模拟的指令
-3) 补丁化代码使其返回原始 pc + 4
-4) 将被补丁化的原始指令分支到新代码
+1) 灏嗘ā鎷熶唬鐮佸鍒跺埌鍐呭瓨
+2) 琛ヤ竵鍖栦唬鐮佷互閫傞厤琚ā鎷熺殑鎸囦护
+3) 琛ヤ竵鍖栦唬鐮佷娇鍏惰繑鍥炲師濮?pc + 4
+4) 灏嗚琛ヤ竵鍖栫殑鍘熷鎸囦护鍒嗘敮鍒版柊浠ｇ爜
 
-由此，可用任意数量的代码替换单条指令。例如，这允许我们通过设置 EE=1 来检查挂起的中断。
+鐢辨锛屽彲鐢ㄤ换鎰忔暟閲忕殑浠ｇ爜鏇挎崲鍗曟潯鎸囦护銆備緥濡傦紝杩欏厑璁告垜浠€氳繃璁剧疆 EE=1 鏉ユ鏌ユ寕璧风殑涓柇銆?
 
 
-## Hypercall ABIs（KVM PowerPC）
+## Hypercall ABIs锛圞VM PowerPC锛?
 
 1) KVM hypercalls (ePAPR)
 
-符合 ePAPR 的 hypercall 实现（如前所述）。即便通用 hypercall 已实现（如 ePAPR idle hcall），也可用。适用于相应 targets。
+绗﹀悎 ePAPR 鐨?hypercall 瀹炵幇锛堝鍓嶆墍杩帮級銆傚嵆渚块€氱敤 hypercall 宸插疄鐜帮紙濡?ePAPR idle hcall锛夛紝涔熷彲鐢ㄣ€傞€傜敤浜庣浉搴?targets銆?
 
 2) PAPR hypercalls
 
-运行 server PowerPC PAPR guest（`-M pseries` QEMU）需要 PAPR hypercall。这些 hypercall 与 pHyp（POWER hypervisor）实现的相同。一部分由内核处理，一部分由用户空间处理。可用于 book3s_64。
+杩愯 server PowerPC PAPR guest锛坄-M pseries` QEMU锛夐渶瑕?PAPR hypercall銆傝繖浜?hypercall 涓?pHyp锛圥OWER hypervisor锛夊疄鐜扮殑鐩稿悓銆備竴閮ㄥ垎鐢卞唴鏍稿鐞嗭紝涓€閮ㄥ垎鐢辩敤鎴风┖闂村鐞嗐€傚彲鐢ㄤ簬 book3s_64銆?
 
 3) OSI hypercalls
 
-Mac-on-Linux 用户为 KVM PowerPC 提供了自己的 hypercall（沿用自早期的 KVM）。为保持兼容性而支持这些 hypercall。它们会被转发到用户空间。对 book3s_32 有用，同样适用于 book3s_64。
+Mac-on-Linux 鐢ㄦ埛涓?KVM PowerPC 鎻愪緵浜嗚嚜宸辩殑 hypercall锛堟部鐢ㄨ嚜鏃╂湡鐨?KVM锛夈€備负淇濇寔鍏煎鎬ц€屾敮鎸佽繖浜?hypercall銆傚畠浠細琚浆鍙戝埌鐢ㄦ埛绌洪棿銆傚 book3s_32 鏈夌敤锛屽悓鏍烽€傜敤浜?book3s_64銆?

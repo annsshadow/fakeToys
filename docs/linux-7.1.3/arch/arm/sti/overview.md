@@ -1,24 +1,24 @@
-## STi ARM Linux 概述
+﻿## STi ARM Linux 姒傝堪
 
 
-### 简介
+### 绠€浠?
 
 
-  ARM Linux 的 'STi' 平台支持意法半导体（ST Microelectronics）基于 CortexA9 的 Multimedia and Application Processors 系列片上系统（System-on-Chip）。目前支持 STiH407、STiH410 和 STiH418。
+  ARM Linux 鐨?'STi' 骞冲彴鏀寔鎰忔硶鍗婂浣擄紙ST Microelectronics锛夊熀浜?CortexA9 鐨?Multimedia and Application Processors 绯诲垪鐗囦笂绯荤粺锛圫ystem-on-Chip锛夈€傜洰鍓嶆敮鎸?STiH407銆丼TiH410 鍜?STiH418銆?
 
-### 配置
-
-
-  STi 平台的配置通过 multi_v7_defconfig 提供支持。
-
-### 布局
+### 閰嶇疆
 
 
-  多个机器系列（STiH407、STiH410 和 STiH418）的所有文件都位于 arch/arm/mach-sti 内的平台代码中。
+  STi 骞冲彴鐨勯厤缃€氳繃 multi_v7_defconfig 鎻愪緵鏀寔銆?
 
-  mach 文件夹中有一个通用的 board-dt.c，支持扁平设备树（Flattened Device Tree），这意味着它可以与任何兼容的设备树板卡配合工作。
+### 甯冨眬
 
-### 文档作者
+
+  澶氫釜鏈哄櫒绯诲垪锛圫TiH407銆丼TiH410 鍜?STiH418锛夌殑鎵€鏈夋枃浠堕兘浣嶄簬 arch/arm/mach-sti 鍐呯殑骞冲彴浠ｇ爜涓€?
+
+  mach 鏂囦欢澶逛腑鏈変竴涓€氱敤鐨?board-dt.c锛屾敮鎸佹墎骞宠澶囨爲锛團lattened Device Tree锛夛紝杩欐剰鍛崇潃瀹冨彲浠ヤ笌浠讳綍鍏煎鐨勮澶囨爲鏉垮崱閰嶅悎宸ヤ綔銆?
+
+### 鏂囨。浣滆€?
 
 
   Srinivas Kandagatla <srinivas.kandagatla@st.com>, (c) 2013 ST Microelectronics

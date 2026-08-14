@@ -1,67 +1,44 @@
-
-## Linux 硬件时间戳引擎（HTE, Hardware Timestamping Engine）
-
+﻿
+## Linux 纭欢鏃堕棿鎴冲紩鎿庯紙HTE, Hardware Timestamping Engine锛?
 
 :Author: Dipen Patel
 
-### 简介
+### 绠€浠?
 
-
-某些设备内置有硬件时间戳引擎，可以实时监视一组系统信号、线路、总线等的状态
-变化；一旦检测到变化，它们可以自动存储发生变化时刻的时间戳。与使用软件方式
-（即 ktime 及其同类）相比，此类功能有助于获得更准确的时间戳。
-
-本文档描述了供硬件时间戳引擎的提供方（provider）与消费方（consumer）驱动使用
-的 API，这些驱动希望使用硬件时间戳引擎（HTE）框架。消费方与提供方都必须包含
-`#include <linux/hte.h>`。
-
-### 提供给提供方的 HTE 框架 API
+鏌愪簺璁惧鍐呯疆鏈夌‖浠舵椂闂存埑寮曟搸锛屽彲浠ュ疄鏃剁洃瑙嗕竴缁勭郴缁熶俊鍙枫€佺嚎璺€佹€荤嚎绛夌殑鐘舵€?鍙樺寲锛涗竴鏃︽娴嬪埌鍙樺寲锛屽畠浠彲浠ヨ嚜鍔ㄥ瓨鍌ㄥ彂鐢熷彉鍖栨椂鍒荤殑鏃堕棿鎴炽€備笌浣跨敤杞欢鏂瑰紡
+锛堝嵆 ktime 鍙婂叾鍚岀被锛夌浉姣旓紝姝ょ被鍔熻兘鏈夊姪浜庤幏寰楁洿鍑嗙‘鐨勬椂闂存埑銆?
+鏈枃妗ｆ弿杩颁簡渚涚‖浠舵椂闂存埑寮曟搸鐨勬彁渚涙柟锛坧rovider锛変笌娑堣垂鏂癸紙consumer锛夐┍鍔ㄤ娇鐢?鐨?API锛岃繖浜涢┍鍔ㄥ笇鏈涗娇鐢ㄧ‖浠舵椂闂存埑寮曟搸锛圚TE锛夋鏋躲€傛秷璐规柟涓庢彁渚涙柟閮藉繀椤诲寘鍚?`#include <linux/hte.h>`銆?
+### 鎻愪緵缁欐彁渚涙柟鐨?HTE 妗嗘灦 API
 
 
    :functions: devm_hte_register_chip hte_push_ts_ns
 
-### 提供给消费方的 HTE 框架 API
+### 鎻愪緵缁欐秷璐规柟鐨?HTE 妗嗘灦 API
 
 
    :functions: hte_init_line_attr hte_ts_get hte_ts_put devm_hte_request_ts_ns hte_request_ts_ns hte_enable_ts hte_disable_ts of_hte_req_count hte_get_clk_src_info
 
-### HTE 框架公共结构体
+### HTE 妗嗘灦鍏叡缁撴瀯浣?
+
+### 鍏充簬 HTE 鏃堕棿鎴虫暟鎹殑鏇村璇存槑
 
 
-### 关于 HTE 时间戳数据的更多说明
-
-
-`struct hte_ts_data` 用于在消费方与提供方之间传递时间戳详细信息。它以 u64
-表达纳秒级的时间戳数据。下面是 GPIO 线路典型时间戳数据生命周期的一个示例：
-
-```
-
- - 监视 GPIO 线路变化。
- - 检测 GPIO 线路上的状态变化。
- - 将时间戳转换为纳秒。
- - 如果提供方具备该硬件能力，则将 GPIO 原始电平存入 raw_level 变量。
- - 将该 hte_ts_data 对象推送给 HTE 子系统。
- - HTE 子系统递增 seq 计数器，并调用消费方提供的回调。
-   根据回调的返回值，HTE 核心在线程上下文中调用次级回调。
+`struct hte_ts_data` 鐢ㄤ簬鍦ㄦ秷璐规柟涓庢彁渚涙柟涔嬮棿浼犻€掓椂闂存埑璇︾粏淇℃伅銆傚畠浠?u64
+琛ㄨ揪绾崇绾х殑鏃堕棿鎴虫暟鎹€備笅闈㈡槸 GPIO 绾胯矾鍏稿瀷鏃堕棿鎴虫暟鎹敓鍛藉懆鏈熺殑涓€涓ず渚嬶細
 
 ```
 
-### HTE 子系统 debugfs 属性
+ - 鐩戣 GPIO 绾胯矾鍙樺寲銆? - 妫€娴?GPIO 绾胯矾涓婄殑鐘舵€佸彉鍖栥€? - 灏嗘椂闂存埑杞崲涓虹撼绉掋€? - 濡傛灉鎻愪緵鏂瑰叿澶囪纭欢鑳藉姏锛屽垯灏?GPIO 鍘熷鐢靛钩瀛樺叆 raw_level 鍙橀噺銆? - 灏嗚 hte_ts_data 瀵硅薄鎺ㄩ€佺粰 HTE 瀛愮郴缁熴€? - HTE 瀛愮郴缁熼€掑 seq 璁℃暟鍣紝骞惰皟鐢ㄦ秷璐规柟鎻愪緵鐨勫洖璋冦€?   鏍规嵁鍥炶皟鐨勮繑鍥炲€硷紝HTE 鏍稿績鍦ㄧ嚎绋嬩笂涓嬫枃涓皟鐢ㄦ绾у洖璋冦€?
+```
 
+### HTE 瀛愮郴缁?debugfs 灞炴€?
 
-HTE 子系统在 `/sys/kernel/debug/hte/` 创建 debugfs 属性。它还在
-`/sys/kernel/debug/hte/<provider>/<label or line id>/` 创建与线路/信号相关的
-debugfs 属性。注意这些属性都是只读的。
-
+HTE 瀛愮郴缁熷湪 `/sys/kernel/debug/hte/` 鍒涘缓 debugfs 灞炴€с€傚畠杩樺湪
+`/sys/kernel/debug/hte/<provider>/<label or line id>/` 鍒涘缓涓庣嚎璺?淇″彿鐩稿叧鐨?debugfs 灞炴€с€傛敞鎰忚繖浜涘睘鎬ч兘鏄彧璇荤殑銆?
 `ts_requested`
-		从给定提供方请求的实体总数，其中实体由提供方定义，可能代表
-		线路、GPIO、芯片信号、总线等……
-                该属性位于 `/sys/kernel/debug/hte/<provider>/`。
-
+		浠庣粰瀹氭彁渚涙柟璇锋眰鐨勫疄浣撴€绘暟锛屽叾涓疄浣撶敱鎻愪緵鏂瑰畾涔夛紝鍙兘浠ｈ〃
+		绾胯矾銆丟PIO銆佽姱鐗囦俊鍙枫€佹€荤嚎绛夆€︹€?                璇ュ睘鎬т綅浜?`/sys/kernel/debug/hte/<provider>/`銆?
 `total_ts`
-		提供方支持的实体总数。
-                该属性位于 `/sys/kernel/debug/hte/<provider>/`。
-
+		鎻愪緵鏂规敮鎸佺殑瀹炰綋鎬绘暟銆?                璇ュ睘鎬т綅浜?`/sys/kernel/debug/hte/<provider>/`銆?
 `dropped_timestamps`
-		给定线路上被丢弃的时间戳。
-                该属性位于 `/sys/kernel/debug/hte/<provider>/<label or line id>/`。
+		缁欏畾绾胯矾涓婅涓㈠純鐨勬椂闂存埑銆?                璇ュ睘鎬т綅浜?`/sys/kernel/debug/hte/<provider>/<label or line id>/`銆?

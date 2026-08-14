@@ -1,92 +1,92 @@
-## ALSA 驱动 API（The ALSA Driver API）
+﻿## ALSA 椹卞姩 API锛圱he ALSA Driver API锛?
 
 
-## 声卡与设备的管理（Management of Cards and Devices）
+## 澹板崱涓庤澶囩殑绠＄悊锛圡anagement of Cards and Devices锛?
 
 
-### 声卡管理（Card Management）
+### 澹板崱绠＄悊锛圕ard Management锛?
 
 
-### 设备组件（Device Components）
+### 璁惧缁勪欢锛圖evice Components锛?
 
 
-### 模块请求与设备文件条目（Module requests and Device File Entries）
+### 妯″潡璇锋眰涓庤澶囨枃浠舵潯鐩紙Module requests and Device File Entries锛?
 
 
-### 内存管理辅助函数（Memory Management Helpers）
+### 鍐呭瓨绠＄悊杈呭姪鍑芥暟锛圡emory Management Helpers锛?
 
 
 ## PCM API
 
 
-### PCM 核心（PCM Core）
+### PCM 鏍稿績锛圥CM Core锛?
 
 
-### PCM 格式辅助函数（PCM Format Helpers）
+### PCM 鏍煎紡杈呭姪鍑芥暟锛圥CM Format Helpers锛?
 
 
-### PCM 内存管理（PCM Memory Management）
+### PCM 鍐呭瓨绠＄悊锛圥CM Memory Management锛?
 
 
-### PCM DMA 引擎 API（PCM DMA Engine API）
+### PCM DMA 寮曟搸 API锛圥CM DMA Engine API锛?
 
 
-## 控制/混音器 API（Control/Mixer API）
+## 鎺у埗/娣烽煶鍣?API锛圕ontrol/Mixer API锛?
 
 
-### 通用控制接口（General Control Interface）
+### 閫氱敤鎺у埗鎺ュ彛锛圙eneral Control Interface锛?
 
 
-### AC97 编解码器 API（AC97 Codec API）
+### AC97 缂栬В鐮佸櫒 API锛圓C97 Codec API锛?
 
 
-### 虚拟主控制 API（Virtual Master Control API）
+### 铏氭嫙涓绘帶鍒?API锛圴irtual Master Control API锛?
 
 
 ## MIDI API
 
 
-### 原始 MIDI API（Raw MIDI API）
+### 鍘熷 MIDI API锛圧aw MIDI API锛?
 
 
 ### MPU401-UART API
 
 
-## Proc 信息 API（Proc Info API）
+## Proc 淇℃伅 API锛圥roc Info API锛?
 
 
-### Proc 信息接口（Proc Info Interface）
+### Proc 淇℃伅鎺ュ彛锛圥roc Info Interface锛?
 
 
-## 压缩卸载（Compress Offload）
+## 鍘嬬缉鍗歌浇锛圕ompress Offload锛?
 
 
-### 压缩卸载 API（Compress Offload API）
+### 鍘嬬缉鍗歌浇 API锛圕ompress Offload API锛?
 
 
 ## ASoC
 
 
-### ASoC 核心 API（ASoC Core API）
+### ASoC 鏍稿績 API锛圓SoC Core API锛?
 
 
 ### ASoC DAPM API
 
 
-### ASoC DMA 引擎 API（ASoC DMA Engine API）
+### ASoC DMA 寮曟搸 API锛圓SoC DMA Engine API锛?
 
 
-## 杂项函数（Miscellaneous Functions）
+## 鏉傞」鍑芥暟锛圡iscellaneous Functions锛?
 
 
-### 硬件相关设备 API（Hardware-Dependent Devices API）
+### 纭欢鐩稿叧璁惧 API锛圚ardware-Dependent Devices API锛?
 
 
-### Jack 抽象层 API（Jack Abstraction Layer API）
+### Jack 鎶借薄灞?API锛圝ack Abstraction Layer API锛?
 
 
-### ISA DMA 辅助函数（ISA DMA Helpers）
+### ISA DMA 杈呭姪鍑芥暟锛圛SA DMA Helpers锛?
 
 
-### 其他辅助宏（Other Helper Macros）
+### 鍏朵粬杈呭姪瀹忥紙Other Helper Macros锛?
 

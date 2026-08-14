@@ -1,4 +1,4 @@
-
+﻿
 ## PPS - Pulse Per Second
 
 
@@ -16,62 +16,43 @@ GNU General Public License for more details.
 
 
 
-### 概述
+### 姒傝堪
 
 
-LinuxPPS 提供了一个编程接口（API），用于在系统中定义多个 PPS 源。
+LinuxPPS 鎻愪緵浜嗕竴涓紪绋嬫帴鍙ｏ紙API锛夛紝鐢ㄤ簬鍦ㄧ郴缁熶腑瀹氫箟澶氫釜 PPS 婧愩€?
+PPS 鎰忎负鈥滄瘡绉掕剦鍐诧紙pulse per second锛夆€濓紝PPS 婧愬氨鏄竴涓瘡绉掓彁渚涗竴涓珮绮惧害淇″彿鐨?璁惧锛屽簲鐢ㄧ▼搴忓彲浠ュ埄鐢ㄥ畠鏉ヨ皟鏁寸郴缁熸椂閽熸椂闂淬€?
+涓€涓?PPS 婧愬彲浠ヨ繛鎺ュ埌涓茶绔彛锛堥€氬父鏄帴鍒版暟鎹浇娉㈡娴?Data Carrier Detect 寮曡剼锛夈€?骞惰绔彛锛圓CK 寮曡剼锛夛紝鎴栬€呮煇涓笓鐢?CPU 鐨?GPIO锛堣繖鍦ㄥ祵鍏ュ紡绯荤粺涓緢甯歌锛夛紱浣嗗湪姣忕
+鎯呭喌涓嬶紝褰撲竴涓柊鐨勮剦鍐插埌杈炬椂锛岀郴缁熼兘蹇呴』涓哄畠鎵撲笂鏃堕棿鎴筹紙timestamp锛夊苟璁板綍涓嬫潵渚涚敤鎴?绌洪棿浣跨敤銆?
+甯歌鐨勭敤娉曟槸灏?NTPD 浣滀负鐢ㄦ埛绌洪棿绋嬪簭锛岄厤鍚堜竴涓?GPS 鎺ユ敹鍣ㄤ綔涓?PPS 婧愶紝浠庤€岃幏寰椾笌 UTC
+淇濇寔浜氭绉掔骇鍚屾鐨勫涓婃椂閽熸椂闂达紙wallclock-time锛夈€?
 
-PPS 意为“每秒脉冲（pulse per second）”，PPS 源就是一个每秒提供一个高精度信号的
-设备，应用程序可以利用它来调整系统时钟时间。
-
-一个 PPS 源可以连接到串行端口（通常是接到数据载波检测 Data Carrier Detect 引脚）、
-并行端口（ACK 引脚），或者某个专用 CPU 的 GPIO（这在嵌入式系统中很常见）；但在每种
-情况下，当一个新的脉冲到达时，系统都必须为它打上时间戳（timestamp）并记录下来供用户
-空间使用。
-
-常见的用法是将 NTPD 作为用户空间程序，配合一个 GPS 接收器作为 PPS 源，从而获得与 UTC
-保持亚毫秒级同步的墙上时钟时间（wallclock-time）。
+### RFC 鐩稿叧鑰冮噺
 
 
-### RFC 相关考量
-
-
-在为 PPS API 实现 RFC 2783 所定义的接口、并使用嵌入式 CPU 的 GPIO 引脚作为连接到信号的
-物理链路时，我遇到了一个更深层的问题：
+鍦ㄤ负 PPS API 瀹炵幇 RFC 2783 鎵€瀹氫箟鐨勬帴鍙ｃ€佸苟浣跨敤宓屽叆寮?CPU 鐨?GPIO 寮曡剼浣滀负杩炴帴鍒颁俊鍙风殑
+鐗╃悊閾捐矾鏃讹紝鎴戦亣鍒颁簡涓€涓洿娣卞眰鐨勯棶棰橈細
 
    At startup it needs a file descriptor as argument for the function
    time_pps_create().
 
-这意味着该源必须有一个 /dev/... 条目。对于串行端口和并行端口来说这个假设是可以的，因为
-除了（！）采集时间戳（这是 PPS API 的核心任务）之外，你还可以在这些端口上做一些有用的
-事情。但对于单一用途的 GPIO 线，这个假设就不成立了。在这种情况下，即便基本的文件相关
-功能（如 read() 与 write()）也毫无意义，不应成为使用 PPS API 的前提条件。
+杩欐剰鍛崇潃璇ユ簮蹇呴』鏈変竴涓?/dev/... 鏉＄洰銆傚浜庝覆琛岀鍙ｅ拰骞惰绔彛鏉ヨ杩欎釜鍋囪鏄彲浠ョ殑锛屽洜涓?闄や簡锛堬紒锛夐噰闆嗘椂闂存埑锛堣繖鏄?PPS API 鐨勬牳蹇冧换鍔★級涔嬪锛屼綘杩樺彲浠ュ湪杩欎簺绔彛涓婂仛涓€浜涙湁鐢ㄧ殑
+浜嬫儏銆備絾瀵逛簬鍗曚竴鐢ㄩ€旂殑 GPIO 绾匡紝杩欎釜鍋囪灏变笉鎴愮珛浜嗐€傚湪杩欑鎯呭喌涓嬶紝鍗充究鍩烘湰鐨勬枃浠剁浉鍏?鍔熻兘锛堝 read() 涓?write()锛変篃姣棤鎰忎箟锛屼笉搴旀垚涓轰娇鐢?PPS API 鐨勫墠鎻愭潯浠躲€?
+濡傛灉浣犺€冭檻鍒?PPS 婧愬苟涓嶆€绘槸涓?GPS 鏁版嵁婧愮浉杩烇紝杩欎釜闂灏卞彲浠ョ畝鍗曞湴瑙ｅ喅銆?
+鍥犳浣犵殑绋嬪簭搴斿綋妫€鏌?GPS 鏁版嵁婧愶紙渚嬪涓茶绔彛锛夋槸鍚︿篃鏄竴涓?PPS 婧愶紱濡傛灉涓嶆槸锛屽畠浠?搴斿綋鎻愪緵鎵撳紑鍙︿竴涓澶囦綔涓?PPS 婧愮殑鍙兘鎬с€?
+鍦?LinuxPPS 涓紝PPS 婧愬氨鏄櫘閫氱殑瀛楃璁惧锛岄€氬父鏄犲皠鍒?/dev/pps0銆?dev/pps1 绛夋枃浠躲€?
 
-如果你考虑到 PPS 源并不总是与 GPS 数据源相连，这个问题就可以简单地解决。
-
-因此你的程序应当检查 GPS 数据源（例如串行端口）是否也是一个 PPS 源；如果不是，它们
-应当提供打开另一个设备作为 PPS 源的可能性。
-
-在 LinuxPPS 中，PPS 源就是普通的字符设备，通常映射到 /dev/pps0、/dev/pps1 等文件。
+### 浣跨敤 USB 杞覆鍙ｈ澶囩殑 PPS
 
 
-### 使用 USB 转串口设备的 PPS
+鍙互浠?USB 杞覆鍙ｈ澶囦笂鑾峰彇 PPS銆備笉杩囷紝浣犲簲璇ヨ€冭檻鍒?USB 鍗忚鏍堝紩鍏ョ殑寤惰繜涓庢姈鍔ㄣ€傜敤鎴锋姤鍛?閫氳繃 USB 涓?PPS 鍚屾鏃舵椂閽熶笉绋冲畾锛屽ぇ绾﹀湪 卤1ms銆備娇鐢?USB 2.0 鏃讹紝鎶栧姩鍙兘闄嶄綆鍒?125 寰
+鐨勯噺绾с€?
+杩欏浜庝娇鐢?NTP 杩涜鏃堕棿鏈嶅姟鍣ㄥ悓姝ュ彲鑳芥槸鍚堥€傜殑锛屽洜涓哄畠鏈変笅閲囨牱锛坲ndersampling锛夊拰绠楁硶銆?
+濡傛灉浣犵殑璁惧娌℃湁鎶ュ憡 PPS锛屼綘鍙互妫€鏌ュ叾椹卞姩鏄惁鏀寔璇ュ姛鑳姐€傚ぇ澶氭暟鎯呭喌涓嬶紝浣犲彧闇€瑕佸湪妫€鏌?DCD 鐘舵€佷箣鍚庢坊鍔犲 usb_serial_handle_dcd_change 鐨勮皟鐢紙鍙傝 ch341 涓?pl2303 绀轰緥锛夈€?
+
+### 缂栫爜绀轰緥
 
 
-可以从 USB 转串口设备上获取 PPS。不过，你应该考虑到 USB 协议栈引入的延迟与抖动。用户报告
-通过 USB 与 PPS 同步时时钟不稳定，大约在 ±1ms。使用 USB 2.0 时，抖动可能降低到 125 微秒
-的量级。
-
-这对于使用 NTP 进行时间服务器同步可能是合适的，因为它有下采样（undersampling）和算法。
-
-如果你的设备没有报告 PPS，你可以检查其驱动是否支持该功能。大多数情况下，你只需要在检查
-DCD 状态之后添加对 usb_serial_handle_dcd_change 的调用（参见 ch341 与 pl2303 示例）。
-
-
-### 编码示例
-
-
-要将一个 PPS 源注册到内核中，你应该定义一个 struct
+瑕佸皢涓€涓?PPS 婧愭敞鍐屽埌鍐呮牳涓紝浣犲簲璇ュ畾涔変竴涓?struct
 ```
 
     static struct pps_source_info pps_ktimer_info = {
@@ -85,7 +66,7 @@ DCD 状态之后添加对 usb_serial_handle_dcd_change 的调用（参见 ch341 
     };
 
 ```
-然后调用函数 pps_register_source()，在你的
+鐒跺悗璋冪敤鍑芥暟 pps_register_source()锛屽湪浣犵殑
 ```
 
     source = pps_register_source(&pps_ktimer_info,
@@ -97,25 +78,20 @@ DCD 状态之后添加对 usb_serial_handle_dcd_change 的调用（参见 ch341 
   int pps_register_source(struct pps_source_info *info, int default_params)
 
 ```
-其中 “info” 是指向描述某个特定 PPS 源的结构的指针，“default_params” 告诉系统该设备的初始
-默认参数应该是什么（显然，这些参数必须是描述驱动能力的 struct pps_source_info 中所定义的
-参数的一个子集）。
-
-一旦你将一个新 PPS 源注册到系统中，就可以发出一个 assert 事件（例如在中断处理例程中）
+鍏朵腑 鈥渋nfo鈥?鏄寚鍚戞弿杩版煇涓壒瀹?PPS 婧愮殑缁撴瀯鐨勬寚閽堬紝鈥渄efault_params鈥?鍛婅瘔绯荤粺璇ヨ澶囩殑鍒濆
+榛樿鍙傛暟搴旇鏄粈涔堬紙鏄剧劧锛岃繖浜涘弬鏁板繀椤绘槸鎻忚堪椹卞姩鑳藉姏鐨?struct pps_source_info 涓墍瀹氫箟鐨?鍙傛暟鐨勪竴涓瓙闆嗭級銆?
+涓€鏃︿綘灏嗕竴涓柊 PPS 婧愭敞鍐屽埌绯荤粺涓紝灏卞彲浠ュ彂鍑轰竴涓?assert 浜嬩欢锛堜緥濡傚湪涓柇澶勭悊渚嬬▼涓級
 ```
 
     pps_event(source, &ts, PPS_CAPTUREASSERT, ptr)
 
 ```
-其中 “ts” 是事件的时间戳。
+鍏朵腑 鈥渢s鈥?鏄簨浠剁殑鏃堕棿鎴炽€?
+鍚屼竴涓嚱鏁拌繕鍙互杩愯鎵€瀹氫箟鐨?echo 鍑芥暟锛坧ps_ktimer_echo()锛屽悜瀹冧紶鍏?鈥減tr鈥?鎸囬拡锛夛紝濡傛灉鐢ㄦ埛
+瑕佹眰杩欎箞鍋氱殑璇濃€︹€︾瓑绛夈€?
+绀轰緥浠ｇ爜璇峰弬瑙?drivers/pps/clients/pps-ktimer.c 鏂囦欢銆?
 
-同一个函数还可以运行所定义的 echo 函数（pps_ktimer_echo()，向它传入 “ptr” 指针），如果用户
-要求这么做的话……等等。
-
-示例代码请参见 drivers/pps/clients/pps-ktimer.c 文件。
-
-
-### SYSFS 支持
+### SYSFS 鏀寔
 
 
 ```
@@ -124,8 +100,7 @@ DCD 状态之后添加对 usb_serial_handle_dcd_change 的调用（参见 ch341 
    pps0/  pps1/  pps2/
 
 ```
-每个目录都是系统中定义的一个 PPS 源的 ID，以及
-```
+姣忎釜鐩綍閮芥槸绯荤粺涓畾涔夌殑涓€涓?PPS 婧愮殑 ID锛屼互鍙?```
 
    $ ls -F /sys/class/pps/pps0/
    assert     dev        mode       path       subsystem@
@@ -133,31 +108,25 @@ DCD 状态之后添加对 usb_serial_handle_dcd_change 的调用（参见 ch341 
 
 
 ```
-在每个 “assert” 与 “clear” 文件中，你可以找到时间戳和一个
-```
+鍦ㄦ瘡涓?鈥渁ssert鈥?涓?鈥渃lear鈥?鏂囦欢涓紝浣犲彲浠ユ壘鍒版椂闂存埑鍜屼竴涓?```
 
    $ cat /sys/class/pps/pps0/assert
    1170026870.983207967#8
 
 ```
-其中 “#” 之前的是以秒为单位的时间戳；之后的是序列号。其它文件包括：
+鍏朵腑 鈥?鈥?涔嬪墠鐨勬槸浠ョ涓哄崟浣嶇殑鏃堕棿鎴筹紱涔嬪悗鐨勬槸搴忓垪鍙枫€傚叾瀹冩枃浠跺寘鎷細
 
- - echo：报告该 PPS 源是否具有 echo 函数；
+ - echo锛氭姤鍛婅 PPS 婧愭槸鍚﹀叿鏈?echo 鍑芥暟锛?
+ - mode锛氭姤鍛婂彲鐢ㄧ殑 PPS 宸ヤ綔妯″紡锛?
+ - name锛氭姤鍛?PPS 婧愮殑鍚嶇О锛?
+ - path锛氭姤鍛?PPS 婧愮殑璁惧璺緞锛屽嵆璇?PPS 婧愭墍杩炴帴鐨勮澶囷紙濡傛灉瀛樺湪锛夈€?
 
- - mode：报告可用的 PPS 工作模式；
-
- - name：报告 PPS 源的名称；
-
- - path：报告 PPS 源的设备路径，即该 PPS 源所连接的设备（如果存在）。
-
-
-### 测试 PPS 支持
+### 娴嬭瘯 PPS 鏀寔
 
 
-即便没有特定硬件，你也可以为了测试 PPS 支持而使用 pps-ktimer 驱动（参见 PPS 配置菜单中的
-客户端子小节）以及你的发行版中 pps-tools 软件包、http://linuxpps.org 或 https://github.com/redlab-i/pps-tools 中提供的用户空间工具。
-
-一旦你启用了 pps-ktimer 的编译，只需 modprobe 它（如果
+鍗充究娌℃湁鐗瑰畾纭欢锛屼綘涔熷彲浠ヤ负浜嗘祴璇?PPS 鏀寔鑰屼娇鐢?pps-ktimer 椹卞姩锛堝弬瑙?PPS 閰嶇疆鑿滃崟涓殑
+瀹㈡埛绔瓙灏忚妭锛変互鍙婁綘鐨勫彂琛岀増涓?pps-tools 杞欢鍖呫€乭ttp://linuxpps.org 鎴?https://github.com/redlab-i/pps-tools 涓彁渚涚殑鐢ㄦ埛绌洪棿宸ュ叿銆?
+涓€鏃︿綘鍚敤浜?pps-ktimer 鐨勭紪璇戯紝鍙渶 modprobe 瀹冿紙濡傛灉
 ```
 
    # modprobe pps-ktimer
@@ -174,17 +143,14 @@ DCD 状态之后添加对 usb_serial_handle_dcd_change 的调用（参见 ch341 
    source 0 - assert 1186592701.389032765, sequence: 366 - clear  0.000000000, sequence: 0
 
 ```
-请注意，要编译用户空间程序，你需要 timepps.h 文件。该文件在上述 pps-tools 仓库中可以找到。
+璇锋敞鎰忥紝瑕佺紪璇戠敤鎴风┖闂寸▼搴忥紝浣犻渶瑕?timepps.h 鏂囦欢銆傝鏂囦欢鍦ㄤ笂杩?pps-tools 浠撳簱涓彲浠ユ壘鍒般€?
 
+### 鍙戠敓鍣紙Generators锛?
 
-### 发生器（Generators）
-
-
-有时不仅需要捕获 PPS 信号，还需要产生它们。例如，运行一个分布式仿真，它要求计算机的时钟
-被非常紧密地同步。
-
-为此，增加了 pps-gen 类。可以通过定义 struct pps_gen_source_info 来向内核注册 PPS 发生器，
-如下
+鏈夋椂涓嶄粎闇€瑕佹崟鑾?PPS 淇″彿锛岃繕闇€瑕佷骇鐢熷畠浠€備緥濡傦紝杩愯涓€涓垎甯冨紡浠跨湡锛屽畠瑕佹眰璁＄畻鏈虹殑鏃堕挓
+琚潪甯哥揣瀵嗗湴鍚屾銆?
+涓烘锛屽鍔犱簡 pps-gen 绫汇€傚彲浠ラ€氳繃瀹氫箟 struct pps_gen_source_info 鏉ュ悜鍐呮牳娉ㄥ唽 PPS 鍙戠敓鍣紝
+濡備笅
 ```
 
     static const struct pps_gen_source_info pps_gen_dummy_info = {
@@ -194,17 +160,14 @@ DCD 状态之后添加对 usb_serial_handle_dcd_change 的调用（参见 ch341 
     };
 
 ```
-其中 use_system_clock 表明该发生器是否使用系统时钟来产生脉冲，还是使用来自外设设备时钟的
-脉冲。方法 get_time() 用于查询存储在发生器时钟中的时间，而方法 enable() 用于启用或禁用
-PPS 脉冲的产生。
-
-然后在你的初始化例程中调用函数 pps_gen_register_source()，如下所示，会创建一个新的发生器
+鍏朵腑 use_system_clock 琛ㄦ槑璇ュ彂鐢熷櫒鏄惁浣跨敤绯荤粺鏃堕挓鏉ヤ骇鐢熻剦鍐诧紝杩樻槸浣跨敤鏉ヨ嚜澶栬璁惧鏃堕挓鐨?鑴夊啿銆傛柟娉?get_time() 鐢ㄤ簬鏌ヨ瀛樺偍鍦ㄥ彂鐢熷櫒鏃堕挓涓殑鏃堕棿锛岃€屾柟娉?enable() 鐢ㄤ簬鍚敤鎴栫鐢?PPS 鑴夊啿鐨勪骇鐢熴€?
+鐒跺悗鍦ㄤ綘鐨勫垵濮嬪寲渚嬬▼涓皟鐢ㄥ嚱鏁?pps_gen_register_source()锛屽涓嬫墍绀猴紝浼氬垱寤轰竴涓柊鐨勫彂鐢熷櫒
 ```
 
     pps_gen = pps_gen_register_source(&pps_gen_dummy_info);
 
 ```
-### 发生器 SYSFS 支持
+### 鍙戠敓鍣?SYSFS 鏀寔
 
 
 ```
@@ -213,8 +176,7 @@ PPS 脉冲的产生。
     pps-gen0/  pps-gen1/  pps-gen2/
 
 ```
-每个目录都是系统中定义的一个 PPS 发生器的 ID，以及
-```
+姣忎釜鐩綍閮芥槸绯荤粺涓畾涔夌殑涓€涓?PPS 鍙戠敓鍣ㄧ殑 ID锛屼互鍙?```
 
     $ ls -F /sys/class/pps-gen/pps-gen0/
     dev  enable  name  power/  subsystem@  system  time  uevent
@@ -225,13 +187,11 @@ PPS 脉冲的产生。
     $ echo 1 > /sys/class/pps-gen/pps-gen0/enable
 
 ```
-### 并行端口发生器
+### 骞惰绔彛鍙戠敓鍣?
 
-
-一种做法是发明某些复杂的硬件方案，但这既没必要也未必划算。便宜的做法是在其中一台计算机
-（主节点，master）上加载一个 PPS 发生器，在其它计算机（从节点，slave）上加载 PPS 客户端，
-并使用非常简单的线缆，例如通过并行端口来传送信号。
-
+涓€绉嶅仛娉曟槸鍙戞槑鏌愪簺澶嶆潅鐨勭‖浠舵柟妗堬紝浣嗚繖鏃㈡病蹇呰涔熸湭蹇呭垝绠椼€備究瀹滅殑鍋氭硶鏄湪鍏朵腑涓€鍙拌绠楁満
+锛堜富鑺傜偣锛宮aster锛変笂鍔犺浇涓€涓?PPS 鍙戠敓鍣紝鍦ㄥ叾瀹冭绠楁満锛堜粠鑺傜偣锛宻lave锛変笂鍔犺浇 PPS 瀹㈡埛绔紝
+骞朵娇鐢ㄩ潪甯哥畝鍗曠殑绾跨紗锛屼緥濡傞€氳繃骞惰绔彛鏉ヤ紶閫佷俊鍙枫€?
 ```
 
 	pin	name	master      slave
@@ -255,26 +215,18 @@ PPS 脉冲的产生。
 	18-25	GND	  *-----------*
 
 ```
-请注意，并行端口中断只在由高到低的跳变时触发，因此它被用于 PPS 的 assert 边沿。PPS 的 clear
-边沿只能通过在中断处理程序中使用轮询（polling）来确定，这实际上可以做得更精确，因为中断
-处理的延迟可能相当大且随机。因此当前的 parport PPS 发生器实现（pps_gen_parport 模块）倾向于
-使用 clear 边沿来进行时间同步。
+璇锋敞鎰忥紝骞惰绔彛涓柇鍙湪鐢遍珮鍒颁綆鐨勮烦鍙樻椂瑙﹀彂锛屽洜姝ゅ畠琚敤浜?PPS 鐨?assert 杈规部銆侾PS 鐨?clear
+杈规部鍙兘閫氳繃鍦ㄤ腑鏂鐞嗙▼搴忎腑浣跨敤杞锛坧olling锛夋潵纭畾锛岃繖瀹為檯涓婂彲浠ュ仛寰楁洿绮剧‘锛屽洜涓轰腑鏂?澶勭悊鐨勫欢杩熷彲鑳界浉褰撳ぇ涓旈殢鏈恒€傚洜姝ゅ綋鍓嶇殑 parport PPS 鍙戠敓鍣ㄥ疄鐜帮紙pps_gen_parport 妯″潡锛夊€惧悜浜?浣跨敤 clear 杈规部鏉ヨ繘琛屾椂闂村悓姝ャ€?
+clear 杈规部鐨勮疆璇㈡槸鍦ㄥ叧闂腑鏂殑鎯呭喌涓嬭繘琛岀殑锛屽洜姝ゆ渶濂藉皢 assert 涓?clear 杈规部涔嬮棿鐨勫欢杩熼€夊緱
+灏藉彲鑳藉皬锛屼互闄嶄綆绯荤粺寤惰繜銆備絾濡傛灉澶皬锛屼粠鑺傜偣灏嗘棤娉曟崟鑾?clear 杈规部鐨勮烦鍙樸€?0 寰鐨勯粯璁ゅ€煎湪
+澶у鏁版儏鍐典笅搴旇瓒冲濂姐€傝寤惰繜鍙互浣跨敤 'delay' pps_gen_parport 妯″潡鍙傛暟鏉ラ€夋嫨銆?
 
-clear 边沿的轮询是在关闭中断的情况下进行的，因此最好将 assert 与 clear 边沿之间的延迟选得
-尽可能小，以降低系统延迟。但如果太小，从节点将无法捕获 clear 边沿的跳变。30 微秒的默认值在
-大多数情况下应该足够好。该延迟可以使用 'delay' pps_gen_parport 模块参数来选择。
+### Intel Timed I/O PPS 淇″彿鍙戠敓鍣?
 
-
-### Intel Timed I/O PPS 信号发生器
-
-
-Intel Timed I/O 是一个高精度设备，出现在 2019 年及更新的 Intel CPU 上，可以产生 PPS 信号。
-
-Timed I/O 与系统时间都由同一个硬件时钟驱动。信号的生成精度约为 20 纳秒。生成的 PPS 信号用于
-将外部设备与系统时钟同步。例如，它可以用来与接收由 Timed I/O 设备生成的 PPS 信号的设备共享
-你的时钟。有专用的 Timed I/O 引脚用于将 PPS 信号传送到外部设备。
-
-将 Intel Timed I/O 用作 PPS 发生器：
+Intel Timed I/O 鏄竴涓珮绮惧害璁惧锛屽嚭鐜板湪 2019 骞村強鏇存柊鐨?Intel CPU 涓婏紝鍙互浜х敓 PPS 淇″彿銆?
+Timed I/O 涓庣郴缁熸椂闂撮兘鐢卞悓涓€涓‖浠舵椂閽熼┍鍔ㄣ€備俊鍙风殑鐢熸垚绮惧害绾︿负 20 绾崇銆傜敓鎴愮殑 PPS 淇″彿鐢ㄤ簬
+灏嗗閮ㄨ澶囦笌绯荤粺鏃堕挓鍚屾銆備緥濡傦紝瀹冨彲浠ョ敤鏉ヤ笌鎺ユ敹鐢?Timed I/O 璁惧鐢熸垚鐨?PPS 淇″彿鐨勮澶囧叡浜?浣犵殑鏃堕挓銆傛湁涓撶敤鐨?Timed I/O 寮曡剼鐢ㄤ簬灏?PPS 淇″彿浼犻€佸埌澶栭儴璁惧銆?
+灏?Intel Timed I/O 鐢ㄤ綔 PPS 鍙戠敓鍣細
 
 ```
 

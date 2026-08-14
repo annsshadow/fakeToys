@@ -1,36 +1,20 @@
-## s390 SCSI 转储工具（zfcpdump）
+﻿## s390 SCSI 杞偍宸ュ叿锛坺fcpdump锛?
 
-
-System z 机器（z900 或更高）提供硬件支持，用于在 SCSI 磁盘上创建系统转储。转储过程通过启动
-一个转储工具来发起，该工具必须创建当前（可能已崩溃的）Linux 映像的转储。为了不把崩溃 Linux
-的内存被转储工具的数据覆盖，硬件在加载转储工具之前会保存一些内存以及启动 CPU 的寄存器集合。
-之后存在一个 SCLP 硬件接口用于获取所保存的内存。当前保存 32 MB。
-
-该 zfcpdump 实现由一个 Linux 转储内核和一个用户空间转储工具组成，它们一起被加载到 32 MB 以下
-的已保存内存区域中。zfcpdump 使用 zipl（包含在 s390-tools 包中）安装到 SCSI 磁盘上，以使该
-设备可启动。Linux 系统的操作员随后可以通过启动装有 zfcpdump 的 SCSI 磁盘来触发 SCSI 转储。
-
-用户空间转储工具通过 /proc/vmcore 接口访问崩溃系统的内存。该接口以 ELF core dump 格式导出
-崩溃系统的内存和寄存器。为了访问由硬件保存的内存，SCLP 请求将在 /proc/vmcore 需要该数据时
-创建。崩溃系统内存中未被硬件暂存（stash）的尾部部分可以直接从真实内存复制。
-
-要构建支持转储的内核，必须设置内核配置选项 CONFIG_CRASH_DUMP。
-
-要获得有效的 zfcpdump 内核配置，使用 “make zfcpdump_defconfig”。
-
-s390 zipl 工具在以下位置查找 zfcpdump 内核和可选的 initrd/initramfs：
-
+System z 鏈哄櫒锛坺900 鎴栨洿楂橈級鎻愪緵纭欢鏀寔锛岀敤浜庡湪 SCSI 纾佺洏涓婂垱寤虹郴缁熻浆鍌ㄣ€傝浆鍌ㄨ繃绋嬮€氳繃鍚姩
+涓€涓浆鍌ㄥ伐鍏锋潵鍙戣捣锛岃宸ュ叿蹇呴』鍒涘缓褰撳墠锛堝彲鑳藉凡宕╂簝鐨勶級Linux 鏄犲儚鐨勮浆鍌ㄣ€備负浜嗕笉鎶婂穿婧?Linux
+鐨勫唴瀛樿杞偍宸ュ叿鐨勬暟鎹鐩栵紝纭欢鍦ㄥ姞杞借浆鍌ㄥ伐鍏蜂箣鍓嶄細淇濆瓨涓€浜涘唴瀛樹互鍙婂惎鍔?CPU 鐨勫瘎瀛樺櫒闆嗗悎銆?涔嬪悗瀛樺湪涓€涓?SCLP 纭欢鎺ュ彛鐢ㄤ簬鑾峰彇鎵€淇濆瓨鐨勫唴瀛樸€傚綋鍓嶄繚瀛?32 MB銆?
+璇?zfcpdump 瀹炵幇鐢变竴涓?Linux 杞偍鍐呮牳鍜屼竴涓敤鎴风┖闂磋浆鍌ㄥ伐鍏风粍鎴愶紝瀹冧滑涓€璧疯鍔犺浇鍒?32 MB 浠ヤ笅
+鐨勫凡淇濆瓨鍐呭瓨鍖哄煙涓€倆fcpdump 浣跨敤 zipl锛堝寘鍚湪 s390-tools 鍖呬腑锛夊畨瑁呭埌 SCSI 纾佺洏涓婏紝浠ヤ娇璇?璁惧鍙惎鍔ㄣ€侺inux 绯荤粺鐨勬搷浣滃憳闅忓悗鍙互閫氳繃鍚姩瑁呮湁 zfcpdump 鐨?SCSI 纾佺洏鏉ヨЕ鍙?SCSI 杞偍銆?
+鐢ㄦ埛绌洪棿杞偍宸ュ叿閫氳繃 /proc/vmcore 鎺ュ彛璁块棶宕╂簝绯荤粺鐨勫唴瀛樸€傝鎺ュ彛浠?ELF core dump 鏍煎紡瀵煎嚭
+宕╂簝绯荤粺鐨勫唴瀛樺拰瀵勫瓨鍣ㄣ€備负浜嗚闂敱纭欢淇濆瓨鐨勫唴瀛橈紝SCLP 璇锋眰灏嗗湪 /proc/vmcore 闇€瑕佽鏁版嵁鏃?鍒涘缓銆傚穿婧冪郴缁熷唴瀛樹腑鏈纭欢鏆傚瓨锛坰tash锛夌殑灏鹃儴閮ㄥ垎鍙互鐩存帴浠庣湡瀹炲唴瀛樺鍒躲€?
+瑕佹瀯寤烘敮鎸佽浆鍌ㄧ殑鍐呮牳锛屽繀椤昏缃唴鏍搁厤缃€夐」 CONFIG_CRASH_DUMP銆?
+瑕佽幏寰楁湁鏁堢殑 zfcpdump 鍐呮牳閰嶇疆锛屼娇鐢?鈥渕ake zfcpdump_defconfig鈥濄€?
+s390 zipl 宸ュ叿鍦ㄤ互涓嬩綅缃煡鎵?zfcpdump 鍐呮牳鍜屽彲閫夌殑 initrd/initramfs锛?
 - kernel:  <zfcpdump directory>/zfcpdump.image
 - ramdisk: <zfcpdump directory>/zfcpdump.rd
 
-zfcpdump 目录在 s390-tools 包中定义。
-
-zfcpdump 的用户空间应用程序可以驻留在 intitramfs 或 initrd 中。它也可以包含在内置的内核
-initramfs 中。该应用程序从 /proc/vmcore 或 zcore/mem 读取，并将系统转储写入 SCSI 磁盘。
-
-s390-tools 包 1.24.0 及更高版本构建一个外部 zfcpdump initramfs，其中带有一个将转储写入
-SCSI 分区的用户空间应用程序。
-
-有关如何使用 zfcpdump 的更多信息，请参阅 s390 的 “Using the Dump Tools” 手册，该书可从
-IBM Knowledge Center 获取：
-https://www.ibm.com/support/knowledgecenter/linuxonibm/liaaf/lnz_r_dt.html
+zfcpdump 鐩綍鍦?s390-tools 鍖呬腑瀹氫箟銆?
+zfcpdump 鐨勭敤鎴风┖闂村簲鐢ㄧ▼搴忓彲浠ラ┗鐣欏湪 intitramfs 鎴?initrd 涓€傚畠涔熷彲浠ュ寘鍚湪鍐呯疆鐨勫唴鏍?initramfs 涓€傝搴旂敤绋嬪簭浠?/proc/vmcore 鎴?zcore/mem 璇诲彇锛屽苟灏嗙郴缁熻浆鍌ㄥ啓鍏?SCSI 纾佺洏銆?
+s390-tools 鍖?1.24.0 鍙婃洿楂樼増鏈瀯寤轰竴涓閮?zfcpdump initramfs锛屽叾涓甫鏈変竴涓皢杞偍鍐欏叆
+SCSI 鍒嗗尯鐨勭敤鎴风┖闂村簲鐢ㄧ▼搴忋€?
+鏈夊叧濡備綍浣跨敤 zfcpdump 鐨勬洿澶氫俊鎭紝璇峰弬闃?s390 鐨?鈥淯sing the Dump Tools鈥?鎵嬪唽锛岃涔﹀彲浠?IBM Knowledge Center 鑾峰彇锛?https://www.ibm.com/support/knowledgecenter/linuxonibm/liaaf/lnz_r_dt.html

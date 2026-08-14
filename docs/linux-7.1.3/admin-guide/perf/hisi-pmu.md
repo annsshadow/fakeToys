@@ -1,29 +1,19 @@
-## 海思（HiSilicon）SoC 非核（uncore）性能监控单元（PMU）
+﻿## 娴锋€濓紙HiSilicon锛塖oC 闈炴牳锛坲ncore锛夋€ц兘鐩戞帶鍗曞厓锛圥MU锛?
+
+娴锋€?SoC 鑺墖鍖呭惈鍚勭鐙珛鐨勭郴缁熻澶?PMU锛屼緥濡?L3 缂撳瓨锛圠3C锛夈€丠ydra Home Agent锛圚HA锛夊拰 DDRC銆傝繖浜?PMU 鏄嫭绔嬬殑锛屽苟鍏锋湁鏀堕泦缁熻鍜屾€ц兘淇℃伅鐨勭‖浠堕€昏緫銆?
+娴锋€?SoC 灏佽浜嗗涓?CPU 鍜?I/O 瑁哥墖锛坉ie锛夈€傛瘡涓?CPU 绨囷紙CCL锛夌敱 4 涓叡浜竴涓?L3 缂撳瓨鐨?CPU 鏍哥粍鎴愶紱姣忎釜 CPU 瑁哥墖绉颁负瓒呯骇 CPU 绨囷紙SCCL锛夛紝鐢?6 涓?CCL 缁勬垚銆傛瘡涓?SCCL 鍒嗗埆鏈変袱涓?HHA锛? - 1锛夊拰鍥涗釜 DDRC锛? - 3锛夈€?
+### 娴锋€?SoC 闈炴牳 PMU 椹卞姩
 
 
-海思 SoC 芯片包含各种独立的系统设备 PMU，例如 L3 缓存（L3C）、Hydra Home Agent（HHA）和 DDRC。这些 PMU 是独立的，并具有收集统计和性能信息的硬件逻辑。
-
-海思 SoC 封装了多个 CPU 和 I/O 裸片（die）。每个 CPU 簇（CCL）由 4 个共享一个 L3 缓存的 CPU 核组成；每个 CPU 裸片称为超级 CPU 簇（SCCL），由 6 个 CCL 组成。每个 SCCL 分别有两个 HHA（0 - 1）和四个 DDRC（0 - 3）。
-
-### 海思 SoC 非核 PMU 驱动
-
-
-每个设备 PMU 都有用于事件计数、控制和中断的独立寄存器，PMU 驱动应注册像 L3C、HHA 和 DDRC 等 perf PMU 驱动。可用的事件和配置选项应位于
-```
+姣忎釜璁惧 PMU 閮芥湁鐢ㄤ簬浜嬩欢璁℃暟銆佹帶鍒跺拰涓柇鐨勭嫭绔嬪瘎瀛樺櫒锛孭MU 椹卞姩搴旀敞鍐屽儚 L3C銆丠HA 鍜?DDRC 绛?perf PMU 椹卞姩銆傚彲鐢ㄧ殑浜嬩欢鍜岄厤缃€夐」搴斾綅浜?```
 ```
 /sys/bus/event_source/devices/hisi_sccl{X}_<l3c{Y}/hha{Y}/ddrc{Y}>
 
-"perf list" 命令应从 sysfs 列出可用事件。
-
-每个 L3C、HHA 和 DDRC 都作为独立的 PMU 注册到 perf。PMU 名称在事件列表中显示为 hisi_sccl<sccl-id>_module<index-id>。其中 "sccl-id" 是 SCCL 的标识符，"index-id" 是模块的索引。
-
-例如：hisi_sccl3_l3c0/rd_hit_cpipe 是 SCCL ID #3 中 L3C 索引 #0 的 READ_HIT_CPIPE 事件。
-
-例如：hisi_sccl1_hha0/rx_operations 是 SCCL ID #1 中 HHA 索引 #0 的 RX_OPERATIONS 事件。
-
-驱动还提供一个 "cpumask" sysfs 属性，显示用于计数非核 PMU 事件的 CPU 核 ID。还提供 "associated_cpus" sysfs 属性以显示与此 PMU 关联的 CPU。"cpumask" 指示打开事件的 CPU，通常作为像 perf 这样的用户空间工具的提示。
-它只包含来自 "associated_cpus" 的一个关联 CPU。
-
+"perf list" 鍛戒护搴斾粠 sysfs 鍒楀嚭鍙敤浜嬩欢銆?
+姣忎釜 L3C銆丠HA 鍜?DDRC 閮戒綔涓虹嫭绔嬬殑 PMU 娉ㄥ唽鍒?perf銆侾MU 鍚嶇О鍦ㄤ簨浠跺垪琛ㄤ腑鏄剧ず涓?hisi_sccl<sccl-id>_module<index-id>銆傚叾涓?"sccl-id" 鏄?SCCL 鐨勬爣璇嗙锛?index-id" 鏄ā鍧楃殑绱㈠紩銆?
+渚嬪锛歨isi_sccl3_l3c0/rd_hit_cpipe 鏄?SCCL ID #3 涓?L3C 绱㈠紩 #0 鐨?READ_HIT_CPIPE 浜嬩欢銆?
+渚嬪锛歨isi_sccl1_hha0/rx_operations 鏄?SCCL ID #1 涓?HHA 绱㈠紩 #0 鐨?RX_OPERATIONS 浜嬩欢銆?
+椹卞姩杩樻彁渚涗竴涓?"cpumask" sysfs 灞炴€э紝鏄剧ず鐢ㄤ簬璁℃暟闈炴牳 PMU 浜嬩欢鐨?CPU 鏍?ID銆傝繕鎻愪緵 "associated_cpus" sysfs 灞炴€т互鏄剧ず涓庢 PMU 鍏宠仈鐨?CPU銆?cpumask" 鎸囩ず鎵撳紑浜嬩欢鐨?CPU锛岄€氬父浣滀负鍍?perf 杩欐牱鐨勭敤鎴风┖闂村伐鍏风殑鎻愮ず銆?瀹冨彧鍖呭惈鏉ヨ嚜 "associated_cpus" 鐨勪竴涓叧鑱?CPU銆?
 ```
   $# perf list
   hisi_sccl3_l3c0/rd_hit_cpipe/ [kernel PMU event]
@@ -39,86 +29,55 @@
   $# perf stat -a -e hisi_sccl3_l3c0/config=0x02/ sleep 5
 ```
 
-对于标识符为 0x30 的海思非核 PMU v2，其拓扑与 PMU v1 相同，但硬件上增加了一些新功能。
-
-1. L3C PMU 支持按簇内的核/线程进行过滤，可通过
+瀵逛簬鏍囪瘑绗︿负 0x30 鐨勬捣鎬濋潪鏍?PMU v2锛屽叾鎷撴墤涓?PMU v1 鐩稿悓锛屼絾纭欢涓婂鍔犱簡涓€浜涙柊鍔熻兘銆?
+1. L3C PMU 鏀寔鎸夌皣鍐呯殑鏍?绾跨▼杩涜杩囨护锛屽彲閫氳繃
 ```
   $# perf stat -a -e hisi_sccl3_l3c0/config=0x02,tt_core=0x3/ sleep 5
 ```
-这只会计数该簇中核/线程 0 和 1 的操作。
-
-用户不应使用 tt_core_deprecated 来指定核/线程过滤。该选项仅为了向后兼容而提供，且只支持 8 位，可能无法覆盖共享 L3C 的所有核/线程。
-
-2. Tracetag 允许用户通过 perf 中的 tt_req 参数选择只计数读、写或原子操作。默认计数所有操作。tt_req 为 3 位，3'b100 表示读操作，3'b101 表示写操作，3'b110 表示原子存储操作，且
+杩欏彧浼氳鏁拌绨囦腑鏍?绾跨▼ 0 鍜?1 鐨勬搷浣溿€?
+鐢ㄦ埛涓嶅簲浣跨敤 tt_core_deprecated 鏉ユ寚瀹氭牳/绾跨▼杩囨护銆傝閫夐」浠呬负浜嗗悜鍚庡吋瀹硅€屾彁渚涳紝涓斿彧鏀寔 8 浣嶏紝鍙兘鏃犳硶瑕嗙洊鍏变韩 L3C 鐨勬墍鏈夋牳/绾跨▼銆?
+2. Tracetag 鍏佽鐢ㄦ埛閫氳繃 perf 涓殑 tt_req 鍙傛暟閫夋嫨鍙鏁拌銆佸啓鎴栧師瀛愭搷浣溿€傞粯璁よ鏁版墍鏈夋搷浣溿€倀t_req 涓?3 浣嶏紝3'b100 琛ㄧず璇绘搷浣滐紝3'b101 琛ㄧず鍐欐搷浣滐紝3'b110 琛ㄧず鍘熷瓙瀛樺偍鎿嶄綔锛屼笖
 ```
   $# perf stat -a -e hisi_sccl3_l3c0/config=0x02,tt_req=0x4/ sleep 5
 ```
-这只会计数该簇中的读操作。
+杩欏彧浼氳鏁拌绨囦腑鐨勮鎿嶄綔銆?
+3. Datasrc 鍏佽鐢ㄦ埛妫€鏌ユ暟鎹潵鑷綍澶勩€傚畠鏄?5 浣嶃€備竴浜涢噸瑕佺紪鐮佸涓嬶細
 
-3. Datasrc 允许用户检查数据来自何处。它是 5 位。一些重要编码如下：
-
-- 5'b00001：来自本裸片的 L3C；
-- 5'b01000：来自跨裸片的 L3C；
-- 5'b01001：来自另一个插槽（socket）的 L3C；
-- 5'b01110：来自本地 DDR；
-- 5'b01111：来自跨裸片的 DDR；
-- 5'b10000：来自跨插槽的 DDR；
-
-等等，它主要有助于发现数据源距离 CPU 核最近。如果在多芯片中使用 datasrc_cfg，则 datasrc_skt 应为
+- 5'b00001锛氭潵鑷湰瑁哥墖鐨?L3C锛?- 5'b01000锛氭潵鑷法瑁哥墖鐨?L3C锛?- 5'b01001锛氭潵鑷彟涓€涓彃妲斤紙socket锛夌殑 L3C锛?- 5'b01110锛氭潵鑷湰鍦?DDR锛?- 5'b01111锛氭潵鑷法瑁哥墖鐨?DDR锛?- 5'b10000锛氭潵鑷法鎻掓Ы鐨?DDR锛?
+绛夌瓑锛屽畠涓昏鏈夊姪浜庡彂鐜版暟鎹簮璺濈 CPU 鏍告渶杩戙€傚鏋滃湪澶氳姱鐗囦腑浣跨敤 datasrc_cfg锛屽垯 datasrc_skt 搴斾负
 ```
   $# perf stat -a -e hisi_sccl3_l3c0/config=0xb9,datasrc_cfg=0xE/,
   hisi_sccl3_l3c0/config=0xb9,datasrc_cfg=0xF/ sleep 5
 ```
 
-4. 一些海思 SoC 封装了多个 CPU 和 I/O 裸片。每个 CPU 裸片包含若干计算簇（CCL）。I/O 裸片称为超级 I/O 簇（SICL），包含多个 I/O 簇（ICL）。SoC 中的每个 CCL/ICL 都有一个唯一 ID。每个 ID 为 11 位，包含 6 位的 SCCL-ID 和 5 位的 CCL/ICL-ID。对于 I/O 裸片，ICL-ID 后跟：
+4. 涓€浜涙捣鎬?SoC 灏佽浜嗗涓?CPU 鍜?I/O 瑁哥墖銆傛瘡涓?CPU 瑁哥墖鍖呭惈鑻ュ共璁＄畻绨囷紙CCL锛夈€侷/O 瑁哥墖绉颁负瓒呯骇 I/O 绨囷紙SICL锛夛紝鍖呭惈澶氫釜 I/O 绨囷紙ICL锛夈€係oC 涓殑姣忎釜 CCL/ICL 閮芥湁涓€涓敮涓€ ID銆傛瘡涓?ID 涓?11 浣嶏紝鍖呭惈 6 浣嶇殑 SCCL-ID 鍜?5 浣嶇殑 CCL/ICL-ID銆傚浜?I/O 瑁哥墖锛孖CL-ID 鍚庤窡锛?
+- 5'b00000锛欼/O_MGMT_ICL锛?- 5'b00001锛歂etwork_ICL锛?- 5'b00011锛欻AC_ICL锛?- 5'b10000锛歅CIe_ICL锛?
+5. uring_channel锛歎C PMU 浜嬩欢 0x47~0x59 鏀寔鎸?tx request uring 閫氶亾杩涜杩囨护銆傚畠鏄?2 浣嶃€備竴浜涢噸瑕佺紪鐮佸涓嬶細
 
-- 5'b00000：I/O_MGMT_ICL；
-- 5'b00001：Network_ICL；
-- 5'b00011：HAC_ICL；
-- 5'b10000：PCIe_ICL；
+- 2'b11锛氳鏁板彂閫佸埌 uring_ext锛圡ATA锛夐€氶亾鐨勪簨浠讹紱
+- 2'b01锛氫笌 2'b11 鐩稿悓锛?- 2'b10锛氳鏁板彂閫佸埌 uring锛堥潪 MATA锛夐€氶亾鐨勪簨浠讹紱
+- 2'b00锛氶粯璁ゅ€硷紝璁℃暟鍙戦€佸埌 uring 鍜?uring_ext 涓や釜閫氶亾鐨勪簨浠讹紱
 
-5. uring_channel：UC PMU 事件 0x47~0x59 支持按 tx request uring 通道进行过滤。它是 2 位。一些重要编码如下：
-
-- 2'b11：计数发送到 uring_ext（MATA）通道的事件；
-- 2'b01：与 2'b11 相同；
-- 2'b10：计数发送到 uring（非 MATA）通道的事件；
-- 2'b00：默认值，计数发送到 uring 和 uring_ext 两个通道的事件；
-
-6. ch：NoC PMU 支持使用此选项过滤特定事务通道的事件计数。当前支持的通道如下：
-
-- 3'b010：请求通道（Request channel）
-- 3'b100：侦听通道（Snoop channel）
-- 3'b110：响应通道（Response channel）
-- 3'b111：数据通道（Data channel）
-
-7. tt_en：如果设置了此选项，NoC PMU 仅支持计数设置了 tracetag 的事务。有关 tracetag 的更多信息请参见第 2 条列表。
-
-对于标识符为 0x40 的海思非核 PMU v3，一些非核 PMU 被进一步划分为若干部分以获得更细粒度的追踪，每个部分有自己的专用 PMU，所有这些 PMU 一起覆盖特定非核设备上的事件监控任务。此类 PMU 在 sysfs 中以如下名称格式描述：
-```
+6. ch锛歂oC PMU 鏀寔浣跨敤姝ら€夐」杩囨护鐗瑰畾浜嬪姟閫氶亾鐨勪簨浠惰鏁般€傚綋鍓嶆敮鎸佺殑閫氶亾濡備笅锛?
+- 3'b010锛氳姹傞€氶亾锛圧equest channel锛?- 3'b100锛氫睛鍚€氶亾锛圫noop channel锛?- 3'b110锛氬搷搴旈€氶亾锛圧esponse channel锛?- 3'b111锛氭暟鎹€氶亾锛圖ata channel锛?
+7. tt_en锛氬鏋滆缃簡姝ら€夐」锛孨oC PMU 浠呮敮鎸佽鏁拌缃簡 tracetag 鐨勪簨鍔°€傛湁鍏?tracetag 鐨勬洿澶氫俊鎭鍙傝绗?2 鏉″垪琛ㄣ€?
+瀵逛簬鏍囪瘑绗︿负 0x40 鐨勬捣鎬濋潪鏍?PMU v3锛屼竴浜涢潪鏍?PMU 琚繘涓€姝ュ垝鍒嗕负鑻ュ共閮ㄥ垎浠ヨ幏寰楁洿缁嗙矑搴︾殑杩借釜锛屾瘡涓儴鍒嗘湁鑷繁鐨勪笓鐢?PMU锛屾墍鏈夎繖浜?PMU 涓€璧疯鐩栫壒瀹氶潪鏍歌澶囦笂鐨勪簨浠剁洃鎺т换鍔°€傛绫?PMU 鍦?sysfs 涓互濡備笅鍚嶇О鏍煎紡鎻忚堪锛?```
 ```
 /sys/bus/event_source/devices/hisi_sccl{X}_<l3c{Y}_{Z}/ddrc{Y}_{Z}/noc{Y}_{Z}>
 
-Z 是子 ID（sub-id），表示硬件设备某个部分的 PMU。
+Z 鏄瓙 ID锛坰ub-id锛夛紝琛ㄧず纭欢璁惧鏌愪釜閮ㄥ垎鐨?PMU銆?
+澶у鏁板叿鏈変笉鍚屽瓙 ID 鐨?PMU 鐢ㄦ硶鐩稿悓銆傜壒鍒湴锛孡3C PMU 鎻愪緵 `ext` 閫夐」浠ュ厑璁告帰绱?L3C PMU 鏇寸粏绮掑害鐨勭粺璁°€侺3C PMU 椹卞姩鍦ㄥ悜纭欢涓嬪彂 perf 鍛戒护鏃跺皢鍏剁敤浣滅粓姝㈡彁绀猴細
 
-大多数具有不同子 ID 的 PMU 用法相同。特别地，L3C PMU 提供 `ext` 选项以允许探索 L3C PMU 更细粒度的统计。L3C PMU 驱动在向硬件下发 perf 命令时将其用作终止提示：
-
-- ext=0：默认，可与事件名一起使用。
-- ext=1 和 ext=2：必须与事件码一起使用，不支持事件名。
-
+- ext=0锛氶粯璁わ紝鍙笌浜嬩欢鍚嶄竴璧蜂娇鐢ㄣ€?- ext=1 鍜?ext=2锛氬繀椤讳笌浜嬩欢鐮佷竴璧蜂娇鐢紝涓嶆敮鎸佷簨浠跺悕銆?
 ```
   $# perf stat -a -e hisi_sccl0_l3c1_0/rd_spipe/ sleep 5
 ```
 ```
   $# perf stat -a -e hisi_sccl0_l3c1_0/event=0x1,ext=1/ sleep 5
 ```
-如上，`hisi_sccl0_l3c1_0` 定位到超级 CPU 簇 0、L3 缓存 1 的 pipe0。
-
-第一条命令定位到 L3C 的第一部分，因为默认隐含 `ext=0`。第二条命令在 L3C 的另一部分上以事件 `0x1` 进行计数。
-
-用户可以通过设置 srcid_cmd & srcid_msk 来配置 ID 以计数来自特定 CCL/ICL 的数据，并通过设置 tgtid_cmd & tgtid_msk 来计数发往特定 CCL/ICL 的数据。srcid_msk/tgtid_msk 中置位的位表示 PMU 在匹配 srcid_cmd/tgtid_cmd 时不会检查该位。
-
-如果所有这些选项都被禁用，它可以按默认值工作，即不区分过滤条件和 ID 信息，并返回 PMU 计数器中的总计数器值。
-
-当前驱动不支持采样。因此不支持 "perf record"。同样，由于事件都是非核的，也不支持附加到任务（task）。
-
-注意：如果需要，请联系维护者获取 SoC 中 PMU 设备支持的完整事件列表及其信息。
+濡備笂锛宍hisi_sccl0_l3c1_0` 瀹氫綅鍒拌秴绾?CPU 绨?0銆丩3 缂撳瓨 1 鐨?pipe0銆?
+绗竴鏉″懡浠ゅ畾浣嶅埌 L3C 鐨勭涓€閮ㄥ垎锛屽洜涓洪粯璁ら殣鍚?`ext=0`銆傜浜屾潯鍛戒护鍦?L3C 鐨勫彟涓€閮ㄥ垎涓婁互浜嬩欢 `0x1` 杩涜璁℃暟銆?
+鐢ㄦ埛鍙互閫氳繃璁剧疆 srcid_cmd & srcid_msk 鏉ラ厤缃?ID 浠ヨ鏁版潵鑷壒瀹?CCL/ICL 鐨勬暟鎹紝骞堕€氳繃璁剧疆 tgtid_cmd & tgtid_msk 鏉ヨ鏁板彂寰€鐗瑰畾 CCL/ICL 鐨勬暟鎹€俿rcid_msk/tgtid_msk 涓疆浣嶇殑浣嶈〃绀?PMU 鍦ㄥ尮閰?srcid_cmd/tgtid_cmd 鏃朵笉浼氭鏌ヨ浣嶃€?
+濡傛灉鎵€鏈夎繖浜涢€夐」閮借绂佺敤锛屽畠鍙互鎸夐粯璁ゅ€煎伐浣滐紝鍗充笉鍖哄垎杩囨护鏉′欢鍜?ID 淇℃伅锛屽苟杩斿洖 PMU 璁℃暟鍣ㄤ腑鐨勬€昏鏁板櫒鍊笺€?
+褰撳墠椹卞姩涓嶆敮鎸侀噰鏍枫€傚洜姝や笉鏀寔 "perf record"銆傚悓鏍凤紝鐢变簬浜嬩欢閮芥槸闈炴牳鐨勶紝涔熶笉鏀寔闄勫姞鍒颁换鍔★紙task锛夈€?
+娉ㄦ剰锛氬鏋滈渶瑕侊紝璇疯仈绯荤淮鎶よ€呰幏鍙?SoC 涓?PMU 璁惧鏀寔鐨勫畬鏁翠簨浠跺垪琛ㄥ強鍏朵俊鎭€?

@@ -1,11 +1,10 @@
-## io_mapping 函数
+﻿## io_mapping 鍑芥暟
 
 
 ## API
 
 
-linux/io-mapping.h 中的 io_mapping 函数提供了一种抽象，用于高效地将 I/O 设备的小块区域映射到 CPU。其最初用途是支持 32 位处理器上较大的图形 aperture，因为在这些处理器上无法使用 ioremap_wc 将整个 aperture 静态映射到 CPU（那样会消耗过多的内核地址空间）。
-
+linux/io-mapping.h 涓殑 io_mapping 鍑芥暟鎻愪緵浜嗕竴绉嶆娊璞★紝鐢ㄤ簬楂樻晥鍦板皢 I/O 璁惧鐨勫皬鍧楀尯鍩熸槧灏勫埌 CPU銆傚叾鏈€鍒濈敤閫旀槸鏀寔 32 浣嶅鐞嗗櫒涓婅緝澶х殑鍥惧舰 aperture锛屽洜涓哄湪杩欎簺澶勭悊鍣ㄤ笂鏃犳硶浣跨敤 ioremap_wc 灏嗘暣涓?aperture 闈欐€佹槧灏勫埌 CPU锛堥偅鏍蜂細娑堣€楄繃澶氱殑鍐呮牳鍦板潃绌洪棿锛夈€?
 ```
 
 	struct io_mapping *io_mapping_create_wc(unsigned long base,
@@ -13,12 +12,9 @@ linux/io-mapping.h 中的 io_mapping 函数提供了一种抽象，用于高效�
 
 ```
 
-'base' 是要使其可映射的区域的总线地址，而 'size' 表示要启用的映射区域大小。两者均以字节为单位。
-
-此 _wc 变体提供的映射只能与 io_mapping_map_atomic_wc()、io_mapping_map_local_wc() 或 io_mapping_map_wc() 一起使用。
-
-借助此映射对象，可以根据需求以临时或长期方式映射单个页。当然，临时映射是
-
+'base' 鏄浣垮叾鍙槧灏勭殑鍖哄煙鐨勬€荤嚎鍦板潃锛岃€?'size' 琛ㄧず瑕佸惎鐢ㄧ殑鏄犲皠鍖哄煙澶у皬銆備袱鑰呭潎浠ュ瓧鑺備负鍗曚綅銆?
+姝?_wc 鍙樹綋鎻愪緵鐨勬槧灏勫彧鑳戒笌 io_mapping_map_atomic_wc()銆乮o_mapping_map_local_wc() 鎴?io_mapping_map_wc() 涓€璧蜂娇鐢ㄣ€?
+鍊熷姪姝ゆ槧灏勫璞★紝鍙互鏍规嵁闇€姹備互涓存椂鎴栭暱鏈熸柟寮忔槧灏勫崟涓〉銆傚綋鐒讹紝涓存椂鏄犲皠鏄?
 ```
 
 	void *io_mapping_map_local_wc(struct io_mapping *mapping,
@@ -29,18 +25,12 @@ linux/io-mapping.h 中的 io_mapping 函数提供了一种抽象，用于高效�
 
 ```
 
-'offset' 是所定义映射区域内的偏移量。访问创建函数中指定区域之外的地址会产生未定义的结果。使用未按页对齐的偏移量也会产生未定义的结果。返回值指向 CPU 地址空间中的单个页。
-
-此 _wc 变体会返回该页的一个写入合并（write-combining）映射，且只能用于由 io_mapping_create_wc() 创建的映射。
-
-临时映射仅在调用者的上下文中有效。该映射不保证对所有 CPU 全局可见。
-
-io_mapping_map_local_wc() 在 X86 32 位上有副作用：它会禁用迁移以使映射代码正常工作。任何调用者都不得依赖这一副作用。
-
-io_mapping_map_atomic_wc() 的副作用是禁用抢占（preemption）和缺页（pagefaults）。不要在新代码中使用它，请改用 io_mapping_map_local_wc()。
-
-嵌套映射必须以相反顺序撤销，因为映射
-
+'offset' 鏄墍瀹氫箟鏄犲皠鍖哄煙鍐呯殑鍋忕Щ閲忋€傝闂垱寤哄嚱鏁颁腑鎸囧畾鍖哄煙涔嬪鐨勫湴鍧€浼氫骇鐢熸湭瀹氫箟鐨勭粨鏋溿€備娇鐢ㄦ湭鎸夐〉瀵归綈鐨勫亸绉婚噺涔熶細浜х敓鏈畾涔夌殑缁撴灉銆傝繑鍥炲€兼寚鍚?CPU 鍦板潃绌洪棿涓殑鍗曚釜椤点€?
+姝?_wc 鍙樹綋浼氳繑鍥炶椤电殑涓€涓啓鍏ュ悎骞讹紙write-combining锛夋槧灏勶紝涓斿彧鑳界敤浜庣敱 io_mapping_create_wc() 鍒涘缓鐨勬槧灏勩€?
+涓存椂鏄犲皠浠呭湪璋冪敤鑰呯殑涓婁笅鏂囦腑鏈夋晥銆傝鏄犲皠涓嶄繚璇佸鎵€鏈?CPU 鍏ㄥ眬鍙銆?
+io_mapping_map_local_wc() 鍦?X86 32 浣嶄笂鏈夊壇浣滅敤锛氬畠浼氱鐢ㄨ縼绉讳互浣挎槧灏勪唬鐮佹甯稿伐浣溿€備换浣曡皟鐢ㄨ€呴兘涓嶅緱渚濊禆杩欎竴鍓綔鐢ㄣ€?
+io_mapping_map_atomic_wc() 鐨勫壇浣滅敤鏄鐢ㄦ姠鍗狅紙preemption锛夊拰缂洪〉锛坧agefaults锛夈€備笉瑕佸湪鏂颁唬鐮佷腑浣跨敤瀹冿紝璇锋敼鐢?io_mapping_map_local_wc()銆?
+宓屽鏄犲皠蹇呴』浠ョ浉鍙嶉『搴忔挙閿€锛屽洜涓烘槧灏?
 ```
 
  addr1 = io_mapping_map_local_wc(map1, offset1);
@@ -58,10 +48,8 @@ io_mapping_map_atomic_wc() 的副作用是禁用抢占（preemption）和缺页�
 
 ```
 
-'vaddr' 必须是最后一次 io_mapping_map_local_wc() 或 io_mapping_map_atomic_wc() 调用返回的值。这会取消映射指定的映射，并撤销映射函数的副作用。
-
-如果你在持有一个映射期间需要睡眠，可以使用常规的
-
+'vaddr' 蹇呴』鏄渶鍚庝竴娆?io_mapping_map_local_wc() 鎴?io_mapping_map_atomic_wc() 璋冪敤杩斿洖鐨勫€笺€傝繖浼氬彇娑堟槧灏勬寚瀹氱殑鏄犲皠锛屽苟鎾ら攢鏄犲皠鍑芥暟鐨勫壇浣滅敤銆?
+濡傛灉浣犲湪鎸佹湁涓€涓槧灏勬湡闂撮渶瑕佺潯鐪狅紝鍙互浣跨敤甯歌鐨?
 ```
 
 	void *io_mapping_map_wc(struct io_mapping *mapping,
@@ -69,16 +57,14 @@ io_mapping_map_atomic_wc() 的副作用是禁用抢占（preemption）和缺页�
 
 ```
 
-其工作方式类似于 io_mapping_map_atomic/local_wc()，只是没有副作用，且指针全局可见。
-
+鍏跺伐浣滄柟寮忕被浼间簬 io_mapping_map_atomic/local_wc()锛屽彧鏄病鏈夊壇浣滅敤锛屼笖鎸囬拡鍏ㄥ眬鍙銆?
 ```
 
 	void io_mapping_unmap(void *vaddr)
 
 ```
 
-用于解除由 io_mapping_map_wc() 映射的页。
-
+鐢ㄤ簬瑙ｉ櫎鐢?io_mapping_map_wc() 鏄犲皠鐨勯〉銆?
 ```
 
 	void io_mapping_free(struct io_mapping *mapping)

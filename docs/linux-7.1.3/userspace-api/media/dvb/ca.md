@@ -1,9 +1,9 @@
+﻿
+# 鏁板瓧鐢佃 CA 璁惧
 
-# 数字电视 CA 设备
 
-
-数字电视 CA 设备控制条件接收（conditional access）硬件。可通过 `/dev/dvb/adapter?/ca?` 访问。
-在应用程序中包含 `linux/dvb/ca.h` 即可获取数据类型与 ioctl 定义。
+鏁板瓧鐢佃 CA 璁惧鎺у埗鏉′欢鎺ユ敹锛坈onditional access锛夌‖浠躲€傚彲閫氳繃 `/dev/dvb/adapter?/ca?` 璁块棶銆?
+鍦ㄥ簲鐢ㄧ▼搴忎腑鍖呭惈 `linux/dvb/ca.h` 鍗冲彲鑾峰彇鏁版嵁绫诲瀷涓?ioctl 瀹氫箟銆?
 
 
    There are three ioctls at this API that aren't documented:

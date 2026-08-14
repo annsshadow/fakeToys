@@ -1,42 +1,42 @@
+﻿
+## IMC锛圛n-Memory Collection Counters锛屽唴瀛樺唴閲囬泦璁℃暟鍣級
 
-## IMC（In-Memory Collection Counters，内存内采集计数器）
 
-
-Anju T Sudhakar，2019 年 5 月 10 日
+Anju T Sudhakar锛?019 骞?5 鏈?10 鏃?
 
     :depth: 3
 
 
-## 基本概述
+## 鍩烘湰姒傝堪
 
 
-IMC（In-Memory collection counters，内存内采集计数器）是一种硬件监控设施，它在 Nest 级别（片内但核外）、Core 级别和 Thread 级别收集大量的硬件性能事件。
+IMC锛圛n-Memory collection counters锛屽唴瀛樺唴閲囬泦璁℃暟鍣級鏄竴绉嶇‖浠剁洃鎺ц鏂斤紝瀹冨湪 Nest 绾у埆锛堢墖鍐呬絾鏍稿锛夈€丆ore 绾у埆鍜?Thread 绾у埆鏀堕泦澶ч噺鐨勭‖浠舵€ц兘浜嬩欢銆?
 
-Nest PMU 计数器由一个运行在 OCC（On-Chip Controller，片上控制器）复合体中的 Nest IMC 微码处理。该微码收集计数器数据，并将 nest IMC 计数器数据搬移到内存中。
+Nest PMU 璁℃暟鍣ㄧ敱涓€涓繍琛屽湪 OCC锛圤n-Chip Controller锛岀墖涓婃帶鍒跺櫒锛夊鍚堜綋涓殑 Nest IMC 寰爜澶勭悊銆傝寰爜鏀堕泦璁℃暟鍣ㄦ暟鎹紝骞跺皢 nest IMC 璁℃暟鍣ㄦ暟鎹惉绉诲埌鍐呭瓨涓€?
 
-Core 和 Thread IMC PMU 计数器在核内处理。Core 级 PMU 计数器为我们提供每个核的 IMC 计数器数据，而 thread 级 PMU 计数器为我们提供每个 CPU 线程的 IMC 计数器数据。
+Core 鍜?Thread IMC PMU 璁℃暟鍣ㄥ湪鏍稿唴澶勭悊銆侰ore 绾?PMU 璁℃暟鍣ㄤ负鎴戜滑鎻愪緵姣忎釜鏍哥殑 IMC 璁℃暟鍣ㄦ暟鎹紝鑰?thread 绾?PMU 璁℃暟鍣ㄤ负鎴戜滑鎻愪緵姣忎釜 CPU 绾跨▼鐨?IMC 璁℃暟鍣ㄦ暟鎹€?
 
-OPAL 从 IMC Catalog 获取 IMC PMU 及所支持事件的信息，并通过设备树传递给内核。事件的信息包含：
+OPAL 浠?IMC Catalog 鑾峰彇 IMC PMU 鍙婃墍鏀寔浜嬩欢鐨勪俊鎭紝骞堕€氳繃璁惧鏍戜紶閫掔粰鍐呮牳銆備簨浠剁殑淇℃伅鍖呭惈锛?
 
-- 事件名称（Event name）
-- 事件偏移（Event Offset）
-- 事件描述（Event description）
+- 浜嬩欢鍚嶇О锛圗vent name锛?
+- 浜嬩欢鍋忕Щ锛圗vent Offset锛?
+- 浜嬩欢鎻忚堪锛圗vent description锛?
 
-并且可能还包含：
+骞朵笖鍙兘杩樺寘鍚細
 
-- 事件缩放（Event scale）
-- 事件单位（Event unit）
+- 浜嬩欢缂╂斁锛圗vent scale锛?
+- 浜嬩欢鍗曚綅锛圗vent unit锛?
 
-某些 PMU 可能对其所有受支持的事件具有共同的 scale 和 unit 值。对于这些情况，这些事件的 scale 和 unit 属性必须从 PMU 继承。
+鏌愪簺 PMU 鍙兘瀵瑰叾鎵€鏈夊彈鏀寔鐨勪簨浠跺叿鏈夊叡鍚岀殑 scale 鍜?unit 鍊笺€傚浜庤繖浜涙儏鍐碉紝杩欎簺浜嬩欢鐨?scale 鍜?unit 灞炴€у繀椤讳粠 PMU 缁ф壙銆?
 
-内存中的事件偏移处就是计数器数据被累加的地方。
+鍐呭瓨涓殑浜嬩欢鍋忕Щ澶勫氨鏄鏁板櫒鏁版嵁琚疮鍔犵殑鍦版柟銆?
 
-IMC catalog 位于：
+IMC catalog 浣嶄簬锛?
 	https://github.com/open-power/ima-catalog
 
-内核在设备树的 `imc-counters` 设备节点中发现 IMC 计数器信息，该节点具有 compatible 字段 `ibm,opal-in-memory-counters`。内核从设备树中解析 PMU 及其事件信息，并在内核中注册 PMU 及其属性。
+鍐呮牳鍦ㄨ澶囨爲鐨?`imc-counters` 璁惧鑺傜偣涓彂鐜?IMC 璁℃暟鍣ㄤ俊鎭紝璇ヨ妭鐐瑰叿鏈?compatible 瀛楁 `ibm,opal-in-memory-counters`銆傚唴鏍镐粠璁惧鏍戜腑瑙ｆ瀽 PMU 鍙婂叾浜嬩欢淇℃伅锛屽苟鍦ㄥ唴鏍镐腑娉ㄥ唽 PMU 鍙婂叾灞炴€с€?
 
-## IMC 使用示例
+## IMC 浣跨敤绀轰緥
 
 
 
@@ -51,30 +51,30 @@ IMC catalog 位于：
   thread_imc/CPM_0THRD_NON_IDLE_PCYC/                [Kernel PMU event]
   thread_imc/CPM_1THRD_NON_IDLE_INST/                [Kernel PMU event]
 
-要查看 nest_mcs0/PM_MCS_DOWN_128B_DATA_XFER_MC0/ 的每个芯片数据：
+瑕佹煡鐪?nest_mcs0/PM_MCS_DOWN_128B_DATA_XFER_MC0/ 鐨勬瘡涓姱鐗囨暟鎹細
 
 
   # ./perf stat -e "nest_mcs01/PM_MCS01_64B_WR_DISP_PORT01/" -a --per-socket
 
-要查看 core 0 的非空闲指令：
+瑕佹煡鐪?core 0 鐨勯潪绌洪棽鎸囦护锛?
 
 
   # ./perf stat -e "core_imc/CPM_NON_IDLE_INST/" -C 0 -I 1000
 
-要查看 "make" 的非空闲指令：
+瑕佹煡鐪?"make" 鐨勯潪绌洪棽鎸囦护锛?
 
 
   # ./perf stat -e "thread_imc/CPM_NON_IDLE_PCYC/" make
 
 
-## IMC 跟踪模式（Trace-mode）
+## IMC 璺熻釜妯″紡锛圱race-mode锛?
 
 
-POWER9 支持 IMC 的两种模式：累加（Accumulation）模式和跟踪（Trace）模式。在累加模式下，事件计数在系统内存中累加。然后 Hypervisor 会周期性地或在被请求时读取这些已提交的计数。在 IMC 跟踪模式下，64 位的 trace SCOM 值被初始化为事件信息。trace SCOM 中的 CPMCxSEL 和 CPMC_LOAD 指定了要监控的事件以及采样时长。在 CPMCxSEL 每次溢出时，硬件会快照程序计数器以及事件计数，并写入由 LDBAR 指向的内存。
+POWER9 鏀寔 IMC 鐨勪袱绉嶆ā寮忥細绱姞锛圓ccumulation锛夋ā寮忓拰璺熻釜锛圱race锛夋ā寮忋€傚湪绱姞妯″紡涓嬶紝浜嬩欢璁℃暟鍦ㄧ郴缁熷唴瀛樹腑绱姞銆傜劧鍚?Hypervisor 浼氬懆鏈熸€у湴鎴栧湪琚姹傛椂璇诲彇杩欎簺宸叉彁浜ょ殑璁℃暟銆傚湪 IMC 璺熻釜妯″紡涓嬶紝64 浣嶇殑 trace SCOM 鍊艰鍒濆鍖栦负浜嬩欢淇℃伅銆倀race SCOM 涓殑 CPMCxSEL 鍜?CPMC_LOAD 鎸囧畾浜嗚鐩戞帶鐨勪簨浠朵互鍙婇噰鏍锋椂闀裤€傚湪 CPMCxSEL 姣忔婧㈠嚭鏃讹紝纭欢浼氬揩鐓х▼搴忚鏁板櫒浠ュ強浜嬩欢璁℃暟锛屽苟鍐欏叆鐢?LDBAR 鎸囧悜鐨勫唴瀛樸€?
 
-LDBAR 是一个 64 位的每线程特殊用途寄存器，它的位用于指示硬件是配置为累加模式还是跟踪模式。
+LDBAR 鏄竴涓?64 浣嶇殑姣忕嚎绋嬬壒娈婄敤閫斿瘎瀛樺櫒锛屽畠鐨勪綅鐢ㄤ簬鎸囩ず纭欢鏄厤缃负绱姞妯″紡杩樻槸璺熻釜妯″紡銆?
 
-### LDBAR 寄存器布局
+### LDBAR 瀵勫瓨鍣ㄥ竷灞€
 
 
   +-------+----------------------+
@@ -95,7 +95,7 @@ LDBAR 是一个 64 位的每线程特殊用途寄存器，它的位用于指示�
   | 51:63 | Reserved             |
   +-------+----------------------+
 
-### TRACE_IMC_SCOM 位表示
+### TRACE_IMC_SCOM 浣嶈〃绀?
 
 
   +-------+------------+
@@ -112,11 +112,11 @@ LDBAR 是一个 64 位的每线程特殊用途寄存器，它的位用于指示�
   | 51:63 | RESERVED   |
   +-------+------------+
 
-CPMC_LOAD 包含采样时长。SAMPSEL 和 CPMCxSEL 决定要计数的事件。BUFFERSIZE 指示内存范围。每次溢出时，硬件会快照程序计数器以及事件计数，并更新内存并重新加载 CMPC_LOAD 值以进行下一次采样。IMC 硬件不支持异常，因此如果内存缓冲区到达末尾，它会静默地回绕。
+CPMC_LOAD 鍖呭惈閲囨牱鏃堕暱銆係AMPSEL 鍜?CPMCxSEL 鍐冲畾瑕佽鏁扮殑浜嬩欢銆侭UFFERSIZE 鎸囩ず鍐呭瓨鑼冨洿銆傛瘡娆℃孩鍑烘椂锛岀‖浠朵細蹇収绋嬪簭璁℃暟鍣ㄤ互鍙婁簨浠惰鏁帮紝骞舵洿鏂板唴瀛樺苟閲嶆柊鍔犺浇 CMPC_LOAD 鍊间互杩涜涓嬩竴娆￠噰鏍枫€侷MC 纭欢涓嶆敮鎸佸紓甯革紝鍥犳濡傛灉鍐呭瓨缂撳啿鍖哄埌杈炬湯灏撅紝瀹冧細闈欓粯鍦板洖缁曘€?
 
-**目前，跟踪模式下监控的事件固定为 cycle。**
+**鐩墠锛岃窡韪ā寮忎笅鐩戞帶鐨勪簨浠跺浐瀹氫负 cycle銆?*
 
-## 跟踪 IMC 使用示例
+## 璺熻釜 IMC 浣跨敤绀轰緥
 
 
 
@@ -124,23 +124,23 @@ CPMC_LOAD 包含采样时长。SAMPSEL 和 CPMCxSEL 决定要计数的事件。B
   [....]
   trace_imc/trace_cycles/                            [Kernel PMU event]
 
-要记录一个使用 trace-imc 事件的应用程序/进程：
+瑕佽褰曚竴涓娇鐢?trace-imc 浜嬩欢鐨勫簲鐢ㄧ▼搴?杩涚▼锛?
 
 
   # perf record -e trace_imc/trace_cycles/ yes > /dev/null
   [ perf record: Woken up 1 times to write data ]
   [ perf record: Captured and wrote 0.012 MB perf.data (21 samples) ]
 
-生成的 `perf.data` 可以使用 perf report 读取。
+鐢熸垚鐨?`perf.data` 鍙互浣跨敤 perf report 璇诲彇銆?
 
-## 使用 IMC 跟踪模式的好处
+## 浣跨敤 IMC 璺熻釜妯″紡鐨勫ソ澶?
 
 
-避免了 PMI（Performance Monitoring Interrupts，性能监控中断）中断处理，因为 IMC 跟踪模式会快照程序计数器并更新到内存。这也提供了一种方式，让操作系统在不产生 PMI 处理开销的情况下实时进行指令采样。
+閬垮厤浜?PMI锛圥erformance Monitoring Interrupts锛屾€ц兘鐩戞帶涓柇锛変腑鏂鐞嗭紝鍥犱负 IMC 璺熻釜妯″紡浼氬揩鐓х▼搴忚鏁板櫒骞舵洿鏂板埌鍐呭瓨銆傝繖涔熸彁渚涗簡涓€绉嶆柟寮忥紝璁╂搷浣滅郴缁熷湪涓嶄骇鐢?PMI 澶勭悊寮€閿€鐨勬儏鍐典笅瀹炴椂杩涜鎸囦护閲囨牱銆?
 
-使用 `perf top` 带与不带 trace-imc 事件时的性能数据。
+浣跨敤 `perf top` 甯︿笌涓嶅甫 trace-imc 浜嬩欢鏃剁殑鎬ц兘鏁版嵁銆?
 
-执行 `perf top` 命令但不带 trace-imc 事件时，会统计 PMI 中断计数。
+鎵ц `perf top` 鍛戒护浣嗕笉甯?trace-imc 浜嬩欢鏃讹紝浼氱粺璁?PMI 涓柇璁℃暟銆?
 
 
   # grep PMI /proc/interrupts
@@ -155,4 +155,4 @@ CPMC_LOAD 包含采样时长。SAMPSEL 和 CPMCxSEL 决定要计数的事件。B
   PMI:      39735       8710      17338      17801   Performance monitoring interrupts
 
 
-也就是说，使用 `trace_imc` 事件时，PMI 中断计数不会增加。
+涔熷氨鏄锛屼娇鐢?`trace_imc` 浜嬩欢鏃讹紝PMI 涓柇璁℃暟涓嶄細澧炲姞銆?

@@ -1,35 +1,27 @@
-
+﻿
 
 
 ######## V4L2_META_FMT_MALI_C55_STATS ('C55S'), V4L2_META_FMT_MALI_C55_PARAMS ('C55P')
 
 
-## 3A 统计信息
+## 3A 缁熻淇℃伅
 
 
-ISP 设备会针对输入的 bayer 帧收集不同的统计信息。用户空间可以通过
-mali-c55 3a stats <mali-c55-3a-stats> 元数据捕获视频节点，使用
-`v4l2_meta_format` 接口来获取这些统计信息。缓冲区包含 `mali-c55-config.h` 中
-定义的 C 结构体 `mali_c55_stats_buffer` 的单个实例，因此可以通过如下方式从
-缓冲区中获取该结构体：
-
+ISP 璁惧浼氶拡瀵硅緭鍏ョ殑 bayer 甯ф敹闆嗕笉鍚岀殑缁熻淇℃伅銆傜敤鎴风┖闂村彲浠ラ€氳繃
+mali-c55 3a stats <mali-c55-3a-stats> 鍏冩暟鎹崟鑾疯棰戣妭鐐癸紝浣跨敤
+`v4l2_meta_format` 鎺ュ彛鏉ヨ幏鍙栬繖浜涚粺璁′俊鎭€傜紦鍐插尯鍖呭惈 `mali-c55-config.h` 涓?瀹氫箟鐨?C 缁撴瀯浣?`mali_c55_stats_buffer` 鐨勫崟涓疄渚嬶紝鍥犳鍙互閫氳繃濡備笅鏂瑰紡浠?缂撳啿鍖轰腑鑾峰彇璇ョ粨鏋勪綋锛?
 
 	struct mali_c55_stats_buffer *stats =
 		(struct mali_c55_stats_buffer *)buf;
 
-有关统计信息的细节请参见 `mali_c55_stats_buffer`。
+鏈夊叧缁熻淇℃伅鐨勭粏鑺傝鍙傝 `mali_c55_stats_buffer`銆?
+## 閰嶇疆鍙傛暟
 
-## 配置参数
 
-
-配置参数通过 :ref:`mali-c55 3a params <mali-c55-3a-params>` 元数据输出视频节点
-传递，使用 `v4l2_meta_format` 接口。与为每个可配置 ISP 区域包含子结构体的单一
-结构体不同，Mali-C55 的参数使用 v4l2-isp parameters 系统，通过该系统，参数组被
-定义为不同的结构体或“块”（blocks），可以被添加到 `v4l2_isp_params_buffer` 的
-data 成员中。用户空间负责用需要由驱动配置的块来填充 data 成员。每个块特有的
-结构体将其第一个成员嵌入 `v4l2_isp_params_block_header`，并且用户空间必须用
-`mali_c55_param_block_type` 中的一个值来填充 type 成员。
-
+閰嶇疆鍙傛暟閫氳繃 :ref:`mali-c55 3a params <mali-c55-3a-params>` 鍏冩暟鎹緭鍑鸿棰戣妭鐐?浼犻€掞紝浣跨敤 `v4l2_meta_format` 鎺ュ彛銆備笌涓烘瘡涓彲閰嶇疆 ISP 鍖哄煙鍖呭惈瀛愮粨鏋勪綋鐨勫崟涓€
+缁撴瀯浣撲笉鍚岋紝Mali-C55 鐨勫弬鏁颁娇鐢?v4l2-isp parameters 绯荤粺锛岄€氳繃璇ョ郴缁燂紝鍙傛暟缁勮
+瀹氫箟涓轰笉鍚岀殑缁撴瀯浣撴垨鈥滃潡鈥濓紙blocks锛夛紝鍙互琚坊鍔犲埌 `v4l2_isp_params_buffer` 鐨?data 鎴愬憳涓€傜敤鎴风┖闂磋礋璐ｇ敤闇€瑕佺敱椹卞姩閰嶇疆鐨勫潡鏉ュ～鍏?data 鎴愬憳銆傛瘡涓潡鐗规湁鐨?缁撴瀯浣撳皢鍏剁涓€涓垚鍛樺祵鍏?`v4l2_isp_params_block_header`锛屽苟涓旂敤鎴风┖闂村繀椤荤敤
+`mali_c55_param_block_type` 涓殑涓€涓€兼潵濉厖 type 鎴愬憳銆?
 
 	struct v4l2_isp_params_buffer *params =
 		(struct v4l2_isp_params_buffer *)buffer;
@@ -68,4 +60,4 @@ data 成员中。用户空间负责用需要由驱动配置的块来填充 data 
 
 	params->data_size += sizeof(struct mali_c55_params_sensor_off_preshading);
 
-## Arm Mali-C55 uAPI 数据类型
+## Arm Mali-C55 uAPI 鏁版嵁绫诲瀷

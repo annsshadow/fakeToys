@@ -1,46 +1,36 @@
-## fwctl bnxt 驱动
+﻿## fwctl bnxt 椹卞姩
 
 
 :Author: Pavan Chebbi
 
-## 概述
+## 姒傝堪
 
 
-BNXT 驱动通过 auxiliary_device 提供 fwctl 服务。bnxt_fwctl 驱动绑定到该设备，并向 fwctl
-子系统注册自己。
-
-bnxt_fwctl 驱动对设备固件内部一无所知。它使用 bnxt 提供的上层协议（ULP）通道来向固件发送
-硬件资源管理器（HWRM）命令。
-
-这些命令可以查询或更改由固件驱动的设备配置，以及读写对调试有用的寄存器。
-
-## bnxt_fwctl 用户 API
+BNXT 椹卞姩閫氳繃 auxiliary_device 鎻愪緵 fwctl 鏈嶅姟銆俠nxt_fwctl 椹卞姩缁戝畾鍒拌璁惧锛屽苟鍚?fwctl
+瀛愮郴缁熸敞鍐岃嚜宸便€?
+bnxt_fwctl 椹卞姩瀵硅澶囧浐浠跺唴閮ㄤ竴鏃犳墍鐭ャ€傚畠浣跨敤 bnxt 鎻愪緵鐨勪笂灞傚崗璁紙ULP锛夐€氶亾鏉ュ悜鍥轰欢鍙戦€?纭欢璧勬簮绠＄悊鍣紙HWRM锛夊懡浠ゃ€?
+杩欎簺鍛戒护鍙互鏌ヨ鎴栨洿鏀圭敱鍥轰欢椹卞姩鐨勮澶囬厤缃紝浠ュ強璇诲啓瀵硅皟璇曟湁鐢ㄧ殑瀵勫瓨鍣ㄣ€?
+## bnxt_fwctl 鐢ㄦ埛 API
 
 
-每个 RPC 请求在 fwctl_rpc 的 'in' 缓冲区中包含 HWRM 输入结构，而 'out' 将包含响应。
-
-一个典型的用户应用程序可以使用 ioctl() 发送 FWCTL_INFO 命令来发现 bnxt_fwctl 的 RPC 能力，
-如下所示：
+姣忎釜 RPC 璇锋眰鍦?fwctl_rpc 鐨?'in' 缂撳啿鍖轰腑鍖呭惈 HWRM 杈撳叆缁撴瀯锛岃€?'out' 灏嗗寘鍚搷搴斻€?
+涓€涓吀鍨嬬殑鐢ㄦ埛搴旂敤绋嬪簭鍙互浣跨敤 ioctl() 鍙戦€?FWCTL_INFO 鍛戒护鏉ュ彂鐜?bnxt_fwctl 鐨?RPC 鑳藉姏锛?濡備笅鎵€绀猴細
 
         ioctl(fd, FWCTL_INFO, &fwctl_info_msg);
 
-其中 fwctl_info_msg（类型为 struct fwctl_info）描述了 bnxt_info_msg（类型为 struct fwctl_info_bnxt）。
-fwctl_info_msg 设置如下：
-
+鍏朵腑 fwctl_info_msg锛堢被鍨嬩负 struct fwctl_info锛夋弿杩颁簡 bnxt_info_msg锛堢被鍨嬩负 struct fwctl_info_bnxt锛夈€?fwctl_info_msg 璁剧疆濡備笅锛?
         size = sizeof(struct fwctl_info);
         flags = 0;
         device_data_len = sizeof(bnxt_info_msg);
         out_device_data = (__aligned_u64)&bnxt_info_msg;
 
-bnxt_info_msg 的 uctx_caps 表示 include/uapi/fwctl/bnxt.h 中 fwctl_bnxt_commands 所描述的
-能力。
-
-FW RPC 本身，FWCTL_RPC 可使用 ioctl() 发送，如下所示：
+bnxt_info_msg 鐨?uctx_caps 琛ㄧず include/uapi/fwctl/bnxt.h 涓?fwctl_bnxt_commands 鎵€鎻忚堪鐨?鑳藉姏銆?
+FW RPC 鏈韩锛孎WCTL_RPC 鍙娇鐢?ioctl() 鍙戦€侊紝濡備笅鎵€绀猴細
 
         ioctl(fd, FWCTL_RPC, &fwctl_rpc_msg);
 
-其中 fwctl_rpc_msg（类型为 struct fwctl_rpc）在其 'in' 缓冲区中携带 HWRM 命令。HWRM 输入
-结构在 include/linux/bnxt/hsi.h 中描述。HWRM_VER_GET 的示例如下所示：
+鍏朵腑 fwctl_rpc_msg锛堢被鍨嬩负 struct fwctl_rpc锛夊湪鍏?'in' 缂撳啿鍖轰腑鎼哄甫 HWRM 鍛戒护銆侶WRM 杈撳叆
+缁撴瀯鍦?include/linux/bnxt/hsi.h 涓弿杩般€侶WRM_VER_GET 鐨勭ず渚嬪涓嬫墍绀猴細
 
         struct hwrm_ver_get_output resp;
         struct fwctl_rpc fwctl_rpc_msg;
@@ -60,6 +50,6 @@ FW RPC 本身，FWCTL_RPC 可使用 ioctl() 发送，如下所示：
         fwctl_rpc_msg.in = (__aligned_u64)&req;
         fwctl_rpc_msg.out = (__aligned_u64)&resp;
 
-可以练习此接口的示例 python3 程序可在以下 git 仓库中找到：
+鍙互缁冧範姝ゆ帴鍙ｇ殑绀轰緥 python3 绋嬪簭鍙湪浠ヤ笅 git 浠撳簱涓壘鍒帮細
 
 https://github.com/Broadcom/fwctl-tools

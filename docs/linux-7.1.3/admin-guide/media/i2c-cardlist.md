@@ -1,272 +1,169 @@
+﻿
+## I虏C 椹卞姩
 
-## I²C 驱动
 
-
-I²C（Inter-Integrated Circuit，集成电路间总线）总线是一种三线总线，在媒体卡内部用于不同芯片之间的通信。虽然该总线对 Linux 内核不可见，但驱动需要通过该总线发送和接收命令。Linux 内核的驱动抽象支持为 I²C 总线内的每个组件实现不同的驱动，就好像该总线对主系统板可见一样。
-
-I²C 设备的问题之一是，有时同一设备可能与不同的 I²C 硬件配合工作。例如，在面向北美市场带有调谐器、以及面向欧洲市场的另一个调谐器的设备上，这种情况很常见。一些驱动有 `tuner=` modprobe 参数，以允许使用不同的调谐器编号来解决此类问题。
-
-下面列出了当前支持的 I²C 驱动（不包括暂存驱动）。
-
-### 音频解码器、处理器和混音器
+I虏C锛圛nter-Integrated Circuit锛岄泦鎴愮數璺棿鎬荤嚎锛夋€荤嚎鏄竴绉嶄笁绾挎€荤嚎锛屽湪濯掍綋鍗″唴閮ㄧ敤浜庝笉鍚岃姱鐗囦箣闂寸殑閫氫俊銆傝櫧鐒惰鎬荤嚎瀵?Linux 鍐呮牳涓嶅彲瑙侊紝浣嗛┍鍔ㄩ渶瑕侀€氳繃璇ユ€荤嚎鍙戦€佸拰鎺ユ敹鍛戒护銆侺inux 鍐呮牳鐨勯┍鍔ㄦ娊璞℃敮鎸佷负 I虏C 鎬荤嚎鍐呯殑姣忎釜缁勪欢瀹炵幇涓嶅悓鐨勯┍鍔紝灏卞ソ鍍忚鎬荤嚎瀵逛富绯荤粺鏉垮彲瑙佷竴鏍枫€?
+I虏C 璁惧鐨勯棶棰樹箣涓€鏄紝鏈夋椂鍚屼竴璁惧鍙兘涓庝笉鍚岀殑 I虏C 纭欢閰嶅悎宸ヤ綔銆備緥濡傦紝鍦ㄩ潰鍚戝寳缇庡競鍦哄甫鏈夎皟璋愬櫒銆佷互鍙婇潰鍚戞娲插競鍦虹殑鍙︿竴涓皟璋愬櫒鐨勮澶囦笂锛岃繖绉嶆儏鍐靛緢甯歌銆備竴浜涢┍鍔ㄦ湁 `tuner=` modprobe 鍙傛暟锛屼互鍏佽浣跨敤涓嶅悓鐨勮皟璋愬櫒缂栧彿鏉ヨВ鍐虫绫婚棶棰樸€?
+涓嬮潰鍒楀嚭浜嗗綋鍓嶆敮鎸佺殑 I虏C 椹卞姩锛堜笉鍖呮嫭鏆傚瓨椹卞姩锛夈€?
+### 闊抽瑙ｇ爜鍣ㄣ€佸鐞嗗櫒鍜屾贩闊冲櫒
 
 
 ============  ==========================================================
-驱动          名称
+椹卞姩          鍚嶇О
 ============  ==========================================================
-cs3308        Cirrus Logic CS3308 音频 ADC
-cs5345        Cirrus Logic CS5345 音频 ADC
-cs53l32a      Cirrus Logic CS53L32A 音频 ADC
-msp3400       Micronas MSP34xx 音频解码器
-sony-btf-mpx  Sony BTF 内部 MPX
-tda1997x      NXP TDA1997x HDMI 接收器
-tda7432       Philips TDA7432 音频处理器
-tda9840       Philips TDA9840 音频处理器
-tea6415c      Philips TEA6415C 音频处理器
-tea6420       Philips TEA6420 音频处理器
-tlv320aic23b  Texas Instruments TLV320AIC23B 音频编解码器
-tvaudio       简单音频解码器芯片
-uda1342       Philips UDA1342 音频编解码器
-vp27smpx      Panasonic VP27 内部 MPX
-wm8739        Wolfson Microelectronics WM8739 立体声音频 ADC
-wm8775        Wolfson Microelectronics WM8775 带输入混音器的音频 ADC
+cs3308        Cirrus Logic CS3308 闊抽 ADC
+cs5345        Cirrus Logic CS5345 闊抽 ADC
+cs53l32a      Cirrus Logic CS53L32A 闊抽 ADC
+msp3400       Micronas MSP34xx 闊抽瑙ｇ爜鍣?sony-btf-mpx  Sony BTF 鍐呴儴 MPX
+tda1997x      NXP TDA1997x HDMI 鎺ユ敹鍣?tda7432       Philips TDA7432 闊抽澶勭悊鍣?tda9840       Philips TDA9840 闊抽澶勭悊鍣?tea6415c      Philips TEA6415C 闊抽澶勭悊鍣?tea6420       Philips TEA6420 闊抽澶勭悊鍣?tlv320aic23b  Texas Instruments TLV320AIC23B 闊抽缂栬В鐮佸櫒
+tvaudio       绠€鍗曢煶棰戣В鐮佸櫒鑺墖
+uda1342       Philips UDA1342 闊抽缂栬В鐮佸櫒
+vp27smpx      Panasonic VP27 鍐呴儴 MPX
+wm8739        Wolfson Microelectronics WM8739 绔嬩綋澹伴煶棰?ADC
+wm8775        Wolfson Microelectronics WM8775 甯﹁緭鍏ユ贩闊冲櫒鐨勯煶棰?ADC
 ============  ==========================================================
 
-### 音频/视频压缩芯片
+### 闊抽/瑙嗛鍘嬬缉鑺墖
 
 
 ============  ==========================================================
-驱动          名称
+椹卞姩          鍚嶇О
 ============  ==========================================================
-saa6752hs     Philips SAA6752HS MPEG-2 音频/视频编码器
-============  ==========================================================
+saa6752hs     Philips SAA6752HS MPEG-2 闊抽/瑙嗛缂栫爜鍣?============  ==========================================================
 
-### 摄像头传感器设备
+### 鎽勫儚澶翠紶鎰熷櫒璁惧
 
 
 ============  ==========================================================
-驱动          名称
+椹卞姩          鍚嶇О
 ============  ==========================================================
-ccs           MIPI CCS 兼容摄像头传感器（也包括 SMIA++ 和 SMIA）
-et8ek8        ET8EK8 摄像头传感器
-hi556         Hynix Hi-556 传感器
-hi846         Hynix Hi-846 传感器
-imx208        Sony IMX208 传感器
-imx214        Sony IMX214 传感器
-imx219        Sony IMX219 传感器
-imx258        Sony IMX258 传感器
-imx274        Sony IMX274 传感器
-imx290        Sony IMX290 传感器
-imx319        Sony IMX319 传感器
-imx334        Sony IMX334 传感器
-imx355        Sony IMX355 传感器
-imx412        Sony IMX412 传感器
-mt9m001       mt9m001
-mt9m111       mt9m111、mt9m112 和 mt9m131
+ccs           MIPI CCS 鍏煎鎽勫儚澶翠紶鎰熷櫒锛堜篃鍖呮嫭 SMIA++ 鍜?SMIA锛?et8ek8        ET8EK8 鎽勫儚澶翠紶鎰熷櫒
+hi556         Hynix Hi-556 浼犳劅鍣?hi846         Hynix Hi-846 浼犳劅鍣?imx208        Sony IMX208 浼犳劅鍣?imx214        Sony IMX214 浼犳劅鍣?imx219        Sony IMX219 浼犳劅鍣?imx258        Sony IMX258 浼犳劅鍣?imx274        Sony IMX274 浼犳劅鍣?imx290        Sony IMX290 浼犳劅鍣?imx319        Sony IMX319 浼犳劅鍣?imx334        Sony IMX334 浼犳劅鍣?imx355        Sony IMX355 浼犳劅鍣?imx412        Sony IMX412 浼犳劅鍣?mt9m001       mt9m001
+mt9m111       mt9m111銆乵t9m112 鍜?mt9m131
 mt9p031       Aptina MT9P031
 mt9t112       Aptina MT9T111/MT9T112
-mt9v011       Micron mt9v011 传感器
-mt9v032       Micron MT9V032 传感器
-mt9v111       Aptina MT9V111 传感器
-ov13858       OmniVision OV13858 传感器
-ov13b10       OmniVision OV13B10 传感器
-ov2640        OmniVision OV2640 传感器
-ov2659        OmniVision OV2659 传感器
-ov2680        OmniVision OV2680 传感器
-ov2685        OmniVision OV2685 传感器
-ov5640        OmniVision OV5640 传感器
-ov5645        OmniVision OV5645 传感器
-ov5647        OmniVision OV5647 传感器
-ov5670        OmniVision OV5670 传感器
-ov5675        OmniVision OV5675 传感器
-ov5695        OmniVision OV5695 传感器
-ov7251        OmniVision OV7251 传感器
-ov7640        OmniVision OV7640 传感器
-ov7670        OmniVision OV7670 传感器
-ov772x        OmniVision OV772x 传感器
-ov7740        OmniVision OV7740 传感器
-ov8856        OmniVision OV8856 传感器
-ov9640        OmniVision OV9640 传感器
-ov9650        OmniVision OV9650/OV9652 传感器
-rj54n1cb0c    Sharp RJ54N1CB0C 传感器
-s5c73m3       Samsung S5C73M3 传感器
-s5k4ecgx      Samsung S5K4ECGX 传感器
-s5k5baf       Samsung S5K5BAF 传感器
-s5k6a3        Samsung S5K6A3 传感器
+mt9v011       Micron mt9v011 浼犳劅鍣?mt9v032       Micron MT9V032 浼犳劅鍣?mt9v111       Aptina MT9V111 浼犳劅鍣?ov13858       OmniVision OV13858 浼犳劅鍣?ov13b10       OmniVision OV13B10 浼犳劅鍣?ov2640        OmniVision OV2640 浼犳劅鍣?ov2659        OmniVision OV2659 浼犳劅鍣?ov2680        OmniVision OV2680 浼犳劅鍣?ov2685        OmniVision OV2685 浼犳劅鍣?ov5640        OmniVision OV5640 浼犳劅鍣?ov5645        OmniVision OV5645 浼犳劅鍣?ov5647        OmniVision OV5647 浼犳劅鍣?ov5670        OmniVision OV5670 浼犳劅鍣?ov5675        OmniVision OV5675 浼犳劅鍣?ov5695        OmniVision OV5695 浼犳劅鍣?ov7251        OmniVision OV7251 浼犳劅鍣?ov7640        OmniVision OV7640 浼犳劅鍣?ov7670        OmniVision OV7670 浼犳劅鍣?ov772x        OmniVision OV772x 浼犳劅鍣?ov7740        OmniVision OV7740 浼犳劅鍣?ov8856        OmniVision OV8856 浼犳劅鍣?ov9640        OmniVision OV9640 浼犳劅鍣?ov9650        OmniVision OV9650/OV9652 浼犳劅鍣?rj54n1cb0c    Sharp RJ54N1CB0C 浼犳劅鍣?s5c73m3       Samsung S5C73M3 浼犳劅鍣?s5k4ecgx      Samsung S5K4ECGX 浼犳劅鍣?s5k5baf       Samsung S5K5BAF 浼犳劅鍣?s5k6a3        Samsung S5K6A3 浼犳劅鍣?============  ==========================================================
+
+### 闂厜鐏澶?
+
+============  ==========================================================
+椹卞姩          鍚嶇О
+============  ==========================================================
+adp1653       ADP1653 闂厜鐏?lm3560        LM3560 鍙岄棯鍏夌伅椹卞姩
+lm3646        LM3646 鍙岄棯鍏夌伅椹卞姩
 ============  ==========================================================
 
-### 闪光灯设备
+### IR I2C 椹卞姩
 
 
 ============  ==========================================================
-驱动          名称
+椹卞姩          鍚嶇О
 ============  ==========================================================
-adp1653       ADP1653 闪光灯
-lm3560        LM3560 双闪光灯驱动
-lm3646        LM3646 双闪光灯驱动
+ir-kbd-i2c    IR 鐨?I2C 妯″潡
 ============  ==========================================================
 
-### IR I2C 驱动
+### 闀滃ご椹卞姩
 
 
 ============  ==========================================================
-驱动          名称
+椹卞姩          鍚嶇О
 ============  ==========================================================
-ir-kbd-i2c    IR 的 I2C 模块
-============  ==========================================================
-
-### 镜头驱动
-
-
-============  ==========================================================
-驱动          名称
-============  ==========================================================
-ad5820        AD5820 镜头音圈
-ak7375        AK7375 镜头音圈
-dw9714        DW9714 镜头音圈
-dw9768        DW9768 镜头音圈
-dw9807-vcm    DW9807 镜头音圈
+ad5820        AD5820 闀滃ご闊冲湀
+ak7375        AK7375 闀滃ご闊冲湀
+dw9714        DW9714 闀滃ご闊冲湀
+dw9768        DW9768 闀滃ご闊冲湀
+dw9807-vcm    DW9807 闀滃ご闊冲湀
 ============  ==========================================================
 
-### 杂项辅助芯片
+### 鏉傞」杈呭姪鑺墖
 
 
 ============  ==========================================================
-驱动          名称
+椹卞姩          鍚嶇О
 ============  ==========================================================
-video-i2c     I2C 传输视频
-m52790        Mitsubishi M52790 A/V 开关
-st-mipid02    STMicroelectronics MIPID02 CSI-2 转并行桥接
-ths7303       THS7303/53 视频放大器
-============  ==========================================================
+video-i2c     I2C 浼犺緭瑙嗛
+m52790        Mitsubishi M52790 A/V 寮€鍏?st-mipid02    STMicroelectronics MIPID02 CSI-2 杞苟琛屾ˉ鎺?ths7303       THS7303/53 瑙嗛鏀惧ぇ鍣?============  ==========================================================
 
-### RDS 解码器
-
+### RDS 瑙ｇ爜鍣?
 
 ============  ==========================================================
-驱动          名称
+椹卞姩          鍚嶇О
 ============  ==========================================================
-saa6588       SAA6588 无线电芯片 RDS 解码器
-============  ==========================================================
+saa6588       SAA6588 鏃犵嚎鐢佃姱鐗?RDS 瑙ｇ爜鍣?============  ==========================================================
 
-### SDR 调谐器芯片
-
+### SDR 璋冭皭鍣ㄨ姱鐗?
 
 ============  ==========================================================
-驱动          名称
+椹卞姩          鍚嶇О
 ============  ==========================================================
-max2175       Maxim 2175 RF 转比特调谐器
+max2175       Maxim 2175 RF 杞瘮鐗硅皟璋愬櫒
 ============  ==========================================================
 
-### 视频和音频解码器
+### 瑙嗛鍜岄煶棰戣В鐮佸櫒
 
 
 ============  ==========================================================
-驱动          名称
+椹卞姩          鍚嶇О
 ============  ==========================================================
-cx25840       Conexant CX2584x 音频/视频解码器
-saa717x       Philips SAA7171/3/4 音频/视频解码器
-============  ==========================================================
+cx25840       Conexant CX2584x 闊抽/瑙嗛瑙ｇ爜鍣?saa717x       Philips SAA7171/3/4 闊抽/瑙嗛瑙ｇ爜鍣?============  ==========================================================
 
-### 视频解码器
-
+### 瑙嗛瑙ｇ爜鍣?
 
 ============  ==========================================================
-驱动          名称
+椹卞姩          鍚嶇О
 ============  ==========================================================
-adv7180       Analog Devices ADV7180 解码器
-adv7183       Analog Devices ADV7183 解码器
-adv748x       Analog Devices ADV748x 解码器
-adv7604       Analog Devices ADV7604 解码器
-adv7842       Analog Devices ADV7842 解码器
-bt819         BT819A VideoStream 解码器
-bt856         BT856 VideoStream 解码器
-bt866         BT866 VideoStream 解码器
-ks0127        KS0127 视频解码器
-ml86v7667     OKI ML86V7667 视频解码器
-saa7110       Philips SAA7110 视频解码器
-saa7115       Philips SAA7111/3/4/5 视频解码器
-tc358743      Toshiba TC358743 解码器
-tvp514x       Texas Instruments TVP514x 视频解码器
-tvp5150       Texas Instruments TVP5150 视频解码器
-tvp7002       Texas Instruments TVP7002 视频解码器
-tw2804        Techwell TW2804 多路视频解码器
-tw9903        Techwell TW9903 视频解码器
-tw9906        Techwell TW9906 视频解码器
-tw9910        Techwell TW9910 视频解码器
-vpx3220       vpx3220a、vpx3216b 和 vpx3214c 视频解码器
-============  ==========================================================
+adv7180       Analog Devices ADV7180 瑙ｇ爜鍣?adv7183       Analog Devices ADV7183 瑙ｇ爜鍣?adv748x       Analog Devices ADV748x 瑙ｇ爜鍣?adv7604       Analog Devices ADV7604 瑙ｇ爜鍣?adv7842       Analog Devices ADV7842 瑙ｇ爜鍣?bt819         BT819A VideoStream 瑙ｇ爜鍣?bt856         BT856 VideoStream 瑙ｇ爜鍣?bt866         BT866 VideoStream 瑙ｇ爜鍣?ks0127        KS0127 瑙嗛瑙ｇ爜鍣?ml86v7667     OKI ML86V7667 瑙嗛瑙ｇ爜鍣?saa7110       Philips SAA7110 瑙嗛瑙ｇ爜鍣?saa7115       Philips SAA7111/3/4/5 瑙嗛瑙ｇ爜鍣?tc358743      Toshiba TC358743 瑙ｇ爜鍣?tvp514x       Texas Instruments TVP514x 瑙嗛瑙ｇ爜鍣?tvp5150       Texas Instruments TVP5150 瑙嗛瑙ｇ爜鍣?tvp7002       Texas Instruments TVP7002 瑙嗛瑙ｇ爜鍣?tw2804        Techwell TW2804 澶氳矾瑙嗛瑙ｇ爜鍣?tw9903        Techwell TW9903 瑙嗛瑙ｇ爜鍣?tw9906        Techwell TW9906 瑙嗛瑙ｇ爜鍣?tw9910        Techwell TW9910 瑙嗛瑙ｇ爜鍣?vpx3220       vpx3220a銆乿px3216b 鍜?vpx3214c 瑙嗛瑙ｇ爜鍣?============  ==========================================================
 
-### 视频编码器
+### 瑙嗛缂栫爜鍣?
+
+============  ==========================================================
+椹卞姩          鍚嶇О
+============  ==========================================================
+adv7170       Analog Devices ADV7170 瑙嗛缂栫爜鍣?adv7175       Analog Devices ADV7175 瑙嗛缂栫爜鍣?adv7343       ADV7343 瑙嗛缂栫爜鍣?adv7393       ADV7393 瑙嗛缂栫爜鍣?adv7511-v4l2  Analog Devices ADV7511 缂栫爜鍣?ak881x        AK8813/AK8814 瑙嗛缂栫爜鍣?saa7127       Philips SAA7127/9 鏁板瓧瑙嗛缂栫爜鍣?saa7185       Philips SAA7185 瑙嗛缂栫爜鍣?ths8200       Texas Instruments THS8200 瑙嗛缂栫爜鍣?============  ==========================================================
+
+### 瑙嗛鏀瑰杽鑺墖
 
 
 ============  ==========================================================
-驱动          名称
+椹卞姩          鍚嶇О
 ============  ==========================================================
-adv7170       Analog Devices ADV7170 视频编码器
-adv7175       Analog Devices ADV7175 视频编码器
-adv7343       ADV7343 视频编码器
-adv7393       ADV7393 视频编码器
-adv7511-v4l2  Analog Devices ADV7511 编码器
-ak881x        AK8813/AK8814 视频编码器
-saa7127       Philips SAA7127/9 数字视频编码器
-saa7185       Philips SAA7185 视频编码器
-ths8200       Texas Instruments THS8200 视频编码器
+upd64031a     NEC Electronics uPD64031A 閲嶅奖娑堥櫎
+upd64083      NEC Electronics uPD64083 涓夌淮 Y/C 鍒嗙
 ============  ==========================================================
 
-### 视频改善芯片
-
-
-============  ==========================================================
-驱动          名称
-============  ==========================================================
-upd64031a     NEC Electronics uPD64031A 重影消除
-upd64083      NEC Electronics uPD64083 三维 Y/C 分离
-============  ==========================================================
-
-### 调谐器驱动
-
+### 璋冭皭鍣ㄩ┍鍔?
 
 ============  ==================================================
-驱动          名称
+椹卞姩          鍚嶇О
 ============  ==================================================
-e4000         Elonics E4000 硅调谐器
-fc0011        Fitipower FC0011 硅调谐器
-fc0012        Fitipower FC0012 硅调谐器
-fc0013        Fitipower FC0013 硅调谐器
-fc2580        FCI FC2580 硅调谐器
-it913x        ITE Tech IT913x 硅调谐器
-m88rs6000t    Montage M88RS6000 内部调谐器
-max2165       Maxim MAX2165 硅调谐器
-mc44s803      Freescale MC44S803 低功耗 CMOS 宽带调谐器
-msi001        Mirics MSi001
-mt2060        Microtune MT2060 硅中频调谐器
-mt2063        Microtune MT2063 硅中频调谐器
-mt20xx        Microtune 2032 / 2050 调谐器
-mt2131        Microtune MT2131 硅调谐器
-mt2266        Microtune MT2266 硅调谐器
-mxl301rf      MaxLinear MxL301RF 调谐器
-mxl5005s      MaxLinear MSL5005S 硅调谐器
-mxl5007t      MaxLinear MxL5007T 硅调谐器
-qm1d1b0004    Sharp QM1D1B0004 调谐器
-qm1d1c0042    Sharp QM1D1C0042 调谐器
-qt1010        Quantek QT1010 硅调谐器
-r820t         Rafael Micro R820T 硅调谐器
-si2157        Silicon Labs Si2157 硅调谐器
-tuner-types   简单调谐器支持
-tda18212      NXP TDA18212 硅调谐器
-tda18218      NXP TDA18218 硅调谐器
-tda18250      NXP TDA18250 硅调谐器
-tda18271      NXP TDA18271 硅调谐器
-tda827x       Philips TDA827X 硅调谐器
-tda8290       TDA 8290/8295 + 8275(a)/18271 调谐器组合
-tda9887       TDA 9885/6/7 模拟中频解调器
-tea5761       TEA 5761 无线电调谐器
-tea5767       TEA 5767 无线电调谐器
-tua9001       Infineon TUA9001 硅调谐器
-xc2028        XCeive xc2028/xc3028 调谐器
-xc4000        Xceive XC4000 硅调谐器
-xc5000        Xceive XC5000 硅调谐器
+e4000         Elonics E4000 纭呰皟璋愬櫒
+fc0011        Fitipower FC0011 纭呰皟璋愬櫒
+fc0012        Fitipower FC0012 纭呰皟璋愬櫒
+fc0013        Fitipower FC0013 纭呰皟璋愬櫒
+fc2580        FCI FC2580 纭呰皟璋愬櫒
+it913x        ITE Tech IT913x 纭呰皟璋愬櫒
+m88rs6000t    Montage M88RS6000 鍐呴儴璋冭皭鍣?max2165       Maxim MAX2165 纭呰皟璋愬櫒
+mc44s803      Freescale MC44S803 浣庡姛鑰?CMOS 瀹藉甫璋冭皭鍣?msi001        Mirics MSi001
+mt2060        Microtune MT2060 纭呬腑棰戣皟璋愬櫒
+mt2063        Microtune MT2063 纭呬腑棰戣皟璋愬櫒
+mt20xx        Microtune 2032 / 2050 璋冭皭鍣?mt2131        Microtune MT2131 纭呰皟璋愬櫒
+mt2266        Microtune MT2266 纭呰皟璋愬櫒
+mxl301rf      MaxLinear MxL301RF 璋冭皭鍣?mxl5005s      MaxLinear MSL5005S 纭呰皟璋愬櫒
+mxl5007t      MaxLinear MxL5007T 纭呰皟璋愬櫒
+qm1d1b0004    Sharp QM1D1B0004 璋冭皭鍣?qm1d1c0042    Sharp QM1D1C0042 璋冭皭鍣?qt1010        Quantek QT1010 纭呰皟璋愬櫒
+r820t         Rafael Micro R820T 纭呰皟璋愬櫒
+si2157        Silicon Labs Si2157 纭呰皟璋愬櫒
+tuner-types   绠€鍗曡皟璋愬櫒鏀寔
+tda18212      NXP TDA18212 纭呰皟璋愬櫒
+tda18218      NXP TDA18218 纭呰皟璋愬櫒
+tda18250      NXP TDA18250 纭呰皟璋愬櫒
+tda18271      NXP TDA18271 纭呰皟璋愬櫒
+tda827x       Philips TDA827X 纭呰皟璋愬櫒
+tda8290       TDA 8290/8295 + 8275(a)/18271 璋冭皭鍣ㄧ粍鍚?tda9887       TDA 9885/6/7 妯℃嫙涓瑙ｈ皟鍣?tea5761       TEA 5761 鏃犵嚎鐢佃皟璋愬櫒
+tea5767       TEA 5767 鏃犵嚎鐢佃皟璋愬櫒
+tua9001       Infineon TUA9001 纭呰皟璋愬櫒
+xc2028        XCeive xc2028/xc3028 璋冭皭鍣?xc4000        Xceive XC4000 纭呰皟璋愬櫒
+xc5000        Xceive XC5000 纭呰皟璋愬櫒
 ============  ==================================================
 
 - [tuner-cardlist](tuner-cardlist)

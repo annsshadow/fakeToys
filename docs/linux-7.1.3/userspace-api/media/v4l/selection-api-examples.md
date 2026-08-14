@@ -1,15 +1,11 @@
+﻿
+######## 绀轰緥
 
-######## 示例
-
-本页提供 V4L2 选择（selection）接口的使用示例，通过 C 代码片段演示裁剪（crop）与合成（compose）参数的查询、重置与缩放等操作，供应用开发者在用户空间实现视频捕获或输出时参考。
+鏈〉鎻愪緵 V4L2 閫夋嫨锛坰election锛夋帴鍙ｇ殑浣跨敤绀轰緥锛岄€氳繃 C 浠ｇ爜鐗囨婕旂ず瑁佸壀锛坈rop锛変笌鍚堟垚锛坈ompose锛夊弬鏁扮殑鏌ヨ銆侀噸缃笌缂╂斁绛夋搷浣滐紝渚涘簲鐢ㄥ紑鍙戣€呭湪鐢ㄦ埛绌洪棿瀹炵幇瑙嗛鎹曡幏鎴栬緭鍑烘椂鍙傝€冦€?
 
 
-
-（假定为视频捕获设备；对其他设备请更改 `V4L2_BUF_TYPE_VIDEO_CAPTURE`；
-如需配置合成区域，请将目标改为 `V4L2_SEL_TGT_COMPOSE_*` 系列）
-
-## 示例：重置裁剪参数
-
+锛堝亣瀹氫负瑙嗛鎹曡幏璁惧锛涘鍏朵粬璁惧璇锋洿鏀?`V4L2_BUF_TYPE_VIDEO_CAPTURE`锛?濡傞渶閰嶇疆鍚堟垚鍖哄煙锛岃灏嗙洰鏍囨敼涓?`V4L2_SEL_TGT_COMPOSE_*` 绯诲垪锛?
+## 绀轰緥锛氶噸缃鍓弬鏁?
 
 
 	struct v4l2_selection sel = {
@@ -24,10 +20,8 @@
 	if (ret)
 	    exit(-1);
 
-在显示器中央设置一个输出合成区域，其大小**至多**为限制值的一半。
-
-## 示例：简单缩小
-
+鍦ㄦ樉绀哄櫒涓ぎ璁剧疆涓€涓緭鍑哄悎鎴愬尯鍩燂紝鍏跺ぇ灏?*鑷冲**涓洪檺鍒跺€肩殑涓€鍗娿€?
+## 绀轰緥锛氱畝鍗曠缉灏?
 
 
 	struct v4l2_selection sel = {
@@ -39,7 +33,7 @@
 	ret = ioctl(fd, VIDIOC_G_SELECTION, &sel);
 	if (ret)
 	    exit(-1);
-	/** 设置更小的合成矩形 **/
+	/** 璁剧疆鏇村皬鐨勫悎鎴愮煩褰?**/
 	r.width = sel.r.width / 2;
 	r.height = sel.r.height / 2;
 	r.left = sel.r.width / 4;
@@ -51,10 +45,9 @@
 	if (ret)
 	    exit(-1);
 
-假定为视频输出设备；对其他设备请更改 `V4L2_BUF_TYPE_VIDEO_OUTPUT`
+鍋囧畾涓鸿棰戣緭鍑鸿澶囷紱瀵瑰叾浠栬澶囪鏇存敼 `V4L2_BUF_TYPE_VIDEO_OUTPUT`
 
-## 示例：查询缩放因子
-
+## 绀轰緥锛氭煡璇㈢缉鏀惧洜瀛?
 
 
 	struct v4l2_selection compose = {
@@ -74,6 +67,6 @@
 	if (ret)
 	    exit(-1);
 
-	/** 计算缩放因子 **/
+	/** 璁＄畻缂╂斁鍥犲瓙 **/
 	hscale = (double)compose.r.width / crop.r.width;
 	vscale = (double)compose.r.height / crop.r.height;

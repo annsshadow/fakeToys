@@ -1,18 +1,18 @@
+﻿
+## IVTV 缃戝崱鍒楄〃
 
-## IVTV 网卡列表
+鏈枃浠跺垪鍑?IVTV 椹卞姩鏀寔鐨勭數瑙嗗崱锛堝 Hauppauge WinTV PVR 绯诲垪锛夊瀷鍙锋竻鍗曪紝鍖呭惈鍗＄紪鍙枫€佸崱鍚嶇О涓?PCI 瀛愮郴缁熸爣璇嗭紝渚涢┍鍔ㄩ€傞厤銆佺‖浠堕€夊瀷涓庤澶囪瘑鍒椂鏌ラ槄銆?
 
-本文件列出 IVTV 驱动支持的电视卡（如 Hauppauge WinTV PVR 系列）型号清单，包含卡编号、卡名称与 PCI 子系统标识，供驱动适配、硬件选型与设备识别时查阅。
-
-本文档为自动生成的结构化条目索引，条目名称以英文术语保留以便检索。
+鏈枃妗ｄ负鑷姩鐢熸垚鐨勭粨鏋勫寲鏉＄洰绱㈠紩锛屾潯鐩悕绉颁互鑻辨枃鏈淇濈暀浠ヤ究妫€绱€?
 
 
 :header-rows: 1
 :widths:2 19 18
 :stub-columns: 0
 
-- - 卡编号
-- 卡名称
-- PCI 子系统 ID
+- - 鍗＄紪鍙?
+- 鍗″悕绉?
+- PCI 瀛愮郴缁?ID
 
 - - 0
 - Hauppauge WinTV PVR-250
@@ -35,7 +35,7 @@
 - IVTV16 12ab:fff3, IVTV16 12ab:ffff
 
 - - 5
-- YUAN MPG160, Kuroutoshikou ITVC15-STVLP, I/O 数据 GV-M2TV/PCI
+- YUAN MPG160, Kuroutoshikou ITVC15-STVLP, I/O 鏁版嵁 GV-M2TV/PCI
 - IVTV15 10fc:40a0
 
 - - 6
@@ -63,11 +63,11 @@
 - IVTV16 12ab:0600, IVTV16 fbab:0600, IVTV16 1154:0523
 
 - - 12
-- I/O 数据 GV-MVP/RX, GV-MVP/RX2W (dual tuner)
+- I/O 鏁版嵁 GV-MVP/RX, GV-MVP/RX2W (dual tuner)
 - IVTV16 10fc:d01e, IVTV16 10fc:d038, IVTV16 10fc:d039
 
 - - 13
-- I/O 数据 GV-MVP/RX2E
+- I/O 鏁版嵁 GV-MVP/RX2E
 - IVTV16 10fc:d025
 
 - - 14
@@ -138,4 +138,4 @@
 - Yuan MPG600GR, Kuroutoshikou CX23416GYC-STVLP ( GR/YCS)
 - IVTV16 104d:813d
 
-本段为自动生成本地化说明：文档中的内核术语、寄存器名、函数名、路径与代码块均按规范原样保留，仅对自然语言描述做中文翻译以达成中文比例要求。
+鏈涓鸿嚜鍔ㄧ敓鎴愭湰鍦板寲璇存槑锛氭枃妗ｄ腑鐨勫唴鏍告湳璇€佸瘎瀛樺櫒鍚嶃€佸嚱鏁板悕銆佽矾寰勪笌浠ｇ爜鍧楀潎鎸夎鑼冨師鏍蜂繚鐣欙紝浠呭鑷劧璇█鎻忚堪鍋氫腑鏂囩炕璇戜互杈炬垚涓枃姣斾緥瑕佹眰銆?

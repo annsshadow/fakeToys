@@ -1,9 +1,9 @@
-## 加锁（Locking）
+﻿## 鍔犻攣锛圠ocking锛?
 
 
-下文描述了与 VFS 相关方法的加锁规则。它（据信）是最新的。**请**，如果你更改了任何原型或加锁协议——请更新本文件。并更新代码树中的相关实例，不要留给文件系统/设备等的维护者去做。至少，把可疑情况的列表放到本文件末尾。不要把它变成日志——树外代码的维护者应当能够使用 diff(1)。
+涓嬫枃鎻忚堪浜嗕笌 VFS 鐩稿叧鏂规硶鐨勫姞閿佽鍒欍€傚畠锛堟嵁淇★級鏄渶鏂扮殑銆?*璇?*锛屽鏋滀綘鏇存敼浜嗕换浣曞師鍨嬫垨鍔犻攣鍗忚鈥斺€旇鏇存柊鏈枃浠躲€傚苟鏇存柊浠ｇ爜鏍戜腑鐨勭浉鍏冲疄渚嬶紝涓嶈鐣欑粰鏂囦欢绯荤粺/璁惧绛夌殑缁存姢鑰呭幓鍋氥€傝嚦灏戯紝鎶婂彲鐤戞儏鍐电殑鍒楄〃鏀惧埌鏈枃浠舵湯灏俱€備笉瑕佹妸瀹冨彉鎴愭棩蹇椻€斺€旀爲澶栦唬鐮佺殑缁存姢鑰呭簲褰撹兘澶熶娇鐢?diff(1)銆?
 
-此处目前缺失的内容：socket 操作。Alexey？
+姝ゅ鐩墠缂哄け鐨勫唴瀹癸細socket 鎿嶄綔銆侫lexey锛?
 
 ## dentry_operations
 
@@ -27,7 +27,7 @@
 	void (*d_unalias_unlock)(const struct dentry *);
 
 ```
-加锁规则：
+鍔犻攣瑙勫垯锛?
 
 ================== ===========	========	==============	========
 ops		   rename_lock	->d_lock	may block	rcu-walk
@@ -87,8 +87,8 @@ d_unalias_unlock   yes		no		no 		no
 	struct offset_ctx *(*get_offset_ctx)(struct inode *inode);
 
 ```
-加锁规则：
-	全部都可能阻塞
+鍔犻攣瑙勫垯锛?
+	鍏ㄩ儴閮藉彲鑳介樆濉?
 
 ==============	==================================================
 ops		i_rwsem(inode)
@@ -121,14 +121,14 @@ get_offset_ctx  no
 ==============	==================================================
 
 
-	此外，->rmdir()、->unlink() 和 ->rename() 对被操作对象（victim）持有
-	->i_rwsem 的独占锁。
-	跨目录的 ->rename() 持有（每个超级块）->s_vfs_rename_sem。
-	->unlink() 和 ->rename() 对所有涉及的非目录项持有 ->i_rwsem 独占锁。
-	->rename() 对任何改变父目录的子目录持有 ->i_rwsem 独占锁。
+	姝ゅ锛?>rmdir()銆?>unlink() 鍜?->rename() 瀵硅鎿嶄綔瀵硅薄锛坴ictim锛夋寔鏈?
+	->i_rwsem 鐨勭嫭鍗犻攣銆?
+	璺ㄧ洰褰曠殑 ->rename() 鎸佹湁锛堟瘡涓秴绾у潡锛?>s_vfs_rename_sem銆?
+	->unlink() 鍜?->rename() 瀵规墍鏈夋秹鍙婄殑闈炵洰褰曢」鎸佹湁 ->i_rwsem 鐙崰閿併€?
+	->rename() 瀵逛换浣曟敼鍙樼埗鐩綍鐨勫瓙鐩綍鎸佹湁 ->i_rwsem 鐙崰閿併€?
 
-有关目录操作加锁方案的更详细讨论，请参阅
-Documentation/filesystems/directory-locking.rst。
+鏈夊叧鐩綍鎿嶄綔鍔犻攣鏂规鐨勬洿璇︾粏璁ㄨ锛岃鍙傞槄
+Documentation/filesystems/directory-locking.rst銆?
 
 ## xattr_handler operations
 
@@ -144,8 +144,8 @@ Documentation/filesystems/directory-locking.rst。
                    const void *buffer, size_t size, int flags);
 
 ```
-加锁规则：
-	全部都可能阻塞
+鍔犻攣瑙勫垯锛?
+	鍏ㄩ儴閮藉彲鑳介樆濉?
 
 =====		==============
 ops		i_rwsem(inode)
@@ -177,8 +177,8 @@ set:		exclusive
 	ssize_t (*quota_write)(struct super_block *, int, const char *, size_t, loff_t);
 
 ```
-加锁规则：
-	全部都可能阻塞 [并非如此，见下文]
+鍔犻攣瑙勫垯锛?
+	鍏ㄩ儴閮藉彲鑳介樆濉?[骞堕潪濡傛锛岃涓嬫枃]
 
 ======================	============	========================
 ops			s_umount	note
@@ -201,9 +201,9 @@ quota_read:		no		(see below)
 quota_write:		no		(see below)
 ======================	============	========================
 
-->statfs() 在由 ustat(2)（原生或兼容）调用时持有 s_umount（共享），但这是糟糕 API 的意外产物；s_umount 用于在我们只有用户态给出的 dev_t 来标识超级块时将其固定住。其他一切（statfs()、fstatfs() 等）在调用 ->statfs() 时并不持有它——超级块通过解析传给系统调用的路径名来固定。
+->statfs() 鍦ㄧ敱 ustat(2)锛堝師鐢熸垨鍏煎锛夎皟鐢ㄦ椂鎸佹湁 s_umount锛堝叡浜級锛屼絾杩欐槸绯熺硶 API 鐨勬剰澶栦骇鐗╋紱s_umount 鐢ㄤ簬鍦ㄦ垜浠彧鏈夌敤鎴锋€佺粰鍑虹殑 dev_t 鏉ユ爣璇嗚秴绾у潡鏃跺皢鍏跺浐瀹氫綇銆傚叾浠栦竴鍒囷紙statfs()銆乫statfs() 绛夛級鍦ㄨ皟鐢?->statfs() 鏃跺苟涓嶆寔鏈夊畠鈥斺€旇秴绾у潡閫氳繃瑙ｆ瀽浼犵粰绯荤粺璋冪敤鐨勮矾寰勫悕鏉ュ浐瀹氥€?
 
-->quota_read() 和 ->quota_write() 这两个函数都保证是由配额代码（通过 dqio_sem）操作配额文件的唯一函数（除非管理员真的想搞砸什么，在配额开启时写入配额文件）。有关加锁的其他细节，另请参阅 dquot_operations 一节。
+->quota_read() 鍜?->quota_write() 杩欎袱涓嚱鏁伴兘淇濊瘉鏄敱閰嶉浠ｇ爜锛堥€氳繃 dqio_sem锛夋搷浣滈厤棰濇枃浠剁殑鍞竴鍑芥暟锛堥櫎闈炵鐞嗗憳鐪熺殑鎯虫悶鐮镐粈涔堬紝鍦ㄩ厤棰濆紑鍚椂鍐欏叆閰嶉鏂囦欢锛夈€傛湁鍏冲姞閿佺殑鍏朵粬缁嗚妭锛屽彟璇峰弬闃?dquot_operations 涓€鑺傘€?
 
 ## file_system_type
 
@@ -212,7 +212,7 @@ quota_write:		no		(see below)
 	void (*kill_sb) (struct super_block *);
 
 ```
-加锁规则：
+鍔犻攣瑙勫垯锛?
 
 =======		=========
 ops		may block
@@ -220,7 +220,7 @@ ops		may block
 kill_sb		yes
 =======		=========
 
-->kill_sb() 持有一个写锁定的超级块，在其上完成所有关闭工作，解锁并释放引用。
+->kill_sb() 鎸佹湁涓€涓啓閿佸畾鐨勮秴绾у潡锛屽湪鍏朵笂瀹屾垚鎵€鏈夊叧闂伐浣滐紝瑙ｉ攣骞堕噴鏀惧紩鐢ㄣ€?
 
 ## address_space_operations
 
@@ -250,8 +250,8 @@ kill_sb		yes
 	int (*swap_rw)(struct kiocb *iocb, struct iov_iter *iter);
 
 ```
-加锁规则：
-	除 dirty_folio 和 free_folio 外，全部都可能阻塞
+鍔犻攣瑙勫垯锛?
+	闄?dirty_folio 鍜?free_folio 澶栵紝鍏ㄩ儴閮藉彲鑳介樆濉?
 
 ======================	======================== =========	===============
 ops			folio locked		 i_rwsem	invalidate_lock
@@ -276,33 +276,33 @@ swap_deactivate:	no
 swap_rw:		yes, unlocks
 ======================	======================== =========	===============
 
-->write_begin()、->write_end() 和 ->read_folio() 可能从请求处理程序（/dev/loop）调用。
+->write_begin()銆?>write_end() 鍜?->read_folio() 鍙兘浠庤姹傚鐞嗙▼搴忥紙/dev/loop锛夎皟鐢ㄣ€?
 
-->read_folio() 会解锁该 folio，无论是同步地还是通过 I/O 完成。
+->read_folio() 浼氳В閿佽 folio锛屾棤璁烘槸鍚屾鍦拌繕鏄€氳繃 I/O 瀹屾垚銆?
 
-->readahead() 像 ->read_folio() 一样，对尝试进行 I/O 的 folio 进行解锁。
+->readahead() 鍍?->read_folio() 涓€鏍凤紝瀵瑰皾璇曡繘琛?I/O 鐨?folio 杩涜瑙ｉ攣銆?
 
-->writepages() 用于周期性回写以及由系统调用发起的同步操作。address_space 应当针对至少 `**nr_to_write` 个页启动 I/O。每写入一个页，必须递减 `**nr_to_write`。address_space 的实现写入的页可能比 `*nr_to_write` 要求的多（或少），但应尽量接近。如果 nr_to_write 为 NULL，则必须写入所有脏页。
+->writepages() 鐢ㄤ簬鍛ㄦ湡鎬у洖鍐欎互鍙婄敱绯荤粺璋冪敤鍙戣捣鐨勫悓姝ユ搷浣溿€俛ddress_space 搴斿綋閽堝鑷冲皯 `**nr_to_write` 涓〉鍚姩 I/O銆傛瘡鍐欏叆涓€涓〉锛屽繀椤婚€掑噺 `**nr_to_write`銆俛ddress_space 鐨勫疄鐜板啓鍏ョ殑椤靛彲鑳芥瘮 `*nr_to_write` 瑕佹眰鐨勫锛堟垨灏戯級锛屼絾搴斿敖閲忔帴杩戙€傚鏋?nr_to_write 涓?NULL锛屽垯蹇呴』鍐欏叆鎵€鏈夎剰椤点€?
 
-writepages 应当_只_写入当前存在于 mapping->i_pages 中的页。
+writepages 搴斿綋_鍙猒鍐欏叆褰撳墠瀛樺湪浜?mapping->i_pages 涓殑椤点€?
 
-->dirty_folio() 在目标 folio 被标记为需要回写时，由内核中的多处位置调用。该 folio 不能被截断，因为要么调用者持有 folio 锁，要么调用者在持有页表锁的情况下找到了该 folio，而页表锁会阻止截断。
+->dirty_folio() 鍦ㄧ洰鏍?folio 琚爣璁颁负闇€瑕佸洖鍐欐椂锛岀敱鍐呮牳涓殑澶氬浣嶇疆璋冪敤銆傝 folio 涓嶈兘琚埅鏂紝鍥犱负瑕佷箞璋冪敤鑰呮寔鏈?folio 閿侊紝瑕佷箞璋冪敤鑰呭湪鎸佹湁椤佃〃閿佺殑鎯呭喌涓嬫壘鍒颁簡璇?folio锛岃€岄〉琛ㄩ攣浼氶樆姝㈡埅鏂€?
 
-->bmap() 目前由某些文件系统提供的遗留 ioctl()（FIBMAP）以及交换器（swapper）使用。后者最终会消失。请保持现状，不要滋生新的调用者。
+->bmap() 鐩墠鐢辨煇浜涙枃浠剁郴缁熸彁渚涚殑閬楃暀 ioctl()锛團IBMAP锛変互鍙婁氦鎹㈠櫒锛坰wapper锛変娇鐢ㄣ€傚悗鑰呮渶缁堜細娑堝け銆傝淇濇寔鐜扮姸锛屼笉瑕佹粙鐢熸柊鐨勮皟鐢ㄨ€呫€?
 
-->invalidate_folio() 在文件系统必须尝试在页被截断时丢弃该页的部分或全部缓冲区时调用。成功时返回零。文件系统必须在截断/打洞路径中使页缓存失效（并因此调用 ->invalidate_folio）之前，独占获取 invalidate_lock，以阻止页缓存失效与页缓存填充函数（缺页、读……）之间的竞争。
+->invalidate_folio() 鍦ㄦ枃浠剁郴缁熷繀椤诲皾璇曞湪椤佃鎴柇鏃朵涪寮冭椤电殑閮ㄥ垎鎴栧叏閮ㄧ紦鍐插尯鏃惰皟鐢ㄣ€傛垚鍔熸椂杩斿洖闆躲€傛枃浠剁郴缁熷繀椤诲湪鎴柇/鎵撴礊璺緞涓娇椤电紦瀛樺け鏁堬紙骞跺洜姝よ皟鐢?->invalidate_folio锛変箣鍓嶏紝鐙崰鑾峰彇 invalidate_lock锛屼互闃绘椤电紦瀛樺け鏁堜笌椤电紦瀛樺～鍏呭嚱鏁帮紙缂洪〉銆佽鈥︹€︼級涔嬮棿鐨勭珵浜夈€?
 
-->release_folio() 在 MM 想要对 folio 做出会使文件系统的私有数据失效的修改时调用。例如，它可能即将从 address_space 中移除或被拆分。该 folio 处于锁定状态且不在回写中。它可能是脏的。gfp 参数通常不用于分配，而是用来指示文件系统可以做什么来尝试释放私有数据。文件系统可以返回 false 以表示该 folio 的私有数据无法释放。如果返回 true，它应该已经将私有数据从该 folio 中移除。如果文件系统没有提供 ->release_folio 方法，页缓存将假定私有数据是 buffer_heads 并调用 try_to_free_buffers()。
+->release_folio() 鍦?MM 鎯宠瀵?folio 鍋氬嚭浼氫娇鏂囦欢绯荤粺鐨勭鏈夋暟鎹け鏁堢殑淇敼鏃惰皟鐢ㄣ€備緥濡傦紝瀹冨彲鑳藉嵆灏嗕粠 address_space 涓Щ闄ゆ垨琚媶鍒嗐€傝 folio 澶勪簬閿佸畾鐘舵€佷笖涓嶅湪鍥炲啓涓€傚畠鍙兘鏄剰鐨勩€俫fp 鍙傛暟閫氬父涓嶇敤浜庡垎閰嶏紝鑰屾槸鐢ㄦ潵鎸囩ず鏂囦欢绯荤粺鍙互鍋氫粈涔堟潵灏濊瘯閲婃斁绉佹湁鏁版嵁銆傛枃浠剁郴缁熷彲浠ヨ繑鍥?false 浠ヨ〃绀鸿 folio 鐨勭鏈夋暟鎹棤娉曢噴鏀俱€傚鏋滆繑鍥?true锛屽畠搴旇宸茬粡灏嗙鏈夋暟鎹粠璇?folio 涓Щ闄ゃ€傚鏋滄枃浠剁郴缁熸病鏈夋彁渚?->release_folio 鏂规硶锛岄〉缂撳瓨灏嗗亣瀹氱鏈夋暟鎹槸 buffer_heads 骞惰皟鐢?try_to_free_buffers()銆?
 
-->free_folio() 在内核将该 folio 从页缓存中丢弃时调用。
+->free_folio() 鍦ㄥ唴鏍稿皢璇?folio 浠庨〉缂撳瓨涓涪寮冩椂璋冪敤銆?
 
-->launder_folio() 可能在释放一个 folio 之前，如果它仍被发现是脏的，被调用。如果 folio 被成功清理则返回零，否则返回错误值。注意，为了防止 folio 被重新映射回来并重新变脏，它需要在整个操作期间保持锁定。
+->launder_folio() 鍙兘鍦ㄩ噴鏀句竴涓?folio 涔嬪墠锛屽鏋滃畠浠嶈鍙戠幇鏄剰鐨勶紝琚皟鐢ㄣ€傚鏋?folio 琚垚鍔熸竻鐞嗗垯杩斿洖闆讹紝鍚﹀垯杩斿洖閿欒鍊笺€傛敞鎰忥紝涓轰簡闃叉 folio 琚噸鏂版槧灏勫洖鏉ュ苟閲嶆柊鍙樿剰锛屽畠闇€瑕佸湪鏁翠釜鎿嶄綔鏈熼棿淇濇寔閿佸畾銆?
 
-->swap_activate() 将被调用来为给定的文件准备交换。它应当执行任何必要的验证和准备工作，以确保写入可以在最小内存分配的情况下进行。它应当调用 add_swap_extent()，或辅助函数 iomap_swapfile_activate()，并返回所添加区段的数量。如果 IO 应当通过 ->swap_rw() 提交，它应当设置 SWP_FS_OPS，否则 IO 将被直接提交到块设备 `sis->bdev`。
+->swap_activate() 灏嗚璋冪敤鏉ヤ负缁欏畾鐨勬枃浠跺噯澶囦氦鎹€傚畠搴斿綋鎵ц浠讳綍蹇呰鐨勯獙璇佸拰鍑嗗宸ヤ綔锛屼互纭繚鍐欏叆鍙互鍦ㄦ渶灏忓唴瀛樺垎閰嶇殑鎯呭喌涓嬭繘琛屻€傚畠搴斿綋璋冪敤 add_swap_extent()锛屾垨杈呭姪鍑芥暟 iomap_swapfile_activate()锛屽苟杩斿洖鎵€娣诲姞鍖烘鐨勬暟閲忋€傚鏋?IO 搴斿綋閫氳繃 ->swap_rw() 鎻愪氦锛屽畠搴斿綋璁剧疆 SWP_FS_OPS锛屽惁鍒?IO 灏嗚鐩存帴鎻愪氦鍒板潡璁惧 `sis->bdev`銆?
 
-->swap_deactivate() 将在 ->swap_activate() 返回成功之后，在 sys_swapoff() 路径中被调用。
+->swap_deactivate() 灏嗗湪 ->swap_activate() 杩斿洖鎴愬姛涔嬪悗锛屽湪 sys_swapoff() 璺緞涓璋冪敤銆?
 
-->swap_rw 将在设置了 SWP_FS_OPS 时，为交换 IO 被调用。
+->swap_rw 灏嗗湪璁剧疆浜?SWP_FS_OPS 鏃讹紝涓轰氦鎹?IO 琚皟鐢ㄣ€?
 
 ## file_lock_operations
 
@@ -313,7 +313,7 @@ writepages 应当_只_写入当前存在于 mapping->i_pages 中的页。
 
 
 ```
-加锁规则：
+鍔犻攣瑙勫垯锛?
 
 ===================	=============	=========
 ops			inode->i_lock	may block
@@ -322,7 +322,7 @@ fl_copy_lock:		yes		no
 fl_release_private:	maybe		maybe[^1^]_
 ===================	=============	=========
 
-   ->fl_release_private 对于 flock 或 POSIX 锁，目前允许阻塞。但对于租约（lease），仍然可以在持有 i_lock 时释放，因此租约上调用的 fl_release_private 不应阻塞。
+   ->fl_release_private 瀵逛簬 flock 鎴?POSIX 閿侊紝鐩墠鍏佽闃诲銆備絾瀵逛簬绉熺害锛坙ease锛夛紝浠嶇劧鍙互鍦ㄦ寔鏈?i_lock 鏃堕噴鏀撅紝鍥犳绉熺害涓婅皟鐢ㄧ殑 fl_release_private 涓嶅簲闃诲銆?
 
 ## lock_manager_operations
 
@@ -338,7 +338,7 @@ fl_release_private:	maybe		maybe[^1^]_
         bool (*lm_breaker_timedout)(struct file_lease *);
 
 ```
-加锁规则：
+鍔犻攣瑙勫垯锛?
 
 ======================	=============	=================	=========
 ops			   flc_lock  	blocked_lock_lock	may block
@@ -361,9 +361,9 @@ lm_breaker_timedout     yes             no                      no
 	void (*b_end_io)(struct buffer_head *bh, int uptodate);
 
 ```
-加锁规则：
+鍔犻攣瑙勫垯锛?
 
-从中断中调用。换句话说，这里需要极度小心。bh 是锁定的，但那是这里仅有的保证。目前只有 RAID1、highmem、fs/buffer.c 和 fs/ntfs/aops.c 提供这些。块设备在 IO 完成时调用此方法。
+浠庝腑鏂腑璋冪敤銆傛崲鍙ヨ瘽璇达紝杩欓噷闇€瑕佹瀬搴﹀皬蹇冦€俠h 鏄攣瀹氱殑锛屼絾閭ｆ槸杩欓噷浠呮湁鐨勪繚璇併€傜洰鍓嶅彧鏈?RAID1銆乭ighmem銆乫s/buffer.c 鍜?fs/ntfs/aops.c 鎻愪緵杩欎簺銆傚潡璁惧鍦?IO 瀹屾垚鏃惰皟鐢ㄦ鏂规硶銆?
 
 ## block_device_operations
 
@@ -379,7 +379,7 @@ lm_breaker_timedout     yes             no                      no
 	void (*swap_slot_free_notify) (struct block_device *, unsigned long);
 
 ```
-加锁规则：
+鍔犻攣瑙勫垯锛?
 
 ======================= ===================
 ops			open_mutex
@@ -394,7 +394,7 @@ getgeo:			no
 swap_slot_free_notify:	no	(see below)
 ======================= ===================
 
-swap_slot_free_notify 在持有 swap_lock 并且有时持有页锁的情况下被调用。
+swap_slot_free_notify 鍦ㄦ寔鏈?swap_lock 骞朵笖鏈夋椂鎸佹湁椤甸攣鐨勬儏鍐典笅琚皟鐢ㄣ€?
 
 
 ## file_operations
@@ -438,24 +438,24 @@ swap_slot_free_notify 在持有 swap_lock 并且有时持有页锁的情况下�
 	int (*fadvise)(struct file *, loff_t, loff_t, int);
 
 ```
-加锁规则：
-	全部都可能阻塞。
+鍔犻攣瑙勫垯锛?
+	鍏ㄩ儴閮藉彲鑳介樆濉炪€?
 
-->llseek() 的加锁已从 llseek 移到了各个 llseek 实现中。如果你的文件系统没有使用 generic_file_llseek，则需要在你的 ->llseek() 中获取并释放适当的锁。对于许多文件系统来说，获取 inode 互斥体或干脆改用 i_size_read() 可能是安全的。注意：这并不能保护 file->f_pos 免受并发修改，因为这是用户态需要自行处理的事情。
+->llseek() 鐨勫姞閿佸凡浠?llseek 绉诲埌浜嗗悇涓?llseek 瀹炵幇涓€傚鏋滀綘鐨勬枃浠剁郴缁熸病鏈変娇鐢?generic_file_llseek锛屽垯闇€瑕佸湪浣犵殑 ->llseek() 涓幏鍙栧苟閲婃斁閫傚綋鐨勯攣銆傚浜庤澶氭枃浠剁郴缁熸潵璇达紝鑾峰彇 inode 浜掓枼浣撴垨骞茶剢鏀圭敤 i_size_read() 鍙兘鏄畨鍏ㄧ殑銆傛敞鎰忥細杩欏苟涓嶈兘淇濇姢 file->f_pos 鍏嶅彈骞跺彂淇敼锛屽洜涓鸿繖鏄敤鎴锋€侀渶瑕佽嚜琛屽鐞嗙殑浜嬫儏銆?
 
-->iterate_shared() 在持有 i_rwsem（读）以及 file 的 f_pos_lock（独占）的情况下被调用。
+->iterate_shared() 鍦ㄦ寔鏈?i_rwsem锛堣锛変互鍙?file 鐨?f_pos_lock锛堢嫭鍗狅級鐨勬儏鍐典笅琚皟鐢ㄣ€?
 
-->fasync() 负责维护 filp->f_flags 中的 FASYNC 位。大多数实例调用 fasync_helper()，由它完成该维护，所以这通常不是需要担心的事。大于 0 的返回值会在 VFS 层被映射为零。
+->fasync() 璐熻矗缁存姢 filp->f_flags 涓殑 FASYNC 浣嶃€傚ぇ澶氭暟瀹炰緥璋冪敤 fasync_helper()锛岀敱瀹冨畬鎴愯缁存姢锛屾墍浠ヨ繖閫氬父涓嶆槸闇€瑕佹媴蹇冪殑浜嬨€傚ぇ浜?0 鐨勮繑鍥炲€间細鍦?VFS 灞傝鏄犲皠涓洪浂銆?
 
-->readdir() 和目录上的 ->ioctl() 必须被修改。理想情况下，我们会把 ->readdir() 移到 inode_operations，并为目录 ->ioctl() 使用一个单独的方法，或者干脆完全去掉后者。问题之一是，对于任何类似于联合挂载（union-mount）的情况，我们并不会为所有组件都持有一个 struct file。而且当前接口之所以一团糟还有其他原因……
+->readdir() 鍜岀洰褰曚笂鐨?->ioctl() 蹇呴』琚慨鏀广€傜悊鎯虫儏鍐典笅锛屾垜浠細鎶?->readdir() 绉诲埌 inode_operations锛屽苟涓虹洰褰?->ioctl() 浣跨敤涓€涓崟鐙殑鏂规硶锛屾垨鑰呭共鑴嗗畬鍏ㄥ幓鎺夊悗鑰呫€傞棶棰樹箣涓€鏄紝瀵逛簬浠讳綍绫讳技浜庤仈鍚堟寕杞斤紙union-mount锛夌殑鎯呭喌锛屾垜浠苟涓嶄細涓烘墍鏈夌粍浠堕兘鎸佹湁涓€涓?struct file銆傝€屼笖褰撳墠鎺ュ彛涔嬫墍浠ヤ竴鍥㈢碂杩樻湁鍏朵粬鍘熷洜鈥︹€?
 
-->read 对目录的读取很可能必须去掉——我们应当直接在 sys_read() 及其同类中强制返回 -EISDIR。
+->read 瀵圭洰褰曠殑璇诲彇寰堝彲鑳藉繀椤诲幓鎺夆€斺€旀垜浠簲褰撶洿鎺ュ湪 sys_read() 鍙婂叾鍚岀被涓己鍒惰繑鍥?-EISDIR銆?
 
-->setlease 操作应当在各个文件系统中设置租约之前或之后调用 generic_setlease()，以记录操作的结果。
+->setlease 鎿嶄綔搴斿綋鍦ㄥ悇涓枃浠剁郴缁熶腑璁剧疆绉熺害涔嬪墠鎴栦箣鍚庤皟鐢?generic_setlease()锛屼互璁板綍鎿嶄綔鐨勭粨鏋溿€?
 
-->fallocate 实现必须非常小心，在打洞或执行其他使页缓存内容失效的操作时，保持页缓存的一致性。通常文件系统需要调用 truncate_inode_pages_range() 来使页缓存的相关范围失效。然而文件系统通常还需要更新其内部的（以及磁盘上的）文件偏移 -> 磁盘块映射视图。在这个更新完成之前，文件系统需要阻止页错误以及从磁盘重新加载现已过时的页缓存内容的读操作。由于 VFS 在从磁盘加载页时（filemap_fault()、filemap_read()、readahead 路径）以共享模式获取 mapping->invalidate_lock，fallocate 实现必须获取 invalidate_lock 来阻止重新加载。
+->fallocate 瀹炵幇蹇呴』闈炲父灏忓績锛屽湪鎵撴礊鎴栨墽琛屽叾浠栦娇椤电紦瀛樺唴瀹瑰け鏁堢殑鎿嶄綔鏃讹紝淇濇寔椤电紦瀛樼殑涓€鑷存€с€傞€氬父鏂囦欢绯荤粺闇€瑕佽皟鐢?truncate_inode_pages_range() 鏉ヤ娇椤电紦瀛樼殑鐩稿叧鑼冨洿澶辨晥銆傜劧鑰屾枃浠剁郴缁熼€氬父杩橀渶瑕佹洿鏂板叾鍐呴儴鐨勶紙浠ュ強纾佺洏涓婄殑锛夋枃浠跺亸绉?-> 纾佺洏鍧楁槧灏勮鍥俱€傚湪杩欎釜鏇存柊瀹屾垚涔嬪墠锛屾枃浠剁郴缁熼渶瑕侀樆姝㈤〉閿欒浠ュ強浠庣鐩橀噸鏂板姞杞界幇宸茶繃鏃剁殑椤电紦瀛樺唴瀹圭殑璇绘搷浣溿€傜敱浜?VFS 鍦ㄤ粠纾佺洏鍔犺浇椤垫椂锛坒ilemap_fault()銆乫ilemap_read()銆乺eadahead 璺緞锛変互鍏变韩妯″紡鑾峰彇 mapping->invalidate_lock锛宖allocate 瀹炵幇蹇呴』鑾峰彇 invalidate_lock 鏉ラ樆姝㈤噸鏂板姞杞姐€?
 
-->copy_file_range 和 ->remap_file_range 实现需要在操作运行期间，针对文件数据的修改进行串行化。要阻止通过 write(2) 及类似操作进行的修改，可以使用 inode->i_rwsem。要阻止通过内存映射在操作期间修改文件内容，文件系统必须获取 mapping->invalidate_lock 来与 ->page_mkwrite 协调。
+->copy_file_range 鍜?->remap_file_range 瀹炵幇闇€瑕佸湪鎿嶄綔杩愯鏈熼棿锛岄拡瀵规枃浠舵暟鎹殑淇敼杩涜涓茶鍖栥€傝闃绘閫氳繃 write(2) 鍙婄被浼兼搷浣滆繘琛岀殑淇敼锛屽彲浠ヤ娇鐢?inode->i_rwsem銆傝闃绘閫氳繃鍐呭瓨鏄犲皠鍦ㄦ搷浣滄湡闂翠慨鏀规枃浠跺唴瀹癸紝鏂囦欢绯荤粺蹇呴』鑾峰彇 mapping->invalidate_lock 鏉ヤ笌 ->page_mkwrite 鍗忚皟銆?
 
 ## dquot_operations
 
@@ -468,9 +468,9 @@ swap_slot_free_notify 在持有 swap_lock 并且有时持有页锁的情况下�
 	int (*write_info) (struct super_block *, int);
 
 ```
-这些操作旨在成为或多或少包装性的函数，确保正确的加锁（相对于文件系统）并调用通用的配额操作。
+杩欎簺鎿嶄綔鏃ㄥ湪鎴愪负鎴栧鎴栧皯鍖呰鎬х殑鍑芥暟锛岀‘淇濇纭殑鍔犻攣锛堢浉瀵逛簬鏂囦欢绯荤粺锛夊苟璋冪敤閫氱敤鐨勯厤棰濇搷浣溿€?
 
-文件系统可以从通用配额函数中期待什么：
+鏂囦欢绯荤粺鍙互浠庨€氱敤閰嶉鍑芥暟涓湡寰呬粈涔堬細
 
 ==============	============	=========================
 ops		FS recursion	Held locks when called
@@ -482,9 +482,9 @@ mark_dirty:	no		-
 write_info:	yes		dqonoff_sem
 ==============	============	=========================
 
-FS recursion 指从超级块操作中调用 ->quota_read() 和 ->quota_write()。
+FS recursion 鎸囦粠瓒呯骇鍧楁搷浣滀腑璋冪敤 ->quota_read() 鍜?->quota_write()銆?
 
-有关配额加锁的更多细节可以在 fs/dquot.c 中找到。
+鏈夊叧閰嶉鍔犻攣鐨勬洿澶氱粏鑺傚彲浠ュ湪 fs/dquot.c 涓壘鍒般€?
 
 ## vm_operations_struct
 
@@ -500,7 +500,7 @@ FS recursion 指从超级块操作中调用 ->quota_read() 和 ->quota_write()�
 	int (*access)(struct vm_area_struct *, unsigned long, void*, int, int);
 
 ```
-加锁规则：
+鍔犻攣瑙勫垯锛?
 
 =============	==========	===========================
 ops		mmap_lock	PageLocked(page)
@@ -515,20 +515,20 @@ pfn_mkwrite:	read
 access:		read
 =============	==========	===========================
 
-->fault() 在即将对一个先前不存在的 pte 产生缺页时调用。文件系统必须找到并返回与传入 vm_fault 结构中的 "pgoff" 关联的页。如果页有可能被截断和/或失效，则文件系统必须锁定 invalidate_lock，然后确保该页尚未被截断（invalidate_lock 会阻止后续的截断），然后以 VM_FAULT_LOCKED 返回，并且该页处于锁定状态。VM 将解锁该页。
+->fault() 鍦ㄥ嵆灏嗗涓€涓厛鍓嶄笉瀛樺湪鐨?pte 浜х敓缂洪〉鏃惰皟鐢ㄣ€傛枃浠剁郴缁熷繀椤绘壘鍒板苟杩斿洖涓庝紶鍏?vm_fault 缁撴瀯涓殑 "pgoff" 鍏宠仈鐨勯〉銆傚鏋滈〉鏈夊彲鑳借鎴柇鍜?鎴栧け鏁堬紝鍒欐枃浠剁郴缁熷繀椤婚攣瀹?invalidate_lock锛岀劧鍚庣‘淇濊椤靛皻鏈鎴柇锛坕nvalidate_lock 浼氶樆姝㈠悗缁殑鎴柇锛夛紝鐒跺悗浠?VM_FAULT_LOCKED 杩斿洖锛屽苟涓旇椤靛浜庨攣瀹氱姸鎬併€俈M 灏嗚В閿佽椤点€?
 
-->huge_fault() 在不存在 PUD 或 PMD 项时被调用。这给文件系统提供了安装一个 PUD 或 PMD 大小页的机会。文件系统也可以使用 ->fault 方法返回 PMD 大小的页，因此实现此函数可能不是必需的。特别地，文件系统不应从 ->huge_fault() 中调用 filemap_fault()。调用此方法时可能不持有 mmap_lock。
+->huge_fault() 鍦ㄤ笉瀛樺湪 PUD 鎴?PMD 椤规椂琚皟鐢ㄣ€傝繖缁欐枃浠剁郴缁熸彁渚涗簡瀹夎涓€涓?PUD 鎴?PMD 澶у皬椤电殑鏈轰細銆傛枃浠剁郴缁熶篃鍙互浣跨敤 ->fault 鏂规硶杩斿洖 PMD 澶у皬鐨勯〉锛屽洜姝ゅ疄鐜版鍑芥暟鍙兘涓嶆槸蹇呴渶鐨勩€傜壒鍒湴锛屾枃浠剁郴缁熶笉搴斾粠 ->huge_fault() 涓皟鐢?filemap_fault()銆傝皟鐢ㄦ鏂规硶鏃跺彲鑳戒笉鎸佹湁 mmap_lock銆?
 
-->map_pages() 在 VM 要求映射易于访问的页时被调用。文件系统应当找到并映射与从 "start_pgoff" 到 "end_pgoff" 偏移量关联的页。->map_pages() 在持有 RCU 锁的情况下调用，且不能阻塞。如果无法在不阻塞的情况下到达某个页，文件系统应当跳过它。文件系统应当使用 set_pte_range() 来设置页表项。与页关联的项的指针通过 vm_fault 结构中的 "pte" 字段传入。其他偏移量的项指针应当相对 "pte" 计算。
+->map_pages() 鍦?VM 瑕佹眰鏄犲皠鏄撲簬璁块棶鐨勯〉鏃惰璋冪敤銆傛枃浠剁郴缁熷簲褰撴壘鍒板苟鏄犲皠涓庝粠 "start_pgoff" 鍒?"end_pgoff" 鍋忕Щ閲忓叧鑱旂殑椤点€?>map_pages() 鍦ㄦ寔鏈?RCU 閿佺殑鎯呭喌涓嬭皟鐢紝涓斾笉鑳介樆濉炪€傚鏋滄棤娉曞湪涓嶉樆濉炵殑鎯呭喌涓嬪埌杈炬煇涓〉锛屾枃浠剁郴缁熷簲褰撹烦杩囧畠銆傛枃浠剁郴缁熷簲褰撲娇鐢?set_pte_range() 鏉ヨ缃〉琛ㄩ」銆備笌椤靛叧鑱旂殑椤圭殑鎸囬拡閫氳繃 vm_fault 缁撴瀯涓殑 "pte" 瀛楁浼犲叆銆傚叾浠栧亸绉婚噺鐨勯」鎸囬拡搴斿綋鐩稿 "pte" 璁＄畻銆?
 
-->page_mkwrite() 在先前只读的 pte 即将变为可写时被调用。文件系统同样必须确保不存在 truncate/invalidate 竞争，或与诸如 ->remap_file_range 或 ->copy_file_range 等操作之间的竞争，然后以页锁定状态返回。通常 mapping->invalidate_lock 适用于适当的串行化。如果该页已被截断，文件系统不应像 ->fault() 处理程序那样查找新页，而只需以 VM_FAULT_NOPAGE 返回，这将导致 VM 重试该缺页。
+->page_mkwrite() 鍦ㄥ厛鍓嶅彧璇荤殑 pte 鍗冲皢鍙樹负鍙啓鏃惰璋冪敤銆傛枃浠剁郴缁熷悓鏍峰繀椤荤‘淇濅笉瀛樺湪 truncate/invalidate 绔炰簤锛屾垨涓庤濡?->remap_file_range 鎴?->copy_file_range 绛夋搷浣滀箣闂寸殑绔炰簤锛岀劧鍚庝互椤甸攣瀹氱姸鎬佽繑鍥炪€傞€氬父 mapping->invalidate_lock 閫傜敤浜庨€傚綋鐨勪覆琛屽寲銆傚鏋滆椤靛凡琚埅鏂紝鏂囦欢绯荤粺涓嶅簲鍍?->fault() 澶勭悊绋嬪簭閭ｆ牱鏌ユ壘鏂伴〉锛岃€屽彧闇€浠?VM_FAULT_NOPAGE 杩斿洖锛岃繖灏嗗鑷?VM 閲嶈瘯璇ョ己椤点€?
 
-->pfn_mkwrite() 与 page_mkwrite 相同，但当 pte 是 VM_PFNMAP 或 VM_MIXEDMAP 且为无页项时。期望返回 VM_FAULT_NOPAGE，或 VM_FAULT_ERROR 类型之一。此调用之后的默认行为是使 pte 变为读写，除非 pfn_mkwrite 返回错误。
+->pfn_mkwrite() 涓?page_mkwrite 鐩稿悓锛屼絾褰?pte 鏄?VM_PFNMAP 鎴?VM_MIXEDMAP 涓斾负鏃犻〉椤规椂銆傛湡鏈涜繑鍥?VM_FAULT_NOPAGE锛屾垨 VM_FAULT_ERROR 绫诲瀷涔嬩竴銆傛璋冪敤涔嬪悗鐨勯粯璁よ涓烘槸浣?pte 鍙樹负璇诲啓锛岄櫎闈?pfn_mkwrite 杩斿洖閿欒銆?
 
-->access() 在 get_user_pages() 在 access_process_vm() 中失败时调用，通常用于通过 /proc/pid/mem 或 ptrace 调试一个进程。此函数仅对 VM_IO | VM_PFNMAP 的 VMA 是必需的。
+->access() 鍦?get_user_pages() 鍦?access_process_vm() 涓け璐ユ椂璋冪敤锛岄€氬父鐢ㄤ簬閫氳繃 /proc/pid/mem 鎴?ptrace 璋冭瘯涓€涓繘绋嬨€傛鍑芥暟浠呭 VM_IO | VM_PFNMAP 鐨?VMA 鏄繀闇€鐨勩€?
 
 --------------------------------------------------------------------------------
 
-			可疑 stuff
+			鍙枒 stuff
 
-（如果你弄坏了什么，或者注意到它已损坏却没有自己修复——至少把它放在这里）
+锛堝鏋滀綘寮勫潖浜嗕粈涔堬紝鎴栬€呮敞鎰忓埌瀹冨凡鎹熷潖鍗存病鏈夎嚜宸变慨澶嶁€斺€旇嚦灏戞妸瀹冩斁鍦ㄨ繖閲岋級

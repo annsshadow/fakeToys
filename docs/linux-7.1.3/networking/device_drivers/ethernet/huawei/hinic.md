@@ -1,103 +1,62 @@
-
-## 华为智能网卡（HiNIC）系列 Linux 内核驱动
-
-
-## 概述：
+﻿
+## 鍗庝负鏅鸿兘缃戝崱锛圚iNIC锛夌郴鍒?Linux 鍐呮牳椹卞姩
 
 
-HiNIC 是面向数据中心领域的网络接口卡。
+## 姒傝堪锛?
 
-该驱动支持一系列不同链路速率的设备（10GbE、25GbE、40GbE 等）。该驱动还支持协商式、可扩展的特性集。
+HiNIC 鏄潰鍚戞暟鎹腑蹇冮鍩熺殑缃戠粶鎺ュ彛鍗°€?
+璇ラ┍鍔ㄦ敮鎸佷竴绯诲垪涓嶅悓閾捐矾閫熺巼鐨勮澶囷紙10GbE銆?5GbE銆?0GbE 绛夛級銆傝椹卞姩杩樻敮鎸佸崗鍟嗗紡銆佸彲鎵╁睍鐨勭壒鎬ч泦銆?
+閮ㄥ垎 HiNIC 璁惧鏀寔 SR-IOV銆傛湰椹卞姩鐢ㄤ簬鐗╃悊鍔熻兘锛圥F锛夈€?
+HiNIC 璁惧涓烘瘡涓?Tx/Rx 闃熷垪鏀寔 MSI-X 涓柇鍚戦噺浠ュ強鑷€傚簲涓柇璋冭妭銆?
+HiNIC 璁惧杩樻敮鎸佸绉嶅嵏杞界壒鎬э紝渚嬪鏍￠獙鍜屽嵏杞姐€乀CP 鍙戦€佸垎娈靛嵏杞斤紙TSO锛夈€佹帴鏀剁缂╂斁锛圧SS锛変互鍙?LRO锛圠arge Receive Offload锛屽ぇ鎺ユ敹鍗歌浇锛夈€?
 
-部分 HiNIC 设备支持 SR-IOV。本驱动用于物理功能（PF）。
-
-HiNIC 设备为每个 Tx/Rx 队列支持 MSI-X 中断向量以及自适应中断调节。
-
-HiNIC 设备还支持多种卸载特性，例如校验和卸载、TCP 发送分段卸载（TSO）、接收端缩放（RSS）以及 LRO（Large Receive Offload，大接收卸载）。
-
-
-## 支持的 PCI 厂商 ID/设备 ID：
-
+## 鏀寔鐨?PCI 鍘傚晢 ID/璁惧 ID锛?
 
 19e5:1822 - HiNIC PF
 
 
-## 驱动架构与源代码：
+## 椹卞姩鏋舵瀯涓庢簮浠ｇ爜锛?
+
+hinic_dev - 瀹炵幇涓€涓笌鍏蜂綋纭欢锛圚W锛夋暟鎹粨鏋勬牸寮忕粏鑺傛棤鍏崇殑閫昏緫缃戠粶璁惧銆?
+hinic_hwdev - 瀹炵幇璁惧鐨勭‖浠剁粏鑺傦紝骞跺寘鍚闂?PCI 缃戝崱鎵€闇€鐨勭粍浠躲€?
+## hinic_hwdev 鍖呭惈浠ヤ笅缁勪欢锛?
+
+## 纭欢鎺ュ彛锛?
+
+鐢ㄤ簬璁块棶 pci 璁惧锛圖MA 鍐呭瓨涓?PCI BAR锛夌殑鎺ュ彛銆?锛坔inic_hw_if.c銆乭inic_hw_if.h锛?
+鎻忚堪閰嶇疆涓庣姸鎬?BAR0 涓婄‖浠跺瘎瀛樺櫒鐨勯厤缃姸鎬佸瘎瀛樺櫒锛圕SR锛夊尯鍩熴€傦紙hinic_hw_csr.h锛?
+## 绠＄悊锛圡GMT锛夌粍浠讹細
 
 
-hinic_dev - 实现一个与具体硬件（HW）数据结构格式细节无关的逻辑网络设备。
+寮傛浜嬩欢闃熷垪锛圓EQ锛? 鐢ㄤ簬鎺ユ敹鏉ヨ嚜缃戝崱涓?MGMT 妯″潡娑堟伅鐨勪簨浠堕槦鍒椼€傦紙hinic_hw_eqs.c銆乭inic_hw_eqs.h锛?
+搴旂敤绋嬪簭鍙紪绋嬫帴鍙ｅ懡浠わ紙API CMD锛? 鐢ㄤ簬鍚戠綉鍗″彂閫?MGMT 鍛戒护鐨勬帴鍙ｃ€傦紙hinic_hw_api_cmd.c銆乭inic_hw_api_cmd.h锛?
+绠＄悊锛圡GMT锛? PF 鍒?MGMT 鐨勯€氶亾锛屼娇鐢?API CMD 鍚戠綉鍗″彂閫?MGMT 鍛戒护锛屽苟閫氳繃 AEQ 鎺ユ敹鏉ヨ嚜缃戝崱涓?MGMT 妯″潡鐨勯€氱煡銆傚悓鏃惰缃‖浠朵腑 IO CMDQ 鐨勫湴鍧€銆?锛坔inic_hw_mgmt.c銆乭inic_hw_mgmt.h锛?
+## IO 缁勪欢锛?
 
-hinic_hwdev - 实现设备的硬件细节，并包含访问 PCI 网卡所需的组件。
+瀹屾垚浜嬩欢闃熷垪锛圕EQ锛? 鎻忚堪宸插畬鎴愮殑 IO 浠诲姟鐨勫畬鎴愪簨浠堕槦鍒椼€傦紙hinic_hw_eqs.c銆乭inic_hw_eqs.h锛?
+宸ヤ綔闃熷垪锛圵Q锛? 鍖呭惈渚?CMD 闃熷垪鍜岄槦鍒楀浣跨敤鐨勫唴瀛樹笌鎿嶄綔銆俉Q 鏄〉涓殑涓€鍧楀唴瀛樸€傝鍧楀寘鍚寚鍚戝唴瀛樺尯锛堝嵆宸ヤ綔闃熷垪鍏冪礌 WQE 鐨勫唴瀛橈級鐨勬寚閽堛€?锛坔inic_hw_wq.c銆乭inic_hw_wq.h锛?
+鍛戒护闃熷垪锛圕MDQ锛? 鐢ㄤ簬鍙戦€?IO 绠＄悊鍛戒护鐨勯槦鍒楋紝鐢ㄤ簬璁剧疆纭欢涓殑 QP 鍦板潃銆傚懡浠ょ殑瀹屾垚浜嬩欢绱Н鍦ㄩ厤缃负鎺ユ敹 CMDQ 瀹屾垚浜嬩欢鐨?CEQ 涓娿€?锛坔inic_hw_cmdq.c銆乭inic_hw_cmdq.h锛?
+闃熷垪瀵癸紙QP锛? 鐢ㄤ簬鎺ユ敹鍜屽彂閫佹暟鎹殑纭欢鎺ユ敹涓庡彂閫侀槦鍒椼€傦紙hinic_hw_qp.c銆乭inic_hw_qp.h銆乭inic_hw_qp_ctxt.h锛?
+IO - 鏋勫缓/鎷嗚В鎵€鏈?IO 缁勪欢銆傦紙hinic_hw_io.c銆乭inic_hw_io.h锛?
+## 纭欢璁惧锛?
 
-## hinic_hwdev 包含以下组件：
+纭欢璁惧 - 鍦ㄩ┍鍔ㄥ垵濮嬪寲鏃舵瀯寤?鎷嗚В纭欢鎺ュ彛銆丮GMT 缁勪欢锛屽苟鍦ㄦ帴鍙?UP/DOWN 浜嬩欢鏃舵瀯寤?鎷嗚В IO 缁勪欢銆傦紙hinic_hw_dev.c銆乭inic_hw_dev.h锛?
 
+## hinic_dev 鍖呭惈浠ヤ笅缁勪欢锛?
 
-## 硬件接口：
+PCI ID 琛?- 鍖呭惈鍙楁敮鎸佺殑 PCI 鍘傚晢/璁惧 ID銆?锛坔inic_pci_tbl.h锛?
+绔彛鍛戒护 - 鍚戠‖浠惰澶囧彂閫佺鍙ｇ鐞嗗懡浠わ紙MAC銆乂lan銆丮TU 绛夛級銆傦紙hinic_port.c銆乭inic_port.h锛?
+Tx 闃熷垪 - 浣跨敤纭欢鍙戦€侀槦鍒楄繘琛屽彂閫佺殑閫昏緫 Tx 闃熷垪銆傞€昏緫 Tx 闃熷垪涓嶄緷璧栦簬纭欢鍙戦€侀槦鍒楃殑鏍煎紡銆?锛坔inic_tx.c銆乭inic_tx.h锛?
+Rx 闃熷垪 - 浣跨敤纭欢鎺ユ敹闃熷垪杩涜鎺ユ敹鐨勯€昏緫 Rx 闃熷垪銆傞€昏緫 Rx 闃熷垪涓嶄緷璧栦簬纭欢鎺ユ敹闃熷垪鐨勬牸寮忋€?锛坔inic_rx.c銆乭inic_rx.h锛?
+hinic_dev - 鏋勫缓/鎷嗚В閫昏緫 Tx 涓?Rx 闃熷垪銆?锛坔inic_main.c銆乭inic_dev.h锛?
 
-
-用于访问 pci 设备（DMA 内存与 PCI BAR）的接口。
-（hinic_hw_if.c、hinic_hw_if.h）
-
-描述配置与状态 BAR0 上硬件寄存器的配置状态寄存器（CSR）区域。（hinic_hw_csr.h）
-
-## 管理（MGMT）组件：
-
-
-异步事件队列（AEQ）- 用于接收来自网卡上 MGMT 模块消息的事件队列。（hinic_hw_eqs.c、hinic_hw_eqs.h）
-
-应用程序可编程接口命令（API CMD）- 用于向网卡发送 MGMT 命令的接口。（hinic_hw_api_cmd.c、hinic_hw_api_cmd.h）
-
-管理（MGMT）- PF 到 MGMT 的通道，使用 API CMD 向网卡发送 MGMT 命令，并通过 AEQ 接收来自网卡上 MGMT 模块的通知。同时设置硬件中 IO CMDQ 的地址。
-（hinic_hw_mgmt.c、hinic_hw_mgmt.h）
-
-## IO 组件：
+## 鏉傞」
 
 
-完成事件队列（CEQ）- 描述已完成的 IO 任务的完成事件队列。（hinic_hw_eqs.c、hinic_hw_eqs.h）
+纭欢涓庨€昏緫璁惧鍏辩敤鐨勯€氱敤鍑芥暟銆?锛坔inic_common.c銆乭inic_common.h锛?
 
-工作队列（WQ）- 包含供 CMD 队列和队列对使用的内存与操作。WQ 是页中的一块内存。该块包含指向内存区（即工作队列元素 WQE 的内存）的指针。
-（hinic_hw_wq.c、hinic_hw_wq.h）
-
-命令队列（CMDQ）- 用于发送 IO 管理命令的队列，用于设置硬件中的 QP 地址。命令的完成事件累积在配置为接收 CMDQ 完成事件的 CEQ 上。
-（hinic_hw_cmdq.c、hinic_hw_cmdq.h）
-
-队列对（QP）- 用于接收和发送数据的硬件接收与发送队列。（hinic_hw_qp.c、hinic_hw_qp.h、hinic_hw_qp_ctxt.h）
-
-IO - 构建/拆解所有 IO 组件。（hinic_hw_io.c、hinic_hw_io.h）
-
-## 硬件设备：
+## 鏀寔
 
 
-硬件设备 - 在驱动初始化时构建/拆解硬件接口、MGMT 组件，并在接口 UP/DOWN 事件时构建/拆解 IO 组件。（hinic_hw_dev.c、hinic_hw_dev.h）
-
-
-## hinic_dev 包含以下组件：
-
-
-PCI ID 表 - 包含受支持的 PCI 厂商/设备 ID。
-（hinic_pci_tbl.h）
-
-端口命令 - 向硬件设备发送端口管理命令（MAC、Vlan、MTU 等）。（hinic_port.c、hinic_port.h）
-
-Tx 队列 - 使用硬件发送队列进行发送的逻辑 Tx 队列。逻辑 Tx 队列不依赖于硬件发送队列的格式。
-（hinic_tx.c、hinic_tx.h）
-
-Rx 队列 - 使用硬件接收队列进行接收的逻辑 Rx 队列。逻辑 Rx 队列不依赖于硬件接收队列的格式。
-（hinic_rx.c、hinic_rx.h）
-
-hinic_dev - 构建/拆解逻辑 Tx 与 Rx 队列。
-（hinic_main.c、hinic_dev.h）
-
-
-## 杂项
-
-
-硬件与逻辑设备共用的通用函数。
-（hinic_common.c、hinic_common.h）
-
-
-## 支持
-
-
-如果发现所发布的源代码在受支持内核、配合受支持适配器时存在问题，请将与该问题相关的具体信息通过电子邮件发送至
-aviad.krawczyk@huawei.com。
+濡傛灉鍙戠幇鎵€鍙戝竷鐨勬簮浠ｇ爜鍦ㄥ彈鏀寔鍐呮牳銆侀厤鍚堝彈鏀寔閫傞厤鍣ㄦ椂瀛樺湪闂锛岃灏嗕笌璇ラ棶棰樼浉鍏崇殑鍏蜂綋淇℃伅閫氳繃鐢靛瓙閭欢鍙戦€佽嚦
+aviad.krawczyk@huawei.com銆?

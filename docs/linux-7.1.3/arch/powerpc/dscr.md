@@ -1,68 +1,46 @@
-## DSCR（数据流控制寄存器，Data Stream Control Register）
+﻿## DSCR锛堟暟鎹祦鎺у埗瀵勫瓨鍣紝Data Stream Control Register锛?
 
-
-powerpc 上的 DSCR 寄存器允许用户对处理器中数据流的预取进行一定的控制。关于如何使用此 DSCR
-来获得对预取的控制，请参阅 ISA 文档或相关手册以获取更详细的信息。本文档概述了内核
-对 DSCR 的支持、相关的内核对象、其功能以及导出的用户接口。
-
-(A) 数据结构：
-
+powerpc 涓婄殑 DSCR 瀵勫瓨鍣ㄥ厑璁哥敤鎴峰澶勭悊鍣ㄤ腑鏁版嵁娴佺殑棰勫彇杩涜涓€瀹氱殑鎺у埗銆傚叧浜庡浣曚娇鐢ㄦ DSCR
+鏉ヨ幏寰楀棰勫彇鐨勬帶鍒讹紝璇峰弬闃?ISA 鏂囨。鎴栫浉鍏虫墜鍐屼互鑾峰彇鏇磋缁嗙殑淇℃伅銆傛湰鏂囨。姒傝堪浜嗗唴鏍?瀵?DSCR 鐨勬敮鎸併€佺浉鍏崇殑鍐呮牳瀵硅薄銆佸叾鍔熻兘浠ュ強瀵煎嚭鐨勭敤鎴锋帴鍙ｃ€?
+(A) 鏁版嵁缁撴瀯锛?
 ```
 
-		dscr		/* 线程 DSCR 值 */
-		dscr_inherit	/* 线程已更改默认 DSCR */
+		dscr		/* 绾跨▼ DSCR 鍊?*/
+		dscr_inherit	/* 绾跨▼宸叉洿鏀归粯璁?DSCR */
 
 	(2) PACA::
 
-		dscr_default	/* 每 CPU 的 DSCR 默认值 */
+		dscr_default	/* 姣?CPU 鐨?DSCR 榛樿鍊?*/
 
 	(3) sysfs.c::
 
-		dscr_default	/* 系统 DSCR 默认值 */
+		dscr_default	/* 绯荤粺 DSCR 榛樿鍊?*/
 
 ```
-(B) 调度器改动：
+(B) 璋冨害鍣ㄦ敼鍔細
 
-	如果线程的 dscr_inherit 值为清零状态（意味着它到目前为止还没有更改过默认 DSCR），
-	调度器会将存储在 CPU 的 PACA 值中的每 CPU DSCR 默认值写入寄存器。如果设定了
-	dscr_inherit 值（意味着它已经更改了默认 DSCR 值），调度器将写入更改后的值，该值
-	现在包含在 thread 结构体的 dscr 中，而不是基于每 CPU 默认 PACA 的 DSCR 值。
+	濡傛灉绾跨▼鐨?dscr_inherit 鍊间负娓呴浂鐘舵€侊紙鎰忓懗鐫€瀹冨埌鐩墠涓烘杩樻病鏈夋洿鏀硅繃榛樿 DSCR锛夛紝
+	璋冨害鍣ㄤ細灏嗗瓨鍌ㄥ湪 CPU 鐨?PACA 鍊间腑鐨勬瘡 CPU DSCR 榛樿鍊煎啓鍏ュ瘎瀛樺櫒銆傚鏋滆瀹氫簡
+	dscr_inherit 鍊硷紙鎰忓懗鐫€瀹冨凡缁忔洿鏀逛簡榛樿 DSCR 鍊硷級锛岃皟搴﹀櫒灏嗗啓鍏ユ洿鏀瑰悗鐨勫€硷紝璇ュ€?	鐜板湪鍖呭惈鍦?thread 缁撴瀯浣撶殑 dscr 涓紝鑰屼笉鏄熀浜庢瘡 CPU 榛樿 PACA 鐨?DSCR 鍊笺€?
+	娉ㄦ剰锛氳娉ㄦ剰锛岀郴缁熻寖鍥寸殑鍏ㄥ眬 DSCR 鍊煎湪璋冨害鍣ㄧ殑杩涚▼涓婁笅鏂囧垏鎹腑鏍规湰涓嶄細琚洿鎺ヤ娇鐢ㄣ€?
+(C) SYSFS 鎺ュ彛锛?
+ - 鍏ㄥ眬 DSCR 榛樿鍊硷細		/sys/devices/system/cpu/dscr_default
+ - CPU 鐗瑰畾鐨?DSCR 榛樿鍊硷細	/sys/devices/system/cpu/cpuN/dscr
 
-	注意：请注意，系统范围的全局 DSCR 值在调度器的进程上下文切换中根本不会被直接使用。
+	鍦?sysfs 涓洿鏀瑰叏灞€ DSCR 榛樿鍊间細绔嬪嵆鏇存敼鍏?PACA 缁撴瀯涓殑鎵€鏈?CPU 鐗瑰畾 DSCR 榛樿鍊笺€?	鍚屾牱锛屽鏋滃綋鍓嶈繘绋嬬殑 dscr_inherit 鏄竻闆剁殑锛屽畠涔熶細绔嬪嵆灏嗘柊鍊煎啓鍏ユ瘡涓?CPU 鐨?DSCR 瀵勫瓨鍣紝
+	骞舵洿鏂板綋鍓嶇嚎绋嬬殑 DSCR 鍊笺€?
+	鍦?sysfs 涓洿鏀?CPU 鐗瑰畾鐨?DSCR 榛樿鍊兼墍鍋氱殑浜嬫儏涓庝笂杩板畬鍏ㄧ浉鍚岋紝浣嗕笌涓婇潰鐨勫叏灞€鍊间笉鍚岋紝
+	瀹冨彧鏇存敼璇ョ壒瀹?CPU 鐨勫唴瀹癸紝鑰屼笉鏄郴缁熶腑鎵€鏈?CPU 鐨勫唴瀹广€?
+(D) 鐢ㄦ埛绌洪棿鎸囦护锛?
+	DSCR 瀵勫瓨鍣ㄥ彲浠ュ湪鐢ㄦ埛绌洪棿涓娇鐢ㄤ负姝ょ洰鐨勬彁渚涚殑浠绘剰涓€涓?SPR 缂栧彿鏉ヨ闂€?
+	(1) 闂鎬?SPR锛?	0x03	锛堥潪鐗规潈锛屼粎 POWER8锛?	(2) 鐗规潈鎬?SPR锛?	0x11	锛堢壒鏉冿級
 
-(C) SYSFS 接口：
+	浠庣敤鎴风┖闂撮€氳繃鐗规潈 SPR 缂栧彿锛?x11锛夎闂?DSCR 鏄彲琛岀殑锛屽洜涓哄畠鍦ㄥ唴鏍稿唴鐨勯潪娉曟寚浠?	寮傚父涔嬪悗琚ā鎷熴€俶fspr 涓?mtspr 鎸囦护閮戒細琚ā鎷熴€?
+	浠庣敤鎴风┖闂撮€氳繃鐢ㄦ埛绾?SPR锛?x03锛夎闂?DSCR 棣栧厛浼氬垱寤轰竴涓?facility unavailable 寮傚父銆?	鍦ㄦ寮傚父澶勭悊绋嬪簭鍐呴儴锛屾墍鏈夊熀浜?mfspr 鎸囦护鐨勮鍙栧皾璇曢兘浼氳妯℃嫙骞惰繑鍥烇紝鑰屽熀浜?mtspr 鎸囦护
+	鐨勯娆″啓鍏ュ皾璇曚細閫氳繃璁剧疆 FSCR 瀵勫瓨鍣ㄤ腑鐨?DSCR facility 鏉ヤ负涓嬩竴娆★紙璇诲拰鍐欙級鍚敤 DSCR facility銆?
+(E) 鍏充簬 'dscr_inherit' 鐨勭粏鑺傦細
 
- - 全局 DSCR 默认值：		/sys/devices/system/cpu/dscr_default
- - CPU 特定的 DSCR 默认值：	/sys/devices/system/cpu/cpuN/dscr
+	绾跨▼缁撴瀯浣撳厓绱?'dscr_inherit' 琛ㄧず鐩稿叧绾跨▼鏄惁鏇惧皾璇曞苟浣跨敤浠ヤ笅浠讳竴鏂规硶鑷鏇存敼杩?DSCR銆?	璇ュ厓绱犺〃绀虹嚎绋嬫槸鎯宠鍦ㄥ唴鏍镐腑浣跨敤 CPU 榛樿鐨?DSCR 鍊硷紝杩樻槸瀹冭嚜宸辨洿鏀硅繃鐨?DSCR 鍊笺€?
+		(1) mtspr 鎸囦护	锛圫PR 缂栧彿 0x03锛?		(2) mtspr 鎸囦护	锛圫PR 缂栧彿 0x11锛?		(3) ptrace 鎺ュ彛	锛堟樉寮忚缃敤鎴?DSCR 鍊硷級
 
-	在 sysfs 中更改全局 DSCR 默认值会立即更改其 PACA 结构中的所有 CPU 特定 DSCR 默认值。
-	同样，如果当前进程的 dscr_inherit 是清零的，它也会立即将新值写入每个 CPU 的 DSCR 寄存器，
-	并更新当前线程的 DSCR 值。
-
-	在 sysfs 中更改 CPU 特定的 DSCR 默认值所做的事情与上述完全相同，但与上面的全局值不同，
-	它只更改该特定 CPU 的内容，而不是系统中所有 CPU 的内容。
-
-(D) 用户空间指令：
-
-	DSCR 寄存器可以在用户空间中使用为此目的提供的任意一个 SPR 编号来访问。
-
-	(1) 问题态 SPR：		0x03	（非特权，仅 POWER8）
-	(2) 特权态 SPR：		0x11	（特权）
-
-	从用户空间通过特权 SPR 编号（0x11）访问 DSCR 是可行的，因为它在内核内的非法指令
-	异常之后被模拟。mfspr 与 mtspr 指令都会被模拟。
-
-	从用户空间通过用户级 SPR（0x03）访问 DSCR 首先会创建一个 facility unavailable 异常。
-	在此异常处理程序内部，所有基于 mfspr 指令的读取尝试都会被模拟并返回，而基于 mtspr 指令
-	的首次写入尝试会通过设置 FSCR 寄存器中的 DSCR facility 来为下一次（读和写）启用 DSCR facility。
-
-(E) 关于 'dscr_inherit' 的细节：
-
-	线程结构体元素 'dscr_inherit' 表示相关线程是否曾尝试并使用以下任一方法自行更改过 DSCR。
-	该元素表示线程是想要在内核中使用 CPU 默认的 DSCR 值，还是它自己更改过的 DSCR 值。
-
-		(1) mtspr 指令	（SPR 编号 0x03）
-		(2) mtspr 指令	（SPR 编号 0x11）
-		(3) ptrace 接口	（显式设置用户 DSCR 值）
-
-	在此事件之后由该进程创建的任何子进程也会继承相同的行为。
+	鍦ㄦ浜嬩欢涔嬪悗鐢辫杩涚▼鍒涘缓鐨勪换浣曞瓙杩涚▼涔熶細缁ф壙鐩稿悓鐨勮涓恒€?

@@ -1,35 +1,24 @@
+﻿
+## QorIQ DPAA 浠ュお缃戦┍鍔?
 
-## QorIQ DPAA 以太网驱动
-
-
-作者：
+浣滆€咃細
 - Madalin Bucur <madalin.bucur@nxp.com>
 - Camelia Groza <camelia.groza@nxp.com>
 
 
- - DPAA 以太网概述
- - DPAA 以太网支持的 SoC
- - 在你的内核中配置 DPAA 以太网
- - DPAA 以太网帧处理
- - DPAA 以太网特性
- - DPAA 中断亲和性与接收端缩放（RSS）
- - 调试
+ - DPAA 浠ュお缃戞杩? - DPAA 浠ュお缃戞敮鎸佺殑 SoC
+ - 鍦ㄤ綘鐨勫唴鏍镐腑閰嶇疆 DPAA 浠ュお缃? - DPAA 浠ュお缃戝抚澶勭悊
+ - DPAA 浠ュお缃戠壒鎬? - DPAA 涓柇浜插拰鎬т笌鎺ユ敹绔缉鏀撅紙RSS锛? - 璋冭瘯
 
-## DPAA 以太网概述
+## DPAA 浠ュお缃戞杩?
 
-
-DPAA 代表 Data Path Acceleration Architecture（数据通路加速架构），它是一组网络加速
-IP，在 PowerPC 和 ARM64 多个代际的 SoC 上都可用。
-
-Freescale 的 DPAA 架构由一系列支持以太网连接的硬件模块组成。该以太网驱动依赖于
-Linux 内核中的以下驱动：
-
- - 外设访问存储单元（PAMU）（*仅 PPC 平台需要）
+DPAA 浠ｈ〃 Data Path Acceleration Architecture锛堟暟鎹€氳矾鍔犻€熸灦鏋勶級锛屽畠鏄竴缁勭綉缁滃姞閫?IP锛屽湪 PowerPC 鍜?ARM64 澶氫釜浠ｉ檯鐨?SoC 涓婇兘鍙敤銆?
+Freescale 鐨?DPAA 鏋舵瀯鐢变竴绯诲垪鏀寔浠ュお缃戣繛鎺ョ殑纭欢妯″潡缁勬垚銆傝浠ュお缃戦┍鍔ㄤ緷璧栦簬
+Linux 鍐呮牳涓殑浠ヤ笅椹卞姩锛?
+ - 澶栬璁块棶瀛樺偍鍗曞厓锛圥AMU锛夛紙*浠?PPC 骞冲彴闇€瑕侊級
     drivers/iommu/fsl_*
- - 帧管理器（FMan）
-    drivers/net/ethernet/freescale/fman
- - 队列管理器（QMan）、缓冲区管理器（BMan）
-    drivers/soc/fsl/qbman
+ - 甯х鐞嗗櫒锛團Man锛?    drivers/net/ethernet/freescale/fman
+ - 闃熷垪绠＄悊鍣紙QMan锛夈€佺紦鍐插尯绠＄悊鍣紙BMan锛?    drivers/soc/fsl/qbman
 
 ```
 
@@ -65,32 +54,26 @@ Linux 内核中的以下驱动：
 	      -----------------------   --------
 
 ```
-其中上面（以及代码中）使用的缩写为：
+鍏朵腑涓婇潰锛堜互鍙婁唬鐮佷腑锛変娇鐢ㄧ殑缂╁啓涓猴細
 
 =============== ===========================================================
-DPAA 		Data Path Acceleration Architecture（数据通路加速架构）
-FMan 		DPAA 帧管理器
-QMan 		DPAA 队列管理器
-BMan 		DPAA 缓冲区管理器
-QMI 		FMan 中的 QMan 接口
-BMI 		FMan 中的 BMan 接口
-FMan SP 	FMan 存储配置文件
-MURAM 		FMan 中的多用户 RAM
-FQ 		QMan 帧队列
-Rx Dfl FQ 	默认接收 FQ
-Rx Err FQ 	Rx 错误帧 FQ
-Tx Cnf FQ 	Tx 确认 FQ
-Tx FQs 		发送帧队列
-dtsec 		datapath 三速以太网控制器（10/100/1000 Mbps）
-tgec 		十千兆以太网控制器（10 Gbps）
-memac 		多速率以太网 MAC（10/100/1000/10000）
-=============== ===========================================================
+DPAA 		Data Path Acceleration Architecture锛堟暟鎹€氳矾鍔犻€熸灦鏋勶級
+FMan 		DPAA 甯х鐞嗗櫒
+QMan 		DPAA 闃熷垪绠＄悊鍣?BMan 		DPAA 缂撳啿鍖虹鐞嗗櫒
+QMI 		FMan 涓殑 QMan 鎺ュ彛
+BMI 		FMan 涓殑 BMan 鎺ュ彛
+FMan SP 	FMan 瀛樺偍閰嶇疆鏂囦欢
+MURAM 		FMan 涓殑澶氱敤鎴?RAM
+FQ 		QMan 甯ч槦鍒?Rx Dfl FQ 	榛樿鎺ユ敹 FQ
+Rx Err FQ 	Rx 閿欒甯?FQ
+Tx Cnf FQ 	Tx 纭 FQ
+Tx FQs 		鍙戦€佸抚闃熷垪
+dtsec 		datapath 涓夐€熶互澶綉鎺у埗鍣紙10/100/1000 Mbps锛?tgec 		鍗佸崈鍏嗕互澶綉鎺у埗鍣紙10 Gbps锛?memac 		澶氶€熺巼浠ュお缃?MAC锛?0/100/1000/10000锛?=============== ===========================================================
 
-## DPAA 以太网支持的 SoC
+## DPAA 浠ュお缃戞敮鎸佺殑 SoC
 
 
-DPAA 驱动启用了以下 SoC 上存在的以太网控制器：
-
+DPAA 椹卞姩鍚敤浜嗕互涓?SoC 涓婂瓨鍦ㄧ殑浠ュお缃戞帶鍒跺櫒锛?
 PPC
 - P1023
 - P2041
@@ -110,56 +93,44 @@ ARM
 - LS1043A
 - LS1046A
 
-## 在你的内核中配置 DPAA 以太网
-
+## 鍦ㄤ綘鐨勫唴鏍镐腑閰嶇疆 DPAA 浠ュお缃?
 
 ```
 
-  # arch/arm64 和 arch/powerpc 平台通用
+  # arch/arm64 鍜?arch/powerpc 骞冲彴閫氱敤
   CONFIG_FSL_DPAA=y
   CONFIG_FSL_FMAN=y
   CONFIG_FSL_DPAA_ETH=y
   CONFIG_FSL_XGMAC_MDIO=y
 
-  # 仅 arch/powerpc
+  # 浠?arch/powerpc
   CONFIG_FSL_PAMU=y
 
-  # RDB 上所用 PHY 需要的通用选项
+  # RDB 涓婃墍鐢?PHY 闇€瑕佺殑閫氱敤閫夐」
   CONFIG_VITESSE_PHY=y
   CONFIG_REALTEK_PHY=y
   CONFIG_AQUANTIA_PHY=y
 
 ```
-## DPAA 以太网帧处理
+## DPAA 浠ュお缃戝抚澶勭悊
 
 
-在接收（Rx）侧，传入帧的缓冲区是从专用接口缓冲区池中的缓冲区获取的。驱动初始化并
-用一页大小的缓冲区填充这些池。
+鍦ㄦ帴鏀讹紙Rx锛変晶锛屼紶鍏ュ抚鐨勭紦鍐插尯鏄粠涓撶敤鎺ュ彛缂撳啿鍖烘睜涓殑缂撳啿鍖鸿幏鍙栫殑銆傞┍鍔ㄥ垵濮嬪寲骞?鐢ㄤ竴椤靛ぇ灏忕殑缂撳啿鍖哄～鍏呰繖浜涙睜銆?
+鍦ㄥ彂閫侊紙Tx锛変晶锛屾墍鏈夎鍙戦€佺殑甯ч兘閫氳繃 Tx 纭甯ч槦鍒楄繑鍥炵粰椹卞姩銆傜劧鍚庨┍鍔ㄨ礋璐ｉ噴鏀捐繖浜?缂撳啿鍖恒€備负浜嗘纭湴鍋氬埌杩欎竴鐐癸紝鍦ㄥ彂閫佷箣鍓嶄細鍚戠紦鍐插尯娣诲姞涓€涓寚鍥?skb 鐨勫洖鎸囬拡銆傚綋缂撳啿
+鍖哄湪纭 FQ 涓婅繑鍥炵粰椹卞姩鏃讹紝skb 灏辫兘琚纭秷璐广€?
+## DPAA 浠ュお缃戠壒鎬?
 
-在发送（Tx）侧，所有被发送的帧都通过 Tx 确认帧队列返回给驱动。然后驱动负责释放这些
-缓冲区。为了正确地做到这一点，在发送之前会向缓冲区添加一个指回 skb 的回指针。当缓冲
-区在确认 FQ 上返回给驱动时，skb 就能被正确消费。
+鐩墠 DPAA 浠ュお缃戦┍鍔ㄥ惎鐢ㄤ簡 Linux 浠ュお缃戦┍鍔ㄦ墍闇€鐨勫熀鏈壒鎬с€傚楂樼骇鐗规€х殑鏀寔灏嗛€愭
+娣诲姞銆?
+璇ラ┍鍔ㄥ UDP 鍜?TCP 鍏锋湁 Rx 鍜?Tx 鏍￠獙鍜屽嵏杞姐€傜洰鍓?Rx 鏍￠獙鍜屽嵏杞界壒鎬ч粯璁ゅ惎鐢紝涓旀棤娉?閫氳繃 ethtool 鎺у埗銆傛澶栵紝杩樻坊鍔犱簡 rx-flow-hash 鍜?rx-hashing銆俁SS 鐨勫姞鍏ヤ负杞彂鍦烘櫙
+甯︽潵浜嗗法澶х殑鎬ц兘鎻愬崌锛屽厑璁哥敱涓€涓帴鍙ｆ帴鏀剁殑涓嶅悓娴侀噺娴佽涓嶅悓鐨?CPU 骞惰澶勭悊銆?
+璇ラ┍鍔ㄦ敮鎸佸涓甫浼樺厛绾х殑 Tx 娴侀噺绫诲埆銆備紭鍏堢骇鑼冨洿浠?0锛堟渶浣庯級鍒?3锛堟渶楂橈級銆傚畠浠
+鏄犲皠鍒板叿鏈変弗鏍间紭鍏堢骇绾у埆鐨勭‖浠跺伐浣滈槦鍒椼€傛瘡涓祦閲忕被鍒寘鍚?NR_CPU 涓?Tx 闃熷垪銆傞粯璁?鎯呭喌涓嬶紝浠呭惎鐢ㄤ竴涓祦閲忕被鍒紝骞朵娇鐢ㄦ渶浣庝紭鍏堢骇鐨?Tx 闃熷垪銆傚彲浠ラ€氳繃 mqprio qdisc 鍚敤
+鏇撮珮浼樺厛绾х殑娴侀噺绫诲埆銆備緥濡傦紝浣跨敤浠ヤ笅鍛戒护鍦ㄦ煇涓帴鍙ｄ笂鍚敤鍏ㄩ儴鍥涗釜娴侀噺绫诲埆銆傛澶栵紝
+skb 浼樺厛绾х骇鍒埌娴侀噺绫诲埆鐨勬槧灏勫涓嬶細
 
-## DPAA 以太网特性
-
-
-目前 DPAA 以太网驱动启用了 Linux 以太网驱动所需的基本特性。对高级特性的支持将逐步
-添加。
-
-该驱动对 UDP 和 TCP 具有 Rx 和 Tx 校验和卸载。目前 Rx 校验和卸载特性默认启用，且无法
-通过 ethtool 控制。此外，还添加了 rx-flow-hash 和 rx-hashing。RSS 的加入为转发场景
-带来了巨大的性能提升，允许由一个接口接收的不同流量流被不同的 CPU 并行处理。
-
-该驱动支持多个带优先级的 Tx 流量类别。优先级范围从 0（最低）到 3（最高）。它们被
-映射到具有严格优先级级别的硬件工作队列。每个流量类别包含 NR_CPU 个 Tx 队列。默认
-情况下，仅启用一个流量类别，并使用最低优先级的 Tx 队列。可以通过 mqprio qdisc 启用
-更高优先级的流量类别。例如，使用以下命令在某个接口上启用全部四个流量类别。此外，
-skb 优先级级别到流量类别的映射如下：
-
- - 优先级 0 到 3 - 流量类别 0（低优先级）
- - 优先级 4 到 7 - 流量类别 1（中低优先级）
- - 优先级 8 到 11 - 流量类别 2（中高优先级）
- - 优先级 12 到 15 - 流量类别 3（高优先级）
+ - 浼樺厛绾?0 鍒?3 - 娴侀噺绫诲埆 0锛堜綆浼樺厛绾э級
+ - 浼樺厛绾?4 鍒?7 - 娴侀噺绫诲埆 1锛堜腑浣庝紭鍏堢骇锛? - 浼樺厛绾?8 鍒?11 - 娴侀噺绫诲埆 2锛堜腑楂樹紭鍏堢骇锛? - 浼樺厛绾?12 鍒?15 - 娴侀噺绫诲埆 3锛堥珮浼樺厛绾э級
 
 ```
 
@@ -167,26 +138,17 @@ skb 优先级级别到流量类别的映射如下：
 	 mqprio num_tc 4 map 0 0 0 0 1 1 1 1 2 2 2 2 3 3 3 3 hw 1
 
 ```
-## DPAA 中断亲和性与接收端缩放
+## DPAA 涓柇浜插拰鎬т笌鎺ユ敹绔缉鏀?
 
-
-到达 DPAA Rx 队列或 DPAA Tx 确认队列的流量，在 CPU 看来是某个特定 portal 上的入口
-（ingress）流量。DPAA QMan portal 中断各自亲和到某个特定 CPU。同一个 portal 中断
-服务于所有 QMan portal 消费者。
-
-默认情况下，DPAA 以太网驱动启用 RSS，利用 DPAA FMan 的 Parser 和 Keygen 模块，基于所
-接收帧中存在的 IPv4/IPv6 源和目的地址以及 L4 源和目的端口的哈希，将流量分布到 128 个
-硬件帧队列上。当 RSS 被禁用时，某个特定接口接收的所有流量都在默认 Rx 帧队列上接收。
-默认的 DPAA Rx 帧队列被配置为将接收到的流量放入一个池通道（pool channel），允许任何
-可用的 CPU portal 出队该入口流量。默认帧队列设置了 HOLDACTIVE 选项，确保来自某个队列
-的流量突发由同一个 CPU 提供服务。这保证了极低的帧乱序率。其缺点是，在 RSS 未启用时，
-某个特定接口接收到的流量一次只能由一个 CPU 提供服务。
-
-为了实现 RSS，DPAA 以太网驱动额外分配一组 128 个 Rx 帧队列，这些队列以轮询方式配置到
-专用通道。帧队列到 CPU 的映射现在是硬编码的，没有间接表来将某个 FQ（哈希结果）的流量
-移动到另一个 CPU。到达这些帧队列之一的入口流量将到达同一个 portal，并总是由同一个 CPU
-处理。这保证了流内顺序的保持以及多个流量流之间的工作负载分布。
-
+鍒拌揪 DPAA Rx 闃熷垪鎴?DPAA Tx 纭闃熷垪鐨勬祦閲忥紝鍦?CPU 鐪嬫潵鏄煇涓壒瀹?portal 涓婄殑鍏ュ彛
+锛坕ngress锛夋祦閲忋€侱PAA QMan portal 涓柇鍚勮嚜浜插拰鍒版煇涓壒瀹?CPU銆傚悓涓€涓?portal 涓柇
+鏈嶅姟浜庢墍鏈?QMan portal 娑堣垂鑰呫€?
+榛樿鎯呭喌涓嬶紝DPAA 浠ュお缃戦┍鍔ㄥ惎鐢?RSS锛屽埄鐢?DPAA FMan 鐨?Parser 鍜?Keygen 妯″潡锛屽熀浜庢墍
+鎺ユ敹甯т腑瀛樺湪鐨?IPv4/IPv6 婧愬拰鐩殑鍦板潃浠ュ強 L4 婧愬拰鐩殑绔彛鐨勫搱甯岋紝灏嗘祦閲忓垎甯冨埌 128 涓?纭欢甯ч槦鍒椾笂銆傚綋 RSS 琚鐢ㄦ椂锛屾煇涓壒瀹氭帴鍙ｆ帴鏀剁殑鎵€鏈夋祦閲忛兘鍦ㄩ粯璁?Rx 甯ч槦鍒椾笂鎺ユ敹銆?榛樿鐨?DPAA Rx 甯ч槦鍒楄閰嶇疆涓哄皢鎺ユ敹鍒扮殑娴侀噺鏀惧叆涓€涓睜閫氶亾锛坧ool channel锛夛紝鍏佽浠讳綍
+鍙敤鐨?CPU portal 鍑洪槦璇ュ叆鍙ｆ祦閲忋€傞粯璁ゅ抚闃熷垪璁剧疆浜?HOLDACTIVE 閫夐」锛岀‘淇濇潵鑷煇涓槦鍒?鐨勬祦閲忕獊鍙戠敱鍚屼竴涓?CPU 鎻愪緵鏈嶅姟銆傝繖淇濊瘉浜嗘瀬浣庣殑甯т贡搴忕巼銆傚叾缂虹偣鏄紝鍦?RSS 鏈惎鐢ㄦ椂锛?鏌愪釜鐗瑰畾鎺ュ彛鎺ユ敹鍒扮殑娴侀噺涓€娆″彧鑳界敱涓€涓?CPU 鎻愪緵鏈嶅姟銆?
+涓轰簡瀹炵幇 RSS锛孌PAA 浠ュお缃戦┍鍔ㄩ澶栧垎閰嶄竴缁?128 涓?Rx 甯ч槦鍒楋紝杩欎簺闃熷垪浠ヨ疆璇㈡柟寮忛厤缃埌
+涓撶敤閫氶亾銆傚抚闃熷垪鍒?CPU 鐨勬槧灏勭幇鍦ㄦ槸纭紪鐮佺殑锛屾病鏈夐棿鎺ヨ〃鏉ュ皢鏌愪釜 FQ锛堝搱甯岀粨鏋滐級鐨勬祦閲?绉诲姩鍒板彟涓€涓?CPU銆傚埌杈捐繖浜涘抚闃熷垪涔嬩竴鐨勫叆鍙ｆ祦閲忓皢鍒拌揪鍚屼竴涓?portal锛屽苟鎬绘槸鐢卞悓涓€涓?CPU
+澶勭悊銆傝繖淇濊瘉浜嗘祦鍐呴『搴忕殑淇濇寔浠ュ強澶氫釜娴侀噺娴佷箣闂寸殑宸ヤ綔璐熻浇鍒嗗竷銆?
 ```
 
 	# ethtool -N fm1-mac9 rx-flow-hash tcp4 ""
@@ -197,11 +159,10 @@ skb 优先级级别到流量类别的映射如下：
 	# ethtool -N fm1-mac9 rx-flow-hash udp4 sfdn
 
 ```
-无法对各个协议进行独立控制，针对 tcp4|udp4|ah4|esp4|sctp4|tcp6|udp6|ah6|esp6|sctp6
-中任意一个运行的命令，都会控制该接口上所有协议的 rx-flow-hashing。
-
-除了使用 FMan Keygen 计算的哈希将流量分散到 128 个 Rx FQ 之外，DPAA 以太网驱动还会在
-NETIF_F_RXHASH 特性开启（默认激活）时设置 skb 哈希值。这可以通过以下方式关闭
+鏃犳硶瀵瑰悇涓崗璁繘琛岀嫭绔嬫帶鍒讹紝閽堝 tcp4|udp4|ah4|esp4|sctp4|tcp6|udp6|ah6|esp6|sctp6
+涓换鎰忎竴涓繍琛岀殑鍛戒护锛岄兘浼氭帶鍒惰鎺ュ彛涓婃墍鏈夊崗璁殑 rx-flow-hashing銆?
+闄や簡浣跨敤 FMan Keygen 璁＄畻鐨勫搱甯屽皢娴侀噺鍒嗘暎鍒?128 涓?Rx FQ 涔嬪锛孌PAA 浠ュお缃戦┍鍔ㄨ繕浼氬湪
+NETIF_F_RXHASH 鐗规€у紑鍚紙榛樿婵€娲伙級鏃惰缃?skb 鍝堝笇鍊笺€傝繖鍙互閫氳繃浠ヤ笅鏂瑰紡鍏抽棴
 ```
 
 	# ethtool -K fm1-mac9 rx-hashing off
@@ -214,33 +175,24 @@ NETIF_F_RXHASH 特性开启（默认激活）时设置 skb 哈希值。这可以
 	receive-hashing: on
 
 ```
-请注意，Rx 哈希依赖于该接口的 rx-flow-hashing 处于开启状态——关闭 rx-flow-hashing 也
-会禁用 rx-hashing（ethtool 不会将其报告为 off，因为这取决于 NETIF_F_RXHASH 特性标志）。
-
-## 调试
+璇锋敞鎰忥紝Rx 鍝堝笇渚濊禆浜庤鎺ュ彛鐨?rx-flow-hashing 澶勪簬寮€鍚姸鎬佲€斺€斿叧闂?rx-flow-hashing 涔?浼氱鐢?rx-hashing锛坋thtool 涓嶄細灏嗗叾鎶ュ憡涓?off锛屽洜涓鸿繖鍙栧喅浜?NETIF_F_RXHASH 鐗规€ф爣蹇楋級銆?
+## 璋冭瘯
 
 
-以下统计信息通过 ethtool 为每个接口导出：
+浠ヤ笅缁熻淇℃伅閫氳繃 ethtool 涓烘瘡涓帴鍙ｅ鍑猴細
 
- - 每个 CPU 的中断计数
- - 每个 CPU 的 Rx 数据包计数
- - 每个 CPU 的 Tx 数据包计数
- - 每个 CPU 的 Tx 确认数据包计数
- - 每个 CPU 的 Tx S/G 帧计数
- - 每个 CPU 的 Tx 错误计数
- - 每个 CPU 的 Rx 错误计数
- - 每个类型的 Rx 错误计数
- - 与拥塞相关的统计：
+ - 姣忎釜 CPU 鐨勪腑鏂鏁? - 姣忎釜 CPU 鐨?Rx 鏁版嵁鍖呰鏁? - 姣忎釜 CPU 鐨?Tx 鏁版嵁鍖呰鏁? - 姣忎釜 CPU 鐨?Tx 纭鏁版嵁鍖呰鏁? - 姣忎釜 CPU 鐨?Tx S/G 甯ц鏁? - 姣忎釜 CPU 鐨?Tx 閿欒璁℃暟
+ - 姣忎釜 CPU 鐨?Rx 閿欒璁℃暟
+ - 姣忎釜绫诲瀷鐨?Rx 閿欒璁℃暟
+ - 涓庢嫢濉炵浉鍏崇殑缁熻锛?
+  - 鎷ュ鐘舵€?  - 澶勪簬鎷ュ鐘舵€佺殑鏃堕棿
+  - 璁惧杩涘叆鎷ュ鐘舵€佺殑娆℃暟
+  - 鎸夊師鍥犵殑涓㈠寘璁℃暟
 
-  - 拥塞状态
-  - 处于拥塞状态的时间
-  - 设备进入拥塞状态的次数
-  - 按原因的丢包计数
+璇ラ┍鍔ㄨ繕浼氬湪 sysfs 涓鍑轰互涓嬩俊鎭細
 
-该驱动还会在 sysfs 中导出以下信息：
-
- - 每种 FQ 类型的 FQ ID
+ - 姣忕 FQ 绫诲瀷鐨?FQ ID
 	  /sys/devices/platform/soc/<addr>.fman/<addr>.ethernet/dpaa-ethernet.<id>/net/fm<nr>-mac<nr>/fqids
 
- - 所用缓冲区池的 ID
+ - 鎵€鐢ㄧ紦鍐插尯姹犵殑 ID
 	  /sys/devices/platform/soc/<addr>.fman/<addr>.ethernet/dpaa-ethernet.<id>/net/fm<nr>-mac<nr>/bpids

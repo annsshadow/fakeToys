@@ -1,53 +1,47 @@
-##  AMDGPU RAS 支持
+﻿##  AMDGPU RAS 鏀寔
 
 
-AMDGPU RAS 接口通过 sysfs（用于信息查询）与 debugfs（用于错误注入）暴露。
-
-## RAS debugfs/sysfs 控制与错误注入接口
-
+AMDGPU RAS 鎺ュ彛閫氳繃 sysfs锛堢敤浜庝俊鎭煡璇級涓?debugfs锛堢敤浜庨敊璇敞鍏ワ級鏆撮湶銆?
+## RAS debugfs/sysfs 鎺у埗涓庨敊璇敞鍏ユ帴鍙?
 
    :doc: AMDGPU RAS debugfs control interface
 
-## RAS 不可恢复错误的重启行为
-
+## RAS 涓嶅彲鎭㈠閿欒鐨勯噸鍚涓?
 
    :doc: AMDGPU RAS Reboot Behavior for Unrecoverable Errors
 
-## RAS 错误计数 sysfs 接口
+## RAS 閿欒璁℃暟 sysfs 鎺ュ彛
 
 
    :doc: AMDGPU RAS sysfs Error Count Interface
 
-## RAS EEPROM debugfs 接口
+## RAS EEPROM debugfs 鎺ュ彛
 
 
    :doc: AMDGPU RAS debugfs EEPROM table reset interface
 
-## RAS VRAM 坏页 sysfs 接口
+## RAS VRAM 鍧忛〉 sysfs 鎺ュ彛
 
 
    :doc: AMDGPU RAS sysfs gpu_vram_bad_pages Interface
 
-## 示例代码
+## 绀轰緥浠ｇ爜
 
 
-用于测试错误注入的示例代码可在此处找到：
+鐢ㄤ簬娴嬭瘯閿欒娉ㄥ叆鐨勭ず渚嬩唬鐮佸彲鍦ㄦ澶勬壘鍒帮細
 https://cgit.freedesktop.org/mesa/drm/tree/tests/amdgpu/ras_tests.c
 
-这是 libdrm amdgpu 单元测试的一部分，覆盖 GPU 的若干方面。共有四组测试：
+杩欐槸 libdrm amdgpu 鍗曞厓娴嬭瘯鐨勪竴閮ㄥ垎锛岃鐩?GPU 鐨勮嫢骞叉柟闈€傚叡鏈夊洓缁勬祴璇曪細
 
-RAS 基本测试
+RAS 鍩烘湰娴嬭瘯
 
-该测试验证 RAS 特性的启用状态，并确保必要的 sysfs 与 debugfs 文件存在。
+璇ユ祴璇曢獙璇?RAS 鐗规€х殑鍚敤鐘舵€侊紝骞剁‘淇濆繀瑕佺殑 sysfs 涓?debugfs 鏂囦欢瀛樺湪銆?
+RAS 鏌ヨ娴嬭瘯
 
-RAS 查询测试
+璇ユ祴璇曟鏌ユ瘡涓彈鏀寔 IP 鍧楃殑 RAS 鍙敤鎬т笌鍚敤鐘舵€侊紝浠ュ強閿欒璁℃暟銆?
+RAS 娉ㄥ叆娴嬭瘯
 
-该测试检查每个受支持 IP 块的 RAS 可用性与启用状态，以及错误计数。
+璇ユ祴璇曚负姣忎釜 IP 娉ㄥ叆閿欒銆?
+RAS 绂佺敤娴嬭瘯
 
-RAS 注入测试
-
-该测试为每个 IP 注入错误。
-
-RAS 禁用测试
-
-该测试测试为每个 IP 块禁用 RAS 特性。
+璇ユ祴璇曟祴璇曚负姣忎釜 IP 鍧楃鐢?RAS 鐗规€с€?

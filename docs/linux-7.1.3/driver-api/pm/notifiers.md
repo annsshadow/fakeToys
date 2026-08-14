@@ -1,5 +1,5 @@
-
-## 挂起/休眠通知器（Notifiers）
+﻿
+## 鎸傝捣/浼戠湢閫氱煡鍣紙Notifiers锛?
 
 
 :Copyright: |copy| 2016 Intel Corporation
@@ -7,34 +7,34 @@
 :Author: Rafael J. Wysocki <rafael.j.wysocki@intel.com>
 
 
-某些子系统或驱动可能希望在休眠/挂起之前或恢复/唤醒之后执行一些操作，但它们要求系统完全可用，因此驱动的与子系统的 `->suspend()` 和 `->resume()` 甚至 `->prepare()` 和 `->complete()` 回调都不适合此目的。
+鏌愪簺瀛愮郴缁熸垨椹卞姩鍙兘甯屾湜鍦ㄤ紤鐪?鎸傝捣涔嬪墠鎴栨仮澶?鍞ら啋涔嬪悗鎵ц涓€浜涙搷浣滐紝浣嗗畠浠姹傜郴缁熷畬鍏ㄥ彲鐢紝鍥犳椹卞姩鐨勪笌瀛愮郴缁熺殑 `->suspend()` 鍜?`->resume()` 鐢氳嚦 `->prepare()` 鍜?`->complete()` 鍥炶皟閮戒笉閫傚悎姝ょ洰鐨勩€?
 
-例如，设备驱动可能希望在唤醒/恢复之后向它们的设备上传固件，但它们无法从 `->resume()` 或 `->complete()` 回调例程中调用 `request_firmware()`（此时用户态进程已被冻结）。解决方案可能是在进程被冻结之前将固件加载到内存中，并在 `->resume()` 例程中从那里上传。为此可以使用挂起/休眠通知器。
+渚嬪锛岃澶囬┍鍔ㄥ彲鑳藉笇鏈涘湪鍞ら啋/鎭㈠涔嬪悗鍚戝畠浠殑璁惧涓婁紶鍥轰欢锛屼絾瀹冧滑鏃犳硶浠?`->resume()` 鎴?`->complete()` 鍥炶皟渚嬬▼涓皟鐢?`request_firmware()`锛堟鏃剁敤鎴锋€佽繘绋嬪凡琚喕缁擄級銆傝В鍐虫柟妗堝彲鑳芥槸鍦ㄨ繘绋嬭鍐荤粨涔嬪墠灏嗗浐浠跺姞杞藉埌鍐呭瓨涓紝骞跺湪 `->resume()` 渚嬬▼涓粠閭ｉ噷涓婁紶銆備负姝ゅ彲浠ヤ娇鐢ㄦ寕璧?浼戠湢閫氱煡鍣ㄣ€?
 
-有此类需求的子系统或驱动可以注册挂起通知器，它们将在以下事件时被 PM 核心调用：
+鏈夋绫婚渶姹傜殑瀛愮郴缁熸垨椹卞姩鍙互娉ㄥ唽鎸傝捣閫氱煡鍣紝瀹冧滑灏嗗湪浠ヤ笅浜嬩欢鏃惰 PM 鏍稿績璋冪敤锛?
 
 `PM_HIBERNATION_PREPARE`
-	系统将要休眠，任务将立即被冻结。这与下面的 `PM_SUSPEND_PREPARE` 不同，因为在这种情况下，通知器与针对“冻结”转换的 PM 回调调用之间会完成额外的工作。
+	绯荤粺灏嗚浼戠湢锛屼换鍔″皢绔嬪嵆琚喕缁撱€傝繖涓庝笅闈㈢殑 `PM_SUSPEND_PREPARE` 涓嶅悓锛屽洜涓哄湪杩欑鎯呭喌涓嬶紝閫氱煡鍣ㄤ笌閽堝鈥滃喕缁撯€濊浆鎹㈢殑 PM 鍥炶皟璋冪敤涔嬮棿浼氬畬鎴愰澶栫殑宸ヤ綔銆?
 
 `PM_POST_HIBERNATION`
-	系统内存状态已从休眠镜像恢复，或在休眠期间发生了错误。设备恢复回调已执行，任务已解冻。
+	绯荤粺鍐呭瓨鐘舵€佸凡浠庝紤鐪犻暅鍍忔仮澶嶏紝鎴栧湪浼戠湢鏈熼棿鍙戠敓浜嗛敊璇€傝澶囨仮澶嶅洖璋冨凡鎵ц锛屼换鍔″凡瑙ｅ喕銆?
 
 `PM_RESTORE_PREPARE`
-	系统将要恢复一个休眠镜像。如果一切顺利，恢复后的镜像内核将发出 `PM_POST_HIBERNATION` 通知。
+	绯荤粺灏嗚鎭㈠涓€涓紤鐪犻暅鍍忋€傚鏋滀竴鍒囬『鍒╋紝鎭㈠鍚庣殑闀滃儚鍐呮牳灏嗗彂鍑?`PM_POST_HIBERNATION` 閫氱煡銆?
 
 `PM_POST_RESTORE`
-	从休眠恢复期间发生了错误。设备恢复回调已执行，任务已解冻。
+	浠庝紤鐪犳仮澶嶆湡闂村彂鐢熶簡閿欒銆傝澶囨仮澶嶅洖璋冨凡鎵ц锛屼换鍔″凡瑙ｅ喕銆?
 
 `PM_SUSPEND_PREPARE`
-	系统正在准备挂起。
+	绯荤粺姝ｅ湪鍑嗗鎸傝捣銆?
 
 `PM_POST_SUSPEND`
-	系统刚刚唤醒，或在挂起期间发生了错误。设备唤醒回调已执行，任务已解冻。
+	绯荤粺鍒氬垰鍞ら啋锛屾垨鍦ㄦ寕璧锋湡闂村彂鐢熶簡閿欒銆傝澶囧敜閱掑洖璋冨凡鎵ц锛屼换鍔″凡瑙ｅ喕銆?
 
-通常假定，通知器为 `PM_HIBERNATION_PREPARE` 所做的任何事情，都应在 `PM_POST_HIBERNATION` 中撤销。类似地，为 `PM_SUSPEND_PREPARE` 执行的操作应在 `PM_POST_SUSPEND` 中反向执行。
+閫氬父鍋囧畾锛岄€氱煡鍣ㄤ负 `PM_HIBERNATION_PREPARE` 鎵€鍋氱殑浠讳綍浜嬫儏锛岄兘搴斿湪 `PM_POST_HIBERNATION` 涓挙閿€銆傜被浼煎湴锛屼负 `PM_SUSPEND_PREPARE` 鎵ц鐨勬搷浣滃簲鍦?`PM_POST_SUSPEND` 涓弽鍚戞墽琛屻€?
 
-此外，如果某个通知器在 `PM_HIBERNATION_PREPARE` 或 `PM_SUSPEND_PREPARE` 事件上失败，那么已经为该事件成功过的通知器将分别被以 `PM_POST_HIBERNATION` 或 `PM_POST_SUSPEND` 调用。
+姝ゅ锛屽鏋滄煇涓€氱煡鍣ㄥ湪 `PM_HIBERNATION_PREPARE` 鎴?`PM_SUSPEND_PREPARE` 浜嬩欢涓婂け璐ワ紝閭ｄ箞宸茬粡涓鸿浜嬩欢鎴愬姛杩囩殑閫氱煡鍣ㄥ皢鍒嗗埆琚互 `PM_POST_HIBERNATION` 鎴?`PM_POST_SUSPEND` 璋冪敤銆?
 
-休眠与挂起通知器在持有 :c:`pm_mutex` 的情况下被调用。它们以通常的方式定义，但它们的最后一个参数无意义（始终为 NULL）。
+浼戠湢涓庢寕璧烽€氱煡鍣ㄥ湪鎸佹湁 :c:`pm_mutex` 鐨勬儏鍐典笅琚皟鐢ㄣ€傚畠浠互閫氬父鐨勬柟寮忓畾涔夛紝浣嗗畠浠殑鏈€鍚庝竴涓弬鏁版棤鎰忎箟锛堝缁堜负 NULL锛夈€?
 
-要注册和/或注销挂起通知器，分别使用 `register_pm_notifier()` 与 `unregister_pm_notifier()`（二者都定义在 `include/linux/suspend.h` 中）。如果你不需要注销通知器，也可以使用 `include/linux/suspend.h` 中定义的 `pm_notifier()` 宏。
+瑕佹敞鍐屽拰/鎴栨敞閿€鎸傝捣閫氱煡鍣紝鍒嗗埆浣跨敤 `register_pm_notifier()` 涓?`unregister_pm_notifier()`锛堜簩鑰呴兘瀹氫箟鍦?`include/linux/suspend.h` 涓級銆傚鏋滀綘涓嶉渶瑕佹敞閿€閫氱煡鍣紝涔熷彲浠ヤ娇鐢?`include/linux/suspend.h` 涓畾涔夌殑 `pm_notifier()` 瀹忋€?

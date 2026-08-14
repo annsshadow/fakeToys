@@ -1,73 +1,44 @@
+﻿
+## Uniwill 绗旇鏈檮鍔犲姛鑳?
 
-## Uniwill 笔记本附加功能
-
-
-在 Uniwill 制造的笔记本（无论是直接制造还是作为 ODM）上，`uniwill-laptop` 驱动
-处理各种平台相关的特性。
-
-### 模块加载
+鍦?Uniwill 鍒堕€犵殑绗旇鏈紙鏃犺鏄洿鎺ュ埗閫犺繕鏄綔涓?ODM锛変笂锛宍uniwill-laptop` 椹卞姩
+澶勭悊鍚勭骞冲彴鐩稿叧鐨勭壒鎬с€?
+### 妯″潡鍔犺浇
 
 
-`uniwill-laptop` 驱动依赖一个 DMI 表，以在受支持的设备上自动加载。当使用 `force`
-模块参数时，会省略该 DMI 检查，从而允许出于测试目的在不受支持的设备上加载该驱动。
+`uniwill-laptop` 椹卞姩渚濊禆涓€涓?DMI 琛紝浠ュ湪鍙楁敮鎸佺殑璁惧涓婅嚜鍔ㄥ姞杞姐€傚綋浣跨敤 `force`
+妯″潡鍙傛暟鏃讹紝浼氱渷鐣ヨ DMI 妫€鏌ワ紝浠庤€屽厑璁稿嚭浜庢祴璇曠洰鐨勫湪涓嶅彈鏀寔鐨勮澶囦笂鍔犺浇璇ラ┍鍔ㄣ€?
+### 鐑敭锛圚otkeys锛?
 
-### 热键（Hotkeys）
-
-
-通常 FN 键在没有特殊驱动的情况下就能工作。然而一旦加载了 `uniwill-laptop` 驱动，
-FN 键就需要手动处理。这由驱动自身自动完成。
-
-### 键盘设置
+閫氬父 FN 閿湪娌℃湁鐗规畩椹卞姩鐨勬儏鍐典笅灏辫兘宸ヤ綔銆傜劧鑰屼竴鏃﹀姞杞戒簡 `uniwill-laptop` 椹卞姩锛?FN 閿氨闇€瑕佹墜鍔ㄥ鐞嗐€傝繖鐢遍┍鍔ㄨ嚜韬嚜鍔ㄥ畬鎴愩€?
+### 閿洏璁剧疆
 
 
-`uniwill-laptop` 驱动允许用户启用/禁用：
-
- - 集成键盘的 FN lock 与 super 键
- - 集成触摸板的触摸板开关功能
-
-详见 Documentation/ABI/testing/sysfs-driver-uniwill-laptop。
-
-### Hwmon 接口
+`uniwill-laptop` 椹卞姩鍏佽鐢ㄦ埛鍚敤/绂佺敤锛?
+ - 闆嗘垚閿洏鐨?FN lock 涓?super 閿? - 闆嗘垚瑙︽懜鏉跨殑瑙︽懜鏉垮紑鍏冲姛鑳?
+璇﹁ Documentation/ABI/testing/sysfs-driver-uniwill-laptop銆?
+### Hwmon 鎺ュ彛
 
 
-`uniwill-laptop` 驱动支持读取 CPU 与 GPU 温度，并支持最多两个风扇。用户态应用可以
-通过 hwmon sysfs 接口访问传感器读数。
+`uniwill-laptop` 椹卞姩鏀寔璇诲彇 CPU 涓?GPU 娓╁害锛屽苟鏀寔鏈€澶氫袱涓鎵囥€傜敤鎴锋€佸簲鐢ㄥ彲浠?閫氳繃 hwmon sysfs 鎺ュ彛璁块棶浼犳劅鍣ㄨ鏁般€?
+### 骞冲彴閰嶇疆妗ｏ紙Platform profile锛?
 
-### 平台配置档（Platform profile）
-
-
-目前尚未实现更改平台性能模式的支持。
-
-### 电池充电控制
+鐩墠灏氭湭瀹炵幇鏇存敼骞冲彴鎬ц兘妯″紡鐨勬敮鎸併€?
+### 鐢垫睜鍏呯數鎺у埗
 
 
-             在部分设备上，驱动启用对该接口的访问可能会损坏电池 [^1^]_。因此，即使
-             使用 `force` 模块参数，驱动也不会启用该功能。
+             鍦ㄩ儴鍒嗚澶囦笂锛岄┍鍔ㄥ惎鐢ㄥ璇ユ帴鍙ｇ殑璁块棶鍙兘浼氭崯鍧忕數姹?[^1^]_銆傚洜姝わ紝鍗充娇
+             浣跨敤 `force` 妯″潡鍙傛暟锛岄┍鍔ㄤ篃涓嶄細鍚敤璇ュ姛鑳姐€?
+`uniwill-laptop` 椹卞姩鏀寔鎺у埗鐢垫睜鍏呯數涓婇檺銆傝繖鏄€氳繃鏍囧噯鐨?`charge_control_end_threshold` 鐢垫簮 sysfs 灞炴€ц繘琛岀殑銆傛敮鎸?1 鍒?100 涔嬮棿鐨勬墍鏈?鐧惧垎姣斿€笺€?
+姝ゅ锛岄┍鍔ㄩ€氳繃鏍囧噯鐨?`health` 鐢垫簮 sysfs 灞炴€ф潵鎻愮ず瀛樺湪鐢垫睜鍏呯數闂銆?
+瀹冭繕鍏佽浣犺缃?USB-C 鐢垫簮搴斾紭鍏堜负鐢垫睜鍏呯數杩樻槸鍚?CPU 鎻愪緵鍗虫椂渚涚數銆傝瑙?Documentation/ABI/testing/sysfs-driver-uniwill-laptop銆?
+### 鍏夋潯锛圠ightbar锛?
 
-`uniwill-laptop` 驱动支持控制电池充电上限。这是通过标准的
-`charge_control_end_threshold` 电源 sysfs 属性进行的。支持 1 到 100 之间的所有
-百分比值。
-
-此外，驱动通过标准的 `health` 电源 sysfs 属性来提示存在电池充电问题。
-
-它还允许你设置 USB-C 电源应优先为电池充电还是向 CPU 提供即时供电。详见
-Documentation/ABI/testing/sysfs-driver-uniwill-laptop。
-
-### 光条（Lightbar）
+`uniwill-laptop` 椹卞姩灏嗛儴鍒嗗瀷鍙蜂笂甯︽湁鐨勫厜鏉′綔涓烘爣鍑嗙殑澶氳壊 LED 绫昏澶囨毚闇插嚭鏉ャ€?璇?LED 绫昏澶囩殑榛樿鍚嶇О涓?`uniwill:multicolor:status`銆?
+鏈夊叧濡備綍鎺у埗鍏夋潯鍚勭鍔ㄧ敾妯″紡鐨勭粏鑺傦紝璇峰弬闃?Documentation/ABI/testing/sysfs-driver-uniwill-laptop銆?
+### 鍙厤缃?TGP
 
 
-`uniwill-laptop` 驱动将部分型号上带有的光条作为标准的多色 LED 类设备暴露出来。
-该 LED 类设备的默认名称为 `uniwill:multicolor:status`。
-
-有关如何控制光条各种动画模式的细节，请参阅
-Documentation/ABI/testing/sysfs-driver-uniwill-laptop。
-
-### 可配置 TGP
-
-
-`uniwill-laptop` 驱动允许为支持此功能的、带 NVIDIA GPU 的设备设置可配置 TGP。
-
-详见 Documentation/ABI/testing/sysfs-driver-uniwill-laptop。
-
-## 参考资料
-
+`uniwill-laptop` 椹卞姩鍏佽涓烘敮鎸佹鍔熻兘鐨勩€佸甫 NVIDIA GPU 鐨勮澶囪缃彲閰嶇疆 TGP銆?
+璇﹁ Documentation/ABI/testing/sysfs-driver-uniwill-laptop銆?
+## 鍙傝€冭祫鏂?

@@ -1,15 +1,10 @@
-## sym53c500_cs 驱动
+﻿## sym53c500_cs 椹卞姩
 
 
-sym53c500_cs 驱动最初是作为 David Hinds 的 pcmcia-cs 软件包的附加组件开发的，由 Tom Corner (tcorner@via.at) 编写。对其进行重写早已是当务之急，当前版本解决了以下问题：
+sym53c500_cs 椹卞姩鏈€鍒濇槸浣滀负 David Hinds 鐨?pcmcia-cs 杞欢鍖呯殑闄勫姞缁勪欢寮€鍙戠殑锛岀敱 Tom Corner (tcorner@via.at) 缂栧啓銆傚鍏惰繘琛岄噸鍐欐棭宸叉槸褰撳姟涔嬫€ワ紝褰撳墠鐗堟湰瑙ｅ喅浜嗕互涓嬮棶棰橈細
 
-	(1) 2.4 与 2.6 内核之间大量的内核改动。
-	(2) 内核之外的 PCMCIA 支持已被弃用。
-
-所有 USE_BIOS 代码均已被移除。这些代码从未被使用过，而且本来也无法工作。USE_DMA 代码也同样被移除。非常感谢 YOKOTA Hiroshi（nsp_cs 驱动）和 David Hinds（qlogic_cs 驱动）提供的代码片段，我在本工作中毫不客气地加以借鉴。同时也感谢 Christoph Hellwig 在我摸索过程中给予的耐心指导。
-
-Symbios Logic 53c500 芯片被用于 New Media Bus Toaster PCMCIA SCSI 控制器的“较新”（约 1997 年）版本中。想必还有其他产品也使用了该芯片，但我从未亲眼见过（更别提亲手接触过）这样的产品。
-
-多年来，该驱动的 pcmcia-cs 版本被多次下载，我想它对那些用户是有效的。它对 Tom Corner 有效，对我也有效。你的使用体验可能会有所不同。
-
+	(1) 2.4 涓?2.6 鍐呮牳涔嬮棿澶ч噺鐨勫唴鏍告敼鍔ㄣ€?	(2) 鍐呮牳涔嬪鐨?PCMCIA 鏀寔宸茶寮冪敤銆?
+鎵€鏈?USE_BIOS 浠ｇ爜鍧囧凡琚Щ闄ゃ€傝繖浜涗唬鐮佷粠鏈浣跨敤杩囷紝鑰屼笖鏈潵涔熸棤娉曞伐浣溿€俇SE_DMA 浠ｇ爜涔熷悓鏍疯绉婚櫎銆傞潪甯告劅璋?YOKOTA Hiroshi锛坣sp_cs 椹卞姩锛夊拰 David Hinds锛坬logic_cs 椹卞姩锛夋彁渚涚殑浠ｇ爜鐗囨锛屾垜鍦ㄦ湰宸ヤ綔涓涓嶅姘斿湴鍔犱互鍊熼壌銆傚悓鏃朵篃鎰熻阿 Christoph Hellwig 鍦ㄦ垜鎽哥储杩囩▼涓粰浜堢殑鑰愬績鎸囧銆?
+Symbios Logic 53c500 鑺墖琚敤浜?New Media Bus Toaster PCMCIA SCSI 鎺у埗鍣ㄧ殑鈥滆緝鏂扳€濓紙绾?1997 骞达級鐗堟湰涓€傛兂蹇呰繕鏈夊叾浠栦骇鍝佷篃浣跨敤浜嗚鑺墖锛屼絾鎴戜粠鏈翰鐪艰杩囷紙鏇村埆鎻愪翰鎵嬫帴瑙﹁繃锛夎繖鏍风殑浜у搧銆?
+澶氬勾鏉ワ紝璇ラ┍鍔ㄧ殑 pcmcia-cs 鐗堟湰琚娆′笅杞斤紝鎴戞兂瀹冨閭ｄ簺鐢ㄦ埛鏄湁鏁堢殑銆傚畠瀵?Tom Corner 鏈夋晥锛屽鎴戜篃鏈夋晥銆備綘鐨勪娇鐢ㄤ綋楠屽彲鑳戒細鏈夋墍涓嶅悓銆?
 Bob Tracy (rct@frus.com)

@@ -1,29 +1,21 @@
-
-## 可扩展调度类
-
-
-sched_ext 是一个调度类，其行为可以由一组 BPF 程序——BPF 调度器——来定义。
-
-- sched_ext 导出了一个完整的调度接口，从而可以在其上实现任意调度算法。
-
-- BPF 调度器可以任意对其认为合适的方式对 CPU 进行分组，并将它们一起调度，因为
-  任务在唤醒时并未绑定到特定的 CPU。
-
-- BPF 调度器可以随时动态开启和关闭。
-
-- 无论 BPF 调度器做什么，系统完整性都得到保持。在任何时候检测到错误、可运行任务
-  停滞，或调用 SysRq 键序列 `SysRq-S` 时，都会恢复默认的调度行为。
-
-- 当 BPF 调度器触发错误时，会转储调试信息以辅助调试。调试转储会传递给调度器二进制
-  并由其打印。也可以通过 `sched_ext_dump` tracepoint 访问调试转储。SysRq 键序列
-  `SysRq-D` 会触发调试转储。这不会终止 BPF 调度器，并且只能通过 tracepoint 读取。
-
-## 切换进出 sched_ext
+﻿
+## 鍙墿灞曡皟搴︾被
 
 
-`CONFIG_SCHED_CLASS_EXT` 是启用 sched_ext 的配置选项，`tools/sched_ext` 包含示例
-调度器。应使用以下配置选项来使用 sched_ext：
+sched_ext 鏄竴涓皟搴︾被锛屽叾琛屼负鍙互鐢变竴缁?BPF 绋嬪簭鈥斺€擝PF 璋冨害鍣ㄢ€斺€旀潵瀹氫箟銆?
+- sched_ext 瀵煎嚭浜嗕竴涓畬鏁寸殑璋冨害鎺ュ彛锛屼粠鑰屽彲浠ュ湪鍏朵笂瀹炵幇浠绘剰璋冨害绠楁硶銆?
+- BPF 璋冨害鍣ㄥ彲浠ヤ换鎰忓鍏惰涓哄悎閫傜殑鏂瑰紡瀵?CPU 杩涜鍒嗙粍锛屽苟灏嗗畠浠竴璧疯皟搴︼紝鍥犱负
+  浠诲姟鍦ㄥ敜閱掓椂骞舵湭缁戝畾鍒扮壒瀹氱殑 CPU銆?
+- BPF 璋冨害鍣ㄥ彲浠ラ殢鏃跺姩鎬佸紑鍚拰鍏抽棴銆?
+- 鏃犺 BPF 璋冨害鍣ㄥ仛浠€涔堬紝绯荤粺瀹屾暣鎬ч兘寰楀埌淇濇寔銆傚湪浠讳綍鏃跺€欐娴嬪埌閿欒銆佸彲杩愯浠诲姟
+  鍋滄粸锛屾垨璋冪敤 SysRq 閿簭鍒?`SysRq-S` 鏃讹紝閮戒細鎭㈠榛樿鐨勮皟搴﹁涓恒€?
+- 褰?BPF 璋冨害鍣ㄨЕ鍙戦敊璇椂锛屼細杞偍璋冭瘯淇℃伅浠ヨ緟鍔╄皟璇曘€傝皟璇曡浆鍌ㄤ細浼犻€掔粰璋冨害鍣ㄤ簩杩涘埗
+  骞剁敱鍏舵墦鍗般€備篃鍙互閫氳繃 `sched_ext_dump` tracepoint 璁块棶璋冭瘯杞偍銆係ysRq 閿簭鍒?  `SysRq-D` 浼氳Е鍙戣皟璇曡浆鍌ㄣ€傝繖涓嶄細缁堟 BPF 璋冨害鍣紝骞朵笖鍙兘閫氳繃 tracepoint 璇诲彇銆?
+## 鍒囨崲杩涘嚭 sched_ext
 
+
+`CONFIG_SCHED_CLASS_EXT` 鏄惎鐢?sched_ext 鐨勯厤缃€夐」锛宍tools/sched_ext` 鍖呭惈绀轰緥
+璋冨害鍣ㄣ€傚簲浣跨敤浠ヤ笅閰嶇疆閫夐」鏉ヤ娇鐢?sched_ext锛?
 
     CONFIG_BPF=y
     CONFIG_SCHED_CLASS_EXT=y
@@ -33,22 +25,14 @@ sched_ext 是一个调度类，其行为可以由一组 BPF 程序——BPF 调�
     CONFIG_BPF_JIT_ALWAYS_ON=y
     CONFIG_BPF_JIT_DEFAULT_ON=y
 
-sched_ext 仅在 BPF 调度器已加载并运行时使用。
-
-如果任务显式地将其调度策略设置为 `SCHED_EXT`，在 BPF 调度器加载之前，它将被当作
-`SCHED_NORMAL` 并由公平类调度器调度。
-
-当 BPF 调度器已加载且 `ops->flags` 中未设置 `SCX_OPS_SWITCH_PARTIAL` 时，所有
-`SCHED_NORMAL`、`SCHED_BATCH`、`SCHED_IDLE` 和 `SCHED_EXT` 任务都由 sched_ext 调度。
-
-然而，当 BPF 调度器已加载且 `ops->flags` 中设置了 `SCX_OPS_SWITCH_PARTIAL` 时，
-只有具有 `SCHED_EXT` 策略的任务由 sched_ext 调度，而具有 `SCHED_NORMAL`、
-`SCHED_BATCH` 和 `SCHED_IDLE` 策略的任务由公平类调度器调度，后者的 sched_class
-优先级高于 `SCHED_EXT`。
-
-终止 sched_ext 调度器程序、触发 `SysRq-S`，或检测到包括可运行任务停滞在内的任何
-内部错误，都会中止 BPF 调度器并将所有任务交还给公平类调度器。
-
+sched_ext 浠呭湪 BPF 璋冨害鍣ㄥ凡鍔犺浇骞惰繍琛屾椂浣跨敤銆?
+濡傛灉浠诲姟鏄惧紡鍦板皢鍏惰皟搴︾瓥鐣ヨ缃负 `SCHED_EXT`锛屽湪 BPF 璋冨害鍣ㄥ姞杞戒箣鍓嶏紝瀹冨皢琚綋浣?`SCHED_NORMAL` 骞剁敱鍏钩绫昏皟搴﹀櫒璋冨害銆?
+褰?BPF 璋冨害鍣ㄥ凡鍔犺浇涓?`ops->flags` 涓湭璁剧疆 `SCX_OPS_SWITCH_PARTIAL` 鏃讹紝鎵€鏈?`SCHED_NORMAL`銆乣SCHED_BATCH`銆乣SCHED_IDLE` 鍜?`SCHED_EXT` 浠诲姟閮界敱 sched_ext 璋冨害銆?
+鐒惰€岋紝褰?BPF 璋冨害鍣ㄥ凡鍔犺浇涓?`ops->flags` 涓缃簡 `SCX_OPS_SWITCH_PARTIAL` 鏃讹紝
+鍙湁鍏锋湁 `SCHED_EXT` 绛栫暐鐨勪换鍔＄敱 sched_ext 璋冨害锛岃€屽叿鏈?`SCHED_NORMAL`銆?`SCHED_BATCH` 鍜?`SCHED_IDLE` 绛栫暐鐨勪换鍔＄敱鍏钩绫昏皟搴﹀櫒璋冨害锛屽悗鑰呯殑 sched_class
+浼樺厛绾ч珮浜?`SCHED_EXT`銆?
+缁堟 sched_ext 璋冨害鍣ㄧ▼搴忋€佽Е鍙?`SysRq-S`锛屾垨妫€娴嬪埌鍖呮嫭鍙繍琛屼换鍔″仠婊炲湪鍐呯殑浠讳綍
+鍐呴儴閿欒锛岄兘浼氫腑姝?BPF 璋冨害鍣ㄥ苟灏嗘墍鏈変换鍔′氦杩樼粰鍏钩绫昏皟搴﹀櫒銆?
 
     # make -j16 -C tools/sched_ext
     # tools/sched_ext/build/bin/scx_simple
@@ -59,24 +43,19 @@ sched_ext 仅在 BPF 调度器已加载并运行时使用。
     local=17 global=72
     ^CEXIT: BPF scheduler unregistered
 
-BPF 调度器的当前状态可如下确定：
-
+BPF 璋冨害鍣ㄧ殑褰撳墠鐘舵€佸彲濡備笅纭畾锛?
 
     # cat /sys/kernel/sched_ext/state
     enabled
     # cat /sys/kernel/sched_ext/root/ops
     simple
 
-你可以通过检查这个单调递增计数器来判断自启动以来是否曾加载过任何 BPF 调度器
-（值为零表示尚未加载任何 BPF 调度器）：
-
+浣犲彲浠ラ€氳繃妫€鏌ヨ繖涓崟璋冮€掑璁℃暟鍣ㄦ潵鍒ゆ柇鑷惎鍔ㄤ互鏉ユ槸鍚︽浘鍔犺浇杩囦换浣?BPF 璋冨害鍣?锛堝€间负闆惰〃绀哄皻鏈姞杞戒换浣?BPF 璋冨害鍣級锛?
 
     # cat /sys/kernel/sched_ext/enable_seq
     1
 
-每个正在运行的调度器还会在 `/sys/kernel/sched_ext/<scheduler-name>/events` 下暴露
-一个每调度器的 `events` 文件，用于跟踪诊断计数器。每个计数器占一行 `name value`：
-
+姣忎釜姝ｅ湪杩愯鐨勮皟搴﹀櫒杩樹細鍦?`/sys/kernel/sched_ext/<scheduler-name>/events` 涓嬫毚闇?涓€涓瘡璋冨害鍣ㄧ殑 `events` 鏂囦欢锛岀敤浜庤窡韪瘖鏂鏁板櫒銆傛瘡涓鏁板櫒鍗犱竴琛?`name value`锛?
 
     # cat /sys/kernel/sched_ext/simple/events
     SCX_EV_SELECT_CPU_FALLBACK 0
@@ -93,33 +72,15 @@ BPF 调度器的当前状态可如下确定：
     SCX_EV_INSERT_NOT_OWNED 0
     SCX_EV_SUB_BYPASS_DISPATCH 0
 
-这些计数器在 `kernel/sched/ext_internal.h` 中有描述；简要地说：
+杩欎簺璁℃暟鍣ㄥ湪 `kernel/sched/ext_internal.h` 涓湁鎻忚堪锛涚畝瑕佸湴璇达細
 
-- `SCX_EV_SELECT_CPU_FALLBACK`：ops.select_cpu() 返回了一个任务不可用的 CPU，核心
-  调度器静默地选择了一个回退 CPU。
-- `SCX_EV_DISPATCH_LOCAL_DSQ_OFFLINE`：由于目标 CPU 下线，本地 DSQ 分发被重定向到
-  全局 DSQ。
-- `SCX_EV_DISPATCH_KEEP_LAST`：由于没有其它可用任务，一个任务继续运行（仅当未设置
-  `SCX_OPS_ENQ_LAST` 时）。
-- `SCX_EV_ENQ_SKIP_EXITING`：一个正在退出的任务被直接分发到本地 DSQ，绕过了
-  ops.enqueue()（仅当未设置 `SCX_OPS_ENQ_EXITING` 时）。
-- `SCX_EV_ENQ_SKIP_MIGRATION_DISABLED`：一个禁用了迁移的任务被直接分发到其本地 DSQ
-  （仅当未设置 `SCX_OPS_ENQ_MIGRATION_DISABLED` 时）。
-- `SCX_EV_REENQ_IMMED`：一个以 `SCX_ENQ_IMMED` 分发的任务由于目标 CPU 无法立即执行
-  而被重新入队。
-- `SCX_EV_REENQ_LOCAL_REPEAT`：本地 DSQ 的重新入队触发了另一次重新入队；反复出现
-  的计数表明 BPF 调度器中 `SCX_ENQ_REENQ` 处理不正确。
-- `SCX_EV_REFILL_SLICE_DFL`：任务的时间片被以默认值（`SCX_SLICE_DFL`）补足。
-- `SCX_EV_BYPASS_DURATION`：在 bypass 模式下花费的总纳秒数。
-- `SCX_EV_BYPASS_DISPATCH`：在 bypass 模式下分发的任务数。
-- `SCX_EV_BYPASS_ACTIVATE`：bypass 模式被激活的次数。
-- `SCX_EV_INSERT_NOT_OWNED`：试图将一个不属于此调度器的任务插入 DSQ；此类尝试会被
-  静默忽略。
-- `SCX_EV_SUB_BYPASS_DISPATCH`：从子调度器 bypass DSQ 分发的任务（仅与
-  `CONFIG_EXT_SUB_SCHED` 相关）。
-
-`tools/sched_ext/scx_show_state.py` 是一个 drgn 脚本，可显示更详细的信息：
-
+- `SCX_EV_SELECT_CPU_FALLBACK`锛歰ps.select_cpu() 杩斿洖浜嗕竴涓换鍔′笉鍙敤鐨?CPU锛屾牳蹇?  璋冨害鍣ㄩ潤榛樺湴閫夋嫨浜嗕竴涓洖閫€ CPU銆?- `SCX_EV_DISPATCH_LOCAL_DSQ_OFFLINE`锛氱敱浜庣洰鏍?CPU 涓嬬嚎锛屾湰鍦?DSQ 鍒嗗彂琚噸瀹氬悜鍒?  鍏ㄥ眬 DSQ銆?- `SCX_EV_DISPATCH_KEEP_LAST`锛氱敱浜庢病鏈夊叾瀹冨彲鐢ㄤ换鍔★紝涓€涓换鍔＄户缁繍琛岋紙浠呭綋鏈缃?  `SCX_OPS_ENQ_LAST` 鏃讹級銆?- `SCX_EV_ENQ_SKIP_EXITING`锛氫竴涓鍦ㄩ€€鍑虹殑浠诲姟琚洿鎺ュ垎鍙戝埌鏈湴 DSQ锛岀粫杩囦簡
+  ops.enqueue()锛堜粎褰撴湭璁剧疆 `SCX_OPS_ENQ_EXITING` 鏃讹級銆?- `SCX_EV_ENQ_SKIP_MIGRATION_DISABLED`锛氫竴涓鐢ㄤ簡杩佺Щ鐨勪换鍔¤鐩存帴鍒嗗彂鍒板叾鏈湴 DSQ
+  锛堜粎褰撴湭璁剧疆 `SCX_OPS_ENQ_MIGRATION_DISABLED` 鏃讹級銆?- `SCX_EV_REENQ_IMMED`锛氫竴涓互 `SCX_ENQ_IMMED` 鍒嗗彂鐨勪换鍔＄敱浜庣洰鏍?CPU 鏃犳硶绔嬪嵆鎵ц
+  鑰岃閲嶆柊鍏ラ槦銆?- `SCX_EV_REENQ_LOCAL_REPEAT`锛氭湰鍦?DSQ 鐨勯噸鏂板叆闃熻Е鍙戜簡鍙︿竴娆￠噸鏂板叆闃燂紱鍙嶅鍑虹幇
+  鐨勮鏁拌〃鏄?BPF 璋冨害鍣ㄤ腑 `SCX_ENQ_REENQ` 澶勭悊涓嶆纭€?- `SCX_EV_REFILL_SLICE_DFL`锛氫换鍔＄殑鏃堕棿鐗囪浠ラ粯璁ゅ€硷紙`SCX_SLICE_DFL`锛夎ˉ瓒炽€?- `SCX_EV_BYPASS_DURATION`锛氬湪 bypass 妯″紡涓嬭姳璐圭殑鎬荤撼绉掓暟銆?- `SCX_EV_BYPASS_DISPATCH`锛氬湪 bypass 妯″紡涓嬪垎鍙戠殑浠诲姟鏁般€?- `SCX_EV_BYPASS_ACTIVATE`锛歜ypass 妯″紡琚縺娲荤殑娆℃暟銆?- `SCX_EV_INSERT_NOT_OWNED`锛氳瘯鍥惧皢涓€涓笉灞炰簬姝よ皟搴﹀櫒鐨勪换鍔℃彃鍏?DSQ锛涙绫诲皾璇曚細琚?  闈欓粯蹇界暐銆?- `SCX_EV_SUB_BYPASS_DISPATCH`锛氫粠瀛愯皟搴﹀櫒 bypass DSQ 鍒嗗彂鐨勪换鍔★紙浠呬笌
+  `CONFIG_EXT_SUB_SCHED` 鐩稿叧锛夈€?
+`tools/sched_ext/scx_show_state.py` 鏄竴涓?drgn 鑴氭湰锛屽彲鏄剧ず鏇磋缁嗙殑淇℃伅锛?
 
     # tools/sched_ext/scx_show_state.py
     ops           : simple
@@ -131,20 +92,16 @@ BPF 调度器的当前状态可如下确定：
     nr_rejected   : 0
     enable_seq    : 1
 
-某个给定任务是否位于 sched_ext 上可如下确定：
-
+鏌愪釜缁欏畾浠诲姟鏄惁浣嶄簬 sched_ext 涓婂彲濡備笅纭畾锛?
 
     # grep ext /proc/self/sched
     ext.enabled                                  :                    1
 
-## 基础
+## 鍩虹
 
 
-用户空间可以通过加载一组实现 `struct sched_ext_ops` 的 BPF 程序来实现任意 BPF
-调度器。唯一的必填字段是 `ops.name`，它必须是一个有效的 BPF 对象名。所有操作都是
-可选的。以下经过修改的摘录来自 `tools/sched_ext/scx_simple.bpf.c`，展示了一个
-最小的全局 FIFO 调度器。
-
+鐢ㄦ埛绌洪棿鍙互閫氳繃鍔犺浇涓€缁勫疄鐜?`struct sched_ext_ops` 鐨?BPF 绋嬪簭鏉ュ疄鐜颁换鎰?BPF
+璋冨害鍣ㄣ€傚敮涓€鐨勫繀濉瓧娈垫槸 `ops.name`锛屽畠蹇呴』鏄竴涓湁鏁堢殑 BPF 瀵硅薄鍚嶃€傛墍鏈夋搷浣滈兘鏄?鍙€夌殑銆備互涓嬬粡杩囦慨鏀圭殑鎽樺綍鏉ヨ嚜 `tools/sched_ext/scx_simple.bpf.c`锛屽睍绀轰簡涓€涓?鏈€灏忕殑鍏ㄥ眬 FIFO 璋冨害鍣ㄣ€?
 
     /*
      - Decide which CPU a task should be migrated to before being
@@ -212,136 +169,81 @@ BPF 调度器的当前状态可如下确定：
             .name                   = "simple",
     };
 
-### 分发队列
+### 鍒嗗彂闃熷垪
 
 
-为了匹配调度器核心与 BPF 调度器之间的阻抗，sched_ext 使用 DSQ（分发队列），它可以
-同时作为 FIFO 和优先级队列运行。默认情况下，有一个全局 FIFO（`SCX_DSQ_GLOBAL`）和
-每个 CPU 一个本地 DSQ（`SCX_DSQ_LOCAL`）。BPF 调度器可以使用 `scx_bpf_create_dsq()`
-和 `scx_bpf_destroy_dsq()` 管理任意数量的 DSQ。
-
-CPU 总是执行其本地 DSQ 中的任务。任务被“插入”到一个 DSQ 中。位于非本地 DSQ 中的
-任务被“移动”到目标 CPU 的本地 DSQ。
-
-当 CPU 寻找下一个要运行的任务时，如果本地 DSQ 不为空，则选取第一个任务。否则，CPU
-尝试从全局 DSQ 移动一个任务。如果那也没有产生可运行任务，则调用 `ops.dispatch()`。
-
-### 调度周期
+涓轰簡鍖归厤璋冨害鍣ㄦ牳蹇冧笌 BPF 璋冨害鍣ㄤ箣闂寸殑闃绘姉锛宻ched_ext 浣跨敤 DSQ锛堝垎鍙戦槦鍒楋級锛屽畠鍙互
+鍚屾椂浣滀负 FIFO 鍜屼紭鍏堢骇闃熷垪杩愯銆傞粯璁ゆ儏鍐典笅锛屾湁涓€涓叏灞€ FIFO锛坄SCX_DSQ_GLOBAL`锛夊拰
+姣忎釜 CPU 涓€涓湰鍦?DSQ锛坄SCX_DSQ_LOCAL`锛夈€侭PF 璋冨害鍣ㄥ彲浠ヤ娇鐢?`scx_bpf_create_dsq()`
+鍜?`scx_bpf_destroy_dsq()` 绠＄悊浠绘剰鏁伴噺鐨?DSQ銆?
+CPU 鎬绘槸鎵ц鍏舵湰鍦?DSQ 涓殑浠诲姟銆備换鍔¤鈥滄彃鍏モ€濆埌涓€涓?DSQ 涓€備綅浜庨潪鏈湴 DSQ 涓殑
+浠诲姟琚€滅Щ鍔ㄢ€濆埌鐩爣 CPU 鐨勬湰鍦?DSQ銆?
+褰?CPU 瀵绘壘涓嬩竴涓杩愯鐨勪换鍔℃椂锛屽鏋滄湰鍦?DSQ 涓嶄负绌猴紝鍒欓€夊彇绗竴涓换鍔°€傚惁鍒欙紝CPU
+灏濊瘯浠庡叏灞€ DSQ 绉诲姩涓€涓换鍔°€傚鏋滈偅涔熸病鏈変骇鐢熷彲杩愯浠诲姟锛屽垯璋冪敤 `ops.dispatch()`銆?
+### 璋冨害鍛ㄦ湡
 
 
-以下简要展示了唤醒的任务如何被调度和执行。
+浠ヤ笅绠€瑕佸睍绀轰簡鍞ら啋鐨勪换鍔″浣曡璋冨害鍜屾墽琛屻€?
+1. 褰撲竴涓换鍔¤鍞ら啋鏃讹紝`ops.select_cpu()` 鏄涓€涓璋冪敤鐨勬搷浣溿€傝繖鏈変袱涓洰鐨勩€?   绗竴锛孋PU 閫夋嫨浼樺寲鎻愮ず銆傜浜岋紝濡傛灉绌洪棽鍒欏敜閱掓墍閫?CPU銆?
+   `ops.select_cpu()` 閫夋嫨鐨?CPU 鏄竴涓紭鍖栨彁绀鸿€岄潪缁戝畾銆傛渶缁堢殑鍐冲畾鍦ㄨ皟搴︾殑鏈€鍚庝竴
+   姝ュ仛鍑恒€傜劧鑰岋紝濡傛灉 `ops.select_cpu()` 杩斿洖鐨?CPU 涓庝换鍔℃渶缁堣繍琛岀殑 CPU 鐩稿尮閰嶏紝
+   浼氭湁灏忓皬鐨勬€ц兘鏀剁泭銆?
+   閫夋嫨 CPU 鐨勪竴涓壇浣滅敤鏄皢瀹冧粠绌洪棽涓敜閱掋€傝櫧鐒?BPF 璋冨害鍣ㄥ彲浠ヤ娇鐢?`scx_bpf_kick_cpu()`
+   杈呭姪鍑芥暟鍞ら啋浠讳綍 CPU锛屼絾鏄庢櫤鍦颁娇鐢?`ops.select_cpu()` 鍙互鏇寸畝鍗曘€佹洿楂樻晥銆?
+   娉ㄦ剰锛岃皟搴﹀櫒鏍稿績浼氬拷鐣ユ棤鏁堢殑 CPU 閫夋嫨锛屼緥濡傦紝濡傛灉瀹冭秴鍑轰簡浠诲姟鐨勫厑璁?cpumask銆?
+   涓€涓换鍔″彲浠ラ€氳繃璋冪敤 `scx_bpf_dsq_insert()` 鎴?`scx_bpf_dsq_insert_vtime()`
+   浠?`ops.select_cpu()` 鐩存帴鎻掑叆鍒颁竴涓?DSQ 涓€?
+   濡傛灉涓€涓换鍔′粠 `ops.select_cpu()` 琚彃鍏ュ埌 `SCX_DSQ_LOCAL`锛屽畠灏嗚娣诲姞鍒颁粠
+   `ops.select_cpu()` 杩斿洖鐨勯偅涓?CPU 鐨勬湰鍦?DSQ 涓€傛澶栵紝浠?`ops.select_cpu()`
+   鐩存帴鎻掑叆灏嗗鑷磋烦杩?`ops.enqueue()` 鍥炶皟銆?
+   浠讳綍鍏跺畠灏嗕换鍔″瓨鍌ㄥ湪 BPF 鍐呴儴鏁版嵁缁撴瀯涓殑灏濊瘯骞朵笉鑳介樆姝?`ops.enqueue()` 琚皟鐢ㄣ€?   杩欎笉榧撳姳杩欐牱鍋氾紝鍥犱负瀹冨彲鑳藉紩鍏ョ珵鎬佽涓烘垨涓嶄竴鑷寸姸鎬併€?
+2. 涓€鏃︾洰鏍?CPU 琚€夊畾锛屽氨浼氳皟鐢?`ops.enqueue()`锛堥櫎闈炰换鍔℃槸浠?`ops.select_cpu()`
+   鐩存帴鎻掑叆鐨勶級銆俙ops.enqueue()` 鍙互鍋氬嚭浠ヤ笅鍐冲畾涔嬩竴锛?
+   - 閫氳繃璋冪敤甯︿互涓嬮€夐」涔嬩竴鐨?`scx_bpf_dsq_insert()` 灏嗕换鍔＄珛鍗虫彃鍏ュ叏灞€鎴栨湰鍦?DSQ锛?     `SCX_DSQ_GLOBAL`銆乣SCX_DSQ_LOCAL` 鎴?`SCX_DSQ_LOCAL_ON | cpu`銆?
+   - 閫氳繃璋冪敤甯︽湁灏忎簬 2^63 鐨?DSQ ID 鐨?`scx_bpf_dsq_insert()` 灏嗕换鍔＄珛鍗虫彃鍏ヨ嚜瀹氫箟
+     DSQ銆?
+   - 鍦?BPF 渚у皢浠诲姟鎺掗槦銆?
+   **浠诲姟鐘舵€佽窡韪笌 ops.dequeue() 璇箟**
 
-1. 当一个任务被唤醒时，`ops.select_cpu()` 是第一个被调用的操作。这有两个目的。
-   第一，CPU 选择优化提示。第二，如果空闲则唤醒所选 CPU。
-
-   `ops.select_cpu()` 选择的 CPU 是一个优化提示而非绑定。最终的决定在调度的最后一
-   步做出。然而，如果 `ops.select_cpu()` 返回的 CPU 与任务最终运行的 CPU 相匹配，
-   会有小小的性能收益。
-
-   选择 CPU 的一个副作用是将它从空闲中唤醒。虽然 BPF 调度器可以使用 `scx_bpf_kick_cpu()`
-   辅助函数唤醒任何 CPU，但明智地使用 `ops.select_cpu()` 可以更简单、更高效。
-
-   注意，调度器核心会忽略无效的 CPU 选择，例如，如果它超出了任务的允许 cpumask。
-
-   一个任务可以通过调用 `scx_bpf_dsq_insert()` 或 `scx_bpf_dsq_insert_vtime()`
-   从 `ops.select_cpu()` 直接插入到一个 DSQ 中。
-
-   如果一个任务从 `ops.select_cpu()` 被插入到 `SCX_DSQ_LOCAL`，它将被添加到从
-   `ops.select_cpu()` 返回的那个 CPU 的本地 DSQ 中。此外，从 `ops.select_cpu()`
-   直接插入将导致跳过 `ops.enqueue()` 回调。
-
-   任何其它将任务存储在 BPF 内部数据结构中的尝试并不能阻止 `ops.enqueue()` 被调用。
-   这不鼓励这样做，因为它可能引入竞态行为或不一致状态。
-
-2. 一旦目标 CPU 被选定，就会调用 `ops.enqueue()`（除非任务是从 `ops.select_cpu()`
-   直接插入的）。`ops.enqueue()` 可以做出以下决定之一：
-
-   - 通过调用带以下选项之一的 `scx_bpf_dsq_insert()` 将任务立即插入全局或本地 DSQ：
-     `SCX_DSQ_GLOBAL`、`SCX_DSQ_LOCAL` 或 `SCX_DSQ_LOCAL_ON | cpu`。
-
-   - 通过调用带有小于 2^63 的 DSQ ID 的 `scx_bpf_dsq_insert()` 将任务立即插入自定义
-     DSQ。
-
-   - 在 BPF 侧将任务排队。
-
-   **任务状态跟踪与 ops.dequeue() 语义**
-
-   当 BPF 调度器负责管理一个任务的生命周期时，该任务处于“BPF 调度器的监管（custody）”
-   之中。当一个任务被分发到用户 DSQ 或存储在 BPF 调度器的内部数据结构中时，它进入
-   监管状态。对于这些操作，监管只从 `ops.enqueue()` 进入。唯一的例外是从
-   `ops.select_cpu()` 分发到用户 DSQ：尽管在那时该任务在技术上尚未处于 BPF 调度器
-   监管中，但对于与监管相关的目的而言，该分发具有与从 `ops.enqueue()` 分发相同的
-   语义效果。
-
-   一旦调用了 `ops.enqueue()`，根据调度器的行为，任务可能会或可能不会进入监管：
-
-   - **直接分发到终结 DSQ**（`SCX_DSQ_LOCAL`、`SCX_DSQ_LOCAL_ON | cpu` 或
-     `SCX_DSQ_GLOBAL`）：BPF 调度器对该任务的处理已完成——它要么直接进入 CPU 的本地
-     运行队列，要么作为回退进入全局 DSQ。任务永远不会进入（或退出）BPF 监管，并且
-     不会调用 `ops.dequeue()`。
-
-   - **分发到用户创建的 DSQ**（自定义 DSQ）：任务进入 BPF 调度器的监管。当任务稍后
-     离开 BPF 监管（被分发到终结 DSQ、被核心调度选中，或因睡眠/属性变更而出队）时，
-     `ops.dequeue()` 将被恰好调用一次。
-
-   - **存储在 BPF 数据结构中**（例如内部 BPF 队列）：任务处于 BPF 监管中。当任务
-     离开时（例如，当 `ops.dispatch()` 将它移动到终结 DSQ，或发生属性变更/睡眠时），
-     将调用 `ops.dequeue()`。
-
-   当任务离开 BPF 调度器监管时，会调用 `ops.dequeue()`。出队可能因不同原因发生，由
-   标志区分：
-
-   1. **常规分发**：当处于 BPF 监管中的任务从 `ops.dispatch()` 被分发到终结 DSQ
-      （离开 BPF 监管以执行）时，会触发 `ops.dequeue()`，不带任何特殊标志。
-
-   2. **核心调度选取**：当启用 `CONFIG_SCHED_CORE` 且核心调度在该任务仍处于 BPF 监管
-      中时选取它来执行，`ops.dequeue()` 会带有 `SCX_DEQ_CORE_SCHED_EXEC` 标志被调用。
-
-   3. **调度属性变更**：当任务属性发生变化（通过 `sched_setaffinity()`、
-      `sched_setscheduler()`、优先级变更、CPU 迁移等操作）而任务仍处于 BPF 监管中时，
-      `ops.dequeue()` 会被调用，并在 `deq_flags` 中设置 `SCX_DEQ_SCHED_CHANGE` 标志。
-
-   **重要**：一旦任务离开了 BPF 监管（例如被分发到终结 DSQ 之后），属性变更将不会触发
-   `ops.dequeue()`，因为该任务不再由 BPF 调度器管理。
-
-3. 当一个 CPU 准备好调度时，它首先查看其本地 DSQ。如果为空，则查看全局 DSQ。如果
-   仍然没有可运行的任务，则调用 `ops.dispatch()`，它可以使用以下两个函数来填充本地
-   DSQ。
-
-   - `scx_bpf_dsq_insert()` 将一个任务插入 DSQ。可以使用任何目标 DSQ——`SCX_DSQ_LOCAL`、
-     `SCX_DSQ_LOCAL_ON | cpu`、`SCX_DSQ_GLOBAL` 或自定义 DSQ。虽然 `scx_bpf_dsq_insert()`
-     目前不能在持有 BPF 锁的情况下调用，但这一限制正在改进中并将被支持。
-     `scx_bpf_dsq_insert()` 安排插入而非立即执行。最多可以有 `ops.dispatch_max_batch`
-     个待处理任务。
-
-   - `scx_bpf_dsq_move_to_local()` 将任务从指定的非本地 DSQ 移动到正在分发的 DSQ。
-     此函数不能在持有任何 BPF 锁的情况下调用。`scx_bpf_dsq_move_to_local()` 在尝试从
-     指定 DSQ 移动之前会刷新待处理的插入任务。
-
-4. `ops.dispatch()` 返回后，如果本地 DSQ 中有任务，CPU 运行第一个。如果为空，则采取
-   以下步骤：
-
-   - 尝试从全局 DSQ 移动。如果成功，运行该任务。
-
-   - 如果 `ops.dispatch()` 已分发过任何任务，重试 #3。
-
-   - 如果前一个任务是 SCX 任务且仍然可运行，继续运行它（见 `SCX_OPS_ENQ_LAST`）。
-
-   - 进入空闲。
-
-注意，BPF 调度器总是可以选择在 `ops.enqueue()` 中立即分发任务，如上面的简单示例
-所示。如果只使用内置 DSQ，则无需实现 `ops.dispatch()`，因为任务永远不会在 BPF
-调度器上排队，并且本地和全局 DSQ 都会自动执行。
-
-`scx_bpf_dsq_insert()` 将任务插入目标 DSQ 的 FIFO。对优先级队列请使用
-`scx_bpf_dsq_insert_vtime()`。内部 DSQ（如 `SCX_DSQ_LOCAL` 和 `SCX_DSQ_GLOBAL`）不
-支持优先级队列分发，必须用 `scx_bpf_dsq_insert()` 分发。更多信息请参阅
-`tools/sched_ext/scx_simple.bpf.c` 中的函数文档和用法。
-
-### 任务生命周期
+   褰?BPF 璋冨害鍣ㄨ礋璐ｇ鐞嗕竴涓换鍔＄殑鐢熷懡鍛ㄦ湡鏃讹紝璇ヤ换鍔″浜庘€淏PF 璋冨害鍣ㄧ殑鐩戠锛坈ustody锛夆€?   涔嬩腑銆傚綋涓€涓换鍔¤鍒嗗彂鍒扮敤鎴?DSQ 鎴栧瓨鍌ㄥ湪 BPF 璋冨害鍣ㄧ殑鍐呴儴鏁版嵁缁撴瀯涓椂锛屽畠杩涘叆
+   鐩戠鐘舵€併€傚浜庤繖浜涙搷浣滐紝鐩戠鍙粠 `ops.enqueue()` 杩涘叆銆傚敮涓€鐨勪緥澶栨槸浠?   `ops.select_cpu()` 鍒嗗彂鍒扮敤鎴?DSQ锛氬敖绠″湪閭ｆ椂璇ヤ换鍔″湪鎶€鏈笂灏氭湭澶勪簬 BPF 璋冨害鍣?   鐩戠涓紝浣嗗浜庝笌鐩戠鐩稿叧鐨勭洰鐨勮€岃█锛岃鍒嗗彂鍏锋湁涓庝粠 `ops.enqueue()` 鍒嗗彂鐩稿悓鐨?   璇箟鏁堟灉銆?
+   涓€鏃﹁皟鐢ㄤ簡 `ops.enqueue()`锛屾牴鎹皟搴﹀櫒鐨勮涓猴紝浠诲姟鍙兘浼氭垨鍙兘涓嶄細杩涘叆鐩戠锛?
+   - **鐩存帴鍒嗗彂鍒扮粓缁?DSQ**锛坄SCX_DSQ_LOCAL`銆乣SCX_DSQ_LOCAL_ON | cpu` 鎴?     `SCX_DSQ_GLOBAL`锛夛細BPF 璋冨害鍣ㄥ璇ヤ换鍔＄殑澶勭悊宸插畬鎴愨€斺€斿畠瑕佷箞鐩存帴杩涘叆 CPU 鐨勬湰鍦?     杩愯闃熷垪锛岃涔堜綔涓哄洖閫€杩涘叆鍏ㄥ眬 DSQ銆備换鍔℃案杩滀笉浼氳繘鍏ワ紙鎴栭€€鍑猴級BPF 鐩戠锛屽苟涓?     涓嶄細璋冪敤 `ops.dequeue()`銆?
+   - **鍒嗗彂鍒扮敤鎴峰垱寤虹殑 DSQ**锛堣嚜瀹氫箟 DSQ锛夛細浠诲姟杩涘叆 BPF 璋冨害鍣ㄧ殑鐩戠銆傚綋浠诲姟绋嶅悗
+     绂诲紑 BPF 鐩戠锛堣鍒嗗彂鍒扮粓缁?DSQ銆佽鏍稿績璋冨害閫変腑锛屾垨鍥犵潯鐪?灞炴€у彉鏇磋€屽嚭闃燂級鏃讹紝
+     `ops.dequeue()` 灏嗚鎭板ソ璋冪敤涓€娆°€?
+   - **瀛樺偍鍦?BPF 鏁版嵁缁撴瀯涓?*锛堜緥濡傚唴閮?BPF 闃熷垪锛夛細浠诲姟澶勪簬 BPF 鐩戠涓€傚綋浠诲姟
+     绂诲紑鏃讹紙渚嬪锛屽綋 `ops.dispatch()` 灏嗗畠绉诲姩鍒扮粓缁?DSQ锛屾垨鍙戠敓灞炴€у彉鏇?鐫＄湢鏃讹級锛?     灏嗚皟鐢?`ops.dequeue()`銆?
+   褰撲换鍔＄寮€ BPF 璋冨害鍣ㄧ洃绠℃椂锛屼細璋冪敤 `ops.dequeue()`銆傚嚭闃熷彲鑳藉洜涓嶅悓鍘熷洜鍙戠敓锛岀敱
+   鏍囧織鍖哄垎锛?
+   1. **甯歌鍒嗗彂**锛氬綋澶勪簬 BPF 鐩戠涓殑浠诲姟浠?`ops.dispatch()` 琚垎鍙戝埌缁堢粨 DSQ
+      锛堢寮€ BPF 鐩戠浠ユ墽琛岋級鏃讹紝浼氳Е鍙?`ops.dequeue()`锛屼笉甯︿换浣曠壒娈婃爣蹇椼€?
+   2. **鏍稿績璋冨害閫夊彇**锛氬綋鍚敤 `CONFIG_SCHED_CORE` 涓旀牳蹇冭皟搴﹀湪璇ヤ换鍔′粛澶勪簬 BPF 鐩戠
+      涓椂閫夊彇瀹冩潵鎵ц锛宍ops.dequeue()` 浼氬甫鏈?`SCX_DEQ_CORE_SCHED_EXEC` 鏍囧織琚皟鐢ㄣ€?
+   3. **璋冨害灞炴€у彉鏇?*锛氬綋浠诲姟灞炴€у彂鐢熷彉鍖栵紙閫氳繃 `sched_setaffinity()`銆?      `sched_setscheduler()`銆佷紭鍏堢骇鍙樻洿銆丆PU 杩佺Щ绛夋搷浣滐級鑰屼换鍔′粛澶勪簬 BPF 鐩戠涓椂锛?      `ops.dequeue()` 浼氳璋冪敤锛屽苟鍦?`deq_flags` 涓缃?`SCX_DEQ_SCHED_CHANGE` 鏍囧織銆?
+   **閲嶈**锛氫竴鏃︿换鍔＄寮€浜?BPF 鐩戠锛堜緥濡傝鍒嗗彂鍒扮粓缁?DSQ 涔嬪悗锛夛紝灞炴€у彉鏇村皢涓嶄細瑙﹀彂
+   `ops.dequeue()`锛屽洜涓鸿浠诲姟涓嶅啀鐢?BPF 璋冨害鍣ㄧ鐞嗐€?
+3. 褰撲竴涓?CPU 鍑嗗濂借皟搴︽椂锛屽畠棣栧厛鏌ョ湅鍏舵湰鍦?DSQ銆傚鏋滀负绌猴紝鍒欐煡鐪嬪叏灞€ DSQ銆傚鏋?   浠嶇劧娌℃湁鍙繍琛岀殑浠诲姟锛屽垯璋冪敤 `ops.dispatch()`锛屽畠鍙互浣跨敤浠ヤ笅涓や釜鍑芥暟鏉ュ～鍏呮湰鍦?   DSQ銆?
+   - `scx_bpf_dsq_insert()` 灏嗕竴涓换鍔℃彃鍏?DSQ銆傚彲浠ヤ娇鐢ㄤ换浣曠洰鏍?DSQ鈥斺€擿SCX_DSQ_LOCAL`銆?     `SCX_DSQ_LOCAL_ON | cpu`銆乣SCX_DSQ_GLOBAL` 鎴栬嚜瀹氫箟 DSQ銆傝櫧鐒?`scx_bpf_dsq_insert()`
+     鐩墠涓嶈兘鍦ㄦ寔鏈?BPF 閿佺殑鎯呭喌涓嬭皟鐢紝浣嗚繖涓€闄愬埗姝ｅ湪鏀硅繘涓苟灏嗚鏀寔銆?     `scx_bpf_dsq_insert()` 瀹夋帓鎻掑叆鑰岄潪绔嬪嵆鎵ц銆傛渶澶氬彲浠ユ湁 `ops.dispatch_max_batch`
+     涓緟澶勭悊浠诲姟銆?
+   - `scx_bpf_dsq_move_to_local()` 灏嗕换鍔′粠鎸囧畾鐨勯潪鏈湴 DSQ 绉诲姩鍒版鍦ㄥ垎鍙戠殑 DSQ銆?     姝ゅ嚱鏁颁笉鑳藉湪鎸佹湁浠讳綍 BPF 閿佺殑鎯呭喌涓嬭皟鐢ㄣ€俙scx_bpf_dsq_move_to_local()` 鍦ㄥ皾璇曚粠
+     鎸囧畾 DSQ 绉诲姩涔嬪墠浼氬埛鏂板緟澶勭悊鐨勬彃鍏ヤ换鍔°€?
+4. `ops.dispatch()` 杩斿洖鍚庯紝濡傛灉鏈湴 DSQ 涓湁浠诲姟锛孋PU 杩愯绗竴涓€傚鏋滀负绌猴紝鍒欓噰鍙?   浠ヤ笅姝ラ锛?
+   - 灏濊瘯浠庡叏灞€ DSQ 绉诲姩銆傚鏋滄垚鍔燂紝杩愯璇ヤ换鍔°€?
+   - 濡傛灉 `ops.dispatch()` 宸插垎鍙戣繃浠讳綍浠诲姟锛岄噸璇?#3銆?
+   - 濡傛灉鍓嶄竴涓换鍔℃槸 SCX 浠诲姟涓斾粛鐒跺彲杩愯锛岀户缁繍琛屽畠锛堣 `SCX_OPS_ENQ_LAST`锛夈€?
+   - 杩涘叆绌洪棽銆?
+娉ㄦ剰锛孊PF 璋冨害鍣ㄦ€绘槸鍙互閫夋嫨鍦?`ops.enqueue()` 涓珛鍗冲垎鍙戜换鍔★紝濡備笂闈㈢殑绠€鍗曠ず渚?鎵€绀恒€傚鏋滃彧浣跨敤鍐呯疆 DSQ锛屽垯鏃犻渶瀹炵幇 `ops.dispatch()`锛屽洜涓轰换鍔℃案杩滀笉浼氬湪 BPF
+璋冨害鍣ㄤ笂鎺掗槦锛屽苟涓旀湰鍦板拰鍏ㄥ眬 DSQ 閮戒細鑷姩鎵ц銆?
+`scx_bpf_dsq_insert()` 灏嗕换鍔℃彃鍏ョ洰鏍?DSQ 鐨?FIFO銆傚浼樺厛绾ч槦鍒楄浣跨敤
+`scx_bpf_dsq_insert_vtime()`銆傚唴閮?DSQ锛堝 `SCX_DSQ_LOCAL` 鍜?`SCX_DSQ_GLOBAL`锛変笉
+鏀寔浼樺厛绾ч槦鍒楀垎鍙戯紝蹇呴』鐢?`scx_bpf_dsq_insert()` 鍒嗗彂銆傛洿澶氫俊鎭鍙傞槄
+`tools/sched_ext/scx_simple.bpf.c` 涓殑鍑芥暟鏂囨。鍜岀敤娉曘€?
+### 浠诲姟鐢熷懡鍛ㄦ湡
 
 
-以下伪代码大致概述了由 sched_ext 调度器管理的任务的整个生命周期：
+浠ヤ笅浼唬鐮佸ぇ鑷存杩颁簡鐢?sched_ext 璋冨害鍣ㄧ鐞嗙殑浠诲姟鐨勬暣涓敓鍛藉懆鏈燂細
 
 
     ops.init_task();            /** A new task is created **/
@@ -392,79 +294,48 @@ CPU 总是执行其本地 DSQ 中的任务。任务被“插入”到一个 DSQ 
     ops.disable();              /** Disable BPF scheduling for the task **/
     ops.exit_task();            /** Task is destroyed **/
 
-注意，上述伪代码并未涵盖所有可能的状态转换和边界情况，仅举几个例子：
+娉ㄦ剰锛屼笂杩颁吉浠ｇ爜骞舵湭娑电洊鎵€鏈夊彲鑳界殑鐘舵€佽浆鎹㈠拰杈圭晫鎯呭喌锛屼粎涓惧嚑涓緥瀛愶細
 
-- `ops.dispatch()` 可能由于该任务上的竞态属性变更而未能将任务移动到本地 DSQ，在这种
-  情况下 `ops.dispatch()` 将被重试。
+- `ops.dispatch()` 鍙兘鐢变簬璇ヤ换鍔′笂鐨勭珵鎬佸睘鎬у彉鏇磋€屾湭鑳藉皢浠诲姟绉诲姩鍒版湰鍦?DSQ锛屽湪杩欑
+  鎯呭喌涓?`ops.dispatch()` 灏嗚閲嶈瘯銆?
+- 浠诲姟鍙兘浠?`ops.enqueue()` 琚洿鎺ュ垎鍙戝埌鏈湴 DSQ锛屽湪杩欑鎯呭喌涓嬩細璺宠繃 `ops.dispatch()`
+  鍜?`ops.dequeue()`锛岀洿鎺ヨ繘鍏?`ops.running()`銆?
+- 灞炴€у彉鏇村彲鑳藉彂鐢熷湪浠诲姟鐢熷懡鍛ㄦ湡鐨勫嚑涔庝换浣曟椂鍒伙紝鑰屼笉浠呬粎鏄湪浠诲姟鎺掗槦骞剁瓑寰呭垎鍙戞椂銆?  渚嬪锛屾洿鏀规鍦ㄨ繍琛岀殑浠诲姟鐨勫睘鎬у皢瀵艰嚧鍥炶皟搴忓垪 `ops.stopping()` -> `ops.quiescent()`
+  ->锛堝睘鎬у彉鏇村洖璋冿級-> `ops.runnable()` -> `ops.running()`銆?
+- 涓€涓?sched_ext 浠诲姟鍙兘琚潵鑷洿楂樹紭鍏堢骇璋冨害绫荤殑浠诲姟鎶㈠崰锛屽湪杩欑鎯呭喌涓嬶紝鍗充娇瀹冩槸
+  鍙繍琛岀殑骞朵笖鍏锋湁闈為浂鏃堕棿鐗囷紝瀹冧篃浼氶€€鍑?tick-dispatch 寰幆銆?
+鏈夊叧鍒氬敜閱掔殑浠诲姟濡備綍涓?CPU 鐨勬洿璇︾粏鎻忚堪锛岃鍙傝鈥滆皟搴﹀懆鏈熲€濅竴鑺傘€?
+## 鍙傝€冧綅缃?
 
-- 任务可能从 `ops.enqueue()` 被直接分发到本地 DSQ，在这种情况下会跳过 `ops.dispatch()`
-  和 `ops.dequeue()`，直接进入 `ops.running()`。
-
-- 属性变更可能发生在任务生命周期的几乎任何时刻，而不仅仅是在任务排队并等待分发时。
-  例如，更改正在运行的任务的属性将导致回调序列 `ops.stopping()` -> `ops.quiescent()`
-  ->（属性变更回调）-> `ops.runnable()` -> `ops.running()`。
-
-- 一个 sched_ext 任务可能被来自更高优先级调度类的任务抢占，在这种情况下，即使它是
-  可运行的并且具有非零时间片，它也会退出 tick-dispatch 循环。
-
-有关刚唤醒的任务如何上 CPU 的更详细描述，请参见“调度周期”一节。
-
-## 参考位置
-
-
-- `include/linux/sched/ext.h` 定义了核心数据结构、ops 表和常量。
-
-- `kernel/sched/ext.c` 包含 sched_ext 核心实现和辅助函数。以 `scx_bpf_` 为前缀的
-  函数可以从 BPF 调度器调用。
-
-- `kernel/sched/ext_idle.c` 包含内置的空闲 CPU 选择策略。
-
-- `tools/sched_ext/` 托管示例 BPF 调度器实现。
-
-  - `scx_simple[.bpf].c`：使用自定义 DSQ 的最小全局 FIFO 调度器示例。
-
-  - `scx_qmap[.bpf].c`：一个多级 FIFO 调度器，使用 `BPF_MAP_TYPE_QUEUE` 实现五级
-    优先级。
-
-  - `scx_central[.bpf].c`：一个中心 FIFO 调度器，所有调度决策都在一个 CPU 上做出，
-    演示了 `LOCAL_ON` 分发、无滴答操作以及 kthread 抢占。
-
-  - `scx_cpu0[.bpf].c`：一个将所有任务排队到共享 DSQ 并仅在 CPU0 上以 FIFO 顺序分发的
-    调度器。对测试 bypass 行为很有用。
-
-  - `scx_flatcg[.bpf].c`：一个扁平化 cgroup 层级调度器，通过将每个 cgroup 的份额在
-    每一级复合为单一的扁平调度层，实现基于层级权重的 cgroup CPU 控制。
-
-  - `scx_pair[.bpf].c`：一个核心调度示例，总是让兄弟 CPU 对执行来自同一 CPU cgroup
-    的任务。
-
-  - `scx_sdt[.bpf].c`：`scx_simple` 的一个变体，演示了用于每任务数据的 BPF arena
-    内存管理。
-
-  - `scx_userland[.bpf].c`：一个最小调度器，演示用户空间调度。具有 CPU 亲和性的任务
-    以 FIFO 顺序直接分发；所有其它任务由一个简单的 vruntime 调度器在用户空间中调度。
-
-## 模块参数
+- `include/linux/sched/ext.h` 瀹氫箟浜嗘牳蹇冩暟鎹粨鏋勩€乷ps 琛ㄥ拰甯搁噺銆?
+- `kernel/sched/ext.c` 鍖呭惈 sched_ext 鏍稿績瀹炵幇鍜岃緟鍔╁嚱鏁般€備互 `scx_bpf_` 涓哄墠缂€鐨?  鍑芥暟鍙互浠?BPF 璋冨害鍣ㄨ皟鐢ㄣ€?
+- `kernel/sched/ext_idle.c` 鍖呭惈鍐呯疆鐨勭┖闂?CPU 閫夋嫨绛栫暐銆?
+- `tools/sched_ext/` 鎵樼绀轰緥 BPF 璋冨害鍣ㄥ疄鐜般€?
+  - `scx_simple[.bpf].c`锛氫娇鐢ㄨ嚜瀹氫箟 DSQ 鐨勬渶灏忓叏灞€ FIFO 璋冨害鍣ㄧず渚嬨€?
+  - `scx_qmap[.bpf].c`锛氫竴涓绾?FIFO 璋冨害鍣紝浣跨敤 `BPF_MAP_TYPE_QUEUE` 瀹炵幇浜旂骇
+    浼樺厛绾с€?
+  - `scx_central[.bpf].c`锛氫竴涓腑蹇?FIFO 璋冨害鍣紝鎵€鏈夎皟搴﹀喅绛栭兘鍦ㄤ竴涓?CPU 涓婂仛鍑猴紝
+    婕旂ず浜?`LOCAL_ON` 鍒嗗彂銆佹棤婊寸瓟鎿嶄綔浠ュ強 kthread 鎶㈠崰銆?
+  - `scx_cpu0[.bpf].c`锛氫竴涓皢鎵€鏈変换鍔℃帓闃熷埌鍏变韩 DSQ 骞朵粎鍦?CPU0 涓婁互 FIFO 椤哄簭鍒嗗彂鐨?    璋冨害鍣ㄣ€傚娴嬭瘯 bypass 琛屼负寰堟湁鐢ㄣ€?
+  - `scx_flatcg[.bpf].c`锛氫竴涓墎骞冲寲 cgroup 灞傜骇璋冨害鍣紝閫氳繃灏嗘瘡涓?cgroup 鐨勪唤棰濆湪
+    姣忎竴绾у鍚堜负鍗曚竴鐨勬墎骞宠皟搴﹀眰锛屽疄鐜板熀浜庡眰绾ф潈閲嶇殑 cgroup CPU 鎺у埗銆?
+  - `scx_pair[.bpf].c`锛氫竴涓牳蹇冭皟搴︾ず渚嬶紝鎬绘槸璁╁厔寮?CPU 瀵规墽琛屾潵鑷悓涓€ CPU cgroup
+    鐨勪换鍔°€?
+  - `scx_sdt[.bpf].c`锛歚scx_simple` 鐨勪竴涓彉浣擄紝婕旂ず浜嗙敤浜庢瘡浠诲姟鏁版嵁鐨?BPF arena
+    鍐呭瓨绠＄悊銆?
+  - `scx_userland[.bpf].c`锛氫竴涓渶灏忚皟搴﹀櫒锛屾紨绀虹敤鎴风┖闂磋皟搴︺€傚叿鏈?CPU 浜插拰鎬х殑浠诲姟
+    浠?FIFO 椤哄簭鐩存帴鍒嗗彂锛涙墍鏈夊叾瀹冧换鍔＄敱涓€涓畝鍗曠殑 vruntime 璋冨害鍣ㄥ湪鐢ㄦ埛绌洪棿涓皟搴︺€?
+## 妯″潡鍙傛暟
 
 
-sched_ext 在 `sched_ext.` 前缀下暴露两个模块参数，用于控制 bypass 模式行为。这些
-旋钮主要用于调试；在正常操作期间通常没有理由更改它们。它们可以在运行时（模式 0600）
-通过 `/sys/module/sched_ext/parameters/` 读写。
+sched_ext 鍦?`sched_ext.` 鍓嶇紑涓嬫毚闇蹭袱涓ā鍧楀弬鏁帮紝鐢ㄤ簬鎺у埗 bypass 妯″紡琛屼负銆傝繖浜?鏃嬮挳涓昏鐢ㄤ簬璋冭瘯锛涘湪姝ｅ父鎿嶄綔鏈熼棿閫氬父娌℃湁鐞嗙敱鏇存敼瀹冧滑銆傚畠浠彲浠ュ湪杩愯鏃讹紙妯″紡 0600锛?閫氳繃 `/sys/module/sched_ext/parameters/` 璇诲啓銆?
+`sched_ext.slice_bypass_us`锛堥粯璁わ細5000 碌s锛?    褰撹皟搴﹀櫒澶勪簬 bypass 妯″紡锛堝嵆鍦?BPF 璋冨害鍣ㄥ姞杞姐€佸嵏杞藉拰閿欒鎭㈠鏈熼棿锛夋椂鍒嗛厤缁欐墍鏈?    浠诲姟鐨勬椂闂寸墖銆傛湁鏁堣寖鍥存槸 100 碌s 鍒?100 ms銆?
+`sched_ext.bypass_lb_intv_us`锛堥粯璁わ細500000 碌s锛?    bypass 妯″紡璐熻浇骞宠　鍣ㄥ湪 CPU 涔嬮棿閲嶆柊鍒嗛厤浠诲姟鐨勯棿闅斻€傝涓?0 鍙湪 bypass 妯″紡鏈熼棿
+    绂佺敤璐熻浇骞宠　銆傛湁鏁堣寖鍥存槸 0 鍒?10 s銆?
+## ABI 涓嶇ǔ瀹氭€?
 
-`sched_ext.slice_bypass_us`（默认：5000 µs）
-    当调度器处于 bypass 模式（即在 BPF 调度器加载、卸载和错误恢复期间）时分配给所有
-    任务的时间片。有效范围是 100 µs 到 100 ms。
-
-`sched_ext.bypass_lb_intv_us`（默认：500000 µs）
-    bypass 模式负载平衡器在 CPU 之间重新分配任务的间隔。设为 0 可在 bypass 模式期间
-    禁用负载平衡。有效范围是 0 到 10 s。
-
-## ABI 不稳定性
-
-
-sched_ext 提供给 BPF 调度器程序的 API 没有稳定性保证。这包括在 `include/linux/sched/ext.h`
-中定义的 ops 表回调和常量，以及 `kernel/sched/ext.c` 和 `kernel/sched/ext_idle.c`
-中定义的 `scx_bpf_` kfunc。
-
-虽然我们会在可能的情况下尝试提供一个相对稳定的 API 面，但它们在不同内核版本之间可能
-在没有任何警告的情况下发生变化。
+sched_ext 鎻愪緵缁?BPF 璋冨害鍣ㄧ▼搴忕殑 API 娌℃湁绋冲畾鎬т繚璇併€傝繖鍖呮嫭鍦?`include/linux/sched/ext.h`
+涓畾涔夌殑 ops 琛ㄥ洖璋冨拰甯搁噺锛屼互鍙?`kernel/sched/ext.c` 鍜?`kernel/sched/ext_idle.c`
+涓畾涔夌殑 `scx_bpf_` kfunc銆?
+铏界劧鎴戜滑浼氬湪鍙兘鐨勬儏鍐典笅灏濊瘯鎻愪緵涓€涓浉瀵圭ǔ瀹氱殑 API 闈紝浣嗗畠浠湪涓嶅悓鍐呮牳鐗堟湰涔嬮棿鍙兘
+鍦ㄦ病鏈変换浣曡鍛婄殑鎯呭喌涓嬪彂鐢熷彉鍖栥€?

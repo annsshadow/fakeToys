@@ -1,24 +1,24 @@
-## ionic 的 devlink 支持
+﻿## ionic 鐨?devlink 鏀寔
 
 
-本文档描述了 `ionic` 设备驱动实现的 devlink 特性。
+鏈枃妗ｆ弿杩颁簡 `ionic` 璁惧椹卞姩瀹炵幇鐨?devlink 鐗规€с€?
 
-## 信息版本
+## 淇℃伅鐗堟湰
 
 
-`ionic` 驱动报告以下版本
+`ionic` 椹卞姩鎶ュ憡浠ヤ笅鐗堟湰
 
    :widths: 5 5 90
 
-   - - 名称
-     - 类型
-     - 描述
+   - - 鍚嶇О
+     - 绫诲瀷
+     - 鎻忚堪
    - - `fw`
      - running
-     - 设备上运行的固件版本
+     - 璁惧涓婅繍琛岀殑鍥轰欢鐗堟湰
    - - `asic.id`
      - fixed
-     - 此设备的 ASIC 类型
+     - 姝よ澶囩殑 ASIC 绫诲瀷
    - - `asic.rev`
      - fixed
-     - 此设备 ASIC 的修订版本
+     - 姝よ澶?ASIC 鐨勪慨璁㈢増鏈?

@@ -1,13 +1,10 @@
+﻿
+## AMD-TEE锛圓MD 鐨勫彲淇℃墽琛岀幆澧冿級
 
-## AMD-TEE（AMD 的可信执行环境）
-
-AMD-TEE 驱动负责与 AMD 的 TEE 环境进行通信。该 TEE 环境由 AMD Secure
-Processor 提供。
-
-AMD Secure Processor（前身称为 Platform Security Processor，简称 PSP）是一颗
-专用处理器，具备 ARM TrustZone 技术，以及为支持第三方可信应用（Trusted
-Application）而设计的基于软件的可信执行环境（TEE）。目前该功能仅对 APU 启用。
-
+AMD-TEE 椹卞姩璐熻矗涓?AMD 鐨?TEE 鐜杩涜閫氫俊銆傝 TEE 鐜鐢?AMD Secure
+Processor 鎻愪緵銆?
+AMD Secure Processor锛堝墠韬О涓?Platform Security Processor锛岀畝绉?PSP锛夋槸涓€棰?涓撶敤澶勭悊鍣紝鍏峰 ARM TrustZone 鎶€鏈紝浠ュ強涓烘敮鎸佺涓夋柟鍙俊搴旂敤锛圱rusted
+Application锛夎€岃璁＄殑鍩轰簬杞欢鐨勫彲淇℃墽琛岀幆澧冿紙TEE锛夈€傜洰鍓嶈鍔熻兘浠呭 APU 鍚敤銆?
 ```
 
                                              |
@@ -37,43 +34,20 @@ Application）而设计的基于软件的可信执行环境（TEE）。目前该
  +--------------------------+      +---------+--------------------+
 
 ```
-在最底层（x86 上），AMD Secure Processor（ASP）驱动使用 CPU 到 PSP 的 mailbox
-寄存器向 PSP 提交命令。命令缓冲区的格式对 ASP 驱动是不透明的。它的职责是向安全
-处理器提交命令，并将结果返回给 AMD-TEE 驱动。AMD-TEE 驱动与 AMD Secure
-Processor 驱动之间的接口可在 [^1^] 中找到。
+鍦ㄦ渶搴曞眰锛坸86 涓婏級锛孉MD Secure Processor锛圓SP锛夐┍鍔ㄤ娇鐢?CPU 鍒?PSP 鐨?mailbox
+瀵勫瓨鍣ㄥ悜 PSP 鎻愪氦鍛戒护銆傚懡浠ょ紦鍐插尯鐨勬牸寮忓 ASP 椹卞姩鏄笉閫忔槑鐨勩€傚畠鐨勮亴璐ｆ槸鍚戝畨鍏?澶勭悊鍣ㄦ彁浜ゅ懡浠わ紝骞跺皢缁撴灉杩斿洖缁?AMD-TEE 椹卞姩銆侫MD-TEE 椹卞姩涓?AMD Secure
+Processor 椹卞姩涔嬮棿鐨勬帴鍙ｅ彲鍦?[^1^] 涓壘鍒般€?
+AMD-TEE 椹卞姩灏嗗懡浠ょ紦鍐插尯璐熻浇鎵撳寘锛屼互渚垮湪 TEE 涓鐞嗐€備笉鍚?TEE 鍛戒护鐨勫懡浠ょ紦鍐?鍖烘牸寮忓彲鍦?[^2^] 涓壘鍒般€?
+AMD-TEE Trusted OS 鏀寔鐨?TEE 鍛戒护鍖呮嫭锛?
+- TEE_CMD_ID_LOAD_TA          - 灏嗕竴涓彲淇″簲鐢紙TA锛変簩杩涘埗鏂囦欢鍔犺浇鍒?TEE 鐜涓€?- TEE_CMD_ID_UNLOAD_TA        - 浠?TEE 鐜涓嵏杞?TA 浜岃繘鍒舵枃浠躲€?- TEE_CMD_ID_OPEN_SESSION     - 涓庡凡鍔犺浇鐨?TA 鎵撳紑涓€涓細璇濄€?- TEE_CMD_ID_CLOSE_SESSION    - 鍏抽棴涓庡凡鍔犺浇 TA 鐨勪細璇濄€?- TEE_CMD_ID_INVOKE_CMD       - 璋冪敤宸插姞杞?TA 鐨勪竴涓懡浠ゃ€?- TEE_CMD_ID_MAP_SHARED_MEM   - 鏄犲皠鍏变韩鍐呭瓨銆?- TEE_CMD_ID_UNMAP_SHARED_MEM - 鍙栨秷鏄犲皠鍏变韩鍐呭瓨銆?
+AMD-TEE Trusted OS 鏄繍琛屽湪 AMD Secure Processor 涓婄殑鍥轰欢銆?
+AMD-TEE 椹卞姩鍚?TEE 瀛愮郴缁熸敞鍐岃嚜韬紝骞跺疄鐜颁互涓嬮┍鍔ㄥ嚱鏁板洖璋冿細
 
-AMD-TEE 驱动将命令缓冲区负载打包，以便在 TEE 中处理。不同 TEE 命令的命令缓冲
-区格式可在 [^2^] 中找到。
-
-AMD-TEE Trusted OS 支持的 TEE 命令包括：
-
-- TEE_CMD_ID_LOAD_TA          - 将一个可信应用（TA）二进制文件加载到 TEE 环境中。
-- TEE_CMD_ID_UNLOAD_TA        - 从 TEE 环境中卸载 TA 二进制文件。
-- TEE_CMD_ID_OPEN_SESSION     - 与已加载的 TA 打开一个会话。
-- TEE_CMD_ID_CLOSE_SESSION    - 关闭与已加载 TA 的会话。
-- TEE_CMD_ID_INVOKE_CMD       - 调用已加载 TA 的一个命令。
-- TEE_CMD_ID_MAP_SHARED_MEM   - 映射共享内存。
-- TEE_CMD_ID_UNMAP_SHARED_MEM - 取消映射共享内存。
-
-AMD-TEE Trusted OS 是运行在 AMD Secure Processor 上的固件。
-
-AMD-TEE 驱动向 TEE 子系统注册自身，并实现以下驱动函数回调：
-
-- get_version - 返回驱动实现 id 与能力（capability）。
-- open - 设置驱动上下文数据结构。
-- release - 释放驱动资源。
-- open_session - 加载 TA 二进制文件并与已加载的 TA 打开会话。
-- close_session - 关闭与已加载 TA 的会话并卸载它。
-- invoke_func - 调用已加载 TA 的一个命令。
-
-AMD-TEE 不支持 cancel_req 驱动回调。
-
-用户空间（客户端）可以使用 GlobalPlatform TEE Client API [^3^] 与 AMD 的 TEE
-通信。AMD 的 TEE 为加载、打开会话、调用命令以及关闭与 TA 的会话提供了一个安全
-环境。
-
-## 参考资料
-
+- get_version - 杩斿洖椹卞姩瀹炵幇 id 涓庤兘鍔涳紙capability锛夈€?- open - 璁剧疆椹卞姩涓婁笅鏂囨暟鎹粨鏋勩€?- release - 閲婃斁椹卞姩璧勬簮銆?- open_session - 鍔犺浇 TA 浜岃繘鍒舵枃浠跺苟涓庡凡鍔犺浇鐨?TA 鎵撳紑浼氳瘽銆?- close_session - 鍏抽棴涓庡凡鍔犺浇 TA 鐨勪細璇濆苟鍗歌浇瀹冦€?- invoke_func - 璋冪敤宸插姞杞?TA 鐨勪竴涓懡浠ゃ€?
+AMD-TEE 涓嶆敮鎸?cancel_req 椹卞姩鍥炶皟銆?
+鐢ㄦ埛绌洪棿锛堝鎴风锛夊彲浠ヤ娇鐢?GlobalPlatform TEE Client API [^3^] 涓?AMD 鐨?TEE
+閫氫俊銆侫MD 鐨?TEE 涓哄姞杞姐€佹墦寮€浼氳瘽銆佽皟鐢ㄥ懡浠や互鍙婂叧闂笌 TA 鐨勪細璇濇彁渚涗簡涓€涓畨鍏?鐜銆?
+## 鍙傝€冭祫鏂?
 [^1^] include/linux/psp-tee.h
 
 [^2^] drivers/tee/amdtee/amdtee_if.h

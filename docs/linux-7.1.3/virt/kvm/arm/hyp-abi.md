@@ -1,16 +1,12 @@
+﻿
+## 鍐呮牳涓?HYP 涔嬮棿鐨勫唴閮?ABI
 
-## 内核与 HYP 之间的内部 ABI
 
-
-本文件记录了 Linux 内核与 hypervisor 层在将 Linux 作为 hypervisor 运行（例如 KVM）时的交互。它不涵盖内核作为客户机（在 Xen、KVM 或任何其他 hypervisor 之下）运行时与 hypervisor 的交互，也不涵盖内核作为宿主时任何 hypervisor 特有的交互。
-
-注意：KVM/arm 已从内核中移除。但此处描述的 API 仍然有效，因为它允许内核在以 HYP 模式启动时进行 kexec。如有必要，非 KVM 的 hypervisor 也可以使用它。
-
-在 arm 和 arm64（无 VHE）上，内核并不运行在 hypervisor 模式下，但仍需要与之交互，以便安装或拆除内置的 hypervisor。
-
-为了实现这一点，内核必须在 HYP（arm）或 EL2（arm64）下启动，从而能够在切入 SVC/EL1 之前安装一组桩函数（stub）。这些桩函数可通过 `hvc #0` 指令访问，并且仅作用于单个 CPU。
-
-除非另有说明，任何内置 hypervisor 都必须实现以下函数（参见 arch/arm{,64}/include/asm/virt.h）：
+鏈枃浠惰褰曚簡 Linux 鍐呮牳涓?hypervisor 灞傚湪灏?Linux 浣滀负 hypervisor 杩愯锛堜緥濡?KVM锛夋椂鐨勪氦浜掋€傚畠涓嶆兜鐩栧唴鏍镐綔涓哄鎴锋満锛堝湪 Xen銆並VM 鎴栦换浣曞叾浠?hypervisor 涔嬩笅锛夎繍琛屾椂涓?hypervisor 鐨勪氦浜掞紝涔熶笉娑电洊鍐呮牳浣滀负瀹夸富鏃朵换浣?hypervisor 鐗规湁鐨勪氦浜掋€?
+娉ㄦ剰锛欿VM/arm 宸蹭粠鍐呮牳涓Щ闄ゃ€備絾姝ゅ鎻忚堪鐨?API 浠嶇劧鏈夋晥锛屽洜涓哄畠鍏佽鍐呮牳鍦ㄤ互 HYP 妯″紡鍚姩鏃惰繘琛?kexec銆傚鏈夊繀瑕侊紝闈?KVM 鐨?hypervisor 涔熷彲浠ヤ娇鐢ㄥ畠銆?
+鍦?arm 鍜?arm64锛堟棤 VHE锛変笂锛屽唴鏍稿苟涓嶈繍琛屽湪 hypervisor 妯″紡涓嬶紝浣嗕粛闇€瑕佷笌涔嬩氦浜掞紝浠ヤ究瀹夎鎴栨媶闄ゅ唴缃殑 hypervisor銆?
+涓轰簡瀹炵幇杩欎竴鐐癸紝鍐呮牳蹇呴』鍦?HYP锛坅rm锛夋垨 EL2锛坅rm64锛変笅鍚姩锛屼粠鑰岃兘澶熷湪鍒囧叆 SVC/EL1 涔嬪墠瀹夎涓€缁勬々鍑芥暟锛坰tub锛夈€傝繖浜涙々鍑芥暟鍙€氳繃 `hvc #0` 鎸囦护璁块棶锛屽苟涓斾粎浣滅敤浜庡崟涓?CPU銆?
+闄ら潪鍙︽湁璇存槑锛屼换浣曞唴缃?hypervisor 閮藉繀椤诲疄鐜颁互涓嬪嚱鏁帮紙鍙傝 arch/arm{,64}/include/asm/virt.h锛夛細
 
 ```
 
@@ -56,6 +52,5 @@
   any other means (command line option, for example).
 
 ```
-r0/x0 的任何其他取值会触发 hypervisor 特有的处理，此处不予记录。
-
-桩函数 hypercall 的返回值由 r0/x0 保存，成功时为 0，出错时为 HVC_STUB_ERR。桩函数 hypercall 允许破坏任何调用者保存的寄存器（arm64 上为 x0-x18，arm 上为 r0-r3 和 ip）。因此建议使用函数调用来执行该 hypercall。
+r0/x0 鐨勪换浣曞叾浠栧彇鍊间細瑙﹀彂 hypervisor 鐗规湁鐨勫鐞嗭紝姝ゅ涓嶄簣璁板綍銆?
+妗╁嚱鏁?hypercall 鐨勮繑鍥炲€肩敱 r0/x0 淇濆瓨锛屾垚鍔熸椂涓?0锛屽嚭閿欐椂涓?HVC_STUB_ERR銆傛々鍑芥暟 hypercall 鍏佽鐮村潖浠讳綍璋冪敤鑰呬繚瀛樼殑瀵勫瓨鍣紙arm64 涓婁负 x0-x18锛宎rm 涓婁负 r0-r3 鍜?ip锛夈€傚洜姝ゅ缓璁娇鐢ㄥ嚱鏁拌皟鐢ㄦ潵鎵ц璇?hypercall銆?

@@ -1,110 +1,79 @@
-
-## Alienware WMI 驱动
+﻿
+## Alienware WMI 椹卞姩
 
 
 Kurt Borja <kuurtb@gmail.com>
 
-这是一个用于 "WMAX" WMI 设备的驱动，该设备存在于大多数 Dell 游戏本中，控制各种特殊功能。
-
-在 M 系列笔记本推出之前（约 2018 年），"WMAX" 设备控制基本的 RGB 灯光、深度睡眠模式、
-HDMI 模式与放大器状态。
-
-后来，该设备被完全重新定位用途。现在它主要处理散热配置文件、传感器监视与超频。该接口
-名为 "AWCC"，已知被 AWCC OEM 应用程序用来控制这些特性。
-
-alienware-wmi 驱动控制这两个接口。
-
-## AWCC 接口
+杩欐槸涓€涓敤浜?"WMAX" WMI 璁惧鐨勯┍鍔紝璇ヨ澶囧瓨鍦ㄤ簬澶у鏁?Dell 娓告垙鏈腑锛屾帶鍒跺悇绉嶇壒娈婂姛鑳姐€?
+鍦?M 绯诲垪绗旇鏈帹鍑轰箣鍓嶏紙绾?2018 骞达級锛?WMAX" 璁惧鎺у埗鍩烘湰鐨?RGB 鐏厜銆佹繁搴︾潯鐪犳ā寮忋€?HDMI 妯″紡涓庢斁澶у櫒鐘舵€併€?
+鍚庢潵锛岃璁惧琚畬鍏ㄩ噸鏂板畾浣嶇敤閫斻€傜幇鍦ㄥ畠涓昏澶勭悊鏁ｇ儹閰嶇疆鏂囦欢銆佷紶鎰熷櫒鐩戣涓庤秴棰戙€傝鎺ュ彛
+鍚嶄负 "AWCC"锛屽凡鐭ヨ AWCC OEM 搴旂敤绋嬪簭鐢ㄦ潵鎺у埗杩欎簺鐗规€с€?
+alienware-wmi 椹卞姩鎺у埗杩欎袱涓帴鍙ｃ€?
+## AWCC 鎺ュ彛
 
 
-WMI 设备文档：Documentation/wmi/devices/alienware-wmi.rst
+WMI 璁惧鏂囨。锛欴ocumentation/wmi/devices/alienware-wmi.rst
 
-### 支持的设备
+### 鏀寔鐨勮澶?
 
+- Alienware M 绯诲垪绗旇鏈?- Alienware X 绯诲垪绗旇鏈?- Alienware Aurora 鍙板紡鏈?- Dell G 绯诲垪绗旇鏈?
+濡傛灉浣犺涓轰綘鐨勮澶囨敮鎸?AWCC 鎺ュ彛锛屼絾娌℃湁鏈枃妗ｄ腑鎻忚堪鐨勪换浣曠壒鎬э紝璇峰皾璇曚互涓?alienware-wmi
+妯″潡鍙傛暟锛?
+- `force_platform_profile=1`锛氬己鍒舵帰娴嬪钩鍙伴厤缃枃浠舵敮鎸?- `force_hwmon=1`锛氬己鍒舵帰娴?HWMON 鏀寔
 
-- Alienware M 系列笔记本
-- Alienware X 系列笔记本
-- Alienware Aurora 台式机
-- Dell G 系列笔记本
+濡傛灉浣跨敤杩欎簺鍙傛暟妯″潡鍔犺浇鎴愬姛锛岃鑰冭檻鎻愪氦涓€涓ˉ涓侊紝灏嗕綘鐨勫瀷鍙峰姞鍏ヤ綅浜?`drivers/platform/x86/dell/alienware-wmi-wmax.c` 鐨?`awcc_dmi_table`锛屾垨鑱旂郴缁存姢鑰?鑾峰彇杩涗竴姝ユ寚瀵笺€?
+### 鐘舵€?
 
-如果你认为你的设备支持 AWCC 接口，但没有本文档中描述的任何特性，请尝试以下 alienware-wmi
-模块参数：
+褰撳墠鏀寔浠ヤ笅鐗规€э細
 
-- `force_platform_profile=1`：强制探测平台配置文件支持
-- `force_hwmon=1`：强制探测 HWMON 支持
+- 骞冲彴閰嶇疆鏂囦欢 <platform-profile>锛?
+  - 鏁ｇ儹閰嶇疆鏂囦欢鎺у埗
 
-如果使用这些参数模块加载成功，请考虑提交一个补丁，将你的型号加入位于
-`drivers/platform/x86/dell/alienware-wmi-wmax.c` 的 `awcc_dmi_table`，或联系维护者
-获取进一步指导。
+  - G-Mode 鍒囨崲
 
-### 状态
-
-
-当前支持以下特性：
-
-- 平台配置文件 <platform-profile>：
-
-  - 散热配置文件控制
-
-  - G-Mode 切换
-
-- HWMON <hwmon>：
-
-  - 传感器监视
-
-  - 手动风扇控制
+- HWMON <hwmon>锛?
+  - 浼犳劅鍣ㄧ洃瑙?
+  - 鎵嬪姩椋庢墖鎺у埗
 
 
-### 平台配置文件
+### 骞冲彴閰嶇疆鏂囦欢
 
 
-AWCC 接口暴露各种固件定义的散热配置文件。这些通过平台配置文件类接口暴露给用户空间。更多
-信息请参考 sysfs-class-platform-profile
-<abi_file_testing_sysfs_class_platform_profile>。
-
-该驱动导出的平台配置文件类设备名称为 "alienware-wmi"，其路径可通过以下方式找到：
-
+AWCC 鎺ュ彛鏆撮湶鍚勭鍥轰欢瀹氫箟鐨勬暎鐑厤缃枃浠躲€傝繖浜涢€氳繃骞冲彴閰嶇疆鏂囦欢绫绘帴鍙ｆ毚闇茬粰鐢ㄦ埛绌洪棿銆傛洿澶?淇℃伅璇峰弬鑰?sysfs-class-platform-profile
+<abi_file_testing_sysfs_class_platform_profile>銆?
+璇ラ┍鍔ㄥ鍑虹殑骞冲彴閰嶇疆鏂囦欢绫昏澶囧悕绉颁负 "alienware-wmi"锛屽叾璺緞鍙€氳繃浠ヤ笅鏂瑰紡鎵惧埌锛?
 ```
 
  grep -l "alienware-wmi" /sys/class/platform-profile/platform-profile-*/name | sed 's|/[^/]*$||'
 
 ```
-如果设备支持 G-Mode，选择 `performance` 配置文件时也会切换它。
-
-   你可以设置 `force_gmode` 模块参数来始终尝试切换此特性，而不检查你的型号是否支持它。
-
+濡傛灉璁惧鏀寔 G-Mode锛岄€夋嫨 `performance` 閰嶇疆鏂囦欢鏃朵篃浼氬垏鎹㈠畠銆?
+   浣犲彲浠ヨ缃?`force_gmode` 妯″潡鍙傛暟鏉ュ缁堝皾璇曞垏鎹㈡鐗规€э紝鑰屼笉妫€鏌ヤ綘鐨勫瀷鍙锋槸鍚︽敮鎸佸畠銆?
 
 ### HWMON
 
 
-AWCC 接口还支持传感器监视与手动风扇控制。这两个特性都通过 HWMON 接口暴露给用户空间。
-
-该驱动导出的 hwmon 类设备名称为 "alienware_wmi"，其路径可通过以下方式找到：
-
+AWCC 鎺ュ彛杩樻敮鎸佷紶鎰熷櫒鐩戣涓庢墜鍔ㄩ鎵囨帶鍒躲€傝繖涓や釜鐗规€ч兘閫氳繃 HWMON 鎺ュ彛鏆撮湶缁欑敤鎴风┖闂淬€?
+璇ラ┍鍔ㄥ鍑虹殑 hwmon 绫昏澶囧悕绉颁负 "alienware_wmi"锛屽叾璺緞鍙€氳繃浠ヤ笅鏂瑰紡鎵惧埌锛?
 ```
 
  grep -l "alienware_wmi" /sys/class/hwmon/hwmon*/name | sed 's|/[^/]*$||'
 
 ```
-传感器监视通过标准 HWMON 接口完成。更多信息请参考 sysfs-class-hwmon
-<abi_file_testing_sysfs_class_hwmon>。
-
-另一方面，手动风扇控制并非由 AWCC 接口直接暴露。相反，它允许我们控制风扇 `boost` 值。
-该 `boost` 值对风扇 pwm 的近似行为如下：
+浼犳劅鍣ㄧ洃瑙嗛€氳繃鏍囧噯 HWMON 鎺ュ彛瀹屾垚銆傛洿澶氫俊鎭鍙傝€?sysfs-class-hwmon
+<abi_file_testing_sysfs_class_hwmon>銆?
+鍙︿竴鏂归潰锛屾墜鍔ㄩ鎵囨帶鍒跺苟闈炵敱 AWCC 鎺ュ彛鐩存帴鏆撮湶銆傜浉鍙嶏紝瀹冨厑璁告垜浠帶鍒堕鎵?`boost` 鍊笺€?璇?`boost` 鍊煎椋庢墖 pwm 鐨勮繎浼艰涓哄涓嬶細
 
 ```
 
  pwm = pwm_base + (fan_boost / 255) * (pwm_max - pwm_base)
 
 ```
-由于上述行为，风扇 `boost` 控制通过以下自定义的 hwmon sysfs 属性暴露给用户空间：
-
+鐢变簬涓婅堪琛屼负锛岄鎵?`boost` 鎺у埗閫氳繃浠ヤ笅鑷畾涔夌殑 hwmon sysfs 灞炴€ф毚闇茬粰鐢ㄦ埛绌洪棿锛?
 =============================== ======= =======================================
-名称			权限	描述
+鍚嶇О			鏉冮檺	鎻忚堪
 =============================== ======= =======================================
-fan[1-4]_boost			RW	风扇 boost 值。
+fan[1-4]_boost			RW	椋庢墖 boost 鍊笺€?
+					浠嬩簬 0 涓?255 涔嬮棿鐨勬暣鏁板€?=============================== ======= =======================================
 
-					介于 0 与 255 之间的整数值
-=============================== ======= =======================================
-
-   在某些设备上，手动风扇控制只有在选择了 `custom` 平台配置文件时才可靠工作。
+   鍦ㄦ煇浜涜澶囦笂锛屾墜鍔ㄩ鎵囨帶鍒跺彧鏈夊湪閫夋嫨浜?`custom` 骞冲彴閰嶇疆鏂囦欢鏃舵墠鍙潬宸ヤ綔銆?

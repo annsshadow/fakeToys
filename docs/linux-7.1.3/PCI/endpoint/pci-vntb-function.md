@@ -1,16 +1,16 @@
+﻿
+## PCI vNTB 鍔熻兘锛團unction锛?
 
-## PCI vNTB 功能（Function）
-
-本文介绍 PCI 端点（Endpoint）子系统下的虚拟 NTB 功能（vNTB Function），说明其与标准 PCI NTB 的区别、实现所用的关键结构（配置区、便签寄存器、门铃、内存窗口等）及其工作原理，供 PCIe 端点驱动开发者参考。
+鏈枃浠嬬粛 PCI 绔偣锛圗ndpoint锛夊瓙绯荤粺涓嬬殑铏氭嫙 NTB 鍔熻兘锛坴NTB Function锛夛紝璇存槑鍏朵笌鏍囧噯 PCI NTB 鐨勫尯鍒€佸疄鐜版墍鐢ㄧ殑鍏抽敭缁撴瀯锛堥厤缃尯銆佷究绛惧瘎瀛樺櫒銆侀棬閾冦€佸唴瀛樼獥鍙ｇ瓑锛夊強鍏跺伐浣滃師鐞嗭紝渚?PCIe 绔偣椹卞姩寮€鍙戣€呭弬鑰冦€?
 
 
 :Author: Frank Li <Frank.Li@nxp.com>
 
-PCI NTB 功能与 PCI vNTB 功能的区别在于：
+PCI NTB 鍔熻兘涓?PCI vNTB 鍔熻兘鐨勫尯鍒湪浜庯細
 
-PCI NTB 功能需要两个端点（endpoint）实例，连接 HOST1 与 HOST2。
+PCI NTB 鍔熻兘闇€瑕佷袱涓鐐癸紙endpoint锛夊疄渚嬶紝杩炴帴 HOST1 涓?HOST2銆?
 
-PCI vNTB 功能只使用一个主机（host）与一个端点（EP），使用 NTB 连接 EP 与 PCI 主机
+PCI vNTB 鍔熻兘鍙娇鐢ㄤ竴涓富鏈猴紙host锛変笌涓€涓鐐癸紙EP锛夛紝浣跨敤 NTB 杩炴帴 EP 涓?PCI 涓绘満
 
 
 
@@ -37,25 +37,25 @@ PCI vNTB 功能只使用一个主机（host）与一个端点（EP），使用 N
   +------------+         +---------------+--------+--------------+
       PCI RC                        PCI EP
 
-## 用于实现 vNTB 的结构（Constructs used for Implementing vNTB）
+## 鐢ㄤ簬瀹炵幇 vNTB 鐨勭粨鏋勶紙Constructs used for Implementing vNTB锛?
 
 
- 1) 配置区（Config Region）
- 2) 自身便签寄存器（Self Scratchpad Registers）
- 3) 对端便签寄存器（Peer Scratchpad Registers）
- 4) 门铃（Doorbell，DB）寄存器
- 5) 内存窗口（Memory Window，MW）
+ 1) 閰嶇疆鍖猴紙Config Region锛?
+ 2) 鑷韩渚跨瀵勫瓨鍣紙Self Scratchpad Registers锛?
+ 3) 瀵圭渚跨瀵勫瓨鍣紙Peer Scratchpad Registers锛?
+ 4) 闂ㄩ搩锛圖oorbell锛孌B锛夊瘎瀛樺櫒
+ 5) 鍐呭瓨绐楀彛锛圡emory Window锛孧W锛?
 
 
-### 配置区（Config Region）：
+### 閰嶇疆鍖猴紙Config Region锛夛細
 
 
-与 PCI NTB Function 驱动相同
+涓?PCI NTB Function 椹卞姩鐩稿悓
 
-### 便签寄存器（Scratchpad Registers）：
+### 渚跨瀵勫瓨鍣紙Scratchpad Registers锛夛細
 
 
-它附加在配置区之后。
+瀹冮檮鍔犲湪閰嶇疆鍖轰箣鍚庛€?
 
 
 
@@ -82,41 +82,41 @@ PCI vNTB 功能只使用一个主机（host）与一个端点（EP），使用 N
         NTB Driver               NTB Driver
 
 
-### 门铃寄存器（Doorbell Registers）：
+### 闂ㄩ搩瀵勫瓨鍣紙Doorbell Registers锛夛細
 
 
-门铃寄存器由主机用来互相中断。
+闂ㄩ搩瀵勫瓨鍣ㄧ敱涓绘満鐢ㄦ潵浜掔浉涓柇銆?
 
-### 内存窗口（Memory Window）：
-
-
-两个主机之间的实际数据传输将通过内存窗口进行。
-
-## 建模结构（Modeling Constructs）：
+### 鍐呭瓨绐楀彛锛圡emory Window锛夛細
 
 
-32 位 BAR。
+涓や釜涓绘満涔嬮棿鐨勫疄闄呮暟鎹紶杈撳皢閫氳繃鍐呭瓨绐楀彛杩涜銆?
+
+## 寤烘ā缁撴瀯锛圡odeling Constructs锛夛細
+
+
+32 浣?BAR銆?
 
 ======  ===============
 BAR NO  CONSTRUCTS USED
 ======  ===============
-BAR0    配置区（Config Region）
-BAR1    门铃（Doorbell）
-BAR2    内存窗口 1（Memory Window 1）
-BAR3    内存窗口 2（Memory Window 2）
-BAR4    内存窗口 3（Memory Window 3）
-BAR5    内存窗口 4（Memory Window 4）
+BAR0    閰嶇疆鍖猴紙Config Region锛?
+BAR1    闂ㄩ搩锛圖oorbell锛?
+BAR2    鍐呭瓨绐楀彛 1锛圡emory Window 1锛?
+BAR3    鍐呭瓨绐楀彛 2锛圡emory Window 2锛?
+BAR4    鍐呭瓨绐楀彛 3锛圡emory Window 3锛?
+BAR5    鍐呭瓨绐楀彛 4锛圡emory Window 4锛?
 ======  ===============
 
-64 位 BAR。
+64 浣?BAR銆?
 
 ======  ===============================
 BAR NO  CONSTRUCTS USED
 ======  ===============================
-BAR0    配置区（Config Region） + 便签寄存器（Scratchpad）
+BAR0    閰嶇疆鍖猴紙Config Region锛?+ 渚跨瀵勫瓨鍣紙Scratchpad锛?
 BAR1
-BAR2    门铃（Doorbell）
+BAR2    闂ㄩ搩锛圖oorbell锛?
 BAR3
-BAR4    内存窗口 1（Memory Window 1）
+BAR4    鍐呭瓨绐楀彛 1锛圡emory Window 1锛?
 BAR5
 ======  ===============================

@@ -1,7 +1,7 @@
+﻿
+# 绀轰緥骞冲彴閰嶇疆
 
-# 示例平台配置
-
-本页面为该分类的文档索引，汇总相关的条目链接；链接目标与标识符保持原文以便于检索。
+鏈〉闈负璇ュ垎绫荤殑鏂囨。绱㈠紩锛屾眹鎬荤浉鍏崇殑鏉＄洰閾炬帴锛涢摼鎺ョ洰鏍囦笌鏍囪瘑绗︿繚鎸佸師鏂囦互渚夸簬妫€绱€?
 
 
 - [example-configurations/one-dev-per-hb.rst](example-configurations/one-dev-per-hb.rst)

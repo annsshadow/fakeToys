@@ -1,19 +1,15 @@
-
-## Eprobe - 基于事件的探针追踪
-
+﻿
+## Eprobe - 鍩轰簬浜嬩欢鐨勬帰閽堣拷韪?
 :Author: Steven Rostedt <rostedt@goodmis.org>
 
-- 为 v6.17 撰写
+- 涓?v6.17 鎾板啓
 
-## 概述
+## 姒傝堪
 
-Eprobes 是放置在现有事件之上的动态事件，用于解引用作为指针的字段，或只是限制记录到追踪事件中的字段。
-
-Eprobes 依赖于 kprobe 事件，因此要启用此功能，请用 `CONFIG_EPROBE_EVENTS=y` 构建你的内核。
-
-Eprobes 通过 /sys/kernel/tracing/dynamic_events 文件创建。
-
-### eprobe_events 概要
+Eprobes 鏄斁缃湪鐜版湁浜嬩欢涔嬩笂鐨勫姩鎬佷簨浠讹紝鐢ㄤ簬瑙ｅ紩鐢ㄤ綔涓烘寚閽堢殑瀛楁锛屾垨鍙槸闄愬埗璁板綍鍒拌拷韪簨浠朵腑鐨勫瓧娈点€?
+Eprobes 渚濊禆浜?kprobe 浜嬩欢锛屽洜姝よ鍚敤姝ゅ姛鑳斤紝璇风敤 `CONFIG_EPROBE_EVENTS=y` 鏋勫缓浣犵殑鍐呮牳銆?
+Eprobes 閫氳繃 /sys/kernel/tracing/dynamic_events 鏂囦欢鍒涘缓銆?
+### eprobe_events 姒傝
 
 ```
 
@@ -41,23 +37,18 @@ Eprobes 通过 /sys/kernel/tracing/dynamic_events 文件创建。
                   supported.
 
 ```
-### 类型
+### 绫诲瀷
 
-上面的 FETCHARGS 与 Documentation/trace/kprobetrace.rst 中描述的 kprobe 事件非常相似。
+涓婇潰鐨?FETCHARGS 涓?Documentation/trace/kprobetrace.rst 涓弿杩扮殑 kprobe 浜嬩欢闈炲父鐩镐技銆?
+eprobes 涓?kprobes 鐨?FETCHARGS 涔嬮棿鐨勫尯鍒湪浜庯紝eprobes 鏈変竴涓?`$FIELD` 鍛戒护锛岀敤浜庤繑鍥炴墍闄勫姞浜嬩欢瀛楁鐨勫唴瀹广€侲probes 鏃犳硶璁块棶 kprobes 鎵€鎷ユ湁鐨勫瘎瀛樺櫒銆佹爤鍜屽嚱鏁板弬鏁般€?
+濡傛灉涓€涓瓧娈靛弬鏁版槸涓€涓寚閽堬紝瀹冨彲浠ュ儚鍐呭瓨鍦板潃涓€鏍蜂娇鐢?FETCHARGS 璇硶杩涜瑙ｅ紩鐢ㄣ€?
+### 闄勫姞鍒板姩鎬佷簨浠?
+Eprobes 鍙互闄勫姞鍒板姩鎬佷簨浠讹紝涔熷彲浠ラ檮鍔犲埌鏅€氫簨浠躲€傚畠鍙互闄勫姞鍒?kprobe 浜嬩欢銆乻ynthetic 浜嬩欢鎴?fprobe 浜嬩欢銆傚鏋滀竴涓瓧娈电殑绫诲瀷闇€瑕佹敼鍙橈紝杩欎細寰堟湁鐢ㄣ€傝鍙傞槄涓嬮潰鐨勭ず渚?2銆?
+## 鐢ㄦ硶绀轰緥
 
-eprobes 与 kprobes 的 FETCHARGS 之间的区别在于，eprobes 有一个 `$FIELD` 命令，用于返回所附加事件字段的内容。Eprobes 无法访问 kprobes 所拥有的寄存器、栈和函数参数。
+### 绀轰緥 1
 
-如果一个字段参数是一个指针，它可以像内存地址一样使用 FETCHARGS 语法进行解引用。
-
-### 附加到动态事件
-
-Eprobes 可以附加到动态事件，也可以附加到普通事件。它可以附加到 kprobe 事件、synthetic 事件或 fprobe 事件。如果一个字段的类型需要改变，这会很有用。请参阅下面的示例 2。
-
-## 用法示例
-
-### 示例 1
-
-eprobes 的基本用途是限制记录到追踪缓冲区中的数据。例如，一个常见的要追踪的事件是 sched_switch
+eprobes 鐨勫熀鏈敤閫旀槸闄愬埗璁板綍鍒拌拷韪紦鍐插尯涓殑鏁版嵁銆備緥濡傦紝涓€涓父瑙佺殑瑕佽拷韪殑浜嬩欢鏄?sched_switch
 ```
 
 	field:unsigned short common_type;	offset:0;	size:2;	signed:0;
@@ -74,10 +65,8 @@ eprobes 的基本用途是限制记录到追踪缓冲区中的数据。例如，
 	field:int next_prio;	offset:60;	size:4;	signed:1;
 
 ```
-前四个字段是所有事件共有的，无法被限制。但该事件的其余部分有 60 字节的信息。它记录了被调度出和调入的前后任务的名称，以及它们的 pid 和优先级。它还记录了前一任务的状态。如果只关心任务的 pid，为什么要浪费环形缓冲区来记录所有其他字段呢？
-
-Eprobe 可以限制记录的内容。注意，这对性能没有帮助，因为所有字段都会记录在一个临时缓冲区中以处理 eprobe。
-```
+鍓嶅洓涓瓧娈垫槸鎵€鏈変簨浠跺叡鏈夌殑锛屾棤娉曡闄愬埗銆備絾璇ヤ簨浠剁殑鍏朵綑閮ㄥ垎鏈?60 瀛楄妭鐨勪俊鎭€傚畠璁板綍浜嗚璋冨害鍑哄拰璋冨叆鐨勫墠鍚庝换鍔＄殑鍚嶇О锛屼互鍙婂畠浠殑 pid 鍜屼紭鍏堢骇銆傚畠杩樿褰曚簡鍓嶄竴浠诲姟鐨勭姸鎬併€傚鏋滃彧鍏冲績浠诲姟鐨?pid锛屼负浠€涔堣娴垂鐜舰缂撳啿鍖烘潵璁板綍鎵€鏈夊叾浠栧瓧娈靛憿锛?
+Eprobe 鍙互闄愬埗璁板綍鐨勫唴瀹广€傛敞鎰忥紝杩欏鎬ц兘娌℃湁甯姪锛屽洜涓烘墍鏈夊瓧娈甸兘浼氳褰曞湪涓€涓复鏃剁紦鍐插尯涓互澶勭悊 eprobe銆?```
 
  # echo 'e:sched/switch sched.sched_switch prev=$prev_pid:u32 next=$next_pid:u32' >> /sys/kernel/tracing/dynamic_events
  # echo 1 > /sys/kernel/tracing/events/sched/switch/enable
@@ -111,11 +100,10 @@ Eprobe 可以限制记录的内容。注意，这对性能没有帮助，因为�
         rcu_sched-16      [002] d..4.  5041.257573: switch: (sched.sched_switch) prev=16 next=0
 
 ```
-注意，如果在 prev_pid 和 next_pid 之后不加上“u32”，这些值默认会以十六进制显示。
+娉ㄦ剰锛屽鏋滃湪 prev_pid 鍜?next_pid 涔嬪悗涓嶅姞涓娾€渦32鈥濓紝杩欎簺鍊奸粯璁や細浠ュ崄鍏繘鍒舵樉绀恒€?
+### 绀轰緥 2
 
-### 示例 2
-
-如果要记录某个特定的系统调用，但 syscalls 事件未启用，仍然可以使用 raw_syscalls（系统调用事件不是普通事件，而是在内核中由 raw_syscalls 事件创建）。为了追踪 openat 系统调用，可以在 raw_syscalls 事件之上创建一个事件探针：
+濡傛灉瑕佽褰曟煇涓壒瀹氱殑绯荤粺璋冪敤锛屼絾 syscalls 浜嬩欢鏈惎鐢紝浠嶇劧鍙互浣跨敤 raw_syscalls锛堢郴缁熻皟鐢ㄤ簨浠朵笉鏄櫘閫氫簨浠讹紝鑰屾槸鍦ㄥ唴鏍镐腑鐢?raw_syscalls 浜嬩欢鍒涘缓锛夈€備负浜嗚拷韪?openat 绯荤粺璋冪敤锛屽彲浠ュ湪 raw_syscalls 浜嬩欢涔嬩笂鍒涘缓涓€涓簨浠舵帰閽堬細
 ```
 
  # cd /sys/kernel/tracing
@@ -134,8 +122,7 @@ Eprobe 可以限制记录的内容。注意，这对性能没有帮助，因为�
  print fmt: "NR %ld (%lx, %lx, %lx, %lx, %lx, %lx)", REC->id, REC->args[0], REC->args[1], REC->args[2], REC->args[3], REC->args[4], REC->args[5]
 
 ```
-从源代码看，sys_openat() 具有：
-```
+浠庢簮浠ｇ爜鐪嬶紝sys_openat() 鍏锋湁锛?```
 
  int sys_openat(int dirfd, const char *path, int flags, mode_t mode)
  {
@@ -143,20 +130,17 @@ Eprobe 可以限制记录的内容。注意，这对性能没有帮助，因为�
  }
 
 ```
-path 是第二个参数，而这正是想要的。
-```
+path 鏄浜屼釜鍙傛暟锛岃€岃繖姝ｆ槸鎯宠鐨勩€?```
 
  # echo 'e:openat raw_syscalls.sys_enter nr=$id filename=+8($args):ustring' >> dynamic_events
 
 ```
-这是在 x86_64 上运行的，其中字大小为 8 字节，openat 系统调用 __NR_openat 设置为 257。
-```
+杩欐槸鍦?x86_64 涓婅繍琛岀殑锛屽叾涓瓧澶у皬涓?8 瀛楄妭锛宱penat 绯荤粺璋冪敤 __NR_openat 璁剧疆涓?257銆?```
 
  # echo 'nr == 257' > events/eprobes/openat/filter
 
 ```
-现在启用该事件并查看追踪记录。
-```
+鐜板湪鍚敤璇ヤ簨浠跺苟鏌ョ湅杩借釜璁板綍銆?```
 
  # echo 1 > events/eprobes/openat/enable
  # cat trace
@@ -179,10 +163,8 @@ path 是第二个参数，而这正是想要的。
               cat-1298    [003] ...2.  2060.879639: openat: (raw_syscalls.sys_enter) nr=0x101 filename=(fault)
 
 ```
-filename 显示“(fault)”。这很可能是因为 filename 尚未被拉入内存，而当前的 trace 事件无法 fault in（按需调入）尚未出现的内存。当 eprobe 尝试读取尚未被 fault in 的内存时，它会显示“(fault)”文本。
-
-为了绕过这一点，由于内核很可能将这个 filename 拉入并使其存在，将其附加到一个 synthetic 事件上，该事件可以将 filename 的地址从事件的入口传递到事件的末尾，这可用于在系统调用返回时显示 filename。
-
+filename 鏄剧ず鈥?fault)鈥濄€傝繖寰堝彲鑳芥槸鍥犱负 filename 灏氭湭琚媺鍏ュ唴瀛橈紝鑰屽綋鍓嶇殑 trace 浜嬩欢鏃犳硶 fault in锛堟寜闇€璋冨叆锛夊皻鏈嚭鐜扮殑鍐呭瓨銆傚綋 eprobe 灏濊瘯璇诲彇灏氭湭琚?fault in 鐨勫唴瀛樻椂锛屽畠浼氭樉绀衡€?fault)鈥濇枃鏈€?
+涓轰簡缁曡繃杩欎竴鐐癸紝鐢变簬鍐呮牳寰堝彲鑳藉皢杩欎釜 filename 鎷夊叆骞朵娇鍏跺瓨鍦紝灏嗗叾闄勫姞鍒颁竴涓?synthetic 浜嬩欢涓婏紝璇ヤ簨浠跺彲浠ュ皢 filename 鐨勫湴鍧€浠庝簨浠剁殑鍏ュ彛浼犻€掑埌浜嬩欢鐨勬湯灏撅紝杩欏彲鐢ㄤ簬鍦ㄧ郴缁熻皟鐢ㄨ繑鍥炴椂鏄剧ず filename銆?
 ```
 
  # echo 1 > events/eprobes/openat/enable
@@ -194,7 +176,7 @@ filename 显示“(fault)”。这很可能是因为 filename 尚未被拉入内
  # echo 'e:openat_start raw_syscalls.sys_enter nr=$id filename=+8($args):x64' >> dynamic_events
 
 ```
-创建一个 synthetic 事件，将 filename 的地址传递到
+鍒涘缓涓€涓?synthetic 浜嬩欢锛屽皢 filename 鐨勫湴鍧€浼犻€掑埌
 ```
 
  # echo 's:filename u64 file' >> dynamic_events
@@ -202,7 +184,7 @@ filename 显示“(fault)”。这很可能是因为 filename 尚未被拉入内
  # echo 'hist:keys=common_pid:file=$f:onmatch(eprobes.openat_start).trace(filename,$file) if id == 257' > events/raw_syscalls/sys_exit/trigger
 
 ```
-既然 filename 的地址已被传递到系统调用的末尾，创建另一个 eprobe 附加到退出事件以显示
+鏃㈢劧 filename 鐨勫湴鍧€宸茶浼犻€掑埌绯荤粺璋冪敤鐨勬湯灏撅紝鍒涘缓鍙︿竴涓?eprobe 闄勫姞鍒伴€€鍑轰簨浠朵互鏄剧ず
 ```
 
  # echo 'e:openat synthetic.filename filename=+0($file):ustring' >> dynamic_events
@@ -227,10 +209,9 @@ filename 显示“(fault)”。这很可能是因为 filename 尚未被拉入内
               cat-1331    [001] ...5.  2944.831362: openat: (synthetic.filename) filename="trace"
 
 ```
-### 示例 3
+### 绀轰緥 3
 
-如果有可用的 syscall trace 事件，上述做法就不需要第一个
-```
+濡傛灉鏈夊彲鐢ㄧ殑 syscall trace 浜嬩欢锛屼笂杩板仛娉曞氨涓嶉渶瑕佺涓€涓?```
 
  # echo 's:filename u64 file' >> dynamic_events
  # echo 'hist:keys=common_pid:f=filename' > events/syscalls/sys_enter_openat/trigger
@@ -239,4 +220,4 @@ filename 显示“(fault)”。这很可能是因为 filename 尚未被拉入内
  # echo 1 > events/eprobes/openat/enable
 
 ```
-而这会产生与示例 2 相同的结果。
+鑰岃繖浼氫骇鐢熶笌绀轰緥 2 鐩稿悓鐨勭粨鏋溿€?

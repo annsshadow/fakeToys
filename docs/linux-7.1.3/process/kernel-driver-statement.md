@@ -1,20 +1,20 @@
+﻿
+### 鍐呮牳椹卞姩澹版槑
 
-### 内核驱动声明
+## 鍏充簬 Linux 鍐呮牳妯″潡鐨勭珛鍦哄０鏄?
 
-## 关于 Linux 内核模块的立场声明
-
-本文档收录了 Linux 内核开发者关于闭源（closed-source）内核模块与驱动的立场声明，阐述此类模块对开源生态、系统稳定性与可维护性的危害，并呼吁硬件厂商以开源方式支持 Linux。下方为署名的开发者名单。
+鏈枃妗ｆ敹褰曚簡 Linux 鍐呮牳寮€鍙戣€呭叧浜庨棴婧愶紙closed-source锛夊唴鏍告ā鍧椾笌椹卞姩鐨勭珛鍦哄０鏄庯紝闃愯堪姝ょ被妯″潡瀵瑰紑婧愮敓鎬併€佺郴缁熺ǔ瀹氭€т笌鍙淮鎶ゆ€х殑鍗卞锛屽苟鍛煎悂纭欢鍘傚晢浠ュ紑婧愭柟寮忔敮鎸?Linux銆備笅鏂逛负缃插悕鐨勫紑鍙戣€呭悕鍗曘€?
 
 
-我们，以下署名的 Linux 内核开发者，认为任何闭源（closed-source）的 Linux 内核模块
-或驱动都是有害且不可取的。我们多次发现它们对 Linux 用户、企业以及更广泛的 Linux
-生态系统造成了损害。此类模块破坏了 Linux 开发模式的开放性、稳定性、灵活性和可维护性，
-并将用户隔绝在 Linux 社区的专业知识之外。提供闭源内核模块的厂商，迫使他们的客户放弃
-Linux 的关键优势，或者去选择新的厂商。因此，为了充分利用开源所能带来的成本节约和
-共享支持的好处，我们敦促厂商采取一项政策：使用开源内核代码在 Linux 上支持他们的
-客户。
+鎴戜滑锛屼互涓嬬讲鍚嶇殑 Linux 鍐呮牳寮€鍙戣€咃紝璁や负浠讳綍闂簮锛坈losed-source锛夌殑 Linux 鍐呮牳妯″潡
+鎴栭┍鍔ㄩ兘鏄湁瀹充笖涓嶅彲鍙栫殑銆傛垜浠娆″彂鐜板畠浠 Linux 鐢ㄦ埛銆佷紒涓氫互鍙婃洿骞挎硾鐨?Linux
+鐢熸€佺郴缁熼€犳垚浜嗘崯瀹炽€傛绫绘ā鍧楃牬鍧忎簡 Linux 寮€鍙戞ā寮忕殑寮€鏀炬€с€佺ǔ瀹氭€с€佺伒娲绘€у拰鍙淮鎶ゆ€э紝
+骞跺皢鐢ㄦ埛闅旂粷鍦?Linux 绀惧尯鐨勪笓涓氱煡璇嗕箣澶栥€傛彁渚涢棴婧愬唴鏍告ā鍧楃殑鍘傚晢锛岃揩浣夸粬浠殑瀹㈡埛鏀惧純
+Linux 鐨勫叧閿紭鍔匡紝鎴栬€呭幓閫夋嫨鏂扮殑鍘傚晢銆傚洜姝わ紝涓轰簡鍏呭垎鍒╃敤寮€婧愭墍鑳藉甫鏉ョ殑鎴愭湰鑺傜害鍜?
+鍏变韩鏀寔鐨勫ソ澶勶紝鎴戜滑鏁︿績鍘傚晢閲囧彇涓€椤规斂绛栵細浣跨敤寮€婧愬唴鏍镐唬鐮佸湪 Linux 涓婃敮鎸佷粬浠殑
+瀹㈡埛銆?
 
-我们仅代表自己发言，而不代表我们今天、过去或将来可能供职的任何公司。
+鎴戜滑浠呬唬琛ㄨ嚜宸卞彂瑷€锛岃€屼笉浠ｈ〃鎴戜滑浠婂ぉ銆佽繃鍘绘垨灏嗘潵鍙兘渚涜亴鐨勪换浣曞叕鍙搞€?
 
  - Dave Airlie
  - Nick Andrew
@@ -35,7 +35,7 @@ Linux 的关键优势，或者去选择新的厂商。因此，为了充分利�
  - Michael Buesch
  - Franck Bui-Huu
  - Adrian Bunk
- - François Cami
+ - Fran莽ois Cami
  - Ralph Campbell
  - Luiz Fernando N. Capitulino
  - Mauro Carvalho Chehab
@@ -79,7 +79,7 @@ Linux 的关键优势，或者去选择新的厂商。因此，为了充分利�
  - Michael Hennerich
  - Tejun Heo
  - Benjamin Herrenschmidt
- - Kristian Høgsberg
+ - Kristian H酶gsberg
  - Henrique de Moraes Holschuh
  - Marcel Holtmann
  - Mike Isely
@@ -94,7 +94,7 @@ Linux 的关键优势，或者去选择新的厂商。因此，为了充分利�
  - Russell King
  - Olaf Kirch
  - Roel Kluin
- - Hans-Jürgen Koch
+ - Hans-J眉rgen Koch
  - Auke Kok
  - Peter Korsgaard
  - Jiri Kosina
@@ -127,7 +127,7 @@ Linux 的关键优势，或者去选择新的厂商。因此，为了充分利�
  - Paul Mundt
  - Oleg Nesterov
  - Luca Olivetti
- - S.Çağlar Onur
+ - S.脟a臒lar Onur
  - Pierre Ossman
  - Keith Owens
  - Venkatesh Pallipadi

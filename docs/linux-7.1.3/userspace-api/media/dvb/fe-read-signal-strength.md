@@ -1,37 +1,37 @@
-######## FE_READ_SIGNAL_STRENGTH
+﻿######## FE_READ_SIGNAL_STRENGTH
 
 
-## 名称
+## 鍚嶇О
 
 
 FE_READ_SIGNAL_STRENGTH
 
 
-## 摘要
+## 鎽樿
 
 
 
 `int ioctl(int fd, FE_READ_SIGNAL_STRENGTH, uint16_t *strength)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `strength`
-    信号强度值被存入 \*strength。
+    淇″彿寮哄害鍊艰瀛樺叆 \*strength銆?
 
-## 说明
-
-
-该 ioctl 调用返回前端当前接收信号的信号强度值。对于该命令，对设备的只读访问即已足够。
-
-## 返回值
+## 璇存槑
 
 
-成功时返回 0。
+璇?ioctl 璋冪敤杩斿洖鍓嶇褰撳墠鎺ユ敹淇″彿鐨勪俊鍙峰己搴﹀€笺€傚浜庤鍛戒护锛屽璁惧鐨勫彧璇昏闂嵆宸茶冻澶熴€?
 
-出错时返回 -1，并相应地设置 `errno` 变量。
+## 杩斿洖鍊?
 
-通用错误码在 Generic Error Codes <gen-errors> 章节中描述。
+
+鎴愬姛鏃惰繑鍥?0銆?
+
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+
+閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?

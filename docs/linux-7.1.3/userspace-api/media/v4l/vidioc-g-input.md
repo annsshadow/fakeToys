@@ -1,13 +1,13 @@
-
+﻿
 ######## ioctl VIDIOC_G_INPUT, VIDIOC_S_INPUT
 
 
-## 名称
+## 鍚嶇О
 
 
-VIDIOC_G_INPUT - VIDIOC_S_INPUT - 查询或选择当前的视频输入
+VIDIOC_G_INPUT - VIDIOC_S_INPUT - 鏌ヨ鎴栭€夋嫨褰撳墠鐨勮棰戣緭鍏?
 
-## 概要
+## 姒傝
 
 
 `int ioctl(int fd, VIDIOC_G_INPUT, int *argp)`
@@ -15,28 +15,28 @@ VIDIOC_G_INPUT - VIDIOC_S_INPUT - 查询或选择当前的视频输入
 
 `int ioctl(int fd, VIDIOC_S_INPUT, int *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `argp`
-    指向包含输入索引的整数。
+    鎸囧悜鍖呭惈杈撳叆绱㈠紩鐨勬暣鏁般€?
 
-## 描述
-
-
-要查询当前的视频输入，应用程序需调用 VIDIOC_G_INPUT <VIDIOC_G_INPUT> ioctl，并传入一个指向整数的指针，驱动会将该输入的编号存入其中，如同结构体 `v4l2_input` 的 `index` 字段一样。该 ioctl 仅在没有视频输入时才会失败，并返回 `EINVAL`。
-
-要选择某个视频输入，应用程序需将要选择的输入编号存入一个整数，并调用 VIDIOC_S_INPUT <VIDIOC_G_INPUT> ioctl，传入指向该整数的指针。这可能会产生副作用。例如，输入可能支持不同的视频标准，因此驱动可能会隐式地切换当前标准。由于这些可能的副作用，应用程序必须先选择一个输入，然后再查询或协商任何其他参数。
-
-有关视频输入的信息可通过 VIDIOC_ENUMINPUT ioctl 获取。
-
-## 返回值
+## 鎻忚堪
 
 
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在 Generic Error Codes <gen-errors> 章节中描述。
+瑕佹煡璇㈠綋鍓嶇殑瑙嗛杈撳叆锛屽簲鐢ㄧ▼搴忛渶璋冪敤 VIDIOC_G_INPUT <VIDIOC_G_INPUT> ioctl锛屽苟浼犲叆涓€涓寚鍚戞暣鏁扮殑鎸囬拡锛岄┍鍔ㄤ細灏嗚杈撳叆鐨勭紪鍙峰瓨鍏ュ叾涓紝濡傚悓缁撴瀯浣?`v4l2_input` 鐨?`index` 瀛楁涓€鏍枫€傝 ioctl 浠呭湪娌℃湁瑙嗛杈撳叆鏃舵墠浼氬け璐ワ紝骞惰繑鍥?`EINVAL`銆?
+
+瑕侀€夋嫨鏌愪釜瑙嗛杈撳叆锛屽簲鐢ㄧ▼搴忛渶灏嗚閫夋嫨鐨勮緭鍏ョ紪鍙峰瓨鍏ヤ竴涓暣鏁帮紝骞惰皟鐢?VIDIOC_S_INPUT <VIDIOC_G_INPUT> ioctl锛屼紶鍏ユ寚鍚戣鏁存暟鐨勬寚閽堛€傝繖鍙兘浼氫骇鐢熷壇浣滅敤銆備緥濡傦紝杈撳叆鍙兘鏀寔涓嶅悓鐨勮棰戞爣鍑嗭紝鍥犳椹卞姩鍙兘浼氶殣寮忓湴鍒囨崲褰撳墠鏍囧噯銆傜敱浜庤繖浜涘彲鑳界殑鍓綔鐢紝搴旂敤绋嬪簭蹇呴』鍏堥€夋嫨涓€涓緭鍏ワ紝鐒跺悗鍐嶆煡璇㈡垨鍗忓晢浠讳綍鍏朵粬鍙傛暟銆?
+
+鏈夊叧瑙嗛杈撳叆鐨勪俊鎭彲閫氳繃 VIDIOC_ENUMINPUT ioctl 鑾峰彇銆?
+
+## 杩斿洖鍊?
+
+
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
 
 EINVAL
-    视频输入的编号越界。
+    瑙嗛杈撳叆鐨勭紪鍙疯秺鐣屻€?

@@ -1,7 +1,7 @@
-## 内核维护者手册
+﻿## 鍐呮牳缁存姢鑰呮墜鍐?
 
 
-本文档是内核维护者手册的初步开端。这里还有很多内容有待补充！欢迎提出（并撰写）对本手册的补充。
+鏈枃妗ｆ槸鍐呮牳缁存姢鑰呮墜鍐岀殑鍒濇寮€绔€傝繖閲岃繕鏈夊緢澶氬唴瀹规湁寰呰ˉ鍏咃紒娆㈣繋鎻愬嚭锛堝苟鎾板啓锛夊鏈墜鍐岀殑琛ュ厖銆?
 
 - [feature-and-driver-maintainers](feature-and-driver-maintainers)
 - [configure-git](configure-git)

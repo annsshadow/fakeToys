@@ -1,48 +1,30 @@
+﻿
+## V4L2 鎺т欢
 
-## V4L2 控件
+### 绠€浠?
+V4L2 鎺т欢锛坈ontrol锛堿PI 鐪嬭捣鏉ヨ冻澶熺畝鍗曪紝浣嗚鍦ㄩ┍鍔ㄤ腑姝ｇ‘瀹炵幇鍗村緢蹇彉寰楅潪甯稿洶闅俱€?涓嶈繃澶勭悊鎺т欢鎵€闇€鐨勪唬鐮佸ぇ閮ㄥ垎鍏跺疄骞朵笉鐗瑰畾浜庢煇涓┍鍔紝鍙互绉诲埌 V4L 鏍稿績妗嗘灦涓€?
+姣曠珶锛岄┍鍔ㄥ紑鍙戣€呭敮涓€鎰熷叴瓒ｇ殑閮ㄥ垎鏄細
 
-### 简介
+1) 濡備綍娣诲姞涓€涓帶浠讹紵
+2) 濡備綍璁剧疆鎺т欢鐨勫€硷紵锛堝嵆 s_ctrl锛?
+鍋跺皵杩樹細鐢ㄥ埌锛?
+3) 濡備綍鑾峰彇鎺т欢鐨勫€硷紵锛堝嵆 g_volatile_ctrl锛?4) 濡備綍鏍￠獙鐢ㄦ埛鎻愯鐨勬帶浠跺€硷紵锛堝嵆 try_ctrl锛?
+鍏朵綑涓€鍒囬兘鍙互鍦ㄩ泦涓瀹屾垚銆?
+鎺у埗妗嗘灦锛坈ontrol framework锛夌殑鍒涘缓锛屾槸涓轰簡鎶?V4L2 瑙勮寖涓叧浜庢帶浠剁殑鎵€鏈夎鍒欏湪
+涓€涓泦涓殑鍦版柟瀹炵幇锛屽苟涓斿敖鍙兘璁╅┍鍔ㄥ紑鍙戣€呯殑宸ヤ綔鍙樺緱杞绘澗銆?
+娉ㄦ剰锛屾帶鍒舵鏋朵緷璧?V4L2 椹卞姩鐨?`v4l2_device` 缁撴瀯浣擄紝浠ュ強瀛愯澶囷紙sub-device锛?椹卞姩鐨?v4l2_subdev 缁撴瀯浣撱€?
+### 妗嗘灦涓殑瀵硅薄
 
-V4L2 控件（control）API 看起来足够简单，但要在驱动中正确实现却很快变得非常困难。
-不过处理控件所需的代码大部分其实并不特定于某个驱动，可以移到 V4L 核心框架中。
+鏈変袱涓富瑕佸璞★細
 
-毕竟，驱动开发者唯一感兴趣的部分是：
-
-1) 如何添加一个控件？
-2) 如何设置控件的值？（即 s_ctrl）
-
-偶尔还会用到：
-
-3) 如何获取控件的值？（即 g_volatile_ctrl）
-4) 如何校验用户提议的控件值？（即 try_ctrl）
-
-其余一切都可以在集中处完成。
-
-控制框架（control framework）的创建，是为了把 V4L2 规范中关于控件的所有规则在
-一个集中的地方实现，并且尽可能让驱动开发者的工作变得轻松。
-
-注意，控制框架依赖 V4L2 驱动的 `v4l2_device` 结构体，以及子设备（sub-device）
-驱动的 v4l2_subdev 结构体。
-
-### 框架中的对象
-
-有两个主要对象：
-
-`v4l2_ctrl` 对象描述控件的属性，并跟踪控件的值（包括当前值和提议的新值）。
-
-`v4l2_ctrl_handler` 是跟踪控件的对象。它维护一个它所拥有的 v4l2_ctrl 对象列表，
-以及另一个指向控件的引用列表，这些控件可能由其它处理器（handler）拥有。
-
-### V4L2 和子设备驱动的基本用法
-
-1) 准备驱动：
-
+`v4l2_ctrl` 瀵硅薄鎻忚堪鎺т欢鐨勫睘鎬э紝骞惰窡韪帶浠剁殑鍊硷紙鍖呮嫭褰撳墠鍊煎拰鎻愯鐨勬柊鍊硷級銆?
+`v4l2_ctrl_handler` 鏄窡韪帶浠剁殑瀵硅薄銆傚畠缁存姢涓€涓畠鎵€鎷ユ湁鐨?v4l2_ctrl 瀵硅薄鍒楄〃锛?浠ュ強鍙︿竴涓寚鍚戞帶浠剁殑寮曠敤鍒楄〃锛岃繖浜涙帶浠跺彲鑳界敱鍏跺畠澶勭悊鍣紙handler锛夋嫢鏈夈€?
+### V4L2 鍜屽瓙璁惧椹卞姩鐨勫熀鏈敤娉?
+1) 鍑嗗椹卞姩锛?
 	#include <media/v4l2-ctrls.h>
 
-1.1) 将处理器（handler）添加到驱动的顶层结构体：
-
-对于 V4L2 驱动：
-
+1.1) 灏嗗鐞嗗櫒锛坔andler锛夋坊鍔犲埌椹卞姩鐨勯《灞傜粨鏋勪綋锛?
+瀵逛簬 V4L2 椹卞姩锛?
 	struct foo_dev {
 		...
 		struct v4l2_device v4l2_dev;
@@ -51,7 +33,7 @@ V4L2 控件（control）API 看起来足够简单，但要在驱动中正确实�
 		...
 	};
 
-对于子设备驱动：
+瀵逛簬瀛愯澶囬┍鍔細
 
 	struct foo_dev {
 		...
@@ -61,65 +43,55 @@ V4L2 控件（control）API 看起来足够简单，但要在驱动中正确实�
 		...
 	};
 
-1.2) 初始化处理器（handler）：
+1.2) 鍒濆鍖栧鐞嗗櫒锛坔andler锛夛細
 
 	v4l2_ctrl_handler_init(&foo->ctrl_handler, nr_of_controls);
 
-第二个参数是一个提示，告诉该函数该处理器预期要处理多少个控件。它将基于该信息
-分配一个哈希表。这仅仅是一个提示。
-
-1.3) 将控制处理器（control handler）挂接到驱动：
-
-对于 V4L2 驱动：
-
+绗簩涓弬鏁版槸涓€涓彁绀猴紝鍛婅瘔璇ュ嚱鏁拌澶勭悊鍣ㄩ鏈熻澶勭悊澶氬皯涓帶浠躲€傚畠灏嗗熀浜庤淇℃伅
+鍒嗛厤涓€涓搱甯岃〃銆傝繖浠呬粎鏄竴涓彁绀恒€?
+1.3) 灏嗘帶鍒跺鐞嗗櫒锛坈ontrol handler锛夋寕鎺ュ埌椹卞姩锛?
+瀵逛簬 V4L2 椹卞姩锛?
 	foo->v4l2_dev.ctrl_handler = &foo->ctrl_handler;
 
-对于子设备驱动：
+瀵逛簬瀛愯澶囬┍鍔細
 
 	foo->sd.ctrl_handler = &foo->ctrl_handler;
 
-1.4) 在最后清理处理器（handler）：
+1.4) 鍦ㄦ渶鍚庢竻鐞嗗鐞嗗櫒锛坔andler锛夛細
 
 	v4l2_ctrl_handler_free(&foo->ctrl_handler);
 
-`v4l2_ctrl_handler_free` 不会触碰处理器的 `error` 字段。
-
-2) 添加控件：
-
-通过调用 `v4l2_ctrl_new_std` 添加非菜单（non-menu）控件：
+`v4l2_ctrl_handler_free` 涓嶄細瑙︾澶勭悊鍣ㄧ殑 `error` 瀛楁銆?
+2) 娣诲姞鎺т欢锛?
+閫氳繃璋冪敤 `v4l2_ctrl_new_std` 娣诲姞闈炶彍鍗曪紙non-menu锛夋帶浠讹細
 
 	struct v4l2_ctrl **v4l2_ctrl_new_std(struct v4l2_ctrl_handler **hdl,
 			const struct v4l2_ctrl_ops *ops,
 			u32 id, s32 min, s32 max, u32 step, s32 def);
 
-菜单（menu）和整数菜单（integer menu）控件通过调用 `v4l2_ctrl_new_std_menu`
-添加：
-
+鑿滃崟锛坢enu锛夊拰鏁存暟鑿滃崟锛坕nteger menu锛夋帶浠堕€氳繃璋冪敤 `v4l2_ctrl_new_std_menu`
+娣诲姞锛?
 	struct v4l2_ctrl **v4l2_ctrl_new_std_menu(struct v4l2_ctrl_handler **hdl,
 			const struct v4l2_ctrl_ops *ops,
 			u32 id, s32 max, s32 skip_mask, s32 def);
 
-带有驱动特定菜单的菜单控件通过调用 `v4l2_ctrl_new_std_menu_items` 添加：
-
+甯︽湁椹卞姩鐗瑰畾鑿滃崟鐨勮彍鍗曟帶浠堕€氳繃璋冪敤 `v4l2_ctrl_new_std_menu_items` 娣诲姞锛?
        struct v4l2_ctrl *v4l2_ctrl_new_std_menu_items(
                        struct v4l2_ctrl_handler *hdl,
                        const struct v4l2_ctrl_ops *ops, u32 id, s32 max,
                        s32 skip_mask, s32 def, const char ** const **qmenu);
 
-标准复合（compound）控件可以通过调用 `v4l2_ctrl_new_std_compound` 添加：
-
+鏍囧噯澶嶅悎锛坈ompound锛夋帶浠跺彲浠ラ€氳繃璋冪敤 `v4l2_ctrl_new_std_compound` 娣诲姞锛?
        struct v4l2_ctrl **v4l2_ctrl_new_std_compound(struct v4l2_ctrl_handler **hdl,
                        const struct v4l2_ctrl_ops *ops, u32 id,
                        const union v4l2_ctrl_ptr p_def);
 
-带有驱动特定菜单的整数菜单控件可以通过调用 `v4l2_ctrl_new_int_menu` 添加：
-
+甯︽湁椹卞姩鐗瑰畾鑿滃崟鐨勬暣鏁拌彍鍗曟帶浠跺彲浠ラ€氳繃璋冪敤 `v4l2_ctrl_new_int_menu` 娣诲姞锛?
 	struct v4l2_ctrl **v4l2_ctrl_new_int_menu(struct v4l2_ctrl_handler **hdl,
 			const struct v4l2_ctrl_ops *ops,
 			u32 id, s32 max, s32 def, const s64 *qmenu_int);
 
-这些函数通常在 `v4l2_ctrl_handler_init` 之后立即调用：
-
+杩欎簺鍑芥暟閫氬父鍦?`v4l2_ctrl_handler_init` 涔嬪悗绔嬪嵆璋冪敤锛?
 	static const s64 exp_bias_qmenu[] = {
 	       -2, -1, 0, 1, 2
 	};
@@ -151,50 +123,30 @@ V4L2 控件（control）API 看起来足够简单，但要在驱动中正确实�
 	if (foo->ctrl_handler.error)
 		return v4l2_ctrl_handler_free(&foo->ctrl_handler);
 
-`v4l2_ctrl_new_std` 函数返回指向新控件的 v4l2_ctrl 指针，但如果你不需要在控件
-操作（control ops）之外访问该指针，则无需保存它。
-
-`v4l2_ctrl_new_std` 函数会基于控件 ID 填充大部分字段，除了最小值、最大值、步长
-和默认值。这些通过最后四个参数传入。这些值是驱动特定的，而类型、名称、标志等
-控件属性都是全局的。控件的当前值会被设为默认值。
-
-`v4l2_ctrl_new_std_menu` 函数非常相似，但它用于菜单控件。没有 min 参数，因为
-对于菜单控件它始终为 0，取而代之的是 step 之外有一个 skip_mask 参数：如果位 X
-为 1，则菜单项 X 被跳过。
-
-`v4l2_ctrl_new_int_menu` 函数创建一个带有驱动特定菜单项的新标准整数菜单控件。
-它与 v4l2_ctrl_new_std_menu 的不同之处在于它没有 mask 参数，并且以最后一个参数
-接受一个有符号 64 位整数数组，构成精确的菜单项列表。
-
-`v4l2_ctrl_new_std_menu_items` 函数与 v4l2_ctrl_new_std_menu 非常相似，但多了一个
-参数 qmenu，它是一个原本标准菜单控件的驱动特定菜单。这类控件的一个好例子是
-具有生成测试图案能力的捕获/显示/传感器设备的测试图案控件。这些测试图案是硬件
-特定的，因此菜单的内容会因设备而异。
-
-注意，如果某处失败，函数将返回 NULL 或错误，并将 ctrl_handler->error 设置为错误码。
-如果 ctrl_handler->error 已经设置，则它只会返回而不做任何事情。对于无法分配内部
-数据结构的 v4l2_ctrl_handler_init 也是如此。
-
-这使得初始化处理器（handler）并直接添加所有控件、只在最后检查错误码变得很容易。
-省去了大量重复的错误检查。
-
-建议按控件 ID 升序添加控件：这样会快一点。
-
-3) 可选地强制初始控件设置：
-
+`v4l2_ctrl_new_std` 鍑芥暟杩斿洖鎸囧悜鏂版帶浠剁殑 v4l2_ctrl 鎸囬拡锛屼絾濡傛灉浣犱笉闇€瑕佸湪鎺т欢
+鎿嶄綔锛坈ontrol ops锛変箣澶栬闂鎸囬拡锛屽垯鏃犻渶淇濆瓨瀹冦€?
+`v4l2_ctrl_new_std` 鍑芥暟浼氬熀浜庢帶浠?ID 濉厖澶ч儴鍒嗗瓧娈碉紝闄や簡鏈€灏忓€笺€佹渶澶у€笺€佹闀?鍜岄粯璁ゅ€笺€傝繖浜涢€氳繃鏈€鍚庡洓涓弬鏁颁紶鍏ャ€傝繖浜涘€兼槸椹卞姩鐗瑰畾鐨勶紝鑰岀被鍨嬨€佸悕绉般€佹爣蹇楃瓑
+鎺т欢灞炴€ч兘鏄叏灞€鐨勩€傛帶浠剁殑褰撳墠鍊间細琚涓洪粯璁ゅ€笺€?
+`v4l2_ctrl_new_std_menu` 鍑芥暟闈炲父鐩镐技锛屼絾瀹冪敤浜庤彍鍗曟帶浠躲€傛病鏈?min 鍙傛暟锛屽洜涓?瀵逛簬鑿滃崟鎺т欢瀹冨缁堜负 0锛屽彇鑰屼唬涔嬬殑鏄?step 涔嬪鏈変竴涓?skip_mask 鍙傛暟锛氬鏋滀綅 X
+涓?1锛屽垯鑿滃崟椤?X 琚烦杩囥€?
+`v4l2_ctrl_new_int_menu` 鍑芥暟鍒涘缓涓€涓甫鏈夐┍鍔ㄧ壒瀹氳彍鍗曢」鐨勬柊鏍囧噯鏁存暟鑿滃崟鎺т欢銆?瀹冧笌 v4l2_ctrl_new_std_menu 鐨勪笉鍚屼箣澶勫湪浜庡畠娌℃湁 mask 鍙傛暟锛屽苟涓斾互鏈€鍚庝竴涓弬鏁?鎺ュ彈涓€涓湁绗﹀彿 64 浣嶆暣鏁版暟缁勶紝鏋勬垚绮剧‘鐨勮彍鍗曢」鍒楄〃銆?
+`v4l2_ctrl_new_std_menu_items` 鍑芥暟涓?v4l2_ctrl_new_std_menu 闈炲父鐩镐技锛屼絾澶氫簡涓€涓?鍙傛暟 qmenu锛屽畠鏄竴涓師鏈爣鍑嗚彍鍗曟帶浠剁殑椹卞姩鐗瑰畾鑿滃崟銆傝繖绫绘帶浠剁殑涓€涓ソ渚嬪瓙鏄?鍏锋湁鐢熸垚娴嬭瘯鍥炬鑳藉姏鐨勬崟鑾?鏄剧ず/浼犳劅鍣ㄨ澶囩殑娴嬭瘯鍥炬鎺т欢銆傝繖浜涙祴璇曞浘妗堟槸纭欢
+鐗瑰畾鐨勶紝鍥犳鑿滃崟鐨勫唴瀹逛細鍥犺澶囪€屽紓銆?
+娉ㄦ剰锛屽鏋滄煇澶勫け璐ワ紝鍑芥暟灏嗚繑鍥?NULL 鎴栭敊璇紝骞跺皢 ctrl_handler->error 璁剧疆涓洪敊璇爜銆?濡傛灉 ctrl_handler->error 宸茬粡璁剧疆锛屽垯瀹冨彧浼氳繑鍥炶€屼笉鍋氫换浣曚簨鎯呫€傚浜庢棤娉曞垎閰嶅唴閮?鏁版嵁缁撴瀯鐨?v4l2_ctrl_handler_init 涔熸槸濡傛銆?
+杩欎娇寰楀垵濮嬪寲澶勭悊鍣紙handler锛夊苟鐩存帴娣诲姞鎵€鏈夋帶浠躲€佸彧鍦ㄦ渶鍚庢鏌ラ敊璇爜鍙樺緱寰堝鏄撱€?鐪佸幓浜嗗ぇ閲忛噸澶嶇殑閿欒妫€鏌ャ€?
+寤鸿鎸夋帶浠?ID 鍗囧簭娣诲姞鎺т欢锛氳繖鏍蜂細蹇竴鐐广€?
+3) 鍙€夊湴寮哄埗鍒濆鎺т欢璁剧疆锛?
 	v4l2_ctrl_handler_setup(&foo->ctrl_handler);
 
-这将无条件地对所有控件调用 s_ctrl。实际上这会把硬件初始化为默认控件值。建议你
-这样做，因为这能确保内部数据结构和硬件保持一致。
-
-4) 最后：实现 `v4l2_ctrl_ops`
+杩欏皢鏃犳潯浠跺湴瀵规墍鏈夋帶浠惰皟鐢?s_ctrl銆傚疄闄呬笂杩欎細鎶婄‖浠跺垵濮嬪寲涓洪粯璁ゆ帶浠跺€笺€傚缓璁綘
+杩欐牱鍋氾紝鍥犱负杩欒兘纭繚鍐呴儴鏁版嵁缁撴瀯鍜岀‖浠朵繚鎸佷竴鑷淬€?
+4) 鏈€鍚庯細瀹炵幇 `v4l2_ctrl_ops`
 
 	static const struct v4l2_ctrl_ops foo_ctrl_ops = {
 		.s_ctrl = foo_s_ctrl,
 	};
 
-通常你只需要 s_ctrl：
-
+閫氬父浣犲彧闇€瑕?s_ctrl锛?
 	static int foo_s_ctrl(struct v4l2_ctrl *ctrl)
 	{
 		struct foo *state = container_of(ctrl->handler, struct foo, ctrl_handler);
@@ -210,29 +162,20 @@ V4L2 控件（control）API 看起来足够简单，但要在驱动中正确实�
 		return 0;
 	}
 
-控制操作（control ops）以 v4l2_ctrl 指针作为参数被调用。新的控件值已经被校验过，
-所以你只需实际去更新硬件寄存器即可。
-
-你完成了！这对于我们的大多数驱动来说已经足够。无需对控件值做任何校验，也无需
-实现 QUERYCTRL、QUERY_EXT_CTRL 和 QUERYMENU。而 G/S_CTRL 以及 G/TRY/S_EXT_CTRLS
-会被自动支持。
-
-   其余小节涉及更高级的控件主题和场景。实际上，如上所述的基本用法对大多数驱动
-   来说已经足够。
-
-### 继承子设备控件
-
-当通过调用 v4l2_device_register_subdev() 将一个子设备注册到 V4L2 驱动，并且
-v4l2_subdev 和 v4l2_device 的 ctrl_handler 字段都已设置时，该子设备的控件将
-自动在 V4L2 驱动中也可用。如果子设备驱动包含的控件在 V4L2 驱动中已经存在，则
-那些控件会被跳过（因此 V4L2 驱动始终可以覆盖子设备控件）。
-
-这里发生的是，v4l2_device_register_subdev() 调用 v4l2_ctrl_add_handler()，将
-子设备的控件添加到 v4l2_device 的控件中。
-
-### 访问控件值
-
-控制框架内部使用以下联合体（union）来访问控件值：
+鎺у埗鎿嶄綔锛坈ontrol ops锛変互 v4l2_ctrl 鎸囬拡浣滀负鍙傛暟琚皟鐢ㄣ€傛柊鐨勬帶浠跺€煎凡缁忚鏍￠獙杩囷紝
+鎵€浠ヤ綘鍙渶瀹為檯鍘绘洿鏂扮‖浠跺瘎瀛樺櫒鍗冲彲銆?
+浣犲畬鎴愪簡锛佽繖瀵逛簬鎴戜滑鐨勫ぇ澶氭暟椹卞姩鏉ヨ宸茬粡瓒冲銆傛棤闇€瀵规帶浠跺€煎仛浠讳綍鏍￠獙锛屼篃鏃犻渶
+瀹炵幇 QUERYCTRL銆丵UERY_EXT_CTRL 鍜?QUERYMENU銆傝€?G/S_CTRL 浠ュ強 G/TRY/S_EXT_CTRLS
+浼氳鑷姩鏀寔銆?
+   鍏朵綑灏忚妭娑夊強鏇撮珮绾х殑鎺т欢涓婚鍜屽満鏅€傚疄闄呬笂锛屽涓婃墍杩扮殑鍩烘湰鐢ㄦ硶瀵瑰ぇ澶氭暟椹卞姩
+   鏉ヨ宸茬粡瓒冲銆?
+### 缁ф壙瀛愯澶囨帶浠?
+褰撻€氳繃璋冪敤 v4l2_device_register_subdev() 灏嗕竴涓瓙璁惧娉ㄥ唽鍒?V4L2 椹卞姩锛屽苟涓?v4l2_subdev 鍜?v4l2_device 鐨?ctrl_handler 瀛楁閮藉凡璁剧疆鏃讹紝璇ュ瓙璁惧鐨勬帶浠跺皢
+鑷姩鍦?V4L2 椹卞姩涓篃鍙敤銆傚鏋滃瓙璁惧椹卞姩鍖呭惈鐨勬帶浠跺湪 V4L2 椹卞姩涓凡缁忓瓨鍦紝鍒?閭ｄ簺鎺т欢浼氳璺宠繃锛堝洜姝?V4L2 椹卞姩濮嬬粓鍙互瑕嗙洊瀛愯澶囨帶浠讹級銆?
+杩欓噷鍙戠敓鐨勬槸锛寁4l2_device_register_subdev() 璋冪敤 v4l2_ctrl_add_handler()锛屽皢
+瀛愯澶囩殑鎺т欢娣诲姞鍒?v4l2_device 鐨勬帶浠朵腑銆?
+### 璁块棶鎺т欢鍊?
+鎺у埗妗嗘灦鍐呴儴浣跨敤浠ヤ笅鑱斿悎浣擄紙union锛夋潵璁块棶鎺т欢鍊硷細
 
 	union v4l2_ctrl_ptr {
 		s32 *p_s32;
@@ -241,8 +184,7 @@ v4l2_subdev 和 v4l2_device 的 ctrl_handler 字段都已设置时，该子设�
 		void *p;
 	};
 
-v4l2_ctrl 结构体包含以下可用于访问当前值和新值的字段：
-
+v4l2_ctrl 缁撴瀯浣撳寘鍚互涓嬪彲鐢ㄤ簬璁块棶褰撳墠鍊煎拰鏂板€肩殑瀛楁锛?
 	s32 val;
 	struct {
 		s32 val;
@@ -252,25 +194,18 @@ v4l2_ctrl 结构体包含以下可用于访问当前值和新值的字段：
 	union v4l2_ctrl_ptr p_new;
 	union v4l2_ctrl_ptr p_cur;
 
-如果控件是简单的 s32 类型，则：
-
+濡傛灉鎺т欢鏄畝鍗曠殑 s32 绫诲瀷锛屽垯锛?
 	&ctrl->val == ctrl->p_new.p_s32
 	&ctrl->cur.val == ctrl->p_cur.p_s32
 
-对于所有其它类型，使用 ctrl->p_cur.p<something>。基本上 val 和 cur.val 字段可以
-视为别名，因为它们被使用得如此频繁。
-
-在控制操作（control ops）内部你可以自由使用这些字段。val 和 cur.val 不言自明。
-p_char 指针指向长度为 ctrl->maximum + 1 的字符缓冲区，并且总是以 0 结尾。
-
-除非控件被标记为 volatile（易变），否则 p_cur 字段指向当前缓存的控件值。当你创建
-一个新控件时，该值会被设为与默认值相同。调用 v4l2_ctrl_handler_setup() 之后，该
-值会被传递给硬件。通常调用此函数是个好主意。
-
-每当设置了一个新值，该新值会被自动缓存。这意味着大多数驱动不需要实现 g_volatile_ctrl()
-操作（op）。例外情况是返回易变寄存器（例如持续变化的信号强度读数）的控件。在这种
-情况下，你需要像下面这样实现 g_volatile_ctrl：
-
+瀵逛簬鎵€鏈夊叾瀹冪被鍨嬶紝浣跨敤 ctrl->p_cur.p<something>銆傚熀鏈笂 val 鍜?cur.val 瀛楁鍙互
+瑙嗕负鍒悕锛屽洜涓哄畠浠浣跨敤寰楀姝ら绻併€?
+鍦ㄦ帶鍒舵搷浣滐紙control ops锛夊唴閮ㄤ綘鍙互鑷敱浣跨敤杩欎簺瀛楁銆倂al 鍜?cur.val 涓嶈█鑷槑銆?p_char 鎸囬拡鎸囧悜闀垮害涓?ctrl->maximum + 1 鐨勫瓧绗︾紦鍐插尯锛屽苟涓旀€绘槸浠?0 缁撳熬銆?
+闄ら潪鎺т欢琚爣璁颁负 volatile锛堟槗鍙橈級锛屽惁鍒?p_cur 瀛楁鎸囧悜褰撳墠缂撳瓨鐨勬帶浠跺€笺€傚綋浣犲垱寤?涓€涓柊鎺т欢鏃讹紝璇ュ€间細琚涓轰笌榛樿鍊肩浉鍚屻€傝皟鐢?v4l2_ctrl_handler_setup() 涔嬪悗锛岃
+鍊间細琚紶閫掔粰纭欢銆傞€氬父璋冪敤姝ゅ嚱鏁版槸涓ソ涓绘剰銆?
+姣忓綋璁剧疆浜嗕竴涓柊鍊硷紝璇ユ柊鍊间細琚嚜鍔ㄧ紦瀛樸€傝繖鎰忓懗鐫€澶у鏁伴┍鍔ㄤ笉闇€瑕佸疄鐜?g_volatile_ctrl()
+鎿嶄綔锛坥p锛夈€備緥澶栨儏鍐垫槸杩斿洖鏄撳彉瀵勫瓨鍣紙渚嬪鎸佺画鍙樺寲鐨勪俊鍙峰己搴﹁鏁帮級鐨勬帶浠躲€傚湪杩欑
+鎯呭喌涓嬶紝浣犻渶瑕佸儚涓嬮潰杩欐牱瀹炵幇 g_volatile_ctrl锛?
 	static int foo_g_volatile_ctrl(struct v4l2_ctrl *ctrl)
 	{
 		switch (ctrl->id) {
@@ -280,64 +215,46 @@ p_char 指针指向长度为 ctrl->maximum + 1 的字符缓冲区，并且总是
 		}
 	}
 
-注意你在 g_volatile_ctrl 中也使用了“新值”联合体。一般来说，需要实现 g_volatile_ctrl
-的控件是只读控件。如果不是，则当控件改变时不会生成 V4L2_EVENT_CTRL_CH_VALUE 事件。
-
-要将一个控件标记为 volatile，你必须设置 V4L2_CTRL_FLAG_VOLATILE：
-
+娉ㄦ剰浣犲湪 g_volatile_ctrl 涓篃浣跨敤浜嗏€滄柊鍊尖€濊仈鍚堜綋銆備竴鑸潵璇达紝闇€瑕佸疄鐜?g_volatile_ctrl
+鐨勬帶浠舵槸鍙鎺т欢銆傚鏋滀笉鏄紝鍒欏綋鎺т欢鏀瑰彉鏃朵笉浼氱敓鎴?V4L2_EVENT_CTRL_CH_VALUE 浜嬩欢銆?
+瑕佸皢涓€涓帶浠舵爣璁颁负 volatile锛屼綘蹇呴』璁剧疆 V4L2_CTRL_FLAG_VOLATILE锛?
 	ctrl = v4l2_ctrl_new_std(&sd->ctrl_handler, ...);
 	if (ctrl)
 		ctrl->flags |= V4L2_CTRL_FLAG_VOLATILE;
 
-对于 try/s_ctrl，新值（即用户传入的值）会被填入，你可以在 try_ctrl 中修改它们，
-或在 s_ctrl 中设置它们。'cur' 联合体包含当前值，你也可以（但不能修改！）使用它。
-
-如果 s_ctrl 返回 0（OK），则控制框架会把新的最终值复制到 'cur' 联合体。
-
-在 g_volatile/s/try_ctrl 内部，你可以访问同一个处理器（handler）拥有的所有控件的
-值，因为处理器（handler）的锁（lock）被持有。如果你需要访问其它处理器（handler）
-拥有的控件值，则必须非常小心，避免引入死锁。
-
-在控制操作（control ops）之外，你必须通过辅助函数来安全地获取或设置驱动中的单个
-控件值：
+瀵逛簬 try/s_ctrl锛屾柊鍊硷紙鍗崇敤鎴蜂紶鍏ョ殑鍊硷級浼氳濉叆锛屼綘鍙互鍦?try_ctrl 涓慨鏀瑰畠浠紝
+鎴栧湪 s_ctrl 涓缃畠浠€?cur' 鑱斿悎浣撳寘鍚綋鍓嶅€硷紝浣犱篃鍙互锛堜絾涓嶈兘淇敼锛侊級浣跨敤瀹冦€?
+濡傛灉 s_ctrl 杩斿洖 0锛圤K锛夛紝鍒欐帶鍒舵鏋朵細鎶婃柊鐨勬渶缁堝€煎鍒跺埌 'cur' 鑱斿悎浣撱€?
+鍦?g_volatile/s/try_ctrl 鍐呴儴锛屼綘鍙互璁块棶鍚屼竴涓鐞嗗櫒锛坔andler锛夋嫢鏈夌殑鎵€鏈夋帶浠剁殑
+鍊硷紝鍥犱负澶勭悊鍣紙handler锛夌殑閿侊紙lock锛夎鎸佹湁銆傚鏋滀綘闇€瑕佽闂叾瀹冨鐞嗗櫒锛坔andler锛?鎷ユ湁鐨勬帶浠跺€硷紝鍒欏繀椤婚潪甯稿皬蹇冿紝閬垮厤寮曞叆姝婚攣銆?
+鍦ㄦ帶鍒舵搷浣滐紙control ops锛変箣澶栵紝浣犲繀椤婚€氳繃杈呭姪鍑芥暟鏉ュ畨鍏ㄥ湴鑾峰彇鎴栬缃┍鍔ㄤ腑鐨勫崟涓?鎺т欢鍊硷細
 
 	s32 v4l2_ctrl_g_ctrl(struct v4l2_ctrl *ctrl);
 	int v4l2_ctrl_s_ctrl(struct v4l2_ctrl *ctrl, s32 val);
 
-这些函数与控制框架的交互方式与 VIDIOC_G/S_CTRL ioctl 相同。不过，不要在控制操作
-g_volatile/s/try_ctrl 内部使用它们，因为这会导致死锁，因为这些辅助函数同样会锁定
-处理器（handler）。
-
-你也可以自己获取处理器（handler）锁：
-
+杩欎簺鍑芥暟涓庢帶鍒舵鏋剁殑浜や簰鏂瑰紡涓?VIDIOC_G/S_CTRL ioctl 鐩稿悓銆備笉杩囷紝涓嶈鍦ㄦ帶鍒舵搷浣?g_volatile/s/try_ctrl 鍐呴儴浣跨敤瀹冧滑锛屽洜涓鸿繖浼氬鑷存閿侊紝鍥犱负杩欎簺杈呭姪鍑芥暟鍚屾牱浼氶攣瀹?澶勭悊鍣紙handler锛夈€?
+浣犱篃鍙互鑷繁鑾峰彇澶勭悊鍣紙handler锛夐攣锛?
 	mutex_lock(&state->ctrl_handler.lock);
 	pr_info("String value is '%s'\n", ctrl1->p_cur.p_char);
 	pr_info("Integer value is '%s'\n", ctrl2->cur.val);
 	mutex_unlock(&state->ctrl_handler.lock);
 
-### 菜单控件
+### 鑿滃崟鎺т欢
 
-v4l2_ctrl 结构体包含这个联合体：
-
+v4l2_ctrl 缁撴瀯浣撳寘鍚繖涓仈鍚堜綋锛?
 	union {
 		u32 step;
 		u32 menu_skip_mask;
 	};
 
-对于菜单控件使用 menu_skip_mask。它的作用是让你可以轻松排除某些菜单项。这在
-VIDIOC_QUERYMENU 的实现中会用到，当某个菜单项不存在时你可以返回 -EINVAL。注意，
-对于菜单控件，VIDIOC_QUERYCTRL 始终返回步长值 1。
-
-一个很好的例子是 MPEG Audio Layer II Bitrate 菜单控件，其中菜单是标准化可能
-比特率的列表。但在实际中，硬件实现只会支持其中的一个子集。通过设置 skip 掩码
-（mask），你可以告诉框架哪些菜单项应该被跳过。将其设置为 0 表示支持所有菜单项。
-
-你可以通过 v4l2_ctrl_config 结构体（针对自定义控件）或调用 v4l2_ctrl_new_std_menu()
-来设置该掩码（mask）。
-
-### 自定义控件
-
-可以使用 v4l2_ctrl_new_custom() 创建驱动特定的控件：
+瀵逛簬鑿滃崟鎺т欢浣跨敤 menu_skip_mask銆傚畠鐨勪綔鐢ㄦ槸璁╀綘鍙互杞绘澗鎺掗櫎鏌愪簺鑿滃崟椤广€傝繖鍦?VIDIOC_QUERYMENU 鐨勫疄鐜颁腑浼氱敤鍒帮紝褰撴煇涓彍鍗曢」涓嶅瓨鍦ㄦ椂浣犲彲浠ヨ繑鍥?-EINVAL銆傛敞鎰忥紝
+瀵逛簬鑿滃崟鎺т欢锛孷IDIOC_QUERYCTRL 濮嬬粓杩斿洖姝ラ暱鍊?1銆?
+涓€涓緢濂界殑渚嬪瓙鏄?MPEG Audio Layer II Bitrate 鑿滃崟鎺т欢锛屽叾涓彍鍗曟槸鏍囧噯鍖栧彲鑳?姣旂壒鐜囩殑鍒楄〃銆備絾鍦ㄥ疄闄呬腑锛岀‖浠跺疄鐜板彧浼氭敮鎸佸叾涓殑涓€涓瓙闆嗐€傞€氳繃璁剧疆 skip 鎺╃爜
+锛坢ask锛夛紝浣犲彲浠ュ憡璇夋鏋跺摢浜涜彍鍗曢」搴旇琚烦杩囥€傚皢鍏惰缃负 0 琛ㄧず鏀寔鎵€鏈夎彍鍗曢」銆?
+浣犲彲浠ラ€氳繃 v4l2_ctrl_config 缁撴瀯浣擄紙閽堝鑷畾涔夋帶浠讹級鎴栬皟鐢?v4l2_ctrl_new_std_menu()
+鏉ヨ缃鎺╃爜锛坢ask锛夈€?
+### 鑷畾涔夋帶浠?
+鍙互浣跨敤 v4l2_ctrl_new_custom() 鍒涘缓椹卞姩鐗瑰畾鐨勬帶浠讹細
 
 	static const struct v4l2_ctrl_config ctrl_filter = {
 		.ops = &ctrl_custom_ops,
@@ -351,32 +268,20 @@ VIDIOC_QUERYMENU 的实现中会用到，当某个菜单项不存在时你可以
 
 	ctrl = v4l2_ctrl_new_custom(&foo->ctrl_handler, &ctrl_filter, NULL);
 
-最后一个参数是 priv 指针，可设置为驱动特定的私有数据。
-
-v4l2_ctrl_config 结构体还有一个字段用于设置 is_private 标志。
-
-如果未设置 name 字段，则框架会假定这是一个标准控件，并相应地填充 name、type 和
-flags 字段。
-
-### 活动（active）与抓取（grabbed）控件
-
-如果你遇到控件之间更复杂的关系，那么你可能必须激活或停用控件。例如，如果 Chroma
-AGC 控件开启，那么 Chroma Gain 控件就是非活动的。也就是说，你可以设置它，但只要
-自动增益控制还开着，硬件就不会使用该值。典型的用户界面可以禁用此类输入字段。
-
-你可以使用 v4l2_ctrl_activate() 设置“活动”状态。默认情况下所有控件都是活动的。
-注意框架不会检查此标志。它纯粹是为 GUI 准备的。该函数通常在 s_ctrl 内部调用。
-
-另一个标志是“抓取”（grabbed）标志。一个被抓取的控件意味着你无法更改它，因为它正
-被某个资源使用。典型的例子是 MPEG 比特率控件，在捕获进行期间无法更改。
-
-如果使用 v4l2_ctrl_grab() 将一个控件设置为“抓取”，那么当试图设置该控件时框架将
-返回 -EBUSY。v4l2_ctrl_grab() 函数通常在驱动启动或停止流传输时调用。
-
-### 控件簇（Control Clusters）
-
-默认情况下所有控件彼此独立。但在更复杂的场景中，你可能得到一个控件对另一个的
-依赖关系。在这种情况下，你需要将它们“聚类”（cluster）：
+鏈€鍚庝竴涓弬鏁版槸 priv 鎸囬拡锛屽彲璁剧疆涓洪┍鍔ㄧ壒瀹氱殑绉佹湁鏁版嵁銆?
+v4l2_ctrl_config 缁撴瀯浣撹繕鏈変竴涓瓧娈电敤浜庤缃?is_private 鏍囧織銆?
+濡傛灉鏈缃?name 瀛楁锛屽垯妗嗘灦浼氬亣瀹氳繖鏄竴涓爣鍑嗘帶浠讹紝骞剁浉搴斿湴濉厖 name銆乼ype 鍜?flags 瀛楁銆?
+### 娲诲姩锛坅ctive锛変笌鎶撳彇锛坓rabbed锛夋帶浠?
+濡傛灉浣犻亣鍒版帶浠朵箣闂存洿澶嶆潅鐨勫叧绯伙紝閭ｄ箞浣犲彲鑳藉繀椤绘縺娲绘垨鍋滅敤鎺т欢銆備緥濡傦紝濡傛灉 Chroma
+AGC 鎺т欢寮€鍚紝閭ｄ箞 Chroma Gain 鎺т欢灏辨槸闈炴椿鍔ㄧ殑銆備篃灏辨槸璇达紝浣犲彲浠ヨ缃畠锛屼絾鍙
+鑷姩澧炵泭鎺у埗杩樺紑鐫€锛岀‖浠跺氨涓嶄細浣跨敤璇ュ€笺€傚吀鍨嬬殑鐢ㄦ埛鐣岄潰鍙互绂佺敤姝ょ被杈撳叆瀛楁銆?
+浣犲彲浠ヤ娇鐢?v4l2_ctrl_activate() 璁剧疆鈥滄椿鍔ㄢ€濈姸鎬併€傞粯璁ゆ儏鍐典笅鎵€鏈夋帶浠堕兘鏄椿鍔ㄧ殑銆?娉ㄦ剰妗嗘灦涓嶄細妫€鏌ユ鏍囧織銆傚畠绾补鏄负 GUI 鍑嗗鐨勩€傝鍑芥暟閫氬父鍦?s_ctrl 鍐呴儴璋冪敤銆?
+鍙︿竴涓爣蹇楁槸鈥滄姄鍙栤€濓紙grabbed锛夋爣蹇椼€備竴涓鎶撳彇鐨勬帶浠舵剰鍛崇潃浣犳棤娉曟洿鏀瑰畠锛屽洜涓哄畠姝?琚煇涓祫婧愪娇鐢ㄣ€傚吀鍨嬬殑渚嬪瓙鏄?MPEG 姣旂壒鐜囨帶浠讹紝鍦ㄦ崟鑾疯繘琛屾湡闂存棤娉曟洿鏀广€?
+濡傛灉浣跨敤 v4l2_ctrl_grab() 灏嗕竴涓帶浠惰缃负鈥滄姄鍙栤€濓紝閭ｄ箞褰撹瘯鍥捐缃鎺т欢鏃舵鏋跺皢
+杩斿洖 -EBUSY銆倂4l2_ctrl_grab() 鍑芥暟閫氬父鍦ㄩ┍鍔ㄥ惎鍔ㄦ垨鍋滄娴佷紶杈撴椂璋冪敤銆?
+### 鎺т欢绨囷紙Control Clusters锛?
+榛樿鎯呭喌涓嬫墍鏈夋帶浠跺郊姝ょ嫭绔嬨€備絾鍦ㄦ洿澶嶆潅鐨勫満鏅腑锛屼綘鍙兘寰楀埌涓€涓帶浠跺鍙︿竴涓殑
+渚濊禆鍏崇郴銆傚湪杩欑鎯呭喌涓嬶紝浣犻渶瑕佸皢瀹冧滑鈥滆仛绫烩€濓紙cluster锛夛細
 
 	struct foo {
 		struct v4l2_ctrl_handler ctrl_handler;
@@ -392,12 +297,9 @@ AGC 控件开启，那么 Chroma Gain 控件就是非活动的。也就是说，
 		v4l2_ctrl_new_std(&state->ctrl_handler, ...);
 	v4l2_ctrl_cluster(ARRAY_SIZE(state->audio_cluster), state->audio_cluster);
 
-从今以后，只要属于同一个簇的一个或多个控件被设置（或“获取”，或“尝试”），只会
-调用第一个控件（本例中为“volume”）的控制操作（control ops）。你实际上创建了一个
-新的复合控件。类似于 C 语言中“struct”的工作方式。
-
-因此，当 s_ctrl 以 V4L2_CID_AUDIO_VOLUME 作为参数被调用时，你应该设置属于
-audio_cluster 的全部两个控件：
+浠庝粖浠ュ悗锛屽彧瑕佸睘浜庡悓涓€涓皣鐨勪竴涓垨澶氫釜鎺т欢琚缃紙鎴栤€滆幏鍙栤€濓紝鎴栤€滃皾璇曗€濓級锛屽彧浼?璋冪敤绗竴涓帶浠讹紙鏈緥涓负鈥渧olume鈥濓級鐨勬帶鍒舵搷浣滐紙control ops锛夈€備綘瀹為檯涓婂垱寤轰簡涓€涓?鏂扮殑澶嶅悎鎺т欢銆傜被浼间簬 C 璇█涓€渟truct鈥濈殑宸ヤ綔鏂瑰紡銆?
+鍥犳锛屽綋 s_ctrl 浠?V4L2_CID_AUDIO_VOLUME 浣滀负鍙傛暟琚皟鐢ㄦ椂锛屼綘搴旇璁剧疆灞炰簬
+audio_cluster 鐨勫叏閮ㄤ袱涓帶浠讹細
 
 	static int foo_s_ctrl(struct v4l2_ctrl *ctrl)
 	{
@@ -417,97 +319,66 @@ audio_cluster 的全部两个控件：
 		return 0;
 	}
 
-在上面的例子中，对于 VOLUME 情况，以下三者等价：
+鍦ㄤ笂闈㈢殑渚嬪瓙涓紝瀵逛簬 VOLUME 鎯呭喌锛屼互涓嬩笁鑰呯瓑浠凤細
 
 	ctrl == ctrl->cluster[AUDIO_CL_VOLUME] == state->audio_cluster[AUDIO_CL_VOLUME]
 	ctrl->cluster[AUDIO_CL_MUTE] == state->audio_cluster[AUDIO_CL_MUTE]
 
-在实践中，像这样使用簇数组会变得非常繁琐。因此改用以下等价的方法：
-
+鍦ㄥ疄璺典腑锛屽儚杩欐牱浣跨敤绨囨暟缁勪細鍙樺緱闈炲父绻佺悙銆傚洜姝ゆ敼鐢ㄤ互涓嬬瓑浠风殑鏂规硶锛?
 	struct {
 		/** audio cluster **/
 		struct v4l2_ctrl *volume;
 		struct v4l2_ctrl *mute;
 	};
 
-这个匿名结构体用于清晰地“聚类”这两个控件指针，但它没有其它用途。效果与创建
-一个带两个控件指针的数组相同。所以你可以直接这样做：
+杩欎釜鍖垮悕缁撴瀯浣撶敤浜庢竻鏅板湴鈥滆仛绫烩€濊繖涓や釜鎺т欢鎸囬拡锛屼絾瀹冩病鏈夊叾瀹冪敤閫斻€傛晥鏋滀笌鍒涘缓
+涓€涓甫涓や釜鎺т欢鎸囬拡鐨勬暟缁勭浉鍚屻€傛墍浠ヤ綘鍙互鐩存帴杩欐牱鍋氾細
 
 	state->volume = v4l2_ctrl_new_std(&state->ctrl_handler, ...);
 	state->mute = v4l2_ctrl_new_std(&state->ctrl_handler, ...);
 	v4l2_ctrl_cluster(2, &state->volume);
 
-在 foo_s_ctrl 中你可以直接使用这些指针：state->mute->val。
+鍦?foo_s_ctrl 涓綘鍙互鐩存帴浣跨敤杩欎簺鎸囬拡锛歴tate->mute->val銆?
+娉ㄦ剰锛岀皣涓殑鎺т欢鍙兘涓?NULL銆備緥濡傦紝濡傛灉鐢变簬鏌愮鍘熷洜 mute 浠庢湭琚坊鍔狅紙鍥犱负纭欢
+涓嶆敮鎸佽鐗瑰畾鐗规€э級锛岄偅涔?mute 灏嗘槸 NULL銆傛墍浠ュ湪杩欑鎯呭喌涓嬫垜浠湁涓€涓寘鍚?2 涓帶浠?鐨勭皣锛屽叾涓彧鏈?1 涓疄闄呰瀹炰緥鍖栥€傚敮涓€鐨勯檺鍒舵槸绨囩殑绗竴涓帶浠跺繀椤诲缁堝瓨鍦紝鍥犱负
+瀹冩槸绨囩殑鈥滀富鈥濓紙master锛夋帶浠躲€備富鎺т欢鏄瘑鍒绨囩殑鎺т欢锛屽苟鎻愪緵鐢ㄤ簬璇ョ皣鐨?v4l2_ctrl_ops 缁撴瀯浣撶殑鎸囬拡銆?
+鏄剧劧锛岀皣鏁扮粍涓殑鎵€鏈夋帶浠跺繀椤昏鍒濆鍖栦负鏈夋晥鐨勬帶浠舵垨 NULL銆?
+鍦ㄦ瀬灏戞暟鎯呭喌涓嬶紝浣犲彲鑳芥兂鐭ラ亾绨囦腑鐨勫摢浜涙帶浠跺疄闄呬笂鏄鐢ㄦ埛鏄惧紡璁剧疆鐨勩€備负姝や綘鍙互
+妫€鏌ユ瘡涓帶浠剁殑鈥渋s_new鈥濇爣蹇椼€備緥濡傦紝鍦?volume/mute 绨囩殑鎯呭喌涓嬶紝濡傛灉鍙负鐢ㄦ埛璋冪敤浜?VIDIOC_S_CTRL 璁剧疆 mute锛岄偅涔?mute 鎺т欢鐨勨€渋s_new鈥濇爣蹇椾細琚缃€傚鏋滅敤鎴蜂负 mute 鍜?volume 鎺т欢閮借皟鐢ㄤ簡 VIDIOC_S_EXT_CTRLS锛岄偅涔堜袱涓帶浠剁殑鈥渋s_new鈥濇爣蹇楅兘灏嗘槸 1銆?
+鈥渋s_new鈥濇爣蹇楀湪浠?v4l2_ctrl_handler_setup() 璋冪敤鏃跺缁堜负 1銆?
+### 浣跨敤鑷姩绨囷紙Auto Clusters锛夊鐞?autogain/gain 绫诲瀷鎺т欢
 
-注意，簇中的控件可能为 NULL。例如，如果由于某种原因 mute 从未被添加（因为硬件
-不支持该特定特性），那么 mute 将是 NULL。所以在这种情况下我们有一个包含 2 个控件
-的簇，其中只有 1 个实际被实例化。唯一的限制是簇的第一个控件必须始终存在，因为
-它是簇的“主”（master）控件。主控件是识别该簇的控件，并提供用于该簇的
-v4l2_ctrl_ops 结构体的指针。
-
-显然，簇数组中的所有控件必须被初始化为有效的控件或 NULL。
-
-在极少数情况下，你可能想知道簇中的哪些控件实际上是被用户显式设置的。为此你可以
-检查每个控件的“is_new”标志。例如，在 volume/mute 簇的情况下，如果只为用户调用了
-VIDIOC_S_CTRL 设置 mute，那么 mute 控件的“is_new”标志会被设置。如果用户为 mute 和
-volume 控件都调用了 VIDIOC_S_EXT_CTRLS，那么两个控件的“is_new”标志都将是 1。
-
-“is_new”标志在从 v4l2_ctrl_handler_setup() 调用时始终为 1。
-
-### 使用自动簇（Auto Clusters）处理 autogain/gain 类型控件
-
-一种常见的控件簇类型处理的是“auto-foo/foo”类型的控件。典型的例子是
-autogain/gain、autoexposure/exposure、autowhitebalance/red balance/blue balance。
-在所有情况下，你都有一个控件决定另一个控件是由硬件自动处理，还是由用户手动控制。
-
-如果簇处于自动模式，那么手动控件应该被标记为非活动（inactive）和易变（volatile）。
-当读取易变控件时，g_volatile_ctrl 操作应该返回由硬件自动模式自动设置的值。
-
-如果簇被切换到手动模式，那么手动控件应该重新变为活动（active），并且清除 volatile
-标志（因此在手动模式下不再调用 g_volatile_ctrl）。此外，就在切换到手动模式之前，
-由自动模式确定的当前值会被复制为新的手动值。
-
-最后，应该为自动控件设置 V4L2_CTRL_FLAG_UPDATE，因为更改该控件会影响手动控件的
-控制标志。
-
-为了简化这一点，引入了一个 v4l2_ctrl_cluster 的特殊变体：
+涓€绉嶅父瑙佺殑鎺т欢绨囩被鍨嬪鐞嗙殑鏄€渁uto-foo/foo鈥濈被鍨嬬殑鎺т欢銆傚吀鍨嬬殑渚嬪瓙鏄?autogain/gain銆乤utoexposure/exposure銆乤utowhitebalance/red balance/blue balance銆?鍦ㄦ墍鏈夋儏鍐典笅锛屼綘閮芥湁涓€涓帶浠跺喅瀹氬彟涓€涓帶浠舵槸鐢辩‖浠惰嚜鍔ㄥ鐞嗭紝杩樻槸鐢辩敤鎴锋墜鍔ㄦ帶鍒躲€?
+濡傛灉绨囧浜庤嚜鍔ㄦā寮忥紝閭ｄ箞鎵嬪姩鎺т欢搴旇琚爣璁颁负闈炴椿鍔紙inactive锛夊拰鏄撳彉锛坴olatile锛夈€?褰撹鍙栨槗鍙樻帶浠舵椂锛実_volatile_ctrl 鎿嶄綔搴旇杩斿洖鐢辩‖浠惰嚜鍔ㄦā寮忚嚜鍔ㄨ缃殑鍊笺€?
+濡傛灉绨囪鍒囨崲鍒版墜鍔ㄦā寮忥紝閭ｄ箞鎵嬪姩鎺т欢搴旇閲嶆柊鍙樹负娲诲姩锛坅ctive锛夛紝骞朵笖娓呴櫎 volatile
+鏍囧織锛堝洜姝ゅ湪鎵嬪姩妯″紡涓嬩笉鍐嶈皟鐢?g_volatile_ctrl锛夈€傛澶栵紝灏卞湪鍒囨崲鍒版墜鍔ㄦā寮忎箣鍓嶏紝
+鐢辫嚜鍔ㄦā寮忕‘瀹氱殑褰撳墠鍊间細琚鍒朵负鏂扮殑鎵嬪姩鍊笺€?
+鏈€鍚庯紝搴旇涓鸿嚜鍔ㄦ帶浠惰缃?V4L2_CTRL_FLAG_UPDATE锛屽洜涓烘洿鏀硅鎺т欢浼氬奖鍝嶆墜鍔ㄦ帶浠剁殑
+鎺у埗鏍囧織銆?
+涓轰簡绠€鍖栬繖涓€鐐癸紝寮曞叆浜嗕竴涓?v4l2_ctrl_cluster 鐨勭壒娈婂彉浣擄細
 
 	void v4l2_ctrl_auto_cluster(unsigned ncontrols, struct v4l2_ctrl **controls,
 				    u8 manual_val, bool set_volatile);
 
-前两个参数与 v4l2_ctrl_cluster 相同。第三个参数告诉框架哪个值会将簇切换到手动模式。
-最后一个参数可选地（optionally）为非自动控件设置 V4L2_CTRL_FLAG_VOLATILE。如果为
-false，则手动控件永远不会是易变的。如果硬件不允许你读回由自动模式确定的值（例如
-如果 autogain 开启，硬件不允许你获取当前增益值），你通常会使用 false。
+鍓嶄袱涓弬鏁颁笌 v4l2_ctrl_cluster 鐩稿悓銆傜涓変釜鍙傛暟鍛婅瘔妗嗘灦鍝釜鍊间細灏嗙皣鍒囨崲鍒版墜鍔ㄦā寮忋€?鏈€鍚庝竴涓弬鏁板彲閫夊湴锛坥ptionally锛変负闈炶嚜鍔ㄦ帶浠惰缃?V4L2_CTRL_FLAG_VOLATILE銆傚鏋滀负
+false锛屽垯鎵嬪姩鎺т欢姘歌繙涓嶄細鏄槗鍙樼殑銆傚鏋滅‖浠朵笉鍏佽浣犺鍥炵敱鑷姩妯″紡纭畾鐨勫€硷紙渚嬪
+濡傛灉 autogain 寮€鍚紝纭欢涓嶅厑璁镐綘鑾峰彇褰撳墠澧炵泭鍊硷級锛屼綘閫氬父浼氫娇鐢?false銆?
+绨囩殑绗竴涓帶浠惰鍋囧畾涓衡€渁uto鈥濇帶浠躲€?
+浣跨敤姝ゅ嚱鏁板彲纭繚浣犳棤闇€澶勭悊鎵€鏈夊鏉傜殑鏍囧織鍜屾槗鍙橈紙volatile锛夊鐞嗐€?
+### VIDIOC_LOG_STATUS 鏀寔
 
-簇的第一个控件被假定为“auto”控件。
+杩欎釜 ioctl 鍏佽浣犲皢椹卞姩鐨勫綋鍓嶇姸鎬佽浆鍌ㄥ埌鍐呮牳鏃ュ織銆倂4l2_ctrl_handler_log_status
+(ctrl_handler, prefix) 鍙敤浜庡皢缁欏畾澶勭悊鍣紙handler锛夋墍鎷ユ湁鐨勬帶浠跺€艰浆鍌ㄥ埌鏃ュ織銆?浣犱篃鍙互鎻愪緵涓€涓墠缂€锛坧refix锛夈€傚鏋滃墠缂€娌℃湁浠ョ┖鏍肩粨灏撅紝鍒欎細涓轰綘娣诲姞鈥? 鈥濄€?
+### 涓嶅悓瑙嗛鑺傜偣浣跨敤涓嶅悓鐨勫鐞嗗櫒
 
-使用此函数可确保你无需处理所有复杂的标志和易变（volatile）处理。
-
-### VIDIOC_LOG_STATUS 支持
-
-这个 ioctl 允许你将驱动的当前状态转储到内核日志。v4l2_ctrl_handler_log_status
-(ctrl_handler, prefix) 可用于将给定处理器（handler）所拥有的控件值转储到日志。
-你也可以提供一个前缀（prefix）。如果前缀没有以空格结尾，则会为你添加“: ”。
-
-### 不同视频节点使用不同的处理器
-
-通常 V4L2 驱动只有一个对所有视频节点全局的控制处理器（handler）。但你也可以为
-不同的视频节点指定不同的控制处理器。你可以通过手动设置 struct video_device 的
-ctrl_handler 字段来做到这一点。
-
-如果没有涉及子设备（subdev），这没有问题；但如果有，那么你需要阻止子设备控件
-自动合并到全局控制处理器。你只需将 struct v4l2_device 中的 ctrl_handler 字段
-设置为 NULL 即可。现在 v4l2_device_register_subdev() 将不再合并子设备控件。
-
-在每个子设备被添加之后，你将必须手动调用 v4l2_ctrl_add_handler，将子设备的控制
-处理器（sd->ctrl_handler）添加到所需的处理器。这个控制处理器可能特定于某个
-video_device，或某个 video_device 的子集。例如：radio 设备节点只有音频控件，而
-video 和 vbi 设备节点共享同一个用于音频和视频控件的控制处理器。
-
-如果你希望让一个处理器（例如用于 radio 设备节点）拥有另一个处理器（例如用于
-video 设备节点）的子集，那么你应该首先添加控件到第一个处理器，添加其它控件到
-第二个处理器，最后将第一个处理器添加到第二个处理器。例如：
+閫氬父 V4L2 椹卞姩鍙湁涓€涓鎵€鏈夎棰戣妭鐐瑰叏灞€鐨勬帶鍒跺鐞嗗櫒锛坔andler锛夈€備絾浣犱篃鍙互涓?涓嶅悓鐨勮棰戣妭鐐规寚瀹氫笉鍚岀殑鎺у埗澶勭悊鍣ㄣ€備綘鍙互閫氳繃鎵嬪姩璁剧疆 struct video_device 鐨?ctrl_handler 瀛楁鏉ュ仛鍒拌繖涓€鐐广€?
+濡傛灉娌℃湁娑夊強瀛愯澶囷紙subdev锛夛紝杩欐病鏈夐棶棰橈紱浣嗗鏋滄湁锛岄偅涔堜綘闇€瑕侀樆姝㈠瓙璁惧鎺т欢
+鑷姩鍚堝苟鍒板叏灞€鎺у埗澶勭悊鍣ㄣ€備綘鍙渶灏?struct v4l2_device 涓殑 ctrl_handler 瀛楁
+璁剧疆涓?NULL 鍗冲彲銆傜幇鍦?v4l2_device_register_subdev() 灏嗕笉鍐嶅悎骞跺瓙璁惧鎺т欢銆?
+鍦ㄦ瘡涓瓙璁惧琚坊鍔犱箣鍚庯紝浣犲皢蹇呴』鎵嬪姩璋冪敤 v4l2_ctrl_add_handler锛屽皢瀛愯澶囩殑鎺у埗
+澶勭悊鍣紙sd->ctrl_handler锛夋坊鍔犲埌鎵€闇€鐨勫鐞嗗櫒銆傝繖涓帶鍒跺鐞嗗櫒鍙兘鐗瑰畾浜庢煇涓?video_device锛屾垨鏌愪釜 video_device 鐨勫瓙闆嗐€備緥濡傦細radio 璁惧鑺傜偣鍙湁闊抽鎺т欢锛岃€?video 鍜?vbi 璁惧鑺傜偣鍏变韩鍚屼竴涓敤浜庨煶棰戝拰瑙嗛鎺т欢鐨勬帶鍒跺鐞嗗櫒銆?
+濡傛灉浣犲笇鏈涜涓€涓鐞嗗櫒锛堜緥濡傜敤浜?radio 璁惧鑺傜偣锛夋嫢鏈夊彟涓€涓鐞嗗櫒锛堜緥濡傜敤浜?video 璁惧鑺傜偣锛夌殑瀛愰泦锛岄偅涔堜綘搴旇棣栧厛娣诲姞鎺т欢鍒扮涓€涓鐞嗗櫒锛屾坊鍔犲叾瀹冩帶浠跺埌
+绗簩涓鐞嗗櫒锛屾渶鍚庡皢绗竴涓鐞嗗櫒娣诲姞鍒扮浜屼釜澶勭悊鍣ㄣ€備緥濡傦細
 
 	v4l2_ctrl_new_std(&radio_ctrl_handler, &radio_ops, V4L2_CID_AUDIO_VOLUME, ...);
 	v4l2_ctrl_new_std(&radio_ctrl_handler, &radio_ops, V4L2_CID_AUDIO_MUTE, ...);
@@ -515,61 +386,49 @@ video 设备节点）的子集，那么你应该首先添加控件到第一个�
 	v4l2_ctrl_new_std(&video_ctrl_handler, &video_ops, V4L2_CID_CONTRAST, ...);
 	v4l2_ctrl_add_handler(&video_ctrl_handler, &radio_ctrl_handler, NULL);
 
-v4l2_ctrl_add_handler() 的最后一个参数是一个过滤函数，允许你过滤哪些控件会被添加。
-如果你想添加所有控件，则将其设为 NULL。
-
-或者你可以将特定控件添加到一个处理器：
-
+v4l2_ctrl_add_handler() 鐨勬渶鍚庝竴涓弬鏁版槸涓€涓繃婊ゅ嚱鏁帮紝鍏佽浣犺繃婊ゅ摢浜涙帶浠朵細琚坊鍔犮€?濡傛灉浣犳兂娣诲姞鎵€鏈夋帶浠讹紝鍒欏皢鍏惰涓?NULL銆?
+鎴栬€呬綘鍙互灏嗙壒瀹氭帶浠舵坊鍔犲埌涓€涓鐞嗗櫒锛?
 	volume = v4l2_ctrl_new_std(&video_ctrl_handler, &ops, V4L2_CID_AUDIO_VOLUME, ...);
 	v4l2_ctrl_new_std(&video_ctrl_handler, &ops, V4L2_CID_BRIGHTNESS, ...);
 	v4l2_ctrl_new_std(&video_ctrl_handler, &ops, V4L2_CID_CONTRAST, ...);
 
-你不应该做的是为两个处理器创建两个相同的控件。例如：
+浣犱笉搴旇鍋氱殑鏄负涓や釜澶勭悊鍣ㄥ垱寤轰袱涓浉鍚岀殑鎺т欢銆備緥濡傦細
 
 	v4l2_ctrl_new_std(&radio_ctrl_handler, &radio_ops, V4L2_CID_AUDIO_MUTE, ...);
 	v4l2_ctrl_new_std(&video_ctrl_handler, &video_ops, V4L2_CID_AUDIO_MUTE, ...);
 
-这很糟糕，因为静音 radio 不会改变 video 静音控件。规则是：对于每个你可以拨动的
-硬件“旋钮”，应该有一个控件。
+杩欏緢绯熺硶锛屽洜涓洪潤闊?radio 涓嶄細鏀瑰彉 video 闈欓煶鎺т欢銆傝鍒欐槸锛氬浜庢瘡涓綘鍙互鎷ㄥ姩鐨?纭欢鈥滄棆閽€濓紝搴旇鏈変竴涓帶浠躲€?
+### 鏌ユ壘鎺т欢
 
-### 查找控件
-
-通常你已经自己创建了控件，并且可以把 struct v4l2_ctrl 指针保存到自己的结构体中。
-
-但有时你需要从一个你不拥有的另一个处理器（handler）中查找控件。例如，如果你必须
-从一个子设备（subdev）中查找 volume 控件。
-
-你可以通过调用 v4l2_ctrl_find 来做到这一点：
+閫氬父浣犲凡缁忚嚜宸卞垱寤轰簡鎺т欢锛屽苟涓斿彲浠ユ妸 struct v4l2_ctrl 鎸囬拡淇濆瓨鍒拌嚜宸辩殑缁撴瀯浣撲腑銆?
+浣嗘湁鏃朵綘闇€瑕佷粠涓€涓綘涓嶆嫢鏈夌殑鍙︿竴涓鐞嗗櫒锛坔andler锛変腑鏌ユ壘鎺т欢銆備緥濡傦紝濡傛灉浣犲繀椤?浠庝竴涓瓙璁惧锛坰ubdev锛変腑鏌ユ壘 volume 鎺т欢銆?
+浣犲彲浠ラ€氳繃璋冪敤 v4l2_ctrl_find 鏉ュ仛鍒拌繖涓€鐐癸細
 
 	struct v4l2_ctrl *volume;
 
 	volume = v4l2_ctrl_find(sd->ctrl_handler, V4L2_CID_AUDIO_VOLUME);
 
-由于 v4l2_ctrl_find 会锁定处理器（handler），所以你必须小心在哪里使用它。例如，
-这并不是一个好主意：
-
+鐢变簬 v4l2_ctrl_find 浼氶攣瀹氬鐞嗗櫒锛坔andler锛夛紝鎵€浠ヤ綘蹇呴』灏忓績鍦ㄥ摢閲屼娇鐢ㄥ畠銆備緥濡傦紝
+杩欏苟涓嶆槸涓€涓ソ涓绘剰锛?
 	struct v4l2_ctrl_handler ctrl_handler;
 
 	v4l2_ctrl_new_std(&ctrl_handler, &video_ops, V4L2_CID_BRIGHTNESS, ...);
 	v4l2_ctrl_new_std(&ctrl_handler, &video_ops, V4L2_CID_CONTRAST, ...);
 
-……而在 video_ops.s_ctrl 中：
+鈥︹€﹁€屽湪 video_ops.s_ctrl 涓細
 
 	case V4L2_CID_BRIGHTNESS:
 		contrast = v4l2_find_ctrl(&ctrl_handler, V4L2_CID_CONTRAST);
 		...
 
-当框架调用 s_ctrl 时，ctrl_handler.lock 已经被获取，因此试图从同一个处理器查找
-另一个控件会导致死锁。
+褰撴鏋惰皟鐢?s_ctrl 鏃讹紝ctrl_handler.lock 宸茬粡琚幏鍙栵紝鍥犳璇曞浘浠庡悓涓€涓鐞嗗櫒鏌ユ壘
+鍙︿竴涓帶浠朵細瀵艰嚧姝婚攣銆?
+寤鸿涓嶈鍦ㄦ帶鍒舵搷浣滐紙control ops锛夊唴閮ㄤ娇鐢ㄦ鍑芥暟銆?
+### 闃绘鎺т欢缁ф壙
 
-建议不要在控制操作（control ops）内部使用此函数。
-
-### 阻止控件继承
-
-当使用一个控制处理器（handler）通过 v4l2_ctrl_add_handler 添加到另一个时，默认
-情况下其中一个的所有控件都会被合并到另一个。但一个子设备可能拥有对某个高级嵌入式
-系统有意义、但在消费级硬件中使用时毫无意义的底层控件。在这种情况下，你希望将这些
-底层控件保留在子设备本地。你可以通过将控件的“is_private”标志设为 1 来做到这一点：
+褰撲娇鐢ㄤ竴涓帶鍒跺鐞嗗櫒锛坔andler锛夐€氳繃 v4l2_ctrl_add_handler 娣诲姞鍒板彟涓€涓椂锛岄粯璁?鎯呭喌涓嬪叾涓竴涓殑鎵€鏈夋帶浠堕兘浼氳鍚堝苟鍒板彟涓€涓€備絾涓€涓瓙璁惧鍙兘鎷ユ湁瀵规煇涓珮绾у祵鍏ュ紡
+绯荤粺鏈夋剰涔夈€佷絾鍦ㄦ秷璐圭骇纭欢涓娇鐢ㄦ椂姣棤鎰忎箟鐨勫簳灞傛帶浠躲€傚湪杩欑鎯呭喌涓嬶紝浣犲笇鏈涘皢杩欎簺
+搴曞眰鎺т欢淇濈暀鍦ㄥ瓙璁惧鏈湴銆備綘鍙互閫氳繃灏嗘帶浠剁殑鈥渋s_private鈥濇爣蹇楄涓?1 鏉ュ仛鍒拌繖涓€鐐癸細
 
 	static const struct v4l2_ctrl_config ctrl_private = {
 		.ops = &ctrl_custom_ops,
@@ -583,29 +442,21 @@ v4l2_ctrl_add_handler() 的最后一个参数是一个过滤函数，允许你�
 
 	ctrl = v4l2_ctrl_new_custom(&foo->ctrl_handler, &ctrl_private, NULL);
 
-现在调用 v4l2_ctrl_add_handler 时会跳过这些控件。
+鐜板湪璋冪敤 v4l2_ctrl_add_handler 鏃朵細璺宠繃杩欎簺鎺т欢銆?
+### V4L2_CTRL_TYPE_CTRL_CLASS 鎺т欢
 
-### V4L2_CTRL_TYPE_CTRL_CLASS 控件
-
-GUI 可以使用此类控件来获取控件类（control class）的名称。功能完备的 GUI 可以创建
-一个带多个选项卡的对话框，每个选项卡包含属于某个特定控件类的控件。每个选项卡的
-名称可以通过查询一个 ID 为 <control class | 1> 的特殊控件来找到。
-
-驱动无需关心这一点。每当添加属于一个新的控件类的第一个控件时，框架会自动添加此类
-控件。
-
-### 添加通知回调（Notify Callbacks）
-
-有时平台或桥接（bridge）驱动需要在子设备驱动的某个控件改变时收到通知。你可以通过
-调用此函数设置 notify 回调：
-
+GUI 鍙互浣跨敤姝ょ被鎺т欢鏉ヨ幏鍙栨帶浠剁被锛坈ontrol class锛夌殑鍚嶇О銆傚姛鑳藉畬澶囩殑 GUI 鍙互鍒涘缓
+涓€涓甫澶氫釜閫夐」鍗＄殑瀵硅瘽妗嗭紝姣忎釜閫夐」鍗″寘鍚睘浜庢煇涓壒瀹氭帶浠剁被鐨勬帶浠躲€傛瘡涓€夐」鍗＄殑
+鍚嶇О鍙互閫氳繃鏌ヨ涓€涓?ID 涓?<control class | 1> 鐨勭壒娈婃帶浠舵潵鎵惧埌銆?
+椹卞姩鏃犻渶鍏冲績杩欎竴鐐广€傛瘡褰撴坊鍔犲睘浜庝竴涓柊鐨勬帶浠剁被鐨勭涓€涓帶浠舵椂锛屾鏋朵細鑷姩娣诲姞姝ょ被
+鎺т欢銆?
+### 娣诲姞閫氱煡鍥炶皟锛圢otify Callbacks锛?
+鏈夋椂骞冲彴鎴栨ˉ鎺ワ紙bridge锛夐┍鍔ㄩ渶瑕佸湪瀛愯澶囬┍鍔ㄧ殑鏌愪釜鎺т欢鏀瑰彉鏃舵敹鍒伴€氱煡銆備綘鍙互閫氳繃
+璋冪敤姝ゅ嚱鏁拌缃?notify 鍥炶皟锛?
 	void v4l2_ctrl_notify(struct v4l2_ctrl *ctrl,
 		void (**notify)(struct v4l2_ctrl **ctrl, void **priv), void **priv);
 
-每当给定的控件值改变时，notify 回调会以指向该控件的指针以及传给 v4l2_ctrl_notify
-的 priv 指针被调用。注意，调用 notify 函数时控制处理器（handler）的锁（lock）被持有。
-
-每个控制处理器（handler）只能有一个 notify 函数。任何设置另一个 notify 函数的尝试
-都会导致 WARN_ON。
-
-### v4l2_ctrl 函数与数据结构
+姣忓綋缁欏畾鐨勬帶浠跺€兼敼鍙樻椂锛宯otify 鍥炶皟浼氫互鎸囧悜璇ユ帶浠剁殑鎸囬拡浠ュ強浼犵粰 v4l2_ctrl_notify
+鐨?priv 鎸囬拡琚皟鐢ㄣ€傛敞鎰忥紝璋冪敤 notify 鍑芥暟鏃舵帶鍒跺鐞嗗櫒锛坔andler锛夌殑閿侊紙lock锛夎鎸佹湁銆?
+姣忎釜鎺у埗澶勭悊鍣紙handler锛夊彧鑳芥湁涓€涓?notify 鍑芥暟銆備换浣曡缃彟涓€涓?notify 鍑芥暟鐨勫皾璇?閮戒細瀵艰嚧 WARN_ON銆?
+### v4l2_ctrl 鍑芥暟涓庢暟鎹粨鏋?

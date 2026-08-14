@@ -1,10 +1,8 @@
-## active_mm
+﻿## active_mm
 
-注意，在开启了 CONFIG_MMU_LAZY_TLB_REFCOUNT=n 的内核上，mm_count 引用计数
-可能不再包含“惰性（lazy）”用户（即 ->active_mm == mm && ->mm == NULL 的运行
-中任务）。获取和释放这些惰性引用必须使用 mmgrab_lazy_tlb() 和 mmdrop_lazy_tlb()
-辅助函数，它们对该配置选项进行了抽象。
-
+娉ㄦ剰锛屽湪寮€鍚簡 CONFIG_MMU_LAZY_TLB_REFCOUNT=n 鐨勫唴鏍镐笂锛宮m_count 寮曠敤璁℃暟
+鍙兘涓嶅啀鍖呭惈鈥滄儼鎬э紙lazy锛夆€濈敤鎴凤紙鍗?->active_mm == mm && ->mm == NULL 鐨勮繍琛?涓换鍔★級銆傝幏鍙栧拰閲婃斁杩欎簺鎯版€у紩鐢ㄥ繀椤讳娇鐢?mmgrab_lazy_tlb() 鍜?mmdrop_lazy_tlb()
+杈呭姪鍑芥暟锛屽畠浠璇ラ厤缃€夐」杩涜浜嗘娊璞°€?
 ```
 
  List:       linux-kernel

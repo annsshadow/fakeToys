@@ -1,14 +1,14 @@
-## Monitor stall（停滞任务监视器）
+﻿## Monitor stall锛堝仠婊炰换鍔＄洃瑙嗗櫒锛?
 
 
-- 名称：stall - 停滞任务监视器
-- 类型：每任务混合自动机
-- 作者：Gabriele Monaco <gmonaco@redhat.com>
+- 鍚嶇О锛歴tall - 鍋滄粸浠诲姟鐩戣鍣?
+- 绫诲瀷锛氭瘡浠诲姟娣峰悎鑷姩鏈?
+- 浣滆€咃細Gabriele Monaco <gmonaco@redhat.com>
 
-### 描述
+### 鎻忚堪
 
 
-停滞任务（stall）监视器是一个示例性的每任务定时监视器，用于检查
+鍋滄粸浠诲姟锛坰tall锛夌洃瑙嗗櫒鏄竴涓ず渚嬫€х殑姣忎换鍔″畾鏃剁洃瑙嗗櫒锛岀敤浜庢鏌?
 ```
 
                         |
@@ -35,10 +35,10 @@
                         +----------------------+
 
 ```
-阈值可作为一个参数进行配置，既可以通过在内核启动时传入
-`stall.threshold_jiffies=<新值>` 参数，也可以向
-`/sys/module/stall/parameters/threshold_jiffies` 写入新值。
+闃堝€煎彲浣滀负涓€涓弬鏁拌繘琛岄厤缃紝鏃㈠彲浠ラ€氳繃鍦ㄥ唴鏍稿惎鍔ㄦ椂浼犲叆
+`stall.threshold_jiffies=<鏂板€?` 鍙傛暟锛屼篃鍙互鍚?
+`/sys/module/stall/parameters/threshold_jiffies` 鍐欏叆鏂板€笺€?
 
-### 规格说明
+### 瑙勬牸璇存槑
 
-Graphviz Dot 文件位于 tools/verification/models/stall.dot
+Graphviz Dot 鏂囦欢浣嶄簬 tools/verification/models/stall.dot

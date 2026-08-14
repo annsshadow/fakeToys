@@ -1,33 +1,33 @@
-
-## mmap_prepare 回调使用指南
-
-
-## 简介
+﻿
+## mmap_prepare 鍥炶皟浣跨敤鎸囧崡
 
 
-`struct file->f_op->mmap()` 回调已被废弃，因为它既存在稳定性问题，也存在安全风险，并且不总是允许相邻映射的合并，从而导致不必要的内存碎片。
-
-它已被 `file->f_op->mmap_prepare()` 回调取代，该回调解决了这些问题。
-
-此钩子在函数映射建立的起始阶段被调用，重要的是它在任何相邻映射合并发生**之前**被调用。
-
-若在映射时产生错误，错误可能在此回调被调用之后才出现，因此应将其视为实质上无状态的。
-
-也就是说——不应分配任何资源，也不应更新任何状态来反映映射已经建立，因为映射可能在回调完成后被合并，或者映射失败。
-
-### 已映射回调
+## 绠€浠?
 
 
-如果需要为每个映射分配资源，或者需要操作诸如引用计数之类的状态，应当通过 `vm_ops->mapped` 钩子来完成，该钩子本身应由 mmap_prepare 钩子设置。
+`struct file->f_op->mmap()` 鍥炶皟宸茶搴熷純锛屽洜涓哄畠鏃㈠瓨鍦ㄧǔ瀹氭€ч棶棰橈紝涔熷瓨鍦ㄥ畨鍏ㄩ闄╋紝骞朵笖涓嶆€绘槸鍏佽鐩搁偦鏄犲皠鐨勫悎骞讹紝浠庤€屽鑷翠笉蹇呰鐨勫唴瀛樼鐗囥€?
 
-仅当一个新的映射建立且未与其他映射合并时，才会调用此回调；并且它会在映射建立之前不可能发生错误的时刻被调用。
+瀹冨凡琚?`file->f_op->mmap_prepare()` 鍥炶皟鍙栦唬锛岃鍥炶皟瑙ｅ喅浜嗚繖浜涢棶棰樸€?
 
-你可以向该回调本身返回错误，这将导致映射被取消映射，并向 mmap() 调用者返回错误。这在需要分配资源、而分配可能失败的情况下很有用。
+姝ら挬瀛愬湪鍑芥暟鏄犲皠寤虹珛鐨勮捣濮嬮樁娈佃璋冪敤锛岄噸瑕佺殑鏄畠鍦ㄤ换浣曠浉閭绘槧灏勫悎骞跺彂鐢?*涔嬪墠**琚皟鐢ㄣ€?
 
-## 如何使用
+鑻ュ湪鏄犲皠鏃朵骇鐢熼敊璇紝閿欒鍙兘鍦ㄦ鍥炶皟琚皟鐢ㄤ箣鍚庢墠鍑虹幇锛屽洜姝ゅ簲灏嗗叾瑙嗕负瀹炶川涓婃棤鐘舵€佺殑銆?
+
+涔熷氨鏄鈥斺€斾笉搴斿垎閰嶄换浣曡祫婧愶紝涔熶笉搴旀洿鏂颁换浣曠姸鎬佹潵鍙嶆槧鏄犲皠宸茬粡寤虹珛锛屽洜涓烘槧灏勫彲鑳藉湪鍥炶皟瀹屾垚鍚庤鍚堝苟锛屾垨鑰呮槧灏勫け璐ャ€?
+
+### 宸叉槧灏勫洖璋?
 
 
-在你的驱动的 struct file_operations 结构体中，指定一个 `mmap_prepare` 回调，而不是 `mmap` 回调，例如对于 ext4：
+濡傛灉闇€瑕佷负姣忎釜鏄犲皠鍒嗛厤璧勬簮锛屾垨鑰呴渶瑕佹搷浣滆濡傚紩鐢ㄨ鏁颁箣绫荤殑鐘舵€侊紝搴斿綋閫氳繃 `vm_ops->mapped` 閽╁瓙鏉ュ畬鎴愶紝璇ラ挬瀛愭湰韬簲鐢?mmap_prepare 閽╁瓙璁剧疆銆?
+
+浠呭綋涓€涓柊鐨勬槧灏勫缓绔嬩笖鏈笌鍏朵粬鏄犲皠鍚堝苟鏃讹紝鎵嶄細璋冪敤姝ゅ洖璋冿紱骞朵笖瀹冧細鍦ㄦ槧灏勫缓绔嬩箣鍓嶄笉鍙兘鍙戠敓閿欒鐨勬椂鍒昏璋冪敤銆?
+
+浣犲彲浠ュ悜璇ュ洖璋冩湰韬繑鍥為敊璇紝杩欏皢瀵艰嚧鏄犲皠琚彇娑堟槧灏勶紝骞跺悜 mmap() 璋冪敤鑰呰繑鍥為敊璇€傝繖鍦ㄩ渶瑕佸垎閰嶈祫婧愩€佽€屽垎閰嶅彲鑳藉け璐ョ殑鎯呭喌涓嬪緢鏈夌敤銆?
+
+## 濡備綍浣跨敤
+
+
+鍦ㄤ綘鐨勯┍鍔ㄧ殑 struct file_operations 缁撴瀯浣撲腑锛屾寚瀹氫竴涓?`mmap_prepare` 鍥炶皟锛岃€屼笉鏄?`mmap` 鍥炶皟锛屼緥濡傚浜?ext4锛?
 
 
     const struct file_operations ext4_file_operations = {
@@ -35,9 +35,9 @@
         .mmap_prepare    = ext4_file_mmap_prepare,
     };
 
-其签名为 `int (**mmap_prepare)(struct vm_area_desc **)`。
+鍏剁鍚嶄负 `int (**mmap_prepare)(struct vm_area_desc **)`銆?
 
-观察 struct vm_area_desc 类型：
+瑙傚療 struct vm_area_desc 绫诲瀷锛?
 
 
     struct vm_area_desc {
@@ -61,7 +61,7 @@
         struct mmap_action action;
     };
 
-这很直接——你拥有设置映射所需的所有字段，并且可以更新可变的与可写的字段，例如：
+杩欏緢鐩存帴鈥斺€斾綘鎷ユ湁璁剧疆鏄犲皠鎵€闇€鐨勬墍鏈夊瓧娈碉紝骞朵笖鍙互鏇存柊鍙彉鐨勪笌鍙啓鐨勫瓧娈碉紝渚嬪锛?
 
 
     static int ext4_file_mmap_prepare(struct vm_area_desc *desc)
@@ -82,40 +82,40 @@
         return 0;
     }
 
-重要的是，更新这些字段时你不再需要在引用计数或锁上绕来绕去——**你可以直接去修改它们**。
+閲嶈鐨勬槸锛屾洿鏂拌繖浜涘瓧娈垫椂浣犱笉鍐嶉渶瑕佸湪寮曠敤璁℃暟鎴栭攣涓婄粫鏉ョ粫鍘烩€斺€?*浣犲彲浠ョ洿鎺ュ幓淇敼瀹冧滑**銆?
 
-一切都由映射代码负责处理。
+涓€鍒囬兘鐢辨槧灏勪唬鐮佽礋璐ｅ鐞嗐€?
 
-### VMA 标志
-
-
-随着 `mmap_prepare`，VMA 标志也经历了一次大修。以前你会调用 vm_flags_init()、vm_flags_reset()、vm_flags_set()、vm_flags_clear() 和 vm_flags_mod() 中的一个来修改标志（并让锁被正确执行），现在这已不再必要。
-
-此外，通过 `VM_READ`、`VM_WRITE` 等指定 VMA 标志的传统方式——即使用 `-VM_xxx` 宏——也发生了变化。
-
-在实现 mmap_prepare() 时，通过位号来引用标志，定义为 `VMA_xxx_BIT` 宏，例如 `VMA_READ_BIT`、`VMA_WRITE_BIT` 等，并使用下列函数之一（其中 `desc` 是指向 struct vm_area_desc 的指针）：
-
-- `vma_desc_test_any(desc, ...)` - 指定一个以逗号分隔的标志列表来测试（任意标志是否被设置），例如——``vma_desc_test_any(desc, VMA_WRITE_BIT, VMA_MAYWRITE_BIT)`` 如果任一标志被设置则返回 `true`，否则返回 `false`。
-- `vma_desc_set_flags(desc, ...)` - 更新 VMA 描述符标志以设置由逗号分隔的列表所指定的附加标志，例如——`vma_desc_set_flags(desc, VMA_PFNMAP_BIT, VMA_IO_BIT)`。
-- `vma_desc_clear_flags(desc, ...)` - 更新 VMA 描述符标志以清除由逗号分隔的列表所指定的标志，例如——``vma_desc_clear_flags(desc, VMA_WRITE_BIT, VMA_MAYWRITE_BIT)``。
-
-## 操作
+### VMA 鏍囧織
 
 
-现在你可以非常容易地通过对 struct vm_area_desc 指针调用简单的辅助函数，在映射建立后对其执行操作。这些辅助函数包括：
+闅忕潃 `mmap_prepare`锛孷MA 鏍囧織涔熺粡鍘嗕簡涓€娆″ぇ淇€備互鍓嶄綘浼氳皟鐢?vm_flags_init()銆乿m_flags_reset()銆乿m_flags_set()銆乿m_flags_clear() 鍜?vm_flags_mod() 涓殑涓€涓潵淇敼鏍囧織锛堝苟璁╅攣琚纭墽琛岋級锛岀幇鍦ㄨ繖宸蹭笉鍐嶅繀瑕併€?
 
-- mmap_action_remap() - 对由特定大小的一组 PFN 组成、起始于某个虚拟地址和 PFN 编号的范围进行重映射。
+姝ゅ锛岄€氳繃 `VM_READ`銆乣VM_WRITE` 绛夋寚瀹?VMA 鏍囧織鐨勪紶缁熸柟寮忊€斺€斿嵆浣跨敤 `-VM_xxx` 瀹忊€斺€斾篃鍙戠敓浜嗗彉鍖栥€?
 
-- mmap_action_remap_full() - 与 mmap_action_remap() 相同，只是从 `start_pfn` 开始重映射整个映射。
+鍦ㄥ疄鐜?mmap_prepare() 鏃讹紝閫氳繃浣嶅彿鏉ュ紩鐢ㄦ爣蹇楋紝瀹氫箟涓?`VMA_xxx_BIT` 瀹忥紝渚嬪 `VMA_READ_BIT`銆乣VMA_WRITE_BIT` 绛夛紝骞朵娇鐢ㄤ笅鍒楀嚱鏁颁箣涓€锛堝叾涓?`desc` 鏄寚鍚?struct vm_area_desc 鐨勬寚閽堬級锛?
 
-- mmap_action_ioremap() - 与 mmap_action_remap() 相同，只是执行一次 I/O 重映射。
+- `vma_desc_test_any(desc, ...)` - 鎸囧畾涓€涓互閫楀彿鍒嗛殧鐨勬爣蹇楀垪琛ㄦ潵娴嬭瘯锛堜换鎰忔爣蹇楁槸鍚﹁璁剧疆锛夛紝渚嬪鈥斺€擿`vma_desc_test_any(desc, VMA_WRITE_BIT, VMA_MAYWRITE_BIT)`` 濡傛灉浠讳竴鏍囧織琚缃垯杩斿洖 `true`锛屽惁鍒欒繑鍥?`false`銆?
+- `vma_desc_set_flags(desc, ...)` - 鏇存柊 VMA 鎻忚堪绗︽爣蹇椾互璁剧疆鐢遍€楀彿鍒嗛殧鐨勫垪琛ㄦ墍鎸囧畾鐨勯檮鍔犳爣蹇楋紝渚嬪鈥斺€擿vma_desc_set_flags(desc, VMA_PFNMAP_BIT, VMA_IO_BIT)`銆?
+- `vma_desc_clear_flags(desc, ...)` - 鏇存柊 VMA 鎻忚堪绗︽爣蹇椾互娓呴櫎鐢遍€楀彿鍒嗛殧鐨勫垪琛ㄦ墍鎸囧畾鐨勬爣蹇楋紝渚嬪鈥斺€擿`vma_desc_clear_flags(desc, VMA_WRITE_BIT, VMA_MAYWRITE_BIT)``銆?
 
-- mmap_action_ioremap_full() - 与 mmap_action_ioremap() 相同，只是从 `start_pfn` 开始重映射整个映射。
+## 鎿嶄綔
 
-- mmap_action_simple_ioremap() - 从指定的物理地址开始、覆盖指定长度，建立一个 I/O 重映射。
 
-- mmap_action_map_kernel_pages() - 在 VMA 中从特定偏移处映射一组指定的 `struct page` 指针。
+鐜板湪浣犲彲浠ラ潪甯稿鏄撳湴閫氳繃瀵?struct vm_area_desc 鎸囬拡璋冪敤绠€鍗曠殑杈呭姪鍑芥暟锛屽湪鏄犲皠寤虹珛鍚庡鍏舵墽琛屾搷浣溿€傝繖浜涜緟鍔╁嚱鏁板寘鎷細
 
-- mmap_action_map_kernel_pages_full() - 在整段 VMA 上映射一组指定的 `struct page` 指针。调用者必须确保页数组中有足够的条目来覆盖所描述的 VMA 的整个范围。
+- mmap_action_remap() - 瀵圭敱鐗瑰畾澶у皬鐨勪竴缁?PFN 缁勬垚銆佽捣濮嬩簬鏌愪釜铏氭嫙鍦板潃鍜?PFN 缂栧彿鐨勮寖鍥磋繘琛岄噸鏄犲皠銆?
 
-**注意：** `action` 字段通常绝不应被直接操作，而应当使用这些辅助函数之一。
+- mmap_action_remap_full() - 涓?mmap_action_remap() 鐩稿悓锛屽彧鏄粠 `start_pfn` 寮€濮嬮噸鏄犲皠鏁翠釜鏄犲皠銆?
+
+- mmap_action_ioremap() - 涓?mmap_action_remap() 鐩稿悓锛屽彧鏄墽琛屼竴娆?I/O 閲嶆槧灏勩€?
+
+- mmap_action_ioremap_full() - 涓?mmap_action_ioremap() 鐩稿悓锛屽彧鏄粠 `start_pfn` 寮€濮嬮噸鏄犲皠鏁翠釜鏄犲皠銆?
+
+- mmap_action_simple_ioremap() - 浠庢寚瀹氱殑鐗╃悊鍦板潃寮€濮嬨€佽鐩栨寚瀹氶暱搴︼紝寤虹珛涓€涓?I/O 閲嶆槧灏勩€?
+
+- mmap_action_map_kernel_pages() - 鍦?VMA 涓粠鐗瑰畾鍋忕Щ澶勬槧灏勪竴缁勬寚瀹氱殑 `struct page` 鎸囬拡銆?
+
+- mmap_action_map_kernel_pages_full() - 鍦ㄦ暣娈?VMA 涓婃槧灏勪竴缁勬寚瀹氱殑 `struct page` 鎸囬拡銆傝皟鐢ㄨ€呭繀椤荤‘淇濋〉鏁扮粍涓湁瓒冲鐨勬潯鐩潵瑕嗙洊鎵€鎻忚堪鐨?VMA 鐨勬暣涓寖鍥淬€?
+
+**娉ㄦ剰锛?* `action` 瀛楁閫氬父缁濅笉搴旇鐩存帴鎿嶄綔锛岃€屽簲褰撲娇鐢ㄨ繖浜涜緟鍔╁嚱鏁颁箣涓€銆?

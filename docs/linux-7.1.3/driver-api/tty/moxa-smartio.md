@@ -1,4 +1,4 @@
-## MOXA Smartio/Industio Family Device Driver Installation Guide
+﻿## MOXA Smartio/Industio Family Device Driver Installation Guide
 
 
 Copyright (C) 2008, Moxa Inc.
@@ -17,7 +17,7 @@ Copyright (C) 2021, Jiri Slaby
 ##### 1. Introduction
 
 
-   Smartio/Industio/UPCI 系列 Linux 驱动支持以下多端口板卡：
+   Smartio/Industio/UPCI 绯诲垪 Linux 椹卞姩鏀寔浠ヤ笅澶氱鍙ｆ澘鍗★細
 
     - 2 ports multiport board
 	CP-102U, CP-102UL, CP-102UF
@@ -42,32 +42,22 @@ Copyright (C) 2021, Jiri Slaby
 	C168H/PCI,
 	CB-108
 
-   如果发生兼容性问题，请联系 Moxa：support@moxa.com.tw。
-
-   除设备驱动外，本版本还提供了一些有用的工具。它们是：
-
+   濡傛灉鍙戠敓鍏煎鎬ч棶棰橈紝璇疯仈绯?Moxa锛歴upport@moxa.com.tw銆?
+   闄よ澶囬┍鍔ㄥ锛屾湰鐗堟湰杩樻彁渚涗簡涓€浜涙湁鐢ㄧ殑宸ュ叿銆傚畠浠槸锛?
     - msdiag
-		 用于显示已安装的 Moxa Smartio/Industio 板卡的诊断程序。
-    - msmon
-		 用于观察数据计数和线路状态信号的监视程序。
-    - msterm     一个用于测试串口的简单终端程序。
-
-   本版本中所有的驱动和工具都以源代码形式在 GNU General Public License 下发布。详情请参阅各源代码文件中的 GNU General Public License 声明。
-
-   在 Moxa 的网站上，你总能找到最新驱动：https://www.moxa.com/。
-
-   本版本驱动可以安装为可加载模块（Module driver）或内建到内核中（Static driver）。安装驱动前，请参考用户手册中的硬件安装步骤。
-
-   我们假设用户应当熟悉以下文档：
-
+		 鐢ㄤ簬鏄剧ず宸插畨瑁呯殑 Moxa Smartio/Industio 鏉垮崱鐨勮瘖鏂▼搴忋€?    - msmon
+		 鐢ㄤ簬瑙傚療鏁版嵁璁℃暟鍜岀嚎璺姸鎬佷俊鍙风殑鐩戣绋嬪簭銆?    - msterm     涓€涓敤浜庢祴璇曚覆鍙ｇ殑绠€鍗曠粓绔▼搴忋€?
+   鏈増鏈腑鎵€鏈夌殑椹卞姩鍜屽伐鍏烽兘浠ユ簮浠ｇ爜褰㈠紡鍦?GNU General Public License 涓嬪彂甯冦€傝鎯呰鍙傞槄鍚勬簮浠ｇ爜鏂囦欢涓殑 GNU General Public License 澹版槑銆?
+   鍦?Moxa 鐨勭綉绔欎笂锛屼綘鎬昏兘鎵惧埌鏈€鏂伴┍鍔細https://www.moxa.com/銆?
+   鏈増鏈┍鍔ㄥ彲浠ュ畨瑁呬负鍙姞杞芥ā鍧楋紙Module driver锛夋垨鍐呭缓鍒板唴鏍镐腑锛圫tatic driver锛夈€傚畨瑁呴┍鍔ㄥ墠锛岃鍙傝€冪敤鎴锋墜鍐屼腑鐨勭‖浠跺畨瑁呮楠ゃ€?
+   鎴戜滑鍋囪鐢ㄦ埛搴斿綋鐔熸倝浠ヤ笅鏂囨。锛?
    - Serial-HOWTO
    - Kernel-HOWTO
 
 ##### 2. System Requirement
 
 
-   - 最多可组合安装 4 块板卡
-
+   - 鏈€澶氬彲缁勫悎瀹夎 4 鍧楁澘鍗?
 ##### 3. Installation
 
 
@@ -77,25 +67,21 @@ Copyright (C) 2021, Jiri Slaby
 ### PCI/UPCI board
 
 
-   你可能需要在 BIOS 中调整 IRQ 使用以避免与其他 ISA 设备发生 IRQ 冲突。请提前参考用户手册中的硬件安装步骤。
-
+   浣犲彲鑳介渶瑕佸湪 BIOS 涓皟鏁?IRQ 浣跨敤浠ラ伩鍏嶄笌鍏朵粬 ISA 璁惧鍙戠敓 IRQ 鍐茬獊銆傝鎻愬墠鍙傝€冪敤鎴锋墜鍐屼腑鐨勭‖浠跺畨瑁呮楠ゃ€?
 ### PCI IRQ Sharing
 
 
-   同一块多端口板卡内的每个端口共享同一个 IRQ。最多可将 4 块 Moxa Smartio/Industio PCI 系列多端口板卡安装在同一系统中，并且它们可以共享同一个 IRQ。
-
+   鍚屼竴鍧楀绔彛鏉垮崱鍐呯殑姣忎釜绔彛鍏变韩鍚屼竴涓?IRQ銆傛渶澶氬彲灏?4 鍧?Moxa Smartio/Industio PCI 绯诲垪澶氱鍙ｆ澘鍗″畨瑁呭湪鍚屼竴绯荤粺涓紝骞朵笖瀹冧滑鍙互鍏变韩鍚屼竴涓?IRQ銆?
 
 
 ## 3.2 Device naming convention
 
 
-   设备节点命名为 "ttyMxx"。
-
+   璁惧鑺傜偣鍛藉悕涓?"ttyMxx"銆?
 ### Device naming when more than 2 boards installed
 
 
-   Smartio/Industio 每块多端口板卡的命名约定预定义如下。
-
+   Smartio/Industio 姣忓潡澶氱鍙ｆ澘鍗＄殑鍛藉悕绾﹀畾棰勫畾涔夊涓嬨€?
    ============ ===============
    Board Num.	Device node
    1st board	ttyM0  - ttyM7
@@ -107,30 +93,24 @@ Copyright (C) 2021, Jiri Slaby
 ##### 4. Utilities
 
 
-   本驱动包含 3 个工具，即 msdiag、msmon 和 msterm。这 3 个工具以源代码形式发布。它们应当被编译为可执行文件并复制到 /usr/bin。
-
+   鏈┍鍔ㄥ寘鍚?3 涓伐鍏凤紝鍗?msdiag銆乵smon 鍜?msterm銆傝繖 3 涓伐鍏蜂互婧愪唬鐮佸舰寮忓彂甯冦€傚畠浠簲褰撹缂栬瘧涓哄彲鎵ц鏂囦欢骞跺鍒跺埌 /usr/bin銆?
 ## msdiag - Diagnostic
 
 
-   该工具提供显示系统中驱动所找到的 Moxa Smartio/Industio 板卡的功能。
-
+   璇ュ伐鍏锋彁渚涙樉绀虹郴缁熶腑椹卞姩鎵€鎵惧埌鐨?Moxa Smartio/Industio 鏉垮崱鐨勫姛鑳姐€?
 ## msmon - Port Monitoring
 
 
-   该工具让用户快速查看所有 MOXA 端口的活动。可以轻松了解每个端口自监视开始以来的接收/发送（Rx/Tx）字符总数。
-
-   每秒的 Rx/Tx 吞吐量既按间隔（例如最近 5 秒）报告，也按平均（自监视开始以来）报告。你可以按 <HOME> 键重置所有端口计数。按 <+> <->（加/减）键更改显示的时间间隔。在光标所在端口上按 <ENTER> 可查看该端口的通信参数、信号状态以及输入/输出队列。
-
+   璇ュ伐鍏疯鐢ㄦ埛蹇€熸煡鐪嬫墍鏈?MOXA 绔彛鐨勬椿鍔ㄣ€傚彲浠ヨ交鏉句簡瑙ｆ瘡涓鍙ｈ嚜鐩戣寮€濮嬩互鏉ョ殑鎺ユ敹/鍙戦€侊紙Rx/Tx锛夊瓧绗︽€绘暟銆?
+   姣忕鐨?Rx/Tx 鍚炲悙閲忔棦鎸夐棿闅旓紙渚嬪鏈€杩?5 绉掞級鎶ュ憡锛屼篃鎸夊钩鍧囷紙鑷洃瑙嗗紑濮嬩互鏉ワ級鎶ュ憡銆備綘鍙互鎸?<HOME> 閿噸缃墍鏈夌鍙ｈ鏁般€傛寜 <+> <->锛堝姞/鍑忥級閿洿鏀规樉绀虹殑鏃堕棿闂撮殧銆傚湪鍏夋爣鎵€鍦ㄧ鍙ｄ笂鎸?<ENTER> 鍙煡鐪嬭绔彛鐨勯€氫俊鍙傛暟銆佷俊鍙风姸鎬佷互鍙婅緭鍏?杈撳嚭闃熷垪銆?
 ## msterm - Terminal Emulation
 
 
-   该工具提供所有 tty 端口（尤其是 MOXA 端口）的数据收发能力。它对测试简单应用很有用，例如向连接到该端口的调制解调器发送 AT 命令，或作为登录用的终端。注意，这只是一个哑终端仿真，不处理全屏操作。
-
+   璇ュ伐鍏锋彁渚涙墍鏈?tty 绔彛锛堝挨鍏舵槸 MOXA 绔彛锛夌殑鏁版嵁鏀跺彂鑳藉姏銆傚畠瀵规祴璇曠畝鍗曞簲鐢ㄥ緢鏈夌敤锛屼緥濡傚悜杩炴帴鍒拌绔彛鐨勮皟鍒惰В璋冨櫒鍙戦€?AT 鍛戒护锛屾垨浣滀负鐧诲綍鐢ㄧ殑缁堢銆傛敞鎰忥紝杩欏彧鏄竴涓搼缁堢浠跨湡锛屼笉澶勭悊鍏ㄥ睆鎿嶄綔銆?
 ##### 5. Setserial
 
 
-   支持的 Setserial 参数如下。
-
+   鏀寔鐨?Setserial 鍙傛暟濡備笅銆?
    ============== =============================================================
    uart		  set UART type(16450 --> disable FIFO, 16550A --> enable FIFO)
    close_delay	  set the amount of time (in 1/100 of a second) that DTR
@@ -152,12 +132,11 @@ Copyright (C) 2021, Jiri Slaby
 ##### 6. Troubleshooting
 
 
-   启动时的错误消息及解决方案已尽可能清晰地说明。如果所有可能的解决方案都失败，请联系我们的技术支持团队以获取更多帮助。
-
+   鍚姩鏃剁殑閿欒娑堟伅鍙婅В鍐虫柟妗堝凡灏藉彲鑳芥竻鏅板湴璇存槑銆傚鏋滄墍鏈夊彲鑳界殑瑙ｅ喅鏂规閮藉け璐ワ紝璇疯仈绯绘垜浠殑鎶€鏈敮鎸佸洟闃熶互鑾峰彇鏇村甯姪銆?
 
    Error msg:
 	      More than 4 Moxa Smartio/Industio family boards found. Fifth board
               and after are ignored.
 
    Solution:
-   为避免此问题，请拔下第五块及之后的板卡，因为 Moxa 驱动最多支持 4 块板卡。
+   涓洪伩鍏嶆闂锛岃鎷斾笅绗簲鍧楀強涔嬪悗鐨勬澘鍗★紝鍥犱负 Moxa 椹卞姩鏈€澶氭敮鎸?4 鍧楁澘鍗°€?

@@ -1,35 +1,35 @@
+﻿
+## SHA-3 绠楁硶闆嗗悎锛圫HA-3 Algorithm Collection锛?
 
-## SHA-3 算法集合（SHA-3 Algorithm Collection）
 
+## 姒傝堪
 
-## 概述
+SHA-3 绯诲垪绠楁硶鐢?NIST FIPS-202 [^1^]_ 瑙勮寖瀹氫箟锛屽寘鍚熀浜?Keccak 娴风坏锛坰ponge锛夊嚱鏁扮殑鍏绠楁硶銆傚畠浠箣闂寸殑宸紓鍦ㄤ簬锛?
 
-SHA-3 系列算法由 NIST FIPS-202 [^1^]_ 规范定义，包含基于 Keccak 海绵（sponge）函数的六种算法。它们之间的差异在于：
+- "rate"锛堥€熺巼锛屽嵆姣忔璋冪敤 Keccak 鍑芥暟鏃惰鏂版暟鎹洿鏂扮殑鐘舵€佺紦鍐插尯澶у皬锛岀被浼间簬"鍧楀ぇ灏?锛夛紱
+- 杩藉姞鍒拌緭鍏ユ暟鎹箣鍚庣殑鍩熷垎绂诲悗缂€锛坉omain separation suffix锛夛紱
+- 浠ュ強浠庢湯灏炬彁鍙栫殑杈撳嚭鏁版嵁閲忋€?
 
-- "rate"（速率，即每次调用 Keccak 函数时被新数据更新的状态缓冲区大小，类似于"块大小"）；
-- 追加到输入数据之后的域分离后缀（domain separation suffix）；
-- 以及从末尾提取的输出数据量。
+Keccak 娴风坏鍑芥暟琚璁′负鍙浠绘剰闀垮害鐨勮緭鍑鸿繘琛屾彁鍙栵紙杩欐鏄儴鍒嗙畻娉曟墍闇€瑕佺殑锛夈€?
 
-Keccak 海绵函数被设计为可对任意长度的输出进行提取（这正是部分算法所需要的）。
-
-提供四种摘要算法：
+鎻愪緵鍥涚鎽樿绠楁硶锛?
 
 - SHA3-224
 - SHA3-256
 - SHA3-384
 - SHA3-512
 
-此外，还提供两种可扩展输出函数（XOF）：
+姝ゅ锛岃繕鎻愪緵涓ょ鍙墿灞曡緭鍑哄嚱鏁帮紙XOF锛夛細
 
 - SHAKE128
 - SHAKE256
 
-SHA-3 库 API 支持上述六种算法。其中四种摘要算法支持 `crypto_shash` 与 `crypto_ahash` 两类 API。
+SHA-3 搴?API 鏀寔涓婅堪鍏绠楁硶銆傚叾涓洓绉嶆憳瑕佺畻娉曟敮鎸?`crypto_shash` 涓?`crypto_ahash` 涓ょ被 API銆?
 
-本文档描述 SHA-3 库 API。
+鏈枃妗ｆ弿杩?SHA-3 搴?API銆?
 
 
-## Digests（摘要）
+## Digests锛堟憳瑕侊級
 
 ```
 	void sha3_224(const u8 *in, size_t in_len, u8 out[SHA3_224_DIGEST_SIZE]);
@@ -38,7 +38,7 @@ SHA-3 库 API 支持上述六种算法。其中四种摘要算法支持 `crypto_
 	void sha3_512(const u8 *in, size_t in_len, u8 out[SHA3_512_DIGEST_SIZE]);
 ```
 
-如果用户需要以增量（incremental）方式传入数据，可使用增量 API：
+濡傛灉鐢ㄦ埛闇€瑕佷互澧為噺锛坕ncremental锛夋柟寮忎紶鍏ユ暟鎹紝鍙娇鐢ㄥ閲?API锛?
 
 ```
 	struct sha3_ctx { ... };
@@ -59,17 +59,17 @@ SHA-3 库 API 支持上述六种算法。其中四种摘要算法支持 `crypto_
 	void sha3_final(struct sha3_ctx *ctx, u8 *out);
 ```
 
-`sha3_final` 会清零（zeroize）上下文。摘要长度由所调用的初始化函数决定。
+`sha3_final` 浼氭竻闆讹紙zeroize锛変笂涓嬫枃銆傛憳瑕侀暱搴︾敱鎵€璋冪敤鐨勫垵濮嬪寲鍑芥暟鍐冲畾銆?
 
 
-## Extendable-Output 函数（可扩展输出函数）
+## Extendable-Output 鍑芥暟锛堝彲鎵╁睍杈撳嚭鍑芥暟锛?
 
 ```
 	void shake128(const u8 *in, size_t in_len, u8 *out, size_t out_len);
 	void shake256(const u8 *in, size_t in_len, u8 *out, size_t out_len);
 ```
 
-如果用户需要以增量方式提供输入数据 / 接收输出数据，可使用增量 API：
+濡傛灉鐢ㄦ埛闇€瑕佷互澧為噺鏂瑰紡鎻愪緵杈撳叆鏁版嵁 / 鎺ユ敹杈撳嚭鏁版嵁锛屽彲浣跨敤澧為噺 API锛?
 
 ```
 	struct shake_ctx { ... };
@@ -88,21 +88,21 @@ SHA-3 库 API 支持上述六种算法。其中四种摘要算法支持 `crypto_
 	void shake_squeeze(struct shake_ctx *ctx, u8 *out, size_t out_len);
 ```
 
-`shake_squeeze` 通过告知要提取的数据量来工作。注意：执行多次 squeeze 时，输出会连续地排布在缓冲区中，这与在单个缓冲区上执行一次、提取相同总量的单次 squeeze 得到的结果完全相同。一旦开始 squeeze，就不能再追加更多输入数据。
+`shake_squeeze` 閫氳繃鍛婄煡瑕佹彁鍙栫殑鏁版嵁閲忔潵宸ヤ綔銆傛敞鎰忥細鎵ц澶氭 squeeze 鏃讹紝杈撳嚭浼氳繛缁湴鎺掑竷鍦ㄧ紦鍐插尯涓紝杩欎笌鍦ㄥ崟涓紦鍐插尯涓婃墽琛屼竴娆°€佹彁鍙栫浉鍚屾€婚噺鐨勫崟娆?squeeze 寰楀埌鐨勭粨鏋滃畬鍏ㄧ浉鍚屻€備竴鏃﹀紑濮?squeeze锛屽氨涓嶈兘鍐嶈拷鍔犳洿澶氳緭鍏ユ暟鎹€?
 
 ```
 	void shake_zeroize_ctx(struct shake_ctx *ctx);
 ```
 
 
-## Testing（测试）
+## Testing锛堟祴璇曪級
 
-测试 SHA-3 代码，可使用 `sha3_kunit`（对应配置项 `CONFIG_CRYPTO_LIB_SHA3_KUNIT_TEST`）。
+娴嬭瘯 SHA-3 浠ｇ爜锛屽彲浣跨敤 `sha3_kunit`锛堝搴旈厤缃」 `CONFIG_CRYPTO_LIB_SHA3_KUNIT_TEST`锛夈€?
 
-由于 SHA-3 算法已获 FIPS 批准，当内核以 FIPS 模式启动时，SHA-3 库会执行一次简单的自检测（self-test），这纯粹是为了满足 FIPS 合规要求。常规测试则由内核开发者与集成者使用更为全面的 KUnit 测试套件来完成。
-
-
-## References（参考资料）
+鐢变簬 SHA-3 绠楁硶宸茶幏 FIPS 鎵瑰噯锛屽綋鍐呮牳浠?FIPS 妯″紡鍚姩鏃讹紝SHA-3 搴撲細鎵ц涓€娆＄畝鍗曠殑鑷娴嬶紙self-test锛夛紝杩欑函绮规槸涓轰簡婊¤冻 FIPS 鍚堣瑕佹眰銆傚父瑙勬祴璇曞垯鐢卞唴鏍稿紑鍙戣€呬笌闆嗘垚鑰呬娇鐢ㄦ洿涓哄叏闈㈢殑 KUnit 娴嬭瘯濂椾欢鏉ュ畬鎴愩€?
 
 
-## API 函数 参考
+## References锛堝弬鑰冭祫鏂欙級
+
+
+## API 鍑芥暟 鍙傝€?

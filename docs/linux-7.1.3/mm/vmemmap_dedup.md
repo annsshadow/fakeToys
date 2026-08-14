@@ -1,21 +1,15 @@
+﻿
 
-
-## 为 HugeTLB 与 Device DAX 削减 vmemmap
+## 涓?HugeTLB 涓?Device DAX 鍓婂噺 vmemmap
 
 ## HugeTLB
 
-本节用于解释 HugeTLB Vmemmap 优化（HVO）的工作原理。
-
-`struct page` 结构体用于描述一个物理页帧。默认情况下，页帧与其对应的 `struct page` 之间存在一对一映射。
-
-HugeTLB 页由多个基本页大小的页组成，并得到许多体系结构的支持。更多细节参见 Documentation/admin-guide/mm/hugetlbpage.rst。在 x86-64 体系结构上，目前支持 2MB 和 1GB 大小的 HugeTLB 页。由于 x86 上的基本页大小为 4KB，一个 2MB 的 HugeTLB 页由 512 个基本页组成，而一个 1GB 的 HugeTLB 页由 262144 个基本页组成。对于每个基本页，都对应有一个 `struct page`。
-
-在 HugeTLB 子系统内部，只有前 4 个 `struct page` 被用来存放关于某个 HugeTLB 页的唯一信息。`__NR_USED_SUBPAGE` 提供了这一上限。其余 `struct page` 中唯一“有用”的信息是 compound_info 字段，而该字段对所有尾页都是相同的。
-
-通过移除 HugeTLB 页中冗余的 `struct page`，可以将内存归还给伙伴分配器以作他用。
-
-不同的体系结构支持不同的 HugeTLB 页。例如，下表是 x86 和 arm64 体系结构所支持的 HugeTLB 页大小。由于 arm64 支持 4k、16k 和 64k 的基本页，并且支持连续表项（contiguous entries），因此它支持多种大小的 HugeTLB 页。
-
+鏈妭鐢ㄤ簬瑙ｉ噴 HugeTLB Vmemmap 浼樺寲锛圚VO锛夌殑宸ヤ綔鍘熺悊銆?
+`struct page` 缁撴瀯浣撶敤浜庢弿杩颁竴涓墿鐞嗛〉甯с€傞粯璁ゆ儏鍐典笅锛岄〉甯т笌鍏跺搴旂殑 `struct page` 涔嬮棿瀛樺湪涓€瀵逛竴鏄犲皠銆?
+HugeTLB 椤电敱澶氫釜鍩烘湰椤靛ぇ灏忕殑椤电粍鎴愶紝骞跺緱鍒拌澶氫綋绯荤粨鏋勭殑鏀寔銆傛洿澶氱粏鑺傚弬瑙?Documentation/admin-guide/mm/hugetlbpage.rst銆傚湪 x86-64 浣撶郴缁撴瀯涓婏紝鐩墠鏀寔 2MB 鍜?1GB 澶у皬鐨?HugeTLB 椤点€傜敱浜?x86 涓婄殑鍩烘湰椤靛ぇ灏忎负 4KB锛屼竴涓?2MB 鐨?HugeTLB 椤电敱 512 涓熀鏈〉缁勬垚锛岃€屼竴涓?1GB 鐨?HugeTLB 椤电敱 262144 涓熀鏈〉缁勬垚銆傚浜庢瘡涓熀鏈〉锛岄兘瀵瑰簲鏈変竴涓?`struct page`銆?
+鍦?HugeTLB 瀛愮郴缁熷唴閮紝鍙湁鍓?4 涓?`struct page` 琚敤鏉ュ瓨鏀惧叧浜庢煇涓?HugeTLB 椤电殑鍞竴淇℃伅銆俙__NR_USED_SUBPAGE` 鎻愪緵浜嗚繖涓€涓婇檺銆傚叾浣?`struct page` 涓敮涓€鈥滄湁鐢ㄢ€濈殑淇℃伅鏄?compound_info 瀛楁锛岃€岃瀛楁瀵规墍鏈夊熬椤甸兘鏄浉鍚岀殑銆?
+閫氳繃绉婚櫎 HugeTLB 椤典腑鍐椾綑鐨?`struct page`锛屽彲浠ュ皢鍐呭瓨褰掕繕缁欎紮浼村垎閰嶅櫒浠ヤ綔浠栫敤銆?
+涓嶅悓鐨勪綋绯荤粨鏋勬敮鎸佷笉鍚岀殑 HugeTLB 椤点€備緥濡傦紝涓嬭〃鏄?x86 鍜?arm64 浣撶郴缁撴瀯鎵€鏀寔鐨?HugeTLB 椤靛ぇ灏忋€傜敱浜?arm64 鏀寔 4k銆?6k 鍜?64k 鐨勫熀鏈〉锛屽苟涓旀敮鎸佽繛缁〃椤癸紙contiguous entries锛夛紝鍥犳瀹冩敮鎸佸绉嶅ぇ灏忕殑 HugeTLB 椤点€?
 +--------------+-----------+-----------------------------------------------+
 | Architecture | Page Size |                HugeTLB Page Size              |
 +--------------+-----------+-----------+-----------+-----------+-----------+
@@ -28,14 +22,13 @@ HugeTLB 页由多个基本页大小的页组成，并得到许多体系结构的
 |              |   64KB    |    2MB    |  512MB    |    16GB   |           |
 +--------------+-----------+-----------+-----------+-----------+-----------+
 
-当系统启动时，每个 HugeTLB 页都拥有多于一个 `struct page`
+褰撶郴缁熷惎鍔ㄦ椂锛屾瘡涓?HugeTLB 椤甸兘鎷ユ湁澶氫簬涓€涓?`struct page`
 ```
 
    struct_size = HugeTLB_Size / PAGE_SIZE * sizeof(struct page) / PAGE_SIZE
 
 ```
-其中 HugeTLB_Size 是 HugeTLB 页的大小。我们知道 HugeTLB 页的大小始终是 PAGE_SIZE 的 n 倍。因此可以得到下式
-```
+鍏朵腑 HugeTLB_Size 鏄?HugeTLB 椤电殑澶у皬銆傛垜浠煡閬?HugeTLB 椤电殑澶у皬濮嬬粓鏄?PAGE_SIZE 鐨?n 鍊嶃€傚洜姝ゅ彲浠ュ緱鍒颁笅寮?```
 
    HugeTLB_Size = n * PAGE_SIZE
 
@@ -45,8 +38,7 @@ HugeTLB 页由多个基本页大小的页组成，并得到许多体系结构的
                = n * sizeof(struct page) / PAGE_SIZE
 
 ```
-我们可以对 HugeTLB 页在 pud/pmd 级别使用大页映射。
-```
+鎴戜滑鍙互瀵?HugeTLB 椤靛湪 pud/pmd 绾у埆浣跨敤澶ч〉鏄犲皠銆?```
 
    struct_size = n * sizeof(struct page) / PAGE_SIZE
                = PAGE_SIZE / sizeof(pte_t) * sizeof(struct page) / PAGE_SIZE
@@ -55,22 +47,17 @@ HugeTLB 页由多个基本页大小的页组成，并得到许多体系结构的
                = 8 (pages)
 
 ```
-其中 n 是一个页所能包含的 pte 表项数量。所以 n 的值为 (PAGE_SIZE / sizeof(pte_t))。
-
-该优化仅支持 64 位系统，因此 sizeof(pte_t) 的值为 8。并且该优化仅在 `struct page` 的大小为 2 的幂时才适用。在大多数情况下，`struct page` 的大小为 64 字节（例如 x86-64 和 arm64）。因此，如果我们对某个 HugeTLB 页使用 pmd 级别的映射，其 `struct page` 结构体所占的大小为 8 个页帧，具体大小取决于基本页的大小。
-```
+鍏朵腑 n 鏄竴涓〉鎵€鑳藉寘鍚殑 pte 琛ㄩ」鏁伴噺銆傛墍浠?n 鐨勫€间负 (PAGE_SIZE / sizeof(pte_t))銆?
+璇ヤ紭鍖栦粎鏀寔 64 浣嶇郴缁燂紝鍥犳 sizeof(pte_t) 鐨勫€间负 8銆傚苟涓旇浼樺寲浠呭湪 `struct page` 鐨勫ぇ灏忎负 2 鐨勫箓鏃舵墠閫傜敤銆傚湪澶у鏁版儏鍐典笅锛宍struct page` 鐨勫ぇ灏忎负 64 瀛楄妭锛堜緥濡?x86-64 鍜?arm64锛夈€傚洜姝わ紝濡傛灉鎴戜滑瀵规煇涓?HugeTLB 椤典娇鐢?pmd 绾у埆鐨勬槧灏勶紝鍏?`struct page` 缁撴瀯浣撴墍鍗犵殑澶у皬涓?8 涓〉甯э紝鍏蜂綋澶у皬鍙栧喅浜庡熀鏈〉鐨勫ぇ灏忋€?```
 
    struct_size = PAGE_SIZE / sizeof(pmd_t) * struct_size(pmd)
                = PAGE_SIZE / 8 * 8 (pages)
                = PAGE_SIZE (pages)
 
 ```
-其中 struct_size(pmd) 是采用 pmd 级别映射的 HugeTLB 页的 `struct page` 结构体的大小。
-
-例如：x86_64 上一个 2MB 的 HugeTLB 页由 8 个页帧组成，而 1GB 的 HugeTLB 页由 4096 个页帧组成。
-
-接下来，我们以 HugeTLB 页的 pmd 级别映射为例，展示该优化的内部实现。采用 pmd 映射的 HugeTLB 页关联有 8 个页的 `struct page` 结构体。
-```
+鍏朵腑 struct_size(pmd) 鏄噰鐢?pmd 绾у埆鏄犲皠鐨?HugeTLB 椤电殑 `struct page` 缁撴瀯浣撶殑澶у皬銆?
+渚嬪锛歺86_64 涓婁竴涓?2MB 鐨?HugeTLB 椤电敱 8 涓〉甯х粍鎴愶紝鑰?1GB 鐨?HugeTLB 椤电敱 4096 涓〉甯х粍鎴愩€?
+鎺ヤ笅鏉ワ紝鎴戜滑浠?HugeTLB 椤电殑 pmd 绾у埆鏄犲皠涓轰緥锛屽睍绀鸿浼樺寲鐨勫唴閮ㄥ疄鐜般€傞噰鐢?pmd 鏄犲皠鐨?HugeTLB 椤靛叧鑱旀湁 8 涓〉鐨?`struct page` 缁撴瀯浣撱€?```
 
     HugeTLB                  struct pages(8 pages)         page frame(8 pages)
  +-----------+ ---virt_to_page---> +-----------+   mapping to   +-----------+
@@ -96,57 +83,41 @@ HugeTLB 页由多个基本页大小的页组成，并得到许多体系结构的
  +-----------+
 
 ```
-与 HugeTLB 页关联的第一个 `struct page`（页 0）包含描述该 HugeTLB 所必需的 4 个 `struct page`。其余的 `struct page`（页 1 到页 7）是尾页。
-
-该优化仅当 struct page 的大小为 2 的幂时才应用。在这种情况下，所有相同阶数的尾页都是相同的。参见 compound_head()。这使我们能够将 vmemmap 的尾页重映射到一个共享的、只读的页。头页也被重映射到一个新页。这使得原始的 vmemmap 页得以释放。
-```
+涓?HugeTLB 椤靛叧鑱旂殑绗竴涓?`struct page`锛堥〉 0锛夊寘鍚弿杩拌 HugeTLB 鎵€蹇呴渶鐨?4 涓?`struct page`銆傚叾浣欑殑 `struct page`锛堥〉 1 鍒伴〉 7锛夋槸灏鹃〉銆?
+璇ヤ紭鍖栦粎褰?struct page 鐨勫ぇ灏忎负 2 鐨勫箓鏃舵墠搴旂敤銆傚湪杩欑鎯呭喌涓嬶紝鎵€鏈夌浉鍚岄樁鏁扮殑灏鹃〉閮芥槸鐩稿悓鐨勩€傚弬瑙?compound_head()銆傝繖浣挎垜浠兘澶熷皢 vmemmap 鐨勫熬椤甸噸鏄犲皠鍒颁竴涓叡浜殑銆佸彧璇荤殑椤点€傚ご椤典篃琚噸鏄犲皠鍒颁竴涓柊椤点€傝繖浣垮緱鍘熷鐨?vmemmap 椤靛緱浠ラ噴鏀俱€?```
 
     HugeTLB                  struct pages(8 pages)                 page frame (new)
  +-----------+ ---virt_to_page---> +-----------+   mapping to   +----------------+
  |           |                     |     0     | -------------> |       0        |
  |           |                     +-----------+                +----------------+
- |           |                     |     1     | ------┐
- |           |                     +-----------+       |
- |           |                     |     2     | ------┼        +----------------------------+
+ |           |                     |     1     | ------鈹? |           |                     +-----------+       |
+ |           |                     |     2     | ------鈹?       +----------------------------+
  |           |                     +-----------+       |        | A single, per-zone page    |
- |           |                     |     3     | ------┼------> | frame shared among all     |
+ |           |                     |     3     | ------鈹?-----> | frame shared among all     |
  |           |                     +-----------+       |        | hugepages of the same size |
- |           |                     |     4     | ------┼        +----------------------------+
+ |           |                     |     4     | ------鈹?       +----------------------------+
  |           |                     +-----------+       |
- |           |                     |     5     | ------┼
- |    PMD    |                     +-----------+       |
- |   level   |                     |     6     | ------┼
- |  mapping  |                     +-----------+       |
- |           |                     |     7     | ------┘
- |           |                     +-----------+
+ |           |                     |     5     | ------鈹? |    PMD    |                     +-----------+       |
+ |   level   |                     |     6     | ------鈹? |  mapping  |                     +-----------+       |
+ |           |                     |     7     | ------鈹? |           |                     +-----------+
  |           |
  |           |
  |           |
  +-----------+
 
 ```
-当某个 HugeTLB 被释放回伙伴系统时，我们应当分配 7 个页用于 vmemmap 页，并恢复先前的映射关系。
-
-对于采用 pud 级别映射的 HugeTLB 页，情况与前文类似。我们同样可以用这种方法来释放 (PAGE_SIZE - 1) 个 vmemmap 页。
-
-除了 pmd/pud 级别映射的 HugeTLB 页之外，某些体系结构（例如 aarch64）在转换表项（translation table entry）中提供了一个连续位（contiguous bit），用于向 MMU 提示：它是一组连续表项中的一个，这些表项可以被缓存到单个 TLB 表项中。
-
-连续位用于在 pmd 和 pte（最后一级）级别增大映射尺寸。因此这类 HugeTLB 页仅当其 `struct page` 结构体的大小大于 **1** 个页时才能被优化。
-
+褰撴煇涓?HugeTLB 琚噴鏀惧洖浼欎即绯荤粺鏃讹紝鎴戜滑搴斿綋鍒嗛厤 7 涓〉鐢ㄤ簬 vmemmap 椤碉紝骞舵仮澶嶅厛鍓嶇殑鏄犲皠鍏崇郴銆?
+瀵逛簬閲囩敤 pud 绾у埆鏄犲皠鐨?HugeTLB 椤碉紝鎯呭喌涓庡墠鏂囩被浼笺€傛垜浠悓鏍峰彲浠ョ敤杩欑鏂规硶鏉ラ噴鏀?(PAGE_SIZE - 1) 涓?vmemmap 椤点€?
+闄や簡 pmd/pud 绾у埆鏄犲皠鐨?HugeTLB 椤典箣澶栵紝鏌愪簺浣撶郴缁撴瀯锛堜緥濡?aarch64锛夊湪杞崲琛ㄩ」锛坱ranslation table entry锛変腑鎻愪緵浜嗕竴涓繛缁綅锛坈ontiguous bit锛夛紝鐢ㄤ簬鍚?MMU 鎻愮ず锛氬畠鏄竴缁勮繛缁〃椤逛腑鐨勪竴涓紝杩欎簺琛ㄩ」鍙互琚紦瀛樺埌鍗曚釜 TLB 琛ㄩ」涓€?
+杩炵画浣嶇敤浜庡湪 pmd 鍜?pte锛堟渶鍚庝竴绾э級绾у埆澧炲ぇ鏄犲皠灏哄銆傚洜姝よ繖绫?HugeTLB 椤典粎褰撳叾 `struct page` 缁撴瀯浣撶殑澶у皬澶т簬 **1** 涓〉鏃舵墠鑳借浼樺寲銆?
 ## Device DAX
 
-device-dax 接口使用了前一章所介绍的相同尾页去重技术，唯一的例外是它与设备中的 vmemmap（altmap）一起使用。
-
-DAX 中支持以下页大小：PAGE_SIZE（x86_64 上为 4K）、PMD_SIZE（x86_64 上为 2M）以及 PUD_SIZE（x86_64 上为 1G）。关于 powerpc 上等效的细节，参见 Documentation/arch/powerpc/vmemmap_dedup.rst。
-
-其与 HugeTLB 的差异相对较小。
-
-它仅使用 3 个 `struct page` 来存储全部信息，而不是 HugeTLB 页所需的 4 个。
-
-由于 device-dax 内存并非启动时初始化的 System RAM 范围的一部分，因此不存在 vmemmap 的重映射。于是尾页去重发生在我们填充段（sections）的较晚阶段。HugeTLB 复用所代表头部的 vmemmap 页，而 device-dax 复用尾部的 vmemmap 页。这导致其相比 HugeTLB 只能节省一半。
-
-去重后的尾页不会被映射为只读。
-```
+device-dax 鎺ュ彛浣跨敤浜嗗墠涓€绔犳墍浠嬬粛鐨勭浉鍚屽熬椤靛幓閲嶆妧鏈紝鍞竴鐨勪緥澶栨槸瀹冧笌璁惧涓殑 vmemmap锛坅ltmap锛変竴璧蜂娇鐢ㄣ€?
+DAX 涓敮鎸佷互涓嬮〉澶у皬锛歅AGE_SIZE锛坸86_64 涓婁负 4K锛夈€丳MD_SIZE锛坸86_64 涓婁负 2M锛変互鍙?PUD_SIZE锛坸86_64 涓婁负 1G锛夈€傚叧浜?powerpc 涓婄瓑鏁堢殑缁嗚妭锛屽弬瑙?Documentation/arch/powerpc/vmemmap_dedup.rst銆?
+鍏朵笌 HugeTLB 鐨勫樊寮傜浉瀵硅緝灏忋€?
+瀹冧粎浣跨敤 3 涓?`struct page` 鏉ュ瓨鍌ㄥ叏閮ㄤ俊鎭紝鑰屼笉鏄?HugeTLB 椤垫墍闇€鐨?4 涓€?
+鐢变簬 device-dax 鍐呭瓨骞堕潪鍚姩鏃跺垵濮嬪寲鐨?System RAM 鑼冨洿鐨勪竴閮ㄥ垎锛屽洜姝や笉瀛樺湪 vmemmap 鐨勯噸鏄犲皠銆備簬鏄熬椤靛幓閲嶅彂鐢熷湪鎴戜滑濉厖娈碉紙sections锛夌殑杈冩櫄闃舵銆侶ugeTLB 澶嶇敤鎵€浠ｈ〃澶撮儴鐨?vmemmap 椤碉紝鑰?device-dax 澶嶇敤灏鹃儴鐨?vmemmap 椤点€傝繖瀵艰嚧鍏剁浉姣?HugeTLB 鍙兘鑺傜渷涓€鍗娿€?
+鍘婚噸鍚庣殑灏鹃〉涓嶄細琚槧灏勪负鍙銆?```
 
  +-----------+ ---virt_to_page---> +-----------+   mapping to   +-----------+
  |           |                     |     0     | -------------> |     0     |

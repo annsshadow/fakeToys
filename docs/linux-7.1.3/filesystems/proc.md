@@ -1,127 +1,127 @@
-
-## /proc 文件系统
+﻿锘?
+## /proc 鏂囦欢绯荤粺
 
 
 =====================  =======================================  ================
-/proc/sys              Terrehon Bowden <terrehon@pacbell.net>,  1999 年 10 月 7 日
+/proc/sys              Terrehon Bowden <terrehon@pacbell.net>,  1999 骞?10 鏈?7 鏃?
                        Bodo Bauer <bb@ricochet.net>
-2.4.x update	       Jorge Nerin <comandante@zaralinux.com>   2000 年 11 月 14 日
-move /proc/sys	       Shen Feng <shen@cn.fujitsu.com>	       2009 年 4 月 1 日
-fixes/update part 1.1  Stefani Seibold <stefani@seibold.net>    2009 年 6 月 9 日
+2.4.x update	       Jorge Nerin <comandante@zaralinux.com>   2000 骞?11 鏈?14 鏃?
+move /proc/sys	       Shen Feng <shen@cn.fujitsu.com>	       2009 骞?4 鏈?1 鏃?
+fixes/update part 1.1  Stefani Seibold <stefani@seibold.net>    2009 骞?6 鏈?9 鏃?
 =====================  =======================================  ================
 
 
 
-  0     前言
-  0.1	简介/致谢
-  0.2	法律声明
+  0     鍓嶈█
+  0.1	绠€浠?鑷磋阿
+  0.2	娉曞緥澹版槑
 
-  1	收集系统信息
-  1.1	进程特定的子目录
-  1.2	内核数据
-  1.3	/proc/ide 中的 IDE 设备
-  1.4	/proc/net 中的网络信息
-  1.5	SCSI 信息
-  1.6	/proc/parport 中的并行端口信息
-  1.7	/proc/tty 中的 TTY 信息
-  1.8	/proc/stat 中的杂项内核统计
-  1.9	Ext4 文件系统参数
+  1	鏀堕泦绯荤粺淇℃伅
+  1.1	杩涚▼鐗瑰畾鐨勫瓙鐩綍
+  1.2	鍐呮牳鏁版嵁
+  1.3	/proc/ide 涓殑 IDE 璁惧
+  1.4	/proc/net 涓殑缃戠粶淇℃伅
+  1.5	SCSI 淇℃伅
+  1.6	/proc/parport 涓殑骞惰绔彛淇℃伅
+  1.7	/proc/tty 涓殑 TTY 淇℃伅
+  1.8	/proc/stat 涓殑鏉傞」鍐呮牳缁熻
+  1.9	Ext4 鏂囦欢绯荤粺鍙傛暟
 
-  2	修改系统参数
+  2	淇敼绯荤粺鍙傛暟
 
-  3	每进程参数
-  3.1	/proc/<pid>/oom_adj & /proc/<pid>/oom_score_adj - 调整 oom-killer
-							分数
-  3.2	/proc/<pid>/oom_score - 显示当前 oom-killer 分数
-  3.3	/proc/<pid>/io - 显示 IO 统计字段
-  3.4	/proc/<pid>/coredump_filter - 核心转储过滤设置
-  3.5	/proc/<pid>/mountinfo - 关于挂载的信息
+  3	姣忚繘绋嬪弬鏁?
+  3.1	/proc/<pid>/oom_adj & /proc/<pid>/oom_score_adj - 璋冩暣 oom-killer
+							鍒嗘暟
+  3.2	/proc/<pid>/oom_score - 鏄剧ず褰撳墠 oom-killer 鍒嗘暟
+  3.3	/proc/<pid>/io - 鏄剧ず IO 缁熻瀛楁
+  3.4	/proc/<pid>/coredump_filter - 鏍稿績杞偍杩囨护璁剧疆
+  3.5	/proc/<pid>/mountinfo - 鍏充簬鎸傝浇鐨勪俊鎭?
   3.6	/proc/<pid>/comm  & /proc/<pid>/task/<tid>/comm
-  3.7   /proc/<pid>/task/<tid>/children - 关于任务子进程的信息
-  3.8   /proc/<pid>/fdinfo/<fd> - 关于已打开文件的信息
-  3.9   /proc/<pid>/map_files - 关于内存映射文件的信息
-  3.10  /proc/<pid>/timerslack_ns - 任务 timerslack 值
-  3.11	/proc/<pid>/patch_state - Livepatch 补丁操作状态
-  3.12	/proc/<pid>/arch_status - 任务架构特定信息
-  3.13  /proc/<pid>/fd - 指向打开文件的符号链接列表
-  3.14  /proc/<pid>/ksm_stat - 关于进程 ksm 状态的信息
+  3.7   /proc/<pid>/task/<tid>/children - 鍏充簬浠诲姟瀛愯繘绋嬬殑淇℃伅
+  3.8   /proc/<pid>/fdinfo/<fd> - 鍏充簬宸叉墦寮€鏂囦欢鐨勪俊鎭?
+  3.9   /proc/<pid>/map_files - 鍏充簬鍐呭瓨鏄犲皠鏂囦欢鐨勪俊鎭?
+  3.10  /proc/<pid>/timerslack_ns - 浠诲姟 timerslack 鍊?
+  3.11	/proc/<pid>/patch_state - Livepatch 琛ヤ竵鎿嶄綔鐘舵€?
+  3.12	/proc/<pid>/arch_status - 浠诲姟鏋舵瀯鐗瑰畾淇℃伅
+  3.13  /proc/<pid>/fd - 鎸囧悜鎵撳紑鏂囦欢鐨勭鍙烽摼鎺ュ垪琛?
+  3.14  /proc/<pid>/ksm_stat - 鍏充簬杩涚▼ ksm 鐘舵€佺殑淇℃伅
 
-  4	配置 procfs
-  4.1	挂载选项
+  4	閰嶇疆 procfs
+  4.1	鎸傝浇閫夐」
 
-  5	文件系统行为
+  5	鏂囦欢绯荤粺琛屼负
 
-## 前言
-
-
-### 0.1 简介/致谢
+## 鍓嶈█
 
 
-我们要感谢 Alan Cox、Rik van Riel、Alexey Kuznetsov 以及许多其他人，感谢他们帮助编写本文档。我们还要特别感谢 Andi Kleen 提供的文档，我们在创建本文档时大量依赖它，以及他提供的额外信息。感谢所有为 Linux 内核贡献源代码或文档，并帮助创造这款出色软件的其他人…… :)
+### 0.1 绠€浠?鑷磋阿
 
-本文档的最新版本可在线获取：
+
+鎴戜滑瑕佹劅璋?Alan Cox銆丷ik van Riel銆丄lexey Kuznetsov 浠ュ強璁稿鍏朵粬浜猴紝鎰熻阿浠栦滑甯姪缂栧啓鏈枃妗ｃ€傛垜浠繕瑕佺壒鍒劅璋?Andi Kleen 鎻愪緵鐨勬枃妗ｏ紝鎴戜滑鍦ㄥ垱寤烘湰鏂囨。鏃跺ぇ閲忎緷璧栧畠锛屼互鍙婁粬鎻愪緵鐨勯澶栦俊鎭€傛劅璋㈡墍鏈変负 Linux 鍐呮牳璐＄尞婧愪唬鐮佹垨鏂囨。锛屽苟甯姪鍒涢€犺繖娆惧嚭鑹茶蒋浠剁殑鍏朵粬浜衡€︹€?:)
+
+鏈枃妗ｇ殑鏈€鏂扮増鏈彲鍦ㄧ嚎鑾峰彇锛?
 https://www.kernel.org/doc/html/latest/filesystems/proc.html
 
-### 0.2 法律声明
+### 0.2 娉曞緥澹版槑
 
 
-我们不保证本文档的正确性，如果你因为文档不正确而搞乱了系统来找我们抱怨，我们不会感到负责……
+鎴戜滑涓嶄繚璇佹湰鏂囨。鐨勬纭€э紝濡傛灉浣犲洜涓烘枃妗ｄ笉姝ｇ‘鑰屾悶涔变簡绯荤粺鏉ユ壘鎴戜滑鎶辨€紝鎴戜滑涓嶄細鎰熷埌璐熻矗鈥︹€?
 
-## 第 1 章：收集系统信息
-
-
-### 本章内容
+## 绗?1 绔狅細鏀堕泦绯荤粺淇℃伅
 
 
-- 研究伪文件系统 /proc 的属性及其提供正在运行的 Linux 系统信息的能力
-- 检查 /proc 的结构
-- 揭示有关内核和系统中运行进程的各种信息
+### 鏈珷鍐呭
+
+
+- 鐮旂┒浼枃浠剁郴缁?/proc 鐨勫睘鎬у強鍏舵彁渚涙鍦ㄨ繍琛岀殑 Linux 绯荤粺淇℃伅鐨勮兘鍔?
+- 妫€鏌?/proc 鐨勭粨鏋?
+- 鎻ず鏈夊叧鍐呮牳鍜岀郴缁熶腑杩愯杩涚▼鐨勫悇绉嶄俊鎭?
 
 ------------------------------------------------------------------------------
 
-proc 文件系统充当内核内部数据结构的一个接口。它可以用来获取系统信息，并在运行时（sysctl）更改某些内核参数。
+proc 鏂囦欢绯荤粺鍏呭綋鍐呮牳鍐呴儴鏁版嵁缁撴瀯鐨勪竴涓帴鍙ｃ€傚畠鍙互鐢ㄦ潵鑾峰彇绯荤粺淇℃伅锛屽苟鍦ㄨ繍琛屾椂锛坰ysctl锛夋洿鏀规煇浜涘唴鏍稿弬鏁般€?
 
-首先，我们来看看 /proc 的只读部分。在第 2 章中，我们将展示如何使用 /proc/sys 来更改设置。
+棣栧厛锛屾垜浠潵鐪嬬湅 /proc 鐨勫彧璇婚儴鍒嗐€傚湪绗?2 绔犱腑锛屾垜浠皢灞曠ず濡備綍浣跨敤 /proc/sys 鏉ユ洿鏀硅缃€?
 
-### 1.1 进程特定的子目录
+### 1.1 杩涚▼鐗瑰畾鐨勫瓙鐩綍
 
 
-目录 /proc（除其他内容外）包含系统中每个运行进程的子目录，该子目录以进程 ID（PID）命名。
+鐩綍 /proc锛堥櫎鍏朵粬鍐呭澶栵級鍖呭惈绯荤粺涓瘡涓繍琛岃繘绋嬬殑瀛愮洰褰曪紝璇ュ瓙鐩綍浠ヨ繘绋?ID锛圥ID锛夊懡鍚嶃€?
 
-链接 'self' 指向正在读取该文件系统的进程。每个进程子目录都具有表 1-1 中列出的条目。
+閾炬帴 'self' 鎸囧悜姝ｅ湪璇诲彇璇ユ枃浠剁郴缁熺殑杩涚▼銆傛瘡涓繘绋嬪瓙鐩綍閮藉叿鏈夎〃 1-1 涓垪鍑虹殑鏉＄洰銆?
 
-进程可以在没有任何额外权限的情况下从 /proc/PID/* 读取自身信息。当读取其他进程的 /proc/PID/* 信息时，读取进程需要具有 PTRACE_MODE_READ 访问权限的 CAP_SYS_PTRACE 能力，或者具有 CAP_PERFMON 能力。这适用于所有只读信息，如 `maps`、`environ`、`pagemap` 等。唯一的例外是 `mem` 文件，由于其读写性质，它需要具有更高权限 PTRACE_MODE_ATTACH 的 CAP_SYS_PTRACE 能力；CAP_PERFMON 能力不授予对其他进程的 /proc/PID/mem 的访问权限。
+杩涚▼鍙互鍦ㄦ病鏈変换浣曢澶栨潈闄愮殑鎯呭喌涓嬩粠 /proc/PID/* 璇诲彇鑷韩淇℃伅銆傚綋璇诲彇鍏朵粬杩涚▼鐨?/proc/PID/* 淇℃伅鏃讹紝璇诲彇杩涚▼闇€瑕佸叿鏈?PTRACE_MODE_READ 璁块棶鏉冮檺鐨?CAP_SYS_PTRACE 鑳藉姏锛屾垨鑰呭叿鏈?CAP_PERFMON 鑳藉姏銆傝繖閫傜敤浜庢墍鏈夊彧璇讳俊鎭紝濡?`maps`銆乣environ`銆乣pagemap` 绛夈€傚敮涓€鐨勪緥澶栨槸 `mem` 鏂囦欢锛岀敱浜庡叾璇诲啓鎬ц川锛屽畠闇€瑕佸叿鏈夋洿楂樻潈闄?PTRACE_MODE_ATTACH 鐨?CAP_SYS_PTRACE 鑳藉姏锛汣AP_PERFMON 鑳藉姏涓嶆巿浜堝鍏朵粬杩涚▼鐨?/proc/PID/mem 鐨勮闂潈闄愩€?
 
-注意，对 /proc/<pid> 或其包含的任何文件或子目录的已打开文件描述符，并不能防止 <pid> 在该进程退出时被其他进程复用。对已打开 /proc/<pid> 文件描述符、且对应于已死亡进程的操作，绝不会作用于内核可能碰巧也分配了进程 ID <pid> 的任何新进程。相反，对这些 FD 的操作通常会以 ESRCH 失败。
+娉ㄦ剰锛屽 /proc/<pid> 鎴栧叾鍖呭惈鐨勪换浣曟枃浠舵垨瀛愮洰褰曠殑宸叉墦寮€鏂囦欢鎻忚堪绗︼紝骞朵笉鑳介槻姝?<pid> 鍦ㄨ杩涚▼閫€鍑烘椂琚叾浠栬繘绋嬪鐢ㄣ€傚宸叉墦寮€ /proc/<pid> 鏂囦欢鎻忚堪绗︺€佷笖瀵瑰簲浜庡凡姝讳骸杩涚▼鐨勬搷浣滐紝缁濅笉浼氫綔鐢ㄤ簬鍐呮牳鍙兘纰板阀涔熷垎閰嶄簡杩涚▼ ID <pid> 鐨勪换浣曟柊杩涚▼銆傜浉鍙嶏紝瀵硅繖浜?FD 鐨勬搷浣滈€氬父浼氫互 ESRCH 澶辫触銆?
 
 
  =============  ===============================================================
- 文件	内容
+ 鏂囦欢	鍐呭
  =============  ===============================================================
- clear_refs	清除 smaps 输出中显示的页引用位
- cmdline	命令行参数
- cpu		当前和上次执行所在的 cpu	(2.4)(smp)
- cwd		指向当前工作目录的链接
- environ	环境变量的值
- exe		指向该进程可执行文件的链接
- fd		包含所有文件描述符的目录
- maps		到可执行文件和库文件的内存映射	(2.4)
- mem		该进程持有的内存
- root		指向该进程根目录的链接
- stat		进程状态
- statm		进程内存状态信息
- status		人类可读形式的进程状态
- wchan		启用 CONFIG_KALLSYMS=y 时存在：显示任务被阻塞于其中的内核函数
-		符号，未阻塞则为 "0"。
- pagemap	页表
- stack		报告完整的栈回溯，通过 CONFIG_STACKTRACE 启用
- smaps		基于 maps 的扩展，显示每个映射的内存消耗及其关联的标志
- smaps_rollup	该进程所有映射的 smaps 累计统计。这可以从 smaps 推导，但更快更方便
- numa_maps	基于 maps 的扩展，显示每个映射的内存局部性、绑定策略以及
-		内存使用量（以页为单位）。
+ clear_refs	娓呴櫎 smaps 杈撳嚭涓樉绀虹殑椤靛紩鐢ㄤ綅
+ cmdline	鍛戒护琛屽弬鏁?
+ cpu		褰撳墠鍜屼笂娆℃墽琛屾墍鍦ㄧ殑 cpu	(2.4)(smp)
+ cwd		鎸囧悜褰撳墠宸ヤ綔鐩綍鐨勯摼鎺?
+ environ	鐜鍙橀噺鐨勫€?
+ exe		鎸囧悜璇ヨ繘绋嬪彲鎵ц鏂囦欢鐨勯摼鎺?
+ fd		鍖呭惈鎵€鏈夋枃浠舵弿杩扮鐨勭洰褰?
+ maps		鍒板彲鎵ц鏂囦欢鍜屽簱鏂囦欢鐨勫唴瀛樻槧灏?(2.4)
+ mem		璇ヨ繘绋嬫寔鏈夌殑鍐呭瓨
+ root		鎸囧悜璇ヨ繘绋嬫牴鐩綍鐨勯摼鎺?
+ stat		杩涚▼鐘舵€?
+ statm		杩涚▼鍐呭瓨鐘舵€佷俊鎭?
+ status		浜虹被鍙褰㈠紡鐨勮繘绋嬬姸鎬?
+ wchan		鍚敤 CONFIG_KALLSYMS=y 鏃跺瓨鍦細鏄剧ず浠诲姟琚樆濉炰簬鍏朵腑鐨勫唴鏍稿嚱鏁?
+		绗﹀彿锛屾湭闃诲鍒欎负 "0"銆?
+ pagemap	椤佃〃
+ stack		鎶ュ憡瀹屾暣鐨勬爤鍥炴函锛岄€氳繃 CONFIG_STACKTRACE 鍚敤
+ smaps		鍩轰簬 maps 鐨勬墿灞曪紝鏄剧ず姣忎釜鏄犲皠鐨勫唴瀛樻秷鑰楀強鍏跺叧鑱旂殑鏍囧織
+ smaps_rollup	璇ヨ繘绋嬫墍鏈夋槧灏勭殑 smaps 绱缁熻銆傝繖鍙互浠?smaps 鎺ㄥ锛屼絾鏇村揩鏇存柟渚?
+ numa_maps	鍩轰簬 maps 鐨勬墿灞曪紝鏄剧ず姣忎釜鏄犲皠鐨勫唴瀛樺眬閮ㄦ€с€佺粦瀹氱瓥鐣ヤ互鍙?
+		鍐呭瓨浣跨敤閲忥紙浠ラ〉涓哄崟浣嶏級銆?
  =============  ===============================================================
 
-例如，要获取进程的状态信息，只需：
+渚嬪锛岃鑾峰彇杩涚▼鐨勭姸鎬佷俊鎭紝鍙渶锛?
 
 ```
   >cat /proc/self/status
@@ -173,160 +173,160 @@ proc 文件系统充当内核内部数据结构的一个接口。它可以用来
   nonvoluntary_ctxt_switches:     1
 ```
 
-这显示的信息与你用 ps 命令看到的信息几乎相同。实际上，ps 使用 proc 文件系统来获取其信息。但读取文件 /proc/PID/status 可以让你更详细地查看该进程。它的字段在表 1-2 中描述。
+杩欐樉绀虹殑淇℃伅涓庝綘鐢?ps 鍛戒护鐪嬪埌鐨勪俊鎭嚑涔庣浉鍚屻€傚疄闄呬笂锛宲s 浣跨敤 proc 鏂囦欢绯荤粺鏉ヨ幏鍙栧叾淇℃伅銆備絾璇诲彇鏂囦欢 /proc/PID/status 鍙互璁╀綘鏇磋缁嗗湴鏌ョ湅璇ヨ繘绋嬨€傚畠鐨勫瓧娈靛湪琛?1-2 涓弿杩般€?
 
-statm 文件包含关于进程内存使用更详细的信息。它的七个字段在表 1-3 中解释。stat 文件包含关于进程本身的详细信息。它的字段在表 1-4 中解释。
+statm 鏂囦欢鍖呭惈鍏充簬杩涚▼鍐呭瓨浣跨敤鏇磋缁嗙殑淇℃伅銆傚畠鐨勪竷涓瓧娈靛湪琛?1-3 涓В閲娿€俿tat 鏂囦欢鍖呭惈鍏充簬杩涚▼鏈韩鐨勮缁嗕俊鎭€傚畠鐨勫瓧娈靛湪琛?1-4 涓В閲娿€?
 
-（针对 SMP CONFIG 用户）
+锛堥拡瀵?SMP CONFIG 鐢ㄦ埛锛?
 
-为了使统计可扩展，RSS 相关的信息以异步方式处理，其值可能不是很精确。要查看某个时刻的精确快照，你可以查看 /proc/<pid>/smaps 文件并扫描页表。这很慢但非常精确。
+涓轰簡浣跨粺璁″彲鎵╁睍锛孯SS 鐩稿叧鐨勪俊鎭互寮傛鏂瑰紡澶勭悊锛屽叾鍊煎彲鑳戒笉鏄緢绮剧‘銆傝鏌ョ湅鏌愪釜鏃跺埢鐨勭簿纭揩鐓э紝浣犲彲浠ユ煡鐪?/proc/<pid>/smaps 鏂囦欢骞舵壂鎻忛〉琛ㄣ€傝繖寰堟參浣嗛潪甯哥簿纭€?
 
 
  ==========================  ===================================================
- 字段                       内容
+ 瀛楁                       鍐呭
  ==========================  ===================================================
- Name                        可执行文件的文件名
- Umask                       文件模式创建掩码
- State                       状态（R 为运行中，S 为睡眠，D 为处于不可中断等待中的睡眠，
-			     Z 为僵尸进程，T 为被跟踪或停止）
- Tgid                        线程组 ID
- Ngid                        NUMA 组 ID（无则为 0）
- Pid                         进程 id
- PPid                        父进程的进程 id
- TracerPid                   跟踪此进程的进程 PID（如果没有，或跟踪者在当前 pid 命名空间之外则为 0）
- Uid                         真实、有效、保存集和文件系统 UIDs
- Gid                         真实、有效、保存集和文件系统 GIDs
- FDSize                      当前已分配的文件描述符槽数量
- Groups                      补充组列表
- NStgid                      后代命名空间线程组 ID 层级
- NSpid                       后代命名空间进程 ID 层级
- NSpgid                      后代命名空间进程组 ID 层级
- NSsid                       后代命名空间会话 ID 层级
- Kthread                     内核线程标志，1 为是，0 为否
- VmPeak                      峰值虚拟内存大小
- VmSize                      程序总大小
- VmLck                       锁定内存大小
- VmPin                       固定（pinned）内存大小
- VmHWM                       峰值常驻集大小（"高水位标记"）
- VmRSS                       内存部分的大小。它包含以下三个部分
-                             （VmRSS = RssAnon + RssFile + RssShmem）
- RssAnon                     常驻匿名内存大小
- RssFile                     常驻文件映射大小
- RssShmem                    常驻 shmem 内存大小（包括 SysV shm、
-                             tmpfs 映射和共享匿名映射）
- VmData                      私有数据段大小
- VmStk                       栈段大小
- VmExe                       文本段大小
- VmLib                       共享库代码大小
- VmPTE                       页表项大小
- VmSwap                      匿名私有数据使用的交换量
-                             （不包括 shmem 交换使用量）
- HugetlbPages                hugetlb 内存部分大小
- CoreDumping                 进程内存当前正在被转储
-                             （杀死进程可能导致核心文件损坏）
- THP_enabled                 进程被允许使用 THP（当进程上设置了
-                             PR_SET_THP_DISABLE 以完全禁用 THP 时返回 0，
-                             而不仅仅是部分禁用）
- Threads                     线程数量
- SigQ                        已排队信号数/队列最大数
- SigPnd                      线程挂起信号位图
- ShdPnd                      进程共享挂起信号位图
- SigBlk                      阻塞信号位图
- SigIgn                      忽略信号位图
- SigCgt                      捕获信号位图
- CapInh                      可继承能力位图
- CapPrm                      允许的能力位图
- CapEff                      有效能力位图
- CapBnd                      能力边界集位图
- CapAmb                      环境能力位图
- NoNewPrivs                  no_new_privs，类似 prctl(PR_GET_NO_NEW_PRIV, ...)
- Seccomp                     seccomp 模式，类似 prctl(PR_GET_SECCOMP, ...)
- Speculation_Store_Bypass    推测性存储绕过缓解状态
- SpeculationIndirectBranch   间接分支推测模式
- Cpus_allowed                该进程可在其上运行的 CPU 掩码
- Cpus_allowed_list           与前者相同，但为"列表格式"
- Mems_allowed               该进程允许的内存节点掩码
- Mems_allowed_list           与前者相同，但为"列表格式"
- voluntary_ctxt_switches     自愿上下文切换次数
- nonvoluntary_ctxt_switches  非自愿上下文切换次数
+ Name                        鍙墽琛屾枃浠剁殑鏂囦欢鍚?
+ Umask                       鏂囦欢妯″紡鍒涘缓鎺╃爜
+ State                       鐘舵€侊紙R 涓鸿繍琛屼腑锛孲 涓虹潯鐪狅紝D 涓哄浜庝笉鍙腑鏂瓑寰呬腑鐨勭潯鐪狅紝
+			     Z 涓哄兊灏歌繘绋嬶紝T 涓鸿璺熻釜鎴栧仠姝級
+ Tgid                        绾跨▼缁?ID
+ Ngid                        NUMA 缁?ID锛堟棤鍒欎负 0锛?
+ Pid                         杩涚▼ id
+ PPid                        鐖惰繘绋嬬殑杩涚▼ id
+ TracerPid                   璺熻釜姝よ繘绋嬬殑杩涚▼ PID锛堝鏋滄病鏈夛紝鎴栬窡韪€呭湪褰撳墠 pid 鍛藉悕绌洪棿涔嬪鍒欎负 0锛?
+ Uid                         鐪熷疄銆佹湁鏁堛€佷繚瀛橀泦鍜屾枃浠剁郴缁?UIDs
+ Gid                         鐪熷疄銆佹湁鏁堛€佷繚瀛橀泦鍜屾枃浠剁郴缁?GIDs
+ FDSize                      褰撳墠宸插垎閰嶇殑鏂囦欢鎻忚堪绗︽Ы鏁伴噺
+ Groups                      琛ュ厖缁勫垪琛?
+ NStgid                      鍚庝唬鍛藉悕绌洪棿绾跨▼缁?ID 灞傜骇
+ NSpid                       鍚庝唬鍛藉悕绌洪棿杩涚▼ ID 灞傜骇
+ NSpgid                      鍚庝唬鍛藉悕绌洪棿杩涚▼缁?ID 灞傜骇
+ NSsid                       鍚庝唬鍛藉悕绌洪棿浼氳瘽 ID 灞傜骇
+ Kthread                     鍐呮牳绾跨▼鏍囧織锛? 涓烘槸锛? 涓哄惁
+ VmPeak                      宄板€艰櫄鎷熷唴瀛樺ぇ灏?
+ VmSize                      绋嬪簭鎬诲ぇ灏?
+ VmLck                       閿佸畾鍐呭瓨澶у皬
+ VmPin                       鍥哄畾锛坧inned锛夊唴瀛樺ぇ灏?
+ VmHWM                       宄板€煎父椹婚泦澶у皬锛?楂樻按浣嶆爣璁?锛?
+ VmRSS                       鍐呭瓨閮ㄥ垎鐨勫ぇ灏忋€傚畠鍖呭惈浠ヤ笅涓変釜閮ㄥ垎
+                             锛圴mRSS = RssAnon + RssFile + RssShmem锛?
+ RssAnon                     甯搁┗鍖垮悕鍐呭瓨澶у皬
+ RssFile                     甯搁┗鏂囦欢鏄犲皠澶у皬
+ RssShmem                    甯搁┗ shmem 鍐呭瓨澶у皬锛堝寘鎷?SysV shm銆?
+                             tmpfs 鏄犲皠鍜屽叡浜尶鍚嶆槧灏勶級
+ VmData                      绉佹湁鏁版嵁娈靛ぇ灏?
+ VmStk                       鏍堟澶у皬
+ VmExe                       鏂囨湰娈靛ぇ灏?
+ VmLib                       鍏变韩搴撲唬鐮佸ぇ灏?
+ VmPTE                       椤佃〃椤瑰ぇ灏?
+ VmSwap                      鍖垮悕绉佹湁鏁版嵁浣跨敤鐨勪氦鎹㈤噺
+                             锛堜笉鍖呮嫭 shmem 浜ゆ崲浣跨敤閲忥級
+ HugetlbPages                hugetlb 鍐呭瓨閮ㄥ垎澶у皬
+ CoreDumping                 杩涚▼鍐呭瓨褰撳墠姝ｅ湪琚浆鍌?
+                             锛堟潃姝昏繘绋嬪彲鑳藉鑷存牳蹇冩枃浠舵崯鍧忥級
+ THP_enabled                 杩涚▼琚厑璁镐娇鐢?THP锛堝綋杩涚▼涓婅缃簡
+                             PR_SET_THP_DISABLE 浠ュ畬鍏ㄧ鐢?THP 鏃惰繑鍥?0锛?
+                             鑰屼笉浠呬粎鏄儴鍒嗙鐢級
+ Threads                     绾跨▼鏁伴噺
+ SigQ                        宸叉帓闃熶俊鍙锋暟/闃熷垪鏈€澶ф暟
+ SigPnd                      绾跨▼鎸傝捣淇″彿浣嶅浘
+ ShdPnd                      杩涚▼鍏变韩鎸傝捣淇″彿浣嶅浘
+ SigBlk                      闃诲淇″彿浣嶅浘
+ SigIgn                      蹇界暐淇″彿浣嶅浘
+ SigCgt                      鎹曡幏淇″彿浣嶅浘
+ CapInh                      鍙户鎵胯兘鍔涗綅鍥?
+ CapPrm                      鍏佽鐨勮兘鍔涗綅鍥?
+ CapEff                      鏈夋晥鑳藉姏浣嶅浘
+ CapBnd                      鑳藉姏杈圭晫闆嗕綅鍥?
+ CapAmb                      鐜鑳藉姏浣嶅浘
+ NoNewPrivs                  no_new_privs锛岀被浼?prctl(PR_GET_NO_NEW_PRIV, ...)
+ Seccomp                     seccomp 妯″紡锛岀被浼?prctl(PR_GET_SECCOMP, ...)
+ Speculation_Store_Bypass    鎺ㄦ祴鎬у瓨鍌ㄧ粫杩囩紦瑙ｇ姸鎬?
+ SpeculationIndirectBranch   闂存帴鍒嗘敮鎺ㄦ祴妯″紡
+ Cpus_allowed                璇ヨ繘绋嬪彲鍦ㄥ叾涓婅繍琛岀殑 CPU 鎺╃爜
+ Cpus_allowed_list           涓庡墠鑰呯浉鍚岋紝浣嗕负"鍒楄〃鏍煎紡"
+ Mems_allowed               璇ヨ繘绋嬪厑璁哥殑鍐呭瓨鑺傜偣鎺╃爜
+ Mems_allowed_list           涓庡墠鑰呯浉鍚岋紝浣嗕负"鍒楄〃鏍煎紡"
+ voluntary_ctxt_switches     鑷効涓婁笅鏂囧垏鎹㈡鏁?
+ nonvoluntary_ctxt_switches  闈炶嚜鎰夸笂涓嬫枃鍒囨崲娆℃暟
  ==========================  ===================================================
 
 
 
  ======== ===============================	==============================
- 字段    内容
+ 瀛楁    鍐呭
  ======== ===============================	==============================
- size     程序总大小（页）			（同 status 中的 VmSize）
- resident 内存部分大小（页）			（同 status 中的 VmRSS）
- shared   共享页数量				（即由文件支持，同 status 中的 RssFile+RssShmem）
- trs      为'代码'的页数量			（不包括库；已损坏，包含数据段）
- lrs      库页数量				（2.6 上始终为 0）
- drs      数据/栈的页数量			（包括库；已损坏，包含库文本）
- dt       脏页数量				（2.6 上始终为 0）
+ size     绋嬪簭鎬诲ぇ灏忥紙椤碉級			锛堝悓 status 涓殑 VmSize锛?
+ resident 鍐呭瓨閮ㄥ垎澶у皬锛堥〉锛?		锛堝悓 status 涓殑 VmRSS锛?
+ shared   鍏变韩椤垫暟閲?			锛堝嵆鐢辨枃浠舵敮鎸侊紝鍚?status 涓殑 RssFile+RssShmem锛?
+ trs      涓?浠ｇ爜'鐨勯〉鏁伴噺			锛堜笉鍖呮嫭搴擄紱宸叉崯鍧忥紝鍖呭惈鏁版嵁娈碉級
+ lrs      搴撻〉鏁伴噺				锛?.6 涓婂缁堜负 0锛?
+ drs      鏁版嵁/鏍堢殑椤垫暟閲?		锛堝寘鎷簱锛涘凡鎹熷潖锛屽寘鍚簱鏂囨湰锛?
+ dt       鑴忛〉鏁伴噺				锛?.6 涓婂缁堜负 0锛?
  ======== ===============================	==============================
 
 
 
   ============= ===============================================================
-  字段         内容
+  瀛楁         鍐呭
   ============= ===============================================================
-  pid           进程 id
-  tcomm         可执行文件的文件名
-  state         状态（R 为运行中，S 为睡眠，D 为处于不可中断等待中的睡眠，
-                 Z 为僵尸进程，T 为被跟踪或停止）
-  ppid          父进程的进程 id
-  pgrp          进程的 pgrp
-  sid           会话 id
-  tty_nr        进程使用的 tty
-  tty_pgrp      tty 的 pgrp
-  flags         任务标志
-  min_flt       次要缺页次数
-  cmin_flt      包含子进程的次要缺页次数
-  maj_flt       主要缺页次数
-  cmaj_flt      包含子进程的主要缺页次数
-  utime         用户模式 jiffies
-  stime         内核模式 jiffies
-  cutime        包含子进程的用户模式 jiffies
-  cstime        包含子进程的内核模式 jiffies
-  priority      优先级级别
-  nice          nice 级别
-  num_threads   线程数量
-  it_real_value	(已废弃，始终为 0)
-  start_time    进程在系统启动后启动的时间
-  vsize         虚拟内存大小
-  rss           常驻集内存大小
-  rsslim        当前 rss 的字节数限制
-  start_code    程序文本可运行的地址上限
-  end_code      程序文本可运行的地址下限
-  start_stack   主进程栈起始地址
-  esp           ESP 当前值
-  eip           EIP 当前值
-  pending       挂起信号位图
-  blocked       阻塞信号位图
-  sigign        忽略信号位图
-  sigcatch      捕获信号位图
-  0		(占位符，曾为 wchan 地址，
-		改用 /proc/PID/wchan)
-  0             (占位符)
-  0             (占位符)
-  exit_signal   退出时发送给父线程的信号
-  task_cpu      任务被调度到的 CPU
-  rt_priority   实时优先级
-  policy        调度策略（man sched_setscheduler）
-  blkio_ticks   等待块设备 IO 花费的时间
-  gtime         任务在 jiffies 中的客户（guest）时间
-  cgtime        任务子进程在 jiffies 中的客户时间
-  start_data    程序数据+bss 放置的地址上限
-  end_data      程序数据+bss 放置的地址下限
-  start_brk     可通过 brk() 扩展程序堆的地址上限
-  arg_start     程序命令行放置的地址上限
-  arg_end       程序命令行放置的地址下限
-  env_start     程序环境放置的地址上限
-  env_end       程序环境放置的地址下限
-  exit_code     线程的 exit_code，形式为 waitpid 系统调用所报告的值
+  pid           杩涚▼ id
+  tcomm         鍙墽琛屾枃浠剁殑鏂囦欢鍚?
+  state         鐘舵€侊紙R 涓鸿繍琛屼腑锛孲 涓虹潯鐪狅紝D 涓哄浜庝笉鍙腑鏂瓑寰呬腑鐨勭潯鐪狅紝
+                 Z 涓哄兊灏歌繘绋嬶紝T 涓鸿璺熻釜鎴栧仠姝級
+  ppid          鐖惰繘绋嬬殑杩涚▼ id
+  pgrp          杩涚▼鐨?pgrp
+  sid           浼氳瘽 id
+  tty_nr        杩涚▼浣跨敤鐨?tty
+  tty_pgrp      tty 鐨?pgrp
+  flags         浠诲姟鏍囧織
+  min_flt       娆¤缂洪〉娆℃暟
+  cmin_flt      鍖呭惈瀛愯繘绋嬬殑娆¤缂洪〉娆℃暟
+  maj_flt       涓昏缂洪〉娆℃暟
+  cmaj_flt      鍖呭惈瀛愯繘绋嬬殑涓昏缂洪〉娆℃暟
+  utime         鐢ㄦ埛妯″紡 jiffies
+  stime         鍐呮牳妯″紡 jiffies
+  cutime        鍖呭惈瀛愯繘绋嬬殑鐢ㄦ埛妯″紡 jiffies
+  cstime        鍖呭惈瀛愯繘绋嬬殑鍐呮牳妯″紡 jiffies
+  priority      浼樺厛绾х骇鍒?
+  nice          nice 绾у埆
+  num_threads   绾跨▼鏁伴噺
+  it_real_value	(宸插簾寮冿紝濮嬬粓涓?0)
+  start_time    杩涚▼鍦ㄧ郴缁熷惎鍔ㄥ悗鍚姩鐨勬椂闂?
+  vsize         铏氭嫙鍐呭瓨澶у皬
+  rss           甯搁┗闆嗗唴瀛樺ぇ灏?
+  rsslim        褰撳墠 rss 鐨勫瓧鑺傛暟闄愬埗
+  start_code    绋嬪簭鏂囨湰鍙繍琛岀殑鍦板潃涓婇檺
+  end_code      绋嬪簭鏂囨湰鍙繍琛岀殑鍦板潃涓嬮檺
+  start_stack   涓昏繘绋嬫爤璧峰鍦板潃
+  esp           ESP 褰撳墠鍊?
+  eip           EIP 褰撳墠鍊?
+  pending       鎸傝捣淇″彿浣嶅浘
+  blocked       闃诲淇″彿浣嶅浘
+  sigign        蹇界暐淇″彿浣嶅浘
+  sigcatch      鎹曡幏淇″彿浣嶅浘
+  0		(鍗犱綅绗︼紝鏇句负 wchan 鍦板潃锛?
+		鏀圭敤 /proc/PID/wchan)
+  0             (鍗犱綅绗?
+  0             (鍗犱綅绗?
+  exit_signal   閫€鍑烘椂鍙戦€佺粰鐖剁嚎绋嬬殑淇″彿
+  task_cpu      浠诲姟琚皟搴﹀埌鐨?CPU
+  rt_priority   瀹炴椂浼樺厛绾?
+  policy        璋冨害绛栫暐锛坢an sched_setscheduler锛?
+  blkio_ticks   绛夊緟鍧楄澶?IO 鑺辫垂鐨勬椂闂?
+  gtime         浠诲姟鍦?jiffies 涓殑瀹㈡埛锛坓uest锛夋椂闂?
+  cgtime        浠诲姟瀛愯繘绋嬪湪 jiffies 涓殑瀹㈡埛鏃堕棿
+  start_data    绋嬪簭鏁版嵁+bss 鏀剧疆鐨勫湴鍧€涓婇檺
+  end_data      绋嬪簭鏁版嵁+bss 鏀剧疆鐨勫湴鍧€涓嬮檺
+  start_brk     鍙€氳繃 brk() 鎵╁睍绋嬪簭鍫嗙殑鍦板潃涓婇檺
+  arg_start     绋嬪簭鍛戒护琛屾斁缃殑鍦板潃涓婇檺
+  arg_end       绋嬪簭鍛戒护琛屾斁缃殑鍦板潃涓嬮檺
+  env_start     绋嬪簭鐜鏀剧疆鐨勫湴鍧€涓婇檺
+  env_end       绋嬪簭鐜鏀剧疆鐨勫湴鍧€涓嬮檺
+  exit_code     绾跨▼鐨?exit_code锛屽舰寮忎负 waitpid 绯荤粺璋冪敤鎵€鎶ュ憡鐨勫€?
   ============= ===============================================================
 
-/proc/PID/maps 文件包含当前已映射的内存区域及其访问权限。
+/proc/PID/maps 鏂囦欢鍖呭惈褰撳墠宸叉槧灏勭殑鍐呭瓨鍖哄煙鍙婂叾璁块棶鏉冮檺銆?
 
 ```
     address           perms offset  dev   inode      pathname
@@ -353,7 +353,7 @@ statm 文件包含关于进程内存使用更详细的信息。它的七个字�
     ffffe000-fffff000 r-xp 00000000 00:00 0          [vdso]
 ```
 
-其中 "address" 是它所占用的进程地址空间，"perms"：
+鍏朵腑 "address" 鏄畠鎵€鍗犵敤鐨勮繘绋嬪湴鍧€绌洪棿锛?perms"锛?
 
 ```
  r = read
@@ -363,22 +363,22 @@ statm 文件包含关于进程内存使用更详细的信息。它的七个字�
  p = private (copy on write)
 ```
 
-"offset" 是映射内的偏移，"dev" 是设备（major:minor），"inode" 是该设备上的 inode。0 表示没有与该内存区域关联的 inode，BSS（未初始化数据）就是这种情况。"pathname" 显示该映射关联的文件名。如果该映射未与文件关联：
+"offset" 鏄槧灏勫唴鐨勫亸绉伙紝"dev" 鏄澶囷紙major:minor锛夛紝"inode" 鏄璁惧涓婄殑 inode銆? 琛ㄧず娌℃湁涓庤鍐呭瓨鍖哄煙鍏宠仈鐨?inode锛孊SS锛堟湭鍒濆鍖栨暟鎹級灏辨槸杩欑鎯呭喌銆?pathname" 鏄剧ず璇ユ槧灏勫叧鑱旂殑鏂囦欢鍚嶃€傚鏋滆鏄犲皠鏈笌鏂囦欢鍏宠仈锛?
 
  ===================        ===========================================
- [heap]                     程序的堆
- [stack]                    主进程的栈
- [vdso]                     "虚拟动态共享对象"，
-                            内核系统调用处理程序
- [anon:<name>]              由用户空间命名的一个私有匿名映射
- [anon_shmem:<name>]        由用户空间命名的一个匿名共享内存映射
+ [heap]                     绋嬪簭鐨勫爢
+ [stack]                    涓昏繘绋嬬殑鏍?
+ [vdso]                     "铏氭嫙鍔ㄦ€佸叡浜璞?锛?
+                            鍐呮牳绯荤粺璋冪敤澶勭悊绋嬪簭
+ [anon:<name>]              鐢辩敤鎴风┖闂村懡鍚嶇殑涓€涓鏈夊尶鍚嶆槧灏?
+ [anon_shmem:<name>]        鐢辩敤鎴风┖闂村懡鍚嶇殑涓€涓尶鍚嶅叡浜唴瀛樻槧灏?
  ===================        ===========================================
 
-或者如果为空，则该映射是匿名的。
+鎴栬€呭鏋滀负绌猴紝鍒欒鏄犲皠鏄尶鍚嶇殑銆?
 
-从 6.11 内核开始，/proc/PID/maps 提供了一个替代的基于 ioctl() 的 API，能够灵活且高效地查询和过滤单个 VMA。这个接口是二进制的，旨在用于更高效、更方便的程序化使用。`struct procmap_query`（定义在 linux/fs.h UAPI 头文件中）作为 `PROCMAP_QUERY` ioctl() 命令的输入/输出参数。有关查询语义、支持的标志、返回的数据以及一般 API 使用信息的详细信息，请参阅 linus/fs.h UAPI 头文件中的注释。
+浠?6.11 鍐呮牳寮€濮嬶紝/proc/PID/maps 鎻愪緵浜嗕竴涓浛浠ｇ殑鍩轰簬 ioctl() 鐨?API锛岃兘澶熺伒娲讳笖楂樻晥鍦版煡璇㈠拰杩囨护鍗曚釜 VMA銆傝繖涓帴鍙ｆ槸浜岃繘鍒剁殑锛屾棬鍦ㄧ敤浜庢洿楂樻晥銆佹洿鏂逛究鐨勭▼搴忓寲浣跨敤銆俙struct procmap_query`锛堝畾涔夊湪 linux/fs.h UAPI 澶存枃浠朵腑锛変綔涓?`PROCMAP_QUERY` ioctl() 鍛戒护鐨勮緭鍏?杈撳嚭鍙傛暟銆傛湁鍏虫煡璇㈣涔夈€佹敮鎸佺殑鏍囧織銆佽繑鍥炵殑鏁版嵁浠ュ強涓€鑸?API 浣跨敤淇℃伅鐨勮缁嗕俊鎭紝璇峰弬闃?linus/fs.h UAPI 澶存枃浠朵腑鐨勬敞閲娿€?
 
-/proc/PID/smaps 是基于 maps 的扩展，显示进程每个映射的内存消耗。对于每个映射（即虚拟：
+/proc/PID/smaps 鏄熀浜?maps 鐨勬墿灞曪紝鏄剧ず杩涚▼姣忎釜鏄犲皠鐨勫唴瀛樻秷鑰椼€傚浜庢瘡涓槧灏勶紙鍗宠櫄鎷燂細
 
 ```
     08048000-080bc000 r-xp 00000000 03:02 13130      /bin/bash
@@ -409,103 +409,103 @@ statm 文件包含关于进程内存使用更详细的信息。它的七个字�
     VmFlags: rd ex mr mw me dw
 ```
 
-这些行中的第一行显示的信息与 /proc/PID/maps 中显示的映射信息相同。后面的行显示：映射的大小（size）；在支持一个 VMA 时分配的最小可能页大小（KernelPageSize），它是可修改 VMA 的粒度；MMU 在支持一个 VMA 时可使用的最小可能页大小（MMUPageSize）；当前驻留在 RAM 中的该映射的数量（RSS）；该进程在此映射中的比例份额（PSS）；以及该映射中干净和脏的共享与私有页的数量。
+杩欎簺琛屼腑鐨勭涓€琛屾樉绀虹殑淇℃伅涓?/proc/PID/maps 涓樉绀虹殑鏄犲皠淇℃伅鐩稿悓銆傚悗闈㈢殑琛屾樉绀猴細鏄犲皠鐨勫ぇ灏忥紙size锛夛紱鍦ㄦ敮鎸佷竴涓?VMA 鏃跺垎閰嶇殑鏈€灏忓彲鑳介〉澶у皬锛圞ernelPageSize锛夛紝瀹冩槸鍙慨鏀?VMA 鐨勭矑搴︼紱MMU 鍦ㄦ敮鎸佷竴涓?VMA 鏃跺彲浣跨敤鐨勬渶灏忓彲鑳介〉澶у皬锛圡MUPageSize锛夛紱褰撳墠椹荤暀鍦?RAM 涓殑璇ユ槧灏勭殑鏁伴噺锛圧SS锛夛紱璇ヨ繘绋嬪湪姝ゆ槧灏勪腑鐨勬瘮渚嬩唤棰濓紙PSS锛夛紱浠ュ強璇ユ槧灏勪腑骞插噣鍜岃剰鐨勫叡浜笌绉佹湁椤电殑鏁伴噺銆?
 
-"KernelPageSize" 始终对应于 "MMUPageSize"，除非在 MMU 使用较小页大小的系统上模拟了更大的内核页大小，某些带有 hugetlb 的 PPC64 配置就是这样的情况。此外，"KernelPageSize" 和 "MMUPageSize" 始终对应于在 VMA 整个生命周期中可能遇到的最小可能粒度（回退）。这些值不受生效中的透明大页（Transparent Huge Pages），或任何对更大 MMU 页大小的使用（无论是通过架构性大页映射，还是 MMU 执行的虚拟范围的其他显式/隐式合并）的影响。"AnonHugePages"、"ShmemPmdMapped" 和 "FilePmdMapped" 提供了对 PMD 级别架构性大页映射使用情况的洞察。
+"KernelPageSize" 濮嬬粓瀵瑰簲浜?"MMUPageSize"锛岄櫎闈炲湪 MMU 浣跨敤杈冨皬椤靛ぇ灏忕殑绯荤粺涓婃ā鎷熶簡鏇村ぇ鐨勫唴鏍搁〉澶у皬锛屾煇浜涘甫鏈?hugetlb 鐨?PPC64 閰嶇疆灏辨槸杩欐牱鐨勬儏鍐点€傛澶栵紝"KernelPageSize" 鍜?"MMUPageSize" 濮嬬粓瀵瑰簲浜庡湪 VMA 鏁翠釜鐢熷懡鍛ㄦ湡涓彲鑳介亣鍒扮殑鏈€灏忓彲鑳界矑搴︼紙鍥為€€锛夈€傝繖浜涘€间笉鍙楃敓鏁堜腑鐨勯€忔槑澶ч〉锛圱ransparent Huge Pages锛夛紝鎴栦换浣曞鏇村ぇ MMU 椤靛ぇ灏忕殑浣跨敤锛堟棤璁烘槸閫氳繃鏋舵瀯鎬уぇ椤垫槧灏勶紝杩樻槸 MMU 鎵ц鐨勮櫄鎷熻寖鍥寸殑鍏朵粬鏄惧紡/闅愬紡鍚堝苟锛夌殑褰卞搷銆?AnonHugePages"銆?ShmemPmdMapped" 鍜?"FilePmdMapped" 鎻愪緵浜嗗 PMD 绾у埆鏋舵瀯鎬уぇ椤垫槧灏勪娇鐢ㄦ儏鍐电殑娲炲療銆?
 
-一个进程的"比例集大小"（PSS）是它在内存中拥有的页计数，其中每个页都除以共享它的进程数量。因此，如果一个进程有 1000 个页完全归自己所有，并与另一个进程共享 1000 个页，它的 PSS 将为 1500。"Pss_Dirty" 是 PSS 中由脏页组成的部分。（不包含 "Pss_Clean"，但可以通过从 "Pss" 中减去 "Pss_Dirty" 来计算。）
+涓€涓繘绋嬬殑"姣斾緥闆嗗ぇ灏?锛圥SS锛夋槸瀹冨湪鍐呭瓨涓嫢鏈夌殑椤佃鏁帮紝鍏朵腑姣忎釜椤甸兘闄や互鍏变韩瀹冪殑杩涚▼鏁伴噺銆傚洜姝わ紝濡傛灉涓€涓繘绋嬫湁 1000 涓〉瀹屽叏褰掕嚜宸辨墍鏈夛紝骞朵笌鍙︿竴涓繘绋嬪叡浜?1000 涓〉锛屽畠鐨?PSS 灏嗕负 1500銆?Pss_Dirty" 鏄?PSS 涓敱鑴忛〉缁勬垚鐨勯儴鍒嗐€傦紙涓嶅寘鍚?"Pss_Clean"锛屼絾鍙互閫氳繃浠?"Pss" 涓噺鍘?"Pss_Dirty" 鏉ヨ绠椼€傦級
 
-传统上，一个页如果恰好被映射一次，则记为"私有"，而当被映射多次时（即使在同一个进程中被映射多次）记为"共享"。注意这种记账独立于 MAP_SHARED。
+浼犵粺涓婏紝涓€涓〉濡傛灉鎭板ソ琚槧灏勪竴娆★紝鍒欒涓?绉佹湁"锛岃€屽綋琚槧灏勫娆℃椂锛堝嵆浣垮湪鍚屼竴涓繘绋嬩腑琚槧灏勫娆★級璁颁负"鍏变韩"銆傛敞鎰忚繖绉嶈璐︾嫭绔嬩簬 MAP_SHARED銆?
 
-在某些内核配置中，属于更大分配（例如 THP）一部分的页的语义可能不同：如果一个较大分配的所有页**确定**映射在同一个进程中，即使该页在该进程中被映射多次，也记为"私有"。如果一个较大分配的任意页**可能**映射在不同的进程中，则记为"共享"。在某些情况下，一个较大的分配可能被视为"可能被多个进程映射"，即使实际已不再如此。
+鍦ㄦ煇浜涘唴鏍搁厤缃腑锛屽睘浜庢洿澶у垎閰嶏紙渚嬪 THP锛変竴閮ㄥ垎鐨勯〉鐨勮涔夊彲鑳戒笉鍚岋細濡傛灉涓€涓緝澶у垎閰嶇殑鎵€鏈夐〉**纭畾**鏄犲皠鍦ㄥ悓涓€涓繘绋嬩腑锛屽嵆浣胯椤靛湪璇ヨ繘绋嬩腑琚槧灏勫娆★紝涔熻涓?绉佹湁"銆傚鏋滀竴涓緝澶у垎閰嶇殑浠绘剰椤?*鍙兘**鏄犲皠鍦ㄤ笉鍚岀殑杩涚▼涓紝鍒欒涓?鍏变韩"銆傚湪鏌愪簺鎯呭喌涓嬶紝涓€涓緝澶х殑鍒嗛厤鍙兘琚涓?鍙兘琚涓繘绋嬫槧灏?锛屽嵆浣垮疄闄呭凡涓嶅啀濡傛銆?
 
-某些内核配置不跟踪较大分配中一部分的页被映射的精确次数。在这种情况下，计算 PSS 时，可能会使用该较大分配中每页的平均映射数，作为该页映射数量的近似值。这种情况下 PSS 计算将不精确。
+鏌愪簺鍐呮牳閰嶇疆涓嶈窡韪緝澶у垎閰嶄腑涓€閮ㄥ垎鐨勯〉琚槧灏勭殑绮剧‘娆℃暟銆傚湪杩欑鎯呭喌涓嬶紝璁＄畻 PSS 鏃讹紝鍙兘浼氫娇鐢ㄨ杈冨ぇ鍒嗛厤涓瘡椤电殑骞冲潎鏄犲皠鏁帮紝浣滀负璇ラ〉鏄犲皠鏁伴噺鐨勮繎浼煎€笺€傝繖绉嶆儏鍐典笅 PSS 璁＄畻灏嗕笉绮剧‘銆?
 
-"Referenced" 表示当前被标记为引用或已访问的内存量。
+"Referenced" 琛ㄧず褰撳墠琚爣璁颁负寮曠敤鎴栧凡璁块棶鐨勫唴瀛橀噺銆?
 
-"Anonymous" 显示不属于任何文件的内存量。即使是与文件关联的映射也可能包含匿名页：当使用 MAP_PRIVATE 且某页被修改时，该文件页会被一个私有的匿名副本替换。
+"Anonymous" 鏄剧ず涓嶅睘浜庝换浣曟枃浠剁殑鍐呭瓨閲忋€傚嵆浣挎槸涓庢枃浠跺叧鑱旂殑鏄犲皠涔熷彲鑳藉寘鍚尶鍚嶉〉锛氬綋浣跨敤 MAP_PRIVATE 涓旀煇椤佃淇敼鏃讹紝璇ユ枃浠堕〉浼氳涓€涓鏈夌殑鍖垮悕鍓湰鏇挎崲銆?
 
-"KSM" 报告有多少页是 KSM 页。注意 KSM 放置的零页不包含在内，只包含实际的 KSM 页。
+"KSM" 鎶ュ憡鏈夊灏戦〉鏄?KSM 椤点€傛敞鎰?KSM 鏀剧疆鐨勯浂椤典笉鍖呭惈鍦ㄥ唴锛屽彧鍖呭惈瀹為檯鐨?KSM 椤点€?
 
-"LazyFree" 显示由 madvise(MADV_FREE) 标记的内存量。内存不会随 madvise() 立即释放。在内存压力下，如果内存是干净的，它会被释放。请注意，由于当前实现中使用的优化，打印的值可能低于真实值。如果不希望这样，请提交 bug 报告。
+"LazyFree" 鏄剧ず鐢?madvise(MADV_FREE) 鏍囪鐨勫唴瀛橀噺銆傚唴瀛樹笉浼氶殢 madvise() 绔嬪嵆閲婃斁銆傚湪鍐呭瓨鍘嬪姏涓嬶紝濡傛灉鍐呭瓨鏄共鍑€鐨勶紝瀹冧細琚噴鏀俱€傝娉ㄦ剰锛岀敱浜庡綋鍓嶅疄鐜颁腑浣跨敤鐨勪紭鍖栵紝鎵撳嵃鐨勫€煎彲鑳戒綆浜庣湡瀹炲€笺€傚鏋滀笉甯屾湜杩欐牱锛岃鎻愪氦 bug 鎶ュ憡銆?
 
-"AnonHugePages"、"ShmemPmdMapped" 和 "FilePmdMapped" 显示了当前由 PMD 级别的架构性大页映射所支持的透明大页的内存量。"AnonHugePages" 对应于不属于文件的内存，"ShmemPmdMapped" 对应于共享内存（shmem/tmpfs），"FilePmdMapped" 对应于文件支持的内存（不包括 shmem/tmpfs）。
+"AnonHugePages"銆?ShmemPmdMapped" 鍜?"FilePmdMapped" 鏄剧ず浜嗗綋鍓嶇敱 PMD 绾у埆鐨勬灦鏋勬€уぇ椤垫槧灏勬墍鏀寔鐨勯€忔槑澶ч〉鐨勫唴瀛橀噺銆?AnonHugePages" 瀵瑰簲浜庝笉灞炰簬鏂囦欢鐨勫唴瀛橈紝"ShmemPmdMapped" 瀵瑰簲浜庡叡浜唴瀛橈紙shmem/tmpfs锛夛紝"FilePmdMapped" 瀵瑰簲浜庢枃浠舵敮鎸佺殑鍐呭瓨锛堜笉鍖呮嫭 shmem/tmpfs锛夈€?
 
-对于未被 PMD 级别的架构性大页映射映射的透明大页（或类似概念），没有专门的条目。
+瀵逛簬鏈 PMD 绾у埆鐨勬灦鏋勬€уぇ椤垫槧灏勬槧灏勭殑閫忔槑澶ч〉锛堟垨绫讳技姒傚康锛夛紝娌℃湁涓撻棬鐨勬潯鐩€?
 
-"Shared_Hugetlb" 和 "Private_Hugetlb" 显示了由 hugetlbfs 页支持的内存量，由于历史原因，这部分**不**计入 "RSS" 或 "PSS" 字段。并且它们也不包含在 {Shared,Private}_{Clean,Dirty} 字段中。
+"Shared_Hugetlb" 鍜?"Private_Hugetlb" 鏄剧ず浜嗙敱 hugetlbfs 椤垫敮鎸佺殑鍐呭瓨閲忥紝鐢变簬鍘嗗彶鍘熷洜锛岃繖閮ㄥ垎**涓?*璁″叆 "RSS" 鎴?"PSS" 瀛楁銆傚苟涓斿畠浠篃涓嶅寘鍚湪 {Shared,Private}_{Clean,Dirty} 瀛楁涓€?
 
-"Swap" 显示了被使用但位于交换空间中的、原本应为匿名的内存量。
+"Swap" 鏄剧ず浜嗚浣跨敤浣嗕綅浜庝氦鎹㈢┖闂翠腑鐨勩€佸師鏈簲涓哄尶鍚嶇殑鍐呭瓨閲忋€?
 
-对于 shmem 映射，"Swap" 还包括底层 shmem 对象中已映射（且未被写时复制替换）并位于交换空间中的那部分大小。"SwapPss" 显示该映射的比例交换份额。与 "Swap" 不同，它不计入底层 shmem 对象换出的页。"Locked" 指示该映射是否被锁定在内存中。
+瀵逛簬 shmem 鏄犲皠锛?Swap" 杩樺寘鎷簳灞?shmem 瀵硅薄涓凡鏄犲皠锛堜笖鏈鍐欐椂澶嶅埗鏇挎崲锛夊苟浣嶄簬浜ゆ崲绌洪棿涓殑閭ｉ儴鍒嗗ぇ灏忋€?SwapPss" 鏄剧ず璇ユ槧灏勭殑姣斾緥浜ゆ崲浠介銆備笌 "Swap" 涓嶅悓锛屽畠涓嶈鍏ュ簳灞?shmem 瀵硅薄鎹㈠嚭鐨勯〉銆?Locked" 鎸囩ず璇ユ槧灏勬槸鍚﹁閿佸畾鍦ㄥ唴瀛樹腑銆?
 
-"THPeligible" 指示该映射是否有资格分配任何当前已启用大小的自然对齐 THP 页。为真则为 1，否则为 0。
+"THPeligible" 鎸囩ず璇ユ槧灏勬槸鍚︽湁璧勬牸鍒嗛厤浠讳綍褰撳墠宸插惎鐢ㄥぇ灏忕殑鑷劧瀵归綈 THP 椤点€備负鐪熷垯涓?1锛屽惁鍒欎负 0銆?
 
-如果内核和 CPU 都支持保护键（pkeys），"ProtectionKey" 指示与该虚拟内存区域关联的内存保护键。
+濡傛灉鍐呮牳鍜?CPU 閮芥敮鎸佷繚鎶ら敭锛坧keys锛夛紝"ProtectionKey" 鎸囩ず涓庤铏氭嫙鍐呭瓨鍖哄煙鍏宠仈鐨勫唴瀛樹繚鎶ら敭銆?
 
-"VmFlags" 字段值得单独描述。该成员以双字母编码的方式表示与特定虚拟内存区域关联的内核标志。代码如下：
+"VmFlags" 瀛楁鍊煎緱鍗曠嫭鎻忚堪銆傝鎴愬憳浠ュ弻瀛楁瘝缂栫爜鐨勬柟寮忚〃绀轰笌鐗瑰畾铏氭嫙鍐呭瓨鍖哄煙鍏宠仈鐨勫唴鏍告爣蹇椼€備唬鐮佸涓嬶細
 
     ==    =============================================================
-    rd    可读（readable）
-    wr    可写（writeable）
-    ex    可执行（executable）
-    sh    共享（shared）
-    mr    可读取（may read）
-    mw    可写入（may write）
-    me    可执行（may execute）
-    ms    可共享（may share）
-    gd    栈段向下增长（stack segment growns down）
-    pf    纯 PFN 范围（pure PFN range）
-    lo    页被锁定在内存中（pages are locked in memory）
-    io    内存映射 I/O 区域（memory mapped I/O area）
-    sr    提供了顺序读建议（sequential read advise provided）
-    rr    提供了随机读建议（random read advise provided）
-    dc    派生（fork）时不复制该区域（do not copy area on fork）
-    de    重映射时不扩展该区域（do not expand area on remapping）
-    ac    该区域可记账（area is accountable）
-    nr    未为该区域保留交换空间（swap space is not reserved for the area）
-    ht    该区域使用大 tlb 页（area uses huge tlb pages）
-    sf    同步页错误（synchronous page fault）
-    ar    架构特定标志（architecture specific flag）
-    wf    派生时擦除（wipe on fork）
-    dd    不包含在核心转储中（do not include area into core dump）
-    sd    软脏标志（soft dirty flag）
-    mm    混合映射区域（mixed map area）
-    hg    大页建议标志（huge page advise flag）
-    nh    无大页建议标志（no huge page advise flag）
-    mg    可合并建议标志（mergeable advise flag）
-    bt    arm64 BTI 保护页（arm64 BTI guarded page）
-    mt    启用了 arm64 MTE 分配标签（arm64 MTE allocation tags are enabled）
-    um    userfaultfd 缺失跟踪（userfaultfd missing tracking）
-    uw    userfaultfd 写保护跟踪（userfaultfd wr-protect tracking）
-    ui    userfaultfd 次要错误（userfaultfd minor fault）
-    ss    影子/保护控制栈页（shadow/guarded control stack page）
-    sl    已封存（sealed）
-    lf    出错时锁定页（lock on fault pages）
-    dp    始终可惰性释放的映射（always lazily freeable mapping）
-    gu    可能包含保护区域（若未设置，则肯定不包含）
+    rd    鍙锛坮eadable锛?
+    wr    鍙啓锛坵riteable锛?
+    ex    鍙墽琛岋紙executable锛?
+    sh    鍏变韩锛坰hared锛?
+    mr    鍙鍙栵紙may read锛?
+    mw    鍙啓鍏ワ紙may write锛?
+    me    鍙墽琛岋紙may execute锛?
+    ms    鍙叡浜紙may share锛?
+    gd    鏍堟鍚戜笅澧為暱锛坰tack segment growns down锛?
+    pf    绾?PFN 鑼冨洿锛坧ure PFN range锛?
+    lo    椤佃閿佸畾鍦ㄥ唴瀛樹腑锛坧ages are locked in memory锛?
+    io    鍐呭瓨鏄犲皠 I/O 鍖哄煙锛坢emory mapped I/O area锛?
+    sr    鎻愪緵浜嗛『搴忚寤鸿锛坰equential read advise provided锛?
+    rr    鎻愪緵浜嗛殢鏈鸿寤鸿锛坮andom read advise provided锛?
+    dc    娲剧敓锛坒ork锛夋椂涓嶅鍒惰鍖哄煙锛坉o not copy area on fork锛?
+    de    閲嶆槧灏勬椂涓嶆墿灞曡鍖哄煙锛坉o not expand area on remapping锛?
+    ac    璇ュ尯鍩熷彲璁拌处锛坅rea is accountable锛?
+    nr    鏈负璇ュ尯鍩熶繚鐣欎氦鎹㈢┖闂达紙swap space is not reserved for the area锛?
+    ht    璇ュ尯鍩熶娇鐢ㄥぇ tlb 椤碉紙area uses huge tlb pages锛?
+    sf    鍚屾椤甸敊璇紙synchronous page fault锛?
+    ar    鏋舵瀯鐗瑰畾鏍囧織锛坅rchitecture specific flag锛?
+    wf    娲剧敓鏃舵摝闄わ紙wipe on fork锛?
+    dd    涓嶅寘鍚湪鏍稿績杞偍涓紙do not include area into core dump锛?
+    sd    杞剰鏍囧織锛坰oft dirty flag锛?
+    mm    娣峰悎鏄犲皠鍖哄煙锛坢ixed map area锛?
+    hg    澶ч〉寤鸿鏍囧織锛坔uge page advise flag锛?
+    nh    鏃犲ぇ椤靛缓璁爣蹇楋紙no huge page advise flag锛?
+    mg    鍙悎骞跺缓璁爣蹇楋紙mergeable advise flag锛?
+    bt    arm64 BTI 淇濇姢椤碉紙arm64 BTI guarded page锛?
+    mt    鍚敤浜?arm64 MTE 鍒嗛厤鏍囩锛坅rm64 MTE allocation tags are enabled锛?
+    um    userfaultfd 缂哄け璺熻釜锛坲serfaultfd missing tracking锛?
+    uw    userfaultfd 鍐欎繚鎶よ窡韪紙userfaultfd wr-protect tracking锛?
+    ui    userfaultfd 娆¤閿欒锛坲serfaultfd minor fault锛?
+    ss    褰卞瓙/淇濇姢鎺у埗鏍堥〉锛坰hadow/guarded control stack page锛?
+    sl    宸插皝瀛橈紙sealed锛?
+    lf    鍑洪敊鏃堕攣瀹氶〉锛坙ock on fault pages锛?
+    dp    濮嬬粓鍙儼鎬ч噴鏀剧殑鏄犲皠锛坅lways lazily freeable mapping锛?
+    gu    鍙兘鍖呭惈淇濇姢鍖哄煙锛堣嫢鏈缃紝鍒欒偗瀹氫笉鍖呭惈锛?
     ==    =============================================================
 
-注意，不能保证每个标志和关联助记符在所有后续内核版本中都存在。事情会发生变化，标志可能会消失，或者相反——新增。它们含义的解释在未来也可能改变。因此这些标志的每个使用者都必须针对每个特定的内核版本来跟踪其确切语义。
+娉ㄦ剰锛屼笉鑳戒繚璇佹瘡涓爣蹇楀拰鍏宠仈鍔╄绗﹀湪鎵€鏈夊悗缁唴鏍哥増鏈腑閮藉瓨鍦ㄣ€備簨鎯呬細鍙戠敓鍙樺寲锛屾爣蹇楀彲鑳戒細娑堝け锛屾垨鑰呯浉鍙嶁€斺€旀柊澧炪€傚畠浠惈涔夌殑瑙ｉ噴鍦ㄦ湭鏉ヤ篃鍙兘鏀瑰彉銆傚洜姝よ繖浜涙爣蹇楃殑姣忎釜浣跨敤鑰呴兘蹇呴』閽堝姣忎釜鐗瑰畾鐨勫唴鏍哥増鏈潵璺熻釜鍏剁‘鍒囪涔夈€?
 
-只有当启用了 CONFIG_MMU 内核配置选项时，此文件才存在。
+鍙湁褰撳惎鐢ㄤ簡 CONFIG_MMU 鍐呮牳閰嶇疆閫夐」鏃讹紝姝ゆ枃浠舵墠瀛樺湪銆?
 
-注意：读取 /proc/PID/maps 或 /proc/PID/smaps 本质上是存在竞态的（只有在单次读取调用中才能获得一致的输出）。
+娉ㄦ剰锛氳鍙?/proc/PID/maps 鎴?/proc/PID/smaps 鏈川涓婃槸瀛樺湪绔炴€佺殑锛堝彧鏈夊湪鍗曟璇诲彇璋冪敤涓墠鑳借幏寰椾竴鑷寸殑杈撳嚭锛夈€?
 
-这通常在进行这些文件的部分读取、同时内存映射正在被修改时表现出来。尽管存在竞态，我们仍提供以下保证：
+杩欓€氬父鍦ㄨ繘琛岃繖浜涙枃浠剁殑閮ㄥ垎璇诲彇銆佸悓鏃跺唴瀛樻槧灏勬鍦ㄨ淇敼鏃惰〃鐜板嚭鏉ャ€傚敖绠″瓨鍦ㄧ珵鎬侊紝鎴戜滑浠嶆彁渚涗互涓嬩繚璇侊細
 
-1) 映射的地址永远不会后退，这意味着任意两个区域永远不会重叠。
-2) 如果在 smaps/maps 遍历的整个生命周期内某个给定 vaddr 上始终有内容，则会有对应的输出。
+1) 鏄犲皠鐨勫湴鍧€姘歌繙涓嶄細鍚庨€€锛岃繖鎰忓懗鐫€浠绘剰涓や釜鍖哄煙姘歌繙涓嶄細閲嶅彔銆?
+2) 濡傛灉鍦?smaps/maps 閬嶅巻鐨勬暣涓敓鍛藉懆鏈熷唴鏌愪釜缁欏畾 vaddr 涓婂缁堟湁鍐呭锛屽垯浼氭湁瀵瑰簲鐨勮緭鍑恒€?
 
-/proc/PID/smaps_rollup 文件包含与 /proc/PID/smaps 相同的字段，但它们的值是该进程所有映射对应值的总和。此外，它还包含以下字段：
+/proc/PID/smaps_rollup 鏂囦欢鍖呭惈涓?/proc/PID/smaps 鐩稿悓鐨勫瓧娈碉紝浣嗗畠浠殑鍊兼槸璇ヨ繘绋嬫墍鏈夋槧灏勫搴斿€肩殑鎬诲拰銆傛澶栵紝瀹冭繕鍖呭惈浠ヤ笅瀛楁锛?
 
 - Pss_Anon
 - Pss_File
 - Pss_Shmem
 
-它们表示如上为 smaps 所描述的匿名、文件和 shmem 页的比例份额。这些字段在 smaps 中被省略，因为每个映射都标识了它所包含的所有页的类型（anon、file 或 shmem）。因此 smaps_rollup 中的所有信息都可以从 smaps 推导出来，但代价要高得多。
+瀹冧滑琛ㄧず濡備笂涓?smaps 鎵€鎻忚堪鐨勫尶鍚嶃€佹枃浠跺拰 shmem 椤电殑姣斾緥浠介銆傝繖浜涘瓧娈靛湪 smaps 涓鐪佺暐锛屽洜涓烘瘡涓槧灏勯兘鏍囪瘑浜嗗畠鎵€鍖呭惈鐨勬墍鏈夐〉鐨勭被鍨嬶紙anon銆乫ile 鎴?shmem锛夈€傚洜姝?smaps_rollup 涓殑鎵€鏈変俊鎭兘鍙互浠?smaps 鎺ㄥ鍑烘潵锛屼絾浠ｄ环瑕侀珮寰楀銆?
 
-/proc/PID/clear_refs 用于重置与进程关联的物理和虚拟页上的 PG_Referenced 和 ACCESSED/YOUNG 位，以及 pte 上的软脏位（详见 Documentation/admin-guide/mm/soft-dirty.rst）。
+/proc/PID/clear_refs 鐢ㄤ簬閲嶇疆涓庤繘绋嬪叧鑱旂殑鐗╃悊鍜岃櫄鎷熼〉涓婄殑 PG_Referenced 鍜?ACCESSED/YOUNG 浣嶏紝浠ュ強 pte 涓婄殑杞剰浣嶏紙璇﹁ Documentation/admin-guide/mm/soft-dirty.rst锛夈€?
 
 ```
     > echo 1 > /proc/PID/clear_refs
@@ -523,17 +523,17 @@ statm 文件包含关于进程内存使用更详细的信息。它的七个字�
     > echo 4 > /proc/PID/clear_refs
 ```
 
-要重置峰值常驻集大小（"高水位标记"）为进程的：
+瑕侀噸缃嘲鍊煎父椹婚泦澶у皬锛?楂樻按浣嶆爣璁?锛変负杩涚▼鐨勶細
 
 ```
     > echo 5 > /proc/PID/clear_refs
 ```
 
-写入 /proc/PID/clear_refs 的任何其他值都不会产生效果。
+鍐欏叆 /proc/PID/clear_refs 鐨勪换浣曞叾浠栧€奸兘涓嶄細浜х敓鏁堟灉銆?
 
-/proc/pid/pagemap 给出 PFN，可用于通过 /proc/kpageflags 查找 pageflags，以及通过 /proc/kpagecount 查找一个页被映射的次数。详细解释见 Documentation/admin-guide/mm/pagemap.rst。
+/proc/pid/pagemap 缁欏嚭 PFN锛屽彲鐢ㄤ簬閫氳繃 /proc/kpageflags 鏌ユ壘 pageflags锛屼互鍙婇€氳繃 /proc/kpagecount 鏌ユ壘涓€涓〉琚槧灏勭殑娆℃暟銆傝缁嗚В閲婅 Documentation/admin-guide/mm/pagemap.rst銆?
 
-/proc/pid/numa_maps 是基于 maps 的扩展，显示内存局部性和绑定策略，以及每个映射的内存使用量（以页为单位）。输出遵循通用格式，其中映射细节由
+/proc/pid/numa_maps 鏄熀浜?maps 鐨勬墿灞曪紝鏄剧ず鍐呭瓨灞€閮ㄦ€у拰缁戝畾绛栫暐锛屼互鍙婃瘡涓槧灏勭殑鍐呭瓨浣跨敤閲忥紙浠ラ〉涓哄崟浣嶏級銆傝緭鍑洪伒寰€氱敤鏍煎紡锛屽叾涓槧灏勭粏鑺傜敱
 
 ```
     address   policy    mapping details
@@ -556,83 +556,83 @@ statm 文件包含关于进程内存使用更详细的信息。它的七个字�
     7fff3369d000 default mapped=1 mapmax=35 active=0 N3=1 kernelpagesize_kB=4
 ```
 
-其中：
+鍏朵腑锛?
 
-"address" 是该映射的起始地址；
+"address" 鏄鏄犲皠鐨勮捣濮嬪湴鍧€锛?
 
-"policy" 报告为该映射设置的 NUMA 内存策略（见 Documentation/admin-guide/mm/numa_memory_policy.rst）；
+"policy" 鎶ュ憡涓鸿鏄犲皠璁剧疆鐨?NUMA 鍐呭瓨绛栫暐锛堣 Documentation/admin-guide/mm/numa_memory_policy.rst锛夛紱
 
-"mapping details" 汇总了映射数据，如映射类型、页使用计数器、节点局部性页计数器（N0 == node0，N1 == node1，……）以及支持该映射的内核页大小（以 KB 为单位）。
+"mapping details" 姹囨€讳簡鏄犲皠鏁版嵁锛屽鏄犲皠绫诲瀷銆侀〉浣跨敤璁℃暟鍣ㄣ€佽妭鐐瑰眬閮ㄦ€ч〉璁℃暟鍣紙N0 == node0锛孨1 == node1锛屸€︹€︼級浠ュ強鏀寔璇ユ槧灏勭殑鍐呮牳椤靛ぇ灏忥紙浠?KB 涓哄崟浣嶏級銆?
 
-注意，某些内核配置不跟踪较大分配（例如 THP）中一部分的页被映射的精确次数。在这些配置中，"mapmax" 可能对应于此类较大分配中每页的平均映射数。
-### 1.2 内核数据
+娉ㄦ剰锛屾煇浜涘唴鏍搁厤缃笉璺熻釜杈冨ぇ鍒嗛厤锛堜緥濡?THP锛変腑涓€閮ㄥ垎鐨勯〉琚槧灏勭殑绮剧‘娆℃暟銆傚湪杩欎簺閰嶇疆涓紝"mapmax" 鍙兘瀵瑰簲浜庢绫昏緝澶у垎閰嶄腑姣忛〉鐨勫钩鍧囨槧灏勬暟銆?
+### 1.2 鍐呮牳鏁版嵁
 
 
-与进程条目类似，内核数据文件提供关于运行中的内核的信息。用于获取这些信息的文件包含在 /proc 中，并列于表 1-5。并非所有这些文件都会出现在你的系统中。这取决于内核配置和已加载的模块，哪些文件存在，哪些缺失。
+涓庤繘绋嬫潯鐩被浼硷紝鍐呮牳鏁版嵁鏂囦欢鎻愪緵鍏充簬杩愯涓殑鍐呮牳鐨勪俊鎭€傜敤浜庤幏鍙栬繖浜涗俊鎭殑鏂囦欢鍖呭惈鍦?/proc 涓紝骞跺垪浜庤〃 1-5銆傚苟闈炴墍鏈夎繖浜涙枃浠堕兘浼氬嚭鐜板湪浣犵殑绯荤粺涓€傝繖鍙栧喅浜庡唴鏍搁厤缃拰宸插姞杞界殑妯″潡锛屽摢浜涙枃浠跺瓨鍦紝鍝簺缂哄け銆?
 
 
  ============ ===============================================================
- 文件        内容
+ 鏂囦欢        鍐呭
  ============ ===============================================================
- allocinfo    内存分配性能分析信息
- apm          高级电源管理（Advanced power management）信息
- bootconfig   从 boot config 获取的内核命令行，
- 	      以及，如果有来自引导加载程序的
- 	      内核参数，则有一行 "# Parameters from bootloader:"
- 	      后跟包含这些参数的行，前面加 "# "。	(5.5)
- buddyinfo    内核内存分配器信息（见正文）			(2.5)
- bus          包含总线特定信息的目录
- cmdline      内核命令行，包括来自引导加载程序和嵌入在内核映像中的
- cpuinfo      关于 CPU 的信息
- devices      可用设备（块设备和字符设备）
- dma          已使用的 DMA 通道
- filesystems  支持的文件系统
- driver       在此分组的不同驱动，目前为 rtc			(2.4)
- execdomains  执行域（Execdomains），与安全相关			(2.4)
- fb 	      帧缓冲（Frame Buffer）设备			(2.4)
- fs 	      文件系统参数，目前为 nfs/exports		(2.4)
- ide          包含关于 IDE 子系统信息的目录
- interrupts   中断使用情况
- iomem 	      内存映射（Memory map）				(2.4)
- ioports      I/O 端口使用情况
- irq 	      irq 到 cpu 亲和性的掩码				(2.4)(smp?)
- isapnp       ISA PnP (Plug&Play) 信息				(2.4)
- kcore        内核核心映像（可以是 ELF 或 A.OUT（在 2.4 中已废弃））
- kmsg         内核消息
- ksyms        内核符号表
- loadavg      过去 1、5 和 15 分钟的平均负载；
-                当前可运行进程数（运行或在就绪队列中）；
-                系统中进程总数；
-                最后创建的 pid。
-                除"当前可运行进程数"和"系统中进程总数"外，
-                所有字段都用空格分隔，这两者之间用斜杠（'/'）分隔。示例：
+ allocinfo    鍐呭瓨鍒嗛厤鎬ц兘鍒嗘瀽淇℃伅
+ apm          楂樼骇鐢垫簮绠＄悊锛圓dvanced power management锛変俊鎭?
+ bootconfig   浠?boot config 鑾峰彇鐨勫唴鏍稿懡浠よ锛?
+ 	      浠ュ強锛屽鏋滄湁鏉ヨ嚜寮曞鍔犺浇绋嬪簭鐨?
+ 	      鍐呮牳鍙傛暟锛屽垯鏈変竴琛?"# Parameters from bootloader:"
+ 	      鍚庤窡鍖呭惈杩欎簺鍙傛暟鐨勮锛屽墠闈㈠姞 "# "銆?(5.5)
+ buddyinfo    鍐呮牳鍐呭瓨鍒嗛厤鍣ㄤ俊鎭紙瑙佹鏂囷級			(2.5)
+ bus          鍖呭惈鎬荤嚎鐗瑰畾淇℃伅鐨勭洰褰?
+ cmdline      鍐呮牳鍛戒护琛岋紝鍖呮嫭鏉ヨ嚜寮曞鍔犺浇绋嬪簭鍜屽祵鍏ュ湪鍐呮牳鏄犲儚涓殑
+ cpuinfo      鍏充簬 CPU 鐨勪俊鎭?
+ devices      鍙敤璁惧锛堝潡璁惧鍜屽瓧绗﹁澶囷級
+ dma          宸蹭娇鐢ㄧ殑 DMA 閫氶亾
+ filesystems  鏀寔鐨勬枃浠剁郴缁?
+ driver       鍦ㄦ鍒嗙粍鐨勪笉鍚岄┍鍔紝鐩墠涓?rtc			(2.4)
+ execdomains  鎵ц鍩燂紙Execdomains锛夛紝涓庡畨鍏ㄧ浉鍏?		(2.4)
+ fb 	      甯х紦鍐诧紙Frame Buffer锛夎澶?		(2.4)
+ fs 	      鏂囦欢绯荤粺鍙傛暟锛岀洰鍓嶄负 nfs/exports		(2.4)
+ ide          鍖呭惈鍏充簬 IDE 瀛愮郴缁熶俊鎭殑鐩綍
+ interrupts   涓柇浣跨敤鎯呭喌
+ iomem 	      鍐呭瓨鏄犲皠锛圡emory map锛?			(2.4)
+ ioports      I/O 绔彛浣跨敤鎯呭喌
+ irq 	      irq 鍒?cpu 浜插拰鎬х殑鎺╃爜				(2.4)(smp锛?
+ isapnp       ISA PnP (Plug&Play) 淇℃伅				(2.4)
+ kcore        鍐呮牳鏍稿績鏄犲儚锛堝彲浠ユ槸 ELF 鎴?A.OUT锛堝湪 2.4 涓凡搴熷純锛夛級
+ kmsg         鍐呮牳娑堟伅
+ ksyms        鍐呮牳绗﹀彿琛?
+ loadavg      杩囧幓 1銆? 鍜?15 鍒嗛挓鐨勫钩鍧囪礋杞斤紱
+                褰撳墠鍙繍琛岃繘绋嬫暟锛堣繍琛屾垨鍦ㄥ氨缁槦鍒椾腑锛夛紱
+                绯荤粺涓繘绋嬫€绘暟锛?
+                鏈€鍚庡垱寤虹殑 pid銆?
+                闄?褰撳墠鍙繍琛岃繘绋嬫暟"鍜?绯荤粺涓繘绋嬫€绘暟"澶栵紝
+                鎵€鏈夊瓧娈甸兘鐢ㄧ┖鏍煎垎闅旓紝杩欎袱鑰呬箣闂寸敤鏂滄潬锛?/'锛夊垎闅斻€傜ず渚嬶細
                 0.61 0.61 0.55 3/828 22084
- locks        内核锁
- meminfo      内存信息
- misc         杂项
- modules      已加载模块列表
- mounts       已挂载的文件系统
- net          网络信息（见正文）
- pagetypeinfo 额外的页分配器信息（见正文）			(2.5)
- partitions   系统已知的 partitions 表
- pci 	      PCI 总线的已废弃信息（新方式 -> /proc/bus/pci/，
-                由 lspci 解耦				(2.4)
- rtc          实时时钟（Real time clock）
- scsi         SCSI 信息（见正文）
- slabinfo     Slab 池信息
- softirqs     softirq 使用情况
- stat         总体统计
- swaps        交换空间利用率
- sys          见第 2 章
- sysvipc      SysVIPC 资源（msg、sem、shm）的信息			(2.4)
- tty 	      tty 驱动的信息
- uptime       自启动以来的墙上时钟时间，以及所有 cpu 的合并空闲时间
- version      内核版本
- video 	      video 资源的 bttv 信息				(2.4)
- vmallocinfo  显示 vmalloced 区域
+ locks        鍐呮牳閿?
+ meminfo      鍐呭瓨淇℃伅
+ misc         鏉傞」
+ modules      宸插姞杞芥ā鍧楀垪琛?
+ mounts       宸叉寕杞界殑鏂囦欢绯荤粺
+ net          缃戠粶淇℃伅锛堣姝ｆ枃锛?
+ pagetypeinfo 棰濆鐨勯〉鍒嗛厤鍣ㄤ俊鎭紙瑙佹鏂囷級			(2.5)
+ partitions   绯荤粺宸茬煡鐨?partitions 琛?
+ pci 	      PCI 鎬荤嚎鐨勫凡搴熷純淇℃伅锛堟柊鏂瑰紡 -> /proc/bus/pci/锛?
+                鐢?lspci 瑙ｈ€?			(2.4)
+ rtc          瀹炴椂鏃堕挓锛圧eal time clock锛?
+ scsi         SCSI 淇℃伅锛堣姝ｆ枃锛?
+ slabinfo     Slab 姹犱俊鎭?
+ softirqs     softirq 浣跨敤鎯呭喌
+ stat         鎬讳綋缁熻
+ swaps        浜ゆ崲绌洪棿鍒╃敤鐜?
+ sys          瑙佺 2 绔?
+ sysvipc      SysVIPC 璧勬簮锛坢sg銆乻em銆乻hm锛夌殑淇℃伅			(2.4)
+ tty 	      tty 椹卞姩鐨勪俊鎭?
+ uptime       鑷惎鍔ㄤ互鏉ョ殑澧欎笂鏃堕挓鏃堕棿锛屼互鍙婃墍鏈?cpu 鐨勫悎骞剁┖闂叉椂闂?
+ version      鍐呮牳鐗堟湰
+ video 	      video 璧勬簮鐨?bttv 淇℃伅				(2.4)
+ vmallocinfo  鏄剧ず vmalloced 鍖哄煙
  ============ ===============================================================
 
-例如，你可以检查当前正在使用的中断以及哪些
+渚嬪锛屼綘鍙互妫€鏌ュ綋鍓嶆鍦ㄤ娇鐢ㄧ殑涓柇浠ュ強鍝簺
 
 ```
   > cat /proc/interrupts
@@ -652,7 +652,7 @@ statm 文件包含关于进程内存使用更详细的信息。它的七个字�
   NMI:          0
 ```
 
-在 2.4.* 中，向该文件添加了 couple 行 LOC & ERR（这次是
+鍦?2.4.* 涓紝鍚戣鏂囦欢娣诲姞浜?couple 琛?LOC & ERR锛堣繖娆℃槸
 
 ```
   > cat /proc/interrupts
@@ -675,29 +675,29 @@ statm 文件包含关于进程内存使用更详细的信息。它的七个字�
   ERR:       2155
 ```
 
-在这种情况下 NMI 增加，因为每次定时器中断都会生成一个 NMI（不可屏蔽中断），NMI 看门狗用它来检测死锁。
+鍦ㄨ繖绉嶆儏鍐典笅 NMI 澧炲姞锛屽洜涓烘瘡娆″畾鏃跺櫒涓柇閮戒細鐢熸垚涓€涓?NMI锛堜笉鍙睆钄戒腑鏂級锛孨MI 鐪嬮棬鐙楃敤瀹冩潵妫€娴嬫閿併€?
 
-LOC 是每个 CPU 内部 APIC 的本地中断计数器。
+LOC 鏄瘡涓?CPU 鍐呴儴 APIC 鐨勬湰鍦颁腑鏂鏁板櫒銆?
 
-ERR 在 IO-APIC 总线（在 SMP 系统中连接 CPU 的总线）出现错误时增加。这意味着检测到了一个错误，IO-APIC 会自动重试传输，因此这应该不是大问题，但你应该阅读 SMP-FAQ。
+ERR 鍦?IO-APIC 鎬荤嚎锛堝湪 SMP 绯荤粺涓繛鎺?CPU 鐨勬€荤嚎锛夊嚭鐜伴敊璇椂澧炲姞銆傝繖鎰忓懗鐫€妫€娴嬪埌浜嗕竴涓敊璇紝IO-APIC 浼氳嚜鍔ㄩ噸璇曚紶杈擄紝鍥犳杩欏簲璇ヤ笉鏄ぇ闂锛屼絾浣犲簲璇ラ槄璇?SMP-FAQ銆?
 
-在 2.6.2* 中，/proc/interrupts 再次被扩展。这次的目标是让 /proc/interrupts 显示系统中使用的每个 IRQ 向量，而不仅仅是那些被认为是"最重要"的。新的向量有：
+鍦?2.6.2* 涓紝/proc/interrupts 鍐嶆琚墿灞曘€傝繖娆＄殑鐩爣鏄 /proc/interrupts 鏄剧ず绯荤粺涓娇鐢ㄧ殑姣忎釜 IRQ 鍚戦噺锛岃€屼笉浠呬粎鏄偅浜涜璁や负鏄?鏈€閲嶈"鐨勩€傛柊鐨勫悜閲忔湁锛?
 
 THR
-  当机器检查阈值计数器（通常计数内存或缓存的 ECC 纠正错误）超过可配置阈值时引发的中断。仅在某些系统上可用。
+  褰撴満鍣ㄦ鏌ラ槇鍊艰鏁板櫒锛堥€氬父璁℃暟鍐呭瓨鎴栫紦瀛樼殑 ECC 绾犳閿欒锛夎秴杩囧彲閰嶇疆闃堝€兼椂寮曞彂鐨勪腑鏂€備粎鍦ㄦ煇浜涚郴缁熶笂鍙敤銆?
 
 TRM
-  当 CPU 的温度阈值被超过时发生热事件中断。当温度降回正常时也可能生成此中断。
+  褰?CPU 鐨勬俯搴﹂槇鍊艰瓒呰繃鏃跺彂鐢熺儹浜嬩欢涓柇銆傚綋娓╁害闄嶅洖姝ｅ父鏃朵篃鍙兘鐢熸垚姝や腑鏂€?
 
 SPU
-  伪中断（spurious interrupt）是某个 IO 设备在能被 APIC 完全处理之前被引发又拉低的中断。因此 APIC 看到了中断，但不知道它来自哪个设备。对于这种情况，APIC 将生成 IRQ 向量为 0xff 的中断。这也可能由芯片组 bug 引起。
+  浼腑鏂紙spurious interrupt锛夋槸鏌愪釜 IO 璁惧鍦ㄨ兘琚?APIC 瀹屽叏澶勭悊涔嬪墠琚紩鍙戝張鎷変綆鐨勪腑鏂€傚洜姝?APIC 鐪嬪埌浜嗕腑鏂紝浣嗕笉鐭ラ亾瀹冩潵鑷摢涓澶囥€傚浜庤繖绉嶆儏鍐碉紝APIC 灏嗙敓鎴?IRQ 鍚戦噺涓?0xff 鐨勪腑鏂€傝繖涔熷彲鑳界敱鑺墖缁?bug 寮曡捣銆?
 
-RES、CAL、TLB
-  重新调度、调用和 TLB 刷新中断是根据操作系统的需要从一个 CPU 发送到另一个 CPU 的。通常，它们的统计信息被内核开发者和感兴趣的用户用来确定给定类型中断的发生情况。
+RES銆丆AL銆乀LB
+  閲嶆柊璋冨害銆佽皟鐢ㄥ拰 TLB 鍒锋柊涓柇鏄牴鎹搷浣滅郴缁熺殑闇€瑕佷粠涓€涓?CPU 鍙戦€佸埌鍙︿竴涓?CPU 鐨勩€傞€氬父锛屽畠浠殑缁熻淇℃伅琚唴鏍稿紑鍙戣€呭拰鎰熷叴瓒ｇ殑鐢ㄦ埛鐢ㄦ潵纭畾缁欏畾绫诲瀷涓柇鐨勫彂鐢熸儏鍐点€?
 
-上述 IRQ 向量仅在相关时显示。例如，阈值向量在 x86_64 平台上不存在。当系统为单处理器时，其他向量会被抑制。截至本文撰写时，只有 i386 和 x86_64 平台支持新的 IRQ 向量显示。
+涓婅堪 IRQ 鍚戦噺浠呭湪鐩稿叧鏃舵樉绀恒€備緥濡傦紝闃堝€煎悜閲忓湪 x86_64 骞冲彴涓婁笉瀛樺湪銆傚綋绯荤粺涓哄崟澶勭悊鍣ㄦ椂锛屽叾浠栧悜閲忎細琚姂鍒躲€傛埅鑷虫湰鏂囨挵鍐欐椂锛屽彧鏈?i386 鍜?x86_64 骞冲彴鏀寔鏂扮殑 IRQ 鍚戦噺鏄剧ず銆?
 
-值得关注的一点是 2.4 中引入了 /proc/irq 目录。它可以用来设置 IRQ 到 CPU 的亲和性。这意味着你可以将 IRQ"挂钩"到仅一个 CPU，或排除某个 CPU 处理 IRQ。irq 子目录的内容是每个 IRQ 的一个子目录，以及 default_smp_affinity。
+鍊煎緱鍏虫敞鐨勪竴鐐规槸 2.4 涓紩鍏ヤ簡 /proc/irq 鐩綍銆傚畠鍙互鐢ㄦ潵璁剧疆 IRQ 鍒?CPU 鐨勪翰鍜屾€с€傝繖鎰忓懗鐫€浣犲彲浠ュ皢 IRQ"鎸傞挬"鍒颁粎涓€涓?CPU锛屾垨鎺掗櫎鏌愪釜 CPU 澶勭悊 IRQ銆俰rq 瀛愮洰褰曠殑鍐呭鏄瘡涓?IRQ 鐨勪竴涓瓙鐩綍锛屼互鍙?default_smp_affinity銆?
 
 ```
   > ls /proc/irq/
@@ -707,35 +707,35 @@ RES、CAL、TLB
   smp_affinity
 ```
 
-smp_affinity 是一个位掩码，可以在其中指定哪些 CPU 可以处理
+smp_affinity 鏄竴涓綅鎺╃爜锛屽彲浠ュ湪鍏朵腑鎸囧畾鍝簺 CPU 鍙互澶勭悊
 
 ```
   > echo 1 > /proc/irq/10/smp_affinity
 ```
 
-这意味着只有第一个 CPU 会处理该 IRQ，但你也可以 echo 5，这意味着只有第一个和第三个 CPU 可以处理该 IRQ。
+杩欐剰鍛崇潃鍙湁绗竴涓?CPU 浼氬鐞嗚 IRQ锛屼絾浣犱篃鍙互 echo 5锛岃繖鎰忓懗鐫€鍙湁绗竴涓拰绗笁涓?CPU 鍙互澶勭悊璇?IRQ銆?
 
 ```
   > cat /proc/irq/0/smp_affinity
   ffffffff
 ```
 
-还有一个替代接口 smp_affinity_list，允许指定
+杩樻湁涓€涓浛浠ｆ帴鍙?smp_affinity_list锛屽厑璁告寚瀹?
 
 ```
   > cat /proc/irq/0/smp_affinity_list
   1024-1031
 ```
 
-default_smp_affinity 掩码适用于所有非活动 IRQ，即尚未被分配/激活、因此缺少 /proc/irq/[0-9]* 目录的 IRQ。
+default_smp_affinity 鎺╃爜閫傜敤浜庢墍鏈夐潪娲诲姩 IRQ锛屽嵆灏氭湭琚垎閰?婵€娲汇€佸洜姝ょ己灏?/proc/irq/[0-9]* 鐩綍鐨?IRQ銆?
 
-SMP 系统上的 node 文件显示使用 IRQ 的设备所报告的、其自身所附加到的节点。该硬件局部性信息不包括任何可能的驱动局部性偏好的信息。
+SMP 绯荤粺涓婄殑 node 鏂囦欢鏄剧ず浣跨敤 IRQ 鐨勮澶囨墍鎶ュ憡鐨勩€佸叾鑷韩鎵€闄勫姞鍒扮殑鑺傜偣銆傝纭欢灞€閮ㄦ€т俊鎭笉鍖呮嫭浠讳綍鍙兘鐨勯┍鍔ㄥ眬閮ㄦ€у亸濂界殑淇℃伅銆?
 
-IRQ 的路由方式由 IO-APIC 处理，并且在所有被允许处理它的 CPU 之间采用轮询（Round Robin）。像往常一样，内核拥有比你更多的信息，并且做得比你好，因此默认值对几乎所有人来说都是最佳选择。[注意这仅适用于那些支持"Round Robin"中断分布的 IO-APIC。]
+IRQ 鐨勮矾鐢辨柟寮忕敱 IO-APIC 澶勭悊锛屽苟涓斿湪鎵€鏈夎鍏佽澶勭悊瀹冪殑 CPU 涔嬮棿閲囩敤杞锛圧ound Robin锛夈€傚儚寰€甯镐竴鏍凤紝鍐呮牳鎷ユ湁姣斾綘鏇村鐨勪俊鎭紝骞朵笖鍋氬緱姣斾綘濂斤紝鍥犳榛樿鍊煎鍑犱箮鎵€鏈変汉鏉ヨ閮芥槸鏈€浣抽€夋嫨銆俒娉ㄦ剰杩欎粎閫傜敤浜庨偅浜涙敮鎸?Round Robin"涓柇鍒嗗竷鐨?IO-APIC銆俔
 
-/proc 中还有三个更重要的子目录：net、scsi 和 sys。一般的规则是，这些目录的内容，甚至它们的存在，都取决于你的内核配置。如果未启用 SCSI，则 scsi 目录可能不存在。net 也是一样，它只有在运行中的内核存在网络支持时才存在。
+/proc 涓繕鏈変笁涓洿閲嶈鐨勫瓙鐩綍锛歯et銆乻csi 鍜?sys銆備竴鑸殑瑙勫垯鏄紝杩欎簺鐩綍鐨勫唴瀹癸紝鐢氳嚦瀹冧滑鐨勫瓨鍦紝閮藉彇鍐充簬浣犵殑鍐呮牳閰嶇疆銆傚鏋滄湭鍚敤 SCSI锛屽垯 scsi 鐩綍鍙兘涓嶅瓨鍦ㄣ€俷et 涔熸槸涓€鏍凤紝瀹冨彧鏈夊湪杩愯涓殑鍐呮牳瀛樺湪缃戠粶鏀寔鏃舵墠瀛樺湪銆?
 
-slabinfo 文件提供 slab 级别的内存使用信息。Linux 在 2.2 版本中使用 slab 池进行页级别以上的内存管理。常用对象拥有自己的 slab 池（如网络缓冲区、目录缓存等）。
+slabinfo 鏂囦欢鎻愪緵 slab 绾у埆鐨勫唴瀛樹娇鐢ㄤ俊鎭€侺inux 鍦?2.2 鐗堟湰涓娇鐢?slab 姹犺繘琛岄〉绾у埆浠ヤ笂鐨勫唴瀛樼鐞嗐€傚父鐢ㄥ璞℃嫢鏈夎嚜宸辩殑 slab 姹狅紙濡傜綉缁滅紦鍐插尯銆佺洰褰曠紦瀛樼瓑锛夈€?
 
 ```
     > cat /proc/buddyinfo
@@ -745,11 +745,11 @@ slabinfo 文件提供 slab 级别的内存使用信息。Linux 在 2.2 版本中
     Node 0, zone  HighMem      2      0      0      1      1      0 ...
 ```
 
-外部碎片在某些工作负载下是个问题，buddyinfo 是帮助诊断这些问题的一个有用工具。Buddyinfo 会给你一个线索，告诉你能够安全分配多大的区域，或者为什么之前的分配会失败。
+澶栭儴纰庣墖鍦ㄦ煇浜涘伐浣滆礋杞戒笅鏄釜闂锛宐uddyinfo 鏄府鍔╄瘖鏂繖浜涢棶棰樼殑涓€涓湁鐢ㄥ伐鍏枫€侭uddyinfo 浼氱粰浣犱竴涓嚎绱紝鍛婅瘔浣犺兘澶熷畨鍏ㄥ垎閰嶅澶х殑鍖哄煙锛屾垨鑰呬负浠€涔堜箣鍓嶇殑鍒嗛厤浼氬け璐ャ€?
 
-每一列表示可用的某个阶（order）的页数量。在这种情况下，ZONE_DMA 中有 0 个 2^0*PAGE_SIZE 的块，ZONE_DMA 中有 4 个 2^1*PAGE_SIZE 的块，ZONE_NORMAL 中有 101 个 2^4*PAGE_SIZE 的块，等等……
+姣忎竴鍒楄〃绀哄彲鐢ㄧ殑鏌愪釜闃讹紙order锛夌殑椤垫暟閲忋€傚湪杩欑鎯呭喌涓嬶紝ZONE_DMA 涓湁 0 涓?2^0*PAGE_SIZE 鐨勫潡锛孼ONE_DMA 涓湁 4 涓?2^1*PAGE_SIZE 鐨勫潡锛孼ONE_NORMAL 涓湁 101 涓?2^4*PAGE_SIZE 鐨勫潡锛岀瓑绛夆€︹€?
 
-关于外部碎片的更多信息可以在以下找到：
+鍏充簬澶栭儴纰庣墖鐨勬洿澶氫俊鎭彲浠ュ湪浠ヤ笅鎵惧埌锛?
 
 ```
     > cat /proc/pagetypeinfo
@@ -773,24 +773,24 @@ slabinfo 文件提供 slab 级别的内存使用信息。Linux 在 2.2 版本中
     Node 0, zone    DMA32           41            6          967            2            0
 ```
 
-内核中的碎片避免通过将不同迁移类型的页分组到称为页块（page block）的相同连续内存区域来工作。页块通常是默认大页大小，例如 X86-64 上为 2MB。通过根据页的可移动性对其进行分组，内核可以回收页块内的页以满足高阶分配。
+鍐呮牳涓殑纰庣墖閬垮厤閫氳繃灏嗕笉鍚岃縼绉荤被鍨嬬殑椤靛垎缁勫埌绉颁负椤靛潡锛坧age block锛夌殑鐩稿悓杩炵画鍐呭瓨鍖哄煙鏉ュ伐浣溿€傞〉鍧楅€氬父鏄粯璁ゅぇ椤靛ぇ灏忥紝渚嬪 X86-64 涓婁负 2MB銆傞€氳繃鏍规嵁椤电殑鍙Щ鍔ㄦ€у鍏惰繘琛屽垎缁勶紝鍐呮牳鍙互鍥炴敹椤靛潡鍐呯殑椤典互婊¤冻楂橀樁鍒嗛厤銆?
 
-pagetypinfo 以关于页块大小的信息开头。然后它给出与 buddyinfo 相同类型的信息，只是按迁移类型细分，并以每种类型有多少个页块的详细信息结束。
+pagetypinfo 浠ュ叧浜庨〉鍧楀ぇ灏忕殑淇℃伅寮€澶淬€傜劧鍚庡畠缁欏嚭涓?buddyinfo 鐩稿悓绫诲瀷鐨勪俊鎭紝鍙槸鎸夎縼绉荤被鍨嬬粏鍒嗭紝骞朵互姣忕绫诲瀷鏈夊灏戜釜椤靛潡鐨勮缁嗕俊鎭粨鏉熴€?
 
-如果 min_free_kbytes 已被正确调整（由来自 libhugetlbfs 的 hugeadm 提出建议 https://github.com/libhugetlbfs/libhugetlbfs/），则可以估计在给定时刻可以分配的大页的可能数量。除非内存已被 mlock() 锁定，否则所有"Movable"块都应该是可分配的。一些 Reclaimable 块也应该是可分配的，尽管为此可能必须回收大量文件系统元数据。
+濡傛灉 min_free_kbytes 宸茶姝ｇ‘璋冩暣锛堢敱鏉ヨ嚜 libhugetlbfs 鐨?hugeadm 鎻愬嚭寤鸿 https://github.com/libhugetlbfs/libhugetlbfs/锛夛紝鍒欏彲浠ヤ及璁″湪缁欏畾鏃跺埢鍙互鍒嗛厤鐨勫ぇ椤电殑鍙兘鏁伴噺銆傞櫎闈炲唴瀛樺凡琚?mlock() 閿佸畾锛屽惁鍒欐墍鏈?Movable"鍧楅兘搴旇鏄彲鍒嗛厤鐨勩€備竴浜?Reclaimable 鍧椾篃搴旇鏄彲鍒嗛厤鐨勶紝灏界涓烘鍙兘蹇呴』鍥炴敹澶ч噺鏂囦欢绯荤粺鍏冩暟鎹€?
 
 #### allocinfo
 
 
-提供关于代码库中所有位置的内存分配的信息。代码中的每个分配由其源文件、行号、模块（如果来自可加载模块）以及调用该分配的函数标识。会报告每个位置分配的字节数和调用次数。第一行指示文件的版本，第二行是列出文件中各字段的表头。
-如果文件版本为 2.0 或更高，则每行可能包含额外的 <key>:<value> 对，表示关于调用点的额外信息。例如，如果计数器不准确，该行会被附加 "accurate:no" 对。
+鎻愪緵鍏充簬浠ｇ爜搴撲腑鎵€鏈変綅缃殑鍐呭瓨鍒嗛厤鐨勪俊鎭€備唬鐮佷腑鐨勬瘡涓垎閰嶇敱鍏舵簮鏂囦欢銆佽鍙枫€佹ā鍧楋紙濡傛灉鏉ヨ嚜鍙姞杞芥ā鍧楋級浠ュ強璋冪敤璇ュ垎閰嶇殑鍑芥暟鏍囪瘑銆備細鎶ュ憡姣忎釜浣嶇疆鍒嗛厤鐨勫瓧鑺傛暟鍜岃皟鐢ㄦ鏁般€傜涓€琛屾寚绀烘枃浠剁殑鐗堟湰锛岀浜岃鏄垪鍑烘枃浠朵腑鍚勫瓧娈电殑琛ㄥご銆?
+濡傛灉鏂囦欢鐗堟湰涓?2.0 鎴栨洿楂橈紝鍒欐瘡琛屽彲鑳藉寘鍚澶栫殑 <key>:<value> 瀵癸紝琛ㄧず鍏充簬璋冪敤鐐圭殑棰濆淇℃伅銆備緥濡傦紝濡傛灉璁℃暟鍣ㄤ笉鍑嗙‘锛岃琛屼細琚檮鍔?"accurate:no" 瀵广€?
 
-v2 中支持的标记：
+v2 涓敮鎸佺殑鏍囪锛?
 accurate:no
 
-              由于未能分配内存来跟踪在此位置进行的部分分配，本行中计数器的绝对值不准确。这些计数器的增量是准确的，因此计数器可用于跟踪分配大小和计数变化。
+              鐢变簬鏈兘鍒嗛厤鍐呭瓨鏉ヨ窡韪湪姝や綅缃繘琛岀殑閮ㄥ垎鍒嗛厤锛屾湰琛屼腑璁℃暟鍣ㄧ殑缁濆鍊间笉鍑嗙‘銆傝繖浜涜鏁板櫒鐨勫閲忔槸鍑嗙‘鐨勶紝鍥犳璁℃暟鍣ㄥ彲鐢ㄤ簬璺熻釜鍒嗛厤澶у皬鍜岃鏁板彉鍖栥€?
 
-示例输出。
+绀轰緥杈撳嚭銆?
 
 ```
 
@@ -813,9 +813,9 @@ accurate:no
 #### meminfo
 
 
-提供关于内存分布和利用率的信息。这因架构和编译选项而异。这里报告的一些计数器有重叠。由非重叠计数器报告的内存可能不等于整体内存使用量，对于某些工作负载，差异可能很大。在许多情况下，有其他方法可以通过特定子系统的接口找到额外的内存，例如用于 TCP 内存分配的 /proc/net/sockstat。
+鎻愪緵鍏充簬鍐呭瓨鍒嗗竷鍜屽埄鐢ㄧ巼鐨勪俊鎭€傝繖鍥犳灦鏋勫拰缂栬瘧閫夐」鑰屽紓銆傝繖閲屾姤鍛婄殑涓€浜涜鏁板櫒鏈夐噸鍙犮€傜敱闈為噸鍙犺鏁板櫒鎶ュ憡鐨勫唴瀛樺彲鑳戒笉绛変簬鏁翠綋鍐呭瓨浣跨敤閲忥紝瀵逛簬鏌愪簺宸ヤ綔璐熻浇锛屽樊寮傚彲鑳藉緢澶с€傚湪璁稿鎯呭喌涓嬶紝鏈夊叾浠栨柟娉曞彲浠ラ€氳繃鐗瑰畾瀛愮郴缁熺殑鎺ュ彛鎵惧埌棰濆鐨勫唴瀛橈紝渚嬪鐢ㄤ簬 TCP 鍐呭瓨鍒嗛厤鐨?/proc/net/sockstat銆?
 
-示例输出。你可能没有所有这些字段。
+绀轰緥杈撳嚭銆備綘鍙兘娌℃湁鎵€鏈夎繖浜涘瓧娈点€?
 
 ```
     > cat /proc/meminfo
@@ -884,164 +884,164 @@ accurate:no
 ```
 
 MemTotal
-              总可用 RAM（即物理 RAM 减去少量保留位和内核二进制代码）
+              鎬诲彲鐢?RAM锛堝嵆鐗╃悊 RAM 鍑忓幓灏戦噺淇濈暀浣嶅拰鍐呮牳浜岃繘鍒朵唬鐮侊級
 MemFree
-              总空闲 RAM。在 highmem 系统上，为 LowFree+HighFree 之和
+              鎬荤┖闂?RAM銆傚湪 highmem 绯荤粺涓婏紝涓?LowFree+HighFree 涔嬪拰
 MemAvailable
-              在不交换的情况下，可用于启动新应用程序的内存量估计。根据 MemFree、
-              SReclaimable、文件 LRU 列表的大小，以及每个 zone 的低
-              水位线计算。
-              该估计考虑了系统需要一些页缓存才能良好运行，并且由于有项目
-              正在使用，并非所有可回收的 slab 都可回收。这些因素的
-              影响会因系统而异。
+              鍦ㄤ笉浜ゆ崲鐨勬儏鍐典笅锛屽彲鐢ㄤ簬鍚姩鏂板簲鐢ㄧ▼搴忕殑鍐呭瓨閲忎及璁°€傛牴鎹?MemFree銆?
+              SReclaimable銆佹枃浠?LRU 鍒楄〃鐨勫ぇ灏忥紝浠ュ強姣忎釜 zone 鐨勪綆
+              姘翠綅绾胯绠椼€?
+              璇ヤ及璁¤€冭檻浜嗙郴缁熼渶瑕佷竴浜涢〉缂撳瓨鎵嶈兘鑹ソ杩愯锛屽苟涓旂敱浜庢湁椤圭洰
+              姝ｅ湪浣跨敤锛屽苟闈炴墍鏈夊彲鍥炴敹鐨?slab 閮藉彲鍥炴敹銆傝繖浜涘洜绱犵殑
+              褰卞搷浼氬洜绯荤粺鑰屽紓銆?
 Buffers
-              原始磁盘块的相对临时存储，不应变得非常大（约 20MB 左右）
+              鍘熷纾佺洏鍧楃殑鐩稿涓存椂瀛樺偍锛屼笉搴斿彉寰楅潪甯稿ぇ锛堢害 20MB 宸﹀彸锛?
 Cached
-              从磁盘读取的文件（页缓存）以及 tmpfs 和 shmem 的内存缓存。
-              不包括 SwapCached。
+              浠庣鐩樿鍙栫殑鏂囦欢锛堥〉缂撳瓨锛変互鍙?tmpfs 鍜?shmem 鐨勫唴瀛樼紦瀛樸€?
+              涓嶅寘鎷?SwapCached銆?
 SwapCached
-              曾经被换出、又被换入但仍在交换文件中的内存（如果内存不足，
-              它不需要再次被换出，因为它已经在交换文件中。这节省了 I/O）
+              鏇剧粡琚崲鍑恒€佸張琚崲鍏ヤ絾浠嶅湪浜ゆ崲鏂囦欢涓殑鍐呭瓨锛堝鏋滃唴瀛樹笉瓒筹紝
+              瀹冧笉闇€瑕佸啀娆¤鎹㈠嚭锛屽洜涓哄畠宸茬粡鍦ㄤ氦鎹㈡枃浠朵腑銆傝繖鑺傜渷浜?I/O锛?
 Active
-              最近使用过的内存，通常除非绝对必要否则不被回收。
+              鏈€杩戜娇鐢ㄨ繃鐨勫唴瀛橈紝閫氬父闄ら潪缁濆蹇呰鍚﹀垯涓嶈鍥炴敹銆?
 Inactive
-              最近较少使用的内存。它更适合被回收用于其他目的
+              鏈€杩戣緝灏戜娇鐢ㄧ殑鍐呭瓨銆傚畠鏇撮€傚悎琚洖鏀剁敤浜庡叾浠栫洰鐨?
 Unevictable
-              为无法回收的用户空间分配的内存，例如 mlocked 页、ramfs 后端页、
-              secret memfd 页等。
+              涓烘棤娉曞洖鏀剁殑鐢ㄦ埛绌洪棿鍒嗛厤鐨勫唴瀛橈紝渚嬪 mlocked 椤点€乺amfs 鍚庣椤点€?
+              secret memfd 椤电瓑銆?
 Mlocked
-              用 mlock() 锁定的内存。
+              鐢?mlock() 閿佸畾鐨勫唴瀛樸€?
 HighTotal, HighFree
-              Highmem 是物理内存中 ~860MB 以上的所有内存。
-              Highmem 区域供用户空间程序或页缓存使用。内核必须使用技巧来
-              访问此内存，使其访问比 lowmem 慢。
+              Highmem 鏄墿鐞嗗唴瀛樹腑 ~860MB 浠ヤ笂鐨勬墍鏈夊唴瀛樸€?
+              Highmem 鍖哄煙渚涚敤鎴风┖闂寸▼搴忔垨椤电紦瀛樹娇鐢ㄣ€傚唴鏍稿繀椤讳娇鐢ㄦ妧宸ф潵
+              璁块棶姝ゅ唴瀛橈紝浣垮叾璁块棶姣?lowmem 鎱€?
 LowTotal, LowFree
-              Lowmem 是可以用于 highmem 可使用的所有用途的内存，但它也可供
-              内核用于自身的数据结构。除许多其他用途外，Slab 中的所有内容
-              都在这里分配。当你用尽 lowmem 时，会发生糟糕的事情。
+              Lowmem 鏄彲浠ョ敤浜?highmem 鍙娇鐢ㄧ殑鎵€鏈夌敤閫旂殑鍐呭瓨锛屼絾瀹冧篃鍙緵
+              鍐呮牳鐢ㄤ簬鑷韩鐨勬暟鎹粨鏋勩€傞櫎璁稿鍏朵粬鐢ㄩ€斿锛孲lab 涓殑鎵€鏈夊唴瀹?
+              閮藉湪杩欓噷鍒嗛厤銆傚綋浣犵敤灏?lowmem 鏃讹紝浼氬彂鐢熺碂绯曠殑浜嬫儏銆?
 SwapTotal
-              可用交换空间的总量
+              鍙敤浜ゆ崲绌洪棿鐨勬€婚噺
 SwapFree
-              已从 RAM 中逐出、暂时位于磁盘上的内存
+              宸蹭粠 RAM 涓€愬嚭銆佹殏鏃朵綅浜庣鐩樹笂鐨勫唴瀛?
 Zswap
-              zswap 后端消耗的内存（压缩后的大小）
+              zswap 鍚庣娑堣€楃殑鍐呭瓨锛堝帇缂╁悗鐨勫ぇ灏忥級
 Zswapped
-              存储在 zswap 中的匿名内存量（原始大小）
+              瀛樺偍鍦?zswap 涓殑鍖垮悕鍐呭瓨閲忥紙鍘熷澶у皬锛?
 Dirty
-              正在等待写回磁盘的内存
+              姝ｅ湪绛夊緟鍐欏洖纾佺洏鐨勫唴瀛?
 Writeback
-              正在被主动写回磁盘的内存
+              姝ｅ湪琚富鍔ㄥ啓鍥炵鐩樼殑鍐呭瓨
 AnonPages
-              映射到用户空间页表的、无文件支撑的页。注意某些内核配置可能将
-              较大分配（例如 THP）的所有页视为"已映射"，一旦单个页被映射。
+              鏄犲皠鍒扮敤鎴风┖闂撮〉琛ㄧ殑銆佹棤鏂囦欢鏀拺鐨勯〉銆傛敞鎰忔煇浜涘唴鏍搁厤缃彲鑳藉皢
+              杈冨ぇ鍒嗛厤锛堜緥濡?THP锛夌殑鎵€鏈夐〉瑙嗕负"宸叉槧灏?锛屼竴鏃﹀崟涓〉琚槧灏勩€?
 Mapped
-              已被 mmapped 的文件，例如库。注意某些内核配置可能将较大分配
-              （例如 THP）的所有页视为"已映射"，一旦单个页被映射。
+              宸茶 mmapped 鐨勬枃浠讹紝渚嬪搴撱€傛敞鎰忔煇浜涘唴鏍搁厤缃彲鑳藉皢杈冨ぇ鍒嗛厤
+              锛堜緥濡?THP锛夌殑鎵€鏈夐〉瑙嗕负"宸叉槧灏?锛屼竴鏃﹀崟涓〉琚槧灏勩€?
 Shmem
-              共享内存（shmem）和 tmpfs 使用的总内存
+              鍏变韩鍐呭瓨锛坰hmem锛夊拰 tmpfs 浣跨敤鐨勬€诲唴瀛?
 KReclaimable
-              内核在内存压力下会尝试回收的内核分配。包括 SReclaimable（见下），
-              以及其他带有 shrinker 的直接分配。
+              鍐呮牳鍦ㄥ唴瀛樺帇鍔涗笅浼氬皾璇曞洖鏀剁殑鍐呮牳鍒嗛厤銆傚寘鎷?SReclaimable锛堣涓嬶級锛?
+              浠ュ強鍏朵粬甯︽湁 shrinker 鐨勭洿鎺ュ垎閰嶃€?
 Slab
-              内核内数据结构缓存
+              鍐呮牳鍐呮暟鎹粨鏋勭紦瀛?
 SReclaimable
-              Slab 中可能被回收的部分，例如缓存
+              Slab 涓彲鑳借鍥炴敹鐨勯儴鍒嗭紝渚嬪缂撳瓨
 SUnreclaim
-              Slab 中在内存压力下无法回收的部分
+              Slab 涓湪鍐呭瓨鍘嬪姏涓嬫棤娉曞洖鏀剁殑閮ㄥ垎
 KernelStack
-              所有任务的核栈消耗的内存
+              鎵€鏈変换鍔＄殑鏍告爤娑堣€楃殑鍐呭瓨
 PageTables
-              用户空间页表消耗的内存
+              鐢ㄦ埛绌洪棿椤佃〃娑堣€楃殑鍐呭瓨
 SecPageTables
-              次级页表消耗的内存，目前包括 x86 和 arm64 上的 KVM mmu 和 IOMMU 分配。
+              娆＄骇椤佃〃娑堣€楃殑鍐呭瓨锛岀洰鍓嶅寘鎷?x86 鍜?arm64 涓婄殑 KVM mmu 鍜?IOMMU 鍒嗛厤銆?
 NFS_Unstable
-              始终为零。以前用于计数已写入服务器但尚未提交到稳定存储的页。
+              濮嬬粓涓洪浂銆備互鍓嶇敤浜庤鏁板凡鍐欏叆鏈嶅姟鍣ㄤ絾灏氭湭鎻愪氦鍒扮ǔ瀹氬瓨鍌ㄧ殑椤点€?
 Bounce
-              始终为零。以前用于块设备"bounce buffers"的内存。
+              濮嬬粓涓洪浂銆備互鍓嶇敤浜庡潡璁惧"bounce buffers"鐨勫唴瀛樸€?
 WritebackTmp
-              始终为零。以前用于 FUSE 临时写回缓冲区的内存。
+              濮嬬粓涓洪浂銆備互鍓嶇敤浜?FUSE 涓存椂鍐欏洖缂撳啿鍖虹殑鍐呭瓨銆?
 CommitLimit
-              基于 overcommit 比率（'vm.overcommit_ratio'），这是系统上当前
-              可用于分配的内存总量。只有在启用了严格 overcommit 记账时
-              （'vm.overcommit_memory' 中的模式 2），才会遵守此限制。
+              鍩轰簬 overcommit 姣旂巼锛?vm.overcommit_ratio'锛夛紝杩欐槸绯荤粺涓婂綋鍓?
+              鍙敤浜庡垎閰嶇殑鍐呭瓨鎬婚噺銆傚彧鏈夊湪鍚敤浜嗕弗鏍?overcommit 璁拌处鏃?
+              锛?vm.overcommit_memory' 涓殑妯″紡 2锛夛紝鎵嶄細閬靛畧姝ら檺鍒躲€?
 
 ```
-                CommitLimit = ([总 RAM 页数] - [总 huge TLB 页数]) *
-                               overcommit_ratio / 100 + [总交换页数]
+                CommitLimit = ([鎬?RAM 椤垫暟] - [鎬?huge TLB 椤垫暟]) *
+                               overcommit_ratio / 100 + [鎬讳氦鎹㈤〉鏁癩
 
-              例如，在一个具有 1G 物理 RAM 和 7G 交换空间、且 `vm.overcommit_ratio`
-              为 30 的系统上，将得到 7.3G 的 CommitLimit。
+              渚嬪锛屽湪涓€涓叿鏈?1G 鐗╃悊 RAM 鍜?7G 浜ゆ崲绌洪棿銆佷笖 `vm.overcommit_ratio`
+              涓?30 鐨勭郴缁熶笂锛屽皢寰楀埌 7.3G 鐨?CommitLimit銆?
 
-              更多详细信息，请参阅 mm/overcommit-accounting 中的 overcommit 文档。
+              鏇村璇︾粏淇℃伅锛岃鍙傞槄 mm/overcommit-accounting 涓殑 overcommit 鏂囨。銆?
 ```
 Committed_AS
-              系统上当前已分配的内存量。已提交的内存是所有进程已分配的
-              内存之和，即使它们尚未"使用"。一个 malloc() 了 1G 内存但
-              只触及其中 300M 的进程，会显示为使用了 1G。这 1G 是已被 VM
-              "提交"的内存，可以由分配应用程序随时使用。在系统上启用了严格
-              overcommit（'vm.overcommit_memory' 中的模式 2）时，超过
-              CommitLimit（详见上文）的分配将不被允许。如果需要保证进程在
-              成功分配内存后不会因缺少内存而失败，这很有用。
+              绯荤粺涓婂綋鍓嶅凡鍒嗛厤鐨勫唴瀛橀噺銆傚凡鎻愪氦鐨勫唴瀛樻槸鎵€鏈夎繘绋嬪凡鍒嗛厤鐨?
+              鍐呭瓨涔嬪拰锛屽嵆浣垮畠浠皻鏈?浣跨敤"銆備竴涓?malloc() 浜?1G 鍐呭瓨浣?
+              鍙Е鍙婂叾涓?300M 鐨勮繘绋嬶紝浼氭樉绀轰负浣跨敤浜?1G銆傝繖 1G 鏄凡琚?VM
+              "鎻愪氦"鐨勫唴瀛橈紝鍙互鐢卞垎閰嶅簲鐢ㄧ▼搴忛殢鏃朵娇鐢ㄣ€傚湪绯荤粺涓婂惎鐢ㄤ簡涓ユ牸
+              overcommit锛?vm.overcommit_memory' 涓殑妯″紡 2锛夋椂锛岃秴杩?
+              CommitLimit锛堣瑙佷笂鏂囷級鐨勫垎閰嶅皢涓嶈鍏佽銆傚鏋滈渶瑕佷繚璇佽繘绋嬪湪
+              鎴愬姛鍒嗛厤鍐呭瓨鍚庝笉浼氬洜缂哄皯鍐呭瓨鑰屽け璐ワ紝杩欏緢鏈夌敤銆?
 VmallocTotal
-              vmalloc 虚拟地址空间的总大小
+              vmalloc 铏氭嫙鍦板潃绌洪棿鐨勬€诲ぇ灏?
 VmallocUsed
-              已使用的 vmalloc 区域大小
+              宸蹭娇鐢ㄧ殑 vmalloc 鍖哄煙澶у皬
 VmallocChunk
-              空闲的 vmalloc 区域中最大的连续块
+              绌洪棽鐨?vmalloc 鍖哄煙涓渶澶х殑杩炵画鍧?
 Percpu
-              分配给 percpu 分配器用于支撑 percpu 分配的内存。此统计不包括
-              元数据的开销。
+              鍒嗛厤缁?percpu 鍒嗛厤鍣ㄧ敤浜庢敮鎾?percpu 鍒嗛厤鐨勫唴瀛樸€傛缁熻涓嶅寘鎷?
+              鍏冩暟鎹殑寮€閿€銆?
 EarlyMemtestBad
-              以 kB 为单位的、被早期 memtest 识别为损坏的 RAM/内存量。如果未运行
-              memtest，则根本不会显示此字段。大小永远不会向下舍入到 0 kB。
-              这意味着如果报告为 0 kB，你可以放心地假设至少进行了一次 memtest
-              扫描，且没有任何一次扫描发现单个损坏的 RAM 字节。
+              浠?kB 涓哄崟浣嶇殑銆佽鏃╂湡 memtest 璇嗗埆涓烘崯鍧忕殑 RAM/鍐呭瓨閲忋€傚鏋滄湭杩愯
+              memtest锛屽垯鏍规湰涓嶄細鏄剧ず姝ゅ瓧娈点€傚ぇ灏忔案杩滀笉浼氬悜涓嬭垗鍏ュ埌 0 kB銆?
+              杩欐剰鍛崇潃濡傛灉鎶ュ憡涓?0 kB锛屼綘鍙互鏀惧績鍦板亣璁捐嚦灏戣繘琛屼簡涓€娆?memtest
+              鎵弿锛屼笖娌℃湁浠讳綍涓€娆℃壂鎻忓彂鐜板崟涓崯鍧忕殑 RAM 瀛楄妭銆?
 HardwareCorrupted
-              内核识别为已损坏的 RAM/内存量（KB）。
+              鍐呮牳璇嗗埆涓哄凡鎹熷潖鐨?RAM/鍐呭瓨閲忥紙KB锛夈€?
 AnonHugePages
-              映射到用户空间页表的无文件支撑的大页
+              鏄犲皠鍒扮敤鎴风┖闂撮〉琛ㄧ殑鏃犳枃浠舵敮鎾戠殑澶ч〉
 ShmemHugePages
-              由共享内存（shmem）和 tmpfs 用大页分配的内存
+              鐢卞叡浜唴瀛橈紙shmem锛夊拰 tmpfs 鐢ㄥぇ椤靛垎閰嶇殑鍐呭瓨
 ShmemPmdMapped
-              用大页映射到用户空间的共享内存
+              鐢ㄥぇ椤垫槧灏勫埌鐢ㄦ埛绌洪棿鐨勫叡浜唴瀛?
 FileHugePages
-              文件系统数据（页缓存）用大页分配的内存
+              鏂囦欢绯荤粺鏁版嵁锛堥〉缂撳瓨锛夌敤澶ч〉鍒嗛厤鐨勫唴瀛?
 FilePmdMapped
-              用大页映射到用户空间的页缓存
+              鐢ㄥぇ椤垫槧灏勫埌鐢ㄦ埛绌洪棿鐨勯〉缂撳瓨
 CmaTotal
-              为连续内存分配器（CMA）保留的内存
+              涓鸿繛缁唴瀛樺垎閰嶅櫒锛圕MA锛変繚鐣欑殑鍐呭瓨
 CmaFree
-              CMA 保留区中剩余的空闲内存
+              CMA 淇濈暀鍖轰腑鍓╀綑鐨勭┖闂插唴瀛?
 Unaccepted
-              尚未被 guest 接受的内存
+              灏氭湭琚?guest 鎺ュ彈鐨勫唴瀛?
 Balloon
-              由 VM Balloon 驱动返回给 Host 的内存
+              鐢?VM Balloon 椹卞姩杩斿洖缁?Host 鐨勫唴瀛?
 GPUActive
-              分配给活动 GPU 对象的系统内存
+              鍒嗛厤缁欐椿鍔?GPU 瀵硅薄鐨勭郴缁熷唴瀛?
 GPUReclaim
-              存储在 GPU 池中供复用的系统内存。此内存不计入 GPUActive。它是
-              因具有非标准页表属性（如 WC 或 UC）而保留在复用池中的 shrinker
-              可回收内存。
+              瀛樺偍鍦?GPU 姹犱腑渚涘鐢ㄧ殑绯荤粺鍐呭瓨銆傛鍐呭瓨涓嶈鍏?GPUActive銆傚畠鏄?
+              鍥犲叿鏈夐潪鏍囧噯椤佃〃灞炴€э紙濡?WC 鎴?UC锛夎€屼繚鐣欏湪澶嶇敤姹犱腑鐨?shrinker
+              鍙洖鏀跺唴瀛樸€?
 HugePages_Total, HugePages_Free, HugePages_Rsvd, HugePages_Surp, Hugepagesize, Hugetlb
-              见 Documentation/admin-guide/mm/hugetlbpage.rst。
+              瑙?Documentation/admin-guide/mm/hugetlbpage.rst銆?
 DirectMap4k, DirectMap2M, DirectMap1G
-              内核 RAM 恒等映射中使用的页表大小细分
+              鍐呮牳 RAM 鎭掔瓑鏄犲皠涓娇鐢ㄧ殑椤佃〃澶у皬缁嗗垎
 
 #### vmallocinfo
 
 
-提供关于 vmalloced/vmaped 区域的信息。每个区域一行，包含该区域的虚拟地址范围、字节大小、创建者的调用者信息，以及取决于区域类型的可选信息：
+鎻愪緵鍏充簬 vmalloced/vmaped 鍖哄煙鐨勪俊鎭€傛瘡涓尯鍩熶竴琛岋紝鍖呭惈璇ュ尯鍩熺殑铏氭嫙鍦板潃鑼冨洿銆佸瓧鑺傚ぇ灏忋€佸垱寤鸿€呯殑璋冪敤鑰呬俊鎭紝浠ュ強鍙栧喅浜庡尯鍩熺被鍨嬬殑鍙€変俊鎭細
 
  ==========  ===================================================
- pages=nr    页数量
- phys=addr   如果指定了物理地址
- ioremap     I/O 映射（ioremap() 及其相关函数）
- vmalloc     vmalloc() 区域
- vmap        vmap() 映射的页
- user        VM_USERMAP 区域
- vpages     页指针的缓冲区被 vmalloced（巨大区域）
- N<node>=nr  （仅 NUMA 内核上）
-             在内存节点 <node> 上分配的页数量
+ pages=nr    椤垫暟閲?
+ phys=addr   濡傛灉鎸囧畾浜嗙墿鐞嗗湴鍧€
+ ioremap     I/O 鏄犲皠锛坕oremap() 鍙婂叾鐩稿叧鍑芥暟锛?
+ vmalloc     vmalloc() 鍖哄煙
+ vmap        vmap() 鏄犲皠鐨勯〉
+ user        VM_USERMAP 鍖哄煙
+ vpages     椤垫寚閽堢殑缂撳啿鍖鸿 vmalloced锛堝法澶у尯鍩燂級
+ N<node>=nr  锛堜粎 NUMA 鍐呮牳涓婏級
+             鍦ㄥ唴瀛樿妭鐐?<node> 涓婂垎閰嶇殑椤垫暟閲?
  ==========  ===================================================
 
 ```
@@ -1076,7 +1076,7 @@ DirectMap4k, DirectMap2M, DirectMap1G
 #### softirqs
 
 
-提供自启动以来每个 CPU 服务的 softirq 处理程序计数。
+鎻愪緵鑷惎鍔ㄤ互鏉ユ瘡涓?CPU 鏈嶅姟鐨?softirq 澶勭悊绋嬪簭璁℃暟銆?
 
 ```
 
@@ -1093,60 +1093,60 @@ DirectMap4k, DirectMap2M, DirectMap1G
 	RCU:      1678       1769       2178       2250
 ```
 
-### 1.3 /proc/net 中的网络信息
+### 1.3 /proc/net 涓殑缃戠粶淇℃伅
 
 
-子目录 /proc/net 遵循通常的模式。表 1-8 显示了如果你配置内核支持 IP 版本 6 所获得的额外值。表 1-9 列出了这些文件及其含义。
+瀛愮洰褰?/proc/net 閬靛惊閫氬父鐨勬ā寮忋€傝〃 1-8 鏄剧ず浜嗗鏋滀綘閰嶇疆鍐呮牳鏀寔 IP 鐗堟湰 6 鎵€鑾峰緱鐨勯澶栧€笺€傝〃 1-9 鍒楀嚭浜嗚繖浜涙枃浠跺強鍏跺惈涔夈€?
 
 
 
  ========== =====================================================
- 文件      内容
+ 鏂囦欢      鍐呭
  ========== =====================================================
- udp6       UDP 套接字（IPv6）
- tcp6       TCP 套接字（IPv6）
- raw6       原始设备统计（IPv6）
- igmp6      本机已加入的 IP 组播地址（IPv6）
- if_inet6   IPv6 接口地址列表
- ipv6_route 内核 IPv6 路由表
- rt6_stats  全局 IPv6 路由表统计
- sockstat6  套接字统计（IPv6）
- snmp6      Snmp 数据（IPv6）
+ udp6       UDP 濂楁帴瀛楋紙IPv6锛?
+ tcp6       TCP 濂楁帴瀛楋紙IPv6锛?
+ raw6       鍘熷璁惧缁熻锛圛Pv6锛?
+ igmp6      鏈満宸插姞鍏ョ殑 IP 缁勬挱鍦板潃锛圛Pv6锛?
+ if_inet6   IPv6 鎺ュ彛鍦板潃鍒楄〃
+ ipv6_route 鍐呮牳 IPv6 璺敱琛?
+ rt6_stats  鍏ㄥ眬 IPv6 璺敱琛ㄧ粺璁?
+ sockstat6  濂楁帴瀛楃粺璁★紙IPv6锛?
+ snmp6      Snmp 鏁版嵁锛圛Pv6锛?
  ========== =====================================================
 
 
  ============= ================================================================
- 文件         内容
+ 鏂囦欢         鍐呭
  ============= ================================================================
- arp           内核 ARP 表
- dev           带统计的网络设备
- dev_mcast     设备正在监听的二层组播组
-                （接口索引、标签、引用计数、绑定地址数）。
- dev_stat      网络设备状态
- ip_fwchains   防火墙链链接
- ip_fwnames    防火墙链名称
- ip_masq       包含伪装表的目录
- ip_masquerade 主要伪装表
- netstat       网络统计
- raw           原始设备统计
- route         内核路由表
- rpc           包含 rpc 信息的目录
- rt_cache      路由缓存
- snmp          SNMP 数据
- sockstat      套接字统计
- softnet_stat  在线 CPU 的每 CPU 入站数据包队列统计
- tcp           TCP 套接字
- udp           UDP 套接字
- unix          UNIX 域套接字
- wireless      无线接口数据（Wavelan 等）
- igmp          本机已加入的 IP 组播地址
- psched        全局数据包调度器参数。
- netlink       PF_NETLINK 套接字列表
- ip_mr_vifs    组播虚拟接口列表
- ip_mr_cache   组播路由缓存列表
+ arp           鍐呮牳 ARP 琛?
+ dev           甯︾粺璁＄殑缃戠粶璁惧
+ dev_mcast     璁惧姝ｅ湪鐩戝惉鐨勪簩灞傜粍鎾粍
+                锛堟帴鍙ｇ储寮曘€佹爣绛俱€佸紩鐢ㄨ鏁般€佺粦瀹氬湴鍧€鏁帮級銆?
+ dev_stat      缃戠粶璁惧鐘舵€?
+ ip_fwchains   闃茬伀澧欓摼閾炬帴
+ ip_fwnames    闃茬伀澧欓摼鍚嶇О
+ ip_masq       鍖呭惈浼琛ㄧ殑鐩綍
+ ip_masquerade 涓昏浼琛?
+ netstat       缃戠粶缁熻
+ raw           鍘熷璁惧缁熻
+ route         鍐呮牳璺敱琛?
+ rpc           鍖呭惈 rpc 淇℃伅鐨勭洰褰?
+ rt_cache      璺敱缂撳瓨
+ snmp          SNMP 鏁版嵁
+ sockstat      濂楁帴瀛楃粺璁?
+ softnet_stat  鍦ㄧ嚎 CPU 鐨勬瘡 CPU 鍏ョ珯鏁版嵁鍖呴槦鍒楃粺璁?
+ tcp           TCP 濂楁帴瀛?
+ udp           UDP 濂楁帴瀛?
+ unix          UNIX 鍩熷鎺ュ瓧
+ wireless      鏃犵嚎鎺ュ彛鏁版嵁锛圵avelan 绛夛級
+ igmp          鏈満宸插姞鍏ョ殑 IP 缁勬挱鍦板潃
+ psched        鍏ㄥ眬鏁版嵁鍖呰皟搴﹀櫒鍙傛暟銆?
+ netlink       PF_NETLINK 濂楁帴瀛楀垪琛?
+ ip_mr_vifs    缁勬挱铏氭嫙鎺ュ彛鍒楄〃
+ ip_mr_cache   缁勬挱璺敱缂撳瓨鍒楄〃
  ============= ================================================================
 
-你可以利用此信息查看系统中可用的网络设备
+浣犲彲浠ュ埄鐢ㄦ淇℃伅鏌ョ湅绯荤粺涓彲鐢ㄧ殑缃戠粶璁惧
 
 ```
   > cat /proc/net/dev
@@ -1163,12 +1163,12 @@ DirectMap4k, DirectMap2M, DirectMap1G
   ...] 1703981     5535    0    0    0     3       0          0
 ```
 
-此外，每个 Channel Bond 接口都有自己的目录。例如，bond0 设备将有一个名为 /proc/net/bond0/ 的目录。它将包含特定于该 bond 的信息，例如 bond 的当前从设备、从设备的链路状态，以及从设备的链路失败次数。
+姝ゅ锛屾瘡涓?Channel Bond 鎺ュ彛閮芥湁鑷繁鐨勭洰褰曘€備緥濡傦紝bond0 璁惧灏嗘湁涓€涓悕涓?/proc/net/bond0/ 鐨勭洰褰曘€傚畠灏嗗寘鍚壒瀹氫簬璇?bond 鐨勪俊鎭紝渚嬪 bond 鐨勫綋鍓嶄粠璁惧銆佷粠璁惧鐨勯摼璺姸鎬侊紝浠ュ強浠庤澶囩殑閾捐矾澶辫触娆℃暟銆?
 
-### 1.4 SCSI 信息
+### 1.4 SCSI 淇℃伅
 
 
-如果你的系统中有 SCSI 或 ATA 主机适配器，你会在 /proc/scsi 中找到以该适配器驱动命名的子目录。
+濡傛灉浣犵殑绯荤粺涓湁 SCSI 鎴?ATA 涓绘満閫傞厤鍣紝浣犱細鍦?/proc/scsi 涓壘鍒颁互璇ラ€傞厤鍣ㄩ┍鍔ㄥ懡鍚嶇殑瀛愮洰褰曘€?
 
 ```
   >cat /proc/scsi/scsi
@@ -1183,7 +1183,7 @@ DirectMap4k, DirectMap2M, DirectMap1G
 
 ```
 
-以驱动命名的目录针对系统中找到的每个适配器有一个文件。这些文件包含关于控制器的信息，包括所使用的 IRQ 和 IO 地址范围。显示的信息量取决于你使用的适配器。示例显示了 Adaptec 的输出
+浠ラ┍鍔ㄥ懡鍚嶇殑鐩綍閽堝绯荤粺涓壘鍒扮殑姣忎釜閫傞厤鍣ㄦ湁涓€涓枃浠躲€傝繖浜涙枃浠跺寘鍚叧浜庢帶鍒跺櫒鐨勪俊鎭紝鍖呮嫭鎵€浣跨敤鐨?IRQ 鍜?IO 鍦板潃鑼冨洿銆傛樉绀虹殑淇℃伅閲忓彇鍐充簬浣犱娇鐢ㄧ殑閫傞厤鍣ㄣ€傜ず渚嬫樉绀轰簡 Adaptec 鐨勮緭鍑?
 
 ```
   > cat /proc/scsi/aic7xxx/0
@@ -1228,42 +1228,42 @@ DirectMap4k, DirectMap2M, DirectMap1G
 
 ```
 
-### 1.5 /proc/parport 中的并行端口信息
+### 1.5 /proc/parport 涓殑骞惰绔彛淇℃伅
 
 
-目录 /proc/parport 包含关于你系统并行端口的信息。它为每个端口有一个以端口号（0,1,2,...）命名的子目录。
+鐩綍 /proc/parport 鍖呭惈鍏充簬浣犵郴缁熷苟琛岀鍙ｇ殑淇℃伅銆傚畠涓烘瘡涓鍙ｆ湁涓€涓互绔彛鍙凤紙0,1,2,...锛夊懡鍚嶇殑瀛愮洰褰曘€?
 
-这些目录包含表 1-10 中所示的四个文件。
+杩欎簺鐩綍鍖呭惈琛?1-10 涓墍绀虹殑鍥涗釜鏂囦欢銆?
 
 
 
  ========= ====================================================================
- 文件      内容
+ 鏂囦欢      鍐呭
  ========= ====================================================================
- autoprobe 已获取的任意 IEEE-1284 设备 ID 信息。
- devices   使用该端口的设备驱动列表。当前正在使用该端口的设备名旁边会出现一个 +（它可能
-           不出现在任何设备名旁）。
- hardware  并行端口的基地址、IRQ 线和 DMA 通道。
- irq       parport 用于该端口的 IRQ。它在一个单独的文件中，允许你通过写入新值
-           （IRQ 号或 none）来更改它。
+ autoprobe 宸茶幏鍙栫殑浠绘剰 IEEE-1284 璁惧 ID 淇℃伅銆?
+ devices   浣跨敤璇ョ鍙ｇ殑璁惧椹卞姩鍒楄〃銆傚綋鍓嶆鍦ㄤ娇鐢ㄨ绔彛鐨勮澶囧悕鏃佽竟浼氬嚭鐜颁竴涓?+锛堝畠鍙兘
+           涓嶅嚭鐜板湪浠讳綍璁惧鍚嶆梺锛夈€?
+ hardware  骞惰绔彛鐨勫熀鍦板潃銆両RQ 绾垮拰 DMA 閫氶亾銆?
+ irq       parport 鐢ㄤ簬璇ョ鍙ｇ殑 IRQ銆傚畠鍦ㄤ竴涓崟鐙殑鏂囦欢涓紝鍏佽浣犻€氳繃鍐欏叆鏂板€?
+           锛圛RQ 鍙锋垨 none锛夋潵鏇存敼瀹冦€?
  ========= ====================================================================
 
-### 1.6 /proc/tty 中的 TTY 信息
+### 1.6 /proc/tty 涓殑 TTY 淇℃伅
 
 
-关于可用和实际使用的 tty 的信息可以在目录 /proc/tty 中找到。你会在这个目录中找到驱动和线路规程（line discipline）的条目，如表 1-11 所示。
+鍏充簬鍙敤鍜屽疄闄呬娇鐢ㄧ殑 tty 鐨勪俊鎭彲浠ュ湪鐩綍 /proc/tty 涓壘鍒般€備綘浼氬湪杩欎釜鐩綍涓壘鍒伴┍鍔ㄥ拰绾胯矾瑙勭▼锛坙ine discipline锛夌殑鏉＄洰锛屽琛?1-11 鎵€绀恒€?
 
 
 
  ============= ==============================================
- 文件         内容
+ 鏂囦欢         鍐呭
  ============= ==============================================
- drivers      驱动及其使用情况的列表
- ldiscs       已注册的线路规程
- driver/serial 单个 tty 线路的使用统计和状态
+ drivers      椹卞姩鍙婂叾浣跨敤鎯呭喌鐨勫垪琛?
+ ldiscs       宸叉敞鍐岀殑绾胯矾瑙勭▼
+ driver/serial 鍗曚釜 tty 绾胯矾鐨勪娇鐢ㄧ粺璁″拰鐘舵€?
  ============= ==============================================
 
-要查看当前正在使用哪些 tty，你可以直接查看文件
+瑕佹煡鐪嬪綋鍓嶆鍦ㄤ娇鐢ㄥ摢浜?tty锛屼綘鍙互鐩存帴鏌ョ湅鏂囦欢
 
 ```
   > cat /proc/tty/drivers
@@ -1281,10 +1281,10 @@ DirectMap4k, DirectMap2M, DirectMap1G
 
 
 ```
-### 1.7 /proc/stat 中的杂项内核统计
+### 1.7 /proc/stat 涓殑鏉傞」鍐呮牳缁熻
 
 
-关于内核活动的各种信息可以在 /proc/stat 文件中获取。该文件中报告的所有数字都是聚合值
+鍏充簬鍐呮牳娲诲姩鐨勫悇绉嶄俊鎭彲浠ュ湪 /proc/stat 鏂囦欢涓幏鍙栥€傝鏂囦欢涓姤鍛婄殑鎵€鏈夋暟瀛楅兘鏄仛鍚堝€?
 
 ```
   > cat /proc/stat
@@ -1302,58 +1302,58 @@ DirectMap4k, DirectMap2M, DirectMap1G
   softirq 12121874454 100099120 3938138295 127375644 2795979 187870761 0 173808342 3072582055 52608 224184354
 ```
 
-最开始的 "cpu" 行聚合了所有其他 "cpuN" 行中的数字。这些数字标识了 CPU 执行不同类型工作所花费的时间量。时间单位是 USER_HZ（通常是百分之一秒）。各列的含义从左到右如下：
+鏈€寮€濮嬬殑 "cpu" 琛岃仛鍚堜簡鎵€鏈夊叾浠?"cpuN" 琛屼腑鐨勬暟瀛椼€傝繖浜涙暟瀛楁爣璇嗕簡 CPU 鎵ц涓嶅悓绫诲瀷宸ヤ綔鎵€鑺辫垂鐨勬椂闂撮噺銆傛椂闂村崟浣嶆槸 USER_HZ锛堥€氬父鏄櫨鍒嗕箣涓€绉掞級銆傚悇鍒楃殑鍚箟浠庡乏鍒板彸濡備笅锛?
 
-- user：在用户模式下执行普通进程
-- nice：在用户模式下执行被 nice 调整的进程
-- system：在内核模式下执行的进程
-- idle：空闲（twiddling thumbs）
-- iowait：一言以蔽之，iowait 表示等待 I/O 完成。但有几个问题：
+- user锛氬湪鐢ㄦ埛妯″紡涓嬫墽琛屾櫘閫氳繘绋?
+- nice锛氬湪鐢ㄦ埛妯″紡涓嬫墽琛岃 nice 璋冩暣鐨勮繘绋?
+- system锛氬湪鍐呮牳妯″紡涓嬫墽琛岀殑杩涚▼
+- idle锛氱┖闂诧紙twiddling thumbs锛?
+- iowait锛氫竴瑷€浠ヨ斀涔嬶紝iowait 琛ㄧず绛夊緟 I/O 瀹屾垚銆備絾鏈夊嚑涓棶棰橈細
 
-  1. CPU 不会等待 I/O 完成，iowait 是一个任务等待 I/O 完成的时间。当 CPU 因未完成的任务 I/O 而进入空闲状态时，另一个任务将被调度到该 CPU 上。
-  2. 在多核 CPU 中，等待 I/O 完成的任务不在任何 CPU 上运行，因此每个 CPU 的 iowait 难以计算。
-  3. 在某些情况下，/proc/stat 中 iowait 字段的值会减少。
+  1. CPU 涓嶄細绛夊緟 I/O 瀹屾垚锛宨owait 鏄竴涓换鍔＄瓑寰?I/O 瀹屾垚鐨勬椂闂淬€傚綋 CPU 鍥犳湭瀹屾垚鐨勪换鍔?I/O 鑰岃繘鍏ョ┖闂茬姸鎬佹椂锛屽彟涓€涓换鍔″皢琚皟搴﹀埌璇?CPU 涓娿€?
+  2. 鍦ㄥ鏍?CPU 涓紝绛夊緟 I/O 瀹屾垚鐨勪换鍔′笉鍦ㄤ换浣?CPU 涓婅繍琛岋紝鍥犳姣忎釜 CPU 鐨?iowait 闅句互璁＄畻銆?
+  3. 鍦ㄦ煇浜涙儏鍐典笅锛?proc/stat 涓?iowait 瀛楁鐨勫€间細鍑忓皯銆?
 
-  因此，从 /proc/stat 读取 iowait 并不可靠。
-- irq：服务中断
-- softirq：服务软中断
-- steal：非自愿等待
-- guest：运行普通 guest
-- guest_nice：运行被 nice 调整的 guest
+  鍥犳锛屼粠 /proc/stat 璇诲彇 iowait 骞朵笉鍙潬銆?
+- irq锛氭湇鍔′腑鏂?
+- softirq锛氭湇鍔¤蒋涓柇
+- steal锛氶潪鑷効绛夊緟
+- guest锛氳繍琛屾櫘閫?guest
+- guest_nice锛氳繍琛岃 nice 璋冩暣鐨?guest
 
-"intr" 行给出了自启动以来服务的、针对每个可能系统中断的中断计数。第一列是所有被服务中断的总数，包括未编号的架构特定中断；其后的每一列是该特定编号中断的总数。未编号的中断不会显示，只被汇总到总数中。
+"intr" 琛岀粰鍑轰簡鑷惎鍔ㄤ互鏉ユ湇鍔＄殑銆侀拡瀵规瘡涓彲鑳界郴缁熶腑鏂殑涓柇璁℃暟銆傜涓€鍒楁槸鎵€鏈夎鏈嶅姟涓柇鐨勬€绘暟锛屽寘鎷湭缂栧彿鐨勬灦鏋勭壒瀹氫腑鏂紱鍏跺悗鐨勬瘡涓€鍒楁槸璇ョ壒瀹氱紪鍙蜂腑鏂殑鎬绘暟銆傛湭缂栧彿鐨勪腑鏂笉浼氭樉绀猴紝鍙姹囨€诲埌鎬绘暟涓€?
 
-"ctxt" 行给出了跨所有 CPU 的上下文切换总数。
+"ctxt" 琛岀粰鍑轰簡璺ㄦ墍鏈?CPU 鐨勪笂涓嬫枃鍒囨崲鎬绘暟銆?
 
-"btime" 行给出了系统启动的时间，以自 Unix 纪元以来的秒数表示。
+"btime" 琛岀粰鍑轰簡绯荤粺鍚姩鐨勬椂闂达紝浠ヨ嚜 Unix 绾厓浠ユ潵鐨勭鏁拌〃绀恒€?
 
-"processes" 行给出了已创建的进程和线程数，包括（但不限于）通过 fork() 和 clone() 系统调用创建的那些。
+"processes" 琛岀粰鍑轰簡宸插垱寤虹殑杩涚▼鍜岀嚎绋嬫暟锛屽寘鎷紙浣嗕笉闄愪簬锛夐€氳繃 fork() 鍜?clone() 绯荤粺璋冪敤鍒涘缓鐨勯偅浜涖€?
 
-"procs_running" 行给出了正在运行或准备运行的线程总数（即可运行线程总数）。
+"procs_running" 琛岀粰鍑轰簡姝ｅ湪杩愯鎴栧噯澶囪繍琛岀殑绾跨▼鎬绘暟锛堝嵆鍙繍琛岀嚎绋嬫€绘暟锛夈€?
 
-"procs_blocked" 行给出了当前被阻塞、等待 I/O 完成的进程数。
+"procs_blocked" 琛岀粰鍑轰簡褰撳墠琚樆濉炪€佺瓑寰?I/O 瀹屾垚鐨勮繘绋嬫暟銆?
 
-"softirq" 行给出了自启动以来服务的、针对每个可能系统 softirq 的 softirq 计数。第一列是所有被服务 softirq 的总数；其后的每一列是该特定 softirq 的总数。
-
-
-### 1.8 Ext4 文件系统参数
+"softirq" 琛岀粰鍑轰簡鑷惎鍔ㄤ互鏉ユ湇鍔＄殑銆侀拡瀵规瘡涓彲鑳界郴缁?softirq 鐨?softirq 璁℃暟銆傜涓€鍒楁槸鎵€鏈夎鏈嶅姟 softirq 鐨勬€绘暟锛涘叾鍚庣殑姣忎竴鍒楁槸璇ョ壒瀹?softirq 鐨勬€绘暟銆?
 
 
-关于已挂载 ext4 文件系统的信息可以在 /proc/fs/ext4 中找到。每个已挂载的文件系统会在 /proc/fs/ext4 下有一个基于其设备名的目录（即 /proc/fs/ext4/hdc 或 /proc/fs/ext4/sda9 或 /proc/fs/ext4/dm-0）。每个每设备目录下的文件如表 1-12 所示。
+### 1.8 Ext4 鏂囦欢绯荤粺鍙傛暟
+
+
+鍏充簬宸叉寕杞?ext4 鏂囦欢绯荤粺鐨勪俊鎭彲浠ュ湪 /proc/fs/ext4 涓壘鍒般€傛瘡涓凡鎸傝浇鐨勬枃浠剁郴缁熶細鍦?/proc/fs/ext4 涓嬫湁涓€涓熀浜庡叾璁惧鍚嶇殑鐩綍锛堝嵆 /proc/fs/ext4/hdc 鎴?/proc/fs/ext4/sda9 鎴?/proc/fs/ext4/dm-0锛夈€傛瘡涓瘡璁惧鐩綍涓嬬殑鏂囦欢濡傝〃 1-12 鎵€绀恒€?
 
 
 
  ==============  ==========================================================
- 文件           内容
- mb_groups       多块分配器空闲块 buddy 缓存的详细信息
+ 鏂囦欢           鍐呭
+ mb_groups       澶氬潡鍒嗛厤鍣ㄧ┖闂插潡 buddy 缂撳瓨鐨勮缁嗕俊鎭?
  ==============  ==========================================================
 
 ### 1.9 /proc/consoles
 
 
-显示已注册的系统控制台线路。
+鏄剧ず宸叉敞鍐岀殑绯荤粺鎺у埗鍙扮嚎璺€?
 
-要查看当前用于系统控制台的字符设备线路：
+瑕佹煡鐪嬪綋鍓嶇敤浜庣郴缁熸帶鍒跺彴鐨勫瓧绗﹁澶囩嚎璺細
 
 ```
   > cat /proc/consoles
@@ -1361,93 +1361,93 @@ DirectMap4k, DirectMap2M, DirectMap1G
   ttyS0                -W- (Ep)        4:64
 ```
 
-各列如下：
+鍚勫垪濡備笅锛?
 
 +--------------------+-------------------------------------------------------+
-| device             | 设备名称                                            |
+| device             | 璁惧鍚嶇О                                            |
 +====================+=======================================================+
-| operations         | * R = 可以进行读操作                                 |
-|                    | * W = 可以进行写操作                                 |
-|                    | * U = 可以进行解除空白（unblank）                    |
+| operations         | * R = 鍙互杩涜璇绘搷浣?                                |
+|                    | * W = 鍙互杩涜鍐欐搷浣?                                |
+|                    | * U = 鍙互杩涜瑙ｉ櫎绌虹櫧锛坲nblank锛?                   |
 +--------------------+-------------------------------------------------------+
-| flags              | * E = 已启用                                          |
-|                    | * C = 它是首选控制台                                  |
-|                    | * B = 它是主引导控制台                                |
-|                    | * p = 它用于 printk 缓冲区                            |
-|                    | * b = 它不是 TTY 而是 Braille 设备                    |
-|                    | * a = 在 cpu 离线时安全使用                           |
+| flags              | * E = 宸插惎鐢?                                         |
+|                    | * C = 瀹冩槸棣栭€夋帶鍒跺彴                                  |
+|                    | * B = 瀹冩槸涓诲紩瀵兼帶鍒跺彴                                |
+|                    | * p = 瀹冪敤浜?printk 缂撳啿鍖?                           |
+|                    | * b = 瀹冧笉鏄?TTY 鑰屾槸 Braille 璁惧                    |
+|                    | * a = 鍦?cpu 绂荤嚎鏃跺畨鍏ㄤ娇鐢?                          |
 +--------------------+-------------------------------------------------------+
-| major:minor        | 设备的主设备号和次设备号，以冒号分隔                  |
+| major:minor        | 璁惧鐨勪富璁惧鍙峰拰娆¤澶囧彿锛屼互鍐掑彿鍒嗛殧                  |
 +--------------------+-------------------------------------------------------+
 
-### 小结
+### 灏忕粨
 
 
-/proc 文件系统提供关于运行系统的信息。它不仅允许访问进程数据，还允许你通过读取层级结构中的文件来请求内核状态。
+/proc 鏂囦欢绯荤粺鎻愪緵鍏充簬杩愯绯荤粺鐨勪俊鎭€傚畠涓嶄粎鍏佽璁块棶杩涚▼鏁版嵁锛岃繕鍏佽浣犻€氳繃璇诲彇灞傜骇缁撴瀯涓殑鏂囦欢鏉ヨ姹傚唴鏍哥姸鎬併€?
 
-/proc 的目录结构反映了信息的类型，并使查找特定数据的位置变得容易（即便不是显而易见）。
+/proc 鐨勭洰褰曠粨鏋勫弽鏄犱簡淇℃伅鐨勭被鍨嬶紝骞朵娇鏌ユ壘鐗瑰畾鏁版嵁鐨勪綅缃彉寰楀鏄擄紙鍗充究涓嶆槸鏄捐€屾槗瑙侊級銆?
 
-## 第 2 章：修改系统参数
-
-
-### 本章内容
+## 绗?2 绔狅細淇敼绯荤粺鍙傛暟
 
 
-- 通过写入 /proc/sys 中的文件来修改内核参数
-- 探索修改特定参数的文件
-- 回顾 /proc/sys 文件树
+### 鏈珷鍐呭
+
+
+- 閫氳繃鍐欏叆 /proc/sys 涓殑鏂囦欢鏉ヤ慨鏀瑰唴鏍稿弬鏁?
+- 鎺㈢储淇敼鐗瑰畾鍙傛暟鐨勬枃浠?
+- 鍥為【 /proc/sys 鏂囦欢鏍?
 
 ------------------------------------------------------------------------------
 
-/proc 中非常有趣的一部分是目录 /proc/sys。它不仅是信息的来源，还允许你更改内核中的参数。尝试此操作时要非常小心。你可以优化你的系统，但也可能使它崩溃。绝不要在生产系统上更改内核参数。搭建一台开发机器并进行测试，以确保一切按你想要的方式工作。一旦出错，你可能别无选择，只能重启机器。
+/proc 涓潪甯告湁瓒ｇ殑涓€閮ㄥ垎鏄洰褰?/proc/sys銆傚畠涓嶄粎鏄俊鎭殑鏉ユ簮锛岃繕鍏佽浣犳洿鏀瑰唴鏍镐腑鐨勫弬鏁般€傚皾璇曟鎿嶄綔鏃惰闈炲父灏忓績銆備綘鍙互浼樺寲浣犵殑绯荤粺锛屼絾涔熷彲鑳戒娇瀹冨穿婧冦€傜粷涓嶈鍦ㄧ敓浜х郴缁熶笂鏇存敼鍐呮牳鍙傛暟銆傛惌寤轰竴鍙板紑鍙戞満鍣ㄥ苟杩涜娴嬭瘯锛屼互纭繚涓€鍒囨寜浣犳兂瑕佺殑鏂瑰紡宸ヤ綔銆備竴鏃﹀嚭閿欙紝浣犲彲鑳藉埆鏃犻€夋嫨锛屽彧鑳介噸鍚満鍣ㄣ€?
 
-要更改一个值，只需将新值 echo 到文件中。你需要是 root 才能这样做。你可以创建自己的引导脚本，在系统每次启动时执行此操作。
+瑕佹洿鏀逛竴涓€硷紝鍙渶灏嗘柊鍊?echo 鍒版枃浠朵腑銆備綘闇€瑕佹槸 root 鎵嶈兘杩欐牱鍋氥€備綘鍙互鍒涘缓鑷繁鐨勫紩瀵艰剼鏈紝鍦ㄧ郴缁熸瘡娆″惎鍔ㄦ椂鎵ц姝ゆ搷浣溿€?
 
-/proc/sys 中的文件可用于微调和监视 Linux 内核运行中的各种和一般事务。由于某些文件可能会不经意地扰乱你的系统，在实际进行调整之前，建议同时阅读文档和源代码。无论如何，写入这些文件中的任何文件时都要非常小心。/proc 中的条目在 2.1.* 和 2.2 内核之间可能略有变化，因此如有任何疑问，请查阅 linux/Documentation 目录中的内核文档。本章大量基于 2.2 之前内核中包含的文档，并在 Linux 内核 2.2.1 版本中成为其一部分。
+/proc/sys 涓殑鏂囦欢鍙敤浜庡井璋冨拰鐩戣 Linux 鍐呮牳杩愯涓殑鍚勭鍜屼竴鑸簨鍔°€傜敱浜庢煇浜涙枃浠跺彲鑳戒細涓嶇粡鎰忓湴鎵颁贡浣犵殑绯荤粺锛屽湪瀹為檯杩涜璋冩暣涔嬪墠锛屽缓璁悓鏃堕槄璇绘枃妗ｅ拰婧愪唬鐮併€傛棤璁哄浣曪紝鍐欏叆杩欎簺鏂囦欢涓殑浠讳綍鏂囦欢鏃堕兘瑕侀潪甯稿皬蹇冦€?proc 涓殑鏉＄洰鍦?2.1.* 鍜?2.2 鍐呮牳涔嬮棿鍙兘鐣ユ湁鍙樺寲锛屽洜姝ゅ鏈変换浣曠枒闂紝璇锋煡闃?linux/Documentation 鐩綍涓殑鍐呮牳鏂囨。銆傛湰绔犲ぇ閲忓熀浜?2.2 涔嬪墠鍐呮牳涓寘鍚殑鏂囨。锛屽苟鍦?Linux 鍐呮牳 2.2.1 鐗堟湰涓垚涓哄叾涓€閮ㄥ垎銆?
 
-请参阅：Documentation/admin-guide/sysctl/ 目录以获取这些条目的描述。
+璇峰弬闃咃細Documentation/admin-guide/sysctl/ 鐩綍浠ヨ幏鍙栬繖浜涙潯鐩殑鎻忚堪銆?
 
-### 小结
-
-
-内核行为的某些方面可以在运行时修改，无需重新编译内核，甚至无需重启系统。/proc/sys 树中的文件不仅可以读取，还可以修改。你可以使用 echo 命令将值写入这些文件，从而更改内核的默认设置。
+### 灏忕粨
 
 
-## 第 3 章：每进程参数
+鍐呮牳琛屼负鐨勬煇浜涙柟闈㈠彲浠ュ湪杩愯鏃朵慨鏀癸紝鏃犻渶閲嶆柊缂栬瘧鍐呮牳锛岀敋鑷虫棤闇€閲嶅惎绯荤粺銆?proc/sys 鏍戜腑鐨勬枃浠朵笉浠呭彲浠ヨ鍙栵紝杩樺彲浠ヤ慨鏀广€備綘鍙互浣跨敤 echo 鍛戒护灏嗗€煎啓鍏ヨ繖浜涙枃浠讹紝浠庤€屾洿鏀瑰唴鏍哥殑榛樿璁剧疆銆?
 
 
-### 3.1 /proc/<pid>/oom_adj & /proc/<pid>/oom_score_adj - 调整 oom-killer 分数
+## 绗?3 绔狅細姣忚繘绋嬪弬鏁?
 
 
-这些文件可用于调整用于选择内存不足（oom）条件下哪个进程被杀死的坏度（badness）启发式。
-
-坏度启发式为每个候选任务分配一个从 0（从不杀死）到 1000（总是杀死）的值，以确定哪个进程是目标。这些单位大致是基于对其当前内存和交换使用量的估计，该进程可能从中分配的允许内存范围上的一个比例。例如，如果一个任务正在使用所有允许的内存，它的坏度分数将是 1000。如果它正在使用其允许内存的一半，它的分数将是 500。
-
-"允许"的内存量取决于调用 oom killer 的上下文。如果是因为分配给分配任务的 cpuset 的内存耗尽，允许内存表示该 cpuset 被分配的一组 mems。如果是因为 mempolicy 的节点耗尽，允许内存表示该 mempolicy 节点集。如果是因为达到了内存限制（或交换限制），允许内存就是配置的限制。最后，如果是因为整个系统内存不足，允许内存表示所有可分配资源。
-
-/proc/<pid>/oom_score_adj 的值在用于确定要杀死哪个任务之前被加到坏度分数上。可接受的值范围从 -1000（OOM_SCORE_ADJ_MIN）到 +1000（OOM_SCORE_ADJ_MAX）。这允许用户空间通过总是偏好某个任务或完全禁用它来极化 oom 杀死的偏好。最低可能的值 -1000 相当于完全禁用该任务的 oom 杀死，因为它总是报告坏度分数为 0。
-
-因此，用户空间定义每个任务要考虑的内存量非常简单。例如，设置 /proc/<pid>/oom_score_adj 值为 +500，大致相当于允许共享同一系统、cpuset、mempolicy 或内存控制器资源的其余任务多使用至少 50% 的内存。另一方面，值 -500 大致相当于从该任务的计分中扣除其允许内存的 50%。
-
-为了与以前的内核向后兼容，/proc/<pid>/oom_adj 也可用于调整坏度分数。其可接受的值范围从 -16（OOM_ADJUST_MIN）到 +15（OOM_ADJUST_MAX），以及特殊值 -17（OOM_DISABLE）以完全禁用该任务的 oom 杀死。其值随 /proc/<pid>/oom_score_adj 线性缩放。
-
-/proc/<pid>/oom_score_adj 的值不能降低到最后一个由 CAP_SYS_RESOURCE 进程设置的值以下。要降低到更低的值需要 CAP_SYS_RESOURCE。
+### 3.1 /proc/<pid>/oom_adj & /proc/<pid>/oom_score_adj - 璋冩暣 oom-killer 鍒嗘暟
 
 
-### 3.2 /proc/<pid>/oom_score - 显示当前 oom-killer 分数
+杩欎簺鏂囦欢鍙敤浜庤皟鏁寸敤浜庨€夋嫨鍐呭瓨涓嶈冻锛坥om锛夋潯浠朵笅鍝釜杩涚▼琚潃姝荤殑鍧忓害锛坆adness锛夊惎鍙戝紡銆?
+
+鍧忓害鍚彂寮忎负姣忎釜鍊欓€変换鍔″垎閰嶄竴涓粠 0锛堜粠涓嶆潃姝伙級鍒?1000锛堟€绘槸鏉€姝伙級鐨勫€硷紝浠ョ‘瀹氬摢涓繘绋嬫槸鐩爣銆傝繖浜涘崟浣嶅ぇ鑷存槸鍩轰簬瀵瑰叾褰撳墠鍐呭瓨鍜屼氦鎹娇鐢ㄩ噺鐨勪及璁★紝璇ヨ繘绋嬪彲鑳戒粠涓垎閰嶇殑鍏佽鍐呭瓨鑼冨洿涓婄殑涓€涓瘮渚嬨€備緥濡傦紝濡傛灉涓€涓换鍔℃鍦ㄤ娇鐢ㄦ墍鏈夊厑璁哥殑鍐呭瓨锛屽畠鐨勫潖搴﹀垎鏁板皢鏄?1000銆傚鏋滃畠姝ｅ湪浣跨敤鍏跺厑璁稿唴瀛樼殑涓€鍗婏紝瀹冪殑鍒嗘暟灏嗘槸 500銆?
+
+"鍏佽"鐨勫唴瀛橀噺鍙栧喅浜庤皟鐢?oom killer 鐨勪笂涓嬫枃銆傚鏋滄槸鍥犱负鍒嗛厤缁欏垎閰嶄换鍔＄殑 cpuset 鐨勫唴瀛樿€楀敖锛屽厑璁稿唴瀛樿〃绀鸿 cpuset 琚垎閰嶇殑涓€缁?mems銆傚鏋滄槸鍥犱负 mempolicy 鐨勮妭鐐硅€楀敖锛屽厑璁稿唴瀛樿〃绀鸿 mempolicy 鑺傜偣闆嗐€傚鏋滄槸鍥犱负杈惧埌浜嗗唴瀛橀檺鍒讹紙鎴栦氦鎹㈤檺鍒讹級锛屽厑璁稿唴瀛樺氨鏄厤缃殑闄愬埗銆傛渶鍚庯紝濡傛灉鏄洜涓烘暣涓郴缁熷唴瀛樹笉瓒筹紝鍏佽鍐呭瓨琛ㄧず鎵€鏈夊彲鍒嗛厤璧勬簮銆?
+
+/proc/<pid>/oom_score_adj 鐨勫€煎湪鐢ㄤ簬纭畾瑕佹潃姝诲摢涓换鍔′箣鍓嶈鍔犲埌鍧忓害鍒嗘暟涓娿€傚彲鎺ュ彈鐨勫€艰寖鍥翠粠 -1000锛圤OM_SCORE_ADJ_MIN锛夊埌 +1000锛圤OM_SCORE_ADJ_MAX锛夈€傝繖鍏佽鐢ㄦ埛绌洪棿閫氳繃鎬绘槸鍋忓ソ鏌愪釜浠诲姟鎴栧畬鍏ㄧ鐢ㄥ畠鏉ユ瀬鍖?oom 鏉€姝荤殑鍋忓ソ銆傛渶浣庡彲鑳界殑鍊?-1000 鐩稿綋浜庡畬鍏ㄧ鐢ㄨ浠诲姟鐨?oom 鏉€姝伙紝鍥犱负瀹冩€绘槸鎶ュ憡鍧忓害鍒嗘暟涓?0銆?
+
+鍥犳锛岀敤鎴风┖闂村畾涔夋瘡涓换鍔¤鑰冭檻鐨勫唴瀛橀噺闈炲父绠€鍗曘€備緥濡傦紝璁剧疆 /proc/<pid>/oom_score_adj 鍊间负 +500锛屽ぇ鑷寸浉褰撲簬鍏佽鍏变韩鍚屼竴绯荤粺銆乧puset銆乵empolicy 鎴栧唴瀛樻帶鍒跺櫒璧勬簮鐨勫叾浣欎换鍔″浣跨敤鑷冲皯 50% 鐨勫唴瀛樸€傚彟涓€鏂归潰锛屽€?-500 澶ц嚧鐩稿綋浜庝粠璇ヤ换鍔＄殑璁″垎涓墸闄ゅ叾鍏佽鍐呭瓨鐨?50%銆?
+
+涓轰簡涓庝互鍓嶇殑鍐呮牳鍚戝悗鍏煎锛?proc/<pid>/oom_adj 涔熷彲鐢ㄤ簬璋冩暣鍧忓害鍒嗘暟銆傚叾鍙帴鍙楃殑鍊艰寖鍥翠粠 -16锛圤OM_ADJUST_MIN锛夊埌 +15锛圤OM_ADJUST_MAX锛夛紝浠ュ強鐗规畩鍊?-17锛圤OM_DISABLE锛変互瀹屽叏绂佺敤璇ヤ换鍔＄殑 oom 鏉€姝汇€傚叾鍊奸殢 /proc/<pid>/oom_score_adj 绾挎€х缉鏀俱€?
+
+/proc/<pid>/oom_score_adj 鐨勫€间笉鑳介檷浣庡埌鏈€鍚庝竴涓敱 CAP_SYS_RESOURCE 杩涚▼璁剧疆鐨勫€间互涓嬨€傝闄嶄綆鍒版洿浣庣殑鍊奸渶瑕?CAP_SYS_RESOURCE銆?
 
 
-该文件可用于检查 oom-killer 对任何给定 <pid> 使用的当前分数。将它和 /proc/<pid>/oom_score_adj 一起使用，以调整在内存不足情况下应杀死哪个进程。
-
-请注意，导出的值包含 oom_score_adj，因此它实际上在 [0,2000] 范围内。
+### 3.2 /proc/<pid>/oom_score - 鏄剧ず褰撳墠 oom-killer 鍒嗘暟
 
 
-### 3.3  /proc/<pid>/io - 显示 IO 统计字段
+璇ユ枃浠跺彲鐢ㄤ簬妫€鏌?oom-killer 瀵逛换浣曠粰瀹?<pid> 浣跨敤鐨勫綋鍓嶅垎鏁般€傚皢瀹冨拰 /proc/<pid>/oom_score_adj 涓€璧蜂娇鐢紝浠ヨ皟鏁村湪鍐呭瓨涓嶈冻鎯呭喌涓嬪簲鏉€姝诲摢涓繘绋嬨€?
+
+璇锋敞鎰忥紝瀵煎嚭鐨勫€煎寘鍚?oom_score_adj锛屽洜姝ゅ畠瀹為檯涓婂湪 [0,2000] 鑼冨洿鍐呫€?
 
 
-该文件包含每个运行进程的 IO 统计。
+### 3.3  /proc/<pid>/io - 鏄剧ず IO 缁熻瀛楁
 
-#### 示例
+
+璇ユ枃浠跺寘鍚瘡涓繍琛岃繘绋嬬殑 IO 缁熻銆?
+
+#### 绀轰緥
 
 
 ```
@@ -1464,155 +1464,155 @@ DirectMap4k, DirectMap2M, DirectMap1G
     cancelled_write_bytes: 0
 ```
 
-#### 描述
+#### 鎻忚堪
 
 
 ##### rchar
 
 
-I/O 计数器：读取的字符数
-该任务导致从存储读取的字节数。这简单是该进程传递给 read() 和 pread() 的字节数之和。它包含像 tty IO 之类的内容，并且不受是否需要实际物理磁盘 IO 的影响（读取可能由页缓存满足）。
+I/O 璁℃暟鍣細璇诲彇鐨勫瓧绗︽暟
+璇ヤ换鍔″鑷翠粠瀛樺偍璇诲彇鐨勫瓧鑺傛暟銆傝繖绠€鍗曟槸璇ヨ繘绋嬩紶閫掔粰 read() 鍜?pread() 鐨勫瓧鑺傛暟涔嬪拰銆傚畠鍖呭惈鍍?tty IO 涔嬬被鐨勫唴瀹癸紝骞朵笖涓嶅彈鏄惁闇€瑕佸疄闄呯墿鐞嗙鐩?IO 鐨勫奖鍝嶏紙璇诲彇鍙兘鐢遍〉缂撳瓨婊¤冻锛夈€?
 
 
 ##### wchar
 
 
-I/O 计数器：写入的字符数
-该任务导致或将要导致写入磁盘的字节数。这里适用的注意事项与 rchar 类似。
+I/O 璁℃暟鍣細鍐欏叆鐨勫瓧绗︽暟
+璇ヤ换鍔″鑷存垨灏嗚瀵艰嚧鍐欏叆纾佺洏鐨勫瓧鑺傛暟銆傝繖閲岄€傜敤鐨勬敞鎰忎簨椤逛笌 rchar 绫讳技銆?
 
 
 ##### syscr
 
 
-I/O 计数器：读系统调用数
-尝试统计读 I/O 操作的数量，即像 read() 和 pread() 这样的系统调用。
+I/O 璁℃暟鍣細璇荤郴缁熻皟鐢ㄦ暟
+灏濊瘯缁熻璇?I/O 鎿嶄綔鐨勬暟閲忥紝鍗冲儚 read() 鍜?pread() 杩欐牱鐨勭郴缁熻皟鐢ㄣ€?
 
 
 ##### syscw
 
 
-I/O 计数器：写系统调用数
-尝试统计写 I/O 操作的数量，即像 write() 和 pwrite() 这样的系统调用。
+I/O 璁℃暟鍣細鍐欑郴缁熻皟鐢ㄦ暟
+灏濊瘯缁熻鍐?I/O 鎿嶄綔鐨勬暟閲忥紝鍗冲儚 write() 鍜?pwrite() 杩欐牱鐨勭郴缁熻皟鐢ㄣ€?
 
 
 ##### read_bytes
 
 
-I/O 计数器：读取的字节数
-尝试统计该进程真正导致从存储层获取到的字节数。在 submit_bio() 级别完成，因此对于块设备支持的文件系统是准确的。<请在以后补充关于 NFS 和 CIFS 的状态>
+I/O 璁℃暟鍣細璇诲彇鐨勫瓧鑺傛暟
+灏濊瘯缁熻璇ヨ繘绋嬬湡姝ｅ鑷翠粠瀛樺偍灞傝幏鍙栧埌鐨勫瓧鑺傛暟銆傚湪 submit_bio() 绾у埆瀹屾垚锛屽洜姝ゅ浜庡潡璁惧鏀寔鐨勬枃浠剁郴缁熸槸鍑嗙‘鐨勩€?璇峰湪浠ュ悗琛ュ厖鍏充簬 NFS 鍜?CIFS 鐨勭姸鎬?
 
 
 ##### write_bytes
 
 
-I/O 计数器：写入的字节数
-尝试统计该进程导致发送到存储层的字节数。这在页变脏时进行。
+I/O 璁℃暟鍣細鍐欏叆鐨勫瓧鑺傛暟
+灏濊瘯缁熻璇ヨ繘绋嬪鑷村彂閫佸埌瀛樺偍灞傜殑瀛楄妭鏁般€傝繖鍦ㄩ〉鍙樿剰鏃惰繘琛屻€?
 
 
 ##### cancelled_write_bytes
 
 
-这里最大的不准确之处是截断（truncate）。如果一个进程向一个文件写入 1MB，然后删除该文件，它实际上不会执行任何写回。但它会被记为导致了 1MB 的写入。
-换句话说：该进程通过截断页缓存而导致未发生的字节数。一个任务也可能导致"负"的 IO。如果该任务截断了某些脏页缓存，另一个任务已被计入（在其 write_bytes 中）的某些 IO 将不会发生。我们_可以_从截断任务的 write_bytes 中减去该值，但这样做会导致信息丢失。
+杩欓噷鏈€澶х殑涓嶅噯纭箣澶勬槸鎴柇锛坱runcate锛夈€傚鏋滀竴涓繘绋嬪悜涓€涓枃浠跺啓鍏?1MB锛岀劧鍚庡垹闄よ鏂囦欢锛屽畠瀹為檯涓婁笉浼氭墽琛屼换浣曞啓鍥炪€備絾瀹冧細琚涓哄鑷翠簡 1MB 鐨勫啓鍏ャ€?
+鎹㈠彞璇濊锛氳杩涚▼閫氳繃鎴柇椤电紦瀛樿€屽鑷存湭鍙戠敓鐨勫瓧鑺傛暟銆備竴涓换鍔′篃鍙兘瀵艰嚧"璐?鐨?IO銆傚鏋滆浠诲姟鎴柇浜嗘煇浜涜剰椤电紦瀛橈紝鍙︿竴涓换鍔″凡琚鍏ワ紙鍦ㄥ叾 write_bytes 涓級鐨勬煇浜?IO 灏嗕笉浼氬彂鐢熴€傛垜浠琠鍙互_浠庢埅鏂换鍔＄殑 write_bytes 涓噺鍘昏鍊硷紝浣嗚繖鏍峰仛浼氬鑷翠俊鎭涪澶便€?
 
 
 
-   在其当前的实现状态下，这在 32 位机器上有些存在竞态：如果进程 A 在进程 B 更新其中一个 64 位计数器时读取进程 B 的 /proc/pid/io，进程 A 可能会看到一个中间结果。
+   鍦ㄥ叾褰撳墠鐨勫疄鐜扮姸鎬佷笅锛岃繖鍦?32 浣嶆満鍣ㄤ笂鏈変簺瀛樺湪绔炴€侊細濡傛灉杩涚▼ A 鍦ㄨ繘绋?B 鏇存柊鍏朵腑涓€涓?64 浣嶈鏁板櫒鏃惰鍙栬繘绋?B 鐨?/proc/pid/io锛岃繘绋?A 鍙兘浼氱湅鍒颁竴涓腑闂寸粨鏋溿€?
 
 
-关于此的更多信息可以在 Documentation/accounting 中的 taskstats 文档中找到。
+鍏充簬姝ょ殑鏇村淇℃伅鍙互鍦?Documentation/accounting 涓殑 taskstats 鏂囨。涓壘鍒般€?
 
-### 3.4 /proc/<pid>/coredump_filter - 核心转储过滤设置
+### 3.4 /proc/<pid>/coredump_filter - 鏍稿績杞偍杩囨护璁剧疆
 
-当一个进程被转储时，只要核心文件的大小不受限制，所有匿名内存都会被写入核心文件。但有时我们不想转储某些内存段，例如巨大的共享内存或 DAX。相反，有时我们想将文件支持的内存段保存到核心文件中，而不仅仅是各个文件。
+褰撲竴涓繘绋嬭杞偍鏃讹紝鍙鏍稿績鏂囦欢鐨勫ぇ灏忎笉鍙楅檺鍒讹紝鎵€鏈夊尶鍚嶅唴瀛橀兘浼氳鍐欏叆鏍稿績鏂囦欢銆備絾鏈夋椂鎴戜滑涓嶆兂杞偍鏌愪簺鍐呭瓨娈碉紝渚嬪宸ㄥぇ鐨勫叡浜唴瀛樻垨 DAX銆傜浉鍙嶏紝鏈夋椂鎴戜滑鎯冲皢鏂囦欢鏀寔鐨勫唴瀛樻淇濆瓨鍒版牳蹇冩枃浠朵腑锛岃€屼笉浠呬粎鏄悇涓枃浠躲€?
 
-/proc/<pid>/coredump_filter 允许你自定义当 <pid> 进程被转储时将转储哪些内存段。coredump_filter 是一个内存类型的位掩码。如果位掩码的某一位被设置，则相应内存类型的内存段会被转储，否则不会转储。
+/proc/<pid>/coredump_filter 鍏佽浣犺嚜瀹氫箟褰?<pid> 杩涚▼琚浆鍌ㄦ椂灏嗚浆鍌ㄥ摢浜涘唴瀛樻銆俢oredump_filter 鏄竴涓唴瀛樼被鍨嬬殑浣嶆帺鐮併€傚鏋滀綅鎺╃爜鐨勬煇涓€浣嶈璁剧疆锛屽垯鐩稿簲鍐呭瓨绫诲瀷鐨勫唴瀛樻浼氳杞偍锛屽惁鍒欎笉浼氳浆鍌ㄣ€?
 
-支持以下 9 种内存类型：
+鏀寔浠ヤ笅 9 绉嶅唴瀛樼被鍨嬶細
 
-  - （位 0）匿名私有内存
-  - （位 1）匿名共享内存
-  - （位 2）文件支持的私有内存
-  - （位 3）文件支持的共享内存
-  - （位 4）文件支持的私有内存区域中的 ELF 头页（仅当位 2 被清除时有效）
-  - （位 5）hugetlb 私有内存
-  - （位 6）hugetlb 共享内存
-  - （位 7）DAX 私有内存
-  - （位 8）DAX 共享内存
+  - 锛堜綅 0锛夊尶鍚嶇鏈夊唴瀛?
+  - 锛堜綅 1锛夊尶鍚嶅叡浜唴瀛?
+  - 锛堜綅 2锛夋枃浠舵敮鎸佺殑绉佹湁鍐呭瓨
+  - 锛堜綅 3锛夋枃浠舵敮鎸佺殑鍏变韩鍐呭瓨
+  - 锛堜綅 4锛夋枃浠舵敮鎸佺殑绉佹湁鍐呭瓨鍖哄煙涓殑 ELF 澶撮〉锛堜粎褰撲綅 2 琚竻闄ゆ椂鏈夋晥锛?
+  - 锛堜綅 5锛塰ugetlb 绉佹湁鍐呭瓨
+  - 锛堜綅 6锛塰ugetlb 鍏变韩鍐呭瓨
+  - 锛堜綅 7锛塂AX 绉佹湁鍐呭瓨
+  - 锛堜綅 8锛塂AX 鍏变韩鍐呭瓨
 
-  注意，MMIO 页（如帧缓冲）永远不会被转储，而 vDSO 页无论位掩码状态如何总是被转储。
+  娉ㄦ剰锛孧MIO 椤碉紙濡傚抚缂撳啿锛夋案杩滀笉浼氳杞偍锛岃€?vDSO 椤垫棤璁轰綅鎺╃爜鐘舵€佸浣曟€绘槸琚浆鍌ㄣ€?
 
-  注意位 0-4 不影响 hugetlb 或 DAX 内存。hugetlb 内存仅受位 5-6 影响，DAX 仅受位 7-8 影响。
+  娉ㄦ剰浣?0-4 涓嶅奖鍝?hugetlb 鎴?DAX 鍐呭瓨銆俬ugetlb 鍐呭瓨浠呭彈浣?5-6 褰卞搷锛孌AX 浠呭彈浣?7-8 褰卞搷銆?
 
-coredump_filter 的默认值是 0x33；这意味着所有匿名内存段、ELF 头页和 hugetlb 私有内存都会被转储。
+coredump_filter 鐨勯粯璁ゅ€兼槸 0x33锛涜繖鎰忓懗鐫€鎵€鏈夊尶鍚嶅唴瀛樻銆丒LF 澶撮〉鍜?hugetlb 绉佹湁鍐呭瓨閮戒細琚浆鍌ㄣ€?
 
-如果你不想转储附加到 pid 1234 的所有共享内存段：
+濡傛灉浣犱笉鎯宠浆鍌ㄩ檮鍔犲埌 pid 1234 鐨勬墍鏈夊叡浜唴瀛樻锛?
 
 ```
   $ echo 0x31 > /proc/1234/coredump_filter
 ```
 
-当创建一个新进程时，该进程从其父进程继承位掩码状态。在程序运行之前设置 coredump_filter 很有用。
+褰撳垱寤轰竴涓柊杩涚▼鏃讹紝璇ヨ繘绋嬩粠鍏剁埗杩涚▼缁ф壙浣嶆帺鐮佺姸鎬併€傚湪绋嬪簭杩愯涔嬪墠璁剧疆 coredump_filter 寰堟湁鐢ㄣ€?
 
 ```
   $ echo 0x7 > /proc/self/coredump_filter
   $ ./some_program
 ```
 
-### 3.5	/proc/<pid>/mountinfo - 关于挂载的信息
+### 3.5	/proc/<pid>/mountinfo - 鍏充簬鎸傝浇鐨勪俊鎭?
 
 
 ```
     36 35 98:0 /mnt1 /mnt2 rw,noatime master:1 - ext3 /dev/root rw,errors=continue
-    (1)(2)(3)   (4)   (5)      (6)     (n…m) (m+1)(m+2) (m+3)         (m+4)
+    (1)(2)(3)   (4)   (5)      (6)     (n鈥) (m+1)(m+2) (m+3)         (m+4)
 
-    (1)   mount ID:        挂载的唯一标识符（umount 后可能被复用）
-    (2)   parent ID:       父挂载的 ID（或挂载树顶端的自身 ID）
-    (3)   major:minor:     文件系统上文件的 st_dev 值
-    (4)   root:            文件系统中该挂载的根
-    (5)   mount point:     相对于进程根目录的挂载点
-    (6)   mount options:   每个挂载的选项
-    (n…m) optional fields: 零个或多个 "tag[:value]" 形式的字段
-    (m+1) separator:       可选字段结束的标记
-    (m+2) filesystem type: "type[.subtype]" 形式的文件系统名
-    (m+3) mount source:    文件系统特定信息或 "none"
-    (m+4) super options:   每个超级块的选项
+    (1)   mount ID:        鎸傝浇鐨勫敮涓€鏍囪瘑绗︼紙umount 鍚庡彲鑳借澶嶇敤锛?
+    (2)   parent ID:       鐖舵寕杞界殑 ID锛堟垨鎸傝浇鏍戦《绔殑鑷韩 ID锛?
+    (3)   major:minor:     鏂囦欢绯荤粺涓婃枃浠剁殑 st_dev 鍊?
+    (4)   root:            鏂囦欢绯荤粺涓鎸傝浇鐨勬牴
+    (5)   mount point:     鐩稿浜庤繘绋嬫牴鐩綍鐨勬寕杞界偣
+    (6)   mount options:   姣忎釜鎸傝浇鐨勯€夐」
+    (n鈥) optional fields: 闆朵釜鎴栧涓?"tag[:value]" 褰㈠紡鐨勫瓧娈?
+    (m+1) separator:       鍙€夊瓧娈电粨鏉熺殑鏍囪
+    (m+2) filesystem type: "type[.subtype]" 褰㈠紡鐨勬枃浠剁郴缁熷悕
+    (m+3) mount source:    鏂囦欢绯荤粺鐗瑰畾淇℃伅鎴?"none"
+    (m+4) super options:   姣忎釜瓒呯骇鍧楃殑閫夐」
 ```
 
-解析器应忽略所有无法识别的可选字段。目前可能的可选字段有：
+瑙ｆ瀽鍣ㄥ簲蹇界暐鎵€鏈夋棤娉曡瘑鍒殑鍙€夊瓧娈点€傜洰鍓嶅彲鑳界殑鍙€夊瓧娈垫湁锛?
 
 ================  ==============================================================
-shared:X          mount 在 peer group X 中共享
-master:X          mount 是 peer group X 的从属（slave）
-propagate_from:X  该 mount 是 slave 并从 peer group X 接收传播 [#]_
-unbindable        mount 不可绑定（unbindable）
+shared:X          mount 鍦?peer group X 涓叡浜?
+master:X          mount 鏄?peer group X 鐨勪粠灞烇紙slave锛?
+propagate_from:X  璇?mount 鏄?slave 骞朵粠 peer group X 鎺ユ敹浼犳挱 [#]_
+unbindable        mount 涓嶅彲缁戝畾锛坲nbindable锛?
 ================  ==============================================================
 
-       X 是该 mount 的直接 master，或者如果在同一根下没有占主导的 peer
-       group，则只出现 "master:X" 字段，而不出现 "propagate_from:X" 字段。
+       X 鏄 mount 鐨勭洿鎺?master锛屾垨鑰呭鏋滃湪鍚屼竴鏍逛笅娌℃湁鍗犱富瀵肩殑 peer
+       group锛屽垯鍙嚭鐜?"master:X" 瀛楁锛岃€屼笉鍑虹幇 "propagate_from:X" 瀛楁銆?
 
-关于挂载传播的更多信息，请参阅：
+鍏充簬鎸傝浇浼犳挱鐨勬洿澶氫俊鎭紝璇峰弬闃咃細
 
   Documentation/filesystems/sharedsubtree.rst
 
 
 ### 3.6	/proc/<pid>/comm  & /proc/<pid>/task/<tid>/comm
 
-这些文件提供了一种访问任务 comm 值的方法。它还允许某个任务设置它自身或其某个线程兄弟的 comm 值。与 cmdline 值相比，comm 值的大小受到限制，因此写入超过内核 TASK_COMM_LEN（当前为 16 个字符，包含 NUL 终止符）的内容会导致 comm 值被截断。
+杩欎簺鏂囦欢鎻愪緵浜嗕竴绉嶈闂换鍔?comm 鍊肩殑鏂规硶銆傚畠杩樺厑璁告煇涓换鍔¤缃畠鑷韩鎴栧叾鏌愪釜绾跨▼鍏勫紵鐨?comm 鍊笺€備笌 cmdline 鍊肩浉姣旓紝comm 鍊肩殑澶у皬鍙楀埌闄愬埗锛屽洜姝ゅ啓鍏ヨ秴杩囧唴鏍?TASK_COMM_LEN锛堝綋鍓嶄负 16 涓瓧绗︼紝鍖呭惈 NUL 缁堟绗︼級鐨勫唴瀹逛細瀵艰嚧 comm 鍊艰鎴柇銆?
 
 
-### 3.7	/proc/<pid>/task/<tid>/children - 关于任务子进程的信息
+### 3.7	/proc/<pid>/task/<tid>/children - 鍏充簬浠诲姟瀛愯繘绋嬬殑淇℃伅
 
-该文件提供了一种快速获取由 <pid>/<tid> 对所指任务的第一层子进程 pid 的方法。其格式为以空格分隔的 pid 流。
+璇ユ枃浠舵彁渚涗簡涓€绉嶅揩閫熻幏鍙栫敱 <pid>/<tid> 瀵规墍鎸囦换鍔＄殑绗竴灞傚瓙杩涚▼ pid 鐨勬柟娉曘€傚叾鏍煎紡涓轰互绌烘牸鍒嗛殧鐨?pid 娴併€?
 
-注意这里的"第一层"——如果一个子进程还有它自己的子进程，则不会列在这里；需要读取 /proc/<children-pid>/task/<tid>/children 来获取其后代。
+娉ㄦ剰杩欓噷鐨?绗竴灞?鈥斺€斿鏋滀竴涓瓙杩涚▼杩樻湁瀹冭嚜宸辩殑瀛愯繘绋嬶紝鍒欎笉浼氬垪鍦ㄨ繖閲岋紱闇€瑕佽鍙?/proc/<children-pid>/task/<tid>/children 鏉ヨ幏鍙栧叾鍚庝唬銆?
 
-由于该接口旨在快速且廉价，它不保证提供精确的结果，某些子进程可能会被跳过，特别是如果它们在打印出 pid 之后立即退出，因此在需要精确结果时，需要停止或冻结被检查进程。
+鐢变簬璇ユ帴鍙ｆ棬鍦ㄥ揩閫熶笖寤変环锛屽畠涓嶄繚璇佹彁渚涚簿纭殑缁撴灉锛屾煇浜涘瓙杩涚▼鍙兘浼氳璺宠繃锛岀壒鍒槸濡傛灉瀹冧滑鍦ㄦ墦鍗板嚭 pid 涔嬪悗绔嬪嵆閫€鍑猴紝鍥犳鍦ㄩ渶瑕佺簿纭粨鏋滄椂锛岄渶瑕佸仠姝㈡垨鍐荤粨琚鏌ヨ繘绋嬨€?
 
 
-### 3.8	/proc/<pid>/fdinfo/<fd> - 关于已打开文件的信息
+### 3.8	/proc/<pid>/fdinfo/<fd> - 鍏充簬宸叉墦寮€鏂囦欢鐨勪俊鎭?
 
-该文件提供与已打开文件相关的信息。常规文件至少有四个字段——'pos'、'flags'、'mnt_id' 和 'ino'。'pos' 以十进制形式表示该已打开文件的当前偏移量 [详见 lseek(2)]，'flags' 表示文件创建时使用的八进制 O_xxx 掩码 [详见 open(2)]，'mnt_id' 表示包含该已打开文件的文件系统的挂载 ID [详见 3.5 /proc/<pid>/mountinfo]。'ino' 表示该文件的 inode 号。
+璇ユ枃浠舵彁渚涗笌宸叉墦寮€鏂囦欢鐩稿叧鐨勪俊鎭€傚父瑙勬枃浠惰嚦灏戞湁鍥涗釜瀛楁鈥斺€?pos'銆?flags'銆?mnt_id' 鍜?'ino'銆?pos' 浠ュ崄杩涘埗褰㈠紡琛ㄧず璇ュ凡鎵撳紑鏂囦欢鐨勫綋鍓嶅亸绉婚噺 [璇﹁ lseek(2)]锛?flags' 琛ㄧず鏂囦欢鍒涘缓鏃朵娇鐢ㄧ殑鍏繘鍒?O_xxx 鎺╃爜 [璇﹁ open(2)]锛?mnt_id' 琛ㄧず鍖呭惈璇ュ凡鎵撳紑鏂囦欢鐨勬枃浠剁郴缁熺殑鎸傝浇 ID [璇﹁ 3.5 /proc/<pid>/mountinfo]銆?ino' 琛ㄧず璇ユ枃浠剁殑 inode 鍙枫€?
 
 ```
 	pos:	0
@@ -1625,9 +1625,9 @@ unbindable        mount 不可绑定（unbindable）
     lock:       1: FLOCK  ADVISORY  WRITE 359 00:13:11691 0 EOF
 ```
 
-像 eventfd、fsnotify、signalfd、epoll 这样的文件，在常规的 pos/flags 之外还提供与其所代表对象相关的附加信息。
+鍍?eventfd銆乫snotify銆乻ignalfd銆乪poll 杩欐牱鐨勬枃浠讹紝鍦ㄥ父瑙勭殑 pos/flags 涔嬪杩樻彁渚涗笌鍏舵墍浠ｈ〃瀵硅薄鐩稿叧鐨勯檮鍔犱俊鎭€?
 
-#### Eventfd 文件
+#### Eventfd 鏂囦欢
 
 
 ```
@@ -1638,9 +1638,9 @@ unbindable        mount 不可绑定（unbindable）
 	eventfd-count:	5a
 ```
 
-其中 'eventfd-count' 是一个计数器的十六进制值。
+鍏朵腑 'eventfd-count' 鏄竴涓鏁板櫒鐨勫崄鍏繘鍒跺€笺€?
 
-#### Signalfd 文件
+#### Signalfd 鏂囦欢
 
 
 ```
@@ -1651,9 +1651,9 @@ unbindable        mount 不可绑定（unbindable）
 	sigmask:	0000000000000200
 ```
 
-其中 'sigmask' 是与该文件关联的 signal mask 的十六进制值。
+鍏朵腑 'sigmask' 鏄笌璇ユ枃浠跺叧鑱旂殑 signal mask 鐨勫崄鍏繘鍒跺€笺€?
 
-#### Epoll 文件
+#### Epoll 鏂囦欢
 
 
 ```
@@ -1664,11 +1664,11 @@ unbindable        mount 不可绑定（unbindable）
 	tfd:        5 events:       1d data: ffffffffffffffff pos:0 ino:61af sdev:7
 ```
 
-其中 'tfd' 是十进制形式的目标文件描述符编号，'events' 是正在被监视的事件掩码，'data' 是与目标关联的数据 [详见 epoll(7)]。
+鍏朵腑 'tfd' 鏄崄杩涘埗褰㈠紡鐨勭洰鏍囨枃浠舵弿杩扮缂栧彿锛?events' 鏄鍦ㄨ鐩戣鐨勪簨浠舵帺鐮侊紝'data' 鏄笌鐩爣鍏宠仈鐨勬暟鎹?[璇﹁ epoll(7)]銆?
 
-'pos' 是目标文件当前偏移量的十进制形式 [见 lseek(2)]，'ino' 和 'sdev' 是目标文件所在位置的 inode 和设备号，均以十六进制格式表示。
+'pos' 鏄洰鏍囨枃浠跺綋鍓嶅亸绉婚噺鐨勫崄杩涘埗褰㈠紡 [瑙?lseek(2)]锛?ino' 鍜?'sdev' 鏄洰鏍囨枃浠舵墍鍦ㄤ綅缃殑 inode 鍜岃澶囧彿锛屽潎浠ュ崄鍏繘鍒舵牸寮忚〃绀恒€?
 
-#### Fsnotify 文件
+#### Fsnotify 鏂囦欢
 
 
 ```
@@ -1679,13 +1679,13 @@ unbindable        mount 不可绑定（unbindable）
 	inotify wd:3 ino:9e7e sdev:800013 mask:800afce ignored_mask:0 fhandle-bytes:8 fhandle-type:1 f_handle:7e9e0000640d1b6d
 ```
 
-其中 'wd' 是十进制形式的监视描述符，即目标文件描述符编号，'ino' 和 'sdev' 是目标文件所在的 inode 和设备号，'mask' 是事件掩码，均以十六进制形式 [详见 inotify(7)]。
+鍏朵腑 'wd' 鏄崄杩涘埗褰㈠紡鐨勭洃瑙嗘弿杩扮锛屽嵆鐩爣鏂囦欢鎻忚堪绗︾紪鍙凤紝'ino' 鍜?'sdev' 鏄洰鏍囨枃浠舵墍鍦ㄧ殑 inode 鍜岃澶囧彿锛?mask' 鏄簨浠舵帺鐮侊紝鍧囦互鍗佸叚杩涘埗褰㈠紡 [璇﹁ inotify(7)]銆?
 
-如果内核在构建时启用了 exportfs 支持，则到目标文件的路径被编码为一个文件句柄。该文件句柄由三个字段 'fhandle-bytes'、'fhandle-type' 和 'f_handle' 提供，均为十六进制格式。
+濡傛灉鍐呮牳鍦ㄦ瀯寤烘椂鍚敤浜?exportfs 鏀寔锛屽垯鍒扮洰鏍囨枃浠剁殑璺緞琚紪鐮佷负涓€涓枃浠跺彞鏌勩€傝鏂囦欢鍙ユ焺鐢变笁涓瓧娈?'fhandle-bytes'銆?fhandle-type' 鍜?'f_handle' 鎻愪緵锛屽潎涓哄崄鍏繘鍒舵牸寮忋€?
 
-如果内核在没有 exportfs 支持的情况下构建，则不会打印出文件句柄。
+濡傛灉鍐呮牳鍦ㄦ病鏈?exportfs 鏀寔鐨勬儏鍐典笅鏋勫缓锛屽垯涓嶄細鎵撳嵃鍑烘枃浠跺彞鏌勩€?
 
-如果尚未附加任何 inotify 标记，则 'inotify' 行会被省略。
+濡傛灉灏氭湭闄勫姞浠讳綍 inotify 鏍囪锛屽垯 'inotify' 琛屼細琚渷鐣ャ€?
 
 ```
 	pos:	0
@@ -1697,11 +1697,11 @@ unbindable        mount 不可绑定（unbindable）
 	fanotify ino:4f969 sdev:800013 mflags:0 mask:3b ignored_mask:40000000 fhandle-bytes:8 fhandle-type:1 f_handle:69f90400c275b5b4
 ```
 
-其中 fanotify 的 'flags' 和 'event-flags' 是 fanotify_init 调用中使用的值，'mnt_id' 是挂载点标识符，'mflags' 是与标记关联的、与事件掩码分开跟踪的 flags 值。'ino' 和 'sdev' 是目标 inode 和设备号，'mask' 是事件掩码，'ignored_mask' 是要被忽略的事件掩码。所有均为十六进制格式。引入 'mflags'、'mask' 和 'ignored_mask' 提供了关于 fanotify_mark 调用中使用的 flags 和掩码的信息 [详见 fsnotify 手册页]。
+鍏朵腑 fanotify 鐨?'flags' 鍜?'event-flags' 鏄?fanotify_init 璋冪敤涓娇鐢ㄧ殑鍊硷紝'mnt_id' 鏄寕杞界偣鏍囪瘑绗︼紝'mflags' 鏄笌鏍囪鍏宠仈鐨勩€佷笌浜嬩欢鎺╃爜鍒嗗紑璺熻釜鐨?flags 鍊笺€?ino' 鍜?'sdev' 鏄洰鏍?inode 鍜岃澶囧彿锛?mask' 鏄簨浠舵帺鐮侊紝'ignored_mask' 鏄琚拷鐣ョ殑浜嬩欢鎺╃爜銆傛墍鏈夊潎涓哄崄鍏繘鍒舵牸寮忋€傚紩鍏?'mflags'銆?mask' 鍜?'ignored_mask' 鎻愪緵浜嗗叧浜?fanotify_mark 璋冪敤涓娇鐢ㄧ殑 flags 鍜屾帺鐮佺殑淇℃伅 [璇﹁ fsnotify 鎵嬪唽椤礭銆?
 
-虽然前三行是强制的且始终会打印，但其余部分是可选的，如果没有创建任何标记则可能会被省略。
+铏界劧鍓嶄笁琛屾槸寮哄埗鐨勪笖濮嬬粓浼氭墦鍗帮紝浣嗗叾浣欓儴鍒嗘槸鍙€夌殑锛屽鏋滄病鏈夊垱寤轰换浣曟爣璁板垯鍙兘浼氳鐪佺暐銆?
 
-#### Timerfd 文件
+#### Timerfd 鏂囦欢
 
 
 ```
@@ -1716,9 +1716,9 @@ unbindable        mount 不可绑定（unbindable）
 	it_interval: (1, 0)
 ```
 
-其中 'clockid' 是时钟类型，'ticks' 是已发生的定时器到期次数 [详见 timerfd_create(2)]。'settime flags' 是用于设置定时器的八进制形式 flags [详见 timerfd_settime(2)]。'it_value' 是距离定时器到期的剩余时间。'it_interval' 是定时器的间隔。注意，定时器可能使用 TIMER_ABSTIME 选项设置，这会显示在 'settime flags' 中，但 'it_value' 仍然显示定时器的剩余时间。
+鍏朵腑 'clockid' 鏄椂閽熺被鍨嬶紝'ticks' 鏄凡鍙戠敓鐨勫畾鏃跺櫒鍒版湡娆℃暟 [璇﹁ timerfd_create(2)]銆?settime flags' 鏄敤浜庤缃畾鏃跺櫒鐨勫叓杩涘埗褰㈠紡 flags [璇﹁ timerfd_settime(2)]銆?it_value' 鏄窛绂诲畾鏃跺櫒鍒版湡鐨勫墿浣欐椂闂淬€?it_interval' 鏄畾鏃跺櫒鐨勯棿闅斻€傛敞鎰忥紝瀹氭椂鍣ㄥ彲鑳戒娇鐢?TIMER_ABSTIME 閫夐」璁剧疆锛岃繖浼氭樉绀哄湪 'settime flags' 涓紝浣?'it_value' 浠嶇劧鏄剧ず瀹氭椂鍣ㄧ殑鍓╀綑鏃堕棿銆?
 
-#### DMA Buffer 文件
+#### DMA Buffer 鏂囦欢
 
 
 ```
@@ -1731,9 +1731,9 @@ unbindable        mount 不可绑定（unbindable）
 	exp_name:  system-heap
 ```
 
-其中 'size' 是 DMA buffer 的大小（以字节为单位）。'count' 是 DMA buffer 文件的文件计数。'exp_name' 是 DMA buffer 导出者的名称。
+鍏朵腑 'size' 鏄?DMA buffer 鐨勫ぇ灏忥紙浠ュ瓧鑺備负鍗曚綅锛夈€?count' 鏄?DMA buffer 鏂囦欢鐨勬枃浠惰鏁般€?exp_name' 鏄?DMA buffer 瀵煎嚭鑰呯殑鍚嶇О銆?
 
-#### VFIO Device 文件
+#### VFIO Device 鏂囦欢
 
 
 ```
@@ -1744,11 +1744,11 @@ unbindable        mount 不可绑定（unbindable）
 	vfio-device-syspath: /sys/devices/pci0000:e0/0000:e0:01.1/0000:e1:00.0/0000:e2:05.0/0000:e8:00.0
 ```
 
-其中 'vfio-device-syspath' 是与 VFIO 设备文件对应的 sysfs 路径。
+鍏朵腑 'vfio-device-syspath' 鏄笌 VFIO 璁惧鏂囦欢瀵瑰簲鐨?sysfs 璺緞銆?
 
-### 3.9	/proc/<pid>/map_files - 关于内存映射文件的信息
+### 3.9	/proc/<pid>/map_files - 鍏充簬鍐呭瓨鏄犲皠鏂囦欢鐨勪俊鎭?
 
-该目录包含表示内存映射文件的符号链接。
+璇ョ洰褰曞寘鍚〃绀哄唴瀛樻槧灏勬枃浠剁殑绗﹀彿閾炬帴銆?
 
 ```
      | lr-------- 1 root root 64 Jan 27 11:24 333c600000-333c620000 -> /usr/lib64/ld-2.18.so
@@ -1759,37 +1759,37 @@ unbindable        mount 不可绑定（unbindable）
      | lr-------- 1 root root 64 Jan 27 11:24 400000-41a000 -> /usr/bin/ls
 ```
 
-链接的名称表示一个映射的虚拟内存边界，即 **vm_area_struct**：vm_start-vm_area_struct::vm_end。
+閾炬帴鐨勫悕绉拌〃绀轰竴涓槧灏勭殑铏氭嫙鍐呭瓨杈圭晫锛屽嵆 **vm_area_struct**锛歷m_start-vm_area_struct::vm_end銆?
 
-map_files 的主要用途是以快速的方式获取一组内存映射文件，而无需解析 /proc/<pid>/maps 或 /proc/<pid>/smaps（这两者都包含更多的记录）。同时，可以从两个进程的文件列表中 open(2) 映射，并比较它们的 inode 号，以确定哪些匿名内存区域实际上是共享的。
+map_files 鐨勪富瑕佺敤閫旀槸浠ュ揩閫熺殑鏂瑰紡鑾峰彇涓€缁勫唴瀛樻槧灏勬枃浠讹紝鑰屾棤闇€瑙ｆ瀽 /proc/<pid>/maps 鎴?/proc/<pid>/smaps锛堣繖涓よ€呴兘鍖呭惈鏇村鐨勮褰曪級銆傚悓鏃讹紝鍙互浠庝袱涓繘绋嬬殑鏂囦欢鍒楄〃涓?open(2) 鏄犲皠锛屽苟姣旇緝瀹冧滑鐨?inode 鍙凤紝浠ョ‘瀹氬摢浜涘尶鍚嶅唴瀛樺尯鍩熷疄闄呬笂鏄叡浜殑銆?
 
-### 3.10	/proc/<pid>/timerslack_ns - 任务 timerslack 值
+### 3.10	/proc/<pid>/timerslack_ns - 浠诲姟 timerslack 鍊?
 
-该文件提供任务的 timerslack 值（以纳秒为单位）。该值指定了普通定时器可以被推迟的一段时间，以便将定时器合并，避免不必要的唤醒。
+璇ユ枃浠舵彁渚涗换鍔＄殑 timerslack 鍊硷紙浠ョ撼绉掍负鍗曚綅锛夈€傝鍊兼寚瀹氫簡鏅€氬畾鏃跺櫒鍙互琚帹杩熺殑涓€娈垫椂闂达紝浠ヤ究灏嗗畾鏃跺櫒鍚堝苟锛岄伩鍏嶄笉蹇呰鐨勫敜閱掋€?
 
-这允许调整任务的交互性与功耗之间的权衡。
+杩欏厑璁歌皟鏁翠换鍔＄殑浜や簰鎬т笌鍔熻€椾箣闂寸殑鏉冭　銆?
 
-向该文件写入 0 会将任务的 timerslack 设为默认值。
+鍚戣鏂囦欢鍐欏叆 0 浼氬皢浠诲姟鐨?timerslack 璁句负榛樿鍊笺€?
 
-有效值范围为 0 - ULLONG_MAX。
+鏈夋晥鍊艰寖鍥翠负 0 - ULLONG_MAX銆?
 
-要更改某任务的 timerslack_ns 值，设置该值的应用程序必须对该指定任务具有 PTRACE_MODE_ATTACH_FSCREDS 级别的权限。
+瑕佹洿鏀规煇浠诲姟鐨?timerslack_ns 鍊硷紝璁剧疆璇ュ€肩殑搴旂敤绋嬪簭蹇呴』瀵硅鎸囧畾浠诲姟鍏锋湁 PTRACE_MODE_ATTACH_FSCREDS 绾у埆鐨勬潈闄愩€?
 
-### 3.11	/proc/<pid>/patch_state - Livepatch 补丁操作状态
+### 3.11	/proc/<pid>/patch_state - Livepatch 琛ヤ竵鎿嶄綔鐘舵€?
 
-当启用 CONFIG_LIVEPATCH 时，该文件显示该任务的补丁状态值。
+褰撳惎鐢?CONFIG_LIVEPATCH 鏃讹紝璇ユ枃浠舵樉绀鸿浠诲姟鐨勮ˉ涓佺姸鎬佸€笺€?
 
-值 '-1' 表示没有补丁处于转换（transition）状态。
+鍊?'-1' 琛ㄧず娌℃湁琛ヤ竵澶勪簬杞崲锛坱ransition锛夌姸鎬併€?
 
-值 '0' 表示有一个补丁处于转换状态且该任务未被打补丁。如果补丁正在被启用，则该任务尚未被打补丁。如果补丁正在被禁用，则该任务已经被取消补丁。
+鍊?'0' 琛ㄧず鏈変竴涓ˉ涓佸浜庤浆鎹㈢姸鎬佷笖璇ヤ换鍔℃湭琚墦琛ヤ竵銆傚鏋滆ˉ涓佹鍦ㄨ鍚敤锛屽垯璇ヤ换鍔″皻鏈鎵撹ˉ涓併€傚鏋滆ˉ涓佹鍦ㄨ绂佺敤锛屽垯璇ヤ换鍔″凡缁忚鍙栨秷琛ヤ竵銆?
 
-值 '1' 表示有一个补丁处于转换状态且该任务已被打补丁。如果补丁正在被启用，则该任务已经被打补丁。如果补丁正在被禁用，则该任务尚未被取消补丁。
+鍊?'1' 琛ㄧず鏈変竴涓ˉ涓佸浜庤浆鎹㈢姸鎬佷笖璇ヤ换鍔″凡琚墦琛ヤ竵銆傚鏋滆ˉ涓佹鍦ㄨ鍚敤锛屽垯璇ヤ换鍔″凡缁忚鎵撹ˉ涓併€傚鏋滆ˉ涓佹鍦ㄨ绂佺敤锛屽垯璇ヤ换鍔″皻鏈鍙栨秷琛ヤ竵銆?
 
-### 3.12 /proc/<pid>/arch_status - 任务架构特定状态
+### 3.12 /proc/<pid>/arch_status - 浠诲姟鏋舵瀯鐗瑰畾鐘舵€?
 
-当启用 CONFIG_PROC_PID_ARCH_STATUS 时，该文件显示该任务的架构特定状态。
+褰撳惎鐢?CONFIG_PROC_PID_ARCH_STATUS 鏃讹紝璇ユ枃浠舵樉绀鸿浠诲姟鐨勬灦鏋勭壒瀹氱姸鎬併€?
 
-#### 示例
+#### 绀轰緥
 
 
 ```
@@ -1797,28 +1797,28 @@ map_files 的主要用途是以快速的方式获取一组内存映射文件，�
  AVX512_elapsed_ms:      8
 ```
 
-#### 描述
+#### 鎻忚堪
 
 
-#### x86 特定条目
+#### x86 鐗瑰畾鏉＄洰
 
 
 ##### AVX512_elapsed_ms
 
 
-  如果机器支持 AVX512，该条目显示自上次记录 AVX512 使用以来经过的毫秒数。记录是在任务被调度出 CPU 时尽力进行的。这意味着该值取决于两个因素：
+  濡傛灉鏈哄櫒鏀寔 AVX512锛岃鏉＄洰鏄剧ず鑷笂娆¤褰?AVX512 浣跨敤浠ユ潵缁忚繃鐨勬绉掓暟銆傝褰曟槸鍦ㄤ换鍔¤璋冨害鍑?CPU 鏃跺敖鍔涜繘琛岀殑銆傝繖鎰忓懗鐫€璇ュ€煎彇鍐充簬涓や釜鍥犵礌锛?
 
-    1) 任务在 CPU 上未被调度出所花费的时间。在 CPU 隔离且只有一个可运行任务的情况下，这可能花费数秒。
+    1) 浠诲姟鍦?CPU 涓婃湭琚皟搴﹀嚭鎵€鑺辫垂鐨勬椂闂淬€傚湪 CPU 闅旂涓斿彧鏈変竴涓彲杩愯浠诲姟鐨勬儏鍐典笅锛岃繖鍙兘鑺辫垂鏁扮銆?
 
-    2) 自任务上次被调度出以来经过的时间。根据被调度出的原因（时间片耗尽、syscall ...），这可能是任意长的时间。
+    2) 鑷换鍔′笂娆¤璋冨害鍑轰互鏉ョ粡杩囩殑鏃堕棿銆傛牴鎹璋冨害鍑虹殑鍘熷洜锛堟椂闂寸墖鑰楀敖銆乻yscall ...锛夛紝杩欏彲鑳芥槸浠绘剰闀跨殑鏃堕棿銆?
 
-  因此，该值不能被视作精确且权威的信息。使用此信息的应用程序必须了解系统上的整体场景，以确定某个任务是否真的是 AVX512 用户。精确信息可以通过性能计数器获得。
+  鍥犳锛岃鍊间笉鑳借瑙嗕綔绮剧‘涓旀潈濞佺殑淇℃伅銆備娇鐢ㄦ淇℃伅鐨勫簲鐢ㄧ▼搴忓繀椤讳簡瑙ｇ郴缁熶笂鐨勬暣浣撳満鏅紝浠ョ‘瀹氭煇涓换鍔℃槸鍚︾湡鐨勬槸 AVX512 鐢ㄦ埛銆傜簿纭俊鎭彲浠ラ€氳繃鎬ц兘璁℃暟鍣ㄨ幏寰椼€?
 
-  特殊值 '-1' 表示没有记录到 AVX512 使用，因此该任务不太可能是 AVX512 用户，但这也取决于工作负载和调度场景，也可能出现上述假阴性。
+  鐗规畩鍊?'-1' 琛ㄧず娌℃湁璁板綍鍒?AVX512 浣跨敤锛屽洜姝よ浠诲姟涓嶅お鍙兘鏄?AVX512 鐢ㄦ埛锛屼絾杩欎篃鍙栧喅浜庡伐浣滆礋杞藉拰璋冨害鍦烘櫙锛屼篃鍙兘鍑虹幇涓婅堪鍋囬槾鎬с€?
 
-### 3.13 /proc/<pid>/fd - 指向打开文件的符号链接列表
+### 3.13 /proc/<pid>/fd - 鎸囧悜鎵撳紑鏂囦欢鐨勭鍙烽摼鎺ュ垪琛?
 
-该目录包含表示打开文件的符号链接。
+璇ョ洰褰曞寘鍚〃绀烘墦寮€鏂囦欢鐨勭鍙烽摼鎺ャ€?
 
 ```
   lr-x------ 1 root root 64 Sep 20 17:53 0 -> /dev/null
@@ -1828,14 +1828,14 @@ map_files 的主要用途是以快速的方式获取一组内存映射文件，�
   lrwx------ 1 root root 64 Sep 20 17:53 12 -> 'socket:[12542]'
 ```
 
-进程打开文件的数量存储在 /proc/<pid>/fd 的 stat() 输出的 'size' 成员中，以便快速访问。
+杩涚▼鎵撳紑鏂囦欢鐨勬暟閲忓瓨鍌ㄥ湪 /proc/<pid>/fd 鐨?stat() 杈撳嚭鐨?'size' 鎴愬憳涓紝浠ヤ究蹇€熻闂€?
 
 
-### 3.14 /proc/<pid>/ksm_stat - 关于进程 ksm 状态的信息
+### 3.14 /proc/<pid>/ksm_stat - 鍏充簬杩涚▼ ksm 鐘舵€佺殑淇℃伅
 
-当启用 CONFIG_KSM 时，每个进程都有此文件，显示 ksm 合并状态的信息。
+褰撳惎鐢?CONFIG_KSM 鏃讹紝姣忎釜杩涚▼閮芥湁姝ゆ枃浠讹紝鏄剧ず ksm 鍚堝苟鐘舵€佺殑淇℃伅銆?
 
-#### 示例
+#### 绀轰緥
 
 
 ```
@@ -1848,77 +1848,77 @@ map_files 的主要用途是以快速的方式获取一组内存映射文件，�
     ksm_mergeable: no
 ```
 
-#### 描述
+#### 鎻忚堪
 
 
 ##### ksm_rmap_items
 
 
-ksm_rmap_item 结构的使用数量。ksm_rmap_item 结构存储虚拟地址的反向映射信息。KSM 会为该进程每个被 ksm 扫描的页生成一个 ksm_rmap_item。
+ksm_rmap_item 缁撴瀯鐨勪娇鐢ㄦ暟閲忋€俴sm_rmap_item 缁撴瀯瀛樺偍铏氭嫙鍦板潃鐨勫弽鍚戞槧灏勪俊鎭€侹SM 浼氫负璇ヨ繘绋嬫瘡涓 ksm 鎵弿鐨勯〉鐢熸垚涓€涓?ksm_rmap_item銆?
 
 ##### ksm_zero_pages
 
 
-当 /sys/kernel/mm/ksm/use_zero_pages 被启用时，它表示有多少个空页被 KSM 与内核零页合并。
+褰?/sys/kernel/mm/ksm/use_zero_pages 琚惎鐢ㄦ椂锛屽畠琛ㄧず鏈夊灏戜釜绌洪〉琚?KSM 涓庡唴鏍搁浂椤靛悎骞躲€?
 
 ##### ksm_merging_pages
 
 
-它表示有多少个该进程的页参与了 KSM 合并（不包括 ksm_zero_pages）。它与 /proc/<pid>/ksm_merging_pages 所显示的内容相同。
+瀹冭〃绀烘湁澶氬皯涓杩涚▼鐨勯〉鍙備笌浜?KSM 鍚堝苟锛堜笉鍖呮嫭 ksm_zero_pages锛夈€傚畠涓?/proc/<pid>/ksm_merging_pages 鎵€鏄剧ず鐨勫唴瀹圭浉鍚屻€?
 
 ##### ksm_process_profit
 
 
-KSM 带来的收益（节省的字节数）。KSM 可以通过合并相同的页来节省内存，但也可能消耗额外的内存，因为它需要为每个被扫描的页生成一个 rmap_item 来保存其简要的 rmap 信息。其中一些页可能被合并，但有些在多次检查后仍可能无法合并，这些就是被消耗的无收益内存。
+KSM 甯︽潵鐨勬敹鐩婏紙鑺傜渷鐨勫瓧鑺傛暟锛夈€侹SM 鍙互閫氳繃鍚堝苟鐩稿悓鐨勯〉鏉ヨ妭鐪佸唴瀛橈紝浣嗕篃鍙兘娑堣€楅澶栫殑鍐呭瓨锛屽洜涓哄畠闇€瑕佷负姣忎釜琚壂鎻忕殑椤电敓鎴愪竴涓?rmap_item 鏉ヤ繚瀛樺叾绠€瑕佺殑 rmap 淇℃伅銆傚叾涓竴浜涢〉鍙兘琚悎骞讹紝浣嗘湁浜涘湪澶氭妫€鏌ュ悗浠嶅彲鑳芥棤娉曞悎骞讹紝杩欎簺灏辨槸琚秷鑰楃殑鏃犳敹鐩婂唴瀛樸€?
 
 ##### ksm_merge_any
 
 
-它指定该进程的 'mm 是否已被 prctl() 加入 KSM 的候选列表，以及 KSM 扫描是否在进程级别被完全启用。
+瀹冩寚瀹氳杩涚▼鐨?'mm 鏄惁宸茶 prctl() 鍔犲叆 KSM 鐨勫€欓€夊垪琛紝浠ュ強 KSM 鎵弿鏄惁鍦ㄨ繘绋嬬骇鍒瀹屽叏鍚敤銆?
 
 ##### ksm_mergeable
 
 
-它指定该进程的 mms 中是否有任何 VMA 当前适用于 KSM。
+瀹冩寚瀹氳杩涚▼鐨?mms 涓槸鍚︽湁浠讳綍 VMA 褰撳墠閫傜敤浜?KSM銆?
 
-关于 KSM 的更多信息可以在 Documentation/admin-guide/mm/ksm.rst 中找到。
-
-
-## 第 4 章：配置 procfs
+鍏充簬 KSM 鐨勬洿澶氫俊鎭彲浠ュ湪 Documentation/admin-guide/mm/ksm.rst 涓壘鍒般€?
 
 
-### 4.1	挂载选项
+## 绗?4 绔狅細閰嶇疆 procfs
 
 
-支持以下挂载选项：
+### 4.1	鎸傝浇閫夐」
+
+
+鏀寔浠ヤ笅鎸傝浇閫夐」锛?
 
 	=========	========================================================
-	hidepid=	设置 /proc/<pid>/ 的访问模式。
-	gid=		设置被授权了解进程信息的组。
-	subset=		只显示 procfs 的指定子集。
-	pidns=		指定该 procfs 使用的命名空间。
+	hidepid=	璁剧疆 /proc/<pid>/ 鐨勮闂ā寮忋€?
+	gid=		璁剧疆琚巿鏉冧簡瑙ｈ繘绋嬩俊鎭殑缁勩€?
+	subset=		鍙樉绀?procfs 鐨勬寚瀹氬瓙闆嗐€?
+	pidns=		鎸囧畾璇?procfs 浣跨敤鐨勫懡鍚嶇┖闂淬€?
 	=========	========================================================
 
-hidepid=off 或 hidepid=0 表示经典模式——每个人都可以访问所有 /proc/<pid>/ 目录（默认）。
+hidepid=off 鎴?hidepid=0 琛ㄧず缁忓吀妯″紡鈥斺€旀瘡涓汉閮藉彲浠ヨ闂墍鏈?/proc/<pid>/ 鐩綍锛堥粯璁わ級銆?
 
-hidepid=noaccess 或 hidepid=1 表示用户只能访问其自身的 /proc/<pid>/ 目录，不能访问其他任何目录。像 cmdline、sched*、status 这样的敏感文件现在受到保护，防止其他用户访问。这使得他人无法得知是否有用户运行了特定程序（前提是程序没有通过其自身行为暴露自己）。作为额外的好处，由于 /proc/<pid>/cmdline 对其他用户不可访问，那些通过程序参数传递敏感信息的编写不良的程序现在也受到保护，防止本地窃听者。
+hidepid=noaccess 鎴?hidepid=1 琛ㄧず鐢ㄦ埛鍙兘璁块棶鍏惰嚜韬殑 /proc/<pid>/ 鐩綍锛屼笉鑳借闂叾浠栦换浣曠洰褰曘€傚儚 cmdline銆乻ched*銆乻tatus 杩欐牱鐨勬晱鎰熸枃浠剁幇鍦ㄥ彈鍒颁繚鎶わ紝闃叉鍏朵粬鐢ㄦ埛璁块棶銆傝繖浣垮緱浠栦汉鏃犳硶寰楃煡鏄惁鏈夌敤鎴疯繍琛屼簡鐗瑰畾绋嬪簭锛堝墠鎻愭槸绋嬪簭娌℃湁閫氳繃鍏惰嚜韬涓烘毚闇茶嚜宸憋級銆備綔涓洪澶栫殑濂藉锛岀敱浜?/proc/<pid>/cmdline 瀵瑰叾浠栫敤鎴蜂笉鍙闂紝閭ｄ簺閫氳繃绋嬪簭鍙傛暟浼犻€掓晱鎰熶俊鎭殑缂栧啓涓嶈壇鐨勭▼搴忕幇鍦ㄤ篃鍙楀埌淇濇姢锛岄槻姝㈡湰鍦扮獌鍚€呫€?
 
-hidepid=invisible 或 hidepid=2 表示在 hidepid=1 的基础上，所有 /proc/<pid>/ 对其他用户完全不可见。这并不意味着隐藏了是否存在具有特定 pid 值的进程这一事实（它可以通过其他方式得知，例如 "kill -0 $PID"），但它隐藏了进程的 uid 和 gid，否则可以通过 stat() /proc/<pid>/ 来得知。它极大地增加了入侵者收集正在运行进程信息的难度，例如某个守护进程是否以提权方式运行、其他用户是否运行了某些敏感程序、其他用户是否运行了任何程序等等。
+hidepid=invisible 鎴?hidepid=2 琛ㄧず鍦?hidepid=1 鐨勫熀纭€涓婏紝鎵€鏈?/proc/<pid>/ 瀵瑰叾浠栫敤鎴峰畬鍏ㄤ笉鍙銆傝繖骞朵笉鎰忓懗鐫€闅愯棌浜嗘槸鍚﹀瓨鍦ㄥ叿鏈夌壒瀹?pid 鍊肩殑杩涚▼杩欎竴浜嬪疄锛堝畠鍙互閫氳繃鍏朵粬鏂瑰紡寰楃煡锛屼緥濡?"kill -0 $PID"锛夛紝浣嗗畠闅愯棌浜嗚繘绋嬬殑 uid 鍜?gid锛屽惁鍒欏彲浠ラ€氳繃 stat() /proc/<pid>/ 鏉ュ緱鐭ャ€傚畠鏋佸ぇ鍦板鍔犱簡鍏ヤ镜鑰呮敹闆嗘鍦ㄨ繍琛岃繘绋嬩俊鎭殑闅惧害锛屼緥濡傛煇涓畧鎶よ繘绋嬫槸鍚︿互鎻愭潈鏂瑰紡杩愯銆佸叾浠栫敤鎴锋槸鍚﹁繍琛屼簡鏌愪簺鏁忔劅绋嬪簭銆佸叾浠栫敤鎴锋槸鍚﹁繍琛屼簡浠讳綍绋嬪簭绛夌瓑銆?
 
-hidepid=ptraceable 或 hidepid=4 表示 procfs 应只包含调用者可以 ptrace 的 /proc/<pid>/ 目录。
+hidepid=ptraceable 鎴?hidepid=4 琛ㄧず procfs 搴斿彧鍖呭惈璋冪敤鑰呭彲浠?ptrace 鐨?/proc/<pid>/ 鐩綍銆?
 
-gid= 定义一个被授权了解进程信息的组，否则该信息会被 hidepid= 禁止。如果你使用像 identd 这样需要了解进程信息的守护进程，只需将 identd 加入该组。
+gid= 瀹氫箟涓€涓鎺堟潈浜嗚В杩涚▼淇℃伅鐨勭粍锛屽惁鍒欒淇℃伅浼氳 hidepid= 绂佹銆傚鏋滀綘浣跨敤鍍?identd 杩欐牱闇€瑕佷簡瑙ｈ繘绋嬩俊鎭殑瀹堟姢杩涚▼锛屽彧闇€灏?identd 鍔犲叆璇ョ粍銆?
 
-subset=pid 隐藏 procfs 中所有与任务无关的最顶层文件和目录。
+subset=pid 闅愯棌 procfs 涓墍鏈変笌浠诲姟鏃犲叧鐨勬渶椤跺眰鏂囦欢鍜岀洰褰曘€?
 
-pidns= 指定一个 pid 命名空间（可以是类似 `/proc/$pid/ns/pid` 的字符串路径，也可以是使用 `FSCONFIG_SET_FD` 时的文件描述符），procfs 实例在转换 pid 时将使用该命名空间。默认情况下，procfs 将使用调用进程的活动 pid 命名空间。注意，现有 procfs 实例的 pid 命名空间无法被修改（尝试这样做会得到 `-EBUSY` 错误）。
+pidns= 鎸囧畾涓€涓?pid 鍛藉悕绌洪棿锛堝彲浠ユ槸绫讳技 `/proc/$pid/ns/pid` 鐨勫瓧绗︿覆璺緞锛屼篃鍙互鏄娇鐢?`FSCONFIG_SET_FD` 鏃剁殑鏂囦欢鎻忚堪绗︼級锛宲rocfs 瀹炰緥鍦ㄨ浆鎹?pid 鏃跺皢浣跨敤璇ュ懡鍚嶇┖闂淬€傞粯璁ゆ儏鍐典笅锛宲rocfs 灏嗕娇鐢ㄨ皟鐢ㄨ繘绋嬬殑娲诲姩 pid 鍛藉悕绌洪棿銆傛敞鎰忥紝鐜版湁 procfs 瀹炰緥鐨?pid 鍛藉悕绌洪棿鏃犳硶琚慨鏀癸紙灏濊瘯杩欐牱鍋氫細寰楀埌 `-EBUSY` 閿欒锛夈€?
 
-## 第 5 章：文件系统行为
+## 绗?5 绔狅細鏂囦欢绯荤粺琛屼负
 
 
-最初，在 pid 命名空间出现之前，procfs 是一个全局文件系统。这意味着系统中只有一个 procfs 实例。
+鏈€鍒濓紝鍦?pid 鍛藉悕绌洪棿鍑虹幇涔嬪墠锛宲rocfs 鏄竴涓叏灞€鏂囦欢绯荤粺銆傝繖鎰忓懗鐫€绯荤粺涓彧鏈変竴涓?procfs 瀹炰緥銆?
 
-当加入 pid 命名空间后，在每个 pid 命名空间中会挂载一个独立的 procfs 实例。因此，procfs 的挂载选项在所有挂载实例之间是全局的：
+褰撳姞鍏?pid 鍛藉悕绌洪棿鍚庯紝鍦ㄦ瘡涓?pid 鍛藉悕绌洪棿涓細鎸傝浇涓€涓嫭绔嬬殑 procfs 瀹炰緥銆傚洜姝わ紝procfs 鐨勬寕杞介€夐」鍦ㄦ墍鏈夋寕杞藉疄渚嬩箣闂存槸鍏ㄥ眬鐨勶細
 
 ```
 	# grep ^proc /proc/mounts
@@ -1933,7 +1933,7 @@ pidns= 指定一个 pid 命名空间（可以是类似 `/proc/$pid/ns/pid` 的�
 	proc /tmp/proc proc rw,relatime,hidepid=2 0 0
 ```
 
-只有在重新挂载 procfs 之后，挂载选项才会改变：
+鍙湁鍦ㄩ噸鏂版寕杞?procfs 涔嬪悗锛屾寕杞介€夐」鎵嶄細鏀瑰彉锛?
 
 ```
 	# mount -o remount,hidepid=1 -t proc proc /tmp/proc
@@ -1943,9 +1943,9 @@ pidns= 指定一个 pid 命名空间（可以是类似 `/proc/$pid/ns/pid` 的�
 	proc /tmp/proc proc rw,relatime,hidepid=1 0 0
 ```
 
-这种行为与其他文件系统的行为不同。
+杩欑琛屼负涓庡叾浠栨枃浠剁郴缁熺殑琛屼负涓嶅悓銆?
 
-新的 procfs 行为更类似于其他文件系统。每次挂载 procfs 都会创建一个新的 procfs 实例。挂载选项只影响自身的 procfs 实例。这意味着可以拥有多个 procfs 实例：
+鏂扮殑 procfs 琛屼负鏇寸被浼间簬鍏朵粬鏂囦欢绯荤粺銆傛瘡娆℃寕杞?procfs 閮戒細鍒涘缓涓€涓柊鐨?procfs 瀹炰緥銆傛寕杞介€夐」鍙奖鍝嶈嚜韬殑 procfs 瀹炰緥銆傝繖鎰忓懗鐫€鍙互鎷ユ湁澶氫釜 procfs 瀹炰緥锛?
 
 ```
 	# mount -o hidepid=invisible -t proc proc /proc

@@ -1,70 +1,46 @@
+﻿
+## Spear PCIe Gadget 椹卞姩
 
-## Spear PCIe Gadget 驱动
 
-
-## 作者（Author）
-
+## 浣滆€咃紙Author锛?
 Pratyush Anand (pratyush.anand@gmail.com)
 
-## 位置（Location）
-
+## 浣嶇疆锛圠ocation锛?
 driver/misc/spear13xx_pcie_gadget.c
 
-## 支持的芯片（Supported Chip）：
+## 鏀寔鐨勮姱鐗囷紙Supported Chip锛夛細
 
 SPEAr1300
 SPEAr1310
 
-## Menuconfig 选项（Menuconfig option）：
+## Menuconfig 閫夐」锛圡enuconfig option锛夛細
 
 Device Drivers
 	Misc devices
 		PCIe gadget support for SPEAr13XX platform
 
-## 用途（purpose）
-
-该驱动有若干个可由 configfs 接口读写的节点（node）。其主要目的是将所选的双模（dual mode）PCIe 控制器配置为设备（device），然后编程其各种寄存器，将其配置为特定的设备类型。该驱动可用于展示 spear 的 PCIe 设备能力。
-
-## 不同节点的描述（Description of different nodes）：
+## 鐢ㄩ€旓紙purpose锛?
+璇ラ┍鍔ㄦ湁鑻ュ共涓彲鐢?configfs 鎺ュ彛璇诲啓鐨勮妭鐐癸紙node锛夈€傚叾涓昏鐩殑鏄皢鎵€閫夌殑鍙屾ā锛坉ual mode锛塒CIe 鎺у埗鍣ㄩ厤缃负璁惧锛坉evice锛夛紝鐒跺悗缂栫▼鍏跺悇绉嶅瘎瀛樺櫒锛屽皢鍏堕厤缃负鐗瑰畾鐨勮澶囩被鍨嬨€傝椹卞姩鍙敤浜庡睍绀?spear 鐨?PCIe 璁惧鑳藉姏銆?
+## 涓嶅悓鑺傜偣鐨勬弿杩帮紙Description of different nodes锛夛細
 
 
-### 节点的读行为（read behavior of nodes）：
+### 鑺傜偣鐨勮琛屼负锛坮ead behavior of nodes锛夛細
 
 
 =============== ==============================================================
-link 		给出 ltssm 状态。
-int_type 	所支持的中断类型
-no_of_msi 	若主机未启用 MSI 则为 0。正值即为被授予的 MSI 向量数量。
-vendor_id	返回已编程的厂商 ID（hex，十六进制）
-device_id	返回已编程的设备 ID（hex，十六进制）
-bar0_size:	以十六进制返回 bar0 的大小。
-bar0_address	以十六进制返回 bar0 映射区的地址。
-bar0_rw_offset	返回 bar0 的偏移量，bar0_data 将返回该偏移处的值。
-bar0_data	返回 bar0_rw_offset 处的数据。
-=============== ==============================================================
+link 		缁欏嚭 ltssm 鐘舵€併€?int_type 	鎵€鏀寔鐨勪腑鏂被鍨?no_of_msi 	鑻ヤ富鏈烘湭鍚敤 MSI 鍒欎负 0銆傛鍊煎嵆涓鸿鎺堜簣鐨?MSI 鍚戦噺鏁伴噺銆?vendor_id	杩斿洖宸茬紪绋嬬殑鍘傚晢 ID锛坔ex锛屽崄鍏繘鍒讹級
+device_id	杩斿洖宸茬紪绋嬬殑璁惧 ID锛坔ex锛屽崄鍏繘鍒讹級
+bar0_size:	浠ュ崄鍏繘鍒惰繑鍥?bar0 鐨勫ぇ灏忋€?bar0_address	浠ュ崄鍏繘鍒惰繑鍥?bar0 鏄犲皠鍖虹殑鍦板潃銆?bar0_rw_offset	杩斿洖 bar0 鐨勫亸绉婚噺锛宐ar0_data 灏嗚繑鍥炶鍋忕Щ澶勭殑鍊笺€?bar0_data	杩斿洖 bar0_rw_offset 澶勭殑鏁版嵁銆?=============== ==============================================================
 
-### 节点的写行为（write behavior of nodes）：
+### 鑺傜偣鐨勫啓琛屼负锛坵rite behavior of nodes锛夛細
 
 
 =============== ================================================================
-link 		写入 UP 以启用 ltsmm，写入 DOWN 以禁用
-int_type	写入要配置的中断类型（int_type 可以是 INTA、MSI 或 NO_INT）。仅在你已编程了 no_of_msi 节点时才选择 MSI。
-no_of_msi	所需的 MSI 向量数量。
-inta		写入 1 以断言（assert）INTA，写入 0 以解除断言。
-send_msi	写入要发送的 MSI 向量。
-vendor_id	写入要编程的厂商 ID（hex，十六进制）。
-device_id	写入要编程的设备 ID（hex，十六进制）。
-bar0_size	以十六进制写入 bar0 的大小。默认 bar0 大小为 1000（hex）字节。
-bar0_address	以十六进制写入 bar0 映射区的地址。（bar0 的默认映射为 SYSRAM1(E0800000)。务必先编程 bar 大小再编程 bar 地址。内核可能为了对齐而修改 bar 大小和地址，因此写入后应回读 bar 大小和地址以进行核对。
-bar0_rw_offset	写入 bar0 的偏移量，bar0_data 将向该偏移写入值。
-bar0_data	写入要写到 bar0_rw_offset 的数据。
-=============== ================================================================
+link 		鍐欏叆 UP 浠ュ惎鐢?ltsmm锛屽啓鍏?DOWN 浠ョ鐢?int_type	鍐欏叆瑕侀厤缃殑涓柇绫诲瀷锛坕nt_type 鍙互鏄?INTA銆丮SI 鎴?NO_INT锛夈€備粎鍦ㄤ綘宸茬紪绋嬩簡 no_of_msi 鑺傜偣鏃舵墠閫夋嫨 MSI銆?no_of_msi	鎵€闇€鐨?MSI 鍚戦噺鏁伴噺銆?inta		鍐欏叆 1 浠ユ柇瑷€锛坅ssert锛塈NTA锛屽啓鍏?0 浠ヨВ闄ゆ柇瑷€銆?send_msi	鍐欏叆瑕佸彂閫佺殑 MSI 鍚戦噺銆?vendor_id	鍐欏叆瑕佺紪绋嬬殑鍘傚晢 ID锛坔ex锛屽崄鍏繘鍒讹級銆?device_id	鍐欏叆瑕佺紪绋嬬殑璁惧 ID锛坔ex锛屽崄鍏繘鍒讹級銆?bar0_size	浠ュ崄鍏繘鍒跺啓鍏?bar0 鐨勫ぇ灏忋€傞粯璁?bar0 澶у皬涓?1000锛坔ex锛夊瓧鑺傘€?bar0_address	浠ュ崄鍏繘鍒跺啓鍏?bar0 鏄犲皠鍖虹殑鍦板潃銆傦紙bar0 鐨勯粯璁ゆ槧灏勪负 SYSRAM1(E0800000)銆傚姟蹇呭厛缂栫▼ bar 澶у皬鍐嶇紪绋?bar 鍦板潃銆傚唴鏍稿彲鑳戒负浜嗗榻愯€屼慨鏀?bar 澶у皬鍜屽湴鍧€锛屽洜姝ゅ啓鍏ュ悗搴斿洖璇?bar 澶у皬鍜屽湴鍧€浠ヨ繘琛屾牳瀵广€?bar0_rw_offset	鍐欏叆 bar0 鐨勫亸绉婚噺锛宐ar0_data 灏嗗悜璇ュ亸绉诲啓鍏ュ€笺€?bar0_data	鍐欏叆瑕佸啓鍒?bar0_rw_offset 鐨勬暟鎹€?=============== ================================================================
 
-## 节点编程示例（Node programming example）
+## 鑺傜偣缂栫▼绀轰緥锛圢ode programming example锛?
 
-
-将所有的 PCIe 寄存器编程为：当此设备连接到 PCIe 主机时，主机将此设备视为 1MB 的 RAM。
-
+灏嗘墍鏈夌殑 PCIe 瀵勫瓨鍣ㄧ紪绋嬩负锛氬綋姝よ澶囪繛鎺ュ埌 PCIe 涓绘満鏃讹紝涓绘満灏嗘璁惧瑙嗕负 1MB 鐨?RAM銆?
 ```
 
     #mount -t configfs none /Config
@@ -75,8 +51,7 @@ bar0_data	写入要写到 bar0_rw_offset 的数据。
     # cd /config/pcie_gadget.n/
 
 ```
-现在你在该目录下拥有所有节点。
-```
+鐜板湪浣犲湪璇ョ洰褰曚笅鎷ユ湁鎵€鏈夎妭鐐广€?```
 
     # echo 104A >> vendor_id
 
@@ -96,8 +71,7 @@ bar0_data	写入要写到 bar0_rw_offset 的数据。
     # cat bar0_size
 
 ```
-将 BAR0 地址编程为 DDR（0x2100000）。这是要暴露给 PCIe 主机的物理内存地址。类似地，任何其它外设也可以暴露给 PCIe 主机。例如，如果你将 UART 的基地址编程为 BAR0 地址，那么当此设备连接到主机时，它将表现为一个 UART。
-
+灏?BAR0 鍦板潃缂栫▼涓?DDR锛?x2100000锛夈€傝繖鏄鏆撮湶缁?PCIe 涓绘満鐨勭墿鐞嗗唴瀛樺湴鍧€銆傜被浼煎湴锛屼换浣曞叾瀹冨璁句篃鍙互鏆撮湶缁?PCIe 涓绘満銆備緥濡傦紝濡傛灉浣犲皢 UART 鐨勫熀鍦板潃缂栫▼涓?BAR0 鍦板潃锛岄偅涔堝綋姝よ澶囪繛鎺ュ埌涓绘満鏃讹紝瀹冨皢琛ㄧ幇涓轰竴涓?UART銆?
 ```
 
     # echo 2100000 >> bar0_address
@@ -113,16 +87,14 @@ bar0_data	写入要写到 bar0_rw_offset 的数据。
     # echo UP >> link
 
 ```
-必须确保：一旦 gadget 侧完成链路就绪（link up），主机才开始初始化并搜索其端口上的 PCIe 设备。
-
+蹇呴』纭繚锛氫竴鏃?gadget 渚у畬鎴愰摼璺氨缁紙link up锛夛紝涓绘満鎵嶅紑濮嬪垵濮嬪寲骞舵悳绱㈠叾绔彛涓婄殑 PCIe 璁惧銆?
 ```
 
     /*wait till link is up*/
     # cat link
 
 ```
-等待其返回 UP。
-```
+绛夊緟鍏惰繑鍥?UP銆?```
 
     # echo 1 >> inta
 
@@ -152,15 +124,13 @@ bar0_data	写入要写到 bar0_rw_offset 的数据。
     # cat link
 
 ```
-应用程序可以重复读取该节点，直到发现链路为 UP。两次读取之间可以休眠。
-
+搴旂敤绋嬪簭鍙互閲嶅璇诲彇璇ヨ妭鐐癸紝鐩村埌鍙戠幇閾捐矾涓?UP銆備袱娆¤鍙栦箣闂村彲浠ヤ紤鐪犮€?
 ```
 
     # cat no_of_msi
 
 ```
-应返回 4（请求的 MSI 向量数量）
-```
+搴旇繑鍥?4锛堣姹傜殑 MSI 鍚戦噺鏁伴噺锛?```
 
     # echo 2 >> send_msi
     # cd -

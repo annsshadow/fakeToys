@@ -1,25 +1,25 @@
-## SuperH 接口指南
+﻿## SuperH 鎺ュ彛鎸囧崡
 
 
 :Author: Paul Mundt
 
-- [启动](booting)
-- [新增机型](new-machine)
-- [寄存器组](register-banks)
-- [特性](features)
+- [鍚姩](booting)
+- [鏂板鏈哄瀷](new-machine)
+- [瀵勫瓨鍣ㄧ粍](register-banks)
+- [鐗规€(features)
 
-## 内存管理
+## 鍐呭瓨绠＄悊
 
 
 ### SH-4
 
 
-#### 存储队列 API（Store Queue API）
+#### 瀛樺偍闃熷垪 API锛圫tore Queue API锛?
 
 
    :export:
 
-## 机器特定接口
+## 鏈哄櫒鐗瑰畾鎺ュ彛
 
 
 ### mach-dreamcast
@@ -32,7 +32,7 @@
 
    :export:
 
-## 总线（Busses）
+## 鎬荤嚎锛圔usses锛?
 
 
 ### Maple

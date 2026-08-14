@@ -1,81 +1,59 @@
-## ktime 访问器
+﻿## ktime 璁块棶鍣?
 
+璁惧椹卞姩鍙互浣跨敤 ktime_get() 浠ュ強 linux/timekeeping.h 涓０鏄庣殑璁稿鐩稿叧鍑芥暟鏉ヨ鍙?褰撳墠鏃堕棿銆備綔涓虹粡楠屾硶鍒欙紝濡傛灉涓や釜璁块棶鍣ㄥ鏌愪釜鐗瑰畾鐢ㄤ緥鍚屾牱閫傜敤锛屽簲浼樺厛浣跨敤鍚嶅瓧鏇寸煭鐨?閭ｄ釜銆?
+### 鍩轰簬鍩烘湰 ktime_t 鐨勬帴鍙?
 
-设备驱动可以使用 ktime_get() 以及 linux/timekeeping.h 中声明的许多相关函数来读取
-当前时间。作为经验法则，如果两个访问器对某个特定用例同样适用，应优先使用名字更短的
-那个。
-
-### 基于基本 ktime_t 的接口
-
-
-推荐的最简单形式返回一个不透明的 ktime_t，并带有为不同时钟参考返回时间的变体：
-
+鎺ㄨ崘鐨勬渶绠€鍗曞舰寮忚繑鍥炰竴涓笉閫忔槑鐨?ktime_t锛屽苟甯︽湁涓轰笉鍚屾椂閽熷弬鑰冭繑鍥炴椂闂寸殑鍙樹綋锛?
 
 	CLOCK_MONOTONIC
 
-	适用于可靠的 timestamps 以及准确测量短时间间隔。从系统启动时开始计时，但在
-	挂起（suspend）期间停止。
-
+	閫傜敤浜庡彲闈犵殑 timestamps 浠ュ強鍑嗙‘娴嬮噺鐭椂闂撮棿闅斻€備粠绯荤粺鍚姩鏃跺紑濮嬭鏃讹紝浣嗗湪
+	鎸傝捣锛坰uspend锛夋湡闂村仠姝€?
 
 	CLOCK_BOOTTIME
 
-	类似 ktime_get()，但在挂起时不会停止。这可用于例如需要与其它机器跨挂起操作
-	保持同步的密钥过期时间。
-
+	绫讳技 ktime_get()锛屼絾鍦ㄦ寕璧锋椂涓嶄細鍋滄銆傝繖鍙敤浜庝緥濡傞渶瑕佷笌鍏跺畠鏈哄櫒璺ㄦ寕璧锋搷浣?	淇濇寔鍚屾鐨勫瘑閽ヨ繃鏈熸椂闂淬€?
 
 	CLOCK_REALTIME
 
-	返回相对于始于 1970 年的 UNIX 纪元（epoch）的时间，使用协调世界时（UTC），与
-	用户空间的 gettimeofday() 相同。这用于所有需要跨重启保持的 timestamps，例如
-	inode 时间，但应避免用于内部用途，因为它可能因闰秒更新、NTP 调整或来自用户空间的
-	settimeofday() 操作而向后跳变。
-
+	杩斿洖鐩稿浜庡浜?1970 骞寸殑 UNIX 绾厓锛坋poch锛夌殑鏃堕棿锛屼娇鐢ㄥ崗璋冧笘鐣屾椂锛圲TC锛夛紝涓?	鐢ㄦ埛绌洪棿鐨?gettimeofday() 鐩稿悓銆傝繖鐢ㄤ簬鎵€鏈夐渶瑕佽法閲嶅惎淇濇寔鐨?timestamps锛屼緥濡?	inode 鏃堕棿锛屼絾搴旈伩鍏嶇敤浜庡唴閮ㄧ敤閫旓紝鍥犱负瀹冨彲鑳藉洜闂扮鏇存柊銆丯TP 璋冩暣鎴栨潵鑷敤鎴风┖闂寸殑
+	settimeofday() 鎿嶄綔鑰屽悜鍚庤烦鍙樸€?
 
 	 CLOCK_TAI
 
-	类似 ktime_get_real()，但使用国际原子时（TAI）参考而非 UTC，以避免在闰秒更新时
-	跳变。这在内核中很少有用。
-
+	绫讳技 ktime_get_real()锛屼絾浣跨敤鍥介檯鍘熷瓙鏃讹紙TAI锛夊弬鑰冭€岄潪 UTC锛屼互閬垮厤鍦ㄩ棸绉掓洿鏂版椂
+	璺冲彉銆傝繖鍦ㄥ唴鏍镐腑寰堝皯鏈夌敤銆?
 
 	CLOCK_MONOTONIC_RAW
 
-	类似 ktime_get()，但以与硬件 clocksource 相同的速率运行，不做（NTP）时钟漂移
-	调整。在内核中也很少需要。
-
-### 纳秒、timespec64 和秒输出
+	绫讳技 ktime_get()锛屼絾浠ヤ笌纭欢 clocksource 鐩稿悓鐨勯€熺巼杩愯锛屼笉鍋氾紙NTP锛夋椂閽熸紓绉?	璋冩暣銆傚湪鍐呮牳涓篃寰堝皯闇€瑕併€?
+### 绾崇銆乼imespec64 鍜岀杈撳嚭
 
 
-对于上述所有接口，都有根据调用者需求以不同格式返回时间的变体：
+瀵逛簬涓婅堪鎵€鏈夋帴鍙ｏ紝閮芥湁鏍规嵁璋冪敤鑰呴渶姹備互涓嶅悓鏍煎紡杩斿洖鏃堕棿鐨勫彉浣擄細
 
 		u64 ktime_get_boottime_ns( void )
 		u64 ktime_get_real_ns( void )
 		u64 ktime_get_clocktai_ns( void )
 		u64 ktime_get_raw_ns( void )
 
-	与上述普通的 ktime_get 函数相同，但返回相应时间参考下的 u64 纳秒数，对某些
-	调用者可能更方便。
-
+	涓庝笂杩版櫘閫氱殑 ktime_get 鍑芥暟鐩稿悓锛屼絾杩斿洖鐩稿簲鏃堕棿鍙傝€冧笅鐨?u64 绾崇鏁帮紝瀵规煇浜?	璋冪敤鑰呭彲鑳芥洿鏂逛究銆?
 		void ktime_get_boottime_ts64( struct timespec64 * )
 		void ktime_get_real_ts64( struct timespec64 * )
 		void ktime_get_clocktai_ts64( struct timespec64 * )
 		void ktime_get_raw_ts64( struct timespec64 * )
 
-	与上述相同，但以 ‘struct timespec64’ 形式返回时间，拆分为秒和纳秒。这可以在
-	打印时间，或将时间传入期望 ‘timespec’ 或 ‘timeval’ 结构的外部接口时避免一次额外
-	的除法。
-
+	涓庝笂杩扮浉鍚岋紝浣嗕互 鈥榮truct timespec64鈥?褰㈠紡杩斿洖鏃堕棿锛屾媶鍒嗕负绉掑拰绾崇銆傝繖鍙互鍦?	鎵撳嵃鏃堕棿锛屾垨灏嗘椂闂翠紶鍏ユ湡鏈?鈥榯imespec鈥?鎴?鈥榯imeval鈥?缁撴瀯鐨勫閮ㄦ帴鍙ｆ椂閬垮厤涓€娆￠澶?	鐨勯櫎娉曘€?
 		time64_t ktime_get_boottime_seconds( void )
 		time64_t ktime_get_real_seconds( void )
 		time64_t ktime_get_clocktai_seconds( void )
 		time64_t ktime_get_raw_seconds( void )
 
-	以标量 time64_t 形式返回一个粗粒度（coarse-grained）的时间版本。这避免了访问时钟
-	硬件，并使用相应参考将秒向下取整到上一个定时器节拍（timer tick）的完整秒数。
-
-### 粗粒度与 fast_ns 访问
+	浠ユ爣閲?time64_t 褰㈠紡杩斿洖涓€涓矖绮掑害锛坈oarse-grained锛夌殑鏃堕棿鐗堟湰銆傝繖閬垮厤浜嗚闂椂閽?	纭欢锛屽苟浣跨敤鐩稿簲鍙傝€冨皢绉掑悜涓嬪彇鏁村埌涓婁竴涓畾鏃跺櫒鑺傛媿锛坱imer tick锛夌殑瀹屾暣绉掓暟銆?
+### 绮楃矑搴︿笌 fast_ns 璁块棶
 
 
-还有一些用于更专门场景的变体：
+杩樻湁涓€浜涚敤浜庢洿涓撻棬鍦烘櫙鐨勫彉浣擄細
 
 		ktime_t ktime_get_coarse_boottime( void )
 		ktime_t ktime_get_coarse_real( void )
@@ -89,58 +67,43 @@
 		void ktime_get_coarse_real_ts64( struct timespec64 * )
 		void ktime_get_coarse_clocktai_ts64( struct timespec64 * )
 
-	这些比非粗粒度版本更快，但精度较低，对应于用户空间中的 CLOCK_MONOTONIC_COARSE
-	和 CLOCK_REALTIME_COARSE，以及用户空间中不可用的等效 boottime/tai/raw 时基。
-
-	这里返回的时间对应于上一个定时器节拍，在过去可能长达 10ms（对于 CONFIG_HZ=100），
-	与读取 ‘jiffies’ 变量相同。这些仅在对时效性要求高（fast path）且仍期望优于秒级
-	精度、但又无法轻松使用 ‘jiffies’ 的情况下有用，例如用于 inode 时间戳。跳过硬件
-	时钟访问在现代大多数带有可靠周期计数器的机器上可节省约 100 个 CPU 周期，但在带有
-	外部 clocksource 的较旧硬件上最多可达数微秒。
-
+	杩欎簺姣旈潪绮楃矑搴︾増鏈洿蹇紝浣嗙簿搴﹁緝浣庯紝瀵瑰簲浜庣敤鎴风┖闂翠腑鐨?CLOCK_MONOTONIC_COARSE
+	鍜?CLOCK_REALTIME_COARSE锛屼互鍙婄敤鎴风┖闂翠腑涓嶅彲鐢ㄧ殑绛夋晥 boottime/tai/raw 鏃跺熀銆?
+	杩欓噷杩斿洖鐨勬椂闂村搴斾簬涓婁竴涓畾鏃跺櫒鑺傛媿锛屽湪杩囧幓鍙兘闀胯揪 10ms锛堝浜?CONFIG_HZ=100锛夛紝
+	涓庤鍙?鈥榡iffies鈥?鍙橀噺鐩稿悓銆傝繖浜涗粎鍦ㄥ鏃舵晥鎬ц姹傞珮锛坒ast path锛変笖浠嶆湡鏈涗紭浜庣绾?	绮惧害銆佷絾鍙堟棤娉曡交鏉句娇鐢?鈥榡iffies鈥?鐨勬儏鍐典笅鏈夌敤锛屼緥濡傜敤浜?inode 鏃堕棿鎴炽€傝烦杩囩‖浠?	鏃堕挓璁块棶鍦ㄧ幇浠ｅぇ澶氭暟甯︽湁鍙潬鍛ㄦ湡璁℃暟鍣ㄧ殑鏈哄櫒涓婂彲鑺傜渷绾?100 涓?CPU 鍛ㄦ湡锛屼絾鍦ㄥ甫鏈?	澶栭儴 clocksource 鐨勮緝鏃х‖浠朵笂鏈€澶氬彲杈炬暟寰銆?
 		u64 ktime_get_raw_fast_ns( void )
 		u64 ktime_get_boot_fast_ns( void )
 		u64 ktime_get_tai_fast_ns( void )
 		u64 ktime_get_real_fast_ns( void )
 
-	这些变体可以安全地从任何上下文中调用，包括在 timekeeper 更新期间的不可屏蔽中断
-	（NMI）中，以及在我们进入挂起且 clocksource 断电时。这在一些跟踪或调试代码以及
-	机器检查（machine check）报告中很有用，但大多数驱动绝不应调用它们，因为该时间
-	在某些条件下允许跳变。
-
-### 已废弃的时间接口
+	杩欎簺鍙樹綋鍙互瀹夊叏鍦颁粠浠讳綍涓婁笅鏂囦腑璋冪敤锛屽寘鎷湪 timekeeper 鏇存柊鏈熼棿鐨勪笉鍙睆钄戒腑鏂?	锛圢MI锛変腑锛屼互鍙婂湪鎴戜滑杩涘叆鎸傝捣涓?clocksource 鏂數鏃躲€傝繖鍦ㄤ竴浜涜窡韪垨璋冭瘯浠ｇ爜浠ュ強
+	鏈哄櫒妫€鏌ワ紙machine check锛夋姤鍛婁腑寰堟湁鐢紝浣嗗ぇ澶氭暟椹卞姩缁濅笉搴旇皟鐢ㄥ畠浠紝鍥犱负璇ユ椂闂?	鍦ㄦ煇浜涙潯浠朵笅鍏佽璺冲彉銆?
+### 宸插簾寮冪殑鏃堕棿鎺ュ彛
 
 
-较旧的内核使用了一些其它接口，现在正在逐步淘汰，但可能出现在被移植到这里的三方驱动
-中。特别是，所有返回 ‘struct timeval’ 或 ‘struct timespec’ 的接口都已被替换，因为
-在 32 位体系结构上 tv_sec 成员会在 2038 年溢出。以下是推荐的替换：
+杈冩棫鐨勫唴鏍镐娇鐢ㄤ簡涓€浜涘叾瀹冩帴鍙ｏ紝鐜板湪姝ｅ湪閫愭娣樻卑锛屼絾鍙兘鍑虹幇鍦ㄨ绉绘鍒拌繖閲岀殑涓夋柟椹卞姩
+涓€傜壒鍒槸锛屾墍鏈夎繑鍥?鈥榮truct timeval鈥?鎴?鈥榮truct timespec鈥?鐨勬帴鍙ｉ兘宸茶鏇挎崲锛屽洜涓?鍦?32 浣嶄綋绯荤粨鏋勪笂 tv_sec 鎴愬憳浼氬湪 2038 骞存孩鍑恒€備互涓嬫槸鎺ㄨ崘鐨勬浛鎹細
 
 
-	使用 ktime_get() 或 ktime_get_ts64() 代替。
-
+	浣跨敤 ktime_get() 鎴?ktime_get_ts64() 浠ｆ浛銆?
 		void getnstimeofday( struct timespec * )
 		void getnstimeofday64( struct timespec64 * )
 		void ktime_get_real_ts( struct timespec * )
 
-	ktime_get_real_ts64() 是直接替换，但考虑使用单调时间（ktime_get_ts64()）和/或基于
-	ktime_t 的接口（ktime_get()/ktime_get_real()）。
-
+	ktime_get_real_ts64() 鏄洿鎺ユ浛鎹紝浣嗚€冭檻浣跨敤鍗曡皟鏃堕棿锛坘time_get_ts64()锛夊拰/鎴栧熀浜?	ktime_t 鐨勬帴鍙ｏ紙ktime_get()/ktime_get_real()锛夈€?
 		struct timespec64 current_kernel_time64( void )
 		struct timespec get_monotonic_coarse( void )
 		struct timespec64 get_monotonic_coarse64( void )
 
-	这些被 ktime_get_coarse_real_ts64() 和 ktime_get_coarse_ts64() 替换。然而，许多
-	需要粗粒度时间的代码可以改用简单的 ‘jiffies’，而如今一些驱动可能实际上想要更高
-	分辨率的访问器。
-
+	杩欎簺琚?ktime_get_coarse_real_ts64() 鍜?ktime_get_coarse_ts64() 鏇挎崲銆傜劧鑰岋紝璁稿
+	闇€瑕佺矖绮掑害鏃堕棿鐨勪唬鐮佸彲浠ユ敼鐢ㄧ畝鍗曠殑 鈥榡iffies鈥欙紝鑰屽浠婁竴浜涢┍鍔ㄥ彲鑳藉疄闄呬笂鎯宠鏇撮珮
+	鍒嗚鲸鐜囩殑璁块棶鍣ㄣ€?
 		struct timespec64 getrawmonotonic64( void )
 		struct timespec timekeeping_clocktai( void )
 		struct timespec64 timekeeping_clocktai64( void )
 		struct timespec get_monotonic_boottime( void )
 		struct timespec64 get_monotonic_boottime64( void )
 
-	这些被 ktime_get_raw()/ktime_get_raw_ts64()、ktime_get_clocktai()/
-	ktime_get_clocktai_ts64() 以及 ktime_get_boottime()/ktime_get_boottime_ts64() 替换。
-	然而，如果用户并不在意时钟源的具体选择，为了一致性考虑改用 ktime_get()/
-	ktime_get_ts64()。
-
+	杩欎簺琚?ktime_get_raw()/ktime_get_raw_ts64()銆乲time_get_clocktai()/
+	ktime_get_clocktai_ts64() 浠ュ強 ktime_get_boottime()/ktime_get_boottime_ts64() 鏇挎崲銆?	鐒惰€岋紝濡傛灉鐢ㄦ埛骞朵笉鍦ㄦ剰鏃堕挓婧愮殑鍏蜂綋閫夋嫨锛屼负浜嗕竴鑷存€ц€冭檻鏀圭敤 ktime_get()/
+	ktime_get_ts64()銆?

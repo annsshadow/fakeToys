@@ -1,47 +1,37 @@
+﻿
 
 
+######## 妫€娴嬫帶鍒跺弬鑰冿紙Detect Control Reference锛?
 
-######## 检测控制参考（Detect Control Reference）
-
-
-Detect 类包含用于各种具备运动或物体检测能力的设备的通用特性控制。
+Detect 绫诲寘鍚敤浜庡悇绉嶅叿澶囪繍鍔ㄦ垨鐗╀綋妫€娴嬭兘鍔涚殑璁惧鐨勯€氱敤鐗规€ф帶鍒躲€?
 
 
-
-## 检测控制 IDs
+## 妫€娴嬫帶鍒?IDs
 
 
 `V4L2_CID_DETECT_CLASS (class)`
-    Detect 类描述符。对该控制调用 VIDIOC_QUERYCTRL 将返回该控制类的描述。
-
+    Detect 绫绘弿杩扮銆傚璇ユ帶鍒惰皟鐢?VIDIOC_QUERYCTRL 灏嗚繑鍥炶鎺у埗绫荤殑鎻忚堪銆?
 `V4L2_CID_DETECT_MD_MODE (menu)`
-    设置运动检测模式。
-
+    璁剧疆杩愬姩妫€娴嬫ā寮忋€?
 
     :header-rows:  0
     :stub-columns: 0
 
     - - `V4L2_DETECT_MD_MODE_DISABLED`
-      - 禁用运动检测。
-    - - `V4L2_DETECT_MD_MODE_GLOBAL`
-      - 使用单一的运动检测阈值。
-    - - `V4L2_DETECT_MD_MODE_THRESHOLD_GRID`
-      - 将图像划分为网格，每个单元格有自己的运动检测阈值。这些阈值通过
-	`V4L2_CID_DETECT_MD_THRESHOLD_GRID` 矩阵控制设置。
-    - - `V4L2_DETECT_MD_MODE_REGION_GRID`
-      - 将图像划分为网格，每个单元格有自己的区域值，用于指定应当使用哪个
-	每区域的运动检测阈值。每个区域都有自己的阈值。这些每区域阈值的设置方式
-	是驱动相关的。网格的区域值通过 `V4L2_CID_DETECT_MD_REGION_GRID` 矩阵控制设置。
-
+      - 绂佺敤杩愬姩妫€娴嬨€?    - - `V4L2_DETECT_MD_MODE_GLOBAL`
+      - 浣跨敤鍗曚竴鐨勮繍鍔ㄦ娴嬮槇鍊笺€?    - - `V4L2_DETECT_MD_MODE_THRESHOLD_GRID`
+      - 灏嗗浘鍍忓垝鍒嗕负缃戞牸锛屾瘡涓崟鍏冩牸鏈夎嚜宸辩殑杩愬姩妫€娴嬮槇鍊笺€傝繖浜涢槇鍊奸€氳繃
+	`V4L2_CID_DETECT_MD_THRESHOLD_GRID` 鐭╅樀鎺у埗璁剧疆銆?    - - `V4L2_DETECT_MD_MODE_REGION_GRID`
+      - 灏嗗浘鍍忓垝鍒嗕负缃戞牸锛屾瘡涓崟鍏冩牸鏈夎嚜宸辩殑鍖哄煙鍊硷紝鐢ㄤ簬鎸囧畾搴斿綋浣跨敤鍝釜
+	姣忓尯鍩熺殑杩愬姩妫€娴嬮槇鍊笺€傛瘡涓尯鍩熼兘鏈夎嚜宸辩殑闃堝€笺€傝繖浜涙瘡鍖哄煙闃堝€肩殑璁剧疆鏂瑰紡
+	鏄┍鍔ㄧ浉鍏崇殑銆傜綉鏍肩殑鍖哄煙鍊奸€氳繃 `V4L2_CID_DETECT_MD_REGION_GRID` 鐭╅樀鎺у埗璁剧疆銆?
 
 
 `V4L2_CID_DETECT_MD_GLOBAL_THRESHOLD (integer)`
-    设置与 `V4L2_DETECT_MD_MODE_GLOBAL` 运动检测模式一起使用的全局运动检测阈值。
-
+    璁剧疆涓?`V4L2_DETECT_MD_MODE_GLOBAL` 杩愬姩妫€娴嬫ā寮忎竴璧蜂娇鐢ㄧ殑鍏ㄥ眬杩愬姩妫€娴嬮槇鍊笺€?
 `V4L2_CID_DETECT_MD_THRESHOLD_GRID (__u16 matrix)`
-    设置网格中每个单元格的运动检测阈值。需与 `V4L2_DETECT_MD_MODE_THRESHOLD_GRID`
-    运动检测模式一起使用。矩阵元素 (0, 0) 表示网格左上角的单元格。
-
+    璁剧疆缃戞牸涓瘡涓崟鍏冩牸鐨勮繍鍔ㄦ娴嬮槇鍊笺€傞渶涓?`V4L2_DETECT_MD_MODE_THRESHOLD_GRID`
+    杩愬姩妫€娴嬫ā寮忎竴璧蜂娇鐢ㄣ€傜煩闃靛厓绱?(0, 0) 琛ㄧず缃戞牸宸︿笂瑙掔殑鍗曞厓鏍笺€?
 `V4L2_CID_DETECT_MD_REGION_GRID (__u8 matrix)`
-    设置网格中每个单元格的运动检测区域值。需与 `V4L2_DETECT_MD_MODE_REGION_GRID`
-    运动检测模式一起使用。矩阵元素 (0, 0) 表示网格左上角的单元格。
+    璁剧疆缃戞牸涓瘡涓崟鍏冩牸鐨勮繍鍔ㄦ娴嬪尯鍩熷€笺€傞渶涓?`V4L2_DETECT_MD_MODE_REGION_GRID`
+    杩愬姩妫€娴嬫ā寮忎竴璧蜂娇鐢ㄣ€傜煩闃靛厓绱?(0, 0) 琛ㄧず缃戞牸宸︿笂瑙掔殑鍗曞厓鏍笺€?

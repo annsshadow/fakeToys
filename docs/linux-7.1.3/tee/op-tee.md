@@ -1,24 +1,17 @@
-## OP-TEE（开放可移植可信执行环境，Open Portable Trusted Execution Environment）
+﻿## OP-TEE锛堝紑鏀惧彲绉绘鍙俊鎵ц鐜锛孫pen Portable Trusted Execution Environment锛?
 
+OP-TEE 椹卞姩澶勭悊鍩轰簬 OP-TEE [^1^] 鐨?TEE銆傜洰鍓嶄粎鏀寔鍩轰簬 ARM TrustZone 鐨?OP-TEE 鏂规銆?
+涓?OP-TEE 閫氫俊鐨勬渶浣庡眰鏋勫缓鍦?ARM SMC 璋冪敤绾﹀畾锛圫MCCC锛塠^2^] 涔嬩笂锛屽畠鏄?OP-TEE 鐨?SMC 鎺ュ彛 [^3^] 鐨勫熀纭€锛岃鎺ュ彛鐢遍┍鍔ㄥ湪鍐呴儴浣跨敤銆傚湪姝や箣涓婂彔鏀剧殑鏄?OP-TEE 娑堟伅鍗忚 [^4^]銆?
+OP-TEE SMC 鎺ュ彛鎻愪緵 SMCCC 鎵€闇€鐨勫熀鏈姛鑳戒互鍙?OP-TEE 鐗规湁鐨勪竴浜涢檮鍔犲姛鑳姐€傛渶鏈夋剰鎬濈殑鍔熻兘鏄細
 
-OP-TEE 驱动处理基于 OP-TEE [^1^] 的 TEE。目前仅支持基于 ARM TrustZone 的 OP-TEE 方案。
+- OPTEE_SMC_FUNCID_CALLS_UID锛圫MCCC 鐨勪竴閮ㄥ垎锛夎繑鍥炵増鏈俊鎭紝闅忓悗鐢?TEE_IOC_VERSION 杩斿洖
 
-与 OP-TEE 通信的最低层构建在 ARM SMC 调用约定（SMCCC）[^2^] 之上，它是 OP-TEE 的 SMC 接口 [^3^] 的基础，该接口由驱动在内部使用。在此之上叠放的是 OP-TEE 消息协议 [^4^]。
+- OPTEE_SMC_CALL_GET_OS_UUID 杩斿洖鐗瑰畾鐨?OP-TEE 瀹炵幇锛岀敤浜庡尯鍒嗭紝渚嬪锛孴rustZone OP-TEE 涓庤繍琛屽湪鐙珛瀹夊叏鍗忓鐞嗗櫒涓婄殑 OP-TEE銆?
+- OPTEE_SMC_CALL_WITH_ARG 椹卞姩 OP-TEE 娑堟伅鍗忚
 
-OP-TEE SMC 接口提供 SMCCC 所需的基本功能以及 OP-TEE 特有的一些附加功能。最有意思的功能是：
-
-- OPTEE_SMC_FUNCID_CALLS_UID（SMCCC 的一部分）返回版本信息，随后由 TEE_IOC_VERSION 返回
-
-- OPTEE_SMC_CALL_GET_OS_UUID 返回特定的 OP-TEE 实现，用于区分，例如，TrustZone OP-TEE 与运行在独立安全协处理器上的 OP-TEE。
-
-- OPTEE_SMC_CALL_WITH_ARG 驱动 OP-TEE 消息协议
-
-- OPTEE_SMC_GET_SHM_CONFIG 让驱动和 OP-TEE 就 Linux 与 OP-TEE 之间用于共享内存的内存范围达成一致。
-
-GlobalPlatform TEE Client API [^5^] 实现在通用 TEE API 之上。
-
-不同组件之间关系的示意图：
-```
+- OPTEE_SMC_GET_SHM_CONFIG 璁╅┍鍔ㄥ拰 OP-TEE 灏?Linux 涓?OP-TEE 涔嬮棿鐢ㄤ簬鍏变韩鍐呭瓨鐨勫唴瀛樿寖鍥磋揪鎴愪竴鑷淬€?
+GlobalPlatform TEE Client API [^5^] 瀹炵幇鍦ㄩ€氱敤 TEE API 涔嬩笂銆?
+涓嶅悓缁勪欢涔嬮棿鍏崇郴鐨勭ず鎰忓浘锛?```
       User space                  Kernel                   Secure world
       ~~~~~~~~~~                  ~~~~~~                   ~~~~~~~~~~~~
    +--------+                                             +-------------+
@@ -39,60 +32,35 @@ GlobalPlatform TEE Client API [^5^] 实现在通用 TEE API 之上。
    |      IOCTL (TEE_IOC_*)      |       |     SMCCC (OPTEE_SMC_CALL_*) |
    +-----------------------------+       +------------------------------+
 ```
-RPC（远程过程调用，Remote Procedure Call）是来自安全世界对内核驱动或 tee-supplicant 的请求。一个 RPC 由 OPTEE_SMC_CALL_WITH_ARG 返回的一组特殊范围的 SMCCC 返回值标识。旨在发给内核的 RPC 消息由内核驱动处理。其他 RPC 消息将被转发给 tee-supplicant，驱动不再进一步参与，除非切换共享内存缓冲区的表示。
+RPC锛堣繙绋嬭繃绋嬭皟鐢紝Remote Procedure Call锛夋槸鏉ヨ嚜瀹夊叏涓栫晫瀵瑰唴鏍搁┍鍔ㄦ垨 tee-supplicant 鐨勮姹傘€備竴涓?RPC 鐢?OPTEE_SMC_CALL_WITH_ARG 杩斿洖鐨勪竴缁勭壒娈婅寖鍥寸殑 SMCCC 杩斿洖鍊兼爣璇嗐€傛棬鍦ㄥ彂缁欏唴鏍哥殑 RPC 娑堟伅鐢卞唴鏍搁┍鍔ㄥ鐞嗐€傚叾浠?RPC 娑堟伅灏嗚杞彂缁?tee-supplicant锛岄┍鍔ㄤ笉鍐嶈繘涓€姝ュ弬涓庯紝闄ら潪鍒囨崲鍏变韩鍐呭瓨缂撳啿鍖虹殑琛ㄧず銆?
+### OP-TEE 璁惧鏋氫妇锛圤P-TEE device enumeration锛?
 
-### OP-TEE 设备枚举（OP-TEE device enumeration）
+OP-TEE 鎻愪緵浜嗕竴涓吉鍙俊搴旂敤绋嬪簭锛歞rivers/tee/optee/device.c锛屼互鏀寔璁惧鏋氫妇銆傛崲鍙ヨ瘽璇达紝OP-TEE 椹卞姩璋冪敤璇ュ簲鐢ㄧ▼搴忔潵妫€绱㈠彲浣滀负璁惧娉ㄥ唽鍒?TEE 鎬荤嚎涓婄殑鍙俊搴旂敤绋嬪簭鍒楄〃銆?
+### OP-TEE 閫氱煡锛圤P-TEE notifications锛?
 
-
-OP-TEE 提供了一个伪可信应用程序：drivers/tee/optee/device.c，以支持设备枚举。换句话说，OP-TEE 驱动调用该应用程序来检索可作为设备注册到 TEE 总线上的可信应用程序列表。
-
-### OP-TEE 通知（OP-TEE notifications）
-
-
-安全世界可以使用两类通知，使普通世界知晓某个事件。
-
-1. 通过 `OPTEE_RPC_CMD_NOTIFICATION` 配合 `OPTEE_RPC_NOTIFICATION_SEND` 参数传递的同步通知。
-2. 通过非安全的边沿触发中断与非安全中断处理程序中的快速调用组合传递的异步通知。
-
-同步通知受限于依赖 RPC 来投递，这仅在使用 `OPTEE_SMC_CALL_WITH_ARG` 的 yielding 调用进入安全世界时可用。这将其排除在安全世界中断处理程序之外。
-
-异步通知通过注册在 OP-TEE 驱动中的非安全边沿触发中断投递给中断处理程序。实际的通知值通过快速调用 `OPTEE_SMC_GET_ASYNC_NOTIF_VALUE` 获取。请注意，一个中断可以代表多个通知。
-
-通知值 `OPTEE_SMC_ASYNC_NOTIF_VALUE_DO_BOTTOM_HALF` 具有特殊含义。当接收到该值时，意味着普通世界应当发起一个 yielding 调用 `OPTEE_MSG_CMD_DO_BOTTOM_HALF`。该调用由协助中断处理程序的线程发出。这是安全世界中的 OP-TEE OS 实现设备驱动上半部/下半部风格的一个构建模块。
-
-### OPTEE_INSECURE_LOAD_IMAGE Kconfig 选项
+瀹夊叏涓栫晫鍙互浣跨敤涓ょ被閫氱煡锛屼娇鏅€氫笘鐣岀煡鏅撴煇涓簨浠躲€?
+1. 閫氳繃 `OPTEE_RPC_CMD_NOTIFICATION` 閰嶅悎 `OPTEE_RPC_NOTIFICATION_SEND` 鍙傛暟浼犻€掔殑鍚屾閫氱煡銆?2. 閫氳繃闈炲畨鍏ㄧ殑杈规部瑙﹀彂涓柇涓庨潪瀹夊叏涓柇澶勭悊绋嬪簭涓殑蹇€熻皟鐢ㄧ粍鍚堜紶閫掔殑寮傛閫氱煡銆?
+鍚屾閫氱煡鍙楅檺浜庝緷璧?RPC 鏉ユ姇閫掞紝杩欎粎鍦ㄤ娇鐢?`OPTEE_SMC_CALL_WITH_ARG` 鐨?yielding 璋冪敤杩涘叆瀹夊叏涓栫晫鏃跺彲鐢ㄣ€傝繖灏嗗叾鎺掗櫎鍦ㄥ畨鍏ㄤ笘鐣屼腑鏂鐞嗙▼搴忎箣澶栥€?
+寮傛閫氱煡閫氳繃娉ㄥ唽鍦?OP-TEE 椹卞姩涓殑闈炲畨鍏ㄨ竟娌胯Е鍙戜腑鏂姇閫掔粰涓柇澶勭悊绋嬪簭銆傚疄闄呯殑閫氱煡鍊奸€氳繃蹇€熻皟鐢?`OPTEE_SMC_GET_ASYNC_NOTIF_VALUE` 鑾峰彇銆傝娉ㄦ剰锛屼竴涓腑鏂彲浠ヤ唬琛ㄥ涓€氱煡銆?
+閫氱煡鍊?`OPTEE_SMC_ASYNC_NOTIF_VALUE_DO_BOTTOM_HALF` 鍏锋湁鐗规畩鍚箟銆傚綋鎺ユ敹鍒拌鍊兼椂锛屾剰鍛崇潃鏅€氫笘鐣屽簲褰撳彂璧蜂竴涓?yielding 璋冪敤 `OPTEE_MSG_CMD_DO_BOTTOM_HALF`銆傝璋冪敤鐢卞崗鍔╀腑鏂鐞嗙▼搴忕殑绾跨▼鍙戝嚭銆傝繖鏄畨鍏ㄤ笘鐣屼腑鐨?OP-TEE OS 瀹炵幇璁惧椹卞姩涓婂崐閮?涓嬪崐閮ㄩ鏍肩殑涓€涓瀯寤烘ā鍧椼€?
+### OPTEE_INSECURE_LOAD_IMAGE Kconfig 閫夐」
 
 
-OPTEE_INSECURE_LOAD_IMAGE Kconfig 选项启用了在内核启动后从内核加载 BL32 OP-TEE 镜像的能力，而不是在内核启动前从固件加载。这还需要在 Arm 的 Trusted Firmware 中启用相应的选项。Arm 的 Trusted Firmware 文档 [^6^] 解释了启用此选项所带来的安全威胁，以及固件和平台层面的缓解措施。
-
-使用该选项时，还存在应当解决的、针对内核的额外攻击向量/缓解措施。
-
-1. 启动链安全。
-
-   - 攻击向量：替换 rootfs 中的 OP-TEE OS 镜像以获取对系统的控制权。
-
-   - 缓解：必须有验证内核和 rootfs 的启动链安全，否则攻击者可以通过修改 rootfs 中的内容来修改已加载的 OP-TEE 二进制文件。
-
-2. 备用启动模式。
-
-   - 攻击向量：使用备用启动模式（即恢复模式）时，OP-TEE 驱动不会被加载，从而留下 SMC 漏洞。
-
-   - 缓解：如果存在备用启动设备的方法（例如恢复模式），应确保在那种模式下应用相同的缓解措施。
-
-3. SMC 调用之前的攻击。
-
-   - 攻击向量：在发出用于加载 OP-TEE 的 SMC 调用之前执行的代码可能被利用，从而加载一个替换的 OS 镜像。
-
-   - 缓解：OP-TEE 驱动必须在任何潜在的攻击向量被打开之前加载。这应包括挂载任何可修改的文件系统、打开网络端口或与外部设备（例如 USB）通信。
-
-4. 阻止加载 OP-TEE 的 SMC 调用。
-
-   - 攻击向量：阻止驱动被探测（probe），从而使加载 OP-TEE 的 SMC 调用在期望时未能执行，使其保持开放以便后续执行并加载被修改的 OS。
-
-   - 缓解：建议将 OP-TEE 驱动构建为内建（builtin）驱动，而非模块，以防止可能导致模块不被加载的漏洞利用。
-
-## 参考（References）
-
+OPTEE_INSECURE_LOAD_IMAGE Kconfig 閫夐」鍚敤浜嗗湪鍐呮牳鍚姩鍚庝粠鍐呮牳鍔犺浇 BL32 OP-TEE 闀滃儚鐨勮兘鍔涳紝鑰屼笉鏄湪鍐呮牳鍚姩鍓嶄粠鍥轰欢鍔犺浇銆傝繖杩橀渶瑕佸湪 Arm 鐨?Trusted Firmware 涓惎鐢ㄧ浉搴旂殑閫夐」銆侫rm 鐨?Trusted Firmware 鏂囨。 [^6^] 瑙ｉ噴浜嗗惎鐢ㄦ閫夐」鎵€甯︽潵鐨勫畨鍏ㄥ▉鑳侊紝浠ュ強鍥轰欢鍜屽钩鍙板眰闈㈢殑缂撹В鎺柦銆?
+浣跨敤璇ラ€夐」鏃讹紝杩樺瓨鍦ㄥ簲褰撹В鍐崇殑銆侀拡瀵瑰唴鏍哥殑棰濆鏀诲嚮鍚戦噺/缂撹В鎺柦銆?
+1. 鍚姩閾惧畨鍏ㄣ€?
+   - 鏀诲嚮鍚戦噺锛氭浛鎹?rootfs 涓殑 OP-TEE OS 闀滃儚浠ヨ幏鍙栧绯荤粺鐨勬帶鍒舵潈銆?
+   - 缂撹В锛氬繀椤绘湁楠岃瘉鍐呮牳鍜?rootfs 鐨勫惎鍔ㄩ摼瀹夊叏锛屽惁鍒欐敾鍑昏€呭彲浠ラ€氳繃淇敼 rootfs 涓殑鍐呭鏉ヤ慨鏀瑰凡鍔犺浇鐨?OP-TEE 浜岃繘鍒舵枃浠躲€?
+2. 澶囩敤鍚姩妯″紡銆?
+   - 鏀诲嚮鍚戦噺锛氫娇鐢ㄥ鐢ㄥ惎鍔ㄦā寮忥紙鍗虫仮澶嶆ā寮忥級鏃讹紝OP-TEE 椹卞姩涓嶄細琚姞杞斤紝浠庤€岀暀涓?SMC 婕忔礊銆?
+   - 缂撹В锛氬鏋滃瓨鍦ㄥ鐢ㄥ惎鍔ㄨ澶囩殑鏂规硶锛堜緥濡傛仮澶嶆ā寮忥級锛屽簲纭繚鍦ㄩ偅绉嶆ā寮忎笅搴旂敤鐩稿悓鐨勭紦瑙ｆ帾鏂姐€?
+3. SMC 璋冪敤涔嬪墠鐨勬敾鍑汇€?
+   - 鏀诲嚮鍚戦噺锛氬湪鍙戝嚭鐢ㄤ簬鍔犺浇 OP-TEE 鐨?SMC 璋冪敤涔嬪墠鎵ц鐨勪唬鐮佸彲鑳借鍒╃敤锛屼粠鑰屽姞杞戒竴涓浛鎹㈢殑 OS 闀滃儚銆?
+   - 缂撹В锛歄P-TEE 椹卞姩蹇呴』鍦ㄤ换浣曟綔鍦ㄧ殑鏀诲嚮鍚戦噺琚墦寮€涔嬪墠鍔犺浇銆傝繖搴斿寘鎷寕杞戒换浣曞彲淇敼鐨勬枃浠剁郴缁熴€佹墦寮€缃戠粶绔彛鎴栦笌澶栭儴璁惧锛堜緥濡?USB锛夐€氫俊銆?
+4. 闃绘鍔犺浇 OP-TEE 鐨?SMC 璋冪敤銆?
+   - 鏀诲嚮鍚戦噺锛氶樆姝㈤┍鍔ㄨ鎺㈡祴锛坧robe锛夛紝浠庤€屼娇鍔犺浇 OP-TEE 鐨?SMC 璋冪敤鍦ㄦ湡鏈涙椂鏈兘鎵ц锛屼娇鍏朵繚鎸佸紑鏀句互渚垮悗缁墽琛屽苟鍔犺浇琚慨鏀圭殑 OS銆?
+   - 缂撹В锛氬缓璁皢 OP-TEE 椹卞姩鏋勫缓涓哄唴寤猴紙builtin锛夐┍鍔紝鑰岄潪妯″潡锛屼互闃叉鍙兘瀵艰嚧妯″潡涓嶈鍔犺浇鐨勬紡娲炲埄鐢ㄣ€?
+## 鍙傝€冿紙References锛?
 
 [^1^] https://github.com/OP-TEE/optee_os
 
@@ -103,6 +71,5 @@ OPTEE_INSECURE_LOAD_IMAGE Kconfig 选项启用了在内核启动后从内核加�
 [^4^] drivers/tee/optee/optee_msg.h
 
 [^5^] http://www.globalplatform.org/specificationsdevice.asp look for
-    "TEE Client API Specification v1.0" 并点击下载。
-
+    "TEE Client API Specification v1.0" 骞剁偣鍑讳笅杞姐€?
 [^6^] https://trustedfirmware-a.readthedocs.io/en/latest/threat_model/threat_model.html

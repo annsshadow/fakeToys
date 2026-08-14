@@ -1,224 +1,147 @@
-## DC 术语表
+﻿## DC 鏈琛?
 
-
-在本页中，我们试图记录与显示组件相关的首字母缩写词。如果你没有找到你要找的内容，请查看
-'Documentation/gpu/amdgpu/amdgpu-glossary.rst'；如果你在任何地方都找不到，请考虑在 amd-gfx
-邮件列表中提问并更新本页。
-
+鍦ㄦ湰椤典腑锛屾垜浠瘯鍥捐褰曚笌鏄剧ず缁勪欢鐩稿叧鐨勯瀛楁瘝缂╁啓璇嶃€傚鏋滀綘娌℃湁鎵惧埌浣犺鎵剧殑鍐呭锛岃鏌ョ湅
+'Documentation/gpu/amdgpu/amdgpu-glossary.rst'锛涘鏋滀綘鍦ㄤ换浣曞湴鏂归兘鎵句笉鍒帮紝璇疯€冭檻鍦?amd-gfx
+閭欢鍒楄〃涓彁闂苟鏇存柊鏈〉銆?
 
     ABM
-      自适应背光调制（Adaptive Backlight Modulation）
-
+      鑷€傚簲鑳屽厜璋冨埗锛圓daptive Backlight Modulation锛?
     APU
-      加速处理单元（Accelerated Processing Unit）
-
+      鍔犻€熷鐞嗗崟鍏冿紙Accelerated Processing Unit锛?
     ASIC
-      专用集成电路（Application-Specific Integrated Circuit）
-
+      涓撶敤闆嗘垚鐢佃矾锛圓pplication-Specific Integrated Circuit锛?
     ASSR
-      备用加扰器种子重置（Alternate Scrambler Seed Reset）
-
+      澶囩敤鍔犳壈鍣ㄧ瀛愰噸缃紙Alternate Scrambler Seed Reset锛?
     AZ
-      Azalia（HD 音频 DMA 引擎）
-
+      Azalia锛圚D 闊抽 DMA 寮曟搸锛?
     BPC
-      每颜色/分量位数（Bits Per Colour/Component）
-
+      姣忛鑹?鍒嗛噺浣嶆暟锛圔its Per Colour/Component锛?
     BPP
-      每像素位数（Bits Per Pixel）
-
+      姣忓儚绱犱綅鏁帮紙Bits Per Pixel锛?
     Clocks
-      - PCLK: 像素时钟（Pixel Clock）
-      - SYMCLK: 符号时钟（Symbol Clock）
-      - SOCCLK: GPU 引擎时钟（GPU Engine Clock）
-      - DISPCLK: 显示时钟（Display Clock）
-      - DPPCLK: DPP 时钟（DPP Clock）
-      - DCFCLK: 显示控制器 Fabric 时钟（Display Controller Fabric Clock）
-      - REFCLK: 实时参考时钟（Real Time Reference Clock）
-      - PPLL: 像素 PLL（Pixel PLL）
-      - FCLK: Fabric 时钟（Fabric Clock）
-      - MCLK: 内存时钟（Memory Clock）
-
+      - PCLK: 鍍忕礌鏃堕挓锛圥ixel Clock锛?      - SYMCLK: 绗﹀彿鏃堕挓锛圫ymbol Clock锛?      - SOCCLK: GPU 寮曟搸鏃堕挓锛圙PU Engine Clock锛?      - DISPCLK: 鏄剧ず鏃堕挓锛圖isplay Clock锛?      - DPPCLK: DPP 鏃堕挓锛圖PP Clock锛?      - DCFCLK: 鏄剧ず鎺у埗鍣?Fabric 鏃堕挓锛圖isplay Controller Fabric Clock锛?      - REFCLK: 瀹炴椂鍙傝€冩椂閽燂紙Real Time Reference Clock锛?      - PPLL: 鍍忕礌 PLL锛圥ixel PLL锛?      - FCLK: Fabric 鏃堕挓锛團abric Clock锛?      - MCLK: 鍐呭瓨鏃堕挓锛圡emory Clock锛?
     CRC
-      循环冗余校验（Cyclic Redundancy Check）
-
+      寰幆鍐椾綑鏍￠獙锛圕yclic Redundancy Check锛?
     CRTC
-      阴极射线管控制器（Cathode Ray Tube Controller）——通常称为“控制器”——生成以像素时钟
-      计时的原始像素流
+      闃存瀬灏勭嚎绠℃帶鍒跺櫒锛圕athode Ray Tube Controller锛夆€斺€旈€氬父绉颁负鈥滄帶鍒跺櫒鈥濃€斺€旂敓鎴愪互鍍忕礌鏃堕挓
+      璁℃椂鐨勫師濮嬪儚绱犳祦
 
     CVT
-      协调视频时序（Coordinated Video Timings）
-
+      鍗忚皟瑙嗛鏃跺簭锛圕oordinated Video Timings锛?
     DAL
-      显示抽象层（Display Abstraction layer）
-
+      鏄剧ず鎶借薄灞傦紙Display Abstraction layer锛?
     DC (Software)
-      显示核心（Display Core）
-
+      鏄剧ず鏍稿績锛圖isplay Core锛?
     DC (Hardware)
-      显示控制器（Display Controller）
-
+      鏄剧ず鎺у埗鍣紙Display Controller锛?
     DCC
-      Delta 色彩压缩（Delta Colour Compression）
-
+      Delta 鑹插僵鍘嬬缉锛圖elta Colour Compression锛?
     DCE
-      显示控制器引擎（Display Controller Engine）
-
+      鏄剧ず鎺у埗鍣ㄥ紩鎿庯紙Display Controller Engine锛?
     DCHUB
-      显示控制器集线器（Display Controller HUB）
-
+      鏄剧ず鎺у埗鍣ㄩ泦绾垮櫒锛圖isplay Controller HUB锛?
     ARB
-      仲裁器（Arbiter）
-
+      浠茶鍣紙Arbiter锛?
     VTG
-      垂直时序生成器（Vertical Timing Generator）
-
+      鍨傜洿鏃跺簭鐢熸垚鍣紙Vertical Timing Generator锛?
     DCN
-      下一代显示核心（Display Core Next）
-
+      涓嬩竴浠ｆ樉绀烘牳蹇冿紙Display Core Next锛?
     DCCG
-      显示时钟生成器模块（Display Clock Generator block）
-
+      鏄剧ず鏃堕挓鐢熸垚鍣ㄦā鍧楋紙Display Clock Generator block锛?
     DDC
-      显示数据通道（Display Data Channel）
-
+      鏄剧ず鏁版嵁閫氶亾锛圖isplay Data Channel锛?
     DIO
-      显示 IO（Display IO）
-
+      鏄剧ず IO锛圖isplay IO锛?
     DPP
-      显示管道与平面（Display Pipes and Planes）
-
+      鏄剧ず绠￠亾涓庡钩闈紙Display Pipes and Planes锛?
     DSC
-      显示流压缩（Display Stream Compression）（在相同像素时钟下减少表示像素数量所需的位数）
+      鏄剧ず娴佸帇缂╋紙Display Stream Compression锛夛紙鍦ㄧ浉鍚屽儚绱犳椂閽熶笅鍑忓皯琛ㄧず鍍忕礌鏁伴噺鎵€闇€鐨勪綅鏁帮級
 
     dGPU
-      独立 GPU（discrete GPU）
-
+      鐙珛 GPU锛坉iscrete GPU锛?
     DMIF
-      显示内存接口（Display Memory Interface）
-
+      鏄剧ず鍐呭瓨鎺ュ彛锛圖isplay Memory Interface锛?
     DML
-      显示模式库（Display Mode Library）
-
+      鏄剧ず妯″紡搴擄紙Display Mode Library锛?
     DMCU
-      显示微控制器单元（Display Micro-Controller Unit）
-
+      鏄剧ず寰帶鍒跺櫒鍗曞厓锛圖isplay Micro-Controller Unit锛?
     DMCUB
-      显示微控制器单元，B 版本（Display Micro-Controller Unit, version B）
-
+      鏄剧ず寰帶鍒跺櫒鍗曞厓锛孊 鐗堟湰锛圖isplay Micro-Controller Unit, version B锛?
     DPCD
-      DisplayPort 配置数据（DisplayPort Configuration Data）
-
+      DisplayPort 閰嶇疆鏁版嵁锛圖isplayPort Configuration Data锛?
     DPM(S)
-      显示电源管理（信令）（Display Power Management (Signaling)）
-
+      鏄剧ず鐢垫簮绠＄悊锛堜俊浠わ級锛圖isplay Power Management (Signaling)锛?
     DRR
-      动态刷新率（Dynamic Refresh Rate）
-
+      鍔ㄦ€佸埛鏂扮巼锛圖ynamic Refresh Rate锛?
     DWB
-      显示回写（Display Writeback）
-
+      鏄剧ず鍥炲啓锛圖isplay Writeback锛?
     FB
-      帧缓冲（Frame Buffer）
-
+      甯х紦鍐诧紙Frame Buffer锛?
     FBC
-      帧缓冲压缩（Frame Buffer Compression）
-
+      甯х紦鍐插帇缂╋紙Frame Buffer Compression锛?
     FEC
-      前向纠错（Forward Error Correction）
-
+      鍓嶅悜绾犻敊锛團orward Error Correction锛?
     FRL
-      固定速率链路（Fixed Rate Link）
-
+      鍥哄畾閫熺巼閾捐矾锛團ixed Rate Link锛?
     GCO
-      图形控制器对象（Graphical Controller Object）
-
+      鍥惧舰鎺у埗鍣ㄥ璞★紙Graphical Controller Object锛?
     GSL
-      全局交换锁（Global Swap Lock）
-
+      鍏ㄥ眬浜ゆ崲閿侊紙Global Swap Lock锛?
     iGPU
-      集成 GPU（integrated GPU）
-
+      闆嗘垚 GPU锛坕ntegrated GPU锛?
     ISR
-      中断服务请求（Interrupt Service Request）
-
+      涓柇鏈嶅姟璇锋眰锛圛nterrupt Service Request锛?
     ISV
-      独立软件供应商（Independent Software Vendor）
-
+      鐙珛杞欢渚涘簲鍟嗭紙Independent Software Vendor锛?
     KMD
-      内核模式驱动（Kernel Mode Driver）
-
+      鍐呮牳妯″紡椹卞姩锛圞ernel Mode Driver锛?
     LB
-      行缓冲（Line Buffer）
-
+      琛岀紦鍐诧紙Line Buffer锛?
     LFC
-      低帧率补偿（Low Framerate Compensation）
-
+      浣庡抚鐜囪ˉ鍋匡紙Low Framerate Compensation锛?
     LTTPR
-      链路训练可调物理层中继器（Link Training Tunable Phy Repeater）
-
+      閾捐矾璁粌鍙皟鐗╃悊灞備腑缁у櫒锛圠ink Training Tunable Phy Repeater锛?
     LUT
-      查找表（Lookup Table）
-
+      鏌ユ壘琛紙Lookup Table锛?
     MALL
-      末级内存访问（Memory Access at Last Level）
-
+      鏈骇鍐呭瓨璁块棶锛圡emory Access at Last Level锛?
     MPC/MPCC
-      多管道与平面合并（Multiple pipes and plane combine）
-
+      澶氱閬撲笌骞抽潰鍚堝苟锛圡ultiple pipes and plane combine锛?
     MPO
-      多平面叠加（Multi Plane Overlay）
-
+      澶氬钩闈㈠彔鍔狅紙Multi Plane Overlay锛?
     MST
-      多流传输（Multi Stream Transport）
-
+      澶氭祦浼犺緭锛圡ulti Stream Transport锛?
     NBP State
-      北桥电源状态（Northbridge Power State）
-
+      鍖楁ˉ鐢垫簮鐘舵€侊紙Northbridge Power State锛?
     NBIO
-      北桥输入/输出（North Bridge Input/Output）
-
+      鍖楁ˉ杈撳叆/杈撳嚭锛圢orth Bridge Input/Output锛?
     ODM
-      输出数据映射（Output Data Mapping）
-
+      杈撳嚭鏁版嵁鏄犲皠锛圤utput Data Mapping锛?
     OPM
-      输出保护管理器（Output Protection Manager）
-
+      杈撳嚭淇濇姢绠＄悊鍣紙Output Protection Manager锛?
     OPP
-      输出平面处理器（Output Plane Processor）
-
+      杈撳嚭骞抽潰澶勭悊鍣紙Output Plane Processor锛?
     OPTC
-      输出管道时序组合器（Output Pipe Timing Combiner）
-
+      杈撳嚭绠￠亾鏃跺簭缁勫悎鍣紙Output Pipe Timing Combiner锛?
     OTG
-      输出时序生成器（Output Timing Generator）
-
+      杈撳嚭鏃跺簭鐢熸垚鍣紙Output Timing Generator锛?
     PCON
-      电源控制器（Power Controller）
-
+      鐢垫簮鎺у埗鍣紙Power Controller锛?
     PGFSM
-      电源门控有限状态机（Power Gate Finite State Machine）
-
+      鐢垫簮闂ㄦ帶鏈夐檺鐘舵€佹満锛圥ower Gate Finite State Machine锛?
     PSR
-      面板自刷新（Panel Self Refresh）
-
+      闈㈡澘鑷埛鏂帮紙Panel Self Refresh锛?
     SCL
-      缩放器（Scaler）
-
+      缂╂斁鍣紙Scaler锛?
     SDP
-      可扩展数据端口（Scalable Data Port）
-
+      鍙墿灞曟暟鎹鍙ｏ紙Scalable Data Port锛?
     SLS
-      单一大表面（Single Large Surface）
-
+      鍗曚竴澶ц〃闈紙Single Large Surface锛?
     SST
-      单流传输（Single Stream Transport）
-
+      鍗曟祦浼犺緭锛圫ingle Stream Transport锛?
     TMDS
-      最小化传输差分信号（Transition-Minimized Differential Signaling）
-
+      鏈€灏忓寲浼犺緭宸垎淇″彿锛圱ransition-Minimized Differential Signaling锛?
     TTU
-      到达下溢的时间（Time to Underflow）
-
+      鍒拌揪涓嬫孩鐨勬椂闂达紙Time to Underflow锛?
     VRR
-      可变刷新率（Variable Refresh Rate）
+      鍙彉鍒锋柊鐜囷紙Variable Refresh Rate锛?

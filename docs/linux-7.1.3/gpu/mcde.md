@@ -1,5 +1,5 @@
-## drm/mcde ST-Ericsson MCDE 多通道显示引擎
+﻿## drm/mcde ST-Ericsson MCDE 澶氶€氶亾鏄剧ず寮曟搸
 
-本页面为 drm/mcde（ST-Ericsson MCDE 多通道显示引擎）驱动的文档入口，指向其详细说明文档，链接目标保持原样。
+鏈〉闈负 drm/mcde锛圫T-Ericsson MCDE 澶氶€氶亾鏄剧ず寮曟搸锛夐┍鍔ㄧ殑鏂囨。鍏ュ彛锛屾寚鍚戝叾璇︾粏璇存槑鏂囨。锛岄摼鎺ョ洰鏍囦繚鎸佸師鏍枫€?
 
    :doc: ST-Ericsson MCDE Driver

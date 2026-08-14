@@ -1,21 +1,16 @@
-## SPI NOR 框架
+﻿## SPI NOR 妗嗘灦
 
 
-### 如何提议新增一款 flash
+### 濡備綍鎻愯鏂板涓€娆?flash
 
 
-大多数 SPI NOR flash 都符合 JEDEC JESD216 串行闪存可发现参数（SFDP）标准。SFDP 通过一组标准的内部只读参数表来描述串行闪存设备的功能与特性能力。
+澶у鏁?SPI NOR flash 閮界鍚?JEDEC JESD216 涓茶闂瓨鍙彂鐜板弬鏁帮紙SFDP锛夋爣鍑嗐€係FDP 閫氳繃涓€缁勬爣鍑嗙殑鍐呴儴鍙鍙傛暟琛ㄦ潵鎻忚堪涓茶闂瓨璁惧鐨勫姛鑳戒笌鐗规€ц兘鍔涖€?
+SPI NOR 椹卞姩浼氭煡璇?SFDP 琛紝浠ョ‘瀹?flash 鐨勫弬鏁颁笌璁剧疆銆傚鏋?flash 瀹氫箟浜?SFDP 琛紝寰堝彲鑳戒綘鏍规湰涓嶉渶瑕佷竴鏉?flash 琛ㄩ」锛岃€屾槸渚濊禆閫氱敤 flash 椹卞姩鈥斺€斿畠浠呮牴鎹?flash 鐨?SFDP 鏁版嵁杩涜鎺㈡祴銆備綘鍙渶鍦ㄨ澶囨爲涓寚瀹?"jedec,spi-nor" 杩欎竴 compatible 鍗冲彲銆?
+涓嶈繃锛屽湪鏌愪簺鎯呭喌涓嬩綘闇€瑕佹樉寮忓畾涔変竴鏉?flash 琛ㄩ」銆傝繖閫氬父鍙戠敓鍦?flash 鎷ユ湁 SFDP 琛ㄦ湭娑电洊鐨勮缃垨鏀寔锛堜緥濡傚潡淇濇姢锛孊lock Protection锛夋椂锛屾垨鑰?flash 鍖呭惈鐨?SFDP 鏁版嵁琚牬鍧忔椂銆傝嫢鏄悗鑰咃紝闇€瑕佸疄鐜?`spi_nor_fixups` 閽╁瓙锛屼互渚跨敤姝ｇ‘鐨勫€间慨姝?SFDP 鍙傛暟銆?
+### 鏈€浣庢祴璇曡姹?
 
-SPI NOR 驱动会查询 SFDP 表，以确定 flash 的参数与设置。如果 flash 定义了 SFDP 表，很可能你根本不需要一条 flash 表项，而是依赖通用 flash 驱动——它仅根据 flash 的 SFDP 数据进行探测。你只需在设备树中指定 "jedec,spi-nor" 这一 compatible 即可。
-
-不过，在某些情况下你需要显式定义一条 flash 表项。这通常发生在 flash 拥有 SFDP 表未涵盖的设置或支持（例如块保护，Block Protection）时，或者 flash 包含的 SFDP 数据被破坏时。若是后者，需要实现 `spi_nor_fixups` 钩子，以便用正确的值修正 SFDP 参数。
-
-### 最低测试要求
-
-
-执行下面所有测试，并将它们粘贴到提交的注释部分中、`---` 标记之后。
-
-1) 说明你用来测试该 flash 的控制器，并说明
+鎵ц涓嬮潰鎵€鏈夋祴璇曪紝骞跺皢瀹冧滑绮樿创鍒版彁浜ょ殑娉ㄩ噴閮ㄥ垎涓€乣---` 鏍囪涔嬪悗銆?
+1) 璇存槑浣犵敤鏉ユ祴璇曡 flash 鐨勬帶鍒跺櫒锛屽苟璇存槑
 ```
 
     This flash is populated on the X board and was tested at Y

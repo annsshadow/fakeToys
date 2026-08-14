@@ -1,27 +1,19 @@
-## Linux 内核 Tracepoint API
+﻿## Linux 鍐呮牳 Tracepoint API
 
 
 :Author: Jason Baron
 :Author: William Cohen
 
-## 简介
+## 绠€浠?
 
-
-Tracepoint 是位于内核各处关键点的静态探测点。'Probes' 通过回调机制
-向 tracepoint 注册/注销。'probes' 是严格类型化的函数，接收每个
-tracepoint 定义的唯一参数集。
-
-通过这一简单的回调机制，'probes' 可用于剖析、调试和理解内核行为。有若干
-工具提供了使用 'probes' 的框架。这些工具包括 Systemtap、ftrace 和 LTTng。
-
-Tracepoint 通过多种宏定义于多个头文件中。因此，本文档的目的是对可用
-tracepoint 提供清晰的统计。意图不仅是理解有哪些 tracepoint 可用，还要
-理解未来可能在何处添加 tracepoint。
-
-所呈现的 API 具有形如 `trace_tracepointname(function parameters)` 的函数。
-这些是位于代码各处的 tracepoint 回调。向这些回调站点注册和注销 probes 的
-内容在 `Documentation/trace/*` 目录中说明。
-
+Tracepoint 鏄綅浜庡唴鏍稿悇澶勫叧閿偣鐨勯潤鎬佹帰娴嬬偣銆?Probes' 閫氳繃鍥炶皟鏈哄埗
+鍚?tracepoint 娉ㄥ唽/娉ㄩ攢銆?probes' 鏄弗鏍肩被鍨嬪寲鐨勫嚱鏁帮紝鎺ユ敹姣忎釜
+tracepoint 瀹氫箟鐨勫敮涓€鍙傛暟闆嗐€?
+閫氳繃杩欎竴绠€鍗曠殑鍥炶皟鏈哄埗锛?probes' 鍙敤浜庡墫鏋愩€佽皟璇曞拰鐞嗚В鍐呮牳琛屼负銆傛湁鑻ュ共
+宸ュ叿鎻愪緵浜嗕娇鐢?'probes' 鐨勬鏋躲€傝繖浜涘伐鍏峰寘鎷?Systemtap銆乫trace 鍜?LTTng銆?
+Tracepoint 閫氳繃澶氱瀹忓畾涔変簬澶氫釜澶存枃浠朵腑銆傚洜姝わ紝鏈枃妗ｇ殑鐩殑鏄鍙敤
+tracepoint 鎻愪緵娓呮櫚鐨勭粺璁°€傛剰鍥句笉浠呮槸鐞嗚В鏈夊摢浜?tracepoint 鍙敤锛岃繕瑕?鐞嗚В鏈潵鍙兘鍦ㄤ綍澶勬坊鍔?tracepoint銆?
+鎵€鍛堢幇鐨?API 鍏锋湁褰㈠ `trace_tracepointname(function parameters)` 鐨勫嚱鏁般€?杩欎簺鏄綅浜庝唬鐮佸悇澶勭殑 tracepoint 鍥炶皟銆傚悜杩欎簺鍥炶皟绔欑偣娉ㄥ唽鍜屾敞閿€ probes 鐨?鍐呭鍦?`Documentation/trace/*` 鐩綍涓鏄庛€?
 ## IRQ
 
 

@@ -1,22 +1,15 @@
-
+﻿
 ## BPF_MAP_TYPE_SK_STORAGE
 
 
-   - `BPF_MAP_TYPE_SK_STORAGE` 在内核版本 5.2 中引入
-
-`BPF_MAP_TYPE_SK_STORAGE` 用于为 BPF 程序提供套接字本地（socket-local）
-存储。类型为 `BPF_MAP_TYPE_SK_STORAGE` 的映射声明要提供的存储类型，并作为
-访问套接字本地存储的句柄。类型为 `BPF_MAP_TYPE_SK_STORAGE` 的映射的值与
-映射本身一起存储在每个套接字本地，而不是与映射一起存储。内核负责在请求时
-为套接字分配存储，并在映射或套接字被删除时释放存储。
-
-  - 键类型必须为 `int`，并且 `max_entries` 必须设为 `0`。
-  - 创建用于套接字本地存储的映射时必须使用 `BPF_F_NO_PREALLOC` 标志。
-
-## 用法
+   - `BPF_MAP_TYPE_SK_STORAGE` 鍦ㄥ唴鏍哥増鏈?5.2 涓紩鍏?
+`BPF_MAP_TYPE_SK_STORAGE` 鐢ㄤ簬涓?BPF 绋嬪簭鎻愪緵濂楁帴瀛楁湰鍦帮紙socket-local锛?瀛樺偍銆傜被鍨嬩负 `BPF_MAP_TYPE_SK_STORAGE` 鐨勬槧灏勫０鏄庤鎻愪緵鐨勫瓨鍌ㄧ被鍨嬶紝骞朵綔涓?璁块棶濂楁帴瀛楁湰鍦板瓨鍌ㄧ殑鍙ユ焺銆傜被鍨嬩负 `BPF_MAP_TYPE_SK_STORAGE` 鐨勬槧灏勭殑鍊间笌
+鏄犲皠鏈韩涓€璧峰瓨鍌ㄥ湪姣忎釜濂楁帴瀛楁湰鍦帮紝鑰屼笉鏄笌鏄犲皠涓€璧峰瓨鍌ㄣ€傚唴鏍歌礋璐ｅ湪璇锋眰鏃?涓哄鎺ュ瓧鍒嗛厤瀛樺偍锛屽苟鍦ㄦ槧灏勬垨濂楁帴瀛楄鍒犻櫎鏃堕噴鏀惧瓨鍌ㄣ€?
+  - 閿被鍨嬪繀椤讳负 `int`锛屽苟涓?`max_entries` 蹇呴』璁句负 `0`銆?  - 鍒涘缓鐢ㄤ簬濂楁帴瀛楁湰鍦板瓨鍌ㄧ殑鏄犲皠鏃跺繀椤讳娇鐢?`BPF_F_NO_PREALLOC` 鏍囧織銆?
+## 鐢ㄦ硶
 
 
-### 内核 BPF
+### 鍐呮牳 BPF
 
 
 #### bpf_sk_storage_get()
@@ -24,24 +17,15 @@
 
    void **bpf_sk_storage_get(struct bpf_map **map, void **sk, void **value, u64 flags)
 
-可以使用 `bpf_sk_storage_get()` 辅助函数从套接字 `sk` 获取 `map` 的
-套接字本地存储。如果使用了 `BPF_LOCAL_STORAGE_GET_F_CREATE` 标志，那么
-`bpf_sk_storage_get()` 将在 `sk` 尚不存在时为其创建存储。可以结合
-`BPF_LOCAL_STORAGE_GET_F_CREATE` 使用 `value` 来初始化存储值，否则它将被
-零初始化。成功时返回指向该存储的指针，失败时返回 `NULL`。
-
-   - 对于 LSM 或跟踪（tracing）程序，`sk` 是一个内核 `struct sock` 指针。
-   - 对于其它程序类型，`sk` 是一个 `struct bpf_sock` 指针。
-
+鍙互浣跨敤 `bpf_sk_storage_get()` 杈呭姪鍑芥暟浠庡鎺ュ瓧 `sk` 鑾峰彇 `map` 鐨?濂楁帴瀛楁湰鍦板瓨鍌ㄣ€傚鏋滀娇鐢ㄤ簡 `BPF_LOCAL_STORAGE_GET_F_CREATE` 鏍囧織锛岄偅涔?`bpf_sk_storage_get()` 灏嗗湪 `sk` 灏氫笉瀛樺湪鏃朵负鍏跺垱寤哄瓨鍌ㄣ€傚彲浠ョ粨鍚?`BPF_LOCAL_STORAGE_GET_F_CREATE` 浣跨敤 `value` 鏉ュ垵濮嬪寲瀛樺偍鍊硷紝鍚﹀垯瀹冨皢琚?闆跺垵濮嬪寲銆傛垚鍔熸椂杩斿洖鎸囧悜璇ュ瓨鍌ㄧ殑鎸囬拡锛屽け璐ユ椂杩斿洖 `NULL`銆?
+   - 瀵逛簬 LSM 鎴栬窡韪紙tracing锛夌▼搴忥紝`sk` 鏄竴涓唴鏍?`struct sock` 鎸囬拡銆?   - 瀵逛簬鍏跺畠绋嬪簭绫诲瀷锛宍sk` 鏄竴涓?`struct bpf_sock` 鎸囬拡銆?
 #### bpf_sk_storage_delete()
 
 
    long bpf_sk_storage_delete(struct bpf_map **map, void **sk)
 
-可以使用 `bpf_sk_storage_delete()` 辅助函数从套接字 `sk` 删除 `map` 的
-套接字本地存储。成功时返回 `0`，失败时返回负的错误。
-
-### 用户空间
+鍙互浣跨敤 `bpf_sk_storage_delete()` 杈呭姪鍑芥暟浠庡鎺ュ瓧 `sk` 鍒犻櫎 `map` 鐨?濂楁帴瀛楁湰鍦板瓨鍌ㄣ€傛垚鍔熸椂杩斿洖 `0`锛屽け璐ユ椂杩斿洖璐熺殑閿欒銆?
+### 鐢ㄦ埛绌洪棿
 
 
 #### bpf_map_update_elem()
@@ -49,47 +33,35 @@
 
    int bpf_map_update_elem(int map_fd, const void **key, const void **value, __u64 flags)
 
-可以使用 `bpf_map_update_elem()` libbpf 函数将 `map` 映射的套接字本地存储
-添加或更新到某个套接字本地。套接字由存储在指针 `key` 中的 `socket` `fd`
-标识。指针 `value` 包含要添加或更新到该套接字 `fd` 的数据。`value` 的类型
-和大小应与映射定义中的值类型相同。
+鍙互浣跨敤 `bpf_map_update_elem()` libbpf 鍑芥暟灏?`map` 鏄犲皠鐨勫鎺ュ瓧鏈湴瀛樺偍
+娣诲姞鎴栨洿鏂板埌鏌愪釜濂楁帴瀛楁湰鍦般€傚鎺ュ瓧鐢卞瓨鍌ㄥ湪鎸囬拡 `key` 涓殑 `socket` `fd`
+鏍囪瘑銆傛寚閽?`value` 鍖呭惈瑕佹坊鍔犳垨鏇存柊鍒拌濂楁帴瀛?`fd` 鐨勬暟鎹€俙value` 鐨勭被鍨?鍜屽ぇ灏忓簲涓庢槧灏勫畾涔変腑鐨勫€肩被鍨嬬浉鍚屻€?
+`flags` 鍙傛暟鍙敤浜庢帶鍒舵洿鏂拌涓猴細
 
-`flags` 参数可用于控制更新行为：
-
-- `BPF_ANY` 将为 `socket` `fd` 创建存储或更新现有存储。
-- `BPF_NOEXIST` 将仅在 `socket` `fd` 尚不存在时才为其创建存储，否则调用
-  将以 `-EEXIST` 失败。
-- `BPF_EXIST` 将仅在 `socket` `fd` 已存在时才更新其现有存储，否则调用将
-  以 `-ENOENT` 失败。
-
-成功时返回 `0`，失败时返回负的错误。
-
+- `BPF_ANY` 灏嗕负 `socket` `fd` 鍒涘缓瀛樺偍鎴栨洿鏂扮幇鏈夊瓨鍌ㄣ€?- `BPF_NOEXIST` 灏嗕粎鍦?`socket` `fd` 灏氫笉瀛樺湪鏃舵墠涓哄叾鍒涘缓瀛樺偍锛屽惁鍒欒皟鐢?  灏嗕互 `-EEXIST` 澶辫触銆?- `BPF_EXIST` 灏嗕粎鍦?`socket` `fd` 宸插瓨鍦ㄦ椂鎵嶆洿鏂板叾鐜版湁瀛樺偍锛屽惁鍒欒皟鐢ㄥ皢
+  浠?`-ENOENT` 澶辫触銆?
+鎴愬姛鏃惰繑鍥?`0`锛屽け璐ユ椂杩斿洖璐熺殑閿欒銆?
 #### bpf_map_lookup_elem()
 
 
    int bpf_map_lookup_elem(int map_fd, const void *key, void **value)
 
-可以使用 `bpf_map_lookup_elem()` libbpf 函数从某个套接字获取 `map` 映射的
-套接字本地存储。存储是从由指针 `key` 中存储的 `socket` `fd` 所标识的套接字
-获取的。成功时返回 `0`，失败时返回负的错误。
-
+鍙互浣跨敤 `bpf_map_lookup_elem()` libbpf 鍑芥暟浠庢煇涓鎺ュ瓧鑾峰彇 `map` 鏄犲皠鐨?濂楁帴瀛楁湰鍦板瓨鍌ㄣ€傚瓨鍌ㄦ槸浠庣敱鎸囬拡 `key` 涓瓨鍌ㄧ殑 `socket` `fd` 鎵€鏍囪瘑鐨勫鎺ュ瓧
+鑾峰彇鐨勩€傛垚鍔熸椂杩斿洖 `0`锛屽け璐ユ椂杩斿洖璐熺殑閿欒銆?
 #### bpf_map_delete_elem()
 
 
    int bpf_map_delete_elem(int map_fd, const void *key)
 
-可以使用 `bpf_map_delete_elem()` libbpf 函数从某个套接字删除 `map` 映射的
-套接字本地存储。存储从由指针 `key` 中存储的 `socket` `fd` 所标识的套接字
-删除。成功时返回 `0`，失败时返回负的错误。
-
-## 示例
+鍙互浣跨敤 `bpf_map_delete_elem()` libbpf 鍑芥暟浠庢煇涓鎺ュ瓧鍒犻櫎 `map` 鏄犲皠鐨?濂楁帴瀛楁湰鍦板瓨鍌ㄣ€傚瓨鍌ㄤ粠鐢辨寚閽?`key` 涓瓨鍌ㄧ殑 `socket` `fd` 鎵€鏍囪瘑鐨勫鎺ュ瓧
+鍒犻櫎銆傛垚鍔熸椂杩斿洖 `0`锛屽け璐ユ椂杩斿洖璐熺殑閿欒銆?
+## 绀轰緥
 
 
-### 内核 BPF
+### 鍐呮牳 BPF
 
 
-以下片段展示了如何在 BPF 程序中声明套接字本地存储：
-
+浠ヤ笅鐗囨灞曠ず浜嗗浣曞湪 BPF 绋嬪簭涓０鏄庡鎺ュ瓧鏈湴瀛樺偍锛?
 
     struct {
             __uint(type, BPF_MAP_TYPE_SK_STORAGE);
@@ -98,8 +70,7 @@
             __type(value, struct my_storage);
     } socket_storage SEC(".maps");
 
-以下片段展示了如何在 BPF 程序中获取套接字本地存储：
-
+浠ヤ笅鐗囨灞曠ず浜嗗浣曞湪 BPF 绋嬪簭涓幏鍙栧鎺ュ瓧鏈湴瀛樺偍锛?
 
     SEC("sockops")
     int _sockops(struct bpf_sock_ops *ctx)
@@ -116,15 +87,13 @@
             if (!storage)
                     return 1;
 
-            /** 在此使用 'storage' **/
+            /** 鍦ㄦ浣跨敤 'storage' **/
 
             return 1;
     }
 
 
-有关功能示例，请参阅 `tools/testing/selftests/bpf` 目录。
-
-## 参考资料
-
+鏈夊叧鍔熻兘绀轰緥锛岃鍙傞槄 `tools/testing/selftests/bpf` 鐩綍銆?
+## 鍙傝€冭祫鏂?
 
 https://lwn.net/ml/netdev/20190426171103.61892-1-kafai@fb.com/

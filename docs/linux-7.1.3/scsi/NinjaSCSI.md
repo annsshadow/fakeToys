@@ -1,33 +1,29 @@
-
-## WorkBiT NinjaSCSI-3/32Bi Linux 驱动
-
-
-## 1. 说明
+﻿
+## WorkBiT NinjaSCSI-3/32Bi Linux 椹卞姩
 
 
-这是 Workbit corp.（http://www.workbit.co.jp/）的 NinjaSCSI-3 的 Linux 驱动。
-
-## 2. 我的 Linux 环境
+## 1. 璇存槑
 
 
-:Linux 内核: 2.4.7 / 2.2.19
+杩欐槸 Workbit corp.锛坔ttp://www.workbit.co.jp/锛夌殑 NinjaSCSI-3 鐨?Linux 椹卞姩銆?
+## 2. 鎴戠殑 Linux 鐜
+
+
+:Linux 鍐呮牳: 2.4.7 / 2.2.19
 :pcmcia-cs:    3.1.27
 :gcc:          gcc-2.95.4
-:PC 卡:        I-O data PCSC-F (NinjaSCSI-3),
-               I-O data CBSC-II 16 位模式 (NinjaSCSI-32Bi)
-:SCSI 设备:    I-O data CDPS-PX24 (CD-ROM 驱动器),
-               Media Intelligent MMO-640GT (光盘驱动器)
+:PC 鍗?        I-O data PCSC-F (NinjaSCSI-3),
+               I-O data CBSC-II 16 浣嶆ā寮?(NinjaSCSI-32Bi)
+:SCSI 璁惧:    I-O data CDPS-PX24 (CD-ROM 椹卞姩鍣?,
+               Media Intelligent MMO-640GT (鍏夌洏椹卞姩鍣?
 
-## 3. 安装
+## 3. 瀹夎
 
 
-(a) 确认你的 PC 卡是真正的 “NinjaSCSI-3” 卡。
-
-    如果你已经安装了 pcmcia-cs，pcmcia 会将你的卡报告为 UNKNOWN 卡，并向你的控制台或
-    日志文件写入 ["WBT", "NinjaSCSI-3", "R1.0"] 或其他字符串。
-
-    你也可以使用 “cardctl” 程序（该程序位于 pcmcia-cs 源码中）来获取更多信息。
-
+(a) 纭浣犵殑 PC 鍗℃槸鐪熸鐨?鈥淣injaSCSI-3鈥?鍗°€?
+    濡傛灉浣犲凡缁忓畨瑁呬簡 pcmcia-cs锛宲cmcia 浼氬皢浣犵殑鍗℃姤鍛婁负 UNKNOWN 鍗★紝骞跺悜浣犵殑鎺у埗鍙版垨
+    鏃ュ織鏂囦欢鍐欏叆 ["WBT", "NinjaSCSI-3", "R1.0"] 鎴栧叾浠栧瓧绗︿覆銆?
+    浣犱篃鍙互浣跨敤 鈥渃ardctl鈥?绋嬪簭锛堣绋嬪簭浣嶄簬 pcmcia-cs 婧愮爜涓級鏉ヨ幏鍙栨洿澶氫俊鎭€?
 ```
 
 	# cat /var/log/messages
@@ -43,9 +39,8 @@
 
 
 ```
-(b) 获取 Linux 内核源码，并将其解压到 /usr/src。由于 NinjaSCSI 驱动需要 Linux 内核
-    源码中的一些 SCSI 头文件，我建议重新构建你的内核；这可以消除一些版本问题。
-
+(b) 鑾峰彇 Linux 鍐呮牳婧愮爜锛屽苟灏嗗叾瑙ｅ帇鍒?/usr/src銆傜敱浜?NinjaSCSI 椹卞姩闇€瑕?Linux 鍐呮牳
+    婧愮爜涓殑涓€浜?SCSI 澶存枃浠讹紝鎴戝缓璁噸鏂版瀯寤轰綘鐨勫唴鏍革紱杩欏彲浠ユ秷闄や竴浜涚増鏈棶棰樸€?
 ```
 
 	$ cd /usr/src
@@ -55,9 +50,7 @@
 	...
 
 ```
-(c) 如果你将该驱动与内核 2.2 配合使用，在某个目录中解压 pcmcia-cs 并 make & install。
-    该驱动需要 pcmcia-cs 头文件。
-
+(c) 濡傛灉浣犲皢璇ラ┍鍔ㄤ笌鍐呮牳 2.2 閰嶅悎浣跨敤锛屽湪鏌愪釜鐩綍涓В鍘?pcmcia-cs 骞?make & install銆?    璇ラ┍鍔ㄩ渶瑕?pcmcia-cs 澶存枃浠躲€?
 ```
 
 	$ cd /usr/src
@@ -74,13 +67,9 @@
 	$ make
 
 ```
-(e) 将 nsp_cs.ko 复制到合适的位置，例如 /lib/modules/<内核版本>/pcmcia/ 。
-
-(f) 将这些行加入 /etc/pcmcia/config 。
-
-    如果你使用 pcmcia-cs-3.1.8 或更高版本，我们可以使用 “nsp_cs.conf” 文件。
-    因此，你无需编辑文件，只需复制到 /etc/pcmcia/ 即可。
-
+(e) 灏?nsp_cs.ko 澶嶅埗鍒板悎閫傜殑浣嶇疆锛屼緥濡?/lib/modules/<鍐呮牳鐗堟湰>/pcmcia/ 銆?
+(f) 灏嗚繖浜涜鍔犲叆 /etc/pcmcia/config 銆?
+    濡傛灉浣犱娇鐢?pcmcia-cs-3.1.8 鎴栨洿楂樼増鏈紝鎴戜滑鍙互浣跨敤 鈥渘sp_cs.conf鈥?鏂囦欢銆?    鍥犳锛屼綘鏃犻渶缂栬緫鏂囦欢锛屽彧闇€澶嶅埗鍒?/etc/pcmcia/ 鍗冲彲銆?
 ```
 
 	device "nsp_cs"
@@ -116,45 +105,37 @@
 ```
 ```
 
-	# /etc/rc.d/rc.pcmcia start        (BSD 风格)
+	# /etc/rc.d/rc.pcmcia start        (BSD 椋庢牸)
 
-    或::
+    鎴?:
 
-	# /etc/init.d/pcmcia start         (SYSV 风格)
+	# /etc/init.d/pcmcia start         (SYSV 椋庢牸)
 
 
 ```
-## 4. 历史
+## 4. 鍘嗗彶
 
 
-参见 README.nin_cs 。
-
-## 5. 注意事项
-
-
-如果在对 SCSI 设备执行某些操作，或挂起计算机时弹出卡片，你会遇到一些**严重**错误，
-例如磁盘崩溃。
-
-当我正确使用该驱动时它工作良好。但我不保证你的数据。使用该驱动时请备份你的数据。
-
-## 6. 已知缺陷
+鍙傝 README.nin_cs 銆?
+## 5. 娉ㄦ剰浜嬮」
 
 
-在 2.4 内核中，你无法使用 640MB 光盘。该错误来自高层 SCSI 驱动。
-
-## 7. 测试
-
-
-请向我们发送该软件的一些报告（缺陷报告等）。发送报告时，请告知我们以下或更多信息。
-
- - 卡名称
- - 内核版本
- - 你的 SCSI 设备名称（硬盘、CD-ROM 等……）
-
-## 8. 版权
+濡傛灉鍦ㄥ SCSI 璁惧鎵ц鏌愪簺鎿嶄綔锛屾垨鎸傝捣璁＄畻鏈烘椂寮瑰嚭鍗＄墖锛屼綘浼氶亣鍒颁竴浜?*涓ラ噸**閿欒锛?渚嬪纾佺洏宕╂簝銆?
+褰撴垜姝ｇ‘浣跨敤璇ラ┍鍔ㄦ椂瀹冨伐浣滆壇濂姐€備絾鎴戜笉淇濊瘉浣犵殑鏁版嵁銆備娇鐢ㄨ椹卞姩鏃惰澶囦唤浣犵殑鏁版嵁銆?
+## 6. 宸茬煡缂洪櫡
 
 
- 参见 GPL。
+鍦?2.4 鍐呮牳涓紝浣犳棤娉曚娇鐢?640MB 鍏夌洏銆傝閿欒鏉ヨ嚜楂樺眰 SCSI 椹卞姩銆?
+## 7. 娴嬭瘯
 
+
+璇峰悜鎴戜滑鍙戦€佽杞欢鐨勪竴浜涙姤鍛婏紙缂洪櫡鎶ュ憡绛夛級銆傚彂閫佹姤鍛婃椂锛岃鍛婄煡鎴戜滑浠ヤ笅鎴栨洿澶氫俊鎭€?
+ - 鍗″悕绉? - 鍐呮牳鐗堟湰
+ - 浣犵殑 SCSI 璁惧鍚嶇О锛堢‖鐩樸€丆D-ROM 绛夆€︹€︼級
+
+## 8. 鐗堟潈
+
+
+ 鍙傝 GPL銆?
 
 2001/08/08 yokota@netlab.is.tsukuba.ac.jp <YOKOTA Hiroshi>

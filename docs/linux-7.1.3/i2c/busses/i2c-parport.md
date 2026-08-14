@@ -1,44 +1,28 @@
-## 内核驱动 i2c-parport
+﻿## 鍐呮牳椹卞姩 i2c-parport
 
 
-作者：Jean Delvare <jdelvare@suse.de>
+浣滆€咃細Jean Delvare <jdelvare@suse.de>
 
-这是一个用于多种 i2c-over-parallel-port（并行口上的 I2C）适配器的统一驱动，
-例如 Philips、Velleman 或 ELV 制造的那些。该驱动意在取代旧有的、各自独立的驱动：
-
+杩欐槸涓€涓敤浜庡绉?i2c-over-parallel-port锛堝苟琛屽彛涓婄殑 I2C锛夐€傞厤鍣ㄧ殑缁熶竴椹卞姩锛?渚嬪 Philips銆乂elleman 鎴?ELV 鍒堕€犵殑閭ｄ簺銆傝椹卞姩鎰忓湪鍙栦唬鏃ф湁鐨勩€佸悇鑷嫭绔嬬殑椹卞姩锛?
  - i2c-philips-par
  - i2c-elv
  - i2c-velleman
  - video/i2c-parport
-   （与此驱动不同，它专用于自制的图文电视 teletext 适配器）
+   锛堜笌姝ら┍鍔ㄤ笉鍚岋紝瀹冧笓鐢ㄤ簬鑷埗鐨勫浘鏂囩數瑙?teletext 閫傞厤鍣級
 
-它目前支持以下设备：
+瀹冪洰鍓嶆敮鎸佷互涓嬭澶囷細
 
- - (type=0) Philips 适配器
- - (type=1) 自制图文电视 teletext 适配器
- - (type=2) Velleman K8000 适配器
- - (type=3) ELV 适配器
- - (type=4) Analog Devices ADM1032 评估板
- - (type=5) Analog Devices 评估板：ADM1025、ADM1030、ADM1031
- - (type=6) Barco LPT->DVI（K5800236）适配器
- - (type=7) One For All JP1 并行口适配器
- - (type=8) VCT-jig
+ - (type=0) Philips 閫傞厤鍣? - (type=1) 鑷埗鍥炬枃鐢佃 teletext 閫傞厤鍣? - (type=2) Velleman K8000 閫傞厤鍣? - (type=3) ELV 閫傞厤鍣? - (type=4) Analog Devices ADM1032 璇勪及鏉? - (type=5) Analog Devices 璇勪及鏉匡細ADM1025銆丄DM1030銆丄DM1031
+ - (type=6) Barco LPT->DVI锛圞5800236锛夐€傞厤鍣? - (type=7) One For All JP1 骞惰鍙ｉ€傞厤鍣? - (type=8) VCT-jig
 
-这些设备使用不同的引脚配置，因此必须通过 type 模块参数告诉驱动你所使用的
-是什么。无法自动探测设备。如有需要，可以很容易地加入对不同引脚配置的支持。
+杩欎簺璁惧浣跨敤涓嶅悓鐨勫紩鑴氶厤缃紝鍥犳蹇呴』閫氳繃 type 妯″潡鍙傛暟鍛婅瘔椹卞姩浣犳墍浣跨敤鐨?鏄粈涔堛€傛棤娉曡嚜鍔ㄦ帰娴嬭澶囥€傚鏈夐渶瑕侊紝鍙互寰堝鏄撳湴鍔犲叆瀵逛笉鍚屽紩鑴氶厤缃殑鏀寔銆?
+杈冩棭鐨勫唴鏍搁粯璁や娇鐢?type=0锛圥hilips锛夈€備絾鐜板湪锛屽鏋滅己灏?type 鍙傛暟锛岄┍鍔ㄥ皢
+鐩存帴鍒濆鍖栧け璐ャ€?
+鍦ㄩ偅浜涘皢 SMBus alert 涓柇绾挎纭繛鎺ュ埌骞惰鍙ｄ腑绔紩鑴氱殑閫傞厤鍣ㄤ笂锛屽彲浠ヤ娇鐢?SMBus alert 鏀寔銆?
 
-较早的内核默认使用 type=0（Philips）。但现在，如果缺少 type 参数，驱动将
-直接初始化失败。
+### 鏋勫缓浣犺嚜宸辩殑閫傞厤鍣?
 
-在那些将 SMBus alert 中断线正确连接到并行口中端引脚的适配器上，可以使用
-SMBus alert 支持。
-
-
-### 构建你自己的适配器
-
-
-如果你想自己构建 i2c-over-parallel-port 适配器，可参考下面的电路：
-```
+濡傛灉浣犳兂鑷繁鏋勫缓 i2c-over-parallel-port 閫傞厤鍣紝鍙弬鑰冧笅闈㈢殑鐢佃矾锛?```
    Device                                                      PC
    Side          ___________________Vdd (+)                    Side
                   |    |         |
@@ -70,25 +54,14 @@ SMBus alert 支持。
                                         GND  GND
 
 ```
-说明：
- - 这正是 Analog Devices 评估板所使用的引脚定义与电路。
-```
+璇存槑锛? - 杩欐鏄?Analog Devices 璇勪及鏉挎墍浣跨敤鐨勫紩鑴氬畾涔変笌鐢佃矾銆?```
                   /|
                 -o |-
                   \|
 
-   必须使用 74HC05，且必须是开集电极（open collector）输出。
- - 所有电阻均为 10k。
- - 并行口的引脚 18-25 连接到 GND。
- - 引脚 4-9（D2-D7）可用作 VDD，由驱动将它们驱动为高电平。
-   ADM1032 评估板使用了 D4-D7。注意从并行口可吸取的电流是受限的。
-   还需注意，所有相连的线路必须被驱动为相同状态，否则会短路输出缓冲！
-   因此，在加载 i2c-parport 模块之后再插入 I2C 适配器可能更安全，因为
-   初始化前数据线状态可能是未知的。
- - 这是 5V 电平！
- - 显然你无法读取 SCL（因此它并非真正符合标准）。要加上很容易，只需
-   复制 SDA 部分并使用另一个输入引脚即可。这样会得到（ELV 兼容引脚定义）：：
-
+   蹇呴』浣跨敤 74HC05锛屼笖蹇呴』鏄紑闆嗙數鏋侊紙open collector锛夎緭鍑恒€? - 鎵€鏈夌數闃诲潎涓?10k銆? - 骞惰鍙ｇ殑寮曡剼 18-25 杩炴帴鍒?GND銆? - 寮曡剼 4-9锛圖2-D7锛夊彲鐢ㄤ綔 VDD锛岀敱椹卞姩灏嗗畠浠┍鍔ㄤ负楂樼數骞炽€?   ADM1032 璇勪及鏉夸娇鐢ㄤ簡 D4-D7銆傛敞鎰忎粠骞惰鍙ｅ彲鍚稿彇鐨勭數娴佹槸鍙楅檺鐨勩€?   杩橀渶娉ㄦ剰锛屾墍鏈夌浉杩炵殑绾胯矾蹇呴』琚┍鍔ㄤ负鐩稿悓鐘舵€侊紝鍚﹀垯浼氱煭璺緭鍑虹紦鍐诧紒
+   鍥犳锛屽湪鍔犺浇 i2c-parport 妯″潡涔嬪悗鍐嶆彃鍏?I2C 閫傞厤鍣ㄥ彲鑳芥洿瀹夊叏锛屽洜涓?   鍒濆鍖栧墠鏁版嵁绾跨姸鎬佸彲鑳芥槸鏈煡鐨勩€? - 杩欐槸 5V 鐢靛钩锛? - 鏄剧劧浣犳棤娉曡鍙?SCL锛堝洜姝ゅ畠骞堕潪鐪熸绗﹀悎鏍囧噯锛夈€傝鍔犱笂寰堝鏄擄紝鍙渶
+   澶嶅埗 SDA 閮ㄥ垎骞朵娇鐢ㄥ彟涓€涓緭鍏ュ紩鑴氬嵆鍙€傝繖鏍蜂細寰楀埌锛圗LV 鍏煎寮曡剼瀹氫箟锛夛細锛?
 
       Device                                                      PC
       Side          ______________________________Vdd (+)         Side
@@ -127,51 +100,43 @@ SMBus alert 支持。
 
 
 ```
-如果可能，你应当使用与现有适配器相同的引脚配置，这样就无需修改代码。
+濡傛灉鍙兘锛屼綘搴斿綋浣跨敤涓庣幇鏈夐€傞厤鍣ㄧ浉鍚岀殑寮曡剼閰嶇疆锛岃繖鏍峰氨鏃犻渶淇敼浠ｇ爜銆?
+
+### 鐩镐技锛堜絾涓嶅悓锛夌殑椹卞姩
 
 
-### 相似（但不同）的驱动
+鏈┍鍔ㄤ笌 i2c 杞欢鍖呬腑鐨?i2c-pport 椹卞姩骞朵笉鐩稿悓銆俰2c-pport 椹卞姩鍒╃敤鐜颁唬
+骞惰鍙ｇ殑鐗规€э紝鍥犳涓嶉渶瑕侀澶栫殑鐢靛瓙鐢佃矾銆備絾瀹冧篃鏈夊叾浠栭檺鍒讹紝骞朵笖灏氭湭
+绉绘鍒?Linux 2.6锛堟埅鑷崇洰鍓嶏級銆?
+鏈┍鍔ㄤ篃涓?lm_sensors 杞欢鍖呬腑鐨?i2c-pcf-epp 椹卞姩涓嶇浉鍚屻€俰2c-pcf-epp 椹卞姩
+骞朵笉鏄皢骞惰鍙ｇ洿鎺ョ敤浣?I2C 鎬荤嚎锛岃€屾槸鐢ㄥ畠鏉ユ帶鍒跺閮ㄧ殑 I2C 鎬荤嚎涓昏澶囥€?璇ラ┍鍔ㄥ悓鏍峰皻鏈Щ妞嶅埌 Linux 2.6锛堟埅鑷崇洰鍓嶏級銆?
+
+### Velleman 閫傞厤鍣ㄧ殑鍘嗗彶鏂囨。
 
 
-本驱动与 i2c 软件包中的 i2c-pport 驱动并不相同。i2c-pport 驱动利用现代
-并行口的特性，因此不需要额外的电子电路。但它也有其他限制，并且尚未
-移植到 Linux 2.6（截至目前）。
-
-本驱动也与 lm_sensors 软件包中的 i2c-pcf-epp 驱动不相同。i2c-pcf-epp 驱动
-并不是将并行口直接用作 I2C 总线，而是用它来控制外部的 I2C 总线主设备。
-该驱动同样尚未移植到 Linux 2.6（截至目前）。
-
-
-### Velleman 适配器的历史文档
-
-
-有用的链接：
+鏈夌敤鐨勯摼鎺ワ細
 
 - Velleman                http://www.velleman.be/
 - Velleman K8000 Howto    http://howto.htlw16.ac.at/k8000-howto.html
 
-该项目催生了用于 Velleman K8000 和 K8005 的新库：
+璇ラ」鐩偓鐢熶簡鐢ㄤ簬 Velleman K8000 鍜?K8005 鐨勬柊搴擄細
 
-  LIBK8000 v1.99.1 和 LIBK8005 v0.21
+  LIBK8000 v1.99.1 鍜?LIBK8005 v0.21
 
-借助这些库，你可以使用原始 Velleman 软件中的简单命令，例如
-SetIOchannel、ReadADchannel、SendStepCCWFull 等许多命令，来控制 K8000
-接口卡和 K8005 步进电机卡，使用 /dev/velleman。
-
+鍊熷姪杩欎簺搴擄紝浣犲彲浠ヤ娇鐢ㄥ師濮?Velleman 杞欢涓殑绠€鍗曞懡浠わ紝渚嬪
+SetIOchannel銆丷eadADchannel銆丼endStepCCWFull 绛夎澶氬懡浠わ紝鏉ユ帶鍒?K8000
+鎺ュ彛鍗″拰 K8005 姝ヨ繘鐢垫満鍗★紝浣跨敤 /dev/velleman銆?
   - http://home.wanadoo.nl/hihihi/libk8000.htm
   - http://home.wanadoo.nl/hihihi/libk8005.htm
   - http://struyve.mine.nu:8080/index.php?block=k8000
   - http://sourceforge.net/projects/libk8005/
 
 
-### One For All JP1 并行口适配器
+### One For All JP1 骞惰鍙ｉ€傞厤鍣?
 
-
-JP1 项目围绕一组遥控器展开，这些遥控器通过电池仓中的一个 6 针跳线，
-将其内部配置 EEPROM 所连接的 I2C 总线暴露出来。更多细节可参见：
-
+JP1 椤圭洰鍥寸粫涓€缁勯仴鎺у櫒灞曞紑锛岃繖浜涢仴鎺у櫒閫氳繃鐢垫睜浠撲腑鐨勪竴涓?6 閽堣烦绾匡紝
+灏嗗叾鍐呴儴閰嶇疆 EEPROM 鎵€杩炴帴鐨?I2C 鎬荤嚎鏆撮湶鍑烘潵銆傛洿澶氱粏鑺傚彲鍙傝锛?
 http://www.hifi-remote.com/jp1/
 
-简单的并行口硬件细节可参见：
-
+绠€鍗曠殑骞惰鍙ｇ‖浠剁粏鑺傚彲鍙傝锛?
 http://www.hifi-remote.com/jp1/hardware.shtml

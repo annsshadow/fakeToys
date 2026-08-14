@@ -1,67 +1,67 @@
-
+﻿
 
 
 ######## Digital TV property parameters
 
 
-有若干不同的数字电视（Digital TV）参数可供 `FE_SET_PROPERTY` 与
-`FE_GET_PROPERTY` ioctl<FE_GET_PROPERTY> 使用。本节将逐一描述它们。但请注意，
-设置前端（frontend）时只需用到其中的一个子集。
+鏈夎嫢骞蹭笉鍚岀殑鏁板瓧鐢佃锛圖igital TV锛夊弬鏁板彲渚?`FE_SET_PROPERTY` 涓?
+`FE_GET_PROPERTY` ioctl<FE_GET_PROPERTY> 浣跨敤銆傛湰鑺傚皢閫愪竴鎻忚堪瀹冧滑銆備絾璇锋敞鎰忥紝
+璁剧疆鍓嶇锛坒rontend锛夋椂鍙渶鐢ㄥ埌鍏朵腑鐨勪竴涓瓙闆嗐€?
 
 
 
 ## DTV_UNDEFINED
 
 
-内部使用。对其执行 GET/SET 操作不会改变或返回任何内容。
+鍐呴儴浣跨敤銆傚鍏舵墽琛?GET/SET 鎿嶄綔涓嶄細鏀瑰彉鎴栬繑鍥炰换浣曞唴瀹广€?
 
 
 
 ## DTV_TUNE
 
 
-解析数据缓存（cache），构建一条传统的 frontend 调谐请求（tunerequest），以便
-能够通过 `FE_SET_FRONTEND` ioctl 的校验。
+瑙ｆ瀽鏁版嵁缂撳瓨锛坈ache锛夛紝鏋勫缓涓€鏉′紶缁熺殑 frontend 璋冭皭璇锋眰锛坱unerequest锛夛紝浠ヤ究
+鑳藉閫氳繃 `FE_SET_FRONTEND` ioctl 鐨勬牎楠屻€?
 
 
 
 ## DTV_CLEAR
 
 
-在此处重置专属于该 frontend 的数据缓存（cache）。这不会影响硬件。
+鍦ㄦ澶勯噸缃笓灞炰簬璇?frontend 鐨勬暟鎹紦瀛橈紙cache锛夈€傝繖涓嶄細褰卞搷纭欢銆?
 
 
 
 ## DTV_FREQUENCY
 
 
-数字电视转发器（transponder）/频道（channel）的频率。
+鏁板瓧鐢佃杞彂鍣紙transponder锛?棰戦亾锛坈hannel锛夌殑棰戠巼銆?
 
 
-  #. 对于卫星传输系统，频率单位为 kHz。
+  #. 瀵逛簬鍗槦浼犺緭绯荤粺锛岄鐜囧崟浣嶄负 kHz銆?
 
-  #. 对于有线电视（cable）和地面（terrestrial）传输系统，频率单位为 Hz。
+  #. 瀵逛簬鏈夌嚎鐢佃锛坈able锛夊拰鍦伴潰锛坱errestrial锛変紶杈撶郴缁燂紝棰戠巼鍗曚綅涓?Hz銆?
 
-  #. 在大多数传输系统中，频率为转发器/频道的中心频率。ISDB-T 例外，其主载波相对
-     中心有 1/7 的偏移。
+  #. 鍦ㄥぇ澶氭暟浼犺緭绯荤粺涓紝棰戠巼涓鸿浆鍙戝櫒/棰戦亾鐨勪腑蹇冮鐜囥€侷SDB-T 渚嬪锛屽叾涓昏浇娉㈢浉瀵?
+     涓績鏈?1/7 鐨勫亸绉汇€?
 
-  #. 对于 ISDB-T，频道通常带有约 143kHz 的偏移进行传输。例如，一个有效的频率可以
-     是 474,143 kHz。步进（stepping）与频道带宽相关，通常为 6MHz。
+  #. 瀵逛簬 ISDB-T锛岄閬撻€氬父甯︽湁绾?143kHz 鐨勫亸绉昏繘琛屼紶杈撱€備緥濡傦紝涓€涓湁鏁堢殑棰戠巼鍙互
+     鏄?474,143 kHz銆傛杩涳紙stepping锛変笌棰戦亾甯﹀鐩稿叧锛岄€氬父涓?6MHz銆?
 
-  #. 在 ISDB-Tsb 中，频道仅由一段或三段组成，频率步进分别为 429kHz、3*429。
+  #. 鍦?ISDB-Tsb 涓紝棰戦亾浠呯敱涓€娈垫垨涓夋缁勬垚锛岄鐜囨杩涘垎鍒负 429kHz銆?*429銆?
 
 
 
 ## DTV_MODULATION
 
 
-为支持多种调制（modulation）的传输系统指定 frontend 的调制类型。
+涓烘敮鎸佸绉嶈皟鍒讹紙modulation锛夌殑浼犺緭绯荤粺鎸囧畾 frontend 鐨勮皟鍒剁被鍨嬨€?
 
-调制（modulation）可以是枚举 `fe_modulation` 所定义的类型之一。
+璋冨埗锛坢odulation锛夊彲浠ユ槸鏋氫妇 `fe_modulation` 鎵€瀹氫箟鐨勭被鍨嬩箣涓€銆?
 
-大多数数字电视标准都提供多于一种可能的调制类型。
+澶у鏁版暟瀛楃數瑙嗘爣鍑嗛兘鎻愪緵澶氫簬涓€绉嶅彲鑳界殑璋冨埗绫诲瀷銆?
 
-下表汇总了当前规范中定义的各传输系统所支持的调制类型。
+涓嬭〃姹囨€讳簡褰撳墠瑙勮寖涓畾涔夌殑鍚勪紶杈撶郴缁熸墍鏀寔鐨勮皟鍒剁被鍨嬨€?
 
 ======================= =======================================================
 Standard		Modulation types
@@ -81,22 +81,22 @@ ISDB-S			8-PSK, QPSK and BPSK.
 ======================= =======================================================
 
 
-   由于 DVB-S2X 是对 DVB-S2 标准的扩展，使用了相同的传输系统枚举值（SYS_DVBS2）。
+   鐢变簬 DVB-S2X 鏄 DVB-S2 鏍囧噯鐨勬墿灞曪紝浣跨敤浜嗙浉鍚岀殑浼犺緭绯荤粺鏋氫妇鍊硷紙SYS_DVBS2锛夈€?
 
-   请注意，上述某些调制类型当前可能尚未在内核（Kernel）中定义。原因很简单：尚没有
-   驱动需要这样的定义。
+   璇锋敞鎰忥紝涓婅堪鏌愪簺璋冨埗绫诲瀷褰撳墠鍙兘灏氭湭鍦ㄥ唴鏍革紙Kernel锛変腑瀹氫箟銆傚師鍥犲緢绠€鍗曪細灏氭病鏈?
+   椹卞姩闇€瑕佽繖鏍风殑瀹氫箟銆?
 
 
 
 ## DTV_BANDWIDTH_HZ
 
 
-频道的带宽，单位为 Hz。
+棰戦亾鐨勫甫瀹斤紝鍗曚綅涓?Hz銆?
 
-仅应在地面传输系统中设置。
+浠呭簲鍦ㄥ湴闈紶杈撶郴缁熶腑璁剧疆銆?
 
-可能的值：`1712000`、`5000000`、`6000000`、`7000000`、
-`8000000`、`10000000`。
+鍙兘鐨勫€硷細`1712000`銆乣5000000`銆乣6000000`銆乣7000000`銆?
+`8000000`銆乣10000000`銆?
 
 ======================= =======================================================
 Terrestrial Standard	Possible values for bandwidth
@@ -112,298 +112,298 @@ ISDB-T			5MHz, 6MHz, 7MHz and 8MHz, although most places
 
 
 
-  #. 对于 ISDB-Tsb，带宽会随所连接段（segment）的数量而变化。
+  #. 瀵逛簬 ISDB-Tsb锛屽甫瀹戒細闅忔墍杩炴帴娈碉紙segment锛夌殑鏁伴噺鑰屽彉鍖栥€?
 
-     它可由其他参数（DTV_ISDBT_SB_SEGMENT_IDX、DTV_ISDBT_SB_SEGMENT_COUNT）
-     轻易推导得出。
+     瀹冨彲鐢卞叾浠栧弬鏁帮紙DTV_ISDBT_SB_SEGMENT_IDX銆丏TV_ISDBT_SB_SEGMENT_COUNT锛?
+     杞绘槗鎺ㄥ寰楀嚭銆?
 
-  #. 在卫星和有线电视传输系统中，带宽取决于符号率（symbol rate）。内核会静默忽略任何
-     DTV-BANDWIDTH-HZ 设置，并用带宽估算值覆盖它。
+  #. 鍦ㄥ崼鏄熷拰鏈夌嚎鐢佃浼犺緭绯荤粺涓紝甯﹀鍙栧喅浜庣鍙风巼锛坰ymbol rate锛夈€傚唴鏍镐細闈欓粯蹇界暐浠讳綍
+     DTV-BANDWIDTH-HZ 璁剧疆锛屽苟鐢ㄥ甫瀹戒及绠楀€艰鐩栧畠銆?
 
-     该带宽估算会考虑由 DTV-SYMBOL-RATE 设置的符号率，以及滚降（rolloff）因子
-     （对于 DVB-C 和 DVB-S 为固定值）。
+     璇ュ甫瀹戒及绠椾細鑰冭檻鐢?DTV-SYMBOL-RATE 璁剧疆鐨勭鍙风巼锛屼互鍙婃粴闄嶏紙rolloff锛夊洜瀛?
+     锛堝浜?DVB-C 鍜?DVB-S 涓哄浐瀹氬€硷級銆?
 
-     对于 DVB-S2，滚降还应通过 DTV-ROLLOFF 设置。
+     瀵逛簬 DVB-S2锛屾粴闄嶈繕搴旈€氳繃 DTV-ROLLOFF 璁剧疆銆?
 
 
 
 ## DTV_INVERSION
 
 
-指定 frontend 是否应进行频谱反转（spectral inversion）。
+鎸囧畾 frontend 鏄惁搴旇繘琛岄璋卞弽杞紙spectral inversion锛夈€?
 
-可接受的值由 `fe_spectral_inversion` 定义。
+鍙帴鍙楃殑鍊肩敱 `fe_spectral_inversion` 瀹氫箟銆?
 
 
 
 ## DTV_DISEQC_MASTER
 
 
-当前未实现。
+褰撳墠鏈疄鐜般€?
 
 
 
 ## DTV_SYMBOL_RATE
 
 
-用于有线电视和卫星传输系统。
+鐢ㄤ簬鏈夌嚎鐢佃鍜屽崼鏄熶紶杈撶郴缁熴€?
 
-数字电视符号率（symbol rate），单位为波特（bauds，即符号/秒）。
+鏁板瓧鐢佃绗﹀彿鐜囷紙symbol rate锛夛紝鍗曚綅涓烘尝鐗癸紙bauds锛屽嵆绗﹀彿/绉掞級銆?
 
 
 
 ## DTV_INNER_FEC
 
 
-用于有线电视和卫星传输系统。
+鐢ㄤ簬鏈夌嚎鐢佃鍜屽崼鏄熶紶杈撶郴缁熴€?
 
-可接受的值由 `fe_code_rate` 定义。
+鍙帴鍙楃殑鍊肩敱 `fe_code_rate` 瀹氫箟銆?
 
 
 
 ## DTV_VOLTAGE
 
 
-用于卫星传输系统。
+鐢ㄤ簬鍗槦浼犺緭绯荤粺銆?
 
-电压通常用于不具备 DiSEqC 能力的 LNB，以切换极化方式（水平/垂直）。使用 DiSEqC
-设备时，该电压必须随 DiSEqC 命令一致地切换，如 DiSEqC 规范中所述。
+鐢靛帇閫氬父鐢ㄤ簬涓嶅叿澶?DiSEqC 鑳藉姏鐨?LNB锛屼互鍒囨崲鏋佸寲鏂瑰紡锛堟按骞?鍨傜洿锛夈€備娇鐢?DiSEqC
+璁惧鏃讹紝璇ョ數鍘嬪繀椤婚殢 DiSEqC 鍛戒护涓€鑷村湴鍒囨崲锛屽 DiSEqC 瑙勮寖涓墍杩般€?
 
-可接受的值由 `fe_sec_voltage` 定义。
+鍙帴鍙楃殑鍊肩敱 `fe_sec_voltage` 瀹氫箟銆?
 
 
 
 ## DTV_TONE
 
 
-当前未使用。
+褰撳墠鏈娇鐢ㄣ€?
 
 
 
 ## DTV_PILOT
 
 
-用于 DVB-S2。
+鐢ㄤ簬 DVB-S2銆?
 
-设置 DVB-S2 的导频（pilot）。
+璁剧疆 DVB-S2 鐨勫棰戯紙pilot锛夈€?
 
-可接受的值由 `fe_pilot` 定义。
+鍙帴鍙楃殑鍊肩敱 `fe_pilot` 瀹氫箟銆?
 
 
 
 ## DTV_ROLLOFF
 
 
-用于 DVB-S2。
+鐢ㄤ簬 DVB-S2銆?
 
-设置 DVB-S2 的滚降（rolloff）。
+璁剧疆 DVB-S2 鐨勬粴闄嶏紙rolloff锛夈€?
 
-可接受的值由 `fe_rolloff` 定义。
+鍙帴鍙楃殑鍊肩敱 `fe_rolloff` 瀹氫箟銆?
 
 
 
 ## DTV_DISEQC_SLAVE_REPLY
 
 
-当前未实现。
+褰撳墠鏈疄鐜般€?
 
 
 
 ## DTV_FE_CAPABILITY_COUNT
 
 
-当前未实现。
+褰撳墠鏈疄鐜般€?
 
 
 
 ## DTV_FE_CAPABILITY
 
 
-当前未实现。
+褰撳墠鏈疄鐜般€?
 
 
 
 ## DTV_DELIVERY_SYSTEM
 
 
-指定传输系统（delivery system）的类型。
+鎸囧畾浼犺緭绯荤粺锛坉elivery system锛夌殑绫诲瀷銆?
 
-可接受的值由 `fe_delivery_system` 定义。
+鍙帴鍙楃殑鍊肩敱 `fe_delivery_system` 瀹氫箟銆?
 
 
 
 ## DTV_ISDBT_PARTIAL_RECEPTION
 
 
-仅用于 ISDB。
+浠呯敤浜?ISDB銆?
 
-如果 `DTV_ISDBT_SOUND_BROADCASTING` 为 '0'，该位字段表示频道是否处于部分接收
-（partial reception）模式。
+濡傛灉 `DTV_ISDBT_SOUND_BROADCASTING` 涓?'0'锛岃浣嶅瓧娈佃〃绀洪閬撴槸鍚﹀浜庨儴鍒嗘帴鏀?
+锛坧artial reception锛夋ā寮忋€?
 
-如果为 '1'，则 `DTV_ISDBT_LAYERA_*` 的值被分配给中心段（center segment），且
-`DTV_ISDBT_LAYERA_SEGMENT_COUNT` 必须为 '1'。
+濡傛灉涓?'1'锛屽垯 `DTV_ISDBT_LAYERA_*` 鐨勫€艰鍒嗛厤缁欎腑蹇冩锛坈enter segment锛夛紝涓?
+`DTV_ISDBT_LAYERA_SEGMENT_COUNT` 蹇呴』涓?'1'銆?
 
-如果 `DTV_ISDBT_SOUND_BROADCASTING` 还为 '1'，则 `DTV_ISDBT_PARTIAL_RECEPTION`
-表示该 ISDB-Tsb 频道是由一段一层还是三段两层组成。
+濡傛灉 `DTV_ISDBT_SOUND_BROADCASTING` 杩樹负 '1'锛屽垯 `DTV_ISDBT_PARTIAL_RECEPTION`
+琛ㄧず璇?ISDB-Tsb 棰戦亾鏄敱涓€娈典竴灞傝繕鏄笁娈典袱灞傜粍鎴愩€?
 
-可能的值：0、1、-1（AUTO）
+鍙兘鐨勫€硷細0銆?銆?1锛圓UTO锛?
 
 
 
 ## DTV_ISDBT_SOUND_BROADCASTING
 
 
-仅用于 ISDB。
+浠呯敤浜?ISDB銆?
 
-该字段表示其他 DTV_ISDBT_*-参数所指的是一个 ISDB-T 频道还是一个 ISDB-Tsb 频道。
-（另见 `DTV_ISDBT_PARTIAL_RECEPTION`）。
+璇ュ瓧娈佃〃绀哄叾浠?DTV_ISDBT_*-鍙傛暟鎵€鎸囩殑鏄竴涓?ISDB-T 棰戦亾杩樻槸涓€涓?ISDB-Tsb 棰戦亾銆?
+锛堝彟瑙?`DTV_ISDBT_PARTIAL_RECEPTION`锛夈€?
 
-可能的值：0、1、-1（AUTO）
+鍙兘鐨勫€硷細0銆?銆?1锛圓UTO锛?
 
 
 
 ## DTV_ISDBT_SB_SUBCHANNEL_ID
 
 
-仅用于 ISDB。
+浠呯敤浜?ISDB銆?
 
-该字段仅当 `DTV_ISDBT_SOUND_BROADCASTING` 为 '1' 时适用。
+璇ュ瓧娈典粎褰?`DTV_ISDBT_SOUND_BROADCASTING` 涓?'1' 鏃堕€傜敤銆?
 
-（作者注：这可能并非对 `SUBCHANNEL-ID` 全部细节的准确描述，但它是我对编程设备
-所需技术背景的理解）
+锛堜綔鑰呮敞锛氳繖鍙兘骞堕潪瀵?`SUBCHANNEL-ID` 鍏ㄩ儴缁嗚妭鐨勫噯纭弿杩帮紝浣嗗畠鏄垜瀵圭紪绋嬭澶?
+鎵€闇€鎶€鏈儗鏅殑鐞嗚В锛?
 
-一个 ISDB-Tsb 频道（1 段或 3 段）可以单独广播，也可以成组（set）地与其他相连的
-ISDB-Tsb 频道一起广播。在这组频道中，每个频道都可以独立接收。相连的 ISDB-Tsb
-段的数量可以变化，例如取决于可用的频谱带宽。
+涓€涓?ISDB-Tsb 棰戦亾锛? 娈垫垨 3 娈碉級鍙互鍗曠嫭骞挎挱锛屼篃鍙互鎴愮粍锛坰et锛夊湴涓庡叾浠栫浉杩炵殑
+ISDB-Tsb 棰戦亾涓€璧峰箍鎾€傚湪杩欑粍棰戦亾涓紝姣忎釜棰戦亾閮藉彲浠ョ嫭绔嬫帴鏀躲€傜浉杩炵殑 ISDB-Tsb
+娈电殑鏁伴噺鍙互鍙樺寲锛屼緥濡傚彇鍐充簬鍙敤鐨勯璋卞甫瀹姐€?
 
-示例：假设广播了 8 个相连的 ISDB-Tsb 段。广播方有多种方式将这些频道送上空中：
-假设一个普通的 13 段 ISDB-T 频谱，他可以将这 8 段从位置 1-8 对齐到 5-13，或介于
-两者之间的任何位置。
+绀轰緥锛氬亣璁惧箍鎾簡 8 涓浉杩炵殑 ISDB-Tsb 娈点€傚箍鎾柟鏈夊绉嶆柟寮忓皢杩欎簺棰戦亾閫佷笂绌轰腑锛?
+鍋囪涓€涓櫘閫氱殑 13 娈?ISDB-T 棰戣氨锛屼粬鍙互灏嗚繖 8 娈典粠浣嶇疆 1-8 瀵归綈鍒?5-13锛屾垨浠嬩簬
+涓よ€呬箣闂寸殑浠讳綍浣嶇疆銆?
 
-段（segment）的下层是子信道（sub-channel）：每个段由若干具有预定义 ID 的子信道
-组成。子信道用于帮助解调器（demodulator）与频道同步。
+娈碉紙segment锛夌殑涓嬪眰鏄瓙淇￠亾锛坰ub-channel锛夛細姣忎釜娈电敱鑻ュ共鍏锋湁棰勫畾涔?ID 鐨勫瓙淇￠亾
+缁勬垚銆傚瓙淇￠亾鐢ㄤ簬甯姪瑙ｈ皟鍣紙demodulator锛変笌棰戦亾鍚屾銆?
 
-一个 ISDB-T 频道总是以所有子信道为中心对齐。如上面示例所述，在 ISDB-Tsb 中就不再
-如此简单了。
+涓€涓?ISDB-T 棰戦亾鎬绘槸浠ユ墍鏈夊瓙淇￠亾涓轰腑蹇冨榻愩€傚涓婇潰绀轰緥鎵€杩帮紝鍦?ISDB-Tsb 涓氨涓嶅啀
+濡傛绠€鍗曚簡銆?
 
-`DTV_ISDBT_SB_SUBCHANNEL_ID` 参数用于给出待解调的段的子信道 ID。
+`DTV_ISDBT_SB_SUBCHANNEL_ID` 鍙傛暟鐢ㄤ簬缁欏嚭寰呰В璋冪殑娈电殑瀛愪俊閬?ID銆?
 
-可能的值：0 .. 41、-1（AUTO）
+鍙兘鐨勫€硷細0 .. 41銆?1锛圓UTO锛?
 
 
 
 ## DTV_ISDBT_SB_SEGMENT_IDX
 
 
-仅用于 ISDB。
+浠呯敤浜?ISDB銆?
 
-该字段仅当 `DTV_ISDBT_SOUND_BROADCASTING` 为 '1' 时适用。
+璇ュ瓧娈典粎褰?`DTV_ISDBT_SOUND_BROADCASTING` 涓?'1' 鏃堕€傜敤銆?
 
-`DTV_ISDBT_SB_SEGMENT_IDX` 给出待解调段的索引，用于多个 ISDB-Tsb 频道以相连方式
-传输的情况。
+`DTV_ISDBT_SB_SEGMENT_IDX` 缁欏嚭寰呰В璋冩鐨勭储寮曪紝鐢ㄤ簬澶氫釜 ISDB-Tsb 棰戦亾浠ョ浉杩炴柟寮?
+浼犺緭鐨勬儏鍐点€?
 
-可能的值：0 .. `DTV_ISDBT_SB_SEGMENT_COUNT` - 1
+鍙兘鐨勫€硷細0 .. `DTV_ISDBT_SB_SEGMENT_COUNT` - 1
 
-注意：该值无法由自动频道搜索确定。
+娉ㄦ剰锛氳鍊兼棤娉曠敱鑷姩棰戦亾鎼滅储纭畾銆?
 
 
 
 ## DTV_ISDBT_SB_SEGMENT_COUNT
 
 
-仅用于 ISDB。
+浠呯敤浜?ISDB銆?
 
-该字段仅当 `DTV_ISDBT_SOUND_BROADCASTING` 为 '1' 时适用。
+璇ュ瓧娈典粎褰?`DTV_ISDBT_SOUND_BROADCASTING` 涓?'1' 鏃堕€傜敤銆?
 
-`DTV_ISDBT_SB_SEGMENT_COUNT` 给出相连的 ISDB-Tsb 频道的总数。
+`DTV_ISDBT_SB_SEGMENT_COUNT` 缁欏嚭鐩歌繛鐨?ISDB-Tsb 棰戦亾鐨勬€绘暟銆?
 
-可能的值：1 .. 13
+鍙兘鐨勫€硷細1 .. 13
 
-注意：该值无法由自动频道搜索确定。
+娉ㄦ剰锛氳鍊兼棤娉曠敱鑷姩棰戦亾鎼滅储纭畾銆?
 
 
 
 ## DTV-ISDBT-LAYER[A-C] parameters
 
 
-仅用于 ISDB。
+浠呯敤浜?ISDB銆?
 
-ISDB-T 频道可以采用分层（hierarchical）编码。与 DVB-T 不同，ISDB-T 中的分层可以
-同时解码。因此一个 ISDB-T 解调器拥有 3 个 Viterbi 和 3 个 Reed-Solomon 解码器。
+ISDB-T 棰戦亾鍙互閲囩敤鍒嗗眰锛坔ierarchical锛夌紪鐮併€備笌 DVB-T 涓嶅悓锛孖SDB-T 涓殑鍒嗗眰鍙互
+鍚屾椂瑙ｇ爜銆傚洜姝や竴涓?ISDB-T 瑙ｈ皟鍣ㄦ嫢鏈?3 涓?Viterbi 鍜?3 涓?Reed-Solomon 瑙ｇ爜鍣ㄣ€?
 
-ISDB-T 有 3 个分层，每一层可以使用可用段的一部分。所有层的总段数在 ISDB-T 中
-必须为 13。
+ISDB-T 鏈?3 涓垎灞傦紝姣忎竴灞傚彲浠ヤ娇鐢ㄥ彲鐢ㄦ鐨勪竴閮ㄥ垎銆傛墍鏈夊眰鐨勬€绘鏁板湪 ISDB-T 涓?
+蹇呴』涓?13銆?
 
-共有 3 组参数，分别用于层 A、B 和 C。
+鍏辨湁 3 缁勫弬鏁帮紝鍒嗗埆鐢ㄤ簬灞?A銆丅 鍜?C銆?
 
 
 
 ### DTV_ISDBT_LAYER_ENABLED
 
 
-仅用于 ISDB。
+浠呯敤浜?ISDB銆?
 
-ISDB-T 中的分层接收（hierarchical reception）通过解码过程中启用或禁用各层来实现。
-将 `DTV_ISDBT_LAYER_ENABLED` 的所有位设为 '1' 会强制解调所有层（如适用）。这是
-默认行为。
+ISDB-T 涓殑鍒嗗眰鎺ユ敹锛坔ierarchical reception锛夐€氳繃瑙ｇ爜杩囩▼涓惎鐢ㄦ垨绂佺敤鍚勫眰鏉ュ疄鐜般€?
+灏?`DTV_ISDBT_LAYER_ENABLED` 鐨勬墍鏈変綅璁句负 '1' 浼氬己鍒惰В璋冩墍鏈夊眰锛堝閫傜敤锛夈€傝繖鏄?
+榛樿琛屼负銆?
 
-如果频道处于部分接收模式（`DTV_ISDBT_PARTIAL_RECEPTION` = 1），中心段可以独立于
-其他 12 段被解码。在该模式下，层 A 的 `SEGMENT_COUNT` 必须为 1。
+濡傛灉棰戦亾澶勪簬閮ㄥ垎鎺ユ敹妯″紡锛坄DTV_ISDBT_PARTIAL_RECEPTION` = 1锛夛紝涓績娈靛彲浠ョ嫭绔嬩簬
+鍏朵粬 12 娈佃瑙ｇ爜銆傚湪璇ユā寮忎笅锛屽眰 A 鐨?`SEGMENT_COUNT` 蹇呴』涓?1銆?
 
-在 ISDB-Tsb 中仅使用层 A，根据 `DTV_ISDBT_PARTIAL_RECEPTION`，它可以是 1 或 3。
-`SEGMENT_COUNT` 必须相应地填写。
+鍦?ISDB-Tsb 涓粎浣跨敤灞?A锛屾牴鎹?`DTV_ISDBT_PARTIAL_RECEPTION`锛屽畠鍙互鏄?1 鎴?3銆?
+`SEGMENT_COUNT` 蹇呴』鐩稿簲鍦板～鍐欍€?
 
-仅使用前 3 位的值。其他位将被静默忽略：
+浠呬娇鐢ㄥ墠 3 浣嶇殑鍊笺€傚叾浠栦綅灏嗚闈欓粯蹇界暐锛?
 
-`DTV_ISDBT_LAYER_ENABLED` 位 0：启用层 A
+`DTV_ISDBT_LAYER_ENABLED` 浣?0锛氬惎鐢ㄥ眰 A
 
-`DTV_ISDBT_LAYER_ENABLED` 位 1：启用层 B
+`DTV_ISDBT_LAYER_ENABLED` 浣?1锛氬惎鐢ㄥ眰 B
 
-`DTV_ISDBT_LAYER_ENABLED` 位 2：启用层 C
+`DTV_ISDBT_LAYER_ENABLED` 浣?2锛氬惎鐢ㄥ眰 C
 
-`DTV_ISDBT_LAYER_ENABLED` 位 3-31：未使用
+`DTV_ISDBT_LAYER_ENABLED` 浣?3-31锛氭湭浣跨敤
 
 
 
 ### DTV_ISDBT_LAYER[A-C]_FEC
 
 
-仅用于 ISDB。
+浠呯敤浜?ISDB銆?
 
-给定 ISDB 层所使用的前向纠错（Forward Error Correction）机制，由 `fe_code_rate`
-定义。
+缁欏畾 ISDB 灞傛墍浣跨敤鐨勫墠鍚戠籂閿欙紙Forward Error Correction锛夋満鍒讹紝鐢?`fe_code_rate`
+瀹氫箟銆?
 
-可能的值为：`FEC_AUTO`、`FEC_1_2`、`FEC_2_3`、`FEC_3_4`、
-`FEC_5_6`、`FEC_7_8`
+鍙兘鐨勫€间负锛歚FEC_AUTO`銆乣FEC_1_2`銆乣FEC_2_3`銆乣FEC_3_4`銆?
+`FEC_5_6`銆乣FEC_7_8`
 
 
 
 ### DTV_ISDBT_LAYER[A-C]_MODULATION
 
 
-仅用于 ISDB。
+浠呯敤浜?ISDB銆?
 
-给定 ISDB 层所使用的调制（modulation），由 `fe_modulation` 定义。
+缁欏畾 ISDB 灞傛墍浣跨敤鐨勮皟鍒讹紙modulation锛夛紝鐢?`fe_modulation` 瀹氫箟銆?
 
-可能的值为：`QAM_AUTO`、`QPSK`、`QAM_16`、`QAM_64`、`DQPSK`
+鍙兘鐨勫€间负锛歚QAM_AUTO`銆乣QPSK`銆乣QAM_16`銆乣QAM_64`銆乣DQPSK`
 
 
-   #. 如果层 C 为 `DQPSK`，则层 B 必须为 `DQPSK`。
+   #. 濡傛灉灞?C 涓?`DQPSK`锛屽垯灞?B 蹇呴』涓?`DQPSK`銆?
 
-   #. 如果层 B 为 `DQPSK` 且 `DTV_ISDBT_PARTIAL_RECEPTION` = 0，则层必须为
-      `DQPSK`。
+   #. 濡傛灉灞?B 涓?`DQPSK` 涓?`DTV_ISDBT_PARTIAL_RECEPTION` = 0锛屽垯灞傚繀椤讳负
+      `DQPSK`銆?
 
 
 
 ### DTV_ISDBT_LAYER[A-C]_SEGMENT_COUNT
 
 
-仅用于 ISDB。
+浠呯敤浜?ISDB銆?
 
-可能的值：0、1、2、3、4、5、6、7、8、9、10、11、12、13、-1（AUTO）
+鍙兘鐨勫€硷細0銆?銆?銆?銆?銆?銆?銆?銆?銆?銆?0銆?1銆?2銆?3銆?1锛圓UTO锛?
 
-注意：`DTV_ISDBT_SOUND_BROADCASTING`、`DTV_ISDBT_PARTIAL_RECEPTION` 与
-`LAYER[A-C]_SEGMENT_COUNT` 的真值表（truth table）
+娉ㄦ剰锛歚DTV_ISDBT_SOUND_BROADCASTING`銆乣DTV_ISDBT_PARTIAL_RECEPTION` 涓?
+`LAYER[A-C]_SEGMENT_COUNT` 鐨勭湡鍊艰〃锛坱ruth table锛?
 
 
     :header-rows:  1
@@ -485,14 +485,14 @@ ISDB-T 中的分层接收（hierarchical reception）通过解码过程中启用
 ### DTV_ISDBT_LAYER[A-C]_TIME_INTERLEAVING
 
 
-仅用于 ISDB。
+浠呯敤浜?ISDB銆?
 
-有效值：0、1、2、4、-1（AUTO）
+鏈夋晥鍊硷細0銆?銆?銆?銆?1锛圓UTO锛?
 
-当 DTV_ISDBT_SOUND_BROADCASTING 处于激活状态时，值 8 也是有效的。
+褰?DTV_ISDBT_SOUND_BROADCASTING 澶勪簬婵€娲荤姸鎬佹椂锛屽€?8 涔熸槸鏈夋晥鐨勩€?
 
-注意：实际的时域交织（time interleaving）长度取决于模式（fft 大小）。此处的值
-指的是可在 TMCC 结构中找到的内容，如下表所示。
+娉ㄦ剰锛氬疄闄呯殑鏃跺煙浜ょ粐锛坱ime interleaving锛夐暱搴﹀彇鍐充簬妯″紡锛坒ft 澶у皬锛夈€傛澶勭殑鍊?
+鎸囩殑鏄彲鍦?TMCC 缁撴瀯涓壘鍒扮殑鍐呭锛屽涓嬭〃鎵€绀恒€?
 
 
     :header-rows:  1
@@ -554,226 +554,226 @@ ISDB-T 中的分层接收（hierarchical reception）通过解码过程中启用
 ### DTV_ATSCMH_FIC_VER
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-FIC（Fast Information Channel，快速信息信道）信令数据的版本号。
+FIC锛團ast Information Channel锛屽揩閫熶俊鎭俊閬擄級淇′护鏁版嵁鐨勭増鏈彿銆?
 
-FIC 用于传递信息，以便接收端快速获取服务。
+FIC 鐢ㄤ簬浼犻€掍俊鎭紝浠ヤ究鎺ユ敹绔揩閫熻幏鍙栨湇鍔°€?
 
-可能的值：0、1、2、3、...、30、31
+鍙兘鐨勫€硷細0銆?銆?銆?銆?..銆?0銆?1
 
 
 
 ### DTV_ATSCMH_PARADE_ID
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-Parade 标识号（parade identification number）。
+Parade 鏍囪瘑鍙凤紙parade identification number锛夈€?
 
-一个 parade 是至多 8 个 MH 组（group）的集合，承载一个或两个 ensemble。
+涓€涓?parade 鏄嚦澶?8 涓?MH 缁勶紙group锛夌殑闆嗗悎锛屾壙杞戒竴涓垨涓や釜 ensemble銆?
 
-可能的值：0、1、2、3、...、126、127
+鍙兘鐨勫€硷細0銆?銆?銆?銆?..銆?26銆?27
 
 
 
 ### DTV_ATSCMH_NOG
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-指定 parade 中每个 MH 子帧（subframe）的 MH 组（group）数量。
+鎸囧畾 parade 涓瘡涓?MH 瀛愬抚锛坰ubframe锛夌殑 MH 缁勶紙group锛夋暟閲忋€?
 
-可能的值：1、2、3、4、5、6、7、8
+鍙兘鐨勫€硷細1銆?銆?銆?銆?銆?銆?銆?
 
 
 
 ### DTV_ATSCMH_TNOG
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-MH 组的总数，包含属于一个 MH 子帧中所有 MH parade 的全部 MH 组。
+MH 缁勭殑鎬绘暟锛屽寘鍚睘浜庝竴涓?MH 瀛愬抚涓墍鏈?MH parade 鐨勫叏閮?MH 缁勩€?
 
-可能的值：0、1、2、3、...、30、31
+鍙兘鐨勫€硷細0銆?銆?銆?銆?..銆?0銆?1
 
 
 
 ### DTV_ATSCMH_SGN
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-起始组号（start group number）。
+璧峰缁勫彿锛坰tart group number锛夈€?
 
-可能的值：0、1、2、3、...、14、15
+鍙兘鐨勫€硷細0銆?銆?銆?銆?..銆?4銆?5
 
 
 
 ### DTV_ATSCMH_PRC
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-Parade 重复周期（parade repetition cycle）。
+Parade 閲嶅鍛ㄦ湡锛坧arade repetition cycle锛夈€?
 
-可能的值：1、2、3、4、5、6、7、8
+鍙兘鐨勫€硷細1銆?銆?銆?銆?銆?銆?銆?
 
 
 
 ### DTV_ATSCMH_RS_FRAME_MODE
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-Reed Solomon（RS）帧模式（frame mode）。
+Reed Solomon锛圧S锛夊抚妯″紡锛坒rame mode锛夈€?
 
-可接受的值由 `atscmh_rs_frame_mode` 定义。
+鍙帴鍙楃殑鍊肩敱 `atscmh_rs_frame_mode` 瀹氫箟銆?
 
 
 
 ### DTV_ATSCMH_RS_FRAME_ENSEMBLE
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-Reed Solomon（RS）帧 ensemble。
+Reed Solomon锛圧S锛夊抚 ensemble銆?
 
-可接受的值由 `atscmh_rs_frame_ensemble` 定义。
+鍙帴鍙楃殑鍊肩敱 `atscmh_rs_frame_ensemble` 瀹氫箟銆?
 
 
 
 ### DTV_ATSCMH_RS_CODE_MODE_PRI
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-Reed Solomon（RS）编码模式（code mode，主）。
+Reed Solomon锛圧S锛夌紪鐮佹ā寮忥紙code mode锛屼富锛夈€?
 
-可接受的值由 `atscmh_rs_code_mode` 定义。
+鍙帴鍙楃殑鍊肩敱 `atscmh_rs_code_mode` 瀹氫箟銆?
 
 
 
 ### DTV_ATSCMH_RS_CODE_MODE_SEC
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-Reed Solomon（RS）编码模式（code mode，次）。
+Reed Solomon锛圧S锛夌紪鐮佹ā寮忥紙code mode锛屾锛夈€?
 
-可接受的值由 `atscmh_rs_code_mode` 定义。
+鍙帴鍙楃殑鍊肩敱 `atscmh_rs_code_mode` 瀹氫箟銆?
 
 
 
 ### DTV_ATSCMH_SCCC_BLOCK_MODE
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-串接卷积码块模式（Series Concatenated Convolutional Code Block Mode）。
+涓叉帴鍗风Н鐮佸潡妯″紡锛圫eries Concatenated Convolutional Code Block Mode锛夈€?
 
-可接受的值由 `atscmh_sccc_block_mode` 定义。
+鍙帴鍙楃殑鍊肩敱 `atscmh_sccc_block_mode` 瀹氫箟銆?
 
 
 
 ### DTV_ATSCMH_SCCC_CODE_MODE_A
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-串接卷积码率（Series Concatenated Convolutional Code Rate）。
+涓叉帴鍗风Н鐮佺巼锛圫eries Concatenated Convolutional Code Rate锛夈€?
 
-可接受的值由 `atscmh_sccc_code_mode` 定义。
+鍙帴鍙楃殑鍊肩敱 `atscmh_sccc_code_mode` 瀹氫箟銆?
 
 
 
 ### DTV_ATSCMH_SCCC_CODE_MODE_B
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-串接卷积码率（Series Concatenated Convolutional Code Rate）。
+涓叉帴鍗风Н鐮佺巼锛圫eries Concatenated Convolutional Code Rate锛夈€?
 
-可能的值与枚举 `atscmh_sccc_code_mode` 中记录的值相同。
+鍙兘鐨勫€间笌鏋氫妇 `atscmh_sccc_code_mode` 涓褰曠殑鍊肩浉鍚屻€?
 
 
 
 ### DTV_ATSCMH_SCCC_CODE_MODE_C
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-串接卷积码率（Series Concatenated Convolutional Code Rate）。
+涓叉帴鍗风Н鐮佺巼锛圫eries Concatenated Convolutional Code Rate锛夈€?
 
-可能的值与枚举 `atscmh_sccc_code_mode` 中记录的值相同。
+鍙兘鐨勫€间笌鏋氫妇 `atscmh_sccc_code_mode` 涓褰曠殑鍊肩浉鍚屻€?
 
 
 
 ### DTV_ATSCMH_SCCC_CODE_MODE_D
 
 
-仅用于 ATSC-MH。
+浠呯敤浜?ATSC-MH銆?
 
-串接卷积码率（Series Concatenated Convolutional Code Rate）。
+涓叉帴鍗风Н鐮佺巼锛圫eries Concatenated Convolutional Code Rate锛夈€?
 
-可能的值与枚举 `atscmh_sccc_code_mode` 中记录的值相同。
+鍙兘鐨勫€间笌鏋氫妇 `atscmh_sccc_code_mode` 涓褰曠殑鍊肩浉鍚屻€?
 
 
 
 ## DTV_API_VERSION
 
 
-返回数字电视 API 的主/次版本号。
+杩斿洖鏁板瓧鐢佃 API 鐨勪富/娆＄増鏈彿銆?
 
 
 
 ## DTV_CODE_RATE_HP
 
 
-用于地面传输。
+鐢ㄤ簬鍦伴潰浼犺緭銆?
 
-可接受的值由 `fe_transmit_mode` 定义。
+鍙帴鍙楃殑鍊肩敱 `fe_transmit_mode` 瀹氫箟銆?
 
 
 
 ## DTV_CODE_RATE_LP
 
 
-用于地面传输。
+鐢ㄤ簬鍦伴潰浼犺緭銆?
 
-可接受的值由 `fe_transmit_mode` 定义。
+鍙帴鍙楃殑鍊肩敱 `fe_transmit_mode` 瀹氫箟銆?
 
 
 
 ## DTV_GUARD_INTERVAL
 
 
-可接受的值由 `fe_guard_interval` 定义。
+鍙帴鍙楃殑鍊肩敱 `fe_guard_interval` 瀹氫箟銆?
 
 
-   #. 如果 `DTV_GUARD_INTERVAL` 设置为 `GUARD_INTERVAL_AUTO`，硬件将尝试找到正确的
-      保护间隔（guard interval）（若支持），并使用 TMCC 填充缺失的参数。
-   #. 间隔 `GUARD_INTERVAL_1_64` 仅用于 DVB-C2。
-   #. 间隔 `GUARD_INTERVAL_1_128` 同时用于 DVB-C2 和 DVB_T2。
-   #. 间隔 `GUARD_INTERVAL_19_128` 与 `GUARD_INTERVAL_19_256` 仅用于 DVB-T2。
-   #. 间隔 `GUARD_INTERVAL_PN420`、`GUARD_INTERVAL_PN595` 与
-      `GUARD_INTERVAL_PN945` 当前仅用于 DMTB。在该标准下，仅这些间隔与
-      `GUARD_INTERVAL_AUTO` 是有效的。
+   #. 濡傛灉 `DTV_GUARD_INTERVAL` 璁剧疆涓?`GUARD_INTERVAL_AUTO`锛岀‖浠跺皢灏濊瘯鎵惧埌姝ｇ‘鐨?
+      淇濇姢闂撮殧锛坓uard interval锛夛紙鑻ユ敮鎸侊級锛屽苟浣跨敤 TMCC 濉厖缂哄け鐨勫弬鏁般€?
+   #. 闂撮殧 `GUARD_INTERVAL_1_64` 浠呯敤浜?DVB-C2銆?
+   #. 闂撮殧 `GUARD_INTERVAL_1_128` 鍚屾椂鐢ㄤ簬 DVB-C2 鍜?DVB_T2銆?
+   #. 闂撮殧 `GUARD_INTERVAL_19_128` 涓?`GUARD_INTERVAL_19_256` 浠呯敤浜?DVB-T2銆?
+   #. 闂撮殧 `GUARD_INTERVAL_PN420`銆乣GUARD_INTERVAL_PN595` 涓?
+      `GUARD_INTERVAL_PN945` 褰撳墠浠呯敤浜?DMTB銆傚湪璇ユ爣鍑嗕笅锛屼粎杩欎簺闂撮殧涓?
+      `GUARD_INTERVAL_AUTO` 鏄湁鏁堢殑銆?
 
 
 ## DTV_TRANSMISSION_MODE
 
 
 
-仅用于基于 OFDM 的标准，例如 DVB-T/T2、ISDB-T、DTMB。
+浠呯敤浜庡熀浜?OFDM 鐨勬爣鍑嗭紝渚嬪 DVB-T/T2銆両SDB-T銆丏TMB銆?
 
-指定该标准所使用的 FFT 大小（对应于载波的近似数量）。
+鎸囧畾璇ユ爣鍑嗘墍浣跨敤鐨?FFT 澶у皬锛堝搴斾簬杞芥尝鐨勮繎浼兼暟閲忥級銆?
 
-可接受的值由 `fe_transmit_mode` 定义。
+鍙帴鍙楃殑鍊肩敱 `fe_transmit_mode` 瀹氫箟銆?
 
 
-   #. ISDB-T 支持三种载波/符号大小：8K、4K、2K。在该标准中称为**模式（mode）**，
-      并从 1 到 3 编号：
+   #. ISDB-T 鏀寔涓夌杞芥尝/绗﹀彿澶у皬锛?K銆?K銆?K銆傚湪璇ユ爣鍑嗕腑绉颁负**妯″紡锛坢ode锛?*锛?
+      骞朵粠 1 鍒?3 缂栧彿锛?
 
       ====	========	========================
       Mode	FFT size	Transmission mode
@@ -783,104 +783,104 @@ Reed Solomon（RS）编码模式（code mode，次）。
       3		8K		`TRANSMISSION_MODE_8K`
       ====	========	========================
 
-   #. 如果 `DTV_TRANSMISSION_MODE` 设置为 `TRANSMISSION_MODE_AUTO`，硬件将尝试找到
-      正确的 FFT 大小（若支持），并使用 TMCC 填充缺失的参数。
+   #. 濡傛灉 `DTV_TRANSMISSION_MODE` 璁剧疆涓?`TRANSMISSION_MODE_AUTO`锛岀‖浠跺皢灏濊瘯鎵惧埌
+      姝ｇ‘鐨?FFT 澶у皬锛堣嫢鏀寔锛夛紝骞朵娇鐢?TMCC 濉厖缂哄け鐨勫弬鏁般€?
 
-   #. DVB-T 规定 2K 和 8K 为有效大小。
+   #. DVB-T 瑙勫畾 2K 鍜?8K 涓烘湁鏁堝ぇ灏忋€?
 
-   #. DVB-T2 规定 1K、2K、4K、8K、16K 和 32K。
+   #. DVB-T2 瑙勫畾 1K銆?K銆?K銆?K銆?6K 鍜?32K銆?
 
-   #. DTMB 规定 C1 和 C3780。
+   #. DTMB 瑙勫畾 C1 鍜?C3780銆?
 
 
 
 ## DTV_HIERARCHY
 
 
-仅用于 DVB-T 和 DVB-T2。
+浠呯敤浜?DVB-T 鍜?DVB-T2銆?
 
-Frontend 分层（hierarchy）。
+Frontend 鍒嗗眰锛坔ierarchy锛夈€?
 
-可接受的值由 `fe_hierarchy` 定义。
+鍙帴鍙楃殑鍊肩敱 `fe_hierarchy` 瀹氫箟銆?
 
 
 
 ## DTV_STREAM_ID
 
 
-用于 DVB-C2、DVB-S2、DVB-T2 和 ISDB-S。
+鐢ㄤ簬 DVB-C2銆丏VB-S2銆丏VB-T2 鍜?ISDB-S銆?
 
-DVB-C2、DVB-S2、DVB-T2 和 ISDB-S 支持在单一传输流（transport stream）上传输多个
-流（stream）。当硬件支持时，该属性使数字电视驱动能够处理子流过滤（substream
-filtering）。默认情况下，子流过滤是禁用的。
+DVB-C2銆丏VB-S2銆丏VB-T2 鍜?ISDB-S 鏀寔鍦ㄥ崟涓€浼犺緭娴侊紙transport stream锛変笂浼犺緭澶氫釜
+娴侊紙stream锛夈€傚綋纭欢鏀寔鏃讹紝璇ュ睘鎬т娇鏁板瓧鐢佃椹卞姩鑳藉澶勭悊瀛愭祦杩囨护锛坰ubstream
+filtering锛夈€傞粯璁ゆ儏鍐典笅锛屽瓙娴佽繃婊ゆ槸绂佺敤鐨勩€?
 
-对于 DVB-C2、DVB-S2 和 DVB-T2，有效的子流 id 范围为 0 到 255。
+瀵逛簬 DVB-C2銆丏VB-S2 鍜?DVB-T2锛屾湁鏁堢殑瀛愭祦 id 鑼冨洿涓?0 鍒?255銆?
 
-对于 ISDB，有效的子流 id 范围为 1 到 65535。
+瀵逛簬 ISDB锛屾湁鏁堢殑瀛愭祦 id 鑼冨洿涓?1 鍒?65535銆?
 
-要禁用它，应使用特殊宏 NO_STREAM_ID_FILTER。
+瑕佺鐢ㄥ畠锛屽簲浣跨敤鐗规畩瀹?NO_STREAM_ID_FILTER銆?
 
-注意：任何超出 id 范围的值也会禁用过滤。
+娉ㄦ剰锛氫换浣曡秴鍑?id 鑼冨洿鐨勫€间篃浼氱鐢ㄨ繃婊ゃ€?
 
 
 
 ## DTV_DVBT2_PLP_ID_LEGACY
 
 
-已废弃，由 DTV_STREAM_ID 取代。
+宸插簾寮冿紝鐢?DTV_STREAM_ID 鍙栦唬銆?
 
 
 
 ## DTV_ENUM_DELSYS
 
 
-一个多标准（multi standard）frontend 需要通告其所提供的传输系统。应用程序在使用
-前端的任何其他操作之前，需要枚举所提供的传输系统。在引入该属性之前，使用
-FE_GET_INFO 来确定前端类型。对于提供多个传输系统的前端，FE_GET_INFO 帮助不大。
-打算使用多标准前端的应用程序必须枚举与其关联的传输系统，而不是尝试使用
-FE_GET_INFO。对于遗留前端，结果与 FE_GET_INFO 相同，但格式更具结构化。
+涓€涓鏍囧噯锛坢ulti standard锛塮rontend 闇€瑕侀€氬憡鍏舵墍鎻愪緵鐨勪紶杈撶郴缁熴€傚簲鐢ㄧ▼搴忓湪浣跨敤
+鍓嶇鐨勪换浣曞叾浠栨搷浣滀箣鍓嶏紝闇€瑕佹灇涓炬墍鎻愪緵鐨勪紶杈撶郴缁熴€傚湪寮曞叆璇ュ睘鎬т箣鍓嶏紝浣跨敤
+FE_GET_INFO 鏉ョ‘瀹氬墠绔被鍨嬨€傚浜庢彁渚涘涓紶杈撶郴缁熺殑鍓嶇锛孎E_GET_INFO 甯姪涓嶅ぇ銆?
+鎵撶畻浣跨敤澶氭爣鍑嗗墠绔殑搴旂敤绋嬪簭蹇呴』鏋氫妇涓庡叾鍏宠仈鐨勪紶杈撶郴缁燂紝鑰屼笉鏄皾璇曚娇鐢?
+FE_GET_INFO銆傚浜庨仐鐣欏墠绔紝缁撴灉涓?FE_GET_INFO 鐩稿悓锛屼絾鏍煎紡鏇村叿缁撴瀯鍖栥€?
 
-可接受的值由 `fe_delivery_system` 定义。
+鍙帴鍙楃殑鍊肩敱 `fe_delivery_system` 瀹氫箟銆?
 
 
 
 ## DTV_INTERLEAVING
 
 
-要使用的时域交织（time interleaving）。
+瑕佷娇鐢ㄧ殑鏃跺煙浜ょ粐锛坱ime interleaving锛夈€?
 
-可接受的值由 `fe_interleaving` 定义。
+鍙帴鍙楃殑鍊肩敱 `fe_interleaving` 瀹氫箟銆?
 
 
 
 ## DTV_LNA
 
 
-低噪声放大器（Low-noise amplifier）。
+浣庡櫔澹版斁澶у櫒锛圠ow-noise amplifier锛夈€?
 
-硬件可能提供可控的 LNA，可通过该参数手动设置。通常 LNA 只在地面设备中存在（如果
-有的话）。
+纭欢鍙兘鎻愪緵鍙帶鐨?LNA锛屽彲閫氳繃璇ュ弬鏁版墜鍔ㄨ缃€傞€氬父 LNA 鍙湪鍦伴潰璁惧涓瓨鍦紙濡傛灉
+鏈夌殑璇濓級銆?
 
-可能的值：0、1、LNA_AUTO
+鍙兘鐨勫€硷細0銆?銆丩NA_AUTO
 
-0，LNA 关闭
+0锛孡NA 鍏抽棴
 
-1，LNA 开启
+1锛孡NA 寮€鍚?
 
-使用特殊宏 LNA_AUTO 设置 LNA 为自动模式
+浣跨敤鐗规畩瀹?LNA_AUTO 璁剧疆 LNA 涓鸿嚜鍔ㄦā寮?
 
 
 
 ## DTV_SCRAMBLING_SEQUENCE_INDEX
 
 
-用于 DVB-S2。
+鐢ㄤ簬 DVB-S2銆?
 
-该 18 位字段（存在时）承载 DVB-S2 物理层加扰序列（scrambling sequence）的索引，
-如 EN 302 307 第 5.5.4 节所定义。没有显式的信令方法将加扰序列索引发送给接收端。
-如果可用的话，可以使用 S2 卫星传输系统描述符来读取加扰序列索引（EN 300 468
-表 41）。
+璇?18 浣嶅瓧娈碉紙瀛樺湪鏃讹級鎵胯浇 DVB-S2 鐗╃悊灞傚姞鎵板簭鍒楋紙scrambling sequence锛夌殑绱㈠紩锛?
+濡?EN 302 307 绗?5.5.4 鑺傛墍瀹氫箟銆傛病鏈夋樉寮忕殑淇′护鏂规硶灏嗗姞鎵板簭鍒楃储寮曞彂閫佺粰鎺ユ敹绔€?
+濡傛灉鍙敤鐨勮瘽锛屽彲浠ヤ娇鐢?S2 鍗槦浼犺緭绯荤粺鎻忚堪绗︽潵璇诲彇鍔犳壈搴忓垪绱㈠紩锛圗N 300 468
+琛?41锛夈€?
 
-默认使用 gold 加扰序列索引 0。
+榛樿浣跨敤 gold 鍔犳壈搴忓垪绱㈠紩 0銆?
 
-有效的加扰序列索引范围为 0 到 262142。
+鏈夋晥鐨勫姞鎵板簭鍒楃储寮曡寖鍥翠负 0 鍒?262142銆?

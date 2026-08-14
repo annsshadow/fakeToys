@@ -1,34 +1,34 @@
-## ALSA Jack 控件
+﻿## ALSA Jack 鎺т欢
 
 
-## 我们为什么需要 Jack kcontrol
+## 鎴戜滑涓轰粈涔堥渶瑕?Jack kcontrol
 
 
-ALSA 使用 kcontrol 向用户空间导出音频控件（开关、音量、多路复用器等）。这意味着像 pulseaudio 这样的用户空间应用程序可以在没有插入耳机时关闭耳机并打开扬声器。
+ALSA 浣跨敤 kcontrol 鍚戠敤鎴风┖闂村鍑洪煶棰戞帶浠讹紙寮€鍏炽€侀煶閲忋€佸璺鐢ㄥ櫒绛夛級銆傝繖鎰忓懗鐫€鍍?pulseaudio 杩欐牱鐨勭敤鎴风┖闂村簲鐢ㄧ▼搴忓彲浠ュ湪娌℃湁鎻掑叆鑰虫満鏃跺叧闂€虫満骞舵墦寮€鎵０鍣ㄣ€?
 
-旧的 ALSA jack 代码仅为每个注册的 jack 创建输入设备。这些 jack 输入设备无法被以非 root 身份运行的用户空间设备读取。
+鏃х殑 ALSA jack 浠ｇ爜浠呬负姣忎釜娉ㄥ唽鐨?jack 鍒涘缓杈撳叆璁惧銆傝繖浜?jack 杈撳叆璁惧鏃犳硶琚互闈?root 韬唤杩愯鐨勭敤鎴风┖闂磋澶囪鍙栥€?
 
-新的 jack 代码为每个 jack 创建嵌入式 jack kcontrol，任何进程都可以读取。
+鏂扮殑 jack 浠ｇ爜涓烘瘡涓?jack 鍒涘缓宓屽叆寮?jack kcontrol锛屼换浣曡繘绋嬮兘鍙互璇诲彇銆?
 
-这可以结合 UCM，使用户空间能够根据 jack 插入或拔出事件更智能地路由音频。
+杩欏彲浠ョ粨鍚?UCM锛屼娇鐢ㄦ埛绌洪棿鑳藉鏍规嵁 jack 鎻掑叆鎴栨嫈鍑轰簨浠舵洿鏅鸿兘鍦拌矾鐢遍煶棰戙€?
 
-## Jack Kcontrol 内部机制
-
-
-每个 jack 都会有一个 kcontrol 列表，以便我们可以在 jack 创建阶段创建一个 kcontrol 并将其附加到 jack 上。我们也可以在任何需要的时候向已有的 jack 添加 kcontrol。
-
-当 Jack 被释放时，这些 kcontrol 会被自动释放。
-
-## 如何使用 jack kcontrol
+## Jack Kcontrol 鍐呴儴鏈哄埗
 
 
-为了保持兼容性，snd_jack_new() 被修改，添加了两个参数：
+姣忎釜 jack 閮戒細鏈変竴涓?kcontrol 鍒楄〃锛屼互渚挎垜浠彲浠ュ湪 jack 鍒涘缓闃舵鍒涘缓涓€涓?kcontrol 骞跺皢鍏堕檮鍔犲埌 jack 涓娿€傛垜浠篃鍙互鍦ㄤ换浣曢渶瑕佺殑鏃跺€欏悜宸叉湁鐨?jack 娣诲姞 kcontrol銆?
+
+褰?Jack 琚噴鏀炬椂锛岃繖浜?kcontrol 浼氳鑷姩閲婃斁銆?
+
+## 濡備綍浣跨敤 jack kcontrol
+
+
+涓轰簡淇濇寔鍏煎鎬э紝snd_jack_new() 琚慨鏀癸紝娣诲姞浜嗕袱涓弬鏁帮細
 
 initial_kctl
-  如果为 true，则创建一个 kcontrol 并将其添加到 jack 列表。
+  濡傛灉涓?true锛屽垯鍒涘缓涓€涓?kcontrol 骞跺皢鍏舵坊鍔犲埌 jack 鍒楄〃銆?
 phantom_jack
-  不为 phantom jack 创建输入设备。
+  涓嶄负 phantom jack 鍒涘缓杈撳叆璁惧銆?
 
-HDA jack 可以将 phantom_jack 设为 true 以创建一个 phantom jack，并将 initial_kctl 设为 true 以使用正确的 id 创建一个初始 kcontrol。
+HDA jack 鍙互灏?phantom_jack 璁句负 true 浠ュ垱寤轰竴涓?phantom jack锛屽苟灏?initial_kctl 璁句负 true 浠ヤ娇鐢ㄦ纭殑 id 鍒涘缓涓€涓垵濮?kcontrol銆?
 
-ASoC jack 应将 initial_kctl 设为 false。引脚名称将被赋为 jack kcontrol 名称。
+ASoC jack 搴斿皢 initial_kctl 璁句负 false銆傚紩鑴氬悕绉板皢琚祴涓?jack kcontrol 鍚嶇О銆?

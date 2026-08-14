@@ -1,57 +1,38 @@
-
-## 内核驱动 sbrmi
+﻿
+## 鍐呮牳椹卞姩 sbrmi
 
 
 Supported hardware:
 
-  - 通过 APML 连接到 BMC 的、兼容 Sideband Remote Management Interface
-    （SB-RMI）的 AMD SoC 设备。
-
+  - 閫氳繃 APML 杩炴帴鍒?BMC 鐨勩€佸吋瀹?Sideband Remote Management Interface
+    锛圫B-RMI锛夌殑 AMD SoC 璁惧銆?
     Prefix: 'sbrmi'
 
-    Addresses scanned: 该驱动不支持地址扫描。
-
-    要在支持 SB-RMI 的 AMD CPU 上实例化该驱动，i2c 总线编号应为从板级管理
-    控制器（BMC）连接到 CPU 的总线。
-    SMBus 地址实际为 7 位。部分厂商及 SMBus 规范将地址表示为 8 位、左对齐，
-    并将 R/W 位作为写（0）使 bit 0 为 0。部分厂商仅使用 7 位来描述地址。
-    如 AMD 的 APML 规范所述，SB-RMI 地址通常为 socket 0 的 78h(0111 100W) 或
-    3Ch(011 1100)，以及 socket 1 的 70h(0111 000W) 或 38h(011 1000)，但会
-    因硬件地址选择引脚而有所变化。
-
-    Datasheet: SB-RMI 接口与协议，连同 Advanced Platform Management Link
-               （APML）规范，作为开源 SoC 寄存器参考的一部分提供，位于：
+    Addresses scanned: 璇ラ┍鍔ㄤ笉鏀寔鍦板潃鎵弿銆?
+    瑕佸湪鏀寔 SB-RMI 鐨?AMD CPU 涓婂疄渚嬪寲璇ラ┍鍔紝i2c 鎬荤嚎缂栧彿搴斾负浠庢澘绾х鐞?    鎺у埗鍣紙BMC锛夎繛鎺ュ埌 CPU 鐨勬€荤嚎銆?    SMBus 鍦板潃瀹為檯涓?7 浣嶃€傞儴鍒嗗巶鍟嗗強 SMBus 瑙勮寖灏嗗湴鍧€琛ㄧず涓?8 浣嶃€佸乏瀵归綈锛?    骞跺皢 R/W 浣嶄綔涓哄啓锛?锛変娇 bit 0 涓?0銆傞儴鍒嗗巶鍟嗕粎浣跨敤 7 浣嶆潵鎻忚堪鍦板潃銆?    濡?AMD 鐨?APML 瑙勮寖鎵€杩帮紝SB-RMI 鍦板潃閫氬父涓?socket 0 鐨?78h(0111 100W) 鎴?    3Ch(011 1100)锛屼互鍙?socket 1 鐨?70h(0111 000W) 鎴?38h(011 1000)锛屼絾浼?    鍥犵‖浠跺湴鍧€閫夋嫨寮曡剼鑰屾湁鎵€鍙樺寲銆?
+    Datasheet: SB-RMI 鎺ュ彛涓庡崗璁紝杩炲悓 Advanced Platform Management Link
+               锛圓PML锛夎鑼冿紝浣滀负寮€婧?SoC 瀵勫瓨鍣ㄥ弬鑰冪殑涓€閮ㄥ垎鎻愪緵锛屼綅浜庯細
 
                https://www.amd.com/en/support/tech-docs?keyword=55898
 
 Author: Akshay Gupta <akshay.gupta@amd.com>
 
-### 描述
+### 鎻忚堪
 
 
-APML 提供了一种从外部 SMBus 主设备与 SB Remote Management interface（SB-RMI）
-模块通信的方式，可用于通过邮箱命令报告 AMD 平台上的插槽功耗，并类似于典型的
-8 引脚远端电源传感器的 I2C 接口连接到 BMC。
-
-该驱动实现了当前功耗以及功耗上限与最大功耗上限。
-
-### sysfs 接口
+APML 鎻愪緵浜嗕竴绉嶄粠澶栭儴 SMBus 涓昏澶囦笌 SB Remote Management interface锛圫B-RMI锛?妯″潡閫氫俊鐨勬柟寮忥紝鍙敤浜庨€氳繃閭鍛戒护鎶ュ憡 AMD 骞冲彴涓婄殑鎻掓Ы鍔熻€楋紝骞剁被浼间簬鍏稿瀷鐨?8 寮曡剼杩滅鐢垫簮浼犳劅鍣ㄧ殑 I2C 鎺ュ彛杩炴帴鍒?BMC銆?
+璇ラ┍鍔ㄥ疄鐜颁簡褰撳墠鍔熻€椾互鍙婂姛鑰椾笂闄愪笌鏈€澶у姛鑰椾笂闄愩€?
+### sysfs 鎺ュ彛
 
 
-电源传感器可通过标准 `hwmon` 接口在 `sysfs` 上查询与设置，位于目录
-`/sys/class/hwmon/hwmonX`（X 为某值，查找使 `/sys/class/hwmon/hwmonX/name`
-内容为 `sbrmi` 的那个 `X`）。
-
+鐢垫簮浼犳劅鍣ㄥ彲閫氳繃鏍囧噯 `hwmon` 鎺ュ彛鍦?`sysfs` 涓婃煡璇笌璁剧疆锛屼綅浜庣洰褰?`/sys/class/hwmon/hwmonX`锛圶 涓烘煇鍊硷紝鏌ユ壘浣?`/sys/class/hwmon/hwmonX/name`
+鍐呭涓?`sbrmi` 鐨勯偅涓?`X`锛夈€?
 ================ ===== ========================================================
-Name             Perm   描述
+Name             Perm   鎻忚堪
 ================ ===== ========================================================
-power1_input     RO    当前消耗功率
-power1_cap       RW    可在 0 与 power1_cap_max 之间设置功耗限制
-power1_cap_max   RO    SMU FW 计算并报告的最大功耗限制
-================ ===== ========================================================
+power1_input     RO    褰撳墠娑堣€楀姛鐜?power1_cap       RW    鍙湪 0 涓?power1_cap_max 涔嬮棿璁剧疆鍔熻€楅檺鍒?power1_cap_max   RO    SMU FW 璁＄畻骞舵姤鍛婄殑鏈€澶у姛鑰楅檺鍒?================ ===== ========================================================
 
-以下示例展示了来自 i2c 地址的 'Power' 属性
-```
+浠ヤ笅绀轰緥灞曠ず浜嗘潵鑷?i2c 鍦板潃鐨?'Power' 灞炴€?```
 
   # sensors
   sbrmi-i2c-1-38

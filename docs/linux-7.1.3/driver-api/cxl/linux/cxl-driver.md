@@ -1,5 +1,5 @@
-
-## CXL 驱动操作
+﻿
+## CXL 椹卞姩鎿嶄綔
 
 
 ```
@@ -8,22 +8,15 @@
   /dev/cxl/
 
 ```
-`cxl-cli` 库作为 NDTCL 项目的一部分进行维护，可用于编写与这些设备交互的脚本。
+`cxl-cli` 搴撲綔涓?NDTCL 椤圭洰鐨勪竴閮ㄥ垎杩涜缁存姢锛屽彲鐢ㄤ簬缂栧啓涓庤繖浜涜澶囦氦浜掔殑鑴氭湰銆?
+## 椹卞姩
 
-## 驱动
+CXL 椹卞姩琚媶鍒嗕负澶氫釜椹卞姩銆?
+- cxl_core  - 鍩虹鍒濆鍖栨帴鍙ｄ笌鏍稿績瀵硅薄鍒涘缓
+- cxl_port  - 鍒濆鍖栨牴骞舵彁渚涚鍙ｆ灇涓炬帴鍙ｃ€?- cxl_acpi  - 鍒濆鍖栨牴瑙ｇ爜鍣ㄥ苟涓?ACPI 鏁版嵁浜や簰銆?- cxl_p/mem - 鍒濆鍖栧唴瀛樿澶?- cxl_pci   - 浣跨敤 cxl_port 鏋氫妇瀹為檯鐨?fabric 灞傜骇缁撴瀯銆?
+## 椹卞姩璁惧
 
-CXL 驱动被拆分为多个驱动。
-
-- cxl_core  - 基础初始化接口与核心对象创建
-- cxl_port  - 初始化根并提供端口枚举接口。
-- cxl_acpi  - 初始化根解码器并与 ACPI 数据交互。
-- cxl_p/mem - 初始化内存设备
-- cxl_pci   - 使用 cxl_port 枚举实际的 fabric 层级结构。
-
-## 驱动设备
-
-下面是一个来自单路（single-socket）系统、带有 4 个主机桥（host bridge）的示例。其中两个主机桥各挂载了一个内存设备，且这些设备被交错（interleaved）
-```
+涓嬮潰鏄竴涓潵鑷崟璺紙single-socket锛夌郴缁熴€佸甫鏈?4 涓富鏈烘ˉ锛坔ost bridge锛夌殑绀轰緥銆傚叾涓袱涓富鏈烘ˉ鍚勬寕杞戒簡涓€涓唴瀛樿澶囷紝涓旇繖浜涜澶囪浜ら敊锛坕nterleaved锛?```
 
   # ls /sys/bus/cxl/devices/
     dax_region0  decoder3.0  decoder6.0  mem0   port3
@@ -33,9 +26,7 @@ CXL 驱动被拆分为多个驱动。
 
 
 ```
-   :alt: 描述主机桥交错的 CXL fabric 有向图
-   :caption: 带有主机桥交错内存区域的 CXL fabric 有向图
-
+   :alt: 鎻忚堪涓绘満妗ヤ氦閿欑殑 CXL fabric 鏈夊悜鍥?   :caption: 甯︽湁涓绘満妗ヤ氦閿欏唴瀛樺尯鍩熺殑 CXL fabric 鏈夊悜鍥?
    digraph foo {
      "root0" -> "port1";
      "root0" -> "port3";
@@ -57,24 +48,20 @@ CXL 驱动被拆分为多个驱动。
      "dax_region0" -> "dax0.0";
    }
 
-本节我们将探索此配置中存在的设备，但更多配置将在下面的示例配置中深入讨论。
+鏈妭鎴戜滑灏嗘帰绱㈡閰嶇疆涓瓨鍦ㄧ殑璁惧锛屼絾鏇村閰嶇疆灏嗗湪涓嬮潰鐨勭ず渚嬮厤缃腑娣卞叆璁ㄨ銆?
+### 鍩虹璁惧
 
-### 基础设备
-
-CXL fabric 中的大多数设备都是某种类型的 `port`（因为每个设备主要是将请求从一个设备路由到下一个，而非提供直接服务）。
-
+CXL fabric 涓殑澶у鏁拌澶囬兘鏄煇绉嶇被鍨嬬殑 `port`锛堝洜涓烘瘡涓澶囦富瑕佹槸灏嗚姹備粠涓€涓澶囪矾鐢卞埌涓嬩竴涓紝鑰岄潪鎻愪緵鐩存帴鏈嶅姟锛夈€?
 #### Root
 
-`CXL Root` 是一个逻辑对象，由 `cxl_acpi` 驱动在 `cxl_acpi_probe` 期间创建——前提是找到了 `ACPI0017` `Compute Express Link
-Root Object`（根对象）设备类。
+`CXL Root` 鏄竴涓€昏緫瀵硅薄锛岀敱 `cxl_acpi` 椹卞姩鍦?`cxl_acpi_probe` 鏈熼棿鍒涘缓鈥斺€斿墠鎻愭槸鎵惧埌浜?`ACPI0017` `Compute Express Link
+Root Object`锛堟牴瀵硅薄锛夎澶囩被銆?
+Root 鍖呭惈鎸囧悜浠ヤ笅瀵硅薄鐨勯摼鎺ワ細
 
-Root 包含指向以下对象的链接：
+- 鐢?CHBS 鍦?[CEDT<../platform/acpi/cedt>](CEDT<../platform/acpi/cedt>) 涓畾涔夌殑 `Host Bridge Ports`
 
-- 由 CHBS 在 [CEDT<../platform/acpi/cedt>](CEDT<../platform/acpi/cedt>) 中定义的 `Host Bridge Ports`
-
-- 通常连接到 `Host Bridge Ports` 的 `Downstream Ports`。
-
-- 由 CFMWS 在 [CEDT<../platform/acpi/cedt>](CEDT<../platform/acpi/cedt>) 中定义的 `Root Decoders`
+- 閫氬父杩炴帴鍒?`Host Bridge Ports` 鐨?`Downstream Ports`銆?
+- 鐢?CFMWS 鍦?[CEDT<../platform/acpi/cedt>](CEDT<../platform/acpi/cedt>) 涓畾涔夌殑 `Root Decoders`
 
 ```
 
@@ -93,12 +80,10 @@ Root 包含指向以下对象的链接：
     cxl_decoder_root
 
 ```
-root 是由 Linux CXL 驱动呈现的 CXL fabric 中第一个 `logical port`（逻辑端口）。`CXL root` 是一种特殊类型的 `switch port`（交换端口），因为它只有下游端口连接。
-
+root 鏄敱 Linux CXL 椹卞姩鍛堢幇鐨?CXL fabric 涓涓€涓?`logical port`锛堥€昏緫绔彛锛夈€俙CXL root` 鏄竴绉嶇壒娈婄被鍨嬬殑 `switch port`锛堜氦鎹㈢鍙ｏ級锛屽洜涓哄畠鍙湁涓嬫父绔彛杩炴帴銆?
 #### Port
 
-`port` 对象更准确地被描述为一个 `switch port`（交换端口）。它可以表示一个到 root 的主机桥，或者交换机上的一个实际交换端口。一个 `switch port` 包含一个或多个解码器，用于将内存请求路由到下游端口，这些下游端口可能连接到另一个 `switch port` 或一个 `endpoint port`。
-
+`port` 瀵硅薄鏇村噯纭湴琚弿杩颁负涓€涓?`switch port`锛堜氦鎹㈢鍙ｏ級銆傚畠鍙互琛ㄧず涓€涓埌 root 鐨勪富鏈烘ˉ锛屾垨鑰呬氦鎹㈡満涓婄殑涓€涓疄闄呬氦鎹㈢鍙ｃ€備竴涓?`switch port` 鍖呭惈涓€涓垨澶氫釜瑙ｇ爜鍣紝鐢ㄤ簬灏嗗唴瀛樿姹傝矾鐢卞埌涓嬫父绔彛锛岃繖浜涗笅娓哥鍙ｅ彲鑳借繛鎺ュ埌鍙︿竴涓?`switch port` 鎴栦竴涓?`endpoint port`銆?
 ```
 
   # ls /sys/bus/cxl/devices/port1
@@ -116,21 +101,16 @@ root 是由 Linux CXL 驱动呈现的 CXL fabric 中第一个 `logical port`（�
     cxl_port
 
 ```
-CXL fabric 中的 `Host Bridges` 在探测 `CXL Root` 的同时，于 `cxl_acpi_probe` 期间被探测。这使得 root 与主机桥之间能够立即建立逻辑连接。
+CXL fabric 涓殑 `Host Bridges` 鍦ㄦ帰娴?`CXL Root` 鐨勫悓鏃讹紝浜?`cxl_acpi_probe` 鏈熼棿琚帰娴嬨€傝繖浣垮緱 root 涓庝富鏈烘ˉ涔嬮棿鑳藉绔嬪嵆寤虹珛閫昏緫杩炴帴銆?
+- root 鏈変竴涓埌涓绘満妗ョ殑涓嬫父绔彛杩炴帴
 
-- root 有一个到主机桥的下游端口连接
-
-- 主机桥有一个到 root 的上游端口连接。
-
-- 主机桥有一个或多个到交换机或端点端口的下游端口连接。
-
-`Host Bridge` 是一种特殊类型的 CXL `switch port`。它在 ACPI 规范中通过 `ACPI0016` ID 显式定义。`Host Bridge` 端口将在 `acpi_probe` 时被探测，而实际交换机上的类似端口将在稍后被探测。除此之外，交换机端口与主机桥端口看起来非常相似——它们都包含用于在上下游端口之间路由访问的交换机解码器。
-
+- 涓绘満妗ユ湁涓€涓埌 root 鐨勪笂娓哥鍙ｈ繛鎺ャ€?
+- 涓绘満妗ユ湁涓€涓垨澶氫釜鍒颁氦鎹㈡満鎴栫鐐圭鍙ｇ殑涓嬫父绔彛杩炴帴銆?
+`Host Bridge` 鏄竴绉嶇壒娈婄被鍨嬬殑 CXL `switch port`銆傚畠鍦?ACPI 瑙勮寖涓€氳繃 `ACPI0016` ID 鏄惧紡瀹氫箟銆俙Host Bridge` 绔彛灏嗗湪 `acpi_probe` 鏃惰鎺㈡祴锛岃€屽疄闄呬氦鎹㈡満涓婄殑绫讳技绔彛灏嗗湪绋嶅悗琚帰娴嬨€傞櫎姝や箣澶栵紝浜ゆ崲鏈虹鍙ｄ笌涓绘満妗ョ鍙ｇ湅璧锋潵闈炲父鐩镐技鈥斺€斿畠浠兘鍖呭惈鐢ㄤ簬鍦ㄤ笂涓嬫父绔彛涔嬮棿璺敱璁块棶鐨勪氦鎹㈡満瑙ｇ爜鍣ㄣ€?
 #### Endpoint
 
-`endpoint` 是 fabric 中的一个终端端口。它是一个 `logical device`（逻辑设备），并且可能是由某个内存设备呈现的众多 `logical devices` 之一。在 fabric 中它仍被视为一种 `port`。
-
-一个 `endpoint` 包含 `endpoint decoders`（端点解码器）以及设备的 Coherent Device
+`endpoint` 鏄?fabric 涓殑涓€涓粓绔鍙ｃ€傚畠鏄竴涓?`logical device`锛堥€昏緫璁惧锛夛紝骞朵笖鍙兘鏄敱鏌愪釜鍐呭瓨璁惧鍛堢幇鐨勪紬澶?`logical devices` 涔嬩竴銆傚湪 fabric 涓畠浠嶈瑙嗕负涓€绉?`port`銆?
+涓€涓?`endpoint` 鍖呭惈 `endpoint decoders`锛堢鐐硅В鐮佸櫒锛変互鍙婅澶囩殑 Coherent Device
 ```
 
   # ls /sys/bus/cxl/devices/endpoint5
@@ -146,9 +126,8 @@ CXL fabric 中的 `Host Bridges` 在探测 `CXL Root` 的同时，于 `cxl_acpi_
 
 
 ```
-#### Memory Device（memdev）
-
-`memdev` 由 `cxl_pci` 驱动在 `cxl_pci_probe` 中探测并添加，并由 `cxl_mem` 驱动管理。它主要通过 `/dev/cxl/memN` 提供到内存设备的 `IOCTL` 接口，并暴露各种
+#### Memory Device锛坢emdev锛?
+`memdev` 鐢?`cxl_pci` 椹卞姩鍦?`cxl_pci_probe` 涓帰娴嬪苟娣诲姞锛屽苟鐢?`cxl_mem` 椹卞姩绠＄悊銆傚畠涓昏閫氳繃 `/dev/cxl/memN` 鎻愪緵鍒板唴瀛樿澶囩殑 `IOCTL` 鎺ュ彛锛屽苟鏆撮湶鍚勭
 ```
 
   # ls /sys/bus/cxl/devices/mem0
@@ -157,15 +136,11 @@ CXL fabric 中的 `Host Bridges` 在探测 `CXL Root` 的同时，于 `cxl_acpi_
     firmware  numa_node           ram          subsystem
 
 ```
-一个 Memory Device 是一个不属端口类型的离散基础对象。虽然它所属的物理设备也可能承载一个 `endpoint`，但 `endpoint` 与 `memdev` 之间的关系并未在 sysfs 中体现。
-
+涓€涓?Memory Device 鏄竴涓笉灞炵鍙ｇ被鍨嬬殑绂绘暎鍩虹瀵硅薄銆傝櫧鐒跺畠鎵€灞炵殑鐗╃悊璁惧涔熷彲鑳芥壙杞戒竴涓?`endpoint`锛屼絾 `endpoint` 涓?`memdev` 涔嬮棿鐨勫叧绯诲苟鏈湪 sysfs 涓綋鐜般€?
 #### Port Relationships
 
-在上述示例中，有四个主机桥连接到 root，其中两个主机桥各挂载了一个端点。
-
-   :alt: 描述主机桥交错的 CXL fabric 有向图
-   :caption: 带有主机桥交错内存区域的 CXL fabric 有向图
-
+鍦ㄤ笂杩扮ず渚嬩腑锛屾湁鍥涗釜涓绘満妗ヨ繛鎺ュ埌 root锛屽叾涓袱涓富鏈烘ˉ鍚勬寕杞戒簡涓€涓鐐广€?
+   :alt: 鎻忚堪涓绘満妗ヤ氦閿欑殑 CXL fabric 鏈夊悜鍥?   :caption: 甯︽湁涓绘満妗ヤ氦閿欏唴瀛樺尯鍩熺殑 CXL fabric 鏈夊悜鍥?
    digraph foo {
      "root0"    -> "port1";
      "root0"    -> "port2";
@@ -177,10 +152,8 @@ CXL fabric 中的 `Host Bridges` 在探测 `CXL Root` 的同时，于 `cxl_acpi_
 
 ### Decoders
 
-`Decoder`（解码器）是 CXL Host-Managed Device Memory（HDM，主机管理设备内存）Decoder 的简称。它是一个将访问通过 CXL fabric 路由到端点、并在端点处将 `Host Physical`（主机物理地址）转换为 `Device Physical`（设备物理地址）寻址的设备。
-
-CXL 3.1 规范强烈暗示只有端点解码器才应参与 `Host Physical Address` 到 `Device Physical Address` 的转换。
-```
+`Decoder`锛堣В鐮佸櫒锛夋槸 CXL Host-Managed Device Memory锛圚DM锛屼富鏈虹鐞嗚澶囧唴瀛橈級Decoder 鐨勭畝绉般€傚畠鏄竴涓皢璁块棶閫氳繃 CXL fabric 璺敱鍒扮鐐广€佸苟鍦ㄧ鐐瑰灏?`Host Physical`锛堜富鏈虹墿鐞嗗湴鍧€锛夎浆鎹负 `Device Physical`锛堣澶囩墿鐞嗗湴鍧€锛夊鍧€鐨勮澶囥€?
+CXL 3.1 瑙勮寖寮虹儓鏆楃ず鍙湁绔偣瑙ｇ爜鍣ㄦ墠搴斿弬涓?`Host Physical Address` 鍒?`Device Physical Address` 鐨勮浆鎹€?```
 
   8.2.4.20 CXL HDM Decoder Capability Structure
 
@@ -191,46 +164,30 @@ CXL 3.1 规范强烈暗示只有端点解码器才应参与 `Host Physical Addre
   Device Decode Logic
 
 ```
-这些注记暗示存在两个逻辑的解码器分组。
+杩欎簺娉ㄨ鏆楃ず瀛樺湪涓や釜閫昏緫鐨勮В鐮佸櫒鍒嗙粍銆?
+- Routing Decoder锛堣矾鐢辫В鐮佸櫒锛? 浠呰矾鐢辫闂絾涓嶇炕璇戝湴鍧€锛堜粠 HPA 鍒?DPA锛夌殑瑙ｇ爜鍣ㄣ€?
+- Translating Decoder锛堣浆鎹㈣В鐮佸櫒锛? 涓虹鐐规湇鍔¤€屽皢璁块棶浠?HPA 杞崲涓?DPA 鐨勮В鐮佸櫒銆?
+CXL 椹卞姩鍖哄垎 3 绉嶈В鐮佸櫒绫诲瀷锛歳oot銆乻witch 鍜?endpoint銆傚彧鏈夌鐐硅В鐮佸櫒鏄?Translating Decoder锛堣浆鎹㈣В鐮佸櫒锛夛紝鍏朵綑閮芥槸 Routing Decoder锛堣矾鐢辫В鐮佸櫒锛夈€?
 
-- Routing Decoder（路由解码器）- 仅路由访问但不翻译地址（从 HPA 到 DPA）的解码器。
-
-- Translating Decoder（转换解码器）- 为端点服务而将访问从 HPA 转换为 DPA 的解码器。
-
-CXL 驱动区分 3 种解码器类型：root、switch 和 endpoint。只有端点解码器是 Translating Decoder（转换解码器），其余都是 Routing Decoder（路由解码器）。
-
-
-   Linux 强烈假设端点解码器是 fabric 中唯一主动将 HPA 转换为 DPA 的解码器。Linux 假设路由解码器将 HPA 原样传递给 fabric 中的下一个解码器。
-
-   因此，假设 fabric 中任何给定的解码器的地址范围都是其上游端口解码器地址范围的子集。对此方案的任何偏离在规范中都属于未定义行为。Linux 优先采用规范定义/架构定义的行为。
-
-解码器如果配置为交错内存访问，则可能具有一个或多个 `Downstream Targets`（下游目标）。这将通过 `target_list` 参数在 sysfs 中呈现。
-
+   Linux 寮虹儓鍋囪绔偣瑙ｇ爜鍣ㄦ槸 fabric 涓敮涓€涓诲姩灏?HPA 杞崲涓?DPA 鐨勮В鐮佸櫒銆侺inux 鍋囪璺敱瑙ｇ爜鍣ㄥ皢 HPA 鍘熸牱浼犻€掔粰 fabric 涓殑涓嬩竴涓В鐮佸櫒銆?
+   鍥犳锛屽亣璁?fabric 涓换浣曠粰瀹氱殑瑙ｇ爜鍣ㄧ殑鍦板潃鑼冨洿閮芥槸鍏朵笂娓哥鍙ｈВ鐮佸櫒鍦板潃鑼冨洿鐨勫瓙闆嗐€傚姝ゆ柟妗堢殑浠讳綍鍋忕鍦ㄨ鑼冧腑閮藉睘浜庢湭瀹氫箟琛屼负銆侺inux 浼樺厛閲囩敤瑙勮寖瀹氫箟/鏋舵瀯瀹氫箟鐨勮涓恒€?
+瑙ｇ爜鍣ㄥ鏋滈厤缃负浜ら敊鍐呭瓨璁块棶锛屽垯鍙兘鍏锋湁涓€涓垨澶氫釜 `Downstream Targets`锛堜笅娓哥洰鏍囷級銆傝繖灏嗛€氳繃 `target_list` 鍙傛暟鍦?sysfs 涓憟鐜般€?
 #### Root Decoder
 
-`Root Decoder` 是 :doc:`CEDT
-<../platform/acpi/cedt>` 中 CFMWS 字段所表示的物理地址与交错配置的逻辑构造。
-Linux 将此信息呈现为存在于 `CXL Root` 中的一个解码器。我们将其视为一个 `Root Decoder`，尽管严格来说它存在于 CXL 规范与平台相关的 CXL root 实现的边界上。
+`Root Decoder` 鏄?:doc:`CEDT
+<../platform/acpi/cedt>` 涓?CFMWS 瀛楁鎵€琛ㄧず鐨勭墿鐞嗗湴鍧€涓庝氦閿欓厤缃殑閫昏緫鏋勯€犮€?Linux 灏嗘淇℃伅鍛堢幇涓哄瓨鍦ㄤ簬 `CXL Root` 涓殑涓€涓В鐮佸櫒銆傛垜浠皢鍏惰涓轰竴涓?`Root Decoder`锛屽敖绠′弗鏍兼潵璇村畠瀛樺湪浜?CXL 瑙勮寖涓庡钩鍙扮浉鍏崇殑 CXL root 瀹炵幇鐨勮竟鐣屼笂銆?
+Linux 灏嗚繖浜涢€昏緫瑙ｇ爜鍣ㄨ涓轰竴绉?`Routing Decoder`锛堣矾鐢辫В鐮佸櫒锛夛紝骞朵笖鏄?CXL fabric 涓涓€涓帴鏀舵潵鑷钩鍙板唴瀛樻帶鍒跺櫒鐨勫唴瀛樿闂殑瑙ｇ爜鍣ㄣ€?
+`Root Decoders` 鍦?`cxl_acpi_probe` 鏈熼棿鍒涘缓銆傛瘡涓?CFMWS 鏉＄洰鍦?[CEDT <../platform/acpi/cedt>](CEDT <../platform/acpi/cedt>) 涓垱寤轰竴涓?root 瑙ｇ爜鍣ㄣ€?
+`target_list` 鍙傛暟鐢?CFMWS 鐨?target 瀛楁濉厖銆俽oot 瑙ｇ爜鍣ㄧ殑鐩爣鏄?`Host Bridges`锛堜富鏈烘ˉ锛夛紝杩欐剰鍛崇潃鍦?root 瑙ｇ爜鍣ㄧ骇鍒畬鎴愮殑浜ら敊鏄竴绉?`Inter-Host-Bridge Interleave`锛堜富鏈烘ˉ闂翠氦閿欙級銆?
+鍙湁 root 瑙ｇ爜鍣ㄨ兘澶熻繘琛?`Inter-Host-Bridge Interleave`锛堜富鏈烘ˉ闂翠氦閿欙級銆?
+姝ょ被浜ら敊蹇呴』鐢卞钩鍙伴厤缃紝骞舵弿杩板湪 ACPI CEDT CFMWS 涓紝鍥犱负 CFMWS 涓殑鐩爣 CXL 涓绘満妗?UID 蹇呴』涓?:doc:`CEDT
+<../platform/acpi/cedt>` 鐨?CHBS 瀛楁涓殑 CXL 涓绘満妗?UID锛屼互鍙?[DSDT <../platform/acpi/dsdt>](DSDT <../platform/acpi/dsdt>) 涓畾涔夌殑 CXL 涓绘満妗?UID 瀛楁鐩稿尮閰嶃€?
+root 瑙ｇ爜鍣ㄤ腑鐨勪氦閿欒缃弿杩扮殑鏄浣曞湪**鐩存帴涓嬫父鐩爣**涔嬮棿浜ら敊璁块棶锛岃€岄潪鏁翠釜浜ら敊闆嗗悎銆?
+root 瑙ｇ爜鍣ㄦ弿杩扮殑鍐呭瓨鑼冨洿鐢ㄤ簬
 
-Linux 将这些逻辑解码器视为一种 `Routing Decoder`（路由解码器），并且是 CXL fabric 中第一个接收来自平台内存控制器的内存访问的解码器。
+1) 鍒涘缓涓€涓唴瀛樺尯鍩燂紙鏈緥涓负 `region0`锛夛紝浠ュ強
 
-`Root Decoders` 在 `cxl_acpi_probe` 期间创建。每个 CFMWS 条目在 [CEDT <../platform/acpi/cedt>](CEDT <../platform/acpi/cedt>) 中创建一个 root 解码器。
-
-`target_list` 参数由 CFMWS 的 target 字段填充。root 解码器的目标是 `Host Bridges`（主机桥），这意味着在 root 解码器级别完成的交错是一种 `Inter-Host-Bridge Interleave`（主机桥间交错）。
-
-只有 root 解码器能够进行 `Inter-Host-Bridge Interleave`（主机桥间交错）。
-
-此类交错必须由平台配置，并描述在 ACPI CEDT CFMWS 中，因为 CFMWS 中的目标 CXL 主机桥 UID 必须与 :doc:`CEDT
-<../platform/acpi/cedt>` 的 CHBS 字段中的 CXL 主机桥 UID，以及 [DSDT <../platform/acpi/dsdt>](DSDT <../platform/acpi/dsdt>) 中定义的 CXL 主机桥 UID 字段相匹配。
-
-root 解码器中的交错设置描述的是如何在**直接下游目标**之间交错访问，而非整个交错集合。
-
-root 解码器描述的内存范围用于
-
-1) 创建一个内存区域（本例中为 `region0`），以及
-
-2) 将该区域与一个 IO Memory Resource（`kernel/resource.c`）关联
-
+2) 灏嗚鍖哄煙涓庝竴涓?IO Memory Resource锛坄kernel/resource.c`锛夊叧鑱?
 ```
 
   # ls /sys/bus/cxl/devices/decoder0.0/
@@ -245,10 +202,8 @@ root 解码器描述的内存范围用于
     0xc050000000
 
 ```
-IO Memory Resource 在早期引导期间创建，此时在 EFI Memory Map 或 E820 表（在 x86 上）中识别到 CFMWS 区域。
-
-Root 解码器被定义为一个独立的 devtype，但它同时也是某种类型
-```
+IO Memory Resource 鍦ㄦ棭鏈熷紩瀵兼湡闂村垱寤猴紝姝ゆ椂鍦?EFI Memory Map 鎴?E820 琛紙鍦?x86 涓婏級涓瘑鍒埌 CFMWS 鍖哄煙銆?
+Root 瑙ｇ爜鍣ㄨ瀹氫箟涓轰竴涓嫭绔嬬殑 devtype锛屼絾瀹冨悓鏃朵篃鏄煇绉嶇被鍨?```
 
   # cat /sys/bus/cxl/devices/decoder0.0/devtype
     cxl_decoder_root
@@ -256,7 +211,7 @@ Root 解码器被定义为一个独立的 devtype，但它同时也是某种类�
 ```
 #### Switch Decoder
 
-任何非 root 的、进行转换的解码器都被视为 `Switch Decoder`（交换机解码器），并呈现为 `cxl_decoder_switch` 类型。`Host Bridge` 和 `CXL
+浠讳綍闈?root 鐨勩€佽繘琛岃浆鎹㈢殑瑙ｇ爜鍣ㄩ兘琚涓?`Switch Decoder`锛堜氦鎹㈡満瑙ｇ爜鍣級锛屽苟鍛堢幇涓?`cxl_decoder_switch` 绫诲瀷銆俙Host Bridge` 鍜?`CXL
 ```
 
   # ls /sys/bus/cxl/devices/decoder1.0/
@@ -271,17 +226,13 @@ Root 解码器被定义为一个独立的 devtype，但它同时也是某种类�
     region0
 
 ```
-`Switch Decoder` 建立了由 root 解码器定义的区域与下游目标端口之间的关联。在交换机解码器内部完成的交错是多下游端口交错（对于主机桥则是 `Intra-Host-Bridge Interleave`，主机桥内交错）。
-
-交换机解码器中的交错设置描述的是如何在**直接下游目标**之间交错访问，而非整个交错集合。
-
-交换机解码器在 `cxl_port` 驱动的 `cxl_switch_port_probe` 期间创建，并基于 PCI 设备的 DVSEC 寄存器创建。
-
-交换机解码器编程在探测期间进行验证（如果平台在引导时对其进行了编程，见下文 `Auto Decoders`），或在提交时进行验证（如果在运行时编程，见下文 `Runtime Programming`）。
-
+`Switch Decoder` 寤虹珛浜嗙敱 root 瑙ｇ爜鍣ㄥ畾涔夌殑鍖哄煙涓庝笅娓哥洰鏍囩鍙ｄ箣闂寸殑鍏宠仈銆傚湪浜ゆ崲鏈鸿В鐮佸櫒鍐呴儴瀹屾垚鐨勪氦閿欐槸澶氫笅娓哥鍙ｄ氦閿欙紙瀵逛簬涓绘満妗ュ垯鏄?`Intra-Host-Bridge Interleave`锛屼富鏈烘ˉ鍐呬氦閿欙級銆?
+浜ゆ崲鏈鸿В鐮佸櫒涓殑浜ら敊璁剧疆鎻忚堪鐨勬槸濡備綍鍦?*鐩存帴涓嬫父鐩爣**涔嬮棿浜ら敊璁块棶锛岃€岄潪鏁翠釜浜ら敊闆嗗悎銆?
+浜ゆ崲鏈鸿В鐮佸櫒鍦?`cxl_port` 椹卞姩鐨?`cxl_switch_port_probe` 鏈熼棿鍒涘缓锛屽苟鍩轰簬 PCI 璁惧鐨?DVSEC 瀵勫瓨鍣ㄥ垱寤恒€?
+浜ゆ崲鏈鸿В鐮佸櫒缂栫▼鍦ㄦ帰娴嬫湡闂磋繘琛岄獙璇侊紙濡傛灉骞冲彴鍦ㄥ紩瀵兼椂瀵瑰叾杩涜浜嗙紪绋嬶紝瑙佷笅鏂?`Auto Decoders`锛夛紝鎴栧湪鎻愪氦鏃惰繘琛岄獙璇侊紙濡傛灉鍦ㄨ繍琛屾椂缂栫▼锛岃涓嬫枃 `Runtime Programming`锛夈€?
 #### Endpoint Decoder
 
-任何连接到 CXL fabric 中**终端**点（`An Endpoint`）的解码器都被视为 `Endpoint Decoder`（端点解码器）。端点解码器的类型为
+浠讳綍杩炴帴鍒?CXL fabric 涓?*缁堢**鐐癸紙`An Endpoint`锛夌殑瑙ｇ爜鍣ㄩ兘琚涓?`Endpoint Decoder`锛堢鐐硅В鐮佸櫒锛夈€傜鐐硅В鐮佸櫒鐨勭被鍨嬩负
 ```
 
   # ls /sys/bus/cxl/devices/decoder5.0
@@ -298,25 +249,16 @@ Root 解码器被定义为一个独立的 devtype，但它同时也是某种类�
     region0
 
 ```
-`Endpoint Decoder` 与由 root 解码器定义的区域相关联，并描述与该区域关联的设备本地资源。
-
-与 root 和交换机解码器不同，端点解码器将 `Host Physical`（主机物理地址）转换为 `Device Physical`（设备物理地址）地址范围。因此端点上的交错设置描述的是整个**交错集合**。
-
-`Device Physical Address`（设备物理地址）区域必须按顺序提交。例如，起始于 0x80000000 的 DPA 区域不能在起始于 0x0 的 DPA 区域之前提交。
-
-自 Linux v6.15 起，Linux 不支持**不平衡**的交错配置，交错集合中的所有端点都应具有相同的交错设置（granularity 与 ways 必须相同）。
-
-端点解码器在 `cxl_port` 驱动的 `cxl_endpoint_port_probe` 期间创建，并基于 PCI 设备的 DVSEC 寄存器创建。
-
+`Endpoint Decoder` 涓庣敱 root 瑙ｇ爜鍣ㄥ畾涔夌殑鍖哄煙鐩稿叧鑱旓紝骞舵弿杩颁笌璇ュ尯鍩熷叧鑱旂殑璁惧鏈湴璧勬簮銆?
+涓?root 鍜屼氦鎹㈡満瑙ｇ爜鍣ㄤ笉鍚岋紝绔偣瑙ｇ爜鍣ㄥ皢 `Host Physical`锛堜富鏈虹墿鐞嗗湴鍧€锛夎浆鎹负 `Device Physical`锛堣澶囩墿鐞嗗湴鍧€锛夊湴鍧€鑼冨洿銆傚洜姝ょ鐐逛笂鐨勪氦閿欒缃弿杩扮殑鏄暣涓?*浜ら敊闆嗗悎**銆?
+`Device Physical Address`锛堣澶囩墿鐞嗗湴鍧€锛夊尯鍩熷繀椤绘寜椤哄簭鎻愪氦銆備緥濡傦紝璧峰浜?0x80000000 鐨?DPA 鍖哄煙涓嶈兘鍦ㄨ捣濮嬩簬 0x0 鐨?DPA 鍖哄煙涔嬪墠鎻愪氦銆?
+鑷?Linux v6.15 璧凤紝Linux 涓嶆敮鎸?*涓嶅钩琛?*鐨勪氦閿欓厤缃紝浜ら敊闆嗗悎涓殑鎵€鏈夌鐐归兘搴斿叿鏈夌浉鍚岀殑浜ら敊璁剧疆锛坓ranularity 涓?ways 蹇呴』鐩稿悓锛夈€?
+绔偣瑙ｇ爜鍣ㄥ湪 `cxl_port` 椹卞姩鐨?`cxl_endpoint_port_probe` 鏈熼棿鍒涘缓锛屽苟鍩轰簬 PCI 璁惧鐨?DVSEC 瀵勫瓨鍣ㄥ垱寤恒€?
 #### Decoder Relationships
 
-在上述示例中，存在一个 root 解码器，它通过两个主机桥路由内存访问。每个主机桥有一个解码器，将访问路由到其唯一的端点目标。每个端点有一个解码器，将 HPA 转换为 DPA 并服务于内存请求。
-
-驱动通过解码器编程验证端口之间的关系，因此我们可以将解码器之间的关系视为与端口类似的层级结构。
-
-   :alt: root、switch 与 endpoint 解码器之间层级关系的有向图。
-   :caption: CXL root、switch 与 endpoint 解码器的有向图。
-
+鍦ㄤ笂杩扮ず渚嬩腑锛屽瓨鍦ㄤ竴涓?root 瑙ｇ爜鍣紝瀹冮€氳繃涓や釜涓绘満妗ヨ矾鐢卞唴瀛樿闂€傛瘡涓富鏈烘ˉ鏈変竴涓В鐮佸櫒锛屽皢璁块棶璺敱鍒板叾鍞竴鐨勭鐐圭洰鏍囥€傛瘡涓鐐规湁涓€涓В鐮佸櫒锛屽皢 HPA 杞崲涓?DPA 骞舵湇鍔′簬鍐呭瓨璇锋眰銆?
+椹卞姩閫氳繃瑙ｇ爜鍣ㄧ紪绋嬮獙璇佺鍙ｄ箣闂寸殑鍏崇郴锛屽洜姝ゆ垜浠彲浠ュ皢瑙ｇ爜鍣ㄤ箣闂寸殑鍏崇郴瑙嗕负涓庣鍙ｇ被浼肩殑灞傜骇缁撴瀯銆?
+   :alt: root銆乻witch 涓?endpoint 瑙ｇ爜鍣ㄤ箣闂村眰绾у叧绯荤殑鏈夊悜鍥俱€?   :caption: CXL root銆乻witch 涓?endpoint 瑙ｇ爜鍣ㄧ殑鏈夊悜鍥俱€?
    digraph foo {
      "root0"    -> "decoder0.0";
      "decoder0.0" -> "decoder1.0";
@@ -329,8 +271,7 @@ Root 解码器被定义为一个独立的 devtype，但它同时也是某种类�
 
 #### Memory Region
 
-`Memory Region`（内存区域）是一个逻辑构造，它将 fabric 中的一组 CXL 端口连接到一个 IO Memory Resource。它最终用于通过 `DAX Region` 将这些设备上的内存暴露给 DAX 子系统。
-
+`Memory Region`锛堝唴瀛樺尯鍩燂級鏄竴涓€昏緫鏋勯€狅紝瀹冨皢 fabric 涓殑涓€缁?CXL 绔彛杩炴帴鍒颁竴涓?IO Memory Resource銆傚畠鏈€缁堢敤浜庨€氳繃 `DAX Region` 灏嗚繖浜涜澶囦笂鐨勫唴瀛樻毚闇茬粰 DAX 瀛愮郴缁熴€?
 ```
 
   # ls /sys/bus/cxl/devices/region0/
@@ -340,13 +281,9 @@ Root 解码器被定义为一个独立的 devtype，但它同时也是某种类�
     dax_region0  interleave_ways         size      uevent
 
 ```
-一个内存区域可以在端点探测期间构造（如果解码器由 BIOS/EFI 编程，见 `Auto Decoders`），或者通过 `Root Decoder` 的 `create_ram_region` 或 `create_pmem_region` 接口手动创建。
-
-`Memory Region` 中的交错设置描述了 `Interleave Set`（交错集合）的配置——也就是在端点交错设置中所能预期看到的内容。
-
-   :alt: root 与 endpoint 解码器之间 CXL 内存区域关系的有向图。
-   :caption: 区域基于 root 解码器配置创建。端点解码器必须使用与区域相同的交错设置进行编程。
-
+涓€涓唴瀛樺尯鍩熷彲浠ュ湪绔偣鎺㈡祴鏈熼棿鏋勯€狅紙濡傛灉瑙ｇ爜鍣ㄧ敱 BIOS/EFI 缂栫▼锛岃 `Auto Decoders`锛夛紝鎴栬€呴€氳繃 `Root Decoder` 鐨?`create_ram_region` 鎴?`create_pmem_region` 鎺ュ彛鎵嬪姩鍒涘缓銆?
+`Memory Region` 涓殑浜ら敊璁剧疆鎻忚堪浜?`Interleave Set`锛堜氦閿欓泦鍚堬級鐨勯厤缃€斺€斾篃灏辨槸鍦ㄧ鐐逛氦閿欒缃腑鎵€鑳介鏈熺湅鍒扮殑鍐呭銆?
+   :alt: root 涓?endpoint 瑙ｇ爜鍣ㄤ箣闂?CXL 鍐呭瓨鍖哄煙鍏崇郴鐨勬湁鍚戝浘銆?   :caption: 鍖哄煙鍩轰簬 root 瑙ｇ爜鍣ㄩ厤缃垱寤恒€傜鐐硅В鐮佸櫒蹇呴』浣跨敤涓庡尯鍩熺浉鍚岀殑浜ら敊璁剧疆杩涜缂栫▼銆?
    digraph foo {
      "root0"    -> "decoder0.0";
      "decoder0.0" -> "region0";
@@ -356,7 +293,7 @@ Root 解码器被定义为一个独立的 devtype，但它同时也是某种类�
 
 #### DAX Region
 
-`DAX Region` 用于将一个 CXL `Memory Region` 转换为一个 DAX 设备。随后可通过文件描述符接口直接访问该 DAX 设备，或通过 DAX kmem 驱动转换为 System RAM。参见 DAX 驱动小节
+`DAX Region` 鐢ㄤ簬灏嗕竴涓?CXL `Memory Region` 杞崲涓轰竴涓?DAX 璁惧銆傞殢鍚庡彲閫氳繃鏂囦欢鎻忚堪绗︽帴鍙ｇ洿鎺ヨ闂 DAX 璁惧锛屾垨閫氳繃 DAX kmem 椹卞姩杞崲涓?System RAM銆傚弬瑙?DAX 椹卞姩灏忚妭
 ```
 
   # ls /sys/bus/cxl/devices/dax_region0/
@@ -372,34 +309,24 @@ Root 解码器被定义为一个独立的 devtype，但它同时也是某种类�
   /dev/cxl/mem1
 
 ```
-这些邮箱可以接收任何规范定义的命令。原始命令（自定义命令）只有在构建配置 `CXL_MEM_RAW_COMMANDS` 被设置时才能发送到这些接口。这被视为一个调试和/或开发接口，并非用于创建厂商特定命令的官方支持机制（相关请参见 `fwctl` 子系统）。
-
+杩欎簺閭鍙互鎺ユ敹浠讳綍瑙勮寖瀹氫箟鐨勫懡浠ゃ€傚師濮嬪懡浠わ紙鑷畾涔夊懡浠わ級鍙湁鍦ㄦ瀯寤洪厤缃?`CXL_MEM_RAW_COMMANDS` 琚缃椂鎵嶈兘鍙戦€佸埌杩欎簺鎺ュ彛銆傝繖琚涓轰竴涓皟璇曞拰/鎴栧紑鍙戞帴鍙ｏ紝骞堕潪鐢ㄤ簬鍒涘缓鍘傚晢鐗瑰畾鍛戒护鐨勫畼鏂规敮鎸佹満鍒讹紙鐩稿叧璇峰弬瑙?`fwctl` 瀛愮郴缁燂級銆?
 ## Decoder Programming
 
 ### Runtime Programming
 
-在探测期间，**必须**编程的解码器只有 `Root Decoders`。实际上，`Root Decoders` 是描述主机桥级别内存区域与交错配置的逻辑构造——如 ACPI CEDT CFMWS 中所述。
-
-所有其他 `Switch` 与 `Endpoint` 解码器都可以在运行时由用户编程——前提是平台支持此类配置。
-
-这种交互创造了 `Software Defined Memory`（软件定义内存）环境。
-
-有关如何在运行时配置 CXL 解码器的更多信息，请参阅 `cxl-cli` 文档。
-
+鍦ㄦ帰娴嬫湡闂达紝**蹇呴』**缂栫▼鐨勮В鐮佸櫒鍙湁 `Root Decoders`銆傚疄闄呬笂锛宍Root Decoders` 鏄弿杩颁富鏈烘ˉ绾у埆鍐呭瓨鍖哄煙涓庝氦閿欓厤缃殑閫昏緫鏋勯€犫€斺€斿 ACPI CEDT CFMWS 涓墍杩般€?
+鎵€鏈夊叾浠?`Switch` 涓?`Endpoint` 瑙ｇ爜鍣ㄩ兘鍙互鍦ㄨ繍琛屾椂鐢辩敤鎴风紪绋嬧€斺€斿墠鎻愭槸骞冲彴鏀寔姝ょ被閰嶇疆銆?
+杩欑浜や簰鍒涢€犱簡 `Software Defined Memory`锛堣蒋浠跺畾涔夊唴瀛橈級鐜銆?
+鏈夊叧濡備綍鍦ㄨ繍琛屾椂閰嶇疆 CXL 瑙ｇ爜鍣ㄧ殑鏇村淇℃伅锛岃鍙傞槄 `cxl-cli` 鏂囨。銆?
 ### Auto Decoders
 
-Auto Decoders 是由 BIOS/EFI 在引导时编程的解码器，几乎总是被锁定（不可更改）。这是由可能具有静态配置的平台完成的——或者某些怪异特性可能阻止对解码器进行动态运行时更改（例如在 CXL 范围之外的 CPU 复合体内需要额外的控制器编程）。
-
-只要 Auto Decoders 所关联的设备与内存区域能够无问题地探测，它们就会自动被探测。在探测 Auto Decoders 时，驱动的主要职责是确保 fabric 状态正常（sane）——如同验证运行时编程的区域与解码器一样。
-
-如果 Linux 无法验证 auto-decoder 配置，该内存将不会被作为 DAX 设备呈现——因此也不会暴露给页分配器——实际上被搁置（stranding）了。
-
+Auto Decoders 鏄敱 BIOS/EFI 鍦ㄥ紩瀵兼椂缂栫▼鐨勮В鐮佸櫒锛屽嚑涔庢€绘槸琚攣瀹氾紙涓嶅彲鏇存敼锛夈€傝繖鏄敱鍙兘鍏锋湁闈欐€侀厤缃殑骞冲彴瀹屾垚鐨勨€斺€旀垨鑰呮煇浜涙€紓鐗规€у彲鑳介樆姝㈠瑙ｇ爜鍣ㄨ繘琛屽姩鎬佽繍琛屾椂鏇存敼锛堜緥濡傚湪 CXL 鑼冨洿涔嬪鐨?CPU 澶嶅悎浣撳唴闇€瑕侀澶栫殑鎺у埗鍣ㄧ紪绋嬶級銆?
+鍙 Auto Decoders 鎵€鍏宠仈鐨勮澶囦笌鍐呭瓨鍖哄煙鑳藉鏃犻棶棰樺湴鎺㈡祴锛屽畠浠氨浼氳嚜鍔ㄨ鎺㈡祴銆傚湪鎺㈡祴 Auto Decoders 鏃讹紝椹卞姩鐨勪富瑕佽亴璐ｆ槸纭繚 fabric 鐘舵€佹甯革紙sane锛夆€斺€斿鍚岄獙璇佽繍琛屾椂缂栫▼鐨勫尯鍩熶笌瑙ｇ爜鍣ㄤ竴鏍枫€?
+濡傛灉 Linux 鏃犳硶楠岃瘉 auto-decoder 閰嶇疆锛岃鍐呭瓨灏嗕笉浼氳浣滀负 DAX 璁惧鍛堢幇鈥斺€斿洜姝や篃涓嶄細鏆撮湶缁欓〉鍒嗛厤鍣ㄢ€斺€斿疄闄呬笂琚悂缃紙stranding锛変簡銆?
 ### Interleave
 
-Linux CXL 驱动支持 `Cross-Link First`（交叉链路优先）交错。这规定了在每个解码器步骤如何编程交错，因为驱动会验证解码器与其父级之间的关系。
-
-例如，在一个 `Cross-Link First` 交错配置中，16 个端点连接到 4 个主机桥，Linux 期望在 root、主机桥和端点上分别有如下的 ways/granularity：
-
+Linux CXL 椹卞姩鏀寔 `Cross-Link First`锛堜氦鍙夐摼璺紭鍏堬級浜ら敊銆傝繖瑙勫畾浜嗗湪姣忎釜瑙ｇ爜鍣ㄦ楠ゅ浣曠紪绋嬩氦閿欙紝鍥犱负椹卞姩浼氶獙璇佽В鐮佸櫒涓庡叾鐖剁骇涔嬮棿鐨勫叧绯汇€?
+渚嬪锛屽湪涓€涓?`Cross-Link First` 浜ら敊閰嶇疆涓紝16 涓鐐硅繛鎺ュ埌 4 涓富鏈烘ˉ锛孡inux 鏈熸湜鍦?root銆佷富鏈烘ˉ鍜岀鐐逛笂鍒嗗埆鏈夊涓嬬殑 ways/granularity锛?
 
   - - decoder
     - ways
@@ -417,15 +344,12 @@ Linux CXL 驱动支持 `Cross-Link First`（交叉链路优先）交错。这规
     - 16
     - 256
 
-在 root 级别，每次给定的访问将被路由到 `((HPA / 256) % 4)` 号目标主机桥。在主机桥内，路由到 `((HPA / 1024) % 4)` 号目标端点。每个端点基于整个 16 设备交错集合进行转换。
-
-不支持不平衡的交错集合——层级结构中相似位置的解码器（例如所有主机桥解码器）必须具有相同的 ways 与 granularity 配置。
-
+鍦?root 绾у埆锛屾瘡娆＄粰瀹氱殑璁块棶灏嗚璺敱鍒?`((HPA / 256) % 4)` 鍙风洰鏍囦富鏈烘ˉ銆傚湪涓绘満妗ュ唴锛岃矾鐢卞埌 `((HPA / 1024) % 4)` 鍙风洰鏍囩鐐广€傛瘡涓鐐瑰熀浜庢暣涓?16 璁惧浜ら敊闆嗗悎杩涜杞崲銆?
+涓嶆敮鎸佷笉骞宠　鐨勪氦閿欓泦鍚堚€斺€斿眰绾х粨鏋勪腑鐩镐技浣嶇疆鐨勮В鐮佸櫒锛堜緥濡傛墍鏈変富鏈烘ˉ瑙ｇ爜鍣級蹇呴』鍏锋湁鐩稿悓鐨?ways 涓?granularity 閰嶇疆銆?
 #### At Root
 
-Root 解码器交错由 :doc:`CEDT
-<../platform/acpi/cedt>` 的 CFMWS 字段定义。CEDT 实际上可能定义多个 CFMWS 配置来描述相同的物理容量，意图是允许用户在运行时决定是将内存作为交错方式上线，还是
-```
+Root 瑙ｇ爜鍣ㄤ氦閿欑敱 :doc:`CEDT
+<../platform/acpi/cedt>` 鐨?CFMWS 瀛楁瀹氫箟銆侰EDT 瀹為檯涓婂彲鑳藉畾涔夊涓?CFMWS 閰嶇疆鏉ユ弿杩扮浉鍚岀殑鐗╃悊瀹归噺锛屾剰鍥炬槸鍏佽鐢ㄦ埛鍦ㄨ繍琛屾椂鍐冲畾鏄皢鍐呭瓨浣滀负浜ら敊鏂瑰紡涓婄嚎锛岃繕鏄?```
 
              Subtable Type : 01 [CXL Fixed Memory Window Structure]
        Window base address : 0000000100000000
@@ -450,7 +374,7 @@ Root 解码器交错由 :doc:`CEDT
                Next Target : 00000006
 
 ```
-在本例中，CFMWS 为每个主机桥定义了两个离散的非交错 4GB 区域，以及一个以两者为目标的 8GB 交错区域。这
+鍦ㄦ湰渚嬩腑锛孋FMWS 涓烘瘡涓富鏈烘ˉ瀹氫箟浜嗕袱涓鏁ｇ殑闈炰氦閿?4GB 鍖哄煙锛屼互鍙婁竴涓互涓よ€呬负鐩爣鐨?8GB 浜ら敊鍖哄煙銆傝繖
 ```
 
   # ls /sys/bus/cxl/devices/root0/decoder*
@@ -472,33 +396,23 @@ Root 解码器交错由 :doc:`CEDT
     0x200000000
 
 ```
-这些解码器不可在运行时编程。它们用于生成一个 `Memory Region`，以便通过 `Switch` 与 `Endpoint` 解码器上运行时编程的设置将此内存上线。
-
+杩欎簺瑙ｇ爜鍣ㄤ笉鍙湪杩愯鏃剁紪绋嬨€傚畠浠敤浜庣敓鎴愪竴涓?`Memory Region`锛屼互渚块€氳繃 `Switch` 涓?`Endpoint` 瑙ｇ爜鍣ㄤ笂杩愯鏃剁紪绋嬬殑璁剧疆灏嗘鍐呭瓨涓婄嚎銆?
 #### At Host Bridge or Switch
 
-`Host Bridge` 与 `Switch` 解码器可通过以下字段编程：
-
-- `start` - 与内存区域关联的 HPA 区域
-- `size` - 区域的大小
-- `target_list` - 下游端口列表
-- `interleave_ways` - 要交错跨越的下游端口数量
-- `interleave_granularity` - 交错粒度。
-
-Linux 期望交换机解码器的 `interleave_granularity` 由其上游端口连接推导而来。在 `Cross-Link First` 交错配置中，解码器的 `interleave_granularity` 等于 `parent_interleave_granularity * parent_interleave_ways`。
-
+`Host Bridge` 涓?`Switch` 瑙ｇ爜鍣ㄥ彲閫氳繃浠ヤ笅瀛楁缂栫▼锛?
+- `start` - 涓庡唴瀛樺尯鍩熷叧鑱旂殑 HPA 鍖哄煙
+- `size` - 鍖哄煙鐨勫ぇ灏?- `target_list` - 涓嬫父绔彛鍒楄〃
+- `interleave_ways` - 瑕佷氦閿欒法瓒婄殑涓嬫父绔彛鏁伴噺
+- `interleave_granularity` - 浜ら敊绮掑害銆?
+Linux 鏈熸湜浜ゆ崲鏈鸿В鐮佸櫒鐨?`interleave_granularity` 鐢卞叾涓婃父绔彛杩炴帴鎺ㄥ鑰屾潵銆傚湪 `Cross-Link First` 浜ら敊閰嶇疆涓紝瑙ｇ爜鍣ㄧ殑 `interleave_granularity` 绛変簬 `parent_interleave_granularity * parent_interleave_ways`銆?
 #### At Endpoint
 
-`Endpoint Decoders` 的编程方式与 Host Bridge 和 Switch 解码器类似，不同之处在于 ways 与 granularity 由交错集合定义（例如由相关联的 `Memory Region` 定义的的交错设置）。
-
-- `start` - 与内存区域关联的 HPA 区域
-- `size` - 区域的大小
-- `interleave_ways` - 交错集合中的端点数量
-- `interleave_granularity` - 交错粒度。
-
-这些设置被端点解码器用于将从 HPA **翻译**为 DPA 的内存请求。这就是为什么它们必须了解整个交错集合。
-
-Linux 不支持不平衡的交错配置。因此，交错集合中的所有端点必须具有相同的 ways 与 granularity。
-
+`Endpoint Decoders` 鐨勭紪绋嬫柟寮忎笌 Host Bridge 鍜?Switch 瑙ｇ爜鍣ㄧ被浼硷紝涓嶅悓涔嬪鍦ㄤ簬 ways 涓?granularity 鐢变氦閿欓泦鍚堝畾涔夛紙渚嬪鐢辩浉鍏宠仈鐨?`Memory Region` 瀹氫箟鐨勭殑浜ら敊璁剧疆锛夈€?
+- `start` - 涓庡唴瀛樺尯鍩熷叧鑱旂殑 HPA 鍖哄煙
+- `size` - 鍖哄煙鐨勫ぇ灏?- `interleave_ways` - 浜ら敊闆嗗悎涓殑绔偣鏁伴噺
+- `interleave_granularity` - 浜ら敊绮掑害銆?
+杩欎簺璁剧疆琚鐐硅В鐮佸櫒鐢ㄤ簬灏嗕粠 HPA **缈昏瘧**涓?DPA 鐨勫唴瀛樿姹傘€傝繖灏辨槸涓轰粈涔堝畠浠繀椤讳簡瑙ｆ暣涓氦閿欓泦鍚堛€?
+Linux 涓嶆敮鎸佷笉骞宠　鐨勪氦閿欓厤缃€傚洜姝わ紝浜ら敊闆嗗悎涓殑鎵€鏈夌鐐瑰繀椤诲叿鏈夌浉鍚岀殑 ways 涓?granularity銆?
 ## Example Configurations
 
 - [example-configurations/single-device.rst](example-configurations/single-device.rst)

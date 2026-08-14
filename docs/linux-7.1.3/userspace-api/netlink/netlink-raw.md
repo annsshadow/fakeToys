@@ -1,28 +1,25 @@
-
+﻿
 ## Netlink specification support for raw Netlink families
 
 
-本文档描述了诸如 `NETLINK_ROUTE` 这类使用 `netlink-raw` 协议规范的原始（raw）Netlink 族所需的额外属性。
-
+鏈枃妗ｆ弿杩颁簡璇稿 `NETLINK_ROUTE` 杩欑被浣跨敤 `netlink-raw` 鍗忚瑙勮寖鐨勫師濮嬶紙raw锛塏etlink 鏃忔墍闇€鐨勯澶栧睘鎬с€?
 ## Specification
 
 
-netlink-raw schema 通过原始 netlink 族所需的协议号和组播 ID 等属性，扩展了 [genetlink-legacy <genetlink-legacy>](genetlink-legacy <genetlink-legacy>) schema。更多信息请参阅 classic_netlink。原始 netlink 族也使用特定类型的子消息（sub-message）。
-
+netlink-raw schema 閫氳繃鍘熷 netlink 鏃忔墍闇€鐨勫崗璁彿鍜岀粍鎾?ID 绛夊睘鎬э紝鎵╁睍浜?[genetlink-legacy <genetlink-legacy>](genetlink-legacy <genetlink-legacy>) schema銆傛洿澶氫俊鎭鍙傞槄 classic_netlink銆傚師濮?netlink 鏃忎篃浣跨敤鐗瑰畾绫诲瀷鐨勫瓙娑堟伅锛坰ub-message锛夈€?
 ### Globals
 
 
 #### protonum
 
 
-`protonum` 属性用于指定打开 netlink 套接字时要使用的协议号。
-
+`protonum` 灞炴€х敤浜庢寚瀹氭墦寮€ netlink 濂楁帴瀛楁椂瑕佷娇鐢ㄧ殑鍗忚鍙枫€?
 
   # SPDX-License-Identifier: ((GPL-2.0 WITH Linux-syscall-note) OR BSD-3-Clause)
 
   name: rt-addr
   protocol: netlink-raw
-  protonum: 0             # NETLINK_ROUTE 协议的一部分
+  protonum: 0             # NETLINK_ROUTE 鍗忚鐨勪竴閮ㄥ垎
 
 ### Multicast group properties
 
@@ -30,8 +27,7 @@ netlink-raw schema 通过原始 netlink 族所需的协议号和组播 ID 等属
 #### value
 
 
-`value` 属性用于指定组播组注册要使用的组 ID。
-
+`value` 灞炴€х敤浜庢寚瀹氱粍鎾粍娉ㄥ唽瑕佷娇鐢ㄧ殑缁?ID銆?
 
   mcast-groups:
     list:
@@ -48,10 +44,7 @@ netlink-raw schema 通过原始 netlink 族所需的协议号和组播 ID 等属
 ### Sub-messages
 
 
-几个原始 netlink 族，如
-rt-link<netlink-rt-link> 和
-tc<netlink-tc> 使用属性嵌套（attribute nesting）作为一种抽象来携带模块特定信息。
-
+鍑犱釜鍘熷 netlink 鏃忥紝濡?rt-link<netlink-rt-link> 鍜?tc<netlink-tc> 浣跨敤灞炴€у祵濂楋紙attribute nesting锛変綔涓轰竴绉嶆娊璞℃潵鎼哄甫妯″潡鐗瑰畾淇℃伅銆?
 ```
 
     [OUTER NEST OR MESSAGE LEVEL]
@@ -63,14 +56,13 @@ tc<netlink-tc> 使用属性嵌套（attribute nesting）作为一种抽象来携
         [MODULE SPECIFIC ATTR 2]
 
 ```
-外层级别的 `GENERIC ATTRs` 定义在核心（或 rt_link 或核心 TC）中，而特定的驱动、TC 分类器、qdisc 等可以携带它们自己的、包裹在 `GENERIC ATTR - wrapper` 中的信息。尽管上面的例子显示了属性嵌套在 wrapper 内部，但模块通常拥有定义嵌套格式的完全自由。实际上，wrapper 属性的负载与 netlink 消息具有非常相似的特征。它可能包含固定头部/结构、netlink 属性，或两者皆有。由于这些共同特征，我们将 wrapper 属性的负载称为子消息（sub-message）。
-
-子消息属性使用另一个属性的值作为选择键（selector key）来选择正确的子消息格式。例如，如果已经解码了以下属性：
+澶栧眰绾у埆鐨?`GENERIC ATTRs` 瀹氫箟鍦ㄦ牳蹇冿紙鎴?rt_link 鎴栨牳蹇?TC锛変腑锛岃€岀壒瀹氱殑椹卞姩銆乀C 鍒嗙被鍣ㄣ€乹disc 绛夊彲浠ユ惡甯﹀畠浠嚜宸辩殑銆佸寘瑁瑰湪 `GENERIC ATTR - wrapper` 涓殑淇℃伅銆傚敖绠′笂闈㈢殑渚嬪瓙鏄剧ず浜嗗睘鎬у祵濂楀湪 wrapper 鍐呴儴锛屼絾妯″潡閫氬父鎷ユ湁瀹氫箟宓屽鏍煎紡鐨勫畬鍏ㄨ嚜鐢便€傚疄闄呬笂锛寃rapper 灞炴€х殑璐熻浇涓?netlink 娑堟伅鍏锋湁闈炲父鐩镐技鐨勭壒寰併€傚畠鍙兘鍖呭惈鍥哄畾澶撮儴/缁撴瀯銆乶etlink 灞炴€э紝鎴栦袱鑰呯殕鏈夈€傜敱浜庤繖浜涘叡鍚岀壒寰侊紝鎴戜滑灏?wrapper 灞炴€х殑璐熻浇绉颁负瀛愭秷鎭紙sub-message锛夈€?
+瀛愭秷鎭睘鎬т娇鐢ㄥ彟涓€涓睘鎬х殑鍊间綔涓洪€夋嫨閿紙selector key锛夋潵閫夋嫨姝ｇ‘鐨勫瓙娑堟伅鏍煎紡銆備緥濡傦紝濡傛灉宸茬粡瑙ｇ爜浜嗕互涓嬪睘鎬э細
 
 
   { "kind": "gre" }
 
-并且我们遇到以下属性规范：
+骞朵笖鎴戜滑閬囧埌浠ヤ笅灞炴€ц鑼冿細
 
 
   -
@@ -79,7 +71,7 @@ tc<netlink-tc> 使用属性嵌套（attribute nesting）作为一种抽象来携
     sub-message: linkinfo-data-msg
     selector: kind
 
-那么我们会查找名为 `linkinfo-data-msg` 的子消息定义，并使用 `kind` 属性的值（即 `gre`）作为键来选择该子消息的正确格式：
+閭ｄ箞鎴戜滑浼氭煡鎵惧悕涓?`linkinfo-data-msg` 鐨勫瓙娑堟伅瀹氫箟锛屽苟浣跨敤 `kind` 灞炴€х殑鍊硷紙鍗?`gre`锛変綔涓洪敭鏉ラ€夋嫨璇ュ瓙娑堟伅鐨勬纭牸寮忥細
 
 
   sub-messages:
@@ -95,10 +87,8 @@ tc<netlink-tc> 使用属性嵌套（attribute nesting）作为一种抽象来携
         value: geneve
         attribute-set: linkinfo-geneve-attrs
 
-这会将该属性值解码为以名为 `linkinfo-gre-attrs` 的 attribute-set 作为属性空间的子消息。
-
-子消息可以有一个可选的 `fixed-header`，后跟来自 `attribute-set` 的零个或多个属性。例如，以下 `tc-options-msg` 子消息定义了混合使用 `fixed-header`、`attribute-set` 或两者兼有的消息格式：
-
+杩欎細灏嗚灞炴€у€艰В鐮佷负浠ュ悕涓?`linkinfo-gre-attrs` 鐨?attribute-set 浣滀负灞炴€х┖闂寸殑瀛愭秷鎭€?
+瀛愭秷鎭彲浠ユ湁涓€涓彲閫夌殑 `fixed-header`锛屽悗璺熸潵鑷?`attribute-set` 鐨勯浂涓垨澶氫釜灞炴€с€備緥濡傦紝浠ヤ笅 `tc-options-msg` 瀛愭秷鎭畾涔変簡娣峰悎浣跨敤 `fixed-header`銆乣attribute-set` 鎴栦袱鑰呭吋鏈夌殑娑堟伅鏍煎紡锛?
 
   sub-messages:
     -
@@ -115,15 +105,12 @@ tc<netlink-tc> 使用属性嵌套（attribute nesting）作为一种抽象来携
           fixed-header: tc-netem-qopt
           attribute-set: tc-netem-attrs
 
-请注意，selector 属性必须出现在任何依赖于它的子消息属性之前，出现在 netlink 消息中。
-
-如果像 `kind` 这样的属性定义在多个嵌套级别上，那么子消息选择器将使用"最接近"选择器的那个值来解析。例如，如果同一个属性名定义在一个嵌套的 `attribute-set` 中（与子消息选择器一起）以及顶层的 `attribute-set` 中，那么选择器将使用"最接近"选择器的那个值来解析。如果该值没有出现在与规范定义相同级别的消息中，则这是一个错误。
-
+璇锋敞鎰忥紝selector 灞炴€у繀椤诲嚭鐜板湪浠讳綍渚濊禆浜庡畠鐨勫瓙娑堟伅灞炴€т箣鍓嶏紝鍑虹幇鍦?netlink 娑堟伅涓€?
+濡傛灉鍍?`kind` 杩欐牱鐨勫睘鎬у畾涔夊湪澶氫釜宓屽绾у埆涓婏紝閭ｄ箞瀛愭秷鎭€夋嫨鍣ㄥ皢浣跨敤"鏈€鎺ヨ繎"閫夋嫨鍣ㄧ殑閭ｄ釜鍊兼潵瑙ｆ瀽銆備緥濡傦紝濡傛灉鍚屼竴涓睘鎬у悕瀹氫箟鍦ㄤ竴涓祵濂楃殑 `attribute-set` 涓紙涓庡瓙娑堟伅閫夋嫨鍣ㄤ竴璧凤級浠ュ強椤跺眰鐨?`attribute-set` 涓紝閭ｄ箞閫夋嫨鍣ㄥ皢浣跨敤"鏈€鎺ヨ繎"閫夋嫨鍣ㄧ殑閭ｄ釜鍊兼潵瑙ｆ瀽銆傚鏋滆鍊兼病鏈夊嚭鐜板湪涓庤鑼冨畾涔夌浉鍚岀骇鍒殑娑堟伅涓紝鍒欒繖鏄竴涓敊璇€?
 ### Nested struct definitions
 
 
-许多原始 netlink 族，如 tc<netlink-tc>，使用嵌套结构体定义。`netlink-raw` schema 使得可以使用 `struct` 属性将结构体嵌入到结构体定义中。例如，以下结构体定义将 `tc-ratespec` 结构体定义嵌入到 `struct tc-tbf-qopt` 的 `rate` 和 `peakrate` 成员中。
-
+璁稿鍘熷 netlink 鏃忥紝濡?tc<netlink-tc>锛屼娇鐢ㄥ祵濂楃粨鏋勪綋瀹氫箟銆俙netlink-raw` schema 浣垮緱鍙互浣跨敤 `struct` 灞炴€у皢缁撴瀯浣撳祵鍏ュ埌缁撴瀯浣撳畾涔変腑銆備緥濡傦紝浠ヤ笅缁撴瀯浣撳畾涔夊皢 `tc-ratespec` 缁撴瀯浣撳畾涔夊祵鍏ュ埌 `struct tc-tbf-qopt` 鐨?`rate` 鍜?`peakrate` 鎴愬憳涓€?
 
   -
     name: tc-tbf-qopt

@@ -1,70 +1,49 @@
+﻿
+## CPU 铏氭嫙鍖栫殑宸茬煡闄愬埗
 
-## CPU 虚拟化的已知限制
 
-
-每当对某个 CPU 特性进行完美模拟不可能或过于困难时，KVM 就必须在“完全不实现该特性”与
-“在虚拟机与裸机系统之间引入行为差异”之间做出选择。
-
-本文档记录了 KVM 在虚拟化 CPU 特性方面的一些已知限制。
-
+姣忓綋瀵规煇涓?CPU 鐗规€ц繘琛屽畬缇庢ā鎷熶笉鍙兘鎴栬繃浜庡洶闅炬椂锛孠VM 灏卞繀椤诲湪鈥滃畬鍏ㄤ笉瀹炵幇璇ョ壒鎬р€濅笌
+鈥滃湪铏氭嫙鏈轰笌瑁告満绯荤粺涔嬮棿寮曞叆琛屼负宸紓鈥濅箣闂村仛鍑洪€夋嫨銆?
+鏈枃妗ｈ褰曚簡 KVM 鍦ㄨ櫄鎷熷寲 CPU 鐗规€ф柟闈㈢殑涓€浜涘凡鐭ラ檺鍒躲€?
 ## x86
 
 
-### ``KVM_GET_SUPPORTED_CPUID`` 问题
+### ``KVM_GET_SUPPORTED_CPUID`` 闂
 
 
-#### x87 特性
+#### x87 鐗规€?
+
+涓庡ぇ澶氭暟鍏朵粬 CPUID 鐗规€т綅涓嶅悓锛孋PUID[EAX=7,ECX=0]:EBX[^6^]
+锛團DP_EXCPTN_ONLY锛変笌 CPUID[EAX=7,ECX=0]:EBX]13]锛圸ERO_FCS_FDS锛夊湪鐗规€у瓨鍦ㄦ椂
+琚竻闄わ紝鍦ㄧ壒鎬т笉瀛樺湪鏃跺弽鑰岃缃綅銆?
+鍦?CPUID 涓竻闄よ繖浜涗綅瀵?guest 鐨勮繍琛屾病鏈夊奖鍝嶏紱濡傛灉杩欎簺浣嶅湪纭欢涓婅缃綅锛岄偅涔堝湪璇ョ‖浠朵笂
+杩愯鐨勪换浣曡櫄鎷熸満閮戒笉浼氬叿澶囪繖浜涚壒鎬с€?
+**鍙橀€氭柟妗堬細** 寤鸿鍦?guest 鐨?CPUID 涓缁堢疆浣嶈繖浜涗綅銆備笉杩囪娉ㄦ剰锛屼换浣曟湡鏈涜繖浜涚壒鎬у瓨鍦ㄧ殑
+杞欢锛堜緥濡?`WIN87EM.DLL`锛夊緢鍙兘鏃╀簬杩欎簺 CPUID 鐗规€т綅鍑虹幇锛屽洜姝ゆ棤璁哄浣曢兘涓嶇煡閬撹鍘绘鏌ュ畠浠€?
+### ``KVM_SET_VCPU_EVENTS`` 闂
 
 
-与大多数其他 CPUID 特性位不同，CPUID[EAX=7,ECX=0]:EBX[^6^]
-（FDP_EXCPTN_ONLY）与 CPUID[EAX=7,ECX=0]:EBX]13]（ZERO_FCS_FDS）在特性存在时
-被清除，在特性不存在时反而被置位。
+鍏充簬閿欒鐮佺殑鏃犳晥 KVM_SET_VCPU_EVENTS 杈撳叆**鍙兘**瀵艰嚧 Intel CPU 涓?VM-Entry 澶辫触銆侰ET 涔嬪墠鐨?Intel CPU 瑕佹眰閫氳繃 VMCS 娉ㄥ叆寮傚父鏃舵纭缃€渆rror code valid鈥濇爣蹇楋紝渚嬪锛氭敞鍏?#GP 鏃惰姹?缃綅璇ユ爣蹇楋紝娉ㄥ叆 #UD 鏃舵竻闄わ紝娉ㄥ叆杞紓甯告椂娓呴櫎绛夈€傚皢 IA32_VMX_BASIC[^56^] 鏋氫妇涓?'1' 鐨?Intel CPU 鏀惧浜?VMX 鐨勪竴鑷存€ф鏌ワ紝鑰?AMD CPU 鍒欏畬鍏ㄦ病鏈夋绫婚檺鍒躲€侹VM_SET_VCPU_EVENTS 涓嶄細
+瀵瑰悜閲忎笌鈥渉as_error_code鈥濊繘琛屽悎鐞嗘€ф鏌ワ紝鍗?KVM 鐨?ABI 閬靛惊 AMD 鐨勮涓恒€?
+### 宓屽铏氭嫙鍖栫壒鎬?
 
-在 CPUID 中清除这些位对 guest 的运行没有影响；如果这些位在硬件上被置位，那么在该硬件上
-运行的任何虚拟机都不会具备这些特性。
-
-**变通方案：** 建议在 guest 的 CPUID 中始终置位这些位。不过请注意，任何期望这些特性存在的
-软件（例如 `WIN87EM.DLL`）很可能早于这些 CPUID 特性位出现，因此无论如何都不知道要去检查它们。
-
-### ``KVM_SET_VCPU_EVENTS`` 问题
-
-
-关于错误码的无效 KVM_SET_VCPU_EVENTS 输入**可能**导致 Intel CPU 上 VM-Entry 失败。CET 之前的
-Intel CPU 要求通过 VMCS 注入异常时正确设置“error code valid”标志，例如：注入 #GP 时要求
-置位该标志，注入 #UD 时清除，注入软异常时清除等。将 IA32_VMX_BASIC[^56^] 枚举为 '1' 的
-Intel CPU 放宽了 VMX 的一致性检查，而 AMD CPU 则完全没有此类限制。KVM_SET_VCPU_EVENTS 不会
-对向量与“has_error_code”进行合理性检查，即 KVM 的 ABI 遵循 AMD 的行为。
-
-### 嵌套虚拟化特性
-
-
-在 AMD CPU 上，当 GIF 被清除时，由于断点寄存器匹配而产生的 #DB 异常或陷阱会被 CPU 忽略并丢弃。
-CPU 依赖 VMM 来完全虚拟化这一行为，即使为 guest 启用了 vGIF（即 vGIF=0 并不会导致 CPU 在
-guest 运行时丢弃 #DB）。鉴于该使用场景十分罕见，其复杂性并不合理，KVM 并未虚拟化这一行为。
-一种处理方式是让 KVM 拦截 #DB，临时禁用断点，单步执行过该指令，然后重新启用断点。
-
+鍦?AMD CPU 涓婏紝褰?GIF 琚竻闄ゆ椂锛岀敱浜庢柇鐐瑰瘎瀛樺櫒鍖归厤鑰屼骇鐢熺殑 #DB 寮傚父鎴栭櫡闃变細琚?CPU 蹇界暐骞朵涪寮冦€?CPU 渚濊禆 VMM 鏉ュ畬鍏ㄨ櫄鎷熷寲杩欎竴琛屼负锛屽嵆浣夸负 guest 鍚敤浜?vGIF锛堝嵆 vGIF=0 骞朵笉浼氬鑷?CPU 鍦?guest 杩愯鏃朵涪寮?#DB锛夈€傞壌浜庤浣跨敤鍦烘櫙鍗佸垎缃曡锛屽叾澶嶆潅鎬у苟涓嶅悎鐞嗭紝KVM 骞舵湭铏氭嫙鍖栬繖涓€琛屼负銆?涓€绉嶅鐞嗘柟寮忔槸璁?KVM 鎷︽埅 #DB锛屼复鏃剁鐢ㄦ柇鐐癸紝鍗曟鎵ц杩囪鎸囦护锛岀劧鍚庨噸鏂板惎鐢ㄦ柇鐐广€?
 ### x2APIC
 
 
-当启用 KVM_X2APIC_API_USE_32BIT_IDS 时，KVM 会激活一个 hack/quirk，允许使用目标 vCPU 的
-x2APIC ID 向单个 vCPU 发送事件，即使目标 vCPU 启用了传统的 xAPIC，例如在具有 > 255 个 vCPU
-的虚拟机上通过 INIT-SIPI 启动热插拔的 vCPU。该 quirk 的一个副作用是，如果多个 vCPU 拥有相同
-的物理 APIC ID，KVM 只会将针对该 APIC ID 的事件投递给 vCPU ID 最小的那个 vCPU。如果未启用
-KVM_X2APIC_API_USE_32BIT_IDS，KVM 在处理中断时遵循 x86 架构（所有匹配目标 APIC ID 的 vCPU
-都会收到中断）。
-
+褰撳惎鐢?KVM_X2APIC_API_USE_32BIT_IDS 鏃讹紝KVM 浼氭縺娲讳竴涓?hack/quirk锛屽厑璁镐娇鐢ㄧ洰鏍?vCPU 鐨?x2APIC ID 鍚戝崟涓?vCPU 鍙戦€佷簨浠讹紝鍗充娇鐩爣 vCPU 鍚敤浜嗕紶缁熺殑 xAPIC锛屼緥濡傚湪鍏锋湁 > 255 涓?vCPU
+鐨勮櫄鎷熸満涓婇€氳繃 INIT-SIPI 鍚姩鐑彃鎷旂殑 vCPU銆傝 quirk 鐨勪竴涓壇浣滅敤鏄紝濡傛灉澶氫釜 vCPU 鎷ユ湁鐩稿悓
+鐨勭墿鐞?APIC ID锛孠VM 鍙細灏嗛拡瀵硅 APIC ID 鐨勪簨浠舵姇閫掔粰 vCPU ID 鏈€灏忕殑閭ｄ釜 vCPU銆傚鏋滄湭鍚敤
+KVM_X2APIC_API_USE_32BIT_IDS锛孠VM 鍦ㄥ鐞嗕腑鏂椂閬靛惊 x86 鏋舵瀯锛堟墍鏈夊尮閰嶇洰鏍?APIC ID 鐨?vCPU
+閮戒細鏀跺埌涓柇锛夈€?
 ### MTRR
 
 
-KVM 不虚拟化 guest 的 MTRR 内存类型。KVM 模拟对 MTRR MSR 的访问，即 guest 中的 {RD,WR}MSR
-会如预期般工作，但在确定有效内存类型时，KVM 不会考虑 guest 的 MTRR，而是将全部 guest 内存
-视为具有 Writeback（WB）类型的 MTRR。
-
+KVM 涓嶈櫄鎷熷寲 guest 鐨?MTRR 鍐呭瓨绫诲瀷銆侹VM 妯℃嫙瀵?MTRR MSR 鐨勮闂紝鍗?guest 涓殑 {RD,WR}MSR
+浼氬棰勬湡鑸伐浣滐紝浣嗗湪纭畾鏈夋晥鍐呭瓨绫诲瀷鏃讹紝KVM 涓嶄細鑰冭檻 guest 鐨?MTRR锛岃€屾槸灏嗗叏閮?guest 鍐呭瓨
+瑙嗕负鍏锋湁 Writeback锛圵B锛夌被鍨嬬殑 MTRR銆?
 ### CR0.CD
 
 
-KVM 不在 Intel CPU 上虚拟化 CR0.CD。与 MTRR MSR 类似，KVM 模拟对 CR0.CD 的访问，使对 CR0 的
-加载与存储表现得如预期，但将 CR0.CD=1 并不会影响 guest 内存的可缓存性。
-
-注意，该 erratum 不影响 AMD CPU，后者在硬件中完全虚拟化 CR0.CD，即在 CR0.CD=1 时（即使在
-guest 中运行）将 CPU 缓存置于“no fill”模式。
+KVM 涓嶅湪 Intel CPU 涓婅櫄鎷熷寲 CR0.CD銆備笌 MTRR MSR 绫讳技锛孠VM 妯℃嫙瀵?CR0.CD 鐨勮闂紝浣垮 CR0 鐨?鍔犺浇涓庡瓨鍌ㄨ〃鐜板緱濡傞鏈燂紝浣嗗皢 CR0.CD=1 骞朵笉浼氬奖鍝?guest 鍐呭瓨鐨勫彲缂撳瓨鎬с€?
+娉ㄦ剰锛岃 erratum 涓嶅奖鍝?AMD CPU锛屽悗鑰呭湪纭欢涓畬鍏ㄨ櫄鎷熷寲 CR0.CD锛屽嵆鍦?CR0.CD=1 鏃讹紙鍗充娇鍦?guest 涓繍琛岋級灏?CPU 缂撳瓨缃簬鈥渘o fill鈥濇ā寮忋€?

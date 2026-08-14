@@ -1,68 +1,46 @@
-## Android binderfs 文件系统
+﻿## Android binderfs 鏂囦欢绯荤粺
 
 
-Android binderfs 是 Android binder IPC 机制所用的文件系统。它允许在运行时
-动态添加和移除 binder 设备。位于新的 binderfs 实例中的 binder 设备独立于
-其他 binderfs 实例中的 binder 设备。挂载一个新的 binderfs 实例可以获取一组
-私有的 binder 设备。
-
-### 挂载 binderfs
+Android binderfs 鏄?Android binder IPC 鏈哄埗鎵€鐢ㄧ殑鏂囦欢绯荤粺銆傚畠鍏佽鍦ㄨ繍琛屾椂
+鍔ㄦ€佹坊鍔犲拰绉婚櫎 binder 璁惧銆備綅浜庢柊鐨?binderfs 瀹炰緥涓殑 binder 璁惧鐙珛浜?鍏朵粬 binderfs 瀹炰緥涓殑 binder 璁惧銆傛寕杞戒竴涓柊鐨?binderfs 瀹炰緥鍙互鑾峰彇涓€缁?绉佹湁鐨?binder 璁惧銆?
+### 鎸傝浇 binderfs
 
 
 ```
 mkdir /dev/binderfs
 mount -t binder binder /dev/binderfs
 ```
-此时将在 `/dev/binderfs` 处出现一个新的 binderfs 实例。在全新的 binderfs
-实例中不存在任何 binder 设备。只会有一个 `binder-control` 设备，作为
-binderfs 的请求处理程序。在其他位置挂载另一个 binderfs 实例，将创建一个
-独立于所有其他 binderfs 挂载的新实例。这与 `devpts` 和 `tmpfs`
-等行为相同。Android binderfs 文件系统可以挂载在用户命名空间中。
-
-### 选项
+姝ゆ椂灏嗗湪 `/dev/binderfs` 澶勫嚭鐜颁竴涓柊鐨?binderfs 瀹炰緥銆傚湪鍏ㄦ柊鐨?binderfs
+瀹炰緥涓笉瀛樺湪浠讳綍 binder 璁惧銆傚彧浼氭湁涓€涓?`binder-control` 璁惧锛屼綔涓?binderfs 鐨勮姹傚鐞嗙▼搴忋€傚湪鍏朵粬浣嶇疆鎸傝浇鍙︿竴涓?binderfs 瀹炰緥锛屽皢鍒涘缓涓€涓?鐙珛浜庢墍鏈夊叾浠?binderfs 鎸傝浇鐨勬柊瀹炰緥銆傝繖涓?`devpts` 鍜?`tmpfs`
+绛夎涓虹浉鍚屻€侫ndroid binderfs 鏂囦欢绯荤粺鍙互鎸傝浇鍦ㄧ敤鎴峰懡鍚嶇┖闂翠腑銆?
+### 閫夐」
 
 max
-  binderfs 实例挂载时可对可分配的 binder 设备数量设置限制。`max=<count>`
-  挂载选项充当每实例限制。如果设置了 `max=<count>`，则在此 binderfs
-  实例中只能分配 `<count>` 个 binder 设备。
-
+  binderfs 瀹炰緥鎸傝浇鏃跺彲瀵瑰彲鍒嗛厤鐨?binder 璁惧鏁伴噺璁剧疆闄愬埗銆俙max=<count>`
+  鎸傝浇閫夐」鍏呭綋姣忓疄渚嬮檺鍒躲€傚鏋滆缃簡 `max=<count>`锛屽垯鍦ㄦ binderfs
+  瀹炰緥涓彧鑳藉垎閰?`<count>` 涓?binder 璁惧銆?
 stats
-  使用 `stats=global` 可启用全局 binder 统计信息。`stats=global` 仅适用于
-  挂载在初始用户命名空间中的 binderfs 实例。尝试使用该选项挂载位于其他
-  用户命名空间中的 binderfs 实例将返回权限错误。
-
-### 分配 binder 设备
+  浣跨敤 `stats=global` 鍙惎鐢ㄥ叏灞€ binder 缁熻淇℃伅銆俙stats=global` 浠呴€傜敤浜?  鎸傝浇鍦ㄥ垵濮嬬敤鎴峰懡鍚嶇┖闂翠腑鐨?binderfs 瀹炰緥銆傚皾璇曚娇鐢ㄨ閫夐」鎸傝浇浣嶄簬鍏朵粬
+  鐢ㄦ埛鍛藉悕绌洪棿涓殑 binderfs 瀹炰緥灏嗚繑鍥炴潈闄愰敊璇€?
+### 鍒嗛厤 binder 璁惧
 
 
-要在一个 binderfs 实例中分配新的 binder 设备，需要通过 `binder-control`
-设备节点发送请求。请求以 `ioctl() <ioctl_>`_ 的形式发送。
-
-程序需要做的是打开 `binder-control` 设备节点，并向内核发送一个
-`BINDER_CTL_ADD` 请求。binderfs 的用户需要告诉内核新 binder 设备应取
-什么名称。默认情况下，名称最多只能包含 `BINDERFS_MAX_NAME` 个字符
-（含结尾的零字节）。
-
-一旦通过 `ioctl() <ioctl_>`_ 将带有名称的 ``struct
-binder_device`` 传递给内核发起请求，内核就会分配一个新的 binder 设备，
-并在结构体中返回新设备的主、次设备号（这是必需的，因为 binderfs 会动态
-分配主设备号）。`ioctl() <ioctl_>`_ 返回后，在 /dev/binderfs 下
-将出现一个以所选名称命名的新 binder 设备。
-
-### 删除 binder 设备
+瑕佸湪涓€涓?binderfs 瀹炰緥涓垎閰嶆柊鐨?binder 璁惧锛岄渶瑕侀€氳繃 `binder-control`
+璁惧鑺傜偣鍙戦€佽姹傘€傝姹備互 `ioctl() <ioctl_>`_ 鐨勫舰寮忓彂閫併€?
+绋嬪簭闇€瑕佸仛鐨勬槸鎵撳紑 `binder-control` 璁惧鑺傜偣锛屽苟鍚戝唴鏍稿彂閫佷竴涓?`BINDER_CTL_ADD` 璇锋眰銆俠inderfs 鐨勭敤鎴烽渶瑕佸憡璇夊唴鏍告柊 binder 璁惧搴斿彇
+浠€涔堝悕绉般€傞粯璁ゆ儏鍐典笅锛屽悕绉版渶澶氬彧鑳藉寘鍚?`BINDERFS_MAX_NAME` 涓瓧绗?锛堝惈缁撳熬鐨勯浂瀛楄妭锛夈€?
+涓€鏃﹂€氳繃 `ioctl() <ioctl_>`_ 灏嗗甫鏈夊悕绉扮殑 ``struct
+binder_device`` 浼犻€掔粰鍐呮牳鍙戣捣璇锋眰锛屽唴鏍稿氨浼氬垎閰嶄竴涓柊鐨?binder 璁惧锛?骞跺湪缁撴瀯浣撲腑杩斿洖鏂拌澶囩殑涓汇€佹璁惧鍙凤紙杩欐槸蹇呴渶鐨勶紝鍥犱负 binderfs 浼氬姩鎬?鍒嗛厤涓昏澶囧彿锛夈€俙ioctl() <ioctl_>`_ 杩斿洖鍚庯紝鍦?/dev/binderfs 涓?灏嗗嚭鐜颁竴涓互鎵€閫夊悕绉板懡鍚嶇殑鏂?binder 璁惧銆?
+### 鍒犻櫎 binder 璁惧
 
 
-binderfs 的 binder 设备可通过 `unlink() <unlink_>`_ 删除。这意味着可以使用
-`rm() <rm_>`_ 工具删除它们。注意 `binder-control` 设备无法被删除，因为
-那样会使 binderfs 实例不可用。`binder-control` 设备会在 binderfs 实例
-被卸载且对其的所有引用都被释放时被删除。
+binderfs 鐨?binder 璁惧鍙€氳繃 `unlink() <unlink_>`_ 鍒犻櫎銆傝繖鎰忓懗鐫€鍙互浣跨敤
+`rm() <rm_>`_ 宸ュ叿鍒犻櫎瀹冧滑銆傛敞鎰?`binder-control` 璁惧鏃犳硶琚垹闄わ紝鍥犱负
+閭ｆ牱浼氫娇 binderfs 瀹炰緥涓嶅彲鐢ㄣ€俙binder-control` 璁惧浼氬湪 binderfs 瀹炰緥
+琚嵏杞戒笖瀵瑰叾鐨勬墍鏈夊紩鐢ㄩ兘琚噴鏀炬椂琚垹闄ゃ€?
+### binder 鐗规€?
 
-### binder 特性
-
-
-假设已在 `/dev/binderfs` 挂载了一个 binderfs 实例，binder 驱动所支持的
-特性可位于 `/dev/binderfs/features/` 下。可以通过测试各个文件的存在
-来判断驱动是否支持某个特定特性。
-
+鍋囪宸插湪 `/dev/binderfs` 鎸傝浇浜嗕竴涓?binderfs 瀹炰緥锛宐inder 椹卞姩鎵€鏀寔鐨?鐗规€у彲浣嶄簬 `/dev/binderfs/features/` 涓嬨€傚彲浠ラ€氳繃娴嬭瘯鍚勪釜鏂囦欢鐨勫瓨鍦?鏉ュ垽鏂┍鍔ㄦ槸鍚︽敮鎸佹煇涓壒瀹氱壒鎬с€?
 ```
 cat /dev/binderfs/features/oneway_spam_detection
 1

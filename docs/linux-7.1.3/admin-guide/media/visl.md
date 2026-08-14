@@ -1,56 +1,33 @@
+﻿
+## 铏氭嫙鏃犵姸鎬佽В鐮佸櫒椹卞姩锛坴isl锛?
 
-## 虚拟无状态解码器驱动（visl）
+鐢ㄤ簬鏃犵姸鎬?uAPI 寮€鍙戠殑铏氭嫙鏃犵姸鎬佽В鐮佸櫒璁惧銆?
+璇ュ伐鍏风殑鐩爣鏄负浣跨敤 V4L2 鏃犵姸鎬?API 瑙ｇ爜濯掍綋鐨勭敤鎴风┖闂村簲鐢ㄧ▼搴忕殑寮€鍙戜笌娴嬭瘯
+鎻愪緵甯姪銆傚嵆浣挎病鏈夊彲鐢ㄧ‖浠讹紝鎴栬€呯紪瑙ｇ爜鍣ㄧ殑鍐呮牳 uAPI 灏氭湭鍚堝叆涓荤嚎锛岀敤鎴风┖闂?瀹炵幇涔熷彲浠ヤ娇鐢?visl 鏉ヨ繍琛岃В鐮佸惊鐜€傝繖鏈夊姪浜庡湪鏃╂湡闃舵鍙戠幇缂洪櫡銆?
+璇ラ┍鍔ㄨ繕鍙互璺熻釜鎻愪氦缁欏畠鐨?V4L2 鎺т欢鐨勫唴瀹广€傚畠杩樺彲浠ラ€氳繃 debugfs 鎺ュ彛杞偍 vb2
+缂撳啿鍖虹殑鍐呭銆傝繖鍦ㄨ澶氭柟闈㈢被浼间簬鍏朵粬娴佽缂栬В鐮?API 鎵€鎻愪緵鐨勮窡韪熀纭€璁炬柦锛屽苟涓?鍙互閫氳繃浠ュ彟涓€涓紙鍙敤鐨勶級瀹炵幇浣滀负鍙傝€冩潵甯姪寮€鍙戠敤鎴风┖闂村簲鐢ㄧ▼搴忋€?
 
-
-用于无状态 uAPI 开发的虚拟无状态解码器设备。
-
-该工具的目标是为使用 V4L2 无状态 API 解码媒体的用户空间应用程序的开发与测试
-提供帮助。即使没有可用硬件，或者编解码器的内核 uAPI 尚未合入主线，用户空间
-实现也可以使用 visl 来运行解码循环。这有助于在早期阶段发现缺陷。
-
-该驱动还可以跟踪提交给它的 V4L2 控件的内容。它还可以通过 debugfs 接口转储 vb2
-缓冲区的内容。这在许多方面类似于其他流行编解码 API 所提供的跟踪基础设施，并且
-可以通过以另一个（可用的）实现作为参考来帮助开发用户空间应用程序。
-
-
-        visl 实际上并不会对视频帧进行任何解码。它改用 V4L2 测试图案生成器，
-        向捕获缓冲区写入各种调试信息。
-
-### 模块参数
+        visl 瀹為檯涓婂苟涓嶄細瀵硅棰戝抚杩涜浠讳綍瑙ｇ爜銆傚畠鏀圭敤 V4L2 娴嬭瘯鍥炬鐢熸垚鍣紝
+        鍚戞崟鑾风紦鍐插尯鍐欏叆鍚勭璋冭瘯淇℃伅銆?
+### 妯″潡鍙傛暟
 
 
-- visl_debug：激活调试信息，通过 dprintk 打印各种调试消息。同时控制是否显示
-  逐帧调试信息。默认关闭。注意，启用此功能会通过串口导致性能下降。
-
-- visl_transtime_ms：模拟的处理时间（毫秒）。降低解码速度有助于调试。
-
-- visl_dprintk_frame_start、visl_dprintk_frame_nframes：指定启用 dprintk 的
-  帧范围。这仅按帧控制 dprintk 跟踪。注意，通过串口打印大量数据可能较慢。
-
-- keep_bitstream_buffers：控制解码会话结束后是否保留码流（即 OUTPUT）缓冲区。
-  默认为 false 以减少杂乱。当使用 GDB 实时调试客户端程序时，
-  keep_bitstream_buffers == false 表现良好。
-
-- bitstream_trace_frame_start、bitstream_trace_nframes：与 visl_dprintk_frame_start、
-  visl_dprintk_nframes 类似，但改为控制通过 debugfs 转储缓冲区数据。
-
-- tpg_verbose：在每个输出帧上写入额外信息以便于调试 API。当设为 true 时，给定
-  输入的输出帧不再稳定，因为会向其中添加指针或队列状态等信息。
-
-### 该驱动的默认用例是什么？
+- visl_debug锛氭縺娲昏皟璇曚俊鎭紝閫氳繃 dprintk 鎵撳嵃鍚勭璋冭瘯娑堟伅銆傚悓鏃舵帶鍒舵槸鍚︽樉绀?  閫愬抚璋冭瘯淇℃伅銆傞粯璁ゅ叧闂€傛敞鎰忥紝鍚敤姝ゅ姛鑳戒細閫氳繃涓插彛瀵艰嚧鎬ц兘涓嬮檷銆?
+- visl_transtime_ms锛氭ā鎷熺殑澶勭悊鏃堕棿锛堟绉掞級銆傞檷浣庤В鐮侀€熷害鏈夊姪浜庤皟璇曘€?
+- visl_dprintk_frame_start銆乿isl_dprintk_frame_nframes锛氭寚瀹氬惎鐢?dprintk 鐨?  甯ц寖鍥淬€傝繖浠呮寜甯ф帶鍒?dprintk 璺熻釜銆傛敞鎰忥紝閫氳繃涓插彛鎵撳嵃澶ч噺鏁版嵁鍙兘杈冩參銆?
+- keep_bitstream_buffers锛氭帶鍒惰В鐮佷細璇濈粨鏉熷悗鏄惁淇濈暀鐮佹祦锛堝嵆 OUTPUT锛夌紦鍐插尯銆?  榛樿涓?false 浠ュ噺灏戞潅涔便€傚綋浣跨敤 GDB 瀹炴椂璋冭瘯瀹㈡埛绔▼搴忔椂锛?  keep_bitstream_buffers == false 琛ㄧ幇鑹ソ銆?
+- bitstream_trace_frame_start銆乥itstream_trace_nframes锛氫笌 visl_dprintk_frame_start銆?  visl_dprintk_nframes 绫讳技锛屼絾鏀逛负鎺у埗閫氳繃 debugfs 杞偍缂撳啿鍖烘暟鎹€?
+- tpg_verbose锛氬湪姣忎釜杈撳嚭甯т笂鍐欏叆棰濆淇℃伅浠ヤ究浜庤皟璇?API銆傚綋璁句负 true 鏃讹紝缁欏畾
+  杈撳叆鐨勮緭鍑哄抚涓嶅啀绋冲畾锛屽洜涓轰細鍚戝叾涓坊鍔犳寚閽堟垨闃熷垪鐘舵€佺瓑淇℃伅銆?
+### 璇ラ┍鍔ㄧ殑榛樿鐢ㄤ緥鏄粈涔堬紵
 
 
-该驱动可用于比较不同的用户空间实现。这假设先运行一个可用的客户端对接 visl，
-然后利用 ftrace 和 OUTPUT 缓冲区数据来调试一个正在开发中的实现。
-
-尽管实际上并未进行视频解码，但输出帧仍可作为给定输入的参考，除非 tpg_verbose
-被设为 true。
-
-根据 tpg_verbose 参数的值，关于参考帧、其时间戳、OUTPUT 与 CAPTURE 队列的状态等
-更多信息，可以直接从 CAPTURE 缓冲区中读取。
-
-### 支持的编解码器
-
+璇ラ┍鍔ㄥ彲鐢ㄤ簬姣旇緝涓嶅悓鐨勭敤鎴风┖闂村疄鐜般€傝繖鍋囪鍏堣繍琛屼竴涓彲鐢ㄧ殑瀹㈡埛绔鎺?visl锛?鐒跺悗鍒╃敤 ftrace 鍜?OUTPUT 缂撳啿鍖烘暟鎹潵璋冭瘯涓€涓鍦ㄥ紑鍙戜腑鐨勫疄鐜般€?
+灏界瀹為檯涓婂苟鏈繘琛岃棰戣В鐮侊紝浣嗚緭鍑哄抚浠嶅彲浣滀负缁欏畾杈撳叆鐨勫弬鑰冿紝闄ら潪 tpg_verbose
+琚涓?true銆?
+鏍规嵁 tpg_verbose 鍙傛暟鐨勫€硷紝鍏充簬鍙傝€冨抚銆佸叾鏃堕棿鎴炽€丱UTPUT 涓?CAPTURE 闃熷垪鐨勭姸鎬佺瓑
+鏇村淇℃伅锛屽彲浠ョ洿鎺ヤ粠 CAPTURE 缂撳啿鍖轰腑璇诲彇銆?
+### 鏀寔鐨勭紪瑙ｇ爜鍣?
 
 - FWHT
 - MPEG2
@@ -60,11 +37,10 @@
 - HEVC
 - AV1
 
-### visl 跟踪事件
+### visl 璺熻釜浜嬩欢
 
 
-跟踪事件是按编解码器定义的，例如：
-
+璺熻釜浜嬩欢鏄寜缂栬В鐮佸櫒瀹氫箟鐨勶紝渚嬪锛?
 
         $ ls /sys/kernel/tracing/events/ | grep visl
         visl_av1_controls
@@ -75,13 +51,11 @@
         visl_vp8_controls
         visl_vp9_controls
 
-例如，要转储 HEVC SPS 数据：
-
+渚嬪锛岃杞偍 HEVC SPS 鏁版嵁锛?
 
         $ echo 1 >  /sys/kernel/tracing/events/visl_hevc_controls/v4l2_ctrl_hevc_sps/enable
 
-SPS 数据将被转储到跟踪缓冲区，即：
-
+SPS 鏁版嵁灏嗚杞偍鍒拌窡韪紦鍐插尯锛屽嵆锛?
 
         $ cat /sys/kernel/tracing/trace
         video_parameter_set_id 0
@@ -111,24 +85,18 @@ SPS 数据将被转储到跟踪缓冲区，即：
         flags AMP_ENABLED|SAMPLE_ADAPTIVE_OFFSET|TEMPORAL_MVP_ENABLED|STRONG_INTRA_SMOOTHING_ENABLED
 
 
-### 通过 debugfs 转储 OUTPUT 缓冲区数据
+### 閫氳繃 debugfs 杞偍 OUTPUT 缂撳啿鍖烘暟鎹?
 
-
-如果启用了 **VISL_DEBUGFS** Kconfig，visl 会根据 bitstream_trace_frame_start 和
-bitstream_trace_nframes 的值，将 OUTPUT 缓冲区数据填入
-**/sys/kernel/debug/visl/bitstream**。这可以发现错误，因为存在缺陷的客户端可能
-无法正确填充缓冲区。
-
-为每个已处理的 OUTPUT 缓冲区创建一个单独的文件。其名称包含一个表示缓冲区序号
-的整数，即：
+濡傛灉鍚敤浜?**VISL_DEBUGFS** Kconfig锛寁isl 浼氭牴鎹?bitstream_trace_frame_start 鍜?bitstream_trace_nframes 鐨勫€硷紝灏?OUTPUT 缂撳啿鍖烘暟鎹～鍏?**/sys/kernel/debug/visl/bitstream**銆傝繖鍙互鍙戠幇閿欒锛屽洜涓哄瓨鍦ㄧ己闄风殑瀹㈡埛绔彲鑳?鏃犳硶姝ｇ‘濉厖缂撳啿鍖恒€?
+涓烘瘡涓凡澶勭悊鐨?OUTPUT 缂撳啿鍖哄垱寤轰竴涓崟鐙殑鏂囦欢銆傚叾鍚嶇О鍖呭惈涓€涓〃绀虹紦鍐插尯搴忓彿
+鐨勬暣鏁帮紝鍗筹細
 
 
 	snprintf(name, 32, "bitstream%d", run->src->sequence);
 
-转储这些值只需从文件读取即可，即：
+杞偍杩欎簺鍊煎彧闇€浠庢枃浠惰鍙栧嵆鍙紝鍗筹細
 
-对于 sequence == 0 的缓冲区：
-
+瀵逛簬 sequence == 0 鐨勭紦鍐插尯锛?
 
         $ xxd /sys/kernel/debug/visl/bitstream/bitstream0
         00000000: 2601 af04 d088 bc25 a173 0e41 a4f2 3274  &......%.s.A..2t
@@ -140,8 +108,7 @@ bitstream_trace_nframes 的值，将 OUTPUT 缓冲区数据填入
         00000060: ddd0 6cfc 0187 0e20 7aae b15b 1812 3d33  ..l.... z..[..=3
         00000070: e1c5 f425 a83a 00b7 4f18 8127 3c4c aefb  ...%.:..O..'<L..
 
-对于 sequence == 1 的缓冲区：
-
+瀵逛簬 sequence == 1 鐨勭紦鍐插尯锛?
 
         $ xxd /sys/kernel/debug/visl/bitstream/bitstream1
         00000000: 0201 d021 49e1 0c40 aa11 1449 14a6 01dc  ...!I..@...I....
@@ -153,6 +120,5 @@ bitstream_trace_nframes 的值，将 OUTPUT 缓冲区数据填入
         00000060: dfe6 bc99 01ea b6e0 346b 92b5 c8de 9f5d  ........4k.....]
         00000070: e7cc 3484 1769 fef2 a693 a945 2c8b 31da  ..4..i.....E,.1.
 
-依此类推。
-
-默认情况下，这些文件会在 STREAMOFF 期间被删除。这是为了减少杂乱。
+渚濇绫绘帹銆?
+榛樿鎯呭喌涓嬶紝杩欎簺鏂囦欢浼氬湪 STREAMOFF 鏈熼棿琚垹闄ゃ€傝繖鏄负浜嗗噺灏戞潅涔便€?

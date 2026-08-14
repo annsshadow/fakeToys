@@ -1,48 +1,29 @@
-## ALSA 中的跟踪点
-
+﻿## ALSA 涓殑璺熻釜鐐?
 2017/07/02
 Takasahi Sakamoto
 
-## ALSA PCM 核心中的跟踪点
+## ALSA PCM 鏍稿績涓殑璺熻釜鐐?
+ALSA PCM 鏍稿績鍚戝唴鏍歌窡韪偣绯荤粺娉ㄥ唽浜?`snd_pcm` 瀛愮郴缁熴€傝瀛愮郴缁熷寘鍚袱绫昏窡韪偣锛?涓€绫荤敤浜?PCM 缂撳啿鍖虹殑鐘舵€侊紝鍙︿竴绫荤敤浜?PCM 纭欢鍙傛暟鐨勫鐞嗐€傚綋鍚敤鐩稿簲鐨勫唴鏍搁厤缃?鏃讹紝杩欎簺璺熻釜鐐规墠鍙敤銆傚綋鍚敤 `CONFIG_SND_DEBUG` 鏃讹紝鍚庝竴绫昏窡韪偣鍙敤銆傚綋杩樺惎鐢ㄤ簡
+`SND_PCM_XRUN_DEBUG` 鏃讹紝鍓嶄竴绫昏窡韪偣涔熶細琚惎鐢ㄣ€?
+### 鐢ㄤ簬 PCM 缂撳啿鍖虹姸鎬佺殑璺熻釜鐐?
+璇ョ被鍒寘鍚洓涓窡韪偣锛歚hwptr`銆乣applptr`銆乣xrun` 鍜?`hw_ptr_error`銆?
+### 鐢ㄤ簬 PCM 纭欢鍙傛暟澶勭悊鐨勮窡韪偣
 
-ALSA PCM 核心向内核跟踪点系统注册了 `snd_pcm` 子系统。该子系统包含两类跟踪点：
-一类用于 PCM 缓冲区的状态，另一类用于 PCM 硬件参数的处理。当启用相应的内核配置
-时，这些跟踪点才可用。当启用 `CONFIG_SND_DEBUG` 时，后一类跟踪点可用。当还启用了
-`SND_PCM_XRUN_DEBUG` 时，前一类跟踪点也会被启用。
-
-### 用于 PCM 缓冲区状态的跟踪点
-
-该类别包含四个跟踪点：`hwptr`、`applptr`、`xrun` 和 `hw_ptr_error`。
-
-### 用于 PCM 硬件参数处理的跟踪点
-
-该类别包含两个跟踪点：`hw_mask_param` 和 `hw_interval_param`。
-
-在 ALSA PCM 核心的设计中，数据传输被抽象为 PCM 子流（substream）。应用程序管理
-PCM 子流以维护 PCM 帧的数据传输。在开始数据传输之前，应用程序需要配置 PCM 子流。
-在此过程中，PCM 硬件参数由应用程序与 ALSA PCM 核心之间的交互来决定。一旦决定，
-PCM 子流的运行时（runtime）就会保存这些参数。
-
-这些参数在 struct snd_pcm_hw_params 中描述。该结构体包含几种类型的参数。应用程序
-为这些参数设置偏好的值，然后执行带 SNDRV_PCM_IOCTL_HW_REFINE 或
-SNDRV_PCM_IOCTL_HW_PARAMS 的 ioctl(2)。前者仅用于精简可用的参数集合，后者用于
-实际决定参数。
-
-struct snd_pcm_hw_params 结构体具有以下成员：
+璇ョ被鍒寘鍚袱涓窡韪偣锛歚hw_mask_param` 鍜?`hw_interval_param`銆?
+鍦?ALSA PCM 鏍稿績鐨勮璁′腑锛屾暟鎹紶杈撹鎶借薄涓?PCM 瀛愭祦锛坰ubstream锛夈€傚簲鐢ㄧ▼搴忕鐞?PCM 瀛愭祦浠ョ淮鎶?PCM 甯х殑鏁版嵁浼犺緭銆傚湪寮€濮嬫暟鎹紶杈撲箣鍓嶏紝搴旂敤绋嬪簭闇€瑕侀厤缃?PCM 瀛愭祦銆?鍦ㄦ杩囩▼涓紝PCM 纭欢鍙傛暟鐢卞簲鐢ㄧ▼搴忎笌 ALSA PCM 鏍稿績涔嬮棿鐨勪氦浜掓潵鍐冲畾銆備竴鏃﹀喅瀹氾紝
+PCM 瀛愭祦鐨勮繍琛屾椂锛坮untime锛夊氨浼氫繚瀛樿繖浜涘弬鏁般€?
+杩欎簺鍙傛暟鍦?struct snd_pcm_hw_params 涓弿杩般€傝缁撴瀯浣撳寘鍚嚑绉嶇被鍨嬬殑鍙傛暟銆傚簲鐢ㄧ▼搴?涓鸿繖浜涘弬鏁拌缃亸濂界殑鍊硷紝鐒跺悗鎵ц甯?SNDRV_PCM_IOCTL_HW_REFINE 鎴?SNDRV_PCM_IOCTL_HW_PARAMS 鐨?ioctl(2)銆傚墠鑰呬粎鐢ㄤ簬绮剧畝鍙敤鐨勫弬鏁伴泦鍚堬紝鍚庤€呯敤浜?瀹為檯鍐冲畾鍙傛暟銆?
+struct snd_pcm_hw_params 缁撴瀯浣撳叿鏈変互涓嬫垚鍛橈細
 
 `flags`
-        可配置。ALSA PCM 核心和某些驱动会处理该标志，以选择方便的参数或改变其行为。
-`masks`
-        可配置。这类参数在 struct snd_mask 中描述，表示掩码值。截至 PCM 协议
-        v2.0.13，定义了三种类型。
-
+        鍙厤缃€侫LSA PCM 鏍稿績鍜屾煇浜涢┍鍔ㄤ細澶勭悊璇ユ爣蹇楋紝浠ラ€夋嫨鏂逛究鐨勫弬鏁版垨鏀瑰彉鍏惰涓恒€?`masks`
+        鍙厤缃€傝繖绫诲弬鏁板湪 struct snd_mask 涓弿杩帮紝琛ㄧず鎺╃爜鍊笺€傛埅鑷?PCM 鍗忚
+        v2.0.13锛屽畾涔変簡涓夌绫诲瀷銆?
         - SNDRV_PCM_HW_PARAM_ACCESS
         - SNDRV_PCM_HW_PARAM_FORMAT
         - SNDRV_PCM_HW_PARAM_SUBFORMAT
 `intervals`
-        可配置。这类参数在 struct snd_interval 中描述，表示带范围的值。截至
-        PCM 协议 v2.0.13，定义了十二种类型。
-
+        鍙厤缃€傝繖绫诲弬鏁板湪 struct snd_interval 涓弿杩帮紝琛ㄧず甯﹁寖鍥寸殑鍊笺€傛埅鑷?        PCM 鍗忚 v2.0.13锛屽畾涔変簡鍗佷簩绉嶇被鍨嬨€?
         - SNDRV_PCM_HW_PARAM_SAMPLE_BITS
         - SNDRV_PCM_HW_PARAM_FRAME_BITS
         - SNDRV_PCM_HW_PARAM_CHANNELS
@@ -56,76 +37,43 @@ struct snd_pcm_hw_params 结构体具有以下成员：
         - SNDRV_PCM_HW_PARAM_BUFFER_BYTES
         - SNDRV_PCM_HW_PARAM_TICK_TIME
 `rmask`
-        可配置。仅在带 SNDRV_PCM_IOCTL_HW_REFINE 的 ioctl(2) 中求值。应用程序
-        可以选择哪些掩码/区间参数可以由 ALSA PCM 核心更改。对于
-        SNDRV_PCM_IOCTL_HW_PARAMS，该掩码会被忽略，所有参数都将被更改。
-`cmask`
-        只读。从 ioctl(2) 返回后，用户空间中用于 struct snd_pcm_hw_params 的
-        缓冲区包含每次操作的结果。该掩码表示实际更改了哪个掩码/区间参数。
-`info`
-        只读。以 SNDRV_PCM_INFO_XXX 位标志表示硬件/驱动能力。通常，应用程序
-        执行带 SNDRV_PCM_IOCTL_HW_REFINE 的 ioctl(2) 来检索该标志，然后决定
-        参数的候选值，并执行带 SNDRV_PCM_IOCTL_HW_PARAMS 的 ioctl(2) 来配置
-        PCM 子流。
-`msbits`
-        只读。该值表示 PCM 样本中 MSB 一侧可用的位宽。当
-        SNDRV_PCM_HW_PARAM_SAMPLE_BITS 参数被决定为一个固定数值时，该值也会
-        据此计算出来。否则为零。但该行为取决于驱动侧的实现。
-`rate_num`
-        只读。该值表示分数表示法中采样率的分子。基本上，当 SNDRV_PCM_HW_PARAM_RATE
-        参数被决定为单一值时，该值也会据此计算出来。否则为零。但该行为取决于
-        驱动侧的实现。
-`rate_den`
-        只读。该值表示分数表示法中采样率的分母。基本上，当 SNDRV_PCM_HW_PARAM_RATE
-        参数被决定为单一值时，该值也会据此计算出来。否则为零。但该行为取决于
-        驱动侧的实现。
-`fifo_size`
-        只读。该值表示硬件串行音频接口中 FIFO 的大小。基本上，每个驱动都可以
-        为该参数分配合适的值，但某些驱动出于对硬件设计或数据传输协议的考虑
-        会故意设为零。
-
-当应用程序执行带 SNDRV_PCM_IOCTL_HW_REFINE 或 SNDRV_PCM_IOCTL_HW_PARAMS 的
-ioctl(2) 时，ALSA PCM 核心会处理 struct snd_pcm_hw_params 的缓冲区。缓冲区中的
-参数会根据 struct snd_pcm_hardware 以及运行时中的约束规则而改变。该结构体描述
-所处理硬件的能力。这些规则描述了参数依据若干参数被决定的依赖关系。一条规则带有
-一个回调函数，驱动可以注册任意函数来计算目标参数。ALSA PCM 核心会默认向运行时
-注册一些规则。
-
-只要驱动在 struct snd_pcm_ops.open 的回调中准备好了两件事，就可以参与这一交互。
-
-1. 在该回调中，驱动应当依据相应硬件的能力，改变运行时中 struct snd_pcm_hardware
-   类型的成员。
-2. 在同一个回调中，当若干参数因硬件设计而存在依赖关系时，驱动还应当向运行时
-   注册额外的约束规则。
-
-驱动可以在 struct snd_pcm_ops.hw_params 的回调中引用交互的结果，但不应更改其内容。
-
-该类别中的跟踪点旨在追踪掩码/区间参数的变化。当 ALSA PCM 核心更改它们时，会根据
-所更改参数的类型探测到 `hw_mask_param` 或 `hw_interval_param` 事件。
-
-ALSA PCM 核心还为每个跟踪点提供了漂亮的打印格式。下面是 `hw_mask_param` 的示例。
-
+        鍙厤缃€備粎鍦ㄥ甫 SNDRV_PCM_IOCTL_HW_REFINE 鐨?ioctl(2) 涓眰鍊笺€傚簲鐢ㄧ▼搴?        鍙互閫夋嫨鍝簺鎺╃爜/鍖洪棿鍙傛暟鍙互鐢?ALSA PCM 鏍稿績鏇存敼銆傚浜?        SNDRV_PCM_IOCTL_HW_PARAMS锛岃鎺╃爜浼氳蹇界暐锛屾墍鏈夊弬鏁伴兘灏嗚鏇存敼銆?`cmask`
+        鍙銆備粠 ioctl(2) 杩斿洖鍚庯紝鐢ㄦ埛绌洪棿涓敤浜?struct snd_pcm_hw_params 鐨?        缂撳啿鍖哄寘鍚瘡娆℃搷浣滅殑缁撴灉銆傝鎺╃爜琛ㄧず瀹為檯鏇存敼浜嗗摢涓帺鐮?鍖洪棿鍙傛暟銆?`info`
+        鍙銆備互 SNDRV_PCM_INFO_XXX 浣嶆爣蹇楄〃绀虹‖浠?椹卞姩鑳藉姏銆傞€氬父锛屽簲鐢ㄧ▼搴?        鎵ц甯?SNDRV_PCM_IOCTL_HW_REFINE 鐨?ioctl(2) 鏉ユ绱㈣鏍囧織锛岀劧鍚庡喅瀹?        鍙傛暟鐨勫€欓€夊€硷紝骞舵墽琛屽甫 SNDRV_PCM_IOCTL_HW_PARAMS 鐨?ioctl(2) 鏉ラ厤缃?        PCM 瀛愭祦銆?`msbits`
+        鍙銆傝鍊艰〃绀?PCM 鏍锋湰涓?MSB 涓€渚у彲鐢ㄧ殑浣嶅銆傚綋
+        SNDRV_PCM_HW_PARAM_SAMPLE_BITS 鍙傛暟琚喅瀹氫负涓€涓浐瀹氭暟鍊兼椂锛岃鍊间篃浼?        鎹璁＄畻鍑烘潵銆傚惁鍒欎负闆躲€備絾璇ヨ涓哄彇鍐充簬椹卞姩渚х殑瀹炵幇銆?`rate_num`
+        鍙銆傝鍊艰〃绀哄垎鏁拌〃绀烘硶涓噰鏍风巼鐨勫垎瀛愩€傚熀鏈笂锛屽綋 SNDRV_PCM_HW_PARAM_RATE
+        鍙傛暟琚喅瀹氫负鍗曚竴鍊兼椂锛岃鍊间篃浼氭嵁姝よ绠楀嚭鏉ャ€傚惁鍒欎负闆躲€備絾璇ヨ涓哄彇鍐充簬
+        椹卞姩渚х殑瀹炵幇銆?`rate_den`
+        鍙銆傝鍊艰〃绀哄垎鏁拌〃绀烘硶涓噰鏍风巼鐨勫垎姣嶃€傚熀鏈笂锛屽綋 SNDRV_PCM_HW_PARAM_RATE
+        鍙傛暟琚喅瀹氫负鍗曚竴鍊兼椂锛岃鍊间篃浼氭嵁姝よ绠楀嚭鏉ャ€傚惁鍒欎负闆躲€備絾璇ヨ涓哄彇鍐充簬
+        椹卞姩渚х殑瀹炵幇銆?`fifo_size`
+        鍙銆傝鍊艰〃绀虹‖浠朵覆琛岄煶棰戞帴鍙ｄ腑 FIFO 鐨勫ぇ灏忋€傚熀鏈笂锛屾瘡涓┍鍔ㄩ兘鍙互
+        涓鸿鍙傛暟鍒嗛厤鍚堥€傜殑鍊硷紝浣嗘煇浜涢┍鍔ㄥ嚭浜庡纭欢璁捐鎴栨暟鎹紶杈撳崗璁殑鑰冭檻
+        浼氭晠鎰忚涓洪浂銆?
+褰撳簲鐢ㄧ▼搴忔墽琛屽甫 SNDRV_PCM_IOCTL_HW_REFINE 鎴?SNDRV_PCM_IOCTL_HW_PARAMS 鐨?ioctl(2) 鏃讹紝ALSA PCM 鏍稿績浼氬鐞?struct snd_pcm_hw_params 鐨勭紦鍐插尯銆傜紦鍐插尯涓殑
+鍙傛暟浼氭牴鎹?struct snd_pcm_hardware 浠ュ強杩愯鏃朵腑鐨勭害鏉熻鍒欒€屾敼鍙樸€傝缁撴瀯浣撴弿杩?鎵€澶勭悊纭欢鐨勮兘鍔涖€傝繖浜涜鍒欐弿杩颁簡鍙傛暟渚濇嵁鑻ュ共鍙傛暟琚喅瀹氱殑渚濊禆鍏崇郴銆備竴鏉¤鍒欏甫鏈?涓€涓洖璋冨嚱鏁帮紝椹卞姩鍙互娉ㄥ唽浠绘剰鍑芥暟鏉ヨ绠楃洰鏍囧弬鏁般€侫LSA PCM 鏍稿績浼氶粯璁ゅ悜杩愯鏃?娉ㄥ唽涓€浜涜鍒欍€?
+鍙椹卞姩鍦?struct snd_pcm_ops.open 鐨勫洖璋冧腑鍑嗗濂戒簡涓や欢浜嬶紝灏卞彲浠ュ弬涓庤繖涓€浜や簰銆?
+1. 鍦ㄨ鍥炶皟涓紝椹卞姩搴斿綋渚濇嵁鐩稿簲纭欢鐨勮兘鍔涳紝鏀瑰彉杩愯鏃朵腑 struct snd_pcm_hardware
+   绫诲瀷鐨勬垚鍛樸€?2. 鍦ㄥ悓涓€涓洖璋冧腑锛屽綋鑻ュ共鍙傛暟鍥犵‖浠惰璁¤€屽瓨鍦ㄤ緷璧栧叧绯绘椂锛岄┍鍔ㄨ繕搴斿綋鍚戣繍琛屾椂
+   娉ㄥ唽棰濆鐨勭害鏉熻鍒欍€?
+椹卞姩鍙互鍦?struct snd_pcm_ops.hw_params 鐨勫洖璋冧腑寮曠敤浜や簰鐨勭粨鏋滐紝浣嗕笉搴旀洿鏀瑰叾鍐呭銆?
+璇ョ被鍒腑鐨勮窡韪偣鏃ㄥ湪杩借釜鎺╃爜/鍖洪棿鍙傛暟鐨勫彉鍖栥€傚綋 ALSA PCM 鏍稿績鏇存敼瀹冧滑鏃讹紝浼氭牴鎹?鎵€鏇存敼鍙傛暟鐨勭被鍨嬫帰娴嬪埌 `hw_mask_param` 鎴?`hw_interval_param` 浜嬩欢銆?
+ALSA PCM 鏍稿績杩樹负姣忎釜璺熻釜鐐规彁渚涗簡婕備寒鐨勬墦鍗版牸寮忋€備笅闈㈡槸 `hw_mask_param` 鐨勭ず渚嬨€?
 ```
 
     hw_mask_param: pcmC0D0p 001/023 FORMAT 00000000000000000000001000000044 00000000000000000000001000000044
 
 ```
-下面是 `hw_interval_param` 的示例。
-
+涓嬮潰鏄?`hw_interval_param` 鐨勭ず渚嬨€?
 ```
 
     hw_interval_param: pcmC0D0p 000/023 BUFFER_SIZE 0 0 [0 4294967295] 0 1 [0 4294967295]
 
 ```
-前三个字段是通用的。它们依次表示 ALSA PCM 字符设备的名称、约束规则以及被更改
-参数的名称。约束规则字段由两个子字段组成：所应用规则的索引，以及添加到运行时的
-规则总数。作为例外，索引 000 表示该参数由 ALSA PCM 核心更改，与规则无关。
-
-其余字段表示参数更改之前/之后的状态。这些字段根据参数的类型而不同。对于掩码类型
-的参数，这些字段表示该参数内容的十六进制转储。对于区间类型的参数，这些字段按
-此顺序表示 struct snd_interval 中 `empty`、`integer`、`openmin`、`min`、`max`、
-`openmax` 各成员的值。
-
-## 驱动中的跟踪点
-
-某些驱动为了开发者的便利提供了跟踪点。关于它们，请参考各自的文档或实现。
+鍓嶄笁涓瓧娈垫槸閫氱敤鐨勩€傚畠浠緷娆¤〃绀?ALSA PCM 瀛楃璁惧鐨勫悕绉般€佺害鏉熻鍒欎互鍙婅鏇存敼
+鍙傛暟鐨勫悕绉般€傜害鏉熻鍒欏瓧娈电敱涓や釜瀛愬瓧娈电粍鎴愶細鎵€搴旂敤瑙勫垯鐨勭储寮曪紝浠ュ強娣诲姞鍒拌繍琛屾椂鐨?瑙勫垯鎬绘暟銆備綔涓轰緥澶栵紝绱㈠紩 000 琛ㄧず璇ュ弬鏁扮敱 ALSA PCM 鏍稿績鏇存敼锛屼笌瑙勫垯鏃犲叧銆?
+鍏朵綑瀛楁琛ㄧず鍙傛暟鏇存敼涔嬪墠/涔嬪悗鐨勭姸鎬併€傝繖浜涘瓧娈垫牴鎹弬鏁扮殑绫诲瀷鑰屼笉鍚屻€傚浜庢帺鐮佺被鍨?鐨勫弬鏁帮紝杩欎簺瀛楁琛ㄧず璇ュ弬鏁板唴瀹圭殑鍗佸叚杩涘埗杞偍銆傚浜庡尯闂寸被鍨嬬殑鍙傛暟锛岃繖浜涘瓧娈垫寜
+姝ら『搴忚〃绀?struct snd_interval 涓?`empty`銆乣integer`銆乣openmin`銆乣min`銆乣max`銆?`openmax` 鍚勬垚鍛樼殑鍊笺€?
+## 椹卞姩涓殑璺熻釜鐐?
+鏌愪簺椹卞姩涓轰簡寮€鍙戣€呯殑渚垮埄鎻愪緵浜嗚窡韪偣銆傚叧浜庡畠浠紝璇峰弬鑰冨悇鑷殑鏂囨。鎴栧疄鐜般€?

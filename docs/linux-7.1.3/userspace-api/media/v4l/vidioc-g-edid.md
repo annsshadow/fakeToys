@@ -1,15 +1,15 @@
-
+﻿
 
 
 ######## ioctl VIDIOC_G_EDID, VIDIOC_S_EDID, VIDIOC_SUBDEV_G_EDID, VIDIOC_SUBDEV_S_EDID
 
 
-## 名称
+## 鍚嶇О
 
 
-VIDIOC_G_EDID - VIDIOC_S_EDID - VIDIOC_SUBDEV_G_EDID - VIDIOC_SUBDEV_S_EDID - 获取或设置视频接收器/发送器的 EDID
+VIDIOC_G_EDID - VIDIOC_S_EDID - VIDIOC_SUBDEV_G_EDID - VIDIOC_SUBDEV_S_EDID - 鑾峰彇鎴栬缃棰戞帴鏀跺櫒/鍙戦€佸櫒鐨?EDID
 
-## 概要
+## 姒傝
 
 
 `int ioctl(int fd, VIDIOC_G_EDID, struct v4l2_edid *argp)`
@@ -23,52 +23,32 @@ VIDIOC_G_EDID - VIDIOC_S_EDID - VIDIOC_SUBDEV_G_EDID - VIDIOC_SUBDEV_S_EDID - �
 
 `int ioctl(int fd, VIDIOC_SUBDEV_S_EDID, struct v4l2_edid *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
-
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `argp`
-   指向 struct `v4l2_edid` 的指针。
-
-## 描述
-
-
-这些 ioctl 可用于获取或设置与接收器的输入或发送器设备的输出相关联的 EDID。它们可以与子设备节点
-（/dev/v4l-subdevX）或视频节点（/dev/videoX）一起使用。
-
-与视频节点一起使用时，`pad` 字段表示输入（对于视频采集设备）或输出（对于视频输出设备）索引，分别由
-VIDIOC_ENUMINPUT 和 VIDIOC_ENUMOUTPUT 返回。与子设备节点一起使用时，`pad` 字段表示子设备的输入或
-输出 pad。如果对于给定的 `pad` 值没有 EDID 支持，则将返回 `EINVAL` 错误码。
-
-要获取 EDID 数据，应用程序必须填写 `pad`、`start_block`、`blocks` 和 `edid` 字段，将 `reserved`
-数组清零，并调用 VIDIOC_G_EDID <VIDIOC_G_EDID>。从 `start_block` 块开始、大小为 `blocks` 的当前
-EDID 将被放入 `edid` 指向的内存中。`edid` 指针必须指向至少 `blocks` * 128 字节大小的内存（一个块的
-大小为 128 字节）。
-
-如果块数少于指定的数量，则驱动会将 `blocks` 设置为实际的块数。如果根本没有任何 EDID 块可用，则设置
-错误码 `ENODATA`。
-
-如果块必须从 sink 获取，则此调用将阻塞，直到它们被读取。
-
-如果在调用 VIDIOC_G_EDID <VIDIOC_G_EDID> 时 `start_block` 和 `blocks` 都设置为 0，则驱动会将
-`blocks` 设置为可用的 EDID 块总数，并返回 0 而不复制任何数据。这是发现有多少个 EDID 块的简单方法。
+   鎸囧悜 struct `v4l2_edid` 鐨勬寚閽堛€?
+## 鎻忚堪
 
 
-   如果没有任何 EDID 块可用，则驱动会将 `blocks` 设置为 0 并返回 0。
+杩欎簺 ioctl 鍙敤浜庤幏鍙栨垨璁剧疆涓庢帴鏀跺櫒鐨勮緭鍏ユ垨鍙戦€佸櫒璁惧鐨勮緭鍑虹浉鍏宠仈鐨?EDID銆傚畠浠彲浠ヤ笌瀛愯澶囪妭鐐?锛?dev/v4l-subdevX锛夋垨瑙嗛鑺傜偣锛?dev/videoX锛変竴璧蜂娇鐢ㄣ€?
+涓庤棰戣妭鐐逛竴璧蜂娇鐢ㄦ椂锛宍pad` 瀛楁琛ㄧず杈撳叆锛堝浜庤棰戦噰闆嗚澶囷級鎴栬緭鍑猴紙瀵逛簬瑙嗛杈撳嚭璁惧锛夌储寮曪紝鍒嗗埆鐢?VIDIOC_ENUMINPUT 鍜?VIDIOC_ENUMOUTPUT 杩斿洖銆備笌瀛愯澶囪妭鐐逛竴璧蜂娇鐢ㄦ椂锛宍pad` 瀛楁琛ㄧず瀛愯澶囩殑杈撳叆鎴?杈撳嚭 pad銆傚鏋滃浜庣粰瀹氱殑 `pad` 鍊兼病鏈?EDID 鏀寔锛屽垯灏嗚繑鍥?`EINVAL` 閿欒鐮併€?
+瑕佽幏鍙?EDID 鏁版嵁锛屽簲鐢ㄧ▼搴忓繀椤诲～鍐?`pad`銆乣start_block`銆乣blocks` 鍜?`edid` 瀛楁锛屽皢 `reserved`
+鏁扮粍娓呴浂锛屽苟璋冪敤 VIDIOC_G_EDID <VIDIOC_G_EDID>銆備粠 `start_block` 鍧楀紑濮嬨€佸ぇ灏忎负 `blocks` 鐨勫綋鍓?EDID 灏嗚鏀惧叆 `edid` 鎸囧悜鐨勫唴瀛樹腑銆俙edid` 鎸囬拡蹇呴』鎸囧悜鑷冲皯 `blocks` * 128 瀛楄妭澶у皬鐨勫唴瀛橈紙涓€涓潡鐨?澶у皬涓?128 瀛楄妭锛夈€?
+濡傛灉鍧楁暟灏戜簬鎸囧畾鐨勬暟閲忥紝鍒欓┍鍔ㄤ細灏?`blocks` 璁剧疆涓哄疄闄呯殑鍧楁暟銆傚鏋滄牴鏈病鏈変换浣?EDID 鍧楀彲鐢紝鍒欒缃?閿欒鐮?`ENODATA`銆?
+濡傛灉鍧楀繀椤讳粠 sink 鑾峰彇锛屽垯姝よ皟鐢ㄥ皢闃诲锛岀洿鍒板畠浠璇诲彇銆?
+濡傛灉鍦ㄨ皟鐢?VIDIOC_G_EDID <VIDIOC_G_EDID> 鏃?`start_block` 鍜?`blocks` 閮借缃负 0锛屽垯椹卞姩浼氬皢
+`blocks` 璁剧疆涓哄彲鐢ㄧ殑 EDID 鍧楁€绘暟锛屽苟杩斿洖 0 鑰屼笉澶嶅埗浠讳綍鏁版嵁銆傝繖鏄彂鐜版湁澶氬皯涓?EDID 鍧楃殑绠€鍗曟柟娉曘€?
 
-要设置接收器的 EDID 块，应用程序必须填写 `pad`、`blocks` 和 `edid` 字段，将 `start_block` 设置为 0，
-并将 `reserved` 数组清零。不可能只设置 EDID 的一部分，它总是全有或全无。设置 EDID 数据仅对接收器有效，
-因为对发送器来说没有意义。
-
-驱动假定传入的是完整的 EDID。如果 EDID 块多于硬件能处理的数量，则不会写入 EDID，而是设置错误码
-`E2BIG`，并且 `blocks` 被设置为硬件支持的最大值。如果 `start_block` 为 0 以外的任何值，则设置错误码
-`EINVAL`。
-
-要禁用 EDID，你将 `blocks` 设置为 0。根据硬件的不同，这会将热插拔引脚拉低和/或以某种方式阻止源读取 EDID
-数据。无论如何，最终结果是相同的：EDID 不再可用。
-
+   濡傛灉娌℃湁浠讳綍 EDID 鍧楀彲鐢紝鍒欓┍鍔ㄤ細灏?`blocks` 璁剧疆涓?0 骞惰繑鍥?0銆?
+瑕佽缃帴鏀跺櫒鐨?EDID 鍧楋紝搴旂敤绋嬪簭蹇呴』濉啓 `pad`銆乣blocks` 鍜?`edid` 瀛楁锛屽皢 `start_block` 璁剧疆涓?0锛?骞跺皢 `reserved` 鏁扮粍娓呴浂銆備笉鍙兘鍙缃?EDID 鐨勪竴閮ㄥ垎锛屽畠鎬绘槸鍏ㄦ湁鎴栧叏鏃犮€傝缃?EDID 鏁版嵁浠呭鎺ユ敹鍣ㄦ湁鏁堬紝
+鍥犱负瀵瑰彂閫佸櫒鏉ヨ娌℃湁鎰忎箟銆?
+椹卞姩鍋囧畾浼犲叆鐨勬槸瀹屾暣鐨?EDID銆傚鏋?EDID 鍧楀浜庣‖浠惰兘澶勭悊鐨勬暟閲忥紝鍒欎笉浼氬啓鍏?EDID锛岃€屾槸璁剧疆閿欒鐮?`E2BIG`锛屽苟涓?`blocks` 琚缃负纭欢鏀寔鐨勬渶澶у€笺€傚鏋?`start_block` 涓?0 浠ュ鐨勪换浣曞€硷紝鍒欒缃敊璇爜
+`EINVAL`銆?
+瑕佺鐢?EDID锛屼綘灏?`blocks` 璁剧疆涓?0銆傛牴鎹‖浠剁殑涓嶅悓锛岃繖浼氬皢鐑彃鎷斿紩鑴氭媺浣庡拰/鎴栦互鏌愮鏂瑰紡闃绘婧愯鍙?EDID
+鏁版嵁銆傛棤璁哄浣曪紝鏈€缁堢粨鏋滄槸鐩稿悓鐨勶細EDID 涓嶅啀鍙敤銆?
 
     :header-rows:  0
     :stub-columns: 0
@@ -76,29 +56,20 @@ EDID 将被放入 `edid` 指向的内存中。`edid` 指针必须指向至少 `b
 
     - - __u32
       - `pad`
-      - 要获取/设置 EDID 块的 pad。与视频设备节点一起使用时，pad 表示输入或输出索引，分别由
-	VIDIOC_ENUMINPUT 和 VIDIOC_ENUMOUTPUT 返回。
-    - - __u32
+      - 瑕佽幏鍙?璁剧疆 EDID 鍧楃殑 pad銆備笌瑙嗛璁惧鑺傜偣涓€璧蜂娇鐢ㄦ椂锛宲ad 琛ㄧず杈撳叆鎴栬緭鍑虹储寮曪紝鍒嗗埆鐢?	VIDIOC_ENUMINPUT 鍜?VIDIOC_ENUMOUTPUT 杩斿洖銆?    - - __u32
       - `start_block`
-      - 从此块开始读取 EDID。设置 EDID 时必须为 0。
-    - - __u32
+      - 浠庢鍧楀紑濮嬭鍙?EDID銆傝缃?EDID 鏃跺繀椤讳负 0銆?    - - __u32
       - `blocks`
-      - 要获取或设置的块数。必须小于或等于 256（标准定义的最大块数）。当你设置 EDID 且 `blocks` 为 0
-	时，则 EDID 被禁用或擦除。
-    - - __u32
+      - 瑕佽幏鍙栨垨璁剧疆鐨勫潡鏁般€傚繀椤诲皬浜庢垨绛変簬 256锛堟爣鍑嗗畾涔夌殑鏈€澶у潡鏁帮級銆傚綋浣犺缃?EDID 涓?`blocks` 涓?0
+	鏃讹紝鍒?EDID 琚鐢ㄦ垨鎿﹂櫎銆?    - - __u32
       - `reserved`\ [^5^]
-      - 为未来扩展保留。应用程序和驱动必须将数组设置为零。
-    - - __u8 *
+      - 涓烘湭鏉ユ墿灞曚繚鐣欍€傚簲鐢ㄧ▼搴忓拰椹卞姩蹇呴』灏嗘暟缁勮缃负闆躲€?    - - __u8 *
       - `edid`
-      - 指向包含 EDID 的内存。最小大小为 `blocks` * 128。
+      - 鎸囧悜鍖呭惈 EDID 鐨勫唴瀛樸€傛渶灏忓ぇ灏忎负 `blocks` * 128銆?
+## 杩斿洖鍊?
 
-## 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在通用错误码 <gen-errors> 章节中描述。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪閫氱敤閿欒鐮?<gen-errors> 绔犺妭涓弿杩般€?
 `ENODATA`
-    EDID 数据不可用。
-
+    EDID 鏁版嵁涓嶅彲鐢ㄣ€?
 `E2BIG`
-    你提供的 EDID 数据超过了硬件能处理的数量。
+    浣犳彁渚涚殑 EDID 鏁版嵁瓒呰繃浜嗙‖浠惰兘澶勭悊鐨勬暟閲忋€?

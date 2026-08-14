@@ -1,4 +1,4 @@
-## Linux 和 并行 端口 IDE 设备
+﻿## Linux 鍜?骞惰 绔彛 IDE 璁惧
 
 
 PARIDE v1.03   (c) 1997-8  Grant Guenther <grant@torque.net>
@@ -7,35 +7,35 @@ PATA_PARPORT   (c) 2023 Ondrej Zary
 ## 1. Introduction
 
 
-Owing 到 the simplicity 和 near universality 的 the 并行 端口 接口
-到 personal computers, 许多 外部 设备 例如 portable hard-disk,
-CD-ROM, LS-120 和 tape drives 使用 the 并行 端口 到 connect 到 它们的
-host computer.  同时 一些 设备 (notably scanners) 使用 ad-hoc 方法
-到 pass 命令 和 数据 through the 并行 端口 接口, 大多数
-外部 设备 是 actually identical 到 一个 内部 型号, 但 与
-一个 parallel-port adapter 芯片 added 在.  一些 的 the original 并行 端口
-adapters 曾是 little 多于 mechanisms 用于 multiplexing 一个 SCSI 总线.
-(The Iomega PPA-3 adapter 使用 在 the ZIP drives 是 一个 示例 的 此
-approach).  大多数 电流 designs, 然而, take 一个 不同 approach.
-The adapter 芯片 reproduces 一个 small ISA 或 IDE 总线 在 the 外部 设备
-和 the communication 协议 提供 操作 用于 reading 和 writing
-设备 寄存器, 以及 数据 块 transfer 函数.  有时,
-the 设备 正在 addressed 通过 the 并行 cable 是 一个 标准 SCSI
-控制器 类似 一个 NCR 5380.  The "ditto" family 的 外部 tape
-drives 使用 the ISA replicator 到 接口 一个 floppy disk 控制器,
-其 是 然后 connected 到 一个 floppy-tape mechanism.  The vast majority
-的 外部 并行 端口 设备, 然而, 是 现在 基于 标准
-IDE 类型 设备, 其 需要 无 intermediate 控制器.  若 one
-曾是 到 打开 up 一个 并行 端口 CD-ROM drive, 例如, one 将会
-find 一个 标准 ATAPI CD-ROM drive, 一个 电源 supply, 和 一个 单个 adapter
-该 interconnected 一个 标准 PC 并行 端口 cable 和 一个 标准
-IDE cable.  它是 通常 可能 到 exchange the CD-ROM 设备 与
-任何 其他 设备 使用 the IDE 接口.
+Owing 鍒?the simplicity 鍜?near universality 鐨?the 骞惰 绔彛 鎺ュ彛
+鍒?personal computers, 璁稿 澶栭儴 璁惧 渚嬪 portable hard-disk,
+CD-ROM, LS-120 鍜?tape drives 浣跨敤 the 骞惰 绔彛 鍒?connect 鍒?瀹冧滑鐨?
+host computer.  鍚屾椂 涓€浜?璁惧 (notably scanners) 浣跨敤 ad-hoc 鏂规硶
+鍒?pass 鍛戒护 鍜?鏁版嵁 through the 骞惰 绔彛 鎺ュ彛, 澶у鏁?
+澶栭儴 璁惧 鏄?actually identical 鍒?涓€涓?鍐呴儴 鍨嬪彿, 浣?涓?
+涓€涓?parallel-port adapter 鑺墖 added 鍦?  涓€浜?鐨?the original 骞惰 绔彛
+adapters 鏇炬槸 little 澶氫簬 mechanisms 鐢ㄤ簬 multiplexing 涓€涓?SCSI 鎬荤嚎.
+(The Iomega PPA-3 adapter 浣跨敤 鍦?the ZIP drives 鏄?涓€涓?绀轰緥 鐨?姝?
+approach).  澶у鏁?鐢垫祦 designs, 鐒惰€? take 涓€涓?涓嶅悓 approach.
+The adapter 鑺墖 reproduces 涓€涓?small ISA 鎴?IDE 鎬荤嚎 鍦?the 澶栭儴 璁惧
+鍜?the communication 鍗忚 鎻愪緵 鎿嶄綔 鐢ㄤ簬 reading 鍜?writing
+璁惧 瀵勫瓨鍣? 浠ュ強 鏁版嵁 鍧?transfer 鍑芥暟.  鏈夋椂,
+the 璁惧 姝ｅ湪 addressed 閫氳繃 the 骞惰 cable 鏄?涓€涓?鏍囧噯 SCSI
+鎺у埗鍣?绫讳技 涓€涓?NCR 5380.  The "ditto" family 鐨?澶栭儴 tape
+drives 浣跨敤 the ISA replicator 鍒?鎺ュ彛 涓€涓?floppy disk 鎺у埗鍣?
+鍏?鏄?鐒跺悗 connected 鍒?涓€涓?floppy-tape mechanism.  The vast majority
+鐨?澶栭儴 骞惰 绔彛 璁惧, 鐒惰€? 鏄?鐜板湪 鍩轰簬 鏍囧噯
+IDE 绫诲瀷 璁惧, 鍏?闇€瑕?鏃?intermediate 鎺у埗鍣?  鑻?one
+鏇炬槸 鍒?鎵撳紑 up 涓€涓?骞惰 绔彛 CD-ROM drive, 渚嬪, one 灏嗕細
+find 涓€涓?鏍囧噯 ATAPI CD-ROM drive, 涓€涓?鐢垫簮 supply, 鍜?涓€涓?鍗曚釜 adapter
+璇?interconnected 涓€涓?鏍囧噯 PC 骞惰 绔彛 cable 鍜?涓€涓?鏍囧噯
+IDE cable.  瀹冩槸 閫氬父 鍙兘 鍒?exchange the CD-ROM 璁惧 涓?
+浠讳綍 鍏朵粬 璁惧 浣跨敤 the IDE 鎺ュ彛.
 
-The document describes the 支持 在 Linux 用于 并行 端口 IDE
-设备.  它 执行 不 cover 并行 端口 SCSI 设备, "ditto" tape
-drives 或 scanners.  许多 不同 设备 是 受支持 由 the
-并行 端口 IDE 子系统, including:
+The document describes the 鏀寔 鍦?Linux 鐢ㄤ簬 骞惰 绔彛 IDE
+璁惧.  瀹?鎵ц 涓?cover 骞惰 绔彛 SCSI 璁惧, "ditto" tape
+drives 鎴?scanners.  璁稿 涓嶅悓 璁惧 鏄?鍙楁敮鎸?鐢?the
+骞惰 绔彛 IDE 瀛愮郴缁? including:
 
  - MicroSolutions backpack CD-ROM
  - MicroSolutions backpack PD/CD
@@ -45,21 +45,21 @@ drives 或 scanners.  许多 不同 设备 是 受支持 由 the
  - Avatar Shark
  - Imation Superdisk LS-120
  - Maxell Superdisk LS-120
- - FreeCom 电源 CD
- - Hewlett-Packard 5GB 和 8GB tape drives
- - Hewlett-Packard 7100 和 7200 CD-RW drives
+ - FreeCom 鐢垫簮 CD
+ - Hewlett-Packard 5GB 鍜?8GB tape drives
+ - Hewlett-Packard 7100 鍜?7200 CD-RW drives
 
-以及 大多数 的 the clone 和 no-name products 在 the market.
+浠ュ強 澶у鏁?鐨?the clone 鍜?no-name products 鍦?the market.
 
-到 支持 此类 一个 wide range 的 设备, pata_parport 是 actually structured
-在 two parts. 存在 一个 base pata_parport 模块 其 提供 一个 接口
-到 内核 libata 子系统, registry 和 一些 通用 方法 用于 accessing
-the 并行 ports.
+鍒?鏀寔 姝ょ被 涓€涓?wide range 鐨?璁惧, pata_parport 鏄?actually structured
+鍦?two parts. 瀛樺湪 涓€涓?base pata_parport 妯″潡 鍏?鎻愪緵 涓€涓?鎺ュ彛
+鍒?鍐呮牳 libata 瀛愮郴缁? registry 鍜?涓€浜?閫氱敤 鏂规硶 鐢ㄤ簬 accessing
+the 骞惰 ports.
 
-The second component 是 一个 set 的 low-level 协议 驱动 用于 每个 的 the
-并行 端口 IDE adapter chips.  Thanks 到 the interest 和 encouragement 的
-Linux users 来自 许多 parts 的 the world, 支持 是 可用 用于 almost 全部
-known adapter 协议:
+The second component 鏄?涓€涓?set 鐨?low-level 鍗忚 椹卞姩 鐢ㄤ簬 姣忎釜 鐨?the
+骞惰 绔彛 IDE adapter chips.  Thanks 鍒?the interest 鍜?encouragement 鐨?
+Linux users 鏉ヨ嚜 璁稿 parts 鐨?the world, 鏀寔 鏄?鍙敤 鐢ㄤ簬 almost 鍏ㄩ儴
+known adapter 鍗忚:
 
 	====    ====================================== ====
         aten    ATEN EH-100                            (HK)
@@ -71,36 +71,36 @@ known adapter 协议:
 	fit2    FIT TD-2000			       (US)
 	fit3    FIT TD-3000			       (US)
 	friq    Freecom IQ cable                       (DE)
-        frpw    Freecom 电源                          (DE)
-        kbic    KingByte KBIC-951一个 和 KBIC-971一个       (TW)
+        frpw    Freecom 鐢垫簮                          (DE)
+        kbic    KingByte KBIC-951涓€涓?鍜?KBIC-971涓€涓?      (TW)
 	ktti    KT Technology PHd adapter              (SG)
-        在20    OnSpec 90c20                           (US)
-        在26    OnSpec 90c26                           (US)
+        鍦?0    OnSpec 90c20                           (US)
+        鍦?6    OnSpec 90c26                           (US)
 	====    ====================================== ====
 
 
-## 2. 使用 pata_parport 子系统
+## 2. 浣跨敤 pata_parport 瀛愮郴缁?
 
 
-同时 configuring the Linux 内核, 您 可 choose 任一个 到 build
-the pata_parport 驱动 进入 您的 内核, 或 到 build them 作为 模块.
+鍚屾椂 configuring the Linux 鍐呮牳, 鎮?鍙?choose 浠讳竴涓?鍒?build
+the pata_parport 椹卞姩 杩涘叆 鎮ㄧ殑 鍐呮牳, 鎴?鍒?build them 浣滀负 妯″潡.
 
-在 任一个 case, 您 将 需要 到 select "并行 端口 IDE 设备 支持"
-和 至少 one 的 the 并行 端口 communication 协议.
-若 您 执行 不 know 什么 kind 的 并行 端口 adapter 是 使用 在 您的 drive,
-您 可以 begin 由 checking the 文件 names 和 任何 text 文件 在 您的 DOS
-installation floppy.  Alternatively, 您可以 look 在 the markings 在
-the adapter 芯片 itself.  该's 通常 sufficient 到 identify the
-correct 设备.
+鍦?浠讳竴涓?case, 鎮?灏?闇€瑕?鍒?select "骞惰 绔彛 IDE 璁惧 鏀寔"
+鍜?鑷冲皯 one 鐨?the 骞惰 绔彛 communication 鍗忚.
+鑻?鎮?鎵ц 涓?know 浠€涔?kind 鐨?骞惰 绔彛 adapter 鏄?浣跨敤 鍦?鎮ㄧ殑 drive,
+鎮?鍙互 begin 鐢?checking the 鏂囦欢 names 鍜?浠讳綍 text 鏂囦欢 鍦?鎮ㄧ殑 DOS
+installation floppy.  Alternatively, 鎮ㄥ彲浠?look 鍦?the markings 鍦?
+the adapter 鑺墖 itself.  璇?s 閫氬父 sufficient 鍒?identify the
+correct 璁惧.
 
-您可以 actually select 全部 the 协议 模块, 和 允许 the pata_parport
-子系统 到 try them 全部 用于 您.
+鎮ㄥ彲浠?actually select 鍏ㄩ儴 the 鍗忚 妯″潡, 鍜?鍏佽 the pata_parport
+瀛愮郴缁?鍒?try them 鍏ㄩ儴 鐢ㄤ簬 鎮?
 
-用于 the "brand-name" products listed 上文, 此处 是 the 协议
-和 high-level 驱动 该 您 将会 使用:
+鐢ㄤ簬 the "brand-name" products listed 涓婃枃, 姝ゅ 鏄?the 鍗忚
+鍜?high-level 椹卞姩 璇?鎮?灏嗕細 浣跨敤:
 
 	================	============	========
-	Manufacturer		型号		协议
+	Manufacturer		鍨嬪彿		鍗忚
 	================	============	========
 	MicroSolutions		CD-ROM		bpck
 	MicroSolutions		PD drive	bpck
@@ -116,31 +116,31 @@ correct 设备.
 	Hewlett-Packard		7200e (CD-R)	epat
 	================	============	========
 
-全部 parports 和 全部 协议 驱动 是 probed automatically 除非 probe=0
-参数 是 使用. 因此 just "modprobe epat" 是 enough 用于 一个 Imation SuperDisk
-drive 到 work.
+鍏ㄩ儴 parports 鍜?鍏ㄩ儴 鍗忚 椹卞姩 鏄?probed automatically 闄ら潪 probe=0
+鍙傛暟 鏄?浣跨敤. 鍥犳 just "modprobe epat" 鏄?enough 鐢ㄤ簬 涓€涓?Imation SuperDisk
+drive 鍒?work.
 
 ```
 
 	# echo "port protocol mode unit delay" >/sys/bus/pata_parport/new_device
 
 ```
-何处:
+浣曞:
 
 	======== ================================================
-	端口	 parport name (或 "auto" 用于 全部 parports)
-	协议 协议 name (或 "auto" 用于 全部 协议)
-	模式	 模式 数字 (protocol-specific) 或 -1 用于 probe
-	unit	 unit 数字 (用于 backpack 仅, 参见 下文)
-	delay	 I/O delay (参见 troubleshooting section 下文)
+	绔彛	 parport name (鎴?"auto" 鐢ㄤ簬 鍏ㄩ儴 parports)
+	鍗忚 鍗忚 name (鎴?"auto" 鐢ㄤ簬 鍏ㄩ儴 鍗忚)
+	妯″紡	 妯″紡 鏁板瓧 (protocol-specific) 鎴?-1 鐢ㄤ簬 probe
+	unit	 unit 鏁板瓧 (鐢ㄤ簬 backpack 浠? 鍙傝 涓嬫枃)
+	delay	 I/O delay (鍙傝 troubleshooting section 涓嬫枃)
 	======== ================================================
 
-若 您 happen 到 为 使用 一个 MicroSolutions backpack 设备, 您 将
-也 需要 到 know the unit ID 数字 用于 每个 drive.  这是 通常
-the 最后 two digits 的 the drive's 串行 数字 (但 读取 MicroSolutions'
-documentation 关于 此).
+鑻?鎮?happen 鍒?涓?浣跨敤 涓€涓?MicroSolutions backpack 璁惧, 鎮?灏?
+涔?闇€瑕?鍒?know the unit ID 鏁板瓧 鐢ㄤ簬 姣忎釜 drive.  杩欐槸 閫氬父
+the 鏈€鍚?two digits 鐨?the drive's 涓茶 鏁板瓧 (浣?璇诲彇 MicroSolutions'
+documentation 鍏充簬 姝?.
 
-若 您 omit the 参数 来自 the end, defaults 将 为 使用, e.g.:
+鑻?鎮?omit the 鍙傛暟 鏉ヨ嚜 the end, defaults 灏?涓?浣跨敤, e.g.:
 
 ```
 
@@ -171,43 +171,43 @@ documentation 关于 此).
 ## 3. Troubleshooting
 
 
-### 3.1  使用 EPP 模式 若 您可以
+### 3.1  浣跨敤 EPP 妯″紡 鑻?鎮ㄥ彲浠?
 
 
-The 大多数 通用 problems 该 people report 与 the pata_parport 驱动
-concern the 并行 端口 CMOS 设置.  在 此 time, none 的 the
-协议 模块 支持 ECP 模式, 或 任何 ECP combination modes.
-若 您 是 able 到 执行 因此, 请 set 您的 并行 端口 进入 EPP 模式
-使用 您的 CMOS setup procedure.
+The 澶у鏁?閫氱敤 problems 璇?people report 涓?the pata_parport 椹卞姩
+concern the 骞惰 绔彛 CMOS 璁剧疆.  鍦?姝?time, none 鐨?the
+鍗忚 妯″潡 鏀寔 ECP 妯″紡, 鎴?浠讳綍 ECP combination modes.
+鑻?鎮?鏄?able 鍒?鎵ц 鍥犳, 璇?set 鎮ㄧ殑 骞惰 绔彛 杩涘叆 EPP 妯″紡
+浣跨敤 鎮ㄧ殑 CMOS setup procedure.
 
-### 3.2  Check the 端口 delay
-
-
-一些 并行 ports cannot reliably transfer 数据 在 full speed.  到
-偏移 the 错误, the 协议 模块 introduce 一个 "端口
-delay" 之间 每个 access 到 the i/o ports.  每个 协议 sets
-一个 默认 值 用于 此 delay.  在 大多数 cases, the 用户 可 override
-the 默认 和 set 它 到 0 - resulting 在 somewhat higher transfer
-rates.  在 一些 rare cases (especially 与 older 486 系统) the
-默认 delays 是 不 long enough.  若 您 experience corrupt 数据
-transfers, 或 unexpected failures, 您 可 wish 到 increase the
-端口 delay.
-
-### 3.3  一些 drives 需要 一个 打印机 reset
+### 3.2  Check the 绔彛 delay
 
 
-那里 appear 到 为 一个 数字 的 "noname" 外部 drives 在 the market
-该 执行 不 始终 电源 up correctly.  我们 具有 noticed 此 与 一些
-drives 基于 OnSpec 和 older Freecom adapters.  在 这些 rare cases,
-the adapter 可 通常 为 reinitialised 由 issuing 一个 "打印机 reset" 在
-the 并行 端口.  作为 the reset 操作 是 potentially disruptive 在
-多个 设备 environments, the pata_parport 驱动 将 不 执行 它
+涓€浜?骞惰 ports cannot reliably transfer 鏁版嵁 鍦?full speed.  鍒?
+鍋忕Щ the 閿欒, the 鍗忚 妯″潡 introduce 涓€涓?"绔彛
+delay" 涔嬮棿 姣忎釜 access 鍒?the i/o ports.  姣忎釜 鍗忚 sets
+涓€涓?榛樿 鍊?鐢ㄤ簬 姝?delay.  鍦?澶у鏁?cases, the 鐢ㄦ埛 鍙?override
+the 榛樿 鍜?set 瀹?鍒?0 - resulting 鍦?somewhat higher transfer
+rates.  鍦?涓€浜?rare cases (especially 涓?older 486 绯荤粺) the
+榛樿 delays 鏄?涓?long enough.  鑻?鎮?experience corrupt 鏁版嵁
+transfers, 鎴?unexpected failures, 鎮?鍙?wish 鍒?increase the
+绔彛 delay.
+
+### 3.3  涓€浜?drives 闇€瑕?涓€涓?鎵撳嵃鏈?reset
+
+
+閭ｉ噷 appear 鍒?涓?涓€涓?鏁板瓧 鐨?"noname" 澶栭儴 drives 鍦?the market
+璇?鎵ц 涓?濮嬬粓 鐢垫簮 up correctly.  鎴戜滑 鍏锋湁 noticed 姝?涓?涓€浜?
+drives 鍩轰簬 OnSpec 鍜?older Freecom adapters.  鍦?杩欎簺 rare cases,
+the adapter 鍙?閫氬父 涓?reinitialised 鐢?issuing 涓€涓?"鎵撳嵃鏈?reset" 鍦?
+the 骞惰 绔彛.  浣滀负 the reset 鎿嶄綔 鏄?potentially disruptive 鍦?
+澶氫釜 璁惧 environments, the pata_parport 椹卞姩 灏?涓?鎵ц 瀹?
 ```
 
 	insmod lp reset=1
 	rmmod lp
 
 ```
-若 您 具有 one 的 这些 marginal cases, 您 应当 probably build
-您的 pata_parport 驱动 作为 模块, 和 arrange 到 执行 the 打印机 reset
-之前 loading the pata_parport 驱动.
+鑻?鎮?鍏锋湁 one 鐨?杩欎簺 marginal cases, 鎮?搴斿綋 probably build
+鎮ㄧ殑 pata_parport 椹卞姩 浣滀负 妯″潡, 鍜?arrange 鍒?鎵ц the 鎵撳嵃鏈?reset
+涔嬪墠 loading the pata_parport 椹卞姩.

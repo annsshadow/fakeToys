@@ -1,4 +1,4 @@
-
+﻿
 ## Resolve conflict between CFMWS, Platform Memory Holes, and Endpoint Decoders
 
 
@@ -22,53 +22,36 @@ SPDX-License Identifier: CC-BY-4.0
 ### Summary of the Change
 
 
-根据当前的 Compute Express Link（CXL）规范（Revision 3.2, Version 1.0），CXL 固定内存窗口结构（CFMWS）描述了与每个 CXL 主机桥相关联的零个或多个主机物理地址（HPA）窗口。每个窗口代表一个可能跨一个或多个目标（包括 CXL 主机桥）交织的连续 HPA 范围。每个窗口都有一组约束其使用的限制。由操作系统主导的配置与电源管理（OSPM）负责将每个窗口用于指定的用途。
-
-当前 CXL 规范的表 9-22 指出，Window Size 字段包含该窗口描述的 HPA 连续字节总数。该值必须是交织路数（NIW）* 256 MB 的整数倍。
-
-平台固件（BIOS）可能在 4 GB 以下保留物理地址，那里可能存在内存空洞（例如用于 PCIe MMIO 的低内存空洞）。在这种情况下，CFMWS 范围大小可能不遵循 NIW * 256 MB 规则。
-
-HPA 代表 CXL 设备能够解码并响应的实际物理内存地址空间，而系统物理地址（SPA）是一个相关但不同的概念，它代表用户可以直接发起事务寻址的系统可见地址空间，因此排除了保留区域。
-
-BIOS 发布 CFMWS 来传达活跃的 SPA 范围，在有 LMH 的平台上，这些范围映射到 HPA 的一个严格子集。SPA 范围裁掉了空洞，导致 Endpoints 中有一部分 HPA 范围与空洞相交却无对应 SPA 可映射，从而丢失容量。
-
-例如，一个带两个 CFMWS 且 LMH 从 2 GB 开始的 x86 平台：
-
+鏍规嵁褰撳墠鐨?Compute Express Link锛圕XL锛夎鑼冿紙Revision 3.2, Version 1.0锛夛紝CXL 鍥哄畾鍐呭瓨绐楀彛缁撴瀯锛圕FMWS锛夋弿杩颁簡涓庢瘡涓?CXL 涓绘満妗ョ浉鍏宠仈鐨勯浂涓垨澶氫釜涓绘満鐗╃悊鍦板潃锛圚PA锛夌獥鍙ｃ€傛瘡涓獥鍙ｄ唬琛ㄤ竴涓彲鑳借法涓€涓垨澶氫釜鐩爣锛堝寘鎷?CXL 涓绘満妗ワ級浜ょ粐鐨勮繛缁?HPA 鑼冨洿銆傛瘡涓獥鍙ｉ兘鏈変竴缁勭害鏉熷叾浣跨敤鐨勯檺鍒躲€傜敱鎿嶄綔绯荤粺涓诲鐨勯厤缃笌鐢垫簮绠＄悊锛圤SPM锛夎礋璐ｅ皢姣忎釜绐楀彛鐢ㄤ簬鎸囧畾鐨勭敤閫斻€?
+褰撳墠 CXL 瑙勮寖鐨勮〃 9-22 鎸囧嚭锛學indow Size 瀛楁鍖呭惈璇ョ獥鍙ｆ弿杩扮殑 HPA 杩炵画瀛楄妭鎬绘暟銆傝鍊煎繀椤绘槸浜ょ粐璺暟锛圢IW锛? 256 MB 鐨勬暣鏁板€嶃€?
+骞冲彴鍥轰欢锛圔IOS锛夊彲鑳藉湪 4 GB 浠ヤ笅淇濈暀鐗╃悊鍦板潃锛岄偅閲屽彲鑳藉瓨鍦ㄥ唴瀛樼┖娲烇紙渚嬪鐢ㄤ簬 PCIe MMIO 鐨勪綆鍐呭瓨绌烘礊锛夈€傚湪杩欑鎯呭喌涓嬶紝CFMWS 鑼冨洿澶у皬鍙兘涓嶉伒寰?NIW * 256 MB 瑙勫垯銆?
+HPA 浠ｈ〃 CXL 璁惧鑳藉瑙ｇ爜骞跺搷搴旂殑瀹為檯鐗╃悊鍐呭瓨鍦板潃绌洪棿锛岃€岀郴缁熺墿鐞嗗湴鍧€锛圫PA锛夋槸涓€涓浉鍏充絾涓嶅悓鐨勬蹇碉紝瀹冧唬琛ㄧ敤鎴峰彲浠ョ洿鎺ュ彂璧蜂簨鍔″鍧€鐨勭郴缁熷彲瑙佸湴鍧€绌洪棿锛屽洜姝ゆ帓闄や簡淇濈暀鍖哄煙銆?
+BIOS 鍙戝竷 CFMWS 鏉ヤ紶杈炬椿璺冪殑 SPA 鑼冨洿锛屽湪鏈?LMH 鐨勫钩鍙颁笂锛岃繖浜涜寖鍥存槧灏勫埌 HPA 鐨勪竴涓弗鏍煎瓙闆嗐€係PA 鑼冨洿瑁佹帀浜嗙┖娲烇紝瀵艰嚧 Endpoints 涓湁涓€閮ㄥ垎 HPA 鑼冨洿涓庣┖娲炵浉浜ゅ嵈鏃犲搴?SPA 鍙槧灏勶紝浠庤€屼涪澶卞閲忋€?
+渚嬪锛屼竴涓甫涓や釜 CFMWS 涓?LMH 浠?2 GB 寮€濮嬬殑 x86 骞冲彴锛?
  +--------+------------+-------------------+------------------+-------------------+------+
  | Window | CFMWS Base |    CFMWS Size     | HDM Decoder Base |  HDM Decoder Size | Ways |
  +========+============+===================+==================+===================+======+
- |   0    |   0 GB     |       2 GB        |      0 GB        |       3 GB        |  12  |
+ |  鈥?    |   0 GB     |       2 GB        |      0 GB        |       3 GB        |  12  |
  +--------+------------+-------------------+------------------+-------------------+------+
- |   1    |   4 GB     | NIW**256MB Aligned |      4 GB        | NIW**256MB Aligned |  12  |
+ |  鈥?    |   4 GB     | NIW**256MB Aligned |      4 GB        | NIW**256MB Aligned |  12  |
  +--------+------------+-------------------+------------------+-------------------+------+
 
-HDM decoder base 和 HDM decoder size 代表一个 12 路区域的全部 12 个 Endpoint Decoder 以及所有中间 Switch Decoder。它们由 BIOS 根据 NIW * 256MB 规则配置，产生 3GB 的 HPA 范围大小。而 CFMWS Base 和 CFMWS Size 用于配置 Root Decoder 的 HPA 范围，结果（2GB）比层次结构中 Switch 和 Endpoint Decoder 的范围（3GB）更小。
+HDM decoder base 鍜?HDM decoder size 浠ｈ〃涓€涓?12 璺尯鍩熺殑鍏ㄩ儴 12 涓?Endpoint Decoder 浠ュ強鎵€鏈変腑闂?Switch Decoder銆傚畠浠敱 BIOS 鏍规嵁 NIW * 256MB 瑙勫垯閰嶇疆锛屼骇鐢?3GB 鐨?HPA 鑼冨洿澶у皬銆傝€?CFMWS Base 鍜?CFMWS Size 鐢ㄤ簬閰嶇疆 Root Decoder 鐨?HPA 鑼冨洿锛岀粨鏋滐紙2GB锛夋瘮灞傛缁撴瀯涓?Switch 鍜?Endpoint Decoder 鐨勮寖鍥达紙3GB锛夋洿灏忋€?
+杩欎細閫犳垚涓や釜闂锛屽鑷存棤娉曟瀯寤哄尯鍩燂紙region锛夛細
 
-这会造成两个问题，导致无法构建区域（region）：
-
-1) Root 与任何 HDM decoder 之间的区域大小不匹配。由于裁减，Root decoder 总是更小。
-
-2) 裁减导致 root decoder 违反（NIW * 256MB）规则。
-
-该改动允许基址为 0GB 的区域绕过这些检查，以便用被裁减的 root decoder 地址范围构建区域。
-
-该改动不允许任何其他任意区域违反这些检查——它专门用于使将 CXL 内存映射到 4GB 以下的 x86 平台能够构建区域。
-
-尽管 HDM decoder 覆盖了 PCIE 空洞的 HPA 区域，但预计平台永远不会把地址访问路由到 CXL 复合体，因为 root decoder 只覆盖被裁减的区域（即排除了该空洞）。这超出了 Linux 能够强制实施的能力范围。
-
-在示例平台上，只有前 2GB 可能可用，但 Linux 为了遵循当前规范，无法构建 Region 并把 Endpoint 与中间 Switch Decoder 挂接到它们上面。
-
-有多个失败点，原因在于人们期望 Root Decoder 的 HPA 大小（等于配置它的 CFMWS 大小）必须大于或等于匹配的 Switch 和 Endpoint HDM Decoder。
-
-为了成功构建并挂接，Linux 必须用 Root Decoder 的 HPA 范围大小构建一个 Region，然后把属于该层次结构的所有中间 Switch Decoder 和 Endpoint Decoder 挂接到该 Region，而不论它们各自的范围大小。
-
+1) Root 涓庝换浣?HDM decoder 涔嬮棿鐨勫尯鍩熷ぇ灏忎笉鍖归厤銆傜敱浜庤鍑忥紝Root decoder 鎬绘槸鏇村皬銆?
+2) 瑁佸噺瀵艰嚧 root decoder 杩濆弽锛圢IW * 256MB锛夎鍒欍€?
+璇ユ敼鍔ㄥ厑璁稿熀鍧€涓?0GB 鐨勫尯鍩熺粫杩囪繖浜涙鏌ワ紝浠ヤ究鐢ㄨ瑁佸噺鐨?root decoder 鍦板潃鑼冨洿鏋勫缓鍖哄煙銆?
+璇ユ敼鍔ㄤ笉鍏佽浠讳綍鍏朵粬浠绘剰鍖哄煙杩濆弽杩欎簺妫€鏌モ€斺€斿畠涓撻棬鐢ㄤ簬浣垮皢 CXL 鍐呭瓨鏄犲皠鍒?4GB 浠ヤ笅鐨?x86 骞冲彴鑳藉鏋勫缓鍖哄煙銆?
+灏界 HDM decoder 瑕嗙洊浜?PCIE 绌烘礊鐨?HPA 鍖哄煙锛屼絾棰勮骞冲彴姘歌繙涓嶄細鎶婂湴鍧€璁块棶璺敱鍒?CXL 澶嶅悎浣擄紝鍥犱负 root decoder 鍙鐩栬瑁佸噺鐨勫尯鍩燂紙鍗虫帓闄や簡璇ョ┖娲烇級銆傝繖瓒呭嚭浜?Linux 鑳藉寮哄埗瀹炴柦鐨勮兘鍔涜寖鍥淬€?
+鍦ㄧず渚嬪钩鍙颁笂锛屽彧鏈夊墠 2GB 鍙兘鍙敤锛屼絾 Linux 涓轰簡閬靛惊褰撳墠瑙勮寖锛屾棤娉曟瀯寤?Region 骞舵妸 Endpoint 涓庝腑闂?Switch Decoder 鎸傛帴鍒板畠浠笂闈€?
+鏈夊涓け璐ョ偣锛屽師鍥犲湪浜庝汉浠湡鏈?Root Decoder 鐨?HPA 澶у皬锛堢瓑浜庨厤缃畠鐨?CFMWS 澶у皬锛夊繀椤诲ぇ浜庢垨绛変簬鍖归厤鐨?Switch 鍜?Endpoint HDM Decoder銆?
+涓轰簡鎴愬姛鏋勫缓骞舵寕鎺ワ紝Linux 蹇呴』鐢?Root Decoder 鐨?HPA 鑼冨洿澶у皬鏋勫缓涓€涓?Region锛岀劧鍚庢妸灞炰簬璇ュ眰娆＄粨鏋勭殑鎵€鏈変腑闂?Switch Decoder 鍜?Endpoint Decoder 鎸傛帴鍒拌 Region锛岃€屼笉璁哄畠浠悇鑷殑鑼冨洿澶у皬銆?
 ### Benefits of the Change
 
 
-如果不做此改动，OSPM 将无法把中间 Switch 和 Endpoint Decoder 与配置了不符合 NIW * 256MB 约束的 CFMWS HPA 大小的 Root Decoder 匹配起来，从而导致 memdev 容量丢失。
-
-该改动使 OSPM 能够构建 Region 并把中间 Switch 和 Endpoint Decoder 挂接到它们，从而使内存设备总容量中可寻址的部分对用户可用。
-
+濡傛灉涓嶅仛姝ゆ敼鍔紝OSPM 灏嗘棤娉曟妸涓棿 Switch 鍜?Endpoint Decoder 涓庨厤缃簡涓嶇鍚?NIW * 256MB 绾︽潫鐨?CFMWS HPA 澶у皬鐨?Root Decoder 鍖归厤璧锋潵锛屼粠鑰屽鑷?memdev 瀹归噺涓㈠け銆?
+璇ユ敼鍔ㄤ娇 OSPM 鑳藉鏋勫缓 Region 骞舵妸涓棿 Switch 鍜?Endpoint Decoder 鎸傛帴鍒板畠浠紝浠庤€屼娇鍐呭瓨璁惧鎬诲閲忎腑鍙鍧€鐨勯儴鍒嗗鐢ㄦ埛鍙敤銆?
 ### References
 
 
@@ -78,10 +61,8 @@ Compute Express Link Specification Revision 3.2, Version 1.0
 ### Detailed Description of the Change
 
 
-表 9-22 中 Window Size 字段的描述需要顾及存在低内存空洞（Low Memory Holes）的平台，那里 SPA 范围可能是 endpoints HPA 的子集。因此，它需要改为如下内容：
+琛?9-22 涓?Window Size 瀛楁鐨勬弿杩伴渶瑕侀【鍙婂瓨鍦ㄤ綆鍐呭瓨绌烘礊锛圠ow Memory Holes锛夌殑骞冲彴锛岄偅閲?SPA 鑼冨洿鍙兘鏄?endpoints HPA 鐨勫瓙闆嗐€傚洜姝わ紝瀹冮渶瑕佹敼涓哄涓嬪唴瀹癸細
 
-"该窗口所代表的 HPA 连续字节总数。该值应为 NIW * 256 MB 的整数倍。
-
-在保留 4 GB 以下物理地址的平台（例如 x86 上用于 PCIe MMIO 的低内存空洞）上，Base HPA 范围为 0 的某个 CFMWS 实例，其大小可能不符合 NIW * 256 MB 约束。
-
-注意，匹配的中间 Switch Decoder 和 Endpoint Decoder 的 HPA 范围大小仍须符合上述规则，但超出 CFMWS 窗口大小的那部分内存容量将不可访问。"。
+"璇ョ獥鍙ｆ墍浠ｈ〃鐨?HPA 杩炵画瀛楄妭鎬绘暟銆傝鍊煎簲涓?NIW * 256 MB 鐨勬暣鏁板€嶃€?
+鍦ㄤ繚鐣?4 GB 浠ヤ笅鐗╃悊鍦板潃鐨勫钩鍙帮紙渚嬪 x86 涓婄敤浜?PCIe MMIO 鐨勪綆鍐呭瓨绌烘礊锛変笂锛孊ase HPA 鑼冨洿涓?0 鐨勬煇涓?CFMWS 瀹炰緥锛屽叾澶у皬鍙兘涓嶇鍚?NIW * 256 MB 绾︽潫銆?
+娉ㄦ剰锛屽尮閰嶇殑涓棿 Switch Decoder 鍜?Endpoint Decoder 鐨?HPA 鑼冨洿澶у皬浠嶉』绗﹀悎涓婅堪瑙勫垯锛屼絾瓒呭嚭 CFMWS 绐楀彛澶у皬鐨勯偅閮ㄥ垎鍐呭瓨瀹归噺灏嗕笉鍙闂€?銆?

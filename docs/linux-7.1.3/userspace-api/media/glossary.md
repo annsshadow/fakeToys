@@ -1,164 +1,99 @@
+﻿
+## 鏈琛紙Glossary锛?
 
-## 术语表（Glossary）
+   鏈妭鐨勭洰鏍囨槸缁熶竴 media 鐢ㄦ埛绌洪棿 API 鏂囨。涓娇鐢ㄧ殑鏈銆傜洰鍓嶄粛鏄繘琛屼腑鐨勫伐浣滐紙Work In Progress锛夈€?
 
-
-   本节的目标是统一 media 用户空间 API 文档中使用的术语。目前仍是进行中的工作（Work In Progress）。
-
-
-    Bridge Driver（桥接驱动）
-	一种**设备驱动（Device Driver）**，实现与媒体硬件通信的主要逻辑。
-
+    Bridge Driver锛堟ˉ鎺ラ┍鍔級
+	涓€绉?*璁惧椹卞姩锛圖evice Driver锛?*锛屽疄鐜颁笌濯掍綋纭欢閫氫俊鐨勪富瑕侀€昏緫銆?
     CEC API
-	**消费电子控制 API（Consumer Electronics Control API）**
+	**娑堣垂鐢靛瓙鎺у埗 API锛圕onsumer Electronics Control API锛?*
 
-	一种设计用于通过 HDMI CEC 接口接收和发送数据的 API。
+	涓€绉嶈璁＄敤浜庨€氳繃 HDMI CEC 鎺ュ彛鎺ユ敹鍜屽彂閫佹暟鎹殑 API銆?
+	鍙傝 cec銆?
+    Data Unit锛堟暟鎹崟鍏冿級
 
-	参见 cec。
+	鎬荤嚎鎵€浼犺緭鐨勬暟鎹崟鍏冦€傚湪骞惰鎬荤嚎涓婏紝鏁版嵁鍗曞厓鐢变竴涓垨澶氫釜鐩稿叧閲囨牱缁勬垚锛涘湪涓茶鎬荤嚎涓婏紝鏁版嵁鍗曞厓鏄€昏緫鍗曞厓銆傚鏋滄暟鎹崟鍏冧负鍥惧儚鏁版嵁锛屼篃鍙互绉颁负鍍忕礌锛坧ixel锛夈€?
+    Device Driver锛堣澶囬┍鍔級
+	Linux 鍐呮牳鐨勪竴閮ㄥ垎锛屽疄鐜板鏌愪釜纭欢缁勪欢鐨勬敮鎸併€?
+    Device Node锛堣澶囪妭鐐癸級
+	鏂囦欢绯荤粺涓殑瀛楃璁惧鑺傜偣锛岀敤浜庢帶鍒跺唴鏍搁┍鍔ㄥ苟涓庝箣杩涜鏁版嵁鏀跺彂銆?
+    Digital TV API锛堟暟瀛楃數瑙?API锛?	**鏇捐绉颁负 DVB API**
 
-    Data Unit（数据单元）
+	涓€绉嶈璁＄敤浜庢帶鍒?**Media Hardware锛堝獟浣撶‖浠讹級** 涓疄鐜颁簡鏁板瓧鐢佃锛堜緥濡?DVB銆丄TSC銆両SDB 绛夛級鐨勫瓙闆嗙殑 API銆?
+	鍙傝 dvbapi銆?
+    DSP锛堟暟瀛椾俊鍙峰鐞嗗櫒锛?        **Digital Signal Processor**
 
-	总线所传输的数据单元。在并行总线上，数据单元由一个或多个相关采样组成；在串行总线上，数据单元是逻辑单元。如果数据单元为图像数据，也可以称为像素（pixel）。
-
-    Device Driver（设备驱动）
-	Linux 内核的一部分，实现对某个硬件组件的支持。
-
-    Device Node（设备节点）
-	文件系统中的字符设备节点，用于控制内核驱动并与之进行数据收发。
-
-    Digital TV API（数字电视 API）
-	**曾被称为 DVB API**
-
-	一种设计用于控制 **Media Hardware（媒体硬件）** 中实现了数字电视（例如 DVB、ATSC、ISDB 等）的子集的 API。
-
-	参见 dvbapi。
-
-    DSP（数字信号处理器）
-        **Digital Signal Processor**
-
-	一种专用的**微处理器（Microprocessor）**，其架构针对数字信号处理的运算需求进行了优化。
-
-    FPGA（现场可编程门阵列）
+	涓€绉嶄笓鐢ㄧ殑**寰鐞嗗櫒锛圡icroprocessor锛?*锛屽叾鏋舵瀯閽堝鏁板瓧淇″彿澶勭悊鐨勮繍绠楅渶姹傝繘琛屼簡浼樺寲銆?
+    FPGA锛堢幇鍦哄彲缂栫▼闂ㄩ樀鍒楋級
 	**Field-programmable Gate Array**
 
-	一种**IC（集成电路）**电路，可在制造完成后由客户或设计者进行配置。
+	涓€绉?*IC锛堥泦鎴愮數璺級**鐢佃矾锛屽彲鍦ㄥ埗閫犲畬鎴愬悗鐢卞鎴锋垨璁捐鑰呰繘琛岄厤缃€?
+	鍙傝 https://en.wikipedia.org/wiki/Field-programmable_gate_array銆?
+    Hardware Component锛堢‖浠剁粍浠讹級
+	**Media Hardware锛堝獟浣撶‖浠讹級**鐨勫瓙闆嗐€備緥濡備竴涓?**I虏C** 鎴?**SPI** 璁惧锛屾垨 **SoC** 鎴?**FPGA** 鍐呴儴鐨?**IP Block锛圛P 妯″潡锛?*銆?
+    Hardware Peripheral锛堢‖浠跺璁撅級
+	涓€缁?**Hardware Component锛堢‖浠剁粍浠讹級**锛屽叡鍚屾瀯鎴愪竴涓潰鍚戠敤鎴风殑鏇村ぇ鍔熻兘澶栬銆備緥濡傦紝**SoC** 鐨?**ISP** **IP Block** 涓庡閮ㄦ憚鍍忓ご浼犳劅鍣ㄥ叡鍚屾瀯鎴愪竴涓憚鍍忓ご纭欢澶栬銆?
+	涔熺О涓?**Peripheral锛堝璁撅級**銆?
+    I虏C
+	**Inter-Integrated Circuit锛堥泦鎴愮數璺棿鎬荤嚎锛?*
 
-	参见 https://en.wikipedia.org/wiki/Field-programmable_gate_array。
+	涓€绉嶅涓诲浠庛€佸寘浜ゆ崲銆佸崟绔€佷覆琛岀殑璁＄畻鏈烘€荤嚎锛岀敤浜庢帶鍒堕儴鍒嗙‖浠剁粍浠讹紙濡傚瓙璁惧纭欢缁勪欢锛夈€?
+	鍙傝 http://www.nxp.com/docs/en/user-guide/UM10204.pdf銆?
+    IC锛堥泦鎴愮數璺級
+	**Integrated circuit锛堥泦鎴愮數璺級**
 
-    Hardware Component（硬件组件）
-	**Media Hardware（媒体硬件）**的子集。例如一个 **I²C** 或 **SPI** 设备，或 **SoC** 或 **FPGA** 内部的 **IP Block（IP 模块）**。
+	鍒朵綔鍦ㄤ竴灏忕墖鎵佸钩鍗婂浣撴潗鏂欙紙閫氬父涓虹锛変笂鐨勭數瀛愮數璺泦鍚堛€?
+	涔熺О涓鸿姱鐗囷紙chip锛夈€?
+    IP Block锛圛P 妯″潡锛?	**Intellectual property core锛堢煡璇嗕骇鏉冩牳锛?*
 
-    Hardware Peripheral（硬件外设）
-	一组 **Hardware Component（硬件组件）**，共同构成一个面向用户的更大功能外设。例如，**SoC** 的 **ISP** **IP Block** 与外部摄像头传感器共同构成一个摄像头硬件外设。
+	鍦ㄧ數瀛愯璁′腑锛屽崐瀵间綋鐭ヨ瘑浜ф潈鏍告槸涓€鏂瑰彲澶嶇敤鐨勯€昏緫銆佸崟鍏冩垨闆嗘垚鐢佃矾鐗堝浘璁捐锛屽睘浜庢煇涓€鏂圭殑鐭ヨ瘑浜ф潈銆侷P Block 鍙互鎺堟潈缁欏彟涓€鏂逛娇鐢紝涔熷彲浠ョ敱鍗曟柟鐙嚜鎷ユ湁鍜屼娇鐢ㄣ€?
+	鍙傝 https://en.wikipedia.org/wiki/Semiconductor_intellectual_property_core銆?
+    ISP锛堝浘鍍忎俊鍙峰鐞嗗櫒锛?	**Image Signal Processor**
 
-	也称为 **Peripheral（外设）**。
+	涓€绉嶄笓鐢ㄥ鐞嗗櫒锛屽疄鐜颁竴缁勭敤浜庡鐞嗗浘鍍忔暟鎹殑绠楁硶銆侷SP 鍙兘瀹炵幇闀滃ご闃村奖鏍℃銆佸幓椹禌鍏嬨€佺缉鏀惧拰鍍忕礌鏍煎紡杞崲绛夌畻娉曪紝骞朵负鎺у埗绠楁硶锛堜緥濡傝嚜鍔ㄦ洕鍏夈€佺櫧骞宠　鍜屽鐒︼級鐢熸垚缁熻淇℃伅銆?
+    Media API锛堝獟浣?API锛?	涓€缁勭敤浜庢帶鍒跺獟浣撶‖浠剁殑鐢ㄦ埛绌洪棿 API銆傚畠鐢变互涓嬮儴鍒嗙粍鎴愶細
 
-    I²C
-	**Inter-Integrated Circuit（集成电路间总线）**
+   - **CEC API**锛?   - **Digital TV API**锛?   - **MC API**锛?   - **RC API**锛涗互鍙?   - **V4L2 API**銆?
+	鍙傝 Documentation/userspace-api/media/index.rst銆?
+    MC API锛堝獟浣撴帶鍒跺櫒 API锛?	**Media Controller API**
 
-	一种多主多从、包交换、单端、串行的计算机总线，用于控制部分硬件组件（如子设备硬件组件）。
+	涓€绉嶈璁＄敤浜庢毚闇插苟鎺у埗澶氬獟浣撹澶囦笌瀛愯澶囦箣闂村叧绯荤殑 API銆?
+	鍙傝 media_controller銆?
+    MC-centric锛堜互濯掍綋鎺у埗鍣ㄤ负涓績锛?	闇€瑕?**MC API** 鐨?**V4L2 Hardware锛圴4L2 纭欢锛?*璁惧椹卞姩銆?
+	姝ょ被椹卞姩浼氬皢 `V4L2_CAP_IO_MC` device_caps 瀛楁缃綅锛堝弬瑙?VIDIOC_QUERYCAP锛夈€?
+	璇﹁ v4l2_hardware_control銆?
+    Media Hardware锛堝獟浣撶‖浠讹級
+	鍙?Linux Media API 鏀寔鐨勭‖浠跺瓙闆嗐€?
+	鍖呮嫭闊宠棰戦噰闆嗕笌鍥炴斁纭欢銆佹暟瀛椾笌妯℃嫙鐢佃銆佹憚鍍忓ご浼犳劅鍣ㄣ€両SP銆侀仴鎺ф帶鍒跺櫒銆佺紪瑙ｇ爜鍣ㄣ€丠DMI 娑堣垂鐢靛瓙鎺у埗銆丠DMI 閲囬泦绛夈€?
+    Microprocessor锛堝井澶勭悊鍣級
+	鎵ц璁＄畻鏈虹▼搴忔寚浠ょ殑鐢靛瓙鐢佃矾锛岄€氳繃瀵瑰崟涓€闆嗘垚鐢佃矾涓婃寚浠ゆ墍鎸囧畾鐨勫熀鏈畻鏈€侀€昏緫銆佹帶鍒朵互鍙婅緭鍏?杈撳嚭锛圛/O锛夋搷浣滆繘琛屽鐞嗘潵瀹屾垚銆?
+    Peripheral锛堝璁撅級
+	绛夊悓浜?**Hardware Peripheral锛堢‖浠跺璁撅級**銆?
+    RC API锛堥仴鎺ф帶鍒跺櫒 API锛?	**Remote Controller API**
 
-	参见 http://www.nxp.com/docs/en/user-guide/UM10204.pdf。
-
-    IC（集成电路）
-	**Integrated circuit（集成电路）**
-
-	制作在一小片扁平半导体材料（通常为硅）上的电子电路集合。
-
-	也称为芯片（chip）。
-
-    IP Block（IP 模块）
-	**Intellectual property core（知识产权核）**
-
-	在电子设计中，半导体知识产权核是一方可复用的逻辑、单元或集成电路版图设计，属于某一方的知识产权。IP Block 可以授权给另一方使用，也可以由单方独自拥有和使用。
-
-	参见 https://en.wikipedia.org/wiki/Semiconductor_intellectual_property_core。
-
-    ISP（图像信号处理器）
-	**Image Signal Processor**
-
-	一种专用处理器，实现一组用于处理图像数据的算法。ISP 可能实现镜头阴影校正、去马赛克、缩放和像素格式转换等算法，并为控制算法（例如自动曝光、白平衡和对焦）生成统计信息。
-
-    Media API（媒体 API）
-	一组用于控制媒体硬件的用户空间 API。它由以下部分组成：
-
-   - **CEC API**；
-   - **Digital TV API**；
-   - **MC API**；
-   - **RC API**；以及
-   - **V4L2 API**。
-
-	参见 Documentation/userspace-api/media/index.rst。
-
-    MC API（媒体控制器 API）
-	**Media Controller API**
-
-	一种设计用于暴露并控制多媒体设备与子设备之间关系的 API。
-
-	参见 media_controller。
-
-    MC-centric（以媒体控制器为中心）
-	需要 **MC API** 的 **V4L2 Hardware（V4L2 硬件）**设备驱动。
-
-	此类驱动会将 `V4L2_CAP_IO_MC` device_caps 字段置位（参见 VIDIOC_QUERYCAP）。
-
-	详见 v4l2_hardware_control。
-
-    Media Hardware（媒体硬件）
-	受 Linux Media API 支持的硬件子集。
-
-	包括音视频采集与回放硬件、数字与模拟电视、摄像头传感器、ISP、遥控控制器、编解码器、HDMI 消费电子控制、HDMI 采集等。
-
-    Microprocessor（微处理器）
-	执行计算机程序指令的电子电路，通过对单一集成电路上指令所指定的基本算术、逻辑、控制以及输入/输出（I/O）操作进行处理来完成。
-
-    Peripheral（外设）
-	等同于 **Hardware Peripheral（硬件外设）**。
-
-    RC API（遥控控制器 API）
-	**Remote Controller API**
-
-	一种设计用于接收和发送来自遥控控制器的数据的 API。
-
-	参见 remote_controllers。
-
+	涓€绉嶈璁＄敤浜庢帴鏀跺拰鍙戦€佹潵鑷仴鎺ф帶鍒跺櫒鐨勬暟鎹殑 API銆?
+	鍙傝 remote_controllers銆?
     SMBus
-	I²C 的一个子集，对总线的使用方式定义了更严格的规范。
+	I虏C 鐨勪竴涓瓙闆嗭紝瀵规€荤嚎鐨勪娇鐢ㄦ柟寮忓畾涔変簡鏇翠弗鏍肩殑瑙勮寖銆?
+    SPI锛堜覆琛屽璁炬帴鍙ｆ€荤嚎锛?	**Serial Peripheral Interface Bus**
 
-    SPI（串行外设接口总线）
-	**Serial Peripheral Interface Bus**
-
-	一种同步串行通信接口规范，用于短距离通信，主要应用于嵌入式系统。
-
-    SoC（片上系统）
+	涓€绉嶅悓姝ヤ覆琛岄€氫俊鎺ュ彛瑙勮寖锛岀敤浜庣煭璺濈閫氫俊锛屼富瑕佸簲鐢ㄤ簬宓屽叆寮忕郴缁熴€?
+    SoC锛堢墖涓婄郴缁燂級
 	**System on a Chip**
 
-	一种将计算机或其他电子系统的所有组件集成在一起的集成电路。
-
-    Stream（数据流）
-	从初始源到最终汇的一路独立数据流（图像数据或元数据）。初始源可以是例如图像传感器，最终汇可以是例如内存缓冲区。
-
+	涓€绉嶅皢璁＄畻鏈烘垨鍏朵粬鐢靛瓙绯荤粺鐨勬墍鏈夌粍浠堕泦鎴愬湪涓€璧风殑闆嗘垚鐢佃矾銆?
+    Stream锛堟暟鎹祦锛?	浠庡垵濮嬫簮鍒版渶缁堟眹鐨勪竴璺嫭绔嬫暟鎹祦锛堝浘鍍忔暟鎹垨鍏冩暟鎹級銆傚垵濮嬫簮鍙互鏄緥濡傚浘鍍忎紶鎰熷櫒锛屾渶缁堟眹鍙互鏄緥濡傚唴瀛樼紦鍐插尯銆?
     V4L2 API
-	**V4L2 userspace API（V4L2 用户空间 API）**
+	**V4L2 userspace API锛圴4L2 鐢ㄦ埛绌洪棿 API锛?*
 
-	v4l2spec 中定义的用户空间 API，用于控制 V4L2 硬件。
-
-    V4L2 Device Node（V4L2 设备节点）
-	与 V4L 驱动相关联的 **Device Node（设备节点）**。
-
-	V4L2 设备节点的命名规范见 v4l2_device_naming。
-
-    V4L2 Hardware（V4L2 硬件）
-	受 **V4L2 API** 支持的媒体硬件的一部分。
-
-    V4L2 Sub-device（V4L2 子设备）
-	不受 **Bridge Driver（桥接驱动）**控制的 V4L2 硬件组件。参见 subdev。
-
-    Video-node-centric（以视频节点为中心）
-	不需要使用媒体控制器即可工作的 V4L2 设备驱动。
-
-	此类驱动会将 `V4L2_CAP_IO_MC` device_caps 字段清零（参见 VIDIOC_QUERYCAP）。
-
-    V4L2 Sub-device API（V4L2 子设备 API）
-	**V4L2 API** 中用于控制 **V4L2 sub-devices（V4L2 子设备）**（如传感器、HDMI 接收器、缩放器、去隔行器）的部分。
-
-	详见 v4l2_hardware_control。
+	v4l2spec 涓畾涔夌殑鐢ㄦ埛绌洪棿 API锛岀敤浜庢帶鍒?V4L2 纭欢銆?
+    V4L2 Device Node锛圴4L2 璁惧鑺傜偣锛?	涓?V4L 椹卞姩鐩稿叧鑱旂殑 **Device Node锛堣澶囪妭鐐癸級**銆?
+	V4L2 璁惧鑺傜偣鐨勫懡鍚嶈鑼冭 v4l2_device_naming銆?
+    V4L2 Hardware锛圴4L2 纭欢锛?	鍙?**V4L2 API** 鏀寔鐨勫獟浣撶‖浠剁殑涓€閮ㄥ垎銆?
+    V4L2 Sub-device锛圴4L2 瀛愯澶囷級
+	涓嶅彈 **Bridge Driver锛堟ˉ鎺ラ┍鍔級**鎺у埗鐨?V4L2 纭欢缁勪欢銆傚弬瑙?subdev銆?
+    Video-node-centric锛堜互瑙嗛鑺傜偣涓轰腑蹇冿級
+	涓嶉渶瑕佷娇鐢ㄥ獟浣撴帶鍒跺櫒鍗冲彲宸ヤ綔鐨?V4L2 璁惧椹卞姩銆?
+	姝ょ被椹卞姩浼氬皢 `V4L2_CAP_IO_MC` device_caps 瀛楁娓呴浂锛堝弬瑙?VIDIOC_QUERYCAP锛夈€?
+    V4L2 Sub-device API锛圴4L2 瀛愯澶?API锛?	**V4L2 API** 涓敤浜庢帶鍒?**V4L2 sub-devices锛圴4L2 瀛愯澶囷級**锛堝浼犳劅鍣ㄣ€丠DMI 鎺ユ敹鍣ㄣ€佺缉鏀惧櫒銆佸幓闅旇鍣級鐨勯儴鍒嗐€?
+	璇﹁ v4l2_hardware_control銆?

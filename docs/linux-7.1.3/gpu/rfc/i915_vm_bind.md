@@ -1,180 +1,110 @@
-## I915 VM_BIND 特性设计与用例
+﻿## I915 VM_BIND 鐗规€ц璁′笌鐢ㄤ緥
 
-## VM_BIND 特性
+## VM_BIND 鐗规€?
+DRM_I915_GEM_VM_BIND/UNBIND ioctl 鍏佽鐢ㄦ埛鎬侀┍鍔紙UMD锛夊湪鎸囧畾鐨勫湴鍧€绌洪棿锛圴M锛変笂銆佹寚瀹氱殑 GPU
+铏氭嫙鍦板潃澶勭粦瀹?瑙ｇ粦 GEM 缂撳啿鍖哄璞★紙BO锛夋垨 BO 鐨勬煇涓尯娈点€傝繖浜涙槧灏勶紙涔熺О涓烘寔涔呮槧灏勶級浼氬湪 UMD
+鍙戝嚭鐨勫娆?GPU 鎻愪氦锛坋xecbuf 璋冪敤锛変箣闂翠繚鎸佹寔涔咃紝鑰屾棤闇€鐢ㄦ埛鍦ㄦ瘡娆℃彁浜ゆ椂閮芥彁渚涙墍鏈夋墍闇€鏄犲皠鐨?鍒楄〃锛堟棫鐨?execbuf 妯″紡瑕佹眰濡傛锛夈€?
+VM_BIND/UNBIND 璋冪敤鍏佽 UMD 璇锋眰涓€涓椂闂寸嚎鍑虹珯鍥存爮锛坥ut fence锛夛紝鐢ㄤ簬閫氱煡缁戝畾/瑙ｇ粦鎿嶄綔鐨勫畬鎴愩€?
+VM_BIND 鐗规€ч€氳繃 I915_PARAM_VM_BIND_VERSION 鍚戠敤鎴烽€氬憡銆傜敤鎴峰繀椤诲湪 VM 鍒涘缓鏃堕€氳繃
+I915_VM_CREATE_FLAGS_USE_VM_BIND 鎵╁睍鏄惧紡閫夋嫨閲囩敤 VM_BIND 缁戝畾妯″紡銆?
+鍦ㄤ笉鍚?CPU 绾跨▼涓婂苟鍙戞墽琛岀殑 VM_BIND/UNBIND ioctl 璋冪敤鏄棤搴忕殑銆傛澶栵紝褰撴寚瀹氫簡鏈夋晥鐨勫嚭绔?鍥存爮鏃讹紝VM_BIND/UNBIND 鎿嶄綔鐨勯儴鍒嗗彲浠ュ紓姝ュ畬鎴愩€?
+VM_BIND 鐗规€у寘鎷細
 
-DRM_I915_GEM_VM_BIND/UNBIND ioctl 允许用户态驱动（UMD）在指定的地址空间（VM）上、指定的 GPU
-虚拟地址处绑定/解绑 GEM 缓冲区对象（BO）或 BO 的某个区段。这些映射（也称为持久映射）会在 UMD
-发出的多次 GPU 提交（execbuf 调用）之间保持持久，而无需用户在每次提交时都提供所有所需映射的
-列表（旧的 execbuf 模式要求如此）。
+- 澶氫釜铏氭嫙鍦板潃锛圴A锛夋槧灏勫彲浠ユ槧灏勫埌瀵硅薄鐨勫悓涓€鐗╃悊椤碉紙鍒悕鍖栵紝aliasing锛夈€?- VA 鏄犲皠鍙互鏄犲皠鍒?BO 鐨勪竴涓儴鍒嗗尯娈碉紙閮ㄥ垎缁戝畾锛宲artial binding锛夈€?- 鏀寔鍦?GPU 鍑洪敊鏃跺皢鎸佷箙鏄犲皠鎹曡幏鍒拌浆鍌ㄤ腑銆?- 鏀寔 userptr gem 瀵硅薄锛堣繖涓嶉渶瑕佺壒娈婄殑 uapi锛夈€?
+### TLB 鍒锋柊鑰冭檻
 
-VM_BIND/UNBIND 调用允许 UMD 请求一个时间线出站围栏（out fence），用于通知绑定/解绑操作的完成。
+i915 椹卞姩浼氬湪姣忔鎻愪氦鏃朵互鍙婂璞＄殑椤甸潰琚噴鏀炬椂鍒锋柊 TLB銆俈M_BIND/UNBIND 鎿嶄綔涓嶄細杩涜浠讳綍棰濆
+鐨?TLB 鍒锋柊銆傛墍娣诲姞鐨勪换浣?VM_BIND 鏄犲皠閮藉皢鎴愪负璇?VM 鍚庣画鎻愪氦鐨勫伐浣滈泦鐨勪竴閮ㄥ垎锛岃€屼笉浼氬浜?褰撳墠姝ｅ湪杩愯鐨勬壒澶勭悊鐨勫伐浣滈泦涓紙閭ｅ皢闇€瑕侀澶栫殑 TLB 鍒锋柊锛岃€岃繖鏄笉鏀寔鐨勶級銆?
+### VM_BIND 妯″紡涓嬬殑 Execbuf ioctl
 
-VM_BIND 特性通过 I915_PARAM_VM_BIND_VERSION 向用户通告。用户必须在 VM 创建时通过
-I915_VM_CREATE_FLAGS_USE_VM_BIND 扩展显式选择采用 VM_BIND 绑定模式。
-
-在不同 CPU 线程上并发执行的 VM_BIND/UNBIND ioctl 调用是无序的。此外，当指定了有效的出站
-围栏时，VM_BIND/UNBIND 操作的部分可以异步完成。
-
-VM_BIND 特性包括：
-
-- 多个虚拟地址（VA）映射可以映射到对象的同一物理页（别名化，aliasing）。
-- VA 映射可以映射到 BO 的一个部分区段（部分绑定，partial binding）。
-- 支持在 GPU 出错时将持久映射捕获到转储中。
-- 支持 userptr gem 对象（这不需要特殊的 uapi）。
-
-### TLB 刷新考虑
-
-i915 驱动会在每次提交时以及对象的页面被释放时刷新 TLB。VM_BIND/UNBIND 操作不会进行任何额外
-的 TLB 刷新。所添加的任何 VM_BIND 映射都将成为该 VM 后续提交的工作集的一部分，而不会处于
-当前正在运行的批处理的工作集中（那将需要额外的 TLB 刷新，而这是不支持的）。
-
-### VM_BIND 模式下的 Execbuf ioctl
-
-处于 VM_BIND 模式的 VM 将不支持旧的 execbuf 绑定模式。VM_BIND 模式下的 execbuf ioctl 处理与
-旧的 execbuf2 ioctl（见 struct drm_i915_gem_execbuffer2）有显著不同。因此，新增了 execbuf3
-ioctl 以支持 VM_BIND 模式（见 struct drm_i915_gem_execbuffer3）。execbuf3 ioctl 不接受任何
-execlist，因此不支持隐式同步。期望下述工作能够支持所有用例中对象依赖设置的需求：
+澶勪簬 VM_BIND 妯″紡鐨?VM 灏嗕笉鏀寔鏃х殑 execbuf 缁戝畾妯″紡銆俈M_BIND 妯″紡涓嬬殑 execbuf ioctl 澶勭悊涓?鏃х殑 execbuf2 ioctl锛堣 struct drm_i915_gem_execbuffer2锛夋湁鏄捐憲涓嶅悓銆傚洜姝わ紝鏂板浜?execbuf3
+ioctl 浠ユ敮鎸?VM_BIND 妯″紡锛堣 struct drm_i915_gem_execbuffer3锛夈€俥xecbuf3 ioctl 涓嶆帴鍙椾换浣?execlist锛屽洜姝や笉鏀寔闅愬紡鍚屾銆傛湡鏈涗笅杩板伐浣滆兘澶熸敮鎸佹墍鏈夌敤渚嬩腑瀵硅薄渚濊禆璁剧疆鐨勯渶姹傦細
 
 "dma-buf: Add an API for exporting sync files"
 (https://lwn.net/Articles/859290/)
 
-新的 execbuf3 ioctl 仅在 VM_BIND 模式下工作，而 VM_BIND 模式也仅通过 execbuf3 ioctl 进行
-提交。在 execbuf3 调用时该 VM 上所有被映射的 BO（通过 VM_BIND 调用）都被视为该提交所需。
+鏂扮殑 execbuf3 ioctl 浠呭湪 VM_BIND 妯″紡涓嬪伐浣滐紝鑰?VM_BIND 妯″紡涔熶粎閫氳繃 execbuf3 ioctl 杩涜
+鎻愪氦銆傚湪 execbuf3 璋冪敤鏃惰 VM 涓婃墍鏈夎鏄犲皠鐨?BO锛堥€氳繃 VM_BIND 璋冪敤锛夐兘琚涓鸿鎻愪氦鎵€闇€銆?
+execbuf3 ioctl 鐩存帴鎸囧畾鎵瑰鐞嗗湴鍧€锛岃€屼笉鏄儚 execbuf2 ioctl 閭ｆ牱浣跨敤瀵硅薄鍙ユ焺銆俥xecbuf3 ioctl
+涔熶笉鏀寔璁稿鏃х壒鎬э紝濡傚叆/鍑?鎻愪氦鍥存爮銆佸洿鏍忔暟缁勩€侀粯璁?gem 涓婁笅鏂囩瓑绛夛紙瑙?struct
+drm_i915_gem_execbuffer3锛夈€?
+鍦?VM_BIND 妯″紡涓嬶紝VA 鍒嗛厤瀹屽叏鐢辩敤鎴风鐞嗭紝鑰岄潪 i915 椹卞姩銆傚洜姝ゆ墍鏈夌殑 VA 鍒嗛厤銆侀┍閫愶紙eviction锛?鍦?VM_BIND 妯″紡涓嬮兘涓嶉€傜敤銆傛澶栵紝涓轰簡纭畾瀵硅薄鐨勬椿璺冩€э紙activeness锛夛紝VM_BIND 妯″紡涓嶄細浣跨敤
+i915_vma 娲昏穬寮曠敤璺熻釜锛岃€屾槸浣跨敤 dma-resv 瀵硅薄锛堣 `VM_BIND dma_resv 鐢ㄦ硶`_锛夈€?
+鍥犳锛岃澶氭敮鎸?execbuf2 ioctl 鐨勭幇鏈変唬鐮侊紝濡傞噸瀹氫綅銆乂A 椹遍€愩€乿ma 鏌ユ壘琛ㄣ€侀殣寮忓悓姝ャ€乿ma 娲昏穬
+寮曠敤璺熻釜绛夛紝閮戒笉閫傜敤浜?execbuf3 ioctl銆傚洜姝わ紝鎵€鏈?execbuf3 鐗规湁鐨勫鐞嗗簲鏀惧湪鍗曠嫭鐨勬枃浠朵腑锛屽彧鏈?杩欎簺 ioctl 鍏辩敤鐨勫姛鑳芥墠灏藉彲鑳芥斁鍦ㄥ叡浜唬鐮佷腑銆?
+### VM_PRIVATE 瀵硅薄
 
-execbuf3 ioctl 直接指定批处理地址，而不是像 execbuf2 ioctl 那样使用对象句柄。execbuf3 ioctl
-也不支持许多旧特性，如入/出/提交围栏、围栏数组、默认 gem 上下文等等（见 struct
-drm_i915_gem_execbuffer3）。
+榛樿鎯呭喌涓嬶紝BO 鍙互鏄犲皠鍒板涓?VM 涓婏紝涔熷彲浠ヨ dma-buf 瀵煎嚭銆傚洜姝よ繖浜?BO 琚О涓哄叡浜?BO锛圫hared
+BO锛夈€傚湪姣忔 execbuf 鎻愪氦鏃讹紝璇锋眰鍥存爮蹇呴』琚坊鍔犲埌璇?VM 涓婃墍鏈夎鏄犲皠鐨勫叡浜?BO 鐨?dma-resv 鍥存爮
+鍒楄〃涓€?
+VM_BIND 鐗规€у紩鍏ヤ簡涓€椤逛紭鍖栵細鐢ㄦ埛鍙互鍦?BO 鍒涘缓鏃堕€氳繃 I915_GEM_CREATE_EXT_VM_PRIVATE 鏍囧織鍒涘缓
+涓撶敤浜庢煇涓寚瀹?VM 鐨?BO銆備笌鍏变韩 BO 涓嶅悓锛岃繖浜?VM 绉佹湁 BO 鍙兘琚槧灏勫埌瀹冧滑鎵€绉佹湁鐨勯偅涓?VM 涓婏紝
+骞朵笖涓嶈兘琚?dma-buf 瀵煎嚭銆備竴涓?VM 鐨勬墍鏈夌鏈?BO 鍏变韩鍚屼竴涓?dma-resv 瀵硅薄銆傚洜姝ゅ湪姣忔 execbuf
+鎻愪氦鏃讹紝瀹冧滑鍙渶鏇存柊涓€涓?dma-resv 鍥存爮鍒楄〃銆傝繖鏍蜂竴鏉ワ紝鍦ㄥ揩閫熻矾寰勶紙鎵€闇€鏄犲皠宸茬粦瀹氾級涓嬫彁浜ょ殑寤惰繜
+鐩稿浜?VM 绉佹湁 BO 鐨勬暟閲忔槸 O(1) 鐨勩€?
+### VM_BIND 鍔犻攣灞傜骇
 
-在 VM_BIND 模式下，VA 分配完全由用户管理，而非 i915 驱动。因此所有的 VA 分配、驱逐（eviction）
-在 VM_BIND 模式下都不适用。此外，为了确定对象的活跃性（activeness），VM_BIND 模式不会使用
-i915_vma 活跃引用跟踪，而是使用 dma-resv 对象（见 `VM_BIND dma_resv 用法`_）。
+姝ゅ鐨勫姞閿佽璁℃敮鎸佹棫鐨勶紙鍩轰簬 execlist 鐨勶級execbuf 妯″紡銆佹柊鐨?VM_BIND 妯″紡銆佸甫 GPU 缂洪〉鐨?VM_BIND 妯″紡浠ュ強鏈潵鍙兘鐨勭郴缁熷垎閰嶅櫒鏀寔锛堣 `鍏变韩铏氭嫙鍐呭瓨锛圫VM锛夋敮鎸乣_锛夈€傛棫鐨?execbuf 妯″紡鍜?涓嶅甫缂洪〉鐨勬柊 VM_BIND 妯″紡浣跨敤 dma_fence 绠＄悊鍚庡瀛樺偍锛坆acking storage锛夌殑椹荤暀銆傚甫缂洪〉鐨?VM_BIND
+妯″紡鍜岀郴缁熷垎閰嶅櫒鏀寔鍒欏畬鍏ㄤ笉浣跨敤浠讳綍 dma_fence銆?
+VM_BIND 鍔犻攣椤哄簭濡備笅銆?
+1) Lock-A锛氫竴涓?vm_bind 浜掓枼閿佸皢淇濇姢 vm_bind 鍒楄〃銆傝閿佸湪 vm_bind/vm_unbind ioctl 璋冪敤涓€?   execbuf 璺緞涓互鍙婇噴鏀炬槧灏勬椂鑾峰彇銆?
+   鏈潵鍦ㄦ敮鎸?GPU 缂洪〉鏃讹紝鎴戜滑鍙兘浼氭敼鐢?rwsem锛屼互渚垮涓己椤靛鐞嗙▼搴忓彲浠ヨ幏鍙栬渚ч攣鏉ユ煡鎵炬槧灏勶紝
+   浠庤€屽彲浠ュ苟琛岃繍琛屻€傛棫鐨?execbuf 缁戝畾妯″紡涓嶉渶瑕佹閿併€?
+2) Lock-B锛氬璞＄殑 dma-resv 閿佸皢淇濇姢 i915_vma 鐘舵€侊紝鍦ㄥ紓姝ュ伐浣滅嚎绋嬩腑缁戝畾/瑙ｇ粦 vma 浠ュ強鏇存柊瀵硅薄鐨?   dma-resv 鍥存爮鍒楄〃鏃堕渶瑕佹寔鏈夈€傛敞鎰忥紝涓€涓?VM 鐨勭鏈?BO 閮戒細鍏变韩涓€涓?dma-resv 瀵硅薄銆?
+   鏈潵鐨勭郴缁熷垎閰嶅櫒鏀寔灏嗘敼鐢?HMM 瑙勫畾鐨勫姞閿併€?
+3) Lock-C锛氳嚜鏃嬮攣锛岀敤浜庝繚鎶?VM 鐨勪竴浜涘垪琛紝濡傝澶辨晥鐨?vma 鍒楄〃锛堝洜椹遍€愬拰 userptr 澶辨晥绛夛級銆?
+鍦ㄦ敮鎸?GPU 缂洪〉鏃讹紝execbuf 璺緞涓嶄細鑾峰彇涓婅堪浠讳綍閿併€傚湪閭ｉ噷鎴戜滑鍙渶绠€鍗曞湴灏嗘柊鐨勬壒澶勭悊缂撳啿鍖?鍦板潃濉炲叆 ring锛岀劧鍚庨€氱煡璋冨害鍣ㄨ繍琛屽畠銆傚姞閿佸彧鍙戠敓鍦ㄧ己椤靛鐞嗙▼搴忎腑锛屽湪閭ｉ噷鎴戜滑浠ヨ妯″紡鑾峰彇
+lock-A銆佽幏鍙栨壘鍒板悗澶囧瓨鍌ㄦ墍闇€鐨勪换鎰?lock-B锛坓em 瀵硅薄鐨?dma_resv 閿侊紝浠ュ強绯荤粺鍒嗛厤鍣ㄧ殑
+hmm/core mm锛変互鍙婁竴浜涢澶栫殑閿侊紙lock-D锛夋潵澶勭悊椤佃〃绔炰簤銆傜己椤垫ā寮忎笉搴旈渶瑕佹搷浣?vm 鍒楄〃锛屽洜姝ゆ案杩?涓嶉渶瑕?lock-C銆?
+### VM_BIND LRU 澶勭悊
 
-因此，许多支持 execbuf2 ioctl 的现有代码，如重定位、VA 驱逐、vma 查找表、隐式同步、vma 活跃
-引用跟踪等，都不适用于 execbuf3 ioctl。因此，所有 execbuf3 特有的处理应放在单独的文件中，只有
-这些 ioctl 共用的功能才尽可能放在共享代码中。
+鎴戜滑闇€瑕佺‘淇?VM_BIND 鏄犲皠鐨勫璞¤姝ｇ‘鎵撲笂 LRU 鏍囪锛屼互閬垮厤鎬ц兘涓嬮檷銆傛垜浠繕闇€瑕佹敮鎸?VM_BIND
+瀵硅薄鐨勬壒閲?LRU 绉诲姩锛屼互閬垮厤鍦?execbuf 璺緞涓骇鐢熼澶栧欢杩熴€?
+椤佃〃椤典笌 VM_BIND 鏄犲皠鐨勫璞＄被浼硷紙瑙?`鍙┍閫愮殑椤佃〃鍒嗛厤`_锛夛紝瀹冧滑鎸?VM 缁存姢锛屽苟涓斿湪璇?VM 琚?婵€娲绘椂锛堝嵆鍦ㄨ VM 涓婄殑 execbuf 璋冪敤鏃讹級闇€瑕佽閿佸畾鍦ㄥ唴瀛樹腑銆傚洜姝や篃闇€瑕佸椤佃〃椤佃繘琛屾壒閲?LRU
+绉诲姩銆?
+### VM_BIND dma_resv 鐢ㄦ硶
 
-### VM_PRIVATE 对象
+鍥存爮闇€瑕佽娣诲姞鍒版墍鏈?VM_BIND 鏄犲皠鐨勫璞′笂銆傚湪姣忔 execbuf 鎻愪氦鏃讹紝瀹冧滑浠?DMA_RESV_USAGE_BOOKKEEP
+鐢ㄦ硶娣诲姞锛屼互闃叉杩囧害鍚屾锛堣 enum dma_resv_usage锛夈€傚湪鏄惧紡璁剧疆瀵硅薄渚濊禆鏃讹紝鍙互鐢?DMA_RESV_USAGE_READ 鎴?DMA_RESV_USAGE_WRITE 鐢ㄦ硶瑕嗙洊瀹冦€?
+娉ㄦ剰锛孌RM_I915_GEM_WAIT 鍜?DRM_I915_GEM_BUSY ioctl 涓嶆鏌?DMA_RESV_USAGE_BOOKKEEP 鐢ㄦ硶锛屽洜姝?涓嶅簲琚敤浜庢壒澶勭悊缁撴潫妫€鏌ャ€傜浉鍙嶏紝搴斾娇鐢?execbuf3 鍑虹珯鍥存爮杩涜鎵瑰鐞嗙粨鏉熸鏌ワ紙瑙?struct
+drm_i915_gem_execbuffer3锛夈€?
+姝ゅ锛屽湪 VM_BIND 妯″紡涓嬶紝浣跨敤 dma-resv API 鏉ョ‘瀹氬璞＄殑娲昏穬鎬э紙瑙?dma_resv_test_signaled() 鍜?dma_resv_wait_timeout()锛夛紝鑰屼笉瑕佷娇鐢ㄥ凡搴熷純鐨勬棫 i915_vma 娲昏穬寮曠敤璺熻釜銆傝繖搴旇鏇村鏄撲笌褰撳墠鐨?TTM 鍚庣鍗忓悓宸ヤ綔銆?
+### Mesa 鐢ㄤ緥
 
-默认情况下，BO 可以映射到多个 VM 上，也可以被 dma-buf 导出。因此这些 BO 被称为共享 BO（Shared
-BO）。在每次 execbuf 提交时，请求围栏必须被添加到该 VM 上所有被映射的共享 BO 的 dma-resv 围栏
-列表中。
+VM_BIND 鏈夊彲鑳介檷浣?Mesa锛堝寘鎷?Vulkan 鍜?Iris锛変腑鐨?CPU 寮€閿€锛屼粠鑰屾彁鍗囧彈 CPU 闄愬埗鐨勫簲鐢ㄧ殑鎬ц兘銆?瀹冭繕鍏佽鎴戜滑瀹炵幇 Vulkan 鐨勭█鐤忚祫婧愶紙Sparse Resources锛夈€傞殢鐫€ GPU 纭欢鎬ц兘鐨勬彁鍗囷紝闄嶄綆 CPU 寮€閿€
+鍙樺緱鏇存湁鎰忎箟銆?
+## 鍏朵粬 VM_BIND 鐢ㄤ緥
 
-VM_BIND 特性引入了一项优化：用户可以在 BO 创建时通过 I915_GEM_CREATE_EXT_VM_PRIVATE 标志创建
-专用于某个指定 VM 的 BO。与共享 BO 不同，这些 VM 私有 BO 只能被映射到它们所私有的那个 VM 上，
-并且不能被 dma-buf 导出。一个 VM 的所有私有 BO 共享同一个 dma-resv 对象。因此在每次 execbuf
-提交时，它们只需更新一个 dma-resv 围栏列表。这样一来，在快速路径（所需映射已绑定）下提交的延迟
-相对于 VM 私有 BO 的数量是 O(1) 的。
+### 闀挎椂杩愯鐨勮绠椾笂涓嬫枃
 
-### VM_BIND 加锁层级
+dma-fence 鐨勪娇鐢ㄦ湡鏈涘畠浠湪鍚堢悊鐨勬椂闂村唴瀹屾垚銆傝€岃绠楀垯鍙兘鏄暱鏃惰繍琛岀殑銆傚洜姝よ绠楅€傚悎浣跨敤
+鐢ㄦ埛/鍐呭瓨鍥存爮锛堣 `鐢ㄦ埛/鍐呭瓨鍥存爮`_锛夛紝鑰?dma-fence 鐨勪娇鐢ㄥ繀椤讳粎闄愪簬鍐呮牳鍐呴儴娑堣垂銆?
+鍦ㄤ笉鏀寔 GPU 缂洪〉鐨勬儏鍐典笅锛屽唴鏍搁┍鍔ㄥ湪缂撳啿鍖哄け鏁堟椂浼氬彂璧烽暱鏃惰繍琛屼笂涓嬫枃鐨勬寕璧凤紙鎶㈠崰锛夛紝瀹屾垚澶辨晥銆?閲嶆柊楠岃瘉 BO锛岀劧鍚庢仮澶嶈绠椾笂涓嬫枃銆傝繖鏄€氳繃姣忎釜涓婁笅鏂囦竴涓姠鍗犲洿鏍忔潵瀹炵幇鐨勶紝褰撴湁浜鸿瘯鍥剧瓑寰呭畠鏃?璇ュ洿鏍忚鍚敤锛屽苟瑙﹀彂涓婁笅鏂囨姠鍗犮€?
+#### 鐢ㄦ埛/鍐呭瓨鍥存爮
 
-此处的加锁设计支持旧的（基于 execlist 的）execbuf 模式、新的 VM_BIND 模式、带 GPU 缺页的
-VM_BIND 模式以及未来可能的系统分配器支持（见 `共享虚拟内存（SVM）支持`_）。旧的 execbuf 模式和
-不带缺页的新 VM_BIND 模式使用 dma_fence 管理后备存储（backing storage）的驻留。带缺页的 VM_BIND
-模式和系统分配器支持则完全不使用任何 dma_fence。
+鐢ㄦ埛/鍐呭瓨鍥存爮鏄竴涓?<鍦板潃, 鍊? 瀵广€傝鍙戝嚭鐢ㄦ埛鍥存爮淇″彿锛屾寚瀹氱殑鍊间細琚啓鍏ユ寚瀹氱殑铏氭嫙鍦板潃骞跺敜閱?绛夊緟鐨勮繘绋嬨€傜敤鎴峰洿鏍忓彲浠ョ敱 GPU 鎴栧唴鏍稿紓姝ュ伐浣滅嚎绋嬶紙濡傜粦瀹氬畬鎴愭椂锛夊彂鍑轰俊鍙枫€傜敤鎴峰彲浠ラ€氳繃涓€涓柊鐨?鐢ㄦ埛鍥存爮绛夊緟 ioctl 绛夊緟鐢ㄦ埛鍥存爮銆?
+杩欐柟闈箣鍓嶇殑宸ヤ綔濡備笅锛?https://patchwork.freedesktop.org/patch/349417/
 
-VM_BIND 加锁顺序如下。
+#### 浣庡欢杩熸彁浜?
+鍏佽璁＄畻 UMD 鐩存帴鎻愪氦 GPU 浠诲姟锛岃€屼笉鏄€氳繃 execbuf ioctl銆傝繖涔嬫墍浠ュ彲鑳斤紝鏄洜涓?VM_BIND 涓嶄笌
+execbuf 鍚屾銆俈M_BIND 鍏佽涓虹洿鎺ユ彁浜ょ殑浣滀笟缁戝畾/瑙ｇ粦鎵€闇€鐨勬槧灏勩€?
+### 璋冭瘯鍣?
+閫氳繃璋冭瘯浜嬩欢鎺ュ彛锛岀敤鎴风┖闂磋繘绋嬶紙璋冭瘯鍣級鑳藉璺熻釜骞朵綔鐢ㄤ簬鍙︿竴涓繘绋嬶紙琚皟璇曡繘绋嬶級鍒涘缓骞堕€氳繃
+vm_bind 鎺ュ彛闄勫姞鍒?GPU 鐨勮祫婧愩€?
+### GPU 缂洪〉
 
-1) Lock-A：一个 vm_bind 互斥锁将保护 vm_bind 列表。该锁在 vm_bind/vm_unbind ioctl 调用中、
-   execbuf 路径中以及释放映射时获取。
+鏈潵鏀寔 GPU 缂洪〉鏃讹紝灏嗕粎鍦?VM_BIND 妯″紡涓嬪彈鏀寔銆傝櫧鐒舵棫鐨?execbuf 妯″紡鍜屾柊鐨?VM_BIND 缁戝畾
+妯″紡閮介渶瑕佷娇鐢?dma-fence 鏉ョ‘淇濋┗鐣欙紝浣嗘敮鎸?GPU 缂洪〉鐨勬ā寮忓皢涓嶄娇鐢ㄤ换浣?dma-fence锛屽洜涓洪┗鐣欑函绮?閫氳繃瀹夎鍜岀Щ闄?澶辨晥椤佃〃椤规潵绠＄悊銆?
+### 椤电骇鎻愮ず璁剧疆
 
-   未来在支持 GPU 缺页时，我们可能会改用 rwsem，以便多个缺页处理程序可以获取读侧锁来查找映射，
-   从而可以并行运行。旧的 execbuf 绑定模式不需要此锁。
+VM_BIND 鍏佽鎸夋槧灏勮€岄潪鎸?BO 璁剧疆浠讳綍鎻愮ず銆傚彲鑳界殑鎻愮ず鍖呮嫭鏀剧疆锛坧lacement锛夊拰鍘熷瓙鎬с€傚湪鍗冲皢鍒版潵鐨?GPU 鎸夐渶缂洪〉鏀寔涓嬶紝瀛?BO 绾х殑鏀剧疆鎻愮ず灏嗘洿鍏锋剰涔夈€?
+### 椤电骇缂撳瓨/CLOS 璁剧疆
 
-2) Lock-B：对象的 dma-resv 锁将保护 i915_vma 状态，在异步工作线程中绑定/解绑 vma 以及更新对象的
-   dma-resv 围栏列表时需要持有。注意，一个 VM 的私有 BO 都会共享一个 dma-resv 对象。
+VM_BIND 鍏佽鎸夋槧灏勮€岄潪鎸?BO 璁剧疆缂撳瓨/CLOS銆?
+### 鍙┍閫愮殑椤佃〃鍒嗛厤
 
-   未来的系统分配器支持将改用 HMM 规定的加锁。
-
-3) Lock-C：自旋锁，用于保护 VM 的一些列表，如被失效的 vma 列表（因驱逐和 userptr 失效等）。
-
-在支持 GPU 缺页时，execbuf 路径不会获取上述任何锁。在那里我们只需简单地将新的批处理缓冲区
-地址塞入 ring，然后通知调度器运行它。加锁只发生在缺页处理程序中，在那里我们以读模式获取
-lock-A、获取找到后备存储所需的任意 lock-B（gem 对象的 dma_resv 锁，以及系统分配器的
-hmm/core mm）以及一些额外的锁（lock-D）来处理页表竞争。缺页模式不应需要操作 vm 列表，因此永远
-不需要 lock-C。
-
-### VM_BIND LRU 处理
-
-我们需要确保 VM_BIND 映射的对象被正确打上 LRU 标记，以避免性能下降。我们还需要支持 VM_BIND
-对象的批量 LRU 移动，以避免在 execbuf 路径中产生额外延迟。
-
-页表页与 VM_BIND 映射的对象类似（见 `可驱逐的页表分配`_），它们按 VM 维护，并且在该 VM 被
-激活时（即在该 VM 上的 execbuf 调用时）需要被锁定在内存中。因此也需要对页表页进行批量 LRU
-移动。
-
-### VM_BIND dma_resv 用法
-
-围栏需要被添加到所有 VM_BIND 映射的对象上。在每次 execbuf 提交时，它们以 DMA_RESV_USAGE_BOOKKEEP
-用法添加，以防止过度同步（见 enum dma_resv_usage）。在显式设置对象依赖时，可以用
-DMA_RESV_USAGE_READ 或 DMA_RESV_USAGE_WRITE 用法覆盖它。
-
-注意，DRM_I915_GEM_WAIT 和 DRM_I915_GEM_BUSY ioctl 不检查 DMA_RESV_USAGE_BOOKKEEP 用法，因此
-不应被用于批处理结束检查。相反，应使用 execbuf3 出站围栏进行批处理结束检查（见 struct
-drm_i915_gem_execbuffer3）。
-
-此外，在 VM_BIND 模式下，使用 dma-resv API 来确定对象的活跃性（见 dma_resv_test_signaled() 和
-dma_resv_wait_timeout()），而不要使用已废弃的旧 i915_vma 活跃引用跟踪。这应该更容易与当前的
-TTM 后端协同工作。
-
-### Mesa 用例
-
-VM_BIND 有可能降低 Mesa（包括 Vulkan 和 Iris）中的 CPU 开销，从而提升受 CPU 限制的应用的性能。
-它还允许我们实现 Vulkan 的稀疏资源（Sparse Resources）。随着 GPU 硬件性能的提升，降低 CPU 开销
-变得更有意义。
-
-## 其他 VM_BIND 用例
-
-### 长时运行的计算上下文
-
-dma-fence 的使用期望它们在合理的时间内完成。而计算则可能是长时运行的。因此计算适合使用
-用户/内存围栏（见 `用户/内存围栏`_），而 dma-fence 的使用必须仅限于内核内部消费。
-
-在不支持 GPU 缺页的情况下，内核驱动在缓冲区失效时会发起长时运行上下文的挂起（抢占），完成失效、
-重新验证 BO，然后恢复计算上下文。这是通过每个上下文一个抢占围栏来实现的，当有人试图等待它时
-该围栏被启用，并触发上下文抢占。
-
-#### 用户/内存围栏
-
-用户/内存围栏是一个 <地址, 值> 对。要发出用户围栏信号，指定的值会被写入指定的虚拟地址并唤醒
-等待的进程。用户围栏可以由 GPU 或内核异步工作线程（如绑定完成时）发出信号。用户可以通过一个新的
-用户围栏等待 ioctl 等待用户围栏。
-
-这方面之前的工作如下：
-https://patchwork.freedesktop.org/patch/349417/
-
-#### 低延迟提交
-
-允许计算 UMD 直接提交 GPU 任务，而不是通过 execbuf ioctl。这之所以可能，是因为 VM_BIND 不与
-execbuf 同步。VM_BIND 允许为直接提交的作业绑定/解绑所需的映射。
-
-### 调试器
-
-通过调试事件接口，用户空间进程（调试器）能够跟踪并作用于另一个进程（被调试进程）创建并通过
-vm_bind 接口附加到 GPU 的资源。
-
-### GPU 缺页
-
-未来支持 GPU 缺页时，将仅在 VM_BIND 模式下受支持。虽然旧的 execbuf 模式和新的 VM_BIND 绑定
-模式都需要使用 dma-fence 来确保驻留，但支持 GPU 缺页的模式将不使用任何 dma-fence，因为驻留纯粹
-通过安装和移除/失效页表项来管理。
-
-### 页级提示设置
-
-VM_BIND 允许按映射而非按 BO 设置任何提示。可能的提示包括放置（placement）和原子性。在即将到来的
-GPU 按需缺页支持下，子 BO 级的放置提示将更具意义。
-
-### 页级缓存/CLOS 设置
-
-VM_BIND 允许按映射而非按 BO 设置缓存/CLOS。
-
-### 可驱逐的页表分配
-
-使页表分配可驱逐，并像 VM_BIND 映射的对象一样管理它们。页表页类似于 VM 的持久映射（区别在于页表
-页没有 i915_vma 结构，并且在换入页面后需要更新父页链接）。
-
-### 共享虚拟内存（SVM）支持
-
-VM_BIND 接口可用于使用 HMM 接口直接映射系统内存（无需 gem BO 抽象）。SVM 仅在启用 GPU 缺页时
-受支持。
-
+浣块〉琛ㄥ垎閰嶅彲椹遍€愶紝骞跺儚 VM_BIND 鏄犲皠鐨勫璞′竴鏍风鐞嗗畠浠€傞〉琛ㄩ〉绫讳技浜?VM 鐨勬寔涔呮槧灏勶紙鍖哄埆鍦ㄤ簬椤佃〃
+椤垫病鏈?i915_vma 缁撴瀯锛屽苟涓斿湪鎹㈠叆椤甸潰鍚庨渶瑕佹洿鏂扮埗椤甸摼鎺ワ級銆?
+### 鍏变韩铏氭嫙鍐呭瓨锛圫VM锛夋敮鎸?
+VM_BIND 鎺ュ彛鍙敤浜庝娇鐢?HMM 鎺ュ彛鐩存帴鏄犲皠绯荤粺鍐呭瓨锛堟棤闇€ gem BO 鎶借薄锛夈€係VM 浠呭湪鍚敤 GPU 缂洪〉鏃?鍙楁敮鎸併€?
 ## VM_BIND UAPI

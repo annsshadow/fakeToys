@@ -1,4 +1,4 @@
-
+﻿
 
 ######## ioctl VIDIOC_ENUM_FMT
 
@@ -6,7 +6,7 @@
 ## Name
 
 
-VIDIOC_ENUM_FMT - 枚举图像格式
+VIDIOC_ENUM_FMT - 鏋氫妇鍥惧儚鏍煎紡
 
 ## Synopsis
 
@@ -18,27 +18,27 @@ VIDIOC_ENUM_FMT - 枚举图像格式
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `argp`
-    指向 struct `v4l2_fmtdesc` 的指针。
+    鎸囧悜 struct `v4l2_fmtdesc` 鐨勬寚閽堛€?
 
 ## Description
 
 
-为了枚举图像格式，应用程序初始化 struct `v4l2_fmtdesc` 的 `type`、`mbus_code` 和 `index`
-字段，并使用指向该结构的指针调用 VIDIOC_ENUM_FMT ioctl。驱动填充结构的其余部分，或返回
-`EINVAL` 错误码。所有格式都可通过从 index 0 开始每次加 1 直到返回 `EINVAL` 来枚举。如果
-适用，驱动应按优先顺序返回格式，其中优先格式在（即使用更小的 `index` 值）非优先格式之前
-返回。
+涓轰簡鏋氫妇鍥惧儚鏍煎紡锛屽簲鐢ㄧ▼搴忓垵濮嬪寲 struct `v4l2_fmtdesc` 鐨?`type`銆乣mbus_code` 鍜?`index`
+瀛楁锛屽苟浣跨敤鎸囧悜璇ョ粨鏋勭殑鎸囬拡璋冪敤 VIDIOC_ENUM_FMT ioctl銆傞┍鍔ㄥ～鍏呯粨鏋勭殑鍏朵綑閮ㄥ垎锛屾垨杩斿洖
+`EINVAL` 閿欒鐮併€傛墍鏈夋牸寮忛兘鍙€氳繃浠?index 0 寮€濮嬫瘡娆″姞 1 鐩村埌杩斿洖 `EINVAL` 鏉ユ灇涓俱€傚鏋?
+閫傜敤锛岄┍鍔ㄥ簲鎸変紭鍏堥『搴忚繑鍥炴牸寮忥紝鍏朵腑浼樺厛鏍煎紡鍦紙鍗充娇鐢ㄦ洿灏忕殑 `index` 鍊硷級闈炰紭鍏堟牸寮忎箣鍓?
+杩斿洖銆?
 
-根据 `V4L2_CAP_IO_MC` 能力 <device-capabilities>，`mbus_code` 字段的处理方式不同：
+鏍规嵁 `V4L2_CAP_IO_MC` 鑳藉姏 <device-capabilities>锛宍mbus_code` 瀛楁鐨勫鐞嗘柟寮忎笉鍚岋細
 
-1) 未设置 `V4L2_CAP_IO_MC`（也称为“video-node-centric”驱动）
+1) 鏈缃?`V4L2_CAP_IO_MC`锛堜篃绉颁负鈥渧ideo-node-centric鈥濋┍鍔級
 
-   应用程序应将 `mbus_code` 字段初始化为零，驱动应忽略该字段的值。
+   搴旂敤绋嬪簭搴斿皢 `mbus_code` 瀛楁鍒濆鍖栦负闆讹紝椹卞姩搴斿拷鐣ヨ瀛楁鐨勫€笺€?
 
-   驱动应枚举所有图像格式。
+   椹卞姩搴旀灇涓炬墍鏈夊浘鍍忔牸寮忋€?
 
 ```
 
@@ -46,17 +46,17 @@ VIDIOC_ENUM_FMT - 枚举图像格式
       formats may be different.
 
 ```
-2) 设置了 `V4L2_CAP_IO_MC`（也称为“MC-centric”驱动）
+2) 璁剧疆浜?`V4L2_CAP_IO_MC`锛堜篃绉颁负鈥淢C-centric鈥濋┍鍔級
 
-   如果 `mbus_code` 字段为零，则应枚举所有图像格式。
+   濡傛灉 `mbus_code` 瀛楁涓洪浂锛屽垯搴旀灇涓炬墍鏈夊浘鍍忔牸寮忋€?
 
-   如果 `mbus_code` 字段被初始化为一个有效的（非零）媒体总线格式码
-   <v4l2-mbus-pixelcode>，则驱动应将枚举限制为只能生成（对于视频输出设备）或只能由（对于
-   视频捕获设备）该媒体总线码产生/被产生的图像格式。如果驱动不支持该 `mbus_code`，则应
-   返回 `EINVAL`。
+   濡傛灉 `mbus_code` 瀛楁琚垵濮嬪寲涓轰竴涓湁鏁堢殑锛堥潪闆讹級濯掍綋鎬荤嚎鏍煎紡鐮?
+   <v4l2-mbus-pixelcode>锛屽垯椹卞姩搴斿皢鏋氫妇闄愬埗涓哄彧鑳界敓鎴愶紙瀵逛簬瑙嗛杈撳嚭璁惧锛夋垨鍙兘鐢憋紙瀵逛簬
+   瑙嗛鎹曡幏璁惧锛夎濯掍綋鎬荤嚎鐮佷骇鐢?琚骇鐢熺殑鍥惧儚鏍煎紡銆傚鏋滈┍鍔ㄤ笉鏀寔璇?`mbus_code`锛屽垯搴?
+   杩斿洖 `EINVAL`銆?
 
-   无论 `mbus_code` 字段的值如何，枚举出的图像格式不应依赖于视频设备或设备流水线的活动
-   配置。
+   鏃犺 `mbus_code` 瀛楁鐨勫€煎浣曪紝鏋氫妇鍑虹殑鍥惧儚鏍煎紡涓嶅簲渚濊禆浜庤棰戣澶囨垨璁惧娴佹按绾跨殑娲诲姩
+   閰嶇疆銆?
 
 
 
@@ -67,28 +67,28 @@ VIDIOC_ENUM_FMT - 枚举图像格式
 
     - - __u32
       - `index`
-      - 枚举中格式的编号，由应用程序设置。这与 `pixelformat` 字段毫无关系。当 index 与
-        `V4L2_FMTDESC_FLAG_ENUM_ALL` 进行 OR 运算时，驱动清除该标志并枚举所有可能的格式，
-        忽略当前配置带来的任何限制。不支持该标志的驱动总是返回 `EINVAL` 错误码，且不清除
-        该标志。使用 `V4L2_FMTDESC_FLAG_ENUM_ALL` 标志枚举的格式不应在调用
-        `VIDIOC_ENUM_FRAMESIZES` 或 `VIDIOC_ENUM_FRAMEINTERVALS` 时使用。`V4L2_FMTDESC_FLAG_ENUM_ALL`
-        只应由能根据该标志返回不同格式列表的驱动使用。
+      - 鏋氫妇涓牸寮忕殑缂栧彿锛岀敱搴旂敤绋嬪簭璁剧疆銆傝繖涓?`pixelformat` 瀛楁姣棤鍏崇郴銆傚綋 index 涓?
+        `V4L2_FMTDESC_FLAG_ENUM_ALL` 杩涜 OR 杩愮畻鏃讹紝椹卞姩娓呴櫎璇ユ爣蹇楀苟鏋氫妇鎵€鏈夊彲鑳界殑鏍煎紡锛?
+        蹇界暐褰撳墠閰嶇疆甯︽潵鐨勪换浣曢檺鍒躲€備笉鏀寔璇ユ爣蹇楃殑椹卞姩鎬绘槸杩斿洖 `EINVAL` 閿欒鐮侊紝涓斾笉娓呴櫎
+        璇ユ爣蹇椼€備娇鐢?`V4L2_FMTDESC_FLAG_ENUM_ALL` 鏍囧織鏋氫妇鐨勬牸寮忎笉搴斿湪璋冪敤
+        `VIDIOC_ENUM_FRAMESIZES` 鎴?`VIDIOC_ENUM_FRAMEINTERVALS` 鏃朵娇鐢ㄣ€俙V4L2_FMTDESC_FLAG_ENUM_ALL`
+        鍙簲鐢辫兘鏍规嵁璇ユ爣蹇楄繑鍥炰笉鍚屾牸寮忓垪琛ㄧ殑椹卞姩浣跨敤銆?
     - - __u32
       - `type`
-      - 数据流的类型，由应用程序设置。此处只有以下类型是有效的：`V4L2_BUF_TYPE_VIDEO_CAPTURE`、
-        `V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE`、`V4L2_BUF_TYPE_VIDEO_OUTPUT`、
-        `V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE`、`V4L2_BUF_TYPE_VIDEO_OVERLAY`、
-        `V4L2_BUF_TYPE_SDR_CAPTURE`、`V4L2_BUF_TYPE_SDR_OUTPUT`、`V4L2_BUF_TYPE_META_CAPTURE`
-        和 `V4L2_BUF_TYPE_META_OUTPUT`。参见 `v4l2_buf_type`。
+      - 鏁版嵁娴佺殑绫诲瀷锛岀敱搴旂敤绋嬪簭璁剧疆銆傛澶勫彧鏈変互涓嬬被鍨嬫槸鏈夋晥鐨勶細`V4L2_BUF_TYPE_VIDEO_CAPTURE`銆?
+        `V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE`銆乣V4L2_BUF_TYPE_VIDEO_OUTPUT`銆?
+        `V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE`銆乣V4L2_BUF_TYPE_VIDEO_OVERLAY`銆?
+        `V4L2_BUF_TYPE_SDR_CAPTURE`銆乣V4L2_BUF_TYPE_SDR_OUTPUT`銆乣V4L2_BUF_TYPE_META_CAPTURE`
+        鍜?`V4L2_BUF_TYPE_META_OUTPUT`銆傚弬瑙?`v4l2_buf_type`銆?
     - - __u32
       - `flags`
-      - 参见 fmtdesc-flags
+      - 鍙傝 fmtdesc-flags
     - - __u8
       - `description`\ [^32^]
-      - 格式的描述，一个以 NUL 结尾的 ASCII 字符串。此信息供用户使用，例如：“YUV 4:2:2”。
+      - 鏍煎紡鐨勬弿杩帮紝涓€涓互 NUL 缁撳熬鐨?ASCII 瀛楃涓层€傛淇℃伅渚涚敤鎴蜂娇鐢紝渚嬪锛氣€淵UV 4:2:2鈥濄€?
     - - __u32
       - `pixelformat`
-      - 图像格式标识符。这是一个由 v4l2_fourcc() 宏计算出的四字符码：
+      - 鍥惧儚鏍煎紡鏍囪瘑绗︺€傝繖鏄竴涓敱 v4l2_fourcc() 瀹忚绠楀嚭鐨勫洓瀛楃鐮侊細
     - - `2`
 
 	.. _v4l2-fourcc:
@@ -97,7 +97,7 @@ VIDIOC_ENUM_FMT - 枚举图像格式
 
 	`(((__u32)(a)<<0)|((__u32)(b)<<8)|((__u32)(c)<<16)|((__u32)(d)<<24))`
 
-	本规范已在 pixfmt 中定义了若干图像格式。
+	鏈鑼冨凡鍦?pixfmt 涓畾涔変簡鑻ュ共鍥惧儚鏍煎紡銆?
 
 ```
 
@@ -125,78 +125,78 @@ VIDIOC_ENUM_FMT - 枚举图像格式
 
     - - `V4L2_FMT_FLAG_COMPRESSED`
       - 0x0001
-      - 这是一个压缩格式。
+      - 杩欐槸涓€涓帇缂╂牸寮忋€?
     - - `V4L2_FMT_FLAG_EMULATED`
       - 0x0002
-      - 该格式并非设备的原生格式，而是通过软件（通常是 libv4l2）模拟的，在可能的情况下应
-        尽量使用原生格式以获得更好性能。
+      - 璇ユ牸寮忓苟闈炶澶囩殑鍘熺敓鏍煎紡锛岃€屾槸閫氳繃杞欢锛堥€氬父鏄?libv4l2锛夋ā鎷熺殑锛屽湪鍙兘鐨勬儏鍐典笅搴?
+        灏介噺浣跨敤鍘熺敓鏍煎紡浠ヨ幏寰楁洿濂芥€ц兘銆?
     - - `V4L2_FMT_FLAG_CONTINUOUS_BYTESTREAM`
       - 0x0004
-      - 该压缩字节流格式（又称 coded 格式）的硬件解码器能够解析连续的字节流。应用程序无需
-        自行解析字节流来查找帧/场之间的边界。
+      - 璇ュ帇缂╁瓧鑺傛祦鏍煎紡锛堝張绉?coded 鏍煎紡锛夌殑纭欢瑙ｇ爜鍣ㄨ兘澶熻В鏋愯繛缁殑瀛楄妭娴併€傚簲鐢ㄧ▼搴忔棤闇€
+        鑷瑙ｆ瀽瀛楄妭娴佹潵鏌ユ壘甯?鍦轰箣闂寸殑杈圭晫銆?
 
-	该标志只能与 `V4L2_FMT_FLAG_COMPRESSED` 标志组合使用，因为它仅适用于压缩格式。该
-	标志仅对 stateful 解码器有效。
+	璇ユ爣蹇楀彧鑳戒笌 `V4L2_FMT_FLAG_COMPRESSED` 鏍囧織缁勫悎浣跨敤锛屽洜涓哄畠浠呴€傜敤浜庡帇缂╂牸寮忋€傝
+	鏍囧織浠呭 stateful 瑙ｇ爜鍣ㄦ湁鏁堛€?
     - - `V4L2_FMT_FLAG_DYN_RESOLUTION`
       - 0x0008
-      - 设备支持该压缩字节流格式（又称 coded 格式）的动态分辨率切换。当检测到视频参数变化时，
-        它会通过事件 `V4L2_EVENT_SOURCE_CHANGE` 通知用户。
+      - 璁惧鏀寔璇ュ帇缂╁瓧鑺傛祦鏍煎紡锛堝張绉?coded 鏍煎紡锛夌殑鍔ㄦ€佸垎杈ㄧ巼鍒囨崲銆傚綋妫€娴嬪埌瑙嗛鍙傛暟鍙樺寲鏃讹紝
+        瀹冧細閫氳繃浜嬩欢 `V4L2_EVENT_SOURCE_CHANGE` 閫氱煡鐢ㄦ埛銆?
 
-	该标志只能与 `V4L2_FMT_FLAG_COMPRESSED` 标志组合使用，因为它仅适用于压缩格式。该
-	标志仅对 stateful 编解码器有效。
+	璇ユ爣蹇楀彧鑳戒笌 `V4L2_FMT_FLAG_COMPRESSED` 鏍囧織缁勫悎浣跨敤锛屽洜涓哄畠浠呴€傜敤浜庡帇缂╂牸寮忋€傝
+	鏍囧織浠呭 stateful 缂栬В鐮佸櫒鏈夋晥銆?
     - - `V4L2_FMT_FLAG_ENC_CAP_FRAME_INTERVAL`
       - 0x0010
-      - 硬件编码器支持将 `CAPTURE` coded 帧间隔与 `OUTPUT` 原始帧间隔分开设置。使用
-        VIDIOC_S_PARM <VIDIOC_G_PARM> 设置 `OUTPUT` 原始帧间隔也会将 `CAPTURE` coded 帧间隔
-        设为相同的值。如果设置了该标志，则之后可以将 `CAPTURE` coded 帧间隔设为不同的值。这
-        通常用于离线编码，其中 `OUTPUT` 原始帧间隔用作保留硬件编码器资源的提示，而
-        `CAPTURE` coded 帧间隔是嵌入在编码视频流中的实际帧率。
+      - 纭欢缂栫爜鍣ㄦ敮鎸佸皢 `CAPTURE` coded 甯ч棿闅斾笌 `OUTPUT` 鍘熷甯ч棿闅斿垎寮€璁剧疆銆備娇鐢?
+        VIDIOC_S_PARM <VIDIOC_G_PARM> 璁剧疆 `OUTPUT` 鍘熷甯ч棿闅斾篃浼氬皢 `CAPTURE` coded 甯ч棿闅?
+        璁句负鐩稿悓鐨勫€笺€傚鏋滆缃簡璇ユ爣蹇楋紝鍒欎箣鍚庡彲浠ュ皢 `CAPTURE` coded 甯ч棿闅旇涓轰笉鍚岀殑鍊笺€傝繖
+        閫氬父鐢ㄤ簬绂荤嚎缂栫爜锛屽叾涓?`OUTPUT` 鍘熷甯ч棿闅旂敤浣滀繚鐣欑‖浠剁紪鐮佸櫒璧勬簮鐨勬彁绀猴紝鑰?
+        `CAPTURE` coded 甯ч棿闅旀槸宓屽叆鍦ㄧ紪鐮佽棰戞祦涓殑瀹為檯甯х巼銆?
 
-	该标志只能与 `V4L2_FMT_FLAG_COMPRESSED` 标志组合使用，因为它仅适用于压缩格式。该
-        标志仅对 stateful 编码器有效。
+	璇ユ爣蹇楀彧鑳戒笌 `V4L2_FMT_FLAG_COMPRESSED` 鏍囧織缁勫悎浣跨敤锛屽洜涓哄畠浠呴€傜敤浜庡帇缂╂牸寮忋€傝
+        鏍囧織浠呭 stateful 缂栫爜鍣ㄦ湁鏁堛€?
     - - `V4L2_FMT_FLAG_CSC_COLORSPACE`
       - 0x0020
-      - 驱动允许应用程序尝试更改默认色彩空间。该标志仅与捕获设备相关。应用程序可以在调用
-        VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 并设置 V4L2_PIX_FMT_FLAG_SET_CSC
-        <v4l2-pix-fmt-flag-set-csc> 时，请求配置捕获设备的色彩空间。
+      - 椹卞姩鍏佽搴旂敤绋嬪簭灏濊瘯鏇存敼榛樿鑹插僵绌洪棿銆傝鏍囧織浠呬笌鎹曡幏璁惧鐩稿叧銆傚簲鐢ㄧ▼搴忓彲浠ュ湪璋冪敤
+        VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 骞惰缃?V4L2_PIX_FMT_FLAG_SET_CSC
+        <v4l2-pix-fmt-flag-set-csc> 鏃讹紝璇锋眰閰嶇疆鎹曡幏璁惧鐨勮壊褰╃┖闂淬€?
     - - `V4L2_FMT_FLAG_CSC_XFER_FUNC`
       - 0x0040
-      - 驱动允许应用程序尝试更改默认传递函数（transfer function）。该标志仅与捕获设备相关。
-        应用程序可以在调用 VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 并设置
-        V4L2_PIX_FMT_FLAG_SET_CSC <v4l2-pix-fmt-flag-set-csc> 时，请求配置捕获设备的传递函数。
+      - 椹卞姩鍏佽搴旂敤绋嬪簭灏濊瘯鏇存敼榛樿浼犻€掑嚱鏁帮紙transfer function锛夈€傝鏍囧織浠呬笌鎹曡幏璁惧鐩稿叧銆?
+        搴旂敤绋嬪簭鍙互鍦ㄨ皟鐢?VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 骞惰缃?
+        V4L2_PIX_FMT_FLAG_SET_CSC <v4l2-pix-fmt-flag-set-csc> 鏃讹紝璇锋眰閰嶇疆鎹曡幏璁惧鐨勪紶閫掑嚱鏁般€?
     - - `V4L2_FMT_FLAG_CSC_YCBCR_ENC`
       - 0x0080
-      - 驱动允许应用程序尝试更改默认的 Y'CbCr 编码。该标志仅与捕获设备相关。应用程序可以在
-        调用 VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 并设置 V4L2_PIX_FMT_FLAG_SET_CSC
-        <v4l2-pix-fmt-flag-set-csc> 时，请求配置捕获设备的 Y'CbCr 编码。
+      - 椹卞姩鍏佽搴旂敤绋嬪簭灏濊瘯鏇存敼榛樿鐨?Y'CbCr 缂栫爜銆傝鏍囧織浠呬笌鎹曡幏璁惧鐩稿叧銆傚簲鐢ㄧ▼搴忓彲浠ュ湪
+        璋冪敤 VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 骞惰缃?V4L2_PIX_FMT_FLAG_SET_CSC
+        <v4l2-pix-fmt-flag-set-csc> 鏃讹紝璇锋眰閰嶇疆鎹曡幏璁惧鐨?Y'CbCr 缂栫爜銆?
     - - `V4L2_FMT_FLAG_CSC_HSV_ENC`
       - 0x0080
-      - 驱动允许应用程序尝试更改默认的 HSV 编码。该标志仅与捕获设备相关。应用程序可以在调用
-        VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 并设置 V4L2_PIX_FMT_FLAG_SET_CSC
-        <v4l2-pix-fmt-flag-set-csc> 时，请求配置捕获设备的 HSV 编码。
+      - 椹卞姩鍏佽搴旂敤绋嬪簭灏濊瘯鏇存敼榛樿鐨?HSV 缂栫爜銆傝鏍囧織浠呬笌鎹曡幏璁惧鐩稿叧銆傚簲鐢ㄧ▼搴忓彲浠ュ湪璋冪敤
+        VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 骞惰缃?V4L2_PIX_FMT_FLAG_SET_CSC
+        <v4l2-pix-fmt-flag-set-csc> 鏃讹紝璇锋眰閰嶇疆鎹曡幏璁惧鐨?HSV 缂栫爜銆?
     - - `V4L2_FMT_FLAG_CSC_QUANTIZATION`
       - 0x0100
-      - 驱动允许应用程序尝试更改默认的量化。该标志仅与捕获设备相关。应用程序可以在调用
-        VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 并设置 V4L2_PIX_FMT_FLAG_SET_CSC
-        <v4l2-pix-fmt-flag-set-csc> 时，请求配置捕获设备的量化。
+      - 椹卞姩鍏佽搴旂敤绋嬪簭灏濊瘯鏇存敼榛樿鐨勯噺鍖栥€傝鏍囧織浠呬笌鎹曡幏璁惧鐩稿叧銆傚簲鐢ㄧ▼搴忓彲浠ュ湪璋冪敤
+        VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 骞惰缃?V4L2_PIX_FMT_FLAG_SET_CSC
+        <v4l2-pix-fmt-flag-set-csc> 鏃讹紝璇锋眰閰嶇疆鎹曡幏璁惧鐨勯噺鍖栥€?
     - - `V4L2_FMT_FLAG_META_LINE_BASED`
       - 0x0200
-      - 元数据格式是基于行的。在这种情况下 `v4l2_meta_format` 的 `width`、`height` 和
-        `bytesperline` 字段是有效的。缓冲区由 `height` 行组成，每行有 `width` 个数据单元，且
-        每两个连续行之间的偏移量（字节）为 `bytesperline`。
+      - 鍏冩暟鎹牸寮忔槸鍩轰簬琛岀殑銆傚湪杩欑鎯呭喌涓?`v4l2_meta_format` 鐨?`width`銆乣height` 鍜?
+        `bytesperline` 瀛楁鏄湁鏁堢殑銆傜紦鍐插尯鐢?`height` 琛岀粍鎴愶紝姣忚鏈?`width` 涓暟鎹崟鍏冿紝涓?
+        姣忎袱涓繛缁涔嬮棿鐨勫亸绉婚噺锛堝瓧鑺傦級涓?`bytesperline`銆?
     - - `V4L2_FMTDESC_FLAG_ENUM_ALL`
       - 0x80000000
-      - 当应用程序将 `index` 与 `V4L2_FMTDESC_FLAG_ENUM_ALL` 标志进行 OR 运算时，驱动枚举
-        所有可能的像素格式，而不考虑任何已设置的配置。不支持该标志的驱动总是返回 `EINVAL`，
-        且不清除该标志。
+      - 褰撳簲鐢ㄧ▼搴忓皢 `index` 涓?`V4L2_FMTDESC_FLAG_ENUM_ALL` 鏍囧織杩涜 OR 杩愮畻鏃讹紝椹卞姩鏋氫妇
+        鎵€鏈夊彲鑳界殑鍍忕礌鏍煎紡锛岃€屼笉鑰冭檻浠讳綍宸茶缃殑閰嶇疆銆備笉鏀寔璇ユ爣蹇楃殑椹卞姩鎬绘槸杩斿洖 `EINVAL`锛?
+        涓斾笉娓呴櫎璇ユ爣蹇椼€?
 
 ## Return Value
 
 
-成功时返回 0，出错时返回 -1 并设置 `errno`。通用错误码在 Generic Error Codes
-<gen-errors> 一章中描述。
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞惰缃?`errno`銆傞€氱敤閿欒鐮佸湪 Generic Error Codes
+<gen-errors> 涓€绔犱腑鎻忚堪銆?
 
 EINVAL
-    struct `v4l2_fmtdesc` 的 `type` 不被支持，或 `index` 越界。
+    struct `v4l2_fmtdesc` 鐨?`type` 涓嶈鏀寔锛屾垨 `index` 瓒婄晫銆?
 
-    如果设置了 `V4L2_CAP_IO_MC` 且指定的 `mbus_code` 不被支持，则也返回此错误码。
+    濡傛灉璁剧疆浜?`V4L2_CAP_IO_MC` 涓旀寚瀹氱殑 `mbus_code` 涓嶈鏀寔锛屽垯涔熻繑鍥炴閿欒鐮併€?

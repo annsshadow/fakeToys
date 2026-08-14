@@ -1,61 +1,39 @@
-
-## 基于 Generic Netlink 的 DRM RAS
-
-
-DRM RAS（Reliability, Availability, Serviceability，可靠性、可用性、可服务性）接口为 GPU/加速器
-驱动提供了一种标准化的方式，通过 Generic Netlink 向用户空间暴露错误计数器及其它可靠性节点。
-这使得诊断工具、监控守护进程或测试基础设施能够以统一的方式跨不同 DRM 驱动查询硬件健康状态。
-
-主要目标：
-
-- 为 GPU 与加速器驱动提供标准化的 RAS 解决方案，以支持数据中心监控与可靠性运维。
-- 实现一个单一的 drm-ras Generic Netlink 系列，以满足现代 Netlink YAML 规范，并将所有 RAS 相关
-  通信集中到同一命名空间中。
-- 支持基础的错误计数器接口，满足当前紧迫且必要的监控需求。
-- 提供灵活、面向未来的接口，未来可扩展以支持其它类型的 RAS 数据。
-- 允许每个驱动拥有多个节点，使驱动能够为不同的 IP 块、子块或其它适用的逻辑细分单元注册独立的
-  节点。
-
-## 节点
+﻿
+## 鍩轰簬 Generic Netlink 鐨?DRM RAS
 
 
-节点是表示设备内部错误类型或错误来源的逻辑抽象。目前仅支持错误计数器节点。
+DRM RAS锛圧eliability, Availability, Serviceability锛屽彲闈犳€с€佸彲鐢ㄦ€с€佸彲鏈嶅姟鎬э級鎺ュ彛涓?GPU/鍔犻€熷櫒
+椹卞姩鎻愪緵浜嗕竴绉嶆爣鍑嗗寲鐨勬柟寮忥紝閫氳繃 Generic Netlink 鍚戠敤鎴风┖闂存毚闇查敊璇鏁板櫒鍙婂叾瀹冨彲闈犳€ц妭鐐广€?杩欎娇寰楄瘖鏂伐鍏枫€佺洃鎺у畧鎶よ繘绋嬫垨娴嬭瘯鍩虹璁炬柦鑳藉浠ョ粺涓€鐨勬柟寮忚法涓嶅悓 DRM 椹卞姩鏌ヨ纭欢鍋ュ悍鐘舵€併€?
+涓昏鐩爣锛?
+- 涓?GPU 涓庡姞閫熷櫒椹卞姩鎻愪緵鏍囧噯鍖栫殑 RAS 瑙ｅ喅鏂规锛屼互鏀寔鏁版嵁涓績鐩戞帶涓庡彲闈犳€ц繍缁淬€?- 瀹炵幇涓€涓崟涓€鐨?drm-ras Generic Netlink 绯诲垪锛屼互婊¤冻鐜颁唬 Netlink YAML 瑙勮寖锛屽苟灏嗘墍鏈?RAS 鐩稿叧
+  閫氫俊闆嗕腑鍒板悓涓€鍛藉悕绌洪棿涓€?- 鏀寔鍩虹鐨勯敊璇鏁板櫒鎺ュ彛锛屾弧瓒冲綋鍓嶇揣杩笖蹇呰鐨勭洃鎺ч渶姹傘€?- 鎻愪緵鐏垫椿銆侀潰鍚戞湭鏉ョ殑鎺ュ彛锛屾湭鏉ュ彲鎵╁睍浠ユ敮鎸佸叾瀹冪被鍨嬬殑 RAS 鏁版嵁銆?- 鍏佽姣忎釜椹卞姩鎷ユ湁澶氫釜鑺傜偣锛屼娇椹卞姩鑳藉涓轰笉鍚岀殑 IP 鍧椼€佸瓙鍧楁垨鍏跺畠閫傜敤鐨勯€昏緫缁嗗垎鍗曞厓娉ㄥ唽鐙珛鐨?  鑺傜偣銆?
+## 鑺傜偣
 
-驱动负责通过 `drm_ras_node_register()` 与 `drm_ras_node_unregister()` API 注册和注销节点。
 
-### 节点管理
+鑺傜偣鏄〃绀鸿澶囧唴閮ㄩ敊璇被鍨嬫垨閿欒鏉ユ簮鐨勯€昏緫鎶借薄銆傜洰鍓嶄粎鏀寔閿欒璁℃暟鍣ㄨ妭鐐广€?
+椹卞姩璐熻矗閫氳繃 `drm_ras_node_register()` 涓?`drm_ras_node_unregister()` API 娉ㄥ唽鍜屾敞閿€鑺傜偣銆?
+### 鑺傜偣绠＄悊
 
 
    :doc: DRM RAS Node Management
    :internal:
 
-## Generic Netlink 用法
+## Generic Netlink 鐢ㄦ硶
 
 
-该接口实现为一个名为 `drm-ras` 的 Generic Netlink 系列。用户空间工具可以：
+璇ユ帴鍙ｅ疄鐜颁负涓€涓悕涓?`drm-ras` 鐨?Generic Netlink 绯诲垪銆傜敤鎴风┖闂村伐鍏峰彲浠ワ細
 
-- 使用 `list-nodes` 命令列出已注册的节点。
-- 使用 `get-error-counter` 命令，并以 `node-id` 作为参数，列出某个节点中的所有错误计数器。
-- 使用 `get-error-counter` 命令，同时以 `node-id` 与 `error-id` 作为参数，查询特定的错误计数器值。
+- 浣跨敤 `list-nodes` 鍛戒护鍒楀嚭宸叉敞鍐岀殑鑺傜偣銆?- 浣跨敤 `get-error-counter` 鍛戒护锛屽苟浠?`node-id` 浣滀负鍙傛暟锛屽垪鍑烘煇涓妭鐐逛腑鐨勬墍鏈夐敊璇鏁板櫒銆?- 浣跨敤 `get-error-counter` 鍛戒护锛屽悓鏃朵互 `node-id` 涓?`error-id` 浣滀负鍙傛暟锛屾煡璇㈢壒瀹氱殑閿欒璁℃暟鍣ㄥ€笺€?
+### 鍩轰簬 YAML 鐨勬帴鍙?
 
-### 基于 YAML 的接口
-
-
-该接口由一个 YAML 规范 `Documentation/netlink/specs/drm_ras.yaml` 描述。
-
-此 YAML 通过 `tools/net/ynl/pyynl/ynl_gen_c.py` 自动生成用户空间绑定，并驱动 netlink 属性与
-操作的结构。
-
-### 使用说明
+璇ユ帴鍙ｇ敱涓€涓?YAML 瑙勮寖 `Documentation/netlink/specs/drm_ras.yaml` 鎻忚堪銆?
+姝?YAML 閫氳繃 `tools/net/ynl/pyynl/ynl_gen_c.py` 鑷姩鐢熸垚鐢ㄦ埛绌洪棿缁戝畾锛屽苟椹卞姩 netlink 灞炴€т笌
+鎿嶄綔鐨勭粨鏋勩€?
+### 浣跨敤璇存槑
 
 
-- 用户空间必须首先枚举节点以获取其 ID。
-- 节点 ID 或节点名可用于所有后续查询，例如错误计数器。
-- 错误计数器可以通过错误 ID 或错误名查询。
-- 查询参数应定义为 uAPI 的一部分，以确保用户接口的稳定性。
-- 该接口支持通过添加新的节点类型与额外属性来扩展。
-
-示例：使用 ynl 列出节点
+- 鐢ㄦ埛绌洪棿蹇呴』棣栧厛鏋氫妇鑺傜偣浠ヨ幏鍙栧叾 ID銆?- 鑺傜偣 ID 鎴栬妭鐐瑰悕鍙敤浜庢墍鏈夊悗缁煡璇紝渚嬪閿欒璁℃暟鍣ㄣ€?- 閿欒璁℃暟鍣ㄥ彲浠ラ€氳繃閿欒 ID 鎴栭敊璇悕鏌ヨ銆?- 鏌ヨ鍙傛暟搴斿畾涔変负 uAPI 鐨勪竴閮ㄥ垎锛屼互纭繚鐢ㄦ埛鎺ュ彛鐨勭ǔ瀹氭€с€?- 璇ユ帴鍙ｆ敮鎸侀€氳繃娣诲姞鏂扮殑鑺傜偣绫诲瀷涓庨澶栧睘鎬ф潵鎵╁睍銆?
+绀轰緥锛氫娇鐢?ynl 鍒楀嚭鑺傜偣
 
 
     sudo ynl --family drm_ras --dump list-nodes
@@ -68,15 +46,14 @@ DRM RAS（Reliability, Availability, Serviceability，可靠性、可用性、�
      'node-name': 'uncorrectable-errors',
      'node-type': 'error-counter'}]
 
-示例：使用 ynl 列出所有错误计数器
+绀轰緥锛氫娇鐢?ynl 鍒楀嚭鎵€鏈夐敊璇鏁板櫒
 
 
     sudo ynl --family drm_ras --dump get-error-counter --json '{"node-id":0}'
     [{'error-id': 1, 'error-name': 'error_name1', 'error-value': 0},
     {'error-id': 2, 'error-name': 'error_name2', 'error-value': 0}]
 
-示例：查询某个给定节点的错误计数器
-
+绀轰緥锛氭煡璇㈡煇涓粰瀹氳妭鐐圭殑閿欒璁℃暟鍣?
 
     sudo ynl --family drm_ras --do get-error-counter --json '{"node-id":0, "error-id":1}'
     {'error-id': 1, 'error-name': 'error_name1', 'error-value': 0}

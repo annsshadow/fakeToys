@@ -1,67 +1,67 @@
-## Raspberry Pi PiSP 后端内存到内存 ISP（pisp-be）
+﻿## Raspberry Pi PiSP 鍚庣鍐呭瓨鍒板唴瀛?ISP锛坧isp-be锛?
 
 
-## PiSP 后端
+## PiSP 鍚庣
 
 
-PiSP 后端是一个内存到内存的图像信号处理器（ISP），它从 DRAM 内存读取图像数据，并根据应用程序通过配置缓冲区中的参数所指定的方式执行图像处理，然后通过两个独立的输出通道将像素数据写回内存。
+PiSP 鍚庣鏄竴涓唴瀛樺埌鍐呭瓨鐨勫浘鍍忎俊鍙峰鐞嗗櫒锛圛SP锛夛紝瀹冧粠 DRAM 鍐呭瓨璇诲彇鍥惧儚鏁版嵁锛屽苟鏍规嵁搴旂敤绋嬪簭閫氳繃閰嶇疆缂撳啿鍖轰腑鐨勫弬鏁版墍鎸囧畾鐨勬柟寮忔墽琛屽浘鍍忓鐞嗭紝鐒跺悗閫氳繃涓や釜鐙珛鐨勮緭鍑洪€氶亾灏嗗儚绱犳暟鎹啓鍥炲唴瀛樸€?
 
-ISP 寄存器与编程模型记录在 `Raspberry Pi Image Signal Processor (PiSP) Specification document`_ 中。
+ISP 瀵勫瓨鍣ㄤ笌缂栫▼妯″瀷璁板綍鍦?`Raspberry Pi Image Signal Processor (PiSP) Specification document`_ 涓€?
 
-PiSP 后端 ISP 以图块（tile）方式处理图像。图像分块（tessellation）的处理以及底层配置参数的计算，由一个名为 `libpisp <https://github.com/raspberrypi/libpisp>`_ 的自由软件库实现。
+PiSP 鍚庣 ISP 浠ュ浘鍧楋紙tile锛夋柟寮忓鐞嗗浘鍍忋€傚浘鍍忓垎鍧楋紙tessellation锛夌殑澶勭悊浠ュ強搴曞眰閰嶇疆鍙傛暟鐨勮绠楋紝鐢变竴涓悕涓?`libpisp <https://github.com/raspberrypi/libpisp>`_ 鐨勮嚜鐢辫蒋浠跺簱瀹炵幇銆?
 
-完整的图像处理流水线（包括通过兼容 MIPI CSI-2 的采集接口从图像传感器采集 RAW Bayer 数据、将其存入 DRAM 内存，并在 PiSP 后端中进行处理以得到应用程序可用的图像）在 `libcamera <https://libcamera.org>`_ 中作为 Raspberry Pi 平台支持的一部分实现。
+瀹屾暣鐨勫浘鍍忓鐞嗘祦姘寸嚎锛堝寘鎷€氳繃鍏煎 MIPI CSI-2 鐨勯噰闆嗘帴鍙ｄ粠鍥惧儚浼犳劅鍣ㄩ噰闆?RAW Bayer 鏁版嵁銆佸皢鍏跺瓨鍏?DRAM 鍐呭瓨锛屽苟鍦?PiSP 鍚庣涓繘琛屽鐞嗕互寰楀埌搴旂敤绋嬪簭鍙敤鐨勫浘鍍忥級鍦?`libcamera <https://libcamera.org>`_ 涓綔涓?Raspberry Pi 骞冲彴鏀寔鐨勪竴閮ㄥ垎瀹炵幇銆?
 
-## pisp-be 驱动
+## pisp-be 椹卞姩
 
 
-Raspberry Pi PiSP 后端（pisp-be）驱动位于 drivers/media/platform/raspberrypi/pisp-be。它使用 `V4L2 API` 注册若干视频采集与输出设备，使用 `V4L2 subdev API` 注册一个连接这些视频设备的 ISP 子设备，从而形成由 `Media Controller (MC) API` 实现的单一媒体图（media graph）。
+Raspberry Pi PiSP 鍚庣锛坧isp-be锛夐┍鍔ㄤ綅浜?drivers/media/platform/raspberrypi/pisp-be銆傚畠浣跨敤 `V4L2 API` 娉ㄥ唽鑻ュ共瑙嗛閲囬泦涓庤緭鍑鸿澶囷紝浣跨敤 `V4L2 subdev API` 娉ㄥ唽涓€涓繛鎺ヨ繖浜涜棰戣澶囩殑 ISP 瀛愯澶囷紝浠庤€屽舰鎴愮敱 `Media Controller (MC) API` 瀹炵幇鐨勫崟涓€濯掍綋鍥撅紙media graph锛夈€?
 
-`pisp-be` 驱动注册的媒体拓扑如下图所示：
+`pisp-be` 椹卞姩娉ㄥ唽鐨勫獟浣撴嫇鎵戝涓嬪浘鎵€绀猴細
 
-    :alt:   默认媒体流水线拓扑图
+    :alt:   榛樿濯掍綋娴佹按绾挎嫇鎵戝浘
     :align: center
 
 
-媒体图注册了以下视频设备节点：
+濯掍綋鍥炬敞鍐屼簡浠ヤ笅瑙嗛璁惧鑺傜偣锛?
 
-- pispbe-input：提交给 ISP 进行处理的图像的输出设备。
-- pispbe-tdn_input：用于时域去噪（temporal denoise）的输出设备。
-- pispbe-stitch_input：用于图像拼接（HDR）的输出设备。
-- pispbe-output0：处理后图像的第一个采集设备。
-- pispbe-output1：处理后图像的第二个采集设备。
-- pispbe-tdn_output：用于时域去噪的采集设备。
-- pispbe-stitch_output：用于图像拼接（HDR）的采集设备。
-- pispbe-config：用于 ISP 配置参数的输出设备。
+- pispbe-input锛氭彁浜ょ粰 ISP 杩涜澶勭悊鐨勫浘鍍忕殑杈撳嚭璁惧銆?
+- pispbe-tdn_input锛氱敤浜庢椂鍩熷幓鍣紙temporal denoise锛夌殑杈撳嚭璁惧銆?
+- pispbe-stitch_input锛氱敤浜庡浘鍍忔嫾鎺ワ紙HDR锛夌殑杈撳嚭璁惧銆?
+- pispbe-output0锛氬鐞嗗悗鍥惧儚鐨勭涓€涓噰闆嗚澶囥€?
+- pispbe-output1锛氬鐞嗗悗鍥惧儚鐨勭浜屼釜閲囬泦璁惧銆?
+- pispbe-tdn_output锛氱敤浜庢椂鍩熷幓鍣殑閲囬泦璁惧銆?
+- pispbe-stitch_output锛氱敤浜庡浘鍍忔嫾鎺ワ紙HDR锛夌殑閲囬泦璁惧銆?
+- pispbe-config锛氱敤浜?ISP 閰嶇疆鍙傛暟鐨勮緭鍑鸿澶囥€?
 
 ### pispbe-input
 
 
-待 ISP 处理的图像被排入 `pispbe-input` 输出设备节点。有关 ISP 输入所支持的图像格式列表，请参阅 `Raspberry Pi Image Signal Processor (PiSP) Specification document`_。
+寰?ISP 澶勭悊鐨勫浘鍍忚鎺掑叆 `pispbe-input` 杈撳嚭璁惧鑺傜偣銆傛湁鍏?ISP 杈撳叆鎵€鏀寔鐨勫浘鍍忔牸寮忓垪琛紝璇峰弬闃?`Raspberry Pi Image Signal Processor (PiSP) Specification document`_銆?
 
 ### pispbe-tdn_input, pispbe-tdn_output
 
 
-`pispbe-tdn_input` 输出视频设备接收待时域去噪块处理的图像，这些图像从 `pispbe-tdn_output` 采集视频设备获取。用户空间负责维护这两个设备上的队列，并确保输出设备上完成的缓冲区被排入输入设备。
+`pispbe-tdn_input` 杈撳嚭瑙嗛璁惧鎺ユ敹寰呮椂鍩熷幓鍣潡澶勭悊鐨勫浘鍍忥紝杩欎簺鍥惧儚浠?`pispbe-tdn_output` 閲囬泦瑙嗛璁惧鑾峰彇銆傜敤鎴风┖闂磋礋璐ｇ淮鎶よ繖涓や釜璁惧涓婄殑闃熷垪锛屽苟纭繚杈撳嚭璁惧涓婂畬鎴愮殑缂撳啿鍖鸿鎺掑叆杈撳叆璁惧銆?
 
 ### pispbe-stitch_input, pispbe-stitch_output
 
 
-为实现 HDR（高动态范围）图像处理，使用图像拼接与色调映射（tonemapping）块。`pispbe-stitch_output` 将图像写入内存，而 `pispbe-stitch_input` 接收先前写入的帧，将其与当前输入图像一起处理。用户空间负责维护这两个设备上的队列，并确保输出设备上完成的缓冲区被排入输入设备。
+涓哄疄鐜?HDR锛堥珮鍔ㄦ€佽寖鍥达級鍥惧儚澶勭悊锛屼娇鐢ㄥ浘鍍忔嫾鎺ヤ笌鑹茶皟鏄犲皠锛坱onemapping锛夊潡銆俙pispbe-stitch_output` 灏嗗浘鍍忓啓鍏ュ唴瀛橈紝鑰?`pispbe-stitch_input` 鎺ユ敹鍏堝墠鍐欏叆鐨勫抚锛屽皢鍏朵笌褰撳墠杈撳叆鍥惧儚涓€璧峰鐞嗐€傜敤鎴风┖闂磋礋璐ｇ淮鎶よ繖涓や釜璁惧涓婄殑闃熷垪锛屽苟纭繚杈撳嚭璁惧涓婂畬鎴愮殑缂撳啿鍖鸿鎺掑叆杈撳叆璁惧銆?
 
 ### pispbe-output0, pispbe-output1
 
 
-这两个采集设备将经 ISP 处理后的像素数据写入内存。
+杩欎袱涓噰闆嗚澶囧皢缁?ISP 澶勭悊鍚庣殑鍍忕礌鏁版嵁鍐欏叆鍐呭瓨銆?
 
 ### pispbe-config
 
 
-`pispbe-config` 输出视频设备接收一个配置参数字段，该字段定义了 ISP 待执行的图像处理。
+`pispbe-config` 杈撳嚭瑙嗛璁惧鎺ユ敹涓€涓厤缃弬鏁板瓧娈碉紝璇ュ瓧娈靛畾涔変簡 ISP 寰呮墽琛岀殑鍥惧儚澶勭悊銆?
 
-ISP 配置参数的格式由 `pisp_be_tiles_config` C 结构体定义，各参数的含义在 `Raspberry Pi Image Signal Processor (PiSP) Specification document`_ 中描述。
+ISP 閰嶇疆鍙傛暟鐨勬牸寮忕敱 `pisp_be_tiles_config` C 缁撴瀯浣撳畾涔夛紝鍚勫弬鏁扮殑鍚箟鍦?`Raspberry Pi Image Signal Processor (PiSP) Specification document`_ 涓弿杩般€?
 
-## ISP 配置
+## ISP 閰嶇疆
 
 
-ISP 配置仅由参数缓冲区的内容描述。用户空间需要使用 V4L2 API 配置的唯一参数，是输出与采集视频设备上的图像格式，用于校验参数缓冲区内容的合法性。
+ISP 閰嶇疆浠呯敱鍙傛暟缂撳啿鍖虹殑鍐呭鎻忚堪銆傜敤鎴风┖闂撮渶瑕佷娇鐢?V4L2 API 閰嶇疆鐨勫敮涓€鍙傛暟锛屾槸杈撳嚭涓庨噰闆嗚棰戣澶囦笂鐨勫浘鍍忔牸寮忥紝鐢ㄤ簬鏍￠獙鍙傛暟缂撳啿鍖哄唴瀹圭殑鍚堟硶鎬с€?

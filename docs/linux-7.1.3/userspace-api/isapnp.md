@@ -1,12 +1,12 @@
-## ISA 即插即用（Plug & Play）支持
+﻿## ISA 鍗虫彃鍗崇敤锛圥lug & Play锛夋敮鎸?
 
 
-## 接口 /proc/isapnp
+## 鎺ュ彛 /proc/isapnp
 
 
-该接口已在内核 2.5.53 中移除。更多细节参见 pnp.rst。
+璇ユ帴鍙ｅ凡鍦ㄥ唴鏍?2.5.53 涓Щ闄ゃ€傛洿澶氱粏鑺傚弬瑙?pnp.rst銆?
 
-## 接口 /proc/bus/isapnp
+## 鎺ュ彛 /proc/bus/isapnp
 
 
-该目录允许访问 ISA PnP 网卡与逻辑设备。常规文件包含某个逻辑设备的 ISA PnP 寄存器内容。
+璇ョ洰褰曞厑璁歌闂?ISA PnP 缃戝崱涓庨€昏緫璁惧銆傚父瑙勬枃浠跺寘鍚煇涓€昏緫璁惧鐨?ISA PnP 瀵勫瓨鍣ㄥ唴瀹广€?

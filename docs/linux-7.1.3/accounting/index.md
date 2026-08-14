@@ -1,9 +1,9 @@
-## 记账与统计
+﻿## 璁拌处涓庣粺璁?
 
-本页面汇总内核记账与统计相关文档。
+鏈〉闈㈡眹鎬诲唴鏍歌璐︿笌缁熻鐩稿叧鏂囨。銆?
 
-- [cgroup 统计](cgroupstats)
-- [延迟记账](delay-accounting)
-- [PSI 压力失陷信息](psi)
-- [任务统计](taskstats)
-- [任务统计结构体](taskstats-struct)
+- [cgroup 缁熻](cgroupstats)
+- [寤惰繜璁拌处](delay-accounting)
+- [PSI 鍘嬪姏澶遍櫡淇℃伅](psi)
+- [浠诲姟缁熻](taskstats)
+- [浠诲姟缁熻缁撴瀯浣揮(taskstats-struct)

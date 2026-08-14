@@ -1,19 +1,16 @@
-
+﻿
 
 
 ## Coccinelle
 
 
-Coccinelle 是一个用于模式匹配和文本转换的工具，在内核开发中有许多用途，包括应用复杂的、树
-范围的补丁，以及检测有问题的编程模式。
+Coccinelle 鏄竴涓敤浜庢ā寮忓尮閰嶅拰鏂囨湰杞崲鐨勫伐鍏凤紝鍦ㄥ唴鏍稿紑鍙戜腑鏈夎澶氱敤閫旓紝鍖呮嫭搴旂敤澶嶆潅鐨勩€佹爲
+鑼冨洿鐨勮ˉ涓侊紝浠ュ強妫€娴嬫湁闂鐨勭紪绋嬫ā寮忋€?
+### 鑾峰彇 Coccinelle
 
-### 获取 Coccinelle
 
-
-内核中包含的语义补丁（semantic patch）使用了由 Coccinelle 1.0.0-rc11 及更高版本提供的特性
-和选项。使用更早的版本会失败，因为 Coccinelle 文件和 coccicheck 所使用的选项名称已经更新。
-
-Coccinelle 可通过许多发行版的包管理器获取，例如：
+鍐呮牳涓寘鍚殑璇箟琛ヤ竵锛坰emantic patch锛変娇鐢ㄤ簡鐢?Coccinelle 1.0.0-rc11 鍙婃洿楂樼増鏈彁渚涚殑鐗规€?鍜岄€夐」銆備娇鐢ㄦ洿鏃╃殑鐗堟湰浼氬け璐ワ紝鍥犱负 Coccinelle 鏂囦欢鍜?coccicheck 鎵€浣跨敤鐨勯€夐」鍚嶇О宸茬粡鏇存柊銆?
+Coccinelle 鍙€氳繃璁稿鍙戣鐗堢殑鍖呯鐞嗗櫒鑾峰彇锛屼緥濡傦細
 
  - Debian
  - Fedora
@@ -24,12 +21,11 @@ Coccinelle 可通过许多发行版的包管理器获取，例如：
  - NetBSD
  - FreeBSD
 
-一些发行版打的包已经过时，建议使用从 Coccinelle 主页发布的最新版本：
+涓€浜涘彂琛岀増鎵撶殑鍖呭凡缁忚繃鏃讹紝寤鸿浣跨敤浠?Coccinelle 涓婚〉鍙戝竷鐨勬渶鏂扮増鏈細
 
 https://coccinelle.gitlabpages.inria.fr/website
 
-或从 Github 获取：
-
+鎴栦粠 Github 鑾峰彇锛?
 https://github.com/coccinelle/coccinelle
 
 ```
@@ -45,51 +41,37 @@ https://github.com/coccinelle/coccinelle
         sudo make install
 
 ```
-从源码构建的更详细安装说明可以在以下位置找到：
-
+浠庢簮鐮佹瀯寤虹殑鏇磋缁嗗畨瑁呰鏄庡彲浠ュ湪浠ヤ笅浣嶇疆鎵惧埌锛?
 https://github.com/coccinelle/coccinelle/blob/master/install.txt
 
-### 补充文档
+### 琛ュ厖鏂囨。
 
 
-关于补充文档，请参阅 wiki：
-
+鍏充簬琛ュ厖鏂囨。锛岃鍙傞槄 wiki锛?
 https://bottest.wiki.kernel.org/coccicheck.html
 
-wiki 文档始终指向该脚本的 linux-next 版本。
-
-关于语义补丁语言（SmPL，Semantic Patch Language）语法文档，请参阅：
+wiki 鏂囨。濮嬬粓鎸囧悜璇ヨ剼鏈殑 linux-next 鐗堟湰銆?
+鍏充簬璇箟琛ヤ竵璇█锛圫mPL锛孲emantic Patch Language锛夎娉曟枃妗ｏ紝璇峰弬闃咃細
 
 https://coccinelle.gitlabpages.inria.fr/website/docs/main_grammar.html
 
-### 在 Linux 内核上使用 Coccinelle
+### 鍦?Linux 鍐呮牳涓婁娇鐢?Coccinelle
 
 
-顶层 Makefile 中定义了一个 Coccinelle 专用的目标。该目标名为 `coccicheck`，它会调用 `scripts`
-目录中的 `coccicheck` 前端。
-
-定义了四种基本模式：`patch`、`report`、`context` 和 `org`。要使用的模式通过 `MODE=<mode>`
-设置 MODE 变量来指定。
-
-- `patch` 在可能的情况下提出一个修复。
-
-- `report` 生成如下格式的报告：
-  file:line:column-column: message（文件:行:列-列: 消息）
-
-- `context` 以类似 diff 的风格高亮感兴趣的行及其上下文。感兴趣的行用 `-` 标示。
-
-- `org` 生成 Emacs 的 Org mode 格式的报告。
-
-请注意，并非所有语义补丁都实现了所有模式。为了便于使用 Coccinelle，默认模式是 “report”。
-
-另有两种模式提供了这些模式的常见组合。
-
-- `chain` 按上述顺序尝试前面的模式，直到其中一个成功。
-
-- `rep+ctxt` 依次运行 report 模式和 context 模式。它应与 C 选项（下文描述）一起使用，该选项以
-  文件为单位检查代码。
-
-#### 示例
+椤跺眰 Makefile 涓畾涔変簡涓€涓?Coccinelle 涓撶敤鐨勭洰鏍囥€傝鐩爣鍚嶄负 `coccicheck`锛屽畠浼氳皟鐢?`scripts`
+鐩綍涓殑 `coccicheck` 鍓嶇銆?
+瀹氫箟浜嗗洓绉嶅熀鏈ā寮忥細`patch`銆乣report`銆乣context` 鍜?`org`銆傝浣跨敤鐨勬ā寮忛€氳繃 `MODE=<mode>`
+璁剧疆 MODE 鍙橀噺鏉ユ寚瀹氥€?
+- `patch` 鍦ㄥ彲鑳界殑鎯呭喌涓嬫彁鍑轰竴涓慨澶嶃€?
+- `report` 鐢熸垚濡備笅鏍煎紡鐨勬姤鍛婏細
+  file:line:column-column: message锛堟枃浠?琛?鍒?鍒? 娑堟伅锛?
+- `context` 浠ョ被浼?diff 鐨勯鏍奸珮浜劅鍏磋叮鐨勮鍙婂叾涓婁笅鏂囥€傛劅鍏磋叮鐨勮鐢?`-` 鏍囩ず銆?
+- `org` 鐢熸垚 Emacs 鐨?Org mode 鏍煎紡鐨勬姤鍛娿€?
+璇锋敞鎰忥紝骞堕潪鎵€鏈夎涔夎ˉ涓侀兘瀹炵幇浜嗘墍鏈夋ā寮忋€備负浜嗕究浜庝娇鐢?Coccinelle锛岄粯璁ゆā寮忔槸 鈥渞eport鈥濄€?
+鍙︽湁涓ょ妯″紡鎻愪緵浜嗚繖浜涙ā寮忕殑甯歌缁勫悎銆?
+- `chain` 鎸変笂杩伴『搴忓皾璇曞墠闈㈢殑妯″紡锛岀洿鍒板叾涓竴涓垚鍔熴€?
+- `rep+ctxt` 渚濇杩愯 report 妯″紡鍜?context 妯″紡銆傚畠搴斾笌 C 閫夐」锛堜笅鏂囨弿杩帮級涓€璧蜂娇鐢紝璇ラ€夐」浠?  鏂囦欢涓哄崟浣嶆鏌ヤ唬鐮併€?
+#### 绀轰緥
 
 
 ```
@@ -104,60 +86,49 @@ https://coccinelle.gitlabpages.inria.fr/website/docs/main_grammar.html
 
 
 ```
-coccicheck 目标会把 `scripts/coccinelle` 子目录中可用的每个语义补丁应用到整个 Linux 内核。
-
-对于每个语义补丁，都会提出一条提交信息。它描述了该语义补丁所检查的问题，并包含对 Coccinelle
-的引用。
-
-与任何静态代码分析器一样，Coccinelle 会产生误报（false positive）。因此，报告必须仔细检查，
-补丁也必须经过审查。
-
+coccicheck 鐩爣浼氭妸 `scripts/coccinelle` 瀛愮洰褰曚腑鍙敤鐨勬瘡涓涔夎ˉ涓佸簲鐢ㄥ埌鏁翠釜 Linux 鍐呮牳銆?
+瀵逛簬姣忎釜璇箟琛ヤ竵锛岄兘浼氭彁鍑轰竴鏉℃彁浜や俊鎭€傚畠鎻忚堪浜嗚璇箟琛ヤ竵鎵€妫€鏌ョ殑闂锛屽苟鍖呭惈瀵?Coccinelle
+鐨勫紩鐢ㄣ€?
+涓庝换浣曢潤鎬佷唬鐮佸垎鏋愬櫒涓€鏍凤紝Coccinelle 浼氫骇鐢熻鎶ワ紙false positive锛夈€傚洜姝わ紝鎶ュ憡蹇呴』浠旂粏妫€鏌ワ紝
+琛ヤ竵涔熷繀椤荤粡杩囧鏌ャ€?
 ```
 
    make coccicheck MODE=report V=1
 
 ```
-默认情况下，coccicheck 会把调试日志打印到 stdout，并把 stderr 重定向到 /dev/null。这可能使
-coccicheck 的输出难以阅读和理解。调试和错误消息也可以改为写入一个调试文件，通过
+榛樿鎯呭喌涓嬶紝coccicheck 浼氭妸璋冭瘯鏃ュ織鎵撳嵃鍒?stdout锛屽苟鎶?stderr 閲嶅畾鍚戝埌 /dev/null銆傝繖鍙兘浣?coccicheck 鐨勮緭鍑洪毦浠ラ槄璇诲拰鐞嗚В銆傝皟璇曞拰閿欒娑堟伅涔熷彲浠ユ敼涓哄啓鍏ヤ竴涓皟璇曟枃浠讹紝閫氳繃
 
 ```
 
     make coccicheck MODE=report DEBUG_FILE="cocci.log"
 
 ```
-Coccinelle 不能覆盖一个调试文件。与其反复删除日志，不如
+Coccinelle 涓嶈兘瑕嗙洊涓€涓皟璇曟枃浠躲€備笌鍏跺弽澶嶅垹闄ゆ棩蹇楋紝涓嶅
 
 ```
 
     make coccicheck MODE=report DEBUG_FILE="cocci-$(date -Iseconds).log"
 
 ```
-### Coccinelle 并行化
+### Coccinelle 骞惰鍖?
 
-
-默认情况下，coccicheck 会尽量以并行方式运行。要改变这一点，可以使用
+榛樿鎯呭喌涓嬶紝coccicheck 浼氬敖閲忎互骞惰鏂瑰紡杩愯銆傝鏀瑰彉杩欎竴鐐癸紝鍙互浣跨敤
 
 ```
 
    make coccicheck MODE=report J=4
 
 ```
-从 Coccinelle 1.0.2 起，Coccinelle 使用 Ocaml parmap 进行并行化；如果检测到对此的支持，你将
-受益于 parmap 并行化。
-
-当启用 parmap 时，coccicheck 会使用 `--chunksize 1` 参数来启用动态负载均衡。这确保我们一个一个
-地持续向线程分发工作，从而避免大部分工作只由少数几个线程完成的情况。通过动态负载均衡，如果某个
-线程提前完成，我们会持续向它分发更多工作。
-
-当 parmap 启用时，如果 Coccinelle 中发生了错误，该错误值会被传播回来，并且 `make coccicheck`
-命令的返回值会捕获这个返回值。
-
-### 使用单个语义补丁运行 Coccinelle
+浠?Coccinelle 1.0.2 璧凤紝Coccinelle 浣跨敤 Ocaml parmap 杩涜骞惰鍖栵紱濡傛灉妫€娴嬪埌瀵规鐨勬敮鎸侊紝浣犲皢
+鍙楃泭浜?parmap 骞惰鍖栥€?
+褰撳惎鐢?parmap 鏃讹紝coccicheck 浼氫娇鐢?`--chunksize 1` 鍙傛暟鏉ュ惎鐢ㄥ姩鎬佽礋杞藉潎琛°€傝繖纭繚鎴戜滑涓€涓竴涓?鍦版寔缁悜绾跨▼鍒嗗彂宸ヤ綔锛屼粠鑰岄伩鍏嶅ぇ閮ㄥ垎宸ヤ綔鍙敱灏戞暟鍑犱釜绾跨▼瀹屾垚鐨勬儏鍐点€傞€氳繃鍔ㄦ€佽礋杞藉潎琛★紝濡傛灉鏌愪釜
+绾跨▼鎻愬墠瀹屾垚锛屾垜浠細鎸佺画鍚戝畠鍒嗗彂鏇村宸ヤ綔銆?
+褰?parmap 鍚敤鏃讹紝濡傛灉 Coccinelle 涓彂鐢熶簡閿欒锛岃閿欒鍊间細琚紶鎾洖鏉ワ紝骞朵笖 `make coccicheck`
+鍛戒护鐨勮繑鍥炲€间細鎹曡幏杩欎釜杩斿洖鍊笺€?
+### 浣跨敤鍗曚釜璇箟琛ヤ竵杩愯 Coccinelle
 
 
-可选的 make 变量 COCCI 可用于检查单个语义补丁。在这种情况下，该变量必须用要应用的语义补丁的
-名字初始化。
-
+鍙€夌殑 make 鍙橀噺 COCCI 鍙敤浜庢鏌ュ崟涓涔夎ˉ涓併€傚湪杩欑鎯呭喌涓嬶紝璇ュ彉閲忓繀椤荤敤瑕佸簲鐢ㄧ殑璇箟琛ヤ竵鐨?鍚嶅瓧鍒濆鍖栥€?
 ```
 
 	make coccicheck COCCI=<my_SP.cocci> MODE=patch
@@ -170,52 +141,43 @@ Coccinelle 不能覆盖一个调试文件。与其反复删除日志，不如
 
 
 ```
-### 控制 Coccinelle 处理哪些文件
+### 鎺у埗 Coccinelle 澶勭悊鍝簺鏂囦欢
 
 
-默认会检查整个内核源代码树。
-
-要将 Coccinelle 应用到特定目录，可以使用 `M=`。
-
+榛樿浼氭鏌ユ暣涓唴鏍告簮浠ｇ爜鏍戙€?
+瑕佸皢 Coccinelle 搴旂敤鍒扮壒瀹氱洰褰曪紝鍙互浣跨敤 `M=`銆?
 ```
 
     make coccicheck M=drivers/net/wireless/
 
 ```
-要以文件为单位（而非目录为单位）应用 Coccinelle，makefile 使用 C 变量来选择要处理的文件。该
-变量可用于为整个内核、特定目录或单个文件运行脚本。
-
-例如，要检查 drivers/bluetooth/bfusb.c，向 C 变量传入值 1 以检查 make 认为相关的文件
-
+瑕佷互鏂囦欢涓哄崟浣嶏紙鑰岄潪鐩綍涓哄崟浣嶏級搴旂敤 Coccinelle锛宮akefile 浣跨敤 C 鍙橀噺鏉ラ€夋嫨瑕佸鐞嗙殑鏂囦欢銆傝
+鍙橀噺鍙敤浜庝负鏁翠釜鍐呮牳銆佺壒瀹氱洰褰曟垨鍗曚釜鏂囦欢杩愯鑴氭湰銆?
+渚嬪锛岃妫€鏌?drivers/bluetooth/bfusb.c锛屽悜 C 鍙橀噺浼犲叆鍊?1 浠ユ鏌?make 璁や负鐩稿叧鐨勬枃浠?
 ```
 
     make C=1 CHECK=scripts/coccicheck drivers/bluetooth/bfusb.o
 
 ```
-向 C 变量传入值 2 以检查文件而不管其是否
+鍚?C 鍙橀噺浼犲叆鍊?2 浠ユ鏌ユ枃浠惰€屼笉绠″叾鏄惁
 
 ```
 
     make C=2 CHECK=scripts/coccicheck drivers/bluetooth/bfusb.o
 
 ```
-在这些以文件为单位工作的模式下，不会显示关于语义补丁的信息，也不会提出提交信息。
-
-这默认运行 scripts/coccinelle 中的每个语义补丁。COCCI 变量也可额外用于仅应用单个语义补丁，
-如上一节所示。
-
-默认模式是 “report”。你可以用上文解释的 MODE 变量选择另一种模式。
-
-### 调试 Coccinelle SmPL 补丁
+鍦ㄨ繖浜涗互鏂囦欢涓哄崟浣嶅伐浣滅殑妯″紡涓嬶紝涓嶄細鏄剧ず鍏充簬璇箟琛ヤ竵鐨勪俊鎭紝涔熶笉浼氭彁鍑烘彁浜や俊鎭€?
+杩欓粯璁よ繍琛?scripts/coccinelle 涓殑姣忎釜璇箟琛ヤ竵銆侰OCCI 鍙橀噺涔熷彲棰濆鐢ㄤ簬浠呭簲鐢ㄥ崟涓涔夎ˉ涓侊紝
+濡備笂涓€鑺傛墍绀恒€?
+榛樿妯″紡鏄?鈥渞eport鈥濄€備綘鍙互鐢ㄤ笂鏂囪В閲婄殑 MODE 鍙橀噺閫夋嫨鍙︿竴绉嶆ā寮忋€?
+### 璋冭瘯 Coccinelle SmPL 琛ヤ竵
 
 
-使用 coccicheck 最好，因为它在 spatch 命令行中提供了与我们编译内核时所使用选项相匹配的
-包含选项。你可以通过使用 V=1 来了解这些选项是什么；然后你就可以加上调试选项手动运行
-Coccinelle。
-
-调试针对 SmPL 补丁运行 Coccinelle 的一个更简单的方法，是让 coccicheck 把 stderr 重定向到
-一个调试文件。如示例所述，默认 stderr 被重定向到 /dev/null；如果你想捕获 stderr，可以
-
+浣跨敤 coccicheck 鏈€濂斤紝鍥犱负瀹冨湪 spatch 鍛戒护琛屼腑鎻愪緵浜嗕笌鎴戜滑缂栬瘧鍐呮牳鏃舵墍浣跨敤閫夐」鐩稿尮閰嶇殑
+鍖呭惈閫夐」銆備綘鍙互閫氳繃浣跨敤 V=1 鏉ヤ簡瑙ｈ繖浜涢€夐」鏄粈涔堬紱鐒跺悗浣犲氨鍙互鍔犱笂璋冭瘯閫夐」鎵嬪姩杩愯
+Coccinelle銆?
+璋冭瘯閽堝 SmPL 琛ヤ竵杩愯 Coccinelle 鐨勪竴涓洿绠€鍗曠殑鏂规硶锛屾槸璁?coccicheck 鎶?stderr 閲嶅畾鍚戝埌
+涓€涓皟璇曟枃浠躲€傚绀轰緥鎵€杩帮紝榛樿 stderr 琚噸瀹氬悜鍒?/dev/null锛涘鏋滀綘鎯虫崟鑾?stderr锛屽彲浠?
 ```
 
     rm -f cocci.err
@@ -223,9 +185,8 @@ Coccinelle。
     cat cocci.err
 
 ```
-你可以使用 SPFLAGS 添加调试标志；例如，在调试时你可能想向 SPFLAGS 同时添加 `--profile
---show-trying`。例如
-
+浣犲彲浠ヤ娇鐢?SPFLAGS 娣诲姞璋冭瘯鏍囧織锛涗緥濡傦紝鍦ㄨ皟璇曟椂浣犲彲鑳芥兂鍚?SPFLAGS 鍚屾椂娣诲姞 `--profile
+--show-trying`銆備緥濡?
 ```
 
     rm -f err.log
@@ -233,132 +194,101 @@ Coccinelle。
     make coccicheck DEBUG_FILE="err.log" MODE=report SPFLAGS="--profile --show-trying" M=./drivers/mfd
 
 ```
-err.log 现在将包含性能分析（profiling）信息，而 stdout 将随着 Coccinelle 推进工作提供一些
-进度信息。
-
-注意：
-
-DEBUG_FILE 支持仅在 coccinelle >= 1.0.2 时可用。
-
-目前，DEBUG_FILE 支持仅适用于检查文件夹，而不适用于单个文件。这是因为检查单个文件需要调用
-spatch 两次，导致 DEBUG_FILE 两次都被设置为相同的值，从而产生错误。
-
-### .cocciconfig 支持
+err.log 鐜板湪灏嗗寘鍚€ц兘鍒嗘瀽锛坧rofiling锛変俊鎭紝鑰?stdout 灏嗛殢鐫€ Coccinelle 鎺ㄨ繘宸ヤ綔鎻愪緵涓€浜?杩涘害淇℃伅銆?
+娉ㄦ剰锛?
+DEBUG_FILE 鏀寔浠呭湪 coccinelle >= 1.0.2 鏃跺彲鐢ㄣ€?
+鐩墠锛孌EBUG_FILE 鏀寔浠呴€傜敤浜庢鏌ユ枃浠跺す锛岃€屼笉閫傜敤浜庡崟涓枃浠躲€傝繖鏄洜涓烘鏌ュ崟涓枃浠堕渶瑕佽皟鐢?spatch 涓ゆ锛屽鑷?DEBUG_FILE 涓ゆ閮借璁剧疆涓虹浉鍚岀殑鍊硷紝浠庤€屼骇鐢熼敊璇€?
+### .cocciconfig 鏀寔
 
 
-Coccinelle 支持读取 .cocciconfig 以获取每次生成 spatch 时都应使用的默认 Coccinelle 选项。
-.cocciconfig 中变量的优先顺序如下：
-
-- 首先处理当前用户的主目录
-- 接下来处理调用 spatch 所在目录
-- 如果使用，最后处理通过 `--dir` 选项提供的目录
-
-`make coccicheck` 也支持使用 M= 目标。如果你没有提供任何 M= 目标，则假定你想以整个内核为目标。
-
+Coccinelle 鏀寔璇诲彇 .cocciconfig 浠ヨ幏鍙栨瘡娆＄敓鎴?spatch 鏃堕兘搴斾娇鐢ㄧ殑榛樿 Coccinelle 閫夐」銆?.cocciconfig 涓彉閲忕殑浼樺厛椤哄簭濡備笅锛?
+- 棣栧厛澶勭悊褰撳墠鐢ㄦ埛鐨勪富鐩綍
+- 鎺ヤ笅鏉ュ鐞嗚皟鐢?spatch 鎵€鍦ㄧ洰褰?- 濡傛灉浣跨敤锛屾渶鍚庡鐞嗛€氳繃 `--dir` 閫夐」鎻愪緵鐨勭洰褰?
+`make coccicheck` 涔熸敮鎸佷娇鐢?M= 鐩爣銆傚鏋滀綘娌℃湁鎻愪緵浠讳綍 M= 鐩爣锛屽垯鍋囧畾浣犳兂浠ユ暣涓唴鏍镐负鐩爣銆?
 ```
 
     OPTIONS="--dir $srcroot $COCCIINCLUDE"
 
 ```
-这里，$srcroot 指的是目标的源代码目录：当使用 M= 时它指向外部模块的源代码目录，否则指向内核
-源代码目录。第三条规则确保 spatch 从目标目录读取 .cocciconfig，从而允许外部模块拥有自己的
-.cocciconfig 文件。
-
-如果不使用内核的 coccicheck 目标，请保持上述 .cocciconfig 读取的优先顺序逻辑。如果使用内核的
-coccicheck 目标，可通过 SPFLAGS 覆盖内核 .coccicheck 的任何设置。
-
-我们在针对 Linux 使用 Coccinelle 时，通过我们自己的 Linux .cocciconfig 提供了一组合理的
-Linux 默认选项，以提示 Coccinelle 可以使用 git 进行 `git grep` 查询（通过 coccigrep）。目前
-200 秒的超时应该足够了。
-
-Coccinelle 在读取 .cocciconfig 时拾取的选项不会作为运行在你系统上的 spatch 进程的参数出现。
-要确认实际使用了哪些选项，可以
-
+杩欓噷锛?srcroot 鎸囩殑鏄洰鏍囩殑婧愪唬鐮佺洰褰曪細褰撲娇鐢?M= 鏃跺畠鎸囧悜澶栭儴妯″潡鐨勬簮浠ｇ爜鐩綍锛屽惁鍒欐寚鍚戝唴鏍?婧愪唬鐮佺洰褰曘€傜涓夋潯瑙勫垯纭繚 spatch 浠庣洰鏍囩洰褰曡鍙?.cocciconfig锛屼粠鑰屽厑璁稿閮ㄦā鍧楁嫢鏈夎嚜宸辩殑
+.cocciconfig 鏂囦欢銆?
+濡傛灉涓嶄娇鐢ㄥ唴鏍哥殑 coccicheck 鐩爣锛岃淇濇寔涓婅堪 .cocciconfig 璇诲彇鐨勪紭鍏堥『搴忛€昏緫銆傚鏋滀娇鐢ㄥ唴鏍哥殑
+coccicheck 鐩爣锛屽彲閫氳繃 SPFLAGS 瑕嗙洊鍐呮牳 .coccicheck 鐨勪换浣曡缃€?
+鎴戜滑鍦ㄩ拡瀵?Linux 浣跨敤 Coccinelle 鏃讹紝閫氳繃鎴戜滑鑷繁鐨?Linux .cocciconfig 鎻愪緵浜嗕竴缁勫悎鐞嗙殑
+Linux 榛樿閫夐」锛屼互鎻愮ず Coccinelle 鍙互浣跨敤 git 杩涜 `git grep` 鏌ヨ锛堥€氳繃 coccigrep锛夈€傜洰鍓?200 绉掔殑瓒呮椂搴旇瓒冲浜嗐€?
+Coccinelle 鍦ㄨ鍙?.cocciconfig 鏃舵嬀鍙栫殑閫夐」涓嶄細浣滀负杩愯鍦ㄤ綘绯荤粺涓婄殑 spatch 杩涚▼鐨勫弬鏁板嚭鐜般€?瑕佺‘璁ゅ疄闄呬娇鐢ㄤ簡鍝簺閫夐」锛屽彲浠?
 ```
 
       spatch --print-options-only
 
 ```
-你可以通过使用 SPFLAGS 覆盖为你自己偏好的索引选项。请注意，当存在冲突选项时，Coccinelle 会优先
-采用最后传入的选项。使用 .cocciconfig 也可以使用 idutils，不过鉴于 Coccinelle 遵循的优先顺序，
-由于内核现在带有自己的 .cocciconfig，如果需要使用 idutils，你将必须使用 SPFLAGS。更多关于如何
-使用 idutils 的细节，请参阅下文 “Additional flags（附加标志）” 一节。
-
-### 附加标志
+浣犲彲浠ラ€氳繃浣跨敤 SPFLAGS 瑕嗙洊涓轰綘鑷繁鍋忓ソ鐨勭储寮曢€夐」銆傝娉ㄦ剰锛屽綋瀛樺湪鍐茬獊閫夐」鏃讹紝Coccinelle 浼氫紭鍏?閲囩敤鏈€鍚庝紶鍏ョ殑閫夐」銆備娇鐢?.cocciconfig 涔熷彲浠ヤ娇鐢?idutils锛屼笉杩囬壌浜?Coccinelle 閬靛惊鐨勪紭鍏堥『搴忥紝
+鐢变簬鍐呮牳鐜板湪甯︽湁鑷繁鐨?.cocciconfig锛屽鏋滈渶瑕佷娇鐢?idutils锛屼綘灏嗗繀椤讳娇鐢?SPFLAGS銆傛洿澶氬叧浜庡浣?浣跨敤 idutils 鐨勭粏鑺傦紝璇峰弬闃呬笅鏂?鈥淎dditional flags锛堥檮鍔犳爣蹇楋級鈥?涓€鑺傘€?
+### 闄勫姞鏍囧織
 
 
-可以通过 SPFLAGS 变量向 spatch 传递附加标志。这可以工作，因为 Coccinelle 会遵循最后传入的标志
+鍙互閫氳繃 SPFLAGS 鍙橀噺鍚?spatch 浼犻€掗檮鍔犳爣蹇椼€傝繖鍙互宸ヤ綔锛屽洜涓?Coccinelle 浼氶伒寰渶鍚庝紶鍏ョ殑鏍囧織
 
 ```
 
     make SPFLAGS=--use-glimpse coccicheck
 
 ```
-Coccinelle 也支持 idutils，但需要 coccinelle >= 1.0.6。当没有指定 ID 文件时，Coccinelle 假定
-你的 ID 数据库文件位于内核顶层的 .id-utils.index 文件中。Coccinelle
+Coccinelle 涔熸敮鎸?idutils锛屼絾闇€瑕?coccinelle >= 1.0.6銆傚綋娌℃湁鎸囧畾 ID 鏂囦欢鏃讹紝Coccinelle 鍋囧畾
+浣犵殑 ID 鏁版嵁搴撴枃浠朵綅浜庡唴鏍搁《灞傜殑 .id-utils.index 鏂囦欢涓€侰occinelle
 
 ```
 
     mkid -i C --output .id-utils.index
 
 ```
-如果你有另一个数据库文件名，也可以直接通过如下方式使用符号链接
+濡傛灉浣犳湁鍙︿竴涓暟鎹簱鏂囦欢鍚嶏紝涔熷彲浠ョ洿鎺ラ€氳繃濡備笅鏂瑰紡浣跨敤绗﹀彿閾炬帴
 
 ```
 
     make SPFLAGS=--use-idutils coccicheck
 
 ```
-或者你也可以显式指定数据库文件名
-
+鎴栬€呬綘涔熷彲浠ユ樉寮忔寚瀹氭暟鎹簱鏂囦欢鍚?
 ```
 
     make SPFLAGS="--use-idutils /full-path/to/ID" coccicheck
 
 ```
-参见 `spatch --help` 以了解更多关于 spatch 选项的信息。
-
-请注意，`--use-glimpse` 和 `--use-idutils` 选项需要外部工具来为代码建立索引。因此它们默认都不
-激活。然而，通过使用这些工具之一为代码建立索引，并根据所使用的 cocci 文件，spatch 可以更快地
-处理整个代码库。
-
-### SmPL 补丁专有选项
+鍙傝 `spatch --help` 浠ヤ簡瑙ｆ洿澶氬叧浜?spatch 閫夐」鐨勪俊鎭€?
+璇锋敞鎰忥紝`--use-glimpse` 鍜?`--use-idutils` 閫夐」闇€瑕佸閮ㄥ伐鍏锋潵涓轰唬鐮佸缓绔嬬储寮曘€傚洜姝ゅ畠浠粯璁ら兘涓?婵€娲汇€傜劧鑰岋紝閫氳繃浣跨敤杩欎簺宸ュ叿涔嬩竴涓轰唬鐮佸缓绔嬬储寮曪紝骞舵牴鎹墍浣跨敤鐨?cocci 鏂囦欢锛宻patch 鍙互鏇村揩鍦?澶勭悊鏁翠釜浠ｇ爜搴撱€?
+### SmPL 琛ヤ竵涓撴湁閫夐」
 
 
-SmPL 补丁可以对自己传给 Coccinelle 的选项有要求。SmPL 补丁专有选项可以通过如下方式提供
+SmPL 琛ヤ竵鍙互瀵硅嚜宸变紶缁?Coccinelle 鐨勯€夐」鏈夎姹傘€係mPL 琛ヤ竵涓撴湁閫夐」鍙互閫氳繃濡備笅鏂瑰紡鎻愪緵
 
 ```
 
 	// Options: --no-includes --include-headers
 
 ```
-### SmPL 补丁的 Coccinelle 版本要求
+### SmPL 琛ヤ竵鐨?Coccinelle 鐗堟湰瑕佹眰
 
 
-随着 Coccinelle 特性不断增加，一些更高级的 SmPL 补丁可能需要更新版本的 Coccinelle。如果一个
-SmPL 补丁要求最低版本的 Coccinelle，可以如下指定
-
+闅忕潃 Coccinelle 鐗规€т笉鏂鍔狅紝涓€浜涙洿楂樼骇鐨?SmPL 琛ヤ竵鍙兘闇€瑕佹洿鏂扮増鏈殑 Coccinelle銆傚鏋滀竴涓?SmPL 琛ヤ竵瑕佹眰鏈€浣庣増鏈殑 Coccinelle锛屽彲浠ュ涓嬫寚瀹?
 ```
 
 	// Requires: 1.0.5
 
 ```
-### 提出新的语义补丁
+### 鎻愬嚭鏂扮殑璇箟琛ヤ竵
 
 
-内核开发者可以提出并提交新的语义补丁。为了清晰起见，它们应当组织在 `scripts/coccinelle/` 的
-子目录中。
+鍐呮牳寮€鍙戣€呭彲浠ユ彁鍑哄苟鎻愪氦鏂扮殑璇箟琛ヤ竵銆備负浜嗘竻鏅拌捣瑙侊紝瀹冧滑搴斿綋缁勭粐鍦?`scripts/coccinelle/` 鐨?瀛愮洰褰曚腑銆?
 
-
-### ``report`` 模式的详细说明
-
+### ``report`` 妯″紡鐨勮缁嗚鏄?
 
 ```
 
   file:line:column-column: message
 
 ```
-#### 示例
+#### 绀轰緥
 
 
 ```
@@ -387,7 +317,7 @@ SmPL 补丁要求最低版本的 Coccinelle，可以如下指定
    </smpl>
 
 ```
-这段 SmPL 摘录在标准输出上生成如下条目
+杩欐 SmPL 鎽樺綍鍦ㄦ爣鍑嗚緭鍑轰笂鐢熸垚濡備笅鏉＄洰
 
 ```
 
@@ -397,12 +327,10 @@ SmPL 补丁要求最低版本的 Coccinelle，可以如下指定
 
 
 ```
-### ``patch`` 模式的详细说明
+### ``patch`` 妯″紡鐨勮缁嗚鏄?
 
-
-当 `patch` 模式可用时，它会为每个识别出的问题提出一个修复。
-
-#### 示例
+褰?`patch` 妯″紡鍙敤鏃讹紝瀹冧細涓烘瘡涓瘑鍒嚭鐨勯棶棰樻彁鍑轰竴涓慨澶嶃€?
+#### 绀轰緥
 
 
 ```
@@ -423,8 +351,7 @@ SmPL 补丁要求最低版本的 Coccinelle，可以如下指定
     </smpl>
 
 ```
-这段 SmPL 摘录在标准输出上生成补丁块（patch hunk），如下所示
-
+杩欐 SmPL 鎽樺綍鍦ㄦ爣鍑嗚緭鍑轰笂鐢熸垚琛ヤ竵鍧楋紙patch hunk锛夛紝濡備笅鎵€绀?
 ```
 
     diff -u -p a/crypto/ctr.c b/crypto/ctr.c
@@ -441,16 +368,13 @@ SmPL 补丁要求最低版本的 Coccinelle，可以如下指定
  	err = -EINVAL;
 
 ```
-### ``context`` 模式的详细说明
+### ``context`` 妯″紡鐨勮缁嗚鏄?
 
-
-`context` 以类似 diff 的风格高亮感兴趣的行及其上下文。
-
-      **注意**：生成的类似 diff 的输出并不是一个可应用的补丁。`context` 模式的意图是
-      高亮重要的行（用减号 `-` 标注），并给出周围的一些上下文行。这个输出可以和
-      Emacs 的 diff 模式一起用来审查代码。
-
-#### 示例
+`context` 浠ョ被浼?diff 鐨勯鏍奸珮浜劅鍏磋叮鐨勮鍙婂叾涓婁笅鏂囥€?
+      **娉ㄦ剰**锛氱敓鎴愮殑绫讳技 diff 鐨勮緭鍑哄苟涓嶆槸涓€涓彲搴旂敤鐨勮ˉ涓併€俙context` 妯″紡鐨勬剰鍥炬槸
+      楂樹寒閲嶈鐨勮锛堢敤鍑忓彿 `-` 鏍囨敞锛夛紝骞剁粰鍑哄懆鍥寸殑涓€浜涗笂涓嬫枃琛屻€傝繖涓緭鍑哄彲浠ュ拰
+      Emacs 鐨?diff 妯″紡涓€璧风敤鏉ュ鏌ヤ唬鐮併€?
+#### 绀轰緥
 
 
 ```
@@ -470,8 +394,7 @@ SmPL 补丁要求最低版本的 Coccinelle，可以如下指定
     </smpl>
 
 ```
-这段 SmPL 摘录在标准输出上生成 diff 块（diff hunk），如下所示
-
+杩欐 SmPL 鎽樺綍鍦ㄦ爣鍑嗚緭鍑轰笂鐢熸垚 diff 鍧楋紙diff hunk锛夛紝濡備笅鎵€绀?
 ```
 
     diff -u -p /home/user/linux/crypto/ctr.c /tmp/nothing
@@ -487,12 +410,10 @@ SmPL 补丁要求最低版本的 Coccinelle，可以如下指定
  	err = -EINVAL;
 
 ```
-### ``org`` 模式的详细说明
+### ``org`` 妯″紡鐨勮缁嗚鏄?
 
-
-`org` 生成 Emacs 的 Org mode 格式的报告。
-
-#### 示例
+`org` 鐢熸垚 Emacs 鐨?Org mode 鏍煎紡鐨勬姤鍛娿€?
+#### 绀轰緥
 
 
 ```
@@ -522,8 +443,7 @@ SmPL 补丁要求最低版本的 Coccinelle，可以如下指定
     </smpl>
 
 ```
-这段 SmPL 摘录在标准输出上生成 Org 条目，如下所示
-
+杩欐 SmPL 鎽樺綍鍦ㄦ爣鍑嗚緭鍑轰笂鐢熸垚 Org 鏉＄洰锛屽涓嬫墍绀?
 ```
 
     * TODO [[view:/home/user/linux/crypto/ctr.c::face=ovl-face1::linb=188::colb=9::cole=16][ERR_CAST can be used with alg]]

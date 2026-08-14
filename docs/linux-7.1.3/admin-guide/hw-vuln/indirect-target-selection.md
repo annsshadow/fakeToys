@@ -1,113 +1,113 @@
-## 间接目标选择（ITS）
+﻿## 闂存帴鐩爣閫夋嫨锛圛TS锛?
 
-ITS 是部分支持增强型 IBRS（Enhanced IBRS）、且在 Alder Lake 之前发布的 Intel CPU 中存在的一个漏洞。ITS 可能允许攻击者控制位于缓存行（cacheline）下半部分的间接分支与 RET 指令的预测目标。
+ITS 鏄儴鍒嗘敮鎸佸寮哄瀷 IBRS锛圗nhanced IBRS锛夈€佷笖鍦?Alder Lake 涔嬪墠鍙戝竷鐨?Intel CPU 涓瓨鍦ㄧ殑涓€涓紡娲炪€侷TS 鍙兘鍏佽鏀诲嚮鑰呮帶鍒朵綅浜庣紦瀛樿锛坈acheline锛変笅鍗婇儴鍒嗙殑闂存帴鍒嗘敮涓?RET 鎸囦护鐨勯娴嬬洰鏍囥€?
 
-ITS 被分配了 CVE-2024-28956，CVSS 评分为 4.7（中危）。
+ITS 琚垎閰嶄簡 CVE-2024-28956锛孋VSS 璇勫垎涓?4.7锛堜腑鍗憋級銆?
 
-### 影响范围
+### 褰卞搷鑼冨洿
 
-- **eIBRS 客户机/宿主机隔离**：KVM/内核中的间接分支仍可能被预测为对应客户机中某条分支的非预期目标。
+- **eIBRS 瀹㈡埛鏈?瀹夸富鏈洪殧绂?*锛欿VM/鍐呮牳涓殑闂存帴鍒嗘敮浠嶅彲鑳借棰勬祴涓哄搴斿鎴锋満涓煇鏉″垎鏀殑闈為鏈熺洰鏍囥€?
 
-- **模式内 BTI（Intra-Mode BTI）**：内核内部的训练，例如通过 cBPF 或其他原生 gadget。
+- **妯″紡鍐?BTI锛圛ntra-Mode BTI锛?*锛氬唴鏍稿唴閮ㄧ殑璁粌锛屼緥濡傞€氳繃 cBPF 鎴栧叾浠栧師鐢?gadget銆?
 
-- **间接分支预测屏障（IBPB）**：在执行过 IBPB 之后，间接分支仍可能被预测为 IBPB 之前执行的直接分支所对应的目标。该问题已由 IPU 2025.1 微码修复，应通过发行版更新获取；也可从 Intel 的 github 仓库获取微码 [#f1]_。
+- **闂存帴鍒嗘敮棰勬祴灞忛殰锛圛BPB锛?*锛氬湪鎵ц杩?IBPB 涔嬪悗锛岄棿鎺ュ垎鏀粛鍙兘琚娴嬩负 IBPB 涔嬪墠鎵ц鐨勭洿鎺ュ垎鏀墍瀵瑰簲鐨勭洰鏍囥€傝闂宸茬敱 IPU 2025.1 寰爜淇锛屽簲閫氳繃鍙戣鐗堟洿鏂拌幏鍙栵紱涔熷彲浠?Intel 鐨?github 浠撳簱鑾峰彇寰爜 [#f1]_銆?
 
-### 受影响的 CPU
+### 鍙楀奖鍝嶇殑 CPU
 
-以下是受 ITS 影响的 CPU 列表 [#f2]_ [#f3]_：
+浠ヤ笅鏄彈 ITS 褰卞搷鐨?CPU 鍒楄〃 [#f2]_ [#f3]_锛?
 
 ======================== ============ ==================== ===============
-通用名称                   Family_Model  eIBRS                模式内 BTI
-                                         客户机/宿主机隔离
+閫氱敤鍚嶇О                   Family_Model  eIBRS                妯″紡鍐?BTI
+                                         瀹㈡埛鏈?瀹夸富鏈洪殧绂?
 ======================== ============ ==================== ===============
-SKYLAKE_X (step >= 6)     06_55H        受影响               受影响
-ICELAKE_X                 06_6AH        不受影响             受影响
-ICELAKE_D                 06_6CH        不受影响             受影响
-ICELAKE_L                 06_7EH        不受影响             受影响
-TIGERLAKE_L               06_8CH        不受影响             受影响
-TIGERLAKE                 06_8DH        不受影响             受影响
-KABYLAKE_L (step >= 12)   06_8EH        受影响               受影响
-KABYLAKE (step >= 13)     06_9EH        受影响               受影响
-COMETLAKE                 06_A5H        受影响               受影响
-COMETLAKE_L               06_A6H        受影响               受影响
-ROCKETLAKE                06_A7H        不受影响             受影响
+SKYLAKE_X (step >= 6)     06_55H        鍙楀奖鍝?              鍙楀奖鍝?
+ICELAKE_X                 06_6AH        涓嶅彈褰卞搷             鍙楀奖鍝?
+ICELAKE_D                 06_6CH        涓嶅彈褰卞搷             鍙楀奖鍝?
+ICELAKE_L                 06_7EH        涓嶅彈褰卞搷             鍙楀奖鍝?
+TIGERLAKE_L               06_8CH        涓嶅彈褰卞搷             鍙楀奖鍝?
+TIGERLAKE                 06_8DH        涓嶅彈褰卞搷             鍙楀奖鍝?
+KABYLAKE_L (step >= 12)   06_8EH        鍙楀奖鍝?              鍙楀奖鍝?
+KABYLAKE (step >= 13)     06_9EH        鍙楀奖鍝?              鍙楀奖鍝?
+COMETLAKE                 06_A5H        鍙楀奖鍝?              鍙楀奖鍝?
+COMETLAKE_L               06_A6H        鍙楀奖鍝?              鍙楀奖鍝?
+ROCKETLAKE                06_A7H        涓嶅彈褰卞搷             鍙楀奖鍝?
 ======================== ============ ==================== ===============
 
-- 所有受影响的 CPU 都枚举出增强型 IBRS 特性。
-- IBPB 隔离在所有受 ITS 影响的 CPU 上都受影响，需要微码更新才能缓解。
-- 受影响的 CPU 均未枚举 BHI_CTRL，该特性在 Golden Cove（Alder Lake 与 Sapphire Rapids）中引入。这有助于客户机判断宿主机的受影响状态。
-- Intel Atom CPU 不受 ITS 影响。
+- 鎵€鏈夊彈褰卞搷鐨?CPU 閮芥灇涓惧嚭澧炲己鍨?IBRS 鐗规€с€?
+- IBPB 闅旂鍦ㄦ墍鏈夊彈 ITS 褰卞搷鐨?CPU 涓婇兘鍙楀奖鍝嶏紝闇€瑕佸井鐮佹洿鏂版墠鑳界紦瑙ｃ€?
+- 鍙楀奖鍝嶇殑 CPU 鍧囨湭鏋氫妇 BHI_CTRL锛岃鐗规€у湪 Golden Cove锛圓lder Lake 涓?Sapphire Rapids锛変腑寮曞叆銆傝繖鏈夊姪浜庡鎴锋満鍒ゆ柇瀹夸富鏈虹殑鍙楀奖鍝嶇姸鎬併€?
+- Intel Atom CPU 涓嶅彈 ITS 褰卞搷銆?
 
-### 缓解措施
+### 缂撹В鎺柦
 
-由于只有指令最后一个字节位于缓存行下半部分的间接分支与 RET 才受 ITS 影响，缓解措施的基本思路是：不允许间接分支出现在缓存行下半部分。
+鐢变簬鍙湁鎸囦护鏈€鍚庝竴涓瓧鑺備綅浜庣紦瀛樿涓嬪崐閮ㄥ垎鐨勯棿鎺ュ垎鏀笌 RET 鎵嶅彈 ITS 褰卞搷锛岀紦瑙ｆ帾鏂界殑鍩烘湰鎬濊矾鏄細涓嶅厑璁搁棿鎺ュ垎鏀嚭鐜板湪缂撳瓨琛屼笅鍗婇儴鍒嗐€?
 
-这是通过依赖内核中已有的 retpoline 支持以及编译器来达成的。易受 ITS 影响的 retpoline 调用点会在运行时被补丁修改为指向新加入的 ITS 安全 thunk。这些安全 thunk 的间接分支位于缓存行的下半部分。并非所有 retpoline 调用点都会被补丁修改为 thunk：若某个 retpoline 调用点经评估是 ITS 安全的，则会被替换为内联的间接分支。
+杩欐槸閫氳繃渚濊禆鍐呮牳涓凡鏈夌殑 retpoline 鏀寔浠ュ強缂栬瘧鍣ㄦ潵杈炬垚鐨勩€傛槗鍙?ITS 褰卞搷鐨?retpoline 璋冪敤鐐逛細鍦ㄨ繍琛屾椂琚ˉ涓佷慨鏀逛负鎸囧悜鏂板姞鍏ョ殑 ITS 瀹夊叏 thunk銆傝繖浜涘畨鍏?thunk 鐨勯棿鎺ュ垎鏀綅浜庣紦瀛樿鐨勪笅鍗婇儴鍒嗐€傚苟闈炴墍鏈?retpoline 璋冪敤鐐归兘浼氳琛ヤ竵淇敼涓?thunk锛氳嫢鏌愪釜 retpoline 璋冪敤鐐圭粡璇勪及鏄?ITS 瀹夊叏鐨勶紝鍒欎細琚浛鎹负鍐呰仈鐨勯棿鎺ュ垎鏀€?
 
-#### 动态 thunk
+#### 鍔ㄦ€?thunk
 
-从一个动态分配的 thunk 池中，每个易受影响的调用点都会被替换为一个新的 thunk，从而得到一个唯一地址。这有助于提升分支预测的准确性，同时也是针对别名（aliasing）问题的纵深防御措施。
+浠庝竴涓姩鎬佸垎閰嶇殑 thunk 姹犱腑锛屾瘡涓槗鍙楀奖鍝嶇殑璋冪敤鐐归兘浼氳鏇挎崲涓轰竴涓柊鐨?thunk锛屼粠鑰屽緱鍒颁竴涓敮涓€鍦板潃銆傝繖鏈夊姪浜庢彁鍗囧垎鏀娴嬬殑鍑嗙‘鎬э紝鍚屾椂涔熸槸閽堝鍒悕锛坅liasing锛夐棶棰樼殑绾垫繁闃插尽鎺柦銆?
 
-需要注意的是，为简单起见，eBPF 程序中的间接分支总是被替换为跳转到 `__x86_indirect_its_thunk_array` 中的静态 thunk。如有需要，未来可改为使用动态 thunk。
+闇€瑕佹敞鎰忕殑鏄紝涓虹畝鍗曡捣瑙侊紝eBPF 绋嬪簭涓殑闂存帴鍒嗘敮鎬绘槸琚浛鎹负璺宠浆鍒?`__x86_indirect_its_thunk_array` 涓殑闈欐€?thunk銆傚鏈夐渶瑕侊紝鏈潵鍙敼涓轰娇鐢ㄥ姩鎬?thunk銆?
 
-所有易受影响的 RET 都被替换为静态 thunk，它们不使用动态 thunk。这是因为 RET 的预测主要来自 RSB，基本不依赖源地址。发生 RSB 下溢的 RET 可能从动态 thunk 中受益；但 RET 的数量远多于间接分支，而唯一源地址带来的任何收益，都可能被增大的指令缓存（icache）占用与 iTLB 压力所抵消。
+鎵€鏈夋槗鍙楀奖鍝嶇殑 RET 閮借鏇挎崲涓洪潤鎬?thunk锛屽畠浠笉浣跨敤鍔ㄦ€?thunk銆傝繖鏄洜涓?RET 鐨勯娴嬩富瑕佹潵鑷?RSB锛屽熀鏈笉渚濊禆婧愬湴鍧€銆傚彂鐢?RSB 涓嬫孩鐨?RET 鍙兘浠庡姩鎬?thunk 涓彈鐩婏紱浣?RET 鐨勬暟閲忚繙澶氫簬闂存帴鍒嗘敮锛岃€屽敮涓€婧愬湴鍧€甯︽潵鐨勪换浣曟敹鐩婏紝閮藉彲鑳借澧炲ぇ鐨勬寚浠ょ紦瀛橈紙icache锛夊崰鐢ㄤ笌 iTLB 鍘嬪姏鎵€鎶垫秷銆?
 
 #### Retpoline
 
-Retpoline 序列同样可以缓解 ITS 不安全的间接分支。因此，在启用 retpoline 时，ITS 缓解措施仅将 RET 重定位到安全 thunk，除非用户显式请求 RSB 填充（RSB-stuffing）缓解。
+Retpoline 搴忓垪鍚屾牱鍙互缂撹В ITS 涓嶅畨鍏ㄧ殑闂存帴鍒嗘敮銆傚洜姝わ紝鍦ㄥ惎鐢?retpoline 鏃讹紝ITS 缂撹В鎺柦浠呭皢 RET 閲嶅畾浣嶅埌瀹夊叏 thunk锛岄櫎闈炵敤鎴锋樉寮忚姹?RSB 濉厖锛圧SB-stuffing锛夌紦瑙ｃ€?
 
-#### RSB 填充
+#### RSB 濉厖
 
-通过调用深度追踪（Call Depth Tracking）进行的 RSB 填充，是针对 Retbleed 的 RSB 下溢攻击的一种缓解措施，它同时也能缓解受 ITS 影响的 RET。
+閫氳繃璋冪敤娣卞害杩借釜锛圕all Depth Tracking锛夎繘琛岀殑 RSB 濉厖锛屾槸閽堝 Retbleed 鐨?RSB 涓嬫孩鏀诲嚮鐨勪竴绉嶇紦瑙ｆ帾鏂斤紝瀹冨悓鏃朵篃鑳界紦瑙ｅ彈 ITS 褰卞搷鐨?RET銆?
 
-##### 客户机中的缓解
+##### 瀹㈡埛鏈轰腑鐨勭紦瑙?
 
-所有客户机默认都会部署 ITS 缓解措施，无论客户机是否枚举 eIBRS、也无论其 Family/Model 如何。这是因为 eIBRS 特性对客户机而言可能被隐藏。唯一的例外是当客户机枚举出 BHI_DIS_S 时，表明该客户机运行在不受影响的宿主机上。
+鎵€鏈夊鎴锋満榛樿閮戒細閮ㄧ讲 ITS 缂撹В鎺柦锛屾棤璁哄鎴锋満鏄惁鏋氫妇 eIBRS銆佷篃鏃犺鍏?Family/Model 濡備綍銆傝繖鏄洜涓?eIBRS 鐗规€у瀹㈡埛鏈鸿€岃█鍙兘琚殣钘忋€傚敮涓€鐨勪緥澶栨槸褰撳鎴锋満鏋氫妇鍑?BHI_DIS_S 鏃讹紝琛ㄦ槑璇ュ鎴锋満杩愯鍦ㄤ笉鍙楀奖鍝嶇殑瀹夸富鏈轰笂銆?
 
-为防止客户机在不受影响的平台上不必要地部署缓解措施，Intel 在 MSR `IA32_ARCH_CAPABILITIES` 中定义了 ITS_NO 位（第 62 位）。当客户机看到该位置位时，不应枚举 ITS 漏洞。请注意，任何硬件都不会设置该位，它**仅供 VMM 根据宿主机的受影响状态为客户机合成**。
+涓洪槻姝㈠鎴锋満鍦ㄤ笉鍙楀奖鍝嶇殑骞冲彴涓婁笉蹇呰鍦伴儴缃茬紦瑙ｆ帾鏂斤紝Intel 鍦?MSR `IA32_ARCH_CAPABILITIES` 涓畾涔変簡 ITS_NO 浣嶏紙绗?62 浣嶏級銆傚綋瀹㈡埛鏈虹湅鍒拌浣嶇疆浣嶆椂锛屼笉搴旀灇涓?ITS 婕忔礊銆傝娉ㄦ剰锛屼换浣曠‖浠堕兘涓嶄細璁剧疆璇ヤ綅锛屽畠**浠呬緵 VMM 鏍规嵁瀹夸富鏈虹殑鍙楀奖鍝嶇姸鎬佷负瀹㈡埛鏈哄悎鎴?*銆?
 
-##### 缓解选项
+##### 缂撹В閫夐」
 
-ITS 缓解措施可通过内核参数 "indirect_target_selection" 进行控制。可用选项如下：
+ITS 缂撹В鎺柦鍙€氳繃鍐呮牳鍙傛暟 "indirect_target_selection" 杩涜鎺у埗銆傚彲鐢ㄩ€夐」濡備笅锛?
 
 ======== ===================================================================
-on       （默认）部署“对齐分支/返回 thunk”缓解措施。
-        若 spectre_v2 缓解启用了 retpoline，则对齐 thunk 仅部署到受影响的
-        RET 指令上；retpoline 负责缓解间接分支。
+on       锛堥粯璁わ級閮ㄧ讲鈥滃榻愬垎鏀?杩斿洖 thunk鈥濈紦瑙ｆ帾鏂姐€?
+        鑻?spectre_v2 缂撹В鍚敤浜?retpoline锛屽垯瀵归綈 thunk 浠呴儴缃插埌鍙楀奖鍝嶇殑
+        RET 鎸囦护涓婏紱retpoline 璐熻矗缂撹В闂存帴鍒嗘敮銆?
 
-off      禁用 ITS 缓解措施。
+off      绂佺敤 ITS 缂撹В鎺柦銆?
 
-vmexit   若 CPU 受 ITS 的客户机/宿主机隔离部分影响，则等同于“=on”；
-        否则不部署缓解措施。当宿主机用户态不在威胁模型中、仅考虑从客户机
-        到宿主机的攻击时，该选项很有用。
+vmexit   鑻?CPU 鍙?ITS 鐨勫鎴锋満/瀹夸富鏈洪殧绂婚儴鍒嗗奖鍝嶏紝鍒欑瓑鍚屼簬鈥?on鈥濓紱
+        鍚﹀垯涓嶉儴缃茬紦瑙ｆ帾鏂姐€傚綋瀹夸富鏈虹敤鎴锋€佷笉鍦ㄥ▉鑳佹ā鍨嬩腑銆佷粎鑰冭檻浠庡鎴锋満
+        鍒板涓绘満鐨勬敾鍑绘椂锛岃閫夐」寰堟湁鐢ㄣ€?
 
-stuff    在同时部署 retpoline 时，部署 RSB 填充缓解；否则部署默认缓解。
-        当 retpoline 缓解启用时，通过调用深度追踪进行的 RSB 填充同样能
-        缓解 ITS。
+stuff    鍦ㄥ悓鏃堕儴缃?retpoline 鏃讹紝閮ㄧ讲 RSB 濉厖缂撹В锛涘惁鍒欓儴缃查粯璁ょ紦瑙ｃ€?
+        褰?retpoline 缂撹В鍚敤鏃讹紝閫氳繃璋冪敤娣卞害杩借釜杩涜鐨?RSB 濉厖鍚屾牱鑳?
+        缂撹В ITS銆?
 
-force    强制判定存在 ITS 漏洞并部署默认缓解措施。
+force    寮哄埗鍒ゅ畾瀛樺湪 ITS 婕忔礊骞堕儴缃查粯璁ょ紦瑙ｆ帾鏂姐€?
 ======== ===================================================================
 
-### Sysfs 报告
+### Sysfs 鎶ュ憡
 
-显示 ITS 缓解状态的 sysfs 文件为：
+鏄剧ず ITS 缂撹В鐘舵€佺殑 sysfs 鏂囦欢涓猴細
 
 /sys/devices/system/cpu/vulnerabilities/indirect_target_selection
 
-请注意，微码缓解状态不会在该文件中报告。
+璇锋敞鎰忥紝寰爜缂撹В鐘舵€佷笉浼氬湪璇ユ枃浠朵腑鎶ュ憡銆?
 
-该文件可能的取值为：
+璇ユ枃浠跺彲鑳界殑鍙栧€间负锛?
 
-- `Not affected` —— 处理器不受此漏洞影响。
-- `Vulnerable` —— 系统易受攻击，且未应用任何缓解措施。
-- `Vulnerable, KVM: Not affected` —— 系统易受模式内 BTI 攻击，但不受 eIBRS 客户机/宿主机隔离影响。
-- `Mitigation: Aligned branch/return thunks` —— 已启用缓解措施，受影响的间接分支与 RET 被重定位到安全 thunk。
-- `Mitigation: Retpolines, Stuffing RSB` —— 已通过 retpoline 与 RSB 填充启用缓解措施。
+- `Not affected` 鈥斺€?澶勭悊鍣ㄤ笉鍙楁婕忔礊褰卞搷銆?
+- `Vulnerable` 鈥斺€?绯荤粺鏄撳彈鏀诲嚮锛屼笖鏈簲鐢ㄤ换浣曠紦瑙ｆ帾鏂姐€?
+- `Vulnerable, KVM: Not affected` 鈥斺€?绯荤粺鏄撳彈妯″紡鍐?BTI 鏀诲嚮锛屼絾涓嶅彈 eIBRS 瀹㈡埛鏈?瀹夸富鏈洪殧绂诲奖鍝嶃€?
+- `Mitigation: Aligned branch/return thunks` 鈥斺€?宸插惎鐢ㄧ紦瑙ｆ帾鏂斤紝鍙楀奖鍝嶇殑闂存帴鍒嗘敮涓?RET 琚噸瀹氫綅鍒板畨鍏?thunk銆?
+- `Mitigation: Retpolines, Stuffing RSB` 鈥斺€?宸查€氳繃 retpoline 涓?RSB 濉厖鍚敤缂撹В鎺柦銆?
 
-### 参考文献
+### 鍙傝€冩枃鐚?
 
-.. [#f1] 微码仓库 - https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files
+.. [#f1] 寰爜浠撳簱 - https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files
 
-.. [#f2] 受影响处理器列表 - https://www.intel.com/content/www/us/en/developer/topic-technology/software-security-guidance/processors-affected-consolidated-product-cpu-model.html
+.. [#f2] 鍙楀奖鍝嶅鐞嗗櫒鍒楄〃 - https://www.intel.com/content/www/us/en/developer/topic-technology/software-security-guidance/processors-affected-consolidated-product-cpu-model.html
 
-.. [#f3] 受影响处理器列表（机器可读） - https://github.com/intel/Intel-affected-processor-list
+.. [#f3] 鍙楀奖鍝嶅鐞嗗櫒鍒楄〃锛堟満鍣ㄥ彲璇伙級 - https://github.com/intel/Intel-affected-processor-list

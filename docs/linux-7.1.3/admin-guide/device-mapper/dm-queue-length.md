@@ -1,39 +1,29 @@
-## dm-queue-length
+﻿## dm-queue-length
 
 
-dm-queue-length 是 device-mapper 目标的路径选择器模块，它选择具有最少在途
-I/O 的路径。路径选择器名称为 'queue-length'。
-
-每条路径的表参数：[<repeat_count>]
+dm-queue-length 鏄?device-mapper 鐩爣鐨勮矾寰勯€夋嫨鍣ㄦā鍧楋紝瀹冮€夋嫨鍏锋湁鏈€灏戝湪閫?I/O 鐨勮矾寰勩€傝矾寰勯€夋嫨鍣ㄥ悕绉颁负 'queue-length'銆?
+姣忔潯璺緞鐨勮〃鍙傛暟锛歔<repeat_count>]
 
 ```
 
-	<repeat_count>：在使用所选路径分派 I/O 的数量，之后切换到下一条路径。
-			若未给定，使用内部默认值。要查看默认值，请参阅已激活的表。
-
+	<repeat_count>锛氬湪浣跨敤鎵€閫夎矾寰勫垎娲?I/O 鐨勬暟閲忥紝涔嬪悗鍒囨崲鍒颁笅涓€鏉¤矾寰勩€?			鑻ユ湭缁欏畾锛屼娇鐢ㄥ唴閮ㄩ粯璁ゅ€笺€傝鏌ョ湅榛樿鍊硷紝璇峰弬闃呭凡婵€娲荤殑琛ㄣ€?
 ```
-每条路径的状态：<status> <fail-count> <in-flight>
+姣忔潯璺緞鐨勭姸鎬侊細<status> <fail-count> <in-flight>
 
 ```
 
-	<status>：路径处于活动状态为 'A'，路径失败为 'F'。
-	<fail-count>：路径失败的次数。
-	<in-flight>：路径上在途 I/O 的数量。
-
+	<status>锛氳矾寰勫浜庢椿鍔ㄧ姸鎬佷负 'A'锛岃矾寰勫け璐ヤ负 'F'銆?	<fail-count>锛氳矾寰勫け璐ョ殑娆℃暟銆?	<in-flight>锛氳矾寰勪笂鍦ㄩ€?I/O 鐨勬暟閲忋€?
 
 ```
-## 算法
+## 绠楁硶
 
 
-dm-queue-length 在分派/完成 I/O 时分别递增/递减 'in-flight'。
-dm-queue-length 选择具有最小 'in-flight' 的路径。
+dm-queue-length 鍦ㄥ垎娲?瀹屾垚 I/O 鏃跺垎鍒€掑/閫掑噺 'in-flight'銆?dm-queue-length 閫夋嫨鍏锋湁鏈€灏?'in-flight' 鐨勮矾寰勩€?
+
+## 绀轰緥
 
 
-## 示例
-
-
-在 2 条路径（sda 与 sdb）且 repeat_count == 128 的情况下使用。
-
+鍦?2 鏉¤矾寰勶紙sda 涓?sdb锛変笖 repeat_count == 128 鐨勬儏鍐典笅浣跨敤銆?
 ```
 
   # echo "0 10 multipath 0 0 1 1 queue-length 0 2 1 8:0 128 8:16 128" \

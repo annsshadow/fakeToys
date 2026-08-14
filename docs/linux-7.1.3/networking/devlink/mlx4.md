@@ -1,14 +1,13 @@
-
-## mlx4 devlink 支持
-
-
-本文档描述 `mlx4` 设备驱动实现的 devlink 特性。
-
-## 参数
+﻿
+## mlx4 devlink 鏀寔
 
 
-   - - 名称
-     - 模式
+鏈枃妗ｆ弿杩?`mlx4` 璁惧椹卞姩瀹炵幇鐨?devlink 鐗规€с€?
+## 鍙傛暟
+
+
+   - - 鍚嶇О
+     - 妯″紡
    - - `internal_err_reset`
      - driverinit, runtime
    - - `max_macs`
@@ -16,31 +15,25 @@
    - - `region_snapshot_enable`
      - driverinit, runtime
 
-`mlx4` 驱动还实现以下驱动特定的参数。
-
+`mlx4` 椹卞姩杩樺疄鐜颁互涓嬮┍鍔ㄧ壒瀹氱殑鍙傛暟銆?
    :widths: 5 5 5 85
 
-   - - 名称
-     - 类型
-     - 模式
-     - 描述
+   - - 鍚嶇О
+     - 绫诲瀷
+     - 妯″紡
+     - 鎻忚堪
    - - `enable_64b_cqe_eqe`
      - Boolean
      - driverinit
-     - 如果 FW 支持，启用 64 字节 CQEs/EQEs。
-   - - `enable_4k_uar`
+     - 濡傛灉 FW 鏀寔锛屽惎鐢?64 瀛楄妭 CQEs/EQEs銆?   - - `enable_4k_uar`
      - Boolean
      - driverinit
-     - 启用使用 4k UAR。
-
-`mlx4` 驱动支持通过 `DEVLINK_CMD_RELOAD` 重新加载。
-
-## 区域
+     - 鍚敤浣跨敤 4k UAR銆?
+`mlx4` 椹卞姩鏀寔閫氳繃 `DEVLINK_CMD_RELOAD` 閲嶆柊鍔犺浇銆?
+## 鍖哄煙
 
 
-`mlx4` 驱动支持在出现严重固件问题时转储固件 PCI crspace 与健康缓冲区。
-
-如果固件命令超时、固件卡住，或 catastrophic 缓冲区出现非零值，驱动将拍摄快照。
-
-`cr-space` 区域将包含固件 PCI crspace 内容。`fw-health` 区域将包含设备固件的
-健康缓冲区。这两个区域的快照都在相同的事件触发时拍摄。
+`mlx4` 椹卞姩鏀寔鍦ㄥ嚭鐜颁弗閲嶅浐浠堕棶棰樻椂杞偍鍥轰欢 PCI crspace 涓庡仴搴风紦鍐插尯銆?
+濡傛灉鍥轰欢鍛戒护瓒呮椂銆佸浐浠跺崱浣忥紝鎴?catastrophic 缂撳啿鍖哄嚭鐜伴潪闆跺€硷紝椹卞姩灏嗘媿鎽勫揩鐓с€?
+`cr-space` 鍖哄煙灏嗗寘鍚浐浠?PCI crspace 鍐呭銆俙fw-health` 鍖哄煙灏嗗寘鍚澶囧浐浠剁殑
+鍋ュ悍缂撳啿鍖恒€傝繖涓や釜鍖哄煙鐨勫揩鐓ч兘鍦ㄧ浉鍚岀殑浜嬩欢瑙﹀彂鏃舵媿鎽勩€?

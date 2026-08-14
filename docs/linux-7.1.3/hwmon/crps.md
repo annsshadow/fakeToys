@@ -1,5 +1,5 @@
-
-## 内核驱动 crps
+﻿
+## 鍐呮牳椹卞姩 crps
 
 
 Supported chips:
@@ -16,77 +16,40 @@ Authors:
     Ninad Palsule <ninad@linux.ibm.com>
 
 
-### 描述
+### 鎻忚堪
 
 
-本驱动实现对带有 PMBus 支持的 Intel 通用冗余电源（Common Redundant Power supply）的支持。
+鏈┍鍔ㄥ疄鐜板甯︽湁 PMBus 鏀寔鐨?Intel 閫氱敤鍐椾綑鐢垫簮锛圕ommon Redundant Power supply锛夌殑鏀寔銆?
+璇ラ┍鍔ㄦ槸鏍稿績 PMBus 椹卞姩鐨勫鎴风椹卞姩銆傛湁鍏?PMBus 瀹㈡埛绔┍鍔ㄧ殑璇︾粏淇℃伅锛岃鍙傞槄 Documentation/hwmon/pmbus.rst銆?
 
-该驱动是核心 PMBus 驱动的客户端驱动。有关 PMBus 客户端驱动的详细信息，请参阅 Documentation/hwmon/pmbus.rst。
-
-
-### 使用注意事项
+### 浣跨敤娉ㄦ剰浜嬮」
 
 
-本驱动不会自动检测设备。你需要显式地实例化设备。详情请参阅 Documentation/i2c/instantiating-devices.rst。
+鏈┍鍔ㄤ笉浼氳嚜鍔ㄦ娴嬭澶囥€備綘闇€瑕佹樉寮忓湴瀹炰緥鍖栬澶囥€傝鎯呰鍙傞槄 Documentation/i2c/instantiating-devices.rst銆?
 
-
-### Sysfs 条目
+### Sysfs 鏉＄洰
 
 
 ======================= ======================================================
 curr1_label		"iin"
-curr1_input		测得的输入电流
-curr1_max		最大输入电流
-curr1_max_alarm		输入最大电流高报警
-curr1_crit		临界高输入电流
-curr1_crit_alarm	输入临界电流高报警
-curr1_rated_max		最大额定输入电流
-
+curr1_input		娴嬪緱鐨勮緭鍏ョ數娴?curr1_max		鏈€澶ц緭鍏ョ數娴?curr1_max_alarm		杈撳叆鏈€澶х數娴侀珮鎶ヨ
+curr1_crit		涓寸晫楂樿緭鍏ョ數娴?curr1_crit_alarm	杈撳叆涓寸晫鐢垫祦楂樻姤璀?curr1_rated_max		鏈€澶ч瀹氳緭鍏ョ數娴?
 curr2_label		"iout1"
-curr2_input		测得的输出电流
-curr2_max		最大输出电流
-curr2_max_alarm		输出最大电流高报警
-curr2_crit		临界高输出电流
-curr2_crit_alarm	输出临界电流高报警
-curr2_rated_max		最大额定输出电流
-
+curr2_input		娴嬪緱鐨勮緭鍑虹數娴?curr2_max		鏈€澶ц緭鍑虹數娴?curr2_max_alarm		杈撳嚭鏈€澶х數娴侀珮鎶ヨ
+curr2_crit		涓寸晫楂樿緭鍑虹數娴?curr2_crit_alarm	杈撳嚭涓寸晫鐢垫祦楂樻姤璀?curr2_rated_max		鏈€澶ч瀹氳緭鍑虹數娴?
 in1_label		"vin"
-in1_input		测得的输入电压
-in1_crit		临界输入过压
-in1_crit_alarm		临界输入过压报警
-in1_max			最大输入过压
-in1_max_alarm		最大输入过压报警
-in1_rated_min		最小额定输入电压
-in1_rated_max		最大额定输入电压
-
+in1_input		娴嬪緱鐨勮緭鍏ョ數鍘?in1_crit		涓寸晫杈撳叆杩囧帇
+in1_crit_alarm		涓寸晫杈撳叆杩囧帇鎶ヨ
+in1_max			鏈€澶ц緭鍏ヨ繃鍘?in1_max_alarm		鏈€澶ц緭鍏ヨ繃鍘嬫姤璀?in1_rated_min		鏈€灏忛瀹氳緭鍏ョ數鍘?in1_rated_max		鏈€澶ч瀹氳緭鍏ョ數鍘?
 in2_label		"vout1"
-in2_input		测得的输入电压
-in2_crit		临界输入过压
-in2_crit_alarm		临界输入过压报警
-in2_lcrit		临界输入欠压故障
-in2_lcrit_alarm		临界输入欠压故障报警
-in2_max			最大输入过压
-in2_max_alarm		最大输入过压报警
-in2_min			最小输入欠压警告
-in2_min_alarm		最小输入欠压警告报警
-in2_rated_min		最小额定输入电压
-in2_rated_max		最大额定输入电压
-
+in2_input		娴嬪緱鐨勮緭鍏ョ數鍘?in2_crit		涓寸晫杈撳叆杩囧帇
+in2_crit_alarm		涓寸晫杈撳叆杩囧帇鎶ヨ
+in2_lcrit		涓寸晫杈撳叆娆犲帇鏁呴殰
+in2_lcrit_alarm		涓寸晫杈撳叆娆犲帇鏁呴殰鎶ヨ
+in2_max			鏈€澶ц緭鍏ヨ繃鍘?in2_max_alarm		鏈€澶ц緭鍏ヨ繃鍘嬫姤璀?in2_min			鏈€灏忚緭鍏ユ瑺鍘嬭鍛?in2_min_alarm		鏈€灏忚緭鍏ユ瑺鍘嬭鍛婃姤璀?in2_rated_min		鏈€灏忛瀹氳緭鍏ョ數鍘?in2_rated_max		鏈€澶ч瀹氳緭鍏ョ數鍘?
 power1_label		"pin"
-power1_input		测得的输入功率
-power1_alarm		输入功率高报警
-power1_max  		最大输入功率
-power1_rated_max		最大额定输入功率
-
-temp[1-2]_input		测得的温度
-temp[1-2]_crit 		临界温度
-temp[1-2]_crit_alarm	临界温度报警
-temp[1-2]_max		最高温度
-temp[1-2]_max_alarm	最高温度报警
-temp[1-2]_rated_max	最大额定温度
-
-fan1_alarm		风扇 1 警告。
-fan1_fault		风扇 1 故障。
-fan1_input		风扇 1 转速（RPM）。
-fan1_target		风扇 1 目标。
-======================= ======================================================
+power1_input		娴嬪緱鐨勮緭鍏ュ姛鐜?power1_alarm		杈撳叆鍔熺巼楂樻姤璀?power1_max  		鏈€澶ц緭鍏ュ姛鐜?power1_rated_max		鏈€澶ч瀹氳緭鍏ュ姛鐜?
+temp[1-2]_input		娴嬪緱鐨勬俯搴?temp[1-2]_crit 		涓寸晫娓╁害
+temp[1-2]_crit_alarm	涓寸晫娓╁害鎶ヨ
+temp[1-2]_max		鏈€楂樻俯搴?temp[1-2]_max_alarm	鏈€楂樻俯搴︽姤璀?temp[1-2]_rated_max	鏈€澶ч瀹氭俯搴?
+fan1_alarm		椋庢墖 1 璀﹀憡銆?fan1_fault		椋庢墖 1 鏁呴殰銆?fan1_input		椋庢墖 1 杞€燂紙RPM锛夈€?fan1_target		椋庢墖 1 鐩爣銆?======================= ======================================================

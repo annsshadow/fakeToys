@@ -1,21 +1,17 @@
-
-## PCI 非透明桥（NTB）端点功能（EPF）用户指南
-
+﻿
+## PCI 闈為€忔槑妗ワ紙NTB锛夌鐐瑰姛鑳斤紙EPF锛夌敤鎴锋寚鍗?
 
 :Author: Kishon Vijay Abraham I <kishon@ti.com>
 
-本文档是一份指南，帮助用户使用 pci-epf-ntb 功能驱动与 ntb_hw_epf 主机驱动来实现 NTB 功能。下面给出了
-主机侧与 EP 侧需要遵循的步骤列表。关于使用可配置端点实现 NTB 的硬件配置与内部机制，请参见
-`Documentation/PCI/endpoint/pci-ntb-function.rst`。
-
-## 端点设备
-
-
-### 端点控制器设备
+鏈枃妗ｆ槸涓€浠芥寚鍗楋紝甯姪鐢ㄦ埛浣跨敤 pci-epf-ntb 鍔熻兘椹卞姩涓?ntb_hw_epf 涓绘満椹卞姩鏉ュ疄鐜?NTB 鍔熻兘銆備笅闈㈢粰鍑轰簡
+涓绘満渚т笌 EP 渚ч渶瑕侀伒寰殑姝ラ鍒楄〃銆傚叧浜庝娇鐢ㄥ彲閰嶇疆绔偣瀹炵幇 NTB 鐨勭‖浠堕厤缃笌鍐呴儴鏈哄埗锛岃鍙傝
+`Documentation/PCI/endpoint/pci-ntb-function.rst`銆?
+## 绔偣璁惧
 
 
-要实现 NTB 功能，至少需要两个端点控制器设备。
+### 绔偣鎺у埗鍣ㄨ澶?
 
+瑕佸疄鐜?NTB 鍔熻兘锛岃嚦灏戦渶瑕佷袱涓鐐规帶鍒跺櫒璁惧銆?
 ```
 
 	# ls /sys/class/pci_epc/
@@ -29,7 +25,7 @@
 
 
 ```
-### 端点功能驱动
+### 绔偣鍔熻兘椹卞姩
 
 
 ```
@@ -45,10 +41,10 @@
 
 
 ```
-### 创建 pci-epf-ntb 设备
+### 鍒涘缓 pci-epf-ntb 璁惧
 
 
-可以使用 configfs 创建 PCI 端点功能设备。要创建
+鍙互浣跨敤 configfs 鍒涘缓 PCI 绔偣鍔熻兘璁惧銆傝鍒涘缓
 ```
 
 	# mount -t configfs none /sys/kernel/config
@@ -56,10 +52,8 @@
 	# mkdir functions/pci_epf_ntb/func1
 
 ```
-上面的 "mkdir func1" 创建了将被 pci_epf_ntb 驱动探测的 pci-epf-ntb 功能设备。
-
-PCI 端点框架会用以下内容填充该目录
-```
+涓婇潰鐨?"mkdir func1" 鍒涘缓浜嗗皢琚?pci_epf_ntb 椹卞姩鎺㈡祴鐨?pci-epf-ntb 鍔熻兘璁惧銆?
+PCI 绔偣妗嗘灦浼氱敤浠ヤ笅鍐呭濉厖璇ョ洰褰?```
 
 	# ls functions/pci_epf_ntb/func1
 	baseclass_code    deviceid          msi_interrupts    pci-epf-ntb.0
@@ -68,8 +62,7 @@ PCI 端点框架会用以下内容填充该目录
 	revid             subclass_code     subsys_vendor_id
 
 ```
-PCI 端点功能驱动会在设备绑定到驱动时，用默认值填充这些条目。pci-epf-ntb 驱动会填充
-```
+PCI 绔偣鍔熻兘椹卞姩浼氬湪璁惧缁戝畾鍒伴┍鍔ㄦ椂锛岀敤榛樿鍊煎～鍏呰繖浜涙潯鐩€俻ci-epf-ntb 椹卞姩浼氬～鍏?```
 
 	# cat functions/pci_epf_ntb/func1/vendorid
 	0xffff
@@ -78,19 +71,18 @@ PCI 端点功能驱动会在设备绑定到驱动时，用默认值填充这些�
 
 
 ```
-### 配置 pci-epf-ntb 设备
+### 閰嶇疆 pci-epf-ntb 璁惧
 
 
-用户可以使用其 configfs 条目配置 pci-epf-ntb 设备。为了更改 vendorid 与 deviceid，请执行以下
+鐢ㄦ埛鍙互浣跨敤鍏?configfs 鏉＄洰閰嶇疆 pci-epf-ntb 璁惧銆備负浜嗘洿鏀?vendorid 涓?deviceid锛岃鎵ц浠ヤ笅
 ```
 
 	# echo 0x104c > functions/pci_epf_ntb/func1/vendorid
 	# echo 0xb00d > functions/pci_epf_ntb/func1/deviceid
 
 ```
-PCI 端点框架还会自动在功能属性目录中创建一个子目录。该子目录与功能设备的名称相同，并用以下
-NTB 特定的内容填充
-```
+PCI 绔偣妗嗘灦杩樹細鑷姩鍦ㄥ姛鑳藉睘鎬х洰褰曚腑鍒涘缓涓€涓瓙鐩綍銆傝瀛愮洰褰曚笌鍔熻兘璁惧鐨勫悕绉扮浉鍚岋紝骞剁敤浠ヤ笅
+NTB 鐗瑰畾鐨勫唴瀹瑰～鍏?```
 
 	# ls functions/pci_epf_ntb/func1/pci_epf_ntb.0/
 	db_count    mw1         mw2         mw3         mw4         num_mws
@@ -106,24 +98,21 @@ NTB 特定的内容填充
 	# echo 0x100000 > functions/pci_epf_ntb/func1/pci_epf_ntb.0/mw2
 
 ```
-### 将 pci-epf-ntb 设备绑定到 EP 控制器
+### 灏?pci-epf-ntb 璁惧缁戝畾鍒?EP 鎺у埗鍣?
 
-
-NTB 功能设备应连接到连接到两台主机的两个 PCI 端点控制器。使用 NTB 功能设备内部的 'primary' 和
-'secondary' 条目，将一个 PCI 端点控制器连接到 primary 接口，将另一个 PCI 端点控制器连接到 secondary
+NTB 鍔熻兘璁惧搴旇繛鎺ュ埌杩炴帴鍒颁袱鍙颁富鏈虹殑涓や釜 PCI 绔偣鎺у埗鍣ㄣ€備娇鐢?NTB 鍔熻兘璁惧鍐呴儴鐨?'primary' 鍜?'secondary' 鏉＄洰锛屽皢涓€涓?PCI 绔偣鎺у埗鍣ㄨ繛鎺ュ埌 primary 鎺ュ彛锛屽皢鍙︿竴涓?PCI 绔偣鎺у埗鍣ㄨ繛鎺ュ埌 secondary
 ```
 
 	# ln -s controllers/2900000.pcie-ep/ functions/pci-epf-ntb/func1/primary
 	# ln -s controllers/2910000.pcie-ep/ functions/pci-epf-ntb/func1/secondary
 
 ```
-完成上述步骤后，两个 PCI 端点控制器都准备好与主机建立链路。
+瀹屾垚涓婅堪姝ラ鍚庯紝涓や釜 PCI 绔偣鎺у埗鍣ㄩ兘鍑嗗濂戒笌涓绘満寤虹珛閾捐矾銆?
+
+### 鍚姩閾捐矾
 
 
-### 启动链路
-
-
-为了让端点设备与主机建立链路，_start_ 字段应被填充为 '1'。对于 NTB，两个 PCI 端点控制器都
+涓轰簡璁╃鐐硅澶囦笌涓绘満寤虹珛閾捐矾锛宊start_ 瀛楁搴旇濉厖涓?'1'銆傚浜?NTB锛屼袱涓?PCI 绔偣鎺у埗鍣ㄩ兘
 ```
 
 	# echo 1 > controllers/2900000.pcie-ep/start
@@ -131,14 +120,13 @@ NTB 功能设备应连接到连接到两台主机的两个 PCI 端点控制器�
 
 
 ```
-## RootComplex 设备
+## RootComplex 璁惧
 
 
-### lspci 输出
+### lspci 杈撳嚭
 
 
-注意，此处列出的设备对应于填充在以下位置的数值
-```
+娉ㄦ剰锛屾澶勫垪鍑虹殑璁惧瀵瑰簲浜庡～鍏呭湪浠ヤ笅浣嶇疆鐨勬暟鍊?```
 
 	# lspci
 	0000:00:00.0 PCI bridge: Texas Instruments Device b00d
@@ -146,11 +134,8 @@ NTB 功能设备应连接到连接到两台主机的两个 PCI 端点控制器�
 
 
 ```
-### 使用 ntb_hw_epf 设备
+### 浣跨敤 ntb_hw_epf 璁惧
 
 
-主机侧软件遵循 Linux 中标准的 NTB 软件架构。所有现有的客户端侧 NTB 实用工具，如 NTB Transport Client、
-NTB Netdev、NTB Ping Pong Test Client 和 NTB Tool Test Client，都可以与 NTB 功能设备一起使用。
-
-关于 NTB 的更多信息，请参见
-[Non-Transparent Bridge <../../driver-api/ntb>](Non-Transparent Bridge <../../driver-api/ntb>)
+涓绘満渚ц蒋浠堕伒寰?Linux 涓爣鍑嗙殑 NTB 杞欢鏋舵瀯銆傛墍鏈夌幇鏈夌殑瀹㈡埛绔晶 NTB 瀹炵敤宸ュ叿锛屽 NTB Transport Client銆?NTB Netdev銆丯TB Ping Pong Test Client 鍜?NTB Tool Test Client锛岄兘鍙互涓?NTB 鍔熻兘璁惧涓€璧蜂娇鐢ㄣ€?
+鍏充簬 NTB 鐨勬洿澶氫俊鎭紝璇峰弬瑙?[Non-Transparent Bridge <../../driver-api/ntb>](Non-Transparent Bridge <../../driver-api/ntb>)

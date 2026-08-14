@@ -1,40 +1,40 @@
-######## FE_DISHNETWORK_SEND_LEGACY_CMD
+﻿######## FE_DISHNETWORK_SEND_LEGACY_CMD
 
 
-## 名称
+## 鍚嶇О
 
 
 FE_DISHNETWORK_SEND_LEGACY_CMD
 
-## 摘要
+## 鎽樿
 
 
 
 `int ioctl(int fd, FE_DISHNETWORK_SEND_LEGACY_CMD, unsigned long cmd)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `cmd`
-    通过 DISEqC 向天线（dish）发送指定的原始命令。
+    閫氳繃 DISEqC 鍚戝ぉ绾匡紙dish锛夊彂閫佹寚瀹氱殑鍘熷鍛戒护銆?
 
-## 说明
-
-
-   这是一个非常冷门（obscure）的遗留命令，仅用于 stv0299 驱动。不应在新驱动中使用。
-
-它为前端（frontend）提供了一种非标准方法，用于为 Dish Network 遗留切换选择 Diseqc 电压。
-
-由于对该 ioctl 的支持是在 2004 年加入的，这意味着此类天线在 2004 年时就已经是遗留设备了。
-
-## 返回值
+## 璇存槑
 
 
-成功时返回 0。
+   杩欐槸涓€涓潪甯稿喎闂紙obscure锛夌殑閬楃暀鍛戒护锛屼粎鐢ㄤ簬 stv0299 椹卞姩銆備笉搴斿湪鏂伴┍鍔ㄤ腑浣跨敤銆?
 
-出错时返回 -1，并相应地设置 `errno` 变量。
+瀹冧负鍓嶇锛坒rontend锛夋彁渚涗簡涓€绉嶉潪鏍囧噯鏂规硶锛岀敤浜庝负 Dish Network 閬楃暀鍒囨崲閫夋嫨 Diseqc 鐢靛帇銆?
 
-通用错误码在 Generic Error Codes <gen-errors> 章节中描述。
+鐢变簬瀵硅 ioctl 鐨勬敮鎸佹槸鍦?2004 骞村姞鍏ョ殑锛岃繖鎰忓懗鐫€姝ょ被澶╃嚎鍦?2004 骞存椂灏卞凡缁忔槸閬楃暀璁惧浜嗐€?
+
+## 杩斿洖鍊?
+
+
+鎴愬姛鏃惰繑鍥?0銆?
+
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+
+閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?

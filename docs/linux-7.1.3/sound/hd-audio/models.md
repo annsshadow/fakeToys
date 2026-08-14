@@ -1,280 +1,241 @@
-## HD-Audio 编解码器特定型号
+﻿## HD-Audio 缂栬В鐮佸櫒鐗瑰畾鍨嬪彿
 
 
 ## ALC880
 
 3stack
-    背板 3 个插孔与一个耳机输出
+    鑳屾澘 3 涓彃瀛斾笌涓€涓€虫満杈撳嚭
 3stack-digout
-    背板 3 个插孔、一个耳机输出与一个 SPDIF 输出
+    鑳屾澘 3 涓彃瀛斻€佷竴涓€虫満杈撳嚭涓庝竴涓?SPDIF 杈撳嚭
 5stack
-    背板 5 个插孔，前面板 2 个插孔
-5stack-digout
-    背板 5 个插孔，前面板 2 个插孔，一个 SPDIF 输出
+    鑳屾澘 5 涓彃瀛旓紝鍓嶉潰鏉?2 涓彃瀛?5stack-digout
+    鑳屾澘 5 涓彃瀛旓紝鍓嶉潰鏉?2 涓彃瀛旓紝涓€涓?SPDIF 杈撳嚭
 6stack
-    背板 6 个插孔，前面板 2 个插孔
-6stack-digout
-    6 个插孔，带一个 SPDIF 输出
+    鑳屾澘 6 涓彃瀛旓紝鍓嶉潰鏉?2 涓彃瀛?6stack-digout
+    6 涓彃瀛旓紝甯︿竴涓?SPDIF 杈撳嚭
 6stack-automute
-    6 个插孔，带耳机插孔检测
-
+    6 涓彃瀛旓紝甯﹁€虫満鎻掑瓟妫€娴?
 ## ALC260
 
 gpio1
-    启用 GPIO1
+    鍚敤 GPIO1
 coef
-    通过 COEF 表启用 EAPD
+    閫氳繃 COEF 琛ㄥ惎鐢?EAPD
 fujitsu
-    FSC S7020 的修正
-fujitsu-jwse
-    带插孔模式与耳机麦克风支持的 FSC S7020 修正
+    FSC S7020 鐨勪慨姝?fujitsu-jwse
+    甯︽彃瀛旀ā寮忎笌鑰虫満楹﹀厠椋庢敮鎸佺殑 FSC S7020 淇
 
 ## ALC262
 
 inv-dmic
-    内置麦克风反相的变通方案
-fsc-h270
-    Fujitsu-Siemens Celsius H270 的修复
-fsc-s7110
-    Fujitsu-Siemens Lifebook S7110 的修复
-hp-z200
-    HP Z200 的修复
-tyan
-    Tyan Thunder n6650W 的修复
-lenovo-3000
-    Lenovo 3000 的修复
-benq
-    Benq ED8 的修复
-benq-t31
-    Benq T31 的修复
-bayleybay
-    Intel BayleyBay 的修复
-
+    鍐呯疆楹﹀厠椋庡弽鐩哥殑鍙橀€氭柟妗?fsc-h270
+    Fujitsu-Siemens Celsius H270 鐨勪慨澶?fsc-s7110
+    Fujitsu-Siemens Lifebook S7110 鐨勪慨澶?hp-z200
+    HP Z200 鐨勪慨澶?tyan
+    Tyan Thunder n6650W 鐨勪慨澶?lenovo-3000
+    Lenovo 3000 鐨勪慨澶?benq
+    Benq ED8 鐨勪慨澶?benq-t31
+    Benq T31 鐨勪慨澶?bayleybay
+    Intel BayleyBay 鐨勪慨澶?
 ## ALC267/268
 
 inv-dmic
-    内置麦克风反相的变通方案
-hp-eapd
-    在 NID 0x15 上禁用耳机 EAPD
+    鍐呯疆楹﹀厠椋庡弽鐩哥殑鍙橀€氭柟妗?hp-eapd
+    鍦?NID 0x15 涓婄鐢ㄨ€虫満 EAPD
 spdif
-    在 NID 0x1e 上启用 SPDIF 输出
+    鍦?NID 0x1e 涓婂惎鐢?SPDIF 杈撳嚭
 
-## ALC22x/23x/25x/269/27x/28x/29x（以及厂商特定的 ALC3xxx 型号）
-
+## ALC22x/23x/25x/269/27x/28x/29x锛堜互鍙婂巶鍟嗙壒瀹氱殑 ALC3xxx 鍨嬪彿锛?
 laptop-amic
-    带模拟麦克风输入的笔记本
+    甯︽ā鎷熼害鍏嬮杈撳叆鐨勭瑪璁版湰
 laptop-dmic
-    带数字麦克风输入的笔记本
+    甯︽暟瀛楅害鍏嬮杈撳叆鐨勭瑪璁版湰
 alc269-dmic
-    启用 ALC269(VA) 数字麦克风变通方案
-alc271-dmic
-    启用 ALC271X 数字麦克风变通方案
-inv-dmic
-    内置麦克风反相的变通方案
-headset-mic
-    表示组合式头戴（耳机+麦克风）插孔
+    鍚敤 ALC269(VA) 鏁板瓧楹﹀厠椋庡彉閫氭柟妗?alc271-dmic
+    鍚敤 ALC271X 鏁板瓧楹﹀厠椋庡彉閫氭柟妗?inv-dmic
+    鍐呯疆楹﹀厠椋庡弽鐩哥殑鍙橀€氭柟妗?headset-mic
+    琛ㄧず缁勫悎寮忓ご鎴达紙鑰虫満+楹﹀厠椋庯級鎻掑瓟
 headset-mode
-    为 ALC269 及同类提供更全面的头戴支持
-headset-mode-no-hp-mic
-    不含耳机麦克风的头戴模式支持
+    涓?ALC269 鍙婂悓绫绘彁渚涙洿鍏ㄩ潰鐨勫ご鎴存敮鎸?headset-mode-no-hp-mic
+    涓嶅惈鑰虫満楹﹀厠椋庣殑澶存埓妯″紡鏀寔
 lenovo-dock
-    为部分联想机器启用扩展坞 I/O
+    涓洪儴鍒嗚仈鎯虫満鍣ㄥ惎鐢ㄦ墿灞曞潪 I/O
 hp-gpio-led
-    HP 笔记本上的 GPIO LED 支持
+    HP 绗旇鏈笂鐨?GPIO LED 鏀寔
 hp-dock-gpio-mic1-led
-    带麦克风 LED 支持的 HP 扩展坞
-dell-headset-multi
-    头戴插孔，也可用作麦克风输入
+    甯﹂害鍏嬮 LED 鏀寔鐨?HP 鎵╁睍鍧?dell-headset-multi
+    澶存埓鎻掑瓟锛屼篃鍙敤浣滈害鍏嬮杈撳叆
 dell-headset-dock
-    头戴插孔（不含麦克风输入），同时带扩展坞 I/O
+    澶存埓鎻掑瓟锛堜笉鍚害鍏嬮杈撳叆锛夛紝鍚屾椂甯︽墿灞曞潪 I/O
 dell-headset3
-    头戴插孔（不含麦克风输入），同时带扩展坞 I/O，变体 3
+    澶存埓鎻掑瓟锛堜笉鍚害鍏嬮杈撳叆锛夛紝鍚屾椂甯︽墿灞曞潪 I/O锛屽彉浣?3
 dell-headset4
-    头戴插孔（不含麦克风输入），同时带扩展坞 I/O，变体 4
+    澶存埓鎻掑瓟锛堜笉鍚害鍏嬮杈撳叆锛夛紝鍚屾椂甯︽墿灞曞潪 I/O锛屽彉浣?4
 alc283-dac-wcaps
-    带 ALC283 的 Chromebook 修复
+    甯?ALC283 鐨?Chromebook 淇
 alc283-sense-combo
-    ALC283 上的组合插孔检测
-tpt440-dock
-    用于联想 Thinkpad 扩展坞支持的引脚配置
+    ALC283 涓婄殑缁勫悎鎻掑瓟妫€娴?tpt440-dock
+    鐢ㄤ簬鑱旀兂 Thinkpad 鎵╁睍鍧炴敮鎸佺殑寮曡剼閰嶇疆
 tpt440
-    联想 Thinkpad T440s 配置
+    鑱旀兂 Thinkpad T440s 閰嶇疆
 tpt460
-    联想 Thinkpad T460/560 配置
+    鑱旀兂 Thinkpad T460/560 閰嶇疆
 tpt470-dock
-    联想 Thinkpad T470 扩展坞配置
-dual-codecs
-    带双编解码器的联想笔记本
+    鑱旀兂 Thinkpad T470 鎵╁睍鍧為厤缃?dual-codecs
+    甯﹀弻缂栬В鐮佸櫒鐨勮仈鎯崇瑪璁版湰
 alc700-ref
-    带 ALC700 编解码器的 Intel 参考板
+    甯?ALC700 缂栬В鐮佸櫒鐨?Intel 鍙傝€冩澘
 vaio
-    索尼 VAIO 笔记本引脚修复
-dell-m101z
-    Dell M101z 的 COEF 设置
+    绱㈠凹 VAIO 绗旇鏈紩鑴氫慨澶?dell-m101z
+    Dell M101z 鐨?COEF 璁剧疆
 asus-g73jw
-    ASUS G73JW 低音炮引脚修复
-lenovo-eapd
-    联想笔记本的反相 EAPD 设置
+    ASUS G73JW 浣庨煶鐐紩鑴氫慨澶?lenovo-eapd
+    鑱旀兂绗旇鏈殑鍙嶇浉 EAPD 璁剧疆
 sony-hweq
-    索尼笔记本的硬件 EQ COEF 设置
+    绱㈠凹绗旇鏈殑纭欢 EQ COEF 璁剧疆
 pcm44k
-    固定 PCM 44kHz 约束（用于有缺陷的设备）
+    鍥哄畾 PCM 44kHz 绾︽潫锛堢敤浜庢湁缂洪櫡鐨勮澶囷級
 lifebook
-    Fujitsu Lifebook 扩展坞引脚修复
-lifebook-extmic
-    Fujitsu Lifebook 头戴麦克风修复
-lifebook-hp-pin
-    Fujitsu Lifebook 耳机引脚修复
+    Fujitsu Lifebook 鎵╁睍鍧炲紩鑴氫慨澶?lifebook-extmic
+    Fujitsu Lifebook 澶存埓楹﹀厠椋庝慨澶?lifebook-hp-pin
+    Fujitsu Lifebook 鑰虫満寮曡剼淇
 lifebook-u7x7
-    Lifebook U7x7 修复
+    Lifebook U7x7 淇
 alc269vb-amic
-    ALC269VB 模拟麦克风引脚修复
-alc269vb-dmic
-    ALC269VB 数字麦克风引脚修复
-hp-mute-led-mic1
-    HP 上通过 Mic1 引脚的静音 LED
+    ALC269VB 妯℃嫙楹﹀厠椋庡紩鑴氫慨澶?alc269vb-dmic
+    ALC269VB 鏁板瓧楹﹀厠椋庡紩鑴氫慨澶?hp-mute-led-mic1
+    HP 涓婇€氳繃 Mic1 寮曡剼鐨勯潤闊?LED
 hp-mute-led-mic2
-    HP 上通过 Mic2 引脚的静音 LED
+    HP 涓婇€氳繃 Mic2 寮曡剼鐨勯潤闊?LED
 hp-mute-led-mic3
-    HP 上通过 Mic3 引脚的静音 LED
+    HP 涓婇€氳繃 Mic3 寮曡剼鐨勯潤闊?LED
 hp-gpio-mic1
-    HP 上的 GPIO + Mic1 引脚 LED
+    HP 涓婄殑 GPIO + Mic1 寮曡剼 LED
 hp-line1-mic1
-    HP 上通过 Line1 + Mic1 引脚的静音 LED
+    HP 涓婇€氳繃 Line1 + Mic1 寮曡剼鐨勯潤闊?LED
 noshutup
-    跳过 shutup 回调
+    璺宠繃 shutup 鍥炶皟
 sony-nomic
-    索尼笔记本头戴麦克风修复
+    绱㈠凹绗旇鏈ご鎴撮害鍏嬮淇
 aspire-headset-mic
-    Acer Aspire 头戴引脚修复
+    Acer Aspire 澶存埓寮曡剼淇
 asus-x101
-    ASUS X101 修复
+    ASUS X101 淇
 acer-ao7xx
-    Acer AO7xx 修复
+    Acer AO7xx 淇
 acer-aspire-e1
-    Acer Aspire E1 修复
+    Acer Aspire E1 淇
 acer-ac700
-    Acer AC700 修复
+    Acer AC700 淇
 limit-mic-boost
-    限制联想机器上内置麦克风的增益
-asus-zenbook
-    ASUS Zenbook 修复
+    闄愬埗鑱旀兂鏈哄櫒涓婂唴缃害鍏嬮鐨勫鐩?asus-zenbook
+    ASUS Zenbook 淇
 asus-zenbook-ux31a
-    ASUS Zenbook UX31A 修复
+    ASUS Zenbook UX31A 淇
 ordissimo
-    Ordissimo EVE2（或 Malata PC-B1303）修复
-asus-tx300
-    ASUS TX300 修复
+    Ordissimo EVE2锛堟垨 Malata PC-B1303锛変慨澶?asus-tx300
+    ASUS TX300 淇
 alc283-int-mic
-    联想机器上 ALC283 的 COEF 设置
+    鑱旀兂鏈哄櫒涓?ALC283 鐨?COEF 璁剧疆
 mono-speakers
-    Dell Inspiron 的低音炮与头戴修复
-alc290-subwoofer
-    Dell Vostro 的低音炮修复
+    Dell Inspiron 鐨勪綆闊崇偖涓庡ご鎴翠慨澶?alc290-subwoofer
+    Dell Vostro 鐨勪綆闊崇偖淇
 thinkpad
-    与联想机器上的 thinkpad_acpi 驱动绑定
+    涓庤仈鎯虫満鍣ㄤ笂鐨?thinkpad_acpi 椹卞姩缁戝畾
 dmic-thinkpad
-    thinkpad_acpi 绑定 + 数字麦克风支持
-alc255-acer
-    Acer 机器上的 ALC255 修复
+    thinkpad_acpi 缁戝畾 + 鏁板瓧楹﹀厠椋庢敮鎸?alc255-acer
+    Acer 鏈哄櫒涓婄殑 ALC255 淇
 alc255-asus
-    ASUS 机器上的 ALC255 修复
+    ASUS 鏈哄櫒涓婄殑 ALC255 淇
 alc255-dell1
-    Dell 机器上的 ALC255 修复
+    Dell 鏈哄櫒涓婄殑 ALC255 淇
 alc255-dell2
-    Dell 机器上的 ALC255 修复，变体 2
+    Dell 鏈哄櫒涓婄殑 ALC255 淇锛屽彉浣?2
 alc293-dell1
-    Dell 机器上的 ALC293 修复
+    Dell 鏈哄櫒涓婄殑 ALC293 淇
 alc283-headset
-    ALC283 上的头戴引脚修复
+    ALC283 涓婄殑澶存埓寮曡剼淇
 aspire-v5
-    Acer Aspire V5 修复
+    Acer Aspire V5 淇
 hp-gpio4
-    HP 的 GPIO 与 Mic1 引脚静音 LED 修复
+    HP 鐨?GPIO 涓?Mic1 寮曡剼闈欓煶 LED 淇
 hp-gpio-led
-    HP 上的 GPIO 静音 LED
+    HP 涓婄殑 GPIO 闈欓煶 LED
 hp-gpio2-hotkey
-    HP 上带热键处理的 GPIO 静音 LED
+    HP 涓婂甫鐑敭澶勭悊鐨?GPIO 闈欓煶 LED
 hp-dock-pins
-    HP 上的 GPIO 静音 LED 与扩展坞支持
+    HP 涓婄殑 GPIO 闈欓煶 LED 涓庢墿灞曞潪鏀寔
 hp-dock-gpio-mic
-    HP 上的 GPIO、麦克风静音 LED 与扩展坞支持
+    HP 涓婄殑 GPIO銆侀害鍏嬮闈欓煶 LED 涓庢墿灞曞潪鏀寔
 hp-9480m
-    HP 9480m 修复
+    HP 9480m 淇
 alc288-dell1
-    Dell 机器上的 ALC288 修复
+    Dell 鏈哄櫒涓婄殑 ALC288 淇
 alc288-dell-xps13
-    Dell XPS13 上的 ALC288 修复
+    Dell XPS13 涓婄殑 ALC288 淇
 dell-e7x
-    Dell E7x 修复
+    Dell E7x 淇
 alc293-dell
-    Dell 机器上的 ALC293 修复
+    Dell 鏈哄櫒涓婄殑 ALC293 淇
 alc298-dell1
-    Dell 机器上的 ALC298 修复
+    Dell 鏈哄櫒涓婄殑 ALC298 淇
 alc298-dell-aio
-    Dell AIO 机器上的 ALC298 修复
+    Dell AIO 鏈哄櫒涓婄殑 ALC298 淇
 alc275-dell-xps
-    Dell XPS 机型上的 ALC275 修复
+    Dell XPS 鏈哄瀷涓婄殑 ALC275 淇
 lenovo-spk-noise
-    联想机器上扬声器噪声的变通方案
-lenovo-hotkey
-    联想机器上通过 Mic2 引脚的热键支持
-dell-spk-noise
-    Dell 机器上扬声器噪声的变通方案
-alc255-dell1
-    Dell 机器上的 ALC255 修复
+    鑱旀兂鏈哄櫒涓婃壃澹板櫒鍣０鐨勫彉閫氭柟妗?lenovo-hotkey
+    鑱旀兂鏈哄櫒涓婇€氳繃 Mic2 寮曡剼鐨勭儹閿敮鎸?dell-spk-noise
+    Dell 鏈哄櫒涓婃壃澹板櫒鍣０鐨勫彉閫氭柟妗?alc255-dell1
+    Dell 鏈哄櫒涓婄殑 ALC255 淇
 alc295-disable-dac3
-    在 ALC295 上禁用 DAC3 路由
+    鍦?ALC295 涓婄鐢?DAC3 璺敱
 alc280-hp-headset
-    HP Elitebook 修复
+    HP Elitebook 淇
 alc221-hp-mic
-    HP 机器上的前置麦克风引脚修复
-alc298-spk-volume
-    ALC298 上扬声器引脚路由的变通方案
-dell-inspiron-7559
-    Dell Inspiron 7559 修复
+    HP 鏈哄櫒涓婄殑鍓嶇疆楹﹀厠椋庡紩鑴氫慨澶?alc298-spk-volume
+    ALC298 涓婃壃澹板櫒寮曡剼璺敱鐨勫彉閫氭柟妗?dell-inspiron-7559
+    Dell Inspiron 7559 淇
 ativ-book
-    三星 Ativ book 8 修复
+    涓夋槦 Ativ book 8 淇
 alc221-hp-mic
-    HP 机器上的 ALC221 头戴修复
+    HP 鏈哄櫒涓婄殑 ALC221 澶存埓淇
 alc256-asus-mic
-    ASUS 机器上的 ALC256 修复
+    ASUS 鏈哄櫒涓婄殑 ALC256 淇
 alc256-asus-aio
-    ASUS AIO 机器上的 ALC256 修复
+    ASUS AIO 鏈哄櫒涓婄殑 ALC256 淇
 alc233-eapd
-    ASUS 机器上的 ALC233 修复
+    ASUS 鏈哄櫒涓婄殑 ALC233 淇
 alc294-lenovo-mic
-    联想 AIO 机器上的 ALC294 麦克风引脚修复
-alc225-wyse
-    Dell Wyse 修复
+    鑱旀兂 AIO 鏈哄櫒涓婄殑 ALC294 楹﹀厠椋庡紩鑴氫慨澶?alc225-wyse
+    Dell Wyse 淇
 alc274-dell-aio
-    Dell AIO 机器上的 ALC274 修复
+    Dell AIO 鏈哄櫒涓婄殑 ALC274 淇
 alc255-dummy-lineout
-    Dell Precision 3930 修复
+    Dell Precision 3930 淇
 alc255-dell-headset
-    Dell Precision 3630 修复
+    Dell Precision 3630 淇
 alc295-hp-x360
-    HP Spectre X360 修复
+    HP Spectre X360 淇
 alc-sense-combo
-    Chrome 平台的头戴按键支持
-huawei-mbx-stereo
-    为华为 MBX 立体声扬声器启用初始化动词；
-    可能有风险，自行承担尝试风险
+    Chrome 骞冲彴鐨勫ご鎴存寜閿敮鎸?huawei-mbx-stereo
+    涓哄崕涓?MBX 绔嬩綋澹版壃澹板櫒鍚敤鍒濆鍖栧姩璇嶏紱
+    鍙兘鏈夐闄╋紝鑷鎵挎媴灏濊瘯椋庨櫓
 alc298-samsung-headphone
-    带 ALC298 的三星笔记本
+    甯?ALC298 鐨勪笁鏄熺瑪璁版湰
 alc256-samsung-headphone
-    带 ALC256 的三星笔记本
+    甯?ALC256 鐨勪笁鏄熺瑪璁版湰
 
 ## ALC66x/67x/892
 
 aspire
-    Aspire 笔记本低音炮引脚修复
+    Aspire 绗旇鏈綆闊崇偖寮曡剼淇
 ideapad
-    Ideapad 笔记本低音炮引脚修复
+    Ideapad 绗旇鏈綆闊崇偖寮曡剼淇
 mario
-    Chromebook mario 型号修复
+    Chromebook mario 鍨嬪彿淇
 hp-rp5800
-    HP RP5800 耳机引脚修复
+    HP RP5800 鑰虫満寮曡剼淇
 asus-mode1
     ASUS
 asus-mode2
@@ -292,46 +253,38 @@ asus-mode7
 asus-mode8
     ASUS
 zotac-z68
-    Zotac Z68 前置耳机修复
+    Zotac Z68 鍓嶇疆鑰虫満淇
 inv-dmic
-    内置麦克风反相的变通方案
-alc662-headset-multi
-    Dell 头戴插孔，也可用作麦克风输入（ALC662）
-dell-headset-multi
-    头戴插孔，也可用作麦克风输入
+    鍐呯疆楹﹀厠椋庡弽鐩哥殑鍙橀€氭柟妗?alc662-headset-multi
+    Dell 澶存埓鎻掑瓟锛屼篃鍙敤浣滈害鍏嬮杈撳叆锛圓LC662锛?dell-headset-multi
+    澶存埓鎻掑瓟锛屼篃鍙敤浣滈害鍏嬮杈撳叆
 alc662-headset
-    ALC662 上的头戴模式支持
+    ALC662 涓婄殑澶存埓妯″紡鏀寔
 alc668-headset
-    ALC668 上的头戴模式支持
+    ALC668 涓婄殑澶存埓妯″紡鏀寔
 bass16
-    引脚 0x16 上的低音扬声器修复
-bass1a
-    引脚 0x1a 上的低音扬声器修复
-automute
-    ALC668 的自动静音修复
-dell-xps13
-    Dell XPS13 修复
+    寮曡剼 0x16 涓婄殑浣庨煶鎵０鍣ㄤ慨澶?bass1a
+    寮曡剼 0x1a 涓婄殑浣庨煶鎵０鍣ㄤ慨澶?automute
+    ALC668 鐨勮嚜鍔ㄩ潤闊充慨澶?dell-xps13
+    Dell XPS13 淇
 asus-nx50
-    ASUS Nx50 修复
+    ASUS Nx50 淇
 asus-nx51
-    ASUS Nx51 修复
+    ASUS Nx51 淇
 asus-g751
-    ASUS G751 修复
+    ASUS G751 淇
 alc891-headset
-    ALC891 上的头戴模式支持
+    ALC891 涓婄殑澶存埓妯″紡鏀寔
 alc891-headset-multi
-    Dell 头戴插孔，也可用作麦克风输入（ALC891）
-acer-veriton
-    Acer Veriton 扬声器引脚修复
-asrock-mobo
-    修复无效的 0x15 / 0x16 引脚
+    Dell 澶存埓鎻掑瓟锛屼篃鍙敤浣滈害鍏嬮杈撳叆锛圓LC891锛?acer-veriton
+    Acer Veriton 鎵０鍣ㄥ紩鑴氫慨澶?asrock-mobo
+    淇鏃犳晥鐨?0x15 / 0x16 寮曡剼
 usi-headset
-    USI 机器上的头戴支持
+    USI 鏈哄櫒涓婄殑澶存埓鏀寔
 dual-codecs
-    带双编解码器的联想笔记本
+    甯﹀弻缂栬В鐮佸櫒鐨勮仈鎯崇瑪璁版湰
 alc285-hp-amp-init
-    需要扬声器放大器初始化的 HP 笔记本（ALC285）
-
+    闇€瑕佹壃澹板櫒鏀惧ぇ鍣ㄥ垵濮嬪寲鐨?HP 绗旇鏈紙ALC285锛?
 ## ALC680
 
 N/A
@@ -339,67 +292,63 @@ N/A
 ## ALC88x/898/1150/1220
 
 abit-aw9d
-    Abit AW9D-MAX 引脚修复
+    Abit AW9D-MAX 寮曡剼淇
 lenovo-y530
-    Lenovo Y530 引脚修复
+    Lenovo Y530 寮曡剼淇
 acer-aspire-7736
-    Acer Aspire 7736 修复
+    Acer Aspire 7736 淇
 asus-w90v
-    ASUS W90V 引脚修复
+    ASUS W90V 寮曡剼淇
 cd
-    启用音频 CD 引脚 NID 0x1c
+    鍚敤闊抽 CD 寮曡剼 NID 0x1c
 no-front-hp
-    禁用前置耳机引脚 NID 0x1b
+    绂佺敤鍓嶇疆鑰虫満寮曡剼 NID 0x1b
 vaio-tt
-    VAIO TT 引脚修复
+    VAIO TT 寮曡剼淇
 eee1601
-    ASUS Eee 1601 的 COEF 设置
+    ASUS Eee 1601 鐨?COEF 璁剧疆
 alc882-eapd
-    更改 ALC882 上的 EAPD COEF 模式
+    鏇存敼 ALC882 涓婄殑 EAPD COEF 妯″紡
 alc883-eapd
-    更改 ALC883 上的 EAPD COEF 模式
+    鏇存敼 ALC883 涓婄殑 EAPD COEF 妯″紡
 gpio1
-    启用 GPIO1
+    鍚敤 GPIO1
 gpio2
-    启用 GPIO2
+    鍚敤 GPIO2
 gpio3
-    启用 GPIO3
+    鍚敤 GPIO3
 alc889-coef
-    设置 ALC889 COEF
+    璁剧疆 ALC889 COEF
 asus-w2jc
-    ASUS W2JC 修复
+    ASUS W2JC 淇
 acer-aspire-4930g
     Acer Aspire 4930G/5930G/6530G/6930G/7730G
 acer-aspire-8930g
     Acer Aspire 8330G/6935G
 acer-aspire
-    其他 Acer Aspire
+    鍏朵粬 Acer Aspire
 macpro-gpio
-    Mac Pro 的 GPIO 设置
+    Mac Pro 鐨?GPIO 璁剧疆
 dac-route
-    Acer Aspire 上 DAC 路由的变通方案
-mbp-vref
-    Macbook Pro 的 Vref 设置
+    Acer Aspire 涓?DAC 璺敱鐨勫彉閫氭柟妗?mbp-vref
+    Macbook Pro 鐨?Vref 璁剧疆
 imac91-vref
-    iMac 9,1 的 Vref 设置
+    iMac 9,1 鐨?Vref 璁剧疆
 mba11-vref
-    MacBook Air 1,1 的 Vref 设置
+    MacBook Air 1,1 鐨?Vref 璁剧疆
 mba21-vref
-    MacBook Air 2,1 的 Vref 设置
+    MacBook Air 2,1 鐨?Vref 璁剧疆
 mp11-vref
-    Mac Pro 1,1 的 Vref 设置
+    Mac Pro 1,1 鐨?Vref 璁剧疆
 mp41-vref
-    Mac Pro 4,1 的 Vref 设置
+    Mac Pro 4,1 鐨?Vref 璁剧疆
 inv-dmic
-    内置麦克风反相的变通方案
-no-primary-hp
-    VAIO Z/VGC-LN51JGB 变通方案（针对固定的扬声器 DAC）
-asus-bass
-    ASUS ET2700 的低音扬声器设置
+    鍐呯疆楹﹀厠椋庡弽鐩哥殑鍙橀€氭柟妗?no-primary-hp
+    VAIO Z/VGC-LN51JGB 鍙橀€氭柟妗堬紙閽堝鍥哄畾鐨勬壃澹板櫒 DAC锛?asus-bass
+    ASUS ET2700 鐨勪綆闊虫壃澹板櫒璁剧疆
 dual-codecs
-    用于游戏主板的 ALC1220 双编解码器
-clevo-p950
-    Clevo P950 修复
+    鐢ㄤ簬娓告垙涓绘澘鐨?ALC1220 鍙岀紪瑙ｇ爜鍣?clevo-p950
+    Clevo P950 淇
 
 ## ALC861/660
 
@@ -412,33 +361,26 @@ N/A
 ## CMI9880
 
 minimal
-    背板 3 个插孔
-min_fp
-    背板 3 个插孔，前面板 2 个插孔
-full
-    背板 6 个插孔，前面板 2 个插孔
-full_dig
-    背板 6 个插孔，前面板 2 个插孔，SPDIF 输入/输出
+    鑳屾澘 3 涓彃瀛?min_fp
+    鑳屾澘 3 涓彃瀛旓紝鍓嶉潰鏉?2 涓彃瀛?full
+    鑳屾澘 6 涓彃瀛旓紝鍓嶉潰鏉?2 涓彃瀛?full_dig
+    鑳屾澘 6 涓彃瀛旓紝鍓嶉潰鏉?2 涓彃瀛旓紝SPDIF 杈撳叆/杈撳嚭
 allout
-    背板 5 个插孔，前面板 2 个插孔，SPDIF 输出
+    鑳屾澘 5 涓彃瀛旓紝鍓嶉潰鏉?2 涓彃瀛旓紝SPDIF 杈撳嚭
 auto
-    自动配置读取 BIOS（默认）
+    鑷姩閰嶇疆璇诲彇 BIOS锛堥粯璁わ級
 
 ## AD1882 / AD1882A
 
 3stack
-    3 栈模式
-3stack-automute
-    带前置耳机自动静音的 3 栈（默认）
-6stack
-    6 栈模式
-
+    3 鏍堟ā寮?3stack-automute
+    甯﹀墠缃€虫満鑷姩闈欓煶鐨?3 鏍堬紙榛樿锛?6stack
+    6 鏍堟ā寮?
 ## AD1884A / AD1883 / AD1984A / AD1984B
 
-desktop	3 栈台式机（默认）
-laptop	带耳机插孔检测的笔记本
-mobile	带耳机插孔检测的移动设备
-thinkpad	联想 Thinkpad X300
+desktop	3 鏍堝彴寮忔満锛堥粯璁わ級
+laptop	甯﹁€虫満鎻掑瓟妫€娴嬬殑绗旇鏈?mobile	甯﹁€虫満鎻掑瓟妫€娴嬬殑绉诲姩璁惧
+thinkpad	鑱旀兂 Thinkpad X300
 touchsmart	HP Touchsmart
 
 ## AD1884
@@ -447,10 +389,10 @@ N/A
 
 ## AD1981
 
-basic		3 插孔（默认）
+basic		3 鎻掑瓟锛堥粯璁わ級
 hp		HP nx6320
-thinkpad	联想 Thinkpad T60/X60/Z60
-toshiba	东芝 U205
+thinkpad	鑱旀兂 Thinkpad T60/X60/Z60
+toshiba	涓滆姖 U205
 
 ## AD1983
 
@@ -458,102 +400,96 @@ N/A
 
 ## AD1984
 
-basic	默认配置
-thinkpad	联想 Thinkpad T61/X61
+basic	榛樿閰嶇疆
+thinkpad	鑱旀兂 Thinkpad T61/X61
 dell_desktop	Dell T3400
 
 ## AD1986A
 
 3stack
-    3 栈，共享环绕声
-laptop
-    仅 2 声道（FSC V2060、三星 M50）
-laptop-imic
-    带内置麦克风的 2 声道
+    3 鏍堬紝鍏变韩鐜粫澹?laptop
+    浠?2 澹伴亾锛團SC V2060銆佷笁鏄?M50锛?laptop-imic
+    甯﹀唴缃害鍏嬮鐨?2 澹伴亾
 eapd
-    持续开启 EAPD
+    鎸佺画寮€鍚?EAPD
 
 ## AD1988/AD1988B/AD1989A/AD1989B
 
 6stack
-    6 插孔
+    6 鎻掑瓟
 6stack-dig
-    同上，带 SPDIF
+    鍚屼笂锛屽甫 SPDIF
 3stack
-    3 插孔
+    3 鎻掑瓟
 3stack-dig
-    同上，带 SPDIF
+    鍚屼笂锛屽甫 SPDIF
 laptop
-    带耳机插孔自动静音的 3 插孔
+    甯﹁€虫満鎻掑瓟鑷姩闈欓煶鐨?3 鎻掑瓟
 laptop-dig
-    同上，带 SPDIF
+    鍚屼笂锛屽甫 SPDIF
 auto
-    自动配置读取 BIOS（默认）
+    鑷姩閰嶇疆璇诲彇 BIOS锛堥粯璁わ級
 
 ## Conexant 5045
 
 cap-mix-amp
-    修复混音器组件的输入电平上限
+    淇娣烽煶鍣ㄧ粍浠剁殑杈撳叆鐢靛钩涓婇檺
 toshiba-p105
-    东芝 P105 修正
+    涓滆姖 P105 淇
 hp-530
-    HP 530 修正
+    HP 530 淇
 
 ## Conexant 5047
 
 cap-mix-amp
-    修复混音器组件的输入电平上限
+    淇娣烽煶鍣ㄧ粍浠剁殑杈撳叆鐢靛钩涓婇檺
 
 ## Conexant 5051
 
 lenovo-x200
-    联想 X200 修正
+    鑱旀兂 X200 淇
 
 ## Conexant 5066
 
 stereo-dmic
-    反相立体声数字麦克风的变通方案
-gpio1
-    启用 GPIO1 引脚
+    鍙嶇浉绔嬩綋澹版暟瀛楅害鍏嬮鐨勫彉閫氭柟妗?gpio1
+    鍚敤 GPIO1 寮曡剼
 headphone-mic-pin
-    在无检测的情况下启用耳机麦克风 NID 0x18
+    鍦ㄦ棤妫€娴嬬殑鎯呭喌涓嬪惎鐢ㄨ€虫満楹﹀厠椋?NID 0x18
 tp410
-    Thinkpad T400 及同类修正
-thinkpad
-    Thinkpad 静音/麦克风 LED 修正
+    Thinkpad T400 鍙婂悓绫讳慨姝?thinkpad
+    Thinkpad 闈欓煶/楹﹀厠椋?LED 淇
 lemote-a1004
-    Lemote A1004 修正
+    Lemote A1004 淇
 lemote-a1205
-    Lemote A1205 修正
+    Lemote A1205 淇
 olpc-xo
-    OLPC XO 修正
+    OLPC XO 淇
 mute-led-eapd
-    通过 EAPD 控制静音 LED
+    閫氳繃 EAPD 鎺у埗闈欓煶 LED
 hp-dock
-    HP 扩展坞支持
-mute-led-gpio
-    通过 GPIO 控制静音 LED
+    HP 鎵╁睍鍧炴敮鎸?mute-led-gpio
+    閫氳繃 GPIO 鎺у埗闈欓煶 LED
 hp-mic-fix
-    HP 机器上头戴麦克风引脚的修复
-
+    HP 鏈哄櫒涓婂ご鎴撮害鍏嬮寮曡剼鐨勪慨澶?
 ## STAC9200
 
 ref
-    参考板
+    鍙傝€冩澘
 oqo
     OQO Model 2
 dell-d21
-    Dell（未知）
+    Dell锛堟湭鐭ワ級
 dell-d22
-    Dell（未知）
+    Dell锛堟湭鐭ワ級
 dell-d23
-    Dell（未知）
+    Dell锛堟湭鐭ワ級
 dell-m21
-    Dell Inspiron 630m、Dell Inspiron 640m
+    Dell Inspiron 630m銆丏ell Inspiron 640m
 dell-m22
-    Dell Latitude D620、Dell Latitude D820
+    Dell Latitude D620銆丏ell Latitude D820
 dell-m23
-    Dell XPS M1710、Dell Precision M90
+    Dell XPS M1710銆丏ell Precision M90
 dell-m24
     Dell Latitude 120L
 dell-m25
@@ -563,210 +499,173 @@ dell-m26
 dell-m27
     Dell Inspiron E1705/9400
 gateway-m4
-    带 EAPD 控制的 Gateway 笔记本
-gateway-m4-2
-    带 EAPD 控制的 Gateway 笔记本
-panasonic
-    松下 CF-74
+    甯?EAPD 鎺у埗鐨?Gateway 绗旇鏈?gateway-m4-2
+    甯?EAPD 鎺у埗鐨?Gateway 绗旇鏈?panasonic
+    鏉句笅 CF-74
 auto
-    BIOS 设置（默认）
+    BIOS 璁剧疆锛堥粯璁わ級
 
 ## STAC9205/9254
 
 ref
-    参考板
+    鍙傝€冩澘
 dell-m42
-    Dell（未知）
+    Dell锛堟湭鐭ワ級
 dell-m43
     Dell Precision
 dell-m44
     Dell Inspiron
 eapd
-    保持 EAPD 开启（如 Gateway T1616）
-auto
-    BIOS 设置（默认）
+    淇濇寔 EAPD 寮€鍚紙濡?Gateway T1616锛?auto
+    BIOS 璁剧疆锛堥粯璁わ級
 
 ## STAC9220/9221
 
 ref
-    参考板
+    鍙傝€冩澘
 3stack
-    D945 3 栈
-5stack
-    D945 5 栈 + SPDIF
+    D945 3 鏍?5stack
+    D945 5 鏍?+ SPDIF
 intel-mac-v1
-    Intel Mac 类型 1
+    Intel Mac 绫诲瀷 1
 intel-mac-v2
-    Intel Mac 类型 2
+    Intel Mac 绫诲瀷 2
 intel-mac-v3
-    Intel Mac 类型 3
+    Intel Mac 绫诲瀷 3
 intel-mac-v4
-    Intel Mac 类型 4
+    Intel Mac 绫诲瀷 4
 intel-mac-v5
-    Intel Mac 类型 5
+    Intel Mac 绫诲瀷 5
 intel-mac-auto
-    Intel Mac（根据子系统 id 检测类型）
+    Intel Mac锛堟牴鎹瓙绯荤粺 id 妫€娴嬬被鍨嬶級
 macmini
-    Intel Mac Mini（等价于类型 3）
-macbook
-    Intel Mac Book（等价于类型 5）
-macbook-pro-v1
-    Intel Mac Book Pro 第一代（等价于类型 3）
-macbook-pro
-    Intel Mac Book Pro 第二代（等价于类型 3）
-imac-intel
-    Intel iMac（等价于类型 2）
-imac-intel-20
-    Intel iMac（较新版本）（等价于类型 3）
-ecs202
+    Intel Mac Mini锛堢瓑浠蜂簬绫诲瀷 3锛?macbook
+    Intel Mac Book锛堢瓑浠蜂簬绫诲瀷 5锛?macbook-pro-v1
+    Intel Mac Book Pro 绗竴浠ｏ紙绛変环浜庣被鍨?3锛?macbook-pro
+    Intel Mac Book Pro 绗簩浠ｏ紙绛変环浜庣被鍨?3锛?imac-intel
+    Intel iMac锛堢瓑浠蜂簬绫诲瀷 2锛?imac-intel-20
+    Intel iMac锛堣緝鏂扮増鏈級锛堢瓑浠蜂簬绫诲瀷 3锛?ecs202
     ECS/PC chips
 dell-d81
-    Dell（未知）
+    Dell锛堟湭鐭ワ級
 dell-d82
-    Dell（未知）
+    Dell锛堟湭鐭ワ級
 dell-m81
-    Dell（未知）
+    Dell锛堟湭鐭ワ級
 dell-m82
     Dell XPS M1210
 auto
-    BIOS 设置（默认）
+    BIOS 璁剧疆锛堥粯璁わ級
 
 ## STAC9202/9250/9251
 
 ref
-    参考板，基础配置
+    鍙傝€冩澘锛屽熀纭€閰嶇疆
 m1
-    部分 Gateway MX 系列笔记本（NX560XL）
-m1-2
-    部分 Gateway MX 系列笔记本（MX6453）
-m2
-    部分 Gateway MX 系列笔记本（M255）
-m2-2
-    部分 Gateway MX 系列笔记本
-m3
-    部分 Gateway MX 系列笔记本
-m5
-    部分 Gateway MX 系列笔记本（MP6954）
-m6
-    部分 Gateway NX 系列笔记本
-auto
-    BIOS 设置（默认）
+    閮ㄥ垎 Gateway MX 绯诲垪绗旇鏈紙NX560XL锛?m1-2
+    閮ㄥ垎 Gateway MX 绯诲垪绗旇鏈紙MX6453锛?m2
+    閮ㄥ垎 Gateway MX 绯诲垪绗旇鏈紙M255锛?m2-2
+    閮ㄥ垎 Gateway MX 绯诲垪绗旇鏈?m3
+    閮ㄥ垎 Gateway MX 绯诲垪绗旇鏈?m5
+    閮ㄥ垎 Gateway MX 绯诲垪绗旇鏈紙MP6954锛?m6
+    閮ㄥ垎 Gateway NX 绯诲垪绗旇鏈?auto
+    BIOS 璁剧疆锛堥粯璁わ級
 
 ## STAC9227/9228/9229/927x
 
 ref
-    参考板
+    鍙傝€冩澘
 ref-no-jd
-    无耳机/麦克风插孔检测的参考板
+    鏃犺€虫満/楹﹀厠椋庢彃瀛旀娴嬬殑鍙傝€冩澘
 3stack
-    D965 3 栈
-5stack
-    D965 5 栈 + SPDIF
+    D965 3 鏍?5stack
+    D965 5 鏍?+ SPDIF
 5stack-no-fp
-    无前面板的 D965 5 栈
-dell-3stack
+    鏃犲墠闈㈡澘鐨?D965 5 鏍?dell-3stack
     Dell Dimension E520
 dell-bios
-    配合 Dell BIOS 设置的修复
-dell-bios-amic
-    配合含模拟麦克风的 Dell BIOS 设置的修复
-volknob
-    配合音量旋钮组件 0x24 的修复
-auto
-    BIOS 设置（默认）
+    閰嶅悎 Dell BIOS 璁剧疆鐨勪慨澶?dell-bios-amic
+    閰嶅悎鍚ā鎷熼害鍏嬮鐨?Dell BIOS 璁剧疆鐨勪慨澶?volknob
+    閰嶅悎闊抽噺鏃嬮挳缁勪欢 0x24 鐨勪慨澶?auto
+    BIOS 璁剧疆锛堥粯璁わ級
 
 ## STAC92HD71B*
 
 ref
-    参考板
+    鍙傝€冩澘
 dell-m4-1
-    Dell 台式机
-dell-m4-2
-    Dell 台式机
-dell-m4-3
-    Dell 台式机
-hp-m4
+    Dell 鍙板紡鏈?dell-m4-2
+    Dell 鍙板紡鏈?dell-m4-3
+    Dell 鍙板紡鏈?hp-m4
     HP mini 1000
 hp-dv5
-    HP dv 系列
+    HP dv 绯诲垪
 hp-hdx
-    HP HDX 系列
+    HP HDX 绯诲垪
 hp-dv4-1222nr
-    HP dv4-1222nr（带 LED 支持）
-auto
-    BIOS 设置（默认）
+    HP dv4-1222nr锛堝甫 LED 鏀寔锛?auto
+    BIOS 璁剧疆锛堥粯璁わ級
 
 ## STAC92HD73*
 
 ref
-    参考板
+    鍙傝€冩澘
 no-jd
-    BIOS 设置但不含插孔检测
-intel
-    Intel D**45** 主板
+    BIOS 璁剧疆浣嗕笉鍚彃瀛旀娴?intel
+    Intel D**45** 涓绘澘
 dell-m6-amic
-    带模拟麦克风的 Dell 台式机/笔记本
-dell-m6-dmic
-    带数字麦克风的 Dell 台式机/笔记本
-dell-m6
-    带两种类型麦克风的 Dell 台式机/笔记本
-dell-eq
-    Dell 台式机/笔记本
-alienware
+    甯︽ā鎷熼害鍏嬮鐨?Dell 鍙板紡鏈?绗旇鏈?dell-m6-dmic
+    甯︽暟瀛楅害鍏嬮鐨?Dell 鍙板紡鏈?绗旇鏈?dell-m6
+    甯︿袱绉嶇被鍨嬮害鍏嬮鐨?Dell 鍙板紡鏈?绗旇鏈?dell-eq
+    Dell 鍙板紡鏈?绗旇鏈?alienware
     Alienware M17x
 asus-mobo
-    带 5.1/SPDIF 输出的 ASUS 主板引脚配置
+    甯?5.1/SPDIF 杈撳嚭鐨?ASUS 涓绘澘寮曡剼閰嶇疆
 auto
-    BIOS 设置（默认）
+    BIOS 璁剧疆锛堥粯璁わ級
 
 ## STAC92HD83*
 
 ref
-    参考板
+    鍙傝€冩澘
 mic-ref
-    带端口电源管理的参考板
+    甯︾鍙ｇ數婧愮鐞嗙殑鍙傝€冩澘
 dell-s14
-    Dell 笔记本
-dell-vostro-3500
-    Dell Vostro 3500 笔记本
-hp-dv7-4000
+    Dell 绗旇鏈?dell-vostro-3500
+    Dell Vostro 3500 绗旇鏈?hp-dv7-4000
     HP dv-7 4000
 hp_cNB11_intquad
-    带 4 个扬声器的 HP CNB 型号
+    甯?4 涓壃澹板櫒鐨?HP CNB 鍨嬪彿
 hp-zephyr
     HP Zephyr
 hp-led
-    BIOS 损坏导致静音 LED 异常的 HP
+    BIOS 鎹熷潖瀵艰嚧闈欓煶 LED 寮傚父鐨?HP
 hp-inv-led
-    BIOS 损坏导致反相静音 LED 异常的 HP
+    BIOS 鎹熷潖瀵艰嚧鍙嶇浉闈欓煶 LED 寮傚父鐨?HP
 hp-mic-led
-    带麦克风静音 LED 的 HP
+    甯﹂害鍏嬮闈欓煶 LED 鐨?HP
 headset-jack
-    带 4 针头戴插孔的 Dell Latitude
+    甯?4 閽堝ご鎴存彃瀛旂殑 Dell Latitude
 hp-envy-bass
-    HP Envy 低音扬声器引脚修复（NID 0x0f）
-hp-envy-ts-bass
-    HP Envy TS 低音扬声器引脚修复（NID 0x10）
-hp-bnb13-eq
-    HP 笔记本的硬件均衡器设置
-hp-envy-ts-bass
-    HP Envy TS 低音支持
+    HP Envy 浣庨煶鎵０鍣ㄥ紩鑴氫慨澶嶏紙NID 0x0f锛?hp-envy-ts-bass
+    HP Envy TS 浣庨煶鎵０鍣ㄥ紩鑴氫慨澶嶏紙NID 0x10锛?hp-bnb13-eq
+    HP 绗旇鏈殑纭欢鍧囪　鍣ㄨ缃?hp-envy-ts-bass
+    HP Envy TS 浣庨煶鏀寔
 auto
-    BIOS 设置（默认）
+    BIOS 璁剧疆锛堥粯璁わ級
 
 ## STAC92HD95
 
 hp-led
-    HP 笔记本的 LED 支持
+    HP 绗旇鏈殑 LED 鏀寔
 hp-bass
-    HP Spectre 13 的低音 HPF 设置
+    HP Spectre 13 鐨勪綆闊?HPF 璁剧疆
 
 ## STAC9872
 
 vaio
-    无 SPDIF 的 VAIO 笔记本
-auto
-    BIOS 设置（默认）
+    鏃?SPDIF 鐨?VAIO 绗旇鏈?auto
+    BIOS 璁剧疆锛堥粯璁わ級
 
 ## Cirrus Logic CS4206/4207
 
@@ -775,11 +674,11 @@ mbp53
 mbp55
     MacBook Pro 5,5
 imac27
-    iMac 27 英寸
+    iMac 27 鑻卞
 imac27_122
     iMac 12,2
 apple
-    通用 Apple 修正
+    閫氱敤 Apple 淇
 mbp101
     MacBookPro 10,1
 mbp81
@@ -787,22 +686,21 @@ mbp81
 mba42
     MacBookAir 4,2
 auto
-    BIOS 设置（默认）
+    BIOS 璁剧疆锛堥粯璁わ級
 
 ## Cirrus Logic CS4208
 
 mba6
-    MacBook Air 6,1 和 6,2
+    MacBook Air 6,1 鍜?6,2
 gpio0
-    启用 GPIO 0 放大器
-mbp11
+    鍚敤 GPIO 0 鏀惧ぇ鍣?mbp11
     MacBookPro 11,2
 macmini
     MacMini 7,1
 auto
-    BIOS 设置（默认）
+    BIOS 璁剧疆锛堥粯璁わ級
 
 ## VIA VT17xx/VT18xx/VT20xx
 
 auto
-    BIOS 设置（默认）
+    BIOS 璁剧疆锛堥粯璁わ級

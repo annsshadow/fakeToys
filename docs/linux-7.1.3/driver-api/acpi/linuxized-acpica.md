@@ -1,22 +1,17 @@
-
-## Linuxized ACPICA —— ACPICA 发布自动化简介
-
+﻿
+## Linuxized ACPICA 鈥斺€?ACPICA 鍙戝竷鑷姩鍖栫畝浠?
 :Copyright: |copy| 2013-2016, Intel Corporation
 
 :Author: Lv Zheng <lv.zheng@intel.com>
 
 
-## Abstract（摘要）
+## Abstract锛堟憳瑕侊級
 
-本文档描述了 ACPICA 项目以及 ACPICA 与 Linux 之间的关系。它也描述了 drivers/acpi/acpica、include/acpi 和 tools/power/acpi 中的 ACPICA 代码是如何被自动更新以跟随上游的。
-
-## ACPICA Project（ACPICA 项目）
-
-ACPI 组件架构（Advanced Configuration and Power Interface Specification，ACPICA）项目提供了一个操作系统（OS）无关的、关于高级配置与电源接口规范（ACPI）的参考实现。它已被各种宿主操作系统所采纳。通过直接集成 ACPICA，Linux 也能从 ACPICA 在其他宿主操作系统上的应用经验中受益。
-
-ACPICA 项目的主页是：www.acpica.org，它由 Intel Corporation 维护和支持。
-
-下图描绘了 Linux ACPI 子系统，其中 ACPICA
+鏈枃妗ｆ弿杩颁簡 ACPICA 椤圭洰浠ュ強 ACPICA 涓?Linux 涔嬮棿鐨勫叧绯汇€傚畠涔熸弿杩颁簡 drivers/acpi/acpica銆乮nclude/acpi 鍜?tools/power/acpi 涓殑 ACPICA 浠ｇ爜鏄浣曡鑷姩鏇存柊浠ヨ窡闅忎笂娓哥殑銆?
+## ACPICA Project锛圓CPICA 椤圭洰锛?
+ACPI 缁勪欢鏋舵瀯锛圓dvanced Configuration and Power Interface Specification锛孉CPICA锛夐」鐩彁渚涗簡涓€涓搷浣滅郴缁燂紙OS锛夋棤鍏崇殑銆佸叧浜庨珮绾ч厤缃笌鐢垫簮鎺ュ彛瑙勮寖锛圓CPI锛夌殑鍙傝€冨疄鐜般€傚畠宸茶鍚勭瀹夸富鎿嶄綔绯荤粺鎵€閲囩撼銆傞€氳繃鐩存帴闆嗘垚 ACPICA锛孡inux 涔熻兘浠?ACPICA 鍦ㄥ叾浠栧涓绘搷浣滅郴缁熶笂鐨勫簲鐢ㄧ粡楠屼腑鍙楃泭銆?
+ACPICA 椤圭洰鐨勪富椤垫槸锛歸ww.acpica.org锛屽畠鐢?Intel Corporation 缁存姢鍜屾敮鎸併€?
+涓嬪浘鎻忕粯浜?Linux ACPI 瀛愮郴缁燂紝鍏朵腑 ACPICA
 ```
 
       +---------------------------------------------------------+
@@ -64,39 +59,33 @@ ACPICA 项目的主页是：www.acpica.org，它由 Intel Corporation 维护和�
                  Figure 1. Linux ACPI Software Components
 
 ```
-    A. OS Service Layer —— 由 Linux 提供，用于给出预定义 ACPICA 接口（acpi_os_*）的 OS 相关实现。
-```
+    A. OS Service Layer 鈥斺€?鐢?Linux 鎻愪緵锛岀敤浜庣粰鍑洪瀹氫箟 ACPICA 鎺ュ彛锛坅cpi_os_*锛夌殑 OS 鐩稿叧瀹炵幇銆?```
          include/acpi/acpiosxf.h
          drivers/acpi/osl.c
          include/acpi/platform
          include/asm/acenv.h
-    B. ACPICA Functionality —— 从 ACPICA 代码库发布，用于给出 ACPICA 接口（acpi_*）的 OS 无关实现。
-       ::
+    B. ACPICA Functionality 鈥斺€?浠?ACPICA 浠ｇ爜搴撳彂甯冿紝鐢ㄤ簬缁欏嚭 ACPICA 鎺ュ彛锛坅cpi_*锛夌殑 OS 鏃犲叧瀹炵幇銆?       ::
 
          drivers/acpi/acpica
          include/acpi/ac*.h
          tools/power/acpi
-    C. Linux/ACPI Functionality —— 向其他 Linux 内核子系统以及用户空间程序提供 Linux 特定的 ACPI 功能。
-       ::
+    C. Linux/ACPI Functionality 鈥斺€?鍚戝叾浠?Linux 鍐呮牳瀛愮郴缁熶互鍙婄敤鎴风┖闂寸▼搴忔彁渚?Linux 鐗瑰畾鐨?ACPI 鍔熻兘銆?       ::
 
          drivers/acpi
          include/linux/acpi.h
          include/linux/acpi*.h
          include/acpi
          tools/power/acpi
-    D. Architecture Specific ACPICA/ACPI Functionalities —— 由 ACPI 子系统提供，用于给出 ACPI 接口的架构相关实现。它们是 Linux 特定的组件，不在本文档范围内。
-       ::
+    D. Architecture Specific ACPICA/ACPI Functionalities 鈥斺€?鐢?ACPI 瀛愮郴缁熸彁渚涳紝鐢ㄤ簬缁欏嚭 ACPI 鎺ュ彛鐨勬灦鏋勭浉鍏冲疄鐜般€傚畠浠槸 Linux 鐗瑰畾鐨勭粍浠讹紝涓嶅湪鏈枃妗ｈ寖鍥村唴銆?       ::
 
          include/asm/acpi.h
          include/asm/acpi*.h
          arch/*/acpi
 
 ```
-## ACPICA Release（ACPICA 发布）
-
-ACPICA 项目在其以下仓库 URL 维护代码库：https://github.com/acpica/acpica.git。按惯例，每月发布一次。
-
-由于 ACPICA 项目所采用的编码风格不被 Linux 接受，因此存在一套发布流程，将 ACPICA 的 git 提交转换为 Linux 补丁。该流程生成的补丁被称为 “linuxized ACPICA patches”（Linux 化的 ACPICA 补丁）。该发布流程在 ACPICA git 仓库的一份本地副本上进行。每月发布中的每个提交都被转换为一个 linuxized ACPICA 补丁。它们共同构成了面向 Linux ACPI 社区的每月 ACPICA 发布补丁集。此流程
+## ACPICA Release锛圓CPICA 鍙戝竷锛?
+ACPICA 椤圭洰鍦ㄥ叾浠ヤ笅浠撳簱 URL 缁存姢浠ｇ爜搴擄細https://github.com/acpica/acpica.git銆傛寜鎯緥锛屾瘡鏈堝彂甯冧竴娆°€?
+鐢变簬 ACPICA 椤圭洰鎵€閲囩敤鐨勭紪鐮侀鏍间笉琚?Linux 鎺ュ彈锛屽洜姝ゅ瓨鍦ㄤ竴濂楀彂甯冩祦绋嬶紝灏?ACPICA 鐨?git 鎻愪氦杞崲涓?Linux 琛ヤ竵銆傝娴佺▼鐢熸垚鐨勮ˉ涓佽绉颁负 鈥渓inuxized ACPICA patches鈥濓紙Linux 鍖栫殑 ACPICA 琛ヤ竵锛夈€傝鍙戝竷娴佺▼鍦?ACPICA git 浠撳簱鐨勪竴浠芥湰鍦板壇鏈笂杩涜銆傛瘡鏈堝彂甯冧腑鐨勬瘡涓彁浜ら兘琚浆鎹负涓€涓?linuxized ACPICA 琛ヤ竵銆傚畠浠叡鍚屾瀯鎴愪簡闈㈠悜 Linux ACPI 绀惧尯鐨勬瘡鏈?ACPICA 鍙戝竷琛ヤ竵闆嗐€傛娴佺▼
 ```
 
     +-----------------------------+
@@ -139,60 +128,41 @@ ACPICA 项目在其以下仓库 URL 维护代码库：https://github.com/acpica/
                 Figure 2. ACPICA -> Linux Upstream Process
 
 ```
-    A. Linuxize Utilities —— 由 ACPICA 仓库提供，包括位于 source/tools/acpisrc 文件夹中的一个实用程序，以及位于 generate/linux 文件夹中的若干脚本。
-    B. acpica / master —— 位于 <https://github.com/acpica/acpica.git> 的 git 仓库的 “master” 分支。
-    C. linux-pm / linux-next —— 位于 <https://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git> 的 git 仓库的 “linux-next” 分支。
-    D. linux / master —— 位于 <https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git> 的 git 仓库的 “master” 分支。
+    A. Linuxize Utilities 鈥斺€?鐢?ACPICA 浠撳簱鎻愪緵锛屽寘鎷綅浜?source/tools/acpisrc 鏂囦欢澶逛腑鐨勪竴涓疄鐢ㄧ▼搴忥紝浠ュ強浣嶄簬 generate/linux 鏂囦欢澶逛腑鐨勮嫢骞茶剼鏈€?    B. acpica / master 鈥斺€?浣嶄簬 <https://github.com/acpica/acpica.git> 鐨?git 浠撳簱鐨?鈥渕aster鈥?鍒嗘敮銆?    C. linux-pm / linux-next 鈥斺€?浣嶄簬 <https://git.kernel.org/pub/scm/linux/kernel/git/rafael/linux-pm.git> 鐨?git 浠撳簱鐨?鈥渓inux-next鈥?鍒嗘敮銆?    D. linux / master 鈥斺€?浣嶄簬 <https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git> 鐨?git 浠撳簱鐨?鈥渕aster鈥?鍒嗘敮銆?
+   鍦?linuxized ACPICA 琛ヤ竵琚彂閫佺粰 Linux ACPI 绀惧尯瀹℃煡涔嬪墠锛屾湁涓€涓川閲忎繚璇佺殑鏋勫缓娴嬭瘯娴佺▼锛岀敤浠ュ噺灏戠Щ妞嶉棶棰樸€傜洰鍓嶆鏋勫缓娴佺▼鍙収椤句互涓嬪唴鏍搁厤缃€夐」锛?   CONFIG_ACPI/CONFIG_ACPI_DEBUG/CONFIG_ACPI_DEBUGGER
 
-   在 linuxized ACPICA 补丁被发送给 Linux ACPI 社区审查之前，有一个质量保证的构建测试流程，用以减少移植问题。目前此构建流程只照顾以下内核配置选项：
-   CONFIG_ACPI/CONFIG_ACPI_DEBUG/CONFIG_ACPI_DEBUGGER
+## ACPICA Divergences锛圓CPICA 鍒嗘锛?
+鐞嗘兂鎯呭喌涓嬶紝鎵€鏈?ACPICA 鎻愪氦閮藉簲褰撹鑷姩杞崲涓?Linux 琛ヤ竵鑰屾棤闇€鎵嬪姩淇敼锛屸€渓inux / master鈥?鏍戝簲褰撳寘鍚笌 鈥渘ew linuxized acpica鈥?鏍戜腑鎵€鍚?ACPICA 浠ｇ爜绮剧‘瀵瑰簲鐨?ACPICA 浠ｇ爜锛屽苟涓斿簲褰撳彲浠ュ畬鍏ㄨ嚜鍔ㄥ湴杩愯鍙戝竷娴佺▼銆?
+鐒惰€岋紝浜嬪疄涓婏紝Linux 涓殑 ACPICA 浠ｇ爜涓庝笂娓?ACPICA 浠ｇ爜涔嬮棿瀛樺湪婧愪唬鐮佸樊寮傦紝杩欒绉颁负 鈥淎CPICA Divergences鈥濓紙ACPICA 鍒嗘锛夈€?
+ACPICA 鍒嗘鐨勫悇绉嶆潵婧愬寘鎷細
+   1. 閬楃暀鍒嗘锛圠egacy divergences锛夆€斺€?鍦ㄥ綋鍓嶇殑 ACPICA 鍙戝竷娴佺▼寤虹珛涔嬪墠锛孡inux 涓?ACPICA 涔嬮棿灏卞凡缁忓瓨鍦ㄥ垎姝с€傝繃鍘诲嚑骞翠腑杩欎簺鍒嗘宸茶澶у箙鍑忓皯锛屼絾浠嶆湁鑻ュ共瀛樺湪锛屽苟涓旈渶瑕佹椂闂存潵鎵惧嚭瀹冧滑瀛樺湪鑳屽悗鐨勬牴鏈師鍥犮€?   2. 鎵嬪姩淇敼锛圡anual modifications锛夆€斺€?浠讳綍鐩存帴鍦?Linux 婧愮爜涓仛鐨勬墜鍔ㄤ慨鏀癸紙渚嬪缂栫爜椋庢牸淇锛夋樉鐒朵細鎹熷 ACPICA 鍙戝竷鑷姩鍖栥€傚洜姝ゅ缓璁湪涓婃父 ACPICA 婧愮爜涓慨澶嶆绫婚棶棰橈紝骞朵娇鐢?ACPICA 鍙戝竷瀹炵敤绋嬪簭鐢熸垚 linuxized 淇锛堣瑙佷笅鏂囩 4 鑺傦級銆?   3. Linux 鐗瑰畾鍔熻兘锛圠inux specific features锛夆€斺€?鏈夋椂鏃犳硶浣跨敤褰撳墠鐨?ACPICA API 鏉ュ疄鐜?Linux 鍐呮牳鎵€闇€鐨勫姛鑳斤紝鍥犳 Linux 寮€鍙戣€呭伓灏斾笉寰椾笉鐩存帴淇敼 ACPICA 浠ｇ爜銆傝繖浜涗慨鏀瑰彲鑳戒笉琚笂娓?ACPICA 鎺ュ彈锛屽湪杩欑鎯呭喌涓嬶紝闄ら潪 ACPICA 涓€鏂硅兘澶熷疄鐜版柊鐨勬満鍒舵潵鏇夸唬瀹冧滑锛屽惁鍒欏畠浠細浣滀负宸叉彁浜ょ殑 ACPICA 鍒嗘淇濈暀涓嬫潵銆?   4. ACPICA 鍙戝竷淇锛圓CPICA release fixups锛夆€斺€?ACPICA 鍙娇鐢ㄤ竴缁勭敤鎴风┖闂存ā鎷熷疄鐢ㄧ▼搴忔潵娴嬭瘯鎻愪氦锛屽洜姝?linuxized ACPICA 琛ヤ竵鍙兘浼氱牬鍧?Linux 鍐呮牳锛岀粰鎴戜滑鐣欎笅鏋勫缓/鍚姩澶辫触銆備负浜嗛伩鍏嶇牬鍧?Linux 鐨勪簩鍒嗭紙bisection锛夛紝鍦ㄥ彂甯冩祦绋嬩腑浼氬皢淇鐩存帴搴旂敤鍒?linuxized ACPICA 琛ヤ竵涓娿€傚綋杩欎簺鍙戝竷淇琚弽鍚戠Щ妞嶅埌涓婃父 ACPICA 婧愮爜鏃讹紝瀹冧滑蹇呴』閬靛惊涓婃父 ACPICA 鐨勮鍒欙紝鍥犳鍙兘浼氬嚭鐜拌繘涓€姝ョ殑淇敼銆傝繖鍙兘瀵艰嚧鏂板垎姝х殑鍑虹幇銆?   5. ACPICA 鎻愪氦蹇€熻窡韪紙Fast tracking of ACPICA commits锛夆€斺€?鏌愪簺 ACPICA 鎻愪氦鏄洖褰掍慨澶嶆垨绋冲畾鍊欓€夋潗鏂欙紝鍥犳浼氱浉瀵逛簬 ACPICA 鍙戝竷娴佺▼鑰屾彁鍓嶅簲鐢ㄣ€傚鏋滄绫绘彁浜ゅ湪 ACPICA 涓€鏂硅鍥為€€鎴栧彉鍩猴紝浠ユ彁渚涙洿浼樼殑瑙ｅ喅鏂规锛屽氨浼氱敓鎴愭柊鐨?ACPICA 鍒嗘銆?
+## ACPICA Development锛圓CPICA 寮€鍙戯級
 
-## ACPICA Divergences（ACPICA 分歧）
+鏈寮曞 Linux 寮€鍙戣€呬娇鐢?ACPICA 涓婃父鍙戝竷瀹炵敤绋嬪簭锛屽湪瀹冧滑浠?ACPICA 鍙戝竷娴佺▼鍙敤涔嬪墠锛岃幏鍙栧搴斾簬涓婃父 ACPICA 鎻愪氦鐨?Linux 琛ヤ竵銆?
+   1. Cherry-pick 涓€涓?ACPICA 鎻愪氦
 
-理想情况下，所有 ACPICA 提交都应当被自动转换为 Linux 补丁而无需手动修改，“linux / master” 树应当包含与 “new linuxized acpica” 树中所含 ACPICA 代码精确对应的 ACPICA 代码，并且应当可以完全自动地运行发布流程。
-
-然而，事实上，Linux 中的 ACPICA 代码与上游 ACPICA 代码之间存在源代码差异，这被称为 “ACPICA Divergences”（ACPICA 分歧）。
-
-ACPICA 分歧的各种来源包括：
-   1. 遗留分歧（Legacy divergences）—— 在当前的 ACPICA 发布流程建立之前，Linux 与 ACPICA 之间就已经存在分歧。过去几年中这些分歧已被大幅减少，但仍有若干存在，并且需要时间来找出它们存在背后的根本原因。
-   2. 手动修改（Manual modifications）—— 任何直接在 Linux 源码中做的手动修改（例如编码风格修正）显然会损害 ACPICA 发布自动化。因此建议在上游 ACPICA 源码中修复此类问题，并使用 ACPICA 发布实用程序生成 linuxized 修复（详见下文第 4 节）。
-   3. Linux 特定功能（Linux specific features）—— 有时无法使用当前的 ACPICA API 来实现 Linux 内核所需的功能，因此 Linux 开发者偶尔不得不直接修改 ACPICA 代码。这些修改可能不被上游 ACPICA 接受，在这种情况下，除非 ACPICA 一方能够实现新的机制来替代它们，否则它们会作为已提交的 ACPICA 分歧保留下来。
-   4. ACPICA 发布修复（ACPICA release fixups）—— ACPICA 只使用一组用户空间模拟实用程序来测试提交，因此 linuxized ACPICA 补丁可能会破坏 Linux 内核，给我们留下构建/启动失败。为了避免破坏 Linux 的二分（bisection），在发布流程中会将修复直接应用到 linuxized ACPICA 补丁上。当这些发布修复被反向移植到上游 ACPICA 源码时，它们必须遵循上游 ACPICA 的规则，因此可能会出现进一步的修改。这可能导致新分歧的出现。
-   5. ACPICA 提交快速跟踪（Fast tracking of ACPICA commits）—— 某些 ACPICA 提交是回归修复或稳定候选材料，因此会相对于 ACPICA 发布流程而提前应用。如果此类提交在 ACPICA 一方被回退或变基，以提供更优的解决方案，就会生成新的 ACPICA 分歧。
-
-## ACPICA Development（ACPICA 开发）
-
-本段引导 Linux 开发者使用 ACPICA 上游发布实用程序，在它们从 ACPICA 发布流程可用之前，获取对应于上游 ACPICA 提交的 Linux 补丁。
-
-   1. Cherry-pick 一个 ACPICA 提交
-
-   首先您需要 git clone 该 ACPICA 仓库，并且您想要 cherry-pick 的 ACPICA 修改必须已提交到本地仓库。
-
-   然后 gen-patch.sh 命令可以帮助 cherry-pick 一个 ACPICA 提交
+   棣栧厛鎮ㄩ渶瑕?git clone 璇?ACPICA 浠撳簱锛屽苟涓旀偍鎯宠 cherry-pick 鐨?ACPICA 淇敼蹇呴』宸叉彁浜ゅ埌鏈湴浠撳簱銆?
+   鐒跺悗 gen-patch.sh 鍛戒护鍙互甯姪 cherry-pick 涓€涓?ACPICA 鎻愪氦
 ```
 
    $ git clone https://github.com/acpica/acpica
    $ cd acpica
    $ generate/linux/gen-patch.sh -u [commit ID]
 
-   这里的 commit ID 是您想要 cherry-pick 的 ACPICA 本地仓库提交 ID。如果提交是 “HEAD”，则可以省略。
+   杩欓噷鐨?commit ID 鏄偍鎯宠 cherry-pick 鐨?ACPICA 鏈湴浠撳簱鎻愪氦 ID銆傚鏋滄彁浜ゆ槸 鈥淗EAD鈥濓紝鍒欏彲浠ョ渷鐣ャ€?
+   2. Cherry-pick 鏈€杩戠殑 ACPICA 鎻愪氦
 
-   2. Cherry-pick 最近的 ACPICA 提交
-
-   有时您需要将代码变基到尚未应用到 Linux 的最新 ACPICA 修改之上。
-
-   您可以自己生成 ACPICA 发布系列，并将代码变基到生成的 ACPICA 发布补丁之上：：
+   鏈夋椂鎮ㄩ渶瑕佸皢浠ｇ爜鍙樺熀鍒板皻鏈簲鐢ㄥ埌 Linux 鐨勬渶鏂?ACPICA 淇敼涔嬩笂銆?
+   鎮ㄥ彲浠ヨ嚜宸辩敓鎴?ACPICA 鍙戝竷绯诲垪锛屽苟灏嗕唬鐮佸彉鍩哄埌鐢熸垚鐨?ACPICA 鍙戝竷琛ヤ竵涔嬩笂锛氾細
 
    $ git clone https://github.com/acpica/acpica
    $ cd acpica
    $ generate/linux/make-patches.sh -u [commit ID]
 
-   该 commit ID 应当是 Linux 接受的最后一个 ACPICA 提交。通常，它是修改 ACPI_CA_VERSION 的提交。它可以通过执行 "git blame source/include/acpixf.h" 并参考包含 "ACPI_CA_VERSION" 的那一行来找到。
+   璇?commit ID 搴斿綋鏄?Linux 鎺ュ彈鐨勬渶鍚庝竴涓?ACPICA 鎻愪氦銆傞€氬父锛屽畠鏄慨鏀?ACPI_CA_VERSION 鐨勬彁浜ゃ€傚畠鍙互閫氳繃鎵ц "git blame source/include/acpixf.h" 骞跺弬鑰冨寘鍚?"ACPI_CA_VERSION" 鐨勯偅涓€琛屾潵鎵惧埌銆?
+   3. 妫€鏌ュ綋鍓嶇殑鍒嗘
 
-   3. 检查当前的分歧
-
-   如果您同时拥有 Linux 和上游 ACPICA 的本地副本，您可以生成一个 diff 文件，指示当前分歧的状态：：
-
+   濡傛灉鎮ㄥ悓鏃舵嫢鏈?Linux 鍜屼笂娓?ACPICA 鐨勬湰鍦板壇鏈紝鎮ㄥ彲浠ョ敓鎴愪竴涓?diff 鏂囦欢锛屾寚绀哄綋鍓嶅垎姝х殑鐘舵€侊細锛?
    # git clone https://github.com/acpica/acpica
    # git clone https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
    # cd acpica

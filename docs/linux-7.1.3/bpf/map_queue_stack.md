@@ -1,23 +1,19 @@
-
-## BPF_MAP_TYPE_QUEUE 与 BPF_MAP_TYPE_STACK
-
-
-   - `BPF_MAP_TYPE_QUEUE` 与 `BPF_MAP_TYPE_STACK` 在内核版本 4.20 中引入
-
-`BPF_MAP_TYPE_QUEUE` 为 BPF 程序提供 FIFO（先进先出）存储，`BPF_MAP_TYPE_STACK` 提供 LIFO
-（后进先出）存储。这些映射支持 peek、pop 与 push 操作，通过相应的辅助函数暴露给 BPF 程序。
-这些操作通过现有的 `bpf` 系统调用以下列方式暴露给用户空间应用程序：
-
-- `BPF_MAP_LOOKUP_ELEM` -> peek（查看）
-- `BPF_MAP_LOOKUP_AND_DELETE_ELEM` -> pop（弹出）
-- `BPF_MAP_UPDATE_ELEM` -> push（压入）
-
-`BPF_MAP_TYPE_QUEUE` 与 `BPF_MAP_TYPE_STACK` 不支持 `BPF_F_NO_PREALLOC`。
-
-## 用法
+﻿
+## BPF_MAP_TYPE_QUEUE 涓?BPF_MAP_TYPE_STACK
 
 
-### 内核 BPF
+   - `BPF_MAP_TYPE_QUEUE` 涓?`BPF_MAP_TYPE_STACK` 鍦ㄥ唴鏍哥増鏈?4.20 涓紩鍏?
+`BPF_MAP_TYPE_QUEUE` 涓?BPF 绋嬪簭鎻愪緵 FIFO锛堝厛杩涘厛鍑猴級瀛樺偍锛宍BPF_MAP_TYPE_STACK` 鎻愪緵 LIFO
+锛堝悗杩涘厛鍑猴級瀛樺偍銆傝繖浜涙槧灏勬敮鎸?peek銆乸op 涓?push 鎿嶄綔锛岄€氳繃鐩稿簲鐨勮緟鍔╁嚱鏁版毚闇茬粰 BPF 绋嬪簭銆?杩欎簺鎿嶄綔閫氳繃鐜版湁鐨?`bpf` 绯荤粺璋冪敤浠ヤ笅鍒楁柟寮忔毚闇茬粰鐢ㄦ埛绌洪棿搴旂敤绋嬪簭锛?
+- `BPF_MAP_LOOKUP_ELEM` -> peek锛堟煡鐪嬶級
+- `BPF_MAP_LOOKUP_AND_DELETE_ELEM` -> pop锛堝脊鍑猴級
+- `BPF_MAP_UPDATE_ELEM` -> push锛堝帇鍏ワ級
+
+`BPF_MAP_TYPE_QUEUE` 涓?`BPF_MAP_TYPE_STACK` 涓嶆敮鎸?`BPF_F_NO_PREALLOC`銆?
+## 鐢ㄦ硶
+
+
+### 鍐呮牳 BPF
 
 
 #### bpf_map_push_elem()
@@ -25,26 +21,23 @@
 
    long bpf_map_push_elem(struct bpf_map **map, const void **value, u64 flags)
 
-可使用 `bpf_map_push_elem` 辅助函数将一个元素 `value` 添加到队列或栈。必须将 `flags` 参数
-设为 `BPF_ANY` 或 `BPF_EXIST`。如果将 `flags` 设为 `BPF_EXIST`，则当队列或栈已满时，将移除
-最旧的元素以腾出空间添加 `value`。成功时返回 `0`，失败时返回负的错误码。
-
+鍙娇鐢?`bpf_map_push_elem` 杈呭姪鍑芥暟灏嗕竴涓厓绱?`value` 娣诲姞鍒伴槦鍒楁垨鏍堛€傚繀椤诲皢 `flags` 鍙傛暟
+璁句负 `BPF_ANY` 鎴?`BPF_EXIST`銆傚鏋滃皢 `flags` 璁句负 `BPF_EXIST`锛屽垯褰撻槦鍒楁垨鏍堝凡婊℃椂锛屽皢绉婚櫎
+鏈€鏃х殑鍏冪礌浠ヨ吘鍑虹┖闂存坊鍔?`value`銆傛垚鍔熸椂杩斿洖 `0`锛屽け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
 #### bpf_map_peek_elem()
 
 
    long bpf_map_peek_elem(struct bpf_map **map, void **value)
 
-该辅助函数从队列或栈中获取一个元素 `value` 而不移除它。成功时返回 `0`，失败时返回负的错误码。
-
+璇ヨ緟鍔╁嚱鏁颁粠闃熷垪鎴栨爤涓幏鍙栦竴涓厓绱?`value` 鑰屼笉绉婚櫎瀹冦€傛垚鍔熸椂杩斿洖 `0`锛屽け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
 #### bpf_map_pop_elem()
 
 
    long bpf_map_pop_elem(struct bpf_map **map, void **value)
 
-该辅助函数将一个元素移除到 `value` 中，从队列或栈中弹出。成功时返回 `0`，失败时返回负的错误码。
+璇ヨ緟鍔╁嚱鏁板皢涓€涓厓绱犵Щ闄ゅ埌 `value` 涓紝浠庨槦鍒楁垨鏍堜腑寮瑰嚭銆傛垚鍔熸椂杩斿洖 `0`锛屽け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
 
-
-### 用户空间
+### 鐢ㄦ埛绌洪棿
 
 
 #### bpf_map_update_elem()
@@ -52,33 +45,28 @@
 
    int bpf_map_update_elem (int fd, const void **key, const void **value, __u64 flags)
 
-用户空间程序可以使用 libbpf 的 `bpf_map_update_elem` 函数将 `value` 压入队列或栈。`key` 参数
-必须设为 `NULL`，且 `flags` 必须设为 `BPF_ANY` 或 `BPF_EXIST`，语义与 `bpf_map_push_elem`
-内核辅助函数相同。成功时返回 `0`，失败时返回负的错误码。
-
+鐢ㄦ埛绌洪棿绋嬪簭鍙互浣跨敤 libbpf 鐨?`bpf_map_update_elem` 鍑芥暟灏?`value` 鍘嬪叆闃熷垪鎴栨爤銆俙key` 鍙傛暟
+蹇呴』璁句负 `NULL`锛屼笖 `flags` 蹇呴』璁句负 `BPF_ANY` 鎴?`BPF_EXIST`锛岃涔変笌 `bpf_map_push_elem`
+鍐呮牳杈呭姪鍑芥暟鐩稿悓銆傛垚鍔熸椂杩斿洖 `0`锛屽け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
 #### bpf_map_lookup_elem()
 
 
    int bpf_map_lookup_elem (int fd, const void **key, void **value)
 
-用户空间程序可以使用 libbpf 的 `bpf_map_lookup_elem` 函数查看队列或栈头部（head）的 `value`。
-`key` 参数必须设为 `NULL`。成功时返回 `0`，失败时返回负的错误码。
-
+鐢ㄦ埛绌洪棿绋嬪簭鍙互浣跨敤 libbpf 鐨?`bpf_map_lookup_elem` 鍑芥暟鏌ョ湅闃熷垪鎴栨爤澶撮儴锛坔ead锛夌殑 `value`銆?`key` 鍙傛暟蹇呴』璁句负 `NULL`銆傛垚鍔熸椂杩斿洖 `0`锛屽け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
 #### bpf_map_lookup_and_delete_elem()
 
 
    int bpf_map_lookup_and_delete_elem (int fd, const void **key, void **value)
 
-用户空间程序可以使用 libbpf 的 `bpf_map_lookup_and_delete_elem` 函数从队列或栈头部弹出一个
-`value`。`key` 参数必须设为 `NULL`。成功时返回 `0`，失败时返回负的错误码。
-
-## 示例
+鐢ㄦ埛绌洪棿绋嬪簭鍙互浣跨敤 libbpf 鐨?`bpf_map_lookup_and_delete_elem` 鍑芥暟浠庨槦鍒楁垨鏍堝ご閮ㄥ脊鍑轰竴涓?`value`銆俙key` 鍙傛暟蹇呴』璁句负 `NULL`銆傛垚鍔熸椂杩斿洖 `0`锛屽け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
+## 绀轰緥
 
 
-### 内核 BPF
+### 鍐呮牳 BPF
 
 
-以下片段展示如何在 BPF 程序中声明一个队列：
+浠ヤ笅鐗囨灞曠ず濡備綍鍦?BPF 绋嬪簭涓０鏄庝竴涓槦鍒楋細
 
 
     struct {
@@ -88,10 +76,10 @@
     } queue SEC(".maps");
 
 
-### 用户空间
+### 鐢ㄦ埛绌洪棿
 
 
-以下片段展示如何使用 libbpf 的低级 API 从用户空间创建一个队列：
+浠ヤ笅鐗囨灞曠ず濡備綍浣跨敤 libbpf 鐨勪綆绾?API 浠庣敤鎴风┖闂村垱寤轰竴涓槦鍒楋細
 
 
     int create_queue()
@@ -105,7 +93,6 @@
     }
 
 
-## 参考
-
+## 鍙傝€?
 
 https://lwn.net/ml/netdev/153986858555.9127.14517764371945179514.stgit@kernel/

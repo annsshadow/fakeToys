@@ -1,19 +1,13 @@
-## OSNOISE 跟踪器
+﻿## OSNOISE 璺熻釜鍣?
+
+鍦ㄩ珮鎬ц兘璁＄畻锛圚PC锛夌殑璇涓紝鎿嶄綔绯荤粺鍣０锛?*osnoise**锛夋寚鐨勬槸搴旂敤绋嬪簭鐢变簬鎿嶄綔绯荤粺鍐呴儴娲诲姩鑰岀粡鍘嗙殑骞叉壈銆傚湪 Linux 鐨勮澧冧笅锛孨MI銆両RQ銆丼oftIRQ 浠ュ強浠讳綍鍏跺畠绯荤粺绾跨▼閮藉彲鑳界粰绯荤粺甯︽潵鍣０銆傛澶栵紝涓庣‖浠剁浉鍏崇殑宸ヤ綔涔熷彲鑳藉紩璧峰櫔澹帮紝渚嬪閫氳繃 SMI銆?
+hwlat_detector 鏄敤鏉ヨ瘑鍒渶澶嶆潅鍣０婧愨€斺€?*纭欢鍣０**鈥斺€旂殑宸ュ叿涔嬩竴銆?
+绠€鑰岃█涔嬶紝hwlat_detector 鍒涘缓涓€涓嚎绋嬶紝璇ョ嚎绋嬩互缁欏畾鍛ㄦ湡鍛ㄦ湡鎬у湴杩愯銆傚湪涓€涓懆鏈熷紑濮嬫椂锛岃绾跨▼绂佺敤涓柇骞跺紑濮嬮噰鏍枫€傝繍琛屼腑锛宧wlatd 绾跨▼鍦ㄤ竴涓惊鐜腑璇诲彇鏃堕棿銆傜敱浜庝腑鏂绂佺敤锛岀嚎绋嬨€両RQ 鍜?SoftIRQ 閮芥棤娉曞共鎵?hwlatd 绾跨▼銆傚洜姝わ紝涓ゆ涓嶅悓鏃堕棿璇诲彇涔嬮棿鍑虹幇闂撮殧鐨勫師鍥狅紝瑕佷箞鍦?NMI 涓紝瑕佷箞鍦ㄧ‖浠舵湰韬€傚湪鍛ㄦ湡缁撴潫鏃讹紝hwlatd 閲嶆柊鍚敤涓柇锛屽苟鎶ュ憡璇诲彇涔嬮棿瑙傛祴鍒扮殑鏈€澶ч棿闅斻€傚畠杩樹細鎵撳嵃涓€涓?NMI 鍙戠敓璁℃暟鍣ㄣ€傚鏋滆緭鍑轰腑娌℃湁鎶ュ憡 NMI 鎵ц锛岀敤鎴峰氨鍙互鏂畾纭欢鏄寤惰繜鐨勭姜榄佺ジ棣栥€俬wlat 閫氳繃瑙傚療 NMI 鐨勮繘鍏ヤ笌閫€鍑烘娴?NMI 鎵ц銆?
+osnoise 璺熻釜鍣ㄥ埄鐢?hwlat_detector锛岃繍琛屼竴涓被浼肩殑寰幆锛屼絾鍏佽鎶㈠崰銆丼oftIRQ 鍜?IRQ锛屼粠鑰屽厑璁稿湪鍏舵墽琛屾湡闂村嚭鐜版墍鏈夋潵婧愮殑 **osnoise**銆傞噰鐢ㄤ笌 hwlat 鐩稿悓鐨勬柟娉曪紝osnoise 璁板綍浠讳綍骞叉壈婧愮殑杩涘叆涓庨€€鍑虹偣锛屽苟閫掑涓€涓?per-cpu 骞叉壈璁℃暟鍣ㄣ€俹snoise 璺熻釜鍣ㄨ繕浼氫负姣忎竴绉嶅共鎵版簮淇濆瓨涓€涓共鎵拌鏁板櫒銆傛瘡褰撳伐鍏疯瀵熷埌 NMI銆両RQ銆丼oftIRQ 鍜岀嚎绋嬭繖浜涘共鎵扮殑杩涘叆浜嬩欢鏃讹紝鐩稿簲鐨勫共鎵拌鏁板櫒灏变細閫掑銆傚綋鍙戠敓鍣０鑰屾病鏈夋潵鑷搷浣滅郴缁熷眰闈㈢殑浠讳綍骞叉壈鏃讹紝纭欢鍣０璁℃暟鍣ㄩ€掑锛屾寚鍚戜竴涓笌纭欢鐩稿叧鐨勫櫔澹般€傞€氳繃杩欑鏂瑰紡锛宱snoise 鍙互缁熻浠讳綍鏉ユ簮鐨勫共鎵般€傚湪鍛ㄦ湡缁撴潫鏃讹紝osnoise 璺熻釜鍣ㄦ墦鍗版墍鏈夊櫔澹颁箣鍜屻€佹渶澶у崟娆″櫔澹般€佺嚎绋嬪彲鐢ㄧ殑 CPU 鐧惧垎姣旓紝浠ュ強鍚勫櫔澹版簮鐨勮鏁板櫒銆?
+### 鐢ㄦ硶
 
 
-在高性能计算（HPC）的语境中，操作系统噪声（**osnoise**）指的是应用程序由于操作系统内部活动而经历的干扰。在 Linux 的语境下，NMI、IRQ、SoftIRQ 以及任何其它系统线程都可能给系统带来噪声。此外，与硬件相关的工作也可能引起噪声，例如通过 SMI。
-
-hwlat_detector 是用来识别最复杂噪声源——**硬件噪声**——的工具之一。
-
-简而言之，hwlat_detector 创建一个线程，该线程以给定周期周期性地运行。在一个周期开始时，该线程禁用中断并开始采样。运行中，hwlatd 线程在一个循环中读取时间。由于中断被禁用，线程、IRQ 和 SoftIRQ 都无法干扰 hwlatd 线程。因此，两次不同时间读取之间出现间隔的原因，要么在 NMI 中，要么在硬件本身。在周期结束时，hwlatd 重新启用中断，并报告读取之间观测到的最大间隔。它还会打印一个 NMI 发生计数器。如果输出中没有报告 NMI 执行，用户就可以断定硬件是该延迟的罪魁祸首。hwlat 通过观察 NMI 的进入与退出检测 NMI 执行。
-
-osnoise 跟踪器利用 hwlat_detector，运行一个类似的循环，但允许抢占、SoftIRQ 和 IRQ，从而允许在其执行期间出现所有来源的 **osnoise**。采用与 hwlat 相同的方法，osnoise 记录任何干扰源的进入与退出点，并递增一个 per-cpu 干扰计数器。osnoise 跟踪器还会为每一种干扰源保存一个干扰计数器。每当工具观察到 NMI、IRQ、SoftIRQ 和线程这些干扰的进入事件时，相应的干扰计数器就会递增。当发生噪声而没有来自操作系统层面的任何干扰时，硬件噪声计数器递增，指向一个与硬件相关的噪声。通过这种方式，osnoise 可以统计任何来源的干扰。在周期结束时，osnoise 跟踪器打印所有噪声之和、最大单次噪声、线程可用的 CPU 百分比，以及各噪声源的计数器。
-
-### 用法
-
-
-将 ASCII 文本 "osnoise" 写入 tracing 系统（通常挂载于 /sys/kernel/tracing）的 current_tracer 文件。
-
+灏?ASCII 鏂囨湰 "osnoise" 鍐欏叆 tracing 绯荤粺锛堥€氬父鎸傝浇浜?/sys/kernel/tracing锛夌殑 current_tracer 鏂囦欢銆?
 ```
 
         [root@f32 ~]# cd /sys/kernel/tracing/
@@ -43,53 +37,26 @@ osnoise 跟踪器利用 hwlat_detector，运行一个类似的循环，但允许
                    <...>-866     [007] ....    81.638326: 1000000       7816  99.21840     107      8      0   1016     39     19
 
 ```
-除了常规的 trace 字段（从 TASK-PID 到 TIMESTAMP）外，跟踪器会在每个周期结束时，为正在运行 osnoise/ 线程的每个 CPU 打印一条消息。osnoise 特有的字段报告如下：
+闄や簡甯歌鐨?trace 瀛楁锛堜粠 TASK-PID 鍒?TIMESTAMP锛夊锛岃窡韪櫒浼氬湪姣忎釜鍛ㄦ湡缁撴潫鏃讹紝涓烘鍦ㄨ繍琛?osnoise/ 绾跨▼鐨勬瘡涓?CPU 鎵撳嵃涓€鏉℃秷鎭€俹snoise 鐗规湁鐨勫瓧娈垫姤鍛婂涓嬶細
 
- - RUNTIME IN US（以微秒计的运行时）报告 osnoise 线程持续循环读取时间所花费的时间量。
- - NOISE IN US（以微秒计的噪声）报告 osnoise 跟踪器在相应运行时间内观测到的噪声总和。
- - % OF CPU AVAILABLE（可用 CPU 百分比）报告运行时间窗口内 osnoise 线程可用的 CPU 百分比。
- - MAX SINGLE NOISE IN US（最大单次噪声，以微秒计）报告运行时间窗口内观测到的最大单次噪声。
- - 干扰计数器显示各对应干扰在运行时间窗口内发生的次数。
+ - RUNTIME IN US锛堜互寰璁＄殑杩愯鏃讹級鎶ュ憡 osnoise 绾跨▼鎸佺画寰幆璇诲彇鏃堕棿鎵€鑺辫垂鐨勬椂闂撮噺銆? - NOISE IN US锛堜互寰璁＄殑鍣０锛夋姤鍛?osnoise 璺熻釜鍣ㄥ湪鐩稿簲杩愯鏃堕棿鍐呰娴嬪埌鐨勫櫔澹版€诲拰銆? - % OF CPU AVAILABLE锛堝彲鐢?CPU 鐧惧垎姣旓級鎶ュ憡杩愯鏃堕棿绐楀彛鍐?osnoise 绾跨▼鍙敤鐨?CPU 鐧惧垎姣斻€? - MAX SINGLE NOISE IN US锛堟渶澶у崟娆″櫔澹帮紝浠ュ井绉掕锛夋姤鍛婅繍琛屾椂闂寸獥鍙ｅ唴瑙傛祴鍒扮殑鏈€澶у崟娆″櫔澹般€? - 骞叉壈璁℃暟鍣ㄦ樉绀哄悇瀵瑰簲骞叉壈鍦ㄨ繍琛屾椂闂寸獥鍙ｅ唴鍙戠敓鐨勬鏁般€?
+娉ㄦ剰锛屼笂闈㈢殑绀轰緥鏄剧ず浜嗗ぇ閲忕殑 HW 鍣０鏍锋湰銆傚叾鍘熷洜鏄鏍锋湰鍙栬嚜涓€鍙拌櫄鎷熸満锛岃€屼富鏈虹殑骞叉壈琚綋浣滅‖浠跺共鎵版娴嬪埌浜嗐€?
+### 璺熻釜鍣ㄩ厤缃?
 
-注意，上面的示例显示了大量的 HW 噪声样本。其原因是该样本取自一台虚拟机，而主机的干扰被当作硬件干扰检测到了。
-
-### 跟踪器配置
+璺熻釜鍣ㄥ湪 osnoise 鐩綍涓嬫湁涓€缁勯€夐」锛屽畠浠槸锛?
+ - osnoise/cpus锛氬皢杩愯 osnoise 绾跨▼鐨?CPU銆? - osnoise/period_us锛歰snoise 绾跨▼鐨勫懆鏈熴€? - osnoise/runtime_us锛歰snoise 绾跨▼瀵绘壘鍣０鐨勬椂闀裤€? - osnoise/stop_tracing_us锛氬鏋滃彂鐢熺殑鍗曟鍣０楂樹簬閰嶇疆鍊硷紝鍋滄绯荤粺 tracing銆傚啓鍏?0 浼氱鐢ㄨ閫夐」銆? - osnoise/stop_tracing_total_us锛氬鏋滄€诲櫔澹伴珮浜庨厤缃€硷紝鍋滄绯荤粺 tracing銆傚啓鍏?0 浼氱鐢ㄨ閫夐」銆? - tracing_threshold锛氫袱娆?time() 璇诲彇涔嬮棿琚涓哄櫔澹扮殑鏈€灏忓樊鍊硷紙浠?us 璁★級銆傝涓?0 鏃朵娇鐢ㄩ粯璁ゅ€硷紝鐩墠涓?1 us銆? - osnoise/options锛氫竴缁勫紑/鍏抽€夐」锛屽彲閫氳繃灏嗛€夐」鍚嶅啓鍏ヨ鏂囦欢鏉ュ惎鐢紝鎴栭€氳繃鍐欏叆甯︽湁 'NO\_' 鍓嶇紑鐨勯€夐」鍚嶆潵绂佺敤銆備緥濡傦紝鍐欏叆 NO_OSNOISE_WORKLOAD 浼氱鐢?OSNOISE_WORKLOAD 閫夐」銆傜壒娈婄殑 DEFAULTS 閫夐」浼氬皢鎵€鏈夐€夐」閲嶇疆涓洪粯璁ゅ€笺€?
+### 璺熻釜鍣ㄩ€夐」
 
 
-跟踪器在 osnoise 目录下有一组选项，它们是：
+osnoise/options 鏂囦欢鏆撮湶浜嗕竴缁勭敤浜?osnoise 璺熻釜鍣ㄧ殑寮€/鍏抽厤缃€夐」銆傝繖浜涢€夐」鏄細
 
- - osnoise/cpus：将运行 osnoise 线程的 CPU。
- - osnoise/period_us：osnoise 线程的周期。
- - osnoise/runtime_us：osnoise 线程寻找噪声的时长。
- - osnoise/stop_tracing_us：如果发生的单次噪声高于配置值，停止系统 tracing。写入 0 会禁用该选项。
- - osnoise/stop_tracing_total_us：如果总噪声高于配置值，停止系统 tracing。写入 0 会禁用该选项。
- - tracing_threshold：两次 time() 读取之间被视为噪声的最小差值（以 us 计）。设为 0 时使用默认值，目前为 1 us。
- - osnoise/options：一组开/关选项，可通过将选项名写入该文件来启用，或通过写入带有 'NO\_' 前缀的选项名来禁用。例如，写入 NO_OSNOISE_WORKLOAD 会禁用 OSNOISE_WORKLOAD 选项。特殊的 DEFAULTS 选项会将所有选项重置为默认值。
-
-### 跟踪器选项
+ - DEFAULTS锛氬皢閫夐」閲嶇疆涓洪粯璁ゅ€笺€? - OSNOISE_WORKLOAD锛氫笉璋冨害 osnoise 宸ヤ綔璐熻浇锛堣涓嬫枃涓撻棬灏忚妭锛夈€? - PANIC_ON_STOP锛氬鏋滆窡韪櫒鍋滄锛岃皟鐢?panic()銆傝閫夐」鐢ㄤ簬鎹曡幏 vmcore銆? - OSNOISE_PREEMPT_DISABLE锛氳繍琛?osnoise 宸ヤ綔璐熻浇鏃剁鐢ㄦ姠鍗狅紝鍙厑璁?IRQ 鍜屼笌纭欢鐩稿叧鐨勫櫔澹般€? - OSNOISE_IRQ_DISABLE锛氳繍琛?osnoise 宸ヤ綔璐熻浇鏃剁鐢?IRQ锛屽彧鍏佽 NMI 鍜屼笌纭欢鐩稿叧鐨勫櫔澹帮紝绫讳技 hwlat 璺熻釜鍣ㄣ€?
+### 棰濆鐨?Tracing
 
 
-osnoise/options 文件暴露了一组用于 osnoise 跟踪器的开/关配置选项。这些选项是：
-
- - DEFAULTS：将选项重置为默认值。
- - OSNOISE_WORKLOAD：不调度 osnoise 工作负载（见下文专门小节）。
- - PANIC_ON_STOP：如果跟踪器停止，调用 panic()。该选项用于捕获 vmcore。
- - OSNOISE_PREEMPT_DISABLE：运行 osnoise 工作负载时禁用抢占，只允许 IRQ 和与硬件相关的噪声。
- - OSNOISE_IRQ_DISABLE：运行 osnoise 工作负载时禁用 IRQ，只允许 NMI 和与硬件相关的噪声，类似 hwlat 跟踪器。
-
-### 额外的 Tracing
-
-
-除了跟踪器之外，还添加了一组 tracepoint，以方便识别 osnoise 的来源。
-
- - osnoise:sample_threshold：任何时候噪声高于可配置的 tolerance_ns 时打印。
- - osnoise:nmi_noise：来自 NMI 的噪声，包含持续时间。
- - osnoise:irq_noise：来自 IRQ 的噪声，包含持续时间。
- - osnoise:softirq_noise：来自 SoftIRQ 的噪声，包含持续时间。
- - osnoise:thread_noise：来自线程的噪声，包含持续时间。
-
-注意，所有的值都是**净值**。例如，如果在 osnoise 运行期间，另一个线程抢占了 osnoise 线程，它会在开始时启动一个 thread_noise 持续时间。随后发生一次 IRQ，抢占该 thread_noise，启动一个 irq_noise。当 IRQ 执行结束时，它会计算自身的持续时间，并从 thread_noise 中减去该持续时间，以避免对 IRQ 执行的重复记账。这一逻辑对所有噪声源都成立。
-
+闄や簡璺熻釜鍣ㄤ箣澶栵紝杩樻坊鍔犱簡涓€缁?tracepoint锛屼互鏂逛究璇嗗埆 osnoise 鐨勬潵婧愩€?
+ - osnoise:sample_threshold锛氫换浣曟椂鍊欏櫔澹伴珮浜庡彲閰嶇疆鐨?tolerance_ns 鏃舵墦鍗般€? - osnoise:nmi_noise锛氭潵鑷?NMI 鐨勫櫔澹帮紝鍖呭惈鎸佺画鏃堕棿銆? - osnoise:irq_noise锛氭潵鑷?IRQ 鐨勫櫔澹帮紝鍖呭惈鎸佺画鏃堕棿銆? - osnoise:softirq_noise锛氭潵鑷?SoftIRQ 鐨勫櫔澹帮紝鍖呭惈鎸佺画鏃堕棿銆? - osnoise:thread_noise锛氭潵鑷嚎绋嬬殑鍣０锛屽寘鍚寔缁椂闂淬€?
+娉ㄦ剰锛屾墍鏈夌殑鍊奸兘鏄?*鍑€鍊?*銆備緥濡傦紝濡傛灉鍦?osnoise 杩愯鏈熼棿锛屽彟涓€涓嚎绋嬫姠鍗犱簡 osnoise 绾跨▼锛屽畠浼氬湪寮€濮嬫椂鍚姩涓€涓?thread_noise 鎸佺画鏃堕棿銆傞殢鍚庡彂鐢熶竴娆?IRQ锛屾姠鍗犺 thread_noise锛屽惎鍔ㄤ竴涓?irq_noise銆傚綋 IRQ 鎵ц缁撴潫鏃讹紝瀹冧細璁＄畻鑷韩鐨勬寔缁椂闂达紝骞朵粠 thread_noise 涓噺鍘昏鎸佺画鏃堕棿锛屼互閬垮厤瀵?IRQ 鎵ц鐨勯噸澶嶈璐︺€傝繖涓€閫昏緫瀵规墍鏈夊櫔澹版簮閮芥垚绔嬨€?
 ```
 
        osnoise/8-961     [008] d.h.  5789.857532: irq_noise: local_timer:236 start 5789.857529929 duration 1845 ns
@@ -98,11 +65,8 @@ osnoise/options 文件暴露了一组用于 osnoise 跟踪器的开/关配置选
        osnoise/8-961     [008] ....  5789.858413: sample_threshold: start 5789.858404555 duration 8812 ns interferences 2
 
 ```
-在此示例中，最后一行报告了一个 8 微秒的噪声样本，指向两次干扰。向后查看 trace，前两个条目是关于在一次定时器 IRQ 执行之后运行的迁移线程。第一个事件不属于该噪声的一部分，因为它发生在一毫秒之前。
+鍦ㄦ绀轰緥涓紝鏈€鍚庝竴琛屾姤鍛婁簡涓€涓?8 寰鐨勫櫔澹版牱鏈紝鎸囧悜涓ゆ骞叉壈銆傚悜鍚庢煡鐪?trace锛屽墠涓や釜鏉＄洰鏄叧浜庡湪涓€娆″畾鏃跺櫒 IRQ 鎵ц涔嬪悗杩愯鐨勮縼绉荤嚎绋嬨€傜涓€涓簨浠朵笉灞炰簬璇ュ櫔澹扮殑涓€閮ㄥ垎锛屽洜涓哄畠鍙戠敓鍦ㄤ竴姣涔嬪墠銆?
+鍊煎緱娉ㄦ剰鐨勬槸锛宼racepoint 涓姤鍛婄殑鎸佺画鏃堕棿涔嬪拰灏忎簬 sample_threshold 涓姤鍛婄殑 8 us銆傚叾鏍规簮鍦ㄤ簬浠讳綍骞叉壈鎵ц鍓嶅悗杩涘叆涓庨€€鍑轰唬鐮佺殑寮€閿€銆傝繖姝ｆ槸閲囩敤鍙岄噸鏂规硶鈥斺€旀祴閲忕嚎绋嬩笌 tracing鈥斺€旂殑鐞嗙敱鎵€鍦ㄣ€?
+### 鍦ㄦ病鏈夊伐浣滆礋杞界殑鎯呭喌涓嬭繍琛?osnoise 璺熻釜鍣?
 
-值得注意的是，tracepoint 中报告的持续时间之和小于 sample_threshold 中报告的 8 us。其根源在于任何干扰执行前后进入与退出代码的开销。这正是采用双重方法——测量线程与 tracing——的理由所在。
-
-### 在没有工作负载的情况下运行 osnoise 跟踪器
-
-
-通过启用设置了 NO_OSNOISE_WORKLOAD 选项的 osnoise 跟踪器，osnoise: tracepoint 可用于测量任何类型 Linux 任务的执行时间，而不受其它任务干扰。
+閫氳繃鍚敤璁剧疆浜?NO_OSNOISE_WORKLOAD 閫夐」鐨?osnoise 璺熻釜鍣紝osnoise: tracepoint 鍙敤浜庢祴閲忎换浣曠被鍨?Linux 浠诲姟鐨勬墽琛屾椂闂达紝鑰屼笉鍙楀叾瀹冧换鍔″共鎵般€?

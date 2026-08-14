@@ -1,13 +1,13 @@
-
-## UAPI 检查器（UAPI Checker）
-
-
-UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 git 树中检查 UAPI 头文件对用户空间向后兼容性。
-
-## 选项（Options）
+﻿
+## UAPI 妫€鏌ュ櫒锛圲API Checker锛?
 
 
-本节将描述可以用来运行 `check-uapi.sh` 的选项。
+UAPI 妫€鏌ュ櫒锛坄scripts/check-uapi.sh`锛夋槸涓€涓?shell 鑴氭湰锛岀敤浜庡湪 git 鏍戜腑妫€鏌?UAPI 澶存枃浠跺鐢ㄦ埛绌洪棿鍚戝悗鍏煎鎬с€?
+
+## 閫夐」锛圤ptions锛?
+
+
+鏈妭灏嗘弿杩板彲浠ョ敤鏉ヨ繍琛?`check-uapi.sh` 鐨勯€夐」銆?
 
 ```
 
@@ -43,13 +43,13 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 gi
     2) Prerequisite not met
 
 ```
-## 示例（Examples）
+## 绀轰緥锛圗xamples锛?
 
 
-### 基本用法（Basic Usage）
+### 鍩烘湰鐢ㄦ硶锛圔asic Usage锛?
 
 
-首先，让我们尝试对一个 UAPI 头文件做一个明显会
+棣栧厛锛岃鎴戜滑灏濊瘯瀵逛竴涓?UAPI 澶存枃浠跺仛涓€涓槑鏄句細
 ```
 
     cat << 'EOF' | patch -l -p1
@@ -116,7 +116,7 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 gi
     error - 1/912 UAPI headers compatible with x86 appear _not_ to be backwards compatible
 
 ```
-在这种情况下，脚本报告这个类型变更，是因为它可能会破坏传入负数值的用户空间程序。现在，假设你知道没有任何用户空间程序可能会用到 `imm` 中的负值，因此在那里改成无符号类型应该不会有任何影响。你可以给脚本传 `-i` 标志来忽略这些变更
+鍦ㄨ繖绉嶆儏鍐典笅锛岃剼鏈姤鍛婅繖涓被鍨嬪彉鏇达紝鏄洜涓哄畠鍙兘浼氱牬鍧忎紶鍏ヨ礋鏁板€肩殑鐢ㄦ埛绌洪棿绋嬪簭銆傜幇鍦紝鍋囪浣犵煡閬撴病鏈変换浣曠敤鎴风┖闂寸▼搴忓彲鑳戒細鐢ㄥ埌 `imm` 涓殑璐熷€硷紝鍥犳鍦ㄩ偅閲屾敼鎴愭棤绗﹀彿绫诲瀷搴旇涓嶄細鏈変换浣曞奖鍝嶃€備綘鍙互缁欒剼鏈紶 `-i` 鏍囧織鏉ュ拷鐣ヨ繖浜涘彉鏇?
 ```
 
     % ./scripts/check-uapi.sh -i
@@ -144,7 +144,7 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 gi
     EOF
 
 ```
-由于我们是在重排一个已有的结构体成员，这里没有歧义，
+鐢变簬鎴戜滑鏄湪閲嶆帓涓€涓凡鏈夌殑缁撴瀯浣撴垚鍛橈紝杩欓噷娌℃湁姝т箟锛?
 ```
 
     % ./scripts/check-uapi.sh -i
@@ -181,7 +181,7 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 gi
     All 912 UAPI headers compatible with x86 appear to be backwards compatible
 
 ```
-它没抓到任何破坏性变更，因为默认情况下它只比较 `HEAD` 与 `HEAD^1`。破坏性的变更提交在 `HEAD~2`。如果我们希望搜索范围回溯得更远，就得用 `-p` 选项传入一个不同的过去引用。在这种情况下，让我们给脚本传 `-p HEAD~2`，这样它就检查 `HEAD~2` 到 `HEAD` 之间的 UAPI 变更
+瀹冩病鎶撳埌浠讳綍鐮村潖鎬у彉鏇达紝鍥犱负榛樿鎯呭喌涓嬪畠鍙瘮杈?`HEAD` 涓?`HEAD^1`銆傜牬鍧忔€х殑鍙樻洿鎻愪氦鍦?`HEAD~2`銆傚鏋滄垜浠笇鏈涙悳绱㈣寖鍥村洖婧緱鏇磋繙锛屽氨寰楃敤 `-p` 閫夐」浼犲叆涓€涓笉鍚岀殑杩囧幓寮曠敤銆傚湪杩欑鎯呭喌涓嬶紝璁╂垜浠粰鑴氭湰浼?`-p HEAD~2`锛岃繖鏍峰畠灏辨鏌?`HEAD~2` 鍒?`HEAD` 涔嬮棿鐨?UAPI 鍙樻洿
 ```
 
     % ./scripts/check-uapi.sh -p HEAD~2
@@ -199,9 +199,9 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 gi
     error - 1/912 UAPI headers compatible with x86 appear _not_ to be backwards compatible
 
 ```
-另一种做法是，我们也可以用 `-b HEAD~` 运行。这会把基准引用设为 `HEAD~`，于是脚本会比较它与 `HEAD~^1`。
+鍙︿竴绉嶅仛娉曟槸锛屾垜浠篃鍙互鐢?`-b HEAD~` 杩愯銆傝繖浼氭妸鍩哄噯寮曠敤璁句负 `HEAD~`锛屼簬鏄剼鏈細姣旇緝瀹冧笌 `HEAD~^1`銆?
 
-### 架构特定的头文件（Architecture-specific Headers）
+### 鏋舵瀯鐗瑰畾鐨勫ご鏂囦欢锛圓rchitecture-specific Headers锛?
 
 
 ```
@@ -220,7 +220,7 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 gi
     EOF
 
 ```
-这是对一个 arm64 专属 UAPI 头文件的改动。在本例中，我正从一台带 x86 编译器的 x86 机器运行脚本，因此默认情况下
+杩欐槸瀵逛竴涓?arm64 涓撳睘 UAPI 澶存枃浠剁殑鏀瑰姩銆傚湪鏈緥涓紝鎴戞浠庝竴鍙板甫 x86 缂栬瘧鍣ㄧ殑 x86 鏈哄櫒杩愯鑴氭湰锛屽洜姝ら粯璁ゆ儏鍐典笅
 ```
 
     % ./scripts/check-uapi.sh
@@ -229,9 +229,9 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 gi
     No changes to UAPI headers were applied between HEAD and dirty tree
 
 ```
-用 x86 编译器，我们无法检查 `arch/arm64` 中的头文件，所以脚本根本不会尝试。
+鐢?x86 缂栬瘧鍣紝鎴戜滑鏃犳硶妫€鏌?`arch/arm64` 涓殑澶存枃浠讹紝鎵€浠ヨ剼鏈牴鏈笉浼氬皾璇曘€?
 
-如果我们想检查这个头文件，就得用 arm64 编译器并
+濡傛灉鎴戜滑鎯虫鏌ヨ繖涓ご鏂囦欢锛屽氨寰楃敤 arm64 缂栬瘧鍣ㄥ苟
 ```
 
     % CC=aarch64-linux-gnu-gcc ARCH=arm64 ./scripts/check-uapi.sh
@@ -254,9 +254,9 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 gi
     error - 1/884 UAPI headers compatible with arm64 appear _not_ to be backwards compatible
 
 ```
-我们可以看到，在 `ARCH` 和 `CC` 为该文件正确设置后，ABI 变更被正确地报告了。另外注意脚本所检查的 UAPI 头文件总数发生了变化。这是因为为 arm64 平台安装的头部数量与 x86 不同。
+鎴戜滑鍙互鐪嬪埌锛屽湪 `ARCH` 鍜?`CC` 涓鸿鏂囦欢姝ｇ‘璁剧疆鍚庯紝ABI 鍙樻洿琚纭湴鎶ュ憡浜嗐€傚彟澶栨敞鎰忚剼鏈墍妫€鏌ョ殑 UAPI 澶存枃浠舵€绘暟鍙戠敓浜嗗彉鍖栥€傝繖鏄洜涓轰负 arm64 骞冲彴瀹夎鐨勫ご閮ㄦ暟閲忎笌 x86 涓嶅悓銆?
 
-### 跨依赖破坏（Cross-Dependency Breakages）
+### 璺ㄤ緷璧栫牬鍧忥紙Cross-Dependency Breakages锛?
 
 
 ```
@@ -276,7 +276,7 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 gi
     EOF
 
 ```
-这里，我们在改动 `types.h` 中的一个 `typedef`。这并不破坏 `types.h` 中的 UAPI，但树中的其他 UAPI 可能因
+杩欓噷锛屾垜浠湪鏀瑰姩 `types.h` 涓殑涓€涓?`typedef`銆傝繖骞朵笉鐮村潖 `types.h` 涓殑 UAPI锛屼絾鏍戜腑鐨勫叾浠?UAPI 鍙兘鍥?
 ```
 
     % ./scripts/check-uapi.sh
@@ -299,9 +299,9 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 gi
     #include <linux/types.h>
 
 ```
-注意脚本注意到失败的头文件并未改变，因此它假定是它所包含的某个头文件导致了破坏。确实，我们看到 `eventpoll.h` 用到了 `linux/types.h`。
+娉ㄦ剰鑴氭湰娉ㄦ剰鍒板け璐ョ殑澶存枃浠跺苟鏈敼鍙橈紝鍥犳瀹冨亣瀹氭槸瀹冩墍鍖呭惈鐨勬煇涓ご鏂囦欢瀵艰嚧浜嗙牬鍧忋€傜‘瀹烇紝鎴戜滑鐪嬪埌 `eventpoll.h` 鐢ㄥ埌浜?`linux/types.h`銆?
 
-### UAPI 头文件移除（UAPI Header Removals）
+### UAPI 澶存枃浠剁Щ闄わ紙UAPI Header Removals锛?
 
 
 ```
@@ -322,7 +322,7 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 gi
     EOF
 
 ```
-这个脚本把一个 UAPI 头文件从安装列表中移除。让我们运行
+杩欎釜鑴氭湰鎶婁竴涓?UAPI 澶存枃浠朵粠瀹夎鍒楄〃涓Щ闄ゃ€傝鎴戜滑杩愯
 ```
 
     % ./scripts/check-uapi.sh
@@ -334,12 +334,12 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 gi
     error - 1/912 UAPI headers compatible with x86 appear _not_ to be backwards compatible
 
 ```
-移除一个 UAPI 头文件被视为一种破坏性变更，脚本会将其标记为如此。
+绉婚櫎涓€涓?UAPI 澶存枃浠惰瑙嗕负涓€绉嶇牬鍧忔€у彉鏇达紝鑴氭湰浼氬皢鍏舵爣璁颁负濡傛銆?
 
-### 检查历史 UAPI 兼容性（Checking Historic UAPI Compatibility）
+### 妫€鏌ュ巻鍙?UAPI 鍏煎鎬э紙Checking Historic UAPI Compatibility锛?
 
 
-你可以用 `-b` 和 `-p` 选项来检查 git 树中不同的片段。例如，要检查标签之间所有被更改的 UAPI 头文件
+浣犲彲浠ョ敤 `-b` 鍜?`-p` 閫夐」鏉ユ鏌?git 鏍戜腑涓嶅悓鐨勭墖娈点€備緥濡傦紝瑕佹鏌ユ爣绛句箣闂存墍鏈夎鏇存敼鐨?UAPI 澶存枃浠?
 ```
 
     % ./scripts/check-uapi.sh -b v6.1 -p v6.0
@@ -351,16 +351,16 @@ UAPI 检查器（`scripts/check-uapi.sh`）是一个 shell 脚本，用于在 gi
     error - 37/907 UAPI headers compatible with x86 appear _not_ to be backwards compatible
 
 ```
-注意：在 v5.3 之前，脚本所需的一个头文件不存在，因此脚本无法检查那之前的变更。
+娉ㄦ剰锛氬湪 v5.3 涔嬪墠锛岃剼鏈墍闇€鐨勪竴涓ご鏂囦欢涓嶅瓨鍦紝鍥犳鑴氭湰鏃犳硶妫€鏌ラ偅涔嬪墠鐨勫彉鏇淬€?
 
-你会注意到脚本检测到了许多不向后兼容的 UAPI 变更。鉴于内核 UAPI 本应永远保持稳定，这是一个令人警觉的结果。这把我们带到了下一节：注意事项（caveats）。
+浣犱細娉ㄦ剰鍒拌剼鏈娴嬪埌浜嗚澶氫笉鍚戝悗鍏煎鐨?UAPI 鍙樻洿銆傞壌浜庡唴鏍?UAPI 鏈簲姘歌繙淇濇寔绋冲畾锛岃繖鏄竴涓护浜鸿瑙夌殑缁撴灉銆傝繖鎶婃垜浠甫鍒颁簡涓嬩竴鑺傦細娉ㄦ剰浜嬮」锛坈aveats锛夈€?
 
-## 注意事项（Caveats）
+## 娉ㄦ剰浜嬮」锛圕aveats锛?
 
 
-UAPI 检查器对作者的意图不做任何假设，因此某些类型的变更可能会被标记，即便它们是有意破坏 UAPI 的。
+UAPI 妫€鏌ュ櫒瀵逛綔鑰呯殑鎰忓浘涓嶅仛浠讳綍鍋囪锛屽洜姝ゆ煇浜涚被鍨嬬殑鍙樻洿鍙兘浼氳鏍囪锛屽嵆渚垮畠浠槸鏈夋剰鐮村潖 UAPI 鐨勩€?
 
-### 为重构或弃用而移除（Removals For Refactoring or Deprecation）
+### 涓洪噸鏋勬垨寮冪敤鑰岀Щ闄わ紙Removals For Refactoring or Deprecation锛?
 
 
 ```
@@ -374,14 +374,14 @@ UAPI 检查器对作者的意图不做任何假设，因此某些类型的变更
     error - 1/910 UAPI headers compatible with x86 appear _not_ to be backwards compatible
 
 ```
-脚本总会标记移除（即便它们是有意的）。
+鑴氭湰鎬讳細鏍囪绉婚櫎锛堝嵆渚垮畠浠槸鏈夋剰鐨勶級銆?
 
-### 结构体扩展（Struct Expansions）
+### 缁撴瀯浣撴墿灞曪紙Struct Expansions锛?
 
 
-取决于结构体在内核空间中的处理方式，一个扩展结构体的变更可能是非破坏性的。
+鍙栧喅浜庣粨鏋勪綋鍦ㄥ唴鏍哥┖闂翠腑鐨勫鐞嗘柟寮忥紝涓€涓墿灞曠粨鏋勪綋鐨勫彉鏇村彲鑳芥槸闈炵牬鍧忔€х殑銆?
 
-如果一个结构体被用作 ioctl 的参数，那么内核驱动必须能处理任意大小的 ioctl 命令。除此之外，在从用户复制数据时你需要小心。例如说
+濡傛灉涓€涓粨鏋勪綋琚敤浣?ioctl 鐨勫弬鏁帮紝閭ｄ箞鍐呮牳椹卞姩蹇呴』鑳藉鐞嗕换鎰忓ぇ灏忕殑 ioctl 鍛戒护銆傞櫎姝や箣澶栵紝鍦ㄤ粠鐢ㄦ埛澶嶅埗鏁版嵁鏃朵綘闇€瑕佸皬蹇冦€備緥濡傝
 ```
 
     struct foo {
@@ -400,11 +400,11 @@ UAPI 检查器对作者的意图不做任何假设，因此某些类型的变更
         '__u32 c', at offset 96 (in bits)
 
 ```
-不过，这次变更是有可能被安全地完成的。
+涓嶈繃锛岃繖娆″彉鏇存槸鏈夊彲鑳借瀹夊叏鍦板畬鎴愮殑銆?
 
-如果一个用户空间程序是用版本 1 构建的，它会认为 `sizeof(struct foo)` 是 8。这个尺寸会被编码进发往内核的 ioctl 值中。如果内核是用版本 2 构建的，它会认为 `sizeof(struct foo)` 是 16。
+濡傛灉涓€涓敤鎴风┖闂寸▼搴忔槸鐢ㄧ増鏈?1 鏋勫缓鐨勶紝瀹冧細璁や负 `sizeof(struct foo)` 鏄?8銆傝繖涓昂瀵镐細琚紪鐮佽繘鍙戝線鍐呮牳鐨?ioctl 鍊间腑銆傚鏋滃唴鏍告槸鐢ㄧ増鏈?2 鏋勫缓鐨勶紝瀹冧細璁や负 `sizeof(struct foo)` 鏄?16銆?
 
-内核可以用 `_IOC_SIZE` 宏来获取用户传入的 ioctl 码中编码的尺寸，然后
+鍐呮牳鍙互鐢?`_IOC_SIZE` 瀹忔潵鑾峰彇鐢ㄦ埛浼犲叆鐨?ioctl 鐮佷腑缂栫爜鐨勫昂瀵革紝鐒跺悗
 ```
 
     int handle_ioctl(unsigned long cmd, unsigned long arg)
@@ -417,14 +417,14 @@ UAPI 检查器对作者的意图不做任何假设，因此某些类型的变更
             ...
 
 ```
-`copy_struct_from_user` 会在内核中把结构体清零，然后只复制从用户传入的字节（使新成员保持为零）。如果用户传入了更大的结构体，多余的成员会被忽略。
+`copy_struct_from_user` 浼氬湪鍐呮牳涓妸缁撴瀯浣撴竻闆讹紝鐒跺悗鍙鍒朵粠鐢ㄦ埛浼犲叆鐨勫瓧鑺傦紙浣挎柊鎴愬憳淇濇寔涓洪浂锛夈€傚鏋滅敤鎴蜂紶鍏ヤ簡鏇村ぇ鐨勭粨鏋勪綋锛屽浣欑殑鎴愬憳浼氳蹇界暐銆?
 
-如果你知道内核代码中已经考虑了这种情况，你可以给脚本传 `-i`，这样像这样的结构体扩展就会被忽略。
+濡傛灉浣犵煡閬撳唴鏍镐唬鐮佷腑宸茬粡鑰冭檻浜嗚繖绉嶆儏鍐碉紝浣犲彲浠ョ粰鑴氭湰浼?`-i`锛岃繖鏍峰儚杩欐牱鐨勭粨鏋勪綋鎵╁睍灏变細琚拷鐣ャ€?
 
-### Flex 数组迁移（Flex Array Migration）
+### Flex 鏁扮粍杩佺Щ锛團lex Array Migration锛?
 
 
-虽然脚本会处理向已有 flex 数组的扩展，但它仍会标记从 1 元素的伪 flex 数组到真 flex 数组的初始迁移
+铏界劧鑴氭湰浼氬鐞嗗悜宸叉湁 flex 鏁扮粍鐨勬墿灞曪紝浣嗗畠浠嶄細鏍囪浠?1 鍏冪礌鐨勪吉 flex 鏁扮粍鍒扮湡 flex 鏁扮粍鐨勫垵濮嬭縼绉?
 ```
 
     struct foo {
@@ -445,11 +445,11 @@ UAPI 检查器对作者的意图不做任何假设，因此某些类型的变更
           array type subrange 1 changed length from 1 to 'unknown'
 
 ```
-目前，没有办法过滤这类变更，因此请注意这种可能的误报（false positive）。
+鐩墠锛屾病鏈夊姙娉曡繃婊よ繖绫诲彉鏇达紝鍥犳璇锋敞鎰忚繖绉嶅彲鑳界殑璇姤锛坒alse positive锛夈€?
 
-### 总结（Summary）
+### 鎬荤粨锛圫ummary锛?
 
 
-虽然许多类型的误报会被脚本过滤掉，仍有可能出现脚本标记了一个并未破坏 UAPI 的变更的情况。也有可能一个**确实**破坏用户空间的变更未被此脚本标记。虽然脚本已在大量内核历史上运行过，仍可能存在未被涵盖的边界情况。
+铏界劧璁稿绫诲瀷鐨勮鎶ヤ細琚剼鏈繃婊ゆ帀锛屼粛鏈夊彲鑳藉嚭鐜拌剼鏈爣璁颁簡涓€涓苟鏈牬鍧?UAPI 鐨勫彉鏇寸殑鎯呭喌銆備篃鏈夊彲鑳戒竴涓?*纭疄**鐮村潖鐢ㄦ埛绌洪棿鐨勫彉鏇存湭琚鑴氭湰鏍囪銆傝櫧鐒惰剼鏈凡鍦ㄥぇ閲忓唴鏍稿巻鍙蹭笂杩愯杩囷紝浠嶅彲鑳藉瓨鍦ㄦ湭琚兜鐩栫殑杈圭晫鎯呭喌銆?
 
-此脚本的意图是作为维护者或自动化工具的一个快速检查，而非补丁兼容性的最终权威。最好记住：运用你的最佳判断（理想情况下再加上用户空间的一个单元测试）来确保你的 UAPI 变更是向后兼容的！
+姝よ剼鏈殑鎰忓浘鏄綔涓虹淮鎶よ€呮垨鑷姩鍖栧伐鍏风殑涓€涓揩閫熸鏌ワ紝鑰岄潪琛ヤ竵鍏煎鎬х殑鏈€缁堟潈濞併€傛渶濂借浣忥細杩愮敤浣犵殑鏈€浣冲垽鏂紙鐞嗘兂鎯呭喌涓嬪啀鍔犱笂鐢ㄦ埛绌洪棿鐨勪竴涓崟鍏冩祴璇曪級鏉ョ‘淇濅綘鐨?UAPI 鍙樻洿鏄悜鍚庡吋瀹圭殑锛?

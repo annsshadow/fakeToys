@@ -1,86 +1,62 @@
-## HD-Audio DP-MST 支持
+﻿## HD-Audio DP-MST 鏀寔
 
 
-为了支持 DP MST 音频，HD Audio hdmi 编解码器驱动引入了虚拟引脚（virtual pin）和动态 pcm 分配。
-
-虚拟引脚是 per_pin 的扩展。DP MST 与传统的根本区别在于 DP MST 引入了设备条目（device entry）。每个引脚可以包含多个设备条目。每个设备条目的行为就像一个引脚。
-
-由于每个引脚可能包含多个设备条目，而每个编解码器可能包含多个引脚，如果我们对每个 per_pin 使用一个 pcm，就会产生大量 PCM。新的方案是创建少量 PCM，并动态地将 pcm 绑定到 per_pin。驱动使用 spec->dyn_pcm_assign 标志来指示是否使用新方案。
-
+涓轰簡鏀寔 DP MST 闊抽锛孒D Audio hdmi 缂栬В鐮佸櫒椹卞姩寮曞叆浜嗚櫄鎷熷紩鑴氾紙virtual pin锛夊拰鍔ㄦ€?pcm 鍒嗛厤銆?
+铏氭嫙寮曡剼鏄?per_pin 鐨勬墿灞曘€侱P MST 涓庝紶缁熺殑鏍规湰鍖哄埆鍦ㄤ簬 DP MST 寮曞叆浜嗚澶囨潯鐩紙device entry锛夈€傛瘡涓紩鑴氬彲浠ュ寘鍚涓澶囨潯鐩€傛瘡涓澶囨潯鐩殑琛屼负灏卞儚涓€涓紩鑴氥€?
+鐢变簬姣忎釜寮曡剼鍙兘鍖呭惈澶氫釜璁惧鏉＄洰锛岃€屾瘡涓紪瑙ｇ爜鍣ㄥ彲鑳藉寘鍚涓紩鑴氾紝濡傛灉鎴戜滑瀵规瘡涓?per_pin 浣跨敤涓€涓?pcm锛屽氨浼氫骇鐢熷ぇ閲?PCM銆傛柊鐨勬柟妗堟槸鍒涘缓灏戦噺 PCM锛屽苟鍔ㄦ€佸湴灏?pcm 缁戝畾鍒?per_pin銆傞┍鍔ㄤ娇鐢?spec->dyn_pcm_assign 鏍囧織鏉ユ寚绀烘槸鍚︿娇鐢ㄦ柊鏂规銆?
 ## PCM
 
-待补充
+寰呰ˉ鍏?
+## 寮曡剼鍒濆鍖?
 
-## 引脚初始化
-
-
-每个引脚可能有多个设备条目（虚拟引脚）。在 Intel 平台上，设备条目数量是动态变化的。如果连接了 DP MST hub，则处于 DP MST 模式，设备条目数量为 3。否则，设备条目数量为 1。
-
-为了简化实现，无论是否处于 DP MST 模式，所有设备条目都会在启动时初始化。
-
-## 连接列表
+姣忎釜寮曡剼鍙兘鏈夊涓澶囨潯鐩紙铏氭嫙寮曡剼锛夈€傚湪 Intel 骞冲彴涓婏紝璁惧鏉＄洰鏁伴噺鏄姩鎬佸彉鍖栫殑銆傚鏋滆繛鎺ヤ簡 DP MST hub锛屽垯澶勪簬 DP MST 妯″紡锛岃澶囨潯鐩暟閲忎负 3銆傚惁鍒欙紝璁惧鏉＄洰鏁伴噺涓?1銆?
+涓轰簡绠€鍖栧疄鐜帮紝鏃犺鏄惁澶勪簬 DP MST 妯″紡锛屾墍鏈夎澶囨潯鐩兘浼氬湪鍚姩鏃跺垵濮嬪寲銆?
+## 杩炴帴鍒楄〃
 
 
-DP MST 复用了连接列表代码。代码可以复用是因为同一引脚上的设备条目具有相同的连接列表。
+DP MST 澶嶇敤浜嗚繛鎺ュ垪琛ㄤ唬鐮併€備唬鐮佸彲浠ュ鐢ㄦ槸鍥犱负鍚屼竴寮曡剼涓婄殑璁惧鏉＄洰鍏锋湁鐩稿悓鐨勮繛鎺ュ垪琛ㄣ€?
+杩欐剰鍛崇潃 DP MST 鏃犻渶璁惧鏉＄洰璁剧疆鍗冲彲鑾峰彇璁惧鏉＄洰鐨勮繛鎺ュ垪琛ㄣ€?
+## 鎻掑瓟锛圝ack锛?
 
-这意味着 DP MST 无需设备条目设置即可获取设备条目的连接列表。
-
-## 插孔（Jack）
-
-
-假设：
- - MST 必须是 dyn_pcm_assign，且它是 acomp（针对 Intel 场景）；
- - NON-MST 可能是也可能不是 dyn_pcm_assign，它可以是 acomp 或 !acomp；
-
-因此存在以下场景：
- a. MST（&& dyn_pcm_assign && acomp）
- b. NON-MST && dyn_pcm_assign && acomp
+鍋囪锛? - MST 蹇呴』鏄?dyn_pcm_assign锛屼笖瀹冩槸 acomp锛堥拡瀵?Intel 鍦烘櫙锛夛紱
+ - NON-MST 鍙兘鏄篃鍙兘涓嶆槸 dyn_pcm_assign锛屽畠鍙互鏄?acomp 鎴?!acomp锛?
+鍥犳瀛樺湪浠ヤ笅鍦烘櫙锛? a. MST锛?& dyn_pcm_assign && acomp锛? b. NON-MST && dyn_pcm_assign && acomp
  c. NON-MST && !dyn_pcm_assign && !acomp
 
-下面的讨论将忽略 MST 和 NON-MST 的区别，因为它对插孔处理影响不大。
+涓嬮潰鐨勮璁哄皢蹇界暐 MST 鍜?NON-MST 鐨勫尯鍒紝鍥犱负瀹冨鎻掑瓟澶勭悊褰卞搷涓嶅ぇ銆?
+椹卞姩鍦?hdmi_spec 涓娇鐢?struct hdmi_pcm pcm[] 鏁扮粍锛宻nd_jack 鏄?hdmi_pcm 鐨勪竴涓垚鍛樸€傛瘡涓紩鑴氭湁涓€涓?struct hdmi_pcm * pcm 鎸囬拡銆?
+瀵逛簬 !dyn_pcm_assign锛宲er_pin->pcm 浼氬湪鍒濆鍖栨椂闈欐€佸湴鍒嗛厤鍒?spec->pcm[n]銆?
+瀵逛簬 dyn_pcm_assign锛宲er_pin->pcm 浼氬湪鏄剧ず鍣ㄧ儹鎻掓嫈鏃跺垎閰嶅埌 spec->pcm[n]銆?
 
-驱动在 hdmi_spec 中使用 struct hdmi_pcm pcm[] 数组，snd_jack 是 hdmi_pcm 的一个成员。每个引脚有一个 struct hdmi_pcm * pcm 指针。
-
-对于 !dyn_pcm_assign，per_pin->pcm 会在初始化时静态地分配到 spec->pcm[n]。
-
-对于 dyn_pcm_assign，per_pin->pcm 会在显示器热插拔时分配到 spec->pcm[n]。
-
-
-### 构建插孔
+### 鏋勫缓鎻掑瓟
 
 
 - dyn_pcm_assign
 
-  不使用 hda_jack，而是直接使用 spec->pcm_rec[pcm_idx].jack 中的 snd_jack。
-
+  涓嶄娇鐢?hda_jack锛岃€屾槸鐩存帴浣跨敤 spec->pcm_rec[pcm_idx].jack 涓殑 snd_jack銆?
 - !dyn_pcm_assign
 
-  使用 hda_jack，并静态地将 spec->pcm_rec[pcm_idx].jack = jack->jack。
+  浣跨敤 hda_jack锛屽苟闈欐€佸湴灏?spec->pcm_rec[pcm_idx].jack = jack->jack銆?
+
+### 寮€鍚潪璇锋眰浜嬩欢
 
 
-### 开启非请求事件
+濡傛灉涓嶆槸 acomp锛屽垯寮€鍚潪璇锋眰浜嬩欢锛坲nsolicited event锛夈€?
 
-
-如果不是 acomp，则开启非请求事件（unsolicited event）。
-
-
-### 显示器热插拔事件处理
+### 鏄剧ず鍣ㄧ儹鎻掓嫈浜嬩欢澶勭悊
 
 
 - acomp
 
   pin_eld_notify() -> check_presence_and_report() -> hdmi_present_sense() ->
-  sync_eld_via_acomp()。
-
-  无论是 dyn_pcm_assign 还是 !dyn_pcm_assign，都直接在 spec->pcm_rec[pcm_idx].jack 上调用 snd_jack_report()
+  sync_eld_via_acomp()銆?
+  鏃犺鏄?dyn_pcm_assign 杩樻槸 !dyn_pcm_assign锛岄兘鐩存帴鍦?spec->pcm_rec[pcm_idx].jack 涓婅皟鐢?snd_jack_report()
 
 - !acomp
 
   hdmi_unsol_event() -> hdmi_intrinsic_event() -> check_presence_and_report() ->
   hdmi_present_sense() -> hdmi_prepsent_sense_via_verbs()
 
-  对于 dyn_pcm_assign，直接在 spec->pcm_rec[pcm_idx].jack 上调用 snd_jack_report()。
-  使用 hda_jack 机制来处理插孔事件。
+  瀵逛簬 dyn_pcm_assign锛岀洿鎺ュ湪 spec->pcm_rec[pcm_idx].jack 涓婅皟鐢?snd_jack_report()銆?  浣跨敤 hda_jack 鏈哄埗鏉ュ鐞嗘彃瀛斾簨浠躲€?
 
-
-## 其他待后续补充
+## 鍏朵粬寰呭悗缁ˉ鍏?

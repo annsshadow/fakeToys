@@ -1,30 +1,30 @@
-## TechnoTrend/Hauppauge DEC USB 驱动
+﻿## TechnoTrend/Hauppauge DEC USB 椹卞姩
 
 
-### 驱动状态
+### 椹卞姩鐘舵€?
 
 
-支持：
+鏀寔锛?
 
  - DEC2000-t
  - DEC2450-t
  - DEC3000-s
- - 视频流（Video Streaming）
- - 音频流（Audio Streaming）
- - 段过滤器（Section Filters）
- - 换台（Channel Zapping）
- - 热插拔固件加载器
+ - 瑙嗛娴侊紙Video Streaming锛?
+ - 闊抽娴侊紙Audio Streaming锛?
+ - 娈佃繃婊ゅ櫒锛圫ection Filters锛?
+ - 鎹㈠彴锛圕hannel Zapping锛?
+ - 鐑彃鎷斿浐浠跺姞杞藉櫒
 
-待办：
+寰呭姙锛?
 
- - 调谐器状态信息
- - DVB 网络接口
- - 视频流 PC->DEC
- - 2450-t 的 Conax 支持
+ - 璋冭皭鍣ㄧ姸鎬佷俊鎭?
+ - DVB 缃戠粶鎺ュ彛
+ - 瑙嗛娴?PC->DEC
+ - 2450-t 鐨?Conax 鏀寔
 
-### 获取固件
+### 鑾峰彇鍥轰欢
 
-要下载固件，使用以下命令：
+瑕佷笅杞藉浐浠讹紝浣跨敤浠ヤ笅鍛戒护锛?
 
 
 	scripts/get_dvb_firmware dec2000t
@@ -32,9 +32,9 @@
 	scripts/get_dvb_firmware dec3000s
 
 
-### 热插拔固件加载
+### 鐑彃鎷斿浐浠跺姞杞?
 
 
-自 2.6 内核起，固件在驱动模块加载时被加载。
+鑷?2.6 鍐呮牳璧凤紝鍥轰欢鍦ㄩ┍鍔ㄦā鍧楀姞杞芥椂琚姞杞姐€?
 
-将上面下载的三个文件复制到 /usr/lib/hotplug/firmware 或 /lib/firmware 目录（取决于固件热插拔的配置）。
+灏嗕笂闈笅杞界殑涓変釜鏂囦欢澶嶅埗鍒?/usr/lib/hotplug/firmware 鎴?/lib/firmware 鐩綍锛堝彇鍐充簬鍥轰欢鐑彃鎷旂殑閰嶇疆锛夈€?

@@ -1,94 +1,76 @@
----
-title: feat: Kernel full-codebase branch coverage ≥90%
+﻿---
+title: feat: Kernel full-codebase branch coverage 鈮?0%
 type: feat
 status: active
 date: 2026-07-07
 origin: docs/brainstorms/kernel-branch-coverage-90-requirements.md
 ---
 
-# feat: Kernel Full-Codebase Branch Coverage ≥90%
+# feat: Kernel Full-Codebase Branch Coverage 鈮?0%
 
 ## Summary
 
-建立系统化的 Linux 内核分支覆盖率测试工程，覆盖全部代码树（`kernel/`、`mm/`、`fs/`、`net/`、`drivers/`、`arch/*/`、`lib/`、`include/`），通过组合 KUnit、kselftest、syzkaller 和 Fault Injection 多个测试引擎，按子系统分层构建，最终达到审计可接受的分支覆盖率 90%+。
-
+寤虹珛绯荤粺鍖栫殑 Linux 鍐呮牳鍒嗘敮瑕嗙洊鐜囨祴璇曞伐绋嬶紝瑕嗙洊鍏ㄩ儴浠ｇ爜鏍戯紙`kernel/`銆乣mm/`銆乣fs/`銆乣net/`銆乣drivers/`銆乣arch/*/`銆乣lib/`銆乣include/`锛夛紝閫氳繃缁勫悎 KUnit銆乲selftest銆乻yzkaller 鍜?Fault Injection 澶氫釜娴嬭瘯寮曟搸锛屾寜瀛愮郴缁熷垎灞傛瀯寤猴紝鏈€缁堣揪鍒板璁″彲鎺ュ彈鐨勫垎鏀鐩栫巼 90%+銆?
 ---
 
 ## Problem Frame
 
-合规审计方要求 Linux 内核项目提供分支覆盖率 ≥90% 的证明，覆盖全部代码树。当前内核现有测试（KUnit + kselftest）仅覆盖约 15-25% 的行覆盖率，分支覆盖率更低。审计方理解内核规模，不接受豁免或替代指标。项目有预算，需要建立可重复、可审计的测试工程。
-
+鍚堣瀹¤鏂硅姹?Linux 鍐呮牳椤圭洰鎻愪緵鍒嗘敮瑕嗙洊鐜?鈮?0% 鐨勮瘉鏄庯紝瑕嗙洊鍏ㄩ儴浠ｇ爜鏍戙€傚綋鍓嶅唴鏍哥幇鏈夋祴璇曪紙KUnit + kselftest锛変粎瑕嗙洊绾?15-25% 鐨勮瑕嗙洊鐜囷紝鍒嗘敮瑕嗙洊鐜囨洿浣庛€傚璁℃柟鐞嗚В鍐呮牳瑙勬ā锛屼笉鎺ュ彈璞佸厤鎴栨浛浠ｆ寚鏍囥€傞」鐩湁棰勭畻锛岄渶瑕佸缓绔嬪彲閲嶅銆佸彲瀹¤鐨勬祴璇曞伐绋嬨€?
 ---
 
 ## Requirements
 
-**Origin actors:** A1 (合规审计方), A2 (内核测试工程师), A3 (内核开发者), A4 (基础设施工程师), A5 (项目经理)
-**Origin flows:** F1 (覆盖率测量流水线), F2 (子系统测试开发), F3 (审计检查点), F4 (回归防护)
+**Origin actors:** A1 (鍚堣瀹¤鏂?, A2 (鍐呮牳娴嬭瘯宸ョ▼甯?, A3 (鍐呮牳寮€鍙戣€?, A4 (鍩虹璁炬柦宸ョ▼甯?, A5 (椤圭洰缁忕悊)
+**Origin flows:** F1 (瑕嗙洊鐜囨祴閲忔祦姘寸嚎), F2 (瀛愮郴缁熸祴璇曞紑鍙?, F3 (瀹¤妫€鏌ョ偣), F4 (鍥炲綊闃叉姢)
 **Origin acceptance examples:** AE1 (Covers R1, R2), AE2 (Covers R3), AE3 (Covers R9), AE4 (Covers R14)
 
-- R1. 建立统一的覆盖率采集流水线，支持 gcov 和 kcov 两种工具，输出标准格式的覆盖率报告（lcov/html 或等效格式）
-- R2. 覆盖率报告必须包含分支级别粒度（哪些分支被覆盖、哪些未覆盖），不得仅报告行覆盖率
-- R3. 覆盖率数据可复现：相同测试输入在相同环境下运行，覆盖率数字差异不超过 1%
-- R4. 覆盖率报告可追溯：每个覆盖率数据点关联到具体的测试用例和代码提交
-- R5. 统一编排 KUnit、kselftest、syzkaller、Fault Injection 多个测试引擎，支持一键运行全部测试套件
-- R6. 每个测试引擎独立可运行，支持单独运行特定子系统的测试
-- R7. 测试失败时自动重试机制，区分偶发性失败和确定性失败
-- R8. 测试环境可快速重建（从配置到运行 ≤30 分钟）
-- R9. 按子系统顺序推进测试覆盖：`kernel/` → `mm/` → `fs/` → `net/` → `drivers/` → `arch/*/`，每个子系统达到 90% 分支覆盖率后进入下一子系统
-- R10. 每个子系统的测试代码通过代码审查后合并，不得合并未达标的测试
-- R11. 建立覆盖率回归防护：新代码合并不得导致已达标子系统的覆盖率下降
-- R12. 生成季度审计报告，包含整体覆盖率趋势、各子系统覆盖率、未覆盖分支分析
-- R13. 审计报告包含测试完整性证明：每个测试用例的执行记录、覆盖率贡献、关联的需求/代码路径
-- R14. 支持审计方独立运行测试套件验证覆盖率数据（可重复运行环境）
-
+- R1. 寤虹珛缁熶竴鐨勮鐩栫巼閲囬泦娴佹按绾匡紝鏀寔 gcov 鍜?kcov 涓ょ宸ュ叿锛岃緭鍑烘爣鍑嗘牸寮忕殑瑕嗙洊鐜囨姤鍛婏紙lcov/html 鎴栫瓑鏁堟牸寮忥級
+- R2. 瑕嗙洊鐜囨姤鍛婂繀椤诲寘鍚垎鏀骇鍒矑搴︼紙鍝簺鍒嗘敮琚鐩栥€佸摢浜涙湭瑕嗙洊锛夛紝涓嶅緱浠呮姤鍛婅瑕嗙洊鐜?- R3. 瑕嗙洊鐜囨暟鎹彲澶嶇幇锛氱浉鍚屾祴璇曡緭鍏ュ湪鐩稿悓鐜涓嬭繍琛岋紝瑕嗙洊鐜囨暟瀛楀樊寮備笉瓒呰繃 1%
+- R4. 瑕嗙洊鐜囨姤鍛婂彲杩芥函锛氭瘡涓鐩栫巼鏁版嵁鐐瑰叧鑱斿埌鍏蜂綋鐨勬祴璇曠敤渚嬪拰浠ｇ爜鎻愪氦
+- R5. 缁熶竴缂栨帓 KUnit銆乲selftest銆乻yzkaller銆丗ault Injection 澶氫釜娴嬭瘯寮曟搸锛屾敮鎸佷竴閿繍琛屽叏閮ㄦ祴璇曞浠?- R6. 姣忎釜娴嬭瘯寮曟搸鐙珛鍙繍琛岋紝鏀寔鍗曠嫭杩愯鐗瑰畾瀛愮郴缁熺殑娴嬭瘯
+- R7. 娴嬭瘯澶辫触鏃惰嚜鍔ㄩ噸璇曟満鍒讹紝鍖哄垎鍋跺彂鎬уけ璐ュ拰纭畾鎬уけ璐?- R8. 娴嬭瘯鐜鍙揩閫熼噸寤猴紙浠庨厤缃埌杩愯 鈮?0 鍒嗛挓锛?- R9. 鎸夊瓙绯荤粺椤哄簭鎺ㄨ繘娴嬭瘯瑕嗙洊锛歚kernel/` 鈫?`mm/` 鈫?`fs/` 鈫?`net/` 鈫?`drivers/` 鈫?`arch/*/`锛屾瘡涓瓙绯荤粺杈惧埌 90% 鍒嗘敮瑕嗙洊鐜囧悗杩涘叆涓嬩竴瀛愮郴缁?- R10. 姣忎釜瀛愮郴缁熺殑娴嬭瘯浠ｇ爜閫氳繃浠ｇ爜瀹℃煡鍚庡悎骞讹紝涓嶅緱鍚堝苟鏈揪鏍囩殑娴嬭瘯
+- R11. 寤虹珛瑕嗙洊鐜囧洖褰掗槻鎶わ細鏂颁唬鐮佸悎骞朵笉寰楀鑷村凡杈炬爣瀛愮郴缁熺殑瑕嗙洊鐜囦笅闄?- R12. 鐢熸垚瀛ｅ害瀹¤鎶ュ憡锛屽寘鍚暣浣撹鐩栫巼瓒嬪娍銆佸悇瀛愮郴缁熻鐩栫巼銆佹湭瑕嗙洊鍒嗘敮鍒嗘瀽
+- R13. 瀹¤鎶ュ憡鍖呭惈娴嬭瘯瀹屾暣鎬ц瘉鏄庯細姣忎釜娴嬭瘯鐢ㄤ緥鐨勬墽琛岃褰曘€佽鐩栫巼璐＄尞銆佸叧鑱旂殑闇€姹?浠ｇ爜璺緞
+- R14. 鏀寔瀹¤鏂圭嫭绔嬭繍琛屾祴璇曞浠堕獙璇佽鐩栫巼鏁版嵁锛堝彲閲嶅杩愯鐜锛?
 ---
 
 ## Scope Boundaries
 
-- 仅关注分支覆盖率，不要求其他覆盖率指标（行覆盖率、函数覆盖率）达标
-- 不修改内核源码以提高可测试性，除非测试必需且经过评审
-- 不构建新的测试框架，复用现有 KUnit、kselftest、syzkaller、Fault Injection
-- 不包括性能测试、基准测试、安全导向的模糊测试（syzkaller 仅用于覆盖率）
-- 不包括实时覆盖率仪表盘（审计不要求）
-- 测试代码放置在现有 `tools/testing/` 目录结构下
-
+- 浠呭叧娉ㄥ垎鏀鐩栫巼锛屼笉瑕佹眰鍏朵粬瑕嗙洊鐜囨寚鏍囷紙琛岃鐩栫巼銆佸嚱鏁拌鐩栫巼锛夎揪鏍?- 涓嶄慨鏀瑰唴鏍告簮鐮佷互鎻愰珮鍙祴璇曟€э紝闄ら潪娴嬭瘯蹇呴渶涓旂粡杩囪瘎瀹?- 涓嶆瀯寤烘柊鐨勬祴璇曟鏋讹紝澶嶇敤鐜版湁 KUnit銆乲selftest銆乻yzkaller銆丗ault Injection
+- 涓嶅寘鎷€ц兘娴嬭瘯銆佸熀鍑嗘祴璇曘€佸畨鍏ㄥ鍚戠殑妯＄硦娴嬭瘯锛坰yzkaller 浠呯敤浜庤鐩栫巼锛?- 涓嶅寘鎷疄鏃惰鐩栫巼浠〃鐩橈紙瀹¤涓嶈姹傦級
+- 娴嬭瘯浠ｇ爜鏀剧疆鍦ㄧ幇鏈?`tools/testing/` 鐩綍缁撴瀯涓?
 ---
 
 ## Context & Research
 
 ### Relevant Code and Patterns
 
-- `lib/kunit/` — KUnit 框架实现（test.c, executor.c, assert.c），测试注册模式为 `kunit_test_suites()`
-- `tools/testing/kunit/kunit.py` — KUnit Python 运行器，支持 UML/QEMU
-- `tools/testing/selftests/` — kselftest 目录，123 个测试子目录，使用 `kselftest_harness.h`
-- `kernel/gcov/` — gcov 覆盖率采集实现（base.c, fs.c, gcc_4_7.c, clang.c）
-- `lib/Kconfig.debug` — KCOV 配置（`CONFIG_KCOV`、`CONFIG_KCOV_INSTRUMENT_ALL`）
-- `lib/fault-inject.c` — Fault Injection 框架（`should_fail()` / `should_fail_ex()`）
-- `drivers/gpu/drm/ci/kunit.yml` — GitLab CI KUnit 测试示例
-- `tools/testing/selftests/kselftest/runner.sh` — kselftest 运行器
-
+- `lib/kunit/` 鈥?KUnit 妗嗘灦瀹炵幇锛坱est.c, executor.c, assert.c锛夛紝娴嬭瘯娉ㄥ唽妯″紡涓?`kunit_test_suites()`
+- `tools/testing/kunit/kunit.py` 鈥?KUnit Python 杩愯鍣紝鏀寔 UML/QEMU
+- `tools/testing/selftests/` 鈥?kselftest 鐩綍锛?23 涓祴璇曞瓙鐩綍锛屼娇鐢?`kselftest_harness.h`
+- `kernel/gcov/` 鈥?gcov 瑕嗙洊鐜囬噰闆嗗疄鐜帮紙base.c, fs.c, gcc_4_7.c, clang.c锛?- `lib/Kconfig.debug` 鈥?KCOV 閰嶇疆锛坄CONFIG_KCOV`銆乣CONFIG_KCOV_INSTRUMENT_ALL`锛?- `lib/fault-inject.c` 鈥?Fault Injection 妗嗘灦锛坄should_fail()` / `should_fail_ex()`锛?- `drivers/gpu/drm/ci/kunit.yml` 鈥?GitLab CI KUnit 娴嬭瘯绀轰緥
+- `tools/testing/selftests/kselftest/runner.sh` 鈥?kselftest 杩愯鍣?
 ### Institutional Learnings
 
-无直接相关的 `docs/solutions/` 条目。
-
+鏃犵洿鎺ョ浉鍏崇殑 `docs/solutions/` 鏉＄洰銆?
 ### External References
 
-- gcov 文档：`Documentation/dev-tools/gcov.rst`
-- kcov 文档：`Documentation/dev-tools/kcov.rst`
-- Fault Injection 文档：`Documentation/fault-injection/fault-injection.rst`
-- KUnit 文档：`Documentation/dev-tools/kunit/index.rst`
-- kselftest 文档：`Documentation/dev-tools/kselftest.rst`
+- gcov 鏂囨。锛歚Documentation/dev-tools/gcov.rst`
+- kcov 鏂囨。锛歚Documentation/dev-tools/kcov.rst`
+- Fault Injection 鏂囨。锛歚Documentation/fault-injection/fault-injection.rst`
+- KUnit 鏂囨。锛歚Documentation/dev-tools/kunit/index.rst`
+- kselftest 鏂囨。锛歚Documentation/dev-tools/kselftest.rst`
 
 ---
 
 ## Key Technical Decisions
 
-- 分支覆盖率作为唯一指标：审计方不接受行覆盖率或函数覆盖率作为充分证据 (see origin: docs/brainstorms/kernel-branch-coverage-90-requirements.md)
-- 全代码树无豁免：审计方理解内核规模但不接受豁免 (see origin)
-- 分层构建法：按子系统顺序推进，每个子系统达标后再进入下一子系统，确保质量可控 (see origin)
-- 多引擎组合：单一工具无法达到 90%，需要 KUnit + kselftest + syzkaller + Fault Injection 组合 (see origin)
-- 覆盖率采集方案：gcov 为主（提供行/分支粒度），kcov 为辅（用于 fuzzing 场景），统一输出为 lcov 格式
-- 测试编排：扩展 `tools/testing/kunit/kunit.py` 作为统一入口，集成 syzkaller 和 kselftest
+- 鍒嗘敮瑕嗙洊鐜囦綔涓哄敮涓€鎸囨爣锛氬璁℃柟涓嶆帴鍙楄瑕嗙洊鐜囨垨鍑芥暟瑕嗙洊鐜囦綔涓哄厖鍒嗚瘉鎹?(see origin: docs/brainstorms/kernel-branch-coverage-90-requirements.md)
+- 鍏ㄤ唬鐮佹爲鏃犺眮鍏嶏細瀹¤鏂圭悊瑙ｅ唴鏍歌妯′絾涓嶆帴鍙楄眮鍏?(see origin)
+- 鍒嗗眰鏋勫缓娉曪細鎸夊瓙绯荤粺椤哄簭鎺ㄨ繘锛屾瘡涓瓙绯荤粺杈炬爣鍚庡啀杩涘叆涓嬩竴瀛愮郴缁燂紝纭繚璐ㄩ噺鍙帶 (see origin)
+- 澶氬紩鎿庣粍鍚堬細鍗曚竴宸ュ叿鏃犳硶杈惧埌 90%锛岄渶瑕?KUnit + kselftest + syzkaller + Fault Injection 缁勫悎 (see origin)
+- 瑕嗙洊鐜囬噰闆嗘柟妗堬細gcov 涓轰富锛堟彁渚涜/鍒嗘敮绮掑害锛夛紝kcov 涓鸿緟锛堢敤浜?fuzzing 鍦烘櫙锛夛紝缁熶竴杈撳嚭涓?lcov 鏍煎紡
+- 娴嬭瘯缂栨帓锛氭墿灞?`tools/testing/kunit/kunit.py` 浣滀负缁熶竴鍏ュ彛锛岄泦鎴?syzkaller 鍜?kselftest
 
 ---
 
@@ -96,404 +78,310 @@ origin: docs/brainstorms/kernel-branch-coverage-90-requirements.md
 
 ### Resolved During Planning
 
-- 覆盖率测量工具选择：gcov（GCC 内置，支持分支分析）+ kcov（Clang sanitizer，用于 fuzzing）
-- 测试编排入口：扩展 `tools/testing/kunit/kunit.py` 作为统一运行器
-
+- 瑕嗙洊鐜囨祴閲忓伐鍏烽€夋嫨锛歡cov锛圙CC 鍐呯疆锛屾敮鎸佸垎鏀垎鏋愶級+ kcov锛圕lang sanitizer锛岀敤浜?fuzzing锛?- 娴嬭瘯缂栨帓鍏ュ彛锛氭墿灞?`tools/testing/kunit/kunit.py` 浣滀负缁熶竴杩愯鍣?
 ### Deferred to Implementation
 
-- 各子系统的基线覆盖率：需要先运行现有测试套件测量
-- 哪些子系统最难覆盖（如 `arch/` 下的特定架构代码）：需要实际测量后评估
-- 覆盖率采集对内核性能的影响：需要基准测试验证
-- 条件编译（`#ifdef`）导致的代码路径差异：需要在实现时处理
-- 现有测试用例中有多少可以复用：需要逐子系统审计
+- 鍚勫瓙绯荤粺鐨勫熀绾胯鐩栫巼锛氶渶瑕佸厛杩愯鐜版湁娴嬭瘯濂椾欢娴嬮噺
+- 鍝簺瀛愮郴缁熸渶闅捐鐩栵紙濡?`arch/` 涓嬬殑鐗瑰畾鏋舵瀯浠ｇ爜锛夛細闇€瑕佸疄闄呮祴閲忓悗璇勪及
+- 瑕嗙洊鐜囬噰闆嗗鍐呮牳鎬ц兘鐨勫奖鍝嶏細闇€瑕佸熀鍑嗘祴璇曢獙璇?- 鏉′欢缂栬瘧锛坄#ifdef`锛夊鑷寸殑浠ｇ爜璺緞宸紓锛氶渶瑕佸湪瀹炵幇鏃跺鐞?- 鐜版湁娴嬭瘯鐢ㄤ緥涓湁澶氬皯鍙互澶嶇敤锛氶渶瑕侀€愬瓙绯荤粺瀹¤
 
 ---
 
 ## Implementation Units
 
-### U1. 建立覆盖率采集基础设施
+### U1. 寤虹珛瑕嗙洊鐜囬噰闆嗗熀纭€璁炬柦
 
-**Goal:** 建立统一的覆盖率采集流水线，支持 gcov 和 kcov，输出分支级别覆盖率报告。
-
+**Goal:** 寤虹珛缁熶竴鐨勮鐩栫巼閲囬泦娴佹按绾匡紝鏀寔 gcov 鍜?kcov锛岃緭鍑哄垎鏀骇鍒鐩栫巼鎶ュ憡銆?
 **Requirements:** R1, R2, R3, R4
 
-**Dependencies:** 无
-
+**Dependencies:** 鏃?
 **Files:**
-- Create: `tools/testing/coverage/coverage_harness.py` — 覆盖率采集主脚本
-- Create: `tools/testing/coverage/gcov_parser.py` — gcov 数据解析模块
-- Create: `tools/testing/coverage/kcov_parser.py` — kcov 数据解析模块
-- Create: `tools/testing/coverage/report_generator.py` — lcov/HTML 报告生成模块
-- Create: `tools/testing/coverage/configs/` — 覆盖率采集所需的内核配置片段
-- Modify: `tools/testing/kunit/kunit.py` — 集成覆盖率采集参数
-
+- Create: `tools/testing/coverage/coverage_harness.py` 鈥?瑕嗙洊鐜囬噰闆嗕富鑴氭湰
+- Create: `tools/testing/coverage/gcov_parser.py` 鈥?gcov 鏁版嵁瑙ｆ瀽妯″潡
+- Create: `tools/testing/coverage/kcov_parser.py` 鈥?kcov 鏁版嵁瑙ｆ瀽妯″潡
+- Create: `tools/testing/coverage/report_generator.py` 鈥?lcov/HTML 鎶ュ憡鐢熸垚妯″潡
+- Create: `tools/testing/coverage/configs/` 鈥?瑕嗙洊鐜囬噰闆嗘墍闇€鐨勫唴鏍搁厤缃墖娈?- Modify: `tools/testing/kunit/kunit.py` 鈥?闆嗘垚瑕嗙洊鐜囬噰闆嗗弬鏁?
 **Approach:**
-- 扩展 `tools/testing/kunit/kunit.py`，添加 `--coverage` 参数，自动配置内核启用 gcov/kcov
-- 新建 `tools/testing/coverage/` 目录，包含覆盖率数据解析和报告生成工具
-- 覆盖率采集流程：配置内核（启用 `CONFIG_GCOV_KERNEL` + `CONFIG_GCOV_PROFILE_ALL`）→ 构建 → 运行测试 → 从 debugfs 采集数据 → 解析 → 生成 lcov 报告
-- 支持分支覆盖率模式：GCC 的 `--coverage` 配合 lcov 的 `--rc lcov_branch_coverage=1`
-- 输出格式：lcov（用于详细分析）+ HTML（用于审计展示）
+- 鎵╁睍 `tools/testing/kunit/kunit.py`锛屾坊鍔?`--coverage` 鍙傛暟锛岃嚜鍔ㄩ厤缃唴鏍稿惎鐢?gcov/kcov
+- 鏂板缓 `tools/testing/coverage/` 鐩綍锛屽寘鍚鐩栫巼鏁版嵁瑙ｆ瀽鍜屾姤鍛婄敓鎴愬伐鍏?- 瑕嗙洊鐜囬噰闆嗘祦绋嬶細閰嶇疆鍐呮牳锛堝惎鐢?`CONFIG_GCOV_KERNEL` + `CONFIG_GCOV_PROFILE_ALL`锛夆啋 鏋勫缓 鈫?杩愯娴嬭瘯 鈫?浠?debugfs 閲囬泦鏁版嵁 鈫?瑙ｆ瀽 鈫?鐢熸垚 lcov 鎶ュ憡
+- 鏀寔鍒嗘敮瑕嗙洊鐜囨ā寮忥細GCC 鐨?`--coverage` 閰嶅悎 lcov 鐨?`--rc lcov_branch_coverage=1`
+- 杈撳嚭鏍煎紡锛歭cov锛堢敤浜庤缁嗗垎鏋愶級+ HTML锛堢敤浜庡璁″睍绀猴級
 
 **Patterns to follow:**
-- `tools/testing/kunit/kunit.py` 的 argparse + 子命令模式
-- `kernel/gcov/fs.c` 的 debugfs 导出机制
-- `tools/testing/kunit/configs/` 的配置片段组织方式
-
+- `tools/testing/kunit/kunit.py` 鐨?argparse + 瀛愬懡浠ゆā寮?- `kernel/gcov/fs.c` 鐨?debugfs 瀵煎嚭鏈哄埗
+- `tools/testing/kunit/configs/` 鐨勯厤缃墖娈电粍缁囨柟寮?
 **Test scenarios:**
-- Happy path: 配置内核启用 gcov，运行 KUnit 测试套件，成功生成 lcov 报告
-- Happy path: 配置内核启用 kcov，运行 syzkaller 会话，成功采集覆盖率数据
-- Edge case: 内核配置中部分文件禁用 gcov（通过 `GCOV_PROFILE_*.o := n`），报告正确反映排除文件
-- Error path: debugfs 未挂载时，脚本自动挂载或报错退出
-- Error path: 覆盖率数据文件损坏时，脚本跳过损坏文件并继续处理
-- Integration: 覆盖率采集与实际测试运行流水线集成，测试结果和覆盖率数据关联
+- Happy path: 閰嶇疆鍐呮牳鍚敤 gcov锛岃繍琛?KUnit 娴嬭瘯濂椾欢锛屾垚鍔熺敓鎴?lcov 鎶ュ憡
+- Happy path: 閰嶇疆鍐呮牳鍚敤 kcov锛岃繍琛?syzkaller 浼氳瘽锛屾垚鍔熼噰闆嗚鐩栫巼鏁版嵁
+- Edge case: 鍐呮牳閰嶇疆涓儴鍒嗘枃浠剁鐢?gcov锛堥€氳繃 `GCOV_PROFILE_*.o := n`锛夛紝鎶ュ憡姝ｇ‘鍙嶆槧鎺掗櫎鏂囦欢
+- Error path: debugfs 鏈寕杞芥椂锛岃剼鏈嚜鍔ㄦ寕杞芥垨鎶ラ敊閫€鍑?- Error path: 瑕嗙洊鐜囨暟鎹枃浠舵崯鍧忔椂锛岃剼鏈烦杩囨崯鍧忔枃浠跺苟缁х画澶勭悊
+- Integration: 瑕嗙洊鐜囬噰闆嗕笌瀹為檯娴嬭瘯杩愯娴佹按绾块泦鎴愶紝娴嬭瘯缁撴灉鍜岃鐩栫巼鏁版嵁鍏宠仈
 
 **Verification:**
-- `tools/testing/coverage/` 目录下的脚本可以独立运行
-- 运行 `python tools/testing/kunit/kunit.py run --coverage` 可以生成有效的 lcov 报告
-- lcov 报告中包含分支覆盖率数据（`BRDA` 记录）
-- 相同测试输入运行两次，分支覆盖率数字差异 ≤1%
+- `tools/testing/coverage/` 鐩綍涓嬬殑鑴氭湰鍙互鐙珛杩愯
+- 杩愯 `python tools/testing/kunit/kunit.py run --coverage` 鍙互鐢熸垚鏈夋晥鐨?lcov 鎶ュ憡
+- lcov 鎶ュ憡涓寘鍚垎鏀鐩栫巼鏁版嵁锛坄BRDA` 璁板綍锛?- 鐩稿悓娴嬭瘯杈撳叆杩愯涓ゆ锛屽垎鏀鐩栫巼鏁板瓧宸紓 鈮?%
 
 ---
 
-### U2. 建立统一测试编排框架
+### U2. 寤虹珛缁熶竴娴嬭瘯缂栨帓妗嗘灦
 
-**Goal:** 将 KUnit、kselftest、syzkaller、Fault Injection 统一编排为可一键运行的测试套件。
-
+**Goal:** 灏?KUnit銆乲selftest銆乻yzkaller銆丗ault Injection 缁熶竴缂栨帓涓哄彲涓€閿繍琛岀殑娴嬭瘯濂椾欢銆?
 **Requirements:** R5, R6, R7, R8
 
 **Dependencies:** U1
 
 **Files:**
-- Create: `tools/testing/orchestrator/test_orchestrator.py` — 统一测试编排器
-- Create: `tools/testing/orchestrator/kunit_runner.py` — KUnit 运行适配器
-- Create: `tools/testing/orchestrator/kselftest_runner.py` — kselftest 运行适配器
-- Create: `tools/testing/orchestrator/syzkaller_runner.py` — syzkaller 运行适配器
-- Create: `tools/testing/orchestrator/faultinj_runner.py` — Fault Injection 运行适配器
-- Create: `tools/testing/orchestrator/configs/` — 各引擎的配置模板
+- Create: `tools/testing/orchestrator/test_orchestrator.py` 鈥?缁熶竴娴嬭瘯缂栨帓鍣?- Create: `tools/testing/orchestrator/kunit_runner.py` 鈥?KUnit 杩愯閫傞厤鍣?- Create: `tools/testing/orchestrator/kselftest_runner.py` 鈥?kselftest 杩愯閫傞厤鍣?- Create: `tools/testing/orchestrator/syzkaller_runner.py` 鈥?syzkaller 杩愯閫傞厤鍣?- Create: `tools/testing/orchestrator/faultinj_runner.py` 鈥?Fault Injection 杩愯閫傞厤鍣?- Create: `tools/testing/orchestrator/configs/` 鈥?鍚勫紩鎿庣殑閰嶇疆妯℃澘
 
 **Approach:**
-- 扩展 `tools/testing/kunit/kunit.py`，添加 `run_all` 子命令，按子系统顺序运行全部测试引擎
-- 每个测试引擎通过适配器封装，提供统一的接口：`configure()` → `build()` → `run()` → `collect_coverage()`
-- 支持单独运行特定子系统的测试：`--subsystem mm/`
-- 自动重试机制：测试失败时重试最多 3 次，区分偶发性失败（重试后通过）和确定性失败（始终失败）
-- 测试环境缓存：使用 `make O=build` 的 out-of-tree 构建，配置和构建结果缓存，支持快速重建
-
+- 鎵╁睍 `tools/testing/kunit/kunit.py`锛屾坊鍔?`run_all` 瀛愬懡浠わ紝鎸夊瓙绯荤粺椤哄簭杩愯鍏ㄩ儴娴嬭瘯寮曟搸
+- 姣忎釜娴嬭瘯寮曟搸閫氳繃閫傞厤鍣ㄥ皝瑁咃紝鎻愪緵缁熶竴鐨勬帴鍙ｏ細`configure()` 鈫?`build()` 鈫?`run()` 鈫?`collect_coverage()`
+- 鏀寔鍗曠嫭杩愯鐗瑰畾瀛愮郴缁熺殑娴嬭瘯锛歚--subsystem mm/`
+- 鑷姩閲嶈瘯鏈哄埗锛氭祴璇曞け璐ユ椂閲嶈瘯鏈€澶?3 娆★紝鍖哄垎鍋跺彂鎬уけ璐ワ紙閲嶈瘯鍚庨€氳繃锛夊拰纭畾鎬уけ璐ワ紙濮嬬粓澶辫触锛?- 娴嬭瘯鐜缂撳瓨锛氫娇鐢?`make O=build` 鐨?out-of-tree 鏋勫缓锛岄厤缃拰鏋勫缓缁撴灉缂撳瓨锛屾敮鎸佸揩閫熼噸寤?
 **Patterns to follow:**
-- `tools/testing/kunit/kunit.py` 的配置/构建/运行三阶段模式
-- `tools/testing/selftests/kselftest/runner.sh` 的 TAP 输出和超时处理
-- `drivers/gpu/drm/ci/kunit.sh` 的 CI 集成模式
+- `tools/testing/kunit/kunit.py` 鐨勯厤缃?鏋勫缓/杩愯涓夐樁娈垫ā寮?- `tools/testing/selftests/kselftest/runner.sh` 鐨?TAP 杈撳嚭鍜岃秴鏃跺鐞?- `drivers/gpu/drm/ci/kunit.sh` 鐨?CI 闆嗘垚妯″紡
 
 **Test scenarios:**
-- Happy path: `python tools/testing/kunit/kunit.py run_all` 一键运行全部测试引擎
-- Happy path: `python tools/testing/kunit/kunit.py run_all --subsystem mm/` 仅运行 mm/ 子系统测试
-- Edge case: 某个测试引擎不可用（如 syzkaller 未安装），跳过该引擎并继续运行其他引擎
-- Error path: 测试超时时，记录超时信息并继续下一测试
-- Error path: 偶发性测试失败时，自动重试并在报告中标注
-- Integration: 多个测试引擎的输出合并为统一的 TAP/JSON 格式
+- Happy path: `python tools/testing/kunit/kunit.py run_all` 涓€閿繍琛屽叏閮ㄦ祴璇曞紩鎿?- Happy path: `python tools/testing/kunit/kunit.py run_all --subsystem mm/` 浠呰繍琛?mm/ 瀛愮郴缁熸祴璇?- Edge case: 鏌愪釜娴嬭瘯寮曟搸涓嶅彲鐢紙濡?syzkaller 鏈畨瑁咃級锛岃烦杩囪寮曟搸骞剁户缁繍琛屽叾浠栧紩鎿?- Error path: 娴嬭瘯瓒呮椂鏃讹紝璁板綍瓒呮椂淇℃伅骞剁户缁笅涓€娴嬭瘯
+- Error path: 鍋跺彂鎬ф祴璇曞け璐ユ椂锛岃嚜鍔ㄩ噸璇曞苟鍦ㄦ姤鍛婁腑鏍囨敞
+- Integration: 澶氫釜娴嬭瘯寮曟搸鐨勮緭鍑哄悎骞朵负缁熶竴鐨?TAP/JSON 鏍煎紡
 
 **Verification:**
-- `tools/testing/kunit/kunit.py run_all` 可以一键运行全部测试引擎
-- 支持 `--subsystem` 参数单独运行特定子系统
-- 偶发性失败自动重试，确定性失败直接报告
-- 测试环境配置和构建结果可缓存，重建时间 ≤30 分钟
+- `tools/testing/kunit/kunit.py run_all` 鍙互涓€閿繍琛屽叏閮ㄦ祴璇曞紩鎿?- 鏀寔 `--subsystem` 鍙傛暟鍗曠嫭杩愯鐗瑰畾瀛愮郴缁?- 鍋跺彂鎬уけ璐ヨ嚜鍔ㄩ噸璇曪紝纭畾鎬уけ璐ョ洿鎺ユ姤鍛?- 娴嬭瘯鐜閰嶇疆鍜屾瀯寤虹粨鏋滃彲缂撳瓨锛岄噸寤烘椂闂?鈮?0 鍒嗛挓
 
 ---
 
-### U3. kernel/ 子系统分支覆盖率达到 90%
+### U3. kernel/ 瀛愮郴缁熷垎鏀鐩栫巼杈惧埌 90%
 
-**Goal:** 为 `kernel/` 子系统编写 KUnit 和 kselftest 测试，使该子系统的分支覆盖率达到 90%。
-
+**Goal:** 涓?`kernel/` 瀛愮郴缁熺紪鍐?KUnit 鍜?kselftest 娴嬭瘯锛屼娇璇ュ瓙绯荤粺鐨勫垎鏀鐩栫巼杈惧埌 90%銆?
 **Requirements:** R9, R10, R11
 
 **Dependencies:** U1, U2
 
 **Files:**
-- Create: `tools/testing/coverage/baseline/` — 基线覆盖率数据目录
-- Create: `kernel/test/` — `kernel/` 子系统的 KUnit 测试（新建目录）
-- Modify: 各目标文件的 Makefile 添加 `GCOV_PROFILE_*.o := y`
+- Create: `tools/testing/coverage/baseline/` 鈥?鍩虹嚎瑕嗙洊鐜囨暟鎹洰褰?- Create: `kernel/test/` 鈥?`kernel/` 瀛愮郴缁熺殑 KUnit 娴嬭瘯锛堟柊寤虹洰褰曪級
+- Modify: 鍚勭洰鏍囨枃浠剁殑 Makefile 娣诲姞 `GCOV_PROFILE_*.o := y`
 
 **Approach:**
-- 先用 U1 的基础设施测量 `kernel/` 的基线分支覆盖率
-- 分析未覆盖分支，识别可通过 KUnit 覆盖的路径（调度器、printk、irq、time、locking、RCU、BPF 等）
-- 编写 KUnit 测试用例覆盖关键路径，特别关注错误处理分支
-- 对需要用户空间交互的路径，编写 kselftest 测试
-- 使用 Fault Injection 触发错误处理路径（如内存分配失败）
-- 每个测试用例关联到具体的未覆盖分支，确保测试有明确的覆盖率贡献
-- 达标后提交审计，审计通过后进入下一子系统
-
+- 鍏堢敤 U1 鐨勫熀纭€璁炬柦娴嬮噺 `kernel/` 鐨勫熀绾垮垎鏀鐩栫巼
+- 鍒嗘瀽鏈鐩栧垎鏀紝璇嗗埆鍙€氳繃 KUnit 瑕嗙洊鐨勮矾寰勶紙璋冨害鍣ㄣ€乸rintk銆乮rq銆乼ime銆乴ocking銆丷CU銆丅PF 绛夛級
+- 缂栧啓 KUnit 娴嬭瘯鐢ㄤ緥瑕嗙洊鍏抽敭璺緞锛岀壒鍒叧娉ㄩ敊璇鐞嗗垎鏀?- 瀵归渶瑕佺敤鎴风┖闂翠氦浜掔殑璺緞锛岀紪鍐?kselftest 娴嬭瘯
+- 浣跨敤 Fault Injection 瑙﹀彂閿欒澶勭悊璺緞锛堝鍐呭瓨鍒嗛厤澶辫触锛?- 姣忎釜娴嬭瘯鐢ㄤ緥鍏宠仈鍒板叿浣撶殑鏈鐩栧垎鏀紝纭繚娴嬭瘯鏈夋槑纭殑瑕嗙洊鐜囪础鐚?- 杈炬爣鍚庢彁浜ゅ璁★紝瀹¤閫氳繃鍚庤繘鍏ヤ笅涓€瀛愮郴缁?
 **Patterns to follow:**
-- `lib/kunit/` 的 KUnit 测试注册模式
-- `tools/testing/selftests/` 的 kselftest  harness 模式
-- `lib/fault-inject.c` 的 `should_fail()` 用法
+- `lib/kunit/` 鐨?KUnit 娴嬭瘯娉ㄥ唽妯″紡
+- `tools/testing/selftests/` 鐨?kselftest  harness 妯″紡
+- `lib/fault-inject.c` 鐨?`should_fail()` 鐢ㄦ硶
 
 **Test scenarios:**
-- Happy path: `kernel/sched/` 核心路径的 KUnit 测试覆盖率达到 90%
-- Happy path: `kernel/printk/` 的 printk 路径通过 kselftest 覆盖率达到 90%
-- Edge case: 调度器在不同优先级下的分支覆盖
-- Error path: 通过 Fault Injection 触发 kmalloc 失败，覆盖错误处理分支
-- Integration: KUnit + kselftest + Fault Injection 组合覆盖 `kernel/` 的完整路径
-
+- Happy path: `kernel/sched/` 鏍稿績璺緞鐨?KUnit 娴嬭瘯瑕嗙洊鐜囪揪鍒?90%
+- Happy path: `kernel/printk/` 鐨?printk 璺緞閫氳繃 kselftest 瑕嗙洊鐜囪揪鍒?90%
+- Edge case: 璋冨害鍣ㄥ湪涓嶅悓浼樺厛绾т笅鐨勫垎鏀鐩?- Error path: 閫氳繃 Fault Injection 瑙﹀彂 kmalloc 澶辫触锛岃鐩栭敊璇鐞嗗垎鏀?- Integration: KUnit + kselftest + Fault Injection 缁勫悎瑕嗙洊 `kernel/` 鐨勫畬鏁磋矾寰?
 **Verification:**
-- `kernel/` 子系统的分支覆盖率 ≥90%
-- 覆盖率报告中未覆盖分支 <10%
-- 每个测试用例有明确的代码路径覆盖目标
-- 测试代码通过代码审查
+- `kernel/` 瀛愮郴缁熺殑鍒嗘敮瑕嗙洊鐜?鈮?0%
+- 瑕嗙洊鐜囨姤鍛婁腑鏈鐩栧垎鏀?<10%
+- 姣忎釜娴嬭瘯鐢ㄤ緥鏈夋槑纭殑浠ｇ爜璺緞瑕嗙洊鐩爣
+- 娴嬭瘯浠ｇ爜閫氳繃浠ｇ爜瀹℃煡
 
 ---
 
-### U4. mm/ 子系统分支覆盖率达到 90%
+### U4. mm/ 瀛愮郴缁熷垎鏀鐩栫巼杈惧埌 90%
 
-**Goal:** 为 `mm/` 子系统编写 KUnit 和 kselftest 测试，使该子系统的分支覆盖率达到 90%。
-
+**Goal:** 涓?`mm/` 瀛愮郴缁熺紪鍐?KUnit 鍜?kselftest 娴嬭瘯锛屼娇璇ュ瓙绯荤粺鐨勫垎鏀鐩栫巼杈惧埌 90%銆?
 **Requirements:** R9, R10, R11
 
 **Dependencies:** U3
 
 **Files:**
-- Create: `mm/test/` — `mm/` 子系统的 KUnit 测试
-- Modify: `mm/` 下各目标文件的 Makefile 添加 `GCOV_PROFILE_*.o := y`
+- Create: `mm/test/` 鈥?`mm/` 瀛愮郴缁熺殑 KUnit 娴嬭瘯
+- Modify: `mm/` 涓嬪悇鐩爣鏂囦欢鐨?Makefile 娣诲姞 `GCOV_PROFILE_*.o := y`
 
 **Approach:**
-- 分析 `mm/` 子系统的关键路径：page allocator、slab、vmalloc、hugetlb、swap、mmap、madvise、mprotect 等
-- 编写 KUnit 测试覆盖内存分配器的基础路径（ buddy system、slab allocator）
-- 编写 kselftest 测试覆盖用户空间可见的内存管理接口（mmap、madvise、mprotect、brk）
-- 使用 Fault Injection 触发内存分配失败，覆盖错误处理路径
-- 重点覆盖竞争条件路径（通过 KCSAN 检测）
-- 达标后提交审计，审计通过后进入下一子系统
-
+- 鍒嗘瀽 `mm/` 瀛愮郴缁熺殑鍏抽敭璺緞锛歱age allocator銆乻lab銆乿malloc銆乭ugetlb銆乻wap銆乵map銆乵advise銆乵protect 绛?- 缂栧啓 KUnit 娴嬭瘯瑕嗙洊鍐呭瓨鍒嗛厤鍣ㄧ殑鍩虹璺緞锛?buddy system銆乻lab allocator锛?- 缂栧啓 kselftest 娴嬭瘯瑕嗙洊鐢ㄦ埛绌洪棿鍙鐨勫唴瀛樼鐞嗘帴鍙ｏ紙mmap銆乵advise銆乵protect銆乥rk锛?- 浣跨敤 Fault Injection 瑙﹀彂鍐呭瓨鍒嗛厤澶辫触锛岃鐩栭敊璇鐞嗚矾寰?- 閲嶇偣瑕嗙洊绔炰簤鏉′欢璺緞锛堥€氳繃 KCSAN 妫€娴嬶級
+- 杈炬爣鍚庢彁浜ゅ璁★紝瀹¤閫氳繃鍚庤繘鍏ヤ笅涓€瀛愮郴缁?
 **Patterns to follow:**
-- U3 中建立的 `kernel/` 测试模式和覆盖率流程
-- `mm/damon/` 现有的 KUnit 测试（`tools/testing/kunit/configs/damon`）
-
+- U3 涓缓绔嬬殑 `kernel/` 娴嬭瘯妯″紡鍜岃鐩栫巼娴佺▼
+- `mm/damon/` 鐜版湁鐨?KUnit 娴嬭瘯锛坄tools/testing/kunit/configs/damon`锛?
 **Test scenarios:**
-- Happy path: page allocator 的分配/释放路径覆盖率达到 90%
-- Happy path: mmap/munmap 的用户空间路径覆盖率达到 90%
-- Edge case: 不同内存区域（DMA、Normal、HighMem）的分配路径
-- Error path: 通过 failslab 注入 kmalloc 失败，覆盖错误处理分支
-- Error path: 通过 fail_page_alloc 注入 page alloc 失败
-- Integration: 内存压力下的分配路径（结合 fault injection）
-
+- Happy path: page allocator 鐨勫垎閰?閲婃斁璺緞瑕嗙洊鐜囪揪鍒?90%
+- Happy path: mmap/munmap 鐨勭敤鎴风┖闂磋矾寰勮鐩栫巼杈惧埌 90%
+- Edge case: 涓嶅悓鍐呭瓨鍖哄煙锛圖MA銆丯ormal銆丠ighMem锛夌殑鍒嗛厤璺緞
+- Error path: 閫氳繃 failslab 娉ㄥ叆 kmalloc 澶辫触锛岃鐩栭敊璇鐞嗗垎鏀?- Error path: 閫氳繃 fail_page_alloc 娉ㄥ叆 page alloc 澶辫触
+- Integration: 鍐呭瓨鍘嬪姏涓嬬殑鍒嗛厤璺緞锛堢粨鍚?fault injection锛?
 **Verification:**
-- `mm/` 子系统的分支覆盖率 ≥90%
-- 覆盖率报告中未覆盖分支 <10%
-- 错误处理路径通过 fault injection 覆盖
+- `mm/` 瀛愮郴缁熺殑鍒嗘敮瑕嗙洊鐜?鈮?0%
+- 瑕嗙洊鐜囨姤鍛婁腑鏈鐩栧垎鏀?<10%
+- 閿欒澶勭悊璺緞閫氳繃 fault injection 瑕嗙洊
 
 ---
 
-### U5. fs/ + net/ 子系统分支覆盖率达到 90%
+### U5. fs/ + net/ 瀛愮郴缁熷垎鏀鐩栫巼杈惧埌 90%
 
-**Goal:** 为 `fs/` 和 `net/` 子系统编写测试，使两个子系统的分支覆盖率达到 90%。
-
+**Goal:** 涓?`fs/` 鍜?`net/` 瀛愮郴缁熺紪鍐欐祴璇曪紝浣夸袱涓瓙绯荤粺鐨勫垎鏀鐩栫巼杈惧埌 90%銆?
 **Requirements:** R9, R10, R11
 
 **Dependencies:** U4
 
 **Files:**
-- Create: `fs/test/` — `fs/` 子系统的 KUnit 和 kselftest 测试
-- Create: `net/test/` — `net/` 子系统的 KUnit 和 kselftest 测试
-- Modify: `fs/` 和 `net/` 下各目标文件的 Makefile 添加 `GCOV_PROFILE_*.o := y`
+- Create: `fs/test/` 鈥?`fs/` 瀛愮郴缁熺殑 KUnit 鍜?kselftest 娴嬭瘯
+- Create: `net/test/` 鈥?`net/` 瀛愮郴缁熺殑 KUnit 鍜?kselftest 娴嬭瘯
+- Modify: `fs/` 鍜?`net/` 涓嬪悇鐩爣鏂囦欢鐨?Makefile 娣诲姞 `GCOV_PROFILE_*.o := y`
 
 **Approach:**
-- `fs/`：重点覆盖 VFS 层（superblock/inode/dentry 操作）、ext4 核心路径、path lookup、mount 流程
-- `fs/`：使用 kselftest 覆盖文件系统操作的完整路径（open/read/write/close、ioctl、fcntl）
-- `net/`：重点覆盖 sk_buff 生命周期、NAPI、netdevice 模型、socket 层
-- `net/`：使用 kselftest 覆盖网络协议栈（IPv4、IPv6、TCP、netfilter）
-- 使用 syzkaller 对 VFS 和网络栈进行模糊测试，覆盖罕见路径
-- 使用 Fault Injection 触发块设备 IO 错误、网络包丢失等场景
-- 达标后提交审计，审计通过后进入下一子系统
-
+- `fs/`锛氶噸鐐硅鐩?VFS 灞傦紙superblock/inode/dentry 鎿嶄綔锛夈€乪xt4 鏍稿績璺緞銆乸ath lookup銆乵ount 娴佺▼
+- `fs/`锛氫娇鐢?kselftest 瑕嗙洊鏂囦欢绯荤粺鎿嶄綔鐨勫畬鏁磋矾寰勶紙open/read/write/close銆乮octl銆乫cntl锛?- `net/`锛氶噸鐐硅鐩?sk_buff 鐢熷懡鍛ㄦ湡銆丯API銆乶etdevice 妯″瀷銆乻ocket 灞?- `net/`锛氫娇鐢?kselftest 瑕嗙洊缃戠粶鍗忚鏍堬紙IPv4銆両Pv6銆乀CP銆乶etfilter锛?- 浣跨敤 syzkaller 瀵?VFS 鍜岀綉缁滄爤杩涜妯＄硦娴嬭瘯锛岃鐩栫綍瑙佽矾寰?- 浣跨敤 Fault Injection 瑙﹀彂鍧楄澶?IO 閿欒銆佺綉缁滃寘涓㈠け绛夊満鏅?- 杈炬爣鍚庢彁浜ゅ璁★紝瀹¤閫氳繃鍚庤繘鍏ヤ笅涓€瀛愮郴缁?
 **Patterns to follow:**
-- `fs/ext4/` 现有的 KUnit 测试（`.kunitconfig` 在 `fs/ext4/`）
-- `tools/testing/selftests/net/` 现有的网络测试
-- `tools/testing/selftests/filesystems/` 现有的文件系统测试
-
+- `fs/ext4/` 鐜版湁鐨?KUnit 娴嬭瘯锛坄.kunitconfig` 鍦?`fs/ext4/`锛?- `tools/testing/selftests/net/` 鐜版湁鐨勭綉缁滄祴璇?- `tools/testing/selftests/filesystems/` 鐜版湁鐨勬枃浠剁郴缁熸祴璇?
 **Test scenarios:**
-- Happy path: VFS 层的路径查找（path lookup）覆盖率达到 90%
-- Happy path: ext4 核心路径（inode 操作、块分配、journal）覆盖率达到 90%
-- Happy path: 网络栈的 sk_buff 分配/释放路径覆盖率达到 90%
-- Happy path: TCP 连接建立/断开路径覆盖率达到 90%
-- Edge case: 不同文件系统类型的 VFS 操作差异
-- Error path: 通过 fail_make_request 注入块设备 IO 错误
-- Error path: 通过 fail_skb_realloc 注入网络 skb 重分配失败
-- Integration: syzkaller 模糊测试 VFS 和网络栈的边界路径
-
+- Happy path: VFS 灞傜殑璺緞鏌ユ壘锛坧ath lookup锛夎鐩栫巼杈惧埌 90%
+- Happy path: ext4 鏍稿績璺緞锛坕node 鎿嶄綔銆佸潡鍒嗛厤銆乯ournal锛夎鐩栫巼杈惧埌 90%
+- Happy path: 缃戠粶鏍堢殑 sk_buff 鍒嗛厤/閲婃斁璺緞瑕嗙洊鐜囪揪鍒?90%
+- Happy path: TCP 杩炴帴寤虹珛/鏂紑璺緞瑕嗙洊鐜囪揪鍒?90%
+- Edge case: 涓嶅悓鏂囦欢绯荤粺绫诲瀷鐨?VFS 鎿嶄綔宸紓
+- Error path: 閫氳繃 fail_make_request 娉ㄥ叆鍧楄澶?IO 閿欒
+- Error path: 閫氳繃 fail_skb_realloc 娉ㄥ叆缃戠粶 skb 閲嶅垎閰嶅け璐?- Integration: syzkaller 妯＄硦娴嬭瘯 VFS 鍜岀綉缁滄爤鐨勮竟鐣岃矾寰?
 **Verification:**
-- `fs/` 子系统的分支覆盖率 ≥90%
-- `net/` 子系统的分支覆盖率 ≥90%
-- syzkaller 发现的边界路径有对应的回归测试
-
+- `fs/` 瀛愮郴缁熺殑鍒嗘敮瑕嗙洊鐜?鈮?0%
+- `net/` 瀛愮郴缁熺殑鍒嗘敮瑕嗙洊鐜?鈮?0%
+- syzkaller 鍙戠幇鐨勮竟鐣岃矾寰勬湁瀵瑰簲鐨勫洖褰掓祴璇?
 ---
 
-### U6. drivers/ 子系统分支覆盖率达到 90%
+### U6. drivers/ 瀛愮郴缁熷垎鏀鐩栫巼杈惧埌 90%
 
-**Goal:** 为 `drivers/` 子系统编写测试，使该子系统的分支覆盖率达到 90%。
-
+**Goal:** 涓?`drivers/` 瀛愮郴缁熺紪鍐欐祴璇曪紝浣胯瀛愮郴缁熺殑鍒嗘敮瑕嗙洊鐜囪揪鍒?90%銆?
 **Requirements:** R9, R10, R11
 
 **Dependencies:** U5
 
 **Files:**
-- Create: `drivers/test/` — `drivers/` 子系统的测试框架和公共测试
-- Create: `drivers/base/test/` — 驱动核心（device/driver/bus 模型）的 KUnit 测试
-- Create: `drivers/gpu/drm/tests/` — DRM 子系统的 KUnit 测试扩展
-- Modify: `drivers/` 下各目标文件的 Makefile 添加 `GCOV_PROFILE_*.o := y`
+- Create: `drivers/test/` 鈥?`drivers/` 瀛愮郴缁熺殑娴嬭瘯妗嗘灦鍜屽叕鍏辨祴璇?- Create: `drivers/base/test/` 鈥?椹卞姩鏍稿績锛坉evice/driver/bus 妯″瀷锛夌殑 KUnit 娴嬭瘯
+- Create: `drivers/gpu/drm/tests/` 鈥?DRM 瀛愮郴缁熺殑 KUnit 娴嬭瘯鎵╁睍
+- Modify: `drivers/` 涓嬪悇鐩爣鏂囦欢鐨?Makefile 娣诲姞 `GCOV_PROFILE_*.o := y`
 
 **Approach:**
-- 由于驱动代码需要硬件或完整平台模拟，优先使用 QEMU 作为测试平台
-- 重点覆盖驱动核心框架（`drivers/base/`）：kobject、device、driver、bus 层次结构
-- 按驱动类型分组，优先覆盖通用驱动（block、char、net、sound、gpu）
-- 使用 QEMU 启动完整系统，运行 kselftest 和 KUnit 测试
-- 使用 syzkaller 对驱动接口进行模糊测试
-- 对于需要特定硬件的驱动，使用 QEMU 的设备模拟或编写 mock 测试
-- 达标后提交审计，审计通过后进入下一子系统
-
+- 鐢变簬椹卞姩浠ｇ爜闇€瑕佺‖浠舵垨瀹屾暣骞冲彴妯℃嫙锛屼紭鍏堜娇鐢?QEMU 浣滀负娴嬭瘯骞冲彴
+- 閲嶇偣瑕嗙洊椹卞姩鏍稿績妗嗘灦锛坄drivers/base/`锛夛細kobject銆乨evice銆乨river銆乥us 灞傛缁撴瀯
+- 鎸夐┍鍔ㄧ被鍨嬪垎缁勶紝浼樺厛瑕嗙洊閫氱敤椹卞姩锛坆lock銆乧har銆乶et銆乻ound銆乬pu锛?- 浣跨敤 QEMU 鍚姩瀹屾暣绯荤粺锛岃繍琛?kselftest 鍜?KUnit 娴嬭瘯
+- 浣跨敤 syzkaller 瀵归┍鍔ㄦ帴鍙ｈ繘琛屾ā绯婃祴璇?- 瀵逛簬闇€瑕佺壒瀹氱‖浠剁殑椹卞姩锛屼娇鐢?QEMU 鐨勮澶囨ā鎷熸垨缂栧啓 mock 娴嬭瘯
+- 杈炬爣鍚庢彁浜ゅ璁★紝瀹¤閫氳繃鍚庤繘鍏ヤ笅涓€瀛愮郴缁?
 **Patterns to follow:**
-- `drivers/gpu/drm/ci/kunit.sh` 的 QEMU + KUnit 模式
-- `drivers/gpu/drm/tests/` 现有的 DRM KUnit 测试
+- `drivers/gpu/drm/ci/kunit.sh` 鐨?QEMU + KUnit 妯″紡
+- `drivers/gpu/drm/tests/` 鐜版湁鐨?DRM KUnit 娴嬭瘯
 
 **Test scenarios:**
-- Happy path: 驱动核心框架（device_register/driver_register/bus_register）覆盖率达到 90%
-- Happy path: DRM 核心路径（drm_mode_create、gem_create、dma_resv）覆盖率达到 90%
-- Edge case: 不同总线类型（PCI、USB、platform）的驱动绑定流程
-- Error path: 通过 fault injection 触发驱动 probe 失败
-- Error path: 模拟设备热插拔（device_add/remove）
-- Integration: QEMU 完整系统启动后运行 KUnit 和 kselftest
+- Happy path: 椹卞姩鏍稿績妗嗘灦锛坉evice_register/driver_register/bus_register锛夎鐩栫巼杈惧埌 90%
+- Happy path: DRM 鏍稿績璺緞锛坉rm_mode_create銆乬em_create銆乨ma_resv锛夎鐩栫巼杈惧埌 90%
+- Edge case: 涓嶅悓鎬荤嚎绫诲瀷锛圥CI銆乁SB銆乸latform锛夌殑椹卞姩缁戝畾娴佺▼
+- Error path: 閫氳繃 fault injection 瑙﹀彂椹卞姩 probe 澶辫触
+- Error path: 妯℃嫙璁惧鐑彃鎷旓紙device_add/remove锛?- Integration: QEMU 瀹屾暣绯荤粺鍚姩鍚庤繍琛?KUnit 鍜?kselftest
 
 **Verification:**
-- `drivers/` 子系统的分支覆盖率 ≥90%
-- 测试可以在 QEMU 中自动运行
-- 驱动核心框架的测试覆盖率 ≥95%（驱动核心相对稳定，覆盖率应更高）
-
+- `drivers/` 瀛愮郴缁熺殑鍒嗘敮瑕嗙洊鐜?鈮?0%
+- 娴嬭瘯鍙互鍦?QEMU 涓嚜鍔ㄨ繍琛?- 椹卞姩鏍稿績妗嗘灦鐨勬祴璇曡鐩栫巼 鈮?5%锛堥┍鍔ㄦ牳蹇冪浉瀵圭ǔ瀹氾紝瑕嗙洊鐜囧簲鏇撮珮锛?
 ---
 
-### U7. arch/*/ 子系统分支覆盖率达到 90%
+### U7. arch/*/ 瀛愮郴缁熷垎鏀鐩栫巼杈惧埌 90%
 
-**Goal:** 为 `arch/*/` 子系统编写测试，使该子系统的分支覆盖率达到 90%。
-
+**Goal:** 涓?`arch/*/` 瀛愮郴缁熺紪鍐欐祴璇曪紝浣胯瀛愮郴缁熺殑鍒嗘敮瑕嗙洊鐜囪揪鍒?90%銆?
 **Requirements:** R9, R10, R11
 
 **Dependencies:** U6
 
 **Files:**
-- Create: `arch/test/` — 架构相关测试的公共框架
-- Create: `arch/x86/` 下的架构特定测试
-- Create: `arch/arm64/` 下的架构特定测试
-- Modify: `arch/*/` 下各目标文件的 Makefile 添加 `GCOV_PROFILE_*.o := y`
+- Create: `arch/test/` 鈥?鏋舵瀯鐩稿叧娴嬭瘯鐨勫叕鍏辨鏋?- Create: `arch/x86/` 涓嬬殑鏋舵瀯鐗瑰畾娴嬭瘯
+- Create: `arch/arm64/` 涓嬬殑鏋舵瀯鐗瑰畾娴嬭瘯
+- Modify: `arch/*/` 涓嬪悇鐩爣鏂囦欢鐨?Makefile 娣诲姞 `GCOV_PROFILE_*.o := y`
 
 **Approach:**
-- 架构代码高度依赖具体硬件，使用 QEMU 模拟多种架构（x86_64、arm64、riscv）
-- 重点覆盖架构无关的公共路径（entry common、signal handling、syscall dispatch、context switch）
-- 按架构分组，优先覆盖主流架构（x86_64、arm64）
-- 使用 KUnit 测试架构特定的辅助函数和数据结构的逻辑
-- 使用 kselftest 测试架构特定的系统调用和 ABI
-- 对于异常处理路径，使用 QEMU 的 fault injection 机制触发
-- 达标后提交审计，审计通过后进入下一子系统
-
+- 鏋舵瀯浠ｇ爜楂樺害渚濊禆鍏蜂綋纭欢锛屼娇鐢?QEMU 妯℃嫙澶氱鏋舵瀯锛坸86_64銆乤rm64銆乺iscv锛?- 閲嶇偣瑕嗙洊鏋舵瀯鏃犲叧鐨勫叕鍏辫矾寰勶紙entry common銆乻ignal handling銆乻yscall dispatch銆乧ontext switch锛?- 鎸夋灦鏋勫垎缁勶紝浼樺厛瑕嗙洊涓绘祦鏋舵瀯锛坸86_64銆乤rm64锛?- 浣跨敤 KUnit 娴嬭瘯鏋舵瀯鐗瑰畾鐨勮緟鍔╁嚱鏁板拰鏁版嵁缁撴瀯鐨勯€昏緫
+- 浣跨敤 kselftest 娴嬭瘯鏋舵瀯鐗瑰畾鐨勭郴缁熻皟鐢ㄥ拰 ABI
+- 瀵逛簬寮傚父澶勭悊璺緞锛屼娇鐢?QEMU 鐨?fault injection 鏈哄埗瑙﹀彂
+- 杈炬爣鍚庢彁浜ゅ璁★紝瀹¤閫氳繃鍚庤繘鍏ヤ笅涓€瀛愮郴缁?
 **Patterns to follow:**
-- `arch/x86/` 现有的测试（`tools/testing/selftests/x86/`）
-- `arch/arm64/` 现有的测试
-- U6 中建立的 QEMU 测试模式
+- `arch/x86/` 鐜版湁鐨勬祴璇曪紙`tools/testing/selftests/x86/`锛?- `arch/arm64/` 鐜版湁鐨勬祴璇?- U6 涓缓绔嬬殑 QEMU 娴嬭瘯妯″紡
 
 **Test scenarios:**
-- Happy path: 系统调用分发路径（syscall entry/exit）覆盖率达到 90%
-- Happy path: 信号处理路径（signal delivery/return）覆盖率达到 90%
-- Happy path: 上下文切换路径覆盖率达到 90%
-- Edge case: 不同系统调用号的 syscall 处理差异
-- Error path: 通过 QEMU 注入页错误、段错误等异常
-- Error path: 模拟系统调用参数无效的错误处理路径
-- Integration: 完整系统启动后运行架构特定的 kselftest
+- Happy path: 绯荤粺璋冪敤鍒嗗彂璺緞锛坰yscall entry/exit锛夎鐩栫巼杈惧埌 90%
+- Happy path: 淇″彿澶勭悊璺緞锛坰ignal delivery/return锛夎鐩栫巼杈惧埌 90%
+- Happy path: 涓婁笅鏂囧垏鎹㈣矾寰勮鐩栫巼杈惧埌 90%
+- Edge case: 涓嶅悓绯荤粺璋冪敤鍙风殑 syscall 澶勭悊宸紓
+- Error path: 閫氳繃 QEMU 娉ㄥ叆椤甸敊璇€佹閿欒绛夊紓甯?- Error path: 妯℃嫙绯荤粺璋冪敤鍙傛暟鏃犳晥鐨勯敊璇鐞嗚矾寰?- Integration: 瀹屾暣绯荤粺鍚姩鍚庤繍琛屾灦鏋勭壒瀹氱殑 kselftest
 
 **Verification:**
-- `arch/*/` 子系统的分支覆盖率 ≥90%
-- 主流架构（x86_64、arm64）的覆盖率 ≥95%
-- 测试可以在 QEMU 中自动运行
-
+- `arch/*/` 瀛愮郴缁熺殑鍒嗘敮瑕嗙洊鐜?鈮?0%
+- 涓绘祦鏋舵瀯锛坸86_64銆乤rm64锛夌殑瑕嗙洊鐜?鈮?5%
+- 娴嬭瘯鍙互鍦?QEMU 涓嚜鍔ㄨ繍琛?
 ---
 
-### U8. 审计报告、回归防护和 CI 集成
+### U8. 瀹¤鎶ュ憡銆佸洖褰掗槻鎶ゅ拰 CI 闆嗘垚
 
-**Goal:** 建立完整的审计报告系统、覆盖率回归防护机制和 CI 集成。
-
+**Goal:** 寤虹珛瀹屾暣鐨勫璁℃姤鍛婄郴缁熴€佽鐩栫巼鍥炲綊闃叉姢鏈哄埗鍜?CI 闆嗘垚銆?
 **Requirements:** R12, R13, R14, R11
 
 **Dependencies:** U7
 
 **Files:**
-- Create: `tools/testing/audit/report_generator.py` — 季度审计报告生成器
-- Create: `tools/testing/audit/coverage_regression.py` — 覆盖率回归检测工具
-- Create: `tools/testing/audit/ci_configs/` — CI 配置模板
-- Modify: `.gitlab-ci.yml`（或新建）— CI 流水线配置
-- Create: `docs/dev-tools/coverage-audit.rst` — 覆盖率审计文档
-
+- Create: `tools/testing/audit/report_generator.py` 鈥?瀛ｅ害瀹¤鎶ュ憡鐢熸垚鍣?- Create: `tools/testing/audit/coverage_regression.py` 鈥?瑕嗙洊鐜囧洖褰掓娴嬪伐鍏?- Create: `tools/testing/audit/ci_configs/` 鈥?CI 閰嶇疆妯℃澘
+- Modify: `.gitlab-ci.yml`锛堟垨鏂板缓锛夆€?CI 娴佹按绾块厤缃?- Create: `docs/dev-tools/coverage-audit.rst` 鈥?瑕嗙洊鐜囧璁℃枃妗?
 **Approach:**
-- 审计报告生成器：汇总各子系统的覆盖率数据，生成趋势图、未覆盖分支分析、测试完整性证明
-- 覆盖率回归检测：在 CI 中集成覆盖率门控（coverage gate），新代码合并不导致已达标子系统覆盖率下降
-- CI 集成：建立 GitLab CI 流水线，支持自动运行测试、采集覆盖率、生成报告、触发覆盖率门控
-- 审计文档：编写详细的覆盖率采集和验证文档，支持审计方独立运行测试套件
-- 支持审计方导出原始覆盖率数据，独立验证报告结果
-
+- 瀹¤鎶ュ憡鐢熸垚鍣細姹囨€诲悇瀛愮郴缁熺殑瑕嗙洊鐜囨暟鎹紝鐢熸垚瓒嬪娍鍥俱€佹湭瑕嗙洊鍒嗘敮鍒嗘瀽銆佹祴璇曞畬鏁存€ц瘉鏄?- 瑕嗙洊鐜囧洖褰掓娴嬶細鍦?CI 涓泦鎴愯鐩栫巼闂ㄦ帶锛坈overage gate锛夛紝鏂颁唬鐮佸悎骞朵笉瀵艰嚧宸茶揪鏍囧瓙绯荤粺瑕嗙洊鐜囦笅闄?- CI 闆嗘垚锛氬缓绔?GitLab CI 娴佹按绾匡紝鏀寔鑷姩杩愯娴嬭瘯銆侀噰闆嗚鐩栫巼銆佺敓鎴愭姤鍛娿€佽Е鍙戣鐩栫巼闂ㄦ帶
+- 瀹¤鏂囨。锛氱紪鍐欒缁嗙殑瑕嗙洊鐜囬噰闆嗗拰楠岃瘉鏂囨。锛屾敮鎸佸璁℃柟鐙珛杩愯娴嬭瘯濂椾欢
+- 鏀寔瀹¤鏂瑰鍑哄師濮嬭鐩栫巼鏁版嵁锛岀嫭绔嬮獙璇佹姤鍛婄粨鏋?
 **Patterns to follow:**
-- `drivers/gpu/drm/ci/kunit.yml` 的 GitLab CI 模式
-- `tools/testing/selftests/kselftest/runner.sh` 的 TAP 输出模式
+- `drivers/gpu/drm/ci/kunit.yml` 鐨?GitLab CI 妯″紡
+- `tools/testing/selftests/kselftest/runner.sh` 鐨?TAP 杈撳嚭妯″紡
 
 **Test scenarios:**
-- Happy path: 提交 PR 后，CI 自动运行相关子系统测试，覆盖率不下降
-- Happy path: 生成季度审计报告，包含所有必需字段
-- Edge case: 新代码覆盖了新的分支，覆盖率上升
-- Error path: 新代码引入了未覆盖的分支，覆盖率下降，CI 阻断合并
-- Integration: 审计方按照文档独立运行测试套件，得到与项目报告一致的覆盖率数据
-
+- Happy path: 鎻愪氦 PR 鍚庯紝CI 鑷姩杩愯鐩稿叧瀛愮郴缁熸祴璇曪紝瑕嗙洊鐜囦笉涓嬮檷
+- Happy path: 鐢熸垚瀛ｅ害瀹¤鎶ュ憡锛屽寘鍚墍鏈夊繀闇€瀛楁
+- Edge case: 鏂颁唬鐮佽鐩栦簡鏂扮殑鍒嗘敮锛岃鐩栫巼涓婂崌
+- Error path: 鏂颁唬鐮佸紩鍏ヤ簡鏈鐩栫殑鍒嗘敮锛岃鐩栫巼涓嬮檷锛孋I 闃绘柇鍚堝苟
+- Integration: 瀹¤鏂规寜鐓ф枃妗ｇ嫭绔嬭繍琛屾祴璇曞浠讹紝寰楀埌涓庨」鐩姤鍛婁竴鑷寸殑瑕嗙洊鐜囨暟鎹?
 **Verification:**
-- 季度审计报告包含所有必需字段（覆盖率趋势、未覆盖分支分析、测试完整性证明）
-- CI 流水线可以自动运行测试、采集覆盖率、执行回归检测
-- 覆盖率门控有效：新代码合并不导致覆盖率下降
-- 审计方可以独立运行测试套件并复现覆盖率数据
-
+- 瀛ｅ害瀹¤鎶ュ憡鍖呭惈鎵€鏈夊繀闇€瀛楁锛堣鐩栫巼瓒嬪娍銆佹湭瑕嗙洊鍒嗘敮鍒嗘瀽銆佹祴璇曞畬鏁存€ц瘉鏄庯級
+- CI 娴佹按绾垮彲浠ヨ嚜鍔ㄨ繍琛屾祴璇曘€侀噰闆嗚鐩栫巼銆佹墽琛屽洖褰掓娴?- 瑕嗙洊鐜囬棬鎺ф湁鏁堬細鏂颁唬鐮佸悎骞朵笉瀵艰嚧瑕嗙洊鐜囦笅闄?- 瀹¤鏂瑰彲浠ョ嫭绔嬭繍琛屾祴璇曞浠跺苟澶嶇幇瑕嗙洊鐜囨暟鎹?
 ---
 
 ## System-Wide Impact
 
-- **Interaction graph:** 测试编排器与所有测试引擎（KUnit、kselftest、syzkaller、Fault Injection）交互；覆盖率采集与内核构建系统（Kbuild）交互；CI 流水线与 GitLab 交互
-- **Error propagation:** 覆盖率采集失败不应阻断测试运行；测试引擎故障应隔离影响
-- **State lifecycle risks:** 覆盖率数据文件可能很大（GB 级），需要定期清理和归档；测试环境配置需要版本控制
-- **API surface parity:** 覆盖率报告格式需要向后兼容，支持历史数据对比
-- **Integration coverage:** 测试编排器需要与现有构建系统（`make kselftest`、`make kunit`）集成，不破坏现有工作流
-- **Unchanged invariants:** 内核源码不因测试工程而修改（除必要的 `GCOV_PROFILE_*.o` 标记外）；现有测试套件继续正常工作
-
+- **Interaction graph:** 娴嬭瘯缂栨帓鍣ㄤ笌鎵€鏈夋祴璇曞紩鎿庯紙KUnit銆乲selftest銆乻yzkaller銆丗ault Injection锛変氦浜掞紱瑕嗙洊鐜囬噰闆嗕笌鍐呮牳鏋勫缓绯荤粺锛圞build锛変氦浜掞紱CI 娴佹按绾夸笌 GitLab 浜や簰
+- **Error propagation:** 瑕嗙洊鐜囬噰闆嗗け璐ヤ笉搴旈樆鏂祴璇曡繍琛岋紱娴嬭瘯寮曟搸鏁呴殰搴旈殧绂诲奖鍝?- **State lifecycle risks:** 瑕嗙洊鐜囨暟鎹枃浠跺彲鑳藉緢澶э紙GB 绾э級锛岄渶瑕佸畾鏈熸竻鐞嗗拰褰掓。锛涙祴璇曠幆澧冮厤缃渶瑕佺増鏈帶鍒?- **API surface parity:** 瑕嗙洊鐜囨姤鍛婃牸寮忛渶瑕佸悜鍚庡吋瀹癸紝鏀寔鍘嗗彶鏁版嵁瀵规瘮
+- **Integration coverage:** 娴嬭瘯缂栨帓鍣ㄩ渶瑕佷笌鐜版湁鏋勫缓绯荤粺锛坄make kselftest`銆乣make kunit`锛夐泦鎴愶紝涓嶇牬鍧忕幇鏈夊伐浣滄祦
+- **Unchanged invariants:** 鍐呮牳婧愮爜涓嶅洜娴嬭瘯宸ョ▼鑰屼慨鏀癸紙闄ゅ繀瑕佺殑 `GCOV_PROFILE_*.o` 鏍囪澶栵級锛涚幇鏈夋祴璇曞浠剁户缁甯稿伐浣?
 ---
 
 ## Risks & Dependencies
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|-----------|--------|------------|
-| 部分架构代码（如 arch/*/ 的异常处理）在软件层面无法覆盖 | High | High | 与审计方协商，对无法覆盖的代码提供替代证明（代码审查、静态分析） |
-| 覆盖率采集导致内核性能大幅下降，影响测试效率 | Medium | Medium | 使用采样模式或分阶段采集；在非性能关键路径上使用 kcov |
-| syzkaller 对某些子系统的覆盖效率低 | Medium | Medium | 针对性编写 seed corpus；结合 kselftest 补充覆盖 |
-| 测试用例维护成本高，随内核演化需要持续更新 | Medium | Medium | 建立测试维护流程；将测试用例纳入内核审查流程 |
-| 覆盖率数据量大（GB 级），存储和传输成本高 | Medium | Low | 使用 lcov 的压缩格式；仅保留汇总数据，详细数据按需生成 |
-| 团队技能缺口：测试工程师需要熟悉内核内部 | Medium | Medium | 培训计划；与内核开发者结对编程 |
+| 閮ㄥ垎鏋舵瀯浠ｇ爜锛堝 arch/*/ 鐨勫紓甯稿鐞嗭級鍦ㄨ蒋浠跺眰闈㈡棤娉曡鐩?| High | High | 涓庡璁℃柟鍗忓晢锛屽鏃犳硶瑕嗙洊鐨勪唬鐮佹彁渚涙浛浠ｈ瘉鏄庯紙浠ｇ爜瀹℃煡銆侀潤鎬佸垎鏋愶級 |
+| 瑕嗙洊鐜囬噰闆嗗鑷村唴鏍告€ц兘澶у箙涓嬮檷锛屽奖鍝嶆祴璇曟晥鐜?| Medium | Medium | 浣跨敤閲囨牱妯″紡鎴栧垎闃舵閲囬泦锛涘湪闈炴€ц兘鍏抽敭璺緞涓婁娇鐢?kcov |
+| syzkaller 瀵规煇浜涘瓙绯荤粺鐨勮鐩栨晥鐜囦綆 | Medium | Medium | 閽堝鎬х紪鍐?seed corpus锛涚粨鍚?kselftest 琛ュ厖瑕嗙洊 |
+| 娴嬭瘯鐢ㄤ緥缁存姢鎴愭湰楂橈紝闅忓唴鏍告紨鍖栭渶瑕佹寔缁洿鏂?| Medium | Medium | 寤虹珛娴嬭瘯缁存姢娴佺▼锛涘皢娴嬭瘯鐢ㄤ緥绾冲叆鍐呮牳瀹℃煡娴佺▼ |
+| 瑕嗙洊鐜囨暟鎹噺澶э紙GB 绾э級锛屽瓨鍌ㄥ拰浼犺緭鎴愭湰楂?| Medium | Low | 浣跨敤 lcov 鐨勫帇缂╂牸寮忥紱浠呬繚鐣欐眹鎬绘暟鎹紝璇︾粏鏁版嵁鎸夐渶鐢熸垚 |
+| 鍥㈤槦鎶€鑳界己鍙ｏ細娴嬭瘯宸ョ▼甯堥渶瑕佺啛鎮夊唴鏍稿唴閮?| Medium | Medium | 鍩硅璁″垝锛涗笌鍐呮牳寮€鍙戣€呯粨瀵圭紪绋?|
 
 ---
 
 ## Documentation / Operational Notes
 
-- 覆盖率审计文档：`docs/dev-tools/coverage-audit.rst`
-- 测试编写指南：`docs/dev-tools/testing-coverage-guide.rst`
-- CI 流水线文档：`.gitlab-ci.yml` 注释
-- 每个子系统的覆盖率基线数据存档在 `tools/testing/coverage/baseline/`
-- 审计报告存档在 `tools/testing/audit/reports/`
+- 瑕嗙洊鐜囧璁℃枃妗ｏ細`docs/dev-tools/coverage-audit.rst`
+- 娴嬭瘯缂栧啓鎸囧崡锛歚docs/dev-tools/testing-coverage-guide.rst`
+- CI 娴佹按绾挎枃妗ｏ細`.gitlab-ci.yml` 娉ㄩ噴
+- 姣忎釜瀛愮郴缁熺殑瑕嗙洊鐜囧熀绾挎暟鎹瓨妗ｅ湪 `tools/testing/coverage/baseline/`
+- 瀹¤鎶ュ憡瀛樻。鍦?`tools/testing/audit/reports/`
 
 ---
 
 ## Sources & References
 
 - **Origin document:** [docs/brainstorms/kernel-branch-coverage-90-requirements.md](../brainstorms/kernel-branch-coverage-90-requirements.md)
-- **KUnit 框架:** [lib/kunit/](../../lib/kunit/)
-- **KUnit 运行器:** [tools/testing/kunit/kunit.py](../../tools/testing/kunit/kunit.py)
-- **kselftest 目录:** [tools/testing/selftests/](../../tools/testing/selftests/)
-- **gcov 实现:** [kernel/gcov/](../../kernel/gcov/)
-- **kcov 配置:** [lib/Kconfig.debug](../../lib/Kconfig.debug)
+- **KUnit 妗嗘灦:** [lib/kunit/](../../lib/kunit/)
+- **KUnit 杩愯鍣?** [tools/testing/kunit/kunit.py](../../tools/testing/kunit/kunit.py)
+- **kselftest 鐩綍:** [tools/testing/selftests/](../../tools/testing/selftests/)
+- **gcov 瀹炵幇:** [kernel/gcov/](../../kernel/gcov/)
+- **kcov 閰嶇疆:** [lib/Kconfig.debug](../../lib/Kconfig.debug)
 - **Fault Injection:** [lib/fault-inject.c](../../lib/fault-inject.c)
-- **DRM CI 示例:** [drivers/gpu/drm/ci/](../../drivers/gpu/drm/ci/)
-- **gcov 文档:** [Documentation/dev-tools/gcov.rst](../../Documentation/dev-tools/gcov.rst)
-- **kcov 文档:** [Documentation/dev-tools/kcov.rst](../../Documentation/dev-tools/kcov.rst)
+- **DRM CI 绀轰緥:** [drivers/gpu/drm/ci/](../../drivers/gpu/drm/ci/)
+- **gcov 鏂囨。:** [Documentation/dev-tools/gcov.rst](../../Documentation/dev-tools/gcov.rst)
+- **kcov 鏂囨。:** [Documentation/dev-tools/kcov.rst](../../Documentation/dev-tools/kcov.rst)

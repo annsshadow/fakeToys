@@ -1,20 +1,20 @@
-## octeontx2 的 devlink 支持
+﻿## octeontx2 鐨?devlink 鏀寔
 
 
-本文档描述了 `octeontx2 CPT` 设备驱动实现的 devlink 特性。
+鏈枃妗ｆ弿杩颁簡 `octeontx2 CPT` 璁惧椹卞姩瀹炵幇鐨?devlink 鐗规€с€?
 
-## 参数
+## 鍙傛暟
 
 
-`octeontx2` 驱动实现了以下驱动特定的参数。
+`octeontx2` 椹卞姩瀹炵幇浜嗕互涓嬮┍鍔ㄧ壒瀹氱殑鍙傛暟銆?
 
    :widths: 5 5 5 85
 
-   - - 名称
-     - 类型
-     - 模式
-     - 描述
+   - - 鍚嶇О
+     - 绫诲瀷
+     - 妯″紡
+     - 鎻忚堪
    - - `t106_mode`
      - u8
      - runtime
-     - 用于将 CN10KA B0/CN10KB CPT 配置为以 CN10KA A0/A1 方式工作。
+     - 鐢ㄤ簬灏?CN10KA B0/CN10KB CPT 閰嶇疆涓轰互 CN10KA A0/A1 鏂瑰紡宸ヤ綔銆?

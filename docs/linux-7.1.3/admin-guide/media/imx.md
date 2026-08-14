@@ -1,92 +1,53 @@
+﻿
+## i.MX 瑙嗛鎹曡幏椹卞姩
 
-## i.MX 视频捕获驱动
+### 绠€浠?
+Freescale i.MX5/6 鍖呭惈涓€涓浘鍍忓鐞嗗崟鍏冿紙Image Processing Unit锛孖PU锛夛紝
+瀹冭礋璐ｅ浘鍍忓抚鍦ㄦ崟鑾疯澶囧拰鏄剧ず璁惧涔嬮棿鐨勬祦鍚戙€?
+瀵逛簬鍥惧儚鎹曡幏锛孖PU 鍖呭惈浠ヤ笅鍐呴儴瀛愬崟鍏冿細
 
-### 简介
+- 鍥惧儚 DMA 鎺у埗鍣紙Image DMA Controller锛孖DMAC锛?- 鎽勫儚澶翠覆琛屾帴鍙ｏ紙Camera Serial Interface锛孋SI锛?- 鍥惧儚杞崲鍣紙Image Converter锛孖C锛?- 浼犳劅鍣ㄥ FIFO 鎺у埗鍣紙Sensor Multi-FIFO Controller锛孲MFC锛?- 鍥惧儚鏃嬭浆鍣紙Image Rotator锛孖RT锛?- 瑙嗛鍘婚殧琛屾垨鍚堟垚妯″潡锛圴ideo De-Interlacing or Combining Block锛孷DIC锛?
+IDMAC 鏄敤浜庡湪鍐呭瓨涓庡浘鍍忓抚涔嬮棿杩涜浼犺緭鐨?DMA 鎺у埗鍣ㄣ€傞拡瀵硅棰戞崟鑾峰拰鏄剧ず
+璺緞鍒嗗埆瀛樺湪鍚勭涓撶敤 DMA 閫氶亾銆傚湪浼犺緭杩囩▼涓紝IDMAC 杩樿兘澶熻繘琛屽瀭鐩村浘鍍忕炕杞€?8x8 鍧椾紶杈擄紙鍙傝 IRT 鎻忚堪锛夈€佸悓涓€鑹插僵绌洪棿鍐呯殑鍍忕礌鍒嗛噺閲嶆帓搴忥紙渚嬪 UYVY 鍒?YUYV锛夛紝浠ュ強鎵撳寘锛坧acked锛?--> 骞抽潰锛坧lanar锛夎浆鎹€侷DMAC 杩樺彲浠ュ湪浼犺緭鏃堕€氳繃
+浜ら敊鍋舵暟琛屽拰濂囨暟琛岀殑鏂瑰紡鎵ц绠€鍗曠殑鍘婚殧琛岋紙涓嶅甫鏈夐渶瑕?VDIC 鏀寔鐨勮繍鍔ㄨˉ鍋匡級銆?
+CSI 鏄悗绔崟鑾峰崟鍏冿紝閫氳繃骞惰锛圥arallel锛夈€丅T.656/1120 鍜?MIPI CSI-2 鎬荤嚎
+鐩存帴涓庢憚鍍忓ご浼犳劅鍣ㄦ帴鍙ｃ€?
+IC 璐熻矗鑹插僵绌洪棿杞崲銆佺缉鏀撅紙缂╁皬鍜屾斁澶э級銆佹按骞崇炕杞互鍙?90/270 搴︽棆杞搷浣溿€?
+IC 鍐呴儴鏈変笁涓彲骞跺彂鎵ц杞崲鐨勭嫭绔嬧€滀换鍔♀€濓細棰勫鐞嗗櫒缂栫爜锛坧re-process
+encoding锛夈€侀澶勭悊鍣ㄥ彇鏅櫒锛坧re-process viewfinder锛夊拰鍚庡鐞嗭紙post-processing锛夈€?鍦ㄦ瘡涓换鍔″唴锛岃浆鎹㈣鍒嗕负涓変釜閮ㄥ垎锛氱缉灏忛儴鍒嗐€佷富澶勭悊閮ㄥ垎锛堟斁澶с€佺炕杞€佽壊褰╃┖闂?杞崲浠ュ強鍥惧舰骞抽潰鍚堟垚锛夊拰鏃嬭浆閮ㄥ垎銆?
+IPU 浠ユ椂闂寸墖鏂瑰紡鍏变韩 IC 浠诲姟鎿嶄綔銆傛椂闂寸墖绮掑害鍦ㄧ缉灏忛儴鍒嗕负涓€娆＄獊鍙?8 涓儚绱狅紝
+鍦ㄤ富澶勭悊閮ㄥ垎涓轰竴琛屽浘鍍忥紝鍦ㄦ棆杞儴鍒嗕负涓€甯у浘鍍忋€?
+SMFC 鐢卞洓涓嫭绔嬬殑 FIFO 缁勬垚锛屾瘡涓?FIFO 閮藉彲浠ラ€氳繃鍥涗釜 IDMAC 閫氶亾骞跺彂鍦板皢
+鎹曡幏鐨勫抚浠庝紶鎰熷櫒鐩存帴浼犻€佸埌鍐呭瓨銆?
+IRT 鎵ц 90 搴﹀拰 270 搴﹀浘鍍忔棆杞搷浣溿€傝鏃嬭浆鎿嶄綔姣忔鍦?8x8 鍍忕礌鍧椾笂杩涜銆傝
+鎿嶄綔鐢?IDMAC 閰嶅悎瀹屾垚锛孖DMAC 璐熻矗 8x8 鍧椾紶杈撲互鍙婂潡閲嶆帓搴忥紝骞朵笌鍨傜洿缈昏浆鍗忓悓
+宸ヤ綔銆?
+VDIC 璐熻矗灏嗛殧琛岃棰戣浆鎹负閫愯瑙嗛锛屾敮鎸佷笉鍚岀殑杩愬姩琛ュ伩妯″紡锛堜綆銆佷腑銆侀珮杩愬姩锛夈€?VDIC 鍘婚殧琛屽悗鐨勮緭鍑哄抚鍙互鍙戦€佸埌 IC 棰勫鐞嗗櫒鍙栨櫙鍣ㄤ换鍔″仛杩涗竴姝ヨ浆鎹€俈DIC 杩?鍖呭惈涓€涓悎鎴愬櫒锛圕ombiner锛夛紝鍙娇鐢?Alpha 娣峰悎鍜岃壊褰╅敭鎺у皢涓ゅ箙鍥惧儚骞抽潰鍚堟垚
+鍦ㄤ竴璧枫€?
+闄や簡 IPU 鍐呴儴瀛愬崟鍏冨锛宨.MX 涓婅繕鏈変袱涓綅浜?IPU 澶栭儴鐨勫崟鍏冧篃鍙備笌瑙嗛鎹曡幏锛?
+- 鐢ㄤ簬甯?MIPI CSI-2 鎬荤嚎鎺ュ彛鐨勬憚鍍忓ご浼犳劅鍣ㄧ殑 MIPI CSI-2 鎺ユ敹鍣ㄣ€傝繖鏄竴涓?  Synopsys DesignWare 鏍稿績銆?- 涓や釜瑙嗛澶氳矾澶嶇敤鍣紝鐢ㄤ簬鍦ㄥ涓紶鎰熷櫒杈撳叆涔嬮棿閫夋嫨骞跺彂閫佸埌鏌愪釜 CSI銆?
+鏇村淇℃伅锛岃鍙傝€冩渶鏂扮増鏈殑 i.MX5/6 鍙傝€冩墜鍐?[#f1]_ 鍜?[#f2]_銆?
+### 鐗规€?
+鏈┍鍔ㄧ殑閮ㄥ垎鐗规€у寘鎷細
 
-Freescale i.MX5/6 包含一个图像处理单元（Image Processing Unit，IPU），
-它负责图像帧在捕获设备和显示设备之间的流向。
+- 鍙€氳繃 media controller API 閰嶇疆璁稿涓嶅悓鐨勬祦姘寸嚎锛坧ipeline锛夛紝瀹冧滑瀵瑰簲 i.MX
+  涓敮鎸佺殑纭欢瑙嗛鎹曡幏娴佹按绾裤€?
+- 鏀寔骞惰銆丅T.565 浠ュ強 MIPI CSI-2 鎺ュ彛銆?
+- 閫氳繃閰嶇疆娴佹按绾垮埌澶氫釜瑙嗛鎹曡幏鎺ュ彛锛堜娇鐢ㄧ嫭绔嬬殑瀹炰綋锛夛紝鏀寔骞跺彂鐨勭嫭绔嬫暟鎹祦銆?
+- 閫氳繃 IC 浠诲姟瀛愯澶囷紙subdev锛夊疄鐜扮缉鏀俱€佽壊褰╃┖闂磋浆鎹€佹按骞冲拰鍨傜洿缈昏浆浠ュ強
+  鍥惧儚鏃嬭浆銆?
+- 鏀寔澶氱鍍忕礌鏍煎紡锛圧GB銆佹墦鍖呭拰骞抽潰 YUV銆侀儴鍒嗗钩闈?YUV锛夈€?
+- VDIC 瀛愯澶囨敮鎸佽繍鍔ㄨˉ鍋垮幓闅旇锛屽叿鏈変笁绉嶈繍鍔ㄨˉ鍋挎ā寮忥細浣庛€佷腑銆侀珮杩愬姩銆傚畾涔変簡
+  鍏佽浠?CSI 鐩存帴鍚?VDIC 瀛愯澶囧彂閫佸抚鐨勬祦姘寸嚎銆傛湭鏉ヨ繕鏀寔閫氳繃杈撳嚭/鍐呭瓨鍒板唴瀛?  锛坢em2mem锛夎澶囦粠鍐呭瓨缂撳啿鍖哄悜 VDIC 鍙戦€佸抚銆?
+- 鍖呭惈涓€涓抚闂撮殧鐩戣鍣紙Frame Interval Monitor锛孎IM锛夛紝鍙互绾犳 ADV718x
+  瑙嗛瑙ｇ爜鍣ㄧ殑鍨傜洿鍚屾闂銆?
+### 鎷撴墤缁撴瀯
 
-对于图像捕获，IPU 包含以下内部子单元：
-
-- 图像 DMA 控制器（Image DMA Controller，IDMAC）
-- 摄像头串行接口（Camera Serial Interface，CSI）
-- 图像转换器（Image Converter，IC）
-- 传感器多 FIFO 控制器（Sensor Multi-FIFO Controller，SMFC）
-- 图像旋转器（Image Rotator，IRT）
-- 视频去隔行或合成模块（Video De-Interlacing or Combining Block，VDIC）
-
-IDMAC 是用于在内存与图像帧之间进行传输的 DMA 控制器。针对视频捕获和显示
-路径分别存在各种专用 DMA 通道。在传输过程中，IDMAC 还能够进行垂直图像翻转、
-8x8 块传输（参见 IRT 描述）、同一色彩空间内的像素分量重排序（例如 UYVY 到
-YUYV），以及打包（packed）<--> 平面（planar）转换。IDMAC 还可以在传输时通过
-交错偶数行和奇数行的方式执行简单的去隔行（不带有需要 VDIC 支持的运动补偿）。
-
-CSI 是后端捕获单元，通过并行（Parallel）、BT.656/1120 和 MIPI CSI-2 总线
-直接与摄像头传感器接口。
-
-IC 负责色彩空间转换、缩放（缩小和放大）、水平翻转以及 90/270 度旋转操作。
-
-IC 内部有三个可并发执行转换的独立“任务”：预处理器编码（pre-process
-encoding）、预处理器取景器（pre-process viewfinder）和后处理（post-processing）。
-在每个任务内，转换被分为三个部分：缩小部分、主处理部分（放大、翻转、色彩空间
-转换以及图形平面合成）和旋转部分。
-
-IPU 以时间片方式共享 IC 任务操作。时间片粒度在缩小部分为一次突发 8 个像素，
-在主处理部分为一行图像，在旋转部分为一帧图像。
-
-SMFC 由四个独立的 FIFO 组成，每个 FIFO 都可以通过四个 IDMAC 通道并发地将
-捕获的帧从传感器直接传送到内存。
-
-IRT 执行 90 度和 270 度图像旋转操作。该旋转操作每次在 8x8 像素块上进行。该
-操作由 IDMAC 配合完成，IDMAC 负责 8x8 块传输以及块重排序，并与垂直翻转协同
-工作。
-
-VDIC 负责将隔行视频转换为逐行视频，支持不同的运动补偿模式（低、中、高运动）。
-VDIC 去隔行后的输出帧可以发送到 IC 预处理器取景器任务做进一步转换。VDIC 还
-包含一个合成器（Combiner），可使用 Alpha 混合和色彩键控将两幅图像平面合成
-在一起。
-
-除了 IPU 内部子单元外，i.MX 上还有两个位于 IPU 外部的单元也参与视频捕获：
-
-- 用于带 MIPI CSI-2 总线接口的摄像头传感器的 MIPI CSI-2 接收器。这是一个
-  Synopsys DesignWare 核心。
-- 两个视频多路复用器，用于在多个传感器输入之间选择并发送到某个 CSI。
-
-更多信息，请参考最新版本的 i.MX5/6 参考手册 [#f1]_ 和 [#f2]_。
-
-### 特性
-
-本驱动的部分特性包括：
-
-- 可通过 media controller API 配置许多不同的流水线（pipeline），它们对应 i.MX
-  中支持的硬件视频捕获流水线。
-
-- 支持并行、BT.565 以及 MIPI CSI-2 接口。
-
-- 通过配置流水线到多个视频捕获接口（使用独立的实体），支持并发的独立数据流。
-
-- 通过 IC 任务子设备（subdev）实现缩放、色彩空间转换、水平和垂直翻转以及
-  图像旋转。
-
-- 支持多种像素格式（RGB、打包和平面 YUV、部分平面 YUV）。
-
-- VDIC 子设备支持运动补偿去隔行，具有三种运动补偿模式：低、中、高运动。定义了
-  允许从 CSI 直接向 VDIC 子设备发送帧的流水线。未来还支持通过输出/内存到内存
-  （mem2mem）设备从内存缓冲区向 VDIC 发送帧。
-
-- 包含一个帧间隔监视器（Frame Interval Monitor，FIM），可以纠正 ADV718x
-  视频解码器的垂直同步问题。
-
-### 拓扑结构
-
-下面展示了 i.MX6Q SabreSD 和 i.MX6Q SabreAuto 的 media 拓扑结构。请参考下一
-小节实体描述中的这些图。
-
-i.MX5/6 的拓扑结构在 IPUv3 CSI 视频多路复用器上游可能有所不同，但从那里往下的
-内部 IPUv3 拓扑对所有 i.MX5/6 平台都是通用的。例如，带 MIPI CSI-2 OV5640 传感器的
-SabreSD 需要 i.MX6 MIPI CSI-2 接收器。而 SabreAuto 在并行 bt.656 总线上只有
-ADV7180 解码器，因此不需要 MIPI CSI-2 接收器，所以在它的图中没有该部分。
-
+涓嬮潰灞曠ず浜?i.MX6Q SabreSD 鍜?i.MX6Q SabreAuto 鐨?media 鎷撴墤缁撴瀯銆傝鍙傝€冧笅涓€
+灏忚妭瀹炰綋鎻忚堪涓殑杩欎簺鍥俱€?
+i.MX5/6 鐨勬嫇鎵戠粨鏋勫湪 IPUv3 CSI 瑙嗛澶氳矾澶嶇敤鍣ㄤ笂娓稿彲鑳芥湁鎵€涓嶅悓锛屼絾浠庨偅閲屽線涓嬬殑
+鍐呴儴 IPUv3 鎷撴墤瀵规墍鏈?i.MX5/6 骞冲彴閮芥槸閫氱敤鐨勩€備緥濡傦紝甯?MIPI CSI-2 OV5640 浼犳劅鍣ㄧ殑
+SabreSD 闇€瑕?i.MX6 MIPI CSI-2 鎺ユ敹鍣ㄣ€傝€?SabreAuto 鍦ㄥ苟琛?bt.656 鎬荤嚎涓婂彧鏈?ADV7180 瑙ｇ爜鍣紝鍥犳涓嶉渶瑕?MIPI CSI-2 鎺ユ敹鍣紝鎵€浠ュ湪瀹冪殑鍥句腑娌℃湁璇ラ儴鍒嗐€?
     :alt:   Diagram of the i.MX6Q SabreSD media pipeline topology
     :align: center
 
@@ -97,234 +58,153 @@ ADV7180 解码器，因此不需要 MIPI CSI-2 接收器，所以在它的图中
 
     Media pipeline graph on i.MX6Q SabreAuto
 
-### 实体
+### 瀹炰綋
 
 ### imx6-mipi-csi2
 
-这是 MIPI CSI-2 接收器实体。它有一个 sink 管脚（pad）用于接收 MIPI CSI-2 流
-（通常来自 MIPI CSI-2 摄像头传感器）。它有四个 source 管脚，对应四个 MIPI CSI-2
-解复用（demuxed）的虚拟通道输出。可以启用多个 source 管脚以从多个虚拟通道
-独立地进行流传输。
-
-该实体实际上由两个子块组成。一个是 MIPI CSI-2 核心，这是一个 Synopsys
-Designware MIPI CSI-2 核心。另一个子块是“CSI-2 到 IPU 的垫片（gasket）”。该
-垫片充当四个虚拟通道流的解复用器，提供四条独立的并行总线，每条包含各自的
-虚拟通道，并如上所述路由到 CSI 或视频多路复用器。
-
-在 i.MX6 solo/dual-lite 上，全部四个虚拟通道总线都被路由到两个视频多路复用器。
-CSI0 和 CSI1 都可以通过视频多路复用器选择接收任意虚拟通道。
-
-在 i.MX6 Quad 上，虚拟通道 0 路由到 IPU1-CSI0（经过视频多路复用器选择），虚拟
-通道 1 和 2 分别硬连线到 IPU1-CSI1 和 IPU2-CSI0，虚拟通道 3 路由到 IPU2-CSI1
-（同样经过视频多路复用器选择）。
-
+杩欐槸 MIPI CSI-2 鎺ユ敹鍣ㄥ疄浣撱€傚畠鏈変竴涓?sink 绠¤剼锛坧ad锛夌敤浜庢帴鏀?MIPI CSI-2 娴?锛堥€氬父鏉ヨ嚜 MIPI CSI-2 鎽勫儚澶翠紶鎰熷櫒锛夈€傚畠鏈夊洓涓?source 绠¤剼锛屽搴斿洓涓?MIPI CSI-2
+瑙ｅ鐢紙demuxed锛夌殑铏氭嫙閫氶亾杈撳嚭銆傚彲浠ュ惎鐢ㄥ涓?source 绠¤剼浠ヤ粠澶氫釜铏氭嫙閫氶亾
+鐙珛鍦拌繘琛屾祦浼犺緭銆?
+璇ュ疄浣撳疄闄呬笂鐢变袱涓瓙鍧楃粍鎴愩€備竴涓槸 MIPI CSI-2 鏍稿績锛岃繖鏄竴涓?Synopsys
+Designware MIPI CSI-2 鏍稿績銆傚彟涓€涓瓙鍧楁槸鈥淐SI-2 鍒?IPU 鐨勫灚鐗囷紙gasket锛夆€濄€傝
+鍨墖鍏呭綋鍥涗釜铏氭嫙閫氶亾娴佺殑瑙ｅ鐢ㄥ櫒锛屾彁渚涘洓鏉＄嫭绔嬬殑骞惰鎬荤嚎锛屾瘡鏉″寘鍚悇鑷殑
+铏氭嫙閫氶亾锛屽苟濡備笂鎵€杩拌矾鐢卞埌 CSI 鎴栬棰戝璺鐢ㄥ櫒銆?
+鍦?i.MX6 solo/dual-lite 涓婏紝鍏ㄩ儴鍥涗釜铏氭嫙閫氶亾鎬荤嚎閮借璺敱鍒颁袱涓棰戝璺鐢ㄥ櫒銆?CSI0 鍜?CSI1 閮藉彲浠ラ€氳繃瑙嗛澶氳矾澶嶇敤鍣ㄩ€夋嫨鎺ユ敹浠绘剰铏氭嫙閫氶亾銆?
+鍦?i.MX6 Quad 涓婏紝铏氭嫙閫氶亾 0 璺敱鍒?IPU1-CSI0锛堢粡杩囪棰戝璺鐢ㄥ櫒閫夋嫨锛夛紝铏氭嫙
+閫氶亾 1 鍜?2 鍒嗗埆纭繛绾垮埌 IPU1-CSI1 鍜?IPU2-CSI0锛岃櫄鎷熼€氶亾 3 璺敱鍒?IPU2-CSI1
+锛堝悓鏍风粡杩囪棰戝璺鐢ㄥ櫒閫夋嫨锛夈€?
 ### ipuX_csiY_mux
 
-这些是视频多路复用器。它们有两个或更多 sink 管脚，用于从带并行接口的摄像头
-传感器选择，或从 imx6-mipi-csi2 实体的 MIPI CSI-2 虚拟通道选择。它们有一个
-单独的 source 管脚，路由到某个 CSI（ipuX_csiY 实体）。
-
-在 i.MX6 solo/dual-lite 上，有两个视频多路复用器实体。一个位于 IPU1-CSI0 之前，
-用于在并行传感器和四个 MIPI CSI-2 虚拟通道中任选其一（共五个 sink 管脚）。另一个
-多路复用器位于 IPU1-CSI1 之前，同样有五个 sink 管脚，用于在并行传感器和四个
-MIPI CSI-2 虚拟通道中任选其一。
-
-在 i.MX6 Quad 上，有两个视频多路复用器实体。一个位于 IPU1-CSI0 之前，用于在
-并行传感器和 MIPI CSI-2 虚拟通道 0 之间选择（两个 sink 管脚）。另一个多路复用器
-位于 IPU2-CSI1 之前，用于在并行传感器和 MIPI CSI-2 虚拟通道 3 之间选择（两个
-sink 管脚）。
-
+杩欎簺鏄棰戝璺鐢ㄥ櫒銆傚畠浠湁涓や釜鎴栨洿澶?sink 绠¤剼锛岀敤浜庝粠甯﹀苟琛屾帴鍙ｇ殑鎽勫儚澶?浼犳劅鍣ㄩ€夋嫨锛屾垨浠?imx6-mipi-csi2 瀹炰綋鐨?MIPI CSI-2 铏氭嫙閫氶亾閫夋嫨銆傚畠浠湁涓€涓?鍗曠嫭鐨?source 绠¤剼锛岃矾鐢卞埌鏌愪釜 CSI锛坕puX_csiY 瀹炰綋锛夈€?
+鍦?i.MX6 solo/dual-lite 涓婏紝鏈変袱涓棰戝璺鐢ㄥ櫒瀹炰綋銆備竴涓綅浜?IPU1-CSI0 涔嬪墠锛?鐢ㄤ簬鍦ㄥ苟琛屼紶鎰熷櫒鍜屽洓涓?MIPI CSI-2 铏氭嫙閫氶亾涓换閫夊叾涓€锛堝叡浜斾釜 sink 绠¤剼锛夈€傚彟涓€涓?澶氳矾澶嶇敤鍣ㄤ綅浜?IPU1-CSI1 涔嬪墠锛屽悓鏍锋湁浜斾釜 sink 绠¤剼锛岀敤浜庡湪骞惰浼犳劅鍣ㄥ拰鍥涗釜
+MIPI CSI-2 铏氭嫙閫氶亾涓换閫夊叾涓€銆?
+鍦?i.MX6 Quad 涓婏紝鏈変袱涓棰戝璺鐢ㄥ櫒瀹炰綋銆備竴涓綅浜?IPU1-CSI0 涔嬪墠锛岀敤浜庡湪
+骞惰浼犳劅鍣ㄥ拰 MIPI CSI-2 铏氭嫙閫氶亾 0 涔嬮棿閫夋嫨锛堜袱涓?sink 绠¤剼锛夈€傚彟涓€涓璺鐢ㄥ櫒
+浣嶄簬 IPU2-CSI1 涔嬪墠锛岀敤浜庡湪骞惰浼犳劅鍣ㄥ拰 MIPI CSI-2 铏氭嫙閫氶亾 3 涔嬮棿閫夋嫨锛堜袱涓?sink 绠¤剼锛夈€?
 ### ipuX_csiY
 
-这些是 CSI 实体。它们有一个单独的 sink 管脚，如上所述从视频多路复用器或 MIPI
-CSI-2 虚拟通道接收。
+杩欎簺鏄?CSI 瀹炰綋銆傚畠浠湁涓€涓崟鐙殑 sink 绠¤剼锛屽涓婃墍杩颁粠瑙嗛澶氳矾澶嶇敤鍣ㄦ垨 MIPI
+CSI-2 铏氭嫙閫氶亾鎺ユ敹銆?
+璇ュ疄浣撴湁涓や釜 source 绠¤剼銆傜涓€涓?source 绠¤剼鍙互浣跨敤纭欢閾捐矾鐩存帴閾炬帴鍒?ipuX_vdic 瀹炰綋鎴?ipuX_ic_prp 瀹炰綋锛岃繖绉嶉摼鎺ヤ笉闇€瑕?IDMAC 鍐呭瓨缂撳啿鍖轰紶杈撱€?
+褰撶洿鎺?source 绠¤剼璺敱鍒?ipuX_ic_prp 瀹炰綋鏃讹紝鏉ヨ嚜 CSI 鐨勫抚鍙互鐢变竴涓垨涓や釜 IC
+棰勫鐞嗕换鍔″鐞嗐€?
+褰撶洿鎺?source 绠¤剼璺敱鍒?ipuX_vdic 瀹炰綋鏃讹紝VDIC 灏嗕娇鐢ㄢ€滈珮杩愬姩鈥濇ā寮忔墽琛岃繍鍔?琛ュ伩鍘婚殧琛岋紙鍙傝 ipuX_vdic 瀹炰綋鎻忚堪锛夈€?
+绗簩涓?source 绠¤剼閫氳繃 SMFC 鍜屾煇涓?IDMAC 閫氶亾灏嗚棰戝抚鐩存帴鍙戦€佸埌鍐呭瓨缂撳啿鍖猴紝
+缁曡繃 IC 棰勫鐞嗐€傝 source 绠¤剼璺敱鍒颁竴涓崟鑾疯澶囪妭鐐癸紝鑺傜偣鍚嶇О鏍煎紡涓?鈥渋puX_csiY capture鈥濄€?
+娉ㄦ剰锛岀敱浜?IDMAC source 绠¤剼浣跨敤浜?IDMAC 閫氶亾锛屽洜姝ゅ悓涓€鑹插僵绌洪棿鍐呯殑鍍忕礌閲嶆帓搴?鍙互鐢?IDMAC 閫氶亾瀹屾垚銆備緥濡傦紝濡傛灉 CSI sink 绠¤剼浠?UYVY 椤哄簭鎺ユ敹锛屽垯閾炬帴鍒?IDMAC
+source 绠¤剼鐨勬崟鑾疯澶囧彲浠ヤ互 YUYV 椤哄簭鎹曡幏銆傛澶栵紝濡傛灉 CSI sink 绠¤剼鎺ユ敹鐨勬槸
+鎵撳寘锛坧acked锛塝UV 鏍煎紡锛屽垯鎹曡幏璁惧鍙互鎹曡幏骞抽潰锛坧lanar锛塝UV 鏍煎紡锛屼緥濡?YUV420銆?
+IDMAC source 绠¤剼澶勭殑 IDMAC 閫氶亾杩樻敮鎸佹棤杩愬姩琛ュ伩鐨勭畝鍗曚氦缁囷紙interweave锛夛紝褰?source 绠¤剼鐨勫満锛坒ield锛夌被鍨嬩负椤哄簭椤?搴曪紙sequential top-bottom锛夋垨搴?椤?锛坆ottom-top锛夛紝涓旇姹傜殑鎹曡幏鎺ュ彛鍦虹被鍨嬭缃负闅旇锛坕nterlaced锛宼-b銆乥-t 鎴栨湭
+闄愬畾闅旇锛夋椂婵€娲汇€傛崟鑾锋帴鍙ｅ皢寮哄埗閲囩敤涓?source 绠¤剼鐩稿悓鐨勫満椤哄簭锛堝鏋?source
+绠¤剼涓?seq-bt锛屽垯涓?interlaced-bt锛涘鏋?source 绠¤剼涓?seq-tb锛屽垯涓?interlaced-tb锛夈€?
+鍏充簬 ipuX_csiY 浜х敓鐨勪簨浠讹紝璇峰弬瑙?ref:`imx_api_ipuX_csiY`銆?
+### ipuX_csiY 涓殑瑁佸壀
 
-该实体有两个 source 管脚。第一个 source 管脚可以使用硬件链路直接链接到
-ipuX_vdic 实体或 ipuX_ic_prp 实体，这种链接不需要 IDMAC 内存缓冲区传输。
-
-当直接 source 管脚路由到 ipuX_ic_prp 实体时，来自 CSI 的帧可以由一个或两个 IC
-预处理任务处理。
-
-当直接 source 管脚路由到 ipuX_vdic 实体时，VDIC 将使用“高运动”模式执行运动
-补偿去隔行（参见 ipuX_vdic 实体描述）。
-
-第二个 source 管脚通过 SMFC 和某个 IDMAC 通道将视频帧直接发送到内存缓冲区，
-绕过 IC 预处理。该 source 管脚路由到一个捕获设备节点，节点名称格式为
-“ipuX_csiY capture”。
-
-注意，由于 IDMAC source 管脚使用了 IDMAC 通道，因此同一色彩空间内的像素重排序
-可以由 IDMAC 通道完成。例如，如果 CSI sink 管脚以 UYVY 顺序接收，则链接到 IDMAC
-source 管脚的捕获设备可以以 YUYV 顺序捕获。此外，如果 CSI sink 管脚接收的是
-打包（packed）YUV 格式，则捕获设备可以捕获平面（planar）YUV 格式，例如 YUV420。
-
-IDMAC source 管脚处的 IDMAC 通道还支持无运动补偿的简单交织（interweave），当
-source 管脚的场（field）类型为顺序顶-底（sequential top-bottom）或底-顶
-（bottom-top），且请求的捕获接口场类型设置为隔行（interlaced，t-b、b-t 或未
-限定隔行）时激活。捕获接口将强制采用与 source 管脚相同的场顺序（如果 source
-管脚为 seq-bt，则为 interlaced-bt；如果 source 管脚为 seq-tb，则为 interlaced-tb）。
-
-关于 ipuX_csiY 产生的事件，请参见 ref:`imx_api_ipuX_csiY`。
-
-### ipuX_csiY 中的裁剪
-
-CSI 支持对输入的原始传感器帧进行裁剪。这在 ipuX_csiY 实体的 sink 管脚处通过
-crop selection 子设备 API 实现。
-
-CSI 还支持在宽度和高度上独立的固定二分（divide-by-two）缩小。这在 ipuX_csiY
-实体的 sink 管脚处通过 compose selection 子设备 API 实现。
-
-ipuX_csiY source 管脚处的输出矩形与 sink 管脚处的 compose 矩形相同。因此 source
-管脚矩形无法进行协商，必须使用 sink 管脚处的 compose selection API 来设置（如果
-需要 /2 缩小；否则 source 管脚矩形等于输入矩形）。
-
-作为 crop 和 /2 缩小的示例，这会将一个 1280x960 的输入帧裁剪为 640x480，然后
-在两个维度上 /2 缩小到 320x240（假设 ipu1_csi0 链接到 ipu1_csi0_mux）：
+CSI 鏀寔瀵硅緭鍏ョ殑鍘熷浼犳劅鍣ㄥ抚杩涜瑁佸壀銆傝繖鍦?ipuX_csiY 瀹炰綋鐨?sink 绠¤剼澶勯€氳繃
+crop selection 瀛愯澶?API 瀹炵幇銆?
+CSI 杩樻敮鎸佸湪瀹藉害鍜岄珮搴︿笂鐙珛鐨勫浐瀹氫簩鍒嗭紙divide-by-two锛夌缉灏忋€傝繖鍦?ipuX_csiY
+瀹炰綋鐨?sink 绠¤剼澶勯€氳繃 compose selection 瀛愯澶?API 瀹炵幇銆?
+ipuX_csiY source 绠¤剼澶勭殑杈撳嚭鐭╁舰涓?sink 绠¤剼澶勭殑 compose 鐭╁舰鐩稿悓銆傚洜姝?source
+绠¤剼鐭╁舰鏃犳硶杩涜鍗忓晢锛屽繀椤讳娇鐢?sink 绠¤剼澶勭殑 compose selection API 鏉ヨ缃紙濡傛灉
+闇€瑕?/2 缂╁皬锛涘惁鍒?source 绠¤剼鐭╁舰绛変簬杈撳叆鐭╁舰锛夈€?
+浣滀负 crop 鍜?/2 缂╁皬鐨勭ず渚嬶紝杩欎細灏嗕竴涓?1280x960 鐨勮緭鍏ュ抚瑁佸壀涓?640x480锛岀劧鍚?鍦ㄤ袱涓淮搴︿笂 /2 缂╁皬鍒?320x240锛堝亣璁?ipu1_csi0 閾炬帴鍒?ipu1_csi0_mux锛夛細
 
    media-ctl -V "'ipu1_csi0_mux':2[fmt:UYVY2X8/1280x960]"
    media-ctl -V "'ipu1_csi0':0[crop:(0,0)/640x480]"
    media-ctl -V "'ipu1_csi0':0[compose:(0,0)/320x240]"
 
-### ipuX_csiY 中的跳帧
+### ipuX_csiY 涓殑璺冲抚
 
-CSI 支持通过跳帧进行帧率抽取（frame rate decimation）。帧率抽取通过在 sink 和
-source 管脚设置帧间隔来指定。然后 ipuX_csiY 实体将最佳跳帧设置应用到 CSI，以在
-source 管脚达到期望的帧率。
-
-以下示例将 IDMAC 输出 source 管脚上假设的 60 Hz 输入帧率减半：
-
+CSI 鏀寔閫氳繃璺冲抚杩涜甯х巼鎶藉彇锛坒rame rate decimation锛夈€傚抚鐜囨娊鍙栭€氳繃鍦?sink 鍜?source 绠¤剼璁剧疆甯ч棿闅旀潵鎸囧畾銆傜劧鍚?ipuX_csiY 瀹炰綋灏嗘渶浣宠烦甯ц缃簲鐢ㄥ埌 CSI锛屼互鍦?source 绠¤剼杈惧埌鏈熸湜鐨勫抚鐜囥€?
+浠ヤ笅绀轰緥灏?IDMAC 杈撳嚭 source 绠¤剼涓婂亣璁剧殑 60 Hz 杈撳叆甯х巼鍑忓崐锛?
    media-ctl -V "'ipu1_csi0':0[fmt:UYVY2X8/640x480@1/60]"
    media-ctl -V "'ipu1_csi0':2[fmt:UYVY2X8/640x480@1/30]"
 
-### ipuX_csiY 中的帧间隔监视器
+### ipuX_csiY 涓殑甯ч棿闅旂洃瑙嗗櫒
 
-请参见 ref:`imx_api_FIM`。
-
+璇峰弬瑙?ref:`imx_api_FIM`銆?
 ### ipuX_vdic
 
-VDIC 执行运动补偿去隔行，具有三种运动补偿模式：低、中、高运动。模式通过菜单
-控件 V4L2_CID_DEINTERLACING_MODE 指定。VDIC 有两个 sink 管脚和一个单独的
-source 管脚。
-
-直接 sink 管脚从 ipuX_csiY 直接管脚接收。使用该链接时，VDIC 只能以高运动模式
-运行。
-
-当 IDMAC sink 管脚被激活时，它从输出或 mem2mem 设备节点接收。使用该流水线时，
-VDIC 也可以以低和中模式运行，因为这些模式需要从内存缓冲区接收帧。注意，输出
-或 mem2mem 设备尚未实现，因此该 sink 管脚当前没有任何链接。
-
-source 管脚路由到 IC 预处理实体 ipuX_ic_prp。
-
+VDIC 鎵ц杩愬姩琛ュ伩鍘婚殧琛岋紝鍏锋湁涓夌杩愬姩琛ュ伩妯″紡锛氫綆銆佷腑銆侀珮杩愬姩銆傛ā寮忛€氳繃鑿滃崟
+鎺т欢 V4L2_CID_DEINTERLACING_MODE 鎸囧畾銆俈DIC 鏈変袱涓?sink 绠¤剼鍜屼竴涓崟鐙殑
+source 绠¤剼銆?
+鐩存帴 sink 绠¤剼浠?ipuX_csiY 鐩存帴绠¤剼鎺ユ敹銆備娇鐢ㄨ閾炬帴鏃讹紝VDIC 鍙兘浠ラ珮杩愬姩妯″紡
+杩愯銆?
+褰?IDMAC sink 绠¤剼琚縺娲绘椂锛屽畠浠庤緭鍑烘垨 mem2mem 璁惧鑺傜偣鎺ユ敹銆備娇鐢ㄨ娴佹按绾挎椂锛?VDIC 涔熷彲浠ヤ互浣庡拰涓ā寮忚繍琛岋紝鍥犱负杩欎簺妯″紡闇€瑕佷粠鍐呭瓨缂撳啿鍖烘帴鏀跺抚銆傛敞鎰忥紝杈撳嚭
+鎴?mem2mem 璁惧灏氭湭瀹炵幇锛屽洜姝よ sink 绠¤剼褰撳墠娌℃湁浠讳綍閾炬帴銆?
+source 绠¤剼璺敱鍒?IC 棰勫鐞嗗疄浣?ipuX_ic_prp銆?
 ### ipuX_ic_prp
 
-这是 IC 预处理实体。它充当路由器，将其 sink 管脚的数据路由到其一个或两个 source
-管脚。
-
-该实体有一个单独的 sink 管脚。sink 管脚可以从 ipuX_csiY 直接管脚或 ipuX_vdic
-接收。
-
-该实体有两个 source 管脚。一个 source 管脚路由到预处理器编码任务实体
-（ipuX_ic_prpenc），另一个路由到预处理器取景器任务实体（ipuX_ic_prpvf）。如果
-sink 管脚从 ipuX_csiY 接收，则两个 source 管脚可以同时激活。如果 sink 管脚从
-ipuX_vdic 接收，则只能激活到预处理器取景器任务实体的 source 管脚（来自 VDIC 的
-帧只能由预处理器取景器任务处理）。
-
+杩欐槸 IC 棰勫鐞嗗疄浣撱€傚畠鍏呭綋璺敱鍣紝灏嗗叾 sink 绠¤剼鐨勬暟鎹矾鐢卞埌鍏朵竴涓垨涓や釜 source
+绠¤剼銆?
+璇ュ疄浣撴湁涓€涓崟鐙殑 sink 绠¤剼銆俿ink 绠¤剼鍙互浠?ipuX_csiY 鐩存帴绠¤剼鎴?ipuX_vdic
+鎺ユ敹銆?
+璇ュ疄浣撴湁涓や釜 source 绠¤剼銆備竴涓?source 绠¤剼璺敱鍒伴澶勭悊鍣ㄧ紪鐮佷换鍔″疄浣?锛坕puX_ic_prpenc锛夛紝鍙︿竴涓矾鐢卞埌棰勫鐞嗗櫒鍙栨櫙鍣ㄤ换鍔″疄浣擄紙ipuX_ic_prpvf锛夈€傚鏋?sink 绠¤剼浠?ipuX_csiY 鎺ユ敹锛屽垯涓や釜 source 绠¤剼鍙互鍚屾椂婵€娲汇€傚鏋?sink 绠¤剼浠?ipuX_vdic 鎺ユ敹锛屽垯鍙兘婵€娲诲埌棰勫鐞嗗櫒鍙栨櫙鍣ㄤ换鍔″疄浣撶殑 source 绠¤剼锛堟潵鑷?VDIC 鐨?甯у彧鑳界敱棰勫鐞嗗櫒鍙栨櫙鍣ㄤ换鍔″鐞嗭級銆?
 ### ipuX_ic_prpenc
 
-这是 IC 预处理编码实体。它有一个来自 ipuX_ic_prp 的单独 sink 管脚，以及一个
-单独的 source 管脚。source 管脚路由到一个捕获设备节点，节点名称格式为
-“ipuX_ic_prpenc capture”。
-
-该实体执行 IC 预处理编码任务操作：色彩空间转换、缩放（缩小和放大）、水平和垂直
-翻转以及 90/270 度旋转。翻转和旋转通过标准 V4L2 控件提供。
-
-与 ipuX_csiY IDMAC source 类似，该实体也支持无运动补偿的简单去隔行，以及像素
-重排序。
-
+杩欐槸 IC 棰勫鐞嗙紪鐮佸疄浣撱€傚畠鏈変竴涓潵鑷?ipuX_ic_prp 鐨勫崟鐙?sink 绠¤剼锛屼互鍙婁竴涓?鍗曠嫭鐨?source 绠¤剼銆俿ource 绠¤剼璺敱鍒颁竴涓崟鑾疯澶囪妭鐐癸紝鑺傜偣鍚嶇О鏍煎紡涓?鈥渋puX_ic_prpenc capture鈥濄€?
+璇ュ疄浣撴墽琛?IC 棰勫鐞嗙紪鐮佷换鍔℃搷浣滐細鑹插僵绌洪棿杞崲銆佺缉鏀撅紙缂╁皬鍜屾斁澶э級銆佹按骞冲拰鍨傜洿
+缈昏浆浠ュ強 90/270 搴︽棆杞€傜炕杞拰鏃嬭浆閫氳繃鏍囧噯 V4L2 鎺т欢鎻愪緵銆?
+涓?ipuX_csiY IDMAC source 绫讳技锛岃瀹炰綋涔熸敮鎸佹棤杩愬姩琛ュ伩鐨勭畝鍗曞幓闅旇锛屼互鍙婂儚绱?閲嶆帓搴忋€?
 ### ipuX_ic_prpvf
 
-这是 IC 预处理取景器实体。它有一个来自 ipuX_ic_prp 的单独 sink 管脚，以及一个
-单独的 source 管脚。source 管脚路由到一个捕获设备节点，节点名称格式为
-“ipuX_ic_prpvf capture”。
-
-该实体的操作与 ipuX_ic_prpenc 相同，具有相同的缩放和 CSC 操作以及翻转/旋转
-控件。如果 ipuX_ic_prp 从 ipuX_vdic 接收，它将接收并处理来自 ipuX_vdic 的去隔行
-帧。
-
-与 ipuX_csiY IDMAC source 类似，该实体支持无运动补偿的简单交织（interweaving）。
-但是请注意，如果 ipuX_vdic 包含在流水线中（ipuX_ic_prp 从 ipuX_vdic 接收），则
-无法在 ipuX_ic_prpvf 中使用交织，因为 ipuX_vdic 已经执行了去隔行（带运动补偿），
-因此 ipuX_vdic 输出的场类型只能是 none（逐行）。
-
-### 捕获流水线
-
-下面描述流水线支持的各种用例。
-
-所示链接不包含后端传感器、视频多路复用器或 mipi csi-2 接收器链接。这取决于
-传感器接口类型（并行或 mipi csi-2）。因此这些流水线从以下内容开始：
+杩欐槸 IC 棰勫鐞嗗彇鏅櫒瀹炰綋銆傚畠鏈変竴涓潵鑷?ipuX_ic_prp 鐨勫崟鐙?sink 绠¤剼锛屼互鍙婁竴涓?鍗曠嫭鐨?source 绠¤剼銆俿ource 绠¤剼璺敱鍒颁竴涓崟鑾疯澶囪妭鐐癸紝鑺傜偣鍚嶇О鏍煎紡涓?鈥渋puX_ic_prpvf capture鈥濄€?
+璇ュ疄浣撶殑鎿嶄綔涓?ipuX_ic_prpenc 鐩稿悓锛屽叿鏈夌浉鍚岀殑缂╂斁鍜?CSC 鎿嶄綔浠ュ強缈昏浆/鏃嬭浆
+鎺т欢銆傚鏋?ipuX_ic_prp 浠?ipuX_vdic 鎺ユ敹锛屽畠灏嗘帴鏀跺苟澶勭悊鏉ヨ嚜 ipuX_vdic 鐨勫幓闅旇
+甯с€?
+涓?ipuX_csiY IDMAC source 绫讳技锛岃瀹炰綋鏀寔鏃犺繍鍔ㄨˉ鍋跨殑绠€鍗曚氦缁囷紙interweaving锛夈€?浣嗘槸璇锋敞鎰忥紝濡傛灉 ipuX_vdic 鍖呭惈鍦ㄦ祦姘寸嚎涓紙ipuX_ic_prp 浠?ipuX_vdic 鎺ユ敹锛夛紝鍒?鏃犳硶鍦?ipuX_ic_prpvf 涓娇鐢ㄤ氦缁囷紝鍥犱负 ipuX_vdic 宸茬粡鎵ц浜嗗幓闅旇锛堝甫杩愬姩琛ュ伩锛夛紝
+鍥犳 ipuX_vdic 杈撳嚭鐨勫満绫诲瀷鍙兘鏄?none锛堥€愯锛夈€?
+### 鎹曡幏娴佹按绾?
+涓嬮潰鎻忚堪娴佹按绾挎敮鎸佺殑鍚勭鐢ㄤ緥銆?
+鎵€绀洪摼鎺ヤ笉鍖呭惈鍚庣浼犳劅鍣ㄣ€佽棰戝璺鐢ㄥ櫒鎴?mipi csi-2 鎺ユ敹鍣ㄩ摼鎺ャ€傝繖鍙栧喅浜?浼犳劅鍣ㄦ帴鍙ｇ被鍨嬶紙骞惰鎴?mipi csi-2锛夈€傚洜姝よ繖浜涙祦姘寸嚎浠庝互涓嬪唴瀹瑰紑濮嬶細
 
 sensor -> ipuX_csiY_mux -> ...
 
-用于并行传感器，或：
+鐢ㄤ簬骞惰浼犳劅鍣紝鎴栵細
 
 sensor -> imx6-mipi-csi2 -> (ipuX_csiY_mux) -> ...
 
-用于 mipi csi-2 传感器。视 mipi csi-2 虚拟通道而定，imx6-mipi-csi2 接收器可能需要
-先路由到视频多路复用器（ipuX_csiY_mux）再发送到 CSI，因此 ipuX_csiY_mux 用
-括号表示。
+鐢ㄤ簬 mipi csi-2 浼犳劅鍣ㄣ€傝 mipi csi-2 铏氭嫙閫氶亾鑰屽畾锛宨mx6-mipi-csi2 鎺ユ敹鍣ㄥ彲鑳介渶瑕?鍏堣矾鐢卞埌瑙嗛澶氳矾澶嶇敤鍣紙ipuX_csiY_mux锛夊啀鍙戦€佸埌 CSI锛屽洜姝?ipuX_csiY_mux 鐢?鎷彿琛ㄧず銆?
+### 鏈鐞嗚棰戞崟鑾凤細
 
-### 未处理视频捕获：
-
-通过 ipuX_csiY IDMAC source 管脚，将帧从传感器直接发送到摄像头设备接口节点，
-不做任何转换：
-
+閫氳繃 ipuX_csiY IDMAC source 绠¤剼锛屽皢甯т粠浼犳劅鍣ㄧ洿鎺ュ彂閫佸埌鎽勫儚澶磋澶囨帴鍙ｈ妭鐐癸紝
+涓嶅仛浠讳綍杞崲锛?
 -> ipuX_csiY:2 -> ipuX_csiY capture
 
-### IC 直接转换：
-
-该流水线使用预处理编码实体将帧直接从 CSI 路由到 IC，以执行最高 1024x1024
-分辨率的缩放、CSC、翻转以及图像旋转：
+### IC 鐩存帴杞崲锛?
+璇ユ祦姘寸嚎浣跨敤棰勫鐞嗙紪鐮佸疄浣撳皢甯х洿鎺ヤ粠 CSI 璺敱鍒?IC锛屼互鎵ц鏈€楂?1024x1024
+鍒嗚鲸鐜囩殑缂╂斁銆丆SC銆佺炕杞互鍙婂浘鍍忔棆杞細
 
 -> ipuX_csiY:1 -> 0:ipuX_ic_prp:1 -> 0:ipuX_ic_prpenc:1 -> ipuX_ic_prpenc capture
 
-### 运动补偿去隔行：
+### 杩愬姩琛ュ伩鍘婚殧琛岋細
 
-该流水线将帧从 CSI 直接管脚路由到 VDIC 实体，以支持运动补偿去隔行（仅高运动
-模式）、最高 1024x1024 的缩放、CSC、翻转以及旋转：
+璇ユ祦姘寸嚎灏嗗抚浠?CSI 鐩存帴绠¤剼璺敱鍒?VDIC 瀹炰綋锛屼互鏀寔杩愬姩琛ュ伩鍘婚殧琛岋紙浠呴珮杩愬姩
+妯″紡锛夈€佹渶楂?1024x1024 鐨勭缉鏀俱€丆SC銆佺炕杞互鍙婃棆杞細
 
 -> ipuX_csiY:1 -> 0:ipuX_vdic:2 -> 0:ipuX_ic_prp:2 -> 0:ipuX_ic_prpvf:1 -> ipuX_ic_prpvf capture
 
-### 使用说明
+### 浣跨敤璇存槑
 
-为了辅助配置并与只从视频设备节点访问控件（control）的 V4L2 应用向后兼容，捕获
-设备接口会继承当前流水线中活动实体的控件，因此控件既可以直接从子设备访问，也
-可以从活动捕获设备接口访问。例如，FIM 控件既可从 ipuX_csiY 子设备获得，也可从
-活动捕获设备获得。
+涓轰簡杈呭姪閰嶇疆骞朵笌鍙粠瑙嗛璁惧鑺傜偣璁块棶鎺т欢锛坈ontrol锛夌殑 V4L2 搴旂敤鍚戝悗鍏煎锛屾崟鑾?璁惧鎺ュ彛浼氱户鎵垮綋鍓嶆祦姘寸嚎涓椿鍔ㄥ疄浣撶殑鎺т欢锛屽洜姝ゆ帶浠舵棦鍙互鐩存帴浠庡瓙璁惧璁块棶锛屼篃
+鍙互浠庢椿鍔ㄦ崟鑾疯澶囨帴鍙ｈ闂€備緥濡傦紝FIM 鎺т欢鏃㈠彲浠?ipuX_csiY 瀛愯澶囪幏寰楋紝涔熷彲浠?娲诲姩鎹曡幏璁惧鑾峰緱銆?
+浠ヤ笅鏄拡瀵?Sabre* 鍙傝€冩澘鐨勫叿浣撲娇鐢ㄨ鏄庯細
 
-以下是针对 Sabre* 参考板的具体使用说明：
+### 甯?OV5642 鍜?OV5640 鐨?i.MX6Q SabreLite
 
-### 带 OV5642 和 OV5640 的 i.MX6Q SabreLite
-
-该平台需要带并行摄像头接口的 OmniVision OV5642 模块，以及带 MIPI CSI-2 接口的
-OV5640 模块。两个模块均可从 Boundary Devices 获得：
-
+璇ュ钩鍙伴渶瑕佸甫骞惰鎽勫儚澶存帴鍙ｇ殑 OmniVision OV5642 妯″潡锛屼互鍙婂甫 MIPI CSI-2 鎺ュ彛鐨?OV5640 妯″潡銆備袱涓ā鍧楀潎鍙粠 Boundary Devices 鑾峰緱锛?
 - https://boundarydevices.com/product/nit6x_5mp
 - https://boundarydevices.com/product/nit6x_5mp_mipi
 
-注意，如果只有一个摄像头模块可用，则可以在设备树中禁用另一个传感器节点。
-
-OV5642 模块连接到 i.MX 内部视频多路复用器到 IPU1 CSI0 的并行总线输入。它的 i2c
-总线连接到 i2c 总线 2。
-
-MIPI CSI-2 OV5640 模块连接到 i.MX 内部 MIPI CSI-2 接收器，来自接收器的四个虚拟
-通道输出路由如下：vc0 到 IPU1 CSI0 多路复用器，vc1 直接到 IPU1 CSI1，vc2 直接
-到 IPU2 CSI0，vc3 到 IPU2 CSI1 多路复用器。OV5640 也连接到 SabreLite 上的 i2c
-总线 2，因此 OV5642 和 OV5640 不能共享相同的 i2c 从地址。
-
-以下基本示例为两个传感器配置未处理视频捕获流水线。OV5642 路由到 ipu1_csi0，
-而通过 MIPI CSI-2 虚拟通道 1（即 imx6-mipi-csi2 管脚 2）传输的 OV5640 路由到
-ipu1_csi1。两个传感器都配置为输出 640x480，OV5642 输出 YUYV2X8，OV5640 输出
-UYVY2X8：
-
+娉ㄦ剰锛屽鏋滃彧鏈変竴涓憚鍍忓ご妯″潡鍙敤锛屽垯鍙互鍦ㄨ澶囨爲涓鐢ㄥ彟涓€涓紶鎰熷櫒鑺傜偣銆?
+OV5642 妯″潡杩炴帴鍒?i.MX 鍐呴儴瑙嗛澶氳矾澶嶇敤鍣ㄥ埌 IPU1 CSI0 鐨勫苟琛屾€荤嚎杈撳叆銆傚畠鐨?i2c
+鎬荤嚎杩炴帴鍒?i2c 鎬荤嚎 2銆?
+MIPI CSI-2 OV5640 妯″潡杩炴帴鍒?i.MX 鍐呴儴 MIPI CSI-2 鎺ユ敹鍣紝鏉ヨ嚜鎺ユ敹鍣ㄧ殑鍥涗釜铏氭嫙
+閫氶亾杈撳嚭璺敱濡備笅锛歷c0 鍒?IPU1 CSI0 澶氳矾澶嶇敤鍣紝vc1 鐩存帴鍒?IPU1 CSI1锛寁c2 鐩存帴
+鍒?IPU2 CSI0锛寁c3 鍒?IPU2 CSI1 澶氳矾澶嶇敤鍣ㄣ€侽V5640 涔熻繛鎺ュ埌 SabreLite 涓婄殑 i2c
+鎬荤嚎 2锛屽洜姝?OV5642 鍜?OV5640 涓嶈兘鍏变韩鐩稿悓鐨?i2c 浠庡湴鍧€銆?
+浠ヤ笅鍩烘湰绀轰緥涓轰袱涓紶鎰熷櫒閰嶇疆鏈鐞嗚棰戞崟鑾锋祦姘寸嚎銆侽V5642 璺敱鍒?ipu1_csi0锛?鑰岄€氳繃 MIPI CSI-2 铏氭嫙閫氶亾 1锛堝嵆 imx6-mipi-csi2 绠¤剼 2锛変紶杈撶殑 OV5640 璺敱鍒?ipu1_csi1銆備袱涓紶鎰熷櫒閮介厤缃负杈撳嚭 640x480锛孫V5642 杈撳嚭 YUYV2X8锛孫V5640 杈撳嚭
+UYVY2X8锛?
    # Setup links for OV5642
    media-ctl -l "'ov5642 1-0042':0 -> 'ipu1_csi0_mux':1[^1^]"
    media-ctl -l "'ipu1_csi0_mux':2 -> 'ipu1_csi0':0[^1^]"
@@ -342,19 +222,14 @@ UYVY2X8：
    media-ctl -V "'imx6-mipi-csi2':2 [fmt:UYVY2X8/640x480 field:none]"
    media-ctl -V "'ipu1_csi1':2 [fmt:AYUV32/640x480 field:none]"
 
-然后可以在捕获设备节点“ipu1_csi0 capture”和“ipu1_csi1 capture”上独立开始
-流传输。v4l2-ctl 工具可用于在捕获设备节点上选择任何受支持的 YUV 像素格式，
-包括平面格式。
+鐒跺悗鍙互鍦ㄦ崟鑾疯澶囪妭鐐光€渋pu1_csi0 capture鈥濆拰鈥渋pu1_csi1 capture鈥濅笂鐙珛寮€濮?娴佷紶杈撱€倂4l2-ctl 宸ュ叿鍙敤浜庡湪鎹曡幏璁惧鑺傜偣涓婇€夋嫨浠讳綍鍙楁敮鎸佺殑 YUV 鍍忕礌鏍煎紡锛?鍖呮嫭骞抽潰鏍煎紡銆?
+### 甯?ADV7180 瑙ｇ爜鍣ㄧ殑 i.MX6Q SabreAuto
 
-### 带 ADV7180 解码器的 i.MX6Q SabreAuto
-
-在 i.MX6Q SabreAuto 上，板载 ADV7180 SD 解码器连接到内部视频多路复用器到 IPU1
-CSI0 的并行总线输入。
-
-以下示例配置一条流水线，以从 ADV7180 视频解码器捕获，假设 NTSC 720x480 输入
-信号，使用简单交织（未转换且无需运动补偿）。adv7180 必须输出顺序或交替场（NTSC
-的场类型为“seq-bt”，或“alternate”）：
-
+鍦?i.MX6Q SabreAuto 涓婏紝鏉胯浇 ADV7180 SD 瑙ｇ爜鍣ㄨ繛鎺ュ埌鍐呴儴瑙嗛澶氳矾澶嶇敤鍣ㄥ埌 IPU1
+CSI0 鐨勫苟琛屾€荤嚎杈撳叆銆?
+浠ヤ笅绀轰緥閰嶇疆涓€鏉℃祦姘寸嚎锛屼互浠?ADV7180 瑙嗛瑙ｇ爜鍣ㄦ崟鑾凤紝鍋囪 NTSC 720x480 杈撳叆
+淇″彿锛屼娇鐢ㄧ畝鍗曚氦缁囷紙鏈浆鎹笖鏃犻渶杩愬姩琛ュ伩锛夈€俛dv7180 蹇呴』杈撳嚭椤哄簭鎴栦氦鏇垮満锛圢TSC
+鐨勫満绫诲瀷涓衡€渟eq-bt鈥濓紝鎴栤€渁lternate鈥濓級锛?
    # Setup links
    media-ctl -l "'adv7180 3-0021':0 -> 'ipu1_csi0_mux':1[^1^]"
    media-ctl -l "'ipu1_csi0_mux':2 -> 'ipu1_csi0':0[^1^]"
@@ -366,13 +241,10 @@ CSI0 的并行总线输入。
    # Configure "ipu1_csi0 capture" interface (assumed at /dev/video4)
    v4l2-ctl -d4 --set-fmt-video=field=interlaced_bt
 
-然后可以在 /dev/video4 上开始流传输。v4l2-ctl 工具也可用于在 /dev/video4 上选择
-任何受支持的 YUV 像素格式。
-
-此示例配置一条流水线，以从 ADV7180 视频解码器捕获，假设 PAL 720x576 输入信号，
-使用运动补偿去隔行。adv7180 必须输出顺序或交替场（PAL 的场类型为“seq-tb”，
-或“alternate”）：
-
+鐒跺悗鍙互鍦?/dev/video4 涓婂紑濮嬫祦浼犺緭銆倂4l2-ctl 宸ュ叿涔熷彲鐢ㄤ簬鍦?/dev/video4 涓婇€夋嫨
+浠讳綍鍙楁敮鎸佺殑 YUV 鍍忕礌鏍煎紡銆?
+姝ょず渚嬮厤缃竴鏉℃祦姘寸嚎锛屼互浠?ADV7180 瑙嗛瑙ｇ爜鍣ㄦ崟鑾凤紝鍋囪 PAL 720x576 杈撳叆淇″彿锛?浣跨敤杩愬姩琛ュ伩鍘婚殧琛屻€俛dv7180 蹇呴』杈撳嚭椤哄簭鎴栦氦鏇垮満锛圥AL 鐨勫満绫诲瀷涓衡€渟eq-tb鈥濓紝
+鎴栤€渁lternate鈥濓級锛?
    # Setup links
    media-ctl -l "'adv7180 3-0021':0 -> 'ipu1_csi0_mux':1[^1^]"
    media-ctl -l "'ipu1_csi0_mux':2 -> 'ipu1_csi0':0[^1^]"
@@ -390,20 +262,16 @@ CSI0 的并行总线输入。
    # Configure "ipu1_ic_prpvf capture" interface (assumed at /dev/video2)
    v4l2-ctl -d2 --set-fmt-video=field=none
 
-然后可以在 /dev/video2 上开始流传输。v4l2-ctl 工具也可用于在 /dev/video2 上选择
-任何受支持的 YUV 像素格式。
+鐒跺悗鍙互鍦?/dev/video2 涓婂紑濮嬫祦浼犺緭銆倂4l2-ctl 宸ュ叿涔熷彲鐢ㄤ簬鍦?/dev/video2 涓婇€夋嫨
+浠讳綍鍙楁敮鎸佺殑 YUV 鍍忕礌鏍煎紡銆?
+璇ュ钩鍙版帴鍙?ADV7180 涓?Ain1锛堣繛鎺ュ櫒 J42锛夌殑澶嶅悎瑙嗛锛圕omposite Video锛夋ā鎷熻緭鍏ャ€?
+### 甯?ADV7180 瑙ｇ爜鍣ㄧ殑 i.MX6DL SabreAuto
 
-该平台接受 ADV7180 上 Ain1（连接器 J42）的复合视频（Composite Video）模拟输入。
-
-### 带 ADV7180 解码器的 i.MX6DL SabreAuto
-
-在 i.MX6DL SabreAuto 上，板载 ADV7180 SD 解码器连接到内部视频多路复用器到 IPU1
-CSI0 的并行总线输入。
-
-以下示例配置一条流水线，以从 ADV7180 视频解码器捕获，假设 NTSC 720x480 输入
-信号，使用简单交织（未转换且无需运动补偿）。adv7180 必须输出顺序或交替场（NTSC
-的场类型为“seq-bt”，或“alternate”）：
-
+鍦?i.MX6DL SabreAuto 涓婏紝鏉胯浇 ADV7180 SD 瑙ｇ爜鍣ㄨ繛鎺ュ埌鍐呴儴瑙嗛澶氳矾澶嶇敤鍣ㄥ埌 IPU1
+CSI0 鐨勫苟琛屾€荤嚎杈撳叆銆?
+浠ヤ笅绀轰緥閰嶇疆涓€鏉℃祦姘寸嚎锛屼互浠?ADV7180 瑙嗛瑙ｇ爜鍣ㄦ崟鑾凤紝鍋囪 NTSC 720x480 杈撳叆
+淇″彿锛屼娇鐢ㄧ畝鍗曚氦缁囷紙鏈浆鎹笖鏃犻渶杩愬姩琛ュ伩锛夈€俛dv7180 蹇呴』杈撳嚭椤哄簭鎴栦氦鏇垮満锛圢TSC
+鐨勫満绫诲瀷涓衡€渟eq-bt鈥濓紝鎴栤€渁lternate鈥濓級锛?
    # Setup links
    media-ctl -l "'adv7180 4-0021':0 -> 'ipu1_csi0_mux':4[^1^]"
    media-ctl -l "'ipu1_csi0_mux':5 -> 'ipu1_csi0':0[^1^]"
@@ -415,13 +283,10 @@ CSI0 的并行总线输入。
    # Configure "ipu1_csi0 capture" interface (assumed at /dev/video0)
    v4l2-ctl -d0 --set-fmt-video=field=interlaced_bt
 
-然后可以在 /dev/video0 上开始流传输。v4l2-ctl 工具也可用于在 /dev/video0 上选择
-任何受支持的 YUV 像素格式。
-
-此示例配置一条流水线，以从 ADV7180 视频解码器捕获，假设 PAL 720x576 输入信号，
-使用运动补偿去隔行。adv7180 必须输出顺序或交替场（PAL 的场类型为“seq-tb”，
-或“alternate”）：
-
+鐒跺悗鍙互鍦?/dev/video0 涓婂紑濮嬫祦浼犺緭銆倂4l2-ctl 宸ュ叿涔熷彲鐢ㄤ簬鍦?/dev/video0 涓婇€夋嫨
+浠讳綍鍙楁敮鎸佺殑 YUV 鍍忕礌鏍煎紡銆?
+姝ょず渚嬮厤缃竴鏉℃祦姘寸嚎锛屼互浠?ADV7180 瑙嗛瑙ｇ爜鍣ㄦ崟鑾凤紝鍋囪 PAL 720x576 杈撳叆淇″彿锛?浣跨敤杩愬姩琛ュ伩鍘婚殧琛屻€俛dv7180 蹇呴』杈撳嚭椤哄簭鎴栦氦鏇垮満锛圥AL 鐨勫満绫诲瀷涓衡€渟eq-tb鈥濓紝
+鎴栤€渁lternate鈥濓級锛?
    # Setup links
    media-ctl -l "'adv7180 4-0021':0 -> 'ipu1_csi0_mux':4[^1^]"
    media-ctl -l "'ipu1_csi0_mux':5 -> 'ipu1_csi0':0[^1^]"
@@ -439,25 +304,18 @@ CSI0 的并行总线输入。
    # Configure "ipu1_ic_prpvf capture" interface (assumed at /dev/video2)
    v4l2-ctl -d2 --set-fmt-video=field=none
 
-然后可以在 /dev/video2 上开始流传输。v4l2-ctl 工具也可用于在 /dev/video2 上选择
-任何受支持的 YUV 像素格式。
+鐒跺悗鍙互鍦?/dev/video2 涓婂紑濮嬫祦浼犺緭銆倂4l2-ctl 宸ュ叿涔熷彲鐢ㄤ簬鍦?/dev/video2 涓婇€夋嫨
+浠讳綍鍙楁敮鎸佺殑 YUV 鍍忕礌鏍煎紡銆?
+璇ュ钩鍙版帴鍙?ADV7180 涓?Ain1锛堣繛鎺ュ櫒 J42锛夌殑澶嶅悎瑙嗛锛圕omposite Video锛夋ā鎷熻緭鍏ャ€?
+### 甯?MIPI CSI-2 OV5640 鐨?i.MX6Q SabreSD
 
-该平台接受 ADV7180 上 Ain1（连接器 J42）的复合视频（Composite Video）模拟输入。
-
-### 带 MIPI CSI-2 OV5640 的 i.MX6Q SabreSD
-
-与 i.MX6Q SabreLite 类似，i.MX6Q SabreSD 在 IPU1 CSI0 上支持并行接口的 OV5642
-模块，以及 MIPI CSI-2 OV5640 模块。OV5642 连接到 i2c 总线 1，OV5640 连接到 i2c
-总线 2。
-
-SabreSD 的设备树包含了并行 OV5642 和 MIPI CSI-2 OV5640 的 OF 图（OF graphs），
-但截至本文撰写时，仅 MIPI CSI-2 OV5640 经过测试，因此 OV5642 节点当前被禁用。
-OV5640 模块连接到 MIPI 连接器 J5。连接到 SabreSD 板的 OV5640 模块的 NXP 部件号
-为 H120729。
-
-以下示例配置未处理视频捕获流水线，以从通过 MIPI CSI-2 虚拟通道 0 传输的 OV5640
-捕获：
-
+涓?i.MX6Q SabreLite 绫讳技锛宨.MX6Q SabreSD 鍦?IPU1 CSI0 涓婃敮鎸佸苟琛屾帴鍙ｇ殑 OV5642
+妯″潡锛屼互鍙?MIPI CSI-2 OV5640 妯″潡銆侽V5642 杩炴帴鍒?i2c 鎬荤嚎 1锛孫V5640 杩炴帴鍒?i2c
+鎬荤嚎 2銆?
+SabreSD 鐨勮澶囨爲鍖呭惈浜嗗苟琛?OV5642 鍜?MIPI CSI-2 OV5640 鐨?OF 鍥撅紙OF graphs锛夛紝
+浣嗘埅鑷虫湰鏂囨挵鍐欐椂锛屼粎 MIPI CSI-2 OV5640 缁忚繃娴嬭瘯锛屽洜姝?OV5642 鑺傜偣褰撳墠琚鐢ㄣ€?OV5640 妯″潡杩炴帴鍒?MIPI 杩炴帴鍣?J5銆傝繛鎺ュ埌 SabreSD 鏉跨殑 OV5640 妯″潡鐨?NXP 閮ㄤ欢鍙?涓?H120729銆?
+浠ヤ笅绀轰緥閰嶇疆鏈鐞嗚棰戞崟鑾锋祦姘寸嚎锛屼互浠庨€氳繃 MIPI CSI-2 铏氭嫙閫氶亾 0 浼犺緭鐨?OV5640
+鎹曡幏锛?
    # Setup links
    media-ctl -l "'ov5640 1-003c':0 -> 'imx6-mipi-csi2':0[^1^]"
    media-ctl -l "'imx6-mipi-csi2':1 -> 'ipu1_csi0_mux':0[^1^]"
@@ -469,27 +327,23 @@ OV5640 模块连接到 MIPI 连接器 J5。连接到 SabreSD 板的 OV5640 模�
    media-ctl -V "'ipu1_csi0_mux':0 [fmt:UYVY2X8/640x480]"
    media-ctl -V "'ipu1_csi0':0 [fmt:AYUV32/640x480]"
 
-然后可以在“ipu1_csi0 capture”节点上开始流传输。v4l2-ctl 工具可用于在捕获设备
-节点上选择任何受支持的像素格式。
-
-要确定与“ipu1_csi0 capture”对应的 /dev/video 节点：
-
+鐒跺悗鍙互鍦ㄢ€渋pu1_csi0 capture鈥濊妭鐐逛笂寮€濮嬫祦浼犺緭銆倂4l2-ctl 宸ュ叿鍙敤浜庡湪鎹曡幏璁惧
+鑺傜偣涓婇€夋嫨浠讳綍鍙楁敮鎸佺殑鍍忕礌鏍煎紡銆?
+瑕佺‘瀹氫笌鈥渋pu1_csi0 capture鈥濆搴旂殑 /dev/video 鑺傜偣锛?
    media-ctl -e "ipu1_csi0 capture"
    /dev/video0
 
-/dev/video0 是这种情况下的流传输元素。
-
-通过 v4l2-ctl 启动流传输：
+/dev/video0 鏄繖绉嶆儏鍐典笅鐨勬祦浼犺緭鍏冪礌銆?
+閫氳繃 v4l2-ctl 鍚姩娴佷紶杈擄細
 
    v4l2-ctl --stream-mmap -d /dev/video0
 
-通过 Gstreamer 启动流传输并将内容发送到显示器：
+閫氳繃 Gstreamer 鍚姩娴佷紶杈撳苟灏嗗唴瀹瑰彂閫佸埌鏄剧ず鍣細
 
    gst-launch-1.0 v4l2src device=/dev/video0 ! kmssink
 
-以下示例配置一条直接转换流水线，以从通过 MIPI CSI-2 虚拟通道 0 传输的 OV5640
-捕获。它还展示了在 IC 输出处的色彩空间转换和缩放。
-
+浠ヤ笅绀轰緥閰嶇疆涓€鏉＄洿鎺ヨ浆鎹㈡祦姘寸嚎锛屼互浠庨€氳繃 MIPI CSI-2 铏氭嫙閫氶亾 0 浼犺緭鐨?OV5640
+鎹曡幏銆傚畠杩樺睍绀轰簡鍦?IC 杈撳嚭澶勭殑鑹插僵绌洪棿杞崲鍜岀缉鏀俱€?
    # Setup links
    media-ctl -l "'ov5640 1-003c':0 -> 'imx6-mipi-csi2':0[^1^]"
    media-ctl -l "'imx6-mipi-csi2':1 -> 'ipu1_csi0_mux':0[^1^]"
@@ -507,40 +361,33 @@ OV5640 模块连接到 MIPI 连接器 J5。连接到 SabreSD 板的 OV5640 模�
    # Set a format at the capture interface
    v4l2-ctl -d /dev/video1 --set-fmt-video=pixelformat=RGB3
 
-然后可以在“ipu1_ic_prpenc capture”节点上开始流传输。
-
-要确定与“ipu1_ic_prpenc capture”对应的 /dev/video 节点：
-
+鐒跺悗鍙互鍦ㄢ€渋pu1_ic_prpenc capture鈥濊妭鐐逛笂寮€濮嬫祦浼犺緭銆?
+瑕佺‘瀹氫笌鈥渋pu1_ic_prpenc capture鈥濆搴旂殑 /dev/video 鑺傜偣锛?
    media-ctl -e "ipu1_ic_prpenc capture"
    /dev/video1
 
-/dev/video1 是这种情况下的流传输元素。
-
-通过 v4l2-ctl 启动流传输：
+/dev/video1 鏄繖绉嶆儏鍐典笅鐨勬祦浼犺緭鍏冪礌銆?
+閫氳繃 v4l2-ctl 鍚姩娴佷紶杈擄細
 
    v4l2-ctl --stream-mmap -d /dev/video1
 
-通过 Gstreamer 启动流传输并将内容发送到显示器：
+閫氳繃 Gstreamer 鍚姩娴佷紶杈撳苟灏嗗唴瀹瑰彂閫佸埌鏄剧ず鍣細
 
    gst-launch-1.0 v4l2src device=/dev/video1 ! kmssink
 
-### 已知问题
+### 宸茬煡闂
 
-1. 当在接近 IC 缩放器 1024x1024 限制的分辨率下使用 90 或 270 度旋转控件，
-   并且与平面像素格式（YUV420、YUV422p）结合使用时，帧捕获经常会失败，且
-   IDMAC 通道没有帧结束中断。变通方法是，在需要 90 或 270 度旋转时，使用较低的
-   分辨率和/或打包格式（YUYV、RGB3 等）。
-
-### 文件列表
+1. 褰撳湪鎺ヨ繎 IC 缂╂斁鍣?1024x1024 闄愬埗鐨勫垎杈ㄧ巼涓嬩娇鐢?90 鎴?270 搴︽棆杞帶浠讹紝
+   骞朵笖涓庡钩闈㈠儚绱犳牸寮忥紙YUV420銆乊UV422p锛夌粨鍚堜娇鐢ㄦ椂锛屽抚鎹曡幏缁忓父浼氬け璐ワ紝涓?   IDMAC 閫氶亾娌℃湁甯х粨鏉熶腑鏂€傚彉閫氭柟娉曟槸锛屽湪闇€瑕?90 鎴?270 搴︽棆杞椂锛屼娇鐢ㄨ緝浣庣殑
+   鍒嗚鲸鐜囧拰/鎴栨墦鍖呮牸寮忥紙YUYV銆丷GB3 绛夛級銆?
+### 鏂囦欢鍒楄〃
 
 drivers/staging/media/imx/
 include/media/imx.h
 include/linux/imx-media.h
 
-### 参考资料
-
-### 作者
-
+### 鍙傝€冭祫鏂?
+### 浣滆€?
 - Steve Longerbeam <steve_longerbeam@mentor.com>
 - Philipp Zabel <kernel@pengutronix.de>
 - Russell King <linux@armlinux.org.uk>

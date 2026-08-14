@@ -1,36 +1,36 @@
-## DMX_REMOVE_PID
+﻿## DMX_REMOVE_PID
 
 
-### 名称
+### 鍚嶇О
 
 
 DMX_REMOVE_PID
 
-### 摘要
+### 鎽樿
 
 
 
 `int ioctl(fd, DMX_REMOVE_PID, __u16 *pid)`
 
-### 参数
+### 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `pid`
-    要移除的 PES 过滤器的 PID。
+    瑕佺Щ闄ょ殑 PES 杩囨护鍣ㄧ殑 PID銆?
 
-### 说明
-
-
-当一个传输流过滤器上设置了多个 PID 时，该 ioctl 调用允许移除某个 PID，例如之前通过 DMX_SET_PES_FILTER 或 DMX_ADD_PID 创建、且输出等于 `DMX_OUT_TSDEMUX_TAP <dmx_output>` 的过滤器。
-
-### 返回值
+### 璇存槑
 
 
-成功时返回 0。
+褰撲竴涓紶杈撴祦杩囨护鍣ㄤ笂璁剧疆浜嗗涓?PID 鏃讹紝璇?ioctl 璋冪敤鍏佽绉婚櫎鏌愪釜 PID锛屼緥濡備箣鍓嶉€氳繃 DMX_SET_PES_FILTER 鎴?DMX_ADD_PID 鍒涘缓銆佷笖杈撳嚭绛変簬 `DMX_OUT_TSDEMUX_TAP <dmx_output>` 鐨勮繃婊ゅ櫒銆?
 
-出错时返回 -1，并相应地设置 `errno` 变量。
+### 杩斿洖鍊?
 
-通用错误码在 Generic Error Codes <gen-errors> 章节中描述。
+
+鎴愬姛鏃惰繑鍥?0銆?
+
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+
+閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?

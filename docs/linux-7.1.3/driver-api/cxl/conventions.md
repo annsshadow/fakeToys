@@ -1,8 +1,8 @@
-# Compute Express Link：Linux 约定（Conventions）
+﻿# Compute Express Link锛歀inux 绾﹀畾锛圕onventions锛?
 
 
-现有一些出货平台偏离或破坏了 CXL 规范的预期。请记录这些偏离的细节与理由。
-借用 ACPI Code First 模板格式来记录假设与权衡，以便多个平台实现遵循相同的约定。
+鐜版湁涓€浜涘嚭璐у钩鍙板亸绂绘垨鐮村潖浜?CXL 瑙勮寖鐨勯鏈熴€傝璁板綍杩欎簺鍋忕鐨勭粏鑺備笌鐞嗙敱銆?
+鍊熺敤 ACPI Code First 妯℃澘鏍煎紡鏉ヨ褰曞亣璁句笌鏉冭　锛屼互渚垮涓钩鍙板疄鐜伴伒寰浉鍚岀殑绾﹀畾銆?
 
 - [conventions/cxl-lmh.rst](conventions/cxl-lmh.rst)
 - [conventions/cxl-atl.rst](conventions/cxl-atl.rst)

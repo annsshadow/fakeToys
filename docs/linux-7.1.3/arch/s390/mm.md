@@ -1,21 +1,21 @@
-
-## 内存 Management
-
-
-## 虚拟内存 layout
+﻿
+## 鍐呭瓨 Management
 
 
+## 铏氭嫙鍐呭瓨 layout
 
-- aspects 虚拟内存 layout setup
-clarified (编号 页 levels, alignment, DMA 内存).
 
-- Unused gaps 虚拟内存 layout could present
-- depending partucular 系统 configured.
-页 表 created unused gaps.
 
-- 虚拟内存 regions tracked untracked KASAN
-instrumentation, well KASAN shadow 内存 itself
-created CONFIG_KASAN 配置 选项 启用.
+- aspects 铏氭嫙鍐呭瓨 layout setup
+clarified (缂栧彿 椤?levels, alignment, DMA 鍐呭瓨).
+
+- Unused gaps 铏氭嫙鍐呭瓨 layout could present
+- depending partucular 绯荤粺 configured.
+椤?琛?created unused gaps.
+
+- 铏氭嫙鍐呭瓨 regions tracked untracked KASAN
+instrumentation, well KASAN shadow 鍐呭瓨 itself
+created CONFIG_KASAN 閰嶇疆 閫夐」 鍚敤.
 
 ```
 

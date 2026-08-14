@@ -1,4 +1,4 @@
-
+﻿
 
 
 ######## ioctl VIDIOC_G_FBUF, VIDIOC_S_FBUF
@@ -78,67 +78,49 @@ does, or it returns an error code.
     - - __u32
       - `capability`
       -
-      - 由驱动设置的 overlay 能力标志，参见 framebuffer-cap。
-    - - __u32
+      - 鐢遍┍鍔ㄨ缃殑 overlay 鑳藉姏鏍囧織锛屽弬瑙?framebuffer-cap銆?    - - __u32
       - `flags`
       -
-      - 由应用程序和驱动设置的 overlay 控制标志，参见 framebuffer-flags
+      - 鐢卞簲鐢ㄧ▼搴忓拰椹卞姩璁剧疆鐨?overlay 鎺у埗鏍囧織锛屽弬瑙?framebuffer-flags
     - - void *
       - `base`
       -
-      - 帧缓冲区的物理基地址，即帧缓冲区左上角像素的地址。
-	对于 VIDIOC_S_FBUF <VIDIOC_G_FBUF> 此字段不再受支持，
-	内核将始终将其设为 NULL。
-	对于 **Video Output Overlays**，
-	驱动将返回一个有效的基地址，以便应用程序可以找到对应的
-	Linux 帧缓冲设备（参见 osd）。对于 **Video Capture Overlays**
-	此字段将始终为 NULL。
-    - - struct
+      - 甯х紦鍐插尯鐨勭墿鐞嗗熀鍦板潃锛屽嵆甯х紦鍐插尯宸︿笂瑙掑儚绱犵殑鍦板潃銆?	瀵逛簬 VIDIOC_S_FBUF <VIDIOC_G_FBUF> 姝ゅ瓧娈典笉鍐嶅彈鏀寔锛?	鍐呮牳灏嗗缁堝皢鍏惰涓?NULL銆?	瀵逛簬 **Video Output Overlays**锛?	椹卞姩灏嗚繑鍥炰竴涓湁鏁堢殑鍩哄湴鍧€锛屼互渚垮簲鐢ㄧ▼搴忓彲浠ユ壘鍒板搴旂殑
+	Linux 甯х紦鍐茶澶囷紙鍙傝 osd锛夈€傚浜?**Video Capture Overlays**
+	姝ゅ瓧娈靛皢濮嬬粓涓?NULL銆?    - - struct
       - `fmt`
       -
-      - 帧缓冲区的布局。
-    - -
+      - 甯х紦鍐插尯鐨勫竷灞€銆?    - -
       - __u32
       - `width`
-      - 帧缓冲区的宽度，以像素计。
-    - -
+      - 甯х紦鍐插尯鐨勫搴︼紝浠ュ儚绱犺銆?    - -
       - __u32
       - `height`
-      - 帧缓冲区的高度，以像素计。
-    - -
+      - 甯х紦鍐插尯鐨勯珮搴︼紝浠ュ儚绱犺銆?    - -
       - __u32
       - `pixelformat`
-      - 帧缓冲区的像素格式。
-#     * -
+      - 甯х紦鍐插尯鐨勫儚绱犳牸寮忋€?#     * -
 
       -
-      - 对于 **non-destructive Video Overlays**，此字段仅为
-	struct `v4l2_window` 的 `chromakey`
-	字段定义一个格式。
-#     * -
+      - 瀵逛簬 **non-destructive Video Overlays**锛屾瀛楁浠呬负
+	struct `v4l2_window` 鐨?`chromakey`
+	瀛楁瀹氫箟涓€涓牸寮忋€?#     * -
 
       -
-      - 对于 **Video Output Overlays**，驱动必须返回一个有效的格式。
-#     * -
+      - 瀵逛簬 **Video Output Overlays**锛岄┍鍔ㄥ繀椤昏繑鍥炰竴涓湁鏁堢殑鏍煎紡銆?#     * -
 
       -
-      - 通常这是一个 RGB 格式（例如
-	V4L2_PIX_FMT_RGB565 <V4L2-PIX-FMT-RGB565>），但 YUV
-	格式（仅当使用色度键控时为 packed YUV 格式，不包括
-	`V4L2_PIX_FMT_YUYV` 和 `V4L2_PIX_FMT_UYVY`）以及
-	`V4L2_PIX_FMT_PAL8` 格式也允许使用。当应用程序请求压缩格式时
-	驱动的行为是未定义的。关于像素格式的信息参见 pixfmt。
-    - -
+      - 閫氬父杩欐槸涓€涓?RGB 鏍煎紡锛堜緥濡?	V4L2_PIX_FMT_RGB565 <V4L2-PIX-FMT-RGB565>锛夛紝浣?YUV
+	鏍煎紡锛堜粎褰撲娇鐢ㄨ壊搴﹂敭鎺ф椂涓?packed YUV 鏍煎紡锛屼笉鍖呮嫭
+	`V4L2_PIX_FMT_YUYV` 鍜?`V4L2_PIX_FMT_UYVY`锛変互鍙?	`V4L2_PIX_FMT_PAL8` 鏍煎紡涔熷厑璁镐娇鐢ㄣ€傚綋搴旂敤绋嬪簭璇锋眰鍘嬬缉鏍煎紡鏃?	椹卞姩鐨勮涓烘槸鏈畾涔夌殑銆傚叧浜庡儚绱犳牸寮忕殑淇℃伅鍙傝 pixfmt銆?    - -
       - enum `v4l2_field`
       - `field`
-      - 驱动和应用程序应忽略此字段。如适用，字段顺序由
-	VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 使用 struct `v4l2_window`
-	的 `field` 字段选择。
-    - -
+      - 椹卞姩鍜屽簲鐢ㄧ▼搴忓簲蹇界暐姝ゅ瓧娈点€傚閫傜敤锛屽瓧娈甸『搴忕敱
+	VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 浣跨敤 struct `v4l2_window`
+	鐨?`field` 瀛楁閫夋嫨銆?    - -
       - __u32
       - `bytesperline`
-      - 两条相邻扫描线最左侧像素之间的距离，以字节计。
-    - - `3`
+      - 涓ゆ潯鐩搁偦鎵弿绾挎渶宸︿晶鍍忕礌涔嬮棿鐨勮窛绂伙紝浠ュ瓧鑺傝銆?    - - `3`
 
 	This field is irrelevant to **non-destructive Video Overlays**.
 
@@ -169,12 +151,10 @@ does, or it returns an error code.
     - -
       - enum `v4l2_colorspace`
       - `colorspace`
-      - 该信息补充 `pixelformat`，必须由驱动设置，参见 colorspaces。
-    - -
+      - 璇ヤ俊鎭ˉ鍏?`pixelformat`锛屽繀椤荤敱椹卞姩璁剧疆锛屽弬瑙?colorspaces銆?    - -
       - __u32
       - `priv`
-      - 保留。驱动和应用程序必须将此字段设为零。
-
+      - 淇濈暀銆傞┍鍔ㄥ拰搴旂敤绋嬪簭蹇呴』灏嗘瀛楁璁句负闆躲€?
 
 
     :header-rows:  0
@@ -183,39 +163,21 @@ does, or it returns an error code.
 
     - - `V4L2_FBUF_CAP_EXTERNOVERLAY`
       - 0x0001
-      - 设备支持非破坏性 overlay。当驱动清除此标志时，仅支持破坏性
-	overlay。目前还没有同时支持破坏性 overlay 和非破坏性 overlay 的
-	驱动。实际上 Video Output Overlays 总是非破坏性的。
-    - - `V4L2_FBUF_CAP_CHROMAKEY`
+      - 璁惧鏀寔闈炵牬鍧忔€?overlay銆傚綋椹卞姩娓呴櫎姝ゆ爣蹇楁椂锛屼粎鏀寔鐮村潖鎬?	overlay銆傜洰鍓嶈繕娌℃湁鍚屾椂鏀寔鐮村潖鎬?overlay 鍜岄潪鐮村潖鎬?overlay 鐨?	椹卞姩銆傚疄闄呬笂 Video Output Overlays 鎬绘槸闈炵牬鍧忔€х殑銆?    - - `V4L2_FBUF_CAP_CHROMAKEY`
       - 0x0002
-      - 设备支持通过色度键控对图像进行裁剪。即，仅在后者呈现某种特定
-	颜色的位置，图像像素才替换 VGA 或视频信号中的像素。色度键控
-	对破坏性 overlay 没有意义。
-    - - `V4L2_FBUF_CAP_LIST_CLIPPING`
+      - 璁惧鏀寔閫氳繃鑹插害閿帶瀵瑰浘鍍忚繘琛岃鍓€傚嵆锛屼粎鍦ㄥ悗鑰呭憟鐜版煇绉嶇壒瀹?	棰滆壊鐨勪綅缃紝鍥惧儚鍍忕礌鎵嶆浛鎹?VGA 鎴栬棰戜俊鍙蜂腑鐨勫儚绱犮€傝壊搴﹂敭鎺?	瀵圭牬鍧忔€?overlay 娌℃湁鎰忎箟銆?    - - `V4L2_FBUF_CAP_LIST_CLIPPING`
       - 0x0004
-      - 设备支持使用裁剪矩形列表进行裁剪。
-        注意，此功能不再受支持。
-    - - `V4L2_FBUF_CAP_BITMAP_CLIPPING`
+      - 璁惧鏀寔浣跨敤瑁佸壀鐭╁舰鍒楄〃杩涜瑁佸壀銆?        娉ㄦ剰锛屾鍔熻兘涓嶅啀鍙楁敮鎸併€?    - - `V4L2_FBUF_CAP_BITMAP_CLIPPING`
       - 0x0008
-      - 设备支持使用位掩码进行裁剪。
-        注意，此功能不再受支持。
-    - - `V4L2_FBUF_CAP_LOCAL_ALPHA`
+      - 璁惧鏀寔浣跨敤浣嶆帺鐮佽繘琛岃鍓€?        娉ㄦ剰锛屾鍔熻兘涓嶅啀鍙楁敮鎸併€?    - - `V4L2_FBUF_CAP_LOCAL_ALPHA`
       - 0x0010
-      - 设备支持使用帧缓冲区或 VGA 信号的 alpha 通道进行裁剪/混合。
-	alpha 混合对破坏性 overlay 没有意义。
-    - - `V4L2_FBUF_CAP_GLOBAL_ALPHA`
+      - 璁惧鏀寔浣跨敤甯х紦鍐插尯鎴?VGA 淇″彿鐨?alpha 閫氶亾杩涜瑁佸壀/娣峰悎銆?	alpha 娣峰悎瀵圭牬鍧忔€?overlay 娌℃湁鎰忎箟銆?    - - `V4L2_FBUF_CAP_GLOBAL_ALPHA`
       - 0x0020
-      - 设备支持使用全局 alpha 值进行 alpha 混合。
-	alpha 混合对破坏性 overlay 没有意义。
-    - - `V4L2_FBUF_CAP_LOCAL_INV_ALPHA`
+      - 璁惧鏀寔浣跨敤鍏ㄥ眬 alpha 鍊艰繘琛?alpha 娣峰悎銆?	alpha 娣峰悎瀵圭牬鍧忔€?overlay 娌℃湁鎰忎箟銆?    - - `V4L2_FBUF_CAP_LOCAL_INV_ALPHA`
       - 0x0040
-      - 设备支持使用帧缓冲区或 VGA 信号的取反 alpha 通道进行裁剪/混合。
-	alpha 混合对破坏性 overlay 没有意义。
-    - - `V4L2_FBUF_CAP_SRC_CHROMAKEY`
+      - 璁惧鏀寔浣跨敤甯х紦鍐插尯鎴?VGA 淇″彿鐨勫彇鍙?alpha 閫氶亾杩涜瑁佸壀/娣峰悎銆?	alpha 娣峰悎瀵圭牬鍧忔€?overlay 娌℃湁鎰忎箟銆?    - - `V4L2_FBUF_CAP_SRC_CHROMAKEY`
       - 0x0080
-      - 设备支持源色度键控。具有色度键控颜色的视频像素被帧缓冲区像素
-	替换，这与 `V4L2_FBUF_CAP_CHROMAKEY` 正好相反。
-
+      - 璁惧鏀寔婧愯壊搴﹂敭鎺с€傚叿鏈夎壊搴﹂敭鎺ч鑹茬殑瑙嗛鍍忕礌琚抚缂撳啿鍖哄儚绱?	鏇挎崲锛岃繖涓?`V4L2_FBUF_CAP_CHROMAKEY` 姝ｅソ鐩稿弽銆?
 
 
     :header-rows:  0
@@ -224,52 +186,33 @@ does, or it returns an error code.
 
     - - `V4L2_FBUF_FLAG_PRIMARY`
       - 0x0001
-      - 帧缓冲区是主图形表面。换句话说，该 overlay 是破坏性的。此标志
-	通常由任何没有 `V4L2_FBUF_CAP_EXTERNOVERLAY` 能力的驱动设置，
-	否则它被清除。
-    - - `V4L2_FBUF_FLAG_OVERLAY`
+      - 甯х紦鍐插尯鏄富鍥惧舰琛ㄩ潰銆傛崲鍙ヨ瘽璇达紝璇?overlay 鏄牬鍧忔€х殑銆傛鏍囧織
+	閫氬父鐢变换浣曟病鏈?`V4L2_FBUF_CAP_EXTERNOVERLAY` 鑳藉姏鐨勯┍鍔ㄨ缃紝
+	鍚﹀垯瀹冭娓呴櫎銆?    - - `V4L2_FBUF_FLAG_OVERLAY`
       - 0x0002
-      - 如果为视频捕获设备设置了此标志，则驱动会将初始 overlay 大小设为
-	覆盖整个帧缓冲区大小，否则将使用现有的 overlay 大小（由
-	VIDIOC_S_FMT <VIDIOC_G_FMT> 设置）。只有一个视频捕获驱动（bttv）
-	支持此标志。在捕获设备上使用此标志已被弃用。没有办法检测哪些
-	驱动支持此标志，因此设置 overlay 大小唯一可靠的方法是通过
-	VIDIOC_S_FMT <VIDIOC_G_FMT>。如果为视频输出设备设置了此标志，
-	则视频输出 overlay 窗口相对于帧缓冲区的左上角，并限制为帧缓冲区
-	的大小。如果清除了它，则视频输出 overlay 窗口相对于视频输出显示。
-    - - `V4L2_FBUF_FLAG_CHROMAKEY`
+      - 濡傛灉涓鸿棰戞崟鑾疯澶囪缃簡姝ゆ爣蹇楋紝鍒欓┍鍔ㄤ細灏嗗垵濮?overlay 澶у皬璁句负
+	瑕嗙洊鏁翠釜甯х紦鍐插尯澶у皬锛屽惁鍒欏皢浣跨敤鐜版湁鐨?overlay 澶у皬锛堢敱
+	VIDIOC_S_FMT <VIDIOC_G_FMT> 璁剧疆锛夈€傚彧鏈変竴涓棰戞崟鑾烽┍鍔紙bttv锛?	鏀寔姝ゆ爣蹇椼€傚湪鎹曡幏璁惧涓婁娇鐢ㄦ鏍囧織宸茶寮冪敤銆傛病鏈夊姙娉曟娴嬪摢浜?	椹卞姩鏀寔姝ゆ爣蹇楋紝鍥犳璁剧疆 overlay 澶у皬鍞竴鍙潬鐨勬柟娉曟槸閫氳繃
+	VIDIOC_S_FMT <VIDIOC_G_FMT>銆傚鏋滀负瑙嗛杈撳嚭璁惧璁剧疆浜嗘鏍囧織锛?	鍒欒棰戣緭鍑?overlay 绐楀彛鐩稿浜庡抚缂撳啿鍖虹殑宸︿笂瑙掞紝骞堕檺鍒朵负甯х紦鍐插尯
+	鐨勫ぇ灏忋€傚鏋滄竻闄や簡瀹冿紝鍒欒棰戣緭鍑?overlay 绐楀彛鐩稿浜庤棰戣緭鍑烘樉绀恒€?    - - `V4L2_FBUF_FLAG_CHROMAKEY`
       - 0x0004
-      - 使用色度键控。色度键控颜色由 struct `v4l2_window` 的
-	`chromakey` 字段确定，并通过 VIDIOC_S_FMT <VIDIOC_G_FMT>
-	ioctl 协商，参见 overlay 和 osd。
-    - - `2` 没有用于通过裁剪矩形列表或位图启用裁剪的标志。这些方法
-	通过 VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 协商，参见 overlay
-	和 osd。
-    - - `V4L2_FBUF_FLAG_LOCAL_ALPHA`
+      - 浣跨敤鑹插害閿帶銆傝壊搴﹂敭鎺ч鑹茬敱 struct `v4l2_window` 鐨?	`chromakey` 瀛楁纭畾锛屽苟閫氳繃 VIDIOC_S_FMT <VIDIOC_G_FMT>
+	ioctl 鍗忓晢锛屽弬瑙?overlay 鍜?osd銆?    - - `2` 娌℃湁鐢ㄤ簬閫氳繃瑁佸壀鐭╁舰鍒楄〃鎴栦綅鍥惧惎鐢ㄨ鍓殑鏍囧織銆傝繖浜涙柟娉?	閫氳繃 VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 鍗忓晢锛屽弬瑙?overlay
+	鍜?osd銆?    - - `V4L2_FBUF_FLAG_LOCAL_ALPHA`
       - 0x0008
-      - 使用帧缓冲区的 alpha 通道来裁剪或混合帧缓冲区像素与视频图像。
-	混合函数为：output = framebuffer pixel ** alpha + video pixel **
-	(1 - alpha)。实际的 alpha 深度取决于帧缓冲区像素格式。
-    - - `V4L2_FBUF_FLAG_GLOBAL_ALPHA`
+      - 浣跨敤甯х紦鍐插尯鐨?alpha 閫氶亾鏉ヨ鍓垨娣峰悎甯х紦鍐插尯鍍忕礌涓庤棰戝浘鍍忋€?	娣峰悎鍑芥暟涓猴細output = framebuffer pixel ** alpha + video pixel **
+	(1 - alpha)銆傚疄闄呯殑 alpha 娣卞害鍙栧喅浜庡抚缂撳啿鍖哄儚绱犳牸寮忋€?    - - `V4L2_FBUF_FLAG_GLOBAL_ALPHA`
       - 0x0010
-      - 使用全局 alpha 值将帧缓冲区与视频图像混合。混合函数为：
-	output = (framebuffer pixel * alpha - video pixel * (255 - alpha)) / 255。
-	alpha 值由 struct `v4l2_window` 的 `global_alpha` 字段确定，
-	并通过 VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 协商，参见 overlay
-	和 osd。
-    - - `V4L2_FBUF_FLAG_LOCAL_INV_ALPHA`
+      - 浣跨敤鍏ㄥ眬 alpha 鍊煎皢甯х紦鍐插尯涓庤棰戝浘鍍忔贩鍚堛€傛贩鍚堝嚱鏁颁负锛?	output = (framebuffer pixel * alpha - video pixel * (255 - alpha)) / 255銆?	alpha 鍊肩敱 struct `v4l2_window` 鐨?`global_alpha` 瀛楁纭畾锛?	骞堕€氳繃 VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl 鍗忓晢锛屽弬瑙?overlay
+	鍜?osd銆?    - - `V4L2_FBUF_FLAG_LOCAL_INV_ALPHA`
       - 0x0020
-      - 与 `V4L2_FBUF_FLAG_LOCAL_ALPHA` 类似，使用帧缓冲区的 alpha 通道
-	来裁剪或混合帧缓冲区像素与视频图像，但使用取反的 alpha 值。
-	混合函数为：output = framebuffer pixel ** (1 - alpha) + video pixel
-	** alpha。实际的 alpha 深度取决于帧缓冲区像素格式。
-    - - `V4L2_FBUF_FLAG_SRC_CHROMAKEY`
+      - 涓?`V4L2_FBUF_FLAG_LOCAL_ALPHA` 绫讳技锛屼娇鐢ㄥ抚缂撳啿鍖虹殑 alpha 閫氶亾
+	鏉ヨ鍓垨娣峰悎甯х紦鍐插尯鍍忕礌涓庤棰戝浘鍍忥紝浣嗕娇鐢ㄥ彇鍙嶇殑 alpha 鍊笺€?	娣峰悎鍑芥暟涓猴細output = framebuffer pixel ** (1 - alpha) + video pixel
+	** alpha銆傚疄闄呯殑 alpha 娣卞害鍙栧喅浜庡抚缂撳啿鍖哄儚绱犳牸寮忋€?    - - `V4L2_FBUF_FLAG_SRC_CHROMAKEY`
       - 0x0040
-      - 使用源色度键控。源色度键控颜色由 struct `v4l2_window` 的
-	`chromakey` 字段确定，并通过 VIDIOC_S_FMT <VIDIOC_G_FMT>
-	ioctl 协商，参见 overlay 和 osd。两种色度键控彼此互斥，
-	因此使用的是 struct `v4l2_window` 的同一个 `chromakey` 字段。
-
+      - 浣跨敤婧愯壊搴﹂敭鎺с€傛簮鑹插害閿帶棰滆壊鐢?struct `v4l2_window` 鐨?	`chromakey` 瀛楁纭畾锛屽苟閫氳繃 VIDIOC_S_FMT <VIDIOC_G_FMT>
+	ioctl 鍗忓晢锛屽弬瑙?overlay 鍜?osd銆備袱绉嶈壊搴﹂敭鎺у郊姝や簰鏂ワ紝
+	鍥犳浣跨敤鐨勬槸 struct `v4l2_window` 鐨勫悓涓€涓?`chromakey` 瀛楁銆?
 ## Return Value
 
 
@@ -278,7 +221,6 @@ appropriately. The generic error codes are described at the
 Generic Error Codes <gen-errors> chapter.
 
 EPERM
-    VIDIOC_S_FBUF <VIDIOC_G_FBUF> 只能由特权用户调用，以协商破坏性 overlay 的参数。
-
+    VIDIOC_S_FBUF <VIDIOC_G_FBUF> 鍙兘鐢辩壒鏉冪敤鎴疯皟鐢紝浠ュ崗鍟嗙牬鍧忔€?overlay 鐨勫弬鏁般€?
 EINVAL
-    VIDIOC_S_FBUF <VIDIOC_G_FBUF> 的参数不合适。
+    VIDIOC_S_FBUF <VIDIOC_G_FBUF> 鐨勫弬鏁颁笉鍚堥€傘€?

@@ -1,11 +1,11 @@
-## 内核驱动 lp3944
+﻿## 鍐呮牳椹卞姩 lp3944
 
 
-  - National Semiconductor LP3944 Fun-light 芯片
+  - National Semiconductor LP3944 Fun-light 鑺墖
 
     Prefix: 'lp3944'
 
-    Addresses scanned: 无（见下文说明部分）
+    Addresses scanned: 鏃狅紙瑙佷笅鏂囪鏄庨儴鍒嗭級
 
     Datasheet:
 
@@ -16,27 +16,27 @@ Authors:
 	Antonio Ospite <ospite@studenti.unina.it>
 
 
-### 描述
+### 鎻忚堪
 
-LP3944 是一个辅助芯片，可驱动多达 8 个 LED，具有两种可编程 DIM 模式；它甚至可以用作 gpio 扩展器，但本驱动假定它被用作 LED 控制器。
+LP3944 鏄竴涓緟鍔╄姱鐗囷紝鍙┍鍔ㄥ杈?8 涓?LED锛屽叿鏈変袱绉嶅彲缂栫▼ DIM 妯″紡锛涘畠鐢氳嚦鍙互鐢ㄤ綔 gpio 鎵╁睍鍣紝浣嗘湰椹卞姩鍋囧畾瀹冭鐢ㄤ綔 LED 鎺у埗鍣ㄣ€?
 
-DIM 模式用于为 LED 设置 _闪烁_ 模式，该模式通过提供两个参数来指定：
+DIM 妯″紡鐢ㄤ簬涓?LED 璁剧疆 _闂儊_ 妯″紡锛岃妯″紡閫氳繃鎻愪緵涓や釜鍙傛暟鏉ユ寚瀹氾細
 
-  - period（周期）：
-	从 0s 到 1.6s
-  - duty cycle（占空比）：
-	LED 点亮时间占周期的百分比，从 0 到 100
+  - period锛堝懆鏈燂級锛?
+	浠?0s 鍒?1.6s
+  - duty cycle锛堝崰绌烘瘮锛夛細
+	LED 鐐逛寒鏃堕棿鍗犲懆鏈熺殑鐧惧垎姣旓紝浠?0 鍒?100
 
-将 LED 设置为 DIM0 或 DIM1 模式会使其按照该模式闪烁。详见数据手册。
+灏?LED 璁剧疆涓?DIM0 鎴?DIM1 妯″紡浼氫娇鍏舵寜鐓ц妯″紡闂儊銆傝瑙佹暟鎹墜鍐屻€?
 
-LP3944 可在 Motorola A910 智能手机中找到，它驱动 rgb LED、相机闪光灯以及 lcd 的电源。
+LP3944 鍙湪 Motorola A910 鏅鸿兘鎵嬫満涓壘鍒帮紝瀹冮┍鍔?rgb LED銆佺浉鏈洪棯鍏夌伅浠ュ強 lcd 鐨勭數婧愩€?
 
 
-### 说明
+### 璇存槑
 
-该芯片主要用于嵌入式环境，因此本驱动期望它通过 i2c_board_info 机制注册。
+璇ヨ姱鐗囦富瑕佺敤浜庡祵鍏ュ紡鐜锛屽洜姝ゆ湰椹卞姩鏈熸湜瀹冮€氳繃 i2c_board_info 鏈哄埗娉ㄥ唽銆?
 
-要在适配器 0 的地址 0x60 处注册该芯片，请设置平台数据
+瑕佸湪閫傞厤鍣?0 鐨勫湴鍧€ 0x60 澶勬敞鍐岃鑺墖锛岃璁剧疆骞冲彴鏁版嵁
 ```
 
 	static struct i2c_board_info a910_i2c_board_info[] __initdata = {

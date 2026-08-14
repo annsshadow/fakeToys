@@ -1,11 +1,11 @@
-## 块设备
+﻿## 鍧楄澶?
 
-本页面汇总块设备子系统的相关文档。
+鏈〉闈㈡眹鎬诲潡璁惧瀛愮郴缁熺殑鐩稿叧鏂囨。銆?
 
-- [软盘](floppy)
-- [网络块设备（NBD）](nbd)
-- [并行端口 IDE 设备](paride)
-- [内存盘](ramdisk)
-- [分区回环设备](zoned_loop)
-- [压缩内存盘（zram）](zram)
+- [杞洏](floppy)
+- [缃戠粶鍧楄澶囷紙NBD锛塢(nbd)
+- [骞惰绔彛 IDE 璁惧](paride)
+- [鍐呭瓨鐩榏(ramdisk)
+- [鍒嗗尯鍥炵幆璁惧](zoned_loop)
+- [鍘嬬缉鍐呭瓨鐩橈紙zram锛塢(zram)
 - [DRBD](drbd/index)

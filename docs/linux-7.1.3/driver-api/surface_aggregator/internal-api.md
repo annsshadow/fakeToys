@@ -1,13 +1,13 @@
+﻿
+## 鍐呴儴 API 鏂囨。
 
-## 内部 API 文档
 
-
-本文件记录 Surface Aggregator 子系统的内部 API。
+鏈枃浠惰褰?Surface Aggregator 瀛愮郴缁熺殑鍐呴儴 API銆?
 
     :depth: 2
 
 
-## 数据包传输层
+## 鏁版嵁鍖呬紶杈撳眰
 
 
     :internal:
@@ -21,7 +21,7 @@
     :internal:
 
 
-## 请求传输层
+## 璇锋眰浼犺緭灞?
 
 
     :internal:
@@ -29,7 +29,7 @@
     :internal:
 
 
-## 控制器
+## 鎺у埗鍣?
 
 
     :internal:
@@ -37,18 +37,18 @@
     :internal:
 
 
-## 客户端设备总线
+## 瀹㈡埛绔澶囨€荤嚎
 
 
     :internal:
 
 
-## 核心
+## 鏍稿績
 
 
     :internal:
 
 
-## 跟踪辅助函数
+## 璺熻釜杈呭姪鍑芥暟
 
 

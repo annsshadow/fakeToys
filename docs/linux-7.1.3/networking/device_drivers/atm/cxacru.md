@@ -1,50 +1,39 @@
+﻿
+## ATM cxacru 璁惧椹卞姩
 
-## ATM cxacru 设备驱动
 
+璇ヨ澶囬渶瑕佸浐浠讹細http://accessrunner.sourceforge.net/
 
-该设备需要固件：http://accessrunner.sourceforge.net/
-
-虽然设备能够在未加载模块的情况下管理/维护 ADSL 连接，但有时在卸载驱动后设备会停止响应，此时必须拔下设备电源或断电以修复该问题。
-
-注意：对 cxacru-cf.bin 的支持已被移除。该文件之前未被正确加载，因此对设备配置没有效果。修复它可能在提供了无效配置时导致现有设备无法工作。
-
-提供了一个脚本 cxacru-cf.py，用于将现有文件转换为 sysfs 形式。
-
-检测到的设备会作为名为 "cxacru" 的 ATM 设备出现。在 /sys/class/atm/ 下，它们是名为 cxacruN 的目录，其中 N 为设备号。一个名为 device 的符号链接指向 USB 接口设备的目录，其中包含了几个用于获取设备统计信息的 sysfs 属性文件：
+铏界劧璁惧鑳藉鍦ㄦ湭鍔犺浇妯″潡鐨勬儏鍐典笅绠＄悊/缁存姢 ADSL 杩炴帴锛屼絾鏈夋椂鍦ㄥ嵏杞介┍鍔ㄥ悗璁惧浼氬仠姝㈠搷搴旓紝姝ゆ椂蹇呴』鎷斾笅璁惧鐢垫簮鎴栨柇鐢典互淇璇ラ棶棰樸€?
+娉ㄦ剰锛氬 cxacru-cf.bin 鐨勬敮鎸佸凡琚Щ闄ゃ€傝鏂囦欢涔嬪墠鏈姝ｇ‘鍔犺浇锛屽洜姝ゅ璁惧閰嶇疆娌℃湁鏁堟灉銆備慨澶嶅畠鍙兘鍦ㄦ彁渚涗簡鏃犳晥閰嶇疆鏃跺鑷寸幇鏈夎澶囨棤娉曞伐浣溿€?
+鎻愪緵浜嗕竴涓剼鏈?cxacru-cf.py锛岀敤浜庡皢鐜版湁鏂囦欢杞崲涓?sysfs 褰㈠紡銆?
+妫€娴嬪埌鐨勮澶囦細浣滀负鍚嶄负 "cxacru" 鐨?ATM 璁惧鍑虹幇銆傚湪 /sys/class/atm/ 涓嬶紝瀹冧滑鏄悕涓?cxacruN 鐨勭洰褰曪紝鍏朵腑 N 涓鸿澶囧彿銆備竴涓悕涓?device 鐨勭鍙烽摼鎺ユ寚鍚?USB 鎺ュ彛璁惧鐨勭洰褰曪紝鍏朵腑鍖呭惈浜嗗嚑涓敤浜庤幏鍙栬澶囩粺璁′俊鎭殑 sysfs 灞炴€ф枃浠讹細
 
 - adsl_controller_version
 
 - adsl_headend
 - adsl_headend_environment
 
- - 关于远端局端（headend）的信息。
-
+ - 鍏充簬杩滅灞€绔紙headend锛夌殑淇℃伅銆?
 - adsl_config
 
- - 配置写入接口。
- - 以十六进制格式写入参数 <index>=<value>，
-	  以空白分隔，例如：
-
+ - 閰嶇疆鍐欏叆鎺ュ彛銆? - 浠ュ崄鍏繘鍒舵牸寮忓啓鍏ュ弬鏁?<index>=<value>锛?	  浠ョ┖鐧藉垎闅旓紝渚嬪锛?
 		"1=0 a=5"
 
- - 一次最多发送 7 个参数，设置任何值时调制解调器都会重启
-	  ADSL 连接。这些参数会被记录下来以备将来参考。
-
+ - 涓€娆℃渶澶氬彂閫?7 涓弬鏁帮紝璁剧疆浠讳綍鍊兼椂璋冨埗瑙ｈ皟鍣ㄩ兘浼氶噸鍚?	  ADSL 杩炴帴銆傝繖浜涘弬鏁颁細琚褰曚笅鏉ヤ互澶囧皢鏉ュ弬鑰冦€?
 - downstream_attenuation (dB)
 - downstream_bits_per_frame
 - downstream_rate (kbps)
 - downstream_snr_margin (dB)
 
- - 下行统计信息。
-
+ - 涓嬭缁熻淇℃伅銆?
 - upstream_attenuation (dB)
 - upstream_bits_per_frame
 - upstream_rate (kbps)
 - upstream_snr_margin (dB)
 - transmitter_power (dBm/Hz)
 
- - 上行统计信息。
-
+ - 涓婅缁熻淇℃伅銆?
 - downstream_crc_errors
 - downstream_fec_errors
 - downstream_hec_errors
@@ -52,52 +41,43 @@
 - upstream_fec_errors
 - upstream_hec_errors
 
- - 错误计数。
-
+ - 閿欒璁℃暟銆?
 - line_startable
 
- - 表示设备上的 ADSL 支持
-	  是/可以被启用，参见 adsl_start。
-
+ - 琛ㄧず璁惧涓婄殑 ADSL 鏀寔
+	  鏄?鍙互琚惎鐢紝鍙傝 adsl_start銆?
 - line_status
 
-  - "initialising"（初始化中）
-  - "down"（断开）
-  - "attempting to activate"（尝试激活）
-  - "training"（训练）
-  - "channel analysis"（信道分析）
-  - "exchange"（交换）
-  - "waiting"（等待）
-  - "up"（已连接）
-
-	如果没有信号，会在 "down" 与 "attempting to activate"
-	之间切换。
-
+  - "initialising"锛堝垵濮嬪寲涓級
+  - "down"锛堟柇寮€锛?  - "attempting to activate"锛堝皾璇曟縺娲伙級
+  - "training"锛堣缁冿級
+  - "channel analysis"锛堜俊閬撳垎鏋愶級
+  - "exchange"锛堜氦鎹級
+  - "waiting"锛堢瓑寰咃級
+  - "up"锛堝凡杩炴帴锛?
+	濡傛灉娌℃湁淇″彿锛屼細鍦?"down" 涓?"attempting to activate"
+	涔嬮棿鍒囨崲銆?
 - link_status
 
-  - "not connected"（未连接）
-  - "connected"（已连接）
-  - "lost"（丢失）
+  - "not connected"锛堟湭杩炴帴锛?  - "connected"锛堝凡杩炴帴锛?  - "lost"锛堜涪澶憋級
 
 - mac_address
 
 - modulation
 
-  - ""（未连接时）
+  - ""锛堟湭杩炴帴鏃讹級
   - "ANSI T1.413"
   - "ITU-T G.992.1 (G.DMT)"
   - "ITU-T G.992.2 (G.LITE)"
 
 - startup_attempts
 
- - 初始化 ADSL 的总尝试次数。
-
-要启用/禁用 ADSL，可以向 adsl_state 文件写入以下内容：
-
-  - "start"（启动）
-  - "stop"（停止）
-  - "restart"（停止，等待 1.5s，然后启动）
-  - "poll"（在因失败而被禁用后，用于恢复状态轮询）
+ - 鍒濆鍖?ADSL 鐨勬€诲皾璇曟鏁般€?
+瑕佸惎鐢?绂佺敤 ADSL锛屽彲浠ュ悜 adsl_state 鏂囦欢鍐欏叆浠ヤ笅鍐呭锛?
+  - "start"锛堝惎鍔級
+  - "stop"锛堝仠姝級
+  - "restart"锛堝仠姝紝绛夊緟 1.5s锛岀劧鍚庡惎鍔級
+  - "poll"锛堝湪鍥犲け璐ヨ€岃绂佺敤鍚庯紝鐢ㄤ簬鎭㈠鐘舵€佽疆璇級
 
 ```
 

@@ -1,13 +1,13 @@
-## Linux 硬件时间戳引擎（HTE）
+﻿## Linux 纭欢鏃堕棿鎴冲紩鎿庯紙HTE锛?
 
-## HTE 子系统
+## HTE 瀛愮郴缁?
 
-本页面列出 HTE 子系统文档。
+鏈〉闈㈠垪鍑?HTE 瀛愮郴缁熸枃妗ｃ€?
 
-- [HTE 概述](hte)
+- [HTE 姒傝堪](hte)
 
-## HTE Tegra 提供者
+## HTE Tegra 鎻愪緵鑰?
 
-本页面列出 Tegra 平台的 HTE 提供者文档。
+鏈〉闈㈠垪鍑?Tegra 骞冲彴鐨?HTE 鎻愪緵鑰呮枃妗ｃ€?
 
 - [Tegra HTE](tegra-hte)

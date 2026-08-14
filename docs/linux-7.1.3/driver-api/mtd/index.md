@@ -1,7 +1,7 @@
+﻿
+## 瀛樺偍鎶€鏈澶囷紙MTD锛?
 
-## 存储技术设备（MTD）
-
-本页汇集 Linux 内核中存储技术设备（MTD）子系统的相关文档，涵盖 SPI NOR 闪存、NAND 的 ECC 机制以及 Intel SPI 控制器接口等内容。
+鏈〉姹囬泦 Linux 鍐呮牳涓瓨鍌ㄦ妧鏈澶囷紙MTD锛夊瓙绯荤粺鐨勭浉鍏虫枃妗ｏ紝娑电洊 SPI NOR 闂瓨銆丯AND 鐨?ECC 鏈哄埗浠ュ強 Intel SPI 鎺у埗鍣ㄦ帴鍙ｇ瓑鍐呭銆?
 
 - [Intel SPI](spi-intel)
 - [NAND ECC](nand_ecc)

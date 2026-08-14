@@ -1,69 +1,45 @@
-
-## Netlink 规范 C 代码生成
-
-
-本文档介绍如何使用 Netlink 规范生成 C 代码（uAPI、策略等）。同时定义了旧式 family 在 `genetlink-c` 协议层级所允许的额外属性，用于控制命名。
-
-为简洁起见，本文档以对象类型来指代各类对象的 `name` 属性。例如 `$attr` 表示某个 attribute 中 `name` 的值，`$family` 表示 family 的名称（即全局的 `name` 属性）。
-
-大写用于表示一个字面量值，例如 `$family-CMD` 表示 `$family`、连字符以及字面量 `CMD` 的拼接。
-
-`#defines` 和枚举值的名称始终转换为大写，连字符（`-`）会被替换为下划线（`_`）。
-
-如果构造出的名称是 C 语言关键字，则追加一个下划线（`do` -> `do_`）。
-
-## 全局属性
+﻿
+## Netlink 瑙勮寖 C 浠ｇ爜鐢熸垚
 
 
-`c-family-name` 控制 family 名称对应的 `#define` 名称，默认值为 `$family-FAMILY-NAME`。
+鏈枃妗ｄ粙缁嶅浣曚娇鐢?Netlink 瑙勮寖鐢熸垚 C 浠ｇ爜锛坲API銆佺瓥鐣ョ瓑锛夈€傚悓鏃跺畾涔変簡鏃у紡 family 鍦?`genetlink-c` 鍗忚灞傜骇鎵€鍏佽鐨勯澶栧睘鎬э紝鐢ㄤ簬鎺у埗鍛藉悕銆?
+涓虹畝娲佽捣瑙侊紝鏈枃妗ｄ互瀵硅薄绫诲瀷鏉ユ寚浠ｅ悇绫诲璞＄殑 `name` 灞炴€с€備緥濡?`$attr` 琛ㄧず鏌愪釜 attribute 涓?`name` 鐨勫€硷紝`$family` 琛ㄧず family 鐨勫悕绉帮紙鍗冲叏灞€鐨?`name` 灞炴€э級銆?
+澶у啓鐢ㄤ簬琛ㄧず涓€涓瓧闈㈤噺鍊硷紝渚嬪 `$family-CMD` 琛ㄧず `$family`銆佽繛瀛楃浠ュ強瀛楅潰閲?`CMD` 鐨勬嫾鎺ャ€?
+`#defines` 鍜屾灇涓惧€肩殑鍚嶇О濮嬬粓杞崲涓哄ぇ鍐欙紝杩炲瓧绗︼紙`-`锛変細琚浛鎹负涓嬪垝绾匡紙`_`锛夈€?
+濡傛灉鏋勯€犲嚭鐨勫悕绉版槸 C 璇█鍏抽敭瀛楋紝鍒欒拷鍔犱竴涓笅鍒掔嚎锛坄do` -> `do_`锛夈€?
+## 鍏ㄥ眬灞炴€?
 
-`c-version-name` 控制 family 版本对应的 `#define` 名称，默认值为 `$family-FAMILY-VERSION`。
-
-`max-by-define` 选择是否将枚举的最大值定义为 `#define` 而非置于枚举内部。
-
-## 定义
-
-
-### 常量
-
-
-每个常量都渲染为一个 `#define`。常量名称为 `$family-$constant`，其值根据其类型在规范中渲染为字符串或整数。
-
-### 枚举与标志
+`c-family-name` 鎺у埗 family 鍚嶇О瀵瑰簲鐨?`#define` 鍚嶇О锛岄粯璁ゅ€间负 `$family-FAMILY-NAME`銆?
+`c-version-name` 鎺у埗 family 鐗堟湰瀵瑰簲鐨?`#define` 鍚嶇О锛岄粯璁ゅ€间负 `$family-FAMILY-VERSION`銆?
+`max-by-define` 閫夋嫨鏄惁灏嗘灇涓剧殑鏈€澶у€煎畾涔変负 `#define` 鑰岄潪缃簬鏋氫妇鍐呴儴銆?
+## 瀹氫箟
 
 
-枚举命名为 `$family-$enum`。可以通过 `enum-name` 属性直接设置或屏蔽其完整名称。默认条目名称为 `$family-$enum-$entry`。若指定了 `name-prefix`，则替换条目名称中的 `$family-$enum` 部分。
-
-布尔属性 `render-max` 控制是否创建最大值（对于 attribute 枚举，默认启用）。这些最大值命名为 `__$pfx-MAX` 和 `$pfx-MAX`。第一个值的名称可通过 `enum-cnt-name` 属性覆盖。
-
-## 属性
+### 甯搁噺
 
 
-每个属性集（分数集除外）都渲染为一个枚举。
+姣忎釜甯搁噺閮芥覆鏌撲负涓€涓?`#define`銆傚父閲忓悕绉颁负 `$family-$constant`锛屽叾鍊兼牴鎹叾绫诲瀷鍦ㄨ鑼冧腑娓叉煋涓哄瓧绗︿覆鎴栨暣鏁般€?
+### 鏋氫妇涓庢爣蹇?
 
-在 netlink 头文件中，属性枚举传统上是不具名的。若需要命名，可使用 `enum-name` 指定名称。
+鏋氫妇鍛藉悕涓?`$family-$enum`銆傚彲浠ラ€氳繃 `enum-name` 灞炴€х洿鎺ヨ缃垨灞忚斀鍏跺畬鏁村悕绉般€傞粯璁ゆ潯鐩悕绉颁负 `$family-$enum-$entry`銆傝嫢鎸囧畾浜?`name-prefix`锛屽垯鏇挎崲鏉＄洰鍚嶇О涓殑 `$family-$enum` 閮ㄥ垎銆?
+甯冨皵灞炴€?`render-max` 鎺у埗鏄惁鍒涘缓鏈€澶у€硷紙瀵逛簬 attribute 鏋氫妇锛岄粯璁ゅ惎鐢級銆傝繖浜涙渶澶у€煎懡鍚嶄负 `__$pfx-MAX` 鍜?`$pfx-MAX`銆傜涓€涓€肩殑鍚嶇О鍙€氳繃 `enum-cnt-name` 灞炴€ц鐩栥€?
+## 灞炴€?
 
-如果属性集的名称与 family 名称相同，则默认属性名称前缀为 `$family-A`；若名称不同，则前缀为 `$family-A-$set`。该前缀可被属性集的 `name-prefix` 属性覆盖。下文以 `$pfx` 表示此前缀。
-
-属性命名为 `$pfx-$attribute`。
-
-属性枚举以两个特殊值 `__$pfx-MAX` 和 `$pfx-MAX` 结尾，用于确定属性表的大小。这两个名称可分别通过 `attr-cnt-name` 和 `attr-max-name` 属性直接指定。
-
-如果在全局层面将 `max-by-define` 设为 `true`，则 `attr-max-name` 会被指定为 `#define` 而非枚举值。
-
-## 操作
-
-
-操作命名为 `$family-CMD-$operation`。若指定了 `name-prefix`，则替换名称中的 `$family-CMD` 部分。
-
-与属性枚举类似，操作枚举也以特殊的计数与最大值属性结尾。对于操作，这些属性可通过 `cmd-cnt-name` 和 `cmd-max-name` 重命名。若 `max-by-define` 为 `true`，则最大值将是一个 define。
-
-## 多播组
+姣忎釜灞炴€ч泦锛堝垎鏁伴泦闄ゅ锛夐兘娓叉煋涓轰竴涓灇涓俱€?
+鍦?netlink 澶存枃浠朵腑锛屽睘鎬ф灇涓句紶缁熶笂鏄笉鍏峰悕鐨勩€傝嫢闇€瑕佸懡鍚嶏紝鍙娇鐢?`enum-name` 鎸囧畾鍚嶇О銆?
+濡傛灉灞炴€ч泦鐨勫悕绉颁笌 family 鍚嶇О鐩稿悓锛屽垯榛樿灞炴€у悕绉板墠缂€涓?`$family-A`锛涜嫢鍚嶇О涓嶅悓锛屽垯鍓嶇紑涓?`$family-A-$set`銆傝鍓嶇紑鍙灞炴€ч泦鐨?`name-prefix` 灞炴€ц鐩栥€備笅鏂囦互 `$pfx` 琛ㄧず姝ゅ墠缂€銆?
+灞炴€у懡鍚嶄负 `$pfx-$attribute`銆?
+灞炴€ф灇涓句互涓や釜鐗规畩鍊?`__$pfx-MAX` 鍜?`$pfx-MAX` 缁撳熬锛岀敤浜庣‘瀹氬睘鎬ц〃鐨勫ぇ灏忋€傝繖涓や釜鍚嶇О鍙垎鍒€氳繃 `attr-cnt-name` 鍜?`attr-max-name` 灞炴€х洿鎺ユ寚瀹氥€?
+濡傛灉鍦ㄥ叏灞€灞傞潰灏?`max-by-define` 璁句负 `true`锛屽垯 `attr-max-name` 浼氳鎸囧畾涓?`#define` 鑰岄潪鏋氫妇鍊笺€?
+## 鎿嶄綔
 
 
-每个多播组都会生成一个 define，写入内核 uAPI 头文件。该 define 的名称为 `$family-MCGRP-$group`，可通过 `c-define-name` 属性覆盖。
+鎿嶄綔鍛藉悕涓?`$family-CMD-$operation`銆傝嫢鎸囧畾浜?`name-prefix`锛屽垯鏇挎崲鍚嶇О涓殑 `$family-CMD` 閮ㄥ垎銆?
+涓庡睘鎬ф灇涓剧被浼硷紝鎿嶄綔鏋氫妇涔熶互鐗规畩鐨勮鏁颁笌鏈€澶у€煎睘鎬х粨灏俱€傚浜庢搷浣滐紝杩欎簺灞炴€у彲閫氳繃 `cmd-cnt-name` 鍜?`cmd-max-name` 閲嶅懡鍚嶃€傝嫢 `max-by-define` 涓?`true`锛屽垯鏈€澶у€煎皢鏄竴涓?define銆?
+## 澶氭挱缁?
 
-## 代码生成
+姣忎釜澶氭挱缁勯兘浼氱敓鎴愪竴涓?define锛屽啓鍏ュ唴鏍?uAPI 澶存枃浠躲€傝 define 鐨勫悕绉颁负 `$family-MCGRP-$group`锛屽彲閫氳繃 `c-define-name` 灞炴€ц鐩栥€?
+## 浠ｇ爜鐢熸垚
 
 
-默认头文件搜索路径下，uAPI 头文件假定来自 `<linux/$family.h>`。可通过全局属性 `uapi-header` 更改。
+榛樿澶存枃浠舵悳绱㈣矾寰勪笅锛寀API 澶存枃浠跺亣瀹氭潵鑷?`<linux/$family.h>`銆傚彲閫氳繃鍏ㄥ眬灞炴€?`uapi-header` 鏇存敼銆?

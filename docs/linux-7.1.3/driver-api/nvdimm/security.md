@@ -1,132 +1,85 @@
-## NVDIMM 安全性
+﻿## NVDIMM 瀹夊叏鎬?
+
+### 1. 寮曡█
 
 
-### 1. 引言
+闅忕潃 Intel Device Specific Methods锛圖SM锛岃澶囩壒瀹氭柟娉曪級v1.8 瑙勮寖 [^1^] 鐨勫紩鍏ワ紝
+瀹夊叏鐩稿叧鐨?DSM 琚姞鍏ャ€傝瑙勮寖鏂板浜嗕互涓嬪畨鍏?DSM锛?get security state"锛堣幏鍙?瀹夊叏鐘舵€侊級銆?set passphrase"锛堣缃彛浠わ級銆?disable passphrase"锛堢鐢ㄥ彛浠わ級銆?"unlock unit"锛堣В閿佸崟鍏冿級銆?freeze lock"锛堝喕缁撻攣锛夈€?secure erase"锛堝畨鍏ㄦ摝闄わ級
+浠ュ強 "overwrite"锛堣鍐欙級銆備负浜嗘敮鎸佽繖浜涘畨鍏ㄦ搷浣滐紝鍦?struct dimm 涓柊澧炰簡涓€涓?security_ops 鏁版嵁缁撴瀯锛屽苟鏆撮湶浜嗛€氱敤 API 浠ユ敮鎸佷笌鍘傚晢鏃犲叧鐨勬搷浣滅敤娉曘€?
+### 2. Sysfs 鎺ュ彛
 
 
-随着 Intel Device Specific Methods（DSM，设备特定方法）v1.8 规范 [^1^] 的引入，
-安全相关的 DSM 被加入。该规范新增了以下安全 DSM："get security state"（获取
-安全状态）、"set passphrase"（设置口令）、"disable passphrase"（禁用口令）、
-"unlock unit"（解锁单元）、"freeze lock"（冻结锁）、"secure erase"（安全擦除）
-以及 "overwrite"（覆写）。为了支持这些安全操作，在 struct dimm 中新增了一个
-security_ops 数据结构，并暴露了通用 API 以支持与厂商无关的操作用法。
-
-### 2. Sysfs 接口
-
-
-nvdimm 的 sysfs 目录中提供了 "security" 这一 sysfs 属性。例如：
+nvdimm 鐨?sysfs 鐩綍涓彁渚涗簡 "security" 杩欎竴 sysfs 灞炴€с€備緥濡傦細
 /sys/devices/LNXSYSTM:00/LNXSYBUS:00/ACPI0012:00/ndbus0/nmem0/security
 
-该属性的 "show" 属性会显示该 DIMM 的安全状态。可用的状态有：disabled（已禁用）、
-unlocked（已解锁）、locked（已锁定）、frozen（已冻结）和 overwrite（覆写中）。
-如果不支持安全特性，该 sysfs 属性将不可见。
-
-对该属性执行写操作时，"store" 属性会接受若干命令以支持部分安全功能：
-update <old_keyid> <new_keyid> - 启用或更新口令。
-disable <keyid> - 禁用已启用的安全特性并移除密钥。
-freeze - 冻结安全状态的变更。
-erase <keyid> - 删除现有用户加密密钥。
-overwrite <keyid> - 擦除整个 nvdimm。
-master_update <keyid> <new_keyid> - 启用或更新主口令。
-master_erase <keyid> - 删除现有用户加密密钥。
-
-### 3. 密钥管理
+璇ュ睘鎬х殑 "show" 灞炴€т細鏄剧ず璇?DIMM 鐨勫畨鍏ㄧ姸鎬併€傚彲鐢ㄧ殑鐘舵€佹湁锛歞isabled锛堝凡绂佺敤锛夈€?unlocked锛堝凡瑙ｉ攣锛夈€乴ocked锛堝凡閿佸畾锛夈€乫rozen锛堝凡鍐荤粨锛夊拰 overwrite锛堣鍐欎腑锛夈€?濡傛灉涓嶆敮鎸佸畨鍏ㄧ壒鎬э紝璇?sysfs 灞炴€у皢涓嶅彲瑙併€?
+瀵硅灞炴€ф墽琛屽啓鎿嶄綔鏃讹紝"store" 灞炴€т細鎺ュ彈鑻ュ共鍛戒护浠ユ敮鎸侀儴鍒嗗畨鍏ㄥ姛鑳斤細
+update <old_keyid> <new_keyid> - 鍚敤鎴栨洿鏂板彛浠ゃ€?disable <keyid> - 绂佺敤宸插惎鐢ㄧ殑瀹夊叏鐗规€у苟绉婚櫎瀵嗛挜銆?freeze - 鍐荤粨瀹夊叏鐘舵€佺殑鍙樻洿銆?erase <keyid> - 鍒犻櫎鐜版湁鐢ㄦ埛鍔犲瘑瀵嗛挜銆?overwrite <keyid> - 鎿﹂櫎鏁翠釜 nvdimm銆?master_update <keyid> <new_keyid> - 鍚敤鎴栨洿鏂颁富鍙ｄ护銆?master_erase <keyid> - 鍒犻櫎鐜版湁鐢ㄦ埛鍔犲瘑瀵嗛挜銆?
+### 3. 瀵嗛挜绠＄悊
 
 
-密钥通过 DIMM id 与负载相关联。例如：
+瀵嗛挜閫氳繃 DIMM id 涓庤礋杞界浉鍏宠仈銆備緥濡傦細
 # cat /sys/devices/LNXSYSTM:00/LNXSYBUS:00/ACPI0012:00/ndbus0/nmem0/nfit/id
 8089-a2-1740-00000133
-该 DIMM id 会与密钥负载（口令）一起提供给内核。
-
-安全密钥以"每个 DIMM 一把密钥"的方式管理。密钥"口令"预期为 32 字节长。这类似于
-ATA 安全规范 [^2^]。在 nvdimm 解锁期间，密钥最初通过 request_key() 内核 API
-调用获取。用户有责任确保所有密钥都已置于内核用户密钥环（user keyring）中以便
-解锁。
-
-格式为 enc32 的 nvdimm 加密密钥（encrypted-key）的描述格式为：
+璇?DIMM id 浼氫笌瀵嗛挜璐熻浇锛堝彛浠わ級涓€璧锋彁渚涚粰鍐呮牳銆?
+瀹夊叏瀵嗛挜浠?姣忎釜 DIMM 涓€鎶婂瘑閽?鐨勬柟寮忕鐞嗐€傚瘑閽?鍙ｄ护"棰勬湡涓?32 瀛楄妭闀裤€傝繖绫讳技浜?ATA 瀹夊叏瑙勮寖 [^2^]銆傚湪 nvdimm 瑙ｉ攣鏈熼棿锛屽瘑閽ユ渶鍒濋€氳繃 request_key() 鍐呮牳 API
+璋冪敤鑾峰彇銆傜敤鎴锋湁璐ｄ换纭繚鎵€鏈夊瘑閽ラ兘宸茬疆浜庡唴鏍哥敤鎴峰瘑閽ョ幆锛坲ser keyring锛変腑浠ヤ究
+瑙ｉ攣銆?
+鏍煎紡涓?enc32 鐨?nvdimm 鍔犲瘑瀵嗛挜锛坋ncrypted-key锛夌殑鎻忚堪鏍煎紡涓猴細
 nvdimm:<bus-provider-specific-unique-id>
 
-创建 enc32 格式的 encrypted-keys 请参见文件
-`Documentation/security/keys/trusted-encrypted.rst`。使用主可信密钥（master
-trusted key）配合 TPM 来封装（sealing）encrypted-keys 是推荐做法。
-
-### 4. 解锁
+鍒涘缓 enc32 鏍煎紡鐨?encrypted-keys 璇峰弬瑙佹枃浠?`Documentation/security/keys/trusted-encrypted.rst`銆備娇鐢ㄤ富鍙俊瀵嗛挜锛坢aster
+trusted key锛夐厤鍚?TPM 鏉ュ皝瑁咃紙sealing锛塭ncrypted-keys 鏄帹鑽愬仛娉曘€?
+### 4. 瑙ｉ攣
 
 
-当内核枚举 DIMM 时，内核会尝试从内核用户密钥环中检索密钥。这是解锁一个已锁定
-DIMM 的唯一时机。一旦解锁，该 DIMM 将保持解锁状态直到重启。通常某个实体（例如
-shell 脚本）会在 initramfs 阶段将所有相关的 encrypted-keys 注入内核用户密钥环。
-这为解锁功能提供了访问所有相关密钥（其中包含对应 nvdimm 的口令）的途径。同时
-建议在 libnvdimm 被 modprobe 加载之前注入密钥。
-
-### 5. 更新
+褰撳唴鏍告灇涓?DIMM 鏃讹紝鍐呮牳浼氬皾璇曚粠鍐呮牳鐢ㄦ埛瀵嗛挜鐜腑妫€绱㈠瘑閽ャ€傝繖鏄В閿佷竴涓凡閿佸畾
+DIMM 鐨勫敮涓€鏃舵満銆備竴鏃﹁В閿侊紝璇?DIMM 灏嗕繚鎸佽В閿佺姸鎬佺洿鍒伴噸鍚€傞€氬父鏌愪釜瀹炰綋锛堜緥濡?shell 鑴氭湰锛変細鍦?initramfs 闃舵灏嗘墍鏈夌浉鍏崇殑 encrypted-keys 娉ㄥ叆鍐呮牳鐢ㄦ埛瀵嗛挜鐜€?杩欎负瑙ｉ攣鍔熻兘鎻愪緵浜嗚闂墍鏈夌浉鍏冲瘑閽ワ紙鍏朵腑鍖呭惈瀵瑰簲 nvdimm 鐨勫彛浠わ級鐨勯€斿緞銆傚悓鏃?寤鸿鍦?libnvdimm 琚?modprobe 鍔犺浇涔嬪墠娉ㄥ叆瀵嗛挜銆?
+### 5. 鏇存柊
 
 
-进行更新时，预期现有的密钥会从内核用户密钥环中移除，并以不同的（旧）密钥重新
-注入。旧密钥的描述是什么无关紧要，因为更新操作我们只关心 keyid。同时预期新密钥
-以本文档前面描述的格式注入其描述。写入 sysfs 属性的更新命令格式为：
+杩涜鏇存柊鏃讹紝棰勬湡鐜版湁鐨勫瘑閽ヤ細浠庡唴鏍哥敤鎴峰瘑閽ョ幆涓Щ闄わ紝骞朵互涓嶅悓鐨勶紙鏃э級瀵嗛挜閲嶆柊
+娉ㄥ叆銆傛棫瀵嗛挜鐨勬弿杩版槸浠€涔堟棤鍏崇揣瑕侊紝鍥犱负鏇存柊鎿嶄綔鎴戜滑鍙叧蹇?keyid銆傚悓鏃堕鏈熸柊瀵嗛挜
+浠ユ湰鏂囨。鍓嶉潰鎻忚堪鐨勬牸寮忔敞鍏ュ叾鎻忚堪銆傚啓鍏?sysfs 灞炴€х殑鏇存柊鍛戒护鏍煎紡涓猴細
 update <old keyid> <new keyid>
 
-如果由于启用安全特性而不存在旧 keyid，则应传入 0。
+濡傛灉鐢变簬鍚敤瀹夊叏鐗规€ц€屼笉瀛樺湪鏃?keyid锛屽垯搴斾紶鍏?0銆?
+### 6. 鍐荤粨锛團reeze锛?
 
-### 6. 冻结（Freeze）
+freeze 鎿嶄綔涓嶉渶瑕佷换浣曞瘑閽ャ€傚畨鍏ㄩ厤缃彲鐢卞叿鏈?root 鏉冮檺鐨勭敤鎴峰喕缁撱€?
+### 7. 绂佺敤锛圖isable锛?
 
+瀹夊叏绂佺敤鐨勫懡浠ゆ牸寮忎负锛?disable <keyid>
 
-freeze 操作不需要任何密钥。安全配置可由具有 root 权限的用户冻结。
+涓€涓粦瀹氬埌璇?nvdimm銆佸甫鏈夊綋鍓嶅彛浠よ礋杞界殑瀵嗛挜搴斿綋瀛樺湪浜庡唴鏍哥敤鎴峰瘑閽ョ幆涓€?
+### 8. 瀹夊叏鎿﹂櫎锛圫ecure Erase锛?
 
-### 7. 禁用（Disable）
+鎵ц瀹夊叏鎿﹂櫎鐨勫懡浠ゆ牸寮忎负锛?erase <keyid>
 
+涓€涓粦瀹氬埌璇?nvdimm銆佸甫鏈夊綋鍓嶅彛浠よ礋杞界殑瀵嗛挜搴斿綋瀛樺湪浜庡唴鏍哥敤鎴峰瘑閽ョ幆涓€?
+### 9. 瑕嗗啓锛圤verwrite锛?
 
-安全禁用的命令格式为：
-disable <keyid>
+鎵ц瑕嗗啓鐨勫懡浠ゆ牸寮忎负锛?overwrite <keyid>
 
-一个绑定到该 nvdimm、带有当前口令负载的密钥应当存在于内核用户密钥环中。
+濡傛灉鏈惎鐢ㄥ畨鍏ㄧ壒鎬э紝瑕嗗啓鍙互鍦ㄦ病鏈夊瘑閽ョ殑鎯呭喌涓嬭繘琛屻€傚彲浼犲叆瀵嗛挜搴忓垪鍙?0 鏉ヨ〃绀?鏃犲瘑閽ャ€?
+鍙互杞 sysfs 灞炴€?"security" 浠ョ瓑寰呰鍐欏畬鎴愩€傛牴鎹?nvdimm 澶у皬涓嶅悓锛岃鍐欏彲鑳?鎸佺画鏁板崄鍒嗛挓鎴栨洿涔呫€?
+涓€涓粦瀹氬埌璇?nvdimm銆佸甫鏈夊綋鍓嶇敤鎴峰彛浠ょ殑 encrypted-key 搴斿綋琚敞鍏ワ紝骞堕€氳繃 sysfs
+浼犲叆鍏?keyid銆?
+### 10. 涓绘洿鏂帮紙Master Update锛?
 
-### 8. 安全擦除（Secure Erase）
-
-
-执行安全擦除的命令格式为：
-erase <keyid>
-
-一个绑定到该 nvdimm、带有当前口令负载的密钥应当存在于内核用户密钥环中。
-
-### 9. 覆写（Overwrite）
-
-
-执行覆写的命令格式为：
-overwrite <keyid>
-
-如果未启用安全特性，覆写可以在没有密钥的情况下进行。可传入密钥序列号 0 来表示
-无密钥。
-
-可以轮询 sysfs 属性 "security" 以等待覆写完成。根据 nvdimm 大小不同，覆写可能
-持续数十分钟或更久。
-
-一个绑定到该 nvdimm、带有当前用户口令的 encrypted-key 应当被注入，并通过 sysfs
-传入其 keyid。
-
-### 10. 主更新（Master Update）
-
-
-执行主更新的命令格式为：
+鎵ц涓绘洿鏂扮殑鍛戒护鏍煎紡涓猴細
 update <old keyid> <new keyid>
 
-主更新的运行机制与 update 相同，只是传入内核的是主口令密钥。主口令密钥只是
-另一个 encrypted-key。
+涓绘洿鏂扮殑杩愯鏈哄埗涓?update 鐩稿悓锛屽彧鏄紶鍏ュ唴鏍哥殑鏄富鍙ｄ护瀵嗛挜銆備富鍙ｄ护瀵嗛挜鍙槸
+鍙︿竴涓?encrypted-key銆?
+璇ュ懡浠や粎鍦ㄥ畨鍏ㄧ壒鎬ц绂佺敤鏃跺彲鐢ㄣ€?
+### 11. 涓绘摝闄わ紙Master Erase锛?
 
-该命令仅在安全特性被禁用时可用。
-
-### 11. 主擦除（Master Erase）
-
-
-执行主擦除的命令格式为：
+鎵ц涓绘摝闄ょ殑鍛戒护鏍煎紡涓猴細
 master_erase <current keyid>
 
-该命令的运行机制与 erase 相同，只是传入内核的是主口令密钥。主口令密钥只是另一个
-encrypted-key。
-
-该命令仅在主安全特性已启用时可用，这由扩展安全状态指示。
-
+璇ュ懡浠ょ殑杩愯鏈哄埗涓?erase 鐩稿悓锛屽彧鏄紶鍏ュ唴鏍哥殑鏄富鍙ｄ护瀵嗛挜銆備富鍙ｄ护瀵嗛挜鍙槸鍙︿竴涓?encrypted-key銆?
+璇ュ懡浠や粎鍦ㄤ富瀹夊叏鐗规€у凡鍚敤鏃跺彲鐢紝杩欑敱鎵╁睍瀹夊叏鐘舵€佹寚绀恒€?
 [^1^]: https://pmem.io/documents/NVDIMM_DSM_Interface-V1.8.pdf
 
 [^2^]: http://www.t13.org/documents/UploadedDocuments/docs2006/e05179r4-ACS-SecurityClarifications.pdf

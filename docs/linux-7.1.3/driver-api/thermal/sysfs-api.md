@@ -1,30 +1,20 @@
-## Generic Thermal Sysfs driver How To（通用 Thermal Sysfs 驱动使用指南）
-
+﻿## Generic Thermal Sysfs driver How To锛堥€氱敤 Thermal Sysfs 椹卞姩浣跨敤鎸囧崡锛?
 
 Written by Sujith Thomas <sujith.thomas@intel.com>, Zhang Rui <rui.zhang@intel.com>
 
 Copyright (c)  2008 Intel Corporation
 
 
-## 0. 简介（Introduction）
+## 0. 绠€浠嬶紙Introduction锛?
+
+閫氱敤鐨?thermal sysfs 鎻愪緵浜嗕竴缁勬帴鍙ｏ紝渚?thermal zone 璁惧锛堜紶鎰熷櫒锛夊拰 thermal cooling 璁惧锛堥鎵囥€佸鐞嗗櫒鈥︹€︼級鍚戠儹绠＄悊鏂规娉ㄥ唽骞舵垚涓哄叾涓殑涓€閮ㄥ垎銆?
+鏈娇鐢ㄦ寚鍗椾晶閲嶄簬浣挎柊鐨?thermal zone 鍜?cooling 璁惧鑳藉鍙備笌鐑鐞嗐€?璇ユ柟妗堟槸涓庡钩鍙版棤鍏崇殑锛屼换浣曠被鍨嬬殑 thermal zone 璁惧鍜?cooling 璁惧閮藉簲褰撹兘澶熷埄鐢ㄨ繖涓€鍩虹璁炬柦銆?
+thermal sysfs 椹卞姩鐨勪富瑕佷换鍔℃槸灏?thermal zone 灞炴€т互鍙?cooling 璁惧灞炴€ф毚闇茬粰鐢ㄦ埛绌洪棿銆?涓€涓櫤鑳界殑鐑鐞嗗簲鐢ㄧ▼搴忓彲浠ユ牴鎹潵鑷?thermal zone 灞炴€э紙褰撳墠娓╁害鍜岃Е鍙戠偣娓╁害锛夌殑杈撳叆鏉ュ仛鍑哄喅绛栵紝骞跺鐩稿簲鐨勮澶囪繘琛岃妭娴侊紙throttle锛夈€?
+- `[0-*]`		琛ㄧず浠讳綍浠?0 寮€濮嬬殑姝ｆ暣鏁?- `[1-*]`		琛ㄧず浠讳綍浠?1 寮€濮嬬殑姝ｆ暣鏁?
+## 1. thermal sysfs 椹卞姩鎺ュ彛鍑芥暟
 
 
-通用的 thermal sysfs 提供了一组接口，供 thermal zone 设备（传感器）和 thermal cooling 设备（风扇、处理器……）向热管理方案注册并成为其中的一部分。
-
-本使用指南侧重于使新的 thermal zone 和 cooling 设备能够参与热管理。
-该方案是与平台无关的，任何类型的 thermal zone 设备和 cooling 设备都应当能够利用这一基础设施。
-
-thermal sysfs 驱动的主要任务是将 thermal zone 属性以及 cooling 设备属性暴露给用户空间。
-一个智能的热管理应用程序可以根据来自 thermal zone 属性（当前温度和触发点温度）的输入来做出决策，并对相应的设备进行节流（throttle）。
-
-- `[0-*]`		表示任何从 0 开始的正整数
-- `[1-*]`		表示任何从 1 开始的正整数
-
-## 1. thermal sysfs 驱动接口函数
-
-
-### 1.1 thermal zone device interface（thermal zone 设备接口）
-
+### 1.1 thermal zone device interface锛坱hermal zone 璁惧鎺ュ彛锛?
 
 ```
 	struct thermal_zone_device *
@@ -200,8 +190,7 @@ thermal sysfs 驱动的主要任务是将 thermal zone 属性以及 cooling 设�
 	drivers for temperature calculations.
 
 ```
-### 1.2 thermal cooling device interface（thermal cooling 设备接口）
-
+### 1.2 thermal cooling device interface锛坱hermal cooling 璁惧鎺ュ彛锛?
 
 
 ```
@@ -237,8 +226,7 @@ thermal sysfs 驱动的主要任务是将 thermal zone 属性以及 cooling 设�
     unbinds itself from all the thermal zone devices using it.
 
 ```
-### 1.4 Thermal Zone Parameters（Thermal Zone 参数）
-
+### 1.4 Thermal Zone Parameters锛圱hermal Zone 鍙傛暟锛?
 
 ```
 	struct thermal_zone_params
@@ -258,8 +246,7 @@ thermal sysfs 驱动的主要任务是将 thermal zone 属性以及 cooling 设�
 	       will be created (for backward compatibility).
 
 ```
-## 2. sysfs 属性结构（sysfs attributes structure）
-
+## 2. sysfs 灞炴€х粨鏋勶紙sysfs attributes structure锛?
 
 ==	================
 RO	read only value
@@ -267,9 +254,7 @@ WO	write only value
 RW	read/write value
 ==	================
 
-Thermal sysfs 属性将表示在 /sys/class/thermal 之下。
-如果 hwmon 被编译进内核或作为模块构建，hwmon sysfs 接口扩展也可在 /sys/class/hwmon 下使用。
-
+Thermal sysfs 灞炴€у皢琛ㄧず鍦?/sys/class/thermal 涔嬩笅銆?濡傛灉 hwmon 琚紪璇戣繘鍐呮牳鎴栦綔涓烘ā鍧楁瀯寤猴紝hwmon sysfs 鎺ュ彛鎵╁睍涔熷彲鍦?/sys/class/hwmon 涓嬩娇鐢ㄣ€?
 ```
   /sys/class/thermal/thermal_zone[0-*]:
     |---type:			Type of the thermal zone
@@ -304,8 +289,7 @@ Thermal sysfs 属性将表示在 /sys/class/thermal 之下。
 
 
 ```
-接下来的两个动态属性是成对创建/移除的。它们表示 thermal zone 与其关联的 cooling 设备之间的关系。
-
+鎺ヤ笅鏉ョ殑涓や釜鍔ㄦ€佸睘鎬ф槸鎴愬鍒涘缓/绉婚櫎鐨勩€傚畠浠〃绀?thermal zone 涓庡叾鍏宠仈鐨?cooling 璁惧涔嬮棿鐨勫叧绯汇€?
 ```
   /sys/class/thermal/thermal_zone[0-*]:
     |---cdev[0-*]:		[0-*]th cooling device in current thermal zone
@@ -314,10 +298,8 @@ Thermal sysfs 属性将表示在 /sys/class/thermal 之下。
 				this thermal zone
 
 ```
-除了 thermal zone 设备 sysfs 接口和 cooling 设备 sysfs 接口外，通用的 thermal 驱动还会为每种 _type_ 的 thermal zone 设备创建一个 hwmon sysfs 接口。例如，通用的 thermal 驱动会注册一个 hwmon 类设备，并为所有已注册的 ACPI thermal zone 构建关联的 hwmon sysfs 接口。
-
-请阅读 Documentation/ABI/testing/sysfs-class-thermal 以了解 thermal zone 和 cooling 设备属性的详细信息。
-
+闄や簡 thermal zone 璁惧 sysfs 鎺ュ彛鍜?cooling 璁惧 sysfs 鎺ュ彛澶栵紝閫氱敤鐨?thermal 椹卞姩杩樹細涓烘瘡绉?_type_ 鐨?thermal zone 璁惧鍒涘缓涓€涓?hwmon sysfs 鎺ュ彛銆備緥濡傦紝閫氱敤鐨?thermal 椹卞姩浼氭敞鍐屼竴涓?hwmon 绫昏澶囷紝骞朵负鎵€鏈夊凡娉ㄥ唽鐨?ACPI thermal zone 鏋勫缓鍏宠仈鐨?hwmon sysfs 鎺ュ彛銆?
+璇烽槄璇?Documentation/ABI/testing/sysfs-class-thermal 浠ヤ簡瑙?thermal zone 鍜?cooling 璁惧灞炴€х殑璇︾粏淇℃伅銆?
 ```
   /sys/class/hwmon/hwmon[0-*]:
     |---name:			The type of the thermal zone devices
@@ -325,15 +307,11 @@ Thermal sysfs 属性将表示在 /sys/class/thermal 之下。
     |---temp[1-*]_critical:	The critical trip point of thermal zone [1-*]
 
 ```
-请阅读 Documentation/hwmon/sysfs-interface.rst 以获取更多信息。
+璇烽槄璇?Documentation/hwmon/sysfs-interface.rst 浠ヨ幏鍙栨洿澶氫俊鎭€?
+## 3. 涓€涓畝鍗曠殑瀹炵幇锛圓 simple implementation锛?
 
-## 3. 一个简单的实现（A simple implementation）
-
-
-ACPI thermal zone 可能支持多个触发点，如 critical、hot、passive、active。如果一个 ACPI thermal zone 同时支持 critical、passive、active[^0^] 和 active[^1^]，它可以将自己注册为一个带 4 个触发点的 thermal_zone_device（thermal_zone1）。它有一个处理器和一台风扇，两者都注册为 thermal_cooling_device。两者在冷却该 thermal zone 方面被认为具有相同的有效性。
-
-如果处理器列在 _PSL 方法中，且风扇列在 _AL0 方法中
-```
+ACPI thermal zone 鍙兘鏀寔澶氫釜瑙﹀彂鐐癸紝濡?critical銆乭ot銆乸assive銆乤ctive銆傚鏋滀竴涓?ACPI thermal zone 鍚屾椂鏀寔 critical銆乸assive銆乤ctive[^0^] 鍜?active[^1^]锛屽畠鍙互灏嗚嚜宸辨敞鍐屼负涓€涓甫 4 涓Е鍙戠偣鐨?thermal_zone_device锛坱hermal_zone1锛夈€傚畠鏈変竴涓鐞嗗櫒鍜屼竴鍙伴鎵囷紝涓よ€呴兘娉ㄥ唽涓?thermal_cooling_device銆備袱鑰呭湪鍐峰嵈璇?thermal zone 鏂归潰琚涓哄叿鏈夌浉鍚岀殑鏈夋晥鎬с€?
+濡傛灉澶勭悊鍣ㄥ垪鍦?_PSL 鏂规硶涓紝涓旈鎵囧垪鍦?_AL0 鏂规硶涓?```
  /sys/class/thermal:
   |thermal_zone1:
     |---type:			acpitz
@@ -373,26 +351,19 @@ ACPI thermal zone 可能支持多个触发点，如 critical、hot、passive、a
     |---temp1_crit:		100000
 
 ```
-## 4. Export Symbol APIs（导出符号 API）
-
+## 4. Export Symbol APIs锛堝鍑虹鍙?API锛?
 
 ### 4.1. get_tz_trend
 
 
-此函数返回 thermal zone 的趋势，即该 thermal zone 温度的变化率。理想情况下，thermal 传感器驱动应当实现该回调。如果没有，thermal 框架会通过比较先前和当前的温度值来计算趋势。
-
+姝ゅ嚱鏁拌繑鍥?thermal zone 鐨勮秼鍔匡紝鍗宠 thermal zone 娓╁害鐨勫彉鍖栫巼銆傜悊鎯虫儏鍐典笅锛宼hermal 浼犳劅鍣ㄩ┍鍔ㄥ簲褰撳疄鐜拌鍥炶皟銆傚鏋滄病鏈夛紝thermal 妗嗘灦浼氶€氳繃姣旇緝鍏堝墠鍜屽綋鍓嶇殑娓╁害鍊兼潵璁＄畻瓒嬪娍銆?
 ### 4.2. thermal_cdev_update
 
 
-此函数充当仲裁者来设置 cooling 设备的状态。如果可能，它会将 cooling 设备设置为最深的冷却状态。
+姝ゅ嚱鏁板厖褰撲徊瑁佽€呮潵璁剧疆 cooling 璁惧鐨勭姸鎬併€傚鏋滃彲鑳斤紝瀹冧細灏?cooling 璁惧璁剧疆涓烘渶娣辩殑鍐峰嵈鐘舵€併€?
+## 5. 鍏抽敭浜嬩欢锛圕ritical Events锛?
 
-## 5. 关键事件（Critical Events）
-
-
-当发生 critical 触发温度越界事件时，thermal 框架将触发硬件保护性的断电（关机）或重启，具体取决于配置。
-
-首先，内核会尝试有序地断电或重启，但会接受一个延迟，超过该延迟后它将分别继续进行强制断电或重启。如果这失败，将作为最后手段调用 `emergency_restart()`。
-
-应当仔细分析该延迟，以便为有序断电或重启留出充足的时间。
-
-如果该延迟被设置为 0，则将不支持紧急动作。因此，要触发紧急动作，必须经过仔细分析的非零正整数值。
+褰撳彂鐢?critical 瑙﹀彂娓╁害瓒婄晫浜嬩欢鏃讹紝thermal 妗嗘灦灏嗚Е鍙戠‖浠朵繚鎶ゆ€х殑鏂數锛堝叧鏈猴級鎴栭噸鍚紝鍏蜂綋鍙栧喅浜庨厤缃€?
+棣栧厛锛屽唴鏍镐細灏濊瘯鏈夊簭鍦版柇鐢垫垨閲嶅惎锛屼絾浼氭帴鍙椾竴涓欢杩燂紝瓒呰繃璇ュ欢杩熷悗瀹冨皢鍒嗗埆缁х画杩涜寮哄埗鏂數鎴栭噸鍚€傚鏋滆繖澶辫触锛屽皢浣滀负鏈€鍚庢墜娈佃皟鐢?`emergency_restart()`銆?
+搴斿綋浠旂粏鍒嗘瀽璇ュ欢杩燂紝浠ヤ究涓烘湁搴忔柇鐢垫垨閲嶅惎鐣欏嚭鍏呰冻鐨勬椂闂淬€?
+濡傛灉璇ュ欢杩熻璁剧疆涓?0锛屽垯灏嗕笉鏀寔绱ф€ュ姩浣溿€傚洜姝わ紝瑕佽Е鍙戠揣鎬ュ姩浣滐紝蹇呴』缁忚繃浠旂粏鍒嗘瀽鐨勯潪闆舵鏁存暟鍊笺€?

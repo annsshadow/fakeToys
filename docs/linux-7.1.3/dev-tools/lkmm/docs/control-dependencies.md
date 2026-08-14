@@ -1,9 +1,9 @@
-### 控制依赖
+﻿### 鎺у埗渚濊禆
 
-本文档以逐字（literal）方式嵌入 tools/memory-model/Documentation/control-dependencies.txt，
-介绍 Linux 内存模型（LKMM）中控制依赖（control dependency）的语义与注意事项。
+鏈枃妗ｄ互閫愬瓧锛坙iteral锛夋柟寮忓祵鍏?tools/memory-model/Documentation/control-dependencies.txt锛?
+浠嬬粛 Linux 鍐呭瓨妯″瀷锛圠KMM锛変腑鎺у埗渚濊禆锛坈ontrol dependency锛夌殑璇箟涓庢敞鎰忎簨椤广€?
 
-字面包含 `tools/memory-model/Documentation/control-dependencies.txt'.
+瀛楅潰鍖呭惈 `tools/memory-model/Documentation/control-dependencies.txt'.
 
 ------------------------------------------------------------------
 

@@ -1,55 +1,55 @@
-## Supporting Legacy Boards
+﻿## Supporting Legacy Boards
 
 
-内核中的许多驱动，例如 `leds-gpio` 和 `gpio-keys`，正逐渐从使用板特定的 `platform_data` 迁移到
-统一的设备属性（device properties）接口。该接口让驱动更简单、更通用，因为它们可以以标准化的
-方式查询属性。
+鍐呮牳涓殑璁稿椹卞姩锛屼緥濡?`leds-gpio` 鍜?`gpio-keys`锛屾閫愭笎浠庝娇鐢ㄦ澘鐗瑰畾鐨?`platform_data` 杩佺Щ鍒?
+缁熶竴鐨勮澶囧睘鎬э紙device properties锛夋帴鍙ｃ€傝鎺ュ彛璁╅┍鍔ㄦ洿绠€鍗曘€佹洿閫氱敤锛屽洜涓哄畠浠彲浠ヤ互鏍囧噯鍖栫殑
+鏂瑰紡鏌ヨ灞炴€с€?
 
-在现代系统上，这些属性通过设备树提供。然而，一些较旧的平台尚未转换为设备树，而是依赖板文件
-来描述其硬件配置。为了弥合这一差距，并让这些传统板能够配合现代的通用驱动工作，内核提供了一种
-称为**软件节点**（software node）的机制。
+鍦ㄧ幇浠ｇ郴缁熶笂锛岃繖浜涘睘鎬ч€氳繃璁惧鏍戞彁渚涖€傜劧鑰岋紝涓€浜涜緝鏃х殑骞冲彴灏氭湭杞崲涓鸿澶囨爲锛岃€屾槸渚濊禆鏉挎枃浠?
+鏉ユ弿杩板叾纭欢閰嶇疆銆備负浜嗗讥鍚堣繖涓€宸窛锛屽苟璁╄繖浜涗紶缁熸澘鑳藉閰嶅悎鐜颁唬鐨勯€氱敤椹卞姩宸ヤ綔锛屽唴鏍告彁渚涗簡涓€绉?
+绉颁负**杞欢鑺傜偣**锛坰oftware node锛夌殑鏈哄埗銆?
 
-本文档提供了如何将传统板文件从使用 `platform_data` 和 `gpiod_lookup_table` 转换为现代的软件
-节点方法来描述 GPIO 连接设备的指南。
+鏈枃妗ｆ彁渚涗簡濡備綍灏嗕紶缁熸澘鏂囦欢浠庝娇鐢?`platform_data` 鍜?`gpiod_lookup_table` 杞崲涓虹幇浠ｇ殑杞欢
+鑺傜偣鏂规硶鏉ユ弿杩?GPIO 杩炴帴璁惧鐨勬寚鍗椼€?
 
 ### The Core Idea: Software Nodes
 
 
-软件节点允许板特定代码使用 struct software_node 和 struct property_entry 构建内存中的、类似
-设备树的结构。该结构随后可以与平台设备关联，使驱动能够使用标准的设备属性 API（例如
-device_property_read_u32()、device_property_read_string()）查询配置，就像在 ACPI 或设备树系统上
-一样。
+杞欢鑺傜偣鍏佽鏉跨壒瀹氫唬鐮佷娇鐢?struct software_node 鍜?struct property_entry 鏋勫缓鍐呭瓨涓殑銆佺被浼?
+璁惧鏍戠殑缁撴瀯銆傝缁撴瀯闅忓悗鍙互涓庡钩鍙拌澶囧叧鑱旓紝浣块┍鍔ㄨ兘澶熶娇鐢ㄦ爣鍑嗙殑璁惧灞炴€?API锛堜緥濡?
+device_property_read_u32()銆乨evice_property_read_string()锛夋煡璇㈤厤缃紝灏卞儚鍦?ACPI 鎴栬澶囨爲绯荤粺涓?
+涓€鏍枫€?
 
-gpiolib 代码支持处理软件节点，因此如果 GPIO 被正确描述（如下节详述），那么常规的 gpiolib API，
-如 gpiod_get()、gpiod_get_optional() 等，都能正常工作。
+gpiolib 浠ｇ爜鏀寔澶勭悊杞欢鑺傜偣锛屽洜姝ゅ鏋?GPIO 琚纭弿杩帮紙濡備笅鑺傝杩帮級锛岄偅涔堝父瑙勭殑 gpiolib API锛?
+濡?gpiod_get()銆乬piod_get_optional() 绛夛紝閮借兘姝ｅ父宸ヤ綔銆?
 
 #### Requirements for GPIO Properties
 
 
-使用软件节点描述 GPIO 连接时，必须满足以下要求，GPIO 核心才能正确解析引用：
+浣跨敤杞欢鑺傜偣鎻忚堪 GPIO 杩炴帴鏃讹紝蹇呴』婊¤冻浠ヤ笅瑕佹眰锛孏PIO 鏍稿績鎵嶈兘姝ｇ‘瑙ｆ瀽寮曠敤锛?
 
-1. **GPIO 控制器的软件节点必须已注册，并作为主固件节点或次固件节点挂载到控制器的 `struct
-    device` 上。** gpiolib 核心使用固件节点的地址在运行时查找对应的 `struct gpio_chip`。
+1. **GPIO 鎺у埗鍣ㄧ殑杞欢鑺傜偣蹇呴』宸叉敞鍐岋紝骞朵綔涓轰富鍥轰欢鑺傜偣鎴栨鍥轰欢鑺傜偣鎸傝浇鍒版帶鍒跺櫒鐨?`struct
+    device` 涓娿€?* gpiolib 鏍稿績浣跨敤鍥轰欢鑺傜偣鐨勫湴鍧€鍦ㄨ繍琛屾椂鏌ユ壘瀵瑰簲鐨?`struct gpio_chip`銆?
 
-2. **GPIO 属性必须是一个引用。** `PROPERTY_ENTRY_GPIO()` 宏处理了这一点，因为它是
-   `PROPERTY_ENTRY_REF()` 的别名。
+2. **GPIO 灞炴€у繀椤绘槸涓€涓紩鐢ㄣ€?* `PROPERTY_ENTRY_GPIO()` 瀹忓鐞嗕簡杩欎竴鐐癸紝鍥犱负瀹冩槸
+   `PROPERTY_ENTRY_REF()` 鐨勫埆鍚嶃€?
 
-3. **该引用必须恰好有两个参数：**
+3. **璇ュ紩鐢ㄥ繀椤绘伆濂芥湁涓や釜鍙傛暟锛?*
 
-    - 第一个参数是控制器内的 GPIO 偏移量。
-    - 第二个参数是该 GPIO 线的标志（例如 GPIO_ACTIVE_HIGH、GPIO_ACTIVE_LOW）。
+    - 绗竴涓弬鏁版槸鎺у埗鍣ㄥ唴鐨?GPIO 鍋忕Щ閲忋€?
+    - 绗簩涓弬鏁版槸璇?GPIO 绾跨殑鏍囧織锛堜緥濡?GPIO_ACTIVE_HIGH銆丟PIO_ACTIVE_LOW锛夈€?
 
-`PROPERTY_ENTRY_GPIO()` 宏是在软件节点中定义 GPIO 属性的首选方式。
+`PROPERTY_ENTRY_GPIO()` 瀹忔槸鍦ㄨ蒋浠惰妭鐐逛腑瀹氫箟 GPIO 灞炴€х殑棣栭€夋柟寮忋€?
 
 ### Conversion Example
 
 
-让我们通过一个将定义 GPIO 连接的 LED 和按钮的板文件进行转换的示例来逐步说明。
+璁╂垜浠€氳繃涓€涓皢瀹氫箟 GPIO 杩炴帴鐨?LED 鍜屾寜閽殑鏉挎枃浠惰繘琛岃浆鎹㈢殑绀轰緥鏉ラ€愭璇存槑銆?
 
 #### Before: Using Platform Data
 
 
-一个典型的传统板文件可能如下所示：
+涓€涓吀鍨嬬殑浼犵粺鏉挎枃浠跺彲鑳藉涓嬫墍绀猴細
 
 
   #include <linux/platform_device.h>
@@ -59,7 +59,7 @@ gpiolib 代码支持处理软件节点，因此如果 GPIO 被正确描述（如
 
   #define MYBOARD_GPIO_CONTROLLER "gpio-foo"
 
-  /** LED 设置 **/
+  /** LED 璁剧疆 **/
   static const struct gpio_led myboard_leds[] = {
   	{
   		.name = "myboard:green:status",
@@ -80,7 +80,7 @@ gpiolib 代码支持处理软件节点，因此如果 GPIO 被正确描述（如
   	},
   };
 
-  /** 按钮设置 **/
+  /** 鎸夐挳璁剧疆 **/
   static struct gpio_keys_button myboard_buttons[] = {
   	{
   		.code = KEY_WPS_BUTTON,
@@ -102,7 +102,7 @@ gpiolib 代码支持处理软件节点，因此如果 GPIO 被正确描述（如
   	},
   };
 
-  /** 设备注册 **/
+  /** 璁惧娉ㄥ唽 **/
   static int __init myboard_init(void)
   {
   	struct platform_device_info pdev_info = {
@@ -127,12 +127,12 @@ gpiolib 代码支持处理软件节点，因此如果 GPIO 被正确描述（如
 #### After: Using Software Nodes
 
 
-以下是如何使用软件节点表达相同的配置。
+浠ヤ笅鏄浣曚娇鐢ㄨ蒋浠惰妭鐐硅〃杈剧浉鍚岀殑閰嶇疆銆?
 
-######## 步骤 1：定义 GPIO 控制器节点
+######## 姝ラ 1锛氬畾涔?GPIO 鎺у埗鍣ㄨ妭鐐?
 
 
-首先，定义一个代表 LED 和按钮所连接 GPIO 控制器的软件节点。该节点的 `name` 是可选的。
+棣栧厛锛屽畾涔変竴涓唬琛?LED 鍜屾寜閽墍杩炴帴 GPIO 鎺у埗鍣ㄧ殑杞欢鑺傜偣銆傝鑺傜偣鐨?`name` 鏄彲閫夌殑銆?
 
 
   #include <linux/property.h>
@@ -144,14 +144,14 @@ gpiolib 代码支持处理软件节点，因此如果 GPIO 被正确描述（如
   	.name = MYBOARD_GPIO_CONTROLLER,
   };
 
-######## 步骤 2：定义消费设备节点与属性
+######## 姝ラ 2锛氬畾涔夋秷璐硅澶囪妭鐐逛笌灞炴€?
 
 
-接下来，定义消费设备（LED 和按钮）的软件节点。这涉及为每个设备类型创建一个父节点，并为每个
-单独的 LED 或按钮创建子节点。
+鎺ヤ笅鏉ワ紝瀹氫箟娑堣垂璁惧锛圠ED 鍜屾寜閽級鐨勮蒋浠惰妭鐐广€傝繖娑夊強涓烘瘡涓澶囩被鍨嬪垱寤轰竴涓埗鑺傜偣锛屽苟涓烘瘡涓?
+鍗曠嫭鐨?LED 鎴栨寜閽垱寤哄瓙鑺傜偣銆?
 
 
-  /** LED 设置 **/
+  /** LED 璁剧疆 **/
   static const struct software_node myboard_leds_node = {
   	.name = "myboard-leds",
   };
@@ -169,7 +169,7 @@ gpiolib 代码支持处理软件节点，因此如果 GPIO 被正确描述（如
   	.properties = myboard_status_led_props,
   };
 
-  /** 按钮设置 **/
+  /** 鎸夐挳璁剧疆 **/
   static const struct software_node myboard_keys_node = {
   	.name = "myboard-keys",
   };
@@ -189,10 +189,10 @@ gpiolib 代码支持处理软件节点，因此如果 GPIO 被正确描述（如
 
 
 
-######## 步骤 3：分组并注册节点
+######## 姝ラ 3锛氬垎缁勫苟娉ㄥ唽鑺傜偣
 
 
-为了可维护性，通常将所有软件节点分组到一个数组中并用一次调用注册它们是有益的。
+涓轰簡鍙淮鎶ゆ€э紝閫氬父灏嗘墍鏈夎蒋浠惰妭鐐瑰垎缁勫埌涓€涓暟缁勪腑骞剁敤涓€娆¤皟鐢ㄦ敞鍐屽畠浠槸鏈夌泭鐨勩€?
 
 
   static const struct software_node * const myboard_swnodes[] = {
@@ -214,17 +214,17 @@ gpiolib 代码支持处理软件节点，因此如果 GPIO 被正确描述（如
   		return error;
   	}
 
-  	// ... 随后是平台设备注册
+  	// ... 闅忓悗鏄钩鍙拌澶囨敞鍐?
   }
 
-  当按所代表的设备拆分节点注册时，必须先注册代表 GPIO 控制器本身的软件节点，然后才能注册任何
-  引用它的节点。
+  褰撴寜鎵€浠ｈ〃鐨勮澶囨媶鍒嗚妭鐐规敞鍐屾椂锛屽繀椤诲厛娉ㄥ唽浠ｈ〃 GPIO 鎺у埗鍣ㄦ湰韬殑杞欢鑺傜偣锛岀劧鍚庢墠鑳芥敞鍐屼换浣?
+  寮曠敤瀹冪殑鑺傜偣銆?
 
-######## 步骤 4：使用软件节点注册平台设备
+######## 姝ラ 4锛氫娇鐢ㄨ蒋浠惰妭鐐规敞鍐屽钩鍙拌澶?
 
 
-最后，注册平台设备，并使用 struct platform_device_info 中的 `fwnode` 字段将它们与各自的软件
-节点关联。
+鏈€鍚庯紝娉ㄥ唽骞冲彴璁惧锛屽苟浣跨敤 struct platform_device_info 涓殑 `fwnode` 瀛楁灏嗗畠浠笌鍚勮嚜鐨勮蒋浠?
+鑺傜偣鍏宠仈銆?
 
 
   static struct platform_device *leds_pdev;
@@ -287,5 +287,5 @@ gpiolib 代码支持处理软件节点，因此如果 GPIO 被正确描述（如
   	software_node_unregister_node_group(myboard_swnodes);
   }
 
-通过这些更改，通用的 `leds-gpio` 和 `gpio-keys` 驱动将能够成功探测，并从软件节点中定义的属性
-获取其配置，从而不再需要板特定的 platform data。
+閫氳繃杩欎簺鏇存敼锛岄€氱敤鐨?`leds-gpio` 鍜?`gpio-keys` 椹卞姩灏嗚兘澶熸垚鍔熸帰娴嬶紝骞朵粠杞欢鑺傜偣涓畾涔夌殑灞炴€?
+鑾峰彇鍏堕厤缃紝浠庤€屼笉鍐嶉渶瑕佹澘鐗瑰畾鐨?platform data銆?

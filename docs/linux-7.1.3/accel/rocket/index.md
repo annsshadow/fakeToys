@@ -1,15 +1,15 @@
-## accel/rocket Rockchip NPU 驱动
+﻿## accel/rocket Rockchip NPU 椹卞姩
 
 
-accel/rocket 驱动支持部分 Rockchip SoC（如 RK3588）内部的神经处理单元（NPU）。
-Rockchip 称之为 RKNN，有时也称为 RKNPU。
+accel/rocket 椹卞姩鏀寔閮ㄥ垎 Rockchip SoC锛堝 RK3588锛夊唴閮ㄧ殑绁炵粡澶勭悊鍗曞厓锛圢PU锛夈€?
+Rockchip 绉颁箣涓?RKNN锛屾湁鏃朵篃绉颁负 RKNPU銆?
 
-硬件在 RK3588 TRM 的第 36 章中描述。
+纭欢鍦?RK3588 TRM 鐨勭 36 绔犱腑鎻忚堪銆?
 
-该驱动仅负责硬件的上下电、为设备分配并映射缓冲区，以及向前端单元提交任务。
-其余工作均在用户空间完成，即作为 Mesa3D 项目一部分的 Gallium 驱动（同样称为
-rocket）。
+璇ラ┍鍔ㄤ粎璐熻矗纭欢鐨勪笂涓嬬數銆佷负璁惧鍒嗛厤骞舵槧灏勭紦鍐插尯锛屼互鍙婂悜鍓嶇鍗曞厓鎻愪氦浠诲姟銆?
+鍏朵綑宸ヤ綔鍧囧湪鐢ㄦ埛绌洪棿瀹屾垚锛屽嵆浣滀负 Mesa3D 椤圭洰涓€閮ㄥ垎鐨?Gallium 椹卞姩锛堝悓鏍风О涓?
+rocket锛夈€?
 
-当前支持的硬件：
+褰撳墠鏀寔鐨勭‖浠讹細
 
 - RK3588

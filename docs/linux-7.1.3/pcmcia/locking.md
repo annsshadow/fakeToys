@@ -1,27 +1,23 @@
-## 锁机制
+﻿## 閿佹満鍒?
 
+鏈枃浠惰В閲婁簡 PCCARD 涓?PCMCIA 瀛愮郴缁熶腑浣跨敤鐨勫姞閿佷笌浜掓枼鏂规銆?
 
-本文件解释了 PCCARD 与 PCMCIA 子系统中使用的加锁与互斥方案。
-
-
-## A) 概述，加锁层次：
+## A) 姒傝堪锛屽姞閿佸眰娆★細
 
 
 pcmcia_socket_list_rwsem
- - 仅保护套接字（socket）列表
-
+ - 浠呬繚鎶ゅ鎺ュ瓧锛坰ocket锛夊垪琛?
 - skt_mutex
- - 串行化卡的插入 / 弹出
+ - 涓茶鍖栧崱鐨勬彃鍏?/ 寮瑰嚭
 
   - ops_mutex
- - 串行化套接字操作
+ - 涓茶鍖栧鎺ュ瓧鎿嶄綔
 
 
-## B) 互斥
+## B) 浜掓枼
 
 
-以下函数以及对 struct pcmcia_socket 的回调必须
-```
+浠ヤ笅鍑芥暟浠ュ強瀵?struct pcmcia_socket 鐨勫洖璋冨繀椤?```
 
 	socket_detect_change()
 	send_event()
@@ -38,8 +34,7 @@ pcmcia_socket_list_rwsem
 	struct pcmcia_callback	*callback
 
 ```
-以下函数以及对 struct pcmcia_socket 的回调必须
-```
+浠ヤ笅鍑芥暟浠ュ強瀵?struct pcmcia_socket 鐨勫洖璋冨繀椤?```
 
 	socket_reset()
 	socket_setup()
@@ -48,25 +43,19 @@ pcmcia_socket_list_rwsem
 	struct pccard_resource_ops	*resource_ops;
 
 ```
-注意，不得持有 “ops_mutex” 时调用 send_event() 和 `struct pcmcia_callback *callback`。
+娉ㄦ剰锛屼笉寰楁寔鏈?鈥渙ps_mutex鈥?鏃惰皟鐢?send_event() 鍜?`struct pcmcia_callback *callback`銆?
+
+## C) 淇濇姢
 
 
-## C) 保护
-
-
-### 1. 全局数据：
-
+### 1. 鍏ㄥ眬鏁版嵁锛?
 struct list_head	pcmcia_socket_list;
 
-由 pcmcia_socket_list_rwsem 保护；
+鐢?pcmcia_socket_list_rwsem 淇濇姢锛?
 
-
-### 2. 每套接字数据：
-
-resource_ops 及其数据由 ops_mutex 保护。
-
-“主” struct pcmcia_socket 的保护方式如下（未提及的只读字段或
-单次使用字段）：
+### 2. 姣忓鎺ュ瓧鏁版嵁锛?
+resource_ops 鍙婂叾鏁版嵁鐢?ops_mutex 淇濇姢銆?
+鈥滀富鈥?struct pcmcia_socket 鐨勪繚鎶ゆ柟寮忓涓嬶紙鏈彁鍙婄殑鍙瀛楁鎴?鍗曟浣跨敤瀛楁锛夛細
 
 ```
 
@@ -109,11 +98,9 @@ resource_ops 及其数据由 ops_mutex 保护。
 
 
 ```
-### 3. 每 PCMCIA 设备数据：
+### 3. 姣?PCMCIA 璁惧鏁版嵁锛?
 
-
-“主” struct pcmcia_device 的保护方式如下（未提及的只读字段或
-单次使用字段）：
+鈥滀富鈥?struct pcmcia_device 鐨勪繚鎶ゆ柟寮忓涓嬶紙鏈彁鍙婄殑鍙瀛楁鎴?鍗曟浣跨敤瀛楁锛夛細
 
 
 ```

@@ -1,21 +1,21 @@
-## PCI 测试端点功能
+﻿## PCI 娴嬭瘯绔偣鍔熻兘
 
 
-name: 应为 "pci_epf_test" 以绑定到 pci_epf_test 驱动。
+name: 搴斾负 "pci_epf_test" 浠ョ粦瀹氬埌 pci_epf_test 椹卞姩銆?
 
-可配置字段：
+鍙厤缃瓧娈碉細
 
 ================   ===========================================================
-vendorid	   应为 0x104c
-deviceid	   对于 DRA74x 应为 0xb500，对于 DRA72x 应为 0xb501
-revid		   不关心
-progif_code	   不关心
-subclass_code	   不关心
-baseclass_code	   应为 0xff
-cache_line_size	   不关心
-subsys_vendor_id   不关心
-subsys_id	   不关心
-interrupt_pin	   应为 1 - INTA, 2 - INTB, 3 - INTC, 4 -INTD
-msi_interrupts	   应为 1 到 32，取决于要测试的 MSI 中断数量
-msix_interrupts	   应为 1 到 2048，取决于要测试的 MSI-X 中断数量
+vendorid	   搴斾负 0x104c
+deviceid	   瀵逛簬 DRA74x 搴斾负 0xb500锛屽浜?DRA72x 搴斾负 0xb501
+revid		   涓嶅叧蹇?
+progif_code	   涓嶅叧蹇?
+subclass_code	   涓嶅叧蹇?
+baseclass_code	   搴斾负 0xff
+cache_line_size	   涓嶅叧蹇?
+subsys_vendor_id   涓嶅叧蹇?
+subsys_id	   涓嶅叧蹇?
+interrupt_pin	   搴斾负 1 - INTA, 2 - INTB, 3 - INTC, 4 -INTD
+msi_interrupts	   搴斾负 1 鍒?32锛屽彇鍐充簬瑕佹祴璇曠殑 MSI 涓柇鏁伴噺
+msix_interrupts	   搴斾负 1 鍒?2048锛屽彇鍐充簬瑕佹祴璇曠殑 MSI-X 涓柇鏁伴噺
 ================   ===========================================================

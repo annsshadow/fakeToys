@@ -1,18 +1,15 @@
-
-## 用于 CPUSet 的伪 NUMA
+﻿
+## 鐢ㄤ簬 CPUSet 鐨勪吉 NUMA
 
 
 :Author: David Rientjes <rientjes@cs.washington.edu>
 
-使用 numa=fake 和 CPUSet 进行资源管理
+浣跨敤 numa=fake 鍜?CPUSet 杩涜璧勬簮绠＄悊
 
-本文档描述了如何结合 cpusets 使用 numa=fake x86_64 命令行选项来进行粗粒度的内存管理。使用该特性，你可以创建代表连续内存块的伪 NUMA 节点，并将它们分配给 cpusets 及其附加的任务。这是一种限制某类任务可用系统内存总量的方法。
+鏈枃妗ｆ弿杩颁簡濡備綍缁撳悎 cpusets 浣跨敤 numa=fake x86_64 鍛戒护琛岄€夐」鏉ヨ繘琛岀矖绮掑害鐨勫唴瀛樼鐞嗐€備娇鐢ㄨ鐗规€э紝浣犲彲浠ュ垱寤轰唬琛ㄨ繛缁唴瀛樺潡鐨勪吉 NUMA 鑺傜偣锛屽苟灏嗗畠浠垎閰嶇粰 cpusets 鍙婂叾闄勫姞鐨勪换鍔°€傝繖鏄竴绉嶉檺鍒舵煇绫讳换鍔″彲鐢ㄧ郴缁熷唴瀛樻€婚噺鐨勬柟娉曘€?
+鍏充簬 cpusets 鐗规€х殑鏇村淇℃伅锛岃鍙傝 Documentation/admin-guide/cgroup-v1/cpusets.rst銆?浣犲彲浠ユ牴鎹綘鐨勯渶姹備娇鐢ㄥ绉嶄笉鍚岀殑閰嶇疆銆傚叧浜?numa=fake 鍛戒护琛岄€夐」鍙婂叾閰嶇疆浼妭鐐圭殑鍚勭鏂瑰紡锛岃鍙傝 Documentation/admin-guide/kernel-parameters.txt
 
-关于 cpusets 特性的更多信息，请参见 Documentation/admin-guide/cgroup-v1/cpusets.rst。
-你可以根据你的需求使用多种不同的配置。关于 numa=fake 命令行选项及其配置伪节点的各种方式，请参见 Documentation/admin-guide/kernel-parameters.txt
-
-就本简介而言，我们假设一个非常原始的 NUMA 仿真设置 "numa=fake=4*512,"。这将把系统内存拆分为四个各 512M 的相等块，现在我们可以将它们分配给 cpusets。随着你更熟悉使用这一组合进行资源控制，你会确定一个更好的设置，以尽量减少需要处理的节点数量。
-
+灏辨湰绠€浠嬭€岃█锛屾垜浠亣璁句竴涓潪甯稿師濮嬬殑 NUMA 浠跨湡璁剧疆 "numa=fake=4*512,"銆傝繖灏嗘妸绯荤粺鍐呭瓨鎷嗗垎涓哄洓涓悇 512M 鐨勭浉绛夊潡锛岀幇鍦ㄦ垜浠彲浠ュ皢瀹冧滑鍒嗛厤缁?cpusets銆傞殢鐫€浣犳洿鐔熸倝浣跨敤杩欎竴缁勫悎杩涜璧勬簮鎺у埗锛屼綘浼氱‘瀹氫竴涓洿濂界殑璁剧疆锛屼互灏介噺鍑忓皯闇€瑕佸鐞嗙殑鑺傜偣鏁伴噺銆?
 ```
 
 	Faking node 0 at 0000000000000000-0000000020000000 (512MB)
@@ -26,7 +23,7 @@
 	On node 3 totalpages: 131072
 
 ```
-现在按照 Documentation/admin-guide/cgroup-v1/cpusets.rst 中挂载 cpuset 文件系统的说明，你可以分配伪节点（即连续内存
+鐜板湪鎸夌収 Documentation/admin-guide/cgroup-v1/cpusets.rst 涓寕杞?cpuset 鏂囦欢绯荤粺鐨勮鏄庯紝浣犲彲浠ュ垎閰嶄吉鑺傜偣锛堝嵆杩炵画鍐呭瓨
 ```
 
 	[root@xroads /]# mkdir exampleset
@@ -37,9 +34,8 @@
 	[root@xroads /exampleset/ddset]# echo 0-1 > mems
 
 ```
-现在这个名为 'ddset' 的 cpuset 将只允许访问伪节点 0 和 1 进行内存分配（1G）。
-
-你现在可以将任务分配给这些 cpuset，以限制内存资源
+鐜板湪杩欎釜鍚嶄负 'ddset' 鐨?cpuset 灏嗗彧鍏佽璁块棶浼妭鐐?0 鍜?1 杩涜鍐呭瓨鍒嗛厤锛?G锛夈€?
+浣犵幇鍦ㄥ彲浠ュ皢浠诲姟鍒嗛厤缁欒繖浜?cpuset锛屼互闄愬埗鍐呭瓨璧勬簮
 ```
 
 	[root@xroads /exampleset/ddset]# echo $$ > tasks
@@ -47,8 +43,7 @@
 	[1] 13425
 
 ```
-注意上面受限 cpuset 情况与不受限情况（即在未分配给伪 NUMA cpuset 的情况下运行相同 'dd' 命令）之间，/proc/meminfo 所报告的系统内存使用量差异：
-
+娉ㄦ剰涓婇潰鍙楅檺 cpuset 鎯呭喌涓庝笉鍙楅檺鎯呭喌锛堝嵆鍦ㄦ湭鍒嗛厤缁欎吉 NUMA cpuset 鐨勬儏鍐典笅杩愯鐩稿悓 'dd' 鍛戒护锛変箣闂达紝/proc/meminfo 鎵€鎶ュ憡鐨勭郴缁熷唴瀛樹娇鐢ㄩ噺宸紓锛?
 	========	============	==========
 	Name		Unrestricted	Restricted
 	========	============	==========
@@ -56,4 +51,4 @@
 	MemFree		42113 kB	1513236 kB
 	========	============	==========
 
-这实现了对你分配给特定 cpuset 的任务进行粗粒度内存管理。由于 cpuset 可以形成层级结构，你可以为各类任务的内存管理需求创建一些相当有趣的组合用例。
+杩欏疄鐜颁簡瀵逛綘鍒嗛厤缁欑壒瀹?cpuset 鐨勪换鍔¤繘琛岀矖绮掑害鍐呭瓨绠＄悊銆傜敱浜?cpuset 鍙互褰㈡垚灞傜骇缁撴瀯锛屼綘鍙互涓哄悇绫讳换鍔＄殑鍐呭瓨绠＄悊闇€姹傚垱寤轰竴浜涚浉褰撴湁瓒ｇ殑缁勫悎鐢ㄤ緥銆?

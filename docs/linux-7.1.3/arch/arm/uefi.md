@@ -1,56 +1,37 @@
-## 统一可扩展固件接口（UEFI）
+﻿## 缁熶竴鍙墿灞曞浐浠舵帴鍙ｏ紙UEFI锛?
+
+UEFI锛屽嵆缁熶竴鍙墿灞曞浐浠舵帴鍙ｏ紙Unified Extensible Firmware Interface锛夛紝鏄竴浠借鑼冿紝瑙勫畾浜嗗吋瀹瑰浐浠舵帴鍙ｇ殑琛屼负銆傚畠鐢?UEFI 璁哄潧缁存姢 - http://www.uefi.org/銆?
+UEFI 鏄叾鍓嶈韩 'EFI' 鐨勬紨杩涳紝鍥犳鍦ㄦ湰鏂囨。鍙婄浉鍏崇殑婧愪唬鐮佷腑锛孍FI 鍜?UEFI 杩欎袱涓湳璇湪涓€瀹氱▼搴︿笂鍙互浜掓崲浣跨敤銆傞€氬父锛屼换浣曟柊鍐呭閮戒娇鐢?'UEFI'锛岃€?'EFI' 鎸囦唬閬楃暀锛坙egacy锛変唬鐮佹垨瑙勮寖銆?
+## Linux 涓殑 UEFI 鏀寔
 
 
-UEFI，即统一可扩展固件接口（Unified Extensible Firmware Interface），是一份规范，规定了兼容固件接口的行为。它由 UEFI 论坛维护 - http://www.uefi.org/。
+鍦ㄥ甫鏈夌鍚?UEFI 瑙勮寖鐨勫浐浠剁殑骞冲彴涓婂惎鍔紝浣垮唴鏍歌兘澶熸敮鎸侀澶栫殑鐗规€э細
 
-UEFI 是其前身 'EFI' 的演进，因此在本文档及相关的源代码中，EFI 和 UEFI 这两个术语在一定程度上可以互换使用。通常，任何新内容都使用 'UEFI'，而 'EFI' 指代遗留（legacy）代码或规范。
+- UEFI 杩愯鏃舵湇鍔★紙Runtime Services锛?- 閫氳繃 UEFI 閰嶇疆琛ㄧ殑鏍囧噯鍖栨帴鍙ｆ绱㈠悇绉嶉厤缃俊鎭€傦紙ACPI銆丼MBIOS 绛夛級
 
-## Linux 中的 UEFI 支持
-
-
-在带有符合 UEFI 规范的固件的平台上启动，使内核能够支持额外的特性：
-
-- UEFI 运行时服务（Runtime Services）
-- 通过 UEFI 配置表的标准化接口检索各种配置信息。（ACPI、SMBIOS 等）
-
-要实际启用 [U]EFI 支持，请启用：
-
+瑕佸疄闄呭惎鐢?[U]EFI 鏀寔锛岃鍚敤锛?
 - CONFIG_EFI=y
-- CONFIG_EFIVAR_FS=y 或 m
+- CONFIG_EFIVAR_FS=y 鎴?m
 
-该实现依赖于在扁平设备树（Flattened Device Tree，FDT）中接收关于 UEFI 环境的信息——因此仅在 CONFIG_OF 下可用。
-
+璇ュ疄鐜颁緷璧栦簬鍦ㄦ墎骞宠澶囨爲锛團lattened Device Tree锛孎DT锛変腑鎺ユ敹鍏充簬 UEFI 鐜鐨勪俊鎭€斺€斿洜姝や粎鍦?CONFIG_OF 涓嬪彲鐢ㄣ€?
 ## UEFI stub
 
 
-"stub" 是一项功能，它将 Image/zImage 扩展为一个有效的 UEFI PE/COFF 可执行文件，包含一个加载器应用程序，使得可以直接从 UEFI shell、启动菜单，或像 Gummiboot 或 rEFInd 这样的轻量级引导加载程序加载内核。
-
-带有 stub 支持构建的内核镜像仍然是一个有效的内核镜像，可用于在非 UEFI 环境中启动。
-
-## ARM 上的 UEFI 内核支持
+"stub" 鏄竴椤瑰姛鑳斤紝瀹冨皢 Image/zImage 鎵╁睍涓轰竴涓湁鏁堢殑 UEFI PE/COFF 鍙墽琛屾枃浠讹紝鍖呭惈涓€涓姞杞藉櫒搴旂敤绋嬪簭锛屼娇寰楀彲浠ョ洿鎺ヤ粠 UEFI shell銆佸惎鍔ㄨ彍鍗曪紝鎴栧儚 Gummiboot 鎴?rEFInd 杩欐牱鐨勮交閲忕骇寮曞鍔犺浇绋嬪簭鍔犺浇鍐呮牳銆?
+甯︽湁 stub 鏀寔鏋勫缓鐨勫唴鏍搁暅鍍忎粛鐒舵槸涓€涓湁鏁堢殑鍐呮牳闀滃儚锛屽彲鐢ㄤ簬鍦ㄩ潪 UEFI 鐜涓惎鍔ㄣ€?
+## ARM 涓婄殑 UEFI 鍐呮牳鏀寔
 
 
-ARM 架构（arm 和 arm64）上的 UEFI 内核支持仅在通过 stub 启动时可用。
-
-在 UEFI 模式下启动时，stub 会从提供的 DT 中删除任何内存节点。相反，内核读取 UEFI 内存映射（memory map）。
-
-stub 会用以下参数填充 FDT 的 /chosen 节点（内核也会扫描这些参数）：
-
+ARM 鏋舵瀯锛坅rm 鍜?arm64锛変笂鐨?UEFI 鍐呮牳鏀寔浠呭湪閫氳繃 stub 鍚姩鏃跺彲鐢ㄣ€?
+鍦?UEFI 妯″紡涓嬪惎鍔ㄦ椂锛宻tub 浼氫粠鎻愪緵鐨?DT 涓垹闄や换浣曞唴瀛樿妭鐐广€傜浉鍙嶏紝鍐呮牳璇诲彇 UEFI 鍐呭瓨鏄犲皠锛坢emory map锛夈€?
+stub 浼氱敤浠ヤ笅鍙傛暟濉厖 FDT 鐨?/chosen 鑺傜偣锛堝唴鏍镐篃浼氭壂鎻忚繖浜涘弬鏁帮級锛?
 ==========================  ======   ===========================================
-名称                       类型     描述
+鍚嶇О                       绫诲瀷     鎻忚堪
 ==========================  ======   ===========================================
-linux,uefi-system-table     64-bit   UEFI 系统表（System Table）的物理地址。
-
-linux,uefi-mmap-start       64-bit   UEFI 内存映射的物理地址，
-                                     由 UEFI GetMemoryMap() 调用填充。
-
-linux,uefi-mmap-size        32-bit   上一项所指的 UEFI 内存映射的大小（字节）。
-
-linux,uefi-mmap-desc-size   32-bit   UEFI 内存映射中每个条目的大小（字节）。
-
-linux,uefi-mmap-desc-ver    32-bit   mmap 描述符格式的版本。
-
-kaslr-seed                  64-bit   用于随机化内核镜像基址位置的熵。
-
-bootargs                    String   内核命令行
-==========================  ======   ===========================================
+linux,uefi-system-table     64-bit   UEFI 绯荤粺琛紙System Table锛夌殑鐗╃悊鍦板潃銆?
+linux,uefi-mmap-start       64-bit   UEFI 鍐呭瓨鏄犲皠鐨勭墿鐞嗗湴鍧€锛?                                     鐢?UEFI GetMemoryMap() 璋冪敤濉厖銆?
+linux,uefi-mmap-size        32-bit   涓婁竴椤规墍鎸囩殑 UEFI 鍐呭瓨鏄犲皠鐨勫ぇ灏忥紙瀛楄妭锛夈€?
+linux,uefi-mmap-desc-size   32-bit   UEFI 鍐呭瓨鏄犲皠涓瘡涓潯鐩殑澶у皬锛堝瓧鑺傦級銆?
+linux,uefi-mmap-desc-ver    32-bit   mmap 鎻忚堪绗︽牸寮忕殑鐗堟湰銆?
+kaslr-seed                  64-bit   鐢ㄤ簬闅忔満鍖栧唴鏍搁暅鍍忓熀鍧€浣嶇疆鐨勭喌銆?
+bootargs                    String   鍐呮牳鍛戒护琛?==========================  ======   ===========================================

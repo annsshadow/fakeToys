@@ -1,34 +1,29 @@
-## Linux 2.6.x 在 MPC52xx 系列上
+﻿## Linux 2.6.x 鍦?MPC52xx 绯诲垪涓?
 
+鏈€鏂颁俊鎭璁块棶 https://www.246tNt.com/mpc52xx/
 
-最新信息请访问 https://www.246tNt.com/mpc52xx/
-
-要编译/使用 ：
-
+瑕佺紪璇?浣跨敤 锛?
 ```
-     # <编辑 Makefile，设置 ARCH=ppc 与 CROSS_COMPILE=...（如果需要也可设置 EXTRAVERSION）。
-     # make lite5200_defconfig
+     # <缂栬緫 Makefile锛岃缃?ARCH=ppc 涓?CROSS_COMPILE=...锛堝鏋滈渶瑕佷篃鍙缃?EXTRAVERSION锛夈€?     # make lite5200_defconfig
      # make uImage
 
-     然后，在 U-Boot 中：
+     鐒跺悗锛屽湪 U-Boot 涓細
      => tftpboot 200000 uImage
      => tftpboot 400000 pRamdisk
      => bootm 200000 400000
 
   - DBug::
 
-     # <编辑 Makefile，设置 ARCH=ppc 与 CROSS_COMPILE=...（如果需要也可设置 EXTRAVERSION）。
-     # make lite5200_defconfig
+     # <缂栬緫 Makefile锛岃缃?ARCH=ppc 涓?CROSS_COMPILE=...锛堝鏋滈渶瑕佷篃鍙缃?EXTRAVERSION锛夈€?     # make lite5200_defconfig
      # cp your_initrd.gz arch/ppc/boot/images/ramdisk.image.gz
      # make zImage.initrd
      # make
 
-     然后在 DBug 中：
+     鐒跺悗鍦?DBug 涓細
      DBug> dn -i zImage.initrd.lite5200
 
 ```
 
-一些说明：
+涓€浜涜鏄庯細
 
- - 该移植名为 mpc52xxx，配置选项为 PPC_MPC52xx。MGT5100 不受支持，我不确定是否有人有兴趣对其进行开发。我没有采用 5xxx，是因为显然存在大量与 MPC5200 毫无关系的 5xxx。出于同样的原因，我加入了 'MPC'。
- - 当然，我借鉴了 2.4 版本的移植。如果你认为我在某些代码的版权声明中遗漏了你/你的公司，我会尽快更正。
+ - 璇ョЩ妞嶅悕涓?mpc52xxx锛岄厤缃€夐」涓?PPC_MPC52xx銆侻GT5100 涓嶅彈鏀寔锛屾垜涓嶇‘瀹氭槸鍚︽湁浜烘湁鍏磋叮瀵瑰叾杩涜寮€鍙戙€傛垜娌℃湁閲囩敤 5xxx锛屾槸鍥犱负鏄剧劧瀛樺湪澶ч噺涓?MPC5200 姣棤鍏崇郴鐨?5xxx銆傚嚭浜庡悓鏍风殑鍘熷洜锛屾垜鍔犲叆浜?'MPC'銆? - 褰撶劧锛屾垜鍊熼壌浜?2.4 鐗堟湰鐨勭Щ妞嶃€傚鏋滀綘璁や负鎴戝湪鏌愪簺浠ｇ爜鐨勭増鏉冨０鏄庝腑閬楁紡浜嗕綘/浣犵殑鍏徃锛屾垜浼氬敖蹇洿姝ｃ€?

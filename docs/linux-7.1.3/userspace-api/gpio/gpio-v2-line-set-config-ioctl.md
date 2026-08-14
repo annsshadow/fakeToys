@@ -1,58 +1,58 @@
-
+﻿
 
 
 ######## GPIO_V2_LINE_SET_CONFIG_IOCTL
 
 
-## 名称
+## 鍚嶇О
 
 
-GPIO_V2_LINE_SET_CONFIG_IOCTL - 更新先前请求的线路配置。
+GPIO_V2_LINE_SET_CONFIG_IOCTL - 鏇存柊鍏堝墠璇锋眰鐨勭嚎璺厤缃€?
 
-## 概要
+## 姒傝
 
 
 
 `int ioctl(int req_fd, GPIO_V2_LINE_SET_CONFIG_IOCTL, struct gpio_v2_line_config *config)`
 
-## 参数
+## 鍙傛暟
 
 
 `req_fd`
-    GPIO 字符设备的文件描述符，如
-    `request.fd<gpio_v2_line_request>` 中 gpio-v2-get-line-ioctl.rst 所返回的那样。
+    GPIO 瀛楃璁惧鐨勬枃浠舵弿杩扮锛屽
+    `request.fd<gpio_v2_line_request>` 涓?gpio-v2-get-line-ioctl.rst 鎵€杩斿洖鐨勯偅鏍枫€?
 
 `config`
-    要应用到
-    请求线路上的新 `configuration<gpio_v2_line_config>`。
+    瑕佸簲鐢ㄥ埌
+    璇锋眰绾胯矾涓婄殑鏂?`configuration<gpio_v2_line_config>`銆?
 
-## 描述
-
-
-更新先前请求的线路配置，无需释放
-线路或引入潜在的故障。
-
-新配置必须为所有请求的线路指定配置。
-
-请求线路时适用的相同 gpio-v2-get-line-config-rules 和
-gpio-v2-get-line-config-support 在更新线路配置时同样适用，另加
-一条限制：必须设置方向标志以启用重新配置。
-
-如果某条线路在配置中未设置方向标志，则该
-线路配置保持不变。
-
-该命令的主要用例是在
-输入和输出之间改变双向线路的方向，但也可用于
-动态控制边沿检测，或更一般地让线路在
-不同配置状态之间无缝切换。
-
-如果只想改变输出线路的值，请使用
-gpio-v2-line-set-values-ioctl.rst。
-
-## 返回值
+## 鎻忚堪
 
 
-成功时返回 0。
+鏇存柊鍏堝墠璇锋眰鐨勭嚎璺厤缃紝鏃犻渶閲婃斁
+绾胯矾鎴栧紩鍏ユ綔鍦ㄧ殑鏁呴殰銆?
 
-出错时返回 -1，并相应地设置 `errno` 变量。
-常见错误码在 error-codes.rst 中描述。
+鏂伴厤缃繀椤讳负鎵€鏈夎姹傜殑绾胯矾鎸囧畾閰嶇疆銆?
+
+璇锋眰绾胯矾鏃堕€傜敤鐨勭浉鍚?gpio-v2-get-line-config-rules 鍜?
+gpio-v2-get-line-config-support 鍦ㄦ洿鏂扮嚎璺厤缃椂鍚屾牱閫傜敤锛屽彟鍔?
+涓€鏉￠檺鍒讹細蹇呴』璁剧疆鏂瑰悜鏍囧織浠ュ惎鐢ㄩ噸鏂伴厤缃€?
+
+濡傛灉鏌愭潯绾胯矾鍦ㄩ厤缃腑鏈缃柟鍚戞爣蹇楋紝鍒欒
+绾胯矾閰嶇疆淇濇寔涓嶅彉銆?
+
+璇ュ懡浠ょ殑涓昏鐢ㄤ緥鏄湪
+杈撳叆鍜岃緭鍑轰箣闂存敼鍙樺弻鍚戠嚎璺殑鏂瑰悜锛屼絾涔熷彲鐢ㄤ簬
+鍔ㄦ€佹帶鍒惰竟娌挎娴嬶紝鎴栨洿涓€鑸湴璁╃嚎璺湪
+涓嶅悓閰嶇疆鐘舵€佷箣闂存棤缂濆垏鎹€?
+
+濡傛灉鍙兂鏀瑰彉杈撳嚭绾胯矾鐨勫€硷紝璇蜂娇鐢?
+gpio-v2-line-set-values-ioctl.rst銆?
+
+## 杩斿洖鍊?
+
+
+鎴愬姛鏃惰繑鍥?0銆?
+
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+甯歌閿欒鐮佸湪 error-codes.rst 涓弿杩般€?

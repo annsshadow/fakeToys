@@ -1,42 +1,29 @@
-
+﻿
 ## L2TP
 
 
-第二层隧道协议（L2TP）允许将 L2 帧通过 IP 网络进行隧道传输。
-
-本文档涵盖内核的 L2TP 子系统。它为希望使用 L2TP 子系统的应用程序开发者记录内核 API，并提供一些关于内部实现的技术细节，这些可能对内核开发者和维护者有用。
-
-## 概述
+绗簩灞傞毀閬撳崗璁紙L2TP锛夊厑璁稿皢 L2 甯ч€氳繃 IP 缃戠粶杩涜闅ч亾浼犺緭銆?
+鏈枃妗ｆ兜鐩栧唴鏍哥殑 L2TP 瀛愮郴缁熴€傚畠涓哄笇鏈涗娇鐢?L2TP 瀛愮郴缁熺殑搴旂敤绋嬪簭寮€鍙戣€呰褰曞唴鏍?API锛屽苟鎻愪緵涓€浜涘叧浜庡唴閮ㄥ疄鐜扮殑鎶€鏈粏鑺傦紝杩欎簺鍙兘瀵瑰唴鏍稿紑鍙戣€呭拰缁存姢鑰呮湁鐢ㄣ€?
+## 姒傝堪
 
 
-内核的 L2TP 子系统实现了 L2TPv2 和 L2TPv3 的数据路径。L2TPv2 承载于 UDP 之上。L2TPv3 承载于 UDP 之上或直接承载于 IP（协议 115）之上。
+鍐呮牳鐨?L2TP 瀛愮郴缁熷疄鐜颁簡 L2TPv2 鍜?L2TPv3 鐨勬暟鎹矾寰勩€侺2TPv2 鎵胯浇浜?UDP 涔嬩笂銆侺2TPv3 鎵胯浇浜?UDP 涔嬩笂鎴栫洿鎺ユ壙杞戒簬 IP锛堝崗璁?115锛変箣涓娿€?
+L2TP 鐨?RFC 瀹氫箟浜嗕袱绉嶅熀鏈被鍨嬬殑 L2TP 鏁版嵁鍖咃細鎺у埗鏁版嵁鍖咃紙"鎺у埗骞抽潰"锛夊拰鏁版嵁鍖咃紙"鏁版嵁骞抽潰"锛夈€傚唴鏍稿彧澶勭悊鏁版嵁鍖呫€傛洿澶嶆潅鐨勬帶鍒舵暟鎹寘鐢辩敤鎴风┖闂村鐞嗐€?
+涓€涓?L2TP 闅ч亾鎵胯浇涓€涓垨澶氫釜 L2TP 浼氳瘽銆傛瘡涓毀閬撳叧鑱斾竴涓鎺ュ瓧銆傛瘡涓?session 鍏宠仈涓€涓櫄鎷熺綉缁滆澶囷紝渚嬪 `pppN`銆乣l2tpethN`锛屾暟鎹抚閫氳繃瀹冨湪 L2TP 涔嬮棿浼犲叆/浼犲嚭銆侺2TP 澶翠腑鐨勫瓧娈垫爣璇嗛毀閬撴垨 session锛屼互鍙婂畠鏄帶鍒跺寘杩樻槸鏁版嵁鍖呫€傚綋浣跨敤 Linux 鍐呮牳 API 寤虹珛闅ч亾鍜?session 鏃讹紝鎴戜滑鍙槸鍦ㄥ缓绔?L2TP 鏁版嵁璺緞銆傛帶鍒跺崗璁殑鎵€鏈夋柟闈㈤兘鐢辩敤鎴风┖闂村鐞嗐€?
+杩欑鑱岃矗鍒掑垎瀵艰嚧鍦ㄥ缓绔嬮毀閬撳拰 session 鏃舵湁涓€涓嚜鐒剁殑鎿嶄綔搴忓垪銆傝繃绋嬪涓嬶細
 
-L2TP 的 RFC 定义了两种基本类型的 L2TP 数据包：控制数据包（"控制平面"）和数据包（"数据平面"）。内核只处理数据包。更复杂的控制数据包由用户空间处理。
-
-一个 L2TP 隧道承载一个或多个 L2TP 会话。每个隧道关联一个套接字。每个 session 关联一个虚拟网络设备，例如 `pppN`、`l2tpethN`，数据帧通过它在 L2TP 之间传入/传出。L2TP 头中的字段标识隧道或 session，以及它是控制包还是数据包。当使用 Linux 内核 API 建立隧道和 session 时，我们只是在建立 L2TP 数据路径。控制协议的所有方面都由用户空间处理。
-
-这种职责划分导致在建立隧道和 session 时有一个自然的操作序列。过程如下：
-
-    1) 创建一个隧道套接字。通过该套接字与对端交换 L2TP 控制协议消息，以建立隧道。
-
-    2) 使用通过控制协议消息从对端获得的信息，在内核中创建隧道上下文。
-
-    3) 通过隧道套接字与对端交换 L2TP 控制协议消息，以建立 session。
-
-    4) 使用通过控制协议消息从对端获得的信息，在内核中创建 session 上下文。
-
+    1) 鍒涘缓涓€涓毀閬撳鎺ュ瓧銆傞€氳繃璇ュ鎺ュ瓧涓庡绔氦鎹?L2TP 鎺у埗鍗忚娑堟伅锛屼互寤虹珛闅ч亾銆?
+    2) 浣跨敤閫氳繃鎺у埗鍗忚娑堟伅浠庡绔幏寰楃殑淇℃伅锛屽湪鍐呮牳涓垱寤洪毀閬撲笂涓嬫枃銆?
+    3) 閫氳繃闅ч亾濂楁帴瀛椾笌瀵圭浜ゆ崲 L2TP 鎺у埗鍗忚娑堟伅锛屼互寤虹珛 session銆?
+    4) 浣跨敤閫氳繃鎺у埗鍗忚娑堟伅浠庡绔幏寰楃殑淇℃伅锛屽湪鍐呮牳涓垱寤?session 涓婁笅鏂囥€?
 ## L2TP API
 
 
-本节记录 L2TP 子系统的每个用户空间 API。
+鏈妭璁板綍 L2TP 瀛愮郴缁熺殑姣忎釜鐢ㄦ埛绌洪棿 API銆?
+### 闅ч亾濂楁帴瀛?
 
-### 隧道套接字
-
-
-L2TPv2 始终使用 UDP。L2TPv3 可以使用 UDP 或 IP 封装。
-
-要创建供 L2TP 使用的隧道套接字，使用标准 POSIX 套接字 API。
-
+L2TPv2 濮嬬粓浣跨敤 UDP銆侺2TPv3 鍙互浣跨敤 UDP 鎴?IP 灏佽銆?
+瑕佸垱寤轰緵 L2TP 浣跨敤鐨勯毀閬撳鎺ュ瓧锛屼娇鐢ㄦ爣鍑?POSIX 濂楁帴瀛?API銆?
 ```
 
     int sockfd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -47,147 +34,80 @@ L2TPv2 始终使用 UDP。L2TPv3 可以使用 UDP 或 IP 封装。
     int sockfd = socket(AF_INET6, SOCK_DGRAM, IPPROTO_L2TP);
 
 ```
-UDP 套接字编程无需在此赘述。
-
-IPPROTO_L2TP 是内核 L2TP 子系统实现的一种 IP 协议类型。L2TPIP 套接字地址定义于 struct
-sockaddr_l2tpip 和 struct sockaddr_l2tpip6，位于
-`include/uapi/linux/l2tp.h`_。该地址包含 L2TP 隧道（连接）id。要使用 L2TP IP 封装，L2TPv3 应用程序应使用本地分配的隧道 id 绑定 L2TPIP 套接字。当已知对端的隧道 id 和 IP 地址时，必须执行 connect。
-
-如果 L2TP 应用程序需要处理来自使用 L2TPIP 的对端的 L2TPv3 隧道建立请求，它必须打开一个专用的 L2TPIP 套接字来监听这些请求，并使用隧道 id 0 绑定该套接字，因为隧道建立请求是寻址到隧道 id 0 的。
-
-当隧道套接字关闭时，L2TP 隧道及其所有 session 会自动关闭。
-
+UDP 濂楁帴瀛楃紪绋嬫棤闇€鍦ㄦ璧樿堪銆?
+IPPROTO_L2TP 鏄唴鏍?L2TP 瀛愮郴缁熷疄鐜扮殑涓€绉?IP 鍗忚绫诲瀷銆侺2TPIP 濂楁帴瀛楀湴鍧€瀹氫箟浜?struct
+sockaddr_l2tpip 鍜?struct sockaddr_l2tpip6锛屼綅浜?`include/uapi/linux/l2tp.h`_銆傝鍦板潃鍖呭惈 L2TP 闅ч亾锛堣繛鎺ワ級id銆傝浣跨敤 L2TP IP 灏佽锛孡2TPv3 搴旂敤绋嬪簭搴斾娇鐢ㄦ湰鍦板垎閰嶇殑闅ч亾 id 缁戝畾 L2TPIP 濂楁帴瀛椼€傚綋宸茬煡瀵圭鐨勯毀閬?id 鍜?IP 鍦板潃鏃讹紝蹇呴』鎵ц connect銆?
+濡傛灉 L2TP 搴旂敤绋嬪簭闇€瑕佸鐞嗘潵鑷娇鐢?L2TPIP 鐨勫绔殑 L2TPv3 闅ч亾寤虹珛璇锋眰锛屽畠蹇呴』鎵撳紑涓€涓笓鐢ㄧ殑 L2TPIP 濂楁帴瀛楁潵鐩戝惉杩欎簺璇锋眰锛屽苟浣跨敤闅ч亾 id 0 缁戝畾璇ュ鎺ュ瓧锛屽洜涓洪毀閬撳缓绔嬭姹傛槸瀵诲潃鍒伴毀閬?id 0 鐨勩€?
+褰撻毀閬撳鎺ュ瓧鍏抽棴鏃讹紝L2TP 闅ч亾鍙婂叾鎵€鏈?session 浼氳嚜鍔ㄥ叧闂€?
 ### Netlink API
 
 
-L2TP 应用程序使用 netlink 管理内核中的 L2TP 隧道和 session 实例。L2TP netlink API 定义于
-`include/uapi/linux/l2tp.h`_。
-
-L2TP 使用 `Generic Netlink`_（GENL）。定义了若干命令：
-Create、Delete、Modify 和 Get，用于隧道和 session 实例，例如 `L2TP_CMD_TUNNEL_CREATE`。API 头列出了可与每个命令一起使用的 netlink 属性类型。
-
-隧道和 session 实例由本地唯一的 32 位 id 标识。L2TP 隧道 id 由 `L2TP_ATTR_CONN_ID` 和
-`L2TP_ATTR_PEER_CONN_ID` 属性给出，L2TP session id 由
-`L2TP_ATTR_SESSION_ID` 和 `L2TP_ATTR_PEER_SESSION_ID`
-属性给出。如果使用 netlink 管理 L2TPv2 隧道和 session 实例，L2TPv2 的 16 位隧道/session id 在这些属性中被强制转换为 32 位值。
-
-在 `L2TP_CMD_TUNNEL_CREATE` 命令中，`L2TP_ATTR_FD` 告诉内核正在使用的隧道套接字 fd。如果未指定，内核使用在
-`L2TP_ATTR_IP[^6^]_SADDR`、`L2TP_ATTR_IP[^6^]_DADDR`、
-`L2TP_ATTR_UDP_SPORT`、`L2TP_ATTR_UDP_DPORT` 属性中设置的 IP 参数，为隧道创建一个内核套接字。内核套接字用于实现非托管的 L2TPv3 隧道（iproute2 的 "ip l2tp" 命令）。如果给出了 `L2TP_ATTR_FD`，它必须是已经绑定并连接的套接字 fd。本文档后面有更多关于非托管隧道的信息。
-
-`L2TP_CMD_TUNNEL_CREATE` 属性：-
+L2TP 搴旂敤绋嬪簭浣跨敤 netlink 绠＄悊鍐呮牳涓殑 L2TP 闅ч亾鍜?session 瀹炰緥銆侺2TP netlink API 瀹氫箟浜?`include/uapi/linux/l2tp.h`_銆?
+L2TP 浣跨敤 `Generic Netlink`_锛圙ENL锛夈€傚畾涔変簡鑻ュ共鍛戒护锛?Create銆丏elete銆丮odify 鍜?Get锛岀敤浜庨毀閬撳拰 session 瀹炰緥锛屼緥濡?`L2TP_CMD_TUNNEL_CREATE`銆侫PI 澶村垪鍑轰簡鍙笌姣忎釜鍛戒护涓€璧蜂娇鐢ㄧ殑 netlink 灞炴€х被鍨嬨€?
+闅ч亾鍜?session 瀹炰緥鐢辨湰鍦板敮涓€鐨?32 浣?id 鏍囪瘑銆侺2TP 闅ч亾 id 鐢?`L2TP_ATTR_CONN_ID` 鍜?`L2TP_ATTR_PEER_CONN_ID` 灞炴€х粰鍑猴紝L2TP session id 鐢?`L2TP_ATTR_SESSION_ID` 鍜?`L2TP_ATTR_PEER_SESSION_ID`
+灞炴€х粰鍑恒€傚鏋滀娇鐢?netlink 绠＄悊 L2TPv2 闅ч亾鍜?session 瀹炰緥锛孡2TPv2 鐨?16 浣嶉毀閬?session id 鍦ㄨ繖浜涘睘鎬т腑琚己鍒惰浆鎹负 32 浣嶅€笺€?
+鍦?`L2TP_CMD_TUNNEL_CREATE` 鍛戒护涓紝`L2TP_ATTR_FD` 鍛婅瘔鍐呮牳姝ｅ湪浣跨敤鐨勯毀閬撳鎺ュ瓧 fd銆傚鏋滄湭鎸囧畾锛屽唴鏍镐娇鐢ㄥ湪
+`L2TP_ATTR_IP[^6^]_SADDR`銆乣L2TP_ATTR_IP[^6^]_DADDR`銆?`L2TP_ATTR_UDP_SPORT`銆乣L2TP_ATTR_UDP_DPORT` 灞炴€т腑璁剧疆鐨?IP 鍙傛暟锛屼负闅ч亾鍒涘缓涓€涓唴鏍稿鎺ュ瓧銆傚唴鏍稿鎺ュ瓧鐢ㄤ簬瀹炵幇闈炴墭绠＄殑 L2TPv3 闅ч亾锛坕proute2 鐨?"ip l2tp" 鍛戒护锛夈€傚鏋滅粰鍑轰簡 `L2TP_ATTR_FD`锛屽畠蹇呴』鏄凡缁忕粦瀹氬苟杩炴帴鐨勫鎺ュ瓧 fd銆傛湰鏂囨。鍚庨潰鏈夋洿澶氬叧浜庨潪鎵樼闅ч亾鐨勪俊鎭€?
+`L2TP_CMD_TUNNEL_CREATE` 灞炴€э細-
 
 ================== ======== ===
 Attribute          Required Use
 ================== ======== ===
-CONN_ID            Y        设置隧道（连接）id。
-PEER_CONN_ID       Y        设置对端隧道（连接）id。
-PROTO_VERSION      Y        协议版本。2 或 3。
-ENCAP_TYPE         Y        封装类型：UDP 或 IP。
-FD                 N        隧道套接字文件描述符。
-UDP_CSUM           N        启用 IPv4 UDP 校验和。仅当未设置 FD 时使用。
-UDP_ZERO_CSUM6_TX  N        发送时将 IPv6 UDP 校验和置零。仅当未设置 FD 时使用。
-UDP_ZERO_CSUM6_RX  N        接收时将 IPv6 UDP 校验和置零。仅当未设置 FD 时使用。
-IP_SADDR           N        IPv4 源地址。仅当未设置 FD 时使用。
-IP_DADDR           N        IPv4 目的地址。仅当未设置 FD 时使用。
-UDP_SPORT          N        UDP 源端口。仅当未设置 FD 时使用。
-UDP_DPORT          N        UDP 目的端口。仅当未设置 FD 时使用。
-IP6_SADDR          N        IPv6 源地址。仅当未设置 FD 时使用。
-IP6_DADDR          N        IPv6 目的地址。仅当未设置 FD 时使用。
-DEBUG              N        调试标志。
-================== ======== ===
+CONN_ID            Y        璁剧疆闅ч亾锛堣繛鎺ワ級id銆?PEER_CONN_ID       Y        璁剧疆瀵圭闅ч亾锛堣繛鎺ワ級id銆?PROTO_VERSION      Y        鍗忚鐗堟湰銆? 鎴?3銆?ENCAP_TYPE         Y        灏佽绫诲瀷锛歎DP 鎴?IP銆?FD                 N        闅ч亾濂楁帴瀛楁枃浠舵弿杩扮銆?UDP_CSUM           N        鍚敤 IPv4 UDP 鏍￠獙鍜屻€備粎褰撴湭璁剧疆 FD 鏃朵娇鐢ㄣ€?UDP_ZERO_CSUM6_TX  N        鍙戦€佹椂灏?IPv6 UDP 鏍￠獙鍜岀疆闆躲€備粎褰撴湭璁剧疆 FD 鏃朵娇鐢ㄣ€?UDP_ZERO_CSUM6_RX  N        鎺ユ敹鏃跺皢 IPv6 UDP 鏍￠獙鍜岀疆闆躲€備粎褰撴湭璁剧疆 FD 鏃朵娇鐢ㄣ€?IP_SADDR           N        IPv4 婧愬湴鍧€銆備粎褰撴湭璁剧疆 FD 鏃朵娇鐢ㄣ€?IP_DADDR           N        IPv4 鐩殑鍦板潃銆備粎褰撴湭璁剧疆 FD 鏃朵娇鐢ㄣ€?UDP_SPORT          N        UDP 婧愮鍙ｃ€備粎褰撴湭璁剧疆 FD 鏃朵娇鐢ㄣ€?UDP_DPORT          N        UDP 鐩殑绔彛銆備粎褰撴湭璁剧疆 FD 鏃朵娇鐢ㄣ€?IP6_SADDR          N        IPv6 婧愬湴鍧€銆備粎褰撴湭璁剧疆 FD 鏃朵娇鐢ㄣ€?IP6_DADDR          N        IPv6 鐩殑鍦板潃銆備粎褰撴湭璁剧疆 FD 鏃朵娇鐢ㄣ€?DEBUG              N        璋冭瘯鏍囧織銆?================== ======== ===
 
-`L2TP_CMD_TUNNEL_DESTROY` 属性：-
+`L2TP_CMD_TUNNEL_DESTROY` 灞炴€э細-
 
 ================== ======== ===
 Attribute          Required Use
 ================== ======== ===
-CONN_ID            Y        标识要销毁的隧道 id。
-================== ======== ===
+CONN_ID            Y        鏍囪瘑瑕侀攢姣佺殑闅ч亾 id銆?================== ======== ===
 
-`L2TP_CMD_TUNNEL_MODIFY` 属性：-
-
-================== ======== ===
-Attribute          Required Use
-================== ======== ===
-CONN_ID            Y        标识要修改的隧道 id。
-DEBUG              N        调试标志。
-================== ======== ===
-
-`L2TP_CMD_TUNNEL_GET` 属性：-
+`L2TP_CMD_TUNNEL_MODIFY` 灞炴€э細-
 
 ================== ======== ===
 Attribute          Required Use
 ================== ======== ===
-CONN_ID            N        标识要查询的隧道 id。
-                            在 DUMP 请求中忽略。
-================== ======== ===
+CONN_ID            Y        鏍囪瘑瑕佷慨鏀圭殑闅ч亾 id銆?DEBUG              N        璋冭瘯鏍囧織銆?================== ======== ===
 
-`L2TP_CMD_SESSION_CREATE` 属性：-
+`L2TP_CMD_TUNNEL_GET` 灞炴€э細-
 
 ================== ======== ===
 Attribute          Required Use
 ================== ======== ===
-CONN_ID            Y        父隧道 id。
-SESSION_ID         Y        设置 session id。
-PEER_SESSION_ID    Y        设置父 session id。
-PW_TYPE            Y        设置伪线类型。
-DEBUG              N        调试标志。
-RECV_SEQ           N        启用 rx 数据序列号。
-SEND_SEQ           N        启用 tx 数据序列号。
-LNS_MODE           N        启用 LNS 模式（自动启用数据序列号）。
-RECV_TIMEOUT       N        重排序接收数据包时的等待超时。
-L2SPEC_TYPE        N        设置 layer2-specific-sublayer 类型（仅 L2TPv3）。
-COOKIE             N        设置可选 cookie（仅 L2TPv3）。
-PEER_COOKIE        N        设置可选对端 cookie（仅 L2TPv3）。
-IFNAME             N        设置接口名称（仅 L2TPv3）。
-================== ======== ===
+CONN_ID            N        鏍囪瘑瑕佹煡璇㈢殑闅ч亾 id銆?                            鍦?DUMP 璇锋眰涓拷鐣ャ€?================== ======== ===
 
-对于以太网 session 类型，这将创建一个 l2tpeth 虚拟接口，随后可按需配置。对于 PPP session 类型，还必须打开并连接一个 PPPoL2TP 套接字，将其映射到新 session。这在后面的"PPPoL2TP 套接字"中介绍。
-
-`L2TP_CMD_SESSION_DESTROY` 属性：-
+`L2TP_CMD_SESSION_CREATE` 灞炴€э細-
 
 ================== ======== ===
 Attribute          Required Use
 ================== ======== ===
-CONN_ID            Y        标识要销毁的 session 的父隧道 id。
-SESSION_ID         Y        标识要销毁的 session id。
-IFNAME             N        通过接口名称标识 session。如果设置，将覆盖任何 CONN_ID 和 SESSION_ID 属性。目前仅支持 L2TPv3 以太网 session。
-================== ======== ===
+CONN_ID            Y        鐖堕毀閬?id銆?SESSION_ID         Y        璁剧疆 session id銆?PEER_SESSION_ID    Y        璁剧疆鐖?session id銆?PW_TYPE            Y        璁剧疆浼嚎绫诲瀷銆?DEBUG              N        璋冭瘯鏍囧織銆?RECV_SEQ           N        鍚敤 rx 鏁版嵁搴忓垪鍙枫€?SEND_SEQ           N        鍚敤 tx 鏁版嵁搴忓垪鍙枫€?LNS_MODE           N        鍚敤 LNS 妯″紡锛堣嚜鍔ㄥ惎鐢ㄦ暟鎹簭鍒楀彿锛夈€?RECV_TIMEOUT       N        閲嶆帓搴忔帴鏀舵暟鎹寘鏃剁殑绛夊緟瓒呮椂銆?L2SPEC_TYPE        N        璁剧疆 layer2-specific-sublayer 绫诲瀷锛堜粎 L2TPv3锛夈€?COOKIE             N        璁剧疆鍙€?cookie锛堜粎 L2TPv3锛夈€?PEER_COOKIE        N        璁剧疆鍙€夊绔?cookie锛堜粎 L2TPv3锛夈€?IFNAME             N        璁剧疆鎺ュ彛鍚嶇О锛堜粎 L2TPv3锛夈€?================== ======== ===
 
-`L2TP_CMD_SESSION_MODIFY` 属性：-
+瀵逛簬浠ュお缃?session 绫诲瀷锛岃繖灏嗗垱寤轰竴涓?l2tpeth 铏氭嫙鎺ュ彛锛岄殢鍚庡彲鎸夐渶閰嶇疆銆傚浜?PPP session 绫诲瀷锛岃繕蹇呴』鎵撳紑骞惰繛鎺ヤ竴涓?PPPoL2TP 濂楁帴瀛楋紝灏嗗叾鏄犲皠鍒版柊 session銆傝繖鍦ㄥ悗闈㈢殑"PPPoL2TP 濂楁帴瀛?涓粙缁嶃€?
+`L2TP_CMD_SESSION_DESTROY` 灞炴€э細-
 
 ================== ======== ===
 Attribute          Required Use
 ================== ======== ===
-CONN_ID            Y        标识要修改的 session 的父隧道 id。
-SESSION_ID         Y        标识要修改的 session id。
-IFNAME             N        通过接口名称标识 session。如果设置，将覆盖任何 CONN_ID 和 SESSION_ID 属性。目前仅支持 L2TPv3 以太网 session。
-DEBUG              N        调试标志。
-RECV_SEQ           N        启用 rx 数据序列号。
-SEND_SEQ           N        启用 tx 数据序列号。
-LNS_MODE           N        启用 LNS 模式（自动启用数据序列号）。
-RECV_TIMEOUT       N        重排序接收数据包时的等待超时。
-================== ======== ===
+CONN_ID            Y        鏍囪瘑瑕侀攢姣佺殑 session 鐨勭埗闅ч亾 id銆?SESSION_ID         Y        鏍囪瘑瑕侀攢姣佺殑 session id銆?IFNAME             N        閫氳繃鎺ュ彛鍚嶇О鏍囪瘑 session銆傚鏋滆缃紝灏嗚鐩栦换浣?CONN_ID 鍜?SESSION_ID 灞炴€с€傜洰鍓嶄粎鏀寔 L2TPv3 浠ュお缃?session銆?================== ======== ===
 
-`L2TP_CMD_SESSION_GET` 属性：-
+`L2TP_CMD_SESSION_MODIFY` 灞炴€э細-
 
 ================== ======== ===
 Attribute          Required Use
 ================== ======== ===
-CONN_ID            N        标识要查询的隧道 id。
-                            对于 DUMP 请求忽略。
-SESSION_ID         N        标识要查询的 session id。
-                            对于 DUMP 请求忽略。
-IFNAME             N        通过接口名称标识 session。
-                            如果设置，将覆盖任何 CONN_ID 和
-                            SESSION_ID 属性。对于 DUMP 请求忽略。目前仅支持 L2TPv3
-                            以太网 session。
+CONN_ID            Y        鏍囪瘑瑕佷慨鏀圭殑 session 鐨勭埗闅ч亾 id銆?SESSION_ID         Y        鏍囪瘑瑕佷慨鏀圭殑 session id銆?IFNAME             N        閫氳繃鎺ュ彛鍚嶇О鏍囪瘑 session銆傚鏋滆缃紝灏嗚鐩栦换浣?CONN_ID 鍜?SESSION_ID 灞炴€с€傜洰鍓嶄粎鏀寔 L2TPv3 浠ュお缃?session銆?DEBUG              N        璋冭瘯鏍囧織銆?RECV_SEQ           N        鍚敤 rx 鏁版嵁搴忓垪鍙枫€?SEND_SEQ           N        鍚敤 tx 鏁版嵁搴忓垪鍙枫€?LNS_MODE           N        鍚敤 LNS 妯″紡锛堣嚜鍔ㄥ惎鐢ㄦ暟鎹簭鍒楀彿锛夈€?RECV_TIMEOUT       N        閲嶆帓搴忔帴鏀舵暟鎹寘鏃剁殑绛夊緟瓒呮椂銆?================== ======== ===
+
+`L2TP_CMD_SESSION_GET` 灞炴€э細-
+
 ================== ======== ===
+Attribute          Required Use
+================== ======== ===
+CONN_ID            N        鏍囪瘑瑕佹煡璇㈢殑闅ч亾 id銆?                            瀵逛簬 DUMP 璇锋眰蹇界暐銆?SESSION_ID         N        鏍囪瘑瑕佹煡璇㈢殑 session id銆?                            瀵逛簬 DUMP 璇锋眰蹇界暐銆?IFNAME             N        閫氳繃鎺ュ彛鍚嶇О鏍囪瘑 session銆?                            濡傛灉璁剧疆锛屽皢瑕嗙洊浠讳綍 CONN_ID 鍜?                            SESSION_ID 灞炴€с€傚浜?DUMP 璇锋眰蹇界暐銆傜洰鍓嶄粎鏀寔 L2TPv3
+                            浠ュお缃?session銆?================== ======== ===
 
-应用程序开发者应参考 `include/uapi/linux/l2tp.h`_ 获取 netlink 命令和属性定义。
-
-使用 libmnl_ 的示例用户空间代码：
+搴旂敤绋嬪簭寮€鍙戣€呭簲鍙傝€?`include/uapi/linux/l2tp.h`_ 鑾峰彇 netlink 鍛戒护鍜屽睘鎬у畾涔夈€?
+浣跨敤 libmnl_ 鐨勭ず渚嬬敤鎴风┖闂翠唬鐮侊細
 
 ```
 
@@ -198,7 +118,7 @@ IFNAME             N        通过接口名称标识 session。
         genl_connect(nl_sock);
         genl_id = genl_ctrl_resolve(nl_sock, L2TP_GENL_NAME);
 
-  - 创建一个隧道::
+  - 鍒涘缓涓€涓毀閬?:
 
         struct nlmsghdr *nlh;
         struct genlmsghdr *gnlh;
@@ -219,7 +139,7 @@ IFNAME             N        通过接口名称标识 session。
         mnl_attr_put_u8(nlh, L2TP_ATTR_PROTO_VERSION, protocol_version);
         mnl_attr_put_u16(nlh, L2TP_ATTR_ENCAP_TYPE, encap);
 
-  - 创建一个 session::
+  - 鍒涘缓涓€涓?session::
 
         struct nlmsghdr *nlh;
         struct genlmsghdr *gnlh;
@@ -243,7 +163,7 @@ IFNAME             N        通过接口名称标识 session。
          * attributes during session creation -- see l2tp.h
          */
 
-  - 删除一个 session::
+  - 鍒犻櫎涓€涓?session::
 
         struct nlmsghdr *nlh;
         struct genlmsghdr *gnlh;
@@ -261,7 +181,7 @@ IFNAME             N        通过接口名称标识 session。
         mnl_attr_put_u32(nlh, L2TP_ATTR_CONN_ID, tid);
         mnl_attr_put_u32(nlh, L2TP_ATTR_SESSION_ID, sid);
 
-  - 删除一个隧道及其所有 session（如果有）::
+  - 鍒犻櫎涓€涓毀閬撳強鍏舵墍鏈?session锛堝鏋滄湁锛?:
 
         struct nlmsghdr *nlh;
         struct genlmsghdr *gnlh;
@@ -279,31 +199,19 @@ IFNAME             N        通过接口名称标识 session。
         mnl_attr_put_u32(nlh, L2TP_ATTR_CONN_ID, tid);
 
 ```
-### PPPoL2TP Session 套接字 API
+### PPPoL2TP Session 濂楁帴瀛?API
 
 
-对于 PPP session 类型，必须打开一个 PPPoL2TP 套接字并连接到 L2TP session。
-
-创建 PPPoL2TP 套接字时，应用程序在套接字 connect() 调用中向内核提供关于隧道和 session 的信息。提供源和目的隧道及 session id，以及 UDP 或 L2TPIP 套接字的文件描述符。参见 struct
-pppol2tp_addr，位于 `include/linux/if_pppol2tp.h`_。出于历史原因，L2TPv2/L2TPv3 IPv4/IPv6 隧道不幸有略微不同的地址结构，用户空间必须使用与隧道套接字类型相匹配的适当结构。
-
-用户空间可以使用 PPPoX 套接字上的 setsockopt 和 ioctl 控制隧道或 session 的行为。支持以下套接字选项：-
+瀵逛簬 PPP session 绫诲瀷锛屽繀椤绘墦寮€涓€涓?PPPoL2TP 濂楁帴瀛楀苟杩炴帴鍒?L2TP session銆?
+鍒涘缓 PPPoL2TP 濂楁帴瀛楁椂锛屽簲鐢ㄧ▼搴忓湪濂楁帴瀛?connect() 璋冪敤涓悜鍐呮牳鎻愪緵鍏充簬闅ч亾鍜?session 鐨勪俊鎭€傛彁渚涙簮鍜岀洰鐨勯毀閬撳強 session id锛屼互鍙?UDP 鎴?L2TPIP 濂楁帴瀛楃殑鏂囦欢鎻忚堪绗︺€傚弬瑙?struct
+pppol2tp_addr锛屼綅浜?`include/linux/if_pppol2tp.h`_銆傚嚭浜庡巻鍙插師鍥狅紝L2TPv2/L2TPv3 IPv4/IPv6 闅ч亾涓嶅垢鏈夌暐寰笉鍚岀殑鍦板潃缁撴瀯锛岀敤鎴风┖闂村繀椤讳娇鐢ㄤ笌闅ч亾濂楁帴瀛楃被鍨嬬浉鍖归厤鐨勯€傚綋缁撴瀯銆?
+鐢ㄦ埛绌洪棿鍙互浣跨敤 PPPoX 濂楁帴瀛椾笂鐨?setsockopt 鍜?ioctl 鎺у埗闅ч亾鎴?session 鐨勮涓恒€傛敮鎸佷互涓嬪鎺ュ瓧閫夐」锛?
 
 =========   ===========================================================
-DEBUG       调试消息类别。见下文。
-SENDSEQ     - 0 => 不发送带序列号的数据包
-            - 1 => 发送带序列号的数据包
-RECVSEQ     - 0 => 接收数据包的序列号为可选
-            - 1 => 丢弃不带序列号的接收数据包
-LNSMODE     - 0 => 充当 LAC。
-            - 1 => 充当 LNS。
-REORDERTO   重排序超时（毫秒）。若为 0，则不尝试重排序。
-=========   ===========================================================
+DEBUG       璋冭瘯娑堟伅绫诲埆銆傝涓嬫枃銆?SENDSEQ     - 0 => 涓嶅彂閫佸甫搴忓垪鍙风殑鏁版嵁鍖?            - 1 => 鍙戦€佸甫搴忓垪鍙风殑鏁版嵁鍖?RECVSEQ     - 0 => 鎺ユ敹鏁版嵁鍖呯殑搴忓垪鍙蜂负鍙€?            - 1 => 涓㈠純涓嶅甫搴忓垪鍙风殑鎺ユ敹鏁版嵁鍖?LNSMODE     - 0 => 鍏呭綋 LAC銆?            - 1 => 鍏呭綋 LNS銆?REORDERTO   閲嶆帓搴忚秴鏃讹紙姣锛夈€傝嫢涓?0锛屽垯涓嶅皾璇曢噸鎺掑簭銆?=========   ===========================================================
 
-除了标准 PPP ioctls 外，还提供了 PPPIOCGL2TPSTATS，用于使用相应隧道或 session 的 PPPoX 套接字从内核检索隧道和 session 统计信息。
-
-示例用户空间代码：
-
+闄や簡鏍囧噯 PPP ioctls 澶栵紝杩樻彁渚涗簡 PPPIOCGL2TPSTATS锛岀敤浜庝娇鐢ㄧ浉搴旈毀閬撴垨 session 鐨?PPPoX 濂楁帴瀛椾粠鍐呮牳妫€绱㈤毀閬撳拰 session 缁熻淇℃伅銆?
+绀轰緥鐢ㄦ埛绌洪棿浠ｇ爜锛?
 ```
 
         /* Input: the L2TP tunnel UDP socket `tunnel_fd`, which needs to be
@@ -342,8 +250,7 @@ REORDERTO   重排序超时（毫秒）。若为 0，则不尝试重排序。
         return session_fd;
 
 ```
-L2TP 控制数据包在 `tunnel_fd` 上仍然可读。
-
+L2TP 鎺у埗鏁版嵁鍖呭湪 `tunnel_fd` 涓婁粛鐒跺彲璇汇€?
 ```
 
         /* Input: the session PPPoX data socket `session_fd` which was created
@@ -371,8 +278,7 @@ L2TP 控制数据包在 `tunnel_fd` 上仍然可读。
         return ppp_chan_fd;
 
 ```
-LCP PPP 帧在 `ppp_chan_fd` 上可读。
-
+LCP PPP 甯у湪 `ppp_chan_fd` 涓婂彲璇汇€?
 ```
 
         /* Input: the PPP channel `ppp_chan_fd` which was created as described
@@ -402,12 +308,9 @@ LCP PPP 帧在 `ppp_chan_fd` 上可读。
         return ppp_if_fd;
 
 ```
-IPCP/IPv6CP PPP 帧在 `ppp_if_fd` 上可读。
-
-ppp<ifunit> 接口随后可以使用 netlink 的 RTM_NEWLINK、RTM_NEWADDR、RTM_NEWROUTE，或 ioctl 的 SIOCSIFMTU、SIOCSIFADDR、SIOCSIFDSTADDR、SIOCSIFNETMASK、SIOCSIFFLAGS，或使用 `ip` 命令进行常规配置。
-
-  - 桥接具有 PPP 伪线类型的 L2TP session（这也称为
-    L2TP 隧道交换或 L2TP 多跳）通过桥接 PPP
+IPCP/IPv6CP PPP 甯у湪 `ppp_if_fd` 涓婂彲璇汇€?
+ppp<ifunit> 鎺ュ彛闅忓悗鍙互浣跨敤 netlink 鐨?RTM_NEWLINK銆丷TM_NEWADDR銆丷TM_NEWROUTE锛屾垨 ioctl 鐨?SIOCSIFMTU銆丼IOCSIFADDR銆丼IOCSIFDSTADDR銆丼IOCSIFNETMASK銆丼IOCSIFFLAGS锛屾垨浣跨敤 `ip` 鍛戒护杩涜甯歌閰嶇疆銆?
+  - 妗ユ帴鍏锋湁 PPP 浼嚎绫诲瀷鐨?L2TP session锛堣繖涔熺О涓?    L2TP 闅ч亾浜ゆ崲鎴?L2TP 澶氳烦锛夐€氳繃妗ユ帴 PPP
 ```
 
         /* Input: the session PPPoX data sockets `session_fd1` and `session_fd2`
@@ -445,120 +348,86 @@ ppp<ifunit> 接口随后可以使用 netlink 的 RTM_NEWLINK、RTM_NEWADDR、RTM
         return 0;
 
 ```
-可以看出，桥接 PPP 通道时，PPP session 不在本地终结，也不会创建本地 PPP 接口。到达一个通道的 PPP 帧直接传递给另一个通道，反之亦然。
-
-PPP 通道不需要保持打开。只需保持 session 的 PPPoX 数据套接字打开。
-
-更一般地说，也可以以相同方式桥接例如 PPPoL2TP PPP 通道与其他类型的 PPP 通道，例如 PPPoE。
-
-PPP 侧的更多细节参见 ppp_generic.rst。
-
-### 旧版仅 L2TPv2 API
+鍙互鐪嬪嚭锛屾ˉ鎺?PPP 閫氶亾鏃讹紝PPP session 涓嶅湪鏈湴缁堢粨锛屼篃涓嶄細鍒涘缓鏈湴 PPP 鎺ュ彛銆傚埌杈句竴涓€氶亾鐨?PPP 甯х洿鎺ヤ紶閫掔粰鍙︿竴涓€氶亾锛屽弽涔嬩害鐒躲€?
+PPP 閫氶亾涓嶉渶瑕佷繚鎸佹墦寮€銆傚彧闇€淇濇寔 session 鐨?PPPoX 鏁版嵁濂楁帴瀛楁墦寮€銆?
+鏇翠竴鑸湴璇达紝涔熷彲浠ヤ互鐩稿悓鏂瑰紡妗ユ帴渚嬪 PPPoL2TP PPP 閫氶亾涓庡叾浠栫被鍨嬬殑 PPP 閫氶亾锛屼緥濡?PPPoE銆?
+PPP 渚х殑鏇村缁嗚妭鍙傝 ppp_generic.rst銆?
+### 鏃х増浠?L2TPv2 API
 
 
-当 L2TP 在 2.6.23 中首次加入 Linux 内核时，它只实现了 L2TPv2，且不包含 netlink API。相反，内核中的隧道和 session 实例直接使用 PPPoL2TP 套接字管理。PPPoL2TP 套接字的使用如"PPPoL2TP Session 套接字 API"一节所述，但隧道和 session 实例是在套接字 connect() 时自动创建，而不是通过单独的 netlink 请求创建：
-
-    - 隧道使用隧道管理套接字管理，这是一个专用的 PPPoL2TP 套接字，连接到（无效的）session id 0。当 PPPoL2TP 隧道管理套接字连接时创建 L2TP 隧道实例，并在套接字关闭时销毁。
-
-    - 当 PPPoL2TP 套接字连接到非零 session id 时，在内核中创建 session 实例。session 参数使用 setsockopt 设置。当套接字关闭时销毁 L2TP session 实例。
-
-此 API 仍受支持，但不鼓励使用。相反，新的 L2TPv2 应用程序应首先使用 netlink 创建隧道和 session，然后为 session 创建 PPPoL2TP 套接字。
-
-### 非托管 L2TPv3 隧道
+褰?L2TP 鍦?2.6.23 涓娆″姞鍏?Linux 鍐呮牳鏃讹紝瀹冨彧瀹炵幇浜?L2TPv2锛屼笖涓嶅寘鍚?netlink API銆傜浉鍙嶏紝鍐呮牳涓殑闅ч亾鍜?session 瀹炰緥鐩存帴浣跨敤 PPPoL2TP 濂楁帴瀛楃鐞嗐€侾PPoL2TP 濂楁帴瀛楃殑浣跨敤濡?PPPoL2TP Session 濂楁帴瀛?API"涓€鑺傛墍杩帮紝浣嗛毀閬撳拰 session 瀹炰緥鏄湪濂楁帴瀛?connect() 鏃惰嚜鍔ㄥ垱寤猴紝鑰屼笉鏄€氳繃鍗曠嫭鐨?netlink 璇锋眰鍒涘缓锛?
+    - 闅ч亾浣跨敤闅ч亾绠＄悊濂楁帴瀛楃鐞嗭紝杩欐槸涓€涓笓鐢ㄧ殑 PPPoL2TP 濂楁帴瀛楋紝杩炴帴鍒帮紙鏃犳晥鐨勶級session id 0銆傚綋 PPPoL2TP 闅ч亾绠＄悊濂楁帴瀛楄繛鎺ユ椂鍒涘缓 L2TP 闅ч亾瀹炰緥锛屽苟鍦ㄥ鎺ュ瓧鍏抽棴鏃堕攢姣併€?
+    - 褰?PPPoL2TP 濂楁帴瀛楄繛鎺ュ埌闈為浂 session id 鏃讹紝鍦ㄥ唴鏍镐腑鍒涘缓 session 瀹炰緥銆俿ession 鍙傛暟浣跨敤 setsockopt 璁剧疆銆傚綋濂楁帴瀛楀叧闂椂閿€姣?L2TP session 瀹炰緥銆?
+姝?API 浠嶅彈鏀寔锛屼絾涓嶉紦鍔变娇鐢ㄣ€傜浉鍙嶏紝鏂扮殑 L2TPv2 搴旂敤绋嬪簭搴旈鍏堜娇鐢?netlink 鍒涘缓闅ч亾鍜?session锛岀劧鍚庝负 session 鍒涘缓 PPPoL2TP 濂楁帴瀛椼€?
+### 闈炴墭绠?L2TPv3 闅ч亾
 
 
-内核 L2TP 子系统还支持静态（非托管）L2TPv3 隧道。非托管隧道没有用户空间隧道套接字，且与对端不交换控制消息来建立隧道；隧道在隧道两端手动配置。所有配置都使用 netlink 完成。这种情况下不需要 L2TP 用户空间应用程序——隧道套接字由内核创建，并使用在 `L2TP_CMD_TUNNEL_CREATE` netlink 请求中发送的参数配置。`iproute2` 的 `ip` 工具具有管理静态 L2TPv3 隧道命令；执行 ``ip l2tp help`` 了解更多信息。
+鍐呮牳 L2TP 瀛愮郴缁熻繕鏀寔闈欐€侊紙闈炴墭绠★級L2TPv3 闅ч亾銆傞潪鎵樼闅ч亾娌℃湁鐢ㄦ埛绌洪棿闅ч亾濂楁帴瀛楋紝涓斾笌瀵圭涓嶄氦鎹㈡帶鍒舵秷鎭潵寤虹珛闅ч亾锛涢毀閬撳湪闅ч亾涓ょ鎵嬪姩閰嶇疆銆傛墍鏈夐厤缃兘浣跨敤 netlink 瀹屾垚銆傝繖绉嶆儏鍐典笅涓嶉渶瑕?L2TP 鐢ㄦ埛绌洪棿搴旂敤绋嬪簭鈥斺€旈毀閬撳鎺ュ瓧鐢卞唴鏍稿垱寤猴紝骞朵娇鐢ㄥ湪 `L2TP_CMD_TUNNEL_CREATE` netlink 璇锋眰涓彂閫佺殑鍙傛暟閰嶇疆銆俙iproute2` 鐨?`ip` 宸ュ叿鍏锋湁绠＄悊闈欐€?L2TPv3 闅ч亾鍛戒护锛涙墽琛?``ip l2tp help`` 浜嗚В鏇村淇℃伅銆?
+### 璋冭瘯
 
-### 调试
 
-
-L2TP 子系统通过 debugfs 文件系统提供一系列调试接口。
-
+L2TP 瀛愮郴缁熼€氳繃 debugfs 鏂囦欢绯荤粺鎻愪緵涓€绯诲垪璋冭瘯鎺ュ彛銆?
 ```
 
     # mount -t debugfs debugfs /debug
 
 ```
-随后可以访问 l2tp 目录下的文件，提供当前隧道和 session 上下文存在情况的概要
+闅忓悗鍙互璁块棶 l2tp 鐩綍涓嬬殑鏂囦欢锛屾彁渚涘綋鍓嶉毀閬撳拰 session 涓婁笅鏂囧瓨鍦ㄦ儏鍐电殑姒傝
 ```
 
     # cat /debug/l2tp/tunnels
 
 ```
-调试文件系统文件不应被应用程序用于获取 L2TP 状态信息，因为文件格式可能会更改。它实现用于提供额外的调试信息以帮助诊断问题。应用程序应改用 netlink API。
-
-此外，L2TP 子系统使用标准内核事件跟踪 API 实现跟踪点。可用的 L2TP 事件可查看为
+璋冭瘯鏂囦欢绯荤粺鏂囦欢涓嶅簲琚簲鐢ㄧ▼搴忕敤浜庤幏鍙?L2TP 鐘舵€佷俊鎭紝鍥犱负鏂囦欢鏍煎紡鍙兘浼氭洿鏀广€傚畠瀹炵幇鐢ㄤ簬鎻愪緵棰濆鐨勮皟璇曚俊鎭互甯姪璇婃柇闂銆傚簲鐢ㄧ▼搴忓簲鏀圭敤 netlink API銆?
+姝ゅ锛孡2TP 瀛愮郴缁熶娇鐢ㄦ爣鍑嗗唴鏍镐簨浠惰窡韪?API 瀹炵幇璺熻釜鐐广€傚彲鐢ㄧ殑 L2TP 浜嬩欢鍙煡鐪嬩负
 ```
 
     # find /debug/tracing/events/l2tp
 
 ```
-最后，/proc/net/pppol2tp 也提供，用于与原始 pppol2tp 代码向后兼容。它只列出关于 L2TPv2 隧道和 session 的信息。不鼓励使用它。
-
-## 内部实现
-
-
-本节面向内核开发者和维护者。
-
-### 套接字
+鏈€鍚庯紝/proc/net/pppol2tp 涔熸彁渚涳紝鐢ㄤ簬涓庡師濮?pppol2tp 浠ｇ爜鍚戝悗鍏煎銆傚畠鍙垪鍑哄叧浜?L2TPv2 闅ч亾鍜?session 鐨勪俊鎭€備笉榧撳姳浣跨敤瀹冦€?
+## 鍐呴儴瀹炵幇
 
 
-UDP 套接字由网络核心实现。当使用 UDP 套接字创建 L2TP 隧道时，通过在 UDP 套接字上设置 encap_rcv 和 encap_destroy 回调，将该套接字设置为封装的 UDP 套接字。接收到该套接字上的数据包时调用 l2tp_udp_encap_recv。用户空间关闭套接字时调用 l2tp_udp_encap_destroy。
+鏈妭闈㈠悜鍐呮牳寮€鍙戣€呭拰缁存姢鑰呫€?
+### 濂楁帴瀛?
 
-L2TPIP 套接字实现于 `net/l2tp/l2tp_ip.c`_ 和
-`net/l2tp/l2tp_ip6.c`_。
+UDP 濂楁帴瀛楃敱缃戠粶鏍稿績瀹炵幇銆傚綋浣跨敤 UDP 濂楁帴瀛楀垱寤?L2TP 闅ч亾鏃讹紝閫氳繃鍦?UDP 濂楁帴瀛椾笂璁剧疆 encap_rcv 鍜?encap_destroy 鍥炶皟锛屽皢璇ュ鎺ュ瓧璁剧疆涓哄皝瑁呯殑 UDP 濂楁帴瀛椼€傛帴鏀跺埌璇ュ鎺ュ瓧涓婄殑鏁版嵁鍖呮椂璋冪敤 l2tp_udp_encap_recv銆傜敤鎴风┖闂村叧闂鎺ュ瓧鏃惰皟鐢?l2tp_udp_encap_destroy銆?
+L2TPIP 濂楁帴瀛楀疄鐜颁簬 `net/l2tp/l2tp_ip.c`_ 鍜?`net/l2tp/l2tp_ip6.c`_銆?
+### 闅ч亾
 
-### 隧道
 
-
-内核为每个 L2TP 隧道保留一个 struct l2tp_tunnel 上下文。l2tp_tunnel 始终与一个 UDP 或 L2TP/IP 套接字关联，并保留隧道中的 session 列表。当隧道首次向 L2TP 核心注册时，套接字上的引用计数增加。这确保在其数据结构引用该套接字时，套接字不会被移除。
-
-隧道由唯一的隧道 id 标识。该 id 在 L2TPv2 中为 16 位，在 L2TPv3 中为 32 位。内部以 32 位值存储。
-
-隧道保存在按网络（per-net）的列表中，由隧道 id 索引。隧道 id 命名空间由 L2TPv2 和 L2TPv3 共享。
-
-处理隧道套接字关闭也许是 L2TP 实现中最棘手的部分。如果用户空间关闭隧道套接字，L2TP 隧道及其所有 session 必须关闭并销毁。由于隧道上下文持有对隧道套接字的引用，在隧道 sock_put 其套接字之前，不会调用套接字的 sk_destruct。对于 UDP 套接字，当用户空间关闭隧道套接字时，会调用套接字的 encap_destroy 处理程序，L2TP 用它来启动隧道关闭动作。对于 L2TPIP 套接字，套接字的 close 处理程序启动相同的隧道关闭动作。首先关闭所有 session。每个 session 丢弃其对隧道的引用。当隧道引用归零时，隧道丢弃其对套接字的引用。
-
+鍐呮牳涓烘瘡涓?L2TP 闅ч亾淇濈暀涓€涓?struct l2tp_tunnel 涓婁笅鏂囥€俵2tp_tunnel 濮嬬粓涓庝竴涓?UDP 鎴?L2TP/IP 濂楁帴瀛楀叧鑱旓紝骞朵繚鐣欓毀閬撲腑鐨?session 鍒楄〃銆傚綋闅ч亾棣栨鍚?L2TP 鏍稿績娉ㄥ唽鏃讹紝濂楁帴瀛椾笂鐨勫紩鐢ㄨ鏁板鍔犮€傝繖纭繚鍦ㄥ叾鏁版嵁缁撴瀯寮曠敤璇ュ鎺ュ瓧鏃讹紝濂楁帴瀛椾笉浼氳绉婚櫎銆?
+闅ч亾鐢卞敮涓€鐨勯毀閬?id 鏍囪瘑銆傝 id 鍦?L2TPv2 涓负 16 浣嶏紝鍦?L2TPv3 涓负 32 浣嶃€傚唴閮ㄤ互 32 浣嶅€煎瓨鍌ㄣ€?
+闅ч亾淇濆瓨鍦ㄦ寜缃戠粶锛坧er-net锛夌殑鍒楄〃涓紝鐢遍毀閬?id 绱㈠紩銆傞毀閬?id 鍛藉悕绌洪棿鐢?L2TPv2 鍜?L2TPv3 鍏变韩銆?
+澶勭悊闅ч亾濂楁帴瀛楀叧闂篃璁告槸 L2TP 瀹炵幇涓渶妫樻墜鐨勯儴鍒嗐€傚鏋滅敤鎴风┖闂村叧闂毀閬撳鎺ュ瓧锛孡2TP 闅ч亾鍙婂叾鎵€鏈?session 蹇呴』鍏抽棴骞堕攢姣併€傜敱浜庨毀閬撲笂涓嬫枃鎸佹湁瀵归毀閬撳鎺ュ瓧鐨勫紩鐢紝鍦ㄩ毀閬?sock_put 鍏跺鎺ュ瓧涔嬪墠锛屼笉浼氳皟鐢ㄥ鎺ュ瓧鐨?sk_destruct銆傚浜?UDP 濂楁帴瀛楋紝褰撶敤鎴风┖闂村叧闂毀閬撳鎺ュ瓧鏃讹紝浼氳皟鐢ㄥ鎺ュ瓧鐨?encap_destroy 澶勭悊绋嬪簭锛孡2TP 鐢ㄥ畠鏉ュ惎鍔ㄩ毀閬撳叧闂姩浣溿€傚浜?L2TPIP 濂楁帴瀛楋紝濂楁帴瀛楃殑 close 澶勭悊绋嬪簭鍚姩鐩稿悓鐨勯毀閬撳叧闂姩浣溿€傞鍏堝叧闂墍鏈?session銆傛瘡涓?session 涓㈠純鍏跺闅ч亾鐨勫紩鐢ㄣ€傚綋闅ч亾寮曠敤褰掗浂鏃讹紝闅ч亾涓㈠純鍏跺濂楁帴瀛楃殑寮曠敤銆?
 ### Session
 
 
-内核为每个 session 保留一个 struct l2tp_session 上下文。每个 session 都有私有数据，用于特定于 session 类型的数据。在 L2TPv2 中，session 总是承载 PPP 流量。在 L2TPv3 中，session 可以承载以太网帧（以太网伪线）或其他数据类型，如 PPP、ATM、HDLC 或帧中继。Linux 目前仅实现了以太网和 PPP session 类型。
-
-某些 L2TP session 类型还有一个套接字（PPP 伪线），而其他则没有（以太网伪线）。
-
-与隧道类似，L2TP session 由唯一的 session id 标识。与隧道 id 一样，session id 在 L2TPv2 中为 16 位，在 L2TPv3 中为 32 位。内部以 32 位值存储。
-
-Session 持有对其父隧道的引用，以确保在有一个或多个 session 引用隧道时隧道仍然存在。
-
-Session 保存在按网络（per-net）的列表中。L2TPv2 session 和 L2TPv3 session 存储在单独的列表中。L2TPv2 session 由 16 位隧道 ID 和 16 位 session ID 组成的 32 位键索引。L2TPv3 session 由 32 位 session ID 索引，因为 L2TPv3 session id 在所有隧道中唯一。
-
-尽管 L2TPv3 RFC 规定 L2TPv3 session id 不受隧道限制，但 Linux 实现历来允许如此。这种 session id 冲突使用以 sk 和 session ID 为键的按网络（per-net）哈希表来支持。查找 L2TPv3 session 时，列表项可能链接到多个具有该 session ID 的 session，此时使用匹配给定 sk（隧道）的 session。
-
+鍐呮牳涓烘瘡涓?session 淇濈暀涓€涓?struct l2tp_session 涓婁笅鏂囥€傛瘡涓?session 閮芥湁绉佹湁鏁版嵁锛岀敤浜庣壒瀹氫簬 session 绫诲瀷鐨勬暟鎹€傚湪 L2TPv2 涓紝session 鎬绘槸鎵胯浇 PPP 娴侀噺銆傚湪 L2TPv3 涓紝session 鍙互鎵胯浇浠ュお缃戝抚锛堜互澶綉浼嚎锛夋垨鍏朵粬鏁版嵁绫诲瀷锛屽 PPP銆丄TM銆丠DLC 鎴栧抚涓户銆侺inux 鐩墠浠呭疄鐜颁簡浠ュお缃戝拰 PPP session 绫诲瀷銆?
+鏌愪簺 L2TP session 绫诲瀷杩樻湁涓€涓鎺ュ瓧锛圥PP 浼嚎锛夛紝鑰屽叾浠栧垯娌℃湁锛堜互澶綉浼嚎锛夈€?
+涓庨毀閬撶被浼硷紝L2TP session 鐢卞敮涓€鐨?session id 鏍囪瘑銆備笌闅ч亾 id 涓€鏍凤紝session id 鍦?L2TPv2 涓负 16 浣嶏紝鍦?L2TPv3 涓负 32 浣嶃€傚唴閮ㄤ互 32 浣嶅€煎瓨鍌ㄣ€?
+Session 鎸佹湁瀵瑰叾鐖堕毀閬撶殑寮曠敤锛屼互纭繚鍦ㄦ湁涓€涓垨澶氫釜 session 寮曠敤闅ч亾鏃堕毀閬撲粛鐒跺瓨鍦ㄣ€?
+Session 淇濆瓨鍦ㄦ寜缃戠粶锛坧er-net锛夌殑鍒楄〃涓€侺2TPv2 session 鍜?L2TPv3 session 瀛樺偍鍦ㄥ崟鐙殑鍒楄〃涓€侺2TPv2 session 鐢?16 浣嶉毀閬?ID 鍜?16 浣?session ID 缁勬垚鐨?32 浣嶉敭绱㈠紩銆侺2TPv3 session 鐢?32 浣?session ID 绱㈠紩锛屽洜涓?L2TPv3 session id 鍦ㄦ墍鏈夐毀閬撲腑鍞竴銆?
+灏界 L2TPv3 RFC 瑙勫畾 L2TPv3 session id 涓嶅彈闅ч亾闄愬埗锛屼絾 Linux 瀹炵幇鍘嗘潵鍏佽濡傛銆傝繖绉?session id 鍐茬獊浣跨敤浠?sk 鍜?session ID 涓洪敭鐨勬寜缃戠粶锛坧er-net锛夊搱甯岃〃鏉ユ敮鎸併€傛煡鎵?L2TPv3 session 鏃讹紝鍒楄〃椤瑰彲鑳介摼鎺ュ埌澶氫釜鍏锋湁璇?session ID 鐨?session锛屾鏃朵娇鐢ㄥ尮閰嶇粰瀹?sk锛堥毀閬擄級鐨?session銆?
 ### PPP
 
 
-`net/l2tp/l2tp_ppp.c`_ 实现了 PPPoL2TP 套接字族。每个 PPP session 都有一个 PPPoL2TP 套接字。
+`net/l2tp/l2tp_ppp.c`_ 瀹炵幇浜?PPPoL2TP 濂楁帴瀛楁棌銆傛瘡涓?PPP session 閮芥湁涓€涓?PPPoL2TP 濂楁帴瀛椼€?
+PPPoL2TP 濂楁帴瀛楃殑 sk_user_data 寮曠敤 l2tp_session銆?
+鐢ㄦ埛绌洪棿閫氳繃 PPPoL2TP 濂楁帴瀛楀彂閫佸拰鎺ユ敹 PPP 鏁版嵁鍖呫€傚彧鏈?PPP 鎺у埗甯ч€氳繃姝ゅ鎺ュ瓧锛歅PP 鏁版嵁鍖呭畬鍏ㄧ敱鍐呮牳澶勭悊锛屽湪鍐呮牳 PPP 瀛愮郴缁熺殑 PPP 閫氶亾鎺ュ彛涔嬮棿锛屽湪 L2TP session 鍙婂叾鍏宠仈鐨?`pppN` 缃戠粶璁惧涔嬮棿浼犻€掋€?
+L2TP PPP 瀹炵幇閫氳繃鍏抽棴鍏剁浉搴旂殑 L2TP session 鏉ュ鐞?PPPoL2TP 濂楁帴瀛楃殑鍏抽棴銆傝繖寰堝鏉傦紝鍥犱负瀹冨繀椤昏€冭檻涓?netlink session 鍒涘缓/閿€姣佽姹備互鍙?pppol2tp_connect 灏濊瘯閲嶆柊杩炴帴鍒版鍦ㄥ叧闂繃绋嬩腑鐨?session 鐨勭珵浜夈€侾PP session 鎸佹湁瀵瑰叾鍏宠仈濂楁帴瀛楃殑寮曠敤锛屼互渚垮湪 session 寮曠敤瀹冩椂濂楁帴瀛椾粛鐒跺瓨鍦ㄣ€?
+### 浠ュお缃?
 
-PPPoL2TP 套接字的 sk_user_data 引用 l2tp_session。
-
-用户空间通过 PPPoL2TP 套接字发送和接收 PPP 数据包。只有 PPP 控制帧通过此套接字：PPP 数据包完全由内核处理，在内核 PPP 子系统的 PPP 通道接口之间，在 L2TP session 及其关联的 `pppN` 网络设备之间传递。
-
-L2TP PPP 实现通过关闭其相应的 L2TP session 来处理 PPPoL2TP 套接字的关闭。这很复杂，因为它必须考虑与 netlink session 创建/销毁请求以及 pppol2tp_connect 尝试重新连接到正在关闭过程中的 session 的竞争。PPP session 持有对其关联套接字的引用，以便在 session 引用它时套接字仍然存在。
-
-### 以太网
-
-
-`net/l2tp/l2tp_eth.c`_ 实现 L2TPv3 以太网伪线。它为每个 session 管理一个 netdev。
-
-L2TP 以太网 session 由 netlink 请求创建和销毁，或在隧道销毁时销毁。与 PPP session 不同，以太网 session 没有关联的套接字。
-
-## 杂项
+`net/l2tp/l2tp_eth.c`_ 瀹炵幇 L2TPv3 浠ュお缃戜吉绾裤€傚畠涓烘瘡涓?session 绠＄悊涓€涓?netdev銆?
+L2TP 浠ュお缃?session 鐢?netlink 璇锋眰鍒涘缓鍜岄攢姣侊紝鎴栧湪闅ч亾閿€姣佹椂閿€姣併€備笌 PPP session 涓嶅悓锛屼互澶綉 session 娌℃湁鍏宠仈鐨勫鎺ュ瓧銆?
+## 鏉傞」
 
 
 ### RFCs
 
 
-内核代码实现了以下 RFC 中规定的数据路径特性：
+鍐呮牳浠ｇ爜瀹炵幇浜嗕互涓?RFC 涓瀹氱殑鏁版嵁璺緞鐗规€э細
 
 ======= =============== ===================================
 RFC2661 L2TPv2          https://tools.ietf.org/html/rfc2661
@@ -566,10 +435,10 @@ RFC3931 L2TPv3          https://tools.ietf.org/html/rfc3931
 RFC4719 L2TPv3 Ethernet https://tools.ietf.org/html/rfc4719
 ======= =============== ===================================
 
-### 实现
+### 瀹炵幇
 
 
-若干开源应用程序使用 L2TP 内核子系统：
+鑻ュ共寮€婧愬簲鐢ㄧ▼搴忎娇鐢?L2TP 鍐呮牳瀛愮郴缁燂細
 
 ============ ==============================================
 iproute2     https://github.com/shemminger/iproute2
@@ -578,18 +447,15 @@ tunneldigger https://github.com/wlanslovenija/tunneldigger
 xl2tpd       https://github.com/xelerance/xl2tpd
 ============ ==============================================
 
-### 限制
+### 闄愬埗
 
 
-当前实现有一些限制：
+褰撳墠瀹炵幇鏈変竴浜涢檺鍒讹細
 
-  1) 与 openvswitch 的接口尚未实现。将 OVS 以太网和 VLAN 端口映射到 L2TPv3 隧道可能有用。
-
-  2) VLAN 伪线使用配置了 VLAN 子接口的 `l2tpethN` 接口实现。由于 L2TPv3 VLAN 伪线承载且仅承载一个 VLAN，使用单一 netdev 而非每个 VLAN session 使用 `l2tpethN` 和 `l2tpethN`:M 对可能更好。为此添加了 netlink 属性 `L2TP_ATTR_VLAN_ID`，但它从未被实现。
-
-### 测试
+  1) 涓?openvswitch 鐨勬帴鍙ｅ皻鏈疄鐜般€傚皢 OVS 浠ュお缃戝拰 VLAN 绔彛鏄犲皠鍒?L2TPv3 闅ч亾鍙兘鏈夌敤銆?
+  2) VLAN 浼嚎浣跨敤閰嶇疆浜?VLAN 瀛愭帴鍙ｇ殑 `l2tpethN` 鎺ュ彛瀹炵幇銆傜敱浜?L2TPv3 VLAN 浼嚎鎵胯浇涓斾粎鎵胯浇涓€涓?VLAN锛屼娇鐢ㄥ崟涓€ netdev 鑰岄潪姣忎釜 VLAN session 浣跨敤 `l2tpethN` 鍜?`l2tpethN`:M 瀵瑰彲鑳芥洿濂姐€備负姝ゆ坊鍔犱簡 netlink 灞炴€?`L2TP_ATTR_VLAN_ID`锛屼絾瀹冧粠鏈瀹炵幇銆?
+### 娴嬭瘯
 
 
-非托管 L2TPv3 以太网特性由内核内置的自测试测试。参见 `tools/testing/selftests/net/l2tp.sh`_。
-
-另一个测试套件 l2tp-ktest_ 覆盖了所有 L2TP API 和隧道/session 类型。未来可能会集成到内核内置的 L2TP 自测试中。
+闈炴墭绠?L2TPv3 浠ュお缃戠壒鎬х敱鍐呮牳鍐呯疆鐨勮嚜娴嬭瘯娴嬭瘯銆傚弬瑙?`tools/testing/selftests/net/l2tp.sh`_銆?
+鍙︿竴涓祴璇曞浠?l2tp-ktest_ 瑕嗙洊浜嗘墍鏈?L2TP API 鍜岄毀閬?session 绫诲瀷銆傛湭鏉ュ彲鑳戒細闆嗘垚鍒板唴鏍稿唴缃殑 L2TP 鑷祴璇曚腑銆?

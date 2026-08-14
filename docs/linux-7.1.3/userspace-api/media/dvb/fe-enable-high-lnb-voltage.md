@@ -1,40 +1,40 @@
-######## ioctl FE_ENABLE_HIGH_LNB_VOLTAGE
+﻿######## ioctl FE_ENABLE_HIGH_LNB_VOLTAGE
 
 
-## 名称
+## 鍚嶇О
 
 
-FE_ENABLE_HIGH_LNB_VOLTAGE - 在正常 LNBf 电压与更高的 LNBf 电压之间选择输出直流电平。
+FE_ENABLE_HIGH_LNB_VOLTAGE - 鍦ㄦ甯?LNBf 鐢靛帇涓庢洿楂樼殑 LNBf 鐢靛帇涔嬮棿閫夋嫨杈撳嚭鐩存祦鐢靛钩銆?
 
-## 摘要
+## 鎽樿
 
 
 
 `int ioctl(int fd, FE_ENABLE_HIGH_LNB_VOLTAGE, unsigned int high)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    由 `open()` 返回的文件描述符。
+    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 
 `high`
-    有效标志：
+    鏈夋晥鏍囧織锛?
 
-    - 0 - 正常的 13V 和 18V。
+    - 0 - 姝ｅ父鐨?13V 鍜?18V銆?
 
-    - >0 - 启用略高的电压以替代 13/18V，用于补偿过长的天线电缆。
+    - >0 - 鍚敤鐣ラ珮鐨勭數鍘嬩互鏇夸唬 13/18V锛岀敤浜庤ˉ鍋胯繃闀跨殑澶╃嚎鐢电紗銆?
 
-## 说明
-
-
-在正常 LNBf 电压与更高 LNBf 电压之间选择输出直流电平：0（正常）或大于 0 的值（更高电压）。
-
-## 返回值
+## 璇存槑
 
 
-成功时返回 0。
+鍦ㄦ甯?LNBf 鐢靛帇涓庢洿楂?LNBf 鐢靛帇涔嬮棿閫夋嫨杈撳嚭鐩存祦鐢靛钩锛?锛堟甯革級鎴栧ぇ浜?0 鐨勫€硷紙鏇撮珮鐢靛帇锛夈€?
 
-出错时返回 -1，并相应地设置 `errno` 变量。
+## 杩斿洖鍊?
 
-通用错误码在 Generic Error Codes <gen-errors> 章节中描述。
+
+鎴愬姛鏃惰繑鍥?0銆?
+
+鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+
+閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?

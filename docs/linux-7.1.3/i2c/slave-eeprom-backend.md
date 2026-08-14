@@ -1,26 +1,26 @@
-## Linux I2C 从机 EEPROM 后端
+﻿## Linux I2C 浠庢満 EEPROM 鍚庣
 
 
-作者：Wolfram Sang <wsa@sang-engineering.com> in 2014-20
+浣滆€咃細Wolfram Sang <wsa@sang-engineering.com> in 2014-20
 
-本后端在连接的 I2C 总线上模拟一个 EEPROM。其内存内容
+鏈悗绔湪杩炴帴鐨?I2C 鎬荤嚎涓婃ā鎷熶竴涓?EEPROM銆傚叾鍐呭瓨鍐呭
 ```
 
 	/sys/bus/i2c/devices/<device-directory>/slave-eeprom
 
 ```
-可用的类型有：24c02、24c32、24c64 和 24c512。也支持只读变体。
-实例化所需的名称形式为 'slave-<type>[ro]'。示例如下：
+鍙敤鐨勭被鍨嬫湁锛?4c02銆?4c32銆?4c64 鍜?24c512銆備篃鏀寔鍙鍙樹綋銆?
+瀹炰緥鍖栨墍闇€鐨勫悕绉板舰寮忎负 'slave-<type>[ro]'銆傜ず渚嬪涓嬶細
 
-24c02，读/写，地址 0x64：
+24c02锛岃/鍐欙紝鍦板潃 0x64锛?
   # echo slave-24c02 0x1064 > /sys/bus/i2c/devices/i2c-1/new_device
 
-24c512，只读，地址 0x42：
+24c512锛屽彧璇伙紝鍦板潃 0x42锛?
   # echo slave-24c512ro 0x1042 > /sys/bus/i2c/devices/i2c-1/new_device
 
-如果在启动时预加载数据，且名为 'firmware-name' 的设备属性
-包含一个有效的文件名（仅限 DT 或 ACPI）。
+濡傛灉鍦ㄥ惎鍔ㄦ椂棰勫姞杞芥暟鎹紝涓斿悕涓?'firmware-name' 鐨勮澶囧睘鎬?
+鍖呭惈涓€涓湁鏁堢殑鏂囦欢鍚嶏紙浠呴檺 DT 鎴?ACPI锛夈€?
 
-截至 2015 年，Linux 不支持对二进制 sysfs 文件进行 poll，因此当另一个
-主设备改变内容时不会有通知。
+鎴嚦 2015 骞达紝Linux 涓嶆敮鎸佸浜岃繘鍒?sysfs 鏂囦欢杩涜 poll锛屽洜姝ゅ綋鍙︿竴涓?
+涓昏澶囨敼鍙樺唴瀹规椂涓嶄細鏈夐€氱煡銆?
 

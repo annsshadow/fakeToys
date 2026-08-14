@@ -1,11 +1,8 @@
+﻿
+## 浣跨敤 Linux 鍐呮牳杞偍娴嬭瘯妯″潡锛圠KDTM锛夎Е鍙戝穿婧?
 
-## 使用 Linux 内核转储测试模块（LKDTM）触发崩溃
-
-
-lkdtm 模块提供了一个接口，用于在预定义的代码位置中断（通常导致崩溃）内核，以评估内核异常处理（exception handling）的可靠性，并测试使用不同转储方案获得的崩溃转储（crash dump）。该模块使用 KPROBE 来插桩（instrument）触发位置，但也可以通过 debugfs 在没有 KPROBE 支持的情况下直接触发内核。
-
-你可以选择触发的位置（“崩溃点名称”，crash point name）和动作类型（“崩溃点类型”，crash point type），既可以通过插入模块时的模块参数，也可以通过 debugfs 接口。
-
+lkdtm 妯″潡鎻愪緵浜嗕竴涓帴鍙ｏ紝鐢ㄤ簬鍦ㄩ瀹氫箟鐨勪唬鐮佷綅缃腑鏂紙閫氬父瀵艰嚧宕╂簝锛夊唴鏍革紝浠ヨ瘎浼板唴鏍稿紓甯稿鐞嗭紙exception handling锛夌殑鍙潬鎬э紝骞舵祴璇曚娇鐢ㄤ笉鍚岃浆鍌ㄦ柟妗堣幏寰楃殑宕╂簝杞偍锛坈rash dump锛夈€傝妯″潡浣跨敤 KPROBE 鏉ユ彃妗╋紙instrument锛夎Е鍙戜綅缃紝浣嗕篃鍙互閫氳繃 debugfs 鍦ㄦ病鏈?KPROBE 鏀寔鐨勬儏鍐典笅鐩存帴瑙﹀彂鍐呮牳銆?
+浣犲彲浠ラ€夋嫨瑙﹀彂鐨勪綅缃紙鈥滃穿婧冪偣鍚嶇О鈥濓紝crash point name锛夊拰鍔ㄤ綔绫诲瀷锛堚€滃穿婧冪偣绫诲瀷鈥濓紝crash point type锛夛紝鏃㈠彲浠ラ€氳繃鎻掑叆妯″潡鏃剁殑妯″潡鍙傛暟锛屼篃鍙互閫氳繃 debugfs 鎺ュ彛銆?
 ```
 
 	insmod lkdtm.ko [recur_count={>0}] cpoint_name=<> cpoint_type=<>
@@ -13,28 +10,23 @@ lkdtm 模块提供了一个接口，用于在预定义的代码位置中断（�
 
 ```
 recur_count
-	栈溢出测试的递归层级。默认情况下根据内核配置动态计算，目标是刚好大到足以耗尽内核栈。该值可在 `/sys/module/lkdtm/parameters/recur_count` 查看。
-
+	鏍堟孩鍑烘祴璇曠殑閫掑綊灞傜骇銆傞粯璁ゆ儏鍐典笅鏍规嵁鍐呮牳閰嶇疆鍔ㄦ€佽绠楋紝鐩爣鏄垰濂藉ぇ鍒拌冻浠ヨ€楀敖鍐呮牳鏍堛€傝鍊煎彲鍦?`/sys/module/lkdtm/parameters/recur_count` 鏌ョ湅銆?
 cpoint_name
-	在内核中的何处触发动作。可以是 INT_HARDWARE_ENTRY、INT_HW_IRQ_EN、INT_TASKLET_ENTRY、FS_SUBMIT_BH、MEM_SWAPOUT、TIMERADD、SCSI_QUEUE_RQ 或 DIRECT 之一。
-
+	鍦ㄥ唴鏍镐腑鐨勪綍澶勮Е鍙戝姩浣溿€傚彲浠ユ槸 INT_HARDWARE_ENTRY銆両NT_HW_IRQ_EN銆両NT_TASKLET_ENTRY銆丗S_SUBMIT_BH銆丮EM_SWAPOUT銆乀IMERADD銆丼CSI_QUEUE_RQ 鎴?DIRECT 涔嬩竴銆?
 cpoint_type
-	指示命中崩溃点时要采取的动作。种类很多，最好直接从 debugfs 查询。一些常见的是 PANIC、BUG、EXCEPTION、LOOP 和 OVERFLOW。完整列表参见 `/sys/kernel/debug/provoke-crash/DIRECT` 的内容。
-
+	鎸囩ず鍛戒腑宕╂簝鐐规椂瑕侀噰鍙栫殑鍔ㄤ綔銆傜绫诲緢澶氾紝鏈€濂界洿鎺ヤ粠 debugfs 鏌ヨ銆備竴浜涘父瑙佺殑鏄?PANIC銆丅UG銆丒XCEPTION銆丩OOP 鍜?OVERFLOW銆傚畬鏁村垪琛ㄥ弬瑙?`/sys/kernel/debug/provoke-crash/DIRECT` 鐨勫唴瀹广€?
 cpoint_count
-	指示在触发动作之前崩溃点需要被命中的次数。默认是 10（DIRECT 除外，它总是立即触发）。
-
-你也可以通过挂载 debugfs 并写入类型来引发故障
+	鎸囩ず鍦ㄨЕ鍙戝姩浣滀箣鍓嶅穿婧冪偣闇€瑕佽鍛戒腑鐨勬鏁般€傞粯璁ゆ槸 10锛圖IRECT 闄ゅ锛屽畠鎬绘槸绔嬪嵆瑙﹀彂锛夈€?
+浣犱篃鍙互閫氳繃鎸傝浇 debugfs 骞跺啓鍏ョ被鍨嬫潵寮曞彂鏁呴殰
 ```
 
   mount -t debugfs debugfs /sys/kernel/debug
   echo EXCEPTION > /sys/kernel/debug/provoke-crash/INT_HARDWARE_ENTRY
 
 ```
-特殊文件 `DIRECT` 会在没有 KPROBE 插桩的情况下直接引发动作。当模块以如下方式构建时，这是唯一可用的模式
-```
+鐗规畩鏂囦欢 `DIRECT` 浼氬湪娌℃湁 KPROBE 鎻掓々鐨勬儏鍐典笅鐩存帴寮曞彂鍔ㄤ綔銆傚綋妯″潡浠ュ涓嬫柟寮忔瀯寤烘椂锛岃繖鏄敮涓€鍙敤鐨勬ā寮?```
 
-  # 与其让 BUG 杀掉你的 shell，不如让它杀掉 “cat”：
+  # 涓庡叾璁?BUG 鏉€鎺変綘鐨?shell锛屼笉濡傝瀹冩潃鎺?鈥渃at鈥濓細
   cat <(echo WRITE_RO) >/sys/kernel/debug/provoke-crash/DIRECT
 
 ```

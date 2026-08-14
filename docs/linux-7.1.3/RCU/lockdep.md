@@ -1,12 +1,12 @@
+﻿
+## RCU 涓?lockdep 妫€鏌?
 
-## RCU 与 lockdep 检查
 
+鎵€鏈夌被鍨嬬殑 RCU 閮藉叿鏈夊彲鐢ㄧ殑 lockdep 妫€鏌ワ紝鍥犳 lockdep 鐭ラ亾姣忎釜浠诲姟浣曟椂杩涘叆鍜岀寮€浠绘剰
+绫诲瀷鐨?RCU 璇讳晶涓寸晫鍖恒€傛瘡绉嶇被鍨嬬殑 RCU 琚崟鐙窡韪紙浣嗚娉ㄦ剰鍦?2.6.32 鍙婃洿鏃╃増鏈腑骞堕潪
+濡傛锛夈€傝繖浣垮緱 lockdep 鐨勮窡韪彲浠ュ寘鍚?RCU 鐘舵€侊紝鍦ㄨ皟璇曟閿佺瓑鎯呭喌鏃舵湁鏃朵細鏈夋墍甯姪銆?
 
-所有类型的 RCU 都具有可用的 lockdep 检查，因此 lockdep 知道每个任务何时进入和离开任意
-类型的 RCU 读侧临界区。每种类型的 RCU 被单独跟踪（但请注意在 2.6.32 及更早版本中并非
-如此）。这使得 lockdep 的跟踪可以包含 RCU 状态，在调试死锁等情况时有时会有所帮助。
-
-此外，RCU 提供以下检查 lockdep 的原语：
+姝ゅ锛孯CU 鎻愪緵浠ヤ笅妫€鏌?lockdep 鐨勫師璇細
 ```
 
 	rcu_read_lock_held() for normal RCU.
@@ -17,44 +17,44 @@
 	rcu_read_lock_trace_held() for RCU Tasks Trace.
 
 ```
-这些函数是保守的，因此如果它们不确定就会返回 1（例如，如果未设置 CONFIG_DEBUG_LOCK_ALLOC）。
-这可以防止诸如 WARN_ON(!rcu_read_lock_held()) 在 lockdep 被禁用时给出误报。
+杩欎簺鍑芥暟鏄繚瀹堢殑锛屽洜姝ゅ鏋滃畠浠笉纭畾灏变細杩斿洖 1锛堜緥濡傦紝濡傛灉鏈缃?CONFIG_DEBUG_LOCK_ALLOC锛夈€?
+杩欏彲浠ラ槻姝㈣濡?WARN_ON(!rcu_read_lock_held()) 鍦?lockdep 琚鐢ㄦ椂缁欏嚭璇姤銆?
 
-此外，一个独立的内核配置参数 CONFIG_PROVE_RCU 启用对 rcu_dereference() 原语的检查：
+姝ゅ锛屼竴涓嫭绔嬬殑鍐呮牳閰嶇疆鍙傛暟 CONFIG_PROVE_RCU 鍚敤瀵?rcu_dereference() 鍘熻鐨勬鏌ワ細
 
 	rcu_dereference(p):
-		检查 RCU 读侧临界区。
+		妫€鏌?RCU 璇讳晶涓寸晫鍖恒€?
 	rcu_dereference_bh(p):
-		检查 RCU-bh 读侧临界区。
+		妫€鏌?RCU-bh 璇讳晶涓寸晫鍖恒€?
 	rcu_dereference_sched(p):
-		检查 RCU-sched 读侧临界区。
+		妫€鏌?RCU-sched 璇讳晶涓寸晫鍖恒€?
 	srcu_dereference(p, sp):
-		检查 SRCU 读侧临界区。
+		妫€鏌?SRCU 璇讳晶涓寸晫鍖恒€?
 	rcu_dereference_check(p, c):
-		使用显式检查表达式 "c" 以及 rcu_read_lock_held()。这在既被
-		RCU 读者又被更新者调用的代码中很有用。
+		浣跨敤鏄惧紡妫€鏌ヨ〃杈惧紡 "c" 浠ュ強 rcu_read_lock_held()銆傝繖鍦ㄦ棦琚?
+		RCU 璇昏€呭張琚洿鏂拌€呰皟鐢ㄧ殑浠ｇ爜涓緢鏈夌敤銆?
 	rcu_dereference_bh_check(p, c):
-		使用显式检查表达式 "c" 以及 rcu_read_lock_bh_held()。这在既被
-		RCU-bh 读者又被更新者调用的代码中很有用。
+		浣跨敤鏄惧紡妫€鏌ヨ〃杈惧紡 "c" 浠ュ強 rcu_read_lock_bh_held()銆傝繖鍦ㄦ棦琚?
+		RCU-bh 璇昏€呭張琚洿鏂拌€呰皟鐢ㄧ殑浠ｇ爜涓緢鏈夌敤銆?
 	rcu_dereference_sched_check(p, c):
-		使用显式检查表达式 "c" 以及 rcu_read_lock_sched_held()。这在既被
-		RCU-sched 读者又被更新者调用的代码中很有用。
+		浣跨敤鏄惧紡妫€鏌ヨ〃杈惧紡 "c" 浠ュ強 rcu_read_lock_sched_held()銆傝繖鍦ㄦ棦琚?
+		RCU-sched 璇昏€呭張琚洿鏂拌€呰皟鐢ㄧ殑浠ｇ爜涓緢鏈夌敤銆?
 	srcu_dereference_check(p, c):
-		使用显式检查表达式 "c" 以及 srcu_read_lock_held()。这在既被
-		SRCU 读者又被更新者调用的代码中很有用。
+		浣跨敤鏄惧紡妫€鏌ヨ〃杈惧紡 "c" 浠ュ強 srcu_read_lock_held()銆傝繖鍦ㄦ棦琚?
+		SRCU 璇昏€呭張琚洿鏂拌€呰皟鐢ㄧ殑浠ｇ爜涓緢鏈夌敤銆?
 	rcu_dereference_raw(p):
-		不检查。（尽量慎用，最好不用。）
+		涓嶆鏌ャ€傦紙灏介噺鎱庣敤锛屾渶濂戒笉鐢ㄣ€傦級
 	rcu_dereference_raw_check(p):
-		完全不做 lockdep。（尽量慎用，最好不用。）
+		瀹屽叏涓嶅仛 lockdep銆傦紙灏介噺鎱庣敤锛屾渶濂戒笉鐢ㄣ€傦級
 	rcu_dereference_protected(p, c):
-		使用显式检查表达式 "c"，并省略所有屏障和编译器约束。这在数据
-		结构不能改变时很有用，例如在被仅由更新者调用的代码中。
+		浣跨敤鏄惧紡妫€鏌ヨ〃杈惧紡 "c"锛屽苟鐪佺暐鎵€鏈夊睆闅滃拰缂栬瘧鍣ㄧ害鏉熴€傝繖鍦ㄦ暟鎹?
+		缁撴瀯涓嶈兘鏀瑰彉鏃跺緢鏈夌敤锛屼緥濡傚湪琚粎鐢辨洿鏂拌€呰皟鐢ㄧ殑浠ｇ爜涓€?
 	rcu_access_pointer(p):
-		返回指针的值并省略所有屏障，但保留防止重复或合并的编译器约束。
-		这在测试指针本身的值时（例如与 NULL 比较）很有用。
+		杩斿洖鎸囬拡鐨勫€煎苟鐪佺暐鎵€鏈夊睆闅滐紝浣嗕繚鐣欓槻姝㈤噸澶嶆垨鍚堝苟鐨勭紪璇戝櫒绾︽潫銆?
+		杩欏湪娴嬭瘯鎸囬拡鏈韩鐨勫€兼椂锛堜緥濡備笌 NULL 姣旇緝锛夊緢鏈夌敤銆?
 
-rcu_dereference_check() 的检查表达式可以是任何布尔表达式，但通常会包含一个 lockdep 表达式。
-对于一个
+rcu_dereference_check() 鐨勬鏌ヨ〃杈惧紡鍙互鏄换浣曞竷灏旇〃杈惧紡锛屼絾閫氬父浼氬寘鍚竴涓?lockdep 琛ㄨ揪寮忋€?
+瀵逛簬涓€涓?
 ```
 
 	file = rcu_dereference_check(fdt->fd[fd],
@@ -62,16 +62,16 @@ rcu_dereference_check() 的检查表达式可以是任何布尔表达式，但�
 				     atomic_read(&files->count) == 1);
 
 ```
-该表达式以一种 RCU 安全的方式获取指针 "fdt->fd[fd]"，并且，如果配置了 CONFIG_PROVE_RCU，
-则验证该表达式被用于：
+璇ヨ〃杈惧紡浠ヤ竴绉?RCU 瀹夊叏鐨勬柟寮忚幏鍙栨寚閽?"fdt->fd[fd]"锛屽苟涓旓紝濡傛灉閰嶇疆浜?CONFIG_PROVE_RCU锛?
+鍒欓獙璇佽琛ㄨ揪寮忚鐢ㄤ簬锛?
 
-1. 一个 RCU 读侧临界区（隐式），或
-2. 持有 files->file_lock，或
-3. 一个未共享的 files_struct。
+1. 涓€涓?RCU 璇讳晶涓寸晫鍖猴紙闅愬紡锛夛紝鎴?
+2. 鎸佹湁 files->file_lock锛屾垨
+3. 涓€涓湭鍏变韩鐨?files_struct銆?
 
-在情况 (1) 中，指针以 RCU 安全的方式获取，适用于普通的 RCU 读侧临界区；在情况 (2) 中，
-->file_lock 阻止任何改变发生；最后，在情况 (3) 中，当前任务是唯一访问该 file_struct 的
-任务，同样阻止任何改变发生。如果上述语句仅由更新者调用
+鍦ㄦ儏鍐?(1) 涓紝鎸囬拡浠?RCU 瀹夊叏鐨勬柟寮忚幏鍙栵紝閫傜敤浜庢櫘閫氱殑 RCU 璇讳晶涓寸晫鍖猴紱鍦ㄦ儏鍐?(2) 涓紝
+->file_lock 闃绘浠讳綍鏀瑰彉鍙戠敓锛涙渶鍚庯紝鍦ㄦ儏鍐?(3) 涓紝褰撳墠浠诲姟鏄敮涓€璁块棶璇?file_struct 鐨?
+浠诲姟锛屽悓鏍烽樆姝换浣曟敼鍙樺彂鐢熴€傚鏋滀笂杩拌鍙ヤ粎鐢辨洿鏂拌€呰皟鐢?
 ```
 
 	file = rcu_dereference_protected(fdt->fd[fd],
@@ -79,18 +79,18 @@ rcu_dereference_check() 的检查表达式可以是任何布尔表达式，但�
 					 atomic_read(&files->count) == 1);
 
 ```
-这将验证上面的 #2 和 #3 情况，而且 lockdep 还会抱怨，即使它被用于 RCU 读侧临界区，除非
-这两种情况之一成立。因为 rcu_dereference_protected() 省略了所有屏障和编译器约束，它生成的
-代码比其它 rcu_dereference() 变体更好。另一方面，如果受 RCU 保护的指针或它指向的受 RCU
-保护的数据可能并发改变，则使用 rcu_dereference_protected() 是非法的。
+杩欏皢楠岃瘉涓婇潰鐨?#2 鍜?#3 鎯呭喌锛岃€屼笖 lockdep 杩樹細鎶辨€紝鍗充娇瀹冭鐢ㄤ簬 RCU 璇讳晶涓寸晫鍖猴紝闄ら潪
+杩欎袱绉嶆儏鍐典箣涓€鎴愮珛銆傚洜涓?rcu_dereference_protected() 鐪佺暐浜嗘墍鏈夊睆闅滃拰缂栬瘧鍣ㄧ害鏉燂紝瀹冪敓鎴愮殑
+浠ｇ爜姣斿叾瀹?rcu_dereference() 鍙樹綋鏇村ソ銆傚彟涓€鏂归潰锛屽鏋滃彈 RCU 淇濇姢鐨勬寚閽堟垨瀹冩寚鍚戠殑鍙?RCU
+淇濇姢鐨勬暟鎹彲鑳藉苟鍙戞敼鍙橈紝鍒欎娇鐢?rcu_dereference_protected() 鏄潪娉曠殑銆?
 
-与 rcu_dereference() 类似，当启用 lockdep 时，RCU 的 list 和 hlist 遍历原语会检查是否从
-RCU 读侧临界区内调用。然而，可以把一个 lockdep 表达式作为额外的可选参数传给它们。有了
-这个 lockdep 表达式，这些遍历原语仅当 lockdep 表达式为假且它们从任何 RCU 读侧临界区之外
-调用时才会抱怨。
+涓?rcu_dereference() 绫讳技锛屽綋鍚敤 lockdep 鏃讹紝RCU 鐨?list 鍜?hlist 閬嶅巻鍘熻浼氭鏌ユ槸鍚︿粠
+RCU 璇讳晶涓寸晫鍖哄唴璋冪敤銆傜劧鑰岋紝鍙互鎶婁竴涓?lockdep 琛ㄨ揪寮忎綔涓洪澶栫殑鍙€夊弬鏁颁紶缁欏畠浠€傛湁浜?
+杩欎釜 lockdep 琛ㄨ揪寮忥紝杩欎簺閬嶅巻鍘熻浠呭綋 lockdep 琛ㄨ揪寮忎负鍋囦笖瀹冧滑浠庝换浣?RCU 璇讳晶涓寸晫鍖轰箣澶?
+璋冪敤鏃舵墠浼氭姳鎬ㄣ€?
 
-例如，workqueue 的 for_each_pwq() 宏旨在既在 RCU 读侧临界区内使用，也在持有 wq->mutex
-时使用。
+渚嬪锛寃orkqueue 鐨?for_each_pwq() 瀹忔棬鍦ㄦ棦鍦?RCU 璇讳晶涓寸晫鍖哄唴浣跨敤锛屼篃鍦ㄦ寔鏈?wq->mutex
+鏃朵娇鐢ㄣ€?
 ```
 
 	#define for_each_pwq(pwq, wq)

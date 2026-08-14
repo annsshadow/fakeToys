@@ -1,125 +1,88 @@
-
-## Netdev 特性乱象与脱困指南
+﻿
+## Netdev 鐗规€т贡璞′笌鑴卞洶鎸囧崡
 
 
 Author:
-	Michał Mirosław <mirq-linux@rere.qmqm.pl>
+	Micha艂 Miros艂aw <mirq-linux@rere.qmqm.pl>
 
 
 
-## 第一部分：特性集合
+## 绗竴閮ㄥ垎锛氱壒鎬ч泦鍚?
+
+缃戝崱鍙槸鍘熷皝涓嶅姩鍦版敹鍙戝寘鐨勬棩瀛愭棭宸蹭竴鍘讳笉杩斻€傚浠婄殑瑷倷娣诲姞浜嗗绉嶁€滅壒鎬р€濅笌鈥滅己闄封€濓紙璇绘噦浜嗭細鍗?offload 鍗歌浇锛夛紝鎶婄敓鎴愪笌鏍￠獙鏍￠獙鍜屻€佹媶鍒嗘暟鎹寘銆佸鏁版嵁鍖呭垎绫荤瓑鍚勭浠诲姟浠庢搷浣滅郴缁熻韩涓婂嵏涓嬨€傝繖浜涜兘鍔涘強鍏剁姸鎬佸湪 Linux 鍐呮牳涓€氬父琚О涓?netdev 鐗规€с€?
+鐩墠涓庨┍鍔ㄧ浉鍏崇殑鐗规€ч泦鍚堟湁涓夌粍锛屽彟鏈夌綉缁滄牳蹇冨唴閮ㄤ娇鐢ㄧ殑涓€缁勶細
+
+ 1. netdev->hw_features 闆嗗悎鍖呭惈閭ｄ簺鐘舵€佸彲鑳藉簲鏌愪釜璁惧鐨勭敤鎴疯姹傝€屾敼鍙橈紙鍚敤鎴栫鐢級鐨勭壒鎬с€傝闆嗗悎搴斿湪 ndo_init 鍥炶皟涓垵濮嬪寲锛屼箣鍚庝笉鍙洿鏀广€?
+ 2. netdev->features 闆嗗悎鍖呭惈褰撳墠涓烘煇璁惧鍚敤鐨勭壒鎬с€傚畠鍙簲鐢辩綉缁滄牳蹇冩垨鍦?ndo_set_features 鍥炶皟鐨勫嚭閿欒矾寰勪腑淇敼銆?
+ 3. netdev->vlan_features 闆嗗悎鍖呭惈鍏剁姸鎬佷細琚瓙 VLAN 璁惧缁ф壙鐨勭壒鎬э紙鍙?netdev->features 闆嗗悎闄愬埗锛夈€傜洰鍓嶅畠鐢ㄤ簬鎵€鏈?VLAN 璁惧锛屾棤璁烘爣绛炬槸鍦ㄧ‖浠惰繕鏄蒋浠朵腑鍓ョ鎴栨彃鍏ャ€?
+ 4. netdev->wanted_features 闆嗗悎鍖呭惈鐢ㄦ埛璇锋眰鐨勭壒鎬ч泦鍚堛€傛瘡褰撴湰闆嗗悎鎴栨煇浜涜澶囩壒瀹氭潯浠跺彂鐢熷彉鍖栨椂锛屽畠閮戒細琚?ndo_fix_features 鍥炶皟杩囨护銆傝闆嗗悎鏄綉缁滄牳蹇冨唴閮ㄤ娇鐢ㄧ殑锛岄┍鍔ㄤ腑涓嶅簲寮曠敤銆?
 
 
-网卡只是原封不动地收发包的日子早已一去不返。如今的設備添加了多种“特性”与“缺陷”（读懂了：即 offload 卸载），把生成与校验校验和、拆分数据包、对数据包分类等各种任务从操作系统身上卸下。这些能力及其状态在 Linux 内核中通常被称为 netdev 特性。
+## 绗簩閮ㄥ垎锛氭帶鍒跺凡鍚敤鐨勭壒鎬?
 
-目前与驱动相关的特性集合有三组，另有网络核心内部使用的一组：
+褰撹鏀瑰彉褰撳墠鐗规€ч泦鍚堬紙netdev->features锛夋椂锛屼細璋冪敤 ndo_fix_features 鍥炶皟涓?netdev_fix_features() 璁＄畻鍑烘柊鐨勯泦鍚堝苟瀵瑰叾杩涜杩囨护銆傝嫢缁撴灉闆嗗悎涓庡綋鍓嶉泦鍚堜笉鍚岋紝鍒欏皢鍏朵紶鍏?ndo_set_features 鍥炶皟锛屽苟鍦紙璇ュ洖璋冭繑鍥炴垚鍔熷悗锛夋浛鎹?netdev->features 涓瓨鍌ㄧ殑鍊笺€備箣鍚庡彧瑕佸綋鍓嶉泦鍚堝彲鑳藉彂鐢熷彉鍖栵紝灏变細鍙戝嚭 NETDEV_FEAT_CHANGE 閫氱煡銆?
+浠ヤ笅浜嬩欢浼氳Е鍙戦噸鏂拌绠楋細
+ 1. 璁惧娉ㄥ唽鍚庯紝ndo_init 杩斿洖鎴愬姛
+ 2. 鐢ㄦ埛璇锋眰鏀瑰彉鐗规€х姸鎬? 3. 璋冪敤浜?netdev_update_features()
 
- 1. netdev->hw_features 集合包含那些状态可能应某个设备的用户请求而改变（启用或禁用）的特性。该集合应在 ndo_init 回调中初始化，之后不可更改。
-
- 2. netdev->features 集合包含当前为某设备启用的特性。它只应由网络核心或在 ndo_set_features 回调的出错路径中修改。
-
- 3. netdev->vlan_features 集合包含其状态会被子 VLAN 设备继承的特性（受 netdev->features 集合限制）。目前它用于所有 VLAN 设备，无论标签是在硬件还是软件中剥离或插入。
-
- 4. netdev->wanted_features 集合包含用户请求的特性集合。每当本集合或某些设备特定条件发生变化时，它都会被 ndo_fix_features 回调过滤。该集合是网络核心内部使用的，驱动中不应引用。
+ndo_*_features 鍥炶皟鍦ㄦ寔鏈?rtnl_lock 鐨勬儏鍐典笅琚皟鐢ㄣ€傜己澶辩殑鍥炶皟琚涓烘€绘槸杩斿洖鎴愬姛銆?
+鎯宠瑙﹀彂閲嶆柊璁＄畻鐨勯┍鍔ㄥ繀椤婚€氳繃鎸佹湁 rtnl_lock 鏃惰皟鐢?netdev_update_features() 鏉ュ疄鐜般€備笉搴斾粠 ndo_*_features 鍥炶皟涓墽琛屾鎿嶄綔銆傞櫎閫氳繃 ndo_fix_features 鍥炶皟澶栵紝椹卞姩涓嶅簲淇敼 netdev->features銆?
 
 
-
-## 第二部分：控制已启用的特性
-
-
-当要改变当前特性集合（netdev->features）时，会调用 ndo_fix_features 回调与 netdev_fix_features() 计算出新的集合并对其进行过滤。若结果集合与当前集合不同，则将其传入 ndo_set_features 回调，并在（该回调返回成功后）替换 netdev->features 中存储的值。之后只要当前集合可能发生变化，就会发出 NETDEV_FEAT_CHANGE 通知。
-
-以下事件会触发重新计算：
- 1. 设备注册后，ndo_init 返回成功
- 2. 用户请求改变特性状态
- 3. 调用了 netdev_update_features()
-
-ndo_*_features 回调在持有 rtnl_lock 的情况下被调用。缺失的回调被视为总是返回成功。
-
-想要触发重新计算的驱动必须通过持有 rtnl_lock 时调用 netdev_update_features() 来实现。不应从 ndo_*_features 回调中执行此操作。除通过 ndo_fix_features 回调外，驱动不应修改 netdev->features。
-
-
-
-## 第三部分：实现提示
-
+## 绗笁閮ㄥ垎锛氬疄鐜版彁绀?
 
  - ndo_fix_features:
 
-特性之间的所有依赖关系都应在此处解决。结果集合还可能被网络核心施加的限制进一步缩减（如 netdev_fix_features() 中所编写）。因此，当某特性的依赖未满足时，禁用该特性比强制开启其依赖更安全。
-
-该回调不应修改硬件或驱动状态（应是无状态的）。在连续的 ndo_set_features 调用之间，它可能被多次调用。
-
-回调不得更改 NETIF_F_SOFT_FEATURES 或 NETIF_F_NEVER_CHANGE 集合中包含的特性。唯一的例外是 NETIF_F_VLAN_CHALLENGED，但需谨慎，因为这种更改不会影响已配置的 VLAN。
-
+鐗规€т箣闂寸殑鎵€鏈変緷璧栧叧绯婚兘搴斿湪姝ゅ瑙ｅ喅銆傜粨鏋滈泦鍚堣繕鍙兘琚綉缁滄牳蹇冩柦鍔犵殑闄愬埗杩涗竴姝ョ缉鍑忥紙濡?netdev_fix_features() 涓墍缂栧啓锛夈€傚洜姝わ紝褰撴煇鐗规€х殑渚濊禆鏈弧瓒虫椂锛岀鐢ㄨ鐗规€ф瘮寮哄埗寮€鍚叾渚濊禆鏇村畨鍏ㄣ€?
+璇ュ洖璋冧笉搴斾慨鏀圭‖浠舵垨椹卞姩鐘舵€侊紙搴旀槸鏃犵姸鎬佺殑锛夈€傚湪杩炵画鐨?ndo_set_features 璋冪敤涔嬮棿锛屽畠鍙兘琚娆¤皟鐢ㄣ€?
+鍥炶皟涓嶅緱鏇存敼 NETIF_F_SOFT_FEATURES 鎴?NETIF_F_NEVER_CHANGE 闆嗗悎涓寘鍚殑鐗规€с€傚敮涓€鐨勪緥澶栨槸 NETIF_F_VLAN_CHALLENGED锛屼絾闇€璋ㄦ厧锛屽洜涓鸿繖绉嶆洿鏀逛笉浼氬奖鍝嶅凡閰嶇疆鐨?VLAN銆?
  - ndo_set_features:
 
-应重新配置硬件以匹配传入的特性集合。除非出现无法在 ndo_fix_features 中可靠检测的错误情况，否则不应更改该集合。在这种情况下，回调应将 netdev->features 更新为与最终硬件状态一致。返回的错误不会（也无法）被传播到 dmesg 以外的任何地方。（注：成功返回为零，>0 表示静默错误。）
+搴旈噸鏂伴厤缃‖浠朵互鍖归厤浼犲叆鐨勭壒鎬ч泦鍚堛€傞櫎闈炲嚭鐜版棤娉曞湪 ndo_fix_features 涓彲闈犳娴嬬殑閿欒鎯呭喌锛屽惁鍒欎笉搴旀洿鏀硅闆嗗悎銆傚湪杩欑鎯呭喌涓嬶紝鍥炶皟搴斿皢 netdev->features 鏇存柊涓轰笌鏈€缁堢‖浠剁姸鎬佷竴鑷淬€傝繑鍥炵殑閿欒涓嶄細锛堜篃鏃犳硶锛夎浼犳挱鍒?dmesg 浠ュ鐨勪换浣曞湴鏂广€傦紙娉細鎴愬姛杩斿洖涓洪浂锛?0 琛ㄧず闈欓粯閿欒銆傦級
 
 
 
-## 第四部分：特性
+## 绗洓閮ㄥ垎锛氱壒鎬?
 
+鏈夊叧鐗规€х殑褰撳墠鍒楄〃锛岃鍙傞槄 include/linux/netdev_features.h銆傛湰鑺傛弿杩板叾涓儴鍒嗙壒鎬х殑璇箟銆?
+ - Transmit checksumming锛堝彂閫佹牎楠屽拰鍗歌浇锛?
+瀹屾暣璇存槑璇峰弬闃?include/linux/skbuff.h 椤堕儴鐨勬敞閲娿€?
+娉ㄦ剰锛歂ETIF_F_HW_CSUM 鏄?NETIF_F_IP_CSUM + NETIF_F_IPV6_CSUM 鐨勮秴闆嗐€傝繖鎰忓懗鐫€璁惧鍙互鍦ㄦ暟鎹寘鐨勪换浣曚綅缃紙鏃犺瀛樺湪浣曠澶撮儴锛夊～鍐欑被浼?TCP/UDP 鐨勬牎楠屽拰銆?
+ - Transmit TCP segmentation offload锛堝彂閫?TCP 鍒嗘鍗歌浇锛?
+NETIF_F_TSO_ECN 琛ㄧず纭欢鑳藉姝ｇ‘鍦版媶鍒嗚缃簡 CWR 浣嶇殑鏁版嵁鍖咃紝鏃犺鏄?TCPv4锛堝惎鐢?NETIF_F_TSO 鏃讹級杩樻槸 TCPv6锛圢ETIF_F_TSO6锛夈€?
+ - Transmit UDP segmentation offload锛堝彂閫?UDP 鍒嗘鍗歌浇锛?
+NETIF_F_GSO_UDP_L4 鎺ュ彈涓€涓甫鏈夎秴杩?gso_size 鐨勮礋杞界殑鍗曚釜 UDP 澶撮儴銆傚湪鍒嗘鏃讹紝瀹冧細鎸?gso_size 杈圭晫瀵硅礋杞借繘琛屽垎娈碉紝骞跺鍒剁綉缁滀笌 UDP 澶撮儴锛堣嫢鏈€鍚庝竴娈靛皬浜?gso_size 鍒欒繘琛屼慨姝ｏ級銆?
+ - Transmit DMA from high memory锛堜粠楂樼鍐呭瓨鍙戦€?DMA锛?
+鍦ㄧ浉鍏崇殑骞冲彴涓婏紝NETIF_F_HIGHDMA 琛ㄧず ndo_start_xmit 鑳藉澶勭悊鍒嗙墖锛坒rags锛変綅浜庨珮绔唴瀛樼殑 skb銆?
+ - Transmit scatter-gather锛堝彂閫佸垎鏁?鑱氶泦锛?
+杩欎簺鐗规€ц〃绀?ndo_start_xmit 鑳藉澶勭悊鍒嗘鐨?skb锛歂ETIF_F_SG 鈥斺€?鍒嗛〉 skb锛坰kb_shinfo()->frags锛夛紝NETIF_F_FRAGLIST 鈥斺€?閾捐〃寮?skb锛坰kb->next/prev 閾捐〃锛夈€?
+ - Software features锛堣蒋浠剁壒鎬э級
 
-有关特性的当前列表，请参阅 include/linux/netdev_features.h。本节描述其中部分特性的语义。
-
- - Transmit checksumming（发送校验和卸载）
-
-完整说明请参阅 include/linux/skbuff.h 顶部的注释。
-
-注意：NETIF_F_HW_CSUM 是 NETIF_F_IP_CSUM + NETIF_F_IPV6_CSUM 的超集。这意味着设备可以在数据包的任何位置（无论存在何种头部）填写类似 TCP/UDP 的校验和。
-
- - Transmit TCP segmentation offload（发送 TCP 分段卸载）
-
-NETIF_F_TSO_ECN 表示硬件能够正确地拆分设置了 CWR 位的数据包，无论是 TCPv4（启用 NETIF_F_TSO 时）还是 TCPv6（NETIF_F_TSO6）。
-
- - Transmit UDP segmentation offload（发送 UDP 分段卸载）
-
-NETIF_F_GSO_UDP_L4 接受一个带有超过 gso_size 的负载的单个 UDP 头部。在分段时，它会按 gso_size 边界对负载进行分段，并复制网络与 UDP 头部（若最后一段小于 gso_size 则进行修正）。
-
- - Transmit DMA from high memory（从高端内存发送 DMA）
-
-在相关的平台上，NETIF_F_HIGHDMA 表示 ndo_start_xmit 能够处理分片（frags）位于高端内存的 skb。
-
- - Transmit scatter-gather（发送分散/聚集）
-
-这些特性表示 ndo_start_xmit 能够处理分段的 skb：NETIF_F_SG —— 分页 skb（skb_shinfo()->frags），NETIF_F_FRAGLIST —— 链表式 skb（skb->next/prev 链表）。
-
- - Software features（软件特性）
-
-NETIF_F_SOFT_FEATURES 中包含的特性属于网络栈的特性。驱动不应基于这些特性改变行为。
-
- - VLAN challenged（受 VLAN 限制）
-
-NETIF_F_VLAN_CHALLENGED 应设置于那些无法处理 VLAN 头部的设备。某些驱动设置它是因为网卡无法处理更大的 MTU。[FIXME：这些情况可在 VLAN 代码中通过只允许减小 MTU 的 VLAN 来修复。不过这可能用处不大。]
+NETIF_F_SOFT_FEATURES 涓寘鍚殑鐗规€у睘浜庣綉缁滄爤鐨勭壒鎬с€傞┍鍔ㄤ笉搴斿熀浜庤繖浜涚壒鎬ф敼鍙樿涓恒€?
+ - VLAN challenged锛堝彈 VLAN 闄愬埗锛?
+NETIF_F_VLAN_CHALLENGED 搴旇缃簬閭ｄ簺鏃犳硶澶勭悊 VLAN 澶撮儴鐨勮澶囥€傛煇浜涢┍鍔ㄨ缃畠鏄洜涓虹綉鍗℃棤娉曞鐞嗘洿澶х殑 MTU銆俒FIXME锛氳繖浜涙儏鍐靛彲鍦?VLAN 浠ｇ爜涓€氳繃鍙厑璁稿噺灏?MTU 鐨?VLAN 鏉ヤ慨澶嶃€備笉杩囪繖鍙兘鐢ㄥ涓嶅ぇ銆俔
 
 - rx-fcs
 
-该特性请求 NIC 将以太网帧校验和（FCS）附加到 skb 数据的末尾。这样嗅探器及其他工具就能读取 NIC 在收到数据包时记录的 CRC。
-
+璇ョ壒鎬ц姹?NIC 灏嗕互澶綉甯ф牎楠屽拰锛團CS锛夐檮鍔犲埌 skb 鏁版嵁鐨勬湯灏俱€傝繖鏍峰梾鎺㈠櫒鍙婂叾浠栧伐鍏峰氨鑳借鍙?NIC 鍦ㄦ敹鍒版暟鎹寘鏃惰褰曠殑 CRC銆?
 - rx-all
 
-该特性请求 NIC 接收所有可能的帧，包括出错的帧（如错误的 FCS 等）。在嗅探存在坏包的链路时会很有帮助。某些 NIC 在同时进入普通 PROMISC（混杂）模式时可能会收到更多数据包。
-
+璇ョ壒鎬ц姹?NIC 鎺ユ敹鎵€鏈夊彲鑳界殑甯э紝鍖呮嫭鍑洪敊鐨勫抚锛堝閿欒鐨?FCS 绛夛級銆傚湪鍡呮帰瀛樺湪鍧忓寘鐨勯摼璺椂浼氬緢鏈夊府鍔┿€傛煇浜?NIC 鍦ㄥ悓鏃惰繘鍏ユ櫘閫?PROMISC锛堟贩鏉傦級妯″紡鏃跺彲鑳戒細鏀跺埌鏇村鏁版嵁鍖呫€?
 - rx-gro-hw
 
-该特性请求 NIC 启用硬件 GRO（通用接收卸载）。硬件 GRO 基本上是 TSO 的逆向操作，且通常比硬件 LRO 更严格。由硬件 GRO 合并的数据包流必须能被 GSO 或 TSO 重新分段回完全原始的包流。硬件 GRO 依赖 RXCSUM，因为硬件成功合并的每个数据包也必须由硬件完成校验和验证。
-
+璇ョ壒鎬ц姹?NIC 鍚敤纭欢 GRO锛堥€氱敤鎺ユ敹鍗歌浇锛夈€傜‖浠?GRO 鍩烘湰涓婃槸 TSO 鐨勯€嗗悜鎿嶄綔锛屼笖閫氬父姣旂‖浠?LRO 鏇翠弗鏍笺€傜敱纭欢 GRO 鍚堝苟鐨勬暟鎹寘娴佸繀椤昏兘琚?GSO 鎴?TSO 閲嶆柊鍒嗘鍥炲畬鍏ㄥ師濮嬬殑鍖呮祦銆傜‖浠?GRO 渚濊禆 RXCSUM锛屽洜涓虹‖浠舵垚鍔熷悎骞剁殑姣忎釜鏁版嵁鍖呬篃蹇呴』鐢辩‖浠跺畬鎴愭牎楠屽拰楠岃瘉銆?
 - hsr-tag-ins-offload
 
-应在那些能自动插入 HSR（高可用无缝冗余）或 PRP（并行冗余协议）标签的设备上设置此特性。
-
+搴斿湪閭ｄ簺鑳借嚜鍔ㄦ彃鍏?HSR锛堥珮鍙敤鏃犵紳鍐椾綑锛夋垨 PRP锛堝苟琛屽啑浣欏崗璁級鏍囩鐨勮澶囦笂璁剧疆姝ょ壒鎬с€?
 - hsr-tag-rm-offload
 
-应在那些能自动移除 HSR（高可用无缝冗余）或 PRP（并行冗余协议）标签的设备上设置此特性。
-
+搴斿湪閭ｄ簺鑳借嚜鍔ㄧЩ闄?HSR锛堥珮鍙敤鏃犵紳鍐椾綑锛夋垨 PRP锛堝苟琛屽啑浣欏崗璁級鏍囩鐨勮澶囦笂璁剧疆姝ょ壒鎬с€?
 - hsr-fwd-offload
 
-应在那些能在硬件中将 HSR（高可用无缝冗余）帧从一个端口转发到另一个端口的设备上设置此特性。
-
+搴斿湪閭ｄ簺鑳藉湪纭欢涓皢 HSR锛堥珮鍙敤鏃犵紳鍐椾綑锛夊抚浠庝竴涓鍙ｈ浆鍙戝埌鍙︿竴涓鍙ｇ殑璁惧涓婅缃鐗规€с€?
 - hsr-dup-offload
 
-应在那些能在硬件中自动复制外发的 HSR（高可用无缝冗余）或 PRP（并行冗余协议）标签帧的设备上设置此特性。
-
+搴斿湪閭ｄ簺鑳藉湪纭欢涓嚜鍔ㄥ鍒跺鍙戠殑 HSR锛堥珮鍙敤鏃犵紳鍐椾綑锛夋垨 PRP锛堝苟琛屽啑浣欏崗璁級鏍囩甯х殑璁惧涓婅缃鐗规€с€?
 - netmem-tx
 
-应在支持 netmem TX 的设备上设置此特性。请参阅 Documentation/networking/netmem.rst
+搴斿湪鏀寔 netmem TX 鐨勮澶囦笂璁剧疆姝ょ壒鎬с€傝鍙傞槄 Documentation/networking/netmem.rst

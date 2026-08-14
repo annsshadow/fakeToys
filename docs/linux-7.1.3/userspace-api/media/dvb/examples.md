@@ -1,9 +1,9 @@
+﻿
+######## 绀轰緥
 
-######## 示例
 
+杩囧幓锛屾垜浠浘鍦ㄦ鎻愪緵涓€缁勭ず渚嬨€傜劧鑰岋紝杩欎簺绀轰緥宸茬粡杩囨椂锛屽浠婄敋鑷虫棤娉曠紪璇戙€?
 
-过去，我们曾在此提供一组示例。然而，这些示例已经过时，如今甚至无法编译。
+姝ゅ锛屽浠婃渶浣冲仛娉曟槸浣跨敤鏂囨。瀹屽鐨?libdvbv5 DVB API銆?
 
-此外，如今最佳做法是使用文档完备的 libdvbv5 DVB API。
-
-请参考 `libdvbv5 <https://linuxtv.org/docs/libdvbv5/index.html>`__ 获取更新/推荐的示例。
+璇峰弬鑰?`libdvbv5 <https://linuxtv.org/docs/libdvbv5/index.html>`__ 鑾峰彇鏇存柊/鎺ㄨ崘鐨勭ず渚嬨€?

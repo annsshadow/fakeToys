@@ -1,31 +1,24 @@
+﻿
+## Devpts 鏂囦欢绯荤粺
 
-## Devpts 文件系统
 
-
-现在每次 devpts 文件系统的挂载都是独立的，使得在一个挂载中分配的 pty 及其
-索引独立于所有其他挂载中的 pty 及其索引。
-
-现在所有 devpts 文件系统的挂载都会创建一个权限为 `0000` 的 `/dev/pts/ptmx`
-节点。
-
-为保持向后兼容，当打开以 `mknod name c 5 2` 创建的 ptmx 设备节点（即任何
-此类节点）时，会在与 ptmx 设备节点相同的目录下查找名为 `pts` 的 devpts
-实例。
-
-作为一种选择，除了在 `/dev/ptmx` 放置 `/dev/ptmx` 设备节点外，也可以在
-`/dev/ptmx` 放置指向 `/dev/pts/ptmx` 的符号链接，或将 `/dev/ptx/ptmx` 绑定
-挂载到 `/dev/ptmx`。如果你选择以这种方式使用 devpts 文件系统，则应以
-`ptmxmode=0666` 挂载 devpts，或调用 `chmod 0666 /dev/pts/ptmx`。
-
+鐜板湪姣忔 devpts 鏂囦欢绯荤粺鐨勬寕杞介兘鏄嫭绔嬬殑锛屼娇寰楀湪涓€涓寕杞戒腑鍒嗛厤鐨?pty 鍙婂叾
+绱㈠紩鐙珛浜庢墍鏈夊叾浠栨寕杞戒腑鐨?pty 鍙婂叾绱㈠紩銆?
+鐜板湪鎵€鏈?devpts 鏂囦欢绯荤粺鐨勬寕杞介兘浼氬垱寤轰竴涓潈闄愪负 `0000` 鐨?`/dev/pts/ptmx`
+鑺傜偣銆?
+涓轰繚鎸佸悜鍚庡吋瀹癸紝褰撴墦寮€浠?`mknod name c 5 2` 鍒涘缓鐨?ptmx 璁惧鑺傜偣锛堝嵆浠讳綍
+姝ょ被鑺傜偣锛夋椂锛屼細鍦ㄤ笌 ptmx 璁惧鑺傜偣鐩稿悓鐨勭洰褰曚笅鏌ユ壘鍚嶄负 `pts` 鐨?devpts
+瀹炰緥銆?
+浣滀负涓€绉嶉€夋嫨锛岄櫎浜嗗湪 `/dev/ptmx` 鏀剧疆 `/dev/ptmx` 璁惧鑺傜偣澶栵紝涔熷彲浠ュ湪
+`/dev/ptmx` 鏀剧疆鎸囧悜 `/dev/pts/ptmx` 鐨勭鍙烽摼鎺ワ紝鎴栧皢 `/dev/ptx/ptmx` 缁戝畾
+鎸傝浇鍒?`/dev/ptmx`銆傚鏋滀綘閫夋嫨浠ヨ繖绉嶆柟寮忎娇鐢?devpts 鏂囦欢绯荤粺锛屽垯搴斾互
+`ptmxmode=0666` 鎸傝浇 devpts锛屾垨璋冪敤 `chmod 0666 /dev/pts/ptmx`銆?
 ```
 
-    kernel.pty.max = 4096	- 全局限制
-    kernel.pty.reserve = 1024	- 为从初始挂载命名空间挂载的文件系统保留
-    kernel.pty.nr		- 当前 pty 计数
+    kernel.pty.max = 4096	- 鍏ㄥ眬闄愬埗
+    kernel.pty.reserve = 1024	- 涓轰粠鍒濆鎸傝浇鍛藉悕绌洪棿鎸傝浇鐨勬枃浠剁郴缁熶繚鐣?    kernel.pty.nr		- 褰撳墠 pty 璁℃暟
 
 ```
-每实例限制可通过添加挂载选项 `max=<count>` 设置。
-
-此特性在内核 3.4 中与 `sysctl kernel.pty.reserve` 一并加入。
-
-在早于 3.4 的内核中，sysctl `kernel.pty.max` 作为每实例限制工作。
+姣忓疄渚嬮檺鍒跺彲閫氳繃娣诲姞鎸傝浇閫夐」 `max=<count>` 璁剧疆銆?
+姝ょ壒鎬у湪鍐呮牳 3.4 涓笌 `sysctl kernel.pty.reserve` 涓€骞跺姞鍏ャ€?
+鍦ㄦ棭浜?3.4 鐨勫唴鏍镐腑锛宻ysctl `kernel.pty.max` 浣滀负姣忓疄渚嬮檺鍒跺伐浣溿€?

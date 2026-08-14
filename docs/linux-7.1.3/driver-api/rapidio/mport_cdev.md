@@ -1,95 +1,43 @@
-## RapidIO 子系统 mport 字符设备驱动（rio_mport_cdev.c）
+﻿## RapidIO 瀛愮郴缁?mport 瀛楃璁惧椹卞姩锛坮io_mport_cdev.c锛?
+
+## 1. 姒傝堪
 
 
-## 1. 概述
+璇ヨ澶囬┍鍔ㄦ槸 RapidIO.org 杞欢浠诲姟缁勶紙STG锛夊唴 Texas Instruments銆丗reescale銆?Prodrive Technologies銆丯okia Networks銆丅AE 涓?IDT 涔嬮棿鍗忎綔鐨勬垚鏋溿€傝繕鏀跺埌浜?鏉ヨ嚜 RapidIO.org 鍏朵粬鎴愬憳鐨勫叾浠栬緭鍏ャ€傚叾鐩爣鏄垱寤轰竴涓瓧绗︽ā寮忛┍鍔ㄦ帴鍙ｏ紝
+浠ュ厑璁镐紬澶氫笖鍚勫紓鐨?RapidIO 瀹炵幇鑳藉浜掓搷浣滅殑鏂瑰紡锛屽皢 RapidIO 璁惧鐨?鑳藉姏鐩存帴鏆撮湶缁欏簲鐢ㄧ▼搴忋€?
+璇ラ┍鍔紙MPORT_CDEV锛変负鐢ㄦ埛绌洪棿搴旂敤绋嬪簭鎻愪緵瀵瑰熀鏈?RapidIO 瀛愮郴缁熸搷浣滅殑
+璁块棶銆傚ぇ澶氭暟 RapidIO 鎿嶄綔閫氳繃 'ioctl' 绯荤粺璋冪敤鏀寔銆?
+鍔犺浇璇ヨ澶囬┍鍔ㄥ悗锛屽畠浼氫负姣忎竴涓凡娉ㄥ唽鐨?RapidIO mport 璁惧鍦?/dev 鐩綍涓?鍒涘缓鍚嶄负 rio_mportX 鐨勬枃浠剁郴缁熻妭鐐广€傝妭鐐瑰悕涓殑 'X' 涓庡垎閰嶇粰姣忎釜鏈湴
+mport 璁惧鐨勫敮涓€绔彛 ID 鐩稿尮閰嶃€?
+浣跨敤鍙敤鐨勪竴缁?ioctl 鍛戒护锛岀敤鎴风┖闂村簲鐢ㄧ▼搴忓彲浠ユ墽琛屼互涓?RapidIO 鎬荤嚎涓?瀛愮郴缁熸搷浣滐細
 
+- 浠?鍚?mport 璁惧鐨勯厤缃瘎瀛樺櫒璇诲彇鍜屽啓鍏?  锛圧IO_MPORT_MAINT_READ_LOCAL/RIO_MPORT_MAINT_WRITE_LOCAL锛?- 浠?鍚戣繙绋?RapidIO 璁惧鐨勯厤缃瘎瀛樺櫒璇诲彇鍜屽啓鍏ャ€?  杩欎簺鎿嶄綔鍦?RIO 瑙勮寖涓瀹氫箟涓?RapidIO 缁存姢璇?鍐欍€?  锛圧IO_MPORT_MAINT_READ_REMOTE/RIO_MPORT_MAINT_WRITE_REMOTE锛?- 涓?mport 璁惧璁剧疆 RapidIO 鐩爣 ID锛圧IO_MPORT_MAINT_HDID_SET锛?- 涓?mport 璁惧璁剧疆 RapidIO 缁勪欢鏍囩锛圕omponent Tag锛?  锛圧IO_MPORT_MAINT_COMPTAG_SET锛?- 鏌ヨ mport 璁惧鐨勯€昏緫绱㈠紩锛圧IO_MPORT_MAINT_PORT_IDX_GET锛?- 鏌ヨ mport 璁惧鐨勮兘鍔涗笌 RapidIO 閾捐矾閰嶇疆
+  锛圧IO_MPORT_GET_PROPERTIES锛?- 鍚敤/绂佺敤鍚戠敤鎴风┖闂村簲鐢ㄧ▼搴忔姤鍛?RapidIO 闂ㄩ搩锛坉oorbell锛変簨浠?  锛圧IO_ENABLE_DOORBELL_RANGE/RIO_DISABLE_DOORBELL_RANGE锛?- 鍚敤/绂佺敤鍚戠敤鎴风┖闂村簲鐢ㄧ▼搴忔姤鍛?RIO 绔彛鍐欙紙port-write锛変簨浠?  锛圧IO_ENABLE_PORTWRITE_RANGE/RIO_DISABLE_PORTWRITE_RANGE锛?- 鏌ヨ/鎺у埗閫氳繃璇ラ┍鍔ㄦ姤鍛婄殑浜嬩欢绫诲瀷锛氶棬閾冦€佺鍙ｅ啓鎴栦袱鑰?  锛圧IO_SET_EVENT_MASK/RIO_GET_EVENT_MASK锛?- 涓虹壒瀹氬ぇ灏忋€丷apidIO 鐩爣 ID銆佽烦鏁帮紙hopcount锛変笌璇锋眰绫诲瀷閰嶇疆/鏄犲皠 mport 鐨?  鍑虹珯璇锋眰绐楀彛锛圧IO_MAP_OUTBOUND/RIO_UNMAP_OUTBOUND锛?- 涓虹壒瀹氬ぇ灏忋€丷apidIO 鍩哄湴鍧€涓庢湰鍦板唴瀛樺熀鍦板潃閰嶇疆/鏄犲皠 mport 鐨?  鍏ョ珯璇锋眰绐楀彛锛圧IO_MAP_INBOUND/RIO_UNMAP_INBOUND锛?- 涓轰笌杩滅▼ RapidIO 璁惧鐨?DMA 鏁版嵁浼犺緭鍒嗛厤/閲婃斁杩炵画鐨?DMA 涓€鑷存€у唴瀛樼紦鍐插尯
+  锛圧IO_ALLOC_DMA/RIO_FREE_DMA锛?- 鍙戣捣涓庤繙绋?RapidIO 璁惧鐨?DMA 鏁版嵁浼犺緭锛圧IO_TRANSFER锛夈€?  鏀寔闃诲銆佸紓姝ヤ笌 posted锛堝嵆鈥滃彂灏勫悗涓嶇鈥濓級鏁版嵁浼犺緭妯″紡銆?- 妫€鏌?绛夊緟寮傛 DMA 鏁版嵁浼犺緭瀹屾垚锛圧IO_WAIT_FOR_ASYNC锛?- 绠＄悊 RapidIO 瀛愮郴缁熸敮鎸佺殑璁惧瀵硅薄锛圧IO_DEV_ADD/RIO_DEV_DEL锛夈€?  杩欏厑璁稿皢鍚勭 RapidIO 缁撴瀯锛坒abric锛夋灇涓剧畻娉曞疄鐜颁负鐢ㄦ埛绌洪棿搴旂敤绋嬪簭锛?  鍚屾椂浣跨敤鍐呮牳 RapidIO 瀛愮郴缁熸彁渚涚殑鍏朵綑鍔熻兘銆?
+## 2. 纭欢鍏煎鎬?
 
-该设备驱动是 RapidIO.org 软件任务组（STG）内 Texas Instruments、Freescale、
-Prodrive Technologies、Nokia Networks、BAE 与 IDT 之间协作的成果。还收到了
-来自 RapidIO.org 其他成员的其他输入。其目标是创建一个字符模式驱动接口，
-以允许众多且各异的 RapidIO 实现能够互操作的方式，将 RapidIO 设备的
-能力直接暴露给应用程序。
-
-该驱动（MPORT_CDEV）为用户空间应用程序提供对基本 RapidIO 子系统操作的
-访问。大多数 RapidIO 操作通过 'ioctl' 系统调用支持。
-
-加载该设备驱动后，它会为每一个已注册的 RapidIO mport 设备在 /dev 目录下
-创建名为 rio_mportX 的文件系统节点。节点名中的 'X' 与分配给每个本地
-mport 设备的唯一端口 ID 相匹配。
-
-使用可用的一组 ioctl 命令，用户空间应用程序可以执行以下 RapidIO 总线与
-子系统操作：
-
-- 从/向 mport 设备的配置寄存器读取和写入
-  （RIO_MPORT_MAINT_READ_LOCAL/RIO_MPORT_MAINT_WRITE_LOCAL）
-- 从/向远程 RapidIO 设备的配置寄存器读取和写入。
-  这些操作在 RIO 规范中被定义为 RapidIO 维护读/写。
-  （RIO_MPORT_MAINT_READ_REMOTE/RIO_MPORT_MAINT_WRITE_REMOTE）
-- 为 mport 设备设置 RapidIO 目标 ID（RIO_MPORT_MAINT_HDID_SET）
-- 为 mport 设备设置 RapidIO 组件标签（Component Tag）
-  （RIO_MPORT_MAINT_COMPTAG_SET）
-- 查询 mport 设备的逻辑索引（RIO_MPORT_MAINT_PORT_IDX_GET）
-- 查询 mport 设备的能力与 RapidIO 链路配置
-  （RIO_MPORT_GET_PROPERTIES）
-- 启用/禁用向用户空间应用程序报告 RapidIO 门铃（doorbell）事件
-  （RIO_ENABLE_DOORBELL_RANGE/RIO_DISABLE_DOORBELL_RANGE）
-- 启用/禁用向用户空间应用程序报告 RIO 端口写（port-write）事件
-  （RIO_ENABLE_PORTWRITE_RANGE/RIO_DISABLE_PORTWRITE_RANGE）
-- 查询/控制通过该驱动报告的事件类型：门铃、端口写或两者
-  （RIO_SET_EVENT_MASK/RIO_GET_EVENT_MASK）
-- 为特定大小、RapidIO 目标 ID、跳数（hopcount）与请求类型配置/映射 mport 的
-  出站请求窗口（RIO_MAP_OUTBOUND/RIO_UNMAP_OUTBOUND）
-- 为特定大小、RapidIO 基地址与本地内存基地址配置/映射 mport 的
-  入站请求窗口（RIO_MAP_INBOUND/RIO_UNMAP_INBOUND）
-- 为与远程 RapidIO 设备的 DMA 数据传输分配/释放连续的 DMA 一致性内存缓冲区
-  （RIO_ALLOC_DMA/RIO_FREE_DMA）
-- 发起与远程 RapidIO 设备的 DMA 数据传输（RIO_TRANSFER）。
-  支持阻塞、异步与 posted（即“发射后不管”）数据传输模式。
-- 检查/等待异步 DMA 数据传输完成（RIO_WAIT_FOR_ASYNC）
-- 管理 RapidIO 子系统支持的设备对象（RIO_DEV_ADD/RIO_DEV_DEL）。
-  这允许将各种 RapidIO 结构（fabric）枚举算法实现为用户空间应用程序，
-  同时使用内核 RapidIO 子系统提供的其余功能。
-
-## 2. 硬件兼容性
-
-
-该设备驱动使用内核 RapidIO 子系统定义的标准接口，因此它可以与任何由
-RapidIO 子系统注册的 mport 设备驱动一起使用，限制由可用的 mport 实现设置。
-
-目前最常见的限制是特定 mport 设备是否有可用的 RapidIO 专用
-DMA 引擎框架。用户在计划使用该驱动时应验证其平台可用功能：
-
-- IDT Tsi721 PCIe 到 RapidIO 桥接设备及其 mport 设备驱动与该驱动完全兼容。
-- Freescale SoC 的 'fsl_rio' mport 驱动没有实现 RapidIO 专用 DMA 引擎支持，
-  因此 mport_cdev 驱动的 DMA 数据传输不可用。
-
-## 3. 模块参数
+璇ヨ澶囬┍鍔ㄤ娇鐢ㄥ唴鏍?RapidIO 瀛愮郴缁熷畾涔夌殑鏍囧噯鎺ュ彛锛屽洜姝ゅ畠鍙互涓庝换浣曠敱
+RapidIO 瀛愮郴缁熸敞鍐岀殑 mport 璁惧椹卞姩涓€璧蜂娇鐢紝闄愬埗鐢卞彲鐢ㄧ殑 mport 瀹炵幇璁剧疆銆?
+鐩墠鏈€甯歌鐨勯檺鍒舵槸鐗瑰畾 mport 璁惧鏄惁鏈夊彲鐢ㄧ殑 RapidIO 涓撶敤
+DMA 寮曟搸妗嗘灦銆傜敤鎴峰湪璁″垝浣跨敤璇ラ┍鍔ㄦ椂搴旈獙璇佸叾骞冲彴鍙敤鍔熻兘锛?
+- IDT Tsi721 PCIe 鍒?RapidIO 妗ユ帴璁惧鍙婂叾 mport 璁惧椹卞姩涓庤椹卞姩瀹屽叏鍏煎銆?- Freescale SoC 鐨?'fsl_rio' mport 椹卞姩娌℃湁瀹炵幇 RapidIO 涓撶敤 DMA 寮曟搸鏀寔锛?  鍥犳 mport_cdev 椹卞姩鐨?DMA 鏁版嵁浼犺緭涓嶅彲鐢ㄣ€?
+## 3. 妯″潡鍙傛暟
 
 
 - 'dma_timeout'
-      - DMA 传输完成超时（以毫秒计，默认值 3000）。
-        该参数设置 SYNC 模式 DMA 传输请求与 RIO_WAIT_FOR_ASYNC
-        ioctl 请求的最大完成等待时间。
-
+      - DMA 浼犺緭瀹屾垚瓒呮椂锛堜互姣璁★紝榛樿鍊?3000锛夈€?        璇ュ弬鏁拌缃?SYNC 妯″紡 DMA 浼犺緭璇锋眰涓?RIO_WAIT_FOR_ASYNC
+        ioctl 璇锋眰鐨勬渶澶у畬鎴愮瓑寰呮椂闂淬€?
 - 'dbg_level'
-      - 该参数允许控制该设备驱动生成的调试信息量。该参数由一组
-        对应于特定功能块的位掩码构成。
-        有关掩码定义请参见 'drivers/rapidio/devices/rio_mport_cdev.c'
-        该参数可以动态更改。
-        使用 CONFIG_RAPIDIO_DEBUG=y 以在顶层启用调试输出。
-
-## 4. 已知问题
+      - 璇ュ弬鏁板厑璁告帶鍒惰璁惧椹卞姩鐢熸垚鐨勮皟璇曚俊鎭噺銆傝鍙傛暟鐢变竴缁?        瀵瑰簲浜庣壒瀹氬姛鑳藉潡鐨勪綅鎺╃爜鏋勬垚銆?        鏈夊叧鎺╃爜瀹氫箟璇峰弬瑙?'drivers/rapidio/devices/rio_mport_cdev.c'
+        璇ュ弬鏁板彲浠ュ姩鎬佹洿鏀广€?        浣跨敤 CONFIG_RAPIDIO_DEBUG=y 浠ュ湪椤跺眰鍚敤璋冭瘯杈撳嚭銆?
+## 4. 宸茬煡闂
 
 
-  无。
-
-## 5. 用户空间应用程序与 API
-
-
-使用此设备驱动的 API 库与应用程序可从 RapidIO.org 获取。
-
-## 6. 待办列表（TODO List）
+  鏃犮€?
+## 5. 鐢ㄦ埛绌洪棿搴旂敤绋嬪簭涓?API
 
 
-- 添加对发送/接收“原始”RapidIO 消息数据包的支持。
-- 当 RapidIO 专用 DMA 不可用时，添加内存映射的 DMA 数据传输作为选项。
+浣跨敤姝よ澶囬┍鍔ㄧ殑 API 搴撲笌搴旂敤绋嬪簭鍙粠 RapidIO.org 鑾峰彇銆?
+## 6. 寰呭姙鍒楄〃锛圱ODO List锛?
+
+- 娣诲姞瀵瑰彂閫?鎺ユ敹鈥滃師濮嬧€漅apidIO 娑堟伅鏁版嵁鍖呯殑鏀寔銆?- 褰?RapidIO 涓撶敤 DMA 涓嶅彲鐢ㄦ椂锛屾坊鍔犲唴瀛樻槧灏勭殑 DMA 鏁版嵁浼犺緭浣滀负閫夐」銆?

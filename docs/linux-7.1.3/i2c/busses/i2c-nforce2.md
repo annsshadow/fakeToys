@@ -1,7 +1,7 @@
-## i2c-nforce2 内核驱动
+﻿## i2c-nforce2 鍐呮牳椹卞姩
 
 
-支持的适配器：
+鏀寔鐨勯€傞厤鍣細
   - nForce2 MCP                10de:0064
   - nForce2 Ultra 400 MCP      10de:0084
   - nForce3 Pro150 MCP         10de:00D4
@@ -17,19 +17,16 @@
   - nForce MCP78S              10de:0752
   - nForce MCP79               10de:0AA2
 
-数据手册：
-           未公开提供，但似乎与 AMD-8111 SMBus 2.0 适配器相似。
-
-作者：
+鏁版嵁鎵嬪唽锛?           鏈叕寮€鎻愪緵锛屼絾浼间箮涓?AMD-8111 SMBus 2.0 閫傞厤鍣ㄧ浉浼笺€?
+浣滆€咃細
  - Hans-Frieder Vogt <hfvogt@gmx.net>,
  - Thomas Leibold <thomas@plx.com>,
         - Patrick Dreker <patrick@dreker.de>
 
-### 描述
+### 鎻忚堪
 
 
-i2c-nforce2 是 nVidia nForce2 MCP 内置 SMBus 的驱动。
-
+i2c-nforce2 鏄?nVidia nForce2 MCP 鍐呯疆 SMBus 鐨勯┍鍔ㄣ€?
 ```
 
   00:01.1 SMBus: nVidia Corporation: Unknown device 0064 (rev a2)
@@ -39,13 +36,11 @@ i2c-nforce2 是 nVidia nForce2 MCP 内置 SMBus 的驱动。
           Capabilities: <available only to root>
 
 ```
-那么此驱动应支持你主板的 SMBus。
+閭ｄ箞姝ら┍鍔ㄥ簲鏀寔浣犱富鏉跨殑 SMBus銆?
+
+### 璇存槑
 
 
-### 说明
-
-
-nForce2 芯片组中的 SMBus 适配器似乎与 AMD-8111 南桥中的 SMBus 2.0 适配器
-非常相似。然而，我只能让驱动通过直接 I/O 访问工作，这与 AMD-8111 的 EC
-接口不同。在 Asus A7N8X 上测试过。Asus A7N8X 的 ACPI DSDT 表列出了两个
-SMBus，两者均受此驱动支持。
+nForce2 鑺墖缁勪腑鐨?SMBus 閫傞厤鍣ㄤ技涔庝笌 AMD-8111 鍗楁ˉ涓殑 SMBus 2.0 閫傞厤鍣?闈炲父鐩镐技銆傜劧鑰岋紝鎴戝彧鑳借椹卞姩閫氳繃鐩存帴 I/O 璁块棶宸ヤ綔锛岃繖涓?AMD-8111 鐨?EC
+鎺ュ彛涓嶅悓銆傚湪 Asus A7N8X 涓婃祴璇曡繃銆侫sus A7N8X 鐨?ACPI DSDT 琛ㄥ垪鍑轰簡涓や釜
+SMBus锛屼袱鑰呭潎鍙楁椹卞姩鏀寔銆?

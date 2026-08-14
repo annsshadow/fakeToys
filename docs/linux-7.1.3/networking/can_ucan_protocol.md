@@ -1,125 +1,100 @@
-## UCAN 协议
+﻿## UCAN 鍗忚
 
 
-UCAN 是基于微控制器的 USB-CAN 适配器所使用的协议，该适配器集成在 Theobroma Systems 的 System-on-Module 上，也可作为独立的 USB 棒获得。
-
-UCAN 协议被设计为与硬件无关。它紧密地模仿了 Linux 内部表示 CAN 设备的方式。所有多字节整数都编码为 Little Endian。
-
-本文档中提到的所有结构都定义在 `drivers/net/can/usb/ucan.c`。
-
-## USB 端点
+UCAN 鏄熀浜庡井鎺у埗鍣ㄧ殑 USB-CAN 閫傞厤鍣ㄦ墍浣跨敤鐨勫崗璁紝璇ラ€傞厤鍣ㄩ泦鎴愬湪 Theobroma Systems 鐨?System-on-Module 涓婏紝涔熷彲浣滀负鐙珛鐨?USB 妫掕幏寰椼€?
+UCAN 鍗忚琚璁′负涓庣‖浠舵棤鍏炽€傚畠绱у瘑鍦版ā浠夸簡 Linux 鍐呴儴琛ㄧず CAN 璁惧鐨勬柟寮忋€傛墍鏈夊瀛楄妭鏁存暟閮界紪鐮佷负 Little Endian銆?
+鏈枃妗ｄ腑鎻愬埌鐨勬墍鏈夌粨鏋勯兘瀹氫箟鍦?`drivers/net/can/usb/ucan.c`銆?
+## USB 绔偣
 
 
-UCAN 设备使用三个 USB 端点：
+UCAN 璁惧浣跨敤涓変釜 USB 绔偣锛?
+CONTROL 绔偣
+  椹卞姩鍦ㄦ绔偣涓婂彂閫佽澶囩鐞嗗懡浠?
+IN 绔偣
+  璁惧鍙戦€?CAN 鏁版嵁甯у拰 CAN 閿欒甯?
+OUT 绔偣
+  椹卞姩鍦?OUT 绔偣涓婂彂閫?CAN 鏁版嵁甯?
+## 鎺у埗娑堟伅锛圕ONTROL Messages锛?
 
-CONTROL 端点
-  驱动在此端点上发送设备管理命令
-
-IN 端点
-  设备发送 CAN 数据帧和 CAN 错误帧
-
-OUT 端点
-  驱动在 OUT 端点上发送 CAN 数据帧
-
-## 控制消息（CONTROL Messages）
-
-
-UCAN 设备通过使用控制管道（control pipe）上的厂商请求（vendor request）进行配置。
-
-为了支持单个 USB 设备中的多个 CAN 接口，所有配置命令都指向 USB 描述符中相应的接口。
-
-驱动使用 `ucan_ctrl_command_in/out` 和 `ucan_device_request_in` 向设备传递命令。
-
-### 建立包（Setup Packet）
-
+UCAN 璁惧閫氳繃浣跨敤鎺у埗绠￠亾锛坈ontrol pipe锛変笂鐨勫巶鍟嗚姹傦紙vendor request锛夎繘琛岄厤缃€?
+涓轰簡鏀寔鍗曚釜 USB 璁惧涓殑澶氫釜 CAN 鎺ュ彛锛屾墍鏈夐厤缃懡浠ら兘鎸囧悜 USB 鎻忚堪绗︿腑鐩稿簲鐨勬帴鍙ｃ€?
+椹卞姩浣跨敤 `ucan_ctrl_command_in/out` 鍜?`ucan_device_request_in` 鍚戣澶囦紶閫掑懡浠ゃ€?
+### 寤虹珛鍖咃紙Setup Packet锛?
 
 =================  =====================================================
-`bmRequestType`  方向 | 厂商（Vendor） | （接口或设备）
-`bRequest`       命令编号
-`wValue`         子命令编号（16 位），若未使用则为 0
-`wIndex`         USB 接口索引（设备命令为 0）
-`wLength`        * 主机到设备 - 要发送的字节数
-                   - 设备到主机 - 要接收的最大字节数
-                     如果设备发送较少，则使用常见的 ZLP 语义。
-=================  =====================================================
+`bmRequestType`  鏂瑰悜 | 鍘傚晢锛圴endor锛?| 锛堟帴鍙ｆ垨璁惧锛?`bRequest`       鍛戒护缂栧彿
+`wValue`         瀛愬懡浠ょ紪鍙凤紙16 浣嶏級锛岃嫢鏈娇鐢ㄥ垯涓?0
+`wIndex`         USB 鎺ュ彛绱㈠紩锛堣澶囧懡浠や负 0锛?`wLength`        * 涓绘満鍒拌澶?- 瑕佸彂閫佺殑瀛楄妭鏁?                   - 璁惧鍒颁富鏈?- 瑕佹帴鏀剁殑鏈€澶у瓧鑺傛暟
+                     濡傛灉璁惧鍙戦€佽緝灏戯紝鍒欎娇鐢ㄥ父瑙佺殑 ZLP 璇箟銆?=================  =====================================================
 
-### 错误处理
+### 閿欒澶勭悊
 
 
-设备通过阻塞（stall）该管道来指示失败的控制命令。
-
-### 设备命令
+璁惧閫氳繃闃诲锛坰tall锛夎绠￠亾鏉ユ寚绀哄け璐ョ殑鎺у埗鍛戒护銆?
+### 璁惧鍛戒护
 
 
 #### UCAN_DEVICE_GET_FW_STRING
 
 
-**Dev2Host；可选**
+**Dev2Host锛涘彲閫?*
 
-请求设备固件字符串。
-
-### 接口命令
+璇锋眰璁惧鍥轰欢瀛楃涓层€?
+### 鎺ュ彛鍛戒护
 
 
 #### UCAN_COMMAND_START
 
 
-**Host2Dev；必需**
+**Host2Dev锛涘繀闇€**
 
-启动 CAN 接口。
-
-Payload 格式
+鍚姩 CAN 鎺ュ彛銆?
+Payload 鏍煎紡
   `ucan_ctl_payload_t.cmd_start`
 
 ====  ============================
-mode  `UCAN_MODE_*` 的或掩码
+mode  `UCAN_MODE_*` 鐨勬垨鎺╃爜
 ====  ============================
 
 #### UCAN_COMMAND_STOP
 
 
-**Host2Dev；必需**
+**Host2Dev锛涘繀闇€**
 
-停止 CAN 接口
+鍋滄 CAN 鎺ュ彛
 
-Payload 格式
-  **空**
+Payload 鏍煎紡
+  **绌?*
 
 #### UCAN_COMMAND_RESET
 
 
-**Host2Dev；必需**
+**Host2Dev锛涘繀闇€**
 
-复位 CAN 控制器（包括错误计数器）
+澶嶄綅 CAN 鎺у埗鍣紙鍖呮嫭閿欒璁℃暟鍣級
 
-Payload 格式
-  **空**
+Payload 鏍煎紡
+  **绌?*
 
 #### UCAN_COMMAND_GET
 
 
-**Host2Dev；必需**
+**Host2Dev锛涘繀闇€**
 
-从设备获取信息
-
-##### 子命令
-
+浠庤澶囪幏鍙栦俊鎭?
+##### 瀛愬懡浠?
 
 UCAN_COMMAND_GET_INFO
-  请求设备信息结构 `ucan_ctl_payload_t.device_info`。
-
-  细节参见 `device_info` 字段，以及
-  `uapi/linux/can/netlink.h` 中对 `can_bittiming 字段` 的说明。
-
-  Payload 格式
+  璇锋眰璁惧淇℃伅缁撴瀯 `ucan_ctl_payload_t.device_info`銆?
+  缁嗚妭鍙傝 `device_info` 瀛楁锛屼互鍙?  `uapi/linux/can/netlink.h` 涓 `can_bittiming 瀛楁` 鐨勮鏄庛€?
+  Payload 鏍煎紡
     `ucan_ctl_payload_t.device_info`
 
 UCAN_COMMAND_GET_PROTOCOL_VERSION
 
-  请求设备协议版本
-  `ucan_ctl_payload_t.protocol_version`。当前协议版本为 3。
-
-  Payload 格式
+  璇锋眰璁惧鍗忚鐗堟湰
+  `ucan_ctl_payload_t.protocol_version`銆傚綋鍓嶅崗璁増鏈负 3銆?
+  Payload 鏍煎紡
     `ucan_ctl_payload_t.protocol_version`
 
           protocol version 1
@@ -127,51 +102,43 @@ UCAN_COMMAND_GET_PROTOCOL_VERSION
 #### UCAN_COMMAND_SET_BITTIMING
 
 
-**Host2Dev；必需**
+**Host2Dev锛涘繀闇€**
 
-通过发送结构 `ucan_ctl_payload_t.cmd_set_bittiming`（细节见 `struct bittiming`）来设置位时序（bittiming）
-
-Payload 格式
-  `ucan_ctl_payload_t.cmd_set_bittiming`。
-
+閫氳繃鍙戦€佺粨鏋?`ucan_ctl_payload_t.cmd_set_bittiming`锛堢粏鑺傝 `struct bittiming`锛夋潵璁剧疆浣嶆椂搴忥紙bittiming锛?
+Payload 鏍煎紡
+  `ucan_ctl_payload_t.cmd_set_bittiming`銆?
 #### UCAN_SLEEP/WAKE
 
 
-**Host2Dev；可选**
+**Host2Dev锛涘彲閫?*
 
-配置睡眠和唤醒模式。驱动尚不支持。
-
+閰嶇疆鐫＄湢鍜屽敜閱掓ā寮忋€傞┍鍔ㄥ皻涓嶆敮鎸併€?
 #### UCAN_FILTER
 
 
-**Host2Dev；可选**
+**Host2Dev锛涘彲閫?*
 
-设置硬件 CAN 过滤器。驱动尚不支持。
-
-### 允许的接口命令
-
+璁剧疆纭欢 CAN 杩囨护鍣ㄣ€傞┍鍔ㄥ皻涓嶆敮鎸併€?
+### 鍏佽鐨勬帴鍙ｅ懡浠?
 
 ==================  ===================  ==================
-合法设备状态         命令                 新设备状态
-==================  ===================  ==================
+鍚堟硶璁惧鐘舵€?        鍛戒护                 鏂拌澶囩姸鎬?==================  ===================  ==================
 stopped             SET_BITTIMING        stopped
 stopped             START                started
 started             STOP or RESET        stopped
 stopped             STOP or RESET        stopped
 started             RESTART              started
-any                 GET                  **无变化**
+any                 GET                  **鏃犲彉鍖?*
 ==================  ===================  ==================
 
-## IN 消息格式
+## IN 娑堟伅鏍煎紡
 
 
-USB IN 端点上的数据包包含一个或多个 `ucan_message_in` 值。如果多个消息被批处理在一个 USB 数据包中，`len` 字段可用于跳到下一个 `ucan_message_in` 值（注意对 `len` 值做健全性检查，以对照实际数据大小）。
+USB IN 绔偣涓婄殑鏁版嵁鍖呭寘鍚竴涓垨澶氫釜 `ucan_message_in` 鍊笺€傚鏋滃涓秷鎭鎵瑰鐞嗗湪涓€涓?USB 鏁版嵁鍖呬腑锛宍len` 瀛楁鍙敤浜庤烦鍒颁笅涓€涓?`ucan_message_in` 鍊硷紙娉ㄦ剰瀵?`len` 鍊煎仛鍋ュ叏鎬ф鏌ワ紝浠ュ鐓у疄闄呮暟鎹ぇ灏忥級銆?
+### ``len`` 瀛楁
 
-### ``len`` 字段
 
-
-每个 `ucan_message_in` 必须对齐到 4 字节边界（相对于数据缓冲区起始的位置）。这意味着在多个 `ucan_message_in` 值之间可能有填充字节：
-
+姣忎釜 `ucan_message_in` 蹇呴』瀵归綈鍒?4 瀛楄妭杈圭晫锛堢浉瀵逛簬鏁版嵁缂撳啿鍖鸿捣濮嬬殑浣嶇疆锛夈€傝繖鎰忓懗鐫€鍦ㄥ涓?`ucan_message_in` 鍊间箣闂村彲鑳芥湁濉厖瀛楄妭锛?
     +----------------------------+ < 0
     |                            |
     |   struct ucan_message_in   |
@@ -185,39 +152,33 @@ USB IN 端点上的数据包包含一个或多个 `ucan_message_in` 值。如果
     +----------------------------+
                 [...]
 
-### ``type`` 字段
+### ``type`` 瀛楁
 
 
-`type` 字段指定消息的类型。
-
+`type` 瀛楁鎸囧畾娑堟伅鐨勭被鍨嬨€?
 #### UCAN_IN_RX
 
 
 `subtype`
   zero
 
-从 CAN 总线接收到的数据（ID + 载荷）。
-
+浠?CAN 鎬荤嚎鎺ユ敹鍒扮殑鏁版嵁锛圛D + 杞借嵎锛夈€?
 #### UCAN_IN_TX_COMPLETE
 
 
 `subtype`
   zero
 
-CAN 设备已向 CAN 总线发送了一条消息。它用一个元组列表 <echo-ids, flags> 作为应答。
-
-echo-id 标识了来自（回显了先前 UCAN_OUT_TX 消息的 id）的帧。flag 指示传输的结果。其中，置位的 Bit 0 表示成功。所有其他位保留并设为零。
-
-### 流控
+CAN 璁惧宸插悜 CAN 鎬荤嚎鍙戦€佷簡涓€鏉℃秷鎭€傚畠鐢ㄤ竴涓厓缁勫垪琛?<echo-ids, flags> 浣滀负搴旂瓟銆?
+echo-id 鏍囪瘑浜嗘潵鑷紙鍥炴樉浜嗗厛鍓?UCAN_OUT_TX 娑堟伅鐨?id锛夌殑甯с€俧lag 鎸囩ず浼犺緭鐨勭粨鏋溿€傚叾涓紝缃綅鐨?Bit 0 琛ㄧず鎴愬姛銆傛墍鏈夊叾浠栦綅淇濈暀骞惰涓洪浂銆?
+### 娴佹帶
 
 
-接收 CAN 消息时，USB 缓冲区上没有流控。驱动必须足够快地处理入站消息以避免丢包。如果设备缓冲区溢出，该状况会通过发送相应的错误帧来报告（参见 can_ucan_error_handling）。
+鎺ユ敹 CAN 娑堟伅鏃讹紝USB 缂撳啿鍖轰笂娌℃湁娴佹帶銆傞┍鍔ㄥ繀椤昏冻澶熷揩鍦板鐞嗗叆绔欐秷鎭互閬垮厤涓㈠寘銆傚鏋滆澶囩紦鍐插尯婧㈠嚭锛岃鐘跺喌浼氶€氳繃鍙戦€佺浉搴旂殑閿欒甯ф潵鎶ュ憡锛堝弬瑙?can_ucan_error_handling锛夈€?
+## OUT 娑堟伅鏍煎紡
 
-## OUT 消息格式
 
-
-USB OUT 端点上的数据包包含一个或多个 ``struct ucan_message_out`` 值。如果多个消息被批处理到一个数据包中，设备使用 `len` 字段跳到下一个 ucan_message_out 值。每个 ucan_message_out 必须对齐到 4 字节（相对于数据缓冲区起始的位置）。该机制与 can_ucan_in_message_len 中描述的一样。
-
+USB OUT 绔偣涓婄殑鏁版嵁鍖呭寘鍚竴涓垨澶氫釜 ``struct ucan_message_out`` 鍊笺€傚鏋滃涓秷鎭鎵瑰鐞嗗埌涓€涓暟鎹寘涓紝璁惧浣跨敤 `len` 瀛楁璺冲埌涓嬩竴涓?ucan_message_out 鍊笺€傛瘡涓?ucan_message_out 蹇呴』瀵归綈鍒?4 瀛楄妭锛堢浉瀵逛簬鏁版嵁缂撳啿鍖鸿捣濮嬬殑浣嶇疆锛夈€傝鏈哄埗涓?can_ucan_in_message_len 涓弿杩扮殑涓€鏍枫€?
     +----------------------------+ < 0
     |                            |
     |   struct ucan_message_out  |
@@ -231,46 +192,35 @@ USB OUT 端点上的数据包包含一个或多个 ``struct ucan_message_out`` �
     +----------------------------+
                 [...]
 
-### ``type`` 字段
+### ``type`` 瀛楁
 
 
-在协议版本 3 中只定义了 `UCAN_OUT_TX`，其他的仅由旧设备（协议版本 1）使用。
-
+鍦ㄥ崗璁増鏈?3 涓彧瀹氫箟浜?`UCAN_OUT_TX`锛屽叾浠栫殑浠呯敱鏃ц澶囷紙鍗忚鐗堟湰 1锛変娇鐢ㄣ€?
 #### UCAN_OUT_TX
 
 `subtype`
-  要在 CAN_IN_TX_COMPLETE 消息中应答的 echo id
+  瑕佸湪 CAN_IN_TX_COMPLETE 娑堟伅涓簲绛旂殑 echo id
 
-发送一个 CAN 帧。（参数：`id`、`data`）
-
-### 流控
-
-
-当设备出站缓冲区满时，它开始在 **OUT** 管道上发送 **NAK**，直到有更多缓冲区可用。当未完成出站包达到一定阈值时，驱动停止队列。
-
-## CAN 错误处理
+鍙戦€佷竴涓?CAN 甯с€傦紙鍙傛暟锛歚id`銆乣data`锛?
+### 娴佹帶
 
 
-如果开启了错误报告，设备会把错误编码为 CAN 错误帧（参见 `uapi/linux/can/error.h`）并通过 IN 端点发送。驱动更新其错误统计并转发它。
-
-尽管 UCAN 设备可以完全抑制错误帧，但在 Linux 中驱动总是感兴趣的。因此，设备总是以设置了 `UCAN_MODE_BERR_REPORT` 的方式启动。为 user space 过滤这些消息由驱动完成。
-
-### 总线关闭（Bus OFF）
+褰撹澶囧嚭绔欑紦鍐插尯婊℃椂锛屽畠寮€濮嬪湪 **OUT** 绠￠亾涓婂彂閫?**NAK**锛岀洿鍒版湁鏇村缂撳啿鍖哄彲鐢ㄣ€傚綋鏈畬鎴愬嚭绔欏寘杈惧埌涓€瀹氶槇鍊兼椂锛岄┍鍔ㄥ仠姝㈤槦鍒椼€?
+## CAN 閿欒澶勭悊
 
 
-- 设备不会自动从总线关闭中恢复。
-- 总线关闭由错误帧指示（参见 `uapi/linux/can/error.h`）
-- 总线关闭恢复由 `UCAN_COMMAND_RESTART` 启动
-- 一旦总线关闭恢复完成，设备发送一个错误帧，指示其处于 ERROR-ACTIVE 状态。
-- 在总线关闭期间，设备不发送任何帧。
-- 在总线关闭期间，来自主机的传输请求会立即完成，且成功位保持未置位。
+濡傛灉寮€鍚簡閿欒鎶ュ憡锛岃澶囦細鎶婇敊璇紪鐮佷负 CAN 閿欒甯э紙鍙傝 `uapi/linux/can/error.h`锛夊苟閫氳繃 IN 绔偣鍙戦€併€傞┍鍔ㄦ洿鏂板叾閿欒缁熻骞惰浆鍙戝畠銆?
+灏界 UCAN 璁惧鍙互瀹屽叏鎶戝埗閿欒甯э紝浣嗗湪 Linux 涓┍鍔ㄦ€绘槸鎰熷叴瓒ｇ殑銆傚洜姝わ紝璁惧鎬绘槸浠ヨ缃簡 `UCAN_MODE_BERR_REPORT` 鐨勬柟寮忓惎鍔ㄣ€備负 user space 杩囨护杩欎簺娑堟伅鐢遍┍鍔ㄥ畬鎴愩€?
+### 鎬荤嚎鍏抽棴锛圔us OFF锛?
 
-## 示例会话
+- 璁惧涓嶄細鑷姩浠庢€荤嚎鍏抽棴涓仮澶嶃€?- 鎬荤嚎鍏抽棴鐢遍敊璇抚鎸囩ず锛堝弬瑙?`uapi/linux/can/error.h`锛?- 鎬荤嚎鍏抽棴鎭㈠鐢?`UCAN_COMMAND_RESTART` 鍚姩
+- 涓€鏃︽€荤嚎鍏抽棴鎭㈠瀹屾垚锛岃澶囧彂閫佷竴涓敊璇抚锛屾寚绀哄叾澶勪簬 ERROR-ACTIVE 鐘舵€併€?- 鍦ㄦ€荤嚎鍏抽棴鏈熼棿锛岃澶囦笉鍙戦€佷换浣曞抚銆?- 鍦ㄦ€荤嚎鍏抽棴鏈熼棿锛屾潵鑷富鏈虹殑浼犺緭璇锋眰浼氱珛鍗冲畬鎴愶紝涓旀垚鍔熶綅淇濇寔鏈疆浣嶃€?
+## 绀轰緥浼氳瘽
 
 
-#) 设备连接到 USB
-#) 主机发送命令 `UCAN_COMMAND_RESET`，subcmd 0
-#) 主机发送命令 `UCAN_COMMAND_GET`，subcmd `UCAN_COMMAND_GET_INFO`
-#) 设备发送 `UCAN_IN_DEVICE_INFO`
-#) 主机发送命令 `UCAN_OUT_SET_BITTIMING`
-#) 主机发送命令 `UCAN_COMMAND_START`，subcmd 0，mode `UCAN_MODE_BERR_REPORT`
+#) 璁惧杩炴帴鍒?USB
+#) 涓绘満鍙戦€佸懡浠?`UCAN_COMMAND_RESET`锛宻ubcmd 0
+#) 涓绘満鍙戦€佸懡浠?`UCAN_COMMAND_GET`锛宻ubcmd `UCAN_COMMAND_GET_INFO`
+#) 璁惧鍙戦€?`UCAN_IN_DEVICE_INFO`
+#) 涓绘満鍙戦€佸懡浠?`UCAN_OUT_SET_BITTIMING`
+#) 涓绘満鍙戦€佸懡浠?`UCAN_COMMAND_START`锛宻ubcmd 0锛宮ode `UCAN_MODE_BERR_REPORT`

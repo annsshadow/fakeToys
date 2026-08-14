@@ -1,24 +1,19 @@
-
+﻿
 
 
 ######## V4L2_META_FMT_C3ISP_STATS ('C3ST'), V4L2_META_FMT_C3ISP_PARAMS ('C3PM')
 
 
-## 3A 统计信息
+## 3A 缁熻淇℃伅
 
 
-C3 ISP 可以采集输入 Bayer 帧上的不同统计信息。
-这些统计信息通过 "c3-isp-stats" 元数据捕获视频节点，使用 `v4l2_meta_format` 接口获取。
-它们按照 `c3_isp_stats_info` 结构体的描述进行格式化。
+C3 ISP 鍙互閲囬泦杈撳叆 Bayer 甯т笂鐨勪笉鍚岀粺璁′俊鎭€?杩欎簺缁熻淇℃伅閫氳繃 "c3-isp-stats" 鍏冩暟鎹崟鑾疯棰戣妭鐐癸紝浣跨敤 `v4l2_meta_format` 鎺ュ彛鑾峰彇銆?瀹冧滑鎸夌収 `c3_isp_stats_info` 缁撴瀯浣撶殑鎻忚堪杩涜鏍煎紡鍖栥€?
+閲囬泦鐨勭粺璁′俊鎭负鑷姩鐧藉钩琛★紙Auto-white balance锛夈€佽嚜鍔ㄦ洕鍏夛紙Auto-exposure锛変笌鑷姩瀵圭劍锛圓uto-focus锛変俊鎭€?
 
-采集的统计信息为自动白平衡（Auto-white balance）、自动曝光（Auto-exposure）与自动对焦（Auto-focus）信息。
-
-
-## 配置参数
+## 閰嶇疆鍙傛暟
 
 
-配置参数通过 c3-isp-params 元数据输出视频节点，使用 `v4l2_meta_format` 接口传递。
-与包含一个用于 ISP 各可配置区域的子结构体的单一结构体不同，C3-ISP 的参数被定义为不同的结构体或“块（blocks）”，可以添加到 `c3_isp_params_cfg` 的 data 成员中。用户空间负责用需要由驱动配置的块来填充 data 成员，但无需用**所有**块来填充它，如果没有任何配置更改需要做出，甚至根本不需要填充任何块。已填充的块**必须**在缓冲区中连续。为了帮助用户空间与驱动识别块，每个块特定的结构体将其第一个成员嵌入 `c3_isp_params_block_header`，并且用户空间必须用来自 `c3_isp_params_block_type` 的值填充 type 成员。一旦这些块被填充进数据缓冲区，所有已填充块的总大小应设置在 `c3_isp_params_cfg` 的 data_size 成员中。例如：
+閰嶇疆鍙傛暟閫氳繃 c3-isp-params 鍏冩暟鎹緭鍑鸿棰戣妭鐐癸紝浣跨敤 `v4l2_meta_format` 鎺ュ彛浼犻€掋€?涓庡寘鍚竴涓敤浜?ISP 鍚勫彲閰嶇疆鍖哄煙鐨勫瓙缁撴瀯浣撶殑鍗曚竴缁撴瀯浣撲笉鍚岋紝C3-ISP 鐨勫弬鏁拌瀹氫箟涓轰笉鍚岀殑缁撴瀯浣撴垨鈥滃潡锛坆locks锛夆€濓紝鍙互娣诲姞鍒?`c3_isp_params_cfg` 鐨?data 鎴愬憳涓€傜敤鎴风┖闂磋礋璐ｇ敤闇€瑕佺敱椹卞姩閰嶇疆鐨勫潡鏉ュ～鍏?data 鎴愬憳锛屼絾鏃犻渶鐢?*鎵€鏈?*鍧楁潵濉厖瀹冿紝濡傛灉娌℃湁浠讳綍閰嶇疆鏇存敼闇€瑕佸仛鍑猴紝鐢氳嚦鏍规湰涓嶉渶瑕佸～鍏呬换浣曞潡銆傚凡濉厖鐨勫潡**蹇呴』**鍦ㄧ紦鍐插尯涓繛缁€備负浜嗗府鍔╃敤鎴风┖闂翠笌椹卞姩璇嗗埆鍧楋紝姣忎釜鍧楃壒瀹氱殑缁撴瀯浣撳皢鍏剁涓€涓垚鍛樺祵鍏?`c3_isp_params_block_header`锛屽苟涓旂敤鎴风┖闂村繀椤荤敤鏉ヨ嚜 `c3_isp_params_block_type` 鐨勫€煎～鍏?type 鎴愬憳銆備竴鏃﹁繖浜涘潡琚～鍏呰繘鏁版嵁缂撳啿鍖猴紝鎵€鏈夊凡濉厖鍧楃殑鎬诲ぇ灏忓簲璁剧疆鍦?`c3_isp_params_cfg` 鐨?data_size 鎴愬憳涓€備緥濡傦細
 
 
 	struct c3_isp_params_cfg *params =
@@ -58,4 +53,4 @@ C3 ISP 可以采集输入 Bayer 帧上的不同统计信息。
 
 	params->data_size += sizeof(struct c3_isp_params_awb_config);
 
-## Amlogic C3 ISP uAPI 数据类型
+## Amlogic C3 ISP uAPI 鏁版嵁绫诲瀷

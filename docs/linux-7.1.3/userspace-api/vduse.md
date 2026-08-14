@@ -1,32 +1,22 @@
-## VDUSE - “vDPA Device in Userspace”（用户空间中的 vDPA 设备）
+﻿## VDUSE - 鈥渧DPA Device in Userspace鈥濓紙鐢ㄦ埛绌洪棿涓殑 vDPA 璁惧锛?
+
+vDPA锛坴irtio 鏁版嵁璺緞鍔犻€燂級璁惧鏄竴绉嶄娇鐢ㄧ鍚?virtio 瑙勮寖鐨勬暟鎹矾寰勩€佸苟閰嶅悎鍘傚晢鐗瑰畾鎺у埗璺緞鐨勮澶囥€倂DPA 璁惧鍙互鐗╃悊涓婁綅浜庣‖浠朵笂锛屼篃鍙互鐢辫蒋浠舵ā鎷熴€俈DUSE 鏄竴涓鏋讹紝浣垮緱鍦ㄧ敤鎴风┖闂翠腑瀹炵幇杞欢妯℃嫙鐨?vDPA 璁惧鎴愪负鍙兘銆備负浜嗕娇璁惧妯℃嫙鏇村畨鍏紝琚ā鎷熺殑 vDPA 璁惧鐨勬帶鍒惰矾寰勫湪鍐呮牳涓鐞嗭紝鍙湁鏁版嵁璺緞鍦ㄧ敤鎴风┖闂村疄鐜般€?
+娉ㄦ剰锛岀洰鍓?VDUSE 妗嗘灦浠呮敮鎸?virtio 鍧楄澶囷紝杩欏彲浠ュ湪瀹炵幇鏁版嵁璺緞鐨勭敤鎴风┖闂磋繘绋嬬敱闈炵壒鏉冪敤鎴疯繍琛屾椂闄嶄綆瀹夊叏椋庨櫓銆傚鍏朵粬璁惧绫诲瀷鐨勬敮鎸佸彲浠ュ湪鐩稿簲璁惧椹卞姩鐨勫畨鍏ㄩ棶棰樺湪鏈潵琚緞娓呮垨淇鍚庢坊鍔犮€?
+### 鍒涘缓/閿€姣?VDUSE 璁惧
 
 
-vDPA（virtio 数据路径加速）设备是一种使用符合 virtio 规范的数据路径、并配合厂商特定控制路径的设备。vDPA 设备可以物理上位于硬件上，也可以由软件模拟。VDUSE 是一个框架，使得在用户空间中实现软件模拟的 vDPA 设备成为可能。为了使设备模拟更安全，被模拟的 vDPA 设备的控制路径在内核中处理，只有数据路径在用户空间实现。
+VDUSE 璁惧鎸夊涓嬫柟寮忓垱寤猴細
 
-注意，目前 VDUSE 框架仅支持 virtio 块设备，这可以在实现数据路径的用户空间进程由非特权用户运行时降低安全风险。对其他设备类型的支持可以在相应设备驱动的安全问题在未来被澄清或修复后添加。
+1. 鍦?/dev/vduse/control 涓婄敤 ioctl(VDUSE_CREATE_DEV) 鍒涘缓涓€涓柊鐨?VDUSE 瀹炰緥銆?
+2. 鍦?/dev/vduse/$NAME 涓婄敤 ioctl(VDUSE_VQ_SETUP) 璁剧疆姣忎釜 virtqueue銆?
+3. 寮€濮嬪鐞嗘潵鑷?/dev/vduse/$NAME 鐨?VDUSE 娑堟伅銆傚墠鍑犳潯娑堟伅浼氬湪灏?VDUSE 瀹炰緥鎸傛帴鍒?vDPA 鎬荤嚎鏃跺埌杈俱€?
+4. 鍙戦€?VDPA_CMD_DEV_NEW netlink 娑堟伅锛屽皢 VDUSE 瀹炰緥鎸傛帴鍒?vDPA 鎬荤嚎銆?
+VDUSE 璁惧鎸夊涓嬫柟寮忛攢姣侊細
 
-### 创建/销毁 VDUSE 设备
-
-
-VDUSE 设备按如下方式创建：
-
-1. 在 /dev/vduse/control 上用 ioctl(VDUSE_CREATE_DEV) 创建一个新的 VDUSE 实例。
-
-2. 在 /dev/vduse/$NAME 上用 ioctl(VDUSE_VQ_SETUP) 设置每个 virtqueue。
-
-3. 开始处理来自 /dev/vduse/$NAME 的 VDUSE 消息。前几条消息会在将 VDUSE 实例挂接到 vDPA 总线时到达。
-
-4. 发送 VDPA_CMD_DEV_NEW netlink 消息，将 VDUSE 实例挂接到 vDPA 总线。
-
-VDUSE 设备按如下方式销毁：
-
-1. 发送 VDPA_CMD_DEV_DEL netlink 消息，将 VDUSE 实例从 vDPA 总线分离。
-
-2. 关闭指向 /dev/vduse/$NAME 的文件描述符。
-
-3. 在 /dev/vduse/control 上用 ioctl(VDUSE_DESTROY_DEV) 销毁 VDUSE 实例。
-
-netlink 消息可以通过 iproute2 中的 vdpa 工具发送，也可以使用以下示例代码：
+1. 鍙戦€?VDPA_CMD_DEV_DEL netlink 娑堟伅锛屽皢 VDUSE 瀹炰緥浠?vDPA 鎬荤嚎鍒嗙銆?
+2. 鍏抽棴鎸囧悜 /dev/vduse/$NAME 鐨勬枃浠舵弿杩扮銆?
+3. 鍦?/dev/vduse/control 涓婄敤 ioctl(VDUSE_DESTROY_DEV) 閿€姣?VDUSE 瀹炰緥銆?
+netlink 娑堟伅鍙互閫氳繃 iproute2 涓殑 vdpa 宸ュ叿鍙戦€侊紝涔熷彲浠ヤ娇鐢ㄤ互涓嬬ず渚嬩唬鐮侊細
 
 
 	static int netlink_add_vduse(const char *name, enum vdpa_command cmd)
@@ -73,12 +63,11 @@ netlink 消息可以通过 iproute2 中的 vdpa 工具发送，也可以使用�
 		return -1;
 	}
 
-### VDUSE 如何工作
+### VDUSE 濡備綍宸ヤ綔
 
 
-如上所述，VDUSE 设备由在 /dev/vduse/control 上的 ioctl(VDUSE_CREATE_DEV) 创建。通过该 ioctl，用户空间可以指定一些基本配置，例如设备名称（唯一标识一个 VDUSE 设备）、virtio 特性、virtio 配置空间、virtqueue 的数量等，用于这个被模拟的设备。然后会向用户空间导出一个字符设备接口（/dev/vduse/$NAME）用于设备模拟。用户空间可以使用 /dev/vduse/$NAME 上的 VDUSE_VQ_SETUP ioctl 向设备添加每个 virtqueue 的配置，例如 virtqueue 的最大大小。
-
-初始化之后，VDUSE 设备可以通过 VDPA_CMD_DEV_NEW netlink 消息挂接到 vDPA 总线。用户空间需要在 /dev/vduse/$NAME 上 read()/write()，以从 VDUSE 内核模块接收/回复一些控制消息，如下所示：
+濡備笂鎵€杩帮紝VDUSE 璁惧鐢卞湪 /dev/vduse/control 涓婄殑 ioctl(VDUSE_CREATE_DEV) 鍒涘缓銆傞€氳繃璇?ioctl锛岀敤鎴风┖闂村彲浠ユ寚瀹氫竴浜涘熀鏈厤缃紝渚嬪璁惧鍚嶇О锛堝敮涓€鏍囪瘑涓€涓?VDUSE 璁惧锛夈€乿irtio 鐗规€с€乿irtio 閰嶇疆绌洪棿銆乿irtqueue 鐨勬暟閲忕瓑锛岀敤浜庤繖涓妯℃嫙鐨勮澶囥€傜劧鍚庝細鍚戠敤鎴风┖闂村鍑轰竴涓瓧绗﹁澶囨帴鍙ｏ紙/dev/vduse/$NAME锛夌敤浜庤澶囨ā鎷熴€傜敤鎴风┖闂村彲浠ヤ娇鐢?/dev/vduse/$NAME 涓婄殑 VDUSE_VQ_SETUP ioctl 鍚戣澶囨坊鍔犳瘡涓?virtqueue 鐨勯厤缃紝渚嬪 virtqueue 鐨勬渶澶уぇ灏忋€?
+鍒濆鍖栦箣鍚庯紝VDUSE 璁惧鍙互閫氳繃 VDPA_CMD_DEV_NEW netlink 娑堟伅鎸傛帴鍒?vDPA 鎬荤嚎銆傜敤鎴风┖闂撮渶瑕佸湪 /dev/vduse/$NAME 涓?read()/write()锛屼互浠?VDUSE 鍐呮牳妯″潡鎺ユ敹/鍥炲涓€浜涙帶鍒舵秷鎭紝濡備笅鎵€绀猴細
 
 
 	static int vduse_message_handler(int dev_fd)
@@ -106,19 +95,14 @@ netlink 消息可以通过 iproute2 中的 vdpa 工具发送，也可以使用�
 		return 0;
 	}
 
-VDUSE 框架目前引入了三种类型的消息：
+VDUSE 妗嗘灦鐩墠寮曞叆浜嗕笁绉嶇被鍨嬬殑娑堟伅锛?
+- VDUSE_GET_VQ_STATE锛氳幏鍙?virtqueue 鐨勭姸鎬侊紝鐢ㄦ埛绌洪棿搴旇繑鍥?split virtqueue 鐨?avail 绱㈠紩锛屾垨 packed virtqueue 鐨勮澶?椹卞姩鐜洖缁曡鏁颁互鍙?avail 鍜?used 绱㈠紩銆?
+- VDUSE_SET_STATUS锛氳缃澶囩姸鎬侊紝鐢ㄦ埛绌洪棿搴旈伒寰?virtio 瑙勮寖锛歨ttps://docs.oasis-open.org/virtio/virtio/v1.1/virtio-v1.1.html 鏉ュ鐞嗘娑堟伅銆備緥濡傦紝濡傛灉璁惧鏃犳硶鎺ュ彈浠?VDUSE_DEV_GET_FEATURES ioctl 鑾峰緱鐨勫凡鍗忓晢 virtio 鐗规€э紝鍒欒缃?FEATURES_OK 璁惧鐘舵€佷綅澶辫触銆?
+- VDUSE_UPDATE_IOTLB锛氶€氱煡鐢ㄦ埛绌洪棿鏇存柊鎸囧畾 IOVA 鑼冨洿鐨勫唴瀛樻槧灏勶紝鐢ㄦ埛绌洪棿搴旈鍏堢Щ闄ゆ棫鏄犲皠锛岀劧鍚庨€氳繃 VDUSE_IOTLB_GET_FD ioctl 寤虹珛鏂版槧灏勩€?
+鍦ㄩ€氳繃 VDUSE_SET_STATUS 娑堟伅璁剧疆 DRIVER_OK 鐘舵€佷綅涔嬪悗锛岀敤鎴风┖闂村氨鍙互寮€濮嬫暟鎹潰澶勭悊锛屽涓嬫墍绀猴細
 
-- VDUSE_GET_VQ_STATE：获取 virtqueue 的状态，用户空间应返回 split virtqueue 的 avail 索引，或 packed virtqueue 的设备/驱动环回绕计数以及 avail 和 used 索引。
-
-- VDUSE_SET_STATUS：设置设备状态，用户空间应遵循 virtio 规范：https://docs.oasis-open.org/virtio/virtio/v1.1/virtio-v1.1.html 来处理此消息。例如，如果设备无法接受从 VDUSE_DEV_GET_FEATURES ioctl 获得的已协商 virtio 特性，则设置 FEATURES_OK 设备状态位失败。
-
-- VDUSE_UPDATE_IOTLB：通知用户空间更新指定 IOVA 范围的内存映射，用户空间应首先移除旧映射，然后通过 VDUSE_IOTLB_GET_FD ioctl 建立新映射。
-
-在通过 VDUSE_SET_STATUS 消息设置 DRIVER_OK 状态位之后，用户空间就可以开始数据面处理，如下所示：
-
-1. 用 VDUSE_VQ_GET_INFO ioctl 获取指定 virtqueue 的信息，包括大小、描述符表/可用环/已用环的 IOVA、状态以及就绪状态。
-
-2. 将上述 IOVA 传给 VDUSE_IOTLB_GET_FD ioctl，以便将这些 IOVA 区域映射到用户空间。一些示例代码如下：
+1. 鐢?VDUSE_VQ_GET_INFO ioctl 鑾峰彇鎸囧畾 virtqueue 鐨勪俊鎭紝鍖呮嫭澶у皬銆佹弿杩扮琛?鍙敤鐜?宸茬敤鐜殑 IOVA銆佺姸鎬佷互鍙婂氨缁姸鎬併€?
+2. 灏嗕笂杩?IOVA 浼犵粰 VDUSE_IOTLB_GET_FD ioctl锛屼互渚垮皢杩欎簺 IOVA 鍖哄煙鏄犲皠鍒扮敤鎴风┖闂淬€備竴浜涚ず渚嬩唬鐮佸涓嬶細
 
 
 	static int perm_to_prot(uint8_t perm)
@@ -176,20 +160,14 @@ VDUSE 框架目前引入了三种类型的消息：
 		return addr + iova - entry.start;
 	}
 
-3. 用 VDUSE_VQ_SETUP_KICKFD ioctl 为指定 virtqueue 设置 kick eventfd。kick eventfd 由 VDUSE 内核模块用于通知用户空间消费可用环。这是可选的，因为用户空间也可以选择轮询可用环。
+3. 鐢?VDUSE_VQ_SETUP_KICKFD ioctl 涓烘寚瀹?virtqueue 璁剧疆 kick eventfd銆俴ick eventfd 鐢?VDUSE 鍐呮牳妯″潡鐢ㄤ簬閫氱煡鐢ㄦ埛绌洪棿娑堣垂鍙敤鐜€傝繖鏄彲閫夌殑锛屽洜涓虹敤鎴风┖闂翠篃鍙互閫夋嫨杞鍙敤鐜€?
+4. 鐩戝惉 kick eventfd锛堝彲閫夛級骞舵秷璐瑰彲鐢ㄧ幆銆傛弿杩扮琛ㄤ腑鎵€鎻忚堪鐨勬弿杩扮鎵€鎸囧悜鐨勭紦鍐插尯鍦ㄨ闂箣鍓嶄篃搴旈€氳繃 VDUSE_IOTLB_GET_FD ioctl 鏄犲皠鍒扮敤鎴风┖闂淬€?
+5. 鍦ㄥ凡鐢ㄧ幆琚～鍏呬箣鍚庯紝鐢?VDUSE_INJECT_VQ_IRQ ioctl 涓虹壒瀹?virtqueue 娉ㄥ叆涓€涓腑鏂€?
+### 鍚敤 ASID锛圓PI 鐗堟湰 1锛?
 
-4. 监听 kick eventfd（可选）并消费可用环。描述符表中所描述的描述符所指向的缓冲区在访问之前也应通过 VDUSE_IOTLB_GET_FD ioctl 映射到用户空间。
-
-5. 在已用环被填充之后，用 VDUSE_INJECT_VQ_IRQ ioctl 为特定 virtqueue 注入一个中断。
-
-### 启用 ASID（API 版本 1）
-
-
-VDUSE 从 API 版本 1 开始支持每地址空间标识符（ASID）。在通过 ioctl(VDUSE_CREATE_DEV) 创建新的 VDUSE 实例之前，在 `/dev/vduse/control` 上用 ioctl(VDUSE_SET_API_VERSION) 并设置 `VDUSE_API_VERSION_1` 来进行设置。
-
-之后，你可以使用 ioctl(VDUSE_VQ_SETUP) 参数的 asid 成员来选择所查询 IOTLB 的地址空间。驱动可以通过使用 VDUSE_SET_VQ_GROUP_ASID VDUSE 消息类型更改任何 virtqueue 组的地址空间，如果可以更改，VDUSE 实例需要以 VDUSE_REQ_RESULT_OK 回复。
-
-类似地，你可以使用 ioctl(VDUSE_IOTLB_GET_FD2) 获取描述特定 ASID 的 IOVA 区域的文件描述符。使用示例：
+VDUSE 浠?API 鐗堟湰 1 寮€濮嬫敮鎸佹瘡鍦板潃绌洪棿鏍囪瘑绗︼紙ASID锛夈€傚湪閫氳繃 ioctl(VDUSE_CREATE_DEV) 鍒涘缓鏂扮殑 VDUSE 瀹炰緥涔嬪墠锛屽湪 `/dev/vduse/control` 涓婄敤 ioctl(VDUSE_SET_API_VERSION) 骞惰缃?`VDUSE_API_VERSION_1` 鏉ヨ繘琛岃缃€?
+涔嬪悗锛屼綘鍙互浣跨敤 ioctl(VDUSE_VQ_SETUP) 鍙傛暟鐨?asid 鎴愬憳鏉ラ€夋嫨鎵€鏌ヨ IOTLB 鐨勫湴鍧€绌洪棿銆傞┍鍔ㄥ彲浠ラ€氳繃浣跨敤 VDUSE_SET_VQ_GROUP_ASID VDUSE 娑堟伅绫诲瀷鏇存敼浠讳綍 virtqueue 缁勭殑鍦板潃绌洪棿锛屽鏋滃彲浠ユ洿鏀癸紝VDUSE 瀹炰緥闇€瑕佷互 VDUSE_REQ_RESULT_OK 鍥炲銆?
+绫讳技鍦帮紝浣犲彲浠ヤ娇鐢?ioctl(VDUSE_IOTLB_GET_FD2) 鑾峰彇鎻忚堪鐗瑰畾 ASID 鐨?IOVA 鍖哄煙鐨勬枃浠舵弿杩扮銆備娇鐢ㄧず渚嬶細
 
 
 	static void *iova_to_va(int dev_fd, uint32_t asid, uint64_t iova,
@@ -226,4 +204,4 @@ VDUSE 从 API 版本 1 开始支持每地址空间标识符（ASID）。在通�
 		return addr + iova - entry.v1.start;
 	}
 
-关于 uAPI 的更多细节，请参见 include/uapi/linux/vduse.h。
+鍏充簬 uAPI 鐨勬洿澶氱粏鑺傦紝璇峰弬瑙?include/uapi/linux/vduse.h銆?

@@ -1,28 +1,23 @@
+﻿
 
 
-
-## DVB 音频设备
+## DVB 闊抽璁惧
 
 
              See: legacy_dvb_decoder_notes
 
-DVB 音频设备控制着 DVB 硬件的 MPEG2 音频解码器。可以通过
-`/dev/dvb/adapter?/audio?` 访问它。数据类型与 ioctl 定义可以通过在
-应用程序中包含 `linux/dvb/audio.h` 来使用。
+DVB 闊抽璁惧鎺у埗鐫€ DVB 纭欢鐨?MPEG2 闊抽瑙ｇ爜鍣ㄣ€傚彲浠ラ€氳繃
+`/dev/dvb/adapter?/audio?` 璁块棶瀹冦€傛暟鎹被鍨嬩笌 ioctl 瀹氫箟鍙互閫氳繃鍦?搴旂敤绋嬪簭涓寘鍚?`linux/dvb/audio.h` 鏉ヤ娇鐢ㄣ€?
+璇锋敞鎰忥紝澶у鏁?DVB 鍗℃病鏈夎嚜宸辩殑 MPEG 瑙ｇ爜鍣紝鍥犳浼氱渷鐣ラ煶棰戝拰瑙嗛
+璁惧銆?
+杩欎簺 ioctl 涔熸浘琚?V4L2 鐢ㄦ潵鎺у埗 V4L2 涓疄鐜扮殑 MPEG 瑙ｇ爜鍣ㄣ€傚皢杩欑被
+ioctl 鐢ㄤ簬璇ョ洰鐨勭殑鍋氭硶宸茶搴熷純锛屽苟宸插垱寤虹浉搴旂殑 V4L2 ioctl 鎴栨帶浠舵潵
+鍙栦唬璇ュ姛鑳姐€傛柊鐨勯┍鍔ㄧ▼搴忚浣跨敤 V4L2 ioctls<audio>锛?
 
-请注意，大多数 DVB 卡没有自己的 MPEG 解码器，因此会省略音频和视频
-设备。
-
-这些 ioctl 也曾被 V4L2 用来控制 V4L2 中实现的 MPEG 解码器。将这类
-ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl 或控件来
-取代该功能。新的驱动程序请使用 V4L2 ioctls<audio>！
-
-
-## 音频数据类型
+## 闊抽鏁版嵁绫诲瀷
 
 
-本节描述与音频设备交互时所使用的结构体、数据类型与宏定义。
-
+鏈妭鎻忚堪涓庨煶棰戣澶囦氦浜掓椂鎵€浣跨敤鐨勭粨鏋勪綋銆佹暟鎹被鍨嬩笌瀹忓畾涔夈€?
 
 -----
 
@@ -31,7 +26,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 ### audio_stream_source_t
 
 
-#### 概述
+#### 姒傝堪
 
 
     typedef enum {
@@ -39,7 +34,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
     AUDIO_SOURCE_MEMORY
     } audio_stream_source_t;
 
-#### 常量
+#### 甯搁噺
 
 
     :header-rows:  0
@@ -49,23 +44,18 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 
        - `AUDIO_SOURCE_DEMUX`
 
-       - `1` 选择解复用器（由前端或 DVR 设备提供数据）作为视频流的来源。
-
+       - `1` 閫夋嫨瑙ｅ鐢ㄥ櫒锛堢敱鍓嶇鎴?DVR 璁惧鎻愪緵鏁版嵁锛変綔涓鸿棰戞祦鐨勬潵婧愩€?
     - ..
 
        - `AUDIO_SOURCE_MEMORY`
 
-       - 选择通过 `write()`_ 系统调用来自应用程序的流。
+       - 閫夋嫨閫氳繃 `write()`_ 绯荤粺璋冪敤鏉ヨ嚜搴旂敤绋嬪簭鐨勬祦銆?
+#### 鎻忚堪
 
-#### 描述
 
-
-音频流来源通过 `AUDIO_SELECT_SOURCE`_ 调用设置，可取值如下，取决于
-我们是回放内部（demux）还是外部（用户写入）来源。
-
-送入解码器的数据还受 PID 过滤器控制。输出选择：`dmx_output`
-`DMX_OUT_DECODER`。
-
+闊抽娴佹潵婧愰€氳繃 `AUDIO_SELECT_SOURCE`_ 璋冪敤璁剧疆锛屽彲鍙栧€煎涓嬶紝鍙栧喅浜?鎴戜滑鏄洖鏀惧唴閮紙demux锛夎繕鏄閮紙鐢ㄦ埛鍐欏叆锛夋潵婧愩€?
+閫佸叆瑙ｇ爜鍣ㄧ殑鏁版嵁杩樺彈 PID 杩囨护鍣ㄦ帶鍒躲€傝緭鍑洪€夋嫨锛歚dmx_output`
+`DMX_OUT_DECODER`銆?
 
 -----
 
@@ -74,7 +64,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 ### audio_play_state_t
 
 
-#### 概述
+#### 姒傝堪
 
 
     typedef enum {
@@ -83,7 +73,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 	AUDIO_PAUSED
     } audio_play_state_t;
 
-#### 常量
+#### 甯搁噺
 
 
     :header-rows:  0
@@ -93,25 +83,21 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 
        - `AUDIO_STOPPED`
 
-       - 音频已停止。
-
+       - 闊抽宸插仠姝€?
     - ..
 
        - `AUDIO_PLAYING`
 
-       - 音频正在播放。
-
+       - 闊抽姝ｅ湪鎾斁銆?
     - ..
 
        - `AUDIO_PAUSE`
 
-       - 音频已冻结。
+       - 闊抽宸插喕缁撱€?
+#### 鎻忚堪
 
-#### 描述
 
-
-此值可由 `AUDIO_GET_STATUS`_ 调用返回，表示音频播放的状态。
-
+姝ゅ€煎彲鐢?`AUDIO_GET_STATUS`_ 璋冪敤杩斿洖锛岃〃绀洪煶棰戞挱鏀剧殑鐘舵€併€?
 
 -----
 
@@ -120,7 +106,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 ### audio_channel_select_t
 
 
-#### 概述
+#### 姒傝堪
 
 
     typedef enum {
@@ -131,7 +117,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 	AUDIO_STEREO_SWAPPED
     } audio_channel_select_t;
 
-#### 常量
+#### 甯搁噺
 
 
     :header-rows:  0
@@ -141,37 +127,31 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 
        - `AUDIO_STEREO`
 
-       - 立体声。
-
+       - 绔嬩綋澹般€?
     - ..
 
        - `AUDIO_MONO_LEFT`
 
-       - 单声道，选择左声道作为来源。
-
+       - 鍗曞０閬擄紝閫夋嫨宸﹀０閬撲綔涓烘潵婧愩€?
     - ..
 
        - `AUDIO_MONO_RIGHT`
 
-       - 单声道，选择右声道作为来源。
-
+       - 鍗曞０閬擄紝閫夋嫨鍙冲０閬撲綔涓烘潵婧愩€?
     - ..
 
        - `AUDIO_MONO`
 
-       - 仅单声道来源。
-
+       - 浠呭崟澹伴亾鏉ユ簮銆?
     - ..
 
        - `AUDIO_STEREO_SWAPPED`
 
-       - 立体声，交换左（L）与右（R）。
+       - 绔嬩綋澹帮紝浜ゆ崲宸︼紙L锛変笌鍙筹紙R锛夈€?
+#### 鎻忚堪
 
-#### 描述
 
-
-通过 `AUDIO_CHANNEL_SELECT`_ 选择的音频声道由此值决定。
-
+閫氳繃 `AUDIO_CHANNEL_SELECT`_ 閫夋嫨鐨勯煶棰戝０閬撶敱姝ゅ€煎喅瀹氥€?
 
 -----
 
@@ -180,7 +160,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 ### audio_mixer_t
 
 
-#### 概述
+#### 姒傝堪
 
 
     typedef struct audio_mixer {
@@ -188,7 +168,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 	unsigned int volume_right;
     } audio_mixer_t;
 
-#### 变量
+#### 鍙橀噺
 
 
     :header-rows:  0
@@ -198,21 +178,18 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 
        - `unsigned int volume_left`
 
-       - 左声道音量。
-          有效范围：0 ... 255
+       - 宸﹀０閬撻煶閲忋€?          鏈夋晥鑼冨洿锛? ... 255
 
     - ..
 
        - `unsigned int volume_right`
 
-       - 右声道音量。
-          有效范围：0 ... 255
+       - 鍙冲０閬撻煶閲忋€?          鏈夋晥鑼冨洿锛? ... 255
 
-#### 描述
+#### 鎻忚堪
 
 
-此结构体由 `AUDIO_SET_MIXER`_ 调用用来设置音频音量。
-
+姝ょ粨鏋勪綋鐢?`AUDIO_SET_MIXER`_ 璋冪敤鐢ㄦ潵璁剧疆闊抽闊抽噺銆?
 
 -----
 
@@ -221,7 +198,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 ### audio_status
 
 
-#### 概述
+#### 姒傝堪
 
 
     typedef struct audio_status {
@@ -234,7 +211,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 	audio_mixer_t mixer_state;
     } audio_status_t;
 
-#### 变量
+#### 鍙橀噺
 
 
     :header-rows:  0
@@ -244,79 +221,68 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 
        - `2` `int AV_sync_state`
 
-       - `1` 显示 A/V 同步是开启还是关闭。
-
+       - `1` 鏄剧ず A/V 鍚屾鏄紑鍚繕鏄叧闂€?
     - ..
 
        - TRUE  ( != 0 )
 
-       - A/V 同步开启。
-
+       - A/V 鍚屾寮€鍚€?
     - ..
 
        - FALSE ( == 0 )
 
-       - A/V 同步关闭。
-
+       - A/V 鍚屾鍏抽棴銆?
     - ..
 
        - `2` `int mute_state`
 
-       - `1` 指示音频是否静音。
-
+       - `1` 鎸囩ず闊抽鏄惁闈欓煶銆?
     - ..
 
        - TRUE  ( != 0 )
 
-       - 静音音频
+       - 闈欓煶闊抽
 
     - ..
 
        - FALSE ( == 0 )
 
-       - 取消静音音频
+       - 鍙栨秷闈欓煶闊抽
 
     - ..
 
        - `audio_play_state_t`_ `play_state`
 
-       - 当前播放状态。
-
+       - 褰撳墠鎾斁鐘舵€併€?
     - ..
 
        - `audio_stream_source_t`_ `stream_source`
 
-       - 当前的数据来源。
-
+       - 褰撳墠鐨勬暟鎹潵婧愩€?
     - ..
 
        - `2` `int bypass_mode`
 
-       - `1` 当前音频流在 DVB 子系统中的解码是否被启用或禁用。
-
+       - `1` 褰撳墠闊抽娴佸湪 DVB 瀛愮郴缁熶腑鐨勮В鐮佹槸鍚﹁鍚敤鎴栫鐢ㄣ€?
     - ..
 
        - TRUE  ( != 0 )
 
-       - 旁路禁用。
-
+       - 鏃佽矾绂佺敤銆?
     - ..
 
        - FALSE ( == 0 )
 
-       - 旁路启用。
-
+       - 鏃佽矾鍚敤銆?
     - ..
 
        - `audio_mixer_t`_ `mixer_state`
 
-       - 当前音量设置。
+       - 褰撳墠闊抽噺璁剧疆銆?
+#### 鎻忚堪
 
-#### 描述
 
-
-`AUDIO_GET_STATUS`_ 调用返回此结构体，作为播放操作各种状态的信息。
-
+`AUDIO_GET_STATUS`_ 璋冪敤杩斿洖姝ょ粨鏋勪綋锛屼綔涓烘挱鏀炬搷浣滃悇绉嶇姸鎬佺殑淇℃伅銆?
 
 -----
 
@@ -325,7 +291,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 ### audio encodings
 
 
-#### 概述
+#### 姒傝堪
 
 
      #define AUDIO_CAP_DTS    1
@@ -338,7 +304,7 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
      #define AUDIO_CAP_SDDS 128
      #define AUDIO_CAP_AC3  256
 
-#### 常量
+#### 甯搁噺
 
 
     :header-rows:  0
@@ -348,83 +314,69 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 
        - `AUDIO_CAP_DTS`
 
-       - `1` 硬件接受 DTS 音轨。
-
+       - `1` 纭欢鎺ュ彈 DTS 闊宠建銆?
     - ..
 
        - `AUDIO_CAP_LPCM`
 
-       - 硬件接受采用线性脉冲编码调制（LPCM）的非压缩音频。
-
+       - 纭欢鎺ュ彈閲囩敤绾挎€ц剦鍐茬紪鐮佽皟鍒讹紙LPCM锛夌殑闈炲帇缂╅煶棰戙€?
     - ..
 
        - `AUDIO_CAP_MP1`
 
-       - 硬件接受 MPEG-1 Audio Layer 1。
-
+       - 纭欢鎺ュ彈 MPEG-1 Audio Layer 1銆?
     - ..
 
        - `AUDIO_CAP_MP2`
 
-       - 硬件接受 MPEG-1 Audio Layer 2。
-          也称为 MUSICAM。
-
+       - 纭欢鎺ュ彈 MPEG-1 Audio Layer 2銆?          涔熺О涓?MUSICAM銆?
     - ..
 
        - `AUDIO_CAP_MP3`
 
-       - 硬件接受 MPEG-1 Audio Layer III。
-          通常称为 .mp3。
-
+       - 纭欢鎺ュ彈 MPEG-1 Audio Layer III銆?          閫氬父绉颁负 .mp3銆?
     - ..
 
        - `AUDIO_CAP_AAC`
 
-       - 硬件接受 AAC（高级音频编码）。
-
+       - 纭欢鎺ュ彈 AAC锛堥珮绾ч煶棰戠紪鐮侊級銆?
     - ..
 
        - `AUDIO_CAP_OGG`
 
-       - 硬件接受 Vorbis 音轨。
-
+       - 纭欢鎺ュ彈 Vorbis 闊宠建銆?
     - ..
 
        - `AUDIO_CAP_SDDS`
 
-       - 硬件接受 Sony Dynamic Digital Sound（SDDS）。
-
+       - 纭欢鎺ュ彈 Sony Dynamic Digital Sound锛圫DDS锛夈€?
     - ..
 
        - `AUDIO_CAP_AC3`
 
-       - 硬件接受 Dolby Digital ATSC A/52 音频。
-          也称为 AC-3。
-
-#### 描述
+       - 纭欢鎺ュ彈 Dolby Digital ATSC A/52 闊抽銆?          涔熺О涓?AC-3銆?
+#### 鎻忚堪
 
 
-对 `AUDIO_GET_CAPABILITIES`_ 的调用返回一个无符号整数，其中根据硬件
-能力设置了以下比特位。
-
+瀵?`AUDIO_GET_CAPABILITIES`_ 鐨勮皟鐢ㄨ繑鍥炰竴涓棤绗﹀彿鏁存暟锛屽叾涓牴鎹‖浠?鑳藉姏璁剧疆浜嗕互涓嬫瘮鐗逛綅銆?
 
 -----
 
 
 
-## 音频函数调用
+## 闊抽鍑芥暟璋冪敤
 
 
 
 ### AUDIO_STOP
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int ioctl(int fd, int request = AUDIO_STOP)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -434,27 +386,22 @@ ioctl 用于该目的的做法已被废弃，并已创建相应的 V4L2 ioctl �
 
        - `int fd`
 
-       - 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - `1` 对应该命令，等于 `AUDIO_STOP`。
-
-#### 描述
+       - `1` 瀵瑰簲璇ュ懡浠わ紝绛変簬 `AUDIO_STOP`銆?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 调用请求音频设备停止播放当前的流。
+姝?ioctl 璋冪敤璇锋眰闊抽璁惧鍋滄鎾斁褰撳墠鐨勬祦銆?
+#### 杩斿洖鍊?
 
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -463,12 +410,12 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_PLAY
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int  ioctl(int fd, int request = AUDIO_PLAY)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -478,27 +425,22 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - `1` 对应该命令，等于 `AUDIO_PLAY`。
-
-#### 描述
+       - `1` 瀵瑰簲璇ュ懡浠わ紝绛変簬 `AUDIO_PLAY`銆?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 调用请求音频设备开始从所选来源播放音频流。
+姝?ioctl 璋冪敤璇锋眰闊抽璁惧寮€濮嬩粠鎵€閫夋潵婧愭挱鏀鹃煶棰戞祦銆?
+#### 杩斿洖鍊?
 
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -507,12 +449,12 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_PAUSE
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int  ioctl(int fd, int request = AUDIO_PAUSE)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -522,28 +464,22 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - 等于 `AUDIO_PAUSE`。
-
-#### 描述
+       - 绛変簬 `AUDIO_PAUSE`銆?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 调用暂停正在播放的音频流。解码与播放都被暂停。之后可以使用
-`AUDIO_CONTINUE`_ 命令重新开始音频流的解码与播放过程。
+姝?ioctl 璋冪敤鏆傚仠姝ｅ湪鎾斁鐨勯煶棰戞祦銆傝В鐮佷笌鎾斁閮借鏆傚仠銆備箣鍚庡彲浠ヤ娇鐢?`AUDIO_CONTINUE`_ 鍛戒护閲嶆柊寮€濮嬮煶棰戞祦鐨勮В鐮佷笌鎾斁杩囩▼銆?
+#### 杩斿洖鍊?
 
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -552,12 +488,12 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_CONTINUE
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int  ioctl(int fd, int request = AUDIO_CONTINUE)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -567,27 +503,22 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - 等于 `AUDIO_CONTINUE`。
-
-#### 描述
+       - 绛変簬 `AUDIO_CONTINUE`銆?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 重新启动先前被 `AUDIO_PAUSE`_ 命令暂停的解码与播放过程。
+姝?ioctl 閲嶆柊鍚姩鍏堝墠琚?`AUDIO_PAUSE`_ 鍛戒护鏆傚仠鐨勮В鐮佷笌鎾斁杩囩▼銆?
+#### 杩斿洖鍊?
 
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -596,13 +527,13 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_SELECT_SOURCE
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int ioctl(int fd, int request = AUDIO_SELECT_SOURCE,
 	 audio_stream_source_t source)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -612,37 +543,29 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - 等于 `AUDIO_SELECT_SOURCE`。
-
+       - 绛変簬 `AUDIO_SELECT_SOURCE`銆?
     - ..
 
        - `audio_stream_source_t`_ `source`
 
-       - 指示应用于音频流的来源。
-
-#### 描述
+       - 鎸囩ず搴旂敤浜庨煶棰戞祦鐨勬潵婧愩€?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 调用告知音频设备输入数据应使用哪个来源。可能的来源是 demux
-或 memory。若选择 `AUDIO_SOURCE_MEMORY`，则数据通过 write 命令送入音频
-设备。若选择 `AUDIO_SOURCE_DEMUX`，数据则直接从板载解复用设备传输到
-解码器。注意：到目前为止这仅支持具有一个解复用器和一个解码器的
-DVB 设备。
+姝?ioctl 璋冪敤鍛婄煡闊抽璁惧杈撳叆鏁版嵁搴斾娇鐢ㄥ摢涓潵婧愩€傚彲鑳界殑鏉ユ簮鏄?demux
+鎴?memory銆傝嫢閫夋嫨 `AUDIO_SOURCE_MEMORY`锛屽垯鏁版嵁閫氳繃 write 鍛戒护閫佸叆闊抽
+璁惧銆傝嫢閫夋嫨 `AUDIO_SOURCE_DEMUX`锛屾暟鎹垯鐩存帴浠庢澘杞借В澶嶇敤璁惧浼犺緭鍒?瑙ｇ爜鍣ㄣ€傛敞鎰忥細鍒扮洰鍓嶄负姝㈣繖浠呮敮鎸佸叿鏈変竴涓В澶嶇敤鍣ㄥ拰涓€涓В鐮佸櫒鐨?DVB 璁惧銆?
+#### 杩斿洖鍊?
 
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -651,12 +574,12 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_SET_MUTE
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int  ioctl(int fd, int request = AUDIO_SET_MUTE, int state)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -666,48 +589,41 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - `1` 对应该命令，等于 `AUDIO_SET_MUTE`。
-
+       - `1` 瀵瑰簲璇ュ懡浠わ紝绛変簬 `AUDIO_SET_MUTE`銆?
     - ..
 
        - `2` `int state`
 
-       - `1` 指示音频设备是否应静音。
-
+       - `1` 鎸囩ず闊抽璁惧鏄惁搴旈潤闊炽€?
     - ..
 
        - TRUE  ( != 0 )
 
-       - 静音音频
+       - 闈欓煶闊抽
 
     - ..
 
        - FALSE ( == 0 )
 
-       - 取消静音音频
+       - 鍙栨秷闈欓煶闊抽
 
-#### 描述
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 仅适用于 DVB 设备。要控制 V4L2 解码器，请改用 V4L2
-VIDIOC_DECODER_CMD，并带上 `V4L2_DEC_CMD_START_MUTE_AUDIO` 标志。
+姝?ioctl 浠呴€傜敤浜?DVB 璁惧銆傝鎺у埗 V4L2 瑙ｇ爜鍣紝璇锋敼鐢?V4L2
+VIDIOC_DECODER_CMD锛屽苟甯︿笂 `V4L2_DEC_CMD_START_MUTE_AUDIO` 鏍囧織銆?
+姝?ioctl 璋冪敤璇锋眰闊抽璁惧瀵瑰綋鍓嶆鍦ㄦ挱鏀剧殑娴佽繘琛岄潤闊炽€?
+#### 杩斿洖鍊?
 
-此 ioctl 调用请求音频设备对当前正在播放的流进行静音。
-
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -716,12 +632,12 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_SET_AV_SYNC
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int  ioctl(int fd, int request = AUDIO_SET_AV_SYNC, int state)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -731,45 +647,37 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - `1` 对应该命令，等于 `AUDIO_AV_SYNC`。
-
+       - `1` 瀵瑰簲璇ュ懡浠わ紝绛変簬 `AUDIO_AV_SYNC`銆?
     - ..
 
        - `2` `int state`
 
-       - `1` 告知 DVB 子系统 A/V 同步应开启还是关闭。
-
+       - `1` 鍛婄煡 DVB 瀛愮郴缁?A/V 鍚屾搴斿紑鍚繕鏄叧闂€?
     - ..
 
        - TRUE  ( != 0 )
 
-       - A/V 同步开启。
-
+       - A/V 鍚屾寮€鍚€?
     - ..
 
        - FALSE ( == 0 )
 
-       - A/V 同步关闭。
-
-#### 描述
+       - A/V 鍚屾鍏抽棴銆?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 调用请求音频设备开启或关闭 A/V 同步。
+姝?ioctl 璋冪敤璇锋眰闊抽璁惧寮€鍚垨鍏抽棴 A/V 鍚屾銆?
+#### 杩斿洖鍊?
 
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -778,12 +686,12 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_SET_BYPASS_MODE
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int ioctl(int fd, int request = AUDIO_SET_BYPASS_MODE, int mode)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -793,47 +701,40 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - `1` 对应该命令，等于 `AUDIO_SET_BYPASS_MODE`。
-
+       - `1` 瀵瑰簲璇ュ懡浠わ紝绛変簬 `AUDIO_SET_BYPASS_MODE`銆?
     - ..
 
        - `2` `int mode`
 
-       - `1` 启用或禁用当前音频流在 DVB 子系统中的解码。
-
+       - `1` 鍚敤鎴栫鐢ㄥ綋鍓嶉煶棰戞祦鍦?DVB 瀛愮郴缁熶腑鐨勮В鐮併€?
     - ..
 
        - TRUE  ( != 0 )
 
-       - 禁用旁路
+       - 绂佺敤鏃佽矾
 
     - ..
 
        - FALSE ( == 0 )
 
-       - 启用旁路
+       - 鍚敤鏃佽矾
 
-#### 描述
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 调用请求音频设备旁路音频解码器，并直接转发流而不进行解码。
-当无法被 DVB 系统处理的流需要解码时，应使用此模式。如果硬件支持，
-Dolby DigitalTM 流会被 DVB 子系统自动转发。
+姝?ioctl 璋冪敤璇锋眰闊抽璁惧鏃佽矾闊抽瑙ｇ爜鍣紝骞剁洿鎺ヨ浆鍙戞祦鑰屼笉杩涜瑙ｇ爜銆?褰撴棤娉曡 DVB 绯荤粺澶勭悊鐨勬祦闇€瑕佽В鐮佹椂锛屽簲浣跨敤姝ゆā寮忋€傚鏋滅‖浠舵敮鎸侊紝
+Dolby DigitalTM 娴佷細琚?DVB 瀛愮郴缁熻嚜鍔ㄨ浆鍙戙€?
+#### 杩斿洖鍊?
 
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -842,13 +743,13 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_CHANNEL_SELECT
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int ioctl(int fd, int request = AUDIO_CHANNEL_SELECT,
 	 audio_channel_select_t)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -858,36 +759,29 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - 等于 `AUDIO_CHANNEL_SELECT`。
-
+       - 绛変簬 `AUDIO_CHANNEL_SELECT`銆?
     - ..
 
        - `audio_channel_select_t`_ `ch`
 
-       - 选择音频的输出格式（左/右单声道、立体声）。
-
-#### 描述
+       - 閫夋嫨闊抽鐨勮緭鍑烘牸寮忥紙宸?鍙冲崟澹伴亾銆佺珛浣撳０锛夈€?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 仅适用于 DVB 设备。要控制 V4L2 解码器，请改用 V4L2
-`V4L2_CID_MPEG_AUDIO_DEC_PLAYBACK` 控件。
+姝?ioctl 浠呴€傜敤浜?DVB 璁惧銆傝鎺у埗 V4L2 瑙ｇ爜鍣紝璇锋敼鐢?V4L2
+`V4L2_CID_MPEG_AUDIO_DEC_PLAYBACK` 鎺т欢銆?
+姝?ioctl 璋冪敤鍦ㄥ彲鑳界殑鎯呭喌涓嬭姹傞煶棰戣澶囬€夋嫨鎵€璇锋眰鐨勫０閬撱€?
+#### 杩斿洖鍊?
 
-此 ioctl 调用在可能的情况下请求音频设备选择所请求的声道。
-
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -896,13 +790,13 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_GET_STATUS
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int ioctl(int fd, int request = AUDIO_GET_STATUS,
 	 struct audio_status *status)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -912,33 +806,27 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - 等于 AUDIO_GET_STATUS。
-
+       - 绛変簬 AUDIO_GET_STATUS銆?
     - ..
 
        - `struct` `audio_status`_ `*status`
 
-       - 返回音频设备的当前状态。
-
-#### 描述
+       - 杩斿洖闊抽璁惧鐨勫綋鍓嶇姸鎬併€?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 调用请求音频设备返回音频设备的当前状态。
+姝?ioctl 璋冪敤璇锋眰闊抽璁惧杩斿洖闊抽璁惧鐨勫綋鍓嶇姸鎬併€?
+#### 杩斿洖鍊?
 
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -947,13 +835,13 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_GET_CAPABILITIES
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int ioctl(int fd, int request = AUDIO_GET_CAPABILITIES,
 	 unsigned int *cap)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -963,34 +851,27 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - 等于 `AUDIO_GET_CAPABILITIES`。
-
+       - 绛変簬 `AUDIO_GET_CAPABILITIES`銆?
     - ..
 
        - `unsigned int *cap`
 
-       - 返回受支持的声音格式的位数组。
-          比特位在 `audio encodings`_ 中定义。
-
-#### 描述
+       - 杩斿洖鍙楁敮鎸佺殑澹伴煶鏍煎紡鐨勪綅鏁扮粍銆?          姣旂壒浣嶅湪 `audio encodings`_ 涓畾涔夈€?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 调用请求音频设备告知我们音频硬件的解码能力。
+姝?ioctl 璋冪敤璇锋眰闊抽璁惧鍛婄煡鎴戜滑闊抽纭欢鐨勮В鐮佽兘鍔涖€?
+#### 杩斿洖鍊?
 
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -999,12 +880,12 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_CLEAR_BUFFER
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int  ioctl(int fd, int request = AUDIO_CLEAR_BUFFER)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -1014,27 +895,22 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - 等于 `AUDIO_CLEAR_BUFFER`。
-
-#### 描述
+       - 绛変簬 `AUDIO_CLEAR_BUFFER`銆?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 调用请求音频设备清空音频解码器设备的所有软件与硬件缓冲区。
+姝?ioctl 璋冪敤璇锋眰闊抽璁惧娓呯┖闊抽瑙ｇ爜鍣ㄨ澶囩殑鎵€鏈夎蒋浠朵笌纭欢缂撳啿鍖恒€?
+#### 杩斿洖鍊?
 
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -1043,12 +919,12 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_SET_ID
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int  ioctl(int fd, int request = AUDIO_SET_ID, int id)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -1058,40 +934,30 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - 等于 `AUDIO_SET_ID`。
-
+       - 绛変簬 `AUDIO_SET_ID`銆?
     - ..
 
        - `int id`
 
-       - 音频子流 id。
-
-#### 描述
+       - 闊抽瀛愭祦 id銆?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-如果程序流或系统流被发送到视频设备，此 ioctl 选择要被解码的子流。
+濡傛灉绋嬪簭娴佹垨绯荤粺娴佽鍙戦€佸埌瑙嗛璁惧锛屾 ioctl 閫夋嫨瑕佽瑙ｇ爜鐨勫瓙娴併€?
+濡傛灉鏈缃煶棰戞祦绫诲瀷锛屽垯瀵逛簬 MPEG 澹伴煶锛宨d 蹇呴』鍦?[0xC0,0xDF] 鑼冨洿鍐咃紱
+瀵逛簬 AC3锛屽湪 [0x80,0x87] 鑼冨洿鍐咃紱瀵逛簬 LPCM锛屽湪 [0xA0,0xA7] 鑼冨洿鍐呫€?鏇村璇存槑璇峰弬瑙?ITU-T H.222.0 | ISO/IEC 13818-1銆?
+濡傛灉娴佺被鍨嬪凡閫氳繃 `AUDIO_SET_STREAMTYPE`_ 璁剧疆锛屽垯 id 鍙〃绀洪煶棰戞祦鐨?瀛愭祦 id锛屼笖鍙瘑鍒墠 5 涓瘮鐗癸紙& 0x1F锛夈€?
+#### 杩斿洖鍊?
 
-如果未设置音频流类型，则对于 MPEG 声音，id 必须在 [0xC0,0xDF] 范围内；
-对于 AC3，在 [0x80,0x87] 范围内；对于 LPCM，在 [0xA0,0xA7] 范围内。
-更多说明请参见 ITU-T H.222.0 | ISO/IEC 13818-1。
-
-如果流类型已通过 `AUDIO_SET_STREAMTYPE`_ 设置，则 id 只表示音频流的
-子流 id，且只识别前 5 个比特（& 0x1F）。
-
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -1100,12 +966,12 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_SET_MIXER
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int ioctl(int fd, int request = AUDIO_SET_MIXER, audio_mixer_t *mix)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -1115,33 +981,27 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - 等于 `AUDIO_SET_MIXER`。
-
+       - 绛変簬 `AUDIO_SET_MIXER`銆?
     - ..
 
        - `audio_mixer_t *mix`
 
-       - 混音器设置。
-
-#### 描述
+       - 娣烽煶鍣ㄨ缃€?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 允许你调整音频解码器的混音器设置。
+姝?ioctl 鍏佽浣犺皟鏁撮煶棰戣В鐮佸櫒鐨勬贩闊冲櫒璁剧疆銆?
+#### 杩斿洖鍊?
 
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -1150,12 +1010,12 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### AUDIO_SET_STREAMTYPE
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int  ioctl(fd, int request = AUDIO_SET_STREAMTYPE, int type)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -1165,33 +1025,26 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - 等于 `AUDIO_SET_STREAMTYPE`。
-
+       - 绛変簬 `AUDIO_SET_STREAMTYPE`銆?
     - ..
 
        - `int type`
 
-       - 流类型。
-
-#### 描述
+       - 娴佺被鍨嬨€?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-此 ioctl 告诉驱动程序预期接收哪种音频流。当流提供多种音频子流（如
-LPCM 和 AC3）时，这很有用。
+姝?ioctl 鍛婅瘔椹卞姩绋嬪簭棰勬湡鎺ユ敹鍝闊抽娴併€傚綋娴佹彁渚涘绉嶉煶棰戝瓙娴侊紙濡?LPCM 鍜?AC3锛夋椂锛岃繖寰堟湁鐢ㄣ€?
+浣跨敤 ITU-T H.222.0 | ISO/IEC 13818-1 涓畾涔夌殑娴佺被鍨嬨€?
 
-使用 ITU-T H.222.0 | ISO/IEC 13818-1 中定义的流类型。
-
-
-#### 返回值
-
+#### 杩斿洖鍊?
 
     :header-rows:  0
     :stub-columns: 0
@@ -1200,8 +1053,7 @@ LPCM 和 AC3）时，这很有用。
 
        - `EINVAL`
 
-       - 类型不是有效或受支持的流类型。
-
+       - 绫诲瀷涓嶆槸鏈夋晥鎴栧彈鏀寔鐨勬祦绫诲瀷銆?
 
 -----
 
@@ -1210,13 +1062,13 @@ LPCM 和 AC3）时，这很有用。
 ### AUDIO_BILINGUAL_CHANNEL_SELECT
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 int ioctl(int fd, int request = AUDIO_BILINGUAL_CHANNEL_SELECT,
 	 audio_channel_select_t)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -1226,36 +1078,29 @@ LPCM 和 AC3）时，这很有用。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `int request`
 
-       - 等于 `AUDIO_BILINGUAL_CHANNEL_SELECT`。
-
+       - 绛変簬 `AUDIO_BILINGUAL_CHANNEL_SELECT`銆?
     - ..
 
        - `audio_channel_select_t ch`
 
-       - 选择音频的输出格式（左/右单声道、立体声）。
-
-#### 描述
+       - 閫夋嫨闊抽鐨勮緭鍑烘牸寮忥紙宸?鍙冲崟澹伴亾銆佺珛浣撳０锛夈€?
+#### 鎻忚堪
 
 
              See: legacy_dvb_decoder_notes
 
-对于通过 V4L2 控制的 MPEG 解码器，此 ioctl 已被 V4L2
-`V4L2_CID_MPEG_AUDIO_DEC_MULTILINGUAL_PLAYBACK` 控件取代。
+瀵逛簬閫氳繃 V4L2 鎺у埗鐨?MPEG 瑙ｇ爜鍣紝姝?ioctl 宸茶 V4L2
+`V4L2_CID_MPEG_AUDIO_DEC_MULTILINGUAL_PLAYBACK` 鎺т欢鍙栦唬銆?
+姝?ioctl 璋冪敤鍦ㄥ彲鑳界殑鎯呭喌涓嬭姹傞煶棰戣澶囦负鍙岃娴侀€夋嫨鎵€璇锋眰鐨勫０閬撱€?
+#### 杩斿洖鍊?
 
-此 ioctl 调用在可能的情况下请求音频设备为双语流选择所请求的声道。
-
-#### 返回值
-
-
-成功时返回 0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
-Generic Error Codes <gen-errors> 一章中说明。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 涓€绔犱腑璇存槑銆?
 
 -----
 
@@ -1264,13 +1109,13 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### open()
 
 
-#### 概述
+#### 姒傝堪
 
 
     #include <fcntl.h>
 
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -1280,47 +1125,37 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `const char *deviceName`
 
-       - 特定音频设备的名称。
-
+       - 鐗瑰畾闊抽璁惧鐨勫悕绉般€?
     - ..
 
        - `3` `int flags`
 
-       - `1` 下列标志的按位或：
-
+       - `1` 涓嬪垪鏍囧織鐨勬寜浣嶆垨锛?
     - ..
 
        - `O_RDONLY`
 
-       - 只读访问
+       - 鍙璁块棶
 
     - ..
 
        - `O_RDWR`
 
-       - 读写访问
+       - 璇诲啓璁块棶
 
     - ..
 
        - `O_NONBLOCK`
-       - | 以非阻塞模式打开
-          | （默认是阻塞模式）
+       - | 浠ラ潪闃诲妯″紡鎵撳紑
+          | 锛堥粯璁ゆ槸闃诲妯″紡锛?
+#### 鎻忚堪
 
-#### 描述
 
-
-此系统调用打开一个命名的音频设备（例如 `/dev/dvb/adapter0/audio0`）
-以供后续使用。当 open() 调用成功后，设备即可使用。阻塞或非阻塞模式
-的意义在存在差异的函数文档中说明。它不影响 open() 调用本身的语义。
-以阻塞模式打开的设备之后可以使用 fcntl 系统调用的 F_SETFL 命令切换
-到非阻塞模式（反之亦然）。这是一个标准的系统调用，在 Linux 的 fcntl
-手册页中有说明。只有一个用户能以 O_RDWR 模式打开音频设备。所有其他
-以该模式打开设备的尝试都会失败，并返回错误码。如果以 O_RDONLY 模式
-打开音频设备，则唯一可以使用的 ioctl 调用是 `AUDIO_GET_STATUS`_。
-所有其他调用都会返回错误码。
-
-#### 返回值
-
+姝ょ郴缁熻皟鐢ㄦ墦寮€涓€涓懡鍚嶇殑闊抽璁惧锛堜緥濡?`/dev/dvb/adapter0/audio0`锛?浠ヤ緵鍚庣画浣跨敤銆傚綋 open() 璋冪敤鎴愬姛鍚庯紝璁惧鍗冲彲浣跨敤銆傞樆濉炴垨闈為樆濉炴ā寮?鐨勬剰涔夊湪瀛樺湪宸紓鐨勫嚱鏁版枃妗ｄ腑璇存槑銆傚畠涓嶅奖鍝?open() 璋冪敤鏈韩鐨勮涔夈€?浠ラ樆濉炴ā寮忔墦寮€鐨勮澶囦箣鍚庡彲浠ヤ娇鐢?fcntl 绯荤粺璋冪敤鐨?F_SETFL 鍛戒护鍒囨崲
+鍒伴潪闃诲妯″紡锛堝弽涔嬩害鐒讹級銆傝繖鏄竴涓爣鍑嗙殑绯荤粺璋冪敤锛屽湪 Linux 鐨?fcntl
+鎵嬪唽椤典腑鏈夎鏄庛€傚彧鏈変竴涓敤鎴疯兘浠?O_RDWR 妯″紡鎵撳紑闊抽璁惧銆傛墍鏈夊叾浠?浠ヨ妯″紡鎵撳紑璁惧鐨勫皾璇曢兘浼氬け璐ワ紝骞惰繑鍥為敊璇爜銆傚鏋滀互 O_RDONLY 妯″紡
+鎵撳紑闊抽璁惧锛屽垯鍞竴鍙互浣跨敤鐨?ioctl 璋冪敤鏄?`AUDIO_GET_STATUS`_銆?鎵€鏈夊叾浠栬皟鐢ㄩ兘浼氳繑鍥為敊璇爜銆?
+#### 杩斿洖鍊?
 
     :header-rows:  0
     :stub-columns: 0
@@ -1329,20 +1164,17 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `ENODEV`
 
-       - 设备驱动未加载/不可用。
-
+       - 璁惧椹卞姩鏈姞杞?涓嶅彲鐢ㄣ€?
     - ..
 
        - `EBUSY`
 
-       - 设备或资源忙。
-
+       - 璁惧鎴栬祫婧愬繖銆?
     - ..
 
        - `EINVAL`
 
-       - 无效参数。
-
+       - 鏃犳晥鍙傛暟銆?
 
 -----
 
@@ -1351,11 +1183,11 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### close()
 
 
-#### 概述
+#### 姒傝堪
 
 
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -1365,15 +1197,12 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
+#### 鎻忚堪
 
-#### 描述
 
-
-此系统调用关闭先前打开的音频设备。
-
-#### 返回值
-
+姝ょ郴缁熻皟鐢ㄥ叧闂厛鍓嶆墦寮€鐨勯煶棰戣澶囥€?
+#### 杩斿洖鍊?
 
     :header-rows:  0
     :stub-columns: 0
@@ -1382,8 +1211,7 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `EBADF`
 
-       - 文件描述符不是有效的已打开文件描述符。
-
+       - 鏂囦欢鎻忚堪绗︿笉鏄湁鏁堢殑宸叉墦寮€鏂囦欢鎻忚堪绗︺€?
 
 -----
 
@@ -1392,12 +1220,12 @@ Generic Error Codes <gen-errors> 一章中说明。
 ### write()
 
 
-#### 概述
+#### 姒傝堪
 
 
 	 size_t write(int fd, const void *buf, size_t count)
 
-#### 参数
+#### 鍙傛暟
 
 
     :header-rows:  0
@@ -1407,30 +1235,23 @@ Generic Error Codes <gen-errors> 一章中说明。
 
        - `int fd`
 
-       - `1` 由先前对 `open()`_ 的调用返回的文件描述符。
-
+       - `1` 鐢卞厛鍓嶅 `open()`_ 鐨勮皟鐢ㄨ繑鍥炵殑鏂囦欢鎻忚堪绗︺€?
     - ..
 
        - `void *buf`
 
-       - 指向包含 PES 数据的缓冲区的指针。
-
+       - 鎸囧悜鍖呭惈 PES 鏁版嵁鐨勭紦鍐插尯鐨勬寚閽堛€?
     - ..
 
        - `size_t count`
 
-       - buf 的大小。
+       - buf 鐨勫ぇ灏忋€?
+#### 鎻忚堪
 
-#### 描述
 
-
-此系统调用只能在 ioctl 调用 `AUDIO_SELECT_SOURCE`_ 中选择了
-`AUDIO_SOURCE_MEMORY` 时使用。所提供的数据应为 PES 格式。如果未指定
-`O_NONBLOCK`，该函数将阻塞，直到缓冲区空间可用。要传输的数据量由
-count 隐含给出。
-
-#### 返回值
-
+姝ょ郴缁熻皟鐢ㄥ彧鑳藉湪 ioctl 璋冪敤 `AUDIO_SELECT_SOURCE`_ 涓€夋嫨浜?`AUDIO_SOURCE_MEMORY` 鏃朵娇鐢ㄣ€傛墍鎻愪緵鐨勬暟鎹簲涓?PES 鏍煎紡銆傚鏋滄湭鎸囧畾
+`O_NONBLOCK`锛岃鍑芥暟灏嗛樆濉烇紝鐩村埌缂撳啿鍖虹┖闂村彲鐢ㄣ€傝浼犺緭鐨勬暟鎹噺鐢?count 闅愬惈缁欏嚭銆?
+#### 杩斿洖鍊?
 
     :header-rows:  0
     :stub-columns: 0
@@ -1439,16 +1260,14 @@ count 隐含给出。
 
        - `EPERM`
 
-       - `1` 未选择 `AUDIO_SOURCE_MEMORY` 模式。
-
+       - `1` 鏈€夋嫨 `AUDIO_SOURCE_MEMORY` 妯″紡銆?
     - ..
 
        - `ENOMEM`
 
-       - 尝试写入的数据超过了内部缓冲区所能容纳的量。
-
+       - 灏濊瘯鍐欏叆鐨勬暟鎹秴杩囦簡鍐呴儴缂撳啿鍖烘墍鑳藉绾崇殑閲忋€?
     - ..
 
        - `EBADF`
 
-       - 文件描述符不是有效的已打开文件描述符。
+       - 鏂囦欢鎻忚堪绗︿笉鏄湁鏁堢殑宸叉墦寮€鏂囦欢鎻忚堪绗︺€?

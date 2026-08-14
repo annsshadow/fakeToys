@@ -1,14 +1,14 @@
-## ALPS HID Touchpad Protocol
+﻿## ALPS HID Touchpad Protocol
 
-本文介绍 ALPS HID 触控板（Touchpad）协议，涵盖 U1 设备的基本信息、HID 描述符、Report ID 与数据格式，面向需要理解或维护该 HID 驱动的开发者与内核贡献者。
+鏈枃浠嬬粛 ALPS HID 瑙︽帶鏉匡紙Touchpad锛夊崗璁紝娑电洊 U1 璁惧鐨勫熀鏈俊鎭€丠ID 鎻忚堪绗︺€丷eport ID 涓庢暟鎹牸寮忥紝闈㈠悜闇€瑕佺悊瑙ｆ垨缁存姢璇?HID 椹卞姩鐨勫紑鍙戣€呬笌鍐呮牳璐＄尞鑰呫€?
 
 
 ### Introduction
 
 
-目前 ALPS HID 驱动支持 U1 Touchpad 设备。
+鐩墠 ALPS HID 椹卞姩鏀寔 U1 Touchpad 璁惧銆?
 
-U1 设备基本信息。
+U1 璁惧鍩烘湰淇℃伅銆?
 
 ==========	======
 Vendor ID	0x044E
@@ -23,20 +23,20 @@ Version ID	0x0121
 =======	====================	=====	=======================================
 Byte	Field			Value	Notes
 =======	====================	=====	=======================================
-0	wHIDDescLength		001E	HID 描述符长度：30 字节
-2	bcdVersion		0100	符合版本 1.00
-4	wReportDescLength	00B2	Report 描述符为 178 字节 (0x00B2)
-6	wReportDescRegister	0002	用于读取 Report 描述符的标识符
-8	wInputRegister		0003	用于读取 Input Report 的标识符
-10	wMaxInputLength		0053	Input Report 为 80 字节 + 2
-12	wOutputRegister	0000	用于读取 Output Report 的标识符
-14	wMaxOutputLength	0000	无 Output Report
-16	wCommandRegister	0005	Command Register 的标识符
-18	wDataRegister		0006	Data Register 的标识符
+0	wHIDDescLength		001E	HID 鎻忚堪绗﹂暱搴︼細30 瀛楄妭
+2	bcdVersion		0100	绗﹀悎鐗堟湰 1.00
+4	wReportDescLength	00B2	Report 鎻忚堪绗︿负 178 瀛楄妭 (0x00B2)
+6	wReportDescRegister	0002	鐢ㄤ簬璇诲彇 Report 鎻忚堪绗︾殑鏍囪瘑绗?
+8	wInputRegister		0003	鐢ㄤ簬璇诲彇 Input Report 鐨勬爣璇嗙
+10	wMaxInputLength		0053	Input Report 涓?80 瀛楄妭 + 2
+12	wOutputRegister	0000	鐢ㄤ簬璇诲彇 Output Report 鐨勬爣璇嗙
+14	wMaxOutputLength	0000	鏃?Output Report
+16	wCommandRegister	0005	Command Register 鐨勬爣璇嗙
+18	wDataRegister		0006	Data Register 鐨勬爣璇嗙
 20	wVendorID		044E	Vendor ID 0x044E
 22	wProductID		120B	Product ID 0x120B
-24	wVersionID		0121	版本 01.21
-26	RESERVED		0000	保留
+24	wVersionID		0121	鐗堟湰 01.21
+26	RESERVED		0000	淇濈暀
 =======	====================	=====	=======================================
 
 
@@ -44,13 +44,13 @@ Byte	Field			Value	Notes
 
 
 ==========	=================  =========================================
-ReportID-1	(Input Reports)	   (HIDUsage-Mouse) 用于 TP&SP
-ReportID-2	(Input Reports)	   (HIDUsage-keyboard) 用于 TP
-ReportID-3	(Input Reports)	   (厂商 Usage：最多 10 指数据) 用于 TP
-ReportID-4	(Input Reports)	   (厂商 Usage：ON 位数据) 用于 GP
+ReportID-1	(Input Reports)	   (HIDUsage-Mouse) 鐢ㄤ簬 TP&SP
+ReportID-2	(Input Reports)	   (HIDUsage-keyboard) 鐢ㄤ簬 TP
+ReportID-3	(Input Reports)	   (鍘傚晢 Usage锛氭渶澶?10 鎸囨暟鎹? 鐢ㄤ簬 TP
+ReportID-4	(Input Reports)	   (鍘傚晢 Usage锛歄N 浣嶆暟鎹? 鐢ㄤ簬 GP
 ReportID-5	(Feature Reports)  Feature Report
-ReportID-6	(Input Reports)	   (厂商 Usage：StickPointer 数据) 用于 SP
-ReportID-7	(Feature Reports)  Flash 更新 (Bootloader)
+ReportID-6	(Input Reports)	   (鍘傚晢 Usage锛歋tickPointer 鏁版嵁) 鐢ㄤ簬 SP
+ReportID-7	(Feature Reports)  Flash 鏇存柊 (Bootloader)
 ==========	=================  =========================================
 
 
@@ -58,18 +58,18 @@ ReportID-7	(Feature Reports)  Flash 更新 (Bootloader)
 
 
 =====	==========	=====	=================
-Case1	ReportID_1	TP/SP	相对/相对
-Case2	ReportID_3	TP	绝对
-	ReportID_6	SP	绝对
+Case1	ReportID_1	TP/SP	鐩稿/鐩稿
+Case2	ReportID_3	TP	缁濆
+	ReportID_6	SP	缁濆
 =====	==========	=====	=================
 
 
 ### Command Read/Write
 
 
-要对 RAM 进行读/写，需要向设备发送一条命令。
+瑕佸 RAM 杩涜璇?鍐欙紝闇€瑕佸悜璁惧鍙戦€佷竴鏉″懡浠ゃ€?
 
-命令格式如下。
+鍛戒护鏍煎紡濡備笅銆?
 
 #### DataByte(SET_REPORT)
 
@@ -84,13 +84,13 @@ Byte6	Value Byte
 Byte7	Checksum
 =====	======================
 
-Command Byte 为 read=0xD1/write=0xD2。
+Command Byte 涓?read=0xD1/write=0xD2銆?
 
-Address 为读/写 RAM 地址。
+Address 涓鸿/鍐?RAM 鍦板潃銆?
 
-Value Byte 为发送写命令时要写入的数据。
+Value Byte 涓哄彂閫佸啓鍛戒护鏃惰鍐欏叆鐨勬暟鎹€?
 
-读取 RAM 时，该字节无意义。
+璇诲彇 RAM 鏃讹紝璇ュ瓧鑺傛棤鎰忎箟銆?
 
 #### DataByte(GET_REPORT)
 
@@ -105,7 +105,7 @@ Byte6	Value Byte
 Byte7	Checksum
 =====	======================
 
-读取到的值存储在 Value Byte 中。
+璇诲彇鍒扮殑鍊煎瓨鍌ㄥ湪 Value Byte 涓€?
 
 
 ### Packet Format
@@ -153,13 +153,13 @@ Byte7	Checksum
 
 
 SW1-SW6:
-	SW 开/关状态
+	SW 寮€/鍏崇姸鎬?
 Xan_15-0(16bit):
-	第 "n" 个手指的 X 绝对数据
+	绗?"n" 涓墜鎸囩殑 X 缁濆鏁版嵁
 Yan_15-0(16bit):
-	第 "n" 个手指的 Y 绝对数据
+	绗?"n" 涓墜鎸囩殑 Y 缁濆鏁版嵁
 Zsn_6-0(7bit):
-	第 "n" 个手指的操作区域
+	绗?"n" 涓墜鎸囩殑鎿嶄綔鍖哄煙
 
 
 #### StickPointer data byte
@@ -178,10 +178,10 @@ Byte7	T&P	Z14	Z13	Z12	Z11	Z10	Z9	Z8
 ======= ======= ======= ======= ======= ======= ======= ======= =====
 
 SW1-SW3:
-	SW 开/关状态
+	SW 寮€/鍏崇姸鎬?
 Xn_15-0(16bit):
-	X 绝对数据
+	X 缁濆鏁版嵁
 Yn_15-0(16bit):
-	Y 绝对数据
+	Y 缁濆鏁版嵁
 Zn_14-0(15bit):
 	Z

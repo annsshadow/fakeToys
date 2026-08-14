@@ -1,33 +1,24 @@
-
-## 更多内核文档索引
-
-
-在 linux-kernel 邮件列表中，由于反复出现同样的、寻求资料指引的问题，编写这样一份文档的必要性变得显而易见。
-
-幸运的是，随着使用 GNU/Linux 的人越来越多，对内核感兴趣的人也越来越多。但仅仅阅读源代码并不总是足够。理解代码本身很容易，却容易忽略其背后的概念、理念与设计决策。
-
-遗憾的是，可供初学者入门的文档并不多。而且即便存在，此前也没有一个“广为人知”的地方来追踪它们。这些内容正是为了弥补这一缺憾。
-
-如果你知道任何此处未列出的文章，或者撰写了新的文档，请遵循内核的补丁提交流程，在此处添加对它的引用。同时也欢迎任何更正、想法或评论。
-
-所有文档均按以下字段编目：文档的“标题（Title）”、作者（Author）、“URL”所在位置、有助于检索特定主题的若干“关键词（Keywords）”，以及对文档的简短“描述（Description）”。
+﻿
+## 鏇村鍐呮牳鏂囨。绱㈠紩
 
 
-   本文档每个小节中的文档均按发布日期由新到旧排列。维护者应当定期将已过时或陈旧的资源下架，基础著作除外。
+鍦?linux-kernel 閭欢鍒楄〃涓紝鐢变簬鍙嶅鍑虹幇鍚屾牱鐨勩€佸姹傝祫鏂欐寚寮曠殑闂锛岀紪鍐欒繖鏍蜂竴浠芥枃妗ｇ殑蹇呰鎬у彉寰楁樉鑰屾槗瑙併€?
+骞歌繍鐨勬槸锛岄殢鐫€浣跨敤 GNU/Linux 鐨勪汉瓒婃潵瓒婂锛屽鍐呮牳鎰熷叴瓒ｇ殑浜轰篃瓒婃潵瓒婂銆備絾浠呬粎闃呰婧愪唬鐮佸苟涓嶆€绘槸瓒冲銆傜悊瑙ｄ唬鐮佹湰韬緢瀹规槗锛屽嵈瀹规槗蹇界暐鍏惰儗鍚庣殑姒傚康銆佺悊蹇典笌璁捐鍐崇瓥銆?
+閬楁喚鐨勬槸锛屽彲渚涘垵瀛﹁€呭叆闂ㄧ殑鏂囨。骞朵笉澶氥€傝€屼笖鍗充究瀛樺湪锛屾鍓嶄篃娌℃湁涓€涓€滃箍涓轰汉鐭モ€濈殑鍦版柟鏉ヨ拷韪畠浠€傝繖浜涘唴瀹规鏄负浜嗗讥琛ヨ繖涓€缂烘喚銆?
+濡傛灉浣犵煡閬撲换浣曟澶勬湭鍒楀嚭鐨勬枃绔狅紝鎴栬€呮挵鍐欎簡鏂扮殑鏂囨。锛岃閬靛惊鍐呮牳鐨勮ˉ涓佹彁浜ゆ祦绋嬶紝鍦ㄦ澶勬坊鍔犲瀹冪殑寮曠敤銆傚悓鏃朵篃娆㈣繋浠讳綍鏇存銆佹兂娉曟垨璇勮銆?
+鎵€鏈夋枃妗ｅ潎鎸変互涓嬪瓧娈电紪鐩細鏂囨。鐨勨€滄爣棰橈紙Title锛夆€濄€佷綔鑰咃紙Author锛夈€佲€淯RL鈥濇墍鍦ㄤ綅缃€佹湁鍔╀簬妫€绱㈢壒瀹氫富棰樼殑鑻ュ共鈥滃叧閿瘝锛圞eywords锛夆€濓紝浠ュ強瀵规枃妗ｇ殑绠€鐭€滄弿杩帮紙Description锛夆€濄€?
 
-### 位于 Linux 内核源码树中的文档
+   鏈枃妗ｆ瘡涓皬鑺備腑鐨勬枃妗ｅ潎鎸夊彂甯冩棩鏈熺敱鏂板埌鏃ф帓鍒椼€傜淮鎶よ€呭簲褰撳畾鏈熷皢宸茶繃鏃舵垨闄堟棫鐨勮祫婧愪笅鏋讹紝鍩虹钁椾綔闄ゅ銆?
+### 浣嶄簬 Linux 鍐呮牳婧愮爜鏍戜腑鐨勬枃妗?
 
-
-Sphinx 书籍应使用 `make {htmldocs | pdfdocs | epubdocs}` 构建。
-
+Sphinx 涔︾睄搴斾娇鐢?`make {htmldocs | pdfdocs | epubdocs}` 鏋勫缓銆?
     - Name: **linux/Documentation**
 
       :Author: Many.
       :Location: Documentation/
       :Keywords: text files, Sphinx.
-      :Description: 随内核源码一同提供的文档，位于 Documentation 目录内。本文档中的部分页面（包括本文档本身）已迁移至此，可能比 Web 版本更为更新。
-
-### 在线文档
+      :Description: 闅忓唴鏍告簮鐮佷竴鍚屾彁渚涚殑鏂囨。锛屼綅浜?Documentation 鐩綍鍐呫€傛湰鏂囨。涓殑閮ㄥ垎椤甸潰锛堝寘鎷湰鏂囨。鏈韩锛夊凡杩佺Щ鑷虫锛屽彲鑳芥瘮 Web 鐗堟湰鏇翠负鏇存柊銆?
+### 鍦ㄧ嚎鏂囨。
 
 
     - Title: **Linux Kernel Mailing List Glossary**
@@ -36,8 +27,7 @@ Sphinx 书籍应使用 `make {htmldocs | pdfdocs | epubdocs}` 构建。
       :URL: https://kernelnewbies.org/KernelGlossary
       :Date: rolling version
       :Keywords: glossary, terms, linux-kernel.
-      :Description: 引自简介：“本术语表旨在简要说明在讨论 Linux 内核时你可能听到的一些缩写与术语”。
-
+      :Description: 寮曡嚜绠€浠嬶細鈥滄湰鏈琛ㄦ棬鍦ㄧ畝瑕佽鏄庡湪璁ㄨ Linux 鍐呮牳鏃朵綘鍙兘鍚埌鐨勪竴浜涚缉鍐欎笌鏈鈥濄€?
     - Title: **The Linux Kernel Module Programming Guide**
 
       :Author: Peter Jay Salzman, Michael Burian, Ori Pomerantz, Bob Mottram,
@@ -46,10 +36,8 @@ Sphinx 书籍应使用 `make {htmldocs | pdfdocs | epubdocs}` 构建。
       :Date: 2021
       :Keywords: modules, GPL book, /proc, ioctls, system calls,
         interrupt handlers .
-      :Description: 一本非常不错的关于模块编程主题的 GPL 书籍。包含大量示例。目前新版本正活跃地维护于 https://github.com/sysprog21/lkmpg。
-
-### 已出版书籍
-
+      :Description: 涓€鏈潪甯镐笉閿欑殑鍏充簬妯″潡缂栫▼涓婚鐨?GPL 涔︾睄銆傚寘鍚ぇ閲忕ず渚嬨€傜洰鍓嶆柊鐗堟湰姝ｆ椿璺冨湴缁存姢浜?https://github.com/sysprog21/lkmpg銆?
+### 宸插嚭鐗堜功绫?
 
     - Title: **The Linux Memory Manager**
 
@@ -58,8 +46,7 @@ Sphinx 书籍应使用 `make {htmldocs | pdfdocs | epubdocs}` 构建。
       :Date: February 2025
       :Pages: 1300
       :ISBN: 978-1718504462
-      :Notes: 内存管理。完整草稿以早期访问形式提供用于预售，完整版计划于 2025 年秋季发布。详见 https://nostarch.com/linux-memory-manager。
-
+      :Notes: 鍐呭瓨绠＄悊銆傚畬鏁磋崏绋夸互鏃╂湡璁块棶褰㈠紡鎻愪緵鐢ㄤ簬棰勫敭锛屽畬鏁寸増璁″垝浜?2025 骞寸瀛ｅ彂甯冦€傝瑙?https://nostarch.com/linux-memory-manager銆?
     - Title: **Practical Linux System Administration: A Guide to Installation, Configuration, and Management, 1st Edition**
 
       :Author: Kenneth Hess
@@ -67,7 +54,7 @@ Sphinx 书籍应使用 `make {htmldocs | pdfdocs | epubdocs}` 构建。
       :Date: May, 2023
       :Pages: 246
       :ISBN: 978-1098109035
-      :Notes: 系统管理
+      :Notes: 绯荤粺绠＄悊
 
     - Title: **Linux Kernel Debugging: Leverage proven tools and advanced techniques to effectively debug Linux kernels and kernel modules**
 
@@ -76,7 +63,7 @@ Sphinx 书籍应使用 `make {htmldocs | pdfdocs | epubdocs}` 构建。
       :Date: August, 2022
       :Pages: 638
       :ISBN: 978-1801075039
-      :Notes: 调试相关书籍
+      :Notes: 璋冭瘯鐩稿叧涔︾睄
 
     - Title: **Linux Kernel Programming: A Comprehensive Guide to Kernel Internals, Writing Kernel Modules, and Kernel Synchronization**
 
@@ -101,7 +88,7 @@ Sphinx 书籍应使用 `make {htmldocs | pdfdocs | epubdocs}` 构建。
       :Date: June, 2013
       :Pages: 456
       :ISBN: 978-1449339531
-      :Notes: 基础著作
+      :Notes: 鍩虹钁椾綔
 
     - Title: **Linux Kernel Development, 3rd Edition**
 
@@ -110,7 +97,7 @@ Sphinx 书籍应使用 `make {htmldocs | pdfdocs | epubdocs}` 构建。
       :Date: July, 2010
       :Pages: 440
       :ISBN: 978-0672329463
-      :Notes: 基础著作
+      :Notes: 鍩虹钁椾綔
 
 
     - Title: **Linux Device Drivers, 3rd Edition**
@@ -120,7 +107,7 @@ Sphinx 书籍应使用 `make {htmldocs | pdfdocs | epubdocs}` 构建。
       :Date: 2005
       :Pages: 636
       :ISBN: 0-596-00590-3
-      :Notes: 基础著作。更多信息见 http://www.oreilly.com/catalog/linuxdrive3/（PDF 格式），URL：https://lwn.net/Kernel/LDD3/
+      :Notes: 鍩虹钁椾綔銆傛洿澶氫俊鎭 http://www.oreilly.com/catalog/linuxdrive3/锛圥DF 鏍煎紡锛夛紝URL锛歨ttps://lwn.net/Kernel/LDD3/
 
     - Title: **The Design of the UNIX Operating System**
 
@@ -129,50 +116,44 @@ Sphinx 书籍应使用 `make {htmldocs | pdfdocs | epubdocs}` 构建。
       :Date: 1986
       :Pages: 471
       :ISBN: 0-13-201757-1
-      :Notes: 基础著作
+      :Notes: 鍩虹钁椾綔
 
-### 其他
+### 鍏朵粬
 
 
     - Name: **Cross-Referencing Linux**
 
       :URL: https://elixir.bootlin.com/
       :Keywords: Browsing source code.
-      :Description: 另一个基于 Web 的 Linux 内核源代码浏览器。包含大量指向变量和函数的交叉引用。你可以看到它们在何处定义、在何处使用。
-
+      :Description: 鍙︿竴涓熀浜?Web 鐨?Linux 鍐呮牳婧愪唬鐮佹祻瑙堝櫒銆傚寘鍚ぇ閲忔寚鍚戝彉閲忓拰鍑芥暟鐨勪氦鍙夊紩鐢ㄣ€備綘鍙互鐪嬪埌瀹冧滑鍦ㄤ綍澶勫畾涔夈€佸湪浣曞浣跨敤銆?
     - Name: **Linux Weekly News**
 
       :URL: https://lwn.net
       :Keywords: latest kernel news.
-      :Description: 标题即说明一切。其中有一个固定的内核栏目，汇总开发者在一周内完成的工作、缺陷修复、新特性与新版本。
-
+      :Description: 鏍囬鍗宠鏄庝竴鍒囥€傚叾涓湁涓€涓浐瀹氱殑鍐呮牳鏍忕洰锛屾眹鎬诲紑鍙戣€呭湪涓€鍛ㄥ唴瀹屾垚鐨勫伐浣溿€佺己闄蜂慨澶嶃€佹柊鐗规€т笌鏂扮増鏈€?
     - Name: **The home page of Linux-MM**
 
       :Author: The Linux-MM team.
       :URL: https://linux-mm.org/
       :Keywords: memory management, Linux-MM, mm patches, TODO, docs,
         mailing list.
-      :Description: 致力于 Linux 内存管理开发的站点。内存相关的补丁、HOWTO、链接、mm 开发者……如果你对内存管理开发感兴趣，千万别错过！
-
+      :Description: 鑷村姏浜?Linux 鍐呭瓨绠＄悊寮€鍙戠殑绔欑偣銆傚唴瀛樼浉鍏崇殑琛ヤ竵銆丠OWTO銆侀摼鎺ャ€乵m 寮€鍙戣€呪€︹€﹀鏋滀綘瀵瑰唴瀛樼鐞嗗紑鍙戞劅鍏磋叮锛屽崈涓囧埆閿欒繃锛?
     - Name: **Kernel Newbies IRC Channel and Website**
 
       :URL: https://www.kernelnewbies.org
       :Keywords: IRC, newbies, channel, asking doubts.
-      :Description: irc.oftc.net 上的 #kernelnewbies。#kernelnewbies 是一个致力于“新手”内核黑客的 IRC 网络。其成员大多是在学习内核、从事内核项目的人，或是希望帮助经验较少的内核开发者的专业内核黑客。#kernelnewbies 位于 OFTC IRC 网络。请将 irc.oftc.net 作为服务器，然后执行 /join #kernelnewbies。kernelnewbies 网站还托管了文章、文档、FAQ……
-
+      :Description: irc.oftc.net 涓婄殑 #kernelnewbies銆?kernelnewbies 鏄竴涓嚧鍔涗簬鈥滄柊鎵嬧€濆唴鏍搁粦瀹㈢殑 IRC 缃戠粶銆傚叾鎴愬憳澶у鏄湪瀛︿範鍐呮牳銆佷粠浜嬪唴鏍搁」鐩殑浜猴紝鎴栨槸甯屾湜甯姪缁忛獙杈冨皯鐨勫唴鏍稿紑鍙戣€呯殑涓撲笟鍐呮牳榛戝銆?kernelnewbies 浣嶄簬 OFTC IRC 缃戠粶銆傝灏?irc.oftc.net 浣滀负鏈嶅姟鍣紝鐒跺悗鎵ц /join #kernelnewbies銆俴ernelnewbies 缃戠珯杩樻墭绠′簡鏂囩珷銆佹枃妗ｃ€丗AQ鈥︹€?
     - Name: **linux-kernel mailing list archives and search engines**
 
       :URL: https://subspace.kernel.org
       :URL: https://lore.kernel.org
       :Keywords: linux-kernel, archives, search.
-      :Description: linux-kernel 邮件列表的部分归档器。如果你有更好/其他的归档器，请告知我。
-
+      :Description: linux-kernel 閭欢鍒楄〃鐨勯儴鍒嗗綊妗ｅ櫒銆傚鏋滀綘鏈夋洿濂?鍏朵粬鐨勫綊妗ｅ櫒锛岃鍛婄煡鎴戙€?
     - Name: **The Linux Foundation YouTube channel**
 
       :URL: https://www.youtube.com/user/thelinuxfoundation
       :Keywords: linux, videos, linux-foundation, youtube.
-      :Description: Linux 基金会上传其协作活动、包括 LinuxCon 在内的 Linux 会议的视频录像，以及其他与 Linux 和软件开发相关的原创研究与内容。
-
+      :Description: Linux 鍩洪噾浼氫笂浼犲叾鍗忎綔娲诲姩銆佸寘鎷?LinuxCon 鍦ㄥ唴鐨?Linux 浼氳鐨勮棰戝綍鍍忥紝浠ュ強鍏朵粬涓?Linux 鍜岃蒋浠跺紑鍙戠浉鍏崇殑鍘熷垱鐮旂┒涓庡唴瀹广€?
 ### Rust
 
 
@@ -182,16 +163,14 @@ Sphinx 书籍应使用 `make {htmldocs | pdfdocs | epubdocs}` 构建。
       :URL: https://rust-for-linux.com/
       :Date: rolling version
       :Keywords: glossary, terms, linux-kernel, rust.
-      :Description: 引自网站：“Rust for Linux 是一个为 Linux 内核添加 Rust 语言支持的项目。本网站旨在作为与该项目的链接、文档和资源相关的中枢”。
-
+      :Description: 寮曡嚜缃戠珯锛氣€淩ust for Linux 鏄竴涓负 Linux 鍐呮牳娣诲姞 Rust 璇█鏀寔鐨勯」鐩€傛湰缃戠珯鏃ㄥ湪浣滀负涓庤椤圭洰鐨勯摼鎺ャ€佹枃妗ｅ拰璧勬簮鐩稿叧鐨勪腑鏋⑩€濄€?
     - Title: **Learn Rust the Dangerous Way**
 
       :Author: Cliff L. Biffle
       :URL: https://cliffle.com/p/dangerust/
       :Date: Accessed Sep 11 2024
       :Keywords: rust, blog.
-      :Description: 引自网站：“LRtDW 是一系列文章，为可能没有正式计算机科学背景的底层 C 程序员介绍 Rust 特性——也就是那些从事固件、游戏引擎、操作系统内核等工作的人。基本上，就是像我这样的人。” 它以逐行的方式展示了从 C 到 Rust 的转换。
-
+      :Description: 寮曡嚜缃戠珯锛氣€淟RtDW 鏄竴绯诲垪鏂囩珷锛屼负鍙兘娌℃湁姝ｅ紡璁＄畻鏈虹瀛﹁儗鏅殑搴曞眰 C 绋嬪簭鍛樹粙缁?Rust 鐗规€р€斺€斾篃灏辨槸閭ｄ簺浠庝簨鍥轰欢銆佹父鎴忓紩鎿庛€佹搷浣滅郴缁熷唴鏍哥瓑宸ヤ綔鐨勪汉銆傚熀鏈笂锛屽氨鏄儚鎴戣繖鏍风殑浜恒€傗€?瀹冧互閫愯鐨勬柟寮忓睍绀轰簡浠?C 鍒?Rust 鐨勮浆鎹€?
     - Title: **The Rust Book**
 
       :Author: Steve Klabnik and Carol Nichols, with contributions from the
@@ -199,72 +178,63 @@ Sphinx 书籍应使用 `make {htmldocs | pdfdocs | epubdocs}` 构建。
       :URL: https://doc.rust-lang.org/book/
       :Date: Accessed Sep 11 2024
       :Keywords: rust, book.
-      :Description: 引自网站：“本书充分发掘 Rust 的潜力，以赋能其用户。这是一本友好且易于理解的文本，旨在帮助你不仅提升 Rust 知识，也提升作为程序员整体的能力范围与信心。那就开始吧，准备好学习——欢迎来到 Rust 社区！”。
-
+      :Description: 寮曡嚜缃戠珯锛氣€滄湰涔﹀厖鍒嗗彂鎺?Rust 鐨勬綔鍔涳紝浠ヨ祴鑳藉叾鐢ㄦ埛銆傝繖鏄竴鏈弸濂戒笖鏄撲簬鐞嗚В鐨勬枃鏈紝鏃ㄥ湪甯姪浣犱笉浠呮彁鍗?Rust 鐭ヨ瘑锛屼篃鎻愬崌浣滀负绋嬪簭鍛樻暣浣撶殑鑳藉姏鑼冨洿涓庝俊蹇冦€傞偅灏卞紑濮嬪惂锛屽噯澶囧ソ瀛︿範鈥斺€旀杩庢潵鍒?Rust 绀惧尯锛佲€濄€?
     - Title: **Rust for the Polyglot Programmer**
 
       :Author: Ian Jackson
       :URL: https://www.chiark.greenend.org.uk/~ianmdlvl/rust-polyglot/index.html
       :Date: December 2022
       :Keywords: rust, blog, tooling.
-      :Description: 引自网站：“关于 Rust 的指南与入门有很多。这一份有所不同：它面向已经掌握多种其他编程语言的资深程序员。我力求内容足够全面，可作为任意 Rust 领域的起点，但除了那些与预期不符之处外，避免过于深入细节。此外，本指南也并非完全没有个人观点，包括对库（crates）、工具链等的推荐。”
-
+      :Description: 寮曡嚜缃戠珯锛氣€滃叧浜?Rust 鐨勬寚鍗椾笌鍏ラ棬鏈夊緢澶氥€傝繖涓€浠芥湁鎵€涓嶅悓锛氬畠闈㈠悜宸茬粡鎺屾彙澶氱鍏朵粬缂栫▼璇█鐨勮祫娣辩▼搴忓憳銆傛垜鍔涙眰鍐呭瓒冲鍏ㄩ潰锛屽彲浣滀负浠绘剰 Rust 棰嗗煙鐨勮捣鐐癸紝浣嗛櫎浜嗛偅浜涗笌棰勬湡涓嶇涔嬪澶栵紝閬垮厤杩囦簬娣卞叆缁嗚妭銆傛澶栵紝鏈寚鍗椾篃骞堕潪瀹屽叏娌℃湁涓汉瑙傜偣锛屽寘鎷搴擄紙crates锛夈€佸伐鍏烽摼绛夌殑鎺ㄨ崘銆傗€?
     - Title: **Fasterthanli.me**
 
       :Author: Amos Wenger
       :URL: https://fasterthanli.me/
       :Date: Accessed Sep 11 2024
       :Keywords: rust, blog, news.
-      :Description: 引自网站：“我制作关于计算机如何运作的文章和视频。我的内容篇幅较长、具有教学性和探索性——而且常常成了讲解 Rust 的契机！”。
-
+      :Description: 寮曡嚜缃戠珯锛氣€滄垜鍒朵綔鍏充簬璁＄畻鏈哄浣曡繍浣滅殑鏂囩珷鍜岃棰戙€傛垜鐨勫唴瀹圭瘒骞呰緝闀裤€佸叿鏈夋暀瀛︽€у拰鎺㈢储鎬р€斺€旇€屼笖甯稿父鎴愪簡璁茶В Rust 鐨勫鏈猴紒鈥濄€?
     - Title: **Comprehensive Rust**
 
       :Author: Android team at Google
       :URL: https://google.github.io/comprehensive-rust/
       :Date: Accessed Sep 13 2024
       :Keywords: rust, blog.
-      :Description: 引自网站：“本课程涵盖 Rust 的方方面面，从基础语法到泛型与错误处理等高级主题”。
-
+      :Description: 寮曡嚜缃戠珯锛氣€滄湰璇剧▼娑电洊 Rust 鐨勬柟鏂归潰闈紝浠庡熀纭€璇硶鍒版硾鍨嬩笌閿欒澶勭悊绛夐珮绾т富棰樷€濄€?
     - Title: **The Embedded Rust Book**
 
       :Author: Multiple contributors, mostly Jorge Aparicio
       :URL: https://docs.rust-embedded.org/book/
       :Date: Accessed Sep 13 2024
       :Keywords: rust, blog.
-      :Description: 引自网站：“一本关于在微控制器等‘裸机（Bare Metal）’嵌入式系统上使用 Rust 编程语言的入门书籍”。
-
+      :Description: 寮曡嚜缃戠珯锛氣€滀竴鏈叧浜庡湪寰帶鍒跺櫒绛夆€樿８鏈猴紙Bare Metal锛夆€欏祵鍏ュ紡绯荤粺涓婁娇鐢?Rust 缂栫▼璇█鐨勫叆闂ㄤ功绫嶁€濄€?
    - Title: **Experiment: Improving the Rust Book**
 
       :Author: Cognitive Engineering Lab at Brown University
       :URL: https://rust-book.cs.brown.edu/
       :Date: Accessed Sep 22 2024
       :Keywords: rust, blog.
-      :Description: 引自网站：“本实验的目标是评估并改进《Rust Book》的内容，以帮助人们更有效地学习 Rust。”。
-
+      :Description: 寮曡嚜缃戠珯锛氣€滄湰瀹為獙鐨勭洰鏍囨槸璇勪及骞舵敼杩涖€奟ust Book銆嬬殑鍐呭锛屼互甯姪浜轰滑鏇存湁鏁堝湴瀛︿範 Rust銆傗€濄€?
    - Title: **New Rustacean** (podcast)
 
       :Author: Chris Krycho
       :URL: https://newrustacean.com/
       :Date: Accessed Sep 22 2024
       :Keywords: rust, podcast.
-      :Description: 引自网站：“这是一档关于从零开始学习 Rust 编程语言的播客！除了这个漂亮的着陆页之外，网站所有内容都是用 Rust 自带的文档工具构建的。”。
-
+      :Description: 寮曡嚜缃戠珯锛氣€滆繖鏄竴妗ｅ叧浜庝粠闆跺紑濮嬪涔?Rust 缂栫▼璇█鐨勬挱瀹紒闄や簡杩欎釜婕備寒鐨勭潃闄嗛〉涔嬪锛岀綉绔欐墍鏈夊唴瀹归兘鏄敤 Rust 鑷甫鐨勬枃妗ｅ伐鍏锋瀯寤虹殑銆傗€濄€?
    - Title: **Opsem-team** (repository)
 
       :Author: Operational semantics team
       :URL: https://github.com/rust-lang/opsem-team/tree/main
       :Date: Accessed Sep 22 2024
       :Keywords: rust, repository.
-      :Description: 引自 README：“opsem 团队是 unsafe-code-guidelines 工作组的继任者，负责回答关于 unsafe Rust 语义的诸多难题”。
-
+      :Description: 寮曡嚜 README锛氣€渙psem 鍥㈤槦鏄?unsafe-code-guidelines 宸ヤ綔缁勭殑缁т换鑰咃紝璐熻矗鍥炵瓟鍏充簬 unsafe Rust 璇箟鐨勮澶氶毦棰樷€濄€?
     - Title: **You Can't Spell Trust Without Rust**
 
       :Author: Alexis Beingessner
       :URL: https://repository.library.carleton.ca/downloads/1j92g820w?locale=en
       :Date: 2015
       :Keywords: rust, master, thesis.
-      :Description: 本论文聚焦于 Rust 的所有权系统，该系统通过控制数据操作与生命周期来保证内存安全，同时也指出了其局限性，并将其与 Cyclone 和 C++ 中的类似系统进行比较。
-
+      :Description: 鏈鏂囪仛鐒︿簬 Rust 鐨勬墍鏈夋潈绯荤粺锛岃绯荤粺閫氳繃鎺у埗鏁版嵁鎿嶄綔涓庣敓鍛藉懆鏈熸潵淇濊瘉鍐呭瓨瀹夊叏锛屽悓鏃朵篃鎸囧嚭浜嗗叾灞€闄愭€э紝骞跺皢鍏朵笌 Cyclone 鍜?C++ 涓殑绫讳技绯荤粺杩涜姣旇緝銆?
     - Name: **Linux Plumbers (LPC) 2024 Rust presentations**
 
       :Title: Rust microconference
@@ -279,19 +249,17 @@ Sphinx 书籍应使用 `make {htmldocs | pdfdocs | epubdocs}` 构建。
       :Title: openHCL: A Linux and Rust based paravisor
       :URL: https://lpc.events/event/18/contributions/1956/
       :Keywords: rust, lpc, presentations.
-      :Description: 若干与 Rust 相关的 LPC 演讲。
-
+      :Description: 鑻ュ共涓?Rust 鐩稿叧鐨?LPC 婕旇銆?
     - Name: **The Rustacean Station Podcast**
 
       :URL: https://rustacean-station.org/
       :Keywords: rust, podcasts.
-      :Description: 一个为 Rust 编程语言创作播客内容的社区项目。
-
+      :Description: 涓€涓负 Rust 缂栫▼璇█鍒涗綔鎾鍐呭鐨勭ぞ鍖洪」鐩€?
 -------
 
-本文档最初基于：
+鏈枃妗ｆ渶鍒濆熀浜庯細
 
  https://www.dit.upm.es/~jmseyas/linux/kernel/hackers-docs.html
 
-由 Juan-Mariano de Goyeneche 撰写
+鐢?Juan-Mariano de Goyeneche 鎾板啓
 

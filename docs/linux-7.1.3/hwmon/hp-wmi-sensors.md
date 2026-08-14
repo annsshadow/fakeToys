@@ -1,61 +1,35 @@
-
-## Linux HP WMI 传感器驱动
-
+﻿
+## Linux HP WMI 浼犳劅鍣ㄩ┍鍔?
 
 :Copyright: |copy| 2023 James Seo <james@equiv.tech>
 
-## 描述
+## 鎻忚堪
 
 
-惠普（以及部分 HP Compaq）商务级计算机通过 Windows Management Instrumentation（WMI）报告硬件监控信息。该驱动将这些信息暴露给 Linux hwmon 子系统，允许像 `sensors` 这样的用户空间工具收集数值传感器读数。
+鎯犳櫘锛堜互鍙婇儴鍒?HP Compaq锛夊晢鍔＄骇璁＄畻鏈洪€氳繃 Windows Management Instrumentation锛圵MI锛夋姤鍛婄‖浠剁洃鎺т俊鎭€傝椹卞姩灏嗚繖浜涗俊鎭毚闇茬粰 Linux hwmon 瀛愮郴缁燂紝鍏佽鍍?`sensors` 杩欐牱鐨勭敤鎴风┖闂村伐鍏锋敹闆嗘暟鍊间紶鎰熷櫒璇绘暟銆?
+## sysfs 鎺ュ彛
 
-## sysfs 接口
 
+褰撻┍鍔ㄥ姞杞芥椂锛屽畠浼氬彂鐜扮郴缁熶笂鍙敤鐨勪紶鎰熷櫒锛屽苟鍦ㄥ繀瑕佹椂鍦?`/sys/class/hwmon/hwmon[X]` 涓垱寤轰互涓?sysfs 灞炴€э細
 
-当驱动加载时，它会发现系统上可用的传感器，并在必要时在 `/sys/class/hwmon/hwmon[X]` 中创建以下 sysfs 属性：
-
-（`[X]` 是取决于其他系统组件的某个数字。）
+锛坄[X]` 鏄彇鍐充簬鍏朵粬绯荤粺缁勪欢鐨勬煇涓暟瀛椼€傦級
 
 ======================= ======= ===================================
-Name                    Perm    描述
+Name                    Perm    鎻忚堪
 ======================= ======= ===================================
-`curr[X]_input`       RO      电流，单位毫安（mA）。
-`curr[X]_label`       RO      电流传感器标签。
-`fan[X]_input`        RO      风扇转速，单位 RPM。
-`fan[X]_label`        RO      风扇传感器标签。
-`fan[X]_fault`        RO      风扇传感器故障指示器。
-`fan[X]_alarm`        RO      风扇传感器报警指示器。
-`in[X]_input`         RO      电压，单位毫伏（mV）。
-`in[X]_label`         RO      电压传感器标签。
-`temp[X]_input`       RO      温度，单位毫摄氏度
-                               （m\ |deg|\ C）。
-`temp[X]_label`       RO      温度传感器标签。
-`temp[X]_fault`       RO      温度传感器故障指示器。
-`temp[X]_alarm`       RO      温度传感器报警指示器。
-`intrusion[X]_alarm`  RW      机箱入侵报警指示器。
-======================= ======= ===================================
+`curr[X]_input`       RO      鐢垫祦锛屽崟浣嶆瀹夛紙mA锛夈€?`curr[X]_label`       RO      鐢垫祦浼犳劅鍣ㄦ爣绛俱€?`fan[X]_input`        RO      椋庢墖杞€燂紝鍗曚綅 RPM銆?`fan[X]_label`        RO      椋庢墖浼犳劅鍣ㄦ爣绛俱€?`fan[X]_fault`        RO      椋庢墖浼犳劅鍣ㄦ晠闅滄寚绀哄櫒銆?`fan[X]_alarm`        RO      椋庢墖浼犳劅鍣ㄦ姤璀︽寚绀哄櫒銆?`in[X]_input`         RO      鐢靛帇锛屽崟浣嶆浼忥紙mV锛夈€?`in[X]_label`         RO      鐢靛帇浼犳劅鍣ㄦ爣绛俱€?`temp[X]_input`       RO      娓╁害锛屽崟浣嶆鎽勬皬搴?                               锛坢\ |deg|\ C锛夈€?`temp[X]_label`       RO      娓╁害浼犳劅鍣ㄦ爣绛俱€?`temp[X]_fault`       RO      娓╁害浼犳劅鍣ㄦ晠闅滄寚绀哄櫒銆?`temp[X]_alarm`       RO      娓╁害浼犳劅鍣ㄦ姤璀︽寚绀哄櫒銆?`intrusion[X]_alarm`  RW      鏈虹鍏ヤ镜鎶ヨ鎸囩ず鍣ㄣ€?======================= ======= ===================================
 
-`fault` 属性
-  读取到 `fault` 属性的值为 `1` 而非 `0`，表示该传感器在运行过程中遇到了某些问题，因此其测量值不应被信任。如果处于故障状态的传感器后来恢复，再次读取该属性将重新返回 `0`。
-
-`alarm` 属性
-  读取到 `alarm` 属性的值为 `1` 而非 `0`，表示根据其类型，发生了以下之一：
-
-  - `fan`：风扇在运转时已停转或断开连接。
-  - `temp`：传感器读数已达到临界阈值。具体的阈值取决于系统。
-  - `intrusion`：系统机箱被打开。
-
-  读取到 `alarm` 属性的 `1` 后，该属性会自行复位，并在后续读取时返回 `0`。作为例外，`intrusion[X]_alarm` 只能通过向它写入 `0` 来手动复位。
-
-## debugfs 接口
+`fault` 灞炴€?  璇诲彇鍒?`fault` 灞炴€х殑鍊间负 `1` 鑰岄潪 `0`锛岃〃绀鸿浼犳劅鍣ㄥ湪杩愯杩囩▼涓亣鍒颁簡鏌愪簺闂锛屽洜姝ゅ叾娴嬮噺鍊间笉搴旇淇′换銆傚鏋滃浜庢晠闅滅姸鎬佺殑浼犳劅鍣ㄥ悗鏉ユ仮澶嶏紝鍐嶆璇诲彇璇ュ睘鎬у皢閲嶆柊杩斿洖 `0`銆?
+`alarm` 灞炴€?  璇诲彇鍒?`alarm` 灞炴€х殑鍊间负 `1` 鑰岄潪 `0`锛岃〃绀烘牴鎹叾绫诲瀷锛屽彂鐢熶簡浠ヤ笅涔嬩竴锛?
+  - `fan`锛氶鎵囧湪杩愯浆鏃跺凡鍋滆浆鎴栨柇寮€杩炴帴銆?  - `temp`锛氫紶鎰熷櫒璇绘暟宸茶揪鍒颁复鐣岄槇鍊笺€傚叿浣撶殑闃堝€煎彇鍐充簬绯荤粺銆?  - `intrusion`锛氱郴缁熸満绠辫鎵撳紑銆?
+  璇诲彇鍒?`alarm` 灞炴€х殑 `1` 鍚庯紝璇ュ睘鎬т細鑷澶嶄綅锛屽苟鍦ㄥ悗缁鍙栨椂杩斿洖 `0`銆備綔涓轰緥澶栵紝`intrusion[X]_alarm` 鍙兘閫氳繃鍚戝畠鍐欏叆 `0` 鏉ユ墜鍔ㄥ浣嶃€?
+## debugfs 鎺ュ彛
 
 
-             并且仅在内核编译时定义了 `CONFIG_DEBUG_FS` 时才可用。
-
-sysfs 中的标准 hwmon 接口暴露了在驱动初始化时连接的几种常见类型的传感器。然而，WMI 中通常还有其他不符合这些条件的传感器。此外，可能还存在一些系统相关的、用于 `alarm` 属性的“平台事件对象（platform events objects）”。因此提供了一个 debugfs 接口，用于只读访问所有可用的 HP WMI 传感器和平台事件对象。
-
+             骞朵笖浠呭湪鍐呮牳缂栬瘧鏃跺畾涔変簡 `CONFIG_DEBUG_FS` 鏃舵墠鍙敤銆?
+sysfs 涓殑鏍囧噯 hwmon 鎺ュ彛鏆撮湶浜嗗湪椹卞姩鍒濆鍖栨椂杩炴帴鐨勫嚑绉嶅父瑙佺被鍨嬬殑浼犳劅鍣ㄣ€傜劧鑰岋紝WMI 涓€氬父杩樻湁鍏朵粬涓嶇鍚堣繖浜涙潯浠剁殑浼犳劅鍣ㄣ€傛澶栵紝鍙兘杩樺瓨鍦ㄤ竴浜涚郴缁熺浉鍏崇殑銆佺敤浜?`alarm` 灞炴€х殑鈥滃钩鍙颁簨浠跺璞★紙platform events objects锛夆€濄€傚洜姝ゆ彁渚涗簡涓€涓?debugfs 鎺ュ彛锛岀敤浜庡彧璇昏闂墍鏈夊彲鐢ㄧ殑 HP WMI 浼犳劅鍣ㄥ拰骞冲彴浜嬩欢瀵硅薄銆?
 `/sys/kernel/debug/hp-wmi-sensors-[X]/sensor`
-为每个传感器包含一个带编号的条目，具有以下属性：
+涓烘瘡涓紶鎰熷櫒鍖呭惈涓€涓甫缂栧彿鐨勬潯鐩紝鍏锋湁浠ヤ笅灞炴€э細
 
 =============================== =======================================
 Name                            Example
@@ -63,19 +37,17 @@ Name                            Example
 `name`                        `CPU0 Fan`
 `description`                 `Reports CPU0 fan speed`
 `sensor_type`                 `12`
-`other_sensor_type`           （空字符串）
+`other_sensor_type`           锛堢┖瀛楃涓诧級
 `operational_status`          `2`
 `possible_states`             `Normal,Caution,Critical,Not Present`
 `current_state`               `Normal`
 `base_units`                  `19`
 `unit_modifier`               `0`
 `current_reading`             `1008`
-`rate_units`                  `0`（仅存在于某些系统上）
-=============================== =======================================
+`rate_units`                  `0`锛堜粎瀛樺湪浜庢煇浜涚郴缁熶笂锛?=============================== =======================================
 
-如果平台事件对象可用，
-`/sys/kernel/debug/hp-wmi-sensors-[X]/platform_events`
-为每个对象包含一个带编号的条目，具有以下属性：
+濡傛灉骞冲彴浜嬩欢瀵硅薄鍙敤锛?`/sys/kernel/debug/hp-wmi-sensors-[X]/platform_events`
+涓烘瘡涓璞″寘鍚竴涓甫缂栧彿鐨勬潯鐩紝鍏锋湁浠ヤ笅灞炴€э細
 
 =============================== ====================
 Name                            Example
@@ -89,19 +61,11 @@ Name                            Example
 `possible_status`             `5`
 =============================== ====================
 
-这些代表了底层 `HPBIOS_BIOSNumericSensor` 和 `HPBIOS_PlatformEvents` WMI 对象的属性，它们在不同系统之间有所差异。
-更多细节和托管对象格式（MOF）定义请参见 [#]_。
+杩欎簺浠ｈ〃浜嗗簳灞?`HPBIOS_BIOSNumericSensor` 鍜?`HPBIOS_PlatformEvents` WMI 瀵硅薄鐨勫睘鎬э紝瀹冧滑鍦ㄤ笉鍚岀郴缁熶箣闂存湁鎵€宸紓銆?鏇村缁嗚妭鍜屾墭绠″璞℃牸寮忥紙MOF锛夊畾涔夎鍙傝 [#]_銆?
+## 宸茬煡闂涓庨檺鍒?
 
-## 已知问题与限制
+- 濡傛灉閽堝闈炲晢鍔＄骇 HP 绯荤粺鐨勭幇鏈?hp-wmi 椹卞姩宸茬粡鍔犺浇锛岄偅涔堝嵆浣垮湪涓嶆敮鎸佽繖浜涘睘鎬х殑绯荤粺涓婏紝`alarm` 灞炴€т篃灏嗕笉鍙敤銆傝繖鏄洜涓鸿椹卞姩鐢ㄤ簬 `alarm` 灞炴€х殑鍚屼竴涓?WMI 浜嬩欢 GUID 鍦ㄨ繖浜涚郴缁熶笂琚敤浜庝緥濡傜瑪璁版湰鐑敭銆?- 宸茶瀵熷埌鍙枒鐨勪紶鎰熷櫒纭欢鍜屼笉涓€鑷寸殑 BIOS WMI 瀹炵幇浼氬鑷翠笉鍑嗙‘鐨勮鏁板拰寮傚父琛屼负锛屼緥濡傛姤璀︿笉鍙戠敓鎴栨瘡娆″惎鍔ㄥ彧鍙戠敓涓€娆°€?- 杩勪粖涓烘鍦ㄧ幇瀹炰腑鍙杩囨俯搴︺€侀鎵囪浆閫熷拰鍏ヤ镜杩欏嚑绉嶄紶鎰熷櫒绫诲瀷銆傚洜姝ゅ鐢靛帇鍜岀數娴佷紶鎰熷櫒鐨勬敮鎸佹槸鏆傚畾鐨勩€?- 灏界 HP WMI 浼犳劅鍣ㄥ彲鑳藉０绉版槸浠讳綍绫诲瀷锛屼絾 hwmon 涓嶈璇嗙殑浠讳綍濂囨€紶鎰熷櫒绫诲瀷灏嗕笉鍙楁敮鎸併€?
+## 鍙傝€冭祫鏂?
 
-
-- 如果针对非商务级 HP 系统的现有 hp-wmi 驱动已经加载，那么即使在不支持这些属性的系统上，`alarm` 属性也将不可用。这是因为该驱动用于 `alarm` 属性的同一个 WMI 事件 GUID 在这些系统上被用于例如笔记本热键。
-- 已观察到可疑的传感器硬件和不一致的 BIOS WMI 实现会导致不准确的读数和异常行为，例如报警不发生或每次启动只发生一次。
-- 迄今为止在现实中只见过温度、风扇转速和入侵这几种传感器类型。因此对电压和电流传感器的支持是暂定的。
-- 尽管 HP WMI 传感器可能声称是任何类型，但 hwmon 不认识的任何奇怪传感器类型将不受支持。
-
-## 参考资料
-
-
-       “HP Client Management Interface Technical White Paper”，2005。 [Online].
+       鈥淗P Client Management Interface Technical White Paper鈥濓紝2005銆?[Online].
        Available: https://h20331.www2.hp.com/hpsub/downloads/cmi_whitepaper.pdf

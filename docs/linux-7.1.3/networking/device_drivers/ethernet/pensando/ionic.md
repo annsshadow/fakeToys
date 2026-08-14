@@ -1,32 +1,27 @@
-## Pensando(R) 以太网适配器系列 Linux 驱动
+﻿## Pensando(R) 浠ュお缃戦€傞厤鍣ㄧ郴鍒?Linux 椹卞姩
 
 
-Pensando Linux 以太网驱动。
-Copyright(c) 2019 Pensando Systems, Inc
+Pensando Linux 浠ュお缃戦┍鍔ㄣ€?Copyright(c) 2019 Pensando Systems, Inc
 
-## 目录
-
-
-- 识别适配器
-- 启用驱动
-- 配置驱动
-- 通过辅助设备的 RDMA 支持
-- 统计信息
-- 支持
-
-## 识别适配器
+## 鐩綍
 
 
-要确定系统上是否安装了一个或多个 Pensando PCI 以太网设备，可使用
-```
+- 璇嗗埆閫傞厤鍣?- 鍚敤椹卞姩
+- 閰嶇疆椹卞姩
+- 閫氳繃杈呭姪璁惧鐨?RDMA 鏀寔
+- 缁熻淇℃伅
+- 鏀寔
+
+## 璇嗗埆閫傞厤鍣?
+
+瑕佺‘瀹氱郴缁熶笂鏄惁瀹夎浜嗕竴涓垨澶氫釜 Pensando PCI 浠ュお缃戣澶囷紝鍙娇鐢?```
 
   $ lspci -d 1dd8:
   b5:00.0 Ethernet controller: Device 1dd8:1002
   b6:00.0 Ethernet controller: Device 1dd8:1002
 
 ```
-如果列出了如上所示的设备，那么 `ionic.ko` 驱动应该能找到并配置它们以供使用。内核日志中应当有相关条目
-```
+濡傛灉鍒楀嚭浜嗗涓婃墍绀虹殑璁惧锛岄偅涔?`ionic.ko` 椹卞姩搴旇鑳芥壘鍒板苟閰嶇疆瀹冧滑浠ヤ緵浣跨敤銆傚唴鏍告棩蹇椾腑搴斿綋鏈夌浉鍏虫潯鐩?```
 
   $ dmesg | grep ionic
   ionic 0000:b5:00.0: 126.016 Gb/s available PCIe bandwidth (8.0 GT/s PCIe x16 link)
@@ -37,7 +32,7 @@ Copyright(c) 2019 Pensando Systems, Inc
   ionic 0000:b6:00.0 enp182s0: Link up - 100 Gbps
 
 ```
-驱动和固件版本信息可以通过以下任一命令获取
+椹卞姩鍜屽浐浠剁増鏈俊鎭彲浠ラ€氳繃浠ヤ笅浠讳竴鍛戒护鑾峰彇
 ```
 
   $ ethtool -i enp181s0
@@ -58,18 +53,17 @@ Copyright(c) 2019 Pensando Systems, Inc
           fw 1.8.0-28
 
 ```
-有关 devlink dev info 数据的更多信息，请参阅 `Documentation/networking/devlink/ionic.rst`。
+鏈夊叧 devlink dev info 鏁版嵁鐨勬洿澶氫俊鎭紝璇峰弬闃?`Documentation/networking/devlink/ionic.rst`銆?
+## 鍚敤椹卞姩
 
-## 启用驱动
 
-
-驱动通过标准的内核配置系统启用，
+椹卞姩閫氳繃鏍囧噯鐨勫唴鏍搁厤缃郴缁熷惎鐢紝
 ```
 
   make oldconfig/menuconfig/etc.
 
 ```
-该驱动在菜单结构中的位置为：
+璇ラ┍鍔ㄥ湪鑿滃崟缁撴瀯涓殑浣嶇疆涓猴細
 
   -> Device Drivers
     -> Network device support (NETDEVICES [=y])
@@ -77,41 +71,35 @@ Copyright(c) 2019 Pensando Systems, Inc
         -> Pensando devices
           -> Pensando Ethernet IONIC Support
 
-## 配置驱动
+## 閰嶇疆椹卞姩
 
 
 ### MTU
 
 
-支持巨型帧（jumbo frame），最大大小为 9194 字节。
+鏀寔宸ㄥ瀷甯э紙jumbo frame锛夛紝鏈€澶уぇ灏忎负 9194 瀛楄妭銆?
+### 涓柇鑱氬悎锛圛nterrupt coalescing锛?
 
-### 中断聚合（Interrupt coalescing）
-
-
-中断聚合可以通过使用 "ethtool -C" 命令更改 rx-usecs 值来配置。rx-usecs 的取值范围是 0-190。tx-usecs 值反映了 rx-usecs 值，因为它们绑定在同一个中断上。
-
+涓柇鑱氬悎鍙互閫氳繃浣跨敤 "ethtool -C" 鍛戒护鏇存敼 rx-usecs 鍊兼潵閰嶇疆銆俽x-usecs 鐨勫彇鍊艰寖鍥存槸 0-190銆倀x-usecs 鍊煎弽鏄犱簡 rx-usecs 鍊硷紝鍥犱负瀹冧滑缁戝畾鍦ㄥ悓涓€涓腑鏂笂銆?
 ### SR-IOV
 
 
-目前提供最基础的 SR-IOV 支持，可通过设置 sysfs 的 'sriov_numvfs' 值来启用（如果你的特定固件配置支持）。
-
+鐩墠鎻愪緵鏈€鍩虹鐨?SR-IOV 鏀寔锛屽彲閫氳繃璁剧疆 sysfs 鐨?'sriov_numvfs' 鍊兼潵鍚敤锛堝鏋滀綘鐨勭壒瀹氬浐浠堕厤缃敮鎸侊級銆?
 ### XDP
 
 
-对 XDP 的支持包含基本功能，外加巨型帧、Redirect 和 `ndo_xmit`。目前不支持零拷贝套接字或硬件卸载。
-
-## 通过辅助设备的 RDMA 支持
-
-
-当固件声明支持时，ionic 驱动通过 Linux 辅助设备框架支持 RDMA（Remote Direct Memory Access，远程直接内存访问）功能。RDMA 能力在设备初始化期间被检测到，如果受支持，以太网驱动将创建一个辅助设备，允许 RDMA 驱动绑定并提供 InfiniBand/RoCE 功能。
-
-## 统计信息
+瀵?XDP 鐨勬敮鎸佸寘鍚熀鏈姛鑳斤紝澶栧姞宸ㄥ瀷甯с€丷edirect 鍜?`ndo_xmit`銆傜洰鍓嶄笉鏀寔闆舵嫹璐濆鎺ュ瓧鎴栫‖浠跺嵏杞姐€?
+## 閫氳繃杈呭姪璁惧鐨?RDMA 鏀寔
 
 
-### 基础硬件统计
+褰撳浐浠跺０鏄庢敮鎸佹椂锛宨onic 椹卞姩閫氳繃 Linux 杈呭姪璁惧妗嗘灦鏀寔 RDMA锛圧emote Direct Memory Access锛岃繙绋嬬洿鎺ュ唴瀛樿闂級鍔熻兘銆俁DMA 鑳藉姏鍦ㄨ澶囧垵濮嬪寲鏈熼棿琚娴嬪埌锛屽鏋滃彈鏀寔锛屼互澶綉椹卞姩灏嗗垱寤轰竴涓緟鍔╄澶囷紝鍏佽 RDMA 椹卞姩缁戝畾骞舵彁渚?InfiniBand/RoCE 鍔熻兘銆?
+## 缁熻淇℃伅
 
 
-命令 `netstat -i`、`ip -s link show` 和 `ifconfig` 显示
+### 鍩虹纭欢缁熻
+
+
+鍛戒护 `netstat -i`銆乣ip -s link show` 鍜?`ifconfig` 鏄剧ず
 ```
 
   $ ip -s link show enp181s0
@@ -126,8 +114,7 @@ Copyright(c) 2019 Pensando Systems, Inc
 ### ethtool -S
 
 
-`ethtool -S` 命令显示的统计信息包含驱动计数器和固件计数器的组合，包括端口和队列相关的具体数值。驱动数值是由驱动计算得到的计数器，固件数值由固件从端口硬件采集并通过驱动透传，不做进一步解释。
-
+`ethtool -S` 鍛戒护鏄剧ず鐨勭粺璁′俊鎭寘鍚┍鍔ㄨ鏁板櫒鍜屽浐浠惰鏁板櫒鐨勭粍鍚堬紝鍖呮嫭绔彛鍜岄槦鍒楃浉鍏崇殑鍏蜂綋鏁板€笺€傞┍鍔ㄦ暟鍊兼槸鐢遍┍鍔ㄨ绠楀緱鍒扮殑璁℃暟鍣紝鍥轰欢鏁板€肩敱鍥轰欢浠庣鍙ｇ‖浠堕噰闆嗗苟閫氳繃椹卞姩閫忎紶锛屼笉鍋氳繘涓€姝ヨВ閲娿€?
 ```
 
      tx_packets: 12
@@ -281,16 +268,16 @@ Copyright(c) 2019 Pensando Systems, Inc
      frames_tx_truncated: 0
 
 ```
-## 支持
+## 鏀寔
 
 
-有关一般性的 Linux 网络支持，请使用 netdev 邮件列表
+鏈夊叧涓€鑸€х殑 Linux 缃戠粶鏀寔锛岃浣跨敤 netdev 閭欢鍒楄〃
 ```
 
   netdev@vger.kernel.org
 
 ```
-如需更具体的支持，请使用 Pensando 驱动支持邮箱
+濡傞渶鏇村叿浣撶殑鏀寔锛岃浣跨敤 Pensando 椹卞姩鏀寔閭
 ```
 
   drivers@pensando.io

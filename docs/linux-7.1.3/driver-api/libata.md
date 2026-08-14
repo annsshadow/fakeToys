@@ -1,42 +1,30 @@
-## libATA 开发者指南
-
+﻿## libATA 寮€鍙戣€呮寚鍗?
 
 :Author: Jeff Garzik
 
-## 简介
+## 绠€浠?
 
-
-libATA 是 Linux 内核内部使用的一个库，用于支持 ATA 主机控制器和设备。libATA 提供
-一个 ATA 驱动 API、用于 ATA 和 ATAPI 设备的类传输，以及根据 T10 SAT 规范实现的
-ATA 设备的 SCSI<->ATA 转换。
-
-本指南记录了 libATA 驱动 API、库函数、库内部实现，以及几个示例性的 ATA 底层驱动。
-
-## libata 驱动 API
+libATA 鏄?Linux 鍐呮牳鍐呴儴浣跨敤鐨勪竴涓簱锛岀敤浜庢敮鎸?ATA 涓绘満鎺у埗鍣ㄥ拰璁惧銆俵ibATA 鎻愪緵
+涓€涓?ATA 椹卞姩 API銆佺敤浜?ATA 鍜?ATAPI 璁惧鐨勭被浼犺緭锛屼互鍙婃牴鎹?T10 SAT 瑙勮寖瀹炵幇鐨?ATA 璁惧鐨?SCSI<->ATA 杞崲銆?
+鏈寚鍗楄褰曚簡 libATA 椹卞姩 API銆佸簱鍑芥暟銆佸簱鍐呴儴瀹炵幇锛屼互鍙婂嚑涓ず渚嬫€х殑 ATA 搴曞眰椹卞姩銆?
+## libata 椹卞姩 API
 
 
 `struct ata_port_operations <ata_port_operations>`
-为每个底层 libata 硬件驱动定义，它控制底层驱动如何与 ATA 和 SCSI 层交互。
-
-基于 FIS 的驱动将通过 `->qc_prep()` 和 `->qc_issue()` 高层钩子挂接到系统。行为类似
-于 PCI IDE 硬件的硬件可以利用若干通用辅助函数，至少定义 ATA 影子寄存器块的
-总线 I/O 地址。
-
+涓烘瘡涓簳灞?libata 纭欢椹卞姩瀹氫箟锛屽畠鎺у埗搴曞眰椹卞姩濡備綍涓?ATA 鍜?SCSI 灞備氦浜掋€?
+鍩轰簬 FIS 鐨勯┍鍔ㄥ皢閫氳繃 `->qc_prep()` 鍜?`->qc_issue()` 楂樺眰閽╁瓙鎸傛帴鍒扮郴缁熴€傝涓虹被浼?浜?PCI IDE 纭欢鐨勭‖浠跺彲浠ュ埄鐢ㄨ嫢骞查€氱敤杈呭姪鍑芥暟锛岃嚦灏戝畾涔?ATA 褰卞瓙瀵勫瓨鍣ㄥ潡鐨?鎬荤嚎 I/O 鍦板潃銆?
 ### :c:type:`struct ata_port_operations <ata_port_operations>`
 
 
-#### 识别（IDENTIFY）后的设备配置
-
+#### 璇嗗埆锛圛DENTIFY锛夊悗鐨勮澶囬厤缃?
 
 ```
     void (*dev_config) (struct ata_port *, struct ata_device *);
 ```
-在对找到的每个设备发出 IDENTIFY [PACKET] DEVICE 之后调用。通常用于在发出 SET
-FEATURES - XFER MODE 之前以及操作之前，应用设备特定的修正。
-
-这个入口在 ata_port_operations 中可以被指定为 NULL。
-
-#### 设置 PIO/DMA 模式
+鍦ㄥ鎵惧埌鐨勬瘡涓澶囧彂鍑?IDENTIFY [PACKET] DEVICE 涔嬪悗璋冪敤銆傞€氬父鐢ㄤ簬鍦ㄥ彂鍑?SET
+FEATURES - XFER MODE 涔嬪墠浠ュ強鎿嶄綔涔嬪墠锛屽簲鐢ㄨ澶囩壒瀹氱殑淇銆?
+杩欎釜鍏ュ彛鍦?ata_port_operations 涓彲浠ヨ鎸囧畾涓?NULL銆?
+#### 璁剧疆 PIO/DMA 妯″紡
 
 
 ```
@@ -45,107 +33,77 @@ FEATURES - XFER MODE 之前以及操作之前，应用设备特定的修正。
     void (*post_set_mode) (struct ata_port *);
     unsigned int (*mode_filter) (struct ata_port *, struct ata_device *, unsigned int);
 ```
-在发出 SET FEATURES - XFER MODE 命令之前调用的钩子。可选的 `->mode_filter()` 钩子
-在 libata 已经构建出可能模式的掩码时被调用。它会传递给 `->mode_filter()` 函数，该函数
-应返回经过过滤、去掉了那些因硬件限制而不合适的模式之后的有效模式掩码。使用这个接口
-来添加模式是无效的。
-
-当 `->set_piomode()` 和 `->set_dmamode()` 被调用时，`dev->pio_mode` 和 `dev->dma_mode`
-保证有效。此时，共享同一线缆的任何其他驱动器的时序也将有效。也就是说，库会在尝试
-设置任何一个驱动器的模式之前，记录下通道上每个驱动器模式的决策。
-
-`->post_set_mode()` 在 SET FEATURES - XFER MODE 命令成功完成之后无条件调用。
-
-`->set_piomode()` 总是被调用（如果存在），但 `->set_dma_mode()` 仅在 DMA 可行时才被调用。
-
-#### 任务文件读/写
-
+鍦ㄥ彂鍑?SET FEATURES - XFER MODE 鍛戒护涔嬪墠璋冪敤鐨勯挬瀛愩€傚彲閫夌殑 `->mode_filter()` 閽╁瓙
+鍦?libata 宸茬粡鏋勫缓鍑哄彲鑳芥ā寮忕殑鎺╃爜鏃惰璋冪敤銆傚畠浼氫紶閫掔粰 `->mode_filter()` 鍑芥暟锛岃鍑芥暟
+搴旇繑鍥炵粡杩囪繃婊ゃ€佸幓鎺変簡閭ｄ簺鍥犵‖浠堕檺鍒惰€屼笉鍚堥€傜殑妯″紡涔嬪悗鐨勬湁鏁堟ā寮忔帺鐮併€備娇鐢ㄨ繖涓帴鍙?鏉ユ坊鍔犳ā寮忔槸鏃犳晥鐨勩€?
+褰?`->set_piomode()` 鍜?`->set_dmamode()` 琚皟鐢ㄦ椂锛宍dev->pio_mode` 鍜?`dev->dma_mode`
+淇濊瘉鏈夋晥銆傛鏃讹紝鍏变韩鍚屼竴绾跨紗鐨勪换浣曞叾浠栭┍鍔ㄥ櫒鐨勬椂搴忎篃灏嗘湁鏁堛€備篃灏辨槸璇达紝搴撲細鍦ㄥ皾璇?璁剧疆浠讳綍涓€涓┍鍔ㄥ櫒鐨勬ā寮忎箣鍓嶏紝璁板綍涓嬮€氶亾涓婃瘡涓┍鍔ㄥ櫒妯″紡鐨勫喅绛栥€?
+`->post_set_mode()` 鍦?SET FEATURES - XFER MODE 鍛戒护鎴愬姛瀹屾垚涔嬪悗鏃犳潯浠惰皟鐢ㄣ€?
+`->set_piomode()` 鎬绘槸琚皟鐢紙濡傛灉瀛樺湪锛夛紝浣?`->set_dma_mode()` 浠呭湪 DMA 鍙鏃舵墠琚皟鐢ㄣ€?
+#### 浠诲姟鏂囦欢璇?鍐?
 
 ```
     void (*sff_tf_load) (struct ata_port *ap, struct ata_taskfile *tf);
     void (*sff_tf_read) (struct ata_port *ap, struct ata_taskfile *tf);
 ```
-`->tf_load()` 被调用以将给定的任务文件加载到硬件寄存器 / DMA 缓冲区。`->tf_read()`
-被调用以读取硬件寄存器 / DMA 缓冲区，从而获得当前的一组任务文件寄存器值。大多数
-基于任务文件硬件（PIO 或 MMIO）的驱动对这些钩子使用 `ata_sff_tf_load` 和
-`ata_sff_tf_read`。
-
-#### PIO 数据读/写
-
+`->tf_load()` 琚皟鐢ㄤ互灏嗙粰瀹氱殑浠诲姟鏂囦欢鍔犺浇鍒扮‖浠跺瘎瀛樺櫒 / DMA 缂撳啿鍖恒€俙->tf_read()`
+琚皟鐢ㄤ互璇诲彇纭欢瀵勫瓨鍣?/ DMA 缂撳啿鍖猴紝浠庤€岃幏寰楀綋鍓嶇殑涓€缁勪换鍔℃枃浠跺瘎瀛樺櫒鍊笺€傚ぇ澶氭暟
+鍩轰簬浠诲姟鏂囦欢纭欢锛圥IO 鎴?MMIO锛夌殑椹卞姩瀵硅繖浜涢挬瀛愪娇鐢?`ata_sff_tf_load` 鍜?`ata_sff_tf_read`銆?
+#### PIO 鏁版嵁璇?鍐?
 
 ```
     void (*sff_data_xfer) (struct ata_device *, unsigned char *, unsigned int, int);
 ```
-所有 bmdma 风格的驱动都必须实现这个钩子。这是在 PIO 数据传输期间实际复制数据字节的
-底层操作。通常驱动会选择 `ata_sff_data_xfer` 或 `ata_sff_data_xfer32` 之一。
-
-#### ATA 命令执行
+鎵€鏈?bmdma 椋庢牸鐨勯┍鍔ㄩ兘蹇呴』瀹炵幇杩欎釜閽╁瓙銆傝繖鏄湪 PIO 鏁版嵁浼犺緭鏈熼棿瀹為檯澶嶅埗鏁版嵁瀛楄妭鐨?搴曞眰鎿嶄綔銆傞€氬父椹卞姩浼氶€夋嫨 `ata_sff_data_xfer` 鎴?`ata_sff_data_xfer32` 涔嬩竴銆?
+#### ATA 鍛戒护鎵ц
 
 
 ```
     void (*sff_exec_command)(struct ata_port *ap, struct ata_taskfile *tf);
 ```
-使之前用 `->tf_load()` 加载的 ATA 命令在硬件中启动。大多数基于任务文件硬件的驱动
-使用 `ata_sff_exec_command` 作为这个钩子。
-
-#### 每条命令的 ATAPI DMA 能力过滤器
-
+浣夸箣鍓嶇敤 `->tf_load()` 鍔犺浇鐨?ATA 鍛戒护鍦ㄧ‖浠朵腑鍚姩銆傚ぇ澶氭暟鍩轰簬浠诲姟鏂囦欢纭欢鐨勯┍鍔?浣跨敤 `ata_sff_exec_command` 浣滀负杩欎釜閽╁瓙銆?
+#### 姣忔潯鍛戒护鐨?ATAPI DMA 鑳藉姏杩囨护鍣?
 
 ```
     int (*check_atapi_dma) (struct ata_queued_cmd *qc);
 ```
-允许底层驱动过滤 ATA PACKET 命令，返回一个状态，指示是否可以使用 DMA 来执行所提供的
-PACKET 命令。
-
-这个钩子可以被指定为 NULL，在这种情况下 libata 将假定支持 atapi dma。
-
-#### 读取特定的 ATA 影子寄存器
-
+鍏佽搴曞眰椹卞姩杩囨护 ATA PACKET 鍛戒护锛岃繑鍥炰竴涓姸鎬侊紝鎸囩ず鏄惁鍙互浣跨敤 DMA 鏉ユ墽琛屾墍鎻愪緵鐨?PACKET 鍛戒护銆?
+杩欎釜閽╁瓙鍙互琚寚瀹氫负 NULL锛屽湪杩欑鎯呭喌涓?libata 灏嗗亣瀹氭敮鎸?atapi dma銆?
+#### 璇诲彇鐗瑰畾鐨?ATA 褰卞瓙瀵勫瓨鍣?
 
 ```
     u8   (*sff_check_status)(struct ata_port *ap);
     u8   (*sff_check_altstatus)(struct ata_port *ap);
 ```
-从硬件读取 Status/AltStatus ATA 影子寄存器。在某些硬件上，读取 Status 寄存器具有
-清除中断条件的副作用。大多数基于任务文件硬件的驱动使用 `ata_sff_check_status` 作为
-这个钩子。
-
-#### 写入特定的 ATA 影子寄存器
-
+浠庣‖浠惰鍙?Status/AltStatus ATA 褰卞瓙瀵勫瓨鍣ㄣ€傚湪鏌愪簺纭欢涓婏紝璇诲彇 Status 瀵勫瓨鍣ㄥ叿鏈?娓呴櫎涓柇鏉′欢鐨勫壇浣滅敤銆傚ぇ澶氭暟鍩轰簬浠诲姟鏂囦欢纭欢鐨勯┍鍔ㄤ娇鐢?`ata_sff_check_status` 浣滀负
+杩欎釜閽╁瓙銆?
+#### 鍐欏叆鐗瑰畾鐨?ATA 褰卞瓙瀵勫瓨鍣?
 
 ```
     void (*sff_set_devctl)(struct ata_port *ap, u8 ctl);
 ```
-将设备控制 ATA 影子寄存器写入硬件。大多数驱动不需要定义这个。
-
-#### 在总线上选择 ATA 设备
+灏嗚澶囨帶鍒?ATA 褰卞瓙瀵勫瓨鍣ㄥ啓鍏ョ‖浠躲€傚ぇ澶氭暟椹卞姩涓嶉渶瑕佸畾涔夎繖涓€?
+#### 鍦ㄦ€荤嚎涓婇€夋嫨 ATA 璁惧
 
 
 ```
     void (*sff_dev_select)(struct ata_port *ap, unsigned int device);
 ```
-发出底层硬件命令，使 N 个硬件设备中的一个在 ATA 总线上被视为“被选中”（活跃且可
-使用）。这在基于 FIS 的设备上通常没有意义。
-
-大多数基于任务文件硬件的驱动使用 `ata_sff_dev_select` 作为这个钩子。
-
-#### 私有调优方法
+鍙戝嚭搴曞眰纭欢鍛戒护锛屼娇 N 涓‖浠惰澶囦腑鐨勪竴涓湪 ATA 鎬荤嚎涓婅瑙嗕负鈥滆閫変腑鈥濓紙娲昏穬涓斿彲
+浣跨敤锛夈€傝繖鍦ㄥ熀浜?FIS 鐨勮澶囦笂閫氬父娌℃湁鎰忎箟銆?
+澶у鏁板熀浜庝换鍔℃枃浠剁‖浠剁殑椹卞姩浣跨敤 `ata_sff_dev_select` 浣滀负杩欎釜閽╁瓙銆?
+#### 绉佹湁璋冧紭鏂规硶
 
 
 ```
     void (*set_mode) (struct ata_port *ap);
 ```
-默认情况下，libata 按照 ATA 时序规则进行驱动器和控制器调优，并应用黑名单和线缆限制。
-某些控制器需要特殊处理，并有自定义的调优规则，通常是使用 ATA 命令但实际上不进行
-驱动器时序调整的 raid 控制器。
+榛樿鎯呭喌涓嬶紝libata 鎸夌収 ATA 鏃跺簭瑙勫垯杩涜椹卞姩鍣ㄥ拰鎺у埗鍣ㄨ皟浼橈紝骞跺簲鐢ㄩ粦鍚嶅崟鍜岀嚎缂嗛檺鍒躲€?鏌愪簺鎺у埗鍣ㄩ渶瑕佺壒娈婂鐞嗭紝骞舵湁鑷畾涔夌殑璋冧紭瑙勫垯锛岄€氬父鏄娇鐢?ATA 鍛戒护浣嗗疄闄呬笂涓嶈繘琛?椹卞姩鍣ㄦ椂搴忚皟鏁寸殑 raid 鎺у埗鍣ㄣ€?
+    **璀﹀憡**
 
-    **警告**
-
-    当一个控制器存在怪癖（quirk）时，不应使用这个钩子来替换标准的控制器调优逻辑。
-    在这种情况下替换默认的调优逻辑将绕过对驱动器与桥接器怪癖的处理，而这些怪癖可能
-    对数据可靠性很重要。如果一个控制器需要过滤模式选择，它应该改用 mode_filter 钩子。
-
-#### 控制 PCI IDE BMDMA 引擎
+    褰撲竴涓帶鍒跺櫒瀛樺湪鎬櫀锛坬uirk锛夋椂锛屼笉搴斾娇鐢ㄨ繖涓挬瀛愭潵鏇挎崲鏍囧噯鐨勬帶鍒跺櫒璋冧紭閫昏緫銆?    鍦ㄨ繖绉嶆儏鍐典笅鏇挎崲榛樿鐨勮皟浼橀€昏緫灏嗙粫杩囧椹卞姩鍣ㄤ笌妗ユ帴鍣ㄦ€櫀鐨勫鐞嗭紝鑰岃繖浜涙€櫀鍙兘
+    瀵规暟鎹彲闈犳€у緢閲嶈銆傚鏋滀竴涓帶鍒跺櫒闇€瑕佽繃婊ゆā寮忛€夋嫨锛屽畠搴旇鏀圭敤 mode_filter 閽╁瓙銆?
+#### 鎺у埗 PCI IDE BMDMA 寮曟搸
 
 
 ```
@@ -154,104 +112,71 @@ PACKET 命令。
     void (*bmdma_stop) (struct ata_port *ap);
     u8   (*bmdma_status) (struct ata_port *ap);
 ```
-在设置 IDE BMDMA 事务时，这些钩子分别装载（`->bmdma_setup`）、触发（`->bmdma_start`）
-和停止（`->bmdma_stop`）硬件的 DMA 引擎。`->bmdma_status` 用于读取标准的 PCI IDE DMA
-Status 寄存器。
-
-在基于 FIS 的驱动中，这些钩子通常是空操作，或者干脆不实现。
-
-大多数传统 IDE 驱动使用 `ata_bmdma_setup` 作为 `bmdma_setup` 钩子。`ata_bmdma_setup`
-会将指向 PRD 表的指针写入 IDE PRD Table Address 寄存器，在 DMA Command 寄存器中
-启用 DMA，并调用 `exec_command` 开始传输。
-
-大多数传统 IDE 驱动使用 `ata_bmdma_start` 作为 `bmdma_start` 钩子。`ata_bmdma_start`
-会将 ATA_DMA_START 标志写入 DMA Command 寄存器。
-
-许多传统 IDE 驱动使用 `ata_bmdma_stop` 作为 `bmdma_stop` 钩子。`ata_bmdma_stop` 会
-清除 DMA command 寄存器中的 ATA_DMA_START 标志。
-
-许多传统 IDE 驱动使用 `ata_bmdma_status` 作为 `bmdma_status` 钩子。
-
-#### 高层任务文件钩子
+鍦ㄨ缃?IDE BMDMA 浜嬪姟鏃讹紝杩欎簺閽╁瓙鍒嗗埆瑁呰浇锛坄->bmdma_setup`锛夈€佽Е鍙戯紙`->bmdma_start`锛?鍜屽仠姝紙`->bmdma_stop`锛夌‖浠剁殑 DMA 寮曟搸銆俙->bmdma_status` 鐢ㄤ簬璇诲彇鏍囧噯鐨?PCI IDE DMA
+Status 瀵勫瓨鍣ㄣ€?
+鍦ㄥ熀浜?FIS 鐨勯┍鍔ㄤ腑锛岃繖浜涢挬瀛愰€氬父鏄┖鎿嶄綔锛屾垨鑰呭共鑴嗕笉瀹炵幇銆?
+澶у鏁颁紶缁?IDE 椹卞姩浣跨敤 `ata_bmdma_setup` 浣滀负 `bmdma_setup` 閽╁瓙銆俙ata_bmdma_setup`
+浼氬皢鎸囧悜 PRD 琛ㄧ殑鎸囬拡鍐欏叆 IDE PRD Table Address 瀵勫瓨鍣紝鍦?DMA Command 瀵勫瓨鍣ㄤ腑
+鍚敤 DMA锛屽苟璋冪敤 `exec_command` 寮€濮嬩紶杈撱€?
+澶у鏁颁紶缁?IDE 椹卞姩浣跨敤 `ata_bmdma_start` 浣滀负 `bmdma_start` 閽╁瓙銆俙ata_bmdma_start`
+浼氬皢 ATA_DMA_START 鏍囧織鍐欏叆 DMA Command 瀵勫瓨鍣ㄣ€?
+璁稿浼犵粺 IDE 椹卞姩浣跨敤 `ata_bmdma_stop` 浣滀负 `bmdma_stop` 閽╁瓙銆俙ata_bmdma_stop` 浼?娓呴櫎 DMA command 瀵勫瓨鍣ㄤ腑鐨?ATA_DMA_START 鏍囧織銆?
+璁稿浼犵粺 IDE 椹卞姩浣跨敤 `ata_bmdma_status` 浣滀负 `bmdma_status` 閽╁瓙銆?
+#### 楂樺眰浠诲姟鏂囦欢閽╁瓙
 
 
 ```
     enum ata_completion_errors (*qc_prep) (struct ata_queued_cmd *qc);
     int (*qc_issue) (struct ata_queued_cmd *qc);
 ```
-更高层的钩子，这两个钩子有可能取代上面若干任务文件/DMA 引擎钩子。`->qc_prep` 在
-缓冲区完成 DMA 映射后被调用，通常用于填充硬件的 DMA 分散/聚集表。一些驱动使用标准的
-`ata_bmdma_qc_prep` 和 `ata_bmdma_dumb_qc_prep` 辅助函数，但更高级的驱动会实现自己的。
-
-`->qc_issue` 用于在硬件和 S/G 表准备就绪后，使一个命令变为活跃。IDE BMDMA 驱动使用
-辅助函数 `ata_sff_qc_issue` 进行基于任务文件协议的派发。更高级的驱动实现自己的
-`->qc_issue`。
-
-`ata_sff_qc_issue` 会根据需要调用 `->sff_tf_load()`、`->bmdma_setup()` 和
-`->bmdma_start()` 来发起一次传输。
-
-#### 异常与探测处理（EH）
-
+鏇撮珮灞傜殑閽╁瓙锛岃繖涓や釜閽╁瓙鏈夊彲鑳藉彇浠ｄ笂闈㈣嫢骞蹭换鍔℃枃浠?DMA 寮曟搸閽╁瓙銆俙->qc_prep` 鍦?缂撳啿鍖哄畬鎴?DMA 鏄犲皠鍚庤璋冪敤锛岄€氬父鐢ㄤ簬濉厖纭欢鐨?DMA 鍒嗘暎/鑱氶泦琛ㄣ€備竴浜涢┍鍔ㄤ娇鐢ㄦ爣鍑嗙殑
+`ata_bmdma_qc_prep` 鍜?`ata_bmdma_dumb_qc_prep` 杈呭姪鍑芥暟锛屼絾鏇撮珮绾х殑椹卞姩浼氬疄鐜拌嚜宸辩殑銆?
+`->qc_issue` 鐢ㄤ簬鍦ㄧ‖浠跺拰 S/G 琛ㄥ噯澶囧氨缁悗锛屼娇涓€涓懡浠ゅ彉涓烘椿璺冦€侷DE BMDMA 椹卞姩浣跨敤
+杈呭姪鍑芥暟 `ata_sff_qc_issue` 杩涜鍩轰簬浠诲姟鏂囦欢鍗忚鐨勬淳鍙戙€傛洿楂樼骇鐨勯┍鍔ㄥ疄鐜拌嚜宸辩殑
+`->qc_issue`銆?
+`ata_sff_qc_issue` 浼氭牴鎹渶瑕佽皟鐢?`->sff_tf_load()`銆乣->bmdma_setup()` 鍜?`->bmdma_start()` 鏉ュ彂璧蜂竴娆′紶杈撱€?
+#### 寮傚父涓庢帰娴嬪鐞嗭紙EH锛?
 
 ```
     void (*freeze) (struct ata_port *ap);
     void (*thaw) (struct ata_port *ap);
 ```
-当 HSM 违例或其他某种状况扰乱了端口的正常运行时，会调用 `ata_port_freeze`。一个被冻结
-的端口不允许执行任何操作，直到该端口被解冻，而解冻通常发生在一次成功的重置之后。
-
-可选的 `->freeze()` 回调可用于在硬件层面冻结端口（例如屏蔽中断并停止 DMA 引擎）。
-如果一个端口无法在硬件层面被冻结，中断处理器必须在端口冻结期间无条件地确认并清除
-中断。
-
-可选的 `->thaw()` 回调被调用以执行与 `->freeze()` 相反的操作：再次为端口准备正常的
-操作。取消屏蔽中断、启动 DMA 引擎等。
-
+褰?HSM 杩濅緥鎴栧叾浠栨煇绉嶇姸鍐垫壈涔变簡绔彛鐨勬甯歌繍琛屾椂锛屼細璋冪敤 `ata_port_freeze`銆備竴涓鍐荤粨
+鐨勭鍙ｄ笉鍏佽鎵ц浠讳綍鎿嶄綔锛岀洿鍒拌绔彛琚В鍐伙紝鑰岃В鍐婚€氬父鍙戠敓鍦ㄤ竴娆℃垚鍔熺殑閲嶇疆涔嬪悗銆?
+鍙€夌殑 `->freeze()` 鍥炶皟鍙敤浜庡湪纭欢灞傞潰鍐荤粨绔彛锛堜緥濡傚睆钄戒腑鏂苟鍋滄 DMA 寮曟搸锛夈€?濡傛灉涓€涓鍙ｆ棤娉曞湪纭欢灞傞潰琚喕缁擄紝涓柇澶勭悊鍣ㄥ繀椤诲湪绔彛鍐荤粨鏈熼棿鏃犳潯浠跺湴纭骞舵竻闄?涓柇銆?
+鍙€夌殑 `->thaw()` 鍥炶皟琚皟鐢ㄤ互鎵ц涓?`->freeze()` 鐩稿弽鐨勬搷浣滐細鍐嶆涓虹鍙ｅ噯澶囨甯哥殑
+鎿嶄綔銆傚彇娑堝睆钄戒腑鏂€佸惎鍔?DMA 寮曟搸绛夈€?
 ```
     void (*error_handler) (struct ata_port *ap);
 ```
-`->error_handler()` 是驱动接入探测、热插拔、恢复以及其他异常状况的钩子。一个实现的
-主要职责是调用 `ata_std_error_handler`。
-
-`ata_std_error_handler` 将执行一个标准的错误处理序列，以复活失败的设备、分离丢失的
-设备并添加新设备（如果有的话）。这个函数将在需要时调用一个端口的各种重置操作。这些
-操作如下。
-
-- “prereset” 操作（可以为 NULL）在 EH 重置期间、在任何其他动作执行之前被调用。
-
-- “postreset” 钩子（可以为 NULL）在 EH 重置执行之后被调用。基于现有状况、问题的严重
-  程度以及硬件能力，
-
-- 要么调用 “softreset” 操作，要么调用 “hardreset” 操作来执行底层的 EH 重置。如果两种
-  操作都定义了，则优先并使用 “hardreset”。如果两者都未定义，则不执行任何底层重置，
-  EH 假定一个 ATA 类设备通过链路连接。
-
+`->error_handler()` 鏄┍鍔ㄦ帴鍏ユ帰娴嬨€佺儹鎻掓嫈銆佹仮澶嶄互鍙婂叾浠栧紓甯哥姸鍐电殑閽╁瓙銆備竴涓疄鐜扮殑
+涓昏鑱岃矗鏄皟鐢?`ata_std_error_handler`銆?
+`ata_std_error_handler` 灏嗘墽琛屼竴涓爣鍑嗙殑閿欒澶勭悊搴忓垪锛屼互澶嶆椿澶辫触鐨勮澶囥€佸垎绂讳涪澶辩殑
+璁惧骞舵坊鍔犳柊璁惧锛堝鏋滄湁鐨勮瘽锛夈€傝繖涓嚱鏁板皢鍦ㄩ渶瑕佹椂璋冪敤涓€涓鍙ｇ殑鍚勭閲嶇疆鎿嶄綔銆傝繖浜?鎿嶄綔濡備笅銆?
+- 鈥減rereset鈥?鎿嶄綔锛堝彲浠ヤ负 NULL锛夊湪 EH 閲嶇疆鏈熼棿銆佸湪浠讳綍鍏朵粬鍔ㄤ綔鎵ц涔嬪墠琚皟鐢ㄣ€?
+- 鈥減ostreset鈥?閽╁瓙锛堝彲浠ヤ负 NULL锛夊湪 EH 閲嶇疆鎵ц涔嬪悗琚皟鐢ㄣ€傚熀浜庣幇鏈夌姸鍐点€侀棶棰樼殑涓ラ噸
+  绋嬪害浠ュ強纭欢鑳藉姏锛?
+- 瑕佷箞璋冪敤 鈥渟oftreset鈥?鎿嶄綔锛岃涔堣皟鐢?鈥渉ardreset鈥?鎿嶄綔鏉ユ墽琛屽簳灞傜殑 EH 閲嶇疆銆傚鏋滀袱绉?  鎿嶄綔閮藉畾涔変簡锛屽垯浼樺厛骞朵娇鐢?鈥渉ardreset鈥濄€傚鏋滀袱鑰呴兘鏈畾涔夛紝鍒欎笉鎵ц浠讳綍搴曞眰閲嶇疆锛?  EH 鍋囧畾涓€涓?ATA 绫昏澶囬€氳繃閾捐矾杩炴帴銆?
 ```
     void (*post_internal_cmd) (struct ata_queued_cmd *qc);
 ```
-执行任何必要的硬件特定动作，以在使用 `ata_exec_internal` 执行一个探测时或 EH 时的命令
-之后，完成处理。
-
-#### 硬件中断处理
+鎵ц浠讳綍蹇呰鐨勭‖浠剁壒瀹氬姩浣滐紝浠ュ湪浣跨敤 `ata_exec_internal` 鎵ц涓€涓帰娴嬫椂鎴?EH 鏃剁殑鍛戒护
+涔嬪悗锛屽畬鎴愬鐞嗐€?
+#### 纭欢涓柇澶勭悊
 
 
 ```
     irqreturn_t (*irq_handler)(int, void *, struct pt_regs *);
     void (*irq_clear) (struct ata_port *);
 ```
-`->irq_handler` 是由 libata 向系统注册的中断处理例程。`->irq_clear` 在探测期间、在
-中断处理例程注册之前被调用，以确保硬件处于静默状态。
-
-第二个参数 dev_instance 应该被转换为指向 `struct ata_host_set <ata_host_set>` 的指针。
-
-大多数传统 IDE 驱动使用 `ata_sff_interrupt` 作为 irq_handler 钩子，它会扫描 host_set
-中的所有端口，确定哪个排队的命令是活跃的（如果有），并调用 ata_sff_host_intr(ap,qc)。
-
-大多数传统 IDE 驱动使用 `ata_sff_irq_clear` 作为 `irq_clear` 钩子，它只是清除 DMA
-status 寄存器中的中断和错误标志。
-
-#### SATA phy 读/写
-
+`->irq_handler` 鏄敱 libata 鍚戠郴缁熸敞鍐岀殑涓柇澶勭悊渚嬬▼銆俙->irq_clear` 鍦ㄦ帰娴嬫湡闂淬€佸湪
+涓柇澶勭悊渚嬬▼娉ㄥ唽涔嬪墠琚皟鐢紝浠ョ‘淇濈‖浠跺浜庨潤榛樼姸鎬併€?
+绗簩涓弬鏁?dev_instance 搴旇琚浆鎹负鎸囧悜 `struct ata_host_set <ata_host_set>` 鐨勬寚閽堛€?
+澶у鏁颁紶缁?IDE 椹卞姩浣跨敤 `ata_sff_interrupt` 浣滀负 irq_handler 閽╁瓙锛屽畠浼氭壂鎻?host_set
+涓殑鎵€鏈夌鍙ｏ紝纭畾鍝釜鎺掗槦鐨勫懡浠ゆ槸娲昏穬鐨勶紙濡傛灉鏈夛級锛屽苟璋冪敤 ata_sff_host_intr(ap,qc)銆?
+澶у鏁颁紶缁?IDE 椹卞姩浣跨敤 `ata_sff_irq_clear` 浣滀负 `irq_clear` 閽╁瓙锛屽畠鍙槸娓呴櫎 DMA
+status 瀵勫瓨鍣ㄤ腑鐨勪腑鏂拰閿欒鏍囧織銆?
+#### SATA phy 璇?鍐?
 
 ```
     int (*scr_read) (struct ata_port *ap, unsigned int sc_reg,
@@ -259,10 +184,8 @@ status 寄存器中的中断和错误标志。
     int (*scr_write) (struct ata_port *ap, unsigned int sc_reg,
                        u32 val);
 ```
-读取和写入标准 SATA phy 寄存器。sc_reg 是 SCR_STATUS、SCR_CONTROL、SCR_ERROR 或
-SCR_ACTIVE 之一。
-
-#### 初始化与关闭
+璇诲彇鍜屽啓鍏ユ爣鍑?SATA phy 瀵勫瓨鍣ㄣ€俿c_reg 鏄?SCR_STATUS銆丼CR_CONTROL銆丼CR_ERROR 鎴?SCR_ACTIVE 涔嬩竴銆?
+#### 鍒濆鍖栦笌鍏抽棴
 
 
 ```
@@ -270,497 +193,304 @@ SCR_ACTIVE 之一。
     void (*port_stop) (struct ata_port *ap);
     void (*host_stop) (struct ata_host_set *host_set);
 ```
-`->port_start()` 在每个端口的数据结构初始化之后立即被调用。通常它用于分配每端口的
-DMA 缓冲区 / 表 / 环，启用 DMA 引擎，以及类似的任务。一些驱动也利用这个入口点来为
-`ap->private_data` 分配驱动私有内存。
-
-许多驱动使用 `ata_port_start` 作为这个钩子，或从它们自己的 `port_start` 钩子中调用
-它。`ata_port_start` 为一个传统的 IDE PRD 表分配空间并返回。
-
-`->port_stop()` 在 `->host_stop()` 之后被调用。它唯一的功能是释放 DMA/内存资源，因为
-它们不再被主动使用。许多驱动此时也从端口释放驱动私有数据。
-
-`->host_stop()` 在所有 `->port_stop()` 调用完成后被调用。该钩子必须完成硬件关闭、
-释放 DMA 和其他资源等。这个钩子可以被指定为 NULL，在这种情况下它不会被调用。
-
-## 错误处理
+`->port_start()` 鍦ㄦ瘡涓鍙ｇ殑鏁版嵁缁撴瀯鍒濆鍖栦箣鍚庣珛鍗宠璋冪敤銆傞€氬父瀹冪敤浜庡垎閰嶆瘡绔彛鐨?DMA 缂撳啿鍖?/ 琛?/ 鐜紝鍚敤 DMA 寮曟搸锛屼互鍙婄被浼肩殑浠诲姟銆備竴浜涢┍鍔ㄤ篃鍒╃敤杩欎釜鍏ュ彛鐐规潵涓?`ap->private_data` 鍒嗛厤椹卞姩绉佹湁鍐呭瓨銆?
+璁稿椹卞姩浣跨敤 `ata_port_start` 浣滀负杩欎釜閽╁瓙锛屾垨浠庡畠浠嚜宸辩殑 `port_start` 閽╁瓙涓皟鐢?瀹冦€俙ata_port_start` 涓轰竴涓紶缁熺殑 IDE PRD 琛ㄥ垎閰嶇┖闂村苟杩斿洖銆?
+`->port_stop()` 鍦?`->host_stop()` 涔嬪悗琚皟鐢ㄣ€傚畠鍞竴鐨勫姛鑳芥槸閲婃斁 DMA/鍐呭瓨璧勬簮锛屽洜涓?瀹冧滑涓嶅啀琚富鍔ㄤ娇鐢ㄣ€傝澶氶┍鍔ㄦ鏃朵篃浠庣鍙ｉ噴鏀鹃┍鍔ㄧ鏈夋暟鎹€?
+`->host_stop()` 鍦ㄦ墍鏈?`->port_stop()` 璋冪敤瀹屾垚鍚庤璋冪敤銆傝閽╁瓙蹇呴』瀹屾垚纭欢鍏抽棴銆?閲婃斁 DMA 鍜屽叾浠栬祫婧愮瓑銆傝繖涓挬瀛愬彲浠ヨ鎸囧畾涓?NULL锛屽湪杩欑鎯呭喌涓嬪畠涓嶄細琚皟鐢ㄣ€?
+## 閿欒澶勭悊
 
 
-本章描述 libata 下如何处理错误。建议读者先阅读 SCSI EH
-（Documentation/scsi/scsi_eh.rst）和 ATA 异常文档。
+鏈珷鎻忚堪 libata 涓嬪浣曞鐞嗛敊璇€傚缓璁鑰呭厛闃呰 SCSI EH
+锛圖ocumentation/scsi/scsi_eh.rst锛夊拰 ATA 寮傚父鏂囨。銆?
+### 鍛戒护鐨勬潵婧?
 
-### 命令的来源
+鍦?libata 涓紝涓€涓懡浠ょ敱 `struct ata_queued_cmd <ata_queued_cmd>`锛堝嵆 qc锛夎〃绀恒€?qc 鍦ㄧ鍙ｅ垵濮嬪寲鏈熼棿琚鍒嗛厤锛屽苟琚噸澶嶄娇鐢ㄤ簬鍛戒护鎵ц銆傚綋鍓嶆瘡涓鍙ｅ彧鍒嗛厤涓€涓?qc锛屼絾
+灏氭湭鍚堝苟鐨?NCQ 鍒嗘敮涓烘瘡涓爣绛惧垎閰嶄竴涓紝骞跺皢姣忎釜 qc 涓?NCQ 鏍囩 1 瀵?1 鏄犲皠銆?
+libata 鍛戒护鍙互鏉ヨ嚜涓や釜婧愬ご鈥斺€攍ibata 鑷韩鍜?SCSI 涓棿灞傘€俵ibata 鍐呴儴鍛戒护鐢ㄤ簬鍒濆鍖栧拰
+閿欒澶勭悊銆傛墍鏈夊父瑙勭殑鍧楄姹備互鍙婄敤浜?SCSI 妯℃嫙鐨勫懡浠ら兘浣滀负 SCSI 鍛戒护锛岄€氳繃 SCSI host
+妯℃澘鐨?queuecommand 鍥炶皟浼犻€掋€?
+### 鍛戒护濡備綍琚彂鍑?
 
-
-在 libata 中，一个命令由 `struct ata_queued_cmd <ata_queued_cmd>`（即 qc）表示。
-qc 在端口初始化期间被预分配，并被重复使用于命令执行。当前每个端口只分配一个 qc，但
-尚未合并的 NCQ 分支为每个标签分配一个，并将每个 qc 与 NCQ 标签 1 对 1 映射。
-
-libata 命令可以来自两个源头——libata 自身和 SCSI 中间层。libata 内部命令用于初始化和
-错误处理。所有常规的块请求以及用于 SCSI 模拟的命令都作为 SCSI 命令，通过 SCSI host
-模板的 queuecommand 回调传递。
-
-### 命令如何被发出
-
-
-内部命令
-    一旦为要执行的命令初始化了已分配 qc 的任务文件。qc 目前有两种机制来通知完成。
-    一种是通过 `qc->complete_fn()` 回调，另一种是完成 `qc->waiting`。`qc->complete_fn()`
-    回调是由常规 SCSI 转换命令使用的异步路径，而 `qc->waiting` 是由内部命令使用的同步
-    （发出者在进程上下文中休眠）路径。
-
-    初始化完成后，获取 host_set 锁，并发布 qc。
-
-SCSI 命令
-    所有 libata 驱动都使用 `ata_scsi_queuecmd` 作为 `hostt->queuecommand` 回调。
-    scmd 可以被模拟或转换。处理被模拟的 scmd 不涉及任何 qc。结果会立即计算出来，scmd
-    也随之完成。
-
-    `qc->complete_fn()` 回调用于完成通知。ATA 命令使用 `ata_scsi_qc_complete`，而
-    ATAPI 命令使用 `atapi_qc_complete`。两个函数最终都会调用 `qc->scsidone`，在 qc
-    完成时通知上层。转换完成后，qc 通过 `ata_qc_issue` 发布。
-
-    注意，SCSI 中间层在持有 host_set 锁的情况下调用 hostt->queuecommand，因此上述所有
-    动作都在持有 host_set 锁时发生。
-
-### 命令如何处理
+鍐呴儴鍛戒护
+    涓€鏃︿负瑕佹墽琛岀殑鍛戒护鍒濆鍖栦簡宸插垎閰?qc 鐨勪换鍔℃枃浠躲€俼c 鐩墠鏈変袱绉嶆満鍒舵潵閫氱煡瀹屾垚銆?    涓€绉嶆槸閫氳繃 `qc->complete_fn()` 鍥炶皟锛屽彟涓€绉嶆槸瀹屾垚 `qc->waiting`銆俙qc->complete_fn()`
+    鍥炶皟鏄敱甯歌 SCSI 杞崲鍛戒护浣跨敤鐨勫紓姝ヨ矾寰勶紝鑰?`qc->waiting` 鏄敱鍐呴儴鍛戒护浣跨敤鐨勫悓姝?    锛堝彂鍑鸿€呭湪杩涚▼涓婁笅鏂囦腑浼戠湢锛夎矾寰勩€?
+    鍒濆鍖栧畬鎴愬悗锛岃幏鍙?host_set 閿侊紝骞跺彂甯?qc銆?
+SCSI 鍛戒护
+    鎵€鏈?libata 椹卞姩閮戒娇鐢?`ata_scsi_queuecmd` 浣滀负 `hostt->queuecommand` 鍥炶皟銆?    scmd 鍙互琚ā鎷熸垨杞崲銆傚鐞嗚妯℃嫙鐨?scmd 涓嶆秹鍙婁换浣?qc銆傜粨鏋滀細绔嬪嵆璁＄畻鍑烘潵锛宻cmd
+    涔熼殢涔嬪畬鎴愩€?
+    `qc->complete_fn()` 鍥炶皟鐢ㄤ簬瀹屾垚閫氱煡銆侫TA 鍛戒护浣跨敤 `ata_scsi_qc_complete`锛岃€?    ATAPI 鍛戒护浣跨敤 `atapi_qc_complete`銆備袱涓嚱鏁版渶缁堥兘浼氳皟鐢?`qc->scsidone`锛屽湪 qc
+    瀹屾垚鏃堕€氱煡涓婂眰銆傝浆鎹㈠畬鎴愬悗锛宷c 閫氳繃 `ata_qc_issue` 鍙戝竷銆?
+    娉ㄦ剰锛孲CSI 涓棿灞傚湪鎸佹湁 host_set 閿佺殑鎯呭喌涓嬭皟鐢?hostt->queuecommand锛屽洜姝や笂杩版墍鏈?    鍔ㄤ綔閮藉湪鎸佹湁 host_set 閿佹椂鍙戠敓銆?
+### 鍛戒护濡備綍澶勭悊
 
 
-根据所使用的协议和控制器不同，命令的处理方式也不同。为了便于讨论，假设一个使用
-任务文件接口和所有标准回调的控制器。
-
-当前使用了 6 种 ATA 命令协议。根据它们的处理方式，可以分为以下四类。
-
-ATA NO DATA 或 DMA
-    ATA_PROT_NODATA 和 ATA_PROT_DMA 属于这一类。这类命令一经发出就不需要任何软件
-    干预。设备会在完成时引发中断。
-
+鏍规嵁鎵€浣跨敤鐨勫崗璁拰鎺у埗鍣ㄤ笉鍚岋紝鍛戒护鐨勫鐞嗘柟寮忎篃涓嶅悓銆備负浜嗕究浜庤璁猴紝鍋囪涓€涓娇鐢?浠诲姟鏂囦欢鎺ュ彛鍜屾墍鏈夋爣鍑嗗洖璋冪殑鎺у埗鍣ㄣ€?
+褰撳墠浣跨敤浜?6 绉?ATA 鍛戒护鍗忚銆傛牴鎹畠浠殑澶勭悊鏂瑰紡锛屽彲浠ュ垎涓轰互涓嬪洓绫汇€?
+ATA NO DATA 鎴?DMA
+    ATA_PROT_NODATA 鍜?ATA_PROT_DMA 灞炰簬杩欎竴绫汇€傝繖绫诲懡浠や竴缁忓彂鍑哄氨涓嶉渶瑕佷换浣曡蒋浠?    骞查銆傝澶囦細鍦ㄥ畬鎴愭椂寮曞彂涓柇銆?
 ATA PIO
-    ATA_PROT_PIO 属于这一类。libata 目前使用轮询实现 PIO。设置 ATA_NIEN 位以关闭
-    中断，ata_wq 上的 pio_task 执行轮询和 IO。
-
-ATAPI NODATA 或 DMA
-    ATA_PROT_ATAPI_NODATA 和 ATA_PROT_ATAPI_DMA 属于这一类。发出 PACKET 命令后，
-    packet_task 用于轮询 BSY 位。一旦设备关闭 BSY，packet_task 就传输 CDB，并将处理
-    移交给中断处理程序。
-
+    ATA_PROT_PIO 灞炰簬杩欎竴绫汇€俵ibata 鐩墠浣跨敤杞瀹炵幇 PIO銆傝缃?ATA_NIEN 浣嶄互鍏抽棴
+    涓柇锛宎ta_wq 涓婄殑 pio_task 鎵ц杞鍜?IO銆?
+ATAPI NODATA 鎴?DMA
+    ATA_PROT_ATAPI_NODATA 鍜?ATA_PROT_ATAPI_DMA 灞炰簬杩欎竴绫汇€傚彂鍑?PACKET 鍛戒护鍚庯紝
+    packet_task 鐢ㄤ簬杞 BSY 浣嶃€備竴鏃﹁澶囧叧闂?BSY锛宲acket_task 灏变紶杈?CDB锛屽苟灏嗗鐞?    绉讳氦缁欎腑鏂鐞嗙▼搴忋€?
 ATAPI PIO
-    ATA_PROT_ATAPI 属于这一类。设置 ATA_NIEN 位，并且与 ATAPI NODATA 或 DMA 一样，
-    packet_task 提交 cdb。然而，在提交 cdb 之后，进一步的处理（数据传输）被移交给
-    pio_task。
+    ATA_PROT_ATAPI 灞炰簬杩欎竴绫汇€傝缃?ATA_NIEN 浣嶏紝骞朵笖涓?ATAPI NODATA 鎴?DMA 涓€鏍凤紝
+    packet_task 鎻愪氦 cdb銆傜劧鑰岋紝鍦ㄦ彁浜?cdb 涔嬪悗锛岃繘涓€姝ョ殑澶勭悊锛堟暟鎹紶杈擄級琚Щ浜ょ粰
+    pio_task銆?
+### 鍛戒护濡備綍瀹屾垚
 
-### 命令如何完成
 
-
-一旦发出，所有 qc 要么以 `ata_qc_complete` 完成，要么超时。对于由中断处理的命令，
-`ata_host_intr` 调用 `ata_qc_complete`；对于 PIO 任务，pio_task 调用 `ata_qc_complete`。
-在错误情况下，packet_task 也可能完成命令。
-
-`ata_qc_complete` 执行以下操作。
-
-1. 解除 DMA 内存映射。
-
-2. 从 qc->flags 中清除 ATA_QCFLAG_ACTIVE。
-
-3. 调用 :c`qc->complete_fn` 回调。如果回调的返回值不为零。完成被短路，
-   `ata_qc_complete` 返回。
-
-4. 调用 `__ata_qc_complete`，它会
-
-   1. 将 `qc->flags` 清零。
-
-   2. 毒化 `ap->active_tag` 和 `qc->tag`。
-
-   3. 清除并完成 `qc->waiting`（按此顺序）。
-
-   4. 通过清除 `ap->qactive` 中的相应位来释放 qc。
-
-所以，它基本上是通知上层并释放 qc。一个例外是第 3 步中的短路路径，它由
-`atapi_qc_complete` 使用。
-
-对于所有非 ATAPI 命令，无论是否失败，几乎都走相同的代码路径，并进行非常少的错误处理。
-如果成功，则 qc 以成功状态完成；否则以失败状态完成。
-
-然而，失败的 ATAPI 命令需要更多处理，因为需要 REQUEST SENSE 来获取感知数据。如果
-一个 ATAPI 命令失败，`ata_qc_complete` 会以错误状态被调用，而它又会通过 `qc->complete_fn()`
-回调调用 `atapi_qc_complete`。
-
-这使得 `atapi_qc_complete` 将 `scmd->result` 设置为 SAM_STAT_CHECK_CONDITION，完成
-scmd 并返回 1。由于感知数据为空，但 `scmd->result` 为 CHECK CONDITION，SCSI 中间层将
-对该 scmd 调用 EH，而返回 1 使得 `ata_qc_complete` 在不释放 qc 的情况下返回。这将我们
-带到了带有部分完成 qc 的 `ata_scsi_error`。
-
+涓€鏃﹀彂鍑猴紝鎵€鏈?qc 瑕佷箞浠?`ata_qc_complete` 瀹屾垚锛岃涔堣秴鏃躲€傚浜庣敱涓柇澶勭悊鐨勫懡浠わ紝
+`ata_host_intr` 璋冪敤 `ata_qc_complete`锛涘浜?PIO 浠诲姟锛宲io_task 璋冪敤 `ata_qc_complete`銆?鍦ㄩ敊璇儏鍐典笅锛宲acket_task 涔熷彲鑳藉畬鎴愬懡浠ゃ€?
+`ata_qc_complete` 鎵ц浠ヤ笅鎿嶄綔銆?
+1. 瑙ｉ櫎 DMA 鍐呭瓨鏄犲皠銆?
+2. 浠?qc->flags 涓竻闄?ATA_QCFLAG_ACTIVE銆?
+3. 璋冪敤 :c`qc->complete_fn` 鍥炶皟銆傚鏋滃洖璋冪殑杩斿洖鍊间笉涓洪浂銆傚畬鎴愯鐭矾锛?   `ata_qc_complete` 杩斿洖銆?
+4. 璋冪敤 `__ata_qc_complete`锛屽畠浼?
+   1. 灏?`qc->flags` 娓呴浂銆?
+   2. 姣掑寲 `ap->active_tag` 鍜?`qc->tag`銆?
+   3. 娓呴櫎骞跺畬鎴?`qc->waiting`锛堟寜姝ら『搴忥級銆?
+   4. 閫氳繃娓呴櫎 `ap->qactive` 涓殑鐩稿簲浣嶆潵閲婃斁 qc銆?
+鎵€浠ワ紝瀹冨熀鏈笂鏄€氱煡涓婂眰骞堕噴鏀?qc銆備竴涓緥澶栨槸绗?3 姝ヤ腑鐨勭煭璺矾寰勶紝瀹冪敱
+`atapi_qc_complete` 浣跨敤銆?
+瀵逛簬鎵€鏈夐潪 ATAPI 鍛戒护锛屾棤璁烘槸鍚﹀け璐ワ紝鍑犱箮閮借蛋鐩稿悓鐨勪唬鐮佽矾寰勶紝骞惰繘琛岄潪甯稿皯鐨勯敊璇鐞嗐€?濡傛灉鎴愬姛锛屽垯 qc 浠ユ垚鍔熺姸鎬佸畬鎴愶紱鍚﹀垯浠ュけ璐ョ姸鎬佸畬鎴愩€?
+鐒惰€岋紝澶辫触鐨?ATAPI 鍛戒护闇€瑕佹洿澶氬鐞嗭紝鍥犱负闇€瑕?REQUEST SENSE 鏉ヨ幏鍙栨劅鐭ユ暟鎹€傚鏋?涓€涓?ATAPI 鍛戒护澶辫触锛宍ata_qc_complete` 浼氫互閿欒鐘舵€佽璋冪敤锛岃€屽畠鍙堜細閫氳繃 `qc->complete_fn()`
+鍥炶皟璋冪敤 `atapi_qc_complete`銆?
+杩欎娇寰?`atapi_qc_complete` 灏?`scmd->result` 璁剧疆涓?SAM_STAT_CHECK_CONDITION锛屽畬鎴?scmd 骞惰繑鍥?1銆傜敱浜庢劅鐭ユ暟鎹负绌猴紝浣?`scmd->result` 涓?CHECK CONDITION锛孲CSI 涓棿灞傚皢
+瀵硅 scmd 璋冪敤 EH锛岃€岃繑鍥?1 浣垮緱 `ata_qc_complete` 鍦ㄤ笉閲婃斁 qc 鐨勬儏鍐典笅杩斿洖銆傝繖灏嗘垜浠?甯﹀埌浜嗗甫鏈夐儴鍒嗗畬鎴?qc 鐨?`ata_scsi_error`銆?
 ### :c:func:`ata_scsi_error`
 
 
-`ata_scsi_error` 是 libata 当前的 `transportt->eh_strategy_handler()`。如上所述，它会在
-两种情况下被进入——超时和 ATAPI 错误完成。这个函数会检查是否有 qc 处于活跃状态且尚未
-失败。这样的 qc 会被标记为 AC_ERR_TIMEOUT，以便 EH 稍后知道如何处理它。然后它调用
-底层 libata 驱动的 `error_handler` 回调。
+`ata_scsi_error` 鏄?libata 褰撳墠鐨?`transportt->eh_strategy_handler()`銆傚涓婃墍杩帮紝瀹冧細鍦?涓ょ鎯呭喌涓嬭杩涘叆鈥斺€旇秴鏃跺拰 ATAPI 閿欒瀹屾垚銆傝繖涓嚱鏁颁細妫€鏌ユ槸鍚︽湁 qc 澶勪簬娲昏穬鐘舵€佷笖灏氭湭
+澶辫触銆傝繖鏍风殑 qc 浼氳鏍囪涓?AC_ERR_TIMEOUT锛屼互渚?EH 绋嶅悗鐭ラ亾濡備綍澶勭悊瀹冦€傜劧鍚庡畠璋冪敤
+搴曞眰 libata 椹卞姩鐨?`error_handler` 鍥炶皟銆?
+褰?`error_handler` 鍥炶皟琚皟鐢ㄦ椂锛屽畠浼氬仠姝?BMDMA 骞跺畬鎴?qc銆傛敞鎰忥紝鐢变簬褰撳墠澶勪簬 EH 涓紝
+鎴戜滑涓嶈兘璋冪敤 scsi_done銆傚 SCSI EH 鏂囨。鎵€杩帮紝涓€涓鎭㈠鐨?scmd 搴旇瑕佷箞鐢?`scsi_queue_insert` 閲嶈瘯锛岃涔堢敤 `scsi_finish_command` 瀹屾垚銆傝繖閲岋紝鎴戜滑鐢?`scsi_finish_command` 瑕嗙洊 `qc->scsidone` 骞惰皟鐢?`ata_qc_complete`銆?
+濡傛灉 EH 鏄敱浜庝竴涓け璐ョ殑 ATAPI qc 鑰岃璋冪敤鐨勶紝杩欓噷鐨?qc 宸插畬鎴愪絾鏈噴鏀俱€傝繖绉嶅崐瀹屾垚
+鐨勭洰鐨勶紝鏄皢 qc 浣滀负鍗犱綅绗︼紝浣?EH 浠ｇ爜鑳藉鍒拌揪姝ゅ銆傝繖鏈夌偣 hack锛屼絾纭疄鏈夋晥銆?
+涓€鏃︽帶鍒跺埌杈炬澶勶紝qc 浼氶€氳繃鏄惧紡璋冪敤 `__ata_qc_complete` 琚噴鏀俱€傜劧鍚庯紝涓?REQUEST SENSE
+鍙戝嚭鍐呴儴 qc銆備竴鏃﹁幏鍙栧埌鎰熺煡鏁版嵁锛宻cmd 灏遍€氳繃鐩存帴鍦?scmd 涓婅皟鐢?`scsi_finish_command`
+瀹屾垚銆傛敞鎰忥紝鐢变簬鎴戜滑宸茬粡瀹屾垚骞堕噴鏀句簡涓?scmd 鍏宠仈鐨?qc锛屾垜浠笉闇€瑕佷篃涓嶈兘鍐嶆璋冪敤
+`ata_qc_complete`銆?
+### 褰撳墠 EH 瀛樺湪鐨勯棶棰?
 
-当 `error_handler` 回调被调用时，它会停止 BMDMA 并完成 qc。注意，由于当前处于 EH 中，
-我们不能调用 scsi_done。如 SCSI EH 文档所述，一个被恢复的 scmd 应该要么用
-`scsi_queue_insert` 重试，要么用 `scsi_finish_command` 完成。这里，我们用
-`scsi_finish_command` 覆盖 `qc->scsidone` 并调用 `ata_qc_complete`。
-
-如果 EH 是由于一个失败的 ATAPI qc 而被调用的，这里的 qc 已完成但未释放。这种半完成
-的目的，是将 qc 作为占位符，使 EH 代码能够到达此处。这有点 hack，但确实有效。
-
-一旦控制到达此处，qc 会通过显式调用 `__ata_qc_complete` 被释放。然后，为 REQUEST SENSE
-发出内部 qc。一旦获取到感知数据，scmd 就通过直接在 scmd 上调用 `scsi_finish_command`
-完成。注意，由于我们已经完成并释放了与 scmd 关联的 qc，我们不需要也不能再次调用
-`ata_qc_complete`。
-
-### 当前 EH 存在的问题
-
-
-- 错误表示过于粗糙。当前任何和所有错误状况都由 ATA STATUS 和 ERROR 寄存器表示。不是
-  ATA 设备错误的错误通过设置 ATA_ERR 位被当作 ATA 设备错误处理。需要一个能够更好地
-  表示 ATA 和其他错误/异常的更好的错误描述符。
-
-- 处理超时时，没有采取任何动作让设备忘记超时的命令，并为新命令做好准备。
-
-- 通过 `ata_scsi_error` 进行的 EH 处理没有与常规命令处理正确隔离。进入 EH 时，设备
-  并不处于静默状态。超时的命令可能随时成功或失败。pio_task 和 atapi_task 可能仍在
-  运行。
-
-- 错误恢复过于薄弱。导致 HSM 不匹配错误和其他错误的设备/控制器往往需要通过重置来
-  返回到已知状态。此外，为了支持 NCQ 和热插拔等特性，也需要高级错误处理。
-
-- ATA 错误直接在中断处理程序中处理，PIO 错误在 pio_task 中处理。这对于高级错误处理
-  来说是有问题的，原因如下。
-
-  首先，高级错误处理通常需要上下文和内部 qc 执行。
-
-  其次，即使是一个简单的失败（比如 CRC 错误）也需要信息收集，并可能触发复杂的错误
-  处理（比如重置和重新配置）。拥有多条代码路径来收集信息、进入 EH 和触发动作会让
-  生活变得痛苦。
-
-  第三，分散的 EH 代码使得实现底层驱动变得困难。底层驱动会覆盖 libata 回调。如果 EH
-  分散在多个地方，每个受影响的回调都应执行其错误处理的部分。这容易出错且痛苦。
-
-## libata 库
-
+- 閿欒琛ㄧず杩囦簬绮楃硻銆傚綋鍓嶄换浣曞拰鎵€鏈夐敊璇姸鍐甸兘鐢?ATA STATUS 鍜?ERROR 瀵勫瓨鍣ㄨ〃绀恒€備笉鏄?  ATA 璁惧閿欒鐨勯敊璇€氳繃璁剧疆 ATA_ERR 浣嶈褰撲綔 ATA 璁惧閿欒澶勭悊銆傞渶瑕佷竴涓兘澶熸洿濂藉湴
+  琛ㄧず ATA 鍜屽叾浠栭敊璇?寮傚父鐨勬洿濂界殑閿欒鎻忚堪绗︺€?
+- 澶勭悊瓒呮椂鏃讹紝娌℃湁閲囧彇浠讳綍鍔ㄤ綔璁╄澶囧繕璁拌秴鏃剁殑鍛戒护锛屽苟涓烘柊鍛戒护鍋氬ソ鍑嗗銆?
+- 閫氳繃 `ata_scsi_error` 杩涜鐨?EH 澶勭悊娌℃湁涓庡父瑙勫懡浠ゅ鐞嗘纭殧绂汇€傝繘鍏?EH 鏃讹紝璁惧
+  骞朵笉澶勪簬闈欓粯鐘舵€併€傝秴鏃剁殑鍛戒护鍙兘闅忔椂鎴愬姛鎴栧け璐ャ€俻io_task 鍜?atapi_task 鍙兘浠嶅湪
+  杩愯銆?
+- 閿欒鎭㈠杩囦簬钖勫急銆傚鑷?HSM 涓嶅尮閰嶉敊璇拰鍏朵粬閿欒鐨勮澶?鎺у埗鍣ㄥ線寰€闇€瑕侀€氳繃閲嶇疆鏉?  杩斿洖鍒板凡鐭ョ姸鎬併€傛澶栵紝涓轰簡鏀寔 NCQ 鍜岀儹鎻掓嫈绛夌壒鎬э紝涔熼渶瑕侀珮绾ч敊璇鐞嗐€?
+- ATA 閿欒鐩存帴鍦ㄤ腑鏂鐞嗙▼搴忎腑澶勭悊锛孭IO 閿欒鍦?pio_task 涓鐞嗐€傝繖瀵逛簬楂樼骇閿欒澶勭悊
+  鏉ヨ鏄湁闂鐨勶紝鍘熷洜濡備笅銆?
+  棣栧厛锛岄珮绾ч敊璇鐞嗛€氬父闇€瑕佷笂涓嬫枃鍜屽唴閮?qc 鎵ц銆?
+  鍏舵锛屽嵆浣挎槸涓€涓畝鍗曠殑澶辫触锛堟瘮濡?CRC 閿欒锛変篃闇€瑕佷俊鎭敹闆嗭紝骞跺彲鑳借Е鍙戝鏉傜殑閿欒
+  澶勭悊锛堟瘮濡傞噸缃拰閲嶆柊閰嶇疆锛夈€傛嫢鏈夊鏉′唬鐮佽矾寰勬潵鏀堕泦淇℃伅銆佽繘鍏?EH 鍜岃Е鍙戝姩浣滀細璁?  鐢熸椿鍙樺緱鐥涜嫤銆?
+  绗笁锛屽垎鏁ｇ殑 EH 浠ｇ爜浣垮緱瀹炵幇搴曞眰椹卞姩鍙樺緱鍥伴毦銆傚簳灞傞┍鍔ㄤ細瑕嗙洊 libata 鍥炶皟銆傚鏋?EH
+  鍒嗘暎鍦ㄥ涓湴鏂癸紝姣忎釜鍙楀奖鍝嶇殑鍥炶皟閮藉簲鎵ц鍏堕敊璇鐞嗙殑閮ㄥ垎銆傝繖瀹规槗鍑洪敊涓旂棝鑻︺€?
+## libata 搴?
 
    :export:
 
-## libata 核心内部实现
+## libata 鏍稿績鍐呴儴瀹炵幇
 
 
    :internal:
 
 
-## libata SCSI 转换/模拟
+## libata SCSI 杞崲/妯℃嫙
 
 
    :export:
 
    :internal:
 
-## ATA 错误与异常
+## ATA 閿欒涓庡紓甯?
+
+鏈珷璇曞浘璇嗗埆 ATA/ATAPI 璁惧瀛樺湪鍝簺閿欒/寮傚父鐘跺喌锛屽苟浠ュ疄鐜版棤鍏崇殑鏂瑰紡鎻忚堪搴斿浣曞鐞?瀹冧滑銆?
+鏈鈥渆rror锛堥敊璇級鈥濈敤浜庢弿杩拌澶囨姤鍛婁簡鏄惧紡閿欒鐘跺喌鎴栧懡浠ゅ凡瓒呮椂鐨勬儏鍐点€?
+鏈鈥渆xception锛堝紓甯革級鈥濊涔堢敤浜庢弿杩伴潪閿欒鐨勫紓甯哥姸鍐碉紙渚嬪鐢垫簮鎴栫儹鎻掓嫈浜嬩欢锛夛紝瑕佷箞
+鐢ㄤ簬鎻忚堪閿欒鍜岄潪閿欒寮傚父鐘跺喌銆傚湪闇€瑕佹槑纭尯鍒嗛敊璇拰寮傚父鐨勫湴鏂癸紝浣跨敤鏈鈥渘on-error
+exception锛堥潪閿欒寮傚父锛夆€濄€?
+### 寮傚父绫诲埆
 
 
-本章试图识别 ATA/ATAPI 设备存在哪些错误/异常状况，并以实现无关的方式描述应如何处理
-它们。
-
-术语“error（错误）”用于描述设备报告了显式错误状况或命令已超时的情况。
-
-术语“exception（异常）”要么用于描述非错误的异常状况（例如电源或热插拔事件），要么
-用于描述错误和非错误异常状况。在需要明确区分错误和异常的地方，使用术语“non-error
-exception（非错误异常）”。
-
-### 异常类别
+寮傚父鐨勬弿杩颁富瑕佺浉瀵逛簬浼犵粺鐨勪换鍔℃枃浠?+ 鎬荤嚎涓绘帶 IDE 鎺ュ彛銆傚鏋滀竴涓帶鍒跺櫒鎻愪緵浜嗗叾浠?鏇村ソ鐨勯敊璇姤鍛婃満鍒讹紝灏嗚繖浜涙槧灏勫埌涓嬮潰鎻忚堪鐨勭被鍒簲璇ヤ笉闅俱€?
+鍦ㄤ互涓嬪悇鑺備腑锛屾彁鍒颁簡涓や釜鎭㈠鍔ㄤ綔鈥斺€旈噸缃拰閲嶆柊閰嶇疆浼犺緭銆傚畠浠湪
+`EH recovery actions <#exrec>`__ 涓湁杩涗竴姝ユ弿杩般€?
+#### HSM 杩濅緥
 
 
-异常的描述主要相对于传统的任务文件 + 总线主控 IDE 接口。如果一个控制器提供了其他
-更好的错误报告机制，将这些映射到下面描述的类别应该不难。
+褰撳湪鍙戝嚭鎴栨墽琛屼换浣?ATA/ATAPI 鍛戒护鏈熼棿锛孲TATUS 鍊间笉绗﹀悎 HSM 瑕佹眰鏃讹紝鎸囩ず姝ら敊璇€?
+- 鍦ㄨ瘯鍥惧彂鍑轰竴涓懡浠ゆ椂锛孉TA_STATUS 涓嶅寘鍚?!BSY && DRDY && !DRQ銆?
+- PIO 鏁版嵁浼犺緭鏈熼棿鐨?!BSY && !DRQ銆?
+- 鍛戒护瀹屾垚鏃剁殑 DRQ銆?
+- 鍦?CDB 浼犺緭寮€濮嬩箣鍚庛€佷絾 CDB 鏈€鍚庝竴涓瓧鑺備紶杈撲箣鍓嶏紝!BSY && ERR銆侫TA/ATAPI 鏍囧噯鍦?  PACKET 鍛戒护鐨勯敊璇緭鍑烘弿杩颁腑澹版槑鈥滆澶囦笉搴斿湪鍛戒护鍖呮渶鍚庝竴涓瓧鑺傝鍐欏叆涔嬪墠浠ラ敊璇粓姝?  PACKET 鍛戒护鈥濓紝骞朵笖鐘舵€佸浘涓笉鍖呭惈杩欐牱鐨勮浆鎹€?
+鍦ㄨ繖浜涙儏鍐典笅锛孒SM 琚繚渚嬶紝骞朵笖鏃犳硶浠?STATUS 鎴?ERROR 瀵勫瓨鍣ㄨ幏鍙栧叧浜庤閿欒鐨勫お澶氫俊鎭€?鎹㈣█涔嬶紝杩欎釜閿欒鍙互鏄换浣曚笢瑗库€斺€旈┍鍔?bug銆佹晠闅滆澶囥€佹帶鍒跺櫒鍜?鎴栫嚎缂嗐€?
+鐢变簬 HSM 琚繚渚嬶紝闇€瑕侀噸缃潵鎭㈠宸茬煡鐘舵€併€傚皢浼犺緭閲嶆柊閰嶇疆涓烘洿浣庣殑閫熷害鍙兘涔熸湁甯姪锛?鍥犱负浼犺緭閿欒鏈夋椂浼氬鑷磋繖绫婚敊璇€?
+#### ATA/ATAPI 璁惧閿欒锛堥潪 NCQ / 闈?CHECK CONDITION锛?
 
-在以下各节中，提到了两个恢复动作——重置和重新配置传输。它们在
-`EH recovery actions <#exrec>`__ 中有进一步描述。
-
-#### HSM 违例
-
-
-当在发出或执行任何 ATA/ATAPI 命令期间，STATUS 值不符合 HSM 要求时，指示此错误。
-
-- 在试图发出一个命令时，ATA_STATUS 不包含 !BSY && DRDY && !DRQ。
-
-- PIO 数据传输期间的 !BSY && !DRQ。
-
-- 命令完成时的 DRQ。
-
-- 在 CDB 传输开始之后、但 CDB 最后一个字节传输之前，!BSY && ERR。ATA/ATAPI 标准在
-  PACKET 命令的错误输出描述中声明“设备不应在命令包最后一个字节被写入之前以错误终止
-  PACKET 命令”，并且状态图中不包含这样的转换。
-
-在这些情况下，HSM 被违例，并且无法从 STATUS 或 ERROR 寄存器获取关于该错误的太多信息。
-换言之，这个错误可以是任何东西——驱动 bug、故障设备、控制器和/或线缆。
-
-由于 HSM 被违例，需要重置来恢复已知状态。将传输重新配置为更低的速度可能也有帮助，
-因为传输错误有时会导致这类错误。
-
-#### ATA/ATAPI 设备错误（非 NCQ / 非 CHECK CONDITION）
-
-
-这些是由 ATA/ATAPI 设备检测并报告的错误，表明设备问题。对于这类错误，STATUS 和
-ERROR 寄存器值是有效的，并描述错误状况。注意，某些 ATA 总线错误由 ATA/ATAPI 设备检测
-到，并使用与设备错误相同的机制报告。这些情况在本节后面描述。
-
-对于 ATA 命令，这类错误在命令执行期间和完成时由 !BSY && ERR 指示。
-
-对于 ATAPI 命令，
-
-- 发出 PACKET 之后立即出现 !BSY && ERR && ABRT，表示 PACKET 命令不受支持，并属于
-  这一类。
-
-- 在 CDB 最后一个字节传输之后出现 !BSY && ERR(==CHK) && !ABRT，表示 CHECK CONDITION，
-  不属于这一类。
-
-- 在 CDB 最后一个字节传输之后出现 !BSY && ERR(==CHK) && ABRT，\**probably\** 表示
-  CHECK CONDITION，不属于这一类。
-
-在上述检测到的错误中，以下不是 ATA/ATAPI 设备错误，而是 ATA 总线错误，应按
-`ATA bus error <#excatATAbusErr>`__ 处理。
-
-数据传输期间的 CRC 错误
-    这由 ERROR 寄存器中的 ICRC 位指示，意味着数据传输期间发生了损坏。直到 ATA/ATAPI-7，
-    标准规定该位仅适用于 UDMA 传输，但 ATA/ATAPI-8 草案修订版 1f 说该位可能适用于
-    多字 DMA 和 PIO。
-
-数据传输期间或完成时的 ABRT 错误
-    直到 ATA/ATAPI-7，标准规定 ABRT 可以在 ICRC 错误以及设备无法完成命令的情况下被
-    设置。结合 MWDMA 和 PIO 传输错误直到 ATA/ATAPI-7 都不允许使用 ICRC 位这一事实，
-    这似乎暗示 ABRT 位单独就可以表示传输错误。
-
-    然而，ATA/ATAPI-8 草案修订版 1f 移除了 ICRC 错误可以打开 ABRT 的部分。所以，这
-    属于灰色地带。这里需要一些启发式方法。
-
-ATA/ATAPI 设备错误可进一步分类如下。
-
-介质错误
-    这由 ERROR 寄存器中的 UNC 位指示。ATA 设备仅在若干次重试都无法恢复数据后才报告
-    UNC 错误，因此除了通知上层外，没有其他太多可做的。
-
-    READ 和 WRITE 命令会报告第一个失败扇区的 CHS 或 LBA，但 ATA/ATAPI 标准规定错误
-    完成时传输的数据量是不确定的，因此我们不能假定失败扇区之前的扇区已被传输，从而
-    不能像 SCSI 那样成功完成那些扇区。
-
-介质已更改 / 请求介质更改错误
+杩欎簺鏄敱 ATA/ATAPI 璁惧妫€娴嬪苟鎶ュ憡鐨勯敊璇紝琛ㄦ槑璁惧闂銆傚浜庤繖绫婚敊璇紝STATUS 鍜?ERROR 瀵勫瓨鍣ㄥ€兼槸鏈夋晥鐨勶紝骞舵弿杩伴敊璇姸鍐点€傛敞鎰忥紝鏌愪簺 ATA 鎬荤嚎閿欒鐢?ATA/ATAPI 璁惧妫€娴?鍒帮紝骞朵娇鐢ㄤ笌璁惧閿欒鐩稿悓鐨勬満鍒舵姤鍛娿€傝繖浜涙儏鍐靛湪鏈妭鍚庨潰鎻忚堪銆?
+瀵逛簬 ATA 鍛戒护锛岃繖绫婚敊璇湪鍛戒护鎵ц鏈熼棿鍜屽畬鎴愭椂鐢?!BSY && ERR 鎸囩ず銆?
+瀵逛簬 ATAPI 鍛戒护锛?
+- 鍙戝嚭 PACKET 涔嬪悗绔嬪嵆鍑虹幇 !BSY && ERR && ABRT锛岃〃绀?PACKET 鍛戒护涓嶅彈鏀寔锛屽苟灞炰簬
+  杩欎竴绫汇€?
+- 鍦?CDB 鏈€鍚庝竴涓瓧鑺備紶杈撲箣鍚庡嚭鐜?!BSY && ERR(==CHK) && !ABRT锛岃〃绀?CHECK CONDITION锛?  涓嶅睘浜庤繖涓€绫汇€?
+- 鍦?CDB 鏈€鍚庝竴涓瓧鑺備紶杈撲箣鍚庡嚭鐜?!BSY && ERR(==CHK) && ABRT锛孿**probably\** 琛ㄧず
+  CHECK CONDITION锛屼笉灞炰簬杩欎竴绫汇€?
+鍦ㄤ笂杩版娴嬪埌鐨勯敊璇腑锛屼互涓嬩笉鏄?ATA/ATAPI 璁惧閿欒锛岃€屾槸 ATA 鎬荤嚎閿欒锛屽簲鎸?`ATA bus error <#excatATAbusErr>`__ 澶勭悊銆?
+鏁版嵁浼犺緭鏈熼棿鐨?CRC 閿欒
+    杩欑敱 ERROR 瀵勫瓨鍣ㄤ腑鐨?ICRC 浣嶆寚绀猴紝鎰忓懗鐫€鏁版嵁浼犺緭鏈熼棿鍙戠敓浜嗘崯鍧忋€傜洿鍒?ATA/ATAPI-7锛?    鏍囧噯瑙勫畾璇ヤ綅浠呴€傜敤浜?UDMA 浼犺緭锛屼絾 ATA/ATAPI-8 鑽夋淇鐗?1f 璇磋浣嶅彲鑳介€傜敤浜?    澶氬瓧 DMA 鍜?PIO銆?
+鏁版嵁浼犺緭鏈熼棿鎴栧畬鎴愭椂鐨?ABRT 閿欒
+    鐩村埌 ATA/ATAPI-7锛屾爣鍑嗚瀹?ABRT 鍙互鍦?ICRC 閿欒浠ュ強璁惧鏃犳硶瀹屾垚鍛戒护鐨勬儏鍐典笅琚?    璁剧疆銆傜粨鍚?MWDMA 鍜?PIO 浼犺緭閿欒鐩村埌 ATA/ATAPI-7 閮戒笉鍏佽浣跨敤 ICRC 浣嶈繖涓€浜嬪疄锛?    杩欎技涔庢殫绀?ABRT 浣嶅崟鐙氨鍙互琛ㄧず浼犺緭閿欒銆?
+    鐒惰€岋紝ATA/ATAPI-8 鑽夋淇鐗?1f 绉婚櫎浜?ICRC 閿欒鍙互鎵撳紑 ABRT 鐨勯儴鍒嗐€傛墍浠ワ紝杩?    灞炰簬鐏拌壊鍦板甫銆傝繖閲岄渶瑕佷竴浜涘惎鍙戝紡鏂规硶銆?
+ATA/ATAPI 璁惧閿欒鍙繘涓€姝ュ垎绫诲涓嬨€?
+浠嬭川閿欒
+    杩欑敱 ERROR 瀵勫瓨鍣ㄤ腑鐨?UNC 浣嶆寚绀恒€侫TA 璁惧浠呭湪鑻ュ共娆￠噸璇曢兘鏃犳硶鎭㈠鏁版嵁鍚庢墠鎶ュ憡
+    UNC 閿欒锛屽洜姝ら櫎浜嗛€氱煡涓婂眰澶栵紝娌℃湁鍏朵粬澶鍙仛鐨勩€?
+    READ 鍜?WRITE 鍛戒护浼氭姤鍛婄涓€涓け璐ユ墖鍖虹殑 CHS 鎴?LBA锛屼絾 ATA/ATAPI 鏍囧噯瑙勫畾閿欒
+    瀹屾垚鏃朵紶杈撶殑鏁版嵁閲忔槸涓嶇‘瀹氱殑锛屽洜姝ゆ垜浠笉鑳藉亣瀹氬け璐ユ墖鍖轰箣鍓嶇殑鎵囧尯宸茶浼犺緭锛屼粠鑰?    涓嶈兘鍍?SCSI 閭ｆ牱鎴愬姛瀹屾垚閭ｄ簺鎵囧尯銆?
+浠嬭川宸叉洿鏀?/ 璇锋眰浠嬭川鏇存敼閿欒
     <<TODO: fill here>>
 
-地址错误
-    这由 ERROR 寄存器中的 IDNF 位指示。上报给上层。
-
-其他错误
-    这可能是由 ABRT ERROR 位指示的无效命令或参数，或其他一些错误状况。注意，ABRT 位
-    可以指示很多事情，包括 ICRC 和地址错误。需要启发式方法。
-
-根据命令不同，并非所有 STATUS/ERROR 位都适用。这些不适用的位在输出描述中用 “na”
-标记，但直到 ATA/ATAPI-7 都没有找到 “na” 的定义。然而，ATA/ATAPI-8 草案修订版 1f
-如下描述 “N/A”。
-
+鍦板潃閿欒
+    杩欑敱 ERROR 瀵勫瓨鍣ㄤ腑鐨?IDNF 浣嶆寚绀恒€備笂鎶ョ粰涓婂眰銆?
+鍏朵粬閿欒
+    杩欏彲鑳芥槸鐢?ABRT ERROR 浣嶆寚绀虹殑鏃犳晥鍛戒护鎴栧弬鏁帮紝鎴栧叾浠栦竴浜涢敊璇姸鍐点€傛敞鎰忥紝ABRT 浣?    鍙互鎸囩ず寰堝浜嬫儏锛屽寘鎷?ICRC 鍜屽湴鍧€閿欒銆傞渶瑕佸惎鍙戝紡鏂规硶銆?
+鏍规嵁鍛戒护涓嶅悓锛屽苟闈炴墍鏈?STATUS/ERROR 浣嶉兘閫傜敤銆傝繖浜涗笉閫傜敤鐨勪綅鍦ㄨ緭鍑烘弿杩颁腑鐢?鈥渘a鈥?鏍囪锛屼絾鐩村埌 ATA/ATAPI-7 閮芥病鏈夋壘鍒?鈥渘a鈥?鐨勫畾涔夈€傜劧鑰岋紝ATA/ATAPI-8 鑽夋淇鐗?1f
+濡備笅鎻忚堪 鈥淣/A鈥濄€?
     3.2.3.3a N/A
-        一个关键字，表示该字段在本标准中没有定义的值，且不应被主机或设备检查。
-        N/A 字段应被清零。
-
-所以，合理假设设备会将 “na” 位清零，因此不需要显式屏蔽。
-
-#### ATAPI 设备 CHECK CONDITION
+        涓€涓叧閿瓧锛岃〃绀鸿瀛楁鍦ㄦ湰鏍囧噯涓病鏈夊畾涔夌殑鍊硷紝涓斾笉搴旇涓绘満鎴栬澶囨鏌ャ€?        N/A 瀛楁搴旇娓呴浂銆?
+鎵€浠ワ紝鍚堢悊鍋囪璁惧浼氬皢 鈥渘a鈥?浣嶆竻闆讹紝鍥犳涓嶉渶瑕佹樉寮忓睆钄姐€?
+#### ATAPI 璁惧 CHECK CONDITION
 
 
-ATAPI 设备 CHECK CONDITION 错误由 PACKET 命令的 CDB 最后一个字节传输之后，STATUS 寄存器
-中设置的 CHK 位（ERR 位）指示。对于这类错误，应获取感知数据以收集关于错误的信息。
-应使用 REQUEST SENSE packet 命令来获取感知数据。
+ATAPI 璁惧 CHECK CONDITION 閿欒鐢?PACKET 鍛戒护鐨?CDB 鏈€鍚庝竴涓瓧鑺備紶杈撲箣鍚庯紝STATUS 瀵勫瓨鍣?涓缃殑 CHK 浣嶏紙ERR 浣嶏級鎸囩ず銆傚浜庤繖绫婚敊璇紝搴旇幏鍙栨劅鐭ユ暟鎹互鏀堕泦鍏充簬閿欒鐨勪俊鎭€?搴斾娇鐢?REQUEST SENSE packet 鍛戒护鏉ヨ幏鍙栨劅鐭ユ暟鎹€?
+涓€鏃﹁幏鍙栧埌鎰熺煡鏁版嵁锛岃繖绫婚敊璇氨鍙互绫讳技浜庡叾浠?SCSI 閿欒鏉ュ鐞嗐€傛敞鎰忥紝鎰熺煡鏁版嵁鍙兘鎸囩ず
+ATA 鎬荤嚎閿欒锛堜緥濡?Sense Key 04h HARDWARE ERROR && ASC/ASCQ 47h/00h SCSI PARITY ERROR锛夈€?鍦ㄨ繖绉嶆儏鍐典笅锛岃閿欒搴旇瑙嗕负 ATA 鎬荤嚎閿欒锛屽苟鎸?`ATA bus error <#excatATAbusErr>`__
+澶勭悊銆?
+#### ATA 璁惧閿欒锛圢CQ锛?
 
-一旦获取到感知数据，这类错误就可以类似于其他 SCSI 错误来处理。注意，感知数据可能指示
-ATA 总线错误（例如 Sense Key 04h HARDWARE ERROR && ASC/ASCQ 47h/00h SCSI PARITY ERROR）。
-在这种情况下，该错误应被视为 ATA 总线错误，并按 `ATA bus error <#excatATAbusErr>`__
-处理。
-
-#### ATA 设备错误（NCQ）
-
-
-NCQ 命令错误在 NCQ 命令阶段（一个或多个 NCQ 命令未完成）由清除的 BSY 和设置的 ERR 位
-指示。尽管 STATUS 和 ERROR 寄存器将包含描述错误的有效值，但需要 READ LOG EXT 来清除
-错误状况、确定哪个命令失败并获取更多信息。
-
-READ LOG EXT 日志页 10h 报告哪个标签失败以及描述该错误的任务文件寄存器值。有了这些信息，
-失败的命令可以像 `ATA/ATAPI device error (non-NCQ / non-CHECK CONDITION) <#excatDevErr>`__
-中的普通 ATA 命令错误一样处理，并且所有其他在途命令必须被重试。注意，这个重试不应
-被计数——如果不是因为失败的命令，以这种方式重试的命令很可能已经正常完成了。
-
-注意，ATA 总线错误也可以报告为 ATA 设备 NCQ 错误。这应按 `ATA bus error
-<#excatATAbusErr>`__ 处理。
-
-如果 READ LOG EXT 日志页 10h 失败或报告 NQ，我们就彻底完蛋了。这种情况应按
-`HSM violation <#excatHSMviolation>`__ 处理。
-
-#### ATA 总线错误
+NCQ 鍛戒护閿欒鍦?NCQ 鍛戒护闃舵锛堜竴涓垨澶氫釜 NCQ 鍛戒护鏈畬鎴愶級鐢辨竻闄ょ殑 BSY 鍜岃缃殑 ERR 浣?鎸囩ず銆傚敖绠?STATUS 鍜?ERROR 瀵勫瓨鍣ㄥ皢鍖呭惈鎻忚堪閿欒鐨勬湁鏁堝€硷紝浣嗛渶瑕?READ LOG EXT 鏉ユ竻闄?閿欒鐘跺喌銆佺‘瀹氬摢涓懡浠ゅけ璐ュ苟鑾峰彇鏇村淇℃伅銆?
+READ LOG EXT 鏃ュ織椤?10h 鎶ュ憡鍝釜鏍囩澶辫触浠ュ強鎻忚堪璇ラ敊璇殑浠诲姟鏂囦欢瀵勫瓨鍣ㄥ€笺€傛湁浜嗚繖浜涗俊鎭紝
+澶辫触鐨勫懡浠ゅ彲浠ュ儚 `ATA/ATAPI device error (non-NCQ / non-CHECK CONDITION) <#excatDevErr>`__
+涓殑鏅€?ATA 鍛戒护閿欒涓€鏍峰鐞嗭紝骞朵笖鎵€鏈夊叾浠栧湪閫斿懡浠ゅ繀椤昏閲嶈瘯銆傛敞鎰忥紝杩欎釜閲嶈瘯涓嶅簲
+琚鏁扳€斺€斿鏋滀笉鏄洜涓哄け璐ョ殑鍛戒护锛屼互杩欑鏂瑰紡閲嶈瘯鐨勫懡浠ゅ緢鍙兘宸茬粡姝ｅ父瀹屾垚浜嗐€?
+娉ㄦ剰锛孉TA 鎬荤嚎閿欒涔熷彲浠ユ姤鍛婁负 ATA 璁惧 NCQ 閿欒銆傝繖搴旀寜 `ATA bus error
+<#excatATAbusErr>`__ 澶勭悊銆?
+濡傛灉 READ LOG EXT 鏃ュ織椤?10h 澶辫触鎴栨姤鍛?NQ锛屾垜浠氨褰诲簳瀹岃泲浜嗐€傝繖绉嶆儏鍐靛簲鎸?`HSM violation <#excatHSMviolation>`__ 澶勭悊銆?
+#### ATA 鎬荤嚎閿欒
 
 
-ATA 总线错误意味着在 ATA 总线（SATA 或 PATA）上传输期间发生了数据损坏。这类错误可以
-由以下指示：
+ATA 鎬荤嚎閿欒鎰忓懗鐫€鍦?ATA 鎬荤嚎锛圫ATA 鎴?PATA锛変笂浼犺緭鏈熼棿鍙戠敓浜嗘暟鎹崯鍧忋€傝繖绫婚敊璇彲浠?鐢变互涓嬫寚绀猴細
 
-- `ATA/ATAPI device error (non-NCQ / non-CHECK CONDITION) <#excatDevErr>`__ 中描述的
-  ICRC 或 ABRT 错误。
-
-- 带有指示传输错误的错误信息的控制器特定错误完成。
-
-- 在某些控制器上，命令超时。在这种情况下，可能存在一种机制来确定超时是由于传输错误
-  引起的。
-
-- 未知/随机错误、超时以及各种各样的怪异现象。
-
-如上所述，传输错误可能引起从设备 ICRC 错误到随机设备锁死等各种各样的症状，并且在许多
-情况下，无法判断错误状况是否由于传输错误引起；因此，在处理错误和超时时需要采用某种
-启发式方法。例如，对于已知受支持的命令反复遇到 ABRT 错误，很可能表明 ATA 总线错误。
-
-一旦确定可能已经发生了 ATA 总线错误，降低 ATA 总线传输速度是可能缓解问题的一个动作。
-参见 `Reconfigure transport <#exrecReconf>`__ 获取更多信息。
-
-#### PCI 总线错误
+- `ATA/ATAPI device error (non-NCQ / non-CHECK CONDITION) <#excatDevErr>`__ 涓弿杩扮殑
+  ICRC 鎴?ABRT 閿欒銆?
+- 甯︽湁鎸囩ず浼犺緭閿欒鐨勯敊璇俊鎭殑鎺у埗鍣ㄧ壒瀹氶敊璇畬鎴愩€?
+- 鍦ㄦ煇浜涙帶鍒跺櫒涓婏紝鍛戒护瓒呮椂銆傚湪杩欑鎯呭喌涓嬶紝鍙兘瀛樺湪涓€绉嶆満鍒舵潵纭畾瓒呮椂鏄敱浜庝紶杈撻敊璇?  寮曡捣鐨勩€?
+- 鏈煡/闅忔満閿欒銆佽秴鏃朵互鍙婂悇绉嶅悇鏍风殑鎬紓鐜拌薄銆?
+濡備笂鎵€杩帮紝浼犺緭閿欒鍙兘寮曡捣浠庤澶?ICRC 閿欒鍒伴殢鏈鸿澶囬攣姝荤瓑鍚勭鍚勬牱鐨勭棁鐘讹紝骞朵笖鍦ㄨ澶?鎯呭喌涓嬶紝鏃犳硶鍒ゆ柇閿欒鐘跺喌鏄惁鐢变簬浼犺緭閿欒寮曡捣锛涘洜姝わ紝鍦ㄥ鐞嗛敊璇拰瓒呮椂鏃堕渶瑕侀噰鐢ㄦ煇绉?鍚彂寮忔柟娉曘€備緥濡傦紝瀵逛簬宸茬煡鍙楁敮鎸佺殑鍛戒护鍙嶅閬囧埌 ABRT 閿欒锛屽緢鍙兘琛ㄦ槑 ATA 鎬荤嚎閿欒銆?
+涓€鏃︾‘瀹氬彲鑳藉凡缁忓彂鐢熶簡 ATA 鎬荤嚎閿欒锛岄檷浣?ATA 鎬荤嚎浼犺緭閫熷害鏄彲鑳界紦瑙ｉ棶棰樼殑涓€涓姩浣溿€?鍙傝 `Reconfigure transport <#exrecReconf>`__ 鑾峰彇鏇村淇℃伅銆?
+#### PCI 鎬荤嚎閿欒
 
 
-在 PCI（或其他系统总线）上传输期间的数据损坏或其他故障。对于标准 BMDMA，这由 BMDMA
-Status 寄存器中的 Error 位指示。这类错误必须被记录，因为它表明系统出现了非常严重的
-问题。建议重置主机控制器。
-
-#### 迟到完成
-
-
-当发生超时，且超时处理程序发现超时的命令已经成功完成或带有错误完成时，就会出现这种
-情况。这通常是由丢失的中断引起的。这类错误必须被记录。建议重置主机控制器。
-
-#### 未知错误（超时）
+鍦?PCI锛堟垨鍏朵粬绯荤粺鎬荤嚎锛変笂浼犺緭鏈熼棿鐨勬暟鎹崯鍧忔垨鍏朵粬鏁呴殰銆傚浜庢爣鍑?BMDMA锛岃繖鐢?BMDMA
+Status 瀵勫瓨鍣ㄤ腑鐨?Error 浣嶆寚绀恒€傝繖绫婚敊璇繀椤昏璁板綍锛屽洜涓哄畠琛ㄦ槑绯荤粺鍑虹幇浜嗛潪甯镐弗閲嶇殑
+闂銆傚缓璁噸缃富鏈烘帶鍒跺櫒銆?
+#### 杩熷埌瀹屾垚
 
 
-这是指发生了超时，而命令仍在处理中，或者主机和设备处于未知状态。发生这种情况时，HSM
-可能处于任何有效或无效状态。为了使设备回到已知状态并让它忘记超时的命令，重置是必要的。
-超时的命令可以被重试。
+褰撳彂鐢熻秴鏃讹紝涓旇秴鏃跺鐞嗙▼搴忓彂鐜拌秴鏃剁殑鍛戒护宸茬粡鎴愬姛瀹屾垚鎴栧甫鏈夐敊璇畬鎴愭椂锛屽氨浼氬嚭鐜拌繖绉?鎯呭喌銆傝繖閫氬父鏄敱涓㈠け鐨勪腑鏂紩璧风殑銆傝繖绫婚敊璇繀椤昏璁板綍銆傚缓璁噸缃富鏈烘帶鍒跺櫒銆?
+#### 鏈煡閿欒锛堣秴鏃讹級
 
-超时也可能由传输错误引起。更多细节参见 `ATA bus error <#excatATAbusErr>`__。
 
-#### 热插拔与电源管理异常
+杩欐槸鎸囧彂鐢熶簡瓒呮椂锛岃€屽懡浠や粛鍦ㄥ鐞嗕腑锛屾垨鑰呬富鏈哄拰璁惧澶勪簬鏈煡鐘舵€併€傚彂鐢熻繖绉嶆儏鍐垫椂锛孒SM
+鍙兘澶勪簬浠讳綍鏈夋晥鎴栨棤鏁堢姸鎬併€備负浜嗕娇璁惧鍥炲埌宸茬煡鐘舵€佸苟璁╁畠蹇樿瓒呮椂鐨勫懡浠わ紝閲嶇疆鏄繀瑕佺殑銆?瓒呮椂鐨勫懡浠ゅ彲浠ヨ閲嶈瘯銆?
+瓒呮椂涔熷彲鑳界敱浼犺緭閿欒寮曡捣銆傛洿澶氱粏鑺傚弬瑙?`ATA bus error <#excatATAbusErr>`__銆?
+#### 鐑彃鎷斾笌鐢垫簮绠＄悊寮傚父
 
 
 <<TODO: fill here>>
 
-### EH 恢复动作
+### EH 鎭㈠鍔ㄤ綔
 
 
-本节讨论几个重要的恢复动作。
-
-#### 清除错误状况
-
-
-许多控制器要求它的错误寄存器被错误处理程序清除。不同的控制器可能有不同的要求。
-
-对于 SATA，强烈建议在错误处理期间至少清除 SError 寄存器。
-
-#### 重置
+鏈妭璁ㄨ鍑犱釜閲嶈鐨勬仮澶嶅姩浣溿€?
+#### 娓呴櫎閿欒鐘跺喌
 
 
-在 EH 期间，在以下情况下重置是必要的。
-
-- HSM 处于未知或无效状态
-
-- HBA 处于未知或无效状态
-
-- EH 需要让 HBA/设备忘记在途命令
-
-- HBA/设备行为怪异
-
-无论错误状况如何，在 EH 期间进行重置可能都是个好主意，以提高 EH 的健壮性。是重置 HBA
-和设备两者，还是仅重置其中之一，取决于具体情况，但推荐以下方案。
-
-- 当已知 HBA 处于就绪状态，但 ATA/ATAPI 设备处于未知状态时，仅重置设备。
-
-- 如果 HBA 处于未知状态，则重置 HBA 和设备两者。
-
-HBA 重置是实现特定的。对于符合任务文件/BMDMA PCI IDE 的控制器，停止活跃的 DMA 事务
-可能就足够了——前提是 BMDMA 状态是唯一的 HBA 上下文。但即使是大多符合任务文件/BMDMA
-PCI IDE 的控制器，也可能有实现特定的要求和重置自身的机制。这必须由特定驱动来解决。
-
-另一方面，ATA/ATAPI 标准详细描述了重置 ATA/ATAPI 设备的方法。
-
-PATA 硬件重置
-    这是由断言的 PATA RESET- 信号发出的、硬件发起的设备重置。虽然没有标准的软件方式
-    来发起硬件重置，但某些硬件提供了允许驱动直接操纵 RESET- 信号的寄存器。
-
-软件重置
-    这是通过打开 CONTROL SRST 位至少 5us 来实现的。PATA 和 SATA 都支持它，但在 SATA
-    的情况下，这可能需要控制器特定的支持，因为应在 BSY 位仍被设置的同时传输用于清除
-    SRST 的第二个 Register FIS。注意，在 PATA 上，这会重置通道上的主设备和从设备两者。
-
-EXECUTE DEVICE DIAGNOSTIC 命令
-    尽管 ATA/ATAPI 标准没有精确描述，EDD 暗示了某种程度的重置，可能类似于软件重置。
-    主机侧的 EDD 协议可以用常规命令处理，并且大多数 SATA 控制器应该能像处理其他命令
-    一样处理 EDD。与软件重置一样，EDD 影响 PATA 总线上的两个设备。
-
-    虽然 EDD 确实重置设备，但这不适合错误处理，因为当 BSY 被设置时无法发出 EDD，并且
-    当设备处于未知/怪异状态时它将如何表现也不明确。
-
-ATAPI DEVICE RESET 命令
-    这与软件重置非常相似，只是重置可以被限制在所选设备上，而不影响共享线缆的其他
-    设备。
-
-SATA phy 重置
-    这是重置 SATA 设备的首选方式。实际上，它等同于 PATA 硬件重置。注意，这可以通过标准
-    的 SCR Control 寄存器完成。因此，它通常比软件重置更容易实现。
-
-重置设备时还有一件事要考虑，那就是重置会清除某些配置参数，需要在重置后将它们设置为
-先前或新调整的值。
-
-受影响的参数有。
-
-- 用 INITIALIZE DEVICE PARAMETERS 设置的 CHS（很少使用）
-
-- 用 SET FEATURES 设置的参数，包括传输模式设置
-
-- 用 SET MULTIPLE MODE 设置的块计数
-
-- 其他参数（SET MAX、MEDIA LOCK...）
-
-ATA/ATAPI 标准规定某些参数应在硬件或软件重置期间保持，但并未严格规定所有参数。为了
-健壮性，总是需要在重置后重新配置所需参数。注意，这也适用于从深度睡眠（断电）恢复时。
-
-此外，ATA/ATAPI 标准要求在更新任何配置参数或进行一次硬件重置之后，发出 IDENTIFY
-DEVICE / IDENTIFY PACKET DEVICE，并将结果用于进一步操作。OS 驱动需要实现重新验证机制
-来支持这一点。
-
-#### 重新配置传输
+璁稿鎺у埗鍣ㄨ姹傚畠鐨勯敊璇瘎瀛樺櫒琚敊璇鐞嗙▼搴忔竻闄ゃ€備笉鍚岀殑鎺у埗鍣ㄥ彲鑳芥湁涓嶅悓鐨勮姹傘€?
+瀵逛簬 SATA锛屽己鐑堝缓璁湪閿欒澶勭悊鏈熼棿鑷冲皯娓呴櫎 SError 瀵勫瓨鍣ㄣ€?
+#### 閲嶇疆
 
 
-对于 PATA 和 SATA，廉价的连接器、线缆或控制器会省略很多环节，因此看到高传输错误率是
-相当常见的。这可以通过降低传输速度来缓解。
+鍦?EH 鏈熼棿锛屽湪浠ヤ笅鎯呭喌涓嬮噸缃槸蹇呰鐨勩€?
+- HSM 澶勪簬鏈煡鎴栨棤鏁堢姸鎬?
+- HBA 澶勪簬鏈煡鎴栨棤鏁堢姸鎬?
+- EH 闇€瑕佽 HBA/璁惧蹇樿鍦ㄩ€斿懡浠?
+- HBA/璁惧琛屼负鎬紓
 
-以下是 Jeff Garzik 建议的一种可能方案。
+鏃犺閿欒鐘跺喌濡備綍锛屽湪 EH 鏈熼棿杩涜閲嶇疆鍙兘閮芥槸涓ソ涓绘剰锛屼互鎻愰珮 EH 鐨勫仴澹€с€傛槸閲嶇疆 HBA
+鍜岃澶囦袱鑰咃紝杩樻槸浠呴噸缃叾涓箣涓€锛屽彇鍐充簬鍏蜂綋鎯呭喌锛屼絾鎺ㄨ崘浠ヤ笅鏂规銆?
+- 褰撳凡鐭?HBA 澶勪簬灏辩华鐘舵€侊紝浣?ATA/ATAPI 璁惧澶勪簬鏈煡鐘舵€佹椂锛屼粎閲嶇疆璁惧銆?
+- 濡傛灉 HBA 澶勪簬鏈煡鐘舵€侊紝鍒欓噸缃?HBA 鍜岃澶囦袱鑰呫€?
+HBA 閲嶇疆鏄疄鐜扮壒瀹氱殑銆傚浜庣鍚堜换鍔℃枃浠?BMDMA PCI IDE 鐨勬帶鍒跺櫒锛屽仠姝㈡椿璺冪殑 DMA 浜嬪姟
+鍙兘灏辫冻澶熶簡鈥斺€斿墠鎻愭槸 BMDMA 鐘舵€佹槸鍞竴鐨?HBA 涓婁笅鏂囥€備絾鍗充娇鏄ぇ澶氱鍚堜换鍔℃枃浠?BMDMA
+PCI IDE 鐨勬帶鍒跺櫒锛屼篃鍙兘鏈夊疄鐜扮壒瀹氱殑瑕佹眰鍜岄噸缃嚜韬殑鏈哄埗銆傝繖蹇呴』鐢辩壒瀹氶┍鍔ㄦ潵瑙ｅ喅銆?
+鍙︿竴鏂归潰锛孉TA/ATAPI 鏍囧噯璇︾粏鎻忚堪浜嗛噸缃?ATA/ATAPI 璁惧鐨勬柟娉曘€?
+PATA 纭欢閲嶇疆
+    杩欐槸鐢辨柇瑷€鐨?PATA RESET- 淇″彿鍙戝嚭鐨勩€佺‖浠跺彂璧风殑璁惧閲嶇疆銆傝櫧鐒舵病鏈夋爣鍑嗙殑杞欢鏂瑰紡
+    鏉ュ彂璧风‖浠堕噸缃紝浣嗘煇浜涚‖浠舵彁渚涗簡鍏佽椹卞姩鐩存帴鎿嶇旱 RESET- 淇″彿鐨勫瘎瀛樺櫒銆?
+杞欢閲嶇疆
+    杩欐槸閫氳繃鎵撳紑 CONTROL SRST 浣嶈嚦灏?5us 鏉ュ疄鐜扮殑銆侾ATA 鍜?SATA 閮芥敮鎸佸畠锛屼絾鍦?SATA
+    鐨勬儏鍐典笅锛岃繖鍙兘闇€瑕佹帶鍒跺櫒鐗瑰畾鐨勬敮鎸侊紝鍥犱负搴斿湪 BSY 浣嶄粛琚缃殑鍚屾椂浼犺緭鐢ㄤ簬娓呴櫎
+    SRST 鐨勭浜屼釜 Register FIS銆傛敞鎰忥紝鍦?PATA 涓婏紝杩欎細閲嶇疆閫氶亾涓婄殑涓昏澶囧拰浠庤澶囦袱鑰呫€?
+EXECUTE DEVICE DIAGNOSTIC 鍛戒护
+    灏界 ATA/ATAPI 鏍囧噯娌℃湁绮剧‘鎻忚堪锛孍DD 鏆楃ず浜嗘煇绉嶇▼搴︾殑閲嶇疆锛屽彲鑳界被浼间簬杞欢閲嶇疆銆?    涓绘満渚х殑 EDD 鍗忚鍙互鐢ㄥ父瑙勫懡浠ゅ鐞嗭紝骞朵笖澶у鏁?SATA 鎺у埗鍣ㄥ簲璇ヨ兘鍍忓鐞嗗叾浠栧懡浠?    涓€鏍峰鐞?EDD銆備笌杞欢閲嶇疆涓€鏍凤紝EDD 褰卞搷 PATA 鎬荤嚎涓婄殑涓や釜璁惧銆?
+    铏界劧 EDD 纭疄閲嶇疆璁惧锛屼絾杩欎笉閫傚悎閿欒澶勭悊锛屽洜涓哄綋 BSY 琚缃椂鏃犳硶鍙戝嚭 EDD锛屽苟涓?    褰撹澶囧浜庢湭鐭?鎬紓鐘舵€佹椂瀹冨皢濡備綍琛ㄧ幇涔熶笉鏄庣‘銆?
+ATAPI DEVICE RESET 鍛戒护
+    杩欎笌杞欢閲嶇疆闈炲父鐩镐技锛屽彧鏄噸缃彲浠ヨ闄愬埗鍦ㄦ墍閫夎澶囦笂锛岃€屼笉褰卞搷鍏变韩绾跨紗鐨勫叾浠?    璁惧銆?
+SATA phy 閲嶇疆
+    杩欐槸閲嶇疆 SATA 璁惧鐨勯閫夋柟寮忋€傚疄闄呬笂锛屽畠绛夊悓浜?PATA 纭欢閲嶇疆銆傛敞鎰忥紝杩欏彲浠ラ€氳繃鏍囧噯
+    鐨?SCR Control 瀵勫瓨鍣ㄥ畬鎴愩€傚洜姝わ紝瀹冮€氬父姣旇蒋浠堕噸缃洿瀹规槗瀹炵幇銆?
+閲嶇疆璁惧鏃惰繕鏈変竴浠朵簨瑕佽€冭檻锛岄偅灏辨槸閲嶇疆浼氭竻闄ゆ煇浜涢厤缃弬鏁帮紝闇€瑕佸湪閲嶇疆鍚庡皢瀹冧滑璁剧疆涓?鍏堝墠鎴栨柊璋冩暣鐨勫€笺€?
+鍙楀奖鍝嶇殑鍙傛暟鏈夈€?
+- 鐢?INITIALIZE DEVICE PARAMETERS 璁剧疆鐨?CHS锛堝緢灏戜娇鐢級
 
-    如果 15 分钟内发生超过 $N（3？）次传输错误，
+- 鐢?SET FEATURES 璁剧疆鐨勫弬鏁帮紝鍖呮嫭浼犺緭妯″紡璁剧疆
 
-    - 如果是 SATA，降低 SATA PHY 速度。如果无法再降低速度，
+- 鐢?SET MULTIPLE MODE 璁剧疆鐨勫潡璁℃暟
 
-    - 降低 UDMA xfer 速度。如果已在 UDMA0，切换到 PIO4，
+- 鍏朵粬鍙傛暟锛圫ET MAX銆丮EDIA LOCK...锛?
+ATA/ATAPI 鏍囧噯瑙勫畾鏌愪簺鍙傛暟搴斿湪纭欢鎴栬蒋浠堕噸缃湡闂翠繚鎸侊紝浣嗗苟鏈弗鏍艰瀹氭墍鏈夊弬鏁般€備负浜?鍋ュ．鎬э紝鎬绘槸闇€瑕佸湪閲嶇疆鍚庨噸鏂伴厤缃墍闇€鍙傛暟銆傛敞鎰忥紝杩欎篃閫傜敤浜庝粠娣卞害鐫＄湢锛堟柇鐢碉級鎭㈠鏃躲€?
+姝ゅ锛孉TA/ATAPI 鏍囧噯瑕佹眰鍦ㄦ洿鏂颁换浣曢厤缃弬鏁版垨杩涜涓€娆＄‖浠堕噸缃箣鍚庯紝鍙戝嚭 IDENTIFY
+DEVICE / IDENTIFY PACKET DEVICE锛屽苟灏嗙粨鏋滅敤浜庤繘涓€姝ユ搷浣溿€侽S 椹卞姩闇€瑕佸疄鐜伴噸鏂伴獙璇佹満鍒?鏉ユ敮鎸佽繖涓€鐐广€?
+#### 閲嶆柊閰嶇疆浼犺緭
 
-    - 降低 PIO xfer 速度。如果已在 PIO3，发出抱怨，但继续
 
-## ata_piix 内部实现
+瀵逛簬 PATA 鍜?SATA锛屽粔浠风殑杩炴帴鍣ㄣ€佺嚎缂嗘垨鎺у埗鍣ㄤ細鐪佺暐寰堝鐜妭锛屽洜姝ょ湅鍒伴珮浼犺緭閿欒鐜囨槸
+鐩稿綋甯歌鐨勩€傝繖鍙互閫氳繃闄嶄綆浼犺緭閫熷害鏉ョ紦瑙ｃ€?
+浠ヤ笅鏄?Jeff Garzik 寤鸿鐨勪竴绉嶅彲鑳芥柟妗堛€?
+    濡傛灉 15 鍒嗛挓鍐呭彂鐢熻秴杩?$N锛?锛燂級娆′紶杈撻敊璇紝
+
+    - 濡傛灉鏄?SATA锛岄檷浣?SATA PHY 閫熷害銆傚鏋滄棤娉曞啀闄嶄綆閫熷害锛?
+    - 闄嶄綆 UDMA xfer 閫熷害銆傚鏋滃凡鍦?UDMA0锛屽垏鎹㈠埌 PIO4锛?
+    - 闄嶄綆 PIO xfer 閫熷害銆傚鏋滃凡鍦?PIO3锛屽彂鍑烘姳鎬紝浣嗙户缁?
+## ata_piix 鍐呴儴瀹炵幇
 
 
    :internal:
 
-## sata_sil 内部实现
+## sata_sil 鍐呴儴瀹炵幇
 
 
    :internal:
 
-## 致谢
+## 鑷磋阿
 
 
-大量的 ATA 知识得益于与 Andre Hedrick（www.linux-ide.org）的长谈，以及长时间对 ATA 和
-SCSI 规范的研究。
-
-感谢 Alan Cox 指出了 SATA 和 SCSI 之间的相似之处，并总体上为 hack libata 提供了动力。
-
-libata 的设备检测方法 ata_pio_devchk，以及总体上所有早期的探测，都是基于对 Hale Landis
-在其 ATADRVR 驱动（www.ata-atapi.com）中的 probe/reset 代码的广泛研究。
+澶ч噺鐨?ATA 鐭ヨ瘑寰楃泭浜庝笌 Andre Hedrick锛坵ww.linux-ide.org锛夌殑闀胯皥锛屼互鍙婇暱鏃堕棿瀵?ATA 鍜?SCSI 瑙勮寖鐨勭爺绌躲€?
+鎰熻阿 Alan Cox 鎸囧嚭浜?SATA 鍜?SCSI 涔嬮棿鐨勭浉浼间箣澶勶紝骞舵€讳綋涓婁负 hack libata 鎻愪緵浜嗗姩鍔涖€?
+libata 鐨勮澶囨娴嬫柟娉?ata_pio_devchk锛屼互鍙婃€讳綋涓婃墍鏈夋棭鏈熺殑鎺㈡祴锛岄兘鏄熀浜庡 Hale Landis
+鍦ㄥ叾 ATADRVR 椹卞姩锛坵ww.ata-atapi.com锛変腑鐨?probe/reset 浠ｇ爜鐨勫箍娉涚爺绌躲€?

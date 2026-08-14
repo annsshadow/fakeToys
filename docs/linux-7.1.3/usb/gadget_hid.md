@@ -1,17 +1,14 @@
-## Linux USB HID gadget 驱动
+﻿## Linux USB HID gadget 椹卞姩
 
 
-## 简介
+## 绠€浠?
+
+HID gadget 椹卞姩鎻愪緵瀵?USB 浜烘満鎺ュ彛璁惧锛圚ID锛夌殑浠跨湡銆傚熀鏈殑 HID 澶勭悊鍦ㄥ唴鏍镐腑瀹屾垚锛孒ID 鎶ュ憡鍙互閫氳繃瀵?/dev/hidgX 瀛楃璁惧鐨?I/O 杩涜鍙戦€?鎺ユ敹銆?
+鏈夊叧 HID 鐨勬洿澶氱粏鑺傦紝璇峰弬闃?https://www.usb.org/developers/hidpage/ 涓婄殑寮€鍙戣€呴〉闈€?
+## 閰嶇疆
 
 
-HID gadget 驱动提供对 USB 人机接口设备（HID）的仿真。基本的 HID 处理在内核中完成，HID 报告可以通过对 /dev/hidgX 字符设备的 I/O 进行发送/接收。
-
-有关 HID 的更多细节，请参阅 https://www.usb.org/developers/hidpage/ 上的开发者页面。
-
-## 配置
-
-
-g_hid 是一个平台驱动，因此要使用它，你需要在平台代码中添加 struct platform_device，以定义想要使用的 HID 功能描述符——例如类似如下内容：
+g_hid 鏄竴涓钩鍙伴┍鍔紝鍥犳瑕佷娇鐢ㄥ畠锛屼綘闇€瑕佸湪骞冲彴浠ｇ爜涓坊鍔?struct platform_device锛屼互瀹氫箟鎯宠浣跨敤鐨?HID 鍔熻兘鎻忚堪绗︹€斺€斾緥濡傜被浼煎涓嬪唴瀹癸細
 
 ```
   #include <linux/platform_device.h>
@@ -68,31 +65,25 @@ g_hid 是一个平台驱动，因此要使用它，你需要在平台代码中�
   };
 
 ```
-你可以添加任意多个 HID 功能，仅受限于你的 gadget 驱动所支持的中断端点数量。
-
-## 使用 configfs 配置
-
-
-若 HID 是经由 configfs 组合的 gadget 的一部分，则无需再添加伪平台设备和驱动来向内核传递数据——此时可通过向某个 configfs 属性写入相应的字节流，把 hidg_func_descriptor.report_desc 传递给内核。
-
-## 发送与接收 HID 报告
+浣犲彲浠ユ坊鍔犱换鎰忓涓?HID 鍔熻兘锛屼粎鍙楅檺浜庝綘鐨?gadget 椹卞姩鎵€鏀寔鐨勪腑鏂鐐规暟閲忋€?
+## 浣跨敤 configfs 閰嶇疆
 
 
-HID 报告可以使用对 /dev/hidgX 字符设备的 read/write 来发送/接收。示例程序见下文。
+鑻?HID 鏄粡鐢?configfs 缁勫悎鐨?gadget 鐨勪竴閮ㄥ垎锛屽垯鏃犻渶鍐嶆坊鍔犱吉骞冲彴璁惧鍜岄┍鍔ㄦ潵鍚戝唴鏍镐紶閫掓暟鎹€斺€旀鏃跺彲閫氳繃鍚戞煇涓?configfs 灞炴€у啓鍏ョ浉搴旂殑瀛楄妭娴侊紝鎶?hidg_func_descriptor.report_desc 浼犻€掔粰鍐呮牳銆?
+## 鍙戦€佷笌鎺ユ敹 HID 鎶ュ憡
 
-hid_gadget_test 是一个用于测试 HID gadget 驱动的小型交互式程序。使用时将其指向一个 hidg 设备并设置模式，例如：
 
+HID 鎶ュ憡鍙互浣跨敤瀵?/dev/hidgX 瀛楃璁惧鐨?read/write 鏉ュ彂閫?鎺ユ敹銆傜ず渚嬬▼搴忚涓嬫枃銆?
+hid_gadget_test 鏄竴涓敤浜庢祴璇?HID gadget 椹卞姩鐨勫皬鍨嬩氦浜掑紡绋嬪簭銆備娇鐢ㄦ椂灏嗗叾鎸囧悜涓€涓?hidg 璁惧骞惰缃ā寮忥紝渚嬪锛?
 ```
 	# hid_gadget_test /dev/hidg0 keyboard
 
 ```
-现在你处于 hid_gadget_test 的提示符下。你可以输入任意选项与取值的组合。可用选项与取值会在程序启动时列出。在键盘模式下最多可以发送六个取值。
+鐜板湪浣犲浜?hid_gadget_test 鐨勬彁绀虹涓嬨€備綘鍙互杈撳叆浠绘剰閫夐」涓庡彇鍊肩殑缁勫悎銆傚彲鐢ㄩ€夐」涓庡彇鍊间細鍦ㄧ▼搴忓惎鍔ㄦ椂鍒楀嚭銆傚湪閿洏妯″紡涓嬫渶澶氬彲浠ュ彂閫佸叚涓彇鍊笺€?
+渚嬪杈撳叆锛歡 i s t r --left-shift
 
-例如输入：g i s t r --left-shift
-
-按下回车后，相应的报告将由 HID gadget 发送。
-
-另一个有趣的例子是大小写锁定（caps lock）测试。输入 --caps-lock 并按下回车。随后 gadget 会发送一个报告，你应当收到对应的主机应答，例如：
+鎸変笅鍥炶溅鍚庯紝鐩稿簲鐨勬姤鍛婂皢鐢?HID gadget 鍙戦€併€?
+鍙︿竴涓湁瓒ｇ殑渚嬪瓙鏄ぇ灏忓啓閿佸畾锛坈aps lock锛夋祴璇曘€傝緭鍏?--caps-lock 骞舵寜涓嬪洖杞︺€傞殢鍚?gadget 浼氬彂閫佷竴涓姤鍛婏紝浣犲簲褰撴敹鍒板搴旂殑涓绘満搴旂瓟锛屼緥濡傦細
 
 ```
 	--caps-lock
@@ -103,8 +94,7 @@ hid_gadget_test 是一个用于测试 HID gadget 驱动的小型交互式程序�
 	# hid_gadget_test /dev/hidg1 mouse
 
 ```
-你可以测试鼠标模拟。数值为两个有符号数。
-
+浣犲彲浠ユ祴璇曢紶鏍囨ā鎷熴€傛暟鍊间负涓や釜鏈夌鍙锋暟銆?
 
 ```
     /* hid_gadget_test */

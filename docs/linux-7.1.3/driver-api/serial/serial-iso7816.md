@@ -1,85 +1,75 @@
-## ISO7816 串行通信
+﻿## ISO7816 涓茶閫氫俊
 
 
-## 1. 简介
+## 1. 绠€浠?
+
+  ISO/IEC7816 鏄竴绯诲垪瑙勫畾闆嗘垚鐢佃矾鍗★紙ICC锛屼篃绉颁负鏅鸿兘鍗★級鐨勬爣鍑嗐€?
+## 2. 涓庣‖浠剁浉鍏崇殑鑰冭檻
 
 
-  ISO/IEC7816 是一系列规定集成电路卡（ICC，也称为智能卡）的标准。
-
-## 2. 与硬件相关的考虑
-
-
-  某些 CPU/UART（例如 Microchip AT91）包含一个内置模式，能够处理与智能卡的通信。
-
-  对于这些微控制器，Linux 驱动应当被做成能够在两种模式下工作，并且应当在用户层
-  提供适当的 ioctl（见后文），以允许从一种模式切换到另一种模式，反之亦然。
-
-## 3. 内核中已有的数据结构
+  鏌愪簺 CPU/UART锛堜緥濡?Microchip AT91锛夊寘鍚竴涓唴缃ā寮忥紝鑳藉澶勭悊涓庢櫤鑳藉崱鐨勯€氫俊銆?
+  瀵逛簬杩欎簺寰帶鍒跺櫒锛孡inux 椹卞姩搴斿綋琚仛鎴愯兘澶熷湪涓ょ妯″紡涓嬪伐浣滐紝骞朵笖搴斿綋鍦ㄧ敤鎴峰眰
+  鎻愪緵閫傚綋鐨?ioctl锛堣鍚庢枃锛夛紝浠ュ厑璁镐粠涓€绉嶆ā寮忓垏鎹㈠埌鍙︿竴绉嶆ā寮忥紝鍙嶄箣浜︾劧銆?
+## 3. 鍐呮牳涓凡鏈夌殑鏁版嵁缁撴瀯
 
 
-  Linux 内核提供了 serial_iso7816 结构体（见 [^1^]）来处理 ISO7816 通信。该数据
-  结构用于在 ioctl 中设置和配置 ISO7816 参数。
+  Linux 鍐呮牳鎻愪緵浜?serial_iso7816 缁撴瀯浣擄紙瑙?[^1^]锛夋潵澶勭悊 ISO7816 閫氫俊銆傝鏁版嵁
+  缁撴瀯鐢ㄤ簬鍦?ioctl 涓缃拰閰嶇疆 ISO7816 鍙傛暟銆?
+  浠讳綍鑳藉鍚屾椂浣滀负 RS232 涓?ISO7816 宸ヤ綔鐨勮澶囩殑椹卞姩锛岄兘搴斿綋鍦?uart_port 缁撴瀯浣撲腑
+  瀹炵幇 iso7816_config 鍥炶皟銆俿erial_core 璋冪敤 iso7816_config 鏉ュ畬鎴愯澶囩浉鍏崇殑閮ㄥ垎锛?  浠ュ搷搴?TIOCGISO7816 涓?TIOCSISO7816 ioctl锛堣涓嬫枃锛夈€俰so7816_config 鍥炶皟鎺ユ敹涓€涓?  鎸囧悜 struct serial_iso7816 鐨勬寚閽堛€?
+## 4. 鍦ㄧ敤鎴峰眰鐨勪娇鐢?
 
-  任何能够同时作为 RS232 与 ISO7816 工作的设备的驱动，都应当在 uart_port 结构体中
-  实现 iso7816_config 回调。serial_core 调用 iso7816_config 来完成设备相关的部分，
-  以响应 TIOCGISO7816 与 TIOCSISO7816 ioctl（见下文）。iso7816_config 回调接收一个
-  指向 struct serial_iso7816 的指针。
-
-## 4. 在用户层的使用
-
-
-  在用户层，可以使用前面的方式获取/设置 ISO7816 配置
+  鍦ㄧ敤鎴峰眰锛屽彲浠ヤ娇鐢ㄥ墠闈㈢殑鏂瑰紡鑾峰彇/璁剧疆 ISO7816 閰嶇疆
 
 ```
 
 	#include <linux/serial.h>
 
-	/* 包含 ISO7816 ioctl 的定义：TIOCSISO7816 与 TIOCGISO7816 */
+	/* 鍖呭惈 ISO7816 ioctl 鐨勫畾涔夛細TIOCSISO7816 涓?TIOCGISO7816 */
 	#include <sys/ioctl.h>
 
-	/* 打开你的特定设备（例如 /dev/mydevice）： */
+	/* 鎵撳紑浣犵殑鐗瑰畾璁惧锛堜緥濡?/dev/mydevice锛夛細 */
 	int fd = open ("/dev/mydevice", O_RDWR);
 	if (fd < 0) {
-		/* 错误处理。参见 errno。 */
+		/* 閿欒澶勭悊銆傚弬瑙?errno銆?*/
 	}
 
 	struct serial_iso7816 iso7816conf;
 
-	/* 保留字段必须清零 */
+	/* 淇濈暀瀛楁蹇呴』娓呴浂 */
 	memset(&iso7816conf, 0, sizeof(iso7816conf));
 
-	/* 启用 ISO7816 模式： */
+	/* 鍚敤 ISO7816 妯″紡锛?*/
 	iso7816conf.flags |= SER_ISO7816_ENABLED;
 
-	/* 选择协议： */
+	/* 閫夋嫨鍗忚锛?*/
 	/* T=0 */
 	iso7816conf.flags |= SER_ISO7816_T(0);
-	/* 或 T=1 */
+	/* 鎴?T=1 */
 	iso7816conf.flags |= SER_ISO7816_T(1);
 
-	/* 设置保护时间（guard time）： */
+	/* 璁剧疆淇濇姢鏃堕棿锛坓uard time锛夛細 */
 	iso7816conf.tg = 2;
 
-	/* 设置时钟频率 */
+	/* 璁剧疆鏃堕挓棰戠巼 */
 	iso7816conf.clk = 3571200;
 
-	/* 设置传输因子： */
+	/* 璁剧疆浼犺緭鍥犲瓙锛?*/
 	iso7816conf.sc_fi = 372;
 	iso7816conf.sc_di = 1;
 
 	if (ioctl(fd_usart, TIOCSISO7816, &iso7816conf) < 0) {
-		/* 错误处理。参见 errno。 */
+		/* 閿欒澶勭悊銆傚弬瑙?errno銆?*/
 	}
 
-	/* 在此使用 read() 与 write() 系统调用... */
+	/* 鍦ㄦ浣跨敤 read() 涓?write() 绯荤粺璋冪敤... */
 
-	/* 完成后关闭设备： */
+	/* 瀹屾垚鍚庡叧闂澶囷細 */
 	if (close (fd) < 0) {
-		/* 错误处理。参见 errno。 */
+		/* 閿欒澶勭悊銆傚弬瑙?errno銆?*/
 	}
 
 ```
-## 5. 参考资料
-
+## 5. 鍙傝€冭祫鏂?
 
  [^1^]    include/uapi/linux/serial.h

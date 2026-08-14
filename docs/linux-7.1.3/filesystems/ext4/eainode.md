@@ -1,13 +1,13 @@
-### 大扩展属性值
+﻿### 澶ф墿灞曞睘鎬у€?
 
 
-为了使 ext4 能够存储无法放入 inode 或附加到 inode 的
-单个扩展属性块的扩展属性值，EA_INODE 特性允许我们将该值存储于
-一个常规文件 inode 的数据块中。此“EA inode”仅从扩展属性
-名索引链接，且不能出现在目录项中。inode 的 i_atime 字段
-用于存储 xattr 值的校验和；i_ctime/i_version 存储 64 位引用计数，
-从而可在多个拥有者 inode 之间共享大 xattr 值。为与此特性的
-旧版本保持向后兼容，i_mtime/i_generation **可能**存储对
-（在 EA inode 未被多个 inode 引用的情况下）单个拥有者 inode 的
-inode 编号和 i_generation 的反向引用，以验证被访问的 EA inode
-是否为正确的那个。
+涓轰簡浣?ext4 鑳藉瀛樺偍鏃犳硶鏀惧叆 inode 鎴栭檮鍔犲埌 inode 鐨?
+鍗曚釜鎵╁睍灞炴€у潡鐨勬墿灞曞睘鎬у€硷紝EA_INODE 鐗规€у厑璁告垜浠皢璇ュ€煎瓨鍌ㄤ簬
+涓€涓父瑙勬枃浠?inode 鐨勬暟鎹潡涓€傛鈥淓A inode鈥濅粎浠庢墿灞曞睘鎬?
+鍚嶇储寮曢摼鎺ワ紝涓斾笉鑳藉嚭鐜板湪鐩綍椤逛腑銆俰node 鐨?i_atime 瀛楁
+鐢ㄤ簬瀛樺偍 xattr 鍊肩殑鏍￠獙鍜岋紱i_ctime/i_version 瀛樺偍 64 浣嶅紩鐢ㄨ鏁帮紝
+浠庤€屽彲鍦ㄥ涓嫢鏈夎€?inode 涔嬮棿鍏变韩澶?xattr 鍊笺€備负涓庢鐗规€х殑
+鏃х増鏈繚鎸佸悜鍚庡吋瀹癸紝i_mtime/i_generation **鍙兘**瀛樺偍瀵?
+锛堝湪 EA inode 鏈澶氫釜 inode 寮曠敤鐨勬儏鍐典笅锛夊崟涓嫢鏈夎€?inode 鐨?
+inode 缂栧彿鍜?i_generation 鐨勫弽鍚戝紩鐢紝浠ラ獙璇佽璁块棶鐨?EA inode
+鏄惁涓烘纭殑閭ｄ釜銆?

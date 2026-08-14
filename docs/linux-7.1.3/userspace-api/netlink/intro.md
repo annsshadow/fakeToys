@@ -1,31 +1,20 @@
+﻿
+## Netlink 绠€浠?
 
-## Netlink 简介
+Netlink 甯歌鎻忚堪涓?ioctl() 鐨勬浛浠ｅ搧銆傚畠鏃ㄥ湪鐢ㄤ竴绉嶄究浜庢柟渚垮湴娣诲姞鎴栨墿灞?鍙傛暟鐨勬牸寮忥紝鏉ユ浛浠ｆ彁渚涚粰 ioctl() 鐨勫浐瀹氭牸寮?C 缁撴瀯浣撱€?
+涓烘锛孨etlink 浣跨敤涓€涓渶灏忕殑鍥哄畾鏍煎紡鍏冩暟鎹ご锛屽叾鍚庤窡闅忓涓噰鐢?TLV
+锛堢被鍨嬨€侀暱搴︺€佸€硷級鏍煎紡鐨勫睘鎬с€?
+閬楁喚鐨勬槸锛岃鍗忚澶氬勾鏉ヤ互鏈夋満涓旀湭鏂囨。鍖栫殑鏂瑰紡婕斿彉锛屼娇寰楀緢闅捐繛璐湴瑙ｉ噴銆?涓轰簡鏈€鍒囧悎瀹為檯锛屾湰鏂囨。棣栧厛鎻忚堪浠婂ぉ鎵€浣跨敤鐨?netlink锛屽苟鍦ㄥ悗闈㈢殑绔犺妭娣卞叆
+鎺㈣鏇村叿鈥滃巻鍙测€濈敤閫旂殑鐢ㄦ硶銆?
+## 鎵撳紑濂楁帴瀛?
 
-
-Netlink 常被描述为 ioctl() 的替代品。它旨在用一种便于方便地添加或扩展
-参数的格式，来替代提供给 ioctl() 的固定格式 C 结构体。
-
-为此，Netlink 使用一个最小的固定格式元数据头，其后跟随多个采用 TLV
-（类型、长度、值）格式的属性。
-
-遗憾的是，该协议多年来以有机且未文档化的方式演变，使得很难连贯地解释。
-为了最切合实际，本文档首先描述今天所使用的 netlink，并在后面的章节深入
-探讨更具“历史”用途的用法。
-
-## 打开套接字
-
-
-Netlink 通信通过套接字进行，首先需要打开一个套接字：
-
+Netlink 閫氫俊閫氳繃濂楁帴瀛楄繘琛岋紝棣栧厛闇€瑕佹墦寮€涓€涓鎺ュ瓧锛?
 
   fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_GENERIC);
 
-套接字的使用提供了一种自然的方式在双向（发往内核与来自内核）交换信息。
-当应用程序 send() 请求时，操作仍然是同步执行的，但需要单独的 recv()
-系统调用来读取回复。
-
-Netlink “调用”的一个非常简化的流程大致如下：
-
+濂楁帴瀛楃殑浣跨敤鎻愪緵浜嗕竴绉嶈嚜鐒剁殑鏂瑰紡鍦ㄥ弻鍚戯紙鍙戝線鍐呮牳涓庢潵鑷唴鏍革級浜ゆ崲淇℃伅銆?褰撳簲鐢ㄧ▼搴?send() 璇锋眰鏃讹紝鎿嶄綔浠嶇劧鏄悓姝ユ墽琛岀殑锛屼絾闇€瑕佸崟鐙殑 recv()
+绯荤粺璋冪敤鏉ヨ鍙栧洖澶嶃€?
+Netlink 鈥滆皟鐢ㄢ€濈殑涓€涓潪甯哥畝鍖栫殑娴佺▼澶ц嚧濡備笅锛?
 
   fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_GENERIC);
 
@@ -34,9 +23,7 @@ Netlink “调用”的一个非常简化的流程大致如下：
   n = recv(fd, &response, RSP_BUFFER_SIZE);
   /** interpret the response **/
 
-Netlink 还天然支持“dumping”（转储），即向用户空间传递某一类型的所有对象
-（例如转储所有的网络接口）。
-
+Netlink 杩樺ぉ鐒舵敮鎸佲€渄umping鈥濓紙杞偍锛夛紝鍗冲悜鐢ㄦ埛绌洪棿浼犻€掓煇涓€绫诲瀷鐨勬墍鏈夊璞?锛堜緥濡傝浆鍌ㄦ墍鏈夌殑缃戠粶鎺ュ彛锛夈€?
 
   fd = socket(AF_NETLINK, SOCK_RAW, NETLINK_GENERIC);
 
@@ -53,37 +40,26 @@ Netlink 还天然支持“dumping”（转储），即向用户空间传递某�
   }
   dump_finished:
 
-socket() 调用的前两个参数无需太多解释——它打开一个 Netlink 套接字，所有
-头部由用户提供（因此是 NETLINK、RAW）。最后一个参数是 Netlink 内部的协议。
-该字段用于标识套接字将与之通信的子系统。
-
-### 经典 Netlink 与通用 Netlink
+socket() 璋冪敤鐨勫墠涓や釜鍙傛暟鏃犻渶澶瑙ｉ噴鈥斺€斿畠鎵撳紑涓€涓?Netlink 濂楁帴瀛楋紝鎵€鏈?澶撮儴鐢辩敤鎴锋彁渚涳紙鍥犳鏄?NETLINK銆丷AW锛夈€傛渶鍚庝竴涓弬鏁版槸 Netlink 鍐呴儴鐨勫崗璁€?璇ュ瓧娈电敤浜庢爣璇嗗鎺ュ瓧灏嗕笌涔嬮€氫俊鐨勫瓙绯荤粺銆?
+### 缁忓吀 Netlink 涓庨€氱敤 Netlink
 
 
-Netlink 的最初实现依赖于向子系统静态分配 ID，并提供很少的支持基础设施。
-我们将这些协议统称为 **Classic Netlink（经典 Netlink）**。它们的列表定义于
-`include/uapi/linux/netlink.h` 文件之上，其中包括通用网络
-（NETLINK_ROUTE）、iSCSI（NETLINK_ISCSI）和审计（NETLINK_AUDIT）等。
-
-**Generic Netlink（通用 Netlink）**（于 2005 年引入）允许动态注册子系统
-（以及子系统 ID 分配）、自省，并简化了接口内核侧的实现。
-
-下一节描述如何使用 Generic Netlink，因为使用 Generic Netlink 的子系统数量
-比旧协议多出一个数量级。内核也没有计划添加更多 Classic Netlink 协议。关于
-如何与 Linux 内核的核心网络部分（或使用 Classic Netlink 的另外 20 个子系统
-之一）通信、以及它与 Generic Netlink 的区别，本文档后面会提供基本信息。
-
-## 通用 Netlink
+Netlink 鐨勬渶鍒濆疄鐜颁緷璧栦簬鍚戝瓙绯荤粺闈欐€佸垎閰?ID锛屽苟鎻愪緵寰堝皯鐨勬敮鎸佸熀纭€璁炬柦銆?鎴戜滑灏嗚繖浜涘崗璁粺绉颁负 **Classic Netlink锛堢粡鍏?Netlink锛?*銆傚畠浠殑鍒楄〃瀹氫箟浜?`include/uapi/linux/netlink.h` 鏂囦欢涔嬩笂锛屽叾涓寘鎷€氱敤缃戠粶
+锛圢ETLINK_ROUTE锛夈€乮SCSI锛圢ETLINK_ISCSI锛夊拰瀹¤锛圢ETLINK_AUDIT锛夌瓑銆?
+**Generic Netlink锛堥€氱敤 Netlink锛?*锛堜簬 2005 骞村紩鍏ワ級鍏佽鍔ㄦ€佹敞鍐屽瓙绯荤粺
+锛堜互鍙婂瓙绯荤粺 ID 鍒嗛厤锛夈€佽嚜鐪侊紝骞剁畝鍖栦簡鎺ュ彛鍐呮牳渚х殑瀹炵幇銆?
+涓嬩竴鑺傛弿杩板浣曚娇鐢?Generic Netlink锛屽洜涓轰娇鐢?Generic Netlink 鐨勫瓙绯荤粺鏁伴噺
+姣旀棫鍗忚澶氬嚭涓€涓暟閲忕骇銆傚唴鏍镐篃娌℃湁璁″垝娣诲姞鏇村 Classic Netlink 鍗忚銆傚叧浜?濡備綍涓?Linux 鍐呮牳鐨勬牳蹇冪綉缁滈儴鍒嗭紙鎴栦娇鐢?Classic Netlink 鐨勫彟澶?20 涓瓙绯荤粺
+涔嬩竴锛夐€氫俊銆佷互鍙婂畠涓?Generic Netlink 鐨勫尯鍒紝鏈枃妗ｅ悗闈細鎻愪緵鍩烘湰淇℃伅銆?
+## 閫氱敤 Netlink
 
 
-除了 Netlink 固定元数据头之外，每个 Netlink 协议都定义了自己的固定元数据
-头。（类似于网络头部的堆叠——Ethernet > IP > TCP，我们有
-Netlink > Generic N. > Family。）
+闄や簡 Netlink 鍥哄畾鍏冩暟鎹ご涔嬪锛屾瘡涓?Netlink 鍗忚閮藉畾涔変簡鑷繁鐨勫浐瀹氬厓鏁版嵁
+澶淬€傦紙绫讳技浜庣綉缁滃ご閮ㄧ殑鍫嗗彔鈥斺€擡thernet > IP > TCP锛屾垜浠湁
+Netlink > Generic N. > Family銆傦級
 
-一条 Netlink 消息总是以 struct nlmsghdr 开始，其后跟随一个协议特定的头部。
-在 Generic Netlink 的情况下，该协议头部是 struct genlmsghdr。
-
-在 Generic Netlink 的情况下，各字段的实际含义如下：
+涓€鏉?Netlink 娑堟伅鎬绘槸浠?struct nlmsghdr 寮€濮嬶紝鍏跺悗璺熼殢涓€涓崗璁壒瀹氱殑澶撮儴銆?鍦?Generic Netlink 鐨勬儏鍐典笅锛岃鍗忚澶撮儴鏄?struct genlmsghdr銆?
+鍦?Generic Netlink 鐨勬儏鍐典笅锛屽悇瀛楁鐨勫疄闄呭惈涔夊涓嬶細
 
 
   struct nlmsghdr {
@@ -100,58 +76,38 @@ Netlink > Generic N. > Family。）
   };
   /** TLV attributes follow... **/
 
-在 Classic Netlink 中，:c`nlmsghdr.nlmsg_type` 用于标识消息所指的是子系统
-内的哪个操作（例如获取关于某个 netdev 的信息）。Generic Netlink 需要在一个
-协议里多路复用多个子系统，因此它用该字段来标识子系统，而由
-:c`genlmsghdr.cmd` 来标识操作。（关于如何找到感兴趣子系统的 Family ID，
-请参阅 res_fam。）请注意，在 Classic Netlink 和 Generic Netlink 中，该字段
-的前 16 个值（0 - 15）都保留用于控制消息。更多细节请参阅 nl_msg_type。
+鍦?Classic Netlink 涓紝:c`nlmsghdr.nlmsg_type` 鐢ㄤ簬鏍囪瘑娑堟伅鎵€鎸囩殑鏄瓙绯荤粺
+鍐呯殑鍝釜鎿嶄綔锛堜緥濡傝幏鍙栧叧浜庢煇涓?netdev 鐨勪俊鎭級銆侴eneric Netlink 闇€瑕佸湪涓€涓?鍗忚閲屽璺鐢ㄥ涓瓙绯荤粺锛屽洜姝ゅ畠鐢ㄨ瀛楁鏉ユ爣璇嗗瓙绯荤粺锛岃€岀敱
+:c`genlmsghdr.cmd` 鏉ユ爣璇嗘搷浣溿€傦紙鍏充簬濡備綍鎵惧埌鎰熷叴瓒ｅ瓙绯荤粺鐨?Family ID锛?璇峰弬闃?res_fam銆傦級璇锋敞鎰忥紝鍦?Classic Netlink 鍜?Generic Netlink 涓紝璇ュ瓧娈?鐨勫墠 16 涓€硷紙0 - 15锛夐兘淇濈暀鐢ㄤ簬鎺у埗娑堟伅銆傛洿澶氱粏鑺傝鍙傞槄 nl_msg_type銆?
+Netlink 濂楁帴瀛椾笂閫氬父鏈?3 绉嶆秷鎭氦鎹㈢被鍨嬶細
 
-Netlink 套接字上通常有 3 种消息交换类型：
+ - 鎵ц鍗曚釜鍔ㄤ綔锛坄do`锛夛紱
+ - 杞偍淇℃伅锛坄dump`锛夛紱
+ - 鑾峰彇寮傛閫氱煡锛坄multicast`锛夈€?
+Classic Netlink 闈炲父鐏垫椿锛屽ぇ姒備篃鍏佽鍏朵粬绫诲瀷鐨勪氦鎹㈠彂鐢燂紝浣嗗湪瀹炶返涓敤鍒扮殑
+灏辨槸杩欎笁绫汇€?
+寮傛閫氱煡鐢卞唴鏍稿彂閫侊紝鐢辫闃呬簡瀹冧滑鐨勭敤鎴峰鎺ュ瓧鎺ユ敹銆俙do` 鍜?`dump` 璇锋眰鐢?鐢ㄦ埛鍙戣捣銆?c`nlmsghdr.nlmsg_flags` 搴旀寜濡備笅鏂瑰紡璁剧疆锛?
+ - 瀵逛簬 `do`锛歚NLM_F_REQUEST | NLM_F_ACK`
+ - 瀵逛簬 `dump`锛歚NLM_F_REQUEST | NLM_F_ACK | NLM_F_DUMP`
 
- - 执行单个动作（`do`）；
- - 转储信息（`dump`）；
- - 获取异步通知（`multicast`）。
+:c`nlmsghdr.nlmsg_seq` 搴旇缃负涓€涓崟璋冮€掑鐨勫€笺€傝鍊间細鍦ㄥ搷搴斾腑琚洖鏄撅紝
+瀹炶返涓苟涓嶉噸瑕侊紝浣嗕负鍙戦€佺殑姣忔潯娑堟伅璁剧疆涓€涓€掑鐨勫€艰瑙嗕负鑹ソ鐨勪範鎯€傝
+瀛楁鐨勭洰鐨勬槸灏嗗搷搴斾笌璇锋眰鍖归厤銆傚紓姝ラ€氱煡鐨?:c`nlmsghdr.nlmsg_seq` 灏嗕负
+`0`銆?
+:c`nlmsghdr.nlmsg_pid` 鏄?Netlink 涓浉褰撲簬鍦板潃鐨勫瓧娈点€備笌鍐呮牳閫氫俊鏃惰瀛楁
+鍙涓?`0`銆傚叧浜庤瀛楁锛堜笉甯歌锛夌殑鐢ㄩ€旓紝璇峰弬闃?nlmsg_pid銆?
+:c`genlmsghdr.version` 鐨勯鏈熺敤閫旀槸鍏佽瀵瑰瓙绯荤粺鎻愪緵鐨?API 杩涜鐗堟湰绠＄悊銆?杩勪粖涓烘娌℃湁浠讳綍瀛愮郴缁熷ぇ閲忎娇鐢ㄨ瀛楁锛屽洜姝ゅ皢鍏惰涓?`1` 浼间箮鏄ǔ濡ョ殑閫夋嫨銆?
 
-Classic Netlink 非常灵活，大概也允许其他类型的交换发生，但在实践中用到的
-就是这三类。
-
-异步通知由内核发送，由订阅了它们的用户套接字接收。`do` 和 `dump` 请求由
-用户发起。:c`nlmsghdr.nlmsg_flags` 应按如下方式设置：
-
- - 对于 `do`：`NLM_F_REQUEST | NLM_F_ACK`
- - 对于 `dump`：`NLM_F_REQUEST | NLM_F_ACK | NLM_F_DUMP`
-
-:c`nlmsghdr.nlmsg_seq` 应设置为一个单调递增的值。该值会在响应中被回显，
-实践中并不重要，但为发送的每条消息设置一个递增的值被视为良好的习惯。该
-字段的目的是将响应与请求匹配。异步通知的 :c`nlmsghdr.nlmsg_seq` 将为
-`0`。
-
-:c`nlmsghdr.nlmsg_pid` 是 Netlink 中相当于地址的字段。与内核通信时该字段
-可设为 `0`。关于该字段（不常见）的用途，请参阅 nlmsg_pid。
-
-:c`genlmsghdr.version` 的预期用途是允许对子系统提供的 API 进行版本管理。
-迄今为止没有任何子系统大量使用该字段，因此将其设为 `1` 似乎是稳妥的选择。
+### Netlink 娑堟伅绫诲瀷
 
 
-### Netlink 消息类型
-
-
-如前所述，:c`nlmsghdr.nlmsg_type` 携带协议特定的值，但前 16 个标识符是
-保留的（第一个子系统特定的消息类型应等于 `NLMSG_MIN_TYPE`，即 `0x10`）。
-
-只定义了 4 种 Netlink 控制消息：
-
- - `NLMSG_NOOP` - 忽略该消息，实践中未使用；
- - `NLMSG_ERROR` - 携带操作的返回码；
- - `NLMSG_DONE` - 标记一次 dump 的结束；
- - `NLMSG_OVERRUN` - 套接字缓冲区已溢出，至今未使用。
-
-`NLMSG_ERROR` 和 `NLMSG_DONE` 具有实际重要性。它们携带操作的返回码。请
-注意，除非在请求上设置了 `NLM_F_ACK` 标志，否则如果没有错误，Netlink 不会
-以 `NLMSG_ERROR` 回应。为了避免必须为这种怪异行为特殊处理，建议始终设置
-`NLM_F_ACK`。
-
+濡傚墠鎵€杩帮紝:c`nlmsghdr.nlmsg_type` 鎼哄甫鍗忚鐗瑰畾鐨勫€硷紝浣嗗墠 16 涓爣璇嗙鏄?淇濈暀鐨勶紙绗竴涓瓙绯荤粺鐗瑰畾鐨勬秷鎭被鍨嬪簲绛変簬 `NLMSG_MIN_TYPE`锛屽嵆 `0x10`锛夈€?
+鍙畾涔変簡 4 绉?Netlink 鎺у埗娑堟伅锛?
+ - `NLMSG_NOOP` - 蹇界暐璇ユ秷鎭紝瀹炶返涓湭浣跨敤锛? - `NLMSG_ERROR` - 鎼哄甫鎿嶄綔鐨勮繑鍥炵爜锛? - `NLMSG_DONE` - 鏍囪涓€娆?dump 鐨勭粨鏉燂紱
+ - `NLMSG_OVERRUN` - 濂楁帴瀛楃紦鍐插尯宸叉孩鍑猴紝鑷充粖鏈娇鐢ㄣ€?
+`NLMSG_ERROR` 鍜?`NLMSG_DONE` 鍏锋湁瀹為檯閲嶈鎬с€傚畠浠惡甯︽搷浣滅殑杩斿洖鐮併€傝
+娉ㄦ剰锛岄櫎闈炲湪璇锋眰涓婅缃簡 `NLM_F_ACK` 鏍囧織锛屽惁鍒欏鏋滄病鏈夐敊璇紝Netlink 涓嶄細
+浠?`NLMSG_ERROR` 鍥炲簲銆備负浜嗛伩鍏嶅繀椤讳负杩欑鎬紓琛屼负鐗规畩澶勭悊锛屽缓璁缁堣缃?`NLM_F_ACK`銆?
 ```
 
   ----------------------------------------------
@@ -167,20 +123,11 @@ Classic Netlink 非常灵活，大概也允许其他类型的交换发生，但�
   ----------------------------------------------
 
 ```
-这里有两个 struct nlmsghdr 实例，第一个属于响应，第二个属于请求。
-`NLMSG_ERROR` 携带导致错误的请求的信息。这在尝试将请求与响应匹配，或重新
-解析请求以转储到日志中时可能很有用。
-
-请求的有效载荷不会在报告成功的消息（`error == 0`）中回显，如果设置了
-`NETLINK_CAP_ACK` setsockopt() 也不会回显。后者很常见，或许也值得推荐，
-因为不得不从内核读回每个请求的副本是相当浪费的。请求有效载荷的缺失由
-:c`nlmsghdr.nlmsg_flags` 中的 `NLM_F_CAPPED` 指示。
-
-`NLMSG_ERROR` 的第二个可选元素是扩展 ACK 属性。更多细节请参阅 ext_ack。
-扩展 ACK 的存在由 :c`nlmsghdr.nlmsg_flags` 中的 `NLM_F_ACK_TLVS` 指示。
-
-`NLMSG_DONE` 更简单，请求永远不会被回显，但扩展
-```
+杩欓噷鏈変袱涓?struct nlmsghdr 瀹炰緥锛岀涓€涓睘浜庡搷搴旓紝绗簩涓睘浜庤姹傘€?`NLMSG_ERROR` 鎼哄甫瀵艰嚧閿欒鐨勮姹傜殑淇℃伅銆傝繖鍦ㄥ皾璇曞皢璇锋眰涓庡搷搴斿尮閰嶏紝鎴栭噸鏂?瑙ｆ瀽璇锋眰浠ヨ浆鍌ㄥ埌鏃ュ織涓椂鍙兘寰堟湁鐢ㄣ€?
+璇锋眰鐨勬湁鏁堣浇鑽蜂笉浼氬湪鎶ュ憡鎴愬姛鐨勬秷鎭紙`error == 0`锛変腑鍥炴樉锛屽鏋滆缃簡
+`NETLINK_CAP_ACK` setsockopt() 涔熶笉浼氬洖鏄俱€傚悗鑰呭緢甯歌锛屾垨璁镐篃鍊煎緱鎺ㄨ崘锛?鍥犱负涓嶅緱涓嶄粠鍐呮牳璇诲洖姣忎釜璇锋眰鐨勫壇鏈槸鐩稿綋娴垂鐨勩€傝姹傛湁鏁堣浇鑽风殑缂哄け鐢?:c`nlmsghdr.nlmsg_flags` 涓殑 `NLM_F_CAPPED` 鎸囩ず銆?
+`NLMSG_ERROR` 鐨勭浜屼釜鍙€夊厓绱犳槸鎵╁睍 ACK 灞炴€с€傛洿澶氱粏鑺傝鍙傞槄 ext_ack銆?鎵╁睍 ACK 鐨勫瓨鍦ㄧ敱 :c`nlmsghdr.nlmsg_flags` 涓殑 `NLM_F_ACK_TLVS` 鎸囩ず銆?
+`NLMSG_DONE` 鏇寸畝鍗曪紝璇锋眰姘歌繙涓嶄細琚洖鏄撅紝浣嗘墿灞?```
 
   ----------------------------------------------
   | struct nlmsghdr - response header          |
@@ -191,27 +138,19 @@ Classic Netlink 非常灵活，大概也允许其他类型的交换发生，但�
   ----------------------------------------------
 
 ```
-请注意，某些实现可能会发出自定义的 `NLMSG_DONE` 消息来回应 `do` 动作请求。
-在这种情况下，有效载荷是实现特定的，也可能不存在。
+璇锋敞鎰忥紝鏌愪簺瀹炵幇鍙兘浼氬彂鍑鸿嚜瀹氫箟鐨?`NLMSG_DONE` 娑堟伅鏉ュ洖搴?`do` 鍔ㄤ綔璇锋眰銆?鍦ㄨ繖绉嶆儏鍐典笅锛屾湁鏁堣浇鑽锋槸瀹炵幇鐗瑰畾鐨勶紝涔熷彲鑳戒笉瀛樺湪銆?
+
+### 瑙ｆ瀽 Family ID
 
 
-### 解析 Family ID
-
-
-本节说明如何找到子系统的 Family ID。它同时也作为 Generic Netlink 通信的
-一个示例。
-
-Generic Netlink 本身就是一个通过 Generic Netlink API 暴露的子系统。为避免
-循环依赖，Generic Netlink 有一个静态分配的 Family ID（`GENL_ID_CTRL`，等于
-`NLMSG_MIN_TYPE`）。Generic Netlink family 实现了一个用于查询其他 family
-信息的命令（`CTRL_CMD_GETFAMILY`）。
-
-要获取例如名为 `"test1"` 的 Generic Netlink family 的信息，我们需要在之前
-打开的 Generic Netlink 套接字上发送一条消息。该消息应指向 Generic Netlink
-Family（1），是对 `CTRL_CMD_GETFAMILY`（3）的一个 `do`（2）调用。此调用的
-`dump` 版本会让内核以其所知的 **所有** family 的信息来回应。最后但同样重要
-的是，相关 family 的名称包含
-```
+鏈妭璇存槑濡備綍鎵惧埌瀛愮郴缁熺殑 Family ID銆傚畠鍚屾椂涔熶綔涓?Generic Netlink 閫氫俊鐨?涓€涓ず渚嬨€?
+Generic Netlink 鏈韩灏辨槸涓€涓€氳繃 Generic Netlink API 鏆撮湶鐨勫瓙绯荤粺銆備负閬垮厤
+寰幆渚濊禆锛孏eneric Netlink 鏈変竴涓潤鎬佸垎閰嶇殑 Family ID锛坄GENL_ID_CTRL`锛岀瓑浜?`NLMSG_MIN_TYPE`锛夈€侴eneric Netlink family 瀹炵幇浜嗕竴涓敤浜庢煡璇㈠叾浠?family
+淇℃伅鐨勫懡浠わ紙`CTRL_CMD_GETFAMILY`锛夈€?
+瑕佽幏鍙栦緥濡傚悕涓?`"test1"` 鐨?Generic Netlink family 鐨勪俊鎭紝鎴戜滑闇€瑕佸湪涔嬪墠
+鎵撳紑鐨?Generic Netlink 濂楁帴瀛椾笂鍙戦€佷竴鏉℃秷鎭€傝娑堟伅搴旀寚鍚?Generic Netlink
+Family锛?锛夛紝鏄 `CTRL_CMD_GETFAMILY`锛?锛夌殑涓€涓?`do`锛?锛夎皟鐢ㄣ€傛璋冪敤鐨?`dump` 鐗堟湰浼氳鍐呮牳浠ュ叾鎵€鐭ョ殑 **鎵€鏈?* family 鐨勪俊鎭潵鍥炲簲銆傛渶鍚庝絾鍚屾牱閲嶈
+鐨勬槸锛岀浉鍏?family 鐨勫悕绉板寘鍚?```
 
   struct nlmsghdr:
     __u32 nlmsg_len:	32
@@ -234,12 +173,10 @@ Family（1），是对 `CTRL_CMD_GETFAMILY`（3）的一个 `do`（2）调用。
     char data:		\0\0
 
 ```
-Netlink 中的长度字段（:c`nlmsghdr.nlmsg_len` 和 :c`nlattr.nla_len`）总是
-**包含** 头部。Netlink 中的属性头部必须从消息起始位置对齐到 4 字节，因此在
-`CTRL_ATTR_FAMILY_NAME` 之后有额外的 `\0\0`。属性长度 **不包含** 填充。
-
-如果找到了该 family，内核会用两条消息回应，即响应
-```
+Netlink 涓殑闀垮害瀛楁锛?c`nlmsghdr.nlmsg_len` 鍜?:c`nlattr.nla_len`锛夋€绘槸
+**鍖呭惈** 澶撮儴銆侼etlink 涓殑灞炴€уご閮ㄥ繀椤讳粠娑堟伅璧峰浣嶇疆瀵归綈鍒?4 瀛楄妭锛屽洜姝ゅ湪
+`CTRL_ATTR_FAMILY_NAME` 涔嬪悗鏈夐澶栫殑 `\0\0`銆傚睘鎬ч暱搴?**涓嶅寘鍚?* 濉厖銆?
+濡傛灉鎵惧埌浜嗚 family锛屽唴鏍镐細鐢ㄤ袱鏉℃秷鎭洖搴旓紝鍗冲搷搴?```
 
   /* Message #1 - reply */
   struct nlmsghdr:
@@ -298,88 +235,56 @@ Netlink 中的长度字段（:c`nlmsghdr.nlmsg_len` 和 :c`nlattr.nla_len`）总
     __u32 nlmsg_pid:	0
 
 ```
-属性的顺序（struct nlattr）不保证，因此用户必须遍历属性并解析它们。
+灞炴€х殑椤哄簭锛坰truct nlattr锛変笉淇濊瘉锛屽洜姝ょ敤鎴峰繀椤婚亶鍘嗗睘鎬у苟瑙ｆ瀽瀹冧滑銆?
+璇锋敞鎰忥紝Generic Netlink 濂楁帴瀛楀苟涓嶅叧鑱旀垨缁戝畾鍒板崟涓€ family銆備竴涓鎺ュ瓧鍙敤浜?涓庤澶氫笉鍚岀殑 family 浜ゆ崲娑堟伅锛岄€氳繃 :c`nlmsghdr.nlmsg_type` 瀛楁閫愭潯娑堟伅鍦?閫夋嫨鎺ユ敹鏂?family銆?
 
-请注意，Generic Netlink 套接字并不关联或绑定到单一 family。一个套接字可用于
-与许多不同的 family 交换消息，通过 :c`nlmsghdr.nlmsg_type` 字段逐条消息地
-选择接收方 family。
-
-
-### 扩展 ACK
+### 鎵╁睍 ACK
 
 
-扩展 ACK 控制 `NLMSG_ERROR` 和 `NLMSG_DONE` 消息中额外错误/警告 TLV 的
-报告。为了保持向后兼容，此功能必须通过把 `NETLINK_EXT_ACK` setsockopt()
-设为 `1` 来显式启用。
-
-扩展 ack 属性的类型定义于 enum nlmsgerr_attrs。最常用的属性是
-`NLMSGERR_ATTR_MSG`、`NLMSGERR_ATTR_OFFS` 和 `NLMSGERR_ATTR_MISS_*`。
-
-`NLMSGERR_ATTR_MSG` 携带一条描述所遇问题的英文消息。这些消息比通过标准
-UNIX 错误码所能表达的详细得多。
-
-`NLMSGERR_ATTR_OFFS` 指向导致问题的属性。
-
-`NLMSGERR_ATTR_MISS_TYPE` 和 `NLMSGERR_ATTR_MISS_NEST` 报告缺失的属性。
-
-扩展 ACK 既可在出错时报告，也可在成功时报告。后者应被视为警告。
-
-扩展 ACK 极大地提升了 Netlink 的可用性，应当始终启用、恰当地解析并报告给
-用户。
-
-## 高级主题
+鎵╁睍 ACK 鎺у埗 `NLMSG_ERROR` 鍜?`NLMSG_DONE` 娑堟伅涓澶栭敊璇?璀﹀憡 TLV 鐨?鎶ュ憡銆備负浜嗕繚鎸佸悜鍚庡吋瀹癸紝姝ゅ姛鑳藉繀椤婚€氳繃鎶?`NETLINK_EXT_ACK` setsockopt()
+璁句负 `1` 鏉ユ樉寮忓惎鐢ㄣ€?
+鎵╁睍 ack 灞炴€х殑绫诲瀷瀹氫箟浜?enum nlmsgerr_attrs銆傛渶甯哥敤鐨勫睘鎬ф槸
+`NLMSGERR_ATTR_MSG`銆乣NLMSGERR_ATTR_OFFS` 鍜?`NLMSGERR_ATTR_MISS_*`銆?
+`NLMSGERR_ATTR_MSG` 鎼哄甫涓€鏉℃弿杩版墍閬囬棶棰樼殑鑻辨枃娑堟伅銆傝繖浜涙秷鎭瘮閫氳繃鏍囧噯
+UNIX 閿欒鐮佹墍鑳借〃杈剧殑璇︾粏寰楀銆?
+`NLMSGERR_ATTR_OFFS` 鎸囧悜瀵艰嚧闂鐨勫睘鎬с€?
+`NLMSGERR_ATTR_MISS_TYPE` 鍜?`NLMSGERR_ATTR_MISS_NEST` 鎶ュ憡缂哄け鐨勫睘鎬с€?
+鎵╁睍 ACK 鏃㈠彲鍦ㄥ嚭閿欐椂鎶ュ憡锛屼篃鍙湪鎴愬姛鏃舵姤鍛娿€傚悗鑰呭簲琚涓鸿鍛娿€?
+鎵╁睍 ACK 鏋佸ぇ鍦版彁鍗囦簡 Netlink 鐨勫彲鐢ㄦ€э紝搴斿綋濮嬬粓鍚敤銆佹伆褰撳湴瑙ｆ瀽骞舵姤鍛婄粰
+鐢ㄦ埛銆?
+## 楂樼骇涓婚
 
 
-### Dump 一致性
+### Dump 涓€鑷存€?
+
+鍐呮牳鐢ㄤ簬瀛樺偍瀵硅薄鐨勯儴鍒嗘暟鎹粨鏋勶紝浣垮緱闅句互鎻愪緵涓€娆?dump 涓墍鏈夊璞＄殑鍘熷瓙
+蹇収锛堝悓鏃朵笉褰卞搷鏇存柊瀹冧滑鐨勫揩閫熻矾寰勶級銆?
+濡傛灉 dump 琚腑鏂苟鍙兘涓嶄竴鑷达紙渚嬪缂哄皯瀵硅薄锛夛紝鍐呮牳鍙兘鍦?dump 涓殑浠讳綍
+娑堟伅涓婏紙鍖呮嫭 `NLMSG_DONE` 娑堟伅锛夎缃?`NLM_F_DUMP_INTR` 鏍囧織銆傜敤鎴风┖闂村湪
+鐪嬪埌璇ユ爣蹇楁椂搴旈噸璇?dump銆?
+### 鑷渷
 
 
-内核用于存储对象的部分数据结构，使得难以提供一次 dump 中所有对象的原子
-快照（同时不影响更新它们的快速路径）。
-
-如果 dump 被中断并可能不一致（例如缺少对象），内核可能在 dump 中的任何
-消息上（包括 `NLMSG_DONE` 消息）设置 `NLM_F_DUMP_INTR` 标志。用户空间在
-看到该标志时应重试 dump。
-
-### 自省
-
-
-基本自省能力通过访问 res_fam 中报告的 Family 对象来启用。用户可以查询关于
-Generic Netlink family 的信息，包括内核支持哪些操作、内核理解哪些属性。
-Family 信息包含内核可解析的属性的最高 ID，一个单独的命令
-（`CTRL_CMD_GETPOLICY`）提供关于受支持属性的详细信息，包括内核接受的值
-范围。
-
-当用户空间需要在发出请求之前确认内核是否支持某个功能时，查询 family 信息
-很有用。
-
+鍩烘湰鑷渷鑳藉姏閫氳繃璁块棶 res_fam 涓姤鍛婄殑 Family 瀵硅薄鏉ュ惎鐢ㄣ€傜敤鎴峰彲浠ユ煡璇㈠叧浜?Generic Netlink family 鐨勪俊鎭紝鍖呮嫭鍐呮牳鏀寔鍝簺鎿嶄綔銆佸唴鏍哥悊瑙ｅ摢浜涘睘鎬с€?Family 淇℃伅鍖呭惈鍐呮牳鍙В鏋愮殑灞炴€х殑鏈€楂?ID锛屼竴涓崟鐙殑鍛戒护
+锛坄CTRL_CMD_GETPOLICY`锛夋彁渚涘叧浜庡彈鏀寔灞炴€х殑璇︾粏淇℃伅锛屽寘鎷唴鏍告帴鍙楃殑鍊?鑼冨洿銆?
+褰撶敤鎴风┖闂撮渶瑕佸湪鍙戝嚭璇锋眰涔嬪墠纭鍐呮牳鏄惁鏀寔鏌愪釜鍔熻兘鏃讹紝鏌ヨ family 淇℃伅
+寰堟湁鐢ㄣ€?
 
 ### nlmsg_pid
 
 
-:c`nlmsghdr.nlmsg_pid` 是 Netlink 中相当于地址的字段。它被称为 Port ID，
-有时也叫 Process ID，因为出于历史原因，如果应用程序未选择（bind() 到）一个
-显式的 Port ID，内核会自动将其分配为等于其 Process ID 的 ID（由 getpid()
-系统调用报告）。
-
-与 TCP/IP 网络协议的 bind() 语义类似，零值表示“自动分配”，因此应用程序
-通常会将 :c`nlmsghdr.nlmsg_pid` 字段初始化为 `0`。
-
-该字段今天在罕见情况下仍在使用，即内核需要发送单播通知时。用户空间应用
-程序可以使用 bind() 将其套接字与特定的 PID 关联，然后将它的 PID 告知内核。
-这样内核就能联系到特定的用户空间进程。
-
-这类通信用于类似 UMH（User Mode Helper）的场景，即内核需要触发用户空间
-处理或向用户空间询问策略决策时。
-
-### 组播通知
+:c`nlmsghdr.nlmsg_pid` 鏄?Netlink 涓浉褰撲簬鍦板潃鐨勫瓧娈点€傚畠琚О涓?Port ID锛?鏈夋椂涔熷彨 Process ID锛屽洜涓哄嚭浜庡巻鍙插師鍥狅紝濡傛灉搴旂敤绋嬪簭鏈€夋嫨锛坆ind() 鍒帮級涓€涓?鏄惧紡鐨?Port ID锛屽唴鏍镐細鑷姩灏嗗叾鍒嗛厤涓虹瓑浜庡叾 Process ID 鐨?ID锛堢敱 getpid()
+绯荤粺璋冪敤鎶ュ憡锛夈€?
+涓?TCP/IP 缃戠粶鍗忚鐨?bind() 璇箟绫讳技锛岄浂鍊艰〃绀衡€滆嚜鍔ㄥ垎閰嶁€濓紝鍥犳搴旂敤绋嬪簭
+閫氬父浼氬皢 :c`nlmsghdr.nlmsg_pid` 瀛楁鍒濆鍖栦负 `0`銆?
+璇ュ瓧娈典粖澶╁湪缃曡鎯呭喌涓嬩粛鍦ㄤ娇鐢紝鍗冲唴鏍搁渶瑕佸彂閫佸崟鎾€氱煡鏃躲€傜敤鎴风┖闂村簲鐢?绋嬪簭鍙互浣跨敤 bind() 灏嗗叾濂楁帴瀛椾笌鐗瑰畾鐨?PID 鍏宠仈锛岀劧鍚庡皢瀹冪殑 PID 鍛婄煡鍐呮牳銆?杩欐牱鍐呮牳灏辫兘鑱旂郴鍒扮壒瀹氱殑鐢ㄦ埛绌洪棿杩涚▼銆?
+杩欑被閫氫俊鐢ㄤ簬绫讳技 UMH锛圲ser Mode Helper锛夌殑鍦烘櫙锛屽嵆鍐呮牳闇€瑕佽Е鍙戠敤鎴风┖闂?澶勭悊鎴栧悜鐢ㄦ埛绌洪棿璇㈤棶绛栫暐鍐崇瓥鏃躲€?
+### 缁勬挱閫氱煡
 
 
-Netlink 的优势之一是能够向用户空间发送事件通知。这是一种单向通信形式
-（内核 -> 用户），不涉及任何像 `NLMSG_ERROR` 或 `NLMSG_DONE` 这样的控制
-消息。
-
-例如，Generic Netlink family 自身就定义了一组关于已注册 family 的组播
-通知。当添加一个新的 family 时，
+Netlink 鐨勪紭鍔夸箣涓€鏄兘澶熷悜鐢ㄦ埛绌洪棿鍙戦€佷簨浠堕€氱煡銆傝繖鏄竴绉嶅崟鍚戦€氫俊褰㈠紡
+锛堝唴鏍?-> 鐢ㄦ埛锛夛紝涓嶆秹鍙婁换浣曞儚 `NLMSG_ERROR` 鎴?`NLMSG_DONE` 杩欐牱鐨勬帶鍒?娑堟伅銆?
+渚嬪锛孏eneric Netlink family 鑷韩灏卞畾涔変簡涓€缁勫叧浜庡凡娉ㄥ唽 family 鐨勭粍鎾?閫氱煡銆傚綋娣诲姞涓€涓柊鐨?family 鏃讹紝
 ```
 
   struct nlmsghdr:
@@ -418,17 +323,12 @@ Netlink 的优势之一是能够向用户空间发送事件通知。这是一种
   /* ... etc, more attributes will follow. */
 
 ```
-该通知包含与对 `CTRL_CMD_GETFAMILY` 请求的响应相同的信息。
-
-通知的 Netlink 头部大多为 0 且无关紧要。:c`nlmsghdr.nlmsg_seq` 可以是零，
-也可以是该 family 维护的单调递增的通知序列号。
-
-要接收通知，用户套接字必须订阅相关的通知组。与 Family ID 非常相似，给定
-组播组的 Group ID 是动态的，可以在 Family 信息中找到。`CTRL_ATTR_MCAST_GROUPS`
-属性包含嵌套，其中有各组的名称（`CTRL_ATTR_MCAST_GRP_NAME`）和 ID
-（`CTRL_ATTR_MCAST_GRP_ID`）。
-
-一旦知道了 Group ID，一个 setsockopt() 调用就会将该套接字加入该组：
+璇ラ€氱煡鍖呭惈涓庡 `CTRL_CMD_GETFAMILY` 璇锋眰鐨勫搷搴旂浉鍚岀殑淇℃伅銆?
+閫氱煡鐨?Netlink 澶撮儴澶у涓?0 涓旀棤鍏崇揣瑕併€?c`nlmsghdr.nlmsg_seq` 鍙互鏄浂锛?涔熷彲浠ユ槸璇?family 缁存姢鐨勫崟璋冮€掑鐨勯€氱煡搴忓垪鍙枫€?
+瑕佹帴鏀堕€氱煡锛岀敤鎴峰鎺ュ瓧蹇呴』璁㈤槄鐩稿叧鐨勯€氱煡缁勩€備笌 Family ID 闈炲父鐩镐技锛岀粰瀹?缁勬挱缁勭殑 Group ID 鏄姩鎬佺殑锛屽彲浠ュ湪 Family 淇℃伅涓壘鍒般€俙CTRL_ATTR_MCAST_GROUPS`
+灞炴€у寘鍚祵濂楋紝鍏朵腑鏈夊悇缁勭殑鍚嶇О锛坄CTRL_ATTR_MCAST_GRP_NAME`锛夊拰 ID
+锛坄CTRL_ATTR_MCAST_GRP_ID`锛夈€?
+涓€鏃︾煡閬撲簡 Group ID锛屼竴涓?setsockopt() 璋冪敤灏变細灏嗚濂楁帴瀛楀姞鍏ヨ缁勶細
 
 
   unsigned int group_id;
@@ -438,131 +338,80 @@ Netlink 的优势之一是能够向用户空间发送事件通知。这是一种
   setsockopt(fd, SOL_NETLINK, NETLINK_ADD_MEMBERSHIP,
              &group_id, sizeof(group_id));
 
-该套接字现在将接收通知。
+璇ュ鎺ュ瓧鐜板湪灏嗘帴鏀堕€氱煡銆?
+寤鸿涓烘帴鏀堕€氱煡鍜屽悜鍐呮牳鍙戦€佽姹備娇鐢ㄥ崟鐙殑濂楁帴瀛椼€傞€氱煡鐨勫紓姝ョ壒鎬ф剰鍛崇潃瀹冧滑
+鍙兘浼氫笌鍝嶅簲娣峰湪涓€璧凤紝浣垮緱娑堟伅澶勭悊鍥伴毦寰楀銆?
+### 缂撳啿鍖哄ぇ灏?
 
-建议为接收通知和向内核发送请求使用单独的套接字。通知的异步特性意味着它们
-可能会与响应混在一起，使得消息处理困难得多。
+Netlink 濂楁帴瀛楁槸鏁版嵁鎶ュ鎺ュ瓧鑰岄潪娴佸鎺ュ瓧锛岃繖鎰忓懗鐫€姣忔潯娑堟伅閮藉繀椤荤敱鍗曟
+recv()/recvmsg() 绯荤粺璋冪敤瀹屾暣鍦版帴鏀躲€傚鏋滅敤鎴锋彁渚涚殑缂撳啿鍖哄お鐭紝娑堟伅灏嗚
+鎴柇锛屽苟鍦?struct msghdr 涓缃?`MSG_TRUNC` 鏍囧織锛坰truct msghdr 鏄?recvmsg()
+绯荤粺璋冪敤鐨勭浜屼釜鍙傛暟锛?*涓嶆槸** Netlink 澶撮儴锛夈€?
+鎴柇鍚庯紝娑堟伅鐨勫墿浣欓儴鍒嗗皢琚涪寮冦€?
+Netlink 鏈熸湜鐢ㄦ埛缂撳啿鍖鸿嚦灏戜负 8kB锛屾垨 CPU 鏋舵瀯鐨勯〉澶у皬锛屽彇涓よ€呬腑杈冨ぇ鑰呫€?鐒惰€岋紝鐗瑰畾鐨?Netlink family 鍙兘瑕佹眰鏇村ぇ鐨勭紦鍐插尯銆備负鏈€楂樻晥鍦板鐞?dump锛?鎺ㄨ崘浣跨敤 32kB 缂撳啿鍖猴紙鏇村ぇ鐨勭紦鍐插尯鍙绾虫洿澶氳 dump 鐨勫璞★紝鍥犳闇€瑕佺殑
+recvmsg() 璋冪敤鏇村皯锛夈€?
 
-### 缓冲区大小
-
-
-Netlink 套接字是数据报套接字而非流套接字，这意味着每条消息都必须由单次
-recv()/recvmsg() 系统调用完整地接收。如果用户提供的缓冲区太短，消息将被
-截断，并在 struct msghdr 中设置 `MSG_TRUNC` 标志（struct msghdr 是 recvmsg()
-系统调用的第二个参数，**不是** Netlink 头部）。
-
-截断后，消息的剩余部分将被丢弃。
-
-Netlink 期望用户缓冲区至少为 8kB，或 CPU 架构的页大小，取两者中较大者。
-然而，特定的 Netlink family 可能要求更大的缓冲区。为最高效地处理 dump，
-推荐使用 32kB 缓冲区（更大的缓冲区可容纳更多被 dump 的对象，因此需要的
-recvmsg() 调用更少）。
+## 缁忓吀 Netlink
 
 
-## 经典 Netlink
-
-
-Classic 与 Generic Netlink 的主要区别在于子系统标识符的动态分配以及自省的
-可用性。理论上该协议没有显著差异，然而在实践中，Classic Netlink 试验了一
-些在 Generic Netlink 中被废弃的概念（实际上，它们通常只在单个子系统的一个
-小角落里使用过）。本节旨在解释其中几个概念，明确目标是让 Generic Netlink
-用户在阅读 uAPI 头部时能有信心忽略它们。
-
-这里的大多数概念和示例都涉及 `NETLINK_ROUTE` family，它涵盖了 Linux 网络
-栈的大部分配置。对该 family 的真正文档值得单独写一章（或一本书）。
-
+Classic 涓?Generic Netlink 鐨勪富瑕佸尯鍒湪浜庡瓙绯荤粺鏍囪瘑绗︾殑鍔ㄦ€佸垎閰嶄互鍙婅嚜鐪佺殑
+鍙敤鎬с€傜悊璁轰笂璇ュ崗璁病鏈夋樉钁楀樊寮傦紝鐒惰€屽湪瀹炶返涓紝Classic Netlink 璇曢獙浜嗕竴
+浜涘湪 Generic Netlink 涓搴熷純鐨勬蹇碉紙瀹為檯涓婏紝瀹冧滑閫氬父鍙湪鍗曚釜瀛愮郴缁熺殑涓€涓?灏忚钀介噷浣跨敤杩囷級銆傛湰鑺傛棬鍦ㄨВ閲婂叾涓嚑涓蹇碉紝鏄庣‘鐩爣鏄 Generic Netlink
+鐢ㄦ埛鍦ㄩ槄璇?uAPI 澶撮儴鏃惰兘鏈変俊蹇冨拷鐣ュ畠浠€?
+杩欓噷鐨勫ぇ澶氭暟姒傚康鍜岀ず渚嬮兘娑夊強 `NETLINK_ROUTE` family锛屽畠娑电洊浜?Linux 缃戠粶
+鏍堢殑澶ч儴鍒嗛厤缃€傚璇?family 鐨勭湡姝ｆ枃妗ｅ€煎緱鍗曠嫭鍐欎竴绔狅紙鎴栦竴鏈功锛夈€?
 ### Families
 
 
-Netlink 将子系统称为 families。这是使用套接字和协议族概念的遗留产物，而
-协议族是 `NETLINK_ROUTE` 中消息解复用的组成部分。
+Netlink 灏嗗瓙绯荤粺绉颁负 families銆傝繖鏄娇鐢ㄥ鎺ュ瓧鍜屽崗璁棌姒傚康鐨勯仐鐣欎骇鐗╋紝鑰?鍗忚鏃忔槸 `NETLINK_ROUTE` 涓秷鎭В澶嶇敤鐨勭粍鎴愰儴鍒嗐€?
+閬楁喚鐨勬槸锛屾瘡涓€灞傚皝瑁呴兘鍠滄鎶婂畠鎵€鎵胯浇鐨勪笢瑗跨О涓衡€渇amilies鈥濓紝浣垮緱杩欎釜鏈
+闈炲父浠や汉鍥版儜锛?
+ 1. AF_NETLINK 鏄竴涓悕鍓叾瀹炵殑濂楁帴瀛楀崗璁棌
+ 2. AF_NETLINK 鐨勬枃妗ｅ皢娑堟伅涓畠鑷韩澶撮儴锛坰truct nlmsghdr锛変箣鍚庣殑鍐呭绉颁负
+    鈥淔amily Header鈥? 3. Generic Netlink 鏄?AF_NETLINK 鐨勪竴涓?family锛坰truct genlmsghdr 璺熼殢
+    struct nlmsghdr锛夛紝浣嗗畠涔熺О鍏剁敤鎴蜂负鈥淔amilies鈥濄€?
+璇锋敞鎰忥紝Generic Netlink 鐨?Family ID 澶勪簬涓嶅悓鐨勨€淚D 绌洪棿鈥濅腑锛屽苟涓斾笌 Classic
+Netlink 鍗忚鍙烽噸鍙狅紙渚嬪 `NETLINK_CRYPTO` 鐨?Classic Netlink 鍗忚 ID 涓?21锛?鑰?Generic Netlink 涔熶細寰堜箰鎰忓皢鍏跺垎閰嶇粰瀹冪殑鏌愪釜 family锛夈€?
+### 涓ユ牸妫€鏌?
 
-遗憾的是，每一层封装都喜欢把它所承载的东西称为“families”，使得这个术语
-非常令人困惑：
+`NETLINK_GET_STRICT_CHK` 濂楁帴瀛楅€夐」鍦?`NETLINK_ROUTE` 涓惎鐢ㄤ弗鏍肩殑杈撳叆
+妫€鏌ャ€備箣鎵€浠ラ渶瑕佸畠锛屾槸鍥犱负鍘嗗彶涓婂唴鏍镐笉浼氶獙璇佸畠鏈鐞嗙殑缁撴瀯浣撶殑瀛楁銆傝繖浣垮緱
+鍚庢潵涓嶅彲鑳藉紑濮嬩娇鐢ㄩ偅浜涘瓧娈碉紝鑰屼笉鍐掗偅浜涢敊璇湴鎴栨湭鍒濆鍖栧畠浠殑搴旂敤绋嬪簭鍑虹幇
+鍥炲綊鐨勯闄┿€?
+`NETLINK_GET_STRICT_CHK` 澹版槑搴旂敤绋嬪簭姝ｅ湪姝ｇ‘鍒濆鍖栨墍鏈夊瓧娈点€傚畠杩橀€夋嫨楠岃瘉
+娑堟伅涓嶅寘鍚熬闅忔暟鎹紝骞惰姹傚唴鏍告嫆缁濈被鍨嬮珮浜庡唴鏍稿凡鐭ユ渶澶у睘鎬х被鍨嬬殑灞炴€с€?
+`NETLINK_GET_STRICT_CHK` 涓嶅湪 `NETLINK_ROUTE` 涔嬪浣跨敤銆?
+### 鏈煡灞炴€?
 
- 1. AF_NETLINK 是一个名副其实的套接字协议族
- 2. AF_NETLINK 的文档将消息中它自身头部（struct nlmsghdr）之后的内容称为
-    “Family Header”
- 3. Generic Netlink 是 AF_NETLINK 的一个 family（struct genlmsghdr 跟随
-    struct nlmsghdr），但它也称其用户为“Families”。
+鍘嗗彶涓?Netlink 蹇界暐浜嗘墍鏈夋湭鐭ュ睘鎬с€傚叾鎯虫硶鏄搴旂敤绋嬪簭涓嶅繀鍘绘帰鏌ュ唴鏍告敮鎸?浠€涔堛€傚簲鐢ㄧ▼搴忓彲浠ュ彂鍑烘敼鍙樼姸鎬佺殑璇锋眰锛屽苟妫€鏌ヨ姹傜殑鍝簺閮ㄥ垎鈥滅敓鏁堚€濅簡銆?
+瀵逛簬鏂扮殑 Generic Netlink family 浠ュ強閫夋嫨涓ユ牸妫€鏌ョ殑閭ｄ簺锛屾儏鍐靛凡涓嶅啀濡傛銆?鎵€鎵ц鐨勯獙璇佺被鍨嬭鍙傞槄 enum netlink_validation銆?
+### 鍥哄畾鍏冩暟鎹笌缁撴瀯浣?
 
-请注意，Generic Netlink 的 Family ID 处于不同的“ID 空间”中，并且与 Classic
-Netlink 协议号重叠（例如 `NETLINK_CRYPTO` 的 Classic Netlink 协议 ID 为 21，
-而 Generic Netlink 也会很乐意将其分配给它的某个 family）。
-
-### 严格检查
-
-
-`NETLINK_GET_STRICT_CHK` 套接字选项在 `NETLINK_ROUTE` 中启用严格的输入
-检查。之所以需要它，是因为历史上内核不会验证它未处理的结构体的字段。这使得
-后来不可能开始使用那些字段，而不冒那些错误地或未初始化它们的应用程序出现
-回归的风险。
-
-`NETLINK_GET_STRICT_CHK` 声明应用程序正在正确初始化所有字段。它还选择验证
-消息不包含尾随数据，并请求内核拒绝类型高于内核已知最大属性类型的属性。
-
-`NETLINK_GET_STRICT_CHK` 不在 `NETLINK_ROUTE` 之外使用。
-
-### 未知属性
-
-
-历史上 Netlink 忽略了所有未知属性。其想法是让应用程序不必去探查内核支持
-什么。应用程序可以发出改变状态的请求，并检查请求的哪些部分“生效”了。
-
-对于新的 Generic Netlink family 以及选择严格检查的那些，情况已不再如此。
-所执行的验证类型请参阅 enum netlink_validation。
-
-### 固定元数据与结构体
+Classic Netlink 鍦ㄦ秷鎭腑澶ч噺浣跨敤鍥哄畾鏍煎紡鐨勭粨鏋勪綋銆傛秷鎭€氬父鍦?struct
+nlmsghdr 涔嬪悗甯︽湁涓€涓叿鏈夊ぇ閲忓瓧娈电殑缁撴瀯浣撱€傛妸鍏锋湁澶氫釜鎴愬憳鐨勭粨鏋勪綋鏀惧叆
+灞炴€т腑銆佽€屼笉鎶婃瘡涓垚鍛樻媶鎴愬悇鑷殑灞炴€э紝涔熸槸寰堝父瑙佺殑鍋氭硶銆?
+杩欑粰楠岃瘉鍜屽彲鎵╁睍鎬у甫鏉ヤ簡闂锛屽洜姝ゅ浜庢柊灞炴€э紝涓嶉紦鍔变娇鐢ㄤ簩杩涘埗缁撴瀯浣撱€?
+### 璇锋眰绫诲瀷
 
 
-Classic Netlink 在消息中大量使用固定格式的结构体。消息通常在 struct
-nlmsghdr 之后带有一个具有大量字段的结构体。把具有多个成员的结构体放入
-属性中、而不把每个成员拆成各自的属性，也是很常见的做法。
-
-这给验证和可扩展性带来了问题，因此对于新属性，不鼓励使用二进制结构体。
-
-### 请求类型
-
-
-`NETLINK_ROUTE` 将请求分为 4 种类型：`NEW`、`DEL`、`GET` 和 `SET`。每个
-对象可以处理所有这些或其中部分请求（对象即 netdev、路由、地址、qdisc 等）。
-请求类型由消息类型的最低 2 位定义，因此新对象的命令总是以 4 为步长分配。
-
-每个对象还会拥有自己的、由所有请求类型共享的固定元数据（例如 netdev 请求
-使用 struct ifinfomsg，地址请求使用 struct ifaddrmsg，qdisc 请求使用
-struct tcmsg）。
-
-尽管其他协议和 Generic Netlink 命令经常在它们的消息名中使用相同的动词
-（`GET`、`SET`），但请求类型的概念并未得到更广泛的采用。
-
-### 通知回显
+`NETLINK_ROUTE` 灏嗚姹傚垎涓?4 绉嶇被鍨嬶細`NEW`銆乣DEL`銆乣GET` 鍜?`SET`銆傛瘡涓?瀵硅薄鍙互澶勭悊鎵€鏈夎繖浜涙垨鍏朵腑閮ㄥ垎璇锋眰锛堝璞″嵆 netdev銆佽矾鐢便€佸湴鍧€銆乹disc 绛夛級銆?璇锋眰绫诲瀷鐢辨秷鎭被鍨嬬殑鏈€浣?2 浣嶅畾涔夛紝鍥犳鏂板璞＄殑鍛戒护鎬绘槸浠?4 涓烘闀垮垎閰嶃€?
+姣忎釜瀵硅薄杩樹細鎷ユ湁鑷繁鐨勩€佺敱鎵€鏈夎姹傜被鍨嬪叡浜殑鍥哄畾鍏冩暟鎹紙渚嬪 netdev 璇锋眰
+浣跨敤 struct ifinfomsg锛屽湴鍧€璇锋眰浣跨敤 struct ifaddrmsg锛宷disc 璇锋眰浣跨敤
+struct tcmsg锛夈€?
+灏界鍏朵粬鍗忚鍜?Generic Netlink 鍛戒护缁忓父鍦ㄥ畠浠殑娑堟伅鍚嶄腑浣跨敤鐩稿悓鐨勫姩璇?锛坄GET`銆乣SET`锛夛紝浣嗚姹傜被鍨嬬殑姒傚康骞舵湭寰楀埌鏇村箍娉涚殑閲囩敤銆?
+### 閫氱煡鍥炴樉
 
 
-`NLM_F_ECHO` 请求将由该请求产生的通知排队到发起请求的套接字上。这有助于
-发现该请求的影响。
+`NLM_F_ECHO` 璇锋眰灏嗙敱璇ヨ姹備骇鐢熺殑閫氱煡鎺掗槦鍒板彂璧疯姹傜殑濂楁帴瀛椾笂銆傝繖鏈夊姪浜?鍙戠幇璇ヨ姹傜殑褰卞搷銆?
+璇锋敞鎰忥紝姝ゅ姛鑳藉苟鏈鏅亶瀹炵幇銆?
+### 鍏朵粬璇锋眰绫诲瀷鐗瑰畾鐨勬爣蹇?
 
-请注意，此功能并未被普遍实现。
-
-### 其他请求类型特定的标志
-
-
-Classic Netlink 在 struct nlmsghdr 的 nlmsg_flags 的高字节中为它的 `GET`、
-`NEW` 和 `DEL` 请求定义了各种标志。由于请求类型尚未通用化，这些请求类型
-特定的标志很少使用（并且对于新的 family 被视为已弃用）。
-
-对于 `GET` - `NLM_F_ROOT` 和 `NLM_F_MATCH` 被合并为 `NLM_F_DUMP`，不单独
-使用。`NLM_F_ATOMIC` 从未使用。
-
-对于 `DEL` - `NLM_F_NONREC` 仅被 nftables 使用，`NLM_F_BULK` 仅被 FDB 的
-部分操作使用。
-
-用于 `NEW` 的标志在 classic Netlink 中最常用。遗憾的是，其含义并不十分清晰。
-以下描述基于作者对意图的最佳猜测，而在实践中所有 family 都会以某种方式偏离
-它。`NLM_F_REPLACE` 要求替换一个已存在的对象，如果不存在匹配的对象，操作
-应当失败。`NLM_F_EXCL` 具有相反的语义，仅当对象已经存在时才成功。
-`NLM_F_CREATE` 要求如果对象不存在就创建它，它可与 `NLM_F_REPLACE` 和
-`NLM_F_EXCL` 组合。
-
+Classic Netlink 鍦?struct nlmsghdr 鐨?nlmsg_flags 鐨勯珮瀛楄妭涓负瀹冪殑 `GET`銆?`NEW` 鍜?`DEL` 璇锋眰瀹氫箟浜嗗悇绉嶆爣蹇椼€傜敱浜庤姹傜被鍨嬪皻鏈€氱敤鍖栵紝杩欎簺璇锋眰绫诲瀷
+鐗瑰畾鐨勬爣蹇楀緢灏戜娇鐢紙骞朵笖瀵逛簬鏂扮殑 family 琚涓哄凡寮冪敤锛夈€?
+瀵逛簬 `GET` - `NLM_F_ROOT` 鍜?`NLM_F_MATCH` 琚悎骞朵负 `NLM_F_DUMP`锛屼笉鍗曠嫭
+浣跨敤銆俙NLM_F_ATOMIC` 浠庢湭浣跨敤銆?
+瀵逛簬 `DEL` - `NLM_F_NONREC` 浠呰 nftables 浣跨敤锛宍NLM_F_BULK` 浠呰 FDB 鐨?閮ㄥ垎鎿嶄綔浣跨敤銆?
+鐢ㄤ簬 `NEW` 鐨勬爣蹇楀湪 classic Netlink 涓渶甯哥敤銆傞仐鎲剧殑鏄紝鍏跺惈涔夊苟涓嶅崄鍒嗘竻鏅般€?浠ヤ笅鎻忚堪鍩轰簬浣滆€呭鎰忓浘鐨勬渶浣崇寽娴嬶紝鑰屽湪瀹炶返涓墍鏈?family 閮戒細浠ユ煇绉嶆柟寮忓亸绂?瀹冦€俙NLM_F_REPLACE` 瑕佹眰鏇挎崲涓€涓凡瀛樺湪鐨勫璞★紝濡傛灉涓嶅瓨鍦ㄥ尮閰嶇殑瀵硅薄锛屾搷浣?搴斿綋澶辫触銆俙NLM_F_EXCL` 鍏锋湁鐩稿弽鐨勮涔夛紝浠呭綋瀵硅薄宸茬粡瀛樺湪鏃舵墠鎴愬姛銆?`NLM_F_CREATE` 瑕佹眰濡傛灉瀵硅薄涓嶅瓨鍦ㄥ氨鍒涘缓瀹冿紝瀹冨彲涓?`NLM_F_REPLACE` 鍜?`NLM_F_EXCL` 缁勫悎銆?
 ```
 
    4.4BSD ADD		NLM_F_CREATE|NLM_F_EXCL
@@ -573,11 +422,6 @@ Classic Netlink 在 struct nlmsghdr 的 nlmsg_flags 的高字节中为它的 `GE
    Check		NLM_F_EXCL
 
 ```
-这似乎表明这些标志早于请求类型。`NLM_F_REPLACE` 在没有 `NLM_F_CREATE` 时
-最初被用来代替 `SET` 命令。`NLM_F_EXCL` 在没有 `NLM_F_CREATE` 时用于检查
-对象是否存在而不创建它，大概早于 `GET` 命令。
-
-`NLM_F_APPEND` 表示如果一个键可以关联多个对象（例如一条路由的多个下一跳
-对象），新对象应当被添加到列表中，而不是替换整个列表。
-
-## uAPI 参考
+杩欎技涔庤〃鏄庤繖浜涙爣蹇楁棭浜庤姹傜被鍨嬨€俙NLM_F_REPLACE` 鍦ㄦ病鏈?`NLM_F_CREATE` 鏃?鏈€鍒濊鐢ㄦ潵浠ｆ浛 `SET` 鍛戒护銆俙NLM_F_EXCL` 鍦ㄦ病鏈?`NLM_F_CREATE` 鏃剁敤浜庢鏌?瀵硅薄鏄惁瀛樺湪鑰屼笉鍒涘缓瀹冿紝澶ф鏃╀簬 `GET` 鍛戒护銆?
+`NLM_F_APPEND` 琛ㄧず濡傛灉涓€涓敭鍙互鍏宠仈澶氫釜瀵硅薄锛堜緥濡備竴鏉¤矾鐢辩殑澶氫釜涓嬩竴璺?瀵硅薄锛夛紝鏂板璞″簲褰撹娣诲姞鍒板垪琛ㄤ腑锛岃€屼笉鏄浛鎹㈡暣涓垪琛ㄣ€?
+## uAPI 鍙傝€?

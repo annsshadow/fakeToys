@@ -1,63 +1,44 @@
-## FPGA Region
+﻿## FPGA Region
 
 
-### 概述
+### 姒傝堪
 
 
-本文档旨在简要概述 FPGA region API 的用法。关于 region 更具概念性的介绍可以在 Device Tree
-绑定文档 [#f1]_ 中找到。
+鏈枃妗ｆ棬鍦ㄧ畝瑕佹杩?FPGA region API 鐨勭敤娉曘€傚叧浜?region 鏇村叿姒傚康鎬х殑浠嬬粛鍙互鍦?Device Tree
+缁戝畾鏂囨。 [#f1]_ 涓壘鍒般€?
+灏辨湰 API 鏂囨。鑰岃█锛屾垜浠笉濡ㄨ涓€涓?region 灏?FPGA Manager 涓庝竴搴э紙鎴栧搴э級妗ユ帴鍏宠仈鍒?FPGA 鐨?涓€涓彲閲嶇紪绋嬪尯鍩熸垨鏁翠釜 FPGA銆傝 API 鎻愪緵浜嗘敞鍐?region 浠ュ強瀵?region 杩涜缂栫▼鐨勬柟娉曘€?
+鐩墠鍦?fpga-region.c 涔嬩笂銆佸唴鏍镐腑鍞竴鐨勫眰鏄?[#f1]_ 涓弿杩扮殑 Device Tree 鏀寔
+锛坥f-fpga-region.c锛夈€侱T 鏀寔灞備娇鐢?region 瀵?FPGA 杩涜缂栫▼锛岀劧鍚庝娇鐢?DT 澶勭悊鏋氫妇銆傞€氱敤鐨?region 浠ｇ爜鏃ㄥ湪琚叾浠栧湪缂栫▼鍚庢湁鍏跺畠鏋氫妇鏂瑰紡鐨勬柟妗堟墍浣跨敤銆?
+涓€涓?fpga-region 鍙互閰嶇疆涓轰簡瑙ｄ互涓嬪唴瀹癸細
 
-就本 API 文档而言，我们不妨说一个 region 将 FPGA Manager 与一座（或多座）桥接关联到 FPGA 的
-一个可重编程区域或整个 FPGA。该 API 提供了注册 region 以及对 region 进行编程的方法。
+ - 浣跨敤鍝釜 FPGA manager 杩涜缂栫▼
 
-目前在 fpga-region.c 之上、内核中唯一的层是 [#f1]_ 中描述的 Device Tree 支持
-（of-fpga-region.c）。DT 支持层使用 region 对 FPGA 进行编程，然后使用 DT 处理枚举。通用的
-region 代码旨在被其他在编程后有其它枚举方式的方案所使用。
+ - 鍦ㄧ紪绋嬪墠绂佺敤銆佺紪绋嬪悗鍚敤鐨勬ˉ鎺?
+缂栫▼ FPGA 闀滃儚鎵€闇€鐨勯澶栦俊鎭€氳繃 struct fpga_image_info 浼犲叆锛屽寘鎷細
 
-一个 fpga-region 可以配置为了解以下内容：
+ - 鎸囧悜闀滃儚鐨勬寚閽堬紝鍙互鏄垎鏁?鑱氶泦缂撳啿鍖恒€佽繛缁紦鍐插尯锛屾垨鍥轰欢鏂囦欢鍚?
+ - 鎸囩ず鍏蜂綋鐗规€х殑鏍囧織锛屼緥濡傞暅鍍忔槸鍚︾敤浜庨儴鍒嗛噸閰嶇疆
 
- - 使用哪个 FPGA manager 进行编程
-
- - 在编程前禁用、编程后启用的桥接
-
-编程 FPGA 镜像所需的额外信息通过 struct fpga_image_info 传入，包括：
-
- - 指向镜像的指针，可以是分散/聚集缓冲区、连续缓冲区，或固件文件名
-
- - 指示具体特性的标志，例如镜像是否用于部分重配置
-
-### 如何添加一个新的 FPGA region
+### 濡備綍娣诲姞涓€涓柊鐨?FPGA region
 
 
-使用示例可见 [#f2]_ 的 probe 函数。
+浣跨敤绀轰緥鍙 [#f2]_ 鐨?probe 鍑芥暟銆?
+### 娣诲姞鏂扮殑 FPGA region 鐨?API
 
-### 添加新的 FPGA region 的 API
 
+- struct fpga_region - FPGA region 缁撴瀯浣?- struct fpga_region_info - __fpga_region_register_full() 鐨勫弬鏁扮粨鏋勪綋
+- __fpga_region_register_full() - 浣跨敤 fpga_region_info 缁撴瀯浣撳垱寤哄苟娉ㄥ唽涓€涓?FPGA region锛?  浠ユ彁渚涙渶澶у寲鐨勯€夐」鐏垫椿鎬?- __fpga_region_register() - 浣跨敤鏍囧噯鍙傛暟鍒涘缓骞舵敞鍐屼竴涓?FPGA region
+- fpga_region_unregister() - 娉ㄩ攢涓€涓?FPGA region
 
-- struct fpga_region - FPGA region 结构体
-- struct fpga_region_info - __fpga_region_register_full() 的参数结构体
-- __fpga_region_register_full() - 使用 fpga_region_info 结构体创建并注册一个 FPGA region，
-  以提供最大化的选项灵活性
-- __fpga_region_register() - 使用标准参数创建并注册一个 FPGA region
-- fpga_region_unregister() - 注销一个 FPGA region
+杈呭姪瀹?`fpga_region_register()` 涓?`fpga_region_register_full()` 浼氳嚜鍔ㄥ皢娉ㄥ唽璇?FPGA region
+鐨勬ā鍧楄涓烘嫢鏈夎€呫€?
+FPGA region 鐨?probe 鍑芥暟闇€瑕佽幏鍙栧瀹冨皢鐢ㄤ簬缂栫▼鐨?FPGA Manager 鐨勫紩鐢ㄣ€傝繖閫氬父浼氬湪 region 鐨?probe 鍑芥暟鏈熼棿鍙戠敓銆?
+- fpga_mgr_get() - 鑾峰彇瀵?FPGA manager 鐨勫紩鐢紝澧炲姞寮曠敤璁℃暟
+- of_fpga_mgr_get() - 鑾峰彇瀵?FPGA manager 鐨勫紩鐢紝澧炲姞寮曠敤璁℃暟锛岀粰瀹氫竴涓澶囪妭鐐?- fpga_mgr_put() - 閲婃斁涓€涓?FPGA manager
 
-辅助宏 `fpga_region_register()` 与 `fpga_region_register_full()` 会自动将注册该 FPGA region
-的模块设为拥有者。
-
-FPGA region 的 probe 函数需要获取对它将用于编程的 FPGA Manager 的引用。这通常会在 region 的
-probe 函数期间发生。
-
-- fpga_mgr_get() - 获取对 FPGA manager 的引用，增加引用计数
-- of_fpga_mgr_get() - 获取对 FPGA manager 的引用，增加引用计数，给定一个设备节点
-- fpga_mgr_put() - 释放一个 FPGA manager
-
-FPGA region 需要指定在编程 FPGA 时要控制哪些桥接。region 驱动可以在 probe 期间构建一个桥接列表
-（:c`fpga_region->bridge_list`），也可以有一个函数用于在编程前立即创建要编程的桥接列表
-（:c`fpga_region->get_bridges`）。FPGA bridge 框架提供以下 API 来处理构建或拆除该列表。
-
-- fpga_bridge_get_to_list() - 获取对 FPGA bridge 的引用，将其加入列表
-- of_fpga_bridge_get_to_list() - 获取对 FPGA bridge 的引用，将其加入列表，给定一个设备节点
-- fpga_bridges_put() - 给定一个桥接列表，释放它们
+FPGA region 闇€瑕佹寚瀹氬湪缂栫▼ FPGA 鏃惰鎺у埗鍝簺妗ユ帴銆俽egion 椹卞姩鍙互鍦?probe 鏈熼棿鏋勫缓涓€涓ˉ鎺ュ垪琛?锛?c`fpga_region->bridge_list`锛夛紝涔熷彲浠ユ湁涓€涓嚱鏁扮敤浜庡湪缂栫▼鍓嶇珛鍗冲垱寤鸿缂栫▼鐨勬ˉ鎺ュ垪琛?锛?c`fpga_region->get_bridges`锛夈€侳PGA bridge 妗嗘灦鎻愪緵浠ヤ笅 API 鏉ュ鐞嗘瀯寤烘垨鎷嗛櫎璇ュ垪琛ㄣ€?
+- fpga_bridge_get_to_list() - 鑾峰彇瀵?FPGA bridge 鐨勫紩鐢紝灏嗗叾鍔犲叆鍒楄〃
+- of_fpga_bridge_get_to_list() - 鑾峰彇瀵?FPGA bridge 鐨勫紩鐢紝灏嗗叾鍔犲叆鍒楄〃锛岀粰瀹氫竴涓澶囪妭鐐?- fpga_bridges_put() - 缁欏畾涓€涓ˉ鎺ュ垪琛紝閲婃斁瀹冧滑
 
    :functions: fpga_region
 

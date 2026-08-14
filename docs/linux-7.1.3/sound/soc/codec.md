@@ -1,31 +1,25 @@
-## ASoC Codec Class Driver
+﻿## ASoC Codec Class Driver
 
 
-codec 类驱动是通用且与硬件无关的代码，用于配置 codec、FM、MODEM、BT 或外部 DSP，以提供音频采集和回放。它不应包含任何特定于目标平台或机器的代码。所有平台和机器特定的代码应分别添加到平台和机器驱动中。
+codec 绫婚┍鍔ㄦ槸閫氱敤涓斾笌纭欢鏃犲叧鐨勪唬鐮侊紝鐢ㄤ簬閰嶇疆 codec銆丗M銆丮ODEM銆丅T 鎴栧閮?DSP锛屼互鎻愪緵闊抽閲囬泦鍜屽洖鏀俱€傚畠涓嶅簲鍖呭惈浠讳綍鐗瑰畾浜庣洰鏍囧钩鍙版垨鏈哄櫒鐨勪唬鐮併€傛墍鏈夊钩鍙板拰鏈哄櫒鐗瑰畾鐨勪唬鐮佸簲鍒嗗埆娣诲姞鍒板钩鍙板拰鏈哄櫒椹卞姩涓€?
+姣忎釜 codec 绫婚┍鍔?*蹇呴』**鎻愪緵浠ヤ笅鐗规€э細-
 
-每个 codec 类驱动**必须**提供以下特性：-
+1. Codec DAI 鍜?PCM 閰嶇疆
+2. Codec 鎺у埗 IO - 浣跨敤 RegMap API
+3. 娣烽煶鍣紙Mixer锛夊拰闊抽鎺у埗
+4. Codec 闊抽鎿嶄綔
+5. DAPM 鎻忚堪銆?6. DAPM 浜嬩欢澶勭悊绋嬪簭銆?
+鍙€夊湴锛宑odec 椹卞姩杩樺彲浠ユ彁渚涳細-
 
-1. Codec DAI 和 PCM 配置
-2. Codec 控制 IO - 使用 RegMap API
-3. 混音器（Mixer）和音频控制
-4. Codec 音频操作
-5. DAPM 描述。
-6. DAPM 事件处理程序。
-
-可选地，codec 驱动还可以提供：-
-
-7. DAC 数字静音（digital mute）控制。
-
-最好将此指南与 sound/soc/codecs/ 中现有的 codec 驱动代码结合使用。
-
+7. DAC 鏁板瓧闈欓煶锛坉igital mute锛夋帶鍒躲€?
+鏈€濂藉皢姝ゆ寚鍗椾笌 sound/soc/codecs/ 涓幇鏈夌殑 codec 椹卞姩浠ｇ爜缁撳悎浣跨敤銆?
 ## ASoC Codec driver breakdown
 
 
 ### Codec DAI and PCM configuration
 
 
-每个 codec 驱动必须有一个 struct snd_soc_dai_driver 来定义其 DAI 和 PCM 能力及操作。该结构被导出，以便你的机器驱动可以将其注册到核心。
-
+姣忎釜 codec 椹卞姩蹇呴』鏈変竴涓?struct snd_soc_dai_driver 鏉ュ畾涔夊叾 DAI 鍜?PCM 鑳藉姏鍙婃搷浣溿€傝缁撴瀯琚鍑猴紝浠ヤ究浣犵殑鏈哄櫒椹卞姩鍙互灏嗗叾娉ㄥ唽鍒版牳蹇冦€?
 e.g.
 ```
 
@@ -61,64 +55,55 @@ e.g.
 ### Codec control IO
 
 
-codec 通常可以通过 I2C 或 SPI 风格接口控制（AC97 在 DAI 中将控制与数据组合在一起）。codec 驱动应对所有 codec IO 使用 Regmap API。有关 regmap 用法的示例，请参阅 include/linux/regmap.h 和现有的 codec 驱动。
-
+codec 閫氬父鍙互閫氳繃 I2C 鎴?SPI 椋庢牸鎺ュ彛鎺у埗锛圓C97 鍦?DAI 涓皢鎺у埗涓庢暟鎹粍鍚堝湪涓€璧凤級銆俢odec 椹卞姩搴斿鎵€鏈?codec IO 浣跨敤 Regmap API銆傛湁鍏?regmap 鐢ㄦ硶鐨勭ず渚嬶紝璇峰弬闃?include/linux/regmap.h 鍜岀幇鏈夌殑 codec 椹卞姩銆?
 
 ### Mixers and audio controls
 
 
-所有 codec 混音器和音频控制都可以使用 soc.h 中定义的便捷宏来定义。
-```
+鎵€鏈?codec 娣烽煶鍣ㄥ拰闊抽鎺у埗閮藉彲浠ヤ娇鐢?soc.h 涓畾涔夌殑渚挎嵎瀹忔潵瀹氫箟銆?```
 
     #define SOC_SINGLE(xname, reg, shift, mask, invert)
 
 ```
-定义一个单一控制如下：-
+瀹氫箟涓€涓崟涓€鎺у埗濡備笅锛?
 ```
 
-  xname = 控制名称，例如 "Playback Volume"
-  reg = codec 寄存器
-  shift = 控制位在寄存器中的偏移
-  mask = 控制位的大小，例如 mask 为 7 = 3 位
-  invert = 该控制是反转的
-
+  xname = 鎺у埗鍚嶇О锛屼緥濡?"Playback Volume"
+  reg = codec 瀵勫瓨鍣?  shift = 鎺у埗浣嶅湪瀵勫瓨鍣ㄤ腑鐨勫亸绉?  mask = 鎺у埗浣嶇殑澶у皬锛屼緥濡?mask 涓?7 = 3 浣?  invert = 璇ユ帶鍒舵槸鍙嶈浆鐨?
 ```
-其他宏包括：-
+鍏朵粬瀹忓寘鎷細-
 ```
 
     #define SOC_DOUBLE(xname, reg, shift_left, shift_right, mask, invert)
 
 ```
-一个立体声控制
+涓€涓珛浣撳０鎺у埗
 ```
 
     #define SOC_DOUBLE_R(xname, reg_left, reg_right, shift, mask, invert)
 
 ```
-一个跨越 2 个寄存器的立体声控制
+涓€涓法瓒?2 涓瘎瀛樺櫒鐨勭珛浣撳０鎺у埗
 ```
 
     #define SOC_ENUM_SINGLE(xreg, xshift, xmask, xtexts)
 
 ```
-定义一个单一枚举控制如下：-
+瀹氫箟涓€涓崟涓€鏋氫妇鎺у埗濡備笅锛?
 ```
 
-   xreg = 寄存器
-   xshift = 控制位在寄存器中的偏移
-   xmask = 控制位的大小
-   xtexts = 指向描述每个设置的字符串数组的指针
-
+   xreg = 瀵勫瓨鍣?   xshift = 鎺у埗浣嶅湪瀵勫瓨鍣ㄤ腑鐨勫亸绉?   xmask = 鎺у埗浣嶇殑澶у皬
+   xtexts = 鎸囧悜鎻忚堪姣忎釜璁剧疆鐨勫瓧绗︿覆鏁扮粍鐨勬寚閽?
    #define SOC_ENUM_DOUBLE(xreg, xshift_l, xshift_r, xmask, xtexts)
 
 ```
-定义一个立体声枚举控制
+瀹氫箟涓€涓珛浣撳０鏋氫妇鎺у埗
 
 
 ### Codec Audio Operations
 
 
-codec 驱动还支持以下 ALSA PCM 操作：-
+codec 椹卞姩杩樻敮鎸佷互涓?ALSA PCM 鎿嶄綔锛?
 ```
 
   /* SoC audio ops */
@@ -131,45 +116,39 @@ codec 驱动还支持以下 ALSA PCM 操作：-
   };
 
 ```
-详情请参阅 :doc:`ALSA 驱动 PCM 文档 <../kernel-api/writing-an-alsa-driver>`。
-
+璇︽儏璇峰弬闃?:doc:`ALSA 椹卞姩 PCM 鏂囨。 <../kernel-api/writing-an-alsa-driver>`銆?
 
 ### DAPM description
 
 
-动态音频电源管理（Dynamic Audio Power Management）描述描述了 codec 电源组件及其关系，并向 ASoC 核心注册。构建该描述的细节请参阅 dapm.rst。
-
-也请参阅其他 codec 驱动中的示例。
-
+鍔ㄦ€侀煶棰戠數婧愮鐞嗭紙Dynamic Audio Power Management锛夋弿杩版弿杩颁簡 codec 鐢垫簮缁勪欢鍙婂叾鍏崇郴锛屽苟鍚?ASoC 鏍稿績娉ㄥ唽銆傛瀯寤鸿鎻忚堪鐨勭粏鑺傝鍙傞槄 dapm.rst銆?
+涔熻鍙傞槄鍏朵粬 codec 椹卞姩涓殑绀轰緥銆?
 
 ### DAPM event handler
 
 
-此函数是一个回调，处理 codec 域的 PM 调用和系统域的 PM 调用（例如 suspend 和 resume）。它用于在 codec 不使用时使其进入睡眠。
-
-电源状态：-
+姝ゅ嚱鏁版槸涓€涓洖璋冿紝澶勭悊 codec 鍩熺殑 PM 璋冪敤鍜岀郴缁熷煙鐨?PM 璋冪敤锛堜緥濡?suspend 鍜?resume锛夈€傚畠鐢ㄤ簬鍦?codec 涓嶄娇鐢ㄦ椂浣垮叾杩涘叆鐫＄湢銆?
+鐢垫簮鐘舵€侊細-
 ```
 
-	SNDRV_CTL_POWER_D0: /* 完全开启 */
-	/* vref/mid、clk 和 osc 开启，激活 */
+	SNDRV_CTL_POWER_D0: /* 瀹屽叏寮€鍚?*/
+	/* vref/mid銆乧lk 鍜?osc 寮€鍚紝婵€娲?*/
 
-	SNDRV_CTL_POWER_D1: /* 部分开启 */
-	SNDRV_CTL_POWER_D2: /* 部分开启 */
+	SNDRV_CTL_POWER_D1: /* 閮ㄥ垎寮€鍚?*/
+	SNDRV_CTL_POWER_D2: /* 閮ㄥ垎寮€鍚?*/
 
-	SNDRV_CTL_POWER_D3hot: /* 关闭，但保留电源 */
-	/* 除 vref/vmid 外全部关闭，非激活 */
+	SNDRV_CTL_POWER_D3hot: /* 鍏抽棴锛屼絾淇濈暀鐢垫簮 */
+	/* 闄?vref/vmid 澶栧叏閮ㄥ叧闂紝闈炴縺娲?*/
 
-	SNDRV_CTL_POWER_D3cold: /* 全部关闭，无电源 */
+	SNDRV_CTL_POWER_D3cold: /* 鍏ㄩ儴鍏抽棴锛屾棤鐢垫簮 */
 
 
 ```
 ### Codec DAC digital mute control
 
 
-大多数 codec 在 DAC 之前有一个数字静音，可用于尽量减少任何系统噪声。静音会阻止任何数字数据进入 DAC。
-
-可以创建一个由核心在应用或释放静音时为每个 codec DAI 调用的回调。
-
+澶у鏁?codec 鍦?DAC 涔嬪墠鏈変竴涓暟瀛楅潤闊筹紝鍙敤浜庡敖閲忓噺灏戜换浣曠郴缁熷櫔澹般€傞潤闊充細闃绘浠讳綍鏁板瓧鏁版嵁杩涘叆 DAC銆?
+鍙互鍒涘缓涓€涓敱鏍稿績鍦ㄥ簲鐢ㄦ垨閲婃斁闈欓煶鏃朵负姣忎釜 codec DAI 璋冪敤鐨勫洖璋冦€?
 i.e.
 ```
 

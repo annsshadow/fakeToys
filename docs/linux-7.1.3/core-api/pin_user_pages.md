@@ -1,7 +1,6 @@
-
-## pin_user_pages() 及相关调用
-
-## 概述
+﻿
+## pin_user_pages() 鍙婄浉鍏宠皟鐢?
+## 姒傝堪
 
 ```
 
@@ -10,156 +9,108 @@
  pin_user_pages_remote()
 
 ```
-## FOLL_PIN 基本描述
+## FOLL_PIN 鍩烘湰鎻忚堪
 
-FOLL_PIN 和 FOLL_LONGTERM 是可以传递给 get_user_pages*()（“gup”）函数族的标志。FOLL_PIN 与 FOLL_LONGTERM 有着显著的交互和相互依赖关系，因此这里一并介绍。
-
-FOLL_PIN 是 gup 内部的，意味着它不应出现在 gup 调用点。这使得相关的包装函数（pin_user_pages*() 及其他）能够设置这些标志的正确组合，并检查问题。
-
-另一方面，FOLL_LONGTERM **可以**在 gup 调用点设置。这样做是为了避免创建大量包装函数来覆盖 get**()、pin**()、FOLL_LONGTERM 等的所有组合。此外，pin_user_pages**() API 与 get_user_pages**() API 明显不同，因此这是一个自然的划分线，也是进行单独包装调用的好切入点。换句话说，对 DMA-pinned 页使用 pin_user_pages*()，对其他情况使用 get_user_pages*()。本文档后面描述了五种情况，以进一步阐明这一概念。
-
-对于给定的 gup 调用，FOLL_PIN 与 FOLL_GET 是互斥的。不过，多个线程和调用点可以通过 FOLL_PIN 和 FOLL_GET 自由地 pin 相同的 struct page。需要选择其中之一的是调用点，而不是 struct page。
-
-FOLL_PIN 的实现与 FOLL_GET 几乎相同，只是 FOLL_PIN 使用了不同的引用计数技术。
-
-FOLL_PIN 是 FOLL_LONGTERM 的先决条件。换句话说，FOLL_LONGTERM 是 FOLL_PIN 的一种更受限的特定情况。
-
-## 每个包装函数设置了哪些标志
-
-对于这些 pin_user_pages*() 函数，FOLL_PIN 与调用者提供的任何 gup 标志进行 OR 运算。调用者需要传入一个非空的 struct pages* 数组，然后函数通过为每个页增加一个特殊值：GUP_PIN_COUNTING_BIAS 来 pin 页。
-
-对于大 folio（large folios），不使用 GUP_PIN_COUNTING_BIAS 方案。相反，使用 struct folio 中可用的额外空间来直接存储 pincount。
-
-这种针对大 folio 的方法避免了下面讨论的计数上限问题。那些限制会被巨页（huge pages）严重加剧，因为每个尾页都会向头页添加一个引用计数。事实上，测试表明，在没有单独 pincount 字段的情况下，在某些巨页压力测试中观察到了引用计数溢出。
-
-这也意味着巨页和大 folio 不会遭受
+FOLL_PIN 鍜?FOLL_LONGTERM 鏄彲浠ヤ紶閫掔粰 get_user_pages*()锛堚€済up鈥濓級鍑芥暟鏃忕殑鏍囧織銆侳OLL_PIN 涓?FOLL_LONGTERM 鏈夌潃鏄捐憲鐨勪氦浜掑拰鐩镐簰渚濊禆鍏崇郴锛屽洜姝よ繖閲屼竴骞朵粙缁嶃€?
+FOLL_PIN 鏄?gup 鍐呴儴鐨勶紝鎰忓懗鐫€瀹冧笉搴斿嚭鐜板湪 gup 璋冪敤鐐广€傝繖浣垮緱鐩稿叧鐨勫寘瑁呭嚱鏁帮紙pin_user_pages*() 鍙婂叾浠栵級鑳藉璁剧疆杩欎簺鏍囧織鐨勬纭粍鍚堬紝骞舵鏌ラ棶棰樸€?
+鍙︿竴鏂归潰锛孎OLL_LONGTERM **鍙互**鍦?gup 璋冪敤鐐硅缃€傝繖鏍峰仛鏄负浜嗛伩鍏嶅垱寤哄ぇ閲忓寘瑁呭嚱鏁版潵瑕嗙洊 get**()銆乸in**()銆丗OLL_LONGTERM 绛夌殑鎵€鏈夌粍鍚堛€傛澶栵紝pin_user_pages**() API 涓?get_user_pages**() API 鏄庢樉涓嶅悓锛屽洜姝よ繖鏄竴涓嚜鐒剁殑鍒掑垎绾匡紝涔熸槸杩涜鍗曠嫭鍖呰璋冪敤鐨勫ソ鍒囧叆鐐广€傛崲鍙ヨ瘽璇达紝瀵?DMA-pinned 椤典娇鐢?pin_user_pages*()锛屽鍏朵粬鎯呭喌浣跨敤 get_user_pages*()銆傛湰鏂囨。鍚庨潰鎻忚堪浜嗕簲绉嶆儏鍐碉紝浠ヨ繘涓€姝ラ槓鏄庤繖涓€姒傚康銆?
+瀵逛簬缁欏畾鐨?gup 璋冪敤锛孎OLL_PIN 涓?FOLL_GET 鏄簰鏂ョ殑銆備笉杩囷紝澶氫釜绾跨▼鍜岃皟鐢ㄧ偣鍙互閫氳繃 FOLL_PIN 鍜?FOLL_GET 鑷敱鍦?pin 鐩稿悓鐨?struct page銆傞渶瑕侀€夋嫨鍏朵腑涔嬩竴鐨勬槸璋冪敤鐐癸紝鑰屼笉鏄?struct page銆?
+FOLL_PIN 鐨勫疄鐜颁笌 FOLL_GET 鍑犱箮鐩稿悓锛屽彧鏄?FOLL_PIN 浣跨敤浜嗕笉鍚岀殑寮曠敤璁℃暟鎶€鏈€?
+FOLL_PIN 鏄?FOLL_LONGTERM 鐨勫厛鍐虫潯浠躲€傛崲鍙ヨ瘽璇达紝FOLL_LONGTERM 鏄?FOLL_PIN 鐨勪竴绉嶆洿鍙楅檺鐨勭壒瀹氭儏鍐点€?
+## 姣忎釜鍖呰鍑芥暟璁剧疆浜嗗摢浜涙爣蹇?
+瀵逛簬杩欎簺 pin_user_pages*() 鍑芥暟锛孎OLL_PIN 涓庤皟鐢ㄨ€呮彁渚涚殑浠讳綍 gup 鏍囧織杩涜 OR 杩愮畻銆傝皟鐢ㄨ€呴渶瑕佷紶鍏ヤ竴涓潪绌虹殑 struct pages* 鏁扮粍锛岀劧鍚庡嚱鏁伴€氳繃涓烘瘡涓〉澧炲姞涓€涓壒娈婂€硷細GUP_PIN_COUNTING_BIAS 鏉?pin 椤点€?
+瀵逛簬澶?folio锛坙arge folios锛夛紝涓嶄娇鐢?GUP_PIN_COUNTING_BIAS 鏂规銆傜浉鍙嶏紝浣跨敤 struct folio 涓彲鐢ㄧ殑棰濆绌洪棿鏉ョ洿鎺ュ瓨鍌?pincount銆?
+杩欑閽堝澶?folio 鐨勬柟娉曢伩鍏嶄簡涓嬮潰璁ㄨ鐨勮鏁颁笂闄愰棶棰樸€傞偅浜涢檺鍒朵細琚法椤碉紙huge pages锛変弗閲嶅姞鍓э紝鍥犱负姣忎釜灏鹃〉閮戒細鍚戝ご椤垫坊鍔犱竴涓紩鐢ㄨ鏁般€備簨瀹炰笂锛屾祴璇曡〃鏄庯紝鍦ㄦ病鏈夊崟鐙?pincount 瀛楁鐨勬儏鍐典笅锛屽湪鏌愪簺宸ㄩ〉鍘嬪姏娴嬭瘯涓瀵熷埌浜嗗紩鐢ㄨ鏁版孩鍑恒€?
+杩欎篃鎰忓懗鐫€宸ㄩ〉鍜屽ぇ folio 涓嶄細閬彈
 ```
 
  Function
  --------
- pin_user_pages          FOLL_PIN 总是由此函数在内部设置。
- pin_user_pages_fast     FOLL_PIN 总是由此函数在内部设置。
- pin_user_pages_remote   FOLL_PIN 总是由此函数在内部设置。
-
+ pin_user_pages          FOLL_PIN 鎬绘槸鐢辨鍑芥暟鍦ㄥ唴閮ㄨ缃€? pin_user_pages_fast     FOLL_PIN 鎬绘槸鐢辨鍑芥暟鍦ㄥ唴閮ㄨ缃€? pin_user_pages_remote   FOLL_PIN 鎬绘槸鐢辨鍑芥暟鍦ㄥ唴閮ㄨ缃€?
 ```
-对于这些 get_user_pages*() 函数，可能根本不会指定 FOLL_GET。行为比上面稍复杂一些。如果 **没有**指定 FOLL_GET，但调用者传入了非空的 struct pages* 数组，那么函数会为你设置 FOLL_GET，并继续通过增加引用计数来 pin 页
-```
+瀵逛簬杩欎簺 get_user_pages*() 鍑芥暟锛屽彲鑳芥牴鏈笉浼氭寚瀹?FOLL_GET銆傝涓烘瘮涓婇潰绋嶅鏉備竴浜涖€傚鏋?**娌℃湁**鎸囧畾 FOLL_GET锛屼絾璋冪敤鑰呬紶鍏ヤ簡闈炵┖鐨?struct pages* 鏁扮粍锛岄偅涔堝嚱鏁颁細涓轰綘璁剧疆 FOLL_GET锛屽苟缁х画閫氳繃澧炲姞寮曠敤璁℃暟鏉?pin 椤?```
 
  Function
  --------
- get_user_pages           FOLL_GET 有时由此函数在内部设置。
- get_user_pages_fast      FOLL_GET 有时由此函数在内部设置。
- get_user_pages_remote    FOLL_GET 有时由此函数在内部设置。
-
+ get_user_pages           FOLL_GET 鏈夋椂鐢辨鍑芥暟鍦ㄥ唴閮ㄨ缃€? get_user_pages_fast      FOLL_GET 鏈夋椂鐢辨鍑芥暟鍦ㄥ唴閮ㄨ缃€? get_user_pages_remote    FOLL_GET 鏈夋椂鐢辨鍑芥暟鍦ㄥ唴閮ㄨ缃€?
 ```
-## 跟踪 dma-pinned 页
+## 璺熻釜 dma-pinned 椤?
+璺熻釜 dma-pinned 椤电殑涓€浜涘叧閿璁＄害鏉熶笌瑙ｅ喅鏂规锛?
+- 闇€瑕佹瘡涓?struct page 涓€涓疄闄呯殑寮曠敤璁℃暟銆傝繖鏄洜涓哄涓繘绋嬪彲鑳戒細 pin 鍜?unpin 涓€涓〉銆?
+- 鍋囬槼鎬э紙鎶ュ憡涓€涓〉琚?dma-pinned锛岃€屽疄闄呬笂骞堕潪濡傛锛夋槸鍙互鎺ュ彈鐨勶紝浣嗗亣闃存€т笉琛屻€?
+- 涓烘涓嶈兘澧炲ぇ struct page 鐨勫ぇ灏忥紝鑰屼笖鎵€鏈夊瓧娈甸兘宸茶浣跨敤銆?
+- 閴翠簬浠ヤ笂锛屾垜浠彲浠ラ€氳繃浣跨敤 page->_refcount 瀛楁涓€滄煇绉嶆剰涔変笂鐨勨€濋珮浣嶆潵閲嶈浇璇ュ瓧娈碉紝浠ヤ綔涓?dma-pinned 璁℃暟銆傗€滄煇绉嶆剰涔変笂鐨勨€濇剰鍛崇潃锛屾垜浠笉灏?page->_refcount 鍒掑垎涓轰綅瀛楁锛岃€屾槸绠€鍗曞湴灏嗕竴涓腑绛夊ぇ灏忕殑鍊硷紙GUP_PIN_COUNTING_BIAS锛屾渶鍒濋€変负 1024锛?0 浣嶏級鍔犲埌 page->_refcount 涓娿€傝繖鎻愪緵浜嗘ā绯婄殑琛屼负锛氬鏋滀竴涓〉琚皟鐢ㄤ簡 1024 娆?get_page()锛岄偅涔堝畠灏嗚〃鐜颁负鍏锋湁鍗曚釜 dma-pinned 璁℃暟銆傚啀娆¤鏄庯紝杩欐槸鍙帴鍙楃殑銆?
+杩欎篃甯︽潵浜嗛檺鍒讹細鍙湁 31-10==21 浣嶅彲鐢ㄤ簬涓€涓瘡娆￠€掑 10 浣嶇殑璁℃暟鍣ㄣ€?
+- 鐢变簬璇ラ檺鍒讹紝浣跨敤 FOLL_PIN 鏃跺闆堕〉锛坺ero pages锛夊仛浜嗙壒娈婂鐞嗐€傛垜浠彧鏄亣瑁?pin 浜嗕竴涓浂椤碘€斺€旀牴鏈笉鏀瑰彉鍏跺紩鐢ㄨ鏁版垨 pincount锛堝畠鏄案涔呯殑锛屽洜姝ゆ病鏈夊繀瑕侊級銆倁npinning 鍑芥暟瀵归浂椤典篃涓嶅仛浠讳綍鎿嶄綔銆傝繖瀵硅皟鐢ㄨ€呮槸閫忔槑鐨勩€?
+- 璋冪敤鑰呭繀椤绘樉寮忚姹傗€滈〉鐨?dma-pinned 璺熻釜鈥濄€傛崲鍙ヨ瘽璇达紝浠呬粎璋冪敤 get_user_pages() 鏄笉澶熺殑锛涘繀椤讳娇鐢ㄤ竴缁勬柊鍑芥暟锛屽嵆 pin_user_page() 鍙婂叾鐩稿叧鍑芥暟銆?
+## FOLL_PIN銆丗OLL_GET銆丗OLL_LONGTERM锛氫綍鏃朵娇鐢ㄥ摢涓爣蹇?
+鎰熻阿 Jan Kara銆乂lastimil Babka 浠ュ強鍏朵粬鍑犱綅 -mm 浜哄憳鎻忚堪浜嗚繖浜涚被鍒細
 
-跟踪 dma-pinned 页的一些关键设计约束与解决方案：
-
-- 需要每个 struct page 一个实际的引用计数。这是因为多个进程可能会 pin 和 unpin 一个页。
-
-- 假阳性（报告一个页被 dma-pinned，而实际上并非如此）是可以接受的，但假阴性不行。
-
-- 为此不能增大 struct page 的大小，而且所有字段都已被使用。
-
-- 鉴于以上，我们可以通过使用 page->_refcount 字段中“某种意义上的”高位来重载该字段，以作为 dma-pinned 计数。“某种意义上的”意味着，我们不将 page->_refcount 划分为位字段，而是简单地将一个中等大小的值（GUP_PIN_COUNTING_BIAS，最初选为 1024：10 位）加到 page->_refcount 上。这提供了模糊的行为：如果一个页被调用了 1024 次 get_page()，那么它将表现为具有单个 dma-pinned 计数。再次说明，这是可接受的。
-
-这也带来了限制：只有 31-10==21 位可用于一个每次递增 10 位的计数器。
-
-- 由于该限制，使用 FOLL_PIN 时对零页（zero pages）做了特殊处理。我们只是假装 pin 了一个零页——根本不改变其引用计数或 pincount（它是永久的，因此没有必要）。unpinning 函数对零页也不做任何操作。这对调用者是透明的。
-
-- 调用者必须显式请求“页的 dma-pinned 跟踪”。换句话说，仅仅调用 get_user_pages() 是不够的；必须使用一组新函数，即 pin_user_page() 及其相关函数。
-
-## FOLL_PIN、FOLL_GET、FOLL_LONGTERM：何时使用哪个标志
-
-感谢 Jan Kara、Vlastimil Babka 以及其他几位 -mm 人员描述了这些类别：
-
-### CASE 1: 直接 IO（DIO）
-
-存在 GUP 引用，这些页作为 DIO 缓冲区。这些缓冲区需要的时间相对较短（因此它们不是“长期的”）。与 folio_mkclean() 或 munmap() 没有特殊的同步
-```
+### CASE 1: 鐩存帴 IO锛圖IO锛?
+瀛樺湪 GUP 寮曠敤锛岃繖浜涢〉浣滀负 DIO 缂撳啿鍖恒€傝繖浜涚紦鍐插尯闇€瑕佺殑鏃堕棿鐩稿杈冪煭锛堝洜姝ゅ畠浠笉鏄€滈暱鏈熺殑鈥濓級銆備笌 folio_mkclean() 鎴?munmap() 娌℃湁鐗规畩鐨勫悓姝?```
 
     FOLL_PIN
 
 ```
-……但与其直接设置 FOLL_PIN，调用点应当使用设置了 FOLL_PIN 的 pin_user_pages*() 例程之一。
-
+鈥︹€︿絾涓庡叾鐩存帴璁剧疆 FOLL_PIN锛岃皟鐢ㄧ偣搴斿綋浣跨敤璁剧疆浜?FOLL_PIN 鐨?pin_user_pages*() 渚嬬▼涔嬩竴銆?
 ### CASE 2: RDMA
 
-存在 GUP 引用，这些页作为 DMA 缓冲区。这些缓冲区需要很长时间（“长期”）。没有提供与 folio_mkclean() 或 munmap() 的特殊同步。因此标志
-```
+瀛樺湪 GUP 寮曠敤锛岃繖浜涢〉浣滀负 DMA 缂撳啿鍖恒€傝繖浜涚紦鍐插尯闇€瑕佸緢闀挎椂闂达紙鈥滈暱鏈熲€濓級銆傛病鏈夋彁渚涗笌 folio_mkclean() 鎴?munmap() 鐨勭壒娈婂悓姝ャ€傚洜姝ゆ爣蹇?```
 
     FOLL_PIN | FOLL_LONGTERM
 
 ```
-注意：某些页，例如 DAX 页，无法被长期 pin。这是因为 DAX 页没有单独的页缓存，因此“pinning”意味着锁定文件系统块，而（目前）还不以支持这种方式。
+娉ㄦ剰锛氭煇浜涢〉锛屼緥濡?DAX 椤碉紝鏃犳硶琚暱鏈?pin銆傝繖鏄洜涓?DAX 椤垫病鏈夊崟鐙殑椤电紦瀛橈紝鍥犳鈥減inning鈥濇剰鍛崇潃閿佸畾鏂囦欢绯荤粺鍧楋紝鑰岋紙鐩墠锛夎繕涓嶄互鏀寔杩欑鏂瑰紡銆?
+### CASE 3: MMU notifier 娉ㄥ唽锛屽甫鎴栦笉甯︾己椤电‖浠?
+璁惧椹卞姩鍙互閫氳繃 get_user_pages*() pin 椤碉紝骞朵负璇ュ唴瀛樿寖鍥存敞鍐?mmu notifier 鍥炶皟銆傜劧鍚庯紝鍦ㄦ敹鍒?notifier 鐨勨€渋nvalidate range鈥濆洖璋冩椂锛屽仠姝㈣澶囦娇鐢ㄨ鑼冨洿锛屽苟 unpin 杩欎簺椤点€傚彲鑳借繕鏈夊叾浠栧彲琛岀殑鏂规锛屼緥濡傛樉寮忓湴閽堝寰呭鐞嗙殑 IO 杩涜鍚屾锛屼互杈惧埌澶ц嚧鐩稿悓鐨勬晥鏋溿€?
+鎴栬€咃紝濡傛灉纭欢鏀寔鍙噸鏀剧己椤碉紙replayable page faults锛夛紝閭ｄ箞璁惧椹卞姩鍙互瀹屽叏閬垮厤 pinning锛堣繖鏄悊鎯崇殑锛夛紝濡備笅鎵€绀猴細鍍忎笂闈竴鏍锋敞鍐?mmu notifier 鍥炶皟锛屼絾涓嶆槸鍦ㄥ洖璋冧腑鍋滄璁惧骞?unpin锛岃€屽彧鏄皢璇ヨ寖鍥翠粠璁惧鐨勯〉琛ㄤ腑绉婚櫎銆?
+鏃犺鍝鏂瑰紡锛屽彧瑕侀┍鍔ㄥ湪 mmu notifier 鍥炶皟鏃?unpin 杩欎簺椤碉紝灏变笌鏂囦欢绯荤粺鍜?mm锛坒olio_mkclean()銆乵unmap() 绛夛級鏈変簡閫傚綋鐨勫悓姝ャ€傚洜姝わ紝涓嶉渶瑕佽缃换浣曚竴涓爣蹇椼€?
+### CASE 4: 浠呬负 struct page 鎿嶄綔鑰?pinning
 
-### CASE 3: MMU notifier 注册，带或不带缺页硬件
+濡傛灉鍙奖鍝?struct page 鏁版嵁锛堜笌椤垫墍杩借釜鐨勫疄闄呭唴瀛樺唴瀹圭浉瀵癸級锛岄偅涔堟櫘閫氱殑 GUP 璋冪敤灏辫冻澶熶簡锛屼笉闇€瑕佽缃换浣曚竴涓爣蹇椼€?
+### CASE 5: 涓轰簡鍐欏叆椤靛唴鏁版嵁鑰?pinning
 
-设备驱动可以通过 get_user_pages*() pin 页，并为该内存范围注册 mmu notifier 回调。然后，在收到 notifier 的“invalidate range”回调时，停止设备使用该范围，并 unpin 这些页。可能还有其他可行的方案，例如显式地针对待处理的 IO 进行同步，以达到大致相同的效果。
-
-或者，如果硬件支持可重放缺页（replayable page faults），那么设备驱动可以完全避免 pinning（这是理想的），如下所示：像上面一样注册 mmu notifier 回调，但不是在回调中停止设备并 unpin，而只是将该范围从设备的页表中移除。
-
-无论哪种方式，只要驱动在 mmu notifier 回调时 unpin 这些页，就与文件系统和 mm（folio_mkclean()、munmap() 等）有了适当的同步。因此，不需要设置任何一个标志。
-
-### CASE 4: 仅为 struct page 操作而 pinning
-
-如果只影响 struct page 数据（与页所追踪的实际内存内容相对），那么普通的 GUP 调用就足够了，不需要设置任何一个标志。
-
-### CASE 5: 为了写入页内数据而 pinning
-
-即使不涉及 DMA 或直接 IO，仅仅是“pin、写入页数据、unpin”这样简单的情况也会造成问题。CASE 5 可以被视为 CASE 1 加上 CASE 2 再加上任何调用该模式的情况的超集。换句话说，如果代码既不是 CASE 1 也不是 CASE 2，它仍然可能需要 FOLL_PIN，对于如下这样的模式：
-
-正确（使用 FOLL_PIN 调用）：
+鍗充娇涓嶆秹鍙?DMA 鎴栫洿鎺?IO锛屼粎浠呮槸鈥減in銆佸啓鍏ラ〉鏁版嵁銆乽npin鈥濊繖鏍风畝鍗曠殑鎯呭喌涔熶細閫犳垚闂銆侰ASE 5 鍙互琚涓?CASE 1 鍔犱笂 CASE 2 鍐嶅姞涓婁换浣曡皟鐢ㄨ妯″紡鐨勬儏鍐电殑瓒呴泦銆傛崲鍙ヨ瘽璇达紝濡傛灉浠ｇ爜鏃笉鏄?CASE 1 涔熶笉鏄?CASE 2锛屽畠浠嶇劧鍙兘闇€瑕?FOLL_PIN锛屽浜庡涓嬭繖鏍风殑妯″紡锛?
+姝ｇ‘锛堜娇鐢?FOLL_PIN 璋冪敤锛夛細
     pin_user_pages()
-    写入这些页内的数据
-    unpin_user_pages()
+    鍐欏叆杩欎簺椤靛唴鐨勬暟鎹?    unpin_user_pages()
 
-错误（使用 FOLL_GET 调用）：
+閿欒锛堜娇鐢?FOLL_GET 璋冪敤锛夛細
     get_user_pages()
-    写入这些页内的数据
-    put_page()
+    鍐欏叆杩欎簺椤靛唴鐨勬暟鎹?    put_page()
 
-## folio_maybe_dma_pinned()：pinning 的全部意义
-
-将 folio 标记为“DMA-pinned”或“gup-pinned”的全部意义在于能够查询“这个 folio 是否被 DMA-pinned？”这使得诸如 folio_mkclean()（以及一般的文件系统回写代码）之类的代码能够在由于此类 pin 而无法解除映射某个 folio 时，对要做什么做出明智的决定。
-
-在这些情况下该做什么，是长达数年的讨论与争论的主题（参见本文档末尾的参考文献）。这是一个 TODO 项：待该问题理清后补全细节。同时，可以肯定地说
+## folio_maybe_dma_pinned()锛歱inning 鐨勫叏閮ㄦ剰涔?
+灏?folio 鏍囪涓衡€淒MA-pinned鈥濇垨鈥済up-pinned鈥濈殑鍏ㄩ儴鎰忎箟鍦ㄤ簬鑳藉鏌ヨ鈥滆繖涓?folio 鏄惁琚?DMA-pinned锛熲€濊繖浣垮緱璇稿 folio_mkclean()锛堜互鍙婁竴鑸殑鏂囦欢绯荤粺鍥炲啓浠ｇ爜锛変箣绫荤殑浠ｇ爜鑳藉鍦ㄧ敱浜庢绫?pin 鑰屾棤娉曡В闄ゆ槧灏勬煇涓?folio 鏃讹紝瀵硅鍋氫粈涔堝仛鍑烘槑鏅虹殑鍐冲畾銆?
+鍦ㄨ繖浜涙儏鍐典笅璇ュ仛浠€涔堬紝鏄暱杈炬暟骞寸殑璁ㄨ涓庝簤璁虹殑涓婚锛堝弬瑙佹湰鏂囨。鏈熬鐨勫弬鑰冩枃鐚級銆傝繖鏄竴涓?TODO 椤癸細寰呰闂鐞嗘竻鍚庤ˉ鍏ㄧ粏鑺傘€傚悓鏃讹紝鍙互鑲畾鍦拌
 ```
 
         static inline bool folio_maybe_dma_pinned(struct folio *folio)
 
 ```
-……是解决长期存在的 gup+DMA 问题的先决条件。
-
-## 思考 FOLL_GET、FOLL_PIN 和 FOLL_LONGTERM 的另一种方式
-
-思考这些标志的另一种方式是作为一系列逐步加强的限制：FOLL_GET 用于 struct page 操作，不影响 struct page 所引用的数据。FOLL_PIN 是 FOLL_GET 的**替代品**，用于对其数据**将被**访问的页进行短期 pin。因此，FOLL_PIN 是一种“更严格”的 pin 形式。最后，FOLL_LONGTERM 是一个限制更强的、以 FOLL_PIN 为先决条件的情况：这用于将被长期 pin 且其数据将被访问的页。
-
-## 单元测试
+鈥︹€︽槸瑙ｅ喅闀挎湡瀛樺湪鐨?gup+DMA 闂鐨勫厛鍐虫潯浠躲€?
+## 鎬濊€?FOLL_GET銆丗OLL_PIN 鍜?FOLL_LONGTERM 鐨勫彟涓€绉嶆柟寮?
+鎬濊€冭繖浜涙爣蹇楃殑鍙︿竴绉嶆柟寮忔槸浣滀负涓€绯诲垪閫愭鍔犲己鐨勯檺鍒讹細FOLL_GET 鐢ㄤ簬 struct page 鎿嶄綔锛屼笉褰卞搷 struct page 鎵€寮曠敤鐨勬暟鎹€侳OLL_PIN 鏄?FOLL_GET 鐨?*鏇夸唬鍝?*锛岀敤浜庡鍏舵暟鎹?*灏嗚**璁块棶鐨勯〉杩涜鐭湡 pin銆傚洜姝わ紝FOLL_PIN 鏄竴绉嶁€滄洿涓ユ牸鈥濈殑 pin 褰㈠紡銆傛渶鍚庯紝FOLL_LONGTERM 鏄竴涓檺鍒舵洿寮虹殑銆佷互 FOLL_PIN 涓哄厛鍐虫潯浠剁殑鎯呭喌锛氳繖鐢ㄤ簬灏嗚闀挎湡 pin 涓斿叾鏁版嵁灏嗚璁块棶鐨勯〉銆?
+## 鍗曞厓娴嬭瘯
 
 ```
 
  tools/testing/selftests/mm/gup_test.c
 
 ```
-有以下新的调用用于演练新的 pin*() 包装函数：
-
+鏈変互涓嬫柊鐨勮皟鐢ㄧ敤浜庢紨缁冩柊鐨?pin*() 鍖呰鍑芥暟锛?
 - PIN_FAST_BENCHMARK (./gup_test -a)
 - PIN_BASIC_TEST (./gup_test -b)
 
-你可以监控已获取和已释放的 dma-pinned 页总数
+浣犲彲浠ョ洃鎺у凡鑾峰彇鍜屽凡閲婃斁鐨?dma-pinned 椤垫€绘暟
 ```
 
     /proc/vmstat/nr_foll_pin_acquired
     /proc/vmstat/nr_foll_pin_released
 
 ```
-在正常情况下，这两个值相等，除非存在任何长期 [R]DMA pin，或处于 pin/unpin 转换期间。
-
-- nr_foll_pin_acquired：自系统上电以来已获取的 logical pins 数量。对于巨页，头页被 pin 一次（针对巨页中的每个页——头页和每个尾页）。这遵循与 get_user_pages() 用于巨页的相同行为：当 get_user_pages() 应用于巨页时，头页针对巨页中的每个尾页或头页被引用计数一次。
-
-- nr_foll_pin_released：自系统上电以来已释放的 logical pins 数量。注意，页是以 PAGE_SIZE 粒度释放（unpin）的，即使最初的 pin 是应用于巨页。由于上面“nr_foll_pin_acquired”中描述的 pin 计数的行为，
+鍦ㄦ甯告儏鍐典笅锛岃繖涓や釜鍊肩浉绛夛紝闄ら潪瀛樺湪浠讳綍闀挎湡 [R]DMA pin锛屾垨澶勪簬 pin/unpin 杞崲鏈熼棿銆?
+- nr_foll_pin_acquired锛氳嚜绯荤粺涓婄數浠ユ潵宸茶幏鍙栫殑 logical pins 鏁伴噺銆傚浜庡法椤碉紝澶撮〉琚?pin 涓€娆★紙閽堝宸ㄩ〉涓殑姣忎釜椤碘€斺€斿ご椤靛拰姣忎釜灏鹃〉锛夈€傝繖閬靛惊涓?get_user_pages() 鐢ㄤ簬宸ㄩ〉鐨勭浉鍚岃涓猴細褰?get_user_pages() 搴旂敤浜庡法椤垫椂锛屽ご椤甸拡瀵瑰法椤典腑鐨勬瘡涓熬椤垫垨澶撮〉琚紩鐢ㄨ鏁颁竴娆°€?
+- nr_foll_pin_released锛氳嚜绯荤粺涓婄數浠ユ潵宸查噴鏀剧殑 logical pins 鏁伴噺銆傛敞鎰忥紝椤垫槸浠?PAGE_SIZE 绮掑害閲婃斁锛坲npin锛夌殑锛屽嵆浣挎渶鍒濈殑 pin 鏄簲鐢ㄤ簬宸ㄩ〉銆傜敱浜庝笂闈⑩€渘r_foll_pin_acquired鈥濅腑鎻忚堪鐨?pin 璁℃暟鐨勮涓猴紝
 ```
 
     pin_user_pages(huge_page);
@@ -172,17 +123,15 @@ FOLL_PIN 是 FOLL_LONGTERM 的先决条件。换句话说，FOLL_LONGTERM 是 FO
     nr_foll_pin_released == nr_foll_pin_acquired
 
 ```
-（……除非由于已有的长期 RDMA pin 而已经失去平衡。）
+锛堚€︹€﹂櫎闈炵敱浜庡凡鏈夌殑闀挎湡 RDMA pin 鑰屽凡缁忓け鍘诲钩琛°€傦級
 
-## 其他诊断
+## 鍏朵粬璇婃柇
 
-dump_page() 已被略微增强以处理这些新的计数字段，并更好地报告大 folio。具体来说，对于大 folio，会报告精确的 pincount。
-
-## 参考文献
-
+dump_page() 宸茶鐣ュ井澧炲己浠ュ鐞嗚繖浜涙柊鐨勮鏁板瓧娈碉紝骞舵洿濂藉湴鎶ュ憡澶?folio銆傚叿浣撴潵璇达紝瀵逛簬澶?folio锛屼細鎶ュ憡绮剧‘鐨?pincount銆?
+## 鍙傝€冩枃鐚?
 - `Some slow progress on get_user_pages() (Apr 2, 2019) <https://lwn.net/Articles/784574/>`_
 - `DMA and get_user_pages() (LPC: Dec 12, 2018) <https://lwn.net/Articles/774411/>`_
 - `The trouble with get_user_pages() (Apr 30, 2018) <https://lwn.net/Articles/753027/>`_
 - `LWN kernel index: get_user_pages() <https://lwn.net/Kernel/Index/#Memory_management-get_user_pages>`_
 
-John Hubbard，2019 年 10 月
+John Hubbard锛?019 骞?10 鏈?

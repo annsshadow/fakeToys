@@ -1,38 +1,38 @@
-## DMA 测试 Guide
+﻿## DMA 娴嬭瘯 Guide
 
 
 Andy Shevchenko <andriy.shevchenko@linux.intel.com>
 
-small 文档 introduces 测试 DMA 驱动 使用 dmatest 模块.
+small 鏂囨。 introduces 娴嬭瘯 DMA 椹卞姩 浣跨敤 dmatest 妯″潡.
 
-dmatest 模块 测试 DMA memcpy, memset, XOR RAID6 P+Q 操作 使用
+dmatest 妯″潡 娴嬭瘯 DMA memcpy, memset, XOR RAID6 P+Q 鎿嶄綔 浣跨敤
 various lengths various offsets source destination buffers.
-初始化 buffers repeatable pattern verify DMA
+鍒濆鍖?buffers repeatable pattern verify DMA
 engine copies requested region nothing more. verify
-bytes aren't swapped around, source 缓冲区 isn't modified.
+bytes aren't swapped around, source 缂撳啿鍖?isn't modified.
 
-dmatest 模块 configured 测试 specific channel.
-测试 multiple channels same time, start multiple 线程
+dmatest 妯″潡 configured 娴嬭瘯 specific channel.
+娴嬭瘯 multiple channels same time, start multiple 绾跨▼
 competing same channel.
 
-测试 suite works channels least one
-capability following: DMA_MEMCPY (内存- -内存), DMA_MEMSET
-(const- -内存 内存- -内存, emulated), DMA_XOR, DMA_PQ.
+娴嬭瘯 suite works channels least one
+capability following: DMA_MEMCPY (鍐呭瓨- -鍐呭瓨), DMA_MEMSET
+(const- -鍐呭瓨 鍐呭瓨- -鍐呭瓨, emulated), DMA_XOR, DMA_PQ.
 
-case related questions 使用 official mailing 列表
-dmaengine@vger.内核.org.
+case related questions 浣跨敤 official mailing 鍒楄〃
+dmaengine@vger.鍐呮牳.org.
 
-## Part 1 - 构建 测试 模块
+## Part 1 - 鏋勫缓 娴嬭瘯 妯″潡
 
 
-menuconfig 包含 选项 could found following path:
+menuconfig 鍖呭惈 閫夐」 could found following path:
 
-设备 驱动 -> DMA Engine 支持 -> DMA 测试 client
+璁惧 椹卞姩 -> DMA Engine 鏀寔 -> DMA 娴嬭瘯 client
 
-配置 文件 选项 called CONFIG_DMATEST. dmatest could
-built 模块 inside 内核. Let's consider cases.
+閰嶇疆 鏂囦欢 閫夐」 called CONFIG_DMATEST. dmatest could
+built 妯″潡 inside 鍐呮牳. Let's consider cases.
 
-## Part 2 - dmatest built 模块
+## Part 2 - dmatest built 妯″潡
 
 
 ```
@@ -65,38 +65,38 @@ built 模块 inside 内核. Let's consider cases.
     % echo 1 > /sys/module/dmatest/parameters/run
 
 ```
-测试, starting 5.0 内核, single- multi-channel,
-channel 参数(s) 设置 参数.
-time existing 参数 值 acquired 使用
-线程(s). 参数 shared. Therefore, changes made
-参数, additional channel specified,
-(shared) 参数 使用 线程 使用 new 值.
-channels specified, 线程 设置 pending. 线程
-begin execution 运行 参数 设置 1.
+娴嬭瘯, starting 5.0 鍐呮牳, single- multi-channel,
+channel 鍙傛暟(s) 璁剧疆 鍙傛暟.
+time existing 鍙傛暟 鍊?acquired 浣跨敤
+绾跨▼(s). 鍙傛暟 shared. Therefore, changes made
+鍙傛暟, additional channel specified,
+(shared) 鍙傛暟 浣跨敤 绾跨▼ 浣跨敤 new 鍊?
+channels specified, 绾跨▼ 璁剧疆 pending. 绾跨▼
+begin execution 杩愯 鍙傛暟 璁剧疆 1.
 
 ```
 
     % ls -1 /sys/class/dma/
 
 ```
-Once started message like " dmatest: Added 1 线程 使用 dma0chan0"
-emitted. 线程 specific channel created now pending,
-pending 线程 started once 运行 1.
+Once started message like " dmatest: Added 1 绾跨▼ 浣跨敤 dma0chan0"
+emitted. 绾跨▼ specific channel created now pending,
+pending 绾跨▼ started once 杩愯 1.
 
-说明 运行 new 测试 stop progress 测试.
+璇存槑 杩愯 new 娴嬭瘯 stop progress 娴嬭瘯.
 
 ```
 
     % cat /sys/module/dmatest/parameters/run
 
 ```
-wait 测试 completion userspace poll '运行' until false, 使用
-wait 参数. Specifying 'wait=1' loading 模块 causes 模块
-初始化 pause until 测试 运行 completed, reading
-/sys/模块/dmatest/参数/wait waits 运行 测试 complete
-returning. 示例, following scripts wait 42 测试
-complete exiting. 说明 'iterations' 设置 'infinite'
-waiting 禁用.
+wait 娴嬭瘯 completion userspace poll '杩愯' until false, 浣跨敤
+wait 鍙傛暟. Specifying 'wait=1' loading 妯″潡 causes 妯″潡
+鍒濆鍖?pause until 娴嬭瘯 杩愯 completed, reading
+/sys/妯″潡/dmatest/鍙傛暟/wait waits 杩愯 娴嬭瘯 complete
+returning. 绀轰緥, following scripts wait 42 娴嬭瘯
+complete exiting. 璇存槑 'iterations' 璁剧疆 'infinite'
+waiting 绂佺敤.
 
 ```
 
@@ -111,21 +111,21 @@ waiting 禁用.
     % modprobe -r dmatest
 
 ```
-## Part 3 - built- 内核
+## Part 3 - built- 鍐呮牳
 
 
-模块 参数 supplied 内核 命令 line 使用
-first performed 测试. 用户 gets 控制, 测试 could
-re-运行 same different 参数. details 参见
-章节`Part 2 - When dmatest is built as a module`_.
+妯″潡 鍙傛暟 supplied 鍐呮牳 鍛戒护 line 浣跨敤
+first performed 娴嬭瘯. 鐢ㄦ埛 gets 鎺у埗, 娴嬭瘯 could
+re-杩愯 same different 鍙傛暟. details 鍙傝
+绔犺妭`Part 2 - When dmatest is built as a module`_.
 
-cases 模块 参数 使用 actual 值 测试
+cases 妯″潡 鍙傛暟 浣跨敤 actual 鍊?娴嬭瘯
 ```
 
     % grep -H . /sys/module/dmatest/parameters/*
 
 ```
-## Part 4 - Gathering 测试 results
+## Part 4 - Gathering 娴嬭瘯 results
 
 
 ```
@@ -139,10 +139,10 @@ cases 模块 参数 使用 actual 值 测试
     dmatest: result dma0chan0-copy0: #1: No errors with src_off=0x7bf dst_off=0x8ad len=0x3fea (0)
 
 ```
-message format unified across different 类型 错误.
-编号 parentheses represents additional 信息, e.g. 错误
-code, 错误 counter, 状态. 测试 线程 emits 摘要 line
-completion listing 编号 测试 executed, 编号 failed,
+message format unified across different 绫诲瀷 閿欒.
+缂栧彿 parentheses represents additional 淇℃伅, e.g. 閿欒
+code, 閿欒 counter, 鐘舵€? 娴嬭瘯 绾跨▼ emits 鎽樿 line
+completion listing 缂栧彿 娴嬭瘯 executed, 缂栧彿 failed,
 result code.
 
 ```
@@ -151,18 +151,18 @@ result code.
     dmatest: dma0chan0-copy0: summary 1 test, 0 failures 1000 iops 100000 KB/s (0)
 
 ```
-details 数据 miscompare 错误 emitted, follow
+details 鏁版嵁 miscompare 閿欒 emitted, follow
 format.
 
-## Part 5 - Handling channel 分配
+## Part 5 - Handling channel 鍒嗛厤
 
 
 ### Allocating Channels
 
 
-Channels need configured prior starting 测试 运行. Attempting
-运行 测试 configuring channels result testing
-channels 可用.
+Channels need configured prior starting 娴嬭瘯 杩愯. Attempting
+杩愯 娴嬭瘯 configuring channels result testing
+channels 鍙敤.
 
 ```
 
@@ -170,8 +170,8 @@ channels 可用.
     dmatest: No channels configured, continue with any
 
 ```
-Channels registered 使用 "channel" 参数. Channels requested
-名称, once requested, channel registered pending 线程 added 测试 列表.
+Channels registered 浣跨敤 "channel" 鍙傛暟. Channels requested
+鍚嶇О, once requested, channel registered pending 绾跨▼ added 娴嬭瘯 鍒楄〃.
 
 ```
 
@@ -179,8 +179,8 @@ Channels registered 使用 "channel" 参数. Channels requested
     dmatest: Added 1 threads using dma0chan2
 
 ```
-More channels added repeating 示例 .
-Reading back channel 参数 返回 名称 last channel added successfully.
+More channels added repeating 绀轰緥 .
+Reading back channel 鍙傛暟 杩斿洖 鍚嶇О last channel added successfully.
 
 ```
 
@@ -192,8 +192,8 @@ Reading back channel 参数 返回 名称 last channel added successfully.
     dma0chan2
 
 ```
-method requesting channels 请求 channel empty string, Doing
-请求 channels 可用 tested:
+method requesting channels 璇锋眰 channel empty string, Doing
+璇锋眰 channels 鍙敤 tested:
 
 ```
 
@@ -207,8 +207,8 @@ method requesting channels 请求 channel empty string, Doing
     dmatest: Added 1 threads using dma0chan8
 
 ```
-point 测试 配置, reading "test_list" 参数
-print 列表 currently pending 测试.
+point 娴嬭瘯 閰嶇疆, reading "test_list" 鍙傛暟
+print 鍒楄〃 currently pending 娴嬭瘯.
 
 ```
 
@@ -222,13 +222,13 @@ print 列表 currently pending 测试.
     dmatest: 1 threads using dma0chan8
 
 ```
-说明: Channels configured 测试 运行 channel configurations
-carry across next 测试 运行.
+璇存槑: Channels configured 娴嬭瘯 杩愯 channel configurations
+carry across next 娴嬭瘯 杩愯.
 
 ### Releasing Channels
 
 
-Channels freed setting 运行 0.
+Channels freed setting 杩愯 0.
 
 ```
 
@@ -241,5 +241,5 @@ Channels freed setting 运行 0.
     0
 
 ```
-Channels allocated previous 测试 runs automatically freed new
-channel requested completing successful 测试 运行.
+Channels allocated previous 娴嬭瘯 runs automatically freed new
+channel requested completing successful 娴嬭瘯 杩愯.

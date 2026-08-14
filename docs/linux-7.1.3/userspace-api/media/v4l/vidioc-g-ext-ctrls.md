@@ -1,14 +1,13 @@
-
+﻿
 
 ######## ioctl VIDIOC_G_EXT_CTRLS, VIDIOC_S_EXT_CTRLS, VIDIOC_TRY_EXT_CTRLS
 
 
-## 名称
+## 鍚嶇О
 
 
-VIDIOC_G_EXT_CTRLS - VIDIOC_S_EXT_CTRLS - VIDIOC_TRY_EXT_CTRLS - 获取或设置多个控件的值，尝试控件值
-
-## 概要
+VIDIOC_G_EXT_CTRLS - VIDIOC_S_EXT_CTRLS - VIDIOC_TRY_EXT_CTRLS - 鑾峰彇鎴栬缃涓帶浠剁殑鍊硷紝灏濊瘯鎺т欢鍊?
+## 姒傝
 
 
 
@@ -20,68 +19,42 @@ VIDIOC_G_EXT_CTRLS - VIDIOC_S_EXT_CTRLS - VIDIOC_TRY_EXT_CTRLS - 获取或设置
 
 `int ioctl(int fd, VIDIOC_TRY_EXT_CTRLS, struct v4l2_ext_controls *argp)`
 
-## 参数
+## 鍙傛暟
 
 
 `fd`
-    `open()` 返回的文件描述符。
-
+    `open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
 `argp`
-    指向 struct `v4l2_ext_controls` 的指针。
+    鎸囧悜 struct `v4l2_ext_controls` 鐨勬寚閽堛€?
+## 鎻忚堪
 
-## 描述
 
-
-这些 ioctl 允许调用者原子地获取或设置多个控件。控件 ID 被分组到控件类（见
-ctrl-class）中，并且控件数组中的所有控件必须属于同一个控件类。
-
-应用程序必须始终填写 struct `v4l2_ext_controls` 的 `count`、`which`、`controls`
-和 `reserved` 字段，并初始化由 `controls` 字段指向的 struct `v4l2_ext_control`
-数组。
-
-要获取一组控件的当前值，应用程序初始化每个 struct `v4l2_ext_control` 的 `id`、
-`size` 和 `reserved2` 字段，并调用 VIDIOC_G_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> ioctl。
-字符串控件还必须设置 `string` 字段。复合类型（`V4L2_CTRL_FLAG_HAS_PAYLOAD`
-被设置）的控件必须设置 `ptr` 字段。
-
-如果 `size` 太小以至于无法接收控件结果（仅与字符串等指针类型控件相关），那么
-驱动会将 `size` 设置为一个有效值并返回 `ENOSPC` 错误码。你应该将内存重新分配为
-这个新大小并重试。对于字符串类型，如果字符串在此期间变长了，同样的问题可能再次
-发生。建议先调用 VIDIOC_QUERYCTRL 并使用 `maximum`\ +1 作为新的 `size` 值。这能保证
-内存足够。
-
-N 维数组逐行设置和获取。你不能设置部分数组，必须设置或获取所有元素。总大小计算
-为 `elems` * `elem_size`。这些值可以通过调用 VIDIOC_QUERY_EXT_CTRL <VIDIOC_QUERYCTRL>
-获得。
-
-要更改一组控件的值，应用程序初始化每个 struct `v4l2_ext_control` 的 `id`、`size`、
-`reserved2` 和 `value/value64/string/ptr` 字段，并调用
-VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> ioctl。只有当**所有**控件值都有效时，控件才会被设置。
-
-要检查一组控件是否具有正确的值，应用程序初始化每个 struct `v4l2_ext_control` 的
-`id`、`size`、`reserved2` 和 `value/value64/string/ptr` 字段，并调用
-VIDIOC_TRY_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> ioctl。错误值是自动调整到有效值还是返回错误，取决于驱动。
-
-当 `id` 或 `which` 无效时，驱动返回 `EINVAL` 错误码。当值越界时，驱动可以选择取
-最接近的合法值或返回 `ERANGE` 错误码， whichever 看起来更合适。在第一种情况下，新值
-被设置在 struct `v4l2_ext_control` 中。如果新的控件值不合适（例如给定的菜单索引
-不被菜单控件支持），那么这也会导致一个 `EINVAL` 错误码错误。
-
-如果 `request_fd` 被设置为一个尚未排队的 request <media-request-api> 文件描述符，
-并且 `which` 被设置为 `V4L2_CTRL_WHICH_REQUEST_VAL`，那么这些控件不会在调用
-VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 时立即应用，而是被驱动应用于与同一请求关联的缓冲区。
-如果设备不支持请求，那么将返回 `EACCES`。如果支持请求但给出了无效的请求文件描述符，
-那么将返回 `EINVAL`。
-
-试图为已经排队的请求调用 VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 将导致一个 `EBUSY` 错误。
-
-如果在调用 VIDIOC_G_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 期间指定了 `request_fd` 并且 `which` 被设置为
-`V4L2_CTRL_WHICH_REQUEST_VAL`，那么它将返回请求完成时控件的值。如果请求尚未完成，
-那么这将导致一个 `EACCES` 错误。
-
-驱动只会在所有控件值都正确时设置/获取这些控件。这防止了只有部分控件被设置/获取
-的情况。只有底层错误（例如失败的 i2c 命令）仍可能导致这种情况。
-
+杩欎簺 ioctl 鍏佽璋冪敤鑰呭師瀛愬湴鑾峰彇鎴栬缃涓帶浠躲€傛帶浠?ID 琚垎缁勫埌鎺т欢绫伙紙瑙?ctrl-class锛変腑锛屽苟涓旀帶浠舵暟缁勪腑鐨勬墍鏈夋帶浠跺繀椤诲睘浜庡悓涓€涓帶浠剁被銆?
+搴旂敤绋嬪簭蹇呴』濮嬬粓濉啓 struct `v4l2_ext_controls` 鐨?`count`銆乣which`銆乣controls`
+鍜?`reserved` 瀛楁锛屽苟鍒濆鍖栫敱 `controls` 瀛楁鎸囧悜鐨?struct `v4l2_ext_control`
+鏁扮粍銆?
+瑕佽幏鍙栦竴缁勬帶浠剁殑褰撳墠鍊硷紝搴旂敤绋嬪簭鍒濆鍖栨瘡涓?struct `v4l2_ext_control` 鐨?`id`銆?`size` 鍜?`reserved2` 瀛楁锛屽苟璋冪敤 VIDIOC_G_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> ioctl銆?瀛楃涓叉帶浠惰繕蹇呴』璁剧疆 `string` 瀛楁銆傚鍚堢被鍨嬶紙`V4L2_CTRL_FLAG_HAS_PAYLOAD`
+琚缃級鐨勬帶浠跺繀椤昏缃?`ptr` 瀛楁銆?
+濡傛灉 `size` 澶皬浠ヨ嚦浜庢棤娉曟帴鏀舵帶浠剁粨鏋滐紙浠呬笌瀛楃涓茬瓑鎸囬拡绫诲瀷鎺т欢鐩稿叧锛夛紝閭ｄ箞
+椹卞姩浼氬皢 `size` 璁剧疆涓轰竴涓湁鏁堝€煎苟杩斿洖 `ENOSPC` 閿欒鐮併€備綘搴旇灏嗗唴瀛橀噸鏂板垎閰嶄负
+杩欎釜鏂板ぇ灏忓苟閲嶈瘯銆傚浜庡瓧绗︿覆绫诲瀷锛屽鏋滃瓧绗︿覆鍦ㄦ鏈熼棿鍙橀暱浜嗭紝鍚屾牱鐨勯棶棰樺彲鑳藉啀娆?鍙戠敓銆傚缓璁厛璋冪敤 VIDIOC_QUERYCTRL 骞朵娇鐢?`maximum`\ +1 浣滀负鏂扮殑 `size` 鍊笺€傝繖鑳戒繚璇?鍐呭瓨瓒冲銆?
+N 缁存暟缁勯€愯璁剧疆鍜岃幏鍙栥€備綘涓嶈兘璁剧疆閮ㄥ垎鏁扮粍锛屽繀椤昏缃垨鑾峰彇鎵€鏈夊厓绱犮€傛€诲ぇ灏忚绠?涓?`elems` * `elem_size`銆傝繖浜涘€煎彲浠ラ€氳繃璋冪敤 VIDIOC_QUERY_EXT_CTRL <VIDIOC_QUERYCTRL>
+鑾峰緱銆?
+瑕佹洿鏀逛竴缁勬帶浠剁殑鍊硷紝搴旂敤绋嬪簭鍒濆鍖栨瘡涓?struct `v4l2_ext_control` 鐨?`id`銆乣size`銆?`reserved2` 鍜?`value/value64/string/ptr` 瀛楁锛屽苟璋冪敤
+VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> ioctl銆傚彧鏈夊綋**鎵€鏈?*鎺т欢鍊奸兘鏈夋晥鏃讹紝鎺т欢鎵嶄細琚缃€?
+瑕佹鏌ヤ竴缁勬帶浠舵槸鍚﹀叿鏈夋纭殑鍊硷紝搴旂敤绋嬪簭鍒濆鍖栨瘡涓?struct `v4l2_ext_control` 鐨?`id`銆乣size`銆乣reserved2` 鍜?`value/value64/string/ptr` 瀛楁锛屽苟璋冪敤
+VIDIOC_TRY_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> ioctl銆傞敊璇€兼槸鑷姩璋冩暣鍒版湁鏁堝€艰繕鏄繑鍥為敊璇紝鍙栧喅浜庨┍鍔ㄣ€?
+褰?`id` 鎴?`which` 鏃犳晥鏃讹紝椹卞姩杩斿洖 `EINVAL` 閿欒鐮併€傚綋鍊艰秺鐣屾椂锛岄┍鍔ㄥ彲浠ラ€夋嫨鍙?鏈€鎺ヨ繎鐨勫悎娉曞€兼垨杩斿洖 `ERANGE` 閿欒鐮侊紝 whichever 鐪嬭捣鏉ユ洿鍚堥€傘€傚湪绗竴绉嶆儏鍐典笅锛屾柊鍊?琚缃湪 struct `v4l2_ext_control` 涓€傚鏋滄柊鐨勬帶浠跺€间笉鍚堥€傦紙渚嬪缁欏畾鐨勮彍鍗曠储寮?涓嶈鑿滃崟鎺т欢鏀寔锛夛紝閭ｄ箞杩欎篃浼氬鑷翠竴涓?`EINVAL` 閿欒鐮侀敊璇€?
+濡傛灉 `request_fd` 琚缃负涓€涓皻鏈帓闃熺殑 request <media-request-api> 鏂囦欢鎻忚堪绗︼紝
+骞朵笖 `which` 琚缃负 `V4L2_CTRL_WHICH_REQUEST_VAL`锛岄偅涔堣繖浜涙帶浠朵笉浼氬湪璋冪敤
+VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 鏃剁珛鍗冲簲鐢紝鑰屾槸琚┍鍔ㄥ簲鐢ㄤ簬涓庡悓涓€璇锋眰鍏宠仈鐨勭紦鍐插尯銆?濡傛灉璁惧涓嶆敮鎸佽姹傦紝閭ｄ箞灏嗚繑鍥?`EACCES`銆傚鏋滄敮鎸佽姹備絾缁欏嚭浜嗘棤鏁堢殑璇锋眰鏂囦欢鎻忚堪绗︼紝
+閭ｄ箞灏嗚繑鍥?`EINVAL`銆?
+璇曞浘涓哄凡缁忔帓闃熺殑璇锋眰璋冪敤 VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 灏嗗鑷翠竴涓?`EBUSY` 閿欒銆?
+濡傛灉鍦ㄨ皟鐢?VIDIOC_G_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 鏈熼棿鎸囧畾浜?`request_fd` 骞朵笖 `which` 琚缃负
+`V4L2_CTRL_WHICH_REQUEST_VAL`锛岄偅涔堝畠灏嗚繑鍥炶姹傚畬鎴愭椂鎺т欢鐨勫€笺€傚鏋滆姹傚皻鏈畬鎴愶紝
+閭ｄ箞杩欏皢瀵艰嚧涓€涓?`EACCES` 閿欒銆?
+椹卞姩鍙細鍦ㄦ墍鏈夋帶浠跺€奸兘姝ｇ‘鏃惰缃?鑾峰彇杩欎簺鎺т欢銆傝繖闃叉浜嗗彧鏈夐儴鍒嗘帶浠惰璁剧疆/鑾峰彇
+鐨勬儏鍐点€傚彧鏈夊簳灞傞敊璇紙渚嬪澶辫触鐨?i2c 鍛戒护锛変粛鍙兘瀵艰嚧杩欑鎯呭喌銆?
 
 
 
@@ -94,15 +67,11 @@ VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 时立即应用，而是被驱动应用�
 
     - - __u32
       - `id`
-      - 标识控件，由应用程序设置。
-    - - __u32
+      - 鏍囪瘑鎺т欢锛岀敱搴旂敤绋嬪簭璁剧疆銆?    - - __u32
       - `size`
-      - 此控件负载的总字节大小。
-    - - `2` `size` 字段通常为 0，但对于指针控件，应将其设置为包含负载或
-	将接收负载的内存的大小。
-	如果 VIDIOC_G_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 发现该值小于存储负载结果所需的值，
-	那么它会被设置为足够存储负载结果的值，并返回 `ENOSPC`。
-
+      - 姝ゆ帶浠惰礋杞界殑鎬诲瓧鑺傚ぇ灏忋€?    - - `2` `size` 瀛楁閫氬父涓?0锛屼絾瀵逛簬鎸囬拡鎺т欢锛屽簲灏嗗叾璁剧疆涓哄寘鍚礋杞芥垨
+	灏嗘帴鏀惰礋杞界殑鍐呭瓨鐨勫ぇ灏忋€?	濡傛灉 VIDIOC_G_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 鍙戠幇璇ュ€煎皬浜庡瓨鍌ㄨ礋杞界粨鏋滄墍闇€鐨勫€硷紝
+	閭ｄ箞瀹冧細琚缃负瓒冲瀛樺偍璐熻浇缁撴灉鐨勫€硷紝骞惰繑鍥?`ENOSPC`銆?
 ```
 
 	   For string controls, this ``size`` field should
@@ -111,153 +80,87 @@ VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 时立即应用，而是被驱动应用�
 	   *length* of the string may well be much smaller.
     * - __u32
       - ``reserved2``\ [1]
-      - 为未来扩展保留。驱动和应用程序必须将数组设为零。
-    * - union {
+      - 涓烘湭鏉ユ墿灞曚繚鐣欍€傞┍鍔ㄥ拰搴旂敤绋嬪簭蹇呴』灏嗘暟缁勮涓洪浂銆?    * - union {
       - (anonymous)
     * - __s32
       - ``value``
-      - 新值或当前值。如果此控件不是 `V4L2_CTRL_TYPE_INTEGER64` 类型且未设置
-	`V4L2_CTRL_FLAG_HAS_PAYLOAD`，则有效。
-    * - __s64
+      - 鏂板€兼垨褰撳墠鍊笺€傚鏋滄鎺т欢涓嶆槸 `V4L2_CTRL_TYPE_INTEGER64` 绫诲瀷涓旀湭璁剧疆
+	`V4L2_CTRL_FLAG_HAS_PAYLOAD`锛屽垯鏈夋晥銆?    * - __s64
       - ``value64``
-      - 新值或当前值。如果此控件是 `V4L2_CTRL_TYPE_INTEGER64` 类型且未设置
-	`V4L2_CTRL_FLAG_HAS_PAYLOAD`，则有效。
-    * - char *
+      - 鏂板€兼垨褰撳墠鍊笺€傚鏋滄鎺т欢鏄?`V4L2_CTRL_TYPE_INTEGER64` 绫诲瀷涓旀湭璁剧疆
+	`V4L2_CTRL_FLAG_HAS_PAYLOAD`锛屽垯鏈夋晥銆?    * - char *
       - ``string``
-      - 指向字符串的指针。如果此控件是 `V4L2_CTRL_TYPE_STRING` 类型则有效。
-    * - __u8 *
+      - 鎸囧悜瀛楃涓茬殑鎸囬拡銆傚鏋滄鎺т欢鏄?`V4L2_CTRL_TYPE_STRING` 绫诲瀷鍒欐湁鏁堛€?    * - __u8 *
       - ``p_u8``
-      - 指向无符号 8 位值矩阵控件的指针。如果此控件是 `V4L2_CTRL_TYPE_U8` 类型则有效。
-    * - __u16 *
+      - 鎸囧悜鏃犵鍙?8 浣嶅€肩煩闃垫帶浠剁殑鎸囬拡銆傚鏋滄鎺т欢鏄?`V4L2_CTRL_TYPE_U8` 绫诲瀷鍒欐湁鏁堛€?    * - __u16 *
       - ``p_u16``
-      - 指向无符号 16 位值矩阵控件的指针。如果此控件是 `V4L2_CTRL_TYPE_U16` 类型则有效。
-    * - __u32 *
+      - 鎸囧悜鏃犵鍙?16 浣嶅€肩煩闃垫帶浠剁殑鎸囬拡銆傚鏋滄鎺т欢鏄?`V4L2_CTRL_TYPE_U16` 绫诲瀷鍒欐湁鏁堛€?    * - __u32 *
       - ``p_u32``
-      - 指向无符号 32 位值矩阵控件的指针。如果此控件是 `V4L2_CTRL_TYPE_U32` 类型则有效。
-    * - __s32 *
+      - 鎸囧悜鏃犵鍙?32 浣嶅€肩煩闃垫帶浠剁殑鎸囬拡銆傚鏋滄鎺т欢鏄?`V4L2_CTRL_TYPE_U32` 绫诲瀷鍒欐湁鏁堛€?    * - __s32 *
       - ``p_s32``
-      - 指向有符号 32 位值矩阵控件的指针。如果此控件是 `V4L2_CTRL_TYPE_INTEGER` 类型且
-        设置了 `V4L2_CTRL_FLAG_HAS_PAYLOAD` 则有效。
-    * - __s64 *
+      - 鎸囧悜鏈夌鍙?32 浣嶅€肩煩闃垫帶浠剁殑鎸囬拡銆傚鏋滄鎺т欢鏄?`V4L2_CTRL_TYPE_INTEGER` 绫诲瀷涓?        璁剧疆浜?`V4L2_CTRL_FLAG_HAS_PAYLOAD` 鍒欐湁鏁堛€?    * - __s64 *
       - ``p_s64``
-      - 指向有符号 64 位值矩阵控件的指针。如果此控件是 `V4L2_CTRL_TYPE_INTEGER64` 类型且
-        设置了 `V4L2_CTRL_FLAG_HAS_PAYLOAD` 则有效。
-    * - struct :c:type:`v4l2_area` *
+      - 鎸囧悜鏈夌鍙?64 浣嶅€肩煩闃垫帶浠剁殑鎸囬拡銆傚鏋滄鎺т欢鏄?`V4L2_CTRL_TYPE_INTEGER64` 绫诲瀷涓?        璁剧疆浜?`V4L2_CTRL_FLAG_HAS_PAYLOAD` 鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_area` *
       - ``p_area``
-      - 指向 struct :c:type:`v4l2_area` 的指针。如果此控件是 `V4L2_CTRL_TYPE_AREA` 类型则有效。
-    * - struct :c:type:`v4l2_rect` *
+      - 鎸囧悜 struct :c:type:`v4l2_area` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?`V4L2_CTRL_TYPE_AREA` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_rect` *
       - ``p_rect``
-      - 指向 struct :c:type:`v4l2_rect` 的指针。如果此控件是 `V4L2_CTRL_TYPE_RECT` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_h264_sps` *
+      - 鎸囧悜 struct :c:type:`v4l2_rect` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?`V4L2_CTRL_TYPE_RECT` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_h264_sps` *
       - ``p_h264_sps``
-      - 指向 struct :c:type:`v4l2_ctrl_h264_sps` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_H264_SPS` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_h264_pps` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_h264_sps` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_H264_SPS` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_h264_pps` *
       - ``p_h264_pps``
-      - 指向 struct :c:type:`v4l2_ctrl_h264_pps` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_H264_PPS` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_h264_scaling_matrix` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_h264_pps` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_H264_PPS` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_h264_scaling_matrix` *
       - ``p_h264_scaling_matrix``
-      - 指向 struct :c:type:`v4l2_ctrl_h264_scaling_matrix` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_H264_SCALING_MATRIX` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_h264_pred_weights` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_h264_scaling_matrix` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_H264_SCALING_MATRIX` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_h264_pred_weights` *
       - ``p_h264_pred_weights``
-      - 指向 struct :c:type:`v4l2_ctrl_h264_pred_weights` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_H264_PRED_WEIGHTS` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_h264_slice_params` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_h264_pred_weights` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_H264_PRED_WEIGHTS` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_h264_slice_params` *
       - ``p_h264_slice_params``
-      - 指向 struct :c:type:`v4l2_ctrl_h264_slice_params` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_H264_SLICE_PARAMS` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_h264_decode_params` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_h264_slice_params` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_H264_SLICE_PARAMS` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_h264_decode_params` *
       - ``p_h264_decode_params``
-      - 指向 struct :c:type:`v4l2_ctrl_h264_decode_params` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_H264_DECODE_PARAMS` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_fwht_params` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_h264_decode_params` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_H264_DECODE_PARAMS` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_fwht_params` *
       - ``p_fwht_params``
-      - 指向 struct :c:type:`v4l2_ctrl_fwht_params` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_FWHT_PARAMS` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_vp8_frame` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_fwht_params` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_FWHT_PARAMS` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_vp8_frame` *
       - ``p_vp8_frame``
-      - 指向 struct :c:type:`v4l2_ctrl_vp8_frame` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_VP8_FRAME` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_mpeg2_sequence` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_vp8_frame` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_VP8_FRAME` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_mpeg2_sequence` *
       - ``p_mpeg2_sequence``
-      - 指向 struct :c:type:`v4l2_ctrl_mpeg2_sequence` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_MPEG2_SEQUENCE` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_mpeg2_picture` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_mpeg2_sequence` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_MPEG2_SEQUENCE` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_mpeg2_picture` *
       - ``p_mpeg2_picture``
-      - 指向 struct :c:type:`v4l2_ctrl_mpeg2_picture` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_MPEG2_PICTURE` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_mpeg2_quantisation` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_mpeg2_picture` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_MPEG2_PICTURE` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_mpeg2_quantisation` *
       - ``p_mpeg2_quantisation``
-      - 指向 struct :c:type:`v4l2_ctrl_mpeg2_quantisation` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_MPEG2_QUANTISATION` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_vp9_compressed_hdr` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_mpeg2_quantisation` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_MPEG2_QUANTISATION` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_vp9_compressed_hdr` *
       - ``p_vp9_compressed_hdr_probs``
-      - 指向 struct :c:type:`v4l2_ctrl_vp9_compressed_hdr` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_VP9_COMPRESSED_HDR` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_vp9_frame` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_vp9_compressed_hdr` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_VP9_COMPRESSED_HDR` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_vp9_frame` *
       - ``p_vp9_frame``
-      - 指向 struct :c:type:`v4l2_ctrl_vp9_frame` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_VP9_FRAME` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_hdr10_cll_info` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_vp9_frame` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_VP9_FRAME` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_hdr10_cll_info` *
       - ``p_hdr10_cll``
-      - 指向 struct :c:type:`v4l2_ctrl_hdr10_cll_info` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_HDR10_CLL_INFO` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_hdr10_mastering_display` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_hdr10_cll_info` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_HDR10_CLL_INFO` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_hdr10_mastering_display` *
       - ``p_hdr10_mastering``
-      - 指向 struct :c:type:`v4l2_ctrl_hdr10_mastering_display` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_HDR10_MASTERING_DISPLAY` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_hevc_sps` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_hdr10_mastering_display` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_HDR10_MASTERING_DISPLAY` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_hevc_sps` *
       - ``p_hevc_sps``
-      - 指向 struct :c:type:`v4l2_ctrl_hevc_sps` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_HEVC_SPS` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_hevc_pps` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_hevc_sps` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_HEVC_SPS` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_hevc_pps` *
       - ``p_hevc_pps``
-      - 指向 struct :c:type:`v4l2_ctrl_hevc_pps` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_HEVC_PPS` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_hevc_slice_params` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_hevc_pps` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_HEVC_PPS` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_hevc_slice_params` *
       - ``p_hevc_slice_params``
-      - 指向 struct :c:type:`v4l2_ctrl_hevc_slice_params` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_HEVC_SLICE_PARAMS` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_hevc_scaling_matrix` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_hevc_slice_params` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_HEVC_SLICE_PARAMS` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_hevc_scaling_matrix` *
       - ``p_hevc_scaling_matrix``
-      - 指向 struct :c:type:`v4l2_ctrl_hevc_scaling_matrix` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_HEVC_SCALING_MATRIX` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_hevc_decode_params` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_hevc_scaling_matrix` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_HEVC_SCALING_MATRIX` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_hevc_decode_params` *
       - ``p_hevc_decode_params``
-      - 指向 struct :c:type:`v4l2_ctrl_hevc_decode_params` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_HEVC_DECODE_PARAMS` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_av1_sequence` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_hevc_decode_params` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_HEVC_DECODE_PARAMS` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_av1_sequence` *
       - ``p_av1_sequence``
-      - 指向 struct :c:type:`v4l2_ctrl_av1_sequence` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_AV1_SEQUENCE` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_av1_tile_group_entry` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_av1_sequence` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_AV1_SEQUENCE` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_av1_tile_group_entry` *
       - ``p_av1_tile_group_entry``
-      - 指向 struct :c:type:`v4l2_ctrl_av1_tile_group_entry` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_AV1_TILE_GROUP_ENTRY` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_av1_frame` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_av1_tile_group_entry` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_AV1_TILE_GROUP_ENTRY` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_av1_frame` *
       - ``p_av1_frame``
-      - 指向 struct :c:type:`v4l2_ctrl_av1_frame` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_AV1_FRAME` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_av1_film_grain` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_av1_frame` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_AV1_FRAME` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_av1_film_grain` *
       - ``p_av1_film_grain``
-      - 指向 struct :c:type:`v4l2_ctrl_av1_film_grain` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_AV1_FILM_GRAIN` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_hdr10_cll_info` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_av1_film_grain` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_AV1_FILM_GRAIN` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_hdr10_cll_info` *
       - ``p_hdr10_cll_info``
-      - 指向 struct :c:type:`v4l2_ctrl_hdr10_cll_info` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_HDR10_CLL_INFO` 类型则有效。
-    * - struct :c:type:`v4l2_ctrl_hdr10_mastering_display` *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_hdr10_cll_info` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_HDR10_CLL_INFO` 绫诲瀷鍒欐湁鏁堛€?    * - struct :c:type:`v4l2_ctrl_hdr10_mastering_display` *
       - ``p_hdr10_mastering_display``
-      - 指向 struct :c:type:`v4l2_ctrl_hdr10_mastering_display` 的指针。如果此控件是
-        `V4L2_CTRL_TYPE_HDR10_MASTERING_DISPLAY` 类型则有效。
-    * - void *
+      - 鎸囧悜 struct :c:type:`v4l2_ctrl_hdr10_mastering_display` 鐨勬寚閽堛€傚鏋滄鎺т欢鏄?        `V4L2_CTRL_TYPE_HDR10_MASTERING_DISPLAY` 绫诲瀷鍒欐湁鏁堛€?    * - void *
       - ``ptr``
-      - 指向复合类型的指针，该复合类型可以是一个 N 维数组和/或复合类型（控件的类型 >=
-	`V4L2_CTRL_COMPOUND_TYPES`）。如果为此控件设置了 `V4L2_CTRL_FLAG_HAS_PAYLOAD`
-	则有效。
-    * - }
+      - 鎸囧悜澶嶅悎绫诲瀷鐨勬寚閽堬紝璇ュ鍚堢被鍨嬪彲浠ユ槸涓€涓?N 缁存暟缁勫拰/鎴栧鍚堢被鍨嬶紙鎺т欢鐨勭被鍨?>=
+	`V4L2_CTRL_COMPOUND_TYPES`锛夈€傚鏋滀负姝ゆ帶浠惰缃簡 `V4L2_CTRL_FLAG_HAS_PAYLOAD`
+	鍒欐湁鏁堛€?    * - }
       -
 
 ```
@@ -274,81 +177,45 @@ VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 时立即应用，而是被驱动应用�
       - (anonymous)
     - - __u32
       - `which`
-      - 要获取/设置/尝试的控件的值。
-    - - `2` `V4L2_CTRL_WHICH_CUR_VAL` 将返回控件的当前值，
-	`V4L2_CTRL_WHICH_DEF_VAL` 将返回控件的默认值，`V4L2_CTRL_WHICH_MIN_VAL` 将返回
-	控件的最小值，而 `V4L2_CTRL_WHICH_MAX_VAL` 将返回控件的最大值。
-	`V4L2_CTRL_WHICH_REQUEST_VAL` 表示控件值必须从请求中获取，或针对请求尝试/设置。
-	在这种情况下，`request_fd` 字段包含应使用的请求的文件描述符。如果设备不支持
-	请求，那么将返回 `EACCES`。
-
-	使用 `V4L2_CTRL_WHICH_DEF_VAL`、`V4L2_CTRL_WHICH_MIN_VAL` 或
-	`V4L2_CTRL_WHICH_MAX_VAL` 时请注意，你只能获取控件的默认/最小/最大值，不能
-	设置或尝试它。
-
-	控件是否支持使用 `V4L2_CTRL_WHICH_MIN_VAL` 和 `V4L2_CTRL_WHICH_MAX_VAL` 查询
-	最小值和最大值，由 `V4L2_CTRL_FLAG_HAS_WHICH_MIN_MAX` 标志指示。大多数非复合
-	控件类型都支持这一点。对于具有复合类型的控件，最小/最大值的定义由控件文档
-	提供。如果一个复合控件没有记录最小/最大值的含义，那么查询最小值或最大值将导致
-	错误码 -EINVAL。
-
-	为了向后兼容，你也可以在这里使用控件类（见 ctrl-class）。在这种情况下，所有
-	控件必须属于该控件类。这种用法已被弃用，请改用 `V4L2_CTRL_WHICH_CUR_VAL`。
-	有一些非常老的驱动尚不支持 `V4L2_CTRL_WHICH_CUR_VAL`，需要在那里指定控件类。
-	你可以通过将 `which` 设为 `V4L2_CTRL_WHICH_CUR_VAL` 并以 count 为 0 调用
-	VIDIOC_TRY_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 来测试此类驱动。如果失败，则该驱动不支持
-	`V4L2_CTRL_WHICH_CUR_VAL`。
-    - - __u32
+      - 瑕佽幏鍙?璁剧疆/灏濊瘯鐨勬帶浠剁殑鍊笺€?    - - `2` `V4L2_CTRL_WHICH_CUR_VAL` 灏嗚繑鍥炴帶浠剁殑褰撳墠鍊硷紝
+	`V4L2_CTRL_WHICH_DEF_VAL` 灏嗚繑鍥炴帶浠剁殑榛樿鍊硷紝`V4L2_CTRL_WHICH_MIN_VAL` 灏嗚繑鍥?	鎺т欢鐨勬渶灏忓€硷紝鑰?`V4L2_CTRL_WHICH_MAX_VAL` 灏嗚繑鍥炴帶浠剁殑鏈€澶у€笺€?	`V4L2_CTRL_WHICH_REQUEST_VAL` 琛ㄧず鎺т欢鍊煎繀椤讳粠璇锋眰涓幏鍙栵紝鎴栭拡瀵硅姹傚皾璇?璁剧疆銆?	鍦ㄨ繖绉嶆儏鍐典笅锛宍request_fd` 瀛楁鍖呭惈搴斾娇鐢ㄧ殑璇锋眰鐨勬枃浠舵弿杩扮銆傚鏋滆澶囦笉鏀寔
+	璇锋眰锛岄偅涔堝皢杩斿洖 `EACCES`銆?
+	浣跨敤 `V4L2_CTRL_WHICH_DEF_VAL`銆乣V4L2_CTRL_WHICH_MIN_VAL` 鎴?	`V4L2_CTRL_WHICH_MAX_VAL` 鏃惰娉ㄦ剰锛屼綘鍙兘鑾峰彇鎺т欢鐨勯粯璁?鏈€灏?鏈€澶у€硷紝涓嶈兘
+	璁剧疆鎴栧皾璇曞畠銆?
+	鎺т欢鏄惁鏀寔浣跨敤 `V4L2_CTRL_WHICH_MIN_VAL` 鍜?`V4L2_CTRL_WHICH_MAX_VAL` 鏌ヨ
+	鏈€灏忓€煎拰鏈€澶у€硷紝鐢?`V4L2_CTRL_FLAG_HAS_WHICH_MIN_MAX` 鏍囧織鎸囩ず銆傚ぇ澶氭暟闈炲鍚?	鎺т欢绫诲瀷閮芥敮鎸佽繖涓€鐐广€傚浜庡叿鏈夊鍚堢被鍨嬬殑鎺т欢锛屾渶灏?鏈€澶у€肩殑瀹氫箟鐢辨帶浠舵枃妗?	鎻愪緵銆傚鏋滀竴涓鍚堟帶浠舵病鏈夎褰曟渶灏?鏈€澶у€肩殑鍚箟锛岄偅涔堟煡璇㈡渶灏忓€兼垨鏈€澶у€煎皢瀵艰嚧
+	閿欒鐮?-EINVAL銆?
+	涓轰簡鍚戝悗鍏煎锛屼綘涔熷彲浠ュ湪杩欓噷浣跨敤鎺т欢绫伙紙瑙?ctrl-class锛夈€傚湪杩欑鎯呭喌涓嬶紝鎵€鏈?	鎺т欢蹇呴』灞炰簬璇ユ帶浠剁被銆傝繖绉嶇敤娉曞凡琚純鐢紝璇锋敼鐢?`V4L2_CTRL_WHICH_CUR_VAL`銆?	鏈変竴浜涢潪甯歌€佺殑椹卞姩灏氫笉鏀寔 `V4L2_CTRL_WHICH_CUR_VAL`锛岄渶瑕佸湪閭ｉ噷鎸囧畾鎺т欢绫汇€?	浣犲彲浠ラ€氳繃灏?`which` 璁句负 `V4L2_CTRL_WHICH_CUR_VAL` 骞朵互 count 涓?0 璋冪敤
+	VIDIOC_TRY_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 鏉ユ祴璇曟绫婚┍鍔ㄣ€傚鏋滃け璐ワ紝鍒欒椹卞姩涓嶆敮鎸?	`V4L2_CTRL_WHICH_CUR_VAL`銆?    - - __u32
       - `ctrl_class`
-      - 为向后兼容保留的弃用名称。请改用 `which`。
-    - - }
+      - 涓哄悜鍚庡吋瀹逛繚鐣欑殑寮冪敤鍚嶇О銆傝鏀圭敤 `which`銆?    - - }
       -
     - - __u32
       - `count`
-      - controls 数组中的控件数量。也可以为零。
-    - - __u32
+      - controls 鏁扮粍涓殑鎺т欢鏁伴噺銆備篃鍙互涓洪浂銆?    - - __u32
       - `error_idx`
-      - 失败控件的索引。出错时由驱动设置。
-    - - `2` 如果错误与某个特定控件相关联，那么 `error_idx` 被设置为该控件的索引。
-	如果错误与特定控件无关，或者验证步骤失败（见下文），那么 `error_idx` 被设置为
-	`count`。如果 ioctl 返回 0（成功），该值未定义。
-
-	在从硬件读取/写入硬件之前会进行一个验证步骤：这会检查列表中的所有控件是否都是
-	有效的控件，是否没有尝试写入只读控件或从只写控件读取，以及任何其他可以在不访问
-	硬件的情况下完成的事前检查。此步骤所做的确切验证是驱动相关的，因为某些检查可能
-	需要访问某些设备的硬件，从而无法事前完成。然而，驱动应尽最大努力进行尽可能多的
-	事前检查。
-
-	这样做是为了避免因容易避免的问题而使硬件处于不一致状态。但它导致了另一个问题：
-	应用程序需要知道错误是来自验证步骤（意味着未触及硬件）还是在实际从硬件读取/写入
-	硬件期间发生的错误。
-
-	事后看来相当糟糕的解决方案是将验证失败时的 `error_idx` 设为 `count`。这有一个
-	不幸的副作用，即无法看到哪个控件未通过验证。如果验证成功并且错误发生在访问硬件
-	期间，那么 `error_idx` 小于 `count`，并且只有到 `error_idx-1` 的控件被正确地
-	读取或写入，剩余控件的状态未定义。
-
-	由于 VIDIOC_TRY_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 不访问硬件，因此也不需要以这种特殊方式处理
-	验证步骤，所以 `error_idx` 将被设为未通过验证步骤的控件，而不是 `count`。这意味着
-	如果 VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 以 `error_idx` 设为 `count` 失败，那么你可以调用
-	VIDIOC_TRY_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 来尝试发现实际未通过验证步骤的控件。不幸的是，
-	VIDIOC_G_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 没有对应的 `TRY`。
-    - - __s32
+      - 澶辫触鎺т欢鐨勭储寮曘€傚嚭閿欐椂鐢遍┍鍔ㄨ缃€?    - - `2` 濡傛灉閿欒涓庢煇涓壒瀹氭帶浠剁浉鍏宠仈锛岄偅涔?`error_idx` 琚缃负璇ユ帶浠剁殑绱㈠紩銆?	濡傛灉閿欒涓庣壒瀹氭帶浠舵棤鍏筹紝鎴栬€呴獙璇佹楠ゅけ璐ワ紙瑙佷笅鏂囷級锛岄偅涔?`error_idx` 琚缃负
+	`count`銆傚鏋?ioctl 杩斿洖 0锛堟垚鍔燂級锛岃鍊兼湭瀹氫箟銆?
+	鍦ㄤ粠纭欢璇诲彇/鍐欏叆纭欢涔嬪墠浼氳繘琛屼竴涓獙璇佹楠わ細杩欎細妫€鏌ュ垪琛ㄤ腑鐨勬墍鏈夋帶浠舵槸鍚﹂兘鏄?	鏈夋晥鐨勬帶浠讹紝鏄惁娌℃湁灏濊瘯鍐欏叆鍙鎺т欢鎴栦粠鍙啓鎺т欢璇诲彇锛屼互鍙婁换浣曞叾浠栧彲浠ュ湪涓嶈闂?	纭欢鐨勬儏鍐典笅瀹屾垚鐨勪簨鍓嶆鏌ャ€傛姝ラ鎵€鍋氱殑纭垏楠岃瘉鏄┍鍔ㄧ浉鍏崇殑锛屽洜涓烘煇浜涙鏌ュ彲鑳?	闇€瑕佽闂煇浜涜澶囩殑纭欢锛屼粠鑰屾棤娉曚簨鍓嶅畬鎴愩€傜劧鑰岋紝椹卞姩搴斿敖鏈€澶у姫鍔涜繘琛屽敖鍙兘澶氱殑
+	浜嬪墠妫€鏌ャ€?
+	杩欐牱鍋氭槸涓轰簡閬垮厤鍥犲鏄撻伩鍏嶇殑闂鑰屼娇纭欢澶勪簬涓嶄竴鑷寸姸鎬併€備絾瀹冨鑷翠簡鍙︿竴涓棶棰橈細
+	搴旂敤绋嬪簭闇€瑕佺煡閬撻敊璇槸鏉ヨ嚜楠岃瘉姝ラ锛堟剰鍛崇潃鏈Е鍙婄‖浠讹級杩樻槸鍦ㄥ疄闄呬粠纭欢璇诲彇/鍐欏叆
+	纭欢鏈熼棿鍙戠敓鐨勯敊璇€?
+	浜嬪悗鐪嬫潵鐩稿綋绯熺硶鐨勮В鍐虫柟妗堟槸灏嗛獙璇佸け璐ユ椂鐨?`error_idx` 璁句负 `count`銆傝繖鏈変竴涓?	涓嶅垢鐨勫壇浣滅敤锛屽嵆鏃犳硶鐪嬪埌鍝釜鎺т欢鏈€氳繃楠岃瘉銆傚鏋滈獙璇佹垚鍔熷苟涓旈敊璇彂鐢熷湪璁块棶纭欢
+	鏈熼棿锛岄偅涔?`error_idx` 灏忎簬 `count`锛屽苟涓斿彧鏈夊埌 `error_idx-1` 鐨勬帶浠惰姝ｇ‘鍦?	璇诲彇鎴栧啓鍏ワ紝鍓╀綑鎺т欢鐨勭姸鎬佹湭瀹氫箟銆?
+	鐢变簬 VIDIOC_TRY_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 涓嶈闂‖浠讹紝鍥犳涔熶笉闇€瑕佷互杩欑鐗规畩鏂瑰紡澶勭悊
+	楠岃瘉姝ラ锛屾墍浠?`error_idx` 灏嗚璁句负鏈€氳繃楠岃瘉姝ラ鐨勬帶浠讹紝鑰屼笉鏄?`count`銆傝繖鎰忓懗鐫€
+	濡傛灉 VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 浠?`error_idx` 璁句负 `count` 澶辫触锛岄偅涔堜綘鍙互璋冪敤
+	VIDIOC_TRY_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 鏉ュ皾璇曞彂鐜板疄闄呮湭閫氳繃楠岃瘉姝ラ鐨勬帶浠躲€備笉骞哥殑鏄紝
+	VIDIOC_G_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 娌℃湁瀵瑰簲鐨?`TRY`銆?    - - __s32
       - `request_fd`
-      - 此操作要使用的请求的文件描述符。仅当 `which` 被设为
-	`V4L2_CTRL_WHICH_REQUEST_VAL` 时有效。如果设备不支持请求，那么将返回 `EACCES`。
-	如果支持请求但给出了无效的请求文件描述符，那么将返回 `EINVAL`。
-    - - __u32
+      - 姝ゆ搷浣滆浣跨敤鐨勮姹傜殑鏂囦欢鎻忚堪绗︺€備粎褰?`which` 琚涓?	`V4L2_CTRL_WHICH_REQUEST_VAL` 鏃舵湁鏁堛€傚鏋滆澶囦笉鏀寔璇锋眰锛岄偅涔堝皢杩斿洖 `EACCES`銆?	濡傛灉鏀寔璇锋眰浣嗙粰鍑轰簡鏃犳晥鐨勮姹傛枃浠舵弿杩扮锛岄偅涔堝皢杩斿洖 `EINVAL`銆?    - - __u32
       - `reserved`\ [^1^]
-      - 为未来扩展保留。
-
-	驱动和应用程序必须将数组设为零。
-    - - struct `v4l2_ext_control` *
+      - 涓烘湭鏉ユ墿灞曚繚鐣欍€?
+	椹卞姩鍜屽簲鐢ㄧ▼搴忓繀椤诲皢鏁扮粍璁句负闆躲€?    - - struct `v4l2_ext_control` *
       - `controls`
-      - 指向 `count` 个 v4l2_ext_control 结构数组的指针。
-
-	如果 `count` 等于零则忽略。
-
+      - 鎸囧悜 `count` 涓?v4l2_ext_control 缁撴瀯鏁扮粍鐨勬寚閽堛€?
+	濡傛灉 `count` 绛変簬闆跺垯蹇界暐銆?
 
 
 
@@ -358,72 +225,45 @@ VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 时立即应用，而是被驱动应用�
 
     - - `V4L2_CTRL_CLASS_USER`
       - 0x980000
-      - 包含用户控件的类。这些控件在 control 中描述。所有可以使用
-	VIDIOC_S_CTRL <VIDIOC_G_CTRL> 和 VIDIOC_G_CTRL <VIDIOC_G_CTRL> ioctl 设置的控件都属于此类。
-    - - `V4L2_CTRL_CLASS_CODEC`
+      - 鍖呭惈鐢ㄦ埛鎺т欢鐨勭被銆傝繖浜涙帶浠跺湪 control 涓弿杩般€傛墍鏈夊彲浠ヤ娇鐢?	VIDIOC_S_CTRL <VIDIOC_G_CTRL> 鍜?VIDIOC_G_CTRL <VIDIOC_G_CTRL> ioctl 璁剧疆鐨勬帶浠堕兘灞炰簬姝ょ被銆?    - - `V4L2_CTRL_CLASS_CODEC`
       - 0x990000
-      - 包含有状态编解码器控件的类。这些控件在 codec-controls 中描述。
-    - - `V4L2_CTRL_CLASS_CAMERA`
+      - 鍖呭惈鏈夌姸鎬佺紪瑙ｇ爜鍣ㄦ帶浠剁殑绫汇€傝繖浜涙帶浠跺湪 codec-controls 涓弿杩般€?    - - `V4L2_CTRL_CLASS_CAMERA`
       - 0x9a0000
-      - 包含摄像头控件的类。这些控件在 camera-controls 中描述。
-    - - `V4L2_CTRL_CLASS_FM_TX`
+      - 鍖呭惈鎽勫儚澶存帶浠剁殑绫汇€傝繖浜涙帶浠跺湪 camera-controls 涓弿杩般€?    - - `V4L2_CTRL_CLASS_FM_TX`
       - 0x9b0000
-      - 包含 FM 发射器（FM TX）控件的类。这些控件在 fm-tx-controls 中描述。
-    - - `V4L2_CTRL_CLASS_FLASH`
+      - 鍖呭惈 FM 鍙戝皠鍣紙FM TX锛夋帶浠剁殑绫汇€傝繖浜涙帶浠跺湪 fm-tx-controls 涓弿杩般€?    - - `V4L2_CTRL_CLASS_FLASH`
       - 0x9c0000
-      - 包含闪光灯设备控件的类。这些控件在 flash-controls 中描述。
-    - - `V4L2_CTRL_CLASS_JPEG`
+      - 鍖呭惈闂厜鐏澶囨帶浠剁殑绫汇€傝繖浜涙帶浠跺湪 flash-controls 涓弿杩般€?    - - `V4L2_CTRL_CLASS_JPEG`
       - 0x9d0000
-      - 包含 JPEG 压缩控件的类。这些控件在 jpeg-controls 中描述。
-    - - `V4L2_CTRL_CLASS_IMAGE_SOURCE`
+      - 鍖呭惈 JPEG 鍘嬬缉鎺т欢鐨勭被銆傝繖浜涙帶浠跺湪 jpeg-controls 涓弿杩般€?    - - `V4L2_CTRL_CLASS_IMAGE_SOURCE`
       - 0x9e0000
-      - 包含图像源控件的类。这些控件在 image-source-controls 中描述。
-    - - `V4L2_CTRL_CLASS_IMAGE_PROC`
+      - 鍖呭惈鍥惧儚婧愭帶浠剁殑绫汇€傝繖浜涙帶浠跺湪 image-source-controls 涓弿杩般€?    - - `V4L2_CTRL_CLASS_IMAGE_PROC`
       - 0x9f0000
-      - 包含图像处理控件的类。这些控件在 image-process-controls 中描述。
-    - - `V4L2_CTRL_CLASS_FM_RX`
+      - 鍖呭惈鍥惧儚澶勭悊鎺т欢鐨勭被銆傝繖浜涙帶浠跺湪 image-process-controls 涓弿杩般€?    - - `V4L2_CTRL_CLASS_FM_RX`
       - 0xa10000
-      - 包含 FM 接收器（FM RX）控件的类。这些控件在 fm-rx-controls 中描述。
-    - - `V4L2_CTRL_CLASS_RF_TUNER`
+      - 鍖呭惈 FM 鎺ユ敹鍣紙FM RX锛夋帶浠剁殑绫汇€傝繖浜涙帶浠跺湪 fm-rx-controls 涓弿杩般€?    - - `V4L2_CTRL_CLASS_RF_TUNER`
       - 0xa20000
-      - 包含 RF 调谐器控件的类。这些控件在 rf-tuner-controls 中描述。
-    - - `V4L2_CTRL_CLASS_DETECT`
+      - 鍖呭惈 RF 璋冭皭鍣ㄦ帶浠剁殑绫汇€傝繖浜涙帶浠跺湪 rf-tuner-controls 涓弿杩般€?    - - `V4L2_CTRL_CLASS_DETECT`
       - 0xa30000
-      - 包含运动或物体检测控件的类。这些控件在 detect-controls 中描述。
-    - - `V4L2_CTRL_CLASS_CODEC_STATELESS`
+      - 鍖呭惈杩愬姩鎴栫墿浣撴娴嬫帶浠剁殑绫汇€傝繖浜涙帶浠跺湪 detect-controls 涓弿杩般€?    - - `V4L2_CTRL_CLASS_CODEC_STATELESS`
       - 0xa40000
-      - 包含无状态编解码器控件的类。这些控件在 codec-stateless-controls 中描述。
-    - - `V4L2_CTRL_CLASS_COLORIMETRY`
+      - 鍖呭惈鏃犵姸鎬佺紪瑙ｇ爜鍣ㄦ帶浠剁殑绫汇€傝繖浜涙帶浠跺湪 codec-stateless-controls 涓弿杩般€?    - - `V4L2_CTRL_CLASS_COLORIMETRY`
       - 0xa50000
-      - 包含色度学控件的类。这些控件在 colorimetry-controls 中描述。
+      - 鍖呭惈鑹插害瀛︽帶浠剁殑绫汇€傝繖浜涙帶浠跺湪 colorimetry-controls 涓弿杩般€?
+## 杩斿洖鍊?
 
-## 返回值
-
-
-成功时返回 0，出错时返回 -1 并且 `errno` 变量被适当设置。通用错误码在
-Generic Error Codes <gen-errors> 章节中描述。
-
+鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞朵笖 `errno` 鍙橀噺琚€傚綋璁剧疆銆傞€氱敤閿欒鐮佸湪
+Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
 EINVAL
-    struct `v4l2_ext_control` 的 `id` 无效，或 struct `v4l2_ext_controls` 的
-    `which` 无效，或 struct `v4l2_ext_control` 的 `value` 不合适（例如给定的菜单
-    索引不被驱动支持），或 `which` 字段被设为 `V4L2_CTRL_WHICH_REQUEST_VAL` 但给定的
-    `request_fd` 无效或 `V4L2_CTRL_WHICH_REQUEST_VAL` 不被内核支持。
-    如果两个或更多控件值冲突，VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 和
-    VIDIOC_TRY_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> ioctl 也会返回此错误码。
-
+    struct `v4l2_ext_control` 鐨?`id` 鏃犳晥锛屾垨 struct `v4l2_ext_controls` 鐨?    `which` 鏃犳晥锛屾垨 struct `v4l2_ext_control` 鐨?`value` 涓嶅悎閫傦紙渚嬪缁欏畾鐨勮彍鍗?    绱㈠紩涓嶈椹卞姩鏀寔锛夛紝鎴?`which` 瀛楁琚涓?`V4L2_CTRL_WHICH_REQUEST_VAL` 浣嗙粰瀹氱殑
+    `request_fd` 鏃犳晥鎴?`V4L2_CTRL_WHICH_REQUEST_VAL` 涓嶈鍐呮牳鏀寔銆?    濡傛灉涓や釜鎴栨洿澶氭帶浠跺€煎啿绐侊紝VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 鍜?    VIDIOC_TRY_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> ioctl 涔熶細杩斿洖姝ら敊璇爜銆?
 ERANGE
-    struct `v4l2_ext_control` 的 `value` 越界。
-
+    struct `v4l2_ext_control` 鐨?`value` 瓒婄晫銆?
 EBUSY
-    控件暂时不可更改，可能是因为另一个应用程序接管了此控件所属的设备功能，或（如果
-    `which` 字段被设为 `V4L2_CTRL_WHICH_REQUEST_VAL`）请求已排队但尚未完成。
-
+    鎺т欢鏆傛椂涓嶅彲鏇存敼锛屽彲鑳芥槸鍥犱负鍙︿竴涓簲鐢ㄧ▼搴忔帴绠′簡姝ゆ帶浠舵墍灞炵殑璁惧鍔熻兘锛屾垨锛堝鏋?    `which` 瀛楁琚涓?`V4L2_CTRL_WHICH_REQUEST_VAL`锛夎姹傚凡鎺掗槦浣嗗皻鏈畬鎴愩€?
 ENOSPC
-    为控件负载保留的空间不足。`size` 字段被设为一个足够存储负载的值，并返回此错误码。
-
+    涓烘帶浠惰礋杞戒繚鐣欑殑绌洪棿涓嶈冻銆俙size` 瀛楁琚涓轰竴涓冻澶熷瓨鍌ㄨ礋杞界殑鍊硷紝骞惰繑鍥炴閿欒鐮併€?
 EACCES
-    试图尝试或设置只读控件，或获取只写控件，或从尚未完成的请求中获取控件。
-
-    或者 `which` 字段被设为 `V4L2_CTRL_WHICH_REQUEST_VAL` 但设备不支持请求。
-
-    或者如果有试图设置一个非活动控件的操作，且驱动无法缓存新值直到该控件再次活动。
+    璇曞浘灏濊瘯鎴栬缃彧璇绘帶浠讹紝鎴栬幏鍙栧彧鍐欐帶浠讹紝鎴栦粠灏氭湭瀹屾垚鐨勮姹備腑鑾峰彇鎺т欢銆?
+    鎴栬€?`which` 瀛楁琚涓?`V4L2_CTRL_WHICH_REQUEST_VAL` 浣嗚澶囦笉鏀寔璇锋眰銆?
+    鎴栬€呭鏋滄湁璇曞浘璁剧疆涓€涓潪娲诲姩鎺т欢鐨勬搷浣滐紝涓旈┍鍔ㄦ棤娉曠紦瀛樻柊鍊肩洿鍒拌鎺т欢鍐嶆娲诲姩銆?

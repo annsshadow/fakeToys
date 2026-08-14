@@ -1,18 +1,18 @@
-## TEE（可信执行环境，Trusted Execution Environment）
+﻿## TEE锛堝彲淇℃墽琛岀幆澧冿紝Trusted Execution Environment锛?
 
 
-本文档描述 Linux 中的 TEE 子系统。
+鏈枃妗ｆ弿杩?Linux 涓殑 TEE 瀛愮郴缁熴€?
 
-## 概述
+## 姒傝堪
 
 
-TEE 是运行在某些安全环境（例如 ARM CPU 上的 TrustZone，或独立的安全协处理器等）
-中的可信操作系统。TEE 驱动负责处理与 TEE 通信所需的细节。
+TEE 鏄繍琛屽湪鏌愪簺瀹夊叏鐜锛堜緥濡?ARM CPU 涓婄殑 TrustZone锛屾垨鐙珛鐨勫畨鍏ㄥ崗澶勭悊鍣ㄧ瓑锛?
+涓殑鍙俊鎿嶄綔绯荤粺銆俆EE 椹卞姩璐熻矗澶勭悊涓?TEE 閫氫俊鎵€闇€鐨勭粏鑺傘€?
 
-本子系统负责：
+鏈瓙绯荤粺璐熻矗锛?
 
-- TEE 驱动的注册
+- TEE 椹卞姩鐨勬敞鍐?
 
-- 管理 Linux 与 TEE 之间的共享内存
+- 绠＄悊 Linux 涓?TEE 涔嬮棿鐨勫叡浜唴瀛?
 
-- 向 TEE 提供通用 API
+- 鍚?TEE 鎻愪緵閫氱敤 API

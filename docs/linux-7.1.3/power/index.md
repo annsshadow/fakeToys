@@ -1,9 +1,9 @@
-## 电源管理
+﻿## 鐢垫簮绠＄悊
 
-本页是 Linux 内核电源管理（PM）子系统的文档索引，汇总了挂起/休眠、运行时电源管理、能耗模型、OPP、稳压器与功耗上限等主题的参考文档入口。读者可据此按主题快速定位相关说明。
+鏈〉鏄?Linux 鍐呮牳鐢垫簮绠＄悊锛圥M锛夊瓙绯荤粺鐨勬枃妗ｇ储寮曪紝姹囨€讳簡鎸傝捣/浼戠湢銆佽繍琛屾椂鐢垫簮绠＄悊銆佽兘鑰楁ā鍨嬨€丱PP銆佺ǔ鍘嬪櫒涓庡姛鑰椾笂闄愮瓑涓婚鐨勫弬鑰冩枃妗ｅ叆鍙ｃ€傝鑰呭彲鎹鎸変富棰樺揩閫熷畾浣嶇浉鍏宠鏄庛€?
 
 
-本页面为该分类的文档索引，汇总相关的条目链接；链接目标与标识符保持原文以便于检索。
+鏈〉闈负璇ュ垎绫荤殑鏂囨。绱㈠紩锛屾眹鎬荤浉鍏崇殑鏉＄洰閾炬帴锛涢摼鎺ョ洰鏍囦笌鏍囪瘑绗︿繚鎸佸師鏂囦互渚夸簬妫€绱€?
 
 
 - [apm-acpi](apm-acpi)
@@ -17,20 +17,20 @@
 - [pm_qos_interface](pm_qos_interface)
 - [power_supply_class](power_supply_class)
 - [runtime_pm](runtime_pm)
-- [S2RAM（挂起到内存）](s2ram)
+- [S2RAM锛堟寕璧峰埌鍐呭瓨锛塢(s2ram)
 - [shutdown-debugging](shutdown-debugging)
 - [suspend-and-cpuhotplug](suspend-and-cpuhotplug)
 - [suspend-and-interrupts](suspend-and-interrupts)
 - [swsusp-and-swap-files](swsusp-and-swap-files)
 - [swsusp-dmcrypt](swsusp-dmcrypt)
-- [软件挂起](swsusp)
-- [视频](video)
-- [技巧](tricks)
+- [杞欢鎸傝捣](swsusp)
+- [瑙嗛](video)
+- [鎶€宸(tricks)
 - [userland-swsusp](userland-swsusp)
-- [功耗上限/功耗上限](powercap/powercap)
-- [功耗上限/DTPM](powercap/dtpm)
-- [稳压器/消费者](regulator/consumer)
-- [稳压器/设计](regulator/design)
-- [稳压器/机器](regulator/machine)
-- [稳压器/概述](regulator/overview)
-- [稳压器/稳压器](regulator/regulator)
+- [鍔熻€椾笂闄?鍔熻€椾笂闄怾(powercap/powercap)
+- [鍔熻€椾笂闄?DTPM](powercap/dtpm)
+- [绋冲帇鍣?娑堣垂鑰匽(regulator/consumer)
+- [绋冲帇鍣?璁捐](regulator/design)
+- [绋冲帇鍣?鏈哄櫒](regulator/machine)
+- [绋冲帇鍣?姒傝堪](regulator/overview)
+- [绋冲帇鍣?绋冲帇鍣╙(regulator/regulator)

@@ -1,14 +1,10 @@
+﻿
+## CPU 鎬ц兘璋冭妭椹卞姩鐨勫巻鍙叉枃妗?
 
-## CPU 性能调节驱动的历史文档
+涓嬮潰鏀跺綍鐨勬槸鎻忚堪鍚勭
+[CPU performance scaling <cpufreq>](CPU performance scaling <cpufreq>) 椹卞姩鐨勫巻鍙叉枃妗ｃ€?瀹冧滑琚€愬瓧杞浇锛屼繚鐣欎簡鍘熷鐨勭┖鏍兼牸寮忓拰缂╄繘锛屽彧鏄瘡涓€琛屾枃鏈兘棰濆娣诲姞浜?涓€涓墠瀵肩┖鏍煎瓧绗︺€?
 
-
-下面收录的是描述各种
-[CPU performance scaling <cpufreq>](CPU performance scaling <cpufreq>) 驱动的历史文档。
-它们被逐字转载，保留了原始的空格格式和缩进，只是每一行文本都额外添加了
-一个前导空格字符。
-
-
-## AMD PowerNow! 系列驱动
+## AMD PowerNow! 绯诲垪椹卞姩
 
 
 ```

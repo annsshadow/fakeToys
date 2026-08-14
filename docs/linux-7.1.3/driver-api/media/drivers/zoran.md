@@ -1,398 +1,271 @@
-
-## Zoran 驱动
-
-
-统一 zoran 驱动（zr360x7、zoran、buz、dc10(+)、dc30(+)、lml33）
-
-网站：http://mjpeg.sourceforge.net/driver-zoran/
+﻿
+## Zoran 椹卞姩
 
 
-### 常见问题
+缁熶竴 zoran 椹卞姩锛坺r360x7銆亃oran銆乥uz銆乨c10(+)銆乨c30(+)銆乴ml33锛?
+缃戠珯锛歨ttp://mjpeg.sourceforge.net/driver-zoran/
 
-### 支持哪些卡
 
-Iomega Buz、Linux Media Labs LML33/LML33R10、Pinnacle/Miro DC10/DC10+/DC30/DC30+ 以及相关的板卡（以多种名称销售）。
+### 甯歌闂
 
+### 鏀寔鍝簺鍗?
+Iomega Buz銆丩inux Media Labs LML33/LML33R10銆丳innacle/Miro DC10/DC10+/DC30/DC30+ 浠ュ強鐩稿叧鐨勬澘鍗★紙浠ュ绉嶅悕绉伴攢鍞級銆?
 #### Iomega Buz
 
-- Zoran zr36067 PCI 控制器
-- Zoran zr36060 MJPEG 编解码器
-- Philips saa7111 TV 解码器
-- Philips saa7185 TV 编码器
+- Zoran zr36067 PCI 鎺у埗鍣?- Zoran zr36060 MJPEG 缂栬В鐮佸櫒
+- Philips saa7111 TV 瑙ｇ爜鍣?- Philips saa7185 TV 缂栫爜鍣?
+闇€浣跨敤鐨勯┍鍔細videodev, i2c-core, i2c-algo-bit, videocodec, saa7111, saa7185, zr36060, zr36067
 
-需使用的驱动：videodev, i2c-core, i2c-algo-bit, videocodec, saa7111, saa7185, zr36060, zr36067
+杈撳叆/杈撳嚭锛氬鍚堜笌 S-video
 
-输入/输出：复合与 S-video
-
-制式：PAL、SECAM（720x576 @ 25 fps）、NTSC（720x480 @ 29.97 fps）
-
-卡号：7
+鍒跺紡锛歅AL銆丼ECAM锛?20x576 @ 25 fps锛夈€丯TSC锛?20x480 @ 29.97 fps锛?
+鍗″彿锛?
 
 #### AverMedia 6 Eyes AVS6EYES
 
-- Zoran zr36067 PCI 控制器
-- Zoran zr36060 MJPEG 编解码器
-- Samsung ks0127 TV 解码器
-- Conexant bt866 TV 编码器
+- Zoran zr36067 PCI 鎺у埗鍣?- Zoran zr36060 MJPEG 缂栬В鐮佸櫒
+- Samsung ks0127 TV 瑙ｇ爜鍣?- Conexant bt866 TV 缂栫爜鍣?
+闇€浣跨敤鐨勯┍鍔細videodev, i2c-core, i2c-algo-bit, videocodec, ks0127, bt866, zr36060, zr36067
 
-需使用的驱动：videodev, i2c-core, i2c-algo-bit, videocodec, ks0127, bt866, zr36060, zr36067
-
-输入/输出：
-	六个物理输入。1-6 为复合，1-2、3-4、5-6 兼作 S-video，1-3 兼作分量。
-	一个复合输出。
-
-制式：PAL、SECAM（720x576 @ 25 fps）、NTSC（720x480 @ 29.97 fps）
-
-卡号：8
+杈撳叆/杈撳嚭锛?	鍏釜鐗╃悊杈撳叆銆?-6 涓哄鍚堬紝1-2銆?-4銆?-6 鍏间綔 S-video锛?-3 鍏间綔鍒嗛噺銆?	涓€涓鍚堣緭鍑恒€?
+鍒跺紡锛歅AL銆丼ECAM锛?20x576 @ 25 fps锛夈€丯TSC锛?20x480 @ 29.97 fps锛?
+鍗″彿锛?
 
 
-    未自动检测，必须使用 card=8。
-
+    鏈嚜鍔ㄦ娴嬶紝蹇呴』浣跨敤 card=8銆?
 #### Linux Media Labs LML33
 
-- Zoran zr36067 PCI 控制器
-- Zoran zr36060 MJPEG 编解码器
-- Brooktree bt819 TV 解码器
-- Brooktree bt856 TV 编码器
+- Zoran zr36067 PCI 鎺у埗鍣?- Zoran zr36060 MJPEG 缂栬В鐮佸櫒
+- Brooktree bt819 TV 瑙ｇ爜鍣?- Brooktree bt856 TV 缂栫爜鍣?
+闇€浣跨敤鐨勯┍鍔細videodev, i2c-core, i2c-algo-bit, videocodec, bt819, bt856, zr36060, zr36067
 
-需使用的驱动：videodev, i2c-core, i2c-algo-bit, videocodec, bt819, bt856, zr36060, zr36067
+杈撳叆/杈撳嚭锛氬鍚堜笌 S-video
 
-输入/输出：复合与 S-video
-
-制式：PAL（720x576 @ 25 fps）、NTSC（720x480 @ 29.97 fps）
-
-卡号：5
+鍒跺紡锛歅AL锛?20x576 @ 25 fps锛夈€丯TSC锛?20x480 @ 29.97 fps锛?
+鍗″彿锛?
 
 #### Linux Media Labs LML33R10
 
-- Zoran zr36067 PCI 控制器
-- Zoran zr36060 MJPEG 编解码器
-- Philips saa7114 TV 解码器
-- Analog Devices adv7170 TV 编码器
+- Zoran zr36067 PCI 鎺у埗鍣?- Zoran zr36060 MJPEG 缂栬В鐮佸櫒
+- Philips saa7114 TV 瑙ｇ爜鍣?- Analog Devices adv7170 TV 缂栫爜鍣?
+闇€浣跨敤鐨勯┍鍔細videodev, i2c-core, i2c-algo-bit, videocodec, saa7114, adv7170, zr36060, zr36067
 
-需使用的驱动：videodev, i2c-core, i2c-algo-bit, videocodec, saa7114, adv7170, zr36060, zr36067
+杈撳叆/杈撳嚭锛氬鍚堜笌 S-video
 
-输入/输出：复合与 S-video
+鍒跺紡锛歅AL锛?20x576 @ 25 fps锛夈€丯TSC锛?20x480 @ 29.97 fps锛?
+鍗″彿锛?
 
-制式：PAL（720x576 @ 25 fps）、NTSC（720x480 @ 29.97 fps）
+#### Pinnacle/Miro DC10锛堟柊锛?
+- Zoran zr36057 PCI 鎺у埗鍣?- Zoran zr36060 MJPEG 缂栬В鐮佸櫒
+- Philips saa7110a TV 瑙ｇ爜鍣?- Analog Devices adv7176 TV 缂栫爜鍣?
+闇€浣跨敤鐨勯┍鍔細videodev, i2c-core, i2c-algo-bit, videocodec, saa7110, adv7175, zr36060, zr36067
 
-卡号：6
-
-#### Pinnacle/Miro DC10（新）
-
-- Zoran zr36057 PCI 控制器
-- Zoran zr36060 MJPEG 编解码器
-- Philips saa7110a TV 解码器
-- Analog Devices adv7176 TV 编码器
-
-需使用的驱动：videodev, i2c-core, i2c-algo-bit, videocodec, saa7110, adv7175, zr36060, zr36067
-
-输入/输出：复合、S-video 与内部
-
-制式：PAL、SECAM（768x576 @ 25 fps）、NTSC（640x480 @ 29.97 fps）
-
-卡号：1
+杈撳叆/杈撳嚭锛氬鍚堛€丼-video 涓庡唴閮?
+鍒跺紡锛歅AL銆丼ECAM锛?68x576 @ 25 fps锛夈€丯TSC锛?40x480 @ 29.97 fps锛?
+鍗″彿锛?
 
 #### Pinnacle/Miro DC10+
 
-- Zoran zr36067 PCI 控制器
-- Zoran zr36060 MJPEG 编解码器
-- Philips saa7110a TV 解码器
-- Analog Devices adv7176 TV 编码器
+- Zoran zr36067 PCI 鎺у埗鍣?- Zoran zr36060 MJPEG 缂栬В鐮佸櫒
+- Philips saa7110a TV 瑙ｇ爜鍣?- Analog Devices adv7176 TV 缂栫爜鍣?
+闇€浣跨敤鐨勯┍鍔細videodev, i2c-core, i2c-algo-bit, videocodec, saa7110, adv7175, zr36060, zr36067
 
-需使用的驱动：videodev, i2c-core, i2c-algo-bit, videocodec, saa7110, adv7175, zr36060, zr36067
+杈撳叆/杈撳嚭锛氬鍚堛€丼-video 涓庡唴閮?
+鍒跺紡锛歅AL銆丼ECAM锛?68x576 @ 25 fps锛夈€丯TSC锛?40x480 @ 29.97 fps锛?
+鍗″彿锛?
 
-输入/输出：复合、S-video 与内部
+#### Pinnacle/Miro DC10锛堟棫锛?
+- Zoran zr36057 PCI 鎺у埗鍣?- Zoran zr36050 MJPEG 缂栬В鐮佸櫒
+- Zoran zr36016 瑙嗛鍓嶇锛屾垨 Fuji md0211 瑙嗛鍓嶇锛堝厠闅嗭紵锛?- Micronas vpx3220a TV 瑙ｇ爜鍣?- mse3000 TV 缂栫爜鍣?鎴?Analog Devices adv7176 TV 缂栫爜鍣?
+闇€浣跨敤鐨勯┍鍔細videodev, i2c-core, i2c-algo-bit, videocodec, vpx3220, mse3000/adv7175, zr36050, zr36016, zr36067
 
-制式：PAL、SECAM（768x576 @ 25 fps）、NTSC（640x480 @ 29.97 fps）
-
-卡号：2
-
-#### Pinnacle/Miro DC10（旧）
-
-- Zoran zr36057 PCI 控制器
-- Zoran zr36050 MJPEG 编解码器
-- Zoran zr36016 视频前端，或 Fuji md0211 视频前端（克隆？）
-- Micronas vpx3220a TV 解码器
-- mse3000 TV 编码器 或 Analog Devices adv7176 TV 编码器
-
-需使用的驱动：videodev, i2c-core, i2c-algo-bit, videocodec, vpx3220, mse3000/adv7175, zr36050, zr36016, zr36067
-
-输入/输出：复合、S-video 与内部
-
-制式：PAL、SECAM（768x576 @ 25 fps）、NTSC（640x480 @ 29.97 fps）
-
-卡号：0
+杈撳叆/杈撳嚭锛氬鍚堛€丼-video 涓庡唴閮?
+鍒跺紡锛歅AL銆丼ECAM锛?68x576 @ 25 fps锛夈€丯TSC锛?40x480 @ 29.97 fps锛?
+鍗″彿锛?
 
 #### Pinnacle/Miro DC30
 
-- Zoran zr36057 PCI 控制器
-- Zoran zr36050 MJPEG 编解码器
-- Zoran zr36016 视频前端
-- Micronas vpx3225d/vpx3220a/vpx3216b TV 解码器
-- Analog Devices adv7176 TV 编码器
+- Zoran zr36057 PCI 鎺у埗鍣?- Zoran zr36050 MJPEG 缂栬В鐮佸櫒
+- Zoran zr36016 瑙嗛鍓嶇
+- Micronas vpx3225d/vpx3220a/vpx3216b TV 瑙ｇ爜鍣?- Analog Devices adv7176 TV 缂栫爜鍣?
+闇€浣跨敤鐨勯┍鍔細videodev, i2c-core, i2c-algo-bit, videocodec, vpx3220/vpx3224, adv7175, zr36050, zr36016, zr36067
 
-需使用的驱动：videodev, i2c-core, i2c-algo-bit, videocodec, vpx3220/vpx3224, adv7175, zr36050, zr36016, zr36067
-
-输入/输出：复合、S-video 与内部
-
-制式：PAL、SECAM（768x576 @ 25 fps）、NTSC（640x480 @ 29.97 fps）
-
-卡号：3
+杈撳叆/杈撳嚭锛氬鍚堛€丼-video 涓庡唴閮?
+鍒跺紡锛歅AL銆丼ECAM锛?68x576 @ 25 fps锛夈€丯TSC锛?40x480 @ 29.97 fps锛?
+鍗″彿锛?
 
 #### Pinnacle/Miro DC30+
 
-- Zoran zr36067 PCI 控制器
-- Zoran zr36050 MJPEG 编解码器
-- Zoran zr36016 视频前端
-- Micronas vpx3225d/vpx3220a/vpx3216b TV 解码器
-- Analog Devices adv7176 TV 编码器
+- Zoran zr36067 PCI 鎺у埗鍣?- Zoran zr36050 MJPEG 缂栬В鐮佸櫒
+- Zoran zr36016 瑙嗛鍓嶇
+- Micronas vpx3225d/vpx3220a/vpx3216b TV 瑙ｇ爜鍣?- Analog Devices adv7176 TV 缂栫爜鍣?
+闇€浣跨敤鐨勯┍鍔細videodev, i2c-core, i2c-algo-bit, videocodec, vpx3220/vpx3224, adv7175, zr36050, zr36015, zr36067
 
-需使用的驱动：videodev, i2c-core, i2c-algo-bit, videocodec, vpx3220/vpx3224, adv7175, zr36050, zr36015, zr36067
-
-输入/输出：复合、S-video 与内部
-
-制式：PAL、SECAM（768x576 @ 25 fps）、NTSC（640x480 @ 29.97 fps）
-
-卡号：4
+杈撳叆/杈撳嚭锛氬鍚堛€丼-video 涓庡唴閮?
+鍒跺紡锛歅AL銆丼ECAM锛?68x576 @ 25 fps锛夈€丯TSC锛?40x480 @ 29.97 fps锛?
+鍗″彿锛?
 
 
-    #) 目前还没有 mse3000 的模块
-    #) 目前还没有 vpx3224 的模块
+    #) 鐩墠杩樻病鏈?mse3000 鐨勬ā鍧?    #) 鐩墠杩樻病鏈?vpx3224 鐨勬ā鍧?
+### 1.1 TV 瑙ｇ爜鍣ㄨ兘鍋氫粈涔堛€佷笉鑳藉仛浠€涔?
+鏈€骞夸负浜虹煡鐨勭數瑙嗘爣鍑嗘槸 NTSC/PAL/SECAM锛屼絾浠呮淇℃伅涓嶈冻浠ヨВ鐮佷竴甯х敾闈€傜數瑙嗘爣鍑嗘湁澶氱鏍煎紡锛岃€屼笖骞堕潪姣忎釜 TV 瑙ｇ爜鍣ㄩ兘鑳藉鐞嗘瘡绉嶆牸寮忋€傞┍鍔ㄤ篃骞堕潪鏀寔姣忕缁勫悎銆傜洰鍓嶅叏鐞冨叡鏈?11 绉嶄笉鍚岀殑鐢佃骞挎挱鏍煎紡銆?
+CCIR 瀹氫箟浜嗗箍鎾俊鍙锋墍闇€鐨勫弬鏁般€侰CIR 瀹氫箟浜嗕笉鍚岀殑鏍囧噯锛欰銆丅銆丏銆丒銆丗銆丟銆丠銆両銆並銆並1銆丩銆丮銆丯鈥︹€?CCIR 瀵规墍浣跨敤鐨勫僵鑹插埗寮忓嚑涔庢病鏈夎瀹氾紒锛侊紒鑰岃皥璁哄僵鑹插埗寮忔椂锛屼篃涓嶈兘璇存槑瀹冩槸濡備綍骞挎挱鐨勩€?
+CCIR 鏍囧噯 A銆丒銆丗 宸蹭笉鍐嶄娇鐢ㄣ€?
+褰撲綘璇村埌 NTSC 鏃讹紝閫氬父鎸囷細浣跨敤 NTSC 褰╄壊鍒跺紡鐨?CCIR - M 鏍囧噯锛岀敤浜庣編鍥姐€佹棩鏈€佸ⅷ瑗垮摜銆佸姞鎷垮ぇ绛夊皯鏁板浗瀹躲€?
+褰撲綘璇村埌 PAL 鏃讹紝閫氬父鎸囷細浣跨敤 PAL 褰╄壊鍒跺紡鐨?CCIR - B/G 鏍囧噯锛岀敤浜庤澶氬浗瀹躲€?
+褰撲綘璇村埌 SECAM 鏃讹紝鎸囩殑鏄細浣跨敤 SECAM 褰╄壊鍒跺紡鐨?CCIR - L 鏍囧噯锛岀敤浜庢硶鍥界瓑灏戞暟鍥藉銆?
+鍙︽湁鐗堟湰鐨?SECAM锛屽嵆 CCIR - D/K锛岀敤浜庝繚鍔犲埄浜氥€佷腑鍥姐€佹柉娲涗紣鍏嬨€佸寛鐗欏埄銆侀煩鍥斤紙鍏卞拰鍥斤級銆佹尝鍏般€佺綏椹凹浜氱瓑鍦般€?
+CCIR - H 浣跨敤 PAL 褰╄壊鍒跺紡锛堟湁鏃朵负 SECAM锛夛紝鐢ㄤ簬鍩冨強銆佸埄姣斾簹銆佹柉閲屽叞鍗°€侀樋鎷変集鍙欏埄浜氬叡鍜屽浗绛夈€?
+CCIR - I 浣跨敤 PAL 褰╄壊鍒跺紡锛岀敤浜庤嫳鍥姐€侀娓€佺埍灏斿叞銆佸凹鏃ュ埄浜氥€佸崡闈炪€?
+CCIR - N 浣跨敤 PAL 褰╄壊鍒跺紡涓?PAL 甯у昂瀵革紝浣嗛噰鐢?NTSC 甯х巼锛岀敤浜庨樋鏍瑰环銆佷箤鎷夊湱绛夊皯鏁板浗瀹躲€?
+鎴戜滑涓嶈璁洪煶棰戞槸濡備綍骞挎挱鐨勶紒
 
-### 1.1 TV 解码器能做什么、不能做什么
-
-最广为人知的电视标准是 NTSC/PAL/SECAM，但仅此信息不足以解码一帧画面。电视标准有多种格式，而且并非每个 TV 解码器都能处理每种格式。驱动也并非支持每种组合。目前全球共有 11 种不同的电视广播格式。
-
-CCIR 定义了广播信号所需的参数。CCIR 定义了不同的标准：A、B、D、E、F、G、H、I、K、K1、L、M、N…… CCIR 对所使用的彩色制式几乎没有规定！！！而谈论彩色制式时，也不能说明它是如何广播的。
-
-CCIR 标准 A、E、F 已不再使用。
-
-当你说到 NTSC 时，通常指：使用 NTSC 彩色制式的 CCIR - M 标准，用于美国、日本、墨西哥、加拿大等少数国家。
-
-当你说到 PAL 时，通常指：使用 PAL 彩色制式的 CCIR - B/G 标准，用于许多国家。
-
-当你说到 SECAM 时，指的是：使用 SECAM 彩色制式的 CCIR - L 标准，用于法国等少数国家。
-
-另有版本的 SECAM，即 CCIR - D/K，用于保加利亚、中国、斯洛伐克、匈牙利、韩国（共和国）、波兰、罗马尼亚等地。
-
-CCIR - H 使用 PAL 彩色制式（有时为 SECAM），用于埃及、利比亚、斯里兰卡、阿拉伯叙利亚共和国等。
-
-CCIR - I 使用 PAL 彩色制式，用于英国、香港、爱尔兰、尼日利亚、南非。
-
-CCIR - N 使用 PAL 彩色制式与 PAL 帧尺寸，但采用 NTSC 帧率，用于阿根廷、乌拉圭等少数国家。
-
-我们不讨论音频是如何广播的！
-
-关于电视标准的几个相当不错的网站是：
+鍏充簬鐢佃鏍囧噯鐨勫嚑涓浉褰撲笉閿欑殑缃戠珯鏄細
 http://www.sony.jp/support/
 http://info.electronicwerkstatt.de/bereiche/fernsehtechnik/frequenzen_und_normen/Fernsehnormen/
-以及 http://www.cabl.com/restaurant/channel.html
+浠ュ強 http://www.cabl.com/restaurant/channel.html
 
-其它怪异之处：NTSC 4.43 是一种修改过的 NTSC，主要用于能够播放 NTSC 的 PAL 录像机。PAL 60 似乎与 NTSC 4.43 相同。数据手册还提到 NTSC 44，它似乎与 NTSC 4.43 相同。
-NTSC Comb 似乎是一种解码器模式，其中解码器使用梳状滤波器来分离色度与亮度，而不是使用延迟线。
+鍏跺畠鎬紓涔嬪锛歂TSC 4.43 鏄竴绉嶄慨鏀硅繃鐨?NTSC锛屼富瑕佺敤浜庤兘澶熸挱鏀?NTSC 鐨?PAL 褰曞儚鏈恒€侾AL 60 浼间箮涓?NTSC 4.43 鐩稿悓銆傛暟鎹墜鍐岃繕鎻愬埌 NTSC 44锛屽畠浼间箮涓?NTSC 4.43 鐩稿悓銆?NTSC Comb 浼间箮鏄竴绉嶈В鐮佸櫒妯″紡锛屽叾涓В鐮佸櫒浣跨敤姊崇姸婊ゆ尝鍣ㄦ潵鍒嗙鑹插害涓庝寒搴︼紝鑰屼笉鏄娇鐢ㄥ欢杩熺嚎銆?
+浣嗘垜濮嬬粓娌¤兘纭垏寮勬竻 NTSC Comb 鏄粈涔堛€?
+#### Philips saa7111 TV 瑙ｇ爜鍣?
+- 浜?1997 骞存帹鍑猴紝鐢ㄤ簬 BUZ锛屼笖
+- 鍙鐞嗭細PAL B/G/H/I銆丳AL N銆丳AL M銆丯TSC M銆丯TSC N銆丯TSC 4.43 鍜?SECAM
 
-但我始终没能确切弄清 NTSC Comb 是什么。
+#### Philips saa7110a TV 瑙ｇ爜鍣?
+- 浜?1995 骞存帹鍑猴紝鐢ㄤ簬 Pinnacle/Miro DC10锛堟柊锛夈€丏C10+锛屼笖
+- 鍙鐞嗭細PAL B/G銆丯TSC M 鍜?SECAM
 
-#### Philips saa7111 TV 解码器
+#### Philips saa7114 TV 瑙ｇ爜鍣?
+- 浜?2000 骞存帹鍑猴紝鐢ㄤ簬 LML33R10锛屼笖
+- 鍙鐞嗭細PAL B/G/D/H/I/N銆丳AL N銆丳AL M銆丯TSC M銆丯TSC 4.43 鍜?SECAM
 
-- 于 1997 年推出，用于 BUZ，且
-- 可处理：PAL B/G/H/I、PAL N、PAL M、NTSC M、NTSC N、NTSC 4.43 和 SECAM
+#### Brooktree bt819 TV 瑙ｇ爜鍣?
+- 浜?1996 骞存帹鍑猴紝鐢ㄤ簬 LML33锛屼笖
+- 鍙鐞嗭細PAL B/D/G/H/I銆丯TSC M
 
-#### Philips saa7110a TV 解码器
+#### Micronas vpx3220a TV 瑙ｇ爜鍣?
+- 浜?1996 骞存帹鍑猴紝鐢ㄤ簬 DC30 鍜?DC30+锛屼笖
+- 鍙鐞嗭細PAL B/G/H/I銆丳AL N銆丳AL M銆丯TSC M銆丯TSC 44銆丳AL 60銆丼ECAM銆丯TSC Comb
 
-- 于 1995 年推出，用于 Pinnacle/Miro DC10（新）、DC10+，且
-- 可处理：PAL B/G、NTSC M 和 SECAM
-
-#### Philips saa7114 TV 解码器
-
-- 于 2000 年推出，用于 LML33R10，且
-- 可处理：PAL B/G/D/H/I/N、PAL N、PAL M、NTSC M、NTSC 4.43 和 SECAM
-
-#### Brooktree bt819 TV 解码器
-
-- 于 1996 年推出，用于 LML33，且
-- 可处理：PAL B/D/G/H/I、NTSC M
-
-#### Micronas vpx3220a TV 解码器
-
-- 于 1996 年推出，用于 DC30 和 DC30+，且
-- 可处理：PAL B/G/H/I、PAL N、PAL M、NTSC M、NTSC 44、PAL 60、SECAM、NTSC Comb
-
-#### Samsung ks0127 TV 解码器
-
-- 用于 AVS6EYES 卡，且
-- 可处理：NTSC-M/N/44、PAL-M/N/B/G/H/I/D/K/L 和 SECAM
+#### Samsung ks0127 TV 瑙ｇ爜鍣?
+- 鐢ㄤ簬 AVS6EYES 鍗★紝涓?- 鍙鐞嗭細NTSC-M/N/44銆丳AL-M/N/B/G/H/I/D/K/L 鍜?SECAM
 
 
-### TV 编码器能做什么、不能做什么
+### TV 缂栫爜鍣ㄨ兘鍋氫粈涔堛€佷笉鑳藉仛浠€涔?
+TV 缂栫爜鍣ㄥ仛涓庤В鐮佸櫒鈥滅浉鍚屸€濈殑浜嬶紝浣嗘柟鍚戠浉鍙嶃€備綘鍚戝畠杈撳叆鏁板瓧鏁版嵁锛屽畠鐢熸垚澶嶅悎鎴?SVHS 淇″彿銆傚叧浜庡僵鑹插埗寮忎笌鐢佃鍒跺紡鐨勪俊鎭紝璇峰弬闃?TV 瑙ｇ爜鍣ㄤ竴鑺傘€?
+#### Philips saa7185 TV 缂栫爜鍣?
+- 浜?1996 骞存帹鍑猴紝鐢ㄤ簬 BUZ
+- 鍙敓鎴愶細PAL B/G銆丯TSC M
 
-TV 编码器做与解码器“相同”的事，但方向相反。你向它输入数字数据，它生成复合或 SVHS 信号。关于彩色制式与电视制式的信息，请参阅 TV 解码器一节。
+#### Brooktree bt856 TV 缂栫爜鍣?
+- 浜?1994 骞存帹鍑猴紝鐢ㄤ簬 LML33
+- 鍙敓鎴愶細PAL B/D/G/H/I/N銆丳AL M銆丯TSC M銆丳AL-N锛堥樋鏍瑰环锛?
+#### Analog Devices adv7170 TV 缂栫爜鍣?
+- 浜?2000 骞存帹鍑猴紝鐢ㄤ簬 LML300R10
+- 鍙敓鎴愶細PAL B/D/G/H/I/N銆丳AL M銆丯TSC M銆丳AL 60
 
-#### Philips saa7185 TV 编码器
+#### Analog Devices adv7175 TV 缂栫爜鍣?
+- 浜?1996 骞存帹鍑猴紝鐢ㄤ簬 DC10銆丏C10+銆丏C10 鏃с€丏C30銆丏C30+
+- 鍙敓鎴愶細PAL B/D/G/H/I/N銆丳AL M銆丯TSC M
 
-- 于 1996 年推出，用于 BUZ
-- 可生成：PAL B/G、NTSC M
+#### ITT mse3000 TV 缂栫爜鍣?
+- 浜?1991 骞存帹鍑猴紝鐢ㄤ簬 DC10 鏃?- 鍙敓鎴愶細PAL銆丯TSC銆丼ECAM
 
-#### Brooktree bt856 TV 编码器
+#### Conexant bt866 TV 缂栫爜鍣?
+- 鐢ㄤ簬 AVS6EYES锛屼笖
+- 鍙敓鎴愶細NTSC/PAL銆丳AL-M銆丳AL-N
 
-- 于 1994 年推出，用于 LML33
-- 可生成：PAL B/D/G/H/I/N、PAL M、NTSC M、PAL-N（阿根廷）
+adv717x 搴斿綋鑳藉鐢熸垚 PAL N銆備絾浣犲湪瀵勫瓨鍣ㄤ腑鎵句笉鍒颁换浣?PAL N 鐗规湁鐨勫唴瀹广€傜湅鏉ヤ綘蹇呴』澶嶇敤鍏跺畠鏍囧噯鏉ョ敓鎴?PAL N锛屽鏋滀娇鐢?PAL M 鐨勮缃紝涔熻鑳借銆?
+### 濡備綍璁╄繖涓滆タ姝ｅ父宸ヤ綔
 
-#### Analog Devices adv7170 TV 编码器
+鍔犺浇 zr36067.o銆傚鏋滃畠鏃犳硶鑷姩妫€娴嬩綘鐨勫崱锛屼娇鐢?card=X 杩欎釜 insmod 閫夐」锛屽叾涓?X 涓轰笂涓€鑺傜粰鍑虹殑鍗″彿銆傝鎷ユ湁澶氫簬涓€鍗★紝浣跨敤 card=X1[,X2[,X3[,X4[..]]]]
 
-- 于 2000 年推出，用于 LML300R10
-- 可生成：PAL B/D/G/H/I/N、PAL M、NTSC M、PAL 60
-
-#### Analog Devices adv7175 TV 编码器
-
-- 于 1996 年推出，用于 DC10、DC10+、DC10 旧、DC30、DC30+
-- 可生成：PAL B/D/G/H/I/N、PAL M、NTSC M
-
-#### ITT mse3000 TV 编码器
-
-- 于 1991 年推出，用于 DC10 旧
-- 可生成：PAL、NTSC、SECAM
-
-#### Conexant bt866 TV 编码器
-
-- 用于 AVS6EYES，且
-- 可生成：NTSC/PAL、PAL-M、PAL-N
-
-adv717x 应当能够生成 PAL N。但你在寄存器中找不到任何 PAL N 特有的内容。看来你必须复用其它标准来生成 PAL N，如果使用 PAL M 的设置，也许能行。
-
-### 如何让这东西正常工作
-
-加载 zr36067.o。如果它无法自动检测你的卡，使用 card=X 这个 insmod 选项，其中 X 为上一节给出的卡号。要拥有多于一卡，使用 card=X1[,X2[,X3[,X4[..]]]]
-
-要自动化这一点，将以下内容添加到你的 /etc/modprobe.d/zoran.conf：
-
+瑕佽嚜鍔ㄥ寲杩欎竴鐐癸紝灏嗕互涓嬪唴瀹规坊鍔犲埌浣犵殑 /etc/modprobe.d/zoran.conf锛?
 options zr36067 card=X1[,X2[,X3[,X4[..]]]]
 alias char-major-81-0 zr36067
 
-需要记住的一点是，这本身还不会加载 zr36067.o，它只是把加载自动化了。如果你开始使用 xawtv，在某些系统上设备不会加载，因为你正尝试以用户身份加载模块，这是不允许的（“permission denied”）。一个快速的变通方法是：当你默认使用 X 时，向 XF86Config-4 添加 'Load "v4l"'；如果你不使用 X，则在某个启动脚本（通常为 rc.local）中运行 'v4l-conf -c <device>'。这两种做法都能确保模块在启动时以 root 账户加载。
+闇€瑕佽浣忕殑涓€鐐规槸锛岃繖鏈韩杩樹笉浼氬姞杞?zr36067.o锛屽畠鍙槸鎶婂姞杞借嚜鍔ㄥ寲浜嗐€傚鏋滀綘寮€濮嬩娇鐢?xawtv锛屽湪鏌愪簺绯荤粺涓婅澶囦笉浼氬姞杞斤紝鍥犱负浣犳灏濊瘯浠ョ敤鎴疯韩浠藉姞杞芥ā鍧楋紝杩欐槸涓嶅厑璁哥殑锛堚€減ermission denied鈥濓級銆備竴涓揩閫熺殑鍙橀€氭柟娉曟槸锛氬綋浣犻粯璁や娇鐢?X 鏃讹紝鍚?XF86Config-4 娣诲姞 'Load "v4l"'锛涘鏋滀綘涓嶄娇鐢?X锛屽垯鍦ㄦ煇涓惎鍔ㄨ剼鏈紙閫氬父涓?rc.local锛変腑杩愯 'v4l-conf -c <device>'銆傝繖涓ょ鍋氭硶閮借兘纭繚妯″潡鍦ㄥ惎鍔ㄦ椂浠?root 璐︽埛鍔犺浇銆?
+### 鎴戣鐢ㄥ摢鍧椾富鏉匡紙鎴栦负浣曟垜鐨勫崱涓嶅伐浣滐級
 
-### 我该用哪块主板（或为何我的卡不工作）
+<鍦ㄦ鎻掑叆韫╄剼鐨勫厤璐ｅ０鏄?銆傜畝鑰岃█涔嬶細濂?SiS/Intel锛屽樊=VIA銆?
+缁忛獙鍛婅瘔鎴戜滑锛屾嫢鏈?Buz 鐨勪汉骞冲潎姣旀嫢鏈?DC10+/LML33 鐨勭敤鎴烽亣鍒版洿澶氶棶棰樸€傜粡楠岃繕鍛婅瘔鎴戜滑锛屾嫢鏈夊熀浜?VIA 鐨勪富鏉匡紙ktXXX銆丮VP3锛夌殑浜烘瘮鎷ユ湁鍩轰簬鍏跺畠鑺墖缁勪富鏉跨殑浜洪亣鍒版洿澶氶棶棰樸€備互涓嬫槸 Andrew Stevens 鐨勪竴浜涚瑪璁帮細
 
-<在此插入蹩脚的免责声明>。简而言之：好=SiS/Intel，差=VIA。
-
-经验告诉我们，拥有 Buz 的人平均比拥有 DC10+/LML33 的用户遇到更多问题。经验还告诉我们，拥有基于 VIA 的主板（ktXXX、MVP3）的人比拥有基于其它芯片组主板的人遇到更多问题。以下是 Andrew Stevens 的一些笔记：
-
-以下是我在各种主板上使用 LML33 和 Buz 的经验：
+浠ヤ笅鏄垜鍦ㄥ悇绉嶄富鏉夸笂浣跨敤 LML33 鍜?Buz 鐨勭粡楠岋細
 
 - VIA MVP3
- - 算了吧。毫无意义。无法工作。
-- Intel 430FX（Pentium 200）
- - LML33 完美，Buz 勉强可用（每部影片丢 3 或 4 帧）
-- Intel 440BX（早期步进）
- - LML33 勉强可用。Buz 开始变得恼人（每小时 6-10 帧）
-- Intel 440BX（晚期步进）
- - Buz 勉强可用，LML33 几乎完美（偶尔丢单帧）
-- SiS735
- - LML33 完美，Buz 勉强可用。
-- VIA KT133(*)
- - LML33 开始变得恼人，Buz 差到让我放弃。
-
-- 两块 440BX 主板都是双 CPU 版本。
-
-Bernhard Praschinger 后来补充：
-
+ - 绠椾簡鍚с€傛鏃犳剰涔夈€傛棤娉曞伐浣溿€?- Intel 430FX锛圥entium 200锛? - LML33 瀹岀編锛孊uz 鍕夊己鍙敤锛堟瘡閮ㄥ奖鐗囦涪 3 鎴?4 甯э級
+- Intel 440BX锛堟棭鏈熸杩涳級
+ - LML33 鍕夊己鍙敤銆侭uz 寮€濮嬪彉寰楁伡浜猴紙姣忓皬鏃?6-10 甯э級
+- Intel 440BX锛堟櫄鏈熸杩涳級
+ - Buz 鍕夊己鍙敤锛孡ML33 鍑犱箮瀹岀編锛堝伓灏斾涪鍗曞抚锛?- SiS735
+ - LML33 瀹岀編锛孊uz 鍕夊己鍙敤銆?- VIA KT133(*)
+ - LML33 寮€濮嬪彉寰楁伡浜猴紝Buz 宸埌璁╂垜鏀惧純銆?
+- 涓ゅ潡 440BX 涓绘澘閮芥槸鍙?CPU 鐗堟湰銆?
+Bernhard Praschinger 鍚庢潵琛ュ厖锛?
 - AMD 751
- - Buz 完美到勉强可用
-- AMD 760
- - Buz 完美到勉强可用
+ - Buz 瀹岀編鍒板媺寮哄彲鐢?- AMD 760
+ - Buz 瀹岀編鍒板媺寮哄彲鐢?
+鎬荤殑鏉ヨ锛屽鏋滀綘鎷ユ湁鍩轰簬 VIA 鐨勪富鏉匡紝鐢ㄦ埛閭欢鍒楄〃涓婄殑浜轰笉浼氱粰浣犲灏戞満浼氥€傚畠浠彲鑳戒究瀹滐紝浣嗘湁鏃朵綘瀹佹効鍦ㄦ洿濂界殑鏉垮瓙涓婂鑺变簺閽便€傛€荤殑鏉ヨ锛屼笌鍏跺畠涓绘澘鐩告瘮锛孷IA 涓绘澘鐨?IDE/PCI 鎬ц兘涔熶細宸緱寰堟儴銆備綘浼氭敞鎰忓埌姒傝涓畬鍏ㄦ病鏈夋彁鍒?DC10+/DC30+銆傚熀鏈笂锛屼綘鍙互鍋囪锛氬鏋?Buz 鑳藉伐浣滐紝LML33 涔熻兘宸ヤ綔锛涘鏋?LML33 鑳藉伐浣滐紝DC10+/DC30+ 涔熻兘宸ヤ綔銆傚湪鍙楁敮鎸佺殑鎵€鏈夊崱涓紝瀹冧滑瀵逛笉鍚屼富鏉胯姱鐗囩粍鏈€涓哄瀹广€?
+濡傛灉鍦ㄩ噰闆嗚繃绋嬩腑閬囧埌瓒呮椂锛屼拱涓€鍧楁洿濂界殑涓绘澘锛屾垨鍦ㄩ噰闆嗘椂闄嶄綆璐ㄩ噺/缂撳啿鍖哄ぇ灏忥紙鍙傝鈥滃叧浜庣紦鍐插尯澶у皬銆佽川閲忋€佽緭鍑哄昂瀵哥瓑鈥濓級銆傚鏋滃畠鎸傝捣锛岀洰鍓嶆垜浠嚑涔庢棤鑳戒负鍔涖€傛鏌ヤ綘鐨?IRQ锛屽苟纭繚璇ュ崱鎷ユ湁鑷繁鐨勪腑鏂€?
+### 缂栫▼鎺ュ彛
 
-总的来说，如果你拥有基于 VIA 的主板，用户邮件列表上的人不会给你多少机会。它们可能便宜，但有时你宁愿在更好的板子上多花些钱。总的来说，与其它主板相比，VIA 主板的 IDE/PCI 性能也会差得很惨。你会注意到概览中完全没有提到 DC10+/DC30+。基本上，你可以假设：如果 Buz 能工作，LML33 也能工作；如果 LML33 能工作，DC10+/DC30+ 也能工作。在受支持的所有卡中，它们对不同主板芯片组最为宽容。
+鏈┍鍔ㄧ鍚?video4linux2銆傚 V4L1 浠ュ強鑷畾涔?zoran ioctl 鐨勬敮鎸佸凡鍦ㄥ唴鏍?2.6.38 涓Щ闄ゃ€?
+鍏充簬缂栫▼绀轰緥锛岃鏌ョ湅 MJPEG-tools锛坔ttp://mjpeg.sf.net/锛変腑鐨?lavrec.c 涓?lavplay.c 浠ｇ爜銆?
+缁欒蒋浠跺紑鍙戣€呯殑棰濆璇存槑锛?
+   椹卞姩鏍规嵁褰撳墠鐢佃鏍囧噯锛坣orm锛夎繑鍥?maxwidth 涓?maxheight 鍙傛暟銆傚洜姝わ紝涓庨┍鍔ㄩ€氫俊骞垛€滆闂€濊繖浜涘弬鏁扮殑杞欢搴斿綋棣栧厛璁剧疆姝ｇ‘鐨?norm銆傝繖鐪嬩笂鍘诲湪閫昏緫涓婃槸姝ｇ‘鐨勶細鐩稿浜庡彲鑳戒互 ITU 鎴栨柟鍍忕礌鏍煎紡宸ヤ綔鐨勫悇绉嶇數瑙嗛噰闆嗗崱鐨勫嚑浣曡缃紝鐢佃鏍囧噯瀵瑰綋鍓嶅浗瀹惰€岃█鈥滄洿涓烘亽瀹氣€濄€?
+### 搴旂敤绋嬪簭
 
-如果在采集过程中遇到超时，买一块更好的主板，或在采集时降低质量/缓冲区大小（参见“关于缓冲区大小、质量、输出尺寸等”）。如果它挂起，目前我们几乎无能为力。检查你的 IRQ，并确保该卡拥有自己的中断。
-
-### 编程接口
-
-本驱动符合 video4linux2。对 V4L1 以及自定义 zoran ioctl 的支持已在内核 2.6.38 中移除。
-
-关于编程示例，请查看 MJPEG-tools（http://mjpeg.sf.net/）中的 lavrec.c 与 lavplay.c 代码。
-
-给软件开发者的额外说明：
-
-   驱动根据当前电视标准（norm）返回 maxwidth 与 maxheight 参数。因此，与驱动通信并“询问”这些参数的软件应当首先设置正确的 norm。这看上去在逻辑上是正确的：相对于可能以 ITU 或方像素格式工作的各种电视采集卡的几何设置，电视标准对当前国家而言“更为恒定”。
-
-### 应用程序
-
-已知可与该驱动配合工作的应用程序：
-
-电视观看：
-
+宸茬煡鍙笌璇ラ┍鍔ㄩ厤鍚堝伐浣滅殑搴旂敤绋嬪簭锛?
+鐢佃瑙傜湅锛?
 - xawtv
 - kwintv
-- 可能任何支持 video4linux 或 video4linux2 的电视应用程序。
-
-MJPEG 采集/播放：
-
-- mjpegtools/lavtools（或 Linux Video Studio）
-- gstreamer
+- 鍙兘浠讳綍鏀寔 video4linux 鎴?video4linux2 鐨勭數瑙嗗簲鐢ㄧ▼搴忋€?
+MJPEG 閲囬泦/鎾斁锛?
+- mjpegtools/lavtools锛堟垨 Linux Video Studio锛?- gstreamer
 - mplayer
 
-通用原始采集：
-
+閫氱敤鍘熷閲囬泦锛?
 - xawtv
 - gstreamer
-- 可能任何支持 video4linux 或 video4linux2 的应用程序
-
-视频编辑：
-
+- 鍙兘浠讳綍鏀寔 video4linux 鎴?video4linux2 鐨勫簲鐢ㄧ▼搴?
+瑙嗛缂栬緫锛?
 - Cinelerra
 - MainActor
-- mjpegtools（或 Linux Video Studio）
+- mjpegtools锛堟垨 Linux Video Studio锛?
 
+### 鍏充簬缂撳啿鍖哄ぇ灏忋€佽川閲忋€佽緭鍑哄昂瀵哥瓑
 
-### 关于缓冲区大小、质量、输出尺寸等
-
-zr36060 可以进行 1:2 的 JPEG 压缩。这确实是该芯片组能达到的理论最大值。不过，驱动可以将压缩限制为最大（尺寸）1:4。原因在于某些卡（例如 Buz）在只压缩到 1:2 时，若不进行 1:4 压缩，仅几分钟后就会停止采集。使用 1:4 时大多可以正常工作。如果你有 Buz，使用 'low_bitrate=1' 进入 1:4 最大压缩模式。
-
-因此，100% 的 JPEG 质量在实践中就是 1:2 压缩。对于一整帧 PAL 画面（尺寸 720x576）而言。JPEG 场以 YUY2 格式存储，因此场的大小为 720x288x16/2 位/场（2 场/帧）= 207360 字节/场 x 2 = 414720 字节/帧（再加上一些用于头部以及 DHT（huffman）/DQT（量化）表的字节，1:2 压缩时每帧大约会达到 512kB）。对于 1:4 压缩，帧的大小为此的一半。
-
-Martin Samuelsson 给出的一些额外解释，也说明了缓冲区大小的重要性：
+zr36060 鍙互杩涜 1:2 鐨?JPEG 鍘嬬缉銆傝繖纭疄鏄鑺墖缁勮兘杈惧埌鐨勭悊璁烘渶澶у€笺€備笉杩囷紝椹卞姩鍙互灏嗗帇缂╅檺鍒朵负鏈€澶э紙灏哄锛?:4銆傚師鍥犲湪浜庢煇浜涘崱锛堜緥濡?Buz锛夊湪鍙帇缂╁埌 1:2 鏃讹紝鑻ヤ笉杩涜 1:4 鍘嬬缉锛屼粎鍑犲垎閽熷悗灏变細鍋滄閲囬泦銆備娇鐢?1:4 鏃跺ぇ澶氬彲浠ユ甯稿伐浣溿€傚鏋滀綘鏈?Buz锛屼娇鐢?'low_bitrate=1' 杩涘叆 1:4 鏈€澶у帇缂╂ā寮忋€?
+鍥犳锛?00% 鐨?JPEG 璐ㄩ噺鍦ㄥ疄璺典腑灏辨槸 1:2 鍘嬬缉銆傚浜庝竴鏁村抚 PAL 鐢婚潰锛堝昂瀵?720x576锛夎€岃█銆侸PEG 鍦轰互 YUY2 鏍煎紡瀛樺偍锛屽洜姝ゅ満鐨勫ぇ灏忎负 720x288x16/2 浣?鍦猴紙2 鍦?甯э級= 207360 瀛楄妭/鍦?x 2 = 414720 瀛楄妭/甯э紙鍐嶅姞涓婁竴浜涚敤浜庡ご閮ㄤ互鍙?DHT锛坔uffman锛?DQT锛堥噺鍖栵級琛ㄧ殑瀛楄妭锛?:2 鍘嬬缉鏃舵瘡甯уぇ绾︿細杈惧埌 512kB锛夈€傚浜?1:4 鍘嬬缉锛屽抚鐨勫ぇ灏忎负姝ょ殑涓€鍗娿€?
+Martin Samuelsson 缁欏嚭鐨勪竴浜涢澶栬В閲婏紝涔熻鏄庝簡缂撳啿鍖哄ぇ灏忕殑閲嶈鎬э細
 --
-> Hmm，我不认为真的是那样。用当前（周一 18:00 下载）的驱动，我得到 10 秒的输出大小：
-> -q 50 -b 128 : 24.283.332 字节
+> Hmm锛屾垜涓嶈涓虹湡鐨勬槸閭ｆ牱銆傜敤褰撳墠锛堝懆涓€ 18:00 涓嬭浇锛夌殑椹卞姩锛屾垜寰楀埌 10 绉掔殑杈撳嚭澶у皬锛?> -q 50 -b 128 : 24.283.332 瀛楄妭
 > -q 50 -b 256 : 48.442.368
 > -q 25 -b 128 : 24.655.992
 > -q 25 -b 256 : 25.859.820
 
-我醒了，而且再也睡不着。我消磨点时间解释一下为什么这对我来说并不奇怪。
+鎴戦啋浜嗭紝鑰屼笖鍐嶄篃鐫′笉鐫€銆傛垜娑堢（鐐规椂闂磋В閲婁竴涓嬩负浠€涔堣繖瀵规垜鏉ヨ骞朵笉濂囨€€?
+璁╂垜浠敤 704 鍍忕礌鐨勫搴﹀仛鐐圭畻鏈€傛垜涓嶇‘瀹?Buz 鏄惁鐪熺殑鐢ㄨ繖涓暟瀛楋紝浣嗙幇鍦ㄨ繖涓嶉噸瑕併€?
+704x288 鍍忕礌锛屼竴涓満锛屾槸 202752 鍍忕礌銆傞櫎浠ユ瘡鍧?64 鍍忕礌锛涙瘡鍦?3168 鍧椼€傛瘡涓儚绱犵敱涓や釜瀛楄妭缁勬垚锛涙瘡鍧?128 瀛楄妭锛涙瘡鍧?1024 浣嶃€傛柊椹卞姩涓殑 100% 鎰忓懗鐫€ 1:2 鍘嬬缉锛涙渶澶ц緭鍑哄彉涓烘瘡鍧?512 浣嶃€傚疄闄呬笂鏄?510锛屼絾 512 鐢ㄤ簬璁＄畻鏇寸畝鍗曘€?
+鍋囪鎴戜滑鎸囧畾 d1q50銆傚洜姝ゆ垜浠湡鏈涙瘡鍧?256 浣嶏紱涔樹互 3168 寰楀埌 811008 浣嶏紱姣忓満 101376 瀛楄妭銆傛垜浠繖閲岃皥璁虹殑鏄師濮嬩綅涓庡瓧鑺傦紝鎵€浠ヤ笉闇€瑕佸姣忓儚绱犱綅鏁颁箣绫诲仛浠讳綍鑺卞摠鐨勬牎姝ｃ€傛瘡鍦?101376 瀛楄妭銆?
+d1 瑙嗛姣忓抚鍖呭惈涓や釜鍦恒€傚畠浠悎璁′负姣忓抚 202752 瀛楄妭锛屽叾涓竴涓抚杩涘叆姣忎釜缂撳啿鍖恒€?
+浣嗘槸绛変竴涓嬶紒-b128 缁欏嚭 128kB 缂撳啿鍖猴紒涓嶅彲鑳芥妸 202752 瀛楄妭鐨?JPEG 鏁版嵁濉炶繘 128kB锛?
+杩欐鏄┍鍔ㄥ湪浣犵殑绀轰緥涓敞鎰忓埌骞惰嚜鍔ㄨˉ鍋跨殑鍦版柟銆傝鎴戜滑鐢ㄨ繖浜涗俊鎭仛鐐圭畻鏈細
 
-让我们用 704 像素的宽度做点算术。我不确定 Buz 是否真的用这个数字，但现在这不重要。
+128kB 鏄?131072 瀛楄妭銆傚湪杩欎釜缂撳啿鍖轰腑锛屾垜浠瀛樺偍涓や釜鍦猴紝鍥犳姣忎釜鍦哄墿涓?65536 瀛楄妭銆傛瘡鍦轰娇鐢?3168 鍧楋紝鎴戜滑寰楀埌姣忓潡 20.68686868鈥︹€?鍙敤瀛楄妭锛?65 浣嶃€傚綋鍙湁 165 浣嶅彲鐢ㄦ椂锛屾垜浠笉鑳藉厑璁告瘡鍧?256 浣嶇殑璇锋眰锛?q50 閫夐」琚潤榛樿鐩栵紝鑰?-b128 閫夐」浼樺厛锛屽墿涓嬬浉褰撲簬 -q32 鐨勭粨鏋溿€?
+杩欑粰浜嗘垜浠瘡鍧?165 浣嶇殑鏁版嵁鐜囷紝涔樹互 3168锛屽悎璁℃瘡鍦?65340 瀛楄妭锛屽湪鍏佽鐨?65536 涔嬪唴銆傚綋鍓嶉┍鍔ㄨ繕鏈夊彟涓€灞傞€熺巼闄愬埗锛涘畠涓嶄細鎺ュ彈濉弧瓒呰繃鎸囧畾缂撳啿鍖?6/8 鐨?-q 鍊笺€傦紙鎴戜笉纭畾涓轰粈涔堛€傗€滅ǔ濡ヨ捣瑙佲€濅技涔庢槸涓畨鍏ㄧ殑鐚滄祴銆傚氨鎴戜釜浜鸿€岃█锛屾垜鎯虫垜浼氭妸璇锋眰鐨勬瘡鍧椾綅鏁板噺涓€锛屾垨绫讳技鐨勫仛娉曘€傦級鎴戜滑涓嶈兘浣跨敤姣忓潡 165 浣嶏紝鑰屽繀椤诲啀娆￠檷浣庯紝闄嶅埌鍙敤缂撳啿鍖虹┖闂寸殑 6/8锛氭垜浠渶缁堝緱鍒版瘡鍧?124 浣嶏紝鐩稿綋浜?-q24銆備娇鐢?128kB 缂撳啿鍖烘椂锛屽湪 -d1 涓嬩綘涓嶈兘浣跨敤澶т簬 -q24 鐨勫€笺€傦紙浠ュ強 PAL锛屼互鍙?704 鍍忕礌瀹藉害鈥︹€︼級
 
-704x288 像素，一个场，是 202752 像素。除以每块 64 像素；每场 3168 块。每个像素由两个字节组成；每块 128 字节；每块 1024 位。新驱动中的 100% 意味着 1:2 压缩；最大输出变为每块 512 位。实际上是 510，但 512 用于计算更简单。
+绗笁涓ず渚嬮€氳繃鐩稿悓杩囩▼琚檺鍒跺埌 -q24銆傜浜屼釜绀轰緥锛岀敤闈炲父鐩镐技鐨勮绠楋紝琚檺鍒跺埌 -q48銆傚敮涓€鐪熸浠ユ寚瀹?-q 鍊奸噰闆嗙殑绀轰緥鏄渶鍚庝竴涓紝浠庢枃浠跺ぇ灏忓彲浠ユ竻妤氬湴鐪嬪嚭銆?--
 
-假设我们指定 d1q50。因此我们期望每块 256 位；乘以 3168 得到 811008 位；每场 101376 字节。我们这里谈论的是原始位与字节，所以不需要对每像素位数之类做任何花哨的校正。每场 101376 字节。
+缁撹锛氭渶缁堝奖鐗囩殑璐ㄩ噺鍙栧喅浜庣紦鍐插尯澶у皬銆佽川閲忥紝浠ュ強浣犳槸鍚︿娇鐢?'low_bitrate=1' 浣滀负 zr36060.c 妯″潡鐨?insmod 閫夐」鏉ヨ繘琛?1:4 鑰岄潪 1:2 鐨勫帇缂╋紝绛夌瓑銆?
+濡傛灉浣犻亣鍒拌秴鏃讹紝闄嶄綆璐ㄩ噺/缂撳啿鍖哄ぇ灏忔垨浣跨敤 'low_bitrate=1' 浣滀负 zr36060.o 鐨?insmod 閫夐」锛屽疄闄呬笂鍙兘鏈夋墍甯姪锛孊uz 宸茬粡璇佹槑浜嗚繖涓€鐐广€?
+### 瀹冩寕璧?宕╂簝/澶辫触/鍚勭闂锛佹晳鍛斤紒
 
-d1 视频每帧包含两个场。它们合计为每帧 202752 字节，其中一个帧进入每个缓冲区。
+纭繚璇ュ崱鎷ユ湁鑷繁鐨勪腑鏂紙鍙傝 /proc/interrupts锛夛紝浠ラ珮璇︾粏绋嬪害妫€鏌?dmesg 鐨勮緭鍑猴紙浠?debug=2 鍔犺浇 zr36067.o锛屼互 debug=1 鍔犺浇鎵€鏈夊叾瀹冩ā鍧楋級銆傛鏌ヤ綘鐨勪富鏉挎槸鍚︽湁鍒╋紙瑙侀棶棰?2锛夛紝鑻ヤ笉鍒╋紝鍦ㄥ彟涓€鍙拌绠楁満涓祴璇曡鍗°€傚彟璇峰弬闃呴棶棰?3 涓粰鍑虹殑绗旇锛屽鏋滃綍鍒跺湪涓€娈垫椂闂村悗澶辫触锛屽皾璇曢檷浣庤川閲?缂撳啿鍖哄ぇ灏?閲囬泦澶у皬銆?
+濡傛灉杩欎竴鍒囬兘娌℃湁甯姪锛岃娓呮櫚鍦版弿杩伴棶棰橈紝鍖呮嫭璇︾粏鐨勭‖浠朵俊鎭紙鍐呭瓨+鍝佺墝銆佷富鏉?鑺墖缁?鍝佺墝銆佹槸鍝潡 MJPEG 鍗°€佸鐞嗗櫒銆佸叾瀹冨彲鑳界浉鍏崇殑 PCI 鍗★級锛岀粰鍑虹郴缁熺殑 PnP 淇℃伅锛?proc/interrupts銆?proc/dma銆?proc/devices锛夛紝骞剁粰鍑哄唴鏍哥増鏈€侀┍鍔ㄧ増鏈€乬libc 鐗堟湰銆乬cc 鐗堟湰浠ュ強浠讳綍鍏跺畠鍙兘鐩稿叧鐨勪俊鎭€傚悓鏃舵彁渚涢珮璇︾粏绋嬪害鐨?dmesg 杈撳嚭銆傚叧浜庡浣曡仈绯诲紑鍙戣€咃紝璇峰弬闃呪€滆仈绯绘柟寮忊€濄€?
+### 缁存姢鑰?鑱旂郴鏂瑰紡
 
-但是等一下！-b128 给出 128kB 缓冲区！不可能把 202752 字节的 JPEG 数据塞进 128kB！
-
-这正是驱动在你的示例中注意到并自动补偿的地方。让我们用这些信息做点算术：
-
-128kB 是 131072 字节。在这个缓冲区中，我们要存储两个场，因此每个场剩下 65536 字节。每场使用 3168 块，我们得到每块 20.68686868…… 可用字节；165 位。当只有 165 位可用时，我们不能允许每块 256 位的请求！-q50 选项被静默覆盖，而 -b128 选项优先，剩下相当于 -q32 的结果。
-
-这给了我们每块 165 位的数据率，乘以 3168，合计每场 65340 字节，在允许的 65536 之内。当前驱动还有另一层速率限制；它不会接受填满超过指定缓冲区 6/8 的 -q 值。（我不确定为什么。“稳妥起见”似乎是个安全的猜测。就我个人而言，我想我会把请求的每块位数减一，或类似的做法。）我们不能使用每块 165 位，而必须再次降低，降到可用缓冲区空间的 6/8：我们最终得到每块 124 位，相当于 -q24。使用 128kB 缓冲区时，在 -d1 下你不能使用大于 -q24 的值。（以及 PAL，以及 704 像素宽度……）
-
-第三个示例通过相同过程被限制到 -q24。第二个示例，用非常相似的计算，被限制到 -q48。唯一真正以指定 -q 值采集的示例是最后一个，从文件大小可以清楚地看出。
---
-
-结论：最终影片的质量取决于缓冲区大小、质量，以及你是否使用 'low_bitrate=1' 作为 zr36060.c 模块的 insmod 选项来进行 1:4 而非 1:2 的压缩，等等。
-
-如果你遇到超时，降低质量/缓冲区大小或使用 'low_bitrate=1' 作为 zr36060.o 的 insmod 选项，实际上可能有所帮助，Buz 已经证明了这一点。
-
-### 它挂起/崩溃/失败/各种问题！救命！
-
-确保该卡拥有自己的中断（参见 /proc/interrupts），以高详细程度检查 dmesg 的输出（以 debug=2 加载 zr36067.o，以 debug=1 加载所有其它模块）。检查你的主板是否有利（见问题 2），若不利，在另一台计算机中测试该卡。另请参阅问题 3 中给出的笔记，如果录制在一段时间后失败，尝试降低质量/缓冲区大小/采集大小。
-
-如果这一切都没有帮助，请清晰地描述问题，包括详细的硬件信息（内存+品牌、主板+芯片组+品牌、是哪块 MJPEG 卡、处理器、其它可能相关的 PCI 卡），给出系统的 PnP 信息（/proc/interrupts、/proc/dma、/proc/devices），并给出内核版本、驱动版本、glibc 版本、gcc 版本以及任何其它可能相关的信息。同时提供高详细程度的 dmesg 输出。关于如何联系开发者，请参阅“联系方式”。
-
-### 维护者/联系方式
-
-本驱动以往的贡献者/开发者有
+鏈┍鍔ㄤ互寰€鐨勮础鐚€?寮€鍙戣€呮湁
 - Laurent Pinchart <laurent.pinchart@skynet.be>
 - Ronald Bultje rbultje@ronald.bitfreak.net
 - Serguei Miridonov <mirsev@cicese.mx>
@@ -400,8 +273,7 @@ d1 视频每帧包含两个场。它们合计为每帧 202752 字节，其中一
 - Dave Perks <dperks@ibm.net>
 - Rainer Johanni <Rainer@Johanni.de>
 
-### 驱动许可证
-
+### 椹卞姩璁稿彲璇?
     This driver is distributed under the terms of the General Public License.
 
     This program is free software; you can redistribute it and/or modify
@@ -414,4 +286,4 @@ d1 视频每帧包含两个场。它们合计为每帧 202752 字节，其中一
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
-详见 http://www.gnu.org/ 获取更多信息。
+璇﹁ http://www.gnu.org/ 鑾峰彇鏇村淇℃伅銆?

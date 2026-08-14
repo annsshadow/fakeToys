@@ -1,15 +1,15 @@
+﻿
+## 鏃犵嚎鐢甸┍鍔?
 
-## 无线电驱动
+鏈枃浠跺垪鍑?Linux 鏃犵嚎鐢碉紙AM/FM 鏀堕煶鏈哄強鍙戝皠鍣級椹卞姩鎵€鏀寔鐨勭‖浠舵竻鍗曪紝鍖呭惈椹卞姩妯″潡鍚嶄笌瀵瑰簲鐨勮澶?鍘傚晢鍚嶇О锛屼緵椹卞姩閫傞厤涓庣‖浠堕€夊瀷鏃舵煡闃呫€?
 
-本文件列出 Linux 无线电（AM/FM 收音机及发射器）驱动所支持的硬件清单，包含驱动模块名与对应的设备/厂商名称，供驱动适配与硬件选型时查阅。
-
-本文档为自动生成的结构化条目索引，条目名称以英文术语保留以便检索。
+鏈枃妗ｄ负鑷姩鐢熸垚鐨勭粨鏋勫寲鏉＄洰绱㈠紩锛屾潯鐩悕绉颁互鑻辨枃鏈淇濈暀浠ヤ究妫€绱€?
 
 
-同时支持纯 AM/FM 收音机，甚至支持部分 FM 无线电发射器：
+鍚屾椂鏀寔绾?AM/FM 鏀堕煶鏈猴紝鐢氳嚦鏀寔閮ㄥ垎 FM 鏃犵嚎鐢靛彂灏勫櫒锛?
 
 ===================== =========================================================
-驱动 名称
+椹卞姩 鍚嶇О
 ===================== =========================================================
 si4713 Silicon Labs Si4713 FM Radio Transmitter
 radio-aztech Aztech/Packard Bell Radio
@@ -29,17 +29,17 @@ radio-si476x Silicon Laboratories Si476x I2C FM Radio
 radio-tea5764 TEA5764 I2C FM radio
 tef6862 TEF6862 Car Radio Enhanced Selectivity Tuner
 radio-terratec TerraTec ActiveRadio ISA Standalone
-radio-timb 启用 Timberdale radio 驱动
+radio-timb 鍚敤 Timberdale radio 椹卞姩
 radio-trust Trust FM radio card
 radio-typhoon Typhoon Radio ( .k. . EcoRadio)
-fm_drv ISA radio 设备
-fm_drv ISA radio 设备
+fm_drv ISA radio 璁惧
+fm_drv ISA radio 璁惧
 radio-zoltrix Zoltrix Radio
 dsbr100 D-Link/GemTek USB FM radio
 radio-keene Keene FM Transmitter USB
 radio-ma901 Masterkit MA901 USB FM radio
 radio-mr800 AverMedia MR 800 USB FM radio
 radio-raremono Thanko's Raremono AM/FM/SW radio
-radio-si470x-usb Silicon Labs Si470x FM Radio Receiver 支持 USB
-radio-usb-si4713 Silicon Labs Si4713 FM Radio Transmitter 支持 USB
+radio-si470x-usb Silicon Labs Si470x FM Radio Receiver 鏀寔 USB
+radio-usb-si4713 Silicon Labs Si4713 FM Radio Transmitter 鏀寔 USB
 ===================== =========================================================

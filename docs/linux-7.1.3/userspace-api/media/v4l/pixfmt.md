@@ -1,16 +1,16 @@
+﻿
 
+# 鍥惧儚鏍煎紡
 
-# 图像格式
-
-V4L2 API主要是为交换图像数据的设备而设计的
-与应用程序。结构体`v4l2_pix_format`和
-struct `v4l2_pix_format_mplane` 结构体定义了
-内存中图像的格式和布局。前者与
-单平面 API，而后者与多平面 API 一起使用
-版本（请参阅 planar-apis）。图像格式与协商
-VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl。 （这里的解释
-专注于视频捕获和输出，适用于覆盖帧缓冲区格式
-另请参见 VIDIOC_G_FBUF <VIDIOC_G_FBUF>。）
+V4L2 API涓昏鏄负浜ゆ崲鍥惧儚鏁版嵁鐨勮澶囪€岃璁＄殑
+涓庡簲鐢ㄧ▼搴忋€傜粨鏋勪綋`v4l2_pix_format`鍜?
+struct `v4l2_pix_format_mplane` 缁撴瀯浣撳畾涔変簡
+鍐呭瓨涓浘鍍忕殑鏍煎紡鍜屽竷灞€銆傚墠鑰呬笌
+鍗曞钩闈?API锛岃€屽悗鑰呬笌澶氬钩闈?API 涓€璧蜂娇鐢?
+鐗堟湰锛堣鍙傞槄 planar-apis锛夈€傚浘鍍忔牸寮忎笌鍗忓晢
+VIDIOC_S_FMT <VIDIOC_G_FMT> ioctl銆?锛堣繖閲岀殑瑙ｉ噴
+涓撴敞浜庤棰戞崟鑾峰拰杈撳嚭锛岄€傜敤浜庤鐩栧抚缂撳啿鍖烘牸寮?
+鍙﹁鍙傝 VIDIOC_G_FBUF <VIDIOC_G_FBUF>銆傦級
 
 
 - [pixfmt-v4l2](pixfmt-v4l2)
