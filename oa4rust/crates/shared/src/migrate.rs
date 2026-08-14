@@ -129,7 +129,7 @@ pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
         tx.batch_execute(&sql)
             .await
             .map_err(|e| anyhow::anyhow!("migration {} failed: {}", name, e))?;
-        let ms = start.elapsed().as_millis() as i64;
+        let ms = start.elapsed().as_millis() as i32;
         tx.execute(
             "INSERT INTO schema_migrations (version, checksum, execution_ms) VALUES ($1, $2, $3)",
             &[&name, &checksum, &ms],

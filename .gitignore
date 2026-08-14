@@ -35,3 +35,10 @@ Thumbs.db
 
 # Git
 *.orig
+
+# rust
+oa4rust/target*/
+oa4rust/.pgdata/
+
+# log
+*.log

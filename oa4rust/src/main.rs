@@ -144,7 +144,7 @@ async fn main() -> anyhow::Result<()> {
         pool: pool.clone(),
     };
     let app = if http_flag {
-        let bridge = Arc::new(ToolBridge::new(pool, session_manager));
+        let bridge = Arc::new(ToolBridge::new(pool, session_manager).await);
         app.merge(mcp_app(bridge, security_state))
     } else {
         app
@@ -254,7 +254,7 @@ pub async fn create_app(
         pool: pool.clone(),
     };
 
-    let app = Router::new()
+    let mut app = Router::new()
         .merge(shared::router::router())
         .merge(auth::router(pool.clone(), rate_limiter.clone(), session_manager.clone()))
         .merge(personal::router(pool.clone(), session_manager.clone()))
@@ -309,7 +309,7 @@ pub async fn create_app(
         .merge(jpush_assemble_control::router(pool.clone()))
         .merge(processplatform_core_entity::router(pool.clone()))
         .merge(portal_core_entity::router(pool.clone()))
-        .merge(program_center_core_entity::router(pool.clone()))
+        .merge(program_center_core_entity::router(pool.clone()).await)
         .merge(processplatform_core_express::router(pool.clone()))
         .merge(query_core_entity::router(pool.clone()))
         .merge(general_core_entity::router(pool.clone()))
@@ -338,6 +338,20 @@ pub async fn create_app(
         .merge(processplatform_assemble_designer::router(pool.clone()))
         .merge(query_core_express::router(pool.clone()))
         .merge(query_service_processing::router(pool.clone()));
+
+    // Provide the deadpool Postgres pool to every handler that extracts
+    // `Extension<Pool>` (all *_assemble_control / *_service_processing handlers).
+    // Some crates attach it on their own sub-router; adding it here guarantees
+    // availability for those that don't, eliminating "Missing request extension"
+    // HTTP 500s. Harmless where the crate already adds its own (inner wins).
+    app = app.layer(axum::extract::Extension(pool.clone()));
+
+    // Provide the SeaORM pool to all *_core_entity handlers, which extract it
+    // via `Extension<DatabaseConnection>`. They no longer build their own pool;
+    // the previous block_on approach panicked inside the tokio runtime.
+    if let Ok(sea_db) = shared::db::create_sea_orm_pool().await {
+        app = app.layer(axum::extract::Extension(sea_db));
+    }
 
     let app = app
         .layer(middleware::from_fn_with_state(security_state.clone(), authorize_middleware))

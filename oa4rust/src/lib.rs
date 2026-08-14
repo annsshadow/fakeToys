@@ -67,7 +67,7 @@ pub async fn create_app(
         .merge(jpush_assemble_control::router(pool.clone()))
         .merge(processplatform_core_entity::router(pool.clone()))
         .merge(portal_core_entity::router(pool.clone()))
-        .merge(program_center_core_entity::router(pool.clone()))
+        .merge(program_center_core_entity::router(pool.clone()).await)
         .merge(processplatform_core_express::router(pool.clone()))
         .merge(query_core_entity::router(pool.clone()))
         .merge(general_core_entity::router(pool.clone()))
