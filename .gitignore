@@ -39,6 +39,7 @@ Thumbs.db
 # rust
 oa4rust/target*/
 oa4rust/.pgdata/
+oa4rust/__pycache__/
 
 # log
 *.log
