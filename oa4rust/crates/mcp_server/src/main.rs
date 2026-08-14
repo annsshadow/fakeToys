@@ -28,7 +28,7 @@ async fn main() -> anyhow::Result<()> {
 
     let session_manager = SessionManager::with_pool(pool.clone());
 
-    let bridge = Arc::new(ToolBridge::new(pool, session_manager));
+    let bridge = Arc::new(ToolBridge::new(pool, session_manager).await);
 
     match mode {
         "http" => {
