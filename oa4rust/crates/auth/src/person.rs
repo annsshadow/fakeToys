@@ -61,7 +61,7 @@ pub async fn list(
 
     let rows = match client
         .query(
-            "SELECT id, unique_id, name, mobile, email FROM auth_person LIMIT $1 OFFSET $2",
+            "SELECT id, unique_id, name, mobile, email FROM auth_person LIMIT $1::bigint OFFSET $2::bigint",
             &[&size, &offset],
         )
         .await

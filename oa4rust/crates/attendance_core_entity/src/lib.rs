@@ -28,7 +28,7 @@ pub async fn record_list(
         .map(|m| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
-                ("userId".to_string(), Value::String(m.user_id.clone())),
+                ("\"userId\"".to_string(), Value::String(m.user_id.clone())),
                 ("checkInTime".to_string(), Value::String(m.check_in_time.clone())),
                 (
                     "checkOutTime".to_string(),
@@ -70,8 +70,8 @@ pub async fn rule_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
-                ("startTime".to_string(), Value::String(m.start_time.clone())),
-                ("endTime".to_string(), Value::String(m.end_time.clone())),
+                ("\"startTime\"".to_string(), Value::String(m.start_time.clone())),
+                ("\"endTime\"".to_string(), Value::String(m.end_time.clone())),
             ]))
         })
         .collect();
@@ -94,7 +94,7 @@ pub async fn record_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     use attendance_record::ActiveModel;
 
-    let user_id = payload.get("userId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let user_id = payload.get("\"userId\"").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let check_in_time = payload
         .get("checkInTime")
         .and_then(|v| v.as_str())
@@ -120,7 +120,7 @@ pub async fn record_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(new_id)),
-            ("userId".to_string(), Value::String(user_id)),
+            ("\"userId\"".to_string(), Value::String(user_id)),
             ("checkInTime".to_string(), Value::String(check_in_time)),
             ("status".to_string(), Value::String(status)),
             ("created".to_string(), Value::Bool(true)),
@@ -194,13 +194,13 @@ pub async fn rule_create(
 
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let start_time = payload
-        .get("startTime")
+        .get("\"startTime\"")
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
     let end_time = payload
         .get("EndTime")
-        .or_else(|| payload.get("endTime"))
+        .or_else(|| payload.get("\"endTime\""))
         .and_then(|v| v.as_str())
         .unwrap_or("")
         .to_string();
@@ -224,8 +224,8 @@ pub async fn rule_create(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(new_id)),
             ("name".to_string(), Value::String(name)),
-            ("startTime".to_string(), Value::String(start_time)),
-            ("endTime".to_string(), Value::String(end_time)),
+            ("\"startTime\"".to_string(), Value::String(start_time)),
+            ("\"endTime\"".to_string(), Value::String(end_time)),
             ("created".to_string(), Value::Bool(true)),
         ]),
     ))))
@@ -240,9 +240,9 @@ pub async fn rule_update(
     use attendance_rule::ActiveModel;
 
     let name = payload.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
-    let start_time = payload.get("startTime").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let start_time = payload.get("\"startTime\"").and_then(|v| v.as_str()).map(|s| s.to_string());
     let end_time = payload
-        .get("endTime")
+        .get("\"endTime\"")
         .or_else(|| payload.get("EndTime"))
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
@@ -306,14 +306,7 @@ pub async fn rule_delete(
 /// 创建考勤核心实体路由
 pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
     // 尝试创建数据库连接，测试环境中可能没有活跃的tokio runtime
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let router = Router::new()
+    Router::new()
         .route(
             "/jaxrs/attendance/core/entity/record/list",
             get(record_list),
@@ -345,12 +338,7 @@ pub fn attendance_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route(
             "/jaxrs/attendance/core/entity/rule/{id}/delete",
             get(rule_delete),
-        );
-
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+        )
 }
 
 #[cfg(test)]

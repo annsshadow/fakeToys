@@ -79,7 +79,7 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/message/assemble/communicate/im/msg/list/object", get(im_msg_list_object))
         .route("/jaxrs/message/assemble/communicate/im/msg/list/{page}/size/{size}", get(im_msg_list_page_size_size))
         .route("/jaxrs/message/assemble/communicate/im/msg/revoke/{id}", post(im_msg_revoke_id))
-        .route("/jaxrs/message/assemble/communicate/im/msg/upload/{conversationId}/type/{type}", post(im_msg_upload_conversationId_type_type))
+        .route("/jaxrs/message/assemble/communicate/im/msg/upload/{\"conversationId\"}/type/{type}", post(im_msg_upload_conversationId_type_type))
         .route("/jaxrs/message/assemble/communicate/instant/currentperson/consumed", get(instant_currentperson_consumed))
         .route("/jaxrs/message/assemble/communicate/instant/currentperson/consumed/all", get(instant_currentperson_consumed_all))
         .route("/jaxrs/message/assemble/communicate/instant/currentperson/consumed/mockputtopost", post(instant_currentperson_consumed_mockputtopost))

@@ -361,8 +361,8 @@ pub async fn meeting_list(
                     "roomId".to_string(),
                     Value::String(m.room_id.clone().unwrap_or_default()),
                 ),
-                ("startTime".to_string(), Value::String(m.start_time.to_string())),
-                ("endTime".to_string(), Value::String(m.end_time.to_string())),
+                ("\"startTime\"".to_string(), Value::String(m.start_time.to_string())),
+                ("\"endTime\"".to_string(), Value::String(m.end_time.to_string())),
                 (
                     "organizerId".to_string(),
                     Value::String(m.creator.clone().unwrap_or_default()),
@@ -406,8 +406,8 @@ pub async fn meeting_list_by_room(
                     "roomId".to_string(),
                     Value::String(m.room_id.clone().unwrap_or_default()),
                 ),
-                ("startTime".to_string(), Value::String(m.start_time.to_string())),
-                ("endTime".to_string(), Value::String(m.end_time.to_string())),
+                ("\"startTime\"".to_string(), Value::String(m.start_time.to_string())),
+                ("\"endTime\"".to_string(), Value::String(m.end_time.to_string())),
                 (
                     "organizerId".to_string(),
                     Value::String(m.creator.clone().unwrap_or_default()),
@@ -447,19 +447,19 @@ pub async fn create_meeting(
         .ok_or(AppError::BadRequest("roomId is required".to_string()))?;
     let room_id = room_id.to_string();
     let start_time_str = payload
-        .get("startTime")
+        .get("\"startTime\"")
         .and_then(|v| v.as_str())
-        .ok_or(AppError::BadRequest("startTime is required".to_string()))?;
+        .ok_or(AppError::BadRequest("\"startTime\" is required".to_string()))?;
     let start_time: chrono::NaiveDateTime = start_time_str
         .parse()
-        .map_err(|_| AppError::BadRequest("invalid startTime".to_string()))?;
+        .map_err(|_| AppError::BadRequest("invalid \"startTime\"".to_string()))?;
     let end_time_str = payload
-        .get("endTime")
+        .get("\"endTime\"")
         .and_then(|v| v.as_str())
-        .ok_or(AppError::BadRequest("endTime is required".to_string()))?;
+        .ok_or(AppError::BadRequest("\"endTime\" is required".to_string()))?;
     let end_time: chrono::NaiveDateTime = end_time_str
         .parse()
-        .map_err(|_| AppError::BadRequest("invalid endTime".to_string()))?;
+        .map_err(|_| AppError::BadRequest("invalid \"endTime\"".to_string()))?;
     let organizer_id = payload
         .get("organizerId")
         .and_then(|v| v.as_str())
@@ -491,8 +491,8 @@ pub async fn create_meeting(
             "roomId".to_string(),
             Value::String(m.room_id.clone().unwrap_or(room_id)),
         ),
-        ("startTime".to_string(), Value::String(m.start_time.to_string())),
-        ("endTime".to_string(), Value::String(m.end_time.to_string())),
+        ("\"startTime\"".to_string(), Value::String(m.start_time.to_string())),
+        ("\"endTime\"".to_string(), Value::String(m.end_time.to_string())),
     ])))))
 }
 
@@ -519,8 +519,8 @@ pub async fn get_meeting(
                     "roomId".to_string(),
                     Value::String(m.room_id.clone().unwrap_or_default()),
                 ),
-                ("startTime".to_string(), Value::String(m.start_time.to_string())),
-                ("endTime".to_string(), Value::String(m.end_time.to_string())),
+                ("\"startTime\"".to_string(), Value::String(m.start_time.to_string())),
+                ("\"endTime\"".to_string(), Value::String(m.end_time.to_string())),
                 (
                     "organizerId".to_string(),
                     Value::String(m.creator.clone().unwrap_or_default()),
@@ -563,20 +563,20 @@ pub async fn update_meeting(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
     let start_time_str = payload
-        .get("startTime")
+        .get("\"startTime\"")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
     let end_time_str = payload
-        .get("endTime")
+        .get("\"endTime\"")
         .and_then(|v| v.as_str())
         .unwrap_or_default();
 
     let start_time: chrono::NaiveDateTime = start_time_str
         .parse()
-        .map_err(|_| AppError::BadRequest("invalid startTime".to_string()))?;
+        .map_err(|_| AppError::BadRequest("invalid \"startTime\"".to_string()))?;
     let end_time: chrono::NaiveDateTime = end_time_str
         .parse()
-        .map_err(|_| AppError::BadRequest("invalid endTime".to_string()))?;
+        .map_err(|_| AppError::BadRequest("invalid \"endTime\"".to_string()))?;
 
     let active_model = meeting::ActiveModel {
         id: Set(id.clone()),
@@ -641,14 +641,7 @@ pub async fn delete_meeting(
 /// - /jaxrs/meeting/core/entity/meeting/save/{id} - 更新会议
 /// - /jaxrs/meeting/core/entity/meeting/delete/{id} - 删除会议
 pub fn meeting_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let router = Router::new()
+    Router::new()
         .route("/jaxrs/meeting/core/entity/room/list", get(room_list))
         .route("/jaxrs/meeting/core/entity/room/create", post(create_room))
         .route("/jaxrs/meeting/core/entity/room/{id}", get(get_room))
@@ -680,11 +673,7 @@ pub fn meeting_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route(
             "/jaxrs/meeting/core/entity/meeting/delete/{id}",
             post(delete_meeting),
-        );
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+        )
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {

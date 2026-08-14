@@ -27,7 +27,7 @@ pub async fn get_bam_config(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xname, xdefinition, xenabled FROM X.BAM_CONFIG WHERE xid = $1 LIMIT 1",
+            "SELECT xname, xdefinition, xenabled FROM x_bam_config WHERE xid = $1 LIMIT 1",
             &[&id],
         )
         .await
@@ -61,7 +61,7 @@ pub async fn create_bam(
 
     client
         .execute(
-            "INSERT INTO X.BAM_CONFIG (xid, xname, xdefinition, xenabled) VALUES ($1, $2, $3, true)",
+            "INSERT INTO x_bam_config (xid, xname, xdefinition, xenabled) VALUES ($1, $2, $3, true)",
             &[&id, &name, &definition],
         )
         .await
@@ -86,7 +86,7 @@ pub async fn list_bams(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xid, xname, xcategory FROM X.BAM_CONFIG WHERE xcategory = $1 ORDER BY xcreateTime DESC LIMIT 100",
+            "SELECT xid, xname, xcategory FROM x_bam_config WHERE xcategory = $1 ORDER BY \"xcreateTime\" DESC LIMIT 100",
             &[&category],
         )
         .await
@@ -119,7 +119,7 @@ pub async fn delete_bam(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
-        .execute("DELETE FROM X.BAM_CONFIG WHERE xid = $1", &[&id])
+        .execute("DELETE FROM x_bam_config WHERE xid = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -141,7 +141,7 @@ pub async fn get_bam_status(
 
     let task_count_rows = client
         .query(
-            "SELECT COUNT(*) as cnt FROM X.PP_C_TASK WHERE xbamConfig = $1",
+            "SELECT COUNT(*) as cnt FROM x_pp_c_task WHERE xbamConfig = $1",
             &[&id],
         )
         .await
@@ -211,8 +211,8 @@ pub async fn period_list_completed_task_application(
             ("title".to_string(), Value::String(r.get("title"))),
             ("person".to_string(), Value::String(r.get("person"))),
             ("taskStatus".to_string(), Value::String(r.get("task_status"))),
-            ("startTime".to_string(), Value::String(r.get("start_time"))),
-            ("endTime".to_string(), Value::String(r.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
             ("application".to_string(), Value::String(r.get("application"))),
         ]))
     }).collect();
@@ -247,8 +247,8 @@ pub async fn period_list_completed_task_unit(
             ("title".to_string(), Value::String(r.get("title"))),
             ("person".to_string(), Value::String(r.get("person"))),
             ("taskStatus".to_string(), Value::String(r.get("task_status"))),
-            ("startTime".to_string(), Value::String(r.get("start_time"))),
-            ("endTime".to_string(), Value::String(r.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
         ]))
     }).collect();
 
@@ -280,8 +280,8 @@ pub async fn period_list_completed_work_application(
             ("id".to_string(), Value::String(r.get("id"))),
             ("title".to_string(), Value::String(r.get("title"))),
             ("workStatus".to_string(), Value::String(r.get("work_status"))),
-            ("startTime".to_string(), Value::String(r.get("start_time"))),
-            ("endTime".to_string(), Value::String(r.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
         ]))
     }).collect();
 
@@ -314,8 +314,8 @@ pub async fn period_list_completed_work_unit(
             ("id".to_string(), Value::String(r.get("id"))),
             ("title".to_string(), Value::String(r.get("title"))),
             ("workStatus".to_string(), Value::String(r.get("work_status"))),
-            ("startTime".to_string(), Value::String(r.get("start_time"))),
-            ("endTime".to_string(), Value::String(r.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
         ]))
     }).collect();
 
@@ -1114,8 +1114,8 @@ pub async fn period_list_expired_task_application(
             ("title".to_string(), Value::String(r.get("title"))),
             ("person".to_string(), Value::String(r.get("person"))),
             ("taskStatus".to_string(), Value::String(r.get("task_status"))),
-            ("startTime".to_string(), Value::String(r.get("start_time"))),
-            ("endTime".to_string(), Value::String(r.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
         ]))
     }).collect();
 
@@ -1149,8 +1149,8 @@ pub async fn period_list_expired_task_unit(
             ("title".to_string(), Value::String(r.get("title"))),
             ("person".to_string(), Value::String(r.get("person"))),
             ("taskStatus".to_string(), Value::String(r.get("task_status"))),
-            ("startTime".to_string(), Value::String(r.get("start_time"))),
-            ("endTime".to_string(), Value::String(r.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
         ]))
     }).collect();
 
@@ -1182,8 +1182,8 @@ pub async fn period_list_expired_work_application(
             ("id".to_string(), Value::String(r.get("id"))),
             ("title".to_string(), Value::String(r.get("title"))),
             ("workStatus".to_string(), Value::String(r.get("work_status"))),
-            ("startTime".to_string(), Value::String(r.get("start_time"))),
-            ("endTime".to_string(), Value::String(r.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
         ]))
     }).collect();
 
@@ -1216,8 +1216,8 @@ pub async fn period_list_expired_work_unit(
             ("id".to_string(), Value::String(r.get("id"))),
             ("title".to_string(), Value::String(r.get("title"))),
             ("workStatus".to_string(), Value::String(r.get("work_status"))),
-            ("startTime".to_string(), Value::String(r.get("start_time"))),
-            ("endTime".to_string(), Value::String(r.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
         ]))
     }).collect();
 
@@ -1255,8 +1255,8 @@ pub async fn period_list_start_task_application(
             ("title".to_string(), Value::String(r.get("title"))),
             ("person".to_string(), Value::String(r.get("person"))),
             ("taskStatus".to_string(), Value::String(r.get("task_status"))),
-            ("startTime".to_string(), Value::String(r.get("start_time"))),
-            ("endTime".to_string(), Value::String(r.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
         ]))
     }).collect();
 
@@ -1290,8 +1290,8 @@ pub async fn period_list_start_task_unit(
             ("title".to_string(), Value::String(r.get("title"))),
             ("person".to_string(), Value::String(r.get("person"))),
             ("taskStatus".to_string(), Value::String(r.get("task_status"))),
-            ("startTime".to_string(), Value::String(r.get("start_time"))),
-            ("endTime".to_string(), Value::String(r.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
         ]))
     }).collect();
 
@@ -1323,8 +1323,8 @@ pub async fn period_list_start_work_application(
             ("id".to_string(), Value::String(r.get("id"))),
             ("title".to_string(), Value::String(r.get("title"))),
             ("workStatus".to_string(), Value::String(r.get("work_status"))),
-            ("startTime".to_string(), Value::String(r.get("start_time"))),
-            ("endTime".to_string(), Value::String(r.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
         ]))
     }).collect();
 
@@ -1357,8 +1357,8 @@ pub async fn period_list_start_work_unit(
             ("id".to_string(), Value::String(r.get("id"))),
             ("title".to_string(), Value::String(r.get("title"))),
             ("workStatus".to_string(), Value::String(r.get("work_status"))),
-            ("startTime".to_string(), Value::String(r.get("start_time"))),
-            ("endTime".to_string(), Value::String(r.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(r.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(r.get("end_time"))),
         ]))
     }).collect();
 

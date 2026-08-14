@@ -483,7 +483,7 @@ pub async fn config_list_mcp_paging_page_size_size(
             "SELECT id, name, url, enabled, creator, create_time, update_time \
              FROM x_ai_mcp_config \
              ORDER BY update_time DESC \
-             LIMIT $2 OFFSET $1",
+             LIMIT $2::bigint OFFSET $1::bigint",
             &[&offset, &size],
         )
         .await
@@ -521,7 +521,7 @@ pub async fn config_list_model_paging_page_size_size(
     let offset = (page - 1) * size;
     let rows = client
         .query(
-            "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config ORDER BY update_time DESC LIMIT $2 OFFSET $1",
+            "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config ORDER BY update_time DESC LIMIT $2::bigint OFFSET $1::bigint",
             &[&offset, &size],
         )
         .await
@@ -770,7 +770,7 @@ pub async fn file_list_paging_page_size_size(
     let offset = (page - 1) * size;
     let rows = client
         .query(
-            "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time FROM x_ai_file ORDER BY create_time DESC LIMIT $2 OFFSET $1",
+            "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time FROM x_ai_file ORDER BY create_time DESC LIMIT $2::bigint OFFSET $1::bigint",
             &[&offset, &size],
         )
         .await
@@ -1011,7 +1011,7 @@ pub async fn index_list_paging_page_size_size(
     let offset = (page - 1) * size;
     let rows = client
         .query(
-            "SELECT id, doc_id, app_id, title, enabled, creator, create_time FROM x_ai_index ORDER BY create_time DESC LIMIT $2 OFFSET $1",
+            "SELECT id, doc_id, app_id, title, enabled, creator, create_time FROM x_ai_index ORDER BY create_time DESC LIMIT $2::bigint OFFSET $1::bigint",
             &[&offset, &size],
         )
         .await
@@ -1143,7 +1143,7 @@ pub async fn chat_completion(
             "SELECT role, content FROM ( \
              SELECT role, content, create_time FROM x_ai_chat \
              WHERE conversation_id = $1 AND deleted_at IS NULL \
-             ORDER BY create_time DESC LIMIT $2 \
+             ORDER BY create_time DESC LIMIT $2::bigint \
              ) h ORDER BY create_time ASC",
             &[&conversation_id, &context_window],
         )

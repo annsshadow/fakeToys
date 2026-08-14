@@ -431,18 +431,18 @@ pub async fn event_create(
     let location = req.location;
     let start_time_str = req
         .start_time
-        .ok_or_else(|| AppError::BadRequest("startTime is required".to_string()))?;
+        .ok_or_else(|| AppError::BadRequest("\"startTime\" is required".to_string()))?;
     let end_time_str = req
         .end_time
-        .ok_or_else(|| AppError::BadRequest("endTime is required".to_string()))?;
+        .ok_or_else(|| AppError::BadRequest("\"endTime\" is required".to_string()))?;
     let all_day = req.all_day.unwrap_or(false);
     let visibility = req.visibility.unwrap_or_else(|| "PUBLIC".to_string());
     let createor = req.createor.unwrap_or_else(|| "anonymous".to_string());
 
     let id = uuid::Uuid::new_v4().to_string();
 
-    let start_time: chrono::NaiveDateTime = start_time_str.parse().map_err(|_| AppError::BadRequest("invalid startTime".to_string()))?;
-    let end_time: chrono::NaiveDateTime = end_time_str.parse().map_err(|_| AppError::BadRequest("invalid endTime".to_string()))?;
+    let start_time: chrono::NaiveDateTime = start_time_str.parse().map_err(|_| AppError::BadRequest("invalid \"startTime\"".to_string()))?;
+    let end_time: chrono::NaiveDateTime = end_time_str.parse().map_err(|_| AppError::BadRequest("invalid \"endTime\"".to_string()))?;
 
     let active_model = cal_event::ActiveModel {
         id: Set(id.clone()),
@@ -483,10 +483,10 @@ pub async fn event_create(
                 .unwrap_or(Value::Null),
         ),
         (
-            "startTime".to_string(),
+            "\"startTime\"".to_string(),
             Value::String(m.start_time.to_string()),
         ),
-        ("endTime".to_string(), Value::String(m.end_time.to_string())),
+        ("\"endTime\"".to_string(), Value::String(m.end_time.to_string())),
         ("allDay".to_string(), Value::Bool(m.all_day)),
         ("visibility".to_string(), Value::String(m.visibility.clone())),
         ("status".to_string(), Value::String(m.status.clone())),
@@ -521,8 +521,8 @@ pub async fn event_update(
     let visibility = req.visibility.unwrap_or(m.visibility);
     let status = req.status.unwrap_or(m.status);
 
-    let start_time: chrono::NaiveDateTime = start_time_str.parse().map_err(|_| AppError::BadRequest("invalid startTime".to_string()))?;
-    let end_time: chrono::NaiveDateTime = end_time_str.parse().map_err(|_| AppError::BadRequest("invalid endTime".to_string()))?;
+    let start_time: chrono::NaiveDateTime = start_time_str.parse().map_err(|_| AppError::BadRequest("invalid \"startTime\"".to_string()))?;
+    let end_time: chrono::NaiveDateTime = end_time_str.parse().map_err(|_| AppError::BadRequest("invalid \"endTime\"".to_string()))?;
 
     let active_model = cal_event::ActiveModel {
         id: Set(id.clone()),
@@ -568,11 +568,11 @@ pub async fn event_update(
                 .unwrap_or(Value::Null),
         ),
         (
-            "startTime".to_string(),
+            "\"startTime\"".to_string(),
             Value::String(updated.start_time.to_string()),
         ),
         (
-            "endTime".to_string(),
+            "\"endTime\"".to_string(),
             Value::String(updated.end_time.to_string()),
         ),
         ("allDay".to_string(), Value::Bool(updated.all_day)),
@@ -672,10 +672,10 @@ pub async fn event_list_by_calendar(
                         .unwrap_or(Value::Null),
                 ),
                 (
-                    "startTime".to_string(),
+                    "\"startTime\"".to_string(),
                     Value::String(m.start_time.to_string()),
                 ),
-                ("endTime".to_string(), Value::String(m.end_time.to_string())),
+                ("\"endTime\"".to_string(), Value::String(m.end_time.to_string())),
                 ("allDay".to_string(), Value::Bool(m.all_day)),
                 ("visibility".to_string(), Value::String(m.visibility.clone())),
                 ("status".to_string(), Value::String(m.status.clone())),
@@ -700,14 +700,7 @@ pub async fn event_list_by_calendar(
 }
 
 pub fn calendar_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let router = Router::new()
+    Router::new()
         .route(
             "/jaxrs/calendar/core/entity/calendar/list/public",
             get(calendar_list_public),
@@ -747,11 +740,7 @@ pub fn calendar_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route(
             "/jaxrs/calendar/core/entity/event/list/{calendarId}",
             get(event_list_by_calendar),
-        );
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+        )
 }
 
 #[cfg(test)]

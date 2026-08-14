@@ -36,7 +36,7 @@ pub async fn get_status(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
-        .query("SELECT xstatus, xversion, xuptime FROM X.CONSOLE_STATUS WHERE xid = 'system' LIMIT 1", &[])
+        .query("SELECT xstatus, xversion, xuptime FROM x_console_status WHERE xid = 'system' LIMIT 1", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -65,7 +65,7 @@ pub async fn get_logs(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xlevel, xmessage, xtimestamp FROM X.CONSOLE_LOG WHERE xtype = $1 ORDER BY xtimestamp DESC LIMIT 100",
+            "SELECT xlevel, xmessage, xtimestamp FROM x_console_log WHERE xtype = $1 ORDER BY xtimestamp DESC LIMIT 100",
             &[&log_type],
         )
         .await
@@ -103,7 +103,7 @@ pub async fn send_message(
 
     client
         .execute(
-            "INSERT INTO X.CONSOLE_MESSAGE (xid, xtoken, xmessage) VALUES ($1, $2, $3)",
+            "INSERT INTO x_console_message (xid, xtoken, xmessage) VALUES ($1, $2, $3)",
             &[&id, &token, &message],
         )
         .await
@@ -124,7 +124,7 @@ pub async fn clear_cache(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     client
-        .execute("DELETE FROM X.CONSOLE_CACHE WHERE xtype = $1", &[&cache_type])
+        .execute("DELETE FROM x_console_cache WHERE xtype = $1", &[&cache_type])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -145,7 +145,7 @@ pub async fn get_metric(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xvalue, xunit FROM X.CONSOLE_METRIC WHERE xname = $1 LIMIT 1",
+            "SELECT xvalue, xunit FROM x_console_metric WHERE xname = $1 LIMIT 1",
             &[&metric_name],
         )
         .await

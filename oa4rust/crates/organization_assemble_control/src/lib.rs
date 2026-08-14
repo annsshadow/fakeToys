@@ -23,11 +23,11 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let count: i32 = count_str.parse().unwrap_or(10);
+    let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client
             .query(
-                "SELECT id, name, description, creator, create_time FROM x_org_role ORDER BY create_time DESC LIMIT $1",
+                "SELECT id, name, description, creator, create_time FROM x_org_role ORDER BY create_time DESC LIMIT $1::bigint",
                 &[&count],
             )
             .await
@@ -35,7 +35,7 @@ pub async fn organization_assemble_control_role_list_flag_next_count(
     } else {
         client
             .query(
-                "SELECT id, name, description, creator, create_time FROM x_org_role WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
+                "SELECT id, name, description, creator, create_time FROM x_org_role WHERE id > $1 ORDER BY create_time DESC LIMIT $2::bigint",
                 &[&flag, &count],
             )
             .await
@@ -98,11 +98,11 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let count: i32 = count_str.parse().unwrap_or(10);
+    let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time FROM x_org_unit WHERE parent_id IS NULL ORDER BY sort ASC, create_time DESC LIMIT $1",
+                "SELECT id, name, parent_id, level, sort, creator, create_time FROM x_org_unit WHERE parent_id IS NULL ORDER BY sort ASC, create_time DESC LIMIT $1::bigint",
                 &[&count],
             )
             .await
@@ -110,7 +110,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
     } else {
         client
             .query(
-                "SELECT id, name, parent_id, level, sort, creator, create_time FROM x_org_unit WHERE parent_id = $1 ORDER BY sort ASC, create_time DESC LIMIT $2",
+                "SELECT id, name, parent_id, level, sort, creator, create_time FROM x_org_unit WHERE parent_id = $1 ORDER BY sort ASC, create_time DESC LIMIT $2::bigint",
                 &[&flag, &count],
             )
             .await
@@ -124,7 +124,7 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
+                ("\"parentId\"".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
                 ("level".to_string(), Value::String(row.get("level"))),
                 ("sort".to_string(), Value::String(row.get("sort"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
@@ -161,7 +161,7 @@ pub async fn organization_assemble_control_unit_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
+                ("\"parentId\"".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
                 ("level".to_string(), Value::String(row.get("level"))),
                 ("sort".to_string(), Value::String(row.get("sort"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
@@ -201,7 +201,7 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
             ("name".to_string(), Value::String(row.get("name"))),
-            ("parentId".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
+            ("\"parentId\"".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
             ("level".to_string(), Value::Number(serde_json::Number::from(level))),
             ("sort".to_string(), Value::Number(serde_json::Number::from(sort))),
             ("creator".to_string(), Value::String(row.get("creator"))),
@@ -226,9 +226,9 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
     let rows = client
         .query(
             "WITH RECURSIVE sup AS (
-                SELECT id FROM x_org_unit WHERE id = $1 AND deleted_at IS NULL
+                SELECT id, parent_id FROM x_org_unit WHERE id = $1 AND deleted_at IS NULL
                 UNION ALL
-                SELECT u.id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL
+                SELECT u.id, u.parent_id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL
             )
             SELECT id, name, parent_id, level, sort, creator, create_time FROM x_org_unit
             WHERE id IN (SELECT id FROM sup) AND deleted_at IS NULL
@@ -245,7 +245,7 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
             ("name".to_string(), Value::String(row.get("name"))),
-            ("parentId".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
+            ("\"parentId\"".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
             ("level".to_string(), Value::Number(serde_json::Number::from(level))),
             ("sort".to_string(), Value::Number(serde_json::Number::from(sort))),
             ("creator".to_string(), Value::String(row.get("creator"))),
@@ -341,7 +341,7 @@ pub async fn export_result_flag_flag(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("status".to_string(), Value::String(row.get("status"))),
-                ("fileUrl".to_string(), Value::String(row.get("file_url"))),
+                ("\"fileUrl\"".to_string(), Value::String(row.get("file_url"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -529,7 +529,7 @@ pub async fn group_list_flag_sub_direct(
             &[&flag, &flag],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+        .map_err(|e| { eprintln!("DIAG org_sub_direct query err: {:?}", e); AppError::Internal })?;
 
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
@@ -631,9 +631,9 @@ pub async fn group_list_flag_sup_nested(
     let rows = client
         .query(
             "WITH RECURSIVE sup AS (\
-             SELECT id FROM x_org_unit WHERE id = $1 AND deleted_at IS NULL \
+             SELECT id, parent_id FROM x_org_unit WHERE id = $1 AND deleted_at IS NULL \
              UNION ALL \
-             SELECT u.id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL \
+             SELECT u.id, u.parent_id FROM x_org_unit u JOIN sup s ON u.id = s.parent_id WHERE u.deleted_at IS NULL \
              ) \
              SELECT g.id, g.name, g.unit_id, g.type, g.creator, g.create_time \
              FROM x_org_group g JOIN sup s ON g.unit_id = s.id \
@@ -1337,7 +1337,7 @@ pub async fn personcard_listpaging_page_page_size_size_mockputtopost(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1374,7 +1374,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size_mockputtopost(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time FROM x_org_person WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1856,15 +1856,15 @@ pub async fn unitduty_list_flag_prev_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let count: i32 = count_str.parse().unwrap_or(10);
+    let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_duty ORDER BY create_time DESC LIMIT $1",
+            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_duty ORDER BY create_time DESC LIMIT $1::bigint",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_duty WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_duty WHERE id < $1 ORDER BY create_time DESC LIMIT $2::bigint",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -1894,15 +1894,15 @@ pub async fn unitduty_list_flag_next_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let count: i32 = count_str.parse().unwrap_or(10);
+    let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_duty ORDER BY create_time DESC LIMIT $1",
+            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_duty ORDER BY create_time DESC LIMIT $1::bigint",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_duty WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
+            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_duty WHERE id > $1 ORDER BY create_time DESC LIMIT $2::bigint",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2083,15 +2083,15 @@ pub async fn unitattribute_list_flag_prev_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let count: i32 = count_str.parse().unwrap_or(10);
+    let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time FROM x_org_unit_attribute ORDER BY create_time DESC LIMIT $1",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time FROM x_org_unit_attribute ORDER BY create_time DESC LIMIT $1::bigint",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time FROM x_org_unit_attribute WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time FROM x_org_unit_attribute WHERE id < $1 ORDER BY create_time DESC LIMIT $2::bigint",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2121,15 +2121,15 @@ pub async fn unitattribute_list_flag_next_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let count: i32 = count_str.parse().unwrap_or(10);
+    let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time FROM x_org_unit_attribute ORDER BY create_time DESC LIMIT $1",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time FROM x_org_unit_attribute ORDER BY create_time DESC LIMIT $1::bigint",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time FROM x_org_unit_attribute WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time FROM x_org_unit_attribute WHERE id > $1 ORDER BY create_time DESC LIMIT $2::bigint",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2191,15 +2191,15 @@ pub async fn role_list_flag_prev_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let count: i32 = count_str.parse().unwrap_or(10);
+    let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, description, creator, create_time FROM x_org_role ORDER BY create_time DESC LIMIT $1",
+            "SELECT id, name, description, creator, create_time FROM x_org_role ORDER BY create_time DESC LIMIT $1::bigint",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, description, creator, create_time FROM x_org_role WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+            "SELECT id, name, description, creator, create_time FROM x_org_role WHERE id < $1 ORDER BY create_time DESC LIMIT $2::bigint",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2330,7 +2330,7 @@ pub async fn personcard_listpagingwithgroup_page_page_size_size(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time FROM x_org_person ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time FROM x_org_person ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2367,7 +2367,7 @@ pub async fn personcard_listpaging_page_page_size_size(
     let limit = size.max(1);
 
     let rows = client
-        .query("SELECT id, name, mobile, email, unit_id, creator, create_time FROM x_org_person ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query("SELECT id, name, mobile, email, unit_id, creator, create_time FROM x_org_person ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -2505,15 +2505,15 @@ pub async fn personattribute_list_flag_prev_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let count: i32 = count_str.parse().unwrap_or(10);
+    let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time FROM x_org_person_attribute ORDER BY create_time DESC LIMIT $1",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time FROM x_org_person_attribute ORDER BY create_time DESC LIMIT $1::bigint",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time FROM x_org_person_attribute WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time FROM x_org_person_attribute WHERE id < $1 ORDER BY create_time DESC LIMIT $2::bigint",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2543,15 +2543,15 @@ pub async fn personattribute_list_flag_next_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let count: i32 = count_str.parse().unwrap_or(10);
+    let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time FROM x_org_person_attribute ORDER BY create_time DESC LIMIT $1",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time FROM x_org_person_attribute ORDER BY create_time DESC LIMIT $1::bigint",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time FROM x_org_person_attribute WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time FROM x_org_person_attribute WHERE id > $1 ORDER BY create_time DESC LIMIT $2::bigint",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2772,15 +2772,15 @@ pub async fn identity_list_flag_prev_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let count: i32 = count_str.parse().unwrap_or(10);
+    let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity ORDER BY create_time DESC LIMIT $1",
+            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity ORDER BY create_time DESC LIMIT $1::bigint",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity WHERE id < $1 ORDER BY create_time DESC LIMIT $2::bigint",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2810,15 +2810,15 @@ pub async fn identity_list_flag_next_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let count: i32 = count_str.parse().unwrap_or(10);
+    let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity ORDER BY create_time DESC LIMIT $1",
+            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity ORDER BY create_time DESC LIMIT $1::bigint",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
+            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity WHERE id > $1 ORDER BY create_time DESC LIMIT $2::bigint",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -2986,15 +2986,15 @@ pub async fn group_list_flag_prev_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let count: i32 = count_str.parse().unwrap_or(10);
+    let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time FROM x_org_group ORDER BY create_time DESC LIMIT $1",
+            "SELECT id, name, unit_id, type, creator, create_time FROM x_org_group ORDER BY create_time DESC LIMIT $1::bigint",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time FROM x_org_group WHERE id < $1 ORDER BY create_time DESC LIMIT $2",
+            "SELECT id, name, unit_id, type, creator, create_time FROM x_org_group WHERE id < $1 ORDER BY create_time DESC LIMIT $2::bigint",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };
@@ -3024,15 +3024,15 @@ pub async fn group_list_flag_next_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let count: i32 = count_str.parse().unwrap_or(10);
+    let count: i64 = count_str.parse().unwrap_or(10);
     let rows = if flag == "0" {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time FROM x_org_group ORDER BY create_time DESC LIMIT $1",
+            "SELECT id, name, unit_id, type, creator, create_time FROM x_org_group ORDER BY create_time DESC LIMIT $1::bigint",
             &[&count],
         ).await.map_err(|_| AppError::Internal)?
     } else {
         client.query(
-            "SELECT id, name, unit_id, type, creator, create_time FROM x_org_group WHERE id > $1 ORDER BY create_time DESC LIMIT $2",
+            "SELECT id, name, unit_id, type, creator, create_time FROM x_org_group WHERE id > $1 ORDER BY create_time DESC LIMIT $2::bigint",
             &[&flag, &count],
         ).await.map_err(|_| AppError::Internal)?
     };

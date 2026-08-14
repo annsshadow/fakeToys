@@ -446,7 +446,7 @@ pub async fn reply_filter_list_page_page_count_count(
 
     let rows = client
         .query(
-            "SELECT id, topic_id, content, creator, create_time FROM x_bbs_reply ORDER BY create_time DESC LIMIT $2 OFFSET $1",
+            "SELECT id, topic_id, content, creator, create_time FROM x_bbs_reply ORDER BY create_time DESC LIMIT $2::bigint OFFSET $1::bigint",
             &[&offset, &count],
         )
         .await
@@ -680,7 +680,7 @@ pub async fn list_reply_filter(
     let rows = client
         .query(
             "SELECT id, topic_id, content, creator, create_time FROM x_bbs_reply \
-             WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+             WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
             &[&count, &offset],
         )
         .await
@@ -711,7 +711,7 @@ pub async fn list_topics_creamed(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND is_cream = true ORDER BY create_time DESC \
-             LIMIT $1 OFFSET $2",
+             LIMIT $1::bigint OFFSET $2::bigint",
             &[&count, &offset],
         )
         .await
@@ -742,7 +742,7 @@ pub async fn list_topics_recommended(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND is_recommend = true ORDER BY create_time DESC \
-             LIMIT $1 OFFSET $2",
+             LIMIT $1::bigint OFFSET $2::bigint",
             &[&count, &offset],
         )
         .await
@@ -772,7 +772,7 @@ pub async fn list_subjects_filtered(
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
-             WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+             WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
             &[&count, &offset],
         )
         .await
@@ -803,7 +803,7 @@ pub async fn list_subjects_index(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND is_top = true ORDER BY create_time DESC \
-             LIMIT $1 OFFSET $2",
+             LIMIT $1::bigint OFFSET $2::bigint",
             &[&count, &offset],
         )
         .await
@@ -834,7 +834,7 @@ pub async fn list_subjects_recommended_index(
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
              WHERE deleted_at IS NULL AND is_recommend = true ORDER BY create_time DESC \
-             LIMIT $1 OFFSET $2",
+             LIMIT $1::bigint OFFSET $2::bigint",
             &[&count, &offset],
         )
         .await
@@ -995,7 +995,7 @@ pub async fn shutup_list(
     let rows = client
         .query(
             "SELECT id, person, reason, create_time FROM x_bbs_shutup \
-             ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+             ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
             &[&count, &offset],
         )
         .await
@@ -1044,9 +1044,9 @@ pub async fn subject_filter_listsubjectinfo(
     let limit_val = body.get("count").and_then(|v| v.as_i64()).unwrap_or(20);
     let offset = (offset_val.saturating_sub(1)).saturating_mul(limit_val);
     let sql = if forum_id.is_empty() {
-        "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2"
+        "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint"
     } else {
-        "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic WHERE deleted_at IS NULL AND forum_id = $3 ORDER BY create_time DESC LIMIT $1 OFFSET $2"
+        "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic WHERE deleted_at IS NULL AND forum_id = $3 ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint"
     };
     let rows = if forum_id.is_empty() {
         client.query(sql, &[&limit_val, &offset]).await.map_err(|_| AppError::Internal)?
@@ -1151,7 +1151,7 @@ pub async fn topic_recommended_index(
     let rows = client
         .query(
             "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
-             WHERE deleted_at IS NULL AND is_recommend = true ORDER BY create_time DESC LIMIT $1",
+             WHERE deleted_at IS NULL AND is_recommend = true ORDER BY create_time DESC LIMIT $1::bigint",
             &[&count],
         )
         .await

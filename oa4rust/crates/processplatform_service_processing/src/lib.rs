@@ -45,8 +45,8 @@ pub async fn get_process(
             ("activity".to_string(), Value::String(row.get("activity"))),
             ("activityToken".to_string(), Value::String(row.get("activity_token"))),
             ("person".to_string(), Value::String(row.get("person"))),
-            ("startTime".to_string(), Value::String(row.get("start_time"))),
-            ("endTime".to_string(), Value::String(row.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
         ]))
     }).collect();
 
@@ -59,8 +59,8 @@ pub async fn get_process(
             ("workStatus".to_string(), Value::String(row.get("work_status"))),
             ("creator".to_string(), Value::String(row.get("creator"))),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ("startTime".to_string(), Value::String(row.get("start_time"))),
-            ("endTime".to_string(), Value::String(row.get("end_time"))),
+            ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
+            ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
             ("tasks".to_string(), Value::Array(task_list)),
         ]),
     ))))
@@ -1393,7 +1393,7 @@ pub async fn work_list(
 
     let rows = client
         .query(
-            "SELECT id, title, process, application, work_status, creator, create_time FROM x_work WHERE deleted_at IS NULL AND ($1 = '' OR application = $1) ORDER BY create_time DESC LIMIT $2 OFFSET $3",
+            "SELECT id, title, process, application, work_status, creator, create_time FROM x_work WHERE deleted_at IS NULL AND ($1 = '' OR application = $1) ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
             &[&application, &(size as i64), &(offset as i64)],
         )
         .await

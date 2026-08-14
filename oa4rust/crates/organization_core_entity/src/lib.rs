@@ -158,7 +158,7 @@ pub async fn group_list(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 (
-                    "parentId".to_string(),
+                    "\"parentId\"".to_string(),
                     m.parent_id
                         .clone()
                         .map(Value::String)
@@ -464,7 +464,7 @@ pub async fn group_create(
         ("id".to_string(), Value::String(model.id.clone())),
         ("name".to_string(), Value::String(model.name.clone())),
         (
-            "parentId".to_string(),
+            "\"parentId\"".to_string(),
             model
                 .parent_id
                 .clone()
@@ -505,7 +505,7 @@ pub async fn group_update(
         ("id".to_string(), Value::String(updated.id.clone())),
         ("name".to_string(), Value::String(updated.name.clone())),
         (
-            "parentId".to_string(),
+            "\"parentId\"".to_string(),
             updated
                 .parent_id
                 .clone()

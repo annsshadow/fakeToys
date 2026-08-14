@@ -659,14 +659,7 @@ pub async fn search_subjects(
 }
 
 pub fn bbs_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let router = Router::new()
+    Router::new()
         .route("/jaxrs/bbs/core/entity/forum/list", get(forum_list))
         .route("/jaxrs/bbs/core/entity/forum", post(create_forum))
         .route("/jaxrs/bbs/core/entity/forum/{id}", post(update_forum))
@@ -693,11 +686,7 @@ pub fn bbs_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route(
             "/jaxrs/bbs/core/entity/subject/search",
             get(search_subjects),
-        );
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+        )
 }
 
 #[cfg(test)]

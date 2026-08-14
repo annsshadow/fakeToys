@@ -74,7 +74,7 @@ pub async fn zwdingding_login(
 
     let user_id = step2_resp
         .get("result")
-        .and_then(|r| r.get("userId"))
+        .and_then(|r| r.get("\"userId\""))
         .and_then(|v| v.as_str())
         .ok_or(AppError::Internal)?
         .to_string();

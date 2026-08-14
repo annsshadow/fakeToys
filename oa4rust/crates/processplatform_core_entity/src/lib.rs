@@ -286,14 +286,7 @@ pub async fn workcompleted_list(
 }
 
 pub fn processplatform_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let router = Router::new()
+    Router::new()
         .route("/jaxrs/process/work/list", get(work_list))
         .route("/jaxrs/process/work/{id}", get(work_get))
         .route("/jaxrs/process/task/list", get(task_list))
@@ -302,11 +295,7 @@ pub fn processplatform_core_entity_router(_pool: deadpool_postgres::Pool) -> Rou
         .route(
             "/jaxrs/process/workcompleted/list",
             get(workcompleted_list),
-        );
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+        )
 }
 
 #[cfg(test)]

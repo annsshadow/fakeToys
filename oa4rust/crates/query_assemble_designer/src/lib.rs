@@ -1115,7 +1115,7 @@ pub async fn stat_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id > $1 ORDER BY id ASC LIMIT $2",
+            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id > $1 ORDER BY id ASC LIMIT $2::bigint",
             &[&id, &count],
         )
         .await
@@ -1148,7 +1148,7 @@ pub async fn stat_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id < $1 ORDER BY id DESC LIMIT $2",
+            "SELECT id, name, query_flag, stat_type, creator, create_time FROM x_query_stat WHERE id < $1 ORDER BY id DESC LIMIT $2::bigint",
             &[&id, &count],
         )
         .await
@@ -1266,7 +1266,7 @@ pub async fn table_export_tableFlag_count_count(
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 LIMIT $2",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 LIMIT $2::bigint",
             &[&table_flag, &count],
         )
         .await
@@ -1397,7 +1397,7 @@ pub async fn table_list_tableFlag_row_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id > $2 ORDER BY id ASC LIMIT $3",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id > $2 ORDER BY id ASC LIMIT $3::bigint",
             &[&table_flag, &id, &count],
         )
         .await
@@ -1430,7 +1430,7 @@ pub async fn table_list_tableFlag_row_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id < $2 ORDER BY id DESC LIMIT $3",
+            "SELECT id, table_flag, data FROM x_query_table_data WHERE table_flag = $1 AND id < $2 ORDER BY id DESC LIMIT $3::bigint",
             &[&table_flag, &id, &count],
         )
         .await
@@ -1847,7 +1847,7 @@ pub async fn view_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, name, view_flag, creator, create_time FROM x_query_view WHERE id > $1 ORDER BY id ASC LIMIT $2",
+            "SELECT id, name, view_flag, creator, create_time FROM x_query_view WHERE id > $1 ORDER BY id ASC LIMIT $2::bigint",
             &[&id, &count],
         )
         .await
@@ -1881,7 +1881,7 @@ pub async fn view_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, name, view_flag, creator, create_time FROM x_query_view WHERE id < $1 ORDER BY id DESC LIMIT $2",
+            "SELECT id, name, view_flag, creator, create_time FROM x_query_view WHERE id < $1 ORDER BY id DESC LIMIT $2::bigint",
             &[&id, &count],
         )
         .await

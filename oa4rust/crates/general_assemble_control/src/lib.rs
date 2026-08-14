@@ -32,15 +32,15 @@ pub async fn get_general_control_status(
         Ok(r) => serde_json::Map::from_iter([
             ("id".to_string(), Value::String(r.get("id"))),
             ("systemName".to_string(), Value::String(r.get("system_name"))),
-            ("maintenanceMode".to_string(), Value::Bool(r.get("maintenance_mode"))),
-            ("allowRegistration".to_string(), Value::Bool(r.get("allow_registration"))),
+            ("\"maintenanceMode\"".to_string(), Value::Bool(r.get("maintenance_mode"))),
+            ("\"allowRegistration\"".to_string(), Value::Bool(r.get("allow_registration"))),
             ("version".to_string(), Value::String(r.get("version"))),
         ]),
         Err(_) => serde_json::Map::from_iter([
             ("id".to_string(), Value::String(String::new())),
             ("systemName".to_string(), Value::String(String::new())),
-            ("maintenanceMode".to_string(), Value::Bool(false)),
-            ("allowRegistration".to_string(), Value::Bool(true)),
+            ("\"maintenanceMode\"".to_string(), Value::Bool(false)),
+            ("\"allowRegistration\"".to_string(), Value::Bool(true)),
             ("version".to_string(), Value::String(String::new())),
         ]),
     };
@@ -54,8 +54,8 @@ pub async fn update_general_control_status(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let maintenance_mode: bool = payload.get("maintenanceMode").and_then(|v| v.as_bool()).unwrap_or(false);
-    let allow_registration: bool = payload.get("allowRegistration").and_then(|v| v.as_bool()).unwrap_or(true);
+    let maintenance_mode: bool = payload.get("\"maintenanceMode\"").and_then(|v| v.as_bool()).unwrap_or(false);
+    let allow_registration: bool = payload.get("\"allowRegistration\"").and_then(|v| v.as_bool()).unwrap_or(true);
 
     client
         .execute(
@@ -66,8 +66,8 @@ pub async fn update_general_control_status(
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("maintenanceMode".to_string(), Value::Bool(maintenance_mode)),
-        ("allowRegistration".to_string(), Value::Bool(allow_registration)),
+        ("\"maintenanceMode\"".to_string(), Value::Bool(maintenance_mode)),
+        ("\"allowRegistration\"".to_string(), Value::Bool(allow_registration)),
         ("updated".to_string(), Value::Bool(true)),
     ])))))
 }
@@ -92,7 +92,7 @@ pub async fn get_module_permissions(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("moduleName".to_string(), Value::String(row.get("module_name"))),
-                ("userId".to_string(), Value::String(row.get("user_id"))),
+                ("\"userId\"".to_string(), Value::String(row.get("user_id"))),
                 ("canView".to_string(), Value::Bool(row.get("can_view"))),
                 ("canEdit".to_string(), Value::Bool(row.get("can_edit"))),
                 ("canDelete".to_string(), Value::Bool(row.get("can_delete"))),
@@ -292,7 +292,7 @@ pub async fn area_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get("parent_id"))),
+                ("\"parentId\"".to_string(), Value::String(row.get("parent_id"))),
                 ("level".to_string(), Value::String(row.get("level"))),
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
@@ -329,7 +329,7 @@ pub async fn area_list_province_province(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get("parent_id"))),
+                ("\"parentId\"".to_string(), Value::String(row.get("parent_id"))),
                 ("level".to_string(), Value::String(row.get("level"))),
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
@@ -367,7 +367,7 @@ pub async fn area_list_province_province_city_city(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get("parent_id"))),
+                ("\"parentId\"".to_string(), Value::String(row.get("parent_id"))),
                 ("level".to_string(), Value::String(row.get("level"))),
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
@@ -406,7 +406,7 @@ pub async fn area_list_province_province_city_city_district_district(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get("parent_id"))),
+                ("\"parentId\"".to_string(), Value::String(row.get("parent_id"))),
                 ("level".to_string(), Value::String(row.get("level"))),
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
@@ -433,7 +433,7 @@ pub async fn area_create(
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let parent_id = payload.get("parentId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let parent_id = payload.get("\"parentId\"").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let level = payload.get("level").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let province = payload.get("province").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let city = payload.get("city").and_then(|v| v.as_str()).unwrap_or_default().to_string();
@@ -451,7 +451,7 @@ pub async fn area_create(
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
         ("name".to_string(), Value::String(name)),
-        ("parentId".to_string(), Value::String(parent_id)),
+        ("\"parentId\"".to_string(), Value::String(parent_id)),
         ("level".to_string(), Value::String(level)),
         ("province".to_string(), Value::String(province)),
         ("city".to_string(), Value::String(city)),
@@ -478,7 +478,7 @@ pub async fn area_get(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get("parent_id"))),
+                ("\"parentId\"".to_string(), Value::String(row.get("parent_id"))),
                 ("level".to_string(), Value::String(row.get("level"))),
                 ("province".to_string(), Value::String(row.get("province"))),
                 ("city".to_string(), Value::String(row.get("city"))),
@@ -500,7 +500,7 @@ pub async fn area_update(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let parent_id = payload.get("parentId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let parent_id = payload.get("\"parentId\"").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let level = payload.get("level").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let province = payload.get("province").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let city = payload.get("city").and_then(|v| v.as_str()).unwrap_or_default().to_string();
@@ -597,7 +597,7 @@ pub async fn excel_excelName_excelName(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("excelName".to_string(), Value::String(row.get("excel_name"))),
+                ("\"excelName\"".to_string(), Value::String(row.get("excel_name"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]));
@@ -677,7 +677,7 @@ pub async fn excel_upload(
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let excel_name = payload.get("excelName").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let excel_name = payload.get("\"excelName\"").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
     let flag = uuid::Uuid::new_v4().to_string();
 
@@ -692,7 +692,7 @@ pub async fn excel_upload(
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
         ("name".to_string(), Value::String(name)),
-        ("excelName".to_string(), Value::String(excel_name)),
+        ("\"excelName\"".to_string(), Value::String(excel_name)),
         ("flag".to_string(), Value::String(flag)),
     ])))))
 }
@@ -705,7 +705,7 @@ pub async fn excel_upload_with_url(
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let excel_name = payload.get("excelName").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let excel_name = payload.get("\"excelName\"").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
     let flag = uuid::Uuid::new_v4().to_string();
 
@@ -720,7 +720,7 @@ pub async fn excel_upload_with_url(
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
         ("name".to_string(), Value::String(name)),
-        ("excelName".to_string(), Value::String(excel_name)),
+        ("\"excelName\"".to_string(), Value::String(excel_name)),
         ("flag".to_string(), Value::String(flag)),
     ])))))
 }
@@ -944,7 +944,7 @@ pub async fn invoice_list_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, name, flag, status, creator, create_time FROM x_general_assemble_invoice ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+            "SELECT id, name, flag, status, creator, create_time FROM x_general_assemble_invoice ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
             &[&size, &offset],
         )
         .await
@@ -1118,7 +1118,7 @@ pub async fn office_html_to_word(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = uuid::Uuid::new_v4().to_string();
-    let html_content = payload.get("htmlContent").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let html_content = payload.get("\"htmlContent\"").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
     let word_flag = uuid::Uuid::new_v4().to_string();
 
@@ -1155,7 +1155,7 @@ pub async fn office_html_to_word_result_flag(
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("wordFlag".to_string(), Value::String(row.get("word_flag"))),
-                ("htmlContent".to_string(), Value::String(row.get("html_content"))),
+                ("\"htmlContent\"".to_string(), Value::String(row.get("html_content"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]));
@@ -1569,7 +1569,7 @@ pub async fn upgrade_2021090901(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("version".to_string(), Value::String(row.get("version"))),
                 ("description".to_string(), Value::String(row.get("description"))),
-                ("fileUrl".to_string(), Value::String(row.get("file_url"))),
+                ("\"fileUrl\"".to_string(), Value::String(row.get("file_url"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -1602,7 +1602,7 @@ pub async fn upgrade_2021090902(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("version".to_string(), Value::String(row.get("version"))),
                 ("description".to_string(), Value::String(row.get("description"))),
-                ("fileUrl".to_string(), Value::String(row.get("file_url"))),
+                ("\"fileUrl\"".to_string(), Value::String(row.get("file_url"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))

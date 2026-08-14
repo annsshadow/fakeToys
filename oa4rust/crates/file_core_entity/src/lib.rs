@@ -170,7 +170,7 @@ pub async fn file_list(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("person".to_string(), Value::String(m.person.clone())),
-                ("referenceType".to_string(), Value::String(m.reference_type.clone())),
+                ("\"referenceType\"".to_string(), Value::String(m.reference_type.clone())),
                 (
                     "extension".to_string(),
                     serde_json::Value::String(
@@ -250,7 +250,7 @@ pub async fn complex_top(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("person".to_string(), Value::String(m.person.clone())),
-                ("referenceType".to_string(), Value::String(m.reference_type.clone())),
+                ("\"referenceType\"".to_string(), Value::String(m.reference_type.clone())),
                 (
                     "extension".to_string(),
                     serde_json::Value::String(
@@ -368,7 +368,7 @@ pub async fn file_create(
         ("id".to_string(), Value::String(model.id.clone())),
         ("name".to_string(), Value::String(model.name.clone())),
         ("person".to_string(), Value::String(model.person.clone())),
-        ("referenceType".to_string(), Value::String(model.reference_type.clone())),
+        ("\"referenceType\"".to_string(), Value::String(model.reference_type.clone())),
         (
             "extension".to_string(),
             serde_json::Value::String(
@@ -387,14 +387,7 @@ pub async fn file_create(
 // ── Router ───────────────────────────────────────────────────────────────────
 
 pub fn file_core_entity_router(_pool: Pool) -> Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let router = Router::new()
+    Router::new()
         // folder
         .route("/jaxrs/file/core/entity/folder/list/top", get(folder_list_top))
         .route(
@@ -413,11 +406,7 @@ pub fn file_core_entity_router(_pool: Pool) -> Router {
         .route("/jaxrs/file/core/entity/file/list", get(file_list))
         .route("/jaxrs/file/core/entity/file", post(file_create))
         // complex
-        .route("/jaxrs/file/core/entity/complex/top", get(complex_top));
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+        .route("/jaxrs/file/core/entity/complex/top", get(complex_top))
 }
 
 #[cfg(test)]

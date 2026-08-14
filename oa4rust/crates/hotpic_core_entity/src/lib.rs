@@ -190,14 +190,7 @@ pub async fn delete_by_id(
 /// - /jaxrs/hotpic/core/entity/create - 创建热图
 /// - /jaxrs/hotpic/core/entity/delete/{id} - 删除热图
 pub fn hotpic_core_entity_router(_pool: Pool) -> Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let router = Router::new()
+    Router::new()
         .route("/jaxrs/hotpic/core/entity/list", get(list))
         .route("/jaxrs/hotpic/core/entity/list/by/{application}/{infoId}", get(list_by_app_and_info))
         .route(
@@ -205,11 +198,7 @@ pub fn hotpic_core_entity_router(_pool: Pool) -> Router {
             get(exists_check),
         )
         .route("/jaxrs/hotpic/core/entity/create", post(create))
-        .route("/jaxrs/hotpic/core/entity/delete/{id}", delete(delete_by_id));
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+        .route("/jaxrs/hotpic/core/entity/delete/{id}", delete(delete_by_id))
 }
 
 #[cfg(test)]

@@ -43,7 +43,7 @@ pub struct QueryImport {
     pub id: String,
     #[serde(rename = "viewId")]
     pub view_id: String,
-    #[serde(rename = "fileName")]
+    #[serde(rename = "\"fileName\"")]
     pub file_name: String,
     pub status: String,
     #[serde(rename = "importTime")]
@@ -227,7 +227,7 @@ pub async fn import_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("viewId".to_string(), Value::String(row.get("view_id"))),
-                ("fileName".to_string(), Value::String(row.get("file_name"))),
+                ("\"fileName\"".to_string(), Value::String(row.get("file_name"))),
                 ("status".to_string(), Value::String(row.get("status"))),
                 (
                     "importTime".to_string(),

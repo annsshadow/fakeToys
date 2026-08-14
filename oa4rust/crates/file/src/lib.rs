@@ -208,7 +208,7 @@ pub async fn complex_top(
 
     let attachment_rows = client
         .query(
-            "SELECT id, name, person, referenceType, extension, length FROM FILE_FILE ORDER BY name LIMIT 10",
+            "SELECT id, name, person, \"referenceType\", extension, length FROM FILE_FILE ORDER BY name LIMIT 10",
             &[],
         )
         .await
@@ -222,8 +222,8 @@ pub async fn complex_top(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("person".to_string(), Value::String(row.get("person"))),
                 (
-                    "referenceType".to_string(),
-                    Value::String(row.get::<_, String>("referenceType")),
+                    "\"referenceType\"".to_string(),
+                    Value::String(row.get::<_, String>("\"referenceType\"")),
                 ),
                 (
                     "extension".to_string(),
@@ -302,7 +302,7 @@ pub async fn file_upload(
                 "name" => name = Some(value),
                 "person" => person = Some(value),
                 "referenceId" => reference_id = Some(value),
-                "referenceType" => reference_type = Some(value),
+                "\"referenceType\"" => reference_type = Some(value),
                 _ => {}
             }
         }

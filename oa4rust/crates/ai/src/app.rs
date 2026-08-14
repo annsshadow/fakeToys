@@ -12,7 +12,7 @@ pub async fn sync_to_knowledge(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
-        .query("SELECT COUNT(*) as cnt FROM X.AI_COMPLETION", &[])
+        .query("SELECT COUNT(*) as cnt FROM x_ai_completion", &[])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -117,7 +117,7 @@ pub async fn conversation_list(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
-                ("userId".to_string(), Value::String(row.get("user_id"))),
+                ("\"userId\"".to_string(), Value::String(row.get("user_id"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
         })

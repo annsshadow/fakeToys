@@ -100,17 +100,6 @@ pub async fn view_list_all(
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let base = cms_express_router()
-        .layer(Extension(pool));
-    match db {
-        Some(conn) => base.layer(Extension(conn)),
-        None => base,
-    }
+    cms_express_router()
+        .layer(Extension(pool))
 }

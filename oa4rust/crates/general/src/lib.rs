@@ -28,7 +28,7 @@ pub async fn area_list(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("level".to_string(), Value::String(row.get("level"))),
                 (
-                    "parentId".to_string(),
+                    "\"parentId\"".to_string(),
                     row.get::<_, Option<String>>("parent_id")
                         .map(Value::String)
                         .unwrap_or(Value::Null),

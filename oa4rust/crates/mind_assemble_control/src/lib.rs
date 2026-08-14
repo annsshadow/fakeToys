@@ -228,7 +228,7 @@ pub async fn folder_move_folderId(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let parent_id = req.get("parentId").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let parent_id = req.get("\"parentId\"").and_then(|v| v.as_str()).map(|s| s.to_string());
 
     let result = if let Some(pid) = parent_id {
         if pid.is_empty() {

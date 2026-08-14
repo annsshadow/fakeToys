@@ -30,7 +30,7 @@ pub async fn category_list(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 (
-                    "parentId".to_string(),
+                    "\"parentId\"".to_string(),
                     m.parent_id
                         .clone()
                         .map(Value::String)
@@ -81,7 +81,7 @@ pub async fn category_get(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 (
-                    "parentId".to_string(),
+                    "\"parentId\"".to_string(),
                     m.parent_id
                         .clone()
                         .map(Value::String)
@@ -115,7 +115,7 @@ pub async fn category_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let parent_id = payload.get("parentId").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let parent_id = payload.get("\"parentId\"").and_then(|v| v.as_str()).map(|s| s.to_string());
     let sort_order = payload.get("sortOrder").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
     let status = payload
         .get("status")
@@ -317,25 +317,13 @@ pub async fn article_create(
 }
 
 pub fn cms_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let router = Router::new()
+    Router::new()
         .route("/jaxrs/cms/category/list", get(category_list))
         .route("/jaxrs/cms/category/{id}", get(category_get))
         .route("/jaxrs/cms/category/create", post(category_create))
         .route("/jaxrs/cms/article/list", get(article_list))
         .route("/jaxrs/cms/article/{id}", get(article_get))
-        .route("/jaxrs/cms/article/create", post(article_create));
-
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+        .route("/jaxrs/cms/article/create", post(article_create))
 }
 
 #[cfg(test)]

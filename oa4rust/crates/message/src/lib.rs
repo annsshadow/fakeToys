@@ -30,7 +30,7 @@ pub async fn consume_list(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xid, xtitle, xbody, xtype, xconsumer, xperson, xcreateTime FROM X.MSG_MESSAGE WHERE xconsumer = $1 AND xconsumed = false ORDER BY xcreateTime ASC LIMIT $2",
+            "SELECT xid, xtitle, xbody, xtype, xconsumer, xperson, \"xcreateTime\" FROM x_msg_message WHERE xconsumer = $1 AND xconsumed = false ORDER BY \"xcreateTime\" ASC LIMIT $2::bigint",
             &[&consume, &(count.min(200).max(1) as i64)],
         )
         .await
@@ -46,7 +46,7 @@ pub async fn consume_list(
                 ("type".to_string(), Value::String(row.get("xtype"))),
                 ("consumer".to_string(), Value::String(row.get("xconsumer"))),
                 ("person".to_string(), Value::String(row.get("xperson"))),
-                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
             ]))
         })
         .collect();
@@ -65,7 +65,7 @@ pub async fn update_single(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
-        .query("SELECT xid FROM X.MSG_MESSAGE WHERE xid = $1", &[&id])
+        .query("SELECT xid FROM x_msg_message WHERE xid = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -81,7 +81,7 @@ pub async fn update_single(
 
     client
         .execute(
-            "UPDATE X.MSG_MESSAGE SET xconsumed = true WHERE xid = $1",
+            "UPDATE x_msg_message SET xconsumed = true WHERE xid = $1",
             &[&id],
         )
         .await
@@ -108,7 +108,7 @@ pub async fn custom_create(
 
     client
         .execute(
-            "INSERT INTO X.MSG_MESSAGE (xid, xtitle, xbody, xtype, xconsumed) VALUES ($1, $2, $3, $4, false)",
+            "INSERT INTO x_msg_message (xid, xtitle, xbody, xtype, xconsumed) VALUES ($1, $2, $3, $4, false)",
             &[&id, &title, &body, &msg_type],
         )
         .await
@@ -129,14 +129,14 @@ pub async fn mark_read(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
-        .query("SELECT xid FROM X.MSG_MESSAGE WHERE xid = $1", &[&id])
+        .query("SELECT xid FROM x_msg_message WHERE xid = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     if !rows.is_empty() {
         client
             .execute(
-                "UPDATE X.MSG_MESSAGE SET xconsumed = true WHERE xid = $1",
+                "UPDATE x_msg_message SET xconsumed = true WHERE xid = $1",
                 &[&id],
             )
             .await
@@ -158,7 +158,7 @@ pub async fn unread_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT COUNT(*) as cnt FROM X.MSG_MESSAGE WHERE xconsumer = $1 AND xconsumed = false",
+            "SELECT COUNT(*) as cnt FROM x_msg_message WHERE xconsumer = $1 AND xconsumed = false",
             &[&consume],
         )
         .await

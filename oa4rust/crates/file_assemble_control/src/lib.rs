@@ -1093,7 +1093,7 @@ pub async fn attachment2_list_type_page_size_size(
     let rows = client
         .query(
             "SELECT id, name, person, reference_type, extension, length, mime_type, create_time \
-             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+             FROM FILE_FILE WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
             &[&page_size, &offset],
         )
         .await.map_err(|_| AppError::Internal)?;
@@ -1462,7 +1462,7 @@ pub async fn complex_top(
             ("id".to_string(), Value::String(row.get("id"))),
             ("name".to_string(), Value::String(row.get("name"))),
             ("person".to_string(), Value::String(row.get("person"))),
-            ("referenceType".to_string(), Value::String(row.get("reference_type"))),
+            ("\"referenceType\"".to_string(), Value::String(row.get("reference_type"))),
             ("extension".to_string(), Value::String(row.get("extension"))),
             ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("length")))),
         ]))
