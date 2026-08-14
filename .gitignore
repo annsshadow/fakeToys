@@ -43,3 +43,6 @@ oa4rust/__pycache__/
 
 # log
 *.log
+
+# secrets
+oa4rust/scripts/.token

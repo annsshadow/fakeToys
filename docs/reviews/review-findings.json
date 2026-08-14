@@ -1,0 +1,61 @@
+{
+  "reviewer": "coherence",
+  "findings": [
+    {
+      "title": "Phantom requirements R9–R15 referenced in implementation units but undefined in Requirements section",
+      "severity": "P1",
+      "section": "Implementation Units (U2, U3, U4)",
+      "why_it_matters": "U2 cites 'R6, R9, R10', U3 cites 'R1, R2, R3, R7, R8, R11, R12, R13', and U4 cites 'R14, R15', yet the Requirements section enumerates only R1–R8. Any implementer tracing a requirement ID will hit a dead end for R9 onward, making it impossible to verify which acceptance criteria each unit is supposed to satisfy.",
+      "autofix_class": "safe_auto",
+      "finding_type": "error",
+      "suggested_fix": "Either extend the Requirements section to define R9–R15 (matching the origin doc's R9–R15) or change the unit references to point only at the R1–R8 IDs that actually exist in the plan.",
+      "confidence": 100,
+      "evidence": [
+        "Requirements section lists exactly 8 items: R1 through R8 (lines 25–32).",
+        "U2 line 146: 'Requirements: R6, R9, R10' — R9 and R10 are not defined in the plan.",
+        "U3 line 209: 'Requirements: R1, R2, R3, R7, R8, R11, R12, R13' — R11, R12, R13 are not defined in the plan.",
+        "U4 line 255: 'Requirements: R14, R15' — R14 and R15 are not defined in the plan."
+      ]
+    },
+    {
+      "title": "Three interchangeable names for distinct pool functions create ambiguity",
+      "severity": "P2",
+      "section": "Context & Research / Institutional Learnings / U1",
+      "why_it_matters": "The document uses `build_test_pool()`, `mock_pool()`, and `lazy_pool()` in close proximity, describing them all as 'empty-config' pool factories. An implementer cannot tell whether these refer to the same function (and the document is inconsistent) or three separate functions (and the description is unclear about which lives where). This ambiguity risks implementing the wrong replacement target.",
+      "autofix_class": "manual",
+      "finding_type": "error",
+      "suggested_fix": "Add a clarifying sentence that maps each name to its exact file location and role, e.g. '`build_test_pool()` lives in per-crate tests.rs; `mock_pool()` lives in shared/src/testing.rs; `lazy_pool()` lives in shared/src/tests.rs — all three return empty pools but are in different locations.",
+      "confidence": 75,
+      "evidence": [
+        "Line 71: '现有测试使用 `build_test_pool()` 工厂函数（空 Config），直接替换为连接真实 PG 的 `test_pool()`'",
+        "Line 73: '`tests_generated.rs` 中 `build_test_pool()` 模式已被验证可行，可复用'",
+        "Line 121: '在现有 `mock_pool()` 函数旁边新增 `test_pool()`'",
+        "Line 129: '复用 `shared/src/tests.rs` 中 `lazy_pool()` 的连接配置模式（但端口改为 5433）'"
+      ]
+    },
+    {
+      "title": "File-path prefix inconsistency: shared/src vs crates/shared/src",
+      "severity": "P2",
+      "section": "Multiple sections (Context, U1, Documentation)",
+      "why_it_matters": "The document uses `shared/src/testing.rs` and `crates/shared/src/testing.rs` for the same file. While both likely resolve to the same path in a Cargo workspace context, an agent or junior engineer following the plan may create or edit files in the wrong location, causing build failures.",
+      "autofix_class": "safe_auto",
+      "finding_type": "error",
+      "suggested_fix": "Normalize all path references to the dominant form used in the workspace (`crates/shared/src/testing.rs`).",
+      "confidence": 75,
+      "evidence": [
+        "Line 61 (Context): '`shared/src/testing.rs` — 现有 `mock_pool()` 返回空连接池'",
+        "Line 118 (U1 Files): 'Modify: `crates/shared/src/testing.rs`'",
+        "Line 125 (U1 Approach): '在 `shared/src/lib.rs` 中导出 `test_pool`'",
+        "Line 309 (Documentation): '`shared/src/testing.rs::test_pool()` 需要在 `shared/src/lib.rs` 中导出'"
+      ]
+    }
+  ],
+  "residual_risks": [
+    "If R9–R15 are meant to be carried over from the origin doc, implementers may skip checking the origin and miss requirements around coverage reporting (R14), execution-time limits (R15), and priority ordering for large modules (R11).",
+    "The three pool-function names (`build_test_pool`, `mock_pool`, `lazy_pool`) could cause an implementer to replace the wrong function or miss migrating existing per-crate test code."
+  ],
+  "deferred_questions": [
+    "Should the plan's Requirements section be expanded to include R9–R15 verbatim from the origin, or should unit references be rewritten to use only R1–R8?",
+    "Does the plan intentionally diverge from origin R4/R5 (temporary test DB + migration lifecycle) by connecting directly to the default postgres database, and if so, should this divergence be documented explicitly?"
+  ]
+}

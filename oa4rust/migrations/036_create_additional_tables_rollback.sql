@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS "x_general_assemble_excel_result";
+DROP TABLE IF EXISTS "x_general_assemble_general_file";
+DROP TABLE IF EXISTS "x_meeting_checkin_code";
+DROP TABLE IF EXISTS "x_meeting_room_photo";
+DROP TABLE IF EXISTS "x_message_config";
+DROP TABLE IF EXISTS "x_message_conversation_icon";
+DROP TABLE IF EXISTS "x_process_bam";
+DROP TABLE IF EXISTS "x_process_organization";
+DROP TABLE IF EXISTS "x_program_deploy_server";
