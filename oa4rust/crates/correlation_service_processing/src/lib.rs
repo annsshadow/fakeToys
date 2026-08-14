@@ -98,7 +98,7 @@ pub async fn list_correlations(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation \
+            r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation
              WHERE person_id = $1 ORDER BY create_time DESC"#,
             &[&person_id],
         )
@@ -132,7 +132,7 @@ pub async fn get_correlation(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation \
+            r#"SELECT id, person_id, target_id, "type", creator, create_time FROM x_correlation
              WHERE id = $1"#,
             &[&id],
         )
@@ -281,6 +281,9 @@ pub fn correlation_service_processing_router() -> Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     correlation_service_processing_router().layer(axum::extract::Extension(pool))

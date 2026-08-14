@@ -3,7 +3,16 @@
 
 BEGIN;
 
-ALTER TABLE x_application DROP COLUMN IF EXISTS creator_person;
-ALTER TABLE x_script DROP COLUMN IF EXISTS creator_person;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'x_application') THEN
+    ALTER TABLE x_application DROP COLUMN IF EXISTS creator_person;
+  END IF;
+END $$;
+
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_class WHERE relname = 'x_script') THEN
+    ALTER TABLE x_script DROP COLUMN IF EXISTS creator_person;
+  END IF;
+END $$;
 
 COMMIT;

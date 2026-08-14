@@ -132,7 +132,7 @@ pub async fn conversation_list(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("title".to_string(), Value::String(m.title.clone())),
                 (
-                    "userId".to_string(),
+                    "\"userId\"".to_string(),
                     Value::String(m.user_id.clone()),
                 ),
                 (
@@ -165,28 +165,20 @@ pub async fn conversation_list(
 /// - /jaxrs/ai/core/entity/model/list - 模型列表
 /// - /jaxrs/ai/core/entity/conversation/list - 对话列表
 pub fn ai_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let router = Router::new()
+    Router::new()
         .route("/jaxrs/ai/core/entity/app/list", get(app_list))
         .route("/jaxrs/ai/core/entity/model/list", get(model_list))
         .route(
             "/jaxrs/ai/core/entity/conversation/list",
             get(conversation_list),
-        );
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+        )
 }
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::ai_core_entity_router(pool)

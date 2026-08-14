@@ -13,7 +13,7 @@ pub async fn config_get(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xname, xtype, xmodel, xenable FROM X.AI_MODEL WHERE xenable = true ORDER BY xname LIMIT 1",
+            "SELECT xname, xtype, xmodel, xenable FROM x_ai_model WHERE xenable = true ORDER BY xname LIMIT 1",
             &[],
         )
         .await
@@ -44,7 +44,7 @@ pub async fn config_base_config(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xname, xtype, xmodel, xenable FROM X.AI_MODEL WHERE xenable = true ORDER BY xname LIMIT 1",
+            "SELECT xname, xtype, xmodel, xenable FROM x_ai_model WHERE xenable = true ORDER BY xname LIMIT 1",
             &[],
         )
         .await
@@ -84,14 +84,14 @@ pub async fn config_list_model_paging(
     let offset = (page - 1) * size;
 
     let total_row = client
-        .query_one("SELECT COUNT(*) as cnt FROM X.AI_MODEL", &[])
+        .query_one("SELECT COUNT(*) as cnt FROM x_ai_model", &[])
         .await
         .map_err(|_| AppError::Internal)?;
     let total: i64 = total_row.get("cnt");
 
     let rows = client
         .query(
-            "SELECT id, name, xtype as type, xmodel as model, xcompletionurl as completionUrl, xapikey as apiKey, xenable as enable, xasdefault as asDefault, xdesc as desc FROM X.AI_MODEL ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+            "SELECT id, name, xtype as type, xmodel as model, xcompletionurl as \"completionUrl\", xapikey as \"apiKey\", xenable as enable, xasdefault as \"asDefault\", xdesc as desc FROM x_ai_model ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
             &[&size, &offset],
         )
         .await
@@ -105,15 +105,15 @@ pub async fn config_list_model_paging(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("model".to_string(), Value::String(row.get("model"))),
-                ("completionUrl".to_string(), Value::String(row.get("completionUrl"))),
-                ("apiKey".to_string(), {
-                    let api_key: Option<String> = row.get("apiKey");
+                ("\"completionUrl\"".to_string(), Value::String(row.get("\"completionUrl\""))),
+                ("\"apiKey\"".to_string(), {
+                    let api_key: Option<String> = row.get("\"apiKey\"");
                     api_key.map(|k| {
                         if k.len() > 4 { Value::String(format!("{}****", &k[k.len() - 4..])) } else { Value::String("****".to_string()) }
                     }).unwrap_or(Value::Null)
                 }),
                 ("enable".to_string(), Value::Bool(row.get("enable"))),
-                ("asDefault".to_string(), Value::Bool(row.get("asDefault"))),
+                ("\"asDefault\"".to_string(), Value::Bool(row.get("\"asDefault\""))),
                 ("desc".to_string(), Value::String(row.get("desc"))),
             ]))
         })
@@ -138,7 +138,7 @@ pub async fn config_get_model(
 
     let row = client
         .query_opt(
-            "SELECT id, name, xtype as type, xmodel as model, xcompletionurl as completionUrl, xapikey as apiKey, xenable as enable, xasdefault as asDefault, xdesc as desc FROM X.AI_MODEL WHERE id = $1 OR xname = $1",
+            "SELECT id, name, xtype as type, xmodel as model, xcompletionurl as \"completionUrl\", xapikey as \"apiKey\", xenable as enable, xasdefault as \"asDefault\", xdesc as desc FROM x_ai_model WHERE id = $1 OR xname = $1",
             &[&flag],
         )
         .await
@@ -146,7 +146,7 @@ pub async fn config_get_model(
 
     match row {
         Some(row) => {
-            let api_key: Option<String> = row.get("apiKey");
+            let api_key: Option<String> = row.get("\"apiKey\"");
             let masked_key = api_key.map(|k| {
                 if k.len() > 4 { format!("{}****", &k[k.len() - 4..]) } else { "****".to_string() }
             });
@@ -156,10 +156,10 @@ pub async fn config_get_model(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("model".to_string(), Value::String(row.get("model"))),
-                ("completionUrl".to_string(), Value::String(row.get("completionUrl"))),
-                ("apiKey".to_string(), masked_key.map(Value::String).unwrap_or(Value::Null)),
+                ("\"completionUrl\"".to_string(), Value::String(row.get("\"completionUrl\""))),
+                ("\"apiKey\"".to_string(), masked_key.map(Value::String).unwrap_or(Value::Null)),
                 ("enable".to_string(), Value::Bool(row.get("enable"))),
-                ("asDefault".to_string(), Value::Bool(row.get("asDefault"))),
+                ("\"asDefault\"".to_string(), Value::Bool(row.get("\"asDefault\""))),
                 ("desc".to_string(), Value::String(row.get("desc"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -205,7 +205,7 @@ pub async fn list_enable_model(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xname, name, xtype, xmodel, xenable FROM X.AI_MODEL WHERE xenable = true ORDER BY xname LIMIT 20",
+            "SELECT xname, name, xtype, xmodel, xenable FROM x_ai_model WHERE xenable = true ORDER BY xname LIMIT 20",
             &[],
         )
         .await

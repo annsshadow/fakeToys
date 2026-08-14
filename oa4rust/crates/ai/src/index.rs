@@ -15,7 +15,7 @@ pub async fn index_cms_doc(
 
     let row = client
         .query_opt(
-            "SELECT xid FROM X.CMS_DOCUMENT WHERE xid = $1",
+            "SELECT xid FROM x_cms_document WHERE xid = $1",
             &[&doc_id],
         )
         .await
@@ -41,7 +41,7 @@ pub async fn index_cms_doc_with_app(
 
     let rows = client
         .query(
-            "SELECT xid FROM X.CMS_DOCUMENT WHERE xappId = $1 AND xdocStatus = 'publish'",
+            "SELECT xid FROM x_cms_document WHERE xappId = $1 AND xdocStatus = 'publish'",
             &[&app_id],
         )
         .await

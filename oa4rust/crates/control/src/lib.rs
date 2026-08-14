@@ -9,3 +9,6 @@ pub use routes::control_router;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+

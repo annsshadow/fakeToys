@@ -2,7 +2,7 @@
 mod tests {
     use crate::{meeting_assemble_control_router, MeetingControl};
     use axum::body::Body;
-    use axum::http::{Request, StatusCode};
+    use axum::http::{Request, Method, StatusCode};
     use deadpool_postgres::{Manager, Pool};
     use shared::response::ActionResult;
     use tower::ServiceExt;
@@ -171,7 +171,7 @@ mod tests {
 
         let json = serde_json::to_value(&control).unwrap();
         assert_eq!(json["id"], "ctrl-001");
-        assert_eq!(json["controlType"], "RECORDER");
+        assert_eq!(json["\"controlType\""], "RECORDER");
         assert_eq!(json["enabled"], true);
     }
 
@@ -186,18 +186,18 @@ mod tests {
     fn test_list_response_shape() {
         let result = ActionResult::success(serde_json::json!({
             "count": 2,
-            "meetingId": "meeting-001",
+            "\"meetingId\"": "meeting-001",
             "data": [
                 {
                     "id": "ctrl-001",
-                    "meetingId": "meeting-001",
-                    "controlType": "RECORDER",
+                    "\"meetingId\"": "meeting-001",
+                    "\"controlType\"": "RECORDER",
                     "enabled": true
                 },
                 {
                     "id": "ctrl-002",
-                    "meetingId": "meeting-001",
-                    "controlType": "SCREEN",
+                    "\"meetingId\"": "meeting-001",
+                    "\"controlType\"": "SCREEN",
                     "enabled": false
                 }
             ]
@@ -206,7 +206,7 @@ mod tests {
         assert_eq!(result.r#type, Some("success".to_string()));
         let data = result.data.unwrap();
         assert_eq!(data["count"], 2);
-        assert_eq!(data["data"][0]["controlType"], "RECORDER");
+        assert_eq!(data["data"][0]["\"controlType\""], "RECORDER");
         assert_eq!(data["data"][1]["enabled"], false);
     }
 
@@ -222,4 +222,261 @@ mod tests {
         assert_eq!(data["id"], "ctrl-001");
         assert_eq!(data["deleted"], true);
     }
+
+    #[tokio::test]
+    async fn test_delete_jaxrs_meeting_assemble_control_delete_id() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/delete/test-id")
+                    .method(Method::DELETE)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_meeting_assemble_control_building_() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/building/list")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_meeting_assemble_control_config_sy() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/config/system/config")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_meeting_assemble_control_list_meet() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/list/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_meeting_assemble_control_meeting_l() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/meeting/list/applied/completed")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_meeting_assemble_control_meeting_i() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_meeting_assemble_control_openmeeti() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/openmeeting/list/room")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_meeting_assemble_control_room_list() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/room/list")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_get_jaxrs_meeting_assemble_control_room_id() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/room/test-id")
+                    .method(Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_meeting_assemble_control_config_sy() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/config/system/config/manage")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_meeting_assemble_control_create() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/create")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_meeting_assemble_control_meeting_c() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/meeting/create")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_meeting_assemble_control_meeting_d() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/meeting/delete/test-id")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_meeting_assemble_control_meeting_s() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/meeting/save/test-id")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_post_jaxrs_meeting_assemble_control_meeting_i() {
+        let pool = mock_pool();
+        let app = crate::meeting_assemble_control_router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/meeting/test-id/accept")
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+
 }

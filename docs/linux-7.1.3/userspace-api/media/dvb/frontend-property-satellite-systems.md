@@ -1,0 +1,86 @@
+﻿######## 鍗槦浼犺緭绯荤粺浣跨敤鐨勫睘鎬?
+鏈枃浠跺垪鍑?DVB 鍗槦浼犺緭绯荤粺锛圖VB-S銆丏VB-S2銆乀urbo 鐮佺瓑锛夊墠绔彲璋冭皭鐨勫睘鎬у弬鏁帮紝璇存槑鍚勭郴缁熶笅鏈夋晥鐨?DTV 灞炴€ч泦鍚堬紝渚涘崼鏄熺數瑙嗘帴鏀剁浉鍏崇殑鍓嶇椹卞姩涓庡簲鐢ㄥ紑鍙戣€呭弬鑰冦€?
+
+
+
+## DVB-S 浼犺緭绯荤粺
+
+
+浠ヤ笅鍙傛暟瀵?DVB-S 鏈夋晥锛?
+- DTV_API_VERSION <DTV-API-VERSION>
+
+- DTV_DELIVERY_SYSTEM <DTV-DELIVERY-SYSTEM>
+
+- DTV_TUNE <DTV-TUNE>
+
+- DTV_CLEAR <DTV-CLEAR>
+
+- DTV_FREQUENCY <DTV-FREQUENCY>
+
+- DTV_INVERSION <DTV-INVERSION>
+
+- DTV_SYMBOL_RATE <DTV-SYMBOL-RATE>
+
+- DTV_INNER_FEC <DTV-INNER-FEC>
+
+- DTV_VOLTAGE <DTV-VOLTAGE>
+
+- DTV_TONE <DTV-TONE>
+
+姝ゅ锛孌TV QoS 缁熻 <frontend-stat-properties> 鍚屾牱鏈夋晥銆?
+鏈潵鐨勫疄鐜板彲鑳戒細娣诲姞浠ヤ笅涓や釜缂哄け鐨勫弬鏁帮細
+
+- DTV_DISEQC_MASTER <DTV-DISEQC-MASTER>
+
+- DTV_DISEQC_SLAVE_REPLY <DTV-DISEQC-SLAVE-REPLY>
+
+
+
+## DVB-S2 浼犺緭绯荤粺
+
+
+闄ゆ墍鏈夊 DVB-S 鏈夋晥鐨勫弬鏁板锛孌VB-S2 杩樻敮鎸佷互涓嬪弬鏁帮細
+
+- DTV_MODULATION <DTV-MODULATION>
+
+- DTV_PILOT <DTV-PILOT>
+
+- DTV_ROLLOFF <DTV-ROLLOFF>
+
+- DTV_STREAM_ID <DTV-STREAM-ID>
+
+- DTV_SCRAMBLING_SEQUENCE_INDEX <DTV-SCRAMBLING-SEQUENCE-INDEX>
+
+姝ゅ锛孌TV QoS 缁熻 <frontend-stat-properties> 鍚屾牱鏈夋晥銆?
+
+
+## Turbo 鐮佷紶杈撶郴缁?
+
+闄ゆ墍鏈夊 DVB-S 鏈夋晥鐨勫弬鏁板锛宼urbo 鐮佽繕鏀寔浠ヤ笅鍙傛暟锛?
+- DTV_MODULATION <DTV-MODULATION>
+
+
+
+## ISDB-S 浼犺緭绯荤粺
+
+
+浠ヤ笅鍙傛暟瀵?ISDB-S 鏈夋晥锛?
+- DTV_API_VERSION <DTV-API-VERSION>
+
+- DTV_DELIVERY_SYSTEM <DTV-DELIVERY-SYSTEM>
+
+- DTV_TUNE <DTV-TUNE>
+
+- DTV_CLEAR <DTV-CLEAR>
+
+- DTV_FREQUENCY <DTV-FREQUENCY>
+
+- DTV_INVERSION <DTV-INVERSION>
+
+- DTV_SYMBOL_RATE <DTV-SYMBOL-RATE>
+
+- DTV_INNER_FEC <DTV-INNER-FEC>
+
+- DTV_VOLTAGE <DTV-VOLTAGE>
+
+- DTV_STREAM_ID <DTV-STREAM-ID>

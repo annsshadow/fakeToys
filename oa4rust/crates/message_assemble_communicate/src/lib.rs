@@ -16,7 +16,7 @@ pub async fn send_message(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let conversation_id = req.get("conversationId").and_then(|v| v.as_str()).unwrap_or_default();
+    let conversation_id = req.get("\"conversationId\"").and_then(|v| v.as_str()).unwrap_or_default();
     let content = req.get("content").and_then(|v| v.as_str()).unwrap_or_default();
     let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
@@ -35,7 +35,7 @@ pub async fn send_message(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("conversationId".to_string(), Value::String(conversation_id.to_string())),
+            ("\"conversationId\"".to_string(), Value::String(conversation_id.to_string())),
             ("content".to_string(), Value::String(content.to_string())),
             ("sender".to_string(), Value::String(sender.to_string())),
             ("type".to_string(), Value::String(msg_type.to_string())),
@@ -95,6 +95,9 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 
 
@@ -106,7 +109,7 @@ pub async fn consume_list_consume_count_count(
 
     let limit = count.max(1) as i64;
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 ORDER BY create_time DESC LIMIT $2", &[&consume, &limit])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 ORDER BY create_time DESC LIMIT $2::bigint", &[&consume, &limit])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -136,7 +139,7 @@ pub async fn consume_list_consume_currentperson_count_count(
 
     let limit = count.max(1) as i64;
     let rows = client
-        .query("SELECT id, consume, content, sender, read_status, create_time FROM x_message_consume WHERE consume = $1 AND sender = consume ORDER BY create_time DESC LIMIT $2", &[&consume, &limit])
+        .query("SELECT id, consume, content, sender, read_status, create_time FROM x_message_consume WHERE consume = $1 AND sender = consume ORDER BY create_time DESC LIMIT $2::bigint", &[&consume, &limit])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -167,7 +170,7 @@ pub async fn consume_list_consume_person_person_count_count(
 
     let limit = count.max(1) as i64;
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND sender = $2 ORDER BY create_time DESC LIMIT $3", &[&consume, &person, &limit])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consume = $1 AND sender = $2 ORDER BY create_time DESC LIMIT $3::bigint", &[&consume, &person, &limit])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -422,7 +425,7 @@ pub async fn im_conversation_id_group(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("conversationId".to_string(), Value::String(row.get("conversation_id"))),
+            ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
             ("personId".to_string(), Value::String(row.get("person_id"))),
             ("role".to_string(), Value::String(row.get("role"))),
             ("joinTime".to_string(), Value::String(row.get("join_time"))),
@@ -483,7 +486,7 @@ pub async fn im_conversation_id_icon(
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
-                ("conversationId".to_string(), Value::String(id)),
+                ("\"conversationId\"".to_string(), Value::String(id)),
                 ("iconUrl".to_string(), Value::String(row.get("icon_url"))),
                 ("iconName".to_string(), Value::String(row.get("icon_name"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
@@ -645,8 +648,8 @@ pub async fn im_manager_config(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("configKey".to_string(), Value::String(row.get("config_key"))),
-                ("configValue".to_string(), Value::String(row.get("config_value"))),
+                ("\"configKey\"".to_string(), Value::String(row.get("config_key"))),
+                ("\"configValue\"".to_string(), Value::String(row.get("config_value"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -661,7 +664,7 @@ pub async fn im_msg(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let conversation_id = req.get("conversationId").and_then(|v| v.as_str()).unwrap_or_default();
+    let conversation_id = req.get("\"conversationId\"").and_then(|v| v.as_str()).unwrap_or_default();
     let content = req.get("content").and_then(|v| v.as_str()).unwrap_or_default();
     let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
@@ -675,7 +678,7 @@ pub async fn im_msg(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("conversationId".to_string(), Value::String(conversation_id.to_string())),
+            ("\"conversationId\"".to_string(), Value::String(conversation_id.to_string())),
             ("content".to_string(), Value::String(content.to_string())),
             ("sender".to_string(), Value::String(sender.to_string())),
             ("type".to_string(), Value::String(msg_type.to_string())),
@@ -706,7 +709,7 @@ pub async fn im_msg_collection(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let message_id = req.get("messageId").and_then(|v| v.as_str()).unwrap_or_default();
+    let message_id = req.get("\"messageId\"").and_then(|v| v.as_str()).unwrap_or_default();
     client
         .execute("INSERT INTO x_message_collection (id, message_id, create_time) VALUES ($1, $2, NOW())", &[&Uuid::new_v4().to_string(), &message_id])
         .await
@@ -726,14 +729,14 @@ pub async fn im_msg_collection_list_page_size_size(
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
     let rows = client
-        .query("SELECT id, message_id, create_time FROM x_message_collection ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query("SELECT id, message_id, create_time FROM x_message_collection ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("messageId".to_string(), Value::String(row.get("message_id"))),
+            ("\"messageId\"".to_string(), Value::String(row.get("message_id"))),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -752,7 +755,7 @@ pub async fn im_msg_collection_remove(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let message_id = req.get("messageId").and_then(|v| v.as_str()).unwrap_or_default();
+    let message_id = req.get("\"messageId\"").and_then(|v| v.as_str()).unwrap_or_default();
     let result = client
         .execute("DELETE FROM x_message_collection WHERE message_id = $1", &[&message_id])
         .await
@@ -778,9 +781,9 @@ pub async fn im_msg_download_id(
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("fileUrl".to_string(), Value::String(row.get("file_url"))),
-                ("fileName".to_string(), Value::String(row.get("file_name"))),
-                ("fileSize".to_string(), Value::String(row.get("file_size"))),
+                ("\"fileUrl\"".to_string(), Value::String(row.get("file_url"))),
+                ("\"fileName\"".to_string(), Value::String(row.get("file_name"))),
+                ("\"fileSize\"".to_string(), Value::String(row.get("file_size"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -806,8 +809,8 @@ pub async fn im_msg_download_id_image_width_width_height_height(
             let resized_url = format!("{}?w={}&h={}", file_url, width, height);
             let result = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("fileUrl".to_string(), Value::String(resized_url)),
-                ("fileName".to_string(), Value::String(row.get("file_name"))),
+                ("\"fileUrl\"".to_string(), Value::String(resized_url)),
+                ("\"fileName\"".to_string(), Value::String(row.get("file_name"))),
                 ("width".to_string(), Value::Number(serde_json::Number::from(width))),
                 ("height".to_string(), Value::Number(serde_json::Number::from(height))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
@@ -831,7 +834,7 @@ pub async fn im_msg_list_object(
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("conversationId".to_string(), Value::String(row.get("conversation_id"))),
+            ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
             ("content".to_string(), Value::String(row.get("content"))),
             ("sender".to_string(), Value::String(row.get("sender"))),
             ("type".to_string(), Value::String(row.get("type"))),
@@ -856,14 +859,14 @@ pub async fn im_msg_list_page_size_size(
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
     let rows = client
-        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("conversationId".to_string(), Value::String(row.get("conversation_id"))),
+            ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
             ("content".to_string(), Value::String(row.get("content"))),
             ("sender".to_string(), Value::String(row.get("sender"))),
             ("type".to_string(), Value::String(row.get("type"))),
@@ -904,9 +907,9 @@ pub async fn im_msg_upload_conversationId_type_type(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let file_url = req.get("fileUrl").and_then(|v| v.as_str()).unwrap_or_default();
-    let file_name = req.get("fileName").and_then(|v| v.as_str()).unwrap_or_default();
-    let file_size = req.get("fileSize").and_then(|v| v.as_str()).unwrap_or("0");
+    let file_url = req.get("\"fileUrl\"").and_then(|v| v.as_str()).unwrap_or_default();
+    let file_name = req.get("\"fileName\"").and_then(|v| v.as_str()).unwrap_or_default();
+    let file_size = req.get("\"fileSize\"").and_then(|v| v.as_str()).unwrap_or("0");
     let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
     let id = Uuid::new_v4().to_string();
 
@@ -918,9 +921,9 @@ pub async fn im_msg_upload_conversationId_type_type(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("conversationId".to_string(), Value::String(conversation_id)),
+            ("\"conversationId\"".to_string(), Value::String(conversation_id)),
             ("type".to_string(), Value::String(msg_type)),
-            ("fileUrl".to_string(), Value::String(file_url.to_string())),
+            ("\"fileUrl\"".to_string(), Value::String(file_url.to_string())),
             ("uploaded".to_string(), Value::Bool(true)),
         ]),
     ))))
@@ -988,7 +991,7 @@ pub async fn instant_currentperson_consumed_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let id_list = req.get("idList").and_then(|v| v.as_array()).map(|arr| {
+    let id_list = req.get("\"idList\"").and_then(|v| v.as_array()).map(|arr| {
         arr.iter().filter_map(|v| v.as_str().map(String::from)).collect::<Vec<String>>()
     }).unwrap_or_default();
 
@@ -1011,7 +1014,7 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time ASC LIMIT $1", &[&count])
+        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time ASC LIMIT $1::bigint", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1040,7 +1043,7 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT $1", &[&count])
+        .query("SELECT id, consume, content, sender, consume_time FROM x_message_consume WHERE consumed = true ORDER BY consume_time DESC LIMIT $1::bigint", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1069,7 +1072,7 @@ pub async fn instant_list_currentperson_count_count_asc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time ASC LIMIT $1", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time ASC LIMIT $1::bigint", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1098,7 +1101,7 @@ pub async fn instant_list_currentperson_count_count_desc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time DESC LIMIT $1", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume ORDER BY create_time DESC LIMIT $1::bigint", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1127,7 +1130,7 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE type != 'im' ORDER BY create_time DESC LIMIT $1", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE type != 'im' ORDER BY create_time DESC LIMIT $1::bigint", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1156,7 +1159,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time ASC LIMIT $1", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time ASC LIMIT $1::bigint", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1185,7 +1188,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time DESC LIMIT $1", &[&count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE consumed = false ORDER BY create_time DESC LIMIT $1::bigint", &[&count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1214,7 +1217,7 @@ pub async fn instant_list_id_next_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id > $1 ORDER BY create_time ASC LIMIT $2", &[&id, &count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id > $1 ORDER BY create_time ASC LIMIT $2::bigint", &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1243,7 +1246,7 @@ pub async fn instant_list_id_prev_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id < $1 ORDER BY create_time DESC LIMIT $2", &[&id, &count])
+        .query("SELECT id, consume, content, sender, create_time FROM x_message_consume WHERE id < $1 ORDER BY create_time DESC LIMIT $2::bigint", &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1294,7 +1297,7 @@ pub async fn mass_list_id_next_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id > $2 ORDER BY create_time ASC LIMIT $3", &[&id, &id, &count])
+        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id > $2 ORDER BY create_time ASC LIMIT $3::bigint", &[&id, &id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1323,7 +1326,7 @@ pub async fn mass_list_id_prev_count(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let rows = client
-        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id < $2 ORDER BY create_time DESC LIMIT $3", &[&id, &id, &count])
+        .query("SELECT id, mass_id, content, sender, create_time FROM x_message WHERE mass_id = $1 AND id < $2 ORDER BY create_time DESC LIMIT $3::bigint", &[&id, &id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -1393,7 +1396,7 @@ pub async fn message_custom_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let conversation_id = req.get("conversationId").and_then(|v| v.as_str()).unwrap_or_default();
+    let conversation_id = req.get("\"conversationId\"").and_then(|v| v.as_str()).unwrap_or_default();
     let content = req.get("content").and_then(|v| v.as_str()).unwrap_or_default();
     let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
     let id = Uuid::new_v4().to_string();
@@ -1406,7 +1409,7 @@ pub async fn message_custom_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("conversationId".to_string(), Value::String(conversation_id.to_string())),
+            ("\"conversationId\"".to_string(), Value::String(conversation_id.to_string())),
             ("content".to_string(), Value::String(content.to_string())),
             ("type".to_string(), Value::String("custom".to_string())),
             ("created".to_string(), Value::Bool(true)),
@@ -1423,14 +1426,14 @@ pub async fn message_list_paging_page_size_size(
     let offset = ((page.max(1) - 1) * size).max(0);
     let limit = size.max(1);
     let rows = client
-        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1 OFFSET $2", &[&limit, &offset])
+        .query("SELECT id, conversation_id, content, sender, type, create_time FROM x_message ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint", &[&limit, &offset])
         .await
         .map_err(|_| AppError::Internal)?;
 
     let data: Vec<Value> = rows.iter().map(|row| {
         Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
-            ("conversationId".to_string(), Value::String(row.get("conversation_id"))),
+            ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
             ("content".to_string(), Value::String(row.get("content"))),
             ("sender".to_string(), Value::String(row.get("sender"))),
             ("type".to_string(), Value::String(row.get("type"))),

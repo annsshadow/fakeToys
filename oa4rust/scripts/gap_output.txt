@@ -1,0 +1,17 @@
+﻿Rust jaxrs routes: 950
+Missing modules: 15
+  x_organization_core_entity -> /jaxrs/organization/core/entity
+  x_attendance_core_entity -> /jaxrs/attendance/core/entity
+  x_processplatform_core_entity -> /jaxrs/processplatform/core/entity
+  x_processplatform_core_express -> /jaxrs/processplatform/core/express
+  x_process_designer -> /jaxrs/process/designer
+  x_process_express -> /jaxrs/process/express
+  x_process_surface -> /jaxrs/process/surface
+  x_process_bam -> /jaxrs/process/bam
+  x_portal_core_entity -> /jaxrs/portal/core/entity
+  x_query_core_entity -> /jaxrs/query/core/entity
+  x_cms_assemble_control -> /jaxrs/cms/assemble/control
+  x_cms_core_entity -> /jaxrs/cms/core/entity
+  x_cms_express -> /jaxrs/cms/express
+  x_general_core_entity -> /jaxrs/general/core/entity
+  x_program_center_core_entity -> /jaxrs/program_center/core/entity

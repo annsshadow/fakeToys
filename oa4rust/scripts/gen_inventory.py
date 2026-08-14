@@ -1,22 +1,11 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""扫描 oa4rust/crates 下所有 crate，生成两份权威文档：
-   - docs/brainstorms/oa4rust-endpoint-inventory.md  (端点清单 / 实现状态)
-   - docs/brainstorms/oa4rust-migration-status.md     (迁移进度，单一信息源)
+import re, os, glob
 
-状态判定（纯静态分析）：
-   done    : 无 stub_ 且无 Value::Null 桩，且有真实 handler  -> 已完成
-   doing   : 有真实 handler 但仍有 stub_ / Value::Null      -> 迁移中
-   todo    : 无真实 handler（仅占位）                       -> 待迁移
-"""
-import os
-import re
-import glob
-
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-CRATES = os.path.join(ROOT, "crates")
-OUT_DIR = os.path.join(ROOT, "docs", "brainstorms")
+CRATES = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'crates')
+OUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'docs', 'brainstorms')
 os.makedirs(OUT_DIR, exist_ok=True)
+
+# Infrastructure crates — not business logic, no handlers expected
+EXCLUDED = {"mcp_server", "shared", "ldap", "orm", "openapi"}
 
 WAVE = {}
 U5 = ["attendance","attendance_assemble_control","attendance_core_entity","calendar",
@@ -35,8 +24,9 @@ U7 = ["ai","ai_assemble_control","ai_core_entity","component","component_assembl
       "jpush_assemble_control","jpush_core_entity","mind","mind_assemble_control","mind_core_entity",
       "bbs","bbs_assemble_control","bbs_core_entity","console","express","correlation",
       "correlation_service_processing","correlation_core_entity","correlation_core_express",
-      "organization_assemble_express","organization_assemble_control","organization_core_entity",
-      "organization_core_express","program_center","program_center_core_entity","base"]
+      "organization_assemble_express","organization_assemble_control","organization_assemble_authentication",
+      "organization_assemble_personal","organization_core_entity","organization_core_express",
+      "program_center","program_center_core_entity","base"]
 DONE = ["auth","personal","personal_extend","control","program_init"]
 for c in U5: WAVE[c] = "U5"
 for c in U6: WAVE[c] = "U6"
@@ -56,7 +46,10 @@ def scan_crate(name):
     stub = text.count("stub_")
     null = len(re.findall(r"ActionResult::success\(Value::Null\)", text))
     todo = text.count("real implementation needed")
-    handlers = len(re.findall(r"->\s*Result<Json<ActionResult<Value>>,\s*AppError>", text))
+    # Match all handler return patterns: Result<Json<ActionResult<...>>, AppError> or Json<ActionResult<...>>
+    handlers = len(re.findall(r'async fn \w+\s*\([^)]*\)\s*(?:->\s*[^{]*)?\{', text))
+    # More precise: count pub async fn declarations
+    handlers = len(re.findall(r'pub\s+async\s+fn\s+\w+', text))
     routes = len(re.findall(r'\.route\(\s*"', text))
     if handlers > 0 and stub == 0 and null == 0:
         status = "done"
@@ -70,6 +63,8 @@ def scan_crate(name):
 
 rows = []
 for entry in sorted(os.listdir(CRATES)):
+    if entry in EXCLUDED:
+        continue
     if os.path.isdir(os.path.join(CRATES, entry)):
         r = scan_crate(entry)
         if r:
@@ -119,9 +114,13 @@ ms += ["## 说明", "",
        "- `done`：无 stub_ / Value::Null 桩，真实 handler 已暴露。",
        "- `doing`：已有真实 handler 但仍有桩标记待清除或 router 未完全暴露。",
        "- `todo`：仅有占位 handler，尚未真实化。",
+       "- 基础设施 crate（mcp_server、shared、ldap、orm）排除在外，不统计。",
        "- 回滚/灰度见 deploy/nginx.conf、deploy/rollback-playbook.md、deploy/toggle_module.sh。",
        ""]
 open(os.path.join(OUT_DIR, "oa4rust-migration-status.md"), "w", encoding="utf-8").write("\n".join(ms))
 
 print(f"crates={len(rows)} done={done} doing={doing} todo={todo} "
       f"stub_={tot_stub} null={tot_null} todo_markers={tot_todo} handlers={tot_h}")
+for r in rows:
+    if r['status'] != 'done':
+        print(f"  {r['status']:6} {r['name']} wave={r['wave']} h={r['handlers']} r={r['routes']} s={r['stub']} n={r['null']}")

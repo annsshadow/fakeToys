@@ -11,6 +11,9 @@ pub mod routes;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Room {
@@ -215,8 +218,8 @@ pub async fn create_meeting(
     let title = payload.get("title").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("title is required".to_string()))?;
     let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string());
     let room_id = payload.get("roomId").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("roomId is required".to_string()))?;
-    let start_time = payload.get("startTime").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("startTime is required".to_string()))?;
-    let end_time = payload.get("endTime").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("endTime is required".to_string()))?;
+    let start_time = payload.get("\"startTime\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"startTime\" is required".to_string()))?;
+    let end_time = payload.get("\"endTime\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"endTime\" is required".to_string()))?;
     let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system");
 
     let id = uuid::Uuid::new_v4().to_string();
@@ -232,8 +235,8 @@ pub async fn create_meeting(
         ("id".to_string(), Value::String(id)),
         ("title".to_string(), Value::String(title.to_string())),
         ("roomId".to_string(), Value::String(room_id.to_string())),
-        ("startTime".to_string(), Value::String(start_time.to_string())),
-        ("endTime".to_string(), Value::String(end_time.to_string())),
+        ("\"startTime\"".to_string(), Value::String(start_time.to_string())),
+        ("\"endTime\"".to_string(), Value::String(end_time.to_string())),
     ])))))
 }
 
@@ -271,8 +274,8 @@ pub async fn get_meeting(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
                 ("roomId".to_string(), Value::String(row.get("room_id"))),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
-                ("endTime".to_string(), Value::String(row.get("end_time"))),
+                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
+                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]));
@@ -313,8 +316,8 @@ pub async fn list_meetings(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
                 ("roomId".to_string(), Value::String(row.get("room_id"))),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
-                ("endTime".to_string(), Value::String(row.get("end_time"))),
+                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
+                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
@@ -329,9 +332,9 @@ pub async fn list_meetings(
 
 #[utoipa::path(
     post,
-    path = "/jaxrs/meeting/{meetingId}/participant/add",
+    path = "/jaxrs/meeting/{\"meetingId\"}/participant/add",
     params(
-        ("meetingId" = String, Path, description = "Meeting ID")
+        ("\"meetingId\"" = String, Path, description = "Meeting ID")
     ),
     request_body = serde_json::Value,
     responses(
@@ -361,7 +364,7 @@ pub async fn add_participant(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("meetingId".to_string(), Value::String(meeting_id)),
+        ("\"meetingId\"".to_string(), Value::String(meeting_id)),
         ("invitee".to_string(), Value::String(invitee.to_string())),
         ("added".to_string(), Value::Bool(true)),
     ])))))
@@ -369,9 +372,9 @@ pub async fn add_participant(
 
 #[utoipa::path(
     get,
-    path = "/jaxrs/meeting/{meetingId}/participant/list",
+    path = "/jaxrs/meeting/{\"meetingId\"}/participant/list",
     params(
-        ("meetingId" = String, Path, description = "Meeting ID")
+        ("\"meetingId\"" = String, Path, description = "Meeting ID")
     ),
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -399,7 +402,7 @@ pub async fn list_participants(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("meetingId".to_string(), Value::String(row.get("meeting_id"))),
+                ("\"meetingId\"".to_string(), Value::String(row.get("meeting_id"))),
                 ("invitee".to_string(), Value::String(row.get("invitee"))),
                 ("status".to_string(), Value::String(row.get("status"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
@@ -448,8 +451,8 @@ pub async fn list_schedule(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
                 ("roomId".to_string(), Value::String(row.get("room_id"))),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
-                ("endTime".to_string(), Value::String(row.get("end_time"))),
+                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
+                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
                 ("creator".to_string(), Value::String(row.get("creator"))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))

@@ -8,11 +8,11 @@ use uuid;
 use crate::integration_tests::db::TEST_DB;
 
 // ──────────────────────────────────────────────────────────────────────────────
-// BBS Post �?Comment �?Correlation cross-crate happy path
+// BBS Post �?Comment �?Correlation cross-crate happy path
 //
 // Verifies: a BBS post can be created, a comment added, a correlation
 // record inserted linking the post to another entity, and the correlation
-// can be retrieved �?all through the real HTTP layer.
+// can be retrieved �?all through the real HTTP layer.
 // ──────────────────────────────────────────────────────────────────────────────
 
 #[tokio::test]

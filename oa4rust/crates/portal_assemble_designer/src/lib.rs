@@ -373,6 +373,9 @@ pub fn portal_assemble_designer_router() -> Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     portal_assemble_designer_router().layer(axum::extract::Extension(pool))
@@ -421,7 +424,7 @@ pub async fn dict_list_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, name, app_name, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET ($1 - 1) * $2",
+            "SELECT id, name, app_name, create_time FROM x_portal_dict WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1 - 1) * $2",
             &[&_page, &_size],
         )
         .await
@@ -550,7 +553,7 @@ pub async fn file_list_id_next_count(
 
     let rows = client
         .query(
-            "SELECT id, name, flag, file_type, creator, create_time FROM x_portal_file WHERE id > $1 ORDER BY id ASC LIMIT $2",
+            "SELECT id, name, flag, file_type, creator, create_time FROM x_portal_file WHERE id > $1 ORDER BY id ASC LIMIT $2::bigint",
             &[&id, &count],
         )
         .await
@@ -585,7 +588,7 @@ pub async fn file_list_id_prev_count(
 
     let rows = client
         .query(
-            "SELECT id, name, flag, file_type, creator, create_time FROM x_portal_file WHERE id < $1 ORDER BY id DESC LIMIT $2",
+            "SELECT id, name, flag, file_type, creator, create_time FROM x_portal_file WHERE id < $1 ORDER BY id DESC LIMIT $2::bigint",
             &[&id, &count],
         )
         .await
@@ -1442,7 +1445,7 @@ pub async fn script_list_paging_page_size_size(
 
     let rows = client
         .query(
-            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2 OFFSET ($1 - 1) * $2",
+            "SELECT id, name, flag, category, creator, create_time FROM x_portal_script WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET ($1 - 1) * $2",
             &[&page, &size],
         )
         .await

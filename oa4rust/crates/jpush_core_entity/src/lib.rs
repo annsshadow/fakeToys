@@ -48,7 +48,7 @@ pub async fn device_list(
         .map(|m| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
-                ("userId".to_string(), Value::String(m.user_id.clone())),
+                ("\"userId\"".to_string(), Value::String(m.user_id.clone())),
                 ("platform".to_string(), Value::String(m.platform.clone())),
                 ("token".to_string(), Value::String(m.token.clone())),
             ]))
@@ -81,7 +81,7 @@ pub async fn device_get(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(m.id.clone())),
-                    ("userId".to_string(), Value::String(m.user_id.clone())),
+                    ("\"userId\"".to_string(), Value::String(m.user_id.clone())),
                     ("platform".to_string(), Value::String(m.platform.clone())),
                     ("token".to_string(), Value::String(m.token.clone())),
                 ]),
@@ -97,7 +97,7 @@ pub async fn device_create(
     Json(req): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = uuid::Uuid::new_v4().to_string();
-    let user_id = req.get("userId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let user_id = req.get("\"userId\"").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let platform = req.get("platform").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let token = req.get("token").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
@@ -114,7 +114,7 @@ pub async fn device_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("userId".to_string(), Value::String(user_id)),
+            ("\"userId\"".to_string(), Value::String(user_id)),
             ("platform".to_string(), Value::String(platform)),
             ("token".to_string(), Value::String(token)),
         ]),
@@ -189,27 +189,19 @@ pub async fn template_get(
 /// - /jaxrs/jpush/core/entity/template/list - 模板列表
 /// - /jaxrs/jpush/core/entity/template/{id} - 模板详情
 pub fn jpush_core_entity_router(_pool: Pool) -> Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let router = Router::new()
+    Router::new()
         .route("/jaxrs/jpush/core/entity/device/list", get(device_list))
         .route("/jaxrs/jpush/core/entity/device/{id}", get(device_get))
         .route("/jaxrs/jpush/core/entity/device/create", post(device_create))
         .route("/jaxrs/jpush/core/entity/template/list", get(template_list))
-        .route("/jaxrs/jpush/core/entity/template/{id}", get(template_get));
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+        .route("/jaxrs/jpush/core/entity/template/{id}", get(template_get))
 }
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::jpush_core_entity_router(pool)

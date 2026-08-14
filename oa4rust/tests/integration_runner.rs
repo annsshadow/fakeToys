@@ -26,8 +26,8 @@ use integration_tests::db::init_test_database;
 /// 3. 注入测试数据（admin 用户 + 会话）
 /// 4. 按顺序运行每个 cross-crate 场景
 #[ignore = "requires a running PostgreSQL server"]
-#[tokio::test]
-async fn integration_scenarios() {
+#[test]
+fn integration_scenarios() {
     let _ctx = init_test_database();
     let _pool = _ctx.pool();
 
@@ -36,10 +36,10 @@ async fn integration_scenarios() {
     // Note: each scenario is its own #[tokio::test] — call them directly
     // without .await (they manage their own runtime via the test macro).
 
-    integration_tests::scenarios::org_person_meeting::org_person_meeting_flow().await;
-    integration_tests::scenarios::bbs_correlation::bbs_correlation_flow().await;
-    integration_tests::scenarios::file_upload::file_upload_flow().await;
-    integration_tests::scenarios::program_center_core_entity::program_center_core_entity_application_flow().await;
+    integration_tests::scenarios::org_person_meeting::org_person_meeting_flow();
+    integration_tests::scenarios::bbs_correlation::bbs_correlation_flow();
+    integration_tests::scenarios::file_upload::file_upload_flow();
+    integration_tests::scenarios::program_center_core_entity::program_center_core_entity_application_flow();
 }
 
 #[cfg(test)]

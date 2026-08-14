@@ -14,17 +14,17 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
     RouteDef {
         tool_name: "jaxrs_ai_ai_chat_delete_clueid",
         method: HttpMethod::Get,
-        path: "/jaxrs/ai/chat/delete/{clueId}",
+        path: "/jaxrs/ai/chat/delete/{\"clueId\"}",
         description: "chat_delete handler",
-        path_params: &["clueId"],
+        path_params: &["\"clueId\""],
         body_params: &[],
     },
     RouteDef {
         tool_name: "jaxrs_ai_ai_chat_list_completion_clueid_paging_page_size_size",
         method: HttpMethod::Get,
-        path: "/jaxrs/ai/chat/list/completion/{clueId}/paging/{page}/size/{size}",
+        path: "/jaxrs/ai/chat/list/completion/{\"clueId\"}/paging/{page}/size/{size}",
         description: "chat_list_completion_paging handler",
-        path_params: &["clueId", "page", "size"],
+        path_params: &["\"clueId\"", "page", "size"],
         body_params: &[],
     },
     RouteDef {
@@ -3254,17 +3254,17 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
     RouteDef {
         tool_name: "jaxrs_general_assemble_control_general_assemble_control_excel_excelname",
         method: HttpMethod::Get,
-        path: "/jaxrs/general/assemble/control/excel/{excelName}",
+        path: "/jaxrs/general/assemble/control/excel/{\"excelName\"}",
         description: "crate::excel_excelName_excelName handler",
-        path_params: &["excelName"],
+        path_params: &["\"excelName\""],
         body_params: &[],
     },
     RouteDef {
         tool_name: "jaxrs_general_assemble_control_general_assemble_control_excel_excelname_sheet_list",
         method: HttpMethod::Get,
-        path: "/jaxrs/general/assemble/control/excel/{excelName}/sheetList",
+        path: "/jaxrs/general/assemble/control/excel/{\"excelName\"}/sheetList",
         description: "crate::excel_excelName_excelName_sheetList handler",
-        path_params: &["excelName"],
+        path_params: &["\"excelName\""],
         body_params: &[],
     },
     RouteDef {
@@ -4590,9 +4590,9 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
     RouteDef {
         tool_name: "jaxrs_meeting_meeting_meetingid_participant_list",
         method: HttpMethod::Get,
-        path: "/jaxrs/meeting/{meetingId}/participant/list",
+        path: "/jaxrs/meeting/{\"meetingId\"}/participant/list",
         description: "list_participants handler",
-        path_params: &["meetingId"],
+        path_params: &["\"meetingId\""],
         body_params: &[],
     },
     RouteDef {
@@ -4606,9 +4606,9 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
     RouteDef {
         tool_name: "jaxrs_meeting_meeting_meetingid_participant_add",
         method: HttpMethod::Post,
-        path: "/jaxrs/meeting/{meetingId}/participant/add",
+        path: "/jaxrs/meeting/{\"meetingId\"}/participant/add",
         description: "add_participant handler",
-        path_params: &["meetingId"],
+        path_params: &["\"meetingId\""],
         body_params: &[],
     },
     RouteDef {
@@ -4670,9 +4670,9 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
     RouteDef {
         tool_name: "jaxrs_meeting_assemble_control_meeting_assemble_control_list_meetingid",
         method: HttpMethod::Get,
-        path: "/jaxrs/meeting/assemble/control/list/{meetingId}",
+        path: "/jaxrs/meeting/assemble/control/list/{\"meetingId\"}",
         description: "list_meeting_controls handler",
-        path_params: &["meetingId"],
+        path_params: &["\"meetingId\""],
         body_params: &[],
     },
     RouteDef {
@@ -5494,9 +5494,9 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
     RouteDef {
         tool_name: "jaxrs_message_assemble_communicate_message_assemble_communicate_im_msg_upload_conversationid_type_type",
         method: HttpMethod::Post,
-        path: "/jaxrs/message/assemble/communicate/im/msg/upload/{conversationId}/type/{type}",
+        path: "/jaxrs/message/assemble/communicate/im/msg/upload/{\"conversationId\"}/type/{type}",
         description: "im_msg_upload_conversationId_type_type handler",
-        path_params: &["conversationId", "type"],
+        path_params: &["\"conversationId\"", "type"],
         body_params: &[],
     },
     RouteDef {
@@ -6246,17 +6246,17 @@ pub static GENERATED_ROUTE_DEFS: &[RouteDef] = &[
     RouteDef {
         tool_name: "jaxrs_organization_assemble_control_organization_assemble_control_personcard_list_personal_v_cf_idlist",
         method: HttpMethod::Get,
-        path: "/jaxrs/organization/assemble/control/personcard/listPersonalVCf/{idList}",
+        path: "/jaxrs/organization/assemble/control/personcard/listPersonalVCf/{\"idList\"}",
         description: "personcard_listPersonalVCf_idList handler",
-        path_params: &["idList"],
+        path_params: &["\"idList\""],
         body_params: &[],
     },
     RouteDef {
         tool_name: "jaxrs_organization_assemble_control_organization_assemble_control_personcard_list_v_cf_idlist",
         method: HttpMethod::Get,
-        path: "/jaxrs/organization/assemble/control/personcard/listVCf/{idList}",
+        path: "/jaxrs/organization/assemble/control/personcard/listVCf/{\"idList\"}",
         description: "personcard_listVCf_idList handler",
-        path_params: &["idList"],
+        path_params: &["\"idList\""],
         body_params: &[],
     },
     RouteDef {

@@ -83,20 +83,9 @@ pub async fn create_query(
 }
 
 pub fn query_express_router(_pool: Pool) -> Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let router = Router::new()
+    Router::new()
         .route("/jaxrs/query/list", get(query_list))
-        .route("/jaxrs/query/create", post(create_query));
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+        .route("/jaxrs/query/create", post(create_query))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -105,3 +94,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+

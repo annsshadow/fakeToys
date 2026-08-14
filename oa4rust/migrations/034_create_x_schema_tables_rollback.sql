@@ -1,0 +1,16 @@
+DROP TABLE IF EXISTS "x_ai_clue";
+DROP TABLE IF EXISTS "x_ai_completion";
+DROP TABLE IF EXISTS "x_ai_file";
+DROP TABLE IF EXISTS "x_ai_model";
+DROP TABLE IF EXISTS "x_bam_config";
+DROP TABLE IF EXISTS "x_cms_document";
+DROP TABLE IF EXISTS "x_console_cache";
+DROP TABLE IF EXISTS "x_console_log";
+DROP TABLE IF EXISTS "x_console_message";
+DROP TABLE IF EXISTS "x_console_metric";
+DROP TABLE IF EXISTS "x_console_status";
+DROP TABLE IF EXISTS "x_express_company";
+DROP TABLE IF EXISTS "x_express_info";
+DROP TABLE IF EXISTS "x_express_subscribe";
+DROP TABLE IF EXISTS "x_msg_message";
+DROP TABLE IF EXISTS "x_pp_c_task";

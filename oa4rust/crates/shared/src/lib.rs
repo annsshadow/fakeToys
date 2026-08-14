@@ -15,6 +15,7 @@ pub mod db;
 pub mod error;
 pub mod input_validation;
 pub mod middleware;
+pub mod migrate;
 pub mod mock_client;
 pub mod rate_limit;
 pub mod response;
@@ -29,6 +30,9 @@ use std::ops::Deref;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 // ---- RowGet ----
 // Abstraction over a database row so tests can inject mock data.

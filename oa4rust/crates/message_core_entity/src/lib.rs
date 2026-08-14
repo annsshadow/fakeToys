@@ -114,14 +114,7 @@ pub async fn unread_count(
 
 /// 创建消息核心实体路由
 pub fn message_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let router = Router::new()
+    Router::new()
         .route("/jaxrs/message/core/entity/list", get(list))
         .route(
             "/jaxrs/message/core/entity/list/by/{consume}",
@@ -130,15 +123,14 @@ pub fn message_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route(
             "/jaxrs/message/core/entity/unread/count/{consume}",
             get(unread_count),
-        );
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+        )
 }
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::message_core_entity_router(pool)

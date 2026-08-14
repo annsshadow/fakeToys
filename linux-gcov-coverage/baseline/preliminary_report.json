@@ -1,0 +1,11 @@
+{
+  "tool": "gcov",
+  "total_branches": 0,
+  "covered_branches": 0,
+  "branch_coverage_pct": 0.0,
+  "total_lines": 0,
+  "covered_lines": 0,
+  "line_coverage_pct": 0.0,
+  "reproducibility_pct": null,
+  "subsystems": []
+}

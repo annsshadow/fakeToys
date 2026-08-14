@@ -15,7 +15,7 @@ pub async fn file_get(
 
     let row = client
         .query_opt(
-            "SELECT xid, xname, xlength, xstorage, xcreator, xcreateTime FROM X.AI_FILE WHERE xid = $1 OR xname = $1",
+            "SELECT xid, xname, xlength, xstorage, xcreator, \"xcreateTime\" FROM x_ai_file WHERE xid = $1 OR xname = $1",
             &[&flag],
         )
         .await
@@ -29,7 +29,7 @@ pub async fn file_get(
                 ("length".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("xlength")))),
                 ("storage".to_string(), Value::String(row.get("xstorage"))),
                 ("creator".to_string(), Value::String(row.get("xcreator"))),
-                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -78,7 +78,7 @@ pub async fn file_delete(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
-        .query_opt("SELECT xcreator FROM X.AI_FILE WHERE xid = $1 OR xname = $1", &[&flag])
+        .query_opt("SELECT xcreator FROM x_ai_file WHERE xid = $1 OR xname = $1", &[&flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -90,7 +90,7 @@ pub async fn file_delete(
     shared::middleware::require_owner(&pool, &session, &file_creator).await?;
 
     client
-        .execute("DELETE FROM X.AI_FILE WHERE xid = $1 OR xname = $1", &[&flag])
+        .execute("DELETE FROM x_ai_file WHERE xid = $1 OR xname = $1", &[&flag])
         .await
         .map_err(|_| AppError::Internal)?;
 

@@ -9,6 +9,8 @@ use crate::{
     get_control_config, list_control_categories, list_storage_pools, update_control_config,
     list_files, get_file, upload_file, create_file, delete_file,
     create_file_entity, update_file_entity, delete_file_entity,
+    file_id_download_stream, attachment_id_download_stream, anonymous_file_id_download_stream,
+    attachment2_id_office_preview_type_type,
 };
 
 pub fn router(pool: Pool) -> Router {
@@ -21,5 +23,9 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/file/core/entity/file/create", post(create_file_entity))
         .route("/jaxrs/file/core/entity/file/update/{id}", post(update_file_entity))
         .route("/jaxrs/file/core/entity/file/delete/{id}", post(delete_file_entity))
+        .route("/jaxrs/file/{id}/download/stream", get(file_id_download_stream))
+        .route("/jaxrs/attachment/download/{attid}/stream", get(attachment_id_download_stream))
+        .route("/jaxrs/anonymous/file/{id}/download/stream", get(anonymous_file_id_download_stream))
+        .route("/jaxrs/file/assemble/control/attachment2/{id}/office/preview/type/{type}", get(attachment2_id_office_preview_type_type))
         .layer(Extension(pool))
 }

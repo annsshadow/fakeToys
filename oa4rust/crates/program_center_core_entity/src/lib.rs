@@ -11,13 +11,10 @@ const MAX_NAME_LEN: usize = 200;
 const MAX_TEXT_LEN: usize = 500;
 const MAX_LONG_TEXT_LEN: usize = 2000;
 
-pub fn program_center_core_entity_router(pool: Pool) -> Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
+pub async fn program_center_core_entity_router(pool: Pool) -> Router {
+    // NOTE: do NOT block_on here — this runs inside the tokio runtime during
+    // create_app. Obtain the SeaORM pool asynchronously instead.
+    let db = shared::db::create_sea_orm_pool().await.ok();
 
     let app = Router::new()
         .merge(handlers::application::_router(pool.clone(), db.clone()))
@@ -42,3 +39,6 @@ pub fn program_center_mock_router(_db: sea_orm::DatabaseConnection) -> Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+

@@ -34,7 +34,7 @@ pub async fn device_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("userId".to_string(), Value::String(row.get("user_id"))),
+                ("\"userId\"".to_string(), Value::String(row.get("user_id"))),
                 ("platform".to_string(), Value::String(row.get("platform"))),
                 ("token".to_string(), Value::String(row.get("token"))),
             ]))
@@ -68,7 +68,7 @@ pub async fn device_get(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
-                    ("userId".to_string(), Value::String(row.get("user_id"))),
+                    ("\"userId\"".to_string(), Value::String(row.get("user_id"))),
                     ("platform".to_string(), Value::String(row.get("platform"))),
                     ("token".to_string(), Value::String(row.get("token"))),
                 ]),
@@ -85,7 +85,7 @@ pub async fn device_create(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let user_id = req.get("userId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let user_id = req.get("\"userId\"").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let platform = req.get("platform").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let token = req.get("token").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
@@ -102,7 +102,7 @@ pub async fn device_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("userId".to_string(), Value::String(user_id)),
+            ("\"userId\"".to_string(), Value::String(user_id)),
             ("platform".to_string(), Value::String(platform)),
             ("token".to_string(), Value::String(token)),
         ]),
@@ -177,3 +177,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+

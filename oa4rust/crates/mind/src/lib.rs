@@ -10,6 +10,9 @@ pub mod routes;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn mind_router() -> Router {
     Router::new()
@@ -65,7 +68,7 @@ pub async fn list_my_folders(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), Value::String(row.get("parent_id"))),
+                ("\"parentId\"".to_string(), Value::String(row.get("parent_id"))),
                 ("orderNumber".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("order_number")))),
                 ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
                 ("creator".to_string(), Value::String(row.get("creator"))),
@@ -217,7 +220,7 @@ pub async fn create_folder(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let parent_id = payload.get("parentId").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let parent_id = payload.get("\"parentId\"").and_then(|v| v.as_str()).map(|s| s.to_string());
     let order_number = payload.get("orderNumber").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
     let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string());
     let creator = payload.get("creator").and_then(|v| v.as_str()).unwrap_or("system").to_string();
@@ -254,7 +257,7 @@ pub async fn update_folder(
         .map_err(|_| AppError::NotFound)?;
 
     let name = payload.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get("name"));
-    let parent_id = payload.get("parentId").and_then(|v| v.as_str()).map(|s| s.to_string()).or_else(|| row.get::<_, Option<String>>("parent_id")).unwrap_or_default();
+    let parent_id = payload.get("\"parentId\"").and_then(|v| v.as_str()).map(|s| s.to_string()).or_else(|| row.get::<_, Option<String>>("parent_id")).unwrap_or_default();
     let order_number = payload.get("orderNumber").and_then(|v| v.as_i64()).map(|i| i as i32).unwrap_or_else(|| row.get::<_, i32>("order_number"));
     let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()).or_else(|| row.get::<_, Option<String>>("description")).unwrap_or_default();
 

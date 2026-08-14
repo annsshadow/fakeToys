@@ -40,7 +40,7 @@ pub async fn get_express_info(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xtrackingNumber, xstatus, xcompany FROM X.EXPRESS_INFO WHERE xtrackingNumber = $1 AND xcompany = $2",
+            "SELECT \"xtrackingNumber\", xstatus, xcompany FROM x_express_info WHERE \"xtrackingNumber\" = $1 AND xcompany = $2",
             &[&code, &company],
         )
         .await
@@ -72,7 +72,7 @@ pub async fn list_express_companies(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xcode, xname FROM X.EXPRESS_COMPANY ORDER BY xname LIMIT 50",
+            "SELECT xcode, xname FROM x_express_company ORDER BY xname LIMIT 50",
             &[],
         )
         .await
@@ -109,7 +109,7 @@ pub async fn subscribe_express(
 
     client
         .execute(
-            "INSERT INTO X.EXPRESS_SUBSCRIBE (xid, xtrackingNumber, xcompany, xcallback) VALUES ($1, $2, $3, $4)",
+            "INSERT INTO x_express_subscribe (xid, \"xtrackingNumber\", xcompany, xcallback) VALUES ($1, $2, $3, $4)",
             &[&id, &code, &company, &callback],
         )
         .await
@@ -131,3 +131,6 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+

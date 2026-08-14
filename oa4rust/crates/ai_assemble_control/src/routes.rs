@@ -3,7 +3,6 @@ use axum::{
     routing::get, routing::post,
     Router,
 };
-use deadpool_postgres::Pool;
 
 use crate::{
     get_ai_control_config, list_ai_models, update_ai_control_config, get_usage_stats,
@@ -34,6 +33,7 @@ use crate::{
     index_delete_flag,
     index_list_paging_page_size_size,
     index_sync_to_knowledge,
+    chat_completion,
 };
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -69,6 +69,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/ai_assemble_control/index/delete/flag", get(index_delete_flag))
         .route("/jaxrs/ai_assemble_control/index/list/paging/page/size/size", get(index_list_paging_page_size_size))
         .route("/jaxrs/ai_assemble_control/index/sync/to/knowledge", get(index_sync_to_knowledge))
+        .route("/jaxrs/ai_assemble_control/chat/completion", post(chat_completion))
         .layer(Extension(pool))
 }
 

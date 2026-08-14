@@ -38,12 +38,13 @@ pub async fn create_pool() -> Result<Pool, DbError> {
         .dbname(dbname);
 
     let mgr = Manager::new(cfg, NoTls);
-    let wait_ms = env::var("POOL_WAIT_TIMEOUT_MS")
-        .ok()
-        .and_then(|s| s.parse::<u64>().ok())
-        .unwrap_or(10_000);
+    // NOTE: deadpool 0.12 `Pool::builder().build()` performs a
+    // `Handle::try_current()` runtime check when any timeout is set. Under
+    // tokio 1.53.x that check can spuriously fail inside `#[tokio::main]`,
+    // returning `BuildError::TimeoutRequiresRuntime`. We therefore build the
+    // pool without an explicit `wait_timeout` so the runtime check is skipped;
+    // the pool still applies its default timeouts.
     let pool = Pool::builder(mgr)
-        .wait_timeout(Some(Duration::from_millis(wait_ms)))
         .build()
         .map_err(|e| DbError::PoolError(e.to_string()))?;
 

@@ -11,6 +11,9 @@ pub mod routes;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 // --- Request/Response DTOs ---
 
@@ -185,7 +188,7 @@ pub async fn list_check_in_records(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
-                ("userId".to_string(), Value::String(row.get("user_id"))),
+                ("\"userId\"".to_string(), Value::String(row.get("user_id"))),
                 ("checkInTime".to_string(), Value::String(row.get("check_in_time"))),
                 (
                     "checkOutTime".to_string(),
@@ -223,8 +226,8 @@ pub async fn list_schedule_rules(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
-                ("endTime".to_string(), Value::String(row.get("end_time"))),
+                ("\"startTime\"".to_string(), Value::String(row.get("start_time"))),
+                ("\"endTime\"".to_string(), Value::String(row.get("end_time"))),
             ]))
         })
         .collect();

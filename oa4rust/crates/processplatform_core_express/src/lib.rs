@@ -151,3 +151,6 @@ pub fn processplatform_core_express_router(pool: Pool) -> Router {
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::processplatform_core_express_router(pool)
 }
+
+#[cfg(test)]
+mod tests_generated;

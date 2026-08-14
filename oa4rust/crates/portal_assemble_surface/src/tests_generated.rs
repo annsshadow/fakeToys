@@ -1,0 +1,52 @@
+#[cfg(test)]
+mod tests {
+
+    // SKIPPED: get_surface not accessible
+    // SKIPPED: create_surface not accessible
+    // SKIPPED: list_surfaces not accessible
+    // SKIPPED: preview_surface not accessible
+    // SKIPPED: publish_surface not accessible
+    // SKIPPED: surface_list not accessible
+    // SKIPPED: surface_preview not accessible
+    // SKIPPED: surface_publish not accessible
+    // SKIPPED: get_layout not accessible
+    // SKIPPED: list_layouts not accessible
+    // SKIPPED: create_layout not accessible
+    // SKIPPED: save_layout not accessible
+    // SKIPPED: delete_layout not accessible
+    // SKIPPED: dict_list_portal_portalFlag not accessible
+    // SKIPPED: dict_dictFlag_portal_portalFlag not accessible
+    // SKIPPED: dict_dictFlag_portal_portalFlag_data not accessible
+    // SKIPPED: dict_dictFlag_portal_portalFlag_path_data not accessible
+    // SKIPPED: dict_dictFlag_portal_portalFlag_path_data_mockdeletetoget not accessible
+    // SKIPPED: dict_dictFlag_portal_portalFlag_path_data_mockputtopost not accessible
+    // SKIPPED: file_list_portal_portalFlag not accessible
+    // SKIPPED: file_flag not accessible
+    // SKIPPED: file_flag_download not accessible
+    // SKIPPED: file_flag_portal_portalFlag_content not accessible
+    // SKIPPED: file_flag_portal_portalFlag_download not accessible
+    // SKIPPED: page_list_portal_portal not accessible
+    // SKIPPED: page_v2_flag_portal_portalFlag not accessible
+    // SKIPPED: page_v2_flag_portal_portalFlag_mobile not accessible
+    // SKIPPED: page_v2_id not accessible
+    // SKIPPED: page_v2_id_mobile not accessible
+    // SKIPPED: page_flag_portal_portalFlag not accessible
+    // SKIPPED: page_flag_portal_portalFlag_mobile not accessible
+    // SKIPPED: page_id not accessible
+    // SKIPPED: page_id_mobile not accessible
+    // SKIPPED: portal_list not accessible
+    // SKIPPED: portal_list_mobile not accessible
+    // SKIPPED: portal_flag not accessible
+    // SKIPPED: portal_flag_corner_mark not accessible
+    // SKIPPED: portal_id_icon not accessible
+    // SKIPPED: portal_id_icon_base64 not accessible
+    // SKIPPED: script_list_portal_portal not accessible
+    // SKIPPED: script_portal_portal_name_name not accessible
+    // SKIPPED: script_portal_portal_name_name_imported not accessible
+    // SKIPPED: script_id not accessible
+    // SKIPPED: widget_list_portal_portal not accessible
+    // SKIPPED: widget_flag_portal_portalFlag not accessible
+    // SKIPPED: widget_flag_portal_portalFlag_mobile not accessible
+    // SKIPPED: widget_id not accessible
+    // SKIPPED: widget_id_mobile not accessible
+}

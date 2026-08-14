@@ -500,7 +500,7 @@ static ROUTE_DEFS: &[RouteDef] = &[
         path: "/jaxrs/calendar/event",
         desc: "Create a calendar event",
         path_params: [],
-        body_params: ["title", "startTime", "endTime"],
+        body_params: ["title", "\"startTime\"", "\"endTime\""],
     },
     // ── component ───────────────────────────────────────────────────────────
     register_tool! {
@@ -518,7 +518,7 @@ static ROUTE_DEFS: &[RouteDef] = &[
         path: "/jaxrs/file/upload",
         desc: "Upload a file",
         path_params: [],
-        body_params: ["fileName", "contentType", "data"],
+        body_params: ["\"fileName\"", "contentType", "data"],
     },
     register_tool! {
         name: "jaxrs_file_list",
@@ -661,7 +661,7 @@ static ROUTE_DEFS: &[RouteDef] = &[
         path: "/jaxrs/meeting/create",
         desc: "Create a new meeting",
         path_params: [],
-        body_params: ["title", "content", "roomId", "startTime", "endTime", "creator"],
+        body_params: ["title", "content", "roomId", "\"startTime\"", "\"endTime\"", "creator"],
     },
     register_tool! {
         name: "jaxrs_meeting_get_by_id",
@@ -690,17 +690,17 @@ static ROUTE_DEFS: &[RouteDef] = &[
     register_tool! {
         name: "jaxrs_meeting_participant_add",
         method: Post,
-        path: "/jaxrs/meeting/{meetingId}/participant/add",
+        path: "/jaxrs/meeting/{\"meetingId\"}/participant/add",
         desc: "Add a participant to a meeting",
-        path_params: ["meetingId"],
+        path_params: ["\"meetingId\""],
         body_params: ["invitee"],
     },
     register_tool! {
         name: "jaxrs_meeting_participant_list",
         method: Get,
-        path: "/jaxrs/meeting/{meetingId}/participant/list",
+        path: "/jaxrs/meeting/{\"meetingId\"}/participant/list",
         desc: "List meeting participants",
-        path_params: ["meetingId"],
+        path_params: ["\"meetingId\""],
         body_params: [],
     },
     // ── mind ────────────────────────────────────────────────────────────────
@@ -912,7 +912,7 @@ static ROUTE_DEFS: &[RouteDef] = &[
         path: "/jaxrs/meeting/assemble/summary",
         desc: "Get assembled meeting summary",
         path_params: [],
-        body_params: ["meetingId"],
+        body_params: ["\"meetingId\""],
     },
     // ── message_assemble_communicate ────────────────────────────────────────
     register_tool! {
@@ -1396,7 +1396,7 @@ impl ToolBridge {
     /// Build a new ToolBridge from a database pool and session manager.
     /// The internal router carries the same middleware chain as the main app
     /// minus auth (the MCP layer injects sessions directly).
-    pub fn new(pool: Pool, session_manager: SessionManager) -> Self {
+    pub async fn new(pool: Pool, session_manager: SessionManager) -> Self {
         let security_state = SecurityState {
             session_manager,
             rate_limiter: shared::rate_limit::RateLimiter::new(),
@@ -1463,7 +1463,7 @@ impl ToolBridge {
             .merge(jpush_assemble_control::router(pool.clone()))
             .merge(processplatform_core_entity::router(pool.clone()))
             .merge(portal_core_entity::router(pool.clone()))
-            .merge(program_center_core_entity::router(pool.clone()))
+            .merge(program_center_core_entity::router(pool.clone()).await)
             .merge(processplatform_core_express::router(pool.clone()))
             .merge(query_core_entity::router(pool.clone()))
             .merge(general_core_entity::router(pool.clone()))

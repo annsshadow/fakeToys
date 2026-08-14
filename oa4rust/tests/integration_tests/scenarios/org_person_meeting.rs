@@ -7,10 +7,10 @@ use tracing::info;
 use crate::integration_tests::db::TEST_DB;
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Org �?Person �?Meeting cross-crate happy path
+// Org �?Person �?Meeting cross-crate happy path
 //
 // Verifies: admin user can create a meeting room, schedule a meeting,
-// add an attendee, and retrieve the meeting by ID �?all through the
+// add an attendee, and retrieve the meeting by ID �?all through the
 // real HTTP layer with auth middleware active.
 // ──────────────────────────────────────────────────────────────────────────────
 

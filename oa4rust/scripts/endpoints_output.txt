@@ -1,0 +1,93 @@
+﻿扫描 crates/ 目录中的路由定义 ...
+  ai                                                21 条
+  ai_assemble_control                               37 条
+  ai_core_entity                                     3 条
+  attendance                                         9 条
+  attendance_assemble_control                       87 条
+  attendance_core_entity                             8 条
+  auth                                              25 条
+  base                                               3 条
+  bbs                                                9 条
+  bbs_assemble_control                              17 条
+  bbs_core_entity                                   15 条
+  calendar                                          10 条
+  calendar_assemble_control                          4 条
+  calendar_core_entity                              10 条
+  cms_assemble_control                               7 条
+  cms_control                                        2 条
+  cms_core_entity                                    6 条
+  cms_core_express                                   2 条
+  cms_express                                        5 条
+  component                                          3 条
+  component_assemble_control                        10 条
+  component_core_entity                              3 条
+  console                                            7 条
+  control                                           25 条
+  correlation                                        3 条
+  correlation_core_entity                            4 条
+  correlation_core_express                           2 条
+  correlation_service_processing                    20 条
+  express                                           10 条
+  file                                               9 条
+  file_assemble_control                             12 条
+  file_core_entity                                   7 条
+  general_assemble_control                          61 条
+  general_core_entity                               21 条
+  hotpic                                             3 条
+  hotpic_assemble_control                           36 条
+  hotpic_core_entity                                 5 条
+  jpush                                              6 条
+  jpush_assemble_control                            32 条
+  jpush_core_entity                                  5 条
+  meeting                                            9 条
+  meeting_assemble_control                          42 条
+  meeting_core_entity                               11 条
+  message                                            5 条
+  message_assemble_communicate                      58 条
+  message_core_entity                                3 条
+  mind                                              10 条
+  mind_assemble_control                              8 条
+  mind_core_entity                                  10 条
+  organization_assemble_authentication               2 条
+  organization_assemble_control                    105 条
+  organization_assemble_express                      4 条
+  organization_assemble_personal                     2 条
+  organization_core_entity                          18 条
+  organization_core_express                          3 条
+  personal                                          19 条
+  personal_extend                                    4 条
+  portal                                             8 条
+  portal_assemble_designer                          12 条
+  portal_assemble_surface                            8 条
+  portal_core_entity                                 8 条
+  process_bam                                        3 条
+  process_designer                                   7 条
+  process_express                                    3 条
+  process_surface                                    3 条
+  processplatform_assemble_bam                       5 条
+  processplatform_assemble_designer                  6 条
+  processplatform_assemble_surface                   7 条
+  processplatform_core_entity                        6 条
+  processplatform_core_express                       6 条
+  processplatform_service_processing                11 条
+  program_center                                     7 条
+  program_center_core_entity                         5 条
+  program_init                                       3 条
+  query_assemble_designer                            5 条
+  query_assemble_surface                             9 条
+  query_core_entity                                  5 条
+  query_core_express                                 4 条
+  query_express                                      2 条
+  query_service_processing                           4 条
+
+原始端点数: 1014
+去重后端点数: 1012
+  CSV  → D:\WORKSPACE\fakeToys\oa4rust\target\endpoints\endpoints.csv  (1012 行)
+  JSON → D:\WORKSPACE\fakeToys\oa4rust\target\endpoints\endpoints.json  (1012 条)
+  Rust → D:\WORKSPACE\fakeToys\oa4rust\target\endpoints\endpoints.rs  (1012 条)
+  Test → D:\WORKSPACE\fakeToys\oa4rust\tests\behavior_compare_endpoints.rs
+
+方法分布: {'GET': 694, 'POST': 285, 'DELETE': 19, 'PUT': 14}
+ Crate 数: 80
+
+完成。文件位于 D:\WORKSPACE\fakeToys\oa4rust\target\endpoints

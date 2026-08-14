@@ -35,3 +35,15 @@ Thumbs.db
 
 # Git
 *.orig
+
+# rust
+oa4rust/target*/
+oa4rust/.pgdata/
+oa4rust/__pycache__/
+oa4rust/scripts/
+
+# log
+*.log
+
+# secrets
+oa4rust/scripts/.token

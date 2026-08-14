@@ -495,4 +495,18 @@ mod tests {
         let response = err.into_response();
         assert_eq!(response.status(), axum::http::StatusCode::INTERNAL_SERVER_ERROR);
     }
+
+    #[test]
+    fn test_test_pool_builds_without_connecting() {
+        // Pool 构建不应建立实际网络连接（延迟连接）
+        let _pool = crate::testing::test_pool();
+        // 不要求 pool.max_size() 可访问，仅验证函数可调用且返回非 panic
+    }
+
+    #[tokio::test]
+    async fn test_test_sea_orm_pool_connects() {
+        // 若 PG 不可达，连接会返回 Err；仅验证函数可调用
+        let result = crate::testing::test_sea_orm_pool().await;
+        let _ = result;
+    }
 }

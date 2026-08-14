@@ -25,10 +25,10 @@ async fn health_check() {}
 )]
 async fn ai_app_list_app_list_get() {}
 #[utoipa::path(get,
-    path = "/jaxrs/ai/chat/delete/{clueId}",
+    path = "/jaxrs/ai/chat/delete/{\"clueId\"}",
     tag = "ai",
     params(
-        ("clueId" = String, Path, description = "clueId parameter")
+        ("\"clueId\"" = String, Path, description = "\"clueId\" parameter")
     ),
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -39,10 +39,10 @@ async fn ai_app_list_app_list_get() {}
 )]
 async fn ai_chat_delete_clueid_chat_delete_get() {}
 #[utoipa::path(get,
-    path = "/jaxrs/ai/chat/list/completion/{clueId}/paging/{page}/size/{size}",
+    path = "/jaxrs/ai/chat/list/completion/{\"clueId\"}/paging/{page}/size/{size}",
     tag = "ai",
     params(
-        ("clueId" = String, Path, description = "clueId parameter"),
+        ("\"clueId\"" = String, Path, description = "\"clueId\" parameter"),
         ("page" = String, Path, description = "page parameter"),
         ("size" = String, Path, description = "size parameter")
     ),
@@ -4412,10 +4412,10 @@ async fn meeting_schedule_days_days_list_schedule_get() {}
 )]
 async fn meeting_id_get_meeting_get() {}
 #[utoipa::path(get,
-    path = "/jaxrs/meeting/{meetingId}/participant/list",
+    path = "/jaxrs/meeting/{\"meetingId\"}/participant/list",
     tag = "meeting",
     params(
-        ("meetingId" = String, Path, description = "meetingId parameter")
+        ("\"meetingId\"" = String, Path, description = "\"meetingId\" parameter")
     ),
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -4437,10 +4437,10 @@ async fn meeting_meetingid_participant_list_list_participants_get() {}
 )]
 async fn meeting_create_create_meeting_post() {}
 #[utoipa::path(post,
-    path = "/jaxrs/meeting/{meetingId}/participant/add",
+    path = "/jaxrs/meeting/{\"meetingId\"}/participant/add",
     tag = "meeting",
     params(
-        ("meetingId" = String, Path, description = "meetingId parameter")
+        ("\"meetingId\"" = String, Path, description = "\"meetingId\" parameter")
     ),
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -4543,10 +4543,10 @@ async fn meeting_assemble_control_meeting_assemble_control_building_id_building_
 )]
 async fn meeting_assemble_control_meeting_assemble_control_config_system_config_config_system_config_get() {}
 #[utoipa::path(get,
-    path = "/jaxrs/meeting/assemble/control/list/{meetingId}",
+    path = "/jaxrs/meeting/assemble/control/list/{\"meetingId\"}",
     tag = "meeting",
     params(
-        ("meetingId" = String, Path, description = "meetingId parameter")
+        ("\"meetingId\"" = String, Path, description = "\"meetingId\" parameter")
     ),
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -5915,10 +5915,10 @@ async fn message_assemble_communicate_0ed14a_post() {}
 )]
 async fn message_assemble_communicate_message_assemble_communicate_im_msg_revoke_id_im_msg_revoke_id_post() {}
 #[utoipa::path(post,
-    path = "/jaxrs/message/assemble/communicate/im/msg/upload/{conversationId}/type/{type}",
+    path = "/jaxrs/message/assemble/communicate/im/msg/upload/{\"conversationId\"}/type/{type}",
     tag = "message",
     params(
-        ("conversationId" = String, Path, description = "conversationId parameter"),
+        ("\"conversationId\"" = String, Path, description = "\"conversationId\" parameter"),
         ("type" = String, Path, description = "type parameter")
     ),
     responses(
@@ -7007,10 +7007,10 @@ async fn organization_assemble_control_9b0cab_get() {}
 )]
 async fn organization_assemble_control_c652fa_get() {}
 #[utoipa::path(get,
-    path = "/jaxrs/organization/assemble/control/personcard/listPersonalVCf/{idList}",
+    path = "/jaxrs/organization/assemble/control/personcard/listPersonalVCf/{\"idList\"}",
     tag = "organization",
     params(
-        ("idList" = String, Path, description = "idList parameter")
+        ("\"idList\"" = String, Path, description = "\"idList\" parameter")
     ),
     responses(
         (status = 200, description = "Success", body = serde_json::Value),
@@ -7021,10 +7021,10 @@ async fn organization_assemble_control_c652fa_get() {}
 )]
 async fn organization_assemble_control_3b43fc_get() {}
 #[utoipa::path(get,
-    path = "/jaxrs/organization/assemble/control/personcard/listVCf/{idList}",
+    path = "/jaxrs/organization/assemble/control/personcard/listVCf/{\"idList\"}",
     tag = "organization",
     params(
-        ("idList" = String, Path, description = "idList parameter")
+        ("\"idList\"" = String, Path, description = "\"idList\" parameter")
     ),
     responses(
         (status = 200, description = "Success", body = serde_json::Value),

@@ -1,4 +1,4 @@
-[package]
+﻿[package]
 name = "ai_assemble_control"
 version.workspace = true
 edition.workspace = true
@@ -8,7 +8,6 @@ rust-version.workspace = true
 shared = { path = "../shared" }
 axum.workspace = true
 tokio.workspace = true
-sqlx.workspace = true
 deadpool-postgres.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -16,3 +15,4 @@ thiserror.workspace = true
 tracing.workspace = true
 uuid.workspace = true
 tower.workspace = true
+reqwest = { workspace = true, features = ["json", "rustls-tls"] }

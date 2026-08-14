@@ -39,6 +39,9 @@ pub(crate) use shared::middleware::extract_token_from_headers;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 // --- 请求/响应 DTO ---
 
@@ -98,7 +101,7 @@ pub async fn login(
     let row = client
         .query_one(
             "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
-             password_hash, locked, change_password_time, password_expired_time FROM auth_person \
+             password_hash, locked, change_password_time::text, password_expired_time::text FROM auth_person \
              WHERE unique_id = $1 AND deleted_at IS NULL",
             &[&req.credential],
         )

@@ -295,6 +295,9 @@ pub fn portal_assemble_surface_router() -> Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub async fn get_layout(
     pool: Extension<Pool>,

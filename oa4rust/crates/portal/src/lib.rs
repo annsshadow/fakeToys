@@ -10,6 +10,9 @@ pub mod routes;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 #[utoipa::path(
     get,
@@ -25,14 +28,14 @@ mod tests;
     ),
     tag = "portal"
 )]
-pub async fn portal_get(
+pub async fn portal_id(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, description, status, create_time FROM x_portal WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, name, description, status, config, pages, create_time FROM x_portal WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -45,6 +48,8 @@ pub async fn portal_get(
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
                 ("status".to_string(), Value::String(row.get("status"))),
+                ("config".to_string(), Value::String(row.get::<_, Option<String>>("config").unwrap_or_default())),
+                ("pages".to_string(), Value::String(row.get::<_, Option<String>>("pages").unwrap_or_default())),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]));
             Ok(Json(ActionResult::success(result)))

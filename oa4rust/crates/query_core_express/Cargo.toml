@@ -1,4 +1,4 @@
-[package]
+﻿[package]
 name = "query_core_express"
 version.workspace = true
 edition.workspace = true
@@ -8,7 +8,6 @@ rust-version.workspace = true
 shared = { path = "../shared" }
 axum.workspace = true
 tokio.workspace = true
-sqlx.workspace = true
 deadpool-postgres.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -21,4 +20,5 @@ anyhow.workspace = true
 chrono.workspace = true
 md5.workspace = true
 urlencoding.workspace = true
+sqlparser.workspace = true
 tower.workspace = true

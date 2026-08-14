@@ -140,6 +140,9 @@ pub fn query_service_processing_router(pool: Pool) -> Router {
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     query_service_processing_router(pool)

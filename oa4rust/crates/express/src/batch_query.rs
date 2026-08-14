@@ -244,7 +244,7 @@ pub async fn express_unit_list(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 (
-                    "parentId".to_string(),
+                    "\"parentId\"".to_string(),
                     row.get::<_, Option<String>>("parent_id")
                         .map(Value::String)
                         .unwrap_or(Value::Null),

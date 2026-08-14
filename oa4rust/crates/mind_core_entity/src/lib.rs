@@ -71,7 +71,7 @@ pub async fn folder_list(
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 (
-                    "parentId".to_string(),
+                    "\"parentId\"".to_string(),
                     m.parent_id
                         .clone()
                         .map(Value::String)
@@ -282,7 +282,7 @@ pub async fn create_folder(
 
     let id = uuid::Uuid::new_v4().to_string();
     let name = payload.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let parent_id = payload.get("parentId").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let parent_id = payload.get("\"parentId\"").and_then(|v| v.as_str()).map(|s| s.to_string());
     let order_number = payload
         .get("orderNumber")
         .and_then(|v| v.as_i64())
@@ -341,7 +341,7 @@ pub async fn update_folder(
         .map(|s| s.to_string())
         .unwrap_or_else(|| model.name.clone());
     let parent_id = payload
-        .get("parentId")
+        .get("\"parentId\"")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
         .or_else(|| model.parent_id.clone())
@@ -466,14 +466,7 @@ pub async fn create_version(
 
 /// 创建思维导图核心实体路由
 pub fn mind_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
-    let db = std::panic::catch_unwind(|| {
-        tokio::runtime::Handle::current()
-            .block_on(shared::db::create_sea_orm_pool())
-    })
-    .ok()
-    .and_then(|r| r.ok());
-
-    let router = Router::new()
+    Router::new()
         .route("/jaxrs/mind/core/entity/list", get(list))
         .route("/jaxrs/mind/core/entity/folder/list", get(folder_list))
         .route(
@@ -486,16 +479,14 @@ pub fn mind_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route("/jaxrs/mind/core/entity/folder", post(create_folder))
         .route("/jaxrs/mind/core/entity/folder/{id}", post(update_folder))
         .route("/jaxrs/mind/core/entity/folder/{id}", delete(delete_folder))
-        .route("/jaxrs/mind/core/entity/version", post(create_version));
-
-    match db {
-        Some(conn) => router.layer(Extension(conn)),
-        None => router,
-    }
+        .route("/jaxrs/mind/core/entity/version", post(create_version))
 }
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     crate::mind_core_entity_router(pool)

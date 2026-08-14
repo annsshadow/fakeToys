@@ -18,14 +18,14 @@ pub async fn chat_list_paging(
     let offset = (page - 1) * size;
 
     let total_row = client
-        .query_one("SELECT COUNT(*) as cnt FROM X.AI_CLUE", &[])
+        .query_one("SELECT COUNT(*) as cnt FROM x_ai_clue", &[])
         .await
         .map_err(|_| AppError::Internal)?;
     let total: i64 = total_row.get("cnt");
 
     let rows = client
         .query(
-            "SELECT id, title, person, create_time FROM X.AI_CLUE ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+            "SELECT id, title, person, create_time FROM x_ai_clue ORDER BY create_time DESC LIMIT $1::bigint OFFSET $2::bigint",
             &[&size, &offset],
         )
         .await
@@ -65,14 +65,14 @@ pub async fn chat_list_completion_paging(
     let offset = (page - 1) * size;
 
     let total_row = client
-        .query_one("SELECT COUNT(*) as cnt FROM X.AI_COMPLETION WHERE clueId = $1", &[&clue_id])
+        .query_one("SELECT COUNT(*) as cnt FROM x_ai_completion WHERE \"clueId\" = $1", &[&clue_id])
         .await
         .map_err(|_| AppError::Internal)?;
     let total: i64 = total_row.get("cnt");
 
     let rows = client
         .query(
-            "SELECT id, person, clueId, input, content, generateType, create_time FROM X.AI_COMPLETION WHERE clueId = $1 ORDER BY create_time DESC LIMIT $2 OFFSET $3",
+            "SELECT id, person, \"clueId\", input, content, \"generateType\", create_time FROM x_ai_completion WHERE \"clueId\" = $1 ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
             &[&clue_id, &size, &offset],
         )
         .await
@@ -84,10 +84,10 @@ pub async fn chat_list_completion_paging(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("person".to_string(), Value::String(row.get("person"))),
-                ("clueId".to_string(), Value::String(row.get("clueId"))),
+                ("\"clueId\"".to_string(), Value::String(row.get("\"clueId\""))),
                 ("input".to_string(), Value::String(row.get("input"))),
                 ("content".to_string(), Value::String(row.get("content"))),
-                ("generateType".to_string(), Value::String(row.get("generateType"))),
+                ("\"generateType\"".to_string(), Value::String(row.get("\"generateType\""))),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]))
         })
@@ -112,7 +112,7 @@ pub async fn chat_delete(
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let row = client
-        .query_opt("SELECT person FROM X.AI_CLUE WHERE id = $1", &[&clue_id])
+        .query_opt("SELECT person FROM x_ai_clue WHERE id = $1", &[&clue_id])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -125,11 +125,11 @@ pub async fn chat_delete(
 
     let mut tx = client.transaction().await.map_err(|_| AppError::Internal)?;
 
-    tx.execute("DELETE FROM X.AI_COMPLETION WHERE clueId = $1", &[&clue_id])
+    tx.execute("DELETE FROM x_ai_completion WHERE \"clueId\" = $1", &[&clue_id])
         .await
         .map_err(|_| AppError::Internal)?;
 
-    tx.execute("DELETE FROM X.AI_CLUE WHERE id = $1", &[&clue_id])
+    tx.execute("DELETE FROM x_ai_clue WHERE id = $1", &[&clue_id])
         .await
         .map_err(|_| AppError::Internal)?;
 

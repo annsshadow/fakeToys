@@ -10,6 +10,9 @@ pub mod routes;
 
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_generated;
+
 
 pub fn organization_assemble_express_router(pool: Pool) -> axum::Router {
     routes::router(pool)

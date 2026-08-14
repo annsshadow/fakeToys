@@ -169,7 +169,7 @@ mod tests {
             create_time: "2024-01-01T00:00:00Z".to_string(),
         };
         let json = serde_json::to_value(&imp).unwrap();
-        assert_eq!(json["fileName"], "data.csv");
+        assert_eq!(json["\"fileName\""], "data.csv");
         assert_eq!(json["importTime"], "2024-01-01T01:00:00Z");
     }
 }

@@ -18,7 +18,7 @@ pub fn meeting_router(pool: Pool) -> Router {
         .route("/jaxrs/meeting/{id}", get(get_meeting))
         .route("/jaxrs/meeting/list", get(list_meetings))
         .route("/jaxrs/meeting/schedule/days/{days}", get(list_schedule))
-        .route("/jaxrs/meeting/{meetingId}/participant/add", post(add_participant))
-        .route("/jaxrs/meeting/{meetingId}/participant/list", get(list_participants))
+        .route("/jaxrs/meeting/{\"meetingId\"}/participant/add", post(add_participant))
+        .route("/jaxrs/meeting/{\"meetingId\"}/participant/list", get(list_participants))
         .layer(axum::Extension(pool))
 }
