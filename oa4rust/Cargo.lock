@@ -276,6 +276,7 @@ dependencies = [
  "shared",
  "thiserror 1.0.69",
  "tokio",
+ "tower",
  "tracing",
  "urlencoding",
  "uuid",
