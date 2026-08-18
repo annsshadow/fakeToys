@@ -3,17 +3,9 @@ mod tests {
     use crate::hotpic_router;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use deadpool_postgres::Pool;
     use shared::response::ActionResult;
+    use shared::testing::test_pool;
     use tower::ServiceExt;
-
-    fn mock_pool() -> Pool {
-        let mgr = deadpool_postgres::Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        );
-        deadpool_postgres::Pool::builder(mgr).build().unwrap()
-    }
 
     #[test]
     fn test_action_result_success_serialization() {
@@ -26,8 +18,9 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_exists_check_returns_internal_error() {
-        let pool = mock_pool();
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn test_exists_check_with_db() {
+        let pool = test_pool();
         let app = hotpic_router(pool);
 
         let response = app
@@ -42,12 +35,13 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.status(), StatusCode::OK);
     }
 
     #[tokio::test]
-    async fn test_get_by_id_returns_internal_error() {
-        let pool = mock_pool();
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn test_get_by_id_with_db() {
+        let pool = test_pool();
         let app = hotpic_router(pool);
 
         let response = app
@@ -62,12 +56,13 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.status(), StatusCode::OK);
     }
 
     #[tokio::test]
-    async fn test_list_by_application_and_info_id_returns_internal_error() {
-        let pool = mock_pool();
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn test_list_by_application_and_info_id_with_db() {
+        let pool = test_pool();
         let app = hotpic_router(pool);
 
         let response = app
@@ -82,6 +77,6 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(response.status(), StatusCode::OK);
     }
 }
