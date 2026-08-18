@@ -13,25 +13,26 @@ pub fn mock_pool() -> Pool {
     Pool::builder(mgr).max_size(1).build().unwrap()
 }
 
-/// 连接到 Docker PostgreSQL（localhost:5433）的 deadpool_postgres::Pool，用于单元测试。
+/// 连接到 PostgreSQL 的 deadpool_postgres::Pool，用于单元测试。
+/// 默认使用 oa4rust 测试库（postgres://o2server:password@localhost:5432/oa4rust）。
 /// 连接是延迟建立的——pool.get().await 时才实际建连。
 /// 若 PG 不可达，pool 仍可构建，首次 get() 返回错误。
 pub fn test_pool() -> Pool {
     let mut cfg = deadpool_postgres::tokio_postgres::Config::new();
     cfg.host("localhost")
-        .port(5433)
-        .user("postgres")
-        .dbname("postgres");
+        .port(5432)
+        .user("o2server")
+        .password("password")
+        .dbname("oa4rust");
     let mgr = deadpool_postgres::Manager::new(cfg, deadpool_postgres::tokio_postgres::NoTls);
     Pool::builder(mgr).max_size(5).build().unwrap()
 }
 
-/// 连接到 Docker PostgreSQL（localhost:5433）的 sea_orm::DatabaseConnection，
+/// 连接到 PostgreSQL 的 sea_orm::DatabaseConnection，
 /// 用于 Extension<DatabaseConnection> 类型的 handler 测试。
-/// 连接是延迟建立的——await 时才实际建连。
 /// 若 PG 不可达，返回 Err。
 pub async fn test_sea_orm_pool() -> Result<DatabaseConnection, String> {
-    let mut options = ConnectOptions::new("postgres://postgres@localhost:5433/postgres");
+    let mut options = ConnectOptions::new("postgres://o2server:password@localhost:5432/oa4rust");
     options.max_connections(5).sqlx_logging(false);
     Database::connect(options).await.map_err(|e| e.to_string())
 }

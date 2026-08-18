@@ -3,22 +3,13 @@ mod tests {
     use crate::general_assemble_control_router;
     use axum::body::Body;
     use axum::http::{Request, Method, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
+    use shared::testing::test_pool;
     use tower::ServiceExt;
 
-    fn mock_pool() -> Pool {
-        Pool::builder(Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        ))
-        .max_size(1)
-        .build()
-        .unwrap()
-    }
-
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_status_route_accessible() {
-        let app = general_assemble_control_router(mock_pool());
+        let app = general_assemble_control_router(test_pool());
 
         let response = app
             .oneshot(
@@ -33,8 +24,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_status_update_route_accessible() {
-        let app = general_assemble_control_router(mock_pool());
+        let app = general_assemble_control_router(test_pool());
 
         let response = app
             .oneshot(
@@ -51,8 +43,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_permissions_route_accessible() {
-        let app = general_assemble_control_router(mock_pool());
+        let app = general_assemble_control_router(test_pool());
 
         let response = app
             .oneshot(
@@ -67,8 +60,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_status_update_response_shape() {
-        let app = general_assemble_control_router(mock_pool());
+        let app = general_assemble_control_router(test_pool());
 
         let response = app
             .oneshot(
@@ -85,8 +79,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_area_list() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -102,8 +97,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_area_id() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -119,8 +115,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_attendsco() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -136,8 +133,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_ecnet_che() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -153,8 +151,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_excel_res() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -170,8 +169,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_excel_exc() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -187,8 +187,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_generalfi() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -204,8 +205,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_invoice_d() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -221,8 +223,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_invoice_g() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -238,8 +241,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_invoice_l() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -255,8 +259,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_office_ht() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -272,8 +277,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_permissio() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -289,8 +295,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_qrcode_li() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -306,8 +313,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_qrcode_id() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -323,8 +331,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_securityc() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -340,8 +349,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_status() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -357,8 +367,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_upgrade_2() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -374,8 +385,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_get_jaxrs_general_assemble_control_worktime_() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -391,8 +403,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_post_jaxrs_general_assemble_control_area_crea() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -408,8 +421,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_post_jaxrs_general_assemble_control_area_dele() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -425,8 +439,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_post_jaxrs_general_assemble_control_area_upda() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -442,8 +457,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_post_jaxrs_general_assemble_control_attendsco() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -459,8 +475,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_post_jaxrs_general_assemble_control_excel_upl() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -476,8 +493,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_post_jaxrs_general_assemble_control_invoice_c() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -493,8 +511,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_post_jaxrs_general_assemble_control_invoice_d() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -510,8 +529,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_post_jaxrs_general_assemble_control_invoice_u() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -527,8 +547,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_post_jaxrs_general_assemble_control_office_ht() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -544,8 +565,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_post_jaxrs_general_assemble_control_qrcode_de() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -561,8 +583,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_post_jaxrs_general_assemble_control_qrcode_wi() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -578,8 +601,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_post_jaxrs_general_assemble_control_securityc() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
@@ -595,8 +619,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_post_jaxrs_general_assemble_control_status_up() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = crate::general_assemble_control_router(pool);
         let response = app
             .oneshot(
