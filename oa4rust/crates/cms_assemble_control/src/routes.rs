@@ -17,7 +17,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/cms_assemble_control/update/control/config", get(update_control_config))
         .route("/jaxrs/document/{id}/view/count", post(document_id_view_count))
         .route("/jaxrs/commend/list/paging/{docId}", get(commend_list_paging))
-        .route("/jaxrs/queryview/flag/{view}/definition/{queryFlag}", get(queryview_flag_definition))
+        .route("/jaxrs/queryview/flag/{view_flag}/definition/{query_flag}", get(queryview_flag_definition))
         .route("/jaxrs/application/{id}", get(application_id))
         .layer(Extension(pool))
 }
