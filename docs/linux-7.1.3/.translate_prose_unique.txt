@@ -1,0 +1,309 @@
+      - Image width in pixels.
+      - Image height in pixels. If `field` is one of `V4L2_FIELD_TOP`,
+	`V4L2_FIELD_BOTTOM` or `V4L2_FIELD_ALTERNATE` then height
+	refers to the number of lines in the field, otherwise it refers to
+	the number of lines in the frame (which is twice the field height
+	for interlaced formats).
+      - Format code, from enum
+	v4l2_mbus_pixelcode <v4l2-mbus-pixelcode>.
+      - Field order, from enum `v4l2_field`. See
+	field-order for details. Zero for metadata mbus codes.
+      - Image colorspace, from enum `v4l2_colorspace`.
+        Must be set by the driver for subdevices. If the application sets the
+	flag `V4L2_MBUS_FRAMEFMT_SET_CSC` then the application can set this
+	field on the source pad to request a specific colorspace for the media
+	bus data. If the driver cannot handle the requested conversion, it will
+	return another supported colorspace. The driver indicates that colorspace
+	conversion is supported by setting the flag
+	V4L2_SUBDEV_MBUS_CODE_CSC_COLORSPACE in the corresponding struct
+	`v4l2_subdev_mbus_code_enum` during enumeration.
+	See v4l2-subdev-mbus-code-flags. Zero for metadata mbus codes.
+      - (anonymous)
+      - Y'CbCr encoding, from enum `v4l2_ycbcr_encoding`.
+        This information supplements the `colorspace` and must be set by
+	the driver for subdevices, see colorspaces. If the application
+	sets the flag `V4L2_MBUS_FRAMEFMT_SET_CSC` then the application can set
+	this field on a source pad to request a specific Y'CbCr encoding
+	for the media bus data. If the driver cannot handle the requested
+	conversion, it will return another supported encoding.
+	This field is ignored for HSV media bus formats. The driver indicates
+	that ycbcr_enc conversion is supported by setting the flag
+	V4L2_SUBDEV_MBUS_CODE_CSC_YCBCR_ENC in the corresponding struct
+      - HSV encoding, from enum `v4l2_hsv_encoding`.
+	this field on a source pad to request a specific HSV encoding
+	This field is ignored for Y'CbCr media bus formats. The driver indicates
+	that hsv_enc conversion is supported by setting the flag
+	V4L2_SUBDEV_MBUS_CODE_CSC_HSV_ENC in the corresponding struct
+      - Quantization range, from enum `v4l2_quantization`.
+	this field on a source pad to request a specific quantization
+	conversion, it will return another supported quantization.
+	The driver indicates that quantization conversion is supported by
+	setting the flag V4L2_SUBDEV_MBUS_CODE_CSC_QUANTIZATION in the
+	corresponding struct `v4l2_subdev_mbus_code_enum`
+	during enumeration. See v4l2-subdev-mbus-code-flags. Zero for
+	metadata mbus codes.
+      - Transfer function, from enum `v4l2_xfer_func`.
+	this field on a source pad to request a specific transfer
+	function for the media bus data. If the driver cannot handle the requested
+	conversion, it will return another supported transfer function.
+	The driver indicates that the transfer function conversion is supported by
+	setting the flag V4L2_SUBDEV_MBUS_CODE_CSC_XFER_FUNC in the
+      - flags See:  :ref:v4l2-mbus-framefmt-flags
+      - `reserved`\ [^10^]
+      - Reserved for future extensions. Applications and drivers must set
+	the array to zero.
+      - Set by the application. It is only used for source pads and is
+	ignored for sink pads. If set, then request the subdevice to do
+	colorspace conversion from the received colorspace to the requested
+	colorspace values. If the colorimetry field (`colorspace`, `xfer_func`,
+	`ycbcr_enc`, `hsv_enc` or `quantization`) is set to `*_DEFAULT`,
+	then that colorimetry setting will remain unchanged from what was received.
+	So in order to change the quantization, only the `quantization` field shall
+	be set to non default value (`V4L2_QUANTIZATION_FULL_RANGE` or
+	`V4L2_QUANTIZATION_LIM_RANGE`) and all other colorimetry fields shall
+	be set to `*_DEFAULT`.
+	To check which conversions are supported by the hardware for the current
+	media bus frame format, see v4l2-subdev-mbus-code-flags.
+The media bus pixel codes describe image formats as flowing over
+physical buses (both between separate physical components and inside
+SoC devices). This should not be confused with the V4L2 pixel formats
+that describe, using four character codes, image formats as stored in
+memory.
+While there is a relationship between image formats on buses and image
+formats in memory (a raw Bayer image won't be magically converted to
+JPEG just by storing it to memory), there is no one-to-one
+correspondence between them.
+While the media bus pixel codes are named based on how pixels are
+transmitted on parallel buses, serial buses do not define separate
+codes. By convention, they use the codes that transfer a sample on a
+single clock cycle, and whose bit orders from LSB to MSB correspond to
+the order in which colour components are transmitted on the serial bus.
+For instance, the MIPI CSI-2 24-bit RGB (RGB888) format uses the
+MEDIA_BUS_FMT_RGB888_1X24 media bus code because CSI-2 transmits the
+blue colour component first, followed by green and red, and
+MEDIA_BUS_FMT_RGB888_1X24 defines the first bit of blue at bit 0.
+While used for 24-bit RGB data on parallel buses, the
+MEDIA_BUS_FMT_RGB888_3X8 or MEDIA_BUS_FMT_BGR888_1X24 codes must not be
+used for CSI-2.
+Those formats transfer pixel data as red, green and blue components. The
+format code is made of the following information.
+- The red, green and blue components order code, as encoded in a pixel
+   sample. Possible values are RGB and BGR.
+- The number of bits per component, for each component. The values can
+   be different for all components. Common values are 555 and 565.
+- The number of bus samples per pixel. Pixels that are wider than the
+   bus width must be transferred in multiple samples. Common values are
+   1 and 2.
+- The bus width.
+- For formats where the total number of bits per pixel is smaller than
+   the number of bus samples per pixel times the bus width, a padding
+   value stating if the bytes are padded in their most high order bits
+   (PADHI) or low order bits (PADLO). A "C" prefix is used for
+   component-wise padding in the most high order bits (CPADHI) or low
+   order bits (CPADLO) of each separate component.
+- For formats where the number of bus samples per pixel is larger than
+   1, an endianness value stating if the pixel is transferred MSB first
+   (BE) or LSB first (LE).
+For instance, a format where pixels are encoded as 5-bits red, 5-bits
+green and 5-bit blue values padded on the high bit, transferred as 2
+8-bit samples per pixel with the most significant bits (padding, red and
+half of the green value) transferred first will be named
+The following tables list existing packed RGB formats.
+      - Code
+      - `31` Data organization
+      - Bit
+      - MEDIA_BUS_FMT_RGB666_1X30-CPADLO
+      - MEDIA_BUS_FMT_RGB888_1X30-CPADLO
+      - a\ `7`
+      - a\ `6`
+      - a\ `5`
+      - a\ `4`
+      - a\ `3`
+      - a\ `2`
+      - a\ `1`
+      - a\ `0`
+    \endgroup
+The following table list existing packed 36bit wide RGB formats.
+      - `35` Data organization
+The following table list existing packed 48bit wide RGB formats.
+The following table list existing packed 60bit wide RGB formats.
+On LVDS buses, usually each sample is transferred serialized in seven
+time slots per pixel clock, on three (18-bit) or four (24-bit) or five (30-bit)
+differential data pairs at the same time. The remaining bits are used
+for control signals as defined by SPWG/PSWG/VESA or JEIDA standards. The
+24-bit RGB format serialized in seven time slots on four lanes using
+JEIDA defined bit mapping will be named
+    \small
+      - `4` Data organization
+      - Timeslot
+      - Lane
+      - d
+    \normalsize
+   sample. The possible values are shown in bayer-patterns.
+- The number of bits per pixel component. All components are
+   transferred on the same number of bits. Common values are 8, 10 and
+- The compression (optional). If the pixel components are ALAW- or
+   DPCM-compressed, a mention of the compression scheme and the number
+   of bits per compressed pixel component.
+   (PADHI) or low order bits (PADLO).
+For instance, a format with uncompressed 10-bit Bayer components
+arranged in a red, green, green, blue pattern transferred as 2 8-bit
+samples per pixel with the least significant bits transferred first will
+be named `MEDIA_BUS_FMT_SRGGB10_2X8_PADHI_LE`.
+    :alt:    bayer.svg
+    :align:  center
+    Bayer Patterns
+The following table lists existing packed Bayer formats. The data
+organization is given as an example for the first pixel only.
+      - `19` Data organization
+Those data formats transfer pixel data as (possibly downsampled) Y, U
+and V components. Some formats include dummy bits in some of their
+samples and are collectively referred to as "YDYC" (Y-Dummy-Y-Chroma)
+formats. One cannot rely on the values of these dummy bits as those are
+undefined.
+The format code is made of the following information.
+- The Y, U and V components order code, as transferred on the bus.
+   Possible values are YUYV, UYVY, YVYU and VYUY for formats with no
+   dummy bit, and YDYUYDYV, YDYVYDYU, YUYDYVYD and YVYDYUYD for YDYC
+   formats.
+   0.5 (encoded as 0_5; in this case two pixels are transferred per bus
+   sample), 1, 1.5 (encoded as 1_5) and 2.
+- The bus width. When the bus width is larger than the number of bits
+   per pixel component, several components are packed in a single bus
+   sample. The components are ordered as specified by the order code,
+   with components on the left of the code transferred in the high order
+   bits. Common values are 8 and 16.
+For instance, a format where pixels are encoded as 8-bit YUV values
+downsampled to 4:2:2 and transferred as 2 8-bit bus samples per pixel in
+the U, Y, V, Y order will be named `MEDIA_BUS_FMT_UYVY8_2X8`.
+v4l2-mbus-pixelcode-yuv8 lists existing packed YUV formats and
+describes the organization of each pixel data in each sample. When a
+format pattern is split across multiple samples each of the samples in
+the pattern is described.
+The role of each bit transferred over the bus is identified by one of
+the following codes.
+- y\ `x` for luma component bit number x
+- u\ `x` for blue chroma component bit number x
+- v\ `x` for red chroma component bit number x
+- a\ `x` for alpha component bit number x
+- for non-available bits (for positions higher than the bus width)
+- d for dummy bits
+      - y\ `7`
+      - y\ `6`
+      - y\ `5`
+      - y\ `4`
+      - y\ `3`
+      - y\ `2`
+      - y\ `1`
+      - y\ `0`
+      - u\ `7`
+      - u\ `6`
+      - u\ `5`
+      - u\ `4`
+      - u\ `3`
+      - u\ `2`
+      - u\ `1`
+      - u\ `0`
+      - v\ `7`
+      - v\ `6`
+      - v\ `5`
+      - v\ `4`
+      - v\ `3`
+      - v\ `2`
+      - v\ `1`
+      - v\ `0`
+      - y\ `9`
+      - y\ `8`
+      - u\ `9`
+      - u\ `8`
+      - v\ `9`
+      - v\ `8`
+      - y\ `11`
+      - y\ `10`
+      - u\ `11`
+      - u\ `10`
+      - v\ `11`
+      - v\ `10`
+      - y\ `13`
+      - y\ `12`
+      - y\ `15`
+      - y\ `14`
+	\endgroup
+The following table list existing packed 36bit wide YUV formats.
+The following table list existing packed 48bit wide YUV formats.
+      - u\ `15`
+      - u\ `14`
+      - u\ `13`
+      - u\ `12`
+      - v\ `15`
+      - v\ `14`
+      - v\ `13`
+      - v\ `12`
+Those formats transfer pixel data as RGB values in a
+cylindrical-coordinate system using Hue-Saturation-Value or
+Hue-Saturation-Lightness components. The format code is made of the
+following information.
+- The hue, saturation, value or lightness and optional alpha components
+   order code, as encoded in a pixel sample. The only currently
+   supported value is AHSV.
+   be different for all components. The only currently supported value
+   is 8888.
+   bus width must be transferred in multiple samples. The only currently
+   supported value is 1.
+The following table lists existing HSV/HSL formats.
+      - h\ `7`
+      - h\ `6`
+      - h\ `5`
+      - h\ `4`
+      - h\ `3`
+      - h\ `2`
+      - h\ `1`
+      - h\ `0`
+      - s\ `7`
+      - s\ `6`
+      - s\ `5`
+      - s\ `4`
+      - s\ `3`
+      - s\ `2`
+      - s\ `1`
+      - s\ `0`
+Those data formats consist of an ordered sequence of 8-bit bytes
+obtained from JPEG compression process. Additionally to the `_JPEG`
+postfix the format code is made of the following information.
+- The number of bus samples per entropy encoded byte.
+For instance, for a JPEG baseline process and an 8-bit bus width the
+format will be named `MEDIA_BUS_FMT_JPEG_1X8`.
+The following table lists existing JPEG compressed formats.
+      - Remarks
+      - Besides of its usage for the parallel bus this format is
+	recommended for transmission of JPEG data over MIPI CSI bus using
+	the User Defined 8-bit Data types.
+This section lists complex data formats that are either vendor or device
+specific.
+The following table lists the existing vendor and device specific
+formats.
+      - Comments
+      - Interleaved raw UYVY and JPEG image format with embedded meta-data
+	used by Samsung S3C73MX camera sensors.
+This section lists all metadata formats.
+The following table lists the existing metadata formats.
+      - This format should be used when the same driver handles
+	both sides of the link and the bus format is a fixed
+	metadata format that is not configurable from userspace.
+	Width and height will be set to 0 for this format.
+Generic serial metadata formats are used on serial buses where the actual data
+content is more or less device specific but the data is transmitted and received
+by multiple devices that do not process the data in any way, simply writing
+it to system memory for processing in software at the end of the pipeline.
+"b" in an array cell signifies a byte of data, followed by the number of the bit
+and finally the bit number in subscript. "x" indicates a padding bit.
+      - `23` Data organization within bus **Data Unit**
+      - b0\ `7`
+      - b0\ `6`
+      - b0\ `5`
+      - b0\ `4`
+      - b0\ `3`
+      - b0\ `2`
+      - b0\ `1`
+      - b0\ `0`
+      - x

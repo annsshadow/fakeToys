@@ -1,0 +1,123 @@
+{
+  "reviewer": "ce-adversarial-document-reviewer",
+  "findings": [
+    {
+      "title": "批量查询无认证暴露PII数据",
+      "severity": "P1",
+      "section": "Requirements R17-R24 / Key Technical Decisions / Implementation Unit 7",
+      "why_it_matters": "R24声明所有批量查询端点无需认证，R17-R23返回完整Person对象（含mobile、email等PII）。计划仅以'与Java一致'和'前端内部调用场景'为由继承此设计，但未验证Java端是否依赖网络层隔离（如内网部署、防火墙规则）。如果Rust端部署环境暴露于公网或更大信任域，任何人可枚举全量用户身份信息，构成GDPR/个人信息保护法合规风险。计划的风险表将'无认证'仅关联到'并发安全'（UNIQUE约束），完全未触及数据暴露面。",
+      "autofix_class": "manual",
+      "finding_type": "omission",
+      "suggested_fix": null,
+      "confidence": 75,
+      "evidence": [
+        "R24. 以上批量查询端点无需认证（express 模块特性，与 Java 一致）",
+        "R17. 批量查询人员（POST /jaxrs/express/person/list）：接受 {\"ids\":[\"id1\",\"id2\"]} 或 {\"identities\":[\"id1\",\"id2\"]}，返回完整 Person 对象列表",
+        "Key Technical Decisions: 批量查询无认证：express 模块批量查询与 Java 一致，不需要认证（前端内部调用场景）",
+        "Risk table: 批量查询端点无认证时并发安全 | Low | Medium | 数据库 UNIQUE 约束 + 应用层预检查，并发时由 DB 约束兜底"
+      ]
+    },
+    {
+      "title": "LDAP静默回退缺乏安全降级感知",
+      "severity": "P1",
+      "section": "Requirements R13-R15 / Key Technical Decisions / Implementation Unit 8",
+      "why_it_matters": "R14和Key Technical Decisions声明LDAP认证失败时'静默回退数据库密码校验'。如果LDAP配置错误（如LDAP_URL拼写错误、证书过期、网络不通），所有用户认证将静默降级为仅数据库校验，完全绕过LDAP安全策略。由于是'静默'回退，运维人员无法感知安全控制已失效。此外，计划未说明LDAP认证成功但本地auth_person表无对应用户时的处理逻辑——是拒绝登录还是自动创建用户？Scope Boundaries声明'不实现LDAP用户自动同步'，但认证通过≠用户存在，此边界情况未覆盖。",
+      "autofix_class": "manual",
+      "finding_type": "omission",
+      "suggested_fix": null,
+      "confidence": 75,
+      "evidence": [
+        "R14. 登录时若 LDAP_ENABLE=true 且 LDAP 认证成功，直接签发会话；LDAP 认证失败时回退到数据库密码校验",
+        "Key Technical Decisions: LDAP 可选集成：通过环境变量开关控制，默认关闭，认证失败时静默回退数据库密码，不阻塞主流程",
+        "Scope Boundaries: LDAP 仅用于认证，不实现 LDAP 用户自动同步",
+        "U8 Approach: LDAP 认证失败时回退到数据库密码校验"
+      ]
+    },
+    {
+      "title": "U1与U2双因素登录模式矛盾",
+      "severity": "P1",
+      "section": "Implementation Unit 1 / Implementation Unit 2",
+      "why_it_matters": "U1的Approach描述单请求模式：'handler 接收 credential、password、code 三个字段，先验证第一因子（复用现有 login 逻辑），再验证验证码'。U2的Approach描述两阶段模式：'第一阶段 POST /jaxrs/authentication/two/factory/login 发送 credential+password → 发送短信验证码 → 返回 {value: true}；第二阶段 POST /jaxrs/authentication/code 发送 credential+codeAnswer → 签发 token'。两者都是'双因素登录'但实现模式完全不同。Key Technical Decisions明确选择'两阶段拆分'，但U1仍保留旧模式描述。实施者无法确定应构建哪个版本，或两者都构建（冗余）。",
+      "autofix_class": "gated_auto",
+      "finding_type": "error",
+      "suggested_fix": "合并U1和U2中双因素登录的描述，统一为两阶段模式。U1的Approach中删除'handler 接收 credential、password、code 三个字段'的单请求描述，仅保留U2的两阶段流程作为唯一实现路径。",
+      "confidence": 75,
+      "evidence": [
+        "U1 Approach: 双因素登录：在已有短信验证码流程基础上，第一因子为 credential+password，第二因子为短信验证码。handler 接收 credential、password、code 三个字段，先验证第一因子（复用现有 login 逻辑），再验证验证码（复用 CodeStore）",
+        "U2 Approach: 第一阶段：POST /jaxrs/authentication/two/factory/login 发送 credential+password → 验证通过 → 发送短信验证码 → 返回 {value: true, passwordExpired: false}。第二阶段：POST /jaxrs/authentication/code 发送 credential+codeAnswer → 验证验证码 → 签发 token",
+        "Key Technical Decisions: 双因素登录两阶段拆分：Java 先发码（value=true）再验码（codeLogin），Rust 当前单请求模式不符合前端契约，必须拆分为两个独立端点"
+      ]
+    },
+    {
+      "title": "Empower CRUD缺少授权内容校验",
+      "severity": "P1",
+      "section": "Requirements R25-R28 / Implementation Unit 9",
+      "why_it_matters": "R28声明'管理员可管理他人授权，普通用户只能管理自身授权'，但仅约束了'谁能管理谁的授权'，未约束'授权内容本身的合法性'。如果普通用户通过POST /jaxrs/person/empower创建授权时，请求体包含超出自身权限范围的目标角色或资源，系统是否校验？计划未定义empower实体的schema约束、未描述授权内容验证规则、未说明是否存在权限提升（privilege escalation）防护。仅依赖auth_role的is_admin二元判断，无法防止授权内容层面的越权。",
+      "autofix_class": "manual",
+      "finding_type": "omission",
+      "suggested_fix": null,
+      "confidence": 75,
+      "evidence": [
+        "R28. 权限控制：管理员可管理他人授权，普通用户只能管理自身授权",
+        "U9 Approach: 管理员可管理他人授权，普通用户只能管理自身授权。复用 existing auth_role 角色体系",
+        "R25. 补全授权管理 CRUD：POST /jaxrs/person/empower（创建授权）"
+      ]
+    },
+    {
+      "title": "safe_logout广播机制未定义",
+      "severity": "P2",
+      "section": "Implementation Unit 3 / System-Wide Impact",
+      "why_it_matters": "U3 Approach声明'广播机制：使用共享状态或事件总线，确保多实例间同步'，但未指定具体技术实现。如果采用Redis pub/sub，则引入新的基础设施依赖（计划未列出）；如果采用数据库轮询，则性能和实时性存疑；如果采用消息队列，则复杂度显著增加。此外，'单实例可跳过广播'——但如何检测当前是单实例还是多实例？检测逻辑缺失。Open Questions中'safe_logout 并发注销的 SessionManager 锁粒度'被标记为Deferred，但广播机制的选择直接影响锁粒度设计，两者不应分离决策。",
+      "autofix_class": "manual",
+      "finding_type": "omission",
+      "suggested_fix": null,
+      "confidence": 75,
+      "evidence": [
+        "U3 Approach: 广播机制：使用共享状态或事件总线，确保多实例间同步",
+        "U3 Approach: 单实例场景下：仅执行本地 session 移除，不广播（单实例可跳过广播）",
+        "Deferred to Implementation: safe_logout 并发注销的 SessionManager 锁粒度：RwLock 是否足够，大量 session 批量删除的性能风险"
+      ]
+    },
+    {
+      "title": "电子签名存储方式决策矛盾",
+      "severity": "P2",
+      "section": "Key Technical Decisions / Open Questions (Deferred)",
+      "why_it_matters": "Key Technical Decisions明确声明'电子签名和头像 BLOB 存储：与 Java 一致使用 PostgreSQL BLOB（base64 字符串），不改存文件系统'。但Deferred to Implementation中又列出'电子签名的存储方式：本地文件系统 vs 对象存储，需评估现有文件存储模块能力'。决策已定但实现阶段又要重新评估，说明决策缺乏充分依据。如果评估后选择文件系统或对象存储，则Key Technical Decisions需要推翻，影响范围包括U4的Approach和R7的实现。",
+      "autofix_class": "gated_auto",
+      "finding_type": "error",
+      "suggested_fix": "如果决策确为PostgreSQL BLOB，则删除Deferred中的'电子签名的存储方式'条目，避免实施者困惑。如果仍需评估，则Key Technical Decisions中应改为'暂定PostgreSQL BLOB，实现阶段确认'。",
+      "confidence": 75,
+      "evidence": [
+        "Key Technical Decisions: 电子签名和头像 BLOB 存储：与 Java 一致使用 PostgreSQL BLOB（base64 字符串），不改存文件系统",
+        "Deferred to Implementation: 电子签名的存储方式：本地文件系统 vs 对象存储，需评估现有文件存储模块能力"
+      ]
+    },
+    {
+      "title": "100%对齐目标与延期项目矛盾",
+      "severity": "P2",
+      "section": "Summary / Scope Boundaries (Deferred for later)",
+      "why_it_matters": "Summary声明目标是'使 oa4rust 在业务逻辑和端点覆盖上达到与 Java OA 100% 对齐'，但Deferred for later列表包含'多级递归组织导航'、'LDAP用户自动同步'、'缓存层性能优化'、'流程平台深度功能'、'SQLx完全移除'。其中递归组织导航和缓存层是功能性差距（影响前端联调），流程平台深度功能是端点覆盖差距。这些不是'锦上添花'，而是Java端存在但Rust端缺失的功能。'100%对齐'的承诺与明确的延期项目形成矛盾，可能导致利益相关方对交付预期产生误解。",
+      "autofix_class": "gated_auto",
+      "finding_type": "error",
+      "suggested_fix": "将Summary中的'100%对齐'修改为更精确的表述，如'在认证、个人模块、授权管理、批量查询等核心业务逻辑上达到与Java OA对齐，递归组织导航、缓存层、流程平台等功能按后续计划推进'。或在Summary中明确'100%对齐'仅覆盖本次scope内的端点。",
+      "confidence": 75,
+      "evidence": [
+        "Summary: 使 oa4rust 在业务逻辑和端点覆盖上达到与 Java OA 100% 对齐",
+        "Deferred for later: 多级递归组织导航（unit sub-nested/sup-nested 全量递归）、LDAP 用户自动同步和增量更新、缓存层性能优化、流程平台深度功能（processplatform 复杂编排端点）、SQLx 完全移除（SeaORM 为默认路径）"
+      ]
+    }
+  ],
+  "residual_risks": [
+    "批量查询端点无ID列表长度限制，攻击者可构造包含数百万ID的请求导致数据库查询膨胀（DoS向量）。计划未提及任何分页、限流或最大ID数约束。",
+    "双因素登录第一阶段（发送验证码）未明确速率限制策略。虽然AUTH_RATE_LIMIT_PREFIXES可能包含two_factor，但计划未明确说明。如果缺失，可被用于短信轰炸或验证码枚举。",
+    "check_token端点权限级别为Authenticated（U1 Approach所述），但R3要求返回distinguishedName。已认证用户可提交任意token查询其他用户的distinguishedName，构成token枚举向量——尽管U1 test scenario提到'不返回authenticated=false防止会话枚举'，但返回distinguishedName本身已泄露信息。",
+    "LDAP simple bind使用明文凭证（LDAP_BIND_USER/LDAP_BIND_PWD）通过环境变量传递。如果环境变量泄露（如日志、错误报告、/proc/self/enemy），LDAP管理凭证暴露。计划未提及凭证加密存储或运行时注入方案。"
+  ],
+  "deferred_questions": [
+    "如果LDAP认证成功但auth_person表无对应用户记录，系统行为是什么？拒绝登录（用户体验差）还是自动创建用户（与'不实现LDAP用户自动同步'矛盾）？",
+    "批量查询端点的ID列表最大长度是多少？是否需要分页或流式返回？",
+    "safe_logout多实例广播的具体技术选型是什么？Redis pub/sub、PostgreSQL LISTEN/NOTIFY、还是其他机制？该选型是否引入新的基础设施依赖？",
+    "empower实体的完整schema是什么？授权内容验证规则（如：不能授权超出自身权限的角色）在哪个层次实施——handler层、service层、还是数据库约束？",
+    "Java端express模块批量查询'无认证'是否依赖网络层隔离（如仅监听内网接口、前置防火墙）？Rust端部署架构是否具备同等隔离？"
+  ]
+}

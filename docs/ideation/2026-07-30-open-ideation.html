@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ideation: fakeToys — 惊喜模式探索</title>
+  <style>
+    /* ── Reset & base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #fafaf9;
+      --surface: #ffffff;
+      --surface-alt: #f5f5f4;
+      --text: #1c1917;
+      --text-secondary: #78716c;
+      --text-muted: #a8a29e;
+      --border: #e7e5e4;
+      --border-strong: #d6d3d1;
+      --accent: #0d9488;
+      --accent-soft: #ccfbf1;
+      --accent-text: #0f766e;
+      --warn: #b45309;
+      --warn-soft: #fef3c7;
+      --warn-text: #92400e;
+      --info: #1d4ed8;
+      --info-soft: #dbeafe;
+      --info-text: #1e40af;
+      --danger: #b91c1c;
+      --danger-soft: #fee2e2;
+      --danger-text: #991b1b;
+      --success: #15803d;
+      --success-soft: #dcfce7;
+      --success-text: #166534;
+      --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'Noto Sans SC', sans-serif;
+      --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+      --measure: 72ch;
+      --max-width: 920px;
+      --radius: 8px;
+      --radius-sm: 4px;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1917;
+        --surface: #292524;
+        --surface-alt: #44403c;
+        --text: #fafaf9;
+        --text-secondary: #a8a29e;
+        --text-muted: #78716c;
+        --border: #44403c;
+        --border-strong: #57534e;
+        --accent-soft: #042f2e;
+        --accent-text: #5eead4;
+        --warn-soft: #451a03;
+        --warn-text: #fcd34d;
+        --info-soft: #172554;
+        --info-text: #93c5fd;
+        --danger-soft: #450a0a;
+        --danger-text: #fca5a5;
+        --success-soft: #052e16;
+        --success-text: #86efac;
+      }
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { font-weight: 600; color: inherit; }
+
+    /* ── Layout ── */
+    .page { max-width: var(--max-width); margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+    @media (max-width: 640px) { .page { padding: 1rem; } }
+
+    /* ── Header ── */
+    .doc-header { margin-bottom: 2.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--border); }
+    .doc-header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.75rem; }
+    .meta-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem; }
+    .meta-item { display: flex; flex-direction: column; gap: 0.15rem; }
+    .meta-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 600; }
+    .meta-value { font-size: 0.85rem; color: var(--text-secondary); }
+    .meta-value code { font-family: var(--font-mono); font-size: 0.8rem; background: var(--surface-alt); padding: 0.1em 0.35em; border-radius: var(--radius-sm); }
+
+    /* ── Stats strip ── */
+    .stats-strip { display: flex; gap: 1rem; margin: 1.5rem 0 2rem; flex-wrap: wrap; }
+    .stat-chip {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.4rem 0.85rem; border-radius: 999px;
+      font-size: 0.8rem; font-weight: 500;
+      border: 1px solid var(--border);
+    }
+    .stat-chip .stat-num { font-weight: 700; font-size: 1rem; }
+    .stat-chip.ideas { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent); }
+    .stat-chip.survivors { background: var(--success-soft); color: var(--success-text); border-color: var(--success); }
+    .stat-chip.cut { background: var(--warn-soft); color: var(--warn-text); border-color: var(--warn); }
+    .stat-chip.frames { background: var(--info-soft); color: var(--info-text); border-color: var(--info); }
+
+    /* ── Section headings ── */
+    .section { margin-bottom: 2.5rem; }
+    .section h2 {
+      font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;
+      padding-bottom: 0.4rem; border-bottom: 2px solid var(--border);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .section h2 .section-icon { font-size: 1rem; }
+
+    /* ── Grounding context ── */
+    .grounding { font-size: 0.88rem; color: var(--text-secondary); line-height: 1.6; }
+    .grounding p { margin-bottom: 0.6rem; }
+    .grounding ul { margin: 0.4rem 0 0.6rem 1.2rem; }
+    .grounding li { margin-bottom: 0.25rem; }
+    .grounding code { font-family: var(--font-mono); font-size: 0.78rem; background: var(--surface-alt); padding: 0.1em 0.3em; border-radius: var(--radius-sm); }
+    .grounding strong { color: var(--text); }
+
+    /* ── Topic axes ── */
+    .axes-note { font-size: 0.88rem; color: var(--text-muted); font-style: italic; }
+
+    /* ── Jump list ── */
+    .jump-list { background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 0.85rem 1.1rem; margin-bottom: 1.5rem; }
+    .jump-list-title { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); font-weight: 600; margin-bottom: 0.5rem; }
+    .jump-list ol { list-style: none; display: flex; flex-direction: column; gap: 0.3rem; }
+    .jump-list li a { font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; }
+    .jump-list li a:hover { color: var(--accent); text-decoration: none; }
+    .jump-chip { font-size: 0.7rem; font-weight: 600; padding: 0.1em 0.4em; border-radius: 999px; flex-shrink: 0; }
+    .jump-chip.high { background: var(--success-soft); color: var(--success-text); }
+    .jump-chip.medium { background: var(--info-soft); color: var(--info-text); }
+
+    /* ── Idea cards ── */
+    .idea-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.4rem 1.5rem; margin-bottom: 1.2rem;
+      scroll-margin-top: 1rem;
+    }
+    .idea-card h3 { font-size: 1.15rem; font-weight: 700; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.6rem; }
+    .idea-card h3 .idea-id { font-size: 0.75rem; font-weight: 600; color: var(--accent); font-family: var(--font-mono); }
+    .idea-card .card-meta { display: flex; gap: 0.5rem; margin-bottom: 0.9rem; flex-wrap: wrap; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 0.3rem;
+      padding: 0.2rem 0.6rem; border-radius: 999px;
+      font-size: 0.72rem; font-weight: 600;
+      border: 1px solid transparent;
+    }
+    .chip.confidence-high { background: var(--success-soft); color: var(--success-text); border-color: var(--success); }
+    .chip.confidence-medium { background: var(--info-soft); color: var(--info-text); border-color: var(--info); }
+    .chip.complexity-low { background: var(--surface-alt); color: var(--text-secondary); border-color: var(--border-strong); }
+    .chip.complexity-medium { background: var(--warn-soft); color: var(--warn-text); border-color: var(--warn); }
+    .chip.complexity-high { background: var(--danger-soft); color: var(--danger-text); border-color: var(--danger); }
+    .chip.frame { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent); }
+    .card-section { margin-bottom: 0.7rem; }
+    .card-section:last-child { margin-bottom: 0; }
+    .card-section-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); font-weight: 600; margin-bottom: 0.2rem; }
+    .card-section p { font-size: 0.9rem; line-height: 1.6; }
+    .card-section code { font-family: var(--font-mono); font-size: 0.78rem; background: var(--surface-alt); padding: 0.1em 0.3em; border-radius: var(--radius-sm); }
+    .basis-tag { font-weight: 700; }
+    .basis-tag.direct { color: var(--success-text); }
+    .basis-tag.reasoned { color: var(--info-text); }
+    .basis-tag.external { color: var(--warn-text); }
+    .meeting-test { border-left: 3px solid var(--accent); padding-left: 0.7rem; font-size: 0.85rem; color: var(--text-secondary); font-style: italic; }
+    .combines-with { font-size: 0.82rem; color: var(--text-muted); }
+    .combines-with code { font-size: 0.75rem; }
+
+    /* ── Diagrams ── */
+    .diagram-wrap { margin: 1rem 0; padding: 1rem; background: var(--surface-alt); border-radius: var(--radius); border: 1px solid var(--border); overflow-x: auto; }
+    .diagram-wrap svg { display: block; margin: 0 auto; max-width: 100%; }
+    .diagram-caption { font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 0.5rem; font-style: italic; }
+
+    /* ── Rejection table ── */
+    .rejection-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .rejection-table th { text-align: left; padding: 0.5rem 0.7rem; background: var(--surface-alt); border-bottom: 2px solid var(--border-strong); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+    .rejection-table td { padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .rejection-table tr:last-child td { border-bottom: none; }
+    .rejection-table td:first-child { font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+    .rejection-category { display: inline-block; padding: 0.15em 0.5em; border-radius: 999px; font-size: 0.7rem; font-weight: 600; }
+    .rejection-category.refuted { background: var(--danger-soft); color: var(--danger-text); }
+    .rejection-category.weak { background: var(--warn-soft); color: var(--warn-text); }
+
+    /* ── Combination cards ── */
+    .combo-card { background: var(--surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.2rem; margin-bottom: 0.8rem; }
+    .combo-card h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.3rem; }
+    .combo-card p { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+
+    /* ── Footer ── */
+    .composition-footer {
+      margin-top: 3rem; padding-top: 1.2rem; border-top: 1px solid var(--border);
+      font-size: 0.78rem; color: var(--text-muted); text-align: center;
+    }
+
+    /* ── Utilities ── */
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+    .text-muted { color: var(--text-muted); }
+    .mt-1 { margin-top: 0.5rem; }
+    .mt-2 { margin-top: 1rem; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- HEADER — metadata as visible text only      -->
+  <!-- ═══════════════════════════════════════════ -->
+  <header class="doc-header">
+    <h1>Ideation: fakeToys — 惊喜模式探索</h1>
+    <div class="meta-grid">
+      <div class="meta-item">
+        <span class="meta-label">Date</span>
+        <span class="meta-value">2026-07-30</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Mode</span>
+        <span class="meta-value">repo-g grounded</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Mode</span>
+        <span class="meta-value">surprise-me</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Frames</span>
+        <span class="meta-value">6 (pain&friction, inversion/automation, assumption-breaking, leverage/compounding, cross-domain analogy, constraint-flipping)</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-label">Run ID</span>
+        <span class="meta-value"><code>8ee41274</code></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Stats strip -->
+  <div class="stats-strip">
+    <div class="stat-chip ideas"><span class="stat-num">39</span> 候选想法</div>
+    <div class="stat-chip survivors"><span class="stat-num">7</span> 幸存者</div>
+    <div class="stat-chip cut"><span class="stat-num">32</span> 已筛选</div>
+    <div class="stat-chip frames"><span class="stat-num">6</span> 构思框架</div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- GROUNDING CONTEXT                           -->
+  <!-- ═══════════════════════════════════════════ -->
+  <section class="section" id="grounding">
+    <h2><span class="section-icon">◧</span> Codebase Context</h2>
+    <div class="grounding">
+      <p><strong>fakeToys</strong> 是一个个人工具 monorepo（"just some toys"），包含 6 个异构子项目：Go（csv2sql、watering）、Java 21（cool、oa 平台）、Python（train）、Bash（storage）。无共享框架或库层，每个子项目独立构建。</p>
+
+      <p><strong>活跃分支：</strong></p>
+      <ul>
+        <li><strong>watering POC</strong>（计划 <code>2026-07-28-001</code>）— 脚手架存在（config、DingTalk client 含 token 缓存），但 U3-U6（调度器、gap-fill、CLI、记录器）完全未实现</li>
+        <li><strong>系统文档</strong>（计划 <code>2026-07-30-001</code>）— 7 个文档文件全部未创建，<code>measure.py</code> 已消失</li>
+      </ul>
+
+      <p><strong>关键代码状态：</strong></p>
+      <ul>
+        <li><code>cool/cool.java:162-166</code> — 硬编码生产 MD5 密钥（<code>"coolcollege20201211sc"</code> + <code>"135990bd839c5fe0a1ca9cbee2475431"</code>），<code>cool.java:197</code> 有第三组密钥</li>
+        <li><code>cool/cool2.java</code> — 未完成的简化副本（135 行），功能重叠但未完成合并</li>
+        <li><code>storage/check_storage_service.sh:28</code> — bash 语法 bug：<code>[[ ! -d "${dir}" ]]]</code> 多一个 <code>]</code></li>
+        <li><code>watering/main.go:54-82</code> — 硬编码测试 harness（获取 token → 发一条消息 → 退出）</li>
+        <li><code>watering/internal/dingtalk/client.go:74-123</code> — 线程安全的 token 缓存（双重检查锁定 + 10 分钟提前过期）</li>
+        <li><code>train/enhanceTXT.py:102-216, 314-445</code> — 大量注释掉的实验代码（WordEmbsAug、BERT、40 线程 worker）</li>
+        <li><code>train/enhanceTXT.py:148-156</code> — 静默数据丢失 bug：<code>out_file</code> 在循环外以 'w' 模式打开，每次迭代覆盖整个文件</li>
+        <li><code>compile_all.bat:7-49</code> — 硬编码 6 步构建顺序，末尾 <code>pause</code> 阻塞 CI</li>
+        <li><code>train/</code> — 4 个 JSON 文件约 11.5MB 被 git 追踪</li>
+        <li><strong>零测试覆盖</strong> — 无 <code>_test.go</code>、无 Python 测试、无 Java 测试</li>
+      </ul>
+
+      <p><strong>已建立模式：</strong>brainstorm→Plan→Implement 工作流、Go viper+zap 配置/日志、retry+gap-fill 闭环、scope-boundary 纪律。<strong>缺失：</strong><code>docs/solutions/</code> 目录（两计划均明确标注）、CI/CD、共享工具层。</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- TOPIC AXES                                  -->
+  <!-- ═══════════════════════════════════════════ -->
+  <section class="section" id="axes">
+    <h2><span class="section-icon">◫</span> Topic Axes</h2>
+    <p class="axes-note">Decomposition skipped — surprise-me mode. Different frames found different subjects; cross-subject divergence is the intentional output pattern.</p>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- RANKED IDEAS                                -->
+  <!-- ═══════════════════════════════════════════ -->
+  <section class="section" id="ideas">
+    <h2><span class="section-icon">◈</span> Ranked Ideas <span class="text-muted" style="font-size:0.85rem;font-weight:400;">— 7 survivors from 39 candidates</span></h2>
+
+    <!-- Jump list -->
+    <nav class="jump-list" aria-label="Jump to ideas">
+      <div class="jump-list-title">快速跳转</div>
+      <ol>
+        <li><a href="#idea-1"><span class="jump-chip high">High</span> 1. 密钥迁移先于文档</a></li>
+        <li><a href="#idea-2"><span class="jump-chip high">High</span> 2. 秘密扫描工具</a></li>
+        <li><a href="#idea-3"><span class="jump-chip high">High</span> 3. 可组合数据增强流水线</a></li>
+        <li><a href="#idea-4"><span class="jump-chip medium">Med</span> 4. retry+gap-fill 循环抽象</a></li>
+        <li><a href="#idea-5"><span class="jump-chip medium">Med</span> 5. 技术债务账本</a></li>
+        <li><a href="#idea-6"><span class="jump-chip medium">Med</span> 6. 活文档引擎</a></li>
+        <li><a href="#idea-7"><span class="jump-chip medium">Med</span> 7. 实时数据汇流层</a></li>
+      </ol>
+    </nav>
+
+    <!-- ─── Idea 1 ─── -->
+    <article class="idea-card" id="idea-1">
+      <h3><span class="idea-id">#1</span> 密钥迁移先于文档</h3>
+      <div class="card-meta">
+        <span class="chip frame">assumption-breaking</span>
+        <span class="chip confidence-high">Confidence High</span>
+        <span class="chip complexity-medium">Complexity Medium</span>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Description</div>
+        <p>在写任何系统文档之前，先将 <code>cool.java:162-166</code> 和 <code>cool.java:197</code> 的硬编码生产密钥提取为环境变量/配置文件，完成 <code>cool2.java</code> 与 <code>cool.java</code> 的合并或废弃。否则系统文档会描述一个"已修复的架构"——但实际源码仍有生产密钥。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Basis</div>
+        <p><span class="basis-tag direct">direct:</span> <code>cool.java:162-166</code> — <code>key = "coolcollege20201211sc"</code> + <code>thirdSecret = "135990bd839c5fe0a1ca9cbee2475431"</code> 硬编码在 <code>oaMd5()</code> 方法中；<code>cool.java:197</code> — <code>key = "whM1376SiX5=78"</code> 在 <code>decodeTicket()</code> 中；<code>cool2.java</code> 存在但未完成合并（135 行，同密钥在 104-108 行重复）。<code>docs/plans/2026-07-30-001-feat-systems-documentation-plan.md:125</code> 的 R11 只约束"文档中不出现真实密钥"，不约束源码。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Rationale</div>
+        <p>硬编码密钥进入 git 历史意味着即使后续删除，仍可从历史中恢复。如果文档计划先执行，写出来的文档描述的是"已修复"的加密架构，但实际源码仍有生产密钥——新成员按文档改造时会发现不一致，产生信任危机。先修源码，文档才能反映真实系统。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Downsides</div>
+        <p>需要 git 历史重写（<code>git filter-repo</code>）来彻底清除已提交的密钥；cool2.java 合并需要测试验证行为一致性；O2OA SSO 依赖方可能需要更新密钥分发方式。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Meeting Test</div>
+        <p class="meeting-test">团队是否会讨论"在写文档之前，是否应该先清理源码中的硬编码密钥？"</p>
+      </div>
+    </article>
+
+    <!-- ─── Idea 2 ─── -->
+    <article class="idea-card" id="idea-2">
+      <h3><span class="idea-id">#2</span> 秘密扫描工具</h3>
+      <div class="card-meta">
+        <span class="chip frame">leverage/compounding</span>
+        <span class="chip confidence-high">Confidence High</span>
+        <span class="chip complexity-medium">Complexity Medium</span>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Description</div>
+        <p>构建一个扫描代码库中硬编码密钥、已知凭证指纹（如 cool.java 的 key+thirdSecret 对）、以及无环境变量回退的配置值的工具。在 <code>compile_all.bat</code> 末尾或作为 pre-commit hook 运行，拦截包含真实凭证的提交。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Basis</div>
+        <p><span class="basis-tag direct">direct:</span> <code>cool.java:162-166</code> — 硬编码的 O2OA SSO 生产凭证对是仓库中最严重的安全问题。<code>watering/config.yaml.example</code> 和 <code>train/enhanceTXT.py:30-31</code> 均有 env var 回退模式，但无机制阻止开发者提交真实值。<code>compile_all.bat:1-49</code> 是现有编译入口，可在末尾追加扫描步骤。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Rationale</div>
+        <p>cool.java 的凭证目前已在源码中，而文档计划会将其写入 <code>docs/systems/cool.md</code>。扫描工具的介入改变了计划的输出——发现凭证后必须先走提取/替换流程，才能安全地写文档。扫描规则集本身就是可积累的资产——每次发现新类型的凭证，规则就变强一次。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Downsides</div>
+        <p>可能产生误报（合法密钥如测试密钥 vs. 生产密钥的区分）；需要维护规则集；pre-commit hook 可能降低提交速度。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Meeting Test</div>
+        <p class="meeting-test">团队是否接受在提交流程中加入凭证检测门禁？误报阈值如何设定？</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Combines With</div>
+        <p class="combines-with">与 #1 密钥迁移形成完整闭环：迁移是修复，扫描是持续保障。</p>
+      </div>
+    </article>
+
+    <!-- ─── Idea 3 ─── -->
+    <article class="idea-card" id="idea-3">
+      <h3><span class="idea-id">#3</span> 可组合数据增强流水线</h3>
+      <div class="card-meta">
+        <span class="chip frame">cross-domain analogy</span>
+        <span class="chip confidence-high">Confidence High</span>
+        <span class="chip complexity-high">Complexity High</span>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Description</div>
+        <p>构建 <code>Pipeline</code> 类，让每个增强操作（同义词替换、音似替换、回译、LLM 扩充）成为独立的 Pipeline Stage，通过 YAML 配置声明式组合，替代当前散落在注释中的实验代码。</p>
+      </div>
+      <!-- Pipeline flow diagram -->
+      <div class="diagram-wrap">
+        <svg width="680" height="130" viewBox="0 0 680 130" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#78716c"/></marker></defs>
+          <!-- Input -->
+          <rect x="10" y="40" width="100" height="50" rx="6" fill="#ccfbf1" stroke="#0d9488" stroke-width="1.5"/>
+          <text x="60" y="62" text-anchor="middle" font-size="11" font-weight="600" fill="#0f766e">JSON 输入</text>
+          <text x="60" y="78" text-anchor="middle" font-size="10" fill="#78716c">train_data.json</text>
+          <!-- Arrow -->
+          <line x1="110" y1="65" x2="150" y2="65" stroke="#78716c" stroke-width="1.5" marker-end="url(#arr)"/>
+          <!-- Stage 1 -->
+          <rect x="150" y="40" width="90" height="50" rx="6" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.5"/>
+          <text x="195" y="62" text-anchor="middle" font-size="11" font-weight="600" fill="#1e40af">Similarword</text>
+          <text x="195" y="78" text-anchor="middle" font-size="10" fill="#78716c">同义词替换</text>
+          <line x1="240" y1="65" x2="280" y2="65" stroke="#78716c" stroke-width="1.5" marker-end="url(#arr)"/>
+          <!-- Stage 2 -->
+          <rect x="280" y="40" width="90" height="50" rx="6" fill="#fef3c7" stroke="#b45309" stroke-width="1.5"/>
+          <text x="325" y="62" text-anchor="middle" font-size="11" font-weight="600" fill="#92400e">Homophone</text>
+          <text x="325" y="78" text-anchor="middle" font-size="10" fill="#78716c">音似替换</text>
+          <line x1="370" y1="65" x2="410" y2="65" stroke="#78716c" stroke-width="1.5" marker-end="url(#arr)"/>
+          <!-- Stage 3 (commented-out, dashed) -->
+          <rect x="410" y="40" width="90" height="50" rx="6" fill="#f5f5f4" stroke="#a8a29e" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <text x="455" y="62" text-anchor="middle" font-size="11" font-weight="600" fill="#78716c">BERT / 回译</text>
+          <text x="455" y="78" text-anchor="middle" font-size="10" fill="#a8a29e">注释掉的 Stage</text>
+          <line x1="500" y1="65" x2="540" y2="65" stroke="#78716c" stroke-width="1.5" marker-end="url(#arr)"/>
+          <!-- Output -->
+          <rect x="540" y="40" width="110" height="50" rx="6" fill="#dcfce7" stroke="#15803d" stroke-width="1.5"/>
+          <text x="595" y="62" text-anchor="middle" font-size="11" font-weight="600" fill="#166534">增强输出</text>
+          <text x="595" y="78" text-anchor="middle" font-size="10" fill="#78716c">train_data_final.json</text>
+          <!-- YAML config above -->
+          <rect x="250" y="5" width="180" height="22" rx="4" fill="#f5f5f4" stroke="#d6d3d1" stroke-width="1"/>
+          <text x="340" y="19" text-anchor="middle" font-size="9" fill="#78716c" font-family="monospace">pipeline.yaml → 声明式组合</text>
+        </svg>
+        <div class="diagram-caption">当前：Similarword + Homophone 硬编码在 main() 中；目标：YAML 声明式 Stage 组合，注释代码变为可激活的 Stage</div>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Basis</div>
+        <p><span class="basis-tag direct">direct:</span> <code>train/enhanceTXT.py:102-216</code> — <code>process_json_data</code> 中注释掉的 WordEmbsAug/ContextualWordEmbsAug/BackTranslationAug/Simbert 初始化代码；<code>train/enhanceTXT.py:314-445</code> — 注释掉的 40 线程 worker 函数。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Rationale</div>
+        <p>注释掉的代码是有价值的历史资产——它们记录了探索过的技术路径和失败原因（WordEmbsAug 需要本地模型文件，BackTranslationAug 需要 Helsinki 模型）。声明式流水线框架解决的是组合问题，激活的是整个子项目的真实价值。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Downsides</div>
+        <p>YAML 配置的学习成本；Stage 间的数据流接口设计需要仔细考虑；BERT/回译等 Stage 需要 GPU 资源，不适合所有运行环境。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Meeting Test</div>
+        <p class="meeting-test">是否值得投入将 Python 实验代码转化为可复用框架，还是直接注释删除这些代码路径？</p>
+      </div>
+    </article>
+
+    <!-- ─── Idea 4 ─── -->
+    <article class="idea-card" id="idea-4">
+      <h3><span class="idea-id">#4</span> retry+gap-fill 循环抽象为通用库</h3>
+      <div class="card-meta">
+        <span class="chip frame">leverage/compounding</span>
+        <span class="chip confidence-medium">Confidence Medium</span>
+        <span class="chip complexity-medium">Complexity Medium</span>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Description</div>
+        <p>将 watering 的 gap-fill 循环、csv2sql 的单条失败跳过、train 的失败缓存+断点续传、storage 的健康检查+拉起——这四个场景的统一循环模式（执行 → 收集失败 → 条件性重试 → 直到闭环或上限 → 记录结果）——抽象为带策略插件的 Go 库。</p>
+      </div>
+      <!-- Retry loop diagram -->
+      <div class="diagram-wrap">
+        <svg width="600" height="160" viewBox="0 0 600 160" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arr2" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#78716c"/></marker></defs>
+          <!-- Center: shared loop -->
+          <rect x="230" y="50" width="140" height="60" rx="8" fill="#ccfbf1" stroke="#0d9488" stroke-width="2"/>
+          <text x="300" y="72" text-anchor="middle" font-size="12" font-weight="700" fill="#0f766e">retry+gap-fill 循环</text>
+          <text x="300" y="90" text-anchor="middle" font-size="10" fill="#78716c">Execute → Collect Failures</text>
+          <text x="300" y="104" text-anchor="middle" font-size="10" fill="#78716c">→ Retry with Backoff</text>
+          <text x="300" y="118" text-anchor="middle" font-size="10" fill="#78716c">→ Record Result</text>
+          <!-- watering -->
+          <rect x="20" y="10" width="130" height="36" rx="6" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.2"/>
+          <text x="85" y="27" text-anchor="middle" font-size="11" font-weight="600" fill="#1e40af">watering U5</text>
+          <text x="85" y="40" text-anchor="middle" font-size="9" fill="#78716c">gap-fill + retry</text>
+          <line x1="85" y1="46" x2="85" y2="82" stroke="#1d4ed8" stroke-width="1" stroke-dasharray="3 2"/>
+          <line x1="150" y1="65" x2="228" y2="65" stroke="#1d4ed8" stroke-width="1.2" marker-end="url(#arr2)"/>
+          <!-- csv2sql -->
+          <rect x="20" y="110" width="130" height="36" rx="6" fill="#fef3c7" stroke="#b45309" stroke-width="1.2"/>
+          <text x="85" y="127" text-anchor="middle" font-size="11" font-weight="600" fill="#92400e">csv2sql</text>
+          <text x="85" y="140" text-anchor="middle" font-size="9" fill="#78716c">continue on error</text>
+          <line x1="85" y1="110" x2="85" y2="88" stroke="#b45309" stroke-width="1" stroke-dasharray="3 2"/>
+          <line x1="150" y1="88" x2="228" y2="88" stroke="#b45309" stroke-width="1.2" marker-end="url(#arr2)"/>
+          <!-- Outputs -->
+          <line x1="372" y1="65" x2="450" y2="30" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arr2)"/>
+          <line x1="372" y1="80" x2="450" y2="65" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arr2)"/>
+          <line x1="372" y1="95" x2="450" y2="100" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arr2)"/>
+          <line x1="372" y1="110" x2="450" y2="135" stroke="#0d9488" stroke-width="1.2" marker-end="url(#arr2)"/>
+          <!-- Result projects -->
+          <rect x="450" y="10" width="130" height="28" rx="6" fill="#dcfce7" stroke="#15803d" stroke-width="1.2"/>
+          <text x="515" y="28" text-anchor="middle" font-size="10" font-weight="600" fill="#166534">watering (U5)</text>
+          <rect x="450" y="48" width="130" height="28" rx="6" fill="#dcfce7" stroke="#15803d" stroke-width="1.2"/>
+          <text x="515" y="66" text-anchor="middle" font-size="10" font-weight="600" fill="#166534">csv2sql</text>
+          <rect x="450" y="86" width="130" height="28" rx="6" fill="#dcfce7" stroke="#15803d" stroke-width="1.2"/>
+          <text x="515" y="104" text-anchor="middle" font-size="10" font-weight="600" fill="#166534">train</text>
+          <rect x="450" y="124" width="130" height="28" rx="6" fill="#dcfce7" stroke="#15803d" stroke-width="1.2"/>
+          <text x="515" y="142" text-anchor="middle" font-size="10" font-weight="600" fill="#166534">storage</text>
+        </svg>
+        <div class="diagram-caption">4 个子项目各自实现了同一循环模式的不同变体——抽象为共享库后， watering U5 直接复用，其余 3 个获得统一接口</div>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Basis</div>
+        <p><span class="basis-tag direct">direct:</span> <code>client.go:126-180</code>（SendResult 含 FailedUserIDs + ErrorMessages）；<span class="basis-tag reasoned">reasoned:</span> <code>readCSV2SQL.go:130-133</code>（continue 跳过失败是最简形态），<code>enhanceTXT.py:276-284</code>（失败写入 fail_file 是带持久化的形态），<code>check_storage_service.sh:7-35</code>（健康检查→拉起是服务管理形态）。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Rationale</div>
+        <p>watering U5 的 gap-fill 直接复用；csv2sql 和 train 能用统一接口替换各自的循环代码。新工具从第一天起就有成熟的失败处理骨架。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Downsides</div>
+        <p>Go 库的接口设计需要覆盖所有 4 种场景的变体，可能引入过度抽象；watering 计划中的 gap-fill 逻辑已有详细设计，抽象可能与计划冲突。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Meeting Test</div>
+        <p class="meeting-test">4 个子项目各自实现了同一循环的变体，抽象成本低且复用面覆盖所有有外部 I/O 的项目——值得讨论吗？</p>
+      </div>
+    </article>
+
+    <!-- ─── Idea 5 ─── -->
+    <article class="idea-card" id="idea-5">
+      <h3><span class="idea-id">#5</span> 技术债务账本</h3>
+      <div class="card-meta">
+        <span class="chip frame">constraint-flipping</span>
+        <span class="chip confidence-medium">Confidence Medium</span>
+        <span class="chip complexity-low">Complexity Low</span>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Description</div>
+        <p>建立 <code>TECH_DEBT.md</code>，每条记录包含：债务描述、根因、修复成本估算（LOC）、影响范围、是否可逆。将"已知 bug 未修"变为"已知债务已登记"，让任何后续代码审查都基于同一个已知问题清单。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Basis</div>
+        <p><span class="basis-tag reasoned">reasoned:</span> 技术债务的最大危害不是代码本身，而是"它在 Nobody's Land 里"——没有被任何人承认、没有 owner、没有修复计划。CLAUDE.md Rule 12 要求"Failed 必须响亮"，但这些已知问题从未被系统记录过。一个开发者（包括未来的自己）在面对 <code>check_storage_service.sh</code> 的语法 bug 时，无法判断"这是故意写的还是忘了修"——直到读到这个账本。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Rationale</div>
+        <p>债务登记的行为本身改变了代码的解读方式：注释代码不再是"可能有用的保留"，而是"已评估为废弃的代码"。对于 1 人项目，最大的风险不是多人协作混乱，而是"六个月后的自己不知道当初为什么这么做"。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Downsides</div>
+        <p>债务账本需要 owner 约定和 review 节奏，否则会沦为又一份无人维护的文档；登记行为可能被误解为"承认了就可以不修"。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Meeting Test</div>
+        <p class="meeting-test">是否需要讨论"登记技术债务是否增加了维护负担"？</p>
+      </div>
+    </article>
+
+    <!-- ─── Idea 6 ─── -->
+    <article class="idea-card" id="idea-6">
+      <h3><span class="idea-id">#6</span> 活文档引擎</h3>
+      <div class="card-meta">
+        <span class="chip frame">constraint-flipping</span>
+        <span class="chip confidence-medium">Confidence Medium</span>
+        <span class="chip complexity-high">Complexity High</span>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Description</div>
+        <p>构建从源码自动提取系统文档的引擎：解析 Go 结构体定义生成配置文档、解析 import 图生成 Mermaid 架构图。人工只需补充"为什么"而非"是什么"。</p>
+      </div>
+      <!-- Doc lifecycle diagram -->
+      <div class="diagram-wrap">
+        <svg width="560" height="120" viewBox="0 0 560 120" xmlns="http://www.w3.org/2000/svg">
+          <defs><marker id="arr3" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#78716c"/></marker></defs>
+          <!-- Left: Code -->
+          <rect x="20" y="20" width="140" height="80" rx="6" fill="#dbeafe" stroke="#1d4ed8" stroke-width="1.5"/>
+          <text x="90" y="42" text-anchor="middle" font-size="12" font-weight="700" fill="#1e40af">Source Code</text>
+          <text x="90" y="58" text-anchor="middle" font-size="9" fill="#78716c">Go structs, Java classes</text>
+          <text x="90" y="72" text-anchor="middle" font-size="9" fill="#78716c">Python modules, imports</text>
+          <text x="90" y="86" text-anchor="middle" font-size="9" fill="#78716c">pom.xml dependencies</text>
+          <!-- Arrow right -->
+          <line x1="162" y1="60" x2="200" y2="60" stroke="#78716c" stroke-width="1.5" marker-end="url(#arr3)"/>
+          <!-- Center: Engine -->
+          <rect x="200" y="25" width="140" height="70" rx="8" fill="#ccfbf1" stroke="#0d9488" stroke-width="2"/>
+          <text x="270" y="48" text-anchor="middle" font-size="12" font-weight="700" fill="#0f766e">archgen 引擎</text>
+          <text x="270" y="64" text-anchor="middle" font-size="9" fill="#78716c">AST 解析 → Mermaid 图</text>
+          <text x="270" y="78" text-anchor="middle" font-size="9" fill="#78716c">配置文档 + 依赖图</text>
+          <!-- Arrow right -->
+          <line x1="342" y1="60" x2="380" y2="60" stroke="#78716c" stroke-width="1.5" marker-end="url(#arr3)"/>
+          <!-- Right: Doc -->
+          <rect x="380" y="20" width="140" height="80" rx="6" fill="#dcfce7" stroke="#15803d" stroke-width="1.5"/>
+          <text x="450" y="42" text-anchor="middle" font-size="12" font-weight="700" fill="#166534">System Docs</text>
+          <text x="450" y="58" text-anchor="middle" font-size="9" fill="#78716c">Mermaid 架构图</text>
+          <text x="450" y="72" text-anchor="middle" font-size="9" fill="#78716c">模块清单 (自动)</text>
+          <text x="450" y="86" text-anchor="middle" font-size="9" fill="#78716c">设计意图 (人工)</text>
+          <!-- Feedback arrow (curved) -->
+          <path d="M 270 95 Q 270 115 90 115 Q 10 115 10 100" fill="none" stroke="#a8a29e" stroke-width="1" stroke-dasharray="4 3" marker-end="url(#arr3)"/>
+          <text x="140" y="112" text-anchor="middle" font-size="8" fill="#a8a29e">代码变更 → 自动刷新</text>
+        </svg>
+        <div class="diagram-caption">当前：7 个手工文档文件，写完即过期。目标：自动生成 WHAT 部分，人工补充 WHY 部分</div>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Basis</div>
+        <p><span class="basis-tag reasoned">reasoned:</span> 当前 plan U1-U6 产出 7 个手工文档文件，没有任何机制保证它们在代码变更后仍然准确。U7b 已经意识到"文档与代码变更脱节"是 Medium 风险，但缓解手段仅为"每月人工巡检"。代码结构信息（包名、接口、依赖）是客观事实，不需要人的解读——人的工作是添加"为什么这样设计"的上下文。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Rationale</div>
+        <p>将"写完即过期"的静态文档变为"代码变更即同步"的动态资产，直接解决 plan 中 R16（变更后一个 sprint 更新）的执行难题——因为更新变成了自动的。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Downsides</div>
+        <p>自动生成的文档质量上限可能低于手工编写；需要 CI 集成；团队可能不接受"机器写的文档"。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Meeting Test</div>
+        <p class="meeting-test">是否值得用工具生成的部分替代纯人工文档？这直接挑战了 plan 中"纯人工为主、工具辅助为辅"的核心决策。</p>
+      </div>
+    </article>
+
+    <!-- ─── Idea 7 ─── -->
+    <article class="idea-card" id="idea-7">
+      <h3><span class="idea-id">#7</span> 实时数据汇流层</h3>
+      <div class="card-meta">
+        <span class="chip frame">constraint-flipping</span>
+        <span class="chip confidence-medium">Confidence Medium</span>
+        <span class="chip complexity-high">Complexity High</span>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Description</div>
+        <p>构建跨子项目复用的 <code>Pipeline</code> 框架——定义 <code>Source → Transform → Sink</code> 三段式接口，内置重试、backoff、断点续传、失败队列，让三个现有子项目和一个未来的"调度器"都能用同一套原语描述 I/O 流程。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Basis</div>
+        <p><span class="basis-tag reasoned">reasoned:</span> <code>readCSV2SQL.go:130-133</code>（单条失败跳过是最简形态），<code>enhanceTXT.py:276-284</code>（失败写入 fail_file 是带持久化的形态），<code>check_storage_service.sh:7-35</code>（健康检查→拉起是服务管理形态）。当前 watering 计划的 U3-U6 完全未实现，原因是"这些都是通用的基础设施，不值得为单个项目单独写"。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Rationale</div>
+        <p>但如果这些基础设施能被 csv2sql 和 train 也复用，投入产出比立刻翻转——一次编写，三个项目受益。这是用"架构杠杆"替代"功能堆叠"的典型决策。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Downsides</div>
+        <p>三个项目的需求是否足够相似到值得抽象？Go 库对 Python 子项目的调用需要通过 CLI 或 gRPC，增加了耦合复杂度。</p>
+      </div>
+      <div class="card-section">
+        <div class="card-section-label">Meeting Test</div>
+        <p class="meeting-test">三个项目的 I/O 模式是否足够相似到值得抽象，还是强行统一反而限制各自演进？</p>
+      </div>
+    </article>
+
+  </section>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- CROSS-CUTTING COMBINATIONS                  -->
+  <!-- ═══════════════════════════════════════════ -->
+  <section class="section" id="combinations">
+    <h2><span class="section-icon">✦</span> Cross-Cutting Combinations <span class="text-muted" style="font-size:0.85rem;font-weight:400;">— surprise-me 模式下的跨框架协同</span></h2>
+
+    <div class="combo-card">
+      <h4>安全治理包 = #1 密钥迁移 + #2 秘密扫描 + #15 认证库提取</h4>
+      <p>一次解决仓库中最严重的安全问题，并建立持续防护机制。迁移是修复，扫描是门禁，认证库是未来所有 Go 子项目的凭证基础设施。</p>
+    </div>
+
+    <div class="combo-card">
+      <h4>动态文档基础设施 = #6 活文档引擎 + #16 o2server 结构扫描</h4>
+      <p>将当前系统文档计划从纯人工改为"工具辅助+人工补充"。oa.md 的 57 模块架构图可以由扫描脚本自动生成，活文档引擎保持持续同步。</p>
+    </div>
+
+    <div class="combo-card">
+      <h4>可复用模式框架 = #4 retry+gap-fill 库 + #7 数据汇流层 + #3 数据增强流水线</h4>
+      <p>一次抽象，三个项目受益。retry 库提供基础循环，汇流层提供 I/O 编排，增强流水线提供领域特定的 Stage 组合——三层递进，从通用到专用。</p>
+    </div>
+
+    <div class="combo-card">
+      <h4>测试基础设施 = #8 测试桩=可执行规格 + #9 shell 脚本工程化</h4>
+      <p>将 watering 的 POC test harness 扩展为正式实现，同时将 storage 的 bash 脚本纳入工程化流程（shellcheck + 基本测试），建立"所有代码都经过测试"的文化基线。</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- REJECTION SUMMARY                           -->
+  <!-- ═══════════════════════════════════════════ -->
+  <section class="section" id="rejections">
+    <h2><span class="section-icon">✕</span> Rejection Summary</h2>
+    <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1rem;">39 个候选 → 17 个 sound → 7 个幸存者。以下是被 refuted 和 weak 的想法。</p>
+
+    <div style="overflow-x:auto;">
+      <table class="rejection-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Idea</th>
+            <th>Category</th>
+            <th>Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>#3</td>
+            <td>子项目解耦</td>
+            <td><span class="rejection-category refuted">refuted</span></td>
+            <td>Basis 引用 measure.py 的 BASE 路径，但 measure.py 磁盘上不存在</td>
+          </tr>
+          <tr>
+            <td>#17</td>
+            <td>measure.py → 文档生成器</td>
+            <td><span class="rejection-category refuted">refuted</span></td>
+            <td>measure.py 不存在，无法扩展</td>
+          </tr>
+          <tr>
+            <td>#21</td>
+            <td>阈值本身是问题</td>
+            <td><span class="rejection-category refuted">refuted</span></td>
+            <td>Basis 引用不存在的 measure.py:163 + oa 模块数不准确</td>
+          </tr>
+          <tr>
+            <td>#23</td>
+            <td>is_truncated bug</td>
+            <td><span class="rejection-category refuted">refuted</span></td>
+            <td>enhanceTXT.py:270 条件逻辑正确，不是 bug</td>
+          </tr>
+          <tr>
+            <td>#24</td>
+            <td>cool.java × cool2.java × EncryptUtil.java</td>
+            <td><span class="rejection-category refuted">refuted</span></td>
+            <td>cool2.java 只有 135 行，不存在行 162-166；行号引用错误</td>
+          </tr>
+          <tr>
+            <td>#36</td>
+            <td>measure.py 阈值库</td>
+            <td><span class="rejection-category refuted">refuted</span></td>
+            <td>measure.py 不存在</td>
+          </tr>
+          <tr>
+            <td>#39</td>
+            <td>measure.py CI 门禁</td>
+            <td><span class="rejection-category refuted">refuted</span></td>
+            <td>measure.py 不存在</td>
+          </tr>
+          <tr>
+            <td>#2</td>
+            <td>活文档引擎 (weak)</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>推理正确但缺乏直接代码依据</td>
+          </tr>
+          <tr>
+            <td>#4</td>
+            <td>跨语言可观测性</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>推理正确但无具体代码引用</td>
+          </tr>
+          <tr>
+            <td>#5</td>
+            <td>技术债务账本 (weak)</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>"Nobody's Land"推理合理但无具体代码证据</td>
+          </tr>
+          <tr>
+            <td>#6</td>
+            <td>个人工具发布流水线</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>第一性原理正确但无代码依据</td>
+          </tr>
+          <tr>
+            <td>#7</td>
+            <td>实时数据汇流层 (weak)</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>模式确实存在但"3+子项目重复"是过度归纳</td>
+          </tr>
+          <tr>
+            <td>#8</td>
+            <td>反向架构蓝图</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>纯推测性</td>
+          </tr>
+          <tr>
+            <td>#9</td>
+            <td>韧性测试风洞</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>类比合理但无具体代码依据</td>
+          </tr>
+          <tr>
+            <td>#12</td>
+            <td>死代码考古学工具</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>第一性原理推理，无具体代码引用</td>
+          </tr>
+          <tr>
+            <td>#13</td>
+            <td>多架构服务启动框架</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>"非业务逻辑占60%"是未经测量的推测</td>
+          </tr>
+          <tr>
+            <td>#14</td>
+            <td>配置漂移检测器</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>cool.java 依据成立但 csv2sql "silent defaults"无证据</td>
+          </tr>
+          <tr>
+            <td>#15</td>
+            <td>增量式系统文档生成器</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>推理正确但纯推测性</td>
+          </tr>
+          <tr>
+            <td>#25</td>
+            <td>enhanceTXT.py 死代码腐蚀</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>行号标注不精确，混淆活跃/死代码</td>
+          </tr>
+          <tr>
+            <td>#26</td>
+            <td>token 缓存魔法数字</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>声称 undocumented 实际有注释说明</td>
+          </tr>
+          <tr>
+            <td>#33</td>
+            <td>retry+gap-fill 循环抽象 (weak)</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>"4个子项目相同模式"是过度归纳</td>
+          </tr>
+          <tr>
+            <td>#37</td>
+            <td>brainstorm→plan 推导脚本</td>
+            <td><span class="rejection-category weak">weak</span></td>
+            <td>"结构相似→可自动推导"是非必然推理</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="margin-top:1rem;font-size:0.82rem;color:var(--text-muted);">
+      <p><strong>关键模式：</strong>最常见的 refuted 原因是引用了不存在的文件（measure.py 消失，导致 4 个候选被 refuted）。最常见的 weak 原因是推理正确但缺乏直接代码锚定。</p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- FOOTER                                      -->
+  <!-- ═══════════════════════════════════════════ -->
+  <footer class="composition-footer">
+    <p>Composed 2026-07-30 by <code>ce-ideate</code> (surprise-me mode, run <code>8ee41274</code>)</p>
+    <p style="margin-top:0.3rem;">6 ideation frames · 39 raw candidates · 7 survivors · Basis verification applied</p>
+  </footer>
+
+</div>
+
+<!-- Minimal inline script: section tracking -->
+<script>
+(function() {
+  // No-op placeholder for future TOC active-section tracking
+  // Kept minimal per single-file invariant
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+pub mod bpmn_process;
+integration_tests::scenarios::bpmn_process::bpmn_process_flow();

@@ -1,0 +1,35 @@
+-- Rollback for 029: drop all tables created in 029 (reverse order).
+
+DROP TABLE IF EXISTS "x_query_view";
+DROP TABLE IF EXISTS "x_process_work_completed";
+DROP TABLE IF EXISTS "x_process_work";
+DROP TABLE IF EXISTS "x_process_ticket";
+DROP TABLE IF EXISTS "x_process_task";
+DROP TABLE IF EXISTS "x_widget";
+DROP TABLE IF EXISTS "x_script";
+DROP TABLE IF EXISTS "x_portal_page";
+DROP TABLE IF EXISTS "x_portal";
+DROP TABLE IF EXISTS "x_org_definition";
+DROP TABLE IF EXISTS "x_org_custom";
+DROP TABLE IF EXISTS "x_org_bind";
+DROP TABLE IF EXISTS "x_msg_message";
+DROP TABLE IF EXISTS "x_mind_version_info";
+DROP TABLE IF EXISTS "x_mind_folder_info";
+DROP TABLE IF EXISTS "x_mind_base_info";
+DROP TABLE IF EXISTS "x_jpush_template";
+DROP TABLE IF EXISTS "x_jpush_device";
+DROP TABLE IF EXISTS "x_hotpic";
+DROP TABLE IF EXISTS "x_general_invoice";
+DROP TABLE IF EXISTS "x_general_file";
+DROP TABLE IF EXISTS "x_general_application_dict_item";
+DROP TABLE IF EXISTS "x_general_application_dict";
+DROP TABLE IF EXISTS "x_gen_ara_district";
+DROP TABLE IF EXISTS "x_corr_c_correlation";
+DROP TABLE IF EXISTS "x_cal_event";
+DROP TABLE IF EXISTS "x_cal_calendar";
+DROP TABLE IF EXISTS "x_attendance_rule";
+DROP TABLE IF EXISTS "x_attendance_record";
+DROP TABLE IF EXISTS "x_application";
+DROP TABLE IF EXISTS "cte_structure";
+DROP TABLE IF EXISTS "cte_invoke";
+DROP TABLE IF EXISTS "cte_agent";

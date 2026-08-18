@@ -1,0 +1,168 @@
+[
+ {
+  "path": "driver-api/media/v4l2-rect.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.2857,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "gpu/xe/xe_map.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.2609,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "driver-api/xilinx/index.md",
+  "mode": "light",
+  "result": "fail",
+  "pr": 0.0,
+  "note": "not replaced: '## Xilinx FPGA'"
+ },
+ {
+  "path": "driver-api/media/dtv-net.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.3158,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "userspace-api/media/dvb/dmx_types.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.1667,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "userspace-api/media/dvb/frontend-header.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.3158,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "driver-api/i3c/device-driver-api.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.2,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "mm/shmfs.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.5714,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "userspace-api/media/dvb/net-types.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.3,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "userspace-api/media/dvb/ca_data_types.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.1905,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "fpga/index.md",
+  "mode": "light",
+  "result": "fail",
+  "pr": 0.0,
+  "note": "not replaced: '## FPGA'"
+ },
+ {
+  "path": "gpu/amdgpu/xgmi.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.1,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "crypto/libcrypto-utils.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.3636,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "driver-api/media/v4l2-fwnode.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.0741,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "driver-api/media/v4l2-async.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.0769,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "driver-api/media/v4l2-cci.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.0833,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "mm/page_allocation.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.3333,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "mm/page_reclaim.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.3333,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "gpu/xe/xe_debugging.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.2222,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "mm/bootmem.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.4,
+  "fences": 0,
+  "note": ""
+ },
+ {
+  "path": "mm/swap.md",
+  "mode": "light",
+  "result": "light",
+  "pr": 0.25,
+  "fences": 0,
+  "note": ""
+ }
+]

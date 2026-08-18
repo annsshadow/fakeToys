@@ -1,0 +1,20 @@
+{
+  "body": {
+    "count": null,
+    "data": {
+      "count": 0,
+      "data": []
+    },
+    "date": null,
+    "message": null,
+    "position": null,
+    "prompt": null,
+    "size": null,
+    "spent": null,
+    "type": "success"
+  },
+  "method": "GET",
+  "name": "program_applications",
+  "path": "/jaxrs/program/applications",
+  "status": 200
+}

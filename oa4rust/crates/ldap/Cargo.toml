@@ -1,0 +1,11 @@
+[package]
+name = "ldap"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+ldap3 = "0.12"
+tokio.workspace = true
+serde.workspace = true
+tracing.workspace = true

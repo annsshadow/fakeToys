@@ -1,0 +1,25 @@
+[package]
+name = "program_center_core_entity"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+axum.workspace = true
+tokio.workspace = true
+sea-orm.workspace = true
+deadpool-postgres.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+tower.workspace = true
+chrono.workspace = true
+
+shared = { path = "../shared" }
+file_assemble_control = { path = "../file_assemble_control" }
+
+[dev-dependencies]
+tower.workspace = true
+async-trait.workspace = true

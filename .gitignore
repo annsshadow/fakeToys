@@ -1,0 +1,49 @@
+# Binaries (compiled tools)
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Build output
+target/
+build/
+dist/
+.mvn/
+*.class
+*.jar
+*.war
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+
+# Node
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Git
+*.orig
+
+# rust
+oa4rust/target*/
+oa4rust/.pgdata/
+oa4rust/__pycache__/
+oa4rust/scripts/
+
+# log
+*.log
+
+# secrets
+oa4rust/scripts/.token

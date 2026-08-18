@@ -1,0 +1,2 @@
+pub mod ldap_fallback;
+integration_tests::scenarios::ldap_fallback::ldap_fallback_flow();

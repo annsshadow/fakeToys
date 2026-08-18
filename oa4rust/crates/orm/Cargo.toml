@@ -1,0 +1,22 @@
+﻿[package]
+name = "orm"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+sea-orm = { version = "1.0", features = ["runtime-tokio-rustls", "sqlx-postgres", "macros", "with-chrono", "with-uuid"] }
+sea-query = "0.30"
+deadpool-postgres.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+axum.workspace = true
+shared = { path = "../shared" }
+
+[dev-dependencies]
+tokio.workspace = true
+dotenvy.workspace = true

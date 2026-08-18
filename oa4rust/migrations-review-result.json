@@ -1,0 +1,74 @@
+{
+  "reviewer": "ce-data-migrations-reviewer",
+  "findings": [
+    {
+      "title": "Missing auth_token_threshold table — safe_logout and session validation will crash at runtime",
+      "severity": "P0",
+      "file": "crates/auth/src/safe_logout.rs",
+      "line": 36,
+      "confidence": 100,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Create migration 017_add_auth_token_threshold.sql: CREATE TABLE auth_token_threshold (person_unique VARCHAR(255) PRIMARY KEY, threshold_time VARCHAR(255) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); plus matching _rollback.sql. Both safe_logout.rs:36 (INSERT INTO auth_token_threshold) and session.rs:137/292 (SELECT threshold_time FROM auth_token_threshold) will throw 'relation auth_token_threshold does not exist' on first safe_logout or session validation call after deployment."
+    },
+    {
+      "title": "auth_person missing 6 columns (job, department, unit, position, change_password_time, password_expired_time) — all login/auth flows will crash",
+      "severity": "P0",
+      "file": "crates/auth/src/lib.rs",
+      "line": 101,
+      "confidence": 100,
+      "autofix_class": "gated_auto",
+      "owner": "review-fixer",
+      "requires_verification": true,
+      "pre_existing": false,
+      "suggested_fix": "Create migration to add all 6 missing columns in one ALTER: ALTER TABLE auth_person ADD COLUMN IF NOT EXISTS job VARCHAR(255), ADD COLUMN IF NOT EXISTS department VARCHAR(255), ADD COLUMN IF NOT EXISTS unit VARCHAR(255), ADD COLUMN IF NOT EXISTS position VARCHAR(255), ADD COLUMN IF NOT EXISTS change_password_time TIMESTAMP, ADD COLUMN IF NOT EXISTS password_expired_time TIMESTAMP; plus _rollback.sql. Affected code paths: lib.rs:100-101 (login), lib.rs:514 (person lookup), switch_user.rs:41-42 (switch user), two_factor.rs:52-53 (2FA). All will throw 'column does not exist' at runtime. Note: icon (migration 005) and deleted_at/avatar (migration 005) are present; these 6 are entirely absent from the migration suite."
+    },
+    {
+      "title": "Missing rollback migration for 015_create_x_custom.sql",
+      "severity": "P1",
+      "file": "oa4rust/migrations/015_create_x_custom.sql",
+      "line": 1,
+      "confidence": 75,
+      "autofix_class": "safe_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Create 015_create_x_custom_rollback.sql: DROP TABLE IF EXISTS x_custom; (also DROP INDEX if idx_x_custom_person/named_deleted are desired — but DROP TABLE cascades). All migrations 009–014 have matching _rollback.sql files; 015 breaks this pattern and makes deployment rollback impossible without manual SQL."
+    },
+    {
+      "title": "Missing rollback migration for 016_create_x_empower.sql",
+      "severity": "P1",
+      "file": "oa4rust/migrations/016_create_x_empower.sql",
+      "line": 1,
+      "confidence": 75,
+      "autofix_class": "safe_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "Create 016_create_x_empower_rollback.sql: DROP TABLE IF EXISTS x_empower; (also DROP INDEX if desired). All migrations 009–014 have matching _rollback.sql files; 016 breaks this pattern."
+    },
+    {
+      "title": "Migration 015 x_custom table uses updated_at but code never writes it",
+      "severity": "P2",
+      "file": "oa4rust/migrations/015_create_x_custom.sql",
+      "line": 10,
+      "confidence": 75,
+      "autofix_class": "safe_auto",
+      "owner": "review-fixer",
+      "requires_verification": false,
+      "pre_existing": false,
+      "suggested_fix": "The x_custom table has updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, but signature.rs only sets deleted_at on updates and never touches updated_at. This is consistent with the migration's design but means updated_at will remain at insertion time for all records. Consider whether the application should set updated_at = NOW() on UPDATE, or remove the column from the migration. Low risk — not a bug, just a design observation."
+    }
+  ],
+  "residual_risks": [
+    "The 6 missing auth_person columns and the missing auth_token_threshold table are pre-existing schema gaps between migration DDL and application code. These will cause immediate runtime failures on first login, safe_logout, or two-factor auth after deployment. The migration suite creates x_custom and x_empower correctly but does not create the tables/columns that the auth module's core login flow depends on.",
+    "Even after migrations 015 and 016 deploy cleanly, the application will be non-functional for all auth flows (login, switch user, two-factor, safe logout) until the missing table/column migrations are added and applied."
+  ],
+  "testing_gaps": [
+    "No integration test verifies auth_person contains job/department/unit/position/change_password_time/password_expired_time columns before login/switch_user/two_factor flows are exercised.",
+    "No integration test creates or exercises the auth_token_threshold table, so safe_logout and session validation have never been validated against the actual database schema.",
+    "Missing rollback migrations for 015 and 016 mean the team cannot verify that a deployment can be rolled back cleanly — rollback testing is impossible."
+  ]
+}

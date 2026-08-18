@@ -1,0 +1,51 @@
+# Behavior Comparison Diff Allowlist
+#
+# Each entry declares a pair of equivalent field names that legitimately differ
+# between the Rust (oa4rust) and Java (o2server) implementations.
+# During structural comparison, matched pairs are reported as "allowlisted rename"
+# instead of FAIL.
+#
+# Format:
+#   - rust_field: <field name in Rust response>
+#     java_field: <corresponding field name in Java response>
+#     reason: <optional explanation>
+
+- rust_field: updatedAt
+  java_field: update_time
+  reason: "Rust uses camelCase epoch-ms timestamp; Java uses snake_case ISO-8601"
+
+- rust_field: createdAt
+  java_field: create_time
+  reason: "Rust uses camelCase epoch-ms timestamp; Java uses snake_case ISO-8601"
+
+- rust_field: deletedAt
+  java_field: delete_time
+  reason: "Rust uses camelCase epoch-ms timestamp; Java uses snake_case ISO-8601"
+
+- rust_field: completedAt
+  java_field: complete_time
+  reason: "Rust uses camelCase epoch-ms timestamp; Java uses snake_case ISO-8601"
+
+- rust_field: publishedAt
+  java_field: publish_time
+  reason: "Rust uses camelCase epoch-ms timestamp; Java uses snake_case ISO-8601"
+
+- rust_field: availableAt
+  java_field: available_time
+  reason: "Rust uses camelCase epoch-ms timestamp; Java uses snake_case ISO-8601"
+
+- rust_field: expireAt
+  java_field: expire_time
+  reason: "Rust uses camelCase epoch-ms timestamp; Java uses snake_case ISO-8601"
+
+- rust_field: lastReadAt
+  java_field: lastReadTime
+  reason: "Both use camelCase but different capitalization (lastReadAt vs lastReadTime)"
+
+- rust_field: joinTime
+  java_field: join_time
+  reason: "Rust uses camelCase epoch-ms timestamp; Java uses snake_case ISO-8601"
+
+- rust_field: dismissTime
+  java_field: dismiss_time
+  reason: "Rust uses camelCase epoch-ms timestamp; Java uses snake_case ISO-8601"

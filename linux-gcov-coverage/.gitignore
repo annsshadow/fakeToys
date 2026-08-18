@@ -1,0 +1,14 @@
+# 运行时日志（非源码）
+*.log
+regen.log
+baseline_run.log
+progress_feed.log
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 采集产物（.gcda/.gcno/.gcov 体积大且随内核版本变化，不入仓）
+*.gcda
+*.gcno
+*.gcov

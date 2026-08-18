@@ -1,0 +1,54 @@
+#[cfg(test)]
+mod tests {
+
+    // SKIPPED: get_bam_config not accessible
+    // SKIPPED: create_bam not accessible
+    // SKIPPED: list_bams not accessible
+    // SKIPPED: delete_bam not accessible
+    // SKIPPED: get_bam_status not accessible
+    // SKIPPED: period_list_completed_task_application not accessible
+    // SKIPPED: period_list_completed_task_unit not accessible
+    // SKIPPED: period_list_completed_work_application not accessible
+    // SKIPPED: period_list_completed_work_unit not accessible
+    // SKIPPED: period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_by_unit not accessible
+    // SKIPPED: period_list_count_completed_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person not accessible
+    // SKIPPED: period_list_count_completed_task_application_applicationId_process_processId_unit_unit_person_person_by_activity not accessible
+    // SKIPPED: period_list_count_completed_task_application_applicationId_unit_unit_person_person_by_process not accessible
+    // SKIPPED: period_list_count_completed_task_unit_unit_person_person_by_application not accessible
+    // SKIPPED: period_list_count_completed_work_application_applicationId_process_processId_by_unit not accessible
+    // SKIPPED: period_list_count_completed_work_application_applicationId_process_processId_unit_unit_person_person not accessible
+    // SKIPPED: period_list_count_completed_work_application_applicationId_unit_unit_person_person_by_process not accessible
+    // SKIPPED: period_list_count_completed_work_unit_unit_person_person_by_application not accessible
+    // SKIPPED: period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_by_unit not accessible
+    // SKIPPED: period_list_count_expired_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person not accessible
+    // SKIPPED: period_list_count_expired_task_application_applicationId_process_processId_unit_unit_person_person_by_activity not accessible
+    // SKIPPED: period_list_count_expired_task_application_applicationId_unit_unit_person_person_by_process not accessible
+    // SKIPPED: period_list_count_expired_task_unit_unit_person_person_by_application not accessible
+    // SKIPPED: period_list_count_expired_work_application_applicationId_process_processId_by_unit not accessible
+    // SKIPPED: period_list_count_expired_work_application_applicationId_process_processId_unit_unit_person_person not accessible
+    // SKIPPED: period_list_count_expired_work_application_applicationId_unit_unit_person_person_by_process not accessible
+    // SKIPPED: period_list_count_expired_work_unit_unit_person_person_by_application not accessible
+    // SKIPPED: period_list_count_start_task_application_applicationId_process_processId_activity_activityId_by_unit not accessible
+    // SKIPPED: period_list_count_start_task_application_applicationId_process_processId_activity_activityId_unit_unit_person_person not accessible
+    // SKIPPED: period_list_count_start_task_application_applicationId_process_processId_unit_unit_person_person_by_activity not accessible
+    // SKIPPED: period_list_count_start_task_application_applicationId_unit_unit_person_person_by_process not accessible
+    // SKIPPED: period_list_count_start_task_unit_unit_person_person_by_application not accessible
+    // SKIPPED: period_list_count_start_work_application_applicationId_process_processId_by_unit not accessible
+    // SKIPPED: period_list_count_start_work_application_applicationId_process_processId_unit_unit_person_person not accessible
+    // SKIPPED: period_list_count_start_work_application_applicationId_unit_unit_person_person_by_process not accessible
+    // SKIPPED: period_list_count_start_work_unit_unit_person_person_by_application not accessible
+    // SKIPPED: period_list_expired_task_application not accessible
+    // SKIPPED: period_list_expired_task_unit not accessible
+    // SKIPPED: period_list_expired_work_application not accessible
+    // SKIPPED: period_list_expired_work_unit not accessible
+    // SKIPPED: period_list_start_task_application not accessible
+    // SKIPPED: period_list_start_task_unit not accessible
+    // SKIPPED: period_list_start_work_application not accessible
+    // SKIPPED: period_list_start_work_unit not accessible
+    // SKIPPED: state_applicationtstubs_trigger not accessible
+    // SKIPPED: state_category not accessible
+    // SKIPPED: state_category_trigger not accessible
+    // SKIPPED: state_organization not accessible
+    // SKIPPED: state_running not accessible
+    // SKIPPED: state_summary not accessible
+}

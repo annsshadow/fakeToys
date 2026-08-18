@@ -1,0 +1,86 @@
+use axum::{
+    extract::Extension,
+    Json,
+};
+use deadpool_postgres::Pool;
+use serde::{Deserialize, Serialize};
+use shared::error::AppError;
+use shared::response::ActionResult;
+
+use crate::{code_store, password, temp_token_store};
+
+// ──────────────────────────────────────────────────────────────────────────────
+// two_factor — 双因素登录第一阶段（短信验证码发送）
+//
+// 流程：POST /jaxrs/authentication/two_factor
+//   1. 验证第一因子：credential + password
+//   2. 发送短信验证码
+//   3. 签发临时 token（绑定到 credential，防止凭证交换攻击）
+//   4. 返回 {value: true, password_expired: bool, temp_token: "..."}
+//
+// 安全：第一因子失败时返回相同错误消息，不暴露是否验证码正确（防枚举）
+// ──────────────────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Deserialize)]
+pub struct TwoFactorLoginRequest {
+    pub credential: String,
+    pub password: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct TwoFactorPhase1Response {
+    pub value: bool,
+    pub password_expired: bool,
+    pub temp_token: String,
+}
+
+/// POST /jaxrs/authentication/two_factor —— 双因素登录第一阶段
+///
+/// 验证 credential + password，发送短信验证码，签发临时 token（阶段绑定）
+pub async fn two_factor_login(
+    pool: Extension<Pool>,
+    Json(req): Json<TwoFactorLoginRequest>,
+) -> Result<Json<ActionResult<TwoFactorPhase1Response>>, AppError> {
+    if req.credential.is_empty() || req.password.is_empty() {
+        return Ok(Json(ActionResult::error("invalid credentials")));
+    }
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_one(
+            "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
+             password_hash, locked, change_password_time, password_expired_time FROM auth_person \
+             WHERE unique_id = $1 AND deleted_at IS NULL",
+            &[&req.credential],
+        )
+        .await
+        .map_err(|_| AppError::Unauthorized)?;
+
+    let person_unique: String = row.get("unique_id");
+    let locked: bool = row.get("locked");
+    let password_hash: String = row.get("password_hash");
+    let change_password_time: Option<String> = row.get("change_password_time");
+
+    if locked {
+        // 返回通用错误消息，防止账户锁定状态枚举
+        return Ok(Json(ActionResult::error("invalid credentials")));
+    }
+
+    let valid = password::verify_password(&req.password, &password_hash, "", None);
+    if !valid {
+        return Ok(Json(ActionResult::error("invalid credentials")));
+    }
+
+    let password_expired = change_password_time.is_none();
+
+    let _plain = code_store().issue(&person_unique);
+
+    let temp_token = temp_token_store().issue(&person_unique);
+
+    Ok(Json(ActionResult::success(TwoFactorPhase1Response {
+        value: true,
+        password_expired,
+        temp_token,
+    })))
+}

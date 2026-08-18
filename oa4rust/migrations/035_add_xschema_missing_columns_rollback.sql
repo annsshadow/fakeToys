@@ -1,0 +1,34 @@
+-- rollback 035
+
+ALTER TABLE "x_ai_clue" drop column if exists "cnt" TEXT;
+ALTER TABLE "x_ai_completion" drop column if exists "clueId" TEXT;
+ALTER TABLE "x_ai_completion" drop column if exists "cnt" TEXT;
+ALTER TABLE "x_ai_completion" drop column if exists "content" TEXT;
+ALTER TABLE "x_ai_completion" drop column if exists "generateType" TEXT;
+ALTER TABLE "x_ai_completion" drop column if exists "input" TEXT;
+ALTER TABLE "x_ai_completion" drop column if exists "person" TEXT;
+ALTER TABLE "x_ai_file" drop column if exists "xcreator" TEXT;
+ALTER TABLE "x_ai_model" drop column if exists "apiKey" TEXT;
+ALTER TABLE "x_ai_model" drop column if exists "asDefault" BOOLEAN;
+ALTER TABLE "x_ai_model" drop column if exists "cnt" TEXT;
+ALTER TABLE "x_ai_model" drop column if exists "completionUrl" TEXT;
+ALTER TABLE "x_ai_model" drop column if exists "desc" TEXT;
+ALTER TABLE "x_ai_model" drop column if exists "enable" BOOLEAN;
+ALTER TABLE "x_ai_model" drop column if exists "model" TEXT;
+ALTER TABLE "x_ai_model" drop column if exists "type" TEXT;
+ALTER TABLE "x_ai_model" drop column if exists "xapikey" TEXT;
+ALTER TABLE "x_ai_model" drop column if exists "xasdefault" TEXT;
+ALTER TABLE "x_ai_model" drop column if exists "xcompletionurl" TEXT;
+ALTER TABLE "x_ai_model" drop column if exists "xdesc" TEXT;
+ALTER TABLE "x_ai_model" drop column if exists "xenable" BOOLEAN;
+ALTER TABLE "x_ai_model" drop column if exists "xmodel" TEXT;
+ALTER TABLE "x_ai_model" drop column if exists "xname" TEXT;
+ALTER TABLE "x_ai_model" drop column if exists "xtype" TEXT;
+ALTER TABLE "x_express_info" drop column if exists "xcompany" TEXT;
+ALTER TABLE "x_msg_message" drop column if exists "xbody" TEXT;
+ALTER TABLE "x_msg_message" drop column if exists "xconsumer" TEXT;
+ALTER TABLE "x_msg_message" drop column if exists "xcreateTime" TEXT;
+ALTER TABLE "x_msg_message" drop column if exists "xid" TEXT;
+ALTER TABLE "x_msg_message" drop column if exists "xperson" TEXT;
+ALTER TABLE "x_msg_message" drop column if exists "xtitle" TEXT;
+ALTER TABLE "x_msg_message" drop column if exists "xtype" TEXT;

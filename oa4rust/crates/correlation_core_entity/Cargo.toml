@@ -1,0 +1,23 @@
+﻿[package]
+name = "correlation_core_entity"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+axum.workspace = true
+tokio.workspace = true
+deadpool-postgres.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+chrono.workspace = true
+uuid.workspace = true
+tower.workspace = true
+sea-orm.workspace = true
+
+shared = { path = "../shared" }
+
+[dev-dependencies]
+tower.workspace = true

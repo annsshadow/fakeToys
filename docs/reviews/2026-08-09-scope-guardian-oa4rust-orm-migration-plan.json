@@ -1,0 +1,61 @@
+{
+  "reviewer": "scope-guardian",
+  "findings": [
+    {
+      "title": "U7 行为对比测试依赖链偏弱，可能影响 7,624 端点全量验证",
+      "severity": "P2",
+      "section": "U7. 行为对比测试全量扩展 / Dependencies",
+      "why_it_matters": "U7 目标是覆盖全部 7,624 个端点的行为对比测试（R15），但当前仅依赖 U3（8 个 core_entity crate 迁移）。7,624 个端点分布在全部 81 个 crate 中，若 U6（Wave 3，剩余所有 crate）尚未完成，U7 无法验证 Wave 2/3 迁移后端点的正确性。`extract_endpoints.py` 脚本可以从现有代码中提取端点路径，但"行为对比"的验证需要所有 crate 已完成 ORM 迁移。",
+      "finding_type": "omission",
+      "autofix_class": "gated_auto",
+      "confidence": 75,
+      "evidence": [
+        "Plan U7: Dependencies: U3（需要知道所有端点路径）",
+        "Origin R15: 行为对比测试框架需扩展至覆盖全部 7,624 个端点",
+        "Origin AE6: 给定全部 7,624 个端点，行为对比测试框架能枚举并对比每一个端点",
+        "Plan U6: Wave 3 迁移剩余所有 crate（81 - 8 - 15 = 58+ 个 crate）"
+      ],
+      "suggested_fix": "将 U7 的依赖从 `U3` 改为 `U3, U6`（或至少 `U6`），确保全量端点清单基于完成迁移后的代码生成，行为对比测试可覆盖全部 81 个 crate 的端点。"
+    },
+    {
+      "title": "原始需求中 core_entity crate 列表存在内部不一致，计划选择了不同版本",
+      "severity": "P2",
+      "section": "U3. Wave 1 core_entity crate ORM 迁移 / 原始需求 R7 vs Problem Frame",
+      "why_it_matters": "原始需求 Problem Frame（第 20 行）列出：`cms_express、correlation_core_entity、query_express 等`；而 R7（第 88 行）列出：`cms_core_entity、bbs_core_entity、calendar_core_entity、meeting_core_entity`。计划 U3 采用了 Problem Frame 的版本（cms_express、correlation_core_entity、query_express），与 R7 的文字描述不同。这不是计划的越界，而是原始需求的内部歧义，但实施者需要确认最终正确的 crate 列表。",
+      "finding_type": "omission",
+      "autofix_class": "manual",
+      "confidence": 75,
+      "evidence": [
+        "Origin Problem Frame (line 20): '8 个 core_entity crate（organization_core_entity、file_core_entity、program_center_core_entity、ai_core_entity、cms_express、correlation_core_entity、query_express 等）'",
+        "Origin R7 (line 88): '8 个 core_entity crate（organization_core_entity、file_core_entity、program_center_core_entity、ai_core_entity、cms_core_entity、bbs_core_entity、calendar_core_entity、meeting_core_entity）'",
+        "Plan U3 files list: organization_core_entity, file_core_entity, program_center_core_entity, ai_core_entity, cms_express, correlation_core_entity, query_express, cms_core_entity（共 8 个）"
+      ],
+      "suggested_fix": "在计划开始前与需求作者确认 Wave 1 的 8 个 core_entity crate 准确列表。参考 `docs/brainstorms/oa4rust-migration-status-2026-08-08.md` 中的实际 crate 状态表格进行对齐。"
+    },
+    {
+      "title": "U2 修改了现有迁移文件 008_file_tables.sql（作为参考）",
+      "severity": "P3",
+      "section": "U2. Schema 规范化迁移脚本 / Files",
+      "why_it_matters": "计划 U2 包含 'Modify: oa4rust/migrations/008_file_tables.sql（更新为大写转小写后的版本，作为参考）'。原始需求 R4 只要求"编写数据迁移脚本"进行重命名，并未要求修改现有迁移文件。修改现有迁移文件可能影响历史迁移记录的一致性。计划表述为"作为参考"，风险较低，但值得确认。",
+      "finding_type": "error",
+      "autofix_class": "manual",
+      "confidence": 50,
+      "evidence": [
+        "Plan U2 Files: 'Modify: oa4rust/migrations/008_file_tables.sql（更新为大写转小写后的版本，作为参考）'",
+        "Origin R4: '编写数据迁移脚本将现有大写表名（如 FILE_FOLDER → file_folder）同步重命名'",
+        "Origin Scope: 'PostgreSQL schema 规范化'（包含，但未提及修改历史迁移文件）"
+      ],
+      "suggested_fix": "如仅需作为参考，建议改为创建独立的 `migrations/011_normalize_schema_ref.sql`（参考版本）而非修改 `008_file_tables.sql`，保持历史迁移文件的原始状态不变。"
+    }
+  ],
+  "residual_risks": [
+    "核心 entity crate 列表歧义未解决可能导致 U3 实施范围偏差（P2），建议在实施启动前确认",
+    "U7 依赖链偏弱（P2），可能导致 7,624 端点中 Wave 2/3 部分的行为对比测试在迁移完成前无法充分验证",
+    "U2 修改历史迁移文件（P3），低风险但可能影响迁移审计轨迹"
+  ],
+  "deferred_questions": [
+    "Wave 1 的 8 个 core_entity crate 准确列表应以 R7（cms_core_entity/bbs_core_entity/calendar_core_entity/meeting_core_entity）还是 Problem Frame（cms_express/correlation_core_entity/query_express）为准？",
+    "U7 的行为对比测试在 U6 完成前是否已具备足够的端点清单（通过 extract_endpoints.py 脚本）来并行启动，还是必须等待 U6 完成后才能验证？",
+    "U2 中修改 008_file_tables.sql 的必要性和目的——是仅作为文档参考还是实际用于迁移验证？"
+  ]
+}
