@@ -1,0 +1,2 @@
+pub mod program_center;
+integration_tests::scenarios::program_center::program_center_flow();

@@ -1,0 +1,21 @@
+{
+  "body": {
+    "count": null,
+    "data": {
+      "status": "running",
+      "uptime": null,
+      "version": null
+    },
+    "date": null,
+    "message": null,
+    "position": null,
+    "prompt": null,
+    "size": null,
+    "spent": null,
+    "type": "success"
+  },
+  "method": "GET",
+  "name": "console_status",
+  "path": "/jaxrs/console/status",
+  "status": 200
+}

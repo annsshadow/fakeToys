@@ -1,0 +1,179 @@
+{
+  "reviewer": "feasibility",
+  "findings": [
+    {
+      "title": "PostgreSQL ALTER TABLE RENAME IF EXISTS 语法兼容性风险",
+      "severity": "P0",
+      "section": "U2 - Schema 规范化迁移脚本",
+      "why_it_matters": "Plan 示例 SQL 使用 `ALTER TABLE \"FILE_FOLDER\" RENAME TO \"file_folder\" IF EXISTS;`，但 PostgreSQL 仅在 15+ 版本支持 RENAME TO 的 IF EXISTS。当前代码库未声明 PostgreSQL 版本要求。若运行在 PG14 或更早版本，migration 011 将因语法错误失败，整个 ORM 迁移阻塞。",
+      "finding_type": "error",
+      "autofix_class": "gated_auto",
+      "confidence": 75,
+      "evidence": [
+        "Plan U2 示例 SQL: ALTER TABLE \"FILE_FOLDER\" RENAME TO \"file_folder\" IF EXISTS;",
+        "PostgreSQL 15 才为 ALTER TABLE ... RENAME TO 添加 IF EXISTS 支持",
+        "代码库未声明 PostgreSQL 版本约束（.env.example 和 README 均无版本信息）"
+      ],
+      "suggested_fix": "在 Plan 中明确 PostgreSQL 最低版本要求（≥15），或使用 DO $$ BEGIN ... END $$ 块实现版本兼容的幂等重命名。示例：DO $$ BEGIN IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'FILE_FOLDER' AND schemaname = 'public') THEN ALTER TABLE \"FILE_FOLDER\" RENAME TO \"file_folder\"; END IF; END $$;"
+    },
+    {
+      "title": "ALTER TABLE RENAME 不自动重命名依赖对象（索引/约束/外键）",
+      "severity": "P0",
+      "section": "U2 - Schema 规范化迁移脚本",
+      "why_it_matters": "PostgreSQL 的 ALTER TABLE ... RENAME TO 仅重命名表本身，不更新依赖该表的索引名、约束名、外键引用。Migration 011 的示例 SQL 第三步提到通过 pg_constraint 查询并重命名，但没有具体的自动发现逻辑。若遗漏任何依赖对象的更新，迁移后数据库将处于不一致状态（旧名索引/约束指向新表名，或外键引用断裂）。",
+      "finding_type": "omission",
+      "autofix_class": "manual",
+      "confidence": 100,
+      "evidence": [
+        "PostgreSQL 文档: ALTER TABLE ... RENAME TO does not rename dependent objects",
+        "Plan U2 示例 Step 3 仅展示 '通过 pg_constraint 查询并重命名外键' 的概述，无具体发现逻辑",
+        "Migration 008 创建了指向 FILE_FOLDER 的索引 idx_file_folder_superior，迁移后索引名与表名不一致"
+      ],
+      "suggested_fix": "Migration 011 应使用 PL/pgSQL 循环遍历 pg_indexes、pg_constraints，对每个依赖对象执行动态重命名。提供完整的幂等脚本模板，包括：1) 查询所有依赖对象 2) 按依赖顺序重命名 3) 验证重命名后约束完整性。建议在测试数据库上先执行并验证 pg_constraint 和 pg_indexes 的一致性。"
+    },
+    {
+      "title": "大量 x_org_* 等表在 migration 中不存在，规范化范围不完整",
+      "severity": "P0",
+      "section": "U2 + U3 - Schema 规范化与 Wave 1 迁移",
+      "why_it_matters": "代码库中 organization_core_entity 查询 x_org_definition、x_org_group、x_org_person、x_org_identity、x_org_custom、x_org_bind 等表，但这些表在 migrations/001-010 中完全没有 CREATE TABLE 语句。其他缺失表还包括 x_ai_app、x_attendance_record、x_general_*、x_hotpic、x_jpush_*、x_mind_*、x_portal、x_widget、x_message、PROCESS_WORK、QUERY_VIEW 等。Plan 的 migration 011 仅处理已知的大写表（FILE_FOLDER 等），未覆盖这些缺失表。如果这些表由 Java 侧或其他机制创建，ORM 迁移后 Rust 查询将因表名不一致而失败。",
+      "finding_type": "omission",
+      "autofix_class": "manual",
+      "confidence": 100,
+      "evidence": [
+        "migrations/001-010 中 CREATE TABLE 共 18 个表，均为 auth_*、x_meeting_*、bbs_*、FILE_*、secret_config",
+        "organization_core_entity/src/lib.rs 查询 x_org_definition、x_org_group、x_org_person 等表",
+        "ai_core_entity 查询 x_ai_app、x_ai_model、x_ai_conversation",
+        "processplatform_core_entity 查询 PROCESS_WORK、PROCESS_TASK、PROCESS_TICKET",
+        "query_core_entity 查询 QUERY_VIEW、QUERY_ITEM、QUERY_IMPORT",
+        "program_center_core_entity 查询 CTE_INVOKE、CTE_AGENT、CTE_STRUCTURE"
+      ],
+      "suggested_fix": "在 U2 之前增加 U0 步骤：使用 Python 脚本扫描所有 crate 中的 SQL 查询，提取所有引用的表名，与 migrations/ 中的 CREATE TABLE 对比，生成缺失表的 CREATE TABLE DDL（参照 Java 端点的 schema 定义）或标注为'由外部系统创建'。Migration 011 的规范化范围应包含所有发现的大写表名。"
+    },
+    {
+      "title": "软删除过滤模式不一致，list_active 助手假设缺失",
+      "severity": "P0",
+      "section": "U1 + U3 - ORM 共享层与 Wave 1 迁移",
+      "why_it_matters": "Plan 的 `list_active` 助手假设所有查询都包含 `deleted_at IS NULL` 过滤。但实际代码中，14 个 core_entity crate 中有 8 个（ai、attendance、bbs、correlation、file、general、hotpic、jpush、meeting、message、mind、organization）的查询**不包含** `AND deleted_at IS NULL`。若直接迁移这些查询到 `list_active`，将引入软删除过滤（行为改变）；若不应用过滤，则与 plan 描述的'统一 ORM 层处理软删除'矛盾。",
+      "finding_type": "error",
+      "autofix_class": "manual",
+      "confidence": 100,
+      "evidence": [
+        "cms_core_entity、component_core_entity、portal_core_entity、processplatform_core_entity、program_center_core_entity、query_core_entity 的查询包含 'deleted_at IS NULL'",
+        "ai_core_entity、attendance_core_entity、bbs_core_entity、correlation_core_entity、file_core_entity、general_core_entity、hotpic_core_entity、jpush_core_entity、meeting_core_entity、message_core_entity、mind_core_entity、organization_core_entity 的查询不包含软删除过滤",
+        "Plan U1 描述: 'list_active 助手返回正确数量的记录，包含 deleted_at IS NULL 过滤'"
+      ],
+      "suggested_fix": "在 U3 迁移每个 crate 时，逐一审查其查询是否应包含软删除过滤。对于不应过滤的表（如 audit log、history table），提供不带 deleted_at 过滤的 `list_all` 助手。在 Plan 的 U3 测试场景中增加 '验证软删除过滤行为与迁移前一致' 的要求。"
+    },
+    {
+      "title": "sqlx 0.8 与 SeaORM 内部 sqlx 0.9 的 Type 枚举冲突",
+      "severity": "P1",
+      "section": "U1 - ORM 共享层基础构建",
+      "why_it_matters": "Plan 声称'让 SeaORM 通过 sqlx-postgres feature 自行管理内部 sqlx 版本'来避免冲突。但 `shared/src/response.rs` 直接导入并使用 `deadpool_postgres::tokio_postgres::types::Type`——这是 sqlx 0.8 的 Type 枚举。SeaORM 2.0 内部使用 sqlx 0.9 的 Type 枚举。Cargo 虽然可以为同一 crate 的不同版本生成不同条目，但 `shared/src/response.rs` 中的 match *col.type_() 匹配 sqlx 0.8 的 Type 变体，而 SeaORM 生成的代码可能引用 sqlx 0.9 的 Type。如果任何代码路径交叉使用两个版本的 Type，编译将失败。",
+      "finding_type": "error",
+      "autofix_class": "gated_auto",
+      "confidence": 75,
+      "evidence": [
+        "Cargo.lock 锁定 sqlx 0.8.6",
+        "shared/src/response.rs:3: use deadpool_postgres::tokio_postgres::types::Type;",
+        "shared/src/response.rs:19: match *col.type_() { Type::BOOL => ... Type::INT2 => ... }",
+        "Plan 声明: 'SeaORM 2.0 内部依赖 sqlx 0.9，项目使用 sqlx 0.8，需通过 feature 隔离避免冲突'",
+        "SeaORM 2.0.1 Cargo.toml 声明 depends on sqlx = { version = '0.9', optional = true }"
+      ],
+      "suggested_fix": "验证 SeaORM 2.0 是否支持通过 feature flag 选择 sqlx 0.8。如果不支持，需要在 shared crate 中抽象 Type 匹配逻辑，或将 sqlx 升级到 0.9（同时适配所有使用 sqlx query! 宏的 crate）。建议在实际添加 SeaORM 依赖后立即运行 cargo check 验证编译。"
+    },
+    {
+      "title": "7,624 端点数量未经实际验证，行为对比测试扩展可行性存疑",
+      "severity": "P1",
+      "section": "U7 - 行为对比测试全量扩展",
+      "why_it_matters": "Plan 声称覆盖 '全部 7,624 个端点'，但当前 tests/behavior_compare.rs 中仅有 79 个 EndpointDef。若 7,624 是估算值（81 crates × ~94 endpoints/crate），则实际数字可能偏差很大。更关键的是，extract_endpoints.py 脚本需要为每个端点生成 Java war/action 映射——但当前 EndpointDef 的 java_war 和 java_action 字段是手动维护的，没有自动生成机制。7,624 个端点的 Java 映射数据源未明确。",
+      "finding_type": "omission",
+      "autofix_class": "manual",
+      "confidence": 75,
+      "evidence": [
+        "tests/behavior_compare.rs 中 EndpointDef 实例数: 79",
+        "Plan 声称: '覆盖全部 7,624 个端点'",
+        "main.rs 中 router() 调用数: 81（与 crate 数一致）",
+        "extract_endpoints.py 输出示例显示需要 java_war 和 java_action 字段，但代码库中无自动生成这些映射的机制"
+      ],
+      "suggested_fix": "在 Plan 中增加步骤：1) 先运行 extract_endpoints.py 验证实际提取的端点数是否接近 7,624 2) 确认 Java war/action 映射的数据源（是否有自动化脚本或 Java 侧 OpenAPI 规范可解析）3) 如果 Java 映射无法自动生成，将端点扩展分为多批，优先处理高频端点。"
+    },
+    {
+      "title": "orm_entity! 宏引入不必要的抽象层",
+      "severity": "P2",
+      "section": "U1 - ORM 共享层基础构建",
+      "why_it_matters": "Plan 提议创建 `orm_entity!` 宏封装 SeaORM 实体派生模式（主键、索引、soft_delete、table_name）。但 SeaORM 2.0 的 `#[derive(Entity)]` 已原生支持这些功能：主键（#[primary_key]）、索引（#[index]）、表名（#[table_name]）、软删除（#[sea_orm(field_name = "deleted_at")]）。自定义宏增加了维护负担且不提供额外价值，与 SeaORM 的最佳实践相悖。",
+      "finding_type": "omission",
+      "autofix_class": "safe_auto",
+      "confidence": 50,
+      "evidence": [
+        "Plan U1 描述: 'entity.rs: 定义 orm_entity! 宏，封装 SeaORM 实体派生的常见模式'",
+        "SeaORM 2.0 文档确认 #[derive(Entity)] 支持 table_name、primary_key、index、enum_name 等属性",
+        "代码库中无任何现有宏封装模式（所有实体定义直接写在各 crate 中）"
+      ],
+      "suggested_fix": "直接使用 SeaORM 的 #[derive(Entity)] 派生宏，不在 orm crate 中封装额外宏。如果确实需要简化重复模式，可考虑代码生成工具（如 builtins::entity! 的变体）而非运行时宏。"
+    },
+    {
+      "title": "ControlClient trait 与 SeaORM DatabaseConnection 的适配方案未定义",
+      "severity": "P2",
+      "section": "U5 - Wave 2: assemble_control crate ORM 迁移",
+      "why_it_matters": "Plan 提到 '对于使用 ControlClient trait 的 crate（如 file_assemble_control），适配 trait 以支持 SeaORM DatabaseConnection'，但未说明如何适配。ControlClient 的接口是原始 SQL 查询（ctrl_query、ctrl_query_one 等），而 SeaORM 使用模型驱动查询。两者 API 不兼容，适配需要定义新的 trait 或包装层。",
+      "finding_type": "omission",
+      "autofix_class": "manual",
+      "confidence": 75,
+      "evidence": [
+        "shared/src/lib.rs: ControlClient trait 定义 ctrl_query/ctrl_query_one/ctrl_query_opt/ctrl_execute 四个方法，均接受原始 SQL + 参数",
+        "file_assemble_control/src/lib.rs: 'pub use shared::{ControlClient, ControlPool, DynControlPool, RowGet}'",
+        "Plan U5: '适配 trait 以支持 SeaORM DatabaseConnection'",
+        "SeaORM DatabaseConnection 无原始 SQL 查询接口（需通过 Connection trait 的 execute_query 等，与 ControlClient 不兼容）"
+      ],
+      "suggested_fix": "在 U1 中明确 ControlClient 的 SeaORM 兼容方案：选项 A) 为 DatabaseConnection 实现 ControlClient（通过 Connection::execute_parameterized 桥接）；选项 B) 为使用 SeaORM 的 crate 定义新 trait（如 SeaORMClient）；选项 C) 保留 ControlClient 仅用于未迁移 crate，迁移后的 crate 使用 SeaORM 原生 API。"
+    },
+    {
+      "title": "integration_tests/db.rs 未包含 migration 011",
+      "severity": "P2",
+      "section": "U2 - Schema 规范化迁移脚本",
+      "why_it_matters": "tests/integration_tests/db.rs 的 run_migrations() 函数扫描 migrations/ 目录下的所有 .sql 文件并按字典序执行。Migration 011 添加后会自动包含在测试数据库中。但是，测试 helper（helpers.rs 的 seed_test_data）直接查询 auth_person 等小写表名——如果 migration 011 仅重命名大写表（FILE_FOLDER 等），不影响这些小写表，则测试不受影响。但如果 migration 011 也重命名 auth_* 表（plan 示例中未包含），测试将失败。",
+      "finding_type": "omission",
+      "autofix_class": "safe_auto",
+      "confidence": 75,
+      "evidence": [
+        "tests/integration_tests/db.rs:216: 扫描 migrations/ 目录下所有 .sql 文件",
+        "tests/integration_tests/helpers.rs:70: 直接查询 'auth_person' 表（小写）",
+        "migrations/001 已创建 auth_person（小写），migration 011 不应重命名此类表",
+        "但 plan 的示例 SQL 包含 'ALTER TABLE \"file_folder\" RENAME COLUMN \"PERSON\" TO \"person\"'，暗示列名也需要规范化"
+      ],
+      "suggested_fix": "在 Plan 中明确 migration 011 的规范化范围：仅重命名大写字母表名和列名，不触碰已为小写的 auth_* 表。确保 migration 011 幂等且对现有小写表无影响。在 U2 的测试场景中增加 '集成测试 init_test_database() 成功执行 migration 011' 验证。"
+    },
+    {
+      "title": "router() 函数签名变更影响所有 81 个 crate",
+      "severity": "P2",
+      "section": "U3-U6 - 三波 ORM 迁移",
+      "why_it_matters": "Plan 声称'保持 router(pool) 函数签名不变，内部创建 DatabaseConnection'。但当前所有 81 个 crate 的 router(pool: Pool) → Router 签名直接接受 deadpool_postgres::Pool。如果迁移后改为接受 DatabaseConnection，则 main.rs 中 81 个 router() 调用需要全部修改。Plan 的'内部创建'方案需要每个 handler 同时接收 Pool 和 DatabaseConnection，或在 handler 内部从 Pool 创建 DatabaseConnection——两种方案都有显著的 API 变更成本。",
+      "finding_type": "omission",
+      "confidence": 75,
+      "evidence": [
+        "main.rs:241-320: 81 个 router(pool.clone()) 调用",
+        "organization_core_entity/src/lib.rs:287: 'pub fn router(pool: deadpool_postgres::Pool) -> axum::Router'",
+        "Plan U3: '保持 router(pool) 函数签名不变，内部创建 DatabaseConnection 并 layer Extension'",
+        "axum 的 Extension 机制需要在 middleware layer 中注入，而非在 handler 参数中直接声明"
+      ],
+      "suggested_fix": "明确 router() 签名变更策略：选项 A) 保持 Pool 参数不变，在 handler 内部通过 pool.get().await 获取连接后包装为 DatabaseConnection；选项 B) 逐步将 router() 签名改为接受 DatabaseConnection，分批更新 main.rs 调用。推荐选项 A 以减少初始变更范围。"
+    }
+  ],
+  "residual_risks": [
+    "PostgreSQL 版本不确定，ALTER TABLE RENAME IF EXISTS 可能在 PG14 上失败",
+    "缺失表（x_org_* 等）的 schema 未知，规范化无法覆盖这些表",
+    "sqlx 0.8/0.9 双版本共存可能导致 shared crate 编译失败",
+    "7,624 端点数量未经实际代码扫描验证，行为对比测试范围可能过大或过小",
+    "软删除过滤不一致可能导致 ORM 迁移后部分端点行为改变",
+    "ControlClient trait 适配方案未定义，Wave 2 迁移可能受阻"
+  ],
+  "deferred_questions": [
+    "PostgreSQL 生产环境版本是多少？是否 ≥15？",
+    "x_org_*、x_ai_* 等缺失表由谁创建？是否有 Java 侧 migration 文件可参考？",
+    "SeaORM 2.0 是否支持通过 feature flag 锁定内部 sqlx 版本为 0.8？",
+    "7,624 个端点的 Java war/action 映射数据来源是什么？",
+    "哪些 crate 的查询不需要软删除过滤（如审计日志表）？",
+    "ControlClient trait 在迁移后的 crate 中是否仍需保留用于测试注入？"
+  ]
+}

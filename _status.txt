@@ -1,0 +1,14 @@
+﻿START
+FAIL:git_trace.txt
+FAIL:git_typecheck.txt
+FAIL:git_procs.txt
+FAIL:git_cmdlines.txt
+FAIL:git_kill.txt
+FAIL:git_afterkill.txt
+FAIL:git_nativeio.txt
+FAIL:git_refsexp.txt
+FAIL:git_assess.txt
+FAIL:git_sync.log
+FAIL:git_sync_tmp.ps1
+REMOVED=0
+LEFT=none

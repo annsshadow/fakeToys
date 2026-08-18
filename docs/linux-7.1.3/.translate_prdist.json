@@ -1,0 +1,472 @@
+{
+  "buckets": {
+    "<0.05": 23,
+    "0.05-0.10": 69,
+    "0.10-0.30": 1174,
+    "0.30-0.60": 1872,
+    ">=0.60": 244
+  },
+  "total": 3382,
+  "marginal": [
+    {
+      "pr": 0.0366,
+      "unit": 11,
+      "rel": "userspace-api\\media\\v4l\\subdev-formats.md"
+    },
+    {
+      "pr": 0.0373,
+      "unit": 64,
+      "rel": "bpf\\libbpf\\program_types.md"
+    },
+    {
+      "pr": 0.0378,
+      "unit": 111,
+      "rel": "networking\\net_cachelines\\netns_ipv4_sysctl.md"
+    },
+    {
+      "pr": 0.0392,
+      "unit": 75,
+      "rel": "filesystems\\nfs\\nfs41-server.md"
+    },
+    {
+      "pr": 0.0393,
+      "unit": 125,
+      "rel": "admin-guide\\media\\bttv-cardlist.md"
+    },
+    {
+      "pr": 0.0393,
+      "unit": 195,
+      "rel": "gpu\\drivers.md"
+    },
+    {
+      "pr": 0.0396,
+      "unit": 140,
+      "rel": "admin-guide\\media\\em28xx-cardlist.md"
+    },
+    {
+      "pr": 0.0397,
+      "unit": 56,
+      "rel": "arch\\arm64\\silicon-errata.md"
+    },
+    {
+      "pr": 0.0402,
+      "unit": 194,
+      "rel": "userspace-api\\media\\dvb\\dmx_fcalls.md"
+    },
+    {
+      "pr": 0.0404,
+      "unit": 195,
+      "rel": "arch\\index.md"
+    },
+    {
+      "pr": 0.0413,
+      "unit": 78,
+      "rel": "admin-guide\\media\\gspca-cardlist.md"
+    },
+    {
+      "pr": 0.0413,
+      "unit": 195,
+      "rel": "admin-guide\\media\\dvb-usb-dtt200u-cardlist.md"
+    },
+    {
+      "pr": 0.042,
+      "unit": 122,
+      "rel": "filesystems\\ext4\\blockmap.md"
+    },
+    {
+      "pr": 0.0425,
+      "unit": 114,
+      "rel": "admin-guide\\media\\saa7134-cardlist.md"
+    },
+    {
+      "pr": 0.0428,
+      "unit": 195,
+      "rel": "userspace-api\\netlink\\index.md"
+    },
+    {
+      "pr": 0.0429,
+      "unit": 189,
+      "rel": "networking\\device_drivers\\ethernet\\index.md"
+    },
+    {
+      "pr": 0.0437,
+      "unit": 58,
+      "rel": "userspace-api\\ioctl\\ioctl-number.md"
+    },
+    {
+      "pr": 0.0443,
+      "unit": 139,
+      "rel": "userspace-api\\media\\v4l\\biblio.md"
+    },
+    {
+      "pr": 0.0457,
+      "unit": 149,
+      "rel": "networking\\net_cachelines\\snmp.md"
+    },
+    {
+      "pr": 0.0467,
+      "unit": 155,
+      "rel": "admin-guide\\media\\usb-cardlist.md"
+    },
+    {
+      "pr": 0.0479,
+      "unit": 181,
+      "rel": "userspace-api\\media\\v4l\\user-func.md"
+    },
+    {
+      "pr": 0.0486,
+      "unit": 171,
+      "rel": "hwmon\\w83795.md"
+    },
+    {
+      "pr": 0.0496,
+      "unit": 172,
+      "rel": "arch\\arm\\sunxi.md"
+    },
+    {
+      "pr": 0.05,
+      "unit": 178,
+      "rel": "networking\\index.md"
+    },
+    {
+      "pr": 0.0511,
+      "unit": 156,
+      "rel": "hwmon\\index.md"
+    },
+    {
+      "pr": 0.0529,
+      "unit": 111,
+      "rel": "virt\\kvm\\arm\\hypercalls.md"
+    },
+    {
+      "pr": 0.0532,
+      "unit": 157,
+      "rel": "networking\\net_cachelines\\inet_connection_sock.md"
+    },
+    {
+      "pr": 0.0534,
+      "unit": 164,
+      "rel": "hid\\hid-alps.md"
+    },
+    {
+      "pr": 0.0545,
+      "unit": 157,
+      "rel": "admin-guide\\media\\cx88-cardlist.md"
+    },
+    {
+      "pr": 0.055,
+      "unit": 69,
+      "rel": "arch\\arm\\marvell.md"
+    },
+    {
+      "pr": 0.055,
+      "unit": 95,
+      "rel": "networking\\net_cachelines\\tcp_sock.md"
+    },
+    {
+      "pr": 0.0554,
+      "unit": 151,
+      "rel": "scsi\\aacraid.md"
+    },
+    {
+      "pr": 0.0582,
+      "unit": 182,
+      "rel": "driver-api\\80211\\cfg80211.md"
+    },
+    {
+      "pr": 0.0605,
+      "unit": 90,
+      "rel": "mm\\arch_pgtable_helpers.md"
+    },
+    {
+      "pr": 0.0606,
+      "unit": 173,
+      "rel": "admin-guide\\media\\dvb-usb-dib0700-cardlist.md"
+    },
+    {
+      "pr": 0.0626,
+      "unit": 171,
+      "rel": "userspace-api\\media\\rc\\keytable.c.md"
+    },
+    {
+      "pr": 0.0628,
+      "unit": 175,
+      "rel": "admin-guide\\media\\tuner-cardlist.md"
+    },
+    {
+      "pr": 0.063,
+      "unit": 174,
+      "rel": "PCI\\endpoint\\pci-vntb-function.md"
+    },
+    {
+      "pr": 0.0644,
+      "unit": 178,
+      "rel": "gpu\\imagination\\uapi.md"
+    },
+    {
+      "pr": 0.0645,
+      "unit": 179,
+      "rel": "admin-guide\\media\\other-usb-cardlist.md"
+    },
+    {
+      "pr": 0.065,
+      "unit": 114,
+      "rel": "networking\\net_cachelines\\net_device.md"
+    },
+    {
+      "pr": 0.065,
+      "unit": 173,
+      "rel": "admin-guide\\media\\cx23885-cardlist.md"
+    },
+    {
+      "pr": 0.0665,
+      "unit": 194,
+      "rel": "crypto\\index.md"
+    },
+    {
+      "pr": 0.0667,
+      "unit": 192,
+      "rel": "admin-guide\\media\\dvb-usb-dw2102-cardlist.md"
+    },
+    {
+      "pr": 0.0673,
+      "unit": 195,
+      "rel": "admin-guide\\media\\dvb-usb-gl861-cardlist.md"
+    },
+    {
+      "pr": 0.0676,
+      "unit": 195,
+      "rel": "admin-guide\\media\\dvb-usb-pctv452e-cardlist.md"
+    },
+    {
+      "pr": 0.0683,
+      "unit": 195,
+      "rel": "admin-guide\\media\\dvb-usb-af9005-cardlist.md"
+    },
+    {
+      "pr": 0.0685,
+      "unit": 190,
+      "rel": "admin-guide\\media\\dvb-usb-af9035-cardlist.md"
+    },
+    {
+      "pr": 0.0691,
+      "unit": 55,
+      "rel": "usb\\usbip_protocol.md"
+    },
+    {
+      "pr": 0.0693,
+      "unit": 153,
+      "rel": "input\\uinput.md"
+    },
+    {
+      "pr": 0.0693,
+      "unit": 187,
+      "rel": "userspace-api\\media\\v4l\\pixfmt-rawnn-cru.md"
+    },
+    {
+      "pr": 0.0701,
+      "unit": 185,
+      "rel": "filesystems\\index.md"
+    },
+    {
+      "pr": 0.0704,
+      "unit": 184,
+      "rel": "admin-guide\\media\\ivtv-cardlist.md"
+    },
+    {
+      "pr": 0.0707,
+      "unit": 194,
+      "rel": "gpu\\index.md"
+    },
+    {
+      "pr": 0.0707,
+      "unit": 195,
+      "rel": "admin-guide\\media\\dvb-usb-az6007-cardlist.md"
+    },
+    {
+      "pr": 0.0708,
+      "unit": 195,
+      "rel": "networking\\device_drivers\\ethernet\\mellanox\\mlx5\\index.md"
+    },
+    {
+      "pr": 0.071,
+      "unit": 194,
+      "rel": "driver-api\\media\\drivers\\index.md"
+    },
+    {
+      "pr": 0.0712,
+      "unit": 195,
+      "rel": "admin-guide\\media\\dvb-usb-lmedm04-cardlist.md"
+    },
+    {
+      "pr": 0.0725,
+      "unit": 192,
+      "rel": "admin-guide\\media\\dvb-usb-dibusb-mb-cardlist.md"
+    },
+    {
+      "pr": 0.0737,
+      "unit": 188,
+      "rel": "admin-guide\\media\\radio-cardlist.md"
+    },
+    {
+      "pr": 0.0738,
+      "unit": 33,
+      "rel": "userspace-api\\media\\v4l\\hist-v4l2.md"
+    },
+    {
+      "pr": 0.075,
+      "unit": 177,
+      "rel": "driver-api\\index.md"
+    },
+    {
+      "pr": 0.0755,
+      "unit": 188,
+      "rel": "admin-guide\\media\\dvb-usb-af9015-cardlist.md"
+    },
+    {
+      "pr": 0.0768,
+      "unit": 189,
+      "rel": "admin-guide\\media\\dvb-usb-rtl28xxu-cardlist.md"
+    },
+    {
+      "pr": 0.0775,
+      "unit": 188,
+      "rel": "admin-guide\\media\\cx231xx-cardlist.md"
+    },
+    {
+      "pr": 0.0786,
+      "unit": 78,
+      "rel": "userspace-api\\media\\v4l\\pixfmt-rgb.md"
+    },
+    {
+      "pr": 0.0793,
+      "unit": 182,
+      "rel": "networking\\net_cachelines\\inet_sock.md"
+    },
+    {
+      "pr": 0.083,
+      "unit": 190,
+      "rel": "arch\\arm\\index.md"
+    },
+    {
+      "pr": 0.0833,
+      "unit": 86,
+      "rel": "iio\\adis16550.md"
+    },
+    {
+      "pr": 0.0839,
+      "unit": 156,
+      "rel": "userspace-api\\media\\dvb\\frontend-property-terrestrial-systems.md"
+    },
+    {
+      "pr": 0.0845,
+      "unit": 104,
+      "rel": "iio\\adxl313.md"
+    },
+    {
+      "pr": 0.0852,
+      "unit": 168,
+      "rel": "userspace-api\\media\\v4l\\v4l2grab.c.md"
+    },
+    {
+      "pr": 0.0853,
+      "unit": 194,
+      "rel": "admin-guide\\perf\\index.md"
+    },
+    {
+      "pr": 0.0856,
+      "unit": 127,
+      "rel": "iio\\adxl380.md"
+    },
+    {
+      "pr": 0.0856,
+      "unit": 145,
+      "rel": "userspace-api\\media\\v4l\\pixfmt-srggb10-ipu3.md"
+    },
+    {
+      "pr": 0.0864,
+      "unit": 87,
+      "rel": "arch\\arm64\\cpu-feature-registers.md"
+    },
+    {
+      "pr": 0.0867,
+      "unit": 151,
+      "rel": "hwmon\\coretemp.md"
+    },
+    {
+      "pr": 0.0873,
+      "unit": 65,
+      "rel": "scsi\\arcmsr_spec.md"
+    },
+    {
+      "pr": 0.0873,
+      "unit": 188,
+      "rel": "userspace-api\\media\\v4l\\pixfmt-packed-hsv.md"
+    },
+    {
+      "pr": 0.0877,
+      "unit": 65,
+      "rel": "driver-api\\usb\\dwc3.md"
+    },
+    {
+      "pr": 0.0887,
+      "unit": 172,
+      "rel": "process\\kernel-driver-statement.md"
+    },
+    {
+      "pr": 0.089,
+      "unit": 71,
+      "rel": "iio\\adis16480.md"
+    },
+    {
+      "pr": 0.091,
+      "unit": 194,
+      "rel": "admin-guide\\media\\dvb-usb-mxl111sf-cardlist.md"
+    },
+    {
+      "pr": 0.0918,
+      "unit": 100,
+      "rel": "userspace-api\\media\\v4l\\capture.c.md"
+    },
+    {
+      "pr": 0.0936,
+      "unit": 192,
+      "rel": "gpu\\meson.md"
+    },
+    {
+      "pr": 0.0952,
+      "unit": 194,
+      "rel": "admin-guide\\media\\v4l-drivers.md"
+    },
+    {
+      "pr": 0.0963,
+      "unit": 89,
+      "rel": "hwmon\\dell-smm-hwmon.md"
+    },
+    {
+      "pr": 0.0966,
+      "unit": 86,
+      "rel": "wmi\\devices\\alienware-wmi.md"
+    },
+    {
+      "pr": 0.0972,
+      "unit": 192,
+      "rel": "scsi\\index.md"
+    },
+    {
+      "pr": 0.0992,
+      "unit": 140,
+      "rel": "admin-guide\\media\\frontend-cardlist.md"
+    },
+    {
+      "pr": 0.0992,
+      "unit": 176,
+      "rel": "arch\\arm\\samsung\\bootloader-interface.md"
+    },
+    {
+      "pr": 0.1,
+      "unit": 123,
+      "rel": "admin-guide\\java.md"
+    }
+  ]
+}

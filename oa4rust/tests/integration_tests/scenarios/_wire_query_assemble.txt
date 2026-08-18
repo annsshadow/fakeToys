@@ -1,0 +1,2 @@
+pub mod query_assemble;
+integration_tests::scenarios::query_assemble::query_assemble_flow();

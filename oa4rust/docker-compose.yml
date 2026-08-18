@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: o2server
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: oa4rust
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U o2server -d oa4rust"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pgdata:

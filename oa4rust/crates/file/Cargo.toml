@@ -1,0 +1,20 @@
+﻿[package]
+name = "file"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+utoipa.workspace = true
+shared = { path = "../shared" }
+axum = { workspace = true, features = ["multipart"] }
+tokio.workspace = true
+deadpool-postgres.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+anyhow.workspace = true
+chrono.workspace = true
+tower = "0.5"

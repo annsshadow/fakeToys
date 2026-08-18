@@ -1,0 +1,13 @@
+# 链接期配置
+#
+# 问题背景（R33 / U8 验证）：oa4rust 的 `create_app` 将 80 个 crate 路由链式
+# `.merge()` 为一个巨型 axum Router。该构造在默认约 1–2MB 的线程栈上会栈溢出
+# （已确认是栈大小需求，而非无限递归——64MB 栈可确定性通过）。
+#
+# 生产服务器通过 `#[tokio::main]` 在主线程 `block_on` 中执行 `create_app`，
+# 主线程栈由链接器 /STACK 决定。此处将主线程栈提升到 64MB，确保服务器启动
+# 时路由构造不溢出（与集成测试的 64MB worker 栈一致）。
+#
+# 注意：仅影响 windows-msvc 目标二进制的主线程栈；不影响运行时 worker 线程栈。
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "link-args=/STACK:67108864"]

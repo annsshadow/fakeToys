@@ -1,0 +1,22 @@
+{
+  "body": {
+    "count": null,
+    "data": {
+      "count": 0,
+      "data": [],
+      "page": 1,
+      "size": 10
+    },
+    "date": null,
+    "message": null,
+    "position": null,
+    "prompt": null,
+    "size": null,
+    "spent": null,
+    "type": "success"
+  },
+  "method": "GET",
+  "name": "ai_mcp_config_list",
+  "path": "/jaxrs/ai/config/list/mcp/paging/1/size/10",
+  "status": 200
+}

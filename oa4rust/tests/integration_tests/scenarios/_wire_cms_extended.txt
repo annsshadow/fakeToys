@@ -1,0 +1,2 @@
+pub mod cms_extended;
+integration_tests::scenarios::cms_extended::cms_extended_crud_flow();

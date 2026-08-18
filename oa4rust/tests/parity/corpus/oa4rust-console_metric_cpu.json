@@ -1,0 +1,21 @@
+{
+  "body": {
+    "count": null,
+    "data": {
+      "name": "cpu",
+      "unit": null,
+      "value": null
+    },
+    "date": null,
+    "message": null,
+    "position": null,
+    "prompt": null,
+    "size": null,
+    "spent": null,
+    "type": "success"
+  },
+  "method": "GET",
+  "name": "console_metric_cpu",
+  "path": "/jaxrs/console/metric/cpu",
+  "status": 200
+}

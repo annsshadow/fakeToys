@@ -1,0 +1,20 @@
+{
+  "body": {
+    "count": null,
+    "data": {
+      "count": 0,
+      "data": []
+    },
+    "date": null,
+    "message": null,
+    "position": null,
+    "prompt": null,
+    "size": null,
+    "spent": null,
+    "type": "success"
+  },
+  "method": "GET",
+  "name": "portalcategory_list",
+  "path": "/jaxrs/portalcategory/list",
+  "status": 200
+}
