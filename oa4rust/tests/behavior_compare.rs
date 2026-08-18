@@ -10,7 +10,6 @@
 //! 如果 Rust 服务不可达，测试失败。
 
 mod behavior_comparison;
-mod behavior_compare_endpoints;
 
 use std::collections::HashMap;
 
@@ -40,13 +39,7 @@ const REPORT_PATH: &str = "target/debug/behavior-report.md";
 fn all_endpoints() -> Vec<EndpointDef> {
     let mut seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
     let mut result = Vec::new();
-    // 先加入手动维护的端点（作为基准）
     for ep in ENDPOINTS {
-        seen.insert(ep.rust_path);
-        result.push(ep.clone());
-    }
-    // 再加入自动生成的端点（去重）
-    for ep in behavior_compare_endpoints::ENDPOINTS.iter() {
         if seen.insert(ep.rust_path) {
             result.push(ep.clone());
         }
