@@ -124,20 +124,21 @@ pub async fn execute_process(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;    client
-        .execute("UPDATE x_work SET work_status = $1 WHERE id = $2", &[&"processing", &id])
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    tx.execute("UPDATE x_work SET work_status = $1 WHERE id = $2", &[&"processing", &id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     let task_id = Uuid::new_v4().to_string();
-    client
-        .execute(
+    tx.execute(
             "INSERT INTO x_task (id, title, work, activity, activity_token, person, start_time) \
              VALUES ($1, $2, $3, $4, $5, $6, NOW())",
             &[&task_id, &"Process Task", &id, &"start", &"", &""],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -245,18 +246,18 @@ pub async fn work_v2_id_terminate(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute("UPDATE x_work SET work_status = $1, end_time = NOW() WHERE id = $2", &[&"terminated", &id])
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    tx.execute("UPDATE x_work SET work_status = $1, end_time = NOW() WHERE id = $2", &[&"terminated", &id])
         .await
         .map_err(|_| AppError::Internal)?;
     let id2 = Uuid::new_v4().to_string();
-    client
-        .execute(
+    tx.execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&id2, &id, &"terminate", &"workflow terminated", &"system"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -291,22 +292,21 @@ pub async fn work_v2_id_goback(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute("UPDATE x_work SET work_status = $1 WHERE id = $2", &[&"pending", &id])
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    tx.execute("UPDATE x_work SET work_status = $1 WHERE id = $2", &[&"pending", &id])
         .await
         .map_err(|_| AppError::Internal)?;
-    client
-        .execute("UPDATE x_task SET task_status = $1 WHERE work = $2 AND task_status = $3", &[&"pending", &id, &"active"])
+    tx.execute("UPDATE x_task SET task_status = $1 WHERE work = $2 AND task_status = $3", &[&"pending", &id, &"active"])
         .await
         .map_err(|_| AppError::Internal)?;
     let id2 = Uuid::new_v4().to_string();
-    client
-        .execute(
+    tx.execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&id2, &id, &"goback", &"workflow back to pending", &"system"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -328,16 +328,17 @@ pub async fn work_v2_id_rollback(
         .await
         .map_err(|_| AppError::Internal)?;
     if let Some(snap) = snap_row {
+        let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
         let snap_data_raw: String = snap.get("snap_data");
-    let snap_data: Value = serde_json::from_str(&snap_data_raw).unwrap_or(Value::Null);
+        let snap_data: Value = serde_json::from_str(&snap_data_raw).unwrap_or(Value::Null);
         let id2 = Uuid::new_v4().to_string();
-        client
-            .execute(
+        tx.execute(
                 "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
                 &[&id2, &id, &"rollback", &snap_data.to_string(), &"system"],
             )
             .await
             .map_err(|_| AppError::Internal)?;
+        tx.commit().await.map_err(|_| AppError::Internal)?;
         return Ok(Json(ActionResult::success(snap_data)));
     }
     Ok(Json(ActionResult::success(Value::Object(
@@ -350,8 +351,8 @@ pub async fn work_v2_id_add_split(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let new_id = Uuid::new_v4().to_string();
-    let row = client
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
         .query_one(
             "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1 FOR UPDATE",
             &[&id],
@@ -359,20 +360,20 @@ pub async fn work_v2_id_add_split(
         .await
         .map_err(|_| AppError::Internal)?;
     let title: String = row.get("title");
-    client
-        .execute(
+    let new_id = Uuid::new_v4().to_string();
+    tx.execute(
             "INSERT INTO x_work (id, title, process, application, work_status, creator, create_time, start_time) VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())",
             &[&new_id, &title, &row.get::<_, String>("process"), &row.get::<_, Option<String>>("application").unwrap_or_default(), &"pending", &row.get::<_, String>("creator")],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    client
-        .execute(
+    tx.execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&Uuid::new_v4().to_string(), &id, &"split", &format!("split to {}", new_id), &"system"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -386,14 +387,14 @@ pub async fn work_v2_id_reroute(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute("UPDATE x_work SET work_status = $1 WHERE id = $2", &[&"rerouted", &id])
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    tx.execute("UPDATE x_work SET work_status = $1 WHERE id = $2", &[&"rerouted", &id])
         .await
         .map_err(|_| AppError::Internal)?;
-    client
-        .execute("UPDATE x_task SET task_status = $1 WHERE work = $2 AND task_status != $3", &[&"cancelled", &id, &"cancelled"])
+    tx.execute("UPDATE x_task SET task_status = $1 WHERE work = $2 AND task_status != $3", &[&"cancelled", &id, &"cancelled"])
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id)), ("rerouted".to_string(), Value::Bool(true))]),
     ))))
@@ -508,20 +509,21 @@ pub async fn work_manual_after_processing(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
         .query_one(
             "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    client
-        .execute(
+    tx.execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&Uuid::new_v4().to_string(), &id, &"manual", &"manual processing completed", &"system"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -553,11 +555,11 @@ pub async fn task_id_urge(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute("UPDATE x_task SET task_status = $1 WHERE id = $2", &[&"urged", &id])
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    tx.execute("UPDATE x_task SET task_status = $1 WHERE id = $2", &[&"urged", &id])
         .await
         .map_err(|_| AppError::Internal)?;
-    let row = client
+    let row = tx
         .query_one(
             "SELECT id, title, work, activity, activity_token, person FROM x_task WHERE id = $1",
             &[&id],
@@ -565,13 +567,13 @@ pub async fn task_id_urge(
         .await
         .map_err(|_| AppError::Internal)?;
     let id2 = Uuid::new_v4().to_string();
-    client
-        .execute(
+    tx.execute(
             "INSERT INTO x_record (id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&id2, &id, &"urge", &"task urged", &"system"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -580,7 +582,8 @@ pub async fn task_id_replace(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
         .query_one(
             "SELECT id, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1",
             &[&id],
@@ -589,18 +592,17 @@ pub async fn task_id_replace(
         .map_err(|_| AppError::Internal)?;
     let work: String = row.get("work");
     let person: String = row.get("person");
-    client
-        .execute("UPDATE x_task SET task_status = $1 WHERE id = $2", &[&"replaced", &id])
+    tx.execute("UPDATE x_task SET task_status = $1 WHERE id = $2", &[&"replaced", &id])
         .await
         .map_err(|_| AppError::Internal)?;
     let new_id = Uuid::new_v4().to_string();
-    client
-        .execute(
+    tx.execute(
             "INSERT INTO x_task (id, title, work, activity, activity_token, person, task_status, start_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
             &[&new_id, &"Replaced Task", &work, &row.get::<_, String>("activity"), &row.get::<_, String>("activity_token"), &person, &"pending"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
@@ -728,7 +730,8 @@ pub async fn task_v3_id_add(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
         .query_one(
             "SELECT id, title, process, application, work_status FROM x_work WHERE id = $1",
             &[&id],
@@ -736,13 +739,13 @@ pub async fn task_v3_id_add(
         .await
         .map_err(|_| AppError::Internal)?;
     let new_task_id = Uuid::new_v4().to_string();
-    client
-        .execute(
+    tx.execute(
             "INSERT INTO x_task (id, title, work, activity, activity_token, person, task_status, start_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
             &[&new_task_id, &row.get::<_, String>("title"), &id, &"default", &"", &"", &"pending"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("workId".to_string(), Value::String(id)),
@@ -813,17 +816,18 @@ pub async fn taskcompleted_id_press_work_work(
     axum::extract::Path((completed_id, work_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute("UPDATE x_workcompleted SET work_id = $1 WHERE id = $2", &[&work_id, &completed_id])
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    tx.execute("UPDATE x_workcompleted SET work_id = $1 WHERE id = $2", &[&work_id, &completed_id])
         .await
         .map_err(|_| AppError::Internal)?;
-    let row = client
+    let row = tx
         .query_one(
             "SELECT id, work_id, completed_time, creator FROM x_workcompleted WHERE id = $1",
             &[&completed_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -911,8 +915,9 @@ pub async fn snap_workcompleted_workCompletedId_type_abandonedworkcompleted(
     axum::extract::Path((work_completed_id, _type)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
     let id = Uuid::new_v4().to_string();
-    let work_id_row = client
+    let work_id_row = tx
         .query_one(
             "SELECT work_id FROM x_workcompleted WHERE id = $1",
             &[&work_completed_id],
@@ -920,13 +925,13 @@ pub async fn snap_workcompleted_workCompletedId_type_abandonedworkcompleted(
         .await
         .map_err(|_| AppError::Internal)?;
     let work_id: String = work_id_row.get("work_id");
-    client
-        .execute(
+    tx.execute(
             "INSERT INTO x_snap (id, work_id, snap_type, snap_data, create_time) VALUES ($1, $2, $3, $4, NOW())",
             &[&id, &work_id, &"abandonedworkcompleted", &"null"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
@@ -981,7 +986,8 @@ pub async fn snap_id_restore(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let snap_row = client
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let snap_row = tx
         .query_one(
             "SELECT id, work_id, snap_type, snap_data FROM x_snap WHERE id = $1",
             &[&id],
@@ -991,18 +997,17 @@ pub async fn snap_id_restore(
     let work_id: String = snap_row.get("work_id");
     let snap_data_raw: String = snap_row.get("snap_data");
     let snap_data: Value = serde_json::from_str(&snap_data_raw).unwrap_or(Value::Null);
-    client
-        .execute("UPDATE x_work SET work_status = $1 WHERE id = $2", &[&"restored", &work_id])
+    tx.execute("UPDATE x_work SET work_status = $1 WHERE id = $2", &[&"restored", &work_id])
         .await
         .map_err(|_| AppError::Internal)?;
     let id2 = Uuid::new_v4().to_string();
-    client
-        .execute(
+    tx.execute(
             "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&id2, &work_id, &"restore", &format!("restored from snap {}", id), &"system"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(snap_data)))
 }
 
@@ -1071,32 +1076,32 @@ pub async fn touch_merge(
     axum::extract::Path((id1, id2)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row1 = client
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row1 = tx
         .query_one(
             "SELECT id, title, process, application, work_status FROM x_work WHERE id = $1",
             &[&id1],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    let _row2 = client
+    let _row2 = tx
         .query_one(
             "SELECT id, title, process, application, work_status FROM x_work WHERE id = $2",
             &[&id2],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    client
-        .execute("UPDATE x_work SET work_status = $1 WHERE id = $2", &[&"merged", &id2])
+    tx.execute("UPDATE x_work SET work_status = $1 WHERE id = $2", &[&"merged", &id2])
         .await
         .map_err(|_| AppError::Internal)?;
     let id3 = Uuid::new_v4().to_string();
-    client
-        .execute(
+    tx.execute(
             "INSERT INTO x_workcompleted (id, work_id, completed_time, creator, create_time) VALUES ($1, $2, NOW(), $3, NOW())",
             &[&id3, &id1, &row1.get::<_, String>("creator")],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("mergedFrom".to_string(), Value::String(id2)),
@@ -1129,7 +1134,8 @@ pub async fn touch_touchdelay(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
         .query_one(
             "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1",
             &[&id],
@@ -1138,13 +1144,13 @@ pub async fn touch_touchdelay(
         .map_err(|_| AppError::Internal)?;
     let work_id: String = row.get("work");
     let id2 = Uuid::new_v4().to_string();
-    client
-        .execute(
+    tx.execute(
             "INSERT INTO x_record (id, work_id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
             &[&id2, &work_id, &id, &"delay", &"task delayed", &"system"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
@@ -1153,18 +1159,18 @@ pub async fn touch_urge(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute("UPDATE x_task SET task_status = $1 WHERE id = $2", &[&"urged", &id])
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    tx.execute("UPDATE x_task SET task_status = $1 WHERE id = $2", &[&"urged", &id])
         .await
         .map_err(|_| AppError::Internal)?;
     let id2 = Uuid::new_v4().to_string();
-    client
-        .execute(
+    tx.execute(
             "INSERT INTO x_record (id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&id2, &id, &"urge", &"task urged via touch", &"system"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([("id".to_string(), Value::String(id)), ("urged".to_string(), Value::Bool(true))]),
     ))))
@@ -1216,17 +1222,18 @@ pub async fn review_init_review(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
         .query_one(
             "SELECT id, work_id, reviewer, comment, status, create_time FROM x_review WHERE id = $1",
             &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    client
-        .execute("UPDATE x_review SET status = $1 WHERE id = $2", &[&"initiated", &id])
+    tx.execute("UPDATE x_review SET status = $1 WHERE id = $2", &[&"initiated", &id])
         .await
         .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
