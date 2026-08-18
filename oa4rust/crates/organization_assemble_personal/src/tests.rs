@@ -2,19 +2,14 @@
 mod tests {
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
-    use deadpool_postgres::tokio_postgres::{Config, NoTls};
+    use shared::testing::test_pool;
     use tower::util::ServiceExt;
     use crate::router;
 
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(Config::new(), NoTls);
-        Pool::builder(mgr).max_size(1).build().unwrap()
-    }
-
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_user_setting_route_exists() {
-        let pool = build_test_pool();
+        let pool = test_pool();
         let app = router(pool);
 
         let response = app
@@ -32,8 +27,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_user_role_list_route_exists() {
-        let pool = build_test_pool();
+        let pool = test_pool();
         let app = router(pool);
 
         let response = app
@@ -52,7 +48,7 @@ mod tests {
 
     #[test]
     fn test_router_builds() {
-        let pool = build_test_pool();
+        let pool = test_pool();
         let _ = router(pool);
     }
 }
