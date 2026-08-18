@@ -413,7 +413,7 @@ pub async fn work_id_draft(
         .map_err(|_| AppError::Internal)?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(row_to_json(&r)))),
-        None => Ok(Json(ActionResult::success(Value::Null))),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -789,7 +789,7 @@ pub async fn taskcompleted_next_task_identity(
         .map_err(|_| AppError::Internal)?;
     match next_row {
         Some(r) => Ok(Json(ActionResult::success(row_to_json(&r)))),
-        None => Ok(Json(ActionResult::success(Value::Null))),
+        None => Err(AppError::NotFound),
     }
 }
 
@@ -884,7 +884,7 @@ pub async fn snap_work_workId_type_snap(
         .map_err(|_| AppError::Internal)?;
     match row {
         Some(r) => Ok(Json(ActionResult::success(row_to_json(&r)))),
-        None => Ok(Json(ActionResult::success(Value::Null))),
+        None => Err(AppError::NotFound),
     }
 }
 
