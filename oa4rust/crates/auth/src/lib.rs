@@ -738,6 +738,9 @@ pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionMan
             get(sso::sso_get_login),
         )
         .route("/jaxrs/authentication/switchuser", post(switch_user::switch_user))
+        .route("/jaxrs/authentication/unit/list", get(unit_list))
+        .route("/jaxrs/authentication/role/list", get(role_list))
+        .route("/jaxrs/authentication/group/list", get(group_list))
         .route(
             "/jaxrs/andfx/moa/sso/token/{token}/enter/{enterId}",
             get(andfx::andfx_moa_sso),

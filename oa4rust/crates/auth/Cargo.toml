@@ -1,4 +1,7 @@
-﻿[package]
+﻿[dev-dependencies]
+tower = "0.5"
+
+[package]
 name = "auth"
 version.workspace = true
 edition.workspace = true

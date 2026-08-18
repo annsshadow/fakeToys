@@ -5,6 +5,10 @@ mod tests {
     use crate::SessionManager;
     use base64::Engine;
     use shared::response::ActionResult;
+    use shared::testing::test_pool;
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use tower::util::ServiceExt;
 
     #[test]
     fn test_verify_password_md5() {
@@ -488,5 +492,71 @@ mod tests {
             // 对不存在的用户调用 broadcast_logout，应正常返回不报错
             manager.broadcast_logout("nonexistent").await;
         });
+    }
+
+    #[tokio::test]
+    async fn test_unit_list_db_connected() {
+        let pool = shared::testing::test_pool();
+        let rate_limiter = RateLimiter::new();
+        let session_manager = SessionManager::with_pool(pool.clone());
+        let app = crate::router(pool, rate_limiter, session_manager);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/unit/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // seed data includes 2 units (unit-root, unit-dept1)
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_role_list_db_connected() {
+        let pool = shared::testing::test_pool();
+        let rate_limiter = RateLimiter::new();
+        let session_manager = SessionManager::with_pool(pool.clone());
+        let app = crate::router(pool, rate_limiter, session_manager);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/role/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // seed data includes 2 roles (role-admin, role-user)
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_code_send_db_connected() {
+        let pool = shared::testing::test_pool();
+        let rate_limiter = RateLimiter::new();
+        let session_manager = SessionManager::with_pool(pool.clone());
+        let app = crate::router(pool, rate_limiter, session_manager);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/code/credential/admin")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // seed data includes person with unique_id='admin'
+        assert_eq!(response.status(), StatusCode::OK);
     }
 }
