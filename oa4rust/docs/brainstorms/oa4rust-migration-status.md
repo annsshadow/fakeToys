@@ -39,7 +39,7 @@
 | cms_core_entity | done | 7 | 0 | 0 |
 | cms_core_express | done | 2 | 0 | 0 |
 | cms_express | done | 5 | 0 | 0 |
-| meeting | done | 10 | 0 | 0 |
+| meeting | done | 9 | 0 | 0 |
 | meeting_assemble_control | done | 59 | 0 | 0 |
 | meeting_core_entity | done | 11 | 0 | 0 |
 | message | done | 5 | 0 | 0 |
@@ -57,7 +57,7 @@
 | processplatform_assemble_surface | done | 487 | 0 | 0 |
 | processplatform_core_entity | done | 6 | 0 | 0 |
 | processplatform_core_express | done | 6 | 0 | 0 |
-| processplatform_service_processing | done | 100 | 0 | 0 |
+| processplatform_service_processing | done | 99 | 0 | 0 |
 | query_assemble_designer | done | 67 | 0 | 0 |
 | query_assemble_surface | done | 59 | 0 | 0 |
 | query_core_entity | done | 5 | 0 | 0 |

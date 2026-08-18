@@ -231,12 +231,31 @@ async fn run_migrations(pool: &Pool) -> anyhow::Result<()> {
     let mut entries: Vec<_> = std::fs::read_dir(&migrations_dir)
         .context("failed to read migrations directory")?
         .filter_map(|e| e.ok())
-        .filter(|e| e.path().extension().map(|x| x == "sql").unwrap_or(false))
+        .filter(|e| {
+            let path = e.path();
+            path.extension().map(|x| x == "sql").unwrap_or(false)
+                && !path.file_stem()
+                    .and_then(|s| s.to_str())
+                    .map(|s| s.ends_with("_rollback"))
+                    .unwrap_or(false)
+        })
         .collect();
 
     entries.sort_by_key(|e| e.path());
 
     let client = pool.get().await.context("failed to acquire migration connection")?;
+
+    client
+        .batch_execute(
+            "CREATE TABLE IF NOT EXISTS schema_migrations (
+                version     TEXT PRIMARY KEY,
+                applied_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
+                checksum    TEXT NOT NULL,
+                execution_ms INTEGER NOT NULL DEFAULT 0
+            );",
+        )
+        .await
+        .context("failed to create schema_migrations table")?;
 
     for entry in entries {
         let path = entry.path();

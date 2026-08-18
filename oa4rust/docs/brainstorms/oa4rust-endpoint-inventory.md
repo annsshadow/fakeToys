@@ -28,7 +28,7 @@
 | cms_core_entity | U6 | 6 | 7 | 0 | 0 | 0 | done |
 | cms_core_express | U6 | 2 | 2 | 0 | 0 | 0 | done |
 | cms_express | U6 | 5 | 5 | 0 | 0 | 0 | done |
-| meeting | U6 | 10 | 10 | 0 | 0 | 0 | done |
+| meeting | U6 | 9 | 9 | 0 | 0 | 0 | done |
 | meeting_assemble_control | U6 | 42 | 59 | 0 | 0 | 0 | done |
 | meeting_core_entity | U6 | 11 | 11 | 0 | 0 | 0 | done |
 | message | U6 | 5 | 5 | 0 | 0 | 0 | done |
@@ -37,7 +37,7 @@
 | portal | U6 | 8 | 11 | 0 | 0 | 0 | done |
 | portal_assemble_designer | U6 | 12 | 56 | 0 | 0 | 0 | done |
 | portal_assemble_surface | U6 | 8 | 48 | 0 | 0 | 0 | done |
-| portal_core_entity | U6 | 3 | 8 | 0 | 0 | 0 | done |
+| portal_core_entity | U6 | 6 | 8 | 0 | 0 | 0 | done |
 | process_designer | U6 | 7 | 7 | 0 | 0 | 0 | done |
 | process_express | U6 | 3 | 3 | 0 | 0 | 0 | done |
 | process_surface | U6 | 3 | 3 | 0 | 0 | 0 | done |
@@ -46,7 +46,7 @@
 | processplatform_assemble_surface | U6 | 7 | 487 | 0 | 0 | 0 | done |
 | processplatform_core_entity | U6 | 6 | 6 | 0 | 0 | 0 | done |
 | processplatform_core_express | U6 | 6 | 6 | 0 | 0 | 0 | done |
-| processplatform_service_processing | U6 | 12 | 100 | 0 | 0 | 0 | done |
+| processplatform_service_processing | U6 | 11 | 99 | 0 | 0 | 0 | done |
 | query_assemble_designer | U6 | 5 | 67 | 0 | 0 | 0 | done |
 | query_assemble_surface | U6 | 9 | 59 | 0 | 0 | 0 | done |
 | query_core_entity | U6 | 5 | 5 | 0 | 0 | 0 | done |
@@ -94,5 +94,5 @@
 
 - crate 总数: 83
 - 已完成(done): 83 | 迁移中(doing): 0 | 待迁移(todo): 0
-- 真实 handler 总数: 2600
+- 真实 handler 总数: 2598
 - 残留 stub_ 标记: 0 | 纯 Value::Null 桩: 0 | TODO 占位: 0
