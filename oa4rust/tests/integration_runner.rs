@@ -28,6 +28,14 @@ use integration_tests::db::init_test_database;
 #[ignore = "requires a running PostgreSQL server"]
 #[test]
 fn integration_scenarios() {
+    let dialect = std::env::var("DATABASE_DIALECT")
+        .or_else(|_| std::env::var("DB_DIALECT"))
+        .unwrap_or_else(|_| "postgres".to_string());
+    if dialect == "mysql" {
+        eprintln!("skipping integration_scenarios: MySQL integration tests are not yet implemented");
+        return;
+    }
+
     let _ctx = init_test_database();
     let _pool = _ctx.pool();
 
