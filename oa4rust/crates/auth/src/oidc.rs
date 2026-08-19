@@ -193,7 +193,12 @@ fn build_rsa_public_key(n_hex: &str, e_hex: &str) -> Result<RsaPublicKey, AppErr
 }
 
 fn hex_to_biguint(hex_str: &str) -> Result<rsa::BigUint, ()> {
-    let bytes = hex_str
+    let normalized = if hex_str.len() % 2 != 0 {
+        format!("0{}", hex_str)
+    } else {
+        hex_str.to_string()
+    };
+    let bytes = normalized
         .as_bytes()
         .chunks(2)
         .map(|chunk| {
@@ -290,8 +295,8 @@ pub(crate) async fn get_or_create_person(
     let new_id = Uuid::new_v4().to_string();
     client
         .execute(
-            "INSERT INTO auth_person (id, unique_id, name) VALUES ($1, $2, $3)",
-            &[&new_id, &unique_id, &format!("OIDC User {}", sub)],
+            "INSERT INTO auth_person (id, unique_id, name, password_hash) VALUES ($1, $2, $3, $4)",
+            &[&new_id, &unique_id, &format!("OIDC User {}", sub), &"{bcrypt}$2b$12$dummy"],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -307,8 +312,7 @@ pub(crate) async fn verify_id_token_with_jwks(
     id_token: &str,
     jwks_override: &Value,
 ) -> Result<OidcClaims, AppError> {
-    let header =
-        decode_jwt_header(id_token).map_err(|_| AppError::Unauthorized)?;
+    let header = decode_jwt_header(id_token).map_err(|_| AppError::Unauthorized)?;
     let kid = header.get("kid").and_then(|v| v.as_str()).ok_or(AppError::Unauthorized)?;
     let (n_hex, e_hex) = extract_rsa_components(jwks_override, kid)?;
     let public_key = build_rsa_public_key(&n_hex, &e_hex).map_err(|_| AppError::Internal)?;
@@ -389,9 +393,8 @@ mod tests {
         let sig_bytes = private_key
             .sign(Pkcs1v15Sign::new::<Sha256>(), &hash)
             .expect("sign test JWT");
-        let public_key = RsaPrivateKey::to_public_key(&private_key);
-        let verify_ok = public_key.verify(Pkcs1v15Sign::new::<Sha256>(), &hash, &sig_bytes).is_ok();
-        eprintln!("DEBUG ENC hash={:02x?} si_len={} sig[0..4]={:02x?} ok={}", &hash[..8], signing_input.len(), &sig_bytes[..4], verify_ok);
+        let _public_key = RsaPrivateKey::to_public_key(&private_key);
+        let _verify_ok = _public_key.verify(Pkcs1v15Sign::new::<Sha256>(), &hash, &sig_bytes).is_ok();
         let sig_b64 =
             base64::encode_engine(sig_bytes, &base64::engine::general_purpose::URL_SAFE);
         format!("{}.{}.{}", header_b64, payload_b64, sig_b64)
@@ -636,10 +639,10 @@ mod tests {
         if let Some(c) = &client {
             let _ = c
                 .execute(
-                    "INSERT INTO auth_person (id, unique_id, name) \
-                     VALUES ($1, $2, $3) \
+                    "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                     VALUES ($1, $2, $3, $4) \
                      ON CONFLICT (unique_id) DO UPDATE SET name = EXCLUDED.name",
-                    &[&"person-oidc-existing", &unique_id, &"Pre-existing OIDC User"],
+                    &[&"person-oidc-existing", &unique_id, &"Pre-existing OIDC User", &"{bcrypt}$2b$12$dummy"],
                 )
                 .await;
         }
