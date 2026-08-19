@@ -27,6 +27,9 @@ jobs:
 
   integration-tests:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dialect: [postgres, mysql]
     services:
       postgres:
         image: postgres:16
@@ -41,6 +44,20 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: password
+          MYSQL_DATABASE: oa4rust
+          MYSQL_USER: o2server
+          MYSQL_PASSWORD: password
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost -u root -ppassword"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - name: Install Rust
@@ -50,7 +67,14 @@ jobs:
         with:
           path: ~/.cargo/registry
           key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}
-      - name: Set DATABASE_URL
-        run: echo "DATABASE_URL=postgres://o2server:password@localhost:5432/postgres" >> $GITHUB_ENV
-      - name: Run integration tests
+      - name: Set DATABASE_URL for ${{ matrix.dialect }}
+        run: |
+          if [ "${{ matrix.dialect }}" = "postgres" ]; then
+            echo "DATABASE_URL=postgres://o2server:password@localhost:5432/postgres" >> $GITHUB_ENV
+          elif [ "${{ matrix.dialect }}" = "mysql" ]; then
+            echo "DATABASE_URL=mysql://o2server:password@localhost:3306/oa4rust" >> $GITHUB_ENV
+          fi
+      - name: Run integration tests (${{ matrix.dialect }})
         run: cargo test --test integration_runner
+        env:
+          DATABASE_DIALECT: ${{ matrix.dialect }}
