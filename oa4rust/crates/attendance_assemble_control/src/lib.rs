@@ -5,7 +5,7 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{db::dialect, error::AppError, response::ActionResult};
 
 pub mod routes;
 
@@ -68,7 +68,9 @@ pub async fn toggle_control_rule(
 
     client
         .execute(
-            "UPDATE x_attendance_assemble_control_rule SET enabled = $1 WHERE id = $2",
+            &dialect().format_sql(
+                "UPDATE x_attendance_assemble_control_rule SET enabled = $1 WHERE id = $2",
+            ),
             &[&enabled, &id],
         )
         .await
@@ -134,7 +136,9 @@ pub async fn attendanceadmin_id(
 
     let row = client
         .query_opt(
-            "SELECT id, person_id, unit_id, creator, create_time FROM x_attendance_admin WHERE id = $1",
+            &dialect().format_sql(
+                "SELECT id, person_id, unit_id, creator, create_time FROM x_attendance_admin WHERE id = $1",
+            ),
             &[&id],
         )
         .await
@@ -374,11 +378,13 @@ pub async fn attendanceappealInfo_filter_list_id_next_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id > $1 ORDER BY create_time ASC LIMIT {}",
+        d.cast_bigint_param(2),
+    );
     let rows = client
-        .query(
-            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id > $1 ORDER BY create_time ASC LIMIT $2::bigint",
-            &[&id, &count],
-        )
+        .query(&sql, &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -408,11 +414,13 @@ pub async fn attendanceappealInfo_filter_list_id_prev_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id < $1 ORDER BY create_time DESC LIMIT {}",
+        d.cast_bigint_param(2),
+    );
     let rows = client
-        .query(
-            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id < $1 ORDER BY create_time DESC LIMIT $2::bigint",
-            &[&id, &count],
-        )
+        .query(&sql, &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 

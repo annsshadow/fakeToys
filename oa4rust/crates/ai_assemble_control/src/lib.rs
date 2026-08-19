@@ -5,7 +5,7 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{db::dialect, error::AppError, response::ActionResult};
 
 pub mod routes;
 
@@ -478,14 +478,17 @@ pub async fn config_list_mcp_paging_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let offset = (page - 1) * size;
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, name, url, enabled, creator, create_time, update_time \
+         FROM x_ai_mcp_config \
+         ORDER BY update_time DESC \
+         LIMIT {} OFFSET {}",
+        d.cast_bigint_param(2),
+        d.cast_bigint_param(1),
+    );
     let rows = client
-        .query(
-            "SELECT id, name, url, enabled, creator, create_time, update_time \
-             FROM x_ai_mcp_config \
-             ORDER BY update_time DESC \
-             LIMIT $2::bigint OFFSET $1::bigint",
-            &[&offset, &size],
-        )
+        .query(&sql, &[&offset, &size])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -519,11 +522,14 @@ pub async fn config_list_model_paging_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let offset = (page - 1) * size;
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config ORDER BY update_time DESC LIMIT {} OFFSET {}",
+        d.cast_bigint_param(2),
+        d.cast_bigint_param(1),
+    );
     let rows = client
-        .query(
-            "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config ORDER BY update_time DESC LIMIT $2::bigint OFFSET $1::bigint",
-            &[&offset, &size],
-        )
+        .query(&sql, &[&offset, &size])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -732,7 +738,9 @@ pub async fn file_list(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time FROM x_ai_file ORDER BY create_time DESC",
+            &dialect().format_sql(
+                "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config WHERE enabled = true ORDER BY create_time DESC",
+            ),
             &[],
         )
         .await

@@ -6,8 +6,9 @@ mod tests {
     use tower::util::ServiceExt;
     use crate::router;
 
+    const TEST_PERSON_ID: &str = "test-person-id-personal";
+
     #[tokio::test]
-    #[ignore = "requires a running PostgreSQL server"]
     async fn test_user_setting_route_exists() {
         let pool = test_pool();
         let app = router(pool);
@@ -15,7 +16,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/personal/test-id/setting")
+                    .uri(&format!("/jaxrs/organization/assemble/personal/{}/setting", TEST_PERSON_ID))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -27,7 +28,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "requires a running PostgreSQL server"]
     async fn test_user_role_list_route_exists() {
         let pool = test_pool();
         let app = router(pool);
@@ -35,7 +35,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/personal/test-id/role/list")
+                    .uri(&format!("/jaxrs/organization/assemble/personal/{}/role/list", TEST_PERSON_ID))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

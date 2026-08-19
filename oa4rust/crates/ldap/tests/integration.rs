@@ -1,15 +1,23 @@
 use ldap::{LdapAuthResult, LdapConfig};
 
-#[test]
-fn test_ldap_config_from_env_disabled_by_default() {
+fn cleanup_env() {
     std::env::remove_var("LDAP_ENABLE");
     std::env::remove_var("LDAP_URL");
+    std::env::remove_var("LDAP_BASE_DN");
+    std::env::remove_var("LDAP_BIND_USER");
+    std::env::remove_var("LDAP_BIND_PWD");
+}
+
+#[test]
+fn test_ldap_config_from_env_disabled_by_default() {
+    cleanup_env();
     let config = LdapConfig::from_env();
     assert!(config.is_none(), "LDAP should be disabled by default");
 }
 
 #[test]
 fn test_ldap_config_from_env_enabled() {
+    cleanup_env();
     std::env::set_var("LDAP_ENABLE", "true");
     std::env::set_var("LDAP_URL", "ldap://localhost:389");
     std::env::set_var("LDAP_BASE_DN", "ou=users,dc=example,dc=com");
@@ -26,39 +34,36 @@ fn test_ldap_config_from_env_enabled() {
     assert_eq!(cfg.bind_password, "admin_pass");
     assert!(cfg.is_enabled());
 
-    std::env::remove_var("LDAP_ENABLE");
-    std::env::remove_var("LDAP_URL");
-    std::env::remove_var("LDAP_BASE_DN");
-    std::env::remove_var("LDAP_BIND_USER");
-    std::env::remove_var("LDAP_BIND_PWD");
+    cleanup_env();
 }
 
 #[test]
 fn test_ldap_config_empty_url_disables() {
+    cleanup_env();
     std::env::set_var("LDAP_ENABLE", "true");
     std::env::set_var("LDAP_URL", "");
 
     let config = LdapConfig::from_env();
     assert!(config.is_none(), "Empty LDAP_URL should disable LDAP");
 
-    std::env::remove_var("LDAP_ENABLE");
-    std::env::remove_var("LDAP_URL");
+    cleanup_env();
 }
 
 #[test]
 fn test_ldap_config_case_insensitive_enable() {
+    cleanup_env();
     std::env::set_var("LDAP_ENABLE", "TRUE");
     std::env::set_var("LDAP_URL", "ldap://localhost:389");
 
     let config = LdapConfig::from_env();
     assert!(config.is_some(), "LDAP_ENABLE=TRUE (uppercase) should work");
 
-    std::env::remove_var("LDAP_ENABLE");
-    std::env::remove_var("LDAP_URL");
+    cleanup_env();
 }
 
 #[test]
 fn test_ldap_config_partial_env() {
+    cleanup_env();
     std::env::set_var("LDAP_ENABLE", "true");
     std::env::set_var("LDAP_URL", "ldap://localhost:389");
 
@@ -70,8 +75,7 @@ fn test_ldap_config_partial_env() {
     assert_eq!(cfg.bind_user, "");
     assert_eq!(cfg.bind_password, "");
 
-    std::env::remove_var("LDAP_ENABLE");
-    std::env::remove_var("LDAP_URL");
+    cleanup_env();
 }
 
 #[test]
@@ -145,20 +149,19 @@ async fn test_ldap_authenticate_timeout_on_invalid_server() {
 
 #[test]
 fn test_authenticator_from_env_disabled() {
-    std::env::remove_var("LDAP_ENABLE");
-    std::env::remove_var("LDAP_URL");
+    cleanup_env();
     let auth = ldap::authenticator_from_env();
     assert!(auth.is_none());
 }
 
 #[test]
 fn test_authenticator_from_env_enabled() {
+    cleanup_env();
     std::env::set_var("LDAP_ENABLE", "true");
     std::env::set_var("LDAP_URL", "ldap://localhost:389");
 
     let auth = ldap::authenticator_from_env();
     assert!(auth.is_some());
 
-    std::env::remove_var("LDAP_ENABLE");
-    std::env::remove_var("LDAP_URL");
+    cleanup_env();
 }

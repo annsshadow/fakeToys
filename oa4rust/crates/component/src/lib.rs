@@ -39,7 +39,7 @@ pub async fn list_all(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("visible".to_string(), Value::Bool(row.get("visible"))),
-                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
+                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| serde_json::Number::from(v).into()).unwrap_or(Value::Null)),
                 ("path".to_string(), Value::String(row.get("path"))),
                 ("iconPath".to_string(), Value::String(row.get("icon_path"))),
             ]))
@@ -54,13 +54,14 @@ pub async fn list_all(
 
 pub async fn get_component(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
+    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    eprintln!("DEBUG get_component called with id={}", id);
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, name, title, type, visible, order_number, path, icon_path FROM x_component WHERE (id = $1 OR name = $1) AND deleted_at IS NULL",
-            &[&flag],
+            &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
@@ -73,7 +74,7 @@ pub async fn get_component(
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("visible".to_string(), Value::Bool(row.get("visible"))),
-                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
+                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| serde_json::Number::from(v).into()).unwrap_or(Value::Null)),
                 ("path".to_string(), Value::String(row.get("path"))),
                 ("iconPath".to_string(), Value::String(row.get("icon_path"))),
             ])))))

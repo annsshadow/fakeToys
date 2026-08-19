@@ -223,7 +223,7 @@ pub async fn complex_top(
                 ("person".to_string(), Value::String(row.get("person"))),
                 (
                     "\"referenceType\"".to_string(),
-                    Value::String(row.get::<_, String>("\"referenceType\"")),
+                    Value::String(row.get::<_, Option<String>>("referenceType").unwrap_or_default()),
                 ),
                 (
                     "extension".to_string(),
@@ -459,7 +459,7 @@ pub async fn file_download(
 
     let row = client
         .query_opt(
-            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
