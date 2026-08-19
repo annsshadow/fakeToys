@@ -8,7 +8,7 @@ use chrono::{DateTime, Duration, Utc};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{db::dialect, error::AppError, response::ActionResult};
+use shared::{db::dialect, error::AppError, response::{option_to_json, row_opt_json, ActionResult}};
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
@@ -21,6 +21,7 @@ pub mod check_token;
 pub mod model;
 pub mod mpweixin;
 pub mod oauth;
+pub mod oidc;
 pub mod password;
 pub mod person;
 pub mod qiyeweixin;
@@ -202,7 +203,7 @@ pub async fn login(
     };
 
     let token = Uuid::new_v4().to_string();
-    let session = session_manager.create_session(person_unique.clone(), token.clone()).await;
+    let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
 
     let response = ActionResult::success(LoginResponse {
         token: session.token,
@@ -248,7 +249,7 @@ pub async fn refresh(
     let session = session_manager.validate_session(&header_token).await.ok_or(AppError::Unauthorized)?;
 
     let new_token = Uuid::new_v4().to_string();
-    session_manager.create_session(session.person_unique, new_token.clone()).await;
+    session_manager.create_session(session.person_unique, new_token.clone()).await?;
     session_manager.remove_session(old_token).await;
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -301,13 +302,17 @@ pub async fn whoami(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-            ("authenticated".to_string(), Value::Bool(true)),
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("unique".to_string(), Value::String(row.get("unique_id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("mobile".to_string(), row.get::<_, Option<String>>("mobile").map(Value::String).unwrap_or(Value::Null)),
-        ]))))),
+        Some(row) => {
+            let mut map = serde_json::Map::new();
+            map.insert("authenticated".to_string(), Value::Bool(true));
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("unique".to_string(), Value::String(row.get("unique_id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(val) = row_opt_json::<String>(&row, "mobile") {
+                map.insert("mobile".to_string(), val);
+            }
+            Ok(Json(ActionResult::success(Value::Object(map))))
+        }
         None => Ok(Json(ActionResult::error("user not found"))),
     }
 }
@@ -562,7 +567,7 @@ pub async fn code(
     let person_position: Option<String> = row.get("position");
 
     let token = Uuid::new_v4().to_string();
-    let session = session_manager.create_session(person_unique.clone(), token.clone()).await;
+    let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
 
     Ok(Json(ActionResult::success(TwoFactorLoginResponse {
         token: session.token,
@@ -600,12 +605,14 @@ pub async fn unit_list(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), row.get::<_, Option<String>>("parent_id").map(Value::String).unwrap_or(Value::Null)),
-                ("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level")))),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(val) = row_opt_json::<String>(row, "parent_id") {
+                map.insert("parentId".to_string(), val);
+            }
+            map.insert("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level"))));
+            Value::Object(map)
         })
         .collect();
 
@@ -631,11 +638,13 @@ pub async fn role_list(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), row.get::<_, Option<String>>("description").map(Value::String).unwrap_or(Value::Null)),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(val) = row_opt_json::<String>(row, "description") {
+                map.insert("description".to_string(), val);
+            }
+            Value::Object(map)
         })
         .collect();
 
@@ -760,6 +769,7 @@ pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionMan
             "/jaxrs/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}",
             get(oauth::oauth_bind_name),
         )
+        .merge(oidc::oidc_router())
         .merge(captcha::captcha_router())
         .merge(sms::sms_router())
         .merge(bind::bind_router())

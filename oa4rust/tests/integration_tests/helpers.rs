@@ -117,7 +117,7 @@ pub async fn seed_test_data(
 
     let session = session_manager
         .create_session("it-admin".to_string(), token.clone())
-        .await;
+        .await?;
 
     // Persist the session to DB via direct insert (mirrors create_session's DB write)
     let signed_token = if let Ok(secret) = std::env::var("SESSION_HMAC_SECRET") {

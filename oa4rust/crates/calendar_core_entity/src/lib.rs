@@ -7,7 +7,7 @@ use chrono::Utc;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{error::AppError, response::{option_to_json, ActionResult}};
 
 pub mod entities;
 pub mod routes;
@@ -121,23 +121,19 @@ pub async fn calendar_list_public(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
-                ("type".to_string(), Value::String(m.type_.clone())),
-                ("target".to_string(), Value::String(m.target.clone())),
-                ("color".to_string(), Value::String(m.color.clone())),
-                (
-                    "description".to_string(),
-                    m.description
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                ("createor".to_string(), Value::String(m.createor.clone())),
-                ("isPublic".to_string(), Value::Bool(m.is_public)),
-                ("status".to_string(), Value::String(m.status.clone())),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(m.id.clone()));
+            map.insert("name".to_string(), Value::String(m.name.clone()));
+            map.insert("type".to_string(), Value::String(m.type_.clone()));
+            map.insert("target".to_string(), Value::String(m.target.clone()));
+            map.insert("color".to_string(), Value::String(m.color.clone()));
+            if let Some(val) = option_to_json(m.description.clone().map(|s| Value::String(s))) {
+                map.insert("description".to_string(), val);
+            }
+            map.insert("createor".to_string(), Value::String(m.createor.clone()));
+            map.insert("isPublic".to_string(), Value::Bool(m.is_public));
+            map.insert("status".to_string(), Value::String(m.status.clone()));
+            Value::Object(map)
         })
         .collect();
 
@@ -167,23 +163,19 @@ pub async fn calendar_list_my(
     let mut unit_calendars = Vec::new();
 
     for m in models.iter() {
-        let item = Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(m.id.clone())),
-            ("name".to_string(), Value::String(m.name.clone())),
-            ("type".to_string(), Value::String(m.type_.clone())),
-            ("target".to_string(), Value::String(m.target.clone())),
-            ("color".to_string(), Value::String(m.color.clone())),
-            (
-                "description".to_string(),
-                m.description
-                    .clone()
-                    .map(Value::String)
-                    .unwrap_or(Value::Null),
-            ),
-            ("createor".to_string(), Value::String(m.createor.clone())),
-            ("isPublic".to_string(), Value::Bool(m.is_public)),
-            ("status".to_string(), Value::String(m.status.clone())),
-        ]));
+        let mut map = serde_json::Map::new();
+        map.insert("id".to_string(), Value::String(m.id.clone()));
+        map.insert("name".to_string(), Value::String(m.name.clone()));
+        map.insert("type".to_string(), Value::String(m.type_.clone()));
+        map.insert("target".to_string(), Value::String(m.target.clone()));
+        map.insert("color".to_string(), Value::String(m.color.clone()));
+        if let Some(val) = option_to_json(m.description.clone().map(|s| Value::String(s))) {
+            map.insert("description".to_string(), val);
+        }
+        map.insert("createor".to_string(), Value::String(m.createor.clone()));
+        map.insert("isPublic".to_string(), Value::Bool(m.is_public));
+        map.insert("status".to_string(), Value::String(m.status.clone()));
+        let item = Value::Object(map);
 
         if m.type_.eq_ignore_ascii_case("UNIT") {
             unit_calendars.push(item);
@@ -213,23 +205,19 @@ pub async fn calendar_get(
 
     match model {
         Some(m) => {
-            let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
-                ("type".to_string(), Value::String(m.type_.clone())),
-                ("target".to_string(), Value::String(m.target.clone())),
-                ("color".to_string(), Value::String(m.color.clone())),
-                (
-                    "description".to_string(),
-                    m.description
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                ("createor".to_string(), Value::String(m.createor.clone())),
-                ("isPublic".to_string(), Value::Bool(m.is_public)),
-                ("status".to_string(), Value::String(m.status.clone())),
-            ]));
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(m.id.clone()));
+            map.insert("name".to_string(), Value::String(m.name.clone()));
+            map.insert("type".to_string(), Value::String(m.type_.clone()));
+            map.insert("target".to_string(), Value::String(m.target.clone()));
+            map.insert("color".to_string(), Value::String(m.color.clone()));
+            if let Some(val) = option_to_json(m.description.clone().map(|s| Value::String(s))) {
+                map.insert("description".to_string(), val);
+            }
+            map.insert("createor".to_string(), Value::String(m.createor.clone()));
+            map.insert("isPublic".to_string(), Value::Bool(m.is_public));
+            map.insert("status".to_string(), Value::String(m.status.clone()));
+            let data = Value::Object(map);
             Ok(Json(ActionResult::success(data)))
         }
         None => Ok(Json(ActionResult::error("calendar not found"))),
@@ -270,30 +258,22 @@ pub async fn calendar_create(
 
     let m = active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(m.id.clone())),
-        ("name".to_string(), Value::String(m.name.clone())),
-        ("type".to_string(), Value::String(m.type_.clone())),
-        ("target".to_string(), Value::String(m.target.clone())),
-        ("color".to_string(), Value::String(m.color.clone())),
-        (
-            "description".to_string(),
-            m.description
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        (
-            "source".to_string(),
-            m.source
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        ("createor".to_string(), Value::String(m.createor.clone())),
-        ("isPublic".to_string(), Value::Bool(m.is_public)),
-        ("status".to_string(), Value::String(m.status.clone())),
-    ]));
+    let mut map = serde_json::Map::new();
+    map.insert("id".to_string(), Value::String(m.id.clone()));
+    map.insert("name".to_string(), Value::String(m.name.clone()));
+    map.insert("type".to_string(), Value::String(m.type_.clone()));
+    map.insert("target".to_string(), Value::String(m.target.clone()));
+    map.insert("color".to_string(), Value::String(m.color.clone()));
+    if let Some(val) = option_to_json(m.description.clone().map(|s| Value::String(s))) {
+        map.insert("description".to_string(), val);
+    }
+    if let Some(val) = option_to_json(m.source.clone().map(|s| Value::String(s))) {
+        map.insert("source".to_string(), val);
+    }
+    map.insert("createor".to_string(), Value::String(m.createor.clone()));
+    map.insert("isPublic".to_string(), Value::Bool(m.is_public));
+    map.insert("status".to_string(), Value::String(m.status.clone()));
+    let data = Value::Object(map);
 
     Ok(Json(ActionResult::success(data)))
 }
@@ -340,32 +320,22 @@ pub async fn calendar_update(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("name".to_string(), Value::String(updated.name.clone())),
-        ("type".to_string(), Value::String(updated.type_.clone())),
-        ("target".to_string(), Value::String(updated.target.clone())),
-        ("color".to_string(), Value::String(updated.color.clone())),
-        (
-            "description".to_string(),
-            updated
-                .description
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        (
-            "source".to_string(),
-            updated
-                .source
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        ("createor".to_string(), Value::String(updated.createor.clone())),
-        ("isPublic".to_string(), Value::Bool(updated.is_public)),
-        ("status".to_string(), Value::String(updated.status.clone())),
-    ]));
+    let mut map = serde_json::Map::new();
+    map.insert("id".to_string(), Value::String(id));
+    map.insert("name".to_string(), Value::String(updated.name.clone()));
+    map.insert("type".to_string(), Value::String(updated.type_.clone()));
+    map.insert("target".to_string(), Value::String(updated.target.clone()));
+    map.insert("color".to_string(), Value::String(updated.color.clone()));
+    if let Some(val) = option_to_json(updated.description.clone().map(|s| Value::String(s))) {
+        map.insert("description".to_string(), val);
+    }
+    if let Some(val) = option_to_json(updated.source.clone().map(|s| Value::String(s))) {
+        map.insert("source".to_string(), val);
+    }
+    map.insert("createor".to_string(), Value::String(updated.createor.clone()));
+    map.insert("isPublic".to_string(), Value::Bool(updated.is_public));
+    map.insert("status".to_string(), Value::String(updated.status.clone()));
+    let data = Value::Object(map);
 
     Ok(Json(ActionResult::success(data)))
 }
@@ -461,37 +431,29 @@ pub async fn event_create(
 
     let m = active_model.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(m.id.clone())),
-        (
-            "calendarId".to_string(),
-            Value::String(m.calendar_id.clone()),
-        ),
-        ("title".to_string(), Value::String(m.title.clone())),
-        (
-            "content".to_string(),
-            m.content
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        (
-            "location".to_string(),
-            m.location
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        (
-            "\"startTime\"".to_string(),
-            Value::String(m.start_time.to_string()),
-        ),
-        ("\"endTime\"".to_string(), Value::String(m.end_time.to_string())),
-        ("allDay".to_string(), Value::Bool(m.all_day)),
-        ("visibility".to_string(), Value::String(m.visibility.clone())),
-        ("status".to_string(), Value::String(m.status.clone())),
-        ("createor".to_string(), Value::String(m.createor.clone())),
-    ]));
+    let mut map = serde_json::Map::new();
+    map.insert("id".to_string(), Value::String(m.id.clone()));
+    map.insert(
+        "calendarId".to_string(),
+        Value::String(m.calendar_id.clone()),
+    );
+    map.insert("title".to_string(), Value::String(m.title.clone()));
+    if let Some(val) = option_to_json(m.content.clone().map(|s| Value::String(s))) {
+        map.insert("content".to_string(), val);
+    }
+    if let Some(val) = option_to_json(m.location.clone().map(|s| Value::String(s))) {
+        map.insert("location".to_string(), val);
+    }
+    map.insert(
+        "\"startTime\"".to_string(),
+        Value::String(m.start_time.to_string()),
+    );
+    map.insert("\"endTime\"".to_string(), Value::String(m.end_time.to_string()));
+    map.insert("allDay".to_string(), Value::Bool(m.all_day));
+    map.insert("visibility".to_string(), Value::String(m.visibility.clone()));
+    map.insert("status".to_string(), Value::String(m.status.clone()));
+    map.insert("createor".to_string(), Value::String(m.createor.clone()));
+    let data = Value::Object(map);
 
     Ok(Json(ActionResult::success(data)))
 }
@@ -544,45 +506,32 @@ pub async fn event_update(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        (
-            "calendarId".to_string(),
-            Value::String(updated.calendar_id.clone()),
-        ),
-        ("title".to_string(), Value::String(updated.title.clone())),
-        (
-            "content".to_string(),
-            updated
-                .content
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        (
-            "location".to_string(),
-            updated
-                .location
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        (
-            "\"startTime\"".to_string(),
-            Value::String(updated.start_time.to_string()),
-        ),
-        (
-            "\"endTime\"".to_string(),
-            Value::String(updated.end_time.to_string()),
-        ),
-        ("allDay".to_string(), Value::Bool(updated.all_day)),
-        (
-            "visibility".to_string(),
-            Value::String(updated.visibility.clone()),
-        ),
-        ("status".to_string(), Value::String(updated.status.clone())),
-        ("createor".to_string(), Value::String(updated.createor.clone())),
-    ]));
+    let mut map = serde_json::Map::new();
+    map.insert("id".to_string(), Value::String(id));
+    map.insert(
+        "calendarId".to_string(),
+        Value::String(updated.calendar_id.clone()),
+    );
+    map.insert("title".to_string(), Value::String(updated.title.clone()));
+    if let Some(val) = option_to_json(updated.content.clone().map(|s| Value::String(s))) {
+        map.insert("content".to_string(), val);
+    }
+    if let Some(val) = option_to_json(updated.location.clone().map(|s| Value::String(s))) {
+        map.insert("location".to_string(), val);
+    }
+    map.insert(
+        "\"startTime\"".to_string(),
+        Value::String(updated.start_time.to_string()),
+    );
+    map.insert(
+        "\"endTime\"".to_string(),
+        Value::String(updated.end_time.to_string()),
+    );
+    map.insert("allDay".to_string(), Value::Bool(updated.all_day));
+    map.insert("visibility".to_string(), Value::String(updated.visibility.clone()));
+    map.insert("status".to_string(), Value::String(updated.status.clone()));
+    map.insert("createor".to_string(), Value::String(updated.createor.clone()));
+    let data = Value::Object(map);
 
     Ok(Json(ActionResult::success(data)))
 }
@@ -650,37 +599,29 @@ pub async fn event_list_by_calendar(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                (
-                    "calendarId".to_string(),
-                    Value::String(m.calendar_id.clone()),
-                ),
-                ("title".to_string(), Value::String(m.title.clone())),
-                (
-                    "content".to_string(),
-                    m.content
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "location".to_string(),
-                    m.location
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "\"startTime\"".to_string(),
-                    Value::String(m.start_time.to_string()),
-                ),
-                ("\"endTime\"".to_string(), Value::String(m.end_time.to_string())),
-                ("allDay".to_string(), Value::Bool(m.all_day)),
-                ("visibility".to_string(), Value::String(m.visibility.clone())),
-                ("status".to_string(), Value::String(m.status.clone())),
-                ("createor".to_string(), Value::String(m.createor.clone())),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(m.id.clone()));
+            map.insert(
+                "calendarId".to_string(),
+                Value::String(m.calendar_id.clone()),
+            );
+            map.insert("title".to_string(), Value::String(m.title.clone()));
+            if let Some(val) = option_to_json(m.content.clone().map(|s| Value::String(s))) {
+                map.insert("content".to_string(), val);
+            }
+            if let Some(val) = option_to_json(m.location.clone().map(|s| Value::String(s))) {
+                map.insert("location".to_string(), val);
+            }
+            map.insert(
+                "\"startTime\"".to_string(),
+                Value::String(m.start_time.to_string()),
+            );
+            map.insert("\"endTime\"".to_string(), Value::String(m.end_time.to_string()));
+            map.insert("allDay".to_string(), Value::Bool(m.all_day));
+            map.insert("visibility".to_string(), Value::String(m.visibility.clone()));
+            map.insert("status".to_string(), Value::String(m.status.clone()));
+            map.insert("createor".to_string(), Value::String(m.createor.clone()));
+            Value::Object(map)
         })
         .collect();
 

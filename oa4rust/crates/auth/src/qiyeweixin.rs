@@ -98,9 +98,9 @@ async fn get_user_detail(config: &(String, String), userid: &str) -> Result<Valu
     Ok(user_resp)
 }
 
-async fn create_session(token: &str, person_unique: &str, session_manager: &SessionManager) -> String {
-    let session = session_manager.create_session(person_unique.to_string(), token.to_string()).await;
-    session.token
+async fn create_session(token: &str, person_unique: &str, session_manager: &SessionManager) -> Result<String, AppError> {
+    let session = session_manager.create_session(person_unique.to_string(), token.to_string()).await?;
+    Ok(session.token)
 }
 
 /// GET /jaxrs/qiyeweixin/code/{code}
@@ -133,7 +133,7 @@ pub async fn qiyeweixin_login(
             let person_icon: Option<String> = r.get("icon");
 
             let token = uuid::Uuid::new_v4().to_string();
-            let session_token = create_session(&token, &person_unique, &session_manager).await;
+            let session_token = create_session(&token, &person_unique, &session_manager).await?;
 
             let person = json!({
                 "unique": person_unique,
@@ -222,7 +222,7 @@ pub async fn qiyeweixin_update_person_detail(
     }
 
     let token = uuid::Uuid::new_v4().to_string();
-    let session_token = create_session(&token, &person_unique, &session_manager).await;
+    let session_token = create_session(&token, &person_unique, &session_manager).await?;
 
     let icon: Option<String> = client
         .query_opt(

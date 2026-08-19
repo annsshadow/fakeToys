@@ -3,11 +3,12 @@ use axum::{
     extract::Extension,
 };
 use deadpool_postgres::Pool;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult, response::row_to_json};
 use std::collections::HashMap;
 use uuid::Uuid;
+use chrono::NaiveDateTime;
 
 pub mod routes;
 
@@ -2520,8 +2521,43 @@ pub async fn gateway_join(
     ))))
 }
 
+pub async fn gateway_fork(
+    pool: Extension<Pool>,
+    axum::extract::Path(gateway_instance_id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let transitions = client
+        .query(
+            "SELECT id, work_id, to_activity, condition FROM x_process_transition \
+             WHERE gateway_instance = $1 AND deleted_at IS NULL",
+            &[&gateway_instance_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let mut created_tasks = Vec::new();
+    for row in &transitions {
+        let work_id: String = row.get("work_id");
+        let to_activity: String = row.get("to_activity");
+        let task_id = Uuid::new_v4().to_string();
+        let token_id = Uuid::new_v4().to_string();
+        let title = format!("Fork Task: {}", to_activity);
+        client
+            .execute(
+                "INSERT INTO x_task (id, title, work, activity, activity_token, person, task_status) \
+                 VALUES ($1, $2, $3, $4, $5, $6, $7)",
+                &[&task_id, &title, &work_id, &to_activity, &token_id.to_string(), &"", &"pending"],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+        created_tasks.push(Value::String(task_id));
+    }
+
+    Ok(Json(ActionResult::success(Value::Array(created_tasks))))
+}
+
 // ──────────────────────────────────────────────────────────────────────────────
-// Timer (tokio-based simple scheduler, placeholder for Quartz)
+// Timer (DB-persisted, with cancel / restore / cron support)
 // ──────────────────────────────────────────────────────────────────────────────
 
 pub mod timer {
@@ -2530,17 +2566,29 @@ pub mod timer {
     use tokio::sync::RwLock;
     use tokio::time::{interval, Duration};
 
-    #[derive(Clone, Default)]
+    #[derive(Clone)]
     pub struct TimerRegistry {
-        jobs: Arc<RwLock<Vec<TimerJob>>>,
+        pub jobs: Arc<RwLock<HashMap<String, TimerJob>>>,
+        pool: Option<Pool>,
     }
 
-    #[derive(Clone)]
+    impl Default for TimerRegistry {
+        fn default() -> Self {
+            Self {
+                jobs: Arc::new(RwLock::new(HashMap::new())),
+                pool: None,
+            }
+        }
+    }
+
+    #[derive(Clone, Serialize, Deserialize)]
     pub struct TimerJob {
         pub id: String,
         pub work_id: String,
-        pub task_id: String,
-        pub fire_at: chrono::DateTime<chrono::Utc>,
+        pub task_id: Option<String>,
+        pub fire_at: NaiveDateTime,
+        pub cron: Option<String>,
+        pub created_at: NaiveDateTime,
         pub kind: String,
     }
 
@@ -2549,16 +2597,27 @@ pub mod timer {
             Self::default()
         }
 
-        pub async fn start(&self, pool: Pool) {
+        pub fn with_pool(pool: Pool) -> Self {
+            Self {
+                jobs: Arc::new(RwLock::new(HashMap::new())),
+                pool: Some(pool),
+            }
+        }
+
+        pub fn start_background(&self) {
+            if self.pool.is_none() {
+                return;
+            }
+            let pool = self.pool.as_ref().unwrap().clone();
             let registry = self.clone();
             tokio::spawn(async move {
                 let mut ticker = interval(Duration::from_secs(30));
                 loop {
                     ticker.tick().await;
                     let jobs = registry.jobs.read().await.clone();
-                    let now = chrono::Utc::now();
-                    for job in jobs.iter() {
-                        if job.fire_at <= now {
+                    let now = chrono::Utc::now().naive_utc();
+                    for job in jobs.values() {
+                        if job.fire_at <= now && job.cron.is_none() {
                             let _ = Self::fire(&pool, job).await;
                         }
                     }
@@ -2570,21 +2629,166 @@ pub mod timer {
             let client = pool.get().await.map_err(|_| AppError::Internal)?;
             match job.kind.as_str() {
                 "expire" => {
-                    client
-                        .execute("UPDATE x_task SET task_status = $1 WHERE id = $2 AND task_status = $3", &[&"expired", &job.task_id, &"active"])
-                        .await
-                        .map_err(|_| AppError::Internal)?;
+                    if let Some(ref task_id) = job.task_id {
+                        client
+                            .execute(
+                                "UPDATE x_task SET task_status = $1 WHERE id = $2 AND task_status = $3",
+                                &[&"expired", task_id, &"active"],
+                            )
+                            .await
+                            .map_err(|_| AppError::Internal)?;
+                    }
                 }
                 _ => {}
             }
+            client
+                .execute(
+                    "UPDATE x_timer_job SET fired_at = NOW() WHERE id = $1",
+                    &[&job.id],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(())
+        }
+
+    pub async fn start(
+        &self,
+        work_id: String,
+        task_id: Option<String>,
+        fire_at: NaiveDateTime,
+        cron: Option<String>,
+    ) -> Result<String, AppError> {
+        let id = Uuid::new_v4().to_string();
+        let now = chrono::Utc::now().naive_utc();
+        let kind = if cron.is_some() { "cron" } else { "once" };
+        let fire_at_str = fire_at.format("%Y-%m-%d %H:%M:%S").to_string();
+        let now_str = now.format("%Y-%m-%d %H:%M:%S").to_string();
+
+            let job = TimerJob {
+                id: id.clone(),
+                work_id: work_id.clone(),
+                task_id: task_id.clone(),
+                fire_at,
+                cron: cron.clone(),
+                created_at: now,
+                kind: kind.to_string(),
+            };
+
+        if let Some(ref pool) = self.pool {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            client
+                .execute(
+                    "INSERT INTO x_timer_job (id, work_id, task_id, fire_at, cron, created_at, kind) \
+                     VALUES ($1, $2, $3, $4, $5, $6, $7)",
+                    &[&id, &work_id, &task_id, &fire_at_str, &cron, &now_str, &kind],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+        }
+
+        let mut jobs = self.jobs.write().await;
+        jobs.insert(id.clone(), job);
+
+        Ok(id)
+    }
+
+        pub async fn cancel(&self, job_id: &str) -> Result<(), AppError> {
+            if let Some(ref pool) = self.pool {
+                let client = pool.get().await.map_err(|_| AppError::Internal)?;
+                client
+                    .execute(
+                        "UPDATE x_timer_job SET cancelled_at = NOW() WHERE id = $1",
+                        &[&job_id],
+                    )
+                    .await
+                    .map_err(|_| AppError::Internal)?;
+            }
+
+            let mut jobs = self.jobs.write().await;
+            jobs.remove(job_id);
+
+            Ok(())
+        }
+
+        pub async fn restore(&self, pool: &Pool) -> Result<(), AppError> {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let rows = client
+                .query(
+                    "SELECT id, work_id, task_id, fire_at, cron, created_at, kind \
+                     FROM x_timer_job \
+                     WHERE fired_at IS NULL AND cancelled_at IS NULL",
+                    &[],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+
+            let mut jobs = self.jobs.write().await;
+            for row in rows.iter() {
+                let fire_at_str: String = row.get("fire_at");
+                let created_at_str: String = row.get("created_at");
+                let fire_at = NaiveDateTime::parse_from_str(&fire_at_str, "%Y-%m-%d %H:%M:%S")
+                    .unwrap_or_else(|_| chrono::Utc::now().naive_utc());
+                let created_at = NaiveDateTime::parse_from_str(&created_at_str, "%Y-%m-%d %H:%M:%S")
+                    .unwrap_or_else(|_| chrono::Utc::now().naive_utc());
+                let job = TimerJob {
+                    id: row.get("id"),
+                    work_id: row.get("work_id"),
+                    task_id: row.get("task_id"),
+                    fire_at,
+                    cron: row.get("cron"),
+                    created_at,
+                    kind: row.get("kind"),
+                };
+                jobs.insert(job.id.clone(), job);
+            }
+
             Ok(())
         }
 
         pub async fn register(&self, job: TimerJob) {
             let mut jobs = self.jobs.write().await;
-            jobs.push(job);
+            jobs.insert(job.id.clone(), job);
         }
     }
+}
+
+pub async fn start_timer(
+    timer: Extension<timer::TimerRegistry>,
+    axum::extract::Json(req): axum::extract::Json<serde_json::Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let work_id: String = req.get("workId").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let task_id: Option<String> = req.get("taskId").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let fire_at_str: String = req.get("fireAt").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    let cron: Option<String> = req.get("cron").and_then(|v| v.as_str()).map(|s| s.to_string());
+
+    let fire_at = if cron.is_some() {
+        chrono::Utc::now().naive_utc()
+    } else {
+        NaiveDateTime::parse_from_str(&fire_at_str, "%Y-%m-%d %H:%M:%S")
+            .map_err(|_| AppError::BadRequest("invalid fireAt format, expected YYYY-MM-DD HH:MM:SS".to_string()))?
+    };
+
+    let job_id = timer.start(work_id.clone(), task_id, fire_at, cron).await?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("jobId".to_string(), Value::String(job_id)),
+            ("workId".to_string(), Value::String(work_id)),
+        ]),
+    ))))
+}
+
+pub async fn cancel_timer(
+    timer: Extension<timer::TimerRegistry>,
+    axum::extract::Path(job_id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    timer.cancel(&job_id).await?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("jobId".to_string(), Value::String(job_id)),
+            ("cancelled".to_string(), Value::Bool(true)),
+        ]),
+    ))))
 }
 
 #[cfg(test)]

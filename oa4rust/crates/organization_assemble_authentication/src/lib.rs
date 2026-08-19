@@ -340,7 +340,7 @@ pub async fn qiyeweixin_login(
             let token = Uuid::new_v4().to_string();
             let session_token = session_manager
                 .create_session(person_unique.clone(), token)
-                .await;
+                .await?;
 
             Ok(Json(ActionResult::success(json!({
                 "token": session_token,
@@ -525,7 +525,7 @@ pub async fn dingding_login(
             let token = Uuid::new_v4().to_string();
             let session_token = session_manager
                 .create_session(person_unique.clone(), token)
-                .await;
+                .await?;
 
             Ok(Json(ActionResult::success(json!({
                 "token": session_token,
@@ -546,6 +546,8 @@ pub async fn dingding_login(
     }
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// 组织架构查询（保持既有契约路径）
 // ──────────────────────────────────────────────────────────────────────────────
 // 政务钉钉绑定/登录
 // ──────────────────────────────────────────────────────────────────────────────
@@ -740,7 +742,7 @@ pub async fn zhengwudingding_login(
     let token = Uuid::new_v4().to_string();
     let session = session_manager
         .create_session(person_unique.clone(), token.clone())
-        .await;
+        .await?;
 
     Ok(Json(ActionResult::success(json!({
         "token": session.token,

@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use anyhow::Context as _;
 use axum::middleware;
+use axum::routing::get;
 use axum::Router;
 use mcp_server::tool_bridge::ToolBridge;
 use shared::db::create_pool;
@@ -347,7 +348,12 @@ pub async fn create_app(
         .merge(processplatform_assemble_designer::router(pool.clone()))
         .merge(query_core_express::router(pool.clone()))
         .merge(query_service_processing::router(pool.clone()))
-        .merge(realtime::routes::ws_route())
+        .merge(
+            Router::new()
+                .route("/ws", get(realtime::ws_handler))
+                .route("/ws/{room_id}", get(realtime::ws_room_handler))
+                .with_state(Arc::new(realtime::RealtimeManager::new())),
+        )
         .merge(preview::preview_route(preview::LibreOfficePreview::default()))
         .merge(oa4rust_signature::signature_route(oa4rust_signature::PdfSignatureService::new()));
 

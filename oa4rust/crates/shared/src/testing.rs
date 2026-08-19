@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use axum::Router;
 use deadpool_postgres::Pool;
 use sea_orm::{Database, DatabaseConnection, ConnectOptions};
@@ -26,6 +28,17 @@ pub fn test_pool() -> Pool {
         .dbname("oa4rust");
     let mgr = deadpool_postgres::Manager::new(cfg, deadpool_postgres::tokio_postgres::NoTls);
     Pool::builder(mgr).max_size(5).build().unwrap()
+}
+
+/// 尝试用 test_pool 建立连接，超时 2s。
+/// 成功返回 true，失败（连接超时、拒绝等）返回 false。
+/// 用于集成测试的运行时 DATABASE_URL 守卫。
+pub async fn is_db_available() -> bool {
+    let pool = test_pool();
+    match tokio::time::timeout(Duration::from_secs(2), pool.get()).await {
+        Ok(Ok(_)) => true,
+        _ => false,
+    }
 }
 
 /// 连接到 PostgreSQL 的 sea_orm::DatabaseConnection，

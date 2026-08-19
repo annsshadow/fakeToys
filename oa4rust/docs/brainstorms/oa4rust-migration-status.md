@@ -5,104 +5,104 @@
 
 ## U1-U4
 
-| crate | 状态 | handlers | stub_ | null |
-|-------|------|---------:|------:|-----:|
-| auth | done | 45 | 0 | 0 |
-| control | done | 25 | 0 | 0 |
-| personal | done | 22 | 0 | 0 |
-| personal_extend | done | 12 | 0 | 0 |
-| program_init | done | 3 | 0 | 0 |
+| crate | 状态 | handlers | stub_ | null | db_touch | db_touch_rate |
+|-------|------|---------:|------:|-----:|---------:|:--------------|
+| auth | done | 51 | 0 | 0 | 9 | 17.6% |
+| control | done | 25 | 0 | 0 | 1 | 4.0% |
+| personal | done | 22 | 0 | 0 | 6 | 27.3% |
+| personal_extend | done | 12 | 0 | 0 | 4 | 33.3% |
+| program_init | done | 3 | 0 | 0 | 2 | 66.7% |
 
 ## U5
 
-| crate | 状态 | handlers | stub_ | null |
-|-------|------|---------:|------:|-----:|
-| attendance | done | 9 | 0 | 0 |
-| attendance_assemble_control | done | 89 | 0 | 0 |
-| attendance_core_entity | done | 9 | 0 | 0 |
-| calendar | done | 10 | 0 | 0 |
-| calendar_assemble_control | done | 4 | 0 | 0 |
-| calendar_core_entity | done | 10 | 0 | 0 |
-| file | done | 9 | 0 | 0 |
-| file_assemble_control | done | 94 | 0 | 0 |
-| file_core_entity | done | 7 | 0 | 0 |
-| general | done | 3 | 0 | 0 |
-| general_assemble_control | done | 61 | 0 | 0 |
-| general_core_entity | done | 21 | 0 | 0 |
+| crate | 状态 | handlers | stub_ | null | db_touch | db_touch_rate |
+|-------|------|---------:|------:|-----:|---------:|:--------------|
+| attendance | done | 9 | 0 | 0 | 6 | 66.7% |
+| attendance_assemble_control | done | 89 | 0 | 0 | 17 | 19.1% |
+| attendance_core_entity | done | 9 | 0 | 0 | 0 | 0.0% |
+| calendar | done | 10 | 0 | 0 | 2 | 20.0% |
+| calendar_assemble_control | done | 4 | 0 | 0 | 3 | 75.0% |
+| calendar_core_entity | done | 10 | 0 | 0 | 0 | 0.0% |
+| file | done | 9 | 0 | 0 | 3 | 33.3% |
+| file_assemble_control | done | 94 | 0 | 0 | 9 | 9.6% |
+| file_core_entity | done | 7 | 0 | 0 | 0 | 0.0% |
+| general | done | 3 | 0 | 0 | 2 | 66.7% |
+| general_assemble_control | done | 61 | 0 | 0 | 11 | 18.0% |
+| general_core_entity | done | 21 | 0 | 0 | 0 | 0.0% |
 
 ## U6
 
-| crate | 状态 | handlers | stub_ | null |
-|-------|------|---------:|------:|-----:|
-| cms_assemble_control | done | 311 | 0 | 0 |
-| cms_control | done | 2 | 0 | 0 |
-| cms_core_entity | done | 7 | 0 | 0 |
-| cms_core_express | done | 2 | 0 | 0 |
-| cms_express | done | 5 | 0 | 0 |
-| meeting | done | 9 | 0 | 0 |
-| meeting_assemble_control | done | 59 | 0 | 0 |
-| meeting_core_entity | done | 11 | 0 | 0 |
-| message | done | 5 | 0 | 0 |
-| message_assemble_communicate | done | 58 | 0 | 0 |
-| message_core_entity | done | 3 | 0 | 0 |
-| portal | done | 11 | 0 | 0 |
-| portal_assemble_designer | done | 56 | 0 | 0 |
-| portal_assemble_surface | done | 48 | 0 | 0 |
-| portal_core_entity | done | 8 | 0 | 0 |
-| process_designer | done | 7 | 0 | 0 |
-| process_express | done | 3 | 0 | 0 |
-| process_surface | done | 3 | 0 | 0 |
-| processplatform_assemble_bam | done | 50 | 0 | 0 |
-| processplatform_assemble_designer | done | 96 | 0 | 0 |
-| processplatform_assemble_surface | done | 487 | 0 | 0 |
-| processplatform_core_entity | done | 6 | 0 | 0 |
-| processplatform_core_express | done | 6 | 0 | 0 |
-| processplatform_service_processing | done | 99 | 0 | 0 |
-| query_assemble_designer | done | 67 | 0 | 0 |
-| query_assemble_surface | done | 59 | 0 | 0 |
-| query_core_entity | done | 5 | 0 | 0 |
-| query_core_express | done | 4 | 0 | 0 |
-| query_express | done | 2 | 0 | 0 |
-| query_service | done | 3 | 0 | 0 |
-| query_service_processing | done | 4 | 0 | 0 |
+| crate | 状态 | handlers | stub_ | null | db_touch | db_touch_rate |
+|-------|------|---------:|------:|-----:|---------:|:--------------|
+| cms_assemble_control | done | 312 | 0 | 0 | 34 | 10.9% |
+| cms_control | done | 2 | 0 | 0 | 2 | 100.0% |
+| cms_core_entity | done | 7 | 0 | 0 | 0 | 0.0% |
+| cms_core_express | done | 2 | 0 | 0 | 1 | 50.0% |
+| cms_express | done | 5 | 0 | 0 | 1 | 20.0% |
+| meeting | done | 9 | 0 | 0 | 4 | 44.4% |
+| meeting_assemble_control | done | 59 | 0 | 0 | 13 | 22.0% |
+| meeting_core_entity | done | 11 | 0 | 0 | 0 | 0.0% |
+| message | done | 5 | 0 | 0 | 0 | 0.0% |
+| message_assemble_communicate | done | 58 | 0 | 0 | 6 | 10.3% |
+| message_core_entity | done | 3 | 0 | 0 | 0 | 0.0% |
+| portal | done | 11 | 0 | 0 | 6 | 54.5% |
+| portal_assemble_designer | done | 56 | 0 | 0 | 11 | 19.6% |
+| portal_assemble_surface | done | 48 | 0 | 0 | 3 | 6.2% |
+| portal_core_entity | done | 8 | 0 | 0 | 0 | 0.0% |
+| process_designer | done | 7 | 0 | 0 | 2 | 28.6% |
+| process_express | done | 3 | 0 | 0 | 1 | 33.3% |
+| process_surface | done | 3 | 0 | 0 | 1 | 33.3% |
+| processplatform_assemble_bam | done | 50 | 0 | 0 | 5 | 10.0% |
+| processplatform_assemble_designer | done | 96 | 0 | 0 | 13 | 13.5% |
+| processplatform_assemble_surface | done | 487 | 0 | 0 | 27 | 5.5% |
+| processplatform_core_entity | done | 6 | 0 | 0 | 0 | 0.0% |
+| processplatform_core_express | done | 6 | 0 | 0 | 0 | 0.0% |
+| processplatform_service_processing | done | 113 | 0 | 0 | 6 | 5.3% |
+| query_assemble_designer | done | 67 | 0 | 0 | 8 | 11.9% |
+| query_assemble_surface | done | 59 | 0 | 0 | 3 | 5.1% |
+| query_core_entity | done | 5 | 0 | 0 | 3 | 60.0% |
+| query_core_express | done | 4 | 0 | 0 | 0 | 0.0% |
+| query_express | done | 2 | 0 | 0 | 0 | 0.0% |
+| query_service | done | 3 | 0 | 0 | 1 | 33.3% |
+| query_service_processing | done | 4 | 0 | 0 | 2 | 50.0% |
 
 ## U7
 
-| crate | 状态 | handlers | stub_ | null |
-|-------|------|---------:|------:|-----:|
-| ai | done | 21 | 0 | 0 |
-| ai_assemble_control | done | 32 | 0 | 0 |
-| ai_core_entity | done | 3 | 0 | 0 |
-| base | done | 3 | 0 | 0 |
-| bbs | done | 9 | 0 | 0 |
-| bbs_assemble_control | done | 57 | 0 | 0 |
-| bbs_core_entity | done | 15 | 0 | 0 |
-| component | done | 3 | 0 | 0 |
-| component_assemble_control | done | 10 | 0 | 0 |
-| component_core_entity | done | 3 | 0 | 0 |
-| console | done | 7 | 0 | 0 |
-| correlation | done | 3 | 0 | 0 |
-| correlation_core_entity | done | 4 | 0 | 0 |
-| correlation_core_express | done | 2 | 0 | 0 |
-| correlation_service_processing | done | 20 | 0 | 0 |
-| express | done | 10 | 0 | 0 |
-| hotpic | done | 3 | 0 | 0 |
-| hotpic_assemble_control | done | 18 | 0 | 0 |
-| hotpic_core_entity | done | 5 | 0 | 0 |
-| jpush | done | 6 | 0 | 0 |
-| jpush_assemble_control | done | 16 | 0 | 0 |
-| jpush_core_entity | done | 5 | 0 | 0 |
-| mind | done | 10 | 0 | 0 |
-| mind_assemble_control | done | 9 | 0 | 0 |
-| mind_core_entity | done | 11 | 0 | 0 |
-| organization_assemble_authentication | done | 2 | 0 | 0 |
-| organization_assemble_control | done | 105 | 0 | 0 |
-| organization_assemble_express | done | 4 | 0 | 0 |
-| organization_assemble_personal | done | 2 | 0 | 0 |
-| organization_core_entity | done | 24 | 0 | 0 |
-| organization_core_express | done | 3 | 0 | 0 |
-| program_center | done | 205 | 0 | 0 |
-| program_center_core_entity | done | 22 | 0 | 0 |
+| crate | 状态 | handlers | stub_ | null | db_touch | db_touch_rate |
+|-------|------|---------:|------:|-----:|---------:|:--------------|
+| ai | done | 21 | 0 | 0 | 7 | 33.3% |
+| ai_assemble_control | done | 32 | 0 | 0 | 8 | 25.0% |
+| ai_core_entity | done | 3 | 0 | 0 | 0 | 0.0% |
+| base | done | 3 | 0 | 0 | 1 | 33.3% |
+| bbs | done | 9 | 0 | 0 | 2 | 22.2% |
+| bbs_assemble_control | done | 57 | 0 | 0 | 17 | 29.8% |
+| bbs_core_entity | done | 15 | 0 | 0 | 0 | 0.0% |
+| component | done | 3 | 0 | 0 | 2 | 66.7% |
+| component_assemble_control | done | 10 | 0 | 0 | 5 | 50.0% |
+| component_core_entity | done | 3 | 0 | 0 | 2 | 66.7% |
+| console | done | 7 | 0 | 0 | 1 | 14.3% |
+| correlation | done | 3 | 0 | 0 | 3 | 100.0% |
+| correlation_core_entity | done | 4 | 0 | 0 | 0 | 0.0% |
+| correlation_core_express | done | 2 | 0 | 0 | 2 | 100.0% |
+| correlation_service_processing | done | 20 | 0 | 0 | 2 | 10.0% |
+| express | done | 10 | 0 | 0 | 1 | 10.0% |
+| hotpic | done | 3 | 0 | 0 | 0 | 0.0% |
+| hotpic_assemble_control | done | 18 | 0 | 0 | 5 | 27.8% |
+| hotpic_core_entity | done | 5 | 0 | 0 | 0 | 0.0% |
+| jpush | done | 6 | 0 | 0 | 2 | 33.3% |
+| jpush_assemble_control | done | 16 | 0 | 0 | 4 | 25.0% |
+| jpush_core_entity | done | 5 | 0 | 0 | 0 | 0.0% |
+| mind | done | 10 | 0 | 0 | 1 | 10.0% |
+| mind_assemble_control | done | 9 | 0 | 0 | 2 | 22.2% |
+| mind_core_entity | done | 11 | 0 | 0 | 0 | 0.0% |
+| organization_assemble_authentication | done | 12 | 0 | 0 | 0 | 0.0% |
+| organization_assemble_control | done | 105 | 0 | 0 | 24 | 22.9% |
+| organization_assemble_express | done | 4 | 0 | 0 | 3 | 75.0% |
+| organization_assemble_personal | done | 2 | 0 | 0 | 0 | 0.0% |
+| organization_core_entity | done | 24 | 0 | 0 | 0 | 0.0% |
+| organization_core_express | done | 3 | 0 | 0 | 3 | 100.0% |
+| program_center | done | 205 | 0 | 0 | 29 | 14.1% |
+| program_center_core_entity | done | 22 | 0 | 0 | 0 | 0.0% |
 
 ## 说明
 

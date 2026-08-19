@@ -53,4 +53,4 @@ jobs:
       - name: Set DATABASE_URL
         run: echo "DATABASE_URL=postgres://o2server:password@localhost:5432/postgres" >> $GITHUB_ENV
       - name: Run integration tests
-        run: cargo test --test integration_runner -- --ignored
+        run: cargo test --test integration_runner

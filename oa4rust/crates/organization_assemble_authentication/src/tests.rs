@@ -47,6 +47,25 @@ mod tests {
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
 
+    #[tokio::test]
+    async fn test_qiyeweixin_login_route_exists() {
+        let pool = test_pool();
+        let app = router(pool);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/organization/assemble/authentication/qiyeweixin/login/testcode")
+                    .method(axum::http::Method::GET)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
     #[test]
     fn test_router_builds() {
         let pool = test_pool();
