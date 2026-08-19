@@ -8,8 +8,7 @@ use chrono::{DateTime, Duration, Utc};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::error::AppError;
-use shared::response::ActionResult;
+use shared::{db::dialect, error::AppError, response::ActionResult};
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
@@ -98,13 +97,17 @@ pub async fn login(
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
+         password_hash, locked, {}, {} FROM auth_person \
+         WHERE unique_id = {} AND deleted_at IS NULL",
+        d.cast_text("change_password_time"),
+        d.cast_text("password_expired_time"),
+        d.param(1),
+    );
     let row = client
-        .query_one(
-            "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
-             password_hash, locked, change_password_time::text, password_expired_time::text FROM auth_person \
-             WHERE unique_id = $1 AND deleted_at IS NULL",
-            &[&req.credential],
-        )
+        .query_one(&sql, &[&req.credential])
         .await
         .map_err(|_| AppError::Unauthorized)?;
 
@@ -287,8 +290,10 @@ pub async fn whoami(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, unique_id, name, mobile FROM auth_person \
-             WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
+            &dialect().format_sql(
+                "SELECT id, unique_id, name, mobile FROM auth_person \
+                 WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
+            ),
             &[&session.person_unique],
         )
         .await

@@ -60,7 +60,7 @@ pub async fn receive_list(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -118,7 +118,7 @@ pub async fn consume_list_consume_count_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -148,7 +148,7 @@ pub async fn consume_list_consume_currentperson_count_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("readStatus".to_string(), Value::String(row.get("read_status"))),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
@@ -179,7 +179,7 @@ pub async fn consume_list_consume_person_person_count_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -209,7 +209,7 @@ pub async fn consume_type_type(
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
             ("type".to_string(), Value::String(row.get("type"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -836,7 +836,7 @@ pub async fn im_msg_list_object(
             ("id".to_string(), Value::String(row.get("id"))),
             ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("type".to_string(), Value::String(row.get("type"))),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
@@ -868,7 +868,7 @@ pub async fn im_msg_list_page_size_size(
             ("id".to_string(), Value::String(row.get("id"))),
             ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("type".to_string(), Value::String(row.get("type"))),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
@@ -944,8 +944,8 @@ pub async fn instant_currentperson_consumed(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
-            ("consumeTime".to_string(), Value::String(row.get("consume_time"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
+            ("consumeTime".to_string(), Value::String(row.get::<_, Option<String>>("consume_time").unwrap_or_default())),
         ]))
     }).collect();
 
@@ -972,8 +972,8 @@ pub async fn instant_currentperson_consumed_all(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
-            ("consumeTime".to_string(), Value::String(row.get("consume_time"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
+            ("consumeTime".to_string(), Value::String(row.get::<_, Option<String>>("consume_time").unwrap_or_default())),
         ]))
     }).collect();
 
@@ -1023,7 +1023,7 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("consumeTime".to_string(), Value::String(row.get("consume_time"))),
         ]))
     }).collect();
@@ -1052,7 +1052,7 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("consumeTime".to_string(), Value::String(row.get("consume_time"))),
         ]))
     }).collect();
@@ -1081,7 +1081,7 @@ pub async fn instant_list_currentperson_count_count_asc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1110,7 +1110,7 @@ pub async fn instant_list_currentperson_count_count_desc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1139,7 +1139,7 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1168,7 +1168,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1197,7 +1197,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1226,7 +1226,7 @@ pub async fn instant_list_id_next_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1255,7 +1255,7 @@ pub async fn instant_list_id_prev_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1306,7 +1306,7 @@ pub async fn mass_list_id_next_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("massId".to_string(), Value::String(row.get("mass_id"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1335,7 +1335,7 @@ pub async fn mass_list_id_prev_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("massId".to_string(), Value::String(row.get("mass_id"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1365,7 +1365,7 @@ pub async fn mass_id(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get("content"))),
-                ("sender".to_string(), Value::String(row.get("sender"))),
+                ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1435,7 +1435,7 @@ pub async fn message_list_paging_page_size_size(
             ("id".to_string(), Value::String(row.get("id"))),
             ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("type".to_string(), Value::String(row.get("type"))),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))

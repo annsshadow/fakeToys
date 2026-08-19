@@ -6,8 +6,10 @@ mod tests {
     use tower::util::ServiceExt;
     use crate::router;
 
+    const TEST_PERSON_ID: &str = "test-person-id";
+    const TEST_IDENTITY_ID: &str = "test-identity-id";
+
     #[tokio::test]
-    #[ignore = "requires a running PostgreSQL server"]
     async fn test_person_id_icon_route_exists() {
         let pool = test_pool();
         let app = router(pool);
@@ -15,7 +17,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/authentication/person/test-id/icon")
+                    .uri(&format!("/jaxrs/organization/assemble/authentication/person/{}/icon", TEST_PERSON_ID))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -23,12 +25,10 @@ mod tests {
             .await
             .unwrap();
 
-        // Route should be registered (200 or 500, but not 404)
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
     }
 
     #[tokio::test]
-    #[ignore = "requires a running PostgreSQL server"]
     async fn test_identity_id_route_exists() {
         let pool = test_pool();
         let app = router(pool);
@@ -36,7 +36,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/authentication/identity/test-id")
+                    .uri(&format!("/jaxrs/organization/assemble/authentication/identity/{}", TEST_IDENTITY_ID))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),

@@ -5,7 +5,7 @@ use axum::{
 use base64::Engine;
 use deadpool_postgres::Pool;
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{db::dialect, error::AppError, response::ActionResult};
 use std::sync::Arc;
 
 pub use shared::{ControlClient, ControlPool, DynControlPool, RowGet};
@@ -30,7 +30,9 @@ pub async fn get_control_config(
 
     let row = client
         .ctrl_query_one(
-            "SELECT enabled, default_storage, max_upload_size FROM x_file_assemble_control_config LIMIT 1",
+            &dialect().format_sql(
+                "SELECT enabled, default_storage, max_upload_size FROM x_file_assemble_control_config LIMIT 1",
+            ),
             &[],
         )
         .await;
@@ -59,7 +61,9 @@ pub async fn list_storage_pools(
 
     let rows = client
         .ctrl_query(
-            "SELECT id, name, enabled FROM x_file_assemble_control_storage_pool ORDER BY id",
+            &dialect().format_sql(
+                "SELECT id, name, enabled FROM x_file_assemble_control_storage_pool ORDER BY id",
+            ),
             &[],
         )
         .await;
@@ -104,7 +108,9 @@ pub async fn update_control_config(
 
     client
         .ctrl_execute(
-            "UPDATE x_file_assemble_control_config SET enabled = $1, default_storage = $2, max_upload_size = $3 WHERE id = 'global'",
+            &dialect().format_sql(
+                "UPDATE x_file_assemble_control_config SET enabled = $1, default_storage = $2, max_upload_size = $3 WHERE id = 'global'",
+            ),
             &[&enabled, &default_storage, &max_upload_size],
         )
         .await
@@ -128,7 +134,9 @@ pub async fn list_control_categories(
 
     let rows = client
         .ctrl_query(
-            "SELECT id, name, description FROM x_file_assemble_control_category ORDER BY id",
+            &dialect().format_sql(
+                "SELECT id, name, description FROM x_file_assemble_control_category ORDER BY id",
+            ),
             &[],
         )
         .await;
