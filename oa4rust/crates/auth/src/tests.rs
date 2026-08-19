@@ -308,10 +308,10 @@ mod tests {
         if let Some(c) = &client {
             let _ = c
                 .execute(
-                    "INSERT INTO auth_person (id, unique_id, name) \
-                     VALUES ($1, $2, $3) \
+                    "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                     VALUES ($1, $2, $3, $4) \
                      ON CONFLICT (unique_id) DO UPDATE SET name = EXCLUDED.name",
-                    &[&"person-oidc-existing", &unique_id, &"Pre-existing OIDC User"],
+                    &[&"person-oidc-existing", &unique_id, &"Pre-existing OIDC User", &"{bcrypt}$2b$12$dummy"],
                 )
                 .await;
         }
