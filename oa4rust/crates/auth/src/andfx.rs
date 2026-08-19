@@ -85,7 +85,7 @@ pub async fn andfx_moa_sso(
     let token_val = uuid::Uuid::new_v4().to_string();
     let session = session_manager
         .create_session(person_unique.clone(), token_val.clone())
-        .await;
+        .await?;
 
     Ok(Json(ActionResult::success(AndfxLoginResponse {
         token: session.token,

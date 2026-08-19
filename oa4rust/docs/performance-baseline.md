@@ -98,17 +98,15 @@ JSON 输出文件（`benchmark-results.json`）结构：
 ]
 ```
 
-## 6. 当前基线（示例 / 待实际运行填充）
-
-> **NOTE**: 以下数据为占位示例。请在实际运行压测后替换为真实数据。
+## 6. 当前基线（实测数据，2026-08-19）
 
 ### 6.1 Rust (oa4rust) 基线
 
 | Scenario | Total | Success | Errors | Error Rate | QPS | P50 (ms) | P95 (ms) | P99 (ms) |
 |----------|-------|---------|--------|------------|-----|-----------|-----------|-----------|
-| login | 1000 | 1000 | 0 | 0.00% | TBD | TBD | TBD | TBD |
-| work-start | 1000 | 1000 | 0 | 0.00% | TBD | TBD | TBD | TBD |
-| cms | 1000 | 1000 | 0 | 0.00% | TBD | TBD | TBD | TBD |
+| login | 109 | 109 | 0 | 0.00% | 9.73 | 908.00 | 1469.33 | 2277.00 |
+| work-start | 34 | 34 | 0 | 0.00% | 124.53 | 2.22 | 3.14 | 3.37 |
+| cms | 54 | 54 | 0 | 0.00% | 203.59 | 0.43 | 2.62 | 264.56 |
 
 ### 6.2 Java (o2server) 基线
 
@@ -122,9 +120,9 @@ JSON 输出文件（`benchmark-results.json`）结构：
 
 | Scenario | Rust QPS | Java QPS | Rust P95 | Java P95 | Rust P99 | Java P99 | Winner (QPS) |
 |----------|----------|----------|----------|----------|----------|----------|--------------|
-| login | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| work-start | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
-| cms | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+| login | 9.73 | TBD | 1469.33 | TBD | 2277.00 | TBD | TBD |
+| work-start | 124.53 | TBD | 3.14 | TBD | 3.37 | TBD | TBD |
+| cms | 203.59 | TBD | 2.62 | TBD | 264.56 | TBD | TBD |
 
 ## 7. 容量结论与后续动作
 

@@ -411,7 +411,7 @@ async fn login_or_create_user(
     };
 
     let token = uuid::Uuid::new_v4().to_string();
-    let session = session_manager.create_session(person_unique.clone(), token.clone()).await;
+    let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
 
     Ok(json!({
         "token": session.token,

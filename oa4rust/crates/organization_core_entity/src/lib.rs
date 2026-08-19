@@ -9,7 +9,7 @@ use sea_orm::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{error::AppError, response::{option_to_json, ActionResult}};
 
 pub mod entities;
 pub mod routes;
@@ -154,21 +154,14 @@ pub async fn group_list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
-                (
-                    "\"parentId\"".to_string(),
-                    m.parent_id
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "level".to_string(),
-                    Value::Number(serde_json::Number::from(m.level)),
-                ),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(m.id.clone()));
+            map.insert("name".to_string(), Value::String(m.name.clone()));
+            if let Some(val) = option_to_json(m.parent_id.clone().map(|s| Value::String(s))) {
+                map.insert("parentId".to_string(), val);
+            }
+            map.insert("level".to_string(), Value::Number(serde_json::Number::from(m.level)));
+            Value::Object(map)
         })
         .collect();
 
@@ -234,24 +227,16 @@ pub async fn person_list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
-                (
-                    "mobile".to_string(),
-                    m.mobile
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "email".to_string(),
-                    m.email
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(m.id.clone()));
+            map.insert("name".to_string(), Value::String(m.name.clone()));
+            if let Some(val) = option_to_json(m.mobile.clone().map(|s| Value::String(s))) {
+                map.insert("mobile".to_string(), val);
+            }
+            if let Some(val) = option_to_json(m.email.clone().map(|s| Value::String(s))) {
+                map.insert("email".to_string(), val);
+            }
+            Value::Object(map)
         })
         .collect();
 
@@ -325,21 +310,14 @@ pub async fn bind_list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                (
-                    "identityId".to_string(),
-                    Value::String(m.identity_id.clone()),
-                ),
-                ("groupId".to_string(), Value::String(m.group_id.clone())),
-                (
-                    "role".to_string(),
-                    m.role
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(m.id.clone()));
+            map.insert("identityId".to_string(), Value::String(m.identity_id.clone()));
+            map.insert("groupId".to_string(), Value::String(m.group_id.clone()));
+            if let Some(val) = option_to_json(m.role.clone().map(|s| Value::String(s))) {
+                map.insert("role".to_string(), val);
+            }
+            Value::Object(map)
         })
         .collect();
 
@@ -460,19 +438,14 @@ pub async fn group_create(
     };
     let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    let result = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(model.id.clone())),
-        ("name".to_string(), Value::String(model.name.clone())),
-        (
-            "\"parentId\"".to_string(),
-            model
-                .parent_id
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        ("level".to_string(), Value::Number(serde_json::Number::from(model.level))),
-    ]));
+    let mut map = serde_json::Map::new();
+    map.insert("id".to_string(), Value::String(model.id.clone()));
+    map.insert("name".to_string(), Value::String(model.name.clone()));
+    if let Some(val) = option_to_json(model.parent_id.clone().map(|s| Value::String(s))) {
+        map.insert("parentId".to_string(), val);
+    }
+    map.insert("level".to_string(), Value::Number(serde_json::Number::from(model.level)));
+    let result = Value::Object(map);
 
     Ok(Json(ActionResult::success(result)))
 }
@@ -501,22 +474,14 @@ pub async fn group_update(
 
     let updated = active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    let result = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(updated.id.clone())),
-        ("name".to_string(), Value::String(updated.name.clone())),
-        (
-            "\"parentId\"".to_string(),
-            updated
-                .parent_id
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        (
-            "level".to_string(),
-            Value::Number(serde_json::Number::from(updated.level)),
-        ),
-    ]));
+    let mut map = serde_json::Map::new();
+    map.insert("id".to_string(), Value::String(updated.id.clone()));
+    map.insert("name".to_string(), Value::String(updated.name.clone()));
+    if let Some(val) = option_to_json(updated.parent_id.clone().map(|s| Value::String(s))) {
+        map.insert("parentId".to_string(), val);
+    }
+    map.insert("level".to_string(), Value::Number(serde_json::Number::from(updated.level)));
+    let result = Value::Object(map);
 
     Ok(Json(ActionResult::success(result)))
 }
@@ -652,26 +617,16 @@ pub async fn person_create(
     };
     let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    let result = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(model.id.clone())),
-        ("name".to_string(), Value::String(model.name.clone())),
-        (
-            "mobile".to_string(),
-            model
-                .mobile
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        (
-            "email".to_string(),
-            model
-                .email
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-    ]));
+    let mut map = serde_json::Map::new();
+    map.insert("id".to_string(), Value::String(model.id.clone()));
+    map.insert("name".to_string(), Value::String(model.name.clone()));
+    if let Some(val) = option_to_json(model.mobile.clone().map(|s| Value::String(s))) {
+        map.insert("mobile".to_string(), val);
+    }
+    if let Some(val) = option_to_json(model.email.clone().map(|s| Value::String(s))) {
+        map.insert("email".to_string(), val);
+    }
+    let result = Value::Object(map);
 
     Ok(Json(ActionResult::success(result)))
 }
@@ -700,26 +655,16 @@ pub async fn person_update(
 
     let updated = active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    let result = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(updated.id.clone())),
-        ("name".to_string(), Value::String(updated.name.clone())),
-        (
-            "mobile".to_string(),
-            updated
-                .mobile
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        (
-            "email".to_string(),
-            updated
-                .email
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-    ]));
+    let mut map = serde_json::Map::new();
+    map.insert("id".to_string(), Value::String(updated.id.clone()));
+    map.insert("name".to_string(), Value::String(updated.name.clone()));
+    if let Some(val) = option_to_json(updated.mobile.clone().map(|s| Value::String(s))) {
+        map.insert("mobile".to_string(), val);
+    }
+    if let Some(val) = option_to_json(updated.email.clone().map(|s| Value::String(s))) {
+        map.insert("email".to_string(), val);
+    }
+    let result = Value::Object(map);
 
     Ok(Json(ActionResult::success(result)))
 }
@@ -867,22 +812,14 @@ pub async fn bind_create(
     };
     let model = active.insert(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    let result = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(model.id.clone())),
-        (
-            "identityId".to_string(),
-            Value::String(model.identity_id.clone()),
-        ),
-        ("groupId".to_string(), Value::String(model.group_id.clone())),
-        (
-            "role".to_string(),
-            model
-                .role
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-    ]));
+    let mut map = serde_json::Map::new();
+    map.insert("id".to_string(), Value::String(model.id.clone()));
+    map.insert("identityId".to_string(), Value::String(model.identity_id.clone()));
+    map.insert("groupId".to_string(), Value::String(model.group_id.clone()));
+    if let Some(val) = option_to_json(model.role.clone().map(|s| Value::String(s))) {
+        map.insert("role".to_string(), val);
+    }
+    let result = Value::Object(map);
 
     Ok(Json(ActionResult::success(result)))
 }
@@ -911,22 +848,14 @@ pub async fn bind_update(
 
     let updated = active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
-    let result = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(updated.id.clone())),
-        (
-            "identityId".to_string(),
-            Value::String(updated.identity_id.clone()),
-        ),
-        ("groupId".to_string(), Value::String(updated.group_id.clone())),
-        (
-            "role".to_string(),
-            updated
-                .role
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-    ]));
+    let mut map = serde_json::Map::new();
+    map.insert("id".to_string(), Value::String(updated.id.clone()));
+    map.insert("identityId".to_string(), Value::String(updated.identity_id.clone()));
+    map.insert("groupId".to_string(), Value::String(updated.group_id.clone()));
+    if let Some(val) = option_to_json(updated.role.clone().map(|s| Value::String(s))) {
+        map.insert("role".to_string(), val);
+    }
+    let result = Value::Object(map);
 
     Ok(Json(ActionResult::success(result)))
 }

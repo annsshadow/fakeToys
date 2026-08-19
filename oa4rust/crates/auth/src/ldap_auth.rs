@@ -3,6 +3,7 @@ use shared::error::AppError;
 use tracing::warn;
 
 /// LDAP 认证结果。
+#[derive(Debug)]
 pub enum LdapAuthOutcome {
     /// LDAP 认证成功，跳过数据库校验
     Success,

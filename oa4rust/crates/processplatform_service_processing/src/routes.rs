@@ -10,17 +10,16 @@ use crate::{
     get_process, get_process_instance, list_processes,
     task_claim, task_complete, task_reject, task_transfer,
     work_complete, work_id_processing, work_start,
-    gateway_join, timer::TimerRegistry,
+    gateway_join, gateway_fork,
     work_list, process_id_complex,
     work_v2_id_terminate, work_v2_id_retract,
+    start_timer, cancel_timer, timer::TimerRegistry,
 };
 
 pub fn router(pool: Pool) -> Router {
-    let timer = TimerRegistry::new();
-    let pool_clone = pool.clone();
-    tokio::spawn(async move {
-        timer.start(pool_clone).await;
-    });
+    let timer = TimerRegistry::with_pool(pool.clone());
+    timer.start_background();
+    let timer_for_router = timer.clone();
 
     Router::new()
         .route("/jaxrs/processplatform/service/processing/get/{id}", get(get_process))
@@ -41,5 +40,9 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/task/{id}/reject", post(task_reject))
         .route("/jaxrs/task/{id}/transfer/{person}", post(task_transfer))
         .route("/jaxrs/gateway/{work_id}/{activity_token}/join", post(gateway_join))
+        .route("/jaxrs/processplatform/service/processing/gateway/fork/{gateway_instance_id}", post(gateway_fork))
+        .route("/jaxrs/processplatform/service/processing/timer/start", post(start_timer))
+        .route("/jaxrs/processplatform/service/processing/timer/{job_id}/cancel", post(cancel_timer))
         .layer(Extension(pool))
+        .layer(Extension(timer_for_router))
 }

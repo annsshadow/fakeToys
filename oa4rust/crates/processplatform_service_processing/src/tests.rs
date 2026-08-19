@@ -1,18 +1,21 @@
-use super::*;
-use axum::body::Body;
-use axum::http::{Request, Method, StatusCode};
-use deadpool_postgres::{Manager, Pool};
-use deadpool_postgres::tokio_postgres::{Config, NoTls};
-use serde_json::json;
-use tower::util::ServiceExt;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::Body;
+    use axum::http::{Request, Method, StatusCode};
+    use deadpool_postgres::{Manager, Pool};
+    use deadpool_postgres::tokio_postgres::{Config, NoTls};
+    use serde_json::json;
+    use shared::testing::{is_db_available, test_pool};
+    use tower::util::ServiceExt;
 
-fn build_test_pool() -> Pool {
-    let mgr = Manager::new(
-        Config::new(),
-        NoTls,
-    );
-    Pool::builder(mgr).max_size(1).build().unwrap()
-}
+    fn build_test_pool() -> Pool {
+        let mgr = Manager::new(
+            Config::new(),
+            NoTls,
+        );
+        Pool::builder(mgr).max_size(1).build().unwrap()
+    }
 
 #[test]
 fn test_create_process_action_result_format() {
@@ -266,5 +269,50 @@ mod tests {
             .await
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_work_start_status_transition_db_connected() {
+        use shared::testing::is_db_available;
+
+        if !is_db_available().await {
+            eprintln!("skipping test_work_start_status_transition: DATABASE_URL not reachable");
+            return;
+        }
+
+        let pool = test_pool();
+        let work_id = "work-it-start-test";
+        let client = pool.get().await.ok();
+
+        // Seed a work record with pending status
+        if let Some(c) = &client {
+            let _ = c
+                .execute(
+                    "INSERT INTO x_work (id, title, process, application, work_status, creator, create_time, start_time) \
+                     VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW()) \
+                     ON CONFLICT (id) DO UPDATE SET work_status = EXCLUDED.work_status",
+                    &[&work_id, &"Test Work Start", &"default", &"default", &"pending", &"system"],
+                )
+                .await;
+        }
+
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri(&format!("/jaxrs/work/{}/start", work_id))
+                    .method(Method::POST)
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"]["status"], "processing");
     }
 }

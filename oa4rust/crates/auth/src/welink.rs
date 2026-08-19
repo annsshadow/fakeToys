@@ -150,7 +150,7 @@ pub async fn welink_login(
     let token = uuid::Uuid::new_v4().to_string();
     let session = session_manager
         .create_session(person_unique.clone(), token.clone())
-        .await;
+        .await?;
 
     Ok(Json(ActionResult::success(WelinkLoginResponse {
         token: session.token,

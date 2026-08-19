@@ -5,7 +5,7 @@
 };
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{error::AppError, response::{option_to_json, ActionResult}};
 
 pub mod entities;
 pub mod routes;
@@ -26,31 +26,16 @@ pub async fn category_list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
-                (
-                    "\"parentId\"".to_string(),
-                    m.parent_id
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "sortOrder".to_string(),
-                    Value::Number(serde_json::Number::from(m.sort_order)),
-                ),
-                ("status".to_string(), Value::String(m.status.clone())),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .clone()
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(m.id.clone()));
+            map.insert("name".to_string(), Value::String(m.name.clone()));
+            if let Some(val) = option_to_json(m.parent_id.clone().map(|s| Value::String(s))) {
+                map.insert("parentId".to_string(), val);
+            }
+            map.insert("sortOrder".to_string(), Value::Number(serde_json::Number::from(m.sort_order)));
+            map.insert("status".to_string(), Value::String(m.status.clone()));
+            map.insert("createTime".to_string(), Value::String(m.create_time.clone().map(|dt| dt.to_string()).unwrap_or_default()));
+            Value::Object(map)
         })
         .collect();
 
@@ -77,31 +62,16 @@ pub async fn category_get(
 
     match model {
         Some(m) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
-                (
-                    "\"parentId\"".to_string(),
-                    m.parent_id
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "sortOrder".to_string(),
-                    Value::Number(serde_json::Number::from(m.sort_order)),
-                ),
-                ("status".to_string(), Value::String(m.status.clone())),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .clone()
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(m.id.clone()));
+            map.insert("name".to_string(), Value::String(m.name.clone()));
+            if let Some(val) = option_to_json(m.parent_id.clone().map(|s| Value::String(s))) {
+                map.insert("parentId".to_string(), val);
+            }
+            map.insert("sortOrder".to_string(), Value::Number(serde_json::Number::from(m.sort_order)));
+            map.insert("status".to_string(), Value::String(m.status.clone()));
+            map.insert("createTime".to_string(), Value::String(m.create_time.clone().map(|dt| dt.to_string()).unwrap_or_default()));
+            let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("category not found"))),
@@ -160,42 +130,20 @@ pub async fn article_list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                (
-                    "categoryId".to_string(),
-                    Value::String(m.category_id.clone()),
-                ),
-                ("title".to_string(), Value::String(m.title.clone())),
-                (
-                    "content".to_string(),
-                    m.content
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "authorId".to_string(),
-                    Value::String(m.author_id.clone()),
-                ),
-                ("status".to_string(), Value::String(m.status.clone())),
-                (
-                    "publishTime".to_string(),
-                    m.publish_time
-                        .clone()
-                        .map(|dt| Value::String(dt.to_string()))
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .clone()
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(m.id.clone()));
+            map.insert("categoryId".to_string(), Value::String(m.category_id.clone()));
+            map.insert("title".to_string(), Value::String(m.title.clone()));
+            if let Some(val) = option_to_json(m.content.clone().map(|s| Value::String(s))) {
+                map.insert("content".to_string(), val);
+            }
+            map.insert("authorId".to_string(), Value::String(m.author_id.clone()));
+            map.insert("status".to_string(), Value::String(m.status.clone()));
+            if let Some(val) = option_to_json(m.publish_time.clone().map(|dt| Value::String(dt.to_string()))) {
+                map.insert("publishTime".to_string(), val);
+            }
+            map.insert("createTime".to_string(), Value::String(m.create_time.clone().map(|dt| dt.to_string()).unwrap_or_default()));
+            Value::Object(map)
         })
         .collect();
 
@@ -222,42 +170,20 @@ pub async fn article_get(
 
     match model {
         Some(m) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                (
-                    "categoryId".to_string(),
-                    Value::String(m.category_id.clone()),
-                ),
-                ("title".to_string(), Value::String(m.title.clone())),
-                (
-                    "content".to_string(),
-                    m.content
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "authorId".to_string(),
-                    Value::String(m.author_id.clone()),
-                ),
-                ("status".to_string(), Value::String(m.status.clone())),
-                (
-                    "publishTime".to_string(),
-                    m.publish_time
-                        .clone()
-                        .map(|dt| Value::String(dt.to_string()))
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .clone()
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(m.id.clone()));
+            map.insert("categoryId".to_string(), Value::String(m.category_id.clone()));
+            map.insert("title".to_string(), Value::String(m.title.clone()));
+            if let Some(val) = option_to_json(m.content.clone().map(|s| Value::String(s))) {
+                map.insert("content".to_string(), val);
+            }
+            map.insert("authorId".to_string(), Value::String(m.author_id.clone()));
+            map.insert("status".to_string(), Value::String(m.status.clone()));
+            if let Some(val) = option_to_json(m.publish_time.clone().map(|dt| Value::String(dt.to_string()))) {
+                map.insert("publishTime".to_string(), val);
+            }
+            map.insert("createTime".to_string(), Value::String(m.create_time.clone().map(|dt| dt.to_string()).unwrap_or_default()));
+            let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("article not found"))),

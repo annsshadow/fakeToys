@@ -5,7 +5,7 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{error::AppError, response::{option_to_json, ActionResult}};
 
 pub mod routes;
 
@@ -69,15 +69,14 @@ pub async fn get_design(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            let content_value = content
-                .and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or(Value::Null);
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get("description"))),
-                ("components".to_string(), content_value),
-            ]));
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("description".to_string(), Value::String(row.get("description")));
+            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+                map.insert("components".to_string(), val);
+            }
+            let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("design not found"))),
@@ -166,18 +165,17 @@ pub async fn list_pages_by_category(
         .iter()
         .map(|row| {
             let content: Option<String> = row.get("content");
-            let content_value = content
-                .and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or(Value::Null);
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("content".to_string(), content_value),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("category".to_string(), Value::String(row.get("category")));
+            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+                map.insert("content".to_string(), val);
+            }
+            map.insert("creator".to_string(), Value::String(row.get("creator")));
+            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            map.insert("updateTime".to_string(), Value::String(row.get("update_time")));
+            Value::Object(map)
         })
         .collect();
 
@@ -204,18 +202,17 @@ pub async fn get_page(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            let content_value = content
-                .and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or(Value::Null);
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("content".to_string(), content_value),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
-            ]));
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("category".to_string(), Value::String(row.get("category")));
+            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+                map.insert("content".to_string(), val);
+            }
+            map.insert("creator".to_string(), Value::String(row.get("creator")));
+            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            map.insert("updateTime".to_string(), Value::String(row.get("update_time")));
+            let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("page not found"))),
@@ -777,12 +774,14 @@ pub async fn input_compare(
     match row {
         Some(row) => {
             let old_content: Option<String> = row.get("content");
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(input_id.to_string())),
-                ("oldContent".to_string(), old_content.map(Value::String).unwrap_or(Value::Null)),
-                ("newContent".to_string(), Value::String(content_str.to_string())),
-                ("compared".to_string(), Value::Bool(true)),
-            ]));
+            let mut result_map = serde_json::Map::new();
+            result_map.insert("id".to_string(), Value::String(input_id.to_string()));
+            if let Some(val) = option_to_json(old_content.map(|s| Value::String(s))) {
+                result_map.insert("oldContent".to_string(), val);
+            }
+            result_map.insert("newContent".to_string(), Value::String(content_str.to_string()));
+            result_map.insert("compared".to_string(), Value::Bool(true));
+            let result = Value::Object(result_map);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("input not found"))),
@@ -863,12 +862,12 @@ pub async fn input_prepare_cover(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(input_id.to_string())),
-                    ("content".to_string(), content.map(Value::String).unwrap_or(Value::Null)),
-                ]),
-            ))))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(input_id.to_string()));
+            if let Some(val) = option_to_json(content.map(|s| Value::String(s))) {
+                map.insert("content".to_string(), val);
+            }
+            Ok(Json(ActionResult::success(Value::Object(map))))
         }
         None => Ok(Json(ActionResult::error("input not found"))),
     }
@@ -1046,18 +1045,17 @@ pub async fn page_id(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            let content_value = content
-                .and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or(Value::Null);
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("content".to_string(), content_value),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
-            ]));
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("category".to_string(), Value::String(row.get("category")));
+            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+                map.insert("content".to_string(), val);
+            }
+            map.insert("creator".to_string(), Value::String(row.get("creator")));
+            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            map.insert("updateTime".to_string(), Value::String(row.get("update_time")));
+            let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("page not found"))),
@@ -1677,17 +1675,16 @@ pub async fn templatepage_id(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            let content_value = content
-                .and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or(Value::Null);
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("content".to_string(), content_value),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]));
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("category".to_string(), Value::String(row.get("category")));
+            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+                map.insert("content".to_string(), val);
+            }
+            map.insert("creator".to_string(), Value::String(row.get("creator")));
+            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("template page not found"))),

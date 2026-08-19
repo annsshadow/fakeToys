@@ -5,7 +5,7 @@ use serde_json::Value;
 use std::collections::HashMap;
 
 use shared::error::AppError;
-use shared::response::ActionResult;
+use shared::response::{option_to_json, row_opt_json, ActionResult};
 
 const ID_COUNT_LIMIT: usize = 100;
 
@@ -79,49 +79,28 @@ fn person_row_to_value(
     map.insert("unique".to_string(), Value::String(row.get("unique_id")));
     map.insert("name".to_string(), Value::String(row.get("name")));
     if include_pii {
-        map.insert(
-            "mobile".to_string(),
-            row.get::<_, Option<String>>("mobile")
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        );
-        map.insert(
-            "email".to_string(),
-            row.get::<_, Option<String>>("email")
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        );
+        if let Some(val) = row_opt_json::<String>(row, "mobile") {
+            map.insert("mobile".to_string(), val);
+        }
+        if let Some(val) = row_opt_json::<String>(row, "email") {
+            map.insert("email".to_string(), val);
+        }
     }
-    map.insert(
-        "icon".to_string(),
-        row.get::<_, Option<String>>("icon")
-            .map(Value::String)
-            .unwrap_or(Value::Null),
-    );
-    map.insert(
-        "job".to_string(),
-        row.get::<_, Option<String>>("job")
-            .map(Value::String)
-            .unwrap_or(Value::Null),
-    );
-    map.insert(
-        "department".to_string(),
-        row.get::<_, Option<String>>("department")
-            .map(Value::String)
-            .unwrap_or(Value::Null),
-    );
-    map.insert(
-        "unit".to_string(),
-        row.get::<_, Option<String>>("unit")
-            .map(Value::String)
-            .unwrap_or(Value::Null),
-    );
-    map.insert(
-        "position".to_string(),
-        row.get::<_, Option<String>>("position")
-            .map(Value::String)
-            .unwrap_or(Value::Null),
-    );
+    if let Some(val) = row_opt_json::<String>(row, "icon") {
+        map.insert("icon".to_string(), val);
+    }
+    if let Some(val) = row_opt_json::<String>(row, "job") {
+        map.insert("job".to_string(), val);
+    }
+    if let Some(val) = row_opt_json::<String>(row, "department") {
+        map.insert("department".to_string(), val);
+    }
+    if let Some(val) = row_opt_json::<String>(row, "unit") {
+        map.insert("unit".to_string(), val);
+    }
+    if let Some(val) = row_opt_json::<String>(row, "position") {
+        map.insert("position".to_string(), val);
+    }
     Value::Object(map)
 }
 
@@ -240,20 +219,17 @@ pub async fn express_unit_list(
     for id in &ids {
         let rows = client.query(sql, &[id]).await.map_err(|_| AppError::Internal)?;
         for row in &rows {
-            data.push(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "\"parentId\"".to_string(),
-                    row.get::<_, Option<String>>("parent_id")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "level".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("level"))),
-                ),
-            ])));
+            let mut unit_map = serde_json::Map::new();
+            unit_map.insert("id".to_string(), Value::String(row.get("id")));
+            unit_map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(val) = row_opt_json::<String>(row, "parent_id") {
+                unit_map.insert("parentId".to_string(), val);
+            }
+            unit_map.insert(
+                "level".to_string(),
+                Value::Number(serde_json::Number::from(row.get::<_, i32>("level"))),
+            );
+            data.push(Value::Object(unit_map));
         }
     }
 
@@ -355,16 +331,13 @@ pub async fn express_role_list(
     for id in &ids {
         let rows = client.query(sql, &[id]).await.map_err(|_| AppError::Internal)?;
         for row in &rows {
-            data.push(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "description".to_string(),
-                    row.get::<_, Option<String>>("description")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-            ])));
+            let mut role_map = serde_json::Map::new();
+            role_map.insert("id".to_string(), Value::String(row.get("id")));
+            role_map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(val) = row_opt_json::<String>(row, "description") {
+                role_map.insert("description".to_string(), val);
+            }
+            data.push(Value::Object(role_map));
         }
     }
 
@@ -396,33 +369,28 @@ pub async fn express_person_with_unit(
     for id in &ids {
         let rows = client.query(sql, &[id]).await.map_err(|_| AppError::Internal)?;
         for row in &rows {
-            data.push(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("unique".to_string(), Value::String(row.get("unique_id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "job".to_string(),
-                    row.get::<_, Option<String>>("job")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "department".to_string(),
-                    row.get::<_, Option<String>>("department")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "position".to_string(),
-                    row.get::<_, Option<String>>("position")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                ("unit".to_string(), Value::Object(serde_json::Map::from_iter([
-                    ("id".to_string(), row.get::<_, Option<String>>("unit_id").map(Value::String).unwrap_or(Value::Null)),
-                    ("name".to_string(), row.get::<_, Option<String>>("unit_name").map(Value::String).unwrap_or(Value::Null)),
-                ]))),
-            ])));
+            let mut person_map = serde_json::Map::new();
+            person_map.insert("id".to_string(), Value::String(row.get("id")));
+            person_map.insert("unique".to_string(), Value::String(row.get("unique_id")));
+            person_map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(val) = row_opt_json::<String>(row, "job") {
+                person_map.insert("job".to_string(), val);
+            }
+            if let Some(val) = row_opt_json::<String>(row, "department") {
+                person_map.insert("department".to_string(), val);
+            }
+            if let Some(val) = row_opt_json::<String>(row, "position") {
+                person_map.insert("position".to_string(), val);
+            }
+            let mut unit_map = serde_json::Map::new();
+            if let Some(val) = row_opt_json::<String>(row, "unit_id") {
+                unit_map.insert("id".to_string(), val);
+            }
+            if let Some(val) = row_opt_json::<String>(row, "unit_name") {
+                unit_map.insert("name".to_string(), val);
+            }
+            person_map.insert("unit".to_string(), Value::Object(unit_map));
+            data.push(Value::Object(person_map));
         }
     }
 
@@ -462,12 +430,14 @@ pub async fn express_person_with_identity(
                 ]))
             })
             .collect();
-        data.push(Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id.clone())),
-            ("unique".to_string(), if rows.is_empty() { Value::Null } else { Value::String(rows[0].get("unique_id")) }),
-            ("name".to_string(), if rows.is_empty() { Value::Null } else { Value::String(rows[0].get("name")) }),
-            ("identities".to_string(), Value::Array(identities)),
-        ])));
+        let mut person_map = serde_json::Map::new();
+        person_map.insert("id".to_string(), Value::String(id.clone()));
+        if !rows.is_empty() {
+            person_map.insert("unique".to_string(), Value::String(rows[0].get("unique_id")));
+            person_map.insert("name".to_string(), Value::String(rows[0].get("name")));
+        }
+        person_map.insert("identities".to_string(), Value::Array(identities));
+        data.push(Value::Object(person_map));
     }
 
     Ok(Json(ActionResult::success(Value::Object(

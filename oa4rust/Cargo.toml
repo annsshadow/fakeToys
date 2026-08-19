@@ -111,9 +111,9 @@ processplatform_assemble_designer = { path = "crates/processplatform_assemble_de
 query_core_express = { path = "crates/query_core_express" }
   openapi = { path = "crates/openapi" }
   query_service_processing = { path = "crates/query_service_processing" }
-  realtime = { path = "crates/realtime", optional = true }
-  preview = { path = "crates/preview", optional = true }
-  oa4rust_signature = { path = "crates/signature", optional = true }
+  realtime = { path = "crates/realtime" }
+  preview = { path = "crates/preview" }
+  oa4rust_signature = { path = "crates/signature" }
 
 
 [workspace]
@@ -207,6 +207,12 @@ members = [
     "crates/mcp_server",
     "crates/parity",
     "crates/openapi",
+    "crates/realtime",
+    "crates/preview",
+    "crates/signature",
+    "crates/search",
+    "crates/captcha_store",
+    "crates/sms",
 ]
 resolver = "2"
 

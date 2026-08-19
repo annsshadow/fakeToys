@@ -1,5 +1,5 @@
 use axum::response::{IntoResponse, Json};
-use deadpool_postgres::tokio_postgres::types::Type;
+use deadpool_postgres::tokio_postgres::types::{FromSql, Type};
 use deadpool_postgres::tokio_postgres::Row;
 use serde::Serialize;
 use serde_json::Value;
@@ -31,9 +31,25 @@ pub fn row_to_json(row: &Row) -> Value {
             }
             _ => None,
         };
-        map.insert(name.to_string(), val.unwrap_or(Value::Null));
+        if let Some(v) = val {
+            map.insert(name.to_string(), v);
+        }
     }
     Value::Object(map)
+}
+
+/// 将 Option<T> 序列化为 JSON：Some(v) → Value::from(v)，None → 省略字段（不插入 map）
+pub fn option_to_json<T: Serialize>(opt: Option<T>) -> Option<Value> {
+    opt.map(|v| serde_json::to_value(v).unwrap_or(Value::Null))
+}
+
+/// 从 row 中安全提取 Option<T>，避免 Value::Null。
+/// 与 row.get::<_, Option<T>>() 类似，但返回 Option<Value> 而非 Value::Null
+pub fn row_opt_json<T: Serialize + for<'a> FromSql<'a>>(
+    row: &Row,
+    col: &str,
+) -> Option<Value> {
+    row.get::<_, Option<T>>(col).map(|v| serde_json::to_value(v).unwrap())
 }
 
 // ──────────────────────────────────────────────────────────────────────────────

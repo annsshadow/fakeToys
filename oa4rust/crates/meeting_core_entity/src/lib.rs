@@ -6,7 +6,7 @@
 use chrono::Utc;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Set};
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{error::AppError, response::{option_to_json, ActionResult}};
 
 pub mod entities;
 pub mod routes;
@@ -34,30 +34,19 @@ pub async fn room_list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
-                (
-                    "buildingId".to_string(),
-                    m.building_id
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "floor".to_string(),
-                    m.floor
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "capacity".to_string(),
-                    m.capacity
-                        .map(|v| Value::Number(serde_json::Number::from(v)))
-                        .unwrap_or(Value::Null),
-                ),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(m.id.clone()));
+            map.insert("name".to_string(), Value::String(m.name.clone()));
+            if let Some(val) = option_to_json(m.building_id.clone().map(|s| s)) {
+                map.insert("buildingId".to_string(), val);
+            }
+            if let Some(val) = option_to_json(m.floor.clone().map(|s| s)) {
+                map.insert("floor".to_string(), val);
+            }
+            if let Some(val) = option_to_json(m.capacity.map(|v| Value::Number(serde_json::Number::from(v)))) {
+                map.insert("capacity".to_string(), val);
+            }
+            Value::Object(map)
         })
         .collect();
 
@@ -131,36 +120,24 @@ pub async fn create_room(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(m.id.clone())),
-        ("name".to_string(), Value::String(m.name.clone())),
-        (
-            "buildingId".to_string(),
-            m.building_id
-                .clone()
-                .map(|s| Value::String(s))
-                .unwrap_or(Value::Null),
-        ),
-        (
-            "floor".to_string(),
-            m.floor
-                .clone()
-                .map(|s| Value::String(s))
-                .unwrap_or(Value::Null),
-        ),
-        (
-            "capacity".to_string(),
-            m.capacity
-                .map(|v| Value::Number(serde_json::Number::from(v)))
-                .unwrap_or(Value::Null),
-        ),
-        (
-            "orderNumber".to_string(),
-            m.order_number
-                .map(|v| Value::Number(serde_json::Number::from(v)))
-                .unwrap_or(Value::Null),
-        ),
-    ])))))
+    Ok(Json(ActionResult::success(Value::Object({
+        let mut map = serde_json::Map::new();
+        map.insert("id".to_string(), Value::String(m.id.clone()));
+        map.insert("name".to_string(), Value::String(m.name.clone()));
+        if let Some(val) = option_to_json(m.building_id.clone().map(|s| Value::String(s))) {
+            map.insert("buildingId".to_string(), val);
+        }
+        if let Some(val) = option_to_json(m.floor.clone().map(|s| Value::String(s))) {
+            map.insert("floor".to_string(), val);
+        }
+        if let Some(val) = option_to_json(m.capacity.map(|v| Value::Number(serde_json::Number::from(v)))) {
+            map.insert("capacity".to_string(), val);
+        }
+        if let Some(val) = option_to_json(m.order_number.map(|v| Value::Number(serde_json::Number::from(v)))) {
+            map.insert("orderNumber".to_string(), val);
+        }
+        map
+    }))))
 }
 
 pub async fn get_room(
@@ -174,66 +151,40 @@ pub async fn get_room(
 
     match model {
         Some(m) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
-                (
-                    "buildingId".to_string(),
-                    m.building_id
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(m.id.clone()));
+            map.insert("name".to_string(), Value::String(m.name.clone()));
+            if let Some(val) = option_to_json(m.building_id.clone().map(|s| Value::String(s))) {
+                map.insert("buildingId".to_string(), val);
+            }
+            if let Some(val) = option_to_json(m.floor.clone().map(|s| Value::String(s))) {
+                map.insert("floor".to_string(), val);
+            }
+            if let Some(val) = option_to_json(m.capacity.map(|v| Value::Number(serde_json::Number::from(v)))) {
+                map.insert("capacity".to_string(), val);
+            }
+            if let Some(val) = option_to_json(m.equipment.clone().and_then(|s| serde_json::from_str::<Value>(&s).ok())) {
+                map.insert("equipment".to_string(), val);
+            }
+            if let Some(val) = option_to_json(m.description.clone().map(|s| Value::String(s))) {
+                map.insert("description".to_string(), val);
+            }
+            if let Some(val) = option_to_json(m.photo.clone().map(|s| Value::String(s))) {
+                map.insert("photo".to_string(), val);
+            }
+            if let Some(val) = option_to_json(m.order_number.map(|v| Value::Number(serde_json::Number::from(v)))) {
+                map.insert("orderNumber".to_string(), val);
+            }
+            map.insert(
+                "createTime".to_string(),
+                Value::String(
+                    m.create_time
                         .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
+                        .map(|dt| dt.to_string())
+                        .unwrap_or_default(),
                 ),
-                (
-                    "floor".to_string(),
-                    m.floor
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "capacity".to_string(),
-                    m.capacity
-                        .map(|v| Value::Number(serde_json::Number::from(v)))
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "equipment".to_string(),
-                    m.equipment
-                        .clone()
-                        .and_then(|s| serde_json::from_str(&s).ok())
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "description".to_string(),
-                    m.description
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "photo".to_string(),
-                    m.photo
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "orderNumber".to_string(),
-                    m.order_number
-                        .map(|v| Value::Number(serde_json::Number::from(v)))
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .clone()
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
+            );
+            let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("room not found"))),

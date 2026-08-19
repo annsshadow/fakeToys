@@ -9,6 +9,7 @@ use tokio::sync::RwLock;
 use tracing::warn;
 use base64::Engine;
 
+use crate::error::AppError;
 use crate::messaging::{MessageBus, TokenThresholdEvent};
 use crate::redis::RedisPool;
 
@@ -49,23 +50,49 @@ impl Default for SessionManager {
 
 impl SessionManager {
     pub fn new() -> Self {
-        Self {
+        let manager = Self {
             sessions: Arc::new(RwLock::new(std::collections::HashMap::new())),
             pool: None,
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             redis_pool: Arc::new(std::sync::Mutex::new(None)),
             message_bus: None,
-        }
+        };
+        manager.start_threshold_scanner()
     }
 
     pub fn with_pool(pool: Pool) -> Self {
-        Self {
+        let manager = Self {
             sessions: Arc::new(RwLock::new(std::collections::HashMap::new())),
             pool: Some(pool),
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             redis_pool: Arc::new(std::sync::Mutex::new(None)),
             message_bus: None,
-        }
+        };
+        manager.start_threshold_scanner()
+    }
+
+    fn start_threshold_scanner(self) -> Self {
+        let scanner = self.clone();
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
+            loop {
+                interval.tick().await;
+                if let Some(pool) = &scanner.pool {
+                    if let Ok(client) = pool.get().await {
+                        if let Ok(rows) = client
+                            .query("SELECT DISTINCT person_unique FROM auth_token_threshold", &[])
+                            .await
+                        {
+                            for row in rows {
+                                let person_unique: String = row.get("person_unique");
+                                scanner.broadcast_logout(&person_unique).await;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        self
     }
 
     pub fn init_redis(&self) -> bool {
@@ -141,8 +168,12 @@ impl SessionManager {
         }
     }
 
-    pub async fn create_session(&self, person_unique: String, token: String) -> Session {
+    pub async fn create_session(&self, person_unique: String, token: String) -> Result<Session, AppError> {
         let now = Utc::now().naive_utc();
+        if self.check_token_threshold(now, &person_unique).await {
+            return Err(AppError::BadRequest("too many active sessions".to_string()));
+        }
+
         let expires_at = now + Duration::hours(2).to_std().unwrap_or_default();
         let session = Session {
             token: token.clone(),
@@ -160,7 +191,7 @@ impl SessionManager {
                 Ok(j) => j,
                 Err(_) => {
                     Self::persist_to_db(&self.pool, &self.hmac_secret, &token, &session, &now, &expires_at).await;
-                    return session;
+                    return Ok(session);
                 }
             };
             let mut guard = pool.0.manager.lock().await;
@@ -170,7 +201,7 @@ impl SessionManager {
         }
 
         Self::persist_to_db(&self.pool, &self.hmac_secret, &token, &session, &now, &expires_at).await;
-        session
+        Ok(session)
     }
 
     async fn persist_to_db(
@@ -201,8 +232,33 @@ impl SessionManager {
         }
     }
 
-    pub async fn check_token_threshold(&self, _token_created_at: NaiveDateTime, _person_unique: &str) -> bool {
-        true
+    pub async fn check_token_threshold(&self, token_created_at: NaiveDateTime, person_unique: &str) -> bool {
+        let pool = match &self.pool {
+            Some(p) => p,
+            None => return false,
+        };
+
+        let client = match pool.get().await { Ok(c) => c, Err(_) => return false };
+
+        let threshold: Option<NaiveDateTime> = match client
+            .query_opt(
+                "SELECT threshold_time FROM auth_token_threshold WHERE person_unique = $1",
+                &[&person_unique],
+            )
+            .await
+        {
+            Ok(Some(row)) => {
+                let threshold_str: String = row.get("threshold_time");
+                NaiveDateTime::parse_from_str(&threshold_str, "%Y-%m-%d %H:%M:%S").ok()
+            }
+            _ => return false,
+        };
+
+        if let Some(threshold) = threshold {
+            token_created_at < threshold
+        } else {
+            false
+        }
     }
 
     pub async fn validate_session(&self, token: &str) -> Option<Session> {

@@ -7,7 +7,7 @@ use chrono::Utc;
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{error::AppError, response::{option_to_json, row_opt_json, ActionResult}};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use uuid::Uuid;
@@ -594,21 +594,15 @@ pub async fn section_viewforum_forumId(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("forumId".to_string(), Value::String(row.get("forum_id"))),
-                (
-                    "sort".to_string(),
-                    Value::Number(serde_json::Number::from(row.get::<_, i32>("sort"))),
-                ),
-                (
-                    "description".to_string(),
-                    row.get::<_, Option<String>>("description")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("forumId".to_string(), Value::String(row.get("forum_id")));
+            map.insert("sort".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("sort"))));
+            if let Some(val) = row_opt_json::<String>(row, "description") {
+                map.insert("description".to_string(), val);
+            }
+            Value::Object(map)
         })
         .collect();
 
@@ -1007,12 +1001,16 @@ pub async fn shutup_list(
     let total: i64 = total_row.get(0);
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("reason".to_string(), row.get::<_, Option<String>>("reason").map(Value::String).unwrap_or(Value::Null)),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ])))
+        .map(|row| {
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("person".to_string(), Value::String(row.get("person")));
+            if let Some(val) = row_opt_json::<String>(row, "reason") {
+                map.insert("reason".to_string(), val);
+            }
+            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            Value::Object(map)
+        })
         .collect();
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("total".to_string(), Value::Number(serde_json::Number::from(total))),
@@ -1234,17 +1232,23 @@ pub async fn user_info(
                 .await
                 .unwrap_or_default();
             let role_list: Vec<String> = role_rows.iter().map(|r| r.get::<_, String>("name")).collect();
-            let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(id)),
-                ("unique".to_string(), Value::String(unique)),
-                ("name".to_string(), Value::String(name)),
-                ("mobile".to_string(), row.get::<_, Option<String>>("mobile").map(Value::String).unwrap_or(Value::Null)),
-                ("email".to_string(), row.get::<_, Option<String>>("email").map(Value::String).unwrap_or(Value::Null)),
-                ("icon".to_string(), row.get::<_, Option<String>>("icon").map(Value::String).unwrap_or(Value::Null)),
-                ("roleList".to_string(), Value::Array(
-                    role_list.iter().map(|s| Value::String(s.clone())).collect(),
-                )),
-            ]));
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(id));
+            map.insert("unique".to_string(), Value::String(unique));
+            map.insert("name".to_string(), Value::String(name));
+            if let Some(val) = row_opt_json::<String>(&row, "mobile") {
+                map.insert("mobile".to_string(), val);
+            }
+            if let Some(val) = row_opt_json::<String>(&row, "email") {
+                map.insert("email".to_string(), val);
+            }
+            if let Some(val) = row_opt_json::<String>(&row, "icon") {
+                map.insert("icon".to_string(), val);
+            }
+            map.insert("roleList".to_string(), Value::Array(
+                role_list.iter().map(|s| Value::String(s.clone())).collect(),
+            ));
+            let data = Value::Object(map);
             Ok(Json(ActionResult::success(data)))
         }
         None => Ok(Json(ActionResult::error("user not found"))),
@@ -1284,11 +1288,15 @@ pub async fn user_role_list(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("description".to_string(), row.get::<_, Option<String>>("description").map(Value::String).unwrap_or(Value::Null)),
-        ])))
+        .map(|row| {
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(val) = row_opt_json::<String>(row, "description") {
+                map.insert("description".to_string(), val);
+            }
+            Value::Object(map)
+        })
         .collect();
     Ok(Json(ActionResult::success(Value::Array(data))))
 }
@@ -1307,13 +1315,17 @@ pub async fn user_section_list(
         .map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows
         .iter()
-        .map(|row| Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("forumId".to_string(), Value::String(row.get("forum_id"))),
-            ("sort".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("sort")))),
-            ("description".to_string(), row.get::<_, Option<String>>("description").map(Value::String).unwrap_or(Value::Null)),
-        ])))
+        .map(|row| {
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("forumId".to_string(), Value::String(row.get("forum_id")));
+            map.insert("sort".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("sort"))));
+            if let Some(val) = row_opt_json::<String>(row, "description") {
+                map.insert("description".to_string(), val);
+            }
+            Value::Object(map)
+        })
         .collect();
     Ok(Json(ActionResult::success(Value::Array(data))))
 }

@@ -4,6 +4,7 @@ use axum::{
 };
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
+use shared::db::dialect;
 use shared::error::AppError;
 use shared::response::ActionResult;
 
@@ -48,13 +49,17 @@ pub async fn two_factor_login(
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
+         password_hash, locked, {}, {} FROM auth_person \
+         WHERE unique_id = {} AND deleted_at IS NULL",
+        d.cast_text("change_password_time"),
+        d.cast_text("password_expired_time"),
+        d.param(1),
+    );
     let row = client
-        .query_one(
-            "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
-             password_hash, locked, change_password_time, password_expired_time FROM auth_person \
-             WHERE unique_id = $1 AND deleted_at IS NULL",
-            &[&req.credential],
-        )
+        .query_one(&sql, &[&req.credential])
         .await
         .map_err(|_| AppError::Unauthorized)?;
 

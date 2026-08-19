@@ -40,25 +40,172 @@
 ///   `route`      — Full axum route path string literal.
 ///   `method`     — HTTP method: `GET`, `POST`, `PUT`, `DELETE`, `PATCH`.
 ///   `handler`    — Handler fn name (informational, used in panic messages).
+///   `test_name`  — Unique test fn name identifier (e.g. `parity_behavior__auth__login`).
+///   `behavior`   — Optional behavior contract: "login_returns_token",
+///                   "list_returns_array", or "route_exists" (default).
+///
+/// The macro has two forms: with `behavior` (behavior contract validation)
+/// and without (backward-compatible, equivalent to `behavior: "route_exists"`).
+///
+/// Router invocation: `router_args` defaults to `(shared::testing::test_pool())`
+/// but can be overridden for crates whose router fn takes extra arguments
+/// (e.g. auth: `(shared::testing::test_pool(), RateLimiter::new(), SessionManager::new())`).
+///
+/// Request body: `body` defaults to `axum::body::Body::empty()`.  For POST/PUT
+/// routes that require a JSON payload, pass a string expression, e.g.
+/// `body: serde_json::json!({"username":"test"}).to_string()`.
 #[macro_export]
 macro_rules! parity_test {
+    // ── Form 1: with behavior contract + custom body ──────────────────────
     (
         crate: $crate_name:ident,
         router_fn: $router_fn:ident,
         route: $route:expr,
         method: $method:ident,
         handler: $handler:ident,
+        test_name: $test_name:ident,
+        behavior: $behavior:expr,
+        router_args: $router_args:tt,
+        body: $body:expr,
     ) => {
         #[tokio::test]
-        async fn parity_contract_test() {
+        async fn $test_name() {
             let router =
-                oa4rust::$crate_name::$router_fn(shared::testing::test_pool());
+                oa4rust::$crate_name::$router_fn $router_args;
             let response = router
                 .oneshot(
                     axum::http::Request::builder()
                         .uri($route)
                         .method(axum::http::Method::$method)
-                        .body(axum::body::Body::empty())
+                        .body(axum::body::Body::from($body))
+                        .expect("build parity request"),
+                )
+                .await
+                .expect("oneshot dispatch");
+
+            // Check route exists
+            if response.status() == axum::http::StatusCode::NOT_FOUND {
+                panic!("parity: route missing on {}::{} → {} ({}) handler={}",
+                    stringify!($crate_name), stringify!($router_fn), $route,
+                    stringify!($method), stringify!($handler));
+            }
+
+            // Behavior contract validation
+            match $behavior {
+                "login_returns_token" => {
+                    assert!(response.status().is_success() || response.status().is_client_error(),
+                        "login handler should return 2xx or 4xx, got {}",
+                        response.status());
+                    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+                        .await
+                        .expect("read response body");
+                    let json: serde_json::Value =
+                        serde_json::from_slice(&body).expect("parse JSON");
+                    assert!(
+                        json.get("data").is_some(),
+                        "login response should have data field, got: {}",
+                        json
+                    );
+                }
+                "list_returns_array" => {
+                    assert_eq!(response.status(), axum::http::StatusCode::OK,
+                        "list handler should return 200, got {}",
+                        response.status());
+                    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+                        .await
+                        .expect("read response body");
+                    let json: serde_json::Value =
+                        serde_json::from_slice(&body).expect("parse JSON");
+                    assert!(
+                        json.get("data").is_some(),
+                        "list response should have data field, got: {}",
+                        json
+                    );
+                    let data = &json["data"];
+                    if data.is_object() {
+                        if let Some(nested) = data.get("data") {
+                            assert!(nested.is_array() || nested.is_object(),
+                                "list nested data should be array or object, got: {}", nested);
+                        }
+                    } else {
+                        assert!(data.is_array() || data.is_object(),
+                            "list data should be array or object, got: {}", data);
+                    }
+                }
+                "route_exists" => {}
+                _ => {}
+            }
+        }
+    };
+
+    // ── Form 1b: with behavior + default body ─────────────────────────────
+    (
+        crate: $crate_name:ident,
+        router_fn: $router_fn:ident,
+        route: $route:expr,
+        method: $method:ident,
+        handler: $handler:ident,
+        test_name: $test_name:ident,
+        behavior: $behavior:expr,
+        router_args: $router_args:tt,
+    ) => {
+        parity_test!(
+            crate: $crate_name,
+            router_fn: $router_fn,
+            route: $route,
+            method: $method,
+            handler: $handler,
+            test_name: $test_name,
+            behavior: $behavior,
+            router_args: $router_args,
+            body: String::new(),
+        );
+    };
+
+    // ── Form 1c: with behavior + default router_args + default body ───────
+    (
+        crate: $crate_name:ident,
+        router_fn: $router_fn:ident,
+        route: $route:expr,
+        method: $method:ident,
+        handler: $handler:ident,
+        test_name: $test_name:ident,
+        behavior: $behavior:expr,
+    ) => {
+        parity_test!(
+            crate: $crate_name,
+            router_fn: $router_fn,
+            route: $route,
+            method: $method,
+            handler: $handler,
+            test_name: $test_name,
+            behavior: $behavior,
+            router_args: (shared::testing::test_pool()),
+            body: String::new(),
+        );
+    };
+
+    // ── Form 2: backward-compatible without behavior + custom body ─────────
+    (
+        crate: $crate_name:ident,
+        router_fn: $router_fn:ident,
+        route: $route:expr,
+        method: $method:ident,
+        handler: $handler:ident,
+        test_name: $test_name:ident,
+        router_args: $router_args:tt,
+        body: $body:expr,
+    ) => {
+        #[tokio::test]
+        async fn $test_name() {
+            let router =
+                oa4rust::$crate_name::$router_fn $router_args;
+            let response = router
+                .oneshot(
+                    axum::http::Request::builder()
+                        .uri($route)
+                        .method(axum::http::Method::$method)
+                        .body(axum::body::Body::from($body))
                         .expect("build parity request"),
                 )
                 .await
@@ -75,6 +222,49 @@ macro_rules! parity_test {
             );
         }
     };
+
+    // ── Form 2b: backward-compatible without behavior + default body ───────
+    (
+        crate: $crate_name:ident,
+        router_fn: $router_fn:ident,
+        route: $route:expr,
+        method: $method:ident,
+        handler: $handler:ident,
+        test_name: $test_name:ident,
+        router_args: $router_args:tt,
+    ) => {
+        parity_test!(
+            crate: $crate_name,
+            router_fn: $router_fn,
+            route: $route,
+            method: $method,
+            handler: $handler,
+            test_name: $test_name,
+            router_args: $router_args,
+            body: String::new(),
+        );
+    };
+
+    // ── Form 2c: backward-compatible without behavior + default router_args + default body ──
+    (
+        crate: $crate_name:ident,
+        router_fn: $router_fn:ident,
+        route: $route:expr,
+        method: $method:ident,
+        handler: $handler:ident,
+        test_name: $test_name:ident,
+    ) => {
+        parity_test!(
+            crate: $crate_name,
+            router_fn: $router_fn,
+            route: $route,
+            method: $method,
+            handler: $handler,
+            test_name: $test_name,
+            router_args: (shared::testing::test_pool()),
+            body: String::new(),
+        );
+    };
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -88,6 +278,16 @@ macro_rules! parity_test {
 mod generated_tests {
     //! AUTO-GENERATED — DO NOT EDIT. Run `python scripts/generate_parity_tests.py`.
     include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/generated_tests.rs"));
+}
+
+#[cfg(test)]
+mod behavior_tests {
+    //! Hand-written behavior contract tests for Top 100 high-frequency routes.
+    //!
+    //! These use the `behavior:` form of `parity_test!` to validate response
+    //! body structure (not just 404 absence).  Do NOT auto-generate — edits
+    //! here are intentional and must be reviewed.
+    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/behavior_tests.rs"));
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -164,5 +364,8 @@ mod macro_self_test {
         route: "/jaxrs/base/echo/get",
         method: GET,
         handler: base_echo_get_handler,
+        test_name: parity_self_test_base_echo_get,
+        behavior: "route_exists",
+        router_args: (shared::testing::test_pool()),
     );
 }
