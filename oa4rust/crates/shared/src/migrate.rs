@@ -103,7 +103,6 @@ pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
         hasher.update(sql.as_bytes());
         let checksum = B64.encode(hasher.finalize());
 
-        // 3) 检查是否已应用
         let already: Option<String> = client
             .query_opt(
                 "SELECT checksum FROM schema_migrations WHERE version = $1",
@@ -138,7 +137,7 @@ pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
         tx.commit().await?;
 
         tracing::info!(target: "migrate", "applied migration {} ({} ms)", name, ms);
-        report.applied.push(name);
+        report.applied.push(name.clone());
     }
 
     Ok(report)
