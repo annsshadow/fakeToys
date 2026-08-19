@@ -112,7 +112,7 @@ impl CaptchaStore {
     }
 }
 
-fn captcha_store() -> &'static CaptchaStore {
+pub fn captcha_store() -> &'static CaptchaStore {
     static STORE: OnceLock<CaptchaStore> = OnceLock::new();
     STORE.get_or_init(CaptchaStore::new)
 }

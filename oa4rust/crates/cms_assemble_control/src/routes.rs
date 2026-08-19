@@ -8,6 +8,7 @@ use deadpool_postgres::Pool;
 use crate::{
     get_control_config, list_control_sections, update_control_config,
     document_id_view_count, commend_list_paging, queryview_flag_definition, application_id,
+    document_search,
 };
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -19,6 +20,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/commend/list/paging/{docId}", get(commend_list_paging))
         .route("/jaxrs/queryview/flag/{view_flag}/definition/{query_flag}", get(queryview_flag_definition))
         .route("/jaxrs/application/{id}", get(application_id))
+        .route("/jaxrs/cms_assemble_control/document/search", get(document_search))
         .layer(Extension(pool))
 }
 

@@ -7,7 +7,8 @@ use serde::{Deserialize, Serialize};
 use shared::error::AppError;
 use shared::response::ActionResult;
 
-use crate::{code_store, password, temp_token_store};
+use crate::{code_store, ldap_auth, password, temp_token_store};
+use tracing::warn;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // two_factor — 双因素登录第一阶段（短信验证码发送）
@@ -67,7 +68,22 @@ pub async fn two_factor_login(
         return Ok(Json(ActionResult::error("invalid credentials")));
     }
 
-    let valid = password::verify_password(&req.password, &password_hash, "", None);
+    let valid = match ldap_auth::try_ldap_authenticate(&req.credential, &req.password).await {
+        Ok(Some(ldap_auth::LdapAuthOutcome::Success)) => true,
+        Ok(Some(ldap_auth::LdapAuthOutcome::Failed)) => {
+            warn!("LDAP auth failed for two_factor user {}, falling back to DB", req.credential);
+            password::verify_password(&req.password, &password_hash, "", None)
+        }
+        Ok(None) | Ok(Some(ldap_auth::LdapAuthOutcome::Disabled)) => {
+            password::verify_password(&req.password, &password_hash, "", None)
+        }
+        Err(_) => {
+            return Ok(Json(ActionResult::error("invalid credentials")));
+        }
+        Ok(Some(ldap_auth::LdapAuthOutcome::Error)) => {
+            return Ok(Json(ActionResult::error("invalid credentials")));
+        }
+    };
     if !valid {
         return Ok(Json(ActionResult::error("invalid credentials")));
     }

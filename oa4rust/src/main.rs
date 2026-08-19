@@ -346,7 +346,10 @@ pub async fn create_app(
         .merge(processplatform_assemble_bam::router(pool.clone()))
         .merge(processplatform_assemble_designer::router(pool.clone()))
         .merge(query_core_express::router(pool.clone()))
-        .merge(query_service_processing::router(pool.clone()));
+        .merge(query_service_processing::router(pool.clone()))
+        .merge(realtime::routes::ws_route())
+        .merge(preview::preview_route(preview::LibreOfficePreview::default()))
+        .merge(oa4rust_signature::signature_route(oa4rust_signature::PdfSignatureService::new()));
 
     // Provide the deadpool Postgres pool to every handler that extracts
     // `Extension<Pool>` (all *_assemble_control / *_service_processing handlers).

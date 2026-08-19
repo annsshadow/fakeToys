@@ -16,3 +16,4 @@ tower = "0.5"
 uuid.workspace = true
 
 shared = { path = "../shared" }
+search = { path = "../../crates/search" }
