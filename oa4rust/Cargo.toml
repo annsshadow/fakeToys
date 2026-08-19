@@ -259,5 +259,7 @@ urlencoding = "2"
  sqlparser = "0.51"
  sysinfo = "0.33"
  utoipa = { version = "4", features = ["axum_extras"] }
- utoipa-swagger-ui = { version = "7", features = ["axum"] }
- openapi = { path = "crates/openapi" }
+  utoipa-swagger-ui = { version = "7", features = ["axum"] }
+  openapi = { path = "crates/openapi" }
+  redis = { version = "0.25", features = ["tokio-comp", "connection-manager"] }
+

@@ -18,6 +18,8 @@ pub mod middleware;
 pub mod migrate;
 pub mod mock_client;
 pub mod rate_limit;
+pub mod redis;
+// pub mod messaging;
 pub mod response;
 pub mod router;
 pub mod session;
@@ -26,6 +28,11 @@ pub mod testing;
 pub use deadpool_postgres::Pool;
 
 use crate::error::AppError;
+
+// pub use messaging::{
+//     Command, Consumer, Envelope, Event, InMemoryBus, MessageBus, MessagingError,
+//     MessagingResult, Publisher, RedisPubSubBus, Subscriber,
+// };
 use std::ops::Deref;
 
 #[cfg(test)]
