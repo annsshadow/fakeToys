@@ -1,3 +1,4 @@
+use crate::db::rewriter::rewrite_pg_to_mysql;
 use std::sync::OnceLock;
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -138,7 +139,7 @@ impl SqlDialect for MySQLDialect {
     }
 
     fn format_sql(&self, sql: &str) -> String {
-        replace_pg_params(sql)
+        rewrite_pg_to_mysql(sql)
     }
 }
 
@@ -150,7 +151,8 @@ static DIALECT: OnceLock<Box<dyn SqlDialect>> = OnceLock::new();
 
 pub fn dialect() -> &'static dyn SqlDialect {
     DIALECT.get_or_init(|| {
-        let raw = std::env::var("DATABASE_DIALECT")
+        let raw = std::env::var("DB_DIALECT")
+            .or_else(|_| std::env::var("DATABASE_DIALECT"))
             .unwrap_or_else(|_| "postgres".to_string())
             .to_lowercase();
         match raw.as_str() {
@@ -158,42 +160,6 @@ pub fn dialect() -> &'static dyn SqlDialect {
             _ => Box::new(PostgresDialect::new()),
         }
     }).as_ref()
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// 内部辅助：将 PostgreSQL 的 $N 占位符替换为 MySQL 的 ?
-// 纯手工扫描，无需引入 regex 依赖。
-// ──────────────────────────────────────────────────────────────────────────────
-
-fn replace_pg_params(sql: &str) -> String {
-    let mut out = String::with_capacity(sql.len());
-    let mut chars = sql.chars().peekable();
-    let mut in_string = false;
-    while let Some(c) = chars.next() {
-        if c == '\'' {
-            in_string = !in_string;
-            out.push(c);
-        } else if !in_string && c == '$' {
-            if let Some(&d) = chars.peek() {
-                if d.is_ascii_digit() {
-                    out.push('?');
-                    chars.next();
-                    while let Some(&d2) = chars.peek() {
-                        if d2.is_ascii_digit() {
-                            chars.next();
-                        } else {
-                            break;
-                        }
-                    }
-                    continue;
-                }
-            }
-            out.push('$');
-        } else {
-            out.push(c);
-        }
-    }
-    out
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -288,9 +254,27 @@ mod tests {
 
     #[test]
     fn dialect_env_switch() {
+        std::env::set_var("DB_DIALECT", "mysql");
+        let d = dialect();
+        assert_eq!(d.name(), "mysql");
+        std::env::remove_var("DB_DIALECT");
+    }
+
+    #[test]
+    fn dialect_env_switch_databases_dialect_alias() {
         std::env::set_var("DATABASE_DIALECT", "mysql");
         let d = dialect();
         assert_eq!(d.name(), "mysql");
+        std::env::remove_var("DATABASE_DIALECT");
+    }
+
+    #[test]
+    fn db_dialect_takes_priority_over_databases_dialect() {
+        std::env::set_var("DB_DIALECT", "mysql");
+        std::env::set_var("DATABASE_DIALECT", "postgres");
+        let d = dialect();
+        assert_eq!(d.name(), "mysql");
+        std::env::remove_var("DB_DIALECT");
         std::env::remove_var("DATABASE_DIALECT");
     }
 }

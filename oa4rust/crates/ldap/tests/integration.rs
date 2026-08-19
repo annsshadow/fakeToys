@@ -1,5 +1,7 @@
 use ldap::{LdapAuthResult, LdapConfig};
 
+static LDAP_ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 fn cleanup_env() {
     std::env::remove_var("LDAP_ENABLE");
     std::env::remove_var("LDAP_URL");
@@ -10,6 +12,7 @@ fn cleanup_env() {
 
 #[test]
 fn test_ldap_config_from_env_disabled_by_default() {
+    let _lock = LDAP_ENV_LOCK.lock().unwrap();
     cleanup_env();
     let config = LdapConfig::from_env();
     assert!(config.is_none(), "LDAP should be disabled by default");
@@ -17,6 +20,7 @@ fn test_ldap_config_from_env_disabled_by_default() {
 
 #[test]
 fn test_ldap_config_from_env_enabled() {
+    let _lock = LDAP_ENV_LOCK.lock().unwrap();
     cleanup_env();
     std::env::set_var("LDAP_ENABLE", "true");
     std::env::set_var("LDAP_URL", "ldap://localhost:389");
@@ -39,6 +43,7 @@ fn test_ldap_config_from_env_enabled() {
 
 #[test]
 fn test_ldap_config_empty_url_disables() {
+    let _lock = LDAP_ENV_LOCK.lock().unwrap();
     cleanup_env();
     std::env::set_var("LDAP_ENABLE", "true");
     std::env::set_var("LDAP_URL", "");
@@ -51,6 +56,7 @@ fn test_ldap_config_empty_url_disables() {
 
 #[test]
 fn test_ldap_config_case_insensitive_enable() {
+    let _lock = LDAP_ENV_LOCK.lock().unwrap();
     cleanup_env();
     std::env::set_var("LDAP_ENABLE", "TRUE");
     std::env::set_var("LDAP_URL", "ldap://localhost:389");
@@ -63,6 +69,7 @@ fn test_ldap_config_case_insensitive_enable() {
 
 #[test]
 fn test_ldap_config_partial_env() {
+    let _lock = LDAP_ENV_LOCK.lock().unwrap();
     cleanup_env();
     std::env::set_var("LDAP_ENABLE", "true");
     std::env::set_var("LDAP_URL", "ldap://localhost:389");
@@ -149,6 +156,7 @@ async fn test_ldap_authenticate_timeout_on_invalid_server() {
 
 #[test]
 fn test_authenticator_from_env_disabled() {
+    let _lock = LDAP_ENV_LOCK.lock().unwrap();
     cleanup_env();
     let auth = ldap::authenticator_from_env();
     assert!(auth.is_none());
@@ -156,6 +164,7 @@ fn test_authenticator_from_env_disabled() {
 
 #[test]
 fn test_authenticator_from_env_enabled() {
+    let _lock = LDAP_ENV_LOCK.lock().unwrap();
     cleanup_env();
     std::env::set_var("LDAP_ENABLE", "true");
     std::env::set_var("LDAP_URL", "ldap://localhost:389");

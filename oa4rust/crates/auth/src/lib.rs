@@ -25,6 +25,7 @@ pub mod password;
 pub mod person;
 pub mod qiyeweixin;
 pub mod safe_logout;
+pub mod sms;
 pub mod sso;
 pub mod switch_user;
 pub mod two_factor;
@@ -673,6 +674,38 @@ pub async fn group_list(
     ])))))
 }
 
+// --- 验证码 + 短信集成函数 ---
+
+/// 生成验证码（使用 auth::captcha 模块），返回 (captcha_id, data_uri)
+pub async fn captcha_generate() -> Result<(String, String), AppError> {
+    let Json(result) = crate::captcha::captcha_default().await?;
+    let data = result.data.ok_or(AppError::Internal)?;
+    let id = data
+        .get("captchaId")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::Internal)?
+        .to_string();
+    let image = data
+        .get("image")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::Internal)?
+        .to_string();
+    Ok((id, image))
+}
+
+/// 校验验证码（使用 auth::captcha 模块）
+pub async fn captcha_verify(captcha_id: &str, answer: &str) -> Result<bool, AppError> {
+    use crate::captcha::VerifyResult;
+    match crate::captcha::captcha_store().verify(captcha_id, answer) {
+        VerifyResult::Ok => Ok(true),
+        VerifyResult::TooManyAttempts => {
+            Err(AppError::BadRequest("too many attempts".to_string()))
+        }
+        VerifyResult::Expired => Err(AppError::BadRequest("captcha expired".to_string())),
+        _ => Err(AppError::BadRequest("invalid captcha".to_string())),
+    }
+}
+
 // --- 路由注册 ---
 
 /// 构建认证模块路由
@@ -728,6 +761,7 @@ pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionMan
             get(oauth::oauth_bind_name),
         )
         .merge(captcha::captcha_router())
+        .merge(sms::sms_router())
         .merge(bind::bind_router())
         .merge(welink::router())
         .merge(mpweixin::router())

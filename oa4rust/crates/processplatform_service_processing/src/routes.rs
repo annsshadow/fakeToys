@@ -8,11 +8,20 @@ use deadpool_postgres::Pool;
 use crate::{
     cancel_process_instance, create_process, execute_process,
     get_process, get_process_instance, list_processes,
-    work_id_processing, work_v2_id_terminate, work_v2_id_retract,
+    task_claim, task_complete, task_reject, task_transfer,
+    work_complete, work_id_processing, work_start,
+    gateway_join, timer::TimerRegistry,
     work_list, process_id_complex,
+    work_v2_id_terminate, work_v2_id_retract,
 };
 
 pub fn router(pool: Pool) -> Router {
+    let timer = TimerRegistry::new();
+    let pool_clone = pool.clone();
+    tokio::spawn(async move {
+        timer.start(pool_clone).await;
+    });
+
     Router::new()
         .route("/jaxrs/processplatform/service/processing/get/{id}", get(get_process))
         .route("/jaxrs/processplatform/service/processing/create", post(create_process))
@@ -25,5 +34,12 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/work/{id}/retract", post(work_v2_id_retract))
         .route("/jaxrs/processplatform/service/processing/work/list", get(work_list))
         .route("/jaxrs/processplatform/service/processing/process/{id}/complex", get(process_id_complex))
+        .route("/jaxrs/work/{id}/start", post(work_start))
+        .route("/jaxrs/work/{id}/complete", post(work_complete))
+        .route("/jaxrs/task/{id}/claim", post(task_claim))
+        .route("/jaxrs/task/{id}/complete", post(task_complete))
+        .route("/jaxrs/task/{id}/reject", post(task_reject))
+        .route("/jaxrs/task/{id}/transfer/{person}", post(task_transfer))
+        .route("/jaxrs/gateway/{work_id}/{activity_token}/join", post(gateway_join))
         .layer(Extension(pool))
 }

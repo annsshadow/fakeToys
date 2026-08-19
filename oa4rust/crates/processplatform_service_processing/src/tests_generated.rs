@@ -274,4 +274,257 @@ mod tests {
     // SKIPPED: workcompleted_flag_merge not accessible
     // SKIPPED: workcompleted_flag_rollback not accessible
     // SKIPPED: work_v3_retract not accessible
+
+    // ──────────────────────────────────────────────────────────────────────────────
+    // Integration tests for workflow execution semantics
+    // ──────────────────────────────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn test_work_start_and_claim() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool.clone());
+        let mut client = pool.get().await.unwrap();
+        client.execute("DELETE FROM x_task WHERE work = $1", &[&"test-work-start"]).await.unwrap();
+        client.execute("DELETE FROM x_work WHERE id = $1", &[&"test-work-start"]).await.unwrap();
+        client.execute(
+            "INSERT INTO x_work (id, title, process, application, work_status, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&"test-work-start", &"Test Work", &"default", &"default", &"pending", &"tester"],
+        ).await.unwrap();
+
+        let (status, json) = shared::testing::send_request(
+            &app,
+            axum::http::Method::POST,
+            "/jaxrs/work/test-work-start/start",
+            None,
+            None,
+            None,
+        ).await;
+        assert_eq!(status, StatusCode::OK, "work_start should succeed: {:?}", json);
+
+        let (status, json) = shared::testing::send_request(
+            &app,
+            axum::http::Method::POST,
+            "/jaxrs/task/test-task-id/claim",
+            None,
+            None,
+            None,
+        ).await;
+        assert_ne!(status, StatusCode::NOT_FOUND, "task_claim route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_task_complete_flow() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool.clone());
+        let mut client = pool.get().await.unwrap();
+        client.execute("DELETE FROM x_task WHERE id = $1", &[&"test-task-complete"]).await.unwrap();
+        client.execute("DELETE FROM x_work WHERE id = $1", &[&"test-work-complete"]).await.unwrap();
+        client.execute(
+            "INSERT INTO x_work (id, title, process, application, work_status, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&"test-work-complete", &"Test Work", &"default", &"default", &"processing", &"tester"],
+        ).await.unwrap();
+        client.execute(
+            "INSERT INTO x_task (id, title, work, activity, activity_token, person, task_status, start_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            &[&"test-task-complete", &"Test Task", &"test-work-complete", &"approve", &"token-1", &"user1", &"active"],
+        ).await.unwrap();
+
+        let (status, json) = shared::testing::send_request(
+            &app,
+            axum::http::Method::POST,
+            "/jaxrs/task/test-task-complete/complete",
+            None,
+            None,
+            None,
+        ).await;
+        assert_eq!(status, StatusCode::OK, "task_complete should succeed: {:?}", json);
+    }
+
+    #[tokio::test]
+    async fn test_task_reject_flow() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool.clone());
+        let mut client = pool.get().await.unwrap();
+        client.execute("DELETE FROM x_task WHERE id = $1", &[&"test-task-reject"]).await.unwrap();
+        client.execute("DELETE FROM x_work WHERE id = $1", &[&"test-work-reject"]).await.unwrap();
+        client.execute(
+            "INSERT INTO x_work (id, title, process, application, work_status, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&"test-work-reject", &"Test Work", &"default", &"default", &"processing", &"tester"],
+        ).await.unwrap();
+        client.execute(
+            "INSERT INTO x_task (id, title, work, activity, activity_token, person, task_status, start_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            &[&"test-task-reject", &"Test Task", &"test-work-reject", &"approve", &"token-1", &"user1", &"active"],
+        ).await.unwrap();
+
+        let (status, json) = shared::testing::send_request(
+            &app,
+            axum::http::Method::POST,
+            "/jaxrs/task/test-task-reject/reject",
+            None,
+            None,
+            None,
+        ).await;
+        assert_eq!(status, StatusCode::OK, "task_reject should succeed: {:?}", json);
+    }
+
+    #[tokio::test]
+    async fn test_gateway_join_flow() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool.clone());
+        let mut client = pool.get().await.unwrap();
+        client.execute("DELETE FROM x_task WHERE work = $1", &[&"test-work-gateway"]).await.unwrap();
+        client.execute("DELETE FROM x_work WHERE id = $1", &[&"test-work-gateway"]).await.unwrap();
+        client.execute(
+            "INSERT INTO x_work (id, title, process, application, work_status, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&"test-work-gateway", &"Test Work", &"default", &"default", &"processing", &"tester"],
+        ).await.unwrap();
+        for i in 1..=2 {
+            client.execute(
+                "INSERT INTO x_task (id, title, work, activity, activity_token, person, task_status, start_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+                &[&format!("gateway-task-{}", i), &"Gateway Task", &"test-work-gateway", &"review", &"gw-token-1", &"user1", &"completed"],
+            ).await.unwrap();
+        }
+
+        let (status, json) = shared::testing::send_request(
+            &app,
+            axum::http::Method::POST,
+            "/jaxrs/gateway/test-work-gateway/gw-token-1/join",
+            None,
+            None,
+            None,
+        ).await;
+        assert_eq!(status, StatusCode::OK, "gateway_join should succeed: {:?}", json);
+    }
+
+    #[tokio::test]
+    async fn test_work_complete_flow() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool.clone());
+        let mut client = pool.get().await.unwrap();
+        client.execute("DELETE FROM x_task WHERE work = $1", &[&"test-work-complete-flow"]).await.unwrap();
+        client.execute("DELETE FROM x_work WHERE id = $1", &[&"test-work-complete-flow"]).await.unwrap();
+        client.execute(
+            "INSERT INTO x_work (id, title, process, application, work_status, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&"test-work-complete-flow", &"Test Work", &"default", &"default", &"processing", &"tester"],
+        ).await.unwrap();
+
+        let (status, json) = shared::testing::send_request(
+            &app,
+            axum::http::Method::POST,
+            "/jaxrs/work/test-work-complete-flow/complete",
+            None,
+            None,
+            None,
+        ).await;
+        assert_eq!(status, StatusCode::OK, "work_complete should succeed: {:?}", json);
+    }
+
+    #[tokio::test]
+    async fn test_full_e2e_workflow_with_countersign_and_gateway() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool.clone());
+        let mut client = pool.get().await.unwrap();
+
+        let work_id = "test-work-e2e-gateway-reject";
+        client.execute("DELETE FROM x_record WHERE work_id = $1", &[&work_id]).await.unwrap();
+        client.execute("DELETE FROM x_task WHERE work = $1", &[&work_id]).await.unwrap();
+        client.execute("DELETE FROM x_workcompleted WHERE work_id = $1", &[&work_id]).await.unwrap();
+        client.execute("DELETE FROM x_work WHERE id = $1", &[&work_id]).await.unwrap();
+
+        client.execute(
+            "INSERT INTO x_work (id, title, process, application, work_status, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&work_id, &"E2E Test Work", &"default", &"default", &"pending", &"tester"],
+        ).await.unwrap();
+
+        let (status, _) = shared::testing::send_request(
+            &app,
+            axum::http::Method::POST,
+            &format!("/jaxrs/work/{}/start", work_id),
+            None,
+            None,
+            None,
+        ).await;
+        assert_eq!(status, StatusCode::OK, "work_start should succeed");
+
+        let start_task_id = "e2e-start-task";
+        client.execute("DELETE FROM x_task WHERE id = $1", &[&start_task_id]).await.unwrap();
+        client.execute(
+            "INSERT INTO x_task (id, title, work, activity, activity_token, person, task_status, start_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            &[&start_task_id, &"Start", &work_id, &"start", &"", &"system", &"completed"],
+        ).await.unwrap();
+
+        let countersign_token = "cs-token-1";
+        for i in 1..=2 {
+            let task_id = format!("e2e-cs-task-{}", i);
+            client.execute("DELETE FROM x_task WHERE id = $1", &[&task_id]).await.unwrap();
+            client.execute(
+                "INSERT INTO x_task (id, title, work, activity, activity_token, person, task_status, start_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+                &[&task_id, &"Countersign", &work_id, &"countersign", &countersign_token, &"user1", &"pending"],
+            ).await.unwrap();
+        }
+
+        let (status, json) = shared::testing::send_request(
+            &app,
+            axum::http::Method::POST,
+            &format!("/jaxrs/task/{}/claim", "e2e-cs-task-1"),
+            None,
+            None,
+            None,
+        ).await;
+        assert_eq!(status, StatusCode::OK, "claim first countersign task should succeed: {:?}", json);
+
+        let (status, json) = shared::testing::send_request(
+            &app,
+            axum::http::Method::POST,
+            &format!("/jaxrs/task/{}/reject", "e2e-cs-task-1"),
+            None,
+            None,
+            None,
+        ).await;
+        assert_eq!(status, StatusCode::OK, "reject first countersign task should succeed: {:?}", json);
+
+        client.execute(
+            "UPDATE x_task SET task_status = $1 WHERE id = $2",
+            &[&"pending", &"e2e-cs-task-1"],
+        ).await.unwrap();
+
+        let (status, json) = shared::testing::send_request(
+            &app,
+            axum::http::Method::POST,
+            &format!("/jaxrs/task/{}/claim", "e2e-cs-task-1"),
+            None,
+            None,
+            None,
+        ).await;
+        assert_eq!(status, StatusCode::OK, "re-claim first countersign task should succeed: {:?}", json);
+
+        let (status, json) = shared::testing::send_request(
+            &app,
+            axum::http::Method::POST,
+            &format!("/jaxrs/task/{}/complete", "e2e-cs-task-1"),
+            None,
+            None,
+            None,
+        ).await;
+        assert_eq!(status, StatusCode::OK, "complete first countersign task should succeed: {:?}", json);
+
+        let (status, json) = shared::testing::send_request(
+            &app,
+            axum::http::Method::POST,
+            &format!("/jaxrs/task/{}/complete", "e2e-cs-task-2"),
+            None,
+            None,
+            None,
+        ).await;
+        assert_eq!(status, StatusCode::OK, "complete second countersign task should succeed: {:?}", json);
+
+        let (status, json) = shared::testing::send_request(
+            &app,
+            axum::http::Method::POST,
+            &format!("/jaxrs/gateway/{}/{}/join", work_id, countersign_token),
+            None,
+            None,
+            None,
+        ).await;
+        assert_eq!(status, StatusCode::OK, "gateway_join should succeed after countersign: {:?}", json);
+    }
 }

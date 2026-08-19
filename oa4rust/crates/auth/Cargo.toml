@@ -19,14 +19,17 @@ uuid.workspace = true
 bcrypt.workspace = true
 base64.workspace = true
 
- shared = { path = "../shared" }
- ldap = { path = "../ldap" }
+shared = { path = "../shared" }
+ldap = { path = "../ldap" }
 chrono = { version = "0.4", features = ["serde"] }
 md5 = "0.7"
 des = "0.8"
 urlencoding = "2"
 cipher = "0.4"
 captcha.workspace = true
+captcha_store = { path = "../captcha_store" }
+sms = { path = "../sms" }
+async-trait = "0.1"
 reqwest.workspace = true
 sha2.workspace = true
 sha1.workspace = true

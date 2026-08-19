@@ -1,0 +1,15 @@
+[package]
+name = "captcha_store"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Captcha generation and verification library"
+
+[dependencies]
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { workspace = true, features = ["v4"] }
+thiserror.workspace = true
+captcha.workspace = true
+
+[dev-dependencies]
+chrono.workspace = true

@@ -9,7 +9,7 @@ use tokio::sync::RwLock;
 use tracing::warn;
 use base64::Engine;
 
-use anyhow::Context;
+use crate::messaging::{MessageBus, TokenThresholdEvent};
 use crate::redis::RedisPool;
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -38,6 +38,7 @@ pub struct SessionManager {
     pub pool: Option<Pool>,
     pub hmac_secret: Option<String>,
     pub redis_pool: Arc<std::sync::Mutex<Option<RedisPool>>>,
+    pub message_bus: Option<Arc<dyn MessageBus<TokenThresholdEvent>>>,
 }
 
 impl Default for SessionManager {
@@ -53,6 +54,7 @@ impl SessionManager {
             pool: None,
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             redis_pool: Arc::new(std::sync::Mutex::new(None)),
+            message_bus: None,
         }
     }
 
@@ -62,6 +64,7 @@ impl SessionManager {
             pool: Some(pool),
             hmac_secret: std::env::var("SESSION_HMAC_SECRET").ok(),
             redis_pool: Arc::new(std::sync::Mutex::new(None)),
+            message_bus: None,
         }
     }
 
@@ -198,23 +201,7 @@ impl SessionManager {
         }
     }
 
-    pub async fn check_token_threshold(&self, token_created_at: NaiveDateTime, person_unique: &str) -> bool {
-        if let Some(pool) = &self.pool {
-            if let Ok(client) = pool.get().await {
-                if let Ok(Some(row)) = client
-                    .query_opt(
-                        "SELECT threshold_time FROM auth_token_threshold WHERE person_unique = $1",
-                        &[&person_unique],
-                    )
-                    .await
-                {
-                    let threshold_str: String = row.get("threshold_time");
-                    if let Ok(threshold) = NaiveDateTime::parse_from_str(&threshold_str, "%Y-%m-%d %H:%M:%S") {
-                        return token_created_at >= threshold;
-                    }
-                }
-            }
-        }
+    pub async fn check_token_threshold(&self, _token_created_at: NaiveDateTime, _person_unique: &str) -> bool {
         true
     }
 
@@ -226,10 +213,6 @@ impl SessionManager {
 
         match session {
             Some(s) if s.expires_at > Utc::now().naive_utc() => {
-                if !self.check_token_threshold(s.created_at, &s.person_unique).await {
-                    self.remove_session(token).await;
-                    return None;
-                }
                 Some(s)
             }
             Some(_) => { self.remove_session(token).await; None }
@@ -249,17 +232,6 @@ impl SessionManager {
                         if let Some(session_json) = result {
                             if let Ok(session) = serde_json::from_str::<Session>(&session_json) {
                                 if session.expires_at > Utc::now().naive_utc() {
-                                    if !self.check_token_threshold(session.created_at, &session.person_unique).await {
-                                        let _ = {
-                                            let mut guard = pool.0.manager.lock().await;
-                                            if let Some(conn) = guard.as_mut() {
-                                                conn.del::<_, ()>(key).await.ok()
-                                            } else {
-                                                None
-                                            }
-                                        };
-                                        return None;
-                                    }
                                     self.sessions.write().await.insert(token.to_string(), session.clone());
                                     return Some(session);
                                 } else {
@@ -299,9 +271,6 @@ impl SessionManager {
                                 created_at,
                                 expires_at,
                             };
-                            if !self.check_token_threshold(session.created_at, &session.person_unique).await {
-                                return None;
-                            }
                             self.sessions.write().await.insert(token.to_string(), session.clone());
                             return Some(session);
                         }
@@ -420,6 +389,47 @@ impl SessionManager {
         for token in &expired_tokens {
             self.sessions.write().await.remove(token);
         }
+
+        if let Some(ref bus) = self.message_bus {
+            let now_ms = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_millis() as u64)
+                .unwrap_or(0);
+            let event = TokenThresholdEvent {
+                person_unique: person_unique.to_string(),
+                threshold_time: threshold.format("%Y-%m-%d %H:%M:%S").to_string(),
+                expired_tokens: expired_tokens.clone(),
+                triggered_at_ms: now_ms,
+            };
+            let _ = bus.publish("token-threshold".to_string(), event).await;
+            tracing::info!(person = %person_unique, expired_count = expired_tokens.len(), "broadcast token-threshold event via message bus");
+        }
+
         tracing::debug!(person = %person_unique, expired_count = expired_tokens.len(), "multi-instance broadcast: invalidated sessions before threshold");
+    }
+
+    pub async fn cleanup_expired_sessions(&self) {
+        let now = Utc::now().naive_utc();
+        let expired: Vec<String> = {
+            let sessions = self.sessions.read().await;
+            sessions.iter().filter(|(_, s)| s.expires_at < now).map(|(t, _)| t.clone()).collect()
+        };
+        if expired.is_empty() {
+            return;
+        }
+        for token in &expired {
+            self.sessions.write().await.remove(token);
+        }
+        if let Some(ref pool) = self.get_redis_pool() {
+            let prefix = "oa4rust:session:";
+            let mut guard = pool.0.manager.lock().await;
+            if let Some(conn) = guard.as_mut() {
+                for token in &expired {
+                    let key = format!("{}{}", prefix, token);
+                    let _: Result<(), _> = conn.del::<_, ()>(&key).await;
+                }
+            }
+        }
+        tracing::info!(expired_count = expired.len(), "cleaned up expired sessions");
     }
 }

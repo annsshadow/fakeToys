@@ -1400,7 +1400,7 @@ pub async fn work_list(
 
     let rows = client
         .query(
-            "SELECT id, title, process, application, work_status, creator, create_time FROM x_work WHERE deleted_at IS NULL AND ($1 = '' OR application = $1) ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
+            "SELECT id, title, process, COALESCE(application, '') as application, work_status, creator, to_char(create_time, 'YYYY-MM-DD HH24:MI:SS') as create_time FROM x_work WHERE deleted_at IS NULL AND ($1 = '' OR application = $1) ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
             &[&application, &(size as i64), &(offset as i64)],
         )
         .await
@@ -2203,6 +2203,388 @@ pub async fn work_v3_retract(
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(row_to_json(&row))))
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Workflow execution semantics
+// ──────────────────────────────────────────────────────────────────────────────
+
+pub async fn work_start(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
+        .query_one(
+            "SELECT id, title, process, application, work_status FROM x_work WHERE id = $1 FOR UPDATE",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let status: String = row.get("work_status");
+    if status != "pending" {
+        tx.commit().await.map_err(|_| AppError::Internal)?;
+        return Err(AppError::BadRequest(format!("work status is {}，无法启动", status)));
+    }
+    tx.execute("UPDATE x_work SET work_status = $1, start_time = NOW() WHERE id = $2", &[&"processing", &id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let task_id = Uuid::new_v4().to_string();
+    tx.execute(
+            "INSERT INTO x_task (id, title, work, activity, activity_token, person, task_status, start_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            &[&task_id, &"Start Event", &id, &"start", &"", &"system", &"active"],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("taskId".to_string(), Value::String(task_id)),
+            ("status".to_string(), Value::String("processing".to_string())),
+        ]),
+    ))))
+}
+
+pub async fn work_complete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
+        .query_one(
+            "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1 FOR UPDATE",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let status: String = row.get("work_status");
+    if status != "processing" {
+        tx.commit().await.map_err(|_| AppError::Internal)?;
+        return Err(AppError::BadRequest(format!("work status is {}，无法完成归档", status)));
+    }
+    tx.execute("UPDATE x_work SET work_status = $1, end_time = NOW() WHERE id = $2", &[&"completed", &id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    tx.execute("UPDATE x_task SET task_status = $1 WHERE work = $2 AND task_status != $3", &[&"completed", &id, &"completed"])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let completed_id = Uuid::new_v4().to_string();
+    tx.execute(
+            "INSERT INTO x_workcompleted (id, work_id, completed_time, creator, create_time) VALUES ($1, $2, NOW(), $3, NOW())",
+            &[&completed_id, &id, &row.get::<_, String>("creator")],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("workCompletedId".to_string(), Value::String(completed_id)),
+            ("status".to_string(), Value::String("completed".to_string())),
+        ]),
+    ))))
+}
+
+pub async fn task_claim(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1 FOR UPDATE",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let task_status: String = row.get("task_status");
+    if task_status != "pending" {
+        tx.commit().await.map_err(|_| AppError::Internal)?;
+        return Err(AppError::BadRequest(format!("task status is {}，无法认领", task_status)));
+    }
+    tx.execute("UPDATE x_task SET task_status = $1, start_time = NOW() WHERE id = $2", &[&"active", &id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let id2 = Uuid::new_v4().to_string();
+    let work_id: String = row.get("work");
+    tx.execute(
+            "INSERT INTO x_record (id, work_id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&id2, &work_id, &id, &"claim", &"task claimed", &"system"],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("claimed".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn task_complete(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1 FOR UPDATE",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let task_status: String = row.get("task_status");
+    if task_status != "active" && task_status != "processing" {
+        tx.commit().await.map_err(|_| AppError::Internal)?;
+        return Err(AppError::BadRequest(format!("task status is {}，无法完成", task_status)));
+    }
+    tx.execute("UPDATE x_task SET task_status = $1, end_time = NOW() WHERE id = $2", &[&"completed", &id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let work_id: String = row.get("work");
+    let activity_token: String = row.get("activity_token");
+    let id2 = Uuid::new_v4().to_string();
+    tx.execute(
+            "INSERT INTO x_record (id, work_id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&id2, &work_id, &id, &"complete", &"task completed", &"system"],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let next_row = tx
+        .query_opt(
+            "SELECT id, title, activity, activity_token, person FROM x_task WHERE work = $1 AND activity_token = $2 AND task_status = $3 LIMIT 1",
+            &[&work_id, &activity_token, &"pending"],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if let Some(next) = next_row {
+        let next_id: String = next.get("id");
+        tx.execute("UPDATE x_task SET task_status = $1, start_time = NOW() WHERE id = $2", &[&"active", &next_id])
+            .await
+            .map_err(|_| AppError::Internal)?;
+        let id3 = Uuid::new_v4().to_string();
+        tx.execute(
+                "INSERT INTO x_record (id, work_id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+                &[&id3, &work_id, &next_id, &"auto_claim", &"next task auto claimed", &"system"],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("completed".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn task_reject(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1 FOR UPDATE",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let task_status: String = row.get("task_status");
+    if task_status != "active" && task_status != "processing" {
+        tx.commit().await.map_err(|_| AppError::Internal)?;
+        return Err(AppError::BadRequest(format!("task status is {}，无法退回", task_status)));
+    }
+    tx.execute("UPDATE x_task SET task_status = $1 WHERE id = $2", &[&"rejected", &id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let work_id: String = row.get("work");
+    let activity_token: String = row.get("activity_token");
+    let id2 = Uuid::new_v4().to_string();
+    let reason = format!("task rejected from {}", activity_token);
+    tx.execute(
+            "INSERT INTO x_record (id, work_id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&id2, &work_id, &id, &"reject", &reason, &"system"],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let prev_row = tx
+        .query_opt(
+            "SELECT id FROM x_task WHERE work = $1 AND activity_token = $2 AND task_status = $3 LIMIT 1",
+            &[&work_id, &activity_token, &"completed"],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if let Some(prev) = prev_row {
+        let prev_id: String = prev.get("id");
+        tx.execute("UPDATE x_task SET task_status = $1 WHERE id = $2", &[&"pending", &prev_id])
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
+    tx.commit().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("rejected".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+pub async fn task_transfer(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, new_person)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let row = tx
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status FROM x_task WHERE id = $1 FOR UPDATE",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let task_status: String = row.get("task_status");
+    if task_status != "active" && task_status != "pending" && task_status != "processing" {
+        tx.commit().await.map_err(|_| AppError::Internal)?;
+        return Err(AppError::BadRequest(format!("task status is {}，无法转办", task_status)));
+    }
+    let old_person: String = row.get("person");
+    tx.execute("UPDATE x_task SET person = $1 WHERE id = $2", &[&new_person, &id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let work_id: String = row.get("work");
+    let id2 = Uuid::new_v4().to_string();
+    let content = format!("transferred from {} to {}", old_person, new_person);
+    tx.execute(
+            "INSERT INTO x_record (id, work_id, task_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&id2, &work_id, &id, &"transfer", &content, &"system"],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("newPerson".to_string(), Value::String(new_person)),
+        ]),
+    ))))
+}
+
+pub async fn gateway_join(
+    pool: Extension<Pool>,
+    axum::extract::Path((work_id, activity_token)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
+    let rows = tx
+        .query(
+            "SELECT id, task_status FROM x_task WHERE work = $1 AND activity_token = $2",
+            &[&work_id, &activity_token],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if rows.is_empty() {
+        tx.commit().await.map_err(|_| AppError::Internal)?;
+        return Err(AppError::NotFound);
+    }
+    let all_completed = rows.iter().all(|r| {
+        let status: String = r.get("task_status");
+        status == "completed"
+    });
+    if !all_completed {
+        tx.commit().await.map_err(|_| AppError::Internal)?;
+        return Err(AppError::BadRequest("not all tasks completed for this gateway".to_string()));
+    }
+    let id2 = Uuid::new_v4().to_string();
+    tx.execute(
+            "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
+            &[&id2, &work_id, &"gateway_join", &format!("gateway {} joined", activity_token), &"system"],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    tx.commit().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("workId".to_string(), Value::String(work_id)),
+            ("activityToken".to_string(), Value::String(activity_token)),
+            ("joined".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Timer (tokio-based simple scheduler, placeholder for Quartz)
+// ──────────────────────────────────────────────────────────────────────────────
+
+pub mod timer {
+    use super::*;
+    use std::sync::Arc;
+    use tokio::sync::RwLock;
+    use tokio::time::{interval, Duration};
+
+    #[derive(Clone, Default)]
+    pub struct TimerRegistry {
+        jobs: Arc<RwLock<Vec<TimerJob>>>,
+    }
+
+    #[derive(Clone)]
+    pub struct TimerJob {
+        pub id: String,
+        pub work_id: String,
+        pub task_id: String,
+        pub fire_at: chrono::DateTime<chrono::Utc>,
+        pub kind: String,
+    }
+
+    impl TimerRegistry {
+        pub fn new() -> Self {
+            Self::default()
+        }
+
+        pub async fn start(&self, pool: Pool) {
+            let registry = self.clone();
+            tokio::spawn(async move {
+                let mut ticker = interval(Duration::from_secs(30));
+                loop {
+                    ticker.tick().await;
+                    let jobs = registry.jobs.read().await.clone();
+                    let now = chrono::Utc::now();
+                    for job in jobs.iter() {
+                        if job.fire_at <= now {
+                            let _ = Self::fire(&pool, job).await;
+                        }
+                    }
+                }
+            });
+        }
+
+        async fn fire(pool: &Pool, job: &TimerJob) -> Result<(), AppError> {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            match job.kind.as_str() {
+                "expire" => {
+                    client
+                        .execute("UPDATE x_task SET task_status = $1 WHERE id = $2 AND task_status = $3", &[&"expired", &job.task_id, &"active"])
+                        .await
+                        .map_err(|_| AppError::Internal)?;
+                }
+                _ => {}
+            }
+            Ok(())
+        }
+
+        pub async fn register(&self, job: TimerJob) {
+            let mut jobs = self.jobs.write().await;
+            jobs.push(job);
+        }
+    }
 }
 
 #[cfg(test)]

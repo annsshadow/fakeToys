@@ -9,7 +9,11 @@ axum.workspace = true
 serde_json = "1"
 deadpool-postgres.workspace = true
 uuid = { workspace = true, features = ["v4"] }
+reqwest.workspace = true
 shared = { path = "../shared" }
+serde.workspace = true
+chrono = { version = "0.4", features = ["serde"] }
+tracing.workspace = true
 
 [dev-dependencies]
 tower.workspace = true

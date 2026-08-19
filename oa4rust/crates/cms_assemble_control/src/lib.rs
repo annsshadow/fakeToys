@@ -8,6 +8,7 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult, response::row_to_json};
 use deadpool_postgres::tokio_postgres::types::ToSql;
 use std::collections::HashMap;
+use search::{search_documents, Document};
 
 pub mod routes;
 
@@ -3021,7 +3022,47 @@ pub async fn commend_list_paging(
     ))))
 }
 
-// ─── queryview_flag_definition ──────────────────────────────────────────────
+// ─── document_search ─────────────────────────────────────────────────────────
+
+#[axum::debug_handler]
+pub async fn document_search(
+    pool: Extension<Pool>,
+    axum::extract::Query(params): axum::extract::Query<HashMap<String, String>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let query = params
+        .get("q")
+        .ok_or_else(|| AppError::BadRequest("q is required".to_string()))?
+        .clone();
+
+    let limit: i32 = params
+        .get("limit")
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(20);
+
+    let results = search_documents(&pool, &query, limit)
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = results
+        .iter()
+        .map(|doc| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(doc.id.clone())),
+                ("title".to_string(), Value::String(doc.title.clone().unwrap_or_default())),
+                ("content".to_string(), Value::String(doc.content.clone().unwrap_or_default())),
+                ("rank".to_string(), Value::Number(serde_json::Number::from_f64(doc.rank.unwrap_or(0.0)).unwrap())),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
 
 #[axum::debug_handler]
 pub async fn queryview_flag_definition(
