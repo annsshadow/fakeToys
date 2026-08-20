@@ -92,6 +92,10 @@ use processplatform_assemble_bam;
 use processplatform_assemble_designer;
 use query_core_express;
 use query_service_processing;
+use empower;
+use preview;
+use realtime;
+use oa4rust_signature;
 
 /// OpenAPI JSON endpoint handler.
 async fn openapi_json_handler() -> Result<Vec<u8>, axum::response::Json<serde_json::Value>> {
@@ -269,7 +273,7 @@ pub async fn create_app(
         .merge(personal::router(pool.clone(), session_manager.clone()))
         .merge(cms_control::cms_control_router(pool.clone()))
         .merge(control::control_router(pool.clone()))
-        .merge(personal_extend::personal_extend_router(pool.clone(), session_manager))
+        .merge(personal_extend::personal_extend_router(pool.clone(), session_manager.clone()))
         .merge(program_init::program_init_router(pool.clone()))
         .merge(express::router(pool.clone()))
         .merge(message::router(pool.clone()))
@@ -347,10 +351,12 @@ pub async fn create_app(
         .merge(processplatform_assemble_designer::router(pool.clone()))
         .merge(query_core_express::router(pool.clone()))
         .merge(query_service_processing::router(pool.clone()))
+        .merge(empower::router::router(pool.clone(), session_manager.clone()))
         .merge(
             Router::new()
                 .route("/ws", get(realtime::ws_handler))
                 .route("/ws/{room_id}", get(realtime::ws_room_handler))
+                .route("/ws/{room_id}/stats", get(realtime::ws_stats))
                 .with_state(Arc::new(realtime::RealtimeManager::new())),
         )
         .merge(preview::preview_route(preview::LibreOfficePreview::default()))
