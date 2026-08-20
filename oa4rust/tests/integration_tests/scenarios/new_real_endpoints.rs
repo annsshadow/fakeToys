@@ -66,6 +66,7 @@ async fn post_ok(base: &str, client: &Client, auth: &str, path: &str, body: Valu
 
 // ── AI: file download/scale/delete, mcp config list/get, index delete ──────────
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn ai_endpoints_flow() {
     let pool = (**TEST_DB.get().expect("db not initialized")).clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
@@ -79,7 +80,7 @@ pub async fn ai_endpoints_flow() {
     let file_id = uniq("ai-file");
     let file_name = format!("{}.txt", file_id);
     {
-        let c = pool.get().await.expect("pool");
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
         c.execute(
             "INSERT INTO x_ai_file (id, xid, xname, xlength, xcreator) VALUES ($1, $2, $3, $4, $5)",
             &[&file_id, &file_id, &file_name, &(1024i64), &"it-admin"],
@@ -110,7 +111,7 @@ pub async fn ai_endpoints_flow() {
     // Seed an x_ai_mcp_config row.
     let mcp_id = uniq("ai-mcp");
     {
-        let c = pool.get().await.expect("pool");
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
         c.execute(
             "INSERT INTO x_ai_mcp_config (id, name, url, default_model, enabled, is_base, is_extended, max_tokens) \
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8)",
@@ -144,7 +145,7 @@ pub async fn ai_endpoints_flow() {
     // Seed an x_ai_index row then delete it (side effect).
     let idx_id = uniq("ai-idx");
     {
-        let c = pool.get().await.expect("pool");
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
         c.execute(
             "INSERT INTO x_ai_index (id, doc_id, title) VALUES ($1, $2, $3)",
             &[&idx_id, &format!("doc-{}", idx_id), &"title"],
@@ -168,6 +169,7 @@ pub async fn ai_endpoints_flow() {
 
 // ── query_core_express: get_cache_status (read-by-id + 404-safe; never 500) ────
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn query_endpoints_flow() {
     let pool = (**TEST_DB.get().expect("db not initialized")).clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
@@ -179,7 +181,7 @@ pub async fn query_endpoints_flow() {
 
     let q_id = uniq("q");
     {
-        let c = pool.get().await.expect("pool");
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
         c.execute(
             "INSERT INTO x_query (id, name, query_type, count) VALUES ($1, $2, $3, $4)",
             &[&q_id, &"Q", &"sql", &"5"],
@@ -214,6 +216,7 @@ pub async fn query_endpoints_flow() {
 
 // ── bbs_core_entity: create_reply (write → row persisted) ──────────────────────
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn bbs_endpoints_flow() {
     let pool = (**TEST_DB.get().expect("db not initialized")).clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
@@ -251,6 +254,7 @@ pub async fn bbs_endpoints_flow() {
 
 // ── portal: list_portal_category (real category read) ─────────────────────────
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn portal_endpoints_flow() {
     let pool = (**TEST_DB.get().expect("db not initialized")).clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
@@ -262,7 +266,7 @@ pub async fn portal_endpoints_flow() {
 
     let cat = uniq("portal-cat");
     {
-        let c = pool.get().await.expect("pool");
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
         c.execute(
             "INSERT INTO x_portal (id, name, alias, description, portal_category) VALUES ($1, $2, $3, $4, $5)",
             &[&uniq("portal"), &"Portal", &"alias", &"desc", &cat],
@@ -285,6 +289,7 @@ pub async fn portal_endpoints_flow() {
 
 // ── component_assemble_control: update_control_config + get_control_config ─────
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn component_assemble_control_flow() {
     let pool = (**TEST_DB.get().expect("db not initialized")).clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
@@ -335,6 +340,7 @@ pub async fn component_assemble_control_flow() {
 
 // ── correlation_service_processing: unlink_service (write → row removed) ───────
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn correlation_endpoints_flow() {
     let pool = (**TEST_DB.get().expect("db not initialized")).clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
@@ -350,7 +356,7 @@ pub async fn correlation_endpoints_flow() {
     let target_type = "doc";
     let target_id = uniq("tgt");
     {
-        let c = pool.get().await.expect("pool");
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
         c.execute(
             "INSERT INTO x_correlation (id, \"type\", person_id, target_id) VALUES ($1, $2, $3, $4)",
             &[&corr_id, &source_type, &source_id, &target_id],
@@ -385,6 +391,7 @@ pub async fn correlation_endpoints_flow() {
 
 // ── organization_assemble_control: 5 realized read handlers (real DB) ──────────
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn org_assemble_control_flow() {
     let pool = (**TEST_DB.get().expect("db not initialized")).clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
@@ -399,7 +406,7 @@ pub async fn org_assemble_control_flow() {
     let idn_id = uniq("idn");
     let person_id = uniq("person");
     {
-        let c = pool.get().await.expect("pool");
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
         c.execute(
             "INSERT INTO x_org_role (id, name) VALUES ($1, $2)",
             &[&role_id, &"Role"],
@@ -482,6 +489,7 @@ pub async fn org_assemble_control_flow() {
 
 // ── console / jpush / organization_assemble_express status endpoints ───────────
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn console_jpush_express_flow() {
     let pool = (**TEST_DB.get().expect("db not initialized")).clone();
     let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
@@ -498,7 +506,7 @@ pub async fn console_jpush_express_flow() {
     // Seed a real metric row so get_metric returns genuine value/unit (proves xname column fix).
     let m_id = uniq("metric");
     {
-        let c = pool.get().await.expect("pool");
+        let c = pool.as_pg().unwrap().get().await.expect("pool");
         c.execute(
             "INSERT INTO x_console_metric (id, xname, xvalue, xunit) VALUES ($1, 'cpu', '42', '%')",
             &[&m_id],

@@ -30,7 +30,6 @@ pub async fn create_pool() -> Result<Pool, DbError> {
     let database_url = env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/oa4rust".to_string());
 
-    // 读取 DB_DIALECT，用于连接创建时的方言适配（当前仅 PostgreSQL）
     let _dialect_name = env::var("DB_DIALECT")
         .or_else(|_| env::var("DATABASE_DIALECT"))
         .unwrap_or_else(|_| "postgres".to_string());
@@ -50,12 +49,6 @@ pub async fn create_pool() -> Result<Pool, DbError> {
         .dbname(dbname);
 
     let mgr = Manager::new(cfg, NoTls);
-    // NOTE: deadpool 0.12 `Pool::builder().build()` performs a
-    // `Handle::try_current()` runtime check when any timeout is set. Under
-    // tokio 1.53.x that check can spuriously fail inside `#[tokio::main]`,
-    // returning `BuildError::TimeoutRequiresRuntime`. We therefore build the
-    // pool without an explicit `wait_timeout` so the runtime check is skipped;
-    // the pool still applies its default timeouts.
     let pool = Pool::builder(mgr)
         .build()
         .map_err(|e| DbError::PoolError(e.to_string()))?;

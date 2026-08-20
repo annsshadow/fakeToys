@@ -27,13 +27,14 @@ fn uid(prefix: &str) -> String {
 }
 
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn cms_extended_crud_flow() {
     let pool = TEST_DB
         .get()
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server((*pool).clone())
+    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("failed to start test server");
 

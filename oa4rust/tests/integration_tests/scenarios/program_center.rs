@@ -16,13 +16,14 @@ use crate::integration_tests::db::TEST_DB;
 // ──────────────────────────────────────────────────────────────────────────────
 
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn program_center_flow() {
     let pool = TEST_DB
         .get()
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server((*pool).clone())
+    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("failed to start test server");
 
@@ -41,7 +42,7 @@ pub async fn program_center_flow() {
 
     // Seed a program module directly so modules_all reflects a real row.
     {
-        let db = pool.get().await.expect("seed: failed to get client");
+        let db = pool.as_pg().unwrap().get().await.expect("seed: failed to get client");
         db.execute(
             "INSERT INTO x_program_module (id, name, entity, creator, create_time) \
              VALUES ($1, $2, $3, $4, NOW())",

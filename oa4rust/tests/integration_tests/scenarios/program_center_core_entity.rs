@@ -12,13 +12,14 @@ use crate::integration_tests::db::TEST_DB;
 // ──────────────────────────────────────────────────────────────────────────────
 
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn program_center_core_entity_application_flow() {
     let pool = TEST_DB
         .get()
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, _token) = crate::integration_tests::helpers::setup_test_server((*pool).clone())
+    let (_addr, server_handle, _token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("failed to start test server");
 
@@ -31,7 +32,7 @@ pub async fn program_center_core_entity_application_flow() {
 
     // Step 1: Insert a test application record directly into the database
     {
-        let db_client = pool.get().await.expect("failed to get pool client");
+        let db_client = pool.as_pg().unwrap().get().await.expect("failed to get pool client");
         db_client
             .execute(
                 "INSERT INTO x_application (id, name, category, sub_category, version, publisher, creator_person) \

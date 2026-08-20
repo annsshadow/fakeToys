@@ -236,6 +236,8 @@ chrono.workspace = true
 anyhow.workspace = true
 tracing.workspace = true
 serde.workspace = true
+mysql_async = "0.37.0"
+mysql_common = "0.37"
 
 [workspace.dependencies]
 axum = { version = "0.8", features = ["macros", "json", "ws"] }

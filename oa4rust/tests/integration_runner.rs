@@ -25,19 +25,10 @@ use integration_tests::db::init_test_database;
 /// 2. 执行所有迁移
 /// 3. 注入测试数据（admin 用户 + 会话）
 /// 4. 按顺序运行每个 cross-crate 场景
-#[ignore = "requires a running PostgreSQL server"]
+#[ignore = "requires a running database server"]
 #[test]
 fn integration_scenarios() {
-    let dialect = std::env::var("DATABASE_DIALECT")
-        .or_else(|_| std::env::var("DB_DIALECT"))
-        .unwrap_or_else(|_| "postgres".to_string());
-    if dialect == "mysql" {
-        eprintln!("skipping integration_scenarios: MySQL integration tests are not yet implemented");
-        return;
-    }
-
     let _ctx = init_test_database();
-    let _pool = _ctx.pool();
 
     // Run all scenario tests sequentially to avoid port conflicts
     // (each scenario spins up its own HTTP server on a random port)
