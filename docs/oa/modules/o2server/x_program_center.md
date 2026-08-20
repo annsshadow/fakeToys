@@ -37,4 +37,10 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/program/applications`
+- `GET /jaxrs/program/appstyle/current/style`
+- `GET /jaxrs/program/datastructure/modules/all`
+- `POST /jaxrs/program_center/agent/create`
+- `POST /jaxrs/program_center/agent/save/{id}`
+- `POST /jaxrs/program_center/application/create`
+- `POST /jaxrs/program_center/application/save/{id}`

@@ -34,4 +34,7 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `POST /jaxrs/query/service/processing/batch`
+- `POST /jaxrs/query/service/processing/process`
+- `POST /jaxrs/query/service/processing/reset`
+- `GET /jaxrs/query/service/processing/status`

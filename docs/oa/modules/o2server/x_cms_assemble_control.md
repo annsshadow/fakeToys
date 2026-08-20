@@ -39,4 +39,10 @@ CMS 管控模块，处理 CMS 栏目、文章、字典等内容的配置和管�
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/application/{id}`
+- `GET /jaxrs/cms_assemble_control/get/control/config`
+- `GET /jaxrs/cms_assemble_control/list/control/sections`
+- `GET /jaxrs/cms_assemble_control/update/control/config`
+- `GET /jaxrs/commend/list/paging/{docId}`
+- `POST /jaxrs/document/{id}/view/count`
+- `GET /jaxrs/queryview/flag/{view}/definition/{queryFlag}`
