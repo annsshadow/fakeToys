@@ -1,6 +1,6 @@
 use axum::{
     extract::Extension,
-    routing::{delete, get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use deadpool_postgres::Pool;
@@ -18,7 +18,7 @@ use crate::{
     im_conversation_id_single, im_conversation_id_single_mockdeletetoget,
     im_conversation_id_top_cancel, im_conversation_id_top_cancel_mockputtopost,
     im_conversation_id_top_set, im_conversation_id_top_set_mockputtopost,
-    im_manager_config, im_msg, im_msg_clear, im_msg_collection,
+    im_conversation_update, im_manager_config, im_manager_config_post, im_msg, im_msg_clear, im_msg_collection,
     im_msg_collection_list_page_size_size, im_msg_collection_remove,
     im_msg_download_id, im_msg_download_id_image_width_width_height_height,
     im_msg_list_object, im_msg_list_page_size_size, im_msg_revoke_id,
@@ -68,7 +68,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/top/cancel/mockputtopost", post(im_conversation_id_top_cancel_mockputtopost))
         .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/top/set", post(im_conversation_id_top_set))
         .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/top/set/mockputtopost", post(im_conversation_id_top_set_mockputtopost))
-        .route("/jaxrs/message/assemble/communicate/im/manager/config", get(im_manager_config))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}", put(im_conversation_update))
+        .route("/jaxrs/message/assemble/communicate/im/manager/config", get(im_manager_config).post(im_manager_config_post))
         .route("/jaxrs/message/assemble/communicate/im/msg", post(im_msg))
         .route("/jaxrs/message/assemble/communicate/im/msg/clear", post(im_msg_clear))
         .route("/jaxrs/message/assemble/communicate/im/msg/collection", post(im_msg_collection))

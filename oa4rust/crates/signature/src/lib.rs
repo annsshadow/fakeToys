@@ -35,6 +35,7 @@ pub struct SignatureInfo {
     pub contact: String,
     pub cert_pem: String,
     pub private_key_pem: String,
+    pub signer_name: Option<String>,
 }
 
 impl SignatureInfo {
@@ -51,6 +52,7 @@ impl SignatureInfo {
             contact: contact.into(),
             cert_pem: cert_pem.into(),
             private_key_pem: private_key_pem.into(),
+            signer_name: None,
         }
     }
 }
@@ -184,6 +186,38 @@ impl PdfSignatureService {
         hash.copy_from_slice(&result);
         hash
     }
+
+    fn verify_certificate_dates(cert_pem: &str) -> SignatureResult<()> {
+        let cert_data = if let Some(start) = cert_pem.find("-----BEGIN CERTIFICATE-----") {
+            let end = cert_pem.find("-----END CERTIFICATE-----").unwrap_or(cert_pem.len());
+            cert_pem[start..end]
+                .replace("-----BEGIN CERTIFICATE-----", "")
+                .replace("-----END CERTIFICATE-----", "")
+                .replace('\n', "")
+                .replace('\r', "")
+                .replace(' ', "")
+        } else {
+            cert_pem.trim().to_string()
+        };
+
+        let cert_bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, cert_data)
+            .map_err(|_| SignatureError::InvalidCertificate)?;
+
+        let (_, cert) = x509_parser::parse_x509_certificate(&cert_bytes)
+            .map_err(|_| SignatureError::InvalidCertificate)?;
+
+        let now = std::time::SystemTime::now();
+        let not_before: std::time::SystemTime = cert.validity().not_before.to_datetime().into();
+        let not_after: std::time::SystemTime = cert.validity().not_after.to_datetime().into();
+        
+        if now < not_before || now > not_after {
+            return Err(SignatureError::VerificationFailed(
+                format!("certificate not valid: not_before={:?}, not_after={:?}", not_before, not_after)
+            ));
+        }
+
+        Ok(())
+    }
 }
 
 #[async_trait]
@@ -191,6 +225,8 @@ impl SignatureService for PdfSignatureService {
     async fn sign_pdf(&self, pdf_data: &[u8], info: &SignatureInfo) -> SignatureResult<Vec<u8>> {
         let private_key = Self::parse_private_key(&info.private_key_pem)?;
         let public_key = Self::parse_public_key(&info.cert_pem)?;
+        
+        Self::verify_certificate_dates(&info.cert_pem)?;
         
         let hash = Self::compute_sha256(pdf_data);
         let signature = private_key.sign(
@@ -220,6 +256,16 @@ impl SignatureService for PdfSignatureService {
                 });
             }
         };
+        
+        if let Err(e) = Self::verify_certificate_dates(&sig.cert_pem) {
+            return Ok(VerificationResult {
+                valid: false,
+                signer: None,
+                signing_time: None,
+                reason: None,
+                error: Some(format!("certificate date verification failed: {}", e)),
+            });
+        }
         
         let hash = Self::compute_sha256(&sig.pdf_without_signature);
         let signature_bytes = match hex::decode(&sig.signature_hex) {
@@ -273,10 +319,6 @@ impl PdfSignatureService {
         sig_dict.set("Type", lopdf::Object::Name(b"Sig".to_vec()));
         sig_dict.set("Filter", lopdf::Object::Name(b"Adobe.PPKLite".to_vec()));
         sig_dict.set("SubFilter", lopdf::Object::Name(b"adbe.pkcs7.detached".to_vec()));
-        let mut sig_dict = lopdf::Dictionary::new();
-        sig_dict.set("Type", lopdf::Object::Name(b"Sig".to_vec()));
-        sig_dict.set("Filter", lopdf::Object::Name(b"Adobe.PPKLite".to_vec()));
-        sig_dict.set("SubFilter", lopdf::Object::Name(b"adbe.pkcs7.detached".to_vec()));
         sig_dict.set("Name", lopdf::Object::string_literal(info.signer_name().unwrap_or("Unknown")));
         sig_dict.set("Location", lopdf::Object::string_literal(info.location.as_str()));
         sig_dict.set("Reason", lopdf::Object::string_literal(info.reason.as_str()));
@@ -294,6 +336,27 @@ impl PdfSignatureService {
         
         let mut buf = Vec::new();
         doc.save_to(&mut buf).map_err(|e| SignatureError::PdfOperation(e.to_string()))?;
+        
+        if let Some(pos) = buf.windows(signature_hex.len()).position(|w| w == signature_hex.as_bytes()) {
+            let sig_len = signature_hex.len();
+            let file_size = buf.len();
+            let byte_range = vec![
+                lopdf::Object::Integer(0),
+                lopdf::Object::Integer(pos as i64),
+                lopdf::Object::Integer((pos + sig_len) as i64),
+                lopdf::Object::Integer((file_size - pos - sig_len) as i64),
+            ];
+            
+            if let Some(lopdf::Object::Dictionary(ref mut dict)) = doc.objects.get_mut(&sig_id) {
+                dict.set("ByteRange", lopdf::Object::Array(byte_range));
+            }
+            
+            buf.clear();
+            doc.save_to(&mut buf).map_err(|e| SignatureError::PdfOperation(e.to_string()))?;
+        } else {
+            warn!("could not locate signature hex in PDF output; ByteRange remains placeholder");
+        }
+        
         Ok(buf)
     }
     
@@ -341,9 +404,11 @@ trait SignatureInfoExt {
 
 impl SignatureInfoExt for SignatureInfo {
     fn signer_name(&self) -> Option<&str> {
-        self.cert_pem.lines()
-            .find(|l| l.starts_with("Subject: "))
-            .map(|l| l.trim_start_matches("Subject: "))
+        self.signer_name.as_deref().or_else(|| {
+            self.cert_pem.lines()
+                .find(|l| l.starts_with("Subject: "))
+                .map(|l| l.trim_start_matches("Subject: "))
+        })
     }
 }
 

@@ -12,6 +12,7 @@ use shared::{db::dialect, error::AppError, response::{option_to_json, row_opt_js
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
+use captcha_store::captcha_store;
 
 mod ldap_auth;
 pub mod andfx;
@@ -702,10 +703,10 @@ pub async fn captcha_generate() -> Result<(String, String), AppError> {
     Ok((id, image))
 }
 
-/// 校验验证码（使用 auth::captcha 模块）
+/// 校验验证码（使用 captcha_store crate）
 pub async fn captcha_verify(captcha_id: &str, answer: &str) -> Result<bool, AppError> {
-    use crate::captcha::VerifyResult;
-    match crate::captcha::captcha_store().verify(captcha_id, answer) {
+    use captcha_store::VerifyResult;
+    match captcha_store::captcha_store().verify(captcha_id, answer) {
         VerifyResult::Ok => Ok(true),
         VerifyResult::TooManyAttempts => {
             Err(AppError::BadRequest("too many attempts".to_string()))
