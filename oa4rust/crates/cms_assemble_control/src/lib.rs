@@ -27,7 +27,7 @@ pub async fn application_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, alias, appType, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, alias, appType, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -57,7 +57,7 @@ pub async fn get_control_config(
 
     let row = client
         .query_one(
-            "SELECT enabled, max_category_count, allow_anonymous FROM x_cms_assemble_control_config ORDER BY create_time LIMIT 1",
+            "SELECT enabled, max_category_count, allow_anonymous FROM x_cms_assemble_control_config ORDER BY create_time::text LIMIT 1",
             &[],
         )
         .await
@@ -80,7 +80,7 @@ pub async fn list_control_sections(
 
     let rows = client
         .query(
-            "SELECT id, name, enabled FROM x_cms_assemble_control_section ORDER BY create_time",
+            "SELECT id, name, enabled FROM x_cms_assemble_control_section ORDER BY create_time::text",
             &[],
         )
         .await
@@ -113,7 +113,7 @@ pub async fn update_control_config(
 
     client
         .execute(
-            "UPDATE x_cms_assemble_control_config SET enabled = $1, max_category_count = $2, allow_anonymous = $3 WHERE id = (SELECT id FROM x_cms_assemble_control_config ORDER BY create_time LIMIT 1)",
+            "UPDATE x_cms_assemble_control_config SET enabled = $1, max_category_count = $2, allow_anonymous = $3 WHERE id = (SELECT id FROM x_cms_assemble_control_config ORDER BY create_time::text LIMIT 1)",
             &[&enabled, &max_category_count, &allow_anonymous],
         )
         .await
@@ -230,7 +230,7 @@ async fn get_by_id(pool: &Pool, table: &str, id: &str) -> Result<Option<Value>, 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            &format!("SELECT * FROM {} WHERE id = $1 AND deleted_at IS NULL", table),
+            &format!("SELECT * FROM {} WHERE id = $1 AND deleted_at::text IS NULL", table),
             &[&id],
         )
         .await
@@ -352,7 +352,7 @@ pub async fn anonymous_document_id_view(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, title, content, author_id, status, publish_time, creator, create_time FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, title, content, author_id, status, publish_time::text, creator, create_time::text FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -391,7 +391,7 @@ pub async fn appinfo_alias_alias(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE alias = $1 AND deleted_at IS NULL",
+            "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE alias = $1 AND deleted_at::text IS NULL",
             &[&alias],
         )
         .await
@@ -474,7 +474,7 @@ pub async fn appinfo_get_user_publish_appId(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at::text IS NULL",
             &[&app_id],
         )
         .await
@@ -639,7 +639,7 @@ pub async fn appinfo_appId_icon_size_size(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at::text IS NULL",
             &[&app_id],
         )
         .await
@@ -684,7 +684,7 @@ pub async fn appinfo_id_control(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, alias, app_type, icon, enabled, manager FROM x_cms_appinfo WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -723,7 +723,7 @@ pub async fn appinfo_id_permission(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_id, category_id, person_id, role_type, permission_level FROM x_cms_permission WHERE app_id = $1 AND deleted_at IS NULL",
+            "SELECT id, app_id, category_id, person_id, role_type, permission_level FROM x_cms_permission WHERE app_id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -751,7 +751,7 @@ pub async fn categoryinfo_alias_alias(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time FROM x_cms_categoryinfo WHERE alias = $1 AND deleted_at IS NULL",
+            "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time::text FROM x_cms_categoryinfo WHERE alias = $1 AND deleted_at::text IS NULL",
             &[&alias],
         )
         .await
@@ -781,7 +781,7 @@ pub async fn categoryinfo_bind_categoryId_view(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time::text FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at::text IS NULL",
             &[&category_id],
         )
         .await
@@ -819,7 +819,7 @@ pub async fn categoryinfo_bind_categoryId_view_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time::text FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at::text IS NULL",
             &[&category_id],
         )
         .await
@@ -871,7 +871,7 @@ pub async fn categoryinfo_extContent(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, ext_content FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, ext_content FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -1016,7 +1016,7 @@ pub async fn categoryinfo_id_control(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time::text FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -1045,7 +1045,7 @@ pub async fn categoryinfo_id_execute_projection(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time::text FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -1083,7 +1083,7 @@ pub async fn categoryinfo_id_permission(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_id, category_id, person_id, role_type, permission_level FROM x_cms_permission WHERE category_id = $1 AND deleted_at IS NULL",
+            "SELECT id, app_id, category_id, person_id, role_type, permission_level FROM x_cms_permission WHERE category_id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -1191,7 +1191,7 @@ pub async fn comment_id_commend(
     let new_id: String = row_id.get("id");
     let row = client
         .query_opt(
-            "SELECT id, doc_id, person_id, create_time FROM x_cms_commend WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, person_id, create_time::text FROM x_cms_commend WHERE id = $1 AND deleted_at::text IS NULL",
             &[&new_id],
         )
         .await
@@ -1264,7 +1264,7 @@ pub async fn correlation_doc_docId_delete(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, related_doc_id, correlation_type, create_time FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2",
+            "SELECT id, doc_id, related_doc_id, correlation_type, create_time::text FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2",
             &[&doc_id, &related_doc_id],
         )
         .await
@@ -1317,7 +1317,7 @@ pub async fn correlation_update_doc_docId(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, related_doc_id, correlation_type, create_time FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, related_doc_id, correlation_type, create_time::text FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2 AND deleted_at::text IS NULL",
             &[&doc_id, &related_doc_id],
         )
         .await
@@ -1355,7 +1355,7 @@ pub async fn data_document_id_array_data(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, title, content, author_id, status, publish_time, creator, create_time FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, title, content, author_id, status, publish_time::text, creator, create_time::text FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -1393,11 +1393,11 @@ pub async fn data_document_id_mockdeletetoget(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, title, content, author_id, status, publish_time, creator, create_time FROM x_cms_data_document WHERE id = $1",
+            "SELECT id, title, content, author_id, status, publish_time::text, creator, create_time::text FROM x_cms_data_document WHERE id = $1",
             &[&id],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
+            .map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => {
             let result = Value::Object(serde_json::Map::from_iter([
@@ -1409,6 +1409,7 @@ pub async fn data_document_id_mockdeletetoget(
                 ("publishTime".to_string(), Value::String(row.get::<_, Option<String>>("publish_time").unwrap_or_default())),
                 ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
                 ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+                ("deleted".to_string(), Value::Bool(true)),
             ]));
             Ok(Json(ActionResult::success(result)))
         }
@@ -1436,7 +1437,7 @@ pub async fn data_document_id_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, title, content, author_id, status, publish_time, creator, create_time FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, title, content, author_id, status, publish_time::text, creator, create_time::text FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -1467,7 +1468,7 @@ pub async fn data_document_id_path0(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at::text IS NULL",
             &[&doc_id, &path0],
         )
         .await
@@ -1499,7 +1500,7 @@ pub async fn data_document_id_path0_mockdeletetoget(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
             &[&doc_id, &path0],
         )
         .await
@@ -1536,7 +1537,7 @@ pub async fn data_document_id_path0_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at::text IS NULL",
             &[&doc_id, &path0],
         )
         .await
@@ -1579,7 +1580,7 @@ pub async fn data_document_id_path0_path1_mockdeletetoget(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
             &[&doc_id, &path0],
         )
         .await
@@ -1616,7 +1617,7 @@ pub async fn data_document_id_path0_path1_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at::text IS NULL",
             &[&doc_id, &path0],
         )
         .await
@@ -1644,7 +1645,7 @@ pub async fn data_document_id_path0_path1_path2(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -1676,7 +1677,7 @@ pub async fn data_document_id_path0_path1_path2_mockdeletetoget(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
             &[&doc_id, &path0],
         )
         .await
@@ -1713,7 +1714,7 @@ pub async fn data_document_id_path0_path1_path2_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at::text IS NULL",
             &[&doc_id, &path0],
         )
         .await
@@ -1741,7 +1742,7 @@ pub async fn data_document_id_path0_path1_path2_path3(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -1773,7 +1774,7 @@ pub async fn data_document_id_path0_path1_path2_path3_mockdeletetoget(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
             &[&doc_id, &path0],
         )
         .await
@@ -1810,7 +1811,7 @@ pub async fn data_document_id_path0_path1_path2_path3_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at::text IS NULL",
             &[&doc_id, &path0],
         )
         .await
@@ -1838,7 +1839,7 @@ pub async fn data_document_id_path0_path1_path2_path3_path4(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -1870,7 +1871,7 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_mockdeletetoget(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
             &[&doc_id, &_p0],
         )
         .await
@@ -1907,7 +1908,7 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at::text IS NULL",
             &[&doc_id, &_p0],
         )
         .await
@@ -1935,7 +1936,7 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -1967,7 +1968,7 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_mockdeletetoge
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
             &[&doc_id, &_p0],
         )
         .await
@@ -2004,7 +2005,7 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at::text IS NULL",
             &[&doc_id, &_p0],
         )
         .await
@@ -2032,7 +2033,7 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_path6(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -2064,7 +2065,7 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_path6_mockdele
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
             &[&doc_id, &_p0],
         )
         .await
@@ -2101,7 +2102,7 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_path6_mockputt
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at::text IS NULL",
             &[&doc_id, &_p0],
         )
         .await
@@ -2129,7 +2130,7 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_path6_path7(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -2161,7 +2162,7 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mo
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
             &[&doc_id, &_p0],
         )
         .await
@@ -2198,7 +2199,7 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mo
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, field_name, field_value, create_time::text FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at::text IS NULL",
             &[&doc_id, &_p0],
         )
         .await
@@ -2259,7 +2260,7 @@ pub async fn design_appdict_id_mockdeletetoget(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE id = $1",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE id = $1",
             &[&id],
         )
         .await
@@ -2298,7 +2299,7 @@ pub async fn design_appdict_id_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -2329,7 +2330,7 @@ pub async fn designer_search(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_info_flag ILIKE $1 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_info_flag ILIKE $1 AND deleted_at::text IS NULL",
             &[&format!("%{}%", keyword)],
         )
         .await
@@ -2382,7 +2383,7 @@ pub async fn document_cipher_publish_content(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, cipher_text, person_id, create_time FROM x_cms_document_cipher WHERE doc_id = $1 AND person_id = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, cipher_text, person_id, create_time::text FROM x_cms_document_cipher WHERE doc_id = $1 AND person_id = $2 AND deleted_at::text IS NULL",
             &[&id, &person_id],
         )
         .await
@@ -2420,7 +2421,7 @@ pub async fn document_cipher_publish_content_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, cipher_text, person_id, create_time FROM x_cms_document_cipher WHERE doc_id = $1 AND person_id = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, cipher_text, person_id, create_time::text FROM x_cms_document_cipher WHERE doc_id = $1 AND person_id = $2 AND deleted_at::text IS NULL",
             &[&id, &person_id],
         )
         .await
@@ -2448,7 +2449,7 @@ pub async fn document_cipher_id_permission_read_person_person(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, cipher_text, person_id, create_time FROM x_cms_document_cipher WHERE doc_id = $1 AND person_id = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, cipher_text, person_id, create_time::text FROM x_cms_document_cipher WHERE doc_id = $1 AND person_id = $2 AND deleted_at::text IS NULL",
             &[&doc_id, &person_id],
         )
         .await
@@ -2554,7 +2555,7 @@ pub async fn file_flag_appInfo_appInfoFlag_content(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, size, content_type, content_base64, creator, create_time FROM x_cms_file WHERE app_id = $1 AND deleted_at IS NULL LIMIT 1",
+            "SELECT id, app_id, name, size, content_type, content_base64, creator, create_time::text FROM x_cms_file WHERE app_id = $1 AND deleted_at::text IS NULL LIMIT 1",
             &[&app_info_flag],
         )
         .await
@@ -2585,7 +2586,7 @@ pub async fn file_flag_appInfo_appInfoFlag_download(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, size, content_type, creator, create_time FROM x_cms_file WHERE app_id = $1 AND deleted_at IS NULL LIMIT 1",
+            "SELECT id, app_id, name, size, content_type, creator, create_time::text FROM x_cms_file WHERE app_id = $1 AND deleted_at::text IS NULL LIMIT 1",
             &[&app_info_flag],
         )
         .await
@@ -2622,7 +2623,7 @@ pub async fn file_flag_mockdeletetoget(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, size, content_type, content_base64, creator, create_time FROM x_cms_file WHERE id = $1",
+            "SELECT id, app_id, name, size, content_type, content_base64, creator, create_time::text FROM x_cms_file WHERE id = $1",
             &[&id],
         )
         .await
@@ -2661,7 +2662,7 @@ pub async fn file_id_content(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, content_base64, content_type FROM x_cms_file WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, content_base64, content_type FROM x_cms_file WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -2687,7 +2688,7 @@ pub async fn file_id_download(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, size, content_type, content_base64 FROM x_cms_file WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, name, size, content_type, content_base64 FROM x_cms_file WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -2757,7 +2758,7 @@ pub async fn anonymous_fileinfo_download_document_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -2785,7 +2786,7 @@ pub async fn anonymous_fileinfo_download_document_id_stream(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -2813,7 +2814,7 @@ pub async fn fileinfo_batch_download_doc_docId_site_site(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -2859,7 +2860,7 @@ pub async fn fileinfo_download_document_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -2887,7 +2888,7 @@ pub async fn fileinfo_download_document_id_stream(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE doc_id = $1 AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -2913,7 +2914,7 @@ pub async fn fileinfo_download_transfer_flag_flag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time FROM x_cms_fileinfo WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE id = $1 AND deleted_at::text IS NULL",
             &[&flag],
         )
         .await
@@ -3189,7 +3190,7 @@ pub async fn fileinfo_id_binary_base64_size(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, original_name, size, content_type FROM x_cms_fileinfo WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, original_name, size, content_type FROM x_cms_fileinfo WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -3236,7 +3237,7 @@ pub async fn fileinfo_id_document_documentId(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, file_id, original_name, size, content_type FROM x_cms_fileinfo WHERE file_id = $1 AND doc_id = $2 AND deleted_at IS NULL",
+            "SELECT id, doc_id, file_id, original_name, size, content_type FROM x_cms_fileinfo WHERE file_id = $1 AND doc_id = $2 AND deleted_at::text IS NULL",
             &[&file_id, &doc_id],
         )
         .await
@@ -3284,7 +3285,7 @@ pub async fn fileinfo_id_online_info(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time FROM x_cms_fileinfo WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, file_id, original_name, size, content_type, upload_person, create_time::text FROM x_cms_fileinfo WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -3315,7 +3316,7 @@ pub async fn fileinfo_id_preview_pdf(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, doc_id, file_id, original_name, size, content_type FROM x_cms_fileinfo WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, file_id, original_name, size, content_type FROM x_cms_fileinfo WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -3410,7 +3411,7 @@ pub async fn anonymous_form_v2_lookup_document_docId(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL) AND deleted_at IS NULL",
+            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL) AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -3438,7 +3439,7 @@ pub async fn anonymous_form_v2_lookup_document_docId_mobile(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL) AND deleted_at IS NULL",
+            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL) AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -3466,7 +3467,7 @@ pub async fn anonymous_form_v2_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -3494,7 +3495,7 @@ pub async fn anonymous_form_v2_id_mobile(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, app_id, name, definition, status FROM x_cms_form_v2 WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -3522,7 +3523,7 @@ pub async fn anonymous_form_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, definition, status FROM x_cms_form WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, app_id, name, definition, status FROM x_cms_form WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -3550,7 +3551,7 @@ pub async fn form_formFlag_appinfo_appFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_id, name, definition, status, creator, create_time FROM x_cms_form WHERE app_id = $1 AND deleted_at IS NULL",
+            "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form WHERE app_id = $1 AND deleted_at::text IS NULL",
             &[&app_flag],
         )
         .await
@@ -3624,7 +3625,7 @@ pub async fn form_v2_lookup_document_docId(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, definition, status, creator, create_time FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL) AND deleted_at IS NULL",
+            "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL) AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -3652,7 +3653,7 @@ pub async fn form_v2_lookup_document_docId_mobile(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, definition, status, creator, create_time FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL) AND deleted_at IS NULL",
+            "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = (SELECT form_id FROM x_cms_data_document WHERE id = $1 AND deleted_at::text IS NULL) AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -3688,7 +3689,7 @@ pub async fn form_v2_id_mobile(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, definition, status, creator, create_time FROM x_cms_form_v2 WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -3725,7 +3726,7 @@ pub async fn formversion_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, definition, status, creator, create_time FROM x_cms_form_v2 WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -3829,7 +3830,7 @@ pub async fn output_appInfoFlag_select(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_id, name, config, creator, create_time FROM x_cms_output WHERE app_id = $1 AND deleted_at IS NULL",
+            "SELECT id, app_id, name, config, creator, create_time::text FROM x_cms_output WHERE app_id = $1 AND deleted_at::text IS NULL",
             &[&app_info_flag],
         )
         .await
@@ -4020,7 +4021,7 @@ pub async fn review_v2_search(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, doc_id, person_id, create_time FROM x_cms_comment WHERE content ILIKE $1 AND deleted_at IS NULL",
+            "SELECT id, doc_id, person_id, create_time::text FROM x_cms_comment WHERE content ILIKE $1 AND deleted_at::text IS NULL",
             &[&format!("%{}%", keyword)],
         )
         .await
@@ -4129,7 +4130,7 @@ pub async fn script_id_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, script_content, creator, create_time FROM x_cms_script WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, name, script_content, creator, create_time::text FROM x_cms_script WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -4157,7 +4158,7 @@ pub async fn script_uniqueName_app_flag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, unique_name, script_content, imported, creator, create_time FROM x_cms_script WHERE app_id = $1 AND unique_name = $2 AND deleted_at IS NULL",
+            "SELECT id, app_id, name, unique_name, script_content, imported, creator, create_time::text FROM x_cms_script WHERE app_id = $1 AND unique_name = $2 AND deleted_at::text IS NULL",
             &[&app_flag, &unique_name],
         )
         .await
@@ -4188,7 +4189,7 @@ pub async fn script_uniqueName_app_flag_imported(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, unique_name, script_content, imported, creator, create_time FROM x_cms_script WHERE app_id = $1 AND unique_name = $2 AND imported = true AND deleted_at IS NULL",
+            "SELECT id, app_id, name, unique_name, script_content, imported, creator, create_time::text FROM x_cms_script WHERE app_id = $1 AND unique_name = $2 AND imported = true AND deleted_at::text IS NULL",
             &[&app_flag, &unique_name],
         )
         .await
@@ -4226,7 +4227,7 @@ pub async fn scriptversion_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, definition, status, creator, create_time FROM x_cms_form_v2 WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -4288,7 +4289,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag],
         )
         .await
@@ -4315,7 +4316,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_data(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag],
         )
         .await
@@ -4339,7 +4340,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_dat
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4363,7 +4364,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_pat
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4387,7 +4388,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_pat
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4411,7 +4412,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_pat
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4435,7 +4436,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_pat
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4459,7 +4460,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_pat
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4483,7 +4484,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_pat
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4507,7 +4508,7 @@ pub async fn anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_pat
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4539,7 +4540,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag],
         )
         .await
@@ -4564,7 +4565,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_data(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag],
         )
         .await
@@ -4597,7 +4598,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag],
         )
         .await
@@ -4624,7 +4625,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4666,7 +4667,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_data(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4708,7 +4709,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_d
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4759,7 +4760,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_d
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag],
         )
         .await
@@ -4786,7 +4787,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4837,7 +4838,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag],
         )
         .await
@@ -4864,7 +4865,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4915,7 +4916,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag],
         )
         .await
@@ -4942,7 +4943,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -4993,7 +4994,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag],
         )
         .await
@@ -5020,7 +5021,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -5071,7 +5072,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag],
         )
         .await
@@ -5098,7 +5099,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
         )
         .await
@@ -5149,7 +5150,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time::text FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at::text IS NULL",
             &[&app_dict_flag, &app_info_flag],
         )
         .await
@@ -5202,7 +5203,7 @@ pub async fn templateform_id(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, app_id, name, definition, status, creator, create_time FROM x_cms_form_v2 WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, app_id, name, definition, status, creator, create_time::text FROM x_cms_form_v2 WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -5325,7 +5326,7 @@ pub async fn view_id_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, name, view_config, creator, create_time FROM x_cms_view WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, name, view_config, creator, create_time::text FROM x_cms_view WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -5441,7 +5442,7 @@ pub async fn viewfieldconfig_id_mockputtopost(
         .map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, field_name, field_config, creator, create_time FROM x_cms_viewfieldconfig WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, field_name, field_config, creator, create_time::text FROM x_cms_viewfieldconfig WHERE id = $1 AND deleted_at::text IS NULL",
             &[&id],
         )
         .await
@@ -5477,7 +5478,7 @@ pub async fn viewrecord_document_docId_has_view(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT COUNT(*)::bigint AS cnt FROM x_cms_viewrecord WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT COUNT(*)::bigint AS cnt FROM x_cms_viewrecord WHERE doc_id = $1 AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -5788,7 +5789,7 @@ pub async fn commend_list_paging(
 
     let count_row = client
         .query_one(
-            "SELECT COUNT(*) FROM x_cms_commend WHERE doc_id = $1 AND deleted_at IS NULL",
+            "SELECT COUNT(*) FROM x_cms_commend WHERE doc_id = $1 AND deleted_at::text IS NULL",
             &[&doc_id],
         )
         .await
@@ -5797,7 +5798,7 @@ pub async fn commend_list_paging(
 
     let rows = client
         .query(
-            "SELECT id, doc_id, person_id, create_time FROM x_cms_commend WHERE doc_id = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
+            "SELECT id, doc_id, person_id, create_time::text FROM x_cms_commend WHERE doc_id = $1 AND deleted_at::text IS NULL ORDER BY create_time::text DESC LIMIT $2::bigint OFFSET $3::bigint",
             &[&doc_id, &size, &((page - 1) * size)],
         )
         .await
