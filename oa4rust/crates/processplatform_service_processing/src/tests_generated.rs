@@ -113,7 +113,24 @@ mod tests {
             "cancel_process_instance route should be registered");
     }
 
-    // SKIPPED: work_id_processing not accessible
+    #[tokio::test]
+    async fn test_work_id_processing() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/work/test-id/processing")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "work_id_processing route should be registered");
+    }
+
     #[tokio::test]
     async fn test_work_v2_id_terminate() {
         let pool = shared::testing::test_pool();
@@ -274,4 +291,188 @@ mod tests {
     // SKIPPED: workcompleted_flag_merge not accessible
     // SKIPPED: workcompleted_flag_rollback not accessible
     // SKIPPED: work_v3_retract not accessible
+    #[tokio::test]
+    async fn test_work_start() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/work/test-id/start")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "work_start route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_work_complete() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/work/test-id/complete")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "work_complete route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_task_claim() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/task/test-id/claim")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "task_claim route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_task_complete() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/task/test-id/complete")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "task_complete route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_task_reject() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/task/test-id/reject")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "task_reject route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_task_transfer() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/task/test-id/transfer/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "task_transfer route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_gateway_join() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/gateway/test-id/test-id/join")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "gateway_join route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_gateway_fork() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/service/processing/gateway/fork/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "gateway_fork route should be registered");
+    }
+
+    // SKIPPED: start not accessible
+    // SKIPPED: cancel not accessible
+    // SKIPPED: restore not accessible
+    // SKIPPED: register not accessible
+    #[tokio::test]
+    async fn test_start_timer() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/service/processing/timer/start")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "start_timer route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_cancel_timer() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/processplatform/service/processing/timer/test-id/cancel")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "cancel_timer route should be registered");
+    }
+
 }

@@ -153,7 +153,7 @@ pub async fn bind_poll(
             let token = Uuid::new_v4().to_string();
             let session = session_manager
                 .create_session(person_unique.clone(), token.clone())
-                .await;
+                .await?;
             Ok(Json(ActionResult::success(json!({
                 "status": "confirmed",
                 "token": session.token,

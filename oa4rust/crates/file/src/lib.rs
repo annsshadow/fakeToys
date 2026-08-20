@@ -61,16 +61,10 @@ pub async fn folder_list_top(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
+            let mut entries = vec![
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("person".to_string(), Value::String(row.get("person"))),
-                (
-                    "superior".to_string(),
-                    row.get::<_, Option<String>>("superior")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
                 (
                     "attachmentCount".to_string(),
                     Value::Number(serde_json::Number::from(0)),
@@ -80,7 +74,11 @@ pub async fn folder_list_top(
                     "folderCount".to_string(),
                     Value::Number(serde_json::Number::from(0)),
                 ),
-            ]))
+            ];
+            if let Some(superior) = row.get::<_, Option<String>>("superior") {
+                entries.push(("superior".to_string(), Value::String(superior)));
+            }
+            Value::Object(serde_json::Map::from_iter(entries))
         })
         .collect();
 
@@ -124,16 +122,10 @@ pub async fn folder_list_with_folder(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
+            let mut entries = vec![
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("person".to_string(), Value::String(row.get("person"))),
-                (
-                    "superior".to_string(),
-                    row.get::<_, Option<String>>("superior")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
                 (
                     "attachmentCount".to_string(),
                     Value::Number(serde_json::Number::from(0)),
@@ -143,7 +135,11 @@ pub async fn folder_list_with_folder(
                     "folderCount".to_string(),
                     Value::Number(serde_json::Number::from(0)),
                 ),
-            ]))
+            ];
+            if let Some(superior) = row.get::<_, Option<String>>("superior") {
+                entries.push(("superior".to_string(), Value::String(superior)));
+            }
+            Value::Object(serde_json::Map::from_iter(entries))
         })
         .collect();
 
@@ -183,16 +179,10 @@ pub async fn complex_top(
     let folder_list: Vec<Value> = folder_rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
+            let mut entries = vec![
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("person".to_string(), Value::String(row.get("person"))),
-                (
-                    "superior".to_string(),
-                    row.get::<_, Option<String>>("superior")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
                 (
                     "attachmentCount".to_string(),
                     Value::Number(serde_json::Number::from(0)),
@@ -202,7 +192,11 @@ pub async fn complex_top(
                     "folderCount".to_string(),
                     Value::Number(serde_json::Number::from(0)),
                 ),
-            ]))
+            ];
+            if let Some(superior) = row.get::<_, Option<String>>("superior") {
+                entries.push(("superior".to_string(), Value::String(superior)));
+            }
+            Value::Object(serde_json::Map::from_iter(entries))
         })
         .collect();
 
@@ -223,7 +217,7 @@ pub async fn complex_top(
                 ("person".to_string(), Value::String(row.get("person"))),
                 (
                     "\"referenceType\"".to_string(),
-                    Value::String(row.get::<_, String>("\"referenceType\"")),
+                    Value::String(row.get::<_, Option<String>>("referenceType").unwrap_or_default()),
                 ),
                 (
                     "extension".to_string(),
@@ -364,7 +358,8 @@ pub async fn file_upload(
             Value::Number(serde_json::Number::from(data.len() as i64)),
         ),
         ("mimeType".to_string(), Value::String(mime.to_string())),
-        ("uploaded".to_string(), Value::Bool(true)),
+        ("createTime".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
+        ("updateTime".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -430,7 +425,8 @@ pub(crate) async fn upload_file_record(
             Value::Number(serde_json::Number::from(data.len() as i64)),
         ),
         ("mimeType".to_string(), Value::String(mime)),
-        ("uploaded".to_string(), Value::Bool(true)),
+        ("createTime".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
+        ("updateTime".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
     ]));
 
     Ok(Json(ActionResult::success(result)))
@@ -459,7 +455,7 @@ pub async fn file_download(
 
     let row = client
         .query_opt(
-            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
+            "SELECT id, name, person, reference_type, extension, length, mime_type, create_time::text FROM FILE_FILE WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
         )
         .await
@@ -523,15 +519,15 @@ pub async fn folder_create(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let result = Value::Object(serde_json::Map::from_iter([
+    let mut entries = vec![
         ("id".to_string(), Value::String(id)),
         ("name".to_string(), Value::String(name)),
         ("person".to_string(), Value::String(person)),
-        (
-            "superior".to_string(),
-            superior.map(|s| Value::String(s.to_string())).unwrap_or(Value::Null),
-        ),
-    ]));
+    ];
+    if let Some(superior) = superior {
+        entries.push(("superior".to_string(), Value::String(superior.to_string())));
+    }
+    let result = Value::Object(serde_json::Map::from_iter(entries));
 
     Ok(Json(ActionResult::success(result)))
 }
@@ -576,8 +572,8 @@ pub async fn folder_update(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
             ("name".to_string(), Value::String(name)),
+            ("updateTime".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
         ]),
     ))))
 }
@@ -618,7 +614,7 @@ pub async fn folder_remove(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deletedAt".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
         ]),
     ))))
 }
@@ -644,8 +640,11 @@ pub async fn permission_set(
 
     let target_type = body.get("targetType").and_then(|v| v.as_str()).unwrap_or_default().to_string();
     let target_id = body.get("targetId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
-    let permissions = body.get("permissions").cloned().unwrap_or(Value::Null);
-    let permissions_str = serde_json::to_string(&permissions).unwrap_or_default();
+    let permissions: Option<Value> = body.get("permissions").cloned();
+    let permissions_str = permissions
+        .as_ref()
+        .map(|v| serde_json::to_string(v).unwrap_or_default())
+        .unwrap_or_default();
 
     if target_id.is_empty() {
         return Ok(Json(ActionResult::error("targetId is required")));
@@ -667,7 +666,8 @@ pub async fn permission_set(
             ("id".to_string(), Value::String(id)),
             ("targetType".to_string(), Value::String(target_type)),
             ("targetId".to_string(), Value::String(target_id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("permissions".to_string(), permissions.unwrap_or(Value::Object(serde_json::Map::new()))),
+            ("updateTime".to_string(), Value::String(chrono::Local::now().to_rfc3339())),
         ]),
     ))))
 }

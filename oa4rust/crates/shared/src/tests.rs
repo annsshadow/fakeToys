@@ -79,8 +79,8 @@ mod tests {
 
     async fn make_token(sm: &SessionManager, person: &str) -> String {
         let token = uuid::Uuid::new_v4().to_string();
-        sm.create_session(person.to_string(), token.clone()).await;
-        token
+        let session = sm.create_session(person.to_string(), token.clone()).await.unwrap();
+        session.token
     }
 
     async fn send(

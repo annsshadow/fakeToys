@@ -59,5 +59,22 @@ mod tests {
             "update_control_config route should be registered");
     }
 
-    // SKIPPED: get_calendar_detail not accessible
+    #[tokio::test]
+    async fn test_get_calendar_detail() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/calendar/assemble/control/calendar/detail/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "get_calendar_detail route should be registered");
+    }
+
 }

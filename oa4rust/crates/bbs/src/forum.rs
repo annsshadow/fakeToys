@@ -31,16 +31,13 @@ pub async fn view_all(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "description".to_string(),
-                    row.get::<_, Option<String>>("description")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(v) = row.get::<_, Option<String>>("description") {
+                map.insert("description".to_string(), Value::String(v));
+            }
+            Value::Object(map)
         })
         .collect();
 
@@ -81,17 +78,13 @@ pub async fn view_one(
 
     match row {
         Some(row) => {
-            let data = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "description".to_string(),
-                    row.get::<_, Option<String>>("description")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-            ]));
-            Ok(Json(ActionResult::success(data)))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(v) = row.get::<_, Option<String>>("description") {
+                map.insert("description".to_string(), Value::String(v));
+            }
+            Ok(Json(ActionResult::success(Value::Object(map))))
         }
         None => Ok(Json(ActionResult::error("forum not found"))),
     }

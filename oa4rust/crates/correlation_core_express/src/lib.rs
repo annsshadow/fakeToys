@@ -24,7 +24,7 @@ pub async fn get_status(
     let data = Value::Object(serde_json::Map::from_iter([
         ("status".to_string(), Value::String("running".to_string())),
         ("totalRecords".to_string(), Value::Number(serde_json::Number::from(count))),
-        ("enabled".to_string(), Value::Bool(true)),
+        ("enabled".to_string(), Value::Bool(count > 0)),
     ]));
 
     Ok(Json(ActionResult::success(data)))
@@ -43,7 +43,7 @@ pub async fn sync_correlation(
         .get("count");
 
     let data = Value::Object(serde_json::Map::from_iter([
-        ("synced".to_string(), Value::Bool(true)),
+        ("synced".to_string(), Value::Bool(synced > 0)),
         ("syncedRecords".to_string(), Value::Number(serde_json::Number::from(synced))),
         ("message".to_string(), Value::String("同步完成".to_string())),
     ]));

@@ -307,20 +307,26 @@ pub async fn delete(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let result = client
-        .execute(
+    let row = client
+        .query_opt(
             "UPDATE auth_role SET deleted_at = NOW() \
-             WHERE (id = $1 OR name = $1) AND deleted_at IS NULL",
+             WHERE (id = $1 OR name = $1) AND deleted_at IS NULL \
+             RETURNING id, name, description, disable",
             &[&flag],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
+    let Some(row) = row else {
         return Ok(Json(ActionResult::error("role not found or already deleted")));
-    }
+    };
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("id"))),
+        ("name".to_string(), Value::String(row.get("name"))),
+        ("description".to_string(), Value::String(row.get::<_, Option<String>>("description").unwrap_or_default())),
+        ("disable".to_string(), Value::Bool(row.get("disable"))),
+    ]));
+
+    Ok(Json(ActionResult::success(result)))
 }

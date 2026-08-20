@@ -13,6 +13,14 @@ pub enum AppError {
     #[error("database error: {0}")]
     Database(#[from] sqlx::Error),
 
+    /// Redis 操作失败
+    #[error("redis error: {0}")]
+    Redis(#[from] redis::RedisError),
+
+    /// 其他内部错误（来自 anyhow）
+    #[error("internal error: {0}")]
+    InternalAnyhow(#[from] anyhow::Error),
+
     /// 内部服务器错误（未预期的运行时异常）
     #[error("internal server error")]
     Internal,
@@ -39,7 +47,7 @@ pub enum AppError {
 }
 
 // 将 AppError 转换为 HTTP 响应：
-//   - Database / Internal  → 500 Internal Server Error
+//   - Database / Internal / Redis / InternalAnyhow  → 500 Internal Server Error
 //   - BadRequest           → 400 Bad Request
 //   - Unauthorized         → 401 Unauthorized
 //   - Forbidden            → 403 Forbidden
@@ -51,6 +59,8 @@ impl IntoResponse for AppError {
         let status = match &self {
             AppError::Database(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             AppError::Internal => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::Redis(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+            AppError::InternalAnyhow(_) => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
             AppError::BadRequest(_) => axum::http::StatusCode::BAD_REQUEST,
             AppError::Unauthorized => axum::http::StatusCode::UNAUTHORIZED,
             AppError::Forbidden => axum::http::StatusCode::FORBIDDEN,

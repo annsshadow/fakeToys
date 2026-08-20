@@ -58,7 +58,7 @@ pub async fn update_control_config(
         return Ok(Json(ActionResult::error("id is required")));
     }
 
-    client
+    let result = client
         .execute(
             "UPDATE x_mind_assemble_control_config SET config_data = $1 WHERE id = $2",
             &[&config_data, &config_id],
@@ -68,7 +68,7 @@ pub async fn update_control_config(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(config_id.to_string())),
-        ("updated".to_string(), Value::Bool(true)),
+        ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
     ])))))
 }
 
@@ -206,7 +206,7 @@ pub async fn update_folder(
     let name = payload.get("name").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get("name"));
     let content = payload.get("content").and_then(|v| v.as_str()).map(|s| s.to_string()).unwrap_or_else(|| row.get("content"));
 
-    client
+    let result = client
         .execute(
             "UPDATE x_mind SET name = $1, content = $2 WHERE id = $3 AND deleted_at IS NULL",
             &[&name, &content, &id],
@@ -217,7 +217,7 @@ pub async fn update_folder(
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
         ("name".to_string(), Value::String(name)),
-        ("updated".to_string(), Value::Bool(true)),
+        ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
     ])))))
 }
 
@@ -265,7 +265,7 @@ pub async fn folder_move_folderId(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("folderId".to_string(), Value::String(folder_id)),
-            ("moved".to_string(), Value::Bool(true)),
+            ("moved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -320,7 +320,7 @@ pub async fn folder_id_force(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }

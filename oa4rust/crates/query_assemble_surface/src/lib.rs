@@ -143,7 +143,7 @@ pub async fn save_surface(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
             ("name".to_string(), Value::String(name)),
             ("category".to_string(), Value::String(category)),
             ("content".to_string(), Value::String(content)),
@@ -169,7 +169,7 @@ pub async fn delete_surface(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -232,7 +232,6 @@ pub async fn importmodel_execute_record_recordId(
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("modelFlag".to_string(), Value::String(row.get("model_flag"))),
                     ("data".to_string(), Value::String(row.get("data"))),
-                    ("executed".to_string(), Value::Bool(true)),
                 ]),
             ))))
         }
@@ -514,7 +513,7 @@ pub async fn importmodel_id_execute(
     match row {
         Some(row) => {
             let record_id = uuid::Uuid::new_v4().to_string();
-            client
+            let result = client
                 .execute(
                     "INSERT INTO x_query_import_model_record (id, model_flag, import_model_id, create_time) VALUES ($1, $2, $3, NOW())",
                     &[&record_id, &row.get::<_, String>("model_flag"), &id],
@@ -526,7 +525,7 @@ pub async fn importmodel_id_execute(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
                     ("recordId".to_string(), Value::String(record_id)),
-                    ("executed".to_string(), Value::Bool(true)),
+                    ("executed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
                 ]),
             ))))
         }
@@ -940,7 +939,7 @@ pub async fn table_reload_dynamic(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("reloaded".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-            ("success".to_string(), Value::Bool(true)),
+            ("success".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1047,7 +1046,7 @@ pub async fn table_tableFlag_row_delete_all(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("tableFlag".to_string(), Value::String(table_flag)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
             ("count".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
@@ -1196,7 +1195,7 @@ pub async fn table_tableFlag_row_id_mockputtopost(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("tableFlag".to_string(), Value::String(table_flag)),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1227,7 +1226,7 @@ pub async fn table_tableFlag_row_id_part_update(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("tableFlag".to_string(), Value::String(table_flag)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1352,7 +1351,7 @@ pub async fn view_flag_flag_query_queryFlag_bundle_mockputtopost(
         serde_json::Map::from_iter([
             ("viewFlag".to_string(), Value::String(flag)),
             ("queryFlag".to_string(), Value::String(query_flag)),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1412,7 +1411,7 @@ pub async fn view_flag_flag_query_queryFlag_excel_mockputtopost(
         serde_json::Map::from_iter([
             ("viewFlag".to_string(), Value::String(flag)),
             ("queryFlag".to_string(), Value::String(query_flag)),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1438,7 +1437,6 @@ pub async fn view_flag_flag_query_queryFlag_execute(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("viewFlag".to_string(), Value::String(flag)),
-                    ("executed".to_string(), Value::Bool(true)),
                 ]),
             ))))
         }
@@ -1472,7 +1470,7 @@ pub async fn view_flag_flag_query_queryFlag_execute_mockputtopost(
         serde_json::Map::from_iter([
             ("viewFlag".to_string(), Value::String(flag)),
             ("queryFlag".to_string(), Value::String(query_flag)),
-            ("executed".to_string(), Value::Bool(true)),
+            ("executed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1631,7 +1629,7 @@ pub async fn view_id_bundle_mockputtopost(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1716,7 +1714,7 @@ pub async fn view_id_excel_mockputtopost(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1740,7 +1738,6 @@ pub async fn view_id_execute(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
-                    ("executed".to_string(), Value::Bool(true)),
                 ]),
             ))))
         }
@@ -1772,7 +1769,7 @@ pub async fn view_id_execute_mockputtopost(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("executed".to_string(), Value::Bool(true)),
+            ("executed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }

@@ -3,7 +3,7 @@ use axum::{
     routing::{get, post},
     Json as AxumJson, Router,
 };
-use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
+use sea_orm::{ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect, Statement};
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
@@ -94,28 +94,24 @@ pub async fn page_list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("portalId".to_string(), Value::String(m.portal_id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
-                (
-                    "content".to_string(),
-                    m.content
+            let mut obj = serde_json::Map::new();
+            obj.insert("id".to_string(), Value::String(m.id.clone()));
+            obj.insert("portalId".to_string(), Value::String(m.portal_id.clone()));
+            obj.insert("name".to_string(), Value::String(m.name.clone()));
+            if let Some(ref v) = m.content {
+                obj.insert("content".to_string(), Value::String(v.clone()));
+            }
+            obj.insert("status".to_string(), Value::String(m.status.clone()));
+            obj.insert(
+                "createTime".to_string(),
+                Value::String(
+                    m.create_time
                         .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
+                        .map(|dt| dt.to_string())
+                        .unwrap_or_default(),
                 ),
-                ("status".to_string(), Value::String(m.status.clone())),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .clone()
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]))
+            );
+            Value::Object(obj)
         })
         .collect();
 
@@ -143,28 +139,24 @@ pub async fn page_get(
 
     match model {
         Some(m) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("portalId".to_string(), Value::String(m.portal_id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
-                (
-                    "content".to_string(),
-                    m.content
+            let mut obj = serde_json::Map::new();
+            obj.insert("id".to_string(), Value::String(m.id.clone()));
+            obj.insert("portalId".to_string(), Value::String(m.portal_id.clone()));
+            obj.insert("name".to_string(), Value::String(m.name.clone()));
+            if let Some(ref v) = m.content {
+                obj.insert("content".to_string(), Value::String(v.clone()));
+            }
+            obj.insert("status".to_string(), Value::String(m.status.clone()));
+            obj.insert(
+                "createTime".to_string(),
+                Value::String(
+                    m.create_time
                         .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
+                        .map(|dt| dt.to_string())
+                        .unwrap_or_default(),
                 ),
-                ("status".to_string(), Value::String(m.status.clone())),
-                (
-                    "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .clone()
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
-                ),
-            ]));
+            );
+            let result = Value::Object(obj);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("page not found"))),
@@ -225,8 +217,6 @@ pub async fn page_update(
     db: Extension<DatabaseConnection>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    use portal_page::ActiveModel;
-
     let id = payload
         .get("id")
         .and_then(|v| v.as_str())
@@ -247,28 +237,23 @@ pub async fn page_update(
         .and_then(|v| v.as_str())
         .unwrap_or("active");
 
-    let model = portal_page::Entity::find()
-        .filter(portal_page::Column::Id.eq(&id))
-        .filter(portal_page::Column::DeletedAt.is_null())
-        .one(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?
-        .ok_or_else(|| AppError::NotFound)?;
-
-    let mut active: ActiveModel = model.into();
-    active.name = sea_orm::ActiveValue::Set(name);
-    active.content = sea_orm::ActiveValue::Set(Some(content));
-    active.status = sea_orm::ActiveValue::Set(status.to_string());
-
-    active
-        .update(&db.0)
+    let result = db.0
+        .execute(Statement::from_sql_and_values(
+            sea_orm::DbBackend::Postgres,
+            "UPDATE portal_page SET name = $1, content = $2, status = $3 WHERE id = $4 AND deleted_at IS NULL",
+            vec![name.into(), content.into(), status.into(), id.clone().into()],
+        ))
         .await
         .map_err(|_| AppError::Internal)?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound);
+    }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(result.rows_affected() > 0)),
         ]),
     ))))
 }
@@ -277,34 +262,31 @@ pub async fn page_remove(
     db: Extension<DatabaseConnection>,
     AxumJson(payload): AxumJson<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    use portal_page::ActiveModel;
-
     let id = payload
         .get("id")
         .and_then(|v| v.as_str())
         .ok_or(AppError::BadRequest("id is required".to_string()))?;
     let id = id.to_string();
 
-    let model = portal_page::Entity::find()
-        .filter(portal_page::Column::Id.eq(&id))
-        .filter(portal_page::Column::DeletedAt.is_null())
-        .one(&db.0)
-        .await
-        .map_err(|_| AppError::Internal)?
-        .ok_or_else(|| AppError::NotFound)?;
+    let now = chrono::Utc::now().naive_utc();
 
-    let mut active: ActiveModel = model.into();
-    active.deleted_at = sea_orm::ActiveValue::Set(Some(chrono::Utc::now().naive_utc()));
-
-    active
-        .update(&db.0)
+    let result = db.0
+        .execute(Statement::from_sql_and_values(
+            sea_orm::DbBackend::Postgres,
+            "UPDATE portal_page SET deleted_at = $1 WHERE id = $2 AND deleted_at IS NULL",
+            vec![now.into(), id.clone().into()],
+        ))
         .await
         .map_err(|_| AppError::Internal)?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound);
+    }
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result.rows_affected() > 0)),
         ]),
     ))))
 }
@@ -346,6 +328,8 @@ pub fn portal_core_entity_router(_pool: deadpool_postgres::Pool) -> Router {
         .route("/jaxrs/portal/portal/list", get(portal_list))
         .route("/jaxrs/portal/widget/list", get(widget_list))
         .route("/jaxrs/portal/page/list", get(page_list))
+        .route("/jaxrs/portal/page/get/{id}", get(page_get))
+        .route("/jaxrs/portal/page/create", post(page_create))
         .route("/jaxrs/portal/page/update", post(page_update))
         .route("/jaxrs/portal/page/remove", post(page_remove))
         .route("/jaxrs/portal/script/list", get(script_list))

@@ -5,6 +5,7 @@
 
 pub mod allowlist;
 pub mod comparator;
+pub mod endpoints;
 pub mod reporter;
 
 pub use allowlist::{DiffAllowlist, AllowlistEntry};

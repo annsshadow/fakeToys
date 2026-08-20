@@ -101,7 +101,7 @@ pub async fn send_message(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let id = uuid::Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_console_message (xid, xtoken, xmessage) VALUES ($1, $2, $3)",
             &[&id, &token, &message],
@@ -111,7 +111,7 @@ pub async fn send_message(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("sent".to_string(), Value::Bool(true)),
+            ("sent".to_string(), Value::Bool(result > 0)),
             ("token".to_string(), Value::String(token)),
             ("message".to_string(), Value::String(message)),
         ]),
@@ -123,7 +123,7 @@ pub async fn clear_cache(
     axum::extract::Path(cache_type): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let result = client
         .execute("DELETE FROM x_console_cache WHERE xtype = $1", &[&cache_type])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -131,7 +131,7 @@ pub async fn clear_cache(
     let now = chrono::Local::now().to_rfc3339();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("cleared".to_string(), Value::Bool(true)),
+            ("cleared".to_string(), Value::Bool(result > 0)),
             ("type".to_string(), Value::String(cache_type)),
             ("clearedAt".to_string(), Value::String(now)),
         ]),

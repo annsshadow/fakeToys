@@ -26,19 +26,20 @@ pub async fn record_list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("\"userId\"".to_string(), Value::String(m.user_id.clone())),
-                ("checkInTime".to_string(), Value::String(m.check_in_time.clone())),
-                (
-                    "checkOutTime".to_string(),
+            Value::Object(serde_json::Map::from_iter(
+                [
+                    ("id".to_string(), Value::String(m.id.clone())),
+                    ("\"userId\"".to_string(), Value::String(m.user_id.clone())),
+                    ("checkInTime".to_string(), Value::String(m.check_in_time.clone())),
+                    ("status".to_string(), Value::String(m.status.clone())),
+                ]
+                .into_iter()
+                .chain(
                     m.check_out_time
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
+                        .as_ref()
+                        .map(|s| ("checkOutTime".to_string(), Value::String(s.clone()))),
                 ),
-                ("status".to_string(), Value::String(m.status.clone())),
-            ]))
+            ))
         })
         .collect();
 
@@ -117,15 +118,15 @@ pub async fn record_create(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(new_id)),
-            ("\"userId\"".to_string(), Value::String(user_id)),
-            ("checkInTime".to_string(), Value::String(check_in_time)),
-            ("status".to_string(), Value::String(status)),
-            ("created".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let created = attendance_record::Entity::find_by_id(new_id.clone())
+        .one(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(
+        serde_json::to_value(created).map_err(|_| AppError::Internal)?,
+    )))
 }
 
 /// 更新考勤记录
@@ -155,12 +156,15 @@ pub async fn record_update(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let updated = attendance_record::Entity::find_by_id(id.clone())
+        .one(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(
+        serde_json::to_value(updated).map_err(|_| AppError::Internal)?,
+    )))
 }
 
 /// 删除考勤记录
@@ -180,7 +184,7 @@ pub async fn record_delete(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(deleted.rows_affected > 0)),
         ]),
     ))))
 }
@@ -220,15 +224,15 @@ pub async fn rule_create(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(new_id)),
-            ("name".to_string(), Value::String(name)),
-            ("\"startTime\"".to_string(), Value::String(start_time)),
-            ("\"endTime\"".to_string(), Value::String(end_time)),
-            ("created".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let created = attendance_rule::Entity::find_by_id(new_id.clone())
+        .one(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(
+        serde_json::to_value(created).map_err(|_| AppError::Internal)?,
+    )))
 }
 
 /// 更新考勤规则
@@ -273,12 +277,15 @@ pub async fn rule_update(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let updated = attendance_rule::Entity::find_by_id(id.clone())
+        .one(&db.0)
+        .await
+        .map_err(|_| AppError::Internal)?
+        .ok_or_else(|| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(
+        serde_json::to_value(updated).map_err(|_| AppError::Internal)?,
+    )))
 }
 
 /// 删除考勤规则
@@ -298,7 +305,7 @@ pub async fn rule_delete(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(deleted.rows_affected > 0)),
         ]),
     ))))
 }

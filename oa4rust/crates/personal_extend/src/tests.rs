@@ -1,6 +1,5 @@
 use super::avatar;
 use super::personal as personal_mod;
-use super::password;
 use crate::routes::personal_extend_router;
 use auth::SessionManager;
 use deadpool_postgres::Pool;
@@ -183,7 +182,7 @@ fn test_session_manager_integration() {
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {
         let sm = SessionManager::new();
-        sm.create_session("test_user".to_string(), "test_token".to_string()).await;
+        sm.create_session("test_user".to_string(), "test_token".to_string()).await.unwrap();
 
         let session = sm.validate_session("test_token").await;
         assert!(session.is_some());

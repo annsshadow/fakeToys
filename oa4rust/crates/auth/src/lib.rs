@@ -8,11 +8,11 @@ use chrono::{DateTime, Duration, Utc};
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::error::AppError;
-use shared::response::ActionResult;
+use shared::{db::dialect, error::AppError, response::{option_to_json, row_opt_json, ActionResult}};
 use std::collections::HashMap;
 use std::sync::{Mutex, OnceLock};
 use uuid::Uuid;
+use captcha_store::captcha_store;
 
 mod ldap_auth;
 pub mod andfx;
@@ -22,10 +22,12 @@ pub mod check_token;
 pub mod model;
 pub mod mpweixin;
 pub mod oauth;
+pub mod oidc;
 pub mod password;
 pub mod person;
 pub mod qiyeweixin;
 pub mod safe_logout;
+pub mod sms;
 pub mod sso;
 pub mod switch_user;
 pub mod two_factor;
@@ -98,13 +100,17 @@ pub async fn login(
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
+         password_hash, locked, {}, {} FROM auth_person \
+         WHERE unique_id = {} AND deleted_at IS NULL",
+        d.cast_text("change_password_time"),
+        d.cast_text("password_expired_time"),
+        d.param(1),
+    );
     let row = client
-        .query_one(
-            "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
-             password_hash, locked, change_password_time::text, password_expired_time::text FROM auth_person \
-             WHERE unique_id = $1 AND deleted_at IS NULL",
-            &[&req.credential],
-        )
+        .query_one(&sql, &[&req.credential])
         .await
         .map_err(|_| AppError::Unauthorized)?;
 
@@ -198,7 +204,7 @@ pub async fn login(
     };
 
     let token = Uuid::new_v4().to_string();
-    let session = session_manager.create_session(person_unique.clone(), token.clone()).await;
+    let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
 
     let response = ActionResult::success(LoginResponse {
         token: session.token,
@@ -244,7 +250,7 @@ pub async fn refresh(
     let session = session_manager.validate_session(&header_token).await.ok_or(AppError::Unauthorized)?;
 
     let new_token = Uuid::new_v4().to_string();
-    session_manager.create_session(session.person_unique, new_token.clone()).await;
+    session_manager.create_session(session.person_unique, new_token.clone()).await?;
     session_manager.remove_session(old_token).await;
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
@@ -287,21 +293,27 @@ pub async fn whoami(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT id, unique_id, name, mobile FROM auth_person \
-             WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
+            &dialect().format_sql(
+                "SELECT id, unique_id, name, mobile FROM auth_person \
+                 WHERE unique_id = $1 AND locked = false AND deleted_at IS NULL",
+            ),
             &[&session.person_unique],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(row) => Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-            ("authenticated".to_string(), Value::Bool(true)),
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("unique".to_string(), Value::String(row.get("unique_id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("mobile".to_string(), row.get::<_, Option<String>>("mobile").map(Value::String).unwrap_or(Value::Null)),
-        ]))))),
+        Some(row) => {
+            let mut map = serde_json::Map::new();
+            map.insert("authenticated".to_string(), Value::Bool(true));
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("unique".to_string(), Value::String(row.get("unique_id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(val) = row_opt_json::<String>(&row, "mobile") {
+                map.insert("mobile".to_string(), val);
+            }
+            Ok(Json(ActionResult::success(Value::Object(map))))
+        }
         None => Ok(Json(ActionResult::error("user not found"))),
     }
 }
@@ -556,7 +568,7 @@ pub async fn code(
     let person_position: Option<String> = row.get("position");
 
     let token = Uuid::new_v4().to_string();
-    let session = session_manager.create_session(person_unique.clone(), token.clone()).await;
+    let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
 
     Ok(Json(ActionResult::success(TwoFactorLoginResponse {
         token: session.token,
@@ -594,12 +606,14 @@ pub async fn unit_list(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("parentId".to_string(), row.get::<_, Option<String>>("parent_id").map(Value::String).unwrap_or(Value::Null)),
-                ("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level")))),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(val) = row_opt_json::<String>(row, "parent_id") {
+                map.insert("parentId".to_string(), val);
+            }
+            map.insert("level".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("level"))));
+            Value::Object(map)
         })
         .collect();
 
@@ -625,11 +639,13 @@ pub async fn role_list(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), row.get::<_, Option<String>>("description").map(Value::String).unwrap_or(Value::Null)),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(val) = row_opt_json::<String>(row, "description") {
+                map.insert("description".to_string(), val);
+            }
+            Value::Object(map)
         })
         .collect();
 
@@ -666,6 +682,38 @@ pub async fn group_list(
         ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
         ("data".to_string(), Value::Array(data)),
     ])))))
+}
+
+// --- 验证码 + 短信集成函数 ---
+
+/// 生成验证码（使用 auth::captcha 模块），返回 (captcha_id, data_uri)
+pub async fn captcha_generate() -> Result<(String, String), AppError> {
+    let Json(result) = crate::captcha::captcha_default().await?;
+    let data = result.data.ok_or(AppError::Internal)?;
+    let id = data
+        .get("captchaId")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::Internal)?
+        .to_string();
+    let image = data
+        .get("image")
+        .and_then(|v| v.as_str())
+        .ok_or(AppError::Internal)?
+        .to_string();
+    Ok((id, image))
+}
+
+/// 校验验证码（使用 captcha_store crate）
+pub async fn captcha_verify(captcha_id: &str, answer: &str) -> Result<bool, AppError> {
+    use captcha_store::VerifyResult;
+    match captcha_store::captcha_store().verify(captcha_id, answer) {
+        VerifyResult::Ok => Ok(true),
+        VerifyResult::TooManyAttempts => {
+            Err(AppError::BadRequest("too many attempts".to_string()))
+        }
+        VerifyResult::Expired => Err(AppError::BadRequest("captcha expired".to_string())),
+        _ => Err(AppError::BadRequest("invalid captcha".to_string())),
+    }
 }
 
 // --- 路由注册 ---
@@ -722,7 +770,9 @@ pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionMan
             "/jaxrs/authentication/oauth/bind/name/{name}/code/{code}/redirecturi/{redirectUri}",
             get(oauth::oauth_bind_name),
         )
+        .merge(oidc::oidc_router())
         .merge(captcha::captcha_router())
+        .merge(sms::sms_router())
         .merge(bind::bind_router())
         .merge(welink::router())
         .merge(mpweixin::router())
@@ -738,6 +788,9 @@ pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionMan
             get(sso::sso_get_login),
         )
         .route("/jaxrs/authentication/switchuser", post(switch_user::switch_user))
+        .route("/jaxrs/authentication/unit/list", get(unit_list))
+        .route("/jaxrs/authentication/role/list", get(role_list))
+        .route("/jaxrs/authentication/group/list", get(group_list))
         .route(
             "/jaxrs/andfx/moa/sso/token/{token}/enter/{enterId}",
             get(andfx::andfx_moa_sso),

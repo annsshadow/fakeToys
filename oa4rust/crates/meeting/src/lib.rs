@@ -5,7 +5,7 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{error::AppError, response::{option_to_json, row_opt_json, ActionResult}};
 
 pub mod routes;
 
@@ -89,17 +89,31 @@ pub async fn room_list(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("buildingId".to_string(), row.get::<_, Option<String>>("building_id").map(|s| Value::String(s)).unwrap_or(Value::Null)),
-                ("floor".to_string(), row.get::<_, Option<String>>("floor").map(|s| Value::String(s)).unwrap_or(Value::Null)),
-                ("capacity".to_string(), row.get::<_, Option<i32>>("capacity").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
-                ("equipment".to_string(), row.get::<_, Option<String>>("equipment").and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(Value::Null)),
-                ("description".to_string(), row.get::<_, Option<String>>("description").map(|s| Value::String(s)).unwrap_or(Value::Null)),
-                ("photo".to_string(), row.get::<_, Option<String>>("photo").map(|s| Value::String(s)).unwrap_or(Value::Null)),
-                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(val) = row_opt_json::<String>(row, "building_id") {
+                map.insert("buildingId".to_string(), val);
+            }
+            if let Some(val) = row_opt_json::<String>(row, "floor") {
+                map.insert("floor".to_string(), val);
+            }
+            if let Some(val) = row_opt_json::<i32>(row, "capacity") {
+                map.insert("capacity".to_string(), val);
+            }
+            if let Some(val) = option_to_json::<Value>(row.get::<_, Option<String>>("equipment").and_then(|s| serde_json::from_str(&s).ok())) {
+                map.insert("equipment".to_string(), val);
+            }
+            if let Some(val) = row_opt_json::<String>(row, "description") {
+                map.insert("description".to_string(), val);
+            }
+            if let Some(val) = row_opt_json::<String>(row, "photo") {
+                map.insert("photo".to_string(), val);
+            }
+            if let Some(val) = row_opt_json::<i32>(row, "order_number") {
+                map.insert("orderNumber".to_string(), val);
+            }
+            Value::Object(map)
         })
         .collect();
 
@@ -137,14 +151,20 @@ pub async fn building_list(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("address".to_string(), row.get::<_, Option<String>>("address").map(Value::String).unwrap_or(Value::Null)),
-                ("description".to_string(), row.get::<_, Option<String>>("description").map(Value::String).unwrap_or(Value::Null)),
-                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(val) = row_opt_json::<String>(row, "address") {
+                map.insert("address".to_string(), val);
+            }
+            if let Some(val) = row_opt_json::<String>(row, "description") {
+                map.insert("description".to_string(), val);
+            }
+            if let Some(val) = row_opt_json::<i32>(row, "order_number") {
+                map.insert("orderNumber".to_string(), val);
+            }
+            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            Value::Object(map)
         })
         .collect();
 
@@ -182,11 +202,13 @@ pub async fn openmeeting_list_room(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("url".to_string(), row.get::<_, Option<String>>("url").map(Value::String).unwrap_or(Value::Null)),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            if let Some(val) = row_opt_json::<String>(row, "url") {
+                map.insert("url".to_string(), val);
+            }
+            Value::Object(map)
         })
         .collect();
 

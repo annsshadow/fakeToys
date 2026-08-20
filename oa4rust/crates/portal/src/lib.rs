@@ -111,14 +111,31 @@ pub async fn portal_list(
     ),
     tag = "portal"
 )]
-pub async fn list_portal_category() -> Result<Json<ActionResult<Value>>, AppError> {
-    let data = vec![
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String("cat-1".to_string())),
-            ("name".to_string(), Value::String("Category 1".to_string())),
-            ("count".to_string(), Value::Number(serde_json::Number::from(0_i64))),
-        ]))
-    ];
+pub async fn list_portal_category(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT category, COUNT(*) as cnt FROM x_portal WHERE deleted_at IS NULL AND category IS NOT NULL GROUP BY category ORDER BY category",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let category: String = row.get("category");
+            let count: i64 = row.get("cnt");
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(category.clone())),
+                ("name".to_string(), Value::String(category)),
+                ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+            ]))
+        })
+        .collect();
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
@@ -290,7 +307,7 @@ pub async fn save_page(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -329,7 +346,7 @@ pub async fn delete_page(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }

@@ -26,13 +26,23 @@ pub async fn user_setting(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("mobile".to_string(), row.get::<_, Option<String>>("mobile").map(Value::String).unwrap_or(Value::Null)),
-        ("email".to_string(), row.get::<_, Option<String>>("email").map(Value::String).unwrap_or(Value::Null)),
-        ("icon".to_string(), row.get::<_, Option<String>>("icon").map(Value::String).unwrap_or(Value::Null)),
-        ("theme".to_string(), row.get::<_, Option<String>>("theme").map(Value::String).unwrap_or(Value::Null)),
-        ("lang".to_string(), row.get::<_, Option<String>>("lang").map(Value::String).unwrap_or(Value::Null)),
-    ]));
+    let mut map = serde_json::Map::new();
+    if let Some(v) = row.get::<_, Option<String>>("mobile") {
+        map.insert("mobile".to_string(), Value::String(v));
+    }
+    if let Some(v) = row.get::<_, Option<String>>("email") {
+        map.insert("email".to_string(), Value::String(v));
+    }
+    if let Some(v) = row.get::<_, Option<String>>("icon") {
+        map.insert("icon".to_string(), Value::String(v));
+    }
+    if let Some(v) = row.get::<_, Option<String>>("theme") {
+        map.insert("theme".to_string(), Value::String(v));
+    }
+    if let Some(v) = row.get::<_, Option<String>>("lang") {
+        map.insert("lang".to_string(), Value::String(v));
+    }
+    let data = Value::Object(map);
 
     Ok(Json(ActionResult::success(data)))
 }

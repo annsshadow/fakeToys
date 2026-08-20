@@ -194,7 +194,7 @@ pub async fn list_check_in_records(
                     "checkOutTime".to_string(),
                     row.get::<_, Option<String>>("check_out_time")
                         .map(Value::String)
-                        .unwrap_or(Value::Null),
+                        .unwrap_or_default(),
                 ),
                 ("status".to_string(), Value::String(row.get("status"))),
             ]))
@@ -283,7 +283,7 @@ pub async fn submit_appeal(
 
     let new_id = uuid::Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_attendance_appeal_info (id, person_id, appeal_date, reason, appeal_status, creator, create_time) VALUES ($1, $2, $3, $4, 'appealed', $5, NOW())",
             &[&new_id, &person_id, &appeal_date, &reason, &creator],
@@ -297,7 +297,7 @@ pub async fn submit_appeal(
             ("personId".to_string(), Value::String(person_id)),
             ("appealDate".to_string(), Value::String(appeal_date)),
             ("status".to_string(), Value::String("appealed".to_string())),
-            ("submitted".to_string(), Value::Bool(true)),
+            ("submitted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -326,7 +326,7 @@ pub async fn audit_appeal(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("audited".to_string(), Value::Bool(true)),
+            ("audited".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -352,7 +352,7 @@ pub async fn archive_appeal(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("archived".to_string(), Value::Bool(true)),
+            ("archived".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
