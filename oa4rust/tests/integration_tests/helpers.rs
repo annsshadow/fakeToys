@@ -1,15 +1,18 @@
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Context as _;
 use base64::Engine;
 use chrono::NaiveDateTime;
+use deadpool_postgres::Pool;
 use hmac::Mac;
 use oa4rust::create_app;
 use shared::{
     rate_limit::RateLimiter,
     session::SessionManager,
 };
+use super::db::TestPool;
 use tokio::net::TcpListener;
 use tokio::task::JoinHandle;
 
@@ -19,17 +22,20 @@ use tokio::task::JoinHandle;
 
 /// Spin up the full oa4rust application on a random available port.
 ///
-/// Returns (SocketAddr, JoinHandle, admin_token).  The JoinHandle must be
+/// Returns (SocketAddr, JoinHandle, admin_token). The JoinHandle must be
 /// aborted by the caller when the scenario is done.
 ///
-/// The pool's session manager is initialised with the pool so that
-/// auth_session rows written by setup are visible to the middleware's
-/// DB-backed validate_session fallback.
-pub async fn setup_test_server(pool: deadpool_postgres::Pool) -> anyhow::Result<(SocketAddr, JoinHandle<()>, String)> {
-    let session_manager = SessionManager::with_pool(pool.clone());
+/// Requires PostgreSQL pool (application uses deadpool_postgres::Pool).
+pub async fn setup_test_server(pool: Arc<TestPool>) -> anyhow::Result<(SocketAddr, JoinHandle<()>, String)> {
+    let pg_pool = pool
+        .as_pg()
+        .cloned()
+        .expect("setup_test_server requires PostgreSQL pool; MySQL scenario tests are not yet supported");
+
+    let session_manager = SessionManager::with_pool(pg_pool.clone());
     let rate_limiter = RateLimiter::new();
 
-    let app = create_app(pool.clone(), session_manager.clone(), rate_limiter)
+    let app = create_app(pg_pool.clone(), session_manager.clone(), rate_limiter)
         .await
         .context("failed to build app for integration test")?;
 
@@ -51,7 +57,6 @@ pub async fn setup_test_server(pool: deadpool_postgres::Pool) -> anyhow::Result<
         }
     });
 
-    // Brief pause to let the server start accepting connections
     tokio::time::sleep(Duration::from_millis(200)).await;
 
     Ok((addr, handle, token))
@@ -59,13 +64,18 @@ pub async fn setup_test_server(pool: deadpool_postgres::Pool) -> anyhow::Result<
 
 /// Insert a test admin user and role assignments, create a session,
 /// and return the raw token (no HMAC signature when no SESSION_HMAC_SECRET).
+///
+/// Accepts `&TestPool`; only PostgreSQL is currently supported for seeding.
 pub async fn seed_test_data(
-    pool: &deadpool_postgres::Pool,
+    pool: &TestPool,
     session_manager: &SessionManager,
 ) -> anyhow::Result<String> {
-    let client = pool.get().await.context("failed to get pool client for seeding")?;
+    let pg_pool = pool
+        .as_pg()
+        .expect("seed_test_data requires PostgreSQL pool; MySQL seeding not yet supported");
 
-    // Insert admin person (idempotent via ON CONFLICT)
+    let client = pg_pool.get().await.context("failed to get pool client for seeding")?;
+
     client
         .execute(
             "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
@@ -75,14 +85,12 @@ pub async fn seed_test_data(
                 &"person-it-admin",
                 &"it-admin",
                 &"IT Admin",
-                // bcrypt hash of "password123" — rounds=4 for speed in tests
                 &"$2b$04$eKzG7rDxhGXY/bIqz.WZHO0E4XLhK.1qZJ9IoG6q7oB7IoG6q7oBm",
             ],
         )
         .await
         .context("insert admin person failed")?;
 
-    // Insert admin role
     client
         .execute(
             "INSERT INTO auth_role (id, name, description, disable, deleted_at) \
@@ -93,7 +101,6 @@ pub async fn seed_test_data(
         .await
         .context("insert admin role failed")?;
 
-    // Assign admin role to test person
     client
         .execute(
             "INSERT INTO auth_person_role (person_id, role_id, unit_id) \
@@ -104,7 +111,6 @@ pub async fn seed_test_data(
         .await
         .context("insert person_role failed")?;
 
-    // Insert unit for the role assignment
     client
         .execute(
             "INSERT INTO auth_unit (id, name, level) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING",
@@ -119,7 +125,6 @@ pub async fn seed_test_data(
         .create_session("it-admin".to_string(), token.clone())
         .await?;
 
-    // Persist the session to DB via direct insert (mirrors create_session's DB write)
     let signed_token = if let Ok(secret) = std::env::var("SESSION_HMAC_SECRET") {
         let mut mac = hmac::Hmac::<sha2::Sha256>::new_from_slice(secret.as_bytes())
             .expect("HMAC init");
@@ -130,8 +135,6 @@ pub async fn seed_test_data(
         session.token.clone()
     };
 
-    // Persist the session to DB via direct insert (mirrors create_session's DB write).
-    // Ignore errors: the in-memory map below is the source of truth for tests.
     let _ = client
         .execute(
             "INSERT INTO auth_session (token, person_id, expires_at, created_at) \
@@ -146,8 +149,6 @@ pub async fn seed_test_data(
         )
         .await;
 
-    // Also register the session in the session manager's in-memory map
-    // so validate_session finds it without a DB round-trip.
     session_manager
         .sessions
         .write()

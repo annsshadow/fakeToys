@@ -29,8 +29,7 @@ pub mod testing;
 pub use deadpool_postgres::Pool;
 pub use rate_limit::RateLimiter;
 pub use session::SessionManager;
-
-use crate::error::AppError;
+pub use crate::error::AppError;
 
 pub use messaging::{
     Envelope, InMemoryBus, MessageBus, MessagingError, MessagingResult, RedisPubSubBus, TokenThresholdEvent,

@@ -57,25 +57,39 @@ impl RateLimiter {
     /// 惰性初始化 Redis（同步入口，创建临时 tokio runtime）。
     /// 成功返回 true，失败降级为内存模式。
     pub fn init_redis(&self) -> bool {
-        let url = match std::env::var("REDIS_URL") {
-            Ok(u) if !u.trim().is_empty() => u,
-            _ => return false,
-        };
+        let url = std::env::var("REDIS_URL")
+            .ok()
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
+
         let rt = match tokio::runtime::Runtime::new() {
             Ok(r) => r,
             Err(_) => return false,
         };
-        match rt.block_on(RedisPool::from_url(&url)) {
-            Ok(pool) => {
+
+        let result = rt.block_on(async {
+            tokio::time::timeout(
+                std::time::Duration::from_secs(2),
+                RedisPool::from_url(&url),
+            )
+            .await
+        });
+
+        match result {
+            Ok(Ok(pool)) => {
                 let mut guard = self.redis_pool.lock().unwrap();
                 *guard = Some(pool);
                 true
             }
-            Err(e) => {
+            Ok(Err(e)) => {
                 warn!(
                     error = %e,
                     "failed to connect to Redis; rate limiter falling back to in-memory"
                 );
+                false
+            }
+            Err(_) => {
+                warn!("Redis connection timed out after 2s; rate limiter falling back to in-memory");
                 false
             }
         }
@@ -83,24 +97,38 @@ impl RateLimiter {
 
     /// 异步惰性初始化 Redis
     pub async fn init_redis_async(&self) -> bool {
-        let url = match std::env::var("REDIS_URL") {
-            Ok(u) if !u.trim().is_empty() => u,
-            _ => return false,
-        };
+        let url = std::env::var("REDIS_URL")
+            .ok()
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
+
         let mut guard = self.redis_pool.lock().unwrap();
         if guard.is_some() {
             return true;
         }
-        match RedisPool::from_url(&url).await {
-            Ok(pool) => {
+        drop(guard);
+
+        let result = tokio::time::timeout(
+            std::time::Duration::from_secs(2),
+            RedisPool::from_url(&url),
+        )
+        .await;
+
+        match result {
+            Ok(Ok(pool)) => {
+                let mut guard = self.redis_pool.lock().unwrap();
                 *guard = Some(pool);
                 true
             }
-            Err(e) => {
+            Ok(Err(e)) => {
                 warn!(
                     error = %e,
                     "failed to connect to Redis; rate limiter falling back to in-memory"
                 );
+                false
+            }
+            Err(_) => {
+                warn!("Redis connection timed out after 2s; rate limiter falling back to in-memory");
                 false
             }
         }

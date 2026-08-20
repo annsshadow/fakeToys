@@ -132,13 +132,12 @@ async fn main() -> anyhow::Result<()> {
     let session_manager = SessionManager::with_pool(pool.clone());
     let rate_limiter = RateLimiter::new();
 
-    // Phase 3 U3.2: 初始化 Redis 后端（可选）
-    // 成功则启用分布式 session / rate limit，失败则降级为内存模式
+    // Phase B-U-B2: Redis 为默认 session 存储，不可达时降级为内存+DB 模式
     let redis_available = session_manager.init_redis() && rate_limiter.init_redis();
     if redis_available {
         tracing::info!("Redis backend initialized for session store and rate limiter");
     } else {
-        tracing::info!("Running without Redis: session store and rate limiter using in-memory fallback");
+        tracing::warn!("Redis unreachable; session store and rate limiter using in-memory fallback");
     }
 
     let app = create_app(pool.clone(), session_manager.clone(), rate_limiter.clone()).await?;
