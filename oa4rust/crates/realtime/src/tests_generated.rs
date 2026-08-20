@@ -5,14 +5,19 @@ mod tests {
     use shared::testing::test_pool;
     use tower::util::ServiceExt;
 
+    // SKIPPED: join not accessible
+    // SKIPPED: leave not accessible
+    // SKIPPED: broadcast not accessible
+    // SKIPPED: room_connections not accessible
+    // SKIPPED: list_rooms not accessible
     #[tokio::test]
-    async fn test_get_control_config() {
+    async fn test_ws_handler() {
         let pool = shared::testing::test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar_assemble_control/get/control/config")
+                    .uri("/ws/realtime")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -20,17 +25,17 @@ mod tests {
             .await
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "get_control_config route should be registered");
+            "ws_handler route should be registered");
     }
 
     #[tokio::test]
-    async fn test_list_control_calendars() {
+    async fn test_ws_room_handler() {
         let pool = shared::testing::test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar_assemble_control/list/control/calendars")
+                    .uri("/ws/realtime/room/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -38,17 +43,17 @@ mod tests {
             .await
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "list_control_calendars route should be registered");
+            "ws_room_handler route should be registered");
     }
 
     #[tokio::test]
-    async fn test_update_control_config() {
+    async fn test_ws_stats() {
         let pool = shared::testing::test_pool();
         let app = crate::router(pool);
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/calendar_assemble_control/update/control/config")
+                    .uri("/ws/realtime/room/test-id/stats")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -56,25 +61,7 @@ mod tests {
             .await
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "update_control_config route should be registered");
-    }
-
-    #[tokio::test]
-    async fn test_get_calendar_detail() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/jaxrs/calendar/assemble/control/calendar/detail/test-id")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "get_calendar_detail route should be registered");
+            "ws_stats route should be registered");
     }
 
 }

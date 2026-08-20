@@ -1,11 +1,100 @@
 #[cfg(test)]
 mod tests {
+    use axum::body::Body;
+    use axum::http::{Request, Method, StatusCode};
+    use shared::testing::test_pool;
+    use tower::util::ServiceExt;
 
-    // SKIPPED: get_designer not accessible
-    // SKIPPED: create_designer not accessible
-    // SKIPPED: list_designers not accessible
-    // SKIPPED: save_designer not accessible
-    // SKIPPED: delete_designer not accessible
+    #[tokio::test]
+    async fn test_get_designer() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/query/assemble/designer/get/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "get_designer route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_create_designer() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/query/assemble/designer/create")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "create_designer route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_list_designers() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/query/assemble/designer/list/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "list_designers route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_save_designer() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/query/assemble/designer/save/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "save_designer route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_delete_designer() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/query/assemble/designer/delete/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "delete_designer route should be registered");
+    }
+
     // SKIPPED: designer_search not accessible
     // SKIPPED: id_count not accessible
     // SKIPPED: importmodel_list_query_flag not accessible

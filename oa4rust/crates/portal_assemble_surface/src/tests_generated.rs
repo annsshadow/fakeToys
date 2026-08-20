@@ -1,14 +1,154 @@
 #[cfg(test)]
 mod tests {
+    use axum::body::Body;
+    use axum::http::{Request, Method, StatusCode};
+    use shared::testing::test_pool;
+    use tower::util::ServiceExt;
 
-    // SKIPPED: get_surface not accessible
-    // SKIPPED: create_surface not accessible
-    // SKIPPED: list_surfaces not accessible
-    // SKIPPED: preview_surface not accessible
-    // SKIPPED: publish_surface not accessible
-    // SKIPPED: surface_list not accessible
-    // SKIPPED: surface_preview not accessible
-    // SKIPPED: surface_publish not accessible
+    #[tokio::test]
+    async fn test_get_surface() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/surface/get/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "get_surface route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_create_surface() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/surface/create")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "create_surface route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_list_surfaces() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/surface/list/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "list_surfaces route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_preview_surface() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/surface/preview/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "preview_surface route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_publish_surface() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/surface/publish/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "publish_surface route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_surface_list() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/surface/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "surface_list route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_surface_preview() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/surface/test-id/preview")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "surface_preview route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_surface_publish() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/surface/publish")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "surface_publish route should be registered");
+    }
+
     // SKIPPED: get_layout not accessible
     // SKIPPED: list_layouts not accessible
     // SKIPPED: create_layout not accessible

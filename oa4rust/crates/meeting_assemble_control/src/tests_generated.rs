@@ -5,24 +5,7 @@ mod tests {
     use shared::testing::test_pool;
     use tower::util::ServiceExt;
 
-    #[tokio::test]
-    async fn test_list_meeting_controls() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/jaxrs/meeting/assemble/control/list/test-id")
-                    .method("GET")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "list_meeting_controls route should be registered");
-    }
-
+    // SKIPPED: list_meeting_controls not accessible
     #[tokio::test]
     async fn test_create_meeting_control() {
         let pool = shared::testing::test_pool();
@@ -41,7 +24,24 @@ mod tests {
             "create_meeting_control route should be registered");
     }
 
-    // SKIPPED: delete_meeting_control not accessible
+    #[tokio::test]
+    async fn test_delete_meeting_control() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/meeting/assemble/control/delete/test-id")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "delete_meeting_control route should be registered");
+    }
+
     #[tokio::test]
     async fn test_building_list() {
         let pool = shared::testing::test_pool();
