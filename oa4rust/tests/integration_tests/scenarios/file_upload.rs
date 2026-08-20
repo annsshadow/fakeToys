@@ -14,8 +14,6 @@ use crate::integration_tests::db::TEST_DB;
 // HTTP layer with auth middleware active.
 // ──────────────────────────────────────────────────────────────────────────────
 
-#[tokio::test]
-#[ignore = "requires a running database server"]
 pub async fn file_upload_flow() {
     let pool = TEST_DB
         .get()

@@ -14,8 +14,6 @@ use crate::integration_tests::db::TEST_DB;
 // real HTTP layer with auth middleware active.
 // ──────────────────────────────────────────────────────────────────────────────
 
-#[tokio::test]
-#[ignore = "requires a running database server"]
 pub async fn org_person_meeting_flow() {
     let pool = TEST_DB
         .get()
