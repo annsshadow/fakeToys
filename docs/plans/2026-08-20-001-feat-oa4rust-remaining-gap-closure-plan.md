@@ -1,7 +1,7 @@
 ---
 title: feat: oa4rust remaining gap closure
 type: feat
-status: active
+status: completed
 date: 2026-08-20
 origin: docs/brainstorms/2026-08-20-oa4rust-remaining-gap-closure-requirements.md
 ---

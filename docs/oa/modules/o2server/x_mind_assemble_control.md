@@ -30,4 +30,11 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/mind/assemble/control/config`
+- `POST /jaxrs/mind/assemble/control/config/update`
+- `POST /jaxrs/mind/assemble/control/folder/move/{folderId}`
+- `POST /jaxrs/mind/assemble/control/folder/save`
+- `GET /jaxrs/mind/assemble/control/folder/tree/my`
+- `GET /jaxrs/mind/assemble/control/folder/{id}`
+- `POST /jaxrs/mind/assemble/control/folder/{id}/force`
+- `POST /jaxrs/mind/assemble/control/folder/{id}/update`

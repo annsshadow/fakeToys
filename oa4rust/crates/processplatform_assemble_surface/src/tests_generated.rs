@@ -5,9 +5,27 @@ mod tests {
     use shared::testing::test_pool;
     use tower::util::ServiceExt;
 
+    async fn ensure_test_surface(pool: &deadpool_postgres::Pool) {
+        let client = pool.get().await.unwrap();
+        let existing: i64 = client
+            .query_one("SELECT COUNT(*)::bigint FROM x_process_surface WHERE id = $1", &[&"test-id"])
+            .await
+            .unwrap()
+            .get(0);
+        if existing == 0 {
+            let _ = client.execute(
+                "INSERT INTO x_process_surface (id, name, category, content, version, creator, create_time, update_time)
+                 VALUES ($1, $2, $3, $4, $5, $6, NOW(), NOW())
+                 ON CONFLICT (id) DO NOTHING",
+                &[&"test-id", &"Test Surface", &"processplatform", &r#"{"html":"<div>test</div>"}"#, &"1.0", &"test"],
+            ).await.unwrap();
+        }
+    }
+
     #[tokio::test]
     async fn test_get_surface() {
         let pool = shared::testing::test_pool();
+        ensure_test_surface(&pool).await;
         let app = crate::router(pool);
         let response = app
             .oneshot(

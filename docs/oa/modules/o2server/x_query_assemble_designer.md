@@ -35,4 +35,8 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `POST /jaxrs/query/assemble/designer/create`
+- `POST /jaxrs/query/assemble/designer/delete/{id}`
+- `GET /jaxrs/query/assemble/designer/get/{id}`
+- `GET /jaxrs/query/assemble/designer/list/{category}`
+- `POST /jaxrs/query/assemble/designer/save/{id}`

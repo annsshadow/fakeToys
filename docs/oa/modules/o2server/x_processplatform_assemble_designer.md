@@ -32,4 +32,9 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `POST /jaxrs/processplatform/assemble/designer/create`
+- `POST /jaxrs/processplatform/assemble/designer/delete/{id}`
+- `GET /jaxrs/processplatform/assemble/designer/get/{id}`
+- `GET /jaxrs/processplatform/assemble/designer/list/{category}`
+- `GET /jaxrs/processplatform/assemble/designer/preview/{id}`
+- `POST /jaxrs/processplatform/assemble/designer/save/{id}`
