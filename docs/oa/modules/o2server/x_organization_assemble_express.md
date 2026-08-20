@@ -28,4 +28,7 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/organization/assemble/express/config/get`
+- `GET /jaxrs/organization/assemble/express/data/sync`
+- `GET /jaxrs/organization/assemble/express/status/get`
+- `GET /jaxrs/organization/assemble/express/units/list`

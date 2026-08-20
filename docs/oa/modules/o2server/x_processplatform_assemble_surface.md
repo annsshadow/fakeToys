@@ -37,4 +37,10 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `POST /jaxrs/processplatform/assemble/surface/create`
+- `POST /jaxrs/processplatform/assemble/surface/delete/{id}`
+- `GET /jaxrs/processplatform/assemble/surface/get/{id}`
+- `GET /jaxrs/processplatform/assemble/surface/list/{category}`
+- `GET /jaxrs/processplatform/assemble/surface/preview/{id}`
+- `POST /jaxrs/processplatform/assemble/surface/publish/{id}`
+- `POST /jaxrs/processplatform/assemble/surface/save/{id}`

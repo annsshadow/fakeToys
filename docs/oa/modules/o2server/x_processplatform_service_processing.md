@@ -35,4 +35,14 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `POST /jaxrs/processplatform/service/processing/cancel/{executionId}`
+- `POST /jaxrs/processplatform/service/processing/create`
+- `POST /jaxrs/processplatform/service/processing/execute/{id}`
+- `GET /jaxrs/processplatform/service/processing/get/{id}`
+- `GET /jaxrs/processplatform/service/processing/instance/{executionId}`
+- `GET /jaxrs/processplatform/service/processing/list/{category}`
+- `GET /jaxrs/processplatform/service/processing/process/{id}/complex`
+- `GET /jaxrs/processplatform/service/processing/work/list`
+- `PUT /jaxrs/work/{id}/processing`
+- `POST /jaxrs/work/{id}/retract`
+- `POST /jaxrs/work/{id}/terminate`

@@ -30,4 +30,13 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `POST /jaxrs/component/assemble/control/component/delete/all`
+- `GET /jaxrs/component/assemble/control/status/list`
+- `GET /jaxrs/component_assemble_control/create/component`
+- `GET /jaxrs/component_assemble_control/delete/component`
+- `GET /jaxrs/component_assemble_control/get/component`
+- `GET /jaxrs/component_assemble_control/get/control/config`
+- `GET /jaxrs/component_assemble_control/list/components`
+- `GET /jaxrs/component_assemble_control/list/control/categories`
+- `GET /jaxrs/component_assemble_control/save/component`
+- `GET /jaxrs/component_assemble_control/update/control/config`

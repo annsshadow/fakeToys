@@ -31,4 +31,5 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/correlation/core/express/status`
+- `GET /jaxrs/correlation/core/express/sync`
