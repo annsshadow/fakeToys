@@ -318,3 +318,6 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
     }
 }
+
+#[cfg(test)]
+mod tests_generated;

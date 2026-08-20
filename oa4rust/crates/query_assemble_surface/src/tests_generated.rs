@@ -1,12 +1,118 @@
 #[cfg(test)]
 mod tests {
+    use axum::body::Body;
+    use axum::http::{Request, Method, StatusCode};
+    use shared::testing::test_pool;
+    use tower::util::ServiceExt;
 
-    // SKIPPED: get_surface not accessible
-    // SKIPPED: create_surface not accessible
-    // SKIPPED: list_surfaces not accessible
-    // SKIPPED: save_surface not accessible
-    // SKIPPED: delete_surface not accessible
-    // SKIPPED: preview_surface not accessible
+    #[tokio::test]
+    async fn test_get_surface() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/query/assemble/surface/get/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "get_surface route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_create_surface() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/query/assemble/surface/create")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "create_surface route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_list_surfaces() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/query/assemble/surface/list/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "list_surfaces route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_save_surface() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/query/assemble/surface/save/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "save_surface route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_delete_surface() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/query/assemble/surface/delete/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "delete_surface route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_preview_surface() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/query/assemble/surface/preview/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "preview_surface route should be registered");
+    }
+
     // SKIPPED: importmodel_execute_record_recordId not accessible
     // SKIPPED: importmodel_flag_flag_query_queryFlag not accessible
     // SKIPPED: importmodel_list_query_queryFlag not accessible
@@ -17,7 +123,24 @@ mod tests {
     // SKIPPED: importmodel_record_recordId_status not accessible
     // SKIPPED: importmodel_uuid not accessible
     // SKIPPED: importmodel_id not accessible
-    // SKIPPED: importmodel_id_execute not accessible
+    #[tokio::test]
+    async fn test_importmodel_id_execute() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/importmodel/id/test-id/execute")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "importmodel_id_execute route should be registered");
+    }
+
     // SKIPPED: neural_list_calculate_model_modelFlag_work_workId not accessible
     // SKIPPED: query_list not accessible
     // SKIPPED: query_list_key_key not accessible
@@ -47,9 +170,43 @@ mod tests {
     // SKIPPED: view_flag_flag_query_queryFlag_bundle_mockputtopost not accessible
     // SKIPPED: view_flag_flag_query_queryFlag_excel not accessible
     // SKIPPED: view_flag_flag_query_queryFlag_excel_mockputtopost not accessible
-    // SKIPPED: view_flag_flag_query_queryFlag_execute not accessible
+    #[tokio::test]
+    async fn test_view_flag_flag_query_queryFlag_execute() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/queryview/flag/test-id/application/flag/test-id/execute")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "view_flag_flag_query_queryFlag_execute route should be registered");
+    }
+
     // SKIPPED: view_flag_flag_query_queryFlag_execute_mockputtopost not accessible
-    // SKIPPED: view_flag_flag_query_queryFlag_execute_v2_page_page_size_size not accessible
+    #[tokio::test]
+    async fn test_view_flag_flag_query_queryFlag_execute_v2_page_page_size_size() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/queryview/flag/test-id/application/flag/test-id/execute/page/test-id/size/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "view_flag_flag_query_queryFlag_execute_v2_page_page_size_size route should be registered");
+    }
+
     // SKIPPED: view_list_query_queryFlag not accessible
     // SKIPPED: view_id not accessible
     // SKIPPED: view_id_bundle not accessible

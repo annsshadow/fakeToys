@@ -102,8 +102,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/create/mcp")
-                    .method("GET")
+                    .uri("/jaxrs/ai/assemble/control/config/create/mcp")
+                    .method("POST")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -138,8 +138,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/delete/mcp/flag")
-                    .method("GET")
+                    .uri("/jaxrs/ai/assemble/control/config/delete/mcp/test-id")
+                    .method("POST")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -192,7 +192,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/get/mcp/flag")
+                    .uri("/jaxrs/ai/assemble/control/config/get/mcp/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -246,7 +246,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/list/mcp/paging/page/size/size")
+                    .uri("/jaxrs/ai/assemble/control/config/list/mcp/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -264,7 +264,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/list/model/paging/page/size/size")
+                    .uri("/jaxrs/ai_assemble_control/config/list/model/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -300,8 +300,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/config/update/mcp/flag")
-                    .method("GET")
+                    .uri("/jaxrs/ai/assemble/control/config/update/mcp/test-id")
+                    .method("POST")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -390,7 +390,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/file/list/paging/page/size/size")
+                    .uri("/jaxrs/ai_assemble_control/file/list/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -534,7 +534,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/ai_assemble_control/index/list/paging/page/size/size")
+                    .uri("/jaxrs/ai_assemble_control/index/list/paging/test-id/size/test-id")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -564,4 +564,5 @@ mod tests {
     }
 
     // SKIPPED: chat_completion requires Session parameter
+    // SKIPPED: chat_completion_stream requires Session parameter
 }

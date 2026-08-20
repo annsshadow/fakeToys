@@ -213,3 +213,6 @@ mod tests {
         assert_eq!(json["content"], "消息内容");
     }
 }
+
+#[cfg(test)]
+mod tests_generated;

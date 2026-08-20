@@ -450,3 +450,6 @@ mod tests {
         assert_eq!(LibreOfficePreview::detect_target_format("test.xlsx"), "pdf");
     }
 }
+
+#[cfg(test)]
+mod tests_generated;
