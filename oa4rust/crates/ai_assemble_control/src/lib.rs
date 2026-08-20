@@ -1,8 +1,10 @@
 use axum::{
     extract::{Extension, Path},
-    Json, Router, routing::get, routing::post,
+    Json, Router, response::Sse,
+    routing::get, routing::post,
 };
 use deadpool_postgres::Pool;
+use futures_util::StreamExt;
 use serde::Deserialize;
 use serde_json::Value;
 use shared::{db::dialect, error::AppError, response::ActionResult};
@@ -1223,4 +1225,222 @@ pub async fn chat_completion(
 
     Ok(Json(ActionResult::success(result)))
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Shared chat processing logic (ownership check + history load + user msg save)
+// ──────────────────────────────────────────────────────────────────────────────
+
+struct ChatContext {
+    conversation_id: String,
+    full_messages: Vec<ChatMessage>,
+    response_messages: Vec<Value>,
+}
+
+async fn process_chat_request(
+    pool: &Pool,
+    session: &shared::session::Session,
+    req: &ChatCompletionRequest,
+) -> Result<ChatContext, AppError> {
+    let conversation_id = req
+        .conversation_id
+        .clone()
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+
+    let last_user_message = req
+        .messages
+        .iter()
+        .rev()
+        .find(|m| m.role == "user")
+        .map(|m| m.content.clone())
+        .unwrap_or_default();
+
+    let context_window = req.context_window.unwrap_or(20).clamp(1, 100);
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let owner_rows = client
+        .query(
+            "SELECT DISTINCT creator FROM x_ai_chat WHERE conversation_id = $1 AND deleted_at IS NULL AND creator IS NOT NULL",
+            &[&conversation_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let owners: Vec<String> = owner_rows
+        .iter()
+        .map(|r| r.get::<_, String>("creator"))
+        .collect();
+
+    let is_owned_by_others = !owners.is_empty()
+        && owners
+            .iter()
+            .all(|o| o != &session.person_unique && !o.is_empty() && o != "system");
+
+    if is_owned_by_others {
+        return Err(AppError::Forbidden);
+    }
+
+    let history_rows = client
+        .query(
+            "SELECT role, content FROM ( \
+             SELECT role, content, create_time FROM x_ai_chat \
+             WHERE conversation_id = $1 AND deleted_at IS NULL \
+             ORDER BY create_time DESC LIMIT $2::bigint \
+             ) h ORDER BY create_time ASC",
+            &[&conversation_id, &context_window],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let history: Vec<ChatMessage> = history_rows
+        .iter()
+        .map(|r| ChatMessage {
+            role: r.get("role"),
+            content: r.get("content"),
+        })
+        .collect();
+
+    client
+        .execute(
+            "INSERT INTO x_ai_chat (id, conversation_id, role, content, creator, create_time) \
+             VALUES ($1, $2, $3, $4, $5, NOW())",
+            &[
+                &uuid::Uuid::new_v4().to_string(),
+                &conversation_id,
+                &"user".to_string(),
+                &last_user_message,
+                &session.person_unique,
+            ],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let mut full_messages = history.clone();
+    full_messages.extend(req.messages.iter().cloned());
+
+    let response_messages: Vec<Value> = history
+        .iter()
+        .map(|m| serde_json::json!({"role": m.role, "content": m.content}))
+        .collect();
+
+    Ok(ChatContext {
+        conversation_id,
+        full_messages,
+        response_messages,
+    })
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SSE streaming: call_llm_stream
+// ──────────────────────────────────────────────────────────────────────────────
+
+async fn call_llm_stream(
+    messages: &[ChatMessage],
+) -> Result<impl futures_util::Stream<Item = Result<String, AppError>>, AppError> {
+    let api_key = std::env::var("AI_API_KEY").map_err(|_| AppError::Internal)?;
+    let api_base = std::env::var("AI_API_BASE").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
+    let model = std::env::var("AI_MODEL").unwrap_or_else(|_| "gpt-4".to_string());
+
+    let body = serde_json::json!({
+        "model": model,
+        "messages": messages.iter().map(|m| serde_json::json!({"role": m.role, "content": m.content})).collect::<Vec<_>>(),
+        "stream": true,
+    });
+
+    let resp = ai_client()
+        .post(format!("{}/chat/completions", api_base.trim_end_matches('/')))
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&body)
+        .send()
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if !resp.status().is_success() {
+        return Err(AppError::Internal);
+    }
+
+    let mut accumulated: String = String::new();
+    let mut stream = resp.bytes_stream();
+
+    let stream = async_stream::stream! {
+        while let Some(chunk_result) = stream.next().await {
+            match chunk_result {
+                Ok(bytes) => {
+                    accumulated.push_str(&String::from_utf8_lossy(bytes.as_ref()));
+                    if let Ok(token) = parse_stream_chunk(&accumulated) {
+                        if !token.is_empty() {
+                            accumulated.clear();
+                            yield Ok(token);
+                        }
+                    }
+                }
+                Err(_) => {
+                    yield Err(AppError::Internal);
+                    break;
+                }
+            }
+        }
+    };
+
+    Ok(stream)
+}
+
+fn parse_stream_chunk(data: &str) -> Result<String, AppError> {
+    for line in data.lines() {
+        let line = line.trim();
+        if line.is_empty() || !line.starts_with("data: ") {
+            continue;
+        }
+        let payload = &line[6..];
+        if payload == "[DONE]" {
+            return Ok(String::new());
+        }
+        if let Ok(parsed) = serde_json::from_str::<Value>(payload) {
+            if let Some(choice) = parsed["choices"].as_array().and_then(|a| a.first()) {
+                if let Some(delta) = choice["delta"].as_object() {
+                    if let Some(content) = delta.get("content").and_then(|c| c.as_str()) {
+                        return Ok(content.to_string());
+                    }
+                }
+            }
+        }
+    }
+    Ok(String::new())
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SSE streaming endpoint
+// ──────────────────────────────────────────────────────────────────────────────
+
+#[axum::debug_handler]
+pub async fn chat_completion_stream(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Json(req): Json<ChatCompletionRequest>,
+) -> Result<Sse<impl futures_util::Stream<Item = Result<axum::response::sse::Event, AppError>>>, AppError> {
+    let ctx = process_chat_request(&pool, &session, &req).await?;
+
+    let llm_stream = call_llm_stream(&ctx.full_messages).await?;
+
+    let stream = llm_stream.filter_map(move |chunk| {
+        let conversation_id = ctx.conversation_id.clone();
+        async move {
+            match chunk {
+                Ok(token) if !token.is_empty() => {
+                    let event = axum::response::sse::Event::default()
+                        .event("token")
+                        .data(serde_json::json!({
+                            "conversationId": conversation_id,
+                            "token": token,
+                        }).to_string());
+                    Some(Ok(event))
+                }
+                _ => None,
+            }
+        }
+    });
+
+    Ok(Sse::new(stream))
+}
+
 

@@ -34,6 +34,7 @@ use crate::{
     index_list_paging_page_size_size,
     index_sync_to_knowledge,
     chat_completion,
+    chat_completion_stream,
 };
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -70,6 +71,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/ai_assemble_control/index/list/paging/{page}/size/{size}", get(index_list_paging_page_size_size))
         .route("/jaxrs/ai_assemble_control/index/sync/to/knowledge", get(index_sync_to_knowledge))
         .route("/jaxrs/ai_assemble_control/chat/completion", post(chat_completion))
+        .route("/jaxrs/ai_assemble_control/chat/completion/stream", post(chat_completion_stream))
         .route("/jaxrs/ai/assemble/control/config/list/mcp/paging/{page}/size/{size}", get(config_list_mcp_paging_page_size_size))
         .route("/jaxrs/ai/assemble/control/config/get/mcp/{id}", get(config_get_mcp_flag))
         .route("/jaxrs/ai/assemble/control/config/create/mcp", post(config_create_mcp))
