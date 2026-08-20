@@ -82,7 +82,7 @@ async fn test_page_get_returns_error_without_db() {
         .clone()
         .oneshot(
             Request::builder()
-                .uri("/jaxrs/portal/page/test-page-id")
+                .uri("/jaxrs/portal/page/get/test-page-id")
                 .method(axum::http::Method::GET)
                 .body(Body::empty())
                 .unwrap(),

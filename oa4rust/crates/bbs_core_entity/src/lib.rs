@@ -25,17 +25,14 @@ pub async fn forum_list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
+            let mut obj = serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
-                (
-                    "description".to_string(),
-                    m.description
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-            ]))
+            ]);
+            if let Some(ref desc) = m.description {
+                obj.insert("description".to_string(), Value::String(desc.clone()));
+            }
+            Value::Object(obj)
         })
         .collect();
 
@@ -65,25 +62,16 @@ pub async fn section_list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
+            let mut obj = serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
-                (
-                    "forumId".to_string(),
-                    Value::String(m.forum_id.clone()),
-                ),
-                (
-                    "sort".to_string(),
-                    Value::Number(serde_json::Number::from(m.order_number)),
-                ),
-                (
-                    "description".to_string(),
-                    m.description
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-            ]))
+                ("forumId".to_string(), Value::String(m.forum_id.clone())),
+                ("sort".to_string(), Value::Number(serde_json::Number::from(m.order_number))),
+            ]);
+            if let Some(ref desc) = m.description {
+                obj.insert("description".to_string(), Value::String(desc.clone()));
+            }
+            Value::Object(obj)
         })
         .collect();
 
@@ -258,16 +246,19 @@ pub async fn update_forum(
         return Ok(Json(ActionResult::error("forum not found")));
     };
 
+    let m_name = m.name.clone();
+    let m_description = m.description.clone();
+
     let name = payload
         .get("name")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .unwrap_or(m.name);
+        .unwrap_or(m_name.clone());
     let description = payload
         .get("description")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .or(m.description)
+        .or(m_description.clone())
         .unwrap_or_default();
 
     let active_model = bbs_forum_info::ActiveModel {
@@ -286,7 +277,8 @@ pub async fn update_forum(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("updated".to_string(), Value::Bool(true)),
+        ("name".to_string(), Value::String(m_name)),
+        ("description".to_string(), Value::String(m_description.unwrap_or_default())),
     ])))))
 }
 
@@ -304,15 +296,16 @@ pub async fn delete_forum(
         return Ok(Json(ActionResult::error("forum not found")));
     }
 
-    let active_model: bbs_forum_info::ActiveModel = existing.unwrap().into();
+    let model = existing.unwrap();
+    let deleted_id = model.id.clone();
+    let active_model: bbs_forum_info::ActiveModel = model.into();
     active_model
         .delete(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
+        ("id".to_string(), Value::String(deleted_id)),
     ])))))
 }
 
@@ -368,26 +361,31 @@ pub async fn update_section(
         return Ok(Json(ActionResult::error("section not found")));
     };
 
+    let m_name = m.name.clone();
+    let m_forum_id = m.forum_id.clone();
+    let m_order_number = m.order_number;
+    let m_description = m.description.clone();
+
     let name = payload
         .get("name")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .unwrap_or(m.name);
+        .unwrap_or(m_name.clone());
     let forum_id = payload
         .get("forumId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .unwrap_or(m.forum_id);
+        .unwrap_or(m_forum_id.clone());
     let sort = payload
         .get("sort")
         .and_then(|v| v.as_i64())
         .map(|i| i as i32)
-        .unwrap_or(m.order_number);
+        .unwrap_or(m_order_number);
     let description = payload
         .get("description")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .or(m.description)
+        .or(m_description.clone())
         .unwrap_or_default();
 
     let active_model = bbs_section_info::ActiveModel {
@@ -407,7 +405,10 @@ pub async fn update_section(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("updated".to_string(), Value::Bool(true)),
+        ("name".to_string(), Value::String(m_name)),
+        ("forumId".to_string(), Value::String(m_forum_id)),
+        ("sort".to_string(), Value::Number(serde_json::Number::from(m_order_number))),
+        ("description".to_string(), Value::String(m_description.unwrap_or_default())),
     ])))))
 }
 
@@ -425,15 +426,16 @@ pub async fn delete_section(
         return Ok(Json(ActionResult::error("section not found")));
     }
 
-    let active_model: bbs_section_info::ActiveModel = existing.unwrap().into();
+    let model = existing.unwrap();
+    let deleted_id = model.id.clone();
+    let active_model: bbs_section_info::ActiveModel = model.into();
     active_model
         .delete(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
+        ("id".to_string(), Value::String(deleted_id)),
     ])))))
 }
 
@@ -499,17 +501,29 @@ pub async fn update_subject(
         return Ok(Json(ActionResult::error("subject not found")));
     };
 
+    let m_title = m.title.clone();
+    let m_author_id = m.author_id.clone();
+    let m_section_id = m.section_id.clone();
+    let m_reply_count = m.reply_count;
+    let m_view_count = m.view_count;
+    let m_is_top = m.is_top;
+    let m_create_time_str = m
+        .create_time
+        .clone()
+        .map(|dt| dt.to_string())
+        .unwrap_or_default();
+
     let title = payload
         .get("title")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .unwrap_or(m.title);
+        .unwrap_or(m_title.clone());
     let section_id = payload
         .get("sectionId")
         .and_then(|v| v.as_str())
         .map(|s| s.to_string())
-        .unwrap_or(m.section_id);
-    let is_top = payload.get("isTop").and_then(|v| v.as_bool()).unwrap_or(m.is_top);
+        .unwrap_or(m_section_id.clone());
+    let is_top = payload.get("isTop").and_then(|v| v.as_bool()).unwrap_or(m_is_top);
     let disable = payload.get("disable").and_then(|v| v.as_bool()).unwrap_or(m.disable);
 
     let active_model = bbs_subject_info::ActiveModel {
@@ -532,7 +546,28 @@ pub async fn update_subject(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("updated".to_string(), Value::Bool(true)),
+        ("title".to_string(), Value::String(m_title)),
+        (
+            "authorId".to_string(),
+            Value::String(m_author_id),
+        ),
+        (
+            "sectionId".to_string(),
+            Value::String(m_section_id),
+        ),
+        (
+            "replyCount".to_string(),
+            Value::Number(serde_json::Number::from(m_reply_count)),
+        ),
+        (
+            "viewCount".to_string(),
+            Value::Number(serde_json::Number::from(m_view_count)),
+        ),
+        ("isTop".to_string(), Value::Bool(m_is_top)),
+        (
+            "createTime".to_string(),
+            Value::String(m_create_time_str),
+        ),
     ])))))
 }
 
@@ -550,15 +585,16 @@ pub async fn delete_subject(
         return Ok(Json(ActionResult::error("subject not found")));
     }
 
-    let active_model: bbs_subject_info::ActiveModel = existing.unwrap().into();
+    let model = existing.unwrap();
+    let deleted_id = model.id.clone();
+    let active_model: bbs_subject_info::ActiveModel = model.into();
     active_model
         .delete(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
+        ("id".to_string(), Value::String(deleted_id)),
     ])))))
 }
 

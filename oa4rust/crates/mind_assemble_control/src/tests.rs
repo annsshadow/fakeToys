@@ -3,22 +3,13 @@ mod tests {
     use crate::mind_assemble_control_router;
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
+    use shared::testing::test_pool;
     use tower::ServiceExt;
 
-    fn mock_pool() -> Pool {
-        Pool::builder(Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        ))
-        .max_size(1)
-        .build()
-        .unwrap()
-    }
-
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_config_route_accessible() {
-        let app = mind_assemble_control_router(mock_pool());
+        let app = mind_assemble_control_router(test_pool());
 
         let response = app
             .oneshot(
@@ -33,8 +24,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_config_update_route_accessible() {
-        let app = mind_assemble_control_router(mock_pool());
+        let app = mind_assemble_control_router(test_pool());
 
         let response = app
             .oneshot(
@@ -51,8 +43,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_config_update_missing_id() {
-        let app = mind_assemble_control_router(mock_pool());
+        let app = mind_assemble_control_router(test_pool());
 
         let response = app
             .oneshot(

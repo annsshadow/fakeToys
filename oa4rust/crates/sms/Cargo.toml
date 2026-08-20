@@ -1,0 +1,16 @@
+[package]
+name = "sms"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "SMS gateway abstraction layer"
+
+[dependencies]
+thiserror.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+uuid = { workspace = true, features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["full"] }

@@ -178,7 +178,7 @@ async fn create_sso_session(
     }
 
     let token = uuid::Uuid::new_v4().to_string();
-    let session = session_manager.create_session(person_unique.clone(), token.clone()).await;
+    let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
 
     Ok(Json(ActionResult::success(SsoLoginResponse {
         token: session.token,

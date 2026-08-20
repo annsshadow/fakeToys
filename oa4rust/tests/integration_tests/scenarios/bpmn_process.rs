@@ -5,7 +5,7 @@ use reqwest::Client;
 use serde_json::json;
 use tracing::info;
 
-use crate::integration_tests::db::TEST_DB;
+use crate::integration_tests::db::{TestPool, TEST_DB};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // BPMN / workflow execution semantics (U2.2 core)
@@ -24,13 +24,14 @@ use crate::integration_tests::db::TEST_DB;
 // ──────────────────────────────────────────────────────────────────────────────
 
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn bpmn_process_flow() {
     let pool = TEST_DB
-        .get()
+        .as_pg().unwrap().get()
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server((*pool).clone())
+    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("failed to start test server");
 
@@ -179,13 +180,14 @@ pub async fn bpmn_process_flow() {
 // and x_task/x_work status), not just the HTTP 200 response.
 // ──────────────────────────────────────────────────────────────────────────────
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn bpmn_task_actions_flow() {
     let pool = TEST_DB
-        .get()
+        .as_pg().unwrap().get()
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server((*pool).clone())
+    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("failed to start test server");
 
@@ -292,7 +294,7 @@ pub async fn bpmn_task_actions_flow() {
     assert_eq!(ret_body["data"]["taskStatus"].as_str(), Some("pending"));
     // genuine DB writes: x_record(type='return') must exist
     let rec = pool
-        .get()
+        .as_pg().unwrap().get()
         .await
         .expect("pg client")
         .query_opt(
@@ -304,7 +306,7 @@ pub async fn bpmn_task_actions_flow() {
     assert!(rec.is_some(), "x_record of type 'return' was not written");
     // reactivated task is pending in DB
     let tk = pool
-        .get()
+        .as_pg().unwrap().get()
         .await
         .expect("pg client")
         .query_one("SELECT task_status FROM x_task WHERE id = $1", &[&task_a])
@@ -340,7 +342,7 @@ pub async fn bpmn_task_actions_flow() {
     assert_eq!(dis_body["data"]["workStatus"].as_str(), Some("rejected"));
     // genuine DB write: x_record(type='disagree') must exist
     let rec_b = pool
-        .get()
+        .as_pg().unwrap().get()
         .await
         .expect("pg client")
         .query_opt(
@@ -372,13 +374,14 @@ pub async fn bpmn_task_actions_flow() {
 // x_work status and x_record agree rows), not just the HTTP 200 response.
 // ──────────────────────────────────────────────────────────────────────────────
 #[tokio::test]
+#[ignore = "requires a running database server"]
 pub async fn bpmn_countersign_flow() {
     let pool = TEST_DB
-        .get()
+        .as_pg().unwrap().get()
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server((*pool).clone())
+    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("failed to start test server");
 
@@ -440,8 +443,11 @@ pub async fn bpmn_countersign_flow() {
     // Turn a generated task into a countersign task by setting a comma-separated
     // assignee list (o2server's representation of 会签). `pool` is passed as a
     // parameter because nested functions cannot capture the outer `pool`.
-    async fn set_countersign(pool: &Arc<deadpool_postgres::Pool>, task_id: &str, assignees: &str) {
-        pool.get()
+    async fn set_countersign(pool: &Arc<TestPool>, task_id: &str, assignees: &str) {
+        pool.as_ref()
+            .as_pg()
+            .unwrap()
+            .get()
             .await
             .expect("pg client")
             .execute(
@@ -483,7 +489,7 @@ pub async fn bpmn_countersign_flow() {
     assert_eq!(a1_body["data"]["workStatus"].as_str(), Some("processing"));
     // genuine DB: task is processing, exactly one agree record so far
     let tk_a = pool
-        .get()
+        .as_pg().unwrap().get()
         .await
         .expect("pg client")
         .query_one("SELECT task_status FROM x_task WHERE id = $1", &[&task_a])
@@ -491,7 +497,7 @@ pub async fn bpmn_countersign_flow() {
         .expect("task query failed");
     assert_eq!(tk_a.get::<_, &str>("task_status"), "processing");
     let agreed_n: i64 = pool
-        .get()
+        .as_pg().unwrap().get()
         .await
         .expect("pg client")
         .query_one(
@@ -527,7 +533,7 @@ pub async fn bpmn_countersign_flow() {
     assert_eq!(a2_body["data"]["taskStatus"].as_str(), Some("completed"));
     assert_eq!(a2_body["data"]["workStatus"].as_str(), Some("completed"));
     let agreed_n2: i64 = pool
-        .get()
+        .as_pg().unwrap().get()
         .await
         .expect("pg client")
         .query_one(
@@ -583,7 +589,7 @@ pub async fn bpmn_countersign_flow() {
     assert_eq!(b2_body["data"]["taskStatus"].as_str(), Some("rejected"));
     assert_eq!(b2_body["data"]["workStatus"].as_str(), Some("rejected"));
     let rec_b: Option<String> = pool
-        .get()
+        .as_pg().unwrap().get()
         .await
         .expect("pg client")
         .query_opt(

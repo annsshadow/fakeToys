@@ -81,7 +81,7 @@ pub async fn switch_user(
 
     // 为目标用户签发新 session
     let new_token = uuid::Uuid::new_v4().to_string();
-    let new_session = session_manager.create_session(target_unique.clone(), new_token.clone()).await;
+    let new_session = session_manager.create_session(target_unique.clone(), new_token.clone()).await?;
 
     tracing::info!(
         switcher = %session.person_unique,

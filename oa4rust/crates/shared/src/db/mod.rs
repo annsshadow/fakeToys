@@ -1,3 +1,10 @@
+// ──────────────────────────────────────────────────────────────────────────────
+// db — 数据库连接池 + SQL 方言抽象
+// ──────────────────────────────────────────────────────────────────────────────
+
+pub mod dialect;
+pub mod rewriter;
+
 use deadpool_postgres::tokio_postgres::{Config, NoTls};
 use deadpool_postgres::{Manager, Pool};
 use dotenvy::dotenv;
@@ -23,6 +30,10 @@ pub async fn create_pool() -> Result<Pool, DbError> {
     let database_url = env::var("DATABASE_URL")
         .unwrap_or_else(|_| "postgres://o2server:password@localhost:5432/oa4rust".to_string());
 
+    let _dialect_name = env::var("DB_DIALECT")
+        .or_else(|_| env::var("DATABASE_DIALECT"))
+        .unwrap_or_else(|_| "postgres".to_string());
+
     let url = url::Url::parse(&database_url).expect("invalid DATABASE_URL");
     let host = url.host_str().expect("no host in DATABASE_URL");
     let port = url.port().unwrap_or(5432);
@@ -38,12 +49,6 @@ pub async fn create_pool() -> Result<Pool, DbError> {
         .dbname(dbname);
 
     let mgr = Manager::new(cfg, NoTls);
-    // NOTE: deadpool 0.12 `Pool::builder().build()` performs a
-    // `Handle::try_current()` runtime check when any timeout is set. Under
-    // tokio 1.53.x that check can spuriously fail inside `#[tokio::main]`,
-    // returning `BuildError::TimeoutRequiresRuntime`. We therefore build the
-    // pool without an explicit `wait_timeout` so the runtime check is skipped;
-    // the pool still applies its default timeouts.
     let pool = Pool::builder(mgr)
         .build()
         .map_err(|e| DbError::PoolError(e.to_string()))?;
@@ -64,3 +69,6 @@ pub async fn create_sea_orm_pool() -> Result<DatabaseConnection, DbError> {
         .await
         .map_err(|e| DbError::PoolError(e.to_string()))
 }
+
+pub use rewriter::rewrite_pg_to_mysql;
+pub use dialect::{dialect, MySQLDialect, PostgresDialect, SqlDialect};

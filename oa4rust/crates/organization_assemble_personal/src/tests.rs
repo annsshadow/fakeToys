@@ -2,25 +2,21 @@
 mod tests {
     use axum::body::Body;
     use axum::http::{Request, StatusCode};
-    use deadpool_postgres::{Manager, Pool};
-    use deadpool_postgres::tokio_postgres::{Config, NoTls};
+    use shared::testing::test_pool;
     use tower::util::ServiceExt;
     use crate::router;
 
-    fn build_test_pool() -> Pool {
-        let mgr = Manager::new(Config::new(), NoTls);
-        Pool::builder(mgr).max_size(1).build().unwrap()
-    }
+    const TEST_PERSON_ID: &str = "test-person-id-personal";
 
     #[tokio::test]
     async fn test_user_setting_route_exists() {
-        let pool = build_test_pool();
+        let pool = test_pool();
         let app = router(pool);
 
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/personal/test-id/setting")
+                    .uri(&format!("/jaxrs/organization/assemble/personal/{}/setting", TEST_PERSON_ID))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -33,13 +29,13 @@ mod tests {
 
     #[tokio::test]
     async fn test_user_role_list_route_exists() {
-        let pool = build_test_pool();
+        let pool = test_pool();
         let app = router(pool);
 
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/organization/assemble/personal/test-id/role/list")
+                    .uri(&format!("/jaxrs/organization/assemble/personal/{}/role/list", TEST_PERSON_ID))
                     .method(axum::http::Method::GET)
                     .body(Body::empty())
                     .unwrap(),
@@ -52,7 +48,7 @@ mod tests {
 
     #[test]
     fn test_router_builds() {
-        let pool = build_test_pool();
+        let pool = test_pool();
         let _ = router(pool);
     }
 }

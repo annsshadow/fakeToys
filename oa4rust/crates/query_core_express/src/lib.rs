@@ -87,7 +87,7 @@ pub async fn execute_query(
     let data = Value::Object(serde_json::Map::from_iter([
         ("query".to_string(), Value::String(raw_sql.to_string())),
         ("filteredQuery".to_string(), Value::String(final_sql)),
-        ("params".to_string(), req.params.unwrap_or(Value::Null)),
+        ("params".to_string(), req.params.unwrap_or_default()),
         ("timeout".to_string(), Value::Number(serde_json::Number::from(
             req.timeout.unwrap_or(30000),
         ))),
@@ -212,11 +212,28 @@ pub async fn cache_query_result(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let cached = client
-        .query_one("SELECT id FROM x_query WHERE id = $1", &[&query_id])
+
+    let query_row = client
+        .query_opt("SELECT id, name FROM x_query WHERE id = $1", &[&query_id])
         .await
-        .map(|_| true)
-        .unwrap_or(false);
+        .map_err(|_| AppError::Internal)?;
+
+    let cached = match query_row {
+        Some(row) => {
+            let query_name: String = row.get("name");
+            let cache_id = uuid::Uuid::new_v4().to_string();
+            client
+                .execute(
+                    "INSERT INTO x_query_import_record (id, name, creator, create_time) VALUES ($1, $2, $3, NOW())",
+                    &[&cache_id, &query_name, &"system"],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            true
+        }
+        None => false,
+    };
+
     let ttl = body.get("ttl").and_then(|v| v.as_i64()).unwrap_or(3600);
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -235,13 +252,27 @@ pub async fn get_cache_status(
     axum::extract::Path(query_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let cached = client
-        .query_one("SELECT id FROM x_query WHERE id = $1", &[&query_id])
-        .await
-        .map(|_| true)
-        .unwrap_or(false);
 
-    let (hits, misses) = if cached { (1, 0) } else { (0, 1) };
+    let query_row = client
+        .query_opt("SELECT name FROM x_query WHERE id = $1", &[&query_id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let (cached, hits, misses) = match query_row {
+        Some(row) => {
+            let query_name: String = row.get("name");
+            let count_row = client
+                .query_one(
+                    "SELECT COUNT(*) as cnt FROM x_query_import_record WHERE name = $1",
+                    &[&query_name],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            let count: i64 = count_row.get("cnt");
+            (count > 0, count, 0)
+        }
+        None => (false, 0, 1),
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([

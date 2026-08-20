@@ -33,16 +33,18 @@ pub async fn list_all(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("visible".to_string(), Value::Bool(row.get("visible"))),
-                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
-                ("path".to_string(), Value::String(row.get("path"))),
-                ("iconPath".to_string(), Value::String(row.get("icon_path"))),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("title".to_string(), Value::String(row.get("title")));
+            map.insert("type".to_string(), Value::String(row.get("type")));
+            map.insert("visible".to_string(), Value::Bool(row.get("visible")));
+            if let Some(v) = row.get::<_, Option<i32>>("order_number") {
+                map.insert("orderNumber".to_string(), serde_json::Number::from(v).into());
+            }
+            map.insert("path".to_string(), Value::String(row.get("path")));
+            map.insert("iconPath".to_string(), Value::String(row.get("icon_path")));
+            Value::Object(map)
         })
         .collect();
 
@@ -54,29 +56,32 @@ pub async fn list_all(
 
 pub async fn get_component(
     pool: Extension<Pool>,
-    Path(flag): Path<String>,
+    Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    eprintln!("DEBUG get_component called with id={}", id);
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
             "SELECT id, name, title, type, visible, order_number, path, icon_path FROM x_component WHERE (id = $1 OR name = $1) AND deleted_at IS NULL",
-            &[&flag],
+            &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     match row {
         Some(row) => {
-            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("visible".to_string(), Value::Bool(row.get("visible"))),
-                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
-                ("path".to_string(), Value::String(row.get("path"))),
-                ("iconPath".to_string(), Value::String(row.get("icon_path"))),
-            ])))))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("title".to_string(), Value::String(row.get("title")));
+            map.insert("type".to_string(), Value::String(row.get("type")));
+            map.insert("visible".to_string(), Value::Bool(row.get("visible")));
+            if let Some(v) = row.get::<_, Option<i32>>("order_number") {
+                map.insert("orderNumber".to_string(), serde_json::Number::from(v).into());
+            }
+            map.insert("path".to_string(), Value::String(row.get("path")));
+            map.insert("iconPath".to_string(), Value::String(row.get("icon_path")));
+            Ok(Json(ActionResult::success(Value::Object(map))))
         }
         None => Err(AppError::NotFound),
     }

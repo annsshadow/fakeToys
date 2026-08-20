@@ -10,6 +10,6 @@ pub fn component_router(pool: Pool) -> Router {
     Router::new()
         .route("/jaxrs/component/list/all", get(list_all))
         .route("/jaxrs/component/count", get(count))
-        .route("/jaxrs/component/{flag}", get(get_component))
-        .layer(axum::extract::Extension(pool))
+        .route("/jaxrs/component/{id}", get(get_component))
+        // .layer(axum::extract::Extension(pool))
 }

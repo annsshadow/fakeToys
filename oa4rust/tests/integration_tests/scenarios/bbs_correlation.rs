@@ -15,14 +15,13 @@ use crate::integration_tests::db::TEST_DB;
 // can be retrieved �?all through the real HTTP layer.
 // ──────────────────────────────────────────────────────────────────────────────
 
-#[tokio::test]
 pub async fn bbs_correlation_flow() {
     let pool = TEST_DB
         .get()
         .expect("test database not initialized; call init_test_database() first")
         .clone();
 
-    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server((*pool).clone())
+    let (_addr, server_handle, token) = crate::integration_tests::helpers::setup_test_server(pool.clone())
         .await
         .expect("failed to start test server");
 
@@ -36,7 +35,7 @@ pub async fn bbs_correlation_flow() {
 
     // Step 1: Create a BBS forum and section directly in DB for prerequisites
     {
-        let client_db = pool.get().await.expect("failed to get pool client");
+        let client_db = pool.as_pg().unwrap().get().await.expect("failed to get pool client");
         client_db
             .execute(
                 "INSERT INTO bbs_forum_info (id, name, description, disable) VALUES ($1, $2, $3, false) \
@@ -87,7 +86,7 @@ pub async fn bbs_correlation_flow() {
 
     // Step 3: Add a comment to the post directly in DB
     {
-        let client_db = pool.get().await.expect("failed to get pool client");
+        let client_db = pool.as_pg().unwrap().get().await.expect("failed to get pool client");
         let comment_id = uuid::Uuid::new_v4().to_string();
         client_db
             .execute(
@@ -101,7 +100,7 @@ pub async fn bbs_correlation_flow() {
 
     // Step 4: Create a correlation linking the post to another entity
     {
-        let client_db = pool.get().await.expect("failed to get pool client");
+        let client_db = pool.as_pg().unwrap().get().await.expect("failed to get pool client");
         let corr_id = uuid::Uuid::new_v4().to_string();
         client_db
             .execute(

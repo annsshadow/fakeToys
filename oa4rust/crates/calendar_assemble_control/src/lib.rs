@@ -67,11 +67,12 @@ pub async fn list_control_calendars(
     let mut calendars = Vec::new();
     for row in rows.iter() {
         let cal_type: String = row.get("type");
+        let is_public: bool = row.get("is_public");
         calendars.push(Value::Object(serde_json::Map::from_iter([
             ("id".to_string(), Value::String(row.get("id"))),
             ("name".to_string(), Value::String(row.get("name"))),
             ("type".to_string(), Value::String(cal_type)),
-            ("enabled".to_string(), Value::Bool(true)),
+            ("enabled".to_string(), Value::Bool(is_public)),
         ])));
     }
 
@@ -107,10 +108,10 @@ pub async fn update_control_config(
     });
 
     let config_key = "global";
-    client
+    let result = client
         .execute(
             "INSERT INTO cal_control_config (config_key, config_value) VALUES ($1, $2) \
-             ON CONFLICT (config_key) DO UPDATE SET config_value = EXCLUDED.config_value, update_time = NOW()",
+              ON CONFLICT (config_key) DO UPDATE SET config_value = EXCLUDED.config_value, update_time = NOW()",
             &[&config_key, &config_value.to_string()],
         )
         .await
@@ -120,7 +121,7 @@ pub async fn update_control_config(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(result > 0)),
             ("config".to_string(), config_value),
         ]),
     ))))
@@ -153,49 +154,40 @@ pub async fn get_calendar_detail(
     let events: Vec<Value> = event_rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("calendarId".to_string(), Value::String(row.get("calendar_id"))),
-                ("title".to_string(), Value::String(row.get("title"))),
-                (
-                    "content".to_string(),
-                    row.get::<_, Option<String>>("content")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "location".to_string(),
-                    row.get::<_, Option<String>>("location")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                ("startTime".to_string(), Value::String(row.get("start_time"))),
-                ("endTime".to_string(), Value::String(row.get("end_time"))),
-                ("allDay".to_string(), Value::Bool(row.get("all_day"))),
-                ("visibility".to_string(), Value::String(row.get("visibility"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("calendarId".to_string(), Value::String(row.get("calendar_id")));
+            map.insert("title".to_string(), Value::String(row.get("title")));
+            if let Some(content) = row.get::<_, Option<String>>("content") {
+                map.insert("content".to_string(), Value::String(content));
+            }
+            if let Some(location) = row.get::<_, Option<String>>("location") {
+                map.insert("location".to_string(), Value::String(location));
+            }
+            map.insert("startTime".to_string(), Value::String(row.get("start_time")));
+            map.insert("endTime".to_string(), Value::String(row.get("end_time")));
+            map.insert("allDay".to_string(), Value::Bool(row.get("all_day")));
+            map.insert("visibility".to_string(), Value::String(row.get("visibility")));
+            map.insert("status".to_string(), Value::String(row.get("status")));
+            Value::Object(map)
         })
         .collect();
 
-    let data = Value::Object(serde_json::Map::from_iter([
-        ("id".to_string(), Value::String(calendar_row.get("id"))),
-        ("name".to_string(), Value::String(calendar_row.get("name"))),
-        ("type".to_string(), Value::String(calendar_row.get("type"))),
-        ("target".to_string(), Value::String(calendar_row.get("target"))),
-        ("color".to_string(), Value::String(calendar_row.get("color"))),
-        (
-            "description".to_string(),
-            calendar_row.get::<_, Option<String>>("description")
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-        ("createor".to_string(), Value::String(calendar_row.get("createor"))),
-        ("isPublic".to_string(), Value::Bool(calendar_row.get("is_public"))),
-        ("status".to_string(), Value::String(calendar_row.get("status"))),
-        ("eventCount".to_string(), Value::Number(serde_json::Number::from(events.len() as i64))),
-        ("events".to_string(), Value::Array(events)),
-    ]));
+    let mut data_map = serde_json::Map::new();
+    data_map.insert("id".to_string(), Value::String(calendar_row.get("id")));
+    data_map.insert("name".to_string(), Value::String(calendar_row.get("name")));
+    data_map.insert("type".to_string(), Value::String(calendar_row.get("type")));
+    data_map.insert("target".to_string(), Value::String(calendar_row.get("target")));
+    data_map.insert("color".to_string(), Value::String(calendar_row.get("color")));
+    if let Some(description) = calendar_row.get::<_, Option<String>>("description") {
+        data_map.insert("description".to_string(), Value::String(description));
+    }
+    data_map.insert("createor".to_string(), Value::String(calendar_row.get("createor")));
+    data_map.insert("isPublic".to_string(), Value::Bool(calendar_row.get("is_public")));
+    data_map.insert("status".to_string(), Value::String(calendar_row.get("status")));
+    data_map.insert("eventCount".to_string(), Value::Number(serde_json::Number::from(events.len() as i64)));
+    data_map.insert("events".to_string(), Value::Array(events));
+    let data = Value::Object(data_map);
 
     Ok(Json(ActionResult::success(data)))
 }

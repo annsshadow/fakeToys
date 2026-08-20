@@ -453,7 +453,7 @@ pub async fn config_system_config_manage(
         serde_json::Map::from_iter([
             ("\"configKey\"".to_string(), Value::String(config_key.to_string())),
             ("\"configValue\"".to_string(), Value::String(config_value.to_string())),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1435,7 +1435,7 @@ pub async fn save_meeting(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
             ("title".to_string(), Value::String(title.to_string())),
         ]),
     ))))
@@ -1462,7 +1462,7 @@ pub async fn delete_meeting(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1473,7 +1473,7 @@ pub async fn meeting_id_accept(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute(
             "UPDATE x_meeting SET status = 'accepted' WHERE id = $1",
             &[&id],
@@ -1484,7 +1484,7 @@ pub async fn meeting_id_accept(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("accepted".to_string(), Value::Bool(true)),
+            ("accepted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1499,7 +1499,7 @@ pub async fn meeting_id_add_invite(
     let invitee = payload.get("invitee").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("invitee is required".to_string()))?;
     let invite_id = uuid::Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_meeting_invite (id, meeting_id, invitee, status, create_time) VALUES ($1, $2, $3, 'wait', NOW())",
             &[&invite_id, &id, &invitee],
@@ -1512,7 +1512,7 @@ pub async fn meeting_id_add_invite(
             ("id".to_string(), Value::String(invite_id)),
             ("\"meetingId\"".to_string(), Value::String(id)),
             ("invitee".to_string(), Value::String(invitee.to_string())),
-            ("added".to_string(), Value::Bool(true)),
+            ("added".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1527,7 +1527,7 @@ pub async fn meeting_id_checkin(
     let person = payload.get("person").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("person is required".to_string()))?;
     let checkin_id = uuid::Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_meeting_checkin (id, meeting_id, person, checkin_time) VALUES ($1, $2, $3, NOW())",
             &[&checkin_id, &id, &person],
@@ -1540,7 +1540,7 @@ pub async fn meeting_id_checkin(
             ("id".to_string(), Value::String(checkin_id)),
             ("\"meetingId\"".to_string(), Value::String(id)),
             ("person".to_string(), Value::String(person.to_string())),
-            ("checkedIn".to_string(), Value::Bool(true)),
+            ("checkedIn".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1578,7 +1578,7 @@ pub async fn meeting_id_confirm_allow(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute(
             "UPDATE x_meeting SET status = 'confirmed' WHERE id = $1",
             &[&id],
@@ -1589,7 +1589,7 @@ pub async fn meeting_id_confirm_allow(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("confirmed".to_string(), Value::Bool(true)),
+            ("confirmed".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1600,7 +1600,7 @@ pub async fn meeting_id_confirm_deny(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute(
             "UPDATE x_meeting SET status = 'denied' WHERE id = $1",
             &[&id],
@@ -1611,7 +1611,7 @@ pub async fn meeting_id_confirm_deny(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("denied".to_string(), Value::Bool(true)),
+            ("denied".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1648,7 +1648,7 @@ pub async fn meeting_id_manual_completed(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute(
             "UPDATE x_meeting SET status = 'completed' WHERE id = $1",
             &[&id],
@@ -1659,7 +1659,7 @@ pub async fn meeting_id_manual_completed(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("completed".to_string(), Value::Bool(true)),
+            ("completed".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1673,7 +1673,7 @@ pub async fn meeting_id_modify_completedtime(
 
     let completed_time = payload.get("\"completedTime\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"completedTime\" is required".to_string()))?;
 
-    client
+    let result = client
         .execute(
             "UPDATE x_meeting SET completed_time = $1 WHERE id = $2",
             &[&completed_time, &id],
@@ -1685,7 +1685,7 @@ pub async fn meeting_id_modify_completedtime(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("\"completedTime\"".to_string(), Value::String(completed_time.to_string())),
-            ("modified".to_string(), Value::Bool(true)),
+            ("modified".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1700,14 +1700,14 @@ pub async fn meeting_id_modify_starttime(
     let start_time = payload.get("\"startTime\"").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("\"startTime\" is required".to_string()))?;
     let end_time = payload.get("\"endTime\"").and_then(|v| v.as_str());
 
-    if let Some(end_time) = end_time {
+    let result = if let Some(end_time) = end_time {
         client
             .execute(
                 "UPDATE x_meeting SET start_time = $1, end_time = $2 WHERE id = $3",
                 &[&start_time, &end_time, &id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|_| AppError::Internal)?
     } else {
         client
             .execute(
@@ -1715,14 +1715,14 @@ pub async fn meeting_id_modify_starttime(
                 &[&start_time, &id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
-    }
+            .map_err(|_| AppError::Internal)?
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("\"startTime\"".to_string(), Value::String(start_time.to_string())),
-            ("modified".to_string(), Value::Bool(true)),
+            ("modified".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1733,7 +1733,7 @@ pub async fn meeting_id_reject(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute(
             "UPDATE x_meeting SET status = 'rejected' WHERE id = $1",
             &[&id],
@@ -1744,7 +1744,7 @@ pub async fn meeting_id_reject(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("rejected".to_string(), Value::Bool(true)),
+            ("rejected".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }

@@ -1,5 +1,5 @@
 use axum::{
-    extract::Extension,
+    extract::{Extension, Path},
     routing::get, routing::post,
     Router,
 };
@@ -34,6 +34,7 @@ use crate::{
     index_list_paging_page_size_size,
     index_sync_to_knowledge,
     chat_completion,
+    chat_completion_stream,
 };
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -42,7 +43,7 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/ai_assemble_control/list/ai/models", get(list_ai_models))
         .route("/jaxrs/ai_assemble_control/update/ai/control/config", get(update_ai_control_config))
         .route("/jaxrs/ai_assemble_control/get/usage/stats", get(get_usage_stats))
-        .route("/jaxrs/ai_assemble_control/config/list/mcp/paging/page/size/size", get(config_list_mcp_paging_page_size_size))
+        .route("/jaxrs/ai_assemble_control/config/list/mcp/paging/{page}/size/{size}", get(config_list_mcp_paging_page_size_size))
         .route("/jaxrs/ai_assemble_control/config/get/mcp/flag", get(config_get_mcp_flag))
         .route("/jaxrs/ai_assemble_control/config/create/mcp", get(config_create_mcp))
         .route("/jaxrs/ai_assemble_control/config/update/mcp/flag", get(config_update_mcp_flag))
@@ -53,13 +54,13 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/ai_assemble_control/config/delete/model/flag", get(config_delete_model_flag))
         .route("/jaxrs/ai_assemble_control/config/get/mcp/ext/flag", get(config_get_mcp_ext_flag))
         .route("/jaxrs/ai_assemble_control/config/list/enable/model", get(config_list_enable_model))
-        .route("/jaxrs/ai_assemble_control/config/list/model/paging/page/size/size", get(config_list_model_paging_page_size_size))
+        .route("/jaxrs/ai_assemble_control/config/list/model/paging/{page}/size/{size}", get(config_list_model_paging_page_size_size))
         .route("/jaxrs/ai_assemble_control/config/save", get(config_save))
         .route("/jaxrs/ai_assemble_control/config/update/model/flag", get(config_update_model_flag))
         .route("/jaxrs/ai_assemble_control/file/copy/file", get(file_copy_file))
         .route("/jaxrs/ai_assemble_control/file/delete/flag", get(file_delete_flag))
         .route("/jaxrs/ai_assemble_control/file/list", get(file_list))
-        .route("/jaxrs/ai_assemble_control/file/list/paging/page/size/size", get(file_list_paging_page_size_size))
+        .route("/jaxrs/ai_assemble_control/file/list/paging/{page}/size/{size}", get(file_list_paging_page_size_size))
         .route("/jaxrs/ai_assemble_control/file/upload", get(file_upload))
         .route("/jaxrs/ai_assemble_control/file/flag", get(file_flag))
         .route("/jaxrs/ai_assemble_control/file/id/download", get(file_id_download))
@@ -67,9 +68,15 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/ai_assemble_control/index/cms/doc/with/app/appId", get(index_cms_doc_with_app_appId))
         .route("/jaxrs/ai_assemble_control/index/cms/doc/docId", get(index_cms_doc_docId))
         .route("/jaxrs/ai_assemble_control/index/delete/flag", get(index_delete_flag))
-        .route("/jaxrs/ai_assemble_control/index/list/paging/page/size/size", get(index_list_paging_page_size_size))
+        .route("/jaxrs/ai_assemble_control/index/list/paging/{page}/size/{size}", get(index_list_paging_page_size_size))
         .route("/jaxrs/ai_assemble_control/index/sync/to/knowledge", get(index_sync_to_knowledge))
         .route("/jaxrs/ai_assemble_control/chat/completion", post(chat_completion))
+        .route("/jaxrs/ai_assemble_control/chat/completion/stream", post(chat_completion_stream))
+        .route("/jaxrs/ai/assemble/control/config/list/mcp/paging/{page}/size/{size}", get(config_list_mcp_paging_page_size_size))
+        .route("/jaxrs/ai/assemble/control/config/get/mcp/{id}", get(config_get_mcp_flag))
+        .route("/jaxrs/ai/assemble/control/config/create/mcp", post(config_create_mcp))
+        .route("/jaxrs/ai/assemble/control/config/update/mcp/{id}", post(config_update_mcp_flag))
+        .route("/jaxrs/ai/assemble/control/config/delete/mcp/{id}", post(config_delete_mcp_flag))
         .layer(Extension(pool))
 }
 

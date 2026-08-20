@@ -1,18 +1,226 @@
 #[cfg(test)]
 mod tests {
+    use axum::body::Body;
+    use axum::http::{Request, Method, StatusCode};
+    use shared::testing::test_pool;
+    use tower::util::ServiceExt;
 
-    // SKIPPED: create_design not accessible
-    // SKIPPED: get_design not accessible
-    // SKIPPED: list_designs not accessible
-    // SKIPPED: save_design not accessible
-    // SKIPPED: list_pages_by_category not accessible
-    // SKIPPED: get_page not accessible
-    // SKIPPED: create_page not accessible
-    // SKIPPED: save_page not accessible
-    // SKIPPED: delete_page not accessible
-    // SKIPPED: design_list not accessible
-    // SKIPPED: design_get not accessible
-    // SKIPPED: design_save not accessible
+    #[tokio::test]
+    async fn test_create_design() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/designer/create")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "create_design route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_get_design() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/designer/get/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "get_design route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_list_designs() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/designer/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "list_designs route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_save_design() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/designer/save/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "save_design route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_list_pages_by_category() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/designer/page/list/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "list_pages_by_category route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_get_page() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/designer/page/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "get_page route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_create_page() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/designer/page/create")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "create_page route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_save_page() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/designer/page/save/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "save_page route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_delete_page() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/assemble/designer/page/delete/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "delete_page route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_design_list() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/design/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "design_list route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_design_get() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/design/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "design_get route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_design_save() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/portal/design/save")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "design_save route should be registered");
+    }
+
     // SKIPPED: designer_search not accessible
     // SKIPPED: dict_list_paging_page_size_size not accessible
     // SKIPPED: dict_list_portal_portalId not accessible

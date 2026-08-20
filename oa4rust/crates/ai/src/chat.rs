@@ -129,7 +129,8 @@ pub async fn chat_delete(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    tx.execute("DELETE FROM x_ai_clue WHERE id = $1", &[&clue_id])
+    let result = tx
+        .execute("DELETE FROM x_ai_clue WHERE id = $1", &[&clue_id])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -137,7 +138,7 @@ pub async fn chat_delete(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("value".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }

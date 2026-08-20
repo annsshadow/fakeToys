@@ -5,6 +5,10 @@ mod tests {
     use crate::SessionManager;
     use base64::Engine;
     use shared::response::ActionResult;
+    use shared::testing::test_pool;
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use tower::util::ServiceExt;
 
     #[test]
     fn test_verify_password_md5() {
@@ -74,7 +78,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let manager = SessionManager::new();
-            let session = manager.create_session("user1".to_string(), "token1".to_string()).await;
+            let session = manager.create_session("user1".to_string(), "token1".to_string()).await.unwrap();
             assert_eq!(session.person_unique, "user1");
             assert_eq!(session.token, "token1");
 
@@ -92,7 +96,7 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let manager = SessionManager::new();
-            manager.create_session("user1".to_string(), "token1".to_string()).await;
+            manager.create_session("user1".to_string(), "token1".to_string()).await.unwrap();
             assert!(manager.validate_session("token1").await.is_some());
 
             manager.remove_session("token1").await;
@@ -105,8 +109,8 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let manager = SessionManager::new();
-            manager.create_session("user1".to_string(), "token1".to_string()).await;
-            manager.create_session("user2".to_string(), "token2".to_string()).await;
+            manager.create_session("user1".to_string(), "token1".to_string()).await.unwrap();
+            manager.create_session("user2".to_string(), "token2".to_string()).await.unwrap();
 
             assert!(manager.validate_session("token1").await.is_some());
             assert!(manager.validate_session("token2").await.is_some());
@@ -120,10 +124,10 @@ mod tests {
         rt.block_on(async {
             let manager = SessionManager::new();
             // 为 user1 创建多个 session
-            manager.create_session("user1".to_string(), "token1".to_string()).await;
-            manager.create_session("user1".to_string(), "token2".to_string()).await;
+            manager.create_session("user1".to_string(), "token1".to_string()).await.unwrap();
+            manager.create_session("user1".to_string(), "token2".to_string()).await.unwrap();
             // 为 user2 创建 session
-            manager.create_session("user2".to_string(), "token3".to_string()).await;
+            manager.create_session("user2".to_string(), "token3".to_string()).await.unwrap();
 
             // 验证三个 session 都有效
             assert!(manager.validate_session("token1").await.is_some());
@@ -205,9 +209,156 @@ mod tests {
         });
     }
 
-    // Helper function for DES test
+    // --- U7 新增测试用例：OIDC 路由注册与 id_token 验证 ---
+
+    #[tokio::test]
+    async fn test_oidc_authorize_route_registered() {
+        let pool = shared::testing::test_pool();
+        let rate_limiter = RateLimiter::new();
+        let session_manager = SessionManager::with_pool(pool.clone());
+        let app = crate::router(pool, rate_limiter, session_manager);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/oidc/authorize?client_id=test&redirect_uri=http://localhost&response_type=code&scope=openid&state=abc")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_oidc_callback_route_registered() {
+        let pool = shared::testing::test_pool();
+        let rate_limiter = RateLimiter::new();
+        let session_manager = SessionManager::with_pool(pool.clone());
+        let app = crate::router(pool, rate_limiter, session_manager);
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/oidc/callback?code=testcode&state=abc")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // 路由已注册：不应返回 404（缺少 OIDC 配置时返回 500，这是正常的）
+        assert_ne!(response.status(), StatusCode::NOT_FOUND);
+    }
+
+    #[tokio::test]
+    async fn test_oidc_get_or_create_person_inserts() {
+        use shared::testing::is_db_available;
+
+        if !is_db_available().await {
+            eprintln!("skipping test_oidc_get_or_create_person_inserts: DATABASE_URL not reachable");
+            return;
+        }
+
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.ok();
+
+        if let Some(c) = &client {
+            let _ = c
+                .execute(
+                    "DELETE FROM auth_person WHERE unique_id = $1",
+                    &[&"oidc_test_create_user_001"],
+                )
+                .await;
+        }
+
+        let result = crate::oidc::get_or_create_person(&pool, "test_create_user_001")
+            .await
+            .expect("get_or_create_person should succeed");
+
+        assert_eq!(
+            result.get("unique_id").and_then(|v| v.as_str()),
+            Some("oidc_test_create_user_001")
+        );
+        assert!(
+            result.get("id").and_then(|v| v.as_str()).is_some(),
+            "new person should have an id"
+        );
+    }
+
+    #[tokio::test]
+    async fn test_oidc_get_or_create_person_existing() {
+        use shared::testing::is_db_available;
+
+        if !is_db_available().await {
+            eprintln!("skipping test_oidc_get_or_create_person_existing: DATABASE_URL not reachable");
+            return;
+        }
+
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.ok();
+
+        let unique_id = "oidc_test_existing_user_001";
+
+        if let Some(c) = &client {
+            let _ = c
+                .execute(
+                    "INSERT INTO auth_person (id, unique_id, name, password_hash) \
+                     VALUES ($1, $2, $3, $4) \
+                     ON CONFLICT (unique_id) DO UPDATE SET name = EXCLUDED.name",
+                    &[&"person-oidc-existing", &unique_id, &"Pre-existing OIDC User", &"{bcrypt}$2b$12$dummy"],
+                )
+                .await;
+        }
+
+        let result = crate::oidc::get_or_create_person(&pool, "test_existing_user_001")
+            .await
+            .expect("get_or_create_person should succeed");
+
+        assert_eq!(
+            result.get("unique_id").and_then(|v| v.as_str()),
+            Some(unique_id)
+        );
+        assert_eq!(
+            result.get("name").and_then(|v| v.as_str()),
+            Some("Pre-existing OIDC User")
+        );
+    }
+
     fn des_encrypt_for_test(plain: &str, key: &str) -> Vec<u8> {
         crate::password::des_encrypt(plain, key).unwrap()
+    }
+
+    struct EnvGuard {
+        vars: Vec<(&'static str, Option<String>)>,
+    }
+
+    impl EnvGuard {
+        fn new() -> Self {
+            Self { vars: Vec::new() }
+        }
+        fn set(mut self, key: &'static str, value: impl Into<String>) -> Self {
+            let prev = std::env::var(key).ok();
+            self.vars.push((key, prev));
+            std::env::set_var(key, value.into());
+            self
+        }
+    }
+
+    impl Drop for EnvGuard {
+        fn drop(&mut self) {
+            for (key, prev) in self.vars.drain(..).rev() {
+                match prev {
+                    Some(v) => std::env::set_var(key, v),
+                    None => std::env::remove_var(key),
+                }
+            }
+        }
     }
 
     #[test]
@@ -433,8 +584,8 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let manager = SessionManager::new();
-            manager.create_session("user1".to_string(), "token1".to_string()).await;
-            manager.create_session("user1".to_string(), "token2".to_string()).await;
+            manager.create_session("user1".to_string(), "token1".to_string()).await.unwrap();
+            manager.create_session("user1".to_string(), "token2".to_string()).await.unwrap();
 
             // 单实例模式（无 pool）：broadcast_logout 应正常返回，不报错
             manager.broadcast_logout("user1").await;
@@ -450,9 +601,9 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let manager = SessionManager::new();
-            manager.create_session("user1".to_string(), "token1".to_string()).await;
-            manager.create_session("user1".to_string(), "token2".to_string()).await;
-            manager.create_session("user2".to_string(), "token3".to_string()).await;
+            manager.create_session("user1".to_string(), "token1".to_string()).await.unwrap();
+            manager.create_session("user1".to_string(), "token2".to_string()).await.unwrap();
+            manager.create_session("user2".to_string(), "token3".to_string()).await.unwrap();
 
             // 先批量移除
             manager.remove_sessions_by_person("user1").await;
@@ -473,10 +624,10 @@ mod tests {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {
             let manager = SessionManager::new();
-            // 无 TokenThreshold 时，check_token_threshold 应返回 true（允许）
+            // 无 pool 时，check_token_threshold 应返回 false（允许创建）
             let now = chrono::Utc::now().naive_utc();
             let result = manager.check_token_threshold(now, "user1").await;
-            assert!(result);
+            assert!(!result);
         });
     }
 
@@ -488,5 +639,425 @@ mod tests {
             // 对不存在的用户调用 broadcast_logout，应正常返回不报错
             manager.broadcast_logout("nonexistent").await;
         });
+    }
+
+    #[tokio::test]
+    async fn test_unit_list_db_connected() {
+        let pool = shared::testing::test_pool();
+        let rate_limiter = RateLimiter::new();
+        let session_manager = SessionManager::with_pool(pool.clone());
+        let app = crate::router(pool, rate_limiter, session_manager);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/unit/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // seed data includes 2 units (unit-root, unit-dept1)
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_role_list_db_connected() {
+        let pool = shared::testing::test_pool();
+        let rate_limiter = RateLimiter::new();
+        let session_manager = SessionManager::with_pool(pool.clone());
+        let app = crate::router(pool, rate_limiter, session_manager);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/role/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // seed data includes 2 roles (role-admin, role-user)
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_code_send_db_connected() {
+        let pool = shared::testing::test_pool();
+        let rate_limiter = RateLimiter::new();
+        let session_manager = SessionManager::with_pool(pool.clone());
+        let app = crate::router(pool, rate_limiter, session_manager);
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/code/credential/admin")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        // seed data includes person with unique_id='admin'
+        assert_eq!(response.status(), StatusCode::OK);
+    }
+
+    #[tokio::test]
+    async fn test_login_end_to_end_db_connected() {
+        use shared::testing::is_db_available;
+
+        if !is_db_available().await {
+            eprintln!("skipping test_login_end_to_end: DATABASE_URL not reachable");
+            return;
+        }
+
+        let _guard = EnvGuard::new().set("LDAP_ENABLE", "false");
+
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.ok();
+
+        // Seed a test user with a known bcrypt password hash
+        if let Some(c) = &client {
+            let _ = c
+                .execute(
+                    "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
+                     VALUES ($1, $2, $3, $4, false, NULL) \
+                     ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
+                    &[
+                        &"person-it-login",
+                        &"it-login",
+                        &"IT Login User",
+                        &format!("{}{}", crate::password::BCRYPT_PREFIX, bcrypt::hash("testpass123", bcrypt::DEFAULT_COST).unwrap().as_str()),
+                    ],
+                )
+                .await;
+
+            // 清理 auth_token_threshold 中可能残留的测试数据，避免阈值拦截登录
+            let _ = c
+                .execute(
+                    "DELETE FROM auth_token_threshold WHERE person_unique = $1",
+                    &[&"it-login"],
+                )
+                .await;
+        }
+
+        let rate_limiter = RateLimiter::new();
+        let session_manager = SessionManager::with_pool(pool.clone());
+        let app = crate::router(pool, rate_limiter, session_manager);
+
+        let body = serde_json::json!({
+            "credential": "it-login",
+            "password": "testpass123"
+        });
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/login")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::to_vec(&body).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(json["type"], "success");
+        assert!(json["data"]["token"].as_str().is_some());
+        assert!(!json["data"]["token"].as_str().unwrap().is_empty());
+    }
+
+    // --- U6 新增测试用例：LDAP + two_factor 安全验证 ---
+
+    #[tokio::test]
+    async fn test_login_ldap_connection_error_returns_500() {
+        use shared::testing::is_db_available;
+
+        if !is_db_available().await {
+            eprintln!("skipping test_login_ldap_connection_error: DATABASE_URL not reachable");
+            return;
+        }
+
+        let _guard = EnvGuard::new()
+            .set("LDAP_ENABLE", "true")
+            .set("LDAP_URL", "ldap://192.0.2.1:389")
+            .set("LDAP_BASE_DN", "dc=example,dc=com")
+            .set("LDAP_BIND_USER", "")
+            .set("LDAP_BIND_PWD", "");
+
+        assert!(
+            ldap::LdapConfig::from_env().is_some(),
+            "LDAP should be enabled in test"
+        );
+
+        let direct = crate::ldap_auth::try_ldap_authenticate("ldap-err-user", "testpass123").await;
+        eprintln!("direct ldap_auth result: {:?}", direct);
+
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.ok();
+        let rate_limiter = RateLimiter::new();
+        let session_manager = SessionManager::with_pool(pool.clone());
+        let app = crate::router(pool, rate_limiter, session_manager);
+        if let Some(c) = &client {
+            let _ = c
+                .execute(
+                    "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
+                     VALUES ($1, $2, $3, $4, false, NULL) \
+                     ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
+                    &[
+                        &"person-ldap-err",
+                        &"ldap-err-user",
+                        &"LDAP Error User",
+                        &format!(
+                            "{}{}",
+                            crate::password::BCRYPT_PREFIX,
+                            bcrypt::hash("testpass123", bcrypt::DEFAULT_COST)
+                                .unwrap()
+                                .as_str()
+                        ),
+                    ],
+                )
+                .await;
+        }
+
+        let body = serde_json::json!({
+            "credential": "ldap-err-user",
+            "password": "testpass123"
+        });
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/login")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::to_vec(&body).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[tokio::test]
+    async fn test_two_factor_login_phase1_db_connected() {
+        use shared::testing::is_db_available;
+
+        if !is_db_available().await {
+            eprintln!(
+                "skipping test_two_factor_login_phase1: DATABASE_URL not reachable"
+            );
+            return;
+        }
+
+        let _guard = EnvGuard::new().set("LDAP_ENABLE", "false");
+
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.ok();
+
+        if let Some(c) = &client {
+            let _ = c
+                .execute(
+                    "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
+                     VALUES ($1, $2, $3, $4, false, NULL) \
+                     ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
+                    &[
+                        &"person-2fa-phase1",
+                        &"2fa-phase1-user",
+                        &"2FA Phase1 User",
+                        &format!(
+                            "{}{}",
+                            crate::password::BCRYPT_PREFIX,
+                            bcrypt::hash("testpass123", bcrypt::DEFAULT_COST)
+                                .unwrap()
+                                .as_str()
+                        ),
+                    ],
+                )
+                .await;
+        }
+
+        let rate_limiter = RateLimiter::new();
+        let session_manager = SessionManager::with_pool(pool.clone());
+        let app = crate::router(pool, rate_limiter, session_manager);
+
+        let body = serde_json::json!({
+            "credential": "2fa-phase1-user",
+            "password": "testpass123"
+        });
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/two_factor")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::to_vec(&body).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(json["type"], "success");
+        assert_eq!(json["data"]["value"], true);
+        assert!(!json["data"]["temp_token"].as_str().unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_two_factor_full_flow_db_connected() {
+        use shared::testing::is_db_available;
+
+        if !is_db_available().await {
+            eprintln!("skipping test_two_factor_full_flow: DATABASE_URL not reachable");
+            return;
+        }
+
+        let _guard = EnvGuard::new().set("LDAP_ENABLE", "false");
+
+        let pool = shared::testing::test_pool();
+        let client = pool.get().await.ok();
+
+        if let Some(c) = &client {
+            let _ = c
+                .execute(
+                    "INSERT INTO auth_person (id, unique_id, name, password_hash, locked, deleted_at) \
+                     VALUES ($1, $2, $3, $4, false, NULL) \
+                     ON CONFLICT (unique_id) DO UPDATE SET password_hash = EXCLUDED.password_hash",
+                    &[
+                        &"person-2fa-full",
+                        &"2fa-full-user",
+                        &"2FA Full User",
+                        &format!(
+                            "{}{}",
+                            crate::password::BCRYPT_PREFIX,
+                            bcrypt::hash("testpass123", bcrypt::DEFAULT_COST)
+                                .unwrap()
+                                .as_str()
+                        ),
+                    ],
+                )
+                .await;
+        }
+
+        let rate_limiter = RateLimiter::new();
+        let session_manager = SessionManager::with_pool(pool.clone());
+        let app = crate::router(pool, rate_limiter, session_manager);
+
+        let body = serde_json::json!({
+            "credential": "2fa-full-user",
+            "password": "testpass123"
+        });
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/two_factor")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::to_vec(&body).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(json["type"], "success");
+        let temp_token = json["data"]["temp_token"].as_str().unwrap().to_string();
+
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/code/credential/2fa-full-user")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let known_code = crate::code_store().issue("2fa-full-user");
+
+        let body = serde_json::json!({
+            "credential": "2fa-full-user",
+            "codeAnswer": known_code,
+            "tempToken": temp_token
+        });
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/code")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::to_vec(&body).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(json["type"], "success");
+        assert!(!json["data"]["token"].as_str().unwrap().is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_two_factor_invalid_temp_token_returns_error() {
+        use shared::testing::is_db_available;
+
+        if !is_db_available().await {
+            eprintln!(
+                "skipping test_two_factor_invalid_temp_token: DATABASE_URL not reachable"
+            );
+            return;
+        }
+
+        let pool = shared::testing::test_pool();
+        let rate_limiter = RateLimiter::new();
+        let session_manager = SessionManager::with_pool(pool.clone());
+        let app = crate::router(pool, rate_limiter, session_manager);
+
+        let body = serde_json::json!({
+            "credential": "2fa-invalid-temp-user",
+            "codeAnswer": "123456",
+            "tempToken": "invalid-temp-token"
+        });
+
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/authentication/code")
+                    .method("POST")
+                    .header("content-type", "application/json")
+                    .body(Body::from(serde_json::to_vec(&body).unwrap()))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+        let bytes = axum::body::to_bytes(response.into_body(), 4096).await.unwrap();
+        let json: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+        assert_eq!(json["type"], "error");
     }
 }

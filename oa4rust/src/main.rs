@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use anyhow::Context as _;
 use axum::middleware;
+use axum::routing::get;
 use axum::Router;
 use mcp_server::tool_bridge::ToolBridge;
 use shared::db::create_pool;
@@ -91,6 +92,10 @@ use processplatform_assemble_bam;
 use processplatform_assemble_designer;
 use query_core_express;
 use query_service_processing;
+use empower;
+use preview;
+use realtime;
+use oa4rust_signature;
 
 /// OpenAPI JSON endpoint handler.
 async fn openapi_json_handler() -> Result<Vec<u8>, axum::response::Json<serde_json::Value>> {
@@ -130,6 +135,14 @@ async fn main() -> anyhow::Result<()> {
 
     let session_manager = SessionManager::with_pool(pool.clone());
     let rate_limiter = RateLimiter::new();
+
+    // Phase B-U-B2: Redis 为默认 session 存储，不可达时降级为内存+DB 模式
+    let redis_available = session_manager.init_redis() && rate_limiter.init_redis();
+    if redis_available {
+        tracing::info!("Redis backend initialized for session store and rate limiter");
+    } else {
+        tracing::warn!("Redis unreachable; session store and rate limiter using in-memory fallback");
+    }
 
     let app = create_app(pool.clone(), session_manager.clone(), rate_limiter.clone()).await?;
 
@@ -260,7 +273,7 @@ pub async fn create_app(
         .merge(personal::router(pool.clone(), session_manager.clone()))
         .merge(cms_control::cms_control_router(pool.clone()))
         .merge(control::control_router(pool.clone()))
-        .merge(personal_extend::personal_extend_router(pool.clone(), session_manager))
+        .merge(personal_extend::personal_extend_router(pool.clone(), session_manager.clone()))
         .merge(program_init::program_init_router(pool.clone()))
         .merge(express::router(pool.clone()))
         .merge(message::router(pool.clone()))
@@ -337,7 +350,17 @@ pub async fn create_app(
         .merge(processplatform_assemble_bam::router(pool.clone()))
         .merge(processplatform_assemble_designer::router(pool.clone()))
         .merge(query_core_express::router(pool.clone()))
-        .merge(query_service_processing::router(pool.clone()));
+        .merge(query_service_processing::router(pool.clone()))
+        .merge(empower::router::router(pool.clone(), session_manager.clone()))
+        .merge(
+            Router::new()
+                .route("/ws", get(realtime::ws_handler))
+                .route("/ws/{room_id}", get(realtime::ws_room_handler))
+                .route("/ws/{room_id}/stats", get(realtime::ws_stats))
+                .with_state(Arc::new(realtime::RealtimeManager::new())),
+        )
+        .merge(preview::preview_route(preview::LibreOfficePreview::default()))
+        .merge(oa4rust_signature::signature_route(oa4rust_signature::PdfSignatureService::new()));
 
     // Provide the deadpool Postgres pool to every handler that extracts
     // `Extension<Pool>` (all *_assemble_control / *_service_processing handlers).

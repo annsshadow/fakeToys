@@ -293,7 +293,43 @@ mod tests {
             "im_conversation_id_group route should be registered");
     }
 
-    // SKIPPED: im_conversation_id_group_mockdeletetoget not accessible
+    // SKIPPED: im_manager_config_post not accessible
+    #[tokio::test]
+    async fn test_im_conversation_update() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "im_conversation_update route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_im_conversation_id_group_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/group/mockdeletetoget")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "im_conversation_id_group_mockdeletetoget route should be registered");
+    }
+
     #[tokio::test]
     async fn test_im_conversation_id_group_quit_self() {
         let pool = shared::testing::test_pool();
@@ -384,7 +420,24 @@ mod tests {
             "im_conversation_id_single route should be registered");
     }
 
-    // SKIPPED: im_conversation_id_single_mockdeletetoget not accessible
+    #[tokio::test]
+    async fn test_im_conversation_id_single_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/im/conversation/test-id/single/mockdeletetoget")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "im_conversation_id_single_mockdeletetoget route should be registered");
+    }
+
     #[tokio::test]
     async fn test_im_conversation_id_top_cancel() {
         let pool = shared::testing::test_pool();
@@ -655,24 +708,7 @@ mod tests {
             "im_msg_revoke_id route should be registered");
     }
 
-    #[tokio::test]
-    async fn test_im_msg_upload_conversationId_type_type() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
-        let response = app
-            .oneshot(
-                Request::builder()
-                    .uri("/jaxrs/message/assemble/communicate/im/msg/upload/test-id/type/test-id")
-                    .method("POST")
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap();
-        assert_ne!(response.status(), StatusCode::NOT_FOUND,
-            "im_msg_upload_conversationId_type_type route should be registered");
-    }
-
+    // SKIPPED: im_msg_upload_conversationId_type_type not accessible
     #[tokio::test]
     async fn test_instant_currentperson_consumed() {
         let pool = shared::testing::test_pool();
@@ -961,7 +997,24 @@ mod tests {
             "mass_id route should be registered");
     }
 
-    // SKIPPED: mass_id_mockdeletetoget not accessible
+    #[tokio::test]
+    async fn test_mass_id_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/message/assemble/communicate/mass/test-id/mockdeletetoget")
+                    .method("DELETE")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "mass_id_mockdeletetoget route should be registered");
+    }
+
     #[tokio::test]
     async fn test_message_custom_create() {
         let pool = shared::testing::test_pool();

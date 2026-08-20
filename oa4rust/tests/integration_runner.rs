@@ -13,11 +13,11 @@
 
 mod integration_tests;
 
-use integration_tests::db::init_test_database;
+use integration_tests::db::init_test_database_async;
 
 /// 集成测试主入口。
 ///
-/// 使用 `#[ignore]` 标记，避免在无 PostgreSQL 环境的 `cargo test` 中运行。
+/// 使用 `#[ignore]` 标记，避免在无数据库环境的 `cargo test` 中运行。
 /// 通过 `--ignored` 显式启用。
 ///
 /// 初始化流程：
@@ -25,16 +25,10 @@ use integration_tests::db::init_test_database;
 /// 2. 执行所有迁移
 /// 3. 注入测试数据（admin 用户 + 会话）
 /// 4. 按顺序运行每个 cross-crate 场景
-#[ignore = "requires a running PostgreSQL server"]
-#[test]
-fn integration_scenarios() {
-    let _ctx = init_test_database();
-    let _pool = _ctx.pool();
-
-    // Run all scenario tests sequentially to avoid port conflicts
-    // (each scenario spins up its own HTTP server on a random port)
-    // Note: each scenario is its own #[tokio::test] — call them directly
-    // without .await (they manage their own runtime via the test macro).
+#[ignore = "requires a running database server"]
+#[tokio::test]
+async fn integration_scenarios() {
+    let _ctx = init_test_database_async();
 
     integration_tests::scenarios::org_person_meeting::org_person_meeting_flow();
     integration_tests::scenarios::bbs_correlation::bbs_correlation_flow();

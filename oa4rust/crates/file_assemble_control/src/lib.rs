@@ -5,7 +5,7 @@ use axum::{
 use base64::Engine;
 use deadpool_postgres::Pool;
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{db::dialect, error::AppError, response::{ActionResult, row_opt_json}};
 use std::sync::Arc;
 
 pub use shared::{ControlClient, ControlPool, DynControlPool, RowGet};
@@ -30,7 +30,9 @@ pub async fn get_control_config(
 
     let row = client
         .ctrl_query_one(
-            "SELECT enabled, default_storage, max_upload_size FROM x_file_assemble_control_config LIMIT 1",
+            &dialect().format_sql(
+                "SELECT enabled, default_storage, max_upload_size FROM x_file_assemble_control_config LIMIT 1",
+            ),
             &[],
         )
         .await;
@@ -59,7 +61,9 @@ pub async fn list_storage_pools(
 
     let rows = client
         .ctrl_query(
-            "SELECT id, name, enabled FROM x_file_assemble_control_storage_pool ORDER BY id",
+            &dialect().format_sql(
+                "SELECT id, name, enabled FROM x_file_assemble_control_storage_pool ORDER BY id",
+            ),
             &[],
         )
         .await;
@@ -102,9 +106,11 @@ pub async fn update_control_config(
         .and_then(|v| v.as_i64())
         .unwrap_or(104857600);
 
-    client
+    let result = client
         .ctrl_execute(
-            "UPDATE x_file_assemble_control_config SET enabled = $1, default_storage = $2, max_upload_size = $3 WHERE id = 'global'",
+            &dialect().format_sql(
+                "UPDATE x_file_assemble_control_config SET enabled = $1, default_storage = $2, max_upload_size = $3 WHERE id = 'global'",
+            ),
             &[&enabled, &default_storage, &max_upload_size],
         )
         .await
@@ -112,7 +118,7 @@ pub async fn update_control_config(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(result > 0)),
             ("enabled".to_string(), Value::Bool(enabled)),
             ("defaultStorage".to_string(), Value::String(default_storage)),
             ("maxUploadSize".to_string(), Value::Number(serde_json::Number::from(max_upload_size))),
@@ -128,7 +134,9 @@ pub async fn list_control_categories(
 
     let rows = client
         .ctrl_query(
-            "SELECT id, name, description FROM x_file_assemble_control_category ORDER BY id",
+            &dialect().format_sql(
+                "SELECT id, name, description FROM x_file_assemble_control_category ORDER BY id",
+            ),
             &[],
         )
         .await;
@@ -1427,12 +1435,17 @@ pub async fn complex_folder_id(
         .await.map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
-                ("superior".to_string(), row.get::<_, Option<String>>("superior").map(Value::String).unwrap_or(Value::Null)),
-            ]),
+            {
+                let mut map = serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("person".to_string(), Value::String(row.get("person"))),
+                ]);
+                if let Some(superior) = row_opt_json::<String>(&row, "superior") {
+                    map.insert("superior".to_string(), superior);
+                }
+                map
+            },
         )))),
         None => Ok(Json(ActionResult::error("folder not found"))),
     }
@@ -1447,12 +1460,17 @@ pub async fn complex_top(
         .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name LIMIT 10", &[])
         .await.map_err(|_| AppError::Internal)?;
     let folder_list: Vec<Value> = folder_rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("superior".to_string(), row.get::<_, Option<String>>("superior").map(Value::String).unwrap_or(Value::Null)),
-        ]))
+        Value::Object({
+            let mut map = serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("person".to_string(), Value::String(row.get("person"))),
+            ]);
+            if let Some(superior) = row_opt_json::<String>(row, "superior") {
+                map.insert("superior".to_string(), superior);
+            }
+            map
+        })
     }).collect();
     let attachment_rows = client
         .query("SELECT id, name, person, reference_type, extension, length FROM FILE_FILE ORDER BY name LIMIT 10", &[])
@@ -1491,11 +1509,7 @@ pub async fn config_is_file_manager(
 
 #[axum::debug_handler]
 pub async fn config_system_config() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 #[axum::debug_handler]
@@ -1852,10 +1866,37 @@ pub async fn file_upload_with_url(
     Extension(session): Extension<shared::session::Session>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _ = (pool, session, body);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let name = body.get("name").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let path = body.get("path").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let folder_id = body.get("folderId").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let size: i64 = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
+    let url = body.get("url").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+    let mime_type = body.get("mimeType").and_then(|v| v.as_str()).unwrap_or_default().to_string();
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let creator = session.person_unique.clone();
+    let content_b64 = base64::engine::general_purpose::STANDARD.encode(&url);
+    let ext = if let Some(ref fname) = name.split('.').last() { fname } else { "bin" };
+
+    client
+        .execute(
+            "INSERT INTO FILE_FILE (id, name, person, reference_id, reference_type, extension, length, mime_type, content, create_time, update_time) \
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())",
+            &[&id, &name, &creator, &folder_id, &String::from("file"), &ext, &size, &mime_type, &content_b64],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+            ("path".to_string(), Value::String(path)),
+            ("folderId".to_string(), Value::String(folder_id)),
+            ("url".to_string(), Value::String(url)),
+            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
         ]),
     ))))
 }
@@ -1958,12 +1999,17 @@ pub async fn folder_list_top(
         .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name", &[])
         .await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("superior".to_string(), row.get::<_, Option<String>>("superior").map(Value::String).unwrap_or(Value::Null)),
-        ]))
+        Value::Object({
+            let mut map = serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("person".to_string(), Value::String(row.get("person"))),
+            ]);
+            if let Some(superior) = row_opt_json::<String>(row, "superior") {
+                map.insert("superior".to_string(), superior);
+            }
+            map
+        })
     }).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -1983,12 +2029,17 @@ pub async fn folder_list_id(
         .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior = $1 ORDER BY name", &[&id])
         .await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("superior".to_string(), row.get::<_, Option<String>>("superior").map(Value::String).unwrap_or(Value::Null)),
-        ]))
+        Value::Object({
+            let mut map = serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("person".to_string(), Value::String(row.get("person"))),
+            ]);
+            if let Some(superior) = row_opt_json::<String>(row, "superior") {
+                map.insert("superior".to_string(), superior);
+            }
+            map
+        })
     }).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2009,12 +2060,17 @@ pub async fn folder_id(
         .await.map_err(|_| AppError::Internal)?;
     match row {
         Some(row) => Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("person".to_string(), Value::String(row.get("person"))),
-                ("superior".to_string(), row.get::<_, Option<String>>("superior").map(Value::String).unwrap_or(Value::Null)),
-            ]),
+            {
+                let mut map = serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("person".to_string(), Value::String(row.get("person"))),
+                ]);
+                if let Some(superior) = row_opt_json::<String>(&row, "superior") {
+                    map.insert("superior".to_string(), superior);
+                }
+                map
+            },
         )))),
         None => Ok(Json(ActionResult::error("folder not found"))),
     }
@@ -2025,17 +2081,9 @@ pub async fn folder2_batch_download(
     pool: Extension<Pool>,
     axum::extract::Json(body): axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let ids: Vec<String> = body.get("ids")
-        .and_then(|v| v.as_array())
-        .map(|arr| arr.iter().filter_map(|v| v.as_str().map(|s| s.to_string())).collect())
-        .unwrap_or_default();
-    if ids.is_empty() { return Ok(Json(ActionResult::error("ids is required"))); }
-    let _ = (pool, ids);
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let _ = pool;
+    let _ = body;
+    Err(AppError::NotImplemented)
 }
 
 #[axum::debug_handler]
@@ -2047,12 +2095,17 @@ pub async fn folder2_list_top(
         .query("SELECT id, name, person, superior FROM FILE_FOLDER WHERE superior IS NULL OR superior = '' ORDER BY name LIMIT 20", &[])
         .await.map_err(|_| AppError::Internal)?;
     let data: Vec<Value> = rows.iter().map(|row| {
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("person".to_string(), Value::String(row.get("person"))),
-            ("superior".to_string(), row.get::<_, Option<String>>("superior").map(Value::String).unwrap_or(Value::Null)),
-        ]))
+        Value::Object({
+            let mut map = serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("person".to_string(), Value::String(row.get("person"))),
+            ]);
+            if let Some(superior) = row_opt_json::<String>(row, "superior") {
+                map.insert("superior".to_string(), superior);
+            }
+            map
+        })
     }).collect();
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
@@ -2083,20 +2136,8 @@ pub async fn folder2_id_download(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let row = client
-        .query_opt("SELECT id, name FROM FILE_FOLDER WHERE id = $1 AND deleted_at IS NULL", &[&id])
-        .await.map_err(|_| AppError::Internal)?;
-    match row {
-        Some(row) => Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("downloadable".to_string(), Value::Bool(true)),
-            ]),
-        )))),
-        None => Ok(Json(ActionResult::error("folder not found"))),
-    }
+    let _ = (pool, id);
+    Err(AppError::NotImplemented)
 }
 
 #[axum::debug_handler]
@@ -2421,11 +2462,7 @@ pub async fn share_share_shareId_file_fileId_folder_folderId(
     axum::extract::Path((share_id, file_id, folder_id)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = (pool, share_id, file_id, folder_id);
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 #[axum::debug_handler]
@@ -2434,11 +2471,7 @@ pub async fn share_shield_id(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = (pool, id);
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 #[axum::debug_handler]
@@ -2447,11 +2480,7 @@ pub async fn share_id(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = (pool, id);
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }
 
 #[axum::debug_handler]
@@ -2460,9 +2489,5 @@ pub async fn share_id_password_password(
     axum::extract::Path((id, _password)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = (pool, id, _password);
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Err(AppError::NotImplemented)
 }

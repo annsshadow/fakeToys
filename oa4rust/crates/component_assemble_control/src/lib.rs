@@ -19,19 +19,28 @@ pub async fn get_control_config(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
     let row = client
         .query_one(
-            "SELECT COUNT(*) as cnt FROM CPT_COMPONENT WHERE deleted_at IS NULL",
+            "SELECT enabled, max_component_count, allow_custom_components FROM x_component_assemble_control_config WHERE id = 'default'",
             &[],
         )
         .await
-        .map_err(|_| AppError::Internal)?;
-    let count: i64 = row.get("cnt");
+        .ok();
+
+    let (enabled, max_component_count, allow_custom_components) = match row {
+        Some(r) => (
+            r.get("enabled"),
+            r.get::<_, i64>("max_component_count"),
+            r.get("allow_custom_components"),
+        ),
+        None => (true, 500i64, true),
+    };
 
     let data = Value::Object(serde_json::Map::from_iter([
-        ("enabled".to_string(), Value::Bool(true)),
-        ("maxComponentCount".to_string(), Value::Number(serde_json::Number::from(count))),
-        ("allowCustomComponents".to_string(), Value::Bool(count < 500)),
+        ("enabled".to_string(), Value::Bool(enabled)),
+        ("maxComponentCount".to_string(), Value::Number(serde_json::Number::from(max_component_count))),
+        ("allowCustomComponents".to_string(), Value::Bool(allow_custom_components)),
     ]));
 
     Ok(Json(ActionResult::success(data)))
@@ -50,17 +59,25 @@ pub async fn list_control_categories(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    let categories: Vec<Value> = rows
-        .iter()
-        .map(|row| {
-            let comp_type: String = row.get("type");
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(comp_type.clone())),
-                ("name".to_string(), Value::String(if comp_type == "system" { "System Components".to_string() } else { "Custom Components".to_string() })),
-                ("enabled".to_string(), Value::Bool(true)),
-            ]))
-        })
-        .collect();
+    let mut categories = Vec::new();
+    for row in rows.iter() {
+        let comp_type: String = row.get("type");
+        let cnt_row = client
+            .query_one(
+                "SELECT COUNT(*) as cnt FROM CPT_COMPONENT WHERE type = $1 AND deleted_at IS NULL",
+                &[&comp_type],
+            )
+            .await
+            .ok();
+        let enabled = cnt_row
+            .map(|r| r.get::<_, i64>("cnt") > 0)
+            .unwrap_or(false);
+        categories.push(Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(comp_type.clone())),
+            ("name".to_string(), Value::String(if comp_type == "system" { "System Components".to_string() } else { "Custom Components".to_string() })),
+            ("enabled".to_string(), Value::Bool(enabled)),
+        ])));
+    }
 
     Ok(Json(ActionResult::success(Value::Array(categories))))
 }
@@ -71,12 +88,45 @@ pub async fn update_control_config(
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let config = body.0;
-    tracing::info!("Updating component assemble control config: {:?}", config);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let enabled = config
+        .get("enabled")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+    let max_component_count = config
+        .get("maxComponentCount")
+        .and_then(|v| v.as_i64())
+        .unwrap_or(500);
+    let allow_custom_components = config
+        .get("allowCustomComponents")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+
+    let config_value = serde_json::json!({
+        "enabled": enabled,
+        "maxComponentCount": max_component_count,
+        "allowCustomComponents": allow_custom_components,
+    });
+
+    let result = client
+        .execute(
+            "INSERT INTO x_component_assemble_control_config (id, enabled, max_component_count, allow_custom_components) \
+             VALUES ($1, $2, $3, $4) \
+             ON CONFLICT (id) DO UPDATE SET enabled = $2, max_component_count = $3, allow_custom_components = $4",
+            &[&"default", &enabled, &max_component_count, &allow_custom_components],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let updated = result > 0;
+
+    tracing::info!("Updated component assemble control config: {:?}", config_value);
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-            ("config".to_string(), config),
+            ("updated".to_string(), Value::Bool(updated)),
+            ("config".to_string(), config_value),
         ]),
     ))))
 }
@@ -217,7 +267,7 @@ pub async fn save_component(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
             ("name".to_string(), Value::String(name)),
             ("type".to_string(), Value::String(component_type)),
         ]),
@@ -246,7 +296,7 @@ pub async fn delete_component(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -266,7 +316,7 @@ pub async fn component_delete_all(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
             ("count".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
