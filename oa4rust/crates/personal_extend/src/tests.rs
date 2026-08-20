@@ -1,6 +1,5 @@
 use super::avatar;
 use super::personal as personal_mod;
-use super::password;
 use crate::routes::personal_extend_router;
 use auth::SessionManager;
 use deadpool_postgres::Pool;
