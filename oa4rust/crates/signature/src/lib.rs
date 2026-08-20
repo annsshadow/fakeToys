@@ -3,7 +3,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use axum::{Router, extract::State, Json};
 use chrono::Utc;
-use rsa::{pkcs1::{DecodeRsaPrivateKey, DecodeRsaPublicKey}, Pkcs1v15Sign, RsaPrivateKey, RsaPublicKey};
+use rsa::{pkcs1::{DecodeRsaPrivateKey, DecodeRsaPublicKey}, RsaPrivateKey, RsaPublicKey};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use thiserror::Error;
@@ -20,6 +20,8 @@ pub enum SignatureError {
     PdfOperation(String),
     #[error("verification failed: {0}")]
     VerificationFailed(String),
+    #[error("certificate chain verification failed: {0}")]
+    ChainVerification(String),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
     #[error("serialization error: {0}")]
@@ -63,6 +65,8 @@ pub struct VerificationResult {
     pub signer: Option<String>,
     pub signing_time: Option<String>,
     pub reason: Option<String>,
+    pub chain: Option<Vec<ChainLink>>,
+    pub cert_pem: String,
     pub error: Option<String>,
 }
 
@@ -88,6 +92,49 @@ pub struct SignPdfResponse {
 pub struct VerifyPdfResponse {
     pub success: bool,
     pub result: Option<VerificationResult>,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CertStatus {
+    pub subject: String,
+    pub issuer: String,
+    pub serial_number: String,
+    pub not_before: String,
+    pub not_after: String,
+    pub revoked: bool,
+    pub revocation_reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChainLink {
+    pub subject: String,
+    pub issuer: String,
+    pub signature_valid: bool,
+    pub is_self_signed: bool,
+    pub depth: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SignatureChainResponse {
+    pub valid: bool,
+    pub chain: Vec<ChainLink>,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SignatureStatusRequest {
+    pub file_data: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SignatureStatusResponse {
+    pub success: bool,
+    pub signature_valid: bool,
+    pub chain: Option<SignatureChainResponse>,
+    pub revocation: Option<Vec<CertStatus>>,
+    pub signer: Option<String>,
+    pub signing_time: Option<String>,
     pub message: String,
 }
 
@@ -218,6 +265,163 @@ impl PdfSignatureService {
 
         Ok(())
     }
+
+    fn parse_pem_cert_chain(chain_pem: &str) -> SignatureResult<Vec<Vec<u8>>> {
+        let mut certs = Vec::new();
+        let mut remaining = chain_pem;
+
+        while let Some(start) = remaining.find("-----BEGIN CERTIFICATE-----") {
+            if let Some(end) = remaining.find("-----END CERTIFICATE-----") {
+                let end = end + "-----END CERTIFICATE-----".len();
+                let block = &remaining[start..end];
+                let b64 = block
+                    .replace("-----BEGIN CERTIFICATE-----", "")
+                    .replace("-----END CERTIFICATE-----", "")
+                    .replace('\n', "")
+                    .replace('\r', "")
+                    .replace(' ', "");
+                let bytes = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, b64)
+                    .map_err(|_| SignatureError::InvalidCertificate)?;
+                certs.push(bytes);
+                remaining = &remaining[end..];
+            } else {
+                break;
+            }
+        }
+
+        if certs.is_empty() {
+            return Err(SignatureError::ChainVerification(
+                "no certificates found in PEM chain".into(),
+            ));
+        }
+
+        Ok(certs)
+    }
+
+    fn verify_cert_chain(chain_pem: &str) -> SignatureResult<Vec<ChainLink>> {
+        let certs = Self::parse_pem_cert_chain(chain_pem)?;
+        let mut chain = Vec::with_capacity(certs.len());
+
+        for (i, cert_bytes) in certs.iter().enumerate() {
+            let (_, cert) =
+                x509_parser::parse_x509_certificate(cert_bytes).map_err(|_| {
+                    SignatureError::ChainVerification(format!("failed to parse certificate at depth {}", i))
+                })?;
+
+            let subject = cert.subject().to_string();
+            let issuer = cert.issuer().to_string();
+
+            let now = std::time::SystemTime::now();
+            let not_before: std::time::SystemTime = cert.validity().not_before.to_datetime().into();
+            let not_after: std::time::SystemTime = cert.validity().not_after.to_datetime().into();
+            let _date_valid = now >= not_before && now <= not_after;
+
+            let is_self_signed = subject == issuer;
+
+            let mut signature_valid = false;
+            if !is_self_signed || (is_self_signed && certs.len() == 1) {
+                if let Some(issuer_bytes) = certs.get(i + 1) {
+                    if let Ok((_, issuer_cert)) =
+                        x509_parser::parse_x509_certificate(issuer_bytes)
+                    {
+                        signature_valid = PdfSignatureService::verify_cert_signature(&cert, &issuer_cert).is_ok();
+                    }
+                }
+            }
+
+            chain.push(ChainLink {
+                subject,
+                issuer,
+                signature_valid,
+                is_self_signed,
+                depth: i,
+            });
+        }
+
+        if chain.is_empty() {
+            return Err(SignatureError::ChainVerification(
+                "empty certificate chain".into(),
+            ));
+        }
+
+        for i in 0..chain.len() - 1 {
+            if chain[i].issuer != chain[i + 1].subject {
+                return Err(SignatureError::ChainVerification(format!(
+                    "issuer/subject mismatch at depth {}: issuer={}, expected={}",
+                    i, chain[i].issuer, chain[i + 1].subject
+                )));
+            }
+            if !chain[i].signature_valid {
+                return Err(SignatureError::ChainVerification(format!(
+                    "signature verification failed for certificate at depth {} (subject={})",
+                    i, chain[i].subject
+                )));
+            }
+        }
+
+        let root = &chain[chain.len() - 1];
+        if !root.is_self_signed {
+            return Err(SignatureError::ChainVerification(
+                "chain does not terminate at a self-signed root certificate".into(),
+            ));
+        }
+
+        Ok(chain)
+    }
+
+    fn verify_cert_signature(
+        subject_cert: &x509_parser::certificate::X509Certificate,
+        issuer_cert: &x509_parser::certificate::X509Certificate,
+    ) -> SignatureResult<()> {
+        let spki = issuer_cert.public_key();
+        subject_cert
+            .verify_signature(Some(spki))
+            .map_err(|e| SignatureError::ChainVerification(format!("invalid certificate signature: {:?}", e)))?;
+        Ok(())
+    }
+
+    fn check_revocation_status(chain_pem: &str) -> SignatureResult<Vec<CertStatus>> {
+        let certs = Self::parse_pem_cert_chain(chain_pem)?;
+        let mut statuses = Vec::with_capacity(certs.len());
+
+        for cert_bytes in &certs {
+            let (_, cert) =
+                x509_parser::parse_x509_certificate(cert_bytes).map_err(|_| {
+                    SignatureError::InvalidCertificate
+                })?;
+
+            let subject = cert.subject().to_string();
+            let issuer = cert.issuer().to_string();
+            let serial = cert.tbs_certificate.raw_serial_as_string();
+            let not_before = format!("{}", cert.validity().not_before.to_datetime());
+            let not_after = format!("{}", cert.validity().not_after.to_datetime());
+
+            let mut revocation_reason = None;
+
+            for ext in cert.extensions() {
+                let oid_str = ext.oid.to_string();
+                if oid_str == "2.5.29.31" {
+                    revocation_reason = Some("CRL distribution points extension present; live CRL/OCSP check requires network access to the issuing CA".into());
+                } else if oid_str == "2.5.29.1" {
+                    if revocation_reason.is_none() {
+                        revocation_reason = Some("AuthorityInfoAccess extension present; live OCSP check requires network access".into());
+                    }
+                }
+            }
+
+            statuses.push(CertStatus {
+                subject,
+                issuer,
+                serial_number: serial,
+                not_before,
+                not_after,
+                revoked: false,
+                revocation_reason,
+            });
+        }
+
+        Ok(statuses)
+    }
 }
 
 #[async_trait]
@@ -251,7 +455,9 @@ impl SignatureService for PdfSignatureService {
                     valid: false,
                     signer: None,
                     signing_time: None,
-                    reason: None,
+                    reason: Some(sig.reason),
+                    chain: None,
+                    cert_pem: sig.cert_pem.clone(),
                     error: Some(format!("failed to parse certificate: {}", e)),
                 });
             }
@@ -262,10 +468,14 @@ impl SignatureService for PdfSignatureService {
                 valid: false,
                 signer: None,
                 signing_time: None,
-                reason: None,
+                reason: Some(sig.reason),
+                chain: None,
+                cert_pem: sig.cert_pem.clone(),
                 error: Some(format!("certificate date verification failed: {}", e)),
             });
         }
+        
+        let chain = Self::verify_cert_chain(&sig.cert_pem).ok();
         
         let hash = Self::compute_sha256(&sig.pdf_without_signature);
         let signature_bytes = match hex::decode(&sig.signature_hex) {
@@ -275,7 +485,9 @@ impl SignatureService for PdfSignatureService {
                     valid: false,
                     signer: None,
                     signing_time: None,
-                    reason: None,
+                    reason: Some(sig.reason),
+                    chain,
+                    cert_pem: sig.cert_pem.clone(),
                     error: Some(format!("invalid signature hex: {}", e)),
                 });
             }
@@ -289,12 +501,16 @@ impl SignatureService for PdfSignatureService {
         
         let (signer, signing_time) = Self::extract_signer_info(&sig.cert_pem).unwrap_or((None, None));
         
+        let chain_valid = chain.as_ref().map(|c| !c.is_empty()).unwrap_or(false);
+        
         Ok(VerificationResult {
             valid,
             signer,
             signing_time,
             reason: Some(sig.reason),
-            error: if valid { None } else { Some("signature verification failed".to_string()) },
+            chain,
+            cert_pem: sig.cert_pem,
+            error: if valid && chain_valid { None } else { Some("signature or chain verification failed".to_string()) },
         })
     }
 }
@@ -471,10 +687,62 @@ pub async fn verify_pdf_handler(
     }
 }
 
+pub async fn signature_status_handler(
+    State(service): State<Arc<dyn SignatureService>>,
+    Json(req): Json<SignatureStatusRequest>,
+) -> Json<SignatureStatusResponse> {
+    let file_data = match base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &req.file_data) {
+        Ok(data) => data,
+        Err(_) => {
+            return Json(SignatureStatusResponse {
+                success: false,
+                signature_valid: false,
+                chain: None,
+                revocation: None,
+                signer: None,
+                signing_time: None,
+                message: "invalid base64 file data".to_string(),
+            });
+        }
+    };
+
+    match service.verify_pdf(&file_data).await {
+        Ok(result) => {
+            let chain = PdfSignatureService::verify_cert_chain(&result.cert_pem).ok();
+            let chain_response = chain.as_ref().map(|links| SignatureChainResponse {
+                valid: links.iter().all(|l| l.signature_valid) && links.last().map(|l| l.is_self_signed).unwrap_or(false),
+                chain: links.clone(),
+                error: None,
+            });
+            let revocation = PdfSignatureService::check_revocation_status(&result.cert_pem).ok();
+
+            Json(SignatureStatusResponse {
+                success: true,
+                signature_valid: result.valid,
+                chain: chain_response,
+                revocation,
+                signer: result.signer,
+                signing_time: result.signing_time,
+                message: "status retrieved".to_string(),
+            })
+        }
+        Err(e) => Json(SignatureStatusResponse {
+            success: false,
+            signature_valid: false,
+            chain: None,
+            revocation: None,
+            signer: None,
+            signing_time: None,
+            message: e.to_string(),
+        }),
+    }
+}
+
 pub fn signature_route<S: SignatureService + 'static>(service: S) -> Router {
     Router::new()
         .route("/signature/pdf/sign", axum::routing::post(sign_pdf_handler))
         .route("/signature/pdf/verify", axum::routing::post(verify_pdf_handler))
+        .route("/signature/pdf/status", axum::routing::post(signature_status_handler))
         .with_state(Arc::new(service))
 }
 

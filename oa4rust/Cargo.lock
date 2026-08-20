@@ -83,8 +83,10 @@ dependencies = [
 name = "ai_assemble_control"
 version = "0.1.0"
 dependencies = [
+ "async-stream",
  "axum 0.8.9",
  "deadpool-postgres",
+ "futures-util",
  "reqwest",
  "serde",
  "serde_json",
@@ -2547,8 +2549,13 @@ dependencies = [
 name = "jpush_assemble_control"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "axum 0.8.9",
+ "base64 0.22.1",
+ "chrono",
  "deadpool-postgres",
+ "futures-util",
+ "reqwest",
  "serde",
  "serde_json",
  "shared",
@@ -3572,6 +3579,7 @@ dependencies = [
  "digest 0.10.7",
  "hex",
  "lopdf",
+ "ring",
  "rsa",
  "serde",
  "serde_json",
@@ -4991,12 +4999,14 @@ dependencies = [
  "tokio",
  "tokio-native-tls",
  "tokio-rustls",
+ "tokio-util",
  "tower",
  "tower-http 0.6.11",
  "tower-service",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
+ "wasm-streams",
  "web-sys",
  "webpki-roots 1.0.9",
 ]
@@ -6764,6 +6774,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "wasm-streams"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "15053d8d85c7eccdbefef60f06769760a563c7f0a9d6902a13d35c7800b0ad65"
+dependencies = [
+ "futures-util",
+ "js-sys",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+]
+
+[[package]]
 name = "web-sys"
 version = "0.3.103"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7174,6 +7197,7 @@ dependencies = [
  "lazy_static",
  "nom",
  "oid-registry",
+ "ring",
  "rusticata-macros",
  "thiserror 1.0.69",
  "time",

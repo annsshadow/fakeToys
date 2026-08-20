@@ -17,8 +17,9 @@ async-trait = "0.1"
 sha2.workspace = true
 hex.workspace = true
 rsa.workspace = true
-x509-parser.workspace = true
+x509-parser = { workspace = true, features = ["verify"] }
 lopdf.workspace = true
 chrono.workspace = true
 digest.workspace = true
 tower.workspace = true
+ring = "0.17"
