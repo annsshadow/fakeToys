@@ -101,6 +101,13 @@ impl SessionManager {
             .filter(|s| !s.trim().is_empty())
             .unwrap_or_else(|| "redis://127.0.0.1:6379".to_string());
 
+        // If we're already inside a tokio runtime, we cannot use block_on.
+        // In that case, we skip Redis initialization and let the caller
+        // use init_redis_async if needed.
+        if tokio::runtime::Handle::try_current().is_ok() {
+            return false;
+        }
+
         let rt = match tokio::runtime::Runtime::new() {
             Ok(r) => r,
             Err(_) => return false,

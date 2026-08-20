@@ -11,8 +11,6 @@ use crate::integration_tests::db::TEST_DB;
 // and retrieved via the list endpoint through the real HTTP layer.
 // ──────────────────────────────────────────────────────────────────────────────
 
-#[tokio::test]
-#[ignore = "requires a running database server"]
 pub async fn program_center_core_entity_application_flow() {
     let pool = TEST_DB
         .get()

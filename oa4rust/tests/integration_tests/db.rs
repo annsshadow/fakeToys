@@ -111,6 +111,48 @@ fn is_mysql_dialect() -> bool {
         .unwrap_or(false)
 }
 
+/// Initialize the test database and run migrations (async version for use within tokio runtime).
+pub async fn init_test_database_async() -> Arc<TestContext> {
+    let db_name = format!("oa4rust_test_{}", std::process::id());
+    TEST_DB_NAME.get_or_init(|| db_name.clone());
+
+    // Check if already initialized
+    if let Some(pool) = TEST_DB.get() {
+        return Arc::new(TestContext {
+            pool: pool.clone(),
+            db_name: db_name.clone(),
+        });
+    }
+
+    // Initialize based on dialect
+    let pool: Arc<TestPool> = if is_mysql_dialect() {
+        // MySQL initialization must be done in a blocking context
+        // since mysql_async uses its own connection pool
+        let db_name_mysql = db_name.clone();
+        let rt = runtime_or_new();
+        Arc::new(rt.handle().block_on(async move {
+            init_mysql_database(&db_name_mysql)
+                .expect("failed to init MySQL test database")
+        }))
+    } else {
+        // PostgreSQL initialization
+        let p = setup_postgres_database(&db_name).await
+            .expect("failed to set up PostgreSQL test database");
+        Arc::new(TestPool::Postgres(p))
+    };
+
+    // Set the global TEST_DB
+    let result = Arc::new(TestContext {
+        pool: pool.clone(),
+        db_name: db_name.clone(),
+    });
+
+    // Try to set the OnceLock (may fail if another thread already set it)
+    let _ = TEST_DB.set(pool);
+
+    result
+}
+
 /// Initialize the test database and run migrations.
 pub fn init_test_database() -> Arc<TestContext> {
     let db_name = format!("oa4rust_test_{}", std::process::id());
@@ -269,7 +311,7 @@ fn build_mysql_url(
     } else {
         format!("/{}", encode_url_component(dbname))
     };
-    format!("mysql://{}{}:{}{}", auth, host, port, db_part)
+    format!("mysql://{}@{}:{}{}", auth, host, port, db_part)
 }
 
 fn init_mysql_database(db_name: &str) -> anyhow::Result<TestPool> {

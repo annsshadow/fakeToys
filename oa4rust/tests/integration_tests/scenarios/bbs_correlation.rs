@@ -15,8 +15,6 @@ use crate::integration_tests::db::TEST_DB;
 // can be retrieved �?all through the real HTTP layer.
 // ──────────────────────────────────────────────────────────────────────────────
 
-#[tokio::test]
-#[ignore = "requires a running database server"]
 pub async fn bbs_correlation_flow() {
     let pool = TEST_DB
         .get()
