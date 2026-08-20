@@ -181,7 +181,7 @@ pub async fn update_control_config(
     let max_forum_count = body.get("maxForumCount").and_then(|v| v.as_i64()).unwrap_or(1000);
     let allow_anonymous = body.get("allowAnonymous").and_then(|v| v.as_bool()).unwrap_or(false);
 
-    client
+    let rows_affected = client
         .execute(
             "UPDATE x_bbs_assemble_control_config SET enabled = $1, max_forum_count = $2, allow_anonymous = $3 WHERE id = (SELECT id FROM x_bbs_assemble_control_config ORDER BY create_time LIMIT 1)",
             &[&enabled, &max_forum_count, &allow_anonymous],
@@ -191,7 +191,7 @@ pub async fn update_control_config(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(rows_affected > 0)),
             ("config".to_string(), body.0),
         ]),
     ))))
@@ -619,7 +619,7 @@ pub async fn delete_forum(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let rows_affected = client
         .execute(
             "UPDATE x_bbs_forum SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
@@ -627,7 +627,7 @@ pub async fn delete_forum(
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
     ))))
 }
 
@@ -636,7 +636,7 @@ pub async fn delete_reply(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let rows_affected = client
         .execute(
             "UPDATE x_bbs_reply SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
@@ -644,7 +644,7 @@ pub async fn delete_reply(
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
     ))))
 }
 
@@ -653,7 +653,7 @@ pub async fn delete_subject(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let rows_affected = client
         .execute(
             "UPDATE x_bbs_topic SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
             &[&id],
@@ -661,7 +661,7 @@ pub async fn delete_subject(
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
     ))))
 }
 
@@ -909,13 +909,12 @@ pub async fn logout(
     _pool: Extension<Pool>,
     body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    if let Some(token) = body.get("token").and_then(|v| v.as_str()) {
-        TOKEN_STORE.with(|m| {
-            m.lock().unwrap().remove(token);
-        });
-    }
+    let token = body.get("token").and_then(|v| v.as_str()).map(|s| s.to_string());
+    let removed = token.as_ref().map_or(false, |t| {
+        TOKEN_STORE.with(|m| m.lock().unwrap().remove(t).is_some())
+    });
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("success".to_string(), Value::Bool(removed))]),
     ))))
 }
 
@@ -971,12 +970,12 @@ pub async fn shutup_delete(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let rows_affected = client
         .execute("DELETE FROM x_bbs_shutup WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(rows_affected > 0))]),
     ))))
 }
 
@@ -1081,10 +1080,34 @@ pub async fn subject_search(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let _page = page;
-    let _count = count;
-    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let offset = (page.saturating_sub(1)).saturating_mul(count);
+    let rows = client
+        .query(
+            "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
+             WHERE deleted_at IS NULL AND (title ILIKE $1 OR content ILIKE $1) \
+             ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
+            &[&"%".to_string(), &count, &offset],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let total_row = client
+        .query_one(
+            "SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL AND (title ILIKE $1 OR content ILIKE $1)",
+            &[&"%".to_string()],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let total: i64 = total_row.get(0);
+    let data: Vec<Value> = rows
+        .iter()
+        .map(row_to_topic)
+        .map(|t| serde_json::to_value(t).unwrap())
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("total".to_string(), Value::Number(serde_json::Number::from(total))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn subject_statgrade(
@@ -1173,10 +1196,34 @@ pub async fn topic_search(
     pool: Extension<Pool>,
     Path((page, count)): Path<(i64, i64)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let _page = page;
-    let _count = count;
-    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let offset = (page.saturating_sub(1)).saturating_mul(count);
+    let rows = client
+        .query(
+            "SELECT id, forum_id, title, content, creator, create_time FROM x_bbs_topic \
+             WHERE deleted_at IS NULL AND (title ILIKE $1 OR content ILIKE $1) \
+             ORDER BY create_time DESC LIMIT $2::bigint OFFSET $3::bigint",
+            &[&"%".to_string(), &count, &offset],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let total_row = client
+        .query_one(
+            "SELECT COUNT(*) FROM x_bbs_topic WHERE deleted_at IS NULL AND (title ILIKE $1 OR content ILIKE $1)",
+            &[&"%".to_string()],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let total: i64 = total_row.get(0);
+    let data: Vec<Value> = rows
+        .iter()
+        .map(row_to_topic)
+        .map(|t| serde_json::to_value(t).unwrap())
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("total".to_string(), Value::Number(serde_json::Number::from(total))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
 pub async fn user_forum_list(
@@ -1379,7 +1426,27 @@ pub async fn subjectattach_list(
     pool: Extension<Pool>,
     Path(_subject_id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Array(vec![]))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, url, description FROM x_bbs_subject_attachment \
+             WHERE subject_id = $1 ORDER BY create_time ASC",
+            &[&_subject_id],
+        )
+        .await
+        .unwrap_or_default();
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("url".to_string(), Value::String(row.get("url")));
+            if let Some(val) = row_opt_json::<String>(row, "description") {
+                map.insert("description".to_string(), val);
+            }
+            Value::Object(map)
+        })
+        .collect();
+    Ok(Json(ActionResult::success(Value::Array(data))))
 }
 

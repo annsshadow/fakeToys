@@ -79,6 +79,7 @@ pub async fn update_single(
         ))));
     }
 
+    let updated = !rows.is_empty();
     client
         .execute(
             "UPDATE x_msg_message SET xconsumed = true WHERE xid = $1",
@@ -91,7 +92,7 @@ pub async fn update_single(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("type".to_string(), Value::String(r#type)),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(updated)),
         ]),
     ))))
 }
@@ -106,7 +107,7 @@ pub async fn custom_create(
     let body = req.body.unwrap_or_default();
     let msg_type = req.r#type.unwrap_or_default();
 
-    client
+    let created = client
         .execute(
             "INSERT INTO x_msg_message (xid, xtitle, xbody, xtype, xconsumed) VALUES ($1, $2, $3, $4, false)",
             &[&id, &title, &body, &msg_type],
@@ -116,7 +117,7 @@ pub async fn custom_create(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("created".to_string(), Value::Bool(true)),
+            ("created".to_string(), Value::Bool(created > 0)),
             ("id".to_string(), Value::String(id)),
             ("title".to_string(), Value::String(title)),
         ]),
@@ -133,20 +134,22 @@ pub async fn mark_read(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if !rows.is_empty() {
+    let marked_read = if !rows.is_empty() {
         client
             .execute(
                 "UPDATE x_msg_message SET xconsumed = true WHERE xid = $1",
                 &[&id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
-    }
+            .map_err(|_| AppError::Internal)? > 0
+    } else {
+        false
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("markedRead".to_string(), Value::Bool(true)),
+            ("markedRead".to_string(), Value::Bool(marked_read)),
         ]),
     ))))
 }

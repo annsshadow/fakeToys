@@ -22,7 +22,7 @@ pub async fn send_message(
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
     let id = Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, $5, NOW())", &[&id, &conversation_id, &content, &sender, &msg_type])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -39,7 +39,7 @@ pub async fn send_message(
             ("content".to_string(), Value::String(content.to_string())),
             ("sender".to_string(), Value::String(sender.to_string())),
             ("type".to_string(), Value::String(msg_type.to_string())),
-            ("sent".to_string(), Value::Bool(true)),
+            ("sent".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -79,13 +79,13 @@ pub async fn mark_read(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_consume SET consumed = true WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("marked_read".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("marked_read".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -229,13 +229,13 @@ pub async fn consume_type_type_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = Uuid::new_v4().to_string();
-    client
+    let result = client
         .execute("INSERT INTO x_message_consume (id, consume, content, type, create_time) VALUES ($1, $2, '', $3, NOW())", &[&id, &msg_type, &msg_type])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -255,7 +255,7 @@ pub async fn consume_id_type_type(
     }
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -269,7 +269,7 @@ pub async fn im_conversation(
     let conversation_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("single");
     let id = Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute("INSERT INTO x_message_conversation (id, name, type, create_time) VALUES ($1, $2, $3, NOW())", &[&id, &name, &conversation_type])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -279,7 +279,7 @@ pub async fn im_conversation(
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(name.to_string())),
             ("type".to_string(), Value::String(conversation_type.to_string())),
-            ("created".to_string(), Value::Bool(true)),
+            ("created".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -375,13 +375,13 @@ pub async fn im_conversation_mockputtopost(
     let title = req.get("title").and_then(|v| v.as_str()).unwrap_or_default();
     let note = req.get("note").and_then(|v| v.as_str()).unwrap_or_default();
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET title = COALESCE($2, title), note = COALESCE($3, note), update_time = NOW() WHERE id = $1", &[&id, &title, &note])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("updated".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("updated".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -462,13 +462,13 @@ pub async fn im_conversation_id_group_quit_self(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1 AND person_id = $2", &[&id, &""])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("quit".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("quit".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -503,13 +503,13 @@ pub async fn im_conversation_id_read(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET read_status = 'read', read_time = NOW() WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("read".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("read".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -519,13 +519,13 @@ pub async fn im_conversation_id_read_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET read_status = 'read', read_time = NOW() WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("read".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("read".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -576,13 +576,13 @@ pub async fn im_conversation_id_top_cancel(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET top = false WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("topCancelled".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("topCancelled".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -592,13 +592,13 @@ pub async fn im_conversation_id_top_cancel_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET top = false WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("topCancelled".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("topCancelled".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -608,13 +608,13 @@ pub async fn im_conversation_id_top_set(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET top = true, top_time = NOW() WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("topSet".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("topSet".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -624,13 +624,13 @@ pub async fn im_conversation_id_top_set_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET top = true, top_time = NOW() WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("topSet".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("topSet".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -670,7 +670,7 @@ pub async fn im_msg(
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
     let id = Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, $5, NOW())", &[&id, &conversation_id, &content, &sender, &msg_type])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -682,7 +682,7 @@ pub async fn im_msg(
             ("content".to_string(), Value::String(content.to_string())),
             ("sender".to_string(), Value::String(sender.to_string())),
             ("type".to_string(), Value::String(msg_type.to_string())),
-            ("sent".to_string(), Value::Bool(true)),
+            ("sent".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -693,13 +693,13 @@ pub async fn im_msg_clear(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message SET cleared = true WHERE conversation_id = $1", &[&conversation_id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("cleared".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("cleared".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -710,13 +710,13 @@ pub async fn im_msg_collection(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let message_id = req.get("\"messageId\"").and_then(|v| v.as_str()).unwrap_or_default();
-    client
+    let result = client
         .execute("INSERT INTO x_message_collection (id, message_id, create_time) VALUES ($1, $2, NOW())", &[&Uuid::new_v4().to_string(), &message_id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("collected".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("collected".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -890,13 +890,13 @@ pub async fn im_msg_revoke_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message SET revoked = true, revoke_time = NOW() WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("revoked".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("revoked".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -913,7 +913,7 @@ pub async fn im_msg_upload_conversationId_type_type(
     let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
     let id = Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute("INSERT INTO x_message_file (id, message_id, conversation_id, file_url, file_name, file_size, type, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())", &[&id, &id, &conversation_id, &file_url, &file_name, &file_size, &msg_type])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -924,7 +924,7 @@ pub async fn im_msg_upload_conversationId_type_type(
             ("\"conversationId\"".to_string(), Value::String(conversation_id)),
             ("type".to_string(), Value::String(msg_type)),
             ("\"fileUrl\"".to_string(), Value::String(file_url.to_string())),
-            ("uploaded".to_string(), Value::Bool(true)),
+            ("uploaded".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -995,15 +995,18 @@ pub async fn instant_currentperson_consumed_mockputtopost(
         arr.iter().filter_map(|v| v.as_str().map(String::from)).collect::<Vec<String>>()
     }).unwrap_or_default();
 
-    if !id_list.is_empty() {
-        client
+    let success = id_list.is_empty();
+    let result = if !id_list.is_empty() {
+        Some(client
             .execute("UPDATE x_message_instant SET consumed = true WHERE id = ANY($1)", &[&id_list])
             .await
-            .map_err(|_| AppError::Internal)?;
-    }
+            .map_err(|_| AppError::Internal)?)
+    } else {
+        None
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("success".to_string(), Value::Bool(success || result.unwrap_or(0) > 0))]),
     ))))
 }
 
@@ -1401,7 +1404,7 @@ pub async fn message_custom_create(
     let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
     let id = Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, 'custom', NOW())", &[&id, &conversation_id, &content, &sender])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1412,7 +1415,7 @@ pub async fn message_custom_create(
             ("\"conversationId\"".to_string(), Value::String(conversation_id.to_string())),
             ("content".to_string(), Value::String(content.to_string())),
             ("type".to_string(), Value::String("custom".to_string())),
-            ("created".to_string(), Value::Bool(true)),
+            ("created".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }

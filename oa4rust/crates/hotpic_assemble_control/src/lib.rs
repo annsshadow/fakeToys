@@ -37,7 +37,7 @@ pub async fn get_control_config(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("enabled".to_string(), Value::Bool(enabled)),
-            ("cacheEnabled".to_string(), Value::Bool(true)),
+            ("cacheEnabled".to_string(), Value::Bool(count > 0)),
             ("defaultScale".to_string(), Value::Number(serde_json::Number::from_f64(1.0).unwrap())),
         ]),
     ))))
@@ -60,10 +60,11 @@ pub async fn list_control_panels(
         .iter()
         .enumerate()
         .map(|(i, row)| {
+            let creator: String = row.get("creator");
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(format!("panel-{}", i))),
-                ("name".to_string(), Value::String(row.get("creator"))),
-                ("enabled".to_string(), Value::Bool(true)),
+                ("name".to_string(), Value::String(creator.clone())),
+                ("enabled".to_string(), Value::Bool(!creator.is_empty())),
                 ("type".to_string(), Value::String("hotpic".to_string())),
             ]))
         })
@@ -90,7 +91,7 @@ pub async fn update_control_config(
     let name = config.get("name").and_then(|v| v.as_str()).unwrap_or("default").to_string();
     let enabled = config.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_hotpic (id, title, image_url, creator, create_time) VALUES ($1, $2, $3, $4, NOW())",
             &[&id, &name, &"", &"system"],
@@ -100,7 +101,7 @@ pub async fn update_control_config(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(result > 0)),
             ("config".to_string(), config),
         ]),
     ))))
@@ -122,10 +123,11 @@ pub async fn list_control_applications(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
+            let application: String = row.get("application");
             Value::Object(serde_json::Map::from_iter([
                 ("application".to_string(), Value::String(row.get("application"))),
-                ("name".to_string(), Value::String(row.get("application"))),
-                ("enabled".to_string(), Value::Bool(true)),
+                ("name".to_string(), Value::String(application.clone())),
+                ("enabled".to_string(), Value::Bool(!application.is_empty())),
             ]))
         })
         .collect();
@@ -265,7 +267,7 @@ pub async fn save_hotpic(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
             ("title".to_string(), Value::String(title)),
             ("imageUrl".to_string(), Value::String(image_url)),
         ]),
@@ -293,7 +295,7 @@ pub async fn delete_hotpic(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -445,7 +447,7 @@ pub async fn user_hotpic_changeTitle(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("title".to_string(), Value::String(title)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }

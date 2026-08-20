@@ -1705,7 +1705,7 @@ impl JsonRpcResponse {
         Self {
             jsonrpc: "2.0",
             id,
-            result: Some(serde_json::to_value(result).unwrap_or(Value::Null)),
+            result: Some(serde_json::to_value(result).unwrap_or(serde_json::json!({}))),
             error: None,
         }
     }

@@ -25,12 +25,17 @@ pub async fn get_status(
         .await
         .map_err(|_| AppError::Internal)?
         .get("count");
+    let enabled: bool = client
+        .query_one("SELECT config_value FROM x_org_config WHERE config_key = 'sync_enabled'", &[])
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get("config_value");
 
     let data = Value::Object(serde_json::Map::from_iter([
         ("status".to_string(), Value::String("running".to_string())),
         ("personCount".to_string(), Value::Number(serde_json::Number::from(person_count))),
         ("groupCount".to_string(), Value::Number(serde_json::Number::from(group_count))),
-        ("enabled".to_string(), Value::Bool(true)),
+        ("enabled".to_string(), Value::Bool(enabled)),
     ]));
 
     Ok(Json(ActionResult::success(data)))
@@ -49,7 +54,7 @@ pub async fn sync_organization(
         .get("count");
 
     let data = Value::Object(serde_json::Map::from_iter([
-        ("synced".to_string(), Value::Bool(true)),
+        ("synced".to_string(), Value::Bool(synced > 0)),
         ("syncedRecords".to_string(), Value::Number(serde_json::Number::from(synced))),
         ("lastSyncTime".to_string(), Value::String("".to_string())),
         ("message".to_string(), Value::String("同步完成".to_string())),

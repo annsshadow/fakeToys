@@ -20,7 +20,7 @@ pub async fn sync_to_knowledge(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("synced".to_string(), Value::Bool(true)),
+            ("synced".to_string(), Value::Bool(count > 0)),
             ("count".to_string(), Value::Number(serde_json::Number::from(count))),
             ("message".to_string(), Value::String("sync completed".to_string())),
         ]),
@@ -43,17 +43,17 @@ pub async fn app_list(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "description".to_string(),
-                    row.get::<_, Option<String>>("description")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                ("status".to_string(), Value::String(row.get("status"))),
-            ]))
+            let description: Option<Value> =
+                row.get::<_, Option<String>>("description").map(Value::String);
+            Value::Object(serde_json::Map::from_iter(
+                [
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("status".to_string(), Value::String(row.get("status"))),
+                ]
+                .into_iter()
+                .chain(description.into_iter().map(|v| ("description".to_string(), v))),
+            ))
         })
         .collect();
 

@@ -307,7 +307,7 @@ pub async fn save_page(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -346,7 +346,7 @@ pub async fn delete_page(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }

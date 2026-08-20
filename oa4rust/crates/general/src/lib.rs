@@ -23,17 +23,15 @@ pub async fn area_list(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
+            let mut district_map = serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("level".to_string(), Value::String(row.get("level"))),
-                (
-                    "\"parentId\"".to_string(),
-                    row.get::<_, Option<String>>("parent_id")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-            ]))
+            ]);
+            if let Some(parent_id) = row.get::<_, Option<String>>("parent_id") {
+                district_map.insert("\"parentId\"".to_string(), Value::String(parent_id));
+            }
+            Value::Object(district_map)
         })
         .collect();
 

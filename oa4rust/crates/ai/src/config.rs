@@ -23,7 +23,7 @@ pub async fn config_get(
         Value::Object(serde_json::Map::from_iter([
             ("config".to_string(), Value::String("base".to_string())),
             ("version".to_string(), Value::String("1.0.0".to_string())),
-            ("enabled".to_string(), Value::Bool(true)),
+            ("enabled".to_string(), Value::Bool(false)),
         ]))
     } else {
         let row = &rows[0];
@@ -100,22 +100,30 @@ pub async fn config_list_model_paging(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("model".to_string(), Value::String(row.get("model"))),
-                ("\"completionUrl\"".to_string(), Value::String(row.get("\"completionUrl\""))),
-                ("\"apiKey\"".to_string(), {
-                    let api_key: Option<String> = row.get("\"apiKey\"");
-                    api_key.map(|k| {
-                        if k.len() > 4 { Value::String(format!("{}****", &k[k.len() - 4..])) } else { Value::String("****".to_string()) }
-                    }).unwrap_or(Value::Null)
-                }),
-                ("enable".to_string(), Value::Bool(row.get("enable"))),
-                ("\"asDefault\"".to_string(), Value::Bool(row.get("\"asDefault\""))),
-                ("desc".to_string(), Value::String(row.get("desc"))),
-            ]))
+            let api_key_val: Option<Value> = {
+                let api_key: Option<String> = row.get("\"apiKey\"");
+                api_key.map(|k| {
+                    if k.len() > 4 {
+                        Value::String(format!("{}****", &k[k.len() - 4..]))
+                    } else {
+                        Value::String("****".to_string())
+                    }
+                })
+            };
+            Value::Object(serde_json::Map::from_iter(
+                [
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("type".to_string(), Value::String(row.get("type"))),
+                    ("model".to_string(), Value::String(row.get("model"))),
+                    ("\"completionUrl\"".to_string(), Value::String(row.get("\"completionUrl\""))),
+                    ("enable".to_string(), Value::Bool(row.get("enable"))),
+                    ("\"asDefault\"".to_string(), Value::Bool(row.get("\"asDefault\""))),
+                    ("desc".to_string(), Value::String(row.get("desc"))),
+                ]
+                .into_iter()
+                .chain(api_key_val.into_iter().map(|v| ("\"apiKey\"".to_string(), v))),
+            ))
         })
         .collect();
 
@@ -147,21 +155,28 @@ pub async fn config_get_model(
     match row {
         Some(row) => {
             let api_key: Option<String> = row.get("\"apiKey\"");
-            let masked_key = api_key.map(|k| {
-                if k.len() > 4 { format!("{}****", &k[k.len() - 4..]) } else { "****".to_string() }
-            });
+            let masked_key: Option<Value> = api_key.map(|k| {
+                if k.len() > 4 {
+                    format!("{}****", &k[k.len() - 4..])
+                } else {
+                    "****".to_string()
+                }
+            }).map(Value::String);
 
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("type".to_string(), Value::String(row.get("type"))),
-                ("model".to_string(), Value::String(row.get("model"))),
-                ("\"completionUrl\"".to_string(), Value::String(row.get("\"completionUrl\""))),
-                ("\"apiKey\"".to_string(), masked_key.map(Value::String).unwrap_or(Value::Null)),
-                ("enable".to_string(), Value::Bool(row.get("enable"))),
-                ("\"asDefault\"".to_string(), Value::Bool(row.get("\"asDefault\""))),
-                ("desc".to_string(), Value::String(row.get("desc"))),
-            ]));
+            let result = Value::Object(serde_json::Map::from_iter(
+                [
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("type".to_string(), Value::String(row.get("type"))),
+                    ("model".to_string(), Value::String(row.get("model"))),
+                    ("\"completionUrl\"".to_string(), Value::String(row.get("\"completionUrl\""))),
+                    ("enable".to_string(), Value::Bool(row.get("enable"))),
+                    ("\"asDefault\"".to_string(), Value::Bool(row.get("\"asDefault\""))),
+                    ("desc".to_string(), Value::String(row.get("desc"))),
+                ]
+                .into_iter()
+                .chain(masked_key.into_iter().map(|v| ("\"apiKey\"".to_string(), v))),
+            ));
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("model not found"))),

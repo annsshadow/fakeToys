@@ -206,13 +206,14 @@ pub async fn cancel_process_instance(
         .execute("UPDATE x_work SET work_status = $1, end_time = NOW() WHERE id = $2", &[&"cancelled", &execution_id])
         .await
         .map_err(|_| AppError::Internal)?;
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("executionId".to_string(), Value::String(execution_id)),
-            ("cancelled".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
+            &[&execution_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -258,13 +259,15 @@ pub async fn work_v2_id_terminate(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    let row = tx
+        .query_one(
+            "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("terminated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn work_v2_id_retract(
@@ -280,12 +283,14 @@ pub async fn work_v2_id_retract(
         .execute("UPDATE x_task SET task_status = $1 WHERE work = $2", &[&"cancelled", &id])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("retracted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn work_v2_id_goback(
@@ -307,13 +312,15 @@ pub async fn work_v2_id_goback(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    let row = tx
+        .query_one(
+            "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("goback".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn work_v2_id_rollback(
@@ -331,7 +338,7 @@ pub async fn work_v2_id_rollback(
     if let Some(snap) = snap_row {
         let tx = client.transaction().await.map_err(|_| AppError::Internal)?;
         let snap_data_raw: String = snap.get("snap_data");
-        let snap_data: Value = serde_json::from_str(&snap_data_raw).unwrap_or(Value::Null);
+        let snap_data: Value = serde_json::from_str(&snap_data_raw).unwrap_or(serde_json::json!({}));
         let id2 = Uuid::new_v4().to_string();
         tx.execute(
                 "INSERT INTO x_record (id, work_id, record_type, content, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
@@ -395,10 +402,15 @@ pub async fn work_v2_id_reroute(
     tx.execute("UPDATE x_task SET task_status = $1 WHERE work = $2 AND task_status != $3", &[&"cancelled", &id, &"cancelled"])
         .await
         .map_err(|_| AppError::Internal)?;
+    let row = tx
+        .query_one(
+            "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id)), ("rerouted".to_string(), Value::Bool(true))]),
-    ))))
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn work_id_draft(
@@ -621,9 +633,14 @@ pub async fn task_id_press(
         .execute("UPDATE x_task SET task_status = $1 WHERE id = $2", &[&"pressed", &id])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id)), ("pressed".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn task_id_expire(
@@ -635,9 +652,14 @@ pub async fn task_id_expire(
         .execute("UPDATE x_task SET task_status = $1 WHERE id = $2", &[&"expired", &id])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id)), ("expired".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn task_id_pass_expired(
@@ -649,9 +671,14 @@ pub async fn task_id_pass_expired(
         .execute("UPDATE x_task SET task_status = $1 WHERE id = $2", &[&"pending", &id])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id)), ("passed".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn task_id_will(
@@ -693,9 +720,14 @@ pub async fn task_v2_id_pause(
         .execute("UPDATE x_task SET task_status = $1 WHERE id = $2", &[&"paused", &id])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id)), ("paused".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn task_v2_id_reset(
@@ -707,9 +739,14 @@ pub async fn task_v2_id_reset(
         .execute("UPDATE x_task SET task_status = $1, start_time = NULL, end_time = NULL WHERE id = $2", &[&"pending", &id])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id)), ("reset".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn task_v2_id_resume(
@@ -721,9 +758,14 @@ pub async fn task_v2_id_resume(
         .execute("UPDATE x_task SET task_status = $1, start_time = NOW() WHERE id = $2", &[&"active", &id])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id)), ("resumed".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn task_v3_id_add(
@@ -844,7 +886,7 @@ pub async fn snap_upload(
     let id = Uuid::new_v4().to_string();
     let work_id: String = req.get("workId").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let snap_type: String = req.get("snapType").and_then(|v| v.as_str()).unwrap_or("snap").to_string();
-    let snap_data = req.get("data").cloned().unwrap_or(Value::Null);
+    let snap_data = req.get("data").cloned().unwrap_or(serde_json::json!({}));
     client
         .execute(
             "INSERT INTO x_snap (id, work_id, snap_type, snap_data, create_time) VALUES ($1, $2, $3, $4, NOW())",
@@ -997,7 +1039,7 @@ pub async fn snap_id_restore(
         .map_err(|_| AppError::Internal)?;
     let work_id: String = snap_row.get("work_id");
     let snap_data_raw: String = snap_row.get("snap_data");
-    let snap_data: Value = serde_json::from_str(&snap_data_raw).unwrap_or(Value::Null);
+    let snap_data: Value = serde_json::from_str(&snap_data_raw).unwrap_or(serde_json::json!({}));
     tx.execute("UPDATE x_work SET work_status = $1 WHERE id = $2", &[&"restored", &work_id])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1016,12 +1058,12 @@ pub async fn touch_cleanevent(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let result = client
         .execute("DELETE FROM x_record WHERE record_type = $1 AND create_time < NOW() - INTERVAL '30 days'", &[&"event"])
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("cleaned".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("cleaned".to_string(), Value::Number(serde_json::Number::from(result as i64)))]),
     ))))
 }
 
@@ -1034,9 +1076,14 @@ pub async fn touch_deletedraft(
         .execute("UPDATE x_draft SET deleted_at = NOW() WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id)), ("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, work_id, content, creator, create_time FROM x_draft WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn touch_handoverjob(
@@ -1171,10 +1218,15 @@ pub async fn touch_urge(
         )
         .await
         .map_err(|_| AppError::Internal)?;
+    let row = tx
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id)), ("urged".to_string(), Value::Bool(true))]),
-    ))))
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn review_create_work(
@@ -1323,9 +1375,14 @@ pub async fn data_work_id_delete(
         .execute("UPDATE x_work SET deleted_at = NOW() WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id)), ("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, title, process, application, work_status, creator, create_time, start_time, end_time FROM x_work WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn data_work_id_path(
@@ -1515,9 +1572,14 @@ pub async fn data_work_id_path_delete(
         }
         _ => {}
     }
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("id".to_string(), Value::String(id)), ("path".to_string(), Value::String(_path)), ("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, title, process, application, work_status, creator FROM x_work WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn data_workcompleted_id(
@@ -1599,7 +1661,7 @@ pub async fn event_add_update_table(
     let id = Uuid::new_v4().to_string();
     let table: String = req.get("table").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let record_id: String = req.get("recordId").and_then(|v| v.as_str()).unwrap_or("").to_string();
-    let content = req.get("content").cloned().unwrap_or(Value::Null);
+    let content = req.get("content").cloned().unwrap_or(serde_json::json!({}));
     let type_val: String = req.get("type").and_then(|v| v.as_str()).unwrap_or("update").to_string();
     client
         .execute(
@@ -2174,11 +2236,11 @@ pub async fn workcompleted_flag_rollback(
     match snap_row {
         Some(s) => {
             let raw: String = s.get("snap_data");
-            let v: Value = serde_json::from_str(&raw).unwrap_or(Value::Null);
+            let v: Value = serde_json::from_str(&raw).unwrap_or(serde_json::json!({}));
             Ok(Json(ActionResult::success(v)))
         }
         None => Ok(Json(ActionResult::success(Value::Object(
-            serde_json::Map::from_iter([("rolled_back".to_string(), Value::Bool(true))]),
+            serde_json::Map::from_iter([("workId".to_string(), Value::String(work_id))]),
         )))),
     }
 }
@@ -2319,12 +2381,14 @@ pub async fn task_claim(
         .await
         .map_err(|_| AppError::Internal)?;
     tx.commit().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("claimed".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn task_complete(
@@ -2378,12 +2442,14 @@ pub async fn task_complete(
             .map_err(|_| AppError::Internal)?;
     }
     tx.commit().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("completed".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn task_reject(
@@ -2431,12 +2497,14 @@ pub async fn task_reject(
             .map_err(|_| AppError::Internal)?;
     }
     tx.commit().await.map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("rejected".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, title, work, activity, activity_token, person, task_status, start_time, end_time FROM x_task WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 pub async fn task_transfer(
@@ -2516,7 +2584,7 @@ pub async fn gateway_join(
         serde_json::Map::from_iter([
             ("workId".to_string(), Value::String(work_id)),
             ("activityToken".to_string(), Value::String(activity_token)),
-            ("joined".to_string(), Value::Bool(true)),
+            ("joined".to_string(), Value::String("joined".to_string())),
         ]),
     ))))
 }
@@ -2786,7 +2854,7 @@ pub async fn cancel_timer(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("jobId".to_string(), Value::String(job_id)),
-            ("cancelled".to_string(), Value::Bool(true)),
+            ("cancelled".to_string(), Value::String("cancelled".to_string())),
         ]),
     ))))
 }

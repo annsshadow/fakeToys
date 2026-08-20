@@ -35,23 +35,18 @@ pub async fn view_forum(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("forumId".to_string(), Value::String(row.get("forum_id"))),
-                (
-                    "sort".to_string(),
-                    Value::Number(serde_json::Number::from(
-                        row.get::<_, i32>("sort")
-                    )),
-                ),
-                (
-                    "description".to_string(),
-                    row.get::<_, Option<String>>("description")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("forumId".to_string(), Value::String(row.get("forum_id")));
+            map.insert(
+                "sort".to_string(),
+                Value::Number(serde_json::Number::from(row.get::<_, i32>("sort"))),
+            );
+            if let Some(v) = row.get::<_, Option<String>>("description") {
+                map.insert("description".to_string(), Value::String(v));
+            }
+            Value::Object(map)
         })
         .collect();
 
@@ -90,23 +85,18 @@ pub async fn view_all(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("forumId".to_string(), Value::String(row.get("forum_id"))),
-                (
-                    "sort".to_string(),
-                    Value::Number(serde_json::Number::from(
-                        row.get::<_, i32>("sort")
-                    )),
-                ),
-                (
-                    "description".to_string(),
-                    row.get::<_, Option<String>>("description")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("forumId".to_string(), Value::String(row.get("forum_id")));
+            map.insert(
+                "sort".to_string(),
+                Value::Number(serde_json::Number::from(row.get::<_, i32>("sort"))),
+            );
+            if let Some(v) = row.get::<_, Option<String>>("description") {
+                map.insert("description".to_string(), Value::String(v));
+            }
+            Value::Object(map)
         })
         .collect();
 

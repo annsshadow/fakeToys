@@ -209,7 +209,7 @@ pub async fn save_correlation(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
             ("targetId".to_string(), Value::String(target_id)),
             ("type".to_string(), Value::String(r#type)),
         ]),
@@ -236,17 +236,31 @@ pub async fn delete_correlation(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
 
 pub async fn unlink_service(
+    pool: Extension<Pool>,
     axum::extract::Path((source_type, source_id, target_type, target_id)): axum::extract::Path<(String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            r#"DELETE FROM x_correlation WHERE "type" = $1 AND person_id = $2 AND target_id = $3"#,
+            &[&source_type, &source_id, &target_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("correlation not found or already deleted")));
+    }
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("unlinked".to_string(), Value::Bool(true)),
+            ("unlinked".to_string(), Value::Bool(result > 0)),
             ("sourceType".to_string(), Value::String(source_type)),
             ("sourceId".to_string(), Value::String(source_id)),
             ("targetType".to_string(), Value::String(target_type)),
@@ -310,7 +324,7 @@ pub async fn correlation_delete_type_cms_document_document(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("document".to_string(), Value::String(document)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -335,7 +349,7 @@ pub async fn correlation_delete_type_processplatform_job_job(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("job".to_string(), Value::String(job)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -596,7 +610,7 @@ pub async fn correlation_update_type_cms_document_document(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("document".to_string(), Value::String(document)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
             ("personId".to_string(), Value::String(person_id)),
             ("type".to_string(), Value::String(r#type)),
         ]),
@@ -627,7 +641,7 @@ pub async fn correlation_update_type_processplatform_job_job(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("job".to_string(), Value::String(job)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
             ("personId".to_string(), Value::String(person_id)),
             ("type".to_string(), Value::String(r#type)),
         ]),

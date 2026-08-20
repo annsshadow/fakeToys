@@ -32,7 +32,7 @@ pub async fn neural_generate_model(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("modelFlag".to_string(), Value::String(model_flag)),
-            ("generating".to_string(), Value::Bool(true)),
+            ("generating".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -121,9 +121,9 @@ pub async fn processing_execute(
 
     let creator = "system";
 
-    let id = if model_flag.is_empty() {
+    let (id, executed) = if model_flag.is_empty() {
         let id = uuid::Uuid::new_v4().to_string();
-        client
+        let result = client
             .execute(
                 "INSERT INTO x_query_processing (id, query, model_flag, params, creator, create_time, update_time) \
                  VALUES ($1, $2, $3, $4, $5, NOW(), NOW())",
@@ -131,7 +131,7 @@ pub async fn processing_execute(
             )
             .await
             .map_err(|_| AppError::Internal)?;
-        id
+        (id, result > 0)
     } else {
         let id = uuid::Uuid::new_v4().to_string();
         let row = client
@@ -145,9 +145,8 @@ pub async fn processing_execute(
             .await
             .map_err(|_| AppError::Internal)?;
 
-        // Return the existing id if ON CONFLICT fired, otherwise the new id
-        let resolved_id = row.map(|r| r.get::<_, String>("id")).unwrap_or(id);
-        resolved_id
+        let resolved_id = row.as_ref().map(|r| r.get::<_, String>("id")).unwrap_or(id);
+        (resolved_id, row.is_some())
     };
 
     let status = if model_flag.is_empty() {
@@ -174,7 +173,7 @@ pub async fn processing_execute(
             ("query".to_string(), Value::String(query)),
             ("modelFlag".to_string(), Value::String(model_flag)),
             ("status".to_string(), Value::String(status)),
-            ("executed".to_string(), Value::Bool(true)),
+            ("executed".to_string(), Value::Bool(executed)),
         ]),
     ))))
 }

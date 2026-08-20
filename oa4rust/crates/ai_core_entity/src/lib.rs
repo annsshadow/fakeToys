@@ -52,18 +52,15 @@ pub async fn app_list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
+            let mut map = serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
-                (
-                    "description".to_string(),
-                    m.description
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
                 ("status".to_string(), Value::String(m.status.clone())),
-            ]))
+            ]);
+            if let Some(description) = &m.description {
+                map.insert("description".to_string(), Value::String(description.clone()));
+            }
+            Value::Object(map)
         })
         .collect();
 

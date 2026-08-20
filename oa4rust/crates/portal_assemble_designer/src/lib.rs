@@ -120,11 +120,8 @@ pub async fn save_design(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let content = body.get("content").cloned().unwrap_or(Value::Null);
-    let content_str = match &content {
-        Value::String(s) => s.clone(),
-        _ => serde_json::to_string(&content).map_err(|_| AppError::Internal)?,
-    };
+    let content = body.get("content").and_then(|v| v.as_str()).unwrap_or("null");
+    let content_str = content.to_string();
 
     let result = client
         .execute(
@@ -141,8 +138,8 @@ pub async fn save_design(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
-            ("content".to_string(), content),
+            ("saved".to_string(), Value::Bool(result > 0)),
+            ("content".to_string(), Value::String(content.to_string())),
         ]),
     ))))
 }
@@ -275,8 +272,8 @@ pub async fn save_page(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
-            ("content".to_string(), content),
+            ("saved".to_string(), Value::Bool(result > 0)),
+            ("content".to_string(), Value::String(content.to_string())),
         ]),
     ))))
 }
@@ -302,7 +299,7 @@ pub async fn delete_page(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -325,11 +322,8 @@ pub async fn design_save(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = body.get("id").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("id is required".to_string()))?;
-    let content = body.get("content").cloned().unwrap_or(Value::Null);
-    let content_str = match &content {
-        Value::String(s) => s.clone(),
-        _ => serde_json::to_string(&content).map_err(|_| AppError::Internal)?,
-    };
+    let content = body.get("content").and_then(|v| v.as_str()).unwrap_or("null");
+    let content_str = content.to_string();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -346,8 +340,8 @@ pub async fn design_save(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id.to_string())),
-            ("saved".to_string(), Value::Bool(true)),
-            ("content".to_string(), content),
+            ("saved".to_string(), Value::Bool(result > 0)),
+            ("content".to_string(), Value::String(content.to_string())),
         ]),
     ))))
 }
@@ -707,11 +701,8 @@ pub async fn file_id_upload(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let content = body.get("content").cloned().unwrap_or(Value::Null);
-    let content_str = match content {
-        Value::String(s) => s,
-        _ => serde_json::to_string(&content).map_err(|_| AppError::Internal)?,
-    };
+    let content = body.get("content").and_then(|v| v.as_str()).unwrap_or("null");
+    let content_str = content.to_string();
 
     let result = client
         .execute(
@@ -728,7 +719,7 @@ pub async fn file_id_upload(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("uploaded".to_string(), Value::Bool(true)),
+            ("uploaded".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -776,11 +767,12 @@ pub async fn input_compare(
             let old_content: Option<String> = row.get("content");
             let mut result_map = serde_json::Map::new();
             result_map.insert("id".to_string(), Value::String(input_id.to_string()));
-            if let Some(val) = option_to_json(old_content.map(|s| Value::String(s))) {
+            if let Some(val) = option_to_json(old_content.as_ref().map(|s| Value::String(s.to_string()))) {
                 result_map.insert("oldContent".to_string(), val);
             }
             result_map.insert("newContent".to_string(), Value::String(content_str.to_string()));
-            result_map.insert("compared".to_string(), Value::Bool(true));
+            let compared = old_content.is_some();
+            result_map.insert("compared".to_string(), Value::Bool(compared));
             let result = Value::Object(result_map);
             Ok(Json(ActionResult::success(result)))
         }
@@ -813,7 +805,7 @@ pub async fn input_cover(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(input_id.to_string())),
-            ("covered".to_string(), Value::Bool(true)),
+            ("covered".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -828,7 +820,7 @@ pub async fn input_create(
     let content = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
     let creator = "system";
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_portal_input (id, content, creator, create_time) VALUES ($1, $2, $3, NOW())",
             &[&id, &content, &creator],
@@ -839,7 +831,7 @@ pub async fn input_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -883,7 +875,7 @@ pub async fn input_prepare_create(
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_portal_input (id, content, creator, create_time) VALUES ($1, $2, $3, NOW())",
             &[&id, &content, &creator],
@@ -894,7 +886,7 @@ pub async fn input_prepare_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
