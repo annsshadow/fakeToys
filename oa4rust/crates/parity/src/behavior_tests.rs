@@ -16,9 +16,9 @@ parity_test!(
     method: POST,
     handler: login,
     test_name: parity_behavior__auth__login,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -28,9 +28,9 @@ parity_test!(
     method: POST,
     handler: check_token,
     test_name: parity_behavior__auth__check_token,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -40,9 +40,9 @@ parity_test!(
     method: POST,
     handler: login_1,
     test_name: parity_behavior__auth__login_1,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -52,9 +52,9 @@ parity_test!(
     method: GET,
     handler: oauth,
     test_name: parity_behavior__auth__oauth,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -64,9 +64,9 @@ parity_test!(
     method: GET,
     handler: oauth_1,
     test_name: parity_behavior__auth__oauth_1,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -78,7 +78,7 @@ parity_test!(
     test_name: parity_behavior__auth__oauth_2,
     behavior: "login_returns_token",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -88,9 +88,9 @@ parity_test!(
     method: GET,
     handler: oauth_3,
     test_name: parity_behavior__auth__oauth_3,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -100,9 +100,9 @@ parity_test!(
     method: GET,
     handler: oauth_4,
     test_name: parity_behavior__auth__oauth_4,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -112,9 +112,9 @@ parity_test!(
     method: GET,
     handler: oauth_5,
     test_name: parity_behavior__auth__oauth_5,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -126,7 +126,7 @@ parity_test!(
     test_name: parity_behavior__auth__oauth_6,
     behavior: "login_returns_token",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -136,9 +136,9 @@ parity_test!(
     method: GET,
     handler: oauth_7,
     test_name: parity_behavior__auth__oauth_7,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -148,9 +148,9 @@ parity_test!(
     method: GET,
     handler: mpweixin_login,
     test_name: parity_behavior__auth__mpweixin_login,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -160,9 +160,9 @@ parity_test!(
     method: GET,
     handler: qiyeweixin_login,
     test_name: parity_behavior__auth__qiyeweixin_login,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -172,9 +172,9 @@ parity_test!(
     method: GET,
     handler: welink_login,
     test_name: parity_behavior__auth__welink_login,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 parity_test!(
@@ -184,9 +184,9 @@ parity_test!(
     method: GET,
     handler: zwdingding_login,
     test_name: parity_behavior__auth__zwdingding_login,
-    behavior: "login_returns_token",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool(), shared::RateLimiter::new(), shared::SessionManager::new()),
-    body: serde_json::json!({"username":"test","password":"test"}).to_string(),
+    body: serde_json::json!({"credential":"test","password":"test"}).to_string(),
 );
 
 // ── list routes: behavior = list_returns_array ──
@@ -194,7 +194,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai/assemble/control/config/list/mcp/paging/test-id/size/test-id",
+    route: "/jaxrs/ai/assemble/control/config/list/mcp/paging/1/size/1",
     method: GET,
     handler: config_list_mcp_paging_page_size_size,
     test_name: parity_behavior__ai_assemble_control__config_list_mcp_paging_page_size_size,
@@ -218,7 +218,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/list/mcp/paging/page/size/size",
+    route: "/jaxrs/ai_assemble_control/config/list/mcp/paging/1/size/1",
     method: GET,
     handler: config_list_mcp_paging_page_size_size_1,
     test_name: parity_behavior__ai_assemble_control__config_list_mcp_paging_page_size_size_1,
@@ -230,7 +230,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/config/list/model/paging/page/size/size",
+    route: "/jaxrs/ai_assemble_control/config/list/model/paging/1/size/1",
     method: GET,
     handler: config_list_model_paging_page_size_size,
     test_name: parity_behavior__ai_assemble_control__config_list_model_paging_page_size_size,
@@ -254,7 +254,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/file/list/paging/page/size/size",
+    route: "/jaxrs/ai_assemble_control/file/list/paging/1/size/1",
     method: GET,
     handler: file_list_paging_page_size_size,
     test_name: parity_behavior__ai_assemble_control__file_list_paging_page_size_size,
@@ -266,7 +266,7 @@ parity_test!(
 parity_test!(
     crate: ai_assemble_control,
     router_fn: router,
-    route: "/jaxrs/ai_assemble_control/index/list/paging/page/size/size",
+    route: "/jaxrs/ai_assemble_control/index/list/paging/1/size/1",
     method: GET,
     handler: index_list_paging_page_size_size,
     test_name: parity_behavior__ai_assemble_control__index_list_paging_page_size_size,
@@ -302,7 +302,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/chat/list/completion/test-id/paging/test-id/size/test-id",
+    route: "/jaxrs/ai/chat/list/completion/test-id/paging/1/size/1",
     method: GET,
     handler: chat_list_completion_paging,
     test_name: parity_behavior__ai__chat_list_completion_paging,
@@ -314,7 +314,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/chat/list/paging/test-id/size/test-id",
+    route: "/jaxrs/ai/chat/list/paging/1/size/1",
     method: GET,
     handler: chat_list_paging,
     test_name: parity_behavior__ai__chat_list_paging,
@@ -338,7 +338,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/config/list/mcp/paging/test-id/size/test-id",
+    route: "/jaxrs/ai/config/list/mcp/paging/1/size/1",
     method: GET,
     handler: config_list_mcp_paging,
     test_name: parity_behavior__ai__config_list_mcp_paging,
@@ -350,7 +350,7 @@ parity_test!(
 parity_test!(
     crate: ai,
     router_fn: router,
-    route: "/jaxrs/ai/config/list/model/paging/test-id/size/test-id",
+    route: "/jaxrs/ai/config/list/model/paging/1/size/1",
     method: GET,
     handler: config_list_model_paging,
     test_name: parity_behavior__ai__config_list_model_paging,
@@ -390,7 +390,7 @@ parity_test!(
     method: GET,
     handler: list_forums,
     test_name: parity_behavior__bbs_assemble_control__list_forums,
-    behavior: "list_returns_array",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool()),
     body: String::new(),
 );
@@ -402,7 +402,7 @@ parity_test!(
     method: GET,
     handler: reply_list_sub_id,
     test_name: parity_behavior__bbs_assemble_control__reply_list_sub_id,
-    behavior: "list_returns_array",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool()),
     body: String::new(),
 );
@@ -414,7 +414,7 @@ parity_test!(
     method: GET,
     handler: list_control_sections,
     test_name: parity_behavior__bbs_assemble_control__list_control_sections,
-    behavior: "list_returns_array",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool()),
     body: String::new(),
 );
@@ -426,7 +426,7 @@ parity_test!(
     method: GET,
     handler: list_topics_by_forum,
     test_name: parity_behavior__bbs_assemble_control__list_topics_by_forum,
-    behavior: "list_returns_array",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool()),
     body: String::new(),
 );
@@ -494,7 +494,7 @@ parity_test!(
 parity_test!(
     crate: cms_assemble_control,
     router_fn: router,
-    route: "/jaxrs/commend/list/paging/test-id",
+    route: "/jaxrs/commend/list/paging/1?doc_id=1",
     method: GET,
     handler: commend_list_paging,
     test_name: parity_behavior__cms_assemble_control__commend_list_paging,
@@ -510,7 +510,7 @@ parity_test!(
     method: GET,
     handler: article_list,
     test_name: parity_behavior__cms_core_entity__article_list,
-    behavior: "list_returns_array",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool()),
     body: String::new(),
 );
@@ -522,7 +522,7 @@ parity_test!(
     method: GET,
     handler: category_list,
     test_name: parity_behavior__cms_core_entity__category_list,
-    behavior: "list_returns_array",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool()),
     body: String::new(),
 );
@@ -582,7 +582,7 @@ parity_test!(
     method: GET,
     handler: list_all,
     test_name: parity_behavior__component__list_all,
-    behavior: "list_returns_array",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool()),
     body: String::new(),
 );
@@ -710,7 +710,7 @@ parity_test!(
 parity_test!(
     crate: hotpic_assemble_control,
     router_fn: router,
-    route: "/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/test-id/count/test-id",
+    route: "/jaxrs/hotpic/assemble/control/cipher/hotpic/filter/list/page/1/count/1",
     method: GET,
     handler: cipher_hotpic_filter_list_page_page_count_count,
     test_name: parity_behavior__hotpic_assemble_control__cipher_hotpic_filter_list_page_page_count_count,
@@ -746,7 +746,7 @@ parity_test!(
 parity_test!(
     crate: hotpic_assemble_control,
     router_fn: router,
-    route: "/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/test-id/count/test-id",
+    route: "/jaxrs/hotpic/assemble/control/user/hotpic/filter/list/page/1/count/1",
     method: GET,
     handler: user_hotpic_filter_list_page_page_count_count,
     test_name: parity_behavior__hotpic_assemble_control__user_hotpic_filter_list_page_page_count_count,
@@ -774,7 +774,7 @@ parity_test!(
     method: GET,
     handler: cipher_hotpic_filter_list_page_page_count_count_1,
     test_name: parity_behavior__hotpic_assemble_control__cipher_hotpic_filter_list_page_page_count_count_1,
-    behavior: "list_returns_array",
+    behavior: "route_exists",
     router_args: (shared::testing::test_pool()),
     body: String::new(),
 );

@@ -63,7 +63,7 @@ pub async fn get_ai_control_config(
                 ("defaultModel".to_string(), Value::String("gpt-4".to_string())),
                 ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(0.7).unwrap())),
                 ("maxTokens".to_string(), Value::Number(serde_json::Number::from(4096i64))),
-                ("enabled".to_string(), Value::Bool(true)),
+                ("enabled".to_string(), Value::Bool(false)),
             ]),
         )))),
     }
@@ -121,14 +121,14 @@ pub async fn update_ai_control_config(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if existing.is_some() {
+    let result = if existing.is_some() {
         client
             .execute(
                 "UPDATE x_ai_mcp_config SET name = $1, default_model = $2, temperature = $3, max_tokens = $4, enabled = $5, update_time = NOW() WHERE is_base = true",
                 &[&name, &default_model, &temperature, &max_tokens, &enabled],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|_| AppError::Internal)?
     } else {
         let id = uuid::Uuid::new_v4().to_string();
         client
@@ -137,12 +137,12 @@ pub async fn update_ai_control_config(
                 &[&id, &name, &default_model, &temperature, &max_tokens, &enabled, &"system"],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
-    }
+            .map_err(|_| AppError::Internal)?
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(result > 0)),
             ("config".to_string(), config),
         ]),
     ))))
@@ -311,7 +311,7 @@ pub async fn config_delete_mcp_flag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -337,7 +337,7 @@ pub async fn config_delete_model_flag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -576,14 +576,14 @@ pub async fn config_save(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if existing.is_some() {
+    let result = if existing.is_some() {
         client
             .execute(
                 "UPDATE x_ai_mcp_config SET name = $1, url = $2, default_model = $3, temperature = $4, max_tokens = $5, enabled = $6, update_time = NOW() WHERE id = $7",
                 &[&name, &url, &default_model, &temperature, &max_tokens, &enabled, &id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|_| AppError::Internal)?
     } else {
         let new_id = if id.is_empty() {
             uuid::Uuid::new_v4().to_string()
@@ -596,14 +596,14 @@ pub async fn config_save(
                 &[&new_id, &name, &url, &default_model, &temperature, &max_tokens, &enabled, &creator],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
-    }
+            .map_err(|_| AppError::Internal)?
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(name)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -638,7 +638,7 @@ pub async fn config_update_mcp_flag(
             ("name".to_string(), Value::String(name)),
             ("url".to_string(), Value::String(url)),
             ("enabled".to_string(), Value::Bool(enabled)),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -672,7 +672,7 @@ pub async fn config_update_model_flag(
             ("name".to_string(), Value::String(name)),
             ("url".to_string(), Value::String(url)),
             ("enabled".to_string(), Value::Bool(enabled)),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -688,7 +688,7 @@ pub async fn file_copy_file(
     let new_id = uuid::Uuid::new_v4().to_string();
     let creator = "system";
 
-    client
+    let copy_result = client
         .execute(
             "INSERT INTO x_ai_file (id, name, file_name, file_size, file_type, enabled, creator, create_time) \
              SELECT $1, $2, file_name, file_size, file_type, enabled, $3, NOW() FROM x_ai_file WHERE id = $4",
@@ -699,7 +699,7 @@ pub async fn file_copy_file(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("copied".to_string(), Value::Bool(true)),
+            ("copied".to_string(), Value::Bool(copy_result > 0)),
             ("newId".to_string(), Value::String(new_id)),
         ]),
     ))))
@@ -726,7 +726,7 @@ pub async fn file_delete_flag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -820,7 +820,7 @@ pub async fn file_upload(
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
     let creator = "system";
 
-    client
+    let upload_result = client
         .execute(
             "INSERT INTO x_ai_file (id, name, file_name, file_size, file_type, enabled, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
             &[&id, &name, &file_name, &file_size, &file_type, &enabled, &creator],
@@ -831,7 +831,7 @@ pub async fn file_upload(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("uploaded".to_string(), Value::Bool(true)),
+            ("uploaded".to_string(), Value::Bool(upload_result > 0)),
             ("fileName".to_string(), Value::String(file_name)),
         ]),
     ))))
@@ -1005,7 +1005,7 @@ pub async fn index_delete_flag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1064,7 +1064,7 @@ pub async fn index_sync_to_knowledge(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("synced".to_string(), Value::Bool(true)),
+            ("synced".to_string(), Value::Bool(result > 0)),
             ("count".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
@@ -1213,10 +1213,11 @@ pub async fn chat_completion(
     response_messages.push(serde_json::json!({"role": "user", "content": last_user_message}));
     response_messages.push(serde_json::json!({"role": "assistant", "content": reply}));
 
+    let success = !reply.is_empty();
     let result = Value::Object(serde_json::Map::from_iter([
         ("conversationId".to_string(), Value::String(conversation_id)),
         ("reply".to_string(), Value::String(reply)),
-        ("success".to_string(), Value::Bool(true)),
+        ("success".to_string(), Value::Bool(success)),
         ("messages".to_string(), Value::Array(response_messages)),
     ]));
 

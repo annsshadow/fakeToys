@@ -47,7 +47,7 @@ pub async fn list_control_apps(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT DISTINCT target as id FROM x_jpush WHERE deleted_at IS NULL ORDER BY target ASC",
+            "SELECT target as id, COUNT(*) as cnt FROM x_jpush WHERE deleted_at IS NULL GROUP BY target ORDER BY target ASC",
             &[],
         )
         .await
@@ -59,7 +59,7 @@ pub async fn list_control_apps(
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("id"))),
-                ("enabled".to_string(), Value::Bool(true)),
+                ("enabled".to_string(), Value::Bool(row.get::<_, i64>("cnt") > 0)),
             ]))
         })
         .collect();
@@ -79,7 +79,7 @@ pub async fn update_control_config(
     let id = uuid::Uuid::new_v4().to_string();
     let title = config.get("name").and_then(|v| v.as_str()).unwrap_or("default").to_string();
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_jpush (id, title, content, target, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&id, &title, &"", &"all", &"system"],
@@ -89,7 +89,7 @@ pub async fn update_control_config(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(result > 0)),
             ("config".to_string(), config),
         ]),
     ))))
@@ -232,7 +232,7 @@ pub async fn save_jpush(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
             ("title".to_string(), Value::String(title)),
             ("content".to_string(), Value::String(content)),
             ("target".to_string(), Value::String(target)),
@@ -261,7 +261,7 @@ pub async fn delete_jpush(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -288,7 +288,7 @@ pub async fn device_admin_unbind_all_person(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("personId".to_string(), Value::String(person_id)),
-            ("unbound".to_string(), Value::Bool(true)),
+            ("unbound".to_string(), Value::Bool(result > 0)),
             ("count".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
@@ -306,7 +306,7 @@ pub async fn device_bind(
 
     let id = uuid::Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_jpush (id, title, content, target, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&id, &device_name, &device_type, &push_type, &creator],
@@ -320,7 +320,7 @@ pub async fn device_bind(
             ("deviceName".to_string(), Value::String(device_name)),
             ("deviceType".to_string(), Value::String(device_type)),
             ("pushType".to_string(), Value::String(push_type)),
-            ("bound".to_string(), Value::Bool(true)),
+            ("bound".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -428,7 +428,7 @@ pub async fn device_unbind_new_deviceName_deviceType_pushType(
             ("deviceName".to_string(), Value::String(device_name)),
             ("deviceType".to_string(), Value::String(device_type)),
             ("pushType".to_string(), Value::String(push_type)),
-            ("unbound".to_string(), Value::Bool(true)),
+            ("unbound".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -454,7 +454,7 @@ pub async fn device_unbind_deviceName_deviceType(
         serde_json::Map::from_iter([
             ("deviceName".to_string(), Value::String(device_name)),
             ("deviceType".to_string(), Value::String(device_type)),
-            ("unbound".to_string(), Value::Bool(true)),
+            ("unbound".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -471,7 +471,7 @@ pub async fn message_test_send(
 
     let id = uuid::Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_jpush (id, title, content, target, creator, create_time) VALUES ($1, $2, $3, $4, $5, NOW())",
             &[&id, &title, &content, &target, &creator],
@@ -485,7 +485,7 @@ pub async fn message_test_send(
             ("title".to_string(), Value::String(title)),
             ("content".to_string(), Value::String(content)),
             ("target".to_string(), Value::String(target)),
-            ("sent".to_string(), Value::Bool(true)),
+            ("sent".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }

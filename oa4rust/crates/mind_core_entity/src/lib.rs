@@ -4,13 +4,23 @@ use axum::{
     Router,
 };
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, QuerySelect};
-use serde_json::Value;
+use serde_json::{Map, Value};
 use shared::{error::AppError, response::ActionResult};
 
 pub mod entities;
 pub mod routes;
 
 use entities::{mind_mind, mind_folder, mind_version};
+
+fn build_json_object(pairs: &[(&str, Option<Value>)]) -> Value {
+    let mut map = Map::new();
+    for (key, value) in pairs {
+        if let Some(v) = value {
+            map.insert((*key).to_string(), v.clone());
+        }
+    }
+    Value::Object(map)
+}
 
 /// 获取思维导图列表
 pub async fn list(
@@ -26,19 +36,16 @@ pub async fn list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
-                ("folderId".to_string(), Value::String(m.folder_id.clone())),
+            build_json_object(&[
+                ("id", Some(Value::String(m.id.clone()))),
+                ("name", Some(Value::String(m.name.clone()))),
+                ("folderId", Some(Value::String(m.folder_id.clone()))),
                 (
-                    "description".to_string(),
-                    m.description
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
+                    "description",
+                    m.description.as_ref().map(|d| Value::String(d.clone())),
                 ),
-                ("creator".to_string(), Value::String(m.creator.clone())),
-            ]))
+                ("creator", Some(Value::String(m.creator.clone()))),
+            ])
         })
         .collect();
 
@@ -67,29 +74,23 @@ pub async fn folder_list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
+            build_json_object(&[
+                ("id", Some(Value::String(m.id.clone()))),
+                ("name", Some(Value::String(m.name.clone()))),
                 (
-                    "\"parentId\"".to_string(),
-                    m.parent_id
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
+                    "parentId",
+                    m.parent_id.as_ref().map(|p| Value::String(p.clone())),
                 ),
                 (
-                    "orderNumber".to_string(),
-                    Value::Number(serde_json::Number::from(m.order_number)),
+                    "orderNumber",
+                    Some(Value::Number(serde_json::Number::from(m.order_number))),
                 ),
                 (
-                    "description".to_string(),
-                    m.description
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
+                    "description",
+                    m.description.as_ref().map(|d| Value::String(d.clone())),
                 ),
-                ("creator".to_string(), Value::String(m.creator.clone())),
-            ]))
+                ("creator", Some(Value::String(m.creator.clone()))),
+            ])
         })
         .collect();
 
@@ -120,33 +121,27 @@ pub async fn version_list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(m.id.clone())),
-                ("mindId".to_string(), Value::String(m.mind_id.clone())),
-                ("name".to_string(), Value::String(m.name.clone())),
-                ("folderId".to_string(), Value::String(m.folder_id.clone())),
+            build_json_object(&[
+                ("id", Some(Value::String(m.id.clone()))),
+                ("mindId", Some(Value::String(m.mind_id.clone()))),
+                ("name", Some(Value::String(m.name.clone()))),
+                ("folderId", Some(Value::String(m.folder_id.clone()))),
                 (
-                    "description".to_string(),
-                    m.description
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
+                    "description",
+                    m.description.as_ref().map(|d| Value::String(d.clone())),
                 ),
-                ("creator".to_string(), Value::String(m.creator.clone())),
+                ("creator", Some(Value::String(m.creator.clone()))),
                 (
-                    "fileVersion".to_string(),
-                    Value::Number(serde_json::Number::from(m.file_version)),
+                    "fileVersion",
+                    Some(Value::Number(serde_json::Number::from(m.file_version))),
                 ),
                 (
-                    "createTime".to_string(),
-                    Value::String(
-                        m.create_time
-                            .clone()
-                            .map(|dt| dt.to_string())
-                            .unwrap_or_default(),
-                    ),
+                    "createTime",
+                    m.create_time
+                        .as_ref()
+                        .map(|dt| Value::String(dt.to_string())),
                 ),
-            ]))
+            ])
         })
         .collect();
 
@@ -238,9 +233,9 @@ pub async fn update_mind(
         .unwrap_or_default();
 
     let mut active: ActiveModel = model.into();
-    active.name = sea_orm::ActiveValue::Set(name);
-    active.folder_id = sea_orm::ActiveValue::Set(folder_id);
-    active.description = sea_orm::ActiveValue::Set(Some(description));
+    active.name = sea_orm::ActiveValue::Set(name.clone());
+    active.folder_id = sea_orm::ActiveValue::Set(folder_id.clone());
+    active.description = sea_orm::ActiveValue::Set(Some(description.clone()));
 
     active
         .update(&db.0)
@@ -249,7 +244,9 @@ pub async fn update_mind(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("updated".to_string(), Value::Bool(true)),
+        ("name".to_string(), Value::String(name)),
+        ("folderId".to_string(), Value::String(folder_id)),
+        ("description".to_string(), Value::String(description)),
     ])))))
 }
 
@@ -269,7 +266,10 @@ pub async fn delete_mind(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
+        (
+            "rowsAffected".to_string(),
+            Value::Number(serde_json::Number::from(deleted.rows_affected as i64)),
+        ),
     ])))))
 }
 
@@ -359,10 +359,10 @@ pub async fn update_folder(
         .unwrap_or_default();
 
     let mut active: ActiveModel = model.into();
-    active.name = sea_orm::ActiveValue::Set(name);
-    active.parent_id = sea_orm::ActiveValue::Set(Some(parent_id));
+    active.name = sea_orm::ActiveValue::Set(name.clone());
+    active.parent_id = sea_orm::ActiveValue::Set(Some(parent_id.clone()));
     active.order_number = sea_orm::ActiveValue::Set(order_number);
-    active.description = sea_orm::ActiveValue::Set(Some(description));
+    active.description = sea_orm::ActiveValue::Set(Some(description.clone()));
 
     active
         .update(&db.0)
@@ -371,7 +371,13 @@ pub async fn update_folder(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("updated".to_string(), Value::Bool(true)),
+        ("name".to_string(), Value::String(name)),
+        ("parentId".to_string(), Value::String(parent_id)),
+        (
+            "orderNumber".to_string(),
+            Value::Number(serde_json::Number::from(order_number)),
+        ),
+        ("description".to_string(), Value::String(description)),
     ])))))
 }
 
@@ -391,7 +397,10 @@ pub async fn delete_folder(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
+        (
+            "rowsAffected".to_string(),
+            Value::Number(serde_json::Number::from(deleted.rows_affected as i64)),
+        ),
     ])))))
 }
 

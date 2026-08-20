@@ -51,14 +51,18 @@ pub async fn process_query(
                 .get::<_, Option<String>>("count")
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(1);
-            let data = Value::Object(serde_json::Map::from_iter([
+            let processed = count > 0;
+            let mut map = serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("queryType".to_string(), Value::String(row.get("query_type"))),
                 ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-                ("processed".to_string(), Value::Bool(true)),
-                ("params".to_string(), req.params.unwrap_or(Value::Null)),
-            ]));
+                ("processed".to_string(), Value::Bool(processed)),
+            ]);
+            if let Some(params) = req.params {
+                map.insert("params".to_string(), params);
+            }
+            let data = Value::Object(map);
             Ok(Json(ActionResult::success(data)))
         }
         None => Ok(Json(ActionResult::error("query type not found"))),
@@ -106,12 +110,13 @@ pub async fn batch_process(
                     .get::<_, Option<String>>("count")
                     .and_then(|s| s.parse().ok())
                     .unwrap_or(1);
+                let processed = count > 0;
                 results.push(Value::Object(serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("id"))),
                     ("name".to_string(), Value::String(row.get("name"))),
                     ("queryType".to_string(), Value::String(row.get("query_type"))),
                     ("count".to_string(), Value::Number(serde_json::Number::from(count))),
-                    ("processed".to_string(), Value::Bool(true)),
+                    ("processed".to_string(), Value::Bool(processed)),
                 ])));
             }
             None => {
@@ -195,12 +200,28 @@ pub async fn reset_service(
         .map_err(|_| AppError::Internal)?;
     let count: i64 = row.get("count");
 
+    let cleared_count = client
+        .execute(
+            "DELETE FROM x_query_processing WHERE create_time > NOW() - INTERVAL '1 hour'",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let reset = client
+        .execute(
+            "UPDATE x_query SET count = '1', update_time = NOW()",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     let now = chrono::Utc::now().naive_utc().format("%Y-%m-%dT%H:%M:%SZ").to_string();
 
     let data = Value::Object(serde_json::Map::from_iter([
-        ("reset".to_string(), Value::Bool(true)),
+        ("reset".to_string(), Value::Bool(reset > 0)),
         ("resetAt".to_string(), Value::String(now)),
-        ("clearedCache".to_string(), Value::Bool(true)),
+        ("clearedCache".to_string(), Value::Bool(cleared_count > 0)),
         ("processedCount".to_string(), Value::Number(serde_json::Number::from(count))),
     ]));
 

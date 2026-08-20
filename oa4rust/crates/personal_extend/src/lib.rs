@@ -1,5 +1,4 @@
 pub mod avatar;
-pub mod password;
 pub mod personal;
 pub mod routes;
 

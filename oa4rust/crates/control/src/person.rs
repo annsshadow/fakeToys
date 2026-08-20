@@ -350,20 +350,27 @@ pub async fn delete(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let where_clause = format!(
-        "UPDATE auth_person SET deleted_at = NOW() WHERE {} AND deleted_at IS NULL",
+        "UPDATE auth_person SET deleted_at = NOW() WHERE {} AND deleted_at IS NULL RETURNING id, unique_id, name, mobile, email, locked",
         person_flag_clause(1)
     );
 
-    let result = client
-        .execute(&where_clause, &[&flag])
+    let row = client
+        .query_opt(&where_clause, &[&flag])
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
+    let Some(row) = row else {
         return Ok(Json(ActionResult::error("person not found or already deleted")));
-    }
+    };
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("id"))),
+        ("uniqueId".to_string(), Value::String(row.get("unique_id"))),
+        ("name".to_string(), Value::String(row.get("name"))),
+        ("mobile".to_string(), Value::String(row.get::<_, Option<String>>("mobile").unwrap_or_default())),
+        ("email".to_string(), Value::String(row.get::<_, Option<String>>("email").unwrap_or_default())),
+        ("locked".to_string(), Value::Bool(row.get("locked"))),
+    ]));
+
+    Ok(Json(ActionResult::success(result)))
 }

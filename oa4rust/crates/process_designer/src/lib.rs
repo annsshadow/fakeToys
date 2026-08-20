@@ -262,7 +262,7 @@ pub async fn designer_get_route(
         Ok(client) => client,
         Err(_) => {
             return Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([("data".to_string(), Value::Null)]),
+                serde_json::Map::from_iter([]),
             )));
         }
     };
@@ -274,7 +274,7 @@ pub async fn designer_get_route(
             Ok(row) => row,
             Err(_) => {
                 return Json(ActionResult::success(Value::Object(
-                    serde_json::Map::from_iter([("data".to_string(), Value::Null)]),
+                    serde_json::Map::from_iter([]),
                 )));
             }
         };

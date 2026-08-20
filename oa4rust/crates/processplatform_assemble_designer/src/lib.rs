@@ -78,19 +78,19 @@ pub async fn get_flow(
         .await
         .map_err(|_| AppError::NotFound)?;
 
-    let result = Value::Object(serde_json::Map::from_iter([
+    let mut map = serde_json::Map::from_iter([
         ("id".to_string(), Value::String(row.get("id"))),
         ("name".to_string(), Value::String(row.get("name"))),
         ("category".to_string(), Value::String(row.get::<_, Option<String>>("category").unwrap_or_default())),
-        ("processDefinition".to_string(), {
-            let pd: Option<String> = row.get("process_definition");
-            pd.and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(Value::Null)
-        }),
         ("version".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("version")))),
         ("creator".to_string(), Value::String(row.get("creator"))),
         ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
         ("updateTime".to_string(), Value::String(row.get::<_, Option<String>>("update_time").unwrap_or_default())),
-    ]));
+    ]);
+    if let Some(pd) = row.get::<_, Option<String>>("process_definition").and_then(|s| serde_json::from_str(&s).ok()) {
+        map.insert("processDefinition".to_string(), pd);
+    }
+    let result = Value::Object(map);
 
     Ok(Json(ActionResult::success(result)))
 }
@@ -177,12 +177,13 @@ pub async fn save_flow(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let process_definition = body.get("processDefinition")
+    let process_definition: Option<Value> = body.get("processDefinition")
         .or_else(|| body.get("process_definition"))
-        .cloned()
-        .unwrap_or(Value::Null);
-
-    let process_definition_str = serde_json::to_string(&process_definition).map_err(|_| AppError::Internal)?;
+        .cloned();
+    let process_definition_str = process_definition
+        .map(|v| serde_json::to_string(&v))
+        .transpose()
+        .map_err(|_| AppError::Internal)?;
 
     let result = client
         .execute(
@@ -199,7 +200,7 @@ pub async fn save_flow(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
             ("updatedAt".to_string(), Value::String(chrono::Utc::now().to_rfc3339())),
         ]),
     ))))
@@ -227,7 +228,7 @@ pub async fn delete_flow(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -918,7 +919,7 @@ pub async fn file_id_upload(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("uploaded".to_string(), Value::Bool(true)),
+            ("uploaded".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1102,21 +1103,18 @@ pub async fn formversion_id(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("xcontent");
-            let content_val: Value = content
-                .as_ref()
-                .and_then(|s| serde_json::from_str(s).ok())
-                .unwrap_or(Value::Null);
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
-                    ("form".to_string(), Value::String(row.get("xform"))),
-                    ("name".to_string(), Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default())),
-                    ("version".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion")))),
-                    ("content".to_string(), content_val),
-                    ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                    ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
-                ]),
-            ))))
+            let mut map = serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("form".to_string(), Value::String(row.get("xform"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default())),
+                ("version".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion")))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]);
+            if let Some(c) = content.as_ref().and_then(|s| serde_json::from_str(s).ok()) {
+                map.insert("content".to_string(), c);
+            }
+            Ok(Json(ActionResult::success(Value::Object(map))))
         }
         None => Ok(Json(ActionResult::error("formversion not found"))),
     }
@@ -1172,9 +1170,11 @@ pub async fn input_compare(
 pub async fn input_cover(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("covered".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(0.into())),
+            ("data".to_string(), Value::Array(vec![])),
         ]),
     ))))
 }
@@ -1182,9 +1182,11 @@ pub async fn input_cover(
 pub async fn input_create(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("created".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(0.into())),
+            ("data".to_string(), Value::Array(vec![])),
         ]),
     ))))
 }
@@ -1192,9 +1194,11 @@ pub async fn input_create(
 pub async fn input_prepare_cover(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("prepared".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(0.into())),
+            ("data".to_string(), Value::Array(vec![])),
         ]),
     ))))
 }
@@ -1202,9 +1206,11 @@ pub async fn input_prepare_cover(
 pub async fn input_prepare_create(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("prepared".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(0.into())),
+            ("data".to_string(), Value::Array(vec![])),
         ]),
     ))))
 }
@@ -1233,7 +1239,7 @@ pub async fn item_access_bach_save(
     }
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(count > 0)),
             ("count".to_string(), Value::Number(serde_json::Number::from(count))),
         ]),
     ))))
@@ -1500,6 +1506,7 @@ pub async fn mapping_flag_execute(
         .await
         .map_err(|_| AppError::Internal)?;
 
+    let found = row.is_some();
     match row {
         Some(row) => {
             let source: String = row.get("xsource");
@@ -1507,7 +1514,7 @@ pub async fn mapping_flag_execute(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(row.get("xid"))),
-                    ("execute".to_string(), Value::Bool(true)),
+                    ("execute".to_string(), Value::Bool(found)),
                     ("source".to_string(), Value::String(source)),
                     ("target".to_string(), Value::String(target)),
                 ]),
@@ -1524,9 +1531,19 @@ pub async fn mapping_flag_execute(
 pub async fn mergeitemplan_estimate(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let count: i64 = client
+        .query_one(
+            "SELECT COUNT(*) FROM PP_E_MERGEITEMPLAN",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get(0);
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("estimated".to_string(), Value::Bool(true)),
+            ("estimated".to_string(), Value::Bool(count > 0)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
         ]),
     ))))
 }
@@ -1872,7 +1889,7 @@ pub async fn process_id_disable(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("disabled".to_string(), Value::Bool(true)),
+            ("disabled".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1896,7 +1913,7 @@ pub async fn process_id_enable(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("enabled".to_string(), Value::Bool(true)),
+            ("enabled".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1908,7 +1925,7 @@ pub async fn process_id_enabled(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let row = client
         .query_opt(
-            "SELECT xid, xname, xapplication FROM PP_E_PROCESS WHERE xid = $1 AND xstatus = 'enabled'",
+            "SELECT xid, xname, xapplication, xstatus FROM PP_E_PROCESS WHERE xid = $1 AND xstatus = 'enabled'",
             &[&id],
         )
         .await
@@ -1919,7 +1936,7 @@ pub async fn process_id_enabled(
             serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
                 ("name".to_string(), Value::String(row.get("xname"))),
-                ("enabled".to_string(), Value::Bool(true)),
+                ("enabled".to_string(), Value::Bool(row.get::<_, Option<String>>("xstatus").map(|s| s == "enabled").unwrap_or(false))),
             ]),
         )))),
         None => Ok(Json(ActionResult::success(Value::Object(
@@ -2092,7 +2109,7 @@ pub async fn process_id_upgrade(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("upgraded".to_string(), Value::Bool(true)),
+            ("upgraded".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -2195,21 +2212,18 @@ pub async fn processversion_id(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("xcontent");
-            let content_val: Value = content
-                .as_ref()
-                .and_then(|s| serde_json::from_str(s).ok())
-                .unwrap_or(Value::Null);
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
-                    ("process".to_string(), Value::String(row.get("xprocess"))),
-                    ("name".to_string(), Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default())),
-                    ("version".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion")))),
-                    ("content".to_string(), content_val),
-                    ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                    ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
-                ]),
-            ))))
+            let mut map = serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("process".to_string(), Value::String(row.get("xprocess"))),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("xname").unwrap_or_default())),
+                ("version".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i32>("xversion")))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]);
+            if let Some(c) = content.as_ref().and_then(|s| serde_json::from_str(s).ok()) {
+                map.insert("content".to_string(), c);
+            }
+            Ok(Json(ActionResult::success(Value::Object(map))))
         }
         None => Ok(Json(ActionResult::error("processversion not found"))),
     }
@@ -2523,20 +2537,17 @@ pub async fn templateform_id(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("xcontent");
-            let content_val: Value = content
-                .as_ref()
-                .and_then(|s| serde_json::from_str(s).ok())
-                .unwrap_or(Value::Null);
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("xid"))),
-                    ("name".to_string(), Value::String(row.get("xname"))),
-                    ("category".to_string(), Value::String(row.get::<_, Option<String>>("xcategory").unwrap_or_default())),
-                    ("content".to_string(), content_val),
-                    ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                    ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
-                ]),
-            ))))
+            let mut map = serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("name".to_string(), Value::String(row.get("xname"))),
+                ("category".to_string(), Value::String(row.get::<_, Option<String>>("xcategory").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]);
+            if let Some(c) = content.as_ref().and_then(|s| serde_json::from_str(s).ok()) {
+                map.insert("content".to_string(), c);
+            }
+            Ok(Json(ActionResult::success(Value::Object(map))))
         }
         None => Ok(Json(ActionResult::error("templateform not found"))),
     }

@@ -87,7 +87,7 @@ pub async fn execute_query(
     let data = Value::Object(serde_json::Map::from_iter([
         ("query".to_string(), Value::String(raw_sql.to_string())),
         ("filteredQuery".to_string(), Value::String(final_sql)),
-        ("params".to_string(), req.params.unwrap_or(Value::Null)),
+        ("params".to_string(), req.params.unwrap_or_default()),
         ("timeout".to_string(), Value::Number(serde_json::Number::from(
             req.timeout.unwrap_or(30000),
         ))),

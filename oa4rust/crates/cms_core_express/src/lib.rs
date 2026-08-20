@@ -76,7 +76,7 @@ pub async fn content_detail(
             "content".to_string(),
             row.get::<_, Option<String>>("content")
                 .map(Value::String)
-                .unwrap_or(Value::Null),
+                .unwrap_or_default(),
         ),
     ]));
 

@@ -26,17 +26,17 @@ pub async fn list(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
+            let mut pairs = vec![
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("title".to_string(), Value::String(m.title.clone())),
-                (
-                    "body".to_string(),
-                    m.body.clone().map(Value::String).unwrap_or(Value::Null),
-                ),
                 ("type".to_string(), Value::String(m.r#type.clone())),
                 ("consumer".to_string(), Value::String(m.consumer.clone())),
                 ("isRead".to_string(), Value::Bool(m.is_read)),
-            ]))
+            ];
+            if let Some(ref body) = m.body {
+                pairs.push(("body".to_string(), Value::String(body.clone())));
+            }
+            Value::Object(serde_json::Map::from_iter(pairs))
         })
         .collect();
 
@@ -67,17 +67,17 @@ pub async fn list_by_consume(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
+            let mut pairs = vec![
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("title".to_string(), Value::String(m.title.clone())),
-                (
-                    "body".to_string(),
-                    m.body.clone().map(Value::String).unwrap_or(Value::Null),
-                ),
                 ("type".to_string(), Value::String(m.r#type.clone())),
                 ("consumer".to_string(), Value::String(m.consumer.clone())),
                 ("isRead".to_string(), Value::Bool(m.is_read)),
-            ]))
+            ];
+            if let Some(ref body) = m.body {
+                pairs.push(("body".to_string(), Value::String(body.clone())));
+            }
+            Value::Object(serde_json::Map::from_iter(pairs))
         })
         .collect();
 

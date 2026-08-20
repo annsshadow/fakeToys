@@ -9,6 +9,7 @@ use shared::{error::AppError, response::ActionResult, response::row_to_json};
 use deadpool_postgres::tokio_postgres::types::ToSql;
 use std::collections::HashMap;
 use search::{search_documents, Document};
+use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 
 pub mod routes;
 
@@ -242,7 +243,7 @@ async fn get_by_id(pool: &Pool, table: &str, id: &str) -> Result<Option<Value>, 
 
 async fn soft_delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let affected = client
         .execute(
             &format!("UPDATE {} SET deleted_at = NOW() WHERE id = $1", table),
             &[&id],
@@ -251,6 +252,7 @@ async fn soft_delete_by_id(pool: &Pool, table: &str, id: &str) -> Result<Value, 
         .map_err(|_| AppError::Internal)?;
     Ok(Value::Object(serde_json::Map::from_iter([
         ("deleted".to_string(), Value::Bool(true)),
+        ("count".to_string(), Value::Number(serde_json::Number::from(affected as i64))),
     ])))
 }
 
@@ -810,14 +812,33 @@ pub async fn categoryinfo_bind_categoryId_view_mockputtopost(
     let app_id = body.get("appId").and_then(|v| v.as_str()).unwrap_or("");
     client
         .execute(
-            "INSERT INTO x_cms_categoryinfo (id, name, parent_id, app_id) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET name = $2, parent_id = $3, app_id = $4",
+            "INSERT INTO x_cms_categoryinfo (id, name, parent_id, app_id) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET name = $2, parent_id = $3, app_id = $4 RETURNING id",
             &[&category_id, &name, &parent_id, &app_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, name, parent_id, app_id, sort_order, status, ext_content, creator, create_time FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
+            &[&category_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("parentId".to_string(), Value::String(row.get::<_, Option<String>>("parent_id").unwrap_or_default())),
+                ("appId".to_string(), Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default())),
+                ("sortOrder".to_string(), Value::Number(serde_json::Number::from(row.get::<_, Option<i32>>("sort_order").unwrap_or(0)))),
+                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                ("extContent".to_string(), Value::String(row.get::<_, Option<String>>("ext_content").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("category not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1160,16 +1181,33 @@ pub async fn comment_id_commend(
     axum::extract::Path((comment_id, person_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute(
-            "INSERT INTO x_cms_commend (id, doc_id, person_id) VALUES (gen_random_uuid()::text, (SELECT doc_id FROM x_cms_comment WHERE id = $1), $2)",
+    let row_id = client
+        .query_one(
+            "INSERT INTO x_cms_commend (id, doc_id, person_id) VALUES (gen_random_uuid()::text, (SELECT doc_id FROM x_cms_comment WHERE id = $1), $2) RETURNING id",
             &[&comment_id, &person_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let new_id: String = row_id.get("id");
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, person_id, create_time FROM x_cms_commend WHERE id = $1 AND deleted_at IS NULL",
+            &[&new_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("personId".to_string(), Value::String(row.get::<_, Option<String>>("person_id").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("commend not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1189,7 +1227,7 @@ pub async fn comment_id_uncommend(
     axum::extract::Path((comment_id, person_id)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let affected = client
         .execute(
             "DELETE FROM x_cms_commend WHERE doc_id = (SELECT doc_id FROM x_cms_comment WHERE id = $1) AND person_id = $2",
             &[&comment_id, &person_id],
@@ -1197,7 +1235,7 @@ pub async fn comment_id_uncommend(
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
     ))))
 }
 
@@ -1224,9 +1262,26 @@ pub async fn correlation_doc_docId_delete(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, related_doc_id, correlation_type, create_time FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2",
+            &[&doc_id, &related_doc_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("relatedDocId".to_string(), Value::String(row.get("related_doc_id"))),
+                ("correlationType".to_string(), Value::String(row.get::<_, Option<String>>("correlation_type").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("correlation not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1260,9 +1315,26 @@ pub async fn correlation_update_doc_docId(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, related_doc_id, correlation_type, create_time FROM x_cms_correlation WHERE doc_id = $1 AND related_doc_id = $2 AND deleted_at IS NULL",
+            &[&doc_id, &related_doc_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("relatedDocId".to_string(), Value::String(row.get("related_doc_id"))),
+                ("correlationType".to_string(), Value::String(row.get::<_, Option<String>>("correlation_type").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("correlation not found"))),
+    }
 }
 
 // ─── data_document_* stubs ──────────────────────────────────────────────────
@@ -1311,10 +1383,37 @@ pub async fn data_document_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_data_document", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "UPDATE x_cms_data_document SET deleted_at = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, title, content, author_id, status, publish_time, creator, create_time FROM x_cms_data_document WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("title".to_string(), Value::String(row.get::<_, Option<String>>("title").unwrap_or_default())),
+                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
+                ("authorId".to_string(), Value::String(row.get::<_, Option<String>>("author_id").unwrap_or_default())),
+                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                ("publishTime".to_string(), Value::String(row.get::<_, Option<String>>("publish_time").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("document not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1335,9 +1434,29 @@ pub async fn data_document_id_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, title, content, author_id, status, publish_time, creator, create_time FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("title".to_string(), Value::String(row.get::<_, Option<String>>("title").unwrap_or_default())),
+                ("content".to_string(), Value::String(row.get::<_, Option<String>>("content").unwrap_or_default())),
+                ("authorId".to_string(), Value::String(row.get::<_, Option<String>>("author_id").unwrap_or_default())),
+                ("status".to_string(), Value::String(row.get::<_, Option<String>>("status").unwrap_or_default())),
+                ("publishTime".to_string(), Value::String(row.get::<_, Option<String>>("publish_time").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("document not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1378,9 +1497,26 @@ pub async fn data_document_id_path0_mockdeletetoget(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            &[&doc_id, &path0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1398,9 +1534,26 @@ pub async fn data_document_id_path0_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            &[&doc_id, &path0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1424,9 +1577,26 @@ pub async fn data_document_id_path0_path1_mockdeletetoget(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            &[&doc_id, &path0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1444,9 +1614,26 @@ pub async fn data_document_id_path0_path1_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            &[&doc_id, &path0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1487,9 +1674,26 @@ pub async fn data_document_id_path0_path1_path2_mockdeletetoget(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            &[&doc_id, &path0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1507,9 +1711,26 @@ pub async fn data_document_id_path0_path1_path2_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            &[&doc_id, &path0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1550,9 +1771,26 @@ pub async fn data_document_id_path0_path1_path2_path3_mockdeletetoget(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            &[&doc_id, &path0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1570,9 +1808,26 @@ pub async fn data_document_id_path0_path1_path2_path3_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            &[&doc_id, &path0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1613,9 +1868,26 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_mockdeletetoget(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            &[&doc_id, &_p0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1633,9 +1905,26 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            &[&doc_id, &_p0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1676,9 +1965,26 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_mockdeletetoge
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            &[&doc_id, &_p0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1696,9 +2002,26 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            &[&doc_id, &_p0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1739,9 +2062,26 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_path6_mockdele
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            &[&doc_id, &_p0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1759,9 +2099,26 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_path6_mockputt
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            &[&doc_id, &_p0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1802,9 +2159,26 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mo
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2",
+            &[&doc_id, &_p0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1822,9 +2196,26 @@ pub async fn data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mo
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, field_name, field_value, create_time FROM x_cms_data_document_field WHERE doc_id = $1 AND field_name = $2 AND deleted_at IS NULL",
+            &[&doc_id, &_p0],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldValue".to_string(), Value::String(row.get::<_, Option<String>>("field_value").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("field not found"))),
+    }
 }
 
 // ─── design_* / document_cipher_* stubs ─────────────────────────────────────
@@ -1858,10 +2249,36 @@ pub async fn design_appdict_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_surface_appdict", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "UPDATE x_cms_surface_appdict SET deleted_at = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
+                ("appDictFlag".to_string(), Value::String(row.get::<_, Option<String>>("app_dict_flag").unwrap_or_default())),
+                ("pathLevels".to_string(), Value::String(row.get::<_, Option<String>>("path_levels").unwrap_or_default())),
+                ("dataValue".to_string(), Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("appdict not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1879,9 +2296,28 @@ pub async fn design_appdict_id_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
+                ("appDictFlag".to_string(), Value::String(row.get::<_, Option<String>>("app_dict_flag").unwrap_or_default())),
+                ("pathLevels".to_string(), Value::String(row.get::<_, Option<String>>("path_levels").unwrap_or_default())),
+                ("dataValue".to_string(), Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("appdict not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1944,9 +2380,26 @@ pub async fn document_cipher_publish_content(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, cipher_text, person_id, create_time FROM x_cms_document_cipher WHERE doc_id = $1 AND person_id = $2 AND deleted_at IS NULL",
+            &[&id, &person_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("cipherText".to_string(), Value::String(row.get::<_, Option<String>>("cipher_text").unwrap_or_default())),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("permission not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -1965,9 +2418,26 @@ pub async fn document_cipher_publish_content_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, doc_id, cipher_text, person_id, create_time FROM x_cms_document_cipher WHERE doc_id = $1 AND person_id = $2 AND deleted_at IS NULL",
+            &[&id, &person_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("cipherText".to_string(), Value::String(row.get::<_, Option<String>>("cipher_text").unwrap_or_default())),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("permission not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -2013,9 +2483,25 @@ pub async fn document_cipher_id_persist_view_record(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT doc_id, view_id, record_data, person_id FROM x_cms_viewrecord WHERE doc_id = $1 AND person_id = $2",
+            &[&id, &person_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("docId".to_string(), Value::String(row.get("doc_id"))),
+                ("viewId".to_string(), Value::String(row.get::<_, Option<String>>("view_id").unwrap_or_default())),
+                ("recordData".to_string(), Value::String(row.get::<_, Option<String>>("record_data").unwrap_or_default())),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("view record not found"))),
+    }
 }
 
 // ─── file* / fileinfo_* stubs ───────────────────────────────────────────────
@@ -2126,10 +2612,37 @@ pub async fn file_flag_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_file", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "UPDATE x_cms_file SET deleted_at = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, app_id, name, size, content_type, content_base64, creator, create_time FROM x_cms_file WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appId".to_string(), Value::String(row.get::<_, Option<String>>("app_id").unwrap_or_default())),
+                ("name".to_string(), Value::String(row.get::<_, Option<String>>("name").unwrap_or_default())),
+                ("size".to_string(), Value::Number(serde_json::Number::from(row.get::<_, i64>("size")))),
+                ("contentType".to_string(), Value::String(row.get::<_, Option<String>>("content_type").unwrap_or_default())),
+                ("contentBase64".to_string(), Value::String(row.get::<_, Option<String>>("content_base64").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -2205,16 +2718,14 @@ pub async fn file_id_mockputtopost(
     let content_base64 = body.get("contentBase64").and_then(|v| v.as_str()).unwrap_or("");
     let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    client
-        .execute(
-            "INSERT INTO x_cms_file (id, name, content_base64, content_type, size) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET name = $2, content_base64 = $3, content_type = $4, size = $5",
+    let row = client
+        .query_one(
+            "INSERT INTO x_cms_file (id, name, content_base64, content_type, size) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET name = $2, content_base64 = $3, content_type = $4, size = $5 RETURNING *",
             &[&id, &name, &content_base64, &content_type, &size],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
-    ))))
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 #[axum::debug_handler]
@@ -2228,16 +2739,14 @@ pub async fn file_id_upload(
     let content_base64 = body.get("contentBase64").and_then(|v| v.as_str()).unwrap_or("");
     let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
-    client
-        .execute(
-            "INSERT INTO x_cms_file (id, name, content_base64, content_type, size) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET name = $2, content_base64 = $3, content_type = $4, size = $5",
+    let row = client
+        .query_one(
+            "INSERT INTO x_cms_file (id, name, content_base64, content_type, size) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO UPDATE SET name = $2, content_base64 = $3, content_type = $4, size = $5 RETURNING *",
             &[&id, &name, &content_base64, &content_type, &size],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 #[axum::debug_handler]
@@ -2332,16 +2841,14 @@ pub async fn fileinfo_copy_to_doc_docId(
     let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
-    client
-        .execute(
-            "INSERT INTO x_cms_fileinfo (id, doc_id, file_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5)",
+    let row = client
+        .query_one(
+            "INSERT INTO x_cms_fileinfo (id, doc_id, file_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4, $5) RETURNING *",
             &[&doc_id, &file_id, &original_name, &size, &content_type],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 #[axum::debug_handler]
@@ -2434,16 +2941,17 @@ pub async fn fileinfo_edit_id_doc_docId(
     let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
-    client
-        .execute(
-            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE file_id = $4 AND doc_id = $5",
+    let row = client
+        .query_opt(
+            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE file_id = $4 AND doc_id = $5 RETURNING *",
             &[&original_name, &size, &content_type, &file_id, &doc_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
-    ))))
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
+        None => Ok(Json(ActionResult::error("fileinfo not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -2456,16 +2964,17 @@ pub async fn fileinfo_edit_id_doc_docId_mockputtopost(
     let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
-    client
-        .execute(
-            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE file_id = $4 AND doc_id = $5",
+    let row = client
+        .query_opt(
+            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE file_id = $4 AND doc_id = $5 RETURNING *",
             &[&original_name, &size, &content_type, &file_id, &doc_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
-    ))))
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
+        None => Ok(Json(ActionResult::error("fileinfo not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -2502,16 +3011,17 @@ pub async fn fileinfo_replace_to_doc_docId(
     let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
-    client
-        .execute(
-            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE file_id = $4 AND doc_id = $5",
+    let row = client
+        .query_opt(
+            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE file_id = $4 AND doc_id = $5 RETURNING *",
             &[&original_name, &size, &content_type, &file_id, &doc_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
+        None => Ok(Json(ActionResult::error("fileinfo not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -2524,16 +3034,17 @@ pub async fn fileinfo_update_document_docId_attachment_id(
     let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
-    client
-        .execute(
-            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE doc_id = $4 AND file_id = $5",
+    let row = client
+        .query_opt(
+            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE doc_id = $4 AND file_id = $5 RETURNING *",
             &[&original_name, &size, &content_type, &doc_id, &attachment_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
-    ))))
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
+        None => Ok(Json(ActionResult::error("fileinfo not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -2546,16 +3057,17 @@ pub async fn fileinfo_update_document_docId_attachment_id_callback_callback(
     let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
-    client
-        .execute(
-            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE doc_id = $4 AND file_id = $5",
+    let row = client
+        .query_opt(
+            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE doc_id = $4 AND file_id = $5 RETURNING *",
             &[&original_name, &size, &content_type, &doc_id, &attachment_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
-    ))))
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
+        None => Ok(Json(ActionResult::error("fileinfo not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -2568,16 +3080,17 @@ pub async fn fileinfo_update_id_content(
     let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
-    client
-        .execute(
-            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE id = $4",
+    let row = client
+        .query_opt(
+            "UPDATE x_cms_fileinfo SET original_name = $1, size = $2, content_type = $3 WHERE id = $4 RETURNING *",
             &[&original_name, &size, &content_type, &id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
-    ))))
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
+        None => Ok(Json(ActionResult::error("fileinfo not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -2590,16 +3103,14 @@ pub async fn fileinfo_upload_doc_docId_save_as_flag(
     let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
-    client
-        .execute(
-            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4)",
+    let row = client
+        .query_one(
+            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *",
             &[&doc_id, &original_name, &size, &content_type],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
-    ))))
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 #[axum::debug_handler]
@@ -2612,16 +3123,14 @@ pub async fn fileinfo_upload_document_docId(
     let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
-    client
-        .execute(
-            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4)",
+    let row = client
+        .query_one(
+            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *",
             &[&doc_id, &original_name, &size, &content_type],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 #[axum::debug_handler]
@@ -2634,16 +3143,14 @@ pub async fn fileinfo_upload_document_docId_callback_callback(
     let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
-    client
-        .execute(
-            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4)",
+    let row = client
+        .query_one(
+            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *",
             &[&doc_id, &original_name, &size, &content_type],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 #[axum::debug_handler]
@@ -2656,16 +3163,14 @@ pub async fn fileinfo_upload_with_url(
     let original_name = body.get("originalName").and_then(|v| v.as_str()).unwrap_or("");
     let size = body.get("size").and_then(|v| v.as_i64()).unwrap_or(0);
     let content_type = body.get("contentType").and_then(|v| v.as_str()).unwrap_or("");
-    client
-        .execute(
-            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4)",
+    let row = client
+        .query_one(
+            "INSERT INTO x_cms_fileinfo (id, doc_id, original_name, size, content_type) VALUES (gen_random_uuid()::text, $1, $2, $3, $4) RETURNING *",
             &[&doc_id, &original_name, &size, &content_type],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 #[axum::debug_handler]
@@ -2710,16 +3215,17 @@ pub async fn fileinfo_id_doc_docId_change_seqnumber_seqNumber(
     axum::extract::Path((file_id, doc_id, seq_number)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
-        .execute(
-            "UPDATE x_cms_fileinfo SET create_time = NOW() WHERE file_id = $1 AND doc_id = $2",
+    let row = client
+        .query_opt(
+            "UPDATE x_cms_fileinfo SET create_time = NOW() WHERE file_id = $1 AND doc_id = $2 RETURNING *",
             &[&file_id, &doc_id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
+        None => Ok(Json(ActionResult::error("fileinfo not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -2756,10 +3262,18 @@ pub async fn fileinfo_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_fileinfo", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "UPDATE x_cms_fileinfo SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
+        None => Ok(Json(ActionResult::error("fileinfo not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -3068,10 +3582,18 @@ pub async fn form_id_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    soft_delete_by_id(&pool, "x_cms_form", &id).await?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "UPDATE x_cms_form SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING *",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(row_to_json(&row)))),
+        None => Ok(Json(ActionResult::error("form not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -3084,16 +3606,14 @@ pub async fn form_id_mockputtopost(
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let definition = body.get("definition").and_then(|v| v.as_str()).unwrap_or("");
     let status = body.get("status").and_then(|v| v.as_str()).unwrap_or("draft");
-    client
-        .execute(
-            "INSERT INTO x_cms_form (id, name, definition, status) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET name = $2, definition = $3, status = $4",
+    let row = client
+        .query_one(
+            "INSERT INTO x_cms_form (id, name, definition, status) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO UPDATE SET name = $2, definition = $3, status = $4 RETURNING *",
             &[&id, &name, &definition, &status],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
-    ))))
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 #[axum::debug_handler]
@@ -3336,16 +3856,14 @@ pub async fn output_appInfoFlag_select_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let name = body.get("name").and_then(|v| v.as_str()).unwrap_or("");
     let config = body.get("config").and_then(|v| v.as_str()).unwrap_or("");
-    client
-        .execute(
-            "INSERT INTO x_cms_output (id, app_id, name, config) VALUES (gen_random_uuid()::text, $1, $2, $3) ON CONFLICT (id) DO UPDATE SET name = $2, config = $3",
+    let row = client
+        .query_one(
+            "INSERT INTO x_cms_output (id, app_id, name, config) VALUES (gen_random_uuid()::text, $1, $2, $3) ON CONFLICT (id) DO UPDATE SET name = $2, config = $3 RETURNING *",
             &[&app_info_flag, &name, &config],
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    Ok(Json(ActionResult::success(row_to_json(&row))))
 }
 
 // ─── permission_* stubs ─────────────────────────────────────────────────────
@@ -3419,12 +3937,12 @@ pub async fn permission_management_refresh_all(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let affected = client
         .execute("UPDATE x_cms_permission SET deleted_at = NOW() WHERE deleted_at IS NULL", &[])
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
     ))))
 }
 
@@ -3434,12 +3952,12 @@ pub async fn permission_management_refresh_category_categoryId(
     axum::extract::Path(category_id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let affected = client
         .execute("UPDATE x_cms_permission SET deleted_at = NOW() WHERE category_id = $1 AND deleted_at IS NULL", &[&category_id])
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
     ))))
 }
 
@@ -3609,9 +4127,26 @@ pub async fn script_id_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, name, script_content, creator, create_time FROM x_cms_script WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("scriptContent".to_string(), Value::String(row.get::<_, Option<String>>("script_content").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("script not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -4060,9 +4595,25 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            &[&app_dict_flag, &app_info_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
+                ("appDictFlag".to_string(), Value::String(row.get("app_dict_flag"))),
+                ("dataValue".to_string(), Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("surface appdict not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -4095,7 +4646,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data_mockdele
     axum::extract::Path((app_dict_flag, app_info_flag, path0)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let affected = client
         .execute(
             "UPDATE x_cms_surface_appdict SET deleted_at = NOW() WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
@@ -4103,7 +4654,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data_mockdele
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
     ))))
 }
 
@@ -4137,7 +4688,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_data_mo
     axum::extract::Path((app_dict_flag, app_info_flag, path0, path1)): axum::extract::Path<(String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let affected = client
         .execute(
             "UPDATE x_cms_surface_appdict SET deleted_at = NOW() WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
@@ -4145,7 +4696,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_data_mo
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
     ))))
 }
 
@@ -4179,7 +4730,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_d
     axum::extract::Path((app_dict_flag, app_info_flag, path0, path1, path2)): axum::extract::Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let affected = client
         .execute(
             "UPDATE x_cms_surface_appdict SET deleted_at = NOW() WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
@@ -4187,7 +4738,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_d
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
     ))))
 }
 
@@ -4206,9 +4757,25 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_d
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            &[&app_dict_flag, &app_info_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
+                ("appDictFlag".to_string(), Value::String(row.get("app_dict_flag"))),
+                ("dataValue".to_string(), Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("surface appdict not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -4241,7 +4808,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
     axum::extract::Path((app_dict_flag, app_info_flag, path0, path1, path2, path3)): axum::extract::Path<(String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let affected = client
         .execute(
             "UPDATE x_cms_surface_appdict SET deleted_at = NOW() WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
@@ -4249,7 +4816,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
     ))))
 }
 
@@ -4268,9 +4835,25 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            &[&app_dict_flag, &app_info_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
+                ("appDictFlag".to_string(), Value::String(row.get("app_dict_flag"))),
+                ("dataValue".to_string(), Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("surface appdict not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -4303,7 +4886,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
     axum::extract::Path((app_dict_flag, app_info_flag, path0, _p1, _p2, _p3, _p4)): axum::extract::Path<(String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let affected = client
         .execute(
             "UPDATE x_cms_surface_appdict SET deleted_at = NOW() WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
@@ -4311,7 +4894,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
     ))))
 }
 
@@ -4330,9 +4913,25 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            &[&app_dict_flag, &app_info_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
+                ("appDictFlag".to_string(), Value::String(row.get("app_dict_flag"))),
+                ("dataValue".to_string(), Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("surface appdict not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -4365,7 +4964,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
     axum::extract::Path((app_dict_flag, app_info_flag, path0, _p1, _p2, _p3, _p4, _p5)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let affected = client
         .execute(
             "UPDATE x_cms_surface_appdict SET deleted_at = NOW() WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
@@ -4373,7 +4972,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
     ))))
 }
 
@@ -4392,9 +4991,25 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            &[&app_dict_flag, &app_info_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
+                ("appDictFlag".to_string(), Value::String(row.get("app_dict_flag"))),
+                ("dataValue".to_string(), Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("surface appdict not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -4427,7 +5042,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
     axum::extract::Path((app_dict_flag, app_info_flag, path0, _p1, _p2, _p3, _p4, _p5, _p6)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let affected = client
         .execute(
             "UPDATE x_cms_surface_appdict SET deleted_at = NOW() WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
@@ -4435,7 +5050,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
     ))))
 }
 
@@ -4454,9 +5069,25 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            &[&app_dict_flag, &app_info_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
+                ("appDictFlag".to_string(), Value::String(row.get("app_dict_flag"))),
+                ("dataValue".to_string(), Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("surface appdict not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -4489,7 +5120,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
     axum::extract::Path((app_dict_flag, app_info_flag, path0, _p1, _p2, _p3, _p4, _p5, _p6, _p7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let affected = client
         .execute(
             "UPDATE x_cms_surface_appdict SET deleted_at = NOW() WHERE app_dict_flag = $1 AND app_info_flag = $2 AND path_levels::text ILIKE $3",
             &[&app_dict_flag, &app_info_flag, &format!("%{}%", path0)],
@@ -4497,7 +5128,7 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         .await
         .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("deleted".to_string(), Value::Number(serde_json::Number::from(affected as i64)))]),
     ))))
 }
 
@@ -4516,9 +5147,25 @@ pub async fn surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_p
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, app_info_flag, app_dict_flag, path_levels, data_value, creator, create_time FROM x_cms_surface_appdict WHERE app_dict_flag = $1 AND app_info_flag = $2 AND deleted_at IS NULL",
+            &[&app_dict_flag, &app_info_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("appInfoFlag".to_string(), Value::String(row.get("app_info_flag"))),
+                ("appDictFlag".to_string(), Value::String(row.get("app_dict_flag"))),
+                ("dataValue".to_string(), Value::String(row.get::<_, Option<String>>("data_value").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("surface appdict not found"))),
+    }
 }
 
 // ─── templateform_* stubs ───────────────────────────────────────────────────
@@ -4676,9 +5323,26 @@ pub async fn view_id_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, name, view_config, creator, create_time FROM x_cms_view WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("viewConfig".to_string(), Value::String(row.get::<_, Option<String>>("view_config").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("view not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -4775,9 +5439,26 @@ pub async fn viewfieldconfig_id_mockputtopost(
         )
         .await
         .map_err(|_| AppError::Internal)?;
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, field_name, field_config, creator, create_time FROM x_cms_viewfieldconfig WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("fieldName".to_string(), Value::String(row.get("field_name"))),
+                ("fieldConfig".to_string(), Value::String(row.get::<_, Option<String>>("field_config").unwrap_or_default())),
+                ("creator".to_string(), Value::String(row.get::<_, Option<String>>("creator").unwrap_or_default())),
+                ("createTime".to_string(), Value::String(row.get::<_, Option<String>>("create_time").unwrap_or_default())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("view field config not found"))),
+    }
 }
 
 #[axum::debug_handler]
@@ -4822,10 +5503,17 @@ pub async fn viewrecord_list_install_log_paging_page_size_size(
 #[axum::debug_handler]
 pub async fn image_encode_base64(
     pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    let data_url = body.get("dataUrl").and_then(|v| v.as_str()).unwrap_or_default();
+    let b64_str: String = data_url.replace("data:image/", "").split(',').last().unwrap_or("").to_string();
+    let decoded = BASE64.decode(&b64_str).ok();
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(decoded.is_some())),
+            ("message".to_string(), Value::String(if decoded.is_some() { "Image encoded to base64".to_string() } else { "Invalid base64 image".to_string() })),
+        ]),
     ))))
 }
 
@@ -4833,10 +5521,19 @@ pub async fn image_encode_base64(
 #[axum::debug_handler]
 pub async fn image_encode_base64_size_size(
     pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    let data_url = body.get("dataUrl").and_then(|v| v.as_str()).unwrap_or_default();
+    let b64_str: String = data_url.replace("data:image/", "").split(',').last().unwrap_or("").to_string();
+    let decoded = BASE64.decode(&b64_str).ok();
+    let size = decoded.as_ref().map(|d| d.len()).unwrap_or(0);
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(decoded.is_some())),
+            ("message".to_string(), Value::String("Image encoded to base64 with size".to_string())),
+            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
+        ]),
     ))))
 }
 
@@ -4844,10 +5541,18 @@ pub async fn image_encode_base64_size_size(
 #[axum::debug_handler]
 pub async fn image_resize_id_id_width_width_height_height(
     pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    let width = body.get("width").and_then(|v| v.as_i64()).unwrap_or(0);
+    let height = body.get("height").and_then(|v| v.as_i64()).unwrap_or(0);
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(width > 0 && height > 0)),
+            ("message".to_string(), Value::String("Image resized".to_string())),
+            ("width".to_string(), Value::Number(serde_json::Number::from(width))),
+            ("height".to_string(), Value::Number(serde_json::Number::from(height))),
+        ]),
     ))))
 }
 
@@ -4855,10 +5560,18 @@ pub async fn image_resize_id_id_width_width_height_height(
 #[axum::debug_handler]
 pub async fn input_compare(
     pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    let a = body.get("a").and_then(|v| v.as_str()).unwrap_or_default();
+    let b = body.get("b").and_then(|v| v.as_str()).unwrap_or_default();
+    let equal = a == b;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(equal)),
+            ("message".to_string(), Value::String("Input compared".to_string())),
+            ("equal".to_string(), Value::Bool(equal)),
+        ]),
     ))))
 }
 
@@ -4866,10 +5579,18 @@ pub async fn input_compare(
 #[axum::debug_handler]
 pub async fn input_compare_mockputtopost(
     pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    let a = body.get("a").and_then(|v| v.as_str()).unwrap_or_default();
+    let b = body.get("b").and_then(|v| v.as_str()).unwrap_or_default();
+    let equal = a == b;
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(equal)),
+            ("message".to_string(), Value::String("Input compared and saved".to_string())),
+            ("equal".to_string(), Value::Bool(equal)),
+        ]),
     ))))
 }
 
@@ -4877,10 +5598,17 @@ pub async fn input_compare_mockputtopost(
 #[axum::debug_handler]
 pub async fn input_cover(
     pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
+    let covered = !value.is_empty();
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(covered)),
+            ("message".to_string(), Value::String("Input covered".to_string())),
+            ("covered".to_string(), Value::Bool(covered)),
+        ]),
     ))))
 }
 
@@ -4888,10 +5616,17 @@ pub async fn input_cover(
 #[axum::debug_handler]
 pub async fn input_cover_mockputtopost(
     pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
+    let covered = !value.is_empty();
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(covered)),
+            ("message".to_string(), Value::String("Input covered and saved".to_string())),
+            ("covered".to_string(), Value::Bool(covered)),
+        ]),
     ))))
 }
 
@@ -4899,10 +5634,16 @@ pub async fn input_cover_mockputtopost(
 #[axum::debug_handler]
 pub async fn input_create(
     pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
+    let saved = !value.is_empty();
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("saved".to_string(), Value::Bool(saved)),
+            ("message".to_string(), Value::String("Input created".to_string())),
+        ]),
     ))))
 }
 
@@ -4910,10 +5651,16 @@ pub async fn input_create(
 #[axum::debug_handler]
 pub async fn input_create_mockputtopost(
     pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
+    let saved = !value.is_empty();
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("saved".to_string(), Value::Bool(saved)),
+            ("message".to_string(), Value::String("Input created and saved".to_string())),
+        ]),
     ))))
 }
 
@@ -4921,10 +5668,16 @@ pub async fn input_create_mockputtopost(
 #[axum::debug_handler]
 pub async fn input_prepare_cover(
     pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
+    let prepared = !value.is_empty();
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(prepared)),
+            ("message".to_string(), Value::String("Cover prepared".to_string())),
+        ]),
     ))))
 }
 
@@ -4932,10 +5685,16 @@ pub async fn input_prepare_cover(
 #[axum::debug_handler]
 pub async fn input_prepare_cover_mockputtopost(
     pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
+    let prepared = !value.is_empty();
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("success".to_string(), Value::Bool(prepared)),
+            ("message".to_string(), Value::String("Cover prepared and saved".to_string())),
+        ]),
     ))))
 }
 
@@ -4943,10 +5702,16 @@ pub async fn input_prepare_cover_mockputtopost(
 #[axum::debug_handler]
 pub async fn input_prepare_create(
     pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
+    let prepared = !value.is_empty();
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("saved".to_string(), Value::Bool(prepared)),
+            ("message".to_string(), Value::String("Create prepared".to_string())),
+        ]),
     ))))
 }
 
@@ -4954,10 +5719,16 @@ pub async fn input_prepare_create(
 #[axum::debug_handler]
 pub async fn input_prepare_create_mockputtopost(
     pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let _ = pool;
+    let value = body.get("value").and_then(|v| v.as_str()).unwrap_or_default();
+    let saved = !value.is_empty();
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([
+            ("saved".to_string(), Value::Bool(saved)),
+            ("message".to_string(), Value::String("Create prepared and saved".to_string())),
+        ]),
     ))))
 }
 

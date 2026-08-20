@@ -190,8 +190,8 @@ pub async fn dict_update(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
-                    ("saved".to_string(), Value::Bool(true)),
                     ("name".to_string(), Value::String(name)),
+                    ("application".to_string(), Value::String(application)),
                 ]),
             ))))
         }
@@ -203,21 +203,26 @@ pub async fn dict_delete(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let result = general_application_dict::Entity::delete_by_id(&id)
-        .exec(&db.0)
+    let model = general_application_dict::Entity::find_by_id(&id)
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result.rows_affected == 0 {
-        return Ok(Json(ActionResult::error("dict not found")));
+    match model {
+        Some(m) => {
+            general_application_dict::Entity::delete_by_id(&m.id)
+                .exec(&db.0)
+                .await
+                .map_err(|_| AppError::Internal)?;
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("application".to_string(), Value::String(m.application.clone())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("dict not found"))),
     }
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
 }
 
 pub async fn dict_item_create(
@@ -304,8 +309,9 @@ pub async fn dict_item_update(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
-                    ("saved".to_string(), Value::Bool(true)),
+                    ("dictId".to_string(), Value::String(dict_id)),
                     ("name".to_string(), Value::String(name)),
+                    ("value".to_string(), Value::String(value)),
                 ]),
             ))))
         }
@@ -317,21 +323,27 @@ pub async fn dict_item_delete(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let result = general_application_dict_item::Entity::delete_by_id(&id)
-        .exec(&db.0)
+    let model = general_application_dict_item::Entity::find_by_id(&id)
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result.rows_affected == 0 {
-        return Ok(Json(ActionResult::error("dict item not found")));
+    match model {
+        Some(m) => {
+            general_application_dict_item::Entity::delete_by_id(&m.id)
+                .exec(&db.0)
+                .await
+                .map_err(|_| AppError::Internal)?;
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("dictId".to_string(), Value::String(m.dict_id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("value".to_string(), Value::String(m.value.clone())),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("dict item not found"))),
     }
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
 }
 
 pub async fn file_list(
@@ -496,7 +508,7 @@ pub async fn file_update(
 
     match model {
         Some(m) => {
-            let mut active: general_file::ActiveModel = m.into();
+            let mut active: general_file::ActiveModel = m.clone().into();
             active.name = sea_orm::ActiveValue::Set(name.clone());
             active.mime_type = sea_orm::ActiveValue::Set(mime_type.clone());
             active.update(&db.0).await.map_err(|_| AppError::Internal)?;
@@ -504,8 +516,27 @@ pub async fn file_update(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
-                    ("saved".to_string(), Value::Bool(true)),
                     ("name".to_string(), Value::String(name)),
+                    ("mimeType".to_string(), Value::String(mime_type)),
+                    (
+                        "size".to_string(),
+                        Value::Number(serde_json::Number::from(
+                            m.size,
+                        )),
+                    ),
+                    (
+                        "creator".to_string(),
+                        Value::String(m.creator.clone().unwrap_or_default()),
+                    ),
+                    (
+                        "createTime".to_string(),
+                        Value::String(
+                            m.create_time
+                                .clone()
+                                .map(|dt| dt.to_string())
+                                .unwrap_or_default(),
+                        ),
+                    ),
                 ]),
             ))))
         }
@@ -517,21 +548,43 @@ pub async fn file_delete(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let result = general_file::Entity::delete_by_id(&id)
-        .exec(&db.0)
+    let model = general_file::Entity::find_by_id(&id)
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result.rows_affected == 0 {
-        return Ok(Json(ActionResult::error("file not found")));
+    match model {
+        Some(m) => {
+            general_file::Entity::delete_by_id(&m.id)
+                .exec(&db.0)
+                .await
+                .map_err(|_| AppError::Internal)?;
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("name".to_string(), Value::String(m.name.clone())),
+                ("mimeType".to_string(), Value::String(m.mime_type.clone())),
+                (
+                    "size".to_string(),
+                    Value::Number(serde_json::Number::from(m.size)),
+                ),
+                (
+                    "creator".to_string(),
+                    Value::String(m.creator.clone().unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("file not found"))),
     }
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
 }
 
 pub async fn file_download(
@@ -684,7 +737,7 @@ pub async fn invoice_update(
 
     match model {
         Some(m) => {
-            let mut active: general_invoice::ActiveModel = m.into();
+            let mut active: general_invoice::ActiveModel = m.clone().into();
             active.number = sea_orm::ActiveValue::Set(number.clone());
             active.date = sea_orm::ActiveValue::Set(date.clone());
             active.amount = sea_orm::ActiveValue::Set(amount);
@@ -694,8 +747,28 @@ pub async fn invoice_update(
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
-                    ("saved".to_string(), Value::Bool(true)),
                     ("number".to_string(), Value::String(number)),
+                    ("date".to_string(), Value::String(date)),
+                    (
+                        "amount".to_string(),
+                        Value::Number(
+                            serde_json::Number::from_f64(amount).unwrap_or_else(|| serde_json::Number::from(0)),
+                        ),
+                    ),
+                    ("status".to_string(), Value::String(status)),
+                    (
+                        "creator".to_string(),
+                        Value::String(m.creator.clone().unwrap_or_default()),
+                    ),
+                    (
+                        "createTime".to_string(),
+                        Value::String(
+                            m.create_time
+                                .clone()
+                                .map(|dt| dt.to_string())
+                                .unwrap_or_default(),
+                        ),
+                    ),
                 ]),
             ))))
         }
@@ -707,21 +780,46 @@ pub async fn invoice_delete(
     db: Extension<DatabaseConnection>,
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let result = general_invoice::Entity::delete_by_id(&id)
-        .exec(&db.0)
+    let model = general_invoice::Entity::find_by_id(&id)
+        .one(&db.0)
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result.rows_affected == 0 {
-        return Ok(Json(ActionResult::error("invoice not found")));
+    match model {
+        Some(m) => {
+            general_invoice::Entity::delete_by_id(&m.id)
+                .exec(&db.0)
+                .await
+                .map_err(|_| AppError::Internal)?;
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(m.id.clone())),
+                ("number".to_string(), Value::String(m.number.clone())),
+                ("date".to_string(), Value::String(m.date.clone())),
+                (
+                    "amount".to_string(),
+                    Value::Number(
+                        serde_json::Number::from_f64(m.amount).unwrap_or_else(|| serde_json::Number::from(0)),
+                    ),
+                ),
+                ("status".to_string(), Value::String(m.status.clone())),
+                (
+                    "creator".to_string(),
+                    Value::String(m.creator.clone().unwrap_or_default()),
+                ),
+                (
+                    "createTime".to_string(),
+                    Value::String(
+                        m.create_time
+                            .clone()
+                            .map(|dt| dt.to_string())
+                            .unwrap_or_default(),
+                    ),
+                ),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("invoice not found"))),
     }
-
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
 }
 
 pub fn general_core_entity_router(_pool: Pool) -> Router {

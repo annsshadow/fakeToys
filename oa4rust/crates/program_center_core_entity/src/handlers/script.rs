@@ -132,12 +132,13 @@ pub async fn script_delete(
 
     require_owner(&pool, &session, &model.creator_person).await?;
 
+    let id = model.id.clone();
     let mut active: entities::script::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
     active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
 }
 

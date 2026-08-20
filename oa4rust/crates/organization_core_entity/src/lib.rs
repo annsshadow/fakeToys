@@ -410,12 +410,13 @@ pub async fn definition_delete(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
+    let id = model.id.clone();
     let mut active: org_definition::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
     active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
 }
 
@@ -496,12 +497,13 @@ pub async fn group_delete(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
+    let id = model.id.clone();
     let mut active: org_group::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
     active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
 }
 
@@ -589,12 +591,13 @@ pub async fn identity_delete(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
+    let id = model.id.clone();
     let mut active: org_identity::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
     active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
 }
 
@@ -679,12 +682,13 @@ pub async fn person_delete(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
+    let id = model.id.clone();
     let mut active: org_person::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
     active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
 }
 
@@ -781,12 +785,13 @@ pub async fn custom_delete(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
+    let id = model.id.clone();
     let mut active: org_custom::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
     active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
 }
 
@@ -870,12 +875,13 @@ pub async fn bind_delete(
         .map_err(|_| AppError::Internal)?
         .ok_or(AppError::NotFound)?;
 
+    let id = model.id.clone();
     let mut active: org_bind::ActiveModel = model.into();
     active.deleted_at = Set(Some(chrono::Utc::now().naive_utc()));
     active.update(&db.0).await.map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
     ))))
 }
 
