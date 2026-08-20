@@ -87,6 +87,57 @@ pub struct MockSmsGateway {
     pub should_fail: Mutex<bool>,
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// Console 网关（开发/调试用：输出到标准错误）
+// ──────────────────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Default)]
+pub struct ConsoleSmsGateway;
+
+#[async_trait]
+impl SmsGateway for ConsoleSmsGateway {
+    async fn send_verification_code(
+        &self,
+        phone: &str,
+        code: &str,
+        template_id: Option<&str>,
+    ) -> Result<SmsResult, SmsError> {
+        let result = SmsResult {
+            message_id: Uuid::new_v4().to_string(),
+            phone: phone.to_string(),
+            sent_at: chrono::Utc::now().to_rfc3339(),
+            status: SmsStatus::Sent,
+        };
+        eprintln!(
+            "[SMS:console] to={} code={} template_id={:?} status=sent",
+            phone, code, template_id
+        );
+        Ok(result)
+    }
+
+    async fn send_notification(
+        &self,
+        phone: &str,
+        content: &str,
+    ) -> Result<SmsResult, SmsError> {
+        let result = SmsResult {
+            message_id: Uuid::new_v4().to_string(),
+            phone: phone.to_string(),
+            sent_at: chrono::Utc::now().to_rfc3339(),
+            status: SmsStatus::Sent,
+        };
+        eprintln!(
+            "[SMS:console] to={} content={} status=sent",
+            phone, content
+        );
+        Ok(result)
+    }
+
+    fn name(&self) -> &'static str {
+        "console"
+    }
+}
+
 #[async_trait]
 impl SmsGateway for MockSmsGateway {
     async fn send_verification_code(

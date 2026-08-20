@@ -440,6 +440,85 @@ pub async fn im_conversation_id_group(
     ))))
 }
 
+pub async fn im_manager_config_post(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let config_key = req.get("configKey").and_then(|v| v.as_str()).unwrap_or_default();
+    let config_value = req.get("configValue").and_then(|v| v.as_str()).unwrap_or_default();
+
+    let result = client
+        .execute("UPDATE x_message_config SET config_key = $1, config_value = $2, update_time = NOW() WHERE id = (SELECT id FROM x_message_config ORDER BY create_time DESC LIMIT 1)", &[&config_key, &config_value])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        let id = Uuid::new_v4().to_string();
+        client
+            .execute("INSERT INTO x_message_config (id, config_key, config_value, create_time) VALUES ($1, $2, $3, NOW())", &[&id, &config_key, &config_value])
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
+
+    let row = client
+        .query_opt("SELECT id, config_key, config_value, create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("configKey".to_string(), Value::String(row.get("config_key"))),
+                ("configValue".to_string(), Value::String(row.get("config_value"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("config not found"))),
+    }
+}
+
+pub async fn im_conversation_update(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let name = req.get("name").and_then(|v| v.as_str());
+    let conversation_type = req.get("type").and_then(|v| v.as_str());
+
+    let result = client
+        .execute("UPDATE x_message_conversation SET name = COALESCE($2, name), type = COALESCE($3, type), update_time = NOW() WHERE id = $1", &[&id, &name, &conversation_type])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("conversation not found")));
+    }
+
+    let row = client
+        .query_opt("SELECT id, name, type, create_time FROM x_message_conversation WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("conversation not found"))),
+    }
+}
+
 pub async fn im_conversation_id_group_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,

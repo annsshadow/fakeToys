@@ -132,6 +132,22 @@ impl CaptchaStore {
     }
 }
 
+impl CaptchaStore {
+    /// 仅测试用：强制插入带有自定义过期时间的条目
+    pub fn force_insert(&self, id: &str, answer: &str, expires_at: DateTime<Utc>) {
+        if let Ok(mut map) = self.entries.lock() {
+            map.insert(
+                id.to_string(),
+                CaptchaEntry {
+                    answer: answer.to_string(),
+                    expires_at,
+                    attempts: 0,
+                },
+            );
+        }
+    }
+}
+
 /// 全局验证码存储单例
 pub fn captcha_store() -> &'static CaptchaStore {
     static STORE: OnceLock<CaptchaStore> = OnceLock::new();
