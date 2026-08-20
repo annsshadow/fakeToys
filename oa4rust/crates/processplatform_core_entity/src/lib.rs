@@ -34,7 +34,7 @@ pub async fn work_list(
                 ("formData".to_string(), {
                     let fd: Option<String> = m.form_data.clone();
                     fd.and_then(|s| serde_json::from_str(&s).ok())
-                        .unwrap_or(Value::Null)
+                        .unwrap_or_default()
                 }),
                 (
                     "createTime".to_string(),
@@ -89,7 +89,7 @@ pub async fn work_get(
         ("formData".to_string(), {
             let fd: Option<String> = model.form_data.clone();
             fd.and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or(Value::Null)
+                .unwrap_or_default()
         }),
         (
             "createTime".to_string(),
@@ -216,7 +216,7 @@ pub async fn ticket_list(
                     m.description
                         .clone()
                         .map(Value::String)
-                        .unwrap_or(Value::Null),
+                        .unwrap_or_default(),
                 ),
                 ("status".to_string(), Value::String(m.status.clone())),
                 (

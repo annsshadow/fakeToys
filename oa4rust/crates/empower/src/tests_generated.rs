@@ -1,5 +1,9 @@
 #[cfg(test)]
 mod tests {
+    use axum::body::Body;
+    use axum::http::{Request, Method, StatusCode};
+    use shared::testing::test_pool;
+    use tower::util::ServiceExt;
 
     // SKIPPED: create requires Session parameter
     // SKIPPED: get requires Session parameter

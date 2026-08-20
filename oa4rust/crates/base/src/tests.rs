@@ -6,10 +6,12 @@ mod tests {
     use tower::util::ServiceExt;
 
     use crate::base_router;
+    use shared::testing::test_pool;
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_echo_get_endpoint_returns_success() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = base_router(pool);
 
         let response = app
@@ -26,8 +28,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_openapi_info_endpoint_returns_success() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = base_router(pool);
 
         let response = app
@@ -44,8 +47,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_echo_get_response_body() {
-        let pool = mock_pool();
+        let pool = test_pool();
         let app = base_router(pool);
 
         let response = app
@@ -66,16 +70,5 @@ mod tests {
         assert_eq!(body["type"], "success");
         assert_eq!(body["data"]["type"], "echo");
         assert_eq!(body["data"]["message"], "pong");
-    }
-
-    fn mock_pool() -> deadpool_postgres::Pool {
-        use deadpool_postgres::{Manager, Pool};
-        use deadpool_postgres::tokio_postgres::{Config, NoTls};
-
-        let mgr = Manager::new(
-            Config::new(),
-            NoTls,
-        );
-        Pool::builder(mgr).max_size(1).build().unwrap()
     }
 }

@@ -225,7 +225,6 @@ pub async fn collect_remove(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -267,597 +266,1973 @@ mod tests_generated;
 
 
 
-pub async fn agent_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn agent_flag(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, creator, create_time FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn agent_flag_disable(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, creator, create_time FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn agent_flag_enable(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, creator, create_time FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn agent_flag_execute(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, creator, create_time FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn agent_flag_file(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, creator, create_time FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn andfx_pull_sync(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'andfx', 'pull', NOW())",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("source".to_string(), Value::String("andfx".to_string())),
+            ("action".to_string(), Value::String("pull".to_string())),
+        ]),
+    ))))
+}
+
+
+pub async fn appstyle_current_style(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, app_id, disable FROM x_applications ORDER BY name LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-pub async fn agent_flag_disable() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("appId".to_string(), Value::String(row.get("app_id"))),
+                    ("disable".to_string(), Value::Bool(row.get("disable"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("application not found"))),
+    }
+}
+
+
+pub async fn appstyle_current_update(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, app_id, disable FROM x_applications ORDER BY name LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("appId".to_string(), Value::String(row.get("app_id"))),
+                    ("disable".to_string(), Value::Bool(row.get("disable"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("application not found"))),
+    }
+}
+
+
+pub async fn appstyle_image_application_top(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-pub async fn agent_flag_enable() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    let row = client
+        .query_opt(
+            "SELECT id, resource_name, resource_type, path, creator, create_time FROM x_program_deploy_resource WHERE resource_type = 'app_top' ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-pub async fn agent_flag_execute() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("resourceName".to_string(), Value::String(row.get("resource_name"))),
+                    ("resourceType".to_string(), Value::String(row.get("resource_type"))),
+                    ("path".to_string(), Value::String(row.get("path"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn appstyle_image_application_top_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'app_top'",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+        ]),
+    ))))
 }
 
-pub async fn agent_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
 
-pub async fn andfx_pull_sync() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn appstyle_image_launch_logo(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-pub async fn appstyle_current_style() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    let row = client
+        .query_opt(
+            "SELECT id, resource_name, resource_type, path, creator, create_time FROM x_program_deploy_resource WHERE resource_type = 'launch_logo' ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-pub async fn appstyle_current_update() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("resourceName".to_string(), Value::String(row.get("resource_name"))),
+                    ("resourceType".to_string(), Value::String(row.get("resource_type"))),
+                    ("path".to_string(), Value::String(row.get("path"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn appstyle_image_application_top() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
 
-pub async fn appstyle_image_application_top_erase() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn appstyle_image_launch_logo_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-pub async fn appstyle_image_launch_logo() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    let result = client
+        .execute(
+            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'launch_logo'",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-pub async fn appstyle_image_launch_logo_erase() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    if result == 0 {
+        return Ok(Json(ActionResult::error("not found")));
+    }
 
-pub async fn appstyle_image_login_avatar() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
         ]),
     ))))
 }
 
-pub async fn appstyle_image_login_avatar_erase() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
 
-pub async fn appstyle_image_menu_logo_blur() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn appstyle_image_login_avatar(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-pub async fn appstyle_image_menu_logo_blur_erase() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    let row = client
+        .query_opt(
+            "SELECT id, resource_name, resource_type, path, creator, create_time FROM x_program_deploy_resource WHERE resource_type = 'login_avatar' ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-pub async fn appstyle_image_menu_logo_focus() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("resourceName".to_string(), Value::String(row.get("resource_name"))),
+                    ("resourceType".to_string(), Value::String(row.get("resource_type"))),
+                    ("path".to_string(), Value::String(row.get("path"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn appstyle_image_menu_logo_focus_erase() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
 
-pub async fn appstyle_image_process_default() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn appstyle_image_login_avatar_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-pub async fn appstyle_image_process_default_erase() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    let result = client
+        .execute(
+            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'login_avatar'",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-pub async fn appstyle_image_setup_about_logo() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    if result == 0 {
+        return Ok(Json(ActionResult::error("not found")));
+    }
 
-pub async fn appstyle_image_setup_about_logo_erase() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
         ]),
     ))))
 }
 
-pub async fn appstyle_index_portal() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
 
-pub async fn bar_create_mass_from_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn appstyle_image_menu_logo_blur(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-pub async fn bar_select1_field_field_value_value_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    let row = client
+        .query_opt(
+            "SELECT id, resource_name, resource_type, path, creator, create_time FROM x_program_deploy_resource WHERE resource_type = 'menu_logo_blur' ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-pub async fn bar_select2_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("resourceName".to_string(), Value::String(row.get("resource_name"))),
+                    ("resourceType".to_string(), Value::String(row.get("resource_type"))),
+                    ("path".to_string(), Value::String(row.get("path"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn bar_select3_field_field_value_value_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
 
-pub async fn bar_select4_field_field_value_value_count_count() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn appstyle_image_menu_logo_blur_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-pub async fn captcha_list() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    let result = client
+        .execute(
+            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'menu_logo_blur'",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-pub async fn captcha_v2_create_width_width_height_height() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    if result == 0 {
+        return Ok(Json(ActionResult::error("not found")));
+    }
 
-pub async fn captcha_id_validate_answer_answer() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
         ]),
     ))))
 }
 
-pub async fn center_applications() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
 
-pub async fn center_regist_applications() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn appstyle_image_menu_logo_focus(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-pub async fn center_version() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    let row = client
+        .query_opt(
+            "SELECT id, resource_name, resource_type, path, creator, create_time FROM x_program_deploy_resource WHERE resource_type = 'menu_logo_focus' ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-pub async fn code_create_mobile_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("resourceName".to_string(), Value::String(row.get("resource_name"))),
+                    ("resourceType".to_string(), Value::String(row.get("resource_type"))),
+                    ("path".to_string(), Value::String(row.get("path"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn code_list() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
 
-pub async fn code_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn appstyle_image_menu_logo_focus_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-pub async fn code_validate_mobile_mobile_answer_answer() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    let result = client
+        .execute(
+            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'menu_logo_focus'",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-pub async fn code_validate_mobile_mobile_answer_answer_cascade() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    if result == 0 {
+        return Ok(Json(ActionResult::error("not found")));
+    }
 
-pub async fn collect_code_mobile_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
         ]),
     ))))
 }
 
-pub async fn collect_connect() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
 
-pub async fn collect_controllebbs() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn appstyle_image_process_default(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-pub async fn collect_controllermobile_name_name_mobile_mobile() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+    let row = client
+        .query_opt(
+            "SELECT id, resource_name, resource_type, path, creator, create_time FROM x_program_deploy_resource WHERE resource_type = 'process_default' ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-pub async fn collect_disconnect() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("resourceName".to_string(), Value::String(row.get("resource_name"))),
+                    ("resourceType".to_string(), Value::String(row.get("resource_type"))),
+                    ("path".to_string(), Value::String(row.get("path"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn collect_login() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
 
-pub async fn collect_mobile_check_connect() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
+pub async fn appstyle_image_process_default_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'process_default'",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-pub async fn collect_name_name_exist() -> Result<Json<ActionResult<Value>>, AppError> {
+    if result == 0 {
+        return Ok(Json(ActionResult::error("not found")));
+    }
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
         ]),
     ))))
 }
 
-pub async fn collect_name_name_mobile_mobile_code_code() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn appstyle_image_setup_about_logo(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, resource_name, resource_type, path, creator, create_time FROM x_program_deploy_resource WHERE resource_type = 'setup_about_logo' ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("resourceName".to_string(), Value::String(row.get("resource_name"))),
+                    ("resourceType".to_string(), Value::String(row.get("resource_type"))),
+                    ("path".to_string(), Value::String(row.get("path"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn collect_person() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn appstyle_image_setup_about_logo_erase(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM x_program_deploy_resource WHERE id = $1 AND resource_type = 'setup_about_logo'",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("not found")));
+    }
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
         ]),
     ))))
 }
+
 
-pub async fn collect_resetpassword() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn appstyle_index_portal(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, app_id, disable FROM x_applications WHERE disable = false ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("appId".to_string(), Value::String(row.get("app_id"))),
+                ("disable".to_string(), Value::Bool(row.get("disable"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
+
+
+pub async fn bar_create_mass_from_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-pub async fn collect_sync_area() -> Result<Json<ActionResult<Value>>, AppError> {
+    let rows = client
+        .query(
+            "SELECT id, name, status, creator, create_time FROM x_program_schedule ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
+
+
+pub async fn bar_select1_field_field_value_value_count_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, status, creator, create_time FROM x_program_schedule ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
 
-pub async fn collect_updateUnit() -> Result<Json<ActionResult<Value>>, AppError> {
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
+
+
+pub async fn bar_select2_count_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, status, creator, create_time FROM x_program_schedule ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
 
-pub async fn collect_urlMapping() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn collect_validate() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn bar_select3_field_field_value_value_count_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, status, creator, create_time FROM x_program_schedule ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn collect_validate_codeanswer() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn bar_select4_field_field_value_value_count_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, status, creator, create_time FROM x_program_schedule ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
+
 
-pub async fn collect_validate_direct() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn captcha_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, creator, create_time FROM x_program_script WHERE category = 'captcha' AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn collect_validate_password() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn captcha_v2_create_width_width_height_height(pool: Extension<Pool>, Path(width): Path<i64>, Path(height): Path<i64>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_script (id, name, flag, category, creator, create_time) VALUES ($1, $2, $3, 'captcha', 'system', NOW())",
+            &[&id, &format!("captcha_{}", id), &format!("width={},height={}", width, height)],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
         ]),
     ))))
 }
 
-pub async fn command_execute() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn captcha_id_validate_answer_answer(pool: Extension<Pool>, Path(id): Path<String>, Path(answer): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, flag, content FROM x_program_script WHERE id = $1 AND category = 'captcha' AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            let valid = row.get::<_, String>("flag") == answer;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("valid".to_string(), Value::Bool(valid)),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("captcha not found"))),
+    }
 }
+
 
-pub async fn command_list_node() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn center_applications(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, app_id, disable FROM x_applications WHERE disable = false ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("appId".to_string(), Value::String(row.get("app_id"))),
+                ("disable".to_string(), Value::Bool(row.get("disable"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
+
+
+pub async fn center_regist_applications(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-pub async fn config_open_get_disable_export_enable() -> Result<Json<ActionResult<Value>>, AppError> {
+    let rows = client
+        .query(
+            "SELECT id, name, app_id, disable FROM x_applications ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("appId".to_string(), Value::String(row.get("app_id"))),
+                ("disable".to_string(), Value::Bool(row.get("disable"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn config_centerserver() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn center_version(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("version".to_string(), Value::String("1.0.0".to_string())),
         ]),
     ))))
 }
 
-pub async fn config_change_password() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn code_create_mobile_mobile(pool: Extension<Pool>, Path(mobile): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let code = format!("{:06}", chrono::Utc::now().timestamp_subsec_millis() % 1000000);
+    client
+        .execute(
+            "INSERT INTO x_program_script (id, name, flag, category, creator, create_time) VALUES ($1, $2, $3, 'code', 'system', NOW())",
+            &[&id, &format!("mobile_{}", mobile), &code],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
         ]),
     ))))
 }
+
 
-pub async fn config_collect() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn code_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, category, creator, create_time FROM x_program_script WHERE category = 'code' AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
+
+
+pub async fn code_list_paging_page_size_size(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-pub async fn config_license() -> Result<Json<ActionResult<Value>>, AppError> {
+    let rows = client
+        .query(
+            "SELECT id, name, flag, category, creator, create_time FROM x_program_script WHERE category = 'code' AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn config_list() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn code_validate_mobile_mobile_answer_answer(pool: Extension<Pool>, Path(mobile): Path<String>, Path(answer): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, flag FROM x_program_script WHERE category = 'code' AND flag = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[&mobile],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let valid = match row {
+        Some(row) => row.get::<_, String>("flag") == answer,
+        None => false,
+    };
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("valid".to_string(), Value::Bool(valid)),
         ]),
     ))))
 }
 
-pub async fn config_list_application() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn code_validate_mobile_mobile_answer_answer_cascade(pool: Extension<Pool>, Path(mobile): Path<String>, Path(answer): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, flag FROM x_program_script WHERE category = 'code' AND flag = $1 AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[&mobile],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let valid = match row {
+        Some(row) => row.get::<_, String>("flag") == answer,
+        None => false,
+    };
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("valid".to_string(), Value::Bool(valid)),
         ]),
     ))))
 }
 
-pub async fn config_list_dump_data() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn collect_code_mobile_mobile(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn config_list_dump_data_current_node() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn collect_connect(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn config_list_entity() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn collect_controllebbs(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn config_open() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn collect_controllermobile_name_name_mobile_mobile(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn config_open_run_time_config() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn collect_disconnect(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn config_person() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn collect_login(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn config_portal() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn collect_mobile_check_connect(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn config_proxy() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn collect_name_name_exist(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn collect_name_name_mobile_mobile_code_code(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn collect_person(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn collect_resetpassword(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn collect_sync_area(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn collect_updateUnit(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn collect_urlMapping(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn collect_validate(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn collect_validate_codeanswer(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn collect_validate_direct(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn collect_validate_password(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, title, url, creator, create_time FROM x_program_collect WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("person_id".to_string(), Value::String(row.get("person_id"))),
+                ("title".to_string(), Value::String(row.get("title"))),
+                ("url".to_string(), Value::String(row.get("url"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn command_execute(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
+}
+
+
+pub async fn command_list_node(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
+            ("data".to_string(), Value::Array(vec![])),
+        ]),
+    ))))
+}
+
+
+pub async fn config_open_get_disable_export_enable(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn config_centerserver(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn config_change_password(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn config_collect(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn config_license(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn config_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+
+pub async fn config_list_application(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+
+pub async fn config_list_dump_data(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+
+pub async fn config_list_dump_data_current_node(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+
+pub async fn config_list_entity(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+
+pub async fn config_open(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn config_open_run_time_config(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn config_person(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn config_portal(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn config_proxy(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, key, value, category, creator, create_time FROM x_program_config WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("key".to_string(), Value::String(row.get("key"))),
+                ("value".to_string(), Value::String(row.get("value"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
+
 
 pub async fn config_save(
     pool: Extension<Pool>,
@@ -885,7 +2260,6 @@ pub async fn config_save(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("key".to_string(), Value::String(key)),
-            ("saved".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -1166,7 +2540,6 @@ pub async fn deploy_web_resource_as_new_asNew(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("asNew".to_string(), Value::String(as_new)),
-            ("created".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -1420,7 +2793,6 @@ pub async fn dict_dictFlag_path_data_mockputtopost(
         serde_json::Map::from_iter([
             ("dictFlag".to_string(), Value::String(dict_flag)),
             ("path".to_string(), Value::String(_path)),
-            ("updated".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -1456,13 +2828,32 @@ pub async fn dict_id(
     }
 }
 
-pub async fn dingding_get_callback_aes() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn dingding_get_callback_aes(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, source, action, create_time FROM x_program_sync_log WHERE source = 'dingding' ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("source".to_string(), Value::String(row.get("source"))),
+                    ("action".to_string(), Value::String(row.get("action"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
+
 
 pub async fn dingding_pull_sync(
     pool: Extension<Pool>,
@@ -1479,19 +2870,32 @@ pub async fn dingding_pull_sync(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("synced".to_string(), Value::Bool(true)),
             ("affected".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
 
-pub async fn dingding_request_pull_sync() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn dingding_request_pull_sync(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'dingding', 'pull', NOW())",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("source".to_string(), Value::String("dingding".to_string())),
+            ("action".to_string(), Value::String("pull".to_string())),
         ]),
     ))))
 }
+
 
 pub async fn dingding_sync_organization_callback(
     pool: Extension<Pool>,
@@ -1502,159 +2906,551 @@ pub async fn dingding_sync_organization_callback(
     let event_type = body.get("eventType").and_then(|v| v.as_str()).unwrap_or_default();
     let org_id = body.get("orgId").and_then(|v| v.as_str()).unwrap_or_default();
 
+    let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
             "INSERT INTO x_program_sync_log (id, source, action, org_id, event_type, create_time) VALUES ($1, 'dingding', 'callback', $2, $3, NOW())",
-            &[&uuid::Uuid::new_v4().to_string(), &org_id, &event_type],
+            &[&id, &org_id, &event_type],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("source".to_string(), Value::String("dingding".to_string())),
+            ("action".to_string(), Value::String("callback".to_string())),
+            ("orgId".to_string(), Value::String(org_id.to_string())),
+            ("eventType".to_string(), Value::String(event_type.to_string())),
         ]),
     ))))
 }
 
 pub async fn dingding_sync_organization_register_callback_enable(
-    Path(_enable): Path<String>,
+    pool: Extension<Pool>,
+    Path(enable): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_callback_registration (id, source, create_time) VALUES ($1, 'dingding', NOW())",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("registered".to_string(), Value::Bool(true)),
-            ("enable".to_string(), Value::String(_enable)),
+            ("enable".to_string(), Value::String(enable)),
         ]),
     ))))
 }
 
-pub async fn distribute_assemble_source_source() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn distribute_assemble_source_source(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn distribute_webserver_assemble_source_source() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn distribute_webserver_assemble_source_source(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn foo_create_mass_from_count() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn foo_create_mass_from_count(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, cron_expression, status, creator, create_time FROM x_program_schedule ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("cronExpression".to_string(), Value::String(row.get("cron_expression"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn input_compare() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn input_compare(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn input_cover() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn input_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn input_create() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn input_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn input_prepare_cover() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn input_prepare_cover(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn input_prepare_create() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn input_prepare_create(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn invoke_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn invoke_list_category(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn invoke_list_with_category_category() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn invoke_list_with_category_category(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn invoke_token() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn invoke_token(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, key, value, creator, create_time FROM x_program_config WHERE key = 'system.token' AND deleted_at IS NULL",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("key".to_string(), Value::String(row.get("key"))),
+                    ("value".to_string(), Value::String(row.get("value"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("token not found"))),
+    }
 }
 
-pub async fn invoke_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn invoke_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, description, creator, create_time FROM x_program_agent WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("flag".to_string(), Value::String(row.get("flag"))),
+                    ("description".to_string(), Value::String(row.get("description"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("agent not found"))),
+    }
 }
 
-pub async fn invoke_flag_client_client_token_token_execute() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn invoke_flag_client_client_token_token_execute(pool: Extension<Pool>, Path(client): Path<String>, Path(token): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let db_client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = db_client
+        .query_opt(
+            "SELECT id, name, flag FROM x_program_agent WHERE name = $1 AND flag = $2 AND deleted_at IS NULL",
+            &[&client, &token],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            db_client
+                .execute(
+                    "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'invoke', 'execute', NOW())",
+                    &[&uuid::Uuid::new_v4().to_string()],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("agent not found"))),
+    }
 }
 
-pub async fn invoke_flag_execute() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn invoke_flag_execute(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            client
+                .execute(
+                    "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'invoke', 'execute', NOW())",
+                    &[&uuid::Uuid::new_v4().to_string()],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("agent not found"))),
+    }
 }
 
-pub async fn invoke_flag_execute_get() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn invoke_flag_execute_get(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag FROM x_program_agent WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            client
+                .execute(
+                    "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'invoke', 'execute', NOW())",
+                    &[&uuid::Uuid::new_v4().to_string()],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("agent not found"))),
+    }
 }
 
-pub async fn invoke_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn invoke_flag_file(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, flag, content, creator, create_time FROM x_program_script WHERE flag IS NOT NULL AND deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("flag".to_string(), Value::String(row.get("flag"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("script not found"))),
+    }
 }
+
 
 pub async fn jest_center_list() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
@@ -1665,173 +3461,574 @@ pub async fn jest_center_list() -> Result<Json<ActionResult<Value>>, AppError> {
     ))))
 }
 
-pub async fn jest_clear_cache_source() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn jest_clear_cache_source(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'jest', 'clear_cache', NOW())",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("source".to_string(), Value::String("jest".to_string())),
+            ("action".to_string(), Value::String("clear_cache".to_string())),
         ]),
     ))))
 }
 
-pub async fn jest_list() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn jest_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, category, creator, create_time FROM x_program_script WHERE category = 'jest' AND deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("flag".to_string(), Value::String(row.get("flag"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn jest_version() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn jest_version(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("version".to_string(), Value::String("1.0.0".to_string())),
         ]),
     ))))
 }
 
-pub async fn market_cloud_unit_is_vip() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn market_cloud_unit_is_vip(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, entity, vip, creator, create_time FROM x_program_module ORDER BY name LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("entity".to_string(), Value::String(row.get("entity"))),
+                    ("vip".to_string(), Value::Bool(row.get("vip"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn market_install_offline(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_deploy (id, name, creator, create_time) VALUES ($1, $2, 'system', NOW())",
+            &[&id, &"offline_install".to_string()],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
         ]),
     ))))
 }
 
-pub async fn market_install_offline() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn market_list_category(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn market_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn market_list_install_log_paging_page_size_size(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, schedule_id, application, status, message, create_time FROM x_program_schedule_log ORDER BY create_time DESC LIMIT 100",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("scheduleId".to_string(), Value::String(row.get("schedule_id"))),
+                ("application".to_string(), Value::String(row.get("application"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("message".to_string(), Value::String(row.get("message"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn market_list_install_log_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn market_list_paging_page_size_size(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn market_list_paging_page_size_size() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn market_list_paging_page_size_size_category_category(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY name",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn market_list_paging_page_size_size_category_category() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn market_list_top_three(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY create_time DESC LIMIT 3",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn market_list_top_three() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn market_flag(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE deleted_at IS NULL ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("entity".to_string(), Value::String(row.get("entity"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn market_flag_cover_pic(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, resource_name, resource_type, path, creator, create_time FROM x_program_deploy_resource WHERE resource_type = 'cover_pic' ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("resourceName".to_string(), Value::String(row.get("resource_name"))),
+                    ("resourceType".to_string(), Value::String(row.get("resource_type"))),
+                    ("path".to_string(), Value::String(row.get("path"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn market_flag_install_log(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, schedule_id, application, status, message, create_time FROM x_program_schedule_log ORDER BY create_time DESC LIMIT 50",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("scheduleId".to_string(), Value::String(row.get("schedule_id"))),
+                ("application".to_string(), Value::String(row.get("application"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("message".to_string(), Value::String(row.get("message"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
         ]),
     ))))
 }
 
-pub async fn market_flag() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn market_flag_install_or_update(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'market', 'install_or_update', NOW())",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("source".to_string(), Value::String("market".to_string())),
+            ("action".to_string(), Value::String("install_or_update".to_string())),
         ]),
     ))))
 }
 
-pub async fn market_flag_cover_pic() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn market_flag_installed_version(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, version, status, creator, create_time FROM x_program_deploy ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("version".to_string(), Value::String(row.get("version"))),
+                    ("status".to_string(), Value::String(row.get("status"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("deploy not found"))),
+    }
+}
+
+
+pub async fn market_flag_uninstall(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'market', 'uninstall', NOW())",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("source".to_string(), Value::String("market".to_string())),
+            ("action".to_string(), Value::String("uninstall".to_string())),
         ]),
     ))))
 }
 
-pub async fn market_flag_install_log() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn market_id_download(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, entity FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("module not found"))),
+    }
 }
 
-pub async fn market_flag_install_or_update() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn module_compare_upload(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn market_flag_installed_version() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn module_list(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-pub async fn market_flag_uninstall() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn module_list_category(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
 }
 
-pub async fn market_id_download() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+
+pub async fn module_output(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
 
-pub async fn module_compare_upload() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn module_list() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn module_list_category() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn module_output() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
 
 pub async fn module_output_list_structure() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
@@ -1842,85 +4039,247 @@ pub async fn module_output_list_structure() -> Result<Json<ActionResult<Value>>,
     ))))
 }
 
-pub async fn module_output_structure() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn module_output_structure(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn module_output_flag_file(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn module_remove_structure_id(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn module_write_flag(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn module_id_compare(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, entity, creator, create_time FROM x_program_module WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("entity".to_string(), Value::String(row.get("entity"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn mpweixin_check(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn mpweixin_media_add_forever(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn mpweixin_menu_add(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn mpweixin_menu_create_to_weixin(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
+}
+
+
+pub async fn mpweixin_menu_delete_id(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let result = client
+        .execute(
+            "DELETE FROM x_program_mpweixin_menu WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if result == 0 {
+        return Ok(Json(ActionResult::error("not found")));
+    }
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
         ]),
     ))))
 }
 
-pub async fn module_output_flag_file() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn module_remove_structure_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn module_write_flag() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn module_id_compare() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn mpweixin_check() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn mpweixin_media_add_forever() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn mpweixin_menu_add() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn mpweixin_menu_create_to_weixin() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
-
-pub async fn mpweixin_menu_delete_id() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
-}
 
 pub async fn mpweixin_menu_list_weixin() -> Result<Json<ActionResult<Value>>, AppError> {
     Ok(Json(ActionResult::success(Value::Object(
@@ -1931,13 +4290,28 @@ pub async fn mpweixin_menu_list_weixin() -> Result<Json<ActionResult<Value>>, Ap
     ))))
 }
 
-pub async fn mpweixin_menu_subscribe() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn mpweixin_menu_subscribe(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
+
 
 pub async fn mpweixin_menu_update_id(
     pool: Extension<Pool>,
@@ -1960,18 +4334,32 @@ pub async fn mpweixin_menu_update_id(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
 
-pub async fn mpweixin_message_template_send() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn mpweixin_message_template_send(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, create_time FROM x_program_mpweixin_menu WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
+
 
 pub async fn output_list(
     pool: Extension<Pool>,
@@ -2440,41 +4828,78 @@ pub async fn prompterrorlog_id(
     }
 }
 
-pub async fn qiyeweixin_get_callback_aes() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn qiyeweixin_get_callback_aes(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, source, action, create_time FROM x_program_sync_log WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                ("source".to_string(), Value::String(row.get("source"))),
+                ("action".to_string(), Value::String(row.get("action"))),
+                ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
+
 
 pub async fn qiyeweixin_pull_sync(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
             "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'qiyeweixin', 'pull', NOW())",
-            &[&uuid::Uuid::new_v4().to_string()],
+            &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("synced".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("source".to_string(), Value::String("qiyeweixin".to_string())),
+            ("action".to_string(), Value::String("pull".to_string())),
         ]),
     ))))
 }
 
-pub async fn qiyeweixin_request_pull_sync() -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+pub async fn qiyeweixin_request_pull_sync(pool: Extension<Pool>, Path(id): Path<String>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, source, action, create_time FROM x_program_sync_log WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => {
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("source".to_string(), Value::String(row.get("source"))),
+                    ("action".to_string(), Value::String(row.get("action"))),
+                    ("create_time".to_string(), Value::String(row.get("create_time"))),
+                ]),
+            ))))
+        }
+        None => Ok(Json(ActionResult::error("not found"))),
+    }
 }
+
 
 pub async fn qiyeweixin_send_getprivateinfo_message(
     pool: Extension<Pool>,
@@ -2494,7 +4919,6 @@ pub async fn qiyeweixin_send_getprivateinfo_message(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -2539,7 +4963,6 @@ pub async fn application_create(
             ("name".to_string(), Value::String(name)),
             ("appId".to_string(), Value::String(app_id)),
             ("description".to_string(), Value::String(description)),
-            ("created".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -2575,7 +4998,6 @@ pub async fn application_save(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -2620,7 +5042,6 @@ pub async fn agent_create(
             ("name".to_string(), Value::String(name)),
             ("flag".to_string(), Value::String(flag)),
             ("description".to_string(), Value::String(description)),
-            ("created".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -2655,7 +5076,6 @@ pub async fn agent_save(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -2810,7 +5230,6 @@ pub async fn schedule_schedule_fire(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("scheduleId".to_string(), Value::String(schedule_id)),
-            ("fired".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -3003,23 +5422,27 @@ pub async fn script_id(
     }
 }
 
-pub async fn test_test1() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn test_test1(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-            ("test".to_string(), Value::String("test1".to_string())),
+            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
+            ("data".to_string(), Value::Array(vec![])),
         ]),
     ))))
 }
 
-pub async fn test_test2() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn test_test2(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-            ("test".to_string(), Value::String("test2".to_string())),
+            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
+            ("data".to_string(), Value::Array(vec![])),
         ]),
     ))))
 }
+
 
 pub async fn tokenthreshold_update(
     pool: Extension<Pool>,
@@ -3051,7 +5474,6 @@ pub async fn tokenthreshold_update(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("threshold".to_string(), Value::Number(serde_json::Number::from(threshold))),
-            ("updated".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -3223,30 +5645,43 @@ pub async fn unexpectederrorlog_id(
     }
 }
 
-pub async fn validation_meta() -> Result<Json<ActionResult<Value>>, AppError> {
+pub async fn validation_meta(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("valid".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
+            ("data".to_string(), Value::Array(vec![])),
         ]),
     ))))
 }
 
-pub async fn validation_scripting_benchmark() -> Result<Json<ActionResult<Value>>, AppError> {
+
+pub async fn validation_scripting_benchmark(pool: Extension<Pool>) -> Result<Json<ActionResult<Value>>, AppError> {
+    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-            ("benchmark".to_string(), Value::String("completed".to_string())),
+            ("count".to_string(), Value::Number(serde_json::Number::from(0i64))),
+            ("data".to_string(), Value::Array(vec![])),
         ]),
     ))))
 }
+
 
 pub async fn validation_timeout_timeout(
-    Path(_timeout): Path<i64>,
+    pool: Extension<Pool>,
+    Path(timeout): Path<i64>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'validation', 'timeout', NOW())",
+            &[&uuid::Uuid::new_v4().to_string()],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-            ("timeout".to_string(), Value::Number(serde_json::Number::from(_timeout))),
+            ("timeout".to_string(), Value::Number(serde_json::Number::from(timeout))),
         ]),
     ))))
 }
@@ -3256,17 +5691,20 @@ pub async fn zhengwudingding_pull_sync(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
             "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'zhengwudingding', 'pull', NOW())",
-            &[&uuid::Uuid::new_v4().to_string()],
+            &[&id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("synced".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("source".to_string(), Value::String("zhengwudingding".to_string())),
+            ("action".to_string(), Value::String("pull".to_string())),
         ]),
     ))))
 }
@@ -3287,7 +5725,8 @@ pub async fn zhengwudingding_regist_callback(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("registered".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("source".to_string(), Value::String("zhengwudingding".to_string())),
         ]),
     ))))
 }
@@ -3301,17 +5740,22 @@ pub async fn zhengwudingding_sync_organization_callback(
     let event_type = body.get("eventType").and_then(|v| v.as_str()).unwrap_or_default();
     let org_id = body.get("orgId").and_then(|v| v.as_str()).unwrap_or_default();
 
+    let id = uuid::Uuid::new_v4().to_string();
     client
         .execute(
             "INSERT INTO x_program_sync_log (id, source, action, org_id, event_type, create_time) VALUES ($1, 'zhengwudingding', 'callback', $2, $3, NOW())",
-            &[&uuid::Uuid::new_v4().to_string(), &org_id, &event_type],
+            &[&id, &org_id, &event_type],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(id)),
+            ("source".to_string(), Value::String("zhengwudingding".to_string())),
+            ("action".to_string(), Value::String("callback".to_string())),
+            ("orgId".to_string(), Value::String(org_id.to_string())),
+            ("eventType".to_string(), Value::String(event_type.to_string())),
         ]),
     ))))
 }

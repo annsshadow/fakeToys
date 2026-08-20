@@ -40,7 +40,7 @@ pub async fn get_general_control_status(
             ("id".to_string(), Value::String(String::new())),
             ("systemName".to_string(), Value::String(String::new())),
             ("\"maintenanceMode\"".to_string(), Value::Bool(false)),
-            ("\"allowRegistration\"".to_string(), Value::Bool(true)),
+            ("\"allowRegistration\"".to_string(), Value::Bool(false)),
             ("version".to_string(), Value::String(String::new())),
         ]),
     };
@@ -57,7 +57,7 @@ pub async fn update_general_control_status(
     let maintenance_mode: bool = payload.get("\"maintenanceMode\"").and_then(|v| v.as_bool()).unwrap_or(false);
     let allow_registration: bool = payload.get("\"allowRegistration\"").and_then(|v| v.as_bool()).unwrap_or(true);
 
-    client
+    let result = client
         .execute(
             "UPDATE x_general_assemble_control_config SET maintenance_mode = $1, allow_registration = $2 WHERE id = 'global'",
             &[&maintenance_mode, &allow_registration],
@@ -68,7 +68,7 @@ pub async fn update_general_control_status(
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("\"maintenanceMode\"".to_string(), Value::Bool(maintenance_mode)),
         ("\"allowRegistration\"".to_string(), Value::Bool(allow_registration)),
-        ("updated".to_string(), Value::Bool(true)),
+        ("updated".to_string(), Value::Bool(result > 0)),
     ])))))
 }
 
@@ -239,7 +239,7 @@ pub async fn attendscope_save(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
             ("name".to_string(), Value::String(name)),
             ("unitId".to_string(), Value::String(unit_id)),
         ]),
@@ -267,7 +267,7 @@ pub async fn attendscope_delete(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -520,7 +520,7 @@ pub async fn area_update(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("saved".to_string(), Value::Bool(true)),
+        ("saved".to_string(), Value::Bool(result > 0)),
         ("name".to_string(), Value::String(name)),
     ])))))
 }
@@ -542,7 +542,7 @@ pub async fn area_delete(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
+        ("deleted".to_string(), Value::Bool(result > 0)),
     ])))))
 }
 
@@ -863,7 +863,7 @@ pub async fn invoice_delete_id(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
+        ("deleted".to_string(), Value::Bool(result > 0)),
     ])))))
 }
 
@@ -996,7 +996,7 @@ pub async fn invoice_update_apply_status_id(
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
         ("status".to_string(), Value::String(status)),
-        ("updated".to_string(), Value::Bool(true)),
+        ("updated".to_string(), Value::Bool(result > 0)),
     ])))))
 }
 
@@ -1026,7 +1026,7 @@ pub async fn invoice_update_id(
         ("id".to_string(), Value::String(id)),
         ("name".to_string(), Value::String(name)),
         ("status".to_string(), Value::String(status)),
-        ("updated".to_string(), Value::Bool(true)),
+        ("updated".to_string(), Value::Bool(result > 0)),
     ])))))
 }
 
@@ -1276,7 +1276,7 @@ pub async fn qrcode_delete(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
+        ("deleted".to_string(), Value::Bool(result > 0)),
     ])))))
 }
 
@@ -1523,7 +1523,7 @@ pub async fn securityclearance_update(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("saved".to_string(), Value::Bool(true)),
+        ("saved".to_string(), Value::Bool(result > 0)),
         ("name".to_string(), Value::String(name)),
     ])))))
 }
@@ -1545,7 +1545,7 @@ pub async fn securityclearance_delete(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
+        ("deleted".to_string(), Value::Bool(result > 0)),
     ])))))
 }
 
@@ -1771,6 +1771,7 @@ pub async fn worktime_indefinedholiday_date(
             Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(row.get("date"))),
                 ("isHoliday".to_string(), Value::Bool(is_holiday)),
+                ("indefined".to_string(), Value::Bool(false)),
             ])))))
         }
         None => {
@@ -1785,10 +1786,11 @@ pub async fn worktime_indefinedholiday_date(
             };
             let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
             let is_holiday = is_weekend;
+            let indefined = weekday.is_none();
             Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(date)),
                 ("isHoliday".to_string(), Value::Bool(is_holiday)),
-                ("indefined".to_string(), Value::Bool(true)),
+                ("indefined".to_string(), Value::Bool(indefined)),
             ])))))
         }
     }
@@ -1814,6 +1816,7 @@ pub async fn worktime_indefinedworkday_date(
             Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(row.get("date"))),
                 ("isWorkday".to_string(), Value::Bool(is_workday)),
+                ("indefined".to_string(), Value::Bool(false)),
             ])))))
         }
         None => {
@@ -1828,10 +1831,11 @@ pub async fn worktime_indefinedworkday_date(
             };
             let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
             let is_workday = !is_weekend;
+            let indefined = weekday.is_none();
             Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(date)),
                 ("isWorkday".to_string(), Value::Bool(is_workday)),
-                ("indefined".to_string(), Value::Bool(true)),
+                ("indefined".to_string(), Value::Bool(indefined)),
             ])))))
         }
     }
@@ -1857,6 +1861,7 @@ pub async fn worktime_isholiday_date(
             Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(row.get("date"))),
                 ("isHoliday".to_string(), Value::Bool(is_holiday)),
+                ("indefined".to_string(), Value::Bool(false)),
             ])))))
         }
         None => {
@@ -1870,10 +1875,11 @@ pub async fn worktime_isholiday_date(
                 None
             };
             let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
+            let indefined = weekday.is_none();
             Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(date)),
                 ("isHoliday".to_string(), Value::Bool(is_weekend)),
-                ("indefined".to_string(), Value::Bool(true)),
+                ("indefined".to_string(), Value::Bool(indefined)),
             ])))))
         }
     }
@@ -1899,6 +1905,7 @@ pub async fn worktime_isworkday_date(
             Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(row.get("date"))),
                 ("isWorkday".to_string(), Value::Bool(is_workday)),
+                ("indefined".to_string(), Value::Bool(false)),
             ])))))
         }
         None => {
@@ -1912,10 +1919,11 @@ pub async fn worktime_isworkday_date(
                 None
             };
             let is_weekend = weekday.map(|w| w >= 5).unwrap_or(false);
+            let indefined = weekday.is_none();
             Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(date)),
                 ("isWorkday".to_string(), Value::Bool(!is_weekend)),
-                ("indefined".to_string(), Value::Bool(true)),
+                ("indefined".to_string(), Value::Bool(indefined)),
             ])))))
         }
     }
@@ -1941,6 +1949,7 @@ pub async fn worktime_isworktime_date(
             Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
                 ("date".to_string(), Value::String(row.get("date"))),
                 ("isWorktime".to_string(), Value::Bool(is_worktime)),
+                ("indefined".to_string(), Value::Bool(false)),
             ])))))
         }
         None => {

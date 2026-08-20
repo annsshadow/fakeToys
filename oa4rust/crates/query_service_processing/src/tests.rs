@@ -17,14 +17,17 @@ fn build_test_pool() -> Pool {
 #[test]
 fn test_process_query_action_result_format() {
     let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
+        "id": "q-1",
+        "name": "Test Query",
         "queryType": "sql",
-        "params": {},
+        "count": 10,
         "processed": true,
-        "resultCount": 0
+        "params": {}
     }));
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
     assert_eq!(json["data"]["processed"], true);
+    assert_eq!(json["data"]["count"], 10);
 }
 
 #[test]
@@ -32,8 +35,8 @@ fn test_batch_process_action_result_format() {
     let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
         "total": 2,
         "results": [
-            {"queryType": "sql", "processed": true},
-            {"queryType": "rest", "processed": true}
+            {"id": "q-1", "name": "Query 1", "queryType": "sql", "count": 5, "processed": true},
+            {"id": "q-2", "name": "Query 2", "queryType": "rest", "count": 3, "processed": true}
         ]
     }));
     let json = serde_json::to_value(&result).unwrap();
@@ -45,25 +48,29 @@ fn test_batch_process_action_result_format() {
 fn test_get_service_status_action_result_format() {
     let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
         "status": "running",
-        "activeConnections": 0,
+        "activeConnections": 1,
         "queuedRequests": 0,
-        "processedCount": 0
+        "processedCount": 10
     }));
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
     assert_eq!(json["data"]["status"], "running");
+    assert!(json["data"]["activeConnections"].is_number());
+    assert!(json["data"]["queuedRequests"].is_number());
 }
 
 #[test]
 fn test_reset_service_action_result_format() {
     let result: ActionResult<serde_json::Value> = ActionResult::success(json!({
         "reset": true,
-        "resetAt": "2024-01-01T00:00:00Z",
-        "clearedCache": true
+        "resetAt": "2024-06-01T00:00:00Z",
+        "clearedCache": true,
+        "processedCount": 0
     }));
     let json = serde_json::to_value(&result).unwrap();
     assert_eq!(json["type"], "success");
     assert_eq!(json["data"]["reset"], true);
+    assert!(json["data"]["resetAt"].is_string());
 }
 
 #[tokio::test]

@@ -140,7 +140,7 @@ pub async fn save_designer(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
             ("name".to_string(), Value::String(name)),
             ("query".to_string(), Value::String(query_definition)),
         ]),
@@ -168,7 +168,7 @@ pub async fn delete_designer(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -364,11 +364,15 @@ pub async fn input_compare(
     match row {
         Some(row) => {
             let old_content: Option<String> = row.get("content");
+            let new_content = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
+            let old_str = old_content.unwrap_or_default();
+            let compared = !old_str.is_empty() && old_str == new_content;
             Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(input_id.to_string())),
-                    ("oldContent".to_string(), old_content.map(Value::String).unwrap_or(Value::String("".to_string()))),
-                    ("compared".to_string(), Value::Bool(true)),
+                    ("oldContent".to_string(), Value::String(old_str)),
+                    ("newContent".to_string(), Value::String(new_content.to_string())),
+                    ("compared".to_string(), Value::Bool(compared)),
                 ]),
             ))))
         }
@@ -400,7 +404,7 @@ pub async fn input_cover(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(input_id.to_string())),
-            ("covered".to_string(), Value::Bool(true)),
+            ("covered".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -415,7 +419,7 @@ pub async fn input_create(
     let content = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
     let creator = "system";
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_query_input (id, content, creator, create_time) VALUES ($1, $2, $3, NOW())",
             &[&id, &content, &creator],
@@ -426,7 +430,7 @@ pub async fn input_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -470,7 +474,7 @@ pub async fn input_prepare_create(
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_query_input (id, content, creator, create_time) VALUES ($1, $2, $3, NOW())",
             &[&id, &content, &creator],
@@ -481,7 +485,7 @@ pub async fn input_prepare_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -507,7 +511,7 @@ pub async fn neural_generate_model_modelFlag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("modelFlag".to_string(), Value::String(model_flag)),
-            ("generating".to_string(), Value::Bool(true)),
+            ("generating".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -533,7 +537,7 @@ pub async fn neural_learn_model_modelFlag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("modelFlag".to_string(), Value::String(model_flag)),
-            ("learning".to_string(), Value::Bool(true)),
+            ("learning".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -582,7 +586,7 @@ pub async fn neural_model(
     let creator = "system";
 
     let id = uuid::Uuid::new_v4().to_string();
-    client
+    let result = client
         .execute(
             "INSERT INTO x_query_neural_model (id, name, flag, status, creator, create_time) VALUES ($1, $2, $3, 'idle', $4, NOW())",
             &[&id, &name, &flag, &creator],
@@ -595,7 +599,7 @@ pub async fn neural_model(
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(name.to_string())),
             ("flag".to_string(), Value::String(flag.to_string())),
-            ("created".to_string(), Value::Bool(true)),
+            ("created".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -651,7 +655,7 @@ pub async fn neural_model_modelFlag_reset_status(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("modelFlag".to_string(), Value::String(model_flag)),
-            ("reset".to_string(), Value::Bool(true)),
+            ("reset".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -677,7 +681,7 @@ pub async fn neural_stop_generating_model_modelFlag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("modelFlag".to_string(), Value::String(model_flag)),
-            ("stopped".to_string(), Value::Bool(true)),
+            ("stopped".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -703,7 +707,7 @@ pub async fn neural_stop_learn_model_modelFlag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("modelFlag".to_string(), Value::String(model_flag)),
-            ("stopped".to_string(), Value::Bool(true)),
+            ("stopped".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1245,13 +1249,13 @@ pub async fn stat_id_simulate(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(_) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(id)),
-                    ("simulated".to_string(), Value::Bool(true)),
-                ]),
-            ))))
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("config".to_string(), Value::String(row.get("config"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("stat not found"))),
     }
@@ -1497,7 +1501,6 @@ pub async fn table_reload_dynamic(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("reloaded".to_string(), Value::Number(serde_json::Number::from(result as i64))),
-            ("success".to_string(), Value::Bool(true)),
         ]),
     ))))
 }
@@ -1664,7 +1667,6 @@ pub async fn table_query_build_dispatch(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("dispatched".to_string(), Value::Bool(true)),
             ("affected".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
@@ -1743,7 +1745,7 @@ pub async fn table_tableFlag_row_delete_all(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("tableFlag".to_string(), Value::String(table_flag)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
             ("count".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
@@ -1759,7 +1761,7 @@ pub async fn table_tableFlag_row_save(
     let id = uuid::Uuid::new_v4().to_string();
     let data_str = serde_json::to_string(&body).map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_query_table_data (id, table_flag, data, create_time) VALUES ($1, $2, $3, NOW())",
             &[&id, &table_flag, &data_str],
@@ -1771,7 +1773,7 @@ pub async fn table_tableFlag_row_save(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("tableFlag".to_string(), Value::String(table_flag)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -2007,16 +2009,17 @@ pub async fn view_id_simulate(
         .map_err(|_| AppError::Internal)?;
 
     match row {
-        Some(_) => {
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(id)),
-                    ("simulated".to_string(), Value::Bool(true)),
-                ]),
-            ))))
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("content".to_string(), Value::String(row.get("content"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("view not found"))),
     }
 }
+
 
 

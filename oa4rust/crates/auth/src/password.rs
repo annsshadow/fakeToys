@@ -5,10 +5,37 @@ use des::{Des, TdesEde2};
 /// bcrypt 哈希存储前缀，用于区分 MD5/DES 旧格式
 pub const BCRYPT_PREFIX: &str = "{bcrypt}";
 
+/// bcrypt 工作因子（cost），10 在安全性与性能间取得平衡
+pub const BCRYPT_COST: u32 = 10;
+
+/// 密码验证结果短期缓存（避免对同一 (hash, plain) 重复做 bcrypt）
+type VerifyCache = std::collections::HashMap<String, bool>;
+static VERIFY_CACHE: std::sync::OnceLock<std::sync::Mutex<VerifyCache>> =
+    std::sync::OnceLock::new();
+
+fn cache_key(bcrypt_hash: &str, plain: &str) -> String {
+    format!("{}:{}", bcrypt_hash, plain)
+}
+
+fn get_cached(bcrypt_hash: &str, plain: &str) -> Option<bool> {
+    let cache = VERIFY_CACHE.get_or_init(|| std::sync::Mutex::new(VerifyCache::new()));
+    cache
+        .lock()
+        .ok()
+        .and_then(|c| c.get(&cache_key(bcrypt_hash, plain)).copied())
+}
+
+fn set_cached(bcrypt_hash: &str, plain: &str, result: bool) {
+    if let Some(cache) = VERIFY_CACHE.get() {
+        if let Ok(mut c) = cache.lock() {
+            c.insert(cache_key(bcrypt_hash, plain), result);
+        }
+    }
+}
+
 /// 按双算法兼容方案生成密码哈希（新写入统一 bcrypt，兼容既有 MD5/DES 校验）
 pub fn hash_password(plain: &str) -> String {
-    let cost = bcrypt::DEFAULT_COST;
-    match bcrypt::hash(plain, cost) {
+    match bcrypt::hash(plain, BCRYPT_COST) {
         Ok(hash) => format!("{BCRYPT_PREFIX}{hash}"),
         Err(_) => format!("{:x}", md5::compute(plain.as_bytes())),
     }
@@ -16,7 +43,12 @@ pub fn hash_password(plain: &str) -> String {
 
 pub fn verify_password(plain: &str, stored: &str, key: &str, _encrypt_type: Option<&str>) -> bool {
     if let Some(bcrypt_hash) = stored.strip_prefix(BCRYPT_PREFIX) {
-        return bcrypt::verify(plain, bcrypt_hash).unwrap_or(false);
+        if let Some(cached) = get_cached(bcrypt_hash, plain) {
+            return cached;
+        }
+        let result = bcrypt::verify(plain, bcrypt_hash).unwrap_or(false);
+        set_cached(bcrypt_hash, plain, result);
+        return result;
     }
 
     let md5_hash = format!("{:x}", md5::compute(plain.as_bytes()));

@@ -4,10 +4,12 @@ use axum::{
 };
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
+use shared::db::dialect;
 use shared::error::AppError;
 use shared::response::ActionResult;
 
-use crate::{code_store, password, temp_token_store};
+use crate::{code_store, ldap_auth, password, temp_token_store};
+use tracing::warn;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // two_factor — 双因素登录第一阶段（短信验证码发送）
@@ -47,13 +49,17 @@ pub async fn two_factor_login(
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
+         password_hash, locked, {}, {} FROM auth_person \
+         WHERE unique_id = {} AND deleted_at IS NULL",
+        d.cast_text("change_password_time"),
+        d.cast_text("password_expired_time"),
+        d.param(1),
+    );
     let row = client
-        .query_one(
-            "SELECT id, unique_id, name, mobile, email, icon, job, department, unit, position, \
-             password_hash, locked, change_password_time, password_expired_time FROM auth_person \
-             WHERE unique_id = $1 AND deleted_at IS NULL",
-            &[&req.credential],
-        )
+        .query_one(&sql, &[&req.credential])
         .await
         .map_err(|_| AppError::Unauthorized)?;
 
@@ -67,7 +73,22 @@ pub async fn two_factor_login(
         return Ok(Json(ActionResult::error("invalid credentials")));
     }
 
-    let valid = password::verify_password(&req.password, &password_hash, "", None);
+    let valid = match ldap_auth::try_ldap_authenticate(&req.credential, &req.password).await {
+        Ok(Some(ldap_auth::LdapAuthOutcome::Success)) => true,
+        Ok(Some(ldap_auth::LdapAuthOutcome::Failed)) => {
+            warn!("LDAP auth failed for two_factor user {}, falling back to DB", req.credential);
+            password::verify_password(&req.password, &password_hash, "", None)
+        }
+        Ok(None) | Ok(Some(ldap_auth::LdapAuthOutcome::Disabled)) => {
+            password::verify_password(&req.password, &password_hash, "", None)
+        }
+        Err(_) => {
+            return Ok(Json(ActionResult::error("invalid credentials")));
+        }
+        Ok(Some(ldap_auth::LdapAuthOutcome::Error)) => {
+            return Ok(Json(ActionResult::error("invalid credentials")));
+        }
+    };
     if !valid {
         return Ok(Json(ActionResult::error("invalid credentials")));
     }

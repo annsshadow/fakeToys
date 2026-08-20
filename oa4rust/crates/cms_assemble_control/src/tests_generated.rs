@@ -81,7 +81,24 @@ mod tests {
     // SKIPPED: anonymous_document_filter_list_id_next_count_mockputtopost not accessible
     // SKIPPED: anonymous_document_filter_list_page_size_size not accessible
     // SKIPPED: anonymous_document_filter_list_page_size_size_mockputtopost not accessible
-    // SKIPPED: anonymous_document_id_view not accessible
+    #[tokio::test]
+    async fn test_anonymous_document_id_view() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/anonymous/document/test-id/view")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "anonymous_document_id_view route should be registered");
+    }
+
     // SKIPPED: anonymous_fileinfo_list_document_documentId not accessible
     // SKIPPED: appinfo_alias_alias not accessible
     // SKIPPED: appinfo_erase_app_id not accessible
@@ -157,33 +174,492 @@ mod tests {
     // SKIPPED: correlation_list_doc_docId_site_site not accessible
     // SKIPPED: correlation_update_doc_docId not accessible
     // SKIPPED: data_document_id not accessible
-    // SKIPPED: data_document_id_array_data not accessible
-    // SKIPPED: data_document_id_mockdeletetoget not accessible
-    // SKIPPED: data_document_id_mockputtopost not accessible
-    // SKIPPED: data_document_id_path0 not accessible
-    // SKIPPED: data_document_id_path0_mockdeletetoget not accessible
-    // SKIPPED: data_document_id_path0_mockputtopost not accessible
-    // SKIPPED: data_document_id_path0_path1 not accessible
-    // SKIPPED: data_document_id_path0_path1_mockdeletetoget not accessible
-    // SKIPPED: data_document_id_path0_path1_mockputtopost not accessible
-    // SKIPPED: data_document_id_path0_path1_path2 not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_mockdeletetoget not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_mockputtopost not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3 not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_mockdeletetoget not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_mockputtopost not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_path4 not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_path4_mockdeletetoget not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_path4_mockputtopost not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_path4_path5 not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_path4_path5_mockdeletetoget not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_path4_path5_mockputtopost not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_path4_path5_path6 not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_path4_path5_path6_path7 not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget not accessible
-    // SKIPPED: data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost not accessible
+    #[tokio::test]
+    async fn test_data_document_id_array_data() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/array/data")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_array_data route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/mockdeletetoget")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_mockdeletetoget route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0 route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/mockdeletetoget")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_mockdeletetoget route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1 route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/mockdeletetoget")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_mockdeletetoget route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2 route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/mockdeletetoget")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_mockdeletetoget route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3 route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/mockdeletetoget")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_mockdeletetoget route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_path4() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/path4")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_path4 route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_path4_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/path4/mockdeletetoget")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_path4_mockdeletetoget route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_path4_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/path4/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_path4_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_path4_path5() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/path4/path5")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_path4_path5 route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_path4_path5_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/path4/path5/mockdeletetoget")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_path4_path5_mockdeletetoget route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_path4_path5_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/path4/path5/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_path4_path5_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_path4_path5_path6() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/path4/path5/path6")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_path4_path5_path6 route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/path4/path5/path6/mockdeletetoget")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/path4/path5/path6/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_path4_path5_path6_path7() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/path4/path5/path6/path7")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_path4_path5_path6_path7 route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/path4/path5/path6/path7/mockdeletetoget")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id/path0/path1/path2/path3/path4/path5/path6/path7/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost route should be registered");
+    }
+
     // SKIPPED: design_appdict_list_appInfo_appId not accessible
     // SKIPPED: design_appdict_list_paging_page_size_size not accessible
     // SKIPPED: design_appdict_id not accessible
@@ -209,11 +685,45 @@ mod tests {
     // SKIPPED: file_id_download not accessible
     // SKIPPED: file_id_mockputtopost not accessible
     // SKIPPED: file_id_upload not accessible
-    // SKIPPED: anonymous_fileinfo_download_document_id not accessible
+    #[tokio::test]
+    async fn test_anonymous_fileinfo_download_document_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/anonymous/fileinfo/download/document/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "anonymous_fileinfo_download_document_id route should be registered");
+    }
+
     // SKIPPED: anonymous_fileinfo_download_document_id_stream not accessible
     // SKIPPED: fileinfo_batch_download_doc_docId_site_site not accessible
     // SKIPPED: fileinfo_copy_to_doc_docId not accessible
-    // SKIPPED: fileinfo_download_document_id not accessible
+    #[tokio::test]
+    async fn test_fileinfo_download_document_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/fileinfo/download/document/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "fileinfo_download_document_id route should be registered");
+    }
+
     // SKIPPED: fileinfo_download_document_id_stream not accessible
     // SKIPPED: fileinfo_download_transfer_flag_flag not accessible
     // SKIPPED: fileinfo_edit_id_doc_docId not accessible
@@ -226,14 +736,82 @@ mod tests {
     // SKIPPED: fileinfo_update_document_docId_attachment_id_callback_callback not accessible
     // SKIPPED: fileinfo_update_id_content not accessible
     // SKIPPED: fileinfo_upload_doc_docId_save_as_flag not accessible
-    // SKIPPED: fileinfo_upload_document_docId not accessible
+    #[tokio::test]
+    async fn test_fileinfo_upload_document_docId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/fileinfo/upload/document/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "fileinfo_upload_document_docId route should be registered");
+    }
+
     // SKIPPED: fileinfo_upload_document_docId_callback_callback not accessible
     // SKIPPED: fileinfo_upload_with_url not accessible
-    // SKIPPED: fileinfo_id not accessible
+    #[tokio::test]
+    async fn test_fileinfo_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/fileinfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "fileinfo_id route should be registered");
+    }
+
     // SKIPPED: fileinfo_id_binary_base64_size not accessible
     // SKIPPED: fileinfo_id_doc_docId_change_seqnumber_seqNumber not accessible
-    // SKIPPED: fileinfo_id_document_documentId not accessible
-    // SKIPPED: fileinfo_id_mockdeletetoget not accessible
+    #[tokio::test]
+    async fn test_fileinfo_id_document_documentId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/fileinfo/test-id/document/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "fileinfo_id_document_documentId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_fileinfo_id_mockdeletetoget() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/fileinfo/test-id/mockdeletetoget")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "fileinfo_id_mockdeletetoget route should be registered");
+    }
+
     // SKIPPED: fileinfo_id_online_info not accessible
     // SKIPPED: fileinfo_id_preview_pdf not accessible
     // SKIPPED: form_filter_list_id_next_count_app_appId not accessible
@@ -415,6 +993,24 @@ mod tests {
             .unwrap();
         assert_ne!(response.status(), StatusCode::NOT_FOUND,
             "commend_list_paging route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_document_search() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/cms_assemble_control/document/search")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "document_search route should be registered");
     }
 
     #[tokio::test]

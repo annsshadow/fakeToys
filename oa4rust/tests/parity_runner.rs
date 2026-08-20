@@ -121,7 +121,7 @@ fn parity_record() {
 
     let rt = tokio::runtime::Runtime::new().expect("failed to build runtime");
     rt.block_on(async {
-        let (_addr, server_handle, token) = integration_tests::helpers::setup_test_server((*pool).clone())
+        let (_addr, server_handle, token) = integration_tests::helpers::setup_test_server(pool.clone())
             .await
             .expect("failed to start test server");
 

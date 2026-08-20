@@ -24,6 +24,8 @@ use deadpool_postgres::Pool;
 use sha2::{Digest, Sha256};
 use std::path::PathBuf;
 
+use crate::db::dialect;
+
 /// 默认迁移目录：编译期烘焙为工作区根 `migrations/`。
 /// 部署时可用环境变量 `MIGRATIONS_DIR` 覆盖。
 fn migrations_dir() -> PathBuf {
@@ -51,6 +53,9 @@ impl MigrationReport {
 /// 应用全部未执行的迁移。幂等、可重复调用。
 ///
 /// 返回 [`MigrationReport`]，便于启动日志与测试断言。
+///
+/// 当 `DATABASE_DIALECT=mysql`（或 `DB_DIALECT=mysql`）时，
+/// 自动将 PostgreSQL 语法的迁移 SQL 重写为 MySQL 兼容语法。
 pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
     let dir = migrations_dir();
     anyhow::ensure!(
@@ -60,17 +65,19 @@ pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
     );
 
     let mut client = pool.get().await?;
+    let d = dialect();
 
-    // 1) 确保迁移追踪表存在
+    // 1) 确保迁移追踪表存在（按方言重写列类型）
+    let create_table_sql = d.format_sql(
+        "CREATE TABLE IF NOT EXISTS schema_migrations (\n\
+            version     TEXT PRIMARY KEY,\n\
+            applied_at  TIMESTAMPTZ NOT NULL DEFAULT now(),\n\
+            checksum    TEXT NOT NULL,\n\
+            execution_ms INTEGER NOT NULL DEFAULT 0\n\
+        );",
+    );
     client
-        .batch_execute(
-            "CREATE TABLE IF NOT EXISTS schema_migrations (
-                version     TEXT PRIMARY KEY,
-                applied_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-                checksum    TEXT NOT NULL,
-                execution_ms INTEGER NOT NULL DEFAULT 0
-            );",
-        )
+        .batch_execute(&create_table_sql)
         .await?;
 
     // 2) 收集正向迁移（排除 archive/ 子目录与 *_rollback.sql），按文件名排序
@@ -81,7 +88,7 @@ pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
         let entry = entry?;
         let path = entry.path();
         if path.is_dir() {
-            continue; // archive/ 等子目录整体跳过
+            continue;
         }
         let fname = match path.file_name().and_then(|s| s.to_str()) {
             Some(f) => f.to_string(),
@@ -103,10 +110,9 @@ pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
         hasher.update(sql.as_bytes());
         let checksum = B64.encode(hasher.finalize());
 
-        // 3) 检查是否已应用
         let already: Option<String> = client
             .query_opt(
-                "SELECT checksum FROM schema_migrations WHERE version = $1",
+                &d.format_sql("SELECT checksum FROM schema_migrations WHERE version = $1"),
                 &[&name],
             )
             .await?
@@ -123,22 +129,38 @@ pub async fn run_migrations(pool: &Pool) -> anyhow::Result<MigrationReport> {
             );
         }
 
+        // 3) 按方言重写 SQL
+        let rewritten_sql = d.format_sql(&sql);
+
         // 4) 在事务内执行
         let tx = client.transaction().await?;
         let start = std::time::Instant::now();
-        tx.batch_execute(&sql)
+
+        if rewritten_sql.trim().is_empty() {
+            tx.execute(
+                &d.format_sql("INSERT INTO schema_migrations (version, checksum, execution_ms) VALUES ($1, $2, $3)"),
+                &[&name, &checksum, &0i32],
+            )
+            .await?;
+            tx.commit().await?;
+            report.applied.push(name.clone());
+            tracing::info!(target: "migrate", "skipped empty migration {}", name);
+            continue;
+        }
+
+        tx.batch_execute(&rewritten_sql)
             .await
             .map_err(|e| anyhow::anyhow!("migration {} failed: {}", name, e))?;
         let ms = start.elapsed().as_millis() as i32;
         tx.execute(
-            "INSERT INTO schema_migrations (version, checksum, execution_ms) VALUES ($1, $2, $3)",
+            &d.format_sql("INSERT INTO schema_migrations (version, checksum, execution_ms) VALUES ($1, $2, $3)"),
             &[&name, &checksum, &ms],
         )
         .await?;
         tx.commit().await?;
 
         tracing::info!(target: "migrate", "applied migration {} ({} ms)", name, ms);
-        report.applied.push(name);
+        report.applied.push(name.clone());
     }
 
     Ok(report)

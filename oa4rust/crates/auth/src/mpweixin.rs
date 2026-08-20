@@ -153,7 +153,7 @@ async fn mpweixin_login_or_create(
             let person_email: Option<String> = r.get("email");
 
             let token = uuid::Uuid::new_v4().to_string();
-            let session = session_manager.create_session(person_unique.clone(), token.clone()).await;
+            let session = session_manager.create_session(person_unique.clone(), token.clone()).await?;
 
             Ok(serde_json::json!({
                 "token": session.token,

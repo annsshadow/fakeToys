@@ -22,7 +22,7 @@ pub async fn send_message(
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
     let id = Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, $5, NOW())", &[&id, &conversation_id, &content, &sender, &msg_type])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -39,7 +39,7 @@ pub async fn send_message(
             ("content".to_string(), Value::String(content.to_string())),
             ("sender".to_string(), Value::String(sender.to_string())),
             ("type".to_string(), Value::String(msg_type.to_string())),
-            ("sent".to_string(), Value::Bool(true)),
+            ("sent".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -60,7 +60,7 @@ pub async fn receive_list(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -79,13 +79,13 @@ pub async fn mark_read(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_consume SET consumed = true WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("marked_read".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("marked_read".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -118,7 +118,7 @@ pub async fn consume_list_consume_count_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -148,7 +148,7 @@ pub async fn consume_list_consume_currentperson_count_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("readStatus".to_string(), Value::String(row.get("read_status"))),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
@@ -179,7 +179,7 @@ pub async fn consume_list_consume_person_person_count_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -209,7 +209,7 @@ pub async fn consume_type_type(
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
             ("type".to_string(), Value::String(row.get("type"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -229,13 +229,13 @@ pub async fn consume_type_type_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let id = Uuid::new_v4().to_string();
-    client
+    let result = client
         .execute("INSERT INTO x_message_consume (id, consume, content, type, create_time) VALUES ($1, $2, '', $3, NOW())", &[&id, &msg_type, &msg_type])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -255,7 +255,7 @@ pub async fn consume_id_type_type(
     }
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("saved".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -269,7 +269,7 @@ pub async fn im_conversation(
     let conversation_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("single");
     let id = Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute("INSERT INTO x_message_conversation (id, name, type, create_time) VALUES ($1, $2, $3, NOW())", &[&id, &name, &conversation_type])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -279,7 +279,7 @@ pub async fn im_conversation(
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(name.to_string())),
             ("type".to_string(), Value::String(conversation_type.to_string())),
-            ("created".to_string(), Value::Bool(true)),
+            ("created".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -375,13 +375,13 @@ pub async fn im_conversation_mockputtopost(
     let title = req.get("title").and_then(|v| v.as_str()).unwrap_or_default();
     let note = req.get("note").and_then(|v| v.as_str()).unwrap_or_default();
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET title = COALESCE($2, title), note = COALESCE($3, note), update_time = NOW() WHERE id = $1", &[&id, &title, &note])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("updated".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("updated".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -440,6 +440,85 @@ pub async fn im_conversation_id_group(
     ))))
 }
 
+pub async fn im_manager_config_post(
+    pool: Extension<Pool>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let config_key = req.get("configKey").and_then(|v| v.as_str()).unwrap_or_default();
+    let config_value = req.get("configValue").and_then(|v| v.as_str()).unwrap_or_default();
+
+    let result = client
+        .execute("UPDATE x_message_config SET config_key = $1, config_value = $2, update_time = NOW() WHERE id = (SELECT id FROM x_message_config ORDER BY create_time DESC LIMIT 1)", &[&config_key, &config_value])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        let id = Uuid::new_v4().to_string();
+        client
+            .execute("INSERT INTO x_message_config (id, config_key, config_value, create_time) VALUES ($1, $2, $3, NOW())", &[&id, &config_key, &config_value])
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
+
+    let row = client
+        .query_opt("SELECT id, config_key, config_value, create_time FROM x_message_config ORDER BY create_time DESC LIMIT 1", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("configKey".to_string(), Value::String(row.get("config_key"))),
+                ("configValue".to_string(), Value::String(row.get("config_value"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("config not found"))),
+    }
+}
+
+pub async fn im_conversation_update(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Json(req): axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let name = req.get("name").and_then(|v| v.as_str());
+    let conversation_type = req.get("type").and_then(|v| v.as_str());
+
+    let result = client
+        .execute("UPDATE x_message_conversation SET name = COALESCE($2, name), type = COALESCE($3, type), update_time = NOW() WHERE id = $1", &[&id, &name, &conversation_type])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("conversation not found")));
+    }
+
+    let row = client
+        .query_opt("SELECT id, name, type, create_time FROM x_message_conversation WHERE id = $1", &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("conversation not found"))),
+    }
+}
+
 pub async fn im_conversation_id_group_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(id): axum::extract::Path<String>,
@@ -462,13 +541,13 @@ pub async fn im_conversation_id_group_quit_self(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("DELETE FROM x_message_conversation_member WHERE conversation_id = $1 AND person_id = $2", &[&id, &""])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("quit".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("quit".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -503,13 +582,13 @@ pub async fn im_conversation_id_read(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET read_status = 'read', read_time = NOW() WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("read".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("read".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -519,13 +598,13 @@ pub async fn im_conversation_id_read_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET read_status = 'read', read_time = NOW() WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("read".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("read".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -576,13 +655,13 @@ pub async fn im_conversation_id_top_cancel(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET top = false WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("topCancelled".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("topCancelled".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -592,13 +671,13 @@ pub async fn im_conversation_id_top_cancel_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET top = false WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("topCancelled".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("topCancelled".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -608,13 +687,13 @@ pub async fn im_conversation_id_top_set(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET top = true, top_time = NOW() WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("topSet".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("topSet".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -624,13 +703,13 @@ pub async fn im_conversation_id_top_set_mockputtopost(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message_conversation SET top = true, top_time = NOW() WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("topSet".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("topSet".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -670,7 +749,7 @@ pub async fn im_msg(
     let msg_type = req.get("type").and_then(|v| v.as_str()).unwrap_or("text");
     let id = Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, $5, NOW())", &[&id, &conversation_id, &content, &sender, &msg_type])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -682,7 +761,7 @@ pub async fn im_msg(
             ("content".to_string(), Value::String(content.to_string())),
             ("sender".to_string(), Value::String(sender.to_string())),
             ("type".to_string(), Value::String(msg_type.to_string())),
-            ("sent".to_string(), Value::Bool(true)),
+            ("sent".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -693,13 +772,13 @@ pub async fn im_msg_clear(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message SET cleared = true WHERE conversation_id = $1", &[&conversation_id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("cleared".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("cleared".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -710,13 +789,13 @@ pub async fn im_msg_collection(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let message_id = req.get("\"messageId\"").and_then(|v| v.as_str()).unwrap_or_default();
-    client
+    let result = client
         .execute("INSERT INTO x_message_collection (id, message_id, create_time) VALUES ($1, $2, NOW())", &[&Uuid::new_v4().to_string(), &message_id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("collected".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("collected".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -836,7 +915,7 @@ pub async fn im_msg_list_object(
             ("id".to_string(), Value::String(row.get("id"))),
             ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("type".to_string(), Value::String(row.get("type"))),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
@@ -868,7 +947,7 @@ pub async fn im_msg_list_page_size_size(
             ("id".to_string(), Value::String(row.get("id"))),
             ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("type".to_string(), Value::String(row.get("type"))),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
@@ -890,13 +969,13 @@ pub async fn im_msg_revoke_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute("UPDATE x_message SET revoked = true, revoke_time = NOW() WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("revoked".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("revoked".to_string(), Value::Bool(result > 0))]),
     ))))
 }
 
@@ -913,7 +992,7 @@ pub async fn im_msg_upload_conversationId_type_type(
     let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
     let id = Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute("INSERT INTO x_message_file (id, message_id, conversation_id, file_url, file_name, file_size, type, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())", &[&id, &id, &conversation_id, &file_url, &file_name, &file_size, &msg_type])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -924,7 +1003,7 @@ pub async fn im_msg_upload_conversationId_type_type(
             ("\"conversationId\"".to_string(), Value::String(conversation_id)),
             ("type".to_string(), Value::String(msg_type)),
             ("\"fileUrl\"".to_string(), Value::String(file_url.to_string())),
-            ("uploaded".to_string(), Value::Bool(true)),
+            ("uploaded".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -944,8 +1023,8 @@ pub async fn instant_currentperson_consumed(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
-            ("consumeTime".to_string(), Value::String(row.get("consume_time"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
+            ("consumeTime".to_string(), Value::String(row.get::<_, Option<String>>("consume_time").unwrap_or_default())),
         ]))
     }).collect();
 
@@ -972,8 +1051,8 @@ pub async fn instant_currentperson_consumed_all(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
-            ("consumeTime".to_string(), Value::String(row.get("consume_time"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
+            ("consumeTime".to_string(), Value::String(row.get::<_, Option<String>>("consume_time").unwrap_or_default())),
         ]))
     }).collect();
 
@@ -995,15 +1074,18 @@ pub async fn instant_currentperson_consumed_mockputtopost(
         arr.iter().filter_map(|v| v.as_str().map(String::from)).collect::<Vec<String>>()
     }).unwrap_or_default();
 
-    if !id_list.is_empty() {
-        client
+    let success = id_list.is_empty();
+    let result = if !id_list.is_empty() {
+        Some(client
             .execute("UPDATE x_message_instant SET consumed = true WHERE id = ANY($1)", &[&id_list])
             .await
-            .map_err(|_| AppError::Internal)?;
-    }
+            .map_err(|_| AppError::Internal)?)
+    } else {
+        None
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("success".to_string(), Value::Bool(success || result.unwrap_or(0) > 0))]),
     ))))
 }
 
@@ -1023,7 +1105,7 @@ pub async fn instant_list_currentperson_consumed_count_count_asc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("consumeTime".to_string(), Value::String(row.get("consume_time"))),
         ]))
     }).collect();
@@ -1052,7 +1134,7 @@ pub async fn instant_list_currentperson_consumed_count_count_desc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("consumeTime".to_string(), Value::String(row.get("consume_time"))),
         ]))
     }).collect();
@@ -1081,7 +1163,7 @@ pub async fn instant_list_currentperson_count_count_asc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1110,7 +1192,7 @@ pub async fn instant_list_currentperson_count_count_desc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1139,7 +1221,7 @@ pub async fn instant_list_currentperson_noim_count_count_desc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1168,7 +1250,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_asc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1197,7 +1279,7 @@ pub async fn instant_list_currentperson_not_consumed_count_count_desc(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1226,7 +1308,7 @@ pub async fn instant_list_id_next_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1255,7 +1337,7 @@ pub async fn instant_list_id_prev_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("consume".to_string(), Value::String(row.get("consume"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1306,7 +1388,7 @@ pub async fn mass_list_id_next_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("massId".to_string(), Value::String(row.get("mass_id"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1335,7 +1417,7 @@ pub async fn mass_list_id_prev_count(
             ("id".to_string(), Value::String(row.get("id"))),
             ("massId".to_string(), Value::String(row.get("mass_id"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))
     }).collect();
@@ -1365,7 +1447,7 @@ pub async fn mass_id(
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("content".to_string(), Value::String(row.get("content"))),
-                ("sender".to_string(), Value::String(row.get("sender"))),
+                ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
                 ("createTime".to_string(), Value::String(row.get("create_time"))),
             ]));
             Ok(Json(ActionResult::success(result)))
@@ -1401,7 +1483,7 @@ pub async fn message_custom_create(
     let sender = req.get("sender").and_then(|v| v.as_str()).unwrap_or("system");
     let id = Uuid::new_v4().to_string();
 
-    client
+    let result = client
         .execute("INSERT INTO x_message (id, conversation_id, content, sender, type, create_time) VALUES ($1, $2, $3, $4, 'custom', NOW())", &[&id, &conversation_id, &content, &sender])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -1412,7 +1494,7 @@ pub async fn message_custom_create(
             ("\"conversationId\"".to_string(), Value::String(conversation_id.to_string())),
             ("content".to_string(), Value::String(content.to_string())),
             ("type".to_string(), Value::String("custom".to_string())),
-            ("created".to_string(), Value::Bool(true)),
+            ("created".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1435,7 +1517,7 @@ pub async fn message_list_paging_page_size_size(
             ("id".to_string(), Value::String(row.get("id"))),
             ("\"conversationId\"".to_string(), Value::String(row.get("conversation_id"))),
             ("content".to_string(), Value::String(row.get("content"))),
-            ("sender".to_string(), Value::String(row.get("sender"))),
+            ("sender".to_string(), Value::String(row.get::<_, Option<String>>("sender").unwrap_or_default())),
             ("type".to_string(), Value::String(row.get("type"))),
             ("createTime".to_string(), Value::String(row.get("create_time"))),
         ]))

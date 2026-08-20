@@ -1,11 +1,13 @@
 use axum::{
     extract::{Extension, Path},
-    Json, Router, routing::get, routing::post,
+    Json, Router, response::Sse,
+    routing::get, routing::post,
 };
 use deadpool_postgres::Pool;
+use futures_util::StreamExt;
 use serde::Deserialize;
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{db::dialect, error::AppError, response::ActionResult};
 
 pub mod routes;
 
@@ -63,7 +65,7 @@ pub async fn get_ai_control_config(
                 ("defaultModel".to_string(), Value::String("gpt-4".to_string())),
                 ("temperature".to_string(), Value::Number(serde_json::Number::from_f64(0.7).unwrap())),
                 ("maxTokens".to_string(), Value::Number(serde_json::Number::from(4096i64))),
-                ("enabled".to_string(), Value::Bool(true)),
+                ("enabled".to_string(), Value::Bool(false)),
             ]),
         )))),
     }
@@ -121,14 +123,14 @@ pub async fn update_ai_control_config(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if existing.is_some() {
+    let result = if existing.is_some() {
         client
             .execute(
                 "UPDATE x_ai_mcp_config SET name = $1, default_model = $2, temperature = $3, max_tokens = $4, enabled = $5, update_time = NOW() WHERE is_base = true",
                 &[&name, &default_model, &temperature, &max_tokens, &enabled],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|_| AppError::Internal)?
     } else {
         let id = uuid::Uuid::new_v4().to_string();
         client
@@ -137,12 +139,12 @@ pub async fn update_ai_control_config(
                 &[&id, &name, &default_model, &temperature, &max_tokens, &enabled, &"system"],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
-    }
+            .map_err(|_| AppError::Internal)?
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(result > 0)),
             ("config".to_string(), config),
         ]),
     ))))
@@ -311,7 +313,7 @@ pub async fn config_delete_mcp_flag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -337,7 +339,7 @@ pub async fn config_delete_model_flag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -478,14 +480,17 @@ pub async fn config_list_mcp_paging_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let offset = (page - 1) * size;
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, name, url, enabled, creator, create_time, update_time \
+         FROM x_ai_mcp_config \
+         ORDER BY update_time DESC \
+         LIMIT {} OFFSET {}",
+        d.cast_bigint_param(2),
+        d.cast_bigint_param(1),
+    );
     let rows = client
-        .query(
-            "SELECT id, name, url, enabled, creator, create_time, update_time \
-             FROM x_ai_mcp_config \
-             ORDER BY update_time DESC \
-             LIMIT $2::bigint OFFSET $1::bigint",
-            &[&offset, &size],
-        )
+        .query(&sql, &[&offset, &size])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -519,11 +524,14 @@ pub async fn config_list_model_paging_page_size_size(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let offset = (page - 1) * size;
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config ORDER BY update_time DESC LIMIT {} OFFSET {}",
+        d.cast_bigint_param(2),
+        d.cast_bigint_param(1),
+    );
     let rows = client
-        .query(
-            "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config ORDER BY update_time DESC LIMIT $2::bigint OFFSET $1::bigint",
-            &[&offset, &size],
-        )
+        .query(&sql, &[&offset, &size])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -570,14 +578,14 @@ pub async fn config_save(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if existing.is_some() {
+    let result = if existing.is_some() {
         client
             .execute(
                 "UPDATE x_ai_mcp_config SET name = $1, url = $2, default_model = $3, temperature = $4, max_tokens = $5, enabled = $6, update_time = NOW() WHERE id = $7",
                 &[&name, &url, &default_model, &temperature, &max_tokens, &enabled, &id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|_| AppError::Internal)?
     } else {
         let new_id = if id.is_empty() {
             uuid::Uuid::new_v4().to_string()
@@ -590,14 +598,14 @@ pub async fn config_save(
                 &[&new_id, &name, &url, &default_model, &temperature, &max_tokens, &enabled, &creator],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
-    }
+            .map_err(|_| AppError::Internal)?
+    };
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(name)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -632,7 +640,7 @@ pub async fn config_update_mcp_flag(
             ("name".to_string(), Value::String(name)),
             ("url".to_string(), Value::String(url)),
             ("enabled".to_string(), Value::Bool(enabled)),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -666,7 +674,7 @@ pub async fn config_update_model_flag(
             ("name".to_string(), Value::String(name)),
             ("url".to_string(), Value::String(url)),
             ("enabled".to_string(), Value::Bool(enabled)),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -682,7 +690,7 @@ pub async fn file_copy_file(
     let new_id = uuid::Uuid::new_v4().to_string();
     let creator = "system";
 
-    client
+    let copy_result = client
         .execute(
             "INSERT INTO x_ai_file (id, name, file_name, file_size, file_type, enabled, creator, create_time) \
              SELECT $1, $2, file_name, file_size, file_type, enabled, $3, NOW() FROM x_ai_file WHERE id = $4",
@@ -693,7 +701,7 @@ pub async fn file_copy_file(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("copied".to_string(), Value::Bool(true)),
+            ("copied".to_string(), Value::Bool(copy_result > 0)),
             ("newId".to_string(), Value::String(new_id)),
         ]),
     ))))
@@ -720,7 +728,7 @@ pub async fn file_delete_flag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -732,7 +740,9 @@ pub async fn file_list(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT id, name, file_name, file_size, file_type, enabled, creator, create_time FROM x_ai_file ORDER BY create_time DESC",
+            &dialect().format_sql(
+                "SELECT id, name, url, enabled, creator, create_time, update_time FROM x_ai_model_config WHERE enabled = true ORDER BY create_time DESC",
+            ),
             &[],
         )
         .await
@@ -812,7 +822,7 @@ pub async fn file_upload(
     let enabled = req.get("enabled").and_then(|v| v.as_bool()).unwrap_or(true);
     let creator = "system";
 
-    client
+    let upload_result = client
         .execute(
             "INSERT INTO x_ai_file (id, name, file_name, file_size, file_type, enabled, creator, create_time) VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
             &[&id, &name, &file_name, &file_size, &file_type, &enabled, &creator],
@@ -823,7 +833,7 @@ pub async fn file_upload(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("uploaded".to_string(), Value::Bool(true)),
+            ("uploaded".to_string(), Value::Bool(upload_result > 0)),
             ("fileName".to_string(), Value::String(file_name)),
         ]),
     ))))
@@ -997,7 +1007,7 @@ pub async fn index_delete_flag(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1056,7 +1066,7 @@ pub async fn index_sync_to_knowledge(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("synced".to_string(), Value::Bool(true)),
+            ("synced".to_string(), Value::Bool(result > 0)),
             ("count".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
@@ -1205,13 +1215,232 @@ pub async fn chat_completion(
     response_messages.push(serde_json::json!({"role": "user", "content": last_user_message}));
     response_messages.push(serde_json::json!({"role": "assistant", "content": reply}));
 
+    let success = !reply.is_empty();
     let result = Value::Object(serde_json::Map::from_iter([
         ("conversationId".to_string(), Value::String(conversation_id)),
         ("reply".to_string(), Value::String(reply)),
-        ("success".to_string(), Value::Bool(true)),
+        ("success".to_string(), Value::Bool(success)),
         ("messages".to_string(), Value::Array(response_messages)),
     ]));
 
     Ok(Json(ActionResult::success(result)))
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Shared chat processing logic (ownership check + history load + user msg save)
+// ──────────────────────────────────────────────────────────────────────────────
+
+struct ChatContext {
+    conversation_id: String,
+    full_messages: Vec<ChatMessage>,
+    response_messages: Vec<Value>,
+}
+
+async fn process_chat_request(
+    pool: &Pool,
+    session: &shared::session::Session,
+    req: &ChatCompletionRequest,
+) -> Result<ChatContext, AppError> {
+    let conversation_id = req
+        .conversation_id
+        .clone()
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+
+    let last_user_message = req
+        .messages
+        .iter()
+        .rev()
+        .find(|m| m.role == "user")
+        .map(|m| m.content.clone())
+        .unwrap_or_default();
+
+    let context_window = req.context_window.unwrap_or(20).clamp(1, 100);
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let owner_rows = client
+        .query(
+            "SELECT DISTINCT creator FROM x_ai_chat WHERE conversation_id = $1 AND deleted_at IS NULL AND creator IS NOT NULL",
+            &[&conversation_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let owners: Vec<String> = owner_rows
+        .iter()
+        .map(|r| r.get::<_, String>("creator"))
+        .collect();
+
+    let is_owned_by_others = !owners.is_empty()
+        && owners
+            .iter()
+            .all(|o| o != &session.person_unique && !o.is_empty() && o != "system");
+
+    if is_owned_by_others {
+        return Err(AppError::Forbidden);
+    }
+
+    let history_rows = client
+        .query(
+            "SELECT role, content FROM ( \
+             SELECT role, content, create_time FROM x_ai_chat \
+             WHERE conversation_id = $1 AND deleted_at IS NULL \
+             ORDER BY create_time DESC LIMIT $2::bigint \
+             ) h ORDER BY create_time ASC",
+            &[&conversation_id, &context_window],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let history: Vec<ChatMessage> = history_rows
+        .iter()
+        .map(|r| ChatMessage {
+            role: r.get("role"),
+            content: r.get("content"),
+        })
+        .collect();
+
+    client
+        .execute(
+            "INSERT INTO x_ai_chat (id, conversation_id, role, content, creator, create_time) \
+             VALUES ($1, $2, $3, $4, $5, NOW())",
+            &[
+                &uuid::Uuid::new_v4().to_string(),
+                &conversation_id,
+                &"user".to_string(),
+                &last_user_message,
+                &session.person_unique,
+            ],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let mut full_messages = history.clone();
+    full_messages.extend(req.messages.iter().cloned());
+
+    let response_messages: Vec<Value> = history
+        .iter()
+        .map(|m| serde_json::json!({"role": m.role, "content": m.content}))
+        .collect();
+
+    Ok(ChatContext {
+        conversation_id,
+        full_messages,
+        response_messages,
+    })
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SSE streaming: call_llm_stream
+// ──────────────────────────────────────────────────────────────────────────────
+
+async fn call_llm_stream(
+    messages: &[ChatMessage],
+) -> Result<impl futures_util::Stream<Item = Result<String, AppError>>, AppError> {
+    let api_key = std::env::var("AI_API_KEY").map_err(|_| AppError::Internal)?;
+    let api_base = std::env::var("AI_API_BASE").unwrap_or_else(|_| "https://api.openai.com/v1".to_string());
+    let model = std::env::var("AI_MODEL").unwrap_or_else(|_| "gpt-4".to_string());
+
+    let body = serde_json::json!({
+        "model": model,
+        "messages": messages.iter().map(|m| serde_json::json!({"role": m.role, "content": m.content})).collect::<Vec<_>>(),
+        "stream": true,
+    });
+
+    let resp = ai_client()
+        .post(format!("{}/chat/completions", api_base.trim_end_matches('/')))
+        .header("Authorization", format!("Bearer {}", api_key))
+        .json(&body)
+        .send()
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if !resp.status().is_success() {
+        return Err(AppError::Internal);
+    }
+
+    let mut accumulated: String = String::new();
+    let mut stream = resp.bytes_stream();
+
+    let stream = async_stream::stream! {
+        while let Some(chunk_result) = stream.next().await {
+            match chunk_result {
+                Ok(bytes) => {
+                    accumulated.push_str(&String::from_utf8_lossy(bytes.as_ref()));
+                    if let Ok(token) = parse_stream_chunk(&accumulated) {
+                        if !token.is_empty() {
+                            accumulated.clear();
+                            yield Ok(token);
+                        }
+                    }
+                }
+                Err(_) => {
+                    yield Err(AppError::Internal);
+                    break;
+                }
+            }
+        }
+    };
+
+    Ok(stream)
+}
+
+fn parse_stream_chunk(data: &str) -> Result<String, AppError> {
+    for line in data.lines() {
+        let line = line.trim();
+        if line.is_empty() || !line.starts_with("data: ") {
+            continue;
+        }
+        let payload = &line[6..];
+        if payload == "[DONE]" {
+            return Ok(String::new());
+        }
+        if let Ok(parsed) = serde_json::from_str::<Value>(payload) {
+            if let Some(choice) = parsed["choices"].as_array().and_then(|a| a.first()) {
+                if let Some(delta) = choice["delta"].as_object() {
+                    if let Some(content) = delta.get("content").and_then(|c| c.as_str()) {
+                        return Ok(content.to_string());
+                    }
+                }
+            }
+        }
+    }
+    Ok(String::new())
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// SSE streaming endpoint
+// ──────────────────────────────────────────────────────────────────────────────
+
+#[axum::debug_handler]
+pub async fn chat_completion_stream(
+    pool: Extension<Pool>,
+    Extension(session): Extension<shared::session::Session>,
+    axum::extract::Json(req): Json<ChatCompletionRequest>,
+) -> Result<Sse<impl futures_util::Stream<Item = Result<axum::response::sse::Event, AppError>>>, AppError> {
+    let ctx = process_chat_request(&pool, &session, &req).await?;
+
+    let llm_stream = call_llm_stream(&ctx.full_messages).await?;
+
+    let stream = llm_stream.filter_map(move |chunk| {
+        let conversation_id = ctx.conversation_id.clone();
+        async move {
+            match chunk {
+                Ok(token) if !token.is_empty() => {
+                    let event = axum::response::sse::Event::default()
+                        .event("token")
+                        .data(serde_json::json!({
+                            "conversationId": conversation_id,
+                            "token": token,
+                        }).to_string());
+                    Some(Ok(event))
+                }
+                _ => None,
+            }
+        }
+    });
+
+    Ok(Sse::new(stream))
+}
+
 

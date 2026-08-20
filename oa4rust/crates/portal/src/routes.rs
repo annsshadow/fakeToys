@@ -16,7 +16,6 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/portal/list", get(portal_list))
         .route("/jaxrs/portalcategory/list", get(list_portal_category))
         .route("/jaxrs/portal/page/{id}", get(get_page))
-        .route("/jaxrs/portal/page/create", post(create_page))
         .route("/jaxrs/portal/page/save/{id}", post(save_page))
         .route("/jaxrs/portal/page/delete/{id}", post(delete_page))
         .route("/jaxrs/portal/dict/list", get(dict_list))

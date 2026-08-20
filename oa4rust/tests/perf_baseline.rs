@@ -57,7 +57,7 @@ fn perf_baseline() {
 
     runtime.block_on(async {
         // 2) 启动完整应用，拿到 addr / 后台句柄 / 已签发的 admin token
-        let (addr, handle, token) = integration_tests::helpers::setup_test_server((*pool).clone())
+        let (addr, handle, token) = integration_tests::helpers::setup_test_server(pool.clone())
             .await
             .expect("failed to start test server for perf baseline");
 

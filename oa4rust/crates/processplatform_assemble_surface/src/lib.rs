@@ -172,13 +172,30 @@ pub async fn publish_surface(
         return Ok(Json(ActionResult::error("surface not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("published".to_string(), Value::Bool(true)),
-            ("published_at".to_string(), Value::String(chrono::Utc::now().to_rfc3339())),
-        ]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, name, category, content, version, creator, create_time, update_time \
+             FROM x_process_surface WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("id"))),
+        ("name".to_string(), Value::String(row.get("name"))),
+        ("category".to_string(), Value::String(row.get("category"))),
+        ("content".to_string(), {
+            let content_str: Option<String> = row.get("content");
+            content_str.and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(Value::Null)
+        }),
+        ("version".to_string(), Value::String(row.get("version"))),
+        ("creator".to_string(), Value::String(row.get("creator"))),
+        ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ("updateTime".to_string(), Value::String(row.get("update_time"))),
+    ]));
+
+    Ok(Json(ActionResult::success(result)))
 }
 
 pub async fn delete_surface(
@@ -186,6 +203,14 @@ pub async fn delete_surface(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT id, name, category, version, creator, create_time, update_time FROM x_process_surface WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     let result = client
         .execute("DELETE FROM x_process_surface WHERE id = $1", &[&id])
         .await
@@ -195,12 +220,21 @@ pub async fn delete_surface(
         return Ok(Json(ActionResult::error("surface not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("category".to_string(), Value::String(row.get("category"))),
+                ("version".to_string(), Value::String(row.get("version"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ("updateTime".to_string(), Value::String(row.get("update_time"))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("surface not found"))),
+    }
 }
 
 pub async fn save_surface(
@@ -223,12 +257,30 @@ pub async fn save_surface(
         return Ok(Json(ActionResult::error("surface not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_one(
+            "SELECT id, name, category, content, version, creator, create_time, update_time \
+             FROM x_process_surface WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(row.get("id"))),
+        ("name".to_string(), Value::String(row.get("name"))),
+        ("category".to_string(), Value::String(row.get("category"))),
+        ("content".to_string(), {
+            let content_str: Option<String> = row.get("content");
+            content_str.and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(Value::Null)
+        }),
+        ("version".to_string(), Value::String(row.get("version"))),
+        ("creator".to_string(), Value::String(row.get("creator"))),
+        ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ("updateTime".to_string(), Value::String(row.get("update_time"))),
+    ]));
+
+    Ok(Json(ActionResult::success(result)))
 }
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
@@ -354,11 +406,25 @@ pub async fn application_list_complex_manage_person(
         return Ok(Json(ActionResult::error("application not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATION WHERE xid = $1",
+            &[&person],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("application not found"))),
+    }
 }
 
 pub async fn application_list_key_key(
@@ -679,11 +745,37 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("applicationdict not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_data_mockputtopost(
@@ -703,11 +795,25 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data(
@@ -753,11 +859,37 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("applicationdict not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_data_mockputtopost(
@@ -777,11 +909,25 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data(
@@ -827,11 +973,37 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("applicationdict not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_data_mockputtopost(
@@ -851,11 +1023,25 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data(
@@ -901,11 +1087,37 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("applicationdict not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_data_mockputtopost(
@@ -925,11 +1137,25 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data(
@@ -975,11 +1201,37 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("applicationdict not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_data_mockputtopost(
@@ -999,11 +1251,25 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data(
@@ -1049,11 +1315,37 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("applicationdict not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_data_mockputtopost(
@@ -1073,11 +1365,25 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data(
@@ -1123,11 +1429,37 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("applicationdict not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_data_mockputtopost(
@@ -1147,11 +1479,25 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data(
@@ -1197,11 +1543,37 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("applicationdict not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn applicationdict_applicationDictFlag_application_applicationFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockputtopost(
@@ -1221,11 +1593,25 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         return Ok(Json(ActionResult::error("applicationdict not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATIONDICT WHERE xid = $1",
+            &[&applicationDictFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("applicationdict not found"))),
+    }
 }
 
 pub async fn control_workorworkcompleted_workOrWorkCompleted(
@@ -1297,11 +1683,37 @@ pub async fn correlation_job_job_delete(
         return Ok(Json(ActionResult::error("job not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_JOB WHERE xid = $1",
+            &[&job],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_JOB WHERE xid = $1",
+            &[&job],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("job not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("job not found"))),
+    }
 }
 
 pub async fn correlation_list_job_job(
@@ -1498,11 +1910,25 @@ pub async fn data_job_job_mockputtopost(
         return Ok(Json(ActionResult::error("job not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_JOB WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("job not found"))),
+    }
 }
 
 pub async fn data_job_job_path0(
@@ -1552,11 +1978,25 @@ pub async fn data_job_job_path0_mockputtopost(
         return Ok(Json(ActionResult::error("job not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_JOB WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("job not found"))),
+    }
 }
 
 pub async fn data_job_job_path0_path1(
@@ -1606,11 +2046,25 @@ pub async fn data_job_job_path0_path1_mockputtopost(
         return Ok(Json(ActionResult::error("job not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_JOB WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("job not found"))),
+    }
 }
 
 pub async fn data_job_job_path0_path1_path2(
@@ -1660,11 +2114,25 @@ pub async fn data_job_job_path0_path1_path2_mockputtopost(
         return Ok(Json(ActionResult::error("job not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_JOB WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("job not found"))),
+    }
 }
 
 pub async fn data_job_job_path0_path1_path2_path3(
@@ -1714,11 +2182,25 @@ pub async fn data_job_job_path0_path1_path2_path3_mockputtopost(
         return Ok(Json(ActionResult::error("job not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_JOB WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("job not found"))),
+    }
 }
 
 pub async fn data_job_job_path0_path1_path2_path3_path4(
@@ -1768,11 +2250,25 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_mockputtopost(
         return Ok(Json(ActionResult::error("job not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_JOB WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("job not found"))),
+    }
 }
 
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5(
@@ -1822,11 +2318,25 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost(
         return Ok(Json(ActionResult::error("job not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_JOB WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("job not found"))),
+    }
 }
 
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6(
@@ -1876,11 +2386,25 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopos
         return Ok(Json(ActionResult::error("job not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_JOB WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("job not found"))),
+    }
 }
 
 pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7(
@@ -1930,11 +2454,25 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockpu
         return Ok(Json(ActionResult::error("job not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_JOB WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("job not found"))),
+    }
 }
 
 pub async fn data_work_id(
@@ -1984,11 +2522,37 @@ pub async fn data_work_id_mockdeletetoget(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("work not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_mockputtopost(
@@ -2008,11 +2572,25 @@ pub async fn data_work_id_mockputtopost(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0(
@@ -2062,11 +2640,37 @@ pub async fn data_work_id_path0_mockdeletetoget(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("work not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_mockputtopost(
@@ -2086,11 +2690,25 @@ pub async fn data_work_id_path0_mockputtopost(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1(
@@ -2140,11 +2758,37 @@ pub async fn data_work_id_path0_path1_mockdeletetoget(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("work not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1_mockputtopost(
@@ -2164,11 +2808,25 @@ pub async fn data_work_id_path0_path1_mockputtopost(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1_path2(
@@ -2218,11 +2876,37 @@ pub async fn data_work_id_path0_path1_path2_mockdeletetoget(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("work not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1_path2_mockputtopost(
@@ -2242,11 +2926,25 @@ pub async fn data_work_id_path0_path1_path2_mockputtopost(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1_path2_path3(
@@ -2296,11 +2994,37 @@ pub async fn data_work_id_path0_path1_path2_path3_mockdeletetoget(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("work not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1_path2_path3_mockputtopost(
@@ -2320,11 +3044,25 @@ pub async fn data_work_id_path0_path1_path2_path3_mockputtopost(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1_path2_path3_path4(
@@ -2374,11 +3112,37 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockdeletetoget(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("work not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_mockputtopost(
@@ -2398,11 +3162,25 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockputtopost(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5(
@@ -2452,11 +3230,37 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("work not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost(
@@ -2476,11 +3280,25 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6(
@@ -2530,11 +3348,37 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeleteto
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("work not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost(
@@ -2554,11 +3398,25 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopos
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7(
@@ -2608,11 +3466,37 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockde
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("work not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost(
@@ -2632,11 +3516,25 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockpu
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn data_workcompleted_id(
@@ -2746,11 +3644,25 @@ pub async fn data_workcompleted_id_mockputtopost(
         return Ok(Json(ActionResult::error("workcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("workcompleted not found"))),
+    }
 }
 
 pub async fn data_workcompleted_id_path0(
@@ -2800,11 +3712,25 @@ pub async fn data_workcompleted_id_path0_mockputtopost(
         return Ok(Json(ActionResult::error("workcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("workcompleted not found"))),
+    }
 }
 
 pub async fn data_workcompleted_id_path0_path1(
@@ -2854,11 +3780,25 @@ pub async fn data_workcompleted_id_path0_path1_mockputtopost(
         return Ok(Json(ActionResult::error("workcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("workcompleted not found"))),
+    }
 }
 
 pub async fn data_workcompleted_id_path0_path1_path2(
@@ -2908,11 +3848,25 @@ pub async fn data_workcompleted_id_path0_path1_path2_mockputtopost(
         return Ok(Json(ActionResult::error("workcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("workcompleted not found"))),
+    }
 }
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3(
@@ -2962,11 +3916,25 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_mockputtopost(
         return Ok(Json(ActionResult::error("workcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("workcompleted not found"))),
+    }
 }
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4(
@@ -3016,11 +3984,25 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost(
         return Ok(Json(ActionResult::error("workcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("workcompleted not found"))),
+    }
 }
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5(
@@ -3070,11 +4052,25 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputto
         return Ok(Json(ActionResult::error("workcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("workcompleted not found"))),
+    }
 }
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6(
@@ -3124,11 +4120,25 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_moc
         return Ok(Json(ActionResult::error("workcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("workcompleted not found"))),
+    }
 }
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7(
@@ -3178,11 +4188,25 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
         return Ok(Json(ActionResult::error("workcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("workcompleted not found"))),
+    }
 }
 
 pub async fn datarecord_get_job_job_path_path(
@@ -3523,11 +4547,25 @@ pub async fn draft_mockputtopost(
         return Ok(Json(ActionResult::error("draft not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_DRAFT WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("draft not found"))),
+    }
 }
 
 pub async fn draft_process_processFlag(
@@ -3599,11 +4637,37 @@ pub async fn draft_id_mockdeletetoget(
         return Ok(Json(ActionResult::error("draft not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_DRAFT WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_DRAFT WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("draft not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("draft not found"))),
+    }
 }
 
 pub async fn draft_id_start(
@@ -3623,11 +4687,25 @@ pub async fn draft_id_start(
         return Ok(Json(ActionResult::error("draft not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_DRAFT WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("draft not found"))),
+    }
 }
 
 pub async fn file_list_application_applicationFlag(
@@ -4046,11 +5124,25 @@ pub async fn handover_id_cancel(
         return Ok(Json(ActionResult::error("handover not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_HANDOVER WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("handover not found"))),
+    }
 }
 
 pub async fn handover_id_process(
@@ -4070,11 +5162,25 @@ pub async fn handover_id_process(
         return Ok(Json(ActionResult::error("handover not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_HANDOVER WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("handover not found"))),
+    }
 }
 
 pub async fn job_latest_work_workcompleted_serial_serial(
@@ -4224,11 +5330,25 @@ pub async fn keylock_lock_mockputtopost(
         return Ok(Json(ActionResult::error("keylock not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_KEYLOCK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("keylock not found"))),
+    }
 }
 
 pub async fn mode_clear_person_person_manager(
@@ -4303,11 +5423,25 @@ pub async fn mode_save(
         return Ok(Json(ActionResult::error("mode not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASK_PROCESS_MODE WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("mode not found"))),
+    }
 }
 
 pub async fn mode_id_delete(
@@ -4315,6 +5449,14 @@ pub async fn mode_id_delete(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT xid, xtitle, xperson, xidentity, \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASK_PROCESS_MODE WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     let result = client
         .execute(
             "DELETE FROM PP_C_TASK_PROCESS_MODE WHERE xid = $1",
@@ -4327,11 +5469,17 @@ pub async fn mode_id_delete(
         return Ok(Json(ActionResult::error("mode not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("mode not found"))),
+    }
 }
 
 pub async fn process_activity_activity_activityType_activityType(
@@ -4769,11 +5917,25 @@ pub async fn read_list_count_application_applicationFlag_process(
         return Ok(Json(ActionResult::error("read not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_READ WHERE xid = $1",
+            &[&applicationFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("read not found"))),
+    }
 }
 
 pub async fn read_list_date_date_manage(
@@ -5602,11 +6764,37 @@ pub async fn read_id_manage_mockdeletetoget(
         return Ok(Json(ActionResult::error("read not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_READ WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_READ WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("read not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("read not found"))),
+    }
 }
 
 pub async fn read_id_mockputtopost(
@@ -5626,11 +6814,25 @@ pub async fn read_id_mockputtopost(
         return Ok(Json(ActionResult::error("read not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_READ WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("read not found"))),
+    }
 }
 
 pub async fn read_id_opinion_manage(
@@ -5676,11 +6878,25 @@ pub async fn read_id_opinion_manage_mockputtopost(
         return Ok(Json(ActionResult::error("read not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_READ WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("read not found"))),
+    }
 }
 
 pub async fn read_id_processing(
@@ -5752,11 +6968,25 @@ pub async fn read_id_processing_manage_mockputtopost(
         return Ok(Json(ActionResult::error("read not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_READ WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("read not found"))),
+    }
 }
 
 pub async fn read_id_reference(
@@ -5828,11 +7058,25 @@ pub async fn read_id_reset_manage_mockputtopost(
         return Ok(Json(ActionResult::error("read not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_READ WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("read not found"))),
+    }
 }
 
 pub async fn readcompleted_count_credential(
@@ -5945,11 +7189,25 @@ pub async fn readcompleted_list_count_application_applicationFlag_process(
         return Ok(Json(ActionResult::error("readcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_READCOMPLETED WHERE xid = $1",
+            &[&applicationFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("readcompleted not found"))),
+    }
 }
 
 pub async fn readcompleted_list_date_date_manage(
@@ -6700,11 +7958,37 @@ pub async fn readcompleted_id_manage_mockdeletetoget(
         return Ok(Json(ActionResult::error("readcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_READCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_READCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("readcompleted not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("readcompleted not found"))),
+    }
 }
 
 pub async fn readcompleted_id_opinion_manage(
@@ -7012,11 +8296,37 @@ pub async fn record_id_manage_mockdeletetoget(
         return Ok(Json(ActionResult::error("record not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_RECORD WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_RECORD WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("record not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("record not found"))),
+    }
 }
 
 pub async fn record_id_manage_mockputtopost(
@@ -7036,11 +8346,25 @@ pub async fn record_id_manage_mockputtopost(
         return Ok(Json(ActionResult::error("record not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_RECORD WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("record not found"))),
+    }
 }
 
 pub async fn review_count_application(
@@ -7622,11 +8946,37 @@ pub async fn review_id_application_applicationFlag_manage_mockdeletetoget(
         return Ok(Json(ActionResult::error("review not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_REVIEW WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_REVIEW WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("review not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("review not found"))),
+    }
 }
 
 pub async fn route_list(
@@ -7675,11 +9025,25 @@ pub async fn route_list_mockputtopost(
         return Ok(Json(ActionResult::error("route not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_E_ROUTE WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("route not found"))),
+    }
 }
 
 pub async fn route_id(
@@ -7916,11 +9280,37 @@ pub async fn serialnumber_id_mockdeletetoget(
         return Ok(Json(ActionResult::error("serialnumber not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_SERIALNUMBER WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_SERIALNUMBER WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("serialnumber not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("serialnumber not found"))),
+    }
 }
 
 pub async fn serialnumber_id_mockputtopost(
@@ -7940,11 +9330,25 @@ pub async fn serialnumber_id_mockputtopost(
         return Ok(Json(ActionResult::error("serialnumber not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_SERIALNUMBER WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("serialnumber not found"))),
+    }
 }
 
 pub async fn service_work_id_touch(
@@ -7964,11 +9368,25 @@ pub async fn service_work_id_touch(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn service_work_id_touch_mockputtopost(
@@ -7988,11 +9406,25 @@ pub async fn service_work_id_touch_mockputtopost(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn sign_download_scrawlId(
@@ -8120,11 +9552,37 @@ pub async fn sign_task_taskId_mockdeletetoget(
         return Ok(Json(ActionResult::error("sign not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_DOC_SIGN WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_DOC_SIGN WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("sign not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("sign not found"))),
+    }
 }
 
 pub async fn sign_id(
@@ -8170,11 +9628,37 @@ pub async fn sign_id_mockdeletetoget(
         return Ok(Json(ActionResult::error("sign not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_DOC_SIGN WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_DOC_SIGN WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("sign not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("sign not found"))),
+    }
 }
 
 pub async fn task_count_filter(
@@ -8307,11 +9791,25 @@ pub async fn task_list_count_application_applicationFlag_process(
         return Ok(Json(ActionResult::error("task not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASK WHERE xid = $1",
+            &[&applicationFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("task not found"))),
+    }
 }
 
 pub async fn task_list_date_date_hour_hour_exclude_draft_isExcludeDraft_manage(
@@ -9136,11 +10634,25 @@ pub async fn task_v2_id_reset(
         return Ok(Json(ActionResult::error("task not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("task not found"))),
+    }
 }
 
 pub async fn task_v2_id_reset_mockputtopost(
@@ -9160,11 +10672,25 @@ pub async fn task_v2_id_reset_mockputtopost(
         return Ok(Json(ActionResult::error("task not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("task not found"))),
+    }
 }
 
 pub async fn task_v2_id_resume(
@@ -9340,11 +10866,37 @@ pub async fn task_id_manage_mockdeletetoget(
         return Ok(Json(ActionResult::error("task not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_TASK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("task not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("task not found"))),
+    }
 }
 
 pub async fn task_id_mockputtopost(
@@ -9364,11 +10916,25 @@ pub async fn task_id_mockputtopost(
         return Ok(Json(ActionResult::error("task not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("task not found"))),
+    }
 }
 
 pub async fn task_id_opinion_manage(
@@ -9414,11 +10980,25 @@ pub async fn task_id_opinion_manage_mockputtopost(
         return Ok(Json(ActionResult::error("task not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("task not found"))),
+    }
 }
 
 pub async fn task_id_press_manage(
@@ -9516,11 +11096,25 @@ pub async fn task_id_processing_manage_mockputtopost(
         return Ok(Json(ActionResult::error("task not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("task not found"))),
+    }
 }
 
 pub async fn task_id_processing_neural(
@@ -9618,11 +11212,25 @@ pub async fn task_id_reset_manage_mockputtopost(
         return Ok(Json(ActionResult::error("task not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("task not found"))),
+    }
 }
 
 pub async fn task_id_will(
@@ -9761,11 +11369,25 @@ pub async fn taskcompleted_list_count_application_applicationFlag_process(
         return Ok(Json(ActionResult::error("taskcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASKCOMPLETED WHERE xid = $1",
+            &[&applicationFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("taskcompleted not found"))),
+    }
 }
 
 pub async fn taskcompleted_list_date_date_hour_hour_manage(
@@ -10572,11 +12194,37 @@ pub async fn taskcompleted_id_manage_mockdeletetoget(
         return Ok(Json(ActionResult::error("taskcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_TASKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("taskcompleted not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("taskcompleted not found"))),
+    }
 }
 
 pub async fn taskcompleted_id_opinion_manage(
@@ -10622,11 +12270,25 @@ pub async fn taskcompleted_id_opinion_manage_mockputtopost(
         return Ok(Json(ActionResult::error("taskcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_TASKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("taskcompleted not found"))),
+    }
 }
 
 pub async fn taskcompleted_id_reference(
@@ -10684,10 +12346,18 @@ pub async fn taskcompleted_id_reference_control(
 pub async fn touch_expire(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let count = client
+        .execute(
+            "UPDATE PP_C_TOUCH_EXPIRE SET \"xupdateTime\" = NOW()",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(count as i64))),
         ]),
     ))))
 }
@@ -10695,10 +12365,18 @@ pub async fn touch_expire(
 pub async fn touch_passexpired(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let count = client
+        .execute(
+            "UPDATE PP_C_TOUCH_PASSEXPIRED SET \"xupdateTime\" = NOW()",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(count as i64))),
         ]),
     ))))
 }
@@ -10706,10 +12384,18 @@ pub async fn touch_passexpired(
 pub async fn touch_touchdetained(
     pool: Extension<Pool>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    let _client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let count = client
+        .execute(
+            "UPDATE PP_C_TOUCH_DETAINED SET \"xupdateTime\" = NOW()",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(count as i64))),
         ]),
     ))))
 }
@@ -10871,11 +12557,25 @@ pub async fn work_list_count_application_applicationFlag_process(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&applicationFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn work_list_count_application_applicationFlag_process_manage(
@@ -11668,11 +13368,25 @@ pub async fn work_v2_id_add_split_mockputtopost(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn work_v2_id_reroute(
@@ -11718,11 +13432,25 @@ pub async fn work_v2_id_reroute_mockputtopost(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn work_v2_id_retract(
@@ -11768,11 +13496,25 @@ pub async fn work_v2_id_retract_mockputtopost(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn work_v2_id_rollback(
@@ -11818,11 +13560,25 @@ pub async fn work_v2_id_rollback_mockputtopost(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn work_v2_id_terminate(
@@ -12128,11 +13884,37 @@ pub async fn work_id_mockdeletetoget(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("work not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn work_id_processing(
@@ -12178,11 +13960,25 @@ pub async fn work_id_processing_mockputtopost(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn work_id_projection(
@@ -12280,11 +14076,37 @@ pub async fn work_id_relative_manage_mockdeletetoget(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("work not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn work_id_single_manage(
@@ -12330,11 +14152,37 @@ pub async fn work_id_single_manage_mockdeletetoget(
         return Ok(Json(ActionResult::error("work not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_WORK WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("work not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("work not found"))),
+    }
 }
 
 pub async fn workcompleted_filter_attribute_application_applicationFlag(
@@ -12457,11 +14305,25 @@ pub async fn workcompleted_list_count_application_applicationFlag_process(
         return Ok(Json(ActionResult::error("workcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
+            &[&applicationFlag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("workcompleted not found"))),
+    }
 }
 
 pub async fn workcompleted_list_count_application_applicationFlag_process_manage(
@@ -12839,11 +14701,25 @@ pub async fn workcompleted_flag_rollback_mockputtopost(
         return Ok(Json(ActionResult::error("workcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("updated".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("workcompleted not found"))),
+    }
 }
 
 pub async fn workcompleted_id(
@@ -12941,11 +14817,37 @@ pub async fn workcompleted_id_delete_manage_mockdeletetoget(
         return Ok(Json(ActionResult::error("workcompleted not found")));
     }
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("deleted".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT xid, \"xcreateTime\", \"xupdateTime\" FROM PP_C_WORKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let result = client
+        .execute(
+            "DELETE FROM PP_C_WORKCOMPLETED WHERE xid = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("workcompleted not found")));
+    }
+
+    match row {
+        Some(row) => {
+            let data = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("xid"))),
+                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
+                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+            ]));
+            Ok(Json(ActionResult::success(data)))
+        }
+        None => Ok(Json(ActionResult::error("workcompleted not found"))),
+    }
 }
 
 pub async fn workcompleted_id_manage(

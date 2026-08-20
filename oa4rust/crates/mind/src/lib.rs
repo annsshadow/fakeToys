@@ -177,7 +177,7 @@ pub async fn update_mind(
     let shared = payload.get("shared").and_then(|v| v.as_bool()).unwrap_or_else(|| row.get("shared"));
     let file_version = payload.get("fileVersion").and_then(|v| v.as_i64()).map(|i| i as i32).unwrap_or_else(|| row.get::<_, i32>("file_version"));
 
-    client
+    let count = client
         .execute(
             "UPDATE mind_base_info SET name = $1, folder_id = $2, icon = $3, description = $4, shared = $5, file_version = $6, update_time = NOW() WHERE id = $7",
             &[&name, &folder_id, &icon, &description, &shared, &file_version, &id],
@@ -187,7 +187,7 @@ pub async fn update_mind(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("updated".to_string(), Value::Bool(true)),
+        ("updated".to_string(), Value::Number(serde_json::Number::from(count as i64))),
     ])))))
 }
 
@@ -197,18 +197,18 @@ pub async fn delete_mind(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let result = client
+    let count = client
         .execute("DELETE FROM mind_base_info WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
+    if count == 0 {
         return Ok(Json(ActionResult::error("mind not found")));
     }
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
+        ("deleted".to_string(), Value::Number(serde_json::Number::from(count as i64))),
     ])))))
 }
 
@@ -261,7 +261,7 @@ pub async fn update_folder(
     let order_number = payload.get("orderNumber").and_then(|v| v.as_i64()).map(|i| i as i32).unwrap_or_else(|| row.get::<_, i32>("order_number"));
     let description = payload.get("description").and_then(|v| v.as_str()).map(|s| s.to_string()).or_else(|| row.get::<_, Option<String>>("description")).unwrap_or_default();
 
-    client
+    let count = client
         .execute(
             "UPDATE mind_folder_info SET name = $1, parent_id = $2, order_number = $3, description = $4 WHERE id = $5",
             &[&name, &parent_id, &order_number, &description, &id],
@@ -271,7 +271,7 @@ pub async fn update_folder(
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("updated".to_string(), Value::Bool(true)),
+        ("updated".to_string(), Value::Number(serde_json::Number::from(count as i64))),
     ])))))
 }
 
@@ -281,18 +281,18 @@ pub async fn delete_folder(
     Path(id): Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let result = client
+    let count = client
         .execute("DELETE FROM mind_folder_info WHERE id = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if result == 0 {
+    if count == 0 {
         return Ok(Json(ActionResult::error("folder not found")));
     }
 
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
-        ("deleted".to_string(), Value::Bool(true)),
+        ("deleted".to_string(), Value::Number(serde_json::Number::from(count as i64))),
     ])))))
 }
 

@@ -76,21 +76,18 @@ pub async fn folder_list_top(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
+            let mut entries = vec![
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("person".to_string(), Value::String(m.person.clone())),
-                (
-                    "superior".to_string(),
-                    m.superior
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
                 ("attachmentCount".to_string(), Value::Number(serde_json::Number::from(0))),
                 ("size".to_string(), Value::Number(serde_json::Number::from(0))),
                 ("folderCount".to_string(), Value::Number(serde_json::Number::from(0))),
-            ]))
+            ];
+            if let Some(superior) = m.superior.clone() {
+                entries.insert(3, ("superior".to_string(), Value::String(superior)));
+            }
+            Value::Object(serde_json::Map::from_iter(entries))
         })
         .collect();
 
@@ -123,21 +120,18 @@ pub async fn folder_list_with_folder(
     let data: Vec<Value> = models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
+            let mut entries = vec![
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("person".to_string(), Value::String(m.person.clone())),
-                (
-                    "superior".to_string(),
-                    m.superior
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
                 ("attachmentCount".to_string(), Value::Number(serde_json::Number::from(0))),
                 ("size".to_string(), Value::Number(serde_json::Number::from(0))),
                 ("folderCount".to_string(), Value::Number(serde_json::Number::from(0))),
-            ]))
+            ];
+            if let Some(superior) = m.superior.clone() {
+                entries.insert(3, ("superior".to_string(), Value::String(superior)));
+            }
+            Value::Object(serde_json::Map::from_iter(entries))
         })
         .collect();
 
@@ -217,21 +211,18 @@ pub async fn complex_top(
     let folder_list: Vec<Value> = folder_models
         .iter()
         .map(|m| {
-            Value::Object(serde_json::Map::from_iter([
+            let mut entries = vec![
                 ("id".to_string(), Value::String(m.id.clone())),
                 ("name".to_string(), Value::String(m.name.clone())),
                 ("person".to_string(), Value::String(m.person.clone())),
-                (
-                    "superior".to_string(),
-                    m.superior
-                        .clone()
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
                 ("attachmentCount".to_string(), Value::Number(serde_json::Number::from(0))),
                 ("size".to_string(), Value::Number(serde_json::Number::from(0))),
                 ("folderCount".to_string(), Value::Number(serde_json::Number::from(0))),
-            ]))
+            ];
+            if let Some(superior) = m.superior.clone() {
+                entries.insert(3, ("superior".to_string(), Value::String(superior)));
+            }
+            Value::Object(serde_json::Map::from_iter(entries))
         })
         .collect();
 
@@ -296,19 +287,15 @@ pub async fn folder_create(
     };
     let model = active.insert(&db).await.map_err(|_| AppError::Internal)?;
 
-    let result = Value::Object(serde_json::Map::from_iter([
+    let mut entries = vec![
         ("id".to_string(), Value::String(model.id.clone())),
         ("name".to_string(), Value::String(model.name.clone())),
         ("person".to_string(), Value::String(model.person.clone())),
-        (
-            "superior".to_string(),
-            model
-                .superior
-                .clone()
-                .map(Value::String)
-                .unwrap_or(Value::Null),
-        ),
-    ]));
+    ];
+    if let Some(superior) = model.superior.clone() {
+        entries.push(("superior".to_string(), Value::String(superior)));
+    }
+    let result = Value::Object(serde_json::Map::from_iter(entries));
 
     Ok(Json(ActionResult::success(result)))
 }

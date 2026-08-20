@@ -5,18 +5,12 @@ mod tests {
         folder_list_with_folder, upload_file_record,
     };
     use axum::extract::{Extension, Json};
-    use deadpool_postgres::tokio_postgres::{Config, NoTls};
-    use deadpool_postgres::{Manager, Pool};
     use shared::{
         error::AppError,
         response::ActionResult,
     };
     use serde_json::Value;
-
-    fn mock_pool() -> deadpool_postgres::Pool {
-        let mgr = Manager::new(Config::new(), NoTls);
-        Pool::builder(mgr).max_size(1).build().unwrap()
-    }
+    use shared::testing::test_pool;
 
     #[test]
     fn test_action_result_success_serialization() {
@@ -30,63 +24,34 @@ mod tests {
 
     #[test]
     fn test_file_router_builds() {
-        let pool = Pool::builder(Manager::new(
-            deadpool_postgres::tokio_postgres::Config::new(),
-            deadpool_postgres::tokio_postgres::NoTls,
-        ))
-        .build()
-        .unwrap();
-
+        let pool = test_pool();
         let _ = file_router(pool);
     }
 
-    #[test]
-    fn test_folder_list_top_returns_error_without_db() {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            let pool = Pool::builder(Manager::new(
-                deadpool_postgres::tokio_postgres::Config::new(),
-                deadpool_postgres::tokio_postgres::NoTls,
-            ))
-            .build()
-            .unwrap();
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn test_folder_list_top_with_db() {
+        let pool = test_pool();
+        let result: Result<Json<ActionResult<Value>>, AppError> =
+            folder_list_top(Extension(pool)).await;
 
-            let result: Result<Json<ActionResult<Value>>, AppError> =
-                folder_list_top(Extension(pool)).await;
-
-            match result {
-                Ok(_) => panic!("expected error without DB"),
-                Err(AppError::Internal) => {}
-                Err(_) => panic!("expected Internal error"),
-            }
-        });
-    }
-
-    #[test]
-    fn test_complex_top_returns_error_without_db() {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            let pool = Pool::builder(Manager::new(
-                deadpool_postgres::tokio_postgres::Config::new(),
-                deadpool_postgres::tokio_postgres::NoTls,
-            ))
-            .build()
-            .unwrap();
-
-            let result: Result<Json<ActionResult<Value>>, AppError> =
-                complex_top(Extension(pool)).await;
-
-            match result {
-                Ok(_) => panic!("expected error without DB"),
-                Err(AppError::Internal) => {}
-                Err(_) => panic!("expected Internal error"),
-            }
-        });
+        assert!(result.is_ok());
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn test_complex_top_with_db() {
+        let pool = test_pool();
+        let result: Result<Json<ActionResult<Value>>, AppError> =
+            complex_top(Extension(pool)).await;
+
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_folder_create_empty_name_returns_error() {
-        let pool = Extension(mock_pool());
+        let pool = Extension(test_pool());
         let body = serde_json::json!({"name": "", "superior": null});
         let result = folder_create(pool, axum::extract::Json(body)).await;
 
@@ -98,8 +63,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_file_upload_oversized_returns_error() {
-        let pool = Extension(mock_pool());
+        let pool = Extension(test_pool());
         let large_data = vec![0u8; (5 * 1024 * 1024 + 1) as usize];
         let mime = "application/pdf".to_string();
         let result = upload_file_record(pool, large_data, mime, None, None, None, None, None).await;
@@ -112,8 +78,9 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
     async fn test_file_upload_disallowed_mime_returns_error() {
-        let pool = Extension(mock_pool());
+        let pool = Extension(test_pool());
         let data = vec![0u8; 100];
         let result = upload_file_record(pool, data, "application/zip".to_string(), None, None, None, None, None).await;
 
@@ -124,47 +91,23 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_folder_list_with_folder_returns_error_without_db() {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            let pool = Pool::builder(Manager::new(
-                deadpool_postgres::tokio_postgres::Config::new(),
-                deadpool_postgres::tokio_postgres::NoTls,
-            ))
-            .build()
-            .unwrap();
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn test_folder_list_with_folder_with_db() {
+        let pool = test_pool();
+        let result: Result<Json<ActionResult<Value>>, AppError> =
+            folder_list_with_folder(Extension(pool), axum::extract::Path("test".to_string())).await;
 
-            let result: Result<Json<ActionResult<Value>>, AppError> =
-                folder_list_with_folder(Extension(pool), axum::extract::Path("test".to_string())).await;
-
-            match result {
-                Ok(_) => panic!("expected error without DB"),
-                Err(AppError::Internal) => {}
-                Err(_) => panic!("expected Internal error"),
-            }
-        });
+        assert!(result.is_ok());
     }
 
-    #[test]
-    fn test_file_download_returns_error_without_db() {
-        let rt = tokio::runtime::Runtime::new().unwrap();
-        rt.block_on(async {
-            let pool = Pool::builder(Manager::new(
-                deadpool_postgres::tokio_postgres::Config::new(),
-                deadpool_postgres::tokio_postgres::NoTls,
-            ))
-            .build()
-            .unwrap();
+    #[tokio::test]
+    #[ignore = "requires a running PostgreSQL server"]
+    async fn test_file_download_with_db() {
+        let pool = test_pool();
+        let result: Result<Json<ActionResult<Value>>, AppError> =
+            file_download(Extension(pool), axum::extract::Path("test".to_string())).await;
 
-            let result: Result<Json<ActionResult<Value>>, AppError> =
-                file_download(Extension(pool), axum::extract::Path("test".to_string())).await;
-
-            match result {
-                Ok(_) => panic!("expected error without DB"),
-                Err(AppError::Internal) => {}
-                Err(_) => panic!("expected Internal error"),
-            }
-        });
+        assert!(result.is_ok());
     }
 }

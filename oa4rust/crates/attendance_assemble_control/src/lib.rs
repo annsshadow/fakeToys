@@ -5,7 +5,7 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{db::dialect, error::AppError, response::ActionResult};
 
 pub mod routes;
 
@@ -66,18 +66,24 @@ pub async fn toggle_control_rule(
 
     let enabled: bool = payload.get("enabled").and_then(|v| v.as_bool()).unwrap_or(false);
 
-    client
+    let result = client
         .execute(
-            "UPDATE x_attendance_assemble_control_rule SET enabled = $1 WHERE id = $2",
+            &dialect().format_sql(
+                "UPDATE x_attendance_assemble_control_rule SET enabled = $1 WHERE id = $2",
+            ),
             &[&enabled, &id],
         )
         .await
         .map_err(|_| AppError::Internal)?;
 
+    if result == 0 {
+        return Ok(Json(ActionResult::error("control rule not found")));
+    }
+
     Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
         ("id".to_string(), Value::String(id)),
         ("enabled".to_string(), Value::Bool(enabled)),
-        ("updated".to_string(), Value::Bool(true)),
+        ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
     ])))))
 }
 
@@ -134,7 +140,9 @@ pub async fn attendanceadmin_id(
 
     let row = client
         .query_opt(
-            "SELECT id, person_id, unit_id, creator, create_time FROM x_attendance_admin WHERE id = $1",
+            &dialect().format_sql(
+                "SELECT id, person_id, unit_id, creator, create_time FROM x_attendance_admin WHERE id = $1",
+            ),
             &[&id],
         )
         .await
@@ -184,7 +192,7 @@ pub async fn attendanceappealInfo_appeal_id(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id.to_string())),
             ("status".to_string(), Value::String(status.to_string())),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -241,14 +249,14 @@ pub async fn attendanceconfig_save(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    if existing.is_some() {
+    let result = if existing.is_some() {
         client
             .execute(
                 "UPDATE x_attendance_config SET name = $1, value = $2, category = $3 WHERE id = $4",
                 &[&name, &value, &category, &id],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|_| AppError::Internal)?
     } else {
         let new_id = if id.is_empty() {
             uuid::Uuid::new_v4().to_string()
@@ -261,7 +269,11 @@ pub async fn attendanceconfig_save(
                 &[&new_id, &name, &value, &category, &creator],
             )
             .await
-            .map_err(|_| AppError::Internal)?;
+            .map_err(|_| AppError::Internal)?
+    };
+
+    if result == 0 {
+        return Ok(Json(ActionResult::error("attendance config not found")));
     }
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -269,7 +281,7 @@ pub async fn attendanceconfig_save(
             ("id".to_string(), Value::String(id.to_string())),
             ("name".to_string(), Value::String(name.to_string())),
             ("value".to_string(), Value::String(value.to_string())),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -302,7 +314,7 @@ pub async fn attendanceappealInfo_archive_id(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("archived".to_string(), Value::Bool(true)),
+            ("archived".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -332,7 +344,7 @@ pub async fn attendanceappealInfo_audit(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("audited".to_string(), Value::Bool(true)),
+            ("audited".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -374,11 +386,13 @@ pub async fn attendanceappealInfo_filter_list_id_next_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id > $1 ORDER BY create_time ASC LIMIT {}",
+        d.cast_bigint_param(2),
+    );
     let rows = client
-        .query(
-            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id > $1 ORDER BY create_time ASC LIMIT $2::bigint",
-            &[&id, &count],
-        )
+        .query(&sql, &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -408,11 +422,13 @@ pub async fn attendanceappealInfo_filter_list_id_prev_count(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    let d = dialect();
+    let sql = format!(
+        "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id < $1 ORDER BY create_time DESC LIMIT {}",
+        d.cast_bigint_param(2),
+    );
     let rows = client
-        .query(
-            "SELECT id, person_id, appeal_status, creator, create_time FROM x_attendance_appeal_info WHERE id < $1 ORDER BY create_time DESC LIMIT $2::bigint",
-            &[&id, &count],
-        )
+        .query(&sql, &[&id, &count])
         .await
         .map_err(|_| AppError::Internal)?;
 
@@ -491,7 +507,7 @@ pub async fn attendanceappealInfo_workflow_appeal_id(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("workflowAppealed".to_string(), Value::Bool(true)),
+            ("workflowAppealed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -519,7 +535,7 @@ pub async fn attendanceappealInfo_workflow_sync(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("synced".to_string(), Value::Bool(true)),
+            ("synced".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -564,7 +580,7 @@ pub async fn attendancedetail_analyse(
     let start_date = payload.get("startDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let end_date = payload.get("endDate").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
-    let _ = client
+    let result = client
         .execute(
             "UPDATE x_attendance_detail SET analysed = true, update_time = NOW() WHERE person_id = $1 AND date >= $2 AND date <= $3",
             &[&person_id, &start_date, &end_date],
@@ -574,7 +590,7 @@ pub async fn attendancedetail_analyse(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("analysed".to_string(), Value::Bool(true)),
+            ("analysed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -586,7 +602,7 @@ pub async fn attendancedetail_analyse_id_id(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let _ = client
+    let result = client
         .execute(
             "UPDATE x_attendance_detail SET analysed = true, update_time = NOW() WHERE id = $1",
             &[&id],
@@ -597,7 +613,7 @@ pub async fn attendancedetail_analyse_id_id(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("analysed".to_string(), Value::Bool(true)),
+            ("analysed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -611,7 +627,7 @@ pub async fn attendancedetail_analyse_redo(
 
     let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
-    let _ = client
+    let result = client
         .execute(
             "UPDATE x_attendance_detail SET analysed = false, update_time = NOW() WHERE person_id = $1",
             &[&person_id],
@@ -621,7 +637,7 @@ pub async fn attendancedetail_analyse_redo(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("redone".to_string(), Value::Bool(true)),
+            ("redone".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -633,7 +649,7 @@ pub async fn attendancedetail_analyse_startDate_endDate(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let _ = client
+    let result = client
         .execute(
             "UPDATE x_attendance_detail SET analysed = true, update_time = NOW() WHERE date >= $1 AND date <= $2",
             &[&start_date, &end_date],
@@ -643,7 +659,7 @@ pub async fn attendancedetail_analyse_startDate_endDate(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("analysed".to_string(), Value::Bool(true)),
+            ("analysed".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -670,7 +686,7 @@ pub async fn attendancedetail_archive_id(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("archived".to_string(), Value::Bool(true)),
+            ("archived".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -682,7 +698,7 @@ pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let _ = client
+    let result = client
         .execute(
             "UPDATE x_attendance_detail SET checked = true, update_time = NOW() WHERE cycle_year = $1 AND cycle_month = $2",
             &[&cycle_year, &cycle_month],
@@ -692,7 +708,7 @@ pub async fn attendancedetail_checkDetailWithPersonByCycle_cycleYear_cycleMonth(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("checked".to_string(), Value::Bool(true)),
+            ("checked".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1088,7 +1104,7 @@ pub async fn attendancedetail_mobile_recive(
     let person_id = payload.get("personId").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let date = payload.get("date").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
-    let _ = client
+    let result = client
         .execute(
             "UPDATE x_attendance_detail SET received = true, update_time = NOW() WHERE person_id = $1 AND date = $2",
             &[&person_id, &date],
@@ -1098,7 +1114,7 @@ pub async fn attendancedetail_mobile_recive(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("received".to_string(), Value::Bool(true)),
+            ("received".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1141,7 +1157,7 @@ pub async fn attendancedetail_recive(
 
     let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
-    let _ = client
+    let result = client
         .execute(
             "UPDATE x_attendance_detail SET received = true, update_time = NOW() WHERE id = $1",
             &[&id],
@@ -1151,7 +1167,7 @@ pub async fn attendancedetail_recive(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("received".to_string(), Value::Bool(true)),
+            ("received".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1165,7 +1181,7 @@ pub async fn attendancedetail_reciveSingle(
 
     let id = payload.get("id").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
-    let _ = client
+    let result = client
         .execute(
             "UPDATE x_attendance_detail SET received = true, update_time = NOW() WHERE id = $1",
             &[&id],
@@ -1175,7 +1191,7 @@ pub async fn attendancedetail_reciveSingle(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("received".to_string(), Value::Bool(true)),
+            ("received".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -1647,7 +1663,7 @@ pub async fn attendancesetting_enable_type(
         serde_json::Map::from_iter([
             ("code".to_string(), Value::String(code)),
             ("enabled".to_string(), Value::Bool(enabled)),
-            ("updated".to_string(), Value::Bool(true)),
+            ("updated".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -2006,7 +2022,7 @@ pub async fn statistic_do(
     let year = payload.get("year").and_then(|v| v.as_str()).unwrap_or("").to_string();
     let month = payload.get("month").and_then(|v| v.as_str()).unwrap_or("").to_string();
 
-    let _ = client
+    let result = client
         .execute(
             "INSERT INTO x_attendance_statistic (person_id, year, month, create_time) VALUES ($1, $2, $3, NOW()) ON CONFLICT (person_id, year, month) DO UPDATE SET update_time = NOW()",
             &[&person_id, &year, &month],
@@ -2016,7 +2032,7 @@ pub async fn statistic_do(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("done".to_string(), Value::Bool(true)),
+            ("done".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }

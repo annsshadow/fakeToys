@@ -67,28 +67,21 @@ pub async fn view_list(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "description".to_string(),
+            Value::Object(serde_json::Map::from_iter(
+                [
+                    Some(("id".to_string(), Value::String(row.get("id")))),
+                    Some(("name".to_string(), Value::String(row.get("name")))),
                     row.get::<_, Option<String>>("description")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "querySql".to_string(),
+                        .map(|v| ("description".to_string(), Value::String(v))),
                     row.get::<_, Option<String>>("query_sql")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                ("creatorId".to_string(), Value::String(row.get("creator_id"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                (
-                    "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
-                ),
-            ]))
+                        .map(|v| ("querySql".to_string(), Value::String(v))),
+                    Some(("creatorId".to_string(), Value::String(row.get("creator_id")))),
+                    Some(("status".to_string(), Value::String(row.get("status")))),
+                    Some(("createTime".to_string(), Value::String(row.get::<_, String>("create_time")))),
+                ]
+                .into_iter()
+                .flatten(),
+            ))
         })
         .collect();
 
@@ -116,28 +109,21 @@ pub async fn view_get(
 
     match row {
         Some(row) => {
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                (
-                    "description".to_string(),
+            let result = Value::Object(serde_json::Map::from_iter(
+                [
+                    Some(("id".to_string(), Value::String(row.get("id")))),
+                    Some(("name".to_string(), Value::String(row.get("name")))),
                     row.get::<_, Option<String>>("description")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "querySql".to_string(),
+                        .map(|v| ("description".to_string(), Value::String(v))),
                     row.get::<_, Option<String>>("query_sql")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                ("creatorId".to_string(), Value::String(row.get("creator_id"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                (
-                    "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
-                ),
-            ]));
+                        .map(|v| ("querySql".to_string(), Value::String(v))),
+                    Some(("creatorId".to_string(), Value::String(row.get("creator_id")))),
+                    Some(("status".to_string(), Value::String(row.get("status")))),
+                    Some(("createTime".to_string(), Value::String(row.get::<_, String>("create_time")))),
+                ]
+                .into_iter()
+                .flatten(),
+            ));
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("view not found"))),
@@ -224,22 +210,19 @@ pub async fn import_list(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("viewId".to_string(), Value::String(row.get("view_id"))),
-                ("\"fileName\"".to_string(), Value::String(row.get("file_name"))),
-                ("status".to_string(), Value::String(row.get("status"))),
-                (
-                    "importTime".to_string(),
+            Value::Object(serde_json::Map::from_iter(
+                [
+                    Some(("id".to_string(), Value::String(row.get("id")))),
+                    Some(("viewId".to_string(), Value::String(row.get("view_id")))),
+                    Some(("\"fileName\"".to_string(), Value::String(row.get("file_name")))),
+                    Some(("status".to_string(), Value::String(row.get("status")))),
                     row.get::<_, Option<String>>("import_time")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "createTime".to_string(),
-                    Value::String(row.get::<_, String>("create_time")),
-                ),
-            ]))
+                        .map(|v| ("importTime".to_string(), Value::String(v))),
+                    Some(("createTime".to_string(), Value::String(row.get::<_, String>("create_time")))),
+                ]
+                .into_iter()
+                .flatten(),
+            ))
         })
         .collect();
 

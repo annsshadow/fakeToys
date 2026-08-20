@@ -121,15 +121,18 @@ pub async fn organization_assemble_control_unit_list_flag_next_count(
         .iter()
         .map(|row| {
             let parent_id: Option<String> = row.get("parent_id");
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("\"parentId\"".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
-                ("level".to_string(), Value::String(row.get("level"))),
-                ("sort".to_string(), Value::String(row.get("sort"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]))
+            Value::Object(serde_json::Map::from_iter(
+                [
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("level".to_string(), Value::String(row.get("level"))),
+                    ("sort".to_string(), Value::String(row.get("sort"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]
+                .into_iter()
+                .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
+            ))
         })
         .collect();
 
@@ -158,15 +161,18 @@ pub async fn organization_assemble_control_unit_flag(
     match row {
         Some(row) => {
             let parent_id: Option<String> = row.get("parent_id");
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("\"parentId\"".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
-                ("level".to_string(), Value::String(row.get("level"))),
-                ("sort".to_string(), Value::String(row.get("sort"))),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]));
+            let result = Value::Object(serde_json::Map::from_iter(
+                [
+                    ("id".to_string(), Value::String(row.get("id"))),
+                    ("name".to_string(), Value::String(row.get("name"))),
+                    ("level".to_string(), Value::String(row.get("level"))),
+                    ("sort".to_string(), Value::String(row.get("sort"))),
+                    ("creator".to_string(), Value::String(row.get("creator"))),
+                    ("createTime".to_string(), Value::String(row.get("create_time"))),
+                ]
+                .into_iter()
+                .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
+            ));
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("unit not found"))),
@@ -198,15 +204,18 @@ pub async fn organization_assemble_control_unit_list_flag_sub_nested(
         let parent_id: Option<String> = row.get("parent_id");
         let level: i32 = row.get("level");
         let sort: i32 = row.get("sort");
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("\"parentId\"".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
-            ("level".to_string(), Value::Number(serde_json::Number::from(level))),
-            ("sort".to_string(), Value::Number(serde_json::Number::from(sort))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
+        Value::Object(serde_json::Map::from_iter(
+            [
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("level".to_string(), Value::Number(serde_json::Number::from(level))),
+                ("sort".to_string(), Value::Number(serde_json::Number::from(sort))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]
+            .into_iter()
+            .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
+        ))
     }).collect();
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -242,15 +251,18 @@ pub async fn organization_assemble_control_unit_list_flag_sup_nested(
         let parent_id: Option<String> = row.get("parent_id");
         let level: i32 = row.get("level");
         let sort: i32 = row.get("sort");
-        Value::Object(serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(row.get("id"))),
-            ("name".to_string(), Value::String(row.get("name"))),
-            ("\"parentId\"".to_string(), parent_id.map(Value::String).unwrap_or(Value::Null)),
-            ("level".to_string(), Value::Number(serde_json::Number::from(level))),
-            ("sort".to_string(), Value::Number(serde_json::Number::from(sort))),
-            ("creator".to_string(), Value::String(row.get("creator"))),
-            ("createTime".to_string(), Value::String(row.get("create_time"))),
-        ]))
+        Value::Object(serde_json::Map::from_iter(
+            [
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("level".to_string(), Value::Number(serde_json::Number::from(level))),
+                ("sort".to_string(), Value::Number(serde_json::Number::from(sort))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]
+            .into_iter()
+            .chain(parent_id.map(|v| ("\"parentId\"".to_string(), Value::String(v)))),
+        ))
     }).collect();
 
     Ok(Json(ActionResult::success(Value::Object(
@@ -314,14 +326,29 @@ pub async fn export_export_all(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    let export_id = uuid::Uuid::new_v4().to_string();
     client
-        .execute("INSERT INTO x_org_export (id, type, status, create_time) VALUES ($1, 'all', 'pending', NOW())", &[&uuid::Uuid::new_v4().to_string()])
+        .execute("INSERT INTO x_org_export (id, type, status, create_time) VALUES ($1, 'all', 'pending', NOW())", &[&export_id])
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt("SELECT id, type, status, create_time FROM x_org_export WHERE id = $1", &[&export_id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("export record not found after creation"))),
+    }
 }
 
 pub async fn export_result_flag_flag(
@@ -355,14 +382,29 @@ pub async fn export_zhengwudingding_person(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
+    let export_id = uuid::Uuid::new_v4().to_string();
     client
-        .execute("INSERT INTO x_org_export (id, type, status, create_time) VALUES ($1, 'zhengwudingding', 'pending', NOW())", &[&uuid::Uuid::new_v4().to_string()])
+        .execute("INSERT INTO x_org_export (id, type, status, create_time) VALUES ($1, 'zhengwudingding', 'pending', NOW())", &[&export_id])
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
-    ))))
+    let row = client
+        .query_opt("SELECT id, type, status, create_time FROM x_org_export WHERE id = $1", &[&export_id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("type".to_string(), Value::String(row.get("type"))),
+                ("status".to_string(), Value::String(row.get("status"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("export record not found after creation"))),
+    }
 }
 
 
@@ -700,7 +742,7 @@ pub async fn group_flag_add_member(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = flag.clone();
-    client
+    let result = client
         .execute(
             "INSERT INTO x_org_group_member (group_id, person_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
             &[&flag, &person_id],
@@ -710,7 +752,7 @@ pub async fn group_flag_add_member(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -722,7 +764,7 @@ pub async fn group_flag_add_member_mockputtopost(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
     let person_id = flag.clone();
-    client
+    let result = client
         .execute(
             "INSERT INTO x_org_group_member (group_id, person_id) VALUES ($1, $2) ON CONFLICT DO NOTHING",
             &[&flag, &person_id],
@@ -732,7 +774,7 @@ pub async fn group_flag_add_member_mockputtopost(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -787,16 +829,32 @@ pub async fn group_flag_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
-        .execute("UPDATE x_org_group SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+    let row = client
+        .query_opt(
+            "SELECT id, name, unit_id, type, creator, create_time FROM x_org_group WHERE id = $1",
+            &[&flag],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    if let Some(row) = row {
+        client
+            .execute("UPDATE x_org_group SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+            .await
+            .map_err(|_| AppError::Internal)?;
+
+        let result = Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ("type".to_string(), Value::String(row.get("type"))),
+            ("creator".to_string(), Value::String(row.get("creator"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]));
+        Ok(Json(ActionResult::success(result)))
+    } else {
+        Ok(Json(ActionResult::error("group not found")))
+    }
 }
 
 pub async fn group_flag_mockputtopost(
@@ -1045,16 +1103,32 @@ pub async fn identity_flag_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
-        .execute("UPDATE x_org_identity SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+    let row = client
+        .query_opt(
+            "SELECT id, name, unit_id, identity_id, creator, create_time FROM x_org_identity WHERE id = $1",
+            &[&flag],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    if let Some(row) = row {
+        client
+            .execute("UPDATE x_org_identity SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+            .await
+            .map_err(|_| AppError::Internal)?;
+
+        let result = Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ("identityId".to_string(), Value::String(row.get("identity_id"))),
+            ("creator".to_string(), Value::String(row.get("creator"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]));
+        Ok(Json(ActionResult::success(result)))
+    } else {
+        Ok(Json(ActionResult::error("identity not found")))
+    }
 }
 
 pub async fn identity_flag_mockputtopost(
@@ -1208,16 +1282,31 @@ pub async fn permissionsetting_flag_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
-        .execute("UPDATE x_org_permission_setting SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+    let row = client
+        .query_opt(
+            "SELECT id, name, unit_id, creator, create_time FROM x_org_permission_setting WHERE id = $1",
+            &[&flag],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    if let Some(row) = row {
+        client
+            .execute("UPDATE x_org_permission_setting SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+            .await
+            .map_err(|_| AppError::Internal)?;
+
+        let result = Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ("creator".to_string(), Value::String(row.get("creator"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]));
+        Ok(Json(ActionResult::success(result)))
+    } else {
+        Ok(Json(ActionResult::error("permission setting not found")))
+    }
 }
 
 pub async fn permissionsetting_flag_mockputtopost(
@@ -1259,33 +1348,94 @@ pub async fn personattribute_flag(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time FROM x_org_person_attribute WHERE id = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
+                ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("person attribute not found"))),
+    }
 }
 
 pub async fn personattribute_flag_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time FROM x_org_person_attribute WHERE id = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if let Some(row) = row {
+        client
+            .execute("UPDATE x_org_person_attribute SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+            .await
+            .map_err(|_| AppError::Internal)?;
+
+        let result = Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("personId".to_string(), Value::String(row.get("person_id"))),
+            ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
+            ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
+            ("creator".to_string(), Value::String(row.get("creator"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]));
+        Ok(Json(ActionResult::success(result)))
+    } else {
+        Ok(Json(ActionResult::error("person attribute not found")))
+    }
 }
 
 pub async fn personattribute_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, person_id, attribute_key, attribute_value, creator, create_time FROM x_org_person_attribute WHERE id = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("personId".to_string(), Value::String(row.get("person_id"))),
+                ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
+                ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("person attribute not found"))),
+    }
 }
 
 
@@ -1466,16 +1616,33 @@ pub async fn personcard_flag_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
-        .execute("UPDATE x_org_person SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+    let row = client
+        .query_opt(
+            "SELECT id, name, mobile, email, unit_id, creator, create_time FROM x_org_person WHERE id = $1 AND deleted_at IS NULL",
+            &[&flag],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    if let Some(row) = row {
+        client
+            .execute("UPDATE x_org_person SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+            .await
+            .map_err(|_| AppError::Internal)?;
+
+        let result = Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("mobile".to_string(), Value::String(row.get("mobile"))),
+            ("email".to_string(), Value::String(row.get("email"))),
+            ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ("creator".to_string(), Value::String(row.get("creator"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]));
+        Ok(Json(ActionResult::success(result)))
+    } else {
+        Ok(Json(ActionResult::error("person not found")))
+    }
 }
 
 
@@ -1625,22 +1792,62 @@ pub async fn role_flag_mockdeletetoget(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, description, creator, create_time FROM x_org_role WHERE id = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if let Some(row) = row {
+        client
+            .execute("UPDATE x_org_role SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+            .await
+            .map_err(|_| AppError::Internal)?;
+
+        let result = Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("description".to_string(), Value::String(row.get("description"))),
+            ("creator".to_string(), Value::String(row.get("creator"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]));
+        Ok(Json(ActionResult::success(result)))
+    } else {
+        Ok(Json(ActionResult::error("role not found")))
+    }
 }
 
 pub async fn role_flag_mockputtopost(
     pool: Extension<Pool>,
     axum::extract::Path(flag): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, name, description, creator, create_time FROM x_org_role WHERE id = $1",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("description".to_string(), Value::String(row.get("description"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("role not found"))),
+    }
 }
 
 
@@ -1685,16 +1892,32 @@ pub async fn unitattribute_flag_mockdeletetoget(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
-        .execute("UPDATE x_org_unit_attribute SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+    let row = client
+        .query_opt(
+            "SELECT id, unit_id, attribute_key, attribute_value, creator, create_time FROM x_org_unit_attribute WHERE id = $1",
+            &[&flag],
+        )
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    if let Some(row) = row {
+        client
+            .execute("UPDATE x_org_unit_attribute SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", &[&flag])
+            .await
+            .map_err(|_| AppError::Internal)?;
+
+        let result = Value::Object(serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("unitId".to_string(), Value::String(row.get("unit_id"))),
+            ("attributeKey".to_string(), Value::String(row.get("attribute_key"))),
+            ("attributeValue".to_string(), Value::String(row.get("attribute_value"))),
+            ("creator".to_string(), Value::String(row.get("creator"))),
+            ("createTime".to_string(), Value::String(row.get("create_time"))),
+        ]));
+        Ok(Json(ActionResult::success(result)))
+    } else {
+        Ok(Json(ActionResult::error("unit attribute not found")))
+    }
 }
 
 pub async fn unitattribute_flag_mockputtopost(
@@ -2466,13 +2689,29 @@ pub async fn personcard_createQR_cardId(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("cardId".to_string(), Value::String(card_id)),
-            ("qrCode".to_string(), Value::String(qr_code)),
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, name, mobile, email, unit_id, creator, create_time FROM x_org_person WHERE id = $1",
+            &[&card_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("mobile".to_string(), Value::String(row.get("mobile"))),
+                ("email".to_string(), Value::String(row.get("email"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("person not found"))),
+    }
 }
 
 pub async fn personcard_createCode_cardId(
@@ -2487,13 +2726,29 @@ pub async fn personcard_createCode_cardId(
         .await
         .map_err(|_| AppError::Internal)?;
 
-    Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([
-            ("cardId".to_string(), Value::String(card_id)),
-            ("code".to_string(), Value::String(code)),
-            ("success".to_string(), Value::Bool(true)),
-        ]),
-    ))))
+    let row = client
+        .query_opt(
+            "SELECT id, name, mobile, email, unit_id, creator, create_time FROM x_org_person WHERE id = $1",
+            &[&card_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let result = Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("name".to_string(), Value::String(row.get("name"))),
+                ("mobile".to_string(), Value::String(row.get("mobile"))),
+                ("email".to_string(), Value::String(row.get("email"))),
+                ("unitId".to_string(), Value::String(row.get("unit_id"))),
+                ("creator".to_string(), Value::String(row.get("creator"))),
+                ("createTime".to_string(), Value::String(row.get("create_time"))),
+            ]));
+            Ok(Json(ActionResult::success(result)))
+        }
+        None => Ok(Json(ActionResult::error("person not found"))),
+    }
 }
 
 
@@ -2720,16 +2975,17 @@ pub async fn identity_flag_order_before_followFlag(
         ids = new_ids;
     }
 
+    let mut order_result: u64 = 0;
     for (index, id) in ids.iter().enumerate() {
         let order_num = (index + 1) as i32;
-        client
+        order_result += client
             .execute("UPDATE x_org_identity SET order_number = $1 WHERE id = $2", &[&order_num, id])
             .await
             .map_err(|_| AppError::Internal)?;
     }
 
     Ok(Json(ActionResult::success(Value::Object(
-        serde_json::Map::from_iter([("success".to_string(), Value::Bool(true))]),
+        serde_json::Map::from_iter([("success".to_string(), Value::Bool(order_result > 0))]),
     ))))
 }
 

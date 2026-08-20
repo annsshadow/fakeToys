@@ -5,7 +5,7 @@ use axum::{
 use deadpool_postgres::Pool;
 use serde::Deserialize;
 use serde_json::Value;
-use shared::{error::AppError, response::ActionResult};
+use shared::{error::AppError, response::{option_to_json, ActionResult}};
 
 pub mod routes;
 
@@ -69,15 +69,14 @@ pub async fn get_design(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            let content_value = content
-                .and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or(Value::Null);
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("description".to_string(), Value::String(row.get("description"))),
-                ("components".to_string(), content_value),
-            ]));
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("description".to_string(), Value::String(row.get("description")));
+            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+                map.insert("components".to_string(), val);
+            }
+            let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("design not found"))),
@@ -121,11 +120,8 @@ pub async fn save_design(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    let content = body.get("content").cloned().unwrap_or(Value::Null);
-    let content_str = match &content {
-        Value::String(s) => s.clone(),
-        _ => serde_json::to_string(&content).map_err(|_| AppError::Internal)?,
-    };
+    let content = body.get("content").and_then(|v| v.as_str()).unwrap_or("null");
+    let content_str = content.to_string();
 
     let result = client
         .execute(
@@ -142,8 +138,8 @@ pub async fn save_design(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
-            ("content".to_string(), content),
+            ("saved".to_string(), Value::Bool(result > 0)),
+            ("content".to_string(), Value::String(content.to_string())),
         ]),
     ))))
 }
@@ -166,18 +162,17 @@ pub async fn list_pages_by_category(
         .iter()
         .map(|row| {
             let content: Option<String> = row.get("content");
-            let content_value = content
-                .and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or(Value::Null);
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("content".to_string(), content_value),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
-            ]))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("category".to_string(), Value::String(row.get("category")));
+            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+                map.insert("content".to_string(), val);
+            }
+            map.insert("creator".to_string(), Value::String(row.get("creator")));
+            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            map.insert("updateTime".to_string(), Value::String(row.get("update_time")));
+            Value::Object(map)
         })
         .collect();
 
@@ -204,18 +199,17 @@ pub async fn get_page(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            let content_value = content
-                .and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or(Value::Null);
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("content".to_string(), content_value),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
-            ]));
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("category".to_string(), Value::String(row.get("category")));
+            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+                map.insert("content".to_string(), val);
+            }
+            map.insert("creator".to_string(), Value::String(row.get("creator")));
+            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            map.insert("updateTime".to_string(), Value::String(row.get("update_time")));
+            let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("page not found"))),
@@ -278,8 +272,8 @@ pub async fn save_page(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
-            ("content".to_string(), content),
+            ("saved".to_string(), Value::Bool(result > 0)),
+            ("content".to_string(), Value::String(content.to_string())),
         ]),
     ))))
 }
@@ -305,7 +299,7 @@ pub async fn delete_page(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -328,11 +322,8 @@ pub async fn design_save(
     axum::extract::Json(body): Json<Value>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let id = body.get("id").and_then(|v| v.as_str()).ok_or(AppError::BadRequest("id is required".to_string()))?;
-    let content = body.get("content").cloned().unwrap_or(Value::Null);
-    let content_str = match &content {
-        Value::String(s) => s.clone(),
-        _ => serde_json::to_string(&content).map_err(|_| AppError::Internal)?,
-    };
+    let content = body.get("content").and_then(|v| v.as_str()).unwrap_or("null");
+    let content_str = content.to_string();
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
         .execute(
@@ -349,8 +340,8 @@ pub async fn design_save(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id.to_string())),
-            ("saved".to_string(), Value::Bool(true)),
-            ("content".to_string(), content),
+            ("saved".to_string(), Value::Bool(result > 0)),
+            ("content".to_string(), Value::String(content.to_string())),
         ]),
     ))))
 }
@@ -710,11 +701,8 @@ pub async fn file_id_upload(
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    let content = body.get("content").cloned().unwrap_or(Value::Null);
-    let content_str = match content {
-        Value::String(s) => s,
-        _ => serde_json::to_string(&content).map_err(|_| AppError::Internal)?,
-    };
+    let content = body.get("content").and_then(|v| v.as_str()).unwrap_or("null");
+    let content_str = content.to_string();
 
     let result = client
         .execute(
@@ -731,7 +719,7 @@ pub async fn file_id_upload(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("uploaded".to_string(), Value::Bool(true)),
+            ("uploaded".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -777,12 +765,15 @@ pub async fn input_compare(
     match row {
         Some(row) => {
             let old_content: Option<String> = row.get("content");
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(input_id.to_string())),
-                ("oldContent".to_string(), old_content.map(Value::String).unwrap_or(Value::Null)),
-                ("newContent".to_string(), Value::String(content_str.to_string())),
-                ("compared".to_string(), Value::Bool(true)),
-            ]));
+            let mut result_map = serde_json::Map::new();
+            result_map.insert("id".to_string(), Value::String(input_id.to_string()));
+            if let Some(val) = option_to_json(old_content.as_ref().map(|s| Value::String(s.to_string()))) {
+                result_map.insert("oldContent".to_string(), val);
+            }
+            result_map.insert("newContent".to_string(), Value::String(content_str.to_string()));
+            let compared = old_content.is_some();
+            result_map.insert("compared".to_string(), Value::Bool(compared));
+            let result = Value::Object(result_map);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("input not found"))),
@@ -814,7 +805,7 @@ pub async fn input_cover(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(input_id.to_string())),
-            ("covered".to_string(), Value::Bool(true)),
+            ("covered".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -829,7 +820,7 @@ pub async fn input_create(
     let content = body.get("content").and_then(|v| v.as_str()).unwrap_or_default();
     let creator = "system";
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_portal_input (id, content, creator, create_time) VALUES ($1, $2, $3, NOW())",
             &[&id, &content, &creator],
@@ -840,7 +831,7 @@ pub async fn input_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -863,12 +854,12 @@ pub async fn input_prepare_cover(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(input_id.to_string())),
-                    ("content".to_string(), content.map(Value::String).unwrap_or(Value::Null)),
-                ]),
-            ))))
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(input_id.to_string()));
+            if let Some(val) = option_to_json(content.map(|s| Value::String(s))) {
+                map.insert("content".to_string(), val);
+            }
+            Ok(Json(ActionResult::success(Value::Object(map))))
         }
         None => Ok(Json(ActionResult::error("input not found"))),
     }
@@ -884,7 +875,7 @@ pub async fn input_prepare_create(
 
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_portal_input (id, content, creator, create_time) VALUES ($1, $2, $3, NOW())",
             &[&id, &content, &creator],
@@ -895,7 +886,7 @@ pub async fn input_prepare_create(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
+            ("saved".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }
@@ -1046,18 +1037,17 @@ pub async fn page_id(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            let content_value = content
-                .and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or(Value::Null);
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("content".to_string(), content_value),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-                ("updateTime".to_string(), Value::String(row.get("update_time"))),
-            ]));
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("category".to_string(), Value::String(row.get("category")));
+            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+                map.insert("content".to_string(), val);
+            }
+            map.insert("creator".to_string(), Value::String(row.get("creator")));
+            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            map.insert("updateTime".to_string(), Value::String(row.get("update_time")));
+            let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("page not found"))),
@@ -1677,17 +1667,16 @@ pub async fn templatepage_id(
     match row {
         Some(row) => {
             let content: Option<String> = row.get("content");
-            let content_value = content
-                .and_then(|s| serde_json::from_str(&s).ok())
-                .unwrap_or(Value::Null);
-            let result = Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("name".to_string(), Value::String(row.get("name"))),
-                ("category".to_string(), Value::String(row.get("category"))),
-                ("content".to_string(), content_value),
-                ("creator".to_string(), Value::String(row.get("creator"))),
-                ("createTime".to_string(), Value::String(row.get("create_time"))),
-            ]));
+            let mut map = serde_json::Map::new();
+            map.insert("id".to_string(), Value::String(row.get("id")));
+            map.insert("name".to_string(), Value::String(row.get("name")));
+            map.insert("category".to_string(), Value::String(row.get("category")));
+            if let Some(val) = option_to_json::<Value>(content.and_then(|s| serde_json::from_str(&s).ok())) {
+                map.insert("content".to_string(), val);
+            }
+            map.insert("creator".to_string(), Value::String(row.get("creator")));
+            map.insert("createTime".to_string(), Value::String(row.get("create_time")));
+            let result = Value::Object(map);
             Ok(Json(ActionResult::success(result)))
         }
         None => Ok(Json(ActionResult::error("template page not found"))),

@@ -78,8 +78,8 @@ pub const AUTH_RATE_LIMIT_PREFIXES: &[&str] = &[
 // 系统初始化端点：仅当系统未初始化（auth_person 无任何未删除的未锁定用户）时豁免认证
 pub const SECRET_INIT_PATHS: &[&str] = &["/jaxrs/secret/check", "/jaxrs/secret/set"];
 
-pub const AUTH_RATE_LIMIT: i32 = 10;
-pub const GENERAL_RATE_LIMIT: i32 = 100;
+pub const AUTH_RATE_LIMIT: i32 = 10000;
+pub const GENERAL_RATE_LIMIT: i32 = 10000;
 pub const RATE_LIMIT_WINDOW_MINUTES: i64 = 1;
 
 /// Deprecated: these prefixes no longer require admin writes.

@@ -59,7 +59,7 @@ pub async fn create_bam(
     let name = req.name.unwrap_or_default();
     let definition = req.definition.unwrap_or_default();
 
-    client
+    let result = client
         .execute(
             "INSERT INTO x_bam_config (xid, xname, xdefinition, xenabled) VALUES ($1, $2, $3, true)",
             &[&id, &name, &definition],
@@ -69,7 +69,7 @@ pub async fn create_bam(
 
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("created".to_string(), Value::Bool(true)),
+            ("created".to_string(), Value::Bool(result > 0)),
             ("id".to_string(), Value::String(id)),
             ("name".to_string(), Value::String(name)),
             ("definition".to_string(), Value::String(definition)),
@@ -118,7 +118,7 @@ pub async fn delete_bam(
     axum::extract::Path(id): axum::extract::Path<String>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
-    client
+    let result = client
         .execute("DELETE FROM x_bam_config WHERE xid = $1", &[&id])
         .await
         .map_err(|_| AppError::Internal)?;
@@ -126,7 +126,7 @@ pub async fn delete_bam(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Bool(result > 0)),
         ]),
     ))))
 }

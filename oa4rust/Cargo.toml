@@ -109,8 +109,11 @@ organization_assemble_personal = { path = "crates/organization_assemble_personal
 processplatform_assemble_bam = { path = "crates/processplatform_assemble_bam" }
 processplatform_assemble_designer = { path = "crates/processplatform_assemble_designer" }
 query_core_express = { path = "crates/query_core_express" }
- openapi = { path = "crates/openapi" }
- query_service_processing = { path = "crates/query_service_processing" }
+  openapi = { path = "crates/openapi" }
+  query_service_processing = { path = "crates/query_service_processing" }
+  realtime = { path = "crates/realtime" }
+  preview = { path = "crates/preview" }
+  oa4rust_signature = { path = "crates/signature" }
 
 
 [workspace]
@@ -202,7 +205,14 @@ members = [
     "crates/query_core_express",
     "crates/query_service_processing",
     "crates/mcp_server",
+    "crates/parity",
     "crates/openapi",
+    "crates/realtime",
+    "crates/preview",
+    "crates/signature",
+    "crates/search",
+    "crates/captcha_store",
+    "crates/sms",
 ]
 resolver = "2"
 
@@ -226,9 +236,11 @@ chrono.workspace = true
 anyhow.workspace = true
 tracing.workspace = true
 serde.workspace = true
+mysql_async = "0.37.0"
+mysql_common = "0.37"
 
 [workspace.dependencies]
-axum = { version = "0.8", features = ["macros", "json"] }
+axum = { version = "0.8", features = ["macros", "json", "ws"] }
 tokio = { version = "1", features = ["full"] }
  sea-orm = { version = "1.0", features = ["runtime-tokio-rustls", "sqlx-postgres", "macros", "with-chrono", "with-uuid"] }
 deadpool-postgres = "0.14"
@@ -246,18 +258,27 @@ base64 = "0.22"
 aes-gcm = "0.10"
 uuid = { version = "1", features = ["v4"] }
 hmac = "0.12"
-sha2 = "0.10"
-sha1 = "0.10"
-hex = "0.4"
+  sha2 = { version = "0.10", features = ["oid"] }
+  sha1 = "0.10"
+  hex = "0.4"
+  digest = { version = "0.10", features = ["oid"] }
 anyhow = "1"
 chrono = { version = "0.4", features = ["serde"] }
 md5 = "0.7"
 urlencoding = "2"
  captcha = "1.0.0"
- reqwest = { version = "0.12", features = ["json", "rustls-tls"] }
+  reqwest = { version = "0.12", features = ["json", "rustls-tls", "multipart"] }
  async-trait = "0.1"
  sqlparser = "0.51"
  sysinfo = "0.33"
- utoipa = { version = "4", features = ["axum_extras"] }
- utoipa-swagger-ui = { version = "7", features = ["axum"] }
- openapi = { path = "crates/openapi" }
+  utoipa = { version = "4", features = ["axum_extras"] }
+  utoipa-swagger-ui = { version = "7", features = ["axum"] }
+  openapi = { path = "crates/openapi" }
+  redis = { version = "0.25", features = ["tokio-comp", "connection-manager"] }
+  futures-util = "0.3"
+  lopdf = "0.32"
+  x509-parser = "0.16"
+  rsa = "0.9"
+  signature = "2"
+  p256 = "0.13"
+

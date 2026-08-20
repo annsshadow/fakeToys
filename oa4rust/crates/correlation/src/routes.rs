@@ -51,24 +51,18 @@ pub async fn list_cms_correlations(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("fromBundle".to_string(), Value::String(row.get("from_bundle"))),
-                ("targetBundle".to_string(), Value::String(row.get("target_bundle"))),
-                ("person".to_string(), Value::String(row.get("person"))),
-                (
-                    "site".to_string(),
-                    row.get::<_, Option<String>>("site")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "orderNumber".to_string(),
-                    row.get::<_, Option<i32>>("order_number")
-                        .map(|n| Value::Number(serde_json::Number::from(n)))
-                        .unwrap_or(Value::Null),
-                ),
-            ]))
+            let mut obj = serde_json::Map::new();
+            obj.insert("id".to_string(), Value::String(row.get("id")));
+            obj.insert("fromBundle".to_string(), Value::String(row.get("from_bundle")));
+            obj.insert("targetBundle".to_string(), Value::String(row.get("target_bundle")));
+            obj.insert("person".to_string(), Value::String(row.get("person")));
+            if let Some(site) = row.get::<_, Option<String>>("site") {
+                obj.insert("site".to_string(), Value::String(site));
+            }
+            if let Some(n) = row.get::<_, Option<i32>>("order_number") {
+                obj.insert("orderNumber".to_string(), Value::Number(serde_json::Number::from(n)));
+            }
+            Value::Object(obj)
         })
         .collect();
 
@@ -107,24 +101,18 @@ pub async fn list_process_platform_correlations(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
-            Value::Object(serde_json::Map::from_iter([
-                ("id".to_string(), Value::String(row.get("id"))),
-                ("fromBundle".to_string(), Value::String(row.get("from_bundle"))),
-                ("targetBundle".to_string(), Value::String(row.get("target_bundle"))),
-                ("person".to_string(), Value::String(row.get("person"))),
-                (
-                    "site".to_string(),
-                    row.get::<_, Option<String>>("site")
-                        .map(Value::String)
-                        .unwrap_or(Value::Null),
-                ),
-                (
-                    "orderNumber".to_string(),
-                    row.get::<_, Option<i32>>("order_number")
-                        .map(|n| Value::Number(serde_json::Number::from(n)))
-                        .unwrap_or(Value::Null),
-                ),
-            ]))
+            let mut obj = serde_json::Map::new();
+            obj.insert("id".to_string(), Value::String(row.get("id")));
+            obj.insert("fromBundle".to_string(), Value::String(row.get("from_bundle")));
+            obj.insert("targetBundle".to_string(), Value::String(row.get("target_bundle")));
+            obj.insert("person".to_string(), Value::String(row.get("person")));
+            if let Some(site) = row.get::<_, Option<String>>("site") {
+                obj.insert("site".to_string(), Value::String(site));
+            }
+            if let Some(n) = row.get::<_, Option<i32>>("order_number") {
+                obj.insert("orderNumber".to_string(), Value::Number(serde_json::Number::from(n)));
+            }
+            Value::Object(obj)
         })
         .collect();
 

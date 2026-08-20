@@ -422,12 +422,21 @@ pub async fn save_layout(
         return Ok(Json(ActionResult::error("layout not found")));
     }
 
+    let row = client
+        .query_one(
+            "SELECT id, name, category, content, update_time FROM x_portal_layout WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("id".to_string(), Value::String(id)),
-            ("saved".to_string(), Value::Bool(true)),
-            ("name".to_string(), Value::String(name)),
-            ("content".to_string(), Value::String(content)),
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("category".to_string(), Value::String(row.get("category"))),
+            ("content".to_string(), Value::String(row.get("content"))),
+            ("updateTime".to_string(), Value::String(row.get("update_time"))),
         ]),
     ))))
 }
@@ -453,7 +462,7 @@ pub async fn delete_layout(
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
             ("id".to_string(), Value::String(id)),
-            ("deleted".to_string(), Value::Bool(true)),
+            ("deleted".to_string(), Value::Number(serde_json::Number::from(result as i64))),
         ]),
     ))))
 }
@@ -548,11 +557,14 @@ pub async fn dict_dictFlag_portal_portalFlag_data(
     match row {
         Some(row) => {
             let app_data: Option<String> = row.get("app_data");
+            let mut entries = vec![
+                ("id".to_string(), Value::String(row.get("id"))),
+            ];
+            if let Some(data) = app_data {
+                entries.push(("data".to_string(), Value::String(data)));
+            }
             Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("data".to_string(), app_data.map(Value::String).unwrap_or(Value::Null)),
-                ]),
+                serde_json::Map::from_iter(entries),
             ))))
         }
         None => Ok(Json(ActionResult::error("dict not found"))),
@@ -578,12 +590,15 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data(
     match row {
         Some(row) => {
             let app_data: Option<String> = row.get("app_data");
+            let mut entries = vec![
+                ("id".to_string(), Value::String(row.get("id"))),
+                ("path".to_string(), Value::String(_path)),
+            ];
+            if let Some(data) = app_data {
+                entries.push(("data".to_string(), Value::String(data)));
+            }
             Ok(Json(ActionResult::success(Value::Object(
-                serde_json::Map::from_iter([
-                    ("id".to_string(), Value::String(row.get("id"))),
-                    ("path".to_string(), Value::String(_path)),
-                    ("data".to_string(), app_data.map(Value::String).unwrap_or(Value::Null)),
-                ]),
+                serde_json::Map::from_iter(entries),
             ))))
         }
         None => Ok(Json(ActionResult::error("dict not found"))),
@@ -651,12 +666,23 @@ pub async fn dict_dictFlag_portal_portalFlag_path_data_mockputtopost(
         return Ok(Json(ActionResult::error("dict not found")));
     }
 
+    let row = client
+        .query_one(
+            "SELECT id, name, app_name, key_name, app_data, creator, update_time FROM x_portal_dict WHERE flag = $1 AND portal_flag = $2 AND deleted_at IS NULL",
+            &[&dict_flag, &portal_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
     Ok(Json(ActionResult::success(Value::Object(
         serde_json::Map::from_iter([
-            ("flag".to_string(), Value::String(dict_flag)),
-            ("portalFlag".to_string(), Value::String(portal_flag)),
-            ("path".to_string(), Value::String(_path)),
-            ("updated".to_string(), Value::Bool(true)),
+            ("id".to_string(), Value::String(row.get("id"))),
+            ("name".to_string(), Value::String(row.get("name"))),
+            ("appName".to_string(), Value::String(row.get("app_name"))),
+            ("keyName".to_string(), Value::String(row.get("key_name"))),
+            ("appData".to_string(), Value::String(row.get("app_data"))),
+            ("creator".to_string(), Value::String(row.get("creator"))),
+            ("updateTime".to_string(), Value::String(row.get("update_time"))),
         ]),
     ))))
 }

@@ -36,16 +36,17 @@ pub async fn component_list_all(
     let data: Vec<Value> = rows
         .iter()
         .map(|row| {
+            let order_number = row.get::<_, Option<i32>>("order_number")
+                .map(|v| ("orderNumber".to_string(), Value::Number(serde_json::Number::from(v))));
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("visible".to_string(), Value::Bool(row.get("visible"))),
-                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
                 ("path".to_string(), Value::String(row.get("path"))),
                 ("iconPath".to_string(), Value::String(row.get("icon_path"))),
-            ]))
+            ].into_iter().chain(order_number)))
         })
         .collect();
 
@@ -70,16 +71,17 @@ pub async fn component_get(
 
     match row {
         Some(row) => {
+            let order_number = row.get::<_, Option<i32>>("order_number")
+                .map(|v| ("orderNumber".to_string(), Value::Number(serde_json::Number::from(v))));
             Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("id"))),
                 ("name".to_string(), Value::String(row.get("name"))),
                 ("title".to_string(), Value::String(row.get("title"))),
                 ("type".to_string(), Value::String(row.get("type"))),
                 ("visible".to_string(), Value::Bool(row.get("visible"))),
-                ("orderNumber".to_string(), row.get::<_, Option<i32>>("order_number").map(|v| Value::Number(serde_json::Number::from(v))).unwrap_or(Value::Null)),
                 ("path".to_string(), Value::String(row.get("path"))),
                 ("iconPath".to_string(), Value::String(row.get("icon_path"))),
-            ])))))
+            ].into_iter().chain(order_number))))))
         }
         None => Err(AppError::NotFound),
     }
