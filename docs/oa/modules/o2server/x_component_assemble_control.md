@@ -17,6 +17,12 @@
 - com.x.component.assemble.control.jaxrs.component.ActionCreate
 - com.x.component.assemble.control.jaxrs.component.ActionDelete
 
+## Key Flows
+
+- 组件 CRUD：`create|save|delete` 操作 `x_component`（name/type，软删 deleted_at）；`delete/all` 批量软删；`status/list` 统计 total/active/deleted
+- 分类统计：`list/control/categories` 对 `CPT_COMPONENT` DISTINCT type 并逐类 COUNT 判定 enabled，type='system' 映射为 System Components
+- 控制配置：`get/update control/config` 对 `x_component_assemble_control_config`（id='default'）upsert enabled/maxComponentCount/allowCustomComponents
+
 ## Dependencies
 
 
@@ -25,6 +31,11 @@
 - x_organization_core_entity
 - x_organization_core_express
 - x_component_core_entity
+
+**Rust（oa4rust/crates/component_assemble_control）：**
+
+- 内部 path 依赖：shared
+- 关键外部依赖：axum、tokio、deadpool-postgres、serde/serde_json、uuid、tower
 
 ## REST Endpoints
 

@@ -17,6 +17,12 @@
 - com.x.program.center.CompareServiceModule
 - com.x.program.center.Context
 
+## Key Flows
+
+- 应用与风格：`GET /jaxrs/program/applications`、`appstyle/current/style` 查 `x_applications`（name/app_id/disable），current_style 取前 3 条派生 portalList；`center/regist_applications` 注册应用
+- Agent 与脚本：`agent/*` 系列查 `x_program_agent`（deleted_at IS NULL）取 flag 并支持 enable/disable/execute；`script/list|paging|flag|id` 查 `x_program_script`
+- 数据结构与定时任务：`datastructure/modules/all` 联查 `x_program_module` LEFT JOIN `x_program_field` 统计字段数并按 entity 映射 className；`schedule/fire/{id}` 向 `x_program_schedule_log` INSERT 'fired' 记录，schedule_report/list 汇总日志
+
 ## Dependencies
 
 
@@ -32,6 +38,11 @@
 - x_organization_core_express
 - x_message_core_entity
 - mysql-connector-j
+
+**Rust（oa4rust/crates/program_center）：**
+
+- 内部 path 依赖：shared
+- 关键外部依赖：axum、tokio、deadpool-postgres、bcrypt、base64、uuid、chrono、md5、urlencoding
 
 ## REST Endpoints
 
