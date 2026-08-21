@@ -1,5 +1,5 @@
 use axum::{
-    routing::{delete, get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use deadpool_postgres::Pool;
@@ -104,5 +104,8 @@ pub fn meeting_assemble_control_routes(pool: Pool) -> Router {
         .route("/jaxrs/meeting/assemble/control/room/list/like/{key}", get(crate::room_list_like_key))
         .route("/jaxrs/meeting/assemble/control/room/list/like/pinyin/{key}", get(crate::room_list_like_pinyin_key))
         .route("/jaxrs/meeting/assemble/control/room/list/pinyininitial/{key}", get(crate::room_list_pinyininitial_key))
+        .route("/jaxrs/meeting/assemble/control/meeting/delete/{id}", delete(delete_meeting))
+        .route("/jaxrs/meeting/assemble/control/meeting/{id}/delete/invite", delete(meeting_id_delete_invite))
+        .route("/jaxrs/meeting/assemble/control/meeting/save/{id}", put(save_meeting))
         .layer(axum::Extension(pool))
 }

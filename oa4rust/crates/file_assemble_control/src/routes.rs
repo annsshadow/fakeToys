@@ -12,7 +12,7 @@ use crate::{
     attachment2_id_binary_base64, attachment2_id_download, attachment2_id_download_image_width_width_height_height, attachment2_id_download_stream, attachment2_id_image_scale_scale_binary_base64, attachment2_id_image_width_width_height_height_binary_base64, complex_folder_id, complex_top, editor_list, file_clean_unused_referencetype_cmsdocument_manage,
     file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale, file_list_referencetype, file_list_referencetype_referenceType_reference_reference, file_list_unused_referencetype_cmsdocument_manage, file_list_id_next_count, file_list_id_next_count_all, file_list_id_next_count_referencetype_referenceType, file_list_id_prev_count, file_list_id_prev_count_all, file_list_id_prev_count_referencetype_referenceType,
     file_referencetype_referenceType_reference_reference, file_id, file_id_binary_base64, file_id_download, folder_list_top, folder_list_id, folder_id, folder2_batch_download, folder2_list_top, folder2_list_id,
-    folder2_id, folder2_id_download, recycle_id, share_download_share_shareId_file_fileId, share_list_att_share_shareId_folder_folderId, share_list_folder_share_shareId_folder_folderId, share_share_shareId_file_fileId_folder_folderId, share_shield_id, share_id, share_id_password_password,};
+    folder2_id, folder2_id_download, recycle_id, share_download_share_shareId_file_fileId, share_list_att_share_shareId_folder_folderId, share_list_folder_share_shareId_folder_folderId, share_share_shareId_file_fileId_folder_folderId, share_shield_id, share_id, share_id_password_password,attachment_id_update, attachment_id_update_callback_callback, recycle_id_delete, };
 
 
 pub fn router(pool: Pool) -> Router {
@@ -94,5 +94,12 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/recycle/resume/{id}", post(crate::recycle_id_resume))
         .route("/jaxrs/share/list/my2/{shareType}/{fileType}", get(crate::share_list_my2_shareType_fileType))
         .route("/jaxrs/share/list/to/me2/{fileType}", get(crate::share_list_to_me2_fileType))
+        .route("/jaxrs/attachment/update/{id}", put(attachment_id_update))
+        .route("/jaxrs/attachment/update/callback/callback/{id}", put(attachment_id_update_callback_callback))
+        .route("/jaxrs/file/assemble/control/file/delete/{id}", delete(delete_file))
+        .route("/jaxrs/file/core/entity/file/delete/{id}", delete(delete_file_entity))
+        .route("/jaxrs/recycle/delete/{id}", delete(recycle_id_delete))
+        .route("/jaxrs/file/assemble/control/update/control/config", put(update_control_config))
+        .route("/jaxrs/file/core/entity/file/update/{id}", put(update_file_entity))
 .layer(Extension(pool))
 }
