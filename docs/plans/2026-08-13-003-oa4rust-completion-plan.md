@@ -161,3 +161,24 @@ scope: 将 oa4rust 从"70% 壳"推进到可生产接管 oa/o2server 的分阶段
 - 复用 `2026-08-13-001-feat-handler-test-coverage-99-plan.md` 的测试框架，但**要求**其测试改为连库（消除"无库 99%"的虚假覆盖）。
 - 复用 `REALIZE_RUNBOOK.md` 的 handler 真实化模式与 `docs/solutions` 的 CRUD/RBAC/IDOR 约定。
 - 不冲突 `2026-08-10-002-fix-oa4rust-gap-closure-plan.md`（已完成），本计划在其之上推进深度真实化。
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：active（总路线图，Phase 4 出关判定未达成）
+
+### 分阶段落地状态
+
+- **Phase 0 可构建+可诚实：已完成** —— 编译错误修复（提交 1d866b66 等）；迁移运行器读盘机制（`shared/src/migrate.rs`，启动按序应用 migrations/001..059）；进度口径修正
+- **Phase 1 数据正确性+测试基座：大部分完成** —— docker-compose.yml + setup_test_db.sh + integration_tests（13 场景）在档；mock_pool→真实 DB 测试迁移系列提交在档；Value::Null 由 201 降至实测 15 处（未完全归零）；零测试 crate 已补测（ldap/organization_assemble_authentication/organization_assemble_personal 均有 tests）
+- **Phase 2 核心模块真实化：大部分完成** —— CMS 新增 310 路由（fc937a40）+ 种子数据（c6b53715）；BPMN 事务支持（3ac82662）+ bpmn_process 集成场景；认证生态全量落地（LDAP/企微/钉钉/政务钉钉/验证码/短信）；U2.6 查询/门户深度验证未逐项核验
+- **Phase 3 规模化与高级特性：大部分完成** —— MySQL 集成测试执行修复（004e02d9/d972e010）；Redis session 默认（7710d8af）；全文检索 migration 058；IM 端点（d972e010）、realtime crate、preview crate、PDF 签章链（ae911482）
+- **Phase 4 验证与切换：部分完成** —— 行为契约对比套件（tests/behavior_comparison/）即 U4.1 的升级实现；性能基线 `oa4rust/docs/performance-baseline.md` 在档（U4.2）；灰度脚手架（deploy/nginx.conf、toggle_module.sh、shadow-traffic.sh、rollback-playbook.md、gray-release-playbook.md）全在档，但影子流量观察与切流（U4.3）未实际执行
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+- Value::Null 残留 15 处清理（Phase 1 出关条件未完全满足）
+- U2.6 query/portal 抽样深度审计与浅层 handler 补齐
+- U4.3 影子流量灰度验证与切流执行（脚本就绪，流程未跑）
+- DoD 第 3 条：Java-Rust 端点对齐度提升（当前约 36.6%，见 2026-08-20-001 U4）

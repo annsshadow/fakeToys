@@ -62,3 +62,23 @@ oa4rust 使用 `*_core_entity` crate 定义 SeaORM 实体（`#[sea_orm(table_nam
 5. **多数据库适配、分布式/缓存/搜索**：架构层能力。
 6. **灰度和切换**：从 Java o2server 到 oa4rust 的灰度切换方案与回滚。
 7. **真实 DB 集成测试基座**：将 `parity_sweep.sh` 固化为集成测试，并入 CI。
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：completed
+
+### 已验证完成
+
+- migrations 026-031 全部实测在档（含 rollback 配对）
+- `scripts/parity_sweep.sh` 在档
+- 实体 column_name 修正（cal_calendar / org_definition / org_identity）随实体层落地
+
+### 原 Remaining Work 的去向
+
+- #4 认证生态（LDAP/企微/钉钉）：已由后续认证提供方计划全量落地
+- #5 多数据库/分布式/搜索：MySQL 集成测试修复、Redis session 默认（7710d8af）、全文检索 migration 058 均已落地
+- #7 parity 固化为集成测试：已由 `tests/behavior_comparison/` 行为契约对比套件升级承接
+- #2 Value::Null 清理：201 处降至实测 15 处，残留待清理
+- #1 扩大对账面 / #3 list 之外的真实业务逻辑 / #6 灰度切换：持续性问题，汇入剩余工作汇总计划统一追踪
