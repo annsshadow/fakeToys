@@ -2,7 +2,6 @@
 mod tests {
     use axum::body::Body;
     use axum::http::{Request, Method, StatusCode};
-    use shared::testing::test_pool;
     use tower::util::ServiceExt;
 
     // SKIPPED: join not accessible
@@ -12,8 +11,7 @@ mod tests {
     // SKIPPED: list_rooms not accessible
     #[tokio::test]
     async fn test_ws_handler() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::ws_route();
         let response = app
             .oneshot(
                 Request::builder()
@@ -30,8 +28,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_ws_room_handler() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::ws_route();
         let response = app
             .oneshot(
                 Request::builder()
@@ -48,8 +45,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_ws_stats() {
-        let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::ws_route();
         let response = app
             .oneshot(
                 Request::builder()

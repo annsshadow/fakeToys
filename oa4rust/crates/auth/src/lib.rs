@@ -799,3 +799,13 @@ pub fn router(pool: Pool, rate_limiter: RateLimiter, session_manager: SessionMan
         .layer(Extension(rate_limiter))
         .layer(Extension(session_manager))
 }
+
+#[cfg(test)]
+pub fn test_router(pool: deadpool_postgres::Pool) -> axum::Router {
+    use shared::testing::{mock_pool, test_pool};
+    let pool = test_pool();
+    let rate_limiter = shared::rate_limit::RateLimiter::new();
+    let session_manager = shared::session::SessionManager::with_pool(pool.clone());
+    router(pool, rate_limiter, session_manager)
+}
+

@@ -9,7 +9,7 @@ mod tests {
     #[tokio::test]
     async fn test_bind() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
@@ -29,7 +29,7 @@ mod tests {
     #[tokio::test]
     async fn test_captcha_default() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
@@ -48,7 +48,7 @@ mod tests {
     #[tokio::test]
     async fn test_verify() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
@@ -74,7 +74,7 @@ mod tests {
     #[tokio::test]
     async fn test_unit_list() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
@@ -92,7 +92,7 @@ mod tests {
     #[tokio::test]
     async fn test_role_list() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
@@ -110,7 +110,7 @@ mod tests {
     #[tokio::test]
     async fn test_group_list() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
@@ -149,7 +149,7 @@ mod tests {
     #[tokio::test]
     async fn test_qiyeweixin_jssdk_sign() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
@@ -169,7 +169,7 @@ mod tests {
     #[tokio::test]
     async fn test_sms_send_handler() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
@@ -187,7 +187,7 @@ mod tests {
     #[tokio::test]
     async fn test_sms_verify_handler() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
@@ -212,7 +212,7 @@ mod tests {
     #[tokio::test]
     async fn test_zwdingding_info() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
