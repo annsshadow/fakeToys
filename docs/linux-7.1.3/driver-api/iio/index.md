@@ -1,14 +1,14 @@
 ﻿
-## 宸ヤ笟 I/O锛圛IO锛?
+## 工业 I/O（IIO
 
 
-**鐗堟潈** |copy| 2015 Intel Corporation
+**版权** |copy| 2015 Intel Corporation
 
-鐩綍锛?
+目录
 
-- [绠€浠媇(intro)
-- [鏍稿績](core)
-- [缂撳啿鍖篯(buffers)
-- [瑙﹀彂鍣╙(triggers)
-- [瑙﹀彂缂撳啿鍖篯(triggered-buffers)
-- [纭欢娑堣垂鑰匽(hw-consumer)
+- [简介](intro)
+- [核心](core)
+- [缓冲区](buffers)
+- [触发器](triggers)
+- [触发缓冲区](triggered-buffers)
+- [硬件消费者](hw-consumer)
