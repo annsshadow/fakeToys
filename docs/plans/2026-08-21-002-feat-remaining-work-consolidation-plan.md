@@ -153,6 +153,8 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 **Verification:** `/openapi.json` 含 securitySchemes 定义；`cargo tree` 无 sqlx 节点。
 
+> **执行进展（2026-08-21）：** securitySchemes 已落地——修改生成器 `scripts/gen_openapi_paths.py` 注入 `modifiers(&SecurityAddon)`（HttpBearer），重新生成 1842 路径，`cargo check -p openapi` 通过。**运维风险**：`oa4rust/scripts/` 整目录被 .gitignore 忽略，生成器改动仅存于本地工作副本；若他人用旧版脚本重新生成，securitySchemes 将静默丢失。建议后续将 gen_openapi_paths.py 纳入版本控制（需先调整 .gitignore 策略）。SQLx 底层移除未开始。
+
 ---
 
 ### U9. 测试体系增强四项（P2）
