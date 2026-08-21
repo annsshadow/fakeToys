@@ -17,6 +17,12 @@ AI 管控模块，处理 AI 应用、模型和对话的业务编排。
 - com.x.ai.assemble.control.factory.CmsItemFactory
 - com.x.ai.assemble.control.jaxrs.ActionApplication
 
+## Key Flows
+
+- 对话补全：`POST /jaxrs/ai_assemble_control/chat/completion` → `chat_completion` 校验会话所有权（`x_ai_chat` 的 creator 集合 vs session.person_unique）→ 按 context_window 加载历史 → INSERT user 消息与 assistant 回复入 `x_ai_chat`；有 `AI_API_KEY` 时走 reqwest 调 LLM，否则返回内置回退文案
+- SSE 流式对话：`chat/completion/stream` → `call_llm_stream`（reqwest `bytes_stream` + async-stream 解析增量 chunk）→ 以 axum `Sse<Event>` 逐 token 推送
+- AI 配置管理：`GET/...update/ai/control/config` 读写 `x_ai_mcp_config` WHERE is_base=true（不存在则 INSERT is_base 基线行）；`config/create/model` INSERT INTO `x_ai_model_config`，分页列表按 update_time DESC；用量统计 COUNT `x_ai_file`/`x_ai_index`
+
 ## Dependencies
 
 
@@ -30,6 +36,11 @@ AI 管控模块，处理 AI 应用、模型和对话的业务编排。
 - x_ai_core_entity
 - jersey-media-sse
 - jersey-client
+
+**Rust（oa4rust/crates/ai_assemble_control）：**
+
+- 内部 path 依赖：shared
+- 关键外部依赖：axum、tokio、deadpool-postgres、serde/serde_json、uuid、tower、reqwest（json/rustls-tls/stream）、futures-util、async-stream
 
 ## REST Endpoints
 
