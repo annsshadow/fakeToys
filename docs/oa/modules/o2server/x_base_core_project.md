@@ -27,4 +27,4 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- *No endpoints registered.*

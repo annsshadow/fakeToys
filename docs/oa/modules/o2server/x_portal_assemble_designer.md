@@ -30,4 +30,15 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `POST /jaxrs/portal/assemble/designer/create`
+- `GET /jaxrs/portal/assemble/designer/get/{id}`
+- `GET /jaxrs/portal/assemble/designer/list`
+- `POST /jaxrs/portal/assemble/designer/page/create`
+- `POST /jaxrs/portal/assemble/designer/page/delete/{id}`
+- `GET /jaxrs/portal/assemble/designer/page/list/{category}`
+- `POST /jaxrs/portal/assemble/designer/page/save/{id}`
+- `GET /jaxrs/portal/assemble/designer/page/{id}`
+- `POST /jaxrs/portal/assemble/designer/save/{id}`
+- `GET /jaxrs/portal/design/list`
+- `POST /jaxrs/portal/design/save`
+- `GET /jaxrs/portal/design/{id}`
