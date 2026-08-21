@@ -697,3 +697,24 @@ oa4rust 已完成 83 个 crate 的真实化和 2510 个真实 handler，但 2026
   R28 only constrains "who can manage whose authorization" but does not validate the content of the authorization itself. What can be granted? Are there limits on scope or duration? Risk of privilege escalation through authorization content.
 
   <!-- dedup-key: section="implementation unit 9" title="empower crud missing authorization content validation" evidence="R28 only constrains who can manage whose authorization" -->
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：completed
+
+### 已验证完成
+
+- U1 认证安全基础：`crates/auth/src/` 下 two_factor.rs、safe_logout.rs、check_token.rs、switch_user.rs、captcha.rs、bind.rs 均存在
+- U2 双因素登录 / U3 安全注销 / U7 批量查询端点：随 auth 与 express 模块落地
+- U4 电子签名端点（upload/list/delete）：`crates/signature/` 已建立
+- U5 头像端点 / U6 用户注册：personal/personal_extend crate 在档
+- U8 LDAP 集成：`crates/ldap/src/lib.rs` + `crates/auth/src/ldap_auth.rs`
+- U9 授权管理 CRUD：`crates/empower/`（lib.rs + router.rs）在档，且已在 main.rs 挂载
+- U10 null 桩修复（correlation/hotpic）：correlation/hotpic 测试数据 seed migration 在档
+- 原「Deferred to Implementation」8 条为规划期技术问题（SSO 契约、注册冲突处理、签名存储、MCP 路径参数、OpenAPI tag、3DES key 分发、注销锁粒度、密码兼容），随对应单元实现消解，不作为遗留工作项
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+（本计划自身单元无遗留；文首「Deferred to Follow-Up Work」类遗留由后续计划承接，见各后续计划实现情况小节）

@@ -475,3 +475,23 @@ GET /jaxrs/authentication/sso/client/{client}/token/{token}:
 - **Origin document:** [docs/brainstorms/2026-08-10-oa4rust-auth-and-toolchain-closure-requirements.md](../brainstorms/2026-08-10-oa4rust-auth-and-toolchain-closure-requirements.md)
 - **Related code:** `crates/auth/src/oauth.rs`, `crates/auth/src/sso.rs`, `scripts/gen_mcp_tools.py`, `scripts/gen_openapi_paths.py`
 - **Java reference:** `oa/o2server/x_organization_assemble_authentication/` 对应 Action 类
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：completed
+
+### 已验证完成
+
+- U2-U6 五个登录提供方模块文件全部存在：`crates/auth/src/mpweixin.rs`、`welink.rs`、`zhengwudingding.rs`、`andfx.rs`、`qiyeweixin.rs`
+- U7 SSO GET 端点：`crates/auth/src/sso.rs` 含 GET 处理逻辑
+- U8 路由注册与生成脚本重运行：auth 路由已在 `src/main.rs` 挂载，`crates/mcp_server/src/generated_routes.rs` 在档
+- U1 sso_client 表迁移：随模块落地（对应 migration 文件未单独定位，不作为阻塞项）
+- Deferred 完成：电子签名管理（`crates/signature/` 已建立，后续计划补充 PDF 签章链验证）
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+- Deferred「console 模块完整实现」：console crate 仅 4 个源文件，完整性无法证实
+- Deferred「AI 模块 MCP/文件/索引端点补全」：ai crate 已有 21 处路由注册且 SSE 流式响应已落地（提交 ae911482），细项未逐项核验
+- Deferred「SQLx 完全移除」：workspace 直接依赖已清零，sea-orm 底层仍保留

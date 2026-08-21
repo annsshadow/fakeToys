@@ -500,3 +500,26 @@ WHERE work_id/work = $1
 - **Origin document:** docs/brainstorms/2026-08-11-oa4rust-full-api-gap-closure-comprehensive-requirements.md
 - Related code: crates/query_assemble_surface/src/lib.rs, crates/file_assemble_control/src/lib.rs, crates/processplatform_service_processing/src/lib.rs
 - Related PR: #12
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：completed
+
+### 已验证完成
+
+- U1 路由注册修复（查询视图、文件下载流、工作流处理）：query_assemble_surface / file_assemble_control / processplatform_service_processing 均在档
+- U2 工作流列表分页与复杂信息接口、U3 CMS 数据接口：随对应 crate 落地
+- U4 organization_assemble_authentication 模块：crate 实测存在
+- U5 organization_assemble_personal 模块：crate 实测存在
+- U6 AI 对话补全接口：ai_assemble_control 在档（后续已叠加 SSE 流式，提交 ae911482）
+- U7 门户与查询接口：portal / cms_assemble_control / organization_assemble_control 在档
+- U8 migration 024：`migrations/024_create_gap_closure_tables.sql` 实测存在
+- Deferred 完成：多级递归组织导航（2026-08-11-004 U3）、AI 对话多轮上下文管理（2026-08-11-004 U4）
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+- Deferred「Office 文档预览完整 HTML 渲染引擎」：基础 HTML 预览已落地，xlsx/pptx 等格式仍缺
+- Deferred「BBS 图片附件完整文件存储后端」
+- Deferred「程序中心分发组装接口」：未逐项核验

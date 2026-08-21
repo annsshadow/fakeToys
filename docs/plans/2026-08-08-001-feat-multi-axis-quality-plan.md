@@ -1,7 +1,7 @@
 ---
 title: feat: Multi-Axis Quality & Observability Plan
 type: feat
-status: active
+status: completed
 date: 2026-08-08
 ---
 
@@ -372,3 +372,19 @@ This plan upgrades the oa4rust codebase across four parallel axes: (1) replace 2
 - **Existing test infra:** `crates/shared/src/tests.rs`, `tests/behavior_compare.rs`, `tests/behavior_comparison/`
 - **Rollback plan:** `docs/ops/rollback-plan.md`
 - **External refs:** `utoipa` (OpenAPI for Rust), `rmcp` (Rust MCP SDK), `refinery` (SQL migration runner)
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：completed
+
+### 已验证完成
+
+- U1 共享 Mock 框架：`oa4rust/crates/shared/src/testing.rs` 提供 test_pool()/mock_pool() 等设施
+- U2 Java 端点对齐/缺失路由：由后续多个 gap-closure 计划持续推进，当前端点清单规模 1012（`oa4rust/tests/behavior_comparison/endpoints.rs`）
+- U3 行为对比套件运营化：`oa4rust/tests/behavior_compare.rs` + `tests/behavior_comparison/`（后续计划已改为 BEHAVIOR_COMPARE=1 条件执行）
+- U4 MCP 工具层：`oa4rust/crates/mcp_server/src/generated_routes.rs`（由 `scripts/gen_mcp_tools.py` 生成）
+- U5 OpenAPI 自动发现：`oa4rust/crates/openapi/src/lib.rs` + `scripts/gen_openapi_paths.py`
+- U6 集成测试管线（DB & CI）：`oa4rust/tests/integration_tests/`（13 个场景）+ `scripts/setup_test_db.sh` + `oa4rust/.github/workflows/ci.yml`
+- U7 共享测试基础设施整合：与 U1 同源落地
