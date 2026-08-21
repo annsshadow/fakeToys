@@ -119,6 +119,8 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 **Verification:** 审计报告归档；核心 statement/stat/view 端点连库返回真实数据。
 
+> **执行结论（2026-08-21）：** 抽样审计完成。query_assemble_surface 59 个 handler 中 57 个含真实查库操作（96.6%），核心 view_flag_query_queryFlag/execute/excel 系列均为参数化真实查询；portal 11/11 全部查库（100%）。未发现浅层桩。本单元关闭；穷举式逐 handler 复核收益低，后续随 U2 端点对齐一并覆盖。
+
 ---
 
 ### U6. 存储后端三项（P2）
