@@ -395,3 +395,30 @@ if let Some(api_key) = std::env::var("AI_API_KEY").ok() {
 - Related code: crates/organization_assemble_control/src/lib.rs (lines 457-550, 3176-3177), crates/ai_assemble_control/src/lib.rs (lines 1061-1101), crates/file_assemble_control/src/lib.rs (lines 1298-1316)
 - Related migrations: migrations/008_file_tables.sql, migrations/024_create_gap_closure_tables.sql
 - Related solutions: docs/solutions/architecture-patterns/actionresult-9-field-contract.md, docs/solutions/database-issues/postgresql-uppercase-identifier-trap.md
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：completed
+
+### 已验证完成
+
+- U1 Migration 025 补全缺失列：migrations 目录 025 系列在档
+- U2 SQLx 直接依赖清理：workspace Cargo.toml 实测 0 处 sqlx 直接依赖
+- U3 多级递归组织导航：organization_assemble_control 递归查询已落地
+- U4 AI 对话多轮上下文管理：ai_assemble_control chat_completion 改造落地，且后续叠加 SSE 流式响应（提交 ae911482）
+- U5 Office 文档 HTML 预览：preview crate 在档，.docx HTML 渲染落地
+
+### 无法验证
+
+- Deferred「递归导航的 sub/nested/type 变体」：变体覆盖度未逐项核验
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+- Deferred「Office 文档预览的 .xlsx/.pptx 格式支持」
+- Deferred「SQLx 完全替代（含 sea-orm 底层依赖）」
+
+### Deferred 完成
+
+- Deferred「AI 对话的流式响应（SSE）」：提交 ae911482 落地
