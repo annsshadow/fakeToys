@@ -144,5 +144,8 @@ pub fn authenticator_from_env() -> Option<LdapAuthenticator> {
     LdapConfig::from_env().map(LdapAuthenticator::new)
 }
 
+/// LDAP 用户自动同步（plan002 U7b，env 门控）
+pub mod sync;
+
 #[cfg(test)]
 mod tests_generated;

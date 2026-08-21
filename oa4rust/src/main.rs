@@ -144,6 +144,11 @@ async fn main() -> anyhow::Result<()> {
         tracing::warn!("Redis unreachable; session store and rate limiter using in-memory fallback");
     }
 
+    // plan002 U7b: LDAP_SYNC_ENABLE=true 时启动 LDAP 用户自动同步定时 worker（幂等）
+    if ldap::sync::init_from_env(pool.clone()) {
+        tracing::info!("LDAP user sync worker started (LDAP_SYNC_ENABLE=true)");
+    }
+
     let app = create_app(pool.clone(), session_manager.clone(), rate_limiter.clone()).await?;
 
     // Mount OpenAPI JSON and Swagger UI before other layers

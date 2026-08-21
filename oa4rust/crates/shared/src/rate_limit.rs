@@ -3,8 +3,10 @@ use std::time::{Duration, Instant};
 use tokio::sync::RwLock;
 use tracing::warn;
 
-use anyhow::Context;
 use crate::error::AppError;
+use crate::middleware::rate_limit_distributed::{
+    distributed_rate_key, select_distributed_policy, window_decision, RedisWindowCounter, WindowCounter,
+};
 use crate::redis::RedisPool;
 use redis::AsyncCommands;
 
@@ -15,8 +17,10 @@ use redis::AsyncCommands;
 // RateLimiter 由 main.rs 构造单一实例注入各 router 与速率限制中间件，
 // 统一对认证接口（10 次/分钟/IP）与普通接口（100 次/分钟/IP）限流。
 //
-// Redis 可用时优先使用分布式锁，保证多实例限流一致性；
-// Redis 不可用时降级为内存滑动窗口，不影响既有行为。
+// U7c 门控策略：仅当显式配置 REDIS_URL 时使用 Redis INCR+EXPIRE 分布式
+// 滑动窗口（key = rate:{client_ip}:{window_secs}）替代进程内存计数；
+// Redis 不可达（未配置 / 初始化失败 / 运行期操作失败）时降级回内存限流
+// 并 warn。中间件签名保持不变，策略切换仅发生在 check_rate_limit 内部。
 // ──────────────────────────────────────────────────────────────────────────────
 
 /// Redis 中 rate limit key 的前缀
@@ -29,6 +33,8 @@ pub struct RateLimiter {
     pub attempts: Arc<RwLock<std::collections::HashMap<String, Vec<Instant>>>>,
     /// 可选 Redis 连接池：存在时使用分布式限流（多实例一致性）
     redis_pool: Arc<std::sync::Mutex<Option<RedisPool>>>,
+    /// 测试注入点：覆盖分布式计数器（模拟 Redis / 故障），生产路径为 None
+    window_counter_override: Arc<std::sync::Mutex<Option<Arc<dyn WindowCounter>>>>,
 }
 
 impl Default for RateLimiter {
@@ -42,6 +48,7 @@ impl RateLimiter {
         let limiter = Self {
             attempts: Arc::new(RwLock::new(std::collections::HashMap::new())),
             redis_pool: Arc::new(std::sync::Mutex::new(None)),
+            window_counter_override: Arc::new(std::sync::Mutex::new(None)),
         };
         let limiter_clone = limiter.clone();
         tokio::spawn(async move {
@@ -139,6 +146,26 @@ impl RateLimiter {
         self.redis_pool.lock().unwrap().clone()
     }
 
+    /// 测试注入点：覆盖分布式计数器（模拟 Redis / 故障场景）
+    #[doc(hidden)]
+    pub fn set_window_counter_override_for_test(&self, counter: Option<Arc<dyn WindowCounter>>) {
+        *self.window_counter_override.lock().unwrap() = counter;
+    }
+
+    /// 解析当前生效的分布式窗口计数器。
+    ///
+    /// 门控（U7c）：生产路径仅当 REDIS_URL 已配置时才启用分布式限流；
+    /// 测试显式注入的 override 视为有意模拟，不受环境门控约束。
+    async fn active_window_counter(&self) -> Option<Arc<dyn WindowCounter>> {
+        if let Some(override_counter) = self.window_counter_override.lock().unwrap().clone() {
+            return Some(override_counter);
+        }
+        let derived = self
+            .get_redis_pool()
+            .map(|p| Arc::new(RedisWindowCounter::new(p)) as Arc<dyn WindowCounter>);
+        select_distributed_policy(crate::redis::redis_url_from_env().is_some(), derived)
+    }
+
     /// 清理过期的滑动窗口条目，防止内存泄漏
     pub async fn cleanup(&self) {
         self.cleanup_in_memory().await;
@@ -158,30 +185,25 @@ impl RateLimiter {
 
     /// 检查是否超出频率限制
     ///
-    /// 优先使用 Redis 分布式原子操作；Redis 不可用时降级为内存滑动窗口。
+    /// U7c 策略：REDIS_URL 存在且 Redis 可达时使用分布式滑动窗口
+    /// （INCR+EXPIRE，key = rate:{client_ip}:{window_secs}）；
+    /// Redis 运行期不可达时降级为内存滑动窗口并 warn。
     pub async fn check_rate_limit(&self, key: &str, max_attempts: i32, window_minutes: i64) -> Result<(), AppError> {
-        if let Some(ref redis_pool) = self.get_redis_pool() {
-            let redis_key = format!("{}{}", RATE_LIMIT_KEY_PREFIX, key);
-            let window_seconds = window_minutes * 60;
+        let window_secs = window_minutes * 60;
 
-            let mut guard = redis_pool.0.manager.lock().await;
-            let conn = guard
-                .as_mut()
-                .context("Redis connection manager not initialized")?;
-
-            let current: u64 = conn.incr(&redis_key, 1).await?;
-            if current == 1 {
-                conn.expire::<_, ()>(&redis_key, window_seconds).await?;
+        if let Some(counter) = self.active_window_counter().await {
+            let redis_key = distributed_rate_key(key, window_secs);
+            match counter.incr_window(&redis_key, window_secs).await {
+                Ok(current) => return window_decision(current, max_attempts, window_minutes),
+                Err(e) => {
+                    warn!(
+                        error = %e,
+                        key = %key,
+                        "Redis rate limiter unavailable; falling back to in-memory sliding window"
+                    );
+                    // fall through：降级到进程内存限流
+                }
             }
-            if (current as i32) >= max_attempts {
-                return Err(AppError::BadRequest(
-                    format!(
-                        "rate limit exceeded: {} attempts in last {} minutes",
-                        current, window_minutes
-                    )
-                ));
-            }
-            return Ok(());
         }
 
         self.check_rate_limit_in_memory(key, max_attempts, window_minutes)
