@@ -1,7 +1,7 @@
 ---
 title: OA4Rust 接口审计与测试覆盖率提升
 type: feat
-status: partially_completed
+status: completed
 date: 2026-08-12
 completion: 2026-08-13
 origin: docs/brainstorms/2026-08-12-oa4rust-interface-audit-and-test-coverage-requirements.md

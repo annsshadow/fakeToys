@@ -1,7 +1,7 @@
 ---
 title: OA4Rust 最终缺口补全 — 编译修复与 stub 清理
 type: fix
-status: active
+status: completed
 date: 2026-08-12
 origin: docs/brainstorms/2026-08-12-oa4rust-final-gap-closure-requirements.md
 ---
