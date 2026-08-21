@@ -1,80 +1,80 @@
 ﻿
-## RISC-V Linux 鐨勫悜閲忥紙Vector锛夋墿灞曟敮鎸?
+## RISC-V Linux 的向量（Vector）扩展支
 
 
-鏈枃妗ｇ畝瑕佹杩颁簡 Linux 鎻愪緵缁欑敤鎴风┖闂淬€佺敤浜庢敮鎸?RISC-V 鍚戦噺鎵╁睍浣跨敤鐨勬帴鍙ｃ€?
+本文档简要概述了 Linux 提供给用户空间、用于支RISC-V 向量扩展使用的接口
 
-### 1. prctl() 鎺ュ彛
+### 1. prctl() 接口
 
 
-鏂板浜嗕袱涓?prctl() 璋冪敤锛岀敤浜庤绋嬪簭绠＄悊鍦ㄧ敤鎴风┖闂翠娇鐢?Vector 鐨勫惎鐢ㄧ姸鎬併€傝繖浜涙帴鍙ｇ殑棰勬湡浣跨敤鍑嗗垯鏄负 init 绯荤粺鎻愪緵涓€绉嶆柟寮忥紝鐢ㄤ簬淇敼鍏跺煙涓嬭繍琛岀殑杩涚▼瀵?V 鐨勫彲鐢ㄦ€с€備笉寤鸿鍦ㄥ簱渚嬬▼涓皟鐢ㄨ繖浜涙帴鍙ｏ紝鍥犱负搴撲笉搴旇鐩栫敱鐖惰繘绋嬮厤缃殑绛栫暐銆傛澶栵紝鐢ㄦ埛蹇呴』娉ㄦ剰杩欎簺鎺ュ彛涓嶅彲绉绘鍒伴潪 Linux 浠ュ強闈?RISC-V 鐜锛屽洜姝や笉榧撳姳鍦ㄥ彲绉绘浠ｇ爜涓娇鐢ㄣ€傝鑾峰彇 ELF 绋嬪簭涓?V 鐨勫彲鐢ㄦ€э紝璇疯鍙栬緟鍔╁悜閲忎腑 `ELF_HWCAP` 鐨?`COMPAT_HWCAP_ISA_V` 浣嶃€?
+新增了两prctl() 调用，用于让程序管理在用户空间使Vector 的启用状态。这些接口的预期使用准则是为 init 系统提供一种方式，用于修改其域下运行的进程V 的可用性。不建议在库例程中调用这些接口，因为库不应覆盖由父进程配置的策略。此外，用户必须注意这些接口不可移植到非 Linux 以及RISC-V 环境，因此不鼓励在可移植代码中使用。要获取 ELF 程序V 的可用性，请读取辅助向量中 `ELF_HWCAP` `COMPAT_HWCAP_ISA_V` 位
 
 - prctl(PR_RISCV_V_SET_CONTROL, unsigned long arg)
 
-    璁剧疆璋冪敤绾跨▼鐨?Vector 鍚敤鐘舵€侊紝鍏朵腑鎺у埗鍙傛暟鐢变袱涓?2 浣嶇殑鍚敤鐘舵€佸拰涓€涓敤浜庣户鎵挎ā寮忕殑浣嶇粍鎴愩€傝皟鐢ㄨ繘绋嬬殑鍏朵粬绾跨▼涓嶅彈褰卞搷銆?
+    设置调用线程Vector 启用状态，其中控制参数由两2 位的启用状态和一个用于继承模式的位组成。调用进程的其他线程不受影响
 
-    鍚敤鐘舵€佹槸涓€涓笁鎬佸€硷紝鍚勫崰鐢ㄦ帶鍒跺弬鏁颁腑鐨?2 浣嶇┖闂达細
+    启用状态是一个三态值，各占用控制参数中2 位空间：
 
-    - `PR_RISCV_V_VSTATE_CTRL_DEFAULT`锛氬湪 execve() 鏃朵娇鐢ㄧ郴缁熻寖鍥寸殑榛樿鍚敤鐘舵€併€傜郴缁熻寖鍥寸殑榛樿璁剧疆鍙互閫氳繃 sysctl 鎺ュ彛鎺у埗锛堣涓嬫枃 sysctl 灏忚妭锛夈€?
+    - `PR_RISCV_V_VSTATE_CTRL_DEFAULT`：在 execve() 时使用系统范围的默认启用状态。系统范围的默认设置可以通过 sysctl 接口控制（见下文 sysctl 小节）
 
-    - `PR_RISCV_V_VSTATE_CTRL_ON`锛氬厑璁歌绾跨▼杩愯 Vector銆?
+    - `PR_RISCV_V_VSTATE_CTRL_ON`：允许该线程运行 Vector
 
-    - `PR_RISCV_V_VSTATE_CTRL_OFF`锛氱姝?Vector銆傚湪姝ゆ儏鍐典笅鎵ц Vector 鎸囦护浼氳Е鍙戦櫡闃卞苟瀵艰嚧绾跨▼缁堟銆?
+    - `PR_RISCV_V_VSTATE_CTRL_OFF`：禁Vector。在此情况下执行 Vector 指令会触发陷阱并导致线程终止
 
-    arg锛氭帶鍒跺弬鏁版槸涓€涓敱 3 閮ㄥ垎缁勬垚鐨?5 浣嶅€硷紝鍒嗗埆閫氳繃 3 涓帺鐮佽闂€?
+    arg：控制参数是一个由 3 部分组成5 位值，分别通过 3 个掩码访问
 
-    杩?3 涓帺鐮?PR_RISCV_V_VSTATE_CTRL_CUR_MASK銆丳R_RISCV_V_VSTATE_CTRL_NEXT_MASK 鍜?PR_RISCV_V_VSTATE_CTRL_INHERIT 鍒嗗埆琛ㄧず bit[1:0]銆乥it[3:2] 鍜?bit[4]銆俠it[1:0] 瀵瑰簲璋冪敤绾跨▼鐨勫惎鐢ㄧ姸鎬侊紝bit[3:2] 鐨勮缃彂鐢熷湪涓嬩竴娆?execve() 鏃躲€俠it[4] 瀹氫箟 bit[3:2] 涓缃殑缁ф壙妯″紡銆?
+    3 个掩PR_RISCV_V_VSTATE_CTRL_CUR_MASK、PR_RISCV_V_VSTATE_CTRL_NEXT_MASK PR_RISCV_V_VSTATE_CTRL_INHERIT 分别表示 bit[1:0]、bit[3:2] bit[4]。bit[1:0] 对应调用线程的启用状态，bit[3:2] 的设置发生在下一execve() 时。bit[4] 定义 bit[3:2] 中设置的继承模式
 
-        - `PR_RISCV_V_VSTATE_CTRL_CUR_MASK`锛歜it[1:0]锛氬搴旇皟鐢ㄧ嚎绋嬬殑 Vector 鍚敤鐘舵€併€備竴鏃﹀惎鐢紝璋冪敤绾跨▼鏃犳硶鍏抽棴 Vector銆傚鏋滆鎺╃爜涓殑鍊间负 PR_RISCV_V_VSTATE_CTRL_OFF锛屼絾褰撳墠鍚敤鐘舵€佷笉鏄?off锛屽垯 prctl() 璋冪敤灏嗕互 EPERM 澶辫触銆傚湪姝ゅ璁剧疆 PR_RISCV_V_VSTATE_CTRL_DEFAULT 娌℃湁鏁堟灉锛屽彧鏄皢鍘熷鍚敤鐘舵€佽鍥炪€?
+        - `PR_RISCV_V_VSTATE_CTRL_CUR_MASK`：bit[1:0]：对应调用线程的 Vector 启用状态。一旦启用，调用线程无法关闭 Vector。如果该掩码中的值为 PR_RISCV_V_VSTATE_CTRL_OFF，但当前启用状态不off，则 prctl() 调用将以 EPERM 失败。在此处设置 PR_RISCV_V_VSTATE_CTRL_DEFAULT 没有效果，只是将原始启用状态设回
 
-        - `PR_RISCV_V_VSTATE_CTRL_NEXT_MASK`锛歜it[3:2]锛氬搴旇皟鐢ㄧ嚎绋嬪湪涓嬩竴娆?execve() 绯荤粺璋冪敤鏃剁殑 Vector 鍚敤璁剧疆銆傚鏋滃湪姝ゆ帺鐮佷腑浣跨敤 PR_RISCV_V_VSTATE_CTRL_DEFAULT锛屽垯鍚敤鐘舵€佸皢鍦?execve() 鍙戠敓鏃剁敱绯荤粺鑼冨洿鐨勫惎鐢ㄧ姸鎬佸喅瀹氥€?
+        - `PR_RISCV_V_VSTATE_CTRL_NEXT_MASK`：bit[3:2]：对应调用线程在下一execve() 系统调用时的 Vector 启用设置。如果在此掩码中使用 PR_RISCV_V_VSTATE_CTRL_DEFAULT，则启用状态将execve() 发生时由系统范围的启用状态决定
 
-        - `PR_RISCV_V_VSTATE_CTRL_INHERIT`锛歜it[4]锛歅R_RISCV_V_VSTATE_CTRL_NEXT_MASK 涓缃殑缁ф壙妯″紡銆傚鏋滆缃簡璇ヤ綅锛屽垯鍚庣画鐨?execve() 涓嶄細娓呴櫎 PR_RISCV_V_VSTATE_CTRL_NEXT_MASK 鍜?PR_RISCV_V_VSTATE_CTRL_INHERIT 涓殑璁剧疆銆傝璁剧疆璺ㄧ郴缁熻寖鍥撮粯璁ゅ€肩殑鏇存敼鑰屾寔缁瓨鍦ㄣ€?
+        - `PR_RISCV_V_VSTATE_CTRL_INHERIT`：bit[4]：PR_RISCV_V_VSTATE_CTRL_NEXT_MASK 中设置的继承模式。如果设置了该位，则后续execve() 不会清除 PR_RISCV_V_VSTATE_CTRL_NEXT_MASK PR_RISCV_V_VSTATE_CTRL_INHERIT 中的设置。该设置跨系统范围默认值的更改而持续存在
 
-    杩斿洖鍊硷細
-        - 鎴愬姛鏃惰繑鍥?0锛?
-        - EINVAL锛氫笉鏀寔 Vector锛屾垨褰撳墠/涓嬩竴涓帺鐮佺殑鍚敤鐘舵€佹棤鏁堬紱
-        - EPERM锛氬湪 PR_RISCV_V_VSTATE_CTRL_CUR_MASK 涓叧闂?Vector锛岃€岃皟鐢ㄧ嚎绋嬬殑 Vector 宸插惎鐢ㄣ€?
+    返回值：
+        - 成功时返0
+        - EINVAL：不支持 Vector，或当前/下一个掩码的启用状态无效；
+        - EPERM：在 PR_RISCV_V_VSTATE_CTRL_CUR_MASK 中关Vector，而调用线程的 Vector 已启用
 
-    鎴愬姛鏃讹細
-        - 瀵?PR_RISCV_V_VSTATE_CTRL_CUR_MASK 鐨勬湁鏁堣缃細绔嬪嵆鐢熸晥銆侾R_RISCV_V_VSTATE_CTRL_NEXT_MASK 涓寚瀹氱殑鍚敤鐘舵€佸彂鐢熷湪涓嬩竴娆?execve() 璋冪敤鏃讹紝鎴栬€呭鏋滆缃簡 PR_RISCV_V_VSTATE_CTRL_INHERIT 浣嶏紝鍒欏彂鐢熷湪鎵€鏈夊悗缁殑 execve() 璋冪敤鏃躲€?
-        - 姣忔鎴愬姛鐨勮皟鐢ㄩ兘浼氳鐩栬皟鐢ㄧ嚎绋嬩箣鍓嶇殑涓€娆¤缃€?
+    成功时：
+        - PR_RISCV_V_VSTATE_CTRL_CUR_MASK 的有效设置会立即生效。PR_RISCV_V_VSTATE_CTRL_NEXT_MASK 中指定的启用状态发生在下一execve() 调用时，或者如果设置了 PR_RISCV_V_VSTATE_CTRL_INHERIT 位，则发生在所有后续的 execve() 调用时
+        - 每次成功的调用都会覆盖调用线程之前的一次设置
 
 - prctl(PR_RISCV_V_GET_CONTROL)
 
-    鑾峰彇璋冪敤绾跨▼鐩稿悓鐨?Vector 鍚敤鐘舵€併€備笅涓€娆?execve() 璋冪敤鐨勮缃拰缁ф壙浣嶉兘浼氳 OR 鍦ㄤ竴璧枫€?
+    获取调用线程相同Vector 启用状态。下一execve() 调用的设置和继承位都会被 OR 在一起
 
-    娉ㄦ剰锛孍LF 绋嬪簭鑳藉閫氳繃璇诲彇杈呭姪鍚戦噺涓?`ELF_HWCAP` 鐨?`COMPAT_HWCAP_ISA_V` 浣嶆潵鑾峰彇鑷韩 V 鐨勫彲鐢ㄦ€с€?
+    注意，ELF 程序能够通过读取辅助向量`ELF_HWCAP` `COMPAT_HWCAP_ISA_V` 位来获取自身 V 的可用性
 
-    杩斿洖鍊硷細
-        - 鎴愬姛鏃惰繑鍥為潪璐熷€硷紱
-        - EINVAL锛氫笉鏀寔 Vector銆?
+    返回值：
+        - 成功时返回非负值；
+        - EINVAL：不支持 Vector
 
-### 2. 绯荤粺杩愯鏃堕厤缃紙sysctl锛?
+### 2. 系统运行时配置（sysctl
 
 
-涓轰簡缂撹В淇″彿鏍堟墿灞曞 ABI 鐨勫奖鍝嶏紝鎻愪緵浜嗕竴涓瓥鐣ユ満鍒讹紝渚涚鐞嗗憳銆佸彂琛岀増缁存姢鑰呭拰寮€鍙戣€呬互 sysctl 鏃嬮挳鐨勫舰寮忔帶鍒剁敤鎴风┖闂磋繘绋嬮粯璁ょ殑 Vector 鍚敤鐘舵€侊細
+为了缓解信号栈扩展对 ABI 的影响，提供了一个策略机制，供管理员、发行版维护者和开发者以 sysctl 旋钮的形式控制用户空间进程默认的 Vector 启用状态：
 
 - /proc/sys/abi/riscv_v_default_allow
 
-    鍚戣鏂囦欢鍐欏叆 0 鎴?1 鐨勬枃鏈〃绀猴紝鍙缃柊鍚姩鐨勭敤鎴风┖闂寸▼搴忕殑榛樿绯荤粺鍚敤鐘舵€併€傛湁鏁堝€间负锛?
+    向该文件写入 0 1 的文本表示，可设置新启动的用户空间程序的默认系统启用状态。有效值为
 
-    - 0锛氶粯璁や笉鍏佽鏂拌繘绋嬫墽琛?Vector 浠ｇ爜銆?
-    - 1锛氶粯璁ゅ厑璁告柊杩涚▼鎵ц Vector 浠ｇ爜銆?
+    - 0：默认不允许新进程执Vector 代码
+    - 1：默认允许新进程执行 Vector 代码
 
-    璇诲彇璇ユ枃浠朵細杩斿洖褰撳墠鐨勭郴缁熼粯璁ゅ惎鐢ㄧ姸鎬併€?
+    读取该文件会返回当前的系统默认启用状态
 
-    鍦ㄦ瘡娆?execve() 璋冪敤鏃讹紝鏂拌繘绋嬬殑鍚敤鐘舵€佽璁句负绯荤粺榛樿鍊硷紝闄ら潪锛?
+    在每execve() 调用时，新进程的启用状态被设为系统默认值，除非
 
-      - 璋冪敤杩涚▼璁剧疆浜?PR_RISCV_V_VSTATE_CTRL_INHERIT锛屼笖 PR_RISCV_V_VSTATE_CTRL_NEXT_MASK 涓殑璁剧疆涓嶆槸 PR_RISCV_V_VSTATE_CTRL_DEFAULT銆傛垨鑰咃紝
+      - 调用进程设置PR_RISCV_V_VSTATE_CTRL_INHERIT，且 PR_RISCV_V_VSTATE_CTRL_NEXT_MASK 中的设置不是 PR_RISCV_V_VSTATE_CTRL_DEFAULT。或者，
 
-      - PR_RISCV_V_VSTATE_CTRL_NEXT_MASK 涓殑璁剧疆涓嶆槸 PR_RISCV_V_VSTATE_CTRL_DEFAULT銆?
+      - PR_RISCV_V_VSTATE_CTRL_NEXT_MASK 中的设置不是 PR_RISCV_V_VSTATE_CTRL_DEFAULT
 
-    淇敼绯荤粺榛樿鍚敤鐘舵€佷笉浼氬奖鍝嶄换浣曟湭鍙戣捣 execve() 璋冪敤鐨勭幇鏈夎繘绋嬫垨绾跨▼鐨勫惎鐢ㄧ姸鎬併€?
+    修改系统默认启用状态不会影响任何未发起 execve() 调用的现有进程或线程的启用状态
 
-### 3. 绯荤粺璋冪敤闂寸殑鍚戦噺瀵勫瓨鍣ㄧ姸鎬?
+### 3. 系统调用间的向量寄存器状
 
 
-姝ｅ V 鎵╁睍鐨?1.0 鐗堟湰 [^1^] 鎵€鎸囧嚭鐨勶紝鍚戦噺瀵勫瓨鍣ㄤ細琚郴缁熻皟鐢ㄧ牬鍧忋€?
+正如 V 扩展1.0 版本 [^1^] 所指出的，向量寄存器会被系统调用破坏
 
 1: https://github.com/riscv/riscv-v-spec/blob/master/calling-convention.adoc
