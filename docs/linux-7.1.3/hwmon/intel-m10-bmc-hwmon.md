@@ -1,55 +1,55 @@
 ﻿
-## 鍐呮牳椹卞姩 intel-m10-bmc-hwmon
+## 内核驱动 intel-m10-bmc-hwmon
 
 
-鏀寔鐨勮澶囷細
+支持的设备：
 
- - Intel MAX 10 BMC锛堢敤浜?Intel PAC N3000锛?
+ - Intel MAX 10 BMC（用Intel PAC N3000
    Prefix: 'n3000bmc-hwmon'
 
 Author: Xu Yilun <yilun.xu@intel.com>
 
 
-### 鎻忚堪
+### 描述
 
 
-璇ラ┍鍔ㄤ负 Intel MAX 10 鏉跨鐞嗘帶鍒跺櫒锛圔MC锛夎姱鐗囨坊鍔犱簡娓╁害銆佺數鍘嬨€佺數娴佸拰鍔熻€楃殑璇诲彇鏀寔銆傝 BMC 鑺墖闆嗘垚鍦ㄤ竴浜?Intel 鍙紪绋嬪姞閫熷崱锛圥AC锛変腑銆傚畠杩炴帴鍒颁竴缁勪紶鎰熷櫒鑺墖锛屼互鐩戞帶鏉夸笂涓嶅悓缁勪欢鐨勪紶鎰熷櫒鏁版嵁銆侭MC 鍥轰欢璐熻矗鍦ㄥ叡浜瘎瀛樺櫒涓噰鏍峰拰璁板綍浼犳劅鍣ㄦ暟鎹€備富鏈洪┍鍔ㄤ粠杩欎簺鍏变韩瀵勫瓨鍣ㄤ腑璇诲彇浼犳劅鍣ㄦ暟鎹紝骞朵互 hwmon 鎺ュ彛鐨勫舰寮忔毚闇茬粰鐢ㄦ埛銆?
-璇?BMC 鑺墖浣跨敤 Intel MAX 10 CPLD 瀹炵幇銆傚畠鍙互琚噸鏂扮紪绋嬩负鏌愪簺鍙樹綋锛屼互鏀寔涓嶅悓鐨?Intel PAC銆傝椹卞姩璁捐涓婅兘澶熷尯鍒嗚繖浜涘彉浣擄紝浣嗙洰鍓嶄粎鏀寔鐢ㄤ簬 Intel PAC N3000 鐨?BMC銆?
+该驱动为 Intel MAX 10 板管理控制器（BMC）芯片添加了温度、电压、电流和功耗的读取支持。该 BMC 芯片集成在一Intel 可编程加速卡（PAC）中。它连接到一组传感器芯片，以监控板上不同组件的传感器数据。BMC 固件负责在共享寄存器中采样和记录传感器数据。主机驱动从这些共享寄存器中读取传感器数据，并以 hwmon 接口的形式暴露给用户
+BMC 芯片使用 Intel MAX 10 CPLD 实现。它可以被重新编程为某些变体，以支持不同Intel PAC。该驱动设计上能够区分这些变体，但目前仅支持用于 Intel PAC N3000 BMC
 
-### Sysfs 灞炴€?
+### Sysfs 属
 
-鏀寔浠ヤ笅灞炴€э細
+支持以下属性：
 
-- Intel MAX 10 BMC锛堢敤浜?Intel PAC N3000锛夛細
-
-======================= =======================================================
-tempX_input             缁勪欢娓╁害锛堢敱 tempX_label 鎸囧畾锛?tempX_max               缁勪欢娓╁害鏈€澶ц瀹氱偣
-tempX_crit              缁勪欢娓╁害涓寸晫璁惧畾鐐?tempX_max_hyst          缁勪欢娓╁害鏈€澶у€肩殑杩熸粸
-tempX_crit_hyst         缁勪欢娓╁害涓寸晫鍊肩殑杩熸粸
-temp1_label             "鏉胯浇娓╁害"
-temp2_label             "FPGA 鑺墖娓╁害"
-temp3_label             "QSFP0 娓╁害"
-temp4_label             "QSFP1 娓╁害"
-temp5_label             "Retimer A 娓╁害"
-temp6_label             "Retimer A SerDes 娓╁害"
-temp7_label             "Retimer B 娓╁害"
-temp8_label             "Retimer B SerDes 娓╁害"
-
-inX_input               缁勪欢鐨勬祴閲忕數鍘嬶紙鐢?inX_label 鎸囧畾锛?in0_label               "QSFP0 渚涚數鐢靛帇"
-in1_label               "QSFP1 渚涚數鐢靛帇"
-in2_label               "FPGA 鏍稿績鐢靛帇"
-in3_label               "12V 鑳屾澘鐢靛帇"
-in4_label               "1.2V 鐢靛帇"
-in5_label               "12V AUX 鐢靛帇"
-in6_label               "1.8V 鐢靛帇"
-in7_label               "3.3V 鐢靛帇"
-
-currX_input             缁勪欢鐨勬祴閲忕數娴侊紙鐢?currX_label 鎸囧畾锛?curr1_label             "FPGA 鏍稿績鐢垫祦"
-curr2_label             "12V 鑳屾澘鐢垫祦"
-curr3_label             "12V AUX 鐢垫祦"
-
-powerX_input            缁勪欢鐨勬祴閲忓姛鑰楋紙鐢?powerX_label 鎸囧畾锛?power1_label            "鏉胯浇鍔熻€?
+- Intel MAX 10 BMC（用Intel PAC N3000）：
 
 ======================= =======================================================
+tempX_input             组件温度（由 tempX_label 指定tempX_max               组件温度最大设定点
+tempX_crit              组件温度临界设定tempX_max_hyst          组件温度最大值的迟滞
+tempX_crit_hyst         组件温度临界值的迟滞
+temp1_label             "板载温度"
+temp2_label             "FPGA 芯片温度"
+temp3_label             "QSFP0 温度"
+temp4_label             "QSFP1 温度"
+temp5_label             "Retimer A 温度"
+temp6_label             "Retimer A SerDes 温度"
+temp7_label             "Retimer B 温度"
+temp8_label             "Retimer B SerDes 温度"
 
-鎵€鏈夊睘鎬у潎涓哄彧璇汇€?
+inX_input               组件的测量电压（inX_label 指定in0_label               "QSFP0 供电电压"
+in1_label               "QSFP1 供电电压"
+in2_label               "FPGA 核心电压"
+in3_label               "12V 背板电压"
+in4_label               "1.2V 电压"
+in5_label               "12V AUX 电压"
+in6_label               "1.8V 电压"
+in7_label               "3.3V 电压"
+
+currX_input             组件的测量电流（currX_label 指定curr1_label             "FPGA 核心电流"
+curr2_label             "12V 背板电流"
+curr3_label             "12V AUX 电流"
+
+powerX_input            组件的测量功耗（powerX_label 指定power1_label            "板载功
+
+======================= =======================================================
+
+所有属性均为只读

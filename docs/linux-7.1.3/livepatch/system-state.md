@@ -1,78 +1,78 @@
-﻿## 绯荤粺鐘舵€佸彉鏇?
+﻿## 系统状态变
 
-涓€浜涚敤鎴烽潪甯镐笉鎰挎剰閲嶅惎绯荤粺銆傝繖灏卞甫鏉ヤ簡鎻愪緵鏇村鐨?livepatch锛堢儹琛ヤ竵锛夊苟鍦ㄥ畠浠箣闂?缁存姢涓€瀹氬吋瀹规€х殑闇€姹傘€?
-浣跨敤绱Н寮忥紙cumulative锛塴ivepatch 鏉ョ淮鎶ゆ洿澶?livepatch 瑕佸鏄撳緱澶氥€傛瘡涓柊鐨?livepatch 浼氬畬鍏ㄦ浛鎹换浣曟洿鏃х殑 livepatch銆傚畠鍙互淇濈暀銆佹坊鍔犮€佺敋鑷崇Щ闄や慨澶嶃€傜敱浜?鍘熷瓙鏇挎崲锛坅tomic replace锛夌壒鎬э紝鐢ㄤ换鎰忎竴涓増鏈殑 livepatch 鏇挎崲鍙︿竴涓増鏈€氬父
-閮芥槸瀹夊叏鐨勩€?
-闂鍙兘鍑哄湪褰卞瓙鍙橀噺锛坰hadow variables锛夊拰鍥炶皟锛坈allbacks锛変笂銆傚畠浠彲鑳芥敼鍙樼郴缁?鐨勮涓烘垨鐘舵€侊紝浠ヨ嚦浜庡洖閫€骞朵娇鐢ㄦ洿鏃х殑 livepatch 鎴栧師濮嬪唴鏍镐唬鐮佷笉鍐嶅畨鍏ㄣ€傛澶栵紝
-浠讳綍鏂扮殑 livepatch 蹇呴』鑳藉妫€娴嬪埌宸插畨瑁呯殑 livepatch 宸茬粡鍋氫簡鍝簺鍙樻洿銆?
-杩欐鏄?livepatch 绯荤粺鐘舵€佽窡韪彂鎸ヤ綔鐢ㄧ殑鍦版柟銆傚畠鍏佽锛?
-  - 瀛樺偍鐢ㄤ簬鎿嶄綔鍜屾仮澶嶇郴缁熺姸鎬佹墍闇€鐨勬暟鎹?
-  - 浣跨敤 change id 涓?version 瀹氫箟 livepatch 涔嬮棿鐨勫吋瀹规€?
+一些用户非常不愿意重启系统。这就带来了提供更多livepatch（热补丁）并在它们之维护一定兼容性的需求
+使用累积式（cumulative）livepatch 来维护更livepatch 要容易得多。每个新livepatch 会完全替换任何更旧的 livepatch。它可以保留、添加、甚至移除修复。由原子替换（atomic replace）特性，用任意一个版本的 livepatch 替换另一个版本通常
+都是安全的
+问题可能出在影子变量（shadow variables）和回调（callbacks）上。它们可能改变系的行为或状态，以至于回退并使用更旧的 livepatch 或原始内核代码不再安全。此外，
+任何新的 livepatch 必须能够检测到已安装的 livepatch 已经做了哪些变更
+这正livepatch 系统状态跟踪发挥作用的地方。它允许
+  - 存储用于操作和恢复系统状态所需的数
+  - 使用 change id version 定义 livepatch 之间的兼容
 
-## 1. Livepatch 绯荤粺鐘舵€?API
+## 1. Livepatch 系统状API
 
 
-绯荤粺鐘舵€佸彲鑳借澶氫釜 livepatch 鍥炶皟鎴栨柊浣跨敤鐨勪唬鐮佷慨鏀广€傚悓鏃跺繀椤昏兘澶熸壘鍒板凡鐢卞凡瀹夎
-livepatch 瀹屾垚鐨勫彉鏇淬€?
-姣忎釜琚慨鏀圭殑鐘舵€佺敱 struct klp_state 鎻忚堪锛屽弬瑙?include/linux/livepatch.h銆?
-姣忎釜 livepatch 瀹氫箟浜嗕竴涓?struct klp_states 鏁扮粍銆傚畠浠垪鍑轰簡璇?livepatch 淇敼鐨?鎵€鏈夌姸鎬併€?
-livepatch 浣滆€呭繀椤讳负姣忎釜 struct klp_state 瀹氫箟浠ヤ笅涓や釜瀛楁锛?
+系统状态可能被多个 livepatch 回调或新使用的代码修改。同时必须能够找到已由已安装
+livepatch 完成的变更
+每个被修改的状态由 struct klp_state 描述，参include/linux/livepatch.h
+每个 livepatch 定义了一struct klp_states 数组。它们列出了livepatch 修改所有状态
+livepatch 作者必须为每个 struct klp_state 定义以下两个字段
   - **id**
 
-    - 鐢ㄤ簬鏍囪瘑鍙楀奖鍝嶇殑绯荤粺鐘舵€佺殑闈為浂鏁板瓧銆?
+    - 用于标识受影响的系统状态的非零数字
   - **version**
 
-    - 鎻忚堪鐢辩粰瀹?livepatch 鏀寔鐨勭郴缁熺姸鎬佸彉鏇村彉浣撶殑鏁板瓧銆?
-鍙互閫氳繃涓や釜鍑芥暟鎿嶄綔绯荤粺鐘舵€侊細
+    - 描述由给livepatch 支持的系统状态变更变体的数字
+可以通过两个函数操作系统状态：
 
   - klp_get_state()
 
-    - 鑾峰彇涓庣粰瀹?livepatch 鍜?state id 鍏宠仈鐨?struct klp_state銆?
+    - 获取与给livepatch state id 关联struct klp_state
   - klp_get_prev_state()
 
-    - 鑾峰彇涓庣粰瀹?feature id 浠ュ強宸插畨瑁?livepatch 鍏宠仈鐨?struct klp_state銆?
-## 2. Livepatch 鍏煎鎬?
+    - 获取与给feature id 以及已安livepatch 关联struct klp_state
+## 2. Livepatch 兼容
 
-绯荤粺鐘舵€佺増鏈敤浜庨槻姝㈠姞杞戒笉鍏煎鐨?livepatch銆傝妫€鏌ュ湪 livepatch 琚惎鐢ㄦ椂杩涜銆?瑙勫垯濡備笅锛?
-  - 浠讳綍鍏ㄦ柊鐨勭郴缁熺姸鎬佷慨鏀归兘鍏佽銆?
-  - 瀵逛簬宸茶淇敼鐨勭郴缁熺姸鎬侊紝鍏佽鐩稿悓鎴栨洿楂樼増鏈殑淇敼銆?
-  - 绱Н寮?livepatch 蹇呴』澶勭悊鏉ヨ嚜宸插畨瑁?livepatch 鐨勬墍鏈夌郴缁熺姸鎬佷慨鏀广€?
-  - 闈炵疮绉紡 livepatch 鍏佽瑙︾宸茶淇敼鐨勭郴缁熺姸鎬併€?
-## 3. 鏀寔鐨勫満鏅?
+系统状态版本用于防止加载不兼容livepatch。该检查在 livepatch 被启用时进行规则如下
+  - 任何全新的系统状态修改都允许
+  - 对于已被修改的系统状态，允许相同或更高版本的修改
+  - 累积livepatch 必须处理来自已安livepatch 的所有系统状态修改
+  - 非累积式 livepatch 允许触碰已被修改的系统状态
+## 3. 支持的场
 
-livepatch 鏈夊叾鐢熷懡鍛ㄦ湡锛岀郴缁熺姸鎬佸彉鏇翠篃鏄姝ゃ€傛瘡涓吋瀹圭殑 livepatch 閮藉繀椤绘敮鎸?浠ヤ笅鍦烘櫙锛?
-  - 褰?livepatch 琚惎鐢ㄣ€佷笖璇ョ姸鎬佸皻鏈姝ｈ鏇挎崲鐨?livepatch 淇敼鏃讹紝淇敼绯荤粺鐘舵€併€?
-  - 褰撳彉鏇村凡鐢辨琚浛鎹㈢殑 livepatch 瀹屾垚鏃讹紝鎺ョ鎴栨洿鏂扮郴缁熺姸鎬佷慨鏀广€?
-  - 褰?livepatch 琚鐢ㄦ椂锛屾仮澶嶅師濮嬬姸鎬併€?
-  - 褰撹浆鎹紙transition锛夎鍥為€€鏃讹紝鎭㈠鍏堝墠鐨勭姸鎬併€傚畠鍙兘鏄師濮嬬郴缁熺姸鎬侊紝涔熷彲鑳?    鏄琚浛鎹㈢殑 livepatch 鎵€鍋氱殑鐘舵€佷慨鏀广€?
-  - 褰撳彂鐢熼敊璇笖 livepatch 鏃犳硶鍚敤鏃讹紝绉婚櫎浠讳綍宸插仛鍑虹殑淇敼銆?
-## 4. 棰勬湡鐢ㄦ硶
+livepatch 有其生命周期，系统状态变更也是如此。每个兼容的 livepatch 都必须支以下场景
+  - livepatch 被启用、且该状态尚未被正被替换livepatch 修改时，修改系统状态
+  - 当变更已由正被替换的 livepatch 完成时，接管或更新系统状态修改
+  - livepatch 被禁用时，恢复原始状态
+  - 当转换（transition）被回退时，恢复先前的状态。它可能是原始系统状态，也可    是正被替换的 livepatch 所做的状态修改
+  - 当发生错误且 livepatch 无法启用时，移除任何已做出的修改
+## 4. 预期用法
 
 
-绯荤粺鐘舵€侀€氬父鐢?livepatch 鍥炶皟淇敼銆傛瘡涓洖璋冪殑棰勬湡瑙掕壊濡備笅锛?
+系统状态通常livepatch 回调修改。每个回调的预期角色如下
 **pre_patch()**
 
-  - 鍦ㄥ繀瑕佹椂鍒嗛厤 **state->data**銆傚垎閰嶅彲鑳藉け璐ワ紝鑰?**pre_patch()** 鏄敮涓€鑳藉
-    闃绘 livepatch 鍔犺浇鐨勫洖璋冦€傚綋鏁版嵁宸茬敱鍏堝墠瀹夎鐨?livepatch 鎻愪緵鏃讹紝涓嶉渶瑕?    鍒嗛厤銆?
-  - 鎵ц鏂颁唬鐮佸湪杞崲瀹屾垚涔嬪墠灏遍渶瑕佸仛鐨勪换浣曞叾瀹冨噯澶囧伐浣溿€備緥濡傦紝鍒濆鍖?    **state->data**銆?
-    绯荤粺鐘舵€佹湰韬€氬父鍦?**post_patch()** 涓慨鏀癸紝閭ｆ椂鏁翠釜绯荤粺鑳藉澶勭悊瀹冦€?
-  - 鍦ㄥ嚭閿欐椂娓呯悊鑷韩鐨勭儌鎽婂瓙銆傝繖鍙互閫氳繃鑷畾涔変唬鐮佸畬鎴愶紝鎴栨樉寮忚皟鐢?    **post_unpatch()**銆?
+  - 在必要时分配 **state->data**。分配可能失败，**pre_patch()** 是唯一能够
+    阻止 livepatch 加载的回调。当数据已由先前安装livepatch 提供时，不需    分配
+  - 执行新代码在转换完成之前就需要做的任何其它准备工作。例如，初始    **state->data**
+    系统状态本身通常**post_patch()** 中修改，那时整个系统能够处理它
+  - 在出错时清理自身的烂摊子。这可以通过自定义代码完成，或显式调    **post_unpatch()**
 **post_patch()**
 
-  - 褰撳畠浠吋瀹规椂锛屼粠鍏堝墠鐨?livepatch 澶嶅埗 **state->data**銆?
-  - 鎵ц瀹為檯鐨勭郴缁熺姸鎬佷慨鏀广€傛渶缁堣鏂颁唬鐮佸彲浠ヤ娇鐢ㄥ畠銆?
-  - 纭繚 **state->data** 鎷ユ湁鎵€鏈夊繀瑕佺殑淇℃伅銆?
-  - 褰撲笉鍐嶉渶瑕佹椂锛屼粠琚浛鎹㈢殑 livepatch 閲婃斁 **state->data**銆?
+  - 当它们兼容时，从先前livepatch 复制 **state->data**
+  - 执行实际的系统状态修改。最终让新代码可以使用它
+  - 确保 **state->data** 拥有所有必要的信息
+  - 当不再需要时，从被替换的 livepatch 释放 **state->data**
 **pre_unpatch()**
 
-  - 闃绘鐢?livepatch 娣诲姞銆佷緷璧栫郴缁熺姸鎬佸彉鏇寸殑浠ｇ爜鐨勮繍琛屻€?
-  - 鍥為€€绯荤粺鐘舵€佷慨鏀广€?
+  - 阻止livepatch 添加、依赖系统状态变更的代码的运行
+  - 回退系统状态修改
 **post_unpatch()**
 
-  - 閫氳繃妫€鏌?**klp_get_prev_state()** 鏉ュ尯鍒嗚浆鎹㈠洖閫€鍜?livepatch 绂佺敤銆?
-  - 鍦ㄨ浆鎹㈠洖閫€鐨勬儏鍐典笅锛屾仮澶嶅厛鍓嶇殑绯荤粺鐘舵€併€傝繖鍙兘鎰忓懗鐫€浠€涔堥兘涓嶅仛銆?
-  - 绉婚櫎浠讳綍涓嶅啀闇€瑕佺殑璁剧疆鎴栨暟鎹€?
+  - 通过检**klp_get_prev_state()** 来区分转换回退livepatch 禁用
+  - 在转换回退的情况下，恢复先前的系统状态。这可能意味着什么都不做
+  - 移除任何不再需要的设置或数据
 
-   **pre_unpatch()** 閫氬父鎵ц涓?**post_patch()** 瀵圭О鐨勬搷浣溿€備笉鍚屼箣澶勫湪浜庡畠浠?   鍦?livepatch 琚鐢ㄦ椂璋冪敤銆傚洜姝ゅ畠鏃犻渶鍏冲績浠讳綍鍏堝墠瀹夎鐨?livepatch銆?
-   **post_unpatch()** 閫氬父鎵ц涓?**pre_patch()** 瀵圭О鐨勬搷浣溿€傚畠涔熷彲鑳藉湪杞崲鍥為€€
-   鏈熼棿琚皟鐢ㄣ€傚洜姝ゅ畠蹇呴』澶勭悊鍏堝墠瀹夎鐨?livepatch 鐨勭姸鎬併€?
+   **pre_unpatch()** 通常执行**post_patch()** 对称的操作。不同之处在于它   livepatch 被禁用时调用。因此它无需关心任何先前安装livepatch
+   **post_unpatch()** 通常执行**pre_patch()** 对称的操作。它也可能在转换回退
+   期间被调用。因此它必须处理先前安装livepatch 的状态

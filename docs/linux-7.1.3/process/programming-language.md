@@ -1,18 +1,18 @@
 ﻿
-## 缂栫▼璇█
+## 编程语言
 
 
-Linux 鍐呮牳浣跨敤 C 缂栫▼璇█ [c-language]_ 缂栧啓銆傛洿鍑嗙‘鍦拌锛屽畠閫氬父浣跨敤 `gcc` [gcc]_ 鍦?`-std=gnu11` [gcc-c-dialect-options]_锛堝嵆 ISO C11 鐨?GNU 鏂硅█锛変笅缂栬瘧銆俙clang` [clang]_ 涔熷彈鏀寔锛涜鍙傞槄銆婁娇鐢?Clang/LLVM 鏋勫缓 Linux銆?kbuild_llvm>銆?
-璇ユ柟瑷€鍖呭惈瀵硅瑷€鐨勮澶氭墿灞?[gnu-extensions]_锛屽叾涓澶氭墿灞曞湪鍐呮牳涓綔涓烘儻渚嬭浣跨敤銆?
-### 灞炴€?
+Linux 内核使用 C 编程语言 [c-language]_ 编写。更准确地说，它通常使用 `gcc` [gcc]_ `-std=gnu11` [gcc-c-dialect-options]_（即 ISO C11 GNU 方言）下编译。`clang` [clang]_ 也受支持；请参阅《使Clang/LLVM 构建 Linuxkbuild_llvm>
+该方言包含对语言的许多扩[gnu-extensions]_，其中许多扩展在内核中作为惯例被使用
+### 属
 
-鍐呮牳涓箍娉涗娇鐢ㄧ殑鎵╁睍涔嬩竴鏄睘鎬?[gcc-attribute-syntax]_銆傚睘鎬у厑璁稿湪涓嶅璇█鍋氶噸澶ц娉曞彉鏇达紙渚嬪鏂板鍏抽敭瀛楋級鐨勬儏鍐典笅锛屼负璇█瀹炰綋锛堝鍙橀噺銆佸嚱鏁版垨绫诲瀷锛夊紩鍏ュ疄鐜拌嚜瀹氫箟鐨勮涔?[n2049]_銆?
-鍦ㄦ煇浜涙儏鍐典笅锛屽睘鎬ф槸鍙€夌殑锛堝嵆涓嶆敮鎸佸畠浠殑缂栬瘧鍣ㄤ粛搴旂敓鎴愭纭殑浠ｇ爜锛屽嵆浣夸唬鐮佹洿鎱㈡垨鎵ц鐨勭紪璇戞湡妫€鏌?璇婃柇鏇村皯锛夈€?
-鍐呮牳瀹氫箟浜嗕吉鍏抽敭瀛楋紙渚嬪 `__pure`锛夛紝鑰屼笉鏄洿鎺ヤ娇鐢?GNU 灞炴€ц娉曪紙渚嬪 `__attribute__((__pure__))`锛夛紝浠ヤ究杩涜鐗规€ф帰娴嬩互鍒ゆ柇鍝簺鍙敤锛屽苟/鎴栫缉鐭唬鐮併€?
-鏇村淇℃伅璇峰弬闃?`include/linux/compiler_attributes.h`銆?
+内核中广泛使用的扩展之一是属[gcc-attribute-syntax]_。属性允许在不对语言做重大语法变更（例如新增关键字）的情况下，为语言实体（如变量、函数或类型）引入实现自定义的语[n2049]_
+在某些情况下，属性是可选的（即不支持它们的编译器仍应生成正确的代码，即使代码更慢或执行的编译期检诊断更少）
+内核定义了伪关键字（例如 `__pure`），而不是直接使GNU 属性语法（例如 `__attribute__((__pure__))`），以便进行特性探测以判断哪些可用，并/或缩短代码
+更多信息请参`include/linux/compiler_attributes.h`
 ### Rust
 
 
-鍐呮牳鍦?`CONFIG_RUST` 涓嬫敮鎸?Rust 缂栫▼璇█ [rust-language]_銆傚畠浣跨敤 `rustc` [rustc]_ 鍦?`--edition=2021` [rust-editions]_ 涓嬬紪璇戙€侲dition锛堢増鏈級鏄竴绉嶅紩鍏ヤ笌浠ュ線涓嶅悜鍚庡吋瀹圭殑灏忓箙璇█鍙樻洿鐨勬柟寮忋€?
-鍦ㄦ鍩虹涓婏紝鍐呮牳杩樹娇鐢ㄤ簡涓€浜涗笉绋冲畾鐗规€?[rust-unstable-features]_銆備笉绋冲畾鐗规€ф湭鏉ュ彲鑳藉彂鐢熷彉鍖栵紝鍥犳杈惧埌浠呬娇鐢ㄧǔ瀹氱壒鎬х殑鐘舵€佹槸涓€涓噸瑕佺洰鏍囥€?
-鏇村淇℃伅璇峰弬闃?Documentation/rust/index.rst銆?
+内核`CONFIG_RUST` 下支Rust 编程语言 [rust-language]_。它使用 `rustc` [rustc]_ `--edition=2021` [rust-editions]_ 下编译。Edition（版本）是一种引入与以往不向后兼容的小幅语言变更的方式
+在此基础上，内核还使用了一些不稳定特[rust-unstable-features]_。不稳定特性未来可能发生变化，因此达到仅使用稳定特性的状态是一个重要目标
+更多信息请参Documentation/rust/index.rst

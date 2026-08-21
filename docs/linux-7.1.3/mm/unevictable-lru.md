@@ -1,190 +1,190 @@
-﻿## 涓嶅彲鍥炴敹 LRU 鍩虹璁炬柦
+﻿## 不可回收 LRU 基础设施
 
 
 
 
-## 绠€浠?
+## 简
 
-鏈枃妗ｆ弿杩?Linux 鍐呭瓨绠＄悊鍣ㄧ殑"涓嶅彲鍥炴敹 LRU"锛圲nevictable LRU锛夊熀纭€璁炬柦锛屼互鍙婂埄鐢ㄥ畠鏉ョ鐞嗗嚑绉嶇被鍨嬬殑"涓嶅彲鍥炴敹"椤靛抚锛坒olio锛夈€?
-鏈枃妗ｈ瘯鍥炬彁渚涜繖涓€鏈哄埗鑳屽悗鐨勬暣浣撹璁′緷鎹紝浠ュ強椹卞姩瀹炵幇鐨勪竴浜涜璁″喅绛栬儗鍚庣殑渚濇嵁銆傚悗鑰呯殑璁捐渚濇嵁鍦ㄥ疄鐜扮殑涓婁笅鏂囦腑鍔犱互璁ㄨ銆傛棤鍙惁璁わ紝閫氳繃闃呰浠ｇ爜鍗冲彲鑾峰緱瀹炵幇缁嗚妭鈥斺€斿嵆"瀹冨仛浜嗕粈涔?銆備綔鑰呭笇鏈涗笅闈㈢殑鎻忚堪鑳藉閫氳繃鍥炵瓟"瀹冧负浣曢偅鏍峰仛锛?鑰屾彁渚涢澶栫殑浠峰€笺€?
-
-
-## 涓嶅彲鍥炴敹 LRU
+本文档描Linux 内存管理器的"不可回收 LRU"（Unevictable LRU）基础设施，以及利用它来管理几种类型的"不可回收"页帧（folio）
+本文档试图提供这一机制背后的整体设计依据，以及驱动实现的一些设计决策背后的依据。后者的设计依据在实现的上下文中加以讨论。无可否认，通过阅读代码即可获得实现细节——即"它做了什。作者希望下面的描述能够通过回答"它为何那样做而提供额外的价值
 
 
-涓嶅彲鍥炴敹 LRU 鏈哄埗鏂板浜嗕竴涓澶栫殑 LRU 閾捐〃锛岀敤浜庤窡韪笉鍙洖鏀剁殑 folio锛屽苟灏嗚繖浜?folio 瀵?vmscan 闅愯棌銆傝鏈哄埗鍩轰簬 Red Hat 鐨?Larry Woodman 鐨勪竴涓ˉ涓侊紝鏃ㄥ湪瑙ｅ喅 Linux 涓?folio 鍥炴敹鐨勮嫢骞插彲鎵╁睍鎬ч棶棰樸€傝繖浜涢棶棰樺凡鍦ㄥ鎴风殑澶у瀷鍐呭瓨 x86_64 绯荤粺涓婅瀵熷埌銆?
-涓句緥璇存槑锛屼竴鍙版嫢鏈?128GB 涓诲瓨鐨勯潪 NUMA x86_64 骞冲彴鍦ㄥ崟涓妭鐐逛笂浼氭湁瓒呰繃 3200 涓囦釜 4k 椤点€傚綋杩欎簺椤典腑鏈夊緢澶т竴閮ㄥ垎鍥犱换浣曞師鍥犺€屼笉鍙洖鏀禰瑙佷笅鏂嘳鏃讹紝vmscan 灏嗚姳璐瑰ぇ閲忔椂闂存壂鎻?LRU 閾捐〃浠ュ鎵鹃偅灏忛儴鍒嗗彲鍥炴敹鐨勯〉銆傝繖鍙兘瀵艰嚧杩欐牱涓€绉嶆儏鍐碉細鎵€鏈?CPU 杩炵画鏁板皬鏃舵垨鏁板ぉ灏?100% 鐨勬椂闂磋€楄垂鍦?vmscan 涓紝绯荤粺瀹屽叏鏃犲搷搴斻€?
-涓嶅彲鍥炴敹閾捐〃澶勭悊浜嗕互涓嬪嚑绫讳笉鍙洖鏀堕〉锛?
- - 鐢?ramfs 鎷ユ湁鐨勯〉銆?
- - 鐢卞甫鏈?noswap 鎸傝浇閫夐」鐨?tmpfs 鎷ユ湁鐨勯〉銆?
- - 鏄犲皠鍒?SHM_LOCK 鐨勫叡浜唴瀛樺尯鍩熺殑椤点€?
- - 鏄犲皠鍒?VM_LOCKED [mlock()ed] VMA 鐨勯〉銆?
-璇ュ熀纭€璁炬柦鏈潵鎴栬杩樿兘澶勭悊鍥犲畾涔夋垨鐜鑰屼娇寰楅〉涓嶅彲鍥炴敹鐨勫叾浠栨儏鍐点€?
-
-### 涓嶅彲鍥炴敹 LRU 鐨?folio 閾捐〃
+## 不可回收 LRU
 
 
-涓嶅彲鍥炴敹 LRU folio 閾捐〃鏄釜"璋庤█"銆傚畠浠庢潵灏变笉鏄竴涓寜 LRU 鎺掑簭鐨勯摼琛紝鑰屾槸涓庢寜 LRU 鎺掑簭鐨勫尶鍚嶅拰鏂囦欢銆佹椿璺冨拰闈炴椿璺?folio 閾捐〃鐩镐即鑰岀敓鐨勶紱鑰屽浠婂畠鐢氳嚦涓嶅啀鏄?folio 閾捐〃銆備絾閬靛惊鎯敤绾﹀畾锛屽湪鏈枃妗ｅ拰婧愮爜涓紝鎴戜滑缁忓父鎶婂畠鎯宠薄鎴愮浜斾釜 LRU folio 閾捐〃銆?
-涓嶅彲鍥炴敹 LRU 鍩虹璁炬柦鍖呭惈涓€涓澶栫殑銆佹瘡鑺傜偣鐨?LRU 閾捐〃锛岀О涓?unevictable"閾捐〃锛屼互鍙婁竴涓浉鍏崇殑 folio 鏍囧織 PG_unevictable锛岀敤浜庤〃鏄庤 folio 姝ｇ敱涓嶅彲鍥炴敹閾捐〃绠＄悊銆?
-PG_unevictable 鏍囧織绫讳技浜?PG_active 鏍囧織涓斾笌涔嬩簰鏂ワ紝鍥犱负褰?PG_lru 琚疆浣嶆椂锛屽畠琛ㄧず folio 浣嶄簬鍝釜 LRU 閾捐〃涓娿€?
-涓嶅彲鍥炴敹 LRU 鍩虹璁炬柦灏嗕笉鍙洖鏀?folio 褰撲綔瀹冧滑鍦ㄩ澶栫殑 LRU 閾捐〃涓婁竴鏍锋潵缁存姢锛屽師鍥犳湁鍑犵偣锛?
- (1) 鎴戜滑鍙互"鍍忓寰呯郴缁熶腑鍏朵粬 folio 涓€鏍峰寰呬笉鍙洖鏀?folio鈥斺€旇繖鎰忓懗鐫€鎴戜滑鍙互浣跨敤鐩稿悓鐨勪唬鐮佹潵鎿嶄綔瀹冧滑銆佷娇鐢ㄧ浉鍚岀殑浠ｇ爜鏉ラ殧绂诲畠浠紙鐢ㄤ簬杩佺Щ绛夛級銆佷娇鐢ㄧ浉鍚岀殑浠ｇ爜鏉ヨ窡韪粺璁′俊鎭瓑鈥︹€? [Rik van Riel]
+不可回收 LRU 机制新增了一个额外的 LRU 链表，用于跟踪不可回收的 folio，并将这folio vmscan 隐藏。该机制基于 Red Hat Larry Woodman 的一个补丁，旨在解决 Linux folio 回收的若干可扩展性问题。这些问题已在客户的大型内存 x86_64 系统上观察到
+举例说明，一台拥128GB 主存的非 NUMA x86_64 平台在单个节点上会有超过 3200 万个 4k 页。当这些页中有很大一部分因任何原因而不可回收[见下文]时，vmscan 将花费大量时间扫LRU 链表以寻找那小部分可回收的页。这可能导致这样一种情况：所CPU 连续数小时或数天100% 的时间耗费vmscan 中，系统完全无响应
+不可回收链表处理了以下几类不可回收页
+ - ramfs 拥有的页
+ - 由带noswap 挂载选项tmpfs 拥有的页
+ - 映射SHM_LOCK 的共享内存区域的页
+ - 映射VM_LOCKED [mlock()ed] VMA 的页
+该基础设施未来或许还能处理因定义或环境而使得页不可回收的其他情况
 
- (2) 鎴戜滑甯屾湜鑳藉鍦ㄨ妭鐐逛箣闂磋縼绉讳笉鍙洖鏀?folio锛屼互杩涜鍐呭瓨纰庣墖鏁寸悊銆佸伐浣滆礋杞界鐞嗗拰鍐呭瓨鐑彃鎷斻€侺inux 鍐呮牳鍙兘杩佺Щ閭ｄ簺鑳藉鎴愬姛浠?LRU 閾捐〃闅旂鍑烘潵鐨?folio锛堟垨"鍙Щ鍔?鐨?folio锛氳繖閲屼笉鍦ㄨ€冭檻鑼冨洿鍐咃級銆傚鏋滄垜浠妸杩欎簺 folio 缁存姢鍦?LRU 绫婚摼琛ㄤ箣澶栵紙鍗?folio_isolate_lru() 鏃犳硶妫€娴嬪埌鐨勫湴鏂癸級锛屽氨浼氶樆姝㈠畠浠殑杩佺Щ銆?
-涓嶅彲鍥炴敹閾捐〃涓嶅尯鍒嗘枃浠跺悗澶囦笌鍖垮悕銆乻wap 鍚庡鐨?folio銆傝繖绉嶅尯鍒嗕粎鍦?folio 纭疄鍙洖鏀舵椂鎵嶆湁鎰忎箟銆?
-涓嶅彲鍥炴敹閾捐〃鍙楃泭浜?Christoph Lameter 鏈€鍒濇彁鍑哄苟鍙戝竷鐨勬瘡鑺傜偣 LRU 閾捐〃涓庣粺璁＄殑"鏁扮粍鍖?锛坅rrayification锛夈€?
+### 不可回收 LRU folio 链表
 
-### 鍐呭瓨鎺у埗缁勪氦浜?
 
-涓嶅彲鍥炴敹 LRU 鏈哄埗閫氳繃鎵╁睍 lru_list 鏋氫妇锛屼笌鍐呭瓨鎺у埗缁刐鍗?memory controller锛涜 Documentation/admin-guide/cgroup-v1/memory.rst]浜や簰銆?
-鐢变簬姣忚妭鐐?LRU 閾捐〃鐨?鏁扮粍鍖?锛堟瘡涓?lru_list 鏋氫妇鍏冪礌瀵瑰簲涓€涓級锛屽唴瀛樻帶鍒跺櫒鏁版嵁缁撴瀯浼氳嚜鍔ㄨ幏寰椾竴涓瘡鑺傜偣鐨勪笉鍙洖鏀堕摼琛ㄣ€傚唴瀛樻帶鍒跺櫒璺熻釜椤佃繘鍑轰笉鍙洖鏀堕摼琛ㄧ殑绉诲姩銆?
-褰撴煇涓唴瀛樻帶鍒剁粍闈复鍐呭瓨鍘嬪姏鏃讹紝鎺у埗鍣ㄤ笉浼氬皾璇曞洖鏀朵笉鍙洖鏀堕摼琛ㄤ笂鐨勯〉銆傝繖鏈夊嚑涓晥鏋滐細
+不可回收 LRU folio 链表是个"谎言"。它从来就不是一个按 LRU 排序的链表，而是与按 LRU 排序的匿名和文件、活跃和非活folio 链表相伴而生的；而如今它甚至不再folio 链表。但遵循惯用约定，在本文档和源码中，我们经常把它想象成第五个 LRU folio 链表
+不可回收 LRU 基础设施包含一个额外的、每节点LRU 链表，称unevictable"链表，以及一个相关的 folio 标志 PG_unevictable，用于表明该 folio 正由不可回收链表管理
+PG_unevictable 标志类似PG_active 标志且与之互斥，因为PG_lru 被置位时，它表示 folio 位于哪个 LRU 链表上
+不可回收 LRU 基础设施将不可回folio 当作它们在额外的 LRU 链表上一样来维护，原因有几点
+ (1) 我们可以"像对待系统中其他 folio 一样对待不可回folio——这意味着我们可以使用相同的代码来操作它们、使用相同的代码来隔离它们（用于迁移等）、使用相同的代码来跟踪统计信息等… [Rik van Riel]
 
- (1) 鍥犱负杩欎簺椤靛湪涓嶅彲鍥炴敹閾捐〃涓婂鍥炴敹"闅愯棌"锛屽洖鏀惰繃绋嬪彲浠ユ洿楂樻晥锛屽彧澶勭悊閭ｄ簺鏈夊彲鑳借鍥炴敹鐨勯〉銆?
- (2) 鍙︿竴鏂归潰锛屽鏋滆鍏ヨ鎺у埗缁勭殑椤典腑鏈夊お澶氫笉鍙洖鏀讹紝璇ユ帶鍒剁粍浠诲姟鐨?working set 涓彲鍥炴敹鐨勯儴鍒嗗彲鑳芥棤娉曟斁鍏ュ彲鐢ㄥ唴瀛樸€傝繖鍙兘瀵艰嚧鎺у埗缁勫彂鐢熼绨革紙thrash锛夋垨瀵逛换鍔℃墽琛?OOM-kill銆?
+ (2) 我们希望能够在节点之间迁移不可回folio，以进行内存碎片整理、工作负载管理和内存热插拔。Linux 内核只能迁移那些能够成功LRU 链表隔离出来folio（或"可移folio：这里不在考虑范围内）。如果我们把这些 folio 维护LRU 类链表之外（folio_isolate_lru() 无法检测到的地方），就会阻止它们的迁移
+不可回收链表不区分文件后备与匿名、swap 后备folio。这种区分仅folio 确实可回收时才有意义
+不可回收链表受益Christoph Lameter 最初提出并发布的每节点 LRU 链表与统计的"数组（arrayification）
 
-### 灏嗗湴鍧€绌洪棿鏍囪涓轰笉鍙洖鏀?
+### 内存控制组交
 
-瀵逛簬鍍?ramfs 杩欐牱鐨勮鏂斤紝闄勫姞鍒板湴鍧€绌洪棿鐨勯〉閮戒笉鍙鍥炴敹銆備负浜嗛槻姝换浣曟绫婚〉琚洖鏀讹紝鎻愪緵浜?AS_UNEVICTABLE 鍦板潃绌洪棿鏍囧織锛屾枃浠剁郴缁熷彲浠ヤ娇鐢ㄨ嫢骞插寘瑁呭嚱鏁版潵鎿嶄綔瀹冿細
+不可回收 LRU 机制通过扩展 lru_list 枚举，与内存控制组[memory controller；见 Documentation/admin-guide/cgroup-v1/memory.rst]交互
+由于每节LRU 链表数组（每lru_list 枚举元素对应一个），内存控制器数据结构会自动获得一个每节点的不可回收链表。内存控制器跟踪页进出不可回收链表的移动
+当某个内存控制组面临内存压力时，控制器不会尝试回收不可回收链表上的页。这有几个效果：
+
+ (1) 因为这些页在不可回收链表上对回收"隐藏"，回收过程可以更高效，只处理那些有可能被回收的页
+ (2) 另一方面，如果计入该控制组的页中有太多不可回收，该控制组任务working set 中可回收的部分可能无法放入可用内存。这可能导致控制组发生颠簸（thrash）或对任务执OOM-kill
+
+### 将地址空间标记为不可回
+
+对于ramfs 这样的设施，附加到地址空间的页都不可被回收。为了防止任何此类页被回收，提供AS_UNEVICTABLE 地址空间标志，文件系统可以使用若干包装函数来操作它：
 
  - `void mapping_set_unevictable(struct address_space *mapping);`
 
-	灏嗚鍦板潃绌洪棿鏍囪涓哄畬鍏ㄤ笉鍙洖鏀躲€?
+	将该地址空间标记为完全不可回收
  - `void mapping_clear_unevictable(struct address_space *mapping);`
 
-	灏嗚鍦板潃绌洪棿鏍囪涓哄彲鍥炴敹銆?
+	将该地址空间标记为可回收
  - `int mapping_unevictable(struct address_space *mapping);`
 
-	鏌ヨ璇ュ湴鍧€绌洪棿锛屽鏋滃畠瀹屽叏涓嶅彲鍥炴敹鍒欒繑鍥?true銆?
-杩欎簺鍑芥暟鐩墠鍦ㄥ唴鏍哥殑涓変釜鍦版柟浣跨敤锛?
- (1) 鐢?ramfs 鍦ㄥ叾 inode 鍒涘缓鏃舵爣璁板叾鍦板潃绌洪棿锛岃鏍囪鍦?inode 鐨勬暣涓敓鍛藉懆鏈熷唴淇濇寔銆?
- (2) 鐢?SYSV SHM 鏍囪 SHM_LOCK 鐨勫湴鍧€绌洪棿锛岀洿鍒拌皟鐢?SHM_UNLOCK銆傛敞鎰忥紝濡傛灉閿佸畾鐨勯〉宸茶鎹㈠嚭锛孲HM_LOCK 骞朵笉瑕佹眰灏嗗畠浠皟椤靛叆鍐呭瓨锛涘簲鐢ㄧ▼搴忚嫢鎯崇‘淇濆畠浠湪鍐呭瓨涓紝蹇呴』鎵嬪姩璁块棶杩欎簺椤点€?
- (3) 鐢?i915 椹卞姩鏍囪琚浐瀹氱殑鍦板潃绌洪棿锛岀洿鍒板叾琚В闄ゅ浐瀹氥€俰915 椹卞姩鏍囪鐨勪笉鍙洖鏀跺唴瀛橀噺澶х害瀵瑰簲浜?debugfs/dri/0/i915_gem_objects 涓殑鏈夌晫瀵硅薄澶у皬銆?
+	查询该地址空间，如果它完全不可回收则返true
+这些函数目前在内核的三个地方使用
+ (1) ramfs 在其 inode 创建时标记其地址空间，该标记inode 的整个生命周期内保持
+ (2) SYSV SHM 标记 SHM_LOCK 的地址空间，直到调SHM_UNLOCK。注意，如果锁定的页已被换出，SHM_LOCK 并不要求将它们调页入内存；应用程序若想确保它们在内存中，必须手动访问这些页
+ (3) i915 驱动标记被固定的地址空间，直到其被解除固定。i915 驱动标记的不可回收内存量大约对应debugfs/dri/0/i915_gem_objects 中的有界对象大小
 
-### 妫€娴嬩笉鍙洖鏀堕〉
-
-
-mm/internal.h 涓殑鍑芥暟 folio_evictable() 浣跨敤涓婃枃姒傝堪鐨勬煡璇㈠嚱鏁癧瑙?Marking address spaces unevictable <mark_addr_space_unevict> 涓€鑺俔鏉ユ鏌?AS_UNEVICTABLE 鏍囧織锛屼粠鑰屽垽鏂竴涓?folio 鏄惁鍙洖鏀躲€?
-瀵逛簬鍦ㄥ～鍏呬箣鍚庢墠琚姝ゆ爣璁扮殑鍦板潃绌洪棿锛圫HM 鍖哄煙鍙兘濡傛锛夛紝鍔犻攣鍔ㄤ綔锛堜緥濡?SHM_LOCK锛夊彲浠ユ槸鎯版€х殑锛屾棤闇€鍍?mlock() 閭ｆ牱濉厖璇ュ尯鍩熺殑椤佃〃锛屼篃鏃犻渶鐗规剰灏?SHM_LOCK 鍖哄煙鍐呯殑浠讳綍椤垫帹鍏ヤ笉鍙洖鏀堕摼琛ㄣ€傜浉鍙嶏紝vmscan 浼氬湪鍥炴敹鎵弿涓亣鍒拌繖浜?folio 鏃跺啀鍋氳繖浠朵簨銆?
-鍦ㄨВ閿佸姩浣滐紙濡?SHM_UNLOCK锛夋椂锛岃В閿佽€咃紙濡?shmctl()锛夊繀椤绘壂鎻忚鍖哄煙鐨勯〉锛屽苟鍦ㄦ病鏈夊叾浠栨潯浠朵娇鍏朵繚鎸佷笉鍙洖鏀剁殑鎯呭喌涓嬶紝灏嗗畠浠粠涓嶅彲鍥炴敹閾捐〃涓?瑙ｆ晳"鍑烘潵銆傚鏋滀竴涓笉鍙洖鏀跺尯鍩熻閿€姣侊紝杩欎簺椤典篃浼氬湪閲婃斁杩囩▼涓粠涓嶅彲鍥炴敹閾捐〃涓"瑙ｆ晳"鍑烘潵銆?
-folio_evictable() 杩樹細閫氳繃璋冪敤 folio_test_mlocked() 鏉ユ鏌?mlocked 鐨?folio锛屽悗鑰呭湪 folio 琚己椤垫槧灏勮繘 VM_LOCKED VMA銆佹垨鍦ㄦ琚?VM_LOCKED 鐨?VMA 涓鍙戠幇鏃剁疆浣嶃€?
-
-### Vmscan 瀵逛笉鍙洖鏀?folio 鐨勫鐞?
-
-濡傛灉涓嶅彲鍥炴敹 folio 鍦ㄧ己椤佃矾寰勪腑琚墧闄わ紙cull锛夛紝鎴栧湪 mlock()/mmap() 鏃惰绉诲埌涓嶅彲鍥炴敹閾捐〃锛岄偅涔?vmscan 鍦ㄥ畠浠噸鏂板彉涓哄彲鍥炴敹锛堜緥濡傞€氳繃 munlock()锛夊苟浠庝笉鍙洖鏀堕摼琛ㄨ"瑙ｆ晳"涔嬪墠锛屼笉浼氶亣鍒拌繖浜?folio銆傜劧鑰岋紝鍑轰簬渚垮埄锛屾垜浠彲鑳戒細鍐冲畾鎶婁竴涓笉鍙洖鏀?folio 鐣欏湪鏌愪釜甯歌鐨勬椿璺?闈炴椿璺?LRU 閾捐〃涓婏紝浜ょ敱 vmscan 澶勭悊銆倂mscan 鍦ㄦ墍鏈?shrink_{active|inactive|folio}_list() 鍑芥暟涓兘浼氭鏌ユ绫?folio锛屽苟浼?鍓旈櫎"閬囧埌鐨勮繖绫?folio锛氬嵆鎶婇偅浜?folio 杞悜姝ｅ湪鎵弿鐨勫唴瀛?cgroup 鍜岃妭鐐圭殑涓嶅彲鍥炴敹閾捐〃銆?
-鍦ㄦ煇浜涙儏鍐典笅锛屼竴涓?folio 琚槧灏勫埌 VM_LOCKED VMA锛屼絾璇?folio 娌℃湁璁剧疆 mlocked 鏍囧織銆傝繖鏍风殑 folio 浼氫竴璺埌杈?shrink_active_list() 鎴?shrink_folio_list()锛屽湪 vmscan 閫氳繃 folio_referenced() 鎴?try_to_unmap() 閬嶅巻鍙嶅悜鏄犲皠鏃惰妫€娴嬪埌銆傚綋璇?folio 琚?shrinker 閲婃斁鏃讹紝瀹冧細琚墧闄ゅ埌涓嶅彲鍥炴敹閾捐〃銆?
-瑕?鍓旈櫎"涓€涓笉鍙洖鏀?folio锛寁mscan 鍦ㄩ噴鏀?folio 閿佸悗锛岀畝鍗曞湴閫氳繃 folio_putback_lru()锛坒olio_isolate_lru() 鐨勯€嗘搷浣滐級鎶?folio 鏀惧洖 LRU 閾捐〃銆傚洜涓轰娇 folio 涓嶅彲鍥炴敹鐨勬潯浠跺湪 folio 瑙ｉ攣鍚庡彲鑳芥敼鍙橈紝__pagevec_lru_add_fn() 浼氬湪鎶婂畠鏀惧埌涓嶅彲鍥炴敹閾捐〃涔嬪墠閲嶆柊妫€鏌ュ叾涓嶅彲鍥炴敹鐘舵€併€?
-
-## MLOCKED 椤?
-
-闄や簡 ramfs 鍜?SYSV SHM 涔嬪锛屼笉鍙洖鏀?folio 閾捐〃瀵?mlock() 涔熷緢鏈夌敤銆傛敞鎰忥紝mlock() 浠呭湪 CONFIG_MMU=y 鐨勬儏鍐典笅鍙敤锛涘湪 NOMMU 鎯呭喌涓嬶紝鎵€鏈夋槧灏勫疄闄呬笂閮芥槸 mlocked 鐨勩€?
-
-### 鍘嗗彶
+### 检测不可回收页
 
 
-"涓嶅彲鍥炴敹鐨?mlocked 椤?鍩虹璁炬柦鍩轰簬 Nick Piggin 鏈€鍒濆湪涓€涓涓?"mm: mlocked pages off LRU" 鐨?RFC 琛ヤ竵涓彂琛ㄧ殑宸ヤ綔銆侼ick 鍙戝竷浠栫殑琛ヤ竵锛屼綔涓?Christoph Lameter 鍙戝竷鐨勩€佽揪鎴愬悓涓€鐩爣锛堝皢 mlocked 椤靛 vmscan 闅愯棌锛夌殑琛ヤ竵鐨勬浛浠ｆ柟妗堛€?
-鍦?Nick 鐨勮ˉ涓佷腑锛屼粬鐢?struct page 鐨?LRU 閾捐〃閾炬帴瀛楁涔嬩竴锛屼綔涓烘槧灏勮椤电殑 VM_LOCKED VMA 鐨勮鏁帮紙Rik van Riel 涓夊勾鍓嶆湁杩囧悓鏍风殑鎯虫硶锛夈€備絾杩欑灏嗚閾炬帴瀛楁鐢ㄤ簬璁℃暟鐨勫仛娉曪紝濡ㄧ浜嗗湪 LRU 閾捐〃涓婄鐞嗚繖浜涢〉锛屽洜姝?mlocked 椤典笉鍙縼绉伙紝鍥犱负 folio_isolate_lru() 鏃犳硶妫€娴嬪埌瀹冧滑锛屽苟涓?LRU 閾捐〃閾炬帴瀛楁涔熸棤娉曚緵杩佺Щ瀛愮郴缁熶娇鐢ㄣ€?
-Nick 閫氳繃鍦ㄨ繘琛岄殧绂讳箣鍓嶆妸 mlocked 椤垫斁鍥?LRU 閾捐〃瑙ｅ喅浜嗚繖涓棶棰橈紝浠庤€屾斁寮冧簡 VM_LOCKED VMA 鐨勮鏁般€傚綋 Nick 鐨勮ˉ涓佷笌涓嶅彲鍥炴敹 LRU 宸ヤ綔鏁村悎鏃讹紝璇ヨ鏁拌鏇挎崲涓哄湪 munlock 鏃堕亶鍘嗗弽鍚戞槧灏勶紝浠ュ垽鏂槸鍚﹁繕鏈夊叾浠?VM_LOCKED VMA 浠嶆槧灏勭潃璇ラ〉銆?
-鐒惰€岋紝鍦?munlock 鏃朵负姣忎釜椤甸亶鍘嗗弽鍚戞槧灏勬棦涓戦檵鍙堜綆鏁堬紝骞朵笖褰撹澶氬凡 mlock 瀹冪殑杩涚▼璇曞浘閫€鍑烘椂锛屼細瀵艰嚧鏂囦欢 rmap 閿佷笂鐏鹃毦鎬х殑浜夌敤銆傚湪 5.18 涓紝灏?mlock_count 淇濆瓨鍦ㄤ笉鍙洖鏀?LRU 閾捐〃閾炬帴瀛楁涓殑鎯虫硶琚噸鏂板惎鐢ㄥ苟浠樿瀹炶返锛屽悓鏃朵笉濡ㄧ mlocked 椤电殑杩佺Щ銆傝繖灏辨槸涓轰粈涔?涓嶅彲鍥炴敹 LRU 閾捐〃"鐜板湪涓嶈兘鏄竴涓〉鐨勯摼琛紱涓嶈繃閭ｄ釜閾捐〃鏈潵涔熸病浠€涔堢敤澶勨€斺€斿敖绠″叾澶у皬浠嶈缁存姢浠ョ敤浜?meminfo銆?
+mm/internal.h 中的函数 folio_evictable() 使用上文概述的查询函数[Marking address spaces unevictable <mark_addr_space_unevict> 一节]来检AS_UNEVICTABLE 标志，从而判断一folio 是否可回收
+对于在填充之后才被如此标记的地址空间（SHM 区域可能如此），加锁动作（例SHM_LOCK）可以是惰性的，无需mlock() 那样填充该区域的页表，也无需特意SHM_LOCK 区域内的任何页推入不可回收链表。相反，vmscan 会在回收扫描中遇到这folio 时再做这件事
+在解锁动作（SHM_UNLOCK）时，解锁者（shmctl()）必须扫描该区域的页，并在没有其他条件使其保持不可回收的情况下，将它们从不可回收链表解救"出来。如果一个不可回收区域被销毁，这些页也会在释放过程中从不可回收链表中被"解救"出来
+folio_evictable() 还会通过调用 folio_test_mlocked() 来检mlocked folio，后者在 folio 被缺页映射进 VM_LOCKED VMA、或在正VM_LOCKED VMA 中被发现时置位
 
-### 鍩烘湰绠＄悊
+### Vmscan 对不可回folio 的处
 
+如果不可回收 folio 在缺页路径中被剔除（cull），或在 mlock()/mmap() 时被移到不可回收链表，那vmscan 在它们重新变为可回收（例如通过 munlock()）并从不可回收链表被"解救"之前，不会遇到这folio。然而，出于便利，我们可能会决定把一个不可回folio 留在某个常规的活非活LRU 链表上，交由 vmscan 处理。vmscan 在所shrink_{active|inactive|folio}_list() 函数中都会检查此folio，并剔除"遇到的这folio：即把那folio 转向正在扫描的内cgroup 和节点的不可回收链表
+在某些情况下，一folio 被映射到 VM_LOCKED VMA，但folio 没有设置 mlocked 标志。这样的 folio 会一路到shrink_active_list() shrink_folio_list()，在 vmscan 通过 folio_referenced() try_to_unmap() 遍历反向映射时被检测到。当folio shrinker 释放时，它会被剔除到不可回收链表
+剔除"一个不可回folio，vmscan 在释folio 锁后，简单地通过 folio_putback_lru()（folio_isolate_lru() 的逆操作）folio 放回 LRU 链表。因为使 folio 不可回收的条件在 folio 解锁后可能改变，__pagevec_lru_add_fn() 会在把它放到不可回收链表之前重新检查其不可回收状态
 
-mlocked 椤碘€斺€斿嵆鏄犲皠鍒?VM_LOCKED VMA 鐨勯〉鈥斺€旀槸涓€绫讳笉鍙洖鏀堕〉銆傚綋鍐呭瓨绠＄悊瀛愮郴缁?娉ㄦ剰鍒?杩欐牱鐨勯〉鏃讹紝璇?folio 浼氳鏍囪涓?PG_mlocked 鏍囧織銆傝繖鍙互鐢?folio_set_mlocked() 鍜?folio_clear_mlocked() 鍑芥暟鎿嶄綔銆?
-涓€涓?PG_mlocked 椤靛湪鍔犲叆 LRU 鏃朵細琚斁鍒颁笉鍙洖鏀堕摼琛ㄤ笂銆傝繖鏍风殑椤靛彲浠ュ湪澶氫釜鍦版柟琚唴瀛樼鐞?娉ㄦ剰鍒?锛?
- (1) 鍦?mlock()/mlock2()/mlockall() 绯荤粺璋冪敤澶勭悊绋嬪簭涓紱
+## MLOCKED 椤。
 
- (2) 鍦?mmap() 绯荤粺璋冪敤澶勭悊绋嬪簭涓紝褰撲互 MAP_LOCKED 鏍囧織 mmap 涓€涓尯鍩熸椂锛?
- (3) 鍦ㄤ竴涓浘浠?MCL_FUTURE 鏍囧織璋冪敤 mlockall() 鐨勪换鍔′腑 mmap 涓€涓尯鍩熸椂锛?
- (4) 鍦ㄧ己椤佃矾寰勪腑锛屼互鍙婂綋 VM_LOCKED 鏍堟琚墿灞曟椂锛涙垨
+除了 ramfs SYSV SHM 之外，不可回folio 链表mlock() 也很有用。注意，mlock() 仅在 CONFIG_MMU=y 的情况下可用；在 NOMMU 情况下，所有映射实际上都是 mlocked 的
 
- (5) 濡備笂鎵€杩帮紝鍦?vmscan:shrink_folio_list() 涓紝褰撹瘯鍥鹃€氳繃 folio_referenced() 鎴?try_to_unmap() 鍥炴敹鏌愪釜 VM_LOCKED VMA 涓殑椤垫椂銆?
-mlocked 椤靛湪浠ヤ笅鎯呭喌琚В閿佸苟浠庝笉鍙洖鏀堕摼琛ㄨВ鏁戝嚭鏉ワ細
-
- (1) 澶勪簬閫氳繃 munlock()/munlockall() 绯荤粺璋冪敤瑙ｉ攣鐨勮寖鍥村唴鐨勬槧灏勶紱
-
- (2) 閫氳繃 munmap() 浠庢槧灏勮椤电殑鏈€鍚庝竴涓?VM_LOCKED VMA 涓Щ闄わ紝鍖呮嫭鍦ㄤ换鍔￠€€鍑烘椂鐨勮В闄ゆ槧灏勶紱
-
- (3) 褰撹椤典粠鏌愪釜 mmapped 鏂囦欢鐨勬渶鍚庝竴涓?VM_LOCKED VMA 涓鎴柇鏃讹紱鎴?
- (4) 鍦?VM_LOCKED VMA 涓椤垫墽琛?COW锛堝啓鏃跺鍒讹級涔嬪墠銆?
-
-### mlock()/mlock2()/mlockall() 绯荤粺璋冪敤澶勭悊
+### 历史
 
 
-mlock()銆乵lock2() 鍜?mlockall() 绯荤粺璋冪敤澶勭悊绋嬪簭浼氬璋冪敤鎵€鎸囧畾鑼冨洿鍐呯殑姣忎釜 VMA 璋冪敤 mlock_fixup()銆傚湪 mlockall() 鐨勬儏鍐典笅锛岃繖灏辨槸浠诲姟鐨勬暣涓椿鍔ㄥ湴鍧€绌洪棿銆傛敞鎰忥紝mlock_fixup() 鏃㈢敤浜?mlock 涔熺敤浜?munlock 涓€娈靛唴瀛樸€傚宸茬粡鏄?VM_LOCKED 鐨?VMA 璋冪敤 mlock()锛屾垨瀵逛笉鏄?VM_LOCKED 鐨?VMA 璋冪敤 munlock()锛岄兘琚涓虹┖鎿嶄綔锛宮lock_fixup() 鐩存帴杩斿洖銆?
-濡傛灉 VMA 閫氳繃浜嗕笅鏂?Filtering Special VMAs"涓弿杩扮殑鏌愪簺杩囨护锛宮lock_fixup() 浼氬皾璇曞皢 VMA 涓庡叾鐩搁偦鑰呭悎骞讹紝鎴栬€呭湪鑼冨洿鏈鐩栨暣涓?VMA 鏃跺垏鍒嗗嚭 VMA 鐨勪竴涓瓙闆嗐€俈MA 涓凡鏈夌殑浠讳綍椤甸殢鍚庝細閫氳繃 mlock_vma_pages_range() 鈫?walk_page_range() 鈫?mlock_pte_range() 鈫?mlock_folio() 琚爣璁颁负 mlocked銆?
-鍦ㄤ粠绯荤粺璋冪敤杩斿洖涔嬪墠锛宒o_mlock() 鎴?mlockall() 浼氳皟鐢?__mm_populate()锛岄€氳繃 get_user_pages() 灏嗗墿浣欓〉缂洪〉璋冨叆锛屽苟鍦ㄥ畠浠缂洪〉鏃舵爣璁颁负 mlocked銆?
-娉ㄦ剰锛岃 mlock 鐨?VMA 鍙兘浠?PROT_NONE 鏄犲皠銆傚湪杩欑鎯呭喌涓嬶紝get_user_pages() 灏嗘棤娉曞皢杩欎簺椤电己椤佃皟鍏ャ€傝繖娌″叧绯汇€傚鏋滈〉鏈€缁堣缂洪〉鏄犲皠杩涜繖涓?VM_LOCKED VMA锛屽畠浠細鍦ㄧ己椤佃矾寰勪腑澶勭悊鈥斺€攎lock2() 鐨?MLOCK_ONFAULT 鍖哄煙涔熸槸杩欐牱澶勭悊鐨勩€?
-瀵逛簬琚己椤垫槧灏勮繘 VMA 鐨勬瘡涓?PTE锛堟垨 PMD锛夛紝椤电殑 rmap 娣诲姞鍑芥暟浼氳皟鐢?mlock_vma_folio()锛屽綋 VMA 涓?VM_LOCKED 鏃跺畠浼氳皟鐢?mlock_folio()锛堥櫎闈炲畠鏄€忔槑澶ч〉涓€閮ㄥ垎鐨?PTE 鏄犲皠锛夈€傛垨鑰咃紝褰撳畠鏄竴涓柊鍒嗛厤鐨勫尶鍚嶉〉鏃讹紝folio_add_lru_vma() 浼氭敼涓鸿皟鐢?mlock_new_folio()锛氫笌 mlock_folio() 绫讳技锛屼絾鑳藉仛鍑烘洿濂界殑鍒ゆ柇锛屽洜涓鸿椤佃鐙崰鎸佹湁涓斿凡鐭ュ皻鏈湪 LRU 涓娿€?
-mlock_folio() 绔嬪嵆璁剧疆 PG_mlocked锛岀劧鍚庢妸椤垫斁鍒?CPU 鐨?mlock folio 鎵瑰鐞嗕腑锛屼互灏嗗墿浣欏伐浣滄壒澶勭悊銆佸湪 lru_lock 涓嬬敱 __mlock_folio() 瀹屾垚銆俖_mlock_folio() 璁剧疆 PG_unevictable锛屽垵濮嬪寲 mlock_count锛屽苟灏嗛〉杞Щ鍒颁笉鍙洖鏀剁姸鎬侊紙"涓嶅彲鍥炴敹 LRU"锛屼絾浠?mlock_count 浠ｆ浛 LRU 閾炬帴锛夈€傛垨鑰咃紝濡傛灉椤靛凡缁忔槸 PG_lru銆丳G_unevictable 鍜?PG_mlocked锛屽垯鍙槸閫掑 mlock_count銆?
-浣嗗湪瀹炶返涓繖鏈繀鐞嗘兂锛氶〉鍙兘灏氭湭鍦?LRU 涓婏紝鎴栬€呭彲鑳藉凡琚复鏃朵粠 LRU 闅旂銆傚湪杩欑鎯呭喌涓嬩笉鑳芥帴瑙?mlock_count 瀛楁锛屼絾瀹冧細鍦?__munlock_folio() 灏嗛〉褰掕繕"LRU"鏃惰璁句负 0銆傜珵鎬佺姝㈡鏃跺皢 mlock_count 璁句负 1锛氫笌鍏跺啋鐫€灏嗛〉姘镐箙瀛ょ珛涓轰笉鍙洖鏀剁殑椋庨櫓锛屼笉濡傛€绘槸璁?mlock_count 鍋忓悜浣庡€硷紝杩欐牱鍦?munlock 鏃惰椤典細琚В鏁戝埌鍙洖鏀?LRU锛岃嫢涔嬪悗 vmscan 鍦?VM_LOCKED VMA 涓彂鐜板畠锛屽彲鑳藉啀娆¤ mlock銆?
+"不可回收mlocked 基础设施基于 Nick Piggin 最初在一个题"mm: mlocked pages off LRU" RFC 补丁中发表的工作。Nick 发布他的补丁，作Christoph Lameter 发布的、达成同一目标（将 mlocked 页对 vmscan 隐藏）的补丁的替代方案
+Nick 的补丁中，他struct page LRU 链表链接字段之一，作为映射该页的 VM_LOCKED VMA 的计数（Rik van Riel 三年前有过同样的想法）。但这种将该链接字段用于计数的做法，妨碍了在 LRU 链表上管理这些页，因mlocked 页不可迁移，因为 folio_isolate_lru() 无法检测到它们，并LRU 链表链接字段也无法供迁移子系统使用
+Nick 通过在进行隔离之前把 mlocked 页放LRU 链表解决了这个问题，从而放弃了 VM_LOCKED VMA 的计数。当 Nick 的补丁与不可回收 LRU 工作整合时，该计数被替换为在 munlock 时遍历反向映射，以判断是否还有其VM_LOCKED VMA 仍映射着该页
+然而，munlock 时为每个页遍历反向映射既丑陋又低效，并且当许多已 mlock 它的进程试图退出时，会导致文件 rmap 锁上灾难性的争用。在 5.18 中，mlock_count 保存在不可回LRU 链表链接字段中的想法被重新启用并付诸实践，同时不妨碍 mlocked 页的迁移。这就是为什不可回收 LRU 链表"现在不能是一个页的链表；不过那个链表本来也没什么用处——尽管其大小仍被维护以用meminfo
 
-### 杩囨护鐗规畩 VMA
+### 基本管理
 
 
-mlock_fixup() 杩囨护鍑犵被"鐗规畩" VMA锛?
-1) 璁剧疆浜?VM_IO 鎴?VM_PFNMAP 鐨?VMA 琚畬鍏ㄨ烦杩囥€傝繖浜涙槧灏勮儗鍚庣殑椤垫湰璐ㄤ笂鏄鍥哄畾鐨勶紝鍥犳鎴戜滑涓嶉渶瑕佸皢瀹冧滑鏍囪涓?mlocked銆傛棤璁哄浣曪紝杩欎簺椤靛ぇ澶氭病鏈夊彲渚涙爣璁扮殑 struct page銆傚洜姝わ紝get_user_pages() 瀵硅繖浜?VMA 浼氬け璐ワ紝鎵€浠ュ皾璇曡闂畠浠病鏈夋剰涔夈€?
-2) 鏄犲皠 hugetlbfs 椤电殑 VMA 瀹為檯涓婂凡缁忚鍥哄畾鍒板唴瀛樹腑銆傛垜浠棦涓嶉渶瑕佷篃涓嶆兂瀵硅繖浜涢〉鍋?mlock()銆備絾 __mm_populate() 浼氬寘鍚?hugetlbfs 鑼冨洿锛屽垎閰嶅ぇ椤靛苟濉厖 PTE銆?
-3) 甯︽湁 VM_DONTEXPAND 鐨?VMA 閫氬父鏄唴鏍搁〉鐨勭敤鎴锋€佹槧灏勶紝渚嬪 VDSO 椤点€乺elay 閫氶亾椤电瓑銆傝繖浜涢〉鏈川涓婁笉鍙洖鏀讹紝涓斾笉鍦?LRU 閾捐〃涓婄鐞嗐€俖_mm_populate() 浼氬寘鍚繖浜涜寖鍥达紝鍦ㄥ皻鏈～鍏呮椂濉厖 PTE銆?
-4) 璁剧疆浜?VM_MIXEDMAP 鐨?VMA 涓嶄細琚爣璁颁负 VM_LOCKED锛屼絾 __mm_populate() 浼氬寘鍚繖浜涜寖鍥达紝鍦ㄥ皻鏈～鍏呮椂濉厖 PTE銆?
-娉ㄦ剰锛屽浜庢墍鏈夎繖浜涚壒娈?VMA锛宮lock_fixup() 涓嶄細璁剧疆 VM_LOCKED 鏍囧織銆傚洜姝わ紝鎴戜滑涔嬪悗鍦?munlock()銆乵unmap() 鎴栦换鍔￠€€鍑烘椂涓嶅繀澶勭悊瀹冧滑銆俶lock_fixup() 涔熶笉浼氬皢杩欎簺 VMA 璁″叆浠诲姟鐨?"locked_vm"銆?
+mlocked 页——即映射VM_LOCKED VMA 的页——是一类不可回收页。当内存管理子系注意这样的页时，folio 会被标记PG_mlocked 标志。这可以folio_set_mlocked() folio_clear_mlocked() 函数操作
+一PG_mlocked 页在加入 LRU 时会被放到不可回收链表上。这样的页可以在多个地方被内存管注意
+ (1) mlock()/mlock2()/mlockall() 系统调用处理程序中；
 
-### munlock()/munlockall() 绯荤粺璋冪敤澶勭悊
+ (2) mmap() 系统调用处理程序中，当以 MAP_LOCKED 标志 mmap 一个区域时
+ (3) 在一个曾MCL_FUTURE 标志调用 mlockall() 的任务中 mmap 一个区域时
+ (4) 在缺页路径中，以及当 VM_LOCKED 栈段被扩展时；或
 
+ (5) 如上所述，vmscan:shrink_folio_list() 中，当试图通过 folio_referenced() try_to_unmap() 回收某个 VM_LOCKED VMA 中的页时
+mlocked 页在以下情况被解锁并从不可回收链表解救出来：
 
-munlock() 鍜?munlockall() 绯荤粺璋冪敤鐢变笌 mlock()銆乵lock2() 鍜?mlockall() 鐩稿悓鐨?mlock_fixup() 鍑芥暟澶勭悊銆傚鏋滆皟鐢?munlock 涓€涓凡缁?munlock 鐨?VMA锛宮lock_fixup() 鐩存帴杩斿洖銆傜敱浜庝笂杩?VMA 杩囨护锛屼换浣?鐗规畩" VMA 涓兘涓嶄細璁剧疆 VM_LOCKED銆傚洜姝わ紝閭ｄ簺 VMA 鍦?munlock 鏃朵細琚拷鐣ャ€?
-濡傛灉 VMA 鏄?VM_LOCKED锛宮lock_fixup() 浼氬啀娆″皾璇曞悎骞舵垨鍒囧垎鍑烘寚瀹氱殑鑼冨洿銆傜劧鍚?VMA 涓殑鎵€鏈夐〉閫氳繃 mlock_vma_pages_range() 鈫?walk_page_range() 鈫?mlock_pte_range() 鈫?munlock_folio() 琚?munlock鈥斺€旇繖涓?mlock 涓€涓?VMA 鑼冨洿鏃朵娇鐢ㄧ殑鍑芥暟鐩稿悓锛屽彧鏄?VMA 涓婂甫鏈夋爣鏄庢鍦ㄦ墽琛?munlock() 鐨勬柊鏍囧織銆?
-munlock_folio() 浣跨敤 mlock pagevec 鏉ユ壒澶勭悊灏嗗湪 lru_lock 涓嬬敱 __munlock_folio() 瀹屾垚鐨勫伐浣溿€俖_munlock_folio() 閫掑噺 folio 鐨?mlock_count锛屽綋鍑忓埌 0 鏃舵竻闄?mlocked 鏍囧織鍜?unevictable 鏍囧織锛屽皢 folio 浠庝笉鍙洖鏀剁姸鎬佽浆绉诲埌闈炴椿璺?LRU銆?
-浣嗗湪瀹炶返涓繖鏈繀鐞嗘兂锛歠olio 鍙兘灏氭湭鍒拌揪"涓嶅彲鍥炴敹 LRU"锛屾垨鑰呭彲鑳藉凡琚复鏃朵粠涓殧绂汇€傚湪杩欎簺鎯呭喌涓嬪畠鐨?mlock_count 瀛楁涓嶅彲鐢紝蹇呴』鍋囧畾涓?0锛氳繖鏍?folio 浼氳瑙ｆ晳鍒板彲鍥炴敹 LRU锛岃嫢涔嬪悗 vmscan 鍦?VM_LOCKED VMA 涓彂鐜板畠锛屽彲鑳藉啀娆¤ mlock銆?
+ (1) 处于通过 munlock()/munlockall() 系统调用解锁的范围内的映射；
 
-### 杩佺Щ MLOCKED 椤?
+ (2) 通过 munmap() 从映射该页的最后一VM_LOCKED VMA 中移除，包括在任务退出时的解除映射；
 
-姝ｅ湪杩佺Щ鐨勯〉宸茶浠?LRU 閾捐〃闅旂锛屽苟鍦ㄨ椤电殑瑙ｆ槧灏勩€佹洿鏂伴〉鐨勫湴鍧€绌洪棿椤广€佸鍒跺唴瀹瑰拰鐘舵€佹湡闂翠繚鎸侀攣瀹氾紝鐩村埌椤佃〃椤硅鏇挎崲涓烘寚鍚戞柊椤电殑椤广€侺inux 鏀寔杩佺Щ mlocked 椤靛拰鍏朵粬涓嶅彲鍥炴敹椤点€傚綋鏃ч〉浠庢渶鍚庝竴涓?VM_LOCKED VMA 瑙ｆ槧灏勬椂锛孭G_mlocked 浠庢棫椤垫竻闄わ紱褰撴柊椤佃鏄犲皠鍒?VM_LOCKED VMA 涓彇浠ｈ縼绉婚」鏃讹紝PG_mlocked 琚缃€傚鏋滈〉鍥?mlocked 鑰屼笉鍙洖鏀讹紝PG_unevictable 璺熼殢 PG_mlocked锛涗絾濡傛灉椤靛洜鍏朵粬鍘熷洜鑰屼笉鍙洖鏀讹紝鍒欐樉寮忓鍒?PG_unevictable銆?
-娉ㄦ剰锛岄〉杩佺Щ鍙兘涓庡悓涓€椤电殑 mlock 鎴?munlock 鍙戠敓绔炴€併€傝繖鍩烘湰娌℃湁闂锛屽洜涓洪〉杩佺Щ闇€瑕佽В鏄犲皠鏃ч〉鐨勬墍鏈?PTE锛堝寘鎷?VM_LOCKED 鏃剁殑 munlock锛夛紝鐒跺悗鏄犲皠鏂伴〉锛堝寘鎷?VM_LOCKED 鏃剁殑 mlock锛夈€傞〉琛ㄩ攣鎻愪緵浜嗗厖鍒嗙殑鍚屾銆?
-鐒惰€岋紝鐢变簬 mlock_vma_pages_range() 浠庡湪 VMA 涓婅缃?VM_LOCKED 寮€濮嬶紝涔嬪悗鎵?mlock 浠讳綍宸插瓨鍦ㄧ殑椤碉紝濡傛灉鍏朵腑鏌愪釜椤靛湪 mlock_pte_range() 鍒拌揪瀹冧箣鍓嶈杩佺Щ浜嗭紝瀹冧細鍦?mlock_count 涓璁℃暟涓ゆ銆備负闃叉杩欑鎯呭喌锛宮lock_vma_pages_range() 涓存椂灏?VMA 鏍囪涓?VM_IO锛屼娇 mlock_vma_folio() 璺宠繃瀹冦€?
-涓哄畬鎴愰〉杩佺Щ锛屾垜浠湪涔嬪悗灏嗘棫椤靛拰鏂伴〉鏀惧洖 LRU銆傞偅涓?涓嶉渶瑕佺殑"椤碘€斺€旀垚鍔熸椂鏄棫椤碉紝澶辫触鏃舵槸鏂伴〉鈥斺€斿湪杩佺Щ杩囩▼鎸佹湁鐨勫紩鐢ㄨ鏁拌閲婃斁鏃惰閲婃斁銆?
+ (3) 当该页从某个 mmapped 文件的最后一VM_LOCKED VMA 中被截断时；
+ (4) VM_LOCKED VMA 中对页执COW（写时复制）之前
 
-### 鍘嬬缉 MLOCKED 椤?
-
-鍙互鎵弿鍐呭瓨鏄犲皠浠ュ鎵惧彲鍘嬬缉鍖哄煙锛岄粯璁よ涓烘槸鍏佽绉诲姩涓嶅彲鍥炴敹椤点€?proc/sys/vm/compact_unevictable_allowed 鎺у埗杩欎竴琛屼负锛堣 Documentation/admin-guide/sysctl/vm.rst锛夈€傚帇缂╁伐浣滀富瑕佺敱椤佃縼绉讳唬鐮佸鐞嗭紝骞跺鐢?Migrating MLOCKED Pages 涓弿杩扮殑宸ヤ綔娴佺▼銆?
-
-### 瀵归€忔槑澶ч〉鎵ц MLOCK
+### mlock()/mlock2()/mlockall() 系统调用处理
 
 
-閫忔槑澶ч〉鐢?LRU 閾捐〃涓婄殑涓€涓崟鐙」琛ㄧず銆傚洜姝わ紝鎴戜滑鍙兘浣挎暣涓鍚堥〉涓嶅彲鍥炴敹锛岃€屼笉鑳戒娇鍗曚釜瀛愰〉涓嶅彲鍥炴敹銆?
-濡傛灉鐢ㄦ埛灏濊瘯 mlock() 澶ч〉鐨勪竴閮ㄥ垎锛屽苟涓旀病鏈夊叾浠栫敤鎴?mlock() 鏁翠釜澶ч〉锛屾垜浠笇鏈涘ぇ椤电殑鍏朵綑閮ㄥ垎鍙洖鏀躲€?
-鎴戜滑涓嶈兘鍦ㄩ儴鍒?mlock() 鏃剁洿鎺ユ媶鍒嗚椤碉紝鍥犱负 split_huge_page() 鍙兘澶辫触锛岃€屼笖鎴戜滑涓嶅笇鏈涚郴缁熻皟鐢ㄥ嚭鐜版柊鐨勯棿姝囨€уけ璐ユā寮忋€?
-鎴戜滑鐨勫鐞嗘柟寮忔槸锛氬皢 PTE-mlocked 鐨勫ぇ椤典繚鐣欏湪鍙洖鏀?LRU 閾捐〃涓婏細VM_LOCKED VMA 杈圭晫澶勭殑 PMD 浼氳鎷嗗垎涓?PTE 琛ㄣ€?
-杩欐牱澶ч〉瀵?vmscan 鏄彲璁块棶鐨勩€傚湪鍐呭瓨鍘嬪姏涓嬶紝璇ラ〉浼氳鎷嗗垎锛屽睘浜?VM_LOCKED VMA 鐨勫瓙椤典細琚Щ鍒颁笉鍙洖鏀?LRU锛屽叾浣欓儴鍒嗗彲琚洖鏀躲€?
-/proc/meminfo 鐨?Unevictable 鍜?Mlocked 鏁板€间笉鍖呭惈閭ｄ簺浠呯敱 VM_LOCKED VMA 涓?PTE 鏄犲皠鐨勯€忔槑澶ч〉閮ㄥ垎銆?
+mlock()、mlock2() mlockall() 系统调用处理程序会对调用所指定范围内的每个 VMA 调用 mlock_fixup()。在 mlockall() 的情况下，这就是任务的整个活动地址空间。注意，mlock_fixup() 既用mlock 也用munlock 一段内存。对已经VM_LOCKED VMA 调用 mlock()，或对不VM_LOCKED VMA 调用 munlock()，都被视为空操作，mlock_fixup() 直接返回
+如果 VMA 通过了下Filtering Special VMAs"中描述的某些过滤，mlock_fixup() 会尝试将 VMA 与其相邻者合并，或者在范围未覆盖整VMA 时切分出 VMA 的一个子集。VMA 中已有的任何页随后会通过 mlock_vma_pages_range() walk_page_range() mlock_pte_range() mlock_folio() 被标记为 mlocked
+在从系统调用返回之前，do_mlock() mlockall() 会调__mm_populate()，通过 get_user_pages() 将剩余页缺页调入，并在它们被缺页时标记为 mlocked
+注意，被 mlock VMA 可能PROT_NONE 映射。在这种情况下，get_user_pages() 将无法将这些页缺页调入。这没关系。如果页最终被缺页映射进这VM_LOCKED VMA，它们会在缺页路径中处理——mlock2() MLOCK_ONFAULT 区域也是这样处理的
+对于被缺页映射进 VMA 的每PTE（或 PMD），页的 rmap 添加函数会调mlock_vma_folio()，当 VMA VM_LOCKED 时它会调mlock_folio()（除非它是透明大页一部分PTE 映射）。或者，当它是一个新分配的匿名页时，folio_add_lru_vma() 会改为调mlock_new_folio()：与 mlock_folio() 类似，但能做出更好的判断，因为该页被独占持有且已知尚未在 LRU 上
+mlock_folio() 立即设置 PG_mlocked，然后把页放CPU mlock folio 批处理中，以将剩余工作批处理、在 lru_lock 下由 __mlock_folio() 完成。__mlock_folio() 设置 PG_unevictable，初始化 mlock_count，并将页转移到不可回收状态（"不可回收 LRU"，但mlock_count 代替 LRU 链接）。或者，如果页已经是 PG_lru、PG_unevictable PG_mlocked，则只是递增 mlock_count
+但在实践中这未必理想：页可能尚未LRU 上，或者可能已被临时从 LRU 隔离。在这种情况下不能接mlock_count 字段，但它会__munlock_folio() 将页归还"LRU"时被设为 0。竞态禁止此时将 mlock_count 设为 1：与其冒着将页永久孤立为不可回收的风险，不如总是mlock_count 偏向低值，这样munlock 时该页会被解救到可回LRU，若之后 vmscan VM_LOCKED VMA 中发现它，可能再次被 mlock
 
-### mmap(MAP_LOCKED) 绯荤粺璋冪敤澶勭悊
-
-
-闄や簡 mlock()銆乵lock2() 鍜?mlockall() 绯荤粺璋冪敤涔嬪锛屽簲鐢ㄧ▼搴忚繕鍙互閫氳繃鍚?mmap() 璋冪敤鎻愪緵 MAP_LOCKED 鏍囧織锛岃姹傚皢涓€娈靛唴瀛樺尯鍩?mlock銆備笉杩囪繖閲屾湁涓€涓噸瑕佷笖寰鐨勫尯鍒€俶map() + mlock() 鍦ㄨ寖鍥存棤娉曡缂洪〉璋冨叆鏃讹紙渚嬪鍥犱负 mm_populate 澶辫触锛変細澶辫触骞惰繑鍥?ENOMEM锛岃€?mmap(MAP_LOCKED) 涓嶄細澶辫触銆傝 mmap 鐨勫尯鍩熶粛灏嗗叿鏈夐攣瀹氬尯鍩熺殑灞炴€р€斺€旈〉涓嶄細琚崲鍑衡€斺€斾絾灏嗗唴瀛樼己椤佃皟鍏ョ殑閲嶅ぇ缂洪〉寮傚父浠嶅彲鑳藉彂鐢熴€?
-姝ゅ锛屼换浣曟浘浠?MCL_FUTURE 鏍囧織璋冪敤 mlockall() 鐨勪换鍔℃墍鍋氱殑銆佹墿灞曞爢鐨?mmap() 璋冪敤鎴?brk() 璋冪敤锛岄兘浼氬鑷存柊鏄犲皠鐨勫唴瀛樿 mlock銆傚湪涓嶅彲鍥炴敹/mlock 鏀瑰姩涔嬪墠锛屽唴鏍稿彧鏄皟鐢?make_pages_present() 鏉ュ垎閰嶉〉骞跺～鍏呴〉琛ㄣ€?
-瑕佸湪涓嶅彲鍥炴敹/mlock 鍩虹璁炬柦涓?mlock 涓€娈靛唴瀛樿寖鍥达紝mmap() 澶勭悊绋嬪簭鍜屼换鍔″湴鍧€绌洪棿鎵╁睍鍑芥暟浼氳皟鐢?populate_vma_page_range()锛屾寚瀹氳 mlock 鐨?vma 鍜屽湴鍧€鑼冨洿銆?
-
-### munmap()/exit()/exec() 绯荤粺璋冪敤澶勭悊
+### 过滤特殊 VMA
 
 
-褰撹В闄ゆ槧灏勪竴娈?mlocked 鐨勫唴瀛樺尯鍩熸椂锛屾棤璁烘槸閫氳繃鏄惧紡璋冪敤 munmap()锛岃繕鏄粡鐢?exit() 鎴?exec() 澶勭悊涓殑鍐呴儴瑙ｆ槧灏勶紝濡傛灉鎴戜滑姝ｅ湪绉婚櫎鏄犲皠杩欎簺椤电殑鏈€鍚庝竴涓?VM_LOCKED VMA锛屽氨蹇呴』 munlock 杩欎簺椤点€傚湪涓嶅彲鍥炴敹/mlock 鏀瑰姩涔嬪墠锛宮lock 涓嶄細浠ヤ换浣曟柟寮忔爣璁拌繖浜涢〉锛屽洜姝よВ闄ゅ畠浠殑鏄犲皠鏃犻渶浠讳綍澶勭悊銆?
-瀵逛簬姝ｄ粠 VMA 瑙ｉ櫎鏄犲皠鐨勬瘡涓?PTE锛堟垨 PMD锛夛紝folio_remove_rmap_*() 浼氳皟鐢?munlock_vma_folio()锛屽綋 VMA 涓?VM_LOCKED 鏃跺畠浼氳皟鐢?munlock_folio()锛堥櫎闈炲畠鏄€忔槑澶ч〉涓€閮ㄥ垎鐨?PTE 鏄犲皠锛夈€?
-munlock_folio() 浣跨敤 mlock pagevec 鏉ユ壒澶勭悊灏嗗湪 lru_lock 涓嬬敱 __munlock_folio() 瀹屾垚鐨勫伐浣溿€俖_munlock_folio() 閫掑噺 folio 鐨?mlock_count锛屽綋鍑忓埌 0 鏃舵竻闄?mlocked 鏍囧織鍜?unevictable 鏍囧織锛屽皢 folio 浠庝笉鍙洖鏀剁姸鎬佽浆绉诲埌闈炴椿璺?LRU銆?
-浣嗗湪瀹炶返涓繖鏈繀鐞嗘兂锛歠olio 鍙兘灏氭湭鍒拌揪"涓嶅彲鍥炴敹 LRU"锛屾垨鑰呭彲鑳藉凡琚复鏃朵粠涓殧绂汇€傚湪杩欎簺鎯呭喌涓嬪畠鐨?mlock_count 瀛楁涓嶅彲鐢紝蹇呴』鍋囧畾涓?0锛氳繖鏍?folio 浼氳瑙ｆ晳鍒板彲鍥炴敹 LRU锛岃嫢涔嬪悗 vmscan 鍦?VM_LOCKED VMA 涓彂鐜板畠锛屽彲鑳藉啀娆¤ mlock銆?
+mlock_fixup() 过滤几类"特殊" VMA
+1) 设置VM_IO VM_PFNMAP VMA 被完全跳过。这些映射背后的页本质上是被固定的，因此我们不需要将它们标记mlocked。无论如何，这些页大多没有可供标记的 struct page。因此，get_user_pages() 对这VMA 会失败，所以尝试访问它们没有意义
+2) 映射 hugetlbfs 页的 VMA 实际上已经被固定到内存中。我们既不需要也不想对这些页mlock()。但 __mm_populate() 会包hugetlbfs 范围，分配大页并填充 PTE
+3) 带有 VM_DONTEXPAND VMA 通常是内核页的用户态映射，例如 VDSO 页、relay 通道页等。这些页本质上不可回收，且不LRU 链表上管理。__mm_populate() 会包含这些范围，在尚未填充时填充 PTE
+4) 设置VM_MIXEDMAP VMA 不会被标记为 VM_LOCKED，但 __mm_populate() 会包含这些范围，在尚未填充时填充 PTE
+注意，对于所有这些特VMA，mlock_fixup() 不会设置 VM_LOCKED 标志。因此，我们之后munlock()、munmap() 或任务退出时不必处理它们。mlock_fixup() 也不会将这些 VMA 计入任务"locked_vm"
 
-### 鎴柇 MLOCKED 椤?
+### munlock()/munlockall() 系统调用处理
 
-鏂囦欢鎴柇鎴栨墦娲炰細寮哄埗灏嗗凡鍒犻櫎鐨勯〉浠庣敤鎴风┖闂磋В鏄犲皠锛涙埅鏂敋鑷充細瑙ｆ槧灏勫苟鍒犻櫎浠讳綍浠庢琚埅鏂殑鏂囦欢椤?Copy-On-Write锛堝啓鏃跺鍒讹級鑰屾潵鐨勭鏈夊尶鍚嶉〉銆?
-Mlocked 椤靛彲浠ヤ互杩欑鏂瑰紡琚?munlock 骞跺垹闄わ細涓?munmap() 绫讳技锛屽浜庢浠?VMA 瑙ｉ櫎鏄犲皠鐨勬瘡涓?PTE锛堟垨 PMD锛夛紝folio_remove_rmap_*() 浼氳皟鐢?munlock_vma_folio()锛屽綋 VMA 涓?VM_LOCKED 鏃跺畠浼氳皟鐢?munlock_folio()锛堥櫎闈炲畠鏄€忔槑澶ч〉涓€閮ㄥ垎鐨?PTE 鏄犲皠锛夈€?
-鐒惰€岋紝濡傛灉瀛樺湪绔炰簤鐨?munlock()锛岀敱浜?mlock_vma_pages_range() 閫氳繃浠?VMA 娓呴櫎 VM_LOCKED 鏉ュ紑濮?munlock锛屽湪 munlock 鎵€鏈夊凡瀛樺湪鐨勯〉涔嬪墠锛屽鏋滃叾涓煇涓〉鍦?mlock_pte_range() 鍒拌揪瀹冧箣鍓嶅氨琚埅鏂垨鎵撴礊瑙ｆ槧灏勪簡锛岄偅涔堟湰 VMA 灏变笉浼氬皢鍏惰瘑鍒负 mlocked锛屼篃涓嶄細浠?mlock_count 涓噺闄ゃ€傚湪杩欑缃曡鎯呭喌涓嬶紝涓€涓〉鍦ㄥ畬鍏ㄨВ鏄犲皠鍚庡彲鑳戒粛鏄剧ず涓?PG_mlocked锛氭鏃朵氦鐢?release_pages()锛堟垨 __page_cache_release()锛夊湪閲婃斁鍓嶆竻闄ゅ畠骞舵洿鏂扮粺璁★紙姝や簨浠惰鍏?/proc/vmstat 鐨?unevictable_pgs_cleared锛岃鍊奸€氬父涓?0锛夈€?
 
-### shrink_*_list() 涓殑椤靛洖鏀?
+munlock() munlockall() 系统调用由与 mlock()、mlock2() mlockall() 相同mlock_fixup() 函数处理。如果调munlock 一个已munlock VMA，mlock_fixup() 直接返回。由于上VMA 过滤，任特殊" VMA 中都不会设置 VM_LOCKED。因此，那些 VMA munlock 时会被忽略
+如果 VMA VM_LOCKED，mlock_fixup() 会再次尝试合并或切分出指定的范围。然VMA 中的所有页通过 mlock_vma_pages_range() walk_page_range() mlock_pte_range() munlock_folio() munlock——这mlock 一VMA 范围时使用的函数相同，只VMA 上带有标明正在执munlock() 的新标志
+munlock_folio() 使用 mlock pagevec 来批处理将在 lru_lock 下由 __munlock_folio() 完成的工作。__munlock_folio() 递减 folio mlock_count，当减到 0 时清mlocked 标志unevictable 标志，将 folio 从不可回收状态转移到非活LRU
+但在实践中这未必理想：folio 可能尚未到达"不可回收 LRU"，或者可能已被临时从中隔离。在这些情况下它mlock_count 字段不可用，必须假定0：这folio 会被解救到可回收 LRU，若之后 vmscan VM_LOCKED VMA 中发现它，可能再次被 mlock
 
-vmscan 鐨?shrink_active_list() 浼氬墧闄や换浣曟槑鏄句笉鍙洖鏀剁殑椤碘€斺€斿嵆 !page_evictable(page) 鐨勯〉鈥斺€斿皢瀹冧滑杞悜涓嶅彲鍥炴敹閾捐〃銆傜劧鑰岋紝shrink_active_list() 鍙兘鐪嬪埌閭ｄ簺杩涘叆浜嗘椿璺?闈炴椿璺?LRU 閾捐〃鐨勪笉鍙洖鏀堕〉銆傛敞鎰忥紝杩欎簺椤垫病鏈夎缃?PG_unevictable鈥斺€斿惁鍒欏畠浠細鍦ㄤ笉鍙洖鏀堕摼琛ㄤ笂锛岃€?shrink_active_list() 姘歌繙涓嶄細鐪嬪埌瀹冧滑銆?
-LRU 閾捐〃涓婅繖绫讳笉鍙洖鏀堕〉鐨勪竴浜涗緥瀛愭槸锛?
- (1) 棣栨鍒嗛厤鏃跺氨琚斁鍒?LRU 閾捐〃涓婄殑 ramfs 椤点€?
- (2) SHM_LOCK 鐨勫叡浜唴瀛橀〉銆俿hmctl(SHM_LOCK) 涓嶄細灏濊瘯鍒嗛厤鎴栬皟鍏ュ叡浜唴瀛樺尯鍩熶腑鐨勯〉銆傝繖鍙戠敓鍦ㄥ簲鐢ㄧ▼搴忓湪 SHM_LOCK 璇ユ涔嬪悗绗竴娆¤闂椤垫椂銆?
- (3) 浠嶆槧灏勫埌 VM_LOCKED VMA 鐨勯〉锛屾湰搴旇鏍囪涓?mlocked锛屼絾浜嬩欢瀵艰嚧 mlock_count 杩囦綆锛屽洜姝ゅ畠浠杩囨棭 munlock 浜嗐€?
-vmscan 鐨?shrink_inactive_list() 鍜?shrink_folio_list() 涔熶細灏嗛潪娲昏穬閾捐〃涓婂彂鐜扮殑鏄庢樉涓嶅彲鍥炴敹椤碉紝杞悜閫傚綋鐨?memory cgroup 鍜岃妭鐐圭殑涓嶅彲鍥炴敹閾捐〃銆?
-rmap 鐨?folio_referenced_one()锛堢粡鐢?vmscan 鐨?shrink_active_list() 鎴?shrink_folio_list() 璋冪敤锛変互鍙?rmap 鐨?try_to_unmap_one()锛堢粡鐢?shrink_folio_list() 璋冪敤锛変細妫€鏌ヤ粛鐒舵槧灏勫埌 VM_LOCKED VMA 鐨?(3) 绫婚〉锛屽苟璋冪敤 mlock_vma_folio() 鏉ョ籂姝ｅ畠浠€傝繖绫婚〉鍦ㄨ shrinker 閲婃斁鏃朵細琚墧闄ゅ埌涓嶅彲鍥炴敹閾捐〃銆?
+### 杩佺Щ MLOCKED 椤。
+
+正在迁移的页已被LRU 链表隔离，并在该页的解映射、更新页的地址空间项、复制内容和状态期间保持锁定，直到页表项被替换为指向新页的项。Linux 支持迁移 mlocked 页和其他不可回收页。当旧页从最后一VM_LOCKED VMA 解映射时，PG_mlocked 从旧页清除；当新页被映射VM_LOCKED VMA 中取代迁移项时，PG_mlocked 被设置。如果页mlocked 而不可回收，PG_unevictable 跟随 PG_mlocked；但如果页因其他原因而不可回收，则显式复PG_unevictable
+注意，页迁移可能与同一页的 mlock munlock 发生竞态。这基本没有问题，因为页迁移需要解映射旧页的所PTE（包VM_LOCKED 时的 munlock），然后映射新页（包VM_LOCKED 时的 mlock）。页表锁提供了充分的同步
+然而，由于 mlock_vma_pages_range() 从在 VMA 上设VM_LOCKED 开始，之后mlock 任何已存在的页，如果其中某个页在 mlock_pte_range() 到达它之前被迁移了，它会mlock_count 中被计数两次。为防止这种情况，mlock_vma_pages_range() 临时VMA 标记VM_IO，使 mlock_vma_folio() 跳过它
+为完成页迁移，我们在之后将旧页和新页放回 LRU。那不需要的"页——成功时是旧页，失败时是新页——在迁移过程持有的引用计数被释放时被释放
+
+### 鍘嬬缉 MLOCKED 椤。
+
+可以扫描内存映射以寻找可压缩区域，默认行为是允许移动不可回收页proc/sys/vm/compact_unevictable_allowed 控制这一行为（见 Documentation/admin-guide/sysctl/vm.rst）。压缩工作主要由页迁移代码处理，并套Migrating MLOCKED Pages 中描述的工作流程
+
+### 对透明大页执行 MLOCK
+
+
+透明大页LRU 链表上的一个单独项表示。因此，我们只能使整个复合页不可回收，而不能使单个子页不可回收
+如果用户尝试 mlock() 大页的一部分，并且没有其他用mlock() 整个大页，我们希望大页的其余部分可回收
+我们不能在部mlock() 时直接拆分该页，因为 split_huge_page() 可能失败，而且我们不希望系统调用出现新的间歇性失败模式
+我们的处理方式是：将 PTE-mlocked 的大页保留在可回LRU 链表上：VM_LOCKED VMA 边界处的 PMD 会被拆分PTE 表
+这样大页vmscan 是可访问的。在内存压力下，该页会被拆分，属VM_LOCKED VMA 的子页会被移到不可回LRU，其余部分可被回收
+/proc/meminfo Unevictable Mlocked 数值不包含那些仅由 VM_LOCKED VMA PTE 映射的透明大页部分
+
+### mmap(MAP_LOCKED) 系统调用处理
+
+
+除了 mlock()、mlock2() mlockall() 系统调用之外，应用程序还可以通过mmap() 调用提供 MAP_LOCKED 标志，请求将一段内存区mlock。不过这里有一个重要且微妙的区别。mmap() + mlock() 在范围无法被缺页调入时（例如因为 mm_populate 失败）会失败并返ENOMEM，mmap(MAP_LOCKED) 不会失败。被 mmap 的区域仍将具有锁定区域的属性——页不会被换出——但将内存缺页调入的重大缺页异常仍可能发生
+此外，任何曾MCL_FUTURE 标志调用 mlockall() 的任务所做的、扩展堆mmap() 调用brk() 调用，都会导致新映射的内存被 mlock。在不可回收/mlock 改动之前，内核只是调make_pages_present() 来分配页并填充页表
+要在不可回收/mlock 基础设施mlock 一段内存范围，mmap() 处理程序和任务地址空间扩展函数会调populate_vma_page_range()，指定要 mlock vma 和地址范围
+
+### munmap()/exit()/exec() 系统调用处理
+
+
+当解除映射一mlocked 的内存区域时，无论是通过显式调用 munmap()，还是经exit() exec() 处理中的内部解映射，如果我们正在移除映射这些页的最后一VM_LOCKED VMA，就必须 munlock 这些页。在不可回收/mlock 改动之前，mlock 不会以任何方式标记这些页，因此解除它们的映射无需任何处理
+对于正从 VMA 解除映射的每PTE（或 PMD），folio_remove_rmap_*() 会调munlock_vma_folio()，当 VMA VM_LOCKED 时它会调munlock_folio()（除非它是透明大页一部分PTE 映射）
+munlock_folio() 使用 mlock pagevec 来批处理将在 lru_lock 下由 __munlock_folio() 完成的工作。__munlock_folio() 递减 folio mlock_count，当减到 0 时清mlocked 标志unevictable 标志，将 folio 从不可回收状态转移到非活LRU
+但在实践中这未必理想：folio 可能尚未到达"不可回收 LRU"，或者可能已被临时从中隔离。在这些情况下它mlock_count 字段不可用，必须假定0：这folio 会被解救到可回收 LRU，若之后 vmscan VM_LOCKED VMA 中发现它，可能再次被 mlock
+
+### 截断 MLOCKED 
+
+文件截断或打洞会强制将已删除的页从用户空间解映射；截断甚至会解映射并删除任何从正被截断的文件Copy-On-Write（写时复制）而来的私有匿名页
+Mlocked 页可以以这种方式munlock 并删除：munmap() 类似，对于正VMA 解除映射的每PTE（或 PMD），folio_remove_rmap_*() 会调munlock_vma_folio()，当 VMA VM_LOCKED 时它会调munlock_folio()（除非它是透明大页一部分PTE 映射）
+然而，如果存在竞争munlock()，由mlock_vma_pages_range() 通过VMA 清除 VM_LOCKED 来开munlock，在 munlock 所有已存在的页之前，如果其中某个页mlock_pte_range() 到达它之前就被截断或打洞解映射了，那么本 VMA 就不会将其识别为 mlocked，也不会mlock_count 中减除。在这种罕见情况下，一个页在完全解映射后可能仍显示PG_mlocked：此时交release_pages()（或 __page_cache_release()）在释放前清除它并更新统计（此事件计/proc/vmstat unevictable_pgs_cleared，该值通常0）
+
+### shrink_*_list() 中的页回
+
+vmscan shrink_active_list() 会剔除任何明显不可回收的页——即 !page_evictable(page) 的页——将它们转向不可回收链表。然而，shrink_active_list() 只能看到那些进入了活非活LRU 链表的不可回收页。注意，这些页没有设PG_unevictable——否则它们会在不可回收链表上，shrink_active_list() 永远不会看到它们
+LRU 链表上这类不可回收页的一些例子是
+ (1) 首次分配时就被放LRU 链表上的 ramfs 页
+ (2) SHM_LOCK 的共享内存页。shmctl(SHM_LOCK) 不会尝试分配或调入共享内存区域中的页。这发生在应用程序在 SHM_LOCK 该段之后第一次访问该页时
+ (3) 仍映射到 VM_LOCKED VMA 的页，本应被标记mlocked，但事件导致 mlock_count 过低，因此它们被过早 munlock 了
+vmscan shrink_inactive_list() shrink_folio_list() 也会将非活跃链表上发现的明显不可回收页，转向适当memory cgroup 和节点的不可回收链表
+rmap folio_referenced_one()（经vmscan shrink_active_list() shrink_folio_list() 调用）以rmap try_to_unmap_one()（经shrink_folio_list() 调用）会检查仍然映射到 VM_LOCKED VMA (3) 类页，并调用 mlock_vma_folio() 来纠正它们。这类页在被 shrinker 释放时会被剔除到不可回收链表
