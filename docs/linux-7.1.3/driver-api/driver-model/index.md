@@ -1,12 +1,12 @@
-﻿## 椹卞姩妯″瀷
+﻿## 驱动模型
 
 
-- [缁戝畾](binding)
-- [鎬荤嚎](bus)
-- [璁捐妯″紡](design-patterns)
-- [璁惧](device)
-- [璁惧璧勬簮绠＄悊锛坉evres锛塢(devres)
-- [椹卞姩](driver)
-- [姒傝](overview)
-- [骞冲彴璁惧](platform)
-- [绉绘鎸囧崡](porting)
+- [绑定](binding)
+- [总线](bus)
+- [设计模式](design-patterns)
+- [设备](device)
+- [设备资源管理（devres）](devres)
+- [驱动](driver)
+- [概览](overview)
+- [平台设备](platform)
+- [移植指南](porting)

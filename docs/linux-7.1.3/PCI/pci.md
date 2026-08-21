@@ -1,70 +1,70 @@
 ﻿
-## 濡備綍缂栧啓 Linux PCI 椹卞姩
+## 如何编写 Linux PCI 驱动
 
 :Authors: - Martin Mares <mj@ucw.cz>
           - Grant Grundler <grundler@parisc-linux.org>
 
-PCI 鐨勪笘鐣屽箍琚ゆ棤鍨狅紝涓斿厖婊′簡锛堝ぇ澶氫护浜轰笉蹇殑锛夋剰澶栥€傜敱浜庢瘡涓?CPU 鏋舵瀯瀹炵幇浜嗕笉鍚岀殑鑺墖缁勶紝涓?PCI 璁惧鏈変笉鍚岀殑闇€姹傦紙鍛冿紝鈥滅壒鎬р€濓級锛岀粨鏋滄槸 Linux 鍐呮牳涓殑 PCI 鏀寔骞朵笉鍍忎汉浠墍甯屾湜鐨勯偅鏍风畝鍗曘€傝繖绡囩煭鏂囪瘯鍥惧悜鎵€鏈夋綔鍦ㄧ殑椹卞姩浣滆€呬粙缁嶇敤浜?PCI 璁惧椹卞姩鐨?Linux API銆?
-鏇村畬鏁寸殑璧勬簮鏄?Jonathan Corbet銆丄lessandro Rubini 鍜?Greg Kroah-Hartman 鎵€钁楃殑銆奓inux Device Drivers銆嬬涓夌増銆侺DD3 鍙湪浠ヤ笅鍦板潃鍏嶈垂鑾峰彇锛堝熀浜庣煡璇嗗叡浜鍙崗璁級锛?https://lwn.net/Kernel/LDD3/銆?
-涓嶈繃璇疯浣忥紝鎵€鏈夋枃妗ｉ兘闅惧厤浼氣€滆繃鏃惰厫鐑傗€濓紙bit rot锛夈€傚鏋滃疄闄呮儏鍐典笌鏈枃鎻忚堪涓嶇锛岃浠ユ簮浠ｇ爜涓哄噯銆?
-璇峰皢鍏充簬 Linux PCI API 鐨勯棶棰?璇勮/琛ヤ竵鍙戦€佸埌鈥淟inux PCI鈥?linux-pci@atrey.karlin.mff.cuni.cz> 閭欢鍒楄〃銆?
-## PCI 椹卞姩鐨勭粨鏋?
-PCI 椹卞姩閫氳繃 pci_register_driver()鈥滃彂鐜扳€濈郴缁熶腑鐨?PCI 璁惧銆傚疄闄呬笂锛屾儏鍐垫伆濂界浉鍙嶃€傚綋 PCI 閫氱敤浠ｇ爜鍙戠幇涓€涓柊璁惧鏃讹紝鍏锋湁鍖归厤鈥滄弿杩扳€濈殑椹卞姩灏嗚閫氱煡銆傜粏鑺傝涓嬫枃銆?
-pci_register_driver() 灏嗗ぇ閮ㄥ垎璁惧鎺㈡祴宸ヤ綔鐣欑粰 PCI 灞傦紝骞舵敮鎸佽澶囩殑鍦ㄧ嚎鎻掑叆/绉婚櫎[浠庤€屾敮鎸佸湪鍗曚竴椹卞姩涓敮鎸佺儹鎻掓嫈 PCI銆丆ardBus 鍜?Express-Card]銆俻ci_register_driver() 璋冪敤闇€瑕佷紶鍏ヤ竴涓嚱鏁版寚閽堣〃锛屼粠鑰屽喅瀹氫簡椹卞姩鐨勯珮灞傜粨鏋勩€?
-涓€鏃﹂┍鍔ㄤ簡瑙ｆ煇涓?PCI 璁惧骞跺彇寰楁墍鏈夋潈锛岄┍鍔ㄩ€氬父闇€瑕佹墽琛屼互涓嬪垵濮嬪寲锛?
-  - 浣胯兘璁惧
-  - 璇锋眰 MMIO/IOP 璧勬簮
-  - 璁剧疆 DMA 鎺╃爜澶у皬锛堢敤浜庝竴鑷存€?DMA 涓庢祦寮?DMA 涓よ€咃級
-  - 鍒嗛厤骞跺垵濮嬪寲鍏变韩鎺у埗鏁版嵁锛坧ci_allocate_coherent()锛?  - 璁块棶璁惧閰嶇疆绌洪棿锛堝闇€瑕侊級
-  - 娉ㄥ唽 IRQ 澶勭悊绋嬪簭锛坮equest_irq()锛?  - 鍒濆鍖栭潪 PCI 閮ㄥ垎锛堝嵆鑺墖鐨?LAN/SCSI/绛夐儴鍒嗭級
-  - 浣胯兘 DMA/澶勭悊寮曟搸
+PCI 的世界广袤无垠，且充满了（大多令人不快的）意外。由于每CPU 架构实现了不同的芯片组，PCI 设备有不同的需求（呃，“特性”），结果是 Linux 内核中的 PCI 支持并不像人们所希望的那样简单。这篇短文试图向所有潜在的驱动作者介绍用PCI 设备驱动Linux API
+更完整的资源Jonathan Corbet、Alessandro Rubini Greg Kroah-Hartman 所著的《Linux Device Drivers》第三版。LDD3 可在以下地址免费获取（基于知识共享许可协议）https://lwn.net/Kernel/LDD3/
+不过请记住，所有文档都难免会“过时腐烂”（bit rot）。如果实际情况与本文描述不符，请以源代码为准
+请将关于 Linux PCI API 的问评论/补丁发送到“Linux PCIlinux-pci@atrey.karlin.mff.cuni.cz> 邮件列表
+## PCI 驱动的结
+PCI 驱动通过 pci_register_driver()“发现”系统中PCI 设备。实际上，情况恰好相反。当 PCI 通用代码发现一个新设备时，具有匹配“描述”的驱动将被通知。细节见下文
+pci_register_driver() 将大部分设备探测工作留给 PCI 层，并支持设备的在线插入/移除[从而支持在单一驱动中支持热插拔 PCI、CardBus Express-Card]。pci_register_driver() 调用需要传入一个函数指针表，从而决定了驱动的高层结构
+一旦驱动了解某PCI 设备并取得所有权，驱动通常需要执行以下初始化
+  - 使能设备
+  - 请求 MMIO/IOP 资源
+  - 设置 DMA 掩码大小（用于一致DMA 与流DMA 两者）
+  - 分配并初始化共享控制数据（pci_allocate_coherent()  - 访问设备配置空间（如需要）
+  - 注册 IRQ 处理程序（request_irq()  - 初始化非 PCI 部分（即芯片LAN/SCSI/等部分）
+  - 使能 DMA/处理引擎
 
-褰撲娇鐢ㄥ畬璁惧銆佷笖鍙兘闇€瑕佸嵏杞芥ā鍧楁椂锛岄┍鍔ㄩ渶瑕佹墽琛屼互涓嬫楠わ細
+当使用完设备、且可能需要卸载模块时，驱动需要执行以下步骤：
 
-  - 绂佹璁惧浜х敓 IRQ
-  - 閲婃斁 IRQ锛坒ree_irq()锛?  - 鍋滄鎵€鏈?DMA 娲诲姩
-  - 閲婃斁 DMA 缂撳啿鍖猴紙娴佸紡涓庝竴鑷存€т袱鑰咃級
-  - 浠庡叾浠栧瓙绯荤粺娉ㄩ攢锛堜緥濡?scsi 鎴?netdev锛?  - 閲婃斁 MMIO/IOP 璧勬簮
-  - 绂佺敤璁惧
+  - 禁止设备产生 IRQ
+  - 释放 IRQ（free_irq()  - 停止所DMA 活动
+  - 释放 DMA 缓冲区（流式与一致性两者）
+  - 从其他子系统注销（例scsi netdev  - 释放 MMIO/IOP 资源
+  - 禁用设备
 
-杩欎簺涓婚澶у鍦ㄤ互涓嬪皬鑺備腑娑电洊銆傚叾浣欓儴鍒嗚鍙傞槄 LDD3 鎴?<linux/pci.h>銆?
-濡傛灉鏈厤缃?PCI 瀛愮郴缁燂紙鏈缃?CONFIG_PCI锛夛紝涓嬮潰鎻忚堪鐨勫鏁?PCI 鍑芥暟琚畾涔変负鍐呰仈鍑芥暟锛岃涔堝畬鍏ㄤ负绌猴紝瑕佷箞浠呰繑鍥為€傚綋鐨勯敊璇爜锛屼互閬垮厤椹卞姩涓嚭鐜板ぇ閲?ifdef銆?
-## pci_register_driver() 璋冪敤
+这些主题大多在以下小节中涵盖。其余部分请参阅 LDD3 <linux/pci.h>
+如果未配PCI 子系统（未设CONFIG_PCI），下面描述的多PCI 函数被定义为内联函数，要么完全为空，要么仅返回适当的错误码，以避免驱动中出现大ifdef
+## pci_register_driver() 调用
 
-PCI 璁惧椹卞姩鍦ㄥ叾鍒濆鍖栨湡闂磋皟鐢?`pci_register_driver()`锛屽苟浼犲叆涓€涓弿杩拌椹卞姩鐨勭粨鏋勪綋鎸囬拡锛坄struct pci_driver`锛夛細
+PCI 设备驱动在其初始化期间调`pci_register_driver()`，并传入一个描述该驱动的结构体指针（`struct pci_driver`）：
 
    :functions: pci_driver
 
-ID 琛ㄦ槸涓€涓互鍏ㄩ浂鏉＄洰缁撳熬鐨?`struct pci_device_id` 鏉＄洰鏁扮粍銆傞€氬父鎺ㄨ崘浣跨敤 static const 瀹氫箟銆?
+ID 表是一个以全零条目结尾`struct pci_device_id` 条目数组。通常推荐使用 static const 定义
    :functions: pci_device_id
 
-澶у鏁伴┍鍔ㄥ彧闇€瑕?`PCI_DEVICE()` 鎴?`PCI_DEVICE_CLASS()` 鏉ュ缓绔?pci_device_id 琛ㄣ€?
-鏂扮殑 PCI ID 鍙互鍦ㄨ繍琛屾椂娣诲姞鍒拌澶囬┍鍔ㄧ殑 pci_ids 琛ㄤ腑
+大多数驱动只需`PCI_DEVICE()` `PCI_DEVICE_CLASS()` 来建pci_device_id 表
+新的 PCI ID 可以在运行时添加到设备驱动的 pci_ids 表中
 ```
 
   echo "vendor device subvendor subdevice class class_mask driver_data" > \
   /sys/bus/pci/drivers/{driver}/new_id
 
 ```
-鎵€鏈夊瓧娈甸兘浠ュ崄鍏繘鍒跺€间紶鍏ワ紙涓嶅甫鍓嶅 0x锛夈€倂endor 鍜?device 瀛楁鏄繀濉殑锛屽叾浣欎负鍙€夈€傜敤鎴峰彧闇€浼犲叆蹇呰鐨勫彲閫夊瓧娈垫暟閲忥細
+所有字段都以十六进制值传入（不带前导 0x）。vendor device 字段是必填的，其余为可选。用户只需传入必要的可选字段数量：
 
-  - subvendor 鍜?subdevice 瀛楁榛樿涓?PCI_ANY_ID锛團FFFFFFF锛?  - class 鍜?classmask 瀛楁榛樿涓?0
-  - driver_data 榛樿涓?0UL銆?  - override_only 瀛楁榛樿涓?0銆?
-娉ㄦ剰锛宒river_data 蹇呴』涓庨┍鍔ㄤ腑瀹氫箟鐨勪换浣?pci_device_id 鏉＄洰鎵€浣跨敤鐨勫€煎尮閰嶃€傚鏋滄墍鏈?pci_device_id 鏉＄洰閮藉叿鏈夐潪闆剁殑 driver_data 鍊硷紝杩欏皢浣?driver_data 瀛楁鎴愪负蹇呭～椤广€?
-涓€鏃︽坊鍔狅紝瀵逛簬浠讳綍鍦ㄥ叾锛堟柊鏇存柊鐨勶級pci_ids 琛ㄤ腑鍒楀嚭鐨勩€佹湭琚棰嗙殑 PCI 璁惧锛岄兘浼氳皟鐢ㄩ┍鍔ㄧ殑 probe 渚嬬▼銆?
-褰撻┍鍔ㄩ€€鍑烘椂锛屽畠鍙渶璋冪敤 pci_unregister_driver()锛孭CI 灞備細鑷姩瀵硅椹卞姩澶勭悊鐨勬墍鏈夎澶囪皟鐢?remove 閽╁瓙銆?
-### 椹卞姩鍑芥暟/鏁版嵁鐨勨€滃睘鎬р€?
-璇峰湪閫傚綋鐨勪綅缃爣璁板垵濮嬪寲涓庢竻鐞嗗嚱鏁帮紙鐩稿簲鐨勫畯瀹氫箟鍦?<linux/init.h> 涓級锛?
+  - subvendor subdevice 字段默认PCI_ANY_ID（FFFFFFFF  - class classmask 字段默认0
+  - driver_data 默认0UL  - override_only 字段默认0
+注意，driver_data 必须与驱动中定义的任pci_device_id 条目所使用的值匹配。如果所pci_device_id 条目都具有非零的 driver_data 值，这将driver_data 字段成为必填项
+一旦添加，对于任何在其（新更新的）pci_ids 表中列出的、未被认领的 PCI 设备，都会调用驱动的 probe 例程
+当驱动退出时，它只需调用 pci_unregister_driver()，PCI 层会自动对该驱动处理的所有设备调remove 钩子
+### 驱动函数/数据的“属性
+请在适当的位置标记初始化与清理函数（相应的宏定义<linux/init.h> 中）
 	======		=================================================
-	__init		鍒濆鍖栦唬鐮併€傚湪椹卞姩鍒濆鍖栧悗琚涪寮冦€?	__exit		閫€鍑轰唬鐮併€傚闈炴ā鍧楀寲椹卞姩琚拷鐣ャ€?	======		=================================================
+	__init		初始化代码。在驱动初始化后被丢弃	__exit		退出代码。对非模块化驱动被忽略	======		=================================================
 
-鍏充簬浣曟椂/浣曞浣跨敤涓婅堪灞炴€х殑鎻愮ず锛? - module_init()/module_exit() 鍑芥暟锛堜互鍙婁粎浠庤繖浜涘嚱鏁拌皟鐢ㄧ殑鎵€鏈夊垵濮嬪寲鍑芥暟锛夊簲鏍囪涓?__init/__exit銆?
- - 涓嶈鏍囪 struct pci_driver銆?
- - 濡傛灉涓嶇‘瀹氱殑鏍囪鐢ㄦ硶锛岃鍕挎爣璁板嚱鏁般€備笉鏍囪鍑芥暟涔熷ソ杩囬敊璇爣璁板嚱鏁般€?
-## 濡備綍鎵嬪姩鏌ユ壘 PCI 璁惧
+关于何时/何处使用上述属性的提示 - module_init()/module_exit() 函数（以及仅从这些函数调用的所有初始化函数）应标记__init/__exit
+ - 不要标记 struct pci_driver
+ - 如果不确定的标记用法，请勿标记函数。不标记函数也好过错误标记函数
+## 如何手动查找 PCI 设备
 
-PCI 椹卞姩涓嶄娇鐢?pci_register_driver() 鎺ュ彛鏉ユ悳绱?PCI 璁惧锛屽簲褰撴湁闈炲父鍏呭垎鐨勭悊鐢便€侾CI 璁惧鐢卞涓┍鍔ㄦ帶鍒剁殑涓昏鍘熷洜鏄紝涓€涓?PCI 璁惧瀹炵幇浜嗗嚑绉嶄笉鍚岀殑纭欢鏈嶅姟銆備緥濡傜粍鍚堜簡涓插彛/骞跺彛/杞洏鎺у埗鍣ㄣ€?
-鍙互浣跨敤浠ヤ笅缁撴瀯杩涜鎵嬪姩鎼滅储锛?
+PCI 驱动不使pci_register_driver() 接口来搜PCI 设备，应当有非常充分的理由。PCI 设备由多个驱动控制的主要原因是，一PCI 设备实现了几种不同的硬件服务。例如组合了串口/并口/软盘控制器
+可以使用以下结构进行手动搜索
 ```
 
 	struct pci_dev *dev = NULL;
@@ -82,132 +82,132 @@ PCI 椹卞姩涓嶄娇鐢?pci_register_driver() 鎺ュ彛鏉ユ悳绱?PCI 璁惧
 	pci_get_subsys(VENDOR_ID,DEVICE_ID, SUBSYS_VENDOR_ID, SUBSYS_DEVICE_ID, dev).
 
 ```
-浣犲彲浠ヤ娇鐢ㄥ父閲?PCI_ANY_ID 浣滀负 VENDOR_ID 鎴?DEVICE_ID 鐨勯€氶厤绗︽浛浠ｃ€備緥濡傦紝杩欏厑璁告悳绱㈡煇涓壒瀹?vendor 鐨勪换浣曡澶囥€?
-杩欎簺鍑芥暟鏄儹鎻掓嫈瀹夊叏鐨勩€傚畠浠細閫掑鎵€杩斿洖鐨?pci_dev 鐨勫紩鐢ㄨ鏁般€備綘鏈€缁堬紙鍙兘鍦ㄦā鍧楀嵏杞芥椂锛夊繀椤婚€氳繃璋冪敤 pci_dev_put() 鏉ラ€掑噺杩欎簺璁惧鐨勫紩鐢ㄨ鏁般€?
-## 璁惧鍒濆鍖栨楠?
-濡傜畝浠嬩腑鎵€杩帮紝澶у鏁?PCI 椹卞姩闇€瑕佷互涓嬫楠よ繘琛岃澶囧垵濮嬪寲锛?
-  - 浣胯兘璁惧
-  - 璇锋眰 MMIO/IOP 璧勬簮
-  - 璁剧疆 DMA 鎺╃爜澶у皬锛堢敤浜庝竴鑷存€?DMA 涓庢祦寮?DMA 涓よ€咃級
-  - 鍒嗛厤骞跺垵濮嬪寲鍏变韩鎺у埗鏁版嵁锛坧ci_allocate_coherent()锛?  - 璁块棶璁惧閰嶇疆绌洪棿锛堝闇€瑕侊級
-  - 娉ㄥ唽 IRQ 澶勭悊绋嬪簭锛坮equest_irq()锛?  - 鍒濆鍖栭潪 PCI 閮ㄥ垎锛堝嵆鑺墖鐨?LAN/SCSI/绛夐儴鍒嗭級
-  - 浣胯兘 DMA/澶勭悊寮曟搸銆?
-椹卞姩鍙互鍦ㄤ换浣曟椂闂磋闂?PCI 閰嶇疆绌洪棿瀵勫瓨鍣ㄣ€傦紙鍡紝鍑犱箮鍙互銆傝繍琛?BIST 鏃讹紝閰嶇疆绌洪棿鍙兘娑堝け鈥︹€︿絾杩欏彧浼氬鑷?PCI 鎬荤嚎涓昏澶囦腑姝紙Bus Master Abort锛夛紝閰嶇疆璇诲彇灏嗚繑鍥炲瀮鍦炬暟鎹級銆?
-### 浣胯兘 PCI 璁惧
+你可以使用常PCI_ANY_ID 作为 VENDOR_ID DEVICE_ID 的通配符替代。例如，这允许搜索某个特vendor 的任何设备
+这些函数是热插拔安全的。它们会递增所返回pci_dev 的引用计数。你最终（可能在模块卸载时）必须通过调用 pci_dev_put() 来递减这些设备的引用计数
+## 设备初始化步
+如简介中所述，大多PCI 驱动需要以下步骤进行设备初始化
+  - 使能设备
+  - 请求 MMIO/IOP 资源
+  - 设置 DMA 掩码大小（用于一致DMA 与流DMA 两者）
+  - 分配并初始化共享控制数据（pci_allocate_coherent()  - 访问设备配置空间（如需要）
+  - 注册 IRQ 处理程序（request_irq()  - 初始化非 PCI 部分（即芯片LAN/SCSI/等部分）
+  - 使能 DMA/处理引擎
+驱动可以在任何时间访PCI 配置空间寄存器。（嗯，几乎可以。运BIST 时，配置空间可能消失……但这只会导PCI 总线主设备中止（Bus Master Abort），配置读取将返回垃圾数据）
+### 使能 PCI 设备
 
-鍦ㄨЕ纰颁换浣曡澶囧瘎瀛樺櫒涔嬪墠锛岄┍鍔ㄩ渶瑕侀€氳繃璋冪敤 pci_enable_device() 鏉ヤ娇鑳?PCI 璁惧銆傝繖灏嗭細
+在触碰任何设备寄存器之前，驱动需要通过调用 pci_enable_device() 来使PCI 设备。这将：
 
-  - 濡傛灉璁惧澶勪簬鎸傝捣鐘舵€侊紝灏嗗叾鍞ら啋锛?  - 鍒嗛厤璁惧鐨?I/O 鍜屽唴瀛樺尯鍩燂紙濡傛灉 BIOS 娌℃湁鍒嗛厤锛夛紝
-  - 鍒嗛厤涓€涓?IRQ锛堝鏋?BIOS 娌℃湁鍒嗛厤锛夈€?
-   pci_enable_device() 鍙兘澶辫触锛佽妫€鏌ヨ繑鍥炲€笺€?
-   OS BUG锛氭垜浠湪浣胯兘杩欎簺璧勬簮涔嬪墠涓嶆鏌ヨ祫婧愬垎閰嶃€傚鏋滄垜浠兘鍦ㄨ皟鐢?pci_enable_device() 涔嬪墠璋冪敤 pci_request_resources()锛岄『搴忎細鏇存湁鎰忎箟銆傜洰鍓嶏紝褰撲袱涓澶囪鍒嗛厤浜嗙浉鍚岃寖鍥存椂锛岃澶囬┍鍔ㄦ棤娉曟娴嬪埌璇?bug銆傝繖涓嶆槸涓€涓父瑙侀棶棰橈紝涔熶笉澶彲鑳藉緢蹇緱鍒颁慨澶嶃€?
-   杩欎竴鐐规鍓嶅凡缁忚璁鸿繃锛屼絾鎴嚦 2.6.19 灏氭湭鏇存敼锛?   https://lore.kernel.org/r/20060302180025.GC28895@flint.arm.linux.org.uk/
+  - 如果设备处于挂起状态，将其唤醒  - 分配设备I/O 和内存区域（如果 BIOS 没有分配），
+  - 分配一IRQ（如BIOS 没有分配）
+   pci_enable_device() 可能失败！请检查返回值
+   OS BUG：我们在使能这些资源之前不检查资源分配。如果我们能在调pci_enable_device() 之前调用 pci_request_resources()，顺序会更有意义。目前，当两个设备被分配了相同范围时，设备驱动无法检测到bug。这不是一个常见问题，也不太可能很快得到修复
+   这一点此前已经讨论过，但截至 2.6.19 尚未更改   https://lore.kernel.org/r/20060302180025.GC28895@flint.arm.linux.org.uk/
 
-pci_set_master() 灏嗛€氳繃璁剧疆 PCI_COMMAND 瀵勫瓨鍣ㄤ腑鐨勬€荤嚎涓绘帶浣嶆潵浣胯兘 DMA銆傚鏋?BIOS 灏嗗叾璁剧疆涓烘煇涓棤鏁堝€硷紝瀹冭繕浼氫慨澶嶅欢杩熷畾鏃跺櫒锛坙atency timer锛夊€笺€俻ci_clear_master() 灏嗛€氳繃娓呴櫎鎬荤嚎涓绘帶浣嶆潵绂佺敤 DMA銆?
-濡傛灉 PCI 璁惧鍙互浣跨敤 PCI Memory-Write-Invalidate 浜嬪姟锛岃皟鐢?pci_set_mwi()銆傝繖灏嗕娇鑳?Mem-Wr-Inval 鐨?PCI_COMMAND 浣嶏紝骞剁‘淇濈紦瀛樿澶у皬锛坈ache line size锛夊瘎瀛樺櫒琚纭缃€傝妫€鏌?pci_set_mwi() 鐨勮繑鍥炲€硷紝鍥犱负骞堕潪鎵€鏈夋灦鏋勬垨鑺墖缁勯兘鏀寔 Memory-Write-Invalidate銆傛垨鑰咃紝濡傛灉 Mem-Wr-Inval 鏈夊垯鏇村ソ浣嗗苟闈炲繀闇€锛岃皟鐢?pci_try_set_mwi() 璁╃郴缁熷敖鏈€澶у姫鍔涘幓浣胯兘 Mem-Wr-Inval銆?
-### 璇锋眰 MMIO/IOP 璧勬簮
+pci_set_master() 将通过设置 PCI_COMMAND 寄存器中的总线主控位来使能 DMA。如BIOS 将其设置为某个无效值，它还会修复延迟定时器（latency timer）值。pci_clear_master() 将通过清除总线主控位来禁用 DMA
+如果 PCI 设备可以使用 PCI Memory-Write-Invalidate 事务，调pci_set_mwi()。这将使Mem-Wr-Inval PCI_COMMAND 位，并确保缓存行大小（cache line size）寄存器被正确设置。请检pci_set_mwi() 的返回值，因为并非所有架构或芯片组都支持 Memory-Write-Invalidate。或者，如果 Mem-Wr-Inval 有则更好但并非必需，调pci_try_set_mwi() 让系统尽最大努力去使能 Mem-Wr-Inval
+### 请求 MMIO/IOP 资源
 
-鍐呭瓨锛圡MIO锛夊拰 I/O 绔彛鍦板潃涓嶅簲鐩存帴浠?PCI 璁惧閰嶇疆绌洪棿璇诲彇銆傝浣跨敤 pci_dev 缁撴瀯涓殑鍊硷紝鍥犱负 PCI鈥滄€荤嚎鍦板潃鈥濆彲鑳藉凡琚灦鏋?鑺墖缁勭壒瀹氱殑鍐呮牳鏀寔閲嶆槧灏勪负鈥滀富鏈虹墿鐞嗏€濆湴鍧€銆?
-鏈夊叧濡備綍璁块棶璁惧瀵勫瓨鍣ㄦ垨璁惧鍐呭瓨锛岃鍙傞槄 Documentation/driver-api/io-mapping.rst銆?
-璁惧椹卞姩闇€瑕佽皟鐢?pci_request_region() 浠ョ‘璁ゆ病鏈夊叾浠栬澶囧凡缁忓湪浣跨敤鐩稿悓鐨勫湴鍧€璧勬簮銆傚弽涔嬶紝椹卞姩搴斿湪璋冪敤 pci_disable_device() 涔嬪悗璋冪敤 pci_release_region()銆傚叾鎰忓浘鏄槻姝袱涓澶囧湪鍚屼竴鍦板潃鑼冨洿涓婂啿绐併€?
-   璇峰弬闃呬笂闈㈢殑 OS BUG 娉ㄩ噴銆傚綋鍓嶏紙2.6.19锛夛紝椹卞姩鍙兘鍦ㄨ皟鐢?pci_enable_device() 涔嬪悗鎵嶈兘纭畾 MMIO 鍜?IO Port 璧勬簮鐨勫彲鐢ㄦ€с€?
-pci_request_region() 鐨勯€氱敤鍙樹綋鏄?request_mem_region()锛堢敤浜?MMIO 鑼冨洿锛夊拰 request_region()锛堢敤浜?IO Port 鑼冨洿锛夈€傚皢杩欎簺鐢ㄤ簬鏈鈥滄櫘閫氣€漃CI BAR 鎻忚堪鐨勫湴鍧€璧勬簮銆?
-鍙﹁涓嬮潰鐨?pci_request_selected_regions()銆?
-### 璁剧疆 DMA 鎺╃爜澶у皬
+内存（MMIO）和 I/O 端口地址不应直接PCI 设备配置空间读取。请使用 pci_dev 结构中的值，因为 PCI“总线地址”可能已被架芯片组特定的内核支持重映射为“主机物理”地址
+有关如何访问设备寄存器或设备内存，请参阅 Documentation/driver-api/io-mapping.rst
+设备驱动需要调pci_request_region() 以确认没有其他设备已经在使用相同的地址资源。反之，驱动应在调用 pci_disable_device() 之后调用 pci_release_region()。其意图是防止两个设备在同一地址范围上冲突
+   请参阅上面的 OS BUG 注释。当前（2.6.19），驱动只能在调pci_enable_device() 之后才能确定 MMIO IO Port 资源的可用性
+pci_request_region() 的通用变体request_mem_region()（用MMIO 范围）和 request_region()（用IO Port 范围）。将这些用于未被“普通”PCI BAR 描述的地址资源
+另见下面pci_request_selected_regions()
+### 设置 DMA 掩码大小
 
-   濡傛灉浠ヤ笅鍐呭闅句互鐞嗚В锛岃鍙傞槄 Documentation/core-api/dma-api.rst銆傛湰鑺傚彧鏄彁閱掗┍鍔ㄩ渶瑕佹寚鏄庤澶囩殑 DMA 鑳藉姏锛屽苟闈?DMA 鎺ュ彛鐨勬潈濞佹潵婧愩€?
-铏界劧鎵€鏈夐┍鍔ㄩ兘搴旀樉寮忔寚鏄?PCI 鎬荤嚎涓绘帶鐨?DMA 鑳藉姏锛堜緥濡?32 浣嶆垨 64 浣嶏級锛屼絾瀵逛簬鍏锋湁瓒呰繃 32 浣嶆€荤嚎涓绘帶娴佸紡鏁版嵁鑳藉姏鐨勮澶囷紝椹卞姩闇€瑕侀€氳繃璋冪敤甯︽湁閫傚綋鍙傛暟鐨?dma_set_mask() 鏉モ€滄敞鍐屸€濇鑳藉姏銆備竴鑸€岃█锛岃繖鍏佽鍦ㄧ郴缁?RAM 瀛樺湪浜?4G 浠ヤ笂_鐗╃悊_鍦板潃鐨勭郴缁熶腑杩涜鏇撮珮鏁堢殑 DMA銆?
-鎵€鏈?PCI-X 鍜?PCIe 鍏煎璁惧鐨勯┍鍔ㄥ繀椤昏皟鐢?dma_set_mask()锛屽洜涓哄畠浠槸 64 浣?DMA 璁惧銆?
-绫讳技鍦帮紝濡傛灉璁惧鍙互閫氳繃璋冪敤 dma_set_coherent_mask() 鐩存帴瀵诲潃浣嶄簬 4G 鐗╃悊鍦板潃浠ヤ笂鐨勭郴缁?RAM 涓殑鈥滀竴鑷存€у唴瀛樷€濓紝椹卞姩涔熷繀椤烩€滄敞鍐屸€濇鑳藉姏銆傚悓鏍凤紝杩欏寘鎷墍鏈?PCI-X 鍜?PCIe 鍏煎璁惧鐨勯┍鍔ㄣ€傝澶?64 浣嶁€淧CI鈥濊澶囷紙PCI-X 涔嬪墠锛夊拰涓€浜?PCI-X 璁惧瀵逛簬鏈夋晥杞借嵎锛堚€滄祦寮忊€濓級鏁版嵁鍏锋湁 64 浣?DMA 鑳藉姏锛屼絾瀵逛簬鎺у埗锛堚€滀竴鑷存€р€濓級鏁版嵁鍒欐病鏈夈€?
-### 寤虹珛鍏变韩鎺у埗鏁版嵁
+   如果以下内容难以理解，请参阅 Documentation/core-api/dma-api.rst。本节只是提醒驱动需要指明设备的 DMA 能力，并DMA 接口的权威来源
+虽然所有驱动都应显式指PCI 总线主控DMA 能力（例32 位或 64 位），但对于具有超过 32 位总线主控流式数据能力的设备，驱动需要通过调用带有适当参数dma_set_mask() 来“注册”此能力。一般而言，这允许在系RAM 存在4G 以上_物理_地址的系统中进行更高效的 DMA
+所PCI-X PCIe 兼容设备的驱动必须调dma_set_mask()，因为它们是 64 DMA 设备
+类似地，如果设备可以通过调用 dma_set_coherent_mask() 直接寻址位于 4G 物理地址以上的系RAM 中的“一致性内存”，驱动也必须“注册”此能力。同样，这包括所PCI-X PCIe 兼容设备的驱动。许64 位“PCI”设备（PCI-X 之前）和一PCI-X 设备对于有效载荷（“流式”）数据具有 64 DMA 能力，但对于控制（“一致性”）数据则没有
+### 建立共享控制数据
 
-涓€鏃﹁缃簡 DMA 鎺╃爜锛岄┍鍔ㄥ氨鍙互鍒嗛厤鈥滀竴鑷存€р€濓紙涔熺О鍏变韩锛夊唴瀛樸€傛湁鍏?DMA API 鐨勫畬鏁存弿杩帮紝璇峰弬闃?Documentation/core-api/dma-api.rst銆傛湰鑺傚彧鏄彁閱掗渶瑕佸湪璁惧涓婁娇鑳?DMA 涔嬪墠瀹屾垚杩欎竴姝ャ€?
-### 鍒濆鍖栬澶囧瘎瀛樺櫒
+一旦设置了 DMA 掩码，驱动就可以分配“一致性”（也称共享）内存。有DMA API 的完整描述，请参Documentation/core-api/dma-api.rst。本节只是提醒需要在设备上使DMA 之前完成这一步
+### 初始化设备寄存器
 
-鏌愪簺椹卞姩闇€瑕佺紪绋嬬壒瀹氱殑鈥滆兘鍔涒€濆瓧娈碉紝鎴栧垵濮嬪寲/閲嶇疆鍏朵粬鈥滃巶鍟嗙壒瀹氣€濆瘎瀛樺櫒銆備緥濡傛竻闄ゆ寕璧风殑涓柇銆?
-### 娉ㄥ唽 IRQ 澶勭悊绋嬪簭
+某些驱动需要编程特定的“能力”字段，或初始化/重置其他“厂商特定”寄存器。例如清除挂起的中断
+### 注册 IRQ 处理程序
 
-铏界劧璋冪敤 request_irq() 鏄澶勬弿杩扮殑鏈€鍚庝竴姝ワ紝浣嗚繖閫氬父鍙槸鍒濆鍖栬澶囩殑鍙︿竴涓腑闂存楠ゃ€傝繖涓€姝ラ€氬父鍙互鎺ㄨ繜鍒拌澶囪鎵撳紑浣跨敤鏃躲€?
-鎵€鏈?IRQ 绾跨殑涓柇澶勭悊绋嬪簭閮藉簲浣跨敤 IRQF_SHARED 娉ㄥ唽锛屽苟浣跨敤 devid 灏?IRQ 鏄犲皠鍒拌澶囷紙璇疯浣忔墍鏈?PCI IRQ 绾块兘鍙互鍏变韩锛夈€?
-request_irq() 浼氬皢涓柇澶勭悊绋嬪簭鍜岃澶囧彞鏌勪笌涓柇鍙峰叧鑱斻€傚巻鍙蹭笂涓柇鍙蜂唬琛ㄤ粠 PCI 璁惧杩愯鍒颁腑鏂帶鍒跺櫒鐨?IRQ 绾裤€傚浜?MSI 鍜?MSI-X锛堣瑙佷笅鏂囷級锛屼腑鏂彿鏄竴涓?CPU鈥滃悜閲忊€濄€?
-request_irq() 杩樹細浣胯兘涓柇銆傚湪娉ㄥ唽涓柇澶勭悊绋嬪簭涔嬪墠锛岃纭繚璁惧宸查潤榛橈紙quiesced锛変笖娌℃湁鎸傝捣鐨勪腑鏂€?
-MSI 鍜?MSI-X 鏄?PCI 鑳藉姏銆備袱鑰呴兘鏄€滄秷鎭俊鍙蜂腑鏂€濓紙Message Signaled Interrupts锛夛紝閫氳繃鍚?Local APIC 杩涜 DMA 鍐欐搷浣滃皢涓柇鎶曢€掔粰 CPU銆侻SI 涓?MSI-X 鐨勬牴鏈尯鍒湪浜庡涓€滃悜閲忊€濈殑鍒嗛厤鏂瑰紡銆侻SI 闇€瑕佽繛缁殑鍚戦噺鍧楋紝鑰?MSI-X 鍙互鍒嗛厤澶氫釜鐙珛鐨勫悜閲忋€?
-鍙互鍦ㄨ皟鐢?request_irq() 涔嬪墠锛岄€氳繃甯?PCI_IRQ_MSI 鍜?鎴?PCI_IRQ_MSIX 鏍囧織璋冪敤 pci_alloc_irq_vectors() 鏉ヤ娇鑳?MSI 鑳藉姏銆傝繖浼氬鑷?PCI 鏀寔灏?CPU 鍚戦噺鏁版嵁缂栫▼鍒?PCI 璁惧鐨勮兘鍔涘瘎瀛樺櫒涓€傝澶氭灦鏋勩€佽姱鐗囩粍鎴?BIOS 涓嶆敮鎸?MSI 鎴?MSI-X锛屽洜姝や粎甯?PCI_IRQ_MSI 鍜?PCI_IRQ_MSIX 鏍囧織鐨?pci_alloc_irq_vectors 璋冪敤浼氬け璐ワ紝鎵€浠ュ簲灏介噺鍚屾椂鎸囧畾 PCI_IRQ_INTX銆?
-瀵逛簬 MSI/MSI-X 鍜屼紶缁?INTx 鍏锋湁涓嶅悓涓柇澶勭悊绋嬪簭鐨勯┍鍔紝搴斿湪璋冪敤 pci_alloc_irq_vectors 涔嬪悗锛屾牴鎹?pci_dev 缁撴瀯涓殑 msi_enabled 鍜?msix_enabled 鏍囧織閫夋嫨姝ｇ‘鐨勫鐞嗙▼搴忋€?
-浣跨敤 MSI 鑷冲皯鏈変袱涓緢濂界殑鐞嗙敱锛?
-1) 鏍规嵁瀹氫箟锛孧SI 鏄竴涓嫭鍗犵殑涓柇鍚戦噺銆傝繖鎰忓懗鐫€涓柇澶勭悊绋嬪簭鏃犻渶楠岃瘉鏄叾璁惧寮曞彂浜嗕腑鏂€?
-2) MSI 閬垮厤浜?DMA/IRQ 绔炰簤鏉′欢銆傚綋 MSI 琚姇閫掓椂锛屽埌涓绘満鍐呭瓨鐨?DMA 淇濊瘉瀵逛富鏈?CPU 鍙銆傝繖瀵逛簬鏁版嵁涓€鑷存€у拰閬垮厤闄堟棫鐨勬帶鍒舵暟鎹兘寰堥噸瑕併€傝繖涓€淇濊瘉鍏佽椹卞姩鐪佺暐鐢ㄤ簬鍒锋柊 DMA 娴佺殑 MMIO 璇诲彇銆?
-鏈夊叧 MSI/MSI-X 鐢ㄦ硶鐨勭ず渚嬶紝璇峰弬闃?drivers/infiniband/hw/mthca/ 鎴?drivers/net/tg3.c銆?
-## PCI 璁惧鍏抽棴
+虽然调用 request_irq() 是此处描述的最后一步，但这通常只是初始化设备的另一个中间步骤。这一步通常可以推迟到设备被打开使用时
+所IRQ 线的中断处理程序都应使用 IRQF_SHARED 注册，并使用 devid IRQ 映射到设备（请记住所PCI IRQ 线都可以共享）
+request_irq() 会将中断处理程序和设备句柄与中断号关联。历史上中断号代表从 PCI 设备运行到中断控制器IRQ 线。对MSI MSI-X（详见下文），中断号是一CPU“向量”
+request_irq() 还会使能中断。在注册中断处理程序之前，请确保设备已静默（quiesced）且没有挂起的中断
+MSI MSI-X PCI 能力。两者都是“消息信号中断”（Message Signaled Interrupts），通过Local APIC 进行 DMA 写操作将中断投递给 CPU。MSI MSI-X 的根本区别在于多个“向量”的分配方式。MSI 需要连续的向量块，MSI-X 可以分配多个独立的向量
+可以在调request_irq() 之前，通过PCI_IRQ_MSI PCI_IRQ_MSIX 标志调用 pci_alloc_irq_vectors() 来使MSI 能力。这会导PCI 支持CPU 向量数据编程PCI 设备的能力寄存器中。许多架构、芯片组BIOS 不支MSI MSI-X，因此仅PCI_IRQ_MSI PCI_IRQ_MSIX 标志pci_alloc_irq_vectors 调用会失败，所以应尽量同时指定 PCI_IRQ_INTX
+对于 MSI/MSI-X 和传INTx 具有不同中断处理程序的驱动，应在调用 pci_alloc_irq_vectors 之后，根pci_dev 结构中的 msi_enabled msix_enabled 标志选择正确的处理程序
+使用 MSI 至少有两个很好的理由
+1) 根据定义，MSI 是一个独占的中断向量。这意味着中断处理程序无需验证是其设备引发了中断
+2) MSI 避免DMA/IRQ 竞争条件。当 MSI 被投递时，到主机内存DMA 保证对主CPU 可见。这对于数据一致性和避免陈旧的控制数据都很重要。这一保证允许驱动省略用于刷新 DMA 流的 MMIO 读取
+有关 MSI/MSI-X 用法的示例，请参drivers/infiniband/hw/mthca/ drivers/net/tg3.c
+## PCI 设备关闭
 
-褰撲竴涓?PCI 璁惧椹卞姩琚嵏杞芥椂锛岄渶瑕佹墽琛屼互涓嬪ぇ閮ㄥ垎姝ラ锛?
-  - 绂佹璁惧浜х敓 IRQ
-  - 閲婃斁 IRQ锛坒ree_irq()锛?  - 鍋滄鎵€鏈?DMA 娲诲姩
-  - 閲婃斁 DMA 缂撳啿鍖猴紙娴佸紡涓庝竴鑷存€т袱鑰咃級
-  - 浠庡叾浠栧瓙绯荤粺娉ㄩ攢锛堜緥濡?scsi 鎴?netdev锛?  - 绂佹璁惧鍝嶅簲 MMIO/IO Port 鍦板潃
-  - 閲婃斁 MMIO/IO Port 璧勬簮
+当一PCI 设备驱动被卸载时，需要执行以下大部分步骤
+  - 禁止设备产生 IRQ
+  - 释放 IRQ（free_irq()  - 停止所DMA 活动
+  - 释放 DMA 缓冲区（流式与一致性两者）
+  - 从其他子系统注销（例scsi netdev  - 禁止设备响应 MMIO/IO Port 地址
+  - 释放 MMIO/IO Port 资源
 
-### 鍦ㄨ澶囦笂鍋滄 IRQ
+### 在设备上停止 IRQ
 
-濡備綍鍋氬埌杩欎竴鐐规槸鑺墖/璁惧鐩稿叧鐨勩€傚鏋滀笉杩欐牱鍋氾紝鍒欏湪锛堜笖浠呭湪锛塈RQ 涓庡彟涓€涓澶囧叡浜殑鎯呭喌涓嬶紝浼氬瓨鍦ㄢ€滃皷鍙腑鏂€濓紙screaming interrupt锛夌殑鍙兘鎬с€?
-褰撳叡浜殑 IRQ 澶勭悊绋嬪簭琚€滆В闄ゆ寕閽┾€濇椂锛屼娇鐢ㄥ悓涓€ IRQ 绾跨殑鍏朵綑璁惧浠嶉渶瑕佽 IRQ 淇濇寔浣胯兘銆傚洜姝わ紝濡傛灉鈥滆В闄ゆ寕閽┾€濈殑璁惧鏂█锛坅ssert锛変簡 IRQ 绾匡紝绯荤粺浼氫互涓烘槸鍏朵綑鏌愪釜璁惧鏂█浜?IRQ 绾胯€屽仛鍑哄搷搴斻€傜敱浜庡叾浣欒澶囬兘涓嶄細澶勭悊璇?IRQ锛岀郴缁熷皢鈥滄寕璧封€濈洿鍒板畠鍒ゅ畾璇?IRQ 涓嶄細琚鐞嗗苟灞忚斀璇?IRQ锛堝湪 100,000 娆¤凯浠ｄ箣鍚庯級銆備竴鏃﹀叡浜?IRQ 琚睆钄斤紝鍏朵綑璁惧灏嗗仠姝㈡甯稿伐浣溿€傝繖涓嶆槸涓€涓ソ鐨勭姸鍐点€?
-杩欐槸鍙︿竴涓湪鍙敤鏃朵娇鐢?MSI 鎴?MSI-X 鐨勭悊鐢便€侻SI 鍜?MSI-X 琚畾涔変负鐙崰涓柇锛屽洜姝や笉浼氬彈鍒扳€滃皷鍙腑鏂€濋棶棰樼殑褰卞搷銆?
-### 閲婃斁 IRQ
+如何做到这一点是芯片/设备相关的。如果不这样做，则在（且仅在）IRQ 与另一个设备共享的情况下，会存在“尖叫中断”（screaming interrupt）的可能性
+当共享的 IRQ 处理程序被“解除挂钩”时，使用同一 IRQ 线的其余设备仍需要该 IRQ 保持使能。因此，如果“解除挂钩”的设备断言（assert）了 IRQ 线，系统会以为是其余某个设备断言IRQ 线而做出响应。由于其余设备都不会处理IRQ，系统将“挂起”直到它判定IRQ 不会被处理并屏蔽IRQ（在 100,000 次迭代之后）。一旦共IRQ 被屏蔽，其余设备将停止正常工作。这不是一个好的状况
+这是另一个在可用时使MSI MSI-X 的理由。MSI MSI-X 被定义为独占中断，因此不会受到“尖叫中断”问题的影响
+### 释放 IRQ
 
-涓€鏃﹁澶囪闈欓粯锛堜笉鍐嶆湁 IRQ锛夛紝灏卞彲浠ヨ皟鐢?free_irq()銆備竴鏃︿换浣曟寕璧风殑 IRQ 琚鐞嗭紝姝ゅ嚱鏁板皢杩斿洖鎺у埗鏉冿紝鈥滆В闄ゆ寕閽┾€濋┍鍔ㄥ湪璇?IRQ 涓婄殑 IRQ 澶勭悊绋嬪簭锛屽苟涓斿湪娌℃湁鍏朵粬浜轰娇鐢ㄥ畠鏃舵渶缁堥噴鏀捐 IRQ銆?
-### 鍋滄鎵€鏈?DMA 娲诲姩
+一旦设备被静默（不再有 IRQ），就可以调free_irq()。一旦任何挂起的 IRQ 被处理，此函数将返回控制权，“解除挂钩”驱动在IRQ 上的 IRQ 处理程序，并且在没有其他人使用它时最终释放该 IRQ
+### 停止所DMA 活动
 
-鍦ㄥ皾璇曢噴鏀?DMA 鎺у埗鏁版嵁涔嬪墠鍋滄鎵€鏈?DMA 鎿嶄綔鏋佸叾閲嶈銆備笉杩欐牱鍋氬彲鑳藉鑷村唴瀛樻崯鍧忋€佹寕璧凤紝骞跺湪鏌愪簺鑺墖缁勪笂瀵艰嚧纭穿婧冦€?
-鍦ㄥ仠姝?IRQ 涔嬪悗鍐嶅仠姝?DMA 鍙互閬垮厤 IRQ 澶勭悊绋嬪簭鍙兘閲嶅惎 DMA 寮曟搸鐨勭珵浜夋潯浠躲€?
-铏界劧杩欎竴姝ュ惉璧锋潵鏄捐€屾槗瑙佷笖绠€鍗曪紝浣嗗嚑涓€滄垚鐔熲€濈殑椹卞姩杩囧幓骞舵湭姝ｇ‘澶勭悊杩欎竴姝ャ€?
-### 閲婃斁 DMA 缂撳啿鍖?
-涓€鏃?DMA 鍋滄锛岄鍏堟竻鐞嗘祦寮?DMA銆傚嵆瑙ｉ櫎鏁版嵁缂撳啿鍖虹殑鏄犲皠锛屽苟灏嗗叾褰掕繕缁欌€滀笂娓糕€濇墍鏈夎€咃紙濡傛灉瀛樺湪锛夈€?
-鐒跺悗娓呯悊鍖呭惈鎺у埗鏁版嵁鐨勨€滀竴鑷存€р€濈紦鍐插尯銆?
-鏈夊叧瑙ｉ櫎鏄犲皠鎺ュ彛鐨勮缁嗕俊鎭紝璇峰弬闃?Documentation/core-api/dma-api.rst銆?
-### 浠庡叾浠栧瓙绯荤粺娉ㄩ攢
+在尝试释DMA 控制数据之前停止所DMA 操作极其重要。不这样做可能导致内存损坏、挂起，并在某些芯片组上导致硬崩溃
+在停IRQ 之后再停DMA 可以避免 IRQ 处理程序可能重启 DMA 引擎的竞争条件
+虽然这一步听起来显而易见且简单，但几个“成熟”的驱动过去并未正确处理这一步
+### 释放 DMA 缓冲
+一DMA 停止，首先清理流DMA。即解除数据缓冲区的映射，并将其归还给“上游”所有者（如果存在）
+然后清理包含控制数据的“一致性”缓冲区
+有关解除映射接口的详细信息，请参Documentation/core-api/dma-api.rst
+### 从其他子系统注销
 
-澶у鏁板簳灞?PCI 璁惧椹卞姩鏀寔鍏朵粬涓€浜涘瓙绯荤粺锛屽 USB銆丄LSA銆丼CSI銆丯etDev銆両nfiniband 绛夈€傝纭繚浣犵殑椹卞姩娌℃湁浠庤瀛愮郴缁熶腑涓㈠け璧勬簮銆傚鏋滃彂鐢熻繖绉嶆儏鍐碉紝鍏稿瀷鐨勭棁鐘舵槸褰撳瓙绯荤粺灏濊瘯璋冪敤宸插嵏杞界殑椹卞姩鏃朵骇鐢?Oops锛坧anic锛夈€?
-### 绂佹璁惧鍝嶅簲 MMIO/IO Port 鍦板潃
+大多数底PCI 设备驱动支持其他一些子系统，如 USB、ALSA、SCSI、NetDev、Infiniband 等。请确保你的驱动没有从该子系统中丢失资源。如果发生这种情况，典型的症状是当子系统尝试调用已卸载的驱动时产Oops（panic）
+### 禁止设备响应 MMIO/IO Port 地址
 
-瀵?MMIO 鎴?IO Port 璧勬簮鎵ц io_unmap()锛岀劧鍚庤皟鐢?pci_disable_device()銆傝繖鏄?pci_enable_device() 鐨勫绉扮浉鍙嶆搷浣溿€傚湪璋冪敤 pci_disable_device() 涔嬪悗涓嶈璁块棶璁惧瀵勫瓨鍣ㄣ€?
-### 閲婃斁 MMIO/IO Port 璧勬簮
+MMIO IO Port 资源执行 io_unmap()，然后调pci_disable_device()。这pci_enable_device() 的对称相反操作。在调用 pci_disable_device() 之后不要访问设备寄存器
+### 释放 MMIO/IO Port 资源
 
-璋冪敤 pci_release_region() 灏?MMIO 鎴?IO Port 鑼冨洿鏍囪涓哄彲鐢ㄣ€備笉杩欐牱鍋氶€氬父浼氬鑷存棤娉曢噸鏂板姞杞介┍鍔ㄣ€?
-## 濡備綍璁块棶 PCI 閰嶇疆绌洪棿
+调用 pci_release_region() MMIO IO Port 范围标记为可用。不这样做通常会导致无法重新加载驱动
+## 如何访问 PCI 配置空间
 
-浣犲彲浠ヤ娇鐢?`pci_(read|write)_config_(byte|word|dword)` 鏉ヨ闂敱 `struct pci_dev *` 琛ㄧず鐨勮澶囩殑閰嶇疆绌洪棿銆傛墍鏈夎繖浜涘嚱鏁板湪鎴愬姛鏃惰繑鍥?0锛屾垨鍦ㄥけ璐ユ椂杩斿洖涓€涓敊璇爜锛坄PCIBIOS_...`锛夛紝璇ラ敊璇爜鍙€氳繃 pcibios_strerror 杞崲涓烘枃鏈瓧绗︿覆銆傚ぇ澶氭暟椹卞姩鏈熸湜瀵规湁鏁?PCI 璁惧鐨勮闂笉浼氬け璐ャ€?
-濡傛灉娌℃湁鍙敤鐨?struct pci_dev锛屼綘鍙互璋冪敤 `pci_bus_(read|write)_config_(byte|word|dword)` 鏉ヨ闂鎬荤嚎涓婄粰瀹氱殑璁惧鍜屽姛鑳姐€?
-濡傛灉浣犺闂厤缃ご鏍囧噯閮ㄥ垎鐨勫瓧娈碉紝璇蜂娇鐢?<linux/pci.h> 涓０鏄庣殑浣嶇疆鍜屼綅鐨勭鍙峰悕绉般€?
-濡傛灉浣犻渶瑕佽闂墿灞?PCI 鑳藉姏锛圗xtended PCI Capability锛夊瘎瀛樺櫒锛屽彧闇€涓虹壒瀹氳兘鍔涜皟鐢?pci_find_capability()锛屽畠浼氫负浣犳壘鍒扮浉搴旂殑瀵勫瓨鍣ㄥ潡銆?
-## 鍏朵粬鏈夎叮鐨勫嚱鏁?
+你可以使`pci_(read|write)_config_(byte|word|dword)` 来访问由 `struct pci_dev *` 表示的设备的配置空间。所有这些函数在成功时返0，或在失败时返回一个错误码（`PCIBIOS_...`），该错误码可通过 pcibios_strerror 转换为文本字符串。大多数驱动期望对有PCI 设备的访问不会失败
+如果没有可用struct pci_dev，你可以调用 `pci_bus_(read|write)_config_(byte|word|dword)` 来访问该总线上给定的设备和功能
+如果你访问配置头标准部分的字段，请使<linux/pci.h> 中声明的位置和位的符号名称
+如果你需要访问扩PCI 能力（Extended PCI Capability）寄存器，只需为特定能力调pci_find_capability()，它会为你找到相应的寄存器块
+## 其他有趣的函
 =============================	================================================
-pci_get_domain_bus_and_slot()	鏌ユ壘瀵瑰簲浜庣粰瀹氬煙銆佹€荤嚎鍜屾Ы浣嶅強缂栧彿鐨?pci_dev銆?				濡傛灉鎵惧埌璁惧锛屽叾寮曠敤璁℃暟浼氶€掑銆?pci_set_power_state()		璁剧疆 PCI 鐢垫簮绠＄悊鐘舵€侊紙0=D0 ... 3=D3锛?pci_find_capability()		鍦ㄨ澶囩殑鑳藉姏鍒楄〃涓煡鎵炬寚瀹氳兘鍔涖€?pci_resource_start()		杩斿洖缁欏畾 PCI 鍖哄煙鐨?bus 璧峰鍦板潃
-pci_resource_end()		杩斿洖缁欏畾 PCI 鍖哄煙鐨?bus 缁撴潫鍦板潃
-pci_resource_len()		杩斿洖 PCI 鍖哄煙鐨勫瓧鑺傞暱搴?pci_set_drvdata()		璁剧疆 pci_dev 鐨勭鏈夐┍鍔ㄦ暟鎹寚閽?pci_get_drvdata()		杩斿洖 pci_dev 鐨勭鏈夐┍鍔ㄦ暟鎹寚閽?pci_set_mwi()			浣胯兘 Memory-Write-Invalidate 浜嬪姟銆?pci_clear_mwi()		绂佺敤 Memory-Write-Invalidate 浜嬪姟銆?=============================	================================================
+pci_get_domain_bus_and_slot()	查找对应于给定域、总线和槽位及编号pci_dev				如果找到设备，其引用计数会递增pci_set_power_state()		设置 PCI 电源管理状态（0=D0 ... 3=D3pci_find_capability()		在设备的能力列表中查找指定能力pci_resource_start()		返回给定 PCI 区域bus 起始地址
+pci_resource_end()		返回给定 PCI 区域bus 结束地址
+pci_resource_len()		返回 PCI 区域的字节长pci_set_drvdata()		设置 pci_dev 的私有驱动数据指pci_get_drvdata()		返回 pci_dev 的私有驱动数据指pci_set_mwi()			使能 Memory-Write-Invalidate 事务pci_clear_mwi()		禁用 Memory-Write-Invalidate 事务=============================	================================================
 
-## 鏉傞」鎻愮ず
+## 杂项提示
 
-褰撳悜鐢ㄦ埛鏄剧ず PCI 璁惧鍚嶇О鏃讹紙渚嬪褰撻┍鍔ㄦ兂瑕佸憡璇夌敤鎴峰畠鎵惧埌浜嗕粈涔堝崱锛夛紝璇蜂娇鐢?pci_name(pci_dev)銆?
-濮嬬粓閫氳繃鎸囧悜 pci_dev 缁撴瀯鐨勬寚閽堟潵寮曠敤 PCI 璁惧銆傛墍鏈?PCI 灞傚嚱鏁伴兘浣跨敤姝ゆ爣璇嗭紝杩欎篃鏄敮涓€鍚堢悊鐨勬爣璇嗘柟寮忋€傞櫎闈炲嚭浜庨潪甯哥壒娈婄殑鐢ㄩ€旓紝鍚﹀垯涓嶈浣跨敤 bus/slot/function 缂栧彿鈥斺€斿湪鍏锋湁澶氫釜涓绘€荤嚎鐨勭郴缁熶笂锛屽畠浠殑璇箟鍙兘鐩稿綋澶嶆潅銆?
-涓嶈璇曞浘鍦ㄤ綘鐨勯┍鍔ㄤ腑寮€鍚?Fast Back to Back 鍐欐搷浣溿€傛€荤嚎涓婄殑鎵€鏈夎澶囬兘闇€瑕佸叿澶囨鑳藉姏锛屽洜姝よ繖搴旂敱骞冲彴鍜岄€氱敤浠ｇ爜澶勭悊锛岃€岄潪鍚勪釜椹卞姩銆?
-## 鍘傚晢涓庤澶囨爣璇?
-闄ら潪璁惧/鍘傚晢 ID 鍦ㄥ涓┍鍔ㄤ箣闂村叡浜紝鍚﹀垯涓嶈灏嗘柊鐨勮澶囨垨鍘傚晢 ID 娣诲姞鍒?include/linux/pci_ids.h銆傚鏋滃畠浠湁鐢紝浣犲彲浠ュ湪鑷繁鐨勯┍鍔ㄤ腑娣诲姞绉佹湁瀹氫箟锛屾垨鑰呯洿鎺ヤ娇鐢ㄦ櫘閫氱殑鍗佸叚杩涘埗甯搁噺銆?
-璁惧 ID 鏄换鎰忕殑鍗佸叚杩涘埗鏁板瓧锛堢敱鍘傚晢鎺у埗锛夛紝閫氬父鍙敤鍦ㄥ崟涓€浣嶇疆锛屽嵆 pci_device_id 琛ㄣ€?
-璇峰皢鏂扮殑鍘傚晢/璁惧 ID 鎻愪氦鍒?https://pci-ids.ucw.cz/銆俻ci.ids 鏂囦欢鍦?https://github.com/pciutils/pciids 涓婃湁闀滃儚銆?
-## 宸插簾寮冪殑鍑芥暟
+当向用户显示 PCI 设备名称时（例如当驱动想要告诉用户它找到了什么卡），请使pci_name(pci_dev)
+始终通过指向 pci_dev 结构的指针来引用 PCI 设备。所PCI 层函数都使用此标识，这也是唯一合理的标识方式。除非出于非常特殊的用途，否则不要使用 bus/slot/function 编号——在具有多个主总线的系统上，它们的语义可能相当复杂
+不要试图在你的驱动中开Fast Back to Back 写操作。总线上的所有设备都需要具备此能力，因此这应由平台和通用代码处理，而非各个驱动
+## 厂商与设备标
+除非设备/厂商 ID 在多个驱动之间共享，否则不要将新的设备或厂商 ID 添加include/linux/pci_ids.h。如果它们有用，你可以在自己的驱动中添加私有定义，或者直接使用普通的十六进制常量
+设备 ID 是任意的十六进制数字（由厂商控制），通常只用在单一位置，即 pci_device_id 表
+请将新的厂商/设备 ID 提交https://pci-ids.ucw.cz/。pci.ids 文件https://github.com/pciutils/pciids 上有镜像
+## 已废弃的函数
 
-鏈夊嚑涓嚱鏁板湪灏濊瘯灏嗘棫椹卞姩绉绘鍒版柊 PCI 鎺ュ彛鏃跺彲鑳戒細閬囧埌銆傚畠浠凡涓嶅啀瀛樺湪浜庡唴鏍镐腑锛屽洜涓哄畠浠笌鐑彃鎷斻€丳CI 鍩熸垨鍚堢悊鐨勫姞閿佷笉鍏煎銆?
+有几个函数在尝试将旧驱动移植到新 PCI 接口时可能会遇到。它们已不再存在于内核中，因为它们与热插拔、PCI 域或合理的加锁不兼容
 =================	===========================================
-pci_find_device()	宸茶 pci_get_device() 鍙栦唬
-pci_find_subsys()	宸茶 pci_get_subsys() 鍙栦唬
-pci_find_slot()		宸茶 pci_get_domain_bus_and_slot() 鍙栦唬
-pci_get_slot()		宸茶 pci_get_domain_bus_and_slot() 鍙栦唬
+pci_find_device()	已被 pci_get_device() 取代
+pci_find_subsys()	已被 pci_get_subsys() 取代
+pci_find_slot()		已被 pci_get_domain_bus_and_slot() 取代
+pci_get_slot()		已被 pci_get_domain_bus_and_slot() 取代
 =================	===========================================
 
-鏇夸唬鏂规鏄亶鍘?PCI 璁惧鍒楄〃鐨勪紶缁?PCI 璁惧椹卞姩銆傝繖浠嶇劧鏄彲鑳界殑锛屼絾涓嶉紦鍔辫繖鏍峰仛銆?
-## MMIO 绌洪棿涓庘€滃啓鎶曢€掆€?
-灏嗛┍鍔ㄤ粠浣跨敤 I/O Port 绌洪棿杞崲涓轰娇鐢?MMIO 绌洪棿閫氬父闇€瑕佷竴浜涢澶栫殑鏇存敼銆傚叿浣撹€岃█锛岄渶瑕佸鐞嗏€滃啓鎶曢€掆€濓紙write posting锛夈€傝澶氶┍鍔紙渚嬪 tg3銆乤cenic銆乻ym53c8xx_2锛夊凡缁忚繖鏍峰仛浜嗐€侷/O Port 绌洪棿淇濊瘉鍐欎簨鍔″湪 CPU 缁х画涔嬪墠鍒拌揪 PCI 璁惧銆傚 MMIO 绌洪棿鐨勫啓鎿嶄綔鍏佽 CPU 鍦ㄤ簨鍔″埌杈?PCI 璁惧涔嬪墠缁х画銆傜‖浠剁埍濂借€呯О涔嬩负鈥滃啓鎶曢€掆€濓紝鍥犱负鍐欏畬鎴愬湪浜嬪姟鍒拌揪鍏剁洰鐨勫湴涔嬪墠灏辫鈥滄姇閫掆€濈粰浜?CPU銆?
-鍥犳锛屽鏃跺簭鏁忔劅鐨勪唬鐮佸簲鍦?CPU 棰勬湡绛夊緟浠ヨ繘琛屽叾浠栧伐浣滅殑鍦版柟娣诲姞 readl()銆傜粡鍏哥殑鈥滀綅缈昏浆鈥濓紙bit banging锛?```
+替代方案是遍PCI 设备列表的传PCI 设备驱动。这仍然是可能的，但不鼓励这样做
+## MMIO 空间与“写投递
+将驱动从使用 I/O Port 空间转换为使MMIO 空间通常需要一些额外的更改。具体而言，需要处理“写投递”（write posting）。许多驱动（例如 tg3、acenic、sym53c8xx_2）已经这样做了。I/O Port 空间保证写事务在 CPU 继续之前到达 PCI 设备。对 MMIO 空间的写操作允许 CPU 在事务到PCI 设备之前继续。硬件爱好者称之为“写投递”，因为写完成在事务到达其目的地之前就被“投递”给CPU
+因此，对时序敏感的代码应CPU 预期等待以进行其他工作的地方添加 readl()。经典的“位翻转”（bit banging```
 
        for (i = 8; --i; val >>= 1) {
                outb(val & 1, ioport_reg);      /* write bit */
@@ -224,5 +224,5 @@ pci_get_slot()		宸茶 pci_get_domain_bus_and_slot() 鍙栦唬
        }
 
 ```
-閲嶈鐨勬槸锛屸€渟afe_mmio_reg鈥?涓嶈兘鏈変换浣曞共鎵拌澶囨纭繍琛岀殑鍓綔鐢ㄣ€?
-鍙︿竴涓渶瑕佹敞鎰忕殑鎯呭喌鏄噸缃?PCI 璁惧鏃躲€備娇鐢?PCI 閰嶇疆绌洪棿璇诲彇鏉ュ埛鏂?writel()銆傚鏋滈鏈?PCI 璁惧涓嶄細瀵?readl() 鍋氬嚭鍝嶅簲锛岃繖灏嗕紭闆呭湴澶勭悊鎵€鏈夊钩鍙颁笂鐨?PCI 涓昏澶囦腑姝€傚ぇ澶氭暟 x86 骞冲彴鍏佽 MMIO 璇诲彇涓昏澶囦腑姝紙鍗斥€淪oft Fail鈥濓級骞惰繑鍥炲瀮鍦炬暟鎹紙渚嬪 ~0锛夈€備絾璁稿 RISC 骞冲彴浼氬穿婧冿紙鍗斥€淗ard Fail鈥濓級銆?
+重要的是，“safe_mmio_reg不能有任何干扰设备正确运行的副作用
+另一个需要注意的情况是重PCI 设备时。使PCI 配置空间读取来刷writel()。如果预PCI 设备不会readl() 做出响应，这将优雅地处理所有平台上PCI 主设备中止。大多数 x86 平台允许 MMIO 读取主设备中止（即“Soft Fail”）并返回垃圾数据（例如 ~0）。但许多 RISC 平台会崩溃（即“Hard Fail”）

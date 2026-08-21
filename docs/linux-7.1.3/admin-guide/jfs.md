@@ -1,33 +1,33 @@
-﻿## Linux 涓婄殑 IBM 鏃ュ織鍨嬫枃浠剁郴缁燂紙JFS, Journaled File System锛?
+﻿## Linux 上的 IBM 日志型文件系统（JFS, Journaled File System
 
-JFS 涓婚〉锛? http://jfs.sourceforge.net/
+JFS 主页 http://jfs.sourceforge.net/
 
-鏀寔浠ヤ笅鎸傝浇閫夐」锛?
-(*) == 榛樿鍊?
+支持以下挂载选项
+(*) == 默认
 iocharset=name
-                鐢ㄤ簬灏?Unicode 杞崲涓?ASCII 鐨勫瓧绗﹂泦銆傞粯璁や笉杩涜杞崲銆備娇鐢?                iocharset=utf8 杩涜 UTF-8 杞崲銆傝繖闇€瑕佸湪鍐呮牳 .config 鏂囦欢涓?                璁剧疆 CONFIG_NLS_UTF8銆俰ocharset=none 鏄惧紡鎸囧畾榛樿琛屼负銆?
+                用于Unicode 转换ASCII 的字符集。默认不进行转换。使                iocharset=utf8 进行 UTF-8 转换。这需要在内核 .config 文件                设置 CONFIG_NLS_UTF8。iocharset=none 显式指定默认行为
 resize=value
-                灏嗗嵎澶у皬璋冩暣涓?<value> 涓潡銆侸FS 浠呮敮鎸佹墿澶у嵎锛岃€屼笉鏀寔缂╁皬
-                瀹冦€傝閫夐」浠呭湪浠ヨ鍐欐柟寮忔寕杞藉嵎鐨勯噸鏂版寕杞斤紙remount锛夋湡闂存湁鏁堛€?                涓嶅甫鍊肩殑 resize 鍏抽敭瀛椾細灏嗗嵎鎵╁ぇ鍒板垎鍖虹殑瀹屾暣澶у皬銆?
+                将卷大小调整<value> 个块。JFS 仅支持扩大卷，而不支持缩小
+                它。该选项仅在以读写方式挂载卷的重新挂载（remount）期间有效                不带值的 resize 关键字会将卷扩大到分区的完整大小
 nointegrity
-                涓嶅啓鍏ユ棩蹇椼€傝閫夐」鐨勪富瑕佺敤閫旀槸鍦ㄤ粠澶囦唤浠嬭川鎭㈠鍗锋椂鑾峰緱鏇撮珮
-                鐨勬€ц兘銆傚鏋滅郴缁熷紓甯哥粓姝紝鍗风殑瀹屾暣鎬ф棤娉曞緱鍒颁繚璇併€?
+                不写入日志。该选项的主要用途是在从备份介质恢复卷时获得更高
+                的性能。如果系统异常终止，卷的完整性无法得到保证
 integrity(*)
-                灏嗗厓鏁版嵁鍙樻洿鎻愪氦鍒版棩蹇椼€備娇鐢ㄦ閫夐」鍙互閲嶆柊鎸傝浇姝ゅ墠鎸囧畾浜?                nointegrity 閫夐」鐨勫嵎锛屼互鎭㈠姝ｅ父琛屼负銆?
+                将元数据变更提交到日志。使用此选项可以重新挂载此前指定                nointegrity 选项的卷，以恢复正常行为
 errors=continue
-                        鏂囦欢绯荤粺鍑洪敊鏃剁户缁繍琛屻€?errors=remount-ro(*)
-                        鍑洪敊鏃跺皢鏂囦欢绯荤粺浠ュ彧璇绘柟寮忛噸鏂版寕杞姐€?errors=panic
-                        濡傛灉鍙戠敓閿欒锛岃Е鍙?panic 骞跺仠鏈恒€?
+                        文件系统出错时继续运行errors=remount-ro(*)
+                        出错时将文件系统以只读方式重新挂载errors=panic
+                        如果发生错误，触panic 并停机
 uid=value
-                鐢ㄦ寚瀹氱殑鍊艰鐩栫鐩樹笂鐨?uid銆?gid=value
-                鐢ㄦ寚瀹氱殑鍊艰鐩栫鐩樹笂鐨?gid銆?umask=value
-                鐢ㄦ寚瀹氱殑鍏繘鍒跺€艰鐩栫鐩樹笂鐨?umask銆傚浜庣洰褰曪紝濡傛灉鐩稿簲鐨?                璇讳綅琚缃紝鎵ц浣嶄篃浼氳璁剧疆銆?
+                用指定的值覆盖磁盘上uidgid=value
+                用指定的值覆盖磁盘上gidumask=value
+                用指定的八进制值覆盖磁盘上umask。对于目录，如果相应                读位被设置，执行位也会被设置
 discard=minlen, discard/nodiscard(*)
-                鍚敤/绂佺敤 discard/TRIM 鍛戒护鐨勪娇鐢ㄣ€傚綋鍧楄閲婃斁鏃讹紝discard/TRIM
-                鍛戒护浼氳鍙戦€佺粰搴曞眰鍧楄澶囥€傝繖瀵?SSD 璁惧浠ュ強绋€鐤?绮剧畝閰嶇疆鐨?LUN
-                寰堟湁鐢ㄣ€侳ITRIM ioctl 鍛戒护涔熷彲涓?nodiscard 閫夐」涓€璧蜂娇鐢ㄣ€俶inlen
-                鐨勫€兼寚瀹氭渶灏忓潡鏁帮紝褰撹揪鍒拌鍊兼椂锛屽悜鍧楄澶囧彂閫?TRIM 鍛戒护鎵嶈璁や负
-                鏈夌敤銆傚鏋滄病鏈変负 discard 閫夐」鎻愪緵鍊硷紝瀹冮粯璁や负 64 涓潡锛屽湪 JFS 涓?                鍗?256KiB銆俤iscard 鐨?minlen 鍊间細瑕嗙洊 FITRIM ioctl() 缁欏嚭鐨?minlen
-                鍊笺€?
-鍙互閫氳繃鎴戜滑缃戦〉 http://jfs.sourceforge.net/ 涓婃爣璁颁负鈥淢ail list Subscribe鈥濈殑閾炬帴
-鏉ヨ闃?JFS 閭欢鍒楄〃銆?
+                启用/禁用 discard/TRIM 命令的使用。当块被释放时，discard/TRIM
+                命令会被发送给底层块设备。这SSD 设备以及稀精简配置LUN
+                很有用。FITRIM ioctl 命令也可nodiscard 选项一起使用。minlen
+                的值指定最小块数，当达到该值时，向块设备发TRIM 命令才被认为
+                有用。如果没有为 discard 选项提供值，它默认为 64 个块，在 JFS                 256KiB。discard minlen 值会覆盖 FITRIM ioctl() 给出minlen
+                值
+可以通过我们网页 http://jfs.sourceforge.net/ 上标记为“Mail list Subscribe”的链接
+来订JFS 邮件列表

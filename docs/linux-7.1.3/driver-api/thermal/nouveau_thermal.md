@@ -1,4 +1,4 @@
-﻿## 鍐呮牳椹卞姩 nouveau
+﻿## 内核驱动 nouveau
 
 
 Supported chips:
@@ -7,45 +7,45 @@ Supported chips:
 
 Authors: Martin Peres (mupuf) <martin.peres@free.fr>
 
-### 鎻忚堪
+### 描述
 
 
-鏈┍鍔ㄥ厑璁歌鍙?GPU 鏍稿績娓╁害銆侀┍鍔?GPU 椋庢墖骞惰缃俯搴︽姤璀︺€?
-鐩墠锛岀敱浜庡唴鏍镐腑缂哄皯璁块棶 HWMON 椹卞姩鐨?API锛孨ouveau 鏃犳硶璁块棶瀹冨彲鑳藉彂鐜扮殑浠讳綍 i2c 澶栭儴鐩戞帶鑺墖銆傚鏋滀綘鎷ユ湁姝ょ被鑺墖锛岄偅涔堥€氳繃 Nouveau 鐨?HWMON 鎺ュ彛杩涜娓╁害鍜?鎴栭鎵囩鐞嗗緢鍙兘鏃犳硶宸ヤ綔銆傛湰鏂囨。鍙兘鍥犳鏃犳硶瀹屽叏瑕嗙洊浣犵殑鎯呭喌銆?
-### 娓╁害绠＄悊
+本驱动允许读GPU 核心温度、驱GPU 风扇并设置温度报警
+目前，由于内核中缺少访问 HWMON 驱动API，Nouveau 无法访问它可能发现的任何 i2c 外部监控芯片。如果你拥有此类芯片，那么通过 Nouveau HWMON 接口进行温度或风扇管理很可能无法工作。本文档可能因此无法完全覆盖你的情况
+### 温度管理
 
 
-娓╁害浠ヤ竴涓彧璇荤殑 HWMON 灞炴€?temp1_input 鏆撮湶銆?
-涓轰繚鎶?GPU 涓嶈繃鐑紝Nouveau 鏀寔 4 涓彲閰嶇疆鐨勬俯搴﹂槇鍊硷細
+温度以一个只读的 HWMON 属temp1_input 暴露
+为保GPU 不过热，Nouveau 支持 4 个可配置的温度阈值：
 
- - Fan_boost锛堥鎵囧姞閫燂級锛?	杈惧埌璇ユ俯搴︽椂椋庢墖杞€熻涓?100%锛? - Downclock锛堥檷棰戯級锛?	GPU 灏嗚闄嶉浠ュ噺灏戝姛鑰楋紱
- - Critical锛堜复鐣岋級锛?	GPU 琚殏鍋滀互杩涗竴姝ラ檷浣庡姛鑰楋紱
- - Shutdown锛堝叧鏈猴級锛?	鍏抽棴璁＄畻鏈轰互淇濇姢浣犵殑 GPU銆?
-WARNING锛堣鍛婏級锛?	鏍规嵁鑺墖缁勪笉鍚岋紝Nouveau 鍙兘涓嶄細浣跨敤鍏朵腑鏌愪簺闃堝€笺€?
-杩欎簺闃堝€肩殑榛樿鍊兼潵鑷?GPU 鐨?vbios銆傝繖浜涢槇鍊煎彲閫氳繃浠ヤ笅 HWMON 灞炴€ч厤缃細
+ - Fan_boost（风扇加速）	达到该温度时风扇转速设100% - Downclock（降频）	GPU 将被降频以减少功耗；
+ - Critical（临界）	GPU 被暂停以进一步降低功耗；
+ - Shutdown（关机）	关闭计算机以保护你的 GPU
+WARNING（警告）	根据芯片组不同，Nouveau 可能不会使用其中某些阈值
+这些阈值的默认值来GPU vbios。这些阈值可通过以下 HWMON 属性配置：
 
- - Fan_boost锛歵emp1_auto_point1_temp 涓?temp1_auto_point1_temp_hyst锛? - Downclock锛歵emp1_max 涓?temp1_max_hyst锛? - Critical锛歵emp1_crit 涓?temp1_crit_hyst锛? - Shutdown锛歵emp1_emergency 涓?temp1_emergency_hyst銆?
-NOTE锛堟敞鎰忥級锛氳璁颁綇锛岃繖浜涘€间互姣憚姘忓害锛坢illi degrees Celsius锛夊瓨鍌ㄣ€傚埆蹇樹簡鎹㈢畻锛?
-### 椋庢墖绠＄悊
-
-
-骞堕潪鎵€鏈夋樉鍗￠兘鏈夊彲椹卞姩鐨勯鎵囥€傚鏋滄湁锛屽垯浠ヤ笅 HWMON 灞炴€у簲褰撳彲鐢細
-
- - pwm1_enable锛?	褰撳墠椋庢墖绠＄悊妯″紡锛圢ONE銆丮ANUAL 鎴?AUTO锛夛紱
- - pwm1锛?	褰撳墠 PWM 鍊硷紙鍔熺巼鐧惧垎姣旓級锛? - pwm1_min锛?	鍏佽鐨勬渶灏?PWM 杞€燂紱
- - pwm1_max锛?	鍏佽鐨勬渶澶?PWM 杞€燂紙鍛戒腑 Fan_boost 鏃朵細琚粫杩囷級锛?
-浣犲彲鑳借繕鎷ユ湁浠ヤ笅灞炴€э細
-
- - fan1_input锛?	椋庢墖杞€燂紙RPM锛夈€?
-浣犵殑椋庢墖鍙互鍦ㄤ笉鍚屾ā寮忎笅椹卞姩锛?
- - 0锛氶鎵囦繚鎸佷笉鍔紱
- - 1锛氶鎵囧彲鎵嬪姩椹卞姩锛堜娇鐢?pwm1 鏀瑰彉杞€燂級锛? - 2锛氶鎵囨牴鎹俯搴﹁嚜鍔ㄩ┍鍔ㄣ€?
-NOTE锛堟敞鎰忥級锛?  鑻ユ兂鎵嬪姩椹卞姩椋庢墖杞€燂紝璇峰姟蹇呬娇鐢ㄦ墜鍔ㄦā寮忋€?
-NOTE2锛堟敞鎰?锛夛細
-  褰撳湪 vbios 瀹氫箟鐨?[PWM_min, PWM_max] 鑼冨洿涔嬪浠ユ墜鍔ㄦā寮忚繍琛屾椂锛屾牴鎹‖浠朵笉鍚岋紝鎶ュ憡鐨勯鎵囪浆閫燂紙RPM锛夊彲鑳戒笉鍑嗙‘銆?
-### 缂洪櫡鎶ュ憡
+ - Fan_boost：temp1_auto_point1_temp temp1_auto_point1_temp_hyst - Downclock：temp1_max temp1_max_hyst - Critical：temp1_crit temp1_crit_hyst - Shutdown：temp1_emergency temp1_emergency_hyst
+NOTE（注意）：请记住，这些值以毫摄氏度（milli degrees Celsius）存储。别忘了换算
+### 风扇管理
 
 
-Nouveau 涓婄殑鐑鐞嗗睘浜庢柊鍔熻兘锛屽彲鑳藉苟闈炲湪鎵€鏈夋樉鍗′笂閮借兘宸ヤ綔銆傚鏈夌枒闂紝璇峰湪 IRC锛?nouveau锛孫FTC锛変笂鑱旂郴 mupuf銆?
-缂洪櫡鎶ュ憡搴旀彁浜ゅ埌 Freedesktop 鐨?bug 璺熻釜鍣ㄣ€傝璁块棶
+并非所有显卡都有可驱动的风扇。如果有，则以下 HWMON 属性应当可用：
+
+ - pwm1_enable	当前风扇管理模式（NONE、MANUAL AUTO）；
+ - pwm1	当前 PWM 值（功率百分比） - pwm1_min	允许的最PWM 转速；
+ - pwm1_max	允许的最PWM 转速（命中 Fan_boost 时会被绕过）
+你可能还拥有以下属性：
+
+ - fan1_input	风扇转速（RPM）
+你的风扇可以在不同模式下驱动
+ - 0：风扇保持不动；
+ - 1：风扇可手动驱动（使pwm1 改变转速） - 2：风扇根据温度自动驱动
+NOTE（注意）  若想手动驱动风扇转速，请务必使用手动模式
+NOTE2（注）：
+  当在 vbios 定义[PWM_min, PWM_max] 范围之外以手动模式运行时，根据硬件不同，报告的风扇转速（RPM）可能不准确
+### 缺陷报告
+
+
+Nouveau 上的热管理属于新功能，可能并非在所有显卡上都能工作。如有疑问，请在 IRCnouveau，OFTC）上联系 mupuf
+缺陷报告应提交到 Freedesktop bug 跟踪器。请访问
 https://nouveau.freedesktop.org/wiki/Bugs

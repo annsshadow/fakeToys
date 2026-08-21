@@ -1,267 +1,267 @@
 ﻿
-## Linux allocated 璁惧 (4.x+ 鐗堟湰)
+## Linux allocated 设备 (4.x+ 版本)
 
 
-姝?鍒楀嚭 鏄?the Linux 璁惧 鍒楀嚭, the official registry 鐨?allocated
-璁惧 numbers 鍜?`/dev` directory nodes 鐢ㄤ簬 the Linux operating
-绯荤粺.
+列出 the Linux 设备 列出, the official registry allocated
+设备 numbers `/dev` directory nodes 用于 the Linux operating
+系统.
 
-The 鐗堟湰 鐨?姝?document 鍦?lanana.org 鏄?鏃?longer maintained.  姝?
-鐗堟湰 鍦?the mainline Linux 鍐呮牳 鏄?the master document.  Updates
-shall 涓?sent 浣滀负 patches 鍒?the 鍐呮牳 maintainers (鍙傝 the
-Documentation/杩涚▼/submitting-patches.rst <submittingpatches> document).
-Specifically explore the sections titled "CHAR 鍜?MISC 椹卞姩", 鍜?
-"鍧?LAYER" 鍦?the MAINTAINERS 鏂囦欢 鍒?find the right maintainers
-鍒?involve 鐢ㄤ簬 character 鍜?鍧?璁惧.
+The 版本 document lanana.org longer maintained.  
+版本 the mainline Linux 内核 the master document.  Updates
+shall sent 作为 patches the 内核 maintainers (参见 the
+Documentation/进程/submitting-patches.rst <submittingpatches> document).
+Specifically explore the sections titled "CHAR 鍜?MISC 椹卞姩", 鍜。
+"LAYER" the MAINTAINERS 文件 find the right maintainers
+involve 用于 character 设备.
 
-姝?document 鏄?included 鐢?鍙傝€?杩涘叆 the 鏂囦欢绯荤粺 Hierarchy
-鏍囧噯 (FHS).	 The FHS 鏄?鍙敤 鏉ヨ嚜 https://www.pathname.com/fhs/.
+document included 参进入 the 文件系统 Hierarchy
+标准 (FHS).	 The FHS 可用 来自 https://www.pathname.com/fhs/.
 
 Allocations marked (68k/Amiga) apply 鍒?Linux/68k 鍦?the Amiga
-platform 浠?	Allocations marked (68k/Atari) apply 鍒?Linux/68k 鍦?
-the Atari platform 浠?
+platform 浠?	Allocations marked (68k/Atari) apply 鍒?Linux/68k 鍦。
+the Atari platform 浠。
 
-姝?document 鏄?鍦?the 鍏叡 domain.	The authors requests, 鐒惰€?
-璇?semantically altered versions 鏄?涓?distributed 鏃?
-permission 鐨?the authors, assuming the authors 鍙?涓?contacted 鏃?
-涓€涓?unreasonable effort.
+document the 公共 domain.	The authors requests, 然
+璇?semantically altered versions 鏄，涓?distributed 鏃。
+permission 鐨?the authors, assuming the authors 鍙，涓?contacted 鏃。
+一unreasonable effort.
 
 
 
-  璁惧 椹卞姩 AUTHORS 璇?璇诲彇 姝?
+  设备 驱动 AUTHORS 读取 
 
-  Linux 鐜板湪 鍏锋湁 extensive 鏀寔 鐢ㄤ簬 鍔ㄦ€?鍒嗛厤 鐨?璁惧 numbering
-  鍜?鍙?浣跨敤 `sysfs` 鍜?`udev` (`systemd`) 鍒?handle the naming needs.
-  瀛樺湪 浠嶇劧 涓€浜?exceptions 鍦?the 涓茶 鍜?boot 璁惧 area. 涔嬪墠
-  asking   鐢ㄤ簬 涓€涓?璁惧 鏁板瓧 纭繚 鎮?actually 闇€瑕?one.
+  Linux 现在 具有 extensive 支持 用于 动分配 设备 numbering
+  使用 `sysfs` `udev` (`systemd`) handle the naming needs.
+  存在 仍然 一exceptions the 串行 boot 设备 area. 之前
+  asking   用于 一设备 数字 确保 actually 需one.
 
-  鍒?鍏锋湁 涓€涓?涓昏 鏁板瓧 allocated, 鎴?涓€涓?娆¤ 鏁板瓧 鍦?situations
-  浣曞 璇?applies (e.g. busmice), 璇?submit 涓€涓?patch 鍜?send 鍒?
-  the authors 浣滀负 indicated 涓婃枃.
+  具有 一主要 数字 allocated, 一次要 数字 situations
+  何处 applies (e.g. busmice), submit 一patch send 
+  the authors 作为 indicated 上文.
 
-  Keep the description 鐨?the 璁惧 *鍦?the 鐩稿悓 鏍煎紡
-  浣滀负 姝?鍒楀嚭*. The reason 鐢ㄤ簬 杩欐槸 璇?瀹冩槸 the 浠?way 鎴戜滑 鍏锋湁
-  found 鍒?ensure 鎴戜滑 鍏锋湁 鍏ㄩ儴 the requisite information 鍒?publish 鎮ㄧ殑
-  璁惧 鍜?avoid conflicts.
+  Keep the description the 设备 *the 相同 格式
+  作为 列出*. The reason 用于 这是 它是 the way 我们 具有
+  found ensure 我们 具有 全部 the requisite information publish 您的
+  设备 avoid conflicts.
 
-  Finally, 鏈夋椂 鎴戜滑 鍏锋湁 鍒?play "namespace police."  璇?don't 涓?
-  offended.  鎴戜滑 閫氬父 get submissions 鐢ㄤ簬 `/dev` names 璇?灏嗕細 涓?bound
-  鍒?cause conflicts down the road.  鎴戜滑 鏄?trying 鍒?avoid getting 鍦?涓€涓?
-  situation 浣曞 鎴戜滑 灏嗕細 鍏锋湁 鍒?suffer 涓€涓?incompatible forward
-  change.  鍥犳, 璇?consult 涓?us **涔嬪墠** 鎮?make 鎮ㄧ殑
-  璁惧 names 鍜?numbers 鍦?浠讳綍 way 鍏叡, 鑷冲皯 鍒?the point
-  浣曞 瀹?灏嗕細 涓?鍦?鍏ㄩ儴 difficult 鍒?get them changed.
+  Finally, 有时 我们 具有 play "namespace police."  don't 
+  offended.  我们 通常 get submissions 用于 `/dev` names 将会 bound
+  cause conflicts down the road.  我们 trying avoid getting 一
+  situation 何处 我们 将会 具有 suffer 一incompatible forward
+  change.  因此, consult us **之前** make 您的
+  设备 names numbers 任何 way 公共, 至少 the point
+  何处 将会 全部 difficult get them changed.
 
-  鎮ㄧ殑 cooperation 鏄?appreciated.
+  您的 cooperation appreciated.
 
    :literal:
 
-### 棰濆 ``/dev/`` directory 鏉＄洰
+### 额外 ``/dev/`` directory 条目
 
 
-姝?section details 棰濆 鏉＄洰 璇?搴斿綋 鎴?鍙?exist 鍦?
-the /dev directory.  瀹冩槸 preferred 璇?symbolic links 浣跨敤 the 鐩稿悓
-form (absolute 鎴?relative) 浣滀负 鏄?indicated 姝ゅ.  Links 鏄?
-classified 浣滀负 "hard" 鎴?"symbolic" depending 鍦?the preferred 绫诲瀷 鐨?
-link; 鑻?鍙兘, the indicated 绫诲瀷 鐨?link 搴斿綋 涓?浣跨敤.
+section details 额外 条目 应当 exist 
+the /dev directory.  它是 preferred symbolic links 使用 the 相同
+form (absolute relative) 作为 indicated 此处.  Links 
+classified 作为 "hard" "symbolic" depending the preferred 类型 
+link; 可能, the indicated 类型 link 应当 使用.
 
 Compulsory links
 ++++++++++++++++
 
-杩欎簺 links 搴斿綋 exist 鍦?鍏ㄩ儴 绯荤粺:
+这些 links 应当 exist 全部 系统:
 
 =============== =============== =============== ===============================
-/dev/fd		/proc/self/fd	symbolic	鏂囦欢 鎻忚堪绗?
-/dev/stdin	fd/0		symbolic	stdin 鏂囦欢 鎻忚堪绗?
-/dev/stdout	fd/1		symbolic	stdout 鏂囦欢 鎻忚堪绗?
-/dev/stderr	fd/2		symbolic	stderr 鏂囦欢 鎻忚堪绗?
-/dev/nfsd	socksys		symbolic	蹇呴渶 鐢?iBCS-2
-/dev/X0R	null		symbolic	蹇呴渶 鐢?iBCS-2
+/dev/fd		/proc/self/fd	symbolic	文件 描述
+/dev/stdin	fd/0		symbolic	stdin 文件 描述
+/dev/stdout	fd/1		symbolic	stdout 文件 描述
+/dev/stderr	fd/2		symbolic	stderr 文件 描述
+/dev/nfsd	socksys		symbolic	必需 iBCS-2
+/dev/X0R	null		symbolic	必需 iBCS-2
 =============== =============== =============== ===============================
 
-娉ㄦ剰: `/dev/X0R` 鏄?<letter X>-<digit 0>-<letter R>.
+注意: `/dev/X0R` <letter X>-<digit 0>-<letter R>.
 
 Recommended links
 +++++++++++++++++
 
-瀹冩槸 recommended 璇?杩欎簺 links exist 鍦?鍏ㄩ儴 绯荤粺:
+它是 recommended 这些 links exist 全部 系统:
 
 
 =============== =============== =============== ===============================
-/dev/鏍稿績	/proc/kcore	symbolic	Backward compatibility
+/dev/核心	/proc/kcore	symbolic	Backward compatibility
 /dev/ramdisk	ram0		symbolic	Backward compatibility
 /dev/ftape	qft0		symbolic	Backward compatibility
-/dev/bttv0	瑙嗛0		symbolic	Backward compatibility
+/dev/bttv0	视频0		symbolic	Backward compatibility
 /dev/radio	radio0		symbolic	Backward compatibility
 /dev/i2o**	/dev/i2o/**	symbolic	Backward compatibility
 =============== =============== =============== ===============================
 
-Suggested 鏇存棭 `/dev/scd?` alternative names 鐢ㄤ簬 `/dev/sr?`
-CD-ROM 鍜?鍏朵粬 optical drives (浣跨敤 SCSI 鍛戒护) 鏇炬槸 removed
-鍦?`udev` 鐗堟湰 174 璇?鏇炬槸 released 鍦?2011.
+Suggested 更早 `/dev/scd?` alternative names 用于 `/dev/sr?`
+CD-ROM 其他 optical drives (使用 SCSI 命令) 曾是 removed
+`udev` 版本 174 曾是 released 2011.
 
-Locally 瀹氫箟 links
+Locally 定义 links
 +++++++++++++++++++++
 
-The 浠ヤ笅 links 鍙?涓?established locally 鍒?conform 鍒?the
-閰嶇疆 鐨?the 绯荤粺.  杩欐槸 merely 涓€涓?tabulation 鐨?existing
-practice, 鍜?鎵ц 涓?constitute 涓€涓?recommendation.  鐒惰€? 鑻?瀹冧滑
-exist, 瀹冧滑 搴斿綋 鍏锋湁 the 浠ヤ笅 uses.
+The 以下 links established locally conform the
+配置 the 系统.  这是 merely 一tabulation existing
+practice, 执行 constitute 一recommendation.  然 它们
+exist, 它们 应当 具有 the 以下 uses.
 
 =============== =============== =============== ===============================
-/dev/榧犳爣	榧犳爣 绔彛	symbolic	鐢垫祦 榧犳爣 璁惧
-/dev/tape	tape 璁惧	symbolic	鐢垫祦 tape 璁惧
-/dev/cdrom	CD-ROM 璁惧	symbolic	鐢垫祦 CD-ROM 璁惧
-/dev/鎵弿浠?鎵弿浠?	symbolic	鐢垫祦 鎵弿浠?璁惧
-/dev/modem	modem 绔彛	symbolic	鐢垫祦 dialout 璁惧
-/dev/root	root 璁惧	symbolic	鐢垫祦 root 鏂囦欢绯荤粺
-/dev/swap	swap 璁惧	symbolic	鐢垫祦 swap 璁惧
+/dev/鼠标	鼠标 端口	symbolic	电流 鼠标 设备
+/dev/tape	tape 设备	symbolic	电流 tape 设备
+/dev/cdrom	CD-ROM 设备	symbolic	电流 CD-ROM 设备
+/dev/扫描扫描	symbolic	电流 扫描设备
+/dev/modem	modem 端口	symbolic	电流 dialout 设备
+/dev/root	root 设备	symbolic	电流 root 文件系统
+/dev/swap	swap 设备	symbolic	电流 swap 设备
 =============== =============== =============== ===============================
 
-`/dev/modem` 搴斿綋 涓?涓?浣跨敤 鐢ㄤ簬 涓€涓?modem 鍏?supports dialin 浣滀负
-well 浣滀负 dialout, 浣滀负 瀹?tends 鍒?cause 閿?鏂囦欢 problems.  鑻?瀹?
-exists, `/dev/modem` 搴斿綋 point 鍒?the appropriate primary TTY 璁惧
-(the 浣跨敤 鐨?the alternate callout 璁惧 鏄?宸插簾寮?.
+`/dev/modem` 应当 使用 用于 一modem supports dialin 作为
+well 作为 dialout, 作为 tends cause 文件 problems.  
+exists, `/dev/modem` 应当 point the appropriate primary TTY 设备
+(the 使用 the alternate callout 设备 已废.
 
-鐢ㄤ簬 SCSI 璁惧, `/dev/tape` 鍜?`/dev/cdrom` 搴斿綋 point 鍒?the
-**cooked** 璁惧 (`/dev/st**` 鍜?`/dev/sr**`, respectively), whereas
-`/dev/scanner` 搴斿綋 point 鍒?the appropriate generic
-SCSI 璁惧 (`/dev/sg*`).
+用于 SCSI 设备, `/dev/tape` `/dev/cdrom` 应当 point the
+**cooked** 设备 (`/dev/st**` `/dev/sr**`, respectively), whereas
+`/dev/scanner` 应当 point the appropriate generic
+SCSI 设备 (`/dev/sg*`).
 
-`/dev/mouse` 鍙?point 鍒?涓€涓?primary 涓茶 TTY 璁惧, 涓€涓?纭欢 榧犳爣
-璁惧, 鎴?涓€涓?濂楁帴瀛?鐢ㄤ簬 涓€涓?榧犳爣 椹卞姩 program (e.g. `/dev/gpmdata`).
+`/dev/mouse` point 一primary 串行 TTY 设备, 一硬件 鼠标
+设备, 一套接用于 一鼠标 驱动 program (e.g. `/dev/gpmdata`).
 
 Sockets 鍜?pipes
 +++++++++++++++++
 
-Non-transient sockets 鍜?named pipes 鍙?exist 鍦?/dev.  閫氱敤 鏉＄洰 鏄?
+Non-transient sockets named pipes exist /dev.  通用 条目 
 
 =============== =============== ===============================================
-/dev/鎵撳嵃鏈?濂楁帴瀛?	lpd 鏈湴 濂楁帴瀛?
-/dev/log	濂楁帴瀛?	syslog 鏈湴 濂楁帴瀛?
+/dev/打印套接	lpd 本地 套接
+/dev/log	套接	syslog 本地 套接
 /dev/gpmdata	濂楁帴瀛?	gpm 榧犳爣 multiplexer
 =============== =============== ===============================================
 
 Mount points
 ++++++++++++
 
-The 浠ヤ笅 names 鏄?reserved 鐢ㄤ簬 mounting 鐗规畩 鏂囦欢绯荤粺
-鍦ㄢ€︿笅 /dev.  杩欎簺 鐗规畩 鏂囦欢绯荤粺 鎻愪緵 鍐呮牳 interfaces 璇?
-cannot 涓?provided 涓?鏍囧噯 璁惧 nodes.
+The 以下 names reserved 用于 mounting 特殊 文件系统
+在…下 /dev.  这些 特殊 文件系统 提供 内核 interfaces 
+cannot provided 标准 设备 nodes.
 
 =============== =============== ===============================================
-/dev/pts	devpts		PTY slave 鏂囦欢绯荤粺
-/dev/shm	tmpfs		POSIX shared 鍐呭瓨 maintenance access
+/dev/pts	devpts		PTY slave 文件系统
+/dev/shm	tmpfs		POSIX shared 内存 maintenance access
 =============== =============== ===============================================
 
-### Terminal 璁惧
+### Terminal 设备
 
 
-Terminal, 鎴?TTY 璁惧 鏄?涓€涓?鐗规畩 绫?鐨?character 璁惧.  涓€涓?
-terminal 璁惧 鏄?浠讳綍 璁惧 璇?鍙互 act 浣滀负 涓€涓?controlling terminal
-鐢ㄤ簬 涓€涓?浼氳瘽; 姝?鍖呭惈 铏氭嫙 consoles, 涓茶 ports, 鍜?
+Terminal, TTY 设备 一特殊 character 设备.  一
+terminal 设备 任何 设备 可以 act 作为 一controlling terminal
+用于 一会话; 包含 虚拟 consoles, 串行 ports, 
 pseudoterminals (PTYs).
 
-鍏ㄩ儴 terminal 璁惧 share 涓€涓?閫氱敤 set 鐨?capabilities known 浣滀负 line
-disciplines; 杩欎簺 鍖呭惈 the 閫氱敤 terminal line discipline 浣滀负 well
-浣滀负 SLIP 鍜?PPP modes.
+全部 terminal 设备 share 一通用 set capabilities known 作为 line
+disciplines; 这些 包含 the 通用 terminal line discipline 作为 well
+作为 SLIP PPP modes.
 
-鍏ㄩ儴 terminal 璁惧 鏄?named similarly; 姝?section explains the
-naming 鍜?浣跨敤 鐨?the 鍚勭 types 鐨?TTYs.  娉ㄦ剰 璇?the naming
-conventions 鍖呭惈 鑻ュ共 historical warts; 涓€浜?鐨?杩欎簺 鏄?
-Linux-specific, 涓€浜?鏇炬槸 inherited 鏉ヨ嚜 鍏朵粬 绯荤粺, 鍜?涓€浜?
-reflect Linux outgrowing 涓€涓?borrowed convention.
+全部 terminal 设备 named similarly; section explains the
+naming 使用 the 各种 types TTYs.  注意 the naming
+conventions 包含 若干 historical warts; 一这些 
+Linux-specific, 一曾是 inherited 来自 其他 系统, 一
+reflect Linux outgrowing 一borrowed convention.
 
-涓€涓?hash mark (`#`) 鍦?涓€涓?璁惧 name 鏄?浣跨敤 姝ゅ 鍒?indicate 涓€涓?decimal
+一hash mark (`#`) 一设备 name 使用 此处 indicate 一decimal
 鏁板瓧 鏃?leading zeroes.
 
-铏氭嫙 consoles 鍜?the console 璁惧
+虚拟 consoles the console 设备
 +++++++++++++++++++++++++++++++++++++++
 
-铏氭嫙 consoles 鏄?full-screen terminal displays 鍦?the 绯荤粺 瑙嗛
-鐩戣鍣?  铏氭嫙 consoles 鏄?named `/dev/tty#`, 涓?numbering
-starting 鍦?`/dev/tty1`; `/dev/tty0` 鏄?the 鐢垫祦 铏氭嫙 console.
-`/dev/tty0` 鏄?the 璁惧 璇?搴斿綋 涓?浣跨敤 鍒?access the 绯荤粺 瑙嗛
-鍗?鍦?閭ｄ簺 architectures 鐢ㄤ簬 鍏?the 甯?缂撳啿鍖?璁惧
-(`/dev/fb*`) 鏄?涓?applicable. 鎵ц 涓?浣跨敤 `/dev/console`
-鐢ㄤ簬 姝?purpose.
+虚拟 consoles full-screen terminal displays the 系统 视频
+监视  虚拟 consoles named `/dev/tty#`, numbering
+starting `/dev/tty1`; `/dev/tty0` the 电流 虚拟 console.
+`/dev/tty0` the 设备 应当 使用 access the 系统 视频
+那些 architectures 用于 the 缓冲设备
+(`/dev/fb*`) applicable. 执行 使用 `/dev/console`
+用于 purpose.
 
-The console 璁惧, `/dev/console`, 鏄?the 璁惧 鍒?鍏?绯荤粺
-messages 搴斿綋 涓?sent, 鍜?鍦?鍏?logins 搴斿綋 涓?permitted 鍦?
-single-user 妯″紡.  Starting 涓?Linux 2.1.71, `/dev/console` 鏄?managed
-鐢?the 鍐呮牳; 鐢ㄤ簬 鍓嶄竴涓?versions 瀹?搴斿綋 涓?涓€涓?symbolic link 鍒?
-浠讳竴涓?`/dev/tty0`, 涓€涓?鐗瑰畾 铏氭嫙 console 渚嬪 `/dev/tty1`, 鎴?鍒?
-涓€涓?涓茶 绔彛 primary (`tty**`, 涓?`cu**`) 璁惧, depending 鍦?the
-閰嶇疆 鐨?the 绯荤粺.
+The console 设备, `/dev/console`, the 设备 系统
+messages 应当 sent, logins 应当 permitted 
+single-user 模式.  Starting Linux 2.1.71, `/dev/console` managed
+the 内核; 用于 前一versions 应当 一symbolic link 
+任一`/dev/tty0`, 一特定 虚拟 console 例如 `/dev/tty1`, 
+一串行 端口 primary (`tty**`, `cu**`) 设备, depending the
+配置 the 系统.
 
-涓茶 ports
+串行 ports
 ++++++++++++
 
-涓茶 ports 鏄?RS-232 涓茶 ports 鍜?浠讳綍 璁惧 鍏?simulates
-one, 浠讳竴涓?鍦?纭欢 (渚嬪 鍐呴儴 modems) 鎴?鍦?杞欢 (姝ょ被
-浣滀负 the ISDN 椹卞姩.)  鍦ㄢ€︿笅 Linux, 姣忎釜 涓茶 ports 鍏锋湁 two 璁惧
-names, the primary 鎴?callin 璁惧 鍜?the alternate 鎴?callout one.
-姣忎釜 kind 鐨?璁惧 鏄?indicated 鐢?涓€涓?涓嶅悓 letter.	 鐢ㄤ簬 浠讳綍
-letter X, the names 鐨?the 璁惧 鏄?`/dev/ttyX#` 鍜?`/dev/cux#`,
-respectively; 鐢ㄤ簬 historical reasons, `/dev/ttyS#` 鍜?`/dev/ttyC#`
-correspond 鍒?`/dev/cua#` 鍜?`/dev/cub#`. 鍦?the future, 瀹?搴斿綋 涓?
-expected 璇?澶氫釜 letters 灏?涓?浣跨敤; 鍏ㄩ儴 letters 灏?涓?upper
-case 鐢ㄤ簬 the "tty" 璁惧 (e.g. `/dev/ttyDP#`) 鍜?lower case 鐢ㄤ簬 the
-"cu" 璁惧 (e.g. `/dev/cudp#`).
+串行 ports RS-232 串行 ports 任何 设备 simulates
+one, 任一硬件 (例如 内部 modems) 软件 (此类
+作为 the ISDN 驱动.)  在…下 Linux, 每个 串行 ports 具有 two 设备
+names, the primary callin 设备 the alternate callout one.
+每个 kind 设备 indicated 一不同 letter.	 用于 任何
+letter X, the names the 设备 `/dev/ttyX#` `/dev/cux#`,
+respectively; 用于 historical reasons, `/dev/ttyS#` `/dev/ttyC#`
+correspond `/dev/cua#` `/dev/cub#`. the future, 应当 
+expected 多个 letters 使用; 全部 letters upper
+case 用于 the "tty" 设备 (e.g. `/dev/ttyDP#`) lower case 用于 the
+"cu" 设备 (e.g. `/dev/cudp#`).
 
-The names `/dev/ttyQ#` 鍜?`/dev/cuq#` 鏄?reserved 鐢ㄤ簬 鏈湴 浣跨敤.
+The names `/dev/ttyQ#` `/dev/cuq#` reserved 用于 本地 使用.
 
-The alternate 璁惧 鎻愪緵 鐢ㄤ簬 kernel-based exclusion 鍜?somewhat
-涓嶅悓 defaults 姣?the primary 璁惧.  瀹冧滑鐨?涓昏 purpose 鏄?鍒?
-鍏佽 the 浣跨敤 鐨?涓茶 ports 涓?programs 涓?鏃?inherent 鎴?broken
-鏀寔 鐢ㄤ簬 涓茶 ports.  瀹冧滑鐨?浣跨敤 鏄?宸插簾寮? 鍜?瀹冧滑 鍙?涓?
-removed 鏉ヨ嚜 涓€涓?future 鐗堟湰 鐨?Linux.
+The alternate 设备 提供 用于 kernel-based exclusion somewhat
+不同 defaults the primary 设备.  它们主要 purpose 
+允许 the 使用 串行 ports programs inherent broken
+支持 用于 串行 ports.  它们使用 已废 它们 
+removed 来自 一future 版本 Linux.
 
-Arbitration 鐨?涓茶 ports 鏄?provided 鐢?the 浣跨敤 鐨?閿?鏂囦欢 涓?
-the names `/var/lock/LCK..ttyX#`. The contents 鐨?the 閿?鏂囦欢 搴斿綋
-涓?the PID 鐨?the locking 杩涚▼ 浣滀负 涓€涓?ASCII 鏁板瓧.
+Arbitration 串行 ports provided the 使用 文件 
+the names `/var/lock/LCK..ttyX#`. The contents the 文件 应当
+the PID the locking 进程 作为 一ASCII 数字.
 
-瀹冩槸 閫氱敤 practice 鍒?install links 渚嬪 /dev/modem
-鍏?point 鍒?涓茶 ports.  涓轰簡 ensure proper locking 鍦?the
-presence 鐨?杩欎簺 links, 瀹冩槸 recommended 璇?杞欢 chase
-symlinks 鍜?閿?鍏ㄩ儴 鍙兘 names; additionally, 瀹冩槸 recommended
-璇?涓€涓?閿?鏂囦欢 涓?installed 涓?the corresponding alternate
-璁惧.	 涓轰簡 avoid deadlocks, 瀹冩槸 recommended 璇?the 閿?
-鏄?acquired 鍦?the 浠ヤ笅 order, 鍜?released 鍦?the reverse:
+它是 通用 practice install links 例如 /dev/modem
+point 串行 ports.  为了 ensure proper locking the
+presence 这些 links, 它是 recommended 软件 chase
+symlinks 全部 可能 names; additionally, 它是 recommended
+一文件 installed the corresponding alternate
+设备.	 为了 avoid deadlocks, 它是 recommended the 
+acquired the 以下 order, released the reverse:
 
- 1. The symbolic link name, 鑻?浠讳綍 (`/var/lock/LCK..modem`)
+ 1. The symbolic link name, 任何 (`/var/lock/LCK..modem`)
  2. The "tty" name (`/var/lock/LCK..ttyS2`)
- 3. The alternate 璁惧 name (`/var/lock/LCK..cua2`)
+ 3. The alternate 设备 name (`/var/lock/LCK..cua2`)
 
-鍦ㄨ鎯呭喌涓?鐨?nested symbolic links, the 閿?鏂囦欢 搴斿綋 涓?
+在该情况nested symbolic links, the 文件 应当 
 installed 鍦?the order the symlinks 鏄?resolved.
 
-鍦ㄢ€︿笅 鏃?circumstances 搴斿綋 涓€涓?搴旂敤绋嬪簭 hold 涓€涓?閿?鍚屾椂 waiting
-鐢ㄤ簬 another 鍒?涓?released.  姝ゅ, applications 鍏?attempt
-鍒?鍒涘缓 閿?鏂囦欢 鐢ㄤ簬 the corresponding alternate 璁惧 names
-搴斿綋 take 杩涘叆 account the possibility 鐨?姝ｅ湪 浣跨敤 鍦?涓€涓?non-serial
-绔彛 TTY, 鐢ㄤ簬 鍏?鏃?alternate 璁惧 灏嗕細 exist.
+在…下 circumstances 应当 一应用程序 hold 一同时 waiting
+用于 another released.  此外, applications attempt
+创建 文件 用于 the corresponding alternate 设备 names
+应当 take 进入 account the possibility 正在 使用 一non-serial
+端口 TTY, 用于 alternate 设备 将会 exist.
 
 Pseudoterminals (PTYs)
 ++++++++++++++++++++++
 
-Pseudoterminals, 鎴?PTYs, 鏄?浣跨敤 鍒?鍒涘缓 login sessions 鎴?鎻愪緵
-鍏朵粬 capabilities requiring 涓€涓?TTY line discipline (including SLIP 鎴?
-PPP capability) 鍒?arbitrary data-generation 杩涚▼.	 姣忎釜 PTY 鍏锋湁
-涓€涓?master side, named `/dev/pty[p-za-e][0-9a-f]`, 鍜?涓€涓?slave side, named
-`/dev/tty[p-za-e][0-9a-f]`.  The 鍐呮牳 arbitrates the 浣跨敤 鐨?PTYs 鐢?
-allowing 姣忎釜 master side 鍒?涓?opened 浠?涓€鏃?
+Pseudoterminals, PTYs, 使用 创建 login sessions 提供
+其他 capabilities requiring 一TTY line discipline (including SLIP 
+PPP capability) arbitrary data-generation 进程.	 每个 PTY 具有
+一master side, named `/dev/pty[p-za-e][0-9a-f]`, 一slave side, named
+`/dev/tty[p-za-e][0-9a-f]`.  The 内核 arbitrates the 使用 PTYs 
+allowing 每个 master side opened 一
 
-涓€鏃?the master side 鍏锋湁 宸茬粡 opened, the corresponding slave 璁惧
-鍙?涓?浣跨敤 鍦?the 鐩稿悓 manner 浣滀负 浠讳綍 TTY 璁惧.  The master 鍜?
-slave 璁惧 鏄?connected 鐢?the 鍐呮牳, generating the equivalent
-鐨?涓€涓?bidirectional pipe 涓?TTY capabilities.
+一the master side 具有 已经 opened, the corresponding slave 设备
+使用 the 相同 manner 作为 任何 TTY 设备.  The master 
+slave 设备 connected the 内核, generating the equivalent
+一bidirectional pipe TTY capabilities.
 
-Recent versions 鐨?the Linux kernels 鍜?GNU libc 鍖呭惈 鏀寔 鐢ㄤ簬
-the 绯荤粺 V/Unix98 naming scheme 鐢ㄤ簬 PTYs, 鍏?assigns 涓€涓?閫氱敤
-璁惧, `/dev/ptmx`, 鍒?鍏ㄩ儴 the masters (opening 瀹?灏?automatically
-give 鎮?涓€涓?previously unassigned PTY) 鍜?涓€涓?subdirectory, `/dev/pts`,
-鐢ㄤ簬 the slaves; the slaves 鏄?named 涓?decimal integers (`/dev/pts/#`
-鍦?鎴戜滑鐨?notation).  姝?removes the problem 鐨?exhausting the
-namespace 鍜?enables the 鍐呮牳 鍒?automatically 鍒涘缓 the 璁惧
-nodes 鐢ㄤ簬 the slaves 鍦?demand 浣跨敤 the "devpts" 鏂囦欢绯荤粺.
+Recent versions the Linux kernels GNU libc 包含 支持 用于
+the 系统 V/Unix98 naming scheme 用于 PTYs, assigns 一通用
+设备, `/dev/ptmx`, 全部 the masters (opening automatically
+give 一previously unassigned PTY) 一subdirectory, `/dev/pts`,
+用于 the slaves; the slaves named decimal integers (`/dev/pts/#`
+我们notation).  removes the problem exhausting the
+namespace enables the 内核 automatically 创建 the 设备
+nodes 用于 the slaves demand 使用 the "devpts" 文件系统.

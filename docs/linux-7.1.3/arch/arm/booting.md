@@ -5,22 +5,22 @@ Author:	Russell King
 
 Date  : 18 鍙?2002
 
-The 浠ヤ笅 documentation 鏄?relevant 鍒?2.4.18-rmk6 鍜?beyond.
+The 以下 documentation relevant 2.4.18-rmk6 beyond.
 
-涓轰簡 boot ARM Linux, 鎮?闇€瑕?涓€涓?boot loader, 鍏?鏄?涓€涓?small
-program 璇?runs 涔嬪墠 the 涓昏 鍐呮牳.  The boot loader 鏄?expected
-鍒?initialise 鍚勭 璁惧, 鍜?eventually call the Linux 鍐呮牳,
-passing information 鍒?the 鍐呮牳.
+为了 boot ARM Linux, 需一boot loader, 一small
+program runs 之前 the 主要 内核.  The boot loader expected
+initialise 各种 设备, eventually call the Linux 内核,
+passing information the 内核.
 
-Essentially, the boot loader 搴斿綋 鎻愪緵 (浣滀负 涓€涓?鏈€灏? the
-浠ヤ笅:
+Essentially, the boot loader 应当 提供 (作为 一最 the
+以下:
 
 1. Setup 鍜?initialise the RAM.
-2. Initialise one 涓茶 绔彛.
-3. Detect the machine 绫诲瀷.
-4. Setup the 鍐呮牳 tagged 鍒楀嚭.
-5. 鍔犺浇 initramfs.
-6. Call the 鍐呮牳 image.
+2. Initialise one 串行 端口.
+3. Detect the machine 类型.
+4. Setup the 内核 tagged 列出.
+5. 加载 initramfs.
+6. Call the 内核 image.
 
 
 ### 1. Setup 鍜?initialise RAM
@@ -31,81 +31,81 @@ Existing boot loaders:
 鏂?boot loaders:
 	MANDATORY
 
-The boot loader 鏄?expected 鍒?find 鍜?initialise 鍏ㄩ儴 RAM 璇?the
-鍐呮牳 灏?浣跨敤 鐢ㄤ簬 volatile 鏁版嵁 storage 鍦?the 绯荤粺.  瀹?performs
-姝?鍦?涓€涓?machine dependent manner.  (瀹?鍙?浣跨敤 鍐呴儴 algorithms
-鍒?automatically locate 鍜?澶у皬 鍏ㄩ儴 RAM, 鎴?瀹?鍙?浣跨敤 knowledge 鐨?
-the RAM 鍦?the machine, 鎴?浠讳綍 鍏朵粬 鏂规硶 the boot loader designer
+The boot loader expected find initialise 全部 RAM the
+内核 使用 用于 volatile 数据 storage the 系统.  performs
+一machine dependent manner.  (使用 内部 algorithms
+automatically locate 大小 全部 RAM, 使用 knowledge 
+the RAM the machine, 任何 其他 方法 the boot loader designer
 sees fit.)
 
 
-### 2. Initialise one 涓茶 绔彛
+### 2. Initialise one 串行 端口
 
 
 Existing boot loaders:
-	鍙€? RECOMMENDED
+	可 RECOMMENDED
 鏂?boot loaders:
-	鍙€? RECOMMENDED
+	可 RECOMMENDED
 
-The boot loader 搴斿綋 initialise 鍜?鍚敤 one 涓茶 绔彛 鍦?the
-target.  姝?allows the 鍐呮牳 涓茶 椹卞姩 鍒?automatically detect
-鍏?涓茶 绔彛 瀹?搴斿綋 浣跨敤 鐢ㄤ簬 the 鍐呮牳 console (generally
-浣跨敤 鐢ㄤ簬 debugging purposes, 鎴?communication 涓?the target.)
+The boot loader 应当 initialise 启用 one 串行 端口 the
+target.  allows the 内核 串行 驱动 automatically detect
+串行 端口 应当 使用 用于 the 内核 console (generally
+使用 用于 debugging purposes, communication the target.)
 
-浣滀负 涓€涓?alternative, the boot loader 鍙?pass the relevant 'console='
-閫夐」 鍒?the 鍐呮牳 閫氳繃 the tagged 鍒楄〃 specifying the 绔彛, 鍜?
-涓茶 鏍煎紡 閫夐」 浣滀负 鎻忚堪 鍦?
+作为 一alternative, the boot loader pass the relevant 'console='
+选项 the 内核 通过 the tagged 列表 specifying the 端口, 
+串行 格式 选项 作为 描述 
 
        Documentation/admin-guide/kernel-parameters.rst.
 
 
-### 3. Detect the machine 绫诲瀷
+### 3. Detect the machine 类型
 
 
 Existing boot loaders:
-	鍙€?
+	可
 鏂?boot loaders:
-	MANDATORY except 鐢ㄤ簬 DT-浠?platforms
+	MANDATORY except 用于 DT-platforms
 
-The boot loader 搴斿綋 detect the machine 绫诲瀷 鍏?杩愯涓?鍦?鐢?涓€浜?
-鏂规硶.  鏄惁 杩欐槸 涓€涓?hard coded 鍊?鎴?涓€浜?algorithm 璇?
-looks 鍦?the connected 纭欢 鏄?beyond the scope 鐨?姝?document.
-The boot loader 蹇呴』 ultimately 涓?able 鍒?鎻愪緵 涓€涓?MACH_绫诲瀷_xxx
-鍊?鍒?the 鍐呮牳. (鍙傝 linux/arch/arm/tools/mach-types).  姝?
-搴斿綋 涓?passed 鍒?the 鍐呮牳 鍦?娉ㄥ唽 r1.
+The boot loader 应当 detect the machine 类型 运行一
+方法.  是否 这是 一hard coded 一algorithm 
+looks the connected 硬件 beyond the scope document.
+The boot loader 必须 ultimately able 提供 一MACH_类型_xxx
+the 内核. (参见 linux/arch/arm/tools/mach-types).  
+应当 passed the 内核 注册 r1.
 
-鐢ㄤ簬 DT-浠?platforms, the machine 绫诲瀷 灏?涓?determined 鐢?璁惧
-tree.  set the machine 绫诲瀷 鍒?鍏ㄩ儴 ones (~0).  杩欐槸 涓?strictly
-蹇呰, 浣?assures 璇?瀹?灏?涓?match 浠讳綍 existing types.
+用于 DT-platforms, the machine 类型 determined 设备
+tree.  set the machine 类型 全部 ones (~0).  这是 strictly
+必要, assures match 任何 existing types.
 
-### 4. Setup boot 鏁版嵁
+### 4. Setup boot 数据
 
 
 Existing boot loaders:
-	鍙€? HIGHLY RECOMMENDED
+	可 HIGHLY RECOMMENDED
 鏂?boot loaders:
 	MANDATORY
 
-The boot loader 蹇呴』 鎻愪緵 浠讳竴涓?涓€涓?tagged 鍒楀嚭 鎴?涓€涓?dtb image 鐢ㄤ簬
-passing 閰嶇疆 鏁版嵁 鍒?the 鍐呮牳.  The 鐗╃悊 鍦板潃 鐨?the
-boot 鏁版嵁 鏄?passed 鍒?the 鍐呮牳 鍦?娉ㄥ唽 r2.
+The boot loader 必须 提供 任一一tagged 列出 一dtb image 用于
+passing 配置 数据 the 内核.  The 物理 地址 the
+boot 数据 passed the 内核 注册 r2.
 
-### 4涓€涓? Setup the 鍐呮牳 tagged 鍒楀嚭
+### 4一 Setup the 内核 tagged 列出
 
 
-The boot loader 蹇呴』 鍒涘缓 鍜?initialise the 鍐呮牳 tagged 鍒楀嚭.
-涓€涓?valid tagged 鍒楀嚭 starts 涓?ATAG_鏍稿績 鍜?ends 涓?ATAG_NONE.
-The ATAG_鏍稿績 tag 鍙?鎴?鍙?涓?涓?empty.  涓€涓?empty ATAG_鏍稿績 tag
-鍏锋湁 the 澶у皬 瀛楁 set 鍒?'2' (0x00000002).  The ATAG_NONE 蹇呴』 set
-the 澶у皬 瀛楁 鍒?zero.
+The boot loader 必须 创建 initialise the 内核 tagged 列出.
+一valid tagged 列出 starts ATAG_核心 ends ATAG_NONE.
+The ATAG_核心 tag empty.  一empty ATAG_核心 tag
+具有 the 大小 字段 set '2' (0x00000002).  The ATAG_NONE 必须 set
+the 大小 字段 zero.
 
-浠讳綍 鏁板瓧 鐨?tags 鍙?涓?placed 鍦?the 鍒楀嚭.  瀹冩槸 undefined
-鏄惁 涓€涓?repeated tag appends 鍒?the information carried 鐢?the
-鍓嶄竴涓?tag, 鎴?鏄惁 瀹?replaces the information 鍦?鍏?
-entirety; 涓€浜?tags behave 浣滀负 the former, others the latter.
+任何 数字 tags placed the 列出.  它是 undefined
+是否 一repeated tag appends the information carried the
+前一tag, 是否 replaces the information 
+entirety; 一tags behave 作为 the former, others the latter.
 
-The boot loader 蹇呴』 pass 鍦?涓€涓?鏈€灏?the 澶у皬 鍜?location 鐨?
-the 绯荤粺 鍐呭瓨, 鍜?root 鏂囦欢绯荤粺 location.  鍥犳, the
+The boot loader 必须 pass 一最the 大小 location 
+the 系统 内存, root 文件系统 location.  因此, the
 ```
 
 		+-----------+
@@ -117,48 +117,48 @@ the 绯荤粺 鍐呭瓨, 鍜?root 鏂囦欢绯荤粺 location.  鍥犳, the
 		+-----------+  v
 
 ```
-The tagged 鍒楀嚭 搴斿綋 涓?stored 鍦?绯荤粺 RAM.
+The tagged 列出 应当 stored 系统 RAM.
 
-The tagged 鍒楀嚭 蹇呴』 涓?placed 鍦?涓€涓?region 鐨?鍐呭瓨 浣曞 涓よ€呴兘涓?
+The tagged 列出 必须 placed 一region 内存 何处 两者都
 the 鍐呮牳 decompressor nor initrd 'bootp' program 灏?overwrite
-瀹?  The recommended placement 鏄?鍦?the 绗竴 16KiB 鐨?RAM.
+  The recommended placement the 第一 16KiB RAM.
 
-### 4b. Setup the 璁惧鏍?
+### 4b. Setup the 设备
 
 
-The boot loader 蹇呴』 鍔犺浇 涓€涓?璁惧鏍?image (dtb) 杩涘叆 绯荤粺 ram
-鍦?涓€涓?64浣?aligned 鍦板潃 鍜?initialize 瀹?涓?the boot 鏁版嵁.  The
-dtb 鏍煎紡 鏄?documented 鍦?https://www.devicetree.org/specifications/.
-The 鍐呮牳 灏?look 鐢ㄤ簬 the dtb magic 鍊?鐨?0xd00dfeed 鍦?the dtb
-鐗╃悊 鍦板潃 鍒?determine 鑻?涓€涓?dtb 鍏锋湁 宸茬粡 passed 鑰岄潪 涓€涓?
-tagged 鍒楀嚭.
+The boot loader 必须 加载 一设备image (dtb) 进入 系统 ram
+一64aligned 地址 initialize the boot 数据.  The
+dtb 格式 documented https://www.devicetree.org/specifications/.
+The 内核 look 用于 the dtb magic 0xd00dfeed the dtb
+物理 地址 determine 一dtb 具有 已经 passed 而非 一
+tagged 列出.
 
-The boot loader 蹇呴』 pass 鍦?涓€涓?鏈€灏?the 澶у皬 鍜?location 鐨?the
-绯荤粺 鍐呭瓨, 鍜?the root 鏂囦欢绯荤粺 location.  The dtb 蹇呴』 涓?
-placed 鍦?涓€涓?region 鐨?鍐呭瓨 浣曞 the 鍐呮牳 decompressor 灏?涓?
-overwrite 瀹? 鍚屾椂 remaining 涔嬪唴 the region 鍏?灏?涓?covered
-鐢?the 鍐呮牳's low-memory 鏄犲皠.
+The boot loader 必须 pass 一最the 大小 location the
+系统 内存, the root 文件系统 location.  The dtb 必须 
+placed 一region 内存 何处 the 内核 decompressor 
+overwrite  同时 remaining 之内 the region covered
+the 内核's low-memory 映射.
 
-涓€涓?safe location 鏄?just 涓婃枃 the 128MiB boundary 鏉ヨ嚜 鍚姩 鐨?RAM.
+一safe location just 上文 the 128MiB boundary 来自 启动 RAM.
 
-### 5. 鍔犺浇 initramfs.
+### 5. 加载 initramfs.
 
 
 Existing boot loaders:
-	鍙€?
+	可
 鏂?boot loaders:
-	鍙€?
+	可
 
-鑻?涓€涓?initramfs 鏄?鍦?浣跨敤 鐒跺悗, 浣滀负 涓?the dtb, 瀹?蹇呴』 涓?placed 鍦?
-涓€涓?region 鐨?鍐呭瓨 浣曞 the 鍐呮牳 decompressor 灏?涓?overwrite 瀹?
-鍚屾椂 涔?涓?the region 鍏?灏?涓?covered 鐢?the 鍐呮牳's
-low-memory 鏄犲皠.
+一initramfs 使用 然后, 作为 the dtb, 必须 placed 
+一region 内存 何处 the 内核 decompressor overwrite 
+同时 the region covered the 内核's
+low-memory 映射.
 
-涓€涓?safe location 鏄?just 涓婃枃 the 璁惧鏍?blob 鍏?itself 灏?
-涓?loaded just 涓婃枃 the 128MiB boundary 鏉ヨ嚜 the 鍚姩 鐨?RAM 浣滀负
-recommended 涓婃枃.
+一safe location just 上文 the 设备blob itself 
+loaded just 上文 the 128MiB boundary 来自 the 启动 RAM 作为
+recommended 上文.
 
-### 6. Calling the 鍐呮牳 image
+### 6. Calling the 内核 image
 
 
 Existing boot loaders:
@@ -166,72 +166,72 @@ Existing boot loaders:
 鏂?boot loaders:
 	MANDATORY
 
-瀛樺湪 two 閫夐」 鐢ㄤ簬 calling the 鍐呮牳 zImage.  鑻?the zImage
-鏄?stored 鍦?flash, 鍜?鏄?linked correctly 鍒?涓?杩愯 鏉ヨ嚜 flash,
-鐒跺悗 瀹冩槸 legal 鐢ㄤ簬 the boot loader 鍒?call the zImage 鍦?flash
+存在 two 选项 用于 calling the 内核 zImage.  the zImage
+stored flash, linked correctly 运行 来自 flash,
+然后 它是 legal 用于 the boot loader call the zImage flash
 directly.
 
-The zImage 鍙?涔?涓?placed 鍦?绯荤粺 RAM 鍜?called 閭ｉ噷.  The
-鍐呮牳 搴斿綋 涓?placed 鍦?the 绗竴 128MiB 鐨?RAM.  瀹冩槸 recommended
-璇?瀹冩槸 loaded 涓婃枃 32MiB 涓轰簡 avoid the 闇€瑕?鍒?relocate
-prior 鍒?decompression, 鍏?灏?make the boot 杩涚▼ slightly
+The zImage placed 系统 RAM called 那里.  The
+内核 应当 placed the 第一 128MiB RAM.  它是 recommended
+它是 loaded 上文 32MiB 为了 avoid the 需relocate
+prior decompression, make the boot 进程 slightly
 faster.
 
-褰?booting 涓€涓?raw (non-zImage) 鍐呮牳 the constraints 鏄?tighter.
-鍦?姝?case the 鍐呮牳 蹇呴』 涓?loaded 鍦?涓€涓?鍋忕Щ 杩涘叆 绯荤粺 equal
-鍒?TEXT_鍋忕Щ - 椤礯鍋忕Щ.
+booting 一raw (non-zImage) 内核 the constraints tighter.
+case the 内核 必须 loaded 一偏移 进入 系统 equal
+TEXT_偏移 - 页_偏移.
 
-鍦?浠讳綍 case, the 浠ヤ笅 conditions 蹇呴』 涓?met:
+任何 case, the 以下 conditions 必须 met:
 
-- Quiesce 鍏ㄩ儴 DMA capable 璁惧 鍥犳 璇?鍐呭瓨 鎵ц 涓?get
-  corrupted 鐢?bogus 缃戠粶 packets 鎴?disk 鏁版嵁. 姝?灏?save
-  鎮?璁稿 hours 鐨?debug.
+- Quiesce 全部 DMA capable 设备 因此 内存 执行 get
+  corrupted bogus 网络 packets disk 数据. save
+  许多 hours debug.
 
-- CPU 娉ㄥ唽 璁剧疆
+- CPU 注册 设置
 
   - r0 = 0,
-  - r1 = machine 绫诲瀷 鏁板瓧 discovered 鍦?(3) 涓婃枃.
-  - r2 = 鐗╃悊 鍦板潃 鐨?tagged 鍒楀嚭 鍦?绯荤粺 RAM, 鎴?
-    鐗╃悊 鍦板潃 鐨?璁惧鏍?鍧?(dtb) 鍦?绯荤粺 RAM
+  - r1 = machine 类型 数字 discovered (3) 上文.
+  - r2 = 物理 地址 tagged 列出 系统 RAM, 
+    物理 地址 设备(dtb) 系统 RAM
 
-- CPU 妯″紡
+- CPU 模式
 
-  鍏ㄩ儴 forms 鐨?涓柇 蹇呴』 涓?宸茬鐢?(IRQs 鍜?FIQs)
+  全部 forms 中断 必须 已禁(IRQs FIQs)
 
-  鐢ㄤ簬 CPUs 鍏?鎵ц 涓?鍖呭惈 the ARM virtualization extensions, the
-  CPU 蹇呴』 涓?鍦?SVC 妯″紡.  (涓€涓?鐗规畩 寮傚父 exists 鐢ㄤ簬 Angel)
+  用于 CPUs 执行 包含 the ARM virtualization extensions, the
+  CPU 必须 SVC 模式.  (一特殊 异常 exists 用于 Angel)
 
-  CPUs 鍏?鍖呭惈 鏀寔 鐢ㄤ簬 the virtualization extensions 鍙?涓?
-  entered 鍦?HYP 妯″紡 涓轰簡 鍚敤 the 鍐呮牳 鍒?make full 浣跨敤 鐨?
-  杩欎簺 extensions.  杩欐槸 the recommended boot 鏂规硶 鐢ㄤ簬 姝ょ被 CPUs,
-  闄ら潪 the virtualisations 鏄?宸茬粡 鍦?浣跨敤 鐢?涓€涓?pre-installed
+  CPUs 包含 支持 用于 the virtualization extensions 
+  entered HYP 模式 为了 启用 the 内核 make full 使用 
+  这些 extensions.  这是 the recommended boot 方法 用于 此类 CPUs,
+  除非 the virtualisations 已经 使用 一pre-installed
   hypervisor.
 
-  鑻?the 鍐呮牳 鏄?涓?entered 鍦?HYP 妯″紡 鐢ㄤ簬 浠讳綍 reason, 瀹?蹇呴』 涓?
-  entered 鍦?SVC 妯″紡.
+  the 内核 entered HYP 模式 用于 任何 reason, 必须 
+  entered SVC 模式.
 
 - Caches, MMUs
 
-  The MMU 蹇呴』 涓?off.
+  The MMU 必须 off.
 
-  Instruction 缂撳瓨 鍙?涓?鍦?鎴?off.
+  Instruction 缓存 off.
 
-  鏁版嵁 缂撳瓨 蹇呴』 涓?off.
+  数据 缓存 必须 off.
 
-  鑻?the 鍐呮牳 鏄?entered 鍦?HYP 妯″紡, the 涓婃枃 requirements apply 鍒?
-  the HYP 妯″紡 閰嶇疆 姝ゅ 鍒?the ordinary PL1 (privileged
-  鍐呮牳 modes) 閰嶇疆.  姝ゅ, 鍏ㄩ儴 traps 杩涘叆 the
-  hypervisor 蹇呴』 涓?宸茬鐢? 鍜?PL1 access 蹇呴』 涓?granted 鐢ㄤ簬 鍏ㄩ儴
-  peripherals 鍜?CPU resources 鐢ㄤ簬 鍏?杩欐槸 architecturally
-  鍙兘.  Except 鐢ㄤ簬 entering 鍦?HYP 妯″紡, the 绯荤粺 閰嶇疆
-  搴斿綋 涓?姝ょ被 璇?涓€涓?鍐呮牳 鍏?鎵ц 涓?鍖呭惈 鏀寔 鐢ㄤ簬 the
+  the 内核 entered HYP 模式, the 上文 requirements apply 
+  the HYP 模式 配置 此外 the ordinary PL1 (privileged
+  内核 modes) 配置.  此外, 全部 traps 进入 the
+  hypervisor 必须 已禁 PL1 access 必须 granted 用于 全部
+  peripherals CPU resources 用于 这是 architecturally
+  可能.  Except 用于 entering HYP 模式, the 系统 配置
+  应当 此类 一内核 执行 包含 支持 用于 the
   virtualization extensions 鍙?boot correctly 鏃?extra help.
 
-- The boot loader 鏄?expected 鍒?call the 鍐呮牳 image 鐢?jumping
-  directly 鍒?the 绗竴 instruction 鐨?the 鍐呮牳 image.
+- The boot loader expected call the 内核 image jumping
+  directly the 第一 instruction the 内核 image.
 
-  鍦?CPUs supporting the ARM instruction set, the 鏉＄洰 蹇呴』 涓?
-  made 鍦?ARM 鐘舵€? even 鐢ㄤ簬 涓€涓?Thumb-2 鍐呮牳.
+  CPUs supporting the ARM instruction set, the 条目 必须 
+  made ARM 状 even 用于 一Thumb-2 内核.
 
-  鍦?CPUs supporting 浠?the Thumb instruction set 渚嬪
-  Cortex-M 绫?CPUs, the 鏉＄洰 蹇呴』 涓?made 鍦?Thumb 鐘舵€?
+  CPUs supporting the Thumb instruction set 例如
+  Cortex-M CPUs, the 条目 必须 made Thumb 状
