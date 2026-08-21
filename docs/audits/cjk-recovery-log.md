@@ -108,3 +108,300 @@
 - L8: `GCC ?4.9.x [1_] 开始具有该特性（参见 `-fsanitize=undefined` 选项及其子选项）?GCC 5.x 实现了更多检查器 [2_]`
 - L67: `架构上（CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS=y），它默认关闭。仍然可以在配置?启用它，只是要注意它会产生大?UBSAN`
 
+
+## docs/linux-7.1.3/power/freezing-of-tasks.md
+
+- 检测结论：双重编码（非 ASCII 行 173，其中可证明损坏 173 行）
+- 总行数：258（含空行；非空 197）
+- 干净行：85；恢复行：14（另有有损恢复 150 行）；恢复失败行：9
+- 标点替换：36 处（句号 12，逗号 24）；未解决 `?`：534 处
+- 自验乱码签名行率：160/197（81.2%）→ 8/197（4.1%）
+- 注意：150 行因原文件中存在字节丢失（字面 `?`），仅能部分还原
+
+### 恢复失败行（保留原文，需人工对照上游）
+- L1: `锘?# Freezing 鐨?tasks`
+- L22: `鍒?system-wide suspend too).`
+- L41: `鑻?the task 鏄?鍒?涓?frozen 鍜?makes the task enter __refrigerator().`
+- L47: `璇?put the task 鍒?sleep (TASK_INTERRUPTIBLE) 鎴?freeze 瀹?(TASK_FROZEN) 鑻?`
+- L88: `- freezes 浠?userspace tasks`
+- L149: `鐨?the discussions 鍦?LKML (https://lore.kernel.org/r/alpine.LFD.0.98.070427180102`
+- L177: `鏄?quite difficult 鍒?achieve 鏃?the freezing 鐨?tasks.  Consider,`
+- L218: `tasks, since 瀹?generally exists anyway.`
+- L233: `suspend/hibernation notifiers 鍒?achieve mutual exclusion. Look 鍦?the`
+
+### 未解决 `?`（不满足替换规则，保留原样）
+- L1: `锘?# Freezing 鐨?tasks`
+- L6: `## I. 什??the freezing ?tasks?`
+- L9: `The freezing ?tasks ?一?mechanism ??用户空间 进程 ?一?`
+- L10: `内核 线程 ?controlled 期间 hibernation ?system-wide suspend (?一?`
+- L13: `## II. 如何 执行 ?work?`
+- L16: `存在 one per-task 标志 (PF_NOFREEZE) ?three per-task states`
+- L17: `(TASK_FROZEN, TASK_FREEZABLE ?__TASK_FREEZABLE_UNSAFE) 使用 用于 ?`
+- L18: `The tasks ?具有 PF_NOFREEZE unset (全部 用户空间 tasks ?一?内核`
+- L19: `线程) ?regarded 作为 'freezable' ?treated ?一?特殊 way 之前 the`
+- L20: `系统 enters 一?sleep 状?以及 之前 一?hibernation image ?已创?`
+- L21: `(hibernation ?directly covered ?什?follows, ?the description applies`
+- L22: `鍒?system-wide suspend too).`
+- L24: `Namely, 作为 the 第一 step ?the hibernation procedure the 函数`
+- L25: `freeze_进程() (定义 ?内核/电源/进程.c) ?called.  一?system-wide`
+- L26: `静?key freezer_active (相对?一?per-task 标志 ?状? ?使用 ?`
+- L27: `indicate 是否 the 系统 ??undergo 一?freezing 操作. ?`
+- L28: `freeze_进程() sets ?静?key.  之后 ? ?executes`
+- L29: `try_到_freeze_tasks() ?sends 一?fake 信号 ?全部 用户空间 进程, ?`
+- L30: `wakes up 全部 the 内核 线程. 全部 freezable tasks 必须 react ???`
+- L31: `calling try_到_freeze(), ?results ?一?call ?__refrigerator() (定义`
+- L32: `?内核/freezer.c), ?changes the task's 状??TASK_FROZEN, ?makes`
+- L33: `?loop 直到 它是 woken ?一?explicit TASK_FROZEN wakeup. 然后, ?task`
+- L34: `?regarded 作为 'frozen' ?因此 the set ?函数 handling ?mechanism ?`
+- L35: `referred ?作为 'the freezer' (这些 函数 ?定义 ?`
+- L37: `tasks ?generally frozen 之前 内核 线程.`
+- L39: `__refrigerator() 必须 ??called directly.  改为, 使用 the`
+- L40: `try_到_freeze() 函数 (定义 ?包含/linux/freezer.h), ?checks`
+- L41: `鑻?the task 鏄?鍒?涓?frozen 鍜?makes the task enter __refrigerator().`
+- L43: `用于 用户空间 进程 try_到_freeze() ?called automatically 来自 the`
+- L44: `signal-handling code, ?the freezable 内核 线程 需??call ?`
+- L45: `explicitly ?suitable places ?使用 the wait_事件_freezable() ?`
+- L46: `wait_事件_freezable_超时() macros (定义 ?包含/linux/wait.h)`
+- L47: `璇?put the task 鍒?sleep (TASK_INTERRUPTIBLE) 鎴?freeze 瀹?(TASK_FROZEN) 鑻?`
+- L48: `freezer_active ?set. The 主要 loop ?一?freezable 内核 线程 ?look`
+- L72: `?一?freezable 内核 线程 ??put ?the frozen 状?之后 the freezer`
+- L73: `具有 initiated 一?freezing 操作, the freezing ?tasks ?fail ?the`
+- L74: `entire system-wide transition ??cancelled.  用于 ?reason, freezable`
+- L75: `内核 线程 必须 call try_到_freeze() somewhere ?使用 one ?the`
+- L76: `wait_事件_freezable() ?wait_事件_freezable_超时() macros.`
+- L78: `之后 the 系统 内存 状?具有 已经 restored 来自 一?hibernation image ?`
+- L79: `设备 具有 已经 reinitialized, the 函数 thaw_进程() ?called ?`
+- L80: `order ?wake up 每个 frozen task.  然后, the tasks ?具有 已经 frozen leave`
+- L81: `__refrigerator() ?continue 运行?`
+- L84: `### Rationale behind the 函数 dealing ?freezing ?thawing ?tasks`
+- L88: `- freezes 浠?userspace tasks`
+- L92: `内核 线程 ?freezing userspace tasks`
+- L95: `- thaws ?内核 线程; 这是 particularly useful ?我们 需??执行`
+- L96: `anything 特殊 ?之间 thawing ?内核 线程 ?thawing ?`
+- L97: `userspace tasks, ??我们 希望 ?postpone the thawing ?userspace tasks`
+- L101: `tasks ?thawing 内核 线程`
+- L104: `## III. ?内核 线程 ?freezable?`
+- L107: `内核 线程 ??freezable 默认情况?  然? 一?内核 线程 ?clear`
+- L108: `PF_NOFREEZE 用于 itself ?calling set_freezable() (the resetting ?PF_NOFREEZE`
+- L109: `directly ??allowed).  来自 ?point 它是 regarded 作为 freezable`
+- L110: `?必须 call try_到_freeze() ?variants ?wait_事件_freezable() ?一?`
+- L113: `## IV. 为何 执行 我们 执行 ?`
+- L116: `Generally speaking, 存在 一?couple ?reasons ?使用 the freezing ?tasks:`
+- L118: `1. The principal reason ??prevent 文件系统 来自 正在 damaged 之后`
+- L119: `hibernation.  ?the moment 我们 具有 ?简?means ?checkpointing`
+- L120: `文件系统, 因此 ?存在 任何 modifications made ?文件系统 数据 ??`
+- L121: `metadata ?disks, 我们 cannot bring them back ?the 状?来自 之前 the`
+- L123: `filesystem-related information ?必须 ?consistent ?the 状??the`
+- L124: `on-disk 数据 ?metadata 之后 the 系统 内存 状?具有 已经 restored`
+- L125: `来自 the image (否则 the 文件系统 ??damaged ?一?nasty way,`
+- L126: `通常 making them almost impossible ?repair).  我们 因此 freeze`
+- L127: `tasks ?可能 cause the on-disk 文件系统' 数据 ?metadata ??`
+- L128: `modified 之后 the hibernation image 具有 已经 已创??之前 the`
+- L129: `系统 ?finally powered off. The majority ?这些 ?用户空间`
+- L130: `进程, ??任何 ?the 内核 线程 ?cause something 类似 ?`
+- L131: `?happen, 它们 具有 ??freezable.`
+- L133: `2. 接下? ?创建 the hibernation image 我们 需??free 一?sufficient amount ?`
+- L134: `内存 (approximately 50% ?可用 RAM) ?我们 需??执行 ?之前`
+- L135: `设备 ?deactivated, 因为 我们 generally 需?them 用于 swapping out.`
+- L137: `?allocate 额外 内存 ?我们 prevent them 来自 doing ??`
+- L138: `freezing them 更早. [?course, ??means ?设备 驱动`
+- L139: `应当 ?allocate substantial amounts ?内存 来自 它们?.suspend()`
+- L140: `callbacks 之前 hibernation, ?这是 一?separate issue.]`
+- L142: `3. The third reason ??prevent 用户空间 进程 ?一?内核 线程`
+- L143: `来自 interfering ?the suspending ?resuming ?设备.  一?用户空间`
+- L144: `进程 运行??一?second CPU 同时 我们 ?suspending 设备 ? 用于`
+- L145: `示例, ?troublesome ??the freezing ?tasks 我们 将会 需?一?`
+- L146: `safeguards against race conditions ?可能 occur ?此类 一?case.`
+- L148: `尽管 Linus Torvalds doesn't 类似 the freezing ?tasks, he said ??one`
+- L149: `鐨?the discussions 鍦?LKML (https://lore.kernel.org/r/alpine.LFD.0.98.070427180102`
+- L151: `"RJW:> 为何 我们 freeze tasks ?全部 ?为何 我们 freeze 内核 线程?`
+- L153: `Linus: ?许多 ways, '?全部'.`
+- L155: `I **执行** realize the IO 请求 队列 issues, ??我们 cannot actually 执行`
+- L156: `s2ram ?一?设备 ?the middle ?一?DMA.  因此 我们 希望 ??able ?`
+- L157: `avoid **?*, 那里's ?question 关于 ?  ?I suspect ?stopping`
+- L158: `用户 线程 ?然后 waiting 用于 一?sync ?practically one ?the easier`
+- L159: `ways ?执行 因此.`
+- L161: `因此 ?practice, the '?全部' ?become 一?'为何 freeze 内核 线程? ?`
+- L164: `仍然, 存在 内核 线程 ??希望 ??freezable.  例如, ?`
+- L165: `一?内核 线程 ?belongs ?一?设备 驱动 accesses the 设备 directly, ?`
+- L166: `?principle needs ?know ?the 设备 ?suspended, 因此 ??doesn't try`
+- L167: `?access ???time.  然? ?the 内核 线程 ?freezable, ??`
+- L168: `?frozen 之前 the 驱动's .suspend() 回调函数 ?executed ????`
+- L169: `thawed 之后 the 驱动's .resume() 回调函数 具有 运行, 因此 ?won't ?accessing`
+- L170: `the 设备 同时 ?s suspended.`
+- L172: `4. Another reason 用于 freezing tasks ??prevent 用户空间 进程 来自`
+- L173: `realizing ?hibernation (?suspend) 操作 takes place.  Ideally, 用户`
+- L174: `space 进程 应当 ?notice ?此类 一?system-wide 操作 具有`
+- L175: `occurred ?应当 continue 运行??任何 problems 之后 the restore`
+- L176: `(?resume 来自 suspend).  Unfortunately, ?the 大多?通用 case ?`
+- L177: `鏄?quite difficult 鍒?achieve 鏃?the freezing 鐨?tasks.  Consider,`
+- L178: `例如, 一?进程 ?depends ?全部 CPUs 正在 online 同时 ?s`
+- L179: `运行?  Since 我们 需??禁用 nonboot CPUs 期间 the hibernation,`
+- L180: `??进程 ??frozen, ??notice ?the 数字 ?CPUs 具有`
+- L181: `changed ??启动 ?work incorrectly 因为 ??`
+- L183: `## V. ?那里 任何 problems related ?the freezing ?tasks?`
+- L188: `第一 ?全部, the freezing ?内核 线程 ??tricky ?它们 depend one`
+- L189: `?another.  例如, ?内核 线程 一?waits 用于 一?completion (?the`
+- L190: `TASK_UNINTERRUPTIBLE 状? ?needs ??已完??freezable 内核 线程 B`
+- L191: `?B ?frozen ?the meantime, 然后 一???blocked 直到 B ?thawed, ?`
+- L192: `??undesirable.  ?s 为何 内核 线程 ??freezable 默认情况?`
+- L194: `Second, 存在 the 以下 two problems related ?the freezing ?用户`
+- L197: `1. Putting 进程 进入 一?uninterruptible sleep distorts the 加载 average.`
+- L198: `2. 现在 ?我们 具有 FUSE, 增强?the framework 用于 doing 设备 驱动 ?`
+- L199: `userspace, ?gets even 更多 complicated 因为 一?userspace 进程 ?`
+- L200: `现在 doing the sorts ?things ?内核 线程 执行`
+- L203: `The problem 1. seems ??fixable, 尽管 ?hasn't 已经 fixed 因此 far.  The`
+- L204: `其他 one ?更多 serious, ??seems ?我们可以 work around ??使用`
+- L205: `hibernation (?suspend) notifiers (??case, though, 我们 won't ?able ?`
+- L206: `avoid the realization ?the 用户空间 进程 ?the hibernation ?taking`
+- L209: `存在 ?problems ?the freezing ?tasks tends ?expose, 尽管`
+- L210: `它们??directly related ??  例如, ?请求_固件() ?`
+- L211: `called 来自 一?设备 驱动's .resume() routine, ??超时 ?eventually`
+- L212: `fail, 因为 the 用户 land 进程 ?应当 respond ?the 请求 ?frozen`
+- L213: `??point.  因此, seemingly, the failure ?由于 the freezing ?tasks.`
+- L214: `Suppose, 然? ?the 固件 文件 ?located ?一?文件系统 accessible`
+- L215: `?through another 设备 ?hasn't 已经 resumed 尚未.  ??case,`
+- L216: `请求_固件() ?fail regardless ?是否 ??the freezing ?tasks`
+- L217: `?使用.  Consequently, the problem ??really related ?the freezing ?`
+- L218: `tasks, since 瀹?generally exists anyway.`
+- L220: `一?驱动 必须 具有 全部 firmwares ??需??RAM 之前 suspend() ?called.`
+- L221: `?keeping them ??practical, 例如 由于 它们?大小, 它们 必须 ?`
+- L222: `requested early enough 使用 the suspend notifier API 描述 ?`
+- L225: `## VI. ?那里 任何 precautions ??taken ?prevent freezing failures?`
+- L230: `第一 ?全部, grabbing the '系统_transition_互斥? ??mutually exclude 一?`
+- L231: `piece ?code 来自 system-wide sleep 例如 suspend/hibernation ??`
+- L232: `encouraged.  ?可能, ?piece ?code 必须 改为 hook onto the`
+- L233: `suspend/hibernation notifiers 鍒?achieve mutual exclusion. Look 鍦?the`
+- L236: `然? ???feasible, ?grabbing '系统_transition_互斥? ?`
+- L237: `deemed 必要, 它是 strongly discouraged ?directly call`
+- L238: `互斥体_[un]?&系统_transition_互斥? since ?可以 lead ?freezing`
+- L239: `failures, 因为 ?the suspend/hibernate code successfully acquired the`
+- L240: `'系统_transition_互斥? ? ?hence ?其他 entity failed ?acquire`
+- L241: `the ? 然后 ?task 将会 get blocked ?TASK_UNINTERRUPTIBLE 状? 作为 一?`
+- L242: `consequence, the freezer 将会 ??able ?freeze ?task, leading ?`
+- L245: `然? the [un]锁_系统_sleep() APIs ?safe ?使用 ??scenario,`
+- L246: `since 它们 ask the freezer ?skip freezing ?task, since 它是 anyway`
+- L247: `"frozen enough" 作为 它是 blocked ?'系统_transition_互斥?, ???`
+- L248: `released ?之后 the entire suspend/hibernation sequence ?complete.  因此, ?`
+- L250: `互斥体_[un]?&系统_transition_互斥?. ?将会 prevent freezing failures.`
+- L255: `/sys/电源/pm_freeze_超时 controls 如何 long ??cost 至多 ?freeze`
+- L256: `全部 用户空间 进程 ?全部 freezable 内核 线程, ?unit ?`
+- L257: `millisecond.  The 默认 ??20000, ?range ?unsigned integer.`
+
+## docs/linux-7.1.3/scheduler/sched-deadline.md
+
+- 检测结论：双重编码（非 ASCII 行 87，其中可证明损坏 86 行）
+- 总行数：616（含空行；非空 451）
+- 干净行：530；恢复行：15（另有有损恢复 69 行）；恢复失败行：2
+- 标点替换：55 处（句号 49，逗号 6）；未解决 `?`：209 处
+- 自验乱码签名行率：79/451（17.5%）→ 0/451（0.0%）
+- 注意：69 行因原文件中存在字节丢失（字面 `?`），仅能部分还原
+
+### 恢复失败行（保留原文，需人工对照上游）
+- L269: `((M 鈭?1) 路 WCET_max 鈭?WCET_min)/(M 鈭?(M 鈭?2) 路 U_max) + WCET_max`
+- L332: `vol. 25, no. 2鈥?, pp. 187鈥?05, 2003.`
+
+### 未解决 `?`（不满足替换规则，保留原样）
+- L3: `0. 警告（WARNING?    1. 概述（Overview?    2. 调度算法（Scheduling algorithm?      2.1 主算法（`
+- L8: `随意改动这些设置可能导致系统行为不可预测甚至不稳定。对?-rt（组）调度，假定 root 用户清楚自己在做什么?`
+- L13: `sched_dl 调度类中?SCHED_DEADLINE 策略本质上是 Earliest Deadline First（EDF，最早截止期优先）调度算法的实现，`
+- L20: `SCHED_DEADLINE [^18^] 使用三个参数，分别为 "runtime"（运行时间）?period"（周期）?"deadline"（截止期），对任务`
+- L21: `总而言之，CBS[2,3] 算法为任务分配调度截止期，使得每个任务在每个周期内最多运行其 runtime，从而避免不同任务之间的相互干扰（带宽隔离）；?EDF[`
+- L23: `- 每个 SCHED_DEADLINE 任务?"runtime"?deadline" ?"period" 参数所刻画?`
+- L24: `- 任务的状态由一?"调度截止? 和一?"剩余运行时间" 描述。这两个参数初始被设?0?`
+- L25: `- 当一?SCHED_DEADLINE 任务被唤醒（变为可执行状态）时，`
+- L72: `截止期任务的带宽回收基于 GRUB（Greedy Reclamation of Unused Bandwidth，未使用带宽的贪婪回收）算法 [15, 16, `
+- L235: `当选择 cpufreq ?schedutil 调控器（governor）时，SCHED_DEADLINE 会实?GRUB-PA [^19^] 算法，将 CPU `
+- L236: `若改变频率所需的时间与预留周期处于同一数量级，则需格外注意。在这种情况下，设置固定?CPU 频率反而会带来更少的截止期错失?`
+- L262: `一个典型的实时任务由一系列计算阶段（任务实例，或称作业，jobs）的重复组成，这些阶段以周期性或零星（sporadic）的方式被激活。每个作?J_j（其?J_j`
+- L266: `实时任务的利用率（utilization）定义为?WCET 与周期（或最小到达间隔）之比，表示执行该任务所需?CPU 时间比例?`
+- L267: `如果总利用率 U=sum(WCET_i/P_i) 大于 M（其?M 等于 CPU 数量），那么调度器将无法遵守所有截止期。请注意，总利用率定义为系统中所有实时任`
+- L269: `((M 鈭?1) 路 WCET_max 鈭?WCET_min)/(M 鈭?(M 鈭?2) 路 U_max) + WCET_max`
+- L271: `其中 WCET_max = max{WCET_i} 为最?WCET，WCET_min=min{WCET_i} 为最?WCET，U_max = max{WCET_`
+- L274: `如果 M=1（单处理器系统），或者在采用分区调度（每个实时任务被静态地分配到唯一一?CPU）的情况下，可以形式化地检查是否所有截止期都被遵守。如果对所有任务都?`
+- L278: `需要注意的是，这一条件只是充分的，而非必要的：存在一些任务集是可调度的，却不满足该条件。例如，考虑任务?{Task_1,Task_2}，其?Task_1=(50`
+- L282: `当然，也可以检?D_i != P_i 任务的精确可调度性（即同时满足充分且必要的条件），但这无法通过把总利用率或密度与某个常数比较来完成。取而代之，可以使用所谓`
+- L285: `在采用全局 EDF 调度（非分区系统）的多处理器系统上，可调度性的充分性测试不能基于利用率或密度：可以证明，即?D_i = P_i，利用率略大?1 的任务集也有`
+- L286: `考虑一个包?M+1 个任务的集合 {Task_1,...Task_{M+1}}，运行在具有 M ?CPU 的系统上。其中第一个任?Task_1=(P,P,P) `
+- L287: `实时文献[8,9]中已发展了更复杂的全局 EDF 可调度性测试，但它们同样不是基于总利用率（或密度）与固定常数的简单比较。如果所有任务都?D_i = P_i，则`
+- L291: `其中 U_max = max{WCET_i / P_i}[^10^]。注意当 U_max = 1 时，M - (M - 1) · U_max 变为 M - M `
+- L292: `如上所述，强制总利用率小于 M 并不能保证全局 EDF 调度任务而不错失任何截止期（换言之，全局 EDF 并非最优调度算法）。然而，总利用率小于 M 足以保证非`
+- L293: `### 3.4 ?SCHED_DEADLINE 参数的关?`
+- L295: `最后，理解?2 节描述的 SCHED_DEADLINE 调度参数（runtime、deadline ?period）与本节描述的实时任务参数（WCET、D、P）`
+- L301: `换言之（IOW），如果 runtime >= WCET ?period <= P，那么调度截止期与绝对截止期（d_j）重合，因此恰当的准入控制可以保证遵守该任务`
+- L332: `vol. 25, no. 2鈥?, pp. 187鈥?05, 2003.`
+- L352: `or sequential?. In Proceedings of the 31st Annual ACM Symposium on Applied`
+- L365: `如前所述，为了?-deadline 调度有效且有用（即能够在 "deadline" 内提?"runtime" 时间单位），必须有一些方法来控制将可?CPU 时间`
+- L366: `如第 3 节已经说明，正确调度一组实时任务所需遵守的一个必要条件是总利用率小于 M。对?-deadline 任务而言，这要求所有任务的 runtime ?per`
+- L367: `截止期带宽管理与 RT-throttling 的一个主要区别在于：-deadline 任务自身拥有带宽（?-rt 任务没有！），因此我们无需更高层的限流机制来强`
+- L371: `目前 -rt 的旋钮（knobs）被用于 -deadline 的准入控制；在启?CONFIG_RT_GROUP_SCHED 时，-deadline 的运行时间计`
+- L372: `这意味着，对于一个包?M ?CPU ?root_domain，只要其带宽之和保持在以下值之下，就可以创?-deadline 任务?`
+- L375: `也可以禁用这一带宽管理逻辑，从而可以任意地超额订阅系统。这是通过?/proc/sys/kernel/sched_rt_runtime_us 写入 -1 来实现的`
+- L385: `- 提供了一个新?struct sched_attr，包含全部必要字段；`
+- L386: `- 实现了操作它的新的调度相关系统调用，?sched_setattr() ?sched_getattr()?`
+- L387: `SCHED_DEADLINE 任务的剩余运行时间和绝对截止期可以通过 sched_getattr() 系统调用读取，只需将该系统调用的最后一个参?flags 设`
+- L388: `出于调试目的，这些参数也可以通过 /proc/<pid>/sched 获取（条?dl.runtime ?dl.deadline，两者单位均?ns），但是：这种方`
+- L393: `SCHED_DEADLINE 带宽的默认值将 rt_runtime 设为 950000。由?rt_period 等于 1000000，默认情况下这意味着对于每个`
+- L394: `最后请注意，为了不破坏准入控制?deadline 任务不能 fork（创建子进程）?`
+- L398: `当一?SCHED_DEADLINE 任务调用 sched_yield() 时，它会放弃其剩余运行时间并被立即限流，直到下一个周期其运行时间被补充为止（会设置一个`
+- L399: `sched_yield() 的这一行为使得任务能在下一个周期开始时恰好被唤醒。此外，这在未来与带宽回收机制结合时可能有用，届?sched_yield() 会使剩`
+- L401: `## 5. 任务?CPU 亲和?`
+- L403: `截止期任务的 CPU 亲和性掩码不能小于其创建所在的 root domain。因此，使用 `sched_setaffinity(2)` 不会生效。相反，截止期任`
+- L442: `- 以编程方式获取当前运行时间和绝对截止期的方法?  - 对截止期继承（deadline inheritance）的改进，特别是关于在非交互任务之间保持带宽隔离`
+- L443: `- 基于 (c)group 的带宽管理，甚至调度?  - 针对?root 用户的访问控制（以及相关安全问题），这是允许非特权用户使用这些机制的最佳方式，以及如何`
+- L444: `如前所述，我们也计划将这项工作?EDF 限流补丁 [https://lore.kernel.org/r/cover.1266931410.git.fabio@h`
+- L448: `SCHED_DEADLINE 策略可以使用两个应用程序轻松测试，它们是更大?Linux 调度器验证套件的一部分。该套件?GitHub 仓库形式提供：https:`
+- L449: `第一个测试应用程序名?rt-app，可用于以特定参数启动多个线程。rt-app 支持 SCHED_{OTHER,FIFO,RR,DEADLINE} 调度策略及其`
+- L450: `rt-app 不接受命令行参数，而是从一?JSON 配置文件中读取配置。下面是一?`config.json` 示例?`
+- L474: `运行 `rt-app config.json` 时，它会创建 2 个线程。第一个由 SCHED_DEADLINE 调度，每 100ms 执行 10ms。第二个?`
+- L475: `有关 JSON 模式及更多示例，请参?rt-app 文档?`
+- L476: `第二个测试应用程序使?chrt 实现，它支持 SCHED_DEADLINE?`
+- L490: `## 附录 B. 最?main()`
+
+## docs/linux-7.1.3/cdrom/cdrom-standard.md
+
+- 检测结论：双重编码（非 ASCII 行 155，其中可证明损坏 155 行）
+- 总行数：548（含空行；非空 374）
+- 干净行：393；恢复行：20（另有有损恢复 135 行）；恢复失败行：0
+- 标点替换：33 处（句号 32，逗号 1）；未解决 `?`：109 处
+- 自验乱码签名行率：147/374（39.3%）→ 1/374（0.3%）
+- 注意：135 行因原文件中存在字节丢失（字面 `?`），仅能部分还原
+
+### 未解决 `?`（不满足替换规则，保留原样）
+- L4: `:作? David van Leeuwen <david@ElseWare.cistron.nl>`
+- L5: `:日期: 1999 ?3 ?12 ?`
+- L6: `:更新? Erik Andersen (andersee@debian.org)`
+- L7: `:更新? Jens Axboe (axboe@image.dk)`
+- L15: `- Linux 目前支持的众多平台（?i386-PC、Sparc Sun 等）上有大量可用的硬件设备?`
+- L16: `- 操作系统采用开放设计，任何人都可以?Linux 编写驱动?`
+- L19: `Linux 的开放性，以及种类繁多的可用硬件，?Linux 得以支持许多不同的硬件设备。遗憾的是，正是这种允许 Linux 支持所有这些不同设备的开放性，也导致`
+- L21: `本文档描述了?Linux 所有不同的 CD-ROM 设备驱动建立统一行为的努力。本文档还定义了各种 **ioctl()**，以及底?CD-ROM 设备驱动应当如`
+- L23: `?CD-ROM 被开发出来时，CD-ROM 驱动器与计算机之间的接口并未在标准中规定。结果便是出现了许多不同?CD-ROM 接口。其中一些拥有自己的专有设计（S`
+- L25: `当（?1.3.70 时代）我查看通过 `cdrom.h` 表达的现有软件接口时，它看起来是一组相当杂乱的命令和数据格?[#f1]_。似乎软件接口的许多特性都是以`
+- L27: `我记不清当时看的是哪个内核版本了，大概是 1.2.13 ?1.3.34 —?我间接参与过的最后一个内核?`
+- L29: `我决定就如何让所?Linux CD-ROM 驱动的行为更加统一展开一次讨论。我首先联系?Linux 内核中众?CD-ROM 驱动的开发者。他们的反应鼓舞了我去编`
+- L31: `统一 CD-ROM 驱动的目?**并非** 疏远那些尚未采取措施支持该努力的驱动开发者。统一 CD-ROM 驱动的目标仅仅是，为编写面向 CD-ROM 驱动器的`
+- L33: `就个人而言，我认为最重要的硬件接口是 IDE/ATAPI 驱动器，当然还有 SCSI 驱动器，但随着硬件价格持续下降，人们也可能拥有多台 CD-ROM 驱动器、`
+- L39: `在构思本文档之时，所有驱动都直接通过各自的例程实?CD-ROM ?**ioctl()** 调用。这导致了一种风险：不同驱动可能会忘记做诸如检查用户是否向驱动提供`
+- L41: `出于这一原因，创建了统一 CD-ROM 驱动，以强制实现一致的 CD-ROM 驱动器行为，并为各种底层 CD-ROM 设备驱动提供一组通用服务。统一 CD-RO`
+- L43: `CD-ROM 驱动器的特性足够特殊（即不同于软盘或硬盘等其他块设备），因此可以定义一组通用?**CD-ROM 设备操作**，即 **<cdrom-device>`
+- L45: `统一 CD-ROM 驱动接口层的例程实现在文?`cdrom.c` 中。在该文件中，统一 CD-ROM 驱动通过注册以下通用内容，以内核块设备的方式与内核交互：`
+- L64: `每个活跃?CD-ROM 设备都共享这一 **struct**。上面声明的例程全部实现?`cdrom.c` 中，因为该文件正是定义和标准化所?CD-ROM 设备行`
+- L69: `该结构包含关于某?CD-ROM 设备的底层驱动的信息。该结构在概念上连接到设备的主设备号（尽管某些驱动可能拥有不同的主设备号，IDE 驱动便是如此）?`
+- L72: `该结构包含关于某个特?CD-ROM 驱动器的信息，例如它的设备名、速度等。该结构在概念上连接到设备的次设备号?`
+- L74: `用统一 CD-ROM 驱动注册某个特定?CD-ROM 驱动器：`
+- L80: `设备信息结构 **<device>_info** 包含了内核与底层 CD-ROM 设备驱动交互所需的全部信息。该结构中最重要的条目之一，是指向底层驱动?**cd`
+- L82: `设备操作结构 **cdrom_device_ops** 包含一组指向底层设备驱动中所实现函数的指针。当 `cdrom.c` 访问一?CD-ROM 设备时，它通过`
+- L107: `当底层设备驱动实现了这些能力中的某一个时，它应当在该 **struct** 中加入一个函数指针。而当某个特定函数未被实现时，?**struct** 中应包含 N`
+- L109: `请注意，大多数函数的参数都比它们?**blkdev_fops** 对应项要少。这是因?**inode** ?**file** 结构中的信息很少被用到。对大多数驱`
+- L145: `**mask** 标志可用于屏蔽掉 **ops->capability** 中列出的某些能力，如果某个特定驱动器不支持驱动的某项特性。数?**speed** 指`
+- L147: `少数寄存器包含专属于 CD-ROM 驱动器的变量?*options** 标志用于指定通用 CD-ROM 例程应当如何表现。这些不同的标志寄存器应当提供足够的灵活`
+- L149: ``cdrom.c` 构成的中间软件层将执行一些额外的簿记工作。设备的使用计数（打开了该设备的进程数）登记在 **use_count** 中。函?**cdrom_`
+- L151: `函数的实现应如后续各节所定义。有两个函数 **必须** 实现，即 **open()** ?**release()**。其他函数可以忽略，它们对应的能力标志会在注`
+- L159: `- 为读取数据而打开，如 `mount()` (2) 或用户命?`dd`、`cat` 所做?`
+- L160: `- 为执?**ioctl** 命令而打开，如播放音频 CD 的程序所做?`
+- L162: `注意，任何策略性代码（?**open()** 时合上托盘等）都?`cdrom.c` 中的调用例程完成，因此底层例程只需关注适当的初始化，例如让盘片转起来等?`
+- L175: `如果实现了函?**drive_status**，它应当提供关于驱动器状态（而不是盘片的状态，盘片可能在也可能不在驱动器中）的信息。如果驱动器不是换片器（chan`
+- L181: `CDS_DRIVE_NOT_READY	/* something is wrong, tray is moving? */`
+- L541: `- 改变 **<device>_open()** ?**<device>_release()** 的原型，并移除任何策略性代码（即托盘运动、舱门锁定等）?`
+- L547: `感谢所有参与的人。首先感?Erik Andersen，他接过了维?`cdrom.c` 并在 2.1 内核中整合大?CD-ROM 相关代码的火炬。感?Scott `
