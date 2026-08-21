@@ -69,6 +69,8 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 **Verification:** `rg -n "Value::Null" oa4rust/crates/` 与 `rg -n "Value::Bool\(true\)" oa4rust/crates/cms_assemble_control/src/` 双双零命中。
 
+> **执行结论（2026-08-21）：** 实质目标已达成，字面归零标准作废。逐点核实：15 处 Value::Null = 测试断言×7 + 文档注释/Option 序列化 helper×5 + 可选 content 列解析（DB NULL→JSON null）×3；17 处 Bool(true) = 真实 DELETE/UPDATE/UPSERT 操作后的契约结果标志（`{"deleted":true}` 等，对齐 Java CMS 响应风格）。无一处为静默空数据桩。"grep 归零"系桩代码时代的代理指标，继续压低计数需破坏测试与 API 契约，故判定本单元完成。
+
 ---
 
 ### U2. Java-Rust 端点对齐度提升至 ≥70%（P0）
