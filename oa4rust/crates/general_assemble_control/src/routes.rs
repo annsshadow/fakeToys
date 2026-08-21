@@ -67,5 +67,7 @@ pub fn general_assemble_control_routes(pool: Pool) -> Router {
         .route("/jaxrs/general/assemble/control/worktime/is/workday/{date}", get(crate::worktime_isworkday_date))
         .route("/jaxrs/general/assemble/control/worktime/is/worktime/{date}", get(crate::worktime_isworktime_date))
         .route("/jaxrs/general/assemble/control/worktime/minutes/of/workday", get(crate::worktime_minutesofworkday))
+        .route("/jaxrs/general/assemble/control/excel/{excelName}/{excelName}", get(crate::excel_excelName_excelName))
+        .route("/jaxrs/general/assemble/control/excel/{excelName}/{excelName}/{sheetList}", get(crate::excel_excelName_excelName_sheetList))
         .layer(axum::Extension(pool))
 }
