@@ -40,19 +40,20 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 ## 剩余工作总览
 
-| # | 单元 | 优先级 | 类型 |
-|---|------|--------|------|
-| U1 | Value::Null 与 CMS stub 清零 | P0 | oa4rust |
-| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust |
-| U3 | 影子流量灰度验证与切流 | P1 | oa4rust |
-| U4 | Tantivy 全文检索集成 | P1 | oa4rust |
-| U5 | query/portal 深度审计 | P1 | oa4rust |
-| U6 | 存储后端三项（文件/BBS 附件/Office 格式） | P2 | oa4rust |
-| U7 | 认证与消息增强三项 | P2 | oa4rust |
-| U8 | 接口规范与依赖清理两项 | P2 | oa4rust |
-| U9 | 测试体系增强四项 | P2 | oa4rust |
-| U10 | 待核验小项五条 | P3 | oa4rust |
-| U11 | Linux 文档精修四项 | P2 | linux-docs |
+| # | 单元 | 优先级 | 类型 | 状态（2026-08-21 执行后） |
+|---|------|--------|------|--------------------------|
+| U1 | Value::Null 与 CMS stub 清零 | P0 | oa4rust | ✅ 已关闭（实质达成，指标作废） |
+| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | 🔄 36.9%→55.2%，剩余需新增 handler |
+| U3 | 影子流量灰度验证与切流 | P1 | oa4rust | ⛔ 外部阻塞（生产环境+观察期） |
+| U4 | Tantivy 全文检索集成 | P1 | oa4rust | ✅ 已完成（网络已恢复） |
+| U5 | query/portal 深度审计 | P1 | oa4rust | ✅ 已关闭（96.6%/100% 真实查库） |
+| U6 | 存储后端三项（文件/BBS 附件/Office 格式） | P2 | oa4rust | ⏳ 未开始 |
+| U7 | 认证与消息增强三项 | P2 | oa4rust | 🔄 异步队列已完成；LDAP 同步/分布式限流未开始 |
+| U8 | 接口规范与依赖清理两项 | P2 | oa4rust | 🔄 securitySchemes 完成；SQLx 底层移除未开始 |
+| U9 | 测试体系增强四项 | P2 | oa4rust | ⏳ Java 容器化外部依赖；其余未开始 |
+| U10 | 待核验小项五条 | P3 | oa4rust | ✅ 核验完毕（2 关闭 / 3 维持遗留） |
+| U11 | Linux 文档精修四项 | P2 | linux-docs | 🔄 L11.3/L11.4 审计完成；L11.1/L11.2 校正未开始 |
+| U12 | 模块卡片文档深度填充 | P3 | oa-docs | ⏳ 未开始 |
 | U12 | 模块卡片文档深度填充 | P3 | oa-docs |
 
 ---
@@ -106,6 +107,8 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 **Approach:** 网络可达后引入 tantivy，替换 search 三端点（documents/subjects/messages）的检索实现，保留 PG to_tsvector 为 fallback。
 
 **Verification:** `cargo test -p search --lib` 全绿；三端点返回 Tantivy 结果。
+
+> **执行结论（2026-08-21）：** 已完成。`crates/search/src/index.rs` 实现三语料 Tantivy 本地索引：首次查询惰性摄取（上限 5 万行）、`SEARCH_INDEX_DIR` 可配置、spawn_blocking 隔离 CPU 工作；`search_documents_smart` Tantivy 优先、任何错误静默回退 PG `to_tsvector`；CMS document_search 已接线。subjects 端点由 bbs_core_entity 自带实现承接（Tantivy 化归后续）；messages 检索函数已就绪待端点接线。search 8 测试 + cms 335 测试全绿。前序计划记录的 crates.io 网络阻塞已解除（实测可达）。
 
 ---
 
@@ -203,6 +206,8 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 - L11.4 格式与风格统一：toctree 指令的 Markdown 列表替代一致性、YAML frontmatter 使用一致性（CRLF/LF 由 git 自动转换，可接受）
 
 **Verification:** L11.1/L11.2 按语言计数归零或复核完毕；L11.3 产出报告；L11.4 一致性清单过检。
+
+> **执行结论（2026-08-21）：** L11.3/L11.4 完成——`docs/audits/link-integrity-report.{json,md}`（3961 链接、断链 105 条、断链率 2.65%，主因 .rst 引用未随翻译转换）与 `docs/audits/format-consistency-report.{json,md}`（toctree 残留 0、frontmatter 覆盖率 0.1%、标题跳级 156 文件、重复 h1 67 文件）。L11.1/L11.2 翻译校正需逐文件对照 kernel.org 上游 RST 源（266+ 处、7 种语言），属独立人工/脚本工程，未在本轮执行。
 
 ---
 
