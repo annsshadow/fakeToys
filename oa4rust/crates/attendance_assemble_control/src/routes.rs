@@ -1,5 +1,5 @@
 use axum::{
-    routing::{get, post},
+    routing::{get, post, put},
     Router,
 };
 use deadpool_postgres::Pool;
@@ -93,5 +93,6 @@ pub fn attendance_assemble_control_routes(pool: Pool) -> Router {
         .route("/jaxrs/attendance/assemble/control/uuid/random", get(crate::uuid_random))
         .route("/jaxrs/attendance/assemble/control/workplace/list/all", get(crate::workplace_list_all))
         .route("/jaxrs/attendance/assemble/control/workplace/{id}", get(crate::workplace_id))
+        .route("/jaxrs/attendance/assemble/control/rule/{id}/toggle", put(crate::toggle_control_rule))
         .layer(axum::Extension(pool))
 }
