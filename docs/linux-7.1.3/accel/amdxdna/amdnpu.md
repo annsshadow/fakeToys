@@ -5,89 +5,89 @@
 :Copyright: |copy| 2024 Advanced Micro Devices, Inc.
 :Author: Sonal Santan <sonal.santan@amd.com>
 
-## 姒傝堪
+## 概述
 
-AMD NPU锛堢缁忕綉缁滃鐞嗗崟鍏冿紝Neural Processing Unit锛夋槸闆嗘垚鍦?AMD 瀹㈡埛绔?APU 涓殑澶氱敤鎴?AI 鎺ㄧ悊鍔犻€熷櫒銆侼PU 鑳藉楂樻晥鎵ц CNN銆丩LM 绛夋満鍣ㄥ涔狅紙Machine Learning锛夊簲鐢ㄣ€侼PU 鍩轰簬 `AMD XDNA Architecture`_ 鏋舵瀯锛岀敱 **amdxdna** 椹卞姩绠＄悊銆?
-## 纭欢鎻忚堪
+AMD NPU（神经网络处理单元，Neural Processing Unit）是集成AMD 客户APU 中的多用AI 推理加速器。NPU 能够高效执行 CNN、LLM 等机器学习（Machine Learning）应用。NPU 基于 `AMD XDNA Architecture`_ 架构，由 **amdxdna** 驱动管理
+## 硬件描述
 
-AMD NPU 鐢变互涓嬬‖浠剁粍浠舵瀯鎴愶細
+AMD NPU 由以下硬件组件构成：
 
-### AMD XDNA 闃靛垪
+### AMD XDNA 阵列
 
-AMD XDNA 闃靛垪鐢遍噰鐢?`AMD AI Engine Technology`_ 鎶€鏈瀯寤虹殑璁＄畻锛坈ompute锛変笌瀛樺偍锛坢emory锛塼ile 鐨勪簩缁撮樀鍒楃粍鎴愩€傛瘡涓€鍒楁湁 4 琛岃绠?tile 鍜?1 琛屽瓨鍌?tile銆傛瘡涓绠?tile 鍖呭惈涓€涓甫鏈夎嚜韬笓鐢ㄧ▼搴忓拰鏁版嵁瀛樺偍鍣ㄧ殑 VLIW 澶勭悊鍣ㄣ€傚瓨鍌?tile 鍏呭綋 L2 瀛樺偍鍣ㄣ€傝浜岀淮闃靛垪鍙互鍦ㄥ垪杈圭晫澶勮繘琛屽垝鍒嗭紝浠庤€屽垱寤轰竴涓┖闂翠笂鐩镐簰闅旂鐨勫垎鍖猴紙partition锛夛紝骞跺彲浠ュ皢鍏剁粦瀹氬埌涓€涓伐浣滆礋杞戒笂涓嬫枃銆?
-姣忎竴鍒楄繕鎷ユ湁涓撶敤鐨?DMA 寮曟搸锛岀敤浜庡湪涓绘満 DDR 涓庡瓨鍌?tile 涔嬮棿鎼Щ鏁版嵁銆?
-AMD Phoenix 鍜?AMD Hawk Point 瀹㈡埛绔?NPU 閲囩敤 4x5 鎷撴墤锛屽嵆 4 琛岃绠?tile 鎺掑垪涓?5 鍒椼€侫MD Strix Point 瀹㈡埛绔?APU 閲囩敤 4x8 鎷撴墤锛屽嵆 4 琛岃绠?tile 鎺掑垪涓?8 鍒椼€?
-### 鍏变韩 L2 瀛樺偍鍣?
-鍗曠嫭涓€琛岀殑瀛樺偍 tile 鏋勬垚浜嗕竴鍧楃敱杞欢绠＄悊鐨勭墖涓?L2 瀛樺偍鍣ㄦ睜銆侱MA 寮曟搸鐢ㄤ簬鍦ㄤ富鏈?DDR 涓庡瓨鍌?tile 涔嬮棿鎼Щ鏁版嵁銆侫MD Phoenix 鍜?AMD Hawk Point NPU 鍏辨湁 2560 KB 鐨?L2 瀛樺偍鍣ㄣ€侫MD Strix Point NPU 鍏辨湁 4096 KB 鐨?L2 瀛樺偍鍣ㄣ€?
-### 寰帶鍒跺櫒
+AMD XDNA 阵列由采`AMD AI Engine Technology`_ 技术构建的计算（compute）与存储（memory）tile 的二维阵列组成。每一列有 4 行计tile 1 行存tile。每个计tile 包含一个带有自身专用程序和数据存储器的 VLIW 处理器。存tile 充当 L2 存储器。该二维阵列可以在列边界处进行划分，从而创建一个空间上相互隔离的分区（partition），并可以将其绑定到一个工作负载上下文
+每一列还拥有专用DMA 引擎，用于在主机 DDR 与存tile 之间搬移数据
+AMD Phoenix AMD Hawk Point 客户NPU 采用 4x5 拓扑，即 4 行计tile 排列5 列。AMD Strix Point 客户APU 采用 4x8 拓扑，即 4 行计tile 排列8 列
+### 鍏变韩 L2 瀛樺偍鍣。
+单独一行的存储 tile 构成了一块由软件管理的片L2 存储器池。DMA 引擎用于在主DDR 与存tile 之间搬移数据。AMD Phoenix AMD Hawk Point NPU 共有 2560 KB L2 存储器。AMD Strix Point NPU 共有 4096 KB L2 存储器
+### 微控制器
 
-涓€涓井鎺у埗鍣ㄨ繍琛?NPU 鍥轰欢锛團irmware锛夛紝璐熻矗鍛戒护澶勭悊銆乆DNA 闃靛垪鍒嗗尯璁剧疆銆乆DNA 闃靛垪閰嶇疆銆佸伐浣滆礋杞戒笂涓嬫枃绠＄悊浠ュ強宸ヤ綔璐熻浇缂栨帓锛坥rchestration锛夈€?
-NPU 鍥轰欢浣跨敤涓€涓闅旂鐨勩€佹棤鐗规潈鐨勪笂涓嬫枃锛堢О涓?ERT锛夌殑涓撶敤瀹炰緥鏉ユ湇鍔℃瘡涓伐浣滆礋杞戒笂涓嬫枃銆侲RT 涔熺敤浜庢墽琛屼笌宸ヤ綔璐熻浇涓婁笅鏂囩浉鍏宠仈銆佺敱鐢ㄦ埛鎻愪緵鐨?`ctrlcode`銆?
-NPU 鍥轰欢浣跨敤涓€涓崟涓€鐨勩€佽闅旂鐨勬湁鐗规潈涓婁笅鏂囷紙绉颁负 MERT锛夋潵鏈嶅姟鏉ヨ嚜 amdxdna 椹卞姩鐨勭鐞嗗懡浠ゃ€?
-### 閭锛圡ailboxes锛?
-寰帶鍒跺櫒涓?amdxdna 椹卞姩浣跨敤涓€涓湁鐗规潈鐨勯€氶亾鏉ユ墽琛岀鐞嗕换鍔★紝渚嬪寤虹珛涓婁笅鏂囥€侀仴娴嬶紙telemetry锛夈€佹煡璇€侀敊璇鐞嗐€佸缓绔嬬敤鎴烽€氶亾绛夈€傚鍓嶆墍杩帮紝鏈夌壒鏉冮€氶亾鐨勮姹傜敱 MERT 鏈嶅姟銆傝鏈夌壒鏉冮€氶亾缁戝畾鍒板崟涓€鐨勯偖绠便€?
-寰帶鍒跺櫒涓?amdxdna 椹卞姩涓烘瘡涓伐浣滆礋杞戒笂涓嬫枃浣跨敤涓€涓笓鐢ㄧ殑鐢ㄦ埛閫氶亾銆傜敤鎴烽€氶亾涓昏鐢ㄤ簬鍚?NPU 鎻愪氦宸ヤ綔銆傚鍓嶆墍杩帮紝鐢ㄦ埛閫氶亾鐨勮姹傜敱涓€涓?ERT 瀹炰緥鏈嶅姟銆傛瘡涓敤鎴烽€氶亾閮界粦瀹氬埌鍏惰嚜韬笓鐢ㄧ殑閭銆?
+一个微控制器运NPU 固件（Firmware），负责命令处理、XDNA 阵列分区设置、XDNA 阵列配置、工作负载上下文管理以及工作负载编排（orchestration）
+NPU 固件使用一个被隔离的、无特权的上下文（称ERT）的专用实例来服务每个工作负载上下文。ERT 也用于执行与工作负载上下文相关联、由用户提供`ctrlcode`
+NPU 固件使用一个单一的、被隔离的有特权上下文（称为 MERT）来服务来自 amdxdna 驱动的管理命令
+### 邮箱（Mailboxes
+微控制器amdxdna 驱动使用一个有特权的通道来执行管理任务，例如建立上下文、遥测（telemetry）、查询、错误处理、建立用户通道等。如前所述，有特权通道的请求由 MERT 服务。该有特权通道绑定到单一的邮箱
+微控制器amdxdna 驱动为每个工作负载上下文使用一个专用的用户通道。用户通道主要用于NPU 提交工作。如前所述，用户通道的请求由一ERT 实例服务。每个用户通道都绑定到其自身专用的邮箱
 ### PCIe EP
 
-NPU 瀵逛簬 x86 涓绘満 CPU 鑰岃█鏄竴涓甫鏈夊涓?BAR 鍜岃嫢骞?MSI-X 涓柇鍚戦噺鐨?PCIe 璁惧銆侼PU 浣跨敤涓€涓笓鐢ㄧ殑銆侀珮甯﹀鐨?SoC 绾т簰杩烇紙fabric锛夋潵璇诲啓涓绘満鍐呭瓨銆傛瘡涓?ERT 瀹炰緥閮芥嫢鏈夊叾鑷韩涓撶敤鐨?MSI-X 涓柇銆侻ERT 鑾峰緱鍗曚竴鐨?MSI-X 涓柇瀹炰緥銆?
-PCIe BAR 鐨勬暟閲忓洜鍏蜂綋璁惧鑰屽紓銆傛牴鎹叾鍔熻兘锛孭CIe BAR 涓€鑸彲鍒嗕负浠ヤ笅鍑犵被銆?
-- PSP BAR锛氭毚闇?AMD PSP锛堝钩鍙板畨鍏ㄥ鐞嗗櫒锛孭latform Security Processor锛夊姛鑳?- SMU BAR锛氭毚闇?AMD SMU锛堢郴缁熺鐞嗗崟鍏冿紝System Management Unit锛夊姛鑳?- SRAM BAR锛氭毚闇茬敤浜庨偖绠辩殑鐜舰缂撳啿鍖?- Mailbox BAR锛氭毚闇查偖绠辨帶鍒跺瘎瀛樺櫒锛坔ead銆乼ail 浠ュ強 ISR 绛夊瘎瀛樺櫒锛?- Public Register BAR锛氭毚闇插叕鍏卞瘎瀛樺櫒
+NPU 对于 x86 主机 CPU 而言是一个带有多BAR 和若MSI-X 中断向量PCIe 设备。NPU 使用一个专用的、高带宽SoC 级互连（fabric）来读写主机内存。每ERT 实例都拥有其自身专用MSI-X 中断。MERT 获得单一MSI-X 中断实例
+PCIe BAR 的数量因具体设备而异。根据其功能，PCIe BAR 一般可分为以下几类
+- PSP BAR：暴AMD PSP（平台安全处理器，Platform Security Processor）功- SMU BAR：暴AMD SMU（系统管理单元，System Management Unit）功- SRAM BAR：暴露用于邮箱的环形缓冲- Mailbox BAR：暴露邮箱控制寄存器（head、tail 以及 ISR 等寄存器- Public Register BAR：暴露公共寄存器
 
-鍦ㄧ壒瀹氳澶囦笂锛屼笂杩?BAR 绫诲瀷鍙兘浼氳鍚堝苟鍒板崟涓墿鐞?PCIe BAR 涓€傛垨鑰呮煇涓ā鍧楀彲鑳介渶瑕佷袱涓墿鐞?PCIe BAR 鎵嶈兘瀹屽叏姝ｅ父宸ヤ綔銆備緥濡傦細
+在特定设备上，上BAR 类型可能会被合并到单个物PCIe BAR 中。或者某个模块可能需要两个物PCIe BAR 才能完全正常工作。例如：
 
-- 鍦?AMD Phoenix 璁惧涓婏紝PSP銆丼MU銆丳ublic Register BAR 浣嶄簬 PCIe BAR 绱㈠紩 0銆?- 鍦?AMD Strix Point 璁惧涓婏紝Mailbox 涓?Public Register BAR 浣嶄簬 PCIe BAR 绱㈠紩 0銆侾SP 鐨勯儴鍒嗗瘎瀛樺櫒浣嶄簬 PCIe BAR 绱㈠紩 0锛圥ublic Register BAR锛夊拰 PCIe BAR 绱㈠紩 4锛圥SP BAR锛夈€?
-### 杩涚▼闅旂纭欢
+- AMD Phoenix 设备上，PSP、SMU、Public Register BAR 位于 PCIe BAR 索引 0- AMD Strix Point 设备上，Mailbox Public Register BAR 位于 PCIe BAR 索引 0。PSP 的部分寄存器位于 PCIe BAR 索引 0（Public Register BAR）和 PCIe BAR 索引 4（PSP BAR）
+### 进程隔离硬件
 
-濡傚墠鎵€杩帮紝XDNA 闃靛垪鍙互鍔ㄦ€佸垝鍒嗕负鐩镐簰闅旂鐨勭┖闂村垎鍖猴紝姣忎釜鍒嗗尯鍙互鏈変竴鍒楁垨澶氬垪銆傜┖闂村垎鍖虹敱寰帶鍒跺櫒閫氳繃瀵瑰垪闅旂瀵勫瓨鍣ㄨ繘琛岀紪绋嬫潵寤虹珛銆傛瘡涓┖闂村垎鍖洪兘鍏宠仈涓€涓悓鏍风敱寰帶鍒跺櫒缂栫▼鐨?PASID銆傚洜姝わ紝NPU 涓殑澶氫釜绌洪棿鍒嗗尯鍙互杩涜鐢?PASID 淇濇姢鐨勫苟鍙戜富鏈鸿闂€?
-NPU 鍥轰欢鏈韩浣跨敤鐢卞井鎺у埗鍣?MMU 寮哄埗鐨勯殧绂讳笂涓嬫枃鏉ユ湇鍔＄敤鎴峰拰鏈夌壒鏉冮€氶亾璇锋眰銆?
-## 绌洪棿涓庢椂闂存贩鍚堣皟搴?
-AMD XDNA 鏋舵瀯鏀寔浜岀淮闃靛垪鐨勭┖闂翠笌鏃堕棿锛堟椂闂寸墖鍏变韩锛夋贩鍚堣皟搴︺€傝繖鎰忓懗鐫€绌洪棿鍒嗗尯鍙互琚姩鎬佸湴寤虹珛鍜屾媶闄わ紝浠ラ€傚簲鍚勭宸ヤ綔璐熻浇銆備竴涓?*绌洪棿**鍒嗗尯鍙互琚?*鐙崰**缁戝畾鍒板崟涓伐浣滆礋杞戒笂涓嬫枃锛岃€屽彟涓€涓垎鍖哄彲浠ヨ**涓存椂**缁戝畾鍒板涓伐浣滆礋杞戒笂涓嬫枃銆傚井鎺у埗鍣ㄤ細鏇存柊涓存椂鍏变韩鍒嗗尯鐨?PASID锛屼互鍖归厤鍦ㄤ换涓€鏃跺埢琚粦瀹氬埌璇ュ垎鍖虹殑涓婁笅鏂囥€?
-### 璧勬簮姹傝В鍣紙Resource Solver锛?
-amdxdna 椹卞姩鐨勮祫婧愭眰瑙ｅ櫒锛圧esource Solver锛夌粍浠剁鐞嗕簩缁撮樀鍒楀湪鍚勫伐浣滆礋杞戒箣闂寸殑鍒嗛厤銆傛瘡涓伐浣滆礋杞藉湪鍏跺厓鏁版嵁涓弿杩颁簡杩愯 NPU 浜岃繘鍒舵墍闇€鐨勫垪鏁般€傝祫婧愭眰瑙ｅ櫒缁勪欢鍒╃敤宸ヤ綔璐熻浇浼犲叆鐨勬彁绀哄強鍏惰嚜韬殑鍚彂寮忚鍒欙紝鏉ュ喅瀹氱敤浜庡垪鐨勭┖闂翠笌鏃堕棿鍏变韩鐨勪簩缁撮樀鍒楋紙閲嶆柊锛夊垎鍖虹瓥鐣ヤ互鍙婂伐浣滆礋杞界殑鏄犲皠銆傚浐浠讹紙FW锛夊己鍒舵墽琛岀敱璧勬簮姹傝В鍣ㄥ仛鍑虹殑涓婁笅鏂囧埌鍒楋紙鎴栬嫢骞插垪锛夌殑璧勬簮缁戝畾鍐崇瓥銆?
-AMD Phoenix 鍜?AMD Hawk Point 瀹㈡埛绔?NPU 鍙互鏀寔 6 涓苟鍙戠殑宸ヤ綔璐熻浇涓婁笅鏂囥€侫MD Strix Point 鍙互鏀寔 16 涓苟鍙戠殑宸ヤ綔璐熻浇涓婁笅鏂囥€?
-## 搴旂敤绋嬪簭浜岃繘鍒舵枃浠?
-涓€涓?NPU 搴旂敤宸ヤ綔璐熻浇鐢?NPU 缂栬瘧鍣ㄧ敓鎴愮殑涓や釜鐙珛浜岃繘鍒舵枃浠剁粍鎴愩€?
-1. AMD XDNA 闃靛垪鍙犲姞锛坥verlay锛夛紝鐢ㄤ簬閰嶇疆涓€涓?NPU 绌洪棿鍒嗗尯銆傝 overlay 鍖呭惈鐢ㄤ簬璁剧疆娴佸紑鍏筹紙stream switch锛夐厤缃互鍙婇潰鍚戣绠?tile 鐨?ELF銆傝 overlay 鐢变笌涔嬪叧鑱旂殑 ERT 瀹炰緥鍔犺浇鍒扮粦瀹氱粰璇ュ伐浣滆礋杞界殑绌洪棿鍒嗗尯涓娿€傛洿澶氱粏鑺傝鍙傝€?   `Versal Adaptive SoC AIE-ML Architecture Manual (AM020)`_銆?
-2. `ctrlcode`锛岀敤浜庣紪鎺掑姞杞藉湪绌洪棿鍒嗗尯涓婄殑 overlay銆俙ctrlcode` 鐢卞湪寰帶鍒跺櫒涓婁互淇濇姢妯″紡杩愯鐨勩€佸浜庤宸ヤ綔璐熻浇涓婁笅鏂囦腑鐨?ERT 鎵ц銆俙ctrlcode` 鐢变竴绯诲垪鍚嶄负 `XAie_TxnOpcode` 鐨勬搷浣滅爜锛坥pcode锛夋瀯鎴愩€傛洿澶氱粏鑺傝鍙傝€?   `AI Engine Run Time`_銆?
-## 鐗规畩涓绘満缂撳啿鍖?
-### 姣忎笂涓嬫枃鎸囦护缂撳啿鍖?
-姣忎釜宸ヤ綔璐熻浇涓婁笅鏂囬兘浣跨敤涓€涓┗鐣欏湪涓绘満涓婄殑 64 MB 缂撳啿鍖猴紝瀹冭鍐呭瓨鏄犲皠鍒颁负鏈嶅姟璇ュ伐浣滆礋杞借€屽垱寤虹殑 ERT 瀹炰緥涓€傝宸ヤ綔璐熻浇鎵€浣跨敤鐨?`ctrlcode` 浼氳澶嶅埗鍒拌繖鍧楃壒娈婂唴瀛樹腑銆傝缂撳啿鍖轰笌鎵€鏈夊叾浠栫敱璇ュ伐浣滆礋杞戒娇鐢ㄧ殑杈撳叆/杈撳嚭缂撳啿鍖轰竴鏍凤紝鍙?PASID 淇濇姢銆傛寚浠ょ紦鍐插尯涔熻鏄犲皠鍒拌宸ヤ綔璐熻浇鐨勭敤鎴风┖闂淬€?
-### 鍏ㄥ眬鏈夌壒鏉冪紦鍐插尯
+如前所述，XDNA 阵列可以动态划分为相互隔离的空间分区，每个分区可以有一列或多列。空间分区由微控制器通过对列隔离寄存器进行编程来建立。每个空间分区都关联一个同样由微控制器编程PASID。因此，NPU 中的多个空间分区可以进行PASID 保护的并发主机访问
+NPU 固件本身使用由微控制MMU 强制的隔离上下文来服务用户和有特权通道请求
+## 空间与时间混合调
+AMD XDNA 架构支持二维阵列的空间与时间（时间片共享）混合调度。这意味着空间分区可以被动态地建立和拆除，以适应各种工作负载。一*空间**分区可以*独占**绑定到单个工作负载上下文，而另一个分区可以被**临时**绑定到多个工作负载上下文。微控制器会更新临时共享分区PASID，以匹配在任一时刻被绑定到该分区的上下文
+### 资源求解器（Resource Solver
+amdxdna 驱动的资源求解器（Resource Solver）组件管理二维阵列在各工作负载之间的分配。每个工作负载在其元数据中描述了运行 NPU 二进制所需的列数。资源求解器组件利用工作负载传入的提示及其自身的启发式规则，来决定用于列的空间与时间共享的二维阵列（重新）分区策略以及工作负载的映射。固件（FW）强制执行由资源求解器做出的上下文到列（或若干列）的资源绑定决策
+AMD Phoenix AMD Hawk Point 客户NPU 可以支持 6 个并发的工作负载上下文。AMD Strix Point 可以支持 16 个并发的工作负载上下文
+## 应用程序二进制文
+一NPU 应用工作负载NPU 编译器生成的两个独立二进制文件组成
+1. AMD XDNA 阵列叠加（overlay），用于配置一NPU 空间分区。该 overlay 包含用于设置流开关（stream switch）配置以及面向计tile ELF。该 overlay 由与之关联的 ERT 实例加载到绑定给该工作负载的空间分区上。更多细节请参   `Versal Adaptive SoC AIE-ML Architecture Manual (AM020)`_
+2. `ctrlcode`，用于编排加载在空间分区上的 overlay。`ctrlcode` 由在微控制器上以保护模式运行的、处于该工作负载上下文中ERT 执行。`ctrlcode` 由一系列名为 `XAie_TxnOpcode` 的操作码（opcode）构成。更多细节请参   `AI Engine Run Time`_
+## 特殊主机缓冲
+### 每上下文指令缓冲
+每个工作负载上下文都使用一个驻留在主机上的 64 MB 缓冲区，它被内存映射到为服务该工作负载而创建的 ERT 实例中。该工作负载所使用`ctrlcode` 会被复制到这块特殊内存中。该缓冲区与所有其他由该工作负载使用的输入/输出缓冲区一样，PASID 保护。指令缓冲区也被映射到该工作负载的用户空间
+### 全局有特权缓冲区
 
-姝ゅ锛岄┍鍔ㄨ繕鍒嗛厤涓€涓崟涓€鐨勭紦鍐插尯鐢ㄤ簬缁存姢浠诲姟锛屼緥濡傝褰曟潵鑷?MERT 鐨勯敊璇€傝鍏ㄥ眬缂撳啿鍖轰娇鐢ㄥ叏灞€ IOMMU 鍩燂紝骞朵笖鍙兘鐢?MERT 璁块棶銆?
-## 楂樺眰浣跨敤娴佺▼
+此外，驱动还分配一个单一的缓冲区用于维护任务，例如记录来MERT 的错误。该全局缓冲区使用全局 IOMMU 域，并且只能MERT 访问
+## 高层使用流程
 
-浠ヤ笅鏄湪 AMD NPU 涓婅繍琛屼竴涓伐浣滆礋杞界殑姝ラ锛?
-1. 灏嗗伐浣滆礋杞界紪璇戜负涓€涓?overlay 鍜屼竴涓?`ctrlcode` 浜岃繘鍒舵枃浠躲€?2. 鐢ㄦ埛绌洪棿鍦ㄩ┍鍔ㄤ腑鎵撳紑涓€涓笂涓嬫枃锛屽苟鎻愪緵璇?overlay銆?3. 椹卞姩涓庤祫婧愭眰瑙ｅ櫒鍗忓晢锛屼负璇ュ伐浣滆礋杞藉垎閰嶄竴缁勫垪銆?4. 椹卞姩闅忓悗璇锋眰 MERT 鍦ㄨ澶囦笂鐢ㄦ墍闇€鐨勫垪鍒涘缓涓€涓笂涓嬫枃銆?5. MERT 闅忓悗鍒涘缓涓€涓?ERT 瀹炰緥銆侻ERT 杩樺皢鎸囦护缂撳啿鍖烘槧灏勫埌 ERT 鍐呭瓨涓€?6. 鐢ㄦ埛绌洪棿闅忓悗灏?`ctrlcode` 澶嶅埗鍒版寚浠ょ紦鍐插尯涓€?7. 鐢ㄦ埛绌洪棿闅忓悗鍒涘缓涓€涓甫鏈夋寚鍚戣緭鍏ャ€佽緭鍑轰互鍙婃寚浠ょ紦鍐插尯鎸囬拡鐨勫懡浠ょ紦鍐插尯锛涚劧鍚庡畠灏嗗懡浠ょ紦鍐插尯鎻愪氦缁欓┍鍔紝骞惰繘鍏ョ潯鐪犱互绛夊緟瀹屾垚銆?8. 椹卞姩閫氳繃閭灏嗗懡浠ゅ彂閫佺粰 ERT銆?9. ERT **鎵ц**鎸囦护缂撳啿鍖轰腑鐨?`ctrlcode`銆?10. `ctrlcode` 鐨勬墽琛屼細鍚姩 AMD XDNA 闃靛垪杩愯鏈熼棿寰€杩斾簬涓绘満 DDR 鐨?DMA銆?11. 褰?ERT 鍒拌揪 `ctrlcode` 鏈熬鏃讹紝瀹冧細瑙﹀彂涓€涓?MSI-X 鏉ュ悜椹卞姩鍙戦€佸畬鎴愪俊鍙凤紝椹卞姩闅忓悗鍞ら啋绛夊緟涓殑宸ヤ綔璐熻浇銆?
-## 鍚姩娴佺▼
+以下是在 AMD NPU 上运行一个工作负载的步骤
+1. 将工作负载编译为一overlay 和一`ctrlcode` 二进制文件2. 用户空间在驱动中打开一个上下文，并提供overlay3. 驱动与资源求解器协商，为该工作负载分配一组列4. 驱动随后请求 MERT 在设备上用所需的列创建一个上下文5. MERT 随后创建一ERT 实例。MERT 还将指令缓冲区映射到 ERT 内存中6. 用户空间随后`ctrlcode` 复制到指令缓冲区中7. 用户空间随后创建一个带有指向输入、输出以及指令缓冲区指针的命令缓冲区；然后它将命令缓冲区提交给驱动，并进入睡眠以等待完成8. 驱动通过邮箱将命令发送给 ERT9. ERT **执行**指令缓冲区中`ctrlcode`10. `ctrlcode` 的执行会启动 AMD XDNA 阵列运行期间往返于主机 DDR DMA11. ERT 到达 `ctrlcode` 末尾时，它会触发一MSI-X 来向驱动发送完成信号，驱动随后唤醒等待中的工作负载
+## 启动流程
 
-amdxdna 椹卞姩浣跨敤 PSP 鏉ュ畨鍏ㄥ湴鍔犺浇缁忚繃绛惧悕鐨?NPU 鍥轰欢锛團W锛夛紝骞跺惎鍔?NPU 寰帶鍒跺櫒鐨勫紩瀵笺€俛mdxdna 椹卞姩闅忓悗鍦?BAR 0 涓婃煇涓壒娈婁綅缃瓑寰?alive 淇″彿銆侼PU 鍦?SoC 鎸傝捣锛坰uspend锛夋湡闂磋鍏抽棴锛屽苟鍦ㄦ仮澶嶏紙resume锛夊悗閲嶆柊鎵撳紑锛屾鏃?NPU 鍥轰欢琚噸鏂板姞杞斤紝骞跺啀娆℃墽琛屾彙鎵嬨€?
-## 鐢ㄦ埛绌洪棿缁勪欢
+amdxdna 驱动使用 PSP 来安全地加载经过签名NPU 固件（FW），并启NPU 微控制器的引导。amdxdna 驱动随后BAR 0 上某个特殊位置等alive 信号。NPU SoC 挂起（suspend）期间被关闭，并在恢复（resume）后重新打开，此NPU 固件被重新加载，并再次执行握手
+## 用户空间组件
 
-### 缂栬瘧鍣?
-Peano 鏄竴涓熀浜?LLVM 鐨勩€佸紑婧愮殑銆侀潰鍚?AMD XDNA 闃靛垪璁＄畻 tile 鐨勫崟鏍哥紪璇戝櫒銆侾eano 浣嶄簬锛?https://github.com/Xilinx/llvm-aie
+### 编译
+Peano 是一个基LLVM 的、开源的、面AMD XDNA 阵列计算 tile 的单核编译器。Peano 位于https://github.com/Xilinx/llvm-aie
 
-IRON 鏄竴涓紑婧愮殑銆侀潰鍚戝熀浜?AMD XDNA 闃靛垪鐨?NPU 鐨勯樀鍒楃紪璇戝櫒锛屽畠鍦ㄥ簳灞備娇鐢?Peano銆侷RON 浣嶄簬锛?https://github.com/Xilinx/mlir-aie
+IRON 是一个开源的、面向基AMD XDNA 阵列NPU 的阵列编译器，它在底层使Peano。IRON 位于https://github.com/Xilinx/mlir-aie
 
-### 鐢ㄦ埛鎬侀┍鍔紙UMD锛?
-寮€婧愮殑 XRT 杩愯鏃舵爤涓?amdxdna 鍐呮牳椹卞姩瀵规帴銆俋RT 浣嶄簬锛?https://github.com/Xilinx/XRT
+### 用户态驱动（UMD
+开源的 XRT 运行时栈amdxdna 内核驱动对接。XRT 位于https://github.com/Xilinx/XRT
 
-寮€婧愮殑銆侀潰鍚?NPU 鐨?XRT shim 浣嶄簬锛?https://github.com/amd/xdna-driver
+开源的、面NPU XRT shim 位于https://github.com/amd/xdna-driver
 
-## DMA 鎿嶄綔
+## DMA 操作
 
-DMA 鎿嶄綔鎸囦护琚紪鐮佸湪 `ctrlcode` 涓紝褰㈠紡涓?`XAIE_IO_BLOCKWRITE` 鎿嶄綔鐮併€傚綋 ERT 鎵ц `XAIE_IO_BLOCKWRITE` 鏃讹紝浼氬湪涓绘満 DDR 涓?L2 瀛樺偍鍣ㄤ箣闂翠骇鐢?DMA 鎿嶄綔銆?
-## 閿欒澶勭悊
+DMA 操作指令被编码在 `ctrlcode` 中，形式`XAIE_IO_BLOCKWRITE` 操作码。当 ERT 执行 `XAIE_IO_BLOCKWRITE` 时，会在主机 DDR L2 存储器之间产DMA 操作
+## 错误处理
 
-褰?MERT 鍦?AMD XDNA 闃靛垪涓娴嬪埌閿欒鏃讹紝瀹冧細鏆傚仠璇ュ伐浣滆礋杞戒笂涓嬫枃鐨勬墽琛岋紝骞堕€氳繃鏈夌壒鏉冮€氶亾鍚戦┍鍔ㄥ彂閫佷竴鏉″紓姝ユ秷鎭€傞┍鍔ㄩ殢鍚庡悜 MERT 鍙戦€佷竴涓紦鍐插尯鎸囬拡锛屼互鎹曡幏缁戝畾鍒板嚭閿欏伐浣滆礋杞戒笂涓嬫枃鐨勫垎鍖虹殑瀵勫瓨鍣ㄧ姸鎬併€傞┍鍔ㄩ殢鍚庨€氳繃璇诲彇璇ョ紦鍐插尯鎸囬拡鐨勫唴瀹规潵瑙ｇ爜閿欒銆?
-## 閬ユ祴
+MERT AMD XDNA 阵列中检测到错误时，它会暂停该工作负载上下文的执行，并通过有特权通道向驱动发送一条异步消息。驱动随后向 MERT 发送一个缓冲区指针，以捕获绑定到出错工作负载上下文的分区的寄存器状态。驱动随后通过读取该缓冲区指针的内容来解码错误
+## 遥测
 
-MERT 鍙互鎶ュ憡鍚勭閬ユ祴淇℃伅锛屼緥濡傦細
+MERT 可以报告各种遥测信息，例如：
 
-- L1 涓柇璁℃暟
-- DMA 璁℃暟
-- 娣卞害鐫＄湢锛圖eep Sleep锛夎鏁?- 绛?
-## 鍙傝€冭祫鏂?
+- L1 中断计数
+- DMA 计数
+- 深度睡眠（Deep Sleep）计- 
+## 参考资
 - `AMD XDNA Architecture <https://www.amd.com/en/technologies/xdna.html>`_
 - `AMD AI Engine Technology <https://www.xilinx.com/products/technology/ai-engine.html>`_
 - `Peano <https://github.com/Xilinx/llvm-aie>`_

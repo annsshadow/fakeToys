@@ -1,104 +1,104 @@
-﻿## CPU 鍒?ISA 鐗堟湰鏄犲皠
+﻿## CPU ISA 版本映射
 
-鏈枃浠ヨ〃鏍煎舰寮忓垪鍑?PowerPC 鍚?CPU 鐗堟湰锛堝 Power10銆丳ower9銆丳ower8 绛夛級鎵€瀵瑰簲鐨?Power ISA 鏋舵瀯鐗堟湰锛屽苟鏍囨敞鐩稿叧渚嬪鎯呭喌锛屼緵鍐呮牳绉绘涓庢寚浠ら泦鍏煎鎬у伐浣滃弬鑰冦€?
+本文以表格形式列PowerPC CPU 版本（如 Power10、Power9、Power8 等）所对应Power ISA 架构版本，并标注相关例外情况，供内核移植与指令集兼容性工作参考
 
 
 
-閮ㄥ垎 CPU 鐗堟湰鍒扮浉鍏?ISA 鐗堟湰鐨勬槧灏勩€?
+部分 CPU 版本到相ISA 版本的映射
 
-娉ㄦ剰 Power4 鍜?Power4+ 涓嶅彈鏀寔銆?
+注意 Power4 Power4+ 不受支持
 
 ========= ====================================================================
-CPU       鏋舵瀯鐗堟湰
+CPU       架构版本
 ========= ====================================================================
 Power10   Power ISA v3.1
 Power9    Power ISA v3.0B
 Power8    Power ISA v2.07
-e6500     Power ISA v2.06锛堟湁涓€浜涗緥澶栵級
-e5500     Power ISA v2.06锛堟湁涓€浜涗緥澶栵紝鏃?Altivec锛?
+e6500     Power ISA v2.06（有一些例外）
+e5500     Power ISA v2.06（有一些例外，Altivec
 Power7    Power ISA v2.06
 Power6    Power ISA v2.05
 PA6T      Power ISA v2.04
-Cell PPU  - Power ISA v2.02锛堟湁涓€浜涘皬鐨勪緥澶栵級
-          - 澶栧姞 Altivec/VMX ~= 2.03
-Power5++  Power ISA v2.04锛堟棤 VMX锛?
+Cell PPU  - Power ISA v2.02（有一些小的例外）
+          - 外加 Altivec/VMX ~= 2.03
+Power5++  Power ISA v2.04（无 VMX
 Power5+   Power ISA v2.03
-Power5    - PowerPC 鐢ㄦ埛鎸囦护闆嗘灦鏋?鍗?I v2.02
-          - PowerPC 铏氭嫙鐜鏋舵瀯 鍗?II v2.02
-          - PowerPC 鎿嶄綔鐜鏋舵瀯 鍗?III v2.02
-PPC970    - PowerPC 鐢ㄦ埛鎸囦护闆嗘灦鏋?鍗?I v2.01
-          - PowerPC 铏氭嫙鐜鏋舵瀯 鍗?II v2.01
-          - PowerPC 鎿嶄綔鐜鏋舵瀯 鍗?III v2.01
-          - 澶栧姞 Altivec/VMX ~= 2.03
-Power4+   - PowerPC 鐢ㄦ埛鎸囦护闆嗘灦鏋?鍗?I v2.01
-          - PowerPC 铏氭嫙鐜鏋舵瀯 鍗?II v2.01
-          - PowerPC 鎿嶄綔鐜鏋舵瀯 鍗?III v2.01
-Power4    - PowerPC 鐢ㄦ埛鎸囦护闆嗘灦鏋?鍗?I v2.00
-          - PowerPC 铏氭嫙鐜鏋舵瀯 鍗?II v2.00
-          - PowerPC 鎿嶄綔鐜鏋舵瀯 鍗?III v2.00
+Power5    - PowerPC 用户指令集架I v2.02
+          - PowerPC 虚拟环境架构 II v2.02
+          - PowerPC 操作环境架构 III v2.02
+PPC970    - PowerPC 用户指令集架I v2.01
+          - PowerPC 虚拟环境架构 II v2.01
+          - PowerPC 操作环境架构 III v2.01
+          - 外加 Altivec/VMX ~= 2.03
+Power4+   - PowerPC 用户指令集架I v2.01
+          - PowerPC 虚拟环境架构 II v2.01
+          - PowerPC 操作环境架构 III v2.01
+Power4    - PowerPC 用户指令集架I v2.00
+          - PowerPC 虚拟环境架构 II v2.00
+          - PowerPC 操作环境架构 III v2.00
 ========= ====================================================================
 
 
-### 鍏抽敭鐗规€?
+### 关键特
 
 
 ========== ==================
-CPU        VMX锛堝嵆 Altivec锛?
+CPU        VMX（即 Altivec
 ========== ==================
-Power10    鏄紙Yes锛?
-Power9     鏄紙Yes锛?
-Power8     鏄紙Yes锛?
-e6500      鏄紙Yes锛?
-e5500      鍚︼紙No锛?
-Power7     鏄紙Yes锛?
-Power6     鏄紙Yes锛?
-PA6T       鏄紙Yes锛?
-Cell PPU   鏄紙Yes锛?
-Power5++   鍚︼紙No锛?
-Power5+    鍚︼紙No锛?
-Power5     鍚︼紙No锛?
-PPC970     鏄紙Yes锛?
-Power4+    鍚︼紙No锛?
-Power4     鍚︼紙No锛?
+Power10    是（Yes
+Power9     是（Yes
+Power8     是（Yes
+e6500      是（Yes
+e5500      否（No
+Power7     是（Yes
+Power6     是（Yes
+PA6T       是（Yes
+Cell PPU   是（Yes
+Power5++   否（No
+Power5+    否（No
+Power5     否（No
+PPC970     是（Yes
+Power4+    否（No
+Power4     否（No
 ========== ==================
 
 ========== ====
 CPU        VSX
 ========== ====
-Power10    鏄紙Yes锛?
-Power9     鏄紙Yes锛?
-Power8     鏄紙Yes锛?
-e6500      鍚︼紙No锛?
-e5500      鍚︼紙No锛?
-Power7     鏄紙Yes锛?
-Power6     鍚︼紙No锛?
-PA6T       鍚︼紙No锛?
-Cell PPU   鍚︼紙No锛?
-Power5++   鍚︼紙No锛?
-Power5+    鍚︼紙No锛?
-Power5     鍚︼紙No锛?
-PPC970     鍚︼紙No锛?
-Power4+    鍚︼紙No锛?
-Power4     鍚︼紙No锛?
+Power10    是（Yes
+Power9     是（Yes
+Power8     是（Yes
+e6500      否（No
+e5500      否（No
+Power7     是（Yes
+Power6     否（No
+PA6T       否（No
+Cell PPU   否（No
+Power5++   否（No
+Power5+    否（No
+Power5     否（No
+PPC970     否（No
+Power4+    否（No
+Power4     否（No
 ========== ====
 
 ========== ====================================
-CPU        浜嬪姟鍐呭瓨锛圱ransactional Memory锛?
+CPU        事务内存（Transactional Memory
 ========== ====================================
-Power10    鍚︼紙No锛夛紙* 鍙傝 Power ISA v3.1 涓?鍏充簬浠庢灦鏋勪腑绉婚櫎浜嬪姟鍐呭瓨鐨勯檮褰?A 璇存槑"锛?
-Power9     鏄紙Yes锛夛紙* 鍙傝 transactional_memory.txt锛?
-Power8     鏄紙Yes锛?
-e6500      鍚︼紙No锛?
-e5500      鍚︼紙No锛?
-Power7     鍚︼紙No锛?
-Power6     鍚︼紙No锛?
-PA6T       鍚︼紙No锛?
-Cell PPU   鍚︼紙No锛?
-Power5++   鍚︼紙No锛?
-Power5+    鍚︼紙No锛?
-Power5     鍚︼紙No锛?
-PPC970     鍚︼紙No锛?
-Power4+    鍚︼紙No锛?
-Power4     鍚︼紙No锛?
+Power10    否（No）（* 参见 Power ISA v3.1 关于从架构中移除事务内存的附A 说明"
+Power9     是（Yes）（* 参见 transactional_memory.txt
+Power8     是（Yes
+e6500      否（No
+e5500      否（No
+Power7     否（No
+Power6     否（No
+PA6T       否（No
+Cell PPU   否（No
+Power5++   否（No
+Power5+    否（No
+Power5     否（No
+PPC970     否（No
+Power4+    否（No
+Power4     否（No
 ========== ====================================
 
