@@ -8,7 +8,7 @@ use serde_json::Value;
 use shared::{error::AppError, response::ActionResult, response::row_to_json};
 use deadpool_postgres::tokio_postgres::types::ToSql;
 use std::collections::HashMap;
-use search::{search_documents, Document};
+use search::Document;
 use base64::{Engine, engine::general_purpose::STANDARD as BASE64};
 
 pub mod routes;
@@ -5841,9 +5841,7 @@ pub async fn document_search(
         .and_then(|v| v.parse().ok())
         .unwrap_or(20);
 
-    let results = search_documents(&pool, &query, limit)
-        .await
-        .map_err(|_| AppError::Internal)?;
+    let results = search::search_documents_smart(&pool, &query, limit).await;
 
     let data: Vec<Value> = results
         .iter()
