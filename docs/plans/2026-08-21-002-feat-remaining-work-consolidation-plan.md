@@ -180,6 +180,13 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 
 **Verification:** 五条均有核验结论（补全 / 关闭 / 差异解释）。
 
+> **执行结论（2026-08-21 核验）：**
+> 1. **批量操作端点**：全仓无 batch/import 路由 → 确认未实现，维持遗留（低频场景）
+> 2. **程序中心分发组装接口**：Rust program_center 无 cachedispatch/dispatch 实现，Java 侧存在 `cachedispatch/ActionDispatch.java` 等 → 确认未实现，维持遗留
+> 3. **console 完整实现**：lib.rs 252 行含 get_status/get_logs/send_message/clear_cache/get_metric/execute_command/get_system_info 七个 handler，sysinfo 真实指标 + 命令白名单 + 298 行测试 → **已完整实现，关闭**
+> 4. **AI MCP/文件/索引端点**：app.rs/chat.rs/file.rs/index.rs 四模块齐全 + routes.rs 21 条路由 + SSE 流式 → **结构性落地，关闭**（端点级对齐归入 U2 统一推进）
+> 5. **递归导航变体**：organization_assemble_control 实测 20 处 sub/sup_nested/direct/type 变体模式 → **已覆盖，关闭**；**bam 差异更正**：非度量口径问题——Java `x_processplatform_assemble_bam` 含 131 处 @Path，Rust 仅 5 条路由，BAM（业务活动监控）模块为真实大缺口，其补全纳入 U2 端点对齐范围（P3 优先级，监控类低频）
+
 ---
 
 ### U11. Linux 文档精修四项（P2，独立域）
