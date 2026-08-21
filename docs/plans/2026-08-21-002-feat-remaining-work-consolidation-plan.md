@@ -43,17 +43,17 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 | # | 单元 | 优先级 | 类型 | 状态（2026-08-21 执行后） |
 |---|------|--------|------|--------------------------|
 | U1 | Value::Null 与 CMS stub 清零 | P0 | oa4rust | ✅ 已关闭（实质达成，指标作废） |
-| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | 🔄 36.9%→55.2%，剩余需新增 handler |
+| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | 🔄 36.9%→56.1%，剩余需新增 handler |
 | U3 | 影子流量灰度验证与切流 | P1 | oa4rust | ⛔ 外部阻塞（生产环境+观察期） |
 | U4 | Tantivy 全文检索集成 | P1 | oa4rust | ✅ 已完成（网络已恢复） |
 | U5 | query/portal 深度审计 | P1 | oa4rust | ✅ 已关闭（96.6%/100% 真实查库） |
-| U6 | 存储后端三项（文件/BBS 附件/Office 格式） | P2 | oa4rust | ⏳ 未开始 |
+| U6 | 存储后端三项（文件/BBS 附件/Office 格式） | P2 | oa4rust | 🔄 Office xlsx/pptx 预览已完成；存储 trait 与 BBS 附件未开始 |
 | U7 | 认证与消息增强三项 | P2 | oa4rust | 🔄 异步队列已完成；LDAP 同步/分布式限流未开始 |
 | U8 | 接口规范与依赖清理两项 | P2 | oa4rust | 🔄 securitySchemes 完成；SQLx 底层移除未开始 |
-| U9 | 测试体系增强四项 | P2 | oa4rust | ⏳ Java 容器化外部依赖；其余未开始 |
+| U9 | 测试体系增强四项 | P2 | oa4rust | 🔄 行覆盖率脚本+howto 已交付（grcov 报告待装工具）；其余未开始 |
 | U10 | 待核验小项五条 | P3 | oa4rust | ✅ 核验完毕（2 关闭 / 3 维持遗留） |
 | U11 | Linux 文档精修四项 | P2 | linux-docs | 🔄 L11.3/L11.4 审计完成；L11.1/L11.2 校正未开始 |
-| U12 | 模块卡片文档深度填充 | P3 | oa-docs | ⏳ 未开始 |
+| U12 | 模块卡片文档深度填充 | P3 | oa-docs | 🔄 5/55 张核心卡完成；余量未开始 |
 | U12 | 模块卡片文档深度填充 | P3 | oa-docs |
 
 ---
