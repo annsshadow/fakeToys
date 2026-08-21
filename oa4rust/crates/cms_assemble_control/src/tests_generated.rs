@@ -77,10 +77,78 @@ mod tests {
             "update_control_config route should be registered");
     }
 
-    // SKIPPED: anonymous_document_filter_list_id_next_count not accessible
-    // SKIPPED: anonymous_document_filter_list_id_next_count_mockputtopost not accessible
-    // SKIPPED: anonymous_document_filter_list_page_size_size not accessible
-    // SKIPPED: anonymous_document_filter_list_page_size_size_mockputtopost not accessible
+    #[tokio::test]
+    async fn test_anonymous_document_filter_list_id_next_count() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "anonymous_document_filter_list_id_next_count route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_anonymous_document_filter_list_id_next_count_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "anonymous_document_filter_list_id_next_count_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_anonymous_document_filter_list_page_size_size() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "anonymous_document_filter_list_page_size_size route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_anonymous_document_filter_list_page_size_size_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "anonymous_document_filter_list_page_size_size_mockputtopost route should be registered");
+    }
+
     #[tokio::test]
     async fn test_anonymous_document_id_view() {
         let pool = shared::testing::test_pool();
@@ -99,7 +167,24 @@ mod tests {
             "anonymous_document_id_view route should be registered");
     }
 
-    // SKIPPED: anonymous_fileinfo_list_document_documentId not accessible
+    #[tokio::test]
+    async fn test_anonymous_fileinfo_list_document_documentId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/anonymous/fileinfo/list/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "anonymous_fileinfo_list_document_documentId route should be registered");
+    }
+
     #[tokio::test]
     async fn test_appinfo_alias_alias() {
         let pool = shared::testing::test_pool();
@@ -154,10 +239,78 @@ mod tests {
             "appinfo_erase_app_id_mockdeletetoget route should be registered");
     }
 
-    // SKIPPED: appinfo_filter_list_id_next_count not accessible
-    // SKIPPED: appinfo_filter_list_id_next_count_mockputtopost not accessible
-    // SKIPPED: appinfo_filter_list_id_prev_count not accessible
-    // SKIPPED: appinfo_filter_list_id_prev_count_mockputtopost not accessible
+    #[tokio::test]
+    async fn test_appinfo_filter_list_id_next_count() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_filter_list_id_next_count route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_filter_list_id_next_count_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_filter_list_id_next_count_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_filter_list_id_prev_count() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_filter_list_id_prev_count route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_filter_list_id_prev_count_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_filter_list_id_prev_count_mockputtopost route should be registered");
+    }
+
     #[tokio::test]
     async fn test_appinfo_get_user_publish_appId() {
         let pool = shared::testing::test_pool();
@@ -176,23 +329,312 @@ mod tests {
             "appinfo_get_user_publish_appId route should be registered");
     }
 
-    // SKIPPED: appinfo_list_all not accessible
-    // SKIPPED: appinfo_list_appType not accessible
-    // SKIPPED: appinfo_list_appType_manager not accessible
-    // SKIPPED: appinfo_list_has_document not accessible
-    // SKIPPED: appinfo_list_has_document_appType not accessible
-    // SKIPPED: appinfo_list_has_document_type_appType not accessible
-    // SKIPPED: appinfo_list_manage not accessible
-    // SKIPPED: appinfo_list_manage_type_appType not accessible
-    // SKIPPED: appinfo_list_user_publish not accessible
-    // SKIPPED: appinfo_list_user_publish_type_appType not accessible
-    // SKIPPED: appinfo_list_user_publish_with_process not accessible
-    // SKIPPED: appinfo_list_user_view not accessible
-    // SKIPPED: appinfo_list_user_view_all not accessible
-    // SKIPPED: appinfo_list_user_view_all_type_appType not accessible
-    // SKIPPED: appinfo_list_user_view_article_type_appType not accessible
-    // SKIPPED: appinfo_list_user_view_data not accessible
-    // SKIPPED: appinfo_list_user_view_data_type_appType not accessible
+    #[tokio::test]
+    async fn test_appinfo_list_all() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/all")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_all route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_appType() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_appType route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_appType_manager() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/test-id/manager")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_appType_manager route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_has_document() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jianfo/list/has/document")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_has_document route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_has_document_appType() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/has/document/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_has_document_appType route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_has_document_type_appType() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/has/document/type/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_has_document_type_appType route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_manage() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/manage")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_manage route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_manage_type_appType() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/manage/type/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_manage_type_appType route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_user_publish() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/user/publish")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_user_publish route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_user_publish_type_appType() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/user/publish/type/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_user_publish_type_appType route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_user_publish_with_process() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/user/publish/with/process")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_user_publish_with_process route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_user_view() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/user/view")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_user_view route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_user_view_all() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/user/view/all")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_user_view_all route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_user_view_all_type_appType() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/user/view/all/type/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_user_view_all_type_appType route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_user_view_article_type_appType() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/user/view/article/type/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_user_view_article_type_appType route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_user_view_data() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/user/view/data")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_user_view_data route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_list_user_view_data_type_appType() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/list/user/view/data/type/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_list_user_view_data_type_appType route should be registered");
+    }
+
     #[tokio::test]
     async fn test_appinfo_appId_icon_size_size() {
         let pool = shared::testing::test_pool();
@@ -211,8 +653,42 @@ mod tests {
             "appinfo_appId_icon_size_size route should be registered");
     }
 
-    // SKIPPED: appinfo_flag not accessible
-    // SKIPPED: appinfo_id not accessible
+    #[tokio::test]
+    async fn test_appinfo_flag() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/flag")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_flag route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_appinfo_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/appinfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "appinfo_id route should be registered");
+    }
+
     #[tokio::test]
     async fn test_appinfo_id_control() {
         let pool = shared::testing::test_pool();
@@ -375,21 +851,276 @@ mod tests {
             "categoryinfo_extContent route should be registered");
     }
 
-    // SKIPPED: categoryinfo_filter_list_id_next_count_app_appId not accessible
-    // SKIPPED: categoryinfo_filter_list_id_next_count_app_appId_mockputtopost not accessible
-    // SKIPPED: categoryinfo_filter_list_id_prev_count_app_appId not accessible
-    // SKIPPED: categoryinfo_filter_list_id_prev_count_app_appId_mockputtopost not accessible
-    // SKIPPED: categoryinfo_filter_list_page_size_size not accessible
-    // SKIPPED: categoryinfo_filter_list_page_size_size_mockputtopost not accessible
-    // SKIPPED: categoryinfo_list_all not accessible
-    // SKIPPED: categoryinfo_list_manage_app_appId not accessible
-    // SKIPPED: categoryinfo_list_objects not accessible
-    // SKIPPED: categoryinfo_list_publish_app_appId not accessible
-    // SKIPPED: categoryinfo_list_view_app_appId not accessible
-    // SKIPPED: categoryinfo_list_view_app_appId_all not accessible
-    // SKIPPED: categoryinfo_list_view_app_appId_data not accessible
-    // SKIPPED: categoryinfo_flag not accessible
-    // SKIPPED: categoryinfo_id not accessible
+    #[tokio::test]
+    async fn test_categoryinfo_filter_list_id_next_count_app_appId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/filter/list/test-id/next/test-id/app/test-id")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_filter_list_id_next_count_app_appId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_filter_list_id_next_count_app_appId_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/filter/list/test-id/next/test-id/app/test-id/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_filter_list_id_next_count_app_appId_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_filter_list_id_prev_count_app_appId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/filter/list/test-id/prev/test-id/app/test-id")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_filter_list_id_prev_count_app_appId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_filter_list_id_prev_count_app_appId_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/filter/list/test-id/prev/test-id/app/test-id/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_filter_list_id_prev_count_app_appId_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_filter_list_page_size_size() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/filter/list/page/test-id")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_filter_list_page_size_size route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_filter_list_page_size_size_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/filter/list/page/test-id/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_filter_list_page_size_size_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_list_all() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/list/all")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_list_all route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_list_manage_app_appId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/list/manage/app/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_list_manage_app_appId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_list_objects() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/list/objects")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_list_objects route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_list_publish_app_appId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/list/publish/app/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_list_publish_app_appId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_list_view_app_appId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/list/view/app/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_list_view_app_appId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_list_view_app_appId_all() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/list/view/app/test-id/all")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_list_view_app_appId_all route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_list_view_app_appId_data() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/list/view/app/test-id/data")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_list_view_app_appId_data route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_flag() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/flag")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_flag route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_categoryinfo_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/categoryinfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "categoryinfo_id route should be registered");
+    }
+
     #[tokio::test]
     async fn test_categoryinfo_id_control() {
         let pool = shared::testing::test_pool();
@@ -462,15 +1193,168 @@ mod tests {
             "categoryinfo_id_permission route should be registered");
     }
 
-    // SKIPPED: commend_list_paging_page_size_size not accessible
-    // SKIPPED: commend_id not accessible
-    // SKIPPED: comment_list_id_next_count not accessible
-    // SKIPPED: comment_list_id_next_count_mockputtopost not accessible
-    // SKIPPED: comment_list_id_prev_count not accessible
-    // SKIPPED: comment_list_id_prev_count_mockputtopost not accessible
-    // SKIPPED: comment_list_page_size_size not accessible
-    // SKIPPED: comment_list_page_size_size_mockputtopost not accessible
-    // SKIPPED: comment_id not accessible
+    #[tokio::test]
+    async fn test_commend_list_paging_page_size_size() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/commend/list/paging/test-id/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "commend_list_paging_page_size_size route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_commend_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/commend/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "commend_id route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_comment_list_id_next_count() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/comment/list/test-id/next/count")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "comment_list_id_next_count route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_comment_list_id_next_count_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/comment/list/test-id/next/count/mockputtopost")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "comment_list_id_next_count_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_comment_list_id_prev_count() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/comment/list/test-id/prev/count")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "comment_list_id_prev_count route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_comment_list_id_prev_count_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/comment/list/test-id/prev/count/mockputtopost")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "comment_list_id_prev_count_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_comment_list_page_size_size() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/comment/list/page/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "comment_list_page_size_size route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_comment_list_page_size_size_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/comment/list/page/test-id/mockputtopost")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "comment_list_page_size_size_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_comment_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/comment/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "comment_id route should be registered");
+    }
+
     #[tokio::test]
     async fn test_comment_id_commend() {
         let pool = shared::testing::test_pool();
@@ -525,7 +1409,24 @@ mod tests {
             "comment_id_uncommend route should be registered");
     }
 
-    // SKIPPED: correlation_doc_docId not accessible
+    #[tokio::test]
+    async fn test_correlation_doc_docId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/correlation/doc/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "correlation_doc_docId route should be registered");
+    }
+
     #[tokio::test]
     async fn test_correlation_doc_docId_delete() {
         let pool = shared::testing::test_pool();
@@ -544,8 +1445,42 @@ mod tests {
             "correlation_doc_docId_delete route should be registered");
     }
 
-    // SKIPPED: correlation_list_doc_docId not accessible
-    // SKIPPED: correlation_list_doc_docId_site_site not accessible
+    #[tokio::test]
+    async fn test_correlation_list_doc_docId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/correlation/list/doc/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "correlation_list_doc_docId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_correlation_list_doc_docId_site_site() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/correlation/list/doc/test-id/site/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "correlation_list_doc_docId_site_site route should be registered");
+    }
+
     #[tokio::test]
     async fn test_correlation_update_doc_docId() {
         let pool = shared::testing::test_pool();
@@ -564,7 +1499,24 @@ mod tests {
             "correlation_update_doc_docId route should be registered");
     }
 
-    // SKIPPED: data_document_id not accessible
+    #[tokio::test]
+    async fn test_data_document_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/data/document/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "data_document_id route should be registered");
+    }
+
     #[tokio::test]
     async fn test_data_document_id_array_data() {
         let pool = shared::testing::test_pool();
@@ -1051,9 +2003,60 @@ mod tests {
             "data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost route should be registered");
     }
 
-    // SKIPPED: design_appdict_list_appInfo_appId not accessible
-    // SKIPPED: design_appdict_list_paging_page_size_size not accessible
-    // SKIPPED: design_appdict_id not accessible
+    #[tokio::test]
+    async fn test_design_appdict_list_appInfo_appId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/design/appdict/list/appInfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "design_appdict_list_appInfo_appId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_design_appdict_list_paging_page_size_size() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/design/appdict/list/paging/test-id/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "design_appdict_list_paging_page_size_size route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_design_appdict_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/design/appdict/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "design_appdict_id route should be registered");
+    }
+
     #[tokio::test]
     async fn test_design_appdict_id_mockdeletetoget() {
         let pool = shared::testing::test_pool();
@@ -1091,8 +2094,42 @@ mod tests {
     }
 
     // SKIPPED: designer_search not accessible
-    // SKIPPED: document_cipher_filter_list_page_size_size not accessible
-    // SKIPPED: document_cipher_filter_list_page_size_size_mockputtopost not accessible
+    #[tokio::test]
+    async fn test_document_cipher_filter_list_page_size_size() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/document/cipher/filter/list/page/test-id")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "document_cipher_filter_list_page_size_size route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_document_cipher_filter_list_page_size_size_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/document/cipher/filter/list/page/test-id/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "document_cipher_filter_list_page_size_size_mockputtopost route should be registered");
+    }
+
     #[tokio::test]
     async fn test_document_cipher_publish_content() {
         let pool = shared::testing::test_pool();
@@ -1165,11 +2202,96 @@ mod tests {
             "document_cipher_id_persist_view_record route should be registered");
     }
 
-    // SKIPPED: file_list_appInfo_appInfoFlag not accessible
-    // SKIPPED: file_list_id_next_count not accessible
-    // SKIPPED: file_list_id_prev_count not accessible
-    // SKIPPED: file_flag not accessible
-    // SKIPPED: file_flag_appInfo_appInfoFlag not accessible
+    #[tokio::test]
+    async fn test_file_list_appInfo_appInfoFlag() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/list/appInfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "file_list_appInfo_appInfoFlag route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_file_list_id_next_count() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/list/test-id/next/count")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "file_list_id_next_count route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_file_list_id_prev_count() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/list/test-id/prev/count")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "file_list_id_prev_count route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_file_flag() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/flag")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "file_flag route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_file_flag_appInfo_appInfoFlag() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/flag/appInfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "file_flag_appInfo_appInfoFlag route should be registered");
+    }
+
     #[tokio::test]
     async fn test_file_flag_appInfo_appInfoFlag_content() {
         let pool = shared::testing::test_pool();
@@ -1224,7 +2346,24 @@ mod tests {
             "file_flag_mockdeletetoget route should be registered");
     }
 
-    // SKIPPED: file_id not accessible
+    #[tokio::test]
+    async fn test_file_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/file/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "file_id route should be registered");
+    }
+
     #[tokio::test]
     async fn test_file_id_content() {
         let pool = shared::testing::test_pool();
@@ -1459,9 +2598,60 @@ mod tests {
             "fileinfo_edit_id_doc_docId_mockputtopost route should be registered");
     }
 
-    // SKIPPED: fileinfo_list_all not accessible
-    // SKIPPED: fileinfo_list_document_documentId not accessible
-    // SKIPPED: fileinfo_list_filter not accessible
+    #[tokio::test]
+    async fn test_fileinfo_list_all() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/fileinfo/list/all")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "fileinfo_list_all route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_fileinfo_list_document_documentId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/fileinfo/list/document/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "fileinfo_list_document_documentId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_fileinfo_list_filter() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/fileinfo/list/filter")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "fileinfo_list_filter route should be registered");
+    }
+
     #[tokio::test]
     async fn test_fileinfo_replace_to_doc_docId() {
         let pool = shared::testing::test_pool();
@@ -1732,14 +2922,150 @@ mod tests {
             "fileinfo_id_preview_pdf route should be registered");
     }
 
-    // SKIPPED: form_filter_list_id_next_count_app_appId not accessible
-    // SKIPPED: form_filter_list_id_next_count_app_appId_mockputtopost not accessible
-    // SKIPPED: form_filter_list_id_prev_count_app_appId not accessible
-    // SKIPPED: form_filter_list_id_prev_count_app_appId_mockputtopost not accessible
-    // SKIPPED: form_list_all not accessible
-    // SKIPPED: form_list_app_appId not accessible
-    // SKIPPED: form_list_formfield_appInfo_appId not accessible
-    // SKIPPED: form_list_id_formfield not accessible
+    #[tokio::test]
+    async fn test_form_filter_list_id_next_count_app_appId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/form/filter/list/test-id/next/count/app/test-id")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "form_filter_list_id_next_count_app_appId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_form_filter_list_id_next_count_app_appId_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/form/filter/list/test-id/next/count/app/test-id/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "form_filter_list_id_next_count_app_appId_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_form_filter_list_id_prev_count_app_appId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/form/filter/list/test-id/prev/count/app/test-id")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "form_filter_list_id_prev_count_app_appId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_form_filter_list_id_prev_count_app_appId_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/form/filter/list/test-id/prev/count/app/test-id/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "form_filter_list_id_prev_count_app_appId_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_form_list_all() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/form/list/all")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "form_list_all route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_form_list_app_appId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/form/list/app/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "form_list_app_appId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_form_list_formfield_appInfo_appId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/form/list/formfield/appInfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "form_list_formfield_appInfo_appId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_form_list_id_formfield() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/form/list/test-id/formfield")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "form_list_id_formfield route should be registered");
+    }
+
     #[tokio::test]
     async fn test_anonymous_form_v2_lookup_document_docId() {
         let pool = shared::testing::test_pool();
@@ -1848,7 +3174,24 @@ mod tests {
             "form_formFlag_appinfo_appFlag route should be registered");
     }
 
-    // SKIPPED: form_id not accessible
+    #[tokio::test]
+    async fn test_form_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/form/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "form_id route should be registered");
+    }
+
     #[tokio::test]
     async fn test_form_id_mockdeletetoget() {
         let pool = shared::testing::test_pool();
@@ -1921,7 +3264,24 @@ mod tests {
             "form_v2_lookup_document_docId_mobile route should be registered");
     }
 
-    // SKIPPED: form_v2_id not accessible
+    #[tokio::test]
+    async fn test_form_v2_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/form/v2/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "form_v2_id route should be registered");
+    }
+
     #[tokio::test]
     async fn test_form_v2_id_mobile() {
         let pool = shared::testing::test_pool();
@@ -1976,15 +3336,168 @@ mod tests {
             "formversion_id route should be registered");
     }
 
-    // SKIPPED: log_filter_list_id_next_count not accessible
-    // SKIPPED: log_filter_list_id_prev_count not accessible
-    // SKIPPED: log_list_app_appId not accessible
-    // SKIPPED: log_list_category_categoryId not accessible
-    // SKIPPED: log_list_document_documentId not accessible
-    // SKIPPED: log_list_filter_page_size_size not accessible
-    // SKIPPED: log_list_level_operationLevel not accessible
-    // SKIPPED: log_id not accessible
-    // SKIPPED: output_list not accessible
+    #[tokio::test]
+    async fn test_log_filter_list_id_next_count() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/log/filter/list/test-id/next/count")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "log_filter_list_id_next_count route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_log_filter_list_id_prev_count() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/log/filter/list/test-id/prev/count")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "log_filter_list_id_prev_count route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_log_list_app_appId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/log/list/app/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "log_list_app_appId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_log_list_category_categoryId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/log/list/category/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "log_list_category_categoryId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_log_list_document_documentId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/log/list/document/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "log_list_document_documentId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_log_list_filter_page_size_size() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/log/list/filter/page/test-id")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "log_list_filter_page_size_size route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_log_list_level_operationLevel() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/log/list/level/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "log_list_level_operationLevel route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_log_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/log/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "log_id route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_output_list() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/output/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "output_list route should be registered");
+    }
+
     #[tokio::test]
     async fn test_output_appInfoFlag_select() {
         let pool = shared::testing::test_pool();
@@ -2021,15 +3534,168 @@ mod tests {
             "output_appInfoFlag_select_mockputtopost route should be registered");
     }
 
-    // SKIPPED: permission_appInfo_id_manageable not accessible
-    // SKIPPED: permission_appInfo_id_managers not accessible
-    // SKIPPED: permission_appInfo_id_publishers not accessible
-    // SKIPPED: permission_appInfo_id_viewers not accessible
-    // SKIPPED: permission_category_id_managers not accessible
-    // SKIPPED: permission_category_id_publishers not accessible
-    // SKIPPED: permission_category_id_viewers not accessible
-    // SKIPPED: permission_categoryInfo_id_manageable not accessible
-    // SKIPPED: permission_management_refresh_all not accessible
+    #[tokio::test]
+    async fn test_permission_appInfo_id_manageable() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/appInfo/test-id/manageable")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_appInfo_id_manageable route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_permission_appInfo_id_managers() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/appInfo/test-id/managers")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_appInfo_id_managers route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_permission_appInfo_id_publishers() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/appInfo/test-id/publishers")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_appInfo_id_publishers route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_permission_appInfo_id_viewers() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/appInfo/test-id/viewers")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_appInfo_id_viewers route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_permission_category_id_managers() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/category/test-id/managers")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_category_id_managers route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_permission_category_id_publishers() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/category/test-id/publishers")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_category_id_publishers route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_permission_category_id_viewers() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/category/test-id/viewers")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_category_id_viewers route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_permission_categoryInfo_id_manageable() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/categoryInfo/test-id/manageable")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_categoryInfo_id_manageable route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_permission_management_refresh_all() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/management/refresh/all")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_management_refresh_all route should be registered");
+    }
+
     #[tokio::test]
     async fn test_permission_management_refresh_category_categoryId() {
         let pool = shared::testing::test_pool();
@@ -2048,21 +3714,259 @@ mod tests {
             "permission_management_refresh_category_categoryId route should be registered");
     }
 
-    // SKIPPED: permission_manager_appInfo_id not accessible
-    // SKIPPED: permission_manager_categoryInfo_id not accessible
-    // SKIPPED: permission_publisher_appInfo_id not accessible
-    // SKIPPED: permission_publisher_categoryInfo_id not accessible
-    // SKIPPED: permission_viewer_appInfo_id not accessible
-    // SKIPPED: permission_viewer_categoryInfo_id not accessible
+    #[tokio::test]
+    async fn test_permission_manager_appInfo_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/manager/appInfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_manager_appInfo_id route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_permission_manager_categoryInfo_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/manager/categoryInfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_manager_categoryInfo_id route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_permission_publisher_appInfo_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/publisher/appInfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_publisher_appInfo_id route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_permission_publisher_categoryInfo_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/publisher/categoryInfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_publisher_categoryInfo_id route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_permission_viewer_appInfo_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/viewer/appInfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_viewer_appInfo_id route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_permission_viewer_categoryInfo_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/permission/viewer/categoryInfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "permission_viewer_categoryInfo_id route should be registered");
+    }
+
     // SKIPPED: review_v2_search not accessible
-    // SKIPPED: script_list_app_appId_name_name not accessible
-    // SKIPPED: script_list_app_flag not accessible
-    // SKIPPED: script_list_manager not accessible
-    // SKIPPED: script_list_paging_page_size_size not accessible
-    // SKIPPED: script_list_id_next_count not accessible
-    // SKIPPED: script_list_id_prev_count not accessible
-    // SKIPPED: script_flag_appInfo_appInfoFlag not accessible
-    // SKIPPED: script_id not accessible
+    #[tokio::test]
+    async fn test_script_list_app_appId_name_name() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/script/list/app/test-id/name/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "script_list_app_appId_name_name route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_script_list_app_flag() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/script/list/app/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "script_list_app_flag route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_script_list_manager() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/script/list/manager")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "script_list_manager route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_script_list_paging_page_size_size() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/script/list/paging/test-id/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "script_list_paging_page_size_size route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_script_list_id_next_count() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/script/list/test-id/next/count")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "script_list_id_next_count route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_script_list_id_prev_count() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/script/list/test-id/prev/count")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "script_list_id_prev_count route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_script_flag_appInfo_appInfoFlag() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/script/flag/appInfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "script_flag_appInfo_appInfoFlag route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_script_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/script/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "script_id route should be registered");
+    }
+
     #[tokio::test]
     async fn test_script_id_mockdeletetoget() {
         let pool = shared::testing::test_pool();
@@ -2171,10 +4075,78 @@ mod tests {
             "scriptversion_id route should be registered");
     }
 
-    // SKIPPED: searchfilter_list_archive_filter_category_categoryId not accessible
-    // SKIPPED: searchfilter_list_draft_filter_category_categoryId not accessible
-    // SKIPPED: searchfilter_list_publish_filter_category_categoryId not accessible
-    // SKIPPED: anonymous_surface_appdict_list_appInfo_appInfoFlag not accessible
+    #[tokio::test]
+    async fn test_searchfilter_list_archive_filter_category_categoryId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/searchfilter/list/archive/filter/category/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "searchfilter_list_archive_filter_category_categoryId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_searchfilter_list_draft_filter_category_categoryId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/searchfilter/list/draft/filter/category/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "searchfilter_list_draft_filter_category_categoryId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_searchfilter_list_publish_filter_category_categoryId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/searchfilter/list/publish/filter/category/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "searchfilter_list_publish_filter_category_categoryId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_anonymous_surface_appdict_list_appInfo_appInfoFlag() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/anonymous/surface/appdict/list/appInfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "anonymous_surface_appdict_list_appInfo_appInfoFlag route should be registered");
+    }
+
     #[tokio::test]
     async fn test_anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag() {
         let pool = shared::testing::test_pool();
@@ -2355,7 +4327,24 @@ mod tests {
             "anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data route should be registered");
     }
 
-    // SKIPPED: surface_appdict_list_appInfo_appInfoFlag not accessible
+    #[tokio::test]
+    async fn test_surface_appdict_list_appInfo_appInfoFlag() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/surface/appdict/list/appInfo/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "surface_appdict_list_appInfo_appInfoFlag route should be registered");
+    }
+
     #[tokio::test]
     async fn test_surface_appdict_appDictFlag_appInfo_appInfoFlag() {
         let pool = shared::testing::test_pool();
@@ -2806,9 +4795,60 @@ mod tests {
             "surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockputtopost route should be registered");
     }
 
-    // SKIPPED: templateform_list not accessible
-    // SKIPPED: templateform_list_category not accessible
-    // SKIPPED: templateform_list_category_mockputtopost not accessible
+    #[tokio::test]
+    async fn test_templateform_list() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/templateform/list")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "templateform_list route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_templateform_list_category() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/templateform/list/category")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "templateform_list_category route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_templateform_list_category_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/templateform/list/category/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "templateform_list_category_mockputtopost route should be registered");
+    }
+
     #[tokio::test]
     async fn test_templateform_id() {
         let pool = shared::testing::test_pool();
@@ -2845,13 +4885,132 @@ mod tests {
             "templateform_id_mockdeletetoget route should be registered");
     }
 
-    // SKIPPED: uuid_random not accessible
-    // SKIPPED: view_list_all not accessible
-    // SKIPPED: view_list_app_appId not accessible
-    // SKIPPED: view_list_category_categoryId not accessible
-    // SKIPPED: view_list_form_formId not accessible
-    // SKIPPED: view_viewdata_list_id_next_count not accessible
-    // SKIPPED: view_id not accessible
+    #[tokio::test]
+    async fn test_uuid_random() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/uuid/random")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "uuid_random route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_view_list_all() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/view/list/all")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "view_list_all route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_view_list_app_appId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/view/list/app/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "view_list_app_appId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_view_list_category_categoryId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/view/list/category/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "view_list_category_categoryId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_view_list_form_formId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/view/list/form/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "view_list_form_formId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_view_viewdata_list_id_next_count() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/view/viewdata/list/test-id/next/count")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "view_viewdata_list_id_next_count route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_view_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/view/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "view_id route should be registered");
+    }
+
     #[tokio::test]
     async fn test_view_id_mockdeletetoget() {
         let pool = shared::testing::test_pool();
@@ -2888,10 +5047,78 @@ mod tests {
             "view_id_mockputtopost route should be registered");
     }
 
-    // SKIPPED: viewcategory_list_all not accessible
-    // SKIPPED: viewcategory_list_category_categoryId not accessible
-    // SKIPPED: viewcategory_list_view_viewId not accessible
-    // SKIPPED: viewcategory_id not accessible
+    #[tokio::test]
+    async fn test_viewcategory_list_all() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/viewcategory/list/all")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "viewcategory_list_all route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_viewcategory_list_category_categoryId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/viewcategory/list/category/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "viewcategory_list_category_categoryId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_viewcategory_list_view_viewId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/viewcategory/list/view/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "viewcategory_list_view_viewId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_viewcategory_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/viewcategory/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "viewcategory_id route should be registered");
+    }
+
     #[tokio::test]
     async fn test_viewcategory_id_mockdeletetoget() {
         let pool = shared::testing::test_pool();
@@ -2910,9 +5137,60 @@ mod tests {
             "viewcategory_id_mockdeletetoget route should be registered");
     }
 
-    // SKIPPED: viewfieldconfig_list_all not accessible
-    // SKIPPED: viewfieldconfig_list_view_viewId not accessible
-    // SKIPPED: viewfieldconfig_id not accessible
+    #[tokio::test]
+    async fn test_viewfieldconfig_list_all() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/viewfieldconfig/list/all")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "viewfieldconfig_list_all route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_viewfieldconfig_list_view_viewId() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/viewfieldconfig/list/view/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "viewfieldconfig_list_view_viewId route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_viewfieldconfig_id() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/viewfieldconfig/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "viewfieldconfig_id route should be registered");
+    }
+
     #[tokio::test]
     async fn test_viewfieldconfig_id_mockdeletetoget() {
         let pool = shared::testing::test_pool();
@@ -2949,7 +5227,24 @@ mod tests {
             "viewfieldconfig_id_mockputtopost route should be registered");
     }
 
-    // SKIPPED: viewrecord_document_docId_filter_list_id_next_count not accessible
+    #[tokio::test]
+    async fn test_viewrecord_document_docId_filter_list_id_next_count() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/viewrecord/document/test-id/filter/list/test-id/next/count")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "viewrecord_document_docId_filter_list_id_next_count route should be registered");
+    }
+
     #[tokio::test]
     async fn test_viewrecord_document_docId_has_view() {
         let pool = shared::testing::test_pool();
@@ -2968,20 +5263,258 @@ mod tests {
             "viewrecord_document_docId_has_view route should be registered");
     }
 
-    // SKIPPED: viewrecord_list_install_log_paging_page_size_size not accessible
-    // SKIPPED: image_encode_base64 not accessible
-    // SKIPPED: image_encode_base64_size_size not accessible
-    // SKIPPED: image_resize_id_id_width_width_height_height not accessible
-    // SKIPPED: input_compare not accessible
-    // SKIPPED: input_compare_mockputtopost not accessible
-    // SKIPPED: input_cover not accessible
-    // SKIPPED: input_cover_mockputtopost not accessible
-    // SKIPPED: input_create not accessible
-    // SKIPPED: input_create_mockputtopost not accessible
-    // SKIPPED: input_prepare_cover not accessible
-    // SKIPPED: input_prepare_cover_mockputtopost not accessible
-    // SKIPPED: input_prepare_create not accessible
-    // SKIPPED: input_prepare_create_mockputtopost not accessible
+    #[tokio::test]
+    async fn test_viewrecord_list_install_log_paging_page_size_size() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/viewrecord/list/install/log/paging/test-id/test-id")
+                    .method("GET")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "viewrecord_list_install_log_paging_page_size_size route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_image_encode_base64() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/image/encode/base64")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "image_encode_base64 route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_image_encode_base64_size_size() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/image/encode/base64/test-id/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "image_encode_base64_size_size route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_image_resize_id_id_width_width_height_height() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/image/resize/test-id/test-id/width/test-id/test-id")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "image_resize_id_id_width_width_height_height route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_input_compare() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/input/compare")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "input_compare route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_input_compare_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/input/compare/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "input_compare_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_input_cover() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/input/cover")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "input_cover route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_input_cover_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/input/cover/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "input_cover_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_input_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/input/create")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "input_create route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_input_create_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/input/create/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "input_create_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_input_prepare_cover() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/input/prepare/cover")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "input_prepare_cover route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_input_prepare_cover_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/input/prepare/cover/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "input_prepare_cover_mockputtopost route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_input_prepare_create() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/input/prepare/create")
+                    .method("PUT")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "input_prepare_create route should be registered");
+    }
+
+    #[tokio::test]
+    async fn test_input_prepare_create_mockputtopost() {
+        let pool = shared::testing::test_pool();
+        let app = crate::router(pool);
+        let response = app
+            .oneshot(
+                Request::builder()
+                    .uri("/jaxrs/input/prepare/create/mockputtopost")
+                    .method("POST")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+        assert_ne!(response.status(), StatusCode::NOT_FOUND,
+            "input_prepare_create_mockputtopost route should be registered");
+    }
+
     #[tokio::test]
     async fn test_document_id_view_count() {
         let pool = shared::testing::test_pool();

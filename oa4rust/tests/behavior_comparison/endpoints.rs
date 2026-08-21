@@ -1,6 +1,6 @@
 /// 行为对比测试端点列表（自动生成）
 
-/// 生成时间: 2026-08-20 20:06:12
+/// 生成时间: 2026-08-21 10:33:16
 use super::EndpointDef;
 
 pub const ENDPOINTS: &[EndpointDef] = &[
@@ -1998,7 +1998,297 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "cms_assemble_control",
         method: "GET",
+        rust_path: "/jaxrs/anonymous/fileinfo/list/{documentId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/anonymous/surface/appdict/list/appInfo/{appInfoFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/flag",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/has/document/type/{appType}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/has/document/{appType}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/manage/type/{appType}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/user/publish",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/user/publish/type/{appType}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/user/publish/with/process",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/user/view",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/user/view/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/user/view/all/type/{appType}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/user/view/article/type/{appType}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/user/view/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/user/view/data/type/{appType}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/{appType}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/list/{appType}/manager",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/appinfo/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
         rust_path: "/jaxrs/application/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/categoryinfo/flag",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/categoryinfo/list/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/categoryinfo/list/manage/app/{appId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/categoryinfo/list/objects",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/categoryinfo/list/publish/app/{appId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/categoryinfo/list/view/app/{appId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/categoryinfo/list/view/app/{appId}/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/categoryinfo/list/view/app/{appId}/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/categoryinfo/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -2828,6 +3118,46 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "cms_assemble_control",
         method: "GET",
+        rust_path: "/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
         rust_path: "/jaxrs/cms_assemble_control/document/search",
         java_war: "",
         java_action: "",
@@ -2869,6 +3199,136 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "cms_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/commend/list/paging/{docId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/commend/list/paging/{pageSize}/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/commend/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/comment/list/page/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/comment/list/page/{size}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/comment/list/{id}/next/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/comment/list/{id}/next/count/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/comment/list/{id}/prev/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/comment/list/{id}/prev/count/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/comment/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/correlation/doc/{docId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/correlation/list/doc/{docId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/correlation/list/doc/{docId}/site/{site}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/data/document/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -3058,7 +3518,117 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "cms_assemble_control",
         method: "GET",
+        rust_path: "/jaxrs/design/appdict/list/appInfo/{appId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/design/appdict/list/paging/{pageSize}/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/design/appdict/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/flag",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/flag/appInfo/{appInfoFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/list/appInfo/{appInfoFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/list/{id}/next/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/list/{id}/prev/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
         rust_path: "/jaxrs/fileinfo/download/document/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/fileinfo/list/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/fileinfo/list/document/{documentId}",
         java_war: "",
         java_action: "",
         body: None,
@@ -3098,7 +3668,637 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "cms_assemble_control",
         method: "GET",
+        rust_path: "/jaxrs/form/list/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/form/list/app/{appId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/form/list/formfield/appInfo/{appId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/form/list/{id}/formfield",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/form/v2/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/form/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/log/filter/list/{id}/next/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/log/filter/list/{id}/prev/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/log/list/app/{appId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/log/list/category/{categoryId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/log/list/document/{documentId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/log/list/level/{operationLevel}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/log/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/output/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/appInfo/{id}/manageable",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/appInfo/{id}/managers",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/appInfo/{id}/publishers",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/appInfo/{id}/viewers",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/category/{id}/managers",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/category/{id}/publishers",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/category/{id}/viewers",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/categoryInfo/{id}/manageable",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/management/refresh/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/manager/appInfo/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/manager/categoryInfo/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/publisher/appInfo/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/publisher/categoryInfo/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/viewer/appInfo/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/permission/viewer/categoryInfo/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
         rust_path: "/jaxrs/queryview/flag/{view_flag}/definition/{query_flag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/script/flag/appInfo/{appInfoFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/script/list/app/{appId}/name/{name}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/script/list/app/{flag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/script/list/manager",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/script/list/paging/{pageSize}/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/script/list/{id}/next/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/script/list/{id}/prev/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/script/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/searchfilter/list/archive/filter/category/{categoryId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/searchfilter/list/draft/filter/category/{categoryId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/searchfilter/list/publish/filter/category/{categoryId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/surface/appdict/list/appInfo/{appInfoFlag}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/templateform/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/templateform/list/category",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/uuid/random",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/view/list/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/view/list/app/{appId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/view/list/category/{categoryId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/view/list/form/{formId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/view/viewdata/list/{id}/next/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/view/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/viewcategory/list/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/viewcategory/list/category/{categoryId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/viewcategory/list/view/{viewId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/viewcategory/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/viewfieldconfig/list/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/viewfieldconfig/list/view/{viewId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/viewfieldconfig/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/viewrecord/document/{docId}/filter/list/{id}/next/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/viewrecord/list/install/log/paging/{pageSize}/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "GET",
+        rust_path: "/jianfo/list/has/document",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/categoryinfo/filter/list/page/{size}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/categoryinfo/filter/list/{id}/next/{count}/app/{appId}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/categoryinfo/filter/list/{id}/prev/{count}/app/{appId}/mockputtopost",
         java_war: "",
         java_action: "",
         body: None,
@@ -3478,6 +4678,46 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "cms_assemble_control",
         method: "POST",
+        rust_path: "/jaxrs/cms_assemble_control/anonymous/document/filter/list/id/next/count/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/cms_assemble_control/anonymous/document/filter/list/page/size/size/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/cms_assemble_control/appinfo/filter/list/id/next/count/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/cms_assemble_control/appinfo/filter/list/id/prev/count/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
         rust_path: "/jaxrs/data/document/{id}/mockputtopost",
         java_war: "",
         java_action: "",
@@ -3568,6 +4808,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "cms_assemble_control",
         method: "POST",
+        rust_path: "/jaxrs/document/cipher/filter/list/page/{size}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
         rust_path: "/jaxrs/document/{id}/view/count",
         java_war: "",
         java_action: "",
@@ -3579,6 +4829,246 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "cms_assemble_control",
         method: "POST",
         rust_path: "/jaxrs/fileinfo/upload/document/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/form/filter/list/{id}/next/count/app/{appId}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/form/filter/list/{id}/prev/count/app/{appId}/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/image/encode/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/image/encode/base64/{size}/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/image/resize/{id}/{id}/width/{width}/{height}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/input/compare/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/input/cover/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/input/create/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/input/prepare/cover/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/input/prepare/create/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "POST",
+        rust_path: "/jaxrs/templateform/list/category/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/categoryinfo/filter/list/page/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/categoryinfo/filter/list/{id}/next/{count}/app/{appId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/categoryinfo/filter/list/{id}/prev/{count}/app/{appId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/document/cipher/filter/list/page/{size}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/fileinfo/list/filter",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/form/filter/list/{id}/next/count/app/{appId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/form/filter/list/{id}/prev/count/app/{appId}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/input/compare",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/input/cover",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/input/create",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/input/prepare/cover",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/input/prepare/create",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "cms_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/log/list/filter/page/{size}",
         java_war: "",
         java_action: "",
         body: None,
