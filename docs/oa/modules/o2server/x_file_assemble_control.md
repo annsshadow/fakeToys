@@ -32,4 +32,15 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/anonymous/file/{id}/download/stream`
+- `GET /jaxrs/attachment/download/{attid}/stream`
+- `GET /jaxrs/file/assemble/control/attachment2/{id}/office/preview/type/{type}`
+- `POST /jaxrs/file/assemble/control/file/create`
+- `POST /jaxrs/file/assemble/control/file/delete/{id}`
+- `GET /jaxrs/file/assemble/control/file/list/{folderId}`
+- `POST /jaxrs/file/assemble/control/file/upload`
+- `GET /jaxrs/file/assemble/control/file/{id}`
+- `POST /jaxrs/file/core/entity/file/create`
+- `POST /jaxrs/file/core/entity/file/delete/{id}`
+- `POST /jaxrs/file/core/entity/file/update/{id}`
+- `GET /jaxrs/file/{id}/download/stream`

@@ -30,4 +30,20 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/bbs/assemble/control/config`
+- `GET /jaxrs/bbs/assemble/control/forum/list`
+- `GET /jaxrs/bbs/assemble/control/forum/view/all`
+- `GET /jaxrs/bbs/assemble/control/forum/{id}`
+- `GET /jaxrs/bbs/assemble/control/permission/section/{sectionId}`
+- `GET /jaxrs/bbs/assemble/control/permission/subject/{subjectId}`
+- `POST /jaxrs/bbs/assemble/control/reply/create`
+- `GET /jaxrs/bbs/assemble/control/reply/list/sub/{id}`
+- `GET /jaxrs/bbs/assemble/control/section/list`
+- `GET /jaxrs/bbs/assemble/control/section/viewforum/{forumId}`
+- `POST /jaxrs/bbs/assemble/control/shutup/create`
+- `GET /jaxrs/bbs/assemble/control/subject/top/{sectionId}`
+- `GET /jaxrs/bbs/assemble/control/subject/view/{id}`
+- `POST /jaxrs/bbs/assemble/control/topic/create`
+- `GET /jaxrs/bbs/assemble/control/topic/list/forum/{forumId}`
+- `POST /jaxrs/bbs/assemble/control/update/control/config`
+- `GET /jaxrs/bbs/assemble/control/uuid`

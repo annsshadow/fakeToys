@@ -34,4 +34,10 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `POST /jaxrs/console/cache/clear/{type}`
+- `POST /jaxrs/console/command/execute`
+- `GET /jaxrs/console/logs/{type}`
+- `GET /jaxrs/console/metric/{name}`
+- `POST /jaxrs/console/send/message`
+- `GET /jaxrs/console/status`
+- `GET /jaxrs/console/system/info`
