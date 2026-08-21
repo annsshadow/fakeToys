@@ -24,6 +24,11 @@
 - x_base_core_project
 - x_organization_core_entity
 
+**Rust（oa4rust/crates/organization_assemble_express）：**
+
+- 内部 path 依赖：shared
+- 关键外部依赖：axum、tokio、deadpool-postgres、serde/serde_json、uuid、tower
+
 ## REST Endpoints
 
 
