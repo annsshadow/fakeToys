@@ -385,3 +385,22 @@ oa4rust 已完成约 2,592 个 handler 函数的实现，但 handler 级测试�
 - 新增的 `crates/shared/src/testing.rs::test_pool()` 需要在 `crates/shared/src/lib.rs` 中导出（检查现有 `pub mod testing;` 是否已存在）
 - `scripts/generate_handler_tests.py` 需加入 `.gitignore` 排除（或提交，取决于团队偏好）
 - 建议在 `README.md` 或 `CLAUDE.md` 中记录覆盖率目标及 `scripts/check_coverage.py` 的用法
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：completed
+
+### 已验证完成
+
+- U1 共享测试工具 `test_pool()`：`crates/shared/src/testing.rs` 在档
+- U2 生成脚本：`scripts/generate_handler_tests.py` 在档（正文所述 U4 状态说明已过时——`scripts/check_coverage.py` 现实测存在）
+- U3 全量测试生成与编译修复：90 个 `tests_generated.rs` 实测在档
+- U4 覆盖率统计：check_coverage.py 已补齐；正文"25.3% 有效覆盖率"为当时口径，后续计划已将大量 mock 测试迁移为真实 DB 测试
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+- Deferred「集成测试的覆盖增强」
+- Deferred「代码行覆盖率（tarpaulin/grcov）测量」：仓库未见行覆盖率工具配置
+- 正文「后续工作建议」中内部服务函数可测性改造（1,856 个未导出函数）属结构性议题，随端点对齐工作推进

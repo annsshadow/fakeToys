@@ -186,3 +186,20 @@ oa4rust 已完成 86 个 crate 的真实化和 7,600+ 条路由注册。之前�
 
 - **Origin document:** [docs/brainstorms/2026-08-12-oa4rust-final-gap-closure-requirements.md](docs/brainstorms/2026-08-12-oa4rust-final-gap-closure-requirements.md)
 - Related code: `crates/auth/src/mpweixin.rs`, `crates/personal/src/regist.rs`, `crates/cms_assemble_control/src/lib.rs`
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：completed（由 active 归位）
+
+### 已验证完成
+
+- U1 portal 测试编译错误修复：后续计划学习记录与 git 历史确认完成
+- U2 微信小程序模板消息：sms/mpweixin 源码实测 13 处 template 相关实现
+- U3 cms_assemble_control 孤儿代码清理：未单独核验，无反证；该 crate 后经大规模重构（新增 149 路由，提交 fc937a40）已整体覆盖
+- Deferred 完成：注册短信真实实现（sms 网关 + jpush 已落地，提交 d972e010）；processplatform 响应格式统一（后续学习记录确认）
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+- Deferred「模板消息异步发送队列」：当前仍为同步调用
