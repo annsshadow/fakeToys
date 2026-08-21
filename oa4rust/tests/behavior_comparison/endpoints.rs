@@ -1,6 +1,6 @@
 /// 行为对比测试端点列表（自动生成）
 
-/// 生成时间: 2026-08-21 23:04:17
+/// 生成时间: 2026-08-22 00:58:21
 use super::EndpointDef;
 
 pub const ENDPOINTS: &[EndpointDef] = &[
@@ -2067,6 +2067,46 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "bbs_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/bbs/assemble/control/delete/forum",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "bbs_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/bbs/assemble/control/delete/reply",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "bbs_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/bbs/assemble/control/delete/subject",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "bbs_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/bbs/assemble/control/shutup/delete",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "bbs_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/bbs/assemble/control/config",
         java_war: "",
@@ -2498,6 +2538,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "bbs_assemble_control",
         method: "POST",
+        rust_path: "/jaxrs/bbs/assemble/control/update/control/config",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "bbs_assemble_control",
+        method: "PUT",
         rust_path: "/jaxrs/bbs/assemble/control/update/control/config",
         java_war: "",
         java_action: "",
@@ -7487,6 +7537,36 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "file_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/file/assemble/control/file/delete/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/file/core/entity/file/delete/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/recycle/delete/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/anonymous/file/{id}/download/stream",
         java_war: "",
@@ -8249,6 +8329,46 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "file_assemble_control",
         method: "POST",
         rust_path: "/jaxrs/recycle/resume/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/attachment/update/callback/callback/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/attachment/update/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/file/assemble/control/update/control/config",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/file/core/entity/file/update/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -10097,6 +10217,26 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "meeting_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/delete/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/delete/invite",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/meeting/assemble/control/building/list",
         java_war: "",
@@ -10649,6 +10789,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "meeting_assemble_control",
         method: "POST",
         rust_path: "/jaxrs/meeting/assemble/control/meeting/{id}/reject",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "meeting_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/meeting/assemble/control/meeting/save/{id}",
         java_war: "",
         java_action: "",
         body: None,
@@ -11817,6 +11967,106 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "organization_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/organization/assemble/control/group/{flag}/delete/member",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/organization/assemble/control/group/{flag}/delete/member/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/organization/assemble/control/group/{flag}/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/organization/assemble/control/identity/{flag}/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/organization/assemble/control/permissionsetting/{flag}/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/organization/assemble/control/personattribute/{flag}/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/organization/assemble/control/personcard/{flag}/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/organization/assemble/control/role/{flag}/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/organization/assemble/control/unitattribute/{flag}/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_control",
+        method: "DELETE",
+        rust_path: "/jaxrs/organization/assemble/control/unitduty/{flag}/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/identity/{id}",
         java_war: "",
@@ -12859,6 +13109,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "organization_assemble_control",
         method: "POST",
         rust_path: "/jaxrs/organization/assemble/control/person/list/like",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "organization_assemble_control",
+        method: "PUT",
+        rust_path: "/jaxrs/organization/assemble/control/unitduty/update/member",
         java_war: "",
         java_action: "",
         body: None,

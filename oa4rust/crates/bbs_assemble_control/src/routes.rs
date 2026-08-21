@@ -59,4 +59,9 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/bbs/assemble/control/topic/recommended/list", get(crate::topic_recommended_list))
         .route("/jaxrs/bbs/assemble/control/topic/search", get(crate::topic_search))
         .route("/jaxrs/bbs/assemble/control/user/info", get(crate::user_info))
+        .route("/jaxrs/bbs/assemble/control/delete/forum", delete(delete_forum))
+        .route("/jaxrs/bbs/assemble/control/delete/reply", delete(delete_reply))
+        .route("/jaxrs/bbs/assemble/control/delete/subject", delete(delete_subject))
+        .route("/jaxrs/bbs/assemble/control/shutup/delete", delete(shutup_delete))
+        .route("/jaxrs/bbs/assemble/control/update/control/config", put(update_control_config))
 }
