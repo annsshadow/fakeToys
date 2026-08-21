@@ -1,6 +1,6 @@
 ﻿use axum::{
     extract::Extension,
-    Json, Router, routing::get, routing::post,
+    Json, Router, routing::get, routing::post, routing::delete,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -213,6 +213,7 @@ pub fn processplatform_assemble_bam_router() -> Router {
         .route("/jaxrs/processplatform/assemble/bam/period/list/application/{start}/{work}", post(crate::period_list_start_work_application))
         .route("/jaxrs/processplatform/assemble/bam/period/list/{start}/{work}/{unit}", post(crate::period_list_start_work_unit))
         .route("/jaxrs/processplatform/assemble/bam/state/trigger/{category}", post(crate::state_category_trigger))
+        .route("/jaxrs/processplatform/assemble/bam/delete/{id}", delete(delete_bam))
 }
 
 #[cfg(test)]
