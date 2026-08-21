@@ -50,10 +50,10 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 | U6 | 存储后端三项（文件/BBS 附件/Office 格式） | P2 | oa4rust | 🔄 Office xlsx/pptx 预览已完成；存储 trait 与 BBS 附件未开始 |
 | U7 | 认证与消息增强三项 | P2 | oa4rust | 🔄 异步队列已完成；LDAP 同步/分布式限流未开始 |
 | U8 | 接口规范与依赖清理两项 | P2 | oa4rust | 🔄 securitySchemes 完成；SQLx 底层移除未开始 |
-| U9 | 测试体系增强四项 | P2 | oa4rust | 🔄 行覆盖率脚本+howto 已交付（grcov 报告待装工具）；其余未开始 |
+| U9 | 测试体系增强四项 | P2 | oa4rust | 🔄 行覆盖率脚本+深度集成场景已交付（并修复主流程缺 .await 的既有缺陷）；Java 容器化外部依赖 |
 | U10 | 待核验小项五条 | P3 | oa4rust | ✅ 核验完毕（2 关闭 / 3 维持遗留） |
-| U11 | Linux 文档精修四项 | P2 | linux-docs | 🔄 L11.3/L11.4 审计完成；L11.1 三文件恢复完成（乱码率→≈0，134 处丢字节待人工）、其余文件未开始 |
-| U12 | 模块卡片文档深度填充 | P3 | oa-docs | 🔄 21/55 张核心卡完成；余量未开始 |
+| U11 | Linux 文档精修四项 | P2 | linux-docs | 🔄 L11.3/L11.4 审计完成；L11.1 六文件恢复完成（乱码率→≈0，丢字节清单待人工）、其余未开始 |
+| U12 | 模块卡片文档深度填充 | P3 | oa-docs | 🔄 29/55 张核心卡完成；余量未开始 |
 | U12 | 模块卡片文档深度填充 | P3 | oa-docs |
 
 ---
