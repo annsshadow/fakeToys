@@ -1,30 +1,30 @@
-﻿## 鍐呮牳椹卞姩 scpi-hwmon
+﻿## 内核驱动 scpi-hwmon
 
 
-鏀寔鐨勮姱鐗囷細
+支持的芯片：
 
- - 鍩轰簬 ARM 绯荤粺鎺у埗澶勭悊鍣ㄦ帴鍙ｇ殑鑺墖
+ - 基于 ARM 系统控制处理器接口的芯片
 
-   鎵弿鐨勫湴鍧€锛?
+   扫描的地址
 
-   鏁版嵁琛細http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0922b/index.html
+   数据表：http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dui0922b/index.html
 
-浣滆€咃細Punit Agrawal <punit.agrawal@arm.com>
+作者：Punit Agrawal <punit.agrawal@arm.com>
 
-### 鎻忚堪
-
-
-璇ラ┍鍔ㄧ▼搴忔敮鎸佸鍩轰簬 ARM 绯荤粺鎺у埗澶勭悊鍣?(SCP) 瀹炵幇绯荤粺鎺у埗澶勭悊鍣ㄦ帴鍙?(SCPI)
-鐨?SoC 杩涜纭欢鐩戞帶銆係CP 鏀寔浠ヤ笅浼犳劅鍣ㄧ被鍨嬶細
-
-  - 娓╁害
-  - 鐢靛帇
-  - 鐢垫祦
-  - 鍔熺巼
-
-SCP 鎺ュ彛鎻愪緵浜嗕竴涓?API 鏉ユ煡璇㈠彲鐢ㄤ紶鎰熷櫒鍙婂叾鍊硷紝鐒跺悗鐢辫椹卞姩绋嬪簭瀵煎嚭鍒?鐢ㄦ埛绌洪棿銆?
-### 浣跨敤璇存槑
+### 描述
 
 
-璇ラ┍鍔ㄤ緷璧栬澶囨爲鑺傜偣鏉ユ寚绀哄唴鏍镐腑瀛樺湪 SCPI 鏀寔銆傛湁鍏宠澶囨爲鑺傜偣鐨勮缁嗕俊鎭紝
-璇峰弬闃?Documentation/devicetree/bindings/firmware/arm,scpi.yaml銆?
+该驱动程序支持对基于 ARM 系统控制处理(SCP) 实现系统控制处理器接(SCPI)
+SoC 进行硬件监控。SCP 支持以下传感器类型：
+
+  - 温度
+  - 电压
+  - 电流
+  - 功率
+
+SCP 接口提供了一API 来查询可用传感器及其值，然后由该驱动程序导出用户空间
+### 使用说明
+
+
+该驱动依赖设备树节点来指示内核中存在 SCPI 支持。有关设备树节点的详细信息，
+请参Documentation/devicetree/bindings/firmware/arm,scpi.yaml

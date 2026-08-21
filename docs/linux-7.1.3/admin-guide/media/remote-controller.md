@@ -1,40 +1,40 @@
 ﻿
-## video4linux 椹卞姩涓殑绾㈠閬ユ帶鍣ㄦ敮鎸?
+## video4linux 驱动中的红外遥控器支
 
 Authors: Gerd Hoffmann, Mauro Carvalho Chehab
 
-## 鍩虹
+## 基础
 
 
-澶у鏁版ā鎷熶笌鏁板瓧 TV 鏉垮崱閮芥敮鎸侀仴鎺у櫒銆傚叾涓竴浜涙澘鍗″甫鏈夊井澶勭悊鍣紝鍙帴鏀?IR
-杞芥尝锛屽皢鍏惰浆鎹负鑴夊啿/闂撮殧搴忓垪锛岃繘鑰岃浆鎹负鎵弿鐮侊紙scancode锛夛紝骞惰繑鍥炵粰鐢ㄦ埛绌洪棿
-锛?scancode 妯″紡"锛夈€傚彟涓€浜涙澘鍗″垯鍙繑鍥炶剦鍐?闂撮殧搴忓垪锛?raw 妯″紡"锛夈€?
-scancode 妯″紡涓嬬殑閬ユ帶鍣ㄦ敮鎸佺敱鏍囧噯鐨?Linux input 灞傛彁渚涳紱raw 妯″紡鐨勬敮鎸佸垯閫氳繃
-LIRC 鎻愪緵銆?
-涓轰簡妫€鏌ュ苟娴嬭瘯璇ユ敮鎸侊紝寤鸿涓嬭浇 `v4l-utils <https://git.linuxtv.org/v4l-utils.git/>`_銆?瀹冩彁渚涗簡涓や釜鐢ㄤ簬澶勭悊閬ユ帶鍣ㄧ殑宸ュ叿锛?
-- ir-keytable锛氭彁渚涙煡璇㈤仴鎺у櫒銆佸垪鍑哄叾鏀寔鐨勫崗璁€佸湪鍐呮牳涓惎鐢?IR 瑙ｇ爜鍣ㄦ敮鎸侊紝
-  鎴栧垏鎹㈠崗璁苟娴嬭瘯鎵弿鐮佹帴鏀剁殑鏂规硶锛?
-- ir-ctl锛氭彁渚涚敤浜庡鐞嗘敮鎸?raw 妯″紡閬ユ帶鍣ㄧ殑宸ュ叿锛岀粡鐢?LIRC 鎺ュ彛銆?
-閫氬父锛岄仴鎺у櫒妯″潡浼氬湪妫€娴嬪埌 TV 鍗℃椂鑷姩鍔犺浇銆備絾瀵逛簬灏戞暟璁惧锛屼綘闇€瑕佹墜鍔ㄥ姞杞?ir-kbd-i2c 妯″潡銆?
-## 宸ヤ綔鍘熺悊
+大多数模拟与数字 TV 板卡都支持遥控器。其中一些板卡带有微处理器，可接IR
+载波，将其转换为脉冲/间隔序列，进而转换为扫描码（scancode），并返回给用户空间
+scancode 模式"）。另一些板卡则只返回脉间隔序列raw 模式"）
+scancode 模式下的遥控器支持由标准Linux input 层提供；raw 模式的支持则通过
+LIRC 提供
+为了检查并测试该支持，建议下载 `v4l-utils <https://git.linuxtv.org/v4l-utils.git/>`_它提供了两个用于处理遥控器的工具
+- ir-keytable：提供查询遥控器、列出其支持的协议、在内核中启IR 解码器支持，
+  或切换协议并测试扫描码接收的方法
+- ir-ctl：提供用于处理支raw 模式遥控器的工具，经LIRC 接口
+通常，遥控器模块会在检测到 TV 卡时自动加载。但对于少数设备，你需要手动加ir-kbd-i2c 模块
+## 工作原理
 
 
-杩欎簺妯″潡鍦?Linux input 灞備腑灏嗛仴鎺у櫒娉ㄥ唽涓洪敭鐩橈紝涔熷氨鏄锛屼綘浼氭妸閬ユ帶鍣ㄤ笂鐨?鎸夐敭瑙嗕负鏅€氱殑鎸夐敭锛堝墠鎻愭槸鍚敤浜?CONFIG_INPUT_KEYBOARD锛夈€?
-鍊熷姪 event 璁惧锛圕ONFIG_INPUT_EVDEV锛夛紝搴旂敤绋嬪簭鍙互閫氳繃 /dev/input/event<n>
-璁惧璁块棶閬ユ帶鍣ㄣ€倁dev/systemd 浼氳嚜鍔ㄥ垱寤鸿繖浜涜澶囥€傝嫢浣犲畨瑁呬簡
-`v4l-utils <https://git.linuxtv.org/v4l-utils.git/>`_锛屽畠鍙兘杩樹細鑷姩鍔犺浇涓€涓?涓庨粯璁や笉鍚岀殑閿〃銆傝鎯呰鍙傞槄 `v4l-utils <https://git.linuxtv.org/v4l-utils.git/>`_
-鐨?ir-keytable.1 鎵嬪唽椤点€?
-ir-keytable 宸ュ叿闈炲父閫傚悎鎺掓煡鏁呴殰锛屼緥濡傜‘璁?input 璁惧鏄惁纭疄瀛樺湪銆佸畠绌剁珶鏄?鍝釜璁惧銆佹寜涓嬮仴鎺у櫒鎸夐敭鏃舵槸鍚︾湡鐨勪骇鐢熶簡浜嬩欢绛夌瓑銆備綘涔熷彲浠ヤ娇鐢ㄤ换浣曞叾浠栦慨鏀?閿槧灏勭殑 input 宸ュ叿锛屼緥濡?input kbd 宸ュ叿銆?
+这些模块Linux input 层中将遥控器注册为键盘，也就是说，你会把遥控器上按键视为普通的按键（前提是启用CONFIG_INPUT_KEYBOARD）
+借助 event 设备（CONFIG_INPUT_EVDEV），应用程序可以通过 /dev/input/event<n>
+设备访问遥控器。udev/systemd 会自动创建这些设备。若你安装了
+`v4l-utils <https://git.linuxtv.org/v4l-utils.git/>`_，它可能还会自动加载一与默认不同的键表。详情请参阅 `v4l-utils <https://git.linuxtv.org/v4l-utils.git/>`_
+ir-keytable.1 手册页
+ir-keytable 工具非常适合排查故障，例如确input 设备是否确实存在、它究竟哪个设备、按下遥控器按键时是否真的产生了事件等等。你也可以使用任何其他修键映射的 input 工具，例input kbd 工具
 
-### 涓?lircd 閰嶅悎浣跨敤
-
-
-鏈€鏂扮増鏈殑 lircd 瀹堟姢杩涚▼鏀寔浠?Linux input 灞傦紙缁忕敱 event 璁惧锛夎鍙栦簨浠讹紝
-鍚屾椂涔熸敮鎸佷互 lirc 妯″紡鎺ユ敹 IR 鐮併€?
-
-### 涓嶄娇鐢?lircd
+### lircd 配合使用
 
 
-Xorg 鑳借瘑鍒嫢骞叉暟鍊煎皬浜?247 鐨?IR 閿爜銆傞殢鐫€ Wayland 鐨勫嚭鐜帮紝input 椹卞姩涔?寰楀埌浜嗘洿鏂帮紝鐜板湪搴斿綋鑳芥帴鍙楁墍鏈夐敭鐮併€備笉杩囷紝浣犲彲鑳戒粛甯屾湜灏嗚繖浜涢敭鐮侀噸鏂版槧灏勪负浣?甯哥敤鐨勫獟浣撳簲鐢ㄧ▼搴忔墍鍠滄鐨勯敭鍊笺€?
-杩欏彲浠ラ€氳繃鍦ㄨ繍琛屾椂璁?`v4l-utils <https://git.linuxtv.org/v4l-utils.git/>`_
-鍔犺浇浣犺嚜宸辩殑閿〃鏉ュ疄鐜般€傝鎯呰闃呰 ir-keytable.1 鎵嬪唽椤点€?
+最新版本的 lircd 守护进程支持Linux input 层（经由 event 设备）读取事件，
+同时也支持以 lirc 模式接收 IR 码
+
+### 不使lircd
+
+
+Xorg 能识别若干数值小247 IR 键码。随着 Wayland 的出现，input 驱动得到了更新，现在应当能接受所有键码。不过，你可能仍希望将这些键码重新映射为常用的媒体应用程序所喜欢的键值
+这可以通过在运行时`v4l-utils <https://git.linuxtv.org/v4l-utils.git/>`_
+加载你自己的键表来实现。详情请阅读 ir-keytable.1 手册页
