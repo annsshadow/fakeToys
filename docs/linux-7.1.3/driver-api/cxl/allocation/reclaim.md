@@ -1,21 +1,21 @@
 ﻿
-## 鍥炴敹锛圧eclaim锛?
+## 回收（Reclaim
 
-CXL 鍐呭瓨浠?*闂存帴**鏂瑰紡琚埄鐢ㄧ殑鍙︿竴绉嶉€斿緞鏄€氳繃 `mm/vmscan.c` 涓殑鍥炴敹绯荤粺銆傚綋绯荤粺鍐呭瓨瀹归噺鍥犲叏灞€鍜?cgroup 灞€閮ㄧ殑 `watermark` 璁剧疆鑰屽彈鍒板帇鍔涙椂锛屽氨浼氳Е鍙戝洖鏀躲€?
-鏈妭鎴戜滑涓嶄細璁ㄨ `watermark` 閰嶇疆锛岃€屽彧璇存槑鍥炴敹绯荤粺鐨勫悇涓儴鍒嗘槸濡備綍娑堣垂 CXL 鍐呭瓨鐨勩€?
-## 闄嶇骇锛圖emotion锛?
+CXL 内存*间接**方式被利用的另一种途径是通过 `mm/vmscan.c` 中的回收系统。当系统内存容量因全局cgroup 局部的 `watermark` 设置而受到压力时，就会触发回收
+本节我们不会讨论 `watermark` 配置，而只说明回收系统的各个部分是如何消费 CXL 内存的
+## 降级（Demotion
 
-榛樿鎯呭喌涓嬶紝鍥炴敹绯荤粺鍦ㄥ洖鏀跺唴瀛樻椂浼氫紭鍏堜娇鐢?swap锛堟垨 zswap锛夈€傚惎鐢?`kernel/mm/numa/demotion_enabled` 鍚庯紝濡傛灉瀹归噺鍏佽锛寁mscan 浼?opportunistic 鍦颁紭鍏堥€夋嫨杩滅 NUMA 鑺傜偣鑰岄潪 swap 鎴?zswap銆?
-闄嶇骇浼氬姩鐢?`mm/memory_tier.c` 缁勪欢鏉ョ‘瀹氫笅涓€涓檷绾ц妭鐐广€備笅涓€涓檷绾ц妭鐐瑰熀浜?`HMAT` 鎴?`CDAT` 鎬ц兘鏁版嵁銆?
-### cpusets.mems_allowed 鐨勬€紓琛屼负
+默认情况下，回收系统在回收内存时会优先使swap（或 zswap）。启`kernel/mm/numa/demotion_enabled` 后，如果容量允许，vmscan opportunistic 地优先选择远端 NUMA 节点而非 swap zswap
+降级会动`mm/memory_tier.c` 组件来确定下一个降级节点。下一个降级节点基`HMAT` `CDAT` 性能数据
+### cpusets.mems_allowed 的怪异行为
 
 
-鍦?Linux v6.15 鍙婃洿鏃╃増鏈腑锛岄檷绾у湪杩佺Щ椤甸潰鏃朵笉閬靛畧 `cpusets.mems_allowed`銆傚洜姝わ紝濡傛灉鍚敤浜嗛檷绾э紝vmscan 鏃犳硶淇濊瘉灏嗗鍣ㄧ殑鍐呭瓨闅旂鍦?mems_allowed 涓湭璁剧疆鐨勮妭鐐逛箣澶栥€?
-鍦?Linux v6.XX 鍙婃洿楂樼増鏈腑锛岄檷绾х‘瀹炰細灏濊瘯閬靛畧 `cpusets.mems_allowed`锛涗絾鏄紝鏌愪簺鐢卞叾浠?cgroup 鏈€鍒濆疄渚嬪寲鐨勫叡浜唴瀛樼被鍒紙渚嬪鍏叡搴撯€斺€斿 libc锛変粛鍙兘琚檷绾с€傚洜姝わ紝mems_allowed 鎺ュ彛浠嶇劧鏃犳硶鎻愪緵涓庤繙绔妭鐐圭殑瀹岀編闅旂銆?
-## ZSwap 涓庤妭鐐瑰亸濂?
+Linux v6.15 及更早版本中，降级在迁移页面时不遵守 `cpusets.mems_allowed`。因此，如果启用了降级，vmscan 无法保证将容器的内存隔离mems_allowed 中未设置的节点之外
+Linux v6.XX 及更高版本中，降级确实会尝试遵守 `cpusets.mems_allowed`；但是，某些由其cgroup 最初实例化的共享内存类别（例如公共库——如 libc）仍可能被降级。因此，mems_allowed 接口仍然无法提供与远端节点的完美隔离
+## ZSwap 与节点偏
 
-鍦?Linux v6.15 鍙婃洿鏃╃増鏈腑锛孼Swap 涓烘柊鍘嬬缉鐨勯〉闈粠澶勭悊鍣ㄧ殑鏈湴鑺傜偣鍒嗛厤鍐呭瓨銆傜敱浜庤鍘嬬缉鐨勯〉闈㈤€氬父鏄喎椤甸潰锛岀粨鏋滄槸鍐烽〉闈㈣鎻愬崌锛坧romoted锛夆€斺€旈殢鍚庡張闅忕潃鍏朵粠 LRU 鑰佸寲鑰岃闄嶇骇銆?
-鍦?Linux v6.XX 涓紝ZSwap 浼氬皾璇曞皢姝ｅ湪琚帇缂╃殑椤甸潰鎵€灞炶妭鐐逛綔涓哄帇缂╅〉鐨勫垎閰嶇洰鏍囥€傝繖鏈夊姪浜庨槻姝㈤绨革紙thrashing锛夈€?
-## 缁撳悎 ZSwap 鐨勯檷绾?
+Linux v6.15 及更早版本中，ZSwap 为新压缩的页面从处理器的本地节点分配内存。由于被压缩的页面通常是冷页面，结果是冷页面被提升（promoted）——随后又随着其从 LRU 老化而被降级
+Linux v6.XX 中，ZSwap 会尝试将正在被压缩的页面所属节点作为压缩页的分配目标。这有助于防止颠簸（thrashing）
+## 结合 ZSwap 的降
 
-褰撳悓鏃跺惎鐢ㄩ檷绾у拰 ZSwap 鏃讹紝浣犱細鍒堕€犺繖鏍蜂竴绉嶆儏鍐碉細榛樿鎯呭喌涓?ZSwap 浼氫紭鍏堜娇鐢ㄦ渶鎱㈢殑閭ｄ竴绾?CXL 鍐呭瓨锛岀洿鍒拌绾у唴瀛樿€楀敖銆?
+当同时启用降级和 ZSwap 时，你会制造这样一种情况：默认情况ZSwap 会优先使用最慢的那一CXL 内存，直到该级内存耗尽
