@@ -100,5 +100,8 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/message/assemble/communicate/mass/{id}/mockdeletetoget", delete(mass_id_mockdeletetoget))
         .route("/jaxrs/message/assemble/communicate/message/custom/create", post(message_custom_create))
         .route("/jaxrs/message/assemble/communicate/message/list/paging/{page}/size/{size}", get(message_list_paging_page_size_size))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/top/cancel", put(im_conversation_id_top_cancel))
+        .route("/jaxrs/message/assemble/communicate/im/conversation/{id}/top/cancel/mockputtopost", put(im_conversation_id_top_cancel_mockputtopost))
+        .route("/jaxrs/message/assemble/communicate/im/msg/collection/remove", delete(im_msg_collection_remove))
         .layer(Extension(pool))
 }

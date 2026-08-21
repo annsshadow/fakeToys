@@ -1,6 +1,6 @@
 use axum::{
     extract::{Extension, Path},
-    Json, Router, routing::get, routing::post,
+    Json, Router, routing::get, routing::post, routing::put, routing::delete,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -387,6 +387,10 @@ pub fn portal_assemble_designer_router() -> Router {
         .route("/jaxrs/portal/assemble/designer/templatepage/{id}", get(crate::templatepage_id))
         .route("/jaxrs/portal/assemble/designer/widget/{id}", get(crate::widget_id))
         .route("/jaxrs/portal/assemble/designer/widget/list/portal/{portalId}", get(crate::widget_list_portal_portalId))
+        .route("/jaxrs/portal/assemble/designer/page/delete/{id}", delete(delete_page))
+        .route("/jaxrs/portal/design/save", put(design_save))
+        .route("/jaxrs/portal/assemble/designer/save/{id}", put(save_design))
+        .route("/jaxrs/portal/assemble/designer/page/save/{id}", put(save_page))
 }
 
 #[cfg(test)]

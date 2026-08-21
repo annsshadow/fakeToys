@@ -1,5 +1,5 @@
 use axum::{
-    routing::{get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use deadpool_postgres::Pool;
@@ -69,5 +69,16 @@ pub fn general_assemble_control_routes(pool: Pool) -> Router {
         .route("/jaxrs/general/assemble/control/worktime/minutes/of/workday", get(crate::worktime_minutesofworkday))
         .route("/jaxrs/general/assemble/control/excel/{excelName}/{excelName}", get(crate::excel_excelName_excelName))
         .route("/jaxrs/general/assemble/control/excel/{excelName}/{excelName}/{sheetList}", get(crate::excel_excelName_excelName_sheetList))
+        .route("/jaxrs/general/assemble/control/area/delete/{id}", delete(crate::area_delete))
+        .route("/jaxrs/general/assemble/control/area/update/{id}", put(crate::area_update))
+        .route("/jaxrs/general/assemble/control/attendscope/delete/{id}", delete(crate::attendscope_delete))
+        .route("/jaxrs/general/assemble/control/attendscope/save/{id}", put(crate::attendscope_save))
+        .route("/jaxrs/general/assemble/control/invoice/delete/{id}", delete(crate::invoice_delete_id))
+        .route("/jaxrs/general/assemble/control/invoice/update/apply/status/{id}", put(crate::invoice_update_apply_status_id))
+        .route("/jaxrs/general/assemble/control/invoice/update/{id}", put(crate::invoice_update_id))
+        .route("/jaxrs/general/assemble/control/qrcode/delete/{id}", delete(crate::qrcode_delete))
+        .route("/jaxrs/general/assemble/control/securityclearance/delete/{id}", delete(crate::securityclearance_delete))
+        .route("/jaxrs/general/assemble/control/securityclearance/update/{id}", put(crate::securityclearance_update))
+        .route("/jaxrs/general/assemble/control/status/update", put(crate::update_general_control_status))
         .layer(axum::Extension(pool))
 }

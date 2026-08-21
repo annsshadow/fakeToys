@@ -1,6 +1,6 @@
 use axum::{
     extract::{Extension, Path},
-    Json, Router, routing::get, routing::post,
+    Json, Router, routing::get, routing::post, routing::put, routing::delete,
 };
 use deadpool_postgres::Pool;
 use serde::Deserialize;
@@ -220,7 +220,11 @@ pub fn query_assemble_designer_router(pool: Option<Pool>) -> Router {
         .route("/jaxrs/query/assemble/designer/bundle/{view}/{id}", get(crate::view_id_bundle))
         .route("/jaxrs/query/assemble/designer/simulate/{view}/{id}", get(crate::view_id_simulate))
         .route("/jaxrs/query/assemble/designer/list/{view}/{id}/{next}/{count}", get(crate::view_list_id_next_count))
-        .route("/jaxrs/query/assemble/designer/list/{view}/{query}/{flag}", get(crate::view_list_query_flag));
+        .route("/jaxrs/query/assemble/designer/list/{view}/{query}/{flag}", get(crate::view_list_query_flag))
+        .route("/jaxrs/query/assemble/designer/delete/{id}", delete(delete_designer))
+        .route("/jaxrs/query/assemble/designer/save/{id}", put(save_designer))
+        .route("/jaxrs/query/assemble/designer/table/row/delete/all/{tableFlag}", delete(table_tableFlag_row_delete_all))
+        .route("/jaxrs/query/assemble/designer/table/row/save/{tableFlag}", put(table_tableFlag_row_save));
 
     if let Some(pool) = pool {
         router.layer(Extension(pool))
