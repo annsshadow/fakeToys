@@ -13,6 +13,77 @@ use shared::middleware::extract_token_from_headers;
 use shared::response::ActionResult;
 use shared::session::SessionManager;
 use std::sync::OnceLock;
+use tokio::sync::mpsc;
+
+// ──────────────────────────────────────────────────────────────────────────────
+// 模板消息异步发送队列（plan002 U7a）
+//
+// handler 将发送任务入队后立即返回受理结果；后台 worker 串行消费并调用
+// 微信 API。worker 未启动时 enqueue 返回 false，调用方降级为同步发送。
+// v1 简化：失败仅记日志，不做重试/持久化。
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TemplateMessageTask {
+    pub touser: String,
+    pub template_id: String,
+    pub content: String,
+}
+
+const TEMPLATE_QUEUE_CAPACITY: usize = 1024;
+
+static TEMPLATE_QUEUE: OnceLock<mpsc::Sender<TemplateMessageTask>> = OnceLock::new();
+static QUEUE_WORKER_STARTED: OnceLock<()> = OnceLock::new();
+
+/// 入队一条模板消息发送任务。队列满或 worker 未启动时返回 false。
+pub fn enqueue_template_message(task: TemplateMessageTask) -> bool {
+    match TEMPLATE_QUEUE.get() {
+        Some(tx) => tx.try_send(task).is_ok(),
+        None => false,
+    }
+}
+
+/// 启动后台发送 worker（幂等：重复调用只启动一次）。
+pub fn spawn_template_queue_worker() {
+    let _ = QUEUE_WORKER_STARTED.set(());
+    let (tx, mut rx) = mpsc::channel(TEMPLATE_QUEUE_CAPACITY);
+    if TEMPLATE_QUEUE.set(tx).is_err() {
+        // 已被其他调用方初始化：不重复 spawn
+        return;
+    }
+    tokio::spawn(async move {
+        while let Some(task) = rx.recv().await {
+            if let Err(e) = send_template_via_wechat(&task).await {
+                tracing::warn!("template message async send failed (touser={}): {}", task.touser, e);
+            }
+        }
+    });
+}
+
+/// 队列 worker 的实际执行体（同步语义的对外发送）。
+async fn send_template_via_wechat(task: &TemplateMessageTask) -> Result<Value, String> {
+    let access_token = mpweixin_access_token()
+        .await
+        .map_err(|e| format!("access_token: {e}"))?;
+    let client = mpweixin_client();
+    let send_resp: Value = client
+        .post(format!(
+            "https://api.weixin.qq.com/cgi-bin/message/wxopen/template/send?access_token={}",
+            access_token
+        ))
+        .json(&serde_json::json!({
+            "touser": task.touser,
+            "template_id": task.template_id,
+            "content": task.content,
+        }))
+        .send()
+        .await
+        .map_err(|e| format!("http: {e}"))?
+        .json()
+        .await
+        .map_err(|e| format!("decode: {e}"))?;
+    Ok(send_resp)
+}
+
 
 // ──────────────────────────────────────────────────────────────────────────────
 // mpweixin — 微信小程序 OAuth 登录
@@ -275,6 +346,19 @@ pub async fn mpweixin_test_send(
         .and_then(|v| v.as_str())
         .ok_or_else(|| AppError::BadRequest("content is required".to_string()))?;
 
+    // 异步队列优先：worker 已启动且入队成功时立即受理返回
+    let task = TemplateMessageTask {
+        touser: person.clone(),
+        template_id: template_id.to_string(),
+        content: content.to_string(),
+    };
+    if QUEUE_WORKER_STARTED.get().is_some() && enqueue_template_message(task) {
+        return Ok(Json(ActionResult::success(serde_json::json!({
+            "accepted": true,
+            "queued": true,
+        }))));
+    }
+
     let access_token = mpweixin_access_token().await?;
     let client = mpweixin_client();
     let send_resp: Value = client
@@ -308,14 +392,60 @@ pub async fn mpweixin_test_send(
 
     Ok(Json(ActionResult::success(serde_json::json!({
         "sent": true,
+        "accepted": false,
         "msgid": send_resp.get("msgid").and_then(|v| v.as_str()).unwrap_or(""),
     }))))
 }
 
 pub fn router() -> Router {
+    // 在运行时上下文内启动异步发送 worker（测试等无运行时场景自动跳过）
+    if tokio::runtime::Handle::try_current().is_ok() {
+        spawn_template_queue_worker();
+    }
     Router::new()
         .route("/jaxrs/mpweixin/login/code/{code}", get(mpweixin_login))
         .route("/jaxrs/mpweixin/bind/code/{code}", get(mpweixin_bind_code))
         .route("/jaxrs/mpweixin/bind/openid/{openid}", get(mpweixin_bind_openid))
         .route("/jaxrs/mpweixin/menu/test/send/to/{person}", post(mpweixin_test_send))
+}
+
+#[cfg(test)]
+mod queue_tests {
+    use super::*;
+
+    #[test]
+    fn test_enqueue_before_worker_start_returns_false() {
+        // 全局队列未初始化（worker 未启动）时入队必须失败，
+        // 调用方据此降级为同步发送——这是降级契约的核心。
+        let task = TemplateMessageTask {
+            touser: "user-1".into(),
+            template_id: "tpl-1".into(),
+            content: "hello".into(),
+        };
+        assert!(!enqueue_template_message(task));
+    }
+
+    #[tokio::test]
+    async fn test_enqueue_after_worker_start_succeeds() {
+        spawn_template_queue_worker();
+        let task = TemplateMessageTask {
+            touser: "user-2".into(),
+            template_id: "tpl-2".into(),
+            content: "world".into(),
+        };
+        assert!(enqueue_template_message(task));
+    }
+
+    #[test]
+    fn test_task_serialization_roundtrip() {
+        let task = TemplateMessageTask {
+            touser: "u".into(),
+            template_id: "t".into(),
+            content: "c".into(),
+        };
+        let v = serde_json::to_value(&task).unwrap();
+        assert_eq!(v["touser"], "u");
+        let back: TemplateMessageTask = serde_json::from_value(v).unwrap();
+        assert_eq!(back.content, "c");
+    }
 }
