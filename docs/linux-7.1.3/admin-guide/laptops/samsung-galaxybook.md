@@ -1,109 +1,109 @@
 ﻿
 
-## Samsung Galaxy Book 椹卞姩
+## Samsung Galaxy Book 驱动
 
 
 Joshua Grisham <josh@joshuagrisham.com>
 
-杩欐槸涓€涓敤浜庝笁鏄?Galaxy Book 绯诲垪绗旇鏈澶囩殑 Linux x86 骞冲彴椹卞姩锛屽畠鍒╃敤涓夋槦鐨?`SCAI` ACPI 璁惧鏉ユ帶鍒堕澶栧姛鑳藉苟鎺ユ敹鍚勭閫氱煡銆?
+这是一个用于三Galaxy Book 系列笔记本设备的 Linux x86 平台驱动，它利用三星`SCAI` ACPI 设备来控制额外功能并接收各种通知
 
-## 鏀寔鐨勮澶?
-
-
-浠讳綍甯︽湁鍙楁敮鎸?ACPI 璁惧 ID 涔嬩竴鐨勮澶囬兘搴斿彈鏀寔銆傝繖娑电洊浜嗘埅鑷虫湰鏂囨挵鍐欐椂澶у鏁板湪鍞殑鈥淪amsung Galaxy Book鈥濈郴鍒楃瑪璁版湰锛屼篃鍙兘鍖呮嫭鍏朵粬涓夋槦绗旇鏈澶囥€?
-
-## 鐘舵€?
+## 支持的设
 
 
-鐩墠鏀寔浠ヤ笅鍔熻兘锛?
+任何带有受支ACPI 设备 ID 之一的设备都应受支持。这涵盖了截至本文撰写时大多数在售的“Samsung Galaxy Book”系列笔记本，也可能包括其他三星笔记本设备
 
-- 閿洏鑳屽厜鐏?<keyboard-backlight> 鎺у埗
-- 鎬ц兘妯″紡 <performance-mode> 鎺у埗锛屼娇鐢ㄥ钩鍙?profile 鎺ュ彛瀹炵幇
-- :ref:`鐢垫睜鍏呯數鎺у埗缁堟闃堝€?<battery-charge-control-end-threshold>`锛堝湪缁欏畾鐧惧垎姣斿鍋滄涓虹數姹犲厖鐢碉級锛屼綔涓虹數姹犻挬瀛愬疄鐜?
-- 鍥轰欢灞炴€?<firmware-attributes>锛岀敤浜庢帶鍒跺悇绉嶈澶囪缃?
-- 澶勭悊鍚勭鎿嶄綔鐨?Fn 鐑敭 <keyboard-hotkey-actions>
-- :ref:`澶勭悊 ACPI 閫氱煡涓庣儹閿?<acpi-notifications-and-hotkey-actions>`
-
-鐢变簬杩欎簺璁惧鐨勪笉鍚屽瀷鍙峰湪鍔熻兘涓婂彲鑳藉瓨鍦ㄥ樊寮傦紝椹卞姩鍐呴儴鏋勫缓浜嗙浉搴旂殑閫昏緫锛屼細鍦ㄥ惎鐢ㄦ煇椤瑰姛鑳界殑鏀寔锛堟敞鍐岄澶栫殑璁惧鎴栨墿灞曘€佹坊鍔?sysfs 灞炴€х瓑锛変箣鍓嶏紝灏濊瘯娴嬭瘯姣忎釜宸插疄鐜扮殑鍔熻兘鏄惁鑳借繑鍥炴湁鏁堝搷搴斻€傚洜姝わ紝闇€瑕佹敞鎰忥細浣犵殑鐗瑰畾璁惧鍙兘骞朵笉鏀寔鍏ㄩ儴鍔熻兘銆?
-
-浠ヤ笅鍔熻兘鏈夊彲鑳藉疄鐜帮紝浣嗛渶瑕佽繘涓€姝ヨ皟鏌ワ紝鍥犳鐩墠灏氫笉鏀寔锛?
-
-- 鎵０鍣ㄧ殑鈥淒olby Atmos鈥濇ā寮?
-- 鍦ㄥ甫鏈?`SAM0427` 鐨勫瀷鍙蜂笂鎻愰珮灞忓箷浜害鐨勨€淥utdoor Mode鈥?
-- 鍦ㄥ甫鏈?`SAM0427` 鐨勫瀷鍙蜂笂鐨勨€淪ilent Mode鈥?
+## 状
 
 
-## 閿洏鑳屽厜鐏?
+目前支持以下功能
+
+- 键盘背光<keyboard-backlight> 控制
+- 性能模式 <performance-mode> 控制，使用平profile 接口实现
+- :ref:`电池充电控制终止阈<battery-charge-control-end-threshold>`（在给定百分比处停止为电池充电），作为电池钩子实
+- 固件属<firmware-attributes>，用于控制各种设备设
+- 处理各种操作Fn 热键 <keyboard-hotkey-actions>
+- :ref:`处理 ACPI 通知与热<acpi-notifications-and-hotkey-actions>`
+
+由于这些设备的不同型号在功能上可能存在差异，驱动内部构建了相应的逻辑，会在启用某项功能的支持（注册额外的设备或扩展、添sysfs 属性等）之前，尝试测试每个已实现的功能是否能返回有效响应。因此，需要注意：你的特定设备可能并不支持全部功能
+
+以下功能有可能实现，但需要进一步调查，因此目前尚不支持
+
+- 扬声器的“Dolby Atmos”模
+- 在带`SAM0427` 的型号上提高屏幕亮度的“Outdoor Mode
+- 在带`SAM0427` 的型号上的“Silent Mode
 
 
-**浼氬垱寤轰竴涓悕涓?``samsung-galaxybook : kbd_backlight`` 鐨勬柊 LED 绫?*锛岄殢鍚庝細閫氳繃浣嶄簬 **``/sys/class/leds/samsung-galaxybook : kbd_backlight`` 鐨勬爣鍑嗗熀浜?sysfs 鐨?LED 鎺ュ彛鏉ユ毚闇茶璁惧銆傚彲浠ラ€氳繃鍚?`brightness` sysfs 灞炴€у啓鍏ユ墍闇€鍊硷紝鎴栦娇鐢ㄤ换浣曞叾浠栨湡鏈涚殑鐢ㄦ埛绌洪棿宸ュ叿鏉ユ帶鍒朵寒搴︺€?
-
-  杩欎簺璁惧澶у甯︽湁鐜鍏変紶鎰熷櫒锛屽湪鍏夌収鍏呰冻鐨勭幆澧冧笅涔熶細鍏抽棴閿洏鑳屽厜鐏€傝繖绉嶈涓虹洰鍓嶄技涔庢棤娉曟帶鍒讹紝浣嗘渶濂芥湁鎵€浜嗚В銆?
+## 键盘背光
 
 
-## 鎬ц兘妯″紡
+**会创建一个名``samsung-galaxybook : kbd_backlight`` 的新 LED *，随后会通过位于 **``/sys/class/leds/samsung-galaxybook : kbd_backlight`` 的标准基sysfs LED 接口来暴露该设备。可以通过`brightness` sysfs 属性写入所需值，或使用任何其他期望的用户空间工具来控制亮度
+
+  这些设备大多带有环境光传感器，在光照充足的环境下也会关闭键盘背光灯。这种行为目前似乎无法控制，但最好有所了解
 
 
-璇ラ┍鍔ㄥ疄鐜颁簡
-Documentation/userspace-api/sysfs-platform_profile.rst 鎺ュ彛锛岀敤浜庨厤鍚堜笁鏄?ACPI 璁惧鐨勨€滄€ц兘妯″紡鈥濆姛鑳藉伐浣溿€?
-
-鐢变簬骞堕潪鎵€鏈夊瀷鍙烽兘鏀寔鍏ㄩ儴鐩稿悓鐨勬€ц兘妯″紡锛屾瘡涓笁鏄熲€滄€ц兘妯″紡鈥濆埌鍏跺搴斿钩鍙?profile 鐨勬槧灏勭敱椹卞姩鍔ㄦ€佹墽琛屻€備綘鐨勮澶囧彲鑳藉叿鏈変笅鍒楁槧灏勪腑鐨勪竴涓垨澶氫釜锛?
-
-- 鈥淪ilent鈥?鏄犲皠鍒?`low-power`
-- 鈥淨uiet鈥?鏄犲皠鍒?`quiet`
-- 鈥淥ptimized鈥?鏄犲皠鍒?`balanced`
-- 鈥淗igh performance鈥?鏄犲皠鍒?`performance`
-
-鏄犲皠鐨勭粨鏋滀細鍦ㄦā鍧楀姞杞芥椂鎵撳嵃鍒板唴鏍告棩蹇椾腑銆傚彈鏀寔鐨?profile 涔熷彲浠ヤ粠
-`/sys/firmware/acpi/platform_profile_choices` 鑾峰彇锛岃€?
-`/sys/firmware/acpi/platform_profile` 鍙敤浜庤鍙栨垨鍐欏叆褰撳墠鎵€閫夌殑 profile銆?
-
-濡傛灉涔嬪墠娌℃湁璁剧疆杩?profile锛屽垯浼氬湪妯″潡鍔犺浇鏃跺皢 `balanced` 骞冲彴 profile 璁句负褰撳墠鍊笺€?
+## 性能模式
 
 
-## 鐢垫睜鍏呯數鎺у埗缁堟闃堝€?
+该驱动实现了
+Documentation/userspace-api/sysfs-platform_profile.rst 接口，用于配合三ACPI 设备的“性能模式”功能工作
+
+由于并非所有型号都支持全部相同的性能模式，每个三星“性能模式”到其对应平profile 的映射由驱动动态执行。你的设备可能具有下列映射中的一个或多个
+
+- “Silent映射`low-power`
+- “Quiet映射`quiet`
+- “Optimized映射`balanced`
+- “High performance映射`performance`
+
+映射的结果会在模块加载时打印到内核日志中。受支持profile 也可以从
+`/sys/firmware/acpi/platform_profile_choices` 获取，
+`/sys/firmware/acpi/platform_profile` 可用于读取或写入当前所选的 profile
+
+如果之前没有设置profile，则会在模块加载时将 `balanced` 平台 profile 设为当前值
 
 
-璇ュ钩鍙伴┍鍔ㄤ細娣诲姞璁剧疆鐢垫睜鍏呯數鎺у埗缁堟闃堝€肩殑鑳藉姏锛屼絾鏃犳硶璁剧疆璧峰闃堝€笺€?
-
-杩欎竴鍔熻兘鍦?Windows 涓嬮€氬父琚笁鏄熷悇绫诲簲鐢ㄧ▼搴忕О涓衡€淏attery Saver鈥濓紝浣嗗湪 Linux 涓紝鎴戜滑鍦ㄧ數姹犺澶囦笂瀹炵幇浜嗘爣鍑嗗寲鐨勨€渃harge control threshold鈥濓紙鍏呯數鎺у埗闃堝€硷級sysfs 鎺ュ彛锛屼互渚夸粠鐢ㄦ埛绌洪棿鎺у埗璇ュ姛鑳姐€?
-
-sysfs 灞炴€?
-`/sys/class/power_supply/BAT1/charge_control_end_threshold` 鍙敤浜庤鍙栨垨璁剧疆鏈熸湜鐨勫厖鐢电粓姝㈤槇鍊笺€?
-
-濡傛灉浣犲笇鏈涗笌 Windows 涓嬬殑 Samsung Settings 搴旂敤淇濇寔浜掓搷浣滄€э紝鍒欏簲灏嗗€艰涓?100 琛ㄧず鈥滃叧闂€濓紝鎴栦粎浣跨敤涓嬪垪鍊间箣涓€鍚敤璇ュ姛鑳斤細50銆?0銆?0銆?0 鎴?90銆傚惁鍒欙紝椹卞姩浼氭帴鍙?1 鍒?100 涔嬮棿鐨勪换鎰忓€间綔涓轰綘甯屾湜鐢垫睜鍋滄鍏呯數鐨勭櫨鍒嗘瘮銆?
-
-  鏈夎娴嬭〃鏄庯紝褰撹緭鍏ュ€煎皬浜?30 鏃讹紝鏌愪簺璁惧浼氳嚜鍔ㄢ€滃叧闂€濆厖鐢垫帶鍒剁粓姝㈤槇鍊笺€?
+## 电池充电控制终止阈
 
 
-## 鍥轰欢灞炴€?
+该平台驱动会添加设置电池充电控制终止阈值的能力，但无法设置起始阈值
+
+这一功能Windows 下通常被三星各类应用程序称为“Battery Saver”，但在 Linux 中，我们在电池设备上实现了标准化的“charge control threshold”（充电控制阈值）sysfs 接口，以便从用户空间控制该功能
+
+sysfs 属
+`/sys/class/power_supply/BAT1/charge_control_end_threshold` 可用于读取或设置期望的充电终止阈值
+
+如果你希望与 Windows 下的 Samsung Settings 应用保持互操作性，则应将值设100 表示“关闭”，或仅使用下列值之一启用该功能：50000 90。否则，驱动会接1 100 之间的任意值作为你希望电池停止充电的百分比
+
+  有观测表明，当输入值小30 时，某些设备会自动“关闭”充电控制终止阈值
 
 
-浠ヤ笅鏋氫妇绫诲瀷鐨勫浐浠跺睘鎬х敱璇ラ┍鍔ㄨ缃紝濡傛灉浣犵殑璁惧鏀寔锛屽簲鍙湪
-`/sys/class/firmware-attributes/samsung-galaxybook/attributes/` 涓嬭闂細
-
-- `power_on_lid_open`锛堟墦寮€鐩栧瓙鏃惰澶囧簲閫氱數锛?
-- `usb_charging`锛堝嵆浣垮湪璁惧鍏虫満鎴栧浜庝綆鍔熻€楃潯鐪犵姸鎬佹椂锛孶SB 绔彛涔熻兘涓烘墍杩炶澶囦緵鐢碉級
-- `block_recording`锛堥樆姝㈠鎽勫儚澶翠笌楹﹀厠椋庣殑璁块棶锛?
-
-鎵€鏈夎繖浜涘睘鎬ч兘鏄畝鍗曠殑绫诲竷灏旀灇涓惧€硷紝鐢?0 琛ㄧず鈥滃叧闂€濄€? 琛ㄧず鈥滃紑鍚€濄€備娇鐢?`current_value` 灞炴€ф潵鑾峰彇鎴栨洿鏀硅澶囦笂鐨勮缃€?
-
-娉ㄦ剰锛屽綋 `block_recording` 鏇存柊鏃讹紝杈撳叆璁惧鈥淪amsung Galaxy Book Lens Cover鈥濅細鏀跺埌涓€涓?`SW_CAMERA_LENS_COVER` 寮€鍏充簨浠讹紝鍙嶆槧褰撳墠鐘舵€併€?
+## 固件属
 
 
-## 閿洏鐑敭鎿嶄綔锛坕8042 杩囨护鍣級
+以下枚举类型的固件属性由该驱动设置，如果你的设备支持，应可在
+`/sys/class/firmware-attributes/samsung-galaxybook/attributes/` 下访问：
+
+- `power_on_lid_open`（打开盖子时设备应通电
+- `usb_charging`（即使在设备关机或处于低功耗睡眠状态时，USB 端口也能为所连设备供电）
+- `block_recording`（阻止对摄像头与麦克风的访问
+
+所有这些属性都是简单的类布尔枚举值，0 表示“关闭” 表示“开启”。使`current_value` 属性来获取或更改设备上的设置
+
+注意，当 `block_recording` 更新时，输入设备“Samsung Galaxy Book Lens Cover”会收到一`SW_CAMERA_LENS_COVER` 开关事件，反映当前状态
 
 
-i8042 杩囨护鍣ㄤ細鍚炴帀 Fn+F9 鐑敭锛堝绾ч敭鐩樿儗鍏夌伅鍒囨崲锛夊拰 Fn+F10 鐑敭锛堥樆姝㈠綍鍒跺垏鎹級鐨勯敭鐩樹簨浠讹紝杞€屽湪椹卞姩鑷韩鍐呴儴鎵ц瀵瑰簲鐨勬搷浣溿€?
-
-Fn+F9 浼氬惊鐜垏鎹㈤敭鐩樿儗鍏夌伅鐨勪寒搴︾骇鍒€備細浣跨敤 `led_classdev_notify_brightness_hw_changed` 鍙戦€侀€氱煡锛屼互渚跨敤鎴风┖闂寸煡鏅撹繖涓€鍙樺寲銆傝繖妯℃嫙浜嗗叾浠栫幇鏈夎澶囩殑琛屼负锛氫寒搴︾骇鍒敱宓屽叆寮忔帶鍒跺櫒鍦ㄥ唴閮ㄥ惊鐜紝鐒跺悗閫氳繃閫氱煡涓婃姤銆?
-
-Fn+F10 浼氬垏鎹⑩€渂lock recording鈥濊缃殑鍊硷紝浠庤€岄樆姝㈡垨鍏佽浣跨敤鍐呯疆鎽勫儚澶翠笌楹﹀厠椋庯紙骞剁敓鎴愪笂杩扮浉鍚岀殑 Lens Cover 寮€鍏充簨浠讹級銆?
+## 键盘热键操作（i8042 过滤器）
 
 
-## ACPI 閫氱煡涓庣儹閿搷浣?
+i8042 过滤器会吞掉 Fn+F9 热键（多级键盘背光灯切换）和 Fn+F10 热键（阻止录制切换）的键盘事件，转而在驱动自身内部执行对应的操作
+
+Fn+F9 会循环切换键盘背光灯的亮度级别。会使用 `led_classdev_notify_brightness_hw_changed` 发送通知，以便用户空间知晓这一变化。这模拟了其他现有设备的行为：亮度级别由嵌入式控制器在内部循环，然后通过通知上报
+
+Fn+F10 会切换“block recording”设置的值，从而阻止或允许使用内置摄像头与麦克风（并生成上述相同的 Lens Cover 开关事件）
 
 
-ACPI 閫氱煡浼氬湪璁惧绫?`samsung-galaxybook` 浠ュ強涓庝綘璁惧涓婃壘鍒扮殑涓夋槦 ACPI 璁惧 ID 鐩稿尮閰嶇殑鎬荤嚎 ID 涓嬬敓鎴?ACPI netlink 浜嬩欢銆傚彲浠ヤ娇鐢?`acpi_listen`銆乣acpid` 绛夌敤鎴风┖闂村伐鍏锋帴鏀惰繖浜涗簨浠躲€?
+## ACPI 通知与热键操
 
-Fn+F11 鎬ц兘妯″紡鐑敭灏嗙敱椹卞姩澶勭悊锛涙瘡娆℃寜閿細寰幆鍒囨崲鍒颁笅涓€涓彲鐢ㄧ殑骞冲彴 profile銆?
+
+ACPI 通知会在设备`samsung-galaxybook` 以及与你设备上找到的三星 ACPI 设备 ID 相匹配的总线 ID 下生ACPI netlink 事件。可以使`acpi_listen`、`acpid` 等用户空间工具接收这些事件
+
+Fn+F11 性能模式热键将由驱动处理；每次按键会循环切换到下一个可用的平台 profile
