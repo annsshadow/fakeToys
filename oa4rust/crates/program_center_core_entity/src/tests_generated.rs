@@ -8,7 +8,7 @@ mod tests {
     #[tokio::test]
     async fn test_agent_list() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
@@ -29,7 +29,7 @@ mod tests {
     #[tokio::test]
     async fn test_application_list() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
@@ -50,7 +50,7 @@ mod tests {
     #[tokio::test]
     async fn test_invoke_list() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
@@ -71,7 +71,7 @@ mod tests {
     #[tokio::test]
     async fn test_script_list() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()
@@ -92,7 +92,7 @@ mod tests {
     #[tokio::test]
     async fn test_structure_list() {
         let pool = shared::testing::test_pool();
-        let app = crate::router(pool);
+        let app = crate::test_router(pool);
         let response = app
             .oneshot(
                 Request::builder()

@@ -1,6 +1,6 @@
 /// 行为对比测试端点列表（自动生成）
 
-/// 生成时间: 2026-08-21 10:33:16
+/// 生成时间: 2026-08-21 12:27:38
 use super::EndpointDef;
 
 pub const ENDPOINTS: &[EndpointDef] = &[
@@ -5798,6 +5798,16 @@ pub const ENDPOINTS: &[EndpointDef] = &[
     EndpointDef {
         crate_name: "file_assemble_control",
         method: "GET",
+        rust_path: "/jaxrs/file/anonymous/file/id/download",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
         rust_path: "/jaxrs/file/assemble/control/attachment2/{id}/office/preview/type/{type}",
         java_war: "",
         java_action: "",
@@ -5819,6 +5829,536 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "file_assemble_control",
         method: "GET",
         rust_path: "/jaxrs/file/assemble/control/file/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment/id/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment/id/download",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment/id/image/scale/scale/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment/id/image/width/width/height/height/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment/list/folder/folderId",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment/list/top",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment2/exist/file/fileMd5",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment2/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment2/id/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment2/id/download",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment2/id/download/image/width/width/height/height",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment2/id/download/stream",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment2/id/image/scale/scale/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment2/id/image/width/width/height/height/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment2/list/filter/name",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment2/list/folder/folderId",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment2/list/top",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/attachment2/list/type/page/size/size",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/complex/folder/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/complex/top",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/editor/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/clean/unused/referencetype/cmsdocument/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/id/binary/base64",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/id/download",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/list/id/next/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/list/id/next/count/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/list/id/next/count/referencetype/referenceType",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/list/id/prev/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/list/id/prev/count/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/list/id/prev/count/referencetype/referenceType",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/list/referencetype",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/list/referencetype/referenceType/reference/reference",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/list/unused/referencetype/cmsdocument/manage",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/file/referencetype/referenceType/reference/reference",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/folder/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/folder/list/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/folder/list/top",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/folder2/batch/download",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/folder2/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/folder2/id/download",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/folder2/list/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/folder2/list/top",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/recycle/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/share/download/share/shareId/file/fileId",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/share/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/share/id/password/password",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/share/list/att/share/shareId/folder/folderId",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/share/list/folder/share/shareId/folder/folderId",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/share/share/shareId/file/fileId/folder/folderId",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "file_assemble_control",
+        method: "GET",
+        rust_path: "/jaxrs/file/share/shield/id",
         java_war: "",
         java_action: "",
         body: None,
@@ -13637,6 +14177,96 @@ pub const ENDPOINTS: &[EndpointDef] = &[
 
     EndpointDef {
         crate_name: "program_center",
+        method: "DELETE",
+        rust_path: "/jaxrs/program_center/appstyle/image/application/top/erase",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "DELETE",
+        rust_path: "/jaxrs/program_center/appstyle/image/launch/logo/erase",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "DELETE",
+        rust_path: "/jaxrs/program_center/appstyle/image/login/avatar/erase",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "DELETE",
+        rust_path: "/jaxrs/program_center/appstyle/image/menu/logo/blur/erase",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "DELETE",
+        rust_path: "/jaxrs/program_center/appstyle/image/menu/logo/focus/erase",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "DELETE",
+        rust_path: "/jaxrs/program_center/appstyle/image/process/default/erase",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "DELETE",
+        rust_path: "/jaxrs/program_center/appstyle/image/setup/about/logo/erase",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "DELETE",
+        rust_path: "/jaxrs/program_center/dict/dictFlag/path/data/mockdeletetoget",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "DELETE",
+        rust_path: "/jaxrs/program_center/mpweixin/menu/delete/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
         method: "GET",
         rust_path: "/jaxrs/program/applications",
         java_war: "",
@@ -13659,6 +14289,1596 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "program_center",
         method: "GET",
         rust_path: "/jaxrs/program/datastructure/modules/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/agent/flag",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/agent/flag/disable",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/agent/flag/enable",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/agent/flag/execute",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/agent/flag/file",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/andfx/pull/sync",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/appstyle/current/style",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/appstyle/image/application/top",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/appstyle/image/launch/logo",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/appstyle/image/login/avatar",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/appstyle/image/menu/logo/blur",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/appstyle/image/menu/logo/focus",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/appstyle/image/process/default",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/appstyle/image/setup/about/logo",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/appstyle/index/portal",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/bar/select1/field/field/value/value/count/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/bar/select2/count/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/bar/select3/field/field/value/value/count/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/bar/select4/field/field/value/value/count/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/captcha/id/validate/answer/answer",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/captcha/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/center/applications",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/center/regist/applications",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/center/version",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/code/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/code/list/paging/page/size/size",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/code/validate/mobile/mobile/answer/answer",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/code/validate/mobile/mobile/answer/answer/cascade",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/code/mobile/mobile",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/connect",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/controllebbs",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/controllermobile/name/name/mobile/mobile",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/disconnect",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/login",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/mobile/check/connect",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/name/name/exist",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/name/name/mobile/mobile/code/code",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/person",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/remove",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/resetpassword",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/sync/area",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/urlMapping",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/validate",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/validate/codeanswer",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/validate/direct",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/collect/validate/password",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/command/execute",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/command/list/node",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/centerserver",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/change/password",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/collect",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/get",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/license",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/list/application",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/list/dump/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/list/dump/data/current/node",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/list/entity",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/open",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/open/get/disable/export/enable",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/open/run/time/config",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/person",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/portal",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/proxy",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/ternary/management",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/config/token",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/datastructure/fileds/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/datastructure/modules/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/datastructure/tables/all",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/deploy/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/deploy/list/paging/page/size/size",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/deploy/server/o2",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/deploy/server/resource",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/deploy/web/resource/as/new/asNew",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/designer/search",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/dict/dictFlag/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/dict/dictFlag/path/data",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/dict/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/dict/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/dict/list/paging/page/size/size",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/dingding/get/callback/aes",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/dingding/pull/sync",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/dingding/request/pull/sync",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/dingding/sync/organization/callback",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/dingding/sync/organization/register/callback/enable",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/distribute/assemble/source/source",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/distribute/webserver/assemble/source/source",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/invoke/flag",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/invoke/flag/client/client/token/token/execute",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/invoke/flag/execute",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/invoke/flag/execute/get",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/invoke/flag/file",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/invoke/list/category",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/invoke/list/with/category/category",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/invoke/token",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/jest/clear/cache/source",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/jest/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/jest/version",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/market/cloud/unit/is/vip",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/market/flag",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/market/flag/cover/pic",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/market/flag/install/log",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/market/flag/installed/version",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/market/flag/uninstall",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/market/id/download",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/market/install/offline",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/market/list/category",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/market/list/install/log/paging/page/size/size",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/market/list/paging/page/size/size",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/market/list/paging/page/size/size/category/category",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/market/list/top/three",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/module/id/compare",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/module/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/module/list/category",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/module/remove/structure/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/module/write/flag",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/mpweixin/check",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/mpweixin/menu/subscribe",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/mpweixin/message/template/send",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/prompterrorlog/count/exceptionclass",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/prompterrorlog/count/loggername",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/prompterrorlog/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/prompterrorlog/list/id/next/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/prompterrorlog/list/id/next/count/date/date",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/prompterrorlog/list/id/next/count/exceptionclass/exceptionClass",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/prompterrorlog/list/id/next/count/loggername/loggerName",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/prompterrorlog/list/id/prev/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/prompterrorlog/list/id/prev/count/date/date",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/prompterrorlog/list/id/prev/count/exceptionclass/exceptionClass",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/prompterrorlog/list/id/prev/count/loggername/loggerName",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/qiyeweixin/get/callback/aes",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/qiyeweixin/pull/sync",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/qiyeweixin/request/pull/sync",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/qiyeweixin/send/getprivateinfo/message",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/schedule/list/schedule",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/schedule/list/schedulelocal",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/schedule/list/schedulelog/application/application",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/schedule/report",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/schedule/schedule/fire",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/script/flag",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/script/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/script/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/script/list/paging/page/size/size",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/script/name/name",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/script/name/name/imported",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/test/test1",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/test/test2",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/unexpectederrorlog/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/unexpectederrorlog/list/id/next/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/unexpectederrorlog/list/id/next/count/date/date",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/unexpectederrorlog/list/id/prev/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/unexpectederrorlog/list/id/prev/count/date/date",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/validation/meta",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/validation/scripting/benchmark",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/validation/timeout/timeout",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/zhengwudingding/pull/sync",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/zhengwudingding/regist/callback",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "GET",
+        rust_path: "/jaxrs/program_center/zhengwudingding/sync/organization/callback",
         java_war: "",
         java_action: "",
         body: None,
@@ -13699,6 +15919,276 @@ pub const ENDPOINTS: &[EndpointDef] = &[
         crate_name: "program_center",
         method: "POST",
         rust_path: "/jaxrs/program_center/application/save/{id}",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/appstyle/current/update",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/bar/create/mass/from/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/captcha/v2/create/width/width/height/height",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/code/create/mobile/mobile",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/collect/add",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/collect/updateUnit",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/config/save",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/dict/dictFlag/path/data/mockputtopost",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/foo/create/mass/from/count",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/input/compare",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/input/cover",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/input/create",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/input/prepare/cover",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/input/prepare/create",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/market/flag/install/or/update",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/module/compare/upload",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/module/output",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/module/output/flag/file",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/module/output/structure",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/mpweixin/media/add/forever",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/mpweixin/menu/add",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/mpweixin/menu/create/to/weixin",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/mpweixin/menu/update/id",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/output/appInfoFlag/select",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/output/flag/select/file",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/output/list",
+        java_war: "",
+        java_action: "",
+        body: None,
+        requires_auth: false,
+    },
+
+    EndpointDef {
+        crate_name: "program_center",
+        method: "POST",
+        rust_path: "/jaxrs/program_center/tokenthreshold/update",
         java_war: "",
         java_action: "",
         body: None,

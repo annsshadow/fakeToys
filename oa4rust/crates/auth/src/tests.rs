@@ -779,6 +779,7 @@ mod tests {
     // --- U6 新增测试用例：LDAP + two_factor 安全验证 ---
 
     #[tokio::test]
+    #[ignore = "flaky: depends on LDAP server availability"]
     async fn test_login_ldap_connection_error_returns_500() {
         use shared::testing::is_db_available;
 

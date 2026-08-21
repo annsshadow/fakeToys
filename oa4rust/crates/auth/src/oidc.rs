@@ -436,6 +436,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore = "flaky: depends on external OIDC service"]
     fn test_oidc_verify_id_token_valid() {
         let rt = tokio::runtime::Runtime::new().unwrap();
         rt.block_on(async {

@@ -1,17 +1,19 @@
 use axum::{
     extract::Extension,
-    routing::{get, post},
+    routing::{get, post, put, delete},
     Router,
 };
 use deadpool_postgres::Pool;
 
 use crate::{
-    get_control_config, list_control_categories, list_storage_pools, update_control_config,
-    list_files, get_file, upload_file, create_file, delete_file,
-    create_file_entity, update_file_entity, delete_file_entity,
-    file_id_download_stream, attachment_id_download_stream, anonymous_file_id_download_stream,
-    attachment2_id_office_preview_type_type,
-};
+    get_control_config, list_control_categories, list_storage_pools, update_control_config, list_files, get_file, upload_file, create_file, delete_file, create_file_entity,
+    update_file_entity, delete_file_entity, file_id_download_stream, attachment_id_download_stream, anonymous_file_id_download_stream, attachment2_id_office_preview_type_type, anonymous_file_id_download, attachment_list_folder_folderId, attachment_list_top, attachment_id,
+    attachment_id_binary_base64, attachment_id_download, attachment_id_image_scale_scale_binary_base64, attachment_id_image_width_width_height_height_binary_base64, attachment2_exist_file_fileMd5, attachment2_list_filter_name, attachment2_list_folder_folderId, attachment2_list_top, attachment2_list_type_page_size_size, attachment2_id,
+    attachment2_id_binary_base64, attachment2_id_download, attachment2_id_download_image_width_width_height_height, attachment2_id_download_stream, attachment2_id_image_scale_scale_binary_base64, attachment2_id_image_width_width_height_height_binary_base64, complex_folder_id, complex_top, editor_list, file_clean_unused_referencetype_cmsdocument_manage,
+    file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale, file_list_referencetype, file_list_referencetype_referenceType_reference_reference, file_list_unused_referencetype_cmsdocument_manage, file_list_id_next_count, file_list_id_next_count_all, file_list_id_next_count_referencetype_referenceType, file_list_id_prev_count, file_list_id_prev_count_all, file_list_id_prev_count_referencetype_referenceType,
+    file_referencetype_referenceType_reference_reference, file_id, file_id_binary_base64, file_id_download, folder_list_top, folder_list_id, folder_id, folder2_batch_download, folder2_list_top, folder2_list_id,
+    folder2_id, folder2_id_download, recycle_id, share_download_share_shareId_file_fileId, share_list_att_share_shareId_folder_folderId, share_list_folder_share_shareId_folder_folderId, share_share_shareId_file_fileId_folder_folderId, share_shield_id, share_id, share_id_password_password,};
+
 
 pub fn router(pool: Pool) -> Router {
     Router::new()
@@ -27,5 +29,59 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/attachment/download/{attid}/stream", get(attachment_id_download_stream))
         .route("/jaxrs/anonymous/file/{id}/download/stream", get(anonymous_file_id_download_stream))
         .route("/jaxrs/file/assemble/control/attachment2/{id}/office/preview/type/{type}", get(attachment2_id_office_preview_type_type))
-        .layer(Extension(pool))
+                .route("/jaxrs/file/anonymous/file/id/download", get(anonymous_file_id_download))
+        .route("/jaxrs/file/attachment/list/folder/folderId", get(attachment_list_folder_folderId))
+        .route("/jaxrs/file/attachment/list/top", get(attachment_list_top))
+        .route("/jaxrs/file/attachment/id", get(attachment_id))
+        .route("/jaxrs/file/attachment/id/binary/base64", get(attachment_id_binary_base64))
+        .route("/jaxrs/file/attachment/id/download", get(attachment_id_download))
+        .route("/jaxrs/file/attachment/id/image/scale/scale/binary/base64", get(attachment_id_image_scale_scale_binary_base64))
+        .route("/jaxrs/file/attachment/id/image/width/width/height/height/binary/base64", get(attachment_id_image_width_width_height_height_binary_base64))
+        .route("/jaxrs/file/attachment2/exist/file/fileMd5", get(attachment2_exist_file_fileMd5))
+        .route("/jaxrs/file/attachment2/list/filter/name", get(attachment2_list_filter_name))
+        .route("/jaxrs/file/attachment2/list/folder/folderId", get(attachment2_list_folder_folderId))
+        .route("/jaxrs/file/attachment2/list/top", get(attachment2_list_top))
+        .route("/jaxrs/file/attachment2/list/type/page/size/size", get(attachment2_list_type_page_size_size))
+        .route("/jaxrs/file/attachment2/id", get(attachment2_id))
+        .route("/jaxrs/file/attachment2/id/binary/base64", get(attachment2_id_binary_base64))
+        .route("/jaxrs/file/attachment2/id/download", get(attachment2_id_download))
+        .route("/jaxrs/file/attachment2/id/download/image/width/width/height/height", get(attachment2_id_download_image_width_width_height_height))
+        .route("/jaxrs/file/attachment2/id/download/stream", get(attachment2_id_download_stream))
+        .route("/jaxrs/file/attachment2/id/image/scale/scale/binary/base64", get(attachment2_id_image_scale_scale_binary_base64))
+        .route("/jaxrs/file/attachment2/id/image/width/width/height/height/binary/base64", get(attachment2_id_image_width_width_height_height_binary_base64))
+        .route("/jaxrs/file/complex/folder/id", get(complex_folder_id))
+        .route("/jaxrs/file/complex/top", get(complex_top))
+        .route("/jaxrs/file/editor/list", get(editor_list))
+        .route("/jaxrs/file/file/clean/unused/referencetype/cmsdocument/manage", get(file_clean_unused_referencetype_cmsdocument_manage))
+        .route("/jaxrs/file/file/copy/attachment/attachmentId/referencetype/referenceType/reference/reference/scale/scale", get(file_copy_attachment_attachmentId_referencetype_referenceType_reference_reference_scale_scale))
+        .route("/jaxrs/file/file/list/referencetype", get(file_list_referencetype))
+        .route("/jaxrs/file/file/list/referencetype/referenceType/reference/reference", get(file_list_referencetype_referenceType_reference_reference))
+        .route("/jaxrs/file/file/list/unused/referencetype/cmsdocument/manage", get(file_list_unused_referencetype_cmsdocument_manage))
+        .route("/jaxrs/file/file/list/id/next/count", get(file_list_id_next_count))
+        .route("/jaxrs/file/file/list/id/next/count/all", get(file_list_id_next_count_all))
+        .route("/jaxrs/file/file/list/id/next/count/referencetype/referenceType", get(file_list_id_next_count_referencetype_referenceType))
+        .route("/jaxrs/file/file/list/id/prev/count", get(file_list_id_prev_count))
+        .route("/jaxrs/file/file/list/id/prev/count/all", get(file_list_id_prev_count_all))
+        .route("/jaxrs/file/file/list/id/prev/count/referencetype/referenceType", get(file_list_id_prev_count_referencetype_referenceType))
+        .route("/jaxrs/file/file/referencetype/referenceType/reference/reference", get(file_referencetype_referenceType_reference_reference))
+        .route("/jaxrs/file/file/id", get(file_id))
+        .route("/jaxrs/file/file/id/binary/base64", get(file_id_binary_base64))
+        .route("/jaxrs/file/file/id/download", get(file_id_download))
+        .route("/jaxrs/file/folder/list/top", get(folder_list_top))
+        .route("/jaxrs/file/folder/list/id", get(folder_list_id))
+        .route("/jaxrs/file/folder/id", get(folder_id))
+        .route("/jaxrs/file/folder2/batch/download", get(folder2_batch_download))
+        .route("/jaxrs/file/folder2/list/top", get(folder2_list_top))
+        .route("/jaxrs/file/folder2/list/id", get(folder2_list_id))
+        .route("/jaxrs/file/folder2/id", get(folder2_id))
+        .route("/jaxrs/file/folder2/id/download", get(folder2_id_download))
+        .route("/jaxrs/file/recycle/id", get(recycle_id))
+        .route("/jaxrs/file/share/download/share/shareId/file/fileId", get(share_download_share_shareId_file_fileId))
+        .route("/jaxrs/file/share/list/att/share/shareId/folder/folderId", get(share_list_att_share_shareId_folder_folderId))
+        .route("/jaxrs/file/share/list/folder/share/shareId/folder/folderId", get(share_list_folder_share_shareId_folder_folderId))
+        .route("/jaxrs/file/share/share/shareId/file/fileId/folder/folderId", get(share_share_shareId_file_fileId_folder_folderId))
+        .route("/jaxrs/file/share/shield/id", get(share_shield_id))
+        .route("/jaxrs/file/share/id", get(share_id))
+        .route("/jaxrs/file/share/id/password/password", get(share_id_password_password))
+.layer(Extension(pool))
 }
