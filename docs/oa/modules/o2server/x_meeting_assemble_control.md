@@ -17,6 +17,12 @@
 - com.x.meeting.assemble.control.factory.MeetingFactory
 - com.x.meeting.assemble.control.factory.RoomFactory
 
+## Key Flows
+
+- 创建/修改会议：`POST /jaxrs/meeting/assemble/control/meeting/create` → `create_meeting`（校验 title/startTime/endTime，uuid v4 生成 id）→ INSERT INTO `x_meeting`（title/content/start_time/end_time/creator）→ 返回新会议 id；`POST .../meeting/save/{id}` → `save_meeting` UPDATE 同表
+- 邀请与应答：`POST .../meeting/{id}/add/invite` → INSERT INTO `x_meeting_invite`（status='wait'）；`POST .../meeting/{id}/accept` → `meeting_id_accept` UPDATE `x_meeting` SET status='accepted'
+- 楼宇与会议室查询：`GET .../building/list` → `building_list` 查询 `x_meeting_building`（count+data JSON，另有 like/pinyin/pinyininitial 变体）；`GET .../room/list` → `room_list` 查询 `x_meeting_room`
+
 ## Dependencies
 
 
@@ -26,6 +32,11 @@
 - x_organization_core_express
 - x_meeting_core_entity
 - x_general_core_entity
+
+**Rust（oa4rust/crates/meeting_assemble_control）：**
+
+- 内部 path 依赖：shared
+- 关键外部依赖：axum、tokio、deadpool-postgres、serde/serde_json、uuid、tower
 
 ## REST Endpoints
 
