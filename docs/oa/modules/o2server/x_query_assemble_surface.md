@@ -35,4 +35,12 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `POST /jaxrs/importmodel/id/{id}/execute`
+- `POST /jaxrs/query/assemble/surface/create`
+- `POST /jaxrs/query/assemble/surface/delete/{id}`
+- `GET /jaxrs/query/assemble/surface/get/{id}`
+- `GET /jaxrs/query/assemble/surface/list/{category}`
+- `GET /jaxrs/query/assemble/surface/preview/{id}`
+- `POST /jaxrs/query/assemble/surface/save/{id}`
+- `GET /jaxrs/queryview/flag/{view}/application/flag/{app}/execute`
+- `GET /jaxrs/queryview/flag/{view}/application/flag/{app}/execute/page/{page}/size/{size}`

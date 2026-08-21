@@ -29,4 +29,5 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/organization/assemble/authentication/identity/{id}`
+- `GET /jaxrs/organization/assemble/authentication/person/{id}/icon`

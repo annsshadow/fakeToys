@@ -28,4 +28,6 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/secret/check`
+- `POST /jaxrs/secret/set`
+- `GET /jaxrs/secret/set/cancel`

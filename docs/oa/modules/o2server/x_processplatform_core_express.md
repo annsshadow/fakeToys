@@ -31,4 +31,9 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/processplatform/task/count/with/person/{id}`
+- `GET /jaxrs/processplatform/task/processing/{id}`
+- `GET /jaxrs/processplatform/work/count/with/person/{id}`
+- `GET /jaxrs/processplatform/work/processing/{id}`
+- `GET /jaxrs/processplatform/work/retract/{id}`
+- `GET /jaxrs/processplatform/work/terminate/{id}`

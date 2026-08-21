@@ -31,4 +31,7 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/query/core/express/cache/status/{queryId}`
+- `POST /jaxrs/query/core/express/cache/{queryId}`
+- `POST /jaxrs/query/core/express/execute`
+- `GET /jaxrs/query/core/express/history/{limit}`

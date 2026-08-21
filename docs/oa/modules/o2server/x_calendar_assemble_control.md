@@ -30,4 +30,7 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/calendar/assemble/control/calendar/detail/{id}`
+- `GET /jaxrs/calendar_assemble_control/get/control/config`
+- `GET /jaxrs/calendar_assemble_control/list/control/calendars`
+- `GET /jaxrs/calendar_assemble_control/update/control/config`

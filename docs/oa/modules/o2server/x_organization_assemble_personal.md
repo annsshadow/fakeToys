@@ -28,4 +28,5 @@ organization assemble personal 模块。
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/organization/assemble/personal/{id}/role/list`
+- `GET /jaxrs/organization/assemble/personal/{id}/setting`

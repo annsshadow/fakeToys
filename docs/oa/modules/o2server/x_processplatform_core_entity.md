@@ -28,4 +28,9 @@
 
 
 
-- *To be populated from Swagger annotations or action JSON.*
+- `GET /jaxrs/process/task/list`
+- `GET /jaxrs/process/task/{id}`
+- `GET /jaxrs/process/ticket/list`
+- `GET /jaxrs/process/work/list`
+- `GET /jaxrs/process/work/{id}`
+- `GET /jaxrs/process/workcompleted/list`

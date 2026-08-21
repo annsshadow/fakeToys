@@ -6,23 +6,24 @@ use axum::{
 use deadpool_postgres::Pool;
 
 use crate::{
-    get_control_config, list_control_sections, update_control_config,
-    document_id_view_count, commend_list_paging, queryview_flag_definition, application_id,
-    document_search,
-    anonymous_document_id_view,
-    data_document_id_array_data, data_document_id_mockdeletetoget, data_document_id_mockputtopost,
-    data_document_id_path0, data_document_id_path0_mockdeletetoget, data_document_id_path0_mockputtopost,
-    data_document_id_path0_path1, data_document_id_path0_path1_mockdeletetoget, data_document_id_path0_path1_mockputtopost,
-    data_document_id_path0_path1_path2, data_document_id_path0_path1_path2_mockdeletetoget, data_document_id_path0_path1_path2_mockputtopost,
-    data_document_id_path0_path1_path2_path3, data_document_id_path0_path1_path2_path3_mockdeletetoget, data_document_id_path0_path1_path2_path3_mockputtopost,
-    data_document_id_path0_path1_path2_path3_path4, data_document_id_path0_path1_path2_path3_path4_mockdeletetoget, data_document_id_path0_path1_path2_path3_path4_mockputtopost,
-    data_document_id_path0_path1_path2_path3_path4_path5, data_document_id_path0_path1_path2_path3_path4_path5_mockdeletetoget, data_document_id_path0_path1_path2_path3_path4_path5_mockputtopost,
-    data_document_id_path0_path1_path2_path3_path4_path5_path6, data_document_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget, data_document_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost,
-    data_document_id_path0_path1_path2_path3_path4_path5_path6_path7, data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget, data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost,
-    fileinfo_id, fileinfo_id_document_documentId, fileinfo_id_mockdeletetoget,
-    anonymous_fileinfo_download_document_id, fileinfo_download_document_id,
-    fileinfo_upload_document_docId,
-};
+    get_control_config, list_control_sections, update_control_config, document_id_view_count, commend_list_paging, queryview_flag_definition, application_id, document_search, anonymous_document_id_view, data_document_id_array_data,
+    data_document_id_mockdeletetoget, data_document_id_mockputtopost, data_document_id_path0, data_document_id_path0_mockdeletetoget, data_document_id_path0_mockputtopost, data_document_id_path0_path1, data_document_id_path0_path1_mockdeletetoget, data_document_id_path0_path1_mockputtopost, data_document_id_path0_path1_path2, data_document_id_path0_path1_path2_mockdeletetoget,
+    data_document_id_path0_path1_path2_mockputtopost, data_document_id_path0_path1_path2_path3, data_document_id_path0_path1_path2_path3_mockdeletetoget, data_document_id_path0_path1_path2_path3_mockputtopost, data_document_id_path0_path1_path2_path3_path4, data_document_id_path0_path1_path2_path3_path4_mockdeletetoget, data_document_id_path0_path1_path2_path3_path4_mockputtopost, data_document_id_path0_path1_path2_path3_path4_path5, data_document_id_path0_path1_path2_path3_path4_path5_mockdeletetoget, data_document_id_path0_path1_path2_path3_path4_path5_mockputtopost,
+    data_document_id_path0_path1_path2_path3_path4_path5_path6, data_document_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget, data_document_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost, data_document_id_path0_path1_path2_path3_path4_path5_path6_path7, data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget, data_document_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost, fileinfo_id, fileinfo_id_document_documentId, fileinfo_id_mockdeletetoget, anonymous_fileinfo_download_document_id,
+    fileinfo_download_document_id, fileinfo_upload_document_docId, anonymous_fileinfo_download_document_id_stream, anonymous_form_id, anonymous_form_v2_id, anonymous_form_v2_id_mobile, anonymous_form_v2_lookup_document_docId, anonymous_form_v2_lookup_document_docId_mobile, anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag, anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_data,
+    anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data, anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_data, anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_data, anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_data, anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_data, anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_data, anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_data, anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data, appinfo_alias_alias, appinfo_appId_icon_size_size,
+    appinfo_erase_app_id, appinfo_erase_app_id_mockdeletetoget, appinfo_get_user_publish_appId, appinfo_id_control, appinfo_id_mockdeletetoget, appinfo_id_permission, categoryinfo_alias_alias, categoryinfo_bind_categoryId_view, categoryinfo_bind_categoryId_view_mockputtopost, categoryinfo_erase_category_id,
+    categoryinfo_erase_category_id_mockdeletetoget, categoryinfo_extContent, categoryinfo_id_control, categoryinfo_id_execute_projection, categoryinfo_id_mockdeletetoget, categoryinfo_id_permission, comment_id_commend, comment_id_mockdeletetoget, comment_id_uncommend, correlation_doc_docId_delete,
+    correlation_update_doc_docId, design_appdict_id_mockdeletetoget, design_appdict_id_mockputtopost, document_cipher_id_permission_read_person_person, document_cipher_id_persist_view_record, document_cipher_publish_content, document_cipher_publish_content_mockputtopost, file_flag_appInfo_appInfoFlag_content, file_flag_appInfo_appInfoFlag_download, file_flag_mockdeletetoget,
+    file_id_content, file_id_download, file_id_mockputtopost, file_id_upload, fileinfo_batch_download_doc_docId_site_site, fileinfo_copy_to_doc_docId, fileinfo_download_document_id_stream, fileinfo_download_transfer_flag_flag, fileinfo_edit_id_doc_docId, fileinfo_edit_id_doc_docId_mockputtopost,
+    fileinfo_id_binary_base64_size, fileinfo_id_doc_docId_change_seqnumber_seqNumber, fileinfo_id_online_info, fileinfo_id_preview_pdf, fileinfo_replace_to_doc_docId, fileinfo_update_document_docId_attachment_id, fileinfo_update_document_docId_attachment_id_callback_callback, fileinfo_update_id_content, fileinfo_upload_doc_docId_save_as_flag, fileinfo_upload_document_docId_callback_callback,
+    fileinfo_upload_with_url, form_formFlag_appinfo_appFlag, form_id_mockdeletetoget, form_id_mockputtopost, form_v2_id_mobile, form_v2_lookup_document_docId, form_v2_lookup_document_docId_mobile, formversion_id, formversion_list_form_formId, output_appInfoFlag_select,
+    output_appInfoFlag_select_mockputtopost, permission_management_refresh_category_categoryId, script_id_mockdeletetoget, script_id_mockputtopost, script_uniqueName_app_flag, script_uniqueName_app_flag_imported, scriptversion_id, scriptversion_list_script_scriptId, surface_appdict_appDictFlag_appInfo_appInfoFlag, surface_appdict_appDictFlag_appInfo_appInfoFlag_data,
+    surface_appdict_appDictFlag_appInfo_appInfoFlag_mockputtopost, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data_mockdeletetoget, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_data, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_data_mockdeletetoget, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_data, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_data_mockdeletetoget, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_data_mockputtopost, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_data, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_data_mockdeletetoget,
+    surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_data_mockputtopost, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_data, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_data_mockdeletetoget, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_data_mockputtopost, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_data, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_data_mockdeletetoget, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_data_mockputtopost, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_data, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_data_mockdeletetoget, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_data_mockputtopost,
+    surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockdeletetoget, surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockputtopost, templateform_id, templateform_id_mockdeletetoget, view_id_mockdeletetoget, view_id_mockputtopost, viewcategory_id_mockdeletetoget, viewfieldconfig_id_mockdeletetoget, viewfieldconfig_id_mockputtopost,
+    viewrecord_document_docId_has_view,};
+
 
 pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
     Router::new()
@@ -68,7 +69,126 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/fileinfo/{id}", get(fileinfo_id))
         .route("/jaxrs/fileinfo/{id}/document/{docId}", get(fileinfo_id_document_documentId))
         .route("/jaxrs/fileinfo/{id}/mockdeletetoget", get(fileinfo_id_mockdeletetoget))
-        .layer(Extension(pool))
+                .route("/jaxrs/cms/assemble/control/anonymous/fileinfo/download/document/stream/{id}", get(anonymous_fileinfo_download_document_id_stream))
+        .route("/jaxrs/cms/assemble/control/anonymous/form/{id}", get(anonymous_form_id))
+        .route("/jaxrs/cms/assemble/control/anonymous/form/v2/{id}", get(anonymous_form_v2_id))
+        .route("/jaxrs/cms/assemble/control/anonymous/form/v2/mobile/{id}", get(anonymous_form_v2_id_mobile))
+        .route("/jaxrs/cms/assemble/control/anonymous/form/v2/lookup/document/{docId}", get(anonymous_form_v2_lookup_document_docId))
+        .route("/jaxrs/cms/assemble/control/anonymous/form/v2/lookup/document/mobile/{docId}", get(anonymous_form_v2_lookup_document_docId_mobile))
+        .route("/jaxrs/cms/assemble/control/anonymous/surface/appdict/{appDictFlag}/{appInfo}/{appInfoFlag}", get(anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag))
+        .route("/jaxrs/cms/assemble/control/anonymous/surface/appdict/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_data))
+        .route("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data))
+        .route("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_data))
+        .route("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/path2/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_data))
+        .route("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/path2/path3/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_data))
+        .route("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/path2/path3/path4/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_data))
+        .route("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/path2/path3/path4/path5/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_data))
+        .route("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/path2/path3/path4/path5/path6/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_data))
+        .route("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/path2/path3/path4/path5/path6/path7/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(anonymous_surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data))
+        .route("/jaxrs/cms/assemble/control/appinfo/alias/alias", get(appinfo_alias_alias))
+        .route("/jaxrs/cms/assemble/control/appinfo/icon/{appId}/{size}/{size}", get(appinfo_appId_icon_size_size))
+        .route("/jaxrs/cms/assemble/control/appinfo/erase/app/{id}", post(appinfo_erase_app_id))
+        .route("/jaxrs/cms/assemble/control/appinfo/erase/app/mockdeletetoget/{id}", post(appinfo_erase_app_id_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/appinfo/get/user/publish/{appId}", post(appinfo_get_user_publish_appId))
+        .route("/jaxrs/cms/assemble/control/appinfo/control/{id}", get(appinfo_id_control))
+        .route("/jaxrs/cms/assemble/control/appinfo/mockdeletetoget/{id}", post(appinfo_id_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/appinfo/permission/{id}", get(appinfo_id_permission))
+        .route("/jaxrs/cms/assemble/control/categoryinfo/alias/alias", get(categoryinfo_alias_alias))
+        .route("/jaxrs/cms/assemble/control/categoryinfo/bind/view/{categoryId}", post(categoryinfo_bind_categoryId_view))
+        .route("/jaxrs/cms/assemble/control/categoryinfo/bind/view/mockputtopost/{categoryId}", post(categoryinfo_bind_categoryId_view_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/categoryinfo/erase/{category}/{id}", post(categoryinfo_erase_category_id))
+        .route("/jaxrs/cms/assemble/control/categoryinfo/erase/mockdeletetoget/{category}/{id}", post(categoryinfo_erase_category_id_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/categoryinfo/{extContent}", get(categoryinfo_extContent))
+        .route("/jaxrs/cms/assemble/control/categoryinfo/control/{id}", get(categoryinfo_id_control))
+        .route("/jaxrs/cms/assemble/control/categoryinfo/execute/projection/{id}", get(categoryinfo_id_execute_projection))
+        .route("/jaxrs/cms/assemble/control/categoryinfo/mockdeletetoget/{id}", post(categoryinfo_id_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/categoryinfo/permission/{id}", get(categoryinfo_id_permission))
+        .route("/jaxrs/cms/assemble/control/comment/commend/{id}", get(comment_id_commend))
+        .route("/jaxrs/cms/assemble/control/comment/mockdeletetoget/{id}", post(comment_id_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/comment/uncommend/{id}", get(comment_id_uncommend))
+        .route("/jaxrs/cms/assemble/control/correlation/doc/delete/{docId}", post(correlation_doc_docId_delete))
+        .route("/jaxrs/cms/assemble/control/correlation/update/doc/{docId}", post(correlation_update_doc_docId))
+        .route("/jaxrs/cms/assemble/control/design/appdict/mockdeletetoget/{id}", post(design_appdict_id_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/design/appdict/mockputtopost/{id}", get(design_appdict_id_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/document/cipher/permission/read/person/person/{id}", get(document_cipher_id_permission_read_person_person))
+        .route("/jaxrs/cms/assemble/control/document/cipher/persist/view/record/{id}", get(document_cipher_id_persist_view_record))
+        .route("/jaxrs/cms/assemble/control/document/cipher/publish/content", post(document_cipher_publish_content))
+        .route("/jaxrs/cms/assemble/control/document/cipher/publish/content/mockputtopost", post(document_cipher_publish_content_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/file/content/{flag}/{appInfo}/{appInfoFlag}", get(file_flag_appInfo_appInfoFlag_content))
+        .route("/jaxrs/cms/assemble/control/file/download/{flag}/{appInfo}/{appInfoFlag}", get(file_flag_appInfo_appInfoFlag_download))
+        .route("/jaxrs/cms/assemble/control/file/mockdeletetoget/{flag}", post(file_flag_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/file/content/{id}", get(file_id_content))
+        .route("/jaxrs/cms/assemble/control/file/download/{id}", get(file_id_download))
+        .route("/jaxrs/cms/assemble/control/file/mockputtopost/{id}", get(file_id_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/file/upload/{id}", post(file_id_upload))
+        .route("/jaxrs/cms/assemble/control/fileinfo/batch/download/doc/site/site/{docId}", get(fileinfo_batch_download_doc_docId_site_site))
+        .route("/jaxrs/cms/assemble/control/fileinfo/copy/to/doc/{docId}", get(fileinfo_copy_to_doc_docId))
+        .route("/jaxrs/cms/assemble/control/fileinfo/download/document/stream/{id}", get(fileinfo_download_document_id_stream))
+        .route("/jaxrs/cms/assemble/control/fileinfo/download/transfer/{flag}/{flag}", get(fileinfo_download_transfer_flag_flag))
+        .route("/jaxrs/cms/assemble/control/fileinfo/edit/doc/{id}/{docId}", get(fileinfo_edit_id_doc_docId))
+        .route("/jaxrs/cms/assemble/control/fileinfo/edit/doc/mockputtopost/{id}/{docId}", get(fileinfo_edit_id_doc_docId_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/fileinfo/binary/base64/{id}/{size}", get(fileinfo_id_binary_base64_size))
+        .route("/jaxrs/cms/assemble/control/fileinfo/doc/change/seqnumber/{id}/{docId}/{seqNumber}", get(fileinfo_id_doc_docId_change_seqnumber_seqNumber))
+        .route("/jaxrs/cms/assemble/control/fileinfo/online/info/{id}", get(fileinfo_id_online_info))
+        .route("/jaxrs/cms/assemble/control/fileinfo/preview/pdf/{id}", get(fileinfo_id_preview_pdf))
+        .route("/jaxrs/cms/assemble/control/fileinfo/replace/to/doc/{docId}", get(fileinfo_replace_to_doc_docId))
+        .route("/jaxrs/cms/assemble/control/fileinfo/update/document/attachment/{docId}/{id}", post(fileinfo_update_document_docId_attachment_id))
+        .route("/jaxrs/cms/assemble/control/fileinfo/update/document/attachment/callback/callback/{docId}/{id}", post(fileinfo_update_document_docId_attachment_id_callback_callback))
+        .route("/jaxrs/cms/assemble/control/fileinfo/update/content/{id}", post(fileinfo_update_id_content))
+        .route("/jaxrs/cms/assemble/control/fileinfo/upload/doc/save/as/{docId}/{flag}", post(fileinfo_upload_doc_docId_save_as_flag))
+        .route("/jaxrs/cms/assemble/control/fileinfo/upload/document/callback/callback/{docId}", post(fileinfo_upload_document_docId_callback_callback))
+        .route("/jaxrs/cms/assemble/control/fileinfo/upload/with/url", post(fileinfo_upload_with_url))
+        .route("/jaxrs/cms/assemble/control/form/appinfo/{formFlag}/{appFlag}", get(form_formFlag_appinfo_appFlag))
+        .route("/jaxrs/cms/assemble/control/form/mockdeletetoget/{id}", post(form_id_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/form/mockputtopost/{id}", get(form_id_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/form/v2/mobile/{id}", get(form_v2_id_mobile))
+        .route("/jaxrs/cms/assemble/control/form/v2/lookup/document/{docId}", get(form_v2_lookup_document_docId))
+        .route("/jaxrs/cms/assemble/control/form/v2/lookup/document/mobile/{docId}", get(form_v2_lookup_document_docId_mobile))
+        .route("/jaxrs/cms/assemble/control/formversion/{id}", get(formversion_id))
+        .route("/jaxrs/cms/assemble/control/formversion/list/form/{formId}", get(formversion_list_form_formId))
+        .route("/jaxrs/cms/assemble/control/output/select/{appInfoFlag}", get(output_appInfoFlag_select))
+        .route("/jaxrs/cms/assemble/control/output/select/mockputtopost/{appInfoFlag}", get(output_appInfoFlag_select_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/permission/management/refresh/{category}/{categoryId}", get(permission_management_refresh_category_categoryId))
+        .route("/jaxrs/cms/assemble/control/script/mockdeletetoget/{id}", post(script_id_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/script/mockputtopost/{id}", get(script_id_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/script/app/{uniqueName}/{flag}", get(script_uniqueName_app_flag))
+        .route("/jaxrs/cms/assemble/control/script/app/imported/{uniqueName}/{flag}", get(script_uniqueName_app_flag_imported))
+        .route("/jaxrs/cms/assemble/control/scriptversion/{id}", get(scriptversion_id))
+        .route("/jaxrs/cms/assemble/control/scriptversion/list/script/{scriptId}", get(scriptversion_list_script_scriptId))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_data))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/mockputtopost/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/data/mockdeletetoget/{appDictFlag}/{appInfo}/{appInfoFlag}", post(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_data_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_data))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/data/mockdeletetoget/{appDictFlag}/{appInfo}/{appInfoFlag}", post(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_data_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_data))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/data/mockdeletetoget/{appDictFlag}/{appInfo}/{appInfoFlag}", post(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_data_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/data/mockputtopost/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_data_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_data))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/data/mockdeletetoget/{appDictFlag}/{appInfo}/{appInfoFlag}", post(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_data_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/data/mockputtopost/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_data_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_data))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/data/mockdeletetoget/{appDictFlag}/{appInfo}/{appInfoFlag}", post(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_data_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/data/mockputtopost/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_data_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_data))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/data/mockdeletetoget/{appDictFlag}/{appInfo}/{appInfoFlag}", post(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_data_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/data/mockputtopost/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_data_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/path6/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_data))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/path6/data/mockdeletetoget/{appDictFlag}/{appInfo}/{appInfoFlag}", post(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_data_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/path6/data/mockputtopost/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_data_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/path6/path7/data/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/path6/path7/data/mockdeletetoget/{appDictFlag}/{appInfo}/{appInfoFlag}", post(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/path6/path7/data/mockputtopost/{appDictFlag}/{appInfo}/{appInfoFlag}", get(surface_appdict_appDictFlag_appInfo_appInfoFlag_path0_path1_path2_path3_path4_path5_path6_path7_data_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/templateform/{id}", get(templateform_id))
+        .route("/jaxrs/cms/assemble/control/templateform/mockdeletetoget/{id}", post(templateform_id_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/view/mockdeletetoget/{id}", post(view_id_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/view/mockputtopost/{id}", get(view_id_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/viewcategory/mockdeletetoget/{id}", post(viewcategory_id_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/viewfieldconfig/mockdeletetoget/{id}", post(viewfieldconfig_id_mockdeletetoget))
+        .route("/jaxrs/cms/assemble/control/viewfieldconfig/mockputtopost/{id}", get(viewfieldconfig_id_mockputtopost))
+        .route("/jaxrs/cms/assemble/control/viewrecord/document/has/view/{docId}", get(viewrecord_document_docId_has_view))
+.layer(Extension(pool))
 }
 
 pub fn cms_assemble_control_router(pool: Pool) -> Router {
