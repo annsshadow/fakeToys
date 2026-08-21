@@ -17,6 +17,12 @@ CMS 管控模块，处理 CMS 栏目、文章、字典等内容的配置和管�
 - com.x.cms.assemble.control.ExceptionWrapInConvert
 - com.x.cms.assemble.control.MessageFactory
 
+## Key Flows
+
+- 全文检索：`GET /jaxrs/cms_assemble_control/document/search?q=` → `search::search_documents_smart`（Tantivy 本地索引优先、PG to_tsvector 静默回退）→ 返回带 rank 的文档列表
+- 应用与栏目列表：`GET /jaxrs/appinfo/list/*`、`/jaxrs/categoryinfo/list/*` 族 → `list_from_table_filtered` 条件查询 `x_cms_appinfo`/`x_cms_categoryinfo`（deleted_at IS NULL）→ 返回 count+data JSON
+- 文档数据与附件：`POST /jaxrs/fileinfo/upload/document/{docId}` → INSERT INTO `x_cms_fileinfo` RETURNING *；文档数据读写查询 `x_cms_data_document` 与 `x_cms_data_document_field`，下载走 `/jaxrs/fileinfo/download/document/stream/{id}`
+
 ## Dependencies
 
 
@@ -34,6 +40,11 @@ CMS 管控模块，处理 CMS 栏目、文章、字典等内容的配置和管�
 - x_program_center_core_entity
 - x_correlation_core_entity
 - x_correlation_core_express
+
+**Rust（oa4rust/crates/cms_assemble_control）：**
+
+- 内部 path 依赖：shared、search
+- 关键外部依赖：axum、deadpool-postgres、tower
 
 ## REST Endpoints
 
