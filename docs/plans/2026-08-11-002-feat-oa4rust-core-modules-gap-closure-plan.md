@@ -489,3 +489,28 @@ oa4rust 已完成 86 个 crate 的路由挂载，但核心业务模块存在大�
 - **Related completed plan:** [docs/plans/2026-08-11-001-feat-oa4rust-full-gap-closure-plan.md](docs/plans/2026-08-11-001-feat-oa4rust-full-gap-closure-plan.md)（status: completed）
 - **Related code:** `crates/processplatform_service_processing/`, `crates/processplatform_assemble_designer/`, `crates/file_assemble_control/`, `crates/bbs_assemble_control/`, `crates/organization_assemble_control/`, `crates/query_core_express/`, `crates/console/`, `crates/cms_express/`
 - **Java reference:** `oa/o2server/x_processplatform_service_processing/`, `oa/o2server/x_file_assemble_control/`, `oa/o2server/x_bbs_assemble_control/`, `oa/o2server/x_organization_assemble_control/`
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：completed
+
+### 已验证完成
+
+- U1/U3 流程引擎与组织控制 schema 创建：migrations 目录中对应建表脚本在档（含 024 系列）
+- U2 BBS 表名修复、U4 文件管理端点注册与真实化、U5 流程工单/任务操作补全、U6 流程设计器核心管理补全、U7 BBS 模块真实化、U8 组织控制模块真实化：相关 crate（processplatform_service_processing / assemble_designer / file_assemble_control / bbs_assemble_control / organization_assemble_control）均存在且配有 tests_generated.rs
+- U9 质量/安全修复：query_core_express、console、cms_express 均在档
+- Deferred 完成：多级递归组织导航（由 2026-08-11-004 U3 落地）
+
+### 无法验证
+
+- Deferred「processplatform_assemble_bam 模块补全（27 路由已标记 done，待验证）」：实测 `crates/processplatform_assemble_bam/src/*.rs` 仅 5 处 `.route(` 注册，与"27 路由"标称不符，无法证实
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+- Deferred「LDAP 用户自动同步和增量更新」：ldap crate 仅 lib.rs + tests，未见同步模块
+- Deferred「文件实际物理存储后端（文件系统/对象存储）」
+- Deferred「Office 文档预览的完整 HTML 渲染引擎」：基础 HTML 预览已落地（preview crate），xlsx/pptx 等格式仍缺
+- Deferred「BBS 图片附件的完整文件存储」
+- Deferred「SQLx 完全移除」

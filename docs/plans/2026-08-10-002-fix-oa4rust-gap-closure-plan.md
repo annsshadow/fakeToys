@@ -309,3 +309,24 @@ src/
 - **Related code:** `crates/shared/src/db.rs`, `crates/program_center_core_entity/src/lib.rs`, `scripts/gen_openapi_paths.py`, `crates/openapi/src/lib.rs`
 - **Related solutions:** `docs/solutions/architecture-patterns/seaorm-dual-pool-coexistence.md`, `docs/solutions/security-issues/idor-vulnerability-write-handlers.md`, `docs/solutions/best-practices/crud-write-operations-pattern.md`
 - **Related scripts:** `scripts/extract_endpoints.py`, `scripts/gen_mcp_tools.py`
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：completed
+
+### 已验证完成
+
+- U2 OpenAPI 路径自动生成：`scripts/gen_openapi_paths.py` + `crates/openapi/src/lib.rs` 在档
+- U3 program_center_core_entity 模块拆分：`src/handlers/` 下 application/script/invoke/agent/structure 子模块实测存在
+- Deferred 完成：模块拆分后性能基准测试（`tests/perf_baseline.rs` 在档）；电子签名功能 R16（`crates/signature/`）
+
+### 无法验证
+
+- U1 DB 连接池超时保护：`crates/shared/src/db.rs` 在档，但全 crates 未检索到显式池超时配置项，具体实现形态无法证实
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+- Deferred「DB 池超时的 multi-instance 场景（分布式限流）」
+- Deferred「OpenAPI securitySchemes（JWT/OAuth 安全描述）」：实测 openapi 源码 0 处 securitySchemes
