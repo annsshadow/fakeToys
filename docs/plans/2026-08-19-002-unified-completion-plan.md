@@ -1,3 +1,11 @@
+---
+title: OA4Rust 全面收尾与生产就绪计划
+type: plan
+status: active
+date: 2026-08-19
+origin: docs/plans/2026-08-13-003-oa4rust-completion-plan.md
+---
+
 # OA4Rust 全面收尾与生产就绪计划
 
 > 统一承接 `docs/plans/2026-08-13-003-oa4rust-completion-plan.md` 与 `docs/plans/2026-08-19-001-fix-close-all-blocking-gaps-plan.md`，将两份计划中未完成项、测试缺口、生产就绪项、o2server 缺失功能整合为可执行的新计划。
@@ -256,3 +264,32 @@
 1. **立即**：创建 `docs/plans/2026-08-19-002-unified-completion-plan.md`（本计划）
 2. **按优先级**：从 Phase A 开始执行，先修复测试基线
 3. **每完成一个 Phase**：更新本计划的状态标记，记录实际耗时与偏差
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：active（补建 frontmatter；DoD 第 2 条未完全达成）
+
+### 已验证完成
+
+- U-B2 Redis 会话存储生产默认：提交 7710d8af（phase-b）
+- U-B3 MySQL 集成测试跑通：提交 004e02d9、d972e010
+- U-C1 IM 实时消息端点：提交 d972e010（implement IM endpoints）
+- U-C2 PDF 签章完整链路：提交 ae911482（PDF cert chain verification）
+- U-C3 captcha/sms/jpush/AI 链路：提交 ae911482（jpush push + AI SSE streaming + SMS gateway）
+- U-A2 parity 失败修复：已由 phase-a 系列提交处理（d83a80e5，82 个文件），最终失败数未在静态审计中实测
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+- U-A1 Value::Null 归零：实测仍残留 15 处（验收标准为 0）
+- U-A3 CMS `Value::Bool(true)` stub 清零：实测仍残留 17 处（原 96）
+- U-B1 Tantivy 全文检索集成：全仓 0 处 tantivy 引用，search crate 仍为 PG to_tsvector（6 处），网络阻塞未解除
+
+### DoD 达成度
+
+- 测试通过率 ≥99%：静态审计不运行测试，以提交 314c7a75"清零全部剩余测试失败"为旁证，未实测
+- Value::Null 归零：未达成（15 残留）
+- 双库集成测试：已达成（PG + MySQL 提交在档）
+- 生产基础设施：Redis ✓ / Tantivy ✗ / 性能基线文档 ✓
+- IM + PDF 签章：已达成
