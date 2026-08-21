@@ -42,3 +42,8 @@ mod tests;
 #[cfg(test)]
 mod tests_generated;
 
+#[cfg(test)]
+pub fn test_router(_pool: deadpool_postgres::Pool) -> axum::Router {
+    crate::program_center_mock_router(sea_orm::DatabaseConnection::default())
+}
+
