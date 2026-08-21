@@ -1,22 +1,22 @@
-﻿## DAX 椹卞姩鎿嶄綔
+﻿## DAX 驱动操作
 
 
-`Direct Access Device` 椹卞姩鏈€鍒濊璁＄敤浜庝负绫诲唴瀛樺潡璁惧鎻愪緵绫诲唴瀛樼殑璁块棶鏈哄埗銆?瀹冭鎵╁睍浠ユ敮鎸?CXL 鍐呭瓨璁惧锛屽悗鑰呮彁渚涚敤鎴烽厤缃殑鍐呭瓨璁惧銆?
-CXL 瀛愮郴缁熶緷璧?DAX 瀛愮郴缁熸潵瀹炵幇浠ヤ笅涔嬩竴锛?
-- 閫氳繃 `/dev/daxN.Y` 鐢熸垚闈㈠悜鐢ㄦ埛绌洪棿鐨勬枃浠跺紡鎺ュ彛锛屾垨
-- 璋冪敤 memory-hotplug 鎺ュ彛灏?CXL 鍐呭瓨鍔犲叆椤靛垎閰嶅櫒銆?
-DAX 瀛愮郴缁熼€氳繃 `cxl_dax_region` 椹卞姩鏆撮湶姝よ兘鍔涖€俙dax_region` 鎻愪緵 CXL
-`memory_region` 涓?`DAX Device` 涔嬮棿鐨勮浆鎹€?
-## DAX 璁惧
+`Direct Access Device` 驱动最初设计用于为类内存块设备提供类内存的访问机制它被扩展以支CXL 内存设备，后者提供用户配置的内存设备
+CXL 子系统依DAX 子系统来实现以下之一
+- 通过 `/dev/daxN.Y` 生成面向用户空间的文件式接口，或
+- 调用 memory-hotplug 接口CXL 内存加入页分配器
+DAX 子系统通过 `cxl_dax_region` 驱动暴露此能力。`dax_region` 提供 CXL
+`memory_region` `DAX Device` 之间的转换
+## DAX 设备
 
 
-`DAX Device` 鏄湪 `/dev/daxN.Y` 涓毚闇茬殑鏂囦欢寮忔帴鍙ｃ€傞€氳繃 DAX 璁惧鏆撮湶鐨勫唴瀛?鍖哄煙鍙敱鐢ㄦ埛绌洪棿杞欢閫氳繃 `mmap()` 绯荤粺璋冪敤璁块棶銆傜粨鏋滄槸鍦ㄤ换鍔＄殑椤佃〃涓洿鎺?鏄犲皠鍒?CXL 瀹归噺銆?
-甯屾湜鎵嬪姩澶勭悊 CXL 鍐呭瓨鍒嗛厤鐨勭敤鎴峰簲浣跨敤姝ゆ帴鍙ｃ€?
-## kmem 杞崲
+`DAX Device` 是在 `/dev/daxN.Y` 中暴露的文件式接口。通过 DAX 设备暴露的内区域可由用户空间软件通过 `mmap()` 系统调用访问。结果是在任务的页表中直映射CXL 容量
+希望手动处理 CXL 内存分配的用户应使用此接口
+## kmem 转换
 
 
-`dax_kmem` 椹卞姩灏?`DAX Device` 杞崲涓虹敱 `kernel/memory-hotplug.c` 绠＄悊鐨勪竴
-绯诲垪 `hotplug memory blocks`銆傛瀹归噺灏嗗湪鐢ㄦ埛閫夋嫨鐨勫唴瀛樺尯涓毚闇茬粰鍐呮牳椤靛垎閰嶅櫒銆?
-`memmap_on_memory` 璁剧疆锛堝叏灞€涓?DAX 璁惧鏈湴锛夊喅瀹氫簡鍐呮牳灏嗕粠浣曞鍒嗛厤姝ゅ唴瀛樼殑
-`struct folio` 鎻忚堪绗︺€傚鏋滆缃簡 `memmap_on_memory`锛屽唴瀛樼儹鎻掓嫈灏嗛鐣欎竴閮ㄥ垎
-鍐呭瓨鍧楀閲忔潵鍒嗛厤 folio銆傚鏋滄湭璁剧疆锛屽唴瀛樺皢閫氳繃姝ｅ父鐨?`GFP_KERNEL` 鍒嗛厤鈥斺€斿洜姝?寰堝彲鑳戒細钀藉埌鎵ц鐑彃鎷旀搷浣滅殑 CPU 鐨勬湰鍦?NUMA 鑺傜偣涓娿€?
+`dax_kmem` 驱动`DAX Device` 转换为由 `kernel/memory-hotplug.c` 管理的一
+系列 `hotplug memory blocks`。此容量将在用户选择的内存区中暴露给内核页分配器
+`memmap_on_memory` 设置（全局DAX 设备本地）决定了内核将从何处分配此内存的
+`struct folio` 描述符。如果设置了 `memmap_on_memory`，内存热插拔将预留一部分
+内存块容量来分配 folio。如果未设置，内存将通过正常`GFP_KERNEL` 分配——因很可能会落到执行热插拔操作的 CPU 的本NUMA 节点上

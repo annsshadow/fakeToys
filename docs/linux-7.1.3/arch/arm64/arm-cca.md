@@ -1,25 +1,25 @@
 ﻿
-## Arm 鏈哄瘑璁＄畻鏋舵瀯锛圕onfidential Compute Architecture锛?
+## Arm 机密计算架构（Confidential Compute Architecture
 
-鏀寔 Realm Management Extension锛圧ME锛夌殑 Arm 绯荤粺鍖呭惈纭欢锛屽厑璁镐互鏌愮鏂瑰紡杩愯 VM 瀹㈡埛鏈猴紝浠庤€屼繚鎶?瀹㈡埛鏈虹殑浠ｇ爜涓庢暟鎹厤鍙?hypervisor 鐨勪镜瀹炽€傚畠灏嗘棫鐨勨€滀袱涓笘鐣屸€濇ā鍨嬶紙Normal 涓?Secure World锛夋墿灞曚负
-鍥涗釜涓栫晫锛歂ormal銆丼ecure銆丷oot 涓?Realm銆侺inux 涔熷彲浠ヤ綔涓哄鎴锋満杩愯鍦?Realm 涓栫晫涓繍琛岀殑鐩戣鍣紙monitor锛?涔嬩笅銆?
-杩愯鍦?Realm 涓栫晫涓殑鐩戣鍣ㄨ绉颁负 Realm Management Monitor锛圧MM锛夛紝瀹炵幇浜?Realm Management Monitor
-瑙勮寖[^1^]銆傝鐩戣鍣ㄦ湁鐐瑰儚 hypervisor锛堜緥濡傚畠杩愯鍦?EL2锛屽苟绠＄悊杩愯鍦?Realm 涓栫晫涓殑瀹㈡埛鏈虹殑 stage 2
-椤佃〃绛夛級锛屼絾澶ч儴鍒嗘帶鍒舵潈鐢辫繍琛屽湪 Normal World 涓殑 hypervisor 鎺屾彙銆侼ormal World 鐨?hypervisor 浣跨敤
-RMM 瑙勮寖瀹氫箟鐨?Realm Management Interface锛圧MI锛夋潵璇锋眰 RMM 鎵ц鎿嶄綔锛堜緥濡傛槧灏勫唴瀛樻垨鎵ц涓€涓?vCPU锛夈€?
-RMM 涓哄鎴锋満瀹氫箟浜嗕竴涓幆澧冿紝鍏朵腑鍦板潃绌洪棿锛圛PA锛夎涓€鍒嗕负浜屻€備笅鍗婇儴鍒嗘槸鍙椾繚鎶ょ殑鈥斺€旀槧灏勫埌姝ゅ崐閮ㄥ垎鐨勪换浣曞唴瀛?閮芥棤娉曡 Normal World 鐪嬪埌锛屼笖 RMM 闄愬埗 Normal World 瀵规鍐呭瓨鍙墽琛岀殑鎿嶄綔锛堜緥濡傦紝鏈粡瀹㈡埛鏈洪厤鍚堬紝Normal World
-鏃犳硶鏇挎崲姝ゅ尯鍩熷唴鐨勯〉锛夈€備笂鍗婇儴鍒嗘槸鍏变韩鐨勶紝Normal World 鍙互鑷敱鍦版洿鏀规鍖哄煙鍐呯殑椤碉紝骞惰兘澶熷湪姝ゅ尯鍩熶腑妯℃嫙
-MMIO 璁惧銆?
-杩愯鍦?Realm 涓殑瀹㈡埛鏈轰篃鍙互閫氳繃 Realm Services Interface锛圧SI锛変笌 RMM 閫氫俊锛屼互璇锋眰鏇存敼鍏剁幆澧冩垨瀵瑰叾
-鐜杩涜璇佹槑锛坅ttestation锛夈€傜壒鍒湴锛屽畠鍙互璇锋眰灏嗗彈淇濇姢鍦板潃绌洪棿鐨勬煇浜涘尯鍩熷湪鈥淩AM鈥濅笌鈥淓MPTY鈥濅箣闂磋浆鎹紙浠讳竴鏂瑰悜锛夈€?杩欏厑璁?Realm 瀹㈡埛鏈轰氦鍑哄唴瀛樹互褰掕繕缁?Normal World锛屾垨鍚?Normal World 璇锋眰鏂板唴瀛樸€傚鏋滄病鏈?Realm 瀹㈡埛鏈虹殑鏄惧紡璇锋眰锛?RMM 浼氶樆姝?Normal World 杩涜杩欎簺鏇存敼銆?
-### Linux 浣滀负 Realm 瀹㈡埛鏈?
+支持 Realm Management Extension（RME）的 Arm 系统包含硬件，允许以某种方式运行 VM 客户机，从而保客户机的代码与数据免hypervisor 的侵害。它将旧的“两个世界”模型（Normal Secure World）扩展为
+四个世界：Normal、Secure、Root Realm。Linux 也可以作为客户机运行Realm 世界中运行的监视器（monitor之下
+运行Realm 世界中的监视器被称为 Realm Management Monitor（RMM），实现Realm Management Monitor
+规范[^1^]。该监视器有点像 hypervisor（例如它运行EL2，并管理运行Realm 世界中的客户机的 stage 2
+页表等），但大部分控制权由运行在 Normal World 中的 hypervisor 掌握。Normal World hypervisor 使用
+RMM 规范定义Realm Management Interface（RMI）来请求 RMM 执行操作（例如映射内存或执行一vCPU）
+RMM 为客户机定义了一个环境，其中地址空间（IPA）被一分为二。下半部分是受保护的——映射到此半部分的任何内都无法被 Normal World 看到，且 RMM 限制 Normal World 对此内存可执行的操作（例如，未经客户机配合，Normal World
+无法替换此区域内的页）。上半部分是共享的，Normal World 可以自由地更改此区域内的页，并能够在此区域中模拟
+MMIO 设备
+运行Realm 中的客户机也可以通过 Realm Services Interface（RSI）与 RMM 通信，以请求更改其环境或对其
+环境进行证明（attestation）。特别地，它可以请求将受保护地址空间的某些区域在“RAM”与“EMPTY”之间转换（任一方向）这允Realm 客户机交出内存以归还Normal World，或Normal World 请求新内存。如果没Realm 客户机的显式请求RMM 会阻Normal World 进行这些更改
+### Linux 作为 Realm 客户
 
-瑕佸湪 Realm 涓皢 Linux 浣滀负瀹㈡埛鏈鸿繍琛岋紝浠ヤ笅鍐呭蹇呴』鐢?VMM 鎴栧湪 Linux 涔嬪墠杩愯浜?Realm 涓殑 `boot loader` 鎻愪緵锛?
- - 鎻忚堪缁?Linux 鐨勬墍鏈夊彈淇濇姢 RAM锛堥€氳繃 DT 鎴?ACPI锛夊湪绉讳氦缁?Linux 涔嬪墠蹇呴』鏍囪涓?RIPAS RAM銆?
- - MMIO 璁惧蹇呴』鏈淇濇姢锛堜緥濡傜敱 Normal World 妯℃嫙锛夋垨鏍囪涓?RIPAS DEV銆?
- - 鐢?Normal World 妯℃嫙骞跺湪鍚姩鏃╂湡锛堢壒鍒槸 earlycon锛変娇鐢ㄧ殑 MMIO 璁惧蹇呴』鎸囧畾鍦?IPA 鐨勪笂鍗婇儴鍒嗐€傚浜?earlycon锛?   杩欏彲浠ラ€氳繃鍦ㄥ懡浠よ涓婃寚瀹氬湴鍧€鏉ュ畬鎴愶紝渚嬪 IPA 澶у皬涓?33 浣嶃€佽妯℃嫙 UART 鐨勫熀鍦板潃涓?0x1000000锛?   `earlycon=uart,mmio,0x101000000`
+要在 Realm 中将 Linux 作为客户机运行，以下内容必须VMM 或在 Linux 之前运行Realm 中的 `boot loader` 提供
+ - 描述Linux 的所有受保护 RAM（通过 DT ACPI）在移交Linux 之前必须标记RIPAS RAM
+ - MMIO 设备必须未被保护（例如由 Normal World 模拟）或标记RIPAS DEV
+ - Normal World 模拟并在启动早期（特别是 earlycon）使用的 MMIO 设备必须指定IPA 的上半部分。对earlycon   这可以通过在命令行上指定地址来完成，例如 IPA 大小33 位、被模拟 UART 的基地址0x1000000   `earlycon=uart,mmio,0x101000000`
 
- - Linux 灏嗕娇鐢ㄥ弽寮圭紦鍐插尯涓庢湭鍙椾繚鎶ょ殑璁惧閫氫俊銆傚畠浼氬皢涓€浜涘彈淇濇姢鍐呭瓨杞崲涓?RIPAS EMPTY锛屽苟鏈熸湜鑳藉鍦ㄧ浉鍚岀殑 IPA 鍦板潃銆?   浣嗘渶楂樻湁鏁?IPA 浣嶇疆浣嶇殑鎯呭喌涓嬭闂湭鍙椾繚鎶ょ殑椤点€傞鏈熸槸 VMM 浼氫粠鍙椾繚鎶ゆ槧灏勪腑绉婚櫎鐗╃悊椤碉紝骞跺皢杩欎簺椤典綔涓烘湭鍙椾繚鎶ょ殑椤垫彁渚涖€?
-### 鍙傝€?
+ - Linux 将使用反弹缓冲区与未受保护的设备通信。它会将一些受保护内存转换RIPAS EMPTY，并期望能够在相同的 IPA 地址   但最高有IPA 位置位的情况下访问未受保护的页。预期是 VMM 会从受保护映射中移除物理页，并将这些页作为未受保护的页提供
+### 参
 
 [^1^] https://developer.arm.com/documentation/den0137/

@@ -1,49 +1,49 @@
-﻿## 瀹㈡埛鏈哄仠鏈鸿疆璇紙Guest halt polling锛?
+﻿## 客户机停机轮询（Guest halt polling
 
-cpuidle_haltpoll 椹卞姩閰嶅悎 haltpoll 璋冨害鍣紙governor锛夛紝鍏佽瀹㈡埛鏈?vcpu 鍦?鍋滄満锛坔alt锛変箣鍓嶈疆璇竴娈垫寚瀹氱殑鏃堕棿銆?
-杩欑粰涓绘満涓€渚х殑杞甯︽潵浜嗕互涓嬪ソ澶勶細
+cpuidle_haltpoll 驱动配合 haltpoll 调度器（governor），允许客户vcpu 停机（halt）之前轮询一段指定的时间
+这给主机一侧的轮询带来了以下好处：
 
- 1) 鍦ㄨ疆璇㈡墽琛屾湡闂翠細璁剧疆 POLL 鏍囧織锛屼娇寰楄繙绋?vCPU 鍦ㄦ墽琛屽敜閱掓椂鍙互閬垮厤
-	   鍙戦€?IPI锛堜互鍙婂鐞嗚 IPI 鐨勭浉鍏冲紑閿€锛夈€?
- 2) 鍙互閬垮厤 VM-exit 鐨勫紑閿€銆?
-瀹㈡埛鏈轰竴渚ц疆璇㈢殑缂虹偣鍦ㄤ簬锛屽嵆浣夸富鏈轰笂杩樻湁鍏跺畠鍙繍琛屼换鍔★紝涔熶細鎵ц杞銆?
-鍩烘湰閫昏緫濡備笅锛氱敱涓€涓叏灞€鍊?guest_halt_poll_ns 鐢辩敤鎴烽厤缃紝琛ㄧず鍏佽杞鐨?鏈€闀挎椂闂淬€傝鍊兼槸鍥哄畾鐨勩€?
-姣忎釜 vcpu 閮芥湁涓€涓彲璋冩暣鐨?guest_halt_poll_ns锛堚€滄瘡 cpu 鐨?guest_halt_poll_ns鈥濓級锛?鐢辩畻娉曟牴鎹簨浠讹紙濡備笅鎵€杩帮級杩涜璋冩暣銆?
-## 妯″潡鍙傛暟
+ 1) 在轮询执行期间会设置 POLL 标志，使得远vCPU 在执行唤醒时可以避免
+	   发IPI（以及处理该 IPI 的相关开销）
+ 2) 可以避免 VM-exit 的开销
+客户机一侧轮询的缺点在于，即使主机上还有其它可运行任务，也会执行轮询
+基本逻辑如下：由一个全局guest_halt_poll_ns 由用户配置，表示允许轮询最长时间。该值是固定的
+每个 vcpu 都有一个可调整guest_halt_poll_ns（“每 cpu guest_halt_poll_ns”）由算法根据事件（如下所述）进行调整
+## 模块参数
 
 
-haltpoll 璋冨害鍣ㄦ湁 5 涓彲璋冩暣鐨勬ā鍧楀弬鏁帮細
+haltpoll 调度器有 5 个可调整的模块参数：
 
-1) guest_halt_poll_ns锛?
-杞鍦ㄥ仠鏈哄墠鎵ц鐨勬渶闀挎椂闂达紙鍗曚綅绾崇锛夈€?
-榛樿鍊硷細200000
+1) guest_halt_poll_ns锛。
+轮询在停机前执行的最长时间（单位纳秒）
+默认值：200000
 
-2) guest_halt_poll_shrink锛?
-褰撳敜閱掍簨浠跺彂鐢熷湪鍏ㄥ眬 guest_halt_poll_ns 涔嬪悗鏃讹紝鐢ㄤ簬鏀剁缉姣?cpu 鐨?guest_halt_poll_ns 鐨勯櫎娉曞洜瀛愩€?
-榛樿鍊硷細2
+2) guest_halt_poll_shrink锛。
+当唤醒事件发生在全局 guest_halt_poll_ns 之后时，用于收缩cpu guest_halt_poll_ns 的除法因子
+默认值：2
 
-3) guest_halt_poll_grow锛?
-褰撲簨浠跺彂鐢熷湪姣?cpu 鐨?guest_halt_poll_ns 涔嬪悗銆佷絾鍦ㄥ叏灞€ guest_halt_poll_ns
-涔嬪墠鏃讹紝鐢ㄤ簬澧為暱姣?cpu 鐨?guest_halt_poll_ns 鐨勪箻娉曞洜瀛愩€?
-榛樿鍊硷細2
+3) guest_halt_poll_grow锛。
+当事件发生在cpu guest_halt_poll_ns 之后、但在全局 guest_halt_poll_ns
+之前时，用于增长cpu guest_halt_poll_ns 的乘法因子
+默认值：2
 
-4) guest_halt_poll_grow_start锛?
-鍦ㄧ┖闂茬郴缁熺殑鎯呭喌涓嬶紝姣?cpu 鐨?guest_halt_poll_ns 鏈€缁堜細闄嶅埌闆躲€傝鍊艰缃簡
-澧為暱鏃剁殑鍒濆姣?cpu 鐨?guest_halt_poll_ns銆傚彲浠ヤ粠 10000 璧峰澶э紝浠ラ伩鍏嶅湪
-鍒濆澧為暱闃舵鍑虹幇閬楁紡锛?
-10k銆?0k銆?0k銆佲€︹€︼紙绀轰緥鍋囪 guest_halt_poll_grow=2锛夈€?
-榛樿鍊硷細50000
+4) guest_halt_poll_grow_start锛。
+在空闲系统的情况下，cpu guest_halt_poll_ns 最终会降到零。该值设置了
+增长时的初始cpu guest_halt_poll_ns。可以从 10000 起增大，以避免在
+初始增长阶段出现遗漏
+10k0k0k、……（示例假设 guest_halt_poll_grow=2）
+默认值：50000
 
-5) guest_halt_poll_allow_shrink锛?
-鍏佽鏀剁缉鐨勫竷灏斿弬鏁般€傝涓?N 鍙伩鍏嶆敹缂╋紙涓€鏃﹁揪鍒板叏灞€ guest_halt_poll_ns 鍊硷紝
-姣?cpu 鐨?guest_halt_poll_ns 灏嗕繚鎸佽緝楂橈級銆?
-榛樿鍊硷細Y
+5) guest_halt_poll_allow_shrink锛。
+允许收缩的布尔参数。设N 可避免收缩（一旦达到全局 guest_halt_poll_ns 值，
+cpu guest_halt_poll_ns 将保持较高）
+默认值：Y
 
 ```
 
 	/sys/module/haltpoll/parameters/
 
 ```
-## 杩涗竴姝ヨ鏄?
+## 进一步说
 
-- 璁剧疆 guest_halt_poll_ns 鍙傛暟鏃跺簲灏忓績锛屽洜涓鸿緝澶х殑鍊兼湁鍙兘灏嗕竴鍙版湰搴斿嚑涔?  瀹屽叏绌洪棽鐨勬満鍣ㄧ殑 cpu 浣跨敤鐜囨帹楂樺埌 100%銆?
+- 设置 guest_halt_poll_ns 参数时应小心，因为较大的值有可能将一台本应几  完全空闲的机器的 cpu 使用率推高到 100%

@@ -1,8 +1,8 @@
-﻿## ATM锛堝紓姝ヤ紶杈撴ā寮忥級
+﻿## ATM（异步传输模式）
 
 
-涓轰簡浣跨敤 ATM 闄ゆ渶鍘熷鍔熻兘浠ュ鐨勪换浣曞姛鑳斤紝闇€瑕佽嫢骞茬敤鎴锋€佺▼搴忔潵鍗忓姪鍐呮牳銆傝繖浜涚▼搴忓強
-鐩稿叧璧勬枡鍙€氳繃 ATM on Linux 缃戦〉 http://linux-atm.sourceforge.net/ 鑾峰彇銆?
+为了使用 ATM 除最原始功能以外的任何功能，需要若干用户态程序来协助内核。这些程序及
+相关资料可通过 ATM on Linux 网页 http://linux-atm.sourceforge.net/ 获取
 
-濡傛灉浣犲湪浣跨敤 ATM 鏃堕亣鍒伴棶棰橈紝璇峰湪 ATM on Linux 閭欢鍒楄〃涓姤鍛娿€傝闃呬俊鎭€佸綊妗ｇ瓑
-鍙湪 http://linux-atm.sourceforge.net/ 鎵惧埌銆?
+如果你在使用 ATM 时遇到问题，请在 ATM on Linux 邮件列表中报告。订阅信息、归档等
+可在 http://linux-atm.sourceforge.net/ 找到
