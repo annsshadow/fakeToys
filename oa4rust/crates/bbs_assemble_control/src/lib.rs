@@ -918,6 +918,12 @@ pub async fn logout(
     ))))
 }
 
+// 接线点（plan002 U6b）：本 crate 目前只有图片/附件的【查询】端点
+// （picture_list 从 x_bbs_topic.content 提取 URL；subjectattach_list 读
+// x_bbs_subject_attachment.url），没有上传端点，因此未接入 shared::storage。
+// 未来新增图片/附件上传端点时：调用 shared::storage::storage_from_env() 获取
+// Arc<dyn BlobStorage>，put(bytes) 后把返回 key 存入附件表 url 字段；
+// STORAGE_BACKEND=fs 时写文件、=db 时保持现状行为不变。
 pub async fn picture_list(
     pool: Extension<Pool>,
     Path(subject_id): Path<String>,
