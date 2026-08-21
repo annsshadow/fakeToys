@@ -152,3 +152,18 @@ evidence: docs/audits/o2server-parity-report.{md,json}, docs/brainstorms/oa4rust
 - **Java 侧全量功能以 `@Path` 计数近似**：13,560 含 build 重复，唯一 5,858；实际业务逻辑量更大（JPA 实体、服务层、引擎类未计入）。
 
 > 下一文档 `2026-08-13-003-oa4rust-completion-plan.md` 给出将上述缺口落地为可执行的分阶段实施方案。
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：completed
+
+### 已验证完成
+
+- 本计划为纯分析文档，交付物 `docs/audits/o2server-parity-report.md` 与 `.json` 实测存在，后续承接计划 `2026-08-13-003-oa4rust-completion-plan.md` 在档
+- 分析所列缺口的后续落地情况：P0 编译/迁移器已修复（提交 1d866b66 等）；Value::Null 由 201 降至 15 处；认证生态（LDAP/企微/钉钉/政务钉钉/验证码/短信）已全量落地；全文检索 migration 058 在档；IM/PDF 签章/Redis session/MySQL 集成测试均有对应提交
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+- P1-6 工作流执行语义的完整行为对齐、CMS 深度真实化的持续验证、端点对齐度提升——由 002 汇总计划统一追踪

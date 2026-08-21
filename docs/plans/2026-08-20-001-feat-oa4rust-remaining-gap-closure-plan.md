@@ -1,7 +1,7 @@
 ---
 title: feat: oa4rust remaining gap closure
 type: feat
-status: completed
+status: active
 date: 2026-08-20
 origin: docs/brainstorms/2026-08-20-oa4rust-remaining-gap-closure-requirements.md
 ---
@@ -313,3 +313,24 @@ oa4rust 已完成 95 个 crate 的真实化和 7624+ 条路由注册，`cargo te
 - Related code: `src/main.rs`, `tests/behavior_compare.rs`, `tests/behavior_comparison/endpoints.rs`, `crates/empower/src/router.rs`
 - Related plans: `docs/plans/2026-08-10-002-fix-oa4rust-gap-closure-plan.md`, `docs/plans/2026-08-12-001-fix-oa4rust-final-gap-closure-plan.md`
 - External docs: 无
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：active（原自标 completed，因 U4 未达验证标准改回 active）
+
+### 已验证完成
+
+- U1 行为对比测试清单扩展与条件执行：提交 160f71ff（BEHAVIOR_COMPARE=1 条件执行 + SKIP 降级保留）
+- U2 新功能 crate 挂载修复：`src/main.rs` 中 empower 已挂载（双重模块路径，约 354 行），preview/realtime/signature 均在档
+- U3 handler 直接调用测试补全：提交 14def34e（619 个 handler 测试）+ 5fb83fae（挂载 preview/realtime/search/signature/sms 的 tests_generated）
+- U5 文档 REST Endpoints 字段填充：提交 62d67e1d（populate module card REST Endpoints）
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+- U4 Java-Rust 端点对齐度提升：验证标准为 ≥70%，最新提交实测约 36.6%（314c7a75）——未达验证标准，为本计划唯一未竟单元
+- Deferred「行为对比测试的 Java 侧服务容器化」
+- Deferred「handler 级测试覆盖率提升至 99%」
+- Deferred「文档模块卡片 Key Flows、Dependencies 深度填充」与「docs/oa/modules/o2web/ 组件卡片填充」
+- Deferred「SQLx 完全移除」

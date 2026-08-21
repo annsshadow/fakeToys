@@ -640,3 +640,25 @@ flowchart TD
 - Related code: `crates/shared/src/session.rs`, `crates/auth/src/lib.rs`, `crates/processplatform_service_processing/src/lib.rs`
 - Related audits: `docs/audits/o2server-parity-report.json`
 - Institutional learning: `docs/solutions/2026-08-18-sql-dialect-abstraction.md`
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：active（10 个 blocking gap 中 8 个已关闭，U2/U5 验收指标未完全达成）
+
+### 已验证完成
+
+- U1 真实集成测试基座：`tests/integration_tests/`（13 场景）+ DATABASE_URL 守卫 + setup_test_db.sh 在档
+- U3 auth_token_threshold 事件驱动：migration 059_add_timer_job.sql + TimerRegistry 持久化（提交系列在档）
+- U4 BPMN gateway_fork + timer 持久化：bpmn_process 集成场景覆盖 agree/transfer/return/disagree 全语义
+- U6 LDAP 接入登录流程 + two_factor 绕过修复：ldap crate + auth/ldap_auth.rs；提交 3b718b8d
+- U7 OAuth2/OIDC 标准协议：`crates/auth/src/oidc.rs` 在档，JWT 验证修复（3b718b8d）
+- U8 parity 行为契约验证升级：`tests/behavior_comparison/`（endpoints.rs 1012 端点定义 + comparator + allowlist）
+- U9 性能基线填充：`oa4rust/docs/performance-baseline.md` 在档，login P99 优化（948b33d1）
+- U10 gen_inventory db_touch_rate 指标：`scripts/measure_routed_db_touch.py` + report 在档
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+- U2 Value::Null 消除：验收为归零，实测仍残留 15 处
+- U5 CMS 核心路径 stub 真实化：`Value::Bool(true)` 由 96 降至实测 17 处，未清零

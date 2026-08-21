@@ -493,3 +493,27 @@ oa4rust 已完成 83 个 crate 的真实化和 SeaORM 迁移，2458 个 handler�
 - **Related code:** `crates/auth/src/`、`crates/personal/src/`、`crates/personal_extend/src/`、`crates/mcp_server/src/tool_bridge.rs`、`crates/openapi/src/lib.rs`
 - **Related scripts:** `scripts/gen_inventory.py`、`scripts/extract_endpoints.py`
 - **Related solutions:** `docs/solutions/security-issues/idor-vulnerability-write-handlers.md`、`docs/solutions/architecture-patterns/actionresult-9-field-contract.md`
+
+---
+
+## 实现情况（2026-08-21 审计）
+
+**审计基准：** 工作树 HEAD 314c7a75；判定状态：completed
+
+### 已验证完成
+
+- U1 认证安全基础扩展：`crates/auth/src/two_factor.rs`、`safe_logout.rs`、`check_token.rs`、`captcha.rs`、`bind.rs` 均存在
+- U2 SSO 单点登录：`crates/auth/src/sso.rs`
+- U3 用户切换：`crates/auth/src/switch_user.rs`
+- U4 用户注册与个人扩展：`crates/auth/src/person.rs` + `crates/personal/`、`crates/personal_extend/`
+- U5 MCP 工具桥接全量扩展：`crates/mcp_server/src/generated_routes.rs`
+- U6 OpenAPI 文档完善：`crates/openapi/src/lib.rs`
+- U7 行为对比测试全覆盖：`tests/behavior_compare.rs`（后续计划已条件执行化）
+- U8 todo crate 清理：crate 列表中无 todo 残留
+- Deferred 完成 2 项：政务钉钉登录（`zhengwudingding.rs`，由 2026-08-10-002-feat 落地）、微信小程序/WeLink 登录（`mpweixin.rs`、`welink.rs`）
+
+### 未完成 / 遗留 → 待汇入剩余工作汇总计划
+
+- Deferred「批量操作端点（批量删除、批量导入）」：未逐项核验
+- Deferred「流程平台深度功能（复杂编排端点）」：端点对齐度仍显著低于全覆盖
+- Deferred「SQLx 完全移除」：workspace 直接依赖已清零，但 sea-orm 底层仍保留
