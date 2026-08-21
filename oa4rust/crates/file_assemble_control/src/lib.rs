@@ -1364,6 +1364,154 @@ fn html_escape(s: &str) -> String {
         .replace('>', "&gt;")
 }
 
+/// .xlsx 渲染上限：最多输出 200 行，防止超大表格生成巨型 HTML。
+const XLSX_MAX_ROWS: usize = 200;
+
+/// .xlsx 本质是 ZIP 包：xl/sharedStrings.xml 存共享字符串，
+/// xl/worksheets/sheet1.xml 的 <c t="s"><v>索引</v></c> 引用它；
+/// 其余 <v> 为字面值。渲染为简单 HTML 表格。
+fn xlsx_to_html(bytes: &[u8]) -> Option<String> {
+    let reader = std::io::Cursor::new(bytes);
+    let mut archive = zip::ZipArchive::new(reader).ok()?;
+
+    let shared_xml = read_zip_entry(&mut archive, "xl/sharedStrings.xml")?;
+    let shared: Vec<String> = {
+        let mut out = Vec::new();
+        let mut rest = shared_xml.as_str();
+        while let Some(start) = rest.find("<si>") {
+            let Some(end_rel) = rest[start..].find("</si>") else { break };
+            let si = &rest[start + 4..start + end_rel];
+            let mut text = String::new();
+            let mut cur = si;
+            while let Some(t_start) = cur.find("<t") {
+                let Some(gt_rel) = cur[t_start..].find('>') else { break };
+                let cs = t_start + gt_rel + 1;
+                let Some(e_rel) = cur[cs..].find("</t>") else { break };
+                text.push_str(&xml_unescape(&cur[cs..cs + e_rel]));
+                cur = &cur[cs + e_rel + 4..];
+            }
+            out.push(text);
+            rest = &rest[start + end_rel + 5..];
+        }
+        out
+    };
+
+    let sheet_xml = read_zip_entry(&mut archive, "xl/worksheets/sheet1.xml")?;
+    let mut html = String::from("<table>");
+    let mut row_count = 0usize;
+    let mut rest = sheet_xml.as_str();
+    while let Some(start) = rest.find("<row") {
+        let Some(row_end_rel) = rest[start..].find("</row>") else { break };
+        let row_inner_end = start + row_end_rel;
+        let row = &rest[start..row_inner_end];
+        html.push_str("<tr>");
+        let mut cur = row;
+        while let Some(c_start) = cur.find("<c ") {
+            let Some(c_end_rel) = cur[c_start..].find("</c>") else { break };
+            let cell = &cur[c_start..c_start + c_end_rel];
+            let is_shared = cell.contains("t=\"s\"");
+            let value = match cell.find("<v>") {
+                Some(v_rel) => {
+                    let vs = v_rel + 3;
+                    let ve = cell[vs..].find("</v>").map(|e| vs + e).unwrap_or(vs);
+                    &cell[vs..ve]
+                }
+                None => "",
+            };
+            let text = if is_shared {
+                value
+                    .parse::<usize>()
+                    .ok()
+                    .and_then(|i| shared.get(i).cloned())
+                    .unwrap_or_default()
+            } else {
+                xml_unescape(value)
+            };
+            html.push_str("<td>");
+            html.push_str(&html_escape(&text));
+            html.push_str("</td>");
+            cur = &cur[c_start + c_end_rel + 4..];
+        }
+        html.push_str("</tr>");
+        row_count += 1;
+        if row_count >= XLSX_MAX_ROWS {
+            break;
+        }
+        rest = &rest[row_inner_end + 6..];
+    }
+    html.push_str("</table>");
+
+    if row_count == 0 { None } else { Some(html) }
+}
+
+/// .pptx：按编号顺序读取 ppt/slides/slideN.xml，每张幻灯片的
+/// <a:t> 文本首行作标题（h2），其余作段落。最多渲染 50 张。
+const PPTX_MAX_SLIDES: usize = 50;
+
+fn pptx_to_html(bytes: &[u8]) -> Option<String> {
+    let reader = std::io::Cursor::new(bytes);
+    let mut archive = zip::ZipArchive::new(reader).ok()?;
+
+    let mut slide_names: Vec<(u32, String)> = (0..archive.len())
+        .filter_map(|i| {
+            let name = archive.by_index(i).ok()?.name().to_string();
+            let num: u32 = name
+                .strip_prefix("ppt/slides/slide")?
+                .strip_suffix(".xml")?
+                .parse()
+                .ok()?;
+            Some((num, name))
+        })
+        .collect();
+    if slide_names.is_empty() {
+        return None;
+    }
+    slide_names.sort_by_key(|(n, _)| *n);
+    slide_names.truncate(PPTX_MAX_SLIDES);
+
+    let mut html = String::new();
+    for (_, sname) in &slide_names {
+        let xml = read_zip_entry(&mut archive, sname)?;
+        let texts = {
+            let mut out: Vec<String> = Vec::new();
+            let mut rest = xml.as_str();
+            while let Some(start) = rest.find("<a:t>") {
+                let cs = start + 5;
+                let Some(e_rel) = rest[cs..].find("</a:t>") else { break };
+                let t = xml_unescape(&rest[cs..cs + e_rel]);
+                if !t.trim().is_empty() {
+                    out.push(t);
+                }
+                rest = &rest[cs + e_rel + 6..];
+            }
+            out
+        };
+        if texts.is_empty() {
+            continue;
+        }
+        html.push_str("<h2>");
+        html.push_str(&html_escape(&texts[0]));
+        html.push_str("</h2>");
+        for t in &texts[1..] {
+            html.push_str("<p>");
+            html.push_str(&html_escape(t));
+            html.push_str("</p>");
+        }
+    }
+
+    if html.is_empty() { None } else { Some(html) }
+}
+
+fn read_zip_entry(
+    archive: &mut zip::ZipArchive<std::io::Cursor<&[u8]>>,
+    name: &str,
+) -> Option<String> {
+    let mut f = archive.by_name(name).ok()?;
+    let mut s = String::new();
+    std::io::Read::read_to_string(&mut f, &mut s).ok()?;
+    Some(s)
+}
+
 #[axum::debug_handler]
 pub async fn attachment2_id_office_preview_type_type(
     pool: Extension<Pool>,
@@ -1402,6 +1550,34 @@ pub async fn attachment2_id_office_preview_type_type(
 
     if is_docx {
         if let Some(html) = docx_to_html(&bytes) {
+            return Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("name".to_string(), Value::String(name)),
+                    ("html".to_string(), Value::String(html)),
+                    ("contentType".to_string(), Value::String("text/html".to_string())),
+                ]),
+            ))));
+        }
+    }
+
+    let is_xlsx = extension.eq_ignore_ascii_case("xlsx") || mime.contains("spreadsheetml");
+    if is_xlsx {
+        if let Some(html) = xlsx_to_html(&bytes) {
+            return Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("name".to_string(), Value::String(name)),
+                    ("html".to_string(), Value::String(html)),
+                    ("contentType".to_string(), Value::String("text/html".to_string())),
+                ]),
+            ))));
+        }
+    }
+
+    let is_pptx = extension.eq_ignore_ascii_case("pptx") || mime.contains("presentationml");
+    if is_pptx {
+        if let Some(html) = pptx_to_html(&bytes) {
             return Ok(Json(ActionResult::success(Value::Object(
                 serde_json::Map::from_iter([
                     ("id".to_string(), Value::String(id)),
