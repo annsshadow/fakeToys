@@ -1525,7 +1525,7 @@ mod tests {
             .oneshot(
                 Request::builder()
                     .uri("/jaxrs/data/document/test-id/array/data")
-                    .method("GET")
+                    .method("POST")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4154,7 +4154,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/anonymous/surface/appdict/test-id/test-id/test-id")
+                    .uri("/jaxrs/anonymous/surface/appdict/dict-flag/appInfo/app-flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4172,7 +4172,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/anonymous/surface/appdict/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/anonymous/surface/appdict/dict-flag/appInfo/app-flag/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4190,7 +4190,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/anonymous/surface/appdict/dict-flag/appInfo/app-flag/p0/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4208,7 +4208,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/anonymous/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4226,7 +4226,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/path2/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/anonymous/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4244,7 +4244,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/path2/path3/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/anonymous/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4262,7 +4262,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/path2/path3/path4/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/anonymous/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4280,7 +4280,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/path2/path3/path4/path5/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/anonymous/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/p5/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4298,7 +4298,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/path2/path3/path4/path5/path6/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/anonymous/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/p5/p6/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4316,7 +4316,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/anonymous/surface/appdict/path0/path1/path2/path3/path4/path5/path6/path7/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/anonymous/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/p5/p6/p7/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4352,7 +4352,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/test-id/test-id/test-id")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4370,7 +4370,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4388,8 +4388,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/mockputtopost/test-id/test-id/test-id")
-                    .method("GET")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/mockputtopost")
+                    .method("POST")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4406,7 +4406,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4424,8 +4424,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/data/mockdeletetoget/test-id/test-id/test-id")
-                    .method("POST")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/data/mockdeletetoget")
+                    .method("GET")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4442,7 +4442,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4460,8 +4460,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/data/mockdeletetoget/test-id/test-id/test-id")
-                    .method("POST")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/data/mockdeletetoget")
+                    .method("GET")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4478,7 +4478,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4496,8 +4496,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/data/mockdeletetoget/test-id/test-id/test-id")
-                    .method("POST")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/data/mockdeletetoget")
+                    .method("GET")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4514,8 +4514,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/data/mockputtopost/test-id/test-id/test-id")
-                    .method("GET")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/data/mockputtopost")
+                    .method("POST")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4532,7 +4532,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4550,8 +4550,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/data/mockdeletetoget/test-id/test-id/test-id")
-                    .method("POST")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/data/mockdeletetoget")
+                    .method("GET")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4568,8 +4568,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/data/mockputtopost/test-id/test-id/test-id")
-                    .method("GET")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/data/mockputtopost")
+                    .method("POST")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4586,7 +4586,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4604,8 +4604,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/data/mockdeletetoget/test-id/test-id/test-id")
-                    .method("POST")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/data/mockdeletetoget")
+                    .method("GET")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4622,8 +4622,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/data/mockputtopost/test-id/test-id/test-id")
-                    .method("GET")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/data/mockputtopost")
+                    .method("POST")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4640,7 +4640,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/p5/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4658,8 +4658,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/data/mockdeletetoget/test-id/test-id/test-id")
-                    .method("POST")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/p5/data/mockdeletetoget")
+                    .method("GET")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4676,8 +4676,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/data/mockputtopost/test-id/test-id/test-id")
-                    .method("GET")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/p5/data/mockputtopost")
+                    .method("POST")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4694,7 +4694,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/path6/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/p5/p6/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4712,8 +4712,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/path6/data/mockdeletetoget/test-id/test-id/test-id")
-                    .method("POST")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/p5/p6/data/mockdeletetoget")
+                    .method("GET")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4730,8 +4730,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/path6/data/mockputtopost/test-id/test-id/test-id")
-                    .method("GET")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/p5/p6/data/mockputtopost")
+                    .method("POST")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4748,7 +4748,7 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/path6/path7/data/test-id/test-id/test-id")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/p5/p6/p7/data")
                     .method("GET")
                     .body(Body::empty())
                     .unwrap(),
@@ -4766,8 +4766,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/path6/path7/data/mockdeletetoget/test-id/test-id/test-id")
-                    .method("POST")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/p5/p6/p7/data/mockdeletetoget")
+                    .method("GET")
                     .body(Body::empty())
                     .unwrap(),
             )
@@ -4784,8 +4784,8 @@ mod tests {
         let response = app
             .oneshot(
                 Request::builder()
-                    .uri("/jaxrs/cms/assemble/control/surface/appdict/path0/path1/path2/path3/path4/path5/path6/path7/data/mockputtopost/test-id/test-id/test-id")
-                    .method("GET")
+                    .uri("/jaxrs/surface/appdict/dict-flag/appInfo/app-flag/p0/p1/p2/p3/p4/p5/p6/p7/data/mockputtopost")
+                    .method("POST")
                     .body(Body::empty())
                     .unwrap(),
             )
