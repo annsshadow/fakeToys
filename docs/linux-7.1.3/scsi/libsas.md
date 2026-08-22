@@ -1,20 +1,20 @@
 ﻿
-## SAS 灞?
+## SAS 灞。
 
-SAS 灞傛槸涓€涓鐞嗗熀纭€璁炬柦锛岀敤浜庣鐞?SAS LLDD銆傚畠浣嶄簬 SCSI Core 涓?SAS LLDD 涔嬮棿銆傚叾甯冨眬濡備笅锛歋CSI Core 鍏虫敞 SAM/SPC 鐩稿叧浜嬮」锛岃€?SAS LLDD+瀹氬簭鍣ㄥ叧娉?phy/OOB/閾捐矾绠＄悊锛孲AS 灞傚垯鍏虫敞锛?
-      - SAS Phy/Port/HA 浜嬩欢绠＄悊锛堢敱 LLDD 浜х敓锛岀敱 SAS 灞傚鐞嗭級锛?      - SAS 绔彛绠＄悊锛堝垱寤?閿€姣侊級锛?      - SAS 鍩熷彂鐜颁笌閲嶆柊楠岃瘉锛?      - SAS 鍩熻澶囩鐞嗭紝
-      - SCSI 涓绘満娉ㄥ唽/娉ㄩ攢锛?      - 鍚?SCSI Core锛圫AS锛夋垨 libata锛圫ATA锛夋敞鍐岃澶囷紝浠ュ強
-      - 鎵╁睍鍣ㄧ鐞嗗苟鍚戠敤鎴风┖闂村鍑烘墿灞曞櫒鎺у埗銆?
-SAS LLDD 鏄竴涓?PCI 璁惧椹卞姩銆傚畠鍏虫敞 phy/OOB 绠＄悊銆佸巶鍟嗙浉鍏充换鍔★紝骞跺悜 SAS 灞備骇鐢熶簨浠躲€?
-SAS 灞傚畬鎴愪簡 SAS 1.1 瑙勮寖涓杩扮殑澶ч儴鍒?SAS 浠诲姟銆?
-sas_ha_struct 鍚?SAS 灞傛弿杩?SAS LLDD銆傚畠鐨勫ぇ閮ㄥ垎鐢?SAS 灞備娇鐢紝浣嗗皯鏁板瓧娈甸渶瑕佺敱 LLDD 鍒濆鍖栥€?
-鍦ㄥ垵濮嬪寲瀹岀‖浠朵箣鍚庯紝浣犱粠 probe() 鍑芥暟涓皟鐢?sas_register_ha()銆傚畠浼氬皢浣犵殑 LLDD 娉ㄥ唽鍒?SCSI 瀛愮郴缁燂紝鍒涘缓涓€涓?SCSI 涓绘満锛屽苟灏嗕綘鐨?SAS 椹卞姩娉ㄥ唽鍒板畠鍒涘缓鐨?sysfs SAS 鏍戜腑銆傜劧鍚庡畠杩斿洖銆傛帴鐫€浣犲惎鐢ㄤ綘鐨?phys 浠ュ疄闄呭紑濮?OOB锛堟鏃朵綘鐨勯┍鍔ㄥ皢寮€濮嬭皟鐢?notify_* 浜嬩欢鍥炶皟锛夈€?
-## 缁撴瀯浣撹鏄?
+SAS 层是一个管理基础设施，用于管SAS LLDD。它位于 SCSI Core SAS LLDD 之间。其布局如下：SCSI Core 关注 SAM/SPC 相关事项，SAS LLDD+定序器关phy/OOB/链路管理，SAS 层则关注
+      - SAS Phy/Port/HA 事件管理（由 LLDD 产生，由 SAS 层处理）      - SAS 端口管理（创销毁）      - SAS 域发现与重新验证      - SAS 域设备管理，
+      - SCSI 主机注册/注销      - SCSI Core（SAS）或 libata（SATA）注册设备，以及
+      - 扩展器管理并向用户空间导出扩展器控制
+SAS LLDD 是一PCI 设备驱动。它关注 phy/OOB 管理、厂商相关任务，并向 SAS 层产生事件
+SAS 层完成了 SAS 1.1 规范中概述的大部SAS 任务
+sas_ha_struct SAS 层描SAS LLDD。它的大部分SAS 层使用，但少数字段需要由 LLDD 初始化
+在初始化完硬件之后，你从 probe() 函数中调sas_register_ha()。它会将你的 LLDD 注册SCSI 子系统，创建一SCSI 主机，并将你SAS 驱动注册到它创建sysfs SAS 树中。然后它返回。接着你启用你phys 以实际开OOB（此时你的驱动将开始调notify_* 事件回调）
+## 结构体说
 
 ### ``struct sas_phy``
 
 
-閫氬父鎯呭喌涓嬪畠闈欐€佸唴宓屽湪浣犵殑椹卞姩鐨?
+通常情况下它静态内嵌在你的驱动
 ```
     struct my_phy {
 	    blah;
@@ -23,46 +23,46 @@ sas_ha_struct 鍚?SAS 灞傛弿杩?SAS LLDD銆傚畠鐨勫ぇ閮ㄥ垎鐢?SAS �
     };
 ```
 
-涔嬩腑锛岄殢鍚庢墍鏈?phys 閮芥槸浣?HA struct 涓?my_phy 鐨勬暟缁勶紙濡備笅鎵€绀猴級銆?
-鐒跺悗闅忕潃浣犻€愭鍒濆鍖栦綘鐨?phys锛屼綘涔熷悓鏃跺垵濮嬪寲 sas_phy struct锛屼互鍙婁綘鑷繁鐨?phy 缁撴瀯銆?
-涓€鑸€岃█锛宲hys 鐢?LLDD 绠＄悊锛岀鍙ｇ敱 SAS 灞傜鐞嗐€傚洜姝?phys 鐢?LLDD 鍒濆鍖栧拰鏇存柊锛岀鍙ｇ敱 SAS 灞傚垵濮嬪寲鍜屾洿鏂般€?
-瀛樺湪涓€绉嶆満鍒讹細LLDD 鍙互璇诲啓鏌愪簺瀛楁锛岃€?SAS 灞傚彧鑳借鍙栬繖浜涘瓧娈碉紝鍙嶄箣浜︾劧銆傚叾鐩殑鍦ㄤ簬閬垮厤涓嶅繀瑕佺殑鍔犻攣銆?
+之中，随后所phys 都是HA struct my_phy 的数组（如下所示）
+然后随着你逐步初始化你phys，你也同时初始化 sas_phy struct，以及你自己phy 结构
+一般而言，phys LLDD 管理，端口由 SAS 层管理。因phys LLDD 初始化和更新，端口由 SAS 层初始化和更新
+存在一种机制：LLDD 可以读写某些字段，SAS 层只能读取这些字段，反之亦然。其目的在于避免不必要的加锁
 enabled
-    - 蹇呴』璁剧疆锛?/1锛?
+    - 必须设置/1
 id
-    - 蹇呴』璁剧疆 [0,MAX_PHYS)]
+    - 必须设置 [0,MAX_PHYS)]
 
 class, proto, type, role, oob_mode, linkrate
-    - 蹇呴』璁剧疆
+    - 必须设置
 
 oob_mode
-    - 浣犲湪 OOB 瀹屾垚鍚庤缃椤癸紝鐒跺悗閫氱煡 SAS 灞傘€?
+    - 你在 OOB 完成后设置此项，然后通知 SAS 层
 sas_addr
-    - 閫氬父鎸囧悜涓€涓暟缁勶紝璇ユ暟缁勪繚瀛樹簡 phy 鐨?sas 鍦板潃锛屽彲鑳戒綅浜庝綘鐨?my_phy struct 涓殑鏌愬銆?
+    - 通常指向一个数组，该数组保存了 phy sas 地址，可能位于你my_phy struct 中的某处
 attached_sas_addr
-    - 褰撲綘锛圠LDD锛夋敹鍒颁竴涓?IDENTIFY 甯ф垨 FIS 甯ф椂锛屽湪閫氱煡 SAS 灞?_涔嬪墠_ 璁剧疆姝ら」銆傚叾鎬濊矾鏄紝鏈夋椂 LLDD 鍙兘甯屾湜鍦ㄩ偅涓?phy/绔彛涓婁吉閫犳垨鎻愪緵涓€涓笉鍚岀殑 SAS 鍦板潃锛岃繖鍏佽瀹冭繖鏍峰仛銆傛渶濂芥儏鍐典笅锛屼綘搴斿綋浠?IDENTIFY 甯т腑澶嶅埗 sas 鍦板潃锛屾垨鑰呭鐩存帴杩炴帴鐨?SATA 璁惧鐢熸垚涓€涓?SAS 鍦板潃銆傝鍊肩◢鍚庡彲鑳借 Discover 杩囩▼鏀瑰彉銆?
+    - 当你（LLDD）收到一IDENTIFY 帧或 FIS 帧时，在通知 SAS _之前_ 设置此项。其思路是，有时 LLDD 可能希望在那phy/端口上伪造或提供一个不同的 SAS 地址，这允许它这样做。最好情况下，你应当IDENTIFY 帧中复制 sas 地址，或者对直接连接SATA 设备生成一SAS 地址。该值稍后可能被 Discover 过程改变
 frame_rcvd
-    - 杩欐槸浣犳敹鍒?IDENTIFY/FIS 甯ф椂澶嶅埗瀹冪殑浣嶇疆锛涗綘鍔犻攣銆佸鍒躲€佽缃?frame_rcvd_size 骞惰В閿佽閿侊紝鐒跺悗璋冪敤浜嬩欢銆傚畠鏄竴涓寚閽堬紝鍥犱负鏃犳硶 _绮剧‘_ 鐭ラ亾浣犵殑纭欢甯уぇ灏忥紝鎵€浠ヤ綘鍦ㄤ綘鐨?phy struct 涓畾涔夊疄闄呯殑鏁扮粍骞惰璇ユ寚閽堟寚鍚戝畠銆備綘鍦ㄨ閿佺殑淇濇姢涓嬪皢甯т粠浣犵殑鍙?DMA 鍐呭瓨澶嶅埗鍒拌鍖哄煙銆?
+    - 这是你收IDENTIFY/FIS 帧时复制它的位置；你加锁、复制、设frame_rcvd_size 并解锁该锁，然后调用事件。它是一个指针，因为无法 _精确_ 知道你的硬件帧大小，所以你在你phy struct 中定义实际的数组并让该指针指向它。你在该锁的保护下将帧从你的DMA 内存复制到该区域
 sas_prim
-    - 杩欐槸鏀跺埌鍘熻鏃跺畠浠墍鍘诲線鐨勪綅缃€傚弬瑙?sas.h銆傝幏鍙栭攣锛岃缃師璇紝閲婃斁閿侊紝鐒跺悗閫氱煡銆?
+    - 这是收到原语时它们所去往的位置。参sas.h。获取锁，设置原语，释放锁，然后通知
 port
-    - 濡傛灉璇?phy 灞炰簬鏌愪釜绔彛锛屽垯瀹冩寚鍚?sas_port鈥斺€擫LDD 鍙姝ら」銆傚畠鎸囧悜璇?phy 鎵€灞炵殑 sas_port銆傜敱 SAS 灞傝缃€?
+    - 如果phy 属于某个端口，则它指sas_port——LLDD 只读此项。它指向phy 所属的 sas_port。由 SAS 层设置
 ha
-    - 鍙互璁剧疆锛汼AS 灞傛棤璁哄浣曢兘浼氳缃畠銆?
+    - 可以设置；SAS 层无论如何都会设置它
 lldd_phy
-    - 浣犲簲褰撳皢姝ら」璁剧疆涓烘寚鍚戜綘鐨?phy锛岃繖鏍峰綋 SAS 灞傝皟鐢ㄤ綘鐨勬煇涓洖璋冨苟浼犵粰浣犱竴涓?phy 鏃讹紝浣犲彲浠ユ洿蹇湴鎵惧埌浣嶇疆銆傚鏋?sas_phy 鏄唴宓岀殑锛屼綘涔熷彲浠ヤ娇鐢?container_of鈥斺€旈殢浣犲枩娆€?
+    - 你应当将此项设置为指向你phy，这样当 SAS 层调用你的某个回调并传给你一phy 时，你可以更快地找到位置。如sas_phy 是内嵌的，你也可以使container_of——随你喜欢
 
 ### ``struct sas_port``
 
 
-LLDD 涓嶈缃缁撴瀯浣撶殑浠讳綍瀛楁鈥斺€斿畠鍙鍙栧畠浠€傚畠浠簲褰撴槸涓嶈█鑷槑鐨勩€?
-phy_mask 鏄?32 浣嶇殑锛岀洰鍓嶈繖搴斿綋瓒冲锛屽洜涓烘垜杩樻病鍚杩囨湁瓒呰繃 8 涓?phys 鐨?HA銆?
+LLDD 不设置该结构体的任何字段——它只读取它们。它们应当是不言自明的
+phy_mask 32 位的，目前这应当足够，因为我还没听说过有超过 8 phys HA
 lldd_port
-    - 鎴戣繕娌℃壘鍒板畠鐨勭敤閫斺€斺€斾篃璁稿叾浠栧笇鏈涙嫢鏈夊唴閮ㄧ鍙ｈ〃绀虹殑 LLDD 鍙互鍒╃敤瀹冦€?
+    - 我还没找到它的用途——也许其他希望拥有内部端口表示的 LLDD 可以利用它
 ### ``struct sas_ha_struct``
 
 
-瀹冮€氬父鍦ㄤ綘鑷繁鐨?LLDD 涓潤鎬佸０鏄庯細
+它通常在你自己LLDD 中静态声明：
 
 ```
     struct my_sas_ha {
@@ -73,36 +73,36 @@ lldd_port
 	bleh;
     };
 
-    (1) 濡傛灉浣犵殑 LLDD 娌℃湁鑷繁鐨勭鍙ｈ〃绀恒€?```
+    (1) 如果你的 LLDD 没有自己的端口表示```
 
-闇€瑕佸垵濮嬪寲鍝簺鍐呭锛堢ず渚嬪嚱鏁拌涓嬶級銆?
+需要初始化哪些内容（示例函数见下）
 ##### pcidev
 
 
 sas_addr
-       - 鐢变簬 SAS 灞備笉鎯冲鐞嗗唴瀛樺垎閰嶇瓑浜嬪姟锛屾椤规寚鍚戞煇澶勯潤鎬佸垎閰嶇殑鏁扮粍锛堟瘮濡傚湪浣犵殑涓绘満閫傞厤鍣ㄧ粨鏋勪腑锛夛紝骞朵繚瀛樼敱浣犳垨鍒堕€犲晢绛夌粰鍑虹殑涓绘満閫傞厤鍣ㄧ殑 SAS 鍦板潃銆?
+       - 由于 SAS 层不想处理内存分配等事务，此项指向某处静态分配的数组（比如在你的主机适配器结构中），并保存由你或制造商等给出的主机适配器的 SAS 地址
 ##### sas_port
 
 
 sas_phy
-      - 涓€涓寚鍚戠粨鏋勪綋鐨勬寚閽堟暟缁勩€傦紙鍙傝涓婇潰鍏充簬 sas_addr 鐨勮鏄庯級銆?	杩欎簺蹇呴』璁剧疆銆傛洿澶氳鏄庤涓嬨€?
+      - 一个指向结构体的指针数组。（参见上面关于 sas_addr 的说明）	这些必须设置。更多说明见下
 num_phys
-       - sas_phy 鏁扮粍涓瓨鍦ㄧ殑 phys 鏁伴噺锛屼互鍙?sas_port 鏁扮粍涓瓨鍦ㄧ殑绔彛鏁伴噺銆傛渶澶氬彲浠ユ湁 num_phys 涓鍙ｏ紙姣忎釜绔彛涓€涓級锛屽洜姝ゆ垜浠幓鎺?num_ports锛屽彧浣跨敤 num_phys銆?
+       - sas_phy 数组中存在的 phys 数量，以sas_port 数组中存在的端口数量。最多可以有 num_phys 个端口（每个端口一个），因此我们去num_ports，只使用 num_phys
 ```
-	/* LLDD 璋冪敤杩欎簺鏉ラ€氱煡绫诲彂鐢熶簡涓€涓簨浠躲€?*/
+	/* LLDD 调用这些来通知类发生了一个事件*/
 	void sas_notify_port_event(struct sas_phy *, enum port_event, gfp_t);
 	void sas_notify_phy_event(struct sas_phy *, enum phy_event, gfp_t);
 ```
 ```
-	/* 绫昏皟鐢ㄨ繖浜涙潵閫氱煡 LLDD 鍙戠敓浜嗕竴涓簨浠躲€?*/
+	/* 类调用这些来通知 LLDD 发生了一个事件*/
 	void (*lldd_port_formed)(struct sas_phy *);
 	void (*lldd_port_deformed)(struct sas_phy *);
 ```
-濡傛灉 LLDD 甯屾湜鍦ㄧ鍙ｅ舰鎴愭垨閿€姣佹椂鏀跺埌閫氱煡锛屽畠灏嗚繖涓ら」璁剧疆涓烘弧瓒宠绫诲瀷鐨勫嚱鏁般€?
-涓€涓?SAS LLDD 杩樺簲褰撹嚦灏戝疄鐜颁笅鍒椾换鍔＄鐞嗗嚱鏁颁腑鐨勪竴涓細
+如果 LLDD 希望在端口形成或销毁时收到通知，它将这两项设置为满足该类型的函数
+一SAS LLDD 还应当至少实现下列任务管理函数中的一个：
 
 ```
-	/* 浠诲姟绠＄悊鍑芥暟銆傚繀椤讳粠杩涚▼涓婁笅鏂囪皟鐢ㄣ€?*/
+	/* 任务管理函数。必须从进程上下文调用*/
 	int (*lldd_abort_task)(struct sas_task *);
 	int (*lldd_abort_task_set)(struct domain_device *, u8 *lun);
 	int (*lldd_clear_task_set)(struct domain_device *, u8 *lun);
@@ -110,20 +110,20 @@ num_phys
 	int (*lldd_lu_reset)(struct domain_device *, u8 *lun);
 	int (*lldd_query_task)(struct sas_task *);
 ```
-鏇村淇℃伅璇烽槄璇?T10.org 涓婄殑 SAM銆?
+更多信息请阅T10.org 上的 SAM
 ```
-	/* 绔彛涓庨€傞厤鍣ㄧ鐞?*/
+	/* 端口与适配器管*/
 	int (*lldd_clear_nexus_port)(struct sas_port *);
 	int (*lldd_clear_nexus_ha)(struct sas_ha_struct *);
 ```
-涓€涓?SAS LLDD 搴斿綋鑷冲皯瀹炵幇鍏朵腑涔嬩竴銆?
+一SAS LLDD 应当至少实现其中之一
 ```
-	/* Phy 绠＄悊 */
+	/* Phy 管理 */
 	int (*lldd_control_phy)(struct sas_phy *, enum phy_func);
 ```
 lldd_ha
-    - 灏嗘璁剧疆涓烘寚鍚戜綘鐨?HA struct銆傚鏋滀綘鍍忎笂闈㈤偅鏍峰唴宓屼簡瀹冿紝涔熷彲浠ヤ娇鐢?container_of銆?
-涓€涓ず渚嬬殑鍒濆鍖栦笌娉ㄥ唽鍑芥暟鍙互鍍忚繖鏍凤紙浠?probe() 鏈€鍚庤皟鐢級锛?
+    - 将此设置为指向你HA struct。如果你像上面那样内嵌了它，也可以使container_of
+一个示例的初始化与注册函数可以像这样（probe() 最后调用）
 ```
     static int register_sas_ha(struct my_sas_ha *my_ha)
     {
@@ -164,11 +164,11 @@ lldd_ha
 	    return sas_register_ha(&my_ha->sas_ha);
     }
 ```
-(2) SAS 1.1 娌℃湁瀹氫箟 I_T Nexus Reset TMF銆?
-## 浜嬩欢
+(2) SAS 1.1 没有定义 I_T Nexus Reset TMF
+## 事件
 
 
-浜嬩欢鏄?SAS LLDD 閫氱煡 SAS 灞備换浣曚簨鎯呯殑 **鍞竴鏂瑰紡**銆侺LDD 娌℃湁鍒殑鏂规硶鎴栭€斿緞鏉ュ憡璇?SAS 灞傚叾鍐呴儴鎴?SAS 鍩熶腑鍙戠敓鐨勪换浣曚簨鎯呫€?
+事件SAS LLDD 通知 SAS 层任何事情的 **唯一方式**。LLDD 没有别的方法或途径来告SAS 层其内部SAS 域中发生的任何事情
 ```
 	PHYE_LOSS_OF_SIGNAL, (C)
 	PHYE_OOB_DONE,
@@ -182,92 +182,92 @@ lldd_ha
 	PORTE_TIMER_EVENT,      (C)
 	PORTE_HARD_RESET.
 ```
-涓绘満閫傞厤鍣ㄤ簨浠讹細
+主机适配器事件：
 	HAE_RESET
 
-涓€涓?SAS LLDD 搴斿綋鑳藉浜х敓
+一SAS LLDD 应当能够产生
 
- - 鏉ヨ嚜 C 缁勶紙鍙€夛級鐨勮嚦灏戜竴涓簨浠讹紝
- - 鏍囪涓?M锛堝己鍒讹級鐨勪簨浠舵槸寮哄埗鐨勶紙鍙湁涓€涓級锛? - 鏍囪涓?E锛堟墿灞曞櫒锛夌殑浜嬩欢锛屽鏋滃畠甯屾湜 SAS 灞傚鐞嗗煙閲嶆柊楠岃瘉锛堝彧鏈変竴涓繖鏍风殑浜嬩欢锛夈€? - 鏈爣璁扮殑浜嬩欢鏄彲閫夌殑銆?
-鍚箟锛?
+ - 来自 C 组（可选）的至少一个事件，
+ - 标记M（强制）的事件是强制的（只有一个） - 标记E（扩展器）的事件，如果它希望 SAS 层处理域重新验证（只有一个这样的事件） - 未标记的事件是可选的
+含义
 HAE_RESET
-    - 褰撲綘鐨?HA 鍙戠敓鍐呴儴閿欒骞惰閲嶇疆鏃躲€?
+    - 当你HA 发生内部错误并被重置时
 PORTE_BYTES_DMAED
-    - 鏀跺埌 IDENTIFY/FIS 甯ф椂
+    - 收到 IDENTIFY/FIS 帧时
 
 PORTE_BROADCAST_RCVD
-    - 鏀跺埌涓€涓師璇椂
+    - 收到一个原语时
 
 PORTE_LINK_RESET_ERR
-    - 瀹氭椂鍣ㄨ秴鏃躲€佷俊鍙蜂涪澶便€丏WS 涓㈠け绛?[^1^]_
+    - 定时器超时、信号丢失、DWS 丢失[^1^]_
 
 PORTE_TIMER_EVENT
     - DWS 閲嶇疆瓒呮椂瀹氭椂鍣ㄥ埌鏈?[^1^]_
 
 PORTE_HARD_RESET
-    - 鏀跺埌纭浣嶅師璇€?
+    - 收到硬复位原语
 PHYE_LOSS_OF_SIGNAL
-    - 璁惧娑堝け浜?[^1^]_
+    - 设备消失[^1^]_
 
 PHYE_OOB_DONE
-    - OOB 椤哄埄瀹屾垚涓?oob_mode 鏈夋晥
+    - OOB 顺利完成oob_mode 有效
 
 PHYE_OOB_ERROR
-    - 杩涜 OOB 鏃跺嚭閿欙紝璁惧鍙兘宸叉柇寮€杩炴帴銆俒^1^]_
+    - 进行 OOB 时出错，设备可能已断开连接。[^1^]_
 
 PHYE_SPINUP_HOLD
-    - 瀛樺湪 SATA锛屼絾鏈彂閫?COMWAKE銆?
-       鎴栬€呬篃鍙互浠庡畠浠殑 tasklet 涓皟鐢ㄥ唴鑱旂殑 sas_phy_disconnected()锛屽畠鍙槸涓€涓緟鍔╁嚱鏁般€?
+    - 存在 SATA，但未发COMWAKE
+       或者也可以从它们的 tasklet 中调用内联的 sas_phy_disconnected()，它只是一个辅助函数
 ```
 	int (*lldd_execute_task)(struct sas_task *, gfp_t gfp_flags);
 ```
-鐢ㄤ簬鍚?SAS LLDD 鎺掗槦涓€涓换鍔°€侤task 鏄琚墽琛岀殑浠诲姟銆侤gfp_mask 鏄畾涔夎皟鐢ㄦ柟涓婁笅鏂囩殑 gfp_mask銆?
-璇ュ嚱鏁板簲褰撳疄鐜?Execute Command SCSI RPC锛?
-涔熷氨鏄锛屽綋璋冪敤 lldd_execute_task() 鏃讹紝鍛戒护 **绔嬪嵆** 鍦ㄤ紶杈撳眰涓婂彂鍑恒€傚湪 SAS LLDD 涓?**涓嶅瓨鍦?* 浠讳綍绉嶇被銆佷换浣曞眰娆＄殑鎺掗槦銆?
-杩斿洖锛?
-   - -SAS_QUEUE_FULL銆?ENOMEM锛屾湭鎺掗槦浠讳綍鍐呭锛?   - 0锛屼换鍔″凡鎺掗槦銆?
+用于SAS LLDD 排队一个任务。@task 是要被执行的任务。@gfp_mask 是定义调用方上下文的 gfp_mask
+该函数应当实Execute Command SCSI RPC
+也就是说，当调用 lldd_execute_task() 时，命令 **立即** 在传输层上发出。在 SAS LLDD **不存* 任何种类、任何层次的排队
+返回
+   - -SAS_QUEUE_FULLENOMEM，未排队任何内容   - 0，任务已排队
 ```
     struct sas_task {
-	    dev -- 璇ヤ换鍔℃墍鍙戝線鐨勮澶?	    task_proto -- enum sas_proto 涓殑 _涓€涓猒
-	    scatter -- 鎸囧悜鍒嗘暎/鑱氶泦鍒楄〃鏁扮粍鐨勬寚閽?	    num_scatter -- scatter 涓殑鍏冪礌涓暟
-	    total_xfer_len -- 棰勬湡浼犺緭鐨勬€诲瓧鑺傛暟
+	    dev -- 该任务所发往的设	    task_proto -- enum sas_proto 中的 _一个_
+	    scatter -- 指向分散/聚集列表数组的指	    num_scatter -- scatter 中的元素个数
+	    total_xfer_len -- 预期传输的总字节数
 	    data_dir -- PCI_DMA_...
-	    task_done -- 浠诲姟鎵ц瀹屾垚鏃剁殑鍥炶皟
+	    task_done -- 任务执行完成时的回调
     };
 ```
 
-## 鍙戠幇
+## 发现
 
 
-sysfs 鏍戞湁浠ヤ笅鐢ㄩ€旓細
+sysfs 树有以下用途：
 
-    a) 瀹冩樉绀哄綋鍓嶆椂鍒?SAS 鍩熺殑鐗╃悊甯冨眬锛屽嵆姝ゅ埢鍩熷湪鐗╃悊涓栫晫涓殑鏍峰瓙銆?    b) 鏄剧ず _鍙戠幇鏃禵 鐨勬煇浜涜澶囧弬鏁般€?
-杩欐槸涓€涓寚鍚?tree(1) 绋嬪簭鐨勯摼鎺ワ紝鍦ㄦ煡鐪?SAS 鍩熸椂闈炲父鏈夌敤锛?ftp://mama.indstate.edu/linux/tree/
+    a) 它显示当前时SAS 域的物理布局，即此刻域在物理世界中的样子    b) 显示 _发现时_ 的某些设备参数
+这是一个指tree(1) 程序的链接，在查SAS 域时非常有用ftp://mama.indstate.edu/linux/tree/
 
-鎴戞湡鏈涚敤鎴风┖闂村簲鐢ㄧ▼搴忓疄闄呭垱寤哄畠鐨勫浘褰㈢晫闈€?
-涔熷氨鏄锛宻ysfs 鍩熸爲涓嶆樉绀轰篃涓嶄繚瀛樼姸鎬侊紝渚嬪濡傛灉浣犳敼鍙樹簡 READY LED MEANING 璁剧疆鐨勫惈涔夛紝浣嗗畠纭疄鏄剧ず鍩熻澶囩殑褰撳墠杩炴帴鐘舵€併€?
-淇濆瓨鍐呴儴璁惧鐘舵€佸彉鍖栫殑璐ｄ换鍦ㄤ笂灞傦紙鍛戒护闆嗛┍鍔級鍜岀敤鎴风┖闂淬€?
-褰撹澶囨垨璁惧浠粠鍩熶腑鎷斿嚭鏃讹紝杩欎細绔嬪嵆鍙嶆槧鍦?sysfs 鏍戜腑锛屽苟涓旇璁惧锛堜滑锛変細浠庣郴缁熶腑绉婚櫎銆?
-domain_device 缁撴瀯鎻忚堪 SAS 鍩熶腑鐨勪换浣曡澶囥€傚畠瀹屽叏鐢?SAS 灞傜鐞嗐€備竴涓换鍔℃寚鍚戜竴涓煙璁惧锛孲AS LLDD 鐢辨鐭ラ亾灏嗕换鍔″彂寰€浣曞銆係AS LLDD 鍙鍙?domain_device 缁撴瀯鐨勫唴瀹癸紝浣嗕粠涓嶅垱寤烘垨閿€姣佸畠銆?
-## 鏉ヨ嚜鐢ㄦ埛绌洪棿鐨勬墿灞曞櫒绠＄悊
+我期望用户空间应用程序实际创建它的图形界面
+也就是说，sysfs 域树不显示也不保存状态，例如如果你改变了 READY LED MEANING 设置的含义，但它确实显示域设备的当前连接状态
+保存内部设备状态变化的责任在上层（命令集驱动）和用户空间
+当设备或设备们从域中拔出时，这会立即反映sysfs 树中，并且该设备（们）会从系统中移除
+domain_device 结构描述 SAS 域中的任何设备。它完全SAS 层管理。一个任务指向一个域设备，SAS LLDD 由此知道将任务发往何处。SAS LLDD 只读domain_device 结构的内容，但从不创建或销毁它
+## 来自用户空间的扩展器管理
 
 
-鍦?sysfs 涓瘡涓墿灞曞櫒鐩綍涓嬶紝閮芥湁涓€涓悕涓?"smp_portal" 鐨勬枃浠躲€傚畠鏄竴涓簩杩涘埗 sysfs 灞炴€ф枃浠讹紝瀹炵幇浜嗕竴涓?SMP portal锛堟敞鎰忥細杩?**涓嶆槸** 涓€涓?SMP 绔彛锛夛紝鐢ㄦ埛绌洪棿搴旂敤绋嬪簭鍙互鍚戝叾鍙戦€?SMP 璇锋眰骞舵帴鏀?SMP 鍝嶅簲銆?
-鍏跺姛鑳界湅浼肩畝鍗曞疄鍒欎笉鐒讹細
+sysfs 中每个扩展器目录下，都有一个名"smp_portal" 的文件。它是一个二进制 sysfs 属性文件，实现了一SMP portal（注意：**不是** 一SMP 端口），用户空间应用程序可以向其发SMP 请求并接SMP 响应
+其功能看似简单实则不然：
 
-1. 鏋勫缓浣犳兂鍙戦€佺殑 SMP 甯с€傛牸寮忓拰甯冨眬鍦?SAS 瑙勮寖涓弿杩般€傚皢 CRC 瀛楁鐣欎负 0銆?
+1. 构建你想发送的 SMP 帧。格式和布局SAS 规范中描述。将 CRC 字段留为 0
 open(2)
 
-2. 浠ヨ鍐欐ā寮忔墦寮€鎵╁睍鍣ㄧ殑 SMP portal sysfs 鏂囦欢銆?
+2. 以读写模式打开扩展器的 SMP portal sysfs 文件
 write(2)
 
-3. 鍐欏叆浣犲湪绗?1 姝ユ瀯寤虹殑甯с€?
+3. 写入你在1 步构建的帧
 read(2)
 
-4. 璇诲彇浣犳湡鏈涗负鎵€鏋勫缓甯ф帴鏀剁殑鏁版嵁閲忋€傚鏋滀綘鏀跺埌鐨勬暟鎹噺涓庢湡鏈涚殑涓嶅悓锛屽垯鍙戠敓浜嗘煇绉嶉敊璇€?
+4. 读取你期望为所构建帧接收的数据量。如果你收到的数据量与期望的不同，则发生了某种错误
 close(2)
 
-鏁翠釜杩囩▼鍦ㄥ嚱鏁?do_smp_func() 鍙婂叾璋冪敤鑰呬腑鏈夎缁嗗睍绀猴紝浣嶄簬 "expander_conf.c" 鏂囦欢涓€?
-鍐呮牳鍔熻兘瀹炵幇鍦?"sas_expander.c" 鏂囦欢涓€?
-绋嬪簭 "expander_conf.c" 瀹炵幇浜嗘鍔熻兘銆傚畠鎺ュ彈涓€涓弬鏁帮紝鍗虫寚鍚戞墿灞曞櫒鐨?SMP portal 鐨?sysfs 鏂囦欢鍚嶏紝骞剁粰鍑烘墿灞曞櫒淇℃伅锛屽寘鎷矾鐢辫〃銆?
-SMP portal 璁╀綘瀹屽叏鎺у埗鎵╁睍鍣紝鎵€浠ヨ灏忓績銆?
+整个过程在函do_smp_func() 及其调用者中有详细展示，位于 "expander_conf.c" 文件中
+内核功能实现"sas_expander.c" 文件中
+程序 "expander_conf.c" 实现了此功能。它接受一个参数，即指向扩展器SMP portal sysfs 文件名，并给出扩展器信息，包括路由表
+SMP portal 让你完全控制扩展器，所以请小心

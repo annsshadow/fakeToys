@@ -1,10 +1,10 @@
-﻿## 瀛愮郴缁熶笌缁存姢鑰呮爲鐗瑰畾鐨勫紑鍙戞祦绋嬭鏄?
+﻿## 子系统与维护者树特定的开发流程说
 
 
-鏈枃妗ｆ棬鍦ㄦ彁渚涘瓙绯荤粺鐗规湁鐨勪俊鎭紝浣滀负閫氱敤寮€鍙戞祦绋嬫墜鍐?Documentation/process
-<development_process_main> 鐨勮ˉ鍏呫€?
+本文档旨在提供子系统特有的信息，作为通用开发流程手Documentation/process
+<development_process_main> 的补充
 
-鐩綍锛?
+目录
 
 - [maintainer-netdev](maintainer-netdev)
 - [maintainer-soc](maintainer-soc)

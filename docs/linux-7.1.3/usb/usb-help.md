@@ -1,15 +1,15 @@
-﻿## USB 鍙傝€冭祫鏂?
+﻿## USB 参考资
 
 
 2008-Mar-7
 
-闄や綅浜?`Documentation/usb/*` 鐨?readme 鏂囦欢澶栵紝鏈夊叧 USB 鐨勫府鍔╋紝璇峰弬瑙佷互涓嬪唴瀹癸細
+除位`Documentation/usb/*` readme 文件外，有关 USB 的帮助，请参见以下内容：
 
 - Linux-USB project:  http://www.linux-usb.org
   mirrors at          http://usb.in.tum.de/linux-usb/
   and                 http://it.linux-usb.org
 - Linux USB Guide:    http://linux-usb.sourceforge.net
-- Linux-USB 璁惧姒傝锛堝彲鐢ㄨ澶囦笌椹卞姩锛夛細
+- Linux-USB 设备概览（可用设备与驱动）：
   http://www.qbik.ch/usb/devices/
 
-Linux-USB 閭欢鍒楄〃浣嶄簬 linux-usb@vger.kernel.org
+Linux-USB 邮件列表位于 linux-usb@vger.kernel.org

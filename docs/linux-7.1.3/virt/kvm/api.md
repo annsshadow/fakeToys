@@ -1,13 +1,13 @@
 ﻿
-## KVM锛堝熀浜庡唴鏍哥殑铏氭嫙鏈猴級API 鏉冨▉鏂囨。
+## KVM（基于内核的虚拟机）API 权威文档
 
 
 ## 1. General description
 
 
-kvm API 鍥寸粫鍙互鍙戦€佺粰鍚勭被鏂囦欢鎻忚堪绗︾殑涓嶅悓绉嶇被鐨?ioctl 鏋勫缓銆傛渶鍒濈殑涓€娆?open("/dev/kvm") 鑾峰彇涓€涓寚鍚?kvm 瀛愮郴缁熺殑鍙ユ焺锛涜鍙ユ焺鍙敤浜庡彂鍑虹郴缁?ioctl銆傚湪姝ゅ彞鏌勪笂鎵ц KVM_CREATE_VM ioctl 灏嗗垱寤轰竴涓?VM 鏂囦欢鎻忚堪绗︼紝鍙敤浜庡彂鍑?VM ioctl銆傚湪 VM fd 涓婃墽琛?KVM_CREATE_VCPU 鎴?KVM_CREATE_DEVICE ioctl 灏嗗垱寤轰竴涓櫄鎷?cpu 鎴栬澶囷紝骞惰繑鍥炴寚鍚戞柊璧勬簮鐨勬枃浠舵弿杩扮銆?
+kvm API 围绕可以发送给各类文件描述符的不同种类ioctl 构建。最初的一open("/dev/kvm") 获取一个指kvm 子系统的句柄；该句柄可用于发出系ioctl。在此句柄上执行 KVM_CREATE_VM ioctl 将创建一VM 文件描述符，可用于发VM ioctl。在 VM fd 上执KVM_CREATE_VCPU KVM_CREATE_DEVICE ioctl 将创建一个虚cpu 或设备，并返回指向新资源的文件描述符
 
-鎹㈠彞璇濊锛宬vm API 鏄竴缁勫彂閫佺粰涓嶅悓绉嶇被鏂囦欢鎻忚堪绗︾殑 ioctl锛岀敤浜庢帶鍒惰櫄鎷熸満鐨勫悇涓柟闈€傛牴鎹帴鍙楀畠浠殑鏂囦欢鎻忚堪绗︼紝ioctl 灞炰簬浠ヤ笅绫诲埆锛?
+换句话说，kvm API 是一组发送给不同种类文件描述符的 ioctl，用于控制虚拟机的各个方面。根据接受它们的文件描述符，ioctl 属于以下类别
 
  - System ioctls: These query and set global attributes which affect the
    whole kvm subsystem.  In addition a system ioctl is used to create
@@ -34,33 +34,33 @@ kvm API 鍥寸粫鍙互鍙戦€佺粰鍚勭被鏂囦欢鎻忚堪绗︾殑涓
    device ioctls must be issued from the same process (address space) that
    was used to create the VM.
 
-铏界劧澶у鏁?ioctl 鏄壒瀹氫簬鏌愪竴绉嶆枃浠舵弿杩扮鐨勶紝浣嗗湪鏌愪簺鎯呭喌涓嬶紝鍚屼竴涓?ioctl 鍙互灞炰簬澶氫釜绫诲埆銆?
+虽然大多ioctl 是特定于某一种文件描述符的，但在某些情况下，同一ioctl 可以属于多个类别
 
-KVM API 鏄殢鐫€鏃堕棿鎺ㄧЩ鎴愰暱璧锋潵鐨勩€傚洜姝わ紝KVM 瀹氫箟浜嗚澶氬舰濡?`KVM_CAP_*` 鐨勫父閲忥紝姣忎釜瀵瑰簲鐢变竴涓垨澶氫釜 ioctl 鎻愪緵鐨勪竴缁勫姛鑳姐€傝繖浜?鑳藉姏"锛坈apabilities锛夌殑鍙敤鎬у彲浠ラ€氳繃 KVM_CHECK_EXTENSION <KVM_CHECK_EXTENSION> 鏉ユ鏌ャ€傚浜庡笇鏈涜幏寰楀叾鍔熻兘鐨?VM 鎴?VCPU锛屾煇浜涜兘鍔涜繕闇€瑕佽鍚敤锛堝弬瑙?cap_enable 鍜?cap_enable_vm锛夈€?
+KVM API 是随着时间推移成长起来的。因此，KVM 定义了许多形`KVM_CAP_*` 的常量，每个对应由一个或多个 ioctl 提供的一组功能。这能力"（capabilities）的可用性可以通过 KVM_CHECK_EXTENSION <KVM_CHECK_EXTENSION> 来检查。对于希望获得其功能VM VCPU，某些能力还需要被启用（参cap_enable cap_enable_vm）
 
 
 ## 2. Restrictions
 
 
-涓€鑸€岃█锛屾枃浠舵弿杩扮鍙互閫氳繃 fork() 鍜?unix 鍩熷鎺ュ瓧鐨?SCM_RIGHTS 璁炬柦鍦ㄨ繘绋嬮棿杩佺Щ銆傝繖绫绘妧宸ф槑纭笉鍙?kvm 鏀寔銆傝櫧鐒跺畠浠笉浼氬瀹夸富鏈洪€犳垚鎹熷锛屼絾鍏跺疄闄呰涓轰笉琚?API 淇濊瘉銆傛湁鍏?KVM 鏀寔鐨?ioctl 浣跨敤妯″瀷璇︽儏锛岃鍙傞槄"General description"銆?
+一般而言，文件描述符可以通过 fork() unix 域套接字SCM_RIGHTS 设施在进程间迁移。这类技巧明确不kvm 支持。虽然它们不会对宿主机造成损害，但其实际行为不API 保证。有KVM 支持ioctl 使用模型详情，请参阅"General description"
 
-闇€瑕佹敞鎰忕殑鏄紝灏界 VM ioctl 鍙兘浠庡垱寤鸿 VM 鐨勮繘绋嬪彂鍑猴紝浣?VM 鐨勭敓鍛藉懆鏈熶笌鍏舵枃浠舵弿杩扮鐩稿叧鑱旓紝鑰岄潪涓庡叾鍒涘缓鑰咃紙杩涚▼锛夌浉鍏宠仈銆傛崲鍙ヨ瘽璇达紝VM 鍙婂叾璧勬簮锛?*鍖呮嫭鍏宠仈鐨勫湴鍧€绌洪棿**锛夊湪瀵硅 VM 鏂囦欢鎻忚堪绗︾殑鏈€鍚庝竴涓紩鐢ㄨ閲婃斁涔嬪墠涓嶄細琚噴鏀俱€備緥濡傦紝濡傛灉鍦?ioctl(KVM_CREATE_VM) 涔嬪悗鎵ц fork()锛屽垯璇?VM 鍦ㄧ埗锛堝師濮嬶級杩涚▼鍙婂叾瀛愯繘绋嬮兘閲婃斁浜嗗畠浠 VM 鏂囦欢鎻忚堪绗︾殑寮曠敤涔嬪墠涓嶄細琚噴鏀俱€?
+需要注意的是，尽管 VM ioctl 只能从创建该 VM 的进程发出，VM 的生命周期与其文件描述符相关联，而非与其创建者（进程）相关联。换句话说，VM 及其资源*包括关联的地址空间**）在对该 VM 文件描述符的最后一个引用被释放之前不会被释放。例如，如果ioctl(KVM_CREATE_VM) 之后执行 fork()，则VM 在父（原始）进程及其子进程都释放了它们对 VM 文件描述符的引用之前不会被释放
 
-鐢变簬 VM 鐨勮祫婧愬湪鍏舵枃浠舵弿杩扮鐨勬渶鍚庝竴涓紩鐢ㄨ閲婃斁涔嬪墠涓嶄細琚噴鏀撅紝鍥犳寮虹儓涓嶅缓璁湪鏈粩缁嗚€冭檻鐨勬儏鍐典笅閫氳繃 fork()銆乨up() 绛夋柟寮忓垱寤哄 VM 鐨勯澶栧紩鐢紝杩欏彲鑳戒細浜х敓涓嶅笇鏈涚殑鍓綔鐢紝渚嬪 VM 鍏抽棴鏃讹紝鐢?VM 杩涚▼鍙婂叾浠ｈ〃鍒嗛厤鐨勫唴瀛樺彲鑳戒笉浼氳閲婃斁/璁拌处銆?
+由于 VM 的资源在其文件描述符的最后一个引用被释放之前不会被释放，因此强烈不建议在未仔细考虑的情况下通过 fork()、dup() 等方式创建对 VM 的额外引用，这可能会产生不希望的副作用，例如 VM 关闭时，VM 进程及其代表分配的内存可能不会被释放/记账
 
 
 ## 3. Extensions
 
 
-鑷?Linux 2.6.22 璧凤紝KVM ABI 宸茬粡绋冲畾锛氫笉鍏佽浠讳綍涓嶅悜鍚庡吋瀹圭殑鍙樻洿銆傜劧鑰岋紝瀛樺湪涓€涓墿灞曡鏂斤紝鍏佽鏌ヨ鍜屼娇鐢ㄥ API 鐨勫悜鍚庡吋瀹规墿灞曘€?
+Linux 2.6.22 起，KVM ABI 已经稳定：不允许任何不向后兼容的变更。然而，存在一个扩展设施，允许查询和使用对 API 的向后兼容扩展
 
-鎵╁睍鏈哄埗骞堕潪鍩轰簬 Linux 鐗堟湰鍙枫€傜浉鍙嶏紝kvm 瀹氫箟鎵╁睍鏍囪瘑绗︼紝骞舵彁渚涗竴涓鏂芥潵鏌ヨ鏌愪釜鐗瑰畾鐨勬墿灞曟爣璇嗙鏄惁鍙敤銆傚鏋滃彲鐢紝鍒欐湁涓€缁?ioctl 鍙緵搴旂敤绋嬪簭浣跨敤銆?
+扩展机制并非基于 Linux 版本号。相反，kvm 定义扩展标识符，并提供一个设施来查询某个特定的扩展标识符是否可用。如果可用，则有一ioctl 可供应用程序使用
 
 
 ## 4. API description
 
 
-鏈妭鎻忚堪鍙敤浜庢帶鍒?kvm 瀹㈡埛鏈虹殑 ioctl銆傚浜庢瘡涓?ioctl锛岄櫎鎻忚堪澶栬繕鎻愪緵浠ヤ笅淇℃伅锛?
+本节描述可用于控kvm 客户机的 ioctl。对于每ioctl，除描述外还提供以下信息
 
   Capability:
       which KVM extension provides this ioctl.  Can be 'basic',
@@ -95,7 +95,7 @@ KVM API 鏄殢鐫€鏃堕棿鎺ㄧЩ鎴愰暱璧锋潵鐨勩€傚洜姝わ�
 :Parameters: none
 :Returns: the constant KVM_API_VERSION (=12)
 
-杩欎細灏?API 鐗堟湰鏍囪瘑涓虹ǔ瀹氱殑 kvm API銆傞璁¤鏁板瓧涓嶄細鍙樺寲銆備笉杩囷紝Linux 2.6.20 鍜?2.6.21 鎶ュ憡鐨勬槸鏇存棭鐨勭増鏈紱杩欎簺鐗堟湰娌℃湁鏂囨。涓斾笉鍙楁敮鎸併€傚鏋?KVM_GET_API_VERSION 杩斿洖鐨勫€间笉鏄?12锛屽簲鐢ㄧ▼搴忓簲褰撴嫆缁濊繍琛屻€傚鏋滄椤规鏌ラ€氳繃锛屾墍鏈夎鎻忚堪涓?'basic' 鐨?ioctl 閮藉皢鍙敤銆?
+这会API 版本标识为稳定的 kvm API。预计该数字不会变化。不过，Linux 2.6.20 2.6.21 报告的是更早的版本；这些版本没有文档且不受支持。如KVM_GET_API_VERSION 返回的值不12，应用程序应当拒绝运行。如果此项检查通过，所有被描述'basic' ioctl 都将可用
 
 
 ### 4.2 KVM_CREATE_VM
@@ -108,37 +108,37 @@ KVM API 鏄殢鐫€鏃堕棿鎺ㄧЩ鎴愰暱璧锋潵鐨勩€傚洜姝わ�
 :Parameters: machine type identifier (KVM_VM_*)
 :Returns: a VM fd that can be used to control the new virtual machine.
 
-鏂?VM 娌℃湁铏氭嫙 cpu锛屼篃娌℃湁鍐呭瓨銆備綘鍙兘甯屾湜灏?0 鐢ㄤ綔鏈哄櫒绫诲瀷銆?
+VM 没有虚拟 cpu，也没有内存。你可能希望0 用作机器类型
 
 ##### X86:
 
 
 
-鍙楁敮鎸佺殑 X86 VM 绫诲瀷鍙互閫氳繃 KVM_CAP_VM_TYPES 鏌ヨ銆?
+受支持的 X86 VM 类型可以通过 KVM_CAP_VM_TYPES 查询
 
 ##### S390:
 
 
 
-涓轰簡鍦?S390 涓婂垱寤虹敤鎴锋帶鍒剁殑铏氭嫙鏈猴紝璇锋鏌?KVM_CAP_S390_UCONTROL锛屽苟浠ョ壒鏉冪敤鎴凤紙CAP_SYS_ADMIN锛変娇鐢ㄦ爣蹇?KVM_VM_S390_UCONTROL銆?
+为了S390 上创建用户控制的虚拟机，请检KVM_CAP_S390_UCONTROL，并以特权用户（CAP_SYS_ADMIN）使用标KVM_VM_S390_UCONTROL
 
 ##### MIPS:
 
 
 
-瑕佸湪 MIPS 涓婁娇鐢ㄧ‖浠惰緟鍔╄櫄鎷熷寲锛圴Z ASE锛夛紝鑰岄潪榛樿鐨勯櫡鍏ュ苟妯℃嫙锛坱rap & emulate锛夊疄鐜帮紙璇ュ疄鐜颁細鏀瑰彉铏氭嫙鍐呭瓨甯冨眬浠ラ€傞厤鐢ㄦ埛妯″紡锛夛紝璇锋鏌?KVM_CAP_MIPS_VZ 骞朵娇鐢ㄦ爣蹇?KVM_VM_MIPS_VZ銆?
+要在 MIPS 上使用硬件辅助虚拟化（VZ ASE），而非默认的陷入并模拟（trap & emulate）实现（该实现会改变虚拟内存布局以适配用户模式），请检KVM_CAP_MIPS_VZ 并使用标KVM_VM_MIPS_VZ
 
 ##### ARM64:
 
 
 
-鍦?arm64 涓婏紝VM 鐨勭墿鐞嗗湴鍧€澶у皬锛圛PA 澶у皬闄愬埗锛夐粯璁ら檺鍒朵负 40 浣嶃€傚鏋滃涓绘満鏀寔 KVM_CAP_ARM_VM_IPA_SIZE 鎵╁睍锛岃闄愬埗鍙厤缃€傚彈鏀寔鏃讹紝浣跨敤 KVM_VM_TYPE_ARM_IPA_SIZE(IPA_Bits) 鍦ㄦ満鍣ㄧ被鍨嬫爣璇嗙涓缃ぇ灏忥紝鍏朵腑 IPA_Bits 鏄?VM 浣跨敤鐨勪换浣曠墿鐞嗗湴鍧€鐨勬渶澶у搴︺€侷PA_Bits 琚紪鐮佸湪鏈哄櫒绫诲瀷鏍囪瘑绗︾殑 bits[7-0] 涓€?
+arm64 上，VM 的物理地址大小（IPA 大小限制）默认限制为 40 位。如果宿主机支持 KVM_CAP_ARM_VM_IPA_SIZE 扩展，该限制可配置。受支持时，使用 KVM_VM_TYPE_ARM_IPA_SIZE(IPA_Bits) 在机器类型标识符中设置大小，其中 IPA_Bits VM 使用的任何物理地址的最大宽度。IPA_Bits 被编码在机器类型标识符的 bits[7-0] 中
 
 ```
     vm_fd = ioctl(dev_fd, KVM_CREATE_VM, KVM_VM_TYPE_ARM_IPA_SIZE(48));
 ```
 
-鎵€璇锋眰鐨勫ぇ灏忥紙IPA_Bits锛夊繀椤绘弧瓒筹細
+所请求的大小（IPA_Bits）必须满足：
 
  ==   =========================================================
   0   Implies default size, 40bits (for backward compatibility)
@@ -146,11 +146,11 @@ KVM API 鏄殢鐫€鏃堕棿鎺ㄧЩ鎴愰暱璧锋潵鐨勩€傚洜姝わ�
       32 <= N <= Host_IPA_Limit
  ==   =========================================================
 
-Host_IPA_Limit 鏄涓绘満涓?IPA_Bits 鍙兘鐨勬渶澶у€硷紝鍙栧喅浜?CPU 鑳藉姏鍜屽唴鏍搁厤缃€傝闄愬埗鍙互閫氳繃杩愯鏃惰皟鐢?KVM_CHECK_EXTENSION ioctl() 鐨?KVM_CAP_ARM_VM_IPA_SIZE 鑾峰彇銆?
+Host_IPA_Limit 是宿主机IPA_Bits 可能的最大值，取决CPU 能力和内核配置。该限制可以通过运行时调KVM_CHECK_EXTENSION ioctl() KVM_CAP_ARM_VM_IPA_SIZE 获取
 
-濡傛灉鎵€璇锋眰鐨?IPA 澶у皬锛堟棤璁烘槸闅愬紡杩樻槸鏄惧紡锛夊湪瀹夸富鏈轰笂涓嶅彈鏀寔锛孷M 鐨勫垱寤哄皢澶辫触銆?
+如果所请求IPA 大小（无论是隐式还是显式）在宿主机上不受支持，VM 的创建将失败
 
-璇锋敞鎰忥紝閰嶇疆 IPA 澶у皬涓嶄細褰卞搷瀹㈡埛鏈?CPU 鍦?ID_AA64MMFR0_EL1[PARange] 涓毚闇茬殑鑳藉姏銆傚畠鍙奖鍝嶇敱 stage2 绾у埆锛堝鎴锋満鐗╃悊鍦板潃鍒板涓绘満鐗╃悊鍦板潃杞崲锛夋墍杞崲鐨勫湴鍧€澶у皬銆?
+请注意，配置 IPA 大小不会影响客户CPU ID_AA64MMFR0_EL1[PARange] 中暴露的能力。它只影响由 stage2 级别（客户机物理地址到宿主机物理地址转换）所转换的地址大小
 
 
 ### 4.3 KVM_GET_MSR_INDEX_LIST, KVM_GET_MSR_FEATURE_INDEX_LIST
@@ -163,11 +163,11 @@ Host_IPA_Limit 鏄涓绘満涓?IPA_Bits 鍙兘鐨勬渶澶у€硷紝�
 :Parameters: struct kvm_msr_list (in/out)
 :Returns: 0 on success; -1 on error
 
-閿欒锛?
+错误
 
   ======     ============================================================
-  EFAULT     msr 绱㈠紩鍒楄〃鏃犳硶琚鍙栨垨鍐欏叆
-  E2BIG      msr 绱㈠紩鍒楄〃澶ぇ锛屾棤娉曟斁鍏ョ敤鎴锋寚瀹氱殑鏁扮粍涓?
+  EFAULT     msr 索引列表无法被读取或写入
+  E2BIG      msr 索引列表太大，无法放入用户指定的数组
   ======     ============================================================
 
 ```
@@ -177,13 +177,13 @@ Host_IPA_Limit 鏄涓绘満涓?IPA_Bits 鍙兘鐨勬渶澶у€硷紝�
   };
 ```
 
-鐢ㄦ埛鐢?nmsrs 濉叆 indices 鏁扮粍鐨勫ぇ灏忥紝浣滀负鍥炴姤 kvm 璋冩暣 nmsrs 浠ュ弽鏄犲疄闄呯殑 msr 鏁伴噺锛屽苟鐢ㄥ叾缂栧彿濉厖 indices 鏁扮粍銆?
+用户nmsrs 填入 indices 数组的大小，作为回报 kvm 调整 nmsrs 以反映实际的 msr 数量，并用其编号填充 indices 数组
 
-KVM_GET_MSR_INDEX_LIST 杩斿洖鍙楁敮鎸佺殑瀹㈡埛鏈?msr銆傝鍒楄〃闅?kvm 鐗堟湰鍜屽涓绘満澶勭悊鍣ㄨ€屽彉锛岄櫎姝や箣澶栦笉浼氭敼鍙樸€?
+KVM_GET_MSR_INDEX_LIST 返回受支持的客户msr。该列表kvm 版本和宿主机处理器而变，除此之外不会改变
 
-娉ㄦ剰锛氬鏋?kvm 琛ㄦ槑鏀寔 MCE锛圞VM_CAP_MCE锛夛紝鍒?MCE bank MSR 涓嶄細鍦?MSR 鍒楄〃涓繑鍥烇紝鍥犱负涓嶅悓鐨?vcpu 鍙兘鎷ユ湁涓嶅悓鏁伴噺鐨?bank锛岃繖閫氳繃 KVM_X86_SETUP_MCE ioctl 璁剧疆銆?
+注意：如kvm 表明支持 MCE（KVM_CAP_MCE），MCE bank MSR 不会MSR 列表中返回，因为不同vcpu 可能拥有不同数量bank，这通过 KVM_X86_SETUP_MCE ioctl 设置
 
-KVM_GET_MSR_FEATURE_INDEX_LIST 杩斿洖鍙互浼犻€掔粰 KVM_GET_MSRS 绯荤粺 ioctl 鐨?MSR 鍒楄〃銆傝繖璁╃敤鎴风┖闂磋兘澶熸帰娴嬮€氳繃 MSR 鏆撮湶鐨勫涓绘満鑳藉姏鍙婂鐞嗗櫒鐗规€э紙渚嬪 VMX 鑳藉姏锛夈€傝鍒楄〃涔熼殢 kvm 鐗堟湰鍜屽涓绘満澶勭悊鍣ㄨ€屽彉锛岄櫎姝や箣澶栦笉浼氭敼鍙樸€?
+KVM_GET_MSR_FEATURE_INDEX_LIST 返回可以传递给 KVM_GET_MSRS 系统 ioctl MSR 列表。这让用户空间能够探测通过 MSR 暴露的宿主机能力及处理器特性（例如 VMX 能力）。该列表也随 kvm 版本和宿主机处理器而变，除此之外不会改变
 
 
 
@@ -197,9 +197,9 @@ KVM_GET_MSR_FEATURE_INDEX_LIST 杩斿洖鍙互浼犻€掔粰 KVM_GET_MSRS �
 :Parameters: extension identifier (KVM_CAP_*)
 :Returns: 0 if unsupported; 1 (or some other positive integer) if supported
 
-璇?API 鍏佽搴旂敤绋嬪簭鏌ヨ鏍稿績 kvm API 鐨勬墿灞曘€傜敤鎴风┖闂翠紶閫掍竴涓墿灞曟爣璇嗙锛堟暣鏁帮級骞舵帴鏀朵竴涓弿杩版墿灞曞彲鐢ㄦ€х殑鏁存暟銆傞€氬父 0 琛ㄧず鍚︼紝1 琛ㄧず鏄紝浣嗘煇浜涙墿灞曞彲鑳藉湪鏁存暟杩斿洖鍊间腑鎶ュ憡棰濆淇℃伅銆?
+API 允许应用程序查询核心 kvm API 的扩展。用户空间传递一个扩展标识符（整数）并接收一个描述扩展可用性的整数。通常 0 表示否，1 表示是，但某些扩展可能在整数返回值中报告额外信息
 
-鏍规嵁鍏跺垵濮嬪寲鏂瑰紡锛屼笉鍚岀殑 VM 鍙兘鍏锋湁涓嶅悓鐨勮兘鍔涖€傚洜姝ゅ缓璁娇鐢?vm ioctl 鏉ユ煡璇㈣兘鍔涳紙鍦?vm fd 涓婇€氳繃 KVM_CAP_CHECK_EXTENSION_VM 鍙敤锛夈€?
+根据其初始化方式，不同的 VM 可能具有不同的能力。因此建议使vm ioctl 来查询能力（vm fd 上通过 KVM_CAP_CHECK_EXTENSION_VM 可用）
 
 ### 4.5 KVM_GET_VCPU_MMAP_SIZE
 
@@ -211,9 +211,9 @@ KVM_GET_MSR_FEATURE_INDEX_LIST 杩斿洖鍙互浼犻€掔粰 KVM_GET_MSRS �
 :Parameters: none
 :Returns: size of vcpu mmap area, in bytes
 
-KVM_RUN ioctl锛堝弬瑙佸墠鏂囷級閫氳繃鍏变韩鍐呭瓨鍖哄煙涓庣敤鎴风┖闂撮€氫俊銆傝 ioctl 杩斿洖璇ュ尯鍩熺殑澶у皬銆傝鎯呰鍙傞槄 KVM_RUN 鏂囨。銆?
+KVM_RUN ioctl（参见前文）通过共享内存区域与用户空间通信。该 ioctl 返回该区域的大小。详情请参阅 KVM_RUN 文档
 
-闄や簡 KVM_RUN 閫氫俊鍖哄煙鐨勫ぇ灏忓锛孷CPU 鏂囦欢鎻忚堪绗︾殑鍏朵粬鍖哄煙涔熷彲浠ヨ mmap锛屽寘鎷細
+除了 KVM_RUN 通信区域的大小外，VCPU 文件描述符的其他区域也可以被 mmap，包括：
 
 - if KVM_CAP_COALESCED_MMIO is available, a page at
   KVM_COALESCED_MMIO_PAGE_OFFSET * PAGE_SIZE; for historical reasons,
@@ -235,19 +235,19 @@ KVM_RUN ioctl锛堝弬瑙佸墠鏂囷級閫氳繃鍏变韩鍐呭瓨鍖哄煙涓�
 :Parameters: vcpu id (apic id on x86)
 :Returns: vcpu fd on success, -1 on error
 
-璇?API 鍚戣櫄鎷熸満娣诲姞涓€涓?vcpu銆傛坊鍔犳暟閲忎笉寰楄秴杩?max_vcpus銆倂cpu id 鏄寖鍥?[0, max_vcpu_id) 鍐呯殑鏁存暟銆?
+API 向虚拟机添加一vcpu。添加数量不得超max_vcpus。vcpu id 是范[0, max_vcpu_id) 内的整数
 
-寤鸿鐨?max_vcpus 鍊煎彲浠ラ€氳繃杩愯鏃惰皟鐢?KVM_CHECK_EXTENSION ioctl() 鐨?KVM_CAP_NR_VCPUS 鑾峰彇銆俶ax_vcpus 鍙兘鐨勬渶澶у€煎彲浠ラ€氳繃杩愯鏃惰皟鐢?KVM_CHECK_EXTENSION ioctl() 鐨?KVM_CAP_MAX_VCPUS 鑾峰彇銆?
+建议max_vcpus 值可以通过运行时调KVM_CHECK_EXTENSION ioctl() KVM_CAP_NR_VCPUS 获取。max_vcpus 可能的最大值可以通过运行时调KVM_CHECK_EXTENSION ioctl() KVM_CAP_MAX_VCPUS 获取
 
-濡傛灉 KVM_CAP_NR_VCPUS 涓嶅瓨鍦紝浣犲簲褰撳亣瀹?max_vcpus 鏈€澶氫负 4 涓?cpu銆傚鏋?KVM_CAP_MAX_VCPUS 涓嶅瓨鍦紝浣犲簲褰撳亣瀹?max_vcpus 涓?KVM_CAP_NR_VCPUS 杩斿洖鐨勫€肩浉鍚屻€?
+如果 KVM_CAP_NR_VCPUS 不存在，你应当假max_vcpus 最多为 4 cpu。如KVM_CAP_MAX_VCPUS 不存在，你应当假max_vcpus KVM_CAP_NR_VCPUS 返回的值相同
 
-max_vcpu_id 鍙兘鐨勬渶澶у€煎彲浠ラ€氳繃杩愯鏃惰皟鐢?KVM_CHECK_EXTENSION ioctl() 鐨?KVM_CAP_MAX_VCPU_ID 鑾峰彇銆?
+max_vcpu_id 可能的最大值可以通过运行时调KVM_CHECK_EXTENSION ioctl() KVM_CAP_MAX_VCPU_ID 获取
 
-濡傛灉 KVM_CAP_MAX_VCPU_ID 涓嶅瓨鍦紝浣犲簲褰撳亣瀹?max_vcpu_id 涓?KVM_CAP_MAX_VCPUS 杩斿洖鐨勫€肩浉鍚屻€?
+如果 KVM_CAP_MAX_VCPU_ID 不存在，你应当假max_vcpu_id KVM_CAP_MAX_VCPUS 返回的值相同
 
-鍦ㄤ娇鐢?book3s_hv 妯″紡鐨?powerpc 涓婏紝vcpu 琚槧灏勫埌鐢变竴涓垨澶氫釜铏氭嫙 CPU 鏍哥粍鎴愮殑铏氭嫙绾跨▼涓€傦紙杩欐槸鍥犱负纭欢瑕佹眰涓€涓?CPU 鏍镐腑鐨勬墍鏈夌‖浠剁嚎绋嬮兘澶勪簬鍚屼竴鍒嗗尯涓€傦級KVM_CAP_PPC_SMT 鑳藉姏琛ㄧず姣忎釜铏氭嫙鏍革紙vcore锛夌殑 vcpu 鏁伴噺銆倂core id 鐢?vcpu id 闄や互姣忎釜 vcore 鐨?vcpu 鏁伴噺寰楀埌銆傜粰瀹?vcore 涓殑 vcpu 濮嬬粓褰兼浣嶄簬鍚屼竴鐗╃悊鏍镐腑锛堝敖绠″彲鑳介殢鏃堕棿鍒囨崲鍒颁笉鍚岀殑鐗╃悊鏍革級銆傜敤鎴风┖闂村彲浠ラ€氳繃鍒嗛厤 vcpu id 鏉ユ帶鍒跺鎴锋満鐨勭嚎绋嬶紙SMT锛夋ā寮忋€備緥濡傦紝濡傛灉鐢ㄦ埛绌洪棿甯屾湜瀹㈡埛鏈?vcpu 鏄崟绾跨▼鐨勶紝瀹冨簲褰撲娇鎵€鏈?vcpu id 閮芥槸姣忎釜 vcore 鐨?vcpu 鏁伴噺鐨勫€嶆暟銆?
+在使book3s_hv 模式powerpc 上，vcpu 被映射到由一个或多个虚拟 CPU 核组成的虚拟线程中。（这是因为硬件要求一CPU 核中的所有硬件线程都处于同一分区中。）KVM_CAP_PPC_SMT 能力表示每个虚拟核（vcore）的 vcpu 数量。vcore id vcpu id 除以每个 vcore vcpu 数量得到。给vcore 中的 vcpu 始终彼此位于同一物理核中（尽管可能随时间切换到不同的物理核）。用户空间可以通过分配 vcpu id 来控制客户机的线程（SMT）模式。例如，如果用户空间希望客户vcpu 是单线程的，它应当使所vcpu id 都是每个 vcore vcpu 数量的倍数
 
-瀵逛簬浣跨敤 S390 鐢ㄦ埛鎺у埗铏氭嫙鏈哄垱寤虹殑铏氭嫙 cpu锛屽緱鍒扮殑 vcpu fd 鍙互鍦ㄩ〉鍋忕Щ KVM_S390_SIE_PAGE_OFFSET 澶勮繘琛屽唴瀛樻槧灏勶紝浠ヨ幏鍙栬櫄鎷?cpu 纭欢鎺у埗鍧楃殑鍐呭瓨鏄犲皠銆?
+对于使用 S390 用户控制虚拟机创建的虚拟 cpu，得到的 vcpu fd 可以在页偏移 KVM_S390_SIE_PAGE_OFFSET 处进行内存映射，以获取虚cpu 硬件控制块的内存映射
 
 
 ### 4.8 KVM_GET_DIRTY_LOG
@@ -272,13 +272,13 @@ max_vcpu_id 鍙兘鐨勬渶澶у€煎彲浠ラ€氳繃杩愯鏃惰皟鐢
   };
 ```
 
-缁欏畾涓€涓唴瀛樻Ы锛岃繑鍥炰竴涓綅鍥撅紝鍖呭惈鑷笂娆¤皟鐢ㄨ ioctl 浠ユ潵琚紕鑴忕殑鎵€鏈夐〉銆傜 0 浣嶅搴斿唴瀛樻Ы涓殑绗竴椤点€傝纭繚鏁翠釜缁撴瀯浣撹娓呴浂锛屼互閬垮厤濉厖闂銆?
+给定一个内存槽，返回一个位图，包含自上次调用该 ioctl 以来被弄脏的所有页。第 0 位对应内存槽中的第一页。请确保整个结构体被清零，以避免填充问题
 
-濡傛灉 KVM_CAP_MULTI_ADDRESS_SPACE 鍙敤锛宻lot 瀛楁鐨?16-31 浣嶆寚瀹氫簡浣犳兂瑕佽繑鍥炶剰浣嶅浘鐨勫湴鍧€绌洪棿銆傛湁鍏?slot 瀛楁鐢ㄦ硶鐨勮鎯咃紝璇峰弬闃?KVM_SET_USER_MEMORY_REGION銆?
+如果 KVM_CAP_MULTI_ADDRESS_SPACE 可用，slot 字段16-31 位指定了你想要返回脏位图的地址空间。有slot 字段用法的详情，请参KVM_SET_USER_MEMORY_REGION
 
-鑴忎綅鍥句腑鐨勪綅浼氬湪 ioctl 杩斿洖涔嬪墠琚竻闆讹紝闄ら潪鍚敤浜?KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2銆傛洿澶氫俊鎭鍙傞槄璇ヨ兘鍔涚殑鎻忚堪銆?
+脏位图中的位会在 ioctl 返回之前被清零，除非启用KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2。更多信息请参阅该能力的描述
 
-娉ㄦ剰锛孹en shared_info 椤碉紙濡傛灉宸查厤缃級搴斿缁堣瑙嗕负鑴忛〉銆侹VM 涓嶄細鏄惧紡鍦板皢鍏舵爣璁颁负鑴忋€?
+注意，Xen shared_info 页（如果已配置）应始终被视为脏页。KVM 不会显式地将其标记为脏
 
 
 ### 4.10 KVM_RUN
@@ -291,7 +291,7 @@ max_vcpu_id 鍙兘鐨勬渶澶у€煎彲浠ラ€氳繃杩愯鏃惰皟鐢
 :Parameters: none
 :Returns: 0 on success, -1 on error
 
-閿欒锛?
+错误
 
   =======    ==============================================================
   EINTR      an unmasked signal is pending
@@ -302,7 +302,7 @@ max_vcpu_id 鍙兘鐨勬渶澶у€煎彲浠ラ€氳繃杩愯鏃惰皟鐢
   EPERM      SVE feature set but not finalized (arm64)
   =======    ==============================================================
 
-璇?ioctl 鐢ㄤ簬杩愯涓€涓鎴锋満铏氭嫙 cpu銆傝櫧鐒舵病鏈夋樉寮忓弬鏁帮紝浣嗗瓨鍦ㄤ竴涓殣寮忓弬鏁板潡锛屽彲浠ラ€氳繃浠?KVM_GET_VCPU_MMAP_SIZE 缁欏畾澶у皬瀵?vcpu fd 鍦ㄥ亸绉?0 澶勮繘琛?mmap() 鑾峰緱銆傝鍙傛暟鍧楄鏍煎紡鍖栦负 'struct kvm_run'锛堣涓嬫枃锛夈€?
+ioctl 用于运行一个客户机虚拟 cpu。虽然没有显式参数，但存在一个隐式参数块，可以通过KVM_GET_VCPU_MMAP_SIZE 给定大小vcpu fd 在偏0 处进mmap() 获得。该参数块被格式化为 'struct kvm_run'（见下文）
 
 
 ### 4.11 KVM_GET_REGS
@@ -315,7 +315,7 @@ max_vcpu_id 鍙兘鐨勬渶澶у€煎彲浠ラ€氳繃杩愯鏃惰皟鐢
 :Parameters: struct kvm_regs (out)
 :Returns: 0 on success, -1 on error
 
-浠?vcpu 璇诲彇閫氱敤瀵勫瓨鍣ㄣ€?
+vcpu 读取通用寄存器
 
 ```
   /* x86 */
@@ -356,7 +356,7 @@ max_vcpu_id 鍙兘鐨勬渶澶у€煎彲浠ラ€氳繃杩愯鏃惰皟鐢
 :Parameters: struct kvm_regs (in)
 :Returns: 0 on success, -1 on error
 
-灏嗛€氱敤瀵勫瓨鍣ㄥ啓鍏?vcpu銆?
+将通用寄存器写vcpu
 
 See KVM_GET_REGS for the data structure.
 
@@ -371,7 +371,7 @@ See KVM_GET_REGS for the data structure.
 :Parameters: struct kvm_sregs (out)
 :Returns: 0 on success, -1 on error
 
-浠?vcpu 璇诲彇鐗规畩瀵勫瓨鍣ㄣ€?
+vcpu 读取特殊寄存器
 
 ```
   /* x86 */
@@ -389,7 +389,7 @@ See KVM_GET_REGS for the data structure.
 
 ```
 
-interrupt_bitmap 鏄寕璧峰閮ㄤ腑鏂殑浣嶅浘銆傛渶澶氬彧鑳借缃竴浣嶃€傝涓柇宸茶 APIC 纭锛屼絾灏氭湭琚敞鍏ュ埌 cpu 鏍镐腑銆?
+interrupt_bitmap 是挂起外部中断的位图。最多只能设置一位。该中断已被 APIC 确认，但尚未被注入到 cpu 核中
 
 
 ### 4.14 KVM_SET_SREGS
@@ -402,7 +402,7 @@ interrupt_bitmap 鏄寕璧峰閮ㄤ腑鏂殑浣嶅浘銆傛渶澶氬彧
 :Parameters: struct kvm_sregs (in)
 :Returns: 0 on success, -1 on error
 
-灏嗙壒娈婂瘎瀛樺櫒鍐欏叆 vcpu銆係ee KVM_GET_SREGS for the data structures.
+将特殊寄存器写入 vcpu。See KVM_GET_SREGS for the data structures.
 
 
 ### 4.15 KVM_TRANSLATE
@@ -415,7 +415,7 @@ interrupt_bitmap 鏄寕璧峰閮ㄤ腑鏂殑浣嶅浘銆傛渶澶氬彧
 :Parameters: struct kvm_translation (in/out)
 :Returns: 0 on success, -1 on error
 
-鏍规嵁 vcpu 褰撳墠鍦板潃杞崲妯″紡缈昏瘧涓€涓櫄鎷熷湴鍧€銆?
+根据 vcpu 当前地址转换模式翻译一个虚拟地址
 
 ```
   struct kvm_translation {
@@ -442,7 +442,7 @@ interrupt_bitmap 鏄寕璧峰閮ㄤ腑鏂殑浣嶅浘銆傛渶澶氬彧
 :Parameters: struct kvm_interrupt (in)
 :Returns: 0 on success, negative on failure.
 
-灏嗗緟娉ㄥ叆鐨勭‖浠朵腑鏂悜閲忔帓鍏ラ槦鍒椼€?
+将待注入的硬件中断向量排入队列
 
 ```
   /* for KVM_INTERRUPT */
@@ -466,31 +466,31 @@ interrupt_bitmap 鏄寕璧峰閮ㄤ腑鏂殑浣嶅浘銆傛渶澶氬彧
 	 -EFAULT  if the pointer is invalid
 	========= ===================================
 
-娉ㄦ剰锛?irq' 鏄腑鏂悜閲忥紝鑰岄潪涓柇寮曡剼鎴栫嚎璺€傚鏋滄湭浣跨敤鍐呮牳鎬?PIC锛岃 ioctl 寰堟湁鐢ㄣ€?
+注意irq' 是中断向量，而非中断引脚或线路。如果未使用内核PIC，该 ioctl 很有用
 
 ##### PPC:
 
 
 
-灏嗗緟娉ㄥ叆鐨勫閮ㄤ腑鏂帓鍏ラ槦鍒椼€傝 ioctl 琚噸杞戒负 3 涓笉鍚岀殑 irq 鍊硷細
+将待注入的外部中断排入队列。该 ioctl 被重载为 3 个不同的 irq 值：
 
 a) KVM_INTERRUPT_SET
 
-   涓€鏃﹀鎴锋満鍑嗗濂芥帴鏀朵腑鏂紝灏卞皢杈规部鍨嬪閮ㄤ腑鏂敞鍏ュ埌瀹㈡埛鏈轰腑銆傛敞鍏ュ悗锛屼腑鏂嵆瀹屾垚銆?
+   一旦客户机准备好接收中断，就将边沿型外部中断注入到客户机中。注入后，中断即完成
 
 b) KVM_INTERRUPT_UNSET
 
-   杩欎細鍙栨秷浠讳綍鎸傝捣鐨勪腑鏂€?
+   这会取消任何挂起的中断
 
    Only available with KVM_CAP_PPC_UNSET_IRQ.
 
 c) KVM_INTERRUPT_SET_LEVEL
 
-   杩欏皢鐢靛钩鍨嬪閮ㄤ腑鏂敞鍏ュ埌瀹㈡埛鏈轰笂涓嬫枃涓€備腑鏂繚鎸佹寕璧凤紝鐩村埌瑙﹀彂甯︽湁 KVM_INTERRUPT_UNSET 鐨勭壒瀹?ioctl銆?
+   这将电平型外部中断注入到客户机上下文中。中断保持挂起，直到触发带有 KVM_INTERRUPT_UNSET 的特ioctl
 
    Only available with KVM_CAP_PPC_IRQ_LEVEL.
 
-娉ㄦ剰锛岄櫎涓婅堪澹版槑鐨勫€间箣澶栫殑浠讳綍 'irq' 鍊奸兘鏄棤鏁堢殑锛屽苟浼氬鑷存剰澶栬涓恒€?
+注意，除上述声明的值之外的任何 'irq' 值都是无效的，并会导致意外行为
 
 This is an asynchronous vcpu ioctl and can be invoked from any thread.
 
@@ -498,7 +498,7 @@ This is an asynchronous vcpu ioctl and can be invoked from any thread.
 
 
 
-灏嗗緟娉ㄥ叆铏氭嫙 CPU 鐨勫閮ㄤ腑鏂帓鍏ラ槦鍒椼€傝礋鐨?interrupt 鍙蜂細灏嗕腑鏂嚭闃熴€?
+将待注入虚拟 CPU 的外部中断排入队列。负interrupt 号会将中断出队
 
 This is an asynchronous vcpu ioctl and can be invoked from any thread.
 
@@ -506,15 +506,15 @@ This is an asynchronous vcpu ioctl and can be invoked from any thread.
 
 
 
-灏嗗緟娉ㄥ叆铏氭嫙 CPU 鐨勫閮ㄤ腑鏂帓鍏ラ槦鍒椼€傝 ioctl 琚噸杞戒负 2 涓笉鍚岀殑 irq 鍊硷細
+将待注入虚拟 CPU 的外部中断排入队列。该 ioctl 被重载为 2 个不同的 irq 值：
 
 a) KVM_INTERRUPT_SET
 
-   杩欎负铏氭嫙 CPU 璁剧疆澶栭儴涓柇锛屽畠灏嗗湪灏辩华鍚庢帴鏀躲€?
+   这为虚拟 CPU 设置外部中断，它将在就绪后接收
 
 b) KVM_INTERRUPT_UNSET
 
-   杩欎細娓呴櫎铏氭嫙 CPU 鐨勬寕璧峰閮ㄤ腑鏂€?
+   这会清除虚拟 CPU 的挂起外部中断
 
 This is an asynchronous vcpu ioctl and can be invoked from any thread.
 
@@ -522,7 +522,7 @@ This is an asynchronous vcpu ioctl and can be invoked from any thread.
 
 
 
-灏嗗緟娉ㄥ叆铏氭嫙 CPU 鐨勫閮ㄤ腑鏂帓鍏ラ槦鍒椼€傝礋鐨?interrupt 鍙蜂細灏嗕腑鏂嚭闃熴€?
+将待注入虚拟 CPU 的外部中断排入队列。负interrupt 号会将中断出队
 
 This is an asynchronous vcpu ioctl and can be invoked from any thread.
 
@@ -538,9 +538,9 @@ This is an asynchronous vcpu ioctl and can be invoked from any thread.
 :Returns: number of msrs successfully returned;
           -1 on error
 
-褰撶敤浣滅郴缁?ioctl 鏃讹細璇诲彇 VM 鍙敤鐨勫熀浜?MSR 鐨勭壒鎬х殑鍊笺€傝繖绫讳技浜?KVM_GET_SUPPORTED_CPUID锛屼絾瀹冭繑鍥?MSR 绱㈠紩鍜屽€笺€傚熀浜?MSR 鐨勭壒鎬у垪琛ㄥ彲浠ラ€氳繃绯荤粺 ioctl 涓殑 KVM_GET_MSR_FEATURE_INDEX_LIST 鑾峰彇銆?
+当用作系ioctl 时：读取 VM 可用的基MSR 的特性的值。这类似KVM_GET_SUPPORTED_CPUID，但它返MSR 索引和值。基MSR 的特性列表可以通过系统 ioctl 中的 KVM_GET_MSR_FEATURE_INDEX_LIST 获取
 
-褰撶敤浣?vcpu ioctl 鏃讹細浠?vcpu 璇诲彇妯″瀷鐗瑰畾瀵勫瓨鍣ㄣ€傚彈鏀寔鐨?msr 绱㈠紩鍙互閫氳繃绯荤粺 ioctl 涓殑 KVM_GET_MSR_INDEX_LIST 鑾峰彇銆?
+当用vcpu ioctl 时：vcpu 读取模型特定寄存器。受支持msr 索引可以通过系统 ioctl 中的 KVM_GET_MSR_INDEX_LIST 获取
 
 ```
   struct kvm_msrs {
@@ -557,7 +557,7 @@ This is an asynchronous vcpu ioctl and can be invoked from any thread.
   };
 ```
 
-搴旂敤绋嬪簭浠ｇ爜搴旇缃?'nmsrs' 鎴愬憳锛堣〃绀?entries 鏁扮粍鐨勫ぇ灏忥級浠ュ強姣忎釜鏁扮粍鏉＄洰鐨?'index' 鎴愬憳銆俴vm 灏嗗～鍏?'data' 鎴愬憳銆?
+应用程序代码应设'nmsrs' 成员（表entries 数组的大小）以及每个数组条目'index' 成员。kvm 将填'data' 成员
 
 
 ### 4.19 KVM_SET_MSRS
@@ -570,11 +570,11 @@ This is an asynchronous vcpu ioctl and can be invoked from any thread.
 :Parameters: struct kvm_msrs (in)
 :Returns: number of msrs successfully set (see below), -1 on error
 
-灏嗘ā鍨嬬壒瀹氬瘎瀛樺櫒鍐欏叆 vcpu銆傛暟鎹粨鏋勮鍙傞槄 KVM_GET_MSRS銆?
+将模型特定寄存器写入 vcpu。数据结构请参阅 KVM_GET_MSRS
 
-搴旂敤绋嬪簭浠ｇ爜搴旇缃?'nmsrs' 鎴愬憳锛堣〃绀?entries 鏁扮粍鐨勫ぇ灏忥級锛屼互鍙婃瘡涓暟缁勬潯鐩殑 'index' 鍜?'data' 鎴愬憳銆?
+应用程序代码应设'nmsrs' 成员（表entries 数组的大小），以及每个数组条目的 'index' 'data' 成员
 
-瀹冧細灏濊瘯閫愪竴璁剧疆鏁扮粍 entries[] 涓殑 MSR銆傚鏋滆缃煇涓?MSR 澶辫触锛堜緥濡傦紝鐢变簬璁剧疆浜嗕繚鐣欎綅銆並VM 涓嶆敮鎸?涓嶆ā鎷熻 MSR 绛夛級锛屽畠浼氬仠姝㈠鐞?MSR 鍒楄〃锛屽苟杩斿洖宸叉垚鍔熻缃殑 MSR 鏁伴噺銆?
+它会尝试逐一设置数组 entries[] 中的 MSR。如果设置某MSR 失败（例如，由于设置了保留位、KVM 不支不模拟该 MSR 等），它会停止处MSR 列表，并返回已成功设置的 MSR 数量
 
 
 ### 4.20 KVM_SET_CPUID
@@ -587,12 +587,12 @@ This is an asynchronous vcpu ioctl and can be invoked from any thread.
 :Parameters: struct kvm_cpuid (in)
 :Returns: 0 on success, -1 on error
 
-瀹氫箟 vcpu 瀵?cpuid 鎸囦护鐨勫搷搴斻€傚鏋滃彲鐢紝搴旂敤绋嬪簭搴斾娇鐢?KVM_SET_CPUID2 ioctl銆?
+定义 vcpu cpuid 指令的响应。如果可用，应用程序应使KVM_SET_CPUID2 ioctl
 
-娉ㄦ剰浜嬮」锛圕aveat emptor锛夛細
-  - 濡傛灉璇?IOCTL 澶辫触锛孠VM 涓嶄繚璇佸厛鍓嶇殑鏈夋晥 CPUID 閰嶇疆锛堝鏋滃瓨鍦級鏈鐮村潖銆傜敤鎴风┖闂村彲浠ラ€氳繃 KVM_GET_CPUID2 鑾峰彇缁撴灉 CPUID 閰嶇疆鐨勫壇鏈€?
-  - 鍦?KVM_RUN 涔嬪悗浣跨敤 KVM_SET_CPUID{,2}锛屽嵆鍦ㄨ繍琛屽鎴锋満涔嬪悗鏇存敼瀹㈡埛鏈?vCPU 妯″瀷锛屽彲鑳藉鑷村鎴锋満涓嶇ǔ瀹氥€?
-  - 浣跨敤寮傛瀯鐨?CPUID 閰嶇疆锛圓PIC ID銆佹嫇鎵戠瓑闄ゅ锛夊彲鑳藉鑷村鎴锋満涓嶇ǔ瀹氥€?
+注意事项（Caveat emptor）：
+  - 如果IOCTL 失败，KVM 不保证先前的有效 CPUID 配置（如果存在）未被破坏。用户空间可以通过 KVM_GET_CPUID2 获取结果 CPUID 配置的副本
+  - KVM_RUN 之后使用 KVM_SET_CPUID{,2}，即在运行客户机之后更改客户vCPU 模型，可能导致客户机不稳定
+  - 使用异构CPUID 配置（APIC ID、拓扑等除外）可能导致客户机不稳定
 
 ```
   struct kvm_cpuid_entry {
@@ -623,9 +623,9 @@ This is an asynchronous vcpu ioctl and can be invoked from any thread.
 :Parameters: struct kvm_signal_mask (in)
 :Returns: 0 on success, -1 on error
 
-瀹氫箟鍦ㄦ墽琛?KVM_RUN 鏈熼棿琚樆濉炵殑淇″彿銆傝淇″彿鎺╃爜涓存椂瑕嗙洊绾跨▼鐨勪俊鍙锋帺鐮併€傛敹鍒扮殑浠讳綍鏈樆濉炰俊鍙凤紙SIGKILL 鍜?SIGSTOP 闄ゅ锛屽畠浠繚鐣欎紶缁熻涓猴級灏嗗鑷?KVM_RUN 浠?-EINTR 杩斿洖銆?
+定义在执KVM_RUN 期间被阻塞的信号。该信号掩码临时覆盖线程的信号掩码。收到的任何未阻塞信号（SIGKILL SIGSTOP 除外，它们保留传统行为）将导KVM_RUN -EINTR 返回
 
-娉ㄦ剰锛屽彧鏈夊綋璇ヤ俊鍙锋湭琚師濮嬩俊鍙锋帺鐮侀樆濉炴椂鎵嶄細琚姇閫掋€?
+注意，只有当该信号未被原始信号掩码阻塞时才会被投递
 
 ```
   /* for KVM_SET_SIGNAL_MASK */
@@ -646,7 +646,7 @@ This is an asynchronous vcpu ioctl and can be invoked from any thread.
 :Parameters: struct kvm_fpu (out)
 :Returns: 0 on success, -1 on error
 
-浠?vcpu 璇诲彇娴偣鐘舵€併€?
+vcpu 读取浮点状态
 
 ```
   /* x86: for KVM_GET_FPU and KVM_SET_FPU */
@@ -685,7 +685,7 @@ This is an asynchronous vcpu ioctl and can be invoked from any thread.
 :Parameters: struct kvm_fpu (in)
 :Returns: 0 on success, -1 on error
 
-灏嗘诞鐐圭姸鎬佸啓鍏?vcpu銆?
+将浮点状态写vcpu
 
 ```
   /* x86: for KVM_GET_FPU and KVM_SET_FPU */
@@ -724,9 +724,9 @@ This is an asynchronous vcpu ioctl and can be invoked from any thread.
 :Parameters: none
 :Returns: 0 on success, -1 on error
 
-鍦ㄥ唴鏍镐腑鍒涘缓涓€涓腑鏂帶鍒跺櫒妯″瀷銆傚湪 x86 涓婏紝鍒涘缓涓€涓櫄鎷?ioapic銆佷竴涓櫄鎷?PIC锛堜袱涓祵濂楃殑 PIC锛夛紝骞堕厤缃湭鏉ョ殑 vcpu 鎷ユ湁鏈湴 APIC銆侴SI 0-15 鐨?IRQ 璺敱鍚屾椂鎸囧悜 PIC 鍜?IOAPIC锛汫SI 16-23 浠呮寚鍚?IOAPIC銆傚湪 arm64 涓婏紝鍒涘缓涓€涓?GICv2銆備换浣曞叾浠?GIC 鐗堟湰閮介渶瑕佷娇鐢?KVM_CREATE_DEVICE锛屽畠涔熸敮鎸佸垱寤?GICv2銆傚浜?GICv2锛屾帹鑽愪娇鐢?KVM_CREATE_DEVICE 鑰岄潪 KVM_CREATE_IRQCHIP銆傚湪 s390 涓婏紝鍒涘缓涓€涓櫄鎷熺殑 irq 璺敱琛ㄣ€?
+在内核中创建一个中断控制器模型。在 x86 上，创建一个虚ioapic、一个虚PIC（两个嵌套的 PIC），并配置未来的 vcpu 拥有本地 APIC。GSI 0-15 IRQ 路由同时指向 PIC IOAPIC；GSI 16-23 仅指IOAPIC。在 arm64 上，创建一GICv2。任何其GIC 版本都需要使KVM_CREATE_DEVICE，它也支持创GICv2。对GICv2，推荐使KVM_CREATE_DEVICE 而非 KVM_CREATE_IRQCHIP。在 s390 上，创建一个虚拟的 irq 路由表
 
-娉ㄦ剰锛屽湪 s390 涓婏紝鍦ㄤ娇鐢?KVM_CREATE_IRQCHIP 涔嬪墠闇€瑕佸厛鍚敤 KVM_CAP_S390_IRQCHIP vm 鑳藉姏銆?
+注意，在 s390 上，在使KVM_CREATE_IRQCHIP 之前需要先启用 KVM_CAP_S390_IRQCHIP vm 能力
 
 
 ### 4.25 KVM_IRQ_LINE
@@ -739,20 +739,20 @@ This is an asynchronous vcpu ioctl and can be invoked from any thread.
 :Parameters: struct kvm_irq_level
 :Returns: 0 on success, -1 on error
 
-璁剧疆鍐呮牳涓柇鎺у埗鍣ㄦā鍨嬩腑 GSI 杈撳叆鐨勭數骞炽€傚湪鏌愪簺鏋舵瀯涓婏紝瑕佹眰宸查鍏堜娇鐢?KVM_CREATE_IRQCHIP 鍒涘缓浜嗕腑鏂帶鍒跺櫒妯″瀷銆傛敞鎰忥紝杈规部瑙﹀彂鐨勪腑鏂姹傜數骞冲厛缃负 1 鍐嶇疆鍥?0銆?
+设置内核中断控制器模型中 GSI 输入的电平。在某些架构上，要求已预先使KVM_CREATE_IRQCHIP 创建了中断控制器模型。注意，边沿触发的中断要求电平先置为 1 再置0
 
-鍦ㄧ湡瀹炵‖浠朵笂锛屼腑鏂紩鑴氬彲浠ユ槸浣庣數骞虫湁鏁堟垨楂樼數骞虫湁鏁堛€傝繖瀵逛簬 struct kvm_irq_level 鐨?level 瀛楁娌℃湁褰卞搷锛? 濮嬬粓琛ㄧず鏈夋晥锛坅sserted锛夛紝0 琛ㄧず鏃犳晥锛坉easserted锛夈€?
+在真实硬件上，中断引脚可以是低电平有效或高电平有效。这对于 struct kvm_irq_level level 字段没有影响 始终表示有效（asserted），0 表示无效（deasserted）
 
-x86 鍏佽鎿嶄綔绯荤粺涓虹數骞宠Е鍙戜腑鏂紪绋嬩腑鏂瀬鎬э紙浣庣數骞虫湁鏁?楂樼數骞虫湁鏁堬級锛孠VM 杩囧幓涔熶細鑰冭檻鏋佹€с€傜劧鑰岋紝鐢变簬鍦ㄤ綆鐢靛钩鏈夋晥涓柇澶勭悊涓殑浠ｇ爜鑵愬寲锛坆itrot锛夛紝涓婅堪绾﹀畾鐜板湪鍦?x86 涓婁篃鏈夋晥銆傝繖鐢?KVM_CAP_X86_IOAPIC_POLARITY_IGNORED 鍙戝嚭淇″彿銆傜敤鎴风┖闂翠笉搴斿皢涓柇浠ヤ綆鐢靛钩鏈夋晥鐨勬柟寮忓憟鐜扮粰瀹㈡埛鏈猴紝闄ら潪瀛樺湪璇ヨ兘鍔涳紙鎴栬€呭綋鐒讹紝闄ら潪瀹冩病鏈変娇鐢ㄥ唴鏍告€?irqchip锛夈€?
+x86 允许操作系统为电平触发中断编程中断极性（低电平有高电平有效），KVM 过去也会考虑极性。然而，由于在低电平有效中断处理中的代码腐化（bitrot），上述约定现在x86 上也有效。这KVM_CAP_X86_IOAPIC_POLARITY_IGNORED 发出信号。用户空间不应将中断以低电平有效的方式呈现给客户机，除非存在该能力（或者当然，除非它没有使用内核irqchip）
 
-arm64 鍙互鍦?CPU 绾у埆鎴栧湪鍐呮牳鎬?irqchip锛圙IC锛夊鍙戝嚭涓柇淇″彿锛屽苟涓斿浜庡唴鏍告€?irqchip锛屽彲浠ュ憡鐭?GIC 浣跨敤涓虹壒瀹?cpu 鎸囧畾鐨?PPI銆俰rq 瀛楁鐨勮В閲婂涓嬶細
+arm64 可以CPU 级别或在内核irqchip（GIC）处发出中断信号，并且对于内核irqchip，可以告GIC 使用为特cpu 指定PPI。irq 字段的解释如下：
 
 ```
   bits:  |  31 ... 28  | 27 ... 24 | 23  ... 16 | 15 ... 0 |
   field: | vcpu2_index | irq_type  | vcpu_index |  irq_id  |
 ```
 
-irq_type 瀛楁鍏锋湁浠ヤ笅鍙栧€硷細
+irq_type 字段具有以下取值：
 
 - KVM_ARM_IRQ_TYPE_CPU:
 	       out-of-kernel GIC: irq_id 0 is IRQ, irq_id 1 is FIQ
@@ -764,13 +764,13 @@ irq_type 瀛楁鍏锋湁浠ヤ笅鍙栧€硷細
 	       in-kernel GICv2/GICv3: PPI, irq_id between 16 and 31 (incl.)
 	       in-kernel GICv5: PPI, irq_id between 0 and 127 (incl.)
 
-锛堝洜姝?irq_id 瀛楁鎭板ソ瀵瑰簲浜?ARM GIC 瑙勮寖涓殑 IRQ ID锛?
+（因irq_id 字段恰好对应ARM GIC 规范中的 IRQ ID
 
-鍦ㄨ繖涓ょ鎯呭喌涓嬶紝level 閮界敤浜庣疆浣?娓呴櫎璇ョ嚎璺€?
+在这两种情况下，level 都用于置清除该线路
 
-褰撴敮鎸?KVM_CAP_ARM_IRQ_LINE_LAYOUT_2 鏃讹紝鐩爣 vcpu 琚爣璇嗕负 (256 * vcpu2_index + vcpu_index)銆傚惁鍒欙紝vcpu2_index 蹇呴』涓洪浂銆?
+当支KVM_CAP_ARM_IRQ_LINE_LAYOUT_2 时，目标 vcpu 被标识为 (256 * vcpu2_index + vcpu_index)。否则，vcpu2_index 必须为零
 
-娉ㄦ剰锛屽湪 arm64 涓婏紝KVM_CAP_IRQCHIP 鑳藉姏浠呭喅瀹氬唴鏍告€?irqchip 鐨勪腑鏂敞鍏ャ€侹VM_IRQ_LINE 濮嬬粓鍙敤浜庣敤鎴风┖闂翠腑鏂帶鍒跺櫒銆?
+注意，在 arm64 上，KVM_CAP_IRQCHIP 能力仅决定内核irqchip 的中断注入。KVM_IRQ_LINE 始终可用于用户空间中断控制器
 
 ```
   struct kvm_irq_level {
@@ -792,7 +792,7 @@ irq_type 瀛楁鍏锋湁浠ヤ笅鍙栧€硷細
 :Parameters: struct kvm_irqchip (in/out)
 :Returns: 0 on success, -1 on error
 
-灏嗕娇鐢?KVM_CREATE_IRQCHIP 鍒涘缓鐨勫唴鏍镐腑鏂帶鍒跺櫒鐨勭姸鎬佽鍏ヨ皟鐢ㄨ€呮彁渚涚殑缂撳啿鍖恒€?
+将使KVM_CREATE_IRQCHIP 创建的内核中断控制器的状态读入调用者提供的缓冲区
 
 ```
   struct kvm_irqchip {
@@ -816,7 +816,7 @@ irq_type 瀛楁鍏锋湁浠ヤ笅鍙栧€硷細
 :Parameters: struct kvm_irqchip (in)
 :Returns: 0 on success, -1 on error
 
-浠庤皟鐢ㄨ€呮彁渚涚殑缂撳啿鍖鸿缃娇鐢?KVM_CREATE_IRQCHIP 鍒涘缓鐨勫唴鏍镐腑鏂帶鍒跺櫒鐨勭姸鎬併€?
+从调用者提供的缓冲区设置使KVM_CREATE_IRQCHIP 创建的内核中断控制器的状态
 
 ```
   struct kvm_irqchip {
@@ -840,9 +840,9 @@ irq_type 瀛楁鍏锋湁浠ヤ笅鍙栧€硷細
 :Parameters: struct kvm_xen_hvm_config (in)
 :Returns: 0 on success, -1 on error
 
-璁剧疆 Xen HVM 瀹㈡埛鏈虹敤浜庡垵濮嬪寲鍏惰秴绾ц皟鐢ㄩ〉鐨?MSR锛屽苟鎻愪緵鐢ㄦ埛绌洪棿涓秴绾ц皟鐢?blob 鐨勮捣濮嬪湴鍧€鍜屽ぇ灏忋€傚綋瀹㈡埛鏈哄啓鍏ヨ MSR 鏃讹紝kvm 浼氬皢涓€涓?blob 椤碉紙32 浣嶆垨 64 浣嶏紝鍙栧喅浜?vcpu 妯″紡锛夊鍒跺埌瀹㈡埛鏈哄唴瀛樹腑銆?
+设置 Xen HVM 客户机用于初始化其超级调用页MSR，并提供用户空间中超级调blob 的起始地址和大小。当客户机写入该 MSR 时，kvm 会将一blob 页（32 位或 64 位，取决vcpu 模式）复制到客户机内存中
 
-MSR 绱㈠紩蹇呴』浣嶄簬 [0x40000000, 0x4fffffff] 鑼冨洿鍐咃紝鍗冲繀椤讳綅浜庨潪瀹樻柟涓鸿櫄鎷熸満鐩戞帶鍣ㄤ繚鐣欑殑鑼冨洿鍐呫€傛渶灏忓€煎拰鏈€澶у€奸€氳繃 KVM_XEN_MSR_MIN_INDEX 鍜?KVM_XEN_MSR_MAX_INDEX 鏋氫妇銆?
+MSR 索引必须位于 [0x40000000, 0x4fffffff] 范围内，即必须位于非官方为虚拟机监控器保留的范围内。最小值和最大值通过 KVM_XEN_MSR_MIN_INDEX KVM_XEN_MSR_MAX_INDEX 枚举
 
 ```
   struct kvm_xen_hvm_config {
@@ -856,13 +856,13 @@ MSR 绱㈠紩蹇呴』浣嶄簬 [0x40000000, 0x4fffffff] 鑼冨洿鍐咃紝鍗�
   };
 ```
 
-濡傛灉 KVM_CAP_XEN_HVM 妫€鏌ヨ繑鍥炰簡鏌愪簺鏍囧織锛屽垯鍙互灏嗗畠浠缃湪璇?ioctl 鐨?flags 瀛楁涓細
+如果 KVM_CAP_XEN_HVM 检查返回了某些标志，则可以将它们设置在ioctl flags 字段中：
 
-KVM_XEN_HVM_CONFIG_INTERCEPT_HCALL 鏍囧織璇锋眰 KVM 鑷姩鐢熸垚瓒呯骇璋冪敤椤电殑鍐呭锛涜秴绾ц皟鐢ㄥ皢琚嫤鎴苟閫氳繃 KVM_EXIT_XEN 浼犻€掔粰鐢ㄦ埛绌洪棿銆傚湪杩欑鎯呭喌涓嬶紝鎵€鏈?blob 澶у皬鍜屽湴鍧€瀛楁蹇呴』涓洪浂銆?
+KVM_XEN_HVM_CONFIG_INTERCEPT_HCALL 标志请求 KVM 自动生成超级调用页的内容；超级调用将被拦截并通过 KVM_EXIT_XEN 传递给用户空间。在这种情况下，所blob 大小和地址字段必须为零
 
-KVM_XEN_HVM_CONFIG_EVTCHN_SEND 鏍囧織鍚?KVM 琛ㄦ槑锛岀敤鎴风┖闂村皢濮嬬粓浣跨敤 KVM_XEN_HVM_EVTCHN_SEND ioctl 鏉ユ姇閫掍簨浠堕€氶亾涓柇锛岃€屼笉鏄洿鎺ユ搷浣滃鎴锋満鐨?shared_info 缁撴瀯銆傚弽杩囨潵锛岃繖鍙兘鍏佽 KVM 鍚敤璇稿鎷︽埅 SCHEDOP_poll 瓒呯骇璋冪敤浠ュ姞閫熷鎴锋満鐨?PV 鑷棆閿佹搷浣滅瓑鐗规€с€傚嵆浣胯骞垮憡浜嗚鑳藉姏锛岀敤鎴风┖闂翠粛鍙娇鐢ㄨ ioctl 鏉ユ姇閫掍簨浠讹紝鍗充娇鐢ㄦ埛绌洪棿娌℃湁鍙戦€佸畠灏嗗缁堣繖鏍峰仛鐨勬寚绀恒€?
+KVM_XEN_HVM_CONFIG_EVTCHN_SEND 标志KVM 表明，用户空间将始终使用 KVM_XEN_HVM_EVTCHN_SEND ioctl 来投递事件通道中断，而不是直接操作客户机shared_info 结构。反过来，这可能允许 KVM 启用诸如拦截 SCHEDOP_poll 超级调用以加速客户机PV 自旋锁操作等特性。即使被广告了该能力，用户空间仍可使用该 ioctl 来投递事件，即使用户空间没有发送它将始终这样做的指示
 
-鐩墠锛宻truct kvm_xen_hvm_config 涓病鏈夊叾浠栨湁鏁堟爣蹇椼€?
+目前，struct kvm_xen_hvm_config 中没有其他有效标志
 
 ### 4.29 KVM_GET_CLOCK
 
@@ -874,21 +874,21 @@ KVM_XEN_HVM_CONFIG_EVTCHN_SEND 鏍囧織鍚?KVM 琛ㄦ槑锛岀敤鎴风┖闂�
 :Parameters: struct kvm_clock_data (out)
 :Returns: 0 on success, -1 on error
 
-鑾峰彇褰撳墠瀹㈡埛鏈烘墍鐪嬪埌鐨?kvmclock 鐨勫綋鍓嶆椂闂存埑銆傜粨鍚?KVM_SET_CLOCK锛屽畠鐢ㄤ簬鍦ㄨ縼绉荤瓑鍦烘櫙涓‘淇濆崟璋冩€с€?
+获取当前客户机所看到kvmclock 的当前时间戳。结KVM_SET_CLOCK，它用于在迁移等场景中确保单调性
 
-褰撳皢 KVM_CAP_ADJUST_CLOCK 浼犻€掔粰 KVM_CHECK_EXTENSION 鏃讹紝瀹冭繑鍥?KVM 鍙湪 struct kvm_clock_data 鐨?flag 鎴愬憳涓繑鍥炵殑涓€缁勪綅銆?
+当将 KVM_CAP_ADJUST_CLOCK 传递给 KVM_CHECK_EXTENSION 时，它返KVM 可在 struct kvm_clock_data flag 成员中返回的一组位
 
-瀹氫箟浜嗕互涓嬫爣蹇楋細
+定义了以下标志：
 
 KVM_CLOCK_TSC_STABLE
-  濡傛灉缃綅锛岃繑鍥炵殑鍊兼槸璋冪敤 KVM_GET_CLOCK 閭ｄ竴鍒绘墍鏈?VCPU 鎵€鐪嬪埌鐨勭簿纭?kvmclock 鍊笺€?
-  濡傛灉娓呴浂锛岃繑鍥炵殑鍊煎彧鏄?CLOCK_MONOTONIC 鍔犱笂涓€涓父閲忓亸绉伙紱璇ュ亸绉诲彲浠ラ€氳繃 KVM_SET_CLOCK 淇敼銆侹VM 浼氬皾璇曡鎵€鏈?VCPU 璺熼殢姝ゆ椂閽燂紝浣嗙敱浜庡涓?TSC 涓嶇ǔ瀹氾紝姣忎釜 VCPU 璇诲彇鐨勭簿纭€煎彲鑳戒笉鍚屻€?
+  如果置位，返回的值是调用 KVM_GET_CLOCK 那一刻所VCPU 所看到的精kvmclock 值
+  如果清零，返回的值只CLOCK_MONOTONIC 加上一个常量偏移；该偏移可以通过 KVM_SET_CLOCK 修改。KVM 会尝试让所VCPU 跟随此时钟，但由于宿TSC 不稳定，每个 VCPU 读取的精确值可能不同
 
 KVM_CLOCK_REALTIME
-  濡傛灉缃綅锛宬vm_clock_data 缁撴瀯涓殑 `realtime` 瀛楁浼氳濉厖涓鸿皟鐢?KVM_GET_CLOCK 閭ｄ竴鍒诲涓绘満瀹炴椂鏃堕挓婧愮殑鍊笺€傚鏋滄竻闆讹紝鍒?`realtime` 瀛楁涓嶅寘鍚€笺€?
+  如果置位，kvm_clock_data 结构中的 `realtime` 字段会被填充为调KVM_GET_CLOCK 那一刻宿主机实时时钟源的值。如果清零，`realtime` 字段不包含值
 
 KVM_CLOCK_HOST_TSC
-  濡傛灉缃綅锛宬vm_clock_data 缁撴瀯涓殑 `host_tsc` 瀛楁浼氳濉厖涓鸿皟鐢?KVM_GET_CLOCK 閭ｄ竴鍒诲涓绘満鏃堕棿鎴宠鏁板櫒锛圱SC锛夌殑鍊笺€傚鏋滄竻闆讹紝鍒?`host_tsc` 瀛楁涓嶅寘鍚€笺€?
+  如果置位，kvm_clock_data 结构中的 `host_tsc` 字段会被填充为调KVM_GET_CLOCK 那一刻宿主机时间戳计数器（TSC）的值。如果清零，`host_tsc` 字段不包含值
 
 ```
   struct kvm_clock_data {
@@ -911,14 +911,14 @@ KVM_CLOCK_HOST_TSC
 :Parameters: struct kvm_clock_data (in)
 :Returns: 0 on success, -1 on error
 
-灏?kvmclock 鐨勫綋鍓嶆椂闂存埑璁剧疆涓哄弬鏁颁腑鎸囧畾鐨勫€笺€傜粨鍚?KVM_GET_CLOCK锛屽畠鐢ㄤ簬鍦ㄨ縼绉荤瓑鍦烘櫙涓‘淇濆崟璋冩€с€?
+kvmclock 的当前时间戳设置为参数中指定的值。结KVM_GET_CLOCK，它用于在迁移等场景中确保单调性
 
-鍙互浼犻€掍互涓嬫爣蹇楋細
+可以传递以下标志：
 
 KVM_CLOCK_REALTIME
-  濡傛灉缃綅锛孠VM 浼氬皢 `realtime` 瀛楁鐨勫€间笌璋冪敤 KVM_SET_CLOCK 閭ｄ竴鍒诲涓绘満瀹炴椂鏃堕挓婧愮殑鍊艰繘琛屾瘮杈冦€傜粡杩囨椂闂寸殑宸€间細琚姞鍒版渶缁堟彁渚涚粰瀹㈡埛鏈虹殑 kvmclock 鍊间腑銆?
+  如果置位，KVM 会将 `realtime` 字段的值与调用 KVM_SET_CLOCK 那一刻宿主机实时时钟源的值进行比较。经过时间的差值会被加到最终提供给客户机的 kvmclock 值中
 
-`KVM_GET_CLOCK` 杩斿洖鐨勫叾浠栨爣蹇椾細琚帴鍙椾絾琚拷鐣ャ€?
+`KVM_GET_CLOCK` 返回的其他标志会被接受但被忽略
 
 ```
   struct kvm_clock_data {
@@ -946,7 +946,7 @@ KVM_CLOCK_REALTIME
 
 
 
-鑾峰彇褰撳墠鎸傝捣鐨勫紓甯搞€佷腑鏂拰 NMI 浠ュ強 vcpu 鐨勭浉鍏崇姸鎬併€?
+获取当前挂起的异常、中断和 NMI 以及 vcpu 的相关状态
 
 ```
   struct kvm_vcpu_events {
@@ -983,35 +983,35 @@ KVM_CLOCK_REALTIME
   };
 ```
 
-鍦?flags 瀛楁涓畾涔変簡浠ヤ笅浣嶏細
+flags 字段中定义了以下位：
 
-- KVM_VCPUEVENT_VALID_SHADOW 鍙缃綅浠ヨ〃鏄?interrupt.shadow 鍖呭惈鏈夋晥鐘舵€併€?
+- KVM_VCPUEVENT_VALID_SHADOW 可被置位以表interrupt.shadow 包含有效状态
 
-- KVM_VCPUEVENT_VALID_SMM 鍙缃綅浠ヨ〃鏄?smi 鍖呭惈鏈夋晥鐘舵€併€?
+- KVM_VCPUEVENT_VALID_SMM 可被置位以表smi 包含有效状态
 
-- KVM_VCPUEVENT_VALID_PAYLOAD 鍙缃綅浠ヨ〃鏄?exception_has_payload銆乪xception_payload 鍜?exception.pending 瀛楁鍖呭惈鏈夋晥鐘舵€併€傚彧瑕佸惎鐢ㄤ簡 KVM_CAP_EXCEPTION_PAYLOAD锛岃浣嶅氨浼氳缃綅銆?
+- KVM_VCPUEVENT_VALID_PAYLOAD 可被置位以表exception_has_payload、exception_payload exception.pending 字段包含有效状态。只要启用了 KVM_CAP_EXCEPTION_PAYLOAD，该位就会被置位
 
-- KVM_VCPUEVENT_VALID_TRIPLE_FAULT 鍙缃綅浠ヨ〃鏄?triple_fault_pending 瀛楁鍖呭惈鏈夋晥鐘舵€併€傚彧瑕佸惎鐢ㄤ簡 KVM_CAP_X86_TRIPLE_FAULT_EVENT锛岃浣嶅氨浼氳缃綅銆?
+- KVM_VCPUEVENT_VALID_TRIPLE_FAULT 可被置位以表triple_fault_pending 字段包含有效状态。只要启用了 KVM_CAP_X86_TRIPLE_FAULT_EVENT，该位就会被置位
 
 ##### ARM64:
 
 
 
-濡傛灉瀹㈡埛鏈轰互鏌愮鏂瑰紡璁块棶鐢卞涓诲唴鏍告ā鎷熺殑璁惧锛岃€岀湡瀹炶澶囦細鍥犳鐢熸垚鐗╃悊 SError锛孠VM 鍙兘浼氫负璇?VCPU 浣夸竴涓櫄鎷?SError 鎸傝捣銆傝绯荤粺閿欒涓柇淇濇寔鎸傝捣锛岀洿鍒板鎴锋満閫氳繃瑙ｉ櫎 PSTATE.A 灞忚斀鏉ユ帴鍙楄寮傚父銆?
+如果客户机以某种方式访问由宿主内核模拟的设备，而真实设备会因此生成物理 SError，KVM 可能会为VCPU 使一个虚SError 挂起。该系统错误中断保持挂起，直到客户机通过解除 PSTATE.A 屏蔽来接受该异常
 
-杩愯 VCPU 鍙兘瀵艰嚧瀹冩帴鍙楁寕璧风殑 SError锛屾垨杩涜瀵艰嚧 SError 鎸傝捣鐨勮闂€備簨浠剁殑鎻忚堪浠呭湪 VPCU 鏈繍琛屾椂鏈夋晥銆?
+运行 VCPU 可能导致它接受挂起的 SError，或进行导致 SError 挂起的访问。事件的描述仅在 VPCU 未运行时有效
 
-璇?API 鎻愪緵浜嗕竴绉嶈鍐欎负瀹㈡埛鏈轰笉鍙鐨勬寕璧?event"鐘舵€佺殑鏂规硶銆傝淇濆瓨銆佹仮澶嶆垨杩佺Щ VCPU锛屽彲浠ヤ娇鐢ㄦ GET/SET API 璇诲彇鐒跺悗鍐欏叆琛ㄧず璇ョ姸鎬佺殑缁撴瀯浣擄紝浠ュ強涓庡叾瀹冨鎴锋満鍙鐨勫瘎瀛樺櫒涓€璧枫€傛棤娉?鍙栨秷"涓€涓凡鎸傝捣鐨?SError銆?
+API 提供了一种读写为客户机不可见的挂event"状态的方法。要保存、恢复或迁移 VCPU，可以使用此 GET/SET API 读取然后写入表示该状态的结构体，以及与其它客户机可见的寄存器一起。无取消"一个已挂起SError
 
-鍦ㄧ敤鎴风┖闂存ā鎷熺殑璁惧涔熷彲鑳藉笇鏈涚敓鎴?SError銆備负姝わ紝浜嬩欢缁撴瀯浣撳彲浠ョ敱鐢ㄦ埛绌洪棿濉厖銆傚簲棣栧厛璇诲彇褰撳墠鐘舵€侊紝浠ョ‘淇濇病鏈夌幇鏈夌殑 SError 鎸傝捣銆傚鏋滃瓨鍦ㄧ幇鏈夌殑 SError 鎸傝捣锛屽垯搴旈伒寰灦鏋勭殑"Multiple SError interrupts"瑙勫垯銆傦紙DDI0587.a "ARM Reliability, Availability, and Serviceability (RAS) Specification" 鐨?2.5.3 鑺傦級銆?
+在用户空间模拟的设备也可能希望生SError。为此，事件结构体可以由用户空间填充。应首先读取当前状态，以确保没有现有的 SError 挂起。如果存在现有的 SError 挂起，则应遵循架构的"Multiple SError interrupts"规则。（DDI0587.a "ARM Reliability, Availability, and Serviceability (RAS) Specification" 2.5.3 节）
 
-SError 寮傚父濮嬬粓鏈変竴涓?ESR 鍊笺€傛煇浜?CPU 鑳藉鎸囧畾铏氭嫙 SError 鐨?ESR 鍊煎簲璇ユ槸浠€涔堛€傝繖浜涚郴缁熶細骞垮憡 KVM_CAP_ARM_INJECT_SERROR_ESR銆傚湪杩欑鎯呭喌涓嬶紝璇诲彇鏃?exception.has_esr 濮嬬粓鍏锋湁闈為浂鍊硷紝鑰屼娇 SError 鎸傝捣鐨勪唬鐞嗗簲鎸囧畾 exception.serror_esr 浣?24 浣嶄腑鐨?ISS 瀛楁銆傚鏋滅郴缁熸敮鎸?KVM_CAP_ARM_INJECT_SERROR_ESR锛屼絾鐢ㄦ埛绌洪棿灏嗕簨浠惰缃负 exception.has_esr 涓洪浂锛孠VM 浼氶€夋嫨涓€涓?ESR銆?
+SError 异常始终有一ESR 值。某CPU 能够指定虚拟 SError ESR 值应该是什么。这些系统会广告 KVM_CAP_ARM_INJECT_SERROR_ESR。在这种情况下，读取exception.has_esr 始终具有非零值，而使 SError 挂起的代理应指定 exception.serror_esr 24 位中ISS 字段。如果系统支KVM_CAP_ARM_INJECT_SERROR_ESR，但用户空间将事件设置为 exception.has_esr 为零，KVM 会选择一ESR
 
-鍦ㄤ笉鏀寔璇ヨ兘鍔涚殑绯荤粺涓婃寚瀹?exception.has_esr 灏嗚繑鍥?-EINVAL銆傝缃?exception.serror_esr 浣?24 浣嶄箣澶栫殑浠讳綍鍐呭灏嗚繑鍥?-EINVAL銆?
+在不支持该能力的系统上指exception.has_esr 将返-EINVAL。设exception.serror_esr 24 位之外的任何内容将返-EINVAL
 
-鏃犳硶璇诲洖鎸傝捣鐨勫閮ㄤ腑姝紙閫氳繃 KVM_SET_VCPU_EVENTS 鎴栧叾浠栨柟寮忔敞鍏ワ級锛屽洜涓烘绫诲紓甯告€绘槸鐩存帴鎶曢€掑埌铏氭嫙 CPU銆?
+无法读回挂起的外部中止（通过 KVM_SET_VCPU_EVENTS 或其他方式注入），因为此类异常总是直接投递到虚拟 CPU
 
-鍦ㄥ皻鏈垵濮嬪寲鐨?vCPU 涓婅皟鐢ㄦ ioctl 灏嗚繑鍥?-ENOEXEC銆?
+在尚未初始化vCPU 上调用此 ioctl 将返-ENOEXEC
 
 ```
   struct kvm_vcpu_events {
@@ -1041,11 +1041,11 @@ SError 寮傚父濮嬬粓鏈変竴涓?ESR 鍊笺€傛煇浜?CPU 鑳藉鎸囧
 
 
 
-璁剧疆鎸傝捣鐨勫紓甯搞€佷腑鏂€丯MI 浠ュ強 vcpu 鐨勭浉鍏崇姸鎬併€?
+设置挂起的异常、中断、NMI 以及 vcpu 的相关状态
 
 See KVM_GET_VCPU_EVENTS for the data structure.
 
-鍙兘琚繍琛岀殑 VCPU 寮傛淇敼鐨勫瓧娈靛彲浠ヤ粠鏇存柊涓帓闄ゃ€傝繖浜涘瓧娈垫槸 nmi.pending銆乻ipi_vector銆乻mi.smm銆乻mi.pending銆備繚鎸?flags 瀛楁涓浉搴旂殑浣嶈娓呴浂锛屼互鎶戝埗瑕嗙洊褰撳墠鍐呮牳鎬佺姸鎬併€傝繖浜涗綅鏄細
+可能被运行的 VCPU 异步修改的字段可以从更新中排除。这些字段是 nmi.pending、sipi_vector、smi.smm、smi.pending。保flags 字段中相应的位被清零，以抑制覆盖当前内核态状态。这些位是：
 
 ===============================  ==================================
 KVM_VCPUEVENT_VALID_NMI_PENDING  transfer nmi.pending to the kernel
@@ -1053,27 +1053,27 @@ KVM_VCPUEVENT_VALID_SIPI_VECTOR  transfer sipi_vector
 KVM_VCPUEVENT_VALID_SMM          transfer the smi sub-struct.
 ===============================  ==================================
 
-濡傛灉 KVM_CAP_INTR_SHADOW 鍙敤锛屽垯鍙互鍦?flags 瀛楁涓缃?KVM_VCPUEVENT_VALID_SHADOW锛屼互琛ㄦ槑 interrupt.shadow 鍖呭惈鏈夋晥鐘舵€佸苟搴旇鍐欏叆 VCPU銆?
+如果 KVM_CAP_INTR_SHADOW 可用，则可以flags 字段中设KVM_VCPUEVENT_VALID_SHADOW，以表明 interrupt.shadow 包含有效状态并应被写入 VCPU
 
-鍙湁鍦?KVM_CAP_X86_SMM 鍙敤鏃舵墠鑳借缃?KVM_VCPUEVENT_VALID_SMM銆?
+只有KVM_CAP_X86_SMM 可用时才能设KVM_VCPUEVENT_VALID_SMM
 
-濡傛灉鍚敤浜?KVM_CAP_EXCEPTION_PAYLOAD锛屽垯鍙互鍦?flags 瀛楁涓缃?KVM_VCPUEVENT_VALID_PAYLOAD锛屼互琛ㄦ槑 exception_has_payload銆乪xception_payload 鍜?exception.pending 瀛楁鍖呭惈鏈夋晥鐘舵€佸苟搴旇鍐欏叆 VCPU銆?
+如果启用KVM_CAP_EXCEPTION_PAYLOAD，则可以flags 字段中设KVM_VCPUEVENT_VALID_PAYLOAD，以表明 exception_has_payload、exception_payload exception.pending 字段包含有效状态并应被写入 VCPU
 
-濡傛灉鍚敤浜?KVM_CAP_X86_TRIPLE_FAULT_EVENT锛屽垯鍙互鍦?flags 瀛楁涓缃?KVM_VCPUEVENT_VALID_TRIPLE_FAULT锛屼互琛ㄦ槑 triple_fault 瀛楁鍖呭惈鏈夋晥鐘舵€佸苟搴旇鍐欏叆 VCPU銆?
+如果启用KVM_CAP_X86_TRIPLE_FAULT_EVENT，则可以flags 字段中设KVM_VCPUEVENT_VALID_TRIPLE_FAULT，以表明 triple_fault 字段包含有效状态并应被写入 VCPU
 
 ##### ARM64:
 
 
 
-鐢ㄦ埛绌洪棿鍙兘闇€瑕佸悜瀹㈡埛鏈烘敞鍏ュ绉嶇被鍨嬬殑浜嬩欢銆?
+用户空间可能需要向客户机注入多种类型的事件
 
-璁剧疆姝?VCPU 鎸傝捣鐨?SError 寮傚父鐘舵€併€傛棤娉?鍙栨秷"涓€涓凡鎸傝捣鐨?SError銆?
+设置VCPU 挂起SError 异常状态。无取消"一个已挂起SError
 
-濡傛灉瀹㈡埛鏈哄 I/O 鍐呭瓨杩涜浜嗙敤鎴风┖闂存棤娉曞鐞嗙殑璁块棶锛屼緥濡傜敱浜庣己灏戞寚浠ょ患鍚堝緛锛坰yndrome锛夎В鐮佷俊鎭紝鎴栬€呭洜涓哄湪琚闂殑 IPA 澶勬病鏈夋槧灏勮澶囷紝閭ｄ箞鐢ㄦ埛绌洪棿鍙互璇峰唴鏍镐娇鐢ㄦ潵鑷?VCPU 閫€鍑烘晠闅滅殑鍦板潃娉ㄥ叆涓€涓閮ㄤ腑姝€傚湪涓嶆槸 KVM_EXIT_MMIO銆並VM_EXIT_ARM_NISV 鎴?KVM_EXIT_ARM_LDST64B 鐨勯€€鍑轰箣鍚庤缃?ext_dabt_pending 鏄竴绉嶇紪绋嬮敊璇€傛鐗规€т粎鍦ㄧ郴缁熸敮鎸?KVM_CAP_ARM_INJECT_EXT_DABT 鏃跺彲鐢ㄣ€傝繖鏄竴涓緟鍔╄鏂斤紝涓轰笉鍚岀敤鎴风┖闂村疄鐜板湪濡備綍鍚戝鎴锋満鎶ュ憡涓婅堪鎯呭喌鐨勮闂柟闈㈡彁渚涗竴鑷存€с€傚敖绠″姝わ紝鐢ㄦ埛绌洪棿浠嶇劧鍙互閫氳繃浣跨敤 KVM_SET_ONE_REG API 鎿嶄綔鍚勪釜瀵勫瓨鍣ㄦ潵妯℃嫙鎵€鏈?Arm 寮傚父銆?
+如果客户机对 I/O 内存进行了用户空间无法处理的访问，例如由于缺少指令综合征（syndrome）解码信息，或者因为在被访问的 IPA 处没有映射设备，那么用户空间可以请内核使用来VCPU 退出故障的地址注入一个外部中止。在不是 KVM_EXIT_MMIO、KVM_EXIT_ARM_NISV KVM_EXIT_ARM_LDST64B 的退出之后设ext_dabt_pending 是一种编程错误。此特性仅在系统支KVM_CAP_ARM_INJECT_EXT_DABT 时可用。这是一个辅助设施，为不同用户空间实现在如何向客户机报告上述情况的访问方面提供一致性。尽管如此，用户空间仍然可以通过使用 KVM_SET_ONE_REG API 操作各个寄存器来模拟所Arm 异常
 
 See KVM_GET_VCPU_EVENTS for the data structure.
 
-鍦ㄥ皻鏈垵濮嬪寲鐨?vCPU 涓婅皟鐢ㄦ ioctl 灏嗚繑鍥?-ENOEXEC銆?
+在尚未初始化vCPU 上调用此 ioctl 将返-ENOEXEC
 
 ### 4.33 KVM_GET_DEBUGREGS
 
@@ -1085,7 +1085,7 @@ See KVM_GET_VCPU_EVENTS for the data structure.
 :Parameters: struct kvm_debugregs (out)
 :Returns: 0 on success, -1 on error
 
-浠?vcpu 璇诲彇璋冭瘯瀵勫瓨鍣ㄣ€?
+vcpu 读取调试寄存器
 
 ```
   struct kvm_debugregs {
@@ -1108,7 +1108,7 @@ See KVM_GET_VCPU_EVENTS for the data structure.
 :Parameters: struct kvm_debugregs (in)
 :Returns: 0 on success, -1 on error
 
-灏嗚皟璇曞瘎瀛樺櫒鍐欏叆 vcpu銆?
+将调试寄存器写入 vcpu
 
 See KVM_GET_DEBUGREGS for the data structure. The flags field is unused yet and must be cleared on entry.### 4.35 KVM_SET_USER_MEMORY_REGION
 
@@ -1134,43 +1134,43 @@ See KVM_GET_DEBUGREGS for the data structure. The flags field is unused yet and 
   #define KVM_MEM_READONLY	(1UL << 1)
 
 ```
-璇?ioctl 鍏佽鐢ㄦ埛鍒涘缓銆佷慨鏀规垨鍒犻櫎涓€涓鎴锋満鐗╃悊鍐呭瓨妲姐€?slot" 鐨?0-15 浣嶆寚瀹氭Ы id锛岃鍊煎簲灏忎簬姣忎釜
-VM 鎵€鏀寔鐨勬渶澶х敤鎴峰唴瀛樻Ы鏁伴噺銆傛渶澶у厑璁哥殑妲芥暟閲忓彲閫氳繃 KVM_CAP_NR_MEMSLOTS 鏌ヨ銆?
-妲藉湪瀹㈡埛鏈虹墿鐞嗗湴鍧€绌洪棿涓笉寰楅噸鍙犮€?
+ioctl 允许用户创建、修改或删除一个客户机物理内存槽slot" 0-15 位指定槽 id，该值应小于每个
+VM 所支持的最大用户内存槽数量。最大允许的槽数量可通过 KVM_CAP_NR_MEMSLOTS 查询
+槽在客户机物理地址空间中不得重叠
 
-濡傛灉 KVM_CAP_MULTI_ADDRESS_SPACE 鍙敤锛?slot" 鐨?16-31 浣嶆寚瀹氳淇敼鐨勫湴鍧€绌洪棿銆傚畠浠繀椤诲皬浜?
-KVM_CHECK_EXTENSION 閽堝 KVM_CAP_MULTI_ADDRESS_SPACE 鑳藉姏杩斿洖鐨勫€笺€備笉鍚屽湴鍧€绌洪棿涓殑妲藉郊姝ゆ棤鍏筹紱
-鍏充簬妲介噸鍙犵殑闄愬埗浠呴€傜敤浜庡悇鑷殑鍦板潃绌洪棿鍐呴儴銆?
+如果 KVM_CAP_MULTI_ADDRESS_SPACE 可用slot" 16-31 位指定被修改的地址空间。它们必须小
+KVM_CHECK_EXTENSION 针对 KVM_CAP_MULTI_ADDRESS_SPACE 能力返回的值。不同地址空间中的槽彼此无关；
+关于槽重叠的限制仅适用于各自的地址空间内部
 
-鍒犻櫎妲界殑鏂规硶鏄护 memory_size 涓洪浂銆傚綋淇敼涓€涓凡瀛樺湪鐨勬Ы鏃讹紝瀹冨彲浠ュ湪瀹㈡埛鏈虹墿鐞嗗唴瀛樼┖闂翠腑绉诲姩锛?
-鎴栧叾 flags 鍙互琚慨鏀癸紝浣嗗ぇ灏忎笉鍙璋冩暣銆?
+删除槽的方法是令 memory_size 为零。当修改一个已存在的槽时，它可以在客户机物理内存空间中移动
+或其 flags 可以被修改，但大小不可被调整
 
-璇ュ尯鍩熺殑鍐呭瓨浠?userspace_addr 瀛楁鎵€鎸囧悜鐨勫湴鍧€澶勫紑濮嬭幏鍙栵紝璇ュ湴鍧€蹇呴』鎸囧悜鏁翠釜鍐呭瓨妲藉ぇ灏忚寖鍥村唴
-鐢ㄦ埛鍙鍧€鐨勫唴瀛樸€備换浣曞璞￠兘鍙互浣滀负杩欏潡鍐呭瓨鐨勫悗澶囷紝鍖呮嫭鍖垮悕鍐呭瓨銆佹櫘閫氭枃浠朵互鍙?hugetlbfs銆傚唴瀛樺尯鍩?
-鍚庡鐨勫彉鍖栦細鑷姩鍙嶆槧鍒板鎴锋満涓€備緥濡傦紝褰卞搷璇ュ尯鍩熺殑 mmap() 浼氱珛鍒诲彉寰楀瀹㈡埛鏈哄彲瑙併€傚彟涓€涓緥瀛愭槸
-madvise(MADV_DROP)銆?
+该区域的内存userspace_addr 字段所指向的地址处开始获取，该地址必须指向整个内存槽大小范围内
+用户可寻址的内存。任何对象都可以作为这块内存的后备，包括匿名内存、普通文件以hugetlbfs。内存区
+后备的变化会自动反映到客户机中。例如，影响该区域的 mmap() 会立刻变得对客户机可见。另一个例子是
+madvise(MADV_DROP)銆。
 
-鍦ㄦ敮鎸佹煇绉嶅湴鍧€鏍囪锛坅ddress tagging锛夊舰寮忔灦鏋勪笂锛寀serspace_addr 蹇呴』鏄湭鏍囪鐨勶紙untagged锛夊湴鍧€銆?
+在支持某种地址标记（address tagging）形式架构上，userspace_addr 必须是未标记的（untagged）地址
 
-寤鸿 guest_phys_addr 涓?userspace_addr 鐨勪綆 21 浣嶄繚鎸佷竴鑷淬€傝繖鏍峰彲浠ヨ瀹㈡埛鏈轰腑鐨勫ぇ椤电敱瀹夸富鏈轰腑鐨?
-澶ч〉浣滀负鍚庡銆?
+建议 guest_phys_addr userspace_addr 的低 21 位保持一致。这样可以让客户机中的大页由宿主机中
+大页作为后备
 
-flags 瀛楁鏀寔涓や釜鏍囧織锛欿VM_MEM_LOG_DIRTY_PAGES 涓?KVM_MEM_READONLY銆傚墠鑰呭彲琚缃互鎸囩ず KVM 璺熻釜
-妲藉唴鍐呭瓨鐨勫啓鍏ユ儏鍐点€傚浣曚娇鐢ㄥ畠鍙弬瑙?KVM_GET_DIRTY_LOG ioctl銆傝嫢 KVM_CAP_READONLY_MEM 鑳藉姏鍏佽锛?
-鍚庤€呭彲琚缃互浣挎柊妲藉彉涓哄彧璇汇€傚湪杩欑鎯呭喌涓嬶紝瀵硅鍐呭瓨鐨勫啓鍏ヤ細琚綔涓?KVM_EXIT_MMIO 閫€鍑轰笂鎶ョ粰鐢ㄦ埛绌洪棿銆?
+flags 字段支持两个标志：KVM_MEM_LOG_DIRTY_PAGES KVM_MEM_READONLY。前者可被设置以指示 KVM 跟踪
+槽内内存的写入情况。如何使用它可参KVM_GET_DIRTY_LOG ioctl。若 KVM_CAP_READONLY_MEM 能力允许
+后者可被设置以使新槽变为只读。在这种情况下，对该内存的写入会被作KVM_EXIT_MMIO 退出上报给用户空间
 
-瀵逛簬 TDX 瀹㈡埛鏈猴紝鍒犻櫎/绉诲姩鍐呭瓨鍖哄煙浼氫涪澶卞鎴锋満鍐呭瓨鍐呭銆備笉鏀寔鍙鍖哄煙銆備粎鏀寔 as-id 0銆?
+对于 TDX 客户机，删除/移动内存区域会丢失客户机内存内容。不支持只读区域。仅支持 as-id 0
 
-娉ㄦ剰锛氬湪 arm64 涓婏紝褰撴Ы鍏锋湁 KVM_MEM_READONLY 鏍囧織鏃讹紝鐢遍〉琛ㄩ亶鍘嗗櫒锛坧age-table walker锛変骇鐢熺殑鍐欏叆
-锛堜緥濡傜敤浜庢洿鏂?Access 鍜?Dirty 鏍囧織锛夋案杩滀笉浼氬鑷?KVM_EXIT_MMIO 閫€鍑恒€傝繖鏄洜涓?KVM 鏃犳硶鎻愪緵椤佃〃閬嶅巻鍣?
-灏嗚鍐欏叆鐨勬暟鎹紝浠庤€屾棤娉曟ā鎷熻璁块棶銆傚彇鑰屼唬涔嬶紝浼氬悜瀹㈡埛鏈烘敞鍏ヤ竴涓紓甯革紙濡傛灉椤佃〃鏇存柊鐨勮捣鍥犳槸鍔犺浇鎴?
-瀛樺偍锛屽垯涓烘暟鎹紓甯?data abort锛涘鏋滄槸鎸囦护鑾峰彇锛屽垯涓烘寚浠ゅ紓甯?instruction abort锛夈€?
+注意：在 arm64 上，当槽具有 KVM_MEM_READONLY 标志时，由页表遍历器（page-table walker）产生的写入
+（例如用于更Access Dirty 标志）永远不会导KVM_EXIT_MMIO 退出。这是因KVM 无法提供页表遍历
+将要写入的数据，从而无法模拟该访问。取而代之，会向客户机注入一个异常（如果页表更新的起因是加载
+存储，则为数据异data abort；如果是指令获取，则为指令异instruction abort）
 
 ##### S390:
 
 
-濡傛灉 VM 璁剧疆浜?KVM_VM_S390_UCONTROL 鏍囧織锛屽垯杩斿洖 -EINVAL 鎴?-EEXIST銆?
-濡傛灉鏄湪鍙椾繚鎶ょ殑 VM 涓婅皟鐢紝鍒欒繑鍥?-EINVAL銆?
+如果 VM 设置KVM_VM_S390_UCONTROL 标志，则返回 -EINVAL -EEXIST
+如果是在受保护的 VM 上调用，则返-EINVAL
 
 ### 4.36 KVM_SET_TSS_ADDR
 
@@ -1181,11 +1181,11 @@ flags 瀛楁鏀寔涓や釜鏍囧織锛欿VM_MEM_LOG_DIRTY_PAGES 涓?KVM_M
 :Parameters: unsigned long tss_address (in)
 :Returns: 0 on success, -1 on error
 
-璇?ioctl 瀹氫箟瀹㈡埛鏈虹墿鐞嗗湴鍧€绌洪棿涓竴涓笁椤靛尯鍩熺殑鐗╃悊鍦板潃銆傝鍖哄煙蹇呴』浣嶄簬瀹㈡埛鏈虹墿鐞嗗湴鍧€绌洪棿鐨勫墠
-4GB 涔嬪唴锛屼笖涓嶈兘涓庝换浣曞唴瀛樻Ы鎴栦换浣?mmio 鍦板潃鍐茬獊銆傚鏋滃鎴锋満璁块棶璇ュ唴瀛樺尯鍩燂紝鍙兘浼氬彂鐢熸晠闅溿€?
+ioctl 定义客户机物理地址空间中一个三页区域的物理地址。该区域必须位于客户机物理地址空间的前
+4GB 之内，且不能与任何内存槽或任mmio 地址冲突。如果客户机访问该内存区域，可能会发生故障
 
-鍦ㄥ熀浜?Intel 鐨勪富鏈轰笂锛岃 ioctl 鏄繀闇€鐨勩€傚湪 Intel 纭欢涓婇渶瑕佸畠锛屾槸鍥犱负铏氭嫙鍖栧疄鐜颁腑鐨勪竴涓?
-鎬紓涔嬪锛堝弬瑙佸皻鏈潰涓栫殑 internals 鏂囨。锛夈€?
+在基Intel 的主机上，该 ioctl 是必需的。在 Intel 硬件上需要它，是因为虚拟化实现中的一
+怪异之处（参见尚未面世的 internals 文档）
 
 
 
@@ -1205,11 +1205,11 @@ flags 瀛楁鏀寔涓や釜鏍囧織锛欿VM_MEM_LOG_DIRTY_PAGES 涓?KVM_M
 :Returns: 0 on success; -1 on error
 
 
-   骞堕潪鎵€鏈夋墿灞曢兘榛樿鍚敤銆傞€氳繃姝?ioctl锛屽簲鐢ㄧ▼搴忓彲浠ュ惎鐢ㄤ竴涓墿灞曪紝浣垮叾瀵瑰鎴锋満鍙敤銆?
+   并非所有扩展都默认启用。通过ioctl，应用程序可以启用一个扩展，使其对客户机可用
 
-鍦ㄤ笉鏀寔姝?ioctl 鐨勭郴缁熶笂锛屽畠鎬绘槸澶辫触銆傚湪鏀寔瀹冪殑绯荤粺涓婏紝瀹冨彧瀵归偅浜涙敮鎸佽鍚敤鐨勬墿灞曟湁鏁堛€?
+在不支持ioctl 的系统上，它总是失败。在支持它的系统上，它只对那些支持被启用的扩展有效
 
-瑕佹鏌ユ煇涓兘鍔涙槸鍚﹀彲浠ヨ鍚敤锛屽簲褰撲娇鐢?KVM_CHECK_EXTENSION ioctl銆?
+要检查某个能力是否可以被启用，应当使KVM_CHECK_EXTENSION ioctl
 
 ```
 
@@ -1218,21 +1218,21 @@ flags 瀛楁鏀寔涓や釜鏍囧織锛欿VM_MEM_LOG_DIRTY_PAGES 涓?KVM_M
        __u32 cap;
 
 ```
-瑕佽鍚敤鐨勮兘鍔涖€?
+要被启用的能力
 
 ```
 
        __u32 flags;
 
 ```
-涓€涓寚绀烘湭鏉ュ寮虹殑浣嶅煙銆傜洰鍓嶅繀椤讳负 0銆?
+一个指示未来增强的位域。目前必须为 0
 
 ```
 
        __u64 args[4];
 
 ```
-鍚敤鏌愪釜鐗规€ф墍闇€鐨勫弬鏁般€傚鏋滀竴涓壒鎬ч渶瑕佸垵濮嬪€兼墠鑳芥甯稿伐浣滐紝杩欓噷灏辨槸鏀剧疆瀹冧滑鐨勫湴鏂广€?
+启用某个特性所需的参数。如果一个特性需要初始值才能正常工作，这里就是放置它们的地方
 
 ```
 
@@ -1240,7 +1240,7 @@ flags 瀛楁鏀寔涓や釜鏍囧織锛欿VM_MEM_LOG_DIRTY_PAGES 涓?KVM_M
   };
 
 ```
-vcpu ioctl 搴旂敤浜?vcpu 鐗瑰畾鐨勮兘鍔涳紝vm ioctl 搴旂敤浜?VM 鑼冨洿鐨勮兘鍔涖€?
+vcpu ioctl 应用vcpu 特定的能力，vm ioctl 应用VM 范围的能力
 
 ### 4.38 KVM_GET_MP_STATE
 
@@ -1258,9 +1258,9 @@ vcpu ioctl 搴旂敤浜?vcpu 鐗瑰畾鐨勮兘鍔涳紝vm ioctl 搴旂敤浜?VM
   };
 
 ```
-杩斿洖 vcpu 褰撳墠鐨?澶氬鐞嗗櫒鐘舵€?锛堝敖绠″湪鍗曞鐞嗗櫒瀹㈡埛鏈轰笂涔熸湁鏁堬級銆?
+返回 vcpu 当前多处理器状（尽管在单处理器客户机上也有效）
 
-鍙兘鐨勫€煎涓嬶細
+可能的值如下：
 
    ==========================    ===============================================
    KVM_MP_STATE_RUNNABLE         the vcpu is currently running
@@ -1283,33 +1283,33 @@ vcpu ioctl 搴旂敤浜?vcpu 鐗瑰畾鐨勮兘鍔涳紝vm ioctl 搴旂敤浜?VM
                                  for a wakeup event [arm64]
    ==========================    ===============================================
 
-鍦?x86 涓婏紝姝?ioctl 浠呭湪 KVM_CREATE_IRQCHIP 涔嬪悗鎵嶆湁鐢ㄣ€傚鏋滄病鏈夊唴鏍告€?irqchip锛屽澶勭悊鍣ㄧ姸鎬?
-蹇呴』鍦ㄨ繖浜涙灦鏋勪笂鐢辩敤鎴风┖闂寸淮鎶ゃ€?
+x86 上，ioctl 仅在 KVM_CREATE_IRQCHIP 之后才有用。如果没有内核irqchip，多处理器状
+必须在这些架构上由用户空间维护
 
 ##### For arm64:
 
 
-濡傛灉 vCPU 澶勪簬 KVM_MP_STATE_SUSPENDED 鐘舵€侊紝KVM 浼氭ā鎷?WFI 鎸囦护鐨勬灦鏋勫寲鎵ц銆?
+如果 vCPU 处于 KVM_MP_STATE_SUSPENDED 状态，KVM 会模WFI 指令的架构化执行
 
-濡傛灉璇嗗埆鍒颁竴涓敜閱掍簨浠讹紝KVM 浼氶€€鍑哄埌鐢ㄦ埛绌洪棿锛屼骇鐢熶竴涓?KVM_SYSTEM_EVENT 閫€鍑猴紝鍏朵腑浜嬩欢绫诲瀷涓?
-KVM_SYSTEM_EVENT_WAKEUP銆傚鏋滅敤鎴风┖闂村笇鏈涘搷搴旀鍞ら啋锛屽畠蹇呴』灏?vCPU 鐨?MP 鐘舵€佽缃负
-KVM_MP_STATE_RUNNABLE銆傚鏋滀笉杩欐牱鍋氾紝KVM 浼氬湪鍚庣画瀵?KVM_RUN 鐨勮皟鐢ㄤ腑缁х画绛夊緟鍞ら啋浜嬩欢銆?
+如果识别到一个唤醒事件，KVM 会退出到用户空间，产生一KVM_SYSTEM_EVENT 退出，其中事件类型
+KVM_SYSTEM_EVENT_WAKEUP。如果用户空间希望响应此唤醒，它必须vCPU MP 状态设置为
+KVM_MP_STATE_RUNNABLE。如果不这样做，KVM 会在后续KVM_RUN 的调用中继续等待唤醒事件
 
 
-     濡傛灉鐢ㄦ埛绌洪棿鎵撶畻灏?vCPU 淇濇寔鍦?SUSPENDED 鐘舵€侊紝寮虹儓寤鸿鐢ㄦ埛绌洪棿閲囧彇琛屽姩鎶戝埗鍞ら啋浜嬩欢
-     锛堜緥濡傚睆钄芥煇涓腑鏂級銆傚惁鍒欙紝鍚庣画瀵?KVM_RUN 鐨勮皟鐢ㄤ細绔嬪嵆浠?KVM_SYSTEM_EVENT_WAKEUP 浜嬩欢閫€鍑猴紝
-     骞舵棤鎰忎腑娴垂 CPU 鍛ㄦ湡銆?
+     如果用户空间打算vCPU 保持SUSPENDED 状态，强烈建议用户空间采取行动抑制唤醒事件
+     （例如屏蔽某个中断）。否则，后续KVM_RUN 的调用会立即KVM_SYSTEM_EVENT_WAKEUP 事件退出，
+     并无意中浪费 CPU 周期
 
-     姝ゅ锛屽鏋滅敤鎴风┖闂撮噰鍙栬鍔ㄦ姂鍒朵簡鍞ら啋浜嬩欢锛屽己鐑堝缓璁畠鍦?vCPU 鍐嶆鍙樹负 RUNNABLE 鏃跺皢鍏?
-     鎭㈠鍒板師濮嬬姸鎬併€備緥濡傦紝濡傛灉鐢ㄦ埛绌洪棿灞忚斀浜嗕竴涓寕璧风殑涓柇鏉ユ姂鍒跺敜閱掞紝閭ｄ箞鍦ㄥ皢鎺у埗鏉冧氦杩樼粰
-     瀹㈡埛鏈轰箣鍓嶏紝搴旇В闄よ涓柇鐨勫睆钄姐€?
+     此外，如果用户空间采取行动抑制了唤醒事件，强烈建议它vCPU 再次变为 RUNNABLE 时将
+     恢复到原始状态。例如，如果用户空间屏蔽了一个挂起的中断来抑制唤醒，那么在将控制权交还给
+     客户机之前，应解除该中断的屏蔽
 
 ##### For riscv:
 
 
-鍞竴鏈夋晥鐨勭姸鎬佹槸 KVM_MP_STATE_STOPPED 涓?KVM_MP_STATE_RUNNABLE锛屽畠浠弽鏄?vcpu 鏄惁琚殏鍋溿€?
+唯一有效的状态是 KVM_MP_STATE_STOPPED KVM_MP_STATE_RUNNABLE，它们反vcpu 是否被暂停
 
-鍦?LoongArch 涓婏紝浠呬娇鐢?KVM_MP_STATE_RUNNABLE 鐘舵€佹潵鍙嶆槧 vcpu 鏄惁鍙繍琛屻€?
+LoongArch 上，仅使KVM_MP_STATE_RUNNABLE 状态来反映 vcpu 是否可运行
 
 ### 4.39 KVM_SET_MP_STATE
 
@@ -1320,17 +1320,17 @@ KVM_MP_STATE_RUNNABLE銆傚鏋滀笉杩欐牱鍋氾紝KVM 浼氬湪鍚庣画�
 :Parameters: struct kvm_mp_state (in)
 :Returns: 0 on success; -1 on error
 
-璁剧疆 vcpu 褰撳墠鐨?澶氬鐞嗗櫒鐘舵€?锛涘弬鏁拌鏄庡弬瑙?KVM_GET_MP_STATE銆?
+设置 vcpu 当前多处理器状；参数说明参KVM_GET_MP_STATE
 
-鍦?x86 涓婏紝姝?ioctl 浠呭湪 KVM_CREATE_IRQCHIP 涔嬪悗鎵嶆湁鐢ㄣ€傚鏋滄病鏈夊唴鏍告€?irqchip锛屽澶勭悊鍣ㄧ姸鎬?
-蹇呴』鍦ㄨ繖浜涙灦鏋勪笂鐢辩敤鎴风┖闂寸淮鎶ゃ€?
+x86 上，ioctl 仅在 KVM_CREATE_IRQCHIP 之后才有用。如果没有内核irqchip，多处理器状
+必须在这些架构上由用户空间维护
 
 ##### For arm64/riscv:
 
 
-鍞竴鏈夋晥鐨勭姸鎬佹槸 KVM_MP_STATE_STOPPED 涓?KVM_MP_STATE_RUNNABLE锛屽畠浠弽鏄?vcpu 鏄惁搴旇鏆傚仠銆?
+唯一有效的状态是 KVM_MP_STATE_STOPPED KVM_MP_STATE_RUNNABLE，它们反vcpu 是否应被暂停
 
-鍦?LoongArch 涓婏紝浠呬娇鐢?KVM_MP_STATE_RUNNABLE 鐘舵€佹潵鍙嶆槧 vcpu 鏄惁鍙繍琛屻€?
+LoongArch 上，仅使KVM_MP_STATE_RUNNABLE 状态来反映 vcpu 是否可运行
 
 ### 4.40 KVM_SET_IDENTITY_MAP_ADDR
 
@@ -1341,15 +1341,15 @@ KVM_MP_STATE_RUNNABLE銆傚鏋滀笉杩欐牱鍋氾紝KVM 浼氬湪鍚庣画�
 :Parameters: unsigned long identity (in)
 :Returns: 0 on success, -1 on error
 
-璇?ioctl 瀹氫箟瀹㈡埛鏈虹墿鐞嗗湴鍧€绌洪棿涓竴涓崟椤靛尯鍩熺殑鐗╃悊鍦板潃銆傝鍖哄煙蹇呴』浣嶄簬瀹㈡埛鏈虹墿鐞嗗湴鍧€绌洪棿鐨?
-鍓?4GB 涔嬪唴锛屼笖涓嶈兘涓庝换浣曞唴瀛樻Ы鎴栦换浣?mmio 鍦板潃鍐茬獊銆傚鏋滃鎴锋満璁块棶璇ュ唴瀛樺尯鍩燂紝鍙兘浼氬彂鐢熸晠闅溿€?
+ioctl 定义客户机物理地址空间中一个单页区域的物理地址。该区域必须位于客户机物理地址空间
+4GB 之内，且不能与任何内存槽或任mmio 地址冲突。如果客户机访问该内存区域，可能会发生故障
 
-灏嗗湴鍧€璁剧疆涓?0 浼氬鑷磋鍦板潃琚噸缃负榛樿鍊硷紙0xfffbc000锛夈€?
+将地址设置0 会导致该地址被重置为默认值（0xfffbc000）
 
-鍦ㄥ熀浜?Intel 鐨勪富鏈轰笂锛岃 ioctl 鏄繀闇€鐨勩€傚湪 Intel 纭欢涓婇渶瑕佸畠锛屾槸鍥犱负铏氭嫙鍖栧疄鐜颁腑鐨勪竴涓?
-鎬紓涔嬪锛堝弬瑙佸皻鏈潰涓栫殑 internals 鏂囨。锛夈€?
+在基Intel 的主机上，该 ioctl 是必需的。在 Intel 硬件上需要它，是因为虚拟化实现中的一
+怪异之处（参见尚未面世的 internals 文档）
 
-濡傛灉鏈変换浣?VCPU 宸茬粡琚垱寤猴紝鍒欎細澶辫触銆?
+如果有任VCPU 已经被创建，则会失败
 
 ### 4.41 KVM_SET_BOOT_CPU_ID
 
@@ -1360,8 +1360,8 @@ KVM_MP_STATE_RUNNABLE銆傚鏋滀笉杩欐牱鍋氾紝KVM 浼氬湪鍚庣画�
 :Parameters: unsigned long vcpu_id
 :Returns: 0 on success, -1 on error
 
-瀹氫箟鍝釜 vcpu 鏄紩瀵煎鐞嗗櫒锛圔ootstrap Processor锛孊SP锛夈€傚彇鍊间笌 KVM_CREATE_VCPU 涓殑 vcpu id 鐩稿悓銆?
-濡傛灉鏈皟鐢ㄦ ioctl锛屽垯榛樿鏄?vcpu 0銆傛 ioctl 蹇呴』鍦?vcpu 鍒涘缓涔嬪墠璋冪敤锛屽惁鍒欎細杩斿洖 EBUSY 閿欒銆?
+定义哪个 vcpu 是引导处理器（Bootstrap Processor，BSP）。取值与 KVM_CREATE_VCPU 中的 vcpu id 相同
+如果未调用此 ioctl，则默认vcpu 0。此 ioctl 必须vcpu 创建之前调用，否则会返回 EBUSY 错误
 
 
 ### 4.42 KVM_GET_XSAVE
@@ -1382,7 +1382,7 @@ KVM_MP_STATE_RUNNABLE銆傚鏋滀笉杩欐牱鍋氾紝KVM 浼氬湪鍚庣画�
   };
 
 ```
-璇?ioctl 浼氬皢褰撳墠 vcpu 鐨?xsave 缁撴瀯浣撳鍒跺埌鐢ㄦ埛绌洪棿銆?
+ioctl 会将当前 vcpu xsave 结构体复制到用户空间
 
 
 ### 4.43 KVM_SET_XSAVE
@@ -1403,11 +1403,11 @@ KVM_MP_STATE_RUNNABLE銆傚鏋滀笉杩欐牱鍋氾紝KVM 浼氬湪鍚庣画�
   };
 
 ```
-璇?ioctl 浼氬皢鐢ㄦ埛绌洪棿鐨?xsave 缁撴瀯浣撳鍒跺埌鍐呮牳銆傚畠澶嶅埗鐨勫瓧鑺傛暟绛変簬 KVM_CHECK_EXTENSION(KVM_CAP_XSAVE2)
-鍦?vm 鏂囦欢鎻忚堪绗︿笂璋冪敤鏃惰繑鍥炵殑鍊笺€侹VM_CHECK_EXTENSION(KVM_CAP_XSAVE2) 杩斿洖鐨勫ぇ灏忓€兼€绘槸鑷冲皯涓?4096銆?
-鐩墠锛屽彧鏈夊綋鏌愪釜鍔ㄦ€佺壒鎬у凡閫氳繃 `arch_prctl()` 鍚敤鏃跺畠鎵嶄細澶т簬 4096锛屼絾杩欏湪鏈潵鍙兘浼氭敼鍙樸€?
+ioctl 会将用户空间xsave 结构体复制到内核。它复制的字节数等于 KVM_CHECK_EXTENSION(KVM_CAP_XSAVE2)
+vm 文件描述符上调用时返回的值。KVM_CHECK_EXTENSION(KVM_CAP_XSAVE2) 返回的大小值总是至少4096
+目前，只有当某个动态特性已通过 `arch_prctl()` 启用时它才会大于 4096，但这在未来可能会改变
 
-struct kvm_xsave 涓悇鐘舵€佷繚瀛樺尯鍩熺殑鍋忕Щ閲忛伒寰涓绘満涓?CPUID 鍙跺瓙 0xD 鐨勫唴瀹广€?
+struct kvm_xsave 中各状态保存区域的偏移量遵循宿主机CPUID 叶子 0xD 的内容
 
 
 ### 4.44 KVM_GET_XCRS
@@ -1435,7 +1435,7 @@ struct kvm_xsave 涓悇鐘舵€佷繚瀛樺尯鍩熺殑鍋忕Щ閲忛伒寰�
   };
 
 ```
-璇?ioctl 浼氬皢褰撳墠 vcpu 鐨?xcrs 澶嶅埗鍒扮敤鎴风┖闂淬€?
+ioctl 会将当前 vcpu xcrs 复制到用户空间
 
 
 ### 4.45 KVM_SET_XCRS
@@ -1463,7 +1463,7 @@ struct kvm_xsave 涓悇鐘舵€佷繚瀛樺尯鍩熺殑鍋忕Щ閲忛伒寰�
   };
 
 ```
-璇?ioctl 浼氬皢 vcpu 鐨?xcr 璁剧疆涓虹敤鎴风┖闂存寚瀹氱殑鍊笺€?
+ioctl 会将 vcpu xcr 设置为用户空间指定的值
 
 
 ### 4.46 KVM_GET_SUPPORTED_CPUID
@@ -1499,50 +1499,50 @@ struct kvm_xsave 涓悇鐘舵€佷繚瀛樺尯鍩熺殑鍋忕Щ閲忛伒寰�
   };
 
 ```
-璇?ioctl 杩斿洖鍦ㄩ粯璁ら厤缃笅鐢辩‖浠跺拰 kvm 閮芥敮鎸佺殑 x86 cpuid 鐗规€с€傜敤鎴风┖闂村彲浠ヤ娇鐢ㄨ ioctl 杩斿洖鐨?
-淇℃伅鏉ユ瀯閫犱笌纭欢銆佸唴鏍镐互鍙婄敤鎴风┖闂磋兘鍔涗竴鑷寸殑 cpuid 淇℃伅锛堢敤浜?KVM_SET_CPUID2锛夛紝骞朵笌鐢ㄦ埛闇€姹備竴鑷?
-锛堜緥濡傦紝鐢ㄦ埛鍙兘甯屾湜绾︽潫 cpuid 浠ユā鎷熻緝鏃х殑纭欢锛屾垨涓轰簡鍦ㄩ泦缇や腑淇濇寔涓€鑷寸殑鐗规€э級銆?
+ioctl 返回在默认配置下由硬件和 kvm 都支持的 x86 cpuid 特性。用户空间可以使用该 ioctl 返回
+信息来构造与硬件、内核以及用户空间能力一致的 cpuid 信息（用KVM_SET_CPUID2），并与用户需求一
+（例如，用户可能希望约束 cpuid 以模拟较旧的硬件，或为了在集群中保持一致的特性）
 
-鍔ㄦ€佸惎鐢ㄧ殑鐗规€т綅闇€瑕佸湪璋冪敤姝?ioctl 涔嬪墠閫氳繃 `arch_prctl()` 璇锋眰銆傛湭琚姹傜殑鐗规€т綅涓嶄細鍖呭惈鍦ㄧ粨鏋滀腑銆?
+动态启用的特性位需要在调用ioctl 之前通过 `arch_prctl()` 请求。未被请求的特性位不会包含在结果中
 
-娉ㄦ剰锛屾煇浜涜兘鍔涳紙濡?KVM_CAP_X86_DISABLE_EXITS锛夊彲鑳戒細鏆撮湶 kvm 鍦ㄩ粯璁ら厤缃笅涓嶆敮鎸佺殑 cpuid 鐗规€?
-锛堜緥濡?MONITOR锛夈€傚鏋滅敤鎴风┖闂村惎鐢ㄤ簡姝ょ被鑳藉姏锛屽畠璐熻矗閫傚綋鍦颁慨鏀规 ioctl 鐨勭粨鏋溿€?
+注意，某些能力（KVM_CAP_X86_DISABLE_EXITS）可能会暴露 kvm 在默认配置下不支持的 cpuid 特
+（例MONITOR）。如果用户空间启用了此类能力，它负责适当地修改此 ioctl 的结果
 
-鐢ㄦ埛绌洪棿璋冪敤 KVM_GET_SUPPORTED_CPUID 鏃讹紝闇€浼犲叆涓€涓?kvm_cpuid2 缁撴瀯浣擄紝鍏?'nent' 瀛楁鎸囩ず鍙彉闀?
-鏁扮粍 'entries' 涓殑鏉＄洰鏁伴噺銆傚鏋滄潯鐩暟閲忓お灏戣€屾棤娉曟弿杩?cpu 鑳藉姏锛屼細杩斿洖閿欒锛圗2BIG锛夈€傚鏋滄暟閲?
-杩囧锛?nent' 瀛楁浼氳璋冩暣骞惰繑鍥炰竴涓敊璇紙ENOMEM锛夈€傚鏋滄暟閲忔伆濂藉悎閫傦紝'nent' 瀛楁浼氳璋冩暣涓?
-'entries' 鏁扮粍涓湁鏁堟潯鐩殑鏁伴噺锛屽苟闅忓悗琚～鍏呫€?
+用户空间调用 KVM_GET_SUPPORTED_CPUID 时，需传入一kvm_cpuid2 结构体，'nent' 字段指示可变
+数组 'entries' 中的条目数量。如果条目数量太少而无法描cpu 能力，会返回错误（E2BIG）。如果数
+过多nent' 字段会被调整并返回一个错误（ENOMEM）。如果数量恰好合适，'nent' 字段会被调整
+'entries' 数组中有效条目的数量，并随后被填充
 
-杩斿洖鐨勬潯鐩槸 cpuid 鎸囦护杩斿洖鐨勪富鏈?cpuid锛屽叾涓湭鐭ユ垨涓嶆敮鎸佺殑鐗规€ц灞忚斀銆傛煇浜涚壒鎬э紙渚嬪 x2apic锛夊彲鑳?
-涓嶅湪涓绘満 cpu 涓紝浣嗗鏋?kvm 鑳藉楂樻晥鍦版ā鎷熷畠浠紝鍒欎細琚?kvm 鏆撮湶鍑烘潵銆傛瘡涓潯鐩腑鐨勫瓧娈靛畾涔夊涓嬶細
+返回的条目是 cpuid 指令返回的主cpuid，其中未知或不支持的特性被屏蔽。某些特性（例如 x2apic）可
+不在主机 cpu 中，但如kvm 能够高效地模拟它们，则会kvm 暴露出来。每个条目中的字段定义如下：
 
   function:
-         鐢ㄤ簬鑾峰彇璇ユ潯鐩殑 eax 鍊?
+         用于获取该条目的 eax 
 
   index:
-         鐢ㄤ簬鑾峰彇璇ユ潯鐩殑 ecx 鍊硷紙閽堝鍙?ecx 褰卞搷鐨勬潯鐩級
+         用于获取该条目的 ecx 值（针对ecx 影响的条目）
 
   flags:
-     浠ヤ笅闆朵釜鎴栧涓殑鎸変綅鎴栵細
+     以下零个或多个的按位或：
 
         KVM_CPUID_FLAG_SIGNIFCANT_INDEX:
-           琛ㄧず index 瀛楁鏈夋晥
+           表示 index 字段有效
 
    eax, ebx, ecx, edx:
-         璇?function/index 缁勫悎涓?cpuid 鎸囦护杩斿洖鐨勫€?
+         function/index 组合cpuid 指令返回的
 
-x2APIC锛圕PUID 鍙跺瓙 1锛宔cx[21]锛夊拰 TSC deadline 瀹氭椂鍣紙CPUID 鍙跺瓙 1锛宔cx[24]锛夊彲鑳戒綔涓?true 杩斿洖锛?
-浣嗗畠浠緷璧栦簬 KVM_CREATE_IRQCHIP 鐨勫唴鏍告€?
+x2APIC（CPUID 叶子 1，ecx[21]）和 TSC deadline 定时器（CPUID 叶子 1，ecx[24]）可能作true 返回
+但它们依赖于 KVM_CREATE_IRQCHIP 的内核
 ```
 
   ioctl(KVM_CHECK_EXTENSION, KVM_CAP_TSC_DEADLINE_TIMER)
 
 ```
-鏉ュ疄鐜帮紱濡傛灉瀹冭繑鍥?true 涓斾綘浣跨敤浜?KVM_CREATE_IRQCHIP锛屾垨鑰呬綘鍦ㄧ敤鎴风┖闂存ā鎷熶簡璇ョ壒鎬э紝閭ｄ箞浣犲氨鍙互
-涓?KVM_SET_CPUID2 鍚敤璇ョ壒鎬с€?
+来实现；如果它返true 且你使用KVM_CREATE_IRQCHIP，或者你在用户空间模拟了该特性，那么你就可以
+KVM_SET_CPUID2 启用该特性
 
-鍦?KVM_SET_CPUID2 涓惎鐢?x2APIC 闇€瑕?KVM_CREATE_IRQCHIP锛屽洜涓?KVM 涓嶆敮鎸佸皢 x2APIC MSR 璁块棶杞彂鍒?
-鐢ㄦ埛绌洪棿锛屽嵆 KVM 涓嶆敮鎸佸湪鐢ㄦ埛绌洪棿妯℃嫙 x2APIC銆?
+KVM_SET_CPUID2 中启x2APIC 需KVM_CREATE_IRQCHIP，因KVM 不支持将 x2APIC MSR 访问转发
+用户空间，即 KVM 不支持在用户空间模拟 x2APIC
 
 ### 4.47 KVM_PPC_GET_PVINFO
 
@@ -1562,11 +1562,11 @@ x2APIC锛圕PUID 鍙跺瓙 1锛宔cx[21]锛夊拰 TSC deadline 瀹氭椂鍣�
   };
 
 ```
-璇?ioctl 浠?vm 涓婁笅鏂囦腑鑾峰彇闇€瑕佸€熷姪璁惧鏍戞垨鍏朵粬鏂瑰紡浼犻€掔粰瀹㈡埛鏈虹殑 PV 鐗瑰畾淇℃伅銆?
+ioctl vm 上下文中获取需要借助设备树或其他方式传递给客户机的 PV 特定信息
 
-hcall 鏁扮粍瀹氫箟浜嗘瀯鎴愪竴娆?hypercall 鐨?4 鏉℃寚浠ゃ€?
+hcall 数组定义了构成一hypercall 4 条指令
 
-濡傛灉浠ュ悗璇ョ粨鏋勪綋娣诲姞浜嗕换浣曢檮鍔犲瓧娈碉紝浼氬湪 flags 浣嶅浘涓缃搴斾簬璇ラ檮鍔犱俊鎭殑涓€涓綅銆?
+如果以后该结构体添加了任何附加字段，会在 flags 位图中设置对应于该附加信息的一个位
 
 ```
 
@@ -1583,11 +1583,11 @@ hcall 鏁扮粍瀹氫箟浜嗘瀯鎴愪竴娆?hypercall 鐨?4 鏉℃寚浠ゃ€
 :Parameters: struct kvm_irq_routing (in)
 :Returns: 0 on success, -1 on error
 
-璁剧疆 GSI 璺敱琛ㄦ潯鐩紝瑕嗙洊浠讳綍鍏堝墠璁剧疆鐨勬潯鐩€?
+设置 GSI 路由表条目，覆盖任何先前设置的条目
 
-鍦?arm64 涓婏紝GSI 璺敱鏈変互涓嬮檺鍒讹細
+arm64 上，GSI 路由有以下限制：
 
-- GSI 璺敱涓嶉€傜敤浜?KVM_IRQ_LINE锛岃€屽彧閫傜敤浜?KVM_IRQFD銆?
+- GSI 路由不适用KVM_IRQ_LINE，而只适用KVM_IRQFD
 
 ```
 
@@ -1598,7 +1598,7 @@ hcall 鏁扮粍瀹氫箟浜嗘瀯鎴愪竴娆?hypercall 鐨?4 鏉℃寚浠ゃ€
   };
 
 ```
-鐩墠鏈寚瀹氫换浣曟爣蹇楋紝鐩稿簲瀛楁蹇呴』璁剧疆涓洪浂銆?
+目前未指定任何标志，相应字段必须设置为零
 
 ```
 
@@ -1625,14 +1625,14 @@ hcall 鏁扮粍瀹氫箟浜嗘瀯鎴愪竴娆?hypercall 鐨?4 鏉℃寚浠ゃ€
   #define KVM_IRQ_ROUTING_XEN_EVTCHN 5
 
 ```
-鍦?s390 涓婏紝鍚?ucontrol VM 娣诲姞 KVM_IRQ_ROUTING_S390_ADAPTER 浼氫互 -EINVAL 閿欒琚嫆缁濄€?
+s390 上，ucontrol VM 添加 KVM_IRQ_ROUTING_S390_ADAPTER 会以 -EINVAL 错误被拒绝
 
 flags:
 
-- KVM_MSI_VALID_DEVID锛氫笌 KVM_IRQ_ROUTING_MSI 璺敱鏉＄洰绫诲瀷涓€璧蜂娇鐢紝琛ㄧず devid 瀛楁鍖呭惈涓€涓?
-  鏈夋晥鍊笺€傛瘡 VM 鐨?KVM_CAP_MSI_DEVID 鑳藉姏鐢ㄤ簬閫氬憡闇€瑕佹彁渚涜澶?ID 鐨勮姹傘€傚鏋滆鑳藉姏涓嶅彲鐢紝
-  鐢ㄦ埛绌洪棿缁濅笉搴旇缃?KVM_MSI_VALID_DEVID 鏍囧織锛屽惁鍒?ioctl 鍙兘浼氬け璐ャ€?
-- 鍚﹀垯涓洪浂
+- KVM_MSI_VALID_DEVID：与 KVM_IRQ_ROUTING_MSI 路由条目类型一起使用，表示 devid 字段包含一
+  有效值。每 VM KVM_CAP_MSI_DEVID 能力用于通告需要提供设ID 的要求。如果该能力不可用，
+  用户空间绝不应设KVM_MSI_VALID_DEVID 标志，否ioctl 可能会失败
+- 否则为零
 
 ```
 
@@ -1652,11 +1652,11 @@ flags:
   };
 
 ```
-濡傛灉璁剧疆浜?KVM_MSI_VALID_DEVID锛屽垯 devid 鍖呭惈鍐欏叆 MSI 娑堟伅鐨勮澶囩殑鍞竴璁惧鏍囪瘑绗︺€傚浜?PCI锛?
-杩欓€氬父鏄綆 16 浣嶄腑鐨?BDF 鏍囪瘑绗︺€?
+如果设置KVM_MSI_VALID_DEVID，则 devid 包含写入 MSI 消息的设备的唯一设备标识符。对PCI
+这通常是低 16 位中BDF 标识符
 
-鍦?x86 涓婏紝闄ら潪鍚敤浜?KVM_CAP_X2APIC_API 鑳藉姏鐨?KVM_X2APIC_API_USE_32BIT_IDS 鐗规€э紝鍚﹀垯 address_hi
-浼氳蹇界暐銆傚鏋滃惎鐢紝address_hi 鐨?31-8 浣嶆彁渚涚洰鐨?id 鐨?31-8 浣嶃€俛ddress_hi 鐨?7-0 浣嶅繀椤讳负闆躲€?
+x86 上，除非启用KVM_CAP_X2APIC_API 能力KVM_X2APIC_API_USE_32BIT_IDS 特性，否则 address_hi
+会被忽略。如果启用，address_hi 31-8 位提供目id 31-8 位。address_hi 7-0 位必须为零
 
 ```
 
@@ -1681,9 +1681,9 @@ flags:
 
 
 ```
-褰?KVM_CAP_XEN_HVM 鍦ㄥ叾鏀寔鐗规€ф寚绀轰腑鍖呭惈 KVM_XEN_HVM_CONFIG_EVTCHN_2LEVEL 浣嶆椂锛屾敮鎸佽矾鐢卞埌 Xen
-浜嬩欢閫氶亾銆傚敖绠″瓨鍦?priority 瀛楁锛屼絾鐩墠浠呮敮鎸佸€?KVM_XEN_HVM_CONFIG_EVTCHN_2LEVEL锛岃繖鎰忓懗鐫€閫氳繃
-涓ょ骇浜嬩欢閫氶亾鎶曢€掋€傛湭鏉ュ彲鑳戒細娣诲姞 FIFO 浜嬩欢閫氶亾鏀寔銆?
+KVM_CAP_XEN_HVM 在其支持特性指示中包含 KVM_XEN_HVM_CONFIG_EVTCHN_2LEVEL 位时，支持路由到 Xen
+事件通道。尽管存priority 字段，但目前仅支持KVM_XEN_HVM_CONFIG_EVTCHN_2LEVEL，这意味着通过
+两级事件通道投递。未来可能会添加 FIFO 事件通道支持
 
 
 ### 4.55 KVM_SET_TSC_KHZ
@@ -1695,15 +1695,15 @@ flags:
 :Parameters: virtual tsc_khz
 :Returns: 0 on success, -1 on error
 
-鎸囧畾铏氭嫙鏈虹殑 tsc 棰戠巼銆傞鐜囩殑鍗曚綅鏄?KHz銆?
+指定虚拟机的 tsc 频率。频率的单位KHz
 
-濡傛灉閫氬憡浜?KVM_CAP_VM_TSC_CONTROL 鑳藉姏锛屽畠涔熷彲浠ヤ綔涓?vm ioctl 浣跨敤锛屼互璁剧疆闅忓悗鍒涘缓鐨?vCPU 鐨?
-鍒濆 tsc 棰戠巼銆傛敞鎰忥紝vm ioctl 浠呭厑璁稿湪鍒涘缓 vCPU 涔嬪墠浣跨敤銆?
+如果通告KVM_CAP_VM_TSC_CONTROL 能力，它也可以作vm ioctl 使用，以设置随后创建vCPU 
+初始 tsc 频率。注意，vm ioctl 仅允许在创建 vCPU 之前使用
 
-瀵逛簬 TSC 鍙椾繚鎶ょ殑鏈哄瘑璁＄畻锛圕oCo锛塚M锛堝叾 TSC 棰戠巼鍦?VM 鑼冨洿閰嶇疆涓€娆″苟鍦?VM 鐢熷懡鍛ㄦ湡鍐呬繚鎸佷笉鍙橈級锛?
-搴斾娇鐢?vm ioctl 鏉ラ厤缃?TSC 棰戠巼锛寁cpu ioctl 涓嶈鏀寔銆?
+对于 TSC 受保护的机密计算（CoCo）VM（其 TSC 频率VM 范围配置一次并VM 生命周期内保持不变）
+应使vm ioctl 来配TSC 频率，vcpu ioctl 不被支持
 
-姝ょ被 CoCo VM 鐨勪緥瀛愶細TDX 瀹㈡埛鏈恒€?
+此类 CoCo VM 的例子：TDX 客户机
 
 ### 4.56 KVM_GET_TSC_KHZ
 
@@ -1714,8 +1714,8 @@ flags:
 :Parameters: none
 :Returns: virtual tsc-khz on success, negative value on error
 
-杩斿洖瀹㈡埛鏈虹殑 tsc 棰戠巼銆傝繑鍥炲€肩殑鍗曚綅鏄?KHz銆傚鏋滃涓绘満鍏锋湁涓嶇ǔ瀹氱殑 tsc锛岃 ioctl 浼氳繑鍥?-EIO
-浣滀负閿欒銆?
+返回客户机的 tsc 频率。返回值的单位KHz。如果宿主机具有不稳定的 tsc，该 ioctl 会返-EIO
+作为错误
 
 
 ### 4.57 KVM_GET_LAPIC
@@ -1735,15 +1735,15 @@ flags:
   };
 
 ```
-璇诲彇 Local APIC 瀵勫瓨鍣ㄥ苟灏嗗叾澶嶅埗鍒拌緭鍏ュ弬鏁颁腑銆傛暟鎹牸寮忓拰甯冨眬涓庢灦鏋勬墜鍐屼腑璁板綍鐨勪竴鑷淬€?
+读取 Local APIC 寄存器并将其复制到输入参数中。数据格式和布局与架构手册中记录的一致
 
-濡傛灉鍚敤浜?KVM_CAP_X2APIC_API 鐨?KVM_X2APIC_API_USE_32BIT_IDS 鐗规€э紝閭ｄ箞 APIC_ID 瀵勫瓨鍣ㄧ殑鏍煎紡
-鍙栧喅浜庡叾 VCPU 鐨?APIC 妯″紡锛堢敱 MSR_IA32_APICBASE 鎶ュ憡锛夈€倄2APIC 灏?APIC ID 瀛樺偍鍦?APIC_ID 瀵勫瓨鍣?
-锛堝瓧鑺?32-35锛変腑銆倄APIC 浠呭厑璁镐竴涓?8 浣嶇殑 APIC ID锛屽瓨鍌ㄥ湪 APIC 瀵勫瓨鍣ㄧ殑 31-24 浣嶏紝鎴栫瓑鏁堝湴瀛樺偍鍦?
-struct kvm_lapic_state 鐨?regs 瀛楁鐨勫瓧鑺?35 涓€傚洜姝?KVM_GET_LAPIC 蹇呴』鍦?MSR_IA32_APICBASE 宸?
-閫氳繃 KVM_SET_MSR 璁剧疆涔嬪悗璋冪敤銆?
+如果启用KVM_CAP_X2APIC_API KVM_X2APIC_API_USE_32BIT_IDS 特性，那么 APIC_ID 寄存器的格式
+取决于其 VCPU APIC 模式（由 MSR_IA32_APICBASE 报告）。x2APIC APIC ID 存储APIC_ID 寄存
+（字32-35）中。xAPIC 仅允许一8 位的 APIC ID，存储在 APIC 寄存器的 31-24 位，或等效地存储
+struct kvm_lapic_state regs 字段的字35 中。因KVM_GET_LAPIC 必须MSR_IA32_APICBASE 
+通过 KVM_SET_MSR 设置之后调用
 
-濡傛灉绂佺敤浜?KVM_X2APIC_API_USE_32BIT_IDS 鐗规€э紝struct kvm_lapic_state 濮嬬粓浣跨敤 xAPIC 鏍煎紡銆?
+如果禁用KVM_X2APIC_API_USE_32BIT_IDS 特性，struct kvm_lapic_state 始终使用 xAPIC 格式
 
 
 ### 4.58 KVM_SET_LAPIC
@@ -1763,10 +1763,10 @@ struct kvm_lapic_state 鐨?regs 瀛楁鐨勫瓧鑺?35 涓€傚洜姝?KVM_
   };
 
 ```
-灏嗚緭鍏ュ弬鏁板鍒跺埌 Local APIC 瀵勫瓨鍣ㄤ腑銆傛暟鎹牸寮忓拰甯冨眬涓庢灦鏋勬墜鍐屼腑璁板綍鐨勪竴鑷淬€?
+将输入参数复制到 Local APIC 寄存器中。数据格式和布局与架构手册中记录的一致
 
-APIC ID 瀵勫瓨鍣ㄧ殑鏍煎紡锛坰truct kvm_lapic_state 鐨?regs 瀛楁鐨勫瓧鑺?32-35锛夊彇鍐充簬 KVM_CAP_X2APIC_API
-鑳藉姏鐨勭姸鎬併€傚弬瑙?KVM_GET_LAPIC 涓殑璇存槑銆?
+APIC ID 寄存器的格式（struct kvm_lapic_state regs 字段的字32-35）取决于 KVM_CAP_X2APIC_API
+能力的状态。参KVM_GET_LAPIC 中的说明
 
 
 ### 4.59 KVM_IOEVENTFD
@@ -1778,8 +1778,8 @@ APIC ID 瀵勫瓨鍣ㄧ殑鏍煎紡锛坰truct kvm_lapic_state 鐨?regs 瀛楁�
 :Parameters: struct kvm_ioeventfd (in)
 :Returns: 0 on success, !0 on error
 
-璇?ioctl 灏?ioeventfd 闄勫姞鎴栧垎绂诲埌瀹㈡埛鏈哄唴涓€涓悎娉曠殑 pio/mmio 鍦板潃銆傚娉ㄥ唽鍦板潃鐨勫鎴锋満鍐欏叆灏?
-瑙﹀彂鎵€鎻愪緵鐨勪簨浠讹紝鑰屼笉鏄鑷翠竴娆￠€€鍑恒€?
+ioctl ioeventfd 附加或分离到客户机内一个合法的 pio/mmio 地址。对注册地址的客户机写入
+触发所提供的事件，而不是导致一次退出
 
 ```
 
@@ -1793,7 +1793,7 @@ APIC ID 瀵勫瓨鍣ㄧ殑鏍煎紡锛坰truct kvm_lapic_state 鐨?regs 瀛楁�
   };
 
 ```
-瀵逛簬 s390 涓?virtio-ccw 璁惧鐨勭壒娈婃儏鍐碉紝ioevent 鍖归厤鐨勬槸涓€涓瓙閫氶亾/virtqueue 鍏冪粍锛岃€屼笉鏄湴鍧€銆?
+对于 s390 virtio-ccw 设备的特殊情况，ioevent 匹配的是一个子通道/virtqueue 元组，而不是地址
 
 ```
 
@@ -1804,13 +1804,13 @@ APIC ID 瀵勫瓨鍣ㄧ殑鏍煎紡锛坰truct kvm_lapic_state 鐨?regs 瀛楁�
 	(1 << kvm_ioeventfd_flag_nr_virtio_ccw_notify)
 
 ```
-濡傛灉璁剧疆浜?datamatch 鏍囧織锛屽垯鍙湁褰撳啓鍏ユ敞鍐屽湴鍧€鐨勫€肩瓑浜?struct kvm_ioeventfd 涓殑 datamatch 鏃讹紝
-鎵嶄細瑙﹀彂璇ヤ簨浠躲€?
+如果设置datamatch 标志，则只有当写入注册地址的值等struct kvm_ioeventfd 中的 datamatch 时，
+才会触发该事件
 
-瀵逛簬 virtio-ccw 璁惧锛宎ddr 鍖呭惈瀛愰€氶亾 id锛宒atamatch 鍖呭惈 virtqueue 绱㈠紩銆?
+对于 virtio-ccw 设备，addr 包含子通道 id，datamatch 包含 virtqueue 索引
 
-鍊熷姪 KVM_CAP_IOEVENTFD_ANY_LENGTH锛屽厑璁搁暱搴︿负 0 鐨?ioeventfd锛屽唴鏍稿皢蹇界暐瀹㈡埛鏈哄啓鍏ョ殑闀垮害锛屽苟鍙兘
-鑾峰緱鏇村揩鐨?vmexit銆傝繖绉嶅姞閫熷彲鑳藉彧閫傜敤浜庣壒瀹氭灦鏋勶紝浣?ioeventfd 鍦ㄤ换浣曟儏鍐典笅閮借兘宸ヤ綔銆?
+借助 KVM_CAP_IOEVENTFD_ANY_LENGTH，允许长度为 0 ioeventfd，内核将忽略客户机写入的长度，并可能
+获得更快vmexit。这种加速可能只适用于特定架构，ioeventfd 在任何情况下都能工作
 
 ### 4.60 KVM_DIRTY_TLB
 
@@ -1829,18 +1829,18 @@ APIC ID 瀵勫瓨鍣ㄧ殑鏍煎紡锛坰truct kvm_lapic_state 鐨?regs 瀛楁�
   };
 
 ```
-姣忓綋鐢ㄦ埛绌洪棿鏇存敼浜嗗叡浜?TLB 涓殑涓€涓潯鐩椂锛屽繀椤诲湪鍏宠仈鐨?vcpu 涓婅皟鐢?KVM_RUN 涔嬪墠璋冪敤姝?ioctl銆?
+每当用户空间更改了共TLB 中的一个条目时，必须在关联vcpu 上调KVM_RUN 之前调用ioctl
 
-"bitmap" 瀛楁鏄竴涓暟缁勭殑鐢ㄦ埛绌洪棿鍦板潃銆傝鏁扮粍鐢辫嫢骞蹭綅缁勬垚锛屼綅鏁扮瓑浜庣敱涓婃鎴愬姛璋冪敤
-`KVM_ENABLE_CAP(KVM_CAP_SW_TLB)` 纭畾鐨?TLB 鏉＄洰鎬绘暟锛屽悜涓婅垗鍏ュ埌鏈€鎺ヨ繎鐨?64 鐨勫€嶆暟銆?
+"bitmap" 字段是一个数组的用户空间地址。该数组由若干位组成，位数等于由上次成功调用
+`KVM_ENABLE_CAP(KVM_CAP_SW_TLB)` 确定TLB 条目总数，向上舍入到最接近64 的倍数
 
-姣忎竴浣嶅搴斾竴涓?TLB 鏉＄洰锛岄『搴忎笌鍏变韩 TLB 鏁扮粍涓殑椤哄簭鐩稿悓銆?
+每一位对应一TLB 条目，顺序与共享 TLB 数组中的顺序相同
 
-璇ユ暟缁勪负灏忕搴忥細浣?0 鏄涓€涓瓧鑺傜殑鏈€浣庢湁鏁堜綅锛屼綅 8 鏄浜屼釜瀛楄妭鐨勬渶浣庢湁鏁堜綅锛屼緷姝ょ被鎺ㄣ€傝繖閬垮厤浜?
-鍥犲瓧闀夸笉鍚岃€屽甫鏉ョ殑浠讳綍澶嶆潅鎬с€?
+该数组为小端序：0 是第一个字节的最低有效位，位 8 是第二个字节的最低有效位，依此类推。这避免
+因字长不同而带来的任何复杂性
 
-"num_dirty" 瀛楁鏄粰 KVM 鐨勪竴涓€ц兘鎻愮ず锛岀敤浜庡垽鏂畠鏄惁搴旇璺宠繃澶勭悊浣嶅浘鑰岀洿鎺ヤ娇鎵€鏈夊唴瀹瑰け鏁堛€傚畠
-蹇呴』璁剧疆涓轰綅鍥句腑琚疆浣嶇殑浣嶆暟銆?
+"num_dirty" 字段是给 KVM 的一个性能提示，用于判断它是否应该跳过处理位图而直接使所有内容失效。它
+必须设置为位图中被置位的位数
 
 
 ### 4.62 KVM_CREATE_SPAPR_TCE
@@ -1852,9 +1852,9 @@ APIC ID 瀵勫瓨鍣ㄧ殑鏍煎紡锛坰truct kvm_lapic_state 鐨?regs 瀛楁�
 :Parameters: struct kvm_create_spapr_tce (in)
 :Returns: file descriptor for manipulating the created TCE table
 
-杩欏皢鍒涘缓涓€涓櫄鎷?TCE锛堣浆鎹㈡帶鍒舵潯鐩?translation control entry锛夎〃锛屽畠鏄?PAPR 椋庢牸铏氭嫙 I/O 鐨?
-IOMMU銆傚畠鐢ㄤ簬灏嗚櫄鎷?I/O 涓娇鐢ㄧ殑閫昏緫鍦板潃杞崲涓哄鎴锋満鐗╃悊鍦板潃锛屽苟涓?PAPR 铏氭嫙 I/O 鎻愪緵鍒嗘暎/鑱氶泦
-锛坰catter/gather锛夎兘鍔涖€?
+这将创建一个虚TCE（转换控制条translation control entry）表，它PAPR 风格虚拟 I/O 
+IOMMU。它用于将虚I/O 中使用的逻辑地址转换为客户机物理地址，并PAPR 虚拟 I/O 提供分散/聚集
+（scatter/gather）能力
 
 ```
 
@@ -1865,14 +1865,14 @@ IOMMU銆傚畠鐢ㄤ簬灏嗚櫄鎷?I/O 涓娇鐢ㄧ殑閫昏緫鍦板潃杞�
   };
 
 ```
-liobn 瀛楁缁欏嚭浜嗚涓哄叾鍒涘缓 TCE 琛ㄧ殑閫昏緫 IO 鎬荤嚎鍙枫€倃indow_size 瀛楁鎸囧畾浜嗚 TCE 琛ㄥ皢杞崲鐨?DMA
-绐楀彛澶у皬鈥斺€旇琛ㄥ皢涓?DMA 绐楀彛鐨勬瘡 4kiB 鍖呭惈涓€涓?64 浣嶇殑 TCE 鏉＄洰銆?
+liobn 字段给出了要为其创建 TCE 表的逻辑 IO 总线号。window_size 字段指定了该 TCE 表将转换DMA
+窗口大小——该表将DMA 窗口的每 4kiB 包含一64 位的 TCE 条目
 
-褰撳鎴锋満瀵瑰凡缁忎娇鐢ㄦ ioctl() 鍒涘缓浜?TCE 琛ㄧ殑 liobn 鍙戝嚭 H_PUT_TCE hcall 鏃讹紝鍐呮牳灏嗗湪瀹炴ā寮忎笅澶勭悊
-瀹冿紝鏇存柊 TCE 琛ㄣ€傞拡瀵瑰叾浠?liobn 鐨?H_PUT_TCE 璋冪敤浼氬鑷?vm 閫€鍑猴紝蹇呴』鐢辩敤鎴风┖闂村鐞嗐€?
+当客户机对已经使用此 ioctl() 创建TCE 表的 liobn 发出 H_PUT_TCE hcall 时，内核将在实模式下处理
+它，更新 TCE 表。针对其liobn H_PUT_TCE 调用会导vm 退出，必须由用户空间处理
 
-杩斿洖鍊兼槸涓€涓枃浠舵弿杩扮锛屽彲浠ヤ紶閫掔粰 mmap(2) 浠ュ皢鍒涘缓鐨?TCE 琛ㄦ槧灏勫埌鐢ㄦ埛绌洪棿銆傝繖鍏佽鐢ㄦ埛绌洪棿璇诲彇
-鐢卞唴鏍稿鐞嗙殑 H_PUT_TCE 璋冪敤鎵€鍐欏叆鐨勬潯鐩紝涔熷厑璁哥敤鎴风┖闂寸洿鎺ユ洿鏂?TCE 琛紝杩欏湪鏌愪簺鎯呭喌涓嬪緢鏈夌敤銆?
+返回值是一个文件描述符，可以传递给 mmap(2) 以将创建TCE 表映射到用户空间。这允许用户空间读取
+由内核处理的 H_PUT_TCE 调用所写入的条目，也允许用户空间直接更TCE 表，这在某些情况下很有用
 
 
 ### 4.64 KVM_NMI
@@ -1884,18 +1884,18 @@ liobn 瀛楁缁欏嚭浜嗚涓哄叾鍒涘缓 TCE 琛ㄧ殑閫昏緫 IO �
 :Parameters: none
 :Returns: 0 on success, -1 on error
 
-鍦ㄧ嚎绋嬬殑 vcpu 涓婃帓闃熶竴涓?NMI銆傛敞鎰忥紝杩欎粎鍦ㄦ湭璋冪敤 KVM_CREATE_IRQCHIP 鏃舵湁鏄庣‘瀹氫箟锛屽洜涓鸿繖鏄櫄鎷?
-cpu 鏍稿績涓庤櫄鎷?Local APIC 涔嬮棿鐨勬帴鍙ｃ€傚湪璋冪敤 KVM_CREATE_IRQCHIP 涔嬪悗锛岃鎺ュ彛瀹屽叏鍦ㄥ唴鏍镐腑妯℃嫙銆?
+在线程的 vcpu 上排队一NMI。注意，这仅在未调用 KVM_CREATE_IRQCHIP 时有明确定义，因为这是虚
+cpu 核心与虚Local APIC 之间的接口。在调用 KVM_CREATE_IRQCHIP 之后，该接口完全在内核中模拟
 
-瑕佷娇鐢ㄥ畠鏉ラ厤鍚?KVM_CREATE_IRQCHIP 妯℃嫙 LINT1 杈撳叆锛岃浣跨敤浠ヤ笅绠楁硶锛?
+要使用它来配KVM_CREATE_IRQCHIP 模拟 LINT1 输入，请使用以下算法
 
-  - 鏆傚仠 vcpu
-  - 璇诲彇 Local APIC 鐨勭姸鎬侊紙KVM_GET_LAPIC锛?
-  - 妫€鏌ユ洿鏀?LINT1 鏄惁浼氭帓闃熶竴涓?NMI锛堝弬瑙?LINT1 鐨?LVT 鏉＄洰锛?
-  - 濡傛灉鏄紝鍙戝嚭 KVM_NMI
-  - 鎭㈠ vcpu
+  - 暂停 vcpu
+  - 读取 Local APIC 的状态（KVM_GET_LAPIC
+  - 检查更LINT1 是否会排队一NMI（参LINT1 LVT 条目
+  - 如果是，发出 KVM_NMI
+  - 恢复 vcpu
 
-鏌愪簺瀹㈡埛鏈哄皢 LINT1 NMI 杈撳叆閰嶇疆涓哄紩鍙?panic锛屼互鍗忓姪璋冭瘯銆?
+某些客户机将 LINT1 NMI 输入配置为引panic，以协助调试
 
 
 ### 4.65 KVM_S390_UCAS_MAP
@@ -1916,8 +1916,8 @@ cpu 鏍稿績涓庤櫄鎷?Local APIC 涔嬮棿鐨勬帴鍙ｃ€傚湪璋冪敤 
 	};
 
 ```
-璇?ioctl 灏嗕粠 "user_addr" 寮€濮嬨€侀暱搴︿负 "length" 鐨勫唴瀛樻槧灏勫埌浠?"vcpu_addr" 寮€濮嬬殑 vcpu 鍦板潃绌洪棿銆?
-鎵€鏈夊弬鏁伴兘闇€瑕佹寜 1 鍏嗗瓧鑺傚榻愩€?
+ioctl 将从 "user_addr" 开始、长度为 "length" 的内存映射到"vcpu_addr" 开始的 vcpu 地址空间
+所有参数都需要按 1 兆字节对齐
 
 
 ### 4.66 KVM_S390_UCAS_UNMAP
@@ -1938,8 +1938,8 @@ cpu 鏍稿績涓庤櫄鎷?Local APIC 涔嬮棿鐨勬帴鍙ｃ€傚湪璋冪敤 
 	};
 
 ```
-璇?ioctl 鍙栨秷鏄犲皠浠?"vcpu_addr" 寮€濮嬨€侀暱搴︿负 "length" 鐨?vcpu 鍦板潃绌洪棿涓殑鍐呭瓨銆?user_addr" 瀛楁
-琚拷鐣ャ€傛墍鏈夊弬鏁伴兘闇€瑕佹寜 1 鍏嗗瓧鑺傚榻愩€?
+ioctl 取消映射"vcpu_addr" 开始、长度为 "length" vcpu 地址空间中的内存user_addr" 字段
+被忽略。所有参数都需要按 1 兆字节对齐
 
 
 ### 4.67 KVM_S390_VCPU_FAULT
@@ -1951,10 +1951,10 @@ cpu 鏍稿績涓庤櫄鎷?Local APIC 涔嬮棿鐨勬帴鍙ｃ€傚湪璋冪敤 
 :Parameters: vcpu absolute address (in)
 :Returns: 0 in case of success
 
-璇ヨ皟鐢ㄤ細鍦ㄨ櫄鎷?cpu 鐨勫湴鍧€绌洪棿锛堝浜庣敤鎴锋帶鍒剁殑铏氭嫙鏈猴級鎴栬櫄鎷熸満鐨勫湴鍧€绌洪棿锛堝浜庡父瑙勮櫄鎷熸満锛変笂
-鍒涘缓涓€涓〉琛ㄦ潯鐩€傝繖浠呭娆¤缂洪〉锛坢inor fault锛夋湁鏁堬紝鍥犳寤鸿浜嬪厛閫氳繃鐢ㄦ埛椤佃〃璁块棶鐩稿叧鍐呭瓨椤点€?
-杩欏浜庡鐞嗙敤鎴锋帶鍒惰櫄鎷熸満鐨勬湁鏁堟€ф嫤鎴紙validity intercept锛夐潪甯告湁鐢紝鍙湪璋冪敤 KVM_RUN ioctl 涔嬪墠
-灏嗚櫄鎷?cpu 鐨?lowcore 椤电己椤佃鍏ャ€?
+该调用会在虚cpu 的地址空间（对于用户控制的虚拟机）或虚拟机的地址空间（对于常规虚拟机）上
+创建一个页表条目。这仅对次要缺页（minor fault）有效，因此建议事先通过用户页表访问相关内存页
+这对于处理用户控制虚拟机的有效性拦截（validity intercept）非常有用，可在调用 KVM_RUN ioctl 之前
+将虚cpu lowcore 页缺页装入
 ### 4.68 KVM_SET_ONE_REG
 
 
@@ -1964,17 +1964,17 @@ cpu 鏍稿績涓庤櫄鎷?Local APIC 涔嬮棿鐨勬帴鍙ｃ€傚湪璋冪敤 
 :Parameters: struct kvm_one_reg (in)
 :Returns: 0 on success, negative value on failure
 
-閿欒鐮侊細
+错误码：
 
   ======   ============================================================
-  ENOENT   娌℃湁璇ュ瘎瀛樺櫒
-  EINVAL   鏃犳晥鐨勫瘎瀛樺櫒 ID锛屾垨娌℃湁璇ュ瘎瀛樺櫒锛屾垨涓?s390 涓婂彈淇濇姢铏氭嫙鍖?
-           妯″紡涓嬬殑 VM 涓€璧蜂娇鐢?
-  EPERM    (arm64) 鍦?vcpu 瀹氱锛坒inalization锛変箣鍓嶄笉鍏佽璁块棶璇ュ瘎瀛樺櫒
-  EBUSY    (riscv) vcpu 鑷冲皯杩愯杩囦竴娆′箣鍚庝笉鍏佽鏇存敼瀵勫瓨鍣ㄥ€?
+  ENOENT   没有该寄存器
+  EINVAL   无效的寄存器 ID，或没有该寄存器，或s390 上受保护虚拟
+           模式下的 VM 一起使
+  EPERM    (arm64) vcpu 定稿（finalization）之前不允许访问该寄存器
+  EBUSY    (riscv) vcpu 至少运行过一次之后不允许更改寄存器
   ======   ============================================================
 
-锛堣繖浜涢敊璇爜浠呬緵鍙傝€冿細涓嶈渚濊禆鍦ㄧ壒瀹氭儏鍐典笅杩斿洖鐗瑰畾鐨勯敊璇爜銆傦級
+（这些错误码仅供参考：不要依赖在特定情况下返回特定的错误码。）
 
 ```
 
@@ -1984,10 +1984,10 @@ cpu 鏍稿績涓庤櫄鎷?Local APIC 涔嬮棿鐨勬帴鍙ｃ€傚湪璋冪敤 
  };
 
 ```
-浣跨敤璇?ioctl锛屽彲浠ラ€氳繃浼犲叆鐨?struct kvm_one_reg 灏嗗崟涓?vcpu 瀵勫瓨鍣ㄨ缃负鐢ㄦ埛绌洪棿鎸囧畾鐨勭壒瀹氬€硷紝
-鍏朵腑 id 鎸囦唬濡備笅鎵€杩扮殑瀵勫瓨鍣ㄦ爣璇嗙锛宎ddr 鏄寚鍚戠浉搴斿ぇ灏忓彉閲忕殑鎸囬拡銆傚瘎瀛樺櫒鍙互鏋舵瀯鏃犲叧锛?
-涔熷彲浠ユ灦鏋勭浉鍏炽€傛瘡绉嶉兘鏈夊悇鑷殑鎿嶄綔鑼冨洿鍜屽悇鑷殑甯搁噺涓庡搴︺€傝杩借釜宸插疄鐜扮殑瀵勫瓨鍣紝璇峰弬瑙?
-浠ヤ笅鍒楄〃锛?
+使用ioctl，可以通过传入struct kvm_one_reg 将单vcpu 寄存器设置为用户空间指定的特定值，
+其中 id 指代如下所述的寄存器标识符，addr 是指向相应大小变量的指针。寄存器可以架构无关
+也可以架构相关。每种都有各自的操作范围和各自的常量与宽度。要追踪已实现的寄存器，请参
+以下列表
 
   ======= =============================== ============
   Arch              Register              Width (bits)
@@ -2188,7 +2188,7 @@ cpu 鏍稿績涓庤櫄鎷?Local APIC 涔嬮棿鐨勬帴鍙ｃ€傚湪璋冪敤 
   MIPS    KVM_REG_MIPS_MSA_CSR            32
   ======= =============================== ============
 
-ARM 瀵勫瓨鍣ㄦ槧灏勪娇鐢ㄤ綆 32 浣嶃€傚叾涓殑楂?16 浣嶆槸瀵勫瓨鍣ㄧ粍绫诲瀷锛屾垨鍗忓鐞嗗櫒缂栧彿锛?
+ARM 寄存器映射使用低 32 位。其中的16 位是寄存器组类型，或协处理器编号
 
 ```
 
@@ -2226,16 +2226,16 @@ ARM 瀵勫瓨鍣ㄦ槧灏勪娇鐢ㄤ綆 32 浣嶃€傚叾涓殑楂?16 浣�
 
 
 ```
-arm64 瀵勫瓨鍣ㄦ槧灏勪娇鐢ㄤ綆 32 浣嶃€傚叾涓殑楂?16 浣嶆槸瀵勫瓨鍣ㄧ粍绫诲瀷锛屾垨鍗忓鐞嗗櫒缂栧彿锛?
+arm64 寄存器映射使用低 32 位。其中的16 位是寄存器组类型，或协处理器编号
 
-arm64 鏍稿績/FP-SIMD 瀵勫瓨鍣ㄥ叿鏈変互涓?id 浣嶆ā寮忋€傛敞鎰忥紝璁块棶澶у皬鏄彲鍙樼殑锛屽洜涓?kvm_regs 缁撴瀯浣?
-鍖呭惈浠?32 鍒?128 浣嶄笉绛夌殑鍏冪礌銆俰ndex 鏄竴涓?32 浣嶇殑
+arm64 核心/FP-SIMD 寄存器具有以id 位模式。注意，访问大小是可变的，因kvm_regs 结构
+包含32 128 位不等的元素。index 是一32 位的
 ```
 
   0x60x0 0000 0010 <index into the kvm_regs struct:16>
 
 ```
-鍏蜂綋鏉ヨ锛?
+具体来说
 
 ======================= ========= ===== =======================================
     Encoding            Register  Bits  kvm_regs member
@@ -2262,10 +2262,10 @@ arm64 鏍稿績/FP-SIMD 瀵勫瓨鍣ㄥ叿鏈変互涓?id 浣嶆ā寮忋€傛�
   0x6020 0000 0010 00d5 FPCR        32  fp_regs.fpcr
 ======================= ========= ===== =======================================
 
-       KVM_ARM_VCPU_INIT銆?
+       KVM_ARM_VCPU_INIT銆。
 
-       瀵逛簬宸插惎鐢?SVE 鐨?vcpu锛堣涓嬫枃锛夛紝鍙互閫氳繃鐩稿簲 SVE Zn 瀵勫瓨鍣ㄧ殑浣?[127:0]
-       璁块棶绛変环鐨勫瘎瀛樺櫒鍐呭銆?
+       对于已启SVE vcpu（见下文），可以通过相应 SVE Zn 寄存器的[127:0]
+       访问等价的寄存器内容
 
 ```
 
@@ -2278,10 +2278,10 @@ arm64 鏍稿績/FP-SIMD 瀵勫瓨鍣ㄥ叿鏈変互涓?id 浣嶆ā寮忋€傛�
 
 ```
 
-     鏈変袱涓郴缁熷瘎瀛樺櫒 ID 涓嶉伒寰寚瀹氱殑妯″紡銆傚畠浠槸 KVM_REG_ARM_TIMER_CVAL 鍜?
-     KVM_REG_ARM_TIMER_CNT锛屽垎鍒槧灏勫埌绯荤粺瀵勫瓨鍣?CNTV_CVAL_EL0 鍜?CNTVCT_EL0銆?
-     杩欎袱涓殑鍊艰鎰忓鍦颁氦鎹簡锛岃繖鎰忓懗鐫€ TIMER_CVAL 娲剧敓鑷?CNTVCT_EL0 鐨勫瘎瀛樺櫒缂栫爜锛?
-     鑰?TIMER_CNT 娲剧敓鑷?CNTV_CVAL_EL0 鐨勫瘎瀛樺櫒缂栫爜銆傜敱浜庤繖鏄?API锛屽繀椤讳繚鎸佺幇鐘躲€?
+     有两个系统寄存器 ID 不遵循指定的模式。它们是 KVM_REG_ARM_TIMER_CVAL 
+     KVM_REG_ARM_TIMER_CNT，分别映射到系统寄存CNTV_CVAL_EL0 CNTVCT_EL0
+     这两个的值被意外地交换了，这意味着 TIMER_CVAL 派生CNTVCT_EL0 的寄存器编码
+     TIMER_CNT 派生CNTV_CVAL_EL0 的寄存器编码。由于这API，必须保持现状
 
 ```
 
@@ -2296,18 +2296,18 @@ arm64 鏍稿績/FP-SIMD 瀵勫瓨鍣ㄥ叿鏈変互涓?id 浣嶆ā寮忋€傛�
   0x6060 0000 0015 ffff                 KVM_REG_ARM64_SVE_VLS pseudo-register
 
 ```
-褰?2048 * slice >= 128 * max_vq 鏃讹紝璁块棶璇ュ瘎瀛樺櫒 ID 浼氬け璐ュ苟杩斿洖 ENOENT銆俶ax_vq 鏄?vcpu 鏀寔鐨?
-鏈€澶у悜閲忛暱搴︼紙浠?128 浣嶅洓瀛椾负鍗曚綅锛夛細瑙佷笅鏂囩殑 [^2^]_銆?
+2048 * slice >= 128 * max_vq 时，访问该寄存器 ID 会失败并返回 ENOENT。max_vq vcpu 支持
+最大向量长度（128 位四字为单位）：见下文的 [^2^]_
 
-杩欎簺瀵勫瓨鍣ㄥ彧鑳藉湪鍚敤浜?SVE 鐨?vcpu 涓婅闂€傝瑙?KVM_ARM_VCPU_INIT銆?
+这些寄存器只能在启用SVE vcpu 上访问。详KVM_ARM_VCPU_INIT
 
-姝ゅ锛岄櫎浜?KVM_REG_ARM64_SVE_VLS 涔嬪锛屽湪 vcpu 鐨?SVE 閰嶇疆閫氳繃
-KVM_ARM_VCPU_FINALIZE(KVM_ARM_VCPU_SVE) 瀹氱涔嬪墠锛屾棤娉曡闂繖浜涘瘎瀛樺櫒銆傚叧浜庢杩囩▼鐨勬洿澶氫俊鎭紝
-璇峰弬瑙?KVM_ARM_VCPU_INIT 鍜?KVM_ARM_VCPU_FINALIZE銆?
+此外，除KVM_REG_ARM64_SVE_VLS 之外，在 vcpu SVE 配置通过
+KVM_ARM_VCPU_FINALIZE(KVM_ARM_VCPU_SVE) 定稿之前，无法访问这些寄存器。关于此过程的更多信息，
+请参KVM_ARM_VCPU_INIT KVM_ARM_VCPU_FINALIZE
 
-KVM_REG_ARM64_SVE_VLS 鏄竴涓吉瀵勫瓨鍣紝鍏佽鐢ㄦ埛绌洪棿鍙戠幇骞堕厤缃?vcpu 鎵€鏀寔鐨勫悜閲忛暱搴﹂泦鍚堛€?
-閫氳繃 KVM_GET_ONE_REG 鎴?KVM_SET_ONE_REG 鍦ㄧ敤鎴峰唴瀛樹箣闂翠紶杈撴椂锛岃瀵勫瓨鍣ㄧ殑鍊间负
-__u64[KVM_ARM64_SVE_VLS_WORDS] 绫诲瀷锛屽苟灏嗗悜閲忛暱搴﹂泦鍚堢紪鐮佷负
+KVM_REG_ARM64_SVE_VLS 是一个伪寄存器，允许用户空间发现并配vcpu 所支持的向量长度集合
+通过 KVM_GET_ONE_REG KVM_SET_ONE_REG 在用户内存之间传输时，该寄存器的值为
+__u64[KVM_ARM64_SVE_VLS_WORDS] 类型，并将向量长度集合编码为
 ```
 
   __u64 vector_lengths[KVM_ARM64_SVE_VLS_WORDS];
@@ -2320,56 +2320,56 @@ __u64[KVM_ARM64_SVE_VLS_WORDS] 绫诲瀷锛屽苟灏嗗悜閲忛暱搴﹂泦鍚�
 	/* Vector length vq * 16 bytes not supported */
 
 ```
-       max_vq銆傝繖鏄 vcpu 涓婂鎴锋満鍙敤鐨勬渶澶у悜閲忛暱搴︼紝骞跺喅瀹氫簡閫氳繃姝?ioctl 鎺ュ彛鍙鐨?
-       瀵勫瓨鍣ㄥ垏鐗囥€?
+       max_vq。这是该 vcpu 上客户机可用的最大向量长度，并决定了通过ioctl 接口可见
+       寄存器切片
 
-锛堝叧浜?"vq" 鍛藉悕娉曠殑瑙ｉ噴锛岃鍙傝 Documentation/arch/arm64/sve.rst銆傦級
+（关"vq" 命名法的解释，请参见 Documentation/arch/arm64/sve.rst。）
 
-KVM_REG_ARM64_SVE_VLS 浠呭湪 KVM_ARM_VCPU_INIT 涔嬪悗鍙闂€侹VM_ARM_VCPU_INIT 灏嗗叾鍒濆鍖栦负
-瀹夸富鏈烘敮鎸佺殑鏈€浣冲悜閲忛暱搴﹂泦鍚堛€?
+KVM_REG_ARM64_SVE_VLS 仅在 KVM_ARM_VCPU_INIT 之后可访问。KVM_ARM_VCPU_INIT 将其初始化为
+宿主机支持的最佳向量长度集合
 
-鐢ㄦ埛绌洪棿闅忓悗鍙互鏍规嵁闇€瑕佷慨鏀瑰畠锛岀洿鍒?vcpu 鐨?SVE 閰嶇疆閫氳繃
-KVM_ARM_VCPU_FINALIZE(KVM_ARM_VCPU_SVE) 瀹氱涓烘銆?
+用户空间随后可以根据需要修改它，直vcpu SVE 配置通过
+KVM_ARM_VCPU_FINALIZE(KVM_ARM_VCPU_SVE) 定稿为止
 
-闄や簡绠€鍗曞湴浠庡涓绘満闆嗗悎涓Щ闄ゆ墍鏈夎秴杩囨煇涓€肩殑鍚戦噺闀垮害涔嬪锛屽浠绘剰閫夊畾鍚戦噺闀垮害闆嗗悎鐨勬敮鎸?
-渚濊禆浜庣‖浠讹紝鍙兘涓嶅彲鐢ㄣ€傚皾璇曢€氳繃 KVM_SET_ONE_REG 閰嶇疆鏃犳晥鐨勫悜閲忛暱搴﹂泦鍚堜細浠?EINVAL 澶辫触銆?
+除了简单地从宿主机集合中移除所有超过某个值的向量长度之外，对任意选定向量长度集合的支
+依赖于硬件，可能不可用。尝试通过 KVM_SET_ONE_REG 配置无效的向量长度集合会EINVAL 失败
 
-鍦?vcpu 鐨?SVE 閰嶇疆瀹氱涔嬪悗锛岃繘涓€姝ュ啓鍏ヨ瀵勫瓨鍣ㄧ殑灏濊瘯浼氫互 EPERM 澶辫触銆?
+vcpu SVE 配置定稿之后，进一步写入该寄存器的尝试会以 EPERM 失败
 
 ```
 
   0x6030 0000 0016 <regno:16>
 
 ```
-浣嶅浘鐗规€у浐浠跺瘎瀛樺櫒鏆撮湶浜嗗彲渚涚敤鎴风┖闂撮厤缃殑 hypercall 鏈嶅姟銆傜疆浣嶇殑浣嶅搴斾簬鍙緵瀹㈡埛鏈鸿闂殑
-鏈嶅姟銆傞粯璁ゆ儏鍐典笅锛孠VM 鍦?VM 鍒濆鍖栨湡闂磋缃墍鏈夊彈鏀寔鐨勪綅銆傜敤鎴风┖闂村彲浠ラ€氳繃 KVM_GET_ONE_REG
-鍙戠幇鍙敤鐨勬湇鍔★紝骞堕€氳繃 KVM_SET_ONE_REG 鍐欏洖瀹冨笇鏈涘鎴锋満鐪嬪埌鐨勩€佸搴斾簬鐩稿簲鐗规€х殑浣嶅浘銆?
+位图特性固件寄存器暴露了可供用户空间配置的 hypercall 服务。置位的位对应于可供客户机访问的
+服务。默认情况下，KVM VM 初始化期间设置所有受支持的位。用户空间可以通过 KVM_GET_ONE_REG
+发现可用的服务，并通过 KVM_SET_ONE_REG 写回它希望客户机看到的、对应于相应特性的位图
 
-娉ㄦ剰锛氫竴鏃?VM 鐨勪换浣?vCPU 鑷冲皯杩愯杩囦竴娆★紝杩欎簺瀵勫瓨鍣ㄥ氨鍙樹负涓嶅彲鍙樼殑銆傚湪杩欑鎯呭喌涓嬶紝
-KVM_SET_ONE_REG 浼氬悜鐢ㄦ埛绌洪棿杩斿洖 -EBUSY銆?
+注意：一VM 的任vCPU 至少运行过一次，这些寄存器就变为不可变的。在这种情况下，
+KVM_SET_ONE_REG 会向用户空间返回 -EBUSY
 
-锛堟洿澶氱粏鑺傝鍙傝 Documentation/virt/kvm/arm/hypercalls.rst銆傦級
+（更多细节请参见 Documentation/virt/kvm/arm/hypercalls.rst。）
 
 
-MIPS 瀵勫瓨鍣ㄦ槧灏勪娇鐢ㄤ綆 32 浣嶃€傚叾涓殑楂?16 浣嶆槸瀵勫瓨鍣ㄧ粍绫诲瀷锛?
+MIPS 寄存器映射使用低 32 位。其中的16 位是寄存器组类型
 
 ```
 
   0x7030 0000 0000 <reg:16>
 
 ```
-MIPS CP0 瀵勫瓨鍣紙瑙佷笂鏂?KVM_REG_MIPS_CP0_*锛夊叿鏈変互涓?id 浣?
+MIPS CP0 寄存器（见上KVM_REG_MIPS_CP0_*）具有以id 
 ```
 
   0x7020 0000 0001 00 <reg:5> <sel:3>   (32-bit)
   0x7030 0000 0001 00 <reg:5> <sel:3>   (64-bit)
 
 ```
-娉ㄦ剰锛欿VM_REG_MIPS_CP0_ENTRYLO0 鍜?KVM_REG_MIPS_CP0_ENTRYLO1 鏄?EntryLo 瀵勫瓨鍣ㄧ殑 MIPS64 鐗堟湰锛?
-鏃犺瀹夸富鏈虹‖浠躲€佸涓绘満鍐呮牳銆佸鎴锋満鐨勫瓧闀垮浣曪紝涔熸棤璁哄鎴锋満涓槸鍚﹀瓨鍦?XPA锛屽嵆 RI 鍜?XI 浣?
-锛堝鏋滃瓨鍦級鍒嗗埆浣嶄簬浣?63 鍜屼綅 62锛孭FNX 瀛楁浠庝綅 30 寮€濮嬨€?
+注意：KVM_REG_MIPS_CP0_ENTRYLO0 KVM_REG_MIPS_CP0_ENTRYLO1 EntryLo 寄存器的 MIPS64 版本
+无论宿主机硬件、宿主机内核、客户机的字长如何，也无论客户机中是否存XPA，即 RI XI 
+（如果存在）分别位于63 和位 62，PFNX 字段从位 30 开始
 
-MIPS MAAR锛堣涓婃枃 KVM_REG_MIPS_CP0_MAAR(*)锛夊叿鏈変互涓?id 浣?
+MIPS MAAR（见上文 KVM_REG_MIPS_CP0_MAAR(*)）具有以id 
 ```
 
   0x7030 0000 0001 01 <reg:8>
@@ -2380,10 +2380,10 @@ MIPS MAAR锛堣涓婃枃 KVM_REG_MIPS_CP0_MAAR(*)锛夊叿鏈変互涓?id 浣
   0x7030 0000 0002 <reg:16>
 
 ```
-MIPS FPU 瀵勫瓨鍣紙瑙佷笂鏂?KVM_REG_MIPS_FPR_{32,64}()锛夋牴鎹墍璁块棶瀵勫瓨鍣ㄧ殑澶у皬鍏锋湁涓嶅悓鐨?id 浣嶆ā寮忋€?
-瀹冧滑濮嬬粓渚濇嵁褰撳墠瀹㈡埛鏈?FPU 妯″紡锛圫tatus.FR 鍜?Config5.FRE锛夎繘琛岃闂紝鍗冲鎴锋満鎵€瑙佺殑鏂瑰紡锛?
-濡傛灉瀹㈡埛鏈?FPU 妯″紡鍙戠敓鏀瑰彉锛屽畠浠細鍙樺緱涓嶅彲棰勬祴銆侻IPS SIMD 鏋舵瀯锛圡SA锛夊悜閲忓瘎瀛樺櫒
-锛堣涓婃枃 KVM_REG_MIPS_VEC_128()锛夊叿鏈夌被浼肩殑妯″紡锛屽洜涓哄畠浠?
+MIPS FPU 寄存器（见上KVM_REG_MIPS_FPR_{32,64}()）根据所访问寄存器的大小具有不同id 位模式
+它们始终依据当前客户FPU 模式（Status.FR Config5.FRE）进行访问，即客户机所见的方式
+如果客户FPU 模式发生改变，它们会变得不可预测。MIPS SIMD 架构（MSA）向量寄存器
+（见上文 KVM_REG_MIPS_VEC_128()）具有类似的模式，因为它
 ```
 
   0x7020 0000 0003 00 <0:3> <reg:5> (32-bit FPU registers)
@@ -2391,28 +2391,28 @@ MIPS FPU 瀵勫瓨鍣紙瑙佷笂鏂?KVM_REG_MIPS_FPR_{32,64}()锛夋牴鎹�
   0x7040 0000 0003 00 <0:3> <reg:5> (128-bit MSA vector registers)
 
 ```
-MIPS FPU 鎺у埗瀵勫瓨鍣紙瑙佷笂鏂?KVM_REG_MIPS_FCR_{IR,CSR}锛夊叿鏈?
+MIPS FPU 控制寄存器（见上KVM_REG_MIPS_FCR_{IR,CSR}）具
 ```
 
   0x7020 0000 0003 01 <0:3> <reg:5>
 
 ```
-MIPS MSA 鎺у埗瀵勫瓨鍣紙瑙佷笂鏂?KVM_REG_MIPS_MSA_{IR,CSR}锛夊叿鏈?
+MIPS MSA 控制寄存器（见上KVM_REG_MIPS_MSA_{IR,CSR}）具
 ```
 
   0x7020 0000 0003 02 <0:3> <reg:5>
 
 ```
-RISC-V 瀵勫瓨鍣ㄦ槧灏勪娇鐢ㄤ綆 32 浣嶃€傚叾涓殑楂?8 浣嶆槸瀵勫瓨鍣ㄧ粍绫诲瀷銆?
+RISC-V 寄存器映射使用低 32 位。其中的8 位是寄存器组类型
 
-RISC-V 閰嶇疆瀵勫瓨鍣ㄧ敤浜庨厤缃鎴锋満 VCPU锛屽畠鍏锋湁
+RISC-V 配置寄存器用于配置客户机 VCPU，它具有
 ```
 
   0x8020 0000 01 <index into the kvm_riscv_config struct:24> (32bit Host)
   0x8030 0000 01 <index into the kvm_riscv_config struct:24> (64bit Host)
 
 ```
-浠ヤ笅鏄?RISC-V 閰嶇疆瀵勫瓨鍣細
+以下RISC-V 配置寄存器：
 
 ======================= ========= =============================================
     Encoding            Register  Description
@@ -2420,17 +2420,17 @@ RISC-V 閰嶇疆瀵勫瓨鍣ㄧ敤浜庨厤缃鎴锋満 VCPU锛屽畠鍏�
   0x80x0 0000 0100 0000 isa       ISA feature bitmap of Guest VCPU
 ======================= ========= =============================================
 
-isa 閰嶇疆瀵勫瓨鍣ㄥ彲浠ラ殢鏃惰鍙栵紝浣嗗彧鑳藉湪瀹㈡埛鏈?VCPU 杩愯涔嬪墠鍐欏叆銆傞粯璁ゆ儏鍐典笅锛屽畠鍏锋湁涓庡簳灞傚涓绘満
-鍖归厤鐨?ISA 鐗规€т綅銆?
+isa 配置寄存器可以随时读取，但只能在客户VCPU 运行之前写入。默认情况下，它具有与底层宿主机
+匹配ISA 特性位
 
-RISC-V 鏍稿績瀵勫瓨鍣ㄨ〃绀哄鎴锋満 VCPU 鐨勪竴鑸墽琛岀姸鎬?
+RISC-V 核心寄存器表示客户机 VCPU 的一般执行状
 ```
 
   0x8020 0000 02 <index into the kvm_riscv_core struct:24> (32bit Host)
   0x8030 0000 02 <index into the kvm_riscv_core struct:24> (64bit Host)
 
 ```
-浠ヤ笅鏄?RISC-V 鏍稿績瀵勫瓨鍣細
+以下RISC-V 核心寄存器：
 
 ======================= ========= =============================================
     Encoding            Register  Description
@@ -2470,14 +2470,14 @@ RISC-V 鏍稿績瀵勫瓨鍣ㄨ〃绀哄鎴锋満 VCPU 鐨勪竴鑸墽琛�
   0x80x0 0000 0200 0020 mode      Privilege mode (1 = S-mode or 0 = U-mode)
 ======================= ========= =============================================
 
-RISC-V csr 瀵勫瓨鍣ㄨ〃绀虹洃鐫ｈ€呮ā寮忕殑鎺у埗/鐘舵€佸瘎瀛樺櫒
+RISC-V csr 寄存器表示监督者模式的控制/状态寄存器
 ```
 
   0x8020 0000 03 <index into the kvm_riscv_csr struct:24> (32bit Host)
   0x8030 0000 03 <index into the kvm_riscv_csr struct:24> (64bit Host)
 
 ```
-浠ヤ笅鏄?RISC-V csr 瀵勫瓨鍣細
+以下RISC-V csr 寄存器：
 
 ======================= ========= =============================================
     Encoding            Register  Description
@@ -2493,13 +2493,13 @@ RISC-V csr 瀵勫瓨鍣ㄨ〃绀虹洃鐫ｈ€呮ā寮忕殑鎺у埗/鐘舵€�
   0x80x0 0000 0300 0008 satp      Supervisor address translation and protection
 ======================= ========= =============================================
 
-RISC-V 瀹氭椂鍣ㄥ瘎瀛樺櫒琛ㄧず瀹㈡埛鏈?VCPU 鐨勫畾鏃跺櫒鐘舵€侊紝瀹冨叿鏈?
+RISC-V 定时器寄存器表示客户VCPU 的定时器状态，它具
 ```
 
   0x8030 0000 04 <index into the kvm_riscv_timer struct:24>
 
 ```
-浠ヤ笅鏄?RISC-V 瀹氭椂鍣ㄥ瘎瀛樺櫒锛?
+以下RISC-V 定时器寄存器
 
 ======================= ========= =============================================
     Encoding            Register  Description
@@ -2510,13 +2510,13 @@ RISC-V 瀹氭椂鍣ㄥ瘎瀛樺櫒琛ㄧず瀹㈡埛鏈?VCPU 鐨勫畾鏃跺櫒�
   0x8030 0000 0400 0003 state     Time compare state (1 = ON or 0 = OFF)
 ======================= ========= =============================================
 
-RISC-V F-extension 瀵勫瓨鍣ㄨ〃绀哄崟绮惧害娴偣
+RISC-V F-extension 寄存器表示单精度浮点
 ```
 
   0x8020 0000 05 <index into the __riscv_f_ext_state struct:24>
 
 ```
-浠ヤ笅鏄?RISC-V F-extension 瀵勫瓨鍣細
+以下RISC-V F-extension 寄存器：
 
 ======================= ========= =============================================
     Encoding            Register  Description
@@ -2527,14 +2527,14 @@ RISC-V F-extension 瀵勫瓨鍣ㄨ〃绀哄崟绮惧害娴偣
   0x8020 0000 0500 0020 fcsr      Floating point control and status register
 ======================= ========= =============================================
 
-RISC-V D-extension 瀵勫瓨鍣ㄨ〃绀哄弻绮惧害娴偣
+RISC-V D-extension 寄存器表示双精度浮点
 ```
 
   0x8020 0000 06 <index into the __riscv_d_ext_state struct:24> (fcsr)
   0x8030 0000 06 <index into the __riscv_d_ext_state struct:24> (non-fcsr)
 
 ```
-浠ヤ笅鏄?RISC-V D-extension 瀵勫瓨鍣細
+以下RISC-V D-extension 寄存器：
 
 ======================= ========= =============================================
     Encoding            Register  Description
@@ -2545,15 +2545,15 @@ RISC-V D-extension 瀵勫瓨鍣ㄨ〃绀哄弻绮惧害娴偣
   0x8020 0000 0600 0020 fcsr      Floating point control and status register
 ======================= ========= =============================================
 
-LoongArch 瀵勫瓨鍣ㄦ槧灏勪娇鐢ㄤ綆 32 浣嶃€傚叾涓殑楂?16 浣嶆槸瀵勫瓨鍣ㄧ粍绫诲瀷銆?
+LoongArch 寄存器映射使用低 32 位。其中的16 位是寄存器组类型
 
-LoongArch csr 瀵勫瓨鍣ㄧ敤浜庢帶鍒跺鎴锋満 cpu 鎴栬幏鍙栧鎴锋満鐘舵€?
+LoongArch csr 寄存器用于控制客户机 cpu 或获取客户机状
 ```
 
   0x9030 0000 0001 00 <reg:5> <sel:3>   (64-bit)
 
 ```
-LoongArch KVM 鎺у埗瀵勫瓨鍣ㄧ敤浜庡疄鐜颁竴浜涙柊瀹氫箟鐨勫姛鑳?
+LoongArch KVM 控制寄存器用于实现一些新定义的功
 ```
 
   0x9030 0000 0002 <reg:16>
@@ -2564,7 +2564,7 @@ LoongArch KVM 鎺у埗瀵勫瓨鍣ㄧ敤浜庡疄鐜颁竴浜涙柊瀹氫箟鐨�
   0x2030 0002 <msr number:32>
 
 ```
-浠ヤ笅鏄?x86 鐨?KVM 瀹氫箟瀵勫瓨鍣細
+以下x86 KVM 定义寄存器：
 
 ======================= ========= =============================================
     Encoding            Register  Description
@@ -2581,21 +2581,21 @@ LoongArch KVM 鎺у埗瀵勫瓨鍣ㄧ敤浜庡疄鐜颁竴浜涙柊瀹氫箟鐨�
 :Parameters: struct kvm_one_reg (in and out)
 :Returns: 0 on success, negative value on failure
 
-閿欒鐮佸寘鎷細
+错误码包括：
 
   ======== ============================================================
-  ENOENT   娌℃湁璇ュ瘎瀛樺櫒
-  EINVAL   鏃犳晥鐨勫瘎瀛樺櫒 ID锛屾垨娌℃湁璇ュ瘎瀛樺櫒锛屾垨涓?s390 涓婂彈淇濇姢铏氭嫙鍖?
-           妯″紡涓嬬殑 VM 涓€璧蜂娇鐢?
-  EPERM    (arm64) 鍦?vcpu 瀹氱锛坒inalization锛変箣鍓嶄笉鍏佽璁块棶璇ュ瘎瀛樺櫒
+  ENOENT   没有该寄存器
+  EINVAL   无效的寄存器 ID，或没有该寄存器，或s390 上受保护虚拟
+           模式下的 VM 一起使
+  EPERM    (arm64) vcpu 定稿（finalization）之前不允许访问该寄存器
   ======== ============================================================
 
-锛堣繖浜涢敊璇爜浠呬緵鍙傝€冿細涓嶈渚濊禆鍦ㄧ壒瀹氭儏鍐典笅杩斿洖鐗瑰畾鐨勯敊璇爜銆傦級
+（这些错误码仅供参考：不要依赖在特定情况下返回特定的错误码。）
 
-璇?ioctl 鍏佽鎺ユ敹 vcpu 涓疄鐜扮殑鍗曚釜瀵勫瓨鍣ㄧ殑鍊笺€傝璇诲彇鐨勫瘎瀛樺櫒鐢变紶鍏ョ殑 kvm_one_reg 缁撴瀯浣撶殑
-"id" 瀛楁鎸囩ず銆傛垚鍔熸椂锛屽瘎瀛樺櫒鍊煎彲浠ュ湪 "addr" 鎸囧悜鐨勫唴瀛樹綅缃壘鍒般€?
+ioctl 允许接收 vcpu 中实现的单个寄存器的值。要读取的寄存器由传入的 kvm_one_reg 结构体的
+"id" 字段指示。成功时，寄存器值可以在 "addr" 指向的内存位置找到
 
-浣跨敤璇ユ帴鍙ｅ彲璁块棶鐨勫瘎瀛樺櫒鍒楄〃涓?4.68 涓殑鍒楄〃鐩稿悓銆?
+使用该接口可访问的寄存器列表4.68 中的列表相同
 
 
 ### 4.70 KVM_KVMCLOCK_CTRL
@@ -2607,14 +2607,14 @@ LoongArch KVM 鎺у埗瀵勫瓨鍣ㄧ敤浜庡疄鐜颁竴浜涙柊瀹氫箟鐨�
 :Parameters: None
 :Returns: 0 on success, -1 on error
 
-璇?ioctl 璁剧疆涓€涓瀹㈡埛鏈哄彲璁块棶鐨勬爣蹇楋紝鎸囩ず鎸囧畾鐨?vCPU 宸茶瀹夸富鏈虹敤鎴风┖闂存殏鍋溿€?
+ioctl 设置一个对客户机可访问的标志，指示指定vCPU 已被宿主机用户空间暂停
 
-瀹夸富鏈哄皢鍦?pvclock 缁撴瀯浣撲腑璁剧疆涓€涓爣蹇楋紝璇ユ爣蹇楃敱 soft lockup 鐪嬮棬鐙楁鏌ャ€傝鏍囧織鏄鎴锋満涓?
-瀹夸富鏈轰箣闂村叡浜殑 pvclock 缁撴瀯浣撶殑涓€閮ㄥ垎锛屽叿浣撴槸 pvclock_vcpu_time_info 缁撴瀯浣撶殑 flags 瀛楁鐨?
-绗簩浣嶃€傚畠鐢卞涓绘満鐙崰璁剧疆锛岀敱瀹㈡埛鏈虹嫭鍗犺鍙?娓呴櫎銆傚鎴锋満妫€鏌ュ拰娓呴櫎璇ユ爣蹇楃殑鎿嶄綔蹇呴』鏄師瀛?
-鎿嶄綔锛屽洜姝ゅ繀椤讳娇鐢?load-link/store-conditional 鎴栫瓑浠锋寚浠ゃ€傚鎴锋満鍦ㄤ袱绉嶆儏鍐典笅浼氭竻闄よ鏍囧織锛?
-褰?soft lockup 鐪嬮棬鐙楀畾鏃跺櫒閲嶇疆鑷韩鏃讹紝鎴栧綋妫€娴嬪埌 soft lockup 鏃躲€傝 ioctl 鍙互鍦ㄦ殏鍋?vcpu 涔嬪悗銆?
-浣嗗湪鍏舵仮澶嶄箣鍓嶇殑浠讳綍鏃堕棿璋冪敤銆?
+宿主机将pvclock 结构体中设置一个标志，该标志由 soft lockup 看门狗检查。该标志是客户机
+宿主机之间共享的 pvclock 结构体的一部分，具体是 pvclock_vcpu_time_info 结构体的 flags 字段
+第二位。它由宿主机独占设置，由客户机独占读清除。客户机检查和清除该标志的操作必须是原
+操作，因此必须使load-link/store-conditional 或等价指令。客户机在两种情况下会清除该标志
+soft lockup 看门狗定时器重置自身时，或当检测到 soft lockup 时。该 ioctl 可以在暂vcpu 之后
+但在其恢复之前的任何时间调用
 
 
 ### 4.71 KVM_SIGNAL_MSI
@@ -2626,7 +2626,7 @@ LoongArch KVM 鎺у埗瀵勫瓨鍣ㄧ敤浜庡疄鐜颁竴浜涙柊瀹氫箟鐨�
 :Parameters: struct kvm_msi (in)
 :Returns: >0 on delivery, 0 if guest blocked the MSI, and -1 on error
 
-鐩存帴娉ㄥ叆涓€鏉?MSI 娑堟伅銆備粎鍦ㄨ兘澶勭悊 MSI 娑堟伅鐨勫唴鏍告€?irqchip 涓嬫湁鏁堛€?
+直接注入一MSI 消息。仅在能处理 MSI 消息的内核irqchip 下有效
 
 ```
 
@@ -2641,15 +2641,15 @@ LoongArch KVM 鎺у埗瀵勫瓨鍣ㄧ敤浜庡疄鐜颁竴浜涙柊瀹氫箟鐨�
 
 ```
 flags:
-  KVM_MSI_VALID_DEVID锛歞evid 鍖呭惈涓€涓湁鏁堝€笺€傛瘡 VM 鐨?KVM_CAP_MSI_DEVID 鑳藉姏鐢ㄤ簬閫氬憡闇€瑕佹彁渚?
-  璁惧 ID 鐨勮姹傘€傚鏋滆鑳藉姏涓嶅彲鐢紝鐢ㄦ埛绌洪棿缁濅笉搴旇缃?KVM_MSI_VALID_DEVID 鏍囧織锛屽惁鍒?ioctl
-  鍙兘浼氬け璐ャ€?
+  KVM_MSI_VALID_DEVID：devid 包含一个有效值。每 VM KVM_CAP_MSI_DEVID 能力用于通告需要提
+  设备 ID 的要求。如果该能力不可用，用户空间绝不应设KVM_MSI_VALID_DEVID 标志，否ioctl
+  可能会失败
 
-濡傛灉璁剧疆浜?KVM_MSI_VALID_DEVID锛屽垯 devid 鍖呭惈鍐欏叆 MSI 娑堟伅鐨勮澶囩殑鍞竴璁惧鏍囪瘑绗︺€傚浜?PCI锛?
-杩欓€氬父鏄綆 16 浣嶄腑鐨?BDF 鏍囪瘑绗︺€?
+如果设置KVM_MSI_VALID_DEVID，则 devid 包含写入 MSI 消息的设备的唯一设备标识符。对PCI
+这通常是低 16 位中BDF 标识符
 
-鍦?x86 涓婏紝闄ら潪鍚敤浜?KVM_CAP_X2APIC_API 鑳藉姏鐨?KVM_X2APIC_API_USE_32BIT_IDS 鐗规€э紝鍚﹀垯 address_hi
-浼氳蹇界暐銆傚鏋滃惎鐢紝address_hi 鐨?31-8 浣嶆彁渚涚洰鐨?id 鐨?31-8 浣嶃€俛ddress_hi 鐨?7-0 浣嶅繀椤讳负闆躲€?
+x86 上，除非启用KVM_CAP_X2APIC_API 能力KVM_X2APIC_API_USE_32BIT_IDS 特性，否则 address_hi
+会被忽略。如果启用，address_hi 31-8 位提供目id 31-8 位。address_hi 7-0 位必须为零
 
 
 ### 4.71 KVM_CREATE_PIT2
@@ -2661,8 +2661,8 @@ flags:
 :Parameters: struct kvm_pit_config (in)
 :Returns: 0 on success, -1 on error
 
-涓?i8254 PIT 鍒涘缓涓€涓唴鏍告€佽澶囨ā鍨嬨€傝璋冪敤浠呭湪閫氳繃 KVM_CREATE_IRQCHIP 鍚敤鍐呮牳鎬?irqchip
-鏀寔涔嬪悗鎵嶆湁鏁堛€備互涓?
+i8254 PIT 创建一个内核态设备模型。该调用仅在通过 KVM_CREATE_IRQCHIP 启用内核irqchip
+支持之后才有效。以
 ```
 
   struct kvm_pit_config {
@@ -2676,15 +2676,15 @@ flags:
   #define KVM_PIT_SPEAKER_DUMMY     1 /* emulate speaker port stub */
 
 ```
-PIT 瀹氭椂鍣ㄤ腑鏂彲浠ヤ娇鐢ㄤ竴涓瘡 VM 鐨勫唴鏍哥嚎绋嬫潵娉ㄥ叆銆傚鏋滃畠
+PIT 定时器中断可以使用一个每 VM 的内核线程来注入。如果它
 ```
 
   kvm-pit/<owner-process-pid>
 
 ```
-鍦ㄨ繍琛屽叿鏈夐珮浼樺厛绾х殑瀹㈡埛鏈烘椂锛屽彲鑳介渶瑕佺浉搴斿湴璋冩暣璇ョ嚎绋嬬殑璋冨害鍙傛暟銆?
+在运行具有高优先级的客户机时，可能需要相应地调整该线程的调度参数
 
-姝?IOCTL 鍙栦唬浜嗗凡杩囨椂鐨?KVM_CREATE_PIT銆?
+IOCTL 取代了已过时KVM_CREATE_PIT
 
 
 ### 4.72 KVM_GET_PIT2
@@ -2696,7 +2696,7 @@ PIT 瀹氭椂鍣ㄤ腑鏂彲浠ヤ娇鐢ㄤ竴涓瘡 VM 鐨勫唴鏍哥嚎
 :Parameters: struct kvm_pit_state2 (out)
 :Returns: 0 on success, -1 on error
 
-鑾峰彇鍐呮牳鎬?PIT 妯″瀷鐨勭姸鎬併€備粎鍦?
+获取内核PIT 模型的状态。仅
 ```
 
   struct kvm_pit_state2 {
@@ -2714,7 +2714,7 @@ PIT 瀹氭椂鍣ㄤ腑鏂彲浠ヤ娇鐢ㄤ竴涓瘡 VM 鐨勫唴鏍哥嚎
   #define KVM_PIT_FLAGS_SPEAKER_DATA_ON 0x00000002
 
 ```
-姝?IOCTL 鍙栦唬浜嗗凡杩囨椂鐨?KVM_GET_PIT銆?
+IOCTL 取代了已过时KVM_GET_PIT
 
 
 ### 4.73 KVM_SET_PIT2
@@ -2726,14 +2726,14 @@ PIT 瀹氭椂鍣ㄤ腑鏂彲浠ヤ娇鐢ㄤ竴涓瘡 VM 鐨勫唴鏍哥嚎
 :Parameters: struct kvm_pit_state2 (in)
 :Returns: 0 on success, -1 on error
 
-璁剧疆鍐呮牳鎬?PIT 妯″瀷鐨勭姸鎬併€備粎鍦?KVM_CREATE_PIT2 涔嬪悗鏈夋晥銆傚叧浜?struct kvm_pit_state2 鐨勭粏鑺?
-璇峰弬瑙?KVM_GET_PIT2銆?
+设置内核PIT 模型的状态。仅KVM_CREATE_PIT2 之后有效。关struct kvm_pit_state2 的细
+请参KVM_GET_PIT2
 
-  `KVM_SET_PIT2` 涓ユ牸閬靛畧 Intel 8254 PIT 鐨勮鑼冦€備緥濡傦紝`struct kvm_pit_channel_state` 涓?
-  `count` 鍊间负 0 琚В閲婁负 65536锛屽嵆鏈€澶ц鏁板€笺€傚弬鑰?`Intel 8254 programmable interval
-  timer <https://www.scs.stanford.edu/10wi-cs140/pintos/specs/8254.pdf>`_銆?
+  `KVM_SET_PIT2` 严格遵守 Intel 8254 PIT 的规范。例如，`struct kvm_pit_channel_state` 
+  `count` 值为 0 被解释为 65536，即最大计数值。参`Intel 8254 programmable interval
+  timer <https://www.scs.stanford.edu/10wi-cs140/pintos/specs/8254.pdf>`_銆。
 
-姝?IOCTL 鍙栦唬浜嗗凡杩囨椂鐨?KVM_SET_PIT銆?
+IOCTL 取代了已过时KVM_SET_PIT
 
 
 ### 4.74 KVM_PPC_GET_SMMU_INFO
@@ -2745,10 +2745,10 @@ PIT 瀹氭椂鍣ㄤ腑鏂彲浠ヤ娇鐢ㄤ竴涓瘡 VM 鐨勫唴鏍哥嚎
 :Parameters: None
 :Returns: 0 on success, -1 on error
 
-璇?ioctl 濉厖骞惰繑鍥炰竴涓弿杩?KVM 鏀寔鐨?鏈嶅姟鍣?绾?MMU 妯℃嫙鐗规€х殑缁撴瀯浣撱€傜敤鎴风┖闂村弽杩囨潵鍙互鐢ㄥ畠
-涓哄鏈烘搷浣滅郴缁熺敓鎴愰€傚綋鐨勮澶囨爲灞炴€с€?
+ioctl 填充并返回一个描KVM 支持服务MMU 模拟特性的结构体。用户空间反过来可以用它
+为客机操作系统生成适当的设备树属性
 
-璇ョ粨鏋勪綋鍖呭惈涓€浜涘叏灞€淇℃伅锛屽悗闈㈣窡鐫€涓€涓?
+该结构体包含一些全局信息，后面跟着一
 ```
 
       struct kvm_ppc_smmu_info {
@@ -2759,21 +2759,21 @@ PIT 瀹氭椂鍣ㄤ腑鏂彲浠ヤ娇鐢ㄤ竴涓瘡 VM 鐨勫唴鏍哥嚎
       };
 
 ```
-鏀寔鐨勬爣蹇楀涓嬶細
+支持的标志如下：
 
     - KVM_PPC_PAGE_SIZES_REAL:
-        褰撹缃鏍囧織鏃讹紝瀹㈡埛鏈洪〉澶у皬蹇呴』"閫傞厤"鍚庡瀛樺偍鐨勯〉澶у皬銆傚綋鏈缃椂锛屽垪琛ㄤ腑鐨勪换浣曢〉澶у皬
-        閮藉彲浠ヤ娇鐢紝鑰屼笉绠″畠浠浣曠敱鐢ㄦ埛绌洪棿浣滀负鍚庡銆?
+        当设置该标志时，客户机页大小必须"适配"后备存储的页大小。当未设置时，列表中的任何页大小
+        都可以使用，而不管它们如何由用户空间作为后备
 
     - KVM_PPC_1T_SEGMENTS
-        闄や簡鏍囧噯鐨?256M 娈典箣澶栵紝妯℃嫙鐨?MMU 杩樻敮鎸?1T 娈点€?
+        除了标准256M 段之外，模拟MMU 还支1T 段
 
     - KVM_PPC_NO_HASH
-	璇ユ爣蹇楄〃绀?KVM 涓嶆敮鎸?HPT 瀹㈡埛鏈猴紝鍥犳鎵€鏈夊鎴锋満蹇呴』浣跨敤 radix MMU 妯″紡銆?
+	该标志表KVM 不支HPT 客户机，因此所有客户机必须使用 radix MMU 模式
 
-"slb_size" 瀛楁鎸囩ず鏀寔澶氬皯涓?SLB 鏉＄洰銆?
+"slb_size" 字段指示支持多少SLB 条目
 
-"sps" 鏁扮粍鍖呭惈 8 涓潯鐩紝鎸夐€掑椤哄簭鎸囩ず娈垫敮鎸佺殑鍩洪〉澶у皬銆傛瘡涓潯鐩畾涔変负
+"sps" 数组包含 8 个条目，按递增顺序指示段支持的基页大小。每个条目定义为
 ```
 
    struct kvm_ppc_one_seg_page_size {
@@ -2783,13 +2783,13 @@ PIT 瀹氭椂鍣ㄤ腑鏂彲浠ヤ娇鐢ㄤ竴涓瘡 VM 鐨勫唴鏍哥嚎
    };
 
 ```
-"page_shift" 涓?0 鐨勬潯鐩湭琚娇鐢ㄣ€傜敱浜庢暟缁勬寜閫掑椤哄簭缁勭粐锛岄亣鍒版绫绘潯鐩椂鏌ユ壘鍗冲彲鍋滄銆?
+"page_shift" 0 的条目未被使用。由于数组按递增顺序组织，遇到此类条目时查找即可停止
 
-"slb_enc" 瀛楁鎻愪緵鍦?SLB 涓敤浜庤椤靛ぇ灏忕殑缂栫爜銆傝繖浜涗綅鐨勪綅缃娇寰楄鍊煎彲浠ョ洿鎺ユ寜浣嶆垨鍒?slbmte
-鎸囦护鐨?"vsid" 鍙傛暟涓€?
+"slb_enc" 字段提供SLB 中用于该页大小的编码。这些位的位置使得该值可以直接按位或slbmte
+指令"vsid" 参数中
 
-"enc" 鏁扮粍鏄竴涓垪琛紝閽堝姣忎釜娈靛熀椤靛ぇ灏忔彁渚涘彈鏀寔鐨勫疄闄呴〉澶у皬鍒楄〃锛堝彧鑳藉ぇ浜庢垨绛変簬鍩洪〉澶у皬锛夛紝
-浠ュ強鍝堝笇 PTE 涓殑鐩稿簲缂栫爜銆傜被浼煎湴锛岃鏁扮粍鏄?8 涓潯鐩紝鎸夐€掑澶у皬鎺掑簭锛岃€?"0" 鍋忕Щ鐨勬潯鐩?
+"enc" 数组是一个列表，针对每个段基页大小提供受支持的实际页大小列表（只能大于或等于基页大小），
+以及哈希 PTE 中的相应编码。类似地，该数组8 个条目，按递增大小排序，"0" 偏移的条
 ```
 
    struct kvm_ppc_one_page_size {
@@ -2798,8 +2798,8 @@ PIT 瀹氭椂鍣ㄤ腑鏂彲浠ヤ娇鐢ㄤ竴涓瘡 VM 鐨勫唴鏍哥嚎
    };
 
 ```
-"pte_enc" 瀛楁鎻愪緵涓€涓€硷紝鍙互鎸変綅鎴栧埌鍝堝笇 PTE 鐨?RPN 瀛楁涓紙鍗筹紝闇€瑕佸厛宸︾Щ 12 浣嶆墠鑳芥寜浣嶆垨
-鍒板搱甯?PTE 鐨勭浜屼釜鍙屽瓧涓級銆?
+"pte_enc" 字段提供一个值，可以按位或到哈希 PTE RPN 字段中（即，需要先左移 12 位才能按位或
+到哈PTE 的第二个双字中）
 
 ### 4.75 KVM_IRQFD
 
@@ -2810,24 +2810,24 @@ PIT 瀹氭椂鍣ㄤ腑鏂彲浠ヤ娇鐢ㄤ竴涓瘡 VM 鐨勫唴鏍哥嚎
 :Parameters: struct kvm_irqfd (in)
 :Returns: 0 on success, -1 on error
 
-鍏佽璁剧疆涓€涓?eventfd 浠ョ洿鎺ヨЕ鍙戜竴娆″鎴锋満涓柇銆俴vm_irqfd.fd 鎸囧畾鐢ㄤ綔 eventfd 鐨勬枃浠舵弿杩扮锛?
-kvm_irqfd.gsi 鎸囧畾鐢辨浜嬩欢鍒囨崲鐨?irqchip 寮曡剼銆傚綋 eventfd 涓婅Е鍙戜竴涓簨浠舵椂锛屼細浣跨敤鎸囧畾鐨?gsi
-寮曡剼鍚戝鎴锋満娉ㄥ叆涓€涓腑鏂€備娇鐢?KVM_IRQFD_FLAG_DEASSIGN 鏍囧織骞跺悓鏃舵寚瀹?kvm_irqfd.fd 鍜?
-kvm_irqfd.gsi锛屽彲浠ョЩ闄よ irqfd銆?
+允许设置一eventfd 以直接触发一次客户机中断。kvm_irqfd.fd 指定用作 eventfd 的文件描述符
+kvm_irqfd.gsi 指定由此事件切换irqchip 引脚。当 eventfd 上触发一个事件时，会使用指定gsi
+引脚向客户机注入一个中断。使KVM_IRQFD_FLAG_DEASSIGN 标志并同时指kvm_irqfd.fd 
+kvm_irqfd.gsi，可以移除该 irqfd
 
-鍊熷姪 KVM_CAP_IRQFD_RESAMPLE锛孠VM_IRQFD 鏀寔鍘绘柇瑷€锛坉e-assert锛夊拰閫氱煡鏈哄埗锛屼粠鑰屽厑璁告ā鎷熷熀浜?
-irqfd 鐨勭數骞宠Е鍙戜腑鏂€傚綋璁剧疆 KVM_IRQFD_FLAG_RESAMPLE 鏃讹紝鐢ㄦ埛蹇呴』鍦?kvm_irqfd.resamplefd 瀛楁
-涓紶鍏ヤ竴涓澶栫殑 eventfd銆傚湪閲嶉噰鏍锋ā寮忎笅锛岄€氳繃 kvm_irq.fd 鎶曢€掍腑鏂細鏂█ irqchip 涓寚瀹氱殑 gsi銆?
-褰?irqchip 琚噸閲囨牱鏃讹紙渚嬪鏉ヨ嚜 EOI锛夛紝gsi 琚幓鏂█锛屽苟閫氳繃 kvm_irqfd.resamplefd 閫氱煡鐢ㄦ埛銆傛槸鍚?
-閲嶆柊鎺掗槦璇ヤ腑鏂紝鐢辩敤鎴疯礋璐ｏ紝鍓嶆彁鏄娇鐢ㄥ畠鐨勮澶囦粛闇€瑕佹湇鍔°€傛敞鎰忥紝鍏抽棴 resamplefd 涓嶈冻浠ョ鐢?
-璇?irqfd銆侹VM_IRQFD_FLAG_RESAMPLE 浠呭湪鍒嗛厤鏃堕渶瑕侊紝鑰屼笉蹇呬笌 KVM_IRQFD_FLAG_DEASSIGN 涓€璧锋寚瀹氥€?
+借助 KVM_CAP_IRQFD_RESAMPLE，KVM_IRQFD 支持去断言（de-assert）和通知机制，从而允许模拟基
+irqfd 的电平触发中断。当设置 KVM_IRQFD_FLAG_RESAMPLE 时，用户必须kvm_irqfd.resamplefd 字段
+中传入一个额外的 eventfd。在重采样模式下，通过 kvm_irq.fd 投递中断会断言 irqchip 中指定的 gsi
+irqchip 被重采样时（例如来自 EOI），gsi 被去断言，并通过 kvm_irqfd.resamplefd 通知用户。是
+重新排队该中断，由用户负责，前提是使用它的设备仍需要服务。注意，关闭 resamplefd 不足以禁
+irqfd。KVM_IRQFD_FLAG_RESAMPLE 仅在分配时需要，而不必与 KVM_IRQFD_FLAG_DEASSIGN 一起指定
 
-鍦?arm64 涓婏紝鐢变簬鏀寔 gsi 璺敱锛屽彲鑳藉彂鐢熶互涓嬫儏鍐碉細
+arm64 上，由于支持 gsi 路由，可能发生以下情况：
 
-- 濡傛灉娌℃湁涓庤 gsi 鍏宠仈鐨勮矾鐢辨潯鐩紝娉ㄥ叆澶辫触
-- 濡傛灉璇?gsi 鍏宠仈鍒?irqchip 璺敱鏉＄洰锛宨rqchip.pin + 32 瀵瑰簲浜庤娉ㄥ叆鐨?SPI ID
-- 濡傛灉璇?gsi 鍏宠仈鍒?MSI 璺敱鏉＄洰锛孧SI 娑堟伅鍜岃澶?ID 琚浆鎹负涓€涓?LPI锛堟敮鎸佷粎闄愪簬 GICv3 ITS
-  鐨勫唴鏍告€佹ā鎷燂級
+- 如果没有与该 gsi 关联的路由条目，注入失败
+- 如果gsi 关联irqchip 路由条目，irqchip.pin + 32 对应于被注入SPI ID
+- 如果gsi 关联MSI 路由条目，MSI 消息和设ID 被转换为一LPI（支持仅限于 GICv3 ITS
+  的内核态模拟）
 
 ### 4.76 KVM_PPC_ALLOCATE_HTAB
 
@@ -2838,22 +2838,22 @@ irqfd 鐨勭數骞宠Е鍙戜腑鏂€傚綋璁剧疆 KVM_IRQFD_FLAG_RESAMPLE
 :Parameters: Pointer to u32 containing hash table order (in/out)
 :Returns: 0 on success, -1 on error
 
-璇?ioctl 璇锋眰瀹夸富鏈哄唴鏍镐娇鐢?PAPR 鍗婅櫄鎷熷寲鎺ュ彛涓哄鎴锋満鍒嗛厤涓€涓?MMU 鍝堝笇琛ㄣ€傝繖浠呭湪鍐呮牳閰嶇疆涓轰娇鐢?
-Book 3S HV 椋庢牸鐨勮櫄鎷熷寲鏃舵墠璧蜂綔鐢ㄣ€傚惁鍒欒鑳藉姏涓嶅瓨鍦紝ioctl 杩斿洖 ENOTTY 閿欒銆傛湰璇存槑鐨勫叾浣欓儴鍒?
-鍋囪涓?Book 3S HV銆?
+ioctl 请求宿主机内核使PAPR 半虚拟化接口为客户机分配一MMU 哈希表。这仅在内核配置为使
+Book 3S HV 风格的虚拟化时才起作用。否则该能力不存在，ioctl 返回 ENOTTY 错误。本说明的其余部
+假设Book 3S HV
 
-璋冪敤姝?ioctl 鏃朵笉鑳芥湁姝ｅ湪杩愯鐨?vcpu锛涘鏋滄湁锛屽畠灏嗕笉鎵ц浠讳綍鎿嶄綔骞惰繑鍥?EBUSY 閿欒銆?
+调用ioctl 时不能有正在运行vcpu；如果有，它将不执行任何操作并返EBUSY 错误
 
-鍙傛暟鏄竴涓寚鍚?32 浣嶆棤绗﹀彿鏁存暟鍙橀噺鐨勬寚閽堬紝璇ュ彉閲忓寘鍚墍闇€鍝堝笇琛ㄥぇ灏忥紙浠?2 涓哄簳鐨勫鏁帮級鐨勯樁锛坥rder锛夛紝
-鍏跺彇鍊艰寖鍥村繀椤诲湪 18 鍒?46 涔嬮棿銆傚湪 ioctl 鎴愬姛杩斿洖鏃讹紝璇ュ€间笉浼氳鍐呮牳鏀瑰彉銆?
+参数是一个指32 位无符号整数变量的指针，该变量包含所需哈希表大小（2 为底的对数）的阶（order），
+其取值范围必须在 18 46 之间。在 ioctl 成功返回时，该值不会被内核改变
 
-濡傛灉褰撲换浣?vcpu 琚姹傝繍琛岋紙閫氳繃 KVM_RUN ioctl锛夋椂灏氭湭鍒嗛厤鍝堝笇琛紝瀹夸富鏈哄唴鏍稿皢鍒嗛厤涓€涓粯璁ゅぇ灏?
-鐨勫搱甯岃〃锛?6 MB锛夈€?
+如果当任vcpu 被要求运行（通过 KVM_RUN ioctl）时尚未分配哈希表，宿主机内核将分配一个默认大
+的哈希表6 MB）
 
-濡傛灉鍦ㄥ搱甯岃〃宸插垎閰嶇殑鎯呭喌涓嬭皟鐢ㄦ ioctl锛屼笖闃朵笌鐜版湁鍝堝笇琛ㄤ笉鍚岋紝鍒欎細閲婃斁鐜版湁鍝堝笇琛ㄥ苟鍒嗛厤涓€涓柊鐨勩€?
-濡傛灉鍦ㄥ搱甯岃〃宸插垎閰嶄笖闃朵笌鎸囧畾鐩稿悓鏃惰皟鐢ㄦ ioctl锛屽唴鏍稿皢娓呯┖鐜版湁鍝堝笇琛紙灏嗘墍鏈?HPTE 缃浂锛夈€傛棤璁?
-鍝鎯呭喌锛屽鏋滃鎴锋満浣跨敤浜嗚櫄鎷熷寲瀹炴ā寮忓尯鍩燂紙VRMA锛夎鏂斤紝鍐呮牳灏嗗湪浠讳綍 vcpu 鐨勪笅涓€娆?KVM_RUN 鏃?
-閲嶆柊鍒涘缓 VMRA HPTE銆?
+如果在哈希表已分配的情况下调用此 ioctl，且阶与现有哈希表不同，则会释放现有哈希表并分配一个新的
+如果在哈希表已分配且阶与指定相同时调用此 ioctl，内核将清空现有哈希表（将所HPTE 置零）。无
+哪种情况，如果客户机使用了虚拟化实模式区域（VRMA）设施，内核将在任何 vcpu 的下一KVM_RUN 
+重新创建 VMRA HPTE
 
 ### 4.77 KVM_S390_INTERRUPT
 
@@ -2864,7 +2864,7 @@ Book 3S HV 椋庢牸鐨勮櫄鎷熷寲鏃舵墠璧蜂綔鐢ㄣ€傚惁鍒欒
 :Parameters: struct kvm_s390_interrupt (in)
 :Returns: 0 on success, -1 on error
 
-鍏佽鍚戝鎴锋満娉ㄥ叆涓€涓腑鏂€傛牴鎹腑鏂被鍨嬶紝涓柇鍙互鏄诞鍔ㄧ殑锛坴m ioctl锛夋垨姣?cpu 鐨勶紙vcpu ioctl锛夈€?
+允许向客户机注入一个中断。根据中断类型，中断可以是浮动的（vm ioctl）或cpu 的（vcpu ioctl）
 
 ```
 
@@ -2875,36 +2875,36 @@ Book 3S HV 椋庢牸鐨勮櫄鎷熷寲鏃舵墠璧蜂綔鐢ㄣ€傚惁鍒欒
   };
 
 ```
-type 鍙互鏄互涓嬩箣涓€锛?
+type 可以是以下之一
 
 KVM_S390_SIGP_STOP (vcpu)
-    - sigp 鍋滄锛涘彲閫夋爣蹇楀湪 parm 涓?
+    - sigp 停止；可选标志在 parm 
 KVM_S390_PROGRAM_INT (vcpu)
-    - 绋嬪簭妫€鏌ワ紱code 鍦?parm 涓?
+    - 程序检查；code parm 
 KVM_S390_SIGP_SET_PREFIX (vcpu)
-    - sigp 璁剧疆鍓嶇紑锛涘墠缂€鍦板潃鍦?parm 涓?
+    - sigp 设置前缀；前缀地址parm 
 KVM_S390_RESTART (vcpu)
-    - 閲嶅惎
+    - 重启
 KVM_S390_INT_CLOCK_COMP (vcpu)
-    - 鏃堕挓姣旇緝鍣ㄤ腑鏂?
+    - 时钟比较器中
 KVM_S390_INT_CPU_TIMER (vcpu)
-    - CPU 瀹氭椂鍣ㄤ腑鏂?
+    - CPU 定时器中
 KVM_S390_INT_VIRTIO (vm)
-    - virtio 澶栭儴涓柇锛涘閮ㄤ腑鏂弬鏁板湪 parm 鍜?parm64 涓?
+    - virtio 外部中断；外部中断参数在 parm parm64 
 KVM_S390_INT_SERVICE (vm)
-    - sclp 澶栭儴涓柇锛泂clp 鍙傛暟鍦?parm 涓?
+    - sclp 外部中断；sclp 参数parm 
 KVM_S390_INT_EMERGENCY (vcpu)
-    - sigp 绱ф€ワ紱婧?cpu 鍦?parm 涓?
+    - sigp 紧急；cpu parm 
 KVM_S390_INT_EXTERNAL_CALL (vcpu)
-    - sigp 澶栭儴璋冪敤锛涙簮 cpu 鍦?parm 涓?
+    - sigp 外部调用；源 cpu parm 
 KVM_S390_INT_IO(ai,cssid,ssid,schid) (vm)
-    - 澶嶅悎鍊硷紝鎸囩ず涓€涓?I/O 涓柇锛坅i - 閫傞厤鍣ㄤ腑鏂紱cssid,ssid,schid - 瀛愰€氶亾锛夛紱
-      I/O 涓柇鍙傛暟鍦?parm锛堝瓙閫氶亾锛夊拰 parm64锛坕ntparm锛屼腑鏂瓙绫伙級涓?
+    - 复合值，指示一I/O 中断（ai - 适配器中断；cssid,ssid,schid - 子通道）；
+      I/O 中断参数parm（子通道）和 parm64（intparm，中断子类）
 KVM_S390_MCHK (vm, vcpu)
-    - 鏈哄櫒妫€鏌ヤ腑鏂紱cr 14 浣嶅湪 parm 涓紝鏈哄櫒妫€鏌ヤ腑鏂爜鍦?parm64 涓紙娉ㄦ剰锛岄渶瑕侀澶栬礋杞界殑
-      鏈哄櫒妫€鏌ヤ笉鍙楁 ioctl 鏀寔锛?
+    - 机器检查中断；cr 14 位在 parm 中，机器检查中断码parm64 中（注意，需要额外负载的
+      机器检查不受此 ioctl 支持
 
-杩欐槸涓€涓紓姝ョ殑 vcpu ioctl锛屽彲浠ヤ粠浠讳綍绾跨▼璋冪敤銆?
+这是一个异步的 vcpu ioctl，可以从任何线程调用
 
 ### 4.78 KVM_PPC_GET_HTAB_FD
 
@@ -2915,9 +2915,9 @@ KVM_S390_MCHK (vm, vcpu)
 :Parameters: Pointer to struct kvm_get_htab_fd (in)
 :Returns: file descriptor number (>= 0) on success, -1 on error
 
-璇?ioctl 杩斿洖涓€涓枃浠舵弿杩扮锛屽彲鐢ㄤ簬璇诲嚭瀹㈡埛鏈哄搱甯岄〉琛紙HPT锛変腑鐨勬潯鐩紝鎴栧啓鍏ユ潯鐩互鍒濆鍖?HPT銆?
-浠呭綋鍙傛暟鐨?flags 瀛楁涓缃簡 KVM_GET_HTAB_WRITE 浣嶆椂锛岃繑鍥炵殑 fd 鎵嶅彲鍐欙紱浠呭綋璇ヤ綅娓呴浂鏃讹紝鎵嶅彲
-璇汇€傚弬鏁扮粨鏋勪綋濡備笅
+ioctl 返回一个文件描述符，可用于读出客户机哈希页表（HPT）中的条目，或写入条目以初始HPT
+仅当参数flags 字段中设置了 KVM_GET_HTAB_WRITE 位时，返回的 fd 才可写；仅当该位清零时，才可
+读。参数结构体如下
 ```
 
   /* For KVM_PPC_GET_HTAB_FD */
@@ -2932,14 +2932,14 @@ KVM_S390_MCHK (vm, vcpu)
   #define KVM_GET_HTAB_WRITE		((__u64)0x2)
 
 ```
-'start_index' 瀛楁缁欏嚭 HPT 涓紑濮嬭鍙栫殑鏉＄洰鐨勭储寮曘€傚啓鍏ユ椂蹇界暐璇ュ瓧娈点€?
+'start_index' 字段给出 HPT 中开始读取的条目的索引。写入时忽略该字段
 
-瀵?fd 鐨勮鍙栨渶鍒濅細鎻愪緵鎵€鏈?鏈夎叮"鐨?HPT 鏉＄洰鐨勪俊鎭€傚鏋滆缃簡 KVM_GET_HTAB_BOLTED_ONLY 浣嶏紝
-鏈夎叮鐨勬潯鐩槸閭ｄ簺缃綅浜?bolted 浣嶇殑鏉＄洰锛涘惁鍒欐槸鎵€鏈夋潯鐩€傚埌杈?HPT 鏈熬鏃讹紝read() 浼氳繑鍥炪€傚鏋?
-鍐嶆瀵?fd 璋冪敤 read()锛屽畠浼氫粠 HPT 寮€澶撮噸鏂板紑濮嬶紝浣嗗彧杩斿洖鑷笂娆¤鍙栦互鏉ュ彂鐢熷彉鍖栫殑 HPT 鏉＄洰銆?
+fd 的读取最初会提供所有趣"HPT 条目的信息。如果设置了 KVM_GET_HTAB_BOLTED_ONLY 位，
+有趣的条目是那些置位bolted 位的条目；否则是所有条目。到HPT 末尾时，read() 会返回。如
+再次fd 调用 read()，它会从 HPT 开头重新开始，但只返回自上次读取以来发生变化的 HPT 条目
 
-璇诲彇鎴栧啓鍏ョ殑鏁版嵁缁撴瀯涓轰竴涓ご閮紙8 瀛楄妭锛夛紝鍚庤窡涓€绯诲垪鏈夋晥鐨?HPT 鏉＄洰锛堟瘡鏉?16 瀛楄妭锛夈€傚ご閮ㄦ寚绀?
-鏈夊灏戜釜鏈夋晥 HPT 鏉＄洰锛屼互鍙婃湁鏁堟潯鐩箣鍚庤窡闅忓灏戜釜鏃犳晥鏉＄洰銆傛棤鏁堟潯鐩笉琚樉寮忚〃绀?
+读取或写入的数据结构为一个头部（8 字节），后跟一系列有效HPT 条目（每16 字节）。头部指
+有多少个有效 HPT 条目，以及有效条目之后跟随多少个无效条目。无效条目不被显式表
 ```
 
   struct kvm_get_htab_header {
@@ -2949,8 +2949,8 @@ KVM_S390_MCHK (vm, vcpu)
   };
 
 ```
-瀵?fd 鐨勫啓鍏ヤ粠澶撮儴涓粰鍑虹殑绱㈠紩澶勫垱寤?HPT 鏉＄洰锛涘厛鏄?'n_valid' 涓潵鑷啓鍏ユ暟鎹殑鏈夋晥鏉＄洰锛岀劧鍚庢槸
-'n_invalid' 涓棤鏁堟潯鐩紝浣挎壘鍒扮殑浠讳綍鍏堝墠鏈夋晥鏉＄洰澶辨晥銆?
+fd 的写入从头部中给出的索引处创HPT 条目；先'n_valid' 个来自写入数据的有效条目，然后是
+'n_invalid' 个无效条目，使找到的任何先前有效条目失效
 
 ### 4.79 KVM_CREATE_DEVICE
 
@@ -2961,21 +2961,21 @@ KVM_S390_MCHK (vm, vcpu)
 :Parameters: struct kvm_create_device (in/out)
 :Returns: 0 on success, -1 on error
 
-閿欒鐮侊細
+错误码：
 
   ======  =======================================================
-  ENODEV  璁惧绫诲瀷鏈煡鎴栦笉琚敮鎸?
-  EEXIST  璁惧宸插垱寤猴紝涓旇绫诲瀷鐨勮澶囧彲鑳戒笉浼氬疄渚嬪寲澶氭
+  ENODEV  设备类型未知或不被支
+  EEXIST  设备已创建，且该类型的设备可能不会实例化多次
   ======  =======================================================
 
-  鍏朵粬閿欒鏉′欢鍙兘鐢卞悇涓澶囩被鍨嬪畾涔夛紝鎴栧叿鏈夊叾鏍囧噯鍚箟銆?
+  其他错误条件可能由各个设备类型定义，或具有其标准含义
 
-鍦ㄥ唴鏍镐腑鍒涘缓涓€涓ā鎷熻澶囥€傚湪 fd 涓繑鍥炵殑鏂囦欢鎻忚堪绗﹀彲鐢ㄤ簬 KVM_SET/GET/HAS_DEVICE_ATTR銆?
+在内核中创建一个模拟设备。在 fd 中返回的文件描述符可用于 KVM_SET/GET/HAS_DEVICE_ATTR
 
-濡傛灉璁剧疆浜?KVM_CREATE_DEVICE_TEST 鏍囧織锛屽垯鍙祴璇曡澶囩被鍨嬫槸鍚﹀彈鏀寔锛堜笉涓€瀹氭槸瀹冭兘鍚﹀湪褰撳墠 vm 涓?
-鍒涘缓锛夈€?
+如果设置KVM_CREATE_DEVICE_TEST 标志，则只测试设备类型是否受支持（不一定是它能否在当前 vm 
+创建）
 
-鍚勪釜璁惧涓嶅簲瀹氫箟鏍囧織銆傚睘鎬у簲鐢ㄤ簬鎸囧畾浠讳綍涓嶈璁惧绫诲瀷缂栧彿鎵€鏆楃ず鐨勮涓恒€?
+各个设备不应定义标志。属性应用于指定任何不被设备类型编号所暗示的行为
 
 ```
 
@@ -2997,18 +2997,18 @@ KVM_S390_MCHK (vm, vcpu)
 :Parameters: struct kvm_device_attr
 :Returns: 0 on success, -1 on error
 
-閿欒鐮侊細
+错误码：
 
   =====   =============================================================
-  ENXIO   璇ョ粍鎴栧睘鎬у姝ゅ璁炬湭鐭?涓嶅彈鏀寔锛屾垨缂哄皯纭欢鏀寔銆?
-  EPERM   璇ュ睘鎬э紙褰撳墠锛変笉鑳戒互杩欑鏂瑰紡璁块棶
-          锛堜緥濡傚彧璇诲睘鎬э紝鎴栦粎鍦ㄨ澶囧浜庝笉鍚岀姸鎬佹椂鎵嶆湁鎰忎箟鐨勫睘鎬э級
+  ENXIO   该组或属性对此外设未不受支持，或缺少硬件支持
+  EPERM   该属性（当前）不能以这种方式访问
+          （例如只读属性，或仅在设备处于不同状态时才有意义的属性）
   =====   =============================================================
 
-  鍏朵粬閿欒鏉′欢鍙兘鐢卞悇涓澶囩被鍨嬪畾涔夈€?
+  其他错误条件可能由各个设备类型定义
 
-鑾峰彇/璁剧疆鎸囧畾鐨勮澶囬厤缃拰/鎴栫姸鎬佺墖娈点€傚叾璇箟鏄澶囩浉鍏崇殑銆傝鍙傝 "devices" 鐩綍涓殑鍚勪釜
-璁惧鏂囨。銆備笌 ONE_REG 涓€鏍凤紝浼犺緭鏁版嵁鐨勫ぇ灏忕敱鐗瑰畾灞炴€у畾涔夈€?
+获取/设置指定的设备配置和/或状态片段。其语义是设备相关的。请参见 "devices" 目录中的各个
+设备文档。与 ONE_REG 一样，传输数据的大小由特定属性定义
 
 ```
 
@@ -3030,14 +3030,14 @@ KVM_S390_MCHK (vm, vcpu)
 :Parameters: struct kvm_device_attr
 :Returns: 0 on success, -1 on error
 
-閿欒鐮侊細
+错误码：
 
   =====   =============================================================
-  ENXIO   璇ョ粍鎴栧睘鎬у姝ゅ璁炬湭鐭?涓嶅彈鏀寔锛屾垨缂哄皯纭欢鏀寔銆?
+  ENXIO   该组或属性对此外设未不受支持，或缺少硬件支持
   =====   =============================================================
 
-娴嬭瘯涓€涓澶囨槸鍚︽敮鎸佺壒瀹氬睘鎬с€傛垚鍔熻繑鍥炶〃绀哄凡瀹炵幇璇ュ睘鎬с€傚畠骞朵笉涓€瀹氳〃绀鸿灞炴€у彲浠ュ湪璁惧
-褰撳墠鐘舵€佷笅琚鍙栨垨鍐欏叆銆?addr" 琚拷鐣ャ€?
+测试一个设备是否支持特定属性。成功返回表示已实现该属性。它并不一定表示该属性可以在设备
+当前状态下被读取或写入addr" 被忽略
 
 
 ### 4.82 KVM_ARM_VCPU_INIT
@@ -3049,87 +3049,87 @@ KVM_S390_MCHK (vm, vcpu)
 :Parameters: struct kvm_vcpu_init (in)
 :Returns: 0 on success; -1 on error
 
-閿欒鐮侊細
+错误码：
 
   ======     =================================================================
-  EINVAL    鐩爣鏈煡锛屾垨鐗规€х粍鍚堟棤鏁堛€?
-  ENOENT    鎸囧畾鐨勬煇涓壒鎬т綅鏈煡銆?
+  EINVAL    目标未知，或特性组合无效
+  ENOENT    指定的某个特性位未知
   ======     =================================================================
 
-璇?ioctl 鍛婅瘔 KVM 瑕佸悜瀹㈡埛鏈哄憟鐜颁粈涔堢被鍨嬬殑 CPU锛屼互鍙婂畠搴斿叿鏈夊摢浜涘彲閫夌壒鎬с€傝繖灏嗕娇 cpu 瀵勫瓨鍣?
-閲嶇疆涓哄畠浠殑鍒濆鍊笺€傚鏋滄湭璋冪敤瀹冿紝KVM_RUN 灏嗗璇?vcpu 杩斿洖 ENOEXEC銆?
+ioctl 告诉 KVM 要向客户机呈现什么类型的 CPU，以及它应具有哪些可选特性。这将使 cpu 寄存
+重置为它们的初始值。如果未调用它，KVM_RUN 将对vcpu 返回 ENOEXEC
 
-鍒濆鍊煎畾涔変负锛?
- - 澶勭悊鍣ㄧ姸鎬侊細
-  - AArch64锛欵L1h锛孌銆丄銆両 鍜?F 浣嶇疆浣嶃€傛墍鏈夊叾浠栦綅娓呴浂銆?
-  - AArch32锛歋VC锛孉銆両 鍜?F 浣嶇疆浣嶃€傛墍鏈夊叾浠栦綅娓呴浂銆?
- - 閫氱敤瀵勫瓨鍣紝鍖呮嫭 PC 鍜?SP锛氱疆涓?0
- - FPSIMD/NEON 瀵勫瓨鍣細缃负 0
- - SVE 瀵勫瓨鍣細缃负 0
- - 绯荤粺瀵勫瓨鍣細閲嶇疆涓烘灦鏋勫畾涔夌殑鍒濆鍊硷紝鍗抽拡瀵?EL1锛堟垨 SVC锛夋垨 EL2锛堝湪鍚敤 EL2 鐨勬儏鍐典笅锛?
-   鐨勭儹澶嶄綅鍊笺€?
+初始值定义为
+ - 处理器状态：
+  - AArch64：EL1h，D、A、I F 位置位。所有其他位清零
+  - AArch32：SVC，A、I F 位置位。所有其他位清零
+ - 通用寄存器，包括 PC SP：置0
+ - FPSIMD/NEON 寄存器：置为 0
+ - SVE 寄存器：置为 0
+ - 系统寄存器：重置为架构定义的初始值，即针EL1（或 SVC）或 EL2（在启用 EL2 的情况下
+   的热复位值
 
-娉ㄦ剰锛岀敱浜庢煇浜涘瘎瀛樺櫒鍙嶆槧鏈哄櫒鎷撴墤锛屾墍鏈?vcpu 閮藉簲鍦ㄦ ioctl 璋冪敤涔嬪墠鍒涘缓銆?
+注意，由于某些寄存器反映机器拓扑，所vcpu 都应在此 ioctl 调用之前创建
 
-鐢ㄦ埛绌洪棿鍙互瀵圭粰瀹氱殑 vcpu 澶氭璋冪敤姝ゅ嚱鏁帮紝鍖呮嫭鍦?vcpu 杩愯涔嬪悗銆傝繖灏嗘妸 vcpu 閲嶇疆涓哄叾鍒濆鐘舵€併€?
-鍒濆璋冪敤涔嬪悗鐨勬墍鏈夎皟鐢ㄥ繀椤讳娇鐢ㄧ浉鍚岀殑鐩爣浠ュ強鐩稿悓鐨勭壒鎬ф爣蹇楅泦鍚堬紝鍚﹀垯灏嗚繑鍥?EINVAL銆?
+用户空间可以对给定的 vcpu 多次调用此函数，包括vcpu 运行之后。这将把 vcpu 重置为其初始状态
+初始调用之后的所有调用必须使用相同的目标以及相同的特性标志集合，否则将返EINVAL
 
-鍙兘鐨勭壒鎬э細
+可能的特性：
 
- - KVM_ARM_VCPU_POWER_OFF锛氫互鏂數鐘舵€佸惎鍔?CPU銆?
-	  渚濊禆浜?KVM_CAP_ARM_PSCI銆傚鏋滄湭璁剧疆锛屽垯鍦ㄨ皟鐢?KVM_RUN 鏃?CPU 灏嗕笂鐢靛苟
-	  鎵ц瀹㈡埛鏈轰唬鐮併€?
- - KVM_ARM_VCPU_EL1_32BIT锛氫互 32 浣嶆ā寮忓惎鍔?CPU銆?
-	  渚濊禆浜?KVM_CAP_ARM_EL1_32BIT锛堜粎 arm64锛夈€?
- - KVM_ARM_VCPU_PSCI_0_2锛氫负璇?CPU 妯℃嫙 PSCI v0.2锛堟垨涓?v0.2 鍚戝悗鍏煎鐨勬湭鏉ヤ慨璁㈢増锛夈€?
-	  渚濊禆浜?KVM_CAP_ARM_PSCI_0_2銆?
- - KVM_ARM_VCPU_PMU_V3锛氫负璇?CPU 妯℃嫙 PMUv3銆?
-	  渚濊禆浜?KVM_CAP_ARM_PMU_V3銆?
+ - KVM_ARM_VCPU_POWER_OFF：以断电状态启CPU
+	  依赖KVM_CAP_ARM_PSCI。如果未设置，则在调KVM_RUN CPU 将上电并
+	  执行客户机代码
+ - KVM_ARM_VCPU_EL1_32BIT：以 32 位模式启CPU
+	  依赖KVM_CAP_ARM_EL1_32BIT（仅 arm64）
+ - KVM_ARM_VCPU_PSCI_0_2：为CPU 模拟 PSCI v0.2（或v0.2 向后兼容的未来修订版）
+	  依赖KVM_CAP_ARM_PSCI_0_2
+ - KVM_ARM_VCPU_PMU_V3：为CPU 模拟 PMUv3
+	  依赖KVM_CAP_ARM_PMU_V3
 
- - KVM_ARM_VCPU_PTRAUTH_ADDRESS锛氬惎鐢ㄥ湴鍧€鎸囬拡璁よ瘉锛屼粎閫傜敤浜?arm64銆?
-	  渚濊禆浜?KVM_CAP_ARM_PTRAUTH_ADDRESS銆?
-	  濡傛灉 KVM_CAP_ARM_PTRAUTH_ADDRESS 鍜?KVM_CAP_ARM_PTRAUTH_GENERIC 閮藉瓨鍦紝
-	  鍒欏繀椤诲悓鏃惰姹?KVM_ARM_VCPU_PTRAUTH_ADDRESS 鍜?KVM_ARM_VCPU_PTRAUTH_GENERIC锛?
-	  鎴栬€呬袱鑰呴兘涓嶈姹傘€?
+ - KVM_ARM_VCPU_PTRAUTH_ADDRESS：启用地址指针认证，仅适用arm64
+	  依赖KVM_CAP_ARM_PTRAUTH_ADDRESS
+	  如果 KVM_CAP_ARM_PTRAUTH_ADDRESS KVM_CAP_ARM_PTRAUTH_GENERIC 都存在，
+	  则必须同时请KVM_ARM_VCPU_PTRAUTH_ADDRESS KVM_ARM_VCPU_PTRAUTH_GENERIC
+	  或者两者都不请求
 
- - KVM_ARM_VCPU_PTRAUTH_GENERIC锛氬惎鐢ㄩ€氱敤鎸囬拡璁よ瘉锛屼粎閫傜敤浜?arm64銆?
-	  渚濊禆浜?KVM_CAP_ARM_PTRAUTH_GENERIC銆?
-	  濡傛灉 KVM_CAP_ARM_PTRAUTH_ADDRESS 鍜?KVM_CAP_ARM_PTRAUTH_GENERIC 閮藉瓨鍦紝
-	  鍒欏繀椤诲悓鏃惰姹?KVM_ARM_VCPU_PTRAUTH_ADDRESS 鍜?KVM_ARM_VCPU_PTRAUTH_GENERIC锛?
-	  鎴栬€呬袱鑰呴兘涓嶈姹傘€?
+ - KVM_ARM_VCPU_PTRAUTH_GENERIC：启用通用指针认证，仅适用arm64
+	  依赖KVM_CAP_ARM_PTRAUTH_GENERIC
+	  如果 KVM_CAP_ARM_PTRAUTH_ADDRESS KVM_CAP_ARM_PTRAUTH_GENERIC 都存在，
+	  则必须同时请KVM_ARM_VCPU_PTRAUTH_ADDRESS KVM_ARM_VCPU_PTRAUTH_GENERIC
+	  或者两者都不请求
 
- - KVM_ARM_VCPU_SVE锛氫负 CPU 鍚敤 SVE锛堜粎 arm64锛夈€?
-	  渚濊禆浜?KVM_CAP_ARM_SVE銆?
-	  闇€瑕?KVM_ARM_VCPU_FINALIZE(KVM_ARM_VCPU_SVE)锛?
+ - KVM_ARM_VCPU_SVE：为 CPU 启用 SVE（仅 arm64）
+	  依赖KVM_CAP_ARM_SVE
+	  需KVM_ARM_VCPU_FINALIZE(KVM_ARM_VCPU_SVE)
 
-    - 鍦?KVM_ARM_VCPU_INIT 涔嬪悗锛?
+    - KVM_ARM_VCPU_INIT 之后
 
-       - 鍙互浣跨敤 KVM_GET_ONE_REG 璇诲彇 KVM_REG_ARM64_SVE_VLS锛氳浼瘎瀛樺櫒鐨勫垵濮嬪€兼寚绀?
-	      鍦ㄦ瀹夸富鏈轰笂 vcpu 鍙兘鐨勬渶浣冲悜閲忛暱搴﹂泦鍚堛€?
+       - 可以使用 KVM_GET_ONE_REG 读取 KVM_REG_ARM64_SVE_VLS：该伪寄存器的初始值指
+	      在此宿主机上 vcpu 可能的最佳向量长度集合
 
-    - 鍦?KVM_ARM_VCPU_FINALIZE(KVM_ARM_VCPU_SVE) 涔嬪墠锛?
+    - KVM_ARM_VCPU_FINALIZE(KVM_ARM_VCPU_SVE) 之前
 
-       - KVM_RUN 鍜?KVM_GET_REG_LIST 涓嶅彲鐢紱
+       - KVM_RUN KVM_GET_REG_LIST 不可用；
 
-       - 涓嶈兘浣跨敤 KVM_GET_ONE_REG 鍜?KVM_SET_ONE_REG 璁块棶鍙几缂╃殑鏋舵瀯 SVE 瀵勫瓨鍣?
-	        KVM_REG_ARM64_SVE_ZREG()銆並VM_REG_ARM64_SVE_PREG() 鎴?
-	        KVM_REG_ARM64_SVE_FFR锛?
+       - 不能使用 KVM_GET_ONE_REG KVM_SET_ONE_REG 访问可伸缩的架构 SVE 寄存
+	        KVM_REG_ARM64_SVE_ZREG()、KVM_REG_ARM64_SVE_PREG() 
+	        KVM_REG_ARM64_SVE_FFR锛。
 
-       - 鍙互閫夋嫨浣跨敤 KVM_SET_ONE_REG 鍐欏叆 KVM_REG_ARM64_SVE_VLS锛屼互淇敼 vcpu
-	       鍙敤鐨勫悜閲忛暱搴﹂泦鍚堛€?
+       - 可以选择使用 KVM_SET_ONE_REG 写入 KVM_REG_ARM64_SVE_VLS，以修改 vcpu
+	       可用的向量长度集合
 
-    - 鍦?KVM_ARM_VCPU_FINALIZE(KVM_ARM_VCPU_SVE) 涔嬪悗锛?
+    - KVM_ARM_VCPU_FINALIZE(KVM_ARM_VCPU_SVE) 之后
 
-       - KVM_REG_ARM64_SVE_VLS 浼瘎瀛樺櫒鍙樹负涓嶅彲鍙橈紝涓嶈兘鍐嶄娇鐢?KVM_SET_ONE_REG 鍐欏叆銆?
+       - KVM_REG_ARM64_SVE_VLS 伪寄存器变为不可变，不能再使KVM_SET_ONE_REG 写入
 
- - KVM_ARM_VCPU_HAS_EL2锛氬惎鐢ㄥ祵濂楄櫄鎷熷寲鏀寔锛屼粠 EL2 鑰屼笉鏄?EL1 鍚姩瀹㈡埛鏈恒€?
-	  渚濊禆浜?KVM_CAP_ARM_EL2銆?
-	  闄ら潪鍚屾椂璁剧疆浜?KVM_ARM_VCPU_HAS_EL2_E2H0锛屽惁鍒?VM 浠?HCR_EL2.E2H 涓?RES1锛圴HE锛?
-	  鐨勬柟寮忚繍琛屻€?
+ - KVM_ARM_VCPU_HAS_EL2：启用嵌套虚拟化支持，从 EL2 而不EL1 启动客户机
+	  依赖KVM_CAP_ARM_EL2
+	  除非同时设置KVM_ARM_VCPU_HAS_EL2_E2H0，否VM HCR_EL2.E2H RES1（VHE
+	  的方式运行
 
- - KVM_ARM_VCPU_HAS_EL2_E2H0锛氬皢宓屽铏氭嫙鍖栨敮鎸侀檺鍒朵负 HCR_EL2.E2H 涓?RES0锛堥潪 VHE锛夈€?
-	  渚濊禆浜?KVM_CAP_ARM_EL2_E2H0銆?
-	  杩樺繀椤昏缃?KVM_ARM_VCPU_HAS_EL2銆?
+ - KVM_ARM_VCPU_HAS_EL2_E2H0：将嵌套虚拟化支持限制为 HCR_EL2.E2H RES0（非 VHE）
+	  依赖KVM_CAP_ARM_EL2_E2H0
+	  还必须设KVM_ARM_VCPU_HAS_EL2
 
 ### 4.83 KVM_ARM_PREFERRED_TARGET
 
@@ -3140,20 +3140,20 @@ KVM_S390_MCHK (vm, vcpu)
 :Parameters: struct kvm_vcpu_init (out)
 :Returns: 0 on success; -1 on error
 
-閿欒鐮侊細
+错误码：
 
   ======     ==========================================
-  ENODEV     瀹夸富鏈烘病鏈夊彲鐢ㄧ殑棣栭€夌洰鏍?
+  ENODEV     宿主机没有可用的首选目
   ======     ==========================================
 
-璇?ioctl 鏌ヨ KVM 鍦ㄥ簳灞傚涓绘満涓婂彲妯℃嫙鐨勯閫?CPU 鐩爣绫诲瀷銆?
+ioctl 查询 KVM 在底层宿主机上可模拟的首CPU 目标类型
 
-璇?ioctl 杩斿洖 struct kvm_vcpu_init 瀹炰緥锛屽叾涓寘鍚湁鍏抽閫?CPU 鐩爣绫诲瀷鍙婂叾鎺ㄨ崘鐗规€х殑淇℃伅銆?
-濡傛灉棣栭€夌洰鏍囧缓璁缃繖浜涚壒鎬э紝鍒欒繑鍥炵殑 kvm_vcpu_init->features 浣嶅浘浼氱疆涓婄浉搴旂殑鐗规€т綅锛屼絾
-杩欏苟闈炲己鍒惰姹傘€?
+ioctl 返回 struct kvm_vcpu_init 实例，其中包含有关首CPU 目标类型及其推荐特性的信息
+如果首选目标建议设置这些特性，则返回的 kvm_vcpu_init->features 位图会置上相应的特性位，但
+这并非强制要求
 
-璇?ioctl 杩斿洖鐨勪俊鎭彲鐢ㄤ簬鍑嗗 struct kvm_vcpu_init 瀹炰緥浠ョ敤浜?KVM_ARM_VCPU_INIT ioctl锛?
-浠庤€岀敓鎴愪笌搴曞眰瀹夸富鏈哄尮閰嶇殑 VCPU銆?
+ioctl 返回的信息可用于准备 struct kvm_vcpu_init 实例以用KVM_ARM_VCPU_INIT ioctl
+从而生成与底层宿主机匹配的 VCPU
 
 
 ### 4.84 KVM_GET_REG_LIST
@@ -3165,10 +3165,10 @@ KVM_S390_MCHK (vm, vcpu)
 :Parameters: struct kvm_reg_list (in/out)
 :Returns: 0 on success; -1 on error
 
-閿欒鐮侊細
+错误码：
 
   =====      ==============================================================
-  E2BIG      reg 绱㈠紩鍒楄〃澶ぇ锛屾棤娉曟斁鍏ョ敤鎴锋寚瀹氱殑鏁扮粍涓紙鎵€闇€鐨勬暟閲忓皢琚啓鍏?n锛夈€?
+  E2BIG      reg 索引列表太大，无法放入用户指定的数组中（所需的数量将被写n）
   =====      ==============================================================
 
 ```
@@ -3179,10 +3179,10 @@ KVM_S390_MCHK (vm, vcpu)
   };
 
 ```
-璇?ioctl 杩斿洖鍙?KVM_GET_ONE_REG/KVM_SET_ONE_REG 璋冪敤鏀寔鐨勫鎴锋満瀵勫瓨鍣ㄣ€?
+ioctl 返回KVM_GET_ONE_REG/KVM_SET_ONE_REG 调用支持的客户机寄存器
 
-娉ㄦ剰锛岀敱浜庡巻鍙插師鍥狅紙璇寸櫧浜嗗氨鏄病浜哄叧蹇冿級锛宻390 涓嶆敮鎸?KVM_GET_REG_LIST銆傚湪鍐呮牳 4.x 鍙婃洿鏂?
-鐗堟湰涓殑瀵勫瓨鍣ㄩ泦鍚堜负锛?
+注意，由于历史原因（说白了就是没人关心），s390 不支KVM_GET_REG_LIST。在内核 4.x 及更
+版本中的寄存器集合为
 
 - KVM_REG_S390_TODPR
 
@@ -3202,8 +3202,8 @@ KVM_S390_MCHK (vm, vcpu)
 
 - KVM_REG_S390_GBEA
 
-娉ㄦ剰锛屽浜?x86锛岀敱 KVM_GET_MSR_INDEX_LIST 鏋氫妇鐨勬墍鏈?MSR 閮戒綔涓?KVM_X86_REG_TYPE_MSR 绫诲瀷
-鍙楁敮鎸侊紝浣嗕笉浼氶€氳繃 KVM_GET_REG_LIST 鏋氫妇銆?
+注意，对x86，由 KVM_GET_MSR_INDEX_LIST 枚举的所MSR 都作KVM_X86_REG_TYPE_MSR 类型
+受支持，但不会通过 KVM_GET_REG_LIST 枚举
 
 ### 4.85 KVM_ARM_SET_DEVICE_ADDR (deprecated)
 
@@ -3214,14 +3214,14 @@ KVM_S390_MCHK (vm, vcpu)
 :Parameters: struct kvm_arm_device_address (in)
 :Returns: 0 on success, -1 on error
 
-閿欒鐮侊細
+错误码：
 
   ======  ============================================
-  ENODEV  璁惧 id 鏈煡
-  ENXIO   褰撳墠绯荤粺涓嶆敮鎸佽璁惧
-  EEXIST  鍦板潃宸茶缃?
-  E2BIG   鍦板潃瓒呭嚭瀹㈡埛鏈虹墿鐞嗗湴鍧€绌洪棿
-  EBUSY   鍦板潃涓庡叾浠栬澶囪寖鍥撮噸鍙?
+  ENODEV  设备 id 未知
+  ENXIO   当前系统不支持该设备
+  EEXIST  地址已设
+  E2BIG   地址超出客户机物理地址空间
+  EBUSY   地址与其他设备范围重
   ======  ============================================
 
 ```
@@ -3232,22 +3232,22 @@ KVM_S390_MCHK (vm, vcpu)
   };
 
 ```
-鍦ㄥ鎴锋満鐗╃悊鍦板潃绌洪棿涓寚瀹氫竴涓澶囧湴鍧€锛屽鎴锋満鍙互鍦ㄨ鍦板潃璁块棶妯℃嫙鎴栫洿閫氱殑銆佸涓绘満鍐呮牳
-闇€瑕佺煡鏅撶殑璁惧銆俰d 瀛楁鏄壒瀹氳澶囩殑涓€涓灦鏋勭浉鍏虫爣璇嗙銆?
+在客户机物理地址空间中指定一个设备地址，客户机可以在该地址访问模拟或直通的、宿主机内核
+需要知晓的设备。id 字段是特定设备的一个架构相关标识符
 
-arm64 灏?id 瀛楁鍒嗕负涓ら儴鍒嗭細涓€涓澶?id 鍜屼竴涓?
+arm64 id 字段分为两部分：一个设id 和一
 ```
 
   bits:  | 63        ...       32 | 31    ...    16 | 15    ...    0 |
   field: |        0x00000000      |     device id   |  addr type id  |
 
 ```
-arm64 鐩墠浠呭湪浣跨敤鍐呮牳鎬?GIC 鏀寔纭欢 VGIC 鐗规€ф椂鎵嶉渶瑕佸畠锛屼娇鐢?KVM_ARM_DEVICE_VGIC_V2
-浣滀负璁惧 id銆傚湪涓哄鎴风殑 VGIC 铏氭嫙 CPU 鍜屽垎鍙戝櫒锛坉istributor锛夋帴鍙ｆ槧灏勮缃熀鍧€鏃讹紝蹇呴』鍦?
-璋冪敤 KVM_CREATE_IRQCHIP 涔嬪悗銆佷絾鍦ㄤ换浣?VCPU 涓婅皟鐢?KVM_RUN 涔嬪墠璋冪敤璇?ioctl銆傚浠讳綍鍩哄潃
-涓ゆ璋冪敤姝?ioctl 灏嗚繑鍥?-EEXIST銆?
+arm64 目前仅在使用内核GIC 支持硬件 VGIC 特性时才需要它，使KVM_ARM_DEVICE_VGIC_V2
+作为设备 id。在为客户的 VGIC 虚拟 CPU 和分发器（distributor）接口映射设置基址时，必须
+调用 KVM_CREATE_IRQCHIP 之后、但在任VCPU 上调KVM_RUN 之前调用ioctl。对任何基址
+两次调用ioctl 将返-EEXIST
 
-娉ㄦ剰锛屾 IOCTL 宸插簾寮冿紝搴斾娇鐢ㄦ洿鐏垫椿鐨?SET/GET_DEVICE_ATTR API 浠ｆ浛銆?
+注意，此 IOCTL 已废弃，应使用更灵活SET/GET_DEVICE_ATTR API 代替
 
 
 ### 4.86 KVM_PPC_RTAS_DEFINE_TOKEN
@@ -3259,10 +3259,10 @@ arm64 鐩墠浠呭湪浣跨敤鍐呮牳鎬?GIC 鏀寔纭欢 VGIC 鐗规
 :Parameters: struct kvm_rtas_token_args
 :Returns: 0 on success, -1 on error
 
-涓?RTAS锛圧un Time Abstraction Services锛岃繍琛屾椂鎶借薄鏈嶅姟锛夋湇鍔″畾涔変竴涓护鐗屽€硷紝浠ュ厑璁稿畠鍦ㄥ唴鏍镐腑
-琚鐞嗐€傚弬鏁扮粨鏋勪綋缁欏嚭鏈嶅姟鐨勫悕绉帮紝璇ュ悕绉板繀椤绘槸鍏锋湁鍐呮牳渚у疄鐜扮殑鏈嶅姟鍚嶇О銆傚鏋滀护鐗屽€奸潪闆讹紝瀹冨皢
-涓庤鏈嶅姟鍏宠仈锛屽鎴锋満闅忓悗鎸囧畾璇ヤ护鐗岀殑 RTAS 璋冪敤灏嗙敱鍐呮牳澶勭悊銆傚鏋滀护鐗屽€间负 0锛屽垯涓庤鏈嶅姟鍏宠仈鐨?
-浠讳綍浠ょ墝閮藉皢琚仐蹇橈紝瀹㈡埛鏈洪殢鍚庨拡瀵硅鏈嶅姟鐨?RTAS 璋冪敤灏嗚浼犻€掔粰鐢ㄦ埛绌洪棿澶勭悊銆?
+RTAS（Run Time Abstraction Services，运行时抽象服务）服务定义一个令牌值，以允许它在内核中
+被处理。参数结构体给出服务的名称，该名称必须是具有内核侧实现的服务名称。如果令牌值非零，它将
+与该服务关联，客户机随后指定该令牌的 RTAS 调用将由内核处理。如果令牌值为 0，则与该服务关联
+任何令牌都将被遗忘，客户机随后针对该服务RTAS 调用将被传递给用户空间处理
 
 ### 4.87 KVM_SET_GUEST_DEBUG
 
@@ -3282,38 +3282,38 @@ arm64 鐩墠浠呭湪浣跨敤鍐呮牳鎬?GIC 鏀寔纭欢 VGIC 鐗规
   };
 
 ```
-璁剧疆澶勭悊鍣ㄧ壒瀹氱殑璋冭瘯瀵勫瓨鍣紝骞堕厤缃?vcpu 浠ュ鐞嗗鎴锋満璋冭瘯浜嬩欢銆傜粨鏋勪綋鏈変袱閮ㄥ垎锛岀涓€閮ㄥ垎鏄竴涓?
-鎺у埗浣嶅煙锛屾寚绀鸿繍琛屾椂澶勭悊鐨勮皟璇曚簨浠剁被鍨嬨€傞€氱敤鎺у埗浣嶅涓嬶細
+设置处理器特定的调试寄存器，并配vcpu 以处理客户机调试事件。结构体有两部分，第一部分是一
+控制位域，指示运行时处理的调试事件类型。通用控制位如下：
 
-  - KVM_GUESTDBG_ENABLE:        鍚敤瀹㈡埛鏈鸿皟璇?
-  - KVM_GUESTDBG_SINGLESTEP:    涓嬩竴娆¤繍琛屽簲鍗曟鎵ц
+  - KVM_GUESTDBG_ENABLE:        启用客户机调
+  - KVM_GUESTDBG_SINGLESTEP:    下一次运行应单步执行
 
-control 瀛楁鐨勯珮 16 浣嶆槸鏋舵瀯鐩稿叧鐨勬帶鍒舵爣蹇楋紝鍙寘鎷互涓嬶細
+control 字段的高 16 位是架构相关的控制标志，可包括以下：
 
-  - KVM_GUESTDBG_USE_SW_BP:     浣跨敤杞欢鏂偣 [x86, arm64]
-  - KVM_GUESTDBG_USE_HW_BP:     浣跨敤纭欢鏂偣 [x86, s390]
-  - KVM_GUESTDBG_USE_HW:        浣跨敤纭欢璋冭瘯浜嬩欢 [arm64]
-  - KVM_GUESTDBG_INJECT_DB:     娉ㄥ叆 DB 绫诲瀷寮傚父 [x86]
-  - KVM_GUESTDBG_INJECT_BP:     娉ㄥ叆 BP 绫诲瀷寮傚父 [x86]
-  - KVM_GUESTDBG_EXIT_PENDING:  瑙﹀彂绔嬪嵆鐨勫鎴锋満閫€鍑?[s390]
-  - KVM_GUESTDBG_BLOCKIRQ:      閬垮厤娉ㄥ叆涓柇/NMI/SMI [x86]
+  - KVM_GUESTDBG_USE_SW_BP:     使用软件断点 [x86, arm64]
+  - KVM_GUESTDBG_USE_HW_BP:     使用硬件断点 [x86, s390]
+  - KVM_GUESTDBG_USE_HW:        使用硬件调试事件 [arm64]
+  - KVM_GUESTDBG_INJECT_DB:     注入 DB 类型异常 [x86]
+  - KVM_GUESTDBG_INJECT_BP:     注入 BP 类型异常 [x86]
+  - KVM_GUESTDBG_EXIT_PENDING:  触发立即的客户机退[s390]
+  - KVM_GUESTDBG_BLOCKIRQ:      避免注入中断/NMI/SMI [x86]
 
-渚嬪锛孠VM_GUESTDBG_USE_SW_BP 琛ㄧず鍐呭瓨涓惎鐢ㄤ簡杞欢鏂偣锛屽洜姝ゆ垜浠渶瑕佺‘淇濇纭崟鑾锋柇鐐瑰紓甯革紝
-骞朵笖 KVM 杩愯寰幆鍦ㄦ柇鐐瑰閫€鍑猴紝鑰屼笉鏄户缁繍琛屽埌姝ｅ父鐨勫鎴锋満鍚戦噺銆傚浜?KVM_GUESTDBG_USE_HW_BP锛?
-鎴戜滑闇€瑕佺‘淇濆鎴锋満 vCPU 鐨勬灦鏋勭浉鍏冲瘎瀛樺櫒琚洿鏂颁负姝ｇ‘鐨勶紙鎻愪緵鐨勶級鍊笺€?
+例如，KVM_GUESTDBG_USE_SW_BP 表示内存中启用了软件断点，因此我们需要确保正确捕获断点异常，
+并且 KVM 运行循环在断点处退出，而不是继续运行到正常的客户机向量。对KVM_GUESTDBG_USE_HW_BP
+我们需要确保客户机 vCPU 的架构相关寄存器被更新为正确的（提供的）值
 
-缁撴瀯浣撶殑绗簩閮ㄥ垎鏄灦鏋勭浉鍏崇殑锛岄€氬父鍖呭惈涓€缁勮皟璇曞瘎瀛樺櫒銆?
+结构体的第二部分是架构相关的，通常包含一组调试寄存器
 
-瀵逛簬 arm64锛岃皟璇曞瘎瀛樺櫒鐨勬暟閲忔槸瀹炵幇瀹氫箟鐨勶紝鍙互閫氳繃鏌ヨ KVM_CAP_GUEST_DEBUG_HW_BPS 鍜?
-KVM_CAP_GUEST_DEBUG_HW_WPS 鑳藉姏鏉ョ‘瀹氾紝杩欎袱涓兘鍔涜繑鍥炰竴涓鏁帮紝鎸囩ず鍙楁敮鎸佺殑瀵勫瓨鍣ㄦ暟閲忋€?
+对于 arm64，调试寄存器的数量是实现定义的，可以通过查询 KVM_CAP_GUEST_DEBUG_HW_BPS 
+KVM_CAP_GUEST_DEBUG_HW_WPS 能力来确定，这两个能力返回一个正数，指示受支持的寄存器数量
 
-瀵逛簬 ppc锛孠VM_CAP_PPC_GUEST_DEBUG_SSTEP 鑳藉姏鎸囩ず鏄惁鏀寔鍗曟璋冭瘯浜嬩欢
-锛圞VM_GUESTDBG_SINGLESTEP锛夈€?
+对于 ppc，KVM_CAP_PPC_GUEST_DEBUG_SSTEP 能力指示是否支持单步调试事件
+（KVM_GUESTDBG_SINGLESTEP）
 
-鍦ㄥ彈鏀寔鐨勬儏鍐典笅锛孠VM_CAP_SET_GUEST_DEBUG2 鑳藉姏鎸囩ず control 瀛楁涓彈鏀寔鐨?KVM_GUESTDBG_* 浣嶃€?
+在受支持的情况下，KVM_CAP_SET_GUEST_DEBUG2 能力指示 control 字段中受支持KVM_GUESTDBG_* 位
 
-褰撹皟璇曚簨浠朵互 KVM_EXIT_DEBUG 鍘熷洜閫€鍑轰富杩愯寰幆鏃讹紝kvm_run 缁撴瀯浣撶殑 kvm_debug_exit_arch 閮ㄥ垎
-鍖呭惈鏋舵瀯鐩稿叧鐨勮皟璇曚俊鎭€?
+当调试事件以 KVM_EXIT_DEBUG 原因退出主运行循环时，kvm_run 结构体的 kvm_debug_exit_arch 部分
+包含架构相关的调试信息
 
 ### 4.88 KVM_GET_EMULATED_CPUID
 
@@ -3333,7 +3333,7 @@ KVM_CAP_GUEST_DEBUG_HW_WPS 鑳藉姏鏉ョ‘瀹氾紝杩欎袱涓兘鍔涜�
   };
 
 ```
-member 'flags' 瀛楁鐢ㄤ簬浠庣敤鎴风┖闂翠紶閫掓爣蹇椼€?
+member 'flags' 字段用于从用户空间传递标志
 
 ```
 
@@ -3353,35 +3353,35 @@ member 'flags' 瀛楁鐢ㄤ簬浠庣敤鎴风┖闂翠紶閫掓爣蹇椼€?
   };
 
 ```
-璇?ioctl 杩斿洖鐢?kvm 妯℃嫙鐨?x86 cpuid 鐗规€с€傜敤鎴风┖闂村彲浠ヤ娇鐢ㄨ ioctl 杩斿洖鐨勪俊鎭潵鏌ヨ鍝簺鐗规€?
-鏄敱 kvm 妯℃嫙鐨勶紝鑰屼笉鏄師鐢熷瓨鍦ㄧ殑銆?
+ioctl 返回kvm 模拟x86 cpuid 特性。用户空间可以使用该 ioctl 返回的信息来查询哪些特
+是由 kvm 模拟的，而不是原生存在的
 
-鐢ㄦ埛绌洪棿閫氳繃浼犲叆涓€涓?kvm_cpuid2 缁撴瀯浣撴潵璋冪敤 KVM_GET_EMULATED_CPUID锛屽叾涓?'nent' 瀛楁鎸囩ず
-鍙彉闀挎暟缁?'entries' 涓殑鏉＄洰鏁伴噺銆傚鏋滄潯鐩暟閲忓お灏戣€屾棤娉曟弿杩?cpu 鑳藉姏锛屼細杩斿洖閿欒锛圗2BIG锛夈€?
-濡傛灉鏁伴噺杩囧锛?nent' 瀛楁浼氳璋冩暣骞惰繑鍥炰竴涓敊璇紙ENOMEM锛夈€傚鏋滄暟閲忔伆濂藉悎閫傦紝'nent' 瀛楁浼氳
-璋冩暣涓?'entries' 鏁扮粍涓湁鏁堟潯鐩殑鏁伴噺锛屽苟闅忓悗琚～鍏呫€?
+用户空间通过传入一kvm_cpuid2 结构体来调用 KVM_GET_EMULATED_CPUID，其'nent' 字段指示
+可变长数'entries' 中的条目数量。如果条目数量太少而无法描cpu 能力，会返回错误（E2BIG）
+如果数量过多nent' 字段会被调整并返回一个错误（ENOMEM）。如果数量恰好合适，'nent' 字段会被
+调整'entries' 数组中有效条目的数量，并随后被填充
 
-杩斿洖鐨勬潯鐩槸 kvm 妯℃嫙鐨勫悇涓壒鎬х殑 CPUID 浣嶉泦鍚堬紝鐢?CPUID 鎸囦护杩斿洖锛屽叾涓湭鐭ユ垨涓嶆敮鎸佺殑鐗规€т綅
-琚竻闆躲€?
+返回的条目是 kvm 模拟的各个特性的 CPUID 位集合，CPUID 指令返回，其中未知或不支持的特性位
+被清零
 
-渚嬪锛屽儚 x2apic 杩欐牱鐨勭壒鎬у彲鑳戒笉鍦ㄤ富鏈?cpu 涓紝浣嗗洜涓哄彲浠ヨ楂樻晥妯℃嫙鑰屽湪 KVM_GET_SUPPORTED_CPUID
-涓敱 kvm 鏆撮湶锛屽洜姝や笉鍖呭惈鍦ㄦ澶勩€?
+例如，像 x2apic 这样的特性可能不在主cpu 中，但因为可以被高效模拟而在 KVM_GET_SUPPORTED_CPUID
+中由 kvm 暴露，因此不包含在此处
 
-姣忎釜鏉＄洰涓殑瀛楁瀹氫箟濡備笅锛?
+每个条目中的字段定义如下
 
   function:
-	 鐢ㄤ簬鑾峰彇璇ユ潯鐩殑 eax 鍊?
+	 用于获取该条目的 eax 
   index:
-	 鐢ㄤ簬鑾峰彇璇ユ潯鐩殑 ecx 鍊硷紙閽堝鍙?ecx 褰卞搷鐨勬潯鐩級
+	 用于获取该条目的 ecx 值（针对ecx 影响的条目）
   flags:
-    浠ヤ笅闆朵釜鎴栧涓殑鎸変綅鎴栵細
+    以下零个或多个的按位或：
 
         KVM_CPUID_FLAG_SIGNIFCANT_INDEX:
-           琛ㄧず index 瀛楁鏈夋晥
+           表示 index 字段有效
 
    eax, ebx, ecx, edx:
 
-         璇?function/index 缁勫悎涓?cpuid 鎸囦护杩斿洖鐨勫€?
+         function/index 组合cpuid 指令返回的
 
 ### 4.89 KVM_S390_MEM_OP
 
@@ -3394,7 +3394,7 @@ member 'flags' 瀛楁鐢ㄤ簬浠庣敤鎴风┖闂翠紶閫掓爣蹇椼€?
           < 0 on generic error (e.g. -EFAULT or -ENOMEM),
           16 bit program exception code if the access causes such an exception
 
-浠?鍚?VM 鐨勫唴瀛樿鍙栨垨鍐欏叆鏁版嵁銆侹VM_CAP_S390_MEM_OP_EXTENSION 鑳藉姏鎸囧畾浜嗗彈鏀寔鐨勫姛鑳姐€?
+VM 的内存读取或写入数据。KVM_CAP_S390_MEM_OP_EXTENSION 能力指定了受支持的功能
 
 ```
 
@@ -3417,15 +3417,15 @@ member 'flags' 瀛楁鐢ㄤ簬浠庣敤鎴风┖闂翠紶閫掓爣蹇椼€?
   };
 
 ```
-鍐呭瓨鍖哄煙鐨勮捣濮嬪湴鍧€蹇呴』鍦?"gaddr" 瀛楁涓寚瀹氾紝鍖哄煙鐨勯暱搴﹀湪 "size" 瀛楁涓紙涓嶈兘涓?0锛夈€?size"
-鐨勬渶澶у€煎彲浠ラ€氳繃妫€鏌?KVM_CAP_S390_MEM_OP 鑳藉姏鑾峰緱銆?buf" 鏄敤鎴风┖闂村簲鐢ㄧ▼搴忔彁渚涚殑缂撳啿鍖猴紝瀵逛簬
-璇昏闂紝璇诲彇鐨勬暟鎹簲鍐欏叆璇ョ紦鍐插尯锛涘浜庡啓璁块棶锛岃鍐欏叆鐨勬暟鎹瓨鍌ㄥ湪璇ョ紦鍐插尯涓€?reserved" 瀛楁
-鐢ㄤ簬鏈潵鐨勬墿灞曘€備繚鐣欏拰鏈娇鐢ㄧ殑鍊间細琚拷鐣ャ€傛坊鍔犳垚鍛樼殑鏈潵鎵╁睍蹇呴』寮曞叆鏂扮殑鏍囧織銆?
+内存区域的起始地址必须"gaddr" 字段中指定，区域的长度在 "size" 字段中（不能0）size"
+的最大值可以通过检KVM_CAP_S390_MEM_OP 能力获得buf" 是用户空间应用程序提供的缓冲区，对于
+读访问，读取的数据应写入该缓冲区；对于写访问，要写入的数据存储在该缓冲区中reserved" 字段
+用于未来的扩展。保留和未使用的值会被忽略。添加成员的未来扩展必须引入新的标志
 
-鎿嶄綔绫诲瀷鍦?"op" 瀛楁涓寚瀹氥€傚彲淇敼鍏惰涓虹殑鏍囧織鍙互鍦?"flags" 瀛楁涓缃€傛湭瀹氫箟鐨勬爣蹇椾綅蹇呴』
-缃负 0銆?
+操作类型"op" 字段中指定。可修改其行为的标志可以"flags" 字段中设置。未定义的标志位必须
+置为 0
 
-鍙兘鐨勬搷浣滄湁锛?
+可能的操作有
   - `KVM_S390_MEMOP_LOGICAL_READ`
   - `KVM_S390_MEMOP_LOGICAL_WRITE`
   - `KVM_S390_MEMOP_ABSOLUTE_READ`
@@ -3434,68 +3434,68 @@ member 'flags' 瀛楁鐢ㄤ簬浠庣敤鎴风┖闂翠紶閫掓爣蹇椼€?
   - `KVM_S390_MEMOP_SIDA_WRITE`
   - `KVM_S390_MEMOP_ABSOLUTE_CMPXCHG`
 
-##### Logical read/write锛堥€昏緫璇?鍐欙級锛?
+##### Logical read/write（逻辑写）
 
 
-璁块棶閫昏緫鍐呭瓨锛屽嵆鏍规嵁 VCPU 鐨勭姸鎬佸皢缁欏畾鐨勫鎴锋満鍦板潃杞崲涓虹粷瀵瑰湴鍧€锛屽苟浣跨敤璇ョ粷瀵瑰湴鍧€浣滀负璁块棶鐨?
-鐩爣銆?ar" 鎸囧畾瑕佷娇鐢ㄧ殑璁块棶瀵勫瓨鍣ㄧ紪鍙凤紱鏈夋晥鑼冨洿鏄?0..15銆傞€昏緫璁块棶浠呭厑璁哥敤浜?VCPU ioctl銆傞€昏緫
-璁块棶浠呭厑璁哥敤浜庨潪鍙椾繚鎶ょ殑瀹㈡埛鏈恒€?
+访问逻辑内存，即根据 VCPU 的状态将给定的客户机地址转换为绝对地址，并使用该绝对地址作为访问
+目标ar" 指定要使用的访问寄存器编号；有效范围0..15。逻辑访问仅允许用VCPU ioctl。逻辑
+访问仅允许用于非受保护的客户机
 
-鍙楁敮鎸佺殑鏍囧織锛?
+受支持的标志
   - `KVM_S390_MEMOP_F_CHECK_ONLY`
   - `KVM_S390_MEMOP_F_INJECT_EXCEPTION`
   - `KVM_S390_MEMOP_F_SKEY_PROTECTION`
 
-鍙互璁剧疆 KVM_S390_MEMOP_F_CHECK_ONLY 鏍囧織锛屼互妫€鏌ョ浉搴旂殑鍐呭瓨璁块棶鏄惁浼氬鑷磋闂紓甯革紱浣嗘槸锛?
-涓嶄細瀵圭洰鏍囧鍐呭瓨涓殑鏁版嵁杩涜瀹為檯璁块棶銆傚湪杩欑鎯呭喌涓嬶紝"buf" 鏈浣跨敤锛屽彲浠ヤ负 NULL銆?
+可以设置 KVM_S390_MEMOP_F_CHECK_ONLY 标志，以检查相应的内存访问是否会导致访问异常；但是
+不会对目标处内存中的数据进行实际访问。在这种情况下，"buf" 未被使用，可以为 NULL
 
-濡傛灉鍦ㄨ闂湡闂村彂鐢熶簡璁块棶寮傚父锛堟垨鍦?KVM_S390_MEMOP_F_CHECK_ONLY 鎯呭喌涓嬪皢浼氬彂鐢燂級锛宨octl 杩斿洖
-涓€涓鐨勯敊璇彿锛屾寚绀哄紓甯哥殑绫诲瀷銆傚鏋滆缃簡鏍囧織 KVM_S390_MEMOP_F_INJECT_EXCEPTION锛岃寮傚父涔熶細
-鐩存帴鍦ㄧ浉搴旂殑 VCPU 涓婂紩鍙戙€傚湪淇濇姢寮傚父鐨勬儏鍐典笅锛岄櫎闈炲彟鏈夎鏄庯紝娉ㄥ叆鐨勭炕璇戝紓甯告爣璇嗙锛圱EID锛夎〃绀?
-鎶戝埗锛坰uppression锛夈€?
+如果在访问期间发生了访问异常（或KVM_S390_MEMOP_F_CHECK_ONLY 情况下将会发生），ioctl 返回
+一个正的错误号，指示异常的类型。如果设置了标志 KVM_S390_MEMOP_F_INJECT_EXCEPTION，该异常也会
+直接在相应的 VCPU 上引发。在保护异常的情况下，除非另有说明，注入的翻译异常标识符（TEID）表
+抑制（suppression）
 
-濡傛灉璁剧疆浜?KVM_S390_MEMOP_F_SKEY_PROTECTION 鏍囧織锛屽瓨鍌ㄩ敭淇濇姢涔熶細鐢熸晥锛屽苟鍙兘鍦ㄨ闂洜 "key"
-鎸囧畾鐨勮闂敭鑰岃绂佹鏃跺鑷村紓甯革紱鏈夋晥鑼冨洿鏄?0..15銆侹VM_S390_MEMOP_F_SKEY_PROTECTION 鍦?
-KVM_CAP_S390_MEM_OP_EXTENSION 澶т簬 0 鏃跺彲鐢ㄣ€傜敱浜庤璁块棶鐨勫唴瀛樺彲鑳借法瓒婂涓〉锛岃€岃繖浜涢〉鍙兘鍏锋湁
-涓嶅悓鐨勫瓨鍌ㄩ敭锛屽洜姝ゆ湁鍙兘鍦ㄥ唴瀛樺凡琚慨鏀逛箣鍚庢墠鍙戠敓淇濇姢寮傚父銆傚湪杩欑鎯呭喌涓嬶紝濡傛灉娉ㄥ叆浜嗗紓甯革紝TEID
-涓嶄細鎸囩ず鎶戝埗銆?
+如果设置KVM_S390_MEMOP_F_SKEY_PROTECTION 标志，存储键保护也会生效，并可能在访问因 "key"
+指定的访问键而被禁止时导致异常；有效范围0..15。KVM_S390_MEMOP_F_SKEY_PROTECTION 
+KVM_CAP_S390_MEM_OP_EXTENSION 大于 0 时可用。由于被访问的内存可能跨越多个页，而这些页可能具有
+不同的存储键，因此有可能在内存已被修改之后才发生保护异常。在这种情况下，如果注入了异常，TEID
+不会指示抑制
 
-##### Absolute read/write锛堢粷瀵硅/鍐欙級锛?
+##### Absolute read/write（绝对读/写）
 
 
-璁块棶缁濆鍐呭瓨銆傝鎿嶄綔鏃ㄥ湪涓?KVM_S390_MEMOP_F_SKEY_PROTECTION 鏍囧織涓€璧蜂娇鐢紝浠ュ厑璁稿湪涓€涓搷浣滀腑
-璁块棶鍐呭瓨骞舵墽琛屽瓨鍌ㄩ敭淇濇姢鎵€闇€鐨勬鏌ワ紙鐩稿浜庣敤鎴风┖闂磋幏鍙栧瓨鍌ㄩ敭銆佹墽琛屾鏌ャ€佺劧鍚庤闂唴瀛橈紝杩欏彲鑳戒細
-鍦ㄦ鏌ュ拰璁块棶涔嬮棿浜х敓寤惰繜锛夈€傚鏋?KVM_CAP_S390_MEM_OP_EXTENSION 璁剧疆浜?
-KVM_S390_MEMOP_EXTENSION_CAP_BASE 浣嶏紝鍒欑粷瀵硅闂厑璁哥敤浜?VM ioctl銆傜洰鍓嶇粷瀵硅闂笉鍏佽鐢ㄤ簬 VCPU
-ioctl銆傜粷瀵硅闂粎鍏佽鐢ㄤ簬闈炲彈淇濇姢鐨勫鎴锋満銆?
+访问绝对内存。该操作旨在KVM_S390_MEMOP_F_SKEY_PROTECTION 标志一起使用，以允许在一个操作中
+访问内存并执行存储键保护所需的检查（相对于用户空间获取存储键、执行检查、然后访问内存，这可能会
+在检查和访问之间产生延迟）。如KVM_CAP_S390_MEM_OP_EXTENSION 设置
+KVM_S390_MEMOP_EXTENSION_CAP_BASE 位，则绝对访问允许用VM ioctl。目前绝对访问不允许用于 VCPU
+ioctl。绝对访问仅允许用于非受保护的客户机
 
-鍙楁敮鎸佺殑鏍囧織锛?
+受支持的标志
   - `KVM_S390_MEMOP_F_CHECK_ONLY`
   - `KVM_S390_MEMOP_F_SKEY_PROTECTION`
 
-涓庨€昏緫璁块棶鍏辨湁鐨勬爣蹇楃殑璇箟涓庨€昏緫璁块棶鐩稿悓銆?
+与逻辑访问共有的标志的语义与逻辑访问相同
 
-##### Absolute cmpxchg锛堢粷瀵规瘮杈冧氦鎹級锛?
+##### Absolute cmpxchg（绝对比较交换）
 
 
-瀵瑰鎴锋満缁濆鍐呭瓨鎵ц cmpxchg銆傛棬鍦ㄤ笌 KVM_S390_MEMOP_F_SKEY_PROTECTION 鏍囧織涓€璧蜂娇鐢ㄣ€備笌鏃犳潯浠?
-鍐欏叆涓嶅悓锛屼粎褰撶洰鏍囦綅缃寘鍚?"old_addr" 鎸囧悜鐨勫€兼椂鎵嶄細鍙戠敓璁块棶銆傝繖浣滀负涓€娆″師瀛?cmpxchg 鎵ц锛?
-闀垮害鐢?"size" 鍙傛暟鎸囧畾銆?size" 蹇呴』鏄?2 鐨勫箓锛屾渶澶т负 16锛堝惈锛夈€傚鏋滃洜涓虹洰鏍囧€间笌鏂板€间笉鍖归厤鑰?
-鏈彂鐢熶氦鎹紝鍒?"old_addr" 鎸囧悜鐨勫€间細琚浛鎹负鐩爣鍊笺€傜敤鎴风┖闂村彲浠ラ€氳繃妫€鏌ユ槸鍚﹀彂鐢熶簡杩欑鏇挎崲鏉?
-鍒ゆ柇浜ゆ崲鏄惁鍙戠敓銆傚鏋?KVM_CAP_S390_MEM_OP_EXTENSION 璁剧疆浜?
-KVM_S390_MEMOP_EXTENSION_CAP_CMPXCHG 鏍囧織锛屽垯 cmpxchg 鎿嶄綔鍏佽鐢ㄤ簬 VM ioctl銆?
+对客户机绝对内存执行 cmpxchg。旨在与 KVM_S390_MEMOP_F_SKEY_PROTECTION 标志一起使用。与无条
+写入不同，仅当目标位置包"old_addr" 指向的值时才会发生访问。这作为一次原cmpxchg 执行
+长度"size" 参数指定size" 必须2 的幂，最大为 16（含）。如果因为目标值与新值不匹配
+未发生交换，"old_addr" 指向的值会被替换为目标值。用户空间可以通过检查是否发生了这种替换
+判断交换是否发生。如KVM_CAP_S390_MEM_OP_EXTENSION 设置
+KVM_S390_MEMOP_EXTENSION_CAP_CMPXCHG 标志，则 cmpxchg 操作允许用于 VM ioctl
 
-鍙楁敮鎸佺殑鏍囧織锛?
+受支持的标志
   - `KVM_S390_MEMOP_F_SKEY_PROTECTION`
 
-##### SIDA read/write锛圫IDA 璇?鍐欙級锛?
+##### SIDA read/write（SIDA 写）
 
 
-璁块棶瀹夊叏鎸囦护鏁版嵁鍖猴紙secure instruction data area锛夛紝鍏朵腑鍖呭惈鍙椾繚鎶ゅ鎴锋満杩涜鎸囦护妯℃嫙鎵€闇€鐨?
-鍐呭瓨鎿嶄綔鏁般€係IDA 璁块棶鍦?KVM_CAP_S390_PROTECTED 鑳藉姏鍙敤鏃舵彁渚涖€係IDA 璁块棶浠呭厑璁哥敤浜?VCPU
-ioctl銆係IDA 璁块棶浠呭厑璁哥敤浜庡彈淇濇姢鐨勫鎴锋満銆?
+访问安全指令数据区（secure instruction data area），其中包含受保护客户机进行指令模拟所需
+内存操作数。SIDA 访问KVM_CAP_S390_PROTECTED 能力可用时提供。SIDA 访问仅允许用VCPU
+ioctl。SIDA 访问仅允许用于受保护的客户机
 
-涓嶆敮鎸佷换浣曟爣蹇椼€?
+不支持任何标志
 
 ### 4.90 KVM_S390_GET_SKEYS
 
@@ -3507,7 +3507,7 @@ ioctl銆係IDA 璁块棶浠呭厑璁哥敤浜庡彈淇濇姢鐨勫鎴锋満�
 :Returns: 0 on success, KVM_S390_GET_SKEYS_NONE if guest is not using storage
           keys, negative value on error
 
-璇?ioctl 鐢ㄤ簬鍦?s390 涓婅幏鍙栧鎴锋満瀛樺偍閿殑鍊?
+ioctl 用于s390 上获取客户机存储键的
 ```
 
   struct kvm_s390_skeys {
@@ -3519,12 +3519,12 @@ ioctl銆係IDA 璁块棶浠呭厑璁哥敤浜庡彈淇濇姢鐨勫鎴锋満�
   };
 
 ```
-start_gfn 瀛楁鏄綘瑕佽幏鍙栧叾瀛樺偍閿殑绗竴涓鎴锋満甯х殑缂栧彿銆?
+start_gfn 字段是你要获取其存储键的第一个客户机帧的编号
 
-count 瀛楁鏄鑾峰彇鍏跺瓨鍌ㄩ敭鐨勮繛缁抚鐨勬暟閲忥紙浠?start_gfn 寮€濮嬶級銆俢ount 瀛楁蹇呴』鑷冲皯涓?1锛屽厑璁?
-鐨勬渶澶у€煎畾涔変负 KVM_S390_SKEYS_MAX銆傝秴鍑烘鑼冨洿鐨勫€煎皢瀵艰嚧 ioctl 杩斿洖 -EINVAL銆?
+count 字段是要获取其存储键的连续帧的数量（start_gfn 开始）。count 字段必须至少1，允
+的最大值定义为 KVM_S390_SKEYS_MAX。超出此范围的值将导致 ioctl 返回 -EINVAL
 
-skeydata_addr 瀛楁鏄冻浠ュ绾?count 瀛楄妭鐨勭紦鍐插尯鐨勫湴鍧€銆傝缂撳啿鍖哄皢琚?ioctl 濉叆瀛樺偍閿暟鎹€?
+skeydata_addr 字段是足以容count 字节的缓冲区的地址。该缓冲区将ioctl 填入存储键数据
 
 ### 4.91 KVM_S390_SET_SKEYS
 
@@ -3535,18 +3535,18 @@ skeydata_addr 瀛楁鏄冻浠ュ绾?count 瀛楄妭鐨勭紦鍐插尯�
 :Parameters: struct kvm_s390_skeys
 :Returns: 0 on success, negative value on error
 
-璇?ioctl 鐢ㄤ簬鍦?s390 鏋舵瀯涓婅缃鎴锋満瀛樺偍閿殑鍊笺€傝 ioctl 閫氳繃 kvm_s390_skeys 缁撴瀯浣撴帴鏀跺弬鏁般€?
-缁撴瀯浣撳畾涔夎鍙傝 KVM_S390_GET_SKEYS 涓€鑺傘€?
+ioctl 用于s390 架构上设置客户机存储键的值。该 ioctl 通过 kvm_s390_skeys 结构体接收参数
+结构体定义请参见 KVM_S390_GET_SKEYS 一节
 
-start_gfn 瀛楁鏄綘瑕佽缃叾瀛樺偍閿殑绗竴涓鎴锋満甯х殑缂栧彿銆?
+start_gfn 字段是你要设置其存储键的第一个客户机帧的编号
 
-count 瀛楁鏄鑾峰彇鍏跺瓨鍌ㄩ敭鐨勮繛缁抚鐨勬暟閲忥紙浠?start_gfn 寮€濮嬶級銆俢ount 瀛楁蹇呴』鑷冲皯涓?1锛屽厑璁?
-鐨勬渶澶у€煎畾涔変负 KVM_S390_SKEYS_MAX銆傝秴鍑烘鑼冨洿鐨勫€煎皢瀵艰嚧 ioctl 杩斿洖 -EINVAL銆?
+count 字段是要获取其存储键的连续帧的数量（start_gfn 开始）。count 字段必须至少1，允
+的最大值定义为 KVM_S390_SKEYS_MAX。超出此范围的值将导致 ioctl 返回 -EINVAL
 
-skeydata_addr 瀛楁鏄寘鍚?count 瀛楄妭瀛樺偍閿殑缂撳啿鍖虹殑鍦板潃銆傜紦鍐插尯涓殑姣忎釜瀛楄妭灏嗚璁剧疆涓轰粠
-start_gfn 寮€濮嬨€佸叡 count 涓抚涓瘡涓抚鐨勫瓨鍌ㄩ敭銆?
+skeydata_addr 字段是包count 字节存储键的缓冲区的地址。缓冲区中的每个字节将被设置为从
+start_gfn 开始、共 count 个帧中每个帧的存储键
 
-娉ㄦ剰锛氬鏋滃湪缁欏畾鐨勬暟鎹腑鍙戠幇浠讳綍鏋舵瀯鏃犳晥鐨勯敭鍊硷紝ioctl 灏嗚繑鍥?-EINVAL銆?
+注意：如果在给定的数据中发现任何架构无效的键值，ioctl 将返-EINVAL
 
 ### 4.92 KVM_S390_IRQ
 
@@ -3557,22 +3557,22 @@ start_gfn 寮€濮嬨€佸叡 count 涓抚涓瘡涓抚鐨勫瓨鍌ㄩ
 :Parameters: struct kvm_s390_irq (in)
 :Returns: 0 on success, -1 on error
 
-閿欒鐮侊細
+错误码：
 
   ======  =================================================================
-  EINVAL  涓柇绫诲瀷鏃犳晥
-          type 涓?KVM_S390_SIGP_STOP 涓?flag 鍙傛暟涓烘棤鏁堝€硷紝
-          type 涓?KVM_S390_INT_EXTERNAL_CALL 涓?code 澶т簬
-          VCPU 鐨勬渶澶ф暟閲?
-  EBUSY   type 涓?KVM_S390_SIGP_SET_PREFIX 涓?vcpu 鏈仠姝紝
-          type 涓?KVM_S390_SIGP_STOP 涓斿凡鏈変竴涓?stop 涓柇鎸傝捣锛?
-          type 涓?KVM_S390_INT_EXTERNAL_CALL 涓斿凡鏈変竴涓閮ㄨ皟鐢ㄤ腑鏂?
-          鎸傝捣
+  EINVAL  中断类型无效
+          type KVM_S390_SIGP_STOP flag 参数为无效值，
+          type KVM_S390_INT_EXTERNAL_CALL code 大于
+          VCPU 的最大数
+  EBUSY   type KVM_S390_SIGP_SET_PREFIX vcpu 未停止，
+          type KVM_S390_SIGP_STOP 且已有一stop 中断挂起
+          type KVM_S390_INT_EXTERNAL_CALL 且已有一个外部调用中
+          挂起
   ======  =================================================================
 
-鍏佽鍚戝鎴锋満娉ㄥ叆涓€涓腑鏂€?
+允许向客户机注入一个中断
 
-浣跨敤 struct kvm_s390_irq 浣滀负鍙傛暟鍙互娉ㄥ叆鏃犳硶閫氳繃 KVM_S390_INTERRUPT 娉ㄥ叆鐨勯澶栬礋杞姐€?
+使用 struct kvm_s390_irq 作为参数可以注入无法通过 KVM_S390_INTERRUPT 注入的额外负载
 
 ```
 
@@ -3592,19 +3592,19 @@ start_gfn 寮€濮嬨€佸叡 count 涓抚涓瘡涓抚鐨勫瓨鍌ㄩ
   };
 
 ```
-type 鍙互鏄互涓嬩箣涓€锛?
+type 可以是以下之一
 
-- KVM_S390_SIGP_STOP - sigp 鍋滄锛涘弬鏁板湪 .stop 涓?
-- KVM_S390_PROGRAM_INT - 绋嬪簭妫€鏌ワ紱鍙傛暟鍦?.pgm 涓?
-- KVM_S390_SIGP_SET_PREFIX - sigp 璁剧疆鍓嶇紑锛涘弬鏁板湪 .prefix 涓?
-- KVM_S390_RESTART - 閲嶅惎锛涙棤鍙傛暟
-- KVM_S390_INT_CLOCK_COMP - 鏃堕挓姣旇緝鍣ㄤ腑鏂紱鏃犲弬鏁?
-- KVM_S390_INT_CPU_TIMER - CPU 瀹氭椂鍣ㄤ腑鏂紱鏃犲弬鏁?
-- KVM_S390_INT_EMERGENCY - sigp 绱ф€ワ紱鍙傛暟鍦?.emerg 涓?
-- KVM_S390_INT_EXTERNAL_CALL - sigp 澶栭儴璋冪敤锛涘弬鏁板湪 .extcall 涓?
-- KVM_S390_MCHK - 鏈哄櫒妫€鏌ヤ腑鏂紱鍙傛暟鍦?.mchk 涓?
+- KVM_S390_SIGP_STOP - sigp 停止；参数在 .stop 
+- KVM_S390_PROGRAM_INT - 程序检查；参数.pgm 
+- KVM_S390_SIGP_SET_PREFIX - sigp 设置前缀；参数在 .prefix 
+- KVM_S390_RESTART - 重启；无参数
+- KVM_S390_INT_CLOCK_COMP - 时钟比较器中断；无参
+- KVM_S390_INT_CPU_TIMER - CPU 定时器中断；无参
+- KVM_S390_INT_EMERGENCY - sigp 紧急；参数.emerg 
+- KVM_S390_INT_EXTERNAL_CALL - sigp 外部调用；参数在 .extcall 
+- KVM_S390_MCHK - 机器检查中断；参数.mchk 
 
-杩欐槸涓€涓紓姝ョ殑 vcpu ioctl锛屽彲浠ヤ粠浠讳綍绾跨▼璋冪敤銆?
+这是一个异步的 vcpu ioctl，可以从任何线程调用
 
 ### 4.94 KVM_S390_GET_IRQ_STATE
 
@@ -3618,8 +3618,8 @@ type 鍙互鏄互涓嬩箣涓€锛?
           -ENOBUFS if buffer size is too small to fit all pending interrupts,
           -EFAULT if the buffer address was invalid
 
-璇?ioctl 鍏佽鐢ㄦ埛绌洪棿鍦ㄥ崟涓紦鍐插尯涓绱㈠綋鍓嶆墍鏈夋寕璧蜂腑鏂殑瀹屾暣鐘舵€併€傜敤渚嬪寘鎷縼绉诲拰鑷渷銆傚弬鏁?
-缁撴瀯浣撳寘鍚?
+ioctl 允许用户空间在单个缓冲区中检索当前所有挂起中断的完整状态。用例包括迁移和自省。参
+结构体包
 ```
 
   struct kvm_s390_irq_state {
@@ -3630,12 +3630,12 @@ type 鍙互鏄互涓嬩箣涓€锛?
   };
 
 ```
-鐢ㄦ埛绌洪棿浼犲叆涓婅堪缁撴瀯浣擄紝瀵逛簬姣忎釜鎸傝捣鐨勪腑鏂紝涓€涓?struct kvm_s390_irq 浼氳澶嶅埗鍒版彁渚涚殑缂撳啿鍖轰腑銆?
+用户空间传入上述结构体，对于每个挂起的中断，一struct kvm_s390_irq 会被复制到提供的缓冲区中
 
-璇ョ粨鏋勪綋鍖呭惈涓€涓?flags 瀛楁鍜屼竴涓?reserved 瀛楁锛岀敤浜庢湭鏉ョ殑鎵╁睍銆傜敱浜庡唴鏍镐粠鏈鏌?flags == 0锛?
-鑰?QEMU 涔熶粠鏈娓呴浂 flags 鍜?reserved锛屽洜姝ゆ湭鏉ュ鏋滀笉鐮村潖鍏煎鎬э紝灏辨棤娉曚娇鐢ㄨ繖浜涘瓧娈点€?
+该结构体包含一flags 字段和一reserved 字段，用于未来的扩展。由于内核从未检flags == 0
+QEMU 也从未预清零 flags reserved，因此未来如果不破坏兼容性，就无法使用这些字段
 
-濡傛灉杩斿洖 -ENOBUFS锛屽垯鎻愪緵鐨勭紦鍐插尯澶皬锛岀敤鎴风┖闂村彲浠ヤ娇鐢ㄦ洿澶х殑缂撳啿鍖洪噸璇曘€?
+如果返回 -ENOBUFS，则提供的缓冲区太小，用户空间可以使用更大的缓冲区重试
 
 ### 4.95 KVM_S390_SET_IRQ_STATE
 
@@ -3651,8 +3651,8 @@ type 鍙互鏄互涓嬩箣涓€锛?
           errors occurring when actually injecting the
           interrupt. See KVM_S390_IRQ.
 
-璇?ioctl 鍏佽鐢ㄦ埛绌洪棿璁剧疆褰撳墠涓鸿 vcpu 鎸傝捣鐨勬墍鏈?cpu 鏈湴涓柇鐨勫畬鏁寸姸鎬併€傚畠鏃ㄥ湪鐢ㄤ簬杩佺Щ鍚?
-鎭㈠涓柇鐘舵€併€傝緭鍏ュ弬鏁版槸涓€涓敤鎴风┖闂寸紦鍐插尯
+ioctl 允许用户空间设置当前为该 vcpu 挂起的所cpu 本地中断的完整状态。它旨在用于迁移
+恢复中断状态。输入参数是一个用户空间缓冲区
 ```
 
   struct kvm_s390_irq_state {
@@ -3663,14 +3663,14 @@ type 鍙互鏄互涓嬩箣涓€锛?
   };
 
 ```
-鍏充簬 flags 鍜?reserved 鐨勯檺鍒跺悓鏍烽€傜敤銆傦紙瑙?KVM_S390_GET_IRQ_STATE锛?
+关于 flags reserved 的限制同样适用。（KVM_S390_GET_IRQ_STATE
 
-buf 寮曠敤鐨勭敤鎴风┖闂村唴瀛樺寘鍚瘡涓娉ㄥ叆鍒板鎴锋満鐨勪腑鏂搴旂殑涓€涓?struct kvm_s390_irq銆?
+buf 引用的用户空间内存包含每个要注入到客户机的中断对应的一struct kvm_s390_irq
 
-濡傛灉鍏朵腑鏌愪釜涓柇鐢变簬鏌愮鍘熷洜鏃犳硶娉ㄥ叆锛宨octl 浼氫腑姝€?
+如果其中某个中断由于某种原因无法注入，ioctl 会中止
 
-len 蹇呴』鏄?sizeof(struct kvm_s390_irq) 鐨勫€嶆暟銆傚畠蹇呴』 > 0锛屼笖涓嶅緱瓒呰繃
-(max_vcpus + 32) * sizeof(struct kvm_s390_irq)锛屽嵆鍙兘鎸傝捣鐨?cpu 鏈湴涓柇鐨勬渶澶ф暟閲忋€?
+len 必须sizeof(struct kvm_s390_irq) 的倍数。它必须 > 0，且不得超过
+(max_vcpus + 32) * sizeof(struct kvm_s390_irq)，即可能挂起cpu 本地中断的最大数量
 
 ### 4.96 KVM_SMI
 
@@ -3681,7 +3681,7 @@ len 蹇呴』鏄?sizeof(struct kvm_s390_irq) 鐨勫€嶆暟銆傚畠蹇呴』 >
 :Parameters: none
 :Returns: 0 on success, -1 on error
 
-鍦ㄧ嚎绋嬬殑 vcpu 涓婃帓闃熶竴涓?SMI銆?
+在线程的 vcpu 上排队一SMI
 
 ### 4.97 KVM_X86_SET_MSR_FILTER
 
@@ -3712,67 +3712,67 @@ len 蹇呴』鏄?sizeof(struct kvm_s390_irq) 鐨勫€嶆暟銆傚畠蹇呴』 >
   };
 
 ```
-`struct kvm_msr_filter_range` 鐨?flags 鍊硷細
+`struct kvm_msr_filter_range` flags 值：
 
 `KVM_MSR_FILTER_READ`
 
-  浣跨敤缁欏畾鐨勪綅鍥捐繃婊ゅ MSR 鐨勮璁块棶銆備綅鍥句腑涓?0 琛ㄧず搴旀嫆缁濊璁块棶锛屼负 1 琛ㄧず鏃犺榛樿杩囨护鍣?
-  鍔ㄤ綔濡備綍锛岄兘搴斿厑璁稿鐗瑰畾 MSR 鐨勮璁块棶銆?
+  使用给定的位图过滤对 MSR 的读访问。位图中0 表示应拒绝读访问，为 1 表示无论默认过滤
+  动作如何，都应允许对特定 MSR 的读访问
 
 `KVM_MSR_FILTER_WRITE`
 
-  浣跨敤缁欏畾鐨勪綅鍥捐繃婊ゅ MSR 鐨勫啓璁块棶銆備綅鍥句腑涓?0 琛ㄧず搴旀嫆缁濆啓璁块棶锛屼负 1 琛ㄧず鏃犺榛樿杩囨护鍣?
-  鍔ㄤ綔濡備綍锛岄兘搴斿厑璁稿鐗瑰畾 MSR 鐨勫啓璁块棶銆?
+  使用给定的位图过滤对 MSR 的写访问。位图中0 表示应拒绝写访问，为 1 表示无论默认过滤
+  动作如何，都应允许对特定 MSR 的写访问
 
-`struct kvm_msr_filter` 鐨?flags 鍊硷細
+`struct kvm_msr_filter` flags 值：
 
 `KVM_MSR_FILTER_DEFAULT_ALLOW`
 
-  濡傛灉娌℃湁杩囨护鑼冨洿鍖归厤姝ｅ湪琚闂殑 MSR 绱㈠紩锛孠VM 榛樿鍏佽瀵规墍鏈?MSR 鐨勮闂€?
+  如果没有过滤范围匹配正在被访问的 MSR 索引，KVM 默认允许对所MSR 的访问
 
 `KVM_MSR_FILTER_DEFAULT_DENY`
 
-  濡傛灉娌℃湁杩囨护鑼冨洿鍖归厤姝ｅ湪琚闂殑 MSR 绱㈠紩锛孠VM 榛樿鎷掔粷瀵规墍鏈?MSR 鐨勮闂€?
+  如果没有过滤范围匹配正在被访问的 MSR 索引，KVM 默认拒绝对所MSR 的访问
 
-璇?ioctl 鍏佽鐢ㄦ埛绌洪棿瀹氫箟鏈€澶?16 涓?MSR 鑼冨洿浣嶅浘锛屼互鎷掔粷閫氬父琚?KVM 鍏佽鐨勫鏈?MSR 璁块棶銆傚鏋?
-鏌愪釜 MSR 鏈鐗瑰畾鑼冨洿瑕嗙洊锛屽垯搴旂敤"榛樿"杩囨护琛屼负銆傛瘡涓綅鍥捐寖鍥磋鐩?[base .. base+nmsrs) 鑼冨洿鍐呯殑
-MSR銆?
+ioctl 允许用户空间定义最16 MSR 范围位图，以拒绝通常KVM 允许的客MSR 访问。如
+某个 MSR 未被特定范围覆盖，则应用"默认"过滤行为。每个位图范围覆[base .. base+nmsrs) 范围内的
+MSR銆。
 
-濡傛灉 MSR 璁块棶琚敤鎴风┖闂存嫆缁濓紝鐢辨浜х敓鐨?KVM 琛屼负鍙栧喅浜庢槸鍚﹀惎鐢ㄤ簡
-KVM_CAP_X86_USER_SPACE_MSR 鐨?KVM_MSR_EXIT_REASON_FILTER銆傚鏋滃惎鐢ㄤ簡 KVM_MSR_EXIT_REASON_FILTER锛?
-KVM 鍦ㄨ鎷掔粷鐨勮闂笂浼氶€€鍑哄埌鐢ㄦ埛绌洪棿锛屽嵆鐢ㄦ埛绌洪棿瀹為檯涓婃嫤鎴簡璇?MSR 璁块棶銆傚鏋滄湭鍚敤
-KVM_MSR_EXIT_REASON_FILTER锛孠VM 浼氬湪琚嫆缁濈殑璁块棶涓婂悜瀹㈡埛鏈烘敞鍏ヤ竴涓?#GP銆傛敞鎰忥紝濡傛灉鍦?VMX 杞崲
-鏈熼棿妯℃嫙 MSR 鍔犺浇/瀛樺偍鏃?MSR 璁块棶琚嫆缁濓紝KVM 浼氬拷鐣?KVM_MSR_EXIT_REASON_FILTER銆傚畬鏁寸粏鑺傝鍙傝
-涓嬮潰鐨勮鍛娿€?
+如果 MSR 访问被用户空间拒绝，由此产生KVM 行为取决于是否启用了
+KVM_CAP_X86_USER_SPACE_MSR KVM_MSR_EXIT_REASON_FILTER。如果启用了 KVM_MSR_EXIT_REASON_FILTER
+KVM 在被拒绝的访问上会退出到用户空间，即用户空间实际上拦截了MSR 访问。如果未启用
+KVM_MSR_EXIT_REASON_FILTER，KVM 会在被拒绝的访问上向客户机注入一#GP。注意，如果VMX 转换
+期间模拟 MSR 加载/存储MSR 访问被拒绝，KVM 会忽KVM_MSR_EXIT_REASON_FILTER。完整细节请参见
+下面的警告
 
-濡傛灉 MSR 璁块棶琚敤鎴风┖闂村厑璁革紝KVM 灏嗘牴鎹?vCPU 妯″瀷妯℃嫙鍜?鎴栬櫄鎷熷寲璇ヨ闂€傛敞鎰忥紝濡傛灉璁块棶琚敤鎴风┖闂?
-鍏佽锛孠VM 鏈€缁堜粛鍙兘娉ㄥ叆 #GP锛屼緥濡?KVM 涓嶆敮鎸佽 MSR锛屾垨鑰呬负浜嗛伒寰 MSR 鐨勬灦鏋勮涓恒€?
+如果 MSR 访问被用户空间允许，KVM 将根vCPU 模型模拟或虚拟化该访问。注意，如果访问被用户空
+允许，KVM 最终仍可能注入 #GP，例KVM 不支持该 MSR，或者为了遵循该 MSR 的架构行为
 
-榛樿鎯呭喌涓嬶紝KVM 浠?KVM_MSR_FILTER_DEFAULT_ALLOW 妯″紡杩愯锛屼笖娌℃湁 MSR 鑼冨洿杩囨护鍣ㄣ€?
+默认情况下，KVM KVM_MSR_FILTER_DEFAULT_ALLOW 模式运行，且没有 MSR 范围过滤器
 
-浣跨敤涓€缁勭┖鑼冨洿锛堟墍鏈?nmsrs == 0锛夎皟鐢ㄦ ioctl 浼氱鐢?MSR 杩囨护銆傚湪璇ユā寮忎笅锛宍KVM_MSR_FILTER_DEFAULT_DENY`
-鏃犳晥骞朵細瀵艰嚧閿欒銆?
+使用一组空范围（所nmsrs == 0）调用此 ioctl 会禁MSR 过滤。在该模式下，`KVM_MSR_FILTER_DEFAULT_DENY`
+无效并会导致错误
 
-   MSR 璁块棶浣滀负鎸囦护鎵ц锛堟ā鎷熸垨鍘熺敓锛夌殑鍓綔鐢ㄤ笉浼氳杩囨护锛屽洜涓虹‖浠跺湪 RDMSR 鍜?WRMSR 涔嬪涓嶉伒寰?
-   MSR 浣嶅浘锛岃€?KVM 鍦ㄦā鎷熸寚浠ゆ椂浼氭ā浠胯琛屼负锛屼互閬垮厤涓庣‖浠朵骇鐢熸棤鎰忎箟鐨勫亸宸€備緥濡傦紝RDPID 璇诲彇
-   MSR_TSC_AUX锛孲YSENTER 璇诲彇 SYSENTER MSR锛岀瓑绛夈€?
+   MSR 访问作为指令执行（模拟或原生）的副作用不会被过滤，因为硬件在 RDMSR WRMSR 之外不遵
+   MSR 位图，KVM 在模拟指令时会模仿该行为，以避免与硬件产生无意义的偏差。例如，RDPID 读取
+   MSR_TSC_AUX，SYSENTER 读取 SYSENTER MSR，等等
 
-   MSR 閫氳繃涓撶敤 VMCS 瀛楁鍔犺浇/瀛樺偍鐨勶紝涓嶄細浣滀负 VM-Enter/VM-Exit 妯℃嫙鐨勪竴閮ㄥ垎琚繃婊ゃ€?
+   MSR 通过专用 VMCS 字段加载/存储的，不会作为 VM-Enter/VM-Exit 模拟的一部分被过滤
 
-   MSR 閫氳繃 VMX 鐨勫姞杞?瀛樺偍鍒楄〃鍔犺浇/瀛樺偍鐨勶紝浼氫綔涓?VM-Enter/VM-Exit 妯℃嫙鐨勪竴閮ㄥ垎琚繃婊ゃ€傚鏋?
-   鍦?VM-Enter 鏃?MSR 璁块棶琚嫆缁濓紝KVM 浼氬悎鎴愪竴涓竴鑷存€ф鏌?VM-Exit锛圗XIT_REASON_MSR_LOAD_FAIL锛夈€?
-   濡傛灉鍦?VM-Exit 鏃?MSR 璁块棶琚嫆缁濓紝KVM 浼氬悎鎴愪竴涓?VM-Abort銆傜畝鑰岃█涔嬶紝KVM 鎵╁睍浜?Intel 鐨?
-   鏋舵瀯鍒楄〃锛屽垪鍑洪偅浜涙棤娉曢€氳繃 VM-Enter/VM-Exit MSR 鍒楄〃鍔犺浇/淇濆瓨鐨?MSR銆傚钩鍙版墍鏈夎€呮湁璐ｄ换灏嗕换浣?
-   姝ょ被闄愬埗浼犺揪缁欏叾鏈€缁堢敤鎴枫€?
+   MSR 通过 VMX 的加存储列表加载/存储的，会作VM-Enter/VM-Exit 模拟的一部分被过滤。如
+   VM-Enter MSR 访问被拒绝，KVM 会合成一个一致性检VM-Exit（EXIT_REASON_MSR_LOAD_FAIL）
+   如果VM-Exit MSR 访问被拒绝，KVM 会合成一VM-Abort。简而言之，KVM 扩展Intel 
+   架构列表，列出那些无法通过 VM-Enter/VM-Exit MSR 列表加载/保存MSR。平台所有者有责任将任
+   此类限制传达给其最终用户
 
-   x2APIC MSR 璁块棶鏃犳硶琚繃婊わ紙KVM 浼氶潤榛樺拷鐣ヨ鐩栦换浣?x2APIC MSR 鐨勮繃婊ゅ櫒锛夈€?
+   x2APIC MSR 访问无法被过滤（KVM 会静默忽略覆盖任x2APIC MSR 的过滤器）
 
-娉ㄦ剰锛屽湪 vCPU 杩愯鏃惰皟鐢ㄦ ioctl 鏈川涓婃槸绔炴€佺殑銆備絾鏄紝KVM 纭疄淇濊瘉 vCPU 灏嗙湅鍒板厛鍓嶇殑杩囨护鍣?
-鎴栨柊鐨勮繃婊ゅ櫒涔嬩竴锛屼緥濡傦紝鍦ㄦ棫杩囨护鍣ㄥ拰鏂拌繃婊ゅ櫒涓叿鏈夌浉鍚岃缃殑 MSR 灏嗗叿鏈夌‘瀹氭€х殑琛屼负銆?
+注意，在 vCPU 运行时调用此 ioctl 本质上是竞态的。但是，KVM 确实保证 vCPU 将看到先前的过滤
+或新的过滤器之一，例如，在旧过滤器和新过滤器中具有相同设置的 MSR 将具有确定性的行为
 
-绫讳技鍦帮紝濡傛灉鐢ㄦ埛绌洪棿甯屾湜鍦ㄦ嫆缁濈殑璁块棶涓婅繘琛屾嫤鎴紝蹇呴』鍦ㄦ縺娲讳换浣曡繃婊ゅ櫒涔嬪墠鍚敤
-KVM_MSR_EXIT_REASON_FILTER锛屽苟鍦ㄦ墍鏈夎繃婊ゅ櫒鍋滅敤涔嬪悗鎵嶅皢鍏跺叧闂€傚惁鍒欏彲鑳藉鑷?KVM 娉ㄥ叆 #GP 鑰屼笉鏄?
-閫€鍑哄埌鐢ㄦ埛绌洪棿銆?
+类似地，如果用户空间希望在拒绝的访问上进行拦截，必须在激活任何过滤器之前启用
+KVM_MSR_EXIT_REASON_FILTER，并在所有过滤器停用之后才将其关闭。否则可能导KVM 注入 #GP 而不
+退出到用户空间
 
 ### 4.98 KVM_CREATE_SPAPR_TCE_64
 
@@ -3783,7 +3783,7 @@ KVM_MSR_EXIT_REASON_FILTER锛屽苟鍦ㄦ墍鏈夎繃婊ゅ櫒鍋滅敤涔嬪悗
 :Parameters: struct kvm_create_spapr_tce_64 (in)
 :Returns: file descriptor for manipulating the created TCE table
 
-杩欐槸 KVM_CAP_SPAPR_TCE 鐨勬墿灞曪紝鍚庤€呬粎鏀寔 32 浣嶇獥鍙ｏ紝鍦?4.62 KVM_CREATE_SPAPR_TCE 涓弿杩般€?
+这是 KVM_CAP_SPAPR_TCE 的扩展，后者仅支持 32 位窗口，4.62 KVM_CREATE_SPAPR_TCE 中描述
 
 ```
 
@@ -3797,13 +3797,13 @@ KVM_MSR_EXIT_REASON_FILTER锛屽苟鍦ㄦ墍鏈夎繃婊ゅ櫒鍋滅敤涔嬪悗
   };
 
 ```
-璇ユ墿灞曠殑鐩殑鏄敮鎸佷竴涓澶栫殑銆佸叿鏈夊彲鍙橀〉澶у皬鐨勬洿澶?DMA 绐楀彛銆侹VM_CREATE_SPAPR_TCE_64 鎺ユ敹
-涓€涓?64 浣嶇殑绐楀彛澶у皬銆佷竴涓?IOMMU 椤靛亸绉伙紙page shift锛変互鍙婄浉搴?DMA 绐楀彛鐨勬€荤嚎鍋忕Щ锛坆us offset锛夛紝
-@size 鍜?@offset 鏄?IOMMU 椤电殑鏁伴噺銆?
+该扩展的目的是支持一个额外的、具有可变页大小的更DMA 窗口。KVM_CREATE_SPAPR_TCE_64 接收
+一64 位的窗口大小、一IOMMU 页偏移（page shift）以及相DMA 窗口的总线偏移（bus offset），
+@size @offset IOMMU 页的数量
 
-@flags 鐩墠鏈浣跨敤銆?
+@flags 目前未被使用
 
-鍏朵綑鍔熻兘涓?KVM_CREATE_SPAPR_TCE 鐩稿悓銆?
+其余功能KVM_CREATE_SPAPR_TCE 相同
 
 ### 4.99 KVM_REINJECT_CONTROL
 
@@ -3816,9 +3816,9 @@ KVM_MSR_EXIT_REASON_FILTER锛屽苟鍦ㄦ墍鏈夎繃婊ゅ櫒鍋滅敤涔嬪悗
          -EFAULT if struct kvm_reinject_control cannot be read,
          -ENXIO if KVM_CREATE_PIT or KVM_CREATE_PIT2 didn't succeed earlier.
 
-i8254锛圥IT锛夋湁涓ょ妯″紡锛宺einject 鍜?!reinject銆傞粯璁ゆ槸 reinject锛屽嵆 KVM 鎺掗槦宸叉祦閫濈殑 i8254
-tick 骞剁洃鎺?i8254 娉ㄥ叆鐨勪腑鏂殑瀹屾垚銆俽einject 妯″紡浼氬湪娌℃湁鏉ヨ嚜 i8254 鐨勬寕璧蜂腑鏂椂鍑洪槦涓€涓?tick
-骞舵敞鍏ュ叾涓柇銆?reinject 妯″紡鍦?tick 鍒拌揪鏃剁珛鍗虫敞鍏ヤ腑鏂€?
+i8254（PIT）有两种模式，reinject !reinject。默认是 reinject，即 KVM 排队已流逝的 i8254
+tick 并监i8254 注入的中断的完成。reinject 模式会在没有来自 i8254 的挂起中断时出队一tick
+并注入其中断reinject 模式tick 到达时立即注入中断
 
 ```
 
@@ -3828,8 +3828,8 @@ tick 骞剁洃鎺?i8254 娉ㄥ叆鐨勪腑鏂殑瀹屾垚銆俽einject 妯″
   };
 
 ```
-闄ら潪杩愯浣跨敤 PIT 杩涜瀹氭椂鐨勬棫鎿嶄綔绯荤粺锛堜緥濡?Linux 2.4.x锛夛紝鍚﹀垯寤鸿浣跨敤 pit_reinject = 0
-锛?reinject 妯″紡锛夈€?
+除非运行使用 PIT 进行定时的旧操作系统（例Linux 2.4.x），否则建议使用 pit_reinject = 0
+reinject 模式）
 
 ### 4.100 KVM_PPC_CONFIGURE_V3_MMU
 
@@ -3842,7 +3842,7 @@ tick 骞剁洃鎺?i8254 娉ㄥ叆鐨勪腑鏂殑瀹屾垚銆俽einject 妯″
          -EFAULT if struct kvm_ppc_mmuv3_cfg cannot be read,
          -EINVAL if the configuration is invalid
 
-璇?ioctl 鎺у埗瀹㈡埛鏈烘槸浣跨敤 radix 杩樻槸 HPT锛堝搱甯岄〉琛級杞崲锛屽苟璁剧疆鎸囧悜瀹㈡埛鏈鸿繘绋嬭〃鐨勬寚閽堛€?
+ioctl 控制客户机是使用 radix 还是 HPT（哈希页表）转换，并设置指向客户机进程表的指针
 
 ```
 
@@ -3852,13 +3852,13 @@ tick 骞剁洃鎺?i8254 娉ㄥ叆鐨勪腑鏂殑瀹屾垚銆俽einject 妯″
   };
 
 ```
-鍙互鍦?flags 涓缃袱涓綅锛欿VM_PPC_MMUV3_RADIX 鍜?KVM_PPC_MMUV3_GTSE銆侹VM_PPC_MMUV3_RADIX 濡傛灉
-缃綅锛屽垯灏嗗鎴锋満閰嶇疆涓轰娇鐢?radix 鏍戣浆鎹紱濡傛灉娓呴浂锛屽垯浣跨敤 HPT 杞崲銆侹VM_PPC_MMUV3_GTSE 濡傛灉
-缃綅涓?KVM 鍏佽锛屽垯灏嗗鎴锋満閰嶇疆涓鸿兘澶熶娇鐢ㄥ叏灞€ TLB 鍜?SLB 澶辨晥鎸囦护锛涘鏋滄竻闆讹紝瀹㈡埛鏈轰笉寰椾娇鐢?
-杩欎簺鎸囦护銆?
+可以flags 中设置两个位：KVM_PPC_MMUV3_RADIX KVM_PPC_MMUV3_GTSE。KVM_PPC_MMUV3_RADIX 如果
+置位，则将客户机配置为使radix 树转换；如果清零，则使用 HPT 转换。KVM_PPC_MMUV3_GTSE 如果
+置位KVM 允许，则将客户机配置为能够使用全局 TLB SLB 失效指令；如果清零，客户机不得使
+这些指令
 
-process_table 瀛楁鎸囧畾瀹㈡埛鏈鸿繘绋嬭〃鐨勫湴鍧€鍜屽ぇ灏忥紝璇ヨ〃浣嶄簬瀹㈡埛鏈虹┖闂翠腑銆傝瀛楁鐨勬牸寮忎负鍒嗗尯琛ㄩ」
-锛坧artition table entry锛夌殑绗簩涓弻瀛楋紝濡?Power ISA V3.00 绗?III 鍐?5.7.6.1 鑺傛墍瀹氫箟銆?
+process_table 字段指定客户机进程表的地址和大小，该表位于客户机空间中。该字段的格式为分区表项
+（partition table entry）的第二个双字，Power ISA V3.00 III 5.7.6.1 节所定义
 
 ### 4.101 KVM_PPC_GET_RMMU_INFO
 
@@ -3871,8 +3871,8 @@ process_table 瀛楁鎸囧畾瀹㈡埛鏈鸿繘绋嬭〃鐨勫湴鍧€鍜屽
 	 -EFAULT if struct kvm_ppc_rmmu_info cannot be written,
 	 -EINVAL if no useful information can be returned
 
-璇?ioctl 杩斿洖涓€涓粨鏋勪綋锛屽叾涓寘鍚袱鏍蜂笢瑗匡細(a) 涓€涓寘鍚彈鏀寔鐨?radix 鏍戝嚑浣曞竷灞€鐨勫垪琛紝浠ュ強
-(b) 涓€涓皢椤靛ぇ灏忔槧灏勫埌 tlbie锛圱LB 澶辨晥鏉＄洰锛夋寚浠ょ殑 "AP"锛堝疄闄呴〉澶у皬锛夊瓧娈电殑鍒楄〃銆?
+ioctl 返回一个结构体，其中包含两样东西：(a) 一个包含受支持radix 树几何布局的列表，以及
+(b) 一个将页大小映射到 tlbie（TLB 失效条目）指令的 "AP"（实际页大小）字段的列表
 
 ```
 
@@ -3886,11 +3886,11 @@ process_table 瀛楁鎸囧畾瀹㈡埛鏈鸿繘绋嬭〃鐨勫湴鍧€鍜屽
   };
 
 ```
-geometries[] 瀛楁缁欏嚭鏈€澶?8 绉嶅彈鏀寔鐨?radix 椤佃〃鍑犱綍甯冨眬锛屼互鏈€灏忛〉澶у皬浠?2 涓哄簳鐨勫鏁帮紝浠ュ強
-浠?PTE 绾у埌 PGD 绾э紙鎸夋椤哄簭锛夋爲姣忎竴绾х储寮曠殑浣嶆暟琛ㄧず銆備换浣曟湭浣跨敤鐨勬潯鐩湪 page_shift 瀛楁涓负 0銆?
+geometries[] 字段给出最8 种受支持radix 页表几何布局，以最小页大小2 为底的对数，以及
+PTE 级到 PGD 级（按此顺序）树每一级索引的位数表示。任何未使用的条目在 page_shift 字段中为 0
 
-ap_encodings 缁欏嚭鍙楁敮鎸佺殑椤靛ぇ灏忓強鍏?AP 瀛楁缂栫爜锛屼互 AP 鍊间綅浜庨珮 3 浣嶃€侀〉澶у皬浠?2 涓哄簳鐨勫鏁?
-浣嶄簬浣?6 浣嶈繘琛岀紪鐮併€?
+ap_encodings 给出受支持的页大小及AP 字段编码，以 AP 值位于高 3 位、页大小2 为底的对
+位于6 位进行编码
 
 ### 4.102 KVM_PPC_RESIZE_HPT_PREPARE
 
@@ -3906,8 +3906,8 @@ ap_encodings 缁欏嚭鍙楁敮鎸佺殑椤靛ぇ灏忓強鍏?AP 瀛楁缂栫
 	 -EINVAL if the supplied shift or flags are invalid,
 	 -ENOMEM if unable to allocate the new HPT,
 
-鐢ㄤ簬瀹炵幇 PAPR 鎵╁睍锛屼互鍦ㄨ繍琛屾椂璋冩暣瀹㈡埛鏈哄搱甯岄〉琛紙HPT锛夌殑澶у皬銆傚叿浣撴潵璇达紝瀹冨惎鍔ㄣ€佸仠姝㈡垨鐩戣
-涓哄鎴锋満鍑嗗涓€涓柊鐨勬綔鍦?HPT锛屽疄璐ㄤ笂瀹炵幇浜?H_RESIZE_HPT_PREPARE hypercall銆?
+用于实现 PAPR 扩展，以在运行时调整客户机哈希页表（HPT）的大小。具体来说，它启动、停止或监视
+为客户机准备一个新的潜HPT，实质上实现H_RESIZE_HPT_PREPARE hypercall
 
 ```
 
@@ -3918,24 +3918,24 @@ ap_encodings 缁欏嚭鍙楁敮鎸佺殑椤靛ぇ灏忓強鍏?AP 瀛楁缂栫
   };
 
 ```
-濡傛灉鍦ㄥ鎴锋満娌℃湁鎸傝捣鐨?HPT 鏃朵互 shift > 0 璋冪敤锛岃繖灏嗗紑濮嬪噯澶囦竴涓柊鐨勩€佸ぇ灏忎负 2^(shift) 瀛楄妭鐨?
-鎸傝捣 HPT銆傜劧鍚庡畠杩斿洖涓€涓鏁存暟锛岃〃绀鸿窛绂诲噯澶囧畬鎴愪及璁＄殑姣鏁般€?
+如果在客户机没有挂起HPT 时以 shift > 0 调用，这将开始准备一个新的、大小为 2^(shift) 字节
+挂起 HPT。然后它返回一个正整数，表示距离准备完成估计的毫秒数
 
-濡傛灉鍦ㄥ瓨鍦ㄦ寕璧风殑 HPT 浣嗗叾澶у皬涓庡弬鏁颁腑璇锋眰鐨勪笉鍖归厤鏃惰皟鐢紝鍒欎涪寮冪幇鏈夌殑鎸傝捣 HPT锛屽苟鎸変笂杩版柟寮?
-鍒涘缓涓€涓柊鐨勩€?
+如果在存在挂起的 HPT 但其大小与参数中请求的不匹配时调用，则丢弃现有的挂起 HPT，并按上述方
+创建一个新的
 
-濡傛灉鍦ㄥ瓨鍦ㄨ姹傚ぇ灏忕殑鎸傝捣 HPT 鏃惰皟鐢紝灏嗭細
+如果在存在请求大小的挂起 HPT 时调用，将：
 
-  - 濡傛灉鎸傝捣 HPT 鐨勫噯澶囧凡瀹屾垚锛岃繑鍥?0
-  - 濡傛灉鎸傝捣 HPT 鐨勫噯澶囧凡澶辫触锛岃繑鍥為敊璇爜锛岀劧鍚庝涪寮冩寕璧风殑 HPT
-  - 濡傛灉鎸傝捣 HPT 鐨勫噯澶囦粛鍦ㄨ繘琛屼腑锛岃繑鍥炶窛绂诲噯澶囧畬鎴愪及璁＄殑姣鏁?
+  - 如果挂起 HPT 的准备已完成，返0
+  - 如果挂起 HPT 的准备已失败，返回错误码，然后丢弃挂起的 HPT
+  - 如果挂起 HPT 的准备仍在进行中，返回距离准备完成估计的毫秒
 
-濡傛灉浠?shift == 0 璋冪敤锛屽垯涓㈠純浠讳綍褰撳墠鎸傝捣鐨?HPT 骞惰繑鍥?0锛堝嵆鍙栨秷浠讳綍姝ｅ湪杩涜鐨勫噯澶囷級銆?
+如果shift == 0 调用，则丢弃任何当前挂起HPT 并返0（即取消任何正在进行的准备）
 
-flags 淇濈暀鐢ㄤ簬鏈潵鐨勬墿灞曪紝鐩墠璁剧疆 flags 涓殑浠讳綍浣嶉兘灏嗗鑷?-EINVAL銆?
+flags 保留用于未来的扩展，目前设置 flags 中的任何位都将导-EINVAL
 
-閫氬父杩欏皢浣跨敤鐩稿悓鐨勫弬鏁伴噸澶嶈皟鐢紝鐩村埌瀹冭繑鍥?<= 0銆傜涓€娆¤皟鐢ㄥ皢鍚姩鍑嗗锛屽悗缁皟鐢ㄥ皢鐩戣鍑嗗锛?
-鐩村埌瀹屾垚鎴栧け璐ャ€?
+通常这将使用相同的参数重复调用，直到它返<= 0。第一次调用将启动准备，后续调用将监视准备
+直到完成或失败
 
 ### 4.103 KVM_PPC_RESIZE_HPT_COMMIT
 
@@ -3954,8 +3954,8 @@ flags 淇濈暀鐢ㄤ簬鏈潵鐨勬墿灞曪紝鐩墠璁剧疆 flags 涓�
          HPT entries to the new HPT,
 	 -EIO on other error conditions
 
-鐢ㄤ簬瀹炵幇 PAPR 鎵╁睍锛屼互鍦ㄨ繍琛屾椂璋冩暣瀹㈡埛鏈哄搱甯岄〉琛紙HPT锛夌殑澶у皬銆傚叿浣撴潵璇达紝瀹冭姹傚皢瀹㈡埛鏈鸿浆绉诲埌
-浣跨敤鏂扮殑 HPT 宸ヤ綔锛屽疄璐ㄤ笂瀹炵幇浜?H_RESIZE_HPT_COMMIT hypercall銆?
+用于实现 PAPR 扩展，以在运行时调整客户机哈希页表（HPT）的大小。具体来说，它请求将客户机转移到
+使用新的 HPT 工作，实质上实现H_RESIZE_HPT_COMMIT hypercall
 
 ```
 
@@ -3966,16 +3966,16 @@ flags 淇濈暀鐢ㄤ簬鏈潵鐨勬墿灞曪紝鐩墠璁剧疆 flags 涓�
   };
 
 ```
-杩欏彧搴斿湪 KVM_PPC_RESIZE_HPT_PREPARE 浠ョ浉鍚屽弬鏁拌繑鍥?0 涔嬪悗璋冪敤銆傚湪鍏朵粬鎯呭喌涓嬶紝
-KVM_PPC_RESIZE_HPT_COMMIT 灏嗚繑鍥為敊璇紙閫氬父鏄?-ENXIO 鎴?-EBUSY锛屼絾濡傛灉鍑嗗宸插紑濮嬩絾澶辫触浜嗭紝
-涔熷彲鑳借繑鍥炲叾浠栭敊璇級銆?
+这只应在 KVM_PPC_RESIZE_HPT_PREPARE 以相同参数返0 之后调用。在其他情况下，
+KVM_PPC_RESIZE_HPT_COMMIT 将返回错误（通常-ENXIO -EBUSY，但如果准备已开始但失败了，
+也可能返回其他错误）
 
-濡傛灉瀹㈡埛鏈哄皻鏈娇鑷繁澶勪簬闈欐锛坬uiescent锛夌姸鎬侊紙鍗虫病鏈?vcpu 浼氳繘琛屽惎鐢?MMU 鐨勫唴瀛樿闂級锛岃繖
-瀵瑰鎴锋満鐨勫奖鍝嶅皢鏄湭瀹氫箟鐨勩€?
+如果客户机尚未使自己处于静止（quiescent）状态（即没vcpu 会进行启MMU 的内存访问），这
+对客户机的影响将是未定义的
 
-鎴愬姛瀹屾垚鍚庯紝鎸傝捣鐨?HPT 灏嗘垚涓哄鎴锋満鐨勬椿鍔?HPT锛岃€屽厛鍓嶇殑 HPT 灏嗚涓㈠純銆?
+成功完成后，挂起HPT 将成为客户机的活HPT，而先前的 HPT 将被丢弃
 
-澶辫触鏃讹紝瀹㈡埛鏈轰粛灏嗗湪鍏跺厛鍓嶇殑 HPT 涓婅繍琛屻€?
+失败时，客户机仍将在其先前的 HPT 上运行
 
 ### 4.104 KVM_X86_GET_MCE_CAP_SUPPORTED
 
@@ -3986,8 +3986,8 @@ KVM_PPC_RESIZE_HPT_COMMIT 灏嗚繑鍥為敊璇紙閫氬父鏄?-ENXIO 鎴?-EB
 :Parameters: u64 mce_cap (out)
 :Returns: 0 on success, -1 on error
 
-杩斿洖鍙楁敮鎸佺殑 MCE 鑳藉姏銆倁64 mce_cap 鍙傛暟涓?MSR_IA32_MCG_CAP 瀵勫瓨鍣ㄥ叿鏈夌浉鍚岀殑鏍煎紡銆傚彈鏀寔鐨?
-鑳藉姏浼氬皢鍏剁浉搴旂殑浣嶇疆浣嶃€?
+返回受支持的 MCE 能力。u64 mce_cap 参数MSR_IA32_MCG_CAP 寄存器具有相同的格式。受支持
+能力会将其相应的位置位
 ### 4.105 KVM_X86_SETUP_MCE
 
 
@@ -4000,9 +4000,9 @@ KVM_PPC_RESIZE_HPT_COMMIT 灏嗚繑鍥為敊璇紙閫氬父鏄?-ENXIO 鎴?-EB
          -EINVAL if the requested number of banks is invalid,
          -EINVAL if requested MCE capability is not supported.
 
-鍒濆鍖栦互渚涗娇鐢ㄧ殑 MCE 鏀寔銆倁64 mcg_cap 鍙傛暟涓?MSR_IA32_MCG_CAP 瀵勫瓨鍣ㄥ叿鏈夌浉鍚岀殑鏍煎紡锛屽苟鎸囧畾
-搴斿惎鐢ㄥ摢浜涜兘鍔涖€傚彈鏀寔鐨勬渶澶ч敊璇姤鍛婏紙error-reporting锛塨ank 鏁伴噺鍙互鍦ㄦ鏌?KVM_CAP_MCE 鏃惰幏鍙栥€?
-鍙楁敮鎸佺殑鑳藉姏鍙互閫氳繃 KVM_X86_GET_MCE_CAP_SUPPORTED 鑾峰彇銆?
+初始化以供使用的 MCE 支持。u64 mcg_cap 参数MSR_IA32_MCG_CAP 寄存器具有相同的格式，并指定
+应启用哪些能力。受支持的最大错误报告（error-reporting）bank 数量可以在检KVM_CAP_MCE 时获取
+受支持的能力可以通过 KVM_X86_GET_MCE_CAP_SUPPORTED 获取
 
 ### 4.106 KVM_X86_SET_MCE
 
@@ -4016,7 +4016,7 @@ KVM_PPC_RESIZE_HPT_COMMIT 灏嗚繑鍥為敊璇紙閫氬父鏄?-ENXIO 鎴?-EB
          -EINVAL if the bank number is invalid,
          -EINVAL if VAL bit is not set in status field.
 
-鍚戝鎴锋満娉ㄥ叆涓€涓満鍣ㄦ鏌ラ敊璇紙MCE锛夈€傝緭鍏?
+向客户机注入一个机器检查错误（MCE）。输
 ```
 
   struct kvm_x86_mce {
@@ -4030,11 +4030,11 @@ KVM_PPC_RESIZE_HPT_COMMIT 灏嗚繑鍥為敊璇紙閫氬父鏄?-ENXIO 鎴?-EB
   };
 
 ```
-濡傛灉鎶ュ憡鐨?MCE 鏄竴涓湭绾犳鐨勯敊璇紙uncorrected error锛夛紝KVM 浼氬皢鍏朵綔涓?MCE 寮傚父娉ㄥ叆瀹㈡埛鏈恒€傚鏋?
-瀹㈡埛鏈?MCG_STATUS 瀵勫瓨鍣ㄦ姤鍛?MCE 姝ｅ湪杩涜涓紝KVM 浼氬鑷翠竴涓?KVM_EXIT_SHUTDOWN vmexit銆?
+如果报告MCE 是一个未纠正的错误（uncorrected error），KVM 会将其作MCE 异常注入客户机。如
+客户MCG_STATUS 寄存器报MCE 正在进行中，KVM 会导致一KVM_EXIT_SHUTDOWN vmexit
 
-鍚﹀垯锛屽鏋?MCE 鏄竴涓凡绾犳鐨勯敊璇紙corrected error锛夛紝KVM 鍙細灏嗗叾瀛樺偍鍦ㄧ浉搴旂殑 bank 涓紙鍓嶆彁
-鏄 bank 娌℃湁鎸佹湁涓€涓厛鍓嶆姤鍛婄殑鏈籂姝ｉ敊璇級銆?
+否则，如MCE 是一个已纠正的错误（corrected error），KVM 只会将其存储在相应的 bank 中（前提
+是该 bank 没有持有一个先前报告的未纠正错误）
 
 ### 4.107 KVM_S390_GET_CMMA_BITS
 
@@ -4045,27 +4045,27 @@ KVM_PPC_RESIZE_HPT_COMMIT 灏嗚繑鍥為敊璇紙閫氬父鏄?-ENXIO 鎴?-EB
 :Parameters: struct kvm_s390_cmma_log (in, out)
 :Returns: 0 on success, a negative value on error
 
-閿欒鐮侊細
+错误码：
 
   ======     =============================================================
-  ENOMEM     鏃犳硶鍒嗛厤瓒冲鐨勫唴瀛樻潵瀹屾垚浠诲姟
-  ENXIO      濡傛灉 CMMA 鏈惎鐢?
-  EINVAL     濡傛灉鏈缃?KVM_S390_CMMA_PEEK 浣嗚縼绉绘ā寮忔湭鍚敤
-  EINVAL     濡傛灉鏈缃?KVM_S390_CMMA_PEEK 浣嗚剰椤佃窡韪凡琚鐢?
-             锛堝洜姝よ縼绉绘ā寮忚鑷姩绂佺敤锛?
-  EFAULT     濡傛灉鐢ㄦ埛绌洪棿鍦板潃鏃犳晥锛屾垨鍦板潃娌℃湁瀵瑰簲鐨勯〉琛?
-             锛堜緥濡備娇鐢ㄥぇ椤垫椂锛夈€?
+  ENOMEM     无法分配足够的内存来完成任务
+  ENXIO      如果 CMMA 未启
+  EINVAL     如果未设KVM_S390_CMMA_PEEK 但迁移模式未启用
+  EINVAL     如果未设KVM_S390_CMMA_PEEK 但脏页跟踪已被禁
+             （因此迁移模式被自动禁用
+  EFAULT     如果用户空间地址无效，或地址没有对应的页
+             （例如使用大页时）
   ======     =============================================================
 
-璇?ioctl 鐢ㄤ簬鍦?s390 鏋舵瀯涓婅幏鍙?CMMA 浣嶇殑鍊笺€傚畠閫傜敤浜庝袱绉嶅満鏅細
+ioctl 用于s390 架构上获CMMA 位的值。它适用于两种场景：
 
-- 鍦ㄥ疄鏃惰縼绉绘湡闂翠繚瀛?CMMA 鍊笺€傚疄鏃惰縼绉婚渶瑕侀€氳繃 KVM_REQ_START_MIGRATION VM 灞炴€у惎鐢ㄣ€?
-- 閫氳繃璁剧疆浜嗘爣蹇?KVM_S390_CMMA_PEEK 鏉ラ潪鐮村潖鎬у湴鏌ョ湅 CMMA 鍊笺€?
+- 在实时迁移期间保CMMA 值。实时迁移需要通过 KVM_REQ_START_MIGRATION VM 属性启用
+- 通过设置了标KVM_S390_CMMA_PEEK 来非破坏性地查看 CMMA 值
 
-璇?ioctl 閫氳繃 kvm_s390_cmma_log 缁撴瀯浣撴帴鏀跺弬鏁般€傛墍闇€鐨勫€艰鍐欏叆涓€涓紦鍐插尯锛屽叾浣嶇疆閫氳繃
-kvm_s390_cmma_log 缁撴瀯浣撲腑鐨?"values" 鎴愬憳鎸囩ず銆傝緭鍏ョ粨鏋勪綋涓殑鍊间篃浼氭牴鎹渶瑕佹洿鏂般€?
+ioctl 通过 kvm_s390_cmma_log 结构体接收参数。所需的值被写入一个缓冲区，其位置通过
+kvm_s390_cmma_log 结构体中"values" 成员指示。输入结构体中的值也会根据需要更新
 
-姣忎釜 CMMA 鍊煎崰鐢ㄤ竴涓瓧鑺傘€?
+每个 CMMA 值占用一个字节
 
 ```
 
@@ -4081,42 +4081,42 @@ kvm_s390_cmma_log 缁撴瀯浣撲腑鐨?"values" 鎴愬憳鎸囩ず銆傝緭鍏�
   };
 
 ```
-start_gfn 鏄鑾峰彇鍏?CMMA 鍊肩殑绗竴涓鎴锋満甯х殑缂栧彿锛?
+start_gfn 是要获取CMMA 值的第一个客户机帧的编号
 
-count 鏄紦鍐插尯闀垮害鐨勫瓧鑺傛暟锛?
+count 是缓冲区长度的字节数
 
-values 鎸囧悜灏嗙粨鏋滃啓鍏ュ叾涓殑缂撳啿鍖恒€?
+values 指向将结果写入其中的缓冲区
 
-濡傛灉 count 澶т簬 KVM_S390_SKEYS_MAX锛屽垯琚涓?KVM_S390_SKEYS_MAX銆備负浜嗕笌鍏朵粬 ioctl 淇濇寔涓€鑷达紝
-澶嶇敤 KVM_S390_SKEYS_MAX銆?
+如果 count 大于 KVM_S390_SKEYS_MAX，则被视KVM_S390_SKEYS_MAX。为了与其他 ioctl 保持一致，
+复用 KVM_S390_SKEYS_MAX
 
-缁撴灉琚啓鍏?values 瀛楁鎸囧悜鐨勭紦鍐插尯涓紝骞朵笖杈撳叆鍙傛暟鐨勫€兼寜濡備笅鏂瑰紡鏇存柊銆?
+结果被写values 字段指向的缓冲区中，并且输入参数的值按如下方式更新
 
-鏍规嵁鏍囧織鐨勪笉鍚岋紝浼氭墽琛屼笉鍚岀殑鎿嶄綔銆傚埌鐩墠涓烘鍞竴鍙楁敮鎸佺殑鏍囧織鏄?KVM_S390_CMMA_PEEK銆?
+根据标志的不同，会执行不同的操作。到目前为止唯一受支持的标志KVM_S390_CMMA_PEEK
 
-濡傛灉鏈缃?KVM_S390_CMMA_PEEK锛岄粯璁よ涓烘槸锛?
-start_gfn 灏嗘寚绀哄叾 CMMA 浣嶄负鑴忕殑绗竴涓〉甯с€傚畠涓嶄竴瀹氫笌浣滀负杈撳叆浼犲叆鐨勭浉鍚岋紝鍥犱负浼氳烦杩囧共鍑€椤点€?
+如果未设KVM_S390_CMMA_PEEK，默认行为是
+start_gfn 将指示其 CMMA 位为脏的第一个页帧。它不一定与作为输入传入的相同，因为会跳过干净页
 
-count 灏嗘寚绀虹紦鍐插尯涓疄闄呭啓鍏ョ殑瀛楄妭鏁般€傚畠锛堣€屼笖寰€寰€锛変細灏忎簬杈撳叆鍊硷紝鍥犱负缂撳啿鍖哄彧濉厖鍒版壘鍒?16 瀛楄妭
-骞插噣鍊间负姝紙杩欎簺鍊奸殢鍚庝笉浼氳澶嶅埗鍒扮紦鍐插尯涓級銆傜敱浜庝竴涓?CMMA 杩佺Щ鍧楅渶瑕佸熀鍦板潃鍜岄暱搴︼紝鎬诲叡 16 瀛楄妭锛?
-鎵€浠ュ彧瑕佸共鍑€鏁版嵁鐨勫ぇ灏忎笉瓒呰繃澶撮儴鐨勫ぇ灏忥紝鎴戜滑灏变細鍦ㄥ悗闈㈡湁涓€浜涜剰鏁版嵁鐨勬儏鍐典笅鍙戝洖涓€浜涘共鍑€鏁版嵁銆傝繖
-鍏佽浠ユ洿澶氬湴寰€杩旂敤鎴风┖闂翠负浠ｄ环锛屾渶灏忓寲瑕佷繚瀛樻垨閫氳繃缃戠粶浼犺緭鐨勬暟鎹噺銆俰octl 鐨勪笅涓€娆¤皟鐢ㄥ皢璺宠繃鎵€鏈?
-骞插噣鍊硷紝鍙兘鑺傜渷鐨勪笉浠呬粎鏄壘鍒扮殑 16 瀛楄妭銆?
+count 将指示缓冲区中实际写入的字节数。它（而且往往）会小于输入值，因为缓冲区只填充到找16 字节
+干净值为止（这些值随后不会被复制到缓冲区中）。由于一CMMA 迁移块需要基地址和长度，总共 16 字节
+所以只要干净数据的大小不超过头部的大小，我们就会在后面有一些脏数据的情况下发回一些干净数据。这
+允许以更多地往返用户空间为代价，最小化要保存或通过网络传输的数据量。ioctl 的下一次调用将跳过所
+干净值，可能节省的不仅仅是找到的 16 字节
 
-濡傛灉璁剧疆浜?KVM_S390_CMMA_PEEK锛?
-鍗充娇涓嶅湪杩佺Щ妯″紡涓嬶紝涔熶細璇诲彇鐜版湁鐨勫瓨鍌ㄥ睘鎬э紝骞朵笖涓嶆墽琛屽叾浠栨搷浣滐紱
+如果设置KVM_S390_CMMA_PEEK
+即使不在迁移模式下，也会读取现有的存储属性，并且不执行其他操作；
 
-杈撳嚭鐨?start_gfn 灏嗙瓑浜庤緭鍏ョ殑 start_gfn锛?
+输出start_gfn 将等于输入的 start_gfn
 
-杈撳嚭鐨?count 灏嗙瓑浜庤緭鍏ョ殑 count锛岄櫎闈炲凡鍒拌揪鍐呭瓨鏈熬銆?
+输出count 将等于输入的 count，除非已到达内存末尾
 
-鍦ㄨ繖涓ょ鎯呭喌涓嬶細
-"remaining" 瀛楁灏嗘寚绀轰粛鐒跺墿浣欑殑鑴?CMMA 鍊肩殑鎬绘暟锛屾垨鑰呭鏋滆缃簡 KVM_S390_CMMA_PEEK 涓旀湭鍚敤
-杩佺Щ妯″紡鍒欎负 0銆?
+在这两种情况下：
+"remaining" 字段将指示仍然剩余的CMMA 值的总数，或者如果设置了 KVM_S390_CMMA_PEEK 且未启用
+迁移模式则为 0
 
-mask 鏈浣跨敤銆?
+mask 未被使用
 
-values 鎸囧悜灏嗗瓨鍌ㄧ粨鏋滅殑鐢ㄦ埛绌洪棿缂撳啿鍖恒€?
+values 指向将存储结果的用户空间缓冲区
 
 ### 4.108 KVM_S390_SET_CMMA_BITS
 
@@ -4127,8 +4127,8 @@ values 鎸囧悜灏嗗瓨鍌ㄧ粨鏋滅殑鐢ㄦ埛绌洪棿缂撳啿鍖恒€?
 :Parameters: struct kvm_s390_cmma_log (in)
 :Returns: 0 on success, a negative value on error
 
-璇?ioctl 鐢ㄤ簬鍦?s390 鏋舵瀯涓婅缃?CMMA 浣嶇殑鍊笺€傚畠鏃ㄥ湪瀹炴椂杩佺Щ鏈熼棿鐢ㄤ簬鎭㈠ CMMA 鍊硷紝浣嗗叾浣跨敤娌℃湁
-闄愬埗銆傝 ioctl 閫氳繃 kvm_s390_cmma_values 缁撴瀯浣撴帴鏀跺弬鏁般€傛瘡涓?CMMA 鍊煎崰鐢ㄤ竴涓瓧鑺傘€?
+ioctl 用于s390 架构上设CMMA 位的值。它旨在实时迁移期间用于恢复 CMMA 值，但其使用没有
+限制。该 ioctl 通过 kvm_s390_cmma_values 结构体接收参数。每CMMA 值占用一个字节
 
 ```
 
@@ -4144,22 +4144,22 @@ values 鎸囧悜灏嗗瓨鍌ㄧ粨鏋滅殑鐢ㄦ埛绌洪棿缂撳啿鍖恒€?
   };
 
 ```
-start_gfn 鎸囩ず璧峰鐨勫鎴锋満甯х紪鍙凤紝
+start_gfn 指示起始的客户机帧编号，
 
-count 鎸囩ず缂撳啿鍖轰腑瑕佽€冭檻澶氬皯涓€硷紝
+count 指示缓冲区中要考虑多少个值，
 
-flags 鏈浣跨敤锛屽繀椤讳负 0銆?
+flags 未被使用，必须为 0
 
-mask 鎸囩ず瑕佽€冭檻鍝簺 PGSTE 浣嶃€?
+mask 指示要考虑哪些 PGSTE 位
 
-remaining 鏈浣跨敤銆?
+remaining 未被使用
 
-values 鎸囧悜鐢ㄦ埛绌洪棿涓瓨鍌ㄨ繖浜涘€肩殑缂撳啿鍖恒€?
+values 指向用户空间中存储这些值的缓冲区
 
-濡傛灉鏃犳硶鍒嗛厤瓒冲鐨勫唴瀛樻潵瀹屾垚浠诲姟锛岃 ioctl 鍙兘浠?-ENOMEM 澶辫触锛涘鏋?CMMA 鏈惎鐢紝浠?-ENXIO
-澶辫触锛涘鏋?count 瀛楁杩囧ぇ锛堜緥濡傝秴杩?KVM_S390_CMMA_SIZE_MAX锛夋垨 flags 瀛楁涓嶄负 0锛屼互 -EINVAL
-澶辫触锛涘鏋滅敤鎴风┖闂村湴鍧€鏃犳晥銆佸啓鍏ヤ簡鏃犳晥椤碉紙渚嬪鍐呭瓨鏈熬涔嬪悗锛夋垨鍦板潃娌℃湁瀵瑰簲鐨勯〉琛紙渚嬪浣跨敤澶ч〉鏃讹級锛?
-浠?-EFAULT 澶辫触銆?
+如果无法分配足够的内存来完成任务，该 ioctl 可能-ENOMEM 失败；如CMMA 未启用，-ENXIO
+失败；如count 字段过大（例如超KVM_S390_CMMA_SIZE_MAX）或 flags 字段不为 0，以 -EINVAL
+失败；如果用户空间地址无效、写入了无效页（例如内存末尾之后）或地址没有对应的页表（例如使用大页时）
+-EFAULT 失败
 
 ### 4.109 KVM_PPC_GET_CPU_CHAR
 
@@ -4171,8 +4171,8 @@ values 鎸囧悜鐢ㄦ埛绌洪棿涓瓨鍌ㄨ繖浜涘€肩殑缂撳啿鍖�
 :Returns: 0 on successful completion,
 	 -EFAULT if struct kvm_ppc_cpu_char cannot be written
 
-璇?ioctl 鍚戠敤鎴风┖闂存彁渚涙湁鍏?CPU 鏌愪簺鐗规€х殑淇℃伅锛岃繖浜涚壒鎬т笌鎸囦护鐨勬帹娴嬫墽琛屼互鍙婃帹娴嬫墽琛屽彲鑳藉鑷寸殑
-淇℃伅娉勬紡鏈夊叧锛堝弬瑙?CVE-2017-5715銆丆VE-2017-5753 鍜?CVE-2017-5754锛夈€備俊鎭綅浜?
+ioctl 向用户空间提供有CPU 某些特性的信息，这些特性与指令的推测执行以及推测执行可能导致的
+信息泄漏有关（参CVE-2017-5715、CVE-2017-5753 CVE-2017-5754）。信息位
 ```
 
   struct kvm_ppc_cpu_char {
@@ -4183,18 +4183,18 @@ values 鎸囧悜鐢ㄦ埛绌洪棿涓瓨鍌ㄨ繖浜涘€肩殑缂撳啿鍖�
   };
 
 ```
-涓轰簡鍙墿灞曟€э紝character_mask 鍜?behaviour_mask 瀛楁鎸囩ず character 鍜?behaviour 涓殑鍝簺浣嶅凡鐢?
-鍐呮牳濉厖銆傚鏋滃皢鏉ュ畾涔夌殑浣嶉泦鍚堣鎵╁睍锛岀敤鎴风┖闂村皢鑳藉鍒ゆ柇瀹冩槸鍚﹁繍琛屽湪鐭ユ檽鏂颁綅鐨勫唴鏍镐笂銆?
+为了可扩展性，character_mask behaviour_mask 字段指示 character behaviour 中的哪些位已
+内核填充。如果将来定义的位集合被扩展，用户空间将能够判断它是否运行在知晓新位的内核上
 
-character 瀛楁鎻忚堪鏈夊姪浜庨槻姝㈡棤鎰忎俊鎭硠闇茬殑 CPU 灞炴€?鈥斺€?鍏蜂綋鏉ヨ锛屾槸鍚﹀瓨鍦ㄧ敤浜庡埛鏂板け鏁堬紙flash-invalidate锛?
-L1 鏁版嵁缂撳瓨鐨勬寚浠わ紙ori 30,30,0 鎴?mtspr SPRN_TRIG2,rN锛夛紝L1 鏁版嵁缂撳瓨鏄惁璁剧疆涓轰竴绉嶆ā寮忥紙鍏朵腑
-鏉＄洰鍙兘鐢卞垱寤哄畠浠殑绾跨▼浣跨敤锛夛紝bcctr[l] 鎸囦护鏄惁鑳介槻姝㈡帹娴嬫墽琛岋紝浠ュ強鏄惁鎻愪緵鎺ㄦ祴灞忛殰鎸囦护
-锛坥ri 31,31,0锛夈€?
+character 字段描述有助于防止无意信息泄露的 CPU 属—具体来说，是否存在用于刷新失效（flash-invalidate
+L1 数据缓存的指令（ori 30,30,0 mtspr SPRN_TRIG2,rN），L1 数据缓存是否设置为一种模式（其中
+条目只能由创建它们的线程使用），bcctr[l] 指令是否能防止推测执行，以及是否提供推测屏障指令
+（ori 31,31,0）
 
-behaviour 瀛楁鎻忚堪杞欢涓洪槻姝㈡棤鎰忎俊鎭硠闇茶€屽簲閲囧彇鐨勬搷浣滐紝浠庤€屾弿杩扮‖浠跺彈鍝簺婕忔礊褰卞搷锛涘叿浣撴潵璇达紝
-浠庡唴鏍歌繑鍥炵敤鎴锋ā寮忔椂鏄惁搴斿埛鏂?L1 鏁版嵁缂撳瓨锛屼互鍙婃槸鍚﹀簲鍦ㄦ暟缁勮竟鐣屾鏌ュ拰鏁扮粍璁块棶涔嬮棿鏀剧疆鎺ㄦ祴灞忛殰銆?
+behaviour 字段描述软件为防止无意信息泄露而应采取的操作，从而描述硬件受哪些漏洞影响；具体来说，
+从内核返回用户模式时是否应刷L1 数据缓存，以及是否应在数组边界检查和数组访问之间放置推测屏障
 
-杩欎簺瀛楁浣跨敤涓庢柊鐨?H_GET_CPU_CHARACTERISTICS hypercall 鐩稿悓鐨勪綅瀹氫箟銆?
+这些字段使用与新H_GET_CPU_CHARACTERISTICS hypercall 相同的位定义
 
 ### 4.110 KVM_MEMORY_ENCRYPT_OP
 
@@ -4205,12 +4205,12 @@ behaviour 瀛楁鎻忚堪杞欢涓洪槻姝㈡棤鎰忎俊鎭硠闇茶�
 :Parameters: an opaque platform specific structure (in/out)
 :Returns: 0 on success; -1 on error
 
-濡傛灉骞冲彴鏀寔鍒涘缓鍔犲瘑鐨?VM锛屽垯鍙互浣跨敤姝?ioctl 鍙戝嚭鐗瑰畾浜庡钩鍙扮殑銆佺敤浜庣鐞嗚繖浜涘姞瀵?VM 鐨勫唴瀛樺姞瀵?
-鍛戒护銆?
+如果平台支持创建加密VM，则可以使用ioctl 发出特定于平台的、用于管理这些加VM 的内存加
+命令
 
-鐩墠锛屾 ioctl 鐢ㄤ簬鍙戝嚭 AMD 澶勭悊鍣ㄤ笂鐨勫畨鍏ㄥ姞瀵嗚櫄鎷熷寲锛圫EV锛夊懡浠ゅ拰 Intel 澶勭悊鍣ㄤ笂鐨勪俊浠诲煙鎵╁睍
-锛圱DX锛夊懡浠ゃ€傝缁嗙殑鍛戒护瀹氫箟鍦?Documentation/virt/kvm/x86/amd-memory-encryption.rst 鍜?
-Documentation/virt/kvm/x86/intel-tdx.rst 涓€?
+目前，此 ioctl 用于发出 AMD 处理器上的安全加密虚拟化（SEV）命令和 Intel 处理器上的信任域扩展
+（TDX）命令。详细的命令定义Documentation/virt/kvm/x86/amd-memory-encryption.rst 
+Documentation/virt/kvm/x86/intel-tdx.rst 中
 
 ### 4.111 KVM_MEMORY_ENCRYPT_REG_REGION
 
@@ -4221,15 +4221,15 @@ Documentation/virt/kvm/x86/intel-tdx.rst 涓€?
 :Parameters: struct kvm_enc_region (in)
 :Returns: 0 on success; -1 on error
 
-璇?ioctl 鍙敤浜庢敞鍐屼竴涓彲鑳藉寘鍚姞瀵嗘暟鎹殑瀹㈡埛鏈哄唴瀛樺尯鍩燂紙渚嬪瀹㈡埛鏈?RAM銆丼MRAM 绛夛級銆?
+ioctl 可用于注册一个可能包含加密数据的客户机内存区域（例如客户RAM、SMRAM 等）
 
-瀹冪敤浜庡惎鐢?SEV 鐨勫鎴锋満涓€傚綋鍚敤鍔犲瘑鏃讹紝瀹㈡埛鏈哄唴瀛樺尯鍩熷彲鑳藉寘鍚姞瀵嗘暟鎹€係EV 鍐呭瓨鍔犲瘑寮曟搸浣跨敤
-涓€绉嶈皟鏁达紙tweak锛夋満鍒讹紝浣垮緱涓や釜鐩稿悓鐨勬槑鏂囬〉锛屽嵆浣夸綅浜庝笉鍚屼綅缃紝涔熶細鍏锋湁涓嶅悓鐨勫瘑鏂囥€傚洜姝や氦鎹㈡垨
-绉诲姩杩欎簺椤电殑瀵嗘枃涓嶄細瀵艰嚧鏄庢枃琚氦鎹€傚洜姝わ紝涓?SEV 瀹㈡埛鏈洪噸瀹氫綅锛堟垨杩佺Щ锛夌墿鐞嗗悗澶囬〉灏嗛渶瑕佷竴浜涢澶?
-鐨勬楠ゃ€?
+它用于启SEV 的客户机中。当启用加密时，客户机内存区域可能包含加密数据。SEV 内存加密引擎使用
+一种调整（tweak）机制，使得两个相同的明文页，即使位于不同位置，也会具有不同的密文。因此交换或
+移动这些页的密文不会导致明文被交换。因此，SEV 客户机重定位（或迁移）物理后备页将需要一些额
+的步骤
 
-娉ㄦ剰锛氬綋鍓嶇殑 SEV 瀵嗛挜绠＄悊瑙勮寖娌℃湁鎻愪緵浜ゆ崲鎴栬縼绉伙紙绉诲姩锛夊瘑鏂囬〉鐨勫懡浠ゃ€傚洜姝わ紝鐩墠鎴戜滑鍥哄畾锛坧in锛?
-閫氳繃姝?ioctl 娉ㄥ唽鐨勫鎴锋満鍐呭瓨鍖哄煙銆?
+注意：当前的 SEV 密钥管理规范没有提供交换或迁移（移动）密文页的命令。因此，目前我们固定（pin
+通过ioctl 注册的客户机内存区域
 
 ### 4.112 KVM_MEMORY_ENCRYPT_UNREG_REGION
 
@@ -4240,7 +4240,7 @@ Documentation/virt/kvm/x86/intel-tdx.rst 涓€?
 :Parameters: struct kvm_enc_region (in)
 :Returns: 0 on success; -1 on error
 
-璇?ioctl 鍙敤浜庢敞閿€涓婅堪閫氳繃 KVM_MEMORY_ENCRYPT_REG_REGION ioctl 娉ㄥ唽鐨勫鎴锋満鍐呭瓨鍖哄煙銆?
+ioctl 可用于注销上述通过 KVM_MEMORY_ENCRYPT_REG_REGION ioctl 注册的客户机内存区域
 
 ### 4.113 KVM_HYPERV_EVENTFD
 
@@ -4250,9 +4250,9 @@ Documentation/virt/kvm/x86/intel-tdx.rst 涓€?
 :Type: vm ioctl
 :Parameters: struct kvm_hyperv_eventfd (in)
 
-璇?ioctl锛堟敞閿€锛夋敞鍐屼竴涓?eventfd锛屼互閫氳繃 SIGNAL_EVENT hypercall 浠庡鎴锋満鎺ユ敹鍏充簬鎸囧畾 Hyper-V
-杩炴帴 id 鐨勯€氱煡锛岃€屼笉浼氬鑷寸敤鎴烽€€鍑恒€傚甫鏈夐潪闆朵簨浠舵爣蹇楀彿锛堜綅 24-31锛夌殑 SIGNAL_EVENT hypercall 浠嶄細
-瑙﹀彂 KVM_EXIT_HYPERV_HCALL 鐢ㄦ埛閫€鍑恒€?
+ioctl（注销）注册一eventfd，以通过 SIGNAL_EVENT hypercall 从客户机接收关于指定 Hyper-V
+连接 id 的通知，而不会导致用户退出。带有非零事件标志号（位 24-31）的 SIGNAL_EVENT hypercall 仍会
+触发 KVM_EXIT_HYPERV_HCALL 用户退出
 
 ```
 
@@ -4288,10 +4288,10 @@ Documentation/virt/kvm/x86/intel-tdx.rst 涓€?
 :Parameters: struct kvm_nested_state (in/out)
 :Returns: 0 on success, -1 on error
 
-閿欒鐮侊細
+错误码：
 
   =====      =============================================================
-  E2BIG     鎬荤姸鎬佸ぇ灏忚秴杩囦簡鐢ㄦ埛鎸囧畾鐨?'size' 鍊硷紱鎵€闇€鐨勫ぇ灏忓皢琚啓鍏?size銆?
+  E2BIG     总状态大小超过了用户指定'size' 值；所需的大小将被写size
   =====      =============================================================
 
 ```
@@ -4347,9 +4347,9 @@ Documentation/virt/kvm/x86/intel-tdx.rst 涓€?
   };
 
 ```
-璇?ioctl 灏?vcpu 鐨勫祵濂楄櫄鎷熷寲鐘舵€佷粠鍐呮牳澶嶅埗鍒扮敤鎴风┖闂淬€?
+ioctl vcpu 的嵌套虚拟化状态从内核复制到用户空间
 
-鐘舵€佺殑鏈€澶уぇ灏忓彲浠ラ€氳繃鍚?KVM_CHECK_EXTENSION ioctl() 浼犲叆 KVM_CAP_NESTED_STATE 鑾峰彇銆?
+状态的最大大小可以通过KVM_CHECK_EXTENSION ioctl() 传入 KVM_CAP_NESTED_STATE 获取
 
 ### 4.115 KVM_SET_NESTED_STATE
 
@@ -4360,8 +4360,8 @@ Documentation/virt/kvm/x86/intel-tdx.rst 涓€?
 :Parameters: struct kvm_nested_state (in)
 :Returns: 0 on success, -1 on error
 
-杩欏皢 vcpu 鐨?kvm_nested_state 缁撴瀯浣撲粠鐢ㄦ埛绌洪棿澶嶅埗鍒板唴鏍搞€傚叧浜?struct kvm_nested_state 鐨勫畾涔夛紝
-璇峰弬瑙?KVM_GET_NESTED_STATE銆?
+这将 vcpu kvm_nested_state 结构体从用户空间复制到内核。关struct kvm_nested_state 的定义，
+请参KVM_GET_NESTED_STATE
 
 ### 4.116 KVM_(UN)REGISTER_COALESCED_MMIO
 
@@ -4373,18 +4373,18 @@ Documentation/virt/kvm/x86/intel-tdx.rst 涓€?
 :Parameters: struct kvm_coalesced_mmio_zone
 :Returns: 0 on success, < 0 on error
 
-鍚堝苟 I/O锛圕oalesced I/O锛夋槸涓€绉嶆€ц兘浼樺寲锛屽畠鎺ㄨ繜纭欢瀵勫瓨鍣ㄥ啓鍏ョ殑妯℃嫙锛屼粠鑰岄伩鍏嶇敤鎴风┖闂撮€€鍑恒€傚畠
-閫氬父鐢ㄤ簬鍑忓皯妯℃嫙棰戠箒璁块棶鐨勭‖浠跺瘎瀛樺櫒鐨勫紑閿€銆?
+合并 I/O（Coalesced I/O）是一种性能优化，它推迟硬件寄存器写入的模拟，从而避免用户空间退出。它
+通常用于减少模拟频繁访问的硬件寄存器的开销
 
-褰撶‖浠跺瘎瀛樺櫒琚厤缃负鍚堝苟 I/O 鏃讹紝鍐欒闂笉浼氶€€鍑哄埌鐢ㄦ埛绌洪棿锛屽叾鍊艰璁板綍鍦ㄤ竴涓唴鏍镐笌鐢ㄦ埛绌洪棿涔嬮棿
-鍏变韩鐨勭幆褰㈢紦鍐插尯涓€?
+当硬件寄存器被配置为合并 I/O 时，写访问不会退出到用户空间，其值被记录在一个内核与用户空间之间
+共享的环形缓冲区中
 
-濡傛灉瀵圭‖浠跺瘎瀛樺櫒鐨勪竴娆℃垨澶氭鍐欒闂彲浠ユ帹杩熷埌瀵瑰悓涓€璁惧涓婂彟涓€涓‖浠跺瘎瀛樺櫒鐨勮鎴栧啓锛屽垯浣跨敤鍚堝苟
-I/O銆傛渶鍚庝竴娆¤闂皢瀵艰嚧 vmexit锛岀敤鎴风┖闂村皢鍦ㄦā鎷熷畠涔嬪墠澶勭悊鏉ヨ嚜鐜舰缂撳啿鍖虹殑璁块棶銆傝繖灏嗛伩鍏嶅湪閲嶅
-鍐欏叆鏃堕€€鍑哄埌鐢ㄦ埛绌洪棿銆?
+如果对硬件寄存器的一次或多次写访问可以推迟到对同一设备上另一个硬件寄存器的读或写，则使用合并
+I/O。最后一次访问将导致 vmexit，用户空间将在模拟它之前处理来自环形缓冲区的访问。这将避免在重复
+写入时退出到用户空间
 
-鍚堝苟 pio 鍩轰簬鍚堝苟 mmio銆傚悎骞?mmio 涓庡悎骞?pio 涔嬮棿鍑犱箮娌℃湁鍖哄埆锛屽彧鏄悎骞?pio 璁板綍瀵?I/O 绔彛鐨?
-璁块棶銆?
+合并 pio 基于合并 mmio。合mmio 与合pio 之间几乎没有区别，只是合pio 记录I/O 端口
+访问
 
 ### 4.117 KVM_CLEAR_DIRTY_LOG
 
@@ -4409,17 +4409,17 @@ I/O銆傛渶鍚庝竴娆¤闂皢瀵艰嚧 vmexit锛岀敤鎴风┖闂村�
   };
 
 ```
-璇?ioctl 鏍规嵁 struct kvm_clear_dirty_log 鐨?dirty_bitmap 瀛楁涓紶鍏ョ殑浣嶅浘锛屾竻闄ゅ唴瀛樻Ы涓〉鐨?
-鑴忕姸鎬併€備綅鍥剧殑浣?0 瀵瑰簲浜庡唴瀛樻Ы涓殑椤?"first_page"锛宯um_pages 鏄緭鍏ヤ綅鍥剧殑澶у皬锛堜互浣嶄负鍗曚綅锛夈€?
-first_page 蹇呴』鏄?64 鐨勫€嶆暟锛涢櫎闈?first_page + num_pages 绛変簬鍐呭瓨妲界殑澶у皬锛屽惁鍒?num_pages 涔?
-蹇呴』鏄?64 鐨勫€嶆暟銆傚浜庤緭鍏ヤ綅鍥句腑姣忎釜琚疆浣嶇殑浣嶏紝鐩稿簲鐨勯〉鍦?KVM 鐨勮剰浣嶅浘涓鏍囪涓?骞插噣"锛屽苟涓?
-涓鸿椤甸噸鏂板惎鐢ㄨ剰椤佃窡韪紙渚嬪閫氳繃鍐欎繚鎶わ紝鎴栨竻闄ら〉琛ㄩ」涓殑鑴忎綅锛夈€?
+ioctl 根据 struct kvm_clear_dirty_log dirty_bitmap 字段中传入的位图，清除内存槽中页
+脏状态。位图的0 对应于内存槽中的"first_page"，num_pages 是输入位图的大小（以位为单位）
+first_page 必须64 的倍数；除first_page + num_pages 等于内存槽的大小，否num_pages 
+必须64 的倍数。对于输入位图中每个被置位的位，相应的页KVM 的脏位图中被标记干净"，并
+为该页重新启用脏页跟踪（例如通过写保护，或清除页表项中的脏位）
 
-濡傛灉 KVM_CAP_MULTI_ADDRESS_SPACE 鍙敤锛宻lot 瀛楁鐨?16-31 浣嶆寚瀹氳娓呴櫎鑴忕姸鎬佺殑鍦板潃绌洪棿銆傚叧浜?
-slot 瀛楁鐨勭敤娉曠粏鑺傦紝璇峰弬瑙?KVM_SET_USER_MEMORY_REGION銆?
+如果 KVM_CAP_MULTI_ADDRESS_SPACE 可用，slot 字段16-31 位指定要清除脏状态的地址空间。关
+slot 字段的用法细节，请参KVM_SET_USER_MEMORY_REGION
 
-褰撳惎鐢ㄤ簡 KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2 鏃讹紝姝?ioctl 鏈€鏈夌敤锛涙洿澶氫俊鎭鍙傝璇ヨ兘鍔涚殑鎻忚堪銆?
-浣嗘槸锛屽彧瑕?KVM_CHECK_EXTENSION 纭 KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2 瀛樺湪锛屽畠灏卞彲浠ュ缁堣浣跨敤銆?
+当启用了 KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2 时，ioctl 最有用；更多信息请参见该能力的描述
+但是，只KVM_CHECK_EXTENSION 确认 KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2 存在，它就可以始终被使用
 
 ### 4.118 KVM_GET_SUPPORTED_HV_CPUID
 
@@ -4450,14 +4450,14 @@ slot 瀛楁鐨勭敤娉曠粏鑺傦紝璇峰弬瑙?KVM_SET_USER_MEMORY_REGION
   };
 
 ```
-璇?ioctl 杩斿洖 KVM 涓笌 Hyper-V 妯℃嫙鐩稿叧鐨?x86 cpuid 鐗规€у彾瀛愶紙leaf锛夈€傜敤鎴风┖闂村彲浠ヤ娇鐢ㄨ ioctl
-杩斿洖鐨勪俊鎭潵鏋勯€犲憟鐜扮粰浣跨敤 Hyper-V 澧炲己锛坋nlightenment锛夌殑瀹㈡埛鏈猴紙渚嬪 Windows 鎴?Hyper-V 瀹㈡埛鏈猴級
-鐨?cpuid 淇℃伅銆?
+ioctl 返回 KVM 中与 Hyper-V 模拟相关x86 cpuid 特性叶子（leaf）。用户空间可以使用该 ioctl
+返回的信息来构造呈现给使用 Hyper-V 增强（enlightenment）的客户机（例如 Windows Hyper-V 客户机）
+cpuid 信息
 
-姝?ioctl 杩斿洖鐨?CPUID 鐗规€у彾瀛愮敱 Hyper-V 椤跺眰鍔熻兘瑙勮寖锛圱LFS锛夊畾涔夈€傝繖浜涘彾瀛愭棤娉曢€氳繃
-KVM_GET_SUPPORTED_CPUID ioctl 鑾峰彇锛屽洜涓哄叾涓竴浜涗笌 KVM 鐗规€у彾瀛愶紙0x40000000銆?x40000001锛夌浉浜ゃ€?
+ioctl 返回CPUID 特性叶子由 Hyper-V 顶层功能规范（TLFS）定义。这些叶子无法通过
+KVM_GET_SUPPORTED_CPUID ioctl 获取，因为其中一些与 KVM 特性叶子（0x40000000x40000001）相交
 
-鐩墠锛岃繑鍥炰互涓?CPUID 鍙跺瓙鍒楄〃锛?
+目前，返回以CPUID 叶子列表
 
  - HYPERV_CPUID_VENDOR_AND_MAX_FUNCTIONS
  - HYPERV_CPUID_INTERFACE
@@ -4470,21 +4470,21 @@ KVM_GET_SUPPORTED_CPUID ioctl 鑾峰彇锛屽洜涓哄叾涓竴浜涗笌 KVM 
  - HYPERV_CPUID_SYNDBG_INTERFACE
  - HYPERV_CPUID_SYNDBG_PLATFORM_CAPABILITIES
 
-鐢ㄦ埛绌洪棿閫氳繃浼犲叆涓€涓?kvm_cpuid2 缁撴瀯浣撴潵璋冪敤 KVM_GET_SUPPORTED_HV_CPUID锛屽叾涓?'nent' 瀛楁鎸囩ず
-鍙彉闀挎暟缁?'entries' 涓殑鏉＄洰鏁伴噺銆傚鏋滄潯鐩暟閲忓お灏戣€屾棤娉曟弿杩版墍鏈?Hyper-V 鐗规€у彾瀛愶紝浼氳繑鍥為敊璇?
-锛圗2BIG锛夈€傚鏋滄暟閲忓ぇ浜庢垨绛変簬 Hyper-V 鐗规€у彾瀛愮殑鏁伴噺锛?nent' 瀛楁浼氳璋冩暣涓?'entries' 鏁扮粍涓?
-鏈夋晥鏉＄洰鐨勬暟閲忥紝骞堕殢鍚庤濉厖銆?
+用户空间通过传入一kvm_cpuid2 结构体来调用 KVM_GET_SUPPORTED_HV_CPUID，其'nent' 字段指示
+可变长数'entries' 中的条目数量。如果条目数量太少而无法描述所Hyper-V 特性叶子，会返回错
+（E2BIG）。如果数量大于或等于 Hyper-V 特性叶子的数量nent' 字段会被调整'entries' 数组
+有效条目的数量，并随后被填充
 
-'struct kvm_cpuid_entry2' 涓殑 'index' 鍜?'flags' 瀛楁鐩墠淇濈暀锛岀敤鎴风┖闂翠笉搴旀湡鏈涘湪閭ｉ噷鑾峰緱浠讳綍
-鐗瑰畾鍊笺€?
+'struct kvm_cpuid_entry2' 中的 'index' 'flags' 字段目前保留，用户空间不应期望在那里获得任何
+特定值
 
-娉ㄦ剰锛孠VM_GET_SUPPORTED_HV_CPUID 鐨?vcpu 鐗堟湰鐩墠宸茶搴熷純銆備笌鏃犳潯浠舵毚闇叉墍鏈夊彈鏀寔鐗规€т綅鐨勭郴缁?
-ioctl 涓嶅悓锛寁cpu 鐗堟湰鏈変互涓嬫€紓涔嬪锛?
+注意，KVM_GET_SUPPORTED_HV_CPUID vcpu 版本目前已被废弃。与无条件暴露所有受支持特性位的系
+ioctl 不同，vcpu 版本有以下怪异之处
 
-- HYPERV_CPUID_NESTED_FEATURES 鍙跺瓙鍜?HV_X64_ENLIGHTENED_VMCS_RECOMMENDED 鐗规€т綅浠呭湪鐩稿簲鐨?
-  vCPU 鍏堝墠鍚敤浜?Enlightened VMCS锛圞VM_CAP_HYPERV_ENLIGHTENED_VMCS锛夋椂鎵嶄細鏆撮湶銆?
-- HV_STIMER_DIRECT_MODE_AVAILABLE 浣嶄粎鍦ㄥ叿鏈夊唴鏍告€?LAPIC 鏃舵墠鏆撮湶銆?
-  锛堝亣瀹氬凡璋冪敤 KVM_CREATE_IRQCHIP銆傦級
+- HYPERV_CPUID_NESTED_FEATURES 叶子HV_X64_ENLIGHTENED_VMCS_RECOMMENDED 特性位仅在相应
+  vCPU 先前启用Enlightened VMCS（KVM_CAP_HYPERV_ENLIGHTENED_VMCS）时才会暴露
+- HV_STIMER_DIRECT_MODE_AVAILABLE 位仅在具有内核LAPIC 时才暴露
+  （假定已调用 KVM_CREATE_IRQCHIP。）
 
 ### 4.119 KVM_ARM_VCPU_FINALIZE
 
@@ -4494,33 +4494,33 @@ ioctl 涓嶅悓锛寁cpu 鐗堟湰鏈変互涓嬫€紓涔嬪锛?
 :Parameters: int feature (in)
 :Returns: 0 on success, -1 on error
 
-閿欒鐮侊細
+错误码：
 
   ======     ==============================================================
-  EPERM      鐗规€ф湭鍚敤銆侀渶瑕侀厤缃紝鎴栧凡缁忓畾绋?
-  EINVAL     鐗规€ф湭鐭ユ垨涓嶅瓨鍦?
+  EPERM      特性未启用、需要配置，或已经定
+  EINVAL     特性未知或不存
   ======     ==============================================================
 
-feature 鐨勫凡璇嗗埆鍊硷細
+feature 的已识别值：
 
   =====      ===========================================
   arm64      KVM_ARM_VCPU_SVE (requires KVM_CAP_ARM_SVE)
   =====      ===========================================
 
-瀹氱锛坒inalize锛夋寚瀹?vcpu 鐗规€х殑閰嶇疆銆?
+定稿（finalize）指vcpu 特性的配置
 
-vcpu 蹇呴』宸茬粡閫氳繃涓€娆℃垚鍔熺殑 KVM_ARM_VCPU_INIT <KVM_ARM_VCPU_INIT> 璋冪敤锛堝湪 features[] 涓缃簡
-鐩稿簲鐨勬爣蹇楋級瀹屾垚浜嗗垵濮嬪寲锛屽惎鐢ㄤ簡鍙楀奖鍝嶇殑鐗规€с€?
+vcpu 必须已经通过一次成功的 KVM_ARM_VCPU_INIT <KVM_ARM_VCPU_INIT> 调用（在 features[] 中设置了
+相应的标志）完成了初始化，启用了受影响的特性
 
-瀵逛簬鍙楀奖鍝嶇殑 vcpu 鐗规€э紝杩欐槸鍦?vcpu 瀹屽叏鍙敤涔嬪墠蹇呴』鎵ц鐨勫己鍒舵€ф楠ゃ€?
+对于受影响的 vcpu 特性，这是vcpu 完全可用之前必须执行的强制性步骤
 
-鍦?KVM_ARM_VCPU_INIT 鍜?KVM_ARM_VCPU_FINALIZE 涔嬮棿锛屽彲浠ラ€氳繃浣跨敤璇稿 KVM_SET_ONE_REG 涔嬬被鐨?
-ioctl 鏉ラ厤缃鐗规€с€傚簲鎵ц鐨勭‘鍒囬厤缃互鍙婂浣曟墽琛屾槸鐗规€х浉鍏崇殑銆?
+KVM_ARM_VCPU_INIT KVM_ARM_VCPU_FINALIZE 之间，可以通过使用诸如 KVM_SET_ONE_REG 之类
+ioctl 来配置该特性。应执行的确切配置以及如何执行是特性相关的
 
-鍏朵粬渚濊禆浜庣壒瀹氱壒鎬ц瀹氱鐨勮皟鐢紝渚嬪 KVM_RUN銆並VM_GET_REG_LIST銆並VM_GET_ONE_REG 鍜?
-KVM_SET_ONE_REG锛岄櫎闈炶鐗规€у凡缁忛€氳繃 KVM_ARM_VCPU_FINALIZE 璋冪敤瀹氱锛屽惁鍒欏皢浠?-EPERM 澶辫触銆?
+其他依赖于特定特性被定稿的调用，例如 KVM_RUN、KVM_GET_REG_LIST、KVM_GET_ONE_REG 
+KVM_SET_ONE_REG，除非该特性已经通过 KVM_ARM_VCPU_FINALIZE 调用定稿，否则将-EPERM 失败
 
-闇€瑕佷娇鐢ㄦ ioctl 瀹氱鐨?vcpu 鐗规€х殑缁嗚妭锛岃鍙傝 KVM_ARM_VCPU_INIT銆?
+需要使用此 ioctl 定稿vcpu 特性的细节，请参见 KVM_ARM_VCPU_INIT
 
 ### 4.120 KVM_SET_PMU_EVENT_FILTER
 
@@ -4531,7 +4531,7 @@ KVM_SET_ONE_REG锛岄櫎闈炶鐗规€у凡缁忛€氳繃 KVM_ARM_VCPU_FINA
 :Parameters: struct kvm_pmu_event_filter (in)
 :Returns: 0 on success, -1 on error
 
-閿欒鐮侊細
+错误码：
 
   ======     ============================================================
   EFAULT     args[^0^] cannot be accessed
@@ -4552,28 +4552,28 @@ KVM_SET_ONE_REG锛岄櫎闈炶鐗规€у凡缁忛€氳繃 KVM_ARM_VCPU_FINA
   };
 
 ```
-璇?ioctl 閫氳繃闄愬埗鍏佽鐨?event select 鍜?unit mask 缁勫悎锛屾潵闄愬埗瀹㈡埛鏈哄彲浠ョ紪绋嬬殑 PMU 浜嬩欢闆嗗悎銆?
+ioctl 通过限制允许event select unit mask 组合，来限制客户机可以编程的 PMU 事件集合
 
-鍙傛暟鎸佹湁涓€涓皢琚厑璁告垨鎷掔粷鐨勮繃婊や簨浠跺垪琛ㄣ€?
+参数持有一个将被允许或拒绝的过滤事件列表
 
-杩囨护浜嬩欢鍙帶鍒堕€氱敤璁℃暟鍣紱鍥哄畾鐢ㄩ€旇鏁板櫒鐢?fixed_counter_bitmap 鎺у埗銆?
+过滤事件只控制通用计数器；固定用途计数器fixed_counter_bitmap 控制
 
 ```
 
 ```
 `0`
 
-瑕佷娇鐢ㄦ妯″紡锛岃娓呯┖ 'flags' 瀛楁銆?
+要使用此模式，请清空 'flags' 字段
 
-鍦ㄦ妯″紡涓嬶紝姣忎釜浜嬩欢灏嗗寘鍚竴涓?event select + unit mask銆?
+在此模式下，每个事件将包含一event select + unit mask
 
-褰撳鎴锋満灏濊瘯缂栫▼ PMU 鏃讹紝瀹㈡埛鏈虹殑 event select + unit mask 浼氫笌杩囨护浜嬩欢杩涜姣旇緝锛屼互纭畾瀹㈡埛鏈?
-鏄惁搴斿叿鏈夎闂潈闄愩€?
+当客户机尝试编程 PMU 时，客户机的 event select + unit mask 会与过滤事件进行比较，以确定客户
+是否应具有访问权限
 
 `KVM_PMU_EVENT_FLAG_MASKED_EVENTS`
 :Capability: KVM_CAP_PMU_EVENT_MASKED_EVENTS
 
-鍦ㄦ妯″紡涓嬶紝姣忎釜杩囨护浜嬩欢灏嗗寘鍚竴涓?event select銆乵ask銆乵atch 鍜?
+在此模式下，每个过滤事件将包含一event select、mask、match 
 ```
 
   KVM_PMU_ENCODE_MASKED_ENTRY()
@@ -4592,22 +4592,22 @@ KVM_SET_ONE_REG锛岄櫎闈炶鐗规€у凡缁忛€氳繃 KVM_ARM_VCPU_FINA
   63:56  umask mask
 
 ```
-褰撳鎴锋満灏濊瘯缂栫▼ PMU 鏃讹紝鎸変互涓嬫楠ょ‘瀹氬鎴锋満鏄惁搴斿叿鏈夎闂潈闄愶細
+当客户机尝试编程 PMU 时，按以下步骤确定客户机是否应具有访问权限：
 
- 1. 灏嗗鎴锋満鐨?event select 涓庤繃婊や簨浠惰繘琛屽尮閰嶃€?
- 2. 濡傛灉鎵惧埌鍖归厤锛屽皢瀹㈡埛鏈虹殑 unit mask 涓庢墍鍖呭惈杩囨护浜嬩欢鐨?mask 鍜?match 鍊艰繘琛屽尮閰嶃€?
-    I.e. (unit mask & mask) == match && !exclude銆?
- 3. 濡傛灉鎵惧埌鍖归厤锛屽皢瀹㈡埛鏈虹殑 unit mask 涓庢墍鎺掗櫎杩囨护浜嬩欢鐨?mask 鍜?match 鍊艰繘琛屽尮閰嶃€?
-    I.e. (unit mask & mask) == match && exclude銆?
+ 1. 将客户机event select 与过滤事件进行匹配
+ 2. 如果找到匹配，将客户机的 unit mask 与所包含过滤事件mask match 值进行匹配
+    I.e. (unit mask & mask) == match && !exclude銆。
+ 3. 如果找到匹配，将客户机的 unit mask 与所排除过滤事件mask match 值进行匹配
+    I.e. (unit mask & mask) == match && exclude銆。
  4.
-   a. 濡傛灉鎵惧埌鍖呭惈鍖归厤涓旀湭鎵惧埌鎺掗櫎鍖归厤锛屽垯杩囨护璇ヤ簨浠躲€?
-   b. 瀵逛簬鎵€鏈夊叾浠栨儏鍐碉紝涓嶈繃婊よ浜嬩欢銆?
+   a. 如果找到包含匹配且未找到排除匹配，则过滤该事件
+   b. 对于所有其他情况，不过滤该事件
  5.
-   a. 濡傛灉浜嬩欢琚繃婊や笖瀹冩槸鍏佽鍒楄〃锛屽垯鍏佽瀹㈡埛鏈虹紪绋嬭浜嬩欢銆?
-   b. 濡傛灉浜嬩欢琚繃婊や笖瀹冩槸鎷掔粷鍒楄〃锛屽垯涓嶅厑璁稿鎴锋満缂栫▼璇ヤ簨浠躲€?
+   a. 如果事件被过滤且它是允许列表，则允许客户机编程该事件
+   b. 如果事件被过滤且它是拒绝列表，则不允许客户机编程该事件
 
-璁剧疆鏂扮殑 pmu 浜嬩欢杩囨护鍣ㄦ椂锛屽鏋滆缃簡浠讳綍鏈娇鐢ㄥ瓧娈碉紝鎴栬€呭湪 Intel 涓婅皟鐢ㄦ椂璁剧疆浜?event select
-涓殑浠讳綍楂樹綅锛?5:32锛夛紝灏嗚繑鍥?-EINVAL銆?
+设置新的 pmu 事件过滤器时，如果设置了任何未使用字段，或者在 Intel 上调用时设置event select
+中的任何高位5:32），将返-EINVAL
 
 ```
 
@@ -4615,10 +4615,10 @@ KVM_SET_ONE_REG锛岄櫎闈炶鐗规€у凡缁忛€氳繃 KVM_ARM_VCPU_FINA
   #define KVM_PMU_EVENT_DENY 1
 
 ```
-閫氳繃姝?API锛孠VM 鐢ㄦ埛绌洪棿杩樺彲浠ラ€氳繃閰嶇疆 "action" 鍜?"fixed_counter_bitmap" 瀛楁鏉ユ帶鍒?VM 鐨?
-鍥哄畾璁℃暟鍣ㄧ殑琛屼负锛堝鏋滄湁锛夈€?
+通过API，KVM 用户空间还可以通过配置 "action" "fixed_counter_bitmap" 字段来控VM 
+固定计数器的行为（如果有）
 
-鍏蜂綋鏉ヨ锛孠VM 鍦ㄧ‘瀹氭槸鍚?
+具体来说，KVM 在确定是
 ```
 
   FixCtr[i]_is_allowed = (action == ALLOW) && (bitmap & BIT(i)) ||
@@ -4626,11 +4626,11 @@ KVM_SET_ONE_REG锛岄櫎闈炶鐗规€у凡缁忛€氳繃 KVM_ARM_VCPU_FINA
   FixCtr[i]_is_denied = !FixCtr[i]_is_allowed;
 
 ```
-KVM 鎬绘槸浣跨敤 fixed_counter_bitmap锛岀‘淇?fixed_counter_bitmap 璁剧疆姝ｇ‘鏄敤鎴风┖闂寸殑璐ｄ换锛屼緥濡傦紝濡傛灉
-鐢ㄦ埛绌洪棿鎯宠瀹氫箟涓€涓彧褰卞搷閫氱敤璁℃暟鍣ㄧ殑杩囨护鍣ㄣ€?
+KVM 总是使用 fixed_counter_bitmap，确fixed_counter_bitmap 设置正确是用户空间的责任，例如，如果
+用户空间想要定义一个只影响通用计数器的过滤器
 
-娉ㄦ剰锛?events" 瀛楁涔熼€傜敤浜庡浐瀹氳鏁板櫒鐨勭‖缂栫爜 event_select 鍜?unit_mask 鍊笺€?fixed_counter_bitmap"
-鐨勪紭鍏堢骇楂樹簬 "events"锛屽鏋滀袱鑰呬箣闂村瓨鍦ㄧ煕鐩俱€?
+注意events" 字段也适用于固定计数器的硬编码 event_select unit_mask 值fixed_counter_bitmap"
+的优先级高于 "events"，如果两者之间存在矛盾
 
 ### 4.121 KVM_PPC_SVM_OFF
 
@@ -4641,18 +4641,18 @@ KVM 鎬绘槸浣跨敤 fixed_counter_bitmap锛岀‘淇?fixed_counter_bitmap 璁
 :Parameters: none
 :Returns: 0 on successful completion,
 
-閿欒鐮侊細
+错误码：
 
   ======     ================================================================
-  EINVAL     濡傛灉 ultravisor 鏈兘缁堟瀹夊叏瀹㈡埛鏈?
-  ENOMEM     濡傛灉 hypervisor 鏈兘涓哄鎴锋満鍒嗛厤鏂扮殑 radix 椤佃〃
+  EINVAL     如果 ultravisor 未能终止安全客户
+  ENOMEM     如果 hypervisor 未能为客户机分配新的 radix 页表
   ======     ================================================================
 
-璇?ioctl 鐢ㄤ簬鍏抽棴瀹㈡埛鏈虹殑瀹夊叏妯″紡锛屾垨灏嗗鎴锋満浠庡畨鍏ㄦā寮忚浆鎹㈠埌姝ｅ父妯″紡銆傝繖鍦ㄥ鎴锋満琚噸缃椂璋冪敤銆?
-濡傛灉閽堝姝ｅ父瀹㈡埛鏈鸿皟鐢紝鍒欐病鏈夋晥鏋溿€?
+ioctl 用于关闭客户机的安全模式，或将客户机从安全模式转换到正常模式。这在客户机被重置时调用
+如果针对正常客户机调用，则没有效果
 
-璇?ioctl 鍙戝嚭涓€涓?ultravisor 璋冪敤鏉ョ粓姝㈠畨鍏ㄥ鎴锋満锛岃В闄?VPA 椤电殑鍥哄畾锛屽苟閲婃斁鎵€鏈夌敱 hypervisor
-鐢ㄤ簬璺熻釜瀹夊叏椤电殑璁惧椤点€?
+ioctl 发出一ultravisor 调用来终止安全客户机，解VPA 页的固定，并释放所有由 hypervisor
+用于跟踪安全页的设备页
 
 ### 4.122 KVM_S390_NORMAL_RESET
 
@@ -4663,7 +4663,7 @@ KVM 鎬绘槸浣跨敤 fixed_counter_bitmap锛岀‘淇?fixed_counter_bitmap 璁
 :Parameters: none
 :Returns: 0
 
-璇?ioctl 鏍规嵁 POP锛圥rinciples Of Operation锛屾搷浣滃師鐞嗭級涓殑 cpu 閲嶇疆瀹氫箟閲嶇疆 VCPU 瀵勫瓨鍣ㄥ拰鎺у埗缁撴瀯銆?
+ioctl 根据 POP（Principles Of Operation，操作原理）中的 cpu 重置定义重置 VCPU 寄存器和控制结构
 
 ### 4.123 KVM_S390_INITIAL_RESET
 
@@ -4674,8 +4674,8 @@ KVM 鎬绘槸浣跨敤 fixed_counter_bitmap锛岀‘淇?fixed_counter_bitmap 璁
 :Parameters: none
 :Returns: 0
 
-璇?ioctl 鏍规嵁 POP 涓殑鍒濆 cpu 閲嶇疆瀹氫箟閲嶇疆 VCPU 瀵勫瓨鍣ㄥ拰鎺у埗缁撴瀯銆備絾鏄紝cpu 涓嶄細琚疆浜?ESA 妯″紡銆?
-姝ら噸缃槸姝ｅ父閲嶇疆鐨勮秴闆嗐€?
+ioctl 根据 POP 中的初始 cpu 重置定义重置 VCPU 寄存器和控制结构。但是，cpu 不会被置ESA 模式
+此重置是正常重置的超集
 
 ### 4.124 KVM_S390_CLEAR_RESET
 
@@ -4686,8 +4686,8 @@ KVM 鎬绘槸浣跨敤 fixed_counter_bitmap锛岀‘淇?fixed_counter_bitmap 璁
 :Parameters: none
 :Returns: 0
 
-璇?ioctl 鏍规嵁 POP 涓殑娓呴櫎 cpu 閲嶇疆瀹氫箟閲嶇疆 VCPU 瀵勫瓨鍣ㄥ拰鎺у埗缁撴瀯銆備絾鏄紝cpu 涓嶄細琚疆浜?ESA 妯″紡銆?
-姝ら噸缃槸鍒濆閲嶇疆鐨勮秴闆嗐€?
+ioctl 根据 POP 中的清除 cpu 重置定义重置 VCPU 寄存器和控制结构。但是，cpu 不会被置ESA 模式
+此重置是初始重置的超集
 
 
 ### 4.125 KVM_S390_PV_COMMAND
@@ -4711,45 +4711,45 @@ KVM 鎬绘槸浣跨敤 fixed_counter_bitmap锛岀‘淇?fixed_counter_bitmap 璁
   };
 
 ```
-**Ultravisor 杩斿洖鐮侊紙Ultravisor return codes锛?*
-濡傛灉涓轰簡瀹炵幇鍛戒护棰勬湡鐨勭粨鏋滆€屾墽琛屼簡 Ultravisor 璋冪敤锛屽垯鐢卞唴鏍告彁渚?Ultravisor 杩斿洖锛堝師鍥狅級鐮併€傚洜姝?
-瀹冧滑涓?IOCTL 杩斿洖鐮佹棤鍏炽€傚鏋?KVM 鏀瑰彉浜?`rc`锛屽叾鍊煎皢濮嬬粓澶т簬 0锛屽洜姝ゅ缓璁湪鍙戝嚭 PV 鍛戒护涔嬪墠灏嗗叾
-璁剧疆涓?0锛屼互渚胯兘澶熸娴嬪埌 `rc` 鐨勫彉鍖栥€?
+**Ultravisor 返回码（Ultravisor return codes*
+如果为了实现命令预期的结果而执行了 Ultravisor 调用，则由内核提Ultravisor 返回（原因）码。因
+它们IOCTL 返回码无关。如KVM 改变`rc`，其值将始终大于 0，因此建议在发出 PV 命令之前将其
+设置0，以便能够检测到 `rc` 的变化
 
-**cmd 鍊硷細**
+**cmd 值：**
 
 KVM_PV_ENABLE
-  鍒嗛厤鍐呭瓨骞跺皢 VM 娉ㄥ唽鍒?Ultravisor锛屼粠鑰屽皢鍐呭瓨鎹愯禒缁?Ultravisor锛屼娇鍏舵垚涓?KVM 涓嶅彲璁块棶鐨勩€?
-  鎵€鏈夌幇鏈夌殑 CPU 閮借杞崲涓哄彈淇濇姢鐨?CPU銆傚湪姝ゅ懡浠ゆ垚鍔熶箣鍚庯紝浠讳綍閫氳繃鐑彃鎷旀坊鍔犵殑 CPU 鍦ㄥ垱寤烘椂
-  涔熶細鍙樻垚鍙椾繚鎶ょ殑銆?
+  分配内存并将 VM 注册Ultravisor，从而将内存捐赠Ultravisor，使其成KVM 不可访问的
+  所有现有的 CPU 都被转换为受保护CPU。在此命令成功之后，任何通过热插拔添加的 CPU 在创建时
+  也会变成受保护的
 
-  閿欒鐮侊細
+  错误码：
 
   =====      =============================
-  EINTR      瀛樺湪鏈睆钄界殑鎸傝捣淇″彿
+  EINTR      存在未屏蔽的挂起信号
   =====      =============================
 
 KVM_PV_DISABLE
-  浠?Ultravisor 娉ㄩ攢 VM锛屽苟鍥炴敹鎹愯禒缁?Ultravisor 鐨勫唴瀛橈紝浣垮叾閲嶆柊鍙鍐呮牳浣跨敤銆傛墍鏈夋敞鍐岀殑 VCPU
-  閮借杞崲鍥為潪鍙椾繚鎶ょ殑銆傚鏋滃厛鍓嶇殑涓€涓彈淇濇姢 VM 宸茬粡閫氳繃 KVM_PV_ASYNC_CLEANUP_PREPARE 鍑嗗濂借繘琛?
-  寮傛鎷嗛櫎锛屽苟涓旈殢鍚庢病鏈夐€氳繃 KVM_PV_ASYNC_CLEANUP_PERFORM 鎷嗛櫎锛屽垯瀹冨皢鍦ㄦ湰娆¤皟鐢ㄤ腑涓庡綋鍓嶇殑鍙椾繚鎶?
-  VM 涓€璧疯鎷嗛櫎銆?
+  Ultravisor 注销 VM，并回收捐赠Ultravisor 的内存，使其重新可被内核使用。所有注册的 VCPU
+  都被转换回非受保护的。如果先前的一个受保护 VM 已经通过 KVM_PV_ASYNC_CLEANUP_PREPARE 准备好进
+  异步拆除，并且随后没有通过 KVM_PV_ASYNC_CLEANUP_PERFORM 拆除，则它将在本次调用中与当前的受保
+  VM 一起被拆除
 
 KVM_PV_VM_SET_SEC_PARMS
-  灏嗛暅鍍忓ご浠?VM 鍐呭瓨浼犻€掔粰 Ultravisor锛屼互鍑嗗闀滃儚鐨勮В鍖呭拰楠岃瘉銆?
+  将镜像头VM 内存传递给 Ultravisor，以准备镜像的解包和验证
 
 KVM_PV_VM_UNPACK
-  瑙ｅ寘锛堜繚鎶ゅ拰瑙ｅ瘑锛夊姞瀵嗗惎鍔ㄩ暅鍍忕殑涓€椤点€?
+  解包（保护和解密）加密启动镜像的一页
 
 KVM_PV_VM_VERIFY
-  楠岃瘉瑙ｅ寘闀滃儚鐨勫畬鏁存€с€傚彧鏈夊畠鎴愬姛锛屾墠鍏佽 KVM 鍚姩鍙椾繚鎶ょ殑 VCPU銆?
+  验证解包镜像的完整性。只有它成功，才允许 KVM 启动受保护的 VCPU
 
 KVM_PV_INFO
   :Capability: KVM_CAP_S390_PROTECTED_DUMP
 
-  鎻愪緵涓€涓?API锛岄€氳繃瀛愬懡浠ゅ悜鐢ㄦ埛绌洪棿鎻愪緵 Ultravisor 鐩稿叧鏁版嵁銆俵en_max 鏄敤鎴风┖闂寸紦鍐插尯鐨勫ぇ灏忥紝
-  len_written 鏄?KVM 鎸囩ず瀹為檯鍐欏叆璇ョ紦鍐插尯鐨勫瓧鑺傛暟銆傚鏋滃皢鏉ユ坊鍔犳洿澶氬搷搴斿瓧娈碉紝len_written 鍙敤浜?
-  纭畾鏈夋晥瀛楁銆?
+  提供一API，通过子命令向用户空间提供 Ultravisor 相关数据。len_max 是用户空间缓冲区的大小，
+  len_written KVM 指示实际写入该缓冲区的字节数。如果将来添加更多响应字段，len_written 可用
+  确定有效字段
 
 ```
 
@@ -4772,15 +4772,15 @@ KVM_PV_INFO
      };
 
 ```
-**瀛愬懡浠わ細**
+**子命令：**
 
   KVM_PV_INFO_VM
-    姝ゅ瓙鍛戒护涓?PV 瀹夸富鏈烘彁渚涘熀鏈殑 Ultravisor 淇℃伅銆傝繖浜涘€间篃鍙兘浣滀负鏂囦欢瀵煎嚭鍦?sysfs 鍥轰欢 UV
-    鏌ヨ鎺ュ彛涓紝浣嗗湪姝?API 涓▼搴忔洿瀹规槗鑾峰彇銆?
+    此子命令PV 宿主机提供基本的 Ultravisor 信息。这些值也可能作为文件导出sysfs 固件 UV
+    查询接口中，但在API 中程序更容易获取
 
-    inst_calls 鍜?feature_indication 鎴愬憳鎻愪緵宸插畨瑁呯殑 UV 璋冪敤鍜?UV 鐨勫叾浠栫壒鎬ф寚绀恒€?
+    inst_calls feature_indication 成员提供已安装的 UV 调用UV 的其他特性指示
 
-    max_* 鎴愬憳鎻愪緵鍏充簬 PV vCPU銆丳V 瀹㈡埛鏈哄拰 PV 瀹㈡埛鏈哄唴瀛樺ぇ灏忔渶澶у€肩殑淇℃伅銆?
+    max_* 成员提供关于 PV vCPU、PV 客户机和 PV 客户机内存大小最大值的信息
 
 ```
 
@@ -4794,7 +4794,7 @@ KVM_PV_INFO
 
 
   KVM_PV_INFO_DUMP
-    姝ゅ瓙鍛戒护鎻愪緵涓庤浆鍌?PV 瀹㈡埛鏈虹浉鍏崇殑淇℃伅銆?
+    此子命令提供与转PV 客户机相关的信息
 
     ::
 
@@ -4808,7 +4808,7 @@ KVM_PV_INFO
 KVM_PV_DUMP
   :Capability: KVM_CAP_S390_PROTECTED_DUMP
 
-  鎻愪緵涓€涓?API锛屾彁渚涙湁鍔╀簬杞偍鍙椾繚鎶?VM 鐨勮皟鐢ㄣ€?
+  提供一API，提供有助于转储受保VM 的调用
 
 ```
 
@@ -4819,45 +4819,45 @@ KVM_PV_DUMP
       __u64 gaddr;		/* For dump storage state */
     };
 
-  **瀛愬懡浠わ細**
+  **子命令：**
 
   KVM_PV_DUMP_INIT
-    鍒濆鍖栧彈淇濇姢 VM 鐨勮浆鍌ㄨ繃绋嬨€傚鏋滄璋冪敤涓嶆垚鍔燂紝鎵€鏈夊叾浠栧瓙鍛戒护灏嗕互 -EINVAL 澶辫触銆傚鏋?
-    杞偍杩囩▼灏氭湭瀹屾垚锛屾瀛愬懡浠ゅ皢杩斿洖 -EINVAL銆?
+    初始化受保护 VM 的转储过程。如果此调用不成功，所有其他子命令将以 -EINVAL 失败。如
+    转储过程尚未完成，此子命令将返回 -EINVAL
 
-    骞堕潪鎵€鏈?PV vm 閮藉彲浠ヨ杞偍锛屾墍鏈夎€呴渶瑕佸湪 SE 澶翠腑璁剧疆 `dump allowed` PCF 浣?34 浠ュ厑璁歌浆鍌ㄣ€?
+    并非所PV vm 都可以被转储，所有者需要在 SE 头中设置 `dump allowed` PCF 34 以允许转储
 
   KVM_PV_DUMP_CONFIG_STOR_STATE
-     瀛樺偍 `buff_len` 瀛楄妭鐨勮皟鏁达紙tweak锛夌粍浠跺€硷紝浠庣粷瀵瑰鎴锋満鍦板潃锛坄gaddr`锛夋寚瀹氱殑 1MB 鍧楀紑濮嬨€?
-     `buff_len` 闇€瑕佷笌 `conf_dump_storage_state_len` 瀵归綈锛屼笖鑷冲皯 >= dump uv_info 鏁版嵁鎻愪緵鐨?
-     `conf_dump_storage_state_len` 鍊笺€傚嵆浣胯繑鍥炰簡閿欒 rc锛宐uff_user 涔熷彲鑳借鍐欏叆銆備緥濡傦紝濡傛灉鎴戜滑
-     鍦ㄥ啓鍏ョ涓€椤垫暟鎹悗閬囧埌缂洪〉銆?
+     存储 `buff_len` 字节的调整（tweak）组件值，从绝对客户机地址（`gaddr`）指定的 1MB 块开始
+     `buff_len` 需要与 `conf_dump_storage_state_len` 对齐，且至少 >= dump uv_info 数据提供
+     `conf_dump_storage_state_len` 值。即使返回了错误 rc，buff_user 也可能被写入。例如，如果我们
+     在写入第一页数据后遇到缺页
 
   KVM_PV_DUMP_COMPLETE
-    濡傛灉瀛愬懡浠ゆ垚鍔燂紝瀹冨皢瀹屾垚杞偍杩囩▼锛屽苟鍏佽鍐嶆璋冪敤 KVM_PV_DUMP_INIT銆?
+    如果子命令成功，它将完成转储过程，并允许再次调用 KVM_PV_DUMP_INIT
 
-    鎴愬姛鏃讹紝`conf_dump_finalize_len` 瀛楄妭鐨勫畬鎴愭暟鎹皢琚瓨鍌ㄥ埌 `buff_addr`銆傚畬鎴愭暟鎹寘鍚瘑閽ユ淳鐢?
-    绉嶅瓙銆両V銆佽皟鏁撮殢鏈烘暟鍜屽姞瀵嗗瘑閽ワ紝浠ュ強璁よ瘉鏍囩锛屾墍鏈夎繖浜涢兘闇€瑕佸湪浠ュ悗瑙ｅ瘑杞偍鏃朵娇鐢ㄣ€?
+    成功时，`conf_dump_finalize_len` 字节的完成数据将被存储到 `buff_addr`。完成数据包含密钥派
+    种子、IV、调整随机数和加密密钥，以及认证标签，所有这些都需要在以后解密转储时使用
 
 ```
 KVM_PV_ASYNC_CLEANUP_PREPARE
   :Capability: KVM_CAP_S390_PROTECTED_ASYNC_DISABLE
 
-  涓哄綋鍓嶇殑鍙椾繚鎶?VM 鍑嗗寮傛鎷嗛櫎銆傚綋鍓嶅彈淇濇姢 VM 浣跨敤鐨勫ぇ澶氭暟璧勬簮灏嗚鎼佺疆锛屼互渚涘悗缁紓姝ユ媶闄ゃ€傚綋鍓?
-  鍙椾繚鎶?VM 闅忓悗灏嗙珛鍗充綔涓洪潪鍙椾繚鎶ょ殑 VM 鎭㈠鎵ц銆備换浣曟椂鍒绘渶澶氬彧鑳芥湁涓€涓彈淇濇姢 VM 琚噯澶囧ソ杩涜
-  寮傛鎷嗛櫎銆傚鏋滄煇涓彈淇濇姢 VM 宸茬粡鍑嗗濂芥媶闄わ紝鑰屾病鏈夐殢鍚庤皟鐢?KVM_PV_ASYNC_CLEANUP_PERFORM锛屽垯姝?
-  璋冪敤灏嗗け璐ャ€傚湪杩欑鎯呭喌涓嬶紝鐢ㄦ埛绌洪棿杩涚▼搴斿彂鍑轰竴涓甯哥殑 KVM_PV_DISABLE銆傞€氳繃姝よ皟鐢ㄦ悂缃殑璧勬簮
-  闇€瑕侀€氳繃鍚庣画璋冪敤 KVM_PV_ASYNC_CLEANUP_PERFORM 鎴?KVM_PV_DISABLE 鏉ユ竻鐞嗭紝鍚﹀垯瀹冧滑灏嗗湪 KVM 缁堟
-  鏃惰娓呯悊銆備竴鏃︽竻鐞嗗紑濮嬶紝鍗?KVM_PV_ASYNC_CLEANUP_PERFORM 瀹屾垚涔嬪墠锛屽氨鍙互鍐嶆璋冪敤
-  KVM_PV_ASYNC_CLEANUP_PREPARE銆?
+  为当前的受保VM 准备异步拆除。当前受保护 VM 使用的大多数资源将被搁置，以供后续异步拆除。当
+  受保VM 随后将立即作为非受保护的 VM 恢复执行。任何时刻最多只能有一个受保护 VM 被准备好进行
+  异步拆除。如果某个受保护 VM 已经准备好拆除，而没有随后调KVM_PV_ASYNC_CLEANUP_PERFORM，则
+  调用将失败。在这种情况下，用户空间进程应发出一个正常的 KVM_PV_DISABLE。通过此调用搁置的资源
+  需要通过后续调用 KVM_PV_ASYNC_CLEANUP_PERFORM KVM_PV_DISABLE 来清理，否则它们将在 KVM 终止
+  时被清理。一旦清理开始，KVM_PV_ASYNC_CLEANUP_PERFORM 完成之前，就可以再次调用
+  KVM_PV_ASYNC_CLEANUP_PREPARE銆。
 
 KVM_PV_ASYNC_CLEANUP_PERFORM
   :Capability: KVM_CAP_S390_PROTECTED_ASYNC_DISABLE
 
-  鎷嗛櫎鍏堝墠閫氳繃 KVM_PV_ASYNC_CLEANUP_PREPARE 鍑嗗濂芥媶闄ょ殑鍙椾繚鎶?VM銆傛悂缃殑璧勬簮灏嗗湪姝ゅ懡浠ゆ墽琛屾湡闂?
-  琚噴鏀俱€傛 PV 鍛戒护鐞嗘兂鎯呭喌涓嬪簲鐢辩敤鎴风┖闂翠粠鍗曠嫭鐨勭嚎绋嬪彂鍑恒€傚鏋滄敹鍒拌嚧鍛戒俊鍙凤紙鎴栬繘绋嬭嚜鐒剁粓姝級锛?
-  璇ュ懡浠ゅ皢绔嬪嵆缁堟鑰屼笉瀹屾垚锛屾甯哥殑 KVM 鍏抽棴杩囩▼灏嗚礋璐ｆ竻鐞嗘墍鏈夊墿浣欑殑鍙椾繚鎶?VM锛屽寘鎷偅浜涙媶闄よ
-  杩涚▼缁堟涓柇鐨?VM銆?
+  拆除先前通过 KVM_PV_ASYNC_CLEANUP_PREPARE 准备好拆除的受保VM。搁置的资源将在此命令执行期
+  被释放。此 PV 命令理想情况下应由用户空间从单独的线程发出。如果收到致命信号（或进程自然终止）
+  该命令将立即终止而不完成，正常的 KVM 关闭过程将负责清理所有剩余的受保VM，包括那些拆除被
+  进程终止中断VM
 
 ### 4.126 KVM_XEN_HVM_SET_ATTR
 
@@ -4904,56 +4904,56 @@ KVM_PV_ASYNC_CLEANUP_PERFORM
   };
 
 ```
-type 鍊硷細
+type 值：
 
 KVM_XEN_ATTR_TYPE_LONG_MODE
-  灏?VM 鐨?ABI 妯″紡璁剧疆涓?32 浣嶆垨 64 浣嶏紙闀挎ā寮忥級銆傝繖鍐冲畾浜嗘毚闇茬粰 VM 鐨?shared_info 椤电殑甯冨眬銆?
+  VM ABI 模式设置32 位或 64 位（长模式）。这决定了暴露给 VM shared_info 页的布局
 
 KVM_XEN_ATTR_TYPE_SHARED_INFO
-  璁剧疆 Xen shared_info 椤垫墍鍦ㄧ殑瀹㈡埛鏈虹墿鐞嗗抚鍙枫€傛敞鎰忥紝灏界 Xen 灏嗗墠 32 涓?vCPU 鐨?vcpu_info 鏀惧湪
-  shared_info 椤典腑锛屼絾 KVM 涓嶄細鑷姩杩欐牱鍋氾紝鑰屾槸瑕佹眰鍗充娇缁欏畾 vCPU 鐨?vcpu_info 浣嶄簬 shared_info
-  椤典腑鐨?榛樿"浣嶇疆鏃讹紝涔熻鏄惧紡浣跨敤 KVM_XEN_VCPU_ATTR_TYPE_VCPU_INFO 鎴?
-  KVM_XEN_VCPU_ATTR_TYPE_VCPU_INFO_HVA銆傝繖鏄洜涓?KVM 鍙兘涓嶇煡閬撶敤浣?vcpu_info[] 鏁扮粍绱㈠紩鐨?Xen
-  CPU id锛屽洜姝ゅ彲鑳戒笉鐭ラ亾姝ｇ‘鐨勯粯璁や綅缃€?
+  设置 Xen shared_info 页所在的客户机物理帧号。注意，尽管 Xen 将前 32 vCPU vcpu_info 放在
+  shared_info 页中，但 KVM 不会自动这样做，而是要求即使给定 vCPU vcpu_info 位于 shared_info
+  页中默认"位置时，也要显式使用 KVM_XEN_VCPU_ATTR_TYPE_VCPU_INFO 
+  KVM_XEN_VCPU_ATTR_TYPE_VCPU_INFO_HVA。这是因KVM 可能不知道用vcpu_info[] 数组索引Xen
+  CPU id，因此可能不知道正确的默认位置
 
-  娉ㄦ剰锛宻hared_info 椤靛彲鑳借 KVM 鎸佺画鍐欏叆锛涢櫎鍏朵粬鍐呭澶栵紝瀹冨寘鍚敤浜庡悜 Xen 瀹㈡埛鏈烘姇閫掍腑鏂殑浜嬩欢閫氶亾
-  浣嶅浘銆傚畠鍏嶄簬鑴忛〉璺熻釜鏈哄埗 鈥斺€?姣忔鍚戝鎴锋満鎶曢€掍竴涓簨浠堕€氶亾涓柇鏃讹紝KVM 涓嶄細鏄惧紡灏嗚椤垫爣璁颁负鑴忥紒
-  鍥犳锛屽鏋滀换浣?vCPU 涓€鐩村湪杩愯锛屾垨鑰呬换浣曚簨浠堕€氶亾涓柇鍙互琚矾鐢卞埌瀹㈡埛鏈猴紝鐢ㄦ埛绌洪棿搴斿缁堝亣瀹氭寚瀹氱殑
-  GFN 鏄剰鐨勩€?
+  注意，shared_info 页可能被 KVM 持续写入；除其他内容外，它包含用于向 Xen 客户机投递中断的事件通道
+  位图。它免于脏页跟踪机制 —每次向客户机投递一个事件通道中断时，KVM 不会显式将该页标记为脏！
+  因此，如果任vCPU 一直在运行，或者任何事件通道中断可以被路由到客户机，用户空间应始终假定指定的
+  GFN 是脏的
 
-  灏?gfn 璁剧疆涓?KVM_XEN_INVALID_GFN 灏嗙鐢?shared_info 椤点€?
+  gfn 设置KVM_XEN_INVALID_GFN 将禁shared_info 页
 
 KVM_XEN_ATTR_TYPE_SHARED_INFO_HVA
-  濡傛灉鍦?Xen 鑳藉姏涓篃璁剧疆浜?KVM_XEN_HVM_CONFIG_SHARED_INFO_HVA 鏍囧織锛屽垯鍙互浣跨敤姝ゅ睘鎬ф潵璁剧疆
-  shared_info 椤垫墍鍦ㄧ殑鐢ㄦ埛绌洪棿鍦板潃锛屾棤璁哄畠鏄犲皠鍦ㄥ鎴锋満鐗╃悊鍦板潃绌洪棿鐨勪綍澶勶紝璇ュ湴鍧€鍦?VMM 涓缁堟槸
-  鍥哄畾鐨勩€傚簲浼樺厛浣跨敤姝ゅ睘鎬ц€屼笉鏄?KVM_XEN_ATTR_TYPE_SHARED_INFO锛屽洜涓哄畠閬垮厤鍦ㄩ〉琚噸鏂版槧灏勫埌瀹㈡埛鏈?
-  鐗╃悊鍦板潃绌洪棿鏃跺鍐呴儴缂撳瓨杩涜涓嶅繀瑕佺殑澶辨晥銆?
+  如果Xen 能力中也设置KVM_XEN_HVM_CONFIG_SHARED_INFO_HVA 标志，则可以使用此属性来设置
+  shared_info 页所在的用户空间地址，无论它映射在客户机物理地址空间的何处，该地址VMM 中始终是
+  固定的。应优先使用此属性而不KVM_XEN_ATTR_TYPE_SHARED_INFO，因为它避免在页被重新映射到客户
+  物理地址空间时对内部缓存进行不必要的失效
 
-  灏?hva 璁剧疆涓洪浂灏嗙鐢?shared_info 椤点€?
+  hva 设置为零将禁shared_info 页
 
 KVM_XEN_ATTR_TYPE_UPCALL_VECTOR
-  璁剧疆鐢ㄤ簬鎶曢€?Xen 浜嬩欢閫氶亾 upcall 鐨勫紓甯稿悜閲忋€傝繖鏄敱 hypervisor 鐩存帴娉ㄥ叆鐨勩€乂M 鑼冨洿鐨勫悜閲忥紙涓?
-  閫氳繃鏈湴 APIC锛夛紝閫氬父鐢卞鎴锋満閫氳繃 HVM_PARAM_CALLBACK_IRQ 閰嶇疆銆傚彲浠ラ€氳繃灏嗗叾璁剧疆涓洪浂鏉ュ啀娆＄鐢?
-  锛堜緥濡傚浜庡鎴锋満 SHUTDOWN_soft_reset锛夈€?
+  设置用于投Xen 事件通道 upcall 的异常向量。这是由 hypervisor 直接注入的、VM 范围的向量（
+  通过本地 APIC），通常由客户机通过 HVM_PARAM_CALLBACK_IRQ 配置。可以通过将其设置为零来再次禁
+  （例如对于客户机 SHUTDOWN_soft_reset）
 
 KVM_XEN_ATTR_TYPE_EVTCHN
-  褰?KVM_CAP_XEN_HVM ioctl 鎸囩ず鏀寔 KVM_XEN_HVM_CONFIG_EVTCHN_SEND 鐗规€ф椂锛屾灞炴€у彲鐢ㄣ€傚畠閰嶇疆
-  涓€涓嚭绔欑鍙ｅ彿锛岀敤浜庢嫤鎴潵鑷鎴锋満鐨?EVTCHNOP_send 璇锋眰銆傜粰瀹氱殑鍙戦€佺鍙ｅ彿鍙互琚畾鍚戝洖瀹㈡埛鏈?
-  涓婃寚瀹氱殑 vCPU锛堥€氳繃 APIC ID锛?绔彛/浼樺厛绾э紝鎴栬Е鍙?eventfd 涓婄殑浜嬩欢銆傚彲浠ラ€氳繃鍦ㄥ悗缁皟鐢ㄤ腑璁剧疆
-  KVM_XEN_EVTCHN_UPDATE 鏉ユ洿鏀?vCPU 鍜屼紭鍏堢骇锛屼絾瀵逛簬缁欏畾鐨勫彂閫佺鍙ｏ紝鍏朵粬瀛楁涓嶈兘鏇存敼銆傞€氳繃鍦?
-  flags 瀛楁涓娇鐢?KVM_XEN_EVTCHN_DEASSIGN 鏉ョЩ闄ょ鍙ｆ槧灏勩€傚湪 flags 瀛楁涓紶鍏?KVM_XEN_EVTCHN_RESET
-  浼氱Щ闄ゅ鎵€鏈夊嚭绔欎簨浠堕€氶亾鐨勬嫤鎴€俧lags 瀛楁鐨勫€兼槸浜掓枼鐨勶紝涓嶈兘缁勫悎鎴愪綅鎺╃爜銆?
+  KVM_CAP_XEN_HVM ioctl 指示支持 KVM_XEN_HVM_CONFIG_EVTCHN_SEND 特性时，此属性可用。它配置
+  一个出站端口号，用于拦截来自客户机EVTCHNOP_send 请求。给定的发送端口号可以被定向回客户
+  上指定的 vCPU（通过 APIC ID端口/优先级，或触eventfd 上的事件。可以通过在后续调用中设置
+  KVM_XEN_EVTCHN_UPDATE 来更vCPU 和优先级，但对于给定的发送端口，其他字段不能更改。通过
+  flags 字段中使KVM_XEN_EVTCHN_DEASSIGN 来移除端口映射。在 flags 字段中传KVM_XEN_EVTCHN_RESET
+  会移除对所有出站事件通道的拦截。flags 字段的值是互斥的，不能组合成位掩码
 
 KVM_XEN_ATTR_TYPE_XEN_VERSION
-  褰?KVM_CAP_XEN_HVM ioctl 鎸囩ず鏀寔 KVM_XEN_HVM_CONFIG_EVTCHN_SEND 鐗规€ф椂锛屾灞炴€у彲鐢ㄣ€傚畠閰嶇疆
-  瀹㈡埛鏈鸿皟鐢?XENVER_version 鏃惰繑鍥炵殑 32 浣嶇増鏈爜锛涢€氬父鏄紙XEN_MAJOR << 16 | XEN_MINOR锛夈€侾V Xen
-  瀹㈡埛鏈洪€氬父浼氫娇鐢ㄥ畠浣滀负铏氭嫙 hypercall 鏉ヨЕ鍙戜簨浠堕€氶亾鎶曢€掞紝鍥犳鍦ㄥ唴鏍镐腑鍝嶅簲鑰屼笉閫€鍑哄埌鐢ㄦ埛绌洪棿鏄?
-  鏈夌泭鐨勩€?
+  KVM_CAP_XEN_HVM ioctl 指示支持 KVM_XEN_HVM_CONFIG_EVTCHN_SEND 特性时，此属性可用。它配置
+  客户机调XENVER_version 时返回的 32 位版本码；通常是（XEN_MAJOR << 16 | XEN_MINOR）。PV Xen
+  客户机通常会使用它作为虚拟 hypercall 来触发事件通道投递，因此在内核中响应而不退出到用户空间
+  有益的
 
 KVM_XEN_ATTR_TYPE_RUNSTATE_UPDATE_FLAG
-  褰?KVM_CAP_XEN_HVM ioctl 鎸囩ず鏀寔 KVM_XEN_HVM_CONFIG_RUNSTATE_UPDATE_FLAG 鏃讹紝姝ゅ睘鎬у彲鐢ㄣ€傚畠
-  鍚敤 XEN_RUNSTATE_UPDATE 鏍囧織锛岃鏍囧織鍏佽瀹㈡埛鏈?vCPU 瀹夊叏鍦拌鍙栧叾浠?vCPU 鐨?vcpu_runstate_info銆?
-  Xen 瀹㈡埛鏈洪€氳繃 HYPERVISOR_vm_assist hypercall 鐨?VMASST_TYPE_runstate_update_flag 鏉ュ惎鐢ㄦ鐗规€с€?
+  KVM_CAP_XEN_HVM ioctl 指示支持 KVM_XEN_HVM_CONFIG_RUNSTATE_UPDATE_FLAG 时，此属性可用。它
+  启用 XEN_RUNSTATE_UPDATE 标志，该标志允许客户vCPU 安全地读取其vCPU vcpu_runstate_info
+  Xen 客户机通过 HYPERVISOR_vm_assist hypercall VMASST_TYPE_runstate_update_flag 来启用此特性
 
 ### 4.127 KVM_XEN_HVM_GET_ATTR
 
@@ -4964,8 +4964,8 @@ KVM_XEN_ATTR_TYPE_RUNSTATE_UPDATE_FLAG
 :Parameters: struct kvm_xen_hvm_attr
 :Returns: 0 on success, < 0 on error
 
-鍏佽璇诲彇 Xen VM 灞炴€с€傚叧浜庣粨鏋勪綋鍜岀被鍨嬶紝璇峰弬瑙佷笂闈㈢殑 KVM_XEN_HVM_SET_ATTR銆侹VM_XEN_ATTR_TYPE_EVTCHN
-灞炴€т笉鑳借璇诲彇銆?
+允许读取 Xen VM 属性。关于结构体和类型，请参见上面的 KVM_XEN_HVM_SET_ATTR。KVM_XEN_ATTR_TYPE_EVTCHN
+属性不能被读取
 ### 4.128 KVM_XEN_VCPU_SET_ATTR
 
 
@@ -5002,57 +5002,57 @@ KVM_XEN_ATTR_TYPE_RUNSTATE_UPDATE_FLAG
   };
 
 ```
-type 鍊硷細
+type 值：
 
 KVM_XEN_VCPU_ATTR_TYPE_VCPU_INFO
-  璁剧疆缁欏畾 vCPU 鐨?vcpu_info 鐨勫鎴锋満鐗╃悊鍦板潃銆備笌 VM 鐨?shared_info 椤典竴鏍凤紝濡傛灉鍚敤浜嗕簨浠堕€氶亾
-  涓柇鎶曢€掞紝鐩稿簲椤靛彲鑳介殢鏃惰寮勮剰锛屽洜姝ょ敤鎴风┖闂村簲濮嬬粓鍋囪璇ラ〉鏄剰鐨勶紝鑰屼笉渚濊禆浜庤剰椤佃褰曘€傚皢 gpa
-  璁剧疆涓?KVM_XEN_INVALID_GPA 灏嗙鐢?vcpu_info銆?
+  设置给定 vCPU vcpu_info 的客户机物理地址。与 VM shared_info 页一样，如果启用了事件通道
+  中断投递，相应页可能随时被弄脏，因此用户空间应始终假设该页是脏的，而不依赖于脏页记录。将 gpa
+  设置KVM_XEN_INVALID_GPA 将禁vcpu_info
 
 KVM_XEN_VCPU_ATTR_TYPE_VCPU_INFO_HVA
-  濡傛灉鍦?Xen 鑳藉姏涓篃璁剧疆浜?KVM_XEN_HVM_CONFIG_SHARED_INFO_HVA 鏍囧織锛屽垯鍙互浣跨敤姝ゅ睘鎬ф潵璁剧疆
-  缁欏畾 vCPU 鐨?vcpu_info 鐨勭敤鎴风┖闂村湴鍧€銆傚畠鍙簲鍦?vcpu_info 浣嶄簬 shared_info 椤典腑鐨?榛樿"浣嶇疆
-  鏃朵娇鐢ㄣ€傚湪杩欑鎯呭喌涓嬶紝鍙互瀹夊叏鍦板亣璁剧敤鎴风┖闂村湴鍧€涓嶄細鏀瑰彉锛屽洜涓?shared_info 椤垫槸瀹㈡埛鏈哄唴瀛樹笂鐨?
-  涓€涓鐩栧眰锛坥verlay锛夛紝鏃犺瀹冩槧灏勫湪瀹㈡埛鏈虹墿鐞嗗湴鍧€绌洪棿鐨勪綍澶勶紝閮戒繚鎸佸湪鍥哄畾鐨勫涓绘満鍦板潃锛屽洜姝ゅ鏋?
-  瀹㈡埛鏈哄唴瀛樺竷灞€琚慨鏀癸紝鍙互閬垮厤瀵瑰唴閮ㄧ紦瀛樿繘琛屼笉蹇呰鐨勫け鏁堛€傚鏋?vcpu_info 涓嶄綅浜?榛樿"浣嶇疆锛屽垯
-  涓嶈兘淇濊瘉瀹冧繚鎸佸湪鐩稿悓鐨勫涓绘満鍦板潃锛屽洜姝ら渶瑕佷笂杩扮殑缂撳瓨澶辨晥銆?
+  如果Xen 能力中也设置KVM_XEN_HVM_CONFIG_SHARED_INFO_HVA 标志，则可以使用此属性来设置
+  给定 vCPU vcpu_info 的用户空间地址。它只应vcpu_info 位于 shared_info 页中默认"位置
+  时使用。在这种情况下，可以安全地假设用户空间地址不会改变，因shared_info 页是客户机内存上
+  一个覆盖层（overlay），无论它映射在客户机物理地址空间的何处，都保持在固定的宿主机地址，因此如
+  客户机内存布局被修改，可以避免对内部缓存进行不必要的失效。如vcpu_info 不位默认"位置，则
+  不能保证它保持在相同的宿主机地址，因此需要上述的缓存失效
 
 KVM_XEN_VCPU_ATTR_TYPE_VCPU_TIME_INFO
-  璁剧疆缁欏畾 vCPU 鐨勯澶?pvclock 缁撴瀯鐨勫鎴锋満鐗╃悊鍦板潃銆傝繖閫氬父鐢ㄤ簬瀹㈡埛鏈?vsyscall 鏀寔銆傚皢 gpa 璁剧疆
-  涓?KVM_XEN_INVALID_GPA 灏嗙鐢ㄨ缁撴瀯銆?
+  设置给定 vCPU 的额pvclock 结构的客户机物理地址。这通常用于客户vsyscall 支持。将 gpa 设置
+  KVM_XEN_INVALID_GPA 将禁用该结构
 
 KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_ADDR
-  璁剧疆缁欏畾 vCPU 鐨?vcpu_runstate_info 鐨勫鎴锋満鐗╃悊鍦板潃銆俋en 瀹㈡埛鏈洪€氳繃瀹冩潵璺熻釜 steal time 绛?CPU
-  鐘舵€併€傚皢 gpa 璁剧疆涓?KVM_XEN_INVALID_GPA 灏嗙鐢?runstate 鍖哄煙銆?
+  设置给定 vCPU vcpu_runstate_info 的客户机物理地址。Xen 客户机通过它来跟踪 steal time CPU
+  状态。将 gpa 设置KVM_XEN_INVALID_GPA 将禁runstate 区域
 
 KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_CURRENT
-  浠庣粨鏋勪綋鐨?.u.runstate.state 鎴愬憳璁剧疆缁欏畾 vCPU 鐨?runstate锛圧UNSTATE_running/_runnable/_blocked/
-  _offline锛夈€侹VM 鑷姩璁＄畻 running 鍜?runnable 鏃堕棿锛屼絾 blocked 鍜?offline 鐘舵€佸彧鑳芥樉寮忚繘鍏ャ€?
+  从结构体.u.runstate.state 成员设置给定 vCPU runstate（RUNSTATE_running/_runnable/_blocked/
+  _offline）。KVM 自动计算 running runnable 时间，但 blocked offline 状态只能显式进入
 
 KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_DATA
-  浠庣粨鏋勪綋鐨?.u.runstate 鎴愬憳璁剧疆 vCPU runstate 鏁版嵁鐨勬墍鏈夊瓧娈碉紝鍖呮嫭褰撳墠 runstate銆俿tate_entry_time
-  蹇呴』绛変簬鍏朵粬鍥涗釜鏃堕棿鐨勬€诲拰銆?
+  从结构体.u.runstate 成员设置 vCPU runstate 数据的所有字段，包括当前 runstate。state_entry_time
+  必须等于其他四个时间的总和
 
 KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_ADJUST
-  杩欏皢缁撴瀯浣撶殑 .u.runstate 鎴愬憳鐨勫唴瀹?*鍔?*鍒扮粰瀹?vCPU 鐨?runstate 鏁版嵁鐨勭浉搴旀垚鍛樹笂锛屼粠鑰屽厑璁?
-  瀵?runstate 鏃堕棿杩涜鍘熷瓙璋冩暣銆傚 state_entry_time 鐨勮皟鏁村繀椤荤瓑浜庡鍏朵粬鍥涗釜鏃堕棿鐨勮皟鏁翠箣鍜屻€?
-  state 瀛楁蹇呴』璁剧疆涓?-1锛屾垨璁剧疆涓烘湁鏁堢殑 runstate 鍊硷紙RUNSTATE_running銆丷UNSTATE_runnable銆?
-  RUNSTATE_blocked 鎴?RUNSTATE_offline锛夛紝浠ュ皢褰撳墠璁″叆鐘舵€佽缃负璋冩暣鍚庣殑 state_entry_time 鏃剁殑鐘舵€併€?
+  这将结构体的 .u.runstate 成员的内**到给vCPU runstate 数据的相应成员上，从而允
+  runstate 时间进行原子调整。对 state_entry_time 的调整必须等于对其他四个时间的调整之和
+  state 字段必须设置-1，或设置为有效的 runstate 值（RUNSTATE_running、RUNSTATE_runnable
+  RUNSTATE_blocked RUNSTATE_offline），以将当前计入状态设置为调整后的 state_entry_time 时的状态
 
 KVM_XEN_VCPU_ATTR_TYPE_VCPU_ID
-  褰?KVM_CAP_XEN_HVM ioctl 鎸囩ず鏀寔 KVM_XEN_HVM_CONFIG_EVTCHN_SEND 鐗规€ф椂锛屾灞炴€у彲鐢ㄣ€傚畠璁剧疆
-  缁欏畾 vCPU 鐨?Xen vCPU ID锛屼互鍏佽涓庡畾鏃跺櫒鐩稿叧鐨?VCPU 鎿嶄綔琚?KVM 鎷︽埅銆?
+  KVM_CAP_XEN_HVM ioctl 指示支持 KVM_XEN_HVM_CONFIG_EVTCHN_SEND 特性时，此属性可用。它设置
+  给定 vCPU Xen vCPU ID，以允许与定时器相关VCPU 操作KVM 拦截
 
 KVM_XEN_VCPU_ATTR_TYPE_TIMER
-  褰?KVM_CAP_XEN_HVM ioctl 鎸囩ず鏀寔 KVM_XEN_HVM_CONFIG_EVTCHN_SEND 鐗规€ф椂锛屾灞炴€у彲鐢ㄣ€傚畠璁剧疆
-  璇?vCPU 鐨?VIRQ_TIMER 鐨勪簨浠堕€氶亾绔彛/浼樺厛绾э紝骞跺厑璁镐繚瀛?鎭㈠涓€涓寕璧风殑瀹氭椂鍣ㄣ€傚皢瀹氭椂鍣ㄧ鍙?
-  璁剧疆涓洪浂浼氱鐢ㄥ唴鏍稿璇ュ崟娆¤Е鍙戯紙singleshot锛夊畾鏃跺櫒鐨勫鐞嗐€?
+  KVM_CAP_XEN_HVM ioctl 指示支持 KVM_XEN_HVM_CONFIG_EVTCHN_SEND 特性时，此属性可用。它设置
+  vCPU VIRQ_TIMER 的事件通道端口/优先级，并允许保恢复一个挂起的定时器。将定时器端
+  设置为零会禁用内核对该单次触发（singleshot）定时器的处理
 
 KVM_XEN_VCPU_ATTR_TYPE_UPCALL_VECTOR
-  褰?KVM_CAP_XEN_HVM ioctl 鎸囩ず鏀寔 KVM_XEN_HVM_CONFIG_EVTCHN_SEND 鐗规€ф椂锛屾灞炴€у彲鐢ㄣ€傚畠璁剧疆
-  姣?vCPU 鐨勬湰鍦?APIC upcall 鍚戦噺锛岀敱 Xen 瀹㈡埛鏈洪€氳繃 HVMOP_set_evtchn_upcall_vector hypercall 閰嶇疆銆?
-  杩欓€氬父鐢?Windows 瀹㈡埛鏈轰娇鐢紝骞朵笖涓庨€氳繃 HVM_PARAM_CALLBACK_IRQ 閰嶇疆鐨?VM 鑼冨洿鐨?upcall 鍚戦噺涓嶅悓銆?
-  閫氳繃灏嗗悜閲忚缃负闆舵潵绂佺敤瀹冦€?
+  KVM_CAP_XEN_HVM ioctl 指示支持 KVM_XEN_HVM_CONFIG_EVTCHN_SEND 特性时，此属性可用。它设置
+  vCPU 的本APIC upcall 向量，由 Xen 客户机通过 HVMOP_set_evtchn_upcall_vector hypercall 配置
+  这通常Windows 客户机使用，并且与通过 HVM_PARAM_CALLBACK_IRQ 配置VM 范围upcall 向量不同
+  通过将向量设置为零来禁用它
 
 
 ### 4.129 KVM_XEN_VCPU_GET_ATTR
@@ -5064,9 +5064,9 @@ KVM_XEN_VCPU_ATTR_TYPE_UPCALL_VECTOR
 :Parameters: struct kvm_xen_vcpu_attr
 :Returns: 0 on success, -1 on error
 
-鍏佽璇诲彇 Xen vCPU 灞炴€с€傚叧浜庣粨鏋勪綋鍜岀被鍨嬶紝璇峰弬瑙佷笂闈㈢殑 KVM_XEN_VCPU_SET_ATTR銆?
+允许读取 Xen vCPU 属性。关于结构体和类型，请参见上面的 KVM_XEN_VCPU_SET_ATTR
 
-KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_ADJUST 绫诲瀷涓嶈兘涓?KVM_XEN_VCPU_GET_ATTR ioctl 涓€璧蜂娇鐢ㄣ€?
+KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_ADJUST 类型不能KVM_XEN_VCPU_GET_ATTR ioctl 一起使用
 
 ### 4.130 KVM_ARM_MTE_COPY_TAGS
 
@@ -5089,16 +5089,16 @@ KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_ADJUST 绫诲瀷涓嶈兘涓?KVM_XEN_VCPU_GET_AT
   };
 
 ```
-鍦ㄥ鎴锋満鏍囩鍐呭瓨涔嬮棿澶嶅埗鍐呭瓨鏍囪鎵╁睍锛圡TE锛夋爣绛俱€俙guest_ipa` 鍜?`length` 瀛楁蹇呴』涓?`PAGE_SIZE`
-瀵归綈銆俙length` 涓嶅緱澶т簬 2^31 - PAGE_SIZE 瀛楄妭銆俙addr` 瀛楁蹇呴』鎸囧悜涓€涓紦鍐插尯锛屾爣绛惧皢琚鍒惰繘鍑哄叾涓€?
+在客户机标签内存之间复制内存标记扩展（MTE）标签。`guest_ipa` `length` 字段必须`PAGE_SIZE`
+对齐。`length` 不得大于 2^31 - PAGE_SIZE 字节。`addr` 字段必须指向一个缓冲区，标签将被复制进出其中
 
-`flags` 鎸囧畾澶嶅埗鐨勬柟鍚戯紝鍙互鏄?`KVM_ARM_TAGS_TO_GUEST` 鎴?`KVM_ARM_TAGS_FROM_GUEST`銆?
+`flags` 指定复制的方向，可以`KVM_ARM_TAGS_TO_GUEST` `KVM_ARM_TAGS_FROM_GUEST`
 
-鐢ㄤ簬瀛樺偍鏍囩鐨勭紦鍐插尯澶у皬涓?`(length / 16)` 瀛楄妭锛圡TE 涓殑绮掑害涓?16 瀛楄妭锛夈€傛瘡涓瓧鑺傚寘鍚竴涓?
-鏍囩鍊笺€傝繖涓?`PTRACE_PEEKMTETAGS` 鍜?`PTRACE_POKEMTETAGS` 鐨勬牸寮忓尮閰嶃€?
+用于存储标签的缓冲区大小`(length / 16)` 字节（MTE 中的粒度16 字节）。每个字节包含一
+标签值。这`PTRACE_PEEKMTETAGS` `PTRACE_POKEMTETAGS` 的格式匹配
 
-濡傛灉鍦ㄥ鍒朵换浣曟暟鎹箣鍓嶅彂鐢熼敊璇紝鍒欒繑鍥炶礋鐨勯敊璇爜銆傚鏋滃湪鍙戠敓閿欒涔嬪墠宸插鍒朵簡涓€浜涙爣绛撅紝鍒欒繑鍥?
-鎴愬姛澶嶅埗鐨勫瓧鑺傛暟銆傚鏋滆皟鐢ㄦ垚鍔熷畬鎴愶紝鍒欒繑鍥?`length`銆?
+如果在复制任何数据之前发生错误，则返回负的错误码。如果在发生错误之前已复制了一些标签，则返
+成功复制的字节数。如果调用成功完成，则返`length`
 
 ### 4.131 KVM_GET_SREGS2
 
@@ -5109,7 +5109,7 @@ KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_ADJUST 绫诲瀷涓嶈兘涓?KVM_XEN_VCPU_GET_AT
 :Parameters: struct kvm_sregs2 (out)
 :Returns: 0 on success, -1 on error
 
-浠?vcpu 璇诲彇鐗规畩瀵勫瓨鍣ㄣ€傛 ioctl锛堝湪鍙楁敮鎸佹椂锛夊彇浠?KVM_GET_SREGS銆?
+vcpu 读取特殊寄存器。此 ioctl（在受支持时）取KVM_GET_SREGS
 
 ```
 
@@ -5126,11 +5126,11 @@ KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_ADJUST 绫诲瀷涓嶈兘涓?KVM_XEN_VCPU_GET_AT
         };
 
 ```
-`kvm_sregs2` 鐨?flags 鍊硷細
+`kvm_sregs2` flags 值：
 
 `KVM_SREGS2_FLAGS_PDPTRS_VALID`
 
-  鎸囩ず缁撴瀯浣撳寘鍚湁鏁堢殑 PDPTR 鍊笺€?
+  指示结构体包含有效的 PDPTR 值
 
 
 ### 4.132 KVM_SET_SREGS2
@@ -5142,7 +5142,7 @@ KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_ADJUST 绫诲瀷涓嶈兘涓?KVM_XEN_VCPU_GET_AT
 :Parameters: struct kvm_sregs2 (in)
 :Returns: 0 on success, -1 on error
 
-灏嗙壒娈婂瘎瀛樺櫒鍐欏叆 vcpu銆傛暟鎹粨鏋勮鍙傝 KVM_GET_SREGS2銆傛 ioctl锛堝湪鍙楁敮鎸佹椂锛夊彇浠?KVM_SET_SREGS銆?
+将特殊寄存器写入 vcpu。数据结构请参见 KVM_GET_SREGS2。此 ioctl（在受支持时）取KVM_SET_SREGS
 
 ### 4.133 KVM_GET_STATS_FD
 
@@ -5153,15 +5153,15 @@ KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_ADJUST 绫诲瀷涓嶈兘涓?KVM_XEN_VCPU_GET_AT
 :Parameters: none
 :Returns: statistics file descriptor on success, < 0 on error
 
-閿欒鐮侊細
+错误码：
 
   ======     ======================================================
-  ENOMEM     濡傛灉鐢变簬鍐呭瓨涓嶈冻鑰屾棤娉曞垱寤?fd
-  EMFILE     濡傛灉鎵撳紑鐨勬枃浠舵暟瓒呰繃浜嗛檺鍒?
+  ENOMEM     如果由于内存不足而无法创fd
+  EMFILE     如果打开的文件数超过了限
   ======     ======================================================
 
-杩斿洖鐨勬枃浠舵弿杩扮鍙敤浜庝互浜岃繘鍒舵牸寮忚鍙?VM/vCPU 缁熻鏁版嵁銆傛枃浠舵弿杩扮涓殑鏁版嵁鐢卞洓涓潡缁勬垚锛岀粍缁?
-濡備笅锛?
+返回的文件描述符可用于以二进制格式读VM/vCPU 统计数据。文件描述符中的数据由四个块组成，组
+如下
 
 +-------------+
 |   Header    |
@@ -5173,13 +5173,13 @@ KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_ADJUST 绫诲瀷涓嶈兘涓?KVM_XEN_VCPU_GET_AT
 | Stats Data  |
 +-------------+
 
-闄や簡浠庡亸绉?0 寮€濮嬬殑澶撮儴涔嬪锛岃娉ㄦ剰锛屼笉淇濊瘉杩欏洓涓潡鏄浉閭荤殑鎴栨寜涓婅堪椤哄簭鎺掑垪锛沬d銆乨escriptors 鍜?
-data 鍧楃殑鍋忕Щ閲忓湪澶撮儴涓壘鍒般€備絾鏄紝鎵€鏈夊洓涓潡閮藉湪鏂囦欢涓寜 64 浣嶅亸绉诲榻愶紝骞朵笖瀹冧滑涓嶉噸鍙犮€?
+除了从偏0 开始的头部之外，请注意，不保证这四个块是相邻的或按上述顺序排列；id、descriptors 
+data 块的偏移量在头部中找到。但是，所有四个块都在文件中按 64 位偏移对齐，并且它们不重叠
 
-闄?data 鍧椾箣澶栫殑鎵€鏈夊潡閮芥槸涓嶅彲鍙樼殑銆傜敤鎴风┖闂村湪鑾峰彇鏂囦欢鎻忚堪绗﹀悗鍙兘璇诲彇瀹冧滑涓€娆★紝鐒跺悗浣跨敤 `pread`
-鎴?`lseek` 閲嶅璇诲彇缁熻鏁版嵁銆?
+data 块之外的所有块都是不可变的。用户空间在获取文件描述符后只能读取它们一次，然后使用 `pread`
+`lseek` 重复读取统计数据
 
-鎵€鏈夋暟鎹噰鐢ㄧ郴缁熷瓧鑺傚簭銆?
+所有数据采用系统字节序
 
 ```
 
@@ -5193,25 +5193,25 @@ data 鍧楃殑鍋忕Щ閲忓湪澶撮儴涓壘鍒般€備絾鏄紝鎵€�
 	};
 
 ```
-`flags` 瀛楁鐩墠鏈浣跨敤銆傚畠鎬绘槸琚鍙栦负 0銆?
+`flags` 字段目前未被使用。它总是被读取为 0
 
-`name_size` 瀛楁鏄粺璁℃暟鎹悕绉板瓧绗︿覆鐨勫ぇ灏忥紙浠ュ瓧鑺備负鍗曚綅锛屽寘鎷粨灏剧殑 '\0'锛夛紝璇ュ瓧绗︿覆鍖呭惈鍦?
-"id string" 鍧椾腑锛屽苟闄勫姞鍦ㄦ瘡涓弿杩扮鐨勬湯灏俱€?
+`name_size` 字段是统计数据名称字符串的大小（以字节为单位，包括结尾的 '\0'），该字符串包含
+"id string" 块中，并附加在每个描述符的末尾
 
-`num_desc` 瀛楁鏄弿杩扮鍧椾腑鍖呭惈鐨勬弿杩扮鏁伴噺銆傦紙data 鍧椾腑鐨勫疄闄呭€兼暟閲忓彲鑳芥洿澶э紝鍥犱负姣忎釜鎻忚堪绗?
-鍙兘鍖呭惈澶氫釜鍊硷級銆?
+`num_desc` 字段是描述符块中包含的描述符数量。（data 块中的实际值数量可能更大，因为每个描述
+可能包含多个值）
 
-`id_offset` 瀛楁鏄?id 瀛楃涓茬浉瀵逛簬鏂囦欢鎻忚堪绗︽墍鎸囩ず鐨勬枃浠惰捣濮嬩綅缃殑鍋忕Щ閲忋€傚畠鏄?8 鐨勫€嶆暟銆?
+`id_offset` 字段id 字符串相对于文件描述符所指示的文件起始位置的偏移量。它8 的倍数
 
-`desc_offset` 瀛楁鏄?Descriptors 鍧楃浉瀵逛簬鏂囦欢鎻忚堪绗︽墍鎸囩ず鐨勬枃浠惰捣濮嬩綅缃殑鍋忕Щ閲忋€傚畠鏄?8 鐨勫€嶆暟銆?
+`desc_offset` 字段Descriptors 块相对于文件描述符所指示的文件起始位置的偏移量。它8 的倍数
 
-`data_offset` 瀛楁鏄?Stats Data 鍧楃浉瀵逛簬鏂囦欢鎻忚堪绗︽墍鎸囩ず鐨勬枃浠惰捣濮嬩綅缃殑鍋忕Щ閲忋€傚畠鏄?8 鐨勫€嶆暟銆?
+`data_offset` 字段Stats Data 块相对于文件描述符所指示的文件起始位置的偏移量。它8 的倍数
 
-id 瀛楃涓插潡鍖呭惈涓€涓瓧绗︿覆锛岀敤浜庢爣璇嗚皟鐢?KVM_GET_STATS_FD 鐨勬枃浠舵弿杩扮銆傝鍧楃殑澶у皬锛堝寘鎷粨灏剧殑
-`'\0'`锛夌敱澶撮儴涓殑 `name_size` 瀛楁鎸囩ず銆?
+id 字符串块包含一个字符串，用于标识调KVM_GET_STATS_FD 的文件描述符。该块的大小（包括结尾的
+`'\0'`）由头部中的 `name_size` 字段指示
 
-鎻忚堪绗﹀潡鍙渶瑕佸湪鏂囦欢鎻忚堪绗︾殑鐢熷懡鍛ㄦ湡鍐呰鍙栦竴娆★紝瀹冨寘鍚竴涓?`struct kvm_stats_desc` 搴忓垪锛屾瘡涓?
-鍚庨潰璺熺潃涓€涓ぇ灏忎负 `name_size` 鐨勫瓧绗︿覆銆?
+描述符块只需要在文件描述符的生命周期内读取一次，它包含一`struct kvm_stats_desc` 序列，每
+后面跟着一个大小为 `name_size` 的字符串
 ```
 
 	#define KVM_STATS_TYPE_SHIFT		0
@@ -5248,66 +5248,66 @@ id 瀛楃涓插潡鍖呭惈涓€涓瓧绗︿覆锛岀敤浜庢爣璇嗚�
 	};
 
 ```
-`flags` 瀛楁鍖呭惈姝ゆ弿杩扮鎵€鎻忚堪鐨勭粺璁℃暟鎹暟鎹殑绫诲瀷鍜屽崟浣嶃€傚叾瀛楄妭搴忎负 CPU 鍘熺敓瀛楄妭搴忋€傛敮鎸佷互涓?
-鏍囧織锛?
+`flags` 字段包含此描述符所描述的统计数据数据的类型和单位。其字节序为 CPU 原生字节序。支持以
+标志
 
-`flags` 鐨勪綅 0-3 缂栫爜绫诲瀷锛?
+`flags` 的位 0-3 编码类型
 
   - `KVM_STATS_TYPE_CUMULATIVE`
-    缁熻鎶ュ憡涓€涓疮绉鏁般€傛暟鎹殑鍊煎彧鑳藉鍔犮€侹VM 涓娇鐢ㄧ殑澶у鏁拌鏁板櫒閮芥槸杩欑绫诲瀷銆傝绫诲瀷瀵瑰簲鐨?
-    `size` 瀛楁濮嬬粓涓?1銆傛墍鏈夌疮绉粺璁℃暟鎹兘鏄/鍐欑殑銆?
+    统计报告一个累积计数。数据的值只能增加。KVM 中使用的大多数计数器都是这种类型。该类型对应
+    `size` 字段始终1。所有累积统计数据都是读/写的
   - `KVM_STATS_TYPE_INSTANT`
-    缁熻鎶ュ憡涓€涓灛鏃跺€笺€傚叾鍊煎彲浠ュ鍔犳垨鍑忓皯銆傝繖绉嶇被鍨嬮€氬父鐢ㄤ簬娴嬮噺鏌愪簺璧勬簮锛屼緥濡傝剰椤垫暟銆佸ぇ椤垫暟绛夈€?
-    鎵€鏈夌灛鏃剁粺璁￠兘鏄彧璇荤殑銆傝绫诲瀷瀵瑰簲鐨?`size` 瀛楁濮嬬粓涓?1銆?
+    统计报告一个瞬时值。其值可以增加或减少。这种类型通常用于测量某些资源，例如脏页数、大页数等
+    所有瞬时统计都是只读的。该类型对应`size` 字段始终1
   - `KVM_STATS_TYPE_PEAK`
-    缁熻鏁版嵁鎶ュ憡涓€涓嘲鍊硷紝渚嬪鍝堝笇琛ㄦ《涓殑鏈€澶ч」鏁般€佹渶闀跨殑绛夊緟鏃堕棿绛夈€傛暟鎹殑鍊煎彧鑳藉鍔犮€傝绫诲瀷
-    瀵瑰簲鐨?`size` 瀛楁濮嬬粓涓?1銆?
+    统计数据报告一个峰值，例如哈希表桶中的最大项数、最长的等待时间等。数据的值只能增加。该类型
+    对应`size` 字段始终1
   - `KVM_STATS_TYPE_LINEAR_HIST`
-    缁熻鎶ュ憡涓虹嚎鎬х洿鏂瑰浘銆傛《鐨勬暟閲忕敱 `size` 瀛楁鎸囧畾銆傛《鐨勫ぇ灏忕敱 `hist_param` 瀛楁鎸囧畾銆傜 N 涓?
-    妗讹紙1 <= N < `size`锛夌殑鑼冨洿鏄?[`hist_param`**(N-1), `hist_param`**N)锛岃€屾渶鍚庝竴涓《鐨勮寖鍥存槸
-    [`hist_param`*(`size`-1), +INF)銆傦紙+INF 琛ㄧず姝ｆ棤绌峰€笺€傦級
+    统计报告为线性直方图。桶的数量由 `size` 字段指定。桶的大小由 `hist_param` 字段指定。第 N 
+    桶（1 <= N < `size`）的范围[`hist_param`**(N-1), `hist_param`**N)，而最后一个桶的范围是
+    [`hist_param`*(`size`-1), +INF)。（+INF 表示正无穷值。）
   - `KVM_STATS_TYPE_LOG_HIST`
-    缁熻鎶ュ憡涓哄鏁扮洿鏂瑰浘銆傛《鐨勬暟閲忕敱 `size` 瀛楁鎸囧畾銆傜涓€涓《鐨勮寖鍥存槸 [0, 1)锛岃€屾渶鍚庝竴涓《鐨勮寖鍥?
-    鏄?[pow(2, `size`-2), +INF)銆傚惁鍒欙紝绗?N 涓《锛? < N < `size`锛夎鐩?[pow(2, N-2), pow(2, N-1))銆?
+    统计报告为对数直方图。桶的数量由 `size` 字段指定。第一个桶的范围是 [0, 1)，而最后一个桶的范
+    [pow(2, `size`-2), +INF)。否则，N 个桶 < N < `size`）覆[pow(2, N-2), pow(2, N-1))
 
-`flags` 鐨勪綅 4-7 缂栫爜鍗曚綅锛?
+`flags` 的位 4-7 编码单位
 
   - `KVM_STATS_UNIT_NONE`
-    缁熻鏁版嵁鍊兼病鏈夊崟浣嶃€傝繖閫氬父鎰忓懗鐫€璇ュ€兼槸涓€涓簨浠剁殑绠€鍗曡鏁板櫒銆?
+    统计数据值没有单位。这通常意味着该值是一个事件的简单计数器
   - `KVM_STATS_UNIT_BYTES`
-    瀹冭〃绀虹粺璁℃暟鎹敤浜庢祴閲忓唴瀛樺ぇ灏忥紝鍗曚綅涓?Byte銆並iByte銆丮iByte銆丟iByte 绛夈€傛暟鎹殑鍗曚綅鐢辨弿杩扮涓殑
-    `exponent` 瀛楁鍐冲畾銆?
+    它表示统计数据用于测量内存大小，单位Byte、KiByte、MiByte、GiByte 等。数据的单位由描述符中的
+    `exponent` 字段决定
   - `KVM_STATS_UNIT_SECONDS`
-    瀹冭〃绀虹粺璁℃暟鎹敤浜庢祴閲忔椂闂存垨寤惰繜銆?
+    它表示统计数据用于测量时间或延迟
   - `KVM_STATS_UNIT_CYCLES`
-    瀹冭〃绀虹粺璁℃暟鎹敤浜庢祴閲?CPU 鏃堕挓鍛ㄦ湡銆?
+    它表示统计数据用于测CPU 时钟周期
   - `KVM_STATS_UNIT_BOOLEAN`
-    瀹冭〃绀虹粺璁″€煎皢濮嬬粓涓?0 鎴?1銆傚嘲鍊肩被鍨嬬殑甯冨皵缁熻姘歌繙涓嶄細浠?1 鍥炲埌 0銆傚竷灏旂粺璁″彲浠ユ槸绾挎€х洿鏂瑰浘
-    锛堟湁涓や釜妗讹級锛屼絾涓嶈兘鏄鏁扮洿鏂瑰浘銆?
+    它表示统计值将始终0 1。峰值类型的布尔统计永远不会1 回到 0。布尔统计可以是线性直方图
+    （有两个桶），但不能是对数直方图
 
-娉ㄦ剰锛屽浜庣洿鏂瑰浘锛屽崟浣嶉€傜敤浜庢《鐨勮寖鍥达紝鑰屾《鍊兼寚绀鸿惤鍏ヨ妗惰寖鍥村唴鐨勬牱鏈暟閲忋€?
+注意，对于直方图，单位适用于桶的范围，而桶值指示落入该桶范围内的样本数量
 
-`flags` 鐨勪綅 8-11 涓?`exponent` 涓€璧风紪鐮佸崟浣嶇殑閲忕骇锛?
+`flags` 的位 8-11 `exponent` 一起编码单位的量级
 
   - `KVM_STATS_BASE_POW10`
-    閲忕骇鍩轰簬 10 鐨勫箓銆傚畠鐢ㄤ簬娴嬮噺鏃堕棿鍜?CPU 鏃堕挓鍛ㄦ湡銆備緥濡傦紝鎸囨暟 -9 鍙互涓?`KVM_STATS_UNIT_SECONDS`
-    涓€璧蜂娇鐢紝琛ㄧず鍗曚綅鏄撼绉掋€?
+    量级基于 10 的幂。它用于测量时间CPU 时钟周期。例如，指数 -9 可以`KVM_STATS_UNIT_SECONDS`
+    一起使用，表示单位是纳秒
   - `KVM_STATS_BASE_POW2`
-    閲忕骇鍩轰簬 2 鐨勫箓銆傚畠鐢ㄤ簬娴嬮噺鍐呭瓨澶у皬銆備緥濡傦紝鎸囨暟 20 鍙互涓?`KVM_STATS_UNIT_BYTES` 涓€璧蜂娇鐢紝琛ㄧず
-    鍗曚綅鏄?MiB銆?
+    量级基于 2 的幂。它用于测量内存大小。例如，指数 20 可以`KVM_STATS_UNIT_BYTES` 一起使用，表示
+    单位MiB
 
-`size` 瀛楁鏄缁熻鏁版嵁鍊肩殑鏁伴噺銆傚浜庡ぇ澶氭暟绠€鍗曠粺璁★紝鍏跺€奸€氬父涓?1銆? 琛ㄧず瀹冨寘鍚竴涓棤绗﹀彿 64
-浣嶆暟鎹€?
+`size` 字段是此统计数据值的数量。对于大多数简单统计，其值通常1 表示它包含一个无符号 64
+位数据
 
-`offset` 瀛楁鏄粠 Data Block 璧峰浣嶇疆鍒扮浉搴旂粺璁℃暟鎹捣濮嬩綅缃殑鍋忕Щ閲忋€?
+`offset` 字段是从 Data Block 起始位置到相应统计数据起始位置的偏移量
 
-`bucket_size` 瀛楁鐢ㄤ綔鐩存柟鍥剧粺璁℃暟鎹殑鍙傛暟銆傚畠浠呯敱绾挎€х洿鏂瑰浘缁熻鏁版嵁浣跨敤锛屾寚瀹氫竴涓《鐨勫ぇ灏忥紝鍗曚綅
-鐢?`flags` 鐨勪綅 4-11 涓?`exponent` 涓€璧疯〃绀恒€?
+`bucket_size` 字段用作直方图统计数据的参数。它仅由线性直方图统计数据使用，指定一个桶的大小，单位
+`flags` 的位 4-11 `exponent` 一起表示
 
-`name` 瀛楁鏄粺璁℃暟鎹殑鍚嶇О瀛楃涓层€傚悕绉板瓧绗︿覆浠?`struct kvm_stats_desc` 鐨勬湯灏惧紑濮嬨€傚寘鎷粨灏?
-`'\0'` 鍦ㄥ唴鐨勬渶澶ч暱搴︾敱澶撮儴涓殑 `name_size` 鎸囩ず銆?
+`name` 字段是统计数据的名称字符串。名称字符串`struct kvm_stats_desc` 的末尾开始。包括结
+`'\0'` 在内的最大长度由头部中的 `name_size` 指示
 
-Stats Data 鍧楀寘鍚竴涓?64 浣嶅€兼暟缁勶紝椤哄簭涓?Descriptors 鍧椾腑鐨勬弿杩扮鐩稿悓銆?
+Stats Data 块包含一64 位值数组，顺序Descriptors 块中的描述符相同
 
 ### 4.134 KVM_GET_XSAVE2
 
@@ -5327,11 +5327,11 @@ Stats Data 鍧楀寘鍚竴涓?64 浣嶅€兼暟缁勶紝椤哄簭涓?Descrip
   };
 
 ```
-璇?ioctl 浼氬皢褰撳墠 vcpu 鐨?xsave 缁撴瀯浣撳鍒跺埌鐢ㄦ埛绌洪棿銆傚畠澶嶅埗鐨勫瓧鑺傛暟绛変簬 KVM_CHECK_EXTENSION(KVM_CAP_XSAVE2)
-鍦?vm 鏂囦欢鎻忚堪绗︿笂璋冪敤鏃惰繑鍥炵殑鍊笺€侹VM_CHECK_EXTENSION(KVM_CAP_XSAVE2) 杩斿洖鐨勫ぇ灏忓€兼€绘槸鑷冲皯涓?4096銆?
-鐩墠锛屽彧鏈夊綋鏌愪釜鍔ㄦ€佺壒鎬у凡閫氳繃 `arch_prctl()` 鍚敤鏃跺畠鎵嶅ぇ浜?4096锛屼絾杩欏湪鏈潵鍙兘浼氭敼鍙樸€?
+ioctl 会将当前 vcpu xsave 结构体复制到用户空间。它复制的字节数等于 KVM_CHECK_EXTENSION(KVM_CAP_XSAVE2)
+vm 文件描述符上调用时返回的值。KVM_CHECK_EXTENSION(KVM_CAP_XSAVE2) 返回的大小值总是至少4096
+目前，只有当某个动态特性已通过 `arch_prctl()` 启用时它才大4096，但这在未来可能会改变
 
-struct kvm_xsave 涓悇鐘舵€佷繚瀛樺尯鍩熺殑鍋忕Щ閲忛伒寰涓绘満涓?CPUID 鍙跺瓙 0xD 鐨勫唴瀹广€?
+struct kvm_xsave 中各状态保存区域的偏移量遵循宿主机CPUID 叶子 0xD 的内容
 
 ### 4.135 KVM_XEN_HVM_EVTCHN_SEND
 
@@ -5352,7 +5352,7 @@ struct kvm_xsave 涓悇鐘舵€佷繚瀛樺尯鍩熺殑鍋忕Щ閲忛伒寰�
    };
 
 ```
-璇?ioctl 灏嗕簨浠堕€氶亾涓柇鐩存帴娉ㄥ叆瀹㈡埛鏈?vCPU銆?
+ioctl 将事件通道中断直接注入客户vCPU
 
 ### 4.136 KVM_S390_PV_CPU_COMMAND
 
@@ -5363,18 +5363,18 @@ struct kvm_xsave 涓悇鐘舵€佷繚瀛樺尯鍩熺殑鍋忕Щ閲忛伒寰�
 :Parameters: none
 :Returns: 0 on success, < 0 on error
 
-璇?ioctl 涓?`KVM_S390_PV_COMMAND` 闈炲父鐩镐技锛屼絾澶勭悊閽堝 vcpu 鐨勮姹傘€傚畠澶嶇敤浜?kvm_s390_pv_dmp
-缁撴瀯浣擄紝鍥犳涔熷叡浜懡浠?id銆?
+ioctl `KVM_S390_PV_COMMAND` 非常相似，但处理针对 vcpu 的请求。它复用kvm_s390_pv_dmp
+结构体，因此也共享命id
 
 **command锛?*
 
 KVM_PV_DUMP
-  鎻愪緵涓€涓?API锛屾彁渚涙湁鍔╀簬杞偍鍙椾繚鎶?VM 鐨?vcpu 鐨勮皟鐢ㄣ€?
+  提供一API，提供有助于转储受保VM vcpu 的调用
 
 **subcommand锛?*
 
 KVM_PV_DUMP_CPU
-  鎻愪緵鍔犲瘑鐨勮浆鍌ㄦ暟鎹紝濡傚瘎瀛樺櫒鍊笺€傝繑鍥炴暟鎹殑闀垮害鐢?uv_info.guest_cpu_stor_len 鎻愪緵銆?
+  提供加密的转储数据，如寄存器值。返回数据的长度uv_info.guest_cpu_stor_len 提供
 
 ### 4.137 KVM_S390_ZPCI_OP
 
@@ -5385,7 +5385,7 @@ KVM_PV_DUMP_CPU
 :Parameters: struct kvm_s390_zpci_op (in)
 :Returns: 0 on success, <0 on error
 
-鐢ㄤ簬绠＄悊 zPCI 璁惧鐨勭‖浠惰緟鍔╄櫄鎷熷寲鐗规€с€?
+用于管理 zPCI 设备的硬件辅助虚拟化特性
 
 ```
 
@@ -5410,14 +5410,14 @@ KVM_PV_DUMP_CPU
   };
 
 ```
-鎿嶄綔绫诲瀷鍦?"op" 瀛楁涓寚瀹氥€侹VM_S390_ZPCIOP_REG_AEN 鐢ㄤ簬涓?VM 娉ㄥ唽閫傞厤鍣ㄤ簨浠堕€氱煡瑙ｉ噴锛坅dapter
-event notification interpretation锛夛紝杩欏皢鍏佽鍥轰欢鐩存帴灏嗛€傞厤鍣ㄤ簨浠舵姇閫掑埌 vm锛岀敱 KVM 鎻愪緵澶囦唤鎶曢€?
-鏈哄埗锛汯VM_S390_ZPCIOP_DEREG_AEN 鐢ㄤ簬闅忓悗绂佺敤閫傞厤鍣ㄤ簨浠堕€氱煡鐨勮В閲娿€?
+操作类型"op" 字段中指定。KVM_S390_ZPCIOP_REG_AEN 用于VM 注册适配器事件通知解释（adapter
+event notification interpretation），这将允许固件直接将适配器事件投递到 vm，由 KVM 提供备份投
+机制；KVM_S390_ZPCIOP_DEREG_AEN 用于随后禁用适配器事件通知的解释
 
-鐩爣 zPCI 鍔熻兘涔熷繀椤婚€氳繃 "fh" 瀛楁鎸囧畾銆傚浜?KVM_S390_ZPCIOP_REG_AEN 鎿嶄綔锛屽繀椤婚€氳繃 "reg_aen"
-缁撴瀯浣撴彁渚涘缓绔嬪浐浠舵姇閫掓墍闇€鐨勯澶栦俊鎭€?
+目标 zPCI 功能也必须通过 "fh" 字段指定。对KVM_S390_ZPCIOP_REG_AEN 操作，必须通过 "reg_aen"
+结构体提供建立固件投递所需的额外信息
 
-"pad" 鍜?"reserved" 瀛楁鍙敤浜庢湭鏉ョ殑鎵╁睍锛岀敤鎴风┖闂村簲灏嗗叾璁剧疆涓?0銆?
+"pad" "reserved" 字段可用于未来的扩展，用户空间应将其设置0
 
 ### 4.138 KVM_ARM_SET_COUNTER_OFFSET
 
@@ -5428,8 +5428,8 @@ event notification interpretation锛夛紝杩欏皢鍏佽鍥轰欢鐩存帴�
 :Parameters: struct kvm_arm_counter_offset (in)
 :Returns: 0 on success, < 0 on error
 
-璇ヨ兘鍔涙寚绀虹敤鎴风┖闂磋兘澶熶娇鐢?KVM_ARM_SET_CNT_OFFSET ioctl 浠ュ強浠ヤ笅鏁版嵁缁撴瀯锛屽皢鍗曚竴 VM 鑼冨洿鐨勫亸绉?
-搴旂敤鍒板鎴锋満鎵€瑙佺殑铏氭嫙璁℃暟鍣ㄥ拰鐗╃悊璁℃暟鍣細
+该能力指示用户空间能够使KVM_ARM_SET_CNT_OFFSET ioctl 以及以下数据结构，将单一 VM 范围的偏
+应用到客户机所见的虚拟计数器和物理计数器：
 
 ```
 
@@ -5439,17 +5439,17 @@ event notification interpretation锛夛紝杩欏皢鍏佽鍥轰欢鐩存帴�
 	};
 
 ```
-璇ュ亸绉绘弿杩颁簡浠庤櫄鎷熷拰鐗╃悊璁℃暟鍣ㄨ鍥句腑鍑忓幓鐨勮鏁板櫒鍛ㄦ湡鏁帮紙绫讳技浜?CNTVOFF_EL2 鍜?CNTPOFF_EL2 绯荤粺
-瀵勫瓨鍣ㄧ殑鏁堟灉锛屼絾浠呭叏灞€鐢熸晥锛夈€傝鍋忕Щ濮嬬粓搴旂敤浜庢 VM 鐨勬墍鏈?vcpu锛堝凡鍒涘缓鎴栧湪璋冪敤姝?ioctl 涔嬪悗
-鍒涘缓鐨勶級銆?
+该偏移描述了从虚拟和物理计数器视图中减去的计数器周期数（类似CNTVOFF_EL2 CNTPOFF_EL2 系统
+寄存器的效果，但仅全局生效）。该偏移始终应用于此 VM 的所vcpu（已创建或在调用ioctl 之后
+创建的）
 
-璁＄畻鍋忕Щ鏄敤鎴风┖闂寸殑璐ｄ换锛屼緥濡傚熀浜庡鎴锋満璁℃暟鍣ㄧ殑鍏堝墠鍊笺€?
+计算偏移是用户空间的责任，例如基于客户机计数器的先前值
 
-"reserved" 瀛楁鐨勪换浣曢潪 0 鍊奸兘鍙兘瀵艰嚧杩斿洖閿欒锛?EINVAL锛夈€傚鏋滃悓鏃跺彂鍑轰簡浠讳綍 vcpu ioctl锛屾
-ioctl 涔熷彲鑳借繑鍥?-EBUSY銆?
+"reserved" 字段的任何非 0 值都可能导致返回错误EINVAL）。如果同时发出了任何 vcpu ioctl，此
+ioctl 也可能返-EBUSY
 
-娉ㄦ剰锛屼娇鐢ㄦ ioctl 浼氬鑷?KVM 蹇界暐闅忓悗鐢ㄦ埛绌洪棿浣跨敤 SET_ONE_REG 鎺ュ彛瀵?CNTVCT_EL0 鍜?CNTPCT_EL0
-瀵勫瓨鍣ㄧ殑鍐欏叆銆備笉浼氳繑鍥為敊璇紝浣嗙粨鏋滃亸绉讳笉浼氳搴旂敤銆?
+注意，使用此 ioctl 会导KVM 忽略随后用户空间使用 SET_ONE_REG 接口CNTVCT_EL0 CNTPCT_EL0
+寄存器的写入。不会返回错误，但结果偏移不会被应用
 
 
 ### 4.139 KVM_ARM_GET_REG_WRITABLE_MASKS
@@ -5474,25 +5474,25 @@ ioctl 涔熷彲鑳借繑鍥?-EBUSY銆?
         };
 
 ```
-璇?ioctl 灏嗘墍閫夊瘎瀛樺櫒鑼冨洿鐨?writable 鎺╃爜澶嶅埗鍒扮敤鎴风┖闂淬€?
+ioctl 将所选寄存器范围writable 掩码复制到用户空间
 
-`addr` 瀛楁鏄寚鍚戠洰鏍囨暟缁勭殑鎸囬拡锛孠VM 灏?writable 鎺╃爜澶嶅埗鍒伴偅閲屻€?
+`addr` 字段是指向目标数组的指针，KVM writable 掩码复制到那里
 
-`range` 瀛楁鎸囩ず璇锋眰鐨勫瘎瀛樺櫒鑼冨洿銆俙KVM_CHECK_EXTENSION` 瀵?`KVM_CAP_ARM_SUPPORTED_REG_MASK_RANGES`
-鑳藉姏鐨勬煡璇㈣繑鍥炲彈鏀寔鐨勮寖鍥达紝琛ㄧず涓轰竴缁勬爣蹇椼€傛瘡涓爣蹇楃殑浣嶇储寮曚唬琛?`range` 瀛楁鐨勪竴涓彲鑳藉€笺€傛墍鏈?
-鍏朵粬鍊间繚鐣欎緵灏嗘潵浣跨敤锛孠VM 鍙兘杩斿洖閿欒銆?
+`range` 字段指示请求的寄存器范围。`KVM_CHECK_EXTENSION` `KVM_CAP_ARM_SUPPORTED_REG_MASK_RANGES`
+能力的查询返回受支持的范围，表示为一组标志。每个标志的位索引代`range` 字段的一个可能值。所
+其他值保留供将来使用，KVM 可能返回错误
 
-`reserved[^13^]` 鏁扮粍淇濈暀渚涘皢鏉ヤ娇鐢紝搴斾负 0锛屽惁鍒?KVM 鍙兘杩斿洖閿欒銆?
+`reserved[^13^]` 数组保留供将来使用，应为 0，否KVM 可能返回错误
 
 ##### KVM_ARM_FEATURE_ID_RANGE (0)
 
 
-Feature ID 鑼冨洿瀹氫箟涓?AArch64 绯荤粺瀵勫瓨鍣ㄧ┖闂达紝鍏朵腑 op0==3銆乷p1=={0, 1, 3}銆丆Rn==0銆丆Rn=={0-7}銆?
-op2=={0-7}銆?
+Feature ID 范围定义AArch64 系统寄存器空间，其中 op0==3、op1=={0, 1, 3}、CRn==0、CRn=={0-7}
+op2=={0-7}銆。
 
-`addr` 鎸囧悜鐨勮繑鍥炴帺鐮佹暟缁勭敱瀹?`ARM64_FEATURE_ID_RANGE_IDX(op0, op1, crn, crm, op2)` 绱㈠紩锛屼娇
-鐢ㄦ埛绌洪棿鑳藉鐭ラ亾 `op0, op1, crn, crm, op2` 鎵€鎻忚堪鐨勭郴缁熷瘎瀛樺櫒鍙互鏇存敼鍝簺瀛楁銆侹VM 浼氭嫆缁濇弿杩?
-绯荤粺鎵€鏀寔鐗规€ц秴闆嗙殑 ID 瀵勫瓨鍣ㄥ€笺€?
+`addr` 指向的返回掩码数组由`ARM64_FEATURE_ID_RANGE_IDX(op0, op1, crn, crm, op2)` 索引，使
+用户空间能够知道 `op0, op1, crn, crm, op2` 所描述的系统寄存器可以更改哪些字段。KVM 会拒绝描
+系统所支持特性超集的 ID 寄存器值
 
 ### 4.140 KVM_SET_USER_MEMORY_REGION2
 
@@ -5503,12 +5503,12 @@ op2=={0-7}銆?
 :Parameters: struct kvm_userspace_memory_region2 (in)
 :Returns: 0 on success, -1 on error
 
-KVM_SET_USER_MEMORY_REGION2 鏄?KVM_SET_USER_MEMORY_REGION 鐨勬墿灞曪紝鍏佽灏?guest_memfd 鍐呭瓨鏄犲皠鍒?
-瀹㈡埛鏈恒€傛墍鏈変笌 KVM_SET_USER_MEMORY_REGION 鍏变韩鐨勫瓧娈甸兘瀹屽叏鐩稿悓銆傜敤鎴风┖闂村彲浠ュ湪 flags 涓缃?
-KVM_MEM_GUEST_MEMFD锛岃 KVM 灏嗗唴瀛樺尯鍩熺粦瀹氬埌缁欏畾鐨?guest_memfd 鑼冨洿
-[guest_memfd_offset, guest_memfd_offset + memory_size]銆傜洰鏍?guest_memfd 蹇呴』鎸囧悜閫氳繃褰撳墠 VM 涓婄殑
-KVM_CREATE_GUEST_MEMFD 鍒涘缓鐨勬枃浠讹紝涓旂洰鏍囪寖鍥翠笉寰楃粦瀹氬埌浠讳綍鍏朵粬鍐呭瓨鍖哄煙銆傛墍鏈夋爣鍑嗙殑杈圭晫妫€鏌ラ兘
-閫傜敤锛堣杩愮敤甯歌瘑锛夈€?
+KVM_SET_USER_MEMORY_REGION2 KVM_SET_USER_MEMORY_REGION 的扩展，允许guest_memfd 内存映射
+客户机。所有与 KVM_SET_USER_MEMORY_REGION 共享的字段都完全相同。用户空间可以在 flags 中设
+KVM_MEM_GUEST_MEMFD，让 KVM 将内存区域绑定到给定guest_memfd 范围
+[guest_memfd_offset, guest_memfd_offset + memory_size]。目guest_memfd 必须指向通过当前 VM 上的
+KVM_CREATE_GUEST_MEMFD 创建的文件，且目标范围不得绑定到任何其他内存区域。所有标准的边界检查都
+适用（请运用常识）
 
 ```
 
@@ -5525,20 +5525,20 @@ KVM_CREATE_GUEST_MEMFD 鍒涘缓鐨勬枃浠讹紝涓旂洰鏍囪寖鍥翠笉寰
   };
 
 ```
-KVM_MEM_GUEST_MEMFD 鍖哄煙_蹇呴』_鏈変竴涓湁鏁堢殑 guest_memfd锛堢鏈夊唴瀛橈級鍜?userspace_addr锛堝叡浜唴瀛橈級銆?
-浣嗘槸锛屽浜?userspace_addr 鏉ヨ锛?鏈夋晥"浠呬粎鎰忓懗鐫€鍦板潃鏈韩蹇呴』鏄竴涓悎娉曠殑鐨勭敤鎴风┖闂村湴鍧€銆倁serspace_addr
-鐨勫悗澶囨槧灏勪笉闇€瑕佸湪 KVM_SET_USER_MEMORY_REGION2 鏃舵湁鏁?宸插～鍏咃紝渚嬪鍏变韩鍐呭瓨鍙互鎸夐渶鎯版€ф槧灏?鍒嗛厤銆?
+KVM_MEM_GUEST_MEMFD 区域_必须_有一个有效的 guest_memfd（私有内存）userspace_addr（共享内存）
+但是，对userspace_addr 来说有效"仅仅意味着地址本身必须是一个合法的的用户空间地址。userspace_addr
+的后备映射不需要在 KVM_SET_USER_MEMORY_REGION2 时有已填充，例如共享内存可以按需惰性映分配
 
-褰撳皢 gfn 鏄犲皠鍒板鎴锋満鏃讹紝KVM 鏍规嵁 gfn 鐨?KVM_MEMORY_ATTRIBUTE_PRIVATE 鐘舵€侀€夋嫨鍏变韩杩樻槸绉佹湁锛屽嵆
-浣跨敤 userspace_addr 杩樻槸 guest_memfd銆傚湪鍒涘缓 VM 鏃讹紝鎵€鏈夊唴瀛橀兘鏄叡浜殑锛屽嵆鎵€鏈?gfn 鐨?PRIVATE
-灞炴€т负 '0'銆傜敤鎴风┖闂村彲浠ラ€氳繃鎸夐渶閫氳繃 KVM_SET_MEMORY_ATTRIBUTES 鍒囨崲 KVM_MEMORY_ATTRIBUTE_PRIVATE
-鏉ユ帶鍒跺唴瀛樻槸鍏变韩杩樻槸绉佹湁銆?
+当将 gfn 映射到客户机时，KVM 根据 gfn KVM_MEMORY_ATTRIBUTE_PRIVATE 状态选择共享还是私有，即
+使用 userspace_addr 还是 guest_memfd。在创建 VM 时，所有内存都是共享的，即所gfn PRIVATE
+属性为 '0'。用户空间可以通过按需通过 KVM_SET_MEMORY_ATTRIBUTES 切换 KVM_MEMORY_ATTRIBUTE_PRIVATE
+来控制内存是共享还是私有
 
-##### S390锛?
+##### S390锛。
 
 
-濡傛灉 VM 璁剧疆浜?KVM_VM_S390_UCONTROL 鏍囧織锛屽垯杩斿洖 -EINVAL銆?
-濡傛灉鏄湪鍙椾繚鎶ょ殑 VM 涓婅皟鐢紝鍒欒繑鍥?-EINVAL銆?
+如果 VM 设置KVM_VM_S390_UCONTROL 标志，则返回 -EINVAL
+如果是在受保护的 VM 上调用，则返-EINVAL
 
 ### 4.141 KVM_SET_MEMORY_ATTRIBUTES
 
@@ -5549,7 +5549,7 @@ KVM_MEM_GUEST_MEMFD 鍖哄煙_蹇呴』_鏈変竴涓湁鏁堢殑 guest_memfd�
 :Parameters: struct kvm_memory_attributes (in)
 :Returns: 0 on success, <0 on error
 
-KVM_SET_MEMORY_ATTRIBUTES 鍏佽鐢ㄦ埛绌洪棿涓轰竴娈靛鎴锋満鐗╃悊鍐呭瓨璁剧疆鍐呭瓨灞炴€с€?
+KVM_SET_MEMORY_ATTRIBUTES 允许用户空间为一段客户机物理内存设置内存属性
 
 ```
 
@@ -5563,14 +5563,14 @@ KVM_SET_MEMORY_ATTRIBUTES 鍏佽鐢ㄦ埛绌洪棿涓轰竴娈靛鎴锋満
   #define KVM_MEMORY_ATTRIBUTE_PRIVATE           (1ULL << 3)
 
 ```
-address 鍜?size 蹇呴』涓庨〉瀵归綈銆傚彈鏀寔鐨勫睘鎬у彲浠ラ€氳繃鍦?KVM_CAP_MEMORY_ATTRIBUTES 涓婅皟鐢?
-ioctl(KVM_CHECK_EXTENSION) 鑾峰彇銆傚鏋滃湪 VM 涓婃墽琛岋紝KVM_CAP_MEMORY_ATTRIBUTES 绮剧‘杩斿洖璇?VM 鏀寔鐨?
-灞炴€с€傚鏋滃湪绯荤粺鑼冨洿鎵ц锛孠VM_CAP_MEMORY_ATTRIBUTES 杩斿洖 KVM 鏀寔鐨勬墍鏈夊睘鎬с€傜洰鍓嶅畾涔夌殑鍞竴灞炴€ф槸
-KVM_MEMORY_ATTRIBUTE_PRIVATE锛屽畠灏嗙浉鍏崇殑 gfn 鏍囪涓哄鏈虹鏈夊唴瀛樸€?
+address size 必须与页对齐。受支持的属性可以通过KVM_CAP_MEMORY_ATTRIBUTES 上调
+ioctl(KVM_CHECK_EXTENSION) 获取。如果在 VM 上执行，KVM_CAP_MEMORY_ATTRIBUTES 精确返回VM 支持
+属性。如果在系统范围执行，KVM_CAP_MEMORY_ATTRIBUTES 返回 KVM 支持的所有属性。目前定义的唯一属性是
+KVM_MEMORY_ATTRIBUTE_PRIVATE，它将相关的 gfn 标记为客机私有内存
 
-娉ㄦ剰锛屾病鏈?get" API銆傜敤鎴风┖闂磋礋璐ｆ牴鎹渶瑕佹樉寮忚窡韪?gfn/椤电殑鐘舵€併€?
+注意，没get" API。用户空间负责根据需要显式跟gfn/页的状态
 
-"flags" 瀛楁淇濈暀渚涘皢鏉ユ墿灞曪紝蹇呴』涓?'0'銆?
+"flags" 字段保留供将来扩展，必须'0'
 
 ### 4.142 KVM_CREATE_GUEST_MEMFD
 
@@ -5581,11 +5581,11 @@ KVM_MEMORY_ATTRIBUTE_PRIVATE锛屽畠灏嗙浉鍏崇殑 gfn 鏍囪涓哄�
 :Parameters: struct kvm_create_guest_memfd(in)
 :Returns: A file descriptor on success, <0 on error
 
-KVM_CREATE_GUEST_MEMFD 鍒涘缓涓€涓尶鍚嶆枃浠讹紝骞惰繑鍥炰竴涓紩鐢ㄥ畠鐨勬枃浠舵弿杩扮銆俫uest_memfd 鏂囦欢澶ц嚧绫讳技浜?
-閫氳繃 memfd_create() 鍒涘缓鐨勬枃浠讹紝渚嬪锛実uest_memfd 鏂囦欢椹荤暀鍦?RAM 涓紝鍏锋湁鏄撳け鎬у瓨鍌紝骞跺湪鏈€鍚庝竴涓?
-寮曠敤琚噴鏀炬椂鑷姩閲婃斁銆備笌"甯歌" memfd_create() 鏂囦欢涓嶅悓锛実uest_memfd 鏂囦欢缁戝畾鍒板叾鎷ユ湁鐨勮櫄鎷熸満
-锛堣涓嬫枃锛夛紝涓嶈兘琚敤鎴风┖闂存槧灏勩€佽鍙栨垨鍐欏叆锛屽苟涓斾笉鑳借皟鏁村ぇ灏忥紙涓嶈繃 guest_memfd 鏂囦欢鏀寔
-PUNCH_HOLE锛夈€?
+KVM_CREATE_GUEST_MEMFD 创建一个匿名文件，并返回一个引用它的文件描述符。guest_memfd 文件大致类似
+通过 memfd_create() 创建的文件，例如，guest_memfd 文件驻留RAM 中，具有易失性存储，并在最后一
+引用被释放时自动释放。与"常规" memfd_create() 文件不同，guest_memfd 文件绑定到其拥有的虚拟机
+（见下文），不能被用户空间映射、读取或写入，并且不能调整大小（不过 guest_memfd 文件支持
+PUNCH_HOLE）
 
 ```
 
@@ -5596,30 +5596,30 @@ PUNCH_HOLE锛夈€?
   };
 
 ```
-浠庢蹇典笂璁诧紝鏀拺 guest_memfd 鏂囦欢鐨?inode 浠ｈ〃鐗╃悊鍐呭瓨锛屽嵆涓庤櫄鎷熸満浣滀负涓€涓簨鐗╄€﹀悎锛岃€屼笉鏄笌
-"struct kvm" 鑰﹀悎銆傛枃浠舵湰韬粦瀹氬埌 "struct kvm"锛屾槸璇ュ疄渚嬪搴曞眰鍐呭瓨鐨勮鍥撅紝渚嬪鏈夋晥鍦版彁渚涘鎴锋満
-鍦板潃鍒板涓绘満鍐呭瓨鐨勮浆鎹€傝繖鍏佽杩欐牱鐨勭敤渚嬶細澶氫釜 KVM 缁撴瀯鐢ㄤ簬绠＄悊鍗曚釜铏氭嫙鏈猴紝渚嬪鍦ㄦ墽琛岃櫄鎷熸満鐨?
-瀹夸富鏈哄唴锛坕ntrahost锛夎縼绉绘椂銆?
+从概念上讲，支撑 guest_memfd 文件inode 代表物理内存，即与虚拟机作为一个事物耦合，而不是与
+"struct kvm" 耦合。文件本身绑定到 "struct kvm"，是该实例对底层内存的视图，例如有效地提供客户机
+地址到宿主机内存的转换。这允许这样的用例：多个 KVM 结构用于管理单个虚拟机，例如在执行虚拟机
+宿主机内（intrahost）迁移时
 
-KVM 鐩墠浠呮敮鎸侀€氳繃 KVM_SET_USER_MEMORY_REGION2 鏄犲皠 guest_memfd锛屾洿鍏蜂綋鍦拌锛岄€氳繃
-"struct kvm_userspace_memory_region2" 涓殑 guest_memfd 鍜?guest_memfd_offset 瀛楁锛屽叾涓?
-guest_memfd_offset 鏄繘鍏?guest_memfd 瀹炰緥鐨勫亸绉婚噺銆傚浜庣粰瀹氱殑 guest_memfd 鏂囦欢锛屾瘡椤垫渶澶氭湁涓€涓?
-鏄犲皠锛屽嵆涓嶅厑璁稿皢澶氫釜鍐呭瓨鍖哄煙缁戝畾鍒板崟涓?guest_memfd 鑼冨洿锛堜换浣曟暟閲忕殑鍐呭瓨鍖哄煙閮藉彲浠ョ粦瀹氬埌鍗曚釜
-guest_memfd 鏂囦欢锛屼絾缁戝畾鐨勮寖鍥翠笉寰楅噸鍙狅級銆?
+KVM 目前仅支持通过 KVM_SET_USER_MEMORY_REGION2 映射 guest_memfd，更具体地说，通过
+"struct kvm_userspace_memory_region2" 中的 guest_memfd guest_memfd_offset 字段，其
+guest_memfd_offset 是进guest_memfd 实例的偏移量。对于给定的 guest_memfd 文件，每页最多有一
+映射，即不允许将多个内存区域绑定到单guest_memfd 范围（任何数量的内存区域都可以绑定到单个
+guest_memfd 文件，但绑定的范围不得重叠）
 
-鑳藉姏 KVM_CAP_GUEST_MEMFD_FLAGS 鏋氫妇浜嗗彲閫氳繃 KVM_CREATE_GUEST_MEMFD 鎸囧畾鐨?`flags`銆傚綋鍓嶅畾涔夌殑鏍囧織锛?
+能力 KVM_CAP_GUEST_MEMFD_FLAGS 枚举了可通过 KVM_CREATE_GUEST_MEMFD 指定`flags`。当前定义的标志
 
   ============================ ================================================
-  GUEST_MEMFD_FLAG_MMAP        鍚敤鍦?guest_memfd 鏂囦欢鎻忚堪绗︿笂浣跨敤 mmap()銆?
-  GUEST_MEMFD_FLAG_INIT_SHARED 鍦?KVM_CREATE_GUEST_MEMFD 鏈熼棿浣挎枃浠朵腑鐨勬墍鏈夊唴瀛樹负鍏变韩
-                               锛堝湪娌℃湁 INIT_SHARED 鐨勬儏鍐典笅鍒涘缓鐨勫唴瀛樻枃浠跺皢琚爣璁颁负绉佹湁锛夈€?
-                               鍏变韩鍐呭瓨鍙互缂洪〉鏄犲皠鍒板涓绘満鐢ㄦ埛绌洪棿椤佃〃銆傜鏈夊唴瀛樺垯涓嶈兘銆?
+  GUEST_MEMFD_FLAG_MMAP        启用guest_memfd 文件描述符上使用 mmap()
+  GUEST_MEMFD_FLAG_INIT_SHARED KVM_CREATE_GUEST_MEMFD 期间使文件中的所有内存为共享
+                               （在没有 INIT_SHARED 的情况下创建的内存文件将被标记为私有）
+                               共享内存可以缺页映射到宿主机用户空间页表。私有内存则不能
   ============================ ================================================
 
-褰?KVM MMU 鎵ц PFN 鏌ユ壘浠ユ湇鍔″鎴锋満缂洪〉锛屼笖鍚庡 guest_memfd 璁剧疆浜?GUEST_MEMFD_FLAG_MMAP 鏃讹紝
-鏃犺璇ョ己椤垫槸鍏变韩杩樻槸绉佹湁鐨勶紝缂洪〉閮藉皢濮嬬粓浠?guest_memfd 娑堣垂銆?
+KVM MMU 执行 PFN 查找以服务客户机缺页，且后备 guest_memfd 设置GUEST_MEMFD_FLAG_MMAP 时，
+无论该缺页是共享还是私有的，缺页都将始终guest_memfd 消费
 
-鏇村缁嗚妭璇峰弬瑙?KVM_SET_USER_MEMORY_REGION2銆?
+更多细节请参KVM_SET_USER_MEMORY_REGION2
 
 ### 4.143 KVM_PRE_FAULT_MEMORY
 
@@ -5630,17 +5630,17 @@ guest_memfd 鏂囦欢锛屼絾缁戝畾鐨勮寖鍥翠笉寰楅噸鍙狅級銆?
 :Parameters: struct kvm_pre_fault_memory (in/out)
 :Returns: 0 if at least one page is processed, < 0 on error
 
-閿欒鐮侊細
+错误码：
 
   ========== ===============================================================
-  EINVAL     鎸囧畾鐨?`gpa` 鍜?`size` 鏃犳晥锛堜緥濡傛湭椤靛榻愩€佸鑷存孩鍑猴紝鎴?size
-             涓洪浂锛夈€?
-  ENOENT     鎸囧畾鐨?`gpa` 鍦ㄥ凡瀹氫箟鐨?memslot 涔嬪銆?
-  EINTR      瀛樺湪鏈睆钄界殑鎸傝捣淇″彿锛屼笖鏈鐞嗕换浣曢〉銆?
-  EFAULT     鍙傛暟鍦板潃鏃犳晥銆?
-  EOPNOTSUPP 涓?GPA 鏄犲皠鍐呭瓨涓嶅彈 hypervisor 鏀寔锛屽拰/鎴栭拡瀵瑰綋鍓?vCPU 鐘舵€?妯″紡
-             涓嶆敮鎸併€?
-  EIO        鎰忓閿欒鏉′欢锛堜篃浼氬鑷?WARN锛?
+  EINVAL     指定`gpa` `size` 无效（例如未页对齐、导致溢出，size
+             为零）
+  ENOENT     指定`gpa` 在已定义memslot 之外
+  EINTR      存在未屏蔽的挂起信号，且未处理任何页
+  EFAULT     参数地址无效
+  EOPNOTSUPP GPA 映射内存不受 hypervisor 支持，和/或针对当vCPU 状模式
+             不支持
+  EIO        意外错误条件（也会导WARN
   ========== ===============================================================
 
 ```
@@ -5655,23 +5655,23 @@ guest_memfd 鏂囦欢锛屼絾缁戝畾鐨勮寖鍥翠笉寰楅噸鍙狅級銆?
   };
 
 ```
-KVM_PRE_FAULT_MEMORY 濉厖 KVM 鐢ㄤ簬涓哄綋鍓?vCPU 鐘舵€佹槧灏勫唴瀛樼殑 stage-2 椤佃〃銆侹VM 鍍?vCPU 浜х敓浜?
-stage-2 璇荤己椤典竴鏍锋槧灏勫唴瀛橈紝渚嬪鎸夐渶缂洪〉鏄犲皠鍐呭瓨锛屼絾涓嶆墦鐮村啓鏃跺鍒讹紙CoW锛夈€備絾鏄紝KVM 涓嶄細灏嗕换浣曟柊
-鍒涘缓鐨?stage-2 PTE 鏍囪涓?Accessed銆?
+KVM_PRE_FAULT_MEMORY 填充 KVM 用于为当vCPU 状态映射内存的 stage-2 页表。KVM vCPU 产生
+stage-2 读缺页一样映射内存，例如按需缺页映射内存，但不打破写时复制（CoW）。但是，KVM 不会将任何新
+创建stage-2 PTE 标记Accessed
 
-鍦ㄦ満瀵?VM 绫诲瀷涓紝鍦ㄥ鎴锋満琚?瀹氱"/搴﹂噺涔嬪墠闇€瑕佸绉佹湁瀹㈡満鍐呭瓨杩涜鍒濆璁剧疆鐨勬儏鍐典笅锛屾 ioctl 搴?
-浠呭湪瀹屾垚鎵€鏈夊繀瑕佺殑璁剧疆浠ュ皢瀹㈡埛鏈虹疆浜?瀹氱"鐘舵€佷箣鍚庡彂鍑猴紝浠ヤ究涓婅堪璇箟鑳藉琚彲闈犲湴淇濊瘉銆?
+在机VM 类型中，在客户机定稿"/度量之前需要对私有客机内存进行初始设置的情况下，此 ioctl 
+仅在完成所有必要的设置以将客户机置定稿"状态之后发出，以便上述语义能够被可靠地保证
 
-鍦ㄦ煇浜涙儏鍐典笅锛屽涓?vCPU 鍙兘鍏变韩椤佃〃銆傚湪杩欑鎯呭喌涓嬶紝璇?ioctl 鍙互骞惰璋冪敤銆?
+在某些情况下，多vCPU 可能共享页表。在这种情况下，ioctl 可以并行调用
 
-褰?ioctl 杩斿洖鏃讹紝杈撳叆鍊艰鏇存柊浠ユ寚鍚戝墿浣欒寖鍥淬€傚鏋滆繑鍥炴椂 `size` > 0锛岃皟鐢ㄨ€呭彲浠ュ啀娆′娇鐢ㄧ浉鍚岀殑
-`struct kvm_map_memory` 鍙傛暟鍙戝嚭璇?ioctl銆?
+ioctl 返回时，输入值被更新以指向剩余范围。如果返回时 `size` > 0，调用者可以再次使用相同的
+`struct kvm_map_memory` 参数发出ioctl
 
-褰卞瓙椤佃〃鏃犳硶鏀寔姝?ioctl锛屽洜涓哄畠浠槸閫氳繃铏氭嫙鍦板潃鎴栧祵濂楀鎴锋満鐗╃悊鍦板潃绱㈠紩鐨勩€傚綋瀹㈡埛鏈轰娇鐢ㄥ奖瀛愰〉琛?
-鏃讹紙渚嬪鍥犱负瀹冩鍦ㄨ繍琛屽甫鏈夊祵濂楅〉琛ㄧ殑宓屽瀹㈡埛鏈猴級璋冪敤姝?ioctl锛屽嵆浣?`KVM_CHECK_EXTENSION` 鎶ュ憡璇?
-鑳藉姏瀛樺湪锛屼篃浼氫互 `EOPNOTSUPP` 澶辫触銆?
+影子页表无法支持ioctl，因为它们是通过虚拟地址或嵌套客户机物理地址索引的。当客户机使用影子页
+时（例如因为它正在运行带有嵌套页表的嵌套客户机）调用ioctl，即`KVM_CHECK_EXTENSION` 报告
+能力存在，也会以 `EOPNOTSUPP` 失败
 
-`flags` 鐩墠蹇呴』涓洪浂銆?
+`flags` 目前必须为零
 
 ### 4.144 KVM_S390_KEYOP
 
@@ -5682,7 +5682,7 @@ stage-2 璇荤己椤典竴鏍锋槧灏勫唴瀛橈紝渚嬪鎸夐渶缂洪〉
 :Parameters: struct kvm_s390_keyop (in/out)
 :Returns: 0 in case of success, < 0 on error
 
-瀵圭粰瀹氱殑瀹㈡埛鏈哄湴鍧€鎵ц鎸囧畾鐨勫瘑閽ユ搷浣溿€傚厛鍓嶇殑瀛樺偍閿紙鎴栧叾鐩稿叧閮ㄥ垎锛夊皢鍦?`key` 涓繑鍥炪€?
+对给定的客户机地址执行指定的密钥操作。先前的存储键（或其相关部分）将`key` 中返回
 
 ```
 
@@ -5693,25 +5693,25 @@ stage-2 璇荤己椤典竴鏍锋槧灏勫唴瀛橈紝渚嬪鎸夐渶缂洪〉
   };
 
 ```
-鐩墠 `operation` 鏀寔鐨勫涓嬪€硷細
+目前 `operation` 支持的如下值：
 
 KVM_S390_KEYOP_ISKE
-  鍦?`key` 涓繑鍥炲鎴锋満鍦板潃 `guest_addr` 鐨勫瓨鍌ㄩ敭銆?
+  `key` 中返回客户机地址 `guest_addr` 的存储键
 
 KVM_S390_KEYOP_RRBE
-  閲嶇疆瀹㈡埛鏈哄湴鍧€ `guest_addr` 鐨勫紩鐢ㄤ綅锛坮eference bit锛夛紝鍦?`key` 涓繑鍥炴棫瀛樺偍閿殑 R 鍜?C 浣嶏紱
-  瀛樺偍閿殑鍏朵綑瀛楁灏嗚璁剧疆涓?0銆?
+  重置客户机地址 `guest_addr` 的引用位（reference bit），`key` 中返回旧存储键的 R C 位；
+  存储键的其余字段将被设置0
 
 KVM_S390_KEYOP_SSKE
-  灏嗗鎴锋満鍦板潃 `guest_addr` 鐨勫瓨鍌ㄩ敭璁剧疆涓?`key` 涓寚瀹氱殑閿紝鍦?`key` 涓繑鍥炲厛鍓嶇殑鍊笺€?
+  将客户机地址 `guest_addr` 的存储键设置`key` 中指定的键，`key` 中返回先前的值
 
 
 ## 5. The kvm_run structure
 
 
-搴旂敤绋嬪簭浠ｇ爜閫氳繃 mmap() 涓€涓?vcpu fd 鏉ヨ幏鍙栨寚鍚?kvm_run 缁撴瀯浣撶殑鎸囬拡銆備粠閭ｆ椂璧凤紝搴旂敤绋嬪簭浠ｇ爜鍙互閫氳繃
-鍦ㄨ皟鐢?KVM_RUN ioctl 涔嬪墠鏇存敼 kvm_run 涓殑瀛楁鏉ユ帶鍒舵墽琛岋紝骞堕€氳繃鏌ユ壘缁撴瀯浣撴垚鍛樻潵鑾峰彇鍏充簬 KVM_RUN
-杩斿洖鍘熷洜鐨勪俊鎭€?
+应用程序代码通过 mmap() 一vcpu fd 来获取指kvm_run 结构体的指针。从那时起，应用程序代码可以通过
+在调KVM_RUN ioctl 之前更改 kvm_run 中的字段来控制执行，并通过查找结构体成员来获取关于 KVM_RUN
+返回原因的信息
 
 ```
 
@@ -5720,18 +5720,18 @@ KVM_S390_KEYOP_SSKE
 	__u8 request_interrupt_window;
 
 ```
-璇锋眰 KVM_RUN 鍦ㄥ彲浠ュ皢浼氬閮ㄤ腑鏂敞鍏ュ鎴锋満鏃惰繑鍥炪€備笌 KVM_INTERRUPT 閰嶅悎浣跨敤寰堟湁鐢ㄣ€?
+请求 KVM_RUN 在可以将会外部中断注入客户机时返回。与 KVM_INTERRUPT 配合使用很有用
 
 ```
 
 	__u8 immediate_exit;
 
 ```
-璇ュ瓧娈靛湪 KVM_RUN 鍚姩鏃惰疆璇竴娆★紱濡傛灉闈為浂锛孠VM_RUN 绔嬪嵆閫€鍑猴紝杩斿洖 -EINTR銆傚湪閫氬父浣跨敤淇″彿灏?VCPU
-"韪?鍑?KVM_RUN 鐨勫父瑙佸満鏅腑锛岃瀛楁鍙敤浜庨伩鍏嶄娇鐢?KVM_SET_SIGNAL_MASK锛屽悗鑰呯殑鍙墿灞曟€ц緝宸€備笌鍏?
-鍦?KVM_RUN 涔嬪闃诲淇″彿锛岀敤鎴风┖闂村彲浠ヨ缃竴涓俊鍙峰鐞嗙▼搴忥紝灏?run->immediate_exit 璁剧疆涓洪潪闆跺€笺€?
+该字段在 KVM_RUN 启动时轮询一次；如果非零，KVM_RUN 立即退出，返回 -EINTR。在通常使用信号VCPU
+"KVM_RUN 的常见场景中，该字段可用于避免使KVM_SET_SIGNAL_MASK，后者的可扩展性较差。与
+KVM_RUN 之外阻塞信号，用户空间可以设置一个信号处理程序，run->immediate_exit 设置为非零值
 
-濡傛灉 KVM_CAP_IMMEDIATE_EXIT 涓嶅彲鐢紝鍒欏拷鐣ユ瀛楁銆?
+如果 KVM_CAP_IMMEDIATE_EXIT 不可用，则忽略此字段
 
 ```
 
@@ -5741,28 +5741,28 @@ KVM_S390_KEYOP_SSKE
 	__u32 exit_reason;
 
 ```
-褰?KVM_RUN 鎴愬姛杩斿洖锛堣繑鍥炲€?0锛夋椂锛岃繖鍛婄煡搴旂敤绋嬪簭浠ｇ爜 KVM_RUN 涓轰綍杩斿洖銆傛瀛楁鐨勫厑璁稿€煎湪涓嬮潰璇﹁堪銆?
+KVM_RUN 成功返回（返回0）时，这告知应用程序代码 KVM_RUN 为何返回。此字段的允许值在下面详述
 
 ```
 
 	__u8 ready_for_interrupt_injection;
 
 ```
-濡傛灉宸叉寚瀹?request_interrupt_window锛屽垯姝ゅ瓧娈垫寚绀虹幇鍦ㄥ彲浠ヤ娇鐢?KVM_INTERRUPT 娉ㄥ叆涓柇銆?
+如果已指request_interrupt_window，则此字段指示现在可以使KVM_INTERRUPT 注入中断
 
 ```
 
 	__u8 if_flag;
 
 ```
-褰撳墠涓柇鏍囧織鐨勫€笺€備粎鍦ㄥ唴鏍告€佹湰鍦?APIC 鏈娇鐢ㄦ椂鏈夋晥銆?
+当前中断标志的值。仅在内核态本APIC 未使用时有效
 
 ```
 
 	__u16 flags;
 
 ```
-鏇村鏋舵瀯鐩稿叧鐨勬爣蹇楋紝璇︾粏璇存槑 VCPU 鐨勭姸鎬侊紝鍙兘
+更多架构相关的标志，详细说明 VCPU 的状态，可能
 ```
 
   /* x86, set if the VCPU is in system management mode */
@@ -5782,14 +5782,14 @@ KVM_S390_KEYOP_SSKE
 	__u64 cr8;
 
 ```
-cr8 瀵勫瓨鍣ㄧ殑鍊笺€備粎鍦ㄥ唴鏍告€佹湰鍦?APIC 鏈娇鐢ㄦ椂鏈夋晥銆傛棦杈撳叆鍙堣緭鍑恒€?
+cr8 寄存器的值。仅在内核态本APIC 未使用时有效。既输入又输出
 
 ```
 
 	__u64 apic_base;
 
 ```
-APIC BASE msr 鐨勫€笺€備粎鍦ㄥ唴鏍告€佹湰鍦?APIC 鏈娇鐢ㄦ椂鏈夋晥銆傛棦杈撳叆鍙堣緭鍑恒€?
+APIC BASE msr 的值。仅在内核态本APIC 未使用时有效。既输入又输出
 
 ```
 
@@ -5800,8 +5800,8 @@ APIC BASE msr 鐨勫€笺€備粎鍦ㄥ唴鏍告€佹湰鍦?APIC 鏈娇鐢
 		} hw;
 
 ```
-濡傛灉 exit_reason 鏄?KVM_EXIT_UNKNOWN锛屽垯 vcpu 鐢变簬鏈煡鍘熷洜閫€鍑恒€傝繘涓€姝ョ殑鏋舵瀯鐩稿叧淇℃伅鍙湪
-hardware_exit_reason 涓幏寰椼€?
+如果 exit_reason KVM_EXIT_UNKNOWN，则 vcpu 由于未知原因退出。进一步的架构相关信息可在
+hardware_exit_reason 中获得
 
 ```
 
@@ -5812,8 +5812,8 @@ hardware_exit_reason 涓幏寰椼€?
 		} fail_entry;
 
 ```
-濡傛灉 exit_reason 鏄?KVM_EXIT_FAIL_ENTRY锛屽垯鐢变簬鏈煡鍘熷洜 vcpu 鏃犳硶杩愯銆傝繘涓€姝ョ殑鏋舵瀯鐩稿叧淇℃伅鍙湪
-hardware_entry_failure_reason 涓幏寰椼€?
+如果 exit_reason KVM_EXIT_FAIL_ENTRY，则由于未知原因 vcpu 无法运行。进一步的架构相关信息可在
+hardware_entry_failure_reason 中获得
 
 ```
 
@@ -5824,7 +5824,7 @@ hardware_entry_failure_reason 涓幏寰椼€?
 		} ex;
 
 ```
-鏈娇鐢ㄣ€?
+未使用
 
 ```
 
@@ -5840,9 +5840,9 @@ hardware_entry_failure_reason 涓幏寰椼€?
 		} io;
 
 ```
-濡傛灉 exit_reason 鏄?KVM_EXIT_IO锛屽垯 vcpu 鎵ц浜嗕竴鏉℃棤娉曡 kvm 婊¤冻鐨勭鍙?I/O 鎸囦护銆俤ata_offset
-鎻忚堪浜嗘暟鎹墍鍦ㄧ殑浣嶇疆锛圞VM_EXIT_IO_OUT锛夋垨 kvm 鏈熸湜搴旂敤绋嬪簭浠ｇ爜涓轰笅涓€娆?KVM_RUN 璋冪敤鏀剧疆鏁版嵁鐨勪綅缃?
-锛圞VM_EXIT_IO_IN锛夈€傛暟鎹牸寮忔槸鎵撳寘鏁扮粍銆?
+如果 exit_reason KVM_EXIT_IO，则 vcpu 执行了一条无法被 kvm 满足的端I/O 指令。data_offset
+描述了数据所在的位置（KVM_EXIT_IO_OUT）或 kvm 期望应用程序代码为下一KVM_RUN 调用放置数据的位
+（KVM_EXIT_IO_IN）。数据格式是打包数组
 
 ```
 
@@ -5852,7 +5852,7 @@ hardware_entry_failure_reason 涓幏寰椼€?
 		} debug;
 
 ```
-濡傛灉 exit_reason 鏄?KVM_EXIT_DEBUG锛屽垯 vcpu 姝ｅ湪澶勭悊涓€涓皟璇曚簨浠讹紝杩斿洖鏋舵瀯鐩稿叧鐨勪俊鎭€?
+如果 exit_reason KVM_EXIT_DEBUG，则 vcpu 正在处理一个调试事件，返回架构相关的信息
 
 ```
 
@@ -5865,10 +5865,10 @@ hardware_entry_failure_reason 涓幏寰椼€?
 		} mmio;
 
 ```
-濡傛灉 exit_reason 鏄?KVM_EXIT_MMIO锛屽垯 vcpu 鎵ц浜嗕竴鏉℃棤娉曡 kvm 婊¤冻鐨勫唴瀛樻槧灏?I/O 鎸囦护銆?data'
-鎴愬憳鍖呭惈鍐欏叆鐨勬暟鎹紙濡傛灉 'is_write' 涓?true锛夛紝鍚﹀垯搴旂敱搴旂敤绋嬪簭浠ｇ爜濉厖銆?
+如果 exit_reason KVM_EXIT_MMIO，则 vcpu 执行了一条无法被 kvm 满足的内存映I/O 指令data'
+成员包含写入的数据（如果 'is_write' true），否则应由应用程序代码填充
 
-'data' 鎴愬憳鍦ㄥ叾鍓?'len' 涓瓧鑺備腑鍖呭惈璇ュ€硷紝灏卞儚 VCPU 鐩存帴瀵瑰瓧鑺傛暟缁勬墽琛屼簡閫傚綋瀹藉害鐨勫姞杞芥垨瀛樺偍涓€鏍枫€?
+'data' 成员在其'len' 个字节中包含该值，就像 VCPU 直接对字节数组执行了适当宽度的加载或存储一样
 
 
       For KVM_EXIT_IO, KVM_EXIT_MMIO, KVM_EXIT_OSI, KVM_EXIT_PAPR, KVM_EXIT_XEN,
@@ -5878,9 +5878,9 @@ hardware_entry_failure_reason 涓幏寰椼€?
       has re-entered the kernel with KVM_RUN.  The kernel side will first finish
       incomplete operations and then check for pending signals.
 
-      鎿嶄綔鐨勯潪鎸傝捣鐘舵€佷笉淇濆瓨鍦ㄧ敤鎴风┖闂村彲瑙佺殑鐘舵€佷腑锛屽洜姝ょ敤鎴风┖闂村簲纭繚鍦ㄦ墽琛屽疄鏃惰縼绉讳箣鍓嶆搷浣滃凡
-      瀹屾垚銆傜敤鎴风┖闂村彲浠ラ€氳繃甯︽湁鏈睆钄芥寕璧蜂俊鍙锋垨璁剧疆浜?immediate_exit 瀛楁閲嶆柊杩涘叆瀹㈡埛鏈烘潵瀹屾垚
-      鎸傝捣鐨勬搷浣滐紝鑰屼笉鍏佽鎵ц浠讳綍杩涗竴姝ョ殑鎸囦护銆?
+      操作的非挂起状态不保存在用户空间可见的状态中，因此用户空间应确保在执行实时迁移之前操作已
+      完成。用户空间可以通过带有未屏蔽挂起信号或设置immediate_exit 字段重新进入客户机来完成
+      挂起的操作，而不允许执行任何进一步的指令
 
 ```
 
@@ -5894,25 +5894,25 @@ hardware_entry_failure_reason 涓幏寰椼€?
 
 
 ```
-寮虹儓寤鸿鐢ㄦ埛绌洪棿浣跨敤 `KVM_EXIT_IO`锛坸86锛夋垨 `KVM_EXIT_MMIO`锛堥櫎 s390 澶栫殑鎵€鏈夋灦鏋勶級鏉ュ疄鐜伴渶瑕?
-瀹㈡埛鏈轰笌瀹夸富鏈虹敤鎴风┖闂翠氦浜掔殑鍔熻兘銆?
-### 瀵逛簬 arm64锛?
+强烈建议用户空间使用 `KVM_EXIT_IO`（x86）或 `KVM_EXIT_MMIO`（除 s390 外的所有架构）来实现需
+客户机与宿主机用户空间交互的功能
+### 对于 arm64
 
 
-SMCCC 閫€鍑哄彲鏍规嵁 SMCCC 杩囨护鍣ㄧ殑閰嶇疆鍚敤銆傛洿澶氱粏鑺傝鍙傞槄
-Documentation/virt/kvm/devices/vm.rst 涓殑 `KVM_ARM_SMCCC_FILTER`銆?
+SMCCC 退出可根据 SMCCC 过滤器的配置启用。更多细节请参阅
+Documentation/virt/kvm/devices/vm.rst 中的 `KVM_ARM_SMCCC_FILTER`
 
-`nr` 鍖呭惈瀹㈡埛鏈?SMCCC 璋冪敤鐨勫姛鑳?ID銆傜敤鎴风┖闂村簲浣跨敤 `KVM_GET_ONE_REG`
-ioctl 浠?vCPU 鐨?GPR 涓绱㈣皟鐢ㄥ弬鏁般€?
+`nr` 包含客户SMCCC 调用的功ID。用户空间应使用 `KVM_GET_ONE_REG`
+ioctl vCPU GPR 中检索调用参数
 
-`flags` 鐨勫畾涔夛細
- - `KVM_HYPERCALL_EXIT_SMC`锛氳〃绀哄鎴锋満浣跨敤 SMC 閫氶亾鍙戣捣 SMCCC 璋冪敤銆?
-   鑻ヨ浣嶄负 0锛屽垯瀹㈡埛鏈轰娇鐢?HVC 閫氶亾鍙戣捣 SMCCC 璋冪敤銆?
+`flags` 的定义：
+ - `KVM_HYPERCALL_EXIT_SMC`：表示客户机使用 SMC 通道发起 SMCCC 调用
+   若该位为 0，则客户机使HVC 通道发起 SMCCC 调用
 
- - `KVM_HYPERCALL_EXIT_16BIT`锛氳〃绀哄鎴锋満浣跨敤 16 浣嶆寚浠ゅ彂璧?SMCCC 璋冪敤銆?
-   鑻ヨ浣嶄负 0锛屽垯瀹㈡埛鏈轰娇鐢?32 浣嶆寚浠ゃ€侫Arch64 瀹㈡埛鏈鸿浣嶅缁堜负 0銆?
+ - `KVM_HYPERCALL_EXIT_16BIT`：表示客户机使用 16 位指令发SMCCC 调用
+   若该位为 0，则客户机使32 位指令。AArch64 客户机该位始终为 0
 
-閫€鍑烘椂锛孭C 鎸囧悜闄烽槺鎸囦护涔嬪悗鐨勯偅鏉℃寚浠ゃ€?
+退出时，PC 指向陷阱指令之后的那条指令
 
 ```
 
@@ -5924,21 +5924,21 @@ ioctl 浠?vCPU 鐨?GPR 涓绱㈣皟鐢ㄥ弬鏁般€?
 		} tpr_access;
 
 ```
-寰呰ˉ鍏呮枃妗ｏ紙KVM_TPR_ACCESS_REPORTING锛夈€?
+待补充文档（KVM_TPR_ACCESS_REPORTING）
 
 ```
 
 		/* KVM_EXIT_S390_SIEIC */
 		struct {
 			__u8 icptcode;
-			__u64 mask; /* psw 涓婂崐閮ㄥ垎 */
-			__u64 addr; /* psw 涓嬪崐閮ㄥ垎 */
+			__u64 mask; /* psw 上半部分 */
+			__u64 addr; /* psw 下半部分 */
 			__u16 ipa;
 			__u32 ipb;
 		} s390_sieic;
 
 ```
-s390 鐗规湁銆?
+s390 特有
 
 ```
 
@@ -5951,7 +5951,7 @@ s390 鐗规湁銆?
 		__u64 s390_reset_flags;
 
 ```
-s390 鐗规湁銆?
+s390 特有
 
 ```
 
@@ -5962,10 +5962,10 @@ s390 鐗规湁銆?
 		} s390_ucontrol;
 
 ```
-s390 鐗规湁銆傜敤鎴锋帶鍒剁殑铏氭嫙鏈猴紙KVM_VM_S390_UNCONTROL锛夊湪鍏跺涓婚〉琛ㄤ笂鍙戠敓浜?
-鍐呮牳鏃犳硶瑙ｆ瀽鐨勭己椤垫晠闅溿€?
-鏀剧疆鍦?CPU lowcore 涓殑绋嬪簭浠ｇ爜鍜岃浆鎹㈠紓甯镐唬鐮佸湪姝ゅ鎸?z 鏋舵瀯鎿嶄綔鍘熺悊
-锛圥rinciples of Operation锛変竴涔︿腑鍔ㄦ€佸湴鍧€杞崲锛圖AT锛夌珷鑺傜殑瀹氫箟鍛堢幇銆?
+s390 特有。用户控制的虚拟机（KVM_VM_S390_UNCONTROL）在其宿主页表上发生
+内核无法解析的缺页故障
+放置CPU lowcore 中的程序代码和转换异常代码在此处z 架构操作原理
+（Principles of Operation）一书中动态地址转换（DAT）章节的定义呈现
 
 ```
 
@@ -5977,7 +5977,7 @@ s390 鐗规湁銆傜敤鎴锋帶鍒剁殑铏氭嫙鏈猴紙KVM_VM_S390_UNCONTROL
 		} dcr;
 
 ```
-宸插簾寮冣€斺€旀浘鐢ㄤ簬 440 KVM銆?
+已废弃——曾用于 440 KVM
 
 ```
 
@@ -5987,12 +5987,12 @@ s390 鐗规湁銆傜敤鎴锋帶鍒剁殑铏氭嫙鏈猴紙KVM_VM_S390_UNCONTROL
 		} osi;
 
 ```
-MOL 浣跨敤浜嗕竴绉嶅畠绉颁负鈥淥SI鈥濈殑鐗规畩瓒呯骇璋冪敤鎺ュ彛銆備负浜嗗惎鐢ㄥ畠锛屾垜浠崟鑾?
-瓒呯骇璋冪敤骞朵互璇ラ€€鍑虹粨鏋勯€€鍑猴紝鍏朵腑鍖呭惈浜嗗鎴锋満鐨勫叏閮?GPR銆?
+MOL 使用了一种它称为“OSI”的特殊超级调用接口。为了启用它，我们捕
+超级调用并以该退出结构退出，其中包含了客户机的全GPR
 
-濡傛灉 exit_reason 涓?KVM_EXIT_OSI锛屽垯琛ㄧず vCPU 瑙﹀彂浜嗘绫昏秴绾ц皟鐢ㄣ€?
-鐢ㄦ埛绌洪棿鐜板湪鍙互澶勭悊璇ヨ秴绾ц皟鐢紝骞跺湪澶勭悊瀹屾垚鍚庢寜闇€淇敼 GPR銆傚鎴锋満
-閲嶆柊杩涘叆鏃讹紝瀹㈡埛鏈烘墍鏈?GPR 閮藉皢琚缁撴瀯涓殑鍊兼浛鎹€?
+如果 exit_reason KVM_EXIT_OSI，则表示 vCPU 触发了此类超级调用
+用户空间现在可以处理该超级调用，并在处理完成后按需修改 GPR。客户机
+重新进入时，客户机所GPR 都将被此结构中的值替换
 
 ```
 
@@ -6004,12 +6004,12 @@ MOL 浣跨敤浜嗕竴绉嶅畠绉颁负鈥淥SI鈥濈殑鐗规畩瓒呯骇璋�
 		} papr_hcall;
 
 ```
-鍦?64 浣?PowerPC 涓婃ā鎷?pSeries 鍒嗗尯锛堜緥濡傚湪 qemu 涓娇鐢ㄢ€減series鈥濇満鍨嬶級
-鏃朵娇鐢ㄣ€傚綋瀹㈡埛鏈轰娇鐢ㄢ€渟c 1鈥濇寚浠ゅ彂璧疯秴绾ц皟鐢ㄦ椂鍙戠敓銆傗€渘r鈥濆瓧娈靛寘鍚?
-瓒呯骇璋冪敤鍙凤紙鍙栬嚜瀹㈡埛鏈?R3锛夛紝鈥渁rgs鈥濆寘鍚弬鏁帮紙鍙栬嚜瀹㈡埛鏈?R4 - R12锛夈€?
-鐢ㄦ埛绌洪棿搴斿皢杩斿洖鐮佹斁鍏モ€渞et鈥濓紝骞跺皢浠讳綍棰濆鐨勮繑鍥炲€兼斁鍏?args[]銆?
-鍙兘鐨勮秴绾ц皟鐢ㄥ畾涔変簬 Power Architecture Platform Requirements锛圥APR锛?
-鏂囨。锛屽彲浠?www.power.org 鑾峰彇锛堣闂渶鍏嶈垂寮€鍙戣€呮敞鍐岋級銆?
+64 PowerPC 上模pSeries 分区（例如在 qemu 中使用“pseries”机型）
+时使用。当客户机使用“sc 1”指令发起超级调用时发生。“nr”字段包
+超级调用号（取自客户R3），“args”包含参数（取自客户R4 - R12）
+用户空间应将返回码放入“ret”，并将任何额外的返回值放args[]
+可能的超级调用定义于 Power Architecture Platform Requirements（PAPR
+文档，可www.power.org 获取（访问需免费开发者注册）
 
 ```
 
@@ -6024,10 +6024,10 @@ MOL 浣跨敤浜嗕竴绉嶅畠绉颁负鈥淥SI鈥濈殑鐗规畩瓒呯骇璋�
 		} s390_tsch;
 
 ```
-s390 鐗规湁銆傚綋鍚敤浜?KVM_CAP_S390_CSS_SUPPORT 涓旀嫤鎴埌 TEST SUBCHANNEL
-鏃朵細鍙戠敓姝ら€€鍑恒€傚鏋?dequeued 琚疆浣嶏紝鍒欑洰鏍囧瓙閫氶亾涓婃寕璧风殑 I/O 涓柇
-宸茶鍑洪槦锛屽苟涓?subchannel_id銆乻ubchannel_nr銆乮o_int_parm 鍜?io_int_word
-鍖呭惈浜嗚涓柇鐨勫弬鏁般€俰pb 鐢ㄤ簬鎸囦护鍙傛暟瑙ｇ爜銆?
+s390 特有。当启用KVM_CAP_S390_CSS_SUPPORT 且拦截到 TEST SUBCHANNEL
+时会发生此退出。如dequeued 被置位，则目标子通道上挂起的 I/O 中断
+已被出队，并subchannel_id、subchannel_nr、io_int_parm io_int_word
+包含了该中断的参数。ipb 用于指令参数解码
 
 ```
 
@@ -6037,15 +6037,15 @@ s390 鐗规湁銆傚綋鍚敤浜?KVM_CAP_S390_CSS_SUPPORT 涓旀嫤鎴埌 
 		} epr;
 
 ```
-鍦?FSL BookE PowerPC 鑺墖涓婏紝涓柇鎺у埗鍣ㄦ湁涓€鏉″埌鏍稿績鐨勫揩閫熻矾寰勪腑鏂?
-搴旂瓟閫氶亾銆傚綋鏍稿績鎴愬姛閫掗€佷竴涓腑鏂椂锛屽畠浼氳嚜鍔ㄧ敤涓柇鍚戦噺鍙峰～鍏?EPR
-瀵勫瓨鍣紝骞跺湪涓柇鎺у埗鍣ㄥ唴閮ㄧ‘璁よ涓柇銆?
+FSL BookE PowerPC 芯片上，中断控制器有一条到核心的快速路径中
+应答通道。当核心成功递送一个中断时，它会自动用中断向量号填EPR
+寄存器，并在中断控制器内部确认该中断
 
-褰撲腑鏂帶鍒跺櫒浣嶄簬鐢ㄦ埛绌洪棿鏃讹紝鎴戜滑闇€瑕侀€氳繃瀹冩潵瀹屾垚涓柇纭鍛ㄦ湡锛?
-浠ヤ娇鐢ㄦ閫€鍑鸿幏鍙栦笅涓€涓緟閫掗€佺殑涓柇鍚戦噺銆?
+当中断控制器位于用户空间时，我们需要通过它来完成中断确认周期
+以使用此退出获取下一个待递送的中断向量
 
-鍙 KVM_CAP_PPC_EPR 琚惎鐢ㄤ笖鏈夊閮ㄤ腑鏂垰鍒氳閫掗€佸埌瀹㈡埛鏈猴紝灏变細瑙﹀彂瀹冦€?
-鐢ㄦ埛绌洪棿搴斿皢宸茬‘璁ょ殑涓柇鍚戦噺鏀惧叆鈥渆pr鈥濆瓧娈点€?
+只要 KVM_CAP_PPC_EPR 被启用且有外部中断刚刚被递送到客户机，就会触发它
+用户空间应将已确认的中断向量放入“epr”字段
 
 ```
 
@@ -6064,71 +6064,71 @@ s390 鐗规湁銆傚綋鍚敤浜?KVM_CAP_S390_CSS_SUPPORT 涓旀嫤鎴埌 
 		} system_event;
 
 ```
-濡傛灉 exit_reason 涓?KVM_EXIT_SYSTEM_EVENT锛屽垯琛ㄧず vCPU 閫氳繃鏌愮鏋舵瀯
-鐗瑰畾鐨勬満鍒讹紙瓒呯骇璋冪敤鎴栨煇浜涚壒娈婃寚浠わ級瑙﹀彂浜嗙郴缁熺骇浜嬩欢銆傚湪 ARM64 涓婏紝
-杩欐槸鐢?vCPU 鍩轰簬 HVC 鎸囦护鐨?PSCI 璋冪敤瑙﹀彂鐨勩€?
+如果 exit_reason KVM_EXIT_SYSTEM_EVENT，则表示 vCPU 通过某种架构
+特定的机制（超级调用或某些特殊指令）触发了系统级事件。在 ARM64 上，
+这是vCPU 基于 HVC 指令PSCI 调用触发的
 
-鈥渢ype鈥濆瓧娈垫弿杩颁簡绯荤粺绾т簨浠剁殑绫诲瀷銆?
-鈥渢ype鈥濈殑鏈夋晥鍙栧€间负锛?
+“type”字段描述了系统级事件的类型
+“type”的有效取值为
 
- - KVM_SYSTEM_EVENT_SHUTDOWN鈥斺€斿鎴锋満璇锋眰鍏抽棴铏氭嫙鏈恒€傜敤鎴风┖闂翠笉蹇?
-   閬典粠璇ヨ姹傦紝濡傛灉閬典粠锛屼篃涓嶅繀鍚屾閿€姣佽櫄鎷熸満锛堝嵆瀹冨彲浠ュ湪鏈€缁堝叧闂?
-   鍙戠敓涔嬪墠鍐嶆璋冪敤 KVM_RUN锛夈€?
- - KVM_SYSTEM_EVENT_RESET鈥斺€斿鎴锋満璇锋眰閲嶇疆铏氭嫙鏈恒€備笌 SHUTDOWN 涓€鏍凤紝
-   鐢ㄦ埛绌洪棿鍙互閫夋嫨蹇界暐璇ヨ姹傦紝鎴栬€呰皟搴﹀湪鏈潵鐨勬煇涓椂鍒昏繘琛岄噸缃紝
-   骞跺彲浠ュ啀娆¤皟鐢?KVM_RUN銆?
- - KVM_SYSTEM_EVENT_CRASH鈥斺€斿鎴锋満鍙戠敓浜嗗穿婧冿紝骞惰姹傝繘琛屽穿婧冪姸鎬佺淮鎶ゃ€?
-   鐢ㄦ埛绌洪棿鍙互閫夋嫨蹇界暐璇ヨ姹傦紝鎴栬€呮敹闆嗚櫄鎷熸満鍐呭瓨鏍稿績杞偍鍜?鎴?
-   瀵硅櫄鎷熸満杩涜閲嶇疆/鍏抽棴銆?
- - KVM_SYSTEM_EVENT_SEV_TERM鈥斺€斾竴涓?AMD SEV 瀹㈡埛鏈鸿姹傜粓姝€傚鎴锋満
-   GHCB 鐨勫鎴锋満鐗╃悊鍦板潃瀛樺偍鍦?`data[^0^]` 涓€?
- - KVM_SYSTEM_EVENT_TDX_FATAL鈥斺€擳DX 瀹㈡埛鏈烘姤鍛婁簡鑷村懡閿欒鐘舵€併€侹VM 涓嶅仛
-   浠讳綍瑙ｆ瀽鎴栬浆鎹紝鍙槸灏?16 涓€氱敤瀵勫瓨鍣ㄦ寜鎸囦护缂栫爜涓?x86-64 閫氱敤
-   瀵勫瓨鍣?4 浣嶇储寮曠殑鍗囧簭杞偍鍒扮敤鎴风┖闂达紝濡?Intel SDM 涓墍瀹氫箟銆?
- - KVM_SYSTEM_EVENT_WAKEUP鈥斺€旈€€鍑虹殑 vCPU 澶勪簬鎸傝捣鐘舵€侊紝KVM 璇嗗埆鍒颁簡
-   鍞ら啋浜嬩欢銆傜敤鎴风┖闂村彲浠ラ€氳繃灏嗚 vCPU 鏍囪涓哄彲杩愯鏉ユ帴鍙楄浜嬩欢锛?
-   鎴栬€呮嫆缁濆畠骞跺啀娆¤皟鐢?KVM_RUN銆?
- - KVM_SYSTEM_EVENT_SUSPEND鈥斺€斿鎴锋満璇锋眰鎸傝捣铏氭嫙鏈恒€?
+ - KVM_SYSTEM_EVENT_SHUTDOWN——客户机请求关闭虚拟机。用户空间不
+   遵从该请求，如果遵从，也不必同步销毁虚拟机（即它可以在最终关
+   发生之前再次调用 KVM_RUN）
+ - KVM_SYSTEM_EVENT_RESET——客户机请求重置虚拟机。与 SHUTDOWN 一样，
+   用户空间可以选择忽略该请求，或者调度在未来的某个时刻进行重置，
+   并可以再次调KVM_RUN
+ - KVM_SYSTEM_EVENT_CRASH——客户机发生了崩溃，并请求进行崩溃状态维护
+   用户空间可以选择忽略该请求，或者收集虚拟机内存核心转储
+   对虚拟机进行重置/关闭
+ - KVM_SYSTEM_EVENT_SEV_TERM——一AMD SEV 客户机请求终止。客户机
+   GHCB 的客户机物理地址存储`data[^0^]` 中
+ - KVM_SYSTEM_EVENT_TDX_FATAL——TDX 客户机报告了致命错误状态。KVM 不做
+   任何解析或转换，只是16 个通用寄存器按指令编码x86-64 通用
+   寄存4 位索引的升序转储到用户空间，Intel SDM 中所定义
+ - KVM_SYSTEM_EVENT_WAKEUP——退出的 vCPU 处于挂起状态，KVM 识别到了
+   唤醒事件。用户空间可以通过将该 vCPU 标记为可运行来接受该事件
+   或者拒绝它并再次调KVM_RUN
+ - KVM_SYSTEM_EVENT_SUSPEND——客户机请求挂起虚拟机
 
-濡傛灉 KVM_CAP_SYSTEM_EVENT_DATA 瀛樺湪锛屽垯鈥渄ata鈥濆瓧娈靛彲浠ュ寘鍚绯荤粺鐨?
-鏋舵瀯鐗瑰畾淇℃伅銆俤ata 鏁扮粍涓彧鏈夊墠 `ndata` 椤癸紙鍙兘涓洪浂锛夋槸鏈夋晥鐨勩€?
+如果 KVM_CAP_SYSTEM_EVENT_DATA 存在，则“data”字段可以包含该系统
+架构特定信息。data 数组中只有前 `ndata` 项（可能为零）是有效的
 
- - 瀵逛簬 arm64锛屽鏋滃鎴锋満鎸夌収 PSCI 瑙勮寖 v1.1 鍙戝嚭浜?SYSTEM_RESET2 璋冪敤锛?
-   鍒?data[^0^] 琚涓?KVM_SYSTEM_EVENT_RESET_FLAG_PSCI_RESET2銆?
+ - 对于 arm64，如果客户机按照 PSCI 规范 v1.1 发出SYSTEM_RESET2 调用
+   data[^0^] 被设KVM_SYSTEM_EVENT_RESET_FLAG_PSCI_RESET2
 
- - 瀵逛簬 arm64锛屽鏋滃鎴锋満鎸夌収 PSCI 瑙勮寖 v1.3 鍙戝嚭浜?SYSTEM_OFF2 璋冪敤锛?
-   鍒?data[^0^] 琚涓?KVM_SYSTEM_EVENT_SHUTDOWN_FLAG_PSCI_OFF2銆?
+ - 对于 arm64，如果客户机按照 PSCI 规范 v1.3 发出SYSTEM_OFF2 调用
+   data[^0^] 被设KVM_SYSTEM_EVENT_SHUTDOWN_FLAG_PSCI_OFF2
 
- - 瀵逛簬 RISC-V锛宒ata[^0^] 琚涓?`sbi_system_reset` 璋冪敤绗簩涓弬鏁扮殑鍊笺€?
+ - 对于 RISC-V，data[^0^] 被设`sbi_system_reset` 调用第二个参数的值
 
-鏃╂湡鐗堟湰鐨?Linux 鍦ㄨ缁撴瀯涓畾涔変簡涓€涓?`flags` 鎴愬憳銆傝瀛楁鐜板湪宸插埆鍚?
-涓?`data[^0^]`銆傜敤鎴风┖闂村彲浠ュ亣瀹氫粎褰?ndata 澶т簬 0 鏃舵墠浼氳鍐欏叆銆?
+早期版本Linux 在该结构中定义了一`flags` 成员。该字段现在已别
+`data[^0^]`。用户空间可以假定仅ndata 大于 0 时才会被写入
 
-### 瀵逛簬 arm/arm64锛?
+### 对于 arm/arm64
 
 
-KVM_SYSTEM_EVENT_SUSPEND 閫€鍑洪€氳繃 KVM_CAP_ARM_SYSTEM_SUSPEND 铏氭嫙鏈鸿兘鍔?
-鍚敤銆傚鏋滃鎴锋満璋冪敤 PSCI SYSTEM_SUSPEND 鍑芥暟锛孠VM 灏嗕互璇ヤ簨浠剁被鍨嬮€€鍑?
-鍒扮敤鎴风┖闂淬€?
+KVM_SYSTEM_EVENT_SUSPEND 退出通过 KVM_CAP_ARM_SYSTEM_SUSPEND 虚拟机能
+启用。如果客户机调用 PSCI SYSTEM_SUSPEND 函数，KVM 将以该事件类型退
+到用户空间
 
-鐢ㄦ埛绌洪棿鍏ㄦ潈璐熻矗鎸夌収 ARM DEN0022D.b 5.19鈥淪YSTEM_SUSPEND鈥濆疄鐜?PSCI
-SYSTEM_SUSPEND 璋冪敤銆侹VM 鍦ㄩ€€鍑哄埌鐢ㄦ埛绌洪棿涔嬪墠涓嶄細鏀瑰彉 vCPU 鐨勭姸鎬侊紝鍥犳
-璋冪敤鍙傛暟鍘熷湴鐣欏湪 vCPU 瀵勫瓨鍣ㄤ腑銆?
+用户空间全权负责按照 ARM DEN0022D.b 5.19“SYSTEM_SUSPEND”实PSCI
+SYSTEM_SUSPEND 调用。KVM 在退出到用户空间之前不会改变 vCPU 的状态，因此
+调用参数原地留在 vCPU 寄存器中
 
-鐢ㄦ埛绌洪棿_蹇呴』_瀵规绫婚€€鍑洪噰鍙栬鍔ㄣ€傚畠蹇呴』锛?
+用户空间_必须_对此类退出采取行动。它必须
 
- - 鎺ュ彈瀹㈡埛鏈烘寕璧疯櫄鎷熸満鐨勮姹傘€傜敤鎴风┖闂村彲浠ラ€氳繃灏嗚璋冪敤 vCPU 鐨勭姸鎬?
-   璁句负 KVM_MP_STATE_SUSPENDED 鏉ヨ姹傚湪鍐呮牳涓ā鎷熸寕璧枫€傝璋冪敤 vCPU 鎭㈠鏃讹紝
-   鐢ㄦ埛绌洪棿蹇呴』鎸夌収浼犻€掔粰 PSCI 鍑芥暟鐨勫弬鏁伴厤缃?vCPU 鐘舵€併€傛湁鍏冲嚱鏁板弬鏁扮殑
-   璇︽儏璇峰弬瑙?ARM DEN0022D.b 5.19.1鈥滈鏈熺敤閫斺€濄€?
+ - 接受客户机挂起虚拟机的请求。用户空间可以通过将被调用 vCPU 的状
+   设为 KVM_MP_STATE_SUSPENDED 来请求在内核中模拟挂起。被调用 vCPU 恢复时，
+   用户空间必须按照传递给 PSCI 函数的参数配vCPU 状态。有关函数参数的
+   详情请参ARM DEN0022D.b 5.19.1“预期用途”
 
- - 鎷掔粷瀹㈡埛鏈烘寕璧疯櫄鎷熸満鐨勮姹傘€傚彲鑳界殑杩斿洖鍊艰鍙傝 ARM DEN0022D.b 5.19.2
-   鈥滆皟鐢ㄨ€呰亴璐ｂ€濄€?
+ - 拒绝客户机挂起虚拟机的请求。可能的返回值请参见 ARM DEN0022D.b 5.19.2
+   “调用者职责”
 
-浣跨敤 PSCI SYSTEM_OFF2 璋冪敤鐨勪紤鐪犲湪鍚敤 PSCI v1.3 鏃跺惎鐢ㄣ€傚鏋滃鎴锋満璋冪敤
-PSCI SYSTEM_OFF2 鍑芥暟锛孠VM 灏嗕互 KVM_SYSTEM_EVENT_SHUTDOWN 浜嬩欢绫诲瀷閫€鍑哄埌
-鐢ㄦ埛绌洪棿锛屼笖 data[^0^] 琚涓?KVM_SYSTEM_EVENT_SHUTDOWN_FLAG_PSCI_OFF2銆?
-SYSTEM_OFF2 鍑芥暟鏀寔鐨勪紤鐪犵被鍨嬪彧鏈?HIBERNATE_OFF銆?
+使用 PSCI SYSTEM_OFF2 调用的休眠在启用 PSCI v1.3 时启用。如果客户机调用
+PSCI SYSTEM_OFF2 函数，KVM 将以 KVM_SYSTEM_EVENT_SHUTDOWN 事件类型退出到
+用户空间，且 data[^0^] 被设KVM_SYSTEM_EVENT_SHUTDOWN_FLAG_PSCI_OFF2
+SYSTEM_OFF2 函数支持的休眠类型只HIBERNATE_OFF
 
 ```
 
@@ -6138,10 +6138,10 @@ SYSTEM_OFF2 鍑芥暟鏀寔鐨勪紤鐪犵被鍨嬪彧鏈?HIBERNATE_OFF銆?
 		} eoi;
 
 ```
-琛ㄧず vCPU 鐨勫唴鏍告€佹湰鍦?APIC 鏀跺埌浜嗕竴涓數骞宠Е鍙戝瀷 IOAPIC 涓柇鐨?EOI銆?
-姝ら€€鍑轰粎鍦?IOAPIC 瀹炵幇浜庣敤鎴风┖闂达紙鍗冲惎鐢ㄤ簡 KVM_CAP_SPLIT_IRQCHIP锛夋椂
-瑙﹀彂锛涚敤鎴风┖闂?IOAPIC 搴斿鐞嗚 EOI锛屽苟鍦ㄤ腑鏂粛琚柇瑷€鏃堕噸鏂拌Е鍙戣涓柇銆?
-vector 鏄敹鍒?EOI 鐨?LAPIC 涓柇鍚戦噺銆?
+表示 vCPU 的内核态本APIC 收到了一个电平触发型 IOAPIC 中断EOI
+此退出仅IOAPIC 实现于用户空间（即启用了 KVM_CAP_SPLIT_IRQCHIP）时
+触发；用户空IOAPIC 应处理该 EOI，并在中断仍被断言时重新触发该中断
+vector 是收EOI LAPIC 中断向量
 
 ```
 
@@ -6179,17 +6179,17 @@ vector 鏄敹鍒?EOI 鐨?LAPIC 涓柇鍚戦噺銆?
                 struct kvm_hyperv_exit hyperv;
 
 ```
-琛ㄧず vCPU 閫€鍑哄埌鐢ㄦ埛绌洪棿浠ュ鐞嗕笌 Hyper-V 妯℃嫙鐩稿叧鐨勪竴浜涗换鍔°€?
+表示 vCPU 退出到用户空间以处理与 Hyper-V 模拟相关的一些任务
 
-鈥渢ype鈥濈殑鏈夋晥鍙栧€间负锛?
+“type”的有效取值为
 
- - KVM_EXIT_HYPERV_SYNIC鈥斺€斿悓姝ラ€氱煡鐢ㄦ埛绌洪棿 Hyper-V SynIC 鐘舵€佸彉鏇淬€?
-   璇ラ€氱煡鐢ㄤ簬灏?SynIC 浜嬩欢/娑堟伅椤甸噸鏂版槧灏勶紝浠ュ強鍦ㄧ敤鎴风┖闂翠腑鍚敤/绂佺敤
-   SynIC 娑堟伅/浜嬩欢澶勭悊銆?
+ - KVM_EXIT_HYPERV_SYNIC——同步通知用户空间 Hyper-V SynIC 状态变更
+   该通知用于SynIC 事件/消息页重新映射，以及在用户空间中启用/禁用
+   SynIC 消息/事件处理
 
- - KVM_EXIT_HYPERV_SYNDBG鈥斺€斿悓姝ラ€氱煡鐢ㄦ埛绌洪棿 Hyper-V 鍚堟垚璋冭瘯鍣ㄧ姸鎬佸彉鏇淬€?
-   璇ラ€氱煡鐢ㄤ簬鏇存柊 pending_page 浣嶇疆锛屾垨鍙戦€佹帶鍒跺懡浠わ紙鍙戦€佷綅浜?send_page
-   涓殑缂撳啿鍖猴紝鎴栨帴鏀剁紦鍐插尯鍒?recv_page锛夈€?
+ - KVM_EXIT_HYPERV_SYNDBG——同步通知用户空间 Hyper-V 合成调试器状态变更
+   该通知用于更新 pending_page 位置，或发送控制命令（发送位send_page
+   中的缓冲区，或接收缓冲区recv_page）
 
 ```
 
@@ -6200,54 +6200,54 @@ vector 鏄敹鍒?EOI 鐨?LAPIC 涓柇鍚戦噺銆?
 		} arm_nisv;
 
 ```
-- KVM_EXIT_ARM_NISV锛?
+- KVM_EXIT_ARM_NISV锛。
 
-鐢ㄤ簬 arm64 绯荤粺銆傚鏋滃鎴锋満璁块棶浜嗕笉鍦?memslot 涓殑鍐呭瓨锛孠VM 閫氬父浼氳繑鍥?
-鍒扮敤鎴风┖闂村苟璇锋眰瀹冧唬涓鸿繘琛?MMIO 妯℃嫙銆備絾鏄紝瀵逛簬鏌愪簺绫诲埆鐨勬寚浠わ紝涓嶆彁渚?
-鎸囦护瑙ｇ爜锛堟柟鍚戙€佸唴瀛樿闂暱搴︼級锛岃€屼粠铏氭嫙鏈轰腑鍙栧嚭骞惰В鐮佹寚浠ょ殑杩囩▼鍦?
-鍐呮牳涓繃浜庡鏉傘€?
+用于 arm64 系统。如果客户机访问了不memslot 中的内存，KVM 通常会返
+到用户空间并请求它代为进MMIO 模拟。但是，对于某些类别的指令，不提
+指令解码（方向、内存访问长度），而从虚拟机中取出并解码指令的过程
+内核中过于复杂
 
-鍘嗗彶涓婏紝鍙戠敓杩欑鎯呭喌鏃讹紝KVM 浼氭墦鍗拌鍛婂苟鏉€姝昏櫄鎷熸満銆侹VM 鍋囪濡傛灉瀹㈡埛鏈?
-璁块棶浜嗛潪 memslot 鍐呭瓨锛屽畠灏辨槸鍦ㄥ皾璇曡繘琛?I/O锛岃€岃 I/O 鏃犳硶琚ā鎷燂紝璀﹀憡
-娑堟伅涔熸槸鎹鎺緸鐨勩€傜劧鑰岋紝鏇村父瑙佺殑鎯呭喌鏄鎴锋満 bug 瀵艰嚧璁块棶浜嗗鎴锋満
-鍐呭瓨鍖哄煙涔嬪鐨勫湴鏂癸紝杩欏簲褰撳鑷存洿鏈夋剰涔夌殑璀﹀憡娑堟伅锛屽苟涓斿鏋滆闂病鏈夎惤鍦?
-I/O 绐楀彛鍐咃紝鍒欏簲鍦ㄥ鎴锋満涓Е鍙戝閮ㄤ腑姝€?
+历史上，发生这种情况时，KVM 会打印警告并杀死虚拟机。KVM 假设如果客户
+访问了非 memslot 内存，它就是在尝试进I/O，而该 I/O 无法被模拟，警告
+消息也是据此措辞的。然而，更常见的情况是客户机 bug 导致访问了客户机
+内存区域之外的地方，这应当导致更有意义的警告消息，并且如果访问没有落
+I/O 窗口内，则应在客户机中触发外部中止
 
-鐢ㄦ埛绌洪棿瀹炵幇鍙互鏌ヨ KVM_CAP_ARM_NISV_TO_USER锛屽苟鍦ㄥ垱寤鸿櫄鎷熸満鏃跺惎鐢ㄨ
-鑳藉姏銆備竴鏃﹀畬鎴愶紝姝ょ被閿欒灏嗘敼涓轰互 KVM_EXIT_ARM_NISV 杩斿洖鍒扮敤鎴风┖闂达紝鍏朵腑
-ESR_EL2 涓殑鏈夋晥浣嶄綅浜?esr_iss 瀛楁锛屾晠闅?IPA 浣嶄簬 fault_ipa 瀛楁銆?
-鐢ㄦ埛绌洪棿鍙互閫氳繃浠庡鎴锋満鍐呭瓨涓В鐮佹寚浠わ紙濡傛灉瀹冮潪甯稿媷鏁級鏉ヤ慨澶嶈璁块棶
-锛堝鏋滄槸鐪熸鐨?I/O 璁块棶锛夊苟缁х画鎵ц瀹㈡埛鏈猴紝鎴栬€呭畠鍙互閫夋嫨鎸傝捣銆佽浆鍌ㄦ垨
-閲嶅惎瀹㈡埛鏈恒€?
+用户空间实现可以查询 KVM_CAP_ARM_NISV_TO_USER，并在创建虚拟机时启用该
+能力。一旦完成，此类错误将改为以 KVM_EXIT_ARM_NISV 返回到用户空间，其中
+ESR_EL2 中的有效位位esr_iss 字段，故IPA 位于 fault_ipa 字段
+用户空间可以通过从客户机内存中解码指令（如果它非常勇敢）来修复该访问
+（如果是真正I/O 访问）并继续执行客户机，或者它可以选择挂起、转储或
+重启客户机
 
-娉ㄦ剰 KVM 涓嶄細鍍忓 KVM_EXIT_MMIO 閭ｆ牱璺宠繃鏁呴殰鎸囦护锛屼絾濡傛灉鐢ㄦ埛绌洪棿鍐冲畾
-瑙ｇ爜骞舵ā鎷熻鎸囦护锛屽垯蹇呴』妯℃嫙瀵瑰鐞嗙姸鎬佺殑浠讳綍鏇存敼銆?
+注意 KVM 不会像对 KVM_EXIT_MMIO 那样跳过故障指令，但如果用户空间决定
+解码并模拟该指令，则必须模拟对处理状态的任何更改
 
-姝ょ壒鎬у鍙椾繚鎶ょ殑铏氭嫙鏈轰笉鍙敤锛屽洜涓虹敤鎴风┖闂存棤鏉冭闂墽琛屾ā鎷熸墍闇€鐨?
-鐘舵€併€傜浉鍙嶏紝浼氱洿鎺ュ悜瀹㈡埛鏈烘敞鍏ヤ竴涓暟鎹腑姝㈠紓甯搞€傛敞鎰忥紝灏界鍦ㄥ彈淇濇姢
-铏氭嫙鏈轰笂涓嬫枃涔嬪鏌ヨ鏃朵細鎶ュ憡 KVM_CAP_ARM_NISV_TO_USER锛屼絾鍦ㄥ彈淇濇姢铏氭嫙鏈?
-鏂囦欢鎻忚堪绗︿笂鏌ヨ鏃惰鐗规€т笉浼氭毚闇层€?
+此特性对受保护的虚拟机不可用，因为用户空间无权访问执行模拟所需
+状态。相反，会直接向客户机注入一个数据中止异常。注意，尽管在受保护
+虚拟机上下文之外查询时会报告 KVM_CAP_ARM_NISV_TO_USER，但在受保护虚拟
+文件描述符上查询时该特性不会暴露
 
-- KVM_EXIT_ARM_LDST64B锛?
+- KVM_EXIT_ARM_LDST64B锛。
 
-鐢ㄤ簬 arm64 绯荤粺銆傚綋瀹㈡埛鏈哄湪 memslot 涔嬪浣跨敤 LD64B銆丼T64B銆丼T64BV銆?
-ST64BV0 鏃讹紝KVM 灏嗕互 KVM_EXIT_ARM_LDST64B 杩斿洖鍒扮敤鎴风┖闂达紝鏆撮湶鐩稿叧鐨?
-ESR_EL2 淇℃伅鍜屾晠闅?IPA锛屼笌 KVM_EXIT_ARM_NISV 绫讳技銆?
+用于 arm64 系统。当客户机在 memslot 之外使用 LD64B、ST64B、ST64BV
+ST64BV0 时，KVM 将以 KVM_EXIT_ARM_LDST64B 返回到用户空间，暴露相关
+ESR_EL2 信息和故IPA，与 KVM_EXIT_ARM_NISV 类似
 
-鐢ㄦ埛绌洪棿搴斿畬鏁存ā鎷熻繖浜涙寚浠わ紝鍖呮嫭锛?
+用户空间应完整模拟这些指令，包括
 
- - 鍙栧嚭瀛樺偍鎿嶄綔鏁帮紝鍖呮嫭 ST64BV0 鎸囦护鎯呭喌涓嬬殑 ACCDATA_EL1
- - 澶勭悊瀹㈡埛鏈轰负澶х搴忔椂鐨勫瓧鑺傚簭闂
- - 妯℃嫙璁块棶锛屽寘鎷闂湭鎴愬姛鏃堕€掗€佸紓甯?
- - 鍦?ST64BV/ST64BV0 鎯呭喌涓嬫彁渚涜繑鍥炲€?
- - 鍦ㄥ姞杞芥儏鍐典笅杩斿洖鏁版嵁
- - 鎸囦护鎴愬姛鎵ц鏃堕€掑 PC
+ - 取出存储操作数，包括 ST64BV0 指令情况下的 ACCDATA_EL1
+ - 处理客户机为大端序时的字节序问题
+ - 模拟访问，包括访问未成功时递送异
+ - ST64BV/ST64BV0 情况下提供返回
+ - 在加载情况下返回数据
+ - 指令成功执行时递增 PC
 
-娉ㄦ剰瀵规妯℃嫙娌℃湁鎬ц兘鏂归潰鐨勯鏈燂紝鍥犱负瀹冩秹鍙婁笌瀹㈡埛鏈虹姸鎬佺殑澶ч噺浜や簰銆?
-鐒惰€岋紝鏈熸湜鑳藉淇濈暀鎸囦护鐨勮涔夛紝灏ゅ叾鏄?64 瀛楄妭璁块棶鐨勫崟鍓湰鍘熷瓙鎬у睘鎬с€?
+注意对此模拟没有性能方面的预期，因为它涉及与客户机状态的大量交互
+然而，期望能够保留指令的语义，尤其64 字节访问的单副本原子性属性
 
-濡傛灉鐢ㄦ埛绌洪棿灏?ID_AA64ISAR1_EL1.LS64 璁句负闈為浂鍊硷紙琛ㄧず鍚敤浜?FEAT_LS64*锛夛紝
-鍒欏繀椤诲鐞嗘閫€鍑哄師鍥犮€?
+如果用户空间ID_AA64ISAR1_EL1.LS64 设为非零值（表示启用FEAT_LS64*），
+则必须处理此退出原因
 
 ```
 
@@ -6261,31 +6261,31 @@ ESR_EL2 淇℃伅鍜屾晠闅?IPA锛屼笌 KVM_EXIT_ARM_NISV 绫讳技銆?
 		} msr;
 
 ```
-鐢ㄤ簬 x86 绯荤粺銆傚綋铏氭嫙鏈鸿兘鍔?KVM_CAP_X86_USER_SPACE_MSR 鍚敤鏃讹紝瀵逛細寮曞彂
-KVM 鍐呮牳浠ｇ爜 #GP 鐨勫瘎瀛樺櫒鐨?MSR 璁块棶锛屽彲鑳芥敼涓鸿Е鍙戣鏂瑰悜鐨?
-KVM_EXIT_X86_RDMSR 閫€鍑哄拰鍐欐柟鍚戠殑 KVM_EXIT_X86_WRMSR 閫€鍑恒€?
+用于 x86 系统。当虚拟机能KVM_CAP_X86_USER_SPACE_MSR 启用时，对会引发
+KVM 内核代码 #GP 的寄存器MSR 访问，可能改为触发读方向
+KVM_EXIT_X86_RDMSR 退出和写方向的 KVM_EXIT_X86_WRMSR 退出
 
-鈥渞eason鈥濆瓧娈垫寚瀹氫簡 MSR 鎷︽埅鍙戠敓鐨勫師鍥犮€傜敤鎴风┖闂村彧浼氬湪閫氳繃 ENABLE_CAP
-璇锋眰浜嗙壒瀹氬師鍥犳椂鎵嶄細鏀跺埌 MSR 閫€鍑恒€傚綋鍓嶆湁鏁堢殑閫€鍑哄師鍥犳湁锛?
+“reason”字段指定了 MSR 拦截发生的原因。用户空间只会在通过 ENABLE_CAP
+请求了特定原因时才会收到 MSR 退出。当前有效的退出原因有
 
 ============================ ========================================
- KVM_MSR_EXIT_REASON_UNKNOWN 璁块棶 KVM 鏈煡鐨?MSR
- KVM_MSR_EXIT_REASON_INVAL   璁块棶鏃犳晥 MSR 鎴栦繚鐣欎綅
- KVM_MSR_EXIT_REASON_FILTER  琚?KVM_X86_SET_MSR_FILTER 鎷︽埅鐨勮闂?
+ KVM_MSR_EXIT_REASON_UNKNOWN 访问 KVM 未知MSR
+ KVM_MSR_EXIT_REASON_INVAL   访问无效 MSR 或保留位
+ KVM_MSR_EXIT_REASON_FILTER  KVM_X86_SET_MSR_FILTER 拦截的访
 ============================ ========================================
 
-瀵逛簬 KVM_EXIT_X86_RDMSR锛屸€渋ndex鈥濆瓧娈靛憡璇夌敤鎴风┖闂村鎴锋満鎯宠璇诲彇鍝釜 MSR銆?
-瑕佷互涓€娆℃垚鍔熺殑璇诲彇鍝嶅簲姝よ姹傦紝鐢ㄦ埛绌洪棿灏嗙浉搴旀暟鎹啓鍏モ€渄ata鈥濆瓧娈碉紝骞朵笖
-蹇呴』缁х画鎵ц瀹㈡埛鏈轰互纭繚璇诲彇鐨勬暟鎹浼犻€佽繘瀹㈡埛鏈哄瘎瀛樺櫒鐘舵€併€?
+对于 KVM_EXIT_X86_RDMSR，“index”字段告诉用户空间客户机想要读取哪个 MSR
+要以一次成功的读取响应此请求，用户空间将相应数据写入“data”字段，并且
+必须继续执行客户机以确保读取的数据被传送进客户机寄存器状态
 
-濡傛灉 RDMSR 璇锋眰涓嶆垚鍔燂紝鐢ㄦ埛绌洪棿閫氳繃鍦ㄢ€渆rror鈥濆瓧娈典腑鍐欏叆鈥?鈥濇潵鎸囩ず銆?
-杩欎細鍦?VCPU 鍐嶆琚墽琛屾椂鍚戝鎴锋満娉ㄥ叆涓€涓?#GP銆?
+如果 RDMSR 请求不成功，用户空间通过在“error”字段中写入”来指示
+这会VCPU 再次被执行时向客户机注入一#GP
 
-瀵逛簬 KVM_EXIT_X86_WRMSR锛屸€渋ndex鈥濆瓧娈靛憡璇夌敤鎴风┖闂村鎴锋満鎯宠鍐欏叆鍝釜 MSR銆?
-澶勭悊瀹岃浜嬩欢鍚庯紝鐢ㄦ埛绌洪棿蹇呴』缁х画鎵ц vCPU銆傚鏋?MSR 鍐欏叆涓嶆垚鍔燂紝鐢ㄦ埛绌洪棿
-涔熷皢鈥渆rror鈥濆瓧娈佃涓衡€?鈥濄€?
+对于 KVM_EXIT_X86_WRMSR，“index”字段告诉用户空间客户机想要写入哪个 MSR
+处理完该事件后，用户空间必须继续执行 vCPU。如MSR 写入不成功，用户空间
+也将“error”字段设为”
 
-鏈夊叧涓?MSR 杩囨护浜や簰鐨勭粏鑺傦紝璇峰弬闃?KVM_X86_SET_MSR_FILTER銆?
+有关MSR 过滤交互的细节，请参KVM_X86_SET_MSR_FILTER
 
 ```
 
@@ -6306,12 +6306,12 @@ KVM_EXIT_X86_RDMSR 閫€鍑哄拰鍐欐柟鍚戠殑 KVM_EXIT_X86_WRMSR 閫€�
                 struct kvm_hyperv_exit xen;
 
 ```
-琛ㄧず vCPU 閫€鍑哄埌鐢ㄦ埛绌洪棿浠ュ鐞嗕笌 Xen 妯℃嫙鐩稿叧鐨勪竴浜涗换鍔°€?
+表示 vCPU 退出到用户空间以处理与 Xen 模拟相关的一些任务
 
-鈥渢ype鈥濈殑鏈夋晥鍙栧€间负锛?
+“type”的有效取值为
 
-  - KVM_EXIT_XEN_HCALL鈥斺€斿悓姝ラ€氱煡鐢ㄦ埛绌洪棿 Xen 瓒呯骇璋冪敤銆傜敤鎴风┖闂村簲褰撳湪
-    鍐嶆璋冪敤 KVM_RUN 涔嬪墠灏嗚秴绾ц皟鐢ㄧ粨鏋滄斁鍏ョ浉搴斿瓧娈点€?
+  - KVM_EXIT_XEN_HCALL——同步通知用户空间 Xen 超级调用。用户空间应当在
+    再次调用 KVM_RUN 之前将超级调用结果放入相应字段
 
 ```
 
@@ -6324,13 +6324,13 @@ KVM_EXIT_X86_RDMSR 閫€鍑哄拰鍐欐柟鍚戠殑 KVM_EXIT_X86_WRMSR 閫€�
 		} riscv_sbi;
 
 ```
-濡傛灉閫€鍑哄師鍥犱负 KVM_EXIT_RISCV_SBI锛屽垯琛ㄧず VCPU 鎵ц浜嗕笉鐢?KVM RISC-V
-鍐呮牳妯″潡澶勭悊鐨?SBI 璋冪敤銆係BI 璋冪敤鐨勭粏鑺傚彲鍦?kvm_run 缁撴瀯鐨勨€渞iscv_sbi鈥?
-鎴愬憳涓幏寰椼€傗€渞iscv_sbi鈥濈殑鈥渆xtension_id鈥濆瓧娈佃〃绀?SBI 鎵╁睍 ID锛岃€?
-鈥渇unction_id鈥濆瓧娈佃〃绀虹粰瀹?SBI 鎵╁睍鐨勫嚱鏁?ID銆傗€渞iscv_sbi鈥濈殑鈥渁rgs鈥濇暟缁?
-瀛楁琛ㄧず SBI 璋冪敤鐨勫弬鏁帮紝鈥渞et鈥濇暟缁勮〃绀鸿繑鍥炲€笺€傜敤鎴风┖闂村簲鍦ㄦ仮澶?VCPU
-涔嬪墠鏇存柊 SBI 璋冪敤鐨勮繑鍥炲€笺€傛湁鍏?RISC-V SBI 瑙勮寖鐨勬洿澶氱粏鑺傦紝璇峰弬闃?
-https://github.com/riscv/riscv-sbi-doc銆?
+如果退出原因为 KVM_EXIT_RISCV_SBI，则表示 VCPU 执行了不KVM RISC-V
+内核模块处理SBI 调用。SBI 调用的细节可kvm_run 结构的“riscv_sbi
+成员中获得。“riscv_sbi”的“extension_id”字段表SBI 扩展 ID，
+“function_id”字段表示给SBI 扩展的函ID。“riscv_sbi”的“args”数
+字段表示 SBI 调用的参数，“ret”数组表示返回值。用户空间应在恢VCPU
+之前更新 SBI 调用的返回值。有RISC-V SBI 规范的更多细节，请参
+https://github.com/riscv/riscv-sbi-doc銆。
 
 ```
 
@@ -6343,17 +6343,17 @@ https://github.com/riscv/riscv-sbi-doc銆?
 		} memory_fault;
 
 ```
-KVM_EXIT_MEMORY_FAULT 琛ㄧず vCPU 閬囧埌浜?KVM 鏃犳硶瑙ｆ瀽鐨勫唴瀛樻晠闅溿€傗€済pa鈥濆拰
-鈥渟ize鈥濓紙浠ュ瓧鑺備负鍗曚綅锛夋弿杩颁簡鏁呴殰鐨勫鎴锋満鐗╃悊鍦板潃鑼冨洿 [gpa, gpa + size)銆?
-鈥渇lags鈥濆瓧娈垫弿杩颁簡鍙兘涓庢晠闅滅浉鍏崇殑璁块棶灞炴€э細
+KVM_EXIT_MEMORY_FAULT 表示 vCPU 遇到KVM 无法解析的内存故障。“gpa”和
+“size”（以字节为单位）描述了故障的客户机物理地址范围 [gpa, gpa + size)
+“flags”字段描述了可能与故障相关的访问属性：
 
- - KVM_MEMORY_EXIT_FLAG_PRIVATE鈥斺€旂疆浣嶆椂锛岃〃绀哄唴瀛樻晠闅滃彂鐢熷湪绉佹湁鍐呭瓨
-   璁块棶涓婏紱娓呴浂鏃讹紝琛ㄧず鏁呴殰鍙戠敓鍦ㄥ叡浜闂笂銆?
+ - KVM_MEMORY_EXIT_FLAG_PRIVATE——置位时，表示内存故障发生在私有内存
+   访问上；清零时，表示故障发生在共享访问上
 
-娉ㄦ剰锛並VM_EXIT_MEMORY_FAULT 鍦ㄦ墍鏈?KVM 閫€鍑哄師鍥犱腑鐙竴鏃犱簩锛屽畠浼撮殢鐨勮繑鍥?
-鐮佹槸鈥?1鈥濊€岄潪鈥?鈥濓紒褰?KVM 浠?KVM_EXIT_MEMORY_FAULT 閫€鍑烘椂锛宔rrno 灏嗗缁?
-璁句负 EFAULT 鎴?EHWPOISON锛屽浜庢墍鏈夊叾浠栭敊璇爜锛岀敤鎴风┖闂村簲鍋囧畾
-kvm_run.exit_reason 鏄繃鏈?鏈畾涔夌殑銆?
+注意！KVM_EXIT_MEMORY_FAULT 在所KVM 退出原因中独一无二，它伴随的返
+码是1”而非”！KVM KVM_EXIT_MEMORY_FAULT 退出时，errno 将始
+设为 EFAULT EHWPOISON，对于所有其他错误码，用户空间应假定
+kvm_run.exit_reason 是过未定义的
 
 ```
 
@@ -6364,15 +6364,15 @@ kvm_run.exit_reason 鏄繃鏈?鏈畾涔夌殑銆?
     } notify;
 
 ```
-鐢ㄤ簬 x86 绯荤粺銆傚綋铏氭嫙鏈鸿兘鍔?KVM_CAP_X86_NOTIFY_VMEXIT 鍚敤鏃讹紝濡傛灉鍦?VM
-闈炴牴妯″紡涓嬬粡杩囨寚瀹氭椂闀夸粛鏃犱簨浠剁獥鍙ｅ彂鐢燂紝鍒欑敓鎴?VM 閫€鍑恒€備竴鏃﹀湪鍚敤璇ヨ兘鍔涙椂
-璁剧疆浜?KVM_X86_NOTIFY_VMEXIT_USER锛屽畠灏嗕互閫€鍑哄師鍥?KVM_EXIT_NOTIFY 閫€鍑哄埌
-鐢ㄦ埛绌洪棿浠ヨ繘琛岃繘涓€姝ュ鐞嗐€傗€渇lags鈥濆瓧娈靛寘鍚洿璇︾粏鐨勪俊鎭€?
+用于 x86 系统。当虚拟机能KVM_CAP_X86_NOTIFY_VMEXIT 启用时，如果VM
+非根模式下经过指定时长仍无事件窗口发生，则生VM 退出。一旦在启用该能力时
+设置KVM_X86_NOTIFY_VMEXIT_USER，它将以退出原KVM_EXIT_NOTIFY 退出到
+用户空间以进行进一步处理。“flags”字段包含更详细的信息
 
-鈥渇lags鈥濈殑鏈夋晥鍙栧€间负锛?
+“flags”的有效取值为
 
-  - KVM_NOTIFY_CONTEXT_INVALID鈥斺€擵M 涓婁笅鏂囧凡鎹熷潖涓斿湪 VMCS 涓棤鏁堛€傚鏋滄仮澶?
-    鐩爣铏氭嫙鏈猴紝灏嗗鑷存湭鐭ョ粨鏋溿€?
+  - KVM_NOTIFY_CONTEXT_INVALID——VM 上下文已损坏且在 VMCS 中无效。如果恢
+    目标虚拟机，将导致未知结果
 
 ```
 
@@ -6403,33 +6403,33 @@ kvm_run.exit_reason 鏄繃鏈?鏈畾涔夌殑銆?
 		} tdx;
 
 ```
-澶勭悊鏉ヨ嚜瀹㈡埛鏈虹殑 TDVMCALL銆侹VM 鍩轰簬 Guest-Hypervisor 閫氫俊鎺ュ彛锛圙HCI锛夎鑼?
-杞彂閫夊畾鐨?TDVMCALL锛汯VM 浠ユ渶灏忔敼鍔ㄥ皢杩欎簺璇锋眰妗ユ帴鍒扮敤鎴风┖闂?VMM锛屽皢杈撳叆
-鏀惧叆 union锛屽苟鍦ㄩ噸鏂拌繘鍏ユ椂澶嶅埗鍥炲鎴锋満銆?
+处理来自客户机的 TDVMCALL。KVM 基于 Guest-Hypervisor 通信接口（GHCI）规
+转发选定TDVMCALL；KVM 以最小改动将这些请求桥接到用户空VMM，将输入
+放入 union，并在重新进入时复制回客户机
 
-flags 褰撳墠濮嬬粓涓洪浂锛岃€?`nr` 鍖呭惈鏉ヨ嚜 R11 瀵勫瓨鍣ㄧ殑 TDVMCALL 鍙枫€倁nion 鐨?
-鍏朵綑瀛楁鎻愪緵浜?TDVMCALL 鐨勮緭鍏ュ拰杈撳嚭銆傚綋鍓嶅畾涔変簡浠ヤ笅 `nr` 鍊硷細
+flags 当前始终为零，`nr` 包含来自 R11 寄存器的 TDVMCALL 号。union 
+其余字段提供TDVMCALL 的输入和输出。当前定义了以下 `nr` 值：
 
- - `TDVMCALL_GET_QUOTE`锛氬鎴锋満宸茶姹傜敓鎴愮敱杩愯鍦ㄥ涓讳笂鐨?TD-Quoting
-   椋炲湴锛圗nclave锛夌鍚嶇殑 TD-Quote銆傚弬鏁板拰杩斿洖鍊间綅浜?union 鐨?`get_quote`
-   瀛楁銆俙gpa` 瀛楁鍜?`size` 鎸囧畾浜嗗鎴锋満鐗╃悊鍦板潃锛堟湭璁剧疆鍏变韩浣嶏級浠ュ強
-   鍏变韩鍐呭瓨缂撳啿鍖虹殑澶у皬锛孴DX 瀹㈡埛鏈洪€氳繃璇ョ紦鍐插尯浼犻€?TD Report銆俙ret`
-   瀛楁琛ㄧず GetQuote 璇锋眰鐨勮繑鍥炲€笺€傚綋璇锋眰鎴愬姛鍏ラ槦鍚庯紝TDX 瀹㈡埛鏈哄彲浠ヨ疆璇?
-   鍏变韩鍐呭瓨鍖哄煙涓殑鐘舵€佸瓧娈碉紝浠ユ鏌?Quote 鐢熸垚鏄惁瀹屾垚銆傚畬鎴愬悗锛岀敓鎴愮殑
-   Quote 閫氳繃鍚屼竴缂撳啿鍖鸿繑鍥炪€?
+ - `TDVMCALL_GET_QUOTE`：客户机已请求生成由运行在宿主上TD-Quoting
+   飞地（Enclave）签名的 TD-Quote。参数和返回值位union `get_quote`
+   字段。`gpa` 字段`size` 指定了客户机物理地址（未设置共享位）以及
+   共享内存缓冲区的大小，TDX 客户机通过该缓冲区传TD Report。`ret`
+   字段表示 GetQuote 请求的返回值。当请求成功入队后，TDX 客户机可以轮
+   共享内存区域中的状态字段，以检Quote 生成是否完成。完成后，生成的
+   Quote 通过同一缓冲区返回
 
- - `TDVMCALL_GET_TD_VM_CALL_INFO`锛氬鎴锋満宸茶姹?TDVMCALL 鐨勬敮鎸佺姸鎬併€傜粰瀹?
-   leaf 鐨勮緭鍑哄€煎簲鏀惧叆 union 鐨?`get_tdvmcall_info` 瀛楁涓粠 `r11` 鍒?
-   `r14` 鐨勫瓧娈点€?
+ - `TDVMCALL_GET_TD_VM_CALL_INFO`：客户机已请TDVMCALL 的支持状态。给
+   leaf 的输出值应放入 union `get_tdvmcall_info` 字段中从 `r11` 
+   `r14` 的字段
 
- - `TDVMCALL_SETUP_EVENT_NOTIFY_INTERRUPT`锛氬鎴锋満宸茶姹備负鍚戦噺 `vector`
-   璁剧疆閫氱煡涓柇銆?
+ - `TDVMCALL_SETUP_EVENT_NOTIFY_INTERRUPT`：客户机已请求为向量 `vector`
+   设置通知中断
 
-KVM 灏嗘潵鍙兘浼氬鍔犲鏇村鍊肩殑鏀寔锛岃繖浜涘€煎彲鑳藉鑷寸敤鎴风┖闂撮€€鍑猴紝鍗充娇娌℃湁
-璋冪敤 `KVM_ENABLE_CAP` 鎴栫被浼兼帴鍙ｃ€傚湪杩欑鎯呭喌涓嬶紝瀹冨皢甯︾潃宸叉湁鏁堢殑杈撳嚭瀛楁
-杩涘叆锛涢€氬父鎯呭喌涓嬶紝union 鐨?`unknown.ret` 瀛楁涓?
-`TDVMCALL_STATUS_SUBFUNC_UNSUPPORTED`銆傚鏋滅敤鎴风┖闂翠笉甯屾湜鏀寔鏌愪釜 TDVMCALL锛?
-鍒欐棤闇€鍋氫换浣曞鐞嗐€?
+KVM 将来可能会增加对更多值的支持，这些值可能导致用户空间退出，即使没有
+调用 `KVM_ENABLE_CAP` 或类似接口。在这种情况下，它将带着已有效的输出字段
+进入；通常情况下，union `unknown.ret` 字段
+`TDVMCALL_STATUS_SUBFUNC_UNSUPPORTED`。如果用户空间不希望支持某个 TDVMCALL
+则无需做任何处理
 
 ```
 
@@ -6443,11 +6443,11 @@ KVM 灏嗘潵鍙兘浼氬鍔犲鏇村鍊肩殑鏀寔锛岃繖浜�
 		} arm_sea;
 
 ```
-鐢ㄤ簬 arm64 绯荤粺銆傚綋铏氭嫙鏈鸿兘鍔?`KVM_CAP_ARM_SEA_TO_USER` 鍚敤鏃讹紝濡傛灉瀹㈡埛鏈?
-璁块棶瀵艰嚧浜嗗悓姝ュ閮ㄤ腑姝紙SEA锛変笖瀹夸富 APEI 鏃犳硶澶勭悊璇?SEA锛孠VM 浼氶€€鍑哄埌
-鐢ㄦ埛绌洪棿銆?
+用于 arm64 系统。当虚拟机能`KVM_CAP_ARM_SEA_TO_USER` 启用时，如果客户
+访问导致了同步外部中止（SEA）且宿主 APEI 无法处理SEA，KVM 会退出到
+用户空间
 
-`esr` 琚涓轰粠杩涘叆 KVM 鐨勫紓甯镐腑鍙栧嚭鐨?ESR_EL2 鐨勫噣鍖栧€硷紝鍖呭惈浠ヤ笅瀛楁锛?
+`esr` 被设为从进入 KVM 的异常中取出ESR_EL2 的净化值，包含以下字段
 
  - `ESR_EL2.EC`
  - `ESR_EL2.IL`
@@ -6456,26 +6456,26 @@ KVM 灏嗘潵鍙兘浼氬鍔犲鏇村鍊肩殑鏀寔锛岃繖浜�
  - `ESR_EL2.CM`
  - `ESR_EL2.WNR`
  - `ESR_EL2.FSC`
- - `ESR_EL2.SET`锛堝綋涓?VM 瀹炵幇浜?FEAT_RAS 鏃讹級
+ - `ESR_EL2.SET`（当VM 实现FEAT_RAS 时）
 
-褰?`ESR_EL2.FnV == 0` 鏃讹紝`gva` 琚涓轰粠杩涘叆 KVM 鐨勫紓甯镐腑鍙栧嚭鐨?FAR_EL2
-鐨勫€笺€傚惁鍒欙紝`gva` 鐨勫€兼湭鐭ャ€?
+`ESR_EL2.FnV == 0` 时，`gva` 被设为从进入 KVM 的异常中取出FAR_EL2
+的值。否则，`gva` 的值未知
 
-褰?`KVM_EXIT_ARM_SEA_FLAG_GPA_VALID` 鏍囧織缃綅鏃讹紝`gpa` 琚涓轰粠杩涘叆 KVM 鐨?
-寮傚父涓彇鍑虹殑鏁呴殰 IPA銆傚惁鍒欙紝`gpa` 鐨勫€兼湭鐭ャ€?
+`KVM_EXIT_ARM_SEA_FLAG_GPA_VALID` 标志置位时，`gpa` 被设为从进入 KVM 
+异常中取出的故障 IPA。否则，`gpa` 的值未知
 
 ```
 
-		/* 鍥哄畾 union 鐨勫ぇ灏忋€?*/
+		/* 固定 union 的大小*/
 		char padding[256];
 	};
 
 	/*
-	 * kvm 涓庣敤鎴风┖闂翠箣闂村叡浜殑瀵勫瓨鍣ㄣ€?
-	 * kvm_valid_regs 鎸囧畾鐢卞涓昏缃殑瀵勫瓨鍣ㄧ被鍒?
-	 * kvm_dirty_regs 鎸囧畾鐢辩敤鎴风┖闂村紕鑴忕殑瀵勫瓨鍣ㄧ被鍒?
-	 * struct kvm_sync_regs 鏄灦鏋勭壒瀹氱殑锛宬vm_valid_regs 鍜?
-	 * kvm_dirty_regs 鐨勪綅涔熸槸鏋舵瀯鐗瑰畾鐨?
+	 * kvm 与用户空间之间共享的寄存器
+	 * kvm_valid_regs 指定由宿主设置的寄存器类
+	 * kvm_dirty_regs 指定由用户空间弄脏的寄存器类
+	 * struct kvm_sync_regs 是架构特定的，kvm_valid_regs 
+	 * kvm_dirty_regs 的位也是架构特定
 	 */
 	__u64 kvm_valid_regs;
 	__u64 kvm_dirty_regs;
@@ -6485,14 +6485,14 @@ KVM 灏嗘潵鍙兘浼氬鍔犲鏇村鍊肩殑鏀寔锛岃繖浜�
 	} s;
 
 ```
-濡傛灉瀹氫箟浜?KVM_CAP_SYNC_REGS锛岃繖浜涘瓧娈靛厑璁哥敤鎴风┖闂翠笉蹇呰皟鐢?SET/GET_*REGS
-鍗冲彲璁块棶鏌愪簺瀹㈡埛鏈哄瘎瀛樺櫒銆傚洜姝わ紝濡傛灉鐢ㄦ埛绌洪棿闇€瑕佸鐞嗛€€鍑猴紝鎴戜滑鍙互閬垮厤
-涓€浜涚郴缁熻皟鐢ㄥ紑閿€銆傜敤鎴风┖闂村彲浠ラ€氳繃妫€鏌?kvm_valid_regs 鐨勭壒瀹氫綅鏉ユ煡璇㈣
-缁撴瀯鐨勬湁鏁堟€с€傝繖浜涗綅鏄灦鏋勭壒瀹氱殑锛岄€氬父瀹氫箟涓€缁勫瘎瀛樺櫒鐨勬湁鏁堟€э紙渚嬪锛屼竴浣?
-瀵瑰簲閫氱敤瀵勫瓨鍣級銆?
+如果定义KVM_CAP_SYNC_REGS，这些字段允许用户空间不必调SET/GET_*REGS
+即可访问某些客户机寄存器。因此，如果用户空间需要处理退出，我们可以避免
+一些系统调用开销。用户空间可以通过检kvm_valid_regs 的特定位来查询该
+结构的有效性。这些位是架构特定的，通常定义一组寄存器的有效性（例如，一
+对应通用寄存器）
 
-璇锋敞鎰忥紝鍐呮牳琚厑璁镐娇鐢?kvm_run 缁撴瀯浣滀负鏌愪簺瀵勫瓨鍣ㄧ被鍨嬬殑涓诲瓨鍌ㄣ€傚洜姝わ紝鍗充娇
-kvm_dirty_regs 涓浉搴旂殑浣嶆湭缃綅锛屽唴鏍镐篃鍙兘浣跨敤 kvm_run 涓殑鍊笺€?
+请注意，内核被允许使kvm_run 结构作为某些寄存器类型的主存储。因此，即使
+kvm_dirty_regs 中相应的位未置位，内核也可能使用 kvm_run 中的值
 
 ```
 
@@ -6504,56 +6504,56 @@ kvm_dirty_regs 涓浉搴旂殑浣嶆湭缃綅锛屽唴鏍镐篃鍙兘�
 		};
 
 ```
-KVM_EXIT_SNP_REQ_CERTS 琛ㄧず涓€涓惎鐢ㄤ簡璇佷功鑾峰彇鐨?SEV-SNP 瀹㈡埛鏈猴紙瑙?
-KVM_SEV_SNP_ENABLE_REQ_CERTS锛夌敓鎴愪簡涓€涓墿灞曞瀷瀹㈡埛鏈鸿姹?NAE #VMGEXIT
-锛圫NP_GUEST_REQUEST锛夛紝娑堟伅绫诲瀷涓?MSG_REPORT_REQ锛屽嵆宸蹭粠鍥轰欢璇锋眰浜嗚瘉鏄?
-鎶ュ憡锛屽苟甯屾湜鐢辫櫄鎷熸満鐩戞帶鍣ㄩ殢璇锋眰涓€骞舵彁渚涗笌璇佹槑鎶ュ憡绛惧悕鐩稿搴旂殑璇佷功鏁版嵁銆?
+KVM_EXIT_SNP_REQ_CERTS 表示一个启用了证书获取SEV-SNP 客户机（
+KVM_SEV_SNP_ENABLE_REQ_CERTS）生成了一个扩展型客户机请NAE #VMGEXIT
+（SNP_GUEST_REQUEST），消息类型MSG_REPORT_REQ，即已从固件请求了证
+报告，并希望由虚拟机监控器随请求一并提供与证明报告签名相对应的证书数据
 
-涓轰簡鍏佽鐢ㄦ埛绌洪棿鎻愪緵璇佷功锛屸€済pa鈥濆拰鈥渘pages鈥濆師鏍蜂粠瀹㈡埛鏈鸿姹傝浆鍙?
-锛堝垎鍒负 RAX 鍜?RBX GHCB 瀛楁锛夈€傗€渞et鈥濅笉鏄潵鑷?KVM 鐨勨€滆緭鍑衡€濓紝閫€鍑烘椂
-濮嬬粓涓衡€?鈥濄€侹VM 鍦ㄩ€€鍑哄埌鐢ㄦ埛绌洪棿涔嬪墠浼氶獙璇佲€済pa鈥濇槸 4KiB 瀵归綈鐨勶紝浣?
-闄ゆ涔嬪涓嶄細楠岃瘉鏉ヨ嚜瀹㈡埛鏈虹殑淇℃伅銆?
+为了允许用户空间提供证书，“gpa”和“npages”原样从客户机请求转
+（分别为 RAX RBX GHCB 字段）。“ret”不是来KVM 的“输出”，退出时
+始终为”。KVM 在退出到用户空间之前会验证“gpa”是 4KiB 对齐的，
+除此之外不会验证来自客户机的信息
 
-鍦ㄤ笅涓€娆?KVM_RUN 鏃讹紙渚嬪鐢ㄦ埛绌洪棿宸叉湇鍔¤璇锋眰鎴栨病鏈夋湇鍔′箣鍚庯級锛孠VM 灏?
-瀹屾垚 #VMGEXIT锛屼娇鐢ㄢ€渞et鈥濆瓧娈电‘瀹氭槸鍚戝鎴锋満鍙戜俊鍙锋垚鍔熻繕鏄け璐ワ紝澶辫触鏃?
-閫氳繃 SW_EXITINFO2 鍛婄煡浣曠鍘熷洜鐮併€傚鏋溾€渞et鈥濊璁句负涓嶆敮鎸佺殑鍊硷紙瑙佷笅琛級锛?
-KVM_RUN 灏嗕互 -EINVAL 澶辫触銆傚浜庘€渞et鈥濅负鈥淓NOSPC鈥濈殑鎯呭喌锛孠VM 杩樻秷璐光€渘pages鈥?
-瀛楁锛屽嵆鐢ㄦ埛绌洪棿鍙互鐢ㄨ瀛楁鍛婄煡瀹㈡埛鏈轰繚瀛樺叏閮ㄨ瘉涔︽暟鎹墍闇€鐨勯〉鏁般€?
+在下一KVM_RUN 时（例如用户空间已服务该请求或没有服务之后），KVM 
+完成 #VMGEXIT，使用“ret”字段确定是向客户机发信号成功还是失败，失败
+通过 SW_EXITINFO2 告知何种原因码。如果“ret”被设为不支持的值（见下表）
+KVM_RUN 将以 -EINVAL 失败。对于“ret”为“ENOSPC”的情况，KVM 还消费“npages
+字段，即用户空间可以用该字段告知客户机保存全部证书数据所需的页数
 
-鏀寔鐨勨€渞et鈥濆€煎強鍏跺搴旂殑 SW_EXITINFO2 缂栫爜锛?
+支持的“ret”值及其对应的 SW_EXITINFO2 编码
 
   ======     =============================================================
-  0          0x0锛屽嵆鎴愬姛銆侹VM 灏嗗悜 SNP 鍥轰欢鍙戝嚭 SNP_GUEST_REQUEST 鍛戒护
-  ENOSPC     0x0000000100000000锛屽嵆瀹㈡埛鏈洪〉涓嶈冻浠ュ绾宠瘉涔﹁〃鍜岃瘉涔︽暟鎹€?
-             KVM 杩樹細鍦?GHBC 涓皢 RBX 瀛楁璁句负鈥渘pages鈥濄€?
-  EAGAIN     0x0000000200000000锛屽嵆瀹夸富姝ｅ繖锛屽鎴锋満搴旈噸璇曡璇锋眰銆?
-  EIO        0xffffffff00000000锛岀敤浜庢墍鏈夊叾浠栭敊璇紙姝よ繑鍥炵爜鏄?KVM 瀹氫箟鐨?
-             铏氭嫙鏈虹洃鎺у櫒鍊硷紝濡?GHCB 鎵€鍏佽锛?
+  0          0x0，即成功。KVM 将向 SNP 固件发出 SNP_GUEST_REQUEST 命令
+  ENOSPC     0x0000000100000000，即客户机页不足以容纳证书表和证书数据
+             KVM 还会GHBC 中将 RBX 字段设为“npages”
+  EAGAIN     0x0000000200000000，即宿主正忙，客户机应重试该请求
+  EIO        0xffffffff00000000，用于所有其他错误（此返回码KVM 定义
+             虚拟机监控器值，GHCB 所允许
   ======     =============================================================
 
 
-## 6. 鍙湪 vCPU 涓婂惎鐢ㄧ殑鑳藉姏
+## 6. 可在 vCPU 上启用的能力
 
 
-鏈夋煇浜涜兘鍔涘湪鍚敤鏃朵細鏀瑰彉铏氭嫙 CPU 鎴栬櫄鎷熸満鐨勮涓恒€傝鍚敤瀹冧滑锛岃鍙傞槄
-KVM_ENABLE_CAP銆?
+有某些能力在启用时会改变虚拟 CPU 或虚拟机的行为。要启用它们，请参阅
+KVM_ENABLE_CAP銆。
 
-涓嬮潰浣犲彲浠ユ壘鍒颁竴浠借兘鍔涘垪琛紝浠ュ強鍚敤瀹冧滑鏃跺 vCPU 鎴栬櫄鎷熸満鐨勫奖鍝嶃€?
+下面你可以找到一份能力列表，以及启用它们时对 vCPU 或虚拟机的影响
 
-闅忔弿杩颁竴骞舵彁渚涗互涓嬩俊鎭細
+随描述一并提供以下信息：
 
-  Architectures锛堟灦鏋勶級锛?
-      鍝簺鎸囦护闆嗘灦鏋勬彁渚涙 ioctl銆倄86 鍚屾椂鍖呭惈 i386 鍜?x86_64銆?
+  Architectures（架构）
+      哪些指令集架构提供此 ioctl。x86 同时包含 i386 x86_64
 
-  Target锛堢洰鏍囷級锛?
-      杩欐槸姣?vCPU 杩樻槸姣?VM 鐨勮兘鍔涖€?
+  Target（目标）
+      这是vCPU 还是VM 的能力
 
-  Parameters锛堝弬鏁帮級锛?
-      璇ヨ兘鍔涙帴鍙楀摢浜涘弬鏁般€?
+  Parameters（参数）
+      该能力接受哪些参数
 
-  Returns锛堣繑鍥炲€硷級锛?
-      杩斿洖鐨勫€笺€傞€氱敤閿欒鐮侊紙EBADF銆丒NOMEM銆丒INVAL锛変笉鍋氳缁嗚鏄庯紝浣嗗叿鏈?
-      鐗瑰畾鍚箟鐨勯敊璇細浜堜互璇存槑銆?
+  Returns（返回值）
+      返回的值。通用错误码（EBADF、ENOMEM、EINVAL）不做详细说明，但具
+      特定含义的错误会予以说明
 
 
 ### 6.1 KVM_CAP_PPC_OSI
@@ -6564,11 +6564,11 @@ KVM_ENABLE_CAP銆?
 :Parameters: none
 :Returns: 0 on success; -1 on error
 
-姝よ兘鍔涘惎鐢?OSI 瓒呯骇璋冪敤鐨勬嫤鎴紝鍚﹀垯杩欎簺璋冪敤浼氳褰撲綔娉ㄥ叆鍒板鎴锋満鐨勬櫘閫?
-绯荤粺璋冪敤銆侽SI 瓒呯骇璋冪敤鐢?Mac-on-Linux 鍙戞槑锛岀敤浜庡湪瀹㈡埛鏈哄拰瀹夸富涔嬮棿鎻愪緵
-鏍囧噯鍖栫殑閫氫俊鏈哄埗銆?
+此能力启OSI 超级调用的拦截，否则这些调用会被当作注入到客户机的普
+系统调用。OSI 超级调用Mac-on-Linux 发明，用于在客户机和宿主之间提供
+标准化的通信机制
 
-鍚敤姝よ兘鍔涙椂锛屽彲鑳藉彂鐢?KVM_EXIT_OSI銆?
+启用此能力时，可能发KVM_EXIT_OSI
 
 
 ### 6.2 KVM_CAP_PPC_PAPR
@@ -6579,15 +6579,15 @@ KVM_ENABLE_CAP銆?
 :Parameters: none
 :Returns: 0 on success; -1 on error
 
-姝よ兘鍔涘惎鐢?PAPR 瓒呯骇璋冪敤鐨勬嫤鎴€侾APR 瓒呯骇璋冪敤浣跨敤瓒呯骇璋冪敤鎸囦护鈥渟c 1鈥濆彂璧枫€?
+此能力启PAPR 超级调用的拦截。PAPR 超级调用使用超级调用指令“sc 1”发起
 
-瀹冭繕灏嗗鎴锋満鐗规潈绾у埆璁句负鈥渟upervisor鈥濇ā寮忋€傞€氬父瀹㈡埛鏈鸿繍琛屽湪鈥渉ypervisor鈥?
-鐗规潈妯″紡涓嬶紝浣嗙己灏戜竴浜涚壒鎬с€?
+它还将客户机特权级别设为“supervisor”模式。通常客户机运行在“hypervisor
+特权模式下，但缺少一些特性
 
-闄や互涓婁箣澶栵紝瀹冭繕鏀瑰彉浜?SDR1 鐨勮涔夈€傚湪姝ゆā寮忎笅锛孲DR1 鐨?HTAB 鍦板潃閮ㄥ垎
-鍖呭惈 HVA 鑰岄潪 GPA锛屽洜涓?PAPR 瀵瑰鎴锋満闅愯棌浜?HTAB銆?
+除以上之外，它还改变SDR1 的语义。在此模式下，SDR1 HTAB 地址部分
+包含 HVA 而非 GPA，因PAPR 对客户机隐藏HTAB
 
-鍚敤姝よ兘鍔涙椂锛屽彲鑳藉彂鐢?KVM_EXIT_PAPR_HCALL銆?
+启用此能力时，可能发KVM_EXIT_PAPR_HCALL
 
 
 ### 6.3 KVM_CAP_SW_TLB
@@ -6595,7 +6595,7 @@ KVM_ENABLE_CAP銆?
 
 :Architectures: ppc
 :Target: vcpu
-:Parameters: args[^0^] 鏄竴涓?struct kvm_config_tlb 鐨勫湴鍧€
+:Parameters: args[^0^] 是一struct kvm_config_tlb 的地址
 :Returns: 0 on success; -1 on error
 
 ```
@@ -6608,28 +6608,28 @@ KVM_ENABLE_CAP銆?
   };
 
 ```
-閰嶇疆铏氭嫙 CPU 鐨?TLB 鏁扮粍锛屽湪鐢ㄦ埛绌洪棿鍜?KVM 涔嬮棿寤虹珛鍏变韩鍐呭瓨鍖哄煙銆傗€減arams鈥?
-鍜屸€渁rray鈥濆瓧娈垫槸 mmu 绫诲瀷鐗瑰畾鏁版嵁缁撴瀯鐨勭敤鎴风┖闂村湴鍧€銆傗€渁rray_len鈥濆瓧娈?
-鏄竴涓畨鍏ㄦ満鍒讹紝搴旇涓虹敤鎴风┖闂翠负鏁扮粍淇濈暀鐨勫唴瀛樺ぇ灏忥紙浠ュ瓧鑺傝锛夈€傚畠鑷冲皯
-蹇呴』鏄€渕mu_type鈥濆拰鈥減arams鈥濇墍瑕佹眰鐨勫ぇ灏忋€?
+配置虚拟 CPU TLB 数组，在用户空间KVM 之间建立共享内存区域。“params
+和“array”字段是 mmu 类型特定数据结构的用户空间地址。“array_len”字
+是一个安全机制，应设为用户空间为数组保留的内存大小（以字节计）。它至少
+必须是“mmu_type”和“params”所要求的大小
 
-褰?KVM_RUN 澶勪簬娲诲姩鐘舵€佹椂锛屽叡浜尯鍩熺敱 KVM 鎺у埗銆傚叾鍐呭鏈畾涔夛紝鐢ㄦ埛绌洪棿
-瀵瑰叾杩涜鐨勪换浣曚慨鏀归兘浼氬鑷存湁鐣岀殑鏈畾涔夎涓恒€?
+KVM_RUN 处于活动状态时，共享区域由 KVM 控制。其内容未定义，用户空间
+对其进行的任何修改都会导致有界的未定义行为
 
-浠?KVM_RUN 杩斿洖鏃讹紝鍏变韩鍖哄煙灏嗗弽鏄犲鎴锋満 TLB 鐨勫綋鍓嶇姸鎬併€傚鏋滅敤鎴风┖闂?
-杩涜浠讳綍鏇存敼锛屽畠蹇呴』鍦ㄥ啀娆″姝?vcpu 璋冪敤 KVM_RUN 涔嬪墠璋冪敤 KVM_DIRTY_TLB
-鏉ュ憡鐭?KVM 鍝簺鏉＄洰宸茶鏇存敼銆?
+KVM_RUN 返回时，共享区域将反映客户机 TLB 的当前状态。如果用户空
+进行任何更改，它必须在再次对vcpu 调用 KVM_RUN 之前调用 KVM_DIRTY_TLB
+来告KVM 哪些条目已被更改
 
-瀵逛簬 mmu 绫诲瀷 KVM_MMU_FSL_BOOKE_NOHV 鍜?KVM_MMU_FSL_BOOKE_HV锛?
+对于 mmu 类型 KVM_MMU_FSL_BOOKE_NOHV KVM_MMU_FSL_BOOKE_HV
 
- - 鈥減arams鈥濆瓧娈电殑绫诲瀷涓衡€渟truct kvm_book3e_206_tlb_params鈥濄€?
- - 鈥渁rray鈥濆瓧娈垫寚鍚戜竴涓€渟truct kvm_book3e_206_tlb_entry鈥濈被鍨嬬殑鏁扮粍銆?
- - 璇ユ暟缁勭敱绗竴涓?TLB 涓殑鍏ㄩ儴鏉＄洰缁勬垚锛屽悗璺熺浜屼釜 TLB 涓殑鍏ㄩ儴鏉＄洰銆?
- - 鍦ㄤ竴涓?TLB 鍐呴儴锛屾潯鐩厛鎸夐泦鍚堝彿閫掑鎺掑簭銆傚湪涓€涓泦鍚堝唴閮紝鏉＄洰鎸?
-   璺紙way锛岄€掑鐨?ESEL锛夋帓搴忋€?
- - 纭畾 TLB0 涓泦鍚堝彿鐨勫搱甯屼负锛?MAS2 >> 12) & (num_sets - 1)锛屽叾涓?
-   鈥渘um_sets鈥濇槸 tlb_sizes[] 鍊奸櫎浠?tlb_ways[] 鍊笺€?
- - mas1 鐨?tsize 瀛楁鍦?TLB0 涓婂簲璁句负 4K锛屽敖绠＄‖浠跺姝ゅ€煎拷鐣ヤ笉璁°€?
+ - “params”字段的类型为“struct kvm_book3e_206_tlb_params”
+ - “array”字段指向一个“struct kvm_book3e_206_tlb_entry”类型的数组
+ - 该数组由第一TLB 中的全部条目组成，后跟第二个 TLB 中的全部条目
+ - 在一TLB 内部，条目先按集合号递增排序。在一个集合内部，条目
+   路（way，递增ESEL）排序
+ - 确定 TLB0 中集合号的哈希为MAS2 >> 12) & (num_sets - 1)，其
+   “num_sets”是 tlb_sizes[] 值除tlb_ways[] 值
+ - mas1 tsize 字段TLB0 上应设为 4K，尽管硬件对此值忽略不计
 
 ### 6.4 KVM_CAP_S390_CSS_SUPPORT
 
@@ -6639,50 +6639,50 @@ KVM_ENABLE_CAP銆?
 :Parameters: none
 :Returns: 0 on success; -1 on error
 
-姝よ兘鍔涘惎鐢ㄥ閫氶亾 I/O 鎸囦护澶勭悊鏀寔銆?
+此能力启用对通道 I/O 指令处理支持
 
-TEST PENDING INTERRUPTION 浠ュ強 TEST SUBCHANNEL 鐨勪腑鏂儴鍒嗗湪鍐呮牳涓鐞嗭紝
-鑰屽叾浠?I/O 鎸囦护鍒欎紶閫掔粰鐢ㄦ埛绌洪棿銆?
+TEST PENDING INTERRUPTION 以及 TEST SUBCHANNEL 的中断部分在内核中处理，
+而其I/O 指令则传递给用户空间
 
-鍚敤姝よ兘鍔涙椂锛屼細鍦?TEST SUBCHANNEL 鎷︽埅鏃跺彂鐢?KVM_EXIT_S390_TSCH銆?
+启用此能力时，会TEST SUBCHANNEL 拦截时发KVM_EXIT_S390_TSCH
 
-娉ㄦ剰锛屽嵆浣挎鑳藉姏鏄寜 vCPU 鍚敤鐨勶紝鏁翠釜铏氭嫙鏈洪兘浼氬彈鍒板奖鍝嶃€?
+注意，即使此能力是按 vCPU 启用的，整个虚拟机都会受到影响
 
 ### 6.5 KVM_CAP_PPC_EPR
 
 
 :Architectures: ppc
 :Target: vcpu
-:Parameters: args[^0^] 瀹氫箟浠ｇ悊璁炬柦鏄惁澶勪簬娲诲姩鐘舵€?
+:Parameters: args[^0^] 定义代理设施是否处于活动状
 :Returns: 0 on success; -1 on error
 
-姝よ兘鍔涘惎鐢ㄦ垨绂佺敤閫氳繃澶栭儴浠ｇ悊璁炬柦閫掗€佷腑鏂€?
+此能力启用或禁用通过外部代理设施递送中断
 
-鍚敤鏃讹紙args[^0^] != 0锛夛紝姣忔瀹㈡埛鏈烘敹鍒颁竴涓閮ㄤ腑鏂€掗€佹椂锛屽畠浼氳嚜鍔?
-浠?KVM_EXIT_EPR 閫€鍑鸿繘鍏ョ敤鎴风┖闂达紝浠ユ帴鏀舵渶椤跺眰鐨勭粓绔悜閲忋€?
+启用时（args[^0^] != 0），每次客户机收到一个外部中断递送时，它会自
+KVM_EXIT_EPR 退出进入用户空间，以接收最顶层的终端向量
 
-绂佺敤鏃讹紙args[^0^] == 0锛夛紝琛屼负濡傚悓姝よ鏂戒笉鍙楁敮鎸併€?
+禁用时（args[^0^] == 0），行为如同此设施不受支持
 
-鍚敤姝よ兘鍔涙椂锛屽彲鑳藉彂鐢?KVM_EXIT_EPR銆?
+启用此能力时，可能发KVM_EXIT_EPR
 
 ### 6.6 KVM_CAP_IRQ_MPIC
 
 
 :Architectures: ppc
-:Parameters: args[^0^] 鏄?MPIC 璁惧 fd锛?
-             args[^1^] 鏄 vcpu 鐨?MPIC CPU 鍙?
+:Parameters: args[^0^] MPIC 设备 fd
+             args[^1^] 是此 vcpu MPIC CPU 
 
-姝よ兘鍔涘皢 vcpu 杩炴帴鍒板唴鏍告€?MPIC 璁惧銆?
+此能力将 vcpu 连接到内核MPIC 设备
 
 ### 6.7 KVM_CAP_IRQ_XICS
 
 
 :Architectures: ppc
 :Target: vcpu
-:Parameters: args[^0^] 鏄?XICS 璁惧 fd锛?
-             args[^1^] 鏄 vcpu 鐨?XICS CPU 鍙凤紙server ID锛?
+:Parameters: args[^0^] XICS 设备 fd
+             args[^1^] 是此 vcpu XICS CPU 号（server ID
 
-姝よ兘鍔涘皢 vcpu 杩炴帴鍒板唴鏍告€?XICS 璁惧銆?
+此能力将 vcpu 连接到内核XICS 设备
 
 ### 6.8 KVM_CAP_S390_IRQCHIP
 
@@ -6691,64 +6691,64 @@ TEST PENDING INTERRUPTION 浠ュ強 TEST SUBCHANNEL 鐨勪腑鏂儴鍒嗗湪�
 :Target: vm
 :Parameters: none
 
-姝よ兘鍔涘惎鐢?s390 鐨勫唴鏍告€?irqchip銆傝鎯呰鍙傞槄鈥?.24 KVM_CREATE_IRQCHIP鈥濄€?
+此能力启s390 的内核irqchip。详情请参阅.24 KVM_CREATE_IRQCHIP”
 
 ### 6.9 KVM_CAP_MIPS_FPU
 
 
 :Architectures: mips
 :Target: vcpu
-:Parameters: args[^0^] 涓哄皢鏉ヤ繚鐣欙紙搴斾负 0锛夈€?
+:Parameters: args[^0^] 为将来保留（应为 0）
 
-姝よ兘鍔涘厑璁稿鎴锋満浣跨敤瀹夸富鐨勬诞鐐瑰崟鍏冿紙FPU锛夈€傚畠鍏佽璁剧疆 Config1.FP 浣嶄互鍦?
-瀹㈡埛鏈轰腑鍚敤 FPU銆備竴鏃﹀畬鎴愶紝灏卞彲浠ヨ闂?`KVM_REG_MIPS_FPR_**` 鍜?
-`KVM_REG_MIPS_FCR_**` 瀵勫瓨鍣紙鍙栧喅浜庡綋鍓嶅鎴锋満 FPU 瀵勫瓨鍣ㄦā寮忥級锛屽苟涓?
-Status.FR銆丆onfig5.FRE 浣嶅彲閫氳繃 KVM API 浠ュ強浠庡鎴锋満璁块棶锛屽墠鎻愭槸 FPU
-鏀寔瀹冧滑銆?
+此能力允许客户机使用宿主的浮点单元（FPU）。它允许设置 Config1.FP 位以
+客户机中启用 FPU。一旦完成，就可以访`KVM_REG_MIPS_FPR_**` 
+`KVM_REG_MIPS_FCR_**` 寄存器（取决于当前客户机 FPU 寄存器模式），并
+Status.FR、Config5.FRE 位可通过 KVM API 以及从客户机访问，前提是 FPU
+支持它们
 
 ### 6.10 KVM_CAP_MIPS_MSA
 
 
 :Architectures: mips
 :Target: vcpu
-:Parameters: args[^0^] 涓哄皢鏉ヤ繚鐣欙紙搴斾负 0锛夈€?
+:Parameters: args[^0^] 为将来保留（应为 0）
 
-姝よ兘鍔涘厑璁稿鎴锋満浣跨敤 MIPS SIMD 鏋舵瀯锛圡SA锛夈€傚畠鍏佽璁剧疆 Config3.MSAP 浣嶄互
-鍦ㄥ鎴锋満涓惎鐢?MSA 鐨勪娇鐢ㄣ€備竴鏃﹀畬鎴愶紝灏卞彲浠ヨ闂?`KVM_REG_MIPS_VEC_**` 鍜?
-`KVM_REG_MIPS_MSA_**` 瀵勫瓨鍣紝骞朵笖 Config5.MSAEn 浣嶅彲閫氳繃 KVM API 浠ュ強浠?
-瀹㈡埛鏈鸿闂€?
+此能力允许客户机使用 MIPS SIMD 架构（MSA）。它允许设置 Config3.MSAP 位以
+在客户机中启MSA 的使用。一旦完成，就可以访`KVM_REG_MIPS_VEC_**` 
+`KVM_REG_MIPS_MSA_**` 寄存器，并且 Config5.MSAEn 位可通过 KVM API 以及
+客户机访问
 
 ### 6.74 KVM_CAP_SYNC_REGS
 
 
 :Architectures: s390, x86
-:Target: s390锛氬缁堝惎鐢紝x86锛歷cpu
+:Target: s390：始终启用，x86：vcpu
 :Parameters: none
-:Returns: x86锛欿VM_CHECK_EXTENSION 杩斿洖涓€涓綅鏁扮粍锛屾寚绀烘敮鎸佸摢浜涘瘎瀛樺櫒闆?
-          锛堜綅鍩熷畾涔変簬 arch/x86/include/uapi/asm/kvm.h锛夈€?
+:Returns: x86：KVM_CHECK_EXTENSION 返回一个位数组，指示支持哪些寄存器
+          （位域定义于 arch/x86/include/uapi/asm/kvm.h）
 
-濡備笂鏂?kvm_run 涓?kvm_sync_regs 缁撴瀯淇℃伅鎵€杩帮紝KVM_CAP_SYNC_REGS
-鈥滃厑璁竅鐢ㄦ埛绌洪棿]涓嶅繀璋冪敤 SET/GET_*REGS 鍗冲彲璁块棶鏌愪簺瀹㈡埛鏈哄瘎瀛樺櫒鈥濄€傝繖閫氳繃
-娑堥櫎璁剧疆/鑾峰彇瀵勫瓨鍣ㄥ€肩殑閲嶅 ioctl 璋冪敤鍑忓皯浜嗗紑閿€銆傚綋鐢ㄦ埛绌洪棿姝ｅ湪杩涜
-鍚屾鐨勫鎴锋満鐘舵€佷慨鏀癸紙渚嬪锛屽湪鐢ㄦ埛绌洪棿涓ā鎷熷拰/鎴栨嫤鎴寚浠わ級鏃讹紝杩欎竴鐐?
-灏や负閲嶈銆?
+如上kvm_run kvm_sync_regs 结构信息所述，KVM_CAP_SYNC_REGS
+“允许[用户空间]不必调用 SET/GET_*REGS 即可访问某些客户机寄存器”。这通过
+消除设置/获取寄存器值的重复 ioctl 调用减少了开销。当用户空间正在进行
+同步的客户机状态修改（例如，在用户空间中模拟和/或拦截指令）时，这一
+尤为重要
 
-鏈夊叧 s390 鐨勭粏鑺傦紝璇峰弬闃呮簮浠ｇ爜銆?
+有关 s390 的细节，请参阅源代码
 
-瀵逛簬 x86锛?
+对于 x86
 
-- 瑕佸鍒跺埌 kvm_run 鐨勫瘎瀛樺櫒闆嗗彲鐢辩敤鎴风┖闂撮€夋嫨锛堣€屼笉鏄瘡娆￠€€鍑洪兘澶嶅埗鍑?
-  鎵€鏈夊瘎瀛樺櫒闆嗭級銆?
-- 闄?regs 鍜?sregs 澶栵紝杩樺彲浣跨敤 vcpu_events銆?
+- 要复制到 kvm_run 的寄存器集可由用户空间选择（而不是每次退出都复制
+  所有寄存器集）
+- regs sregs 外，还可使用 vcpu_events
 
-瀵逛簬 x86锛宻truct kvm_run 鐨勨€渒vm_valid_regs鈥濆瓧娈佃閲嶈浇锛屽厖褰撶敱鐢ㄦ埛绌洪棿
-璁剧疆鐨勮緭鍏ヤ綅鏁扮粍瀛楁锛屼互鎸囩ず鍦ㄤ笅涓€娆￠€€鍑烘椂瑕佸鍒跺嚭鐨勭壒瀹氬瘎瀛樺櫒闆嗐€?
+对于 x86，struct kvm_run 的“kvm_valid_regs”字段被重载，充当由用户空间
+设置的输入位数组字段，以指示在下一次退出时要复制出的特定寄存器集
 
-涓轰簡鎸囩ず鐢ㄦ埛绌洪棿宸蹭慨鏀逛簡搴斿鍒惰繘 vCPU 鐨勫€硷紝蹇呴』璁剧疆鎵€鏈夋灦鏋勯€氱敤鐨勪綅鏁扮粍
-瀛楁鈥渒vm_dirty_regs鈥濄€傝繖浣跨敤涓庘€渒vm_valid_regs鈥濆瓧娈电浉鍚岀殑浣嶆爣蹇楀畬鎴愩€?
-濡傛灉鏈缃?dirty 浣嶏紝鍒欏嵆浣垮瘎瀛樺櫒闆嗗€煎凡琚慨鏀癸紝涔熶笉浼氳澶嶅埗杩?vCPU銆?
+为了指示用户空间已修改了应复制进 vCPU 的值，必须设置所有架构通用的位数组
+字段“kvm_dirty_regs”。这使用与“kvm_valid_regs”字段相同的位标志完成
+如果未设dirty 位，则即使寄存器集值已被修改，也不会被复制vCPU
 
-浣嶆暟缁勪腑鏈娇鐢ㄧ殑浣嶅瓧娈靛繀椤昏涓洪浂銆?
+位数组中未使用的位字段必须设为零
 
 ```
 
@@ -6764,10 +6764,10 @@ Status.FR銆丆onfig5.FRE 浣嶅彲閫氳繃 KVM API 浠ュ強浠庡鎴锋満
 
 :Architectures: ppc
 :Target: vcpu
-:Parameters: args[^0^] 鏄?XIVE 璁惧 fd锛?
-             args[^1^] 鏄 vcpu 鐨?XIVE CPU 鍙凤紙server ID锛?
+:Parameters: args[^0^] XIVE 设备 fd
+             args[^1^] 是此 vcpu XIVE CPU 号（server ID
 
-姝よ兘鍔涘皢 vcpu 杩炴帴鍒板唴鏍告€?XIVE 璁惧銆?
+此能力将 vcpu 连接到内核XIVE 设备
 
 ### 6.76 KVM_CAP_HYPERV_SYNIC
 
@@ -6775,13 +6775,13 @@ Status.FR銆丆onfig5.FRE 浣嶅彲閫氳繃 KVM API 浠ュ強浠庡鎴锋満
 :Architectures: x86
 :Target: vcpu
 
-姝よ兘鍔涳紝鑻?KVM_CHECK_EXTENSION 鎸囩ず鍏跺彲鐢紝鎰忓懗鐫€鍐呮牳瀹炵幇浜?Hyper-V 鍚堟垚
-涓柇鎺у埗鍣紙SynIC锛夈€侶yper-V SynIC 鐢ㄤ簬鏀寔鍩轰簬 Windows Hyper-V 鐨勫鎴锋満
-鍗婅櫄鎷熷寲椹卞姩锛圴MBus锛夈€?
+此能力，KVM_CHECK_EXTENSION 指示其可用，意味着内核实现Hyper-V 合成
+中断控制器（SynIC）。Hyper-V SynIC 用于支持基于 Windows Hyper-V 的客户机
+半虚拟化驱动（VMBus）
 
-涓轰簡浣跨敤 SynIC锛屽繀椤婚€氳繃 vcpu fd 涓婄殑 KVM_ENABLE_CAP ioctl 璁剧疆姝よ兘鍔涙潵
-婵€娲诲畠銆傛敞鎰忚繖浼氱鐢?APIC 纭欢铏氭嫙鍖栫殑浣跨敤锛堝嵆浣?CPU 鏀寔锛夛紝鍥犱负瀹冧笌
-SynIC 鐨勮嚜鍔?EOI 琛屼负涓嶅吋瀹广€?
+为了使用 SynIC，必须通过 vcpu fd 上的 KVM_ENABLE_CAP ioctl 设置此能力来
+激活它。注意这会禁APIC 硬件虚拟化的使用（即CPU 支持），因为它与
+SynIC 的自EOI 行为不兼容
 
 ### 6.77 KVM_CAP_HYPERV_SYNIC2
 
@@ -6789,9 +6789,9 @@ SynIC 鐨勮嚜鍔?EOI 琛屼负涓嶅吋瀹广€?
 :Architectures: x86
 :Target: vcpu
 
-姝よ兘鍔涘惎鐢ㄦ洿鏂扮増鏈殑 Hyper-V 鍚堟垚涓柇鎺у埗鍣紙SynIC锛夈€備笌 KVM_CAP_HYPERV_SYNIC
-鍞竴鐨勫尯鍒槸锛屽綋閫氳繃鍐欏叆鐩稿簲鐨?MSR 鍚敤鏃讹紝KVM 涓嶄細娓呴櫎 SynIC 娑堟伅鍜屼簨浠?
-鏍囧織椤点€?
+此能力启用更新版本的 Hyper-V 合成中断控制器（SynIC）。与 KVM_CAP_HYPERV_SYNIC
+唯一的区别是，当通过写入相应MSR 启用时，KVM 不会清除 SynIC 消息和事
+标志页
 
 ### 6.78 KVM_CAP_HYPERV_DIRECT_TLBFLUSH
 
@@ -6799,13 +6799,13 @@ SynIC 鐨勮嚜鍔?EOI 琛屼负涓嶅吋瀹广€?
 :Architectures: x86
 :Target: vcpu
 
-姝よ兘鍔涜〃绀鸿繍琛屽湪 Hyper-V 铏氭嫙鏈虹洃鎺у櫒涔嬩笂鐨?KVM 涓哄叾瀹㈡埛鏈哄惎鐢ㄧ洿鎺?TLB
-鍒锋柊锛屾剰鍛崇潃 TLB 鍒锋柊瓒呯骇璋冪敤鐢?0 绾ц櫄鎷熸満鐩戞帶鍣紙Hyper-V锛夊鐞嗭紝缁曡繃
-KVM銆傜敱浜?Hyper-V 鍜?KVM 涔嬮棿瓒呯骇璋冪敤鍙傛暟鐨?ABI 涓嶅悓锛屽惎鐢ㄦ鑳藉姏浼氭湁鏁?
-绂佺敤 KVM 鐨勬墍鏈夎秴绾ц皟鐢ㄥ鐞嗭紙鍥犱负鏌愪簺 KVM 瓒呯骇璋冪敤鍙兘琚?Hyper-V 璇綋浣?
-TLB 鍒锋柊瓒呯骇璋冪敤锛夛紝鍥犳鐢ㄦ埛绌洪棿搴斿湪 CPUID 涓鐢?KVM 鏍囪瘑锛屽彧鏆撮湶 Hyper-V
-鏍囪瘑銆傚湪杩欑鎯呭喌涓嬶紝瀹㈡埛鏈轰互涓鸿嚜宸辫繍琛屽湪 Hyper-V 涓婏紝骞朵笖鍙娇鐢?Hyper-V
-瓒呯骇璋冪敤銆?
+此能力表示运行在 Hyper-V 虚拟机监控器之上KVM 为其客户机启用直TLB
+刷新，意味着 TLB 刷新超级调用0 级虚拟机监控器（Hyper-V）处理，绕过
+KVM。由Hyper-V KVM 之间超级调用参数ABI 不同，启用此能力会有
+禁用 KVM 的所有超级调用处理（因为某些 KVM 超级调用可能Hyper-V 误当
+TLB 刷新超级调用），因此用户空间应在 CPUID 中禁KVM 标识，只暴露 Hyper-V
+标识。在这种情况下，客户机以为自己运行在 Hyper-V 上，并且只使Hyper-V
+超级调用
 
 ### 6.79 KVM_CAP_HYPERV_ENFORCE_CPUID
 
@@ -6813,9 +6813,9 @@ TLB 鍒锋柊瓒呯骇璋冪敤锛夛紝鍥犳鐢ㄦ埛绌洪棿搴斿湪 CPU
 :Architectures: x86
 :Target: vcpu
 
-鍚敤鏃讹紝KVM 灏嗘牴鎹?Hyper-V CPUID 鐗规€у彾涓殑浣嶏紝绂佺敤鎻愪緵缁欏鎴锋満鐨勬ā鎷?
-Hyper-V 鐗规€с€傚惁鍒欙紝鍙鍦?HYPERV_CPUID_INTERFACE锛?x40000001锛夊彾涓缃簡
-Hyper-V 鏍囪瘑锛屾墍鏈夊綋鍓嶅凡瀹炵幇鐨?Hyper-V 鐗规€ч兘浼氭棤鏉′欢鎻愪緵銆?
+启用时，KVM 将根Hyper-V CPUID 特性叶中的位，禁用提供给客户机的模
+Hyper-V 特性。否则，只要HYPERV_CPUID_INTERFACEx40000001）叶中设置了
+Hyper-V 标识，所有当前已实现Hyper-V 特性都会无条件提供
 
 ### 6.80 KVM_CAP_ENFORCE_PV_FEATURE_CPUID
 
@@ -6823,47 +6823,47 @@ Hyper-V 鏍囪瘑锛屾墍鏈夊綋鍓嶅凡瀹炵幇鐨?Hyper-V 鐗规€ч兘�
 :Architectures: x86
 :Target: vcpu
 
-鍚敤鏃讹紝KVM 灏嗘牴鎹?KVM_CPUID_FEATURES CPUID 鍙讹紙0x40000001锛変腑鐨勪綅锛岀鐢?
-鎻愪緵缁欏鎴锋満鐨勫崐铏氭嫙鍖栫壒鎬с€傚惁鍒欙紝瀹㈡埛鏈哄彲鑳戒娇鐢ㄥ崐铏氭嫙鍖栫壒鎬э紝鑰屼笉璁?
-瀹為檯閫氳繃 CPUID 鍙舵毚闇蹭簡浠€涔堛€?
+启用时，KVM 将根KVM_CPUID_FEATURES CPUID 叶（0x40000001）中的位，禁
+提供给客户机的半虚拟化特性。否则，客户机可能使用半虚拟化特性，而不
+实际通过 CPUID 叶暴露了什么
 
 
 
-## 7. 鍙湪 VM 涓婂惎鐢ㄧ殑鑳藉姏
+## 7. 可在 VM 上启用的能力
 
 
-鏈夋煇浜涜兘鍔涘湪鍚敤鏃朵細鏀瑰彉铏氭嫙鏈虹殑琛屼负銆傝鍚敤瀹冧滑锛岃鍙傞槄 KVM_ENABLE_CAP
-涓€鑺傘€備笅闈綘鍙互鎵惧埌涓€浠借兘鍔涘垪琛紝浠ュ強鍚敤瀹冧滑鏃跺 VM 鐨勫奖鍝嶃€?
+有某些能力在启用时会改变虚拟机的行为。要启用它们，请参阅 KVM_ENABLE_CAP
+一节。下面你可以找到一份能力列表，以及启用它们时对 VM 的影响
 
-闅忔弿杩颁竴骞舵彁渚涗互涓嬩俊鎭細
+随描述一并提供以下信息：
 
-  Architectures锛堟灦鏋勶級锛?
-      鍝簺鎸囦护闆嗘灦鏋勬彁渚涙 ioctl銆倄86 鍚屾椂鍖呭惈 i386 鍜?x86_64銆?
+  Architectures（架构）
+      哪些指令集架构提供此 ioctl。x86 同时包含 i386 x86_64
 
-  Parameters锛堝弬鏁帮級锛?
-      璇ヨ兘鍔涙帴鍙楀摢浜涘弬鏁般€?
+  Parameters（参数）
+      该能力接受哪些参数
 
-  Returns锛堣繑鍥炲€硷級锛?
-      杩斿洖鐨勫€笺€傞€氱敤閿欒鐮侊紙EBADF銆丒NOMEM銆丒INVAL锛変笉鍋氳缁嗚鏄庯紝浣嗗叿鏈?
-      鐗瑰畾鍚箟鐨勯敊璇細浜堜互璇存槑銆?
+  Returns（返回值）
+      返回的值。通用错误码（EBADF、ENOMEM、EINVAL）不做详细说明，但具
+      特定含义的错误会予以说明
 
 
 ### 7.1 KVM_CAP_PPC_ENABLE_HCALL
 
 
 :Architectures: ppc
-:Parameters: args[^0^] 鏄?sPAPR hcall 鍙凤紱
-	     args[^1^] 涓?0 琛ㄧず绂佺敤锛? 琛ㄧず鍚敤鍐呮牳鎬佸鐞?
+:Parameters: args[^0^] sPAPR hcall 号；
+	     args[^1^] 0 表示禁用 表示启用内核态处
 
-姝よ兘鍔涙帶鍒跺悇涓?sPAPR 瓒呯骇璋冪敤锛坔call锛夋槸鐢卞唴鏍稿鐞嗚繕鏄笉澶勭悊銆傚惎鐢ㄦ垨
-绂佺敤鏌愪釜 hcall 鐨勫唴鏍告€佸鐞嗗湪鏁翠釜 VM 鑼冨洿鍐呯敓鏁堛€傚垱寤烘椂锛屼細鍚敤涓€缁勫垵濮?
-鐨?hcall 杩涜鍐呮牳鎬佸鐞嗭紝杩欎簺 hcall 鐢卞湪鏈兘鍔涘疄鐜颁箣鍓嶅氨宸茬粡瀹炵幇浜嗗唴鏍告€?
-澶勭悊鍑芥暟鐨勯偅浜涜秴绾ц皟鐢ㄧ粍鎴愩€傚鏋滅鐢紝鍐呮牳灏嗕笉浼氬皾璇曞鐞嗚 hcall锛岃€屾槸
-鎬绘槸閫€鍑哄埌鐢ㄦ埛绌洪棿澶勭悊瀹冦€傛敞鎰忥紝鍚敤涓€缁勭浉鍏?hcall 涓殑鏌愪簺鑰岀鐢ㄥ彟涓€浜?
-鍙兘娌℃湁鎰忎箟锛屼絾 KVM 涓嶄細闃绘鐢ㄦ埛绌洪棿杩欐牱鍋氥€?
+此能力控制各sPAPR 超级调用（hcall）是由内核处理还是不处理。启用或
+禁用某个 hcall 的内核态处理在整个 VM 范围内生效。创建时，会启用一组初
+hcall 进行内核态处理，这些 hcall 由在本能力实现之前就已经实现了内核
+处理函数的那些超级调用组成。如果禁用，内核将不会尝试处理该 hcall，而是
+总是退出到用户空间处理它。注意，启用一组相hcall 中的某些而禁用另一
+可能没有意义，但 KVM 不会阻止用户空间这样做
 
-濡傛灉鎸囧畾鐨?hcall 鍙蜂笉鏄叿鏈夊唴鏍告€佸疄鐜扮殑閭ｄ釜锛屽垯 KVM_ENABLE_CAP ioctl 灏?
-浠?EINVAL 閿欒澶辫触銆?
+如果指定hcall 号不是具有内核态实现的那个，则 KVM_ENABLE_CAP ioctl 
+EINVAL 错误失败
 
 ### 7.2 KVM_CAP_S390_USER_SIGP
 
@@ -6871,8 +6871,8 @@ Hyper-V 鏍囪瘑锛屾墍鏈夊綋鍓嶅凡瀹炵幇鐨?Hyper-V 鐗规€ч兘�
 :Architectures: s390
 :Parameters: none
 
-姝よ兘鍔涙帶鍒跺摢浜?SIGP 椤哄簭灏嗗畬鍏ㄥ湪鐢ㄦ埛绌洪棿澶勭悊銆傚惎鐢ㄦ鑳藉姏鍚庯紝鎵€鏈夊揩閫熼『搴?
-灏嗗畬鍏ㄥ湪鍐呮牳涓鐞嗭細
+此能力控制哪SIGP 顺序将完全在用户空间处理。启用此能力后，所有快速顺
+将完全在内核中处理：
 
 - SENSE
 - SENSE RUNNING
@@ -6880,10 +6880,10 @@ Hyper-V 鏍囪瘑锛屾墍鏈夊綋鍓嶅凡瀹炵幇鐨?Hyper-V 鐗规€ч兘�
 - EMERGENCY SIGNAL
 - CONDITIONAL EMERGENCY SIGNAL
 
-鎵€鏈夊叾浠栭『搴忓皢瀹屽叏鍦ㄧ敤鎴风┖闂村鐞嗐€?
+所有其他顺序将完全在用户空间处理
 
-鍙湁鐗规潈鎿嶄綔寮傚父浼氬湪鍐呮牳涓紙鎴栧湪鎷︽埅涔嬪墠鐨勭‖浠朵腑锛夋鏌ャ€傚鏋滄湭鍚敤姝よ兘鍔涳紝
-鍒欎娇鐢ㄦ棫鐨?SIGP 椤哄簭澶勭悊鏂瑰紡锛堥儴鍒嗗湪鍐呮牳銆侀儴鍒嗗湪鐢ㄦ埛绌洪棿锛夈€?
+只有特权操作异常会在内核中（或在拦截之前的硬件中）检查。如果未启用此能力，
+则使用旧SIGP 顺序处理方式（部分在内核、部分在用户空间）
 
 ### 7.3 KVM_CAP_S390_VECTOR_REGISTERS
 
@@ -6892,8 +6892,8 @@ Hyper-V 鏍囪瘑锛屾墍鏈夊綋鍓嶅凡瀹炵幇鐨?Hyper-V 鐗规€ч兘�
 :Parameters: none
 :Returns: 0 on success, negative value on error
 
-鍏佽浣跨敤闅?z13 澶勭悊鍣ㄥ紩鍏ョ殑鍚戦噺瀵勫瓨鍣紝骞朵负涓绘満鍜岀敤鎴风┖闂翠箣闂寸殑鍚屾鎻愪緵鏀寔銆?
-濡傛灉鏈哄櫒涓嶆敮鎸佸悜閲忥紝灏嗚繑鍥?-EINVAL銆?
+允许使用z13 处理器引入的向量寄存器，并为主机和用户空间之间的同步提供支持
+如果机器不支持向量，将返-EINVAL
 
 ### 7.4 KVM_CAP_S390_USER_STSI
 
@@ -6901,10 +6901,10 @@ Hyper-V 鏍囪瘑锛屾墍鏈夊綋鍓嶅凡瀹炵幇鐨?Hyper-V 鐗规€ч兘�
 :Architectures: s390
 :Parameters: none
 
-姝よ兘鍔涘厑璁?STSI 鎸囦护鐨勫悗澶勭悊鍣ㄣ€傚湪鍐呮牳涓垵姝ュ鐞嗕箣鍚庯紝KVM 浠?KVM_EXIT_S390_STSI
-閫€鍑哄埌鐢ㄦ埛绌洪棿锛屼互鍏佽鐢ㄦ埛绌洪棿鎻掑叆杩涗竴姝ョ殑鏁版嵁銆?
+此能力允STSI 指令的后处理器。在内核中初步处理之后，KVM KVM_EXIT_S390_STSI
+退出到用户空间，以允许用户空间插入进一步的数据
 
-鍦ㄩ€€鍑哄埌鐢ㄦ埛绌洪棿涔嬪墠锛宬vm 澶勭悊鍣ㄥ簲濉厖 kvm_run 鐨?s390_stsi 瀛楁锛?
+在退出到用户空间之前，kvm 处理器应填充 kvm_run s390_stsi 字段
 
 ```
 
@@ -6917,32 +6917,32 @@ Hyper-V 鏍囪瘑锛屾墍鏈夊綋鍓嶅凡瀹炵幇鐨?Hyper-V 鐗规€ч兘�
 	__u16 sel2;
   } s390_stsi;
 
-  @addr - STSI SYSIB 鐨勫鎴锋満鍦板潃
+  @addr - STSI SYSIB 的客户机地址
   @fc   - 鍔熻兘鐮?
   @sel1 - 閫夋嫨鍣?1
   @sel2 - 閫夋嫨鍣?2
-  @ar   - 璁块棶瀵勫瓨鍣ㄥ彿
+  @ar   - 访问寄存器号
 
 ```
-KVM 澶勭悊鍣ㄥ簲浠?rc = -EREMOTE 閫€鍑哄埌鐢ㄦ埛绌洪棿銆?
+KVM 处理器应rc = -EREMOTE 退出到用户空间
 
 ### 7.5 KVM_CAP_SPLIT_IRQCHIP
 
 
 :Architectures: x86
-:Parameters: args[^0^] - 涓虹敤鎴风┖闂?IOAPIC 淇濈暀鐨勮矾鐢辨暟
+:Parameters: args[^0^] - 为用户空IOAPIC 保留的路由数
 :Returns: 0 on success, -1 on error
 
-鍦ㄥ唴鏍镐腑涓烘瘡涓鐞嗗櫒鍒涘缓涓€涓湰鍦?apic銆傚鏋滅敤鎴风┖闂?VMM 甯屾湜妯℃嫙 IOAPIC 鍜?
-PIC锛堜互鍙?PIT锛屽敖绠?PIT 蹇呴』鍗曠嫭鍚敤锛夛紝鍙互鐢ㄥ畠鏇夸唬 KVM_CREATE_IRQCHIP銆?
+在内核中为每个处理器创建一个本apic。如果用户空VMM 希望模拟 IOAPIC 
+PIC（以PIT，尽PIT 必须单独启用），可以用它替代 KVM_CREATE_IRQCHIP
 
-姝よ兘鍔涜繕鍚敤浜嗗唴鏍告€佺殑涓柇璇锋眰璺敱锛涘綋鍚敤 KVM_CAP_SPLIT_IRQCHIP 鏃讹紝IRQ
-璺敱琛ㄤ腑鍙娇鐢?KVM_IRQ_ROUTING_MSI 绫诲瀷鐨勮矾鐢便€傚墠 args[^0^] 涓?MSI 璺敱涓?
-IOAPIC 寮曡剼淇濈暀銆傛瘡褰?LAPIC 鏀跺埌杩欎簺璺敱鐨?EOI 鏃讹紝灏变細鍚戠敤鎴风┖闂存姤鍛婁竴涓?
-KVM_EXIT_IOAPIC_EOI vmexit銆?
+此能力还启用了内核态的中断请求路由；当启用 KVM_CAP_SPLIT_IRQCHIP 时，IRQ
+路由表中只使KVM_IRQ_ROUTING_MSI 类型的路由。前 args[^0^] MSI 路由
+IOAPIC 引脚保留。每LAPIC 收到这些路由EOI 时，就会向用户空间报告一
+KVM_EXIT_IOAPIC_EOI vmexit銆。
 
-濡傛灉宸插垱寤轰簡 VCPU锛屾垨鑰?irqchip 宸茬粡鍦ㄥ唴鏍镐腑锛堝嵆宸茬粡璋冪敤杩?
-KVM_CREATE_IRQCHIP锛夛紝鍒欏け璐ャ€?
+如果已创建了 VCPU，或irqchip 已经在内核中（即已经调用
+KVM_CREATE_IRQCHIP），则失败
 
 ### 7.6 KVM_CAP_S390_RI
 
@@ -6950,13 +6950,13 @@ KVM_CREATE_IRQCHIP锛夛紝鍒欏け璐ャ€?
 :Architectures: s390
 :Parameters: none
 
-鍏佽浣跨敤闅?zEC12 澶勭悊鍣ㄥ紩鍏ョ殑杩愯鏃舵寚浠わ紙runtime-instrumentation锛夈€傚鏋?
-鏈哄櫒涓嶆敮鎸佽繍琛屾椂鎸囦护锛屽皢杩斿洖 -EINVAL銆傚鏋滃凡鍒涘缓浜?VCPU锛屽皢杩斿洖 -EBUSY銆?
+允许使用zEC12 处理器引入的运行时指令（runtime-instrumentation）。如
+机器不支持运行时指令，将返回 -EINVAL。如果已创建VCPU，将返回 -EBUSY
 ### 7.7 KVM_CAP_X2APIC_API
 
 
 :Architectures: x86
-:Parameters: args[^0^] - 搴斿惎鐢ㄧ殑鐗规€?
+:Parameters: args[^0^] - 应启用的特
 :Returns: 0 on success, -EINVAL when args[^0^] contains invalid features
 
 ```
@@ -6967,33 +6967,33 @@ KVM_CREATE_IRQCHIP锛夛紝鍒欏け璐ャ€?
   #define KVM_X2APIC_DISABLE_SUPPRESS_EOI_BROADCAST             (1ULL << 3)
 
 ```
-鍚敤 KVM_X2APIC_API_USE_32BIT_IDS 鏀瑰彉浜?KVM_SET_GSI_ROUTING銆並VM_SIGNAL_MSI銆?
-KVM_SET_LAPIC 鍜?KVM_GET_LAPIC 鐨勮涓猴紝鍏佽浣跨敤 32 浣?APIC ID銆傝鍙傞槄鍚勮嚜
-绔犺妭涓殑 KVM_CAP_X2APIC_API銆?
+启用 KVM_X2APIC_API_USE_32BIT_IDS 改变KVM_SET_GSI_ROUTING、KVM_SIGNAL_MSI
+KVM_SET_LAPIC KVM_GET_LAPIC 的行为，允许使用 32 APIC ID。请参阅各自
+章节中的 KVM_CAP_X2APIC_API
 
-蹇呴』鍚敤 KVM_X2APIC_API_DISABLE_BROADCAST_QUIRK锛寈2APIC 鎵嶈兘鍦ㄩ€昏緫妯″紡鎴?
-瓒呰繃 255 涓?VCPU 鐨勬儏鍐典笅宸ヤ綔銆傚惁鍒欙紝鍗充娇鍦?x2APIC 妯″紡涓嬶紝KVM 涔熶細鎶?0xff
-褰撲綔骞挎挱锛屼互鏀寔娌℃湁涓柇閲嶆槧灏勭殑鐗╃悊 x2APIC銆傝繖鍦ㄩ€昏緫妯″紡涓嬫槸涓嶅彲鍙栫殑锛屽洜涓?
-0xff 琛ㄧず cluster 0 涓殑 CPU 0-7銆?
+必须启用 KVM_X2APIC_API_DISABLE_BROADCAST_QUIRK，x2APIC 才能在逻辑模式
+超过 255 VCPU 的情况下工作。否则，即使x2APIC 模式下，KVM 也会0xff
+当作广播，以支持没有中断重映射的物理 x2APIC。这在逻辑模式下是不可取的，因
+0xff 表示 cluster 0 中的 CPU 0-7
 
-璁剧疆 KVM_X2APIC_ENABLE_SUPPRESS_EOI_BROADCAST 鎸囩ず KVM 鍚敤鎶戝埗 EOI 骞挎挱
-锛圫uppress EOI Broadcasts锛夈€傚綋瀹㈡埛鏈哄湪 SPIV 瀵勫瓨鍣ㄤ腑璁剧疆浜嗘姂鍒?EOI 骞挎挱浣嶆椂锛?
-KVM 浼氬悜瀹㈡埛鏈洪€氬憡瀵规姂鍒?EOI 骞挎挱鐨勬敮鎸侊紝骞跺湪瀹㈡埛鏈鸿缃浣嶆椂鎶戝埗 LAPIC
-鐨?EOI 骞挎挱銆傛鏍囧織浠呭湪浣跨敤 split IRQCHIP 鏃跺彈鏀寔銆?
+设置 KVM_X2APIC_ENABLE_SUPPRESS_EOI_BROADCAST 指示 KVM 启用抑制 EOI 广播
+（Suppress EOI Broadcasts）。当客户机在 SPIV 寄存器中设置了抑EOI 广播位时
+KVM 会向客户机通告对抑EOI 广播的支持，并在客户机设置该位时抑制 LAPIC
+EOI 广播。此标志仅在使用 split IRQCHIP 时受支持
 
-璁剧疆 KVM_X2APIC_DISABLE_SUPPRESS_EOI_BROADCAST 鍒欏畬鍏ㄧ鐢ㄥ鎶戝埗 EOI 骞挎挱鐨?
-鏀寔锛屽嵆鎸囩ず KVM 涓嶈鍚戝鎴锋満閫氬憡鏀寔銆?
+设置 KVM_X2APIC_DISABLE_SUPPRESS_EOI_BROADCAST 则完全禁用对抑制 EOI 广播
+支持，即指示 KVM 不要向客户机通告支持
 
-鐜颁唬 VMM 搴斿綋鍚敤 KVM_X2APIC_ENABLE_SUPPRESS_EOI_BROADCAST 鎴?
-KVM_X2APIC_DISABLE_SUPPRESS_EOI_BROADCAST 涔嬩竴銆傚惁鍒欏皢浣跨敤 KVM 鐨勯仐鐣欏彜鎬?
-琛屼负锛氬湪 split IRQCHIP 妯″紡涓嬶紝KVM 浼氬悜瀹㈡埛鏈洪€氬憡瀵规姂鍒?EOI 骞挎挱鐨勬敮鎸侊紝
-浣嗗疄闄呬笂骞朵笉鎶戝埗 EOI 骞挎挱锛涘湪鍐呮牳鎬?IRQCHIP 妯″紡涓嬶紝KVM 涓嶄細閫氬憡瀵规姂鍒?EOI
-骞挎挱鐨勬敮鎸併€?
+现代 VMM 应当启用 KVM_X2APIC_ENABLE_SUPPRESS_EOI_BROADCAST 
+KVM_X2APIC_DISABLE_SUPPRESS_EOI_BROADCAST 之一。否则将使用 KVM 的遗留古
+行为：在 split IRQCHIP 模式下，KVM 会向客户机通告对抑EOI 广播的支持，
+但实际上并不抑制 EOI 广播；在内核IRQCHIP 模式下，KVM 不会通告对抑EOI
+广播的支持
 
-鍚屾椂璁剧疆 KVM_X2APIC_ENABLE_SUPPRESS_EOI_BROADCAST 鍜?
-KVM_X2APIC_DISABLE_SUPPRESS_EOI_BROADCAST 灏嗕互 EINVAL 閿欒澶辫触锛屽湪鏈娇鐢?
-split IRQCHIP 鐨勬儏鍐典笅璁剧疆 KVM_X2APIC_ENABLE_SUPPRESS_EOI_BROADCAST 鍚屾牱浼?
-澶辫触銆?
+同时设置 KVM_X2APIC_ENABLE_SUPPRESS_EOI_BROADCAST 
+KVM_X2APIC_DISABLE_SUPPRESS_EOI_BROADCAST 将以 EINVAL 错误失败，在未使
+split IRQCHIP 的情况下设置 KVM_X2APIC_ENABLE_SUPPRESS_EOI_BROADCAST 同样
+失败
 
 ### 7.8 KVM_CAP_S390_USER_INSTR0
 
@@ -7001,11 +7001,11 @@ split IRQCHIP 鐨勬儏鍐典笅璁剧疆 KVM_X2APIC_ENABLE_SUPPRESS_EOI_BROADCA
 :Architectures: s390
 :Parameters: none
 
-鍚敤姝よ兘鍔涘悗锛岄潪娉曠殑鎸囦护 0x0000锛? 瀛楄妭锛夊皢琚嫤鎴苟杞彂鍒扮敤鎴风┖闂淬€傜敤鎴风┖闂?
-鍙互鍒╃敤姝ゆ満鍒跺疄鐜颁緥濡?2 瀛楄妭杞欢鏂偣銆傚唴鏍镐笉浼氫负杩欎簺鎸囦护娉ㄥ叆鎿嶄綔寮傚父锛?
-鐢ㄦ埛绌洪棿蹇呴』鑷澶勭悊銆?
+启用此能力后，非法的指令 0x0000 字节）将被拦截并转发到用户空间。用户空
+可以利用此机制实现例2 字节软件断点。内核不会为这些指令注入操作异常
+用户空间必须自行处理
 
-鍗充娇鍦?VCPU 宸茶鍒涘缓骞舵鍦ㄨ繍琛岀殑鎯呭喌涓嬶紝涔熷彲浠ュ姩鎬佸惎鐢ㄦ鑳藉姏銆?
+即使VCPU 已被创建并正在运行的情况下，也可以动态启用此能力
 
 ### 7.9 KVM_CAP_S390_GS
 
@@ -7015,7 +7015,7 @@ split IRQCHIP 鐨勬儏鍐典笅璁剧疆 KVM_X2APIC_ENABLE_SUPPRESS_EOI_BROADCA
 :Returns: 0 on success; -EINVAL if the machine does not support
           guarded storage; -EBUSY if a VCPU has already been created.
 
-鍏佽 KVM 瀹㈡埛鏈轰娇鐢ㄥ畧鎶ゅ瓨鍌紙guarded storage锛夈€?
+允许 KVM 客户机使用守护存储（guarded storage）
 
 ### 7.10 KVM_CAP_S390_AIS
 
@@ -7023,7 +7023,7 @@ split IRQCHIP 鐨勬儏鍐典笅璁剧疆 KVM_X2APIC_ENABLE_SUPPRESS_EOI_BROADCA
 :Architectures: s390
 :Parameters: none
 
-鍏佽浣跨敤閫傞厤鍣ㄤ腑鏂姂鍒讹紙adapter-interruption suppression锛夈€?
+允许使用适配器中断抑制（adapter-interruption suppression）
 :Returns: 0 on success; -EBUSY if a VCPU has already been created.
 
 ### 7.11 KVM_CAP_PPC_SMT
@@ -7032,12 +7032,12 @@ split IRQCHIP 鐨勬儏鍐典笅璁剧疆 KVM_X2APIC_ENABLE_SUPPRESS_EOI_BROADCA
 :Architectures: ppc
 :Parameters: vsmt_mode, flags
 
-鍦?VM 涓婂惎鐢ㄦ鑳藉姏涓虹敤鎴风┖闂存彁渚涗簡涓€绉嶈缃湡鏈涚殑铏氭嫙 SMT 妯″紡锛堝嵆姣忎釜铏氭嫙
-鏍稿績鐨勮櫄鎷?CPU 鏁帮級鐨勬柟娉曘€傝櫄鎷?SMT 妯″紡 vsmt_mode 蹇呴』鏄?1 鍒?8 涔嬮棿鐨?2 鐨?
-骞傘€傚湪 POWER8 涓婏紝vsmt_mode 杩樹笉寰楀ぇ浜庡涓绘瘡涓瓙鏍哥殑绾跨▼鏁般€傚綋鍓?flags 蹇呴』
-涓?0銆傛垚鍔熻皟鐢ㄤ互鍚敤姝よ兘鍔涘悗锛屽綋闅忓悗涓?VM 鏌ヨ KVM_CAP_PPC_SMT 鑳藉姏鏃讹紝灏?
-杩斿洖 vsmt_mode銆傛鑳藉姏浠呯敱 HV KVM 鏀寔锛屽苟涓斿彧鑳藉湪鍒涘缓浠讳綍 VCPU 涔嬪墠璁剧疆銆?
-KVM_CAP_PPC_SMT_POSSIBLE 鑳藉姏鎸囩ず鍝簺铏氭嫙 SMT 妯″紡鍙敤銆?
+VM 上启用此能力为用户空间提供了一种设置期望的虚拟 SMT 模式（即每个虚拟
+核心的虚CPU 数）的方法。虚SMT 模式 vsmt_mode 必须1 8 之间2 
+幂。在 POWER8 上，vsmt_mode 还不得大于宿主每个子核的线程数。当flags 必须
+0。成功调用以启用此能力后，当随后VM 查询 KVM_CAP_PPC_SMT 能力时，
+返回 vsmt_mode。此能力仅由 HV KVM 支持，并且只能在创建任何 VCPU 之前设置
+KVM_CAP_PPC_SMT_POSSIBLE 能力指示哪些虚拟 SMT 模式可用
 
 ### 7.12 KVM_CAP_PPC_FWNMI
 
@@ -7045,15 +7045,15 @@ KVM_CAP_PPC_SMT_POSSIBLE 鑳藉姏鎸囩ず鍝簺铏氭嫙 SMT 妯″紡鍙�
 :Architectures: ppc
 :Parameters: none
 
-鍊熷姪姝よ兘鍔涳紝瀹㈡埛鏈哄湴鍧€绌洪棿涓殑鏈哄櫒妫€鏌ュ紓甯稿皢瀵艰嚧 KVM 浠?NMI 閫€鍑哄師鍥犻€€鍑?
-瀹㈡埛鏈恒€傝繖浣垮緱 QEMU 鑳藉鏋勫缓閿欒鏃ュ織骞惰烦杞埌瀹㈡埛鏈哄唴鏍告敞鍐岀殑鏈哄櫒妫€鏌ュ鐞?
-渚嬬▼銆傝嫢娌℃湁姝よ兘鍔涳紝KVM 灏嗚烦杞埌瀹㈡埛鏈虹殑 0x200 涓柇鍚戦噺銆?
+借助此能力，客户机地址空间中的机器检查异常将导致 KVM NMI 退出原因退
+客户机。这使得 QEMU 能够构建错误日志并跳转到客户机内核注册的机器检查处
+例程。若没有此能力，KVM 将跳转到客户机的 0x200 中断向量
 
 ### 7.13 KVM_CAP_X86_DISABLE_EXITS
 
 
 :Architectures: x86
-:Parameters: args[^0^] 瀹氫箟绂佺敤鍝簺閫€鍑?
+:Parameters: args[^0^] 定义禁用哪些退
 :Returns: 0 on success, -EINVAL when args[^0^] contains invalid exits
           or if any vCPUs have already been created
 
@@ -7066,29 +7066,29 @@ KVM_CAP_PPC_SMT_POSSIBLE 鑳藉姏鎸囩ず鍝簺铏氭嫙 SMT 妯″紡鍙�
   #define KVM_X86_DISABLE_EXITS_APERFMPERF       (1 << 4)
 
 ```
-鍦?VM 涓婂惎鐢ㄦ鑳藉姏涓虹敤鎴风┖闂存彁渚涗簡涓€绉嶄笉鍐嶆嫤鎴煇浜涙寚浠ょ殑鏂规硶锛屼粠鑰屽湪鏌愪簺
-宸ヤ綔璐熻浇涓嬫敼鍠勫欢杩燂紝寤鸿鍦?vCPU 鍏宠仈鍒颁笓鐢ㄧ墿鐞?CPU 鏃朵娇鐢ㄣ€傛湭鏉ュ彲浠ユ坊鍔犳洿澶?
-浣嶏紱鐢ㄦ埛绌洪棿鍙渶灏?KVM_CHECK_EXTENSION 鐨勭粨鏋滀紶缁?KVM_ENABLE_CAP 鍗冲彲绂佺敤
-鎵€鏈夋绫?vmexit銆?
+VM 上启用此能力为用户空间提供了一种不再拦截某些指令的方法，从而在某些
+工作负载下改善延迟，建议vCPU 关联到专用物CPU 时使用。未来可以添加更
+位；用户空间只需KVM_CHECK_EXTENSION 的结果传KVM_ENABLE_CAP 即可禁用
+所有此vmexit
 
-濡傛灉绂佺敤浜?HLT 閫€鍑猴紝璇峰嬁鍚敤 KVM_FEATURE_PV_UNHALT銆?
+如果禁用HLT 退出，请勿启用 KVM_FEATURE_PV_UNHALT
 
-铏氭嫙鍖?`IA32_APERF` 鍜?`IA32_MPERF` MSR 闇€瑕佺殑涓嶄粎浠呮槸绂佺敤 APERF/MPERF 閫€鍑恒€?
-铏界劧 Intel 鍜?AMD 閮借褰曚簡杩欎簺 MSR 鐨勪弗鏍间娇鐢ㄦ潯浠垛€斺€斿己璋冨彧鏈夊畠浠湪涓€娈垫椂闂?
-鍖洪棿锛圱0 鍒?T1锛夊唴澧為噺鐨勬瘮鍊煎湪鏋舵瀯涓婃湁瀹氫箟鈥斺€斾絾绠€鍗曞湴閫忎紶杩欎簺 MSR 浠嶅彲鑳?
-浜х敓涓嶆纭殑姣斿€笺€?
+虚拟`IA32_APERF` `IA32_MPERF` MSR 需要的不仅仅是禁用 APERF/MPERF 退出
+虽然 Intel AMD 都记录了这些 MSR 的严格使用条件——强调只有它们在一段时
+区间（T0 T1）内增量的比值在架构上有定义——但简单地透传这些 MSR 仍可
+产生不正确的比值
 
-濡傛灉鍦?T0 鍜?T1 涔嬮棿鍙戠敓浠ヤ笅鎯呭喌锛屽氨鍙兘鍑虹幇杩欎釜閿欒鐨勬瘮鍊硷細
+如果T0 T1 之间发生以下情况，就可能出现这个错误的比值：
 
-1. vCPU 绾跨▼鍦ㄩ€昏緫澶勭悊鍣ㄤ箣闂磋縼绉汇€?
-2. 鍙戠敓瀹炴椂杩佺Щ鎴栨寕璧?鎭㈠鎿嶄綔銆?
-3. 鍙︿竴涓换鍔″叡浜?vCPU 鐨勯€昏緫澶勭悊鍣ㄣ€?
-4. 妯℃嫙浜嗕綆浜?C0 鐨?C-state锛堜緥濡傞€氳繃 HLT 鎷︽埅锛夈€?
-5. 瀹㈡埛鏈?TSC 棰戠巼涓庡涓?TSC 棰戠巼涓嶅尮閰嶃€?
+1. vCPU 线程在逻辑处理器之间迁移
+2. 发生实时迁移或挂恢复操作
+3. 另一个任务共vCPU 的逻辑处理器
+4. 模拟了低C0 C-state（例如通过 HLT 拦截）
+5. 客户TSC 频率与宿TSC 频率不匹配
 
-鐢变簬杩欎簺澶嶆潅鎬э紝KVM 涓嶄細鑷姩灏嗘閫忎紶鑳藉姏涓庡鎴锋満 CPUID 浣?
-`CPUID.6:ECX.APERFMPERF[bit 0]` 鐩稿叧鑱斻€傝涓烘鏈哄埗瓒充互铏氭嫙鍖?`IA32_APERF`
-鍜?`IA32_MPERF` MSR 鐨勭敤鎴风┖闂?VMM 蹇呴』鏄惧紡璁剧疆瀹㈡埛鏈?CPUID 浣嶃€?
+由于这些复杂性，KVM 不会自动将此透传能力与客户机 CPUID 
+`CPUID.6:ECX.APERFMPERF[bit 0]` 相关联。认为此机制足以虚拟`IA32_APERF`
+`IA32_MPERF` MSR 的用户空VMM 必须显式设置客户CPUID 位
 
 
 ### 7.14 KVM_CAP_S390_HPAGE_1M
@@ -7100,20 +7100,20 @@ KVM_CAP_PPC_SMT_POSSIBLE 鑳藉姏鎸囩ず鍝簺铏氭嫙 SMT 妯″紡鍙�
 	  or cmma is enabled, or the VM has the KVM_VM_S390_UCONTROL
 	  flag set
 
-鍊熷姪姝よ兘鍔涳紝鍙互涓?VM 鍚敤 KVM 瀵归€氳繃 hugetlbfs 鐢?1M 椤靛仛鍐呭瓨鍚庣鐨勬敮鎸併€?
-鍚敤璇ヨ兘鍔涘悗锛宑mma 涓嶈兘鍐嶈鍚敤锛宲fmfi 鍜屽瓨鍌ㄩ敭瑙ｉ噴涔熻绂佺敤銆傚鏋?cmma 宸茬粡
-琚惎鐢ㄦ垨鑰?hpage 妯″潡鍙傛暟鏈涓?1锛屽垯杩斿洖 -EINVAL銆?
+借助此能力，可以VM 启用 KVM 对通过 hugetlbfs 1M 页做内存后端的支持
+启用该能力后，cmma 不能再被启用，pfmfi 和存储键解释也被禁用。如cmma 已经
+被启用或hpage 模块参数未设1，则返回 -EINVAL
 
-铏界劧閫氬父鍙互鍦ㄦ病鏈夋鑳藉姏鐨勬儏鍐典笅鍒涘缓浣跨敤澶ч〉鍚庣鐨?VM锛屼絾 VM 灏嗕笉鑳借繍琛屻€?
+虽然通常可以在没有此能力的情况下创建使用大页后端VM，但 VM 将不能运行
 
 ### 7.15 KVM_CAP_MSR_PLATFORM_INFO
 
 
 :Architectures: x86
-:Parameters: args[^0^] 鐗规€ф槸鍚﹀簲鍚敤
+:Parameters: args[^0^] 特性是否应启用
 
-鍊熷姪姝よ兘鍔涳紝瀹㈡埛鏈哄彲浠ヨ鍙?MSR_PLATFORM_INFO MSR銆傚惁鍒欙紝褰撳鎴锋満灏濊瘯璁块棶鏃朵細
-寮曞彂 #GP銆傚綋鍓嶏紝姝よ兘鍔涗笉鍚敤璇?MSR 瀵瑰鎴锋満鐨勫啓鍏ユ潈闄愩€?
+借助此能力，客户机可以读MSR_PLATFORM_INFO MSR。否则，当客户机尝试访问时会
+引发 #GP。当前，此能力不启用MSR 对客户机的写入权限
 
 ### 7.16 KVM_CAP_PPC_NESTED_HV
 
@@ -7123,28 +7123,28 @@ KVM_CAP_PPC_SMT_POSSIBLE 鑳藉姏鎸囩ず鍝簺铏氭嫙 SMT 妯″紡鍙�
 :Returns: 0 on success, -EINVAL when the implementation doesn't support
 	  nested-HV virtualization.
 
-POWER9 鍙婁互鍚庣郴缁熶笂鐨?HV-KVM 鍏佽鈥滃祵濂?HV鈥濊櫄鎷熷寲锛屽畠涓哄鎴风殑瀹㈡埛鏈猴紙guest
-VM锛夋彁渚涗簡涓€绉嶈兘澶熶娇鐢?CPU 瓒呯骇visor 妯″紡锛堢壒鏉冮潪铏氭嫙鏈虹洃鎺у櫒鐘舵€侊級杩愯鐨?
-鏂瑰紡銆傚湪 VM 涓婂惎鐢ㄦ鑳藉姏鍙栧喅浜?CPU 鏄惁鍏锋湁蹇呰鐨勫姛鑳斤紝浠ュ強璇ヨ鏂芥槸鍚﹂€氳繃
-kvm-hv 妯″潡鍙傛暟鍚敤銆?
+POWER9 及以后系统上HV-KVM 允许“嵌HV”虚拟化，它为客户的客户机（guest
+VM）提供了一种能够使CPU 超级visor 模式（特权非虚拟机监控器状态）运行
+方式。在 VM 上启用此能力取决CPU 是否具有必要的功能，以及该设施是否通过
+kvm-hv 模块参数启用
 
 ### 7.17 KVM_CAP_EXCEPTION_PAYLOAD
 
 
 :Architectures: x86
-:Parameters: args[^0^] 鐗规€ф槸鍚﹀簲鍚敤
+:Parameters: args[^0^] 特性是否应启用
 
-鍚敤姝よ兘鍔涘悗锛屽綋 L1 鎷︽埅鍙戠敓鍦?L2 涓殑 #PF 寮傚父鏃讹紝鍦ㄦā鎷熺殑 VM-exit 涔嬪墠涓嶄細
-淇敼 CR2銆傜被浼煎湴锛屼粎瀵?kvm-intel锛屽綋 L1 鎷︽埅鍙戠敓鍦?L2 涓殑 #DB 寮傚父鏃讹紝鍦?
-妯℃嫙鐨?VM-exit 涔嬪墠涓嶄細淇敼 DR6銆傚洜姝わ紝褰?KVM_GET_VCPU_EVENTS 鎶ュ憡 L2 鏈変竴涓?
-鎸傝捣鐨?#PF锛堟垨 #DB锛夊紓甯告椂锛宔xception.has_payload 灏嗚缃綅锛屽苟涓旀晠闅滃湴鍧€锛堟垨
-鏂扮殑 DR6 浣峔*锛夊皢鎶ュ憡鍦?exception_payload 瀛楁涓€傜被浼煎湴锛屽綋鐢ㄦ埛绌洪棿浣跨敤
-KVM_SET_VCPU_EVENTS 鍚?L2 娉ㄥ叆涓€涓?#PF锛堟垨 #DB锛夋椂锛屽簲缃綅
-exception.has_payload锛屽苟灏嗘晠闅滃湴鍧€鈥斺€旀垨鏂扮殑 DR6 浣峔 [#]_鈥斺€旀斁鍏?exception_payload
-瀛楁銆?
+启用此能力后，当 L1 拦截发生L2 中的 #PF 异常时，在模拟的 VM-exit 之前不会
+修改 CR2。类似地，仅kvm-intel，当 L1 拦截发生L2 中的 #DB 异常时，
+模拟VM-exit 之前不会修改 DR6。因此，KVM_GET_VCPU_EVENTS 报告 L2 有一
+挂起#PF（或 #DB）异常时，exception.has_payload 将被置位，并且故障地址（或
+新的 DR6 位\*）将报告exception_payload 字段中。类似地，当用户空间使用
+KVM_SET_VCPU_EVENTS L2 注入一#PF（或 #DB）时，应置位
+exception.has_payload，并将故障地址——或新的 DR6 位\ [#]_——放exception_payload
+字段
 
-姝よ兘鍔涜繕鍚敤浜?struct kvm_vcpu_events 涓殑 exception.pending锛岃繖鍏佽鐢ㄦ埛绌洪棿
-鍖哄垎鎸傝捣鐨勫紓甯稿拰娉ㄥ叆鐨勫紓甯搞€?
+此能力还启用struct kvm_vcpu_events 中的 exception.pending，这允许用户空间
+区分挂起的异常和注入的异常
 
 
        will clear DR6.RTM.
@@ -7153,7 +7153,7 @@ exception.has_payload锛屽苟灏嗘晠闅滃湴鍧€鈥斺€旀垨鏂扮殑 D
 
 
 :Architectures: x86, arm64, mips
-:Parameters: args[^0^] 鐗规€ф槸鍚﹀簲鍚敤
+:Parameters: args[^0^] 特性是否应启用
 
 ```
 
@@ -7161,80 +7161,80 @@ exception.has_payload锛屽苟灏嗘晠闅滃湴鍧€鈥斺€旀垨鏂扮殑 D
   #define KVM_DIRTY_LOG_INITIALLY_SET           (1 << 1)
 
 ```
-璁剧疆浜?KVM_DIRTY_LOG_MANUAL_PROTECT_ENABLE 鏃讹紝KVM_GET_DIRTY_LOG 涓嶄細鑷姩娓呴櫎
-骞跺啓淇濇姢鎵€鏈変綔涓鸿剰椤佃繑鍥炵殑鍐呭瓨椤点€傜浉鍙嶏紝鐢ㄦ埛绌洪棿蹇呴』浣跨敤 KVM_CLEAR_DIRTY_LOG
-鍗曠嫭鎵ц姝ゆ搷浣溿€?
+设置KVM_DIRTY_LOG_MANUAL_PROTECT_ENABLE 时，KVM_GET_DIRTY_LOG 不会自动清除
+并写保护所有作为脏页返回的内存页。相反，用户空间必须使用 KVM_CLEAR_DIRTY_LOG
+单独执行此操作
 
-浠ョ暐寰洿澶嶆潅鐨勬搷浣滀负浠ｄ环锛岃繖鍦ㄤ袱鏂归潰鎻愪緵浜嗘洿濂界殑鍙墿灞曟€у拰鍝嶅簲鎬с€傞鍏堬紝
-KVM_CLEAR_DIRTY_LOG ioctl 鍙互浠?64 椤电殑绮掑害鎿嶄綔锛岃€屼笉闇€瑕佸悓姝ユ暣涓?memslot锛?
-杩欑‘淇濅簡 KVM 涓嶄細闀挎椂闂存寔鏈夊叧鑷棆閿併€傚叾娆★紝鍦ㄦ煇浜涙儏鍐典笅锛屽湪璋冪敤
-KVM_GET_DIRTY_LOG 鍜岀敤鎴风┖闂村疄闄呬娇鐢ㄩ〉涓暟鎹箣闂翠細缁忚繃澶ч噺鏃堕棿銆傚湪姝ゆ湡闂撮〉
-鍙兘琚慨鏀癸紝杩欏瀹㈡埛鏈哄拰鐢ㄦ埛绌洪棿閮芥槸浣庢晥鐨勶細瀹㈡埛鏈哄皢鍥犲啓淇濇姢鏁呴殰鑰屾壙鍙楁洿楂樼殑
-鎯╃綒锛岃€岀敤鎴风┖闂村彲鑳界湅鍒拌剰椤电殑璇姤銆傛墜鍔ㄩ噸鏂颁繚鎶ゆ湁鍔╀簬鍑忓皯杩欐鏃堕棿锛屾敼鍠勫鎴锋満
-鎬ц兘骞跺噺灏戣剰鏃ュ織鐨勫亣闃虫€ф暟閲忋€?
+以略微更复杂的操作为代价，这在两方面提供了更好的可扩展性和响应性。首先，
+KVM_CLEAR_DIRTY_LOG ioctl 可以64 页的粒度操作，而不需要同步整memslot
+这确保了 KVM 不会长时间持有关自旋锁。其次，在某些情况下，在调用
+KVM_GET_DIRTY_LOG 和用户空间实际使用页中数据之间会经过大量时间。在此期间页
+可能被修改，这对客户机和用户空间都是低效的：客户机将因写保护故障而承受更高的
+惩罚，而用户空间可能看到脏页的误报。手动重新保护有助于减少这段时间，改善客户机
+性能并减少脏日志的假阳性数量
 
-璁剧疆浜?KVM_DIRTY_LOG_INITIALLY_SET 鏃讹紝鑴忎綅鍥剧殑鎵€鏈変綅鍦ㄥ垱寤烘椂閮藉垵濮嬪寲涓?1銆?
-杩欎篃鏀瑰杽浜嗘€ц兘锛屽洜涓鸿剰鏃ュ織鍙互鍦ㄩ娆¤皟鐢?KVM_CLEAR_DIRTY_LOG 鏃朵互灏忓潡閫愭
-鍚敤銆侹VM_DIRTY_LOG_INITIALLY_SET 渚濊禆
-KVM_DIRTY_LOG_MANUAL_PROTECT_ENABLE锛堢洰鍓嶅畠涔熷彧鍦?x86銆乤rm64 鍜?riscv 涓婂彲鐢級銆?
+设置KVM_DIRTY_LOG_INITIALLY_SET 时，脏位图的所有位在创建时都初始化1
+这也改善了性能，因为脏日志可以在首次调KVM_CLEAR_DIRTY_LOG 时以小块逐步
+启用。KVM_DIRTY_LOG_INITIALLY_SET 依赖
+KVM_DIRTY_LOG_MANUAL_PROTECT_ENABLE（目前它也只x86、arm64 riscv 上可用）
 
-KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2 姝ゅ墠鏇句互 KVM_CAP_MANUAL_DIRTY_LOG_PROTECT
-涔嬪悕鎻愪緵锛屼絾鍏跺疄鐜板瓨鍦ㄧ己闄凤紝瀵艰嚧闅句互鎴栨棤娉曟纭娇鐢ㄣ€傛彁渚?
-KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2 鍗宠〃绀鸿繖浜涚己闄峰凡琚慨澶嶃€傜敤鎴风┖闂翠笉搴斿皾璇?
-浣跨敤 KVM_CAP_MANUAL_DIRTY_LOG_PROTECT銆?
+KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2 此前曾以 KVM_CAP_MANUAL_DIRTY_LOG_PROTECT
+之名提供，但其实现存在缺陷，导致难以或无法正确使用。提
+KVM_CAP_MANUAL_DIRTY_LOG_PROTECT2 即表示这些缺陷已被修复。用户空间不应尝
+使用 KVM_CAP_MANUAL_DIRTY_LOG_PROTECT
 
 ### 7.19 KVM_CAP_PPC_SECURE_GUEST
 
 
 :Architectures: ppc
 
-姝よ兘鍔涜〃绀?KVM 姝ｈ繍琛屽湪鎷ユ湁 ultravisor 鍥轰欢銆佸洜鑰岃兘澶熸敮鎸佸畨鍏ㄥ鎴锋満鐨勪富鏈轰笂銆?
-鍦ㄨ繖鏍风殑绯荤粺涓婏紝瀹㈡埛鏈哄彲浠ヨ姹?ultravisor 浣垮叾鎴愪负瀹夊叏瀹㈡埛鏈猴紝鍏跺唴瀛樺湪瀹㈡埛鏈?
-涔嬪瀵瑰涓讳笉鍙闂紝闄ら潪鏄樉寮忚姹備笌瀹㈡埛鏈哄叡浜殑椤点€傚綋瀹㈡埛鏈鸿姹傛垚涓哄畨鍏ㄥ鎴锋満
-鏃讹紝ultravisor 浼氶€氱煡 KVM锛孠VM 鏈夋満浼氬惁鍐宠繖涓€杞崲銆?
+此能力表KVM 正运行在拥有 ultravisor 固件、因而能够支持安全客户机的主机上
+在这样的系统上，客户机可以请ultravisor 使其成为安全客户机，其内存在客户
+之外对宿主不可访问，除非是显式请求与客户机共享的页。当客户机请求成为安全客户机
+时，ultravisor 会通知 KVM，KVM 有机会否决这一转换
 
-濡傛灉瀛樺湪锛屾鑳藉姏鍙互涓?VM 鍚敤锛屾剰鍛崇潃 KVM 灏嗗厑璁歌浆鎹㈠埌瀹夊叏瀹㈡埛鏈烘ā寮忋€傚惁鍒?
-KVM 灏嗗惁鍐宠杞崲銆?
+如果存在，此能力可以VM 启用，意味着 KVM 将允许转换到安全客户机模式。否
+KVM 将否决该转换
 
 ### 7.20 KVM_CAP_HALT_POLL
 
 
 :Architectures: all
 :Target: VM
-:Parameters: args[^0^] 鏄互绾崇涓哄崟浣嶇殑鏈€澶ц疆璇㈡椂闂?
+:Parameters: args[^0^] 是以纳秒为单位的最大轮询时
 :Returns: 0 on success; -1 on error
 
-KVM_CAP_HALT_POLL 瑕嗙洊 kvm.halt_poll_ns 妯″潡鍙傛暟锛屼互璁剧疆鐩爣 VM 涓墍鏈?vCPU 鐨?
-鏈€澶ф殏鍋滆疆璇紙halt-polling锛夋椂闂淬€傛鑳藉姏鍙互鍦ㄤ换浣曟椂闂淬€佷换鎰忔鏁拌皟鐢紝浠ュ姩鎬?
-鏇存敼鏈€澶ф殏鍋滆疆璇㈡椂闂淬€?
+KVM_CAP_HALT_POLL 覆盖 kvm.halt_poll_ns 模块参数，以设置目标 VM 中所vCPU 
+最大暂停轮询（halt-polling）时间。此能力可以在任何时间、任意次数调用，以动
+更改最大暂停轮询时间
 
-鏈夊叧鏆傚仠杞鐨勬洿澶氫俊鎭紝璇峰弬闃?Documentation/virt/kvm/halt-polling.rst銆?
+有关暂停轮询的更多信息，请参Documentation/virt/kvm/halt-polling.rst
 
 ### 7.21 KVM_CAP_X86_USER_SPACE_MSR
 
 
 :Architectures: x86
 :Target: VM
-:Parameters: args[^0^] 鍖呭惈瑕佹姤鍛婄殑 KVM_MSR_EXIT_REASON_* 浜嬩欢鎺╃爜
+:Parameters: args[^0^] 包含要报告的 KVM_MSR_EXIT_REASON_* 事件掩码
 :Returns: 0 on success; -1 on error
 
-姝よ兘鍔涘厑璁哥敤鎴风┖闂村湪 MSR 璁块棶琚嫆缁濇椂鎷︽埅 RDMSR 鍜?WRMSR 鎸囦护銆傞粯璁ゆ儏鍐典笅锛?
-KVM 鍦ㄨ鎷掔粷鐨勮闂笂娉ㄥ叆 #GP銆?
+此能力允许用户空间在 MSR 访问被拒绝时拦截 RDMSR WRMSR 指令。默认情况下
+KVM 在被拒绝的访问上注入 #GP
 
-褰撳鎴锋満璇锋眰璇诲彇鎴栧啓鍏ユ煇涓?MSR 鏃讹紝KVM 鍙兘鏃犳硶瀹炵幇涓庣浉搴旂郴缁熺浉鍏崇殑鎵€鏈?MSR銆?
-瀹冧篃涓嶄細鎸?CPU 绫诲瀷鍖哄垎銆?
+当客户机请求读取或写入某MSR 时，KVM 可能无法实现与相应系统相关的所MSR
+它也不会CPU 类型区分
 
-涓轰簡瀵?MSR 澶勭悊杩涜鏇寸粏绮掑害鐨勬帶鍒讹紝鐢ㄦ埛绌洪棿鍙互鍚敤姝よ兘鍔涖€傚惎鐢ㄥ悗锛屽尮閰?
-args[^0^] 涓寚瀹氭帺鐮併€佸苟涓斾細鍦ㄥ鎴锋満鍐呰Е鍙?#GP 鐨?MSR 璁块棶灏嗘敼涓鸿Е鍙?
-KVM_EXIT_X86_RDMSR 鍜?KVM_EXIT_X86_WRMSR 閫€鍑洪€氱煡銆傜劧鍚庣敤鎴风┖闂村彲浠ュ疄鐜扮壒瀹?
-鍨嬪彿鐨?MSR 澶勭悊锛屽拰/鎴栧悜鐢ㄦ埛鍙戝嚭閫氱煡锛屽憡鐭ユ煇涓?MSR 鏈 KVM 妯℃嫙/铏氭嫙鍖栥€?
+为了MSR 处理进行更细粒度的控制，用户空间可以启用此能力。启用后，匹
+args[^0^] 中指定掩码、并且会在客户机内触#GP MSR 访问将改为触
+KVM_EXIT_X86_RDMSR KVM_EXIT_X86_WRMSR 退出通知。然后用户空间可以实现特
+型号MSR 处理，和/或向用户发出通知，告知某MSR 未被 KVM 模拟/虚拟化
 
-鏈夋晥鐨勬帺鐮佹爣蹇椾负锛?
+有效的掩码标志为
 
 ============================ ===============================================
- KVM_MSR_EXIT_REASON_UNKNOWN 鎷︽埅瀵癸紙KVM 鏈煡鐨勶級MSR 鐨勮闂?
- KVM_MSR_EXIT_REASON_INVAL   鎷︽埅鏍规嵁 vCPU 鍨嬪彿鍜?鎴栨ā寮忓湪鏋舵瀯涓婇潪娉曠殑璁块棶
- KVM_MSR_EXIT_REASON_FILTER  鎷︽埅琚敤鎴风┖闂撮€氳繃 KVM_X86_SET_MSR_FILTER 鎷掔粷鐨勮闂?
+ KVM_MSR_EXIT_REASON_UNKNOWN 拦截对（KVM 未知的）MSR 的访
+ KVM_MSR_EXIT_REASON_INVAL   拦截根据 vCPU 型号或模式在架构上非法的访问
+ KVM_MSR_EXIT_REASON_FILTER  拦截被用户空间通过 KVM_X86_SET_MSR_FILTER 拒绝的访
 ============================ ===============================================
 
 ### 7.22 KVM_CAP_X86_BUS_LOCK_EXIT
@@ -7242,7 +7242,7 @@ KVM_EXIT_X86_RDMSR 鍜?KVM_EXIT_X86_WRMSR 閫€鍑洪€氱煡銆傜劧鍚庣�
 
 :Architectures: x86
 :Target: VM
-:Parameters: args[^0^] 瀹氫箟瀹㈡埛鏈轰腑妫€娴嬪埌鎬荤嚎閿佹椂浣跨敤鐨勭瓥鐣?
+:Parameters: args[^0^] 定义客户机中检测到总线锁时使用的策
 :Returns: 0 on success, -EINVAL when args[^0^] contains invalid bits
 
 ```
@@ -7251,30 +7251,30 @@ KVM_EXIT_X86_RDMSR 鍜?KVM_EXIT_X86_WRMSR 閫€鍑洪€氱煡銆傜劧鍚庣�
   #define KVM_BUS_LOCK_DETECTION_EXIT     (1 << 1)
 
 ```
-鍦?VM 涓婂惎鐢ㄦ鑳藉姏涓虹敤鎴风┖闂存彁渚涗簡涓€绉嶉€夋嫨绛栫暐鏉ュ鐞嗗鎴锋満涓娴嬪埌鐨勬€荤嚎閿?
-鐨勬柟娉曘€傜敤鎴风┖闂村彲浠ヤ粠 KVM_CHECK_EXTENSION 鐨勭粨鏋滀腑鑾峰彇鍙楁敮鎸佺殑妯″紡锛屽苟閫氳繃
-KVM_ENABLE_CAP 杩涜瀹氫箟銆傚彈鏀寔鐨勬ā寮忔槸浜掓枼鐨勩€?
+VM 上启用此能力为用户空间提供了一种选择策略来处理客户机中检测到的总线
+的方法。用户空间可以从 KVM_CHECK_EXTENSION 的结果中获取受支持的模式，并通过
+KVM_ENABLE_CAP 进行定义。受支持的模式是互斥的
 
-姝よ兘鍔涘厑璁哥敤鎴风┖闂村己鍒跺湪瀹㈡埛鏈轰腑妫€娴嬪埌鐨勬€荤嚎閿佷笂鍙戠敓 VM 閫€鍑猴紝鏃犺瀹夸富鏄惁
-鍚敤浜?split-lock 妫€娴嬶紙鍚庤€呬細瑙﹀彂 KVM 鎷︽埅鐨?#AC 寮傚父锛夈€傛鑳藉姏鏃ㄥ湪缂撹В鎭舵剰/
-鏈?bug 鐨勫鎴锋満鍒╃敤鎬荤嚎閿侀檷浣庢暣涓郴缁熸€ц兘鐨勬敾鍑汇€?
+此能力允许用户空间强制在客户机中检测到的总线锁上发生 VM 退出，无论宿主是否
+启用split-lock 检测（后者会触发 KVM 拦截#AC 异常）。此能力旨在缓解恶意/
+bug 的客户机利用总线锁降低整个系统性能的攻击
 
-濡傛灉璁剧疆浜?KVM_BUS_LOCK_DETECTION_OFF锛孠VM 涓嶄細寮哄埗瀹㈡埛鏈烘€荤嚎閿佸彂鐢?VM 閫€鍑猴紝
-灏界瀹夸富鍐呮牳鐨?split-lock #AC 妫€娴嬶紙濡傛灉鍚敤锛変粛鐒堕€傜敤銆?
+如果设置KVM_BUS_LOCK_DETECTION_OFF，KVM 不会强制客户机总线锁发VM 退出，
+尽管宿主内核split-lock #AC 检测（如果启用）仍然适用
 
-濡傛灉璁剧疆浜?KVM_BUS_LOCK_DETECTION_EXIT锛孠VM 浼氬惎鐢ㄤ竴涓?CPU 鐗规€э紝纭繚瀹㈡埛鏈轰腑
-鐨勬€荤嚎閿佽Е鍙?VM 閫€鍑猴紝骞朵笖 KVM 涓烘墍鏈夋绫?VM 閫€鍑洪€€鍑哄埌鐢ㄦ埛绌洪棿锛屼緥濡傚厑璁哥敤鎴?
-绌洪棿瀵硅繚瑙勭殑瀹㈡埛鏈鸿繘琛岄檺娴佸拰/鎴栧簲鐢ㄥ叾浠栧熀浜庣瓥鐣ョ殑缂撹В鎺柦銆傞€€鍑哄埌鐢ㄦ埛绌洪棿鏃讹紝
-KVM 鍦?vcpu-run->flags 涓缃?KVM_RUN_X86_BUS_LOCK锛屽苟鏈夋潯浠跺湴灏?exit_reason 璁句负
-KVM_EXIT_X86_BUS_LOCK銆?
+如果设置KVM_BUS_LOCK_DETECTION_EXIT，KVM 会启用一CPU 特性，确保客户机中
+的总线锁触VM 退出，并且 KVM 为所有此VM 退出退出到用户空间，例如允许用
+空间对违规的客户机进行限流和/或应用其他基于策略的缓解措施。退出到用户空间时，
+KVM vcpu-run->flags 中设KVM_RUN_X86_BUS_LOCK，并有条件地exit_reason 设为
+KVM_EXIT_X86_BUS_LOCK銆。
 
-鐢变簬搴曞眰纭欢瀹炵幇鐨勫樊寮傦紝閫€鍑烘椂 vCPU 鐨?RIP 鍦?Intel 鍜?AMD 涔嬮棿鏈夋墍涓嶅悓銆傚湪
-Intel 瀹夸富涓婏紝RIP 鎸囧悜涓嬩竴鏉℃寚浠わ紝鍗抽€€鍑烘槸闄烽槺寮忕殑锛坱rap-like锛夈€傚湪 AMD 瀹夸富涓婏紝
-RIP 鎸囧悜杩濊鎸囦护锛屽嵆閫€鍑烘槸鏁呴殰寮忕殑锛坒ault-like锛夈€?
+由于底层硬件实现的差异，退出时 vCPU RIP Intel AMD 之间有所不同。在
+Intel 宿主上，RIP 指向下一条指令，即退出是陷阱式的（trap-like）。在 AMD 宿主上，
+RIP 指向违规指令，即退出是故障式的（fault-like）
 
-娉ㄦ剰锛佹娴嬪埌鐨勬€荤嚎閿佸彲鑳戒笌鍏朵粬閫€鍑哄埌鐢ㄦ埛绌洪棿鍚屾椂鍙戠敓锛屽嵆濡傛灉鐢ㄦ埛绌洪棿甯屾湜瀵?
-鎵€鏈夋娴嬪埌鐨勬€荤嚎閿侀噰鍙栬鍔紝鍒欏簲妫€鏌?KVM_RUN_X86_BUS_LOCK锛岃€屼笉璁轰富閫€鍑哄師鍥?
-涓轰綍銆?
+注意！检测到的总线锁可能与其他退出到用户空间同时发生，即如果用户空间希望
+所有检测到的总线锁采取行动，则应检KVM_RUN_X86_BUS_LOCK，而不论主退出原
+为何
 
 ### 7.23 KVM_CAP_PPC_DAWR1
 
@@ -7283,7 +7283,7 @@ RIP 鎸囧悜杩濊鎸囦护锛屽嵆閫€鍑烘槸鏁呴殰寮忕殑锛坒a
 :Parameters: none
 :Returns: 0 on success, -EINVAL when CPU doesn't support 2nd DAWR
 
-姝よ兘鍔涘彲鐢ㄤ簬妫€鏌?鍚敤鐢?POWER10 澶勭悊鍣ㄦ彁渚涚殑绗?2 涓?DAWR 鐗规€с€?
+此能力可用于检启用POWER10 处理器提供的2 DAWR 特性
 
 
 ### 7.24 KVM_CAP_VM_COPY_ENC_CONTEXT_FROM
@@ -7291,47 +7291,47 @@ RIP 鎸囧悜杩濊鎸囦护锛屽嵆閫€鍑烘槸鏁呴殰寮忕殑锛坒a
 
 :Architectures: x86 SEV enabled
 :Type: vm
-:Parameters: args[^0^] 鏄簮 vm 鐨?fd
+:Parameters: args[^0^] 是源 vm fd
 :Returns: 0 on success; ENOTTY on error
 
-姝よ兘鍔涘厑璁哥敤鎴风┖闂村皢鍔犲瘑涓婁笅鏂囦粠鐢辫 fd 鎸囩ず鐨?vm 澶嶅埗鍒拌皟鐢ㄦ鑳藉姏鐨?vm 涓娿€?
+此能力允许用户空间将加密上下文从由该 fd 指示vm 复制到调用此能力vm 上
 
-杩欐棬鍦ㄦ敮鎸佺敱瀹夸富璋冨害鐨勫鎴锋満鍐呭伐浣滆礋杞姐€傝繖浣垮緱瀹㈡埛鏈哄唴宸ヤ綔璐熻浇鑳藉缁存姢鍏惰嚜韬殑
-NPT锛屽苟浣夸袱涓?vm 涓嶄細鍥犱负涓柇绛夎€屾剰澶栦簰鐩哥牬鍧忥紙鐙珛鐨?APIC/MSR 绛夛級銆?
+这旨在支持由宿主调度的客户机内工作负载。这使得客户机内工作负载能够维护其自身的
+NPT，并使两vm 不会因为中断等而意外互相破坏（独立APIC/MSR 等）
 
 ### 7.25 KVM_CAP_SGX_ATTRIBUTE
 
 
 :Architectures: x86
 :Target: VM
-:Parameters: args[^0^] 鏄?securityfs 涓?SGX 灞炴€ф枃浠剁殑鏂囦欢鍙ユ焺
+:Parameters: args[^0^] securityfs SGX 属性文件的文件句柄
 :Returns: 0 on success, -EINVAL if the file handle is invalid or if a requested
           attribute is not supported by KVM.
 
-KVM_CAP_SGX_ATTRIBUTE 浣跨敤鎴风┖闂?VMM 鑳藉鎺堜簣 VM 瀵逛竴涓垨澶氫釜鐗规潈椋炲湴锛坋nclave锛?
-灞炴€х殑璁块棶鏉冮檺銆俛rgs[^0^] 蹇呴』鎸佹湁涓?KVM 鏀寔/闄愬埗鐨勫睘鎬э紙褰撳墠鍙湁 PROVISIONKEY锛?
-鐩稿搴旂殑鏈夋晥 SGX 灞炴€ф枃浠剁殑鏂囦欢鍙ユ焺銆?
+KVM_CAP_SGX_ATTRIBUTE 使用户空VMM 能够授予 VM 对一个或多个特权飞地（enclave
+属性的访问权限。args[^0^] 必须持有KVM 支持/限制的属性（当前只有 PROVISIONKEY
+相对应的有效 SGX 属性文件的文件句柄
 
-SGX 瀛愮郴缁熼檺鍒跺涓€閮ㄥ垎椋炲湴灞炴€х殑璁块棶锛屼互渚夸负鏈鏀荤牬鐨勫唴鏍告彁渚涢澶栧畨鍏ㄦ€э紝渚嬪
-PROVISIONKEY 鐨勪娇鐢ㄥ彈鍒伴檺鍒讹紝浠ラ樆姝㈡伓鎰忚蒋浠跺埄鐢?PROVISIONKEY 鑾峰緱绋冲畾鐨勭郴缁熸寚绾广€?
-涓轰簡闃叉鐢ㄦ埛绌洪棿閫氳繃鍦?VM 涓繍琛岄鍦版潵瑙勯伩姝ょ被闄愬埗锛孠VM 榛樿闃绘瀵圭壒鏉冨睘鎬х殑
-璁块棶銆?
+SGX 子系统限制对一部分飞地属性的访问，以便为未被攻破的内核提供额外安全性，例如
+PROVISIONKEY 的使用受到限制，以阻止恶意软件利PROVISIONKEY 获得稳定的系统指纹
+为了防止用户空间通过VM 中运行飞地来规避此类限制，KVM 默认阻止对特权属性的
+访问
 
-鏇村缁嗚妭璇峰弬闃?Documentation/arch/x86/sgx.rst銆?
+更多细节请参Documentation/arch/x86/sgx.rst
 
 ### 7.27 KVM_CAP_EXIT_ON_EMULATION_FAILURE
 
 
 :Architectures: x86
-:Parameters: args[^0^] 鐗规€ф槸鍚﹀簲鍚敤
+:Parameters: args[^0^] 特性是否应启用
 
-褰撳惎鐢ㄦ鑳藉姏鏃讹紝妯℃嫙澶辫触灏嗗鑷翠互 KVM_INTERNAL_ERROR 閫€鍑哄埌鐢ㄦ埛绌洪棿锛堣皟鐢ㄦā鎷熷櫒
-澶勭悊 VMware 鍚庨棬鎸囦护鐨勬儏鍐甸櫎澶栵級銆傛澶栵紝KVM 鐜板湪灏嗕负浠讳綍鍥犳ā鎷熷け璐ュ鑷寸殑閫€鍑哄埌
-鐢ㄦ埛绌洪棿鎻愪緵鏈€澶?15 鏉℃寚浠ゅ瓧鑺傘€傚綋鍙戠敓杩欎簺閫€鍑哄埌鐢ㄦ埛绌洪棿鏃讹紝浣跨敤 emulation_failure
-缁撴瀯鑰岄潪 internal 缁撴瀯銆傚畠浠叿鏈夌浉鍚岀殑甯冨眬锛屼絾 emulation_failure 缁撴瀯鏇磋创鍚堝唴瀹广€?
-瀹冭繕鏄惧紡瀹氫箟浜嗏€渇lags鈥濆瓧娈碉紝鐢ㄤ簬鎻忚堪缁撴瀯涓湁鏁堢殑瀛楁锛堝嵆锛氬鏋滃湪鈥渇lags鈥濆瓧娈典腑
-璁剧疆浜?KVM_INTERNAL_ERROR_EMULATION_FLAG_INSTRUCTION_BYTES锛屽垯鈥渋nsn_size鈥濆拰
-鈥渋nsn_bytes鈥濋兘鍖呭惈鏈夋晥鏁版嵁锛夈€?
+当启用此能力时，模拟失败将导致以 KVM_INTERNAL_ERROR 退出到用户空间（调用模拟器
+处理 VMware 后门指令的情况除外）。此外，KVM 现在将为任何因模拟失败导致的退出到
+用户空间提供最15 条指令字节。当发生这些退出到用户空间时，使用 emulation_failure
+结构而非 internal 结构。它们具有相同的布局，但 emulation_failure 结构更贴合内容
+它还显式定义了“flags”字段，用于描述结构中有效的字段（即：如果在“flags”字段中
+设置KVM_INTERNAL_ERROR_EMULATION_FLAG_INSTRUCTION_BYTES，则“insn_size”和
+“insn_bytes”都包含有效数据）
 
 ### 7.28 KVM_CAP_ARM_MTE
 
@@ -7339,128 +7339,128 @@ PROVISIONKEY 鐨勪娇鐢ㄥ彈鍒伴檺鍒讹紝浠ラ樆姝㈡伓鎰忚蒋浠�
 :Architectures: arm64
 :Parameters: none
 
-姝よ兘鍔涜〃绀?KVM锛堜互鍙婄‖浠讹級鏀寔鍚戝鎴锋満鏆撮湶鍐呭瓨鏍囪鎵╁睍锛圡TE锛夈€傚湪鍒涘缓浠讳綍 VCPU
-涔嬪墠锛屽畠涔熷繀椤荤敱 VMM 鍚敤锛屼互鍏佽瀹㈡埛鏈鸿闂€傛敞鎰?MTE 浠呭瀹㈡埛鏈哄湪 AArch64 妯″紡涓?
-杩愯鏃跺彲鐢紝鍚敤姝よ兘鍔涘皢瀵艰嚧灏濊瘯鍒涘缓 AArch32 VCPU 澶辫触銆?
+此能力表KVM（以及硬件）支持向客户机暴露内存标记扩展（MTE）。在创建任何 VCPU
+之前，它也必须由 VMM 启用，以允许客户机访问。注MTE 仅对客户机在 AArch64 模式
+运行时可用，启用此能力将导致尝试创建 AArch32 VCPU 失败
 
-鍚敤鍚庯紝瀹㈡埛鏈鸿兘澶熻闂笌鎻愪緵缁欏鎴锋満鐨勪换浣曞唴瀛樼浉鍏宠仈鐨勬爣璁般€侹VM 灏嗙‘淇濆湪瀹夸富鐨?
-浜ゆ崲鎴栦紤鐪犳湡闂寸淮鎶よ繖浜涙爣璁帮紱浣嗘槸锛屽鏋?VM 琚縼绉伙紝VMM 闇€瑕侀€傚綋鍦版墜鍔ㄤ繚瀛?鎭㈠
-杩欎簺鏍囪銆?
+启用后，客户机能够访问与提供给客户机的任何内存相关联的标记。KVM 将确保在宿主
+交换或休眠期间维护这些标记；但是，如VM 被迁移，VMM 需要适当地手动保恢复
+这些标记
 
-鍚敤姝よ兘鍔涙椂锛宮emslot 涓殑鎵€鏈夊唴瀛樺繀椤绘槧灏勪负 `MAP_ANONYMOUS` 鎴栦娇鐢ㄥ熀浜?RAM 鐨?
-鏂囦欢鏄犲皠锛坄tmpfs`銆乣memfd`锛夛紝灏濊瘯鐢ㄦ棤鏁堢殑 mmap 鍒涘缓 memslot 灏嗗鑷磋繑鍥?-EINVAL銆?
+启用此能力时，memslot 中的所有内存必须映射为 `MAP_ANONYMOUS` 或使用基RAM 
+文件映射（`tmpfs`、`memfd`），尝试用无效的 mmap 创建 memslot 将导致返-EINVAL
 
-鍚敤鏃讹紝VMM 鍙互鍒╃敤 `KVM_ARM_MTE_COPY_TAGS` ioctl 鍦ㄥ鎴锋満涔嬮棿鎵归噺澶嶅埗鏍囪銆?
+启用时，VMM 可以利用 `KVM_ARM_MTE_COPY_TAGS` ioctl 在客户机之间批量复制标记
 
 ### 7.29 KVM_CAP_VM_MOVE_ENC_CONTEXT_FROM
 
 
 :Architectures: x86 SEV enabled
 :Type: vm
-:Parameters: args[^0^] 鏄簮 vm 鐨?fd
+:Parameters: args[^0^] 是源 vm fd
 :Returns: 0 on success
 
-姝よ兘鍔涘厑璁哥敤鎴风┖闂村皢鍔犲瘑涓婁笅鏂囦粠鐢辫 fd 鎸囩ず鐨?VM 杩佺Щ鍒拌皟鐢ㄦ鑳藉姏鐨?VM 涓娿€?
+此能力允许用户空间将加密上下文从由该 fd 指示VM 迁移到调用此能力VM 上
 
-杩欐棬鍦ㄦ敮鎸佺敤鎴风┖闂?VMM 涔嬮棿鐨?VM 瀹垮唴杩佺Щ锛屽湪涓嶄腑鏂鎴锋満鐨勬儏鍐典笅鍗囩骇 VMM 杩涚▼銆?
+这旨在支持用户空VMM 之间VM 宿内迁移，在不中断客户机的情况下升级 VMM 进程
 
 ### 7.31 KVM_CAP_DISABLE_QUIRKS2
 
 
-:Parameters: args[^0^] - 瑕佺鐢ㄧ殑 KVM 鎬櫀锛坬uirk锛夐泦鍚?
+:Parameters: args[^0^] - 要禁用的 KVM 怪癖（quirk）集
 :Architectures: x86
 :Type: vm
 
-姝よ兘鍔涘鏋滃惎鐢紝灏嗗鑷?KVM 绂佺敤涓€浜涜涓烘€櫀锛坬uirk锛夈€?
+此能力如果启用，将导KVM 禁用一些行为怪癖（quirk）
 
-涓烘鑳藉姏璋冪敤 KVM_CHECK_EXTENSION 灏嗚繑鍥炲彲鍦?KVM 涓鐢ㄧ殑鎬櫀鐨勪綅鎺╃爜銆?
+为此能力调用 KVM_CHECK_EXTENSION 将返回可KVM 中禁用的怪癖的位掩码
 
-涓烘鑳藉姏璋冪敤 KVM_ENABLE_CAP 鐨勫弬鏁版槸涓€涓绂佺敤鐨勬€櫀鐨勪綅鎺╃爜锛屼笖蹇呴』鏄?
-KVM_CHECK_EXTENSION 杩斿洖鐨勪綅鎺╃爜鐨勫瓙闆嗐€?
+为此能力调用 KVM_ENABLE_CAP 的参数是一个要禁用的怪癖的位掩码，且必须
+KVM_CHECK_EXTENSION 返回的位掩码的子集
 
-cap.args[^0^] 涓殑鏈夋晥浣嶄负锛?
+cap.args[^0^] 中的有效位为
 
 ========================================   ================================================
-KVM_X86_QUIRK_LINT0_REENABLED              榛樿鎯呭喌涓嬶紝LVT LINT0 瀵勫瓨鍣ㄧ殑澶嶄綅鍊兼槸 0x700
-                                           锛圓PIC_MODE_EXTINT锛夈€傜鐢ㄦ鎬櫀鏃讹紝澶嶄綅鍊间负
-                                           0x10000锛圓PIC_LVT_MASKED锛夈€?
+KVM_X86_QUIRK_LINT0_REENABLED              默认情况下，LVT LINT0 寄存器的复位值是 0x700
+                                           （APIC_MODE_EXTINT）。禁用此怪癖时，复位值为
+                                           0x10000（APIC_LVT_MASKED）
 
-KVM_X86_QUIRK_CD_NW_CLEARED                榛樿鎯呭喌涓嬶紝KVM 娓呴櫎 AMD CPU 涓婄殑 CR0.CD 鍜?
-                                           CR0.NW锛屼互瑙勯伩浠?CR0.CD锛堝嵆缂撳瓨澶勪簬鈥渘o fill鈥?
-                                           妯″紡锛夋案涔呰繍琛岀殑瀹㈡埛鏈哄浐浠?bug銆?
+KVM_X86_QUIRK_CD_NW_CLEARED                默认情况下，KVM 清除 AMD CPU 上的 CR0.CD 
+                                           CR0.NW，以规避CR0.CD（即缓存处于“no fill
+                                           模式）永久运行的客户机固bug
 
-                                           绂佺敤姝ゆ€櫀鏃讹紝KVM 涓嶄細鏀瑰彉 CR0.CD 鍜?CR0.NW
-                                           鐨勫€笺€?
+                                           禁用此怪癖时，KVM 不会改变 CR0.CD CR0.NW
+                                           的值
 
-KVM_X86_QUIRK_LAPIC_MMIO_HOLE              榛樿鎯呭喌涓嬶紝鍗充娇閰嶇疆涓?x2APIC 妯″紡锛孧MIO
-                                           LAPIC 鎺ュ彛涔熷彲鐢ㄣ€傜鐢ㄦ鎬櫀鏃讹紝濡傛灉 LAPIC 澶勪簬
-                                           x2APIC 妯″紡锛孠VM 浼氱鐢?MMIO LAPIC 鎺ュ彛銆?
+KVM_X86_QUIRK_LAPIC_MMIO_HOLE              默认情况下，即使配置x2APIC 模式，MMIO
+                                           LAPIC 接口也可用。禁用此怪癖时，如果 LAPIC 处于
+                                           x2APIC 模式，KVM 会禁MMIO LAPIC 接口
 
-KVM_X86_QUIRK_OUT_7E_INC_RIP               榛樿鎯呭喌涓嬶紝KVM 鍦ㄩ€€鍑哄埌鐢ㄦ埛绌洪棿澶勭悊鍚?0x7e
-                                           绔彛鐨?OUT 鎸囦护涔嬪墠棰勯€掑 %rip銆傜鐢ㄦ鎬櫀鏃讹紝
-                                           KVM 鍦ㄩ€€鍑哄埌鐢ㄦ埛绌洪棿涔嬪墠涓嶄細棰勯€掑 %rip銆?
+KVM_X86_QUIRK_OUT_7E_INC_RIP               默认情况下，KVM 在退出到用户空间处理0x7e
+                                           端口OUT 指令之前预递增 %rip。禁用此怪癖时，
+                                           KVM 在退出到用户空间之前不会预递增 %rip
 
-KVM_X86_QUIRK_MISC_ENABLE_NO_MWAIT         绂佺敤姝ゆ€櫀鏃讹紝濡傛灉 IA32_MISC_ENABLE[bit 18]
-                                           锛圡WAIT锛夎缃綅锛孠VM 璁剧疆
-                                           CPUID.01H:ECX[bit 3]锛圡ONITOR/MWAIT锛夈€傛澶栵紝
-                                           绂佺敤姝ゆ€櫀鏃讹紝濡傛灉 IA32_MISC_ENABLE[bit 18]琚?
-                                           娓呴浂锛孠VM 娓呴櫎 CPUID.01H:ECX[bit 3]銆?
+KVM_X86_QUIRK_MISC_ENABLE_NO_MWAIT         禁用此怪癖时，如果 IA32_MISC_ENABLE[bit 18]
+                                           （MWAIT）被置位，KVM 设置
+                                           CPUID.01H:ECX[bit 3]（MONITOR/MWAIT）。此外，
+                                           禁用此怪癖时，如果 IA32_MISC_ENABLE[bit 18]
+                                           清零，KVM 清除 CPUID.01H:ECX[bit 3]
 
-KVM_X86_QUIRK_FIX_HYPERCALL_INSN           榛樿鎯呭喌涓嬶紝KVM 閲嶅啓瀹㈡埛鏈?VMMCALL/VMCALL
-                                           鎸囦护锛屼互鍖归厤绯荤粺渚涘簲鍟嗙殑瓒呯骇璋冪敤鎸囦护銆傜鐢ㄦ
-                                           鎬櫀鏃讹紝KVM 涓嶅啀閲嶅啓鏃犳晥鐨勫鎴锋満瓒呯骇璋冪敤鎸囦护銆?
-                                           鎵ц閿欒鐨勮秴绾ц皟鐢ㄦ寚浠ゅ皢鍦ㄥ鎴锋満鍐呯敓鎴?#UD銆?
+KVM_X86_QUIRK_FIX_HYPERCALL_INSN           默认情况下，KVM 重写客户VMMCALL/VMCALL
+                                           指令，以匹配系统供应商的超级调用指令。禁用此
+                                           怪癖时，KVM 不再重写无效的客户机超级调用指令
+                                           执行错误的超级调用指令将在客户机内生#UD
 
-KVM_X86_QUIRK_MWAIT_NEVER_UD_FAULTS        榛樿鎯呭喌涓嬶紝KVM 灏?MONITOR/MWAIT锛堝鏋滆
-                                           鎷︽埅锛夋ā鎷熶负 NOP锛屼笉璁烘牴鎹鎴锋満 CPUID 瀹冧滑鏄惁
-                                           鍙楁敮鎸併€傜鐢ㄦ鎬櫀涓旀湭璁剧疆
-                                           KVM_X86_DISABLE_EXITS_MWAIT锛圡ONITOR/MWAIT 琚?
-                                           鎷︽埅锛夋椂锛屽鏋滄牴鎹鎴锋満 CPUID 瀹冧滑涓嶅彈鏀寔锛?
-                                           KVM 灏嗗湪 MONITOR/MWAIT 涓婃敞鍏?#UD銆傛敞鎰忥紝濡傛灉
-                                           KVM_X86_QUIRK_MISC_ENABLE_NO_MWAIT 琚鐢紝KVM
-                                           灏嗗湪鍐欏叆 MISC_ENABLE 鏃朵慨鏀瑰鎴锋満 CPUID 涓殑
-                                           MONITOR/MWAIT 鏀寔銆?
+KVM_X86_QUIRK_MWAIT_NEVER_UD_FAULTS        默认情况下，KVM MONITOR/MWAIT（如果被
+                                           拦截）模拟为 NOP，不论根据客户机 CPUID 它们是否
+                                           受支持。禁用此怪癖且未设置
+                                           KVM_X86_DISABLE_EXITS_MWAIT（MONITOR/MWAIT 
+                                           拦截）时，如果根据客户机 CPUID 它们不受支持
+                                           KVM 将在 MONITOR/MWAIT 上注#UD。注意，如果
+                                           KVM_X86_QUIRK_MISC_ENABLE_NO_MWAIT 被禁用，KVM
+                                           将在写入 MISC_ENABLE 时修改客户机 CPUID 中的
+                                           MONITOR/MWAIT 支持
 
-KVM_X86_QUIRK_SLOT_ZAP_ALL                 榛樿鎯呭喌涓嬶紝瀵逛簬 KVM_X86_DEFAULT_VM 绫诲瀷鐨?
-                                           VM锛孠VM 鍦ㄥ垹闄ゆ垨绉诲姩 memslot 鏃朵娇鎵€鏈?memslot 鍜?
-                                           鍦板潃绌洪棿涓殑鎵€鏈?SPTE 澶辨晥銆傜鐢ㄦ鎬櫀锛堟垨 VM 绫诲瀷
-                                           涓嶆槸 KVM_X86_DEFAULT_VM锛夋椂锛孠VM 鍙‘淇濊鍒犻櫎鎴?
-                                           绉诲姩鐨?memslot 鐨勫悗澶囧唴瀛樹笉鍙揪锛屽嵆 KVM _鍙兘_ 鍙?
-                                           浣夸笌璇?memslot 鐩稿叧鐨?SPTE 澶辨晥銆?
+KVM_X86_QUIRK_SLOT_ZAP_ALL                 默认情况下，对于 KVM_X86_DEFAULT_VM 类型
+                                           VM，KVM 在删除或移动 memslot 时使所memslot 
+                                           地址空间中的所SPTE 失效。禁用此怪癖（或 VM 类型
+                                           不是 KVM_X86_DEFAULT_VM）时，KVM 只确保被删除
+                                           移动memslot 的后备内存不可达，即 KVM _可能_ 
+                                           使与memslot 相关SPTE 失效
 
-KVM_X86_QUIRK_STUFF_FEATURE_MSRS           榛樿鎯呭喌涓嬶紝鍦ㄥ垱寤?vCPU 鏃讹紝KVM 灏?vCPU 鐨?
-                                           MSR_IA32_PERF_CAPABILITIES锛?x345锛夈€?
-                                           MSR_IA32_ARCH_CAPABILITIES锛?x10a锛夈€?
-                                           MSR_PLATFORM_INFO锛?xce锛変互鍙婃墍鏈?VMX MSR
-                                           锛?x480..0x492锛夎涓?KVM 鏀寔鐨勬渶澶ц兘鍔涖€侹VM 杩樺皢
-                                           MSR_IA32_UCODE_REV锛?x8b锛夎涓轰换鎰忓€硷紙Intel 涓?AMD
-                                           涓嶅悓锛夈€傛渶鍚庯紝褰撹缃鎴锋満 CPUID 鏃讹紙鐢辩敤鎴风┖闂达級锛?
-                                           KVM 淇敼閫夊畾鐨?VMX MSR 瀛楁锛屼互寮哄埗瀹㈡埛鏈?CPUID 涓?
-                                           L2 鐨勬湁鏁?ISA 涔嬮棿鐨勪竴鑷存€с€傜鐢ㄦ鎬櫀鏃讹紝KVM 灏?
-                                           vCPU 鐨?MSR 鍊兼竻闆讹紙鏈変袱涓緥澶栵紝瑙佷笅鏂囷級锛屽嵆灏嗙壒鎬?
-                                           MSR 瑙嗕负 CPUID 鍙讹紝缁欎簣鐢ㄦ埛绌洪棿瀵?vCPU 鍨嬪彿瀹氫箟鐨?
-                                           瀹屽叏鎺у埗銆傛鎬櫀涓嶅奖鍝?VMX MSR CR0/CR4_FIXED1
-                                           锛?x487 鍜?0x489锛夛紝鍥犱负 KVM 鐜板湪涓嶅厑璁稿畠浠敱鐢ㄦ埛绌洪棿
-                                           璁剧疆锛圞VM 鏍规嵁瀹㈡埛鏈?CPUID 璁剧疆瀹冧滑锛屽嚭浜庡畨鍏ㄧ洰鐨勶級銆?
+KVM_X86_QUIRK_STUFF_FEATURE_MSRS           默认情况下，在创vCPU 时，KVM vCPU 
+                                           MSR_IA32_PERF_CAPABILITIESx345）
+                                           MSR_IA32_ARCH_CAPABILITIESx10a）
+                                           MSR_PLATFORM_INFOxce）以及所VMX MSR
+                                           x480..0x492）设KVM 支持的最大能力。KVM 还将
+                                           MSR_IA32_UCODE_REVx8b）设为任意值（Intel AMD
+                                           不同）。最后，当设置客户机 CPUID 时（由用户空间）
+                                           KVM 修改选定VMX MSR 字段，以强制客户CPUID 
+                                           L2 的有ISA 之间的一致性。禁用此怪癖时，KVM 
+                                           vCPU MSR 值清零（有两个例外，见下文），即将特
+                                           MSR 视为 CPUID 叶，给予用户空间vCPU 型号定义
+                                           完全控制。此怪癖不影VMX MSR CR0/CR4_FIXED1
+                                           x487 0x489），因为 KVM 现在不允许它们由用户空间
+                                           设置（KVM 根据客户CPUID 设置它们，出于安全目的）
 
-KVM_X86_QUIRK_IGNORE_GUEST_PAT             榛樿鎯呭喌涓嬶紝鍦?Intel 骞冲彴涓婏紝KVM 蹇界暐瀹㈡埛鏈?
-                                           PAT锛屽苟鍦?EPT 涓己鍒舵湁鏁堝唴瀛樼被鍨嬩负 WB銆傝鎬櫀鍦?
-                                           鏃犳硶瀹夊叏灏婇噸瀹㈡埛鏈?PAT 鐨?Intel 骞冲彴锛堝嵆娌℃湁 CPU
-                                           鑷梾鎺紝KVM 鎬绘槸蹇界暐瀹㈡埛鏈?PAT 骞跺己鍒舵湁鏁堝唴瀛樼被鍨?
-                                           涓?WB锛変笂涓嶅彲鐢ㄣ€傚湪 AMD 骞冲彴鎴栵紙鍦?Intel 涓婏級褰?VM
-                                           鍒嗛厤浜嗛潪涓€鑷?DMA 璁惧鏃讹紝瀹冧篃琚拷鐣ワ紱KVM 鍦ㄦ绫?
-                                           鎯呭喌涓嬫€绘槸灏婇噸瀹㈡埛鏈?PAT銆傞渶瑕佹鎬櫀浠ラ伩鍏嶆煇浜?Intel
-                                           Xeon 骞冲彴锛堜緥濡?ICX銆丼PR锛変笂鐨勬€ц兘涓嬮檷锛岃繖浜涘钩鍙?
-                                           鏀寔鑷梾鎺㈢壒鎬э紝浣?UC 瓒冲鎱紝浼氬鑷翠竴浜涗娇鐢?UC 鑰岄潪
-                                           WC 鏄犲皠鏄惧瓨鐨勮緝鑰佸鎴锋満鍑虹幇闂銆傚鏋滅敤鎴风┖闂寸煡閬撴病鏈?
-                                           姝ょ被瀹㈡埛鏈鸿蒋浠讹紝渚嬪瀹冩病鏈夋毚闇?bochs 鍥惧舰璁惧锛堝凡鐭?
-                                           鍏堕┍鍔ㄦ湁 bug锛夛紝鍒欏彲浠ョ鐢ㄦ鎬櫀浠ュ皧閲嶅鎴锋満 PAT銆?
+KVM_X86_QUIRK_IGNORE_GUEST_PAT             默认情况下，Intel 平台上，KVM 忽略客户
+                                           PAT，并EPT 中强制有效内存类型为 WB。该怪癖
+                                           无法安全尊重客户PAT Intel 平台（即没有 CPU
+                                           自嗅探，KVM 总是忽略客户PAT 并强制有效内存类
+                                           WB）上不可用。在 AMD 平台或（Intel 上）VM
+                                           分配了非一DMA 设备时，它也被忽略；KVM 在此
+                                           情况下总是尊重客户PAT。需要此怪癖以避免某Intel
+                                           Xeon 平台（例ICX、SPR）上的性能下降，这些平
+                                           支持自嗅探特性，UC 足够慢，会导致一些使UC 而非
+                                           WC 映射显存的较老客户机出现问题。如果用户空间知道没
+                                           此类客户机软件，例如它没有暴bochs 图形设备（已
+                                           其驱动有 bug），则可以禁用此怪癖以尊重客户机 PAT
 
-KVM_X86_QUIRK_VMCS12_ALLOW_FREEZE_IN_SMM   榛樿鎯呭喌涓嬶紝KVM 鏀惧瀵?vmcs12 涓?
-                                           GUEST_IA32_DEBUGCTL 鐨勪竴鑷存€ф鏌ワ紝浠ュ厑璁歌缃?
-                                           FREEZE_IN_SMM銆傜鐢ㄦ鎬櫀鏃讹紝KVM 瑕佹眰璇ヤ綅琚竻闆躲€?
-                                           娉ㄦ剰锛屾棤璁烘€櫀璁剧疆濡備綍锛寁mcs02 鐨勮浣嶄粛瀹屽叏鐢卞涓?
-                                           鎺у埗銆?
+KVM_X86_QUIRK_VMCS12_ALLOW_FREEZE_IN_SMM   默认情况下，KVM 放宽vmcs12 
+                                           GUEST_IA32_DEBUGCTL 的一致性检查，以允许设
+                                           FREEZE_IN_SMM。禁用此怪癖时，KVM 要求该位被清零
+                                           注意，无论怪癖设置如何，vmcs02 的该位仍完全由宿
+                                           控制
 ========================================   ================================================
 
 ### 7.32 KVM_CAP_MAX_VCPU_ID
@@ -7468,71 +7468,71 @@ KVM_X86_QUIRK_VMCS12_ALLOW_FREEZE_IN_SMM   榛樿鎯呭喌涓嬶紝KVM 鏀惧
 
 :Architectures: x86
 :Target: VM
-:Parameters: args[^0^] - 涓哄綋鍓?VM 璁剧疆鐨勬渶澶?APIC ID 鍊?
+:Parameters: args[^0^] - 为当VM 设置的最APIC ID 
 :Returns: 0 on success, -EINVAL if args[^0^] is beyond KVM_MAX_VCPU_IDS
           supported in KVM or if it has been set.
 
-姝よ兘鍔涘厑璁哥敤鎴峰湪鍒涘缓 vCPU 涔嬪墠锛屼负褰撳墠 VM 浼氳瘽鎸囧畾鍒嗛厤鐨勬渶澶у彲鑳?APIC ID锛屼粠鑰屼负
-鎸?APIC ID 绱㈠紩鐨勬暟鎹粨鏋勮妭鐪佸唴瀛樸€傜敤鎴风┖闂磋兘澶熸牴鎹寚瀹氱殑 CPU 鎷撴墤璁＄畻鍑?APIC ID
-鍊肩殑闄愬埗銆?
+此能力允许用户在创建 vCPU 之前，为当前 VM 会话指定分配的最大可APIC ID，从而为
+APIC ID 索引的数据结构节省内存。用户空间能够根据指定的 CPU 拓扑计算APIC ID
+值的限制
 
-璇ュ€煎彧鑳藉湪 KVM_ENABLE_CAP 琚涓洪潪闆跺€间箣鍓嶏紝鎴栫洿鍒板垱寤?vCPU 涔嬪墠鏇存敼銆傚湪鍒涘缓
-绗竴涓?vCPU 鏃讹紝濡傛灉鍊艰璁句负 0 鎴栨湭璋冪敤 KVM_ENABLE_CAP锛孠VM 灏嗕娇鐢?
-KVM_CHECK_EXTENSION(KVM_CAP_MAX_VCPU_ID) 鐨勮繑鍥炲€间綔涓烘渶澶?APIC ID銆?
+该值只能在 KVM_ENABLE_CAP 被设为非零值之前，或直到创vCPU 之前更改。在创建
+第一vCPU 时，如果值被设为 0 或未调用 KVM_ENABLE_CAP，KVM 将使
+KVM_CHECK_EXTENSION(KVM_CAP_MAX_VCPU_ID) 的返回值作为最APIC ID
 
 ### 7.33 KVM_CAP_X86_NOTIFY_VMEXIT
 
 
 :Architectures: x86
 :Target: VM
-:Parameters: args[^0^] 鏄€氱煡绐楀彛鐨勫€间互鍙婁竴浜涙爣蹇?
+:Parameters: args[^0^] 是通知窗口的值以及一些标
 :Returns: 0 on success, -EINVAL if args[^0^] contains invalid flags or notify
           VM exit is unsupported.
 
-args[^0^] 鐨?63:32 浣嶇敤浜庨€氱煡绐楀彛銆?
+args[^0^] 63:32 位用于通知窗口
 ```
 
   #define KVM_X86_NOTIFY_VMEXIT_ENABLED    (1 << 0)
   #define KVM_X86_NOTIFY_VMEXIT_USER       (1 << 1)
 
 ```
-姝よ兘鍔涘厑璁哥敤鎴峰湪 VM 鍒涘缓鏈熼棿鍦ㄦ瘡 VM 鑼冨洿鍐呴厤缃€氱煡 VM 閫€鍑虹殑寮€/鍏炽€傞粯璁ゆ儏鍐典笅
-绂佺敤閫氱煡 VM 閫€鍑恒€傚綋鐢ㄦ埛绌洪棿鍦?args[^0^] 涓缃?KVM_X86_NOTIFY_VMEXIT_ENABLED
-浣嶆椂锛孷MM 灏嗕娇鐢ㄦ彁渚涚殑閫氱煡绐楀彛鍚敤姝ょ壒鎬э紝濡傛灉鍦?VM 闈炴牴妯″紡涓嬬粡杩囨寚瀹氭椂闂达紙閫氱煡
-绐楀彛锛変粛鏃犱簨浠剁獥鍙ｅ彂鐢燂紝灏嗙敓鎴?VM 閫€鍑恒€?
+此能力允许用户在 VM 创建期间在每 VM 范围内配置通知 VM 退出的开/关。默认情况下
+禁用通知 VM 退出。当用户空间args[^0^] 中设KVM_X86_NOTIFY_VMEXIT_ENABLED
+位时，VMM 将使用提供的通知窗口启用此特性，如果VM 非根模式下经过指定时间（通知
+窗口）仍无事件窗口发生，将生VM 退出
 
-濡傛灉鍦?args[^0^] 涓缃簡 KVM_X86_NOTIFY_VMEXIT_USER锛屽垯鍦ㄥ彂鐢熼€氱煡 VM 閫€鍑烘椂锛?
-KVM 灏嗛€€鍑哄埌鐢ㄦ埛绌洪棿杩涜澶勭悊銆?
+如果args[^0^] 中设置了 KVM_X86_NOTIFY_VMEXIT_USER，则在发生通知 VM 退出时
+KVM 将退出到用户空间进行处理
 
-姝よ兘鍔涙棬鍦ㄧ紦瑙ｆ伓鎰?VM 瀵艰嚧 CPU 鍗′綇锛堢敱浜庝簨浠剁獥鍙ｆ湭鎵撳紑锛夊苟浣?CPU 瀵瑰涓绘垨鍏朵粬
-VM 涓嶅彲鐢ㄧ殑濞佽儊銆?
+此能力旨在缓解恶VM 导致 CPU 卡住（由于事件窗口未打开）并CPU 对宿主或其他
+VM 不可用的威胁
 
 ### 7.35 KVM_CAP_X86_APIC_BUS_CYCLES_NS
 
 
 :Architectures: x86
 :Target: VM
-:Parameters: args[^0^] 鏄湡鏈涚殑 APIC 鎬荤嚎鏃堕挓棰戠巼锛屼互绾崇涓哄崟浣?
+:Parameters: args[^0^] 是期望的 APIC 总线时钟频率，以纳秒为单
 :Returns: 0 on success, -EINVAL if args[^0^] contains an invalid value for the
           frequency or if any vCPUs have been created, -ENXIO if a virtual
           local APIC has not been created using KVM_CREATE_IRQCHIP.
 
-姝よ兘鍔涜缃?VM 鐨?APIC 鎬荤嚎鏃堕挓棰戠巼锛孠VM 鐨勫唴鏍告€佽櫄鎷?APIC 鍦ㄦā鎷?APIC 瀹氭椂鍣ㄦ椂
-浣跨敤瀹冦€侹VM 鐨勯粯璁ゅ€煎彲閫氳繃 KVM_CHECK_EXTENSION 鑾峰彇銆?
+此能力设VM APIC 总线时钟频率，KVM 的内核态虚APIC 在模APIC 定时器时
+使用它。KVM 的默认值可通过 KVM_CHECK_EXTENSION 获取
 
-娉ㄦ剰锛氬鏋滃皢闈為浂鐨?CPUID 0x15 鏆撮湶缁欏鎴锋満锛岀敤鎴风┖闂磋礋璐ｆ纭厤缃?CPUID 0x15锛屽嵆
-鏍稿績鏅舵尟鏃堕挓棰戠巼銆?
+注意：如果将非零CPUID 0x15 暴露给客户机，用户空间负责正确配CPUID 0x15，即
+核心晶振时钟频率
 
 ### 7.36 KVM_CAP_DIRTY_LOG_RING/KVM_CAP_DIRTY_LOG_RING_ACQ_REL
 
 
 :Architectures: x86, arm64, riscv
 :Type: vm
-:Parameters: args[^0^] - 鑴忔棩蹇楃幆鐨勫ぇ灏?
+:Parameters: args[^0^] - 脏日志环的大
 
-KVM 鑳藉浣跨敤 mmap 鍒扮敤鎴风┖闂寸殑鐜舰缂撳啿鍖烘潵璺熻釜鑴忓唴瀛橈紱姣忎釜 vcpu 鏈変竴涓剰鐜€?
+KVM 能够使用 mmap 到用户空间的环形缓冲区来跟踪脏内存；每个 vcpu 有一个脏环
 
-鑴忕幆瀵圭敤鎴风┖闂村彲鐢紝鏄竴涓?
+脏环对用户空间可用，是一
 ```
 
   struct kvm_dirty_gfn {
@@ -7542,7 +7542,7 @@ KVM 鑳藉浣跨敤 mmap 鍒扮敤鎴风┖闂寸殑鐜舰缂撳啿鍖烘�
   };
 
 ```
-涓哄畾涔?flags 瀛楁锛屽畾涔変簡浠ヤ笅鍊?
+为定flags 字段，定义了以下
 ```
 
   #define KVM_DIRTY_GFN_F_DIRTY           BIT(0)
@@ -7550,17 +7550,17 @@ KVM 鑳藉浣跨敤 mmap 鍒扮敤鎴风┖闂寸殑鐜舰缂撳啿鍖烘�
   #define KVM_DIRTY_GFN_F_MASK            0x3
 
 ```
-鐢ㄦ埛绌洪棿搴斿湪 KVM_CREATE_VM ioctl 涔嬪悗绔嬪嵆璋冪敤 KVM_ENABLE_CAP ioctl锛屼负鏂板鎴锋満
-鍚敤姝よ兘鍔涘苟璁剧疆鐜殑澶у皬銆傚惎鐢ㄨ鑳藉姏鍙厑璁稿湪鍒涘缓浠讳綍 vCPU 涔嬪墠杩涜锛屼笖鐜殑澶у皬
-蹇呴』鏄?2 鐨勫箓銆傜幆缂撳啿鍖鸿秺澶э紝鐜弧涓?VM 琚揩閫€鍑哄埌鐢ㄦ埛绌洪棿鐨勫彲鑳芥€ц秺灏忋€傛渶浼樺ぇ灏?
-鍙栧喅浜庡伐浣滆礋杞斤紝浣嗗缓璁嚦灏戜负 64 KiB锛?096 涓潯鐩級銆?
+用户空间应在 KVM_CREATE_VM ioctl 之后立即调用 KVM_ENABLE_CAP ioctl，为新客户机
+启用此能力并设置环的大小。启用该能力只允许在创建任何 vCPU 之前进行，且环的大小
+必须2 的幂。环缓冲区越大，环满VM 被迫退出到用户空间的可能性越小。最优大
+取决于工作负载，但建议至少为 64 KiB096 个条目）
 
-涓庤剰椤典綅鍥句竴鏍凤紝缂撳啿鍖鸿窡韪璁剧疆浜?KVM_MEM_LOG_DIRTY_PAGES 鏍囧織鐨?KVM_SET_USER_MEMORY_REGION
-鐨勬墍鏈夌敤鎴峰唴瀛樺尯鍩熺殑鍐欏叆銆備竴鏃﹀唴瀛樺尯鍩熶互璇ユ爣蹇楁敞鍐岋紝鐢ㄦ埛绌洪棿灏卞彲浠ュ紑濮嬩粠鐜舰缂撳啿鍖?
-鏀堕泦鑴忛〉銆?
+与脏页位图一样，缓冲区跟踪对设置KVM_MEM_LOG_DIRTY_PAGES 标志KVM_SET_USER_MEMORY_REGION
+的所有用户内存区域的写入。一旦内存区域以该标志注册，用户空间就可以开始从环形缓冲
+收集脏页
 
-鐜舰缂撳啿鍖轰腑鐨勪竴涓潯鐩彲浠ユ槸鏈娇鐢ㄧ殑锛堟爣蹇椾綅 `00`锛夈€佽剰鐨勶紙鏍囧織浣?`01`锛夋垨宸叉敹闆嗙殑
-锛堟爣蹇椾綅 `1X`锛夈€?
+环形缓冲区中的一个条目可以是未使用的（标志位 `00`）、脏的（标志`01`）或已收集的
+（标志位 `1X`）
 ```
 
           dirtied         harvested        reset
@@ -7570,110 +7570,110 @@ KVM 鑳藉浣跨敤 mmap 鍒扮敤鎴风┖闂寸殑鐜舰缂撳啿鍖烘�
       +------------------------------------------+
 
 ```
-瑕佹敹闆嗚剰椤碉紝鐢ㄦ埛绌洪棿璁块棶 mmap 鐨勭幆褰㈢紦鍐插尯浠ヨ鍙栬剰鐨?GFN銆傚鏋?flags 璁剧疆浜?DIRTY
-浣嶏紙鍦ㄦ闃舵 RESET 浣嶅繀椤绘竻闆讹級锛屽垯鎰忓懗鐫€姝?GFN 鏄剰 GFN銆傜敤鎴风┖闂村簲鏀堕泦姝?GFN 骞跺皢
-鏍囧織浠庣姸鎬?`01b` 鏀逛负 `1Xb`锛堜綅 0 灏嗚 KVM 蹇界暐锛屼絾浣?1 蹇呴』璁剧疆浠ヨ〃鏄庢 GFN 宸茶
-鏀堕泦骞剁瓑寰呴噸缃級锛岀劧鍚庣户缁笅涓€涓?GFN銆傜敤鎴风┖闂村簲鎸佺画姝ゆ搷浣滐紝鐩村埌鏌愪釜 GFN 鐨?flags
-鐨?DIRTY 浣嶈娓呴浂锛屾剰鍛崇潃瀹冨凡鏀堕泦浜嗘墍鏈夊彲鐢ㄧ殑鑴?GFN銆?
+要收集脏页，用户空间访问 mmap 的环形缓冲区以读取脏GFN。如flags 设置DIRTY
+位（在此阶段 RESET 位必须清零），则意味着GFN 是脏 GFN。用户空间应收集GFN 并将
+标志从状`01b` 改为 `1Xb`（位 0 将被 KVM 忽略，但1 必须设置以表明此 GFN 已被
+收集并等待重置），然后继续下一GFN。用户空间应持续此操作，直到某个 GFN flags
+DIRTY 位被清零，意味着它已收集了所有可用的GFN
 
-娉ㄦ剰锛屽湪寮卞唴瀛樺簭鏋舵瀯涓婏紝鐢ㄦ埛绌洪棿瀵圭幆褰㈢紦鍐插尯锛堟洿鍏蜂綋鍦拌鏄€渇lags鈥濆瓧娈碉級鐨勮闂繀椤?
-鏈夊簭锛屽湪鍙敤鏃朵娇鐢?load-acquire/store-release 璁块棶鍣紝鎴栦娇鐢ㄤ换浣曞叾浠栬兘纭繚姝ゆ湁搴忔€?
-鐨勫唴瀛樺睆闅溿€?
+注意，在弱内存序架构上，用户空间对环形缓冲区（更具体地说是“flags”字段）的访问必
+有序，在可用时使load-acquire/store-release 访问器，或使用任何其他能确保此有序
+的内存屏障
 
-鐢ㄦ埛绌洪棿娌℃湁蹇呰涓€娆℃€ф敹闆嗘墍鏈夎剰 GFN銆備絾瀹冨繀椤绘寜椤哄簭鏀堕泦鑴?GFN锛屽嵆鐢ㄦ埛绌洪棿绋嬪簭涓嶈兘
-璺宠繃鏌愪釜鑴?GFN 鍘绘敹闆嗗畠鏃佽竟鐨勯偅涓€?
+用户空间没有必要一次性收集所有脏 GFN。但它必须按顺序收集GFN，即用户空间程序不能
+跳过某个GFN 去收集它旁边的那个
 
-鍦ㄥ鐞嗙幆褰㈢紦鍐插尯涓殑涓€涓垨澶氫釜鏉＄洰涔嬪悗锛岀敤鎴风┖闂磋皟鐢?VM ioctl KVM_RESET_DIRTY_RINGS
-鏉ラ€氱煡鍐呮牳锛屼互渚垮唴鏍搁噸鏂颁繚鎶ら偅浜涘凡鏀堕泦鐨?GFN銆傚洜姝わ紝蹇呴』鍦ㄨ鍙栬剰椤靛唴瀹筥涔嬪墠_璋冪敤
-姝?ioctl銆?
+在处理环形缓冲区中的一个或多个条目之后，用户空间调VM ioctl KVM_RESET_DIRTY_RINGS
+来通知内核，以便内核重新保护那些已收集GFN。因此，必须在读取脏页内容_之前_调用
+姝?ioctl銆。
 
-鑴忕幆鍙兘浼氬彉婊°€傚綋杩欑鎯呭喌鍙戠敓鏃讹紝vcpu 鐨?KVM_RUN 灏嗕互閫€鍑哄師鍥?KVM_EXIT_DIRTY_RING_FULL
-杩斿洖銆?
+脏环可能会变满。当这种情况发生时，vcpu KVM_RUN 将以退出原KVM_EXIT_DIRTY_RING_FULL
+返回
 
-鑴忕幆鎺ュ彛涓?KVM_GET_DIRTY_LOG 鎺ュ彛鐩告瘮鏈変竴涓富瑕佸尯鍒細浠庣敤鎴风┖闂磋鍙栬剰鐜椂锛屽唴鏍镐粛
-鍙兘灏氭湭灏嗗鐞嗗櫒鐨勮剰椤电紦鍐插尯鍒锋柊鍒板唴鏍哥紦鍐插尯锛堣€屽浜庤剰浣嶅浘锛屽埛鏂版槸鐢?
-KVM_GET_DIRTY_LOG ioctl 瀹屾垚鐨勶級銆備负姝わ紝闇€瑕佷娇鐢ㄤ俊鍙峰皢 vcpu 韪㈠嚭 KVM_RUN銆傜敱姝や骇鐢熺殑
-vmexit 纭繚鎵€鏈夎剰 GFN 閮借鍒锋柊鍒拌剰鐜腑銆?
+脏环接口KVM_GET_DIRTY_LOG 接口相比有一个主要区别：从用户空间读取脏环时，内核仍
+可能尚未将处理器的脏页缓冲区刷新到内核缓冲区（而对于脏位图，刷新是
+KVM_GET_DIRTY_LOG ioctl 完成的）。为此，需要使用信号将 vcpu 踢出 KVM_RUN。由此产生的
+vmexit 确保所有脏 GFN 都被刷新到脏环中
 
-娉ㄦ剰锛欿VM_CAP_DIRTY_LOG_RING_ACQ_REL 鏄急鍐呭瓨搴忔灦鏋勫敮涓€搴旀毚闇茬殑鑳藉姏锛屼互鎸囩ず鍦ㄨ鍙?
-鏉＄洰鐘舵€佸苟灏嗗叾浠?DIRTY 鍙樹负 HARVESTED 鏃跺鐢ㄦ埛绌洪棿鏂藉姞鐨勯澶栧唴瀛樻湁搴忔€ц姹傘€傚叿鏈夌被 TSO
-鏈夊簭鎬э紙濡?x86锛夌殑鏋舵瀯鍏佽鍚屾椂鍚戠敤鎴风┖闂存毚闇?KVM_CAP_DIRTY_LOG_RING 鍜?
-KVM_CAP_DIRTY_LOG_RING_ACQ_REL銆?
+注意：KVM_CAP_DIRTY_LOG_RING_ACQ_REL 是弱内存序架构唯一应暴露的能力，以指示在读
+条目状态并将其DIRTY 变为 HARVESTED 时对用户空间施加的额外内存有序性要求。具有类 TSO
+有序性（x86）的架构允许同时向用户空间暴KVM_CAP_DIRTY_LOG_RING 
+KVM_CAP_DIRTY_LOG_RING_ACQ_REL銆。
 
-鍚敤鑴忕幆鍚庯紝鐢ㄦ埛绌洪棿闇€瑕佹娴?KVM_CAP_DIRTY_LOG_RING_WITH_BITMAP 鑳藉姏锛屼互鏌ョ湅鐜粨鏋?
-鏄惁鍙互鐢辨瘡鎻掓Ы锛坧er-slot锛変綅鍥炬敮鎸併€傞€氬憡姝よ兘鍔涙剰鍛崇潃璇ユ灦鏋勫彲浠ュ湪娌℃湁 vcpu/鐜笂涓嬫枃
-鐨勬儏鍐典笅寮勮剰瀹㈡埛鏈洪〉锛屽洜姝ら儴鍒嗚剰淇℃伅浠嶅皢缁存姢鍦ㄤ綅鍥剧粨鏋勪腑銆傚鏋滃皻鏈惎鐢?
-KVM_CAP_DIRTY_LOG_RING_ACQ_REL 鑳藉姏锛屾垨宸插瓨鍦ㄤ换浣?memslot锛屽垯涓嶈兘鍚敤
-KVM_CAP_DIRTY_LOG_RING_WITH_BITMAP銆?
+启用脏环后，用户空间需要检KVM_CAP_DIRTY_LOG_RING_WITH_BITMAP 能力，以查看环结
+是否可以由每插槽（per-slot）位图支持。通告此能力意味着该架构可以在没有 vcpu/环上下文
+的情况下弄脏客户机页，因此部分脏信息仍将维护在位图结构中。如果尚未启
+KVM_CAP_DIRTY_LOG_RING_ACQ_REL 能力，或已存在任memslot，则不能启用
+KVM_CAP_DIRTY_LOG_RING_WITH_BITMAP銆。
 
-娉ㄦ剰锛岃繖閲岀殑浣嶅浘鍙槸鐜粨鏋勭殑澶囦唤銆備粎褰撳彧鏈夋瀬灏戦噺鍐呭瓨鍦?vcpu/鐜笂涓嬫枃涔嬪琚紕鑴忔椂锛?
-浣跨敤鐜拰浣嶅浘缁勫悎鎵嶆湁鐩娿€傚惁鍒欙紝闇€瑕佽€冭檻鐙珛鐨勬瘡鎻掓Ы浣嶅浘鏈哄埗銆?
+注意，这里的位图只是环结构的备份。仅当只有极少量内存vcpu/环上下文之外被弄脏时
+使用环和位图组合才有益。否则，需要考虑独立的每插槽位图机制
 
-瑕佹敹闆嗗浠戒綅鍥句腑鐨勮剰浣嶏紝鐢ㄦ埛绌洪棿鍙互浣跨敤鐩稿悓鐨?KVM_GET_DIRTY_LOG ioctl銆傚彧瑕佹墍鏈夎剰浣?
-鐨勭敓鎴愰兘鍦ㄥ崟娆￠亶鍘嗕腑瀹屾垚锛屽氨涓嶉渶瑕?KVM_CLEAR_DIRTY_LOG銆傛敹闆嗚剰浣嶅浘搴旇鏄?VMM 鍦ㄨ涓?
-鐘舵€佸畬鏁翠箣鍓嶅仛鐨勬渶鍚庝竴浠朵簨銆俈MM 闇€瑕佺‘淇濊剰鐘舵€佹槸鏈€缁堢殑锛屽苟閬垮厤涓㈠け鍦ㄦ瘮鐗瑰浘鏀堕泦涔嬪悗
-鎺掑簭鐨勫彟涓€涓?ioctl 浜х敓鐨勮剰椤点€?
+要收集备份位图中的脏位，用户空间可以使用相同KVM_GET_DIRTY_LOG ioctl。只要所有脏
+的生成都在单次遍历中完成，就不需KVM_CLEAR_DIRTY_LOG。收集脏位图应该VMM 在认
+状态完整之前做的最后一件事。VMM 需要确保脏状态是最终的，并避免丢失在比特图收集之后
+排序的另一ioctl 产生的脏页
 
-娉ㄦ剰锛氫娇鐢ㄥ浠戒綅鍥剧殑澶氫釜绀轰緥锛氾紙1锛夐€氳繃 KVM 璁惧鈥渒vm-arm-vgic-its鈥濅笂鐨勫懡浠?
-KVM_DEV_ARM_{VGIC_GRP_CTRL, ITS_SAVE_TABLES} 淇濆瓨 vgic/its 琛ㄣ€傦紙2锛夐€氳繃 KVM 璁惧
-鈥渒vm-arm-vgic-its鈥濅笂鐨勫懡浠?KVM_DEV_ARM_{VGIC_GRP_CTRL, ITS_RESTORE_TABLES} 鎭㈠
-vgic/its 琛ㄣ€俈GICv3 LPI 鎸傝捣鐘舵€佽鎭㈠銆傦紙3锛夐€氳繃 KVM 璁惧鈥渒vm-arm-vgic-v3鈥濅笂鐨?
-鍛戒护 KVM_DEV_ARM_VGIC_{GRP_CTRL, SAVE_PENDING_TABLES} 淇濆瓨 vgic3 鎸傝捣琛ㄣ€?
+注意：使用备份位图的多个示例：（1）通过 KVM 设备“kvm-arm-vgic-its”上的命
+KVM_DEV_ARM_{VGIC_GRP_CTRL, ITS_SAVE_TABLES} 保存 vgic/its 表。（2）通过 KVM 设备
+“kvm-arm-vgic-its”上的命KVM_DEV_ARM_{VGIC_GRP_CTRL, ITS_RESTORE_TABLES} 恢复
+vgic/its 表。VGICv3 LPI 挂起状态被恢复。（3）通过 KVM 设备“kvm-arm-vgic-v3”上
+命令 KVM_DEV_ARM_VGIC_{GRP_CTRL, SAVE_PENDING_TABLES} 保存 vgic3 挂起表
 
 ### 7.37 KVM_CAP_PMU_CAPABILITY
 
 
 :Architectures: x86
 :Type: vm
-:Parameters: arg[^0^] 鏄?PMU 铏氭嫙鍖栬兘鍔涚殑浣嶆帺鐮併€?
+:Parameters: arg[^0^] PMU 虚拟化能力的位掩码
 :Returns: 0 on success, -EINVAL when arg[^0^] contains invalid bits
 
-姝よ兘鍔涙敼鍙?KVM 涓殑 PMU 铏氭嫙鍖栥€?
+此能力改KVM 中的 PMU 虚拟化
 
-涓烘鑳藉姏璋冪敤 KVM_CHECK_EXTENSION 灏嗚繑鍥炲彲鍦?VM 涓婅皟鏁寸殑 PMU 铏氭嫙鍖栬兘鍔涚殑浣嶆帺鐮併€?
+为此能力调用 KVM_CHECK_EXTENSION 将返回可VM 上调整的 PMU 虚拟化能力的位掩码
 
-KVM_ENABLE_CAP 鐨勫弬鏁颁篃鏄竴涓綅鎺╃爜锛屽苟閫夋嫨瑕佸簲鐢ㄥ埌 VM 鐨勭壒瀹?PMU 铏氭嫙鍖栬兘鍔涖€傝繖
-鍙兘鍦ㄥ垱寤?VCPU 涔嬪墠瀵?VM 璋冪敤銆?
+KVM_ENABLE_CAP 的参数也是一个位掩码，并选择要应用到 VM 的特PMU 虚拟化能力。这
+只能在创VCPU 之前VM 调用
 
-鐩墠锛孠VM_PMU_CAP_DISABLE 鏄敮涓€鐨勮兘鍔涖€傝缃鑳藉姏灏嗙鐢ㄨ VM 鐨?PMU 铏氭嫙鍖栥€?
-鐢ㄦ埛鎬佸簲璋冩暣 CPUID 鍙?0xA 浠ュ弽鏄?PMU 宸茬鐢ㄣ€?
+目前，KVM_PMU_CAP_DISABLE 是唯一的能力。设置此能力将禁用该 VM PMU 虚拟化
+用户态应调整 CPUID 0xA 以反PMU 已禁用
 
 ### 7.38 KVM_CAP_VM_DISABLE_NX_HUGE_PAGES
 
 
 :Architectures: x86
 :Type: vm
-:Parameters: arg[^0^] 蹇呴』涓?0銆?
+:Parameters: arg[^0^] 必须0
 :Returns: 0 on success, -EPERM if the userspace process does not
           have CAP_SYS_BOOT, -EINVAL if args[^0^] is not 0 or any vCPUs have been
           created.
 
-姝よ兘鍔涚鐢ㄩ拡瀵?iTLB MULTIHIT 鐨?NX 澶ч〉缂撹В鎺柦銆?
+此能力禁用针iTLB MULTIHIT NX 大页缓解措施
 
-濡傛灉鏈缃?nx_huge_pages 妯″潡鍙傛暟锛屽垯璇ヨ兘鍔涙棤鏁堛€?
+如果未设nx_huge_pages 模块参数，则该能力无效
 
-姝よ兘鍔涘彧鑳藉湪鍒涘缓浠讳綍 vCPU 涔嬪墠璁剧疆銆?
+此能力只能在创建任何 vCPU 之前设置
 
 ### 7.39 KVM_CAP_ARM_EAGER_SPLIT_CHUNK_SIZE
 
 
 :Architectures: arm64
 :Type: vm
-:Parameters: arg[^0^] 鏄柊鐨勬媶鍒嗗潡澶у皬銆?
+:Parameters: arg[^0^] 是新的拆分块大小
 :Returns: 0 on success, -EINVAL if any memslot was already created.
 
-姝よ兘鍔涜缃?Eager Page Splitting锛堢Н鏋侀〉鎷嗗垎锛変腑浣跨敤鐨勫潡澶у皬銆?
+此能力设Eager Page Splitting（积极页拆分）中使用的块大小
 
-褰撳鎴锋満鍐呭瓨鐢卞ぇ椤碉紙huge-page锛夋敮鎸佹椂锛孍ager Page Splitting 鏀瑰杽浜嗚剰鏃ュ織锛堢敤浜?
-瀹炴椂杩佺Щ锛夌殑鎬ц兘銆傚畠閫氳繃鍦ㄥ惎鐢ㄨ剰鏃ュ織锛堜负鍐呭瓨鍖哄煙璁剧疆 KVM_MEM_LOG_DIRTY_PAGES
-鏍囧織锛夋垨浣跨敤 KVM_CLEAR_DIRTY_LOG 鏃剁Н鏋佸湴鎷嗗垎锛岄伩鍏嶅湪缂洪〉鏃舵媶鍒嗗ぇ椤碉紙涓?PAGE_SIZE
-椤碉級銆?
+当客户机内存由大页（huge-page）支持时，Eager Page Splitting 改善了脏日志（用
+实时迁移）的性能。它通过在启用脏日志（为内存区域设置 KVM_MEM_LOG_DIRTY_PAGES
+标志）或使用 KVM_CLEAR_DIRTY_LOG 时积极地拆分，避免在缺页时拆分大页（PAGE_SIZE
+页）
 
-鍧楀ぇ灏忔寚瀹氭瘡娆℃媶鍒嗗灏戦〉锛屼负姣忎釜鍧椾娇鐢ㄥ崟娆″垎閰嶃€傚潡澶у皬瓒婂ぇ锛岄渶瑕佹彁鍓嶅垎閰嶇殑椤佃秺澶氥€?
+块大小指定每次拆分多少页，为每个块使用单次分配。块大小越大，需要提前分配的页越多
 
-鍧楀ぇ灏忓繀椤绘槸鏈夋晥鐨勫潡澶у皬銆傚彲鎺ュ彈鐨勫潡澶у皬鍒楄〃浣滀负 64 浣嶄綅鍥炬毚闇插湪
-KVM_CAP_ARM_SUPPORTED_BLOCK_SIZES 涓紙姣忎釜浣嶆弿杩颁竴涓潡澶у皬锛夈€傞粯璁ゅ€间负 0锛屽嵆绂佺敤
-绉瀬椤垫媶鍒嗐€?
+块大小必须是有效的块大小。可接受的块大小列表作为 64 位位图暴露在
+KVM_CAP_ARM_SUPPORTED_BLOCK_SIZES 中（每个位描述一个块大小）。默认值为 0，即禁用
+积极页拆分
 
 ### 7.40 KVM_CAP_EXIT_HYPERCALL
 
@@ -7681,14 +7681,14 @@ KVM_CAP_ARM_SUPPORTED_BLOCK_SIZES 涓紙姣忎釜浣嶆弿杩颁竴涓潡�
 :Architectures: x86
 :Type: vm
 
-姝よ兘鍔涘鏋滃惎鐢紝灏嗗鑷?KVM 浠?KVM_EXIT_HYPERCALL 閫€鍑哄師鍥犻€€鍑哄埌鐢ㄦ埛绌洪棿浠ュ鐞嗘煇浜?
-瓒呯骇璋冪敤銆?
+此能力如果启用，将导KVM KVM_EXIT_HYPERCALL 退出原因退出到用户空间以处理某
+超级调用
 
-涓烘鑳藉姏璋冪敤 KVM_CHECK_EXTENSION 灏嗚繑鍥炲彲閰嶇疆涓洪€€鍑哄埌鐢ㄦ埛绌洪棿鐨勮秴绾ц皟鐢ㄧ殑浣嶆帺鐮併€?
-鐩墠锛屽敮涓€鐨勬绫昏秴绾ц皟鐢ㄦ槸 KVM_HC_MAP_GPA_RANGE銆?
+为此能力调用 KVM_CHECK_EXTENSION 将返回可配置为退出到用户空间的超级调用的位掩码
+目前，唯一的此类超级调用是 KVM_HC_MAP_GPA_RANGE
 
-KVM_ENABLE_CAP 鐨勫弬鏁颁篃鏄竴涓綅鎺╃爜锛屼笖蹇呴』鏄?KVM_CHECK_EXTENSION 缁撴灉鐨勫瓙闆嗐€侹VM
-灏嗘妸瀵瑰簲浣嶅湪鍙傛暟涓殑瓒呯骇璋冪敤杞彂鍒扮敤鎴风┖闂达紝骞跺鍏朵綑鐨勮繑鍥?ENOSYS銆?
+KVM_ENABLE_CAP 的参数也是一个位掩码，且必须KVM_CHECK_EXTENSION 结果的子集。KVM
+将把对应位在参数中的超级调用转发到用户空间，并对其余的返ENOSYS
 
 ### 7.41 KVM_CAP_ARM_SYSTEM_SUSPEND
 
@@ -7696,8 +7696,8 @@ KVM_ENABLE_CAP 鐨勫弬鏁颁篃鏄竴涓綅鎺╃爜锛屼笖蹇呴』�
 :Architectures: arm64
 :Type: vm
 
-鍚敤鏃讹紝KVM 灏嗕互绫诲瀷涓?KVM_SYSTEM_EVENT_SUSPEND 鐨?KVM_EXIT_SYSTEM_EVENT 閫€鍑哄埌
-鐢ㄦ埛绌洪棿锛屼互澶勭悊瀹㈡埛鏈烘寕璧疯姹傘€?
+启用时，KVM 将以类型KVM_SYSTEM_EVENT_SUSPEND KVM_EXIT_SYSTEM_EVENT 退出到
+用户空间，以处理客户机挂起请求
 
 ### 7.42 KVM_CAP_ARM_WRITABLE_IMP_ID_REGS
 
@@ -7708,11 +7708,11 @@ KVM_ENABLE_CAP 鐨勫弬鏁颁篃鏄竴涓綅鎺╃爜锛屼笖蹇呴』�
 :Returns: 0 on success, -EINVAL if vCPUs have been created before enabling this
           capability.
 
-姝よ兘鍔涙敼鍙樹簡鏍囪瘑 Arm 鏋舵瀯 PE 瀹炵幇鐨勫瘎瀛樺櫒鐨勮涓猴細MIDR_EL1銆丷EVIDR_EL1 鍜?
-AIDR_EL1銆傞粯璁ゆ儏鍐典笅锛岃繖浜涘瘎瀛樺櫒瀵圭敤鎴风┖闂村彲瑙侊紝浣嗚瑙嗕负涓嶅彉閲忋€?
+此能力改变了标识 Arm 架构 PE 实现的寄存器的行为：MIDR_EL1、REVIDR_EL1 
+AIDR_EL1。默认情况下，这些寄存器对用户空间可见，但被视为不变量
 
-鍚敤姝よ兘鍔涙椂锛孠VM 鍏佽鐢ㄦ埛鍦ㄧ涓€娆?KVM_RUN 涔嬪墠鏇存敼涓婅堪瀵勫瓨鍣ㄣ€傝繖浜涘瘎瀛樺櫒鏄?VM
-浣滅敤鍩熺殑锛屾剰鍛崇潃鍚屼竴缁勫€间細鍛堢幇缁欑粰瀹?VM 涓殑鎵€鏈?vCPU銆?
+启用此能力时，KVM 允许用户在第一KVM_RUN 之前更改上述寄存器。这些寄存器VM
+作用域的，意味着同一组值会呈现给给VM 中的所vCPU
 
 ### 7.43 KVM_CAP_RISCV_MP_STATE_RESET
 
@@ -7722,8 +7722,8 @@ AIDR_EL1銆傞粯璁ゆ儏鍐典笅锛岃繖浜涘瘎瀛樺櫒瀵圭敤鎴风┖
 :Parameters: None
 :Returns: 0 on success, -EINVAL if arg[^0^] is not zero
 
-鍚敤姝よ兘鍔涙椂锛孠VM 鍦ㄩ€氳繃 IOCTL 璁剧疆 MP_STATE_INIT_RECEIVED 鏃堕噸缃?VCPU銆傚師濮嬬殑
-MP_STATE 琚繚鐣欍€?
+启用此能力时，KVM 在通过 IOCTL 设置 MP_STATE_INIT_RECEIVED 时重VCPU。原始的
+MP_STATE 被保留
 ### 7.44 KVM_CAP_ARM_CACHEABLE_PFNMAP_SUPPORTED
 
 
@@ -7731,8 +7731,8 @@ MP_STATE 琚繚鐣欍€?
 :Target: VM
 :Parameters: None
 
-姝よ兘鍔涘悜鐢ㄦ埛绌洪棿鎸囩ず涓€涓?PFNMAP 鍐呭瓨鍖哄煙鏄惁鍙互瀹夊叏鍦版槧灏勪负鍙紦瀛橈紙cacheable锛夈€?
-杩欎緷璧栦簬纭欢涓婃槸鍚﹀瓨鍦ㄥ己鍒跺啓鍥烇紙force write back锛孎WB锛夌壒鎬ф敮鎸併€?
+此能力向用户空间指示一PFNMAP 内存区域是否可以安全地映射为可缓存（cacheable）
+这依赖于硬件上是否存在强制写回（force write back，FWB）特性支持
 
 ### 7.45 KVM_CAP_ARM_SEA_TO_USER
 
@@ -7742,8 +7742,8 @@ MP_STATE 琚繚鐣欍€?
 :Parameters: none
 :Returns: 0 on success, -EINVAL if unsupported.
 
-鍚敤姝よ兘鍔涙椂锛孠VM 鍙兘浼氬洜瀹㈡埛鏈鸿闂鑷寸殑銆佽繘鍏?EL2 鐨?SEA 鑰岄€€鍑哄埌鐢ㄦ埛绌洪棿銆?
-鏇村淇℃伅璇峰弬闃?`KVM_EXIT_ARM_SEA`銆?
+启用此能力时，KVM 可能会因客户机访问导致的、进EL2 SEA 而退出到用户空间
+更多信息请参`KVM_EXIT_ARM_SEA`
 
 ### 7.46 KVM_CAP_S390_USER_OPEREXEC
 
@@ -7751,63 +7751,63 @@ MP_STATE 琚繚鐣欍€?
 :Architectures: s390
 :Parameters: none
 
-鍚敤姝よ兘鍔涙椂锛孠VM 浼氬皢鍏惰嚜韬笉澶勭悊鐨勬搷浣滃紓甯稿叏閮ㄨ浆鍙戝埌鐢ㄦ埛绌洪棿銆傝繖涔熷寘鎷敱
-KVM_CAP_S390_USER_INSTR0 绠＄悊鐨?0x0000 鎸囦护銆傚鏋滅敤鎴风┖闂村笇鏈涙ā鎷燂紙灏氾級鏈湪纭欢
-涓疄鐜扮殑鎸囦护锛岃繖浼氬緢鏈夊府鍔┿€?
+启用此能力时，KVM 会将其自身不处理的操作异常全部转发到用户空间。这也包括由
+KVM_CAP_S390_USER_INSTR0 管理0x0000 指令。如果用户空间希望模拟（尚）未在硬件
+中实现的指令，这会很有帮助
 
-鍗充娇鍦?VCPU 宸茶鍒涘缓骞舵鍦ㄨ繍琛岀殑鎯呭喌涓嬶紝涔熷彲浠ュ姩鎬佸惎鐢ㄦ鑳藉姏銆?
+即使VCPU 已被创建并正在运行的情况下，也可以动态启用此能力
 
-## 8. 鍏朵粬鑳藉姏銆?
+## 8. 其他能力
 
 
-鏈妭鍒楀嚭鎻愪緵鏈夊叧 KVM 瀹炵幇鍏朵粬鐗规€т俊鎭殑鑳藉姏銆?
+本节列出提供有关 KVM 实现其他特性信息的能力
 
 ### 8.1 KVM_CAP_PPC_HWRNG
 
 
 :Architectures: ppc
 
-姝よ兘鍔涳紝濡傛灉 KVM_CHECK_EXTENSION 鎸囩ず鍏跺彲鐢紝鎰忓懗鐫€鍐呮牳瀹炵幇浜嗙敱纭欢闅忔満鏁扮敓鎴愬櫒
-鏀拺鐨?H_RANDOM 瓒呯骇璋冪敤銆傚鏋滃瓨鍦紝鍐呮牳鐨?H_RANDOM 澶勭悊绋嬪簭鍙互閫氳繃
-KVM_CAP_PPC_ENABLE_HCALL 鑳藉姏涓哄鎴锋満浣跨敤鑰屽惎鐢ㄣ€?
+此能力，如果 KVM_CHECK_EXTENSION 指示其可用，意味着内核实现了由硬件随机数生成器
+支撑H_RANDOM 超级调用。如果存在，内核H_RANDOM 处理程序可以通过
+KVM_CAP_PPC_ENABLE_HCALL 能力为客户机使用而启用
 
 ### 8.3 KVM_CAP_PPC_MMU_RADIX
 
 
 :Architectures: ppc
 
-姝よ兘鍔涳紝濡傛灉 KVM_CHECK_EXTENSION 鎸囩ず鍏跺彲鐢紝鎰忓懗鐫€鍐呮牳鍙互鏀寔浣跨敤 Power ISA
-V3.00锛堝 POWER9 澶勭悊鍣ㄤ腑鎵€瀹炵幇锛変腑瀹氫箟鐨?radix MMU 鐨勫鎴锋満銆?
+此能力，如果 KVM_CHECK_EXTENSION 指示其可用，意味着内核可以支持使用 Power ISA
+V3.00（如 POWER9 处理器中所实现）中定义radix MMU 的客户机
 
 ### 8.4 KVM_CAP_PPC_MMU_HASH_V3
 
 
 :Architectures: ppc
 
-姝よ兘鍔涳紝濡傛灉 KVM_CHECK_EXTENSION 鎸囩ず鍏跺彲鐢紝鎰忓懗鐫€鍐呮牳鍙互鏀寔浣跨敤 Power ISA
-V3.00锛堝 POWER9 澶勭悊鍣ㄤ腑鎵€瀹炵幇锛変腑瀹氫箟鐨勫搱甯岄〉琛?MMU 鐨勫鎴锋満锛屽寘鎷唴瀛樹腑鐨勬琛ㄣ€?
+此能力，如果 KVM_CHECK_EXTENSION 指示其可用，意味着内核可以支持使用 Power ISA
+V3.00（如 POWER9 处理器中所实现）中定义的哈希页MMU 的客户机，包括内存中的段表
 
 ### 8.5 KVM_CAP_MIPS_VZ
 
 
 :Architectures: mips
 
-姝よ兘鍔涳紝濡傛灉鍦ㄤ富 kvm 鍙ユ焺涓婃墽琛?KVM_CHECK_EXTENSION 鎸囩ず鍏跺彲鐢紝鎰忓懗鐫€鍙互閫氳繃
-KVM 浣跨敤纭欢鐨勫畬鍏ㄧ‖浠惰緟鍔╄櫄鎷熷寲鑳藉姏銆傚繀椤诲悜 KVM_CREATE_VM 浼犻€掍竴涓悎閫傜殑
-KVM_VM_MIPS_* 绫诲瀷鏉ュ垱寤轰竴涓埄鐢ㄥ畠鐨?VM銆?
+此能力，如果在主 kvm 句柄上执KVM_CHECK_EXTENSION 指示其可用，意味着可以通过
+KVM 使用硬件的完全硬件辅助虚拟化能力。必须向 KVM_CREATE_VM 传递一个合适的
+KVM_VM_MIPS_* 类型来创建一个利用它VM
 
-濡傛灉鍦?kvm VM 鍙ユ焺涓婃墽琛?KVM_CHECK_EXTENSION 鎸囩ず姝よ兘鍔涘彲鐢紝鍒欐剰鍛崇潃璇?VM 姝ｅ湪
-浣跨敤纭欢鐨勫畬鍏ㄧ‖浠惰緟鍔╄櫄鎷熷寲鑳藉姏銆傝繖鍦ㄧ敤 KVM_VM_MIPS_DEFAULT 鍒涘缓 VM 涔嬪悗妫€鏌?
-寰堟湁鐢ㄣ€?
+如果kvm VM 句柄上执KVM_CHECK_EXTENSION 指示此能力可用，则意味着VM 正在
+使用硬件的完全硬件辅助虚拟化能力。这在用 KVM_VM_MIPS_DEFAULT 创建 VM 之后检
+很有用
 
-KVM_CHECK_EXTENSION 杩斿洖鐨勫€煎簲涓庡凡鐭ュ€硷紙瑙佷笅鏂囷級杩涜姣旇緝銆傛墍鏈夊叾浠栧€煎潎淇濈暀銆傝繖鏄?
-涓轰簡鍏佽鍏朵粬鍙兘涓?MIPS VZ ASE 涓嶅吋瀹圭殑纭欢杈呭姪铏氭嫙鍖栧疄鐜板瓨鍦ㄧ殑鍙兘鎬с€?
+KVM_CHECK_EXTENSION 返回的值应与已知值（见下文）进行比较。所有其他值均保留。这
+为了允许其他可能MIPS VZ ASE 不兼容的硬件辅助虚拟化实现存在的可能性
 
 ==  ==========================================================================
- 0  浣跨敤 trap & emulate 瀹炵幇鍦ㄧ敤鎴锋ā寮忎笅杩愯瀹㈡埛鏈轰唬鐮併€傚鎴锋満铏氭嫙鍐呭瓨娈佃閲嶆帓浠?
-    浣垮鎴锋満閫傚簲浜庣敤鎴锋ā寮忓湴鍧€绌洪棿銆?
+ 0  使用 trap & emulate 实现在用户模式下运行客户机代码。客户机虚拟内存段被重排
+    使客户机适应于用户模式地址空间
 
- 1  浣跨敤 MIPS VZ ASE锛屾彁渚涘畬鍏ㄧ‖浠惰緟鍔╄櫄鎷熷寲锛屽寘鎷爣鍑嗙殑瀹㈡埛鏈鸿櫄鎷熷唴瀛樻銆?
+ 1  使用 MIPS VZ ASE，提供完全硬件辅助虚拟化，包括标准的客户机虚拟内存段
 ==  ==========================================================================
 
 ### 8.7 KVM_CAP_MIPS_64BIT
@@ -7815,20 +7815,20 @@ KVM_CHECK_EXTENSION 杩斿洖鐨勫€煎簲涓庡凡鐭ュ€硷紙瑙佷笅鏂
 
 :Architectures: mips
 
-姝よ兘鍔涙寚绀哄鎴锋満鏀寔鐨勬灦鏋勭被鍨嬶紝鍗虫敮鎸佺殑瀵勫瓨鍣ㄥ拰鍦板潃瀹藉害銆?
+此能力指示客户机支持的架构类型，即支持的寄存器和地址宽度
 
-褰撳湪 kvm VM 鍙ユ焺涓婇€氳繃 KVM_CHECK_EXTENSION 妫€鏌ユ鑳藉姏鏃讹紝杩斿洖鐨勫€煎ぇ鑷村搴斾簬
-CP0_Config.AT 瀵勫瓨鍣ㄥ瓧娈碉紝骞跺簲閽堝宸茬煡鍊硷紙瑙佷笅鏂囷級涓撻棬妫€鏌ャ€傛墍鏈夊叾浠栧€煎潎淇濈暀銆?
+当在 kvm VM 句柄上通过 KVM_CHECK_EXTENSION 检查此能力时，返回的值大致对应于
+CP0_Config.AT 寄存器字段，并应针对已知值（见下文）专门检查。所有其他值均保留
 
 ==  ========================================================================
- 0  MIPS32 鎴?microMIPS32銆傚瘎瀛樺櫒鍜屽湴鍧€鍧囦负 32 浣嶅銆傚彧鑳借繍琛?32 浣嶅鎴锋満浠ｇ爜銆?
+ 0  MIPS32 microMIPS32。寄存器和地址均为 32 位宽。只能运32 位客户机代码
 
- 1  MIPS64 鎴?microMIPS64锛屼絾鍙兘璁块棶 32 浣嶅吋瀹规銆傚瘎瀛樺櫒涓?64 浣嶅锛屼絾鍦板潃涓?
-    32 浣嶅銆傚彲浠ヨ繍琛?64 浣嶅鎴锋満浠ｇ爜锛屼絾鏃犳硶璁块棶 MIPS64 鍐呭瓨娈点€備篃鍙互杩愯 32 浣?
-    瀹㈡埛鏈轰唬鐮併€?
+ 1  MIPS64 microMIPS64，但只能访问 32 位兼容段。寄存器64 位宽，但地址
+    32 位宽。可以运64 位客户机代码，但无法访问 MIPS64 内存段。也可以运行 32 
+    客户机代码
 
- 2  MIPS64 鎴?microMIPS64锛屽彲璁块棶鎵€鏈夊湴鍧€娈点€傚瘎瀛樺櫒鍜屽湴鍧€鍧囦负 64 浣嶅銆傚彲浠ヨ繍琛?
-    64 浣嶆垨 32 浣嶅鎴锋満浠ｇ爜銆?
+ 2  MIPS64 microMIPS64，可访问所有地址段。寄存器和地址均为 64 位宽。可以运
+    64 位或 32 位客户机代码
 ==  ========================================================================
 
 ### 8.9 KVM_CAP_ARM_USER_IRQ
@@ -7836,24 +7836,24 @@ CP0_Config.AT 瀵勫瓨鍣ㄥ瓧娈碉紝骞跺簲閽堝宸茬煡鍊硷紙瑙
 
 :Architectures: arm64
 
-姝よ兘鍔涳紝濡傛灉 KVM_CHECK_EXTENSION 鎸囩ず鍏跺彲鐢紝鎰忓懗鐫€濡傛灉鐢ㄦ埛绌洪棿鍒涘缓浜嗘病鏈夊唴鏍告€?
-涓柇鎺у埗鍣ㄧ殑 VM锛屽畠灏嗘敹鍒板鍐呮牳鎬佹ā鎷熻澶囪緭鍑虹數骞冲彉鍖栫殑閫氱煡锛岃繖浜涜澶囧彲浠ョ敓鎴?
-铏氭嫙涓柇骞跺憟鐜扮粰 VM銆傚浜庢绫?VM锛屾瘡娆¤繑鍥炲埌鐢ㄦ埛绌洪棿鏃讹紝鍐呮牳閮戒細鏇存柊 vcpu 鐨?
-run->s.regs.device_irq_level 瀛楁浠ヨ〃绀鸿澶囩殑瀹為檯杈撳嚭鐢靛钩銆?
+此能力，如果 KVM_CHECK_EXTENSION 指示其可用，意味着如果用户空间创建了没有内核
+中断控制器的 VM，它将收到对内核态模拟设备输出电平变化的通知，这些设备可以生
+虚拟中断并呈现给 VM。对于此VM，每次返回到用户空间时，内核都会更新 vcpu 
+run->s.regs.device_irq_level 字段以表示设备的实际输出电平
 
-姣忓綋 kvm 妫€娴嬪埌璁惧杈撳嚭鐢靛钩鍙戠敓鍙樺寲鏃讹紝kvm 淇濊瘉鍦ㄨ繍琛?VM 涔嬪墠鑷冲皯杩斿洖涓€娆＄敤鎴风┖闂淬€?
-姝ら€€鍑哄彲浠ユ槸 KVM_EXIT_INTR 鎴栦换浣曞叾浠栭€€鍑轰簨浠讹紝濡?KVM_EXIT_MMIO銆傝繖鏍凤紝鐢ㄦ埛绌洪棿
-鎬绘槸鍙互閲囨牱璁惧杈撳嚭鐢靛钩骞堕噸鏂拌绠楃敤鎴风┖闂翠腑鏂帶鍒跺櫒鐨勭姸鎬併€傜敤鎴风┖闂村簲鎬绘槸鍦ㄦ瘡娆?
-kvm 閫€鍑烘椂妫€鏌?run->s.regs.device_irq_level 鐨勭姸鎬併€俽un->s.regs.device_irq_level
-涓殑鍊煎彲浠ヨ〃绀虹數骞宠Е鍙戝拰杈规部瑙﹀彂鐨勪腑鏂俊鍙凤紝鍙栧喅浜庤澶囥€傝竟娌胯Е鍙戠殑涓柇淇″彿灏嗗湪姣忔
-杈规部淇″彿鏃朵互 run->s.regs.device_irq_level 涓殑浣嶆伆濂界疆浣嶄竴娆＄殑鏂瑰紡閫€鍑哄埌鐢ㄦ埛绌洪棿銆?
+每当 kvm 检测到设备输出电平发生变化时，kvm 保证在运VM 之前至少返回一次用户空间
+此退出可以是 KVM_EXIT_INTR 或任何其他退出事件，KVM_EXIT_MMIO。这样，用户空间
+总是可以采样设备输出电平并重新计算用户空间中断控制器的状态。用户空间应总是在每
+kvm 退出时检run->s.regs.device_irq_level 的状态。run->s.regs.device_irq_level
+中的值可以表示电平触发和边沿触发的中断信号，取决于设备。边沿触发的中断信号将在每次
+边沿信号时以 run->s.regs.device_irq_level 中的位恰好置位一次的方式退出到用户空间
 
-run->s.regs.device_irq_level 瀛楁鐨勫彲鐢ㄦ€т笉渚濊禆浜?run->kvm_valid_regs 鎴?
-run->kvm_dirty_regs 浣嶃€?
+run->s.regs.device_irq_level 字段的可用性不依赖run->kvm_valid_regs 
+run->kvm_dirty_regs 位
 
-濡傛灉鏀寔 KVM_CAP_ARM_USER_IRQ锛孠VM_CHECK_EXTENSION ioctl 杩斿洖涓€涓ぇ浜?0 鐨勬暟瀛楋紝
-鎸囩ず鎵€瀹炵幇鐨勬鑳藉姏鐗堟湰锛屼粠鑰屾寚绀?run->s.regs.device_irq_level 涓殑鍝簺浣嶅彲浠ュ彂鍑?
-淇″彿鍊笺€?
+如果支持 KVM_CAP_ARM_USER_IRQ，KVM_CHECK_EXTENSION ioctl 返回一个大0 的数字，
+指示所实现的此能力版本，从而指run->s.regs.device_irq_level 中的哪些位可以发
+信号值
 
 ```
 
@@ -7861,122 +7861,122 @@ run->kvm_dirty_regs 浣嶃€?
 
     KVM_ARM_DEV_EL1_VTIMER -  EL1 铏氭嫙瀹氭椂鍣?
     KVM_ARM_DEV_EL1_PTIMER -  EL1 鐗╃悊瀹氭椂鍣?
-    KVM_ARM_DEV_PMU        -  ARM PMU 婧㈠嚭涓柇淇″彿
+    KVM_ARM_DEV_PMU        -  ARM PMU 溢出中断信号
 
 ```
-kvm 鐨勬湭鏉ョ増鏈彲鑳藉疄鐜伴澶栫殑浜嬩欢銆傝繖浜涘皢閫氳繃浠?KVM_CHECK_EXTENSION 杩斿洖鏇撮珮鐨勬暟瀛?
-鏉ユ寚绀猴紝骞跺皢鍦ㄤ笂闈㈠垪鍑恒€?
+kvm 的未来版本可能实现额外的事件。这些将通过KVM_CHECK_EXTENSION 返回更高的数
+来指示，并将在上面列出
 
 ### 8.10 KVM_CAP_PPC_SMT_POSSIBLE
 
 
 :Architectures: ppc
 
-鏌ヨ姝よ兘鍔涜繑鍥炰竴涓綅鍥撅紝鎸囩ず鍙互浣跨敤 KVM_CAP_PPC_SMT 璁剧疆鐨勮櫄鎷?SMT 妯″紡銆傚鏋?
-锛堜粠鍙宠捣锛夌 N 浣嶈缃綅锛屽垯 2^N 鐨勮櫄鎷?SMT 妯″紡鍙敤銆?
+查询此能力返回一个位图，指示可以使用 KVM_CAP_PPC_SMT 设置的虚SMT 模式。如
+（从右起）第 N 位被置位，则 2^N 的虚SMT 模式可用
 
 ### 8.12 KVM_CAP_HYPERV_VP_INDEX
 
 
 :Architectures: x86
 
-姝よ兘鍔涙寚绀虹敤鎴风┖闂村彲浠ュ姞杞?HV_X64_MSR_VP_INDEX msr銆傚叾鍊肩敤浜庤〃绀?SynIC 涓柇鐨?
-鐩爣 vcpu銆備负浜嗗吋瀹规€э紝KVM 灏嗘 msr 鍒濆鍖栦负 KVM 鐨勫唴閮?vcpu 绱㈠紩銆傚綋姝よ兘鍔涗笉瀛樺湪
-鏃讹紝鐢ㄦ埛绌洪棿浠嶅彲浠ユ煡璇㈡ msr 鐨勫€笺€?
+此能力指示用户空间可以加HV_X64_MSR_VP_INDEX msr。其值用于表SynIC 中断
+目标 vcpu。为了兼容性，KVM 将此 msr 初始化为 KVM 的内vcpu 索引。当此能力不存在
+时，用户空间仍可以查询此 msr 的值
 
 ### 8.13 KVM_CAP_S390_AIS_MIGRATION
 
 
 :Architectures: s390
 
-姝よ兘鍔涙寚绀?flic 璁惧鏄惁灏嗚兘澶熼€氳繃 KVM_DEV_FLIC_AISM_ALL 灞炴€ц幏鍙?璁剧疆鐢ㄤ簬杩佺Щ鐨?
-AIS 鐘舵€侊紝骞跺厑璁稿湪涓嶅繀鍒涘缓 flic 璁惧鐨勬儏鍐典笅鍙戠幇杩欎竴鐐广€?
+此能力指flic 设备是否将能够通过 KVM_DEV_FLIC_AISM_ALL 属性获设置用于迁移
+AIS 状态，并允许在不必创建 flic 设备的情况下发现这一点
 
 ### 8.14 KVM_CAP_S390_PSW
 
 
 :Architectures: s390
 
-姝よ兘鍔涙寚绀?PSW 閫氳繃 kvm_run 缁撴瀯鏆撮湶銆?
+此能力指PSW 通过 kvm_run 结构暴露
 
 ### 8.15 KVM_CAP_S390_GMAP
 
 
 :Architectures: s390
 
-姝よ兘鍔涙寚绀虹敤浣滃鎴锋満鏄犲皠鐨勭敤鎴风┖闂村唴瀛樺彲浠ヤ綅浜庣敤鎴峰唴瀛樺湴鍧€绌洪棿涓殑浠讳綍浣嶇疆锛屽彧瑕?
-鍐呭瓨妲芥寜娈碉紙1MB锛夎竟鐣屽榻愬苟璋冩暣澶у皬銆?
+此能力指示用作客户机映射的用户空间内存可以位于用户内存地址空间中的任何位置，只
+内存槽按段（1MB）边界对齐并调整大小
 
 ### 8.16 KVM_CAP_S390_COW
 
 
 :Architectures: s390
 
-姝よ兘鍔涙寚绀虹敤浣滃鎴锋満鏄犲皠鐨勭敤鎴风┖闂村唴瀛樺彲浠ヤ娇鐢ㄥ啓鏃跺鍒讹紙copy-on-write锛夎涔夛紝浠ュ強
-閫氳繃鍙椤佃〃杩涜鑴忛〉璺熻釜銆?
+此能力指示用作客户机映射的用户空间内存可以使用写时复制（copy-on-write）语义，以及
+通过只读页表进行脏页跟踪
 
 ### 8.17 KVM_CAP_S390_BPB
 
 
 :Architectures: s390
 
-姝よ兘鍔涙寚绀?kvm 灏嗗疄鐜扮敤浜庡鐞嗗垎鏀娴嬮樆濉炵殑閲嶇疆銆佽縼绉诲拰宓屽 KVM 鐨勬帴鍙ｃ€傚鏋滄病鏈?
-姝よ兘鍔涳紝涓嶅簲鍚戝鎴锋満鎻愪緵 stfle facility 82銆?
+此能力指kvm 将实现用于处理分支预测阻塞的重置、迁移和嵌套 KVM 的接口。如果没
+此能力，不应向客户机提供 stfle facility 82
 
 ### 8.18 KVM_CAP_HYPERV_TLBFLUSH
 
 
 :Architectures: x86
 
-姝よ兘鍔涙寚绀?KVM 鏀寔鍗婅櫄鎷熷寲 Hyper-V TLB 鍒锋柊瓒呯骇璋冪敤锛?
-HvFlushVirtualAddressSpace銆丠vFlushVirtualAddressSpaceEx銆?
-HvFlushVirtualAddressList銆丠vFlushVirtualAddressListEx銆?
+此能力指KVM 支持半虚拟化 Hyper-V TLB 刷新超级调用
+HvFlushVirtualAddressSpace、HvFlushVirtualAddressSpaceEx
+HvFlushVirtualAddressList、HvFlushVirtualAddressListEx
 
 ### 8.19 KVM_CAP_ARM_INJECT_SERROR_ESR
 
 
 :Architectures: arm64
 
-姝よ兘鍔涙寚绀虹敤鎴风┖闂村彲浠ユ寚瀹氾紙閫氳繃 KVM_SET_VCPU_EVENTS ioctl锛夊綋瀹㈡埛鏈哄彂鐢熻櫄鎷?SError
-涓柇寮傚父鏃舵姤鍛婄粰瀹㈡埛鏈虹殑缁煎悎寰侊紙syndrome锛夊€笺€傚鏋?KVM 閫氬憡姝よ兘鍔涳紝鐢ㄦ埛绌洪棿鍙兘鎸囧畾
-ESR 缁煎悎寰佺殑 ISS 瀛楁銆侲SR 鐨勫叾浠栭儴鍒嗭紙渚嬪 EC锛夊湪寮傚父鍙戠敓鏃剁敱 CPU 鐢熸垚銆傚鏋滆繖涓?
-铏氭嫙 SError 浣跨敤 AArch64 杩涘叆 EL1锛屾鍊煎皢鎶ュ憡鍦?ESR_ELx 鐨?ISS 瀛楁涓€?
+此能力指示用户空间可以指定（通过 KVM_SET_VCPU_EVENTS ioctl）当客户机发生虚SError
+中断异常时报告给客户机的综合征（syndrome）值。如KVM 通告此能力，用户空间只能指定
+ESR 综合征的 ISS 字段。ESR 的其他部分（例如 EC）在异常发生时由 CPU 生成。如果这
+虚拟 SError 使用 AArch64 进入 EL1，此值将报告ESR_ELx ISS 字段中
 
-鏇村缁嗚妭璇峰弬闃?KVM_CAP_VCPU_EVENTS銆?
+更多细节请参KVM_CAP_VCPU_EVENTS
 
 ### 8.20 KVM_CAP_HYPERV_SEND_IPI
 
 
 :Architectures: x86
 
-姝よ兘鍔涙寚绀?KVM 鏀寔鍗婅櫄鎷熷寲 Hyper-V IPI 鍙戦€佽秴绾ц皟鐢細
-HvCallSendSyntheticClusterIpi銆丠vCallSendSyntheticClusterIpiEx銆?
+此能力指KVM 支持半虚拟化 Hyper-V IPI 发送超级调用：
+HvCallSendSyntheticClusterIpi、HvCallSendSyntheticClusterIpiEx
 
 ### 8.22 KVM_CAP_S390_VCPU_RESETS
 
 
 :Architectures: s390
 
-姝よ兘鍔涙寚绀?KVM_S390_NORMAL_RESET 鍜?KVM_S390_CLEAR_RESET ioctl 鍙敤銆?
+此能力指KVM_S390_NORMAL_RESET KVM_S390_CLEAR_RESET ioctl 可用
 
 ### 8.23 KVM_CAP_S390_PROTECTED
 
 
 :Architectures: s390
 
-姝よ兘鍔涙寚绀?Ultravisor 宸插垵濮嬪寲锛屽洜姝?KVM 鍙互鍚姩鍙椾繚鎶ょ殑 VM銆傛鑳藉姏绠¤緰
-KVM_S390_PV_COMMAND ioctl 鍜?KVM_MP_STATE_LOAD MP_STATE銆傚浜庡彈淇濇姢鐨勫鎴锋満锛屽綋
-鐘舵€佸彉鏇存棤鏁堟椂锛孠VM_SET_MP_STATE 鍙兘澶辫触銆?
+此能力指Ultravisor 已初始化，因KVM 可以启动受保护的 VM。此能力管辖
+KVM_S390_PV_COMMAND ioctl KVM_MP_STATE_LOAD MP_STATE。对于受保护的客户机，当
+状态变更无效时，KVM_SET_MP_STATE 可能失败
 
 ### 8.24 KVM_CAP_STEAL_TIME
 
 
 :Architectures: arm64, x86
 
-姝よ兘鍔涙寚绀?KVM 鏀寔绐冨彇鏃堕棿锛坰teal time锛夎璐︺€傚綋鏀寔绐冨彇鏃堕棿璁拌处鏃讹紝鍙互閫氳繃
-鏋舵瀯鐗瑰畾鐨勬帴鍙ｅ惎鐢ㄣ€傛鑳藉姏鍜屾灦鏋勭壒瀹氱殑鎺ュ彛蹇呴』涓€鑷达紝鍗冲鏋滀竴涓鏀寔璇ョ壒鎬э紝鍙︿竴涓?
-涔熷簲璇ユ敮鎸侊紝鍙嶄箣浜︾劧銆傚浜?arm64锛岃鍙傞槄 Documentation/virt/kvm/devices/vcpu.rst 鐨?
-鈥淜VM_ARM_VCPU_PVTIME_CTRL鈥濄€傚浜?x86锛岃鍙傞槄 Documentation/virt/kvm/x86/msr.rst 鐨?
+此能力指KVM 支持窃取时间（steal time）记账。当支持窃取时间记账时，可以通过
+架构特定的接口启用。此能力和架构特定的接口必须一致，即如果一个说支持该特性，另一
+也应该支持，反之亦然。对arm64，请参阅 Documentation/virt/kvm/devices/vcpu.rst 
+“KVM_ARM_VCPU_PVTIME_CTRL”。对x86，请参阅 Documentation/virt/kvm/x86/msr.rst 
 鈥淢SR_KVM_STEAL_TIME鈥濄€?
 
 ### 8.25 KVM_CAP_S390_DIAG318
@@ -7984,43 +7984,43 @@ KVM_S390_PV_COMMAND ioctl 鍜?KVM_MP_STATE_LOAD MP_STATE銆傚浜庡彈淇濇
 
 :Architectures: s390
 
-姝よ兘鍔涗娇瀹㈡埛鏈鸿兘澶熻缃湁鍏冲叾鎺у埗绋嬪簭锛堝嵆瀹㈡埛鏈哄唴鏍哥被鍨嬪拰鐗堟湰锛夌殑淇℃伅銆傝繖浜涗俊鎭湪
-绯荤粺/鍥轰欢鏈嶅姟浜嬩欢鏈熼棿寰堟湁甯姪锛屾彁渚涘叧浜庢満鍣ㄤ笂杩愯鐨勫鎴锋満鐜鐨勯澶栨暟鎹€?
+此能力使客户机能够设置有关其控制程序（即客户机内核类型和版本）的信息。这些信息在
+系统/固件服务事件期间很有帮助，提供关于机器上运行的客户机环境的额外数据
 
-璇ヤ俊鎭笌 DIAGNOSE 0x318 鎸囦护鐩稿叧鑱旓紝璇ユ寚浠よ缃竴涓?8 瀛楄妭鐨勫€硷紝鐢变竴涓瓧鑺傜殑鎺у埗
-绋嬪簭鍚嶄唬鐮侊紙CPNC锛夊拰 7 瀛楄妭鐨勬帶鍒剁▼搴忕増鏈唬鐮侊紙CPVC锛夌粍鎴愩€侰PNC 纭畾鎺у埗绋嬪簭杩愯
-浜庝綍绉嶇幆澧冿紙渚嬪 Linux銆亃/VM鈥︹€︼級锛孋PVC 鐢ㄤ簬 OS 鐗瑰畾鐨勪俊鎭紙渚嬪 Linux 鐗堟湰銆?
-Linux 鍙戣鐗堚€︹€︼級銆?
+该信息与 DIAGNOSE 0x318 指令相关联，该指令设置一8 字节的值，由一个字节的控制
+程序名代码（CPNC）和 7 字节的控制程序版本代码（CPVC）组成。CPNC 确定控制程序运行
+于何种环境（例如 Linux、z/VM……），CPVC 用于 OS 特定的信息（例如 Linux 版本
+Linux 发行版……）
 
-濡傛灉姝よ兘鍔涘彲鐢紝鍒?CPNC 鍜?CPVC 鍙互閫氳繃鍚屾瀵勫瓨鍣ㄦ満鍒讹紙KVM_SYNC_DIAG318锛夊湪 KVM
-鍜岀敤鎴风┖闂翠箣闂村悓姝ャ€?
+如果此能力可用，CPNC CPVC 可以通过同步寄存器机制（KVM_SYNC_DIAG318）在 KVM
+和用户空间之间同步
 
 ### 8.26 KVM_CAP_X86_USER_SPACE_MSR
 
 
 :Architectures: x86
 
-姝よ兘鍔涙寚绀?KVM 鏀寔灏?MSR 璇诲彇鍜屽啓鍏ヨ浆鍚戠敤鎴风┖闂淬€傚畠鍙互鍦?VM 绾у埆鍚敤銆傚鏋滃惎鐢紝
-閫氬父浼氱敱 KVM 鍚戝鎴锋満瑙﹀彂 #GP 鐨?MSR 璁块棶锛屽皢鏀逛负閫氳繃 KVM_EXIT_X86_RDMSR 鍜?
-KVM_EXIT_X86_WRMSR 閫€鍑洪€氱煡寮瑰洖鐢ㄦ埛绌洪棿銆?
+此能力指KVM 支持MSR 读取和写入转向用户空间。它可以VM 级别启用。如果启用，
+通常会由 KVM 向客户机触发 #GP MSR 访问，将改为通过 KVM_EXIT_X86_RDMSR 
+KVM_EXIT_X86_WRMSR 退出通知弹回用户空间
 
 ### 8.27 KVM_CAP_X86_MSR_FILTER
 
 
 :Architectures: x86
 
-姝よ兘鍔涙寚绀?KVM 鏀寔鎷掔粷璁块棶鐢ㄦ埛瀹氫箟鐨?MSR銆傛毚闇叉鑳藉姏鍚庯紝KVM 瀵煎嚭鏂扮殑 VM ioctl
-KVM_X86_SET_MSR_FILTER锛岀敤鎴风┖闂村彲浠ヨ皟鐢ㄥ畠鏉ユ寚瀹?KVM 搴旀嫆缁濊闂殑 MSR 鑼冨洿鐨勪綅鍥俱€?
+此能力指KVM 支持拒绝访问用户定义MSR。暴露此能力后，KVM 导出新的 VM ioctl
+KVM_X86_SET_MSR_FILTER，用户空间可以调用它来指KVM 应拒绝访问的 MSR 范围的位图
 
-缁撳悎 KVM_CAP_X86_USER_SPACE_MSR锛岃繖鍏佽鐢ㄦ埛绌洪棿鎹曡幏骞舵ā鎷熻秴鍑?KVM 鑼冨洿鐨?MSR锛屼互鍙?
-闄愬埗 KVM 鐨?MSR 妯℃嫙浠ｇ爜鐨勬敾鍑婚潰銆?
+结合 KVM_CAP_X86_USER_SPACE_MSR，这允许用户空间捕获并模拟超KVM 范围MSR，以
+限制 KVM MSR 模拟代码的攻击面
 
 ### 8.30 KVM_CAP_XEN_HVM
 
 
 :Architectures: x86
 
-姝よ兘鍔涙寚绀?Xen 鏀寔鐨勭敤浜庢墭绠?Xen 鐨勭壒鎬?
+此能力指Xen 支持的用于托Xen 的特
 ```
 
   #define KVM_XEN_HVM_CONFIG_HYPERCALL_MSR		(1 << 0)
@@ -8033,40 +8033,40 @@ KVM_X86_SET_MSR_FILTER锛岀敤鎴风┖闂村彲浠ヨ皟鐢ㄥ畠鏉ユ寚瀹?
   #define KVM_XEN_HVM_CONFIG_PVCLOCK_TSC_UNSTABLE	(1 << 7)
 
 ```
-KVM_XEN_HVM_CONFIG_HYPERCALL_MSR 鏍囧織鎸囩ず KVM_XEN_HVM_CONFIG ioctl 鍙敤锛屼緵瀹㈡埛鏈?
-璁剧疆鍏惰秴绾ц皟鐢ㄩ〉銆?
+KVM_XEN_HVM_CONFIG_HYPERCALL_MSR 标志指示 KVM_XEN_HVM_CONFIG ioctl 可用，供客户
+设置其超级调用页
 
-濡傛灉涔熻缃簡 KVM_XEN_HVM_CONFIG_INTERCEPT_HCALL锛屽垯鍙互鍦ㄦ彁渚涚粰 KVM_XEN_HVM_CONFIG
-鐨?flags 涓彁渚涚浉鍚岀殑鏍囧織锛堜笉鎻愪緵瓒呯骇璋冪敤椤靛唴瀹癸級锛屼互璇锋眰 KVM 鑷姩鐢熸垚瓒呯骇璋冪敤椤?
-鍐呭锛屽苟鍚敤瀵瑰鎴锋満瓒呯骇璋冪敤鐨勬嫤鎴紙KVM_EXIT_XEN锛夈€?
+如果也设置了 KVM_XEN_HVM_CONFIG_INTERCEPT_HCALL，则可以在提供给 KVM_XEN_HVM_CONFIG
+flags 中提供相同的标志（不提供超级调用页内容），以请求 KVM 自动生成超级调用
+内容，并启用对客户机超级调用的拦截（KVM_EXIT_XEN）
 
-KVM_XEN_HVM_CONFIG_SHARED_INFO 鏍囧織鎸囩ず KVM_XEN_HVM_SET_ATTR銆並VM_XEN_HVM_GET_ATTR銆?
-KVM_XEN_VCPU_SET_ATTR 鍜?KVM_XEN_VCPU_GET_ATTR ioctl 鐨勫彲鐢ㄦ€э紝浠ュ強鍦?vcpu 鐨?
-vcpu_info 鐨?evtchn_upcall_pending 瀛楁琚疆浣嶆椂閫掗€佷簨浠堕€氶亾 upcall 鐨勫紓甯稿悜閲忋€?
+KVM_XEN_HVM_CONFIG_SHARED_INFO 标志指示 KVM_XEN_HVM_SET_ATTR、KVM_XEN_HVM_GET_ATTR
+KVM_XEN_VCPU_SET_ATTR KVM_XEN_VCPU_GET_ATTR ioctl 的可用性，以及vcpu 
+vcpu_info evtchn_upcall_pending 字段被置位时递送事件通道 upcall 的异常向量
 
-KVM_XEN_HVM_CONFIG_RUNSTATE 鏍囧織鎸囩ず runstate 鐩稿叧鐗规€?
-KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_ADDR/_CURRENT/_DATA/_ADJUST 鍙?
-KVM_XEN_VCPU_SET_ATTR/KVM_XEN_VCPU_GET_ATTR ioctl 鏀寔銆?
+KVM_XEN_HVM_CONFIG_RUNSTATE 标志指示 runstate 相关特
+KVM_XEN_VCPU_ATTR_TYPE_RUNSTATE_ADDR/_CURRENT/_DATA/_ADJUST 鍙。
+KVM_XEN_VCPU_SET_ATTR/KVM_XEN_VCPU_GET_ATTR ioctl 支持
 
-KVM_XEN_HVM_CONFIG_EVTCHN_2LEVEL 鏍囧織鎸囩ず鏀寔绫诲瀷涓?KVM_IRQ_ROUTING_XEN_EVTCHN 鐨?
-IRQ 璺敱鏉＄洰锛屽叾 priority 瀛楁琚涓鸿〃绀?2 绾т簨浠堕€氶亾閫掗€併€?
+KVM_XEN_HVM_CONFIG_EVTCHN_2LEVEL 标志指示支持类型KVM_IRQ_ROUTING_XEN_EVTCHN 
+IRQ 路由条目，其 priority 字段被设为表2 级事件通道递送
 
-KVM_XEN_HVM_CONFIG_EVTCHN_SEND 鏍囧織鎸囩ず KVM 鏀寔浣跨敤 KVM_XEN_HVM_EVTCHN_SEND ioctl
-灏嗕簨浠堕€氶亾浜嬩欢鐩存帴娉ㄥ叆瀹㈡埛鏈恒€傚畠杩樻寚绀烘敮鎸?KVM_XEN_ATTR_TYPE_EVTCHN/XEN_VERSION HVM
-灞炴€э紝浠ュ強 KVM_XEN_VCPU_ATTR_TYPE_VCPU_ID/TIMER/UPCALL_VECTOR vCPU 灞炴€э紝杩欎簺涓庝簨浠?
-閫氶亾閫掗€併€佸畾鏃跺櫒浠ュ強 XENVER_version 鎷︽埅鐩稿叧銆?
+KVM_XEN_HVM_CONFIG_EVTCHN_SEND 标志指示 KVM 支持使用 KVM_XEN_HVM_EVTCHN_SEND ioctl
+将事件通道事件直接注入客户机。它还指示支KVM_XEN_ATTR_TYPE_EVTCHN/XEN_VERSION HVM
+属性，以及 KVM_XEN_VCPU_ATTR_TYPE_VCPU_ID/TIMER/UPCALL_VECTOR vCPU 属性，这些与事
+通道递送、定时器以及 XENVER_version 拦截相关
 
-KVM_XEN_HVM_CONFIG_RUNSTATE_UPDATE_FLAG 鏍囧織鎸囩ず KVM 鍦?KVM_XEN_SET_ATTR 鍜?
-KVM_XEN_GET_ATTR ioctl 涓敮鎸?KVM_XEN_ATTR_TYPE_RUNSTATE_UPDATE_FLAG 灞炴€с€傝繖鎺у埗 KVM
-鏄惁浼氬湪鏇存柊 runstate 淇℃伅鏃惰缃鎴锋満鍐呭瓨鏄犲皠鐨?vcpu_runstate_info 涓殑
-XEN_RUNSTATE_UPDATE 鏍囧織銆傛敞鎰忥紝鏀寔涓婅堪 RUNSTATE 鐗规€т絾涓嶆敮鎸?RUNSTATE_UPDATE_FLAG
-鐗规€х殑 KVM 鐗堟湰锛屽湪鏇存柊瀹㈡埛鏈虹粨鏋勬椂鎬绘槸浼氳缃?XEN_RUNSTATE_UPDATE 鏍囧織锛岃繖涔熻鏈夋倴
-鐩磋銆傚綋閫氬憡姝ゆ爣蹇楁椂锛孠VM 鐨勮涓哄皢鏇存纭紝鍦紙鐢卞鎴锋満鍙戣捣瓒呯骇璋冪敤銆佸鑷?VMM 鍚敤
-KVM_XEN_ATTR_TYPE_RUNSTATE_UPDATE_FLAG 灞炴€э級涔嬪墠涓嶄細浣跨敤 XEN_RUNSTATE_UPDATE 鏍囧織銆?
+KVM_XEN_HVM_CONFIG_RUNSTATE_UPDATE_FLAG 标志指示 KVM KVM_XEN_SET_ATTR 
+KVM_XEN_GET_ATTR ioctl 中支KVM_XEN_ATTR_TYPE_RUNSTATE_UPDATE_FLAG 属性。这控制 KVM
+是否会在更新 runstate 信息时设置客户机内存映射vcpu_runstate_info 中的
+XEN_RUNSTATE_UPDATE 标志。注意，支持上述 RUNSTATE 特性但不支RUNSTATE_UPDATE_FLAG
+特性的 KVM 版本，在更新客户机结构时总是会设XEN_RUNSTATE_UPDATE 标志，这也许有悖
+直觉。当通告此标志时，KVM 的行为将更正确，在（由客户机发起超级调用、导VMM 启用
+KVM_XEN_ATTR_TYPE_RUNSTATE_UPDATE_FLAG 属性）之前不会使用 XEN_RUNSTATE_UPDATE 标志
 
-KVM_XEN_HVM_CONFIG_PVCLOCK_TSC_UNSTABLE 鏍囧織鎸囩ず KVM 鏀寔鍦?Xen pvclock 婧愪腑娓呴櫎
-PVCLOCK_TSC_STABLE_BIT 鏍囧織銆傝繖灏嗗湪 KVM_CAP_XEN_HVM ioctl 璁剧疆
-KVM_XEN_HVM_CONFIG_PVCLOCK_TSC_UNSTABLE 鏍囧織鏃跺畬鎴愩€?
+KVM_XEN_HVM_CONFIG_PVCLOCK_TSC_UNSTABLE 标志指示 KVM 支持Xen pvclock 源中清除
+PVCLOCK_TSC_STABLE_BIT 标志。这将在 KVM_CAP_XEN_HVM ioctl 设置
+KVM_XEN_HVM_CONFIG_PVCLOCK_TSC_UNSTABLE 标志时完成
 
 ### 8.31 KVM_CAP_SPAPR_MULTITCE
 
@@ -8074,26 +8074,26 @@ KVM_XEN_HVM_CONFIG_PVCLOCK_TSC_UNSTABLE 鏍囧織鏃跺畬鎴愩€?
 :Architectures: ppc
 :Type: vm
 
-姝よ兘鍔涙剰鍛崇潃鍐呮牳鑳藉澶勭悊瓒呰皟鐢?H_PUT_TCE_INDIRECT 鍜?H_STUFF_TCE锛岃€屾棤闇€灏嗚繖浜涗紶閫?
-鍒扮敤鎴风┖闂淬€傝繖鏄捐憲鍔犻€熶簡 PPC KVM 瀹㈡埛鏈虹殑 DMA 鎿嶄綔銆傚鏋滅敤鎴风┖闂翠箣鍓嶅凡鍦?KVM 涓?
-娉ㄥ唽浜?LIOBN锛堥€氳繃 KVM_CREATE_SPAPR_TCE 鎴栫被浼艰皟鐢級锛岀敤鎴风┖闂村簲棰勬湡杩欎簺瓒呯骇璋冪敤鐨?
-澶勭悊绋嬪簭涓嶄細琚皟鐢ㄣ€?
+此能力意味着内核能够处理超调H_PUT_TCE_INDIRECT H_STUFF_TCE，而无需将这些传
+到用户空间。这显著加速了 PPC KVM 客户机的 DMA 操作。如果用户空间之前已KVM 
+注册LIOBN（通过 KVM_CREATE_SPAPR_TCE 或类似调用），用户空间应预期这些超级调用
+处理程序不会被调用
 
-涓轰簡鍦ㄥ鎴锋満涓惎鐢?H_PUT_TCE_INDIRECT 鍜?H_STUFF_TCE 鐨勪娇鐢紝鐢ㄦ埛绌洪棿鍙兘蹇呴』涓哄鎴锋満
-閫氬憡瀹冦€備緥濡傦紝濡傛灉鈥渋bm,hypertas-functions鈥濊澶囨爲灞炴€т腑瀛樺湪鈥渉call-multi-tce鈥濓紝IBM
-pSeries锛坰PAPR锛夊鎴锋満灏变細寮€濮嬩娇鐢ㄥ畠浠€?
+为了在客户机中启H_PUT_TCE_INDIRECT H_STUFF_TCE 的使用，用户空间可能必须为客户机
+通告它。例如，如果“ibm,hypertas-functions”设备树属性中存在“hcall-multi-tce”，IBM
+pSeries（sPAPR）客户机就会开始使用它们
 
-涓婅堪瓒呯骇璋冪敤鍙兘鍦ㄤ篃鍙兘涓嶅湪鍩轰簬鍐呮牳鐨勫揩閫熻矾寰勪腑鎴愬姛澶勭悊銆傚鏋滃唴鏍告棤娉曞鐞嗗畠浠紝瀹冧滑
-灏嗚浼犻€掔粰鐢ㄦ埛绌洪棿銆傚洜姝わ紝灏界鏈夊唴鏍告€佸姞閫燂紝鐢ㄦ埛绌洪棿浠嶇劧蹇呴』涓鸿繖浜涜秴绾ц皟鐢ㄤ繚鐣欏疄鐜般€?
+上述超级调用可能在也可能不在基于内核的快速路径中成功处理。如果内核无法处理它们，它们
+将被传递给用户空间。因此，尽管有内核态加速，用户空间仍然必须为这些超级调用保留实现
 
-姝よ兘鍔涘缁堝惎鐢ㄣ€?
+此能力始终启用
 
 ### 8.32 KVM_CAP_PTP_KVM
 
 
 :Architectures: arm64
 
-姝よ兘鍔涙寚绀哄涓绘敮鎸?KVM 铏氭嫙 PTP 鏈嶅姟銆俈MM 鍙互鍦ㄨ縼绉绘椂妫€鏌ヨ鏈嶅姟瀵瑰鎴锋満鏄惁鍙敤銆?
+此能力指示宿主支KVM 虚拟 PTP 服务。VMM 可以在迁移时检查该服务对客户机是否可用
 
 ### 8.37 KVM_CAP_S390_PROTECTED_DUMP
 
@@ -8101,9 +8101,9 @@ pSeries锛坰PAPR锛夊鎴锋満灏变細寮€濮嬩娇鐢ㄥ畠浠€?
 :Architectures: s390
 :Type: vm
 
-姝よ兘鍔涙寚绀?KVM 鍜?Ultravisor 鏀寔杞偍 PV 瀹㈡埛鏈恒€俙KVM_PV_DUMP` 鍛戒护鍙敤浜?
-`KVM_S390_PV_COMMAND` ioctl锛宍KVM_PV_INFO` 鍛戒护鎻愪緵涓庤浆鍌ㄧ浉鍏崇殑 UV 鏁版嵁銆傛澶栵紝vcpu
-ioctl `KVM_S390_PV_CPU_COMMAND` 涔熷彲鐢紝骞舵敮鎸?`KVM_PV_DUMP_CPU` 瀛愬懡浠ゃ€?
+此能力指KVM Ultravisor 支持转储 PV 客户机。`KVM_PV_DUMP` 命令可用
+`KVM_S390_PV_COMMAND` ioctl，`KVM_PV_INFO` 命令提供与转储相关的 UV 数据。此外，vcpu
+ioctl `KVM_S390_PV_CPU_COMMAND` 也可用，并支`KVM_PV_DUMP_CPU` 子命令
 
 ### 8.39 KVM_CAP_S390_CPU_TOPOLOGY
 
@@ -8111,17 +8111,17 @@ ioctl `KVM_S390_PV_CPU_COMMAND` 涔熷彲鐢紝骞舵敮鎸?`KVM_PV_DUMP_CPU`
 :Architectures: s390
 :Type: vm
 
-姝よ兘鍔涙寚绀?KVM 灏嗘彁渚?S390 CPU 鎷撴墤璁炬柦锛屽畠鍖呮嫭瀵瑰姛鑳界爜 2 鐨?PTF 鎸囦护鐨勮В閲婏紝浠ュ強瀵?
-鍔熻兘鐮?0 鎴?1 鐨?PTF 鎸囦护涓?STSI(15,1,x) 鎸囦护鐨勬嫤鎴拰杞彂鍒扮敤鎴锋€佽櫄鎷熸満鐩戞帶鍣ㄣ€?
+此能力指KVM 将提S390 CPU 拓扑设施，它包括对功能码 2 PTF 指令的解释，以及
+功能0 1 PTF 指令STSI(15,1,x) 指令的拦截和转发到用户态虚拟机监控器
 
-濡傛灉娌℃湁姝よ兘鍔涳紝涓嶅簲鍚戝鎴锋満鎸囩ず stfle facility 11锛圕PU 鎷撴墤璁炬柦锛夈€?
+如果没有此能力，不应向客户机指示 stfle facility 11（CPU 拓扑设施）
 
-瀛樺湪姝よ兘鍔涙椂锛孠VM 鍦?vm fd 涓婃彁渚涗竴涓柊鐨勫睘鎬х粍 KVM_S390_VM_CPU_TOPOLOGY銆傝繖涓柊鐨?
-灞炴€у厑璁搁€氳繃 kvm_device_attr 缁撴瀯鑾峰彇銆佽缃垨娓呴櫎 SCA 鐨?Modified Change Topology
-Report锛圡TCR锛変綅銆?
+存在此能力时，KVM vm fd 上提供一个新的属性组 KVM_S390_VM_CPU_TOPOLOGY。这个新
+属性允许通过 kvm_device_attr 结构获取、设置或清除 SCA Modified Change Topology
+Report（MTCR）位
 
-褰撹幏鍙?Modified Change Topology Report 鍊兼椂锛宎ttr->addr 蹇呴』鎸囧悜涓€涓瓧鑺傦紝鍊煎皢瀛樺偍鍒?
-鍏朵腑鎴栦粠涓彇鍑恒€?
+当获Modified Change Topology Report 值时，attr->addr 必须指向一个字节，值将存储
+其中或从中取出
 
 ### 8.41 KVM_CAP_VM_TYPES
 
@@ -8129,7 +8129,7 @@ Report锛圡TCR锛変綅銆?
 :Architectures: x86
 :Type: system ioctl
 
-姝よ兘鍔涜繑鍥炲彈鏀寔 VM 绫诲瀷鐨勪綅鍥俱€備綅 @n 缃?1 琛ㄧず
+此能力返回受支持 VM 类型的位图。位 @n 1 表示
 ```
 
   #define KVM_X86_DEFAULT_VM	0
@@ -8138,123 +8138,123 @@ Report锛圡TCR锛変綅銆?
   #define KVM_X86_SEV_ES_VM	3
 
 ```
-娉ㄦ剰锛孠VM_X86_SW_PROTECTED_VM 鐩墠浠呯敤浜庡紑鍙戝拰娴嬭瘯銆備笉瑕佸皢 KVM_X86_SW_PROTECTED_VM
-鐢ㄤ簬鈥滅湡姝ｇ殑鈥漋M锛屽挨鍏舵槸涓嶈鐢ㄤ簬鐢熶骇鐜銆傝蒋浠朵繚鎶ょ殑 VM 鐨勮涓哄拰鏈夋晥 ABI 鏄笉绋冲畾鐨勩€?
+注意，KVM_X86_SW_PROTECTED_VM 目前仅用于开发和测试。不要将 KVM_X86_SW_PROTECTED_VM
+用于“真正的”VM，尤其是不要用于生产环境。软件保护的 VM 的行为和有效 ABI 是不稳定的
 
 ### 8.42 KVM_CAP_PPC_RPT_INVALIDATE
 
 
 :Architectures: ppc
 
-姝よ兘鍔涙寚绀哄唴鏍歌兘澶熷鐞?H_RPT_INVALIDATE 瓒呯骇璋冪敤銆?
+此能力指示内核能够处H_RPT_INVALIDATE 超级调用
 
-涓轰簡鍦ㄥ鎴锋満涓惎鐢?H_RPT_INVALIDATE 鐨勪娇鐢紝鐢ㄦ埛绌洪棿鍙兘蹇呴』涓哄鎴锋満閫氬憡瀹冦€備緥濡傦紝
-濡傛灉鈥渋bm,hypertas-functions鈥濊澶囨爲灞炴€т腑瀛樺湪鈥渉call-rpt-invalidate鈥濓紝IBM pSeries
-锛坰PAPR锛夊鎴锋満灏变細寮€濮嬩娇鐢ㄥ畠銆?
+为了在客户机中启H_RPT_INVALIDATE 的使用，用户空间可能必须为客户机通告它。例如，
+如果“ibm,hypertas-functions”设备树属性中存在“hcall-rpt-invalidate”，IBM pSeries
+（sPAPR）客户机就会开始使用它
 
-姝よ兘鍔涘湪鏀寔 radix MMU 鐨?POWER9 绛夊钩鍙颁笂鐨勮櫄鎷熸満鐩戞帶鍣ㄤ腑鍚敤銆?
+此能力在支持 radix MMU POWER9 等平台上的虚拟机监控器中启用
 
 ### 8.43 KVM_CAP_PPC_AIL_MODE_3
 
 
 :Architectures: ppc
 
-姝よ兘鍔涙寚绀哄唴鏍告敮鎸侀€氳繃 H_SET_MODE 瓒呯骇璋冪敤鎺у埗鐨勨€滀腑鏂椂鐨勫湴鍧€杞崲妯″紡鈥濓紙Address
-Translation Mode on Interrupt锛夛紝鍙堢О鈥滃鐢ㄤ腑鏂綅缃€濓紙Alternate Interrupt Location锛?
-璧勬簮鐨勬ā寮?3 璁剧疆銆?
+此能力指示内核支持通过 H_SET_MODE 超级调用控制的“中断时的地址转换模式”（Address
+Translation Mode on Interrupt），又称“备用中断位置”（Alternate Interrupt Location
+资源的模3 设置
 
-姝よ兘鍔涘厑璁稿鎴锋満鍐呮牳浣跨敤鏇撮珮鎬ц兘鐨勬ā寮忔潵澶勭悊涓柇鍜岀郴缁熻皟鐢ㄣ€?
+此能力允许客户机内核使用更高性能的模式来处理中断和系统调用
 
 ### 8.44 KVM_CAP_MEMORY_FAULT_INFO
 
 
 :Architectures: x86
 
-瀛樺湪姝よ兘鍔涙寚绀猴紝濡傛灉 KVM 鏃犳硶瑙ｆ瀽瀹㈡埛鏈洪〉鏁呴殰 VM-Exit锛堜緥濡傚瓨鍦ㄦ湁鏁堢殑 memslot 浣?
-鐩稿簲鐨勫涓昏櫄鎷熷湴鍧€娌℃湁鍚庡 VMA锛夛紝KVM_RUN 灏嗗～鍏?kvm_run.memory_fault銆?
+存在此能力指示，如果 KVM 无法解析客户机页故障 VM-Exit（例如存在有效的 memslot 
+相应的宿主虚拟地址没有后备 VMA），KVM_RUN 将填kvm_run.memory_fault
 
-kvm_run.memory_fault 涓殑淇℃伅褰撲笖浠呭綋 KVM_RUN 浠?errno=EFAULT 鎴?errno=EHWPOISON
-閿欒杩斿洖 **骞朵笖** kvm_run.exit_reason 琚涓?KVM_EXIT_MEMORY_FAULT 鏃舵墠鏈夋晥銆?
+kvm_run.memory_fault 中的信息当且仅当 KVM_RUN errno=EFAULT errno=EHWPOISON
+错误返回 **并且** kvm_run.exit_reason 被设KVM_EXIT_MEMORY_FAULT 时才有效
 
-娉ㄦ剰锛氬皾璇曡В鍐冲唴瀛樻晠闅滀互閲嶈瘯 KVM_RUN 鐨勭敤鎴风┖闂村簲娉ㄦ剰闃叉閲嶅鏀跺埌鐩稿悓鐨勯敊璇?甯︽敞瑙?
-鏁呴殰銆?
+注意：尝试解决内存故障以重试 KVM_RUN 的用户空间应注意防止重复收到相同的错带注
+故障
 
-鏇村淇℃伅璇峰弬闃?KVM_EXIT_MEMORY_FAULT銆?
+更多信息请参KVM_EXIT_MEMORY_FAULT
 
 ### 8.45 KVM_CAP_X86_GUEST_MODE
 
 
 :Architectures: x86
 
-瀛樺湪姝よ兘鍔涙寚绀?KVM_RUN 灏嗘洿鏂?kvm_run.flags 涓殑 KVM_RUN_X86_GUEST_MODE 浣嶏紝浠ユ寚绀?
-vCPU 閫€鍑烘椂鏄惁姝ｅ湪鎵ц宓屽瀹㈡埛鏈轰唬鐮併€?
+存在此能力指KVM_RUN 将更kvm_run.flags 中的 KVM_RUN_X86_GUEST_MODE 位，以指
+vCPU 退出时是否正在执行嵌套客户机代码
 
 ### 8.46 KVM_CAP_S390_KEYOP
 
 
 :Architectures: s390
 
-瀛樺湪姝よ兘鍔涙寚绀?KVM_S390_KEYOP ioctl 鍙敤銆?
+存在此能力指KVM_S390_KEYOP ioctl 可用
 
-KVM 閫€鍑烘椂甯︽湁 L1 鎴?L2 瀹㈡埛鏈虹殑瀵勫瓨鍣ㄧ姸鎬侊紝鍙栧喅浜庨€€鍑烘椂鎵ц鐨勬槸鍝竴涓€傜敤鎴风┖闂村繀椤?
-娉ㄦ剰鍖哄垎杩欎簺鎯呭喌銆?
+KVM 退出时带有 L1 L2 客户机的寄存器状态，取决于退出时执行的是哪一个。用户空间必
+注意区分这些情况
 
 ### 8.47 KVM_CAP_S390_VSIE_ESAMODE
 
 
 :Architectures: s390
 
-瀛樺湪姝よ兘鍔涙寚绀哄祵濂?KVM 瀹㈡埛鏈哄彲浠ヤ互 ESA 妯″紡鍚姩銆?
+存在此能力指示嵌KVM 客户机可以以 ESA 模式启动
 
-## 9. 宸茬煡鐨?KVM API 闂
+## 9. 已知KVM API 问题
 
 
-鍦ㄦ煇浜涙儏鍐典笅锛孠VM 鐨?API 瀛樺湪涓€浜涗笉涓€鑷存垨鐢ㄦ埛绌洪棿闇€瑕佹敞鎰忕殑甯歌闄烽槺銆傛湰鑺傝杩板叾涓?
-涓€浜涢棶棰樸€?
+在某些情况下，KVM API 存在一些不一致或用户空间需要注意的常见陷阱。本节详述其
+一些问题
 
-鍏朵腑澶ч儴鍒嗘槸鏋舵瀯鐗瑰畾鐨勶紝鍥犳鏈妭鎸夋灦鏋勫垝鍒嗐€?
+其中大部分是架构特定的，因此本节按架构划分
 
 ### 9.1. x86
 
 
-##### ``KVM_GET_SUPPORTED_CPUID`` 闂
+##### ``KVM_GET_SUPPORTED_CPUID`` 问题
 
 
-閫氬父锛宍KVM_GET_SUPPORTED_CPUID` 鐨勮璁′娇寰楀彲浠ュ皢鍏剁粨鏋滅洿鎺ヤ紶缁?`KVM_SET_CPUID2`銆?
-鏈妭璁板綍浜嗕竴浜涢渶瑕佺壒鍒皬蹇冪殑鎯呭喌銆?
+通常，`KVM_GET_SUPPORTED_CPUID` 的设计使得可以将其结果直接传`KVM_SET_CPUID2`
+本节记录了一些需要特别小心的情况
 
-#### 鏈湴 APIC 鐗规€?
-
-
-CPU[EAX=1]:ECX[^21^]锛圶2APIC锛夌敱 `KVM_GET_SUPPORTED_CPUID` 鎶ュ憡锛屼絾鍙湁鍦ㄤ娇鐢?
-`KVM_CREATE_IRQCHIP` 鎴?`KVM_ENABLE_CAP(KVM_CAP_IRQCHIP_SPLIT)` 鏉ュ惎鐢ㄦ湰鍦?APIC 鐨?
-鍐呮牳鎬佹ā鎷熸椂锛屾墠鑳藉惎鐢ㄥ畠銆?
-
-瀵逛簬 `KVM_FEATURE_PV_UNHALT` 鍗婅櫄鎷熷寲鐗规€т篃鏄姝ゃ€?
-
-鍦ㄨ緝鏃х増鏈殑 Linux 涓婏紝`KVM_GET_SUPPORTED_CPUID` 涓嶆姤鍛?CPU[EAX=1]:ECX[^24^]
-锛圱SC_DEADLINE锛夛紝浣嗗鏋滃瓨鍦?`KVM_CAP_TSC_DEADLINE_TIMER` 涓斿唴鏍稿凡鍚敤鏈湴 APIC 鐨?
-鍐呮牳鎬佹ā鎷燂紝鍒欏彲浠ュ惎鐢ㄥ畠銆傚湪杈冩柊鐗堟湰涓婏紝`KVM_GET_SUPPORTED_CPUID` 纭疄灏嗚浣嶆姤鍛婁负
-鍙敤銆?
-
-#### CPU 鎷撴墤
+#### 本地 APIC 特
 
 
-鍑犱釜 CPUID 鍊煎寘鍚涓?CPU 鐨勬嫇鎵戜俊鎭細Intel 绯荤粺鐨?0x0b 鍜?0x1f锛孉MD 绯荤粺鐨?
-0x8000001e銆備笉鍚岀増鏈殑 KVM 涓烘淇℃伅杩斿洖涓嶅悓鐨勫€硷紝鐢ㄦ埛绌洪棿涓嶅簲渚濊禆瀹冦€傚綋鍓嶅畠浠繑鍥?
-鍏ㄩ浂銆?
+CPU[EAX=1]:ECX[^21^]（X2APIC）由 `KVM_GET_SUPPORTED_CPUID` 报告，但只有在使
+`KVM_CREATE_IRQCHIP` `KVM_ENABLE_CAP(KVM_CAP_IRQCHIP_SPLIT)` 来启用本APIC 
+内核态模拟时，才能启用它
 
-濡傛灉鐢ㄦ埛绌洪棿甯屾湜璁剧疆瀹㈡埛鏈烘嫇鎵戯紝搴旀敞鎰忚繖涓変釜鍙讹紙leaf锛夌殑鍊煎浜庢瘡涓?CPU 閮戒笉鍚屻€傜壒鍒?
-鏄紝APIC ID 浣嶄簬 0x0b 鍜?0x1f 鎵€鏈夊瓙鍙剁殑 EDX 涓紝浠ュ強 0x8000001e 鐨?EAX 涓紱鍚庤€呰繕灏?
-鏍稿績 id 鍜岃妭鐐?id 鍒嗗埆缂栫爜鍦?EBX 鍜?ECX 鐨?7:0 浣嶄腑銆?
+对于 `KVM_FEATURE_PV_UNHALT` 半虚拟化特性也是如此
 
-##### 宸插簾寮冪殑 ioctl 涓庤兘鍔?
+在较旧版本的 Linux 上，`KVM_GET_SUPPORTED_CPUID` 不报CPU[EAX=1]:ECX[^24^]
+（TSC_DEADLINE），但如果存`KVM_CAP_TSC_DEADLINE_TIMER` 且内核已启用本地 APIC 
+内核态模拟，则可以启用它。在较新版本上，`KVM_GET_SUPPORTED_CPUID` 确实将该位报告为
+可用
+
+#### CPU 拓扑
 
 
-KVM_CAP_DISABLE_QUIRKS 涓嶄細璁╃敤鎴风┖闂寸煡閬撳摢浜涙€櫀瀹為檯鍙敤銆傚鏋滃彲鐢紝璇锋敼鐢?
-`KVM_CHECK_EXTENSION(KVM_CAP_DISABLE_QUIRKS2)`銆?
+几个 CPUID 值包含宿CPU 的拓扑信息：Intel 系统0x0b 0x1f，AMD 系统
+0x8000001e。不同版本的 KVM 为此信息返回不同的值，用户空间不应依赖它。当前它们返
+全零
 
-##### KVM_GET_*/KVM_SET_* ioctl 鐨勯『搴?
+如果用户空间希望设置客户机拓扑，应注意这三个叶（leaf）的值对于每CPU 都不同。特
+是，APIC ID 位于 0x0b 0x1f 所有子叶的 EDX 中，以及 0x8000001e EAX 中；后者还
+核心 id 和节id 分别编码EBX ECX 7:0 位中
+
+##### 已废弃的 ioctl 与能
+
+
+KVM_CAP_DISABLE_QUIRKS 不会让用户空间知道哪些怪癖实际可用。如果可用，请改
+`KVM_CHECK_EXTENSION(KVM_CAP_DISABLE_QUIRKS2)`銆。
+
+##### KVM_GET_*/KVM_SET_* ioctl 的顺
 
 
 TBD

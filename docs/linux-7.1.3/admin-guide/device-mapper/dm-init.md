@@ -1,11 +1,11 @@
-﻿## 鏄犲皠璁惧鐨勬棭鏈熷垱寤?
+﻿## 映射设备的早期创
 
-鍙互閫氳繃涓ょ鏂瑰紡灏?device-mapper 璁惧閰嶇疆涓虹郴缁熺殑鏍硅澶囥€?
-绗竴绉嶆槸鏋勫缓涓€涓垵濮嬪唴瀛樼洏锛坕nitramfs锛夛紝瀹冨紩瀵煎埌涓€涓渶灏忕敤鎴风┖闂达紝璇ョ敤鎴风┖闂撮厤缃ソ璁惧锛岀劧鍚?pivot_root(8) 杩涘叆鍏朵腑銆?
-绗簩绉嶆槸閫氳繃鍐呮牳鍚姩鍛戒护琛屽弬鏁帮紝浣跨敤妯″潡鍙傛暟 "dm-mod.create=" 鍒涘缓涓€涓垨澶氫釜 device-mapper銆?
-鍏舵牸寮忔寚瀹氫负涓€涓敱閫楀彿鍒嗛殧銆佸彲閫変娇鐢ㄥ垎鍙风殑鏁版嵁瀛楃涓诧紝鍏朵腑锛?
- - 閫楀彿鐢ㄤ簬鍒嗛殧瀛楁锛屽 name銆乽uid銆乫lags 鍜?table锛堟寚瀹氫竴涓澶囷級
- - 鍒嗗彿鐢ㄤ簬鍒嗛殧璁惧銆?
+可以通过两种方式device-mapper 设备配置为系统的根设备
+第一种是构建一个初始内存盘（initramfs），它引导到一个最小用户空间，该用户空间配置好设备，然pivot_root(8) 进入其中
+第二种是通过内核启动命令行参数，使用模块参数 "dm-mod.create=" 创建一个或多个 device-mapper
+其格式指定为一个由逗号分隔、可选使用分号的数据字符串，其中
+ - 逗号用于分隔字段，如 name、uuid、flags table（指定一个设备）
+ - 分号用于分隔设备
 ```
 
  dm-mod.create=<name>,<uuid>,<minor>,<flags>,<table>[,<table>+][;<name>,<uuid>,<minor>,<flags>,<table>[,<table>+]+]
@@ -13,47 +13,47 @@
 ```
 ```
 
-	<name>		::= 璁惧鍚嶇О銆?	<uuid>		::= xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | ""
-	<minor>		::= 璁惧娆¤澶囧彿 | ""
+	<name>		::= 设备名称	<uuid>		::= xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx | ""
+	<minor>		::= 设备次设备号 | ""
 	<flags>		::= "ro" | "rw"
 	<table>		::= <start_sector> <num_sectors> <target_type> <target_args>
-	<target_type>	::= "verity" | "linear" | ...锛堣涓嬭〃锛?
+	<target_type>	::= "verity" | "linear" | ...（见下表
 ```
-dm 琛屽簲绛変环浜?dmsetup 宸ュ叿浣跨敤 `--concise` 鍙傛暟鏃舵墍鐢ㄧ殑涓€琛屻€?
-## 鐩爣绫诲瀷
+dm 行应等价dmsetup 工具使用 `--concise` 参数时所用的一行
+## 目标类型
 
 
-骞堕潪鎵€鏈夌洰鏍囩被鍨嬮兘鍙敤锛屽洜涓哄湪鏈厛浣跨敤鐢ㄦ埛绌洪棿宸ュ叿妫€鏌ョ浉鍏冲厓鏁版嵁鏈夋晥鎬у氨婵€娲绘煇浜?DM 鐩爣鏃讹紝瀛樺湪
-涓ラ噸椋庨櫓銆?
+并非所有目标类型都可用，因为在未先使用用户空间工具检查相关元数据有效性就激活某DM 目标时，存在
+严重风险
 ======================= =======================================================
-`cache`			鍙楅檺锛岀敤鎴风┖闂村簲楠岃瘉缂撳瓨璁惧
-`crypt`			鍏佽
-`delay`			鍏佽
-`era`			鍙楅檺锛岀敤鎴风┖闂村簲楠岃瘉鍏冩暟鎹澶?`flakey`		鍙楅檺锛岀敤浜庢祴璇?`linear`		鍏佽
-`log-writes`		鍙楅檺锛岀敤鎴风┖闂村簲楠岃瘉鍏冩暟鎹澶?`mirror`		鍙楅檺锛岀敤鎴风┖闂村簲楠岃瘉涓?闀滃儚璁惧
-`raid`			鍙楅檺锛岀敤鎴风┖闂村簲楠岃瘉鍏冩暟鎹澶?`snapshot`		鍙楅檺锛岀敤鎴风┖闂村簲楠岃瘉婧?鐩爣璁惧
-`snapshot-origin`	鍏佽
-`snapshot-merge`		鍙楅檺锛岀敤鎴风┖闂村簲楠岃瘉婧?鐩爣璁惧
-`striped`		鍏佽
-`switch`		鍙楅檺锛岀敤鎴风┖闂村簲楠岃瘉璁惧璺緞
-`thin`			鍙楅檺锛岄渶瑕佹潵鑷敤鎴风┖闂寸殑 dm target 娑堟伅
-`thin-pool`		鍙楅檺锛岄渶瑕佹潵鑷敤鎴风┖闂寸殑 dm target 娑堟伅
-`verity`		鍏佽
-`writecache`		鍙楅檺锛岀敤鎴风┖闂村簲楠岃瘉缂撳瓨璁惧
-`zero`			鍙楅檺锛屼笉鐢ㄤ簬鏍规枃浠剁郴缁?======================= =======================================================
+`cache`			受限，用户空间应验证缓存设备
+`crypt`			允许
+`delay`			允许
+`era`			受限，用户空间应验证元数据设`flakey`		受限，用于测`linear`		允许
+`log-writes`		受限，用户空间应验证元数据设`mirror`		受限，用户空间应验证镜像设备
+`raid`			受限，用户空间应验证元数据设`snapshot`		受限，用户空间应验证目标设备
+`snapshot-origin`	允许
+`snapshot-merge`		受限，用户空间应验证目标设备
+`striped`		允许
+`switch`		受限，用户空间应验证设备路径
+`thin`			受限，需要来自用户空间的 dm target 消息
+`thin-pool`		受限，需要来自用户空间的 dm target 消息
+`verity`		允许
+`writecache`		受限，用户空间应验证缓存设备
+`zero`			受限，不用于根文件系======================= =======================================================
 
-濡傛灉鐩爣绫诲瀷鏈湪涓婇潰鍒楀嚭锛屽垯榛樿鍙楅檺锛堟湭缁忔祴璇曪級銆?
-## 绀轰緥
+如果目标类型未在上面列出，则默认受限（未经测试）
+## 示例
 
 
-涓€涓紩瀵煎埌涓€涓敱鐢ㄦ埛鎬?Linux 鍧楄澶囩粍鎴愮殑绾挎€ч樀鍒楃殑绀轰緥
+一个引导到一个由用户Linux 块设备组成的线性阵列的示例
 ```
 
   dm-mod.create="lroot,,,rw, 0 4096 linear 98:16 0, 4096 4096 linear 98:32 0" root=/dev/dm-0
 
 ```
-杩欏皢寮曞鍒颁竴涓敱 8192 涓墖鍖虹粍鎴愮殑璇诲啓 dm-linear 鐩爣锛岃鐩爣璺ㄨ秺涓や釜閫氳繃鍏朵富:娆¤澶囧彿鏍囪瘑鐨勫潡璁惧銆?鍚姩鍚庯紝udev 浼氭牴鎹鍒欏皢姝ょ洰鏍囬噸鍛藉悕涓?/dev/mapper/lroot銆傛病鏈夊垎閰?uuid銆?
-澶氫釜 device-mapper 鐨勭ず渚嬶紝dm-mod.create="..." 鐨勫唴瀹?```
+这将引导到一个由 8192 个扇区组成的读写 dm-linear 目标，该目标跨越两个通过其主:次设备号标识的块设备启动后，udev 会根据规则将此目标重命名/dev/mapper/lroot。没有分uuid
+多个 device-mapper 的示例，dm-mod.create="..." 的内```
 
   dm-linear,,1,rw,
     0 32768 linear 8:1 0,
@@ -64,7 +64,7 @@ dm 琛屽簲绛変环浜?dmsetup 宸ュ叿浣跨敤 `--concise` 鍙傛暟鏃舵�
     5ebfe87f7df3235b80a117ebc4078e44f55045487ad4a96581d1adb564615b51
 
 ```
-鍏朵粬绀轰緥锛堟寜鐩爣绫诲瀷锛夛細
+其他示例（按目标类型）：
 
 ```
 
@@ -107,8 +107,8 @@ dm 琛屽簲绛変环浜?dmsetup 宸ュ叿浣跨敤 `--concise` 鍙傛暟鏃舵�
     51934789604d1b92399c52e7cb149d1b3a1b74bbbcb103b2a0aaacbed5c08584
 
 ```
-瀵逛簬鍦ㄥ紓姝ユ帰娴嬬殑鍧楄澶囷紙MMC銆乁SB 绛夛級涔嬩笂浣跨敤 device-mapper 鐨勮缃紝鍙兘闇€瑕佸憡璇?dm-init
-鍦ㄥ缓绔?device-mapper 琛ㄤ箣鍓嶆樉寮忕瓑寰呭畠浠彉涓哄彲鐢ㄣ€傝繖鍙互閫氳繃 "dm-mod.waitfor=" 瀹屾垚
+对于在异步探测的块设备（MMC、USB 等）之上使用 device-mapper 的设置，可能需要告dm-init
+在建device-mapper 表之前显式等待它们变为可用。这可以通过 "dm-mod.waitfor=" 完成
 ```
 
   dm-mod.waitfor=<device1>[,..,<deviceN>]

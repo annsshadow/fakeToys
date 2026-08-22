@@ -1,54 +1,54 @@
 ﻿
-## Marvell(Aquantia) AQtion 椹卞姩
+## Marvell(Aquantia) AQtion 驱动
 
 
-閫傜敤浜?aQuantia 澶氬崈鍏嗕綅 PCI Express 绯诲垪浠ュお缃戦€傞厤鍣?
+适用aQuantia 多千兆位 PCI Express 系列以太网适配
 
-    - 璇嗗埆鎮ㄧ殑閫傞厤鍣?    - 閰嶇疆
-    - 鍙楁敮鎸佺殑 ethtool 閫夐」
-    - 鍛戒护琛屽弬鏁?    - 閰嶇疆鏂囦欢鍙傛暟
-    - 鏀寔
-    - 璁稿彲璇?
-## 璇嗗埆鎮ㄧ殑閫傞厤鍣?
+    - 识别您的适配    - 配置
+    - 受支持的 ethtool 选项
+    - 命令行参    - 配置文件参数
+    - 支持
+    - 许可
+## 识别您的适配
 
-姝ょ増鏈┍鍔ㄤ笌鍩轰簬 AQC-100銆丄QC-107銆丄QC-108 鐨勪互澶綉閫傞厤鍣ㄥ吋瀹广€?
+此版本驱动与基于 AQC-100、AQC-107、AQC-108 的以太网适配器兼容
 
-### SFP+ 璁惧锛堥€傜敤浜庡熀浜?AQC-100 鐨勯€傞厤鍣級
-
-
-姝ょ増鏈娇鐢ㄦ棤婧愮洿杩為摐缂嗭紙DAC锛夊拰 SFP+/LC 鍏夋敹鍙戝櫒杩涜浜嗘祴璇曘€?
-## 閰嶇疆
+### SFP+ 设备（适用于基AQC-100 的适配器）
 
 
-### 鏌ョ湅閾捐矾娑堟伅
+此版本使用无源直连铜缆（DAC）和 SFP+/LC 光收发器进行了测试
+## 配置
 
-  濡傛灉鍙戣鐗堥檺鍒朵簡绯荤粺娑堟伅锛岄摼璺秷鎭皢涓嶄細鏄剧ず鍒版帶鍒跺彴銆備负浜嗗湪鎺у埗鍙颁笂
-  鐪嬪埌缃戠粶椹卞姩閾捐矾娑堟伅锛岃浣跨敤
+
+### 查看链路消息
+
+  如果发行版限制了系统消息，链路消息将不会显示到控制台。为了在控制台上
+  看到网络驱动链路消息，请使用
 ```
 
        dmesg -n 8
 
   .. note::
 
-     姝よ缃笉浼氬湪閲嶅惎鍚庝繚鐣欍€?
+     此设置不会在重启后保留
 ```
-### Jumbo Frames锛堝法鍨嬪抚锛?
-  璇ラ┍鍔ㄥ鎵€鏈夐€傞厤鍣ㄦ敮鎸?Jumbo Frames銆傞€氳繃灏?MTU 鏇存敼涓哄ぇ浜庨粯璁ゅ€?1500
-  鐨勫€兼潵鍚敤 Jumbo Frames 鏀寔銆侻TU 鐨勬渶澶у€间负 16000銆備娇鐢?`ip` 鍛戒护锛?```
+### Jumbo Frames（巨型帧
+  该驱动对所有适配器支Jumbo Frames。通过MTU 更改为大于默认1500
+  的值来启用 Jumbo Frames 支持。MTU 的最大值为 16000。使`ip` 命令```
 
 	ip link set mtu 16000 dev enp1s0
 
 ```
 ### ethtool
 
-  椹卞姩鍒╃敤 ethtool 鎺ュ彛杩涜椹卞姩閰嶇疆鍜岃瘖鏂紝浠ュ強鏄剧ず缁熻淇℃伅銆傛鍔熻兘闇€瑕?  鏈€鏂扮増鏈殑 ethtool銆?
+  驱动利用 ethtool 接口进行驱动配置和诊断，以及显示统计信息。此功能需  最新版本的 ethtool
 ### NAPI
 
-  atlantic 椹卞姩鏀寔 NAPI锛圧x 杞妯″紡锛夈€?
-## 鍙楁敮鎸佺殑 ethtool 閫夐」
+  atlantic 驱动支持 NAPI（Rx 轮询模式）
+## 受支持的 ethtool 选项
 
 
-### 鏌ョ湅閫傞厤鍣ㄨ缃?
+### 查看适配器设
 
 ```
 
@@ -88,12 +88,12 @@
 
  .. note::
 
-    AQrate 閫熺巼锛?.5/5 Gb/s锛変粎浼氬湪 linux 鍐呮牳 > 4.10 鏃舵樉绀恒€?    浣嗘偍浠嶅彲浣跨敤杩欎簺閫熺巼::
+    AQrate 速率.5/5 Gb/s）仅会在 linux 内核 > 4.10 时显示    但您仍可使用这些速率::
 
 	ethtool -s eth0 autoneg off speed 2500
 
 ```
-### 鏌ョ湅閫傞厤鍣ㄤ俊鎭?
+### 查看适配器信
 
 ```
 
@@ -114,7 +114,7 @@
 
 
 ```
-### 鏌ョ湅浠ュお缃戦€傞厤鍣ㄧ粺璁′俊鎭?
+### 查看以太网适配器统计信
 
 ```
 
@@ -167,7 +167,7 @@
      Queue[3] InErrors: 0
 
 ```
-### 涓柇鍚堝苟鏀寔
+### 中断合并支持
 
 
 ```
@@ -183,7 +183,7 @@
     ethtool -C <ethX> tx-usecs 0 rx-usecs 0 tx-max-frames 1 tx-max-frames 1
 
 ```
-### Wake on LAN 鏀寔
+### Wake on LAN 支持
 
 
 ```
@@ -195,119 +195,119 @@
     ethtool -s <ethX> wol d
 
 ```
-### 璁剧疆骞舵鏌ラ┍鍔ㄦ秷鎭骇鍒?
+### 设置并检查驱动消息级
 
- 璁剧疆娑堟伅绾у埆
+ 设置消息级别
 
 ```
 
     ethtool -s <ethX> msglvl <level>
 
- 绾у埆鍊硷細
+ 级别值：
 
  ======   =============================
- 0x0001   閫氱敤椹卞姩鐘舵€併€? 0x0002   纭欢鎺㈡祴銆? 0x0004   閾捐矾鐘舵€併€? 0x0008   鍛ㄦ湡鎬х姸鎬佹鏌ャ€? 0x0010   鎺ュ彛琚叧闂€? 0x0020   鎺ュ彛琚惎鐢ㄣ€? 0x0040   鎺ユ敹閿欒銆? 0x0080   鍙戦€侀敊璇€? 0x0200   涓柇澶勭悊銆? 0x0400   鍙戦€佸畬鎴愩€? 0x0800   鎺ユ敹瀹屾垚銆? 0x1000   鏁版嵁鍖呭唴瀹广€? 0x2000   纭欢鐘舵€併€? 0x4000   Wake-on-LAN 鐘舵€併€? ======   =============================
+ 0x0001   通用驱动状态 0x0002   硬件探测 0x0004   链路状态 0x0008   周期性状态检查 0x0010   接口被关闭 0x0020   接口被启用 0x0040   接收错误 0x0080   发送错误 0x0200   中断处理 0x0400   发送完成 0x0800   接收完成 0x1000   数据包内容 0x2000   硬件状态 0x4000   Wake-on-LAN 状态 ======   =============================
 
- 榛樿鎯呭喌涓嬶紝璋冭瘯娑堟伅绾у埆璁句负 0x0001锛堥€氱敤椹卞姩鐘舵€侊級銆?
- 妫€鏌ユ秷鎭骇鍒?
+ 默认情况下，调试消息级别设为 0x0001（通用驱动状态）
+ 检查消息级
  ::
 
     ethtool <ethX> | grep "Current message level"
 
- 濡傛灉鎮ㄦ兂绂佺敤娑堟伅杈撳嚭::
+ 如果您想禁用消息输出::
 
     ethtool -s <ethX> msglvl 0
 
 ```
-### RX 娴佽鍒欙紙ntuple 杩囨护鍣級
+### RX 流规则（ntuple 过滤器）
 
 
- 鏀寔浠ヤ笅鐙珛鐨勮鍒欙紝鎸夎椤哄簭搴旂敤锛?
- 1. 16 鏉?VLAN ID 瑙勫垯
- 2. 16 鏉?L2 EtherType 瑙勫垯
- 3. 8 鏉?L3/L4 5 鍏冪粍瑙勫垯
+ 支持以下独立的规则，按该顺序应用
+ 1. 16 VLAN ID 规则
+ 2. 16 L2 EtherType 规则
+ 3. 8 L3/L4 5 元组规则
 
 
- 椹卞姩鍒╃敤 ethtool 鎺ュ彛閫氳繃 `ethtool -N <device> <filter>` 閰嶇疆 ntuple 杩囨护鍣ㄣ€?
+ 驱动利用 ethtool 接口通过 `ethtool -N <device> <filter>` 配置 ntuple 过滤器
 ```
 
     ethtool -K ethX ntuple <on|off>
 
- 绂佺敤 ntuple 杩囨护鍣ㄦ椂锛屾墍鏈夌敤鎴风紪绋嬬殑杩囨护鍣ㄩ兘浼氫粠椹卞姩缂撳瓨鍜岀‖浠朵腑琚埛鏂般€? 閲嶆柊鍚敤 ntuple 鍚庡繀椤婚噸鏂版坊鍔犳墍鏈夐渶瑕佺殑杩囨护鍣ㄣ€?
- 鐢变簬瑙勫垯鐨勫浐瀹氶『搴忥紝杩囨护鍣ㄧ殑浣嶇疆涔熸槸鍥哄畾鐨勶細
+ 禁用 ntuple 过滤器时，所有用户编程的过滤器都会从驱动缓存和硬件中被刷新 重新启用 ntuple 后必须重新添加所有需要的过滤器
+ 由于规则的固定顺序，过滤器的位置也是固定的：
 
- - 浣嶇疆 0 - 15 鐢ㄤ簬 VLAN ID 杩囨护鍣? - 浣嶇疆 16 - 31 鐢ㄤ簬 L2 EtherType 杩囨护鍣? - 浣嶇疆 32 - 39 鐢ㄤ簬 L3/L4 5 鍏冪粍杩囨护鍣紙浣嶇疆 32銆?6 鐢ㄤ簬 IPv6锛?
- L3/L4 5 鍏冪粍锛堝崗璁€佹簮鍜岀洰鐨?IP 鍦板潃銆佹簮鍜岀洰鐨?TCP/UDP/SCTP 绔彛锛変笌 8 涓? 杩囨护鍣ㄨ繘琛屾瘮杈冦€傚浜?IPv4锛屾渶澶氬彲鍖归厤 8 涓簮鍦板潃鍜岀洰鐨勫湴鍧€銆傚浜?IPv6锛? 鏈€澶氭敮鎸?2 瀵瑰湴鍧€銆傛簮绔彛鍜岀洰鐨勭鍙ｄ粎瀵?TCP/UDP/SCTP 鏁版嵁鍖呰繘琛屾瘮杈冦€?
- 瑕佹坊鍔犱竴鏉″皢鏁版嵁鍖呭鍚戦槦鍒?5 鐨勮繃婊ゅ櫒锛屼娇鐢? ``<-N|-U|--config-nfc|--config-ntuple>`` 寮€鍏?:
+ - 位置 0 - 15 用于 VLAN ID 过滤 - 位置 16 - 31 用于 L2 EtherType 过滤 - 位置 32 - 39 用于 L3/L4 5 元组过滤器（位置 326 用于 IPv6
+ L3/L4 5 元组（协议、源和目IP 地址、源和目TCP/UDP/SCTP 端口）与 8  过滤器进行比较。对IPv4，最多可匹配 8 个源地址和目的地址。对IPv6 最多支2 对地址。源端口和目的端口仅TCP/UDP/SCTP 数据包进行比较
+ 要添加一条将数据包导向队5 的过滤器，使 ``<-N|-U|--config-nfc|--config-ntuple>`` 开:
 
     ethtool -N <ethX> flow-type udp4 src-ip 10.0.0.1 dst-ip 10.0.0.2 src-port 2000 dst-port 2001 action 5 <loc 32>
 
- - action 涓洪槦鍒楀彿銆? - loc 涓鸿鍒欏彿銆?
- 瀵逛簬 ``flow-type ip4|udp4|tcp4|sctp4|ip6|udp6|tcp6|sctp6``锛屽繀椤诲皢 loc 缂栧彿
- 璁惧湪 32 - 39 涔嬮棿銆? 瀵逛簬 ``flow-type ip4|udp4|tcp4|sctp4|ip6|udp6|tcp6|sctp6``锛屾偍鍙互涓?IPv4
- 娴侀噺璁剧疆 8 鏉¤鍒欙紝鎴栦负 IPv6 娴侀噺璁剧疆 2 鏉¤鍒欍€侷Pv6 娴侀噺鐨?loc 缂栧彿涓?32
- 鍜?36銆? 鐩墠鎮ㄤ笉鑳藉悓鏃朵娇鐢?IPv4 鍜?IPv6 杩囨护鍣ㄣ€?
- IPv6 杩囨护娴侀噺鐨勭ず渚?:
+ - action 为队列号 - loc 为规则号
+ 对于 ``flow-type ip4|udp4|tcp4|sctp4|ip6|udp6|tcp6|sctp6``，必须将 loc 编号
+ 设在 32 - 39 之间 对于 ``flow-type ip4|udp4|tcp4|sctp4|ip6|udp6|tcp6|sctp6``，您可以IPv4
+ 流量设置 8 条规则，或为 IPv6 流量设置 2 条规则。IPv6 流量loc 编号32
+ 36 目前您不能同时使IPv4 IPv6 过滤器
+ IPv6 过滤流量的示:
 
     sudo ethtool -N <ethX> flow-type tcp6 src-ip 2001:db8:0:f101::1 dst-ip 2001:db8:0:f101::2 action 1 loc 32
     sudo ethtool -N <ethX> flow-type ip6 src-ip 2001:db8:0:f101::2 dst-ip 2001:db8:0:f101::5 action -1 loc 36
 
- IPv4 杩囨护娴侀噺鐨勭ず渚?:
+ IPv4 过滤流量的示:
 
     sudo ethtool -N <ethX> flow-type udp4 src-ip 10.0.0.4 dst-ip 10.0.0.7 src-port 2000 dst-port 2001 loc 32
     sudo ethtool -N <ethX> flow-type tcp4 src-ip 10.0.0.3 dst-ip 10.0.0.9 src-port 2000 dst-port 2001 loc 33
     sudo ethtool -N <ethX> flow-type ip4 src-ip 10.0.0.6 dst-ip 10.0.0.4 loc 34
 
- 濡傛灉璁剧疆 action -1锛屽垯鎵€鏈夊尮閰嶈杩囨护鍣ㄧ殑娴侀噺閮戒細琚涪寮冦€?
- action 鐨勬渶澶у€间负 31銆?
+ 如果设置 action -1，则所有匹配该过滤器的流量都会被丢弃
+ action 的最大值为 31
 
- VLAN 杩囨护鍣紙VLAN id锛変笌 16 涓繃婊ゅ櫒杩涜姣旇緝銆? VLAN id 蹇呴』浼撮殢鎺╃爜 0xF000銆傝繖鏄负灏?VLAN 杩囨护鍣ㄤ笌甯︽湁 UserPriority 鐨? L2 EtherType 杩囨护鍣ㄥ尯鍒嗗紑锛屽洜涓?User Priority 鍜?VLAN ID 閮介€氳繃鍚屼竴涓? 'vlan' 鍙傛暟浼犲叆銆?
- 瑕佹坊鍔犱竴鏉″皢鏉ヨ嚜 VLAN 2001 鐨勬暟鎹寘瀵煎悜闃熷垪 5 鐨勮繃婊ゅ櫒::
+ VLAN 过滤器（VLAN id）与 16 个过滤器进行比较 VLAN id 必须伴随掩码 0xF000。这是为VLAN 过滤器与带有 UserPriority  L2 EtherType 过滤器区分开，因User Priority VLAN ID 都通过同一 'vlan' 参数传入
+ 要添加一条将来自 VLAN 2001 的数据包导向队列 5 的过滤器::
 
     ethtool -N <ethX> flow-type ip4 vlan 2001 m 0xF000 action 1 loc 0
 
 
- L2 EtherType 杩囨护鍣ㄥ厑璁告寜 EtherType 瀛楁锛屾垨鍚屾椂鎸?802.1Q 鐨?EtherType 鍜? User Priority锛圥CP锛夊瓧娈佃繃婊ゆ暟鎹寘銆? UserPriority锛坴lan锛夊弬鏁板繀椤讳即闅忔帺鐮?0x1FFF銆傝繖鏄负灏?VLAN 杩囨护鍣ㄤ笌甯︽湁
- UserPriority 鐨?L2 Ethertype 杩囨护鍣ㄥ尯鍒嗗紑锛屽洜涓?User Priority 鍜?VLAN ID
- 閮介€氳繃鍚屼竴涓?'vlan' 鍙傛暟浼犲叆銆?
- 瑕佹坊鍔犱竴鏉″皢浼樺厛绾?3 鐨?IP4 鏁版嵁鍖呭鍚戦槦鍒?3 鐨勮繃婊ゅ櫒::
+ L2 EtherType 过滤器允许按 EtherType 字段，或同时802.1Q EtherType  User Priority（PCP）字段过滤数据包 UserPriority（vlan）参数必须伴随掩0x1FFF。这是为VLAN 过滤器与带有
+ UserPriority L2 Ethertype 过滤器区分开，因User Priority VLAN ID
+ 都通过同一'vlan' 参数传入
+ 要添加一条将优先3 IP4 数据包导向队3 的过滤器::
 
     ethtool -N <ethX> flow-type ether proto 0x800 vlan 0x600 m 0x1FFF action 3 loc 16
 
- 瑕佹煡鐪嬪綋鍓嶅瓨鍦ㄧ殑杩囨护鍣ㄥ垪琛?:
+ 要查看当前存在的过滤器列:
 
     ethtool <-u|-n|--show-nfc|--show-ntuple> <ethX>
 
- 瑙勫垯鍙互浠庤〃鏈韩鍒犻櫎銆備娇鐢ㄥ涓嬪懡浠ゅ畬鎴?:
+ 规则可以从表本身删除。使用如下命令完:
 
     sudo ethtool <-N|-U|--config-nfc|--config-ntuple> <ethX> delete <loc>
 
- - loc 涓鸿鍒犻櫎鐨勮鍒欏彿銆?
- Rx 杩囨护鍣ㄦ槸涓€涓皢杩囨护琛ㄥ姞杞界殑鎺ュ彛锛岄櫎闈炰娇鐢?鈥渁ction鈥?鎸囧畾鏇夸唬闃熷垪锛屽惁鍒? 瀹冨皢鎵€鏈夋祦姹囧叆闃熷垪 0銆傚湪杩欑鎯呭喌涓嬶紝浠讳綍鍖归厤杩囨护鍣ㄦ潯浠剁殑娴侀兘浼氳瀵煎悜鐩稿簲鐨? 闃熷垪銆俁X 杩囨护鍣ㄥ湪鎵€鏈?2.6.30 鍙婁互鍚庣増鏈殑鍐呮牳涓婂彈鏀寔銆?
+ - loc 为要删除的规则号
+ Rx 过滤器是一个将过滤表加载的接口，除非使“action指定替代队列，否 它将所有流汇入队列 0。在这种情况下，任何匹配过滤器条件的流都会被导向相应 队列。RX 过滤器在所2.6.30 及以后版本的内核上受支持
 ```
 ### UDP 鐨?RSS
 
- 鐩墠锛孨IC 涓嶆敮鎸佸鍒嗙墖 IP 鏁版嵁鍖呯殑 RSS锛岃繖浼氬鑷村鍒嗙墖 UDP 娴侀噺鐨?RSS
- 宸ヤ綔涓嶆纭€傝绂佺敤 UDP 鐨?RSS锛屽彲浠ヤ娇鐢?RX Flow L3/L4 瑙勫垯銆?
+ 目前，NIC 不支持对分片 IP 数据包的 RSS，这会导致对分片 UDP 流量RSS
+ 工作不正确。要禁用 UDP RSS，可以使RX Flow L3/L4 规则
 ```
 
     ethtool -N eth0 flow-type udp4 action 0 loc 32
 
 ```
-### UDP GSO 纭欢鍗歌浇
+### UDP GSO 硬件卸载
 
- UDP GSO 閫氳繃灏?UDP 澶撮儴鍒嗛厤鍗歌浇鍒扮‖浠讹紝鏉ユ彁鍗?UDP 鍙戦€侀€熺巼銆備负姝ら渶瑕佺壒娈婄殑
- 鐢ㄦ埛绌洪棿 socket 閫夐」锛?```
+ UDP GSO 通过UDP 头部分配卸载到硬件，来提UDP 发送速率。为此需要特殊的
+ 用户空间 socket 选项```
 
     udpgso_bench_tx -u -4 -D 10.0.1.1 -s 6300 -S 100
 
- 灏嗗鑷翠粠鍗曚釜 6300 瀛楄妭鐨勭敤鎴风紦鍐插尯鍙戝嚭 100 瀛楄妭澶у皬鐨?UDP 鏁版嵁鍖呫€?
- UDP GSO 閫氳繃濡備笅鏂瑰紡閰嶇疆::
+ 将导致从单个 6300 字节的用户缓冲区发出 100 字节大小UDP 数据包
+ UDP GSO 通过如下方式配置::
 
     ethtool -K eth0 tx-udp-segmentation on
 
 ```
-### 绉佹湁鏍囧織锛堟祴璇曠敤锛?
+### 私有标志（测试用
 
 ```
 
@@ -324,121 +324,121 @@
 
 	$ ethtool --set-priv-flags ethX DMASystemLoopback on
 
- DMASystemLoopback:   DMA 涓绘満鍥炵幆銆? PKTSystemLoopback:   鏁版嵁鍖呯紦鍐插尯涓绘満鍥炵幆銆? DMANetworkLoopback:  DMA 鍧椾笂鐨勭綉缁滀晶鍥炵幆銆? PHYInternalLoopback: Phy 涓婄殑鍐呴儴鍥炵幆銆? PHYExternalLoopback: Phy 涓婄殑澶栭儴鍥炵幆锛堜娇鐢ㄥ洖鐜互澶綉绾跨紗锛夈€?
+ DMASystemLoopback:   DMA 主机回环 PKTSystemLoopback:   数据包缓冲区主机回环 DMANetworkLoopback:  DMA 块上的网络侧回环 PHYInternalLoopback: Phy 上的内部回环 PHYExternalLoopback: Phy 上的外部回环（使用回环以太网线缆）
 
 ```
-## 鍛戒护琛屽弬鏁?
-atlantic 椹卞姩鎻愪緵浠ヤ笅鍛戒护琛屽弬鏁帮細
+## 命令行参
+atlantic 驱动提供以下命令行参数：
 
-### aq_itr - 涓柇鑺傛祦妯″紡
+### aq_itr - 中断节流模式
 
-鍙帴鍙楀€硷細0, 1, 0xFFFF
+可接受值：0, 1, 0xFFFF
 
-榛樿鍊硷細0xFFFF
+默认值：0xFFFF
 
 ======   ==============================================================
-0        绂佺敤涓柇鑺傛祦銆?1        鍚敤涓柇鑺傛祦骞朵娇鐢ㄦ寚瀹氱殑 tx 鍜?rx 閫熺巼銆?0xFFFF   鑷姩鑺傛祦妯″紡銆傞┍鍔ㄥ皢鏍规嵁閾捐矾閫熺巼閫夋嫨鏈€浣崇殑 RX 鍜?TX
-	 涓柇鑺傛祦璁剧疆銆?======   ==============================================================
+0        禁用中断节流1        启用中断节流并使用指定的 tx rx 速率0xFFFF   自动节流模式。驱动将根据链路速率选择最佳的 RX TX
+	 中断节流设置======   ==============================================================
 
-### aq_itr_tx - TX 涓柇鑺傛祦閫熺巼
-
-
-鍙帴鍙楀€硷細0 - 0x1FF
-
-榛樿鍊硷細0
-
-浠ュ井绉掕鐨?TX 渚ц妭娴併€傞€傞厤鍣ㄤ細灏嗘渶澶т腑鏂欢杩熻缃负姝ゅ€笺€傛渶灏忎腑鏂欢杩熶负
-姝ゅ€肩殑涓€鍗娿€?
-### aq_itr_rx - RX 涓柇鑺傛祦閫熺巼
+### aq_itr_tx - TX 中断节流速率
 
 
-鍙帴鍙楀€硷細0 - 0x1FF
+可接受值：0 - 0x1FF
 
-榛樿鍊硷細0
+默认值：0
 
-浠ュ井绉掕鐨?RX 渚ц妭娴併€傞€傞厤鍣ㄤ細灏嗘渶澶т腑鏂欢杩熻缃负姝ゅ€笺€傛渶灏忎腑鏂欢杩熶负
-姝ゅ€肩殑涓€鍗娿€?
-
-   ITR 璁剧疆鍙湪杩愯鏃堕€氳繃 ethtool -c 鏂瑰紡鏇存敼锛堣涓嬫枃锛?
-## 閰嶇疆鏂囦欢鍙傛暟
+以微秒计TX 侧节流。适配器会将最大中断延迟设置为此值。最小中断延迟为
+此值的一半
+### aq_itr_rx - RX 中断节流速率
 
 
-涓轰簡涓€浜涘井璋冧笌鎬ц兘浼樺寲锛屾煇浜涘弬鏁板彲浠ュ湪 {source_dir}/aq_cfg.h 鏂囦欢涓洿鏀广€?
+可接受值：0 - 0x1FF
+
+默认值：0
+
+以微秒计RX 侧节流。适配器会将最大中断延迟设置为此值。最小中断延迟为
+此值的一半
+
+   ITR 设置可在运行时通过 ethtool -c 方式更改（见下文
+## 配置文件参数
+
+
+为了一些微调与性能优化，某些参数可以在 {source_dir}/aq_cfg.h 文件中更改
 ### AQ_CFG_RX_PAGEORDER
 
 
-榛樿鍊硷細0
+默认值：0
 
-RX 椤甸樁瑕嗙洊銆傝繖鏄负姣忎釜鎻忚堪绗﹀垎閰嶇殑 RX 椤垫暟閲忕殑 2 鐨勫箓娆°€傛帴鏀舵弿杩扮澶у皬
-浠嶅彈 AQ_CFG_RX_FRAME_MAX 闄愬埗銆?
-澧炲ぇ椤甸樁鍙互鏀瑰杽椤靛鐢紙鍦ㄥ惎鐢?iommu 鐨勭郴缁熶笂灏や负鏄庢樉锛夈€?
+RX 页阶覆盖。这是为每个描述符分配的 RX 页数量的 2 的幂次。接收描述符大小
+仍受 AQ_CFG_RX_FRAME_MAX 限制
+增大页阶可以改善页复用（在启iommu 的系统上尤为明显）
 ### AQ_CFG_RX_REFILL_THRES
 
 
-榛樿鍊硷細32
+默认值：32
 
-RX 濉厖闃堝€笺€俁X 璺緞鍦ㄨ瀵熷埌鎸囧畾鏁伴噺鐨勭┖闂叉弿杩扮涔嬪墠涓嶄細濉厖宸查噴鏀剧殑鎻忚堪绗︺€?杈冨ぇ鐨勫€煎彲鑳芥湁鍔╀簬鏇村ソ鍦板鐢ㄩ〉锛屼絾涔熷彲鑳藉鑷翠涪鍖呫€?
+RX 填充阈值。RX 路径在观察到指定数量的空闲描述符之前不会填充已释放的描述符较大的值可能有助于更好地复用页，但也可能导致丢包
 ### AQ_CFG_VECS_DEF
 
 
-闃熷垪鏁伴噺
+队列数量
 
-鏈夋晥鑼冨洿锛? - 8锛堟渶澶у埌 AQ_CFG_VECS_MAX锛?
-榛樿鍊硷細8
+有效范围 - 8（最大到 AQ_CFG_VECS_MAX
+默认值：8
 
-娉ㄦ剰姝ゅ€间細琚郴缁熶腑鍙敤鐨勬牳蹇冩暟鎵€闄愬埗銆?
+注意此值会被系统中可用的核心数所限制
 ### AQ_CFG_IS_RSS_DEF
 
 
-鍚敤/绂佺敤 Receive Side Scaling锛堟帴鏀剁缂╂斁锛?
-姝ょ壒鎬у厑璁搁€傞厤鍣ㄥ皢鎺ユ敹澶勭悊鍒嗗竷鍒板涓?CPU 鏍稿績涓婏紝浠ラ槻姝㈠崟涓?CPU 鏍稿績杩囪浇銆?
-鏈夋晥鍊?
+启用/禁用 Receive Side Scaling（接收端缩放
+此特性允许适配器将接收处理分布到多CPU 核心上，以防止单CPU 核心过载
+鏈夋晥鍊。
 ==  ========
-0   绂佺敤
-1   鍚敤
+0   禁用
+1   启用
 ==  ========
 
-榛樿鍊硷細1
+默认值：1
 
 ### AQ_CFG_NUM_RSS_QUEUES_DEF
 
 
-Receive Side Scaling 鐨勯槦鍒楁暟閲?
-鏈夋晥鑼冨洿锛? - 8锛堟渶澶у埌 AQ_CFG_VECS_DEF锛?
-榛樿鍊硷細AQ_CFG_VECS_DEF
+Receive Side Scaling 的队列数
+有效范围 - 8（最大到 AQ_CFG_VECS_DEF
+默认值：AQ_CFG_VECS_DEF
 
 ### AQ_CFG_IS_LRO_DEF
 
 
-鍚敤/绂佺敤 Large Receive Offload锛堝ぇ鍨嬫帴鏀跺嵏杞斤級
+启用/禁用 Large Receive Offload（大型接收卸载）
 
-姝ゅ嵏杞戒娇閫傞厤鍣ㄨ兘澶熷皢澶氫釜 TCP 娈靛悎骞讹紝骞跺皢鍏朵綔涓哄崟涓悎骞跺崟鍏冩寚绀虹粰鎿嶄綔绯荤粺
-缃戠粶瀛愮郴缁熴€?
-绯荤粺娑堣€楁洿灏戠殑鑳介噺锛屼絾涔熷紩鍏ユ洿澶氱殑鏁版嵁鍖呭鐞嗗欢杩熴€?
-鏈夋晥鍊?
+此卸载使适配器能够将多个 TCP 段合并，并将其作为单个合并单元指示给操作系统
+网络子系统
+系统消耗更少的能量，但也引入更多的数据包处理延迟
+鏈夋晥鍊。
 ==  ========
-0   绂佺敤
-1   鍚敤
+0   禁用
+1   启用
 ==  ========
 
-榛樿鍊硷細1
+默认值：1
 
 ### AQ_CFG_TX_CLEAN_BUDGET
 
 
-鍗曟 TX 娓呯悊鐨勬渶澶ф弿杩扮鏁伴噺銆?
-榛樿鍊硷細256
+单次 TX 清理的最大描述符数量
+默认值：256
 
-淇敼 aq_cfg.h 鏂囦欢鍚庯紝蹇呴』閲嶆柊鏋勫缓椹卞姩鎵嶈兘鐢熸晥銆?
-## 鏀寔
+修改 aq_cfg.h 文件后，必须重新构建驱动才能生效
+## 支持
 
 
-濡傛灉鍦ㄥ彈鏀寔鐨勫唴鏍镐笂浣跨敤鍙楁敮鎸佺殑閫傞厤鍣紝鍙戠幇宸插彂甯冩簮浠ｇ爜瀛樺湪闂锛岃灏?涓庤闂鐩稿叧鐨勫叿浣撲俊鎭€氳繃鐢靛瓙閭欢鍙戦€佽嚦 aqn_support@marvell.com
+如果在受支持的内核上使用受支持的适配器，发现已发布源代码存在问题，请与该问题相关的具体信息通过电子邮件发送至 aqn_support@marvell.com
 
-## 璁稿彲璇?
+## 许可
 
-aQuantia Corporation 缃戠粶椹卞姩
+aQuantia Corporation 网络驱动
 
 Copyright |copy| 2014 - 2019 aQuantia Corporation.
 
-鏈▼搴忔槸鑷敱杞欢锛涙偍鍙互鍦ㄨ嚜鐢辫蒋浠跺熀閲戜細鍙戝竷鐨?GNU 閫氱敤鍏叡璁稿彲璇佺 2 鐗?鐨勬潯娆惧拰鏉′欢涓嬮噸鏂板垎鍙戝拰/鎴栦慨鏀瑰畠銆?
+本程序是自由软件；您可以在自由软件基金会发布GNU 通用公共许可证第 2 的条款和条件下重新分发和/或修改它

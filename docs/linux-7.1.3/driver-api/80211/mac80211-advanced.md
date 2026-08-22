@@ -1,10 +1,10 @@
-﻿## mac80211 瀛愮郴缁燂紙杩涢樁锛?
+﻿## mac80211 子系统（进阶
 
-鏈功涓繖閮ㄥ垎鍐呭浠呭 mac80211 涓庨┍鍔ㄤ箣闂寸殑楂樼骇浜や簰鏈夌敤锛岀敤浠ュ彂鎸ユ洿澶?纭欢鑳藉姏骞舵彁鍗囨€ц兘銆?
-## LED 鏀寔
+本书中这部分内容仅对 mac80211 与驱动之间的高级交互有用，用以发挥更硬件能力并提升性能
+## LED 支持
 
 
-Mac80211 鏀寔澶氱璁?LED 闂儊鐨勬柟寮忋€傚湪鍙兘鐨勬儏鍐典笅锛屽簲灏嗚澶?LED 鏆撮湶涓?LED 绫昏澶囷紝骞舵寕鎺ュ埌鐩稿簲鐨勮Е鍙戝櫒涓婏紝闅忓悗鐢?mac80211 鍦ㄩ€傚綋鏃舵満瑙﹀彂璇ヨЕ鍙戝櫒銆?
+Mac80211 支持多种LED 闪烁的方式。在可能的情况下，应将设LED 暴露LED 类设备，并挂接到相应的触发器上，随后mac80211 在适当时机触发该触发器
    :functions:
 	ieee80211_get_tx_led_name
 	ieee80211_get_rx_led_name
@@ -14,9 +14,9 @@ Mac80211 鏀寔澶氱璁?LED 闂儊鐨勬柟寮忋€傚湪鍙兘鐨
 	ieee80211_tpt_led_trigger_flags
 	ieee80211_create_tpt_led_trigger
 
-## 纭欢鍔犲瘑鍔犻€?
+## 硬件加密加
 
-   :doc: 纭欢鍔犲瘑鍔犻€?
+   :doc: 硬件加密加
    :functions:
 	set_key_cmd
 	ieee80211_key_conf
@@ -25,35 +25,35 @@ Mac80211 鏀寔澶氱璁?LED 闂儊鐨勬柟寮忋€傚湪鍙兘鐨
 	ieee80211_get_tkip_p1k_iv
 	ieee80211_get_tkip_p2k
 
-## 鐪佺數鏀寔
+## 省电支持
 
 
-   :doc: 鐪佺數鏀寔
+   :doc: 省电支持
 
-## 淇℃爣杩囨护鏀寔
+## 信标过滤支持
 
 
-   :doc: 淇℃爣杩囨护鏀寔
+   :doc: 信标过滤支持
 
    :functions: ieee80211_beacon_loss
 
-## 澶氶槦鍒椾笌 QoS 鏀寔
+## 多队列与 QoS 支持
 
 
-寰呭畾
+待定
 
    :functions: ieee80211_tx_queue_params
 
-## 鎺ュ叆鐐规ā寮忔敮鎸?
+## 接入点模式支
 
-寰呭畾
+待定
 
-鍏朵腑閮ㄥ垎 if_conf 鍐呭搴斿湪姝ゅ璁ㄨ
+其中部分 if_conf 内容应在此处讨论
 
-鍦ㄦ澶勬垨纭欢鍔犲瘑绔犺妭涓彃鍏ュ叧浜庝娇鐢ㄧ‖浠跺姞瀵嗙殑 VLAN 鎺ュ彛鐨勮鏄庛€?
-### 瀵圭渷鐢靛鎴风鐨勬敮鎸?
+在此处或硬件加密章节中插入关于使用硬件加密的 VLAN 接口的说明
+### 对省电客户端的支
 
-   :doc: AP 瀵圭渷鐢靛鎴风鐨勬敮鎸?
+   :doc: AP 对省电客户端的支
    :functions:
 	ieee80211_get_buffered_bc
 	ieee80211_beacon_get
@@ -64,21 +64,21 @@ Mac80211 鏀寔澶氱璁?LED 闂儊鐨勬柟寮忋€傚湪鍙兘鐨
 	ieee80211_sta_set_buffered
 	ieee80211_sta_block_awake
 
-## 鏀寔澶氫釜铏氭嫙鎺ュ彛
+## 支持多个虚拟接口
 
 
-寰呭畾
+待定
 
-娉ㄦ剰锛氫娇鐢ㄧ浉鍚?MAC 鍦板潃鐨?WDS 鍑犱箮鎬绘槸鍙互鐨?
-鍦ㄦ澶勬彃鍏ュ叧浜庢嫢鏈変笉鍚?MAC 鍦板潃鐨勫涓櫄鎷熸帴鍙ｇ殑璇存槑锛屾敞鏄?mac80211 鏀寔鍝簺閰嶇疆锛?骞舵坊鍔犲叧浜庨厤鍚堢‖浠跺姞瀵嗘敮鎸佺殑璇存槑銆?
+注意：使用相MAC 地址WDS 几乎总是可以
+在此处插入关于拥有不MAC 地址的多个虚拟接口的说明，注mac80211 支持哪些配置并添加关于配合硬件加密支持的说明
    :functions:
 	ieee80211_iterate_active_interfaces
 	ieee80211_iterate_active_interfaces_atomic
 
-## 绔欑偣澶勭悊
+## 站点处理
 
 
-寰呭姙
+待办
 
    :functions:
 	ieee80211_sta
@@ -86,43 +86,43 @@ Mac80211 鏀寔澶氱璁?LED 闂儊鐨勬柟寮忋€傚湪鍙兘鐨
 	ieee80211_find_sta
 	ieee80211_find_sta_by_ifaddr
 
-## 纭欢鎵弿鍗歌浇
+## 硬件扫描卸载
 
 
-寰呭畾
+待定
 
    :functions: ieee80211_scan_completed
 
-## 鑱氬悎
+## 聚合
 
 
-### TX A-MPDU 鑱氬悎
+### TX A-MPDU 聚合
 
 
-   :doc: TX A-MPDU 鑱氬悎
+   :doc: TX A-MPDU 聚合
 
-### RX A-MPDU 鑱氬悎
+### RX A-MPDU 聚合
 
 
-   :doc: RX A-MPDU 鑱氬悎
+   :doc: RX A-MPDU 聚合
 
    :functions: ieee80211_ampdu_mlme_action
 
-## 绌洪棿澶嶇敤鐪佺數锛圫MPS锛?
+## 空间复用省电（SMPS
 
-   :doc: 绌洪棿澶嶇敤鐪佺數
+   :doc: 空间复用省电
 
    :functions:
 	ieee80211_request_smps
 	ieee80211_smps_mode
 
-寰呭畾
+待定
 
-鏈功杩欎竴閮ㄥ垎鎻忚堪閫熺巼鎺у埗绠楁硶鎺ュ彛锛屼互鍙婂畠涓?mac80211 鍜岄┍鍔ㄧ殑鍏崇郴銆?
-## 閫熺巼鎺у埗 API
+本书这一部分描述速率控制算法接口，以及它mac80211 和驱动的关系
+## 速率控制 API
 
 
-寰呭畾
+待定
 
    :functions:
 	ieee80211_start_tx_ba_session
@@ -132,47 +132,47 @@ Mac80211 鏀寔澶氱璁?LED 闂儊鐨勬柟寮忋€傚湪鍙兘鐨
 	ieee80211_rate_control_changed
 	ieee80211_tx_rate_control
 
-寰呭畾
+待定
 
-鏈功杩欎竴閮ㄥ垎鎻忚堪 mac80211 鍐呴儴瀹炵幇銆?
-## 瀵嗛挜澶勭悊
-
-
-### 瀵嗛挜澶勭悊鍩虹
+本书这一部分描述 mac80211 内部实现
+## 密钥处理
 
 
-   :doc: 瀵嗛挜澶勭悊鍩虹
-
-### 鏇村寰呭畾
+### 密钥处理基础
 
 
-寰呭畾
+   :doc: 密钥处理基础
 
-## 鎺ユ敹澶勭悊
-
-
-寰呭畾
-
-## 鍙戦€佸鐞?
-
-寰呭畾
-
-## 绔欑偣淇℃伅澶勭悊
+### 更多待定
 
 
-### 缂栫▼淇℃伅
+待定
+
+## 接收处理
+
+
+待定
+
+## 发送处
+
+待定
+
+## 站点信息处理
+
+
+### 编程信息
 
 
    :functions:
 	sta_info
 	ieee80211_sta_info_flags
 
-### STA 淇℃伅鐢熷懡鍛ㄦ湡瑙勫垯
+### STA 信息生命周期规则
 
 
-   :doc: STA 淇℃伅鐢熷懡鍛ㄦ湡瑙勫垯
+   :doc: STA 信息生命周期规则
 
-## 鑱氬悎鍑芥暟
+## 聚合函数
 
 
    :functions:
@@ -180,9 +180,9 @@ Mac80211 鏀寔澶氱璁?LED 闂儊鐨勬柟寮忋€傚湪鍙兘鐨
 	tid_ampdu_tx
 	tid_ampdu_rx
 
-## 鍚屾鍑芥暟
+## 同步函数
 
 
-寰呭畾
+待定
 
-娑夊強澶ч噺鍔犻攣锛屽澶勪娇鐢?RCU
+涉及大量加锁，多处使RCU

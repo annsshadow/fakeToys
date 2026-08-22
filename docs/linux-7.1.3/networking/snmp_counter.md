@@ -1,117 +1,117 @@
-﻿## SNMP 璁℃暟鍣?
+﻿## SNMP 计数
 
 
-鏈枃妗ｈВ閲?SNMP 璁℃暟鍣ㄧ殑鍚箟銆?
+本文档解SNMP 计数器的含义
 
-## 閫氱敤 IPv4 璁℃暟鍣?
+## 通用 IPv4 计数
 
-鎵€鏈夌 4 灞傛姤鏂囧拰 ICMP 鎶ユ枃閮戒細鏀瑰彉杩欎簺璁℃暟鍣紝浣嗙 2 灞傛姤鏂囷紙渚嬪 STP锛?
-鎴?ARP 鎶ユ枃涓嶄細鏀瑰彉瀹冧滑銆?
+所有第 4 层报文和 ICMP 报文都会改变这些计数器，但第 2 层报文（例如 STP
+ARP 报文不会改变它们
 
 - IpInReceives
 
 瀹氫箟浜?`RFC1213 ipInReceives`_
 
 
-IP 灞傛敹鍒扮殑鎶ユ枃鏁伴噺銆傚畠鍦?ip_rcv 鍑芥暟寮€澶村閫掑锛屽缁堜笌 IpExtInOctets
-涓€璧锋洿鏂般€傚嵆浣挎姤鏂囧悗鏉ヨ涓㈠純锛堜緥濡傜敱浜?IP 澶撮儴鏃犳晥鎴栨牎楠屽拰閿欒绛夛級锛?
-瀹冧粛浼氬鍔犮€傚畠琛ㄧず GRO/LRO 涔嬪悗鑱氬悎娈电殑鏁伴噺銆?
+IP 层收到的报文数量。它ip_rcv 函数开头处递增，始终与 IpExtInOctets
+一起更新。即使报文后来被丢弃（例如由IP 头部无效或校验和错误等）
+它仍会增加。它表示 GRO/LRO 之后聚合段的数量
 
 - IpInDelivers
 
 瀹氫箟浜?`RFC1213 ipInDelivers`_
 
 
-鎶曢€掔粰涓婂眰鍗忚鐨勬姤鏂囨暟閲忋€備緥濡?TCP銆乁DP銆両CMP 绛夈€傚鏋滄病鏈変汉鍦?raw
-socket 涓婄洃鍚紝鍒欏彧鏈夊唴鏍告敮鎸佺殑鍗忚浼氳鎶曢€掞紱濡傛灉鏈変汉鍦?raw socket 涓?
-鐩戝惉锛屾墍鏈夊悎娉曠殑 IP 鎶ユ枃閮戒細琚姇閫掋€?
+投递给上层协议的报文数量。例TCP、UDP、ICMP 等。如果没有人raw
+socket 上监听，则只有内核支持的协议会被投递；如果有人raw socket 
+监听，所有合法的 IP 报文都会被投递
 
 - IpOutRequests
 
 瀹氫箟浜?`RFC1213 ipOutRequests`_
 
 
-缁忕敱 IP 灞傚彂閫佺殑鎶ユ枃鏁伴噺锛屽寘鎷崟鎾拰澶氭挱鎶ユ枃锛屽苟涓斿缁堜笌 IpExtOutOctets
-涓€璧锋洿鏂般€?
+经由 IP 层发送的报文数量，包括单播和多播报文，并且始终与 IpExtOutOctets
+一起更新
 
 - IpExtInOctets 涓?IpExtOutOctets
 
-瀹冧滑鏄?Linux 鍐呮牳鎵╁睍锛屾病鏈?RFC 瀹氫箟銆傝娉ㄦ剰锛孯FC1213 纭疄瀹氫箟浜?
-ifInOctets 鍜?ifOutOctets锛屼絾瀹冧滑鏄笉鍚岀殑涓滆タ銆俰fInOctets 鍜?ifOutOctets
-鍖呭惈 MAC 灞傚ご閮ㄥぇ灏忥紝鑰?IpExtInOctets 鍜?IpExtOutOctets 涓嶅寘鍚紝瀹冧滑
-鍙寘鍚?IP 灞傚ご閮ㄥ拰 IP 灞傛暟鎹€?
+它们Linux 内核扩展，没RFC 定义。请注意，RFC1213 确实定义
+ifInOctets ifOutOctets，但它们是不同的东西。ifInOctets ifOutOctets
+包含 MAC 层头部大小，IpExtInOctets IpExtOutOctets 不包含，它们
+只包IP 层头部和 IP 层数据
 
-- IpExtInNoECTPkts銆両pExtInECT1Pkts銆両pExtInECT0Pkts銆両pExtInCEPkts
+- IpExtInNoECTPkts、IpExtInECT1Pkts、IpExtInECT0Pkts、IpExtInCEPkts
 
-瀹冧滑琛ㄧず鍥涚 ECN IP 鎶ユ枃鐨勬暟閲忥紝鏇村缁嗚妭璇峰弬鑰?`Explicit Congestion
-Notification`_銆?
+它们表示四种 ECN IP 报文的数量，更多细节请参`Explicit Congestion
+Notification`_銆。
 
 
-杩?4 涓鏁板櫒缁熻姣忕 ECN 鐘舵€佷笅鏀跺埌鐨勬姤鏂囨暟閲忋€傛棤璁?LRO/GRO锛屽畠浠兘
-缁熻鐪熷疄鐨勫抚鏁般€傚洜姝ゅ浜庡悓涓€涓姤鏂囷紝浣犲彲鑳戒細鍙戠幇 IpInReceives 璁℃暟涓?1锛?
-鑰?IpExtInNoECTPkts 璁℃暟涓?2 鎴栨洿澶氥€?
+4 个计数器统计每种 ECN 状态下收到的报文数量。无LRO/GRO，它们都
+统计真实的帧数。因此对于同一个报文，你可能会发现 IpInReceives 计数1
+IpExtInNoECTPkts 计数2 或更多
 
 - IpInHdrErrors
 
-瀹氫箟浜?`RFC1213 ipInHdrErrors`_. 瀹冭〃绀烘姤鏂囧洜 IP 澶撮儴閿欒鑰岃涓㈠純銆傚畠
-鍙兘鍙戠敓鍦?IP 杈撳叆璺緞鍜?IP 杞彂璺緞涓€?
+定义`RFC1213 ipInHdrErrors`_. 它表示报文因 IP 头部错误而被丢弃。它
+可能发生IP 输入路径IP 转发路径中
 
 
 - IpInAddrErrors
 
-瀹氫箟浜?`RFC1213 ipInAddrErrors`_. 瀹冧細鍦ㄤ袱绉嶆儏鍐典笅澧炲姞锛?1) IP 鍦板潃鏃犳晥銆?
-(2) 鐩殑 IP 鍦板潃涓嶆槸鏈湴鍦板潃锛屼笖鏈惎鐢?IP 杞彂銆?
+定义`RFC1213 ipInAddrErrors`_. 它会在两种情况下增加1) IP 地址无效
+(2) 目的 IP 地址不是本地地址，且未启IP 转发
 
 
 - IpExtInNoRoutes
 
-璇ヨ鏁板櫒琛ㄧず褰?IP 鍗忚鏍堟敹鍒颁竴涓姤鏂囥€佷笖鏃犳硶浠庤矾鐢辫〃涓负鍏舵壘鍒拌矾鐢辨椂锛?
-璇ユ姤鏂囪涓㈠純銆傚畠鍙兘鍙戠敓鍦ㄥ惎鐢ㄤ簡 IP 杞彂銆佺洰鐨?IP 鍦板潃涓嶆槸鏈湴鍦板潃銆佷笖
-涓嶅瓨鍦ㄩ€氬線璇ョ洰鐨?IP 鍦板潃鐨勮矾鐢辨椂銆?
+该计数器表示IP 协议栈收到一个报文、且无法从路由表中为其找到路由时
+该报文被丢弃。它可能发生在启用了 IP 转发、目IP 地址不是本地地址、且
+不存在通往该目IP 地址的路由时
 
 - IpInUnknownProtos
 
-瀹氫箟浜?`RFC1213 ipInUnknownProtos`_. 濡傛灉绗?4 灞傚崗璁笉琚唴鏍告敮鎸侊紝瀹冨氨浼?
-澧炲姞銆傚鏋滃簲鐢ㄧ▼搴忔鍦ㄤ娇鐢?raw socket锛屽唴鏍告€讳細灏嗘姤鏂囨姇閫掔粰 raw socket锛?
-璇ヨ鏁板櫒鍒欎笉浼氬鍔犮€?
+定义`RFC1213 ipInUnknownProtos`_. 如果4 层协议不被内核支持，它就
+增加。如果应用程序正在使raw socket，内核总会将报文投递给 raw socket
+该计数器则不会增加
 
 
 - IpExtInTruncatedPkts
 
-瀵逛簬 IPv4 鎶ユ枃锛屽畠琛ㄧず瀹為檯鏁版嵁澶у皬灏忎簬 IPv4 澶撮儴涓殑 "Total Length" 瀛楁銆?
+对于 IPv4 报文，它表示实际数据大小小于 IPv4 头部中的 "Total Length" 字段
 
 - IpInDiscards
 
-瀹氫箟浜?`RFC1213 ipInDiscards`_. 瀹冭〃绀烘姤鏂囧洜鍐呮牳鍐呴儴鍘熷洜锛堜緥濡傚唴瀛樹笉瓒筹級
-鍦?IP 鎺ユ敹璺緞涓涓㈠純銆?
+定义`RFC1213 ipInDiscards`_. 它表示报文因内核内部原因（例如内存不足）
+IP 接收路径中被丢弃
 
 
 - IpOutDiscards
 
-瀹氫箟浜?`RFC1213 ipOutDiscards`_. 瀹冭〃绀烘姤鏂囧洜鍐呮牳鍐呴儴鍘熷洜鍦?IP 鍙戦€佽矾寰勪腑
-琚涪寮冦€?
+定义`RFC1213 ipOutDiscards`_. 它表示报文因内核内部原因IP 发送路径中
+被丢弃
 
 
 - IpOutNoRoutes
 
-瀹氫箟浜?`RFC1213 ipOutNoRoutes`_. 瀹冭〃绀烘姤鏂囧湪 IP 鍙戦€佽矾寰勪腑琚涪寮冿紝涓?
-鎵句笉鍒伴€氬線瀹冪殑璺敱銆?
+定义`RFC1213 ipOutNoRoutes`_. 它表示报文在 IP 发送路径中被丢弃，
+找不到通往它的路由
 
 
-## ICMP 璁℃暟鍣?
+## ICMP 计数
 
 - IcmpInMsgs 涓?IcmpOutMsgs
 
-鐢?`RFC1213 icmpInMsgs`_ 鍜?`RFC1213 icmpOutMsgs`_ 瀹氫箟
+`RFC1213 icmpInMsgs`_ `RFC1213 icmpOutMsgs`_ 定义
 
 
-濡?RFC1213 鎵€杩帮紝杩欎袱涓鏁板櫒鍖呭惈閿欒锛屽嵆浣?ICMP 鎶ユ枃绫诲瀷鏃犳晥瀹冧滑涔熶細
-澧炲姞銆侷CMP 杈撳嚭璺緞浼氭鏌?raw socket 鐨勫ご閮紝鍥犳鍗充娇 IP 澶撮儴鐢辩敤鎴锋€?
-绋嬪簭鏋勯€狅紝IcmpOutMsgs 浠嶄細琚洿鏂般€?
+RFC1213 所述，这两个计数器包含错误，即ICMP 报文类型无效它们也会
+增加。ICMP 输出路径会检raw socket 的头部，因此即使 IP 头部由用户
+程序构造，IcmpOutMsgs 仍会被更新
 
-- ICMP 鍛藉悕绫诲瀷
+- ICMP 命名类型
 
-| 杩欎簺璁℃暟鍣ㄥ寘鍚ぇ澶氭暟甯歌鐨?ICMP 绫诲瀷锛屽畠浠槸锛?
+| 这些计数器包含大多数常见ICMP 类型，它们是
 | IcmpInDestUnreachs: `RFC1213 icmpInDestUnreachs`_
 | IcmpInTimeExcds: `RFC1213 icmpInTimeExcds`_
 | IcmpInParmProbs: `RFC1213 icmpInParmProbs`_
@@ -137,105 +137,105 @@ Notification`_銆?
 
 
 
-姣忕 ICMP 绫诲瀷閮芥湁涓や釜璁℃暟鍣細'In' 鍜?'Out'銆備緥濡傦紝瀵逛簬 ICMP Echo 鎶ユ枃锛?
-瀹冧滑鏄?IcmpInEchos 鍜?IcmpOutEchos銆傚畠浠殑鍚箟寰堢洿瑙傘€?In' 璁℃暟鍣ㄨ〃绀哄唴鏍?
-鏀跺埌浜嗚繖鏍风殑鎶ユ枃锛?Out' 璁℃暟鍣ㄨ〃绀哄唴鏍稿彂閫佷簡杩欐牱鐨勬姤鏂囥€?
+每种 ICMP 类型都有两个计数器：'In' 'Out'。例如，对于 ICMP Echo 报文
+它们IcmpInEchos IcmpOutEchos。它们的含义很直观In' 计数器表示内
+收到了这样的报文Out' 计数器表示内核发送了这样的报文
 
-- ICMP 鏁板瓧绫诲瀷
+- ICMP 数字类型
 
-瀹冧滑鏄?IcmpMsgInType[N] 鍜?IcmpMsgOutType[N]锛孾N] 琛ㄧず ICMP 绫诲瀷鍙枫€傝繖浜?
-璁℃暟鍣ㄨ窡韪墍鏈夌绫荤殑 ICMP 鎶ユ枃銆侷CMP 绫诲瀷鍙风殑瀹氫箟鍙互鍦?`ICMP parameters`_
-鏂囨。涓壘鍒般€?
+它们IcmpMsgInType[N] IcmpMsgOutType[N]，[N] 表示 ICMP 类型号。这
+计数器跟踪所有种类的 ICMP 报文。ICMP 类型号的定义可以`ICMP parameters`_
+文档中找到
 
 
-渚嬪锛屽鏋?Linux 鍐呮牳鍙戦€佷竴涓?ICMP Echo 鎶ユ枃锛孖cmpMsgOutType8 浼氬鍔?1銆?
-濡傛灉鍐呮牳鏀跺埌涓€涓?ICMP Echo Reply 鎶ユ枃锛孖cmpMsgInType0 浼氬鍔?1銆?
+例如，如Linux 内核发送一ICMP Echo 报文，IcmpMsgOutType8 会增1
+如果内核收到一ICMP Echo Reply 报文，IcmpMsgInType0 会增1
 
 - IcmpInCsumErrors
 
-璇ヨ鏁板櫒琛ㄧず ICMP 鎶ユ枃鐨勬牎楠屽拰閿欒銆傚唴鏍镐細鍦ㄦ洿鏂?IcmpInMsgs 涔嬪悗銆佹洿鏂?
-IcmpMsgInType[N] 涔嬪墠鏍￠獙鏍￠獙鍜屻€傚鏋滄姤鏂囨牎楠屽拰閿欒锛孖cmpInMsgs 浼氳鏇存柊锛?
-浣嗕换浣?IcmpMsgInType[N] 閮戒笉浼氳鏇存柊銆?
+该计数器表示 ICMP 报文的校验和错误。内核会在更IcmpInMsgs 之后、更
+IcmpMsgInType[N] 之前校验校验和。如果报文校验和错误，IcmpInMsgs 会被更新
+但任IcmpMsgInType[N] 都不会被更新
 
 - IcmpInErrors 涓?IcmpOutErrors
 
-鐢?`RFC1213 icmpInErrors`_ 鍜?`RFC1213 icmpOutErrors`_ 瀹氫箟
+`RFC1213 icmpInErrors`_ `RFC1213 icmpOutErrors`_ 定义
 
 
-褰?ICMP 鎶ユ枃澶勭悊璺緞涓彂鐢熼敊璇椂锛岃繖涓や釜璁℃暟鍣ㄤ細琚洿鏂般€傛帴鏀舵姤鏂囪矾寰?
-浣跨敤 IcmpInErrors锛屽彂閫佹姤鏂囪矾寰勪娇鐢?IcmpOutErrors銆傚綋 IcmpInCsumErrors
-澧炲姞鏃讹紝IcmpInErrors 鎬讳細鍚屾椂澧炲姞銆?
+ICMP 报文处理路径中发生错误时，这两个计数器会被更新。接收报文路
+使用 IcmpInErrors，发送报文路径使IcmpOutErrors。当 IcmpInCsumErrors
+增加时，IcmpInErrors 总会同时增加
 
-### ICMP 璁℃暟鍣ㄤ箣闂寸殑鍏崇郴
+### ICMP 计数器之间的关系
 
-IcmpMsgOutType[N] 鐨勬€诲拰濮嬬粓绛変簬 IcmpOutMsgs锛屽洜涓哄畠浠槸鍚屾椂鏇存柊鐨勩€?
-IcmpMsgInType[N] 鐨勬€诲拰鍔犱笂 IcmpInErrors 搴斿綋绛変簬鎴栧ぇ浜?IcmpInMsgs銆傚綋
-鍐呮牳鏀跺埌涓€涓?ICMP 鎶ユ枃鏃讹紝鍐呮牳閬靛惊浠ヤ笅閫昏緫锛?
+IcmpMsgOutType[N] 的总和始终等于 IcmpOutMsgs，因为它们是同时更新的
+IcmpMsgInType[N] 的总和加上 IcmpInErrors 应当等于或大IcmpInMsgs。当
+内核收到一ICMP 报文时，内核遵循以下逻辑
 
-1. 澧炲姞 IcmpInMsgs
-2. 濡傛灉鏈変换浣曢敊璇紝鏇存柊 IcmpInErrors 骞剁粨鏉熷鐞?
-3. 鏇存柊 IcmpMsgOutType[N]
-4. 鏍规嵁绫诲瀷澶勭悊鎶ユ枃锛屽鏋滄湁浠讳綍閿欒锛屾洿鏂?
-   IcmpInErrors 骞剁粨鏉熷鐞?
+1. 增加 IcmpInMsgs
+2. 如果有任何错误，更新 IcmpInErrors 并结束处
+3. 更新 IcmpMsgOutType[N]
+4. 根据类型处理报文，如果有任何错误，更
+   IcmpInErrors 并结束处
 
-鍥犳锛屽鏋滄墍鏈夐敊璇兘鍙戠敓鍦ㄦ楠?(2)锛孖cmpInMsgs 搴旂瓑浜?IcmpMsgOutType[N]
-鐨勬€诲拰鍔犱笂 IcmpInErrors銆傚鏋滄墍鏈夐敊璇兘鍙戠敓鍦ㄦ楠?(4)锛孖cmpInMsgs 搴旂瓑浜?
-IcmpMsgOutType[N] 鐨勬€诲拰銆傚鏋滈敊璇悓鏃跺彂鐢熷湪姝ラ (2) 鍜屾楠?(4)锛孖cmpInMsgs
-搴斿皬浜?IcmpMsgOutType[N] 鐨勬€诲拰鍔犱笂 IcmpInErrors銆?
+因此，如果所有错误都发生在步(2)，IcmpInMsgs 应等IcmpMsgOutType[N]
+的总和加上 IcmpInErrors。如果所有错误都发生在步(4)，IcmpInMsgs 应等
+IcmpMsgOutType[N] 的总和。如果错误同时发生在步骤 (2) 和步(4)，IcmpInMsgs
+应小IcmpMsgOutType[N] 的总和加上 IcmpInErrors
 
-## 閫氱敤 TCP 璁℃暟鍣?
+## 通用 TCP 计数
 
 - TcpInSegs
 
 瀹氫箟浜?`RFC1213 tcpInSegs`_
 
 
-TCP 灞傛敹鍒扮殑鎶ユ枃鏁伴噺銆傚 RFC1213 鎵€杩帮紝瀹冨寘鍚帴鏀舵椂鍑洪敊鐨勬姤鏂囷紝渚嬪鏍￠獙鍜?
-閿欒銆乀CP 澶撮儴鏃犳晥绛夈€傚彧鏈変竴绉嶉敊璇笉浼氳璁″叆锛氬鏋滅 2 灞傜洰鐨勫湴鍧€涓嶆槸
-NIC 鐨勭 2 灞傚湴鍧€銆傝繖鍙兘鍙戠敓鍦ㄦ姤鏂囨槸缁勬挱鎴栧箍鎾姤鏂囷紝鎴栬€?NIC 澶勪簬娣锋潅
-妯″紡鏃躲€傚湪杩欎簺鎯呭喌涓嬶紝鎶ユ枃浼氳鎶曢€掔粰 TCP 灞傦紝浣?TCP 灞備細鍦ㄥ鍔?TcpInSegs
-涔嬪墠涓㈠純杩欎簺鎶ユ枃銆俆cpInSegs 璁℃暟鍣ㄤ笉鎰熺煡 GRO銆傚洜姝ゅ鏋滄湁涓や釜鎶ユ枃琚?GRO
-鍚堝苟锛孴cpInSegs 璁℃暟鍣ㄥ彧浼氬鍔?1銆?
+TCP 层收到的报文数量。如 RFC1213 所述，它包含接收时出错的报文，例如校验
+错误、TCP 头部无效等。只有一种错误不会被计入：如果第 2 层目的地址不是
+NIC 的第 2 层地址。这可能发生在报文是组播或广播报文，或NIC 处于混杂
+模式时。在这些情况下，报文会被投递给 TCP 层，TCP 层会在增TcpInSegs
+之前丢弃这些报文。TcpInSegs 计数器不感知 GRO。因此如果有两个报文GRO
+合并，TcpInSegs 计数器只会增1
 
 - TcpOutSegs
 
 瀹氫箟浜?`RFC1213 tcpOutSegs`_
 
 
-TCP 灞傚彂閫佺殑鎶ユ枃鏁伴噺銆傚 RFC1213 鎵€杩帮紝瀹冧笉鍖呭惈閲嶄紶鐨勬姤鏂囷紝浣嗗寘鍚?SYN銆?
-ACK 鍜?RST 鎶ユ枃銆備笌 TcpInSegs 涓嶅悓锛孴cpOutSegs 鎰熺煡 GSO锛屽洜姝ゅ鏋滀竴涓姤鏂?
-琚?GSO 鎷嗗垎涓?2 涓紝TcpOutSegs 浼氬鍔?2銆?
+TCP 层发送的报文数量。如 RFC1213 所述，它不包含重传的报文，但包SYN
+ACK RST 报文。与 TcpInSegs 不同，TcpOutSegs 感知 GSO，因此如果一个报
+GSO 拆分2 个，TcpOutSegs 会增2
 
 - TcpActiveOpens
 
 瀹氫箟浜?`RFC1213 tcpActiveOpens`_
 
 
-瀹冭〃绀?TCP 灞傚彂閫佷竴涓?SYN锛屽苟杩涘叆 SYN-SENT 鐘舵€併€傛瘡娆?TcpActiveOpens 澧炲姞
-1锛孴cpOutSegs 閮藉簲褰撳悓鏃跺鍔?1銆?
+它表TCP 层发送一SYN，并进入 SYN-SENT 状态。每TcpActiveOpens 增加
+1，TcpOutSegs 都应当同时增1
 
 - TcpPassiveOpens
 
 瀹氫箟浜?`RFC1213 tcpPassiveOpens`_
 
 
-瀹冭〃绀?TCP 灞傛敹鍒颁竴涓?SYN锛屽洖澶?SYN+ACK锛岃繘鍏?SYN-RCVD 鐘舵€併€?
+它表TCP 层收到一SYN，回SYN+ACK，进SYN-RCVD 状态
 
 - TcpExtTCPRcvCoalesce
 
-褰?TCP 灞傛敹鍒版姤鏂囦笖搴旂敤绋嬪簭灏氭湭璇诲彇鏃讹紝TCP 灞備細灏濊瘯鍚堝苟瀹冧滑銆傝璁℃暟鍣?
-琛ㄧず鍦ㄨ繖绉嶆儏褰笅鍚堝苟浜嗗灏戜釜鎶ユ枃銆傚鏋滃惎鐢ㄤ簡 GRO锛屽ぇ閲忔姤鏂囦細琚?GRO 鍚堝苟锛?
-杩欎簺鎶ユ枃涓嶄細琚鍏?TcpExtTCPRcvCoalesce銆?
+TCP 层收到报文且应用程序尚未读取时，TCP 层会尝试合并它们。该计数
+表示在这种情形下合并了多少个报文。如果启用了 GRO，大量报文会GRO 合并
+这些报文不会被计TcpExtTCPRcvCoalesce
 
 - TcpExtTCPAutoCorking
 
-鍙戦€佹姤鏂囨椂锛孴CP 灞備細灏濊瘯灏嗗皬鎶ユ枃鍚堝苟涓烘洿澶х殑鎶ユ枃銆傚湪杩欑鎯呭舰涓嬫瘡鍚堝苟涓€涓?
-鎶ユ枃锛岃璁℃暟鍣ㄥ鍔?1銆傛洿澶氱粏鑺傝鍙傝€?LWN 鏂囩珷锛?
+发送报文时，TCP 层会尝试将小报文合并为更大的报文。在这种情形下每合并一
+报文，该计数器增1。更多细节请参LWN 文章
 https://lwn.net/Articles/576263/
 
 - TcpExtTCPOrigDataSent
 
-璇ヨ鏁板櫒鐢卞唴鏍告彁浜?f19c29e3e391 瑙ｉ噴锛屾垜绮樿创浜?
+该计数器由内核提f19c29e3e391 解释，我粘贴
 ```
 
   TCPOrigDataSent: number of outgoing packets with original data (excluding
@@ -246,7 +246,7 @@ https://lwn.net/Articles/576263/
 ```
 - TCPSynRetrans
 
-璇ヨ鏁板櫒鐢卞唴鏍告彁浜?f19c29e3e391 瑙ｉ噴锛屾垜绮樿创浜?
+该计数器由内核提f19c29e3e391 解释，我粘贴
 ```
 
   TCPSynRetrans: number of SYN and SYN/ACK retransmits to break down
@@ -255,7 +255,7 @@ https://lwn.net/Articles/576263/
 ```
 - TCPFastOpenActiveFail
 
-璇ヨ鏁板櫒鐢卞唴鏍告彁浜?f19c29e3e391 瑙ｉ噴锛屾垜绮樿创浜?
+该计数器由内核提f19c29e3e391 解释，我粘贴
 ```
 
   TCPFastOpenActiveFail: Fast Open attempts (SYN/data) failed because
@@ -264,21 +264,21 @@ https://lwn.net/Articles/576263/
 ```
 - TcpExtListenOverflows 涓?TcpExtListenDrops
 
-褰撳唴鏍告敹鍒版潵鑷鎴风鐨?SYN锛屼笖 TCP accept 闃熷垪宸叉弧鏃讹紝鍐呮牳浼氫涪寮冭 SYN
-骞跺悜 TcpExtListenOverflows 鍔?1銆傚悓鏃讹紝鍐呮牳涔熶細鍚?TcpExtListenDrops 鍔?1銆?
-褰撲竴涓?TCP socket 澶勪簬 LISTEN 鐘舵€佹椂锛屽彧瑕佸唴鏍搁渶瑕佷涪寮冧竴涓姤鏂囷紝鍐呮牳鎬讳細
-鍚?TcpExtListenDrops 鍔?1銆傚洜姝わ紝TcpExtListenOverflows 鐨勫鍔犱細鍚屾椂瀵艰嚧
-TcpExtListenDrops 澧炲姞锛屼絾 TcpExtListenDrops 涔熷彲鑳藉湪 TcpExtListenOverflows
-涓嶅鍔犵殑鎯呭喌涓嬪鍔狅紝渚嬪鍐呭瓨鍒嗛厤澶辫触涔熶細璁?TcpExtListenDrops 澧炲姞銆?
+当内核收到来自客户端SYN，且 TCP accept 队列已满时，内核会丢弃该 SYN
+并向 TcpExtListenOverflows 1。同时，内核也会TcpExtListenDrops 1
+当一TCP socket 处于 LISTEN 状态时，只要内核需要丢弃一个报文，内核总会
+TcpExtListenDrops 1。因此，TcpExtListenOverflows 的增加会同时导致
+TcpExtListenDrops 增加，但 TcpExtListenDrops 也可能在 TcpExtListenOverflows
+不增加的情况下增加，例如内存分配失败也会TcpExtListenDrops 增加
 
-娉ㄦ剰锛氫笂杩拌В閲婂熀浜庡唴鏍?4.10 鎴栦互涓婄増鏈紝鍦ㄦ棫鍐呮牳涓婏紝褰?TCP accept 闃熷垪
-宸叉弧鏃?TCP 鍗忚鏍堢殑琛屼负涓嶅悓銆傚湪鏃у唴鏍镐笂锛孴CP 鍗忚鏍堜笉浼氫涪寮?SYN锛岃€屾槸浼?
-瀹屾垚涓夋鎻℃墜銆傜敱浜?accept 闃熷垪宸叉弧锛孴CP 鍗忚鏍堜細灏嗚 socket 淇濈暀鍦?TCP
-鍗婂紑闃熷垪涓€傚洜涓哄畠澶勪簬鍗婂紑闃熷垪涓紝TCP 鍗忚鏍堜細浠ユ寚鏁伴€€閬垮畾鏃跺櫒鍙戦€?
-SYN+ACK锛屽湪瀹㈡埛绔洖澶?ACK 鍚庯紝TCP 鍗忚鏍堜細妫€鏌?accept 闃熷垪鏄惁浠嶇劧宸叉弧锛?
-濡傛灉鏈弧锛屽垯灏嗚 socket 绉诲叆 accept 闃熷垪锛涘鏋滃凡婊★紝鍒欑户缁皢鍏朵繚鐣欏湪鍗婂紑
-闃熷垪涓紝寰呭鎴风涓嬫鍥炲 ACK 鏃讹紝璇?socket 浼氳幏寰楀張涓€娆＄Щ鍏?accept 闃熷垪鐨?
-鏈轰細銆?
+注意：上述解释基于内4.10 或以上版本，在旧内核上，TCP accept 队列
+已满TCP 协议栈的行为不同。在旧内核上，TCP 协议栈不会丢SYN，而是
+完成三次握手。由accept 队列已满，TCP 协议栈会将该 socket 保留TCP
+半开队列中。因为它处于半开队列中，TCP 协议栈会以指数退避定时器发
+SYN+ACK，在客户端回ACK 后，TCP 协议栈会检accept 队列是否仍然已满
+如果未满，则将该 socket 移入 accept 队列；如果已满，则继续将其保留在半开
+队列中，待客户端下次回复 ACK 时，socket 会获得又一次移accept 队列
+机会
 
 
 ## TCP Fast Open
@@ -295,35 +295,35 @@ SYN+ACK锛屽湪瀹㈡埛绔洖澶?ACK 鍚庯紝TCP 鍗忚鏍堜細妫€�
 
 - TcpOutRsts
 
-瀹氫箟浜?`RFC1213 tcpOutRsts`_. RFC 鎸囧嚭璇ヨ鏁板櫒琛ㄧず鈥滃寘鍚?RST 鏍囧織鐨勬鈥濓紝
-浣嗗湪 linux 鍐呮牳涓紝璇ヨ鏁板櫒琛ㄧず鐨勬槸鍐呮牳灏濊瘯鍙戦€佺殑娈点€傚彂閫佽繃绋嬪彲鑳藉洜鏌愪簺
-閿欒锛堜緥濡傚唴瀛樺垎閰嶅け璐ワ級鑰屽け璐ャ€?
+定义`RFC1213 tcpOutRsts`_. RFC 指出该计数器表示“包RST 标志的段”，
+但在 linux 内核中，该计数器表示的是内核尝试发送的段。发送过程可能因某些
+错误（例如内存分配失败）而失败
 
 
 - TcpExtTCPSpuriousRtxHostQueues
 
-褰?TCP 鍗忚鏍堟兂瑕侀噸浼犱竴涓姤鏂囷紝鍗村彂鐜拌鎶ユ枃骞堕潪鍦ㄧ綉缁滀腑涓㈠け锛岃€屾槸灏氭湭
-鍙戦€佸嚭鍘绘椂锛孴CP 鍗忚鏍堜細鏀惧純閲嶄紶骞舵洿鏂拌璁℃暟鍣ㄣ€傚綋鎶ユ枃鍦?qdisc 鎴栭┍鍔?
-闃熷垪涓仠鐣欒繃涔呮椂鍙兘浼氬彂鐢熻繖绉嶆儏鍐点€?
+TCP 协议栈想要重传一个报文，却发现该报文并非在网络中丢失，而是尚未
+发送出去时，TCP 协议栈会放弃重传并更新该计数器。当报文qdisc 或驱
+队列中停留过久时可能会发生这种情况
 
 - TcpEstabResets
 
-socket 鍦?Establish 鎴?CloseWait 鐘舵€佹敹鍒颁簡涓€涓?RST 鎶ユ枃銆?
+socket Establish CloseWait 状态收到了一RST 报文
 
 - TcpExtTCPKeepAlive
 
-璇ヨ鏁板櫒琛ㄧず宸插彂閫佷簡澶氬皯涓?keepalive 鎶ユ枃銆俴eepalive 榛樿涓嶅惎鐢ㄣ€傜敤鎴锋€?
-绋嬪簭鍙互閫氳繃璁剧疆 SO_KEEPALIVE socket 閫夐」鏉ュ惎鐢ㄥ畠銆?
+该计数器表示已发送了多少keepalive 报文。keepalive 默认不启用。用户
+程序可以通过设置 SO_KEEPALIVE socket 选项来启用它
 
 - TcpExtTCPSpuriousRTOs
 
-鐢?`F-RTO`_ 绠楁硶妫€娴嬪埌鐨勮櫄鍋囬噸浼犺秴鏃躲€?
+`F-RTO`_ 算法检测到的虚假重传超时
 
 
 ## TCP Fast Path
 
-褰撳唴鏍告敹鍒颁竴涓?TCP 鎶ユ枃鏃讹紝瀹冩湁涓ゆ潯璺緞鏉ュ鐞嗚鎶ユ枃锛屼竴鏉℃槸蹇€熻矾寰勶紝
-鍙︿竴鏉℃槸鎱㈤€熻矾寰勩€傚唴鏍镐腑鐨勬敞閲?
+当内核收到一TCP 报文时，它有两条路径来处理该报文，一条是快速路径，
+另一条是慢速路径。内核中的注
 ```
 
   It is split into a fast path and a slow path. The fast path is
@@ -343,480 +343,480 @@ socket 鍦?Establish 鎴?CloseWait 鐘舵€佹敹鍒颁簡涓€涓?RST 鎶ユ�
   - Unexpected TCP option.
 
 ```
-闄ら潪婊¤冻涓婅堪浠讳綍鏉′欢锛屽唴鏍搁兘浼氬皾璇曚娇鐢ㄥ揩閫熻矾寰勩€傚鏋滄姤鏂囦贡搴忥紝鍐呮牳浼氫互
-鎱㈤€熻矾寰勫鐞嗭紝杩欐剰鍛崇潃鎬ц兘鍙兘涓嶅お濂姐€傚鏋滀娇鐢ㄤ簡 "Delayed ack"锛屽唴鏍镐篃浼?
-杩涘叆鎱㈤€熻矾寰勶紝鍥犱负浣跨敤 "Delayed ack" 鏃舵暟鎹細鍦ㄤ袱涓柟鍚戜笂鍙戦€併€傚綋鏈娇鐢?
-TCP window scale 閫夐」鏃讹紝鍐呮牳浼氬湪杩炴帴杩涘叆 established 鐘舵€佹椂绔嬪嵆灏濊瘯鍚敤
-蹇€熻矾寰勶紱浣嗗鏋滀娇鐢ㄤ簡 TCP window scale 閫夐」锛屽唴鏍镐細鍏堢鐢ㄥ揩閫熻矾寰勶紝骞跺湪
-鏀跺埌鎶ユ枃鍚庡啀灏濊瘯鍚敤瀹冦€?
+除非满足上述任何条件，内核都会尝试使用快速路径。如果报文乱序，内核会以
+慢速路径处理，这意味着性能可能不太好。如果使用了 "Delayed ack"，内核也
+进入慢速路径，因为使用 "Delayed ack" 时数据会在两个方向上发送。当未使
+TCP window scale 选项时，内核会在连接进入 established 状态时立即尝试启用
+快速路径；但如果使用了 TCP window scale 选项，内核会先禁用快速路径，并在
+收到报文后再尝试启用它
 
 - TcpExtTCPPureAcks 涓?TcpExtTCPHPAcks
 
-濡傛灉涓€涓姤鏂囪缃簡 ACK 鏍囧織涓旀病鏈夋暟鎹紝瀹冨氨鏄函 ACK 鎶ユ枃锛涘鏋滃唴鏍镐互
-蹇€熻矾寰勫鐞嗗畠锛孴cpExtTCPHPAcks 澧炲姞 1锛涘鏋滃唴鏍镐互鎱㈤€熻矾寰勫鐞嗗畠锛?
-TcpExtTCPPureAcks 澧炲姞 1銆?
+如果一个报文设置了 ACK 标志且没有数据，它就是纯 ACK 报文；如果内核以
+快速路径处理它，TcpExtTCPHPAcks 增加 1；如果内核以慢速路径处理它
+TcpExtTCPPureAcks 增加 1
 
 - TcpExtTCPHPHits
 
-濡傛灉涓€涓?TCP 鎶ユ枃甯︽湁鏁版嵁锛堝嵆瀹冧笉鏄函 ACK 鎶ユ枃锛夛紝骞朵笖璇ユ姤鏂囦互蹇€熻矾寰?
-澶勭悊锛孴cpExtTCPHPHits 澧炲姞 1銆?
+如果一TCP 报文带有数据（即它不是纯 ACK 报文），并且该报文以快速路
+处理，TcpExtTCPHPHits 增加 1
 
 
-## TCP 涓锛坅bort锛?
+## TCP 中止（abort
 
 - TcpExtTCPAbortOnData
 
-瀹冭〃绀?TCP 灞傛湁鍦ㄩ€旀暟鎹紝浣嗛渶瑕佸叧闂繛鎺ャ€傚洜姝?TCP 灞傚悜瀵圭鍙戦€佷竴涓?RST锛?
-琛ㄦ槑杩炴帴骞堕潪浼橀泤鍦板叧闂€備竴绉嶅鍔犺璁℃暟鍣ㄧ殑绠€鍗曟柟娉曟槸浣跨敤 SO_LINGER 閫夐」銆?
-璇峰弬鑰?`socket man page`_ 鐨?SO_LINGER 灏忚妭锛?
+它表TCP 层有在途数据，但需要关闭连接。因TCP 层向对端发送一RST
+表明连接并非优雅地关闭。一种增加该计数器的简单方法是使用 SO_LINGER 选项
+请参`socket man page`_ SO_LINGER 小节
 
 
-榛樿鎯呭喌涓嬶紝褰撳簲鐢ㄧ▼搴忓叧闂竴涓繛鎺ユ椂锛宑lose 鍑芥暟浼氱珛鍗宠繑鍥烇紝鍐呮牳浼氬皾璇?
-寮傛鍙戦€佸湪閫旀暟鎹€傚鏋滀娇鐢?SO_LINGER 閫夐」锛屽皢 l_onoff 璁句负 1锛屽苟灏?l_linger
-璁句负涓€涓鏁帮紝close 鍑芥暟涓嶄細绔嬪嵆杩斿洖锛岃€屾槸绛夊緟鍦ㄩ€旀暟鎹瀵圭纭锛屾渶闀?
-绛夊緟鏃堕棿涓?l_linger 绉掋€傚鏋滃皢 l_onoff 璁句负 1 骞跺皢 l_linger 璁句负 0锛屽綋
-搴旂敤绋嬪簭鍏抽棴杩炴帴鏃讹紝鍐呮牳浼氱珛鍗冲彂閫佷竴涓?RST锛屽苟澧炲姞 TcpExtTCPAbortOnData
-璁℃暟鍣ㄣ€?
+默认情况下，当应用程序关闭一个连接时，close 函数会立即返回，内核会尝
+异步发送在途数据。如果使SO_LINGER 选项，将 l_onoff 设为 1，并l_linger
+设为一个正数，close 函数不会立即返回，而是等待在途数据被对端确认，最
+等待时间l_linger 秒。如果将 l_onoff 设为 1 并将 l_linger 设为 0，当
+应用程序关闭连接时，内核会立即发送一RST，并增加 TcpExtTCPAbortOnData
+计数器
 
 - TcpExtTCPAbortOnClose
 
-璇ヨ鏁板櫒琛ㄧず褰撳簲鐢ㄧ▼搴忔兂瑕佸叧闂?TCP 杩炴帴鏃讹紝TCP 灞備腑瀛樺湪灏氭湭琚鍙栫殑鏁版嵁銆?
-鍦ㄨ繖绉嶆儏鍐典笅锛屽唴鏍镐細鍚?TCP 杩炴帴鐨勫绔彂閫佷竴涓?RST銆?
+该计数器表示当应用程序想要关TCP 连接时，TCP 层中存在尚未被读取的数据
+在这种情况下，内核会TCP 连接的对端发送一RST
 
 - TcpExtTCPAbortOnMemory
 
-褰撳簲鐢ㄧ▼搴忓叧闂竴涓?TCP 杩炴帴鏃讹紝鍐呮牳浠嶉渶瑕佽窡韪杩炴帴锛岃鍏跺畬鎴?TCP 鏂紑
-杩囩▼銆備緥濡傦紝搴旂敤绋嬪簭璋冪敤浜?socket 鐨?close 鏂规硶锛屽唴鏍稿悜杩炴帴瀵圭鍙戦€?fin锛?
-涔嬪悗搴旂敤绋嬪簭涓庤 socket 鍐嶆棤鍏宠仈锛屼絾鍐呮牳闇€瑕佷繚鐣欒 socket锛岃繖涓?socket 鍙樻垚
-浜嗗鍎?socket锛屽唴鏍哥瓑寰呭绔殑鍥炲锛屾渶缁堜細杩涘叆 TIME_WAIT 鐘舵€併€傚綋鍐呮牳娌℃湁
-瓒冲鐨勫唴瀛樻潵淇濈暀璇ュ鍎?socket 鏃讹紝鍐呮牳浼氬悜瀵圭鍙戦€佷竴涓?RST 骞跺垹闄よ socket锛?
-鍦ㄨ繖绉嶆儏鍐典笅锛屽唴鏍镐細璁?TcpExtTCPAbortOnMemory 鍔?1銆傛湁涓ょ鎯呭喌浼氳Е鍙?
-TcpExtTCPAbortOnMemory锛?
+当应用程序关闭一TCP 连接时，内核仍需要跟踪该连接，让其完TCP 断开
+过程。例如，应用程序调用socket close 方法，内核向连接对端发fin
+之后应用程序与该 socket 再无关联，但内核需要保留该 socket，这socket 变成
+了孤socket，内核等待对端的回复，最终会进入 TIME_WAIT 状态。当内核没有
+足够的内存来保留该孤socket 时，内核会向对端发送一RST 并删除该 socket
+在这种情况下，内核会TcpExtTCPAbortOnMemory 1。有两种情况会触
+TcpExtTCPAbortOnMemory锛。
 
-1. TCP 鍗忚浣跨敤鐨勫唴瀛橀珮浜?tcp_mem 鐨勭涓変釜鍊笺€傝鍙傝€?`TCP man page`_ 鐨?
-tcp_mem 灏忚妭锛?
+1. TCP 协议使用的内存高tcp_mem 的第三个值。请参`TCP man page`_ 
+tcp_mem 小节
 
 
-2. 瀛ゅ効 socket 鏁伴噺楂樹簬 net.ipv4.tcp_max_orphans
+2. 孤儿 socket 数量高于 net.ipv4.tcp_max_orphans
 
 
 - TcpExtTCPAbortOnTimeout
 
-褰撲换浣曚竴涓?TCP 瀹氭椂鍣ㄨ秴鏃舵椂锛岃璁℃暟鍣ㄤ細澧炲姞銆傚湪杩欑鎯呭喌涓嬶紝鍐呮牳涓嶄細鍙戦€?
-RST锛屽彧鏄斁寮冭杩炴帴銆?
+当任何一TCP 定时器超时时，该计数器会增加。在这种情况下，内核不会发
+RST，只是放弃该连接
 
 - TcpExtTCPAbortOnLinger
 
-褰撲竴涓?TCP 杩炴帴杩涘叆 FIN_WAIT_2 鐘舵€佹椂锛屽唴鏍稿彲浠ヤ笉绛夊緟瀵圭鐨?fin 鎶ユ枃锛?
-鑰屾槸绔嬪嵆鍙戦€佷竴涓?RST 骞跺垹闄よ socket銆傝繖涓嶆槸 Linux 鍐呮牳 TCP 鍗忚鏍堢殑榛樿
-琛屼负銆傞€氳繃閰嶇疆 TCP_LINGER2 socket 閫夐」锛屽彲浠ヨ鍐呮牳閲囧彇杩欑琛屼负銆?
+当一TCP 连接进入 FIN_WAIT_2 状态时，内核可以不等待对端fin 报文
+而是立即发送一RST 并删除该 socket。这不是 Linux 内核 TCP 协议栈的默认
+行为。通过配置 TCP_LINGER2 socket 选项，可以让内核采取这种行为
 
 - TcpExtTCPAbortFailed
 
-濡傛灉婊¤冻 `RFC2525 2.17 section`_锛屽唴鏍?TCP 灞備細鍙戦€?RST銆傚鏋滃湪姝よ繃绋嬩腑
-鍙戠敓鍐呴儴閿欒锛孴cpExtTCPAbortFailed 浼氬鍔犮€?
+如果满足 `RFC2525 2.17 section`_，内TCP 层会发RST。如果在此过程中
+发生内部错误，TcpExtTCPAbortFailed 会增加
 
 
-## TCP 娣峰悎鎱㈠惎鍔紙Hybrid Slow Start锛?
+## TCP 混合慢启动（Hybrid Slow Start
 
-娣峰悎鎱㈠惎鍔ㄧ畻娉曟槸瀵逛紶缁?TCP 鎷ュ绐楀彛鎱㈠惎鍔ㄧ畻娉曠殑澧炲己銆傚畠鍒╃敤涓ょ被淇℃伅鏉?
-妫€娴嬫槸鍚︽帴杩?TCP 璺緞鐨勬渶澶у甫瀹姐€傝繖涓ょ被淇℃伅鏄?ACK 鍒楄溅锛圓CK train锛夐暱搴?
-鍜屾姤鏂囧欢杩熺殑澧炲姞銆傛洿澶氱粏鑺傝鍙傝€?`Hybrid Slow Start paper`_銆傚彧瑕?ACK 鍒楄溅
-闀垮害鎴栨姤鏂囧欢杩熻揪鍒版煇涓壒瀹氶槇鍊硷紝鎷ュ鎺у埗绠楁硶灏变細杩涘叆鎷ュ閬垮厤锛圕ongestion
-Avoidance锛夌姸鎬併€傜洿鍒?v4.20锛屾湁涓や釜鎷ュ鎺у埗绠楁硶浣跨敤浜嗘贩鍚堟參鍚姩锛屽畠浠槸
-cubic锛堥粯璁ょ殑鎷ュ鎺у埗绠楁硶锛夊拰 cdg銆傛湁鍥涗釜 snmp 璁℃暟鍣ㄤ笌娣峰悎鎱㈠惎鍔ㄧ畻娉曠浉鍏炽€?
+混合慢启动算法是对传TCP 拥塞窗口慢启动算法的增强。它利用两类信息
+检测是否接TCP 路径的最大带宽。这两类信息ACK 列车（ACK train）长
+和报文延迟的增加。更多细节请参`Hybrid Slow Start paper`_。只ACK 列车
+长度或报文延迟达到某个特定阈值，拥塞控制算法就会进入拥塞避免（Congestion
+Avoidance）状态。直v4.20，有两个拥塞控制算法使用了混合慢启动，它们是
+cubic（默认的拥塞控制算法）和 cdg。有四个 snmp 计数器与混合慢启动算法相关
 
 
 - TcpExtTCPHystartTrainDetect
 
-妫€娴嬪埌 ACK 鍒楄溅闀垮害闃堝€肩殑娆℃暟
+检测到 ACK 列车长度阈值的次数
 
 - TcpExtTCPHystartTrainCwnd
 
-鐢?ACK 鍒楄溅闀垮害妫€娴嬪埌鐨?CWND 涔嬪拰銆傚皢璇ュ€奸櫎浠?TcpExtTCPHystartTrainDetect
-鍗充负鐢?ACK 鍒楄溅闀垮害妫€娴嬪埌鐨勫钩鍧?CWND銆?
+ACK 列车长度检测到CWND 之和。将该值除TcpExtTCPHystartTrainDetect
+即为ACK 列车长度检测到的平CWND
 
 - TcpExtTCPHystartDelayDetect
 
-妫€娴嬪埌鎶ユ枃寤惰繜闃堝€肩殑娆℃暟銆?
+检测到报文延迟阈值的次数
 
 - TcpExtTCPHystartDelayCwnd
 
-鐢辨姤鏂囧欢杩熸娴嬪埌鐨?CWND 涔嬪拰銆傚皢璇ュ€奸櫎浠?TcpExtTCPHystartDelayDetect 鍗充负
-鐢辨姤鏂囧欢杩熸娴嬪埌鐨勫钩鍧?CWND銆?
+由报文延迟检测到CWND 之和。将该值除TcpExtTCPHystartDelayDetect 即为
+由报文延迟检测到的平CWND
 
-## TCP 閲嶄紶涓庢嫢濉炴帶鍒?
+## TCP 重传与拥塞控
 
-TCP 鍗忚鏈変袱绉嶉噸浼犳満鍒讹細SACK 鍜屽揩閫熸仮澶嶏紙fast recovery锛夈€傚畠浠郊姝や簰鏂ャ€?
-褰撳惎鐢?SACK 鏃讹紝鍐呮牳 TCP 鍗忚鏍堜細浣跨敤 SACK锛屽惁鍒欏唴鏍镐細浣跨敤蹇€熸仮澶嶃€係ACK
-鏄竴涓?TCP 閫夐」锛屽畾涔変簬 `RFC2018`_锛屽揩閫熸仮澶嶅畾涔変簬 `RFC6582`_锛屼篃绉颁负
-'Reno'銆?
+TCP 协议有两种重传机制：SACK 和快速恢复（fast recovery）。它们彼此互斥
+当启SACK 时，内核 TCP 协议栈会使用 SACK，否则内核会使用快速恢复。SACK
+是一TCP 选项，定义于 `RFC2018`_，快速恢复定义于 `RFC6582`_，也称为
+'Reno'銆。
 
-TCP 鎷ュ鎺у埗鏄竴涓簽澶ц€屽鏉傜殑涓婚銆傝鐞嗚В鐩稿叧鐨?snmp 璁℃暟鍣紝鎴戜滑闇€瑕?
-浜嗚В鎷ュ鎺у埗鐘舵€佹満鐨勭姸鎬併€傚叡鏈?5 涓姸鎬侊細Open銆丏isorder銆丆WR銆丷ecovery 鍜?
-Loss銆傚叧浜庤繖浜涚姸鎬佺殑缁嗚妭锛岃鍙傝€冭鏂囨。鐨勭 5 椤靛拰绗?6 椤碉細
+TCP 拥塞控制是一个庞大而复杂的主题。要理解相关snmp 计数器，我们需
+了解拥塞控制状态机的状态。共5 个状态：Open、Disorder、CWR、Recovery 
+Loss。关于这些状态的细节，请参考该文档的第 5 页和6 页：
 https://pdfs.semanticscholar.org/0e9c/968d09ab2e53e24c4dca5b2d67c7f7140f8e.pdf
 
 
 - TcpExtTCPRenoRecovery 涓?TcpExtTCPSackRecovery
 
-褰撴嫢濉炴帶鍒惰繘鍏?Recovery 鐘舵€佹椂锛屽鏋滀娇鐢ㄤ簡 sack锛孴cpExtTCPSackRecovery
-澧炲姞 1锛涘鏋滄湭浣跨敤 sack锛孴cpExtTCPRenoRecovery 澧炲姞 1銆傝繖涓や釜璁℃暟鍣ㄨ〃绀?
-TCP 鍗忚鏍堝紑濮嬮噸浼犱涪澶辩殑鎶ユ枃銆?
+当拥塞控制进Recovery 状态时，如果使用了 sack，TcpExtTCPSackRecovery
+增加 1；如果未使用 sack，TcpExtTCPRenoRecovery 增加 1。这两个计数器表
+TCP 协议栈开始重传丢失的报文
 
 - TcpExtTCPSACKReneging
 
-涓€涓姤鏂囧凡琚?SACK 纭锛屼絾鎺ユ敹鏂逛涪寮冧簡璇ユ姤鏂囷紝鍥犳鍙戦€佹柟闇€瑕侀噸浼犺鎶ユ枃銆?
-鍦ㄨ繖绉嶆儏鍐典笅锛屽彂閫佹柟灏?TcpExtTCPSACKReneging 鍔?1銆傛帴鏀舵柟鍙兘涓㈠純涓€涓?
-宸茶 SACK 纭鐨勬姤鏂囷紝灏界杩欏緢涓嶅甯革紝浣?TCP 鍗忚鏄厑璁哥殑銆傚彂閫佹柟鍏跺疄
-骞朵笉鐭ラ亾鎺ユ敹鏂瑰彂鐢熶簡浠€涔堛€傚彂閫佹柟鍙槸绛夊緟璇ユ姤鏂囩殑 RTO 瓒呮椂锛岀劧鍚庡亣瀹氳
-鎶ユ枃宸茶鎺ユ敹鏂逛涪寮冦€?
+一个报文已SACK 确认，但接收方丢弃了该报文，因此发送方需要重传该报文
+在这种情况下，发送方TcpExtTCPSACKReneging 1。接收方可能丢弃一
+已被 SACK 确认的报文，尽管这很不寻常，TCP 协议是允许的。发送方其实
+并不知道接收方发生了什么。发送方只是等待该报文的 RTO 超时，然后假定该
+报文已被接收方丢弃
 
 - TcpExtTCPRenoReorder
 
-涔卞簭鎶ユ枃鐢卞揩閫熸仮澶嶆娴嬨€傚畠浠呭湪绂佺敤 SACK 鏃朵娇鐢ㄣ€傚揩閫熸仮澶嶇畻娉曢€氳繃閲嶅 ACK
-鐨勬暟閲忔潵妫€娴嬩贡搴忋€備緥濡傦紝濡傛灉瑙﹀彂浜嗛噸浼狅紝鑰屽師鏈閲嶄紶鐨勬姤鏂囧苟鏈涪澶憋紝鍙槸
-涔卞簭锛屾帴鏀舵柟浼氳繘琛屽娆＄‘璁わ紝涓€娆￠拡瀵归噸浼犵殑鎶ユ枃锛屽彟涓€娆￠拡瀵瑰師濮嬩贡搴忔姤鏂囩殑
-鍒拌揪銆傚洜姝ゅ彂閫佹柟浼氬彂鐜版敹鍒扮殑 ACK 澶氫簬棰勬湡锛屼粠鑰岀煡閬撳彂鐢熶簡涔卞簭銆?
+乱序报文由快速恢复检测。它仅在禁用 SACK 时使用。快速恢复算法通过重复 ACK
+的数量来检测乱序。例如，如果触发了重传，而原本被重传的报文并未丢失，只是
+乱序，接收方会进行多次确认，一次针对重传的报文，另一次针对原始乱序报文的
+到达。因此发送方会发现收到的 ACK 多于预期，从而知道发生了乱序
 
 - TcpExtTCPTSReorder
 
-褰撳～琛ヤ竴涓┖闅欙紙hole锛夋椂妫€娴嬪埌涔卞簭鎶ユ枃銆備緥濡傦紝鍋囪鍙戦€佹柟鍙戦€佷簡鎶ユ枃
-1銆?銆?銆?銆?锛岃€屾帴鏀堕『搴忔槸 1銆?銆?銆?銆?銆傚綋鍙戦€佹柟鏀跺埌鎶ユ枃 3 鐨?ACK锛堝皢
-濉ˉ绌洪殭锛夋椂锛屼袱绉嶆儏鍐典笅浼氳 TcpExtTCPTSReorder 澧炲姞 1锛?1) 濡傛灉鎶ユ枃 3
-灏氭湭琚啀娆￠噸浼犮€?2) 濡傛灉鎶ユ枃 3 宸茶閲嶄紶锛屼絾鍏?ACK 鐨勬椂闂存埑鏃╀簬閲嶄紶鐨?
-鏃堕棿鎴炽€?
+当填补一个空隙（hole）时检测到乱序报文。例如，假设发送方发送了报文
+1，而接收顺序是 1。当发送方收到报文 3 ACK（将
+填补空隙）时，两种情况下会让 TcpExtTCPTSReorder 增加 11) 如果报文 3
+尚未被再次重传2) 如果报文 3 已被重传，但ACK 的时间戳早于重传
+时间戳
 
 - TcpExtTCPSACKReorder
 
-鐢?SACK 妫€娴嬪埌鐨勪贡搴忔姤鏂囥€係ACK 鏈変袱绉嶆柟娉曟娴嬩贡搴忥細(1) 鍙戦€佹柟鏀跺埌 DSACK銆?
-杩欒〃绀哄彂閫佹柟澶氭鍙戦€佷簡鍚屼竴涓姤鏂囷紝鍞竴鐨勫師鍥犳槸鍙戦€佹柟璁や负涓€涓贡搴忔姤鏂囧凡
-涓㈠け锛屼簬鏄啀娆″彂閫佽鎶ユ枃銆?2) 鍋囪鍙戦€佹柟鍙戦€佷簡鎶ユ枃 1銆?銆?銆?銆?锛屼笖
-鍙戦€佹柟宸叉敹鍒版姤鏂?2 鍜?5 鐨?SACK锛岀幇鍦ㄥ彂閫佹柟鏀跺埌鎶ユ枃 4 鐨?SACK锛屼笖鍙戦€佹柟
-灏氭湭閲嶄紶璇ユ姤鏂囷紝鍙戦€佹柟灏变細鐭ラ亾鎶ユ枃 4 鏄贡搴忕殑銆傚湪涓婅堪涓ょ鎯呭喌涓嬶紝鍐呮牳鐨?
-TCP 鍗忚鏍堥兘浼氬鍔?TcpExtTCPSACKReorder銆?
+SACK 检测到的乱序报文。SACK 有两种方法检测乱序：(1) 发送方收到 DSACK
+这表示发送方多次发送了同一个报文，唯一的原因是发送方认为一个乱序报文已
+丢失，于是再次发送该报文2) 假设发送方发送了报文 1，且
+发送方已收到报2 5 SACK，现在发送方收到报文 4 SACK，且发送方
+尚未重传该报文，发送方就会知道报文 4 是乱序的。在上述两种情况下，内核
+TCP 协议栈都会增TcpExtTCPSACKReorder
 
 - TcpExtTCPSlowStartRetrans
 
-TCP 鍗忚鏍堟兂瑕侀噸浼犱竴涓姤鏂囷紝涓旀嫢濉炴帶鍒剁姸鎬佷负 'Loss'銆?
+TCP 协议栈想要重传一个报文，且拥塞控制状态为 'Loss'
 
 - TcpExtTCPFastRetrans
 
-TCP 鍗忚鏍堟兂瑕侀噸浼犱竴涓姤鏂囷紝涓旀嫢濉炴帶鍒剁姸鎬佷笉涓?'Loss'銆?
+TCP 协议栈想要重传一个报文，且拥塞控制状态不'Loss'
 
 - TcpExtTCPLostRetransmit
 
-涓€涓?SACK 鎸囧嚭鏌愪釜閲嶄紶鎶ユ枃鍐嶆涓㈠け銆?
+一SACK 指出某个重传报文再次丢失
 
 - TcpExtTCPRetransFail
 
-TCP 鍗忚鏍堣瘯鍥惧皢涓€涓噸浼犳姤鏂囦氦浠樼粰涓嬪眰锛屼絾涓嬪眰杩斿洖浜嗛敊璇€?
+TCP 协议栈试图将一个重传报文交付给下层，但下层返回了错误
 
 - TcpExtTCPSynRetrans
 
-TCP 鍗忚鏍堥噸浼犱竴涓?SYN 鎶ユ枃銆?
+TCP 协议栈重传一SYN 报文
 
 ## DSACK
 
-DSACK 瀹氫箟浜?`RFC2883`_銆傛帴鏀舵柟浣跨敤 DSACK 鍚戝彂閫佹柟鎶ュ憡閲嶅鐨勬姤鏂囥€傚瓨鍦ㄤ袱绫?
-閲嶅锛?1) 涓€涓凡琚‘璁ょ殑鎶ユ枃鏄噸澶嶇殑銆?2) 涓€涓贡搴忔姤鏂囨槸閲嶅鐨勩€俆CP 鍗忚鏍?
-鍦ㄦ帴鏀舵柟鍜屽彂閫佹柟涓や晶閮界粺璁¤繖涓ょ被閲嶅銆?
+DSACK 定义`RFC2883`_。接收方使用 DSACK 向发送方报告重复的报文。存在两
+重复1) 一个已被确认的报文是重复的2) 一个乱序报文是重复的。TCP 协议
+在接收方和发送方两侧都统计这两类重复
 
 
 - TcpExtTCPDSACKOldSent
 
-TCP 鍗忚鏍堟敹鍒颁竴涓凡琚‘璁ょ殑閲嶅鎶ユ枃锛屼簬鏄悜鍙戦€佹柟鍙戦€佷竴涓?DSACK銆?
+TCP 协议栈收到一个已被确认的重复报文，于是向发送方发送一DSACK
 
 - TcpExtTCPDSACKOfoSent
 
-TCP 鍗忚鏍堟敹鍒颁竴涓贡搴忕殑閲嶅鎶ユ枃锛屼簬鏄悜鍙戦€佹柟鍙戦€佷竴涓?DSACK銆?
+TCP 协议栈收到一个乱序的重复报文，于是向发送方发送一DSACK
 
 - TcpExtTCPDSACKRecv
 
-TCP 鍗忚鏍堟敹鍒颁竴涓?DSACK锛岃〃绀烘敹鍒颁簡涓€涓凡琚‘璁ょ殑閲嶅鎶ユ枃銆?
+TCP 协议栈收到一DSACK，表示收到了一个已被确认的重复报文
 
 - TcpExtTCPDSACKOfoRecv
 
-TCP 鍗忚鏍堟敹鍒颁竴涓?DSACK锛岃〃绀烘敹鍒颁簡涓€涓贡搴忕殑閲嶅鎶ユ枃銆?
+TCP 协议栈收到一DSACK，表示收到了一个乱序的重复报文
 
-## 鏃犳晥鐨?SACK 涓?DSACK
+## 无效SACK DSACK
 
-褰撲竴涓?SACK锛堟垨 DSACK锛夊潡鏃犳晥鏃讹紝鐩稿簲鐨勮鏁板櫒浼氳鏇存柊銆傛牎楠屾柟娉曞熀浜?SACK
-鍧楃殑璧峰/缁撴潫搴忓垪鍙枫€傛洿澶氱粏鑺傝鍙傝€冨唴鏍告簮鐮佷腑鍑芥暟 tcp_is_sackblock_valid
-鐨勬敞閲娿€備竴涓?SACK 閫夐」鏈€澶氬彲浠ユ湁 4 涓潡锛屽畠浠細琚€愪竴妫€鏌ャ€備緥濡傦紝濡傛灉
-涓€涓?SACK 鏈?3 涓潡鏃犳晥锛岀浉搴旂殑璁℃暟鍣ㄤ細琚洿鏂?3 娆°€傛彁浜?18f02545a9a1
-锛?[TCP] MIB: Add counters for discarded SACK blocks"锛夌殑娉ㄩ噴鏈夐澶栫殑瑙ｉ噴锛?
+当一SACK（或 DSACK）块无效时，相应的计数器会被更新。校验方法基SACK
+块的起始/结束序列号。更多细节请参考内核源码中函数 tcp_is_sackblock_valid
+的注释。一SACK 选项最多可以有 4 个块，它们会被逐一检查。例如，如果
+一SACK 3 个块无效，相应的计数器会被更3 次。提18f02545a9a1
+[TCP] MIB: Add counters for discarded SACK blocks"）的注释有额外的解释
 
 - TcpExtTCPSACKDiscard
 
-璇ヨ鏁板櫒琛ㄧず鏈夊灏戜釜 SACK 鍧楁棤鏁堛€傚鏋滄棤鏁堢殑 SACK 鍧楁槸鐢?ACK 璁板綍锛圓CK
-recording锛夊紩璧风殑锛孴CP 鍗忚鏍堝彧浼氬拷鐣ュ畠锛岃€屼笉浼氭洿鏂拌璁℃暟鍣ㄣ€?
+该计数器表示有多少个 SACK 块无效。如果无效的 SACK 块是ACK 记录（ACK
+recording）引起的，TCP 协议栈只会忽略它，而不会更新该计数器
 
 - TcpExtTCPDSACKIgnoredOld 涓?TcpExtTCPDSACKIgnoredNoUndo
 
-褰撲竴涓?DSACK 鍧楁棤鏁堟椂锛岃繖涓や釜璁℃暟鍣ㄤ箣涓€浼氳鏇存柊銆傛洿鏂板摢涓鏁板櫒鍙栧喅浜?
-TCP socket 鐨?undo_marker 鏍囧織銆傚鏋?undo_marker 鏈缃紝TCP 鍗忚鏍堜笉澶?
-鍙兘閲嶄紶浠讳綍鎶ユ枃锛岃€屾垜浠粛鐒舵敹鍒颁簡涓€涓棤鏁堢殑 DSACK 鍧楋紝鍘熷洜鍙兘鏄姤鏂囧湪
-缃戠粶涓棿琚鍒朵簡銆傚湪杩欑鎯呭喌涓嬶紝TcpExtTCPDSACKIgnoredNoUndo 浼氳鏇存柊銆傚鏋?
-undo_marker 宸茶缃紝TcpExtTCPDSACKIgnoredOld 浼氳鏇存柊銆傛濡傚叾鍚嶇О鎵€鏆楃ず鐨勶紝
-瀹冨彲鑳芥槸涓€涓棫鐨勬姤鏂囥€?
+当一DSACK 块无效时，这两个计数器之一会被更新。更新哪个计数器取决
+TCP socket undo_marker 标志。如undo_marker 未设置，TCP 协议栈不
+可能重传任何报文，而我们仍然收到了一个无效的 DSACK 块，原因可能是报文在
+网络中间被复制了。在这种情况下，TcpExtTCPDSACKIgnoredNoUndo 会被更新。如
+undo_marker 已设置，TcpExtTCPDSACKIgnoredOld 会被更新。正如其名称所暗示的，
+它可能是一个旧的报文
 
-## SACK 绉讳綅锛坰hift锛?
+## SACK 移位（shift
 
-Linux 缃戠粶鍗忚鏍堝皢鏁版嵁瀛樺偍鍦?sk_buff 缁撴瀯浣擄紙绠€绉?skb锛変腑銆傚鏋滀竴涓?SACK
-鍧楄法瓒婂涓?skb锛孴CP 鍗忚鏍堜細灏濊瘯閲嶆柊鏁寸悊杩欎簺 skb 涓殑鏁版嵁銆備緥濡傦紝濡傛灉涓€涓?
-SACK 鍧楃‘璁や簡 seq 10 鍒?15锛宻kb1 鎷ユ湁 seq 10 鍒?13锛宻kb2 鎷ユ湁 seq 14 鍒?20銆?
-skb2 涓殑 seq 14 鍜?15 浼氳绉诲姩鍒?skb1銆傝繖涓搷浣滅О涓?'shift'锛堢Щ浣嶏級銆傚鏋?
-涓€涓?SACK 鍧楃‘璁や簡 seq 10 鍒?20锛宻kb1 鎷ユ湁 seq 10 鍒?13锛宻kb2 鎷ユ湁 seq 14
-鍒?20銆俿kb2 涓殑鍏ㄩ儴鏁版嵁閮戒細琚Щ鍔ㄥ埌 skb1锛屽苟涓?skb2 浼氳涓㈠純锛岃繖涓搷浣?
-绉颁负 'merge'锛堝悎骞讹級銆?
+Linux 网络协议栈将数据存储sk_buff 结构体（简skb）中。如果一SACK
+块跨越多skb，TCP 协议栈会尝试重新整理这些 skb 中的数据。例如，如果一
+SACK 块确认了 seq 10 15，skb1 拥有 seq 10 13，skb2 拥有 seq 14 20
+skb2 中的 seq 14 15 会被移动skb1。这个操作称'shift'（移位）。如
+一SACK 块确认了 seq 10 20，skb1 拥有 seq 10 13，skb2 拥有 seq 14
+20。skb2 中的全部数据都会被移动到 skb1，并skb2 会被丢弃，这个操
+称为 'merge'（合并）
 
 - TcpExtTCPSackShifted
 
-涓€涓?skb 琚Щ浣?
+一skb 被移
 
 - TcpExtTCPSackMerged
 
-涓€涓?skb 琚悎骞?
+一skb 被合
 
 - TcpExtTCPSackShiftFallback
 
-涓€涓?skb 鏈簲琚Щ浣嶆垨鍚堝苟锛屼絾 TCP 鍗忚鏍堝嚭浜庢煇浜涘師鍥犳病鏈夎繖涔堝仛銆?
+一skb 本应被移位或合并，但 TCP 协议栈出于某些原因没有这么做
 
-## TCP 涔卞簭锛坥ut of order锛?
+## TCP 乱序（out of order
 
 - TcpExtTCPOFOQueue
 
-TCP 灞傛敹鍒颁竴涓贡搴忔姤鏂囷紝骞朵笖鏈夊厖瓒崇殑鍐呭瓨灏嗗叾鍏ラ槦銆?
+TCP 层收到一个乱序报文，并且有充足的内存将其入队
 
 - TcpExtTCPOFODrop
 
-TCP 灞傛敹鍒颁竴涓贡搴忔姤鏂囷紝浣嗘病鏈夎冻澶熺殑鍐呭瓨锛屼簬鏄皢鍏朵涪寮冦€傝繖绫绘姤鏂囦笉浼氳
-璁″叆 TcpExtTCPOFOQueue銆?
+TCP 层收到一个乱序报文，但没有足够的内存，于是将其丢弃。这类报文不会被
+计入 TcpExtTCPOFOQueue
 
 - TcpExtTCPOFOMerge
 
-鏀跺埌鐨勪贡搴忔姤鏂囦笌鍓嶄竴涓姤鏂囧瓨鍦ㄩ噸鍙犮€傞噸鍙犻儴鍒嗕細琚涪寮冦€傛墍鏈?TcpExtTCPOFOMerge
-鎶ユ枃涔熶細琚鍏?TcpExtTCPOFOQueue銆?
+收到的乱序报文与前一个报文存在重叠。重叠部分会被丢弃。所TcpExtTCPOFOMerge
+报文也会被计TcpExtTCPOFOQueue
 
 ## TCP PAWS
 
-PAWS锛圥rotection Against Wrapped Sequence numbers锛岄槻姝㈠簭鍒楀彿鍥炵粫锛夋槸涓€绉?
-鐢ㄤ簬涓㈠純鏃ф姤鏂囩殑绠楁硶銆傚畠渚濊禆浜?TCP 鏃堕棿鎴炽€傛洿澶氱粏鑺傝鍙傝€?`timestamp wiki`_
-鍜?`RFC of PAWS`_銆?
+PAWS（Protection Against Wrapped Sequence numbers，防止序列号回绕）是一
+用于丢弃旧报文的算法。它依赖TCP 时间戳。更多细节请参`timestamp wiki`_
+鍜?`RFC of PAWS`_銆。
 
 
 - TcpExtPAWSActive
 
-鎶ユ枃鍦?Syn-Sent 鐘舵€佷笅琚?PAWS 涓㈠純銆?
+报文Syn-Sent 状态下PAWS 丢弃
 
 - TcpExtPAWSEstab
 
-鎶ユ枃鍦ㄩ櫎 Syn-Sent 涔嬪鐨勪换浣曠姸鎬佷笅琚?PAWS 涓㈠純銆?
+报文在除 Syn-Sent 之外的任何状态下PAWS 丢弃
 
-## TCP ACK 璺宠繃
+## TCP ACK 跳过
 
-鍦ㄦ煇浜涘満鏅笅锛屽唴鏍镐細閬垮厤杩囦簬棰戠箒鍦板彂閫侀噸澶?ACK銆傛洿澶氱粏鑺傝鍙傝€?`sysctl
-document`_ 鐨?tcp_invalid_ratelimit 灏忚妭銆傚綋鍐呮牳鐢变簬 tcp_invalid_ratelimit
-鍐冲畾璺宠繃涓€涓?ACK 鏃讹紝鍐呮牳浼氭洿鏂颁互涓嬫煇涓鏁板櫒锛屼互琛ㄦ槑璇?ACK 鏄湪鍝鍦烘櫙涓?
-琚烦杩囩殑銆傚彧鏈夊綋鏀跺埌鐨勬姤鏂囨槸 SYN 鎶ユ枃鎴栦笉鍚暟鎹椂锛孉CK 鎵嶄細琚烦杩囥€?
+在某些场景下，内核会避免过于频繁地发送重ACK。更多细节请参`sysctl
+document`_ tcp_invalid_ratelimit 小节。当内核由于 tcp_invalid_ratelimit
+决定跳过一ACK 时，内核会更新以下某个计数器，以表明ACK 是在哪种场景
+被跳过的。只有当收到的报文是 SYN 报文或不含数据时，ACK 才会被跳过
 
 
 - TcpExtTCPACKSkippedSynRecv
 
-ACK 鍦?Syn-Recv 鐘舵€佷笅琚烦杩囥€係yn-Recv 鐘舵€佽〃绀?TCP 鍗忚鏍堟敹鍒颁簡 SYN 骞?
-鍥炲浜?SYN+ACK銆傛鏃?TCP 鍗忚鏍堟鍦ㄧ瓑寰呬竴涓?ACK銆傞€氬父锛孴CP 鍗忚鏍堝湪 Syn-Recv
-鐘舵€佷笅涓嶉渶瑕佸彂閫?ACK銆備絾鍦ㄥ嚑绉嶅満鏅笅锛孴CP 鍗忚鏍堥渶瑕佸彂閫?ACK銆備緥濡傦紝TCP
-鍗忚鏍堥噸澶嶆敹鍒扮浉鍚岀殑 SYN 鎶ユ枃銆佹敹鍒扮殑鎶ユ枃鏈€氳繃 PAWS 妫€鏌ワ紝鎴栨敹鍒扮殑鎶ユ枃
-搴忓垪鍙疯秴鍑虹獥鍙ｃ€傚湪杩欎簺鍦烘櫙涓嬶紝TCP 鍗忚鏍堥渶瑕佸彂閫?ACK銆傚鏋滃彂閫?ACK 鐨勯鐜?
-楂樹簬 tcp_invalid_ratelimit 鎵€鍏佽鐨勫€硷紝TCP 鍗忚鏍堜細璺宠繃鍙戦€?ACK锛屽苟澧炲姞
-TcpExtTCPACKSkippedSynRecv銆?
+ACK Syn-Recv 状态下被跳过。Syn-Recv 状态表TCP 协议栈收到了 SYN 
+回复SYN+ACK。此TCP 协议栈正在等待一ACK。通常，TCP 协议栈在 Syn-Recv
+状态下不需要发ACK。但在几种场景下，TCP 协议栈需要发ACK。例如，TCP
+协议栈重复收到相同的 SYN 报文、收到的报文未通过 PAWS 检查，或收到的报文
+序列号超出窗口。在这些场景下，TCP 协议栈需要发ACK。如果发ACK 的频
+高于 tcp_invalid_ratelimit 所允许的值，TCP 协议栈会跳过发ACK，并增加
+TcpExtTCPACKSkippedSynRecv銆。
 
 
 - TcpExtTCPACKSkippedPAWS
 
-ACK 鍥犱负 PAWS锛圥rotect Against Wrapped Sequence numbers锛岄槻姝㈠簭鍒楀彿鍥炵粫锛?
-妫€鏌ュけ璐ヨ€岃璺宠繃銆傚鏋?PAWS 妫€鏌ュ湪 Syn-Recv銆丗in-Wait-2 鎴?Time-Wait 鐘舵€佷笅
-澶辫触锛岃璺宠繃鐨?ACK 浼氳璁″叆 TcpExtTCPACKSkippedSynRecv銆乀cpExtTCPACKSkippedFinWait2
-鎴?TcpExtTCPACKSkippedTimeWait銆傚湪鎵€鏈夊叾浠栫姸鎬佷笅锛岃璺宠繃鐨?ACK 浼氳璁″叆
-TcpExtTCPACKSkippedPAWS銆?
+ACK 因为 PAWS（Protect Against Wrapped Sequence numbers，防止序列号回绕
+检查失败而被跳过。如PAWS 检查在 Syn-Recv、Fin-Wait-2 Time-Wait 状态下
+失败，被跳过ACK 会被计入 TcpExtTCPACKSkippedSynRecv、TcpExtTCPACKSkippedFinWait2
+TcpExtTCPACKSkippedTimeWait。在所有其他状态下，被跳过ACK 会被计入
+TcpExtTCPACKSkippedPAWS銆。
 
 - TcpExtTCPACKSkippedSeq
 
-搴忓垪鍙疯秴鍑虹獥鍙ｏ紝涓旀椂闂存埑閫氳繃浜?PAWS 妫€鏌ワ紝涓?TCP 鐘舵€佷笉鏄?Syn-Recv銆?
-Fin-Wait-2 鍜?Time-Wait銆?
+序列号超出窗口，且时间戳通过PAWS 检查，TCP 状态不Syn-Recv
+Fin-Wait-2 鍜?Time-Wait銆。
 
 - TcpExtTCPACKSkippedFinWait2
 
-ACK 鍦?Fin-Wait-2 鐘舵€佷笅琚烦杩囷紝鍘熷洜鍙兘鏄?PAWS 妫€鏌ュけ璐ユ垨鏀跺埌鐨勫簭鍒楀彿
-瓒呭嚭绐楀彛銆?
+ACK Fin-Wait-2 状态下被跳过，原因可能PAWS 检查失败或收到的序列号
+超出窗口
 
 - TcpExtTCPACKSkippedTimeWait
 
-ACK 鍦?Time-Wait 鐘舵€佷笅琚烦杩囷紝鍘熷洜鍙兘鏄?PAWS 妫€鏌ュけ璐ユ垨鏀跺埌鐨勫簭鍒楀彿
-瓒呭嚭绐楀彛銆?
+ACK Time-Wait 状态下被跳过，原因可能PAWS 检查失败或收到的序列号
+超出窗口
 
 - TcpExtTCPACKSkippedChallenge
 
-濡傛灉璇?ACK 鏄竴涓寫鎴橈紙challenge锛堿CK锛屽垯璺宠繃瀹冦€俁FC 5961 瀹氫箟浜?3 绉?
-鎸戞垬 ACK锛岃鍙傝€?`RFC 5961 section 3.2`_銆乣RFC 5961 section 4.2`_ 鍜?
-`RFC 5961 section 5.2`_銆傞櫎浜嗚繖涓夌鍦烘櫙澶栵紝鍦ㄦ煇浜?TCP 鐘舵€佷笅锛屽鏋?ACK 鍙?
-浣嶄簬绗竴涓湭纭鍙蜂箣鍓嶏紝Linux 鐨?TCP 鍗忚鏍堜篃浼氬彂閫佹寫鎴?ACK锛堟瘮 `RFC 5961
-section 5.2`_ 鏇翠弗鏍硷級銆?
+如果ACK 是一个挑战（challenge）ACK，则跳过它。RFC 5961 定义3 
+挑战 ACK，请参`RFC 5961 section 3.2`_、`RFC 5961 section 4.2`_ 
+`RFC 5961 section 5.2`_。除了这三种场景外，在某TCP 状态下，如ACK 
+位于第一个未确认号之前，Linux TCP 协议栈也会发送挑ACK（比 `RFC 5961
+section 5.2`_ 更严格）
 
-## TCP 鎺ユ敹绐楀彛
+## TCP 接收窗口
 
 - TcpExtTCPWantZeroWindowAdv
 
-鏍规嵁褰撳墠鍐呭瓨浣跨敤鎯呭喌锛孴CP 鍗忚鏍堝皾璇曞皢鎺ユ敹绐楀彛璁句负闆躲€備絾鎺ユ敹绐楀彛浠嶅彲鑳芥槸
-涓€涓潪闆跺€笺€備緥濡傦紝濡傛灉涔嬪墠鐨勭獥鍙ｅぇ灏忎负 10锛岃€?TCP 鍗忚鏍堟敹鍒颁簡 3 瀛楄妭锛岄偅涔?
-褰撳墠绐楀彛澶у皬浼氭槸 7锛屽嵆浣挎寜鍐呭瓨浣跨敤閲忚绠楀嚭鐨勭獥鍙ｅぇ灏忎负闆躲€?
+根据当前内存使用情况，TCP 协议栈尝试将接收窗口设为零。但接收窗口仍可能是
+一个非零值。例如，如果之前的窗口大小为 10，TCP 协议栈收到了 3 字节，那
+当前窗口大小会是 7，即使按内存使用量计算出的窗口大小为零
 
 - TcpExtTCPToZeroWindowAdv
 
-TCP 鎺ユ敹绐楀彛浠庝竴涓潪闆跺€艰璁句负闆躲€?
+TCP 接收窗口从一个非零值被设为零
 
 - TcpExtTCPFromZeroWindowAdv
 
-TCP 鎺ユ敹绐楀彛浠庨浂琚涓洪潪闆跺€笺€?
+TCP 接收窗口从零被设为非零值
 
 
-## 寤惰繜纭锛圖elayed ACK锛?
+## 延迟确认（Delayed ACK
 
-TCP 寤惰繜纭鏄竴绉嶇敤浜庡噺灏戠綉缁滀腑鎶ユ枃鏁伴噺鐨勬妧鏈€傛洿澶氱粏鑺傝鍙傝€?`Delayed ACK
+TCP 延迟确认是一种用于减少网络中报文数量的技术。更多细节请参`Delayed ACK
 wiki`_
 
 
 - TcpExtDelayedACKs
 
-涓€涓欢杩熺‘璁ゅ畾鏃跺櫒鍒版湡銆俆CP 鍗忚鏍堜細鍙戦€佷竴涓函 ACK 鎶ユ枃骞堕€€鍑哄欢杩熺‘璁ゆā寮忋€?
+一个延迟确认定时器到期。TCP 协议栈会发送一个纯 ACK 报文并退出延迟确认模式
 
 - TcpExtDelayedACKLocked
 
-涓€涓欢杩熺‘璁ゅ畾鏃跺櫒鍒版湡锛屼絾鐢变簬 socket 琚敤鎴锋€佺▼搴忛攣瀹氾紝TCP 鍗忚鏍堟棤娉?
-绔嬪嵆鍙戦€?ACK銆俆CP 鍗忚鏍堜細鍦ㄧ◢鍚庯紙鍦ㄧ敤鎴锋€佺▼搴忚В閿佽 socket 涔嬪悗锛夊彂閫佷竴涓?
-绾?ACK銆傚綋 TCP 鍗忚鏍堢◢鍚庡彂閫佽绾?ACK 鏃讹紝瀹冧篃浼氭洿鏂?TcpExtDelayedACKs 骞?
-閫€鍑哄欢杩熺‘璁ゆā寮忋€?
+一个延迟确认定时器到期，但由于 socket 被用户态程序锁定，TCP 协议栈无
+立即发ACK。TCP 协议栈会在稍后（在用户态程序解锁该 socket 之后）发送一
+ACK。当 TCP 协议栈稍后发送该ACK 时，它也会更TcpExtDelayedACKs 
+退出延迟确认模式
 
 - TcpExtDelayedACKLost
 
-褰?TCP 鍗忚鏍堟敹鍒颁竴涓凡琚‘璁ょ殑鎶ユ枃鏃讹紝瀹冧細琚洿鏂般€傚欢杩熺‘璁や涪澶卞彲鑳戒細
-瀵艰嚧姝ら棶棰橈紝浣嗗畠涔熷彲鑳界敱鍏朵粬鍘熷洜瑙﹀彂锛屼緥濡傛姤鏂囧湪缃戠粶涓澶嶅埗銆?
+TCP 协议栈收到一个已被确认的报文时，它会被更新。延迟确认丢失可能会
+导致此问题，但它也可能由其他原因触发，例如报文在网络中被复制
 
-## 灏鹃儴涓㈠け鎺㈡祴锛圱LP锛孴ail Loss Probe锛?
+## 尾部丢失探测（TLP，Tail Loss Probe
 
-TLP 鏄竴绉嶇敤浜庢娴?TCP 鎶ユ枃涓㈠け鐨勭畻娉曘€傛洿澶氱粏鑺傝鍙傝€?`TLP paper`_銆?
+TLP 是一种用于检TCP 报文丢失的算法。更多细节请参`TLP paper`_
 
 
 - TcpExtTCPLossProbes
 
-鍙戦€佷簡涓€涓?TLP 鎺㈡祴鎶ユ枃銆?
+发送了一TLP 探测报文
 
 - TcpExtTCPLossProbeRecovery
 
-妫€娴嬪埌涓€涓姤鏂囦涪澶卞苟鐢?TLP 鎭㈠銆?
+检测到一个报文丢失并TLP 恢复
 
-## TCP 蹇€熸墦寮€锛圱CP Fast Open锛夎鏄?
+## TCP 快速打开（TCP Fast Open）说
 
-TCP 蹇€熸墦寮€鏄竴绉嶅厑璁稿湪涓夋鎻℃墜瀹屾垚涔嬪墠浼犺緭鏁版嵁鐨勬妧鏈€備竴鑸€т粙缁嶈鍙傝€?
-`TCP Fast Open wiki`_銆?
+TCP 快速打开是一种允许在三次握手完成之前传输数据的技术。一般性介绍请参
+`TCP Fast Open wiki`_銆。
 
 
 - TcpExtTCPFastOpenActive
 
-褰?TCP 鍗忚鏍堝湪 SYN-SENT 鐘舵€佷笅鏀跺埌涓€涓?ACK 鎶ユ枃锛屼笖璇?ACK 鎶ユ枃纭浜?SYN
-鎶ユ枃涓殑鏁版嵁鏃讹紝TCP 鍗忚鏍堜究鐭ラ亾 TFO cookie 宸茶瀵圭鎺ュ彈锛屼簬鏄洿鏂拌璁℃暟鍣ㄣ€?
+TCP 协议栈在 SYN-SENT 状态下收到一ACK 报文，且ACK 报文确认SYN
+报文中的数据时，TCP 协议栈便知道 TFO cookie 已被对端接受，于是更新该计数器
 
 - TcpExtTCPFastOpenActiveFail
 
-璇ヨ鏁板櫒琛ㄧず TCP 鍗忚鏍堝彂璧蜂簡涓€涓?TCP 蹇€熸墦寮€锛屼絾澶辫触浜嗐€傝璁℃暟鍣ㄤ細鍦ㄤ笁绉?
-鍦烘櫙涓嬫洿鏂帮細(1) 瀵圭娌℃湁纭 SYN 鎶ユ枃涓殑鏁版嵁銆?2) 甯︽湁 TFO cookie 鐨?SYN
-鎶ユ枃鑷冲皯瓒呮椂浜嗕竴娆°€?3) 涓夋鎻℃墜涔嬪悗锛岄噸浼犺秴鏃跺彂鐢熶簡 net.ipv4.tcp_retries1
-娆★紝鍥犱负鏌愪簺涓棿璁惧鍙兘浼氬湪鎻℃墜鍚庘€滈粦娲炩€濇帀蹇€熸墦寮€銆?
+该计数器表示 TCP 协议栈发起了一TCP 快速打开，但失败了。该计数器会在三
+场景下更新：(1) 对端没有确认 SYN 报文中的数据2) 带有 TFO cookie SYN
+报文至少超时了一次3) 三次握手之后，重传超时发生了 net.ipv4.tcp_retries1
+次，因为某些中间设备可能会在握手后“黑洞”掉快速打开
 
 - TcpExtTCPFastOpenPassive
 
-璇ヨ鏁板櫒琛ㄧず TCP 鍗忚鏍堟帴鍙楀揩閫熸墦寮€璇锋眰鐨勬鏁般€?
+该计数器表示 TCP 协议栈接受快速打开请求的次数
 
 - TcpExtTCPFastOpenPassiveFail
 
-璇ヨ鏁板櫒琛ㄧず TCP 鍗忚鏍堟嫆缁濆揩閫熸墦寮€璇锋眰鐨勬鏁般€傚叾鍘熷洜瑕佷箞鏄?TFO cookie
-鏃犳晥锛岃涔堟槸 TCP 鍗忚鏍堝湪鍒涘缓 socket 鐨勮繃绋嬩腑鍙戠幇閿欒銆?
+该计数器表示 TCP 协议栈拒绝快速打开请求的次数。其原因要么TFO cookie
+无效，要么是 TCP 协议栈在创建 socket 的过程中发现错误
 
 - TcpExtTCPFastOpenListenOverflow
 
-褰撳緟澶勭悊鐨勫揩閫熸墦寮€璇锋眰鏁伴噺澶т簬 fastopenq->max_qlen 鏃讹紝TCP 鍗忚鏍堜細鎷掔粷
-璇ュ揩閫熸墦寮€璇锋眰骞舵洿鏂拌璁℃暟鍣ㄣ€傚綋璇ヨ鏁板櫒琚洿鏂版椂锛孴CP 鍗忚鏍堜笉浼氭洿鏂?
-TcpExtTCPFastOpenPassive 鎴?TcpExtTCPFastOpenPassiveFail銆俧astopenq->max_qlen
-鐢?TCP_FASTOPEN socket 鎿嶄綔璁剧疆锛屼笖涓嶈兘澶т簬 net.core.somaxconn銆備緥濡傦細
+当待处理的快速打开请求数量大于 fastopenq->max_qlen 时，TCP 协议栈会拒绝
+该快速打开请求并更新该计数器。当该计数器被更新时，TCP 协议栈不会更
+TcpExtTCPFastOpenPassive TcpExtTCPFastOpenPassiveFail。fastopenq->max_qlen
+TCP_FASTOPEN socket 操作设置，且不能大于 net.core.somaxconn。例如：
 
 setsockopt(sfd, SOL_TCP, TCP_FASTOPEN, &qlen, sizeof(qlen));
 
 - TcpExtTCPFastOpenCookieReqd
 
-璇ヨ鏁板櫒琛ㄧず瀹㈡埛绔兂瑕佽姹備竴涓?TFO cookie 鐨勬鏁般€?
+该计数器表示客户端想要请求一TFO cookie 的次数
 
 ## SYN cookie
 
-SYN cookie 鐢ㄤ簬缂撹В SYN flood 鏀诲嚮锛屾洿澶氱粏鑺傝鍙傝€?`SYN cookies wiki`_銆?
+SYN cookie 用于缓解 SYN flood 攻击，更多细节请参`SYN cookies wiki`_
 
 
 - TcpExtSyncookiesSent
 
-琛ㄧず鍙戦€佷簡澶氬皯涓?SYN cookie銆?
+表示发送了多少SYN cookie
 
 - TcpExtSyncookiesRecv
 
-TCP 鍗忚鏍堟敹鍒颁簡澶氬皯涓?SYN cookie 鐨勫洖澶嶆姤鏂囥€?
+TCP 协议栈收到了多少SYN cookie 的回复报文
 
 - TcpExtSyncookiesFailed
 
-浠?SYN cookie 涓В鐮佸嚭鐨?MSS 鏃犳晥銆傚綋璇ヨ鏁板櫒琚洿鏂版椂锛屾敹鍒扮殑鎶ユ枃涓嶄細琚?
-褰撲綔 SYN cookie 澶勭悊锛孴cpExtSyncookiesRecv 璁℃暟鍣ㄤ篃涓嶄細琚洿鏂般€?
+SYN cookie 中解码出MSS 无效。当该计数器被更新时，收到的报文不会
+当作 SYN cookie 处理，TcpExtSyncookiesRecv 计数器也不会被更新
 
-## 鎸戞垬 ACK锛圕hallenge ACK锛?
+## 挑战 ACK（Challenge ACK
 
-鍏充簬鎸戞垬 ACK 鐨勭粏鑺傦紝璇峰弬鑰?TcpExtTCPACKSkippedChallenge 鐨勮鏄庛€?
+关于挑战 ACK 的细节，请参TcpExtTCPACKSkippedChallenge 的说明
 
 - TcpExtTCPChallengeACK
 
-鍙戦€佺殑鎸戞垬 ACK 鐨勬暟閲忋€?
+发送的挑战 ACK 的数量
 
 - TcpExtTCPSYNChallenge
 
-涓哄搷搴?SYN 鎶ユ枃鑰屽彂閫佺殑鎸戞垬 ACK 鐨勬暟閲忋€傛洿鏂拌璁℃暟鍣ㄥ悗锛孴CP 鍗忚鏍堝彲鑳戒細
-鍙戦€佷竴涓寫鎴?ACK 骞舵洿鏂?TcpExtTCPChallengeACK 璁℃暟鍣紝涔熷彲鑳借烦杩囧彂閫佹寫鎴?
-ACK 鑰屾洿鏂?TcpExtTCPACKSkippedChallenge銆?
+为响SYN 报文而发送的挑战 ACK 的数量。更新该计数器后，TCP 协议栈可能会
+发送一个挑ACK 并更TcpExtTCPChallengeACK 计数器，也可能跳过发送挑
+ACK 而更TcpExtTCPACKSkippedChallenge
 
-## 淇壀锛坧rune锛?
+## 修剪（prune
 
-褰?socket 澶勪簬鍐呭瓨鍘嬪姏涓嬫椂锛孴CP 鍗忚鏍堜細灏濊瘯浠庢帴鏀堕槦鍒楀拰涔卞簭闃熷垪涓洖鏀跺唴瀛樸€?
-鍏朵腑涓€绉嶅洖鏀舵柟娉曟槸 'collapse'锛堟姌鍙狅級锛屽嵆鍒嗛厤涓€涓ぇ鐨?skb锛屽皢杩炵画鐨?skb
-澶嶅埗鍒拌繖涓ぇ鐨?skb 涓紝骞堕噴鏀捐繖浜涜繛缁殑 skb銆?
+socket 处于内存压力下时，TCP 协议栈会尝试从接收队列和乱序队列中回收内存
+其中一种回收方法是 'collapse'（折叠），即分配一个大skb，将连续skb
+复制到这个大skb 中，并释放这些连续的 skb
 
 - TcpExtPruneCalled
 
-TCP 鍗忚鏍堝皾璇曚负涓€涓?socket 鍥炴敹鍐呭瓨銆傛洿鏂拌璁℃暟鍣ㄥ悗锛孴CP 鍗忚鏍堜細灏濊瘯鎶樺彔
-涔卞簭闃熷垪鍜屾帴鏀堕槦鍒椼€傚鏋滃唴瀛樹粛鐒朵笉瓒筹紝TCP 鍗忚鏍堜細灏濊瘯浠庝贡搴忛槦鍒椾腑涓㈠純鎶ユ枃
-锛堝苟鏇存柊 TcpExtOfoPruned 璁℃暟鍣級銆?
+TCP 协议栈尝试为一socket 回收内存。更新该计数器后，TCP 协议栈会尝试折叠
+乱序队列和接收队列。如果内存仍然不足，TCP 协议栈会尝试从乱序队列中丢弃报文
+（并更新 TcpExtOfoPruned 计数器）
 
 - TcpExtOfoPruned
 
-TCP 鍗忚鏍堝皾璇曚粠涔卞簭闃熷垪涓涪寮冩姤鏂囥€?
+TCP 协议栈尝试从乱序队列中丢弃报文
 
 - TcpExtRcvPruned
 
-缁忚繃 'collapse' 骞朵粠涔卞簭闃熷垪涓涪寮冩姤鏂囧悗锛屽鏋滃疄闄呬娇鐢ㄧ殑鍐呭瓨浠嶇劧澶т簬鍏佽鐨?
-鏈€澶у唴瀛橈紝璇ヨ鏁板櫒浼氳鏇存柊銆傝繖鎰忓懗鐫€ 'prune' 澶辫触銆?
+经过 'collapse' 并从乱序队列中丢弃报文后，如果实际使用的内存仍然大于允许
+最大内存，该计数器会被更新。这意味着 'prune' 失败
 
 - TcpExtTCPRcvCollapsed
 
-璇ヨ鏁板櫒琛ㄧず鍦?'collapse' 杩囩▼涓噴鏀句簡澶氬皯涓?skb銆?
+该计数器表示'collapse' 过程中释放了多少skb
 
-## 绀轰緥
+## 示例
 
 
-### ping 娴嬭瘯
+### ping 测试
 ```
 
   nstatuser@nstat-a:~$ ping 8.8.8.8 -c 1
@@ -846,22 +846,22 @@ TCP 鍗忚鏍堝皾璇曚粠涔卞簭闃熷垪涓涪寮冩姤鏂囥€?
   IpExtInNoECTPkts                1                  0.0
 
 ```
-Linux 鏈嶅姟鍣ㄥ彂閫佷簡涓€涓?ICMP Echo 鎶ユ枃锛屽洜姝?IpOutRequests銆?
-IcmpOutMsgs銆両cmpOutEchos 鍜?IcmpMsgOutType8 鍚勫鍔?1銆傛湇鍔″櫒浠?
-8.8.8.8 鏀跺埌 ICMP Echo Reply锛屽洜姝?IpInReceives銆両cmpInMsgs銆?
-IcmpInEchoReps 鍜?IcmpMsgInType0 鍚勫鍔?1銆傝 ICMP Echo Reply 缁?
-IP 灞備紶閫掔粰 ICMP 灞傦紝鍥犳 IpInDelivers 澧炲姞 1銆俻ing 鐨勯粯璁ゆ暟鎹ぇ灏?
-涓?48锛屽洜姝や竴涓?ICMP Echo 鎶ユ枃鍙婂叾瀵瑰簲鐨?Echo Reply 鎶ユ枃鐢变互涓嬮儴鍒?
-鏋勬垚锛?
+Linux 服务器发送了一ICMP Echo 报文，因IpOutRequests
+IcmpOutMsgs、IcmpOutEchos IcmpMsgOutType8 各增1。服务器
+8.8.8.8 收到 ICMP Echo Reply，因IpInReceives、IcmpInMsgs
+IcmpInEchoReps IcmpMsgInType0 各增1。该 ICMP Echo Reply 
+IP 层传递给 ICMP 层，因此 IpInDelivers 增加 1。ping 的默认数据大
+48，因此一ICMP Echo 报文及其对应Echo Reply 报文由以下部
+构成
 
-- 14 瀛楄妭 MAC 澶撮儴
-- 20 瀛楄妭 IP 澶撮儴
-- 16 瀛楄妭 ICMP 澶撮儴
-- 48 瀛楄妭鏁版嵁锛坧ing 鍛戒护鐨勯粯璁ゅ€硷級
+- 14 字节 MAC 头部
+- 20 字节 IP 头部
+- 16 字节 ICMP 头部
+- 48 字节数据（ping 命令的默认值）
 
-鍥犳 IpExtInOctets 鍜?IpExtOutOctets 鍧囦负 20+16+48=84銆?
+因此 IpExtInOctets IpExtOutOctets 均为 20+16+48=84
 
-### TCP 涓夋鎻℃墜
+### TCP 三次握手
 ```
 
   nstatuser@nstat-b:~$ nc -lknv 0.0.0.0 9000
@@ -874,7 +874,7 @@ IP 灞備紶閫掔粰 ICMP 灞傦紝鍥犳 IpInDelivers 澧炲姞 1銆俻ing 
   Connection to 192.168.122.251 9000 port [tcp/*] succeeded!
 
 ```
-鏈嶅姟鍣ㄧ洃鍚?tcp 9000 绔彛锛屽鎴风杩炴帴鍒板畠锛屽弻鏂瑰畬鎴愪簡涓夋鎻℃墜銆?
+服务器监tcp 9000 端口，客户端连接到它，双方完成了三次握手
 ```
 
   nstatuser@nstat-b:~$ nstat | grep -i tcp
@@ -892,17 +892,17 @@ IP 灞備紶閫掔粰 ICMP 灞傦紝鍥犳 IpInDelivers 澧炲姞 1銆俻ing 
   TcpOutSegs                      2                  0.0
 
 ```
-褰撴湇鍔″櫒鏀跺埌绗竴涓?SYN 鏃讹紝瀹冨洖澶?SYN+ACK锛屽苟杩涘叆 SYN-RCVD 鐘舵€侊紝
-鍥犳 TcpPassiveOpens 澧炲姞 1銆傛湇鍔″櫒鏀跺埌 SYN銆佸彂閫?SYN+ACK銆佹敹鍒?
-ACK锛屽洜姝ゆ湇鍔″櫒鍙戦€?1 涓姤鏂囥€佹帴鏀?2 涓姤鏂囷紝TcpInSegs 澧炲姞 2锛?
-TcpOutSegs 澧炲姞 1銆備笁娆℃彙鎵嬬殑鏈€鍚庝竴涓?ACK 鏄笉甯︽暟鎹殑绾?ACK锛屽洜姝?
-TcpExtTCPPureAcks 澧炲姞 1銆?
+当服务器收到第一SYN 时，它回SYN+ACK，并进入 SYN-RCVD 状态，
+因此 TcpPassiveOpens 增加 1。服务器收到 SYN、发SYN+ACK、收
+ACK，因此服务器发1 个报文、接2 个报文，TcpInSegs 增加 2
+TcpOutSegs 增加 1。三次握手的最后一ACK 是不带数据的ACK，因
+TcpExtTCPPureAcks 增加 1
 
-褰撳鎴风鍙戦€?SYN 鏃讹紝瀹㈡埛绔繘鍏?SYN-SENT 鐘舵€侊紝鍥犳 TcpActiveOpens
-澧炲姞 1锛涘鎴风鍙戦€?SYN銆佹敹鍒?SYN+ACK銆佸彂閫?ACK锛屽洜姝ゅ鎴风鍙戦€?2 涓?
-鎶ユ枃銆佹帴鏀?1 涓姤鏂囷紝TcpInSegs 澧炲姞 1锛孴cpOutSegs 澧炲姞 2銆?
+当客户端发SYN 时，客户端进SYN-SENT 状态，因此 TcpActiveOpens
+增加 1；客户端发SYN、收SYN+ACK、发ACK，因此客户端发2 
+报文、接1 个报文，TcpInSegs 增加 1，TcpOutSegs 增加 2
 
-### TCP 姝ｅ父娴侀噺
+### TCP 正常流量
 ```
 
   nstatuser@nstat-b:~$ nc -lkv 0.0.0.0 9000
@@ -992,16 +992,16 @@ TcpExtTCPPureAcks 澧炲姞 1銆?
   IpExtInNoECTPkts                1                  0.0
 
 ```
-瀵规瘮绗竴娆″鎴风 nstat 涓庣浜屾瀹㈡埛绔?nstat锛屾垜浠彲浠ュ彂鐜颁竴涓樊寮傦細
-绗竴娆℃湁 'TcpExtTCPPureAcks'锛岃€岀浜屾鏈?'TcpExtTCPHPAcks'銆傜涓€娆?
-鏈嶅姟鍣ㄧ nstat 涓庣浜屾鏈嶅姟鍣ㄧ nstat 涔熸湁宸紓锛氱浜屾鏈嶅姟鍣ㄧ nstat
-鏈?TcpExtTCPHPHits锛岃€岀涓€娆℃湇鍔″櫒绔?nstat 娌℃湁銆傜綉缁滄祦閲忔ā寮忓畬鍏?
-鐩稿悓锛氬鎴风鍚戞湇鍔″櫒鍙戦€佷竴涓姤鏂囷紝鏈嶅姟鍣ㄥ洖澶嶄竴涓?ACK銆備絾鍐呮牳浠ヤ笉鍚岀殑
-鏂瑰紡澶勭悊瀹冧滑銆傚綋鏈娇鐢?TCP window scale 閫夐」鏃讹紝鍐呮牳浼氬湪杩炴帴杩涘叆
-established 鐘舵€佹椂绔嬪嵆灏濊瘯鍚敤蹇€熻矾寰勶紱浣嗗鏋滀娇鐢ㄤ簡 TCP window scale
-閫夐」锛屽唴鏍镐細鍏堢鐢ㄥ揩閫熻矾寰勶紝骞跺湪鏀跺埌鎶ユ枃鍚庡啀灏濊瘯鍚敤瀹冦€傛垜浠彲浠ヤ娇鐢?
-'ss' 鍛戒护鏉ラ獙璇佹槸鍚︿娇鐢ㄤ簡 window scale 閫夐」銆備緥濡傦紝鍦ㄦ湇鍔″櫒鎴栧鎴风
-涓婅繍琛屼互涓嬪懡浠?
+对比第一次客户端 nstat 与第二次客户nstat，我们可以发现一个差异：
+第一次有 'TcpExtTCPPureAcks'，而第二次'TcpExtTCPHPAcks'。第一
+服务器端 nstat 与第二次服务器端 nstat 也有差异：第二次服务器端 nstat
+TcpExtTCPHPHits，而第一次服务器nstat 没有。网络流量模式完
+相同：客户端向服务器发送一个报文，服务器回复一ACK。但内核以不同的
+方式处理它们。当未使TCP window scale 选项时，内核会在连接进入
+established 状态时立即尝试启用快速路径；但如果使用了 TCP window scale
+选项，内核会先禁用快速路径，并在收到报文后再尝试启用它。我们可以使
+'ss' 命令来验证是否使用了 window scale 选项。例如，在服务器或客户端
+上运行以下命
 ```
 
   nstatuser@nstat-a:~$ ss -o state established -i '( dport = :9000 or sport = :9000 )
@@ -1010,22 +1010,22 @@ established 鐘舵€佹椂绔嬪嵆灏濊瘯鍚敤蹇€熻矾寰勶紱�
              ts sack cubic wscale:7,7 rto:204 rtt:0.98/0.49 mss:1448 pmtu:1500 rcvmss:536 advmss:1448 cwnd:10 bytes_acked:1 segs_out:2 segs_in:1 send 118.2Mbps lastsnd:46572 lastrcv:46572 lastack:46572 pacing_rate 236.4Mbps rcv_space:29200 rcv_ssthresh:29200 minrtt:0.98
 
 ```
-'wscale:7,7' 琛ㄧず鏈嶅姟鍣ㄥ拰瀹㈡埛绔兘灏?window scale 閫夐」璁句负 7銆傜幇鍦ㄦ垜浠彲浠?
-瑙ｉ噴娴嬭瘯涓?nstat 鐨勮緭鍑猴細
+'wscale:7,7' 表示服务器和客户端都window scale 选项设为 7。现在我们可
+解释测试nstat 的输出：
 
-鍦ㄥ鎴风绗竴娆?nstat 杈撳嚭涓紝瀹㈡埛绔彂閫佷簡涓€涓姤鏂囷紝鏈嶅姟鍣ㄥ洖澶嶄簡涓€涓?
-ACK锛屽綋鍐呮牳澶勭悊杩欎釜 ACK 鏃讹紝蹇€熻矾寰勫皻鏈惎鐢紝鍥犳璇?ACK 琚鍏?
-'TcpExtTCPPureAcks'銆?
+在客户端第一nstat 输出中，客户端发送了一个报文，服务器回复了一
+ACK，当内核处理这个 ACK 时，快速路径尚未启用，因此ACK 被计
+'TcpExtTCPPureAcks'銆。
 
-鍦ㄥ鎴风绗簩娆?nstat 杈撳嚭涓紝瀹㈡埛绔啀娆″彂閫佷簡涓€涓姤鏂囷紝骞舵敹鍒版湇鍔″櫒
-鐨勫彟涓€涓?ACK锛屾鏃跺揩閫熻矾寰勫凡鍚敤锛屼笖璇?ACK 绗﹀悎蹇€熻矾寰勬潯浠讹紝鍥犳
-鐢卞揩閫熻矾寰勫鐞嗭紝璇?ACK 琚鍏?TcpExtTCPHPAcks銆?
+在客户端第二nstat 输出中，客户端再次发送了一个报文，并收到服务器
+的另一ACK，此时快速路径已启用，且ACK 符合快速路径条件，因此
+由快速路径处理，ACK 被计TcpExtTCPHPAcks
 
-鍦ㄦ湇鍔″櫒绔涓€娆?nstat 杈撳嚭涓紝蹇€熻矾寰勬湭鍚敤锛屽洜姝ゆ病鏈?
-'TcpExtTCPHPHits'銆?
+在服务器端第一nstat 输出中，快速路径未启用，因此没
+'TcpExtTCPHPHits'銆。
 
-鍦ㄦ湇鍔″櫒绔浜屾 nstat 杈撳嚭涓紝蹇€熻矾寰勫凡鍚敤锛屽苟涓斾粠瀹㈡埛绔敹鍒扮殑
-鎶ユ枃绗﹀悎蹇€熻矾寰勬潯浠讹紝鍥犳瀹冭璁″叆 'TcpExtTCPHPHits'銆?
+在服务器端第二次 nstat 输出中，快速路径已启用，并且从客户端收到的
+报文符合快速路径条件，因此它被计入 'TcpExtTCPHPHits'
 
 ### TcpExtTCPAbortOnClose
 ```
@@ -1043,27 +1043,27 @@ ACK锛屽綋鍐呮牳澶勭悊杩欎釜 ACK 鏃讹紝蹇€熻矾寰勫皻鏈
       time.sleep(9999999)
 
 ```
-璇?python 鑴氭湰鐩戝惉 9000 绔彛锛屼絾涓嶄細浠庤繛鎺ヤ腑璇诲彇浠讳綍鏁版嵁銆?
+python 脚本监听 9000 端口，但不会从连接中读取任何数据
 ```
 
   nstatuser@nstat-a:~$ echo "hello" | nc nstat-b 9000
 
 ```
-鐒跺悗锛屾垜浠洖鍒版湇鍔″櫒绔紝鏈嶅姟鍣ㄥ凡缁忔敹鍒颁簡 "hello" 鎶ユ枃锛屽苟涓?TCP 灞?
-宸茬粡瀵硅鎶ユ枃杩涜浜嗙‘璁わ紙ack锛夛紝浣嗗簲鐢ㄧ▼搴忓皻鏈鍙栧畠銆傛垜浠緭鍏?
-Ctrl-C 鏉ョ粓姝㈡湇鍔″櫒鑴氭湰銆傜劧鍚庢垜浠?
+然后，我们回到服务器端，服务器已经收到了 "hello" 报文，并TCP 
+已经对该报文进行了确认（ack），但应用程序尚未读取它。我们输
+Ctrl-C 来终止服务器脚本。然后我
 ```
 
   nstatuser@nstat-b:~$ nstat | grep -i abort
   TcpExtTCPAbortOnClose           1                  0.0
 
 ```
-濡傛灉鎴戜滑鍦ㄦ湇鍔″櫒绔繍琛?tcpdump锛屽彲浠ュ彂鐜版湇鍔″櫒鍦ㄦ垜浠緭鍏?Ctrl-C 鍚?
-鍙戦€佷簡涓€涓?RST銆?
+如果我们在服务器端运tcpdump，可以发现服务器在我们输Ctrl-C 
+发送了一RST
 
 ### TcpExtTCPAbortOnMemory 涓?TcpExtTCPAbortOnTimeout
 
-涓嬮潰鏄竴涓瀛ゅ効 socket 鏁伴噺瓒呰繃 net.ipv4.tcp_max_orphans 鐨勭ず渚嬨€?
+下面是一个让孤儿 socket 数量超过 net.ipv4.tcp_max_orphans 的示例
 ```
 
   sudo bash -c "echo 10 > /proc/sys/net/ipv4/tcp_max_orphans"
@@ -1111,7 +1111,7 @@ Ctrl-C 鏉ョ粓姝㈡湇鍔″櫒鑴氭湰銆傜劧鍚庢垜浠?
       print("connection_count: %d" % len(connection_list))
 
 ```
-鍦ㄦ湇鍔″櫒鍜屽鎴风涓婅繍琛?python 鑴氭湰銆?
+在服务器和客户端上运python 脚本
 ```
 
   python3 server_orphan.py
@@ -1127,7 +1127,7 @@ Ctrl-C 鏉ョ粓姝㈡湇鍔″櫒鑴氭湰銆傜劧鍚庢垜浠?
   sudo iptables -A INPUT -i ens3 -p tcp --destination-port 9000 -j DROP
 
 ```
-鍦ㄥ鎴风杈撳叆 Ctrl-C锛屽仠姝?client_orphan.py銆?
+在客户端输入 Ctrl-C，停client_orphan.py
 ```
 
   nstatuser@nstat-a:~$ nstat | grep -i abort
@@ -1149,31 +1149,31 @@ Ctrl-C 鏉ョ粓姝㈡湇鍔″櫒鑴氭湰銆傜劧鍚庢垜浠?
   FRAG      0         0         0
 
 ```
-璇ユ祴璇曠殑瑙ｉ噴锛氬湪杩愯 server_orphan.py 鍜?client_orphan.py 涔嬪悗锛屾垜浠湪
-鏈嶅姟鍣ㄥ拰瀹㈡埛绔箣闂村缓绔嬩簡 64 涓繛鎺ャ€傝繍琛?iptables 鍛戒护鍚庯紝鏈嶅姟鍣ㄤ細涓㈠純
-鏉ヨ嚜瀹㈡埛绔殑鎵€鏈夋姤鏂囷紱鍦?client_orphan.py 涓婅緭鍏?Ctrl-C锛屽鎴风绯荤粺浼?
-灏濊瘯鍏抽棴杩欎簺杩炴帴锛屽湪瀹冧滑琚甯稿叧闂箣鍓嶏紝杩欎簺杩炴帴鍙樻垚浜嗗鍎?socket銆傜敱浜?
-鏈嶅姟鍣ㄧ殑 iptables 闃绘柇浜嗘潵鑷鎴风鐨勬姤鏂囷紝鏈嶅姟鍣ㄤ笉浼氭敹鍒版潵鑷鎴风鐨?
-fin锛屽洜姝ゅ鎴风涓婄殑鎵€鏈夎繛鎺ラ兘浼氬崱鍦?FIN_WAIT_1 闃舵锛屼粠鑰屼綔涓哄鍎?socket
-涓€鐩翠繚鎸佸埌瓒呮椂銆傛垜浠皢 10 鍐欏叆 /proc/sys/net/ipv4/tcp_max_orphans锛屽洜姝?
-瀹㈡埛绔郴缁熷彧浼氫繚鐣?10 涓鍎?socket锛屽浜庡叾浣欐墍鏈夊鍎?socket锛屽鎴风绯荤粺
-浼氬悜瀹冧滑鍙戦€?RST 骞跺皢鍏跺垹闄ゃ€傛垜浠缓绔嬩簡 64 涓繛鎺ワ紝鍥犳 'ss -s' 鍛戒护鏄剧ず
-绯荤粺鏈?10 涓鍎?socket锛岃€?TcpExtTCPAbortOnMemory 鐨勫€间负 54銆?
+该测试的解释：在运行 server_orphan.py client_orphan.py 之后，我们在
+服务器和客户端之间建立了 64 个连接。运iptables 命令后，服务器会丢弃
+来自客户端的所有报文；client_orphan.py 上输Ctrl-C，客户端系统
+尝试关闭这些连接，在它们被正常关闭之前，这些连接变成了孤socket。由
+服务器的 iptables 阻断了来自客户端的报文，服务器不会收到来自客户端
+fin，因此客户端上的所有连接都会卡FIN_WAIT_1 阶段，从而作为孤socket
+一直保持到超时。我们将 10 写入 /proc/sys/net/ipv4/tcp_max_orphans，因
+客户端系统只会保10 个孤socket，对于其余所有孤socket，客户端系统
+会向它们发RST 并将其删除。我们建立了 64 个连接，因此 'ss -s' 命令显示
+系统10 个孤socket，TcpExtTCPAbortOnMemory 的值为 54
 
-鍏充簬瀛ゅ効 socket 鏁伴噺鐨勮ˉ鍏呰鏄庯細浣犲彲浠ラ€氳繃 'ss -s' 鍛戒护鎵惧埌绮剧‘鐨勫鍎?
-socket 鏁伴噺锛屼絾褰撳唴鏍稿喅瀹氭槸鍚﹀鍔?TcpExtTCPAbortOnMemory 骞跺彂閫?RST 鏃讹紝
-鍐呮牳骞朵笉鎬绘槸妫€鏌ョ簿纭殑瀛ゅ効 socket 鏁伴噺銆備负浜嗘彁楂樻€ц兘锛屽唴鏍镐細鍏堟鏌ヤ竴涓?
-杩戜技璁℃暟锛屽鏋滆繎浼艰鏁板ぇ浜?tcp_max_orphans锛屽唴鏍告墠浼氬啀娆℃鏌ョ簿纭鏁般€?
-鍥犳锛屽鏋滆繎浼艰鏁板皬浜?tcp_max_orphans锛屼絾绮剧‘璁℃暟澶т簬 tcp_max_orphans锛?
-浣犱細鍙戠幇 TcpExtTCPAbortOnMemory 鏍规湰涓嶄細澧炲姞銆傚鏋?tcp_max_orphans 瓒冲
-澶э紝杩欑鎯呭喌涓嶄細鍙戠敓锛涗絾濡傛灉浣犲儚鎴戜滑鐨勬祴璇曢偅鏍锋妸 tcp_max_orphans 璋冨皬锛?
-灏卞彲鑳戒細閬囧埌杩欎釜闂銆傛墍浠ュ湪鎴戜滑鐨勬祴璇曚腑锛屽敖绠?tcp_max_orphans 鏄?10锛?
-瀹㈡埛绔粛寤虹珛浜?64 涓繛鎺ャ€傚鏋滃鎴风鍙缓绔?11 涓繛鎺ワ紝鎴戜滑灏辫瀵熶笉鍒?
-TcpExtTCPAbortOnMemory 鐨勫彉鍖栥€?
+关于孤儿 socket 数量的补充说明：你可以通过 'ss -s' 命令找到精确的孤
+socket 数量，但当内核决定是否增TcpExtTCPAbortOnMemory 并发RST 时，
+内核并不总是检查精确的孤儿 socket 数量。为了提高性能，内核会先检查一
+近似计数，如果近似计数大tcp_max_orphans，内核才会再次检查精确计数
+因此，如果近似计数小tcp_max_orphans，但精确计数大于 tcp_max_orphans
+你会发现 TcpExtTCPAbortOnMemory 根本不会增加。如tcp_max_orphans 足够
+大，这种情况不会发生；但如果你像我们的测试那样把 tcp_max_orphans 调小
+就可能会遇到这个问题。所以在我们的测试中，尽tcp_max_orphans 10
+客户端仍建立64 个连接。如果客户端只建11 个连接，我们就观察不
+TcpExtTCPAbortOnMemory 的变化
 
-缁х画鍓嶉潰鐨勬祴璇曪紝鎴戜滑绛夊緟鍑犲垎閽熴€傜敱浜庢湇鍔″櫒涓婄殑 iptables 闃绘柇浜嗘祦閲忥紝
-鏈嶅姟鍣ㄤ笉浼氭敹鍒?fin锛屽鎴风鐨勫叏閮ㄥ鍎?socket 鏈€缁堥兘浼氬湪 FIN_WAIT_1
-鐘舵€佽秴鏃躲€傛墍浠ユ垜浠瓑寰呭嚑鍒嗛挓鍚庯紝鍙互鍙戠幇
+继续前面的测试，我们等待几分钟。由于服务器上的 iptables 阻断了流量，
+服务器不会收fin，客户端的全部孤socket 最终都会在 FIN_WAIT_1
+状态超时。所以我们等待几分钟后，可以发现
 ```
 
   nstatuser@nstat-a:~$ nstat | grep -i abort
@@ -1231,7 +1231,7 @@ TcpExtTCPAbortOnMemory 鐨勫彉鍖栥€?
 ```
 ### TcpExtTCPRcvCoalesce
 
-鍦ㄦ湇鍔″櫒绔紝鎴戜滑杩愯涓€涓洃鍚?TCP 9000 绔彛鐨勭▼搴忥紝浣?
+在服务器端，我们运行一个监TCP 9000 端口的程序，
 ```
 
   import socket
@@ -1291,9 +1291,9 @@ TcpExtTCPAbortOnMemory 鐨勫彉鍖栥€?
   IpExtInNoECTPkts                2                  0.0
 
 ```
-瀹㈡埛绔彂閫佷簡涓や釜鎶ユ枃锛屾湇鍔″櫒娌℃湁璇诲彇浠讳綍鏁版嵁銆傚綋绗簩涓姤鏂囧埌杈炬湇鍔″櫒鏃讹紝
-绗竴涓姤鏂囦粛鍦ㄦ帴鏀堕槦鍒椾腑銆傚洜姝?TCP 灞傚悎骞朵簡杩欎袱涓姤鏂囷紝鎴戜滑鍙互鐪嬪埌
-TcpExtTCPRcvCoalesce 澧炲姞浜?1銆?
+客户端发送了两个报文，服务器没有读取任何数据。当第二个报文到达服务器时，
+第一个报文仍在接收队列中。因TCP 层合并了这两个报文，我们可以看到
+TcpExtTCPRcvCoalesce 增加1
 
 ### TcpExtListenOverflows 涓?TcpExtListenDrops
 ```
@@ -1308,9 +1308,9 @@ TcpExtTCPRcvCoalesce 澧炲姞浜?1銆?
   Connection to nstat-b 9000 port [tcp/*] succeeded!
 
 ```
-nc 鍛戒护鍙帴鍙?1 涓繛鎺ワ紝涓?accept 闃熷垪闀垮害涓?1銆傚湪褰撳墠鐨?linux 瀹炵幇涓紝
-灏嗛槦鍒楅暱搴﹁涓?n 鎰忓懗鐫€瀹為檯闃熷垪闀垮害涓?n+1銆傜幇鍦ㄦ垜浠垱寤?3 涓繛鎺ワ紝鍏朵腑
-1 涓 nc 鎺ュ彈锛? 涓湪 accept 闃熷垪涓紝鍥犳 accept 闃熷垪宸叉弧銆?
+nc 命令只接1 个连接，accept 队列长度1。在当前linux 实现中，
+将队列长度设n 意味着实际队列长度n+1。现在我们创3 个连接，其中
+1 个被 nc 接受 个在 accept 队列中，因此 accept 队列已满
 ```
 
   nstatuser@nstat-b:~$ nstat -n
@@ -1321,10 +1321,10 @@ nc 鍛戒护鍙帴鍙?1 涓繛鎺ワ紝涓?accept 闃熷垪闀垮害涓?1�
   nstatuser@nstat-a:~$ nc -v nstat-b 9000
 
 ```
-濡傛灉 nc 鏈嶅姟鍣ㄨ繍琛屽湪鍐呮牳 4.10 鎴栨洿楂樼増鏈笂锛屼綘涓嶄細鐪嬪埌 "Connection to ... succeeded!"
-瀛楃涓诧紝鍥犱负褰?accept 闃熷垪宸叉弧鏃跺唴鏍镐細涓㈠純 SYN銆傚鏋?nc 瀹㈡埛绔繍琛屽湪鏃у唴鏍镐笂锛?
-浣犱細鐪嬪埌杩炴帴鎴愬姛浜嗭紝鍥犱负鍐呮牳浼氬畬鎴愪笁娆℃彙鎵嬪苟灏?socket 淇濈暀鍦ㄥ崐寮€闃熷垪涓€?
-鎴戝湪鍐呮牳 4.15 涓婅繘琛岀殑娴嬭瘯銆備笅闈㈡槸 nstat
+如果 nc 服务器运行在内核 4.10 或更高版本上，你不会看到 "Connection to ... succeeded!"
+字符串，因为accept 队列已满时内核会丢弃 SYN。如nc 客户端运行在旧内核上
+你会看到连接成功了，因为内核会完成三次握手并socket 保留在半开队列中
+我在内核 4.15 上进行的测试。下面是 nstat
 ```
 
   nstatuser@nstat-b:~$ nstat
@@ -1338,11 +1338,11 @@ nc 鍛戒护鍙帴鍙?1 涓繛鎺ワ紝涓?accept 闃熷垪闀垮害涓?1�
   IpExtInNoECTPkts                4                  0.0
 
 ```
-TcpExtListenOverflows 鍜?TcpExtListenDrops 鍧囦负 4銆傚鏋滅 4 涓?nc 涓?
-nstat 涔嬮棿鐨勬椂闂撮棿闅旀洿闀匡紝TcpExtListenOverflows 鍜?TcpExtListenDrops 鐨?
-鍊间細鏇村ぇ锛屽洜涓虹 4 涓?nc 鐨?SYN 琚涪寮冧簡锛屽鎴风姝ｅ湪閲嶈瘯銆?
+TcpExtListenOverflows TcpExtListenDrops 均为 4。如果第 4 nc 
+nstat 之间的时间间隔更长，TcpExtListenOverflows TcpExtListenDrops 
+值会更大，因为第 4 nc SYN 被丢弃了，客户端正在重试
 
-### IpInAddrErrors銆両pExtInNoRoutes 涓?IpOutNoRoutes
+### IpInAddrErrors、IpExtInNoRoutes IpOutNoRoutes
 
 server A IP address: 192.168.122.250
 server B IP address: 192.168.122.251
@@ -1359,9 +1359,9 @@ server B IP address: 192.168.122.251
   $ sudo sysctl -w net.ipv4.conf.default.send_redirects=0
 
 ```
-鎴戜滑甯屾湜璁?server A 鍚?8.8.8.8 鍙戦€佷竴涓姤鏂囷紝骞跺皢璇ユ姤鏂囪矾鐢卞埌 server B銆?
-褰?server B 鏀跺埌杩欐牱鐨勬姤鏂囨椂锛屽畠鍙兘浼氬悜 server A 鍙戦€佷竴涓?ICMP Redirect
-娑堟伅锛屽皢 send_redirects 璁句负 0 鍙互绂佺敤姝よ涓恒€?
+我们希望server A 8.8.8.8 发送一个报文，并将该报文路由到 server B
+server B 收到这样的报文时，它可能会向 server A 发送一ICMP Redirect
+消息，将 send_redirects 设为 0 可以禁用此行为
 ```
 
   $ sudo sysctl -w net.ipv4.conf.all.forwarding=0
@@ -1382,12 +1382,12 @@ server B IP address: 192.168.122.251
   IpExtInNoECTPkts                3                  0.0
 
 ```
-鐢变簬鎴戜滑璁?server A 灏?8.8.8.8 璺敱鍒?server B锛屽苟涓旀垜浠湪 server B 涓?
-绂佺敤浜?IP 杞彂锛宻erver A 鍚?server B 鍙戦€佹姤鏂囧悗锛宻erver B 浼氫涪寮冭繖浜涙姤鏂?
-骞跺鍔?IpInAddrErrors銆傜敱浜?nc 鍛戒护濡傛灉鏈敹鍒?SYN+ACK 浼氶噸鏂板彂閫?SYN 鎶ユ枃锛?
-鎴戜滑鍙互鍙戠幇澶氫釜 IpInAddrErrors銆?
+由于我们server A 8.8.8.8 路由server B，并且我们在 server B 
+禁用IP 转发，server A server B 发送报文后，server B 会丢弃这些报
+并增IpInAddrErrors。由nc 命令如果未收SYN+ACK 会重新发SYN 报文
+我们可以发现多个 IpInAddrErrors
 
-鍏舵锛岀敓鎴?IpExtInNoRoutes銆傚湪 server B 涓婏紝鎴戜滑鍚敤 IP
+其次，生IpExtInNoRoutes。在 server B 上，我们启用 IP
 ```
 
   $ sudo sysctl -w net.ipv4.conf.all.forwarding=1
@@ -1422,10 +1422,10 @@ server B IP address: 192.168.122.251
   IpExtInNoECTPkts                1                  0.0
 
 ```
-鎴戜滑鍦?server B 涓婂惎鐢ㄤ簡 IP 杞彂锛屽綋 server B 鏀跺埌鐩殑 IP 鍦板潃涓?8.8.8.8 鐨?
-鎶ユ枃鏃讹紝server B 浼氬皾璇曡浆鍙戣鎶ユ枃銆傜敱浜庢垜浠凡缁忓垹闄や簡榛樿璺敱锛屾病鏈夐€氬線
-8.8.8.8 鐨勮矾鐢憋紝鍥犳 server B 澧炲姞 IpExtInNoRoutes锛屽苟鍚?server A 鍙戦€?
-"ICMP Destination Unreachable" 娑堟伅銆?
+我们server B 上启用了 IP 转发，当 server B 收到目的 IP 地址8.8.8.8 
+报文时，server B 会尝试转发该报文。由于我们已经删除了默认路由，没有通往
+8.8.8.8 的路由，因此 server B 增加 IpExtInNoRoutes，并server A 发
+"ICMP Destination Unreachable" 消息
 ```
 
   $ ping -c 1 8.8.8.8
@@ -1439,16 +1439,16 @@ server B IP address: 192.168.122.251
   IpOutNoRoutes                   1                  0.0
 
 ```
-鎴戜滑宸插湪 server B 涓婂垹闄や簡榛樿璺敱銆俿erver B 鎵句笉鍒伴€氬線 8.8.8.8 鐨勮矾鐢憋紝
-鍥犳 server B 澧炲姞浜?IpOutNoRoutes銆?
+我们已在 server B 上删除了默认路由。server B 找不到通往 8.8.8.8 的路由，
+因此 server B 增加IpOutNoRoutes
 
 ### TcpExtTCPACKSkippedSynRecv
 
-鍦ㄦ湰娴嬭瘯涓紝鎴戜滑浠庡鎴风鍚戞湇鍔″櫒鍙戦€?3 涓浉鍚岀殑 SYN 鎶ユ枃銆傜涓€涓?SYN
-浼氳鏈嶅姟鍣ㄥ垱寤轰竴涓?socket锛屽皢鍏剁疆涓?Syn-Recv 鐘舵€侊紝骞跺洖澶?SYN/ACK銆傜浜屼釜
-SYN 浼氳鏈嶅姟鍣ㄥ啀娆″洖澶?SYN/ACK锛屽苟璁板綍鍥炲鏃堕棿锛堥噸澶?ACK 鐨勫洖澶嶆椂闂达級銆?
-绗笁涓?SYN 浼氳鏈嶅姟鍣ㄦ鏌ヤ箣鍓嶉噸澶?ACK 鐨勫洖澶嶆椂闂达紝骞跺喅瀹氳烦杩囪閲嶅 ACK锛?
-鐒跺悗澧炲姞 TcpExtTCPACKSkippedSynRecv 璁℃暟鍣ㄣ€?
+在本测试中，我们从客户端向服务器发3 个相同的 SYN 报文。第一SYN
+会让服务器创建一socket，将其置Syn-Recv 状态，并回SYN/ACK。第二个
+SYN 会让服务器再次回SYN/ACK，并记录回复时间（重ACK 的回复时间）
+第三SYN 会让服务器检查之前重ACK 的回复时间，并决定跳过该重复 ACK
+然后增加 TcpExtTCPACKSkippedSynRecv 计数器
 ```
 
   nstatuser@nstat-a:~$ sudo tcpdump -c 1 -w /tmp/syn.pcap port 9000
@@ -1460,9 +1460,9 @@ SYN 浼氳鏈嶅姟鍣ㄥ啀娆″洖澶?SYN/ACK锛屽苟璁板綍鍥炲�
   nstatuser@nstat-a:~$ nc nstat-b 9000
 
 ```
-鐢变簬 nstat-b 娌℃湁鐩戝惉 9000 绔彛锛屽畠搴斿綋鍥炲涓€涓?RST锛宯c 鍛戒护闅忓嵆閫€鍑恒€?
-杩欒冻浠ヨ tcpdump 鍛戒护鎹曡幏鍒颁竴涓?SYN 鎶ユ枃銆俵inux 鏈嶅姟鍣ㄥ彲鑳戒細瀵?TCP 鏍￠獙鍜?
-浣跨敤纭欢鍗歌浇锛坔ardware offload锛夛紝鍥犳 /tmp/syn.pcap 涓殑鏍￠獙鍜?
+由于 nstat-b 没有监听 9000 端口，它应当回复一RST，nc 命令随即退出
+这足以让 tcpdump 命令捕获到一SYN 报文。linux 服务器可能会TCP 校验
+使用硬件卸载（hardware offload），因此 /tmp/syn.pcap 中的校验
 ```
 
   nstatuser@nstat-a:~$ tcprewrite --infile=/tmp/syn.pcap --outfile=/tmp/syn_fixcsum.pcap --fixcsum
@@ -1474,7 +1474,7 @@ SYN 浼氳鏈嶅姟鍣ㄥ啀娆″洖澶?SYN/ACK锛屽苟璁板綍鍥炲�
   Listening on [0.0.0.0] (family 0, port 9000)
 
 ```
-鍦?nstat-a 涓婏紝鎴戜滑闃绘柇浜嗘潵鑷?9000 绔彛鐨勬姤鏂囷紝鍚﹀垯 nstat-a 浼氬彂閫?
+nstat-a 上，我们阻断了来9000 端口的报文，否则 nstat-a 会发
 ```
 
   nstatuser@nstat-a:~$ sudo iptables -A INPUT -p tcp --sport 9000 -j DROP
@@ -1491,11 +1491,11 @@ SYN 浼氳鏈嶅姟鍣ㄥ啀娆″洖澶?SYN/ACK锛屽苟璁板綍鍥炲�
   TcpExtTCPACKSkippedSynRecv      1                  0.0
 
 ```
-姝ｅ棰勬湡锛孴cpExtTCPACKSkippedSynRecv 涓?1銆?
+正如预期，TcpExtTCPACKSkippedSynRecv 1
 
 ### TcpExtTCPACKSkippedPAWS
 
-瑕佽Е鍙?PAWS锛屾垜浠彲浠ュ彂閫佷竴涓棫鐨?SYN銆?
+要触PAWS，我们可以发送一个旧SYN
 ```
 
   nstatuser@nstat-b:~$ nc -lkv 9000
@@ -1514,7 +1514,7 @@ SYN 浼氳鏈嶅姟鍣ㄥ啀娆″洖澶?SYN/ACK锛屽苟璁板綍鍥炲�
   Connection to nstat-b 9000 port [tcp/*] succeeded!
 
 ```
-鐜板湪 tcpdump 宸茬粡鎹曡幏鍒?SYN 骞堕€€鍑恒€傛垜浠簲褰撲慨澶?
+现在 tcpdump 已经捕获SYN 并退出。我们应当修
 ```
 
   nstatuser@nstat-a:~$ tcprewrite --infile /tmp/paws_pre.pcap --outfile /tmp/paws.pcap --fixcsum
@@ -1531,20 +1531,20 @@ SYN 浼氳鏈嶅姟鍣ㄥ啀娆″洖澶?SYN/ACK锛屽苟璁板綍鍥炲�
   TcpExtTCPACKSkippedPAWS         1                  0.0
 
 ```
-鎴戜滑閫氳繃 tcpreplay 鍙戦€佷簡涓や釜 SYN锛屽畠浠兘浼氫娇 PAWS 妫€鏌ュけ璐ワ紝nstat-b 涓?
-绗竴涓?SYN 鍥炲浜嗕竴涓?ACK锛岃烦杩囦簡绗簩涓?SYN 鐨?ACK锛屽苟鏇存柊浜?
-TcpExtTCPACKSkippedPAWS銆?
+我们通过 tcpreplay 发送了两个 SYN，它们都会使 PAWS 检查失败，nstat-b 
+第一SYN 回复了一ACK，跳过了第二SYN ACK，并更新
+TcpExtTCPACKSkippedPAWS銆。
 
 ### TcpExtTCPACKSkippedSeq
 
-瑕佽Е鍙?TcpExtTCPACKSkippedSeq锛屾垜浠彂閫佸甫鏈夋湁鏁堟椂闂存埑锛堜互閫氳繃 PAWS 妫€鏌ワ級
-浣嗗簭鍒楀彿瓒呭嚭绐楀彛鐨勬姤鏂囥€俵inux 鐨?TCP 鍗忚鏍堜細鍦ㄦ姤鏂囧甫鏁版嵁鏃堕伩鍏嶈烦杩囷紝
-鍥犳鎴戜滑闇€瑕佷竴涓函 ACK 鎶ユ枃銆傝鐢熸垚杩欐牱鐨勬姤鏂囷紝鎴戜滑鍙互鍒涘缓涓や釜 socket锛?
-涓€涓湪 9000 绔彛锛屽彟涓€涓湪 9001 绔彛銆傜劧鍚庡湪 9001 绔彛涓婃崟鑾蜂竴涓?ACK锛?
-灏嗘簮/鐩殑绔彛鍙锋敼涓哄尮閰?9000 绔彛鐨?socket銆傛帴鐫€鎴戜滑灏卞彲浠ラ€氳繃璇ユ姤鏂?
-瑙﹀彂 TcpExtTCPACKSkippedSeq銆?
+要触TcpExtTCPACKSkippedSeq，我们发送带有有效时间戳（以通过 PAWS 检查）
+但序列号超出窗口的报文。linux TCP 协议栈会在报文带数据时避免跳过，
+因此我们需要一个纯 ACK 报文。要生成这样的报文，我们可以创建两个 socket
+一个在 9000 端口，另一个在 9001 端口。然后在 9001 端口上捕获一ACK
+将源/目的端口号改为匹9000 端口socket。接着我们就可以通过该报
+触发 TcpExtTCPACKSkippedSeq
 
-鍦?nstat-b 涓婏紝鎵撳紑涓や釜缁堢锛岃繍琛屼袱涓?nc 鍛戒护鍒嗗埆鐩戝惉
+nstat-b 上，打开两个终端，运行两nc 命令分别监听
 ```
 
   nstatuser@nstat-b:~$ nc -lkv 9000
@@ -1569,7 +1569,7 @@ TcpExtTCPACKSkippedPAWS銆?
   tcpdump: listening on ens3, link-type EN10MB (Ethernet), capture size 262144 bytes
 
 ```
-鍦?nstat-b 涓婏紝閫氳繃 9001 绔彛鐨?socket 鍙戦€佷竴涓姤鏂囥€備緥濡傛垜浠彂閫佷簡涓€涓?
+nstat-b 上，通过 9001 端口socket 发送一个报文。例如我们发送了一
 ```
 
   nstatuser@nstat-b:~$ nc -lkv 9001
@@ -1578,7 +1578,7 @@ TcpExtTCPACKSkippedPAWS銆?
   foo
 
 ```
-鍦?nstat-a 涓婏紝tcpdump 搴斿綋宸茬粡鎹曡幏鍒拌 ACK銆傛垜浠簲褰撴鏌?
+nstat-a 上，tcpdump 应当已经捕获到该 ACK。我们应当检
 ```
 
   nstatuser@nstat-a:~$ ss -ta '( dport = :9000 || dport = :9001 )' | tee
@@ -1587,7 +1587,7 @@ TcpExtTCPACKSkippedPAWS銆?
   ESTAB  0        0            192.168.122.250:42132       192.168.122.251:9001
 
 ```
-杩愯 tcprewrite锛屽皢 9001 绔彛鏀逛负 9000 绔彛锛屽皢 42132 绔彛鏀逛负
+运行 tcprewrite，将 9001 端口改为 9000 端口，将 42132 端口改为
 ```
 
   nstatuser@nstat-a:~$ tcprewrite --infile /tmp/seq_pre.pcap --outfile /tmp/seq.pcap -r 9001:9000 -r 42132:50208 --fixcsum

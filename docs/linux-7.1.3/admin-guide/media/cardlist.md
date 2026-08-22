@@ -1,15 +1,15 @@
-﻿## 缃戝崱鍒楄〃
+﻿## 网卡列表
 
 
-濯掍綋锛坢edia锛夊瓙绯荤粺鎻愪緵瀵瑰ぇ閲?PCI 鍜?USB 椹卞姩鐨勬敮鎸侊紝浠ュ強骞冲彴鐩稿叧椹卞姩銆傚畠杩樺寘鍚嫢骞茶緟鍔╃殑 I虏C 椹卞姩銆?
+媒体（media）子系统提供对大PCI USB 驱动的支持，以及平台相关驱动。它还包含若干辅助的 I²C 驱动
 
-骞冲彴鐩稿叧椹卞姩閫氬父鍑虹幇鍦ㄥ祵鍏ュ紡绯荤粺涓婏紝鎴栫敱涓绘澘鐨勬澘杞芥敮鎸併€傞€氬父锛屽畠浠殑璁剧疆閫氳繃 OpenFirmware 鎴?ACPI 瀹屾垚銆?
+平台相关驱动通常出现在嵌入式系统上，或由主板的板载支持。通常，它们的设置通过 OpenFirmware ACPI 完成
 
-鑰?PCI 鍜?USB 椹卞姩涓庣郴缁熶富鏉挎棤鍏筹紝鍙互鐢辩敤鎴锋坊鍔?绉婚櫎銆?
+PCI USB 驱动与系统主板无关，可以由用户添移除
 
-浣犱篃鍙互鏌ョ湅
+你也可以查看
 https://linuxtv.org/wiki/index.php/Hardware_Device_Information
-浠ヨ幏鍙栧叧浜庡彈鏀寔缃戝崱鐨勬洿澶氳鎯呫€?
+以获取关于受支持网卡的更多详情
 
 - [usb-cardlist](usb-cardlist)
 - [pci-cardlist](pci-cardlist)

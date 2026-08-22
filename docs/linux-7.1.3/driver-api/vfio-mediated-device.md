@@ -1,45 +1,45 @@
 ﻿
-## VFIO Mediated 璁惧
+## VFIO Mediated 设备
 
 
-:Copyright: |copy| 2016, NVIDIA CORPORATION. 鍏ㄩ儴 rights reserved.
+:Copyright: |copy| 2016, NVIDIA CORPORATION. 全部 rights reserved.
 :Author: Neo Jia <cjia@nvidia.com>
 :Author: Kirti Wankhede <kwankhede@nvidia.com>
 
 
 
-## 铏氭嫙 鍑芥暟 I/O (VFIO) Mediated 璁惧[1]
+## 虚拟 函数 I/O (VFIO) Mediated 设备[1]
 
 
-The 鏁板瓧 鐨?浣跨敤 cases 鐢ㄤ簬 virtualizing DMA 璁惧 璇?鎵ц 涓?鍏锋湁 built-in
-SR_IOV capability 鏄?increasing. Previously, 鍒?virtualize 姝ょ被 璁惧,
-developers 鏇炬湁 鍒?鍒涘缓 瀹冧滑鐨?own 绠＄悊 interfaces 鍜?APIs, 鍜?鐒跺悗
-integrate them 涓?鐢ㄦ埛绌洪棿 杞欢. 鍒?simplify integration 涓?鐢ㄦ埛绌洪棿
-杞欢, 鎴戜滑 鍏锋湁 identified 閫氱敤 requirements 鍜?涓€涓?unified 绠＄悊
-鎺ュ彛 鐢ㄤ簬 姝ょ被 璁惧.
+The 数字 使用 cases 用于 virtualizing DMA 设备 执行 具有 built-in
+SR_IOV capability increasing. Previously, virtualize 此类 设备,
+developers 曾有 创建 它们own 管理 interfaces APIs, 然后
+integrate them 用户空间 软件. simplify integration 用户空间
+软件, 我们 具有 identified 通用 requirements 一unified 管理
+接口 用于 此类 设备.
 
-The VFIO 椹卞姩 framework 鎻愪緵 unified APIs 鐢ㄤ簬 direct 璁惧 access. 瀹冩槸
-涓€涓?IOMMU/device-agnostic framework 鐢ㄤ簬 exposing direct 璁惧 access 鍒?鐢ㄦ埛
-space 鍦?涓€涓?secure, IOMMU-protected environment. 姝?framework 鏄?浣跨敤 鐢ㄤ簬
-澶氫釜 璁惧, 渚嬪 GPUs, 缃戠粶 adapters, 鍜?compute accelerators. 涓?
-direct 璁惧 access, 铏氭嫙 machines 鎴?鐢ㄦ埛绌洪棿 applications 鍏锋湁 direct
-access 鍒?the 鐗╃悊 璁惧. 姝?framework 鏄?reused 鐢ㄤ簬 mediated 璁惧.
+The VFIO 驱动 framework 提供 unified APIs 用于 direct 设备 access. 它是
+一IOMMU/device-agnostic framework 用于 exposing direct 设备 access 用户
+space 一secure, IOMMU-protected environment. framework 使用 用于
+多个 设备, 例如 GPUs, 网络 adapters, compute accelerators. 
+direct 设备 access, 虚拟 machines 用户空间 applications 具有 direct
+access the 物理 设备. framework reused 用于 mediated 设备.
 
-The mediated 鏍稿績 椹卞姩 鎻愪緵 涓€涓?閫氱敤 鎺ュ彛 鐢ㄤ簬 mediated 璁惧
-绠＄悊 璇?鍙?涓?浣跨敤 鐢?椹卞姩 鐨?涓嶅悓 璁惧. 姝?妯″潡
-鎻愪緵 涓€涓?generic 鎺ュ彛 鍒?perform 杩欎簺 鎿嶄綔:
+The mediated 核心 驱动 提供 一通用 接口 用于 mediated 设备
+管理 使用 驱动 不同 设备. 模块
+提供 一generic 接口 perform 这些 操作:
 
-- 鍒涘缓 鍜?destroy 涓€涓?mediated 璁惧
-- Add 涓€涓?mediated 璁惧 鍒?鍜?remove 瀹?鏉ヨ嚜 涓€涓?mediated 鎬荤嚎 椹卞姩
-- Add 涓€涓?mediated 璁惧 鍒?鍜?remove 瀹?鏉ヨ嚜 涓€涓?IOMMU group
+- 创建 destroy 一mediated 设备
+- Add 一mediated 设备 remove 来自 一mediated 总线 驱动
+- Add 一mediated 设备 remove 来自 一IOMMU group
 
-The mediated 鏍稿績 椹卞姩 涔?鎻愪緵 涓€涓?鎺ュ彛 鍒?娉ㄥ唽 涓€涓?鎬荤嚎 椹卞姩.
-渚嬪, the mediated VFIO mdev 椹卞姩 鏄?designed 鐢ㄤ簬 mediated 璁惧 鍜?
-supports VFIO APIs. The mediated 鎬荤嚎 椹卞姩 adds 涓€涓?mediated 璁惧 鍒?鍜?
-removes 瀹?鏉ヨ嚜 涓€涓?VFIO group.
+The mediated 核心 驱动 提供 一接口 注册 一总线 驱动.
+例如, the mediated VFIO mdev 驱动 designed 用于 mediated 设备 
+supports VFIO APIs. The mediated 总线 驱动 adds 一mediated 设备 
+removes 来自 一VFIO group.
 
-The 浠ヤ笅 high-level 鍧?diagram 鏄剧ず the 涓昏 components 鍜?interfaces
-鍦?the VFIO mediated 椹卞姩 framework. The diagram 鏄剧ず NVIDIA, Intel, 鍜?IBM
+The 以下 high-level diagram 显示 the 主要 components interfaces
+the VFIO mediated 驱动 framework. The diagram 显示 NVIDIA, Intel, IBM
 ```
 
      +---------------+
@@ -74,16 +74,16 @@ The 浠ヤ笅 high-level 鍧?diagram 鏄剧ず the 涓昏 components 鍜?inte
 ## Registration Interfaces
 
 
-The mediated 鏍稿績 椹卞姩 鎻愪緵 the 浠ヤ笅 types 鐨?registration
+The mediated 核心 驱动 提供 the 以下 types registration
 interfaces:
 
-- Registration 鎺ュ彛 鐢ㄤ簬 涓€涓?mediated 鎬荤嚎 椹卞姩
-- 鐗╃悊 璁惧 椹卞姩 鎺ュ彛
+- Registration 接口 用于 一mediated 总线 驱动
+- 物理 设备 驱动 接口
 
-### Registration 鎺ュ彛 鐢ㄤ簬 涓€涓?Mediated 鎬荤嚎 椹卞姩
+### Registration 接口 用于 一Mediated 总线 驱动
 
 
-The registration 鎺ュ彛 鐢ㄤ簬 涓€涓?mediated 璁惧 椹卞姩 鎻愪緵 the 浠ヤ笅
+The registration 接口 用于 一mediated 设备 驱动 提供 the 以下
 ```
 
      /*
@@ -101,8 +101,8 @@ The registration 鎺ュ彛 鐢ㄤ簬 涓€涓?mediated 璁惧 椹卞姩 鎻�
      };
 
 ```
-涓€涓?mediated 鎬荤嚎 椹卞姩 鐢ㄤ簬 mdev 搴斿綋 浣跨敤 姝?缁撴瀯浣?鍦?the 鍑芥暟 calls
-鍒?娉ㄥ唽 鍜?娉ㄩ攢 itself 涓?the 鏍稿績 椹卞姩:
+一mediated 总线 驱动 用于 mdev 应当 使用 结构the 函数 calls
+注册 注销 itself the 核心 驱动:
 
 ```
 
@@ -114,46 +114,46 @@ The registration 鎺ュ彛 鐢ㄤ簬 涓€涓?mediated 璁惧 椹卞姩 鎻�
     void mdev_unregister_driver(struct mdev_driver *drv);
 
 ```
-The mediated 鎬荤嚎 椹卞姩's probe 鍑芥暟 搴斿綋 鍒涘缓 涓€涓?vfio_璁惧 鍦ㄢ€︿箣涓?
-the mdev_璁惧 鍜?connect 瀹?鍒?涓€涓?appropriate implementation 鐨?
-vfio_璁惧_ops.
+The mediated 总线 驱动's probe 函数 应当 创建 一vfio_设备 在…之
+the mdev_设备 connect 一appropriate implementation 
+vfio_设备_ops.
 
-褰?涓€涓?椹卞姩 wants 鍒?add the GUID creation sysfs 鍒?涓€涓?existing 璁惧 瀹?鍏锋湁
+一驱动 wants add the GUID creation sysfs 一existing 设备 具有
 ```
 
     int mdev_register_parent(struct mdev_parent *parent, struct device *dev,
 			struct mdev_driver *mdev_driver);
 
 ```
-姝?灏?鎻愪緵 the 'mdev_鍙楁敮鎸乢types/XX/鍒涘缓' 鏂囦欢 鍏?鍙?鐒跺悗 涓?
-浣跨敤 鍒?trigger the creation 鐨?涓€涓?mdev_璁惧. The 宸插垱寤?mdev_璁惧 灏?涓?
-attached 鍒?the specified 椹卞姩.
+提供 the 'mdev_受支持_types/XX/创建' 文件 然后 
+使用 trigger the creation 一mdev_设备. The 已创mdev_设备 
+attached the specified 驱动.
 
 ```
 
     void mdev_unregister_parent(struct mdev_parent *parent);
 
 ```
-鍏?灏?unbind 鍜?destroy 鍏ㄩ儴 the 宸插垱寤?mdevs 鍜?remove the sysfs 鏂囦欢.
+unbind destroy 全部 the 已创mdevs remove the sysfs 文件.
 
-## Mediated 璁惧 绠＄悊 鎺ュ彛 Through sysfs
+## Mediated 设备 管理 接口 Through sysfs
 
 
-The 绠＄悊 鎺ュ彛 through sysfs enables 鐢ㄦ埛绌洪棿 杞欢, 渚嬪
-libvirt, 鍒?query 鍜?configure mediated 璁惧 鍦?涓€涓?hardware-agnostic fashion.
-姝?绠＄悊 鎺ュ彛 鎻愪緵 flexibility 鍒?the underlying 鐗╃悊
-璁惧's 椹卞姩 鍒?鏀寔 鐗规€?渚嬪:
+The 管理 接口 through sysfs enables 用户空间 软件, 例如
+libvirt, query configure mediated 设备 一hardware-agnostic fashion.
+管理 接口 提供 flexibility the underlying 物理
+设备's 驱动 支持 特例如:
 
-- Mediated 璁惧 hot plug
-- 澶氫釜 mediated 璁惧 鍦?涓€涓?鍗曚釜 铏氭嫙 machine
-- 澶氫釜 mediated 璁惧 鏉ヨ嚜 涓嶅悓 鐗╃悊 璁惧
+- Mediated 设备 hot plug
+- 多个 mediated 设备 一单个 虚拟 machine
+- 多个 mediated 设备 来自 不同 物理 设备
 
-### Links 鍦?the mdev_鎬荤嚎 绫?Directory
+### Links the mdev_总线 Directory
 
-The /sys/绫?mdev_鎬荤嚎/ directory 鍖呭惈 links 鍒?璁惧 璇?鏄?registered
-涓?the mdev 鏍稿績 椹卞姩.
+The /sys/mdev_总线/ directory 包含 links 设备 registered
+the mdev 核心 驱动.
 
-### Directories 鍜?鏂囦欢 鍦ㄢ€︿笅 the sysfs 鐢ㄤ簬 姣忎釜 鐗╃悊 璁惧
+### Directories 文件 在…下 the sysfs 用于 每个 物理 设备
 
 
 ```
@@ -184,47 +184,47 @@ The /sys/绫?mdev_鎬荤嚎/ directory 鍖呭惈 links 鍒?璁惧 璇?鏄?reg
   |          |--- [devices]
 
 ```
-- [mdev_鍙楁敮鎸乢types]
+- [mdev_受支持_types]
 
-  The 鍒楀嚭 鐨?currently 鍙楁敮鎸?mediated 璁惧 types 鍜?瀹冧滑鐨?details.
+  The 列出 currently 受支mediated 设备 types 它们details.
 
-  [<type-id>], 璁惧_api, 鍜?鍙敤_instances 鏄?mandatory attributes
-  璇?搴斿綋 涓?provided 鐢?鍘傚晢 椹卞姩.
+  [<type-id>], 设备_api, 可用_instances mandatory attributes
+  应当 provided 厂商 驱动.
 
 - [<type-id>]
 
-  The [<type-id>] name 鏄?宸插垱寤?鐢?adding the 璁惧 椹卞姩 瀛楃涓?浣滀负 涓€涓?prefix
-  鍒?the 瀛楃涓?provided 鐢?the 鍘傚晢 椹卞姩. 姝?鏍煎紡 鐨?姝?name 鏄?浣滀负
+  The [<type-id>] name 已创adding the 设备 驱动 字符作为 一prefix
+  the 字符provided the 厂商 驱动. 格式 name 作为
 ```
 
 	sprintf(buf, "%s-%s", dev_driver_string(parent->dev), group->name);
 
 ```
-- 璁惧_api
+- 设备_api
 
-  姝?attribute 鏄剧ず 鍏?璁惧 API 鏄?姝ｅ湪 宸插垱寤? 渚嬪,
-  "vfio-PCI" 鐢ㄤ簬 涓€涓?PCI 璁惧.
+  attribute 显示 设备 API 正在 已创 例如,
+  "vfio-PCI" 用于 一PCI 设备.
 
-- 鍙敤_instances
+- 可用_instances
 
-  姝?attribute 鏄剧ず the 鏁板瓧 鐨?璁惧 鐨?绫诲瀷 <type-id> 璇?鍙?涓?
-  宸插垱寤?
+  attribute 显示 the 数字 设备 类型 <type-id> 
+  宸插垱寤。
 
-- [璁惧]
+- [设备]
 
-  姝?directory 鍖呭惈 links 鍒?the 璁惧 鐨?绫诲瀷 <type-id> 璇?鍏锋湁 宸茬粡
-  宸插垱寤?
+  directory 包含 links the 设备 类型 <type-id> 具有 已经
+  宸插垱寤。
 
 - name
 
-  姝?attribute 鏄剧ず 涓€涓?human readable name.
+  attribute 显示 一human readable name.
 
 - description
 
-  姝?attribute 鍙?鏄剧ず brief 鐗规€?description 鐨?the 绫诲瀷. 杩欐槸 涓€涓?
-  鍙€?attribute.
+  attribute 显示 brief 特description the 类型. 这是 一
+  可attribute.
 
-### Directories 鍜?鏂囦欢 鍦ㄢ€︿笅 the sysfs 鐢ㄤ簬 姣忎釜 mdev 璁惧
+### Directories 文件 在…下 the sysfs 用于 每个 mdev 设备
 
 
 ```
@@ -236,27 +236,27 @@ The /sys/绫?mdev_鎬荤嚎/ directory 鍖呭惈 links 鍒?璁惧 璇?鏄?reg
          |--- vendor-specific-attributes [optional]
 
 ```
-- remove (鍐欏叆 浠?
+- remove (写入 
 
-Writing '1' 鍒?the 'remove' 鏂囦欢 destroys the mdev 璁惧. The 鍘傚晢 椹卞姩 鍙?
-fail the remove() 鍥炶皟鍑芥暟 鑻?璇?璁惧 鏄?active 鍜?the 鍘傚晢 椹卞姩
-doesn't 鏀寔 hot unplug.
+Writing '1' the 'remove' 文件 destroys the mdev 设备. The 厂商 驱动 
+fail the remove() 回调函数 设备 active the 厂商 驱动
+doesn't 支持 hot unplug.
 
 ```
 
 	# echo 1 > /sys/bus/mdev/devices/$mdev_UUID/remove
 
 ```
-### Mediated 璁惧 Hot plug
+### Mediated 设备 Hot plug
 
 
-Mediated 璁惧 鍙?涓?宸插垱寤?鍜?assigned 鍦?runtime. The procedure 鍒?hot
-plug 涓€涓?mediated 璁惧 鏄?the 鐩稿悓 浣滀负 the procedure 鍒?hot plug 涓€涓?PCI 璁惧.
+Mediated 设备 已创assigned runtime. The procedure hot
+plug 一mediated 设备 the 相同 作为 the procedure hot plug 一PCI 设备.
 
-## Translation APIs 鐢ㄤ簬 Mediated 璁惧
+## Translation APIs 用于 Mediated 设备
 
 
-The 浠ヤ笅 APIs 鏄?provided 鐢ㄤ簬 translating 鐢ㄦ埛 pfn 鍒?host pfn 鍦?涓€涓?VFIO
+The 以下 APIs provided 用于 translating 用户 pfn host pfn 一VFIO
 ```
 
 	int vfio_pin_pages(struct vfio_device *device, dma_addr_t iova,
@@ -266,16 +266,16 @@ The 浠ヤ笅 APIs 鏄?provided 鐢ㄤ簬 translating 鐢ㄦ埛 pfn 鍒?host pfn
 				    int npage);
 
 ```
-杩欎簺 鍑芥暟 call back 杩涘叆 the back-end IOMMU 妯″潡 鐢?浣跨敤 the pin_椤?
-鍜?unpin_椤?callbacks 鐨?the 缁撴瀯浣?vfio_iommu_椹卞姩_ops[^4^]. Currently
-杩欎簺 callbacks 鏄?鍙楁敮鎸?鍦?the 绫诲瀷1 IOMMU 妯″潡. 鍒?鍚敤 them 鐢ㄤ簬
-鍏朵粬 IOMMU backend 妯″潡, 渚嬪 PPC64 sPAPR 妯″潡, 瀹冧滑 闇€瑕?鍒?鎻愪緵
-杩欎簺 two 鍥炶皟鍑芥暟 鍑芥暟.
+这些 函数 call back 进入 the back-end IOMMU 模块 使用 the pin_
+unpin_callbacks the 结构vfio_iommu_驱动_ops[^4^]. Currently
+这些 callbacks 受支the 类型1 IOMMU 模块. 启用 them 用于
+其他 IOMMU backend 模块, 例如 PPC64 sPAPR 模块, 它们 需提供
+这些 two 回调函数 函数.
 
 ## References
 
 
-1. 鍙傝 Documentation/driver-api/vfio.rst 鐢ㄤ簬 鏇村 information 鍦?VFIO.
-2. 缁撴瀯浣?mdev_椹卞姩 鍦?鍖呭惈/linux/mdev.h
-3. 缁撴瀯浣?mdev_parent_ops 鍦?鍖呭惈/linux/mdev.h
-4. 缁撴瀯浣?vfio_iommu_椹卞姩_ops 鍦?鍖呭惈/linux/vfio.h
+1. 参见 Documentation/driver-api/vfio.rst 用于 更多 information VFIO.
+2. 结构mdev_驱动 包含/linux/mdev.h
+3. 结构mdev_parent_ops 包含/linux/mdev.h
+4. 结构vfio_iommu_驱动_ops 包含/linux/vfio.h
