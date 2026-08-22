@@ -1,34 +1,34 @@
 ﻿
-## VFIO 铏氭嫙璁惧
+## VFIO 虚拟设备
 
 
-鏀寔鐨勮澶囩被鍨嬶細
+支持的设备类型：
 
   - KVM_DEV_TYPE_VFIO
 
-姣忎釜 VM 鍙兘鍒涘缓涓€涓?VFIO 瀹炰緥銆傛墍鍒涘缓鐨勮澶囪窡韪?VM 姝ｅ湪浣跨敤鐨?VFIO 鏂囦欢锛坓roup 鎴?device锛夛紝浠ュ強閭ｄ簺瀵?VM 鐨勬纭€у拰鍔犻€熻嚦鍏抽噸瑕佺殑 group/device 鐗规€с€傞殢鐫€ group/device 琚?VM 鍚敤鎴栫鐢紝搴斿綋灏卞畠浠殑瀛樺湪鏇存柊 KVM銆傚綋鍚?KVM 娉ㄥ唽鏃讹紝KVM 浼氭寔鏈変竴涓 VFIO 鏂囦欢鐨勫紩鐢ㄣ€?
-缁勶細
+每个 VM 只能创建一VFIO 实例。所创建的设备跟VM 正在使用VFIO 文件（group device），以及那些VM 的正确性和加速至关重要的 group/device 特性。随着 group/device VM 启用或禁用，应当就它们的存在更新 KVM。当KVM 注册时，KVM 会持有一个对 VFIO 文件的引用
+组：
   KVM_DEV_VFIO_FILE
 	alias: KVM_DEV_VFIO_GROUP
 
-KVM_DEV_VFIO_FILE 灞炴€э細
-  KVM_DEV_VFIO_FILE_ADD锛氬悜 VFIO-KVM 璁惧璺熻釜涓坊鍔犱竴涓?VFIO 鏂囦欢锛坓roup/device锛?
-	kvm_device_attr.addr 鎸囧悜 VFIO 鏂囦欢鐨?int32_t 鏂囦欢鎻忚堪绗︺€?
-  KVM_DEV_VFIO_FILE_DEL锛氫粠 VFIO-KVM 璁惧璺熻釜涓Щ闄や竴涓?VFIO 鏂囦欢锛坓roup/device锛?
-	kvm_device_attr.addr 鎸囧悜 VFIO 鏂囦欢鐨?int32_t 鏂囦欢鎻忚堪绗︺€?
-KVM_DEV_VFIO_GROUP锛堜粎闄愪簬澶勭悊 VFIO group fd 鐨勪紶缁?kvm 璁惧缁勶級锛?  KVM_DEV_VFIO_GROUP_ADD锛氫笌 KVM_DEV_VFIO_FILE_ADD 鐩稿悓锛屼絾浠呴拡瀵?group fd
+KVM_DEV_VFIO_FILE 属性：
+  KVM_DEV_VFIO_FILE_ADD：向 VFIO-KVM 设备跟踪中添加一VFIO 文件（group/device
+	kvm_device_attr.addr 指向 VFIO 文件int32_t 文件描述符
+  KVM_DEV_VFIO_FILE_DEL：从 VFIO-KVM 设备跟踪中移除一VFIO 文件（group/device
+	kvm_device_attr.addr 指向 VFIO 文件int32_t 文件描述符
+KVM_DEV_VFIO_GROUP（仅限于处理 VFIO group fd 的传kvm 设备组）  KVM_DEV_VFIO_GROUP_ADD：与 KVM_DEV_VFIO_FILE_ADD 相同，但仅针group fd
 
-  KVM_DEV_VFIO_GROUP_DEL锛氫笌 KVM_DEV_VFIO_FILE_DEL 鐩稿悓锛屼絾浠呴拡瀵?group fd
+  KVM_DEV_VFIO_GROUP_DEL：与 KVM_DEV_VFIO_FILE_DEL 相同，但仅针group fd
 
-  KVM_DEV_VFIO_GROUP_SET_SPAPR_TCE锛氶檮鍔犱竴涓鎴锋満鍙鐨?TCE 琛紝
-	鐢?sPAPR KVM 鍒嗛厤銆?```
+  KVM_DEV_VFIO_GROUP_SET_SPAPR_TCE：附加一个客户机可见TCE 表，
+	sPAPR KVM 分配```
 
 		struct kvm_vfio_spapr_tce {
 			__s32	groupfd;
 			__s32	tablefd;
 		};
 
-	鍏朵腑锛?
-	- @groupfd 鏄?VFIO group 鐨勬枃浠舵弿杩扮锛?	- @tablefd 鏄€氳繃 KVM_CREATE_SPAPR_TCE 鍒嗛厤鐨?TCE 琛ㄧ殑鏂囦欢鎻忚堪绗︺€?
+	其中
+	- @groupfd VFIO group 的文件描述符	- @tablefd 是通过 KVM_CREATE_SPAPR_TCE 分配TCE 表的文件描述符
 ```
-涓婇潰鐨?FILE/GROUP_ADD 鎿嶄綔搴斿綋鍦ㄩ€氳繃 VFIO_GROUP_GET_DEVICE_FD 璁块棶璁惧鏂囦欢鎻忚堪绗︿箣鍓嶈皟鐢紝浠ユ敮鎸侀偅浜涢渶瑕佸湪鍏?.open_device() 鍥炶皟涓缃?kvm 鎸囬拡鐨勯┍鍔ㄣ€傚浜庨€氳繃瀛楃璁惧 open 鑾峰緱璁惧鏂囦欢鎻忚堪绗︼紙骞堕€氳繃 VFIO_DEVICE_BIND_IOMMUFD 鑾峰緱璁惧璁块棶锛夌殑鎯呭喌涔熷悓鏍峰姝ゃ€傚浜庢绫绘枃浠舵弿杩扮锛屽簲鍦?VFIO_DEVICE_BIND_IOMMUFD 涔嬪墠璋冪敤 FILE_ADD锛屼互鏀寔鍓嶉潰鎻愬埌鐨勯偅浜涢┍鍔ㄣ€?
+上面FILE/GROUP_ADD 操作应当在通过 VFIO_GROUP_GET_DEVICE_FD 访问设备文件描述符之前调用，以支持那些需要在.open_device() 回调中设kvm 指针的驱动。对于通过字符设备 open 获得设备文件描述符（并通过 VFIO_DEVICE_BIND_IOMMUFD 获得设备访问）的情况也同样如此。对于此类文件描述符，应VFIO_DEVICE_BIND_IOMMUFD 之前调用 FILE_ADD，以支持前面提到的那些驱动
