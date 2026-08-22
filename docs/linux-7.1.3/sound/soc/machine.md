@@ -1,7 +1,7 @@
-﻿## ASoC 鏈哄櫒锛圡achine锛夐┍鍔?
+﻿## ASoC 机器（Machine）驱
 
-ASoC 鏈哄櫒锛堟垨鏉跨骇锛夐┍鍔ㄦ槸灏嗘墍鏈夌粍浠堕┍鍔紙濡傜紪瑙ｇ爜鍣?codec銆佸钩鍙?platform 鍜?DAI锛夌矘鍚堝湪涓€璧风殑浠ｇ爜銆傚畠杩樻弿杩颁簡鍚勭粍浠朵箣闂寸殑鍏崇郴锛屽寘鎷煶棰戣矾寰勩€丟PIO銆佷腑鏂€佹椂閽熴€佹彃瀛旓紙jack锛夊拰鐢靛帇璋冭妭鍣ㄣ€?
-鏈哄櫒椹卞姩鍙互鍖呭惈缂栬В鐮佸櫒鍜屽钩鍙扮浉鍏崇殑浠ｇ爜銆傚畠灏嗛煶棰戝瓙绯荤粺浣滀负骞冲彴璁惧鍚戝唴鏍告敞鍐岋紝骞剁敱浠ヤ笅 struct 琛ㄧず锛?```
+ASoC 机器（或板级）驱动是将所有组件驱动（如编解码codec、平platform DAI）粘合在一起的代码。它还描述了各组件之间的关系，包括音频路径、GPIO、中断、时钟、插孔（jack）和电压调节器
+机器驱动可以包含编解码器和平台相关的代码。它将音频子系统作为平台设备向内核注册，并由以下 struct 表示```
 
   /* SoC machine */
   struct snd_soc_card {
@@ -12,7 +12,7 @@ ASoC 鏈哄櫒锛堟垨鏉跨骇锛夐┍鍔ㄦ槸灏嗘墍鏈夌粍浠堕┍鍔
 	int (*probe)(struct platform_device *pdev);
 	int (*remove)(struct platform_device *pdev);
 
-	/* pre 鍜?post PM 鍑芥暟鐢ㄤ簬鍦?codec 鍜?DAI 杩涜浠讳綍 PM 宸ヤ綔涔嬪墠鍜屼箣鍚庡畬鎴?PM 鐩稿叧宸ヤ綔銆?*/
+	/* pre post PM 函数用于codec DAI 进行任何 PM 工作之前和之后完PM 相关工作*/
 	int (*suspend_pre)(struct platform_device *pdev, pm_message_t state);
 	int (*suspend_post)(struct platform_device *pdev, pm_message_t state);
 	int (*resume_pre)(struct platform_device *pdev);
@@ -30,17 +30,17 @@ ASoC 鏈哄櫒锛堟垨鏉跨骇锛夐┍鍔ㄦ槸灏嗘墍鏈夌粍浠堕┍鍔
 ```
 ### probe()/remove()
 
-probe/remove 鏄彲閫夌殑銆傚湪姝ゅ瀹屾垚浠讳綍鏈哄櫒鐩稿叧鐨勬帰娴嬨€?
+probe/remove 是可选的。在此处完成任何机器相关的探测
 ### suspend()/resume()
 
-鏈哄櫒椹卞姩鍏锋湁 suspend 鍜?resume 鐨?pre 涓?post 鐗堟湰锛岀敤浜庣収椤惧湪 codec銆丏AI 鍜?DMA 鎸傝捣鍜屾仮澶嶅墠鍚庡繀椤诲畬鎴愮殑鏈哄櫒闊抽浠诲姟銆傚彲閫夈€?
-### 鏈哄櫒 DAI 閰嶇疆
+机器驱动具有 suspend resume pre post 版本，用于照顾在 codec、DAI DMA 挂起和恢复前后必须完成的机器音频任务。可选
+### 机器 DAI 配置
 
-鏈哄櫒 DAI 閰嶇疆灏嗘墍鏈?codec 鍜?CPU DAI 绮樺悎鍦ㄤ竴璧枫€傚畠涔熷彲鐢ㄤ簬璁剧疆 DAI 绯荤粺鏃堕挓锛屼互鍙婅繘琛屼换浣曚笌鏈哄櫒鐩稿叧鐨?DAI 鍒濆鍖栵紝渚嬪鏈哄櫒闊抽鏄犲皠鍙繛鎺ュ埌 codec 闊抽鏄犲皠锛屾湭杩炴帴鐨?codec 寮曡剼鍙浉搴旇缃€?
-struct snd_soc_dai_link 鐢ㄤ簬璁剧疆鏈哄櫒涓殑姣忎釜 DAI銆備緥濡傦細
+机器 DAI 配置将所codec CPU DAI 粘合在一起。它也可用于设置 DAI 系统时钟，以及进行任何与机器相关DAI 初始化，例如机器音频映射可连接到 codec 音频映射，未连接codec 引脚可相应设置
+struct snd_soc_dai_link 用于设置机器中的每个 DAI。例如：
 ```
 
-  /* corgi 鏁板瓧闊抽鎺ュ彛绮樺悎 - 杩炴帴 codec <--> CPU */
+  /* corgi 数字音频接口粘合 - 连接 codec <--> CPU */
   static struct snd_soc_dai_link corgi_dai = {
 	.name = "WM8731",
 	.stream_name = "WM8731",
@@ -53,8 +53,8 @@ struct snd_soc_dai_link 鐢ㄤ簬璁剧疆鏈哄櫒涓殑姣忎釜 DAI銆備�
   };
 
 ```
-鍦ㄤ笂杩?struct 涓紝DAI 浣跨敤鍚嶇О娉ㄥ唽锛屼絾浣犲彲浠ヤ紶鍏?DAI 鍚嶇О鎴栬澶囨爲鑺傜偣锛屼笉鑳藉悓鏃朵紶鍏ヤ袱鑰呫€傛澶栵紝杩欓噷鐢ㄤ簬 cpu/codec/platform DAI 鐨勫悕绉板簲鍏ㄥ眬鍞竴銆?
-姝ゅ锛屼笅闈㈢殑绀轰緥瀹忓彲鐢ㄤ簬娉ㄥ唽 cpu銆乧odec 鍜?```
+在上struct 中，DAI 使用名称注册，但你可以传DAI 名称或设备树节点，不能同时传入两者。此外，这里用于 cpu/codec/platform DAI 的名称应全局唯一
+此外，下面的示例宏可用于注册 cpu、codec ```
 
   SND_SOC_DAILINK_DEFS(wm2200_cpu_dsp,
 	DAILINK_COMP_ARRAY(COMP_CPU("samsung-i2s.0")),
@@ -62,10 +62,10 @@ struct snd_soc_dai_link 鐢ㄤ簬璁剧疆鏈哄櫒涓殑姣忎釜 DAI銆備�
 	DAILINK_COMP_ARRAY(COMP_PLATFORM("samsung-i2s.0")));
 
 ```
-struct snd_soc_card 闅忓悗鐢ㄥ叾 DAI 璁剧疆鏈哄櫒銆備緥濡傦細
+struct snd_soc_card 随后用其 DAI 设置机器。例如：
 ```
 
-  /* corgi 闊抽鏈哄櫒椹卞姩 */
+  /* corgi 音频机器驱动 */
   static struct snd_soc_card snd_soc_corgi = {
 	.name = "Corgi",
 	.dai_link = &corgi_dai,
@@ -73,13 +73,13 @@ struct snd_soc_card 闅忓悗鐢ㄥ叾 DAI 璁剧疆鏈哄櫒銆備緥濡傦細
   };
 
 ```
-涔嬪悗锛屽彲浣跨敤 `devm_snd_soc_register_card` 娉ㄥ唽澹板崱銆傚湪娉ㄥ唽杩囩▼涓紝浼氭帰娴?codec銆丆PU 鍜?platform 绛夊悇涓粍浠躲€傚鏋滆繖浜涚粍浠堕兘鎴愬姛琚帰娴嬶紝澹板崱鍗宠娉ㄥ唽銆?
-### 鏈哄櫒鐢垫簮鏄犲皠
+之后，可使用 `devm_snd_soc_register_card` 注册声卡。在注册过程中，会探codec、CPU platform 等各个组件。如果这些组件都成功被探测，声卡即被注册
+### 机器电源映射
 
-鏈哄櫒椹卞姩鍙互閫夋嫨鎬у湴鎵╁睍 codec 鐢垫簮鏄犲皠锛屾垚涓洪煶棰戝瓙绯荤粺鐨勯煶棰戠數婧愭槧灏勩€傝繖鍏佽鎵０鍣?鑰虫満鏀惧ぇ鍣ㄧ瓑鐨勮嚜鍔ㄤ笂鐢?鏂數銆俢odec 寮曡剼鍙湪鏈哄櫒鍒濆鍖栧嚱鏁颁腑杩炴帴鍒版満鍣ㄧ殑鎻掑瓟鎻掑骇銆?
-### 鏈哄櫒鎺у埗
+机器驱动可以选择性地扩展 codec 电源映射，成为音频子系统的音频电源映射。这允许扬声耳机放大器等的自动上断电。codec 引脚可在机器初始化函数中连接到机器的插孔插座
+### 机器控制
 
-鍙湪 DAI 鍒濆鍖栧嚱鏁颁腑娣诲姞鏈哄櫒鐩稿叧鐨勯煶棰戞贩闊冲櫒鎺у埗銆?
-### 鏃堕挓鎺у埗
+可在 DAI 初始化函数中添加机器相关的音频混音器控制
+### 时钟控制
 
-濡傚墠鎵€杩帮紝鏃堕挓閰嶇疆鍦ㄦ満鍣ㄩ┍鍔ㄥ唴澶勭悊銆傚叧浜庢満鍣ㄩ┍鍔ㄥ彲鐢ㄤ簬璁剧疆鐨勬椂閽?API 鐨勭粏鑺傦紝璇峰弬闃?Documentation/sound/soc/clocking.rst銆備絾鏄紝鍥炶皟闇€瑕佺敱 CPU/Codec/Platform 椹卞姩娉ㄥ唽锛屼互閰嶇疆鐩稿簲璁惧鎿嶄綔鎵€闇€鐨勬椂閽熴€?
+如前所述，时钟配置在机器驱动内处理。关于机器驱动可用于设置的时API 的细节，请参Documentation/sound/soc/clocking.rst。但是，回调需要由 CPU/Codec/Platform 驱动注册，以配置相应设备操作所需的时钟

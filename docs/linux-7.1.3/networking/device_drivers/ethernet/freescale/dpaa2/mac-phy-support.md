@@ -1,21 +1,21 @@
 ﻿
-## DPAA2 MAC / PHY 鏀寔
+## DPAA2 MAC / PHY 支持
 
 
 :Copyright: |copy| 2019 NXP
 
-### 姒傝堪
+### 概述
 
 
-DPAA2 MAC / PHY 鏀寔鐢变竴缁?API 缁勬垚锛岃繖浜?API 甯姪 DPAA2 缃戠粶椹卞姩锛坉paa2-eth銆?dpaa2-ethsw锛変笌 PHY 搴撲氦浜掋€?
-### DPAA2 杞欢鏋舵瀯
+DPAA2 MAC / PHY 支持由一API 组成，这API 帮助 DPAA2 网络驱动（dpaa2-ethdpaa2-ethsw）与 PHY 库交互
+### DPAA2 软件架构
 
 
-鍦ㄥ叾瀹?DPAA2 瀵硅薄涔嬩腑锛宖sl-mc 鎬荤嚎瀵煎嚭 DPNI 瀵硅薄锛堟娊璞＄綉缁滄帴鍙ｏ級鍜?DPMAC 瀵硅薄
-锛堟娊璞?MAC锛夈€俤paa2-eth 椹卞姩鍦?DPNI 瀵硅薄涓婃帰娴嬶紝骞跺€熷姪 phylink 杩炴帴骞堕厤缃竴涓?DPMAC 瀵硅薄銆?
-鍙互鍦?DPNI 涓?DPMAC 涔嬮棿锛屾垨涓や釜 DPNI 涔嬮棿寤虹珛鏁版嵁杩炴帴銆傛牴鎹繛鎺ョ被鍨嬬殑涓嶅悓锛?netif_carrier_[on/off] 鐢?dpaa2-eth 椹卞姩鎴?phylink 鐩存帴澶勭悊銆?
+在其DPAA2 对象之中，fsl-mc 总线导出 DPNI 对象（抽象网络接口）DPMAC 对象
+（抽MAC）。dpaa2-eth 驱动DPNI 对象上探测，并借助 phylink 连接并配置一DPMAC 对象
+可以DPNI DPMAC 之间，或两个 DPNI 之间建立数据连接。根据连接类型的不同netif_carrier_[on/off] dpaa2-eth 驱动phylink 直接处理
 
-  鐢?MC 鍥轰欢鍛堢幇鐨勬娊璞￠摼璺姸鎬佷俊鎭殑鏉ユ簮
+  MC 固件呈现的抽象链路状态信息的来源
 
                                                +--------------------------------------+
   +------------+                  +---------+  |                           xgmac_mdio |
@@ -47,28 +47,28 @@ DPAA2 MAC / PHY 鏀寔鐢变竴缁?API 缁勬垚锛岃繖浜?API 甯姪 DP
            +--------------------------------------+
 
 
-鏍规嵁 MC 鍥轰欢閰嶇疆璁剧疆鐨勪笉鍚岋紝姣忎釜 MAC 鍙兘澶勪簬涓ょ妯″紡涔嬩竴锛?
-- DPMAC_LINK_TYPE_FIXED锛氶摼璺姸鎬佺鐞嗗畬鍏ㄧ敱 MC 鍥轰欢閫氳繃杞 MAC PCS 鏉ュ鐞嗐€傛棤闇€
-  娉ㄥ唽 phylink 瀹炰緥锛宒paa2-eth 椹卞姩鏍规湰涓嶄細缁戝畾鍒版墍杩炴帴鐨?dpmac 瀵硅薄銆?
-- DPMAC_LINK_TYPE_PHY锛歁C 鍥轰欢澶勪簬绛夊緟閾捐矾鐘舵€佹洿鏂颁簨浠剁殑鐘舵€侊紝浣嗚繖浜涗簨浠跺疄闄呬笂
-  涓ユ牸鍦?dpaa2-mac锛堝熀浜?phylink锛変笌鍏舵墍杩炴帴鐨?net_device 椹卞姩锛坉paa2-eth銆?  dpaa2-ethsw锛変箣闂翠紶閫掞紝鏈夋晥鍦扮粫杩囦簡鍥轰欢銆?
-### 瀹炵幇
+根据 MC 固件配置设置的不同，每个 MAC 可能处于两种模式之一
+- DPMAC_LINK_TYPE_FIXED：链路状态管理完全由 MC 固件通过轮询 MAC PCS 来处理。无需
+  注册 phylink 实例，dpaa2-eth 驱动根本不会绑定到所连接dpmac 对象
+- DPMAC_LINK_TYPE_PHY：MC 固件处于等待链路状态更新事件的状态，但这些事件实际上
+  严格dpaa2-mac（基phylink）与其所连接net_device 驱动（dpaa2-eth  dpaa2-ethsw）之间传递，有效地绕过了固件
+### 实现
 
 
-鍦ㄦ帰娴嬫椂鎴栧綋 DPNI 鐨勭鐐硅鍔ㄦ€佹洿鏀规椂锛宒paa2-eth 璐熻矗鏌ユ槑瀵圭瀵硅薄鏄惁涓?DPMAC锛?濡傛灉鏄紝鍒欎娇鐢?dpaa2_mac_connect() API 灏嗗叾涓?PHYLINK 闆嗘垚锛岃 API 灏嗘墽琛屼互涓?鎿嶄綔锛?
- - 鍦ㄨ澶囨爲涓煡鎵句笌 PHYLINK 鍏煎鐨勭粦瀹氾紙phy-handle锛? - 灏嗗垱寤轰竴涓笌鎵€鎺ユ敹 net_device 鍏宠仈鐨?PHYLINK 瀹炰緥
- - 浣跨敤 phylink_of_phy_connect() 杩炴帴鍒?PHY
+在探测时或当 DPNI 的端点被动态更改时，dpaa2-eth 负责查明对端对象是否DPMAC如果是，则使dpaa2_mac_connect() API 将其PHYLINK 集成，该 API 将执行以操作
+ - 在设备树中查找与 PHYLINK 兼容的绑定（phy-handle - 将创建一个与所接收 net_device 关联PHYLINK 实例
+ - 使用 phylink_of_phy_connect() 连接PHY
 
-瀹炵幇浜嗕互涓?phylink_mac_ops 鍥炶皟锛?
- - .validate() 灏嗙敤 MAC 鑳藉姏濉厖鍙楁敮鎸佺殑閾捐矾妯″紡锛屼粎褰?phy_interface_t 涓?   RGMII_* 鏃讹紙鐩墠锛岃繖鏄┍鍔ㄦ敮鎸佺殑鍞竴绉嶉摼璺被鍨嬶級銆?
- - .mac_config() 灏嗕娇鐢?dpmac_set_link_state() MC 鍥轰欢 API 浠ユ柊閰嶇疆閰嶇疆 MAC銆?
- - .mac_link_up() / .mac_link_down() 灏嗕娇鐢ㄤ笂杩扮浉鍚岀殑 API 鏇存柊 MAC 閾捐矾銆?
-鍦ㄩ┍鍔?unbind() 鏃舵垨褰?DPNI 瀵硅薄涓?DPMAC 鏂紑杩炴帴鏃讹紝dpaa2-eth 椹卞姩璋冪敤
-dpaa2_mac_disconnect()锛屽悗鑰呭弽杩囨潵浼氭柇寮€涓?PHY 鐨勮繛鎺ュ苟閿€姣?PHYLINK 瀹炰緥銆?
-鍦?DPNI-DPMAC 杩炴帴鐨勬儏鍐典笅锛?ip link set dev eth0 up' 灏嗗惎鍔ㄤ互涓嬫搷浣滃簭鍒楋細
+实现了以phylink_mac_ops 回调
+ - .validate() 将用 MAC 能力填充受支持的链路模式，仅phy_interface_t    RGMII_* 时（目前，这是驱动支持的唯一种链路类型）
+ - .mac_config() 将使dpmac_set_link_state() MC 固件 API 以新配置配置 MAC
+ - .mac_link_up() / .mac_link_down() 将使用上述相同的 API 更新 MAC 链路
+在驱unbind() 时或DPNI 对象DPMAC 断开连接时，dpaa2-eth 驱动调用
+dpaa2_mac_disconnect()，后者反过来会断开PHY 的连接并销PHYLINK 实例
+DPNI-DPMAC 连接的情况下ip link set dev eth0 up' 将启动以下操作序列：
 
-(1) 浠?.dev_open() 璋冪敤 phylink_start()銆?(2) .mac_config() 鍜?.mac_link_up() 鍥炶皟鐢?PHYLINK 璋冪敤銆?(3) 涓轰簡閰嶇疆纭欢 MAC锛岃皟鐢?MC 鍥轰欢 API dpmac_set_link_state()銆?(4) 鍥轰欢鏈€缁堜細灏嗙‖浠?MAC 璁剧疆涓烘柊閰嶇疆銆?(5) 鐩存帴浠?PHYLINK 鍦ㄥ叧鑱旂殑 net_device 涓婅皟鐢?netif_carrier_on()銆?(6) dpaa2-eth 椹卞姩澶勭悊 LINK_STATE_CHANGE 涓柇锛屼互鏍规嵁鏆傚仠甯ц缃惎鐢?绂佺敤 Rx
-    taildrop銆?
+(1) .dev_open() 调用 phylink_start()(2) .mac_config() .mac_link_up() 回调PHYLINK 调用(3) 为了配置硬件 MAC，调MC 固件 API dpmac_set_link_state()(4) 固件最终会将硬MAC 设置为新配置(5) 直接PHYLINK 在关联的 net_device 上调netif_carrier_on()(6) dpaa2-eth 驱动处理 LINK_STATE_CHANGE 中断，以根据暂停帧设置启禁用 Rx
+    taildrop銆。
 
   +---------+               +---------+
   | PHYLINK |-------------->|  eth0   |
@@ -94,11 +94,11 @@ dpaa2_mac_disconnect()锛屽悗鑰呭弽杩囨潵浼氭柇寮€涓?PHY 鐨勮�
   |             HW MAC                |
   +-----------------------------------+
 
-鍦?DPNI-DPNI 杩炴帴鐨勬儏鍐典笅锛岄€氬父鐨勬搷浣滃簭鍒楀涓嬫墍绀猴細
+DPNI-DPNI 连接的情况下，通常的操作序列如下所示：
 
 (1) ip link set dev eth0 up
-(2) 鍦ㄦ墍鍏宠仈鐨?fsl_mc_device 涓婅皟鐢?dpni_enable() MC API銆?(3) ip link set dev eth1 up
-(4) 鍦ㄦ墍鍏宠仈鐨?fsl_mc_device 涓婅皟鐢?dpni_enable() MC API銆?(5) LINK_STATE_CHANGED 涓柇琚?dpaa2-eth 椹卞姩鐨勪袱涓疄渚嬫帴鏀讹紝鍥犱负鐜板湪鎿嶄綔閾捐矾鐘舵€?    涓?up銆?(6) 浠?link_state_update() 鍦ㄥ鍑虹殑 net_device 涓婅皟鐢?netif_carrier_on()銆?
+(2) 在所关联fsl_mc_device 上调dpni_enable() MC API(3) ip link set dev eth1 up
+(4) 在所关联fsl_mc_device 上调dpni_enable() MC API(5) LINK_STATE_CHANGED 中断dpaa2-eth 驱动的两个实例接收，因为现在操作链路状    up(6) link_state_update() 在导出的 net_device 上调netif_carrier_on()
 
   +---------+               +---------+
   |  eth0   |               |  eth1   |
@@ -119,23 +119,23 @@ dpaa2_mac_disconnect()锛屽悗鑰呭弽杩囨潵浼氭柇寮€涓?PHY 鐨勮�
   +-----------------------------------+
 
 
-### 瀵煎嚭鐨?API
+### 导出API
 
 
-浠讳綍椹卞姩 DPMAC 瀵硅薄绔偣鐨?DPAA2 椹卞姩閮藉簲褰撳鐞嗗叾 _EVENT_ENDPOINT_CHANGED 涓柇锛屽苟
-涓庡叧鑱旂殑 DPMAC 杩炴帴/鏂紑
+任何驱动 DPMAC 对象端点DPAA2 驱动都应当处理其 _EVENT_ENDPOINT_CHANGED 中断，并
+与关联的 DPMAC 连接/断开
 ```
 
  - int dpaa2_mac_connect(struct dpaa2_mac *mac);
  - void dpaa2_mac_disconnect(struct dpaa2_mac *mac);
 
 ```
-鍙湁褰撳绔?DPMAC 涓嶆槸 `TYPE_FIXED` 鏃讹紝鎵嶉渶瑕?phylink 闆嗘垚銆傝繖鎰忓懗鐫€瀹冭涔堟槸
-`TYPE_PHY`锛岃涔堟槸 `TYPE_BACKPLANE`锛堜簩鑰呯殑鍖哄埆鍦ㄤ簬锛屽湪 `TYPE_BACKPLANE` 妯″紡涓嬶紝
-MC 鍥轰欢涓嶈闂?PCS 瀵勫瓨鍣級銆傚彲浠ユ鏌?```
+只有当对DPMAC 不是 `TYPE_FIXED` 时，才需phylink 集成。这意味着它要么是
+`TYPE_PHY`，要么是 `TYPE_BACKPLANE`（二者的区别在于，在 `TYPE_BACKPLANE` 模式下，
+MC 固件不访PCS 寄存器）。可以检```
 
  - static inline bool dpaa2_mac_is_type_phy(struct dpaa2_mac *mac);
 
 ```
-鍦ㄨ繛鎺ュ埌 MAC 涔嬪墠锛岃皟鐢ㄨ€呭繀椤诲垎閰嶅苟鐢ㄥ叧鑱旂殑 net_device銆佽浣跨敤鐨?MC portal 鎸囬拡
-浠ュ強 DPMAC 鐨勫疄闄?fsl_mc_device 缁撴瀯濉厖 dpaa2_mac 缁撴瀯銆?
+在连接到 MAC 之前，调用者必须分配并用关联的 net_device、要使用MC portal 指针
+以及 DPMAC 的实fsl_mc_device 结构填充 dpaa2_mac 结构

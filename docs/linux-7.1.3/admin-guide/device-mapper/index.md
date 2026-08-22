@@ -1,17 +1,17 @@
-﻿## 璁惧鏄犲皠锛圖evice Mapper锛?
+﻿## 设备映射（Device Mapper
 
-鏈〉鏄?Device Mapper锛堣澶囨槧灏勶級鏂囨。鐨勭储寮曪紝姹囨€讳簡鍚勭被瀛樺偍鐩爣锛坱arget锛変笌杈呭姪鍐呮牳妯″潡鐨勮鏄庡叆鍙ｏ紙濡傜紦瀛樸€佸姞瀵?dm-crypt銆丷AID銆佺簿绠€閰嶇疆銆乂DO銆佸揩鐓х瓑锛夛紝渚夸簬绯荤粺绠＄悊鍛樹笌寮€鍙戣€呮煡闃呭瓨鍌ㄦ爤閰嶇疆銆?
-
-
-鏈〉姹囨€?Device Mapper 鍚勭被瀛樺偍鐩爣锛坱arget锛夊強鍏剁浉鍏宠緟鍔╁唴鏍告ā鍧楃殑鏂囨。閾炬帴銆?
+本页Device Mapper（设备映射）文档的索引，汇总了各类存储目标（target）与辅助内核模块的说明入口（如缓存、加dm-crypt、RAID、精简配置、VDO、快照等），便于系统管理员与开发者查阅存储栈配置
 
 
-- [缂撳瓨绛栫暐](cache-policies)
-- [缂撳瓨](cache)
-- [寤惰繜](delay)
+本页汇Device Mapper 各类存储目标（target）及其相关辅助内核模块的文档链接
+
+
+- [缓存策略](cache-policies)
+- [缓存](cache)
+- [延迟](delay)
 - [dm-clone](dm-clone)
 - [dm-crypt](dm-crypt)
-- [dm-dust锛堟崯鍧忔ā鎷燂級](dm-dust)
+- [dm-dust（损坏模拟）](dm-dust)
 - [dm-ebs](dm-ebs)
 - [dm-flakey](dm-flakey)
 - [dm-ima](dm-ima)
@@ -27,18 +27,18 @@
 - [dm-zoned](dm-zoned)
 - [era](era)
 - [kcopyd](kcopyd)
-- [绾挎€(linear)
-- [鏃ュ織鍐欏叆](log-writes)
-- [鎸佷箙鍖栨暟鎹甝(persistent-data)
+- [线性](linear)
+- [日志写入](log-writes)
+- [持久化数据](persistent-data)
 - [snapshot](snapshot)
 - [statistics](statistics)
 - [striped](striped)
-- [鍒囨崲](switch)
-- [绮剧畝閰嶇疆](thin-provisioning)
+- [切换](switch)
+- [精简配置](thin-provisioning)
 - [unstriped](unstriped)
-- [VDO 璁捐](vdo-design)
+- [VDO 设计](vdo-design)
 - [vdo](vdo)
-- [瀹屾暣鎬ф牎楠宂(verity)
+- [完整性校验](verity)
 - [writecache](writecache)
 - [zero](zero)
 

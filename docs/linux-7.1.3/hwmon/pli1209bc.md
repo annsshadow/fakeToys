@@ -1,8 +1,8 @@
 ﻿
-## 鍐呮牳椹卞姩 pli1209bc
+## 内核驱动 pli1209bc
 
 
-鏀寔鐨勮姱鐗囷細
+支持的芯片：
 
   - Digital Supervisor PLI1209BC
 
@@ -15,25 +15,25 @@
 Authors:
     - Marcello Sylvester Bauer <sylv@sylv.io>
 
-### 鎻忚堪
+### 描述
 
 
-Vicor PLI1209BC 鏄竴娆鹃殧绂荤殑鏁板瓧鐢垫簮绯荤粺鐩戞帶鍣紙supervisor锛夛紝涓轰富鏈哄鐞嗗櫒涓庝竴涓€荤嚎杞崲妯″潡锛圔CM锛変箣闂存彁渚涢€氫俊鎺ュ彛銆侾LI 閫氳繃涓€涓殧绂荤殑 UART 鎺ュ彛浠?PMBus 鍏煎鎺ュ彛涓庣郴缁熸帶鍒跺櫒閫氫俊銆傞€氳繃 PLI锛屼富鏈哄鐞嗗櫒鍙互閰嶇疆銆佽缃繚鎶ら檺鍒跺苟鐩戣 BCM銆?
-### Sysfs 鎺ュ彛
+Vicor PLI1209BC 是一款隔离的数字电源系统监控器（supervisor），为主机处理器与一个总线转换模块（BCM）之间提供通信接口。PLI 通过一个隔离的 UART 接口PMBus 兼容接口与系统控制器通信。通过 PLI，主机处理器可以配置、设置保护限制并监视 BCM
+### Sysfs 接口
 
 
 ======================= ========================================================
 in1_label		"vin2"
-in1_input		杈撳叆鐢靛帇銆?in1_rated_min		鏈€灏忛瀹氳緭鍏ョ數鍘嬨€?in1_rated_max		鏈€澶ч瀹氳緭鍏ョ數鍘嬨€?in1_max			鏈€澶ц緭鍏ョ數鍘嬨€?in1_max_alarm		杈撳叆鐢靛帇杩囬珮鎶ヨ銆?in1_crit		涓寸晫杈撳叆鐢靛帇銆?in1_crit_alarm		杈撳叆鐢靛帇涓寸晫鎶ヨ銆?
+in1_input		输入电压in1_rated_min		最小额定输入电压in1_rated_max		最大额定输入电压in1_max			最大输入电压in1_max_alarm		输入电压过高报警in1_crit		临界输入电压in1_crit_alarm		输入电压临界报警
 in2_label		"vout2"
-in2_input		杈撳嚭鐢靛帇銆?in2_rated_min		鏈€灏忛瀹氳緭鍑虹數鍘嬨€?in2_rated_max		鏈€澶ч瀹氳緭鍑虹數鍘嬨€?in2_alarm		杈撳嚭鐢靛帇鎶ヨ
+in2_input		输出电压in2_rated_min		最小额定输出电压in2_rated_max		最大额定输出电压in2_alarm		输出电压报警
 
 curr1_label		"iin2"
-curr1_input		杈撳叆鐢垫祦銆?curr1_max		鏈€澶ц緭鍏ョ數娴併€?curr1_max_alarm		鏈€澶ц緭鍏ョ數娴佽繃楂樻姤璀︺€?curr1_crit		涓寸晫杈撳叆鐢垫祦銆?curr1_crit_alarm	杈撳叆鐢垫祦涓寸晫鎶ヨ銆?
+curr1_input		输入电流curr1_max		最大输入电流curr1_max_alarm		最大输入电流过高报警curr1_crit		临界输入电流curr1_crit_alarm	输入电流临界报警
 curr2_label		"iout2"
-curr2_input		杈撳嚭鐢垫祦銆?curr2_crit		涓寸晫杈撳嚭鐢垫祦銆?curr2_crit_alarm	杈撳嚭鐢垫祦涓寸晫鎶ヨ銆?curr2_max		鏈€澶ц緭鍑虹數娴併€?curr2_max_alarm		杈撳嚭鐢垫祦杩囬珮鎶ヨ銆?
+curr2_input		输出电流curr2_crit		临界输出电流curr2_crit_alarm	输出电流临界报警curr2_max		最大输出电流curr2_max_alarm		输出电流过高报警
 power1_label		"pin2"
-power1_input		杈撳叆鍔熺巼銆?power1_alarm		杈撳叆鍔熺巼鎶ヨ銆?
+power1_input		输入功率power1_alarm		输入功率报警
 power2_label		"pout2"
-power2_input		杈撳嚭鍔熺巼銆?power2_rated_max	鏈€澶ч瀹氳緭鍑哄姛鐜囥€?
-temp1_input		鑺墖锛坉ie锛夋俯搴︺€?temp1_alarm		鑺墖娓╁害鎶ヨ銆?temp1_max		鏈€澶ц姱鐗囨俯搴︺€?temp1_max_alarm		鑺墖娓╁害杩囬珮鎶ヨ銆?temp1_crit		涓寸晫鑺墖娓╁害銆?temp1_crit_alarm	鑺墖娓╁害涓寸晫鎶ヨ銆?======================= ========================================================
+power2_input		输出功率power2_rated_max	最大额定输出功率
+temp1_input		芯片（die）温度temp1_alarm		芯片温度报警temp1_max		最大芯片温度temp1_max_alarm		芯片温度过高报警temp1_crit		临界芯片温度temp1_crit_alarm	芯片温度临界报警======================= ========================================================

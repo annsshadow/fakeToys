@@ -1,25 +1,25 @@
-﻿## 鍏朵粬鍥轰欢鎺ュ彛
+﻿## 其他固件接口
 
 
-### DMI 鎺ュ彛
+### DMI 接口
 
 
    :export:
 
-### EDD 鎺ュ彛
+### EDD 接口
 
 
    :internal:
 
-### 閫氱敤绯荤粺甯х紦鍐叉帴鍙?
+### 閫氱敤绯荤粺甯х紦鍐叉帴鍙。
 
    :export:
 
-### Intel Stratix10 SoC 鏈嶅姟灞?
+### Intel Stratix10 SoC 鏈嶅姟灞。
 
-Intel Stratix10 SoC 鐨勬煇浜涚壒鎬ч渶瑕佹瘮鍐呮牳琚巿浜堢殑绾у埆鏇撮珮鐨勭壒鏉冦€傛绫诲畨鍏?鐗规€у寘鎷?FPGA 缂栫▼銆傚氨 ARMv8 鏋舵瀯鑰岃█锛屽唴鏍歌繍琛屽湪寮傚父绾у埆 1 (EL1)锛岃€岃闂?杩欎簺鐗规€ч渶瑕佸紓甯哥骇鍒?3 (EL3)銆?
-Intel Stratix10 SoC 鏈嶅姟灞備负椹卞姩绋嬪簭鎻愪緵浜嗕竴涓唴鏍稿唴 API锛岀敤浜庤姹傝闂?瀹夊叏鐗规€с€傝姹傝鎺掗槦骞堕€愪釜澶勭悊銆侫RM 鐨?SMCCC 鐢ㄤ簬灏嗚姹傜殑鎵ц浼犻€掔粰瀹夊叏
-鐩戣鍣?(EL3)銆?
+Intel Stratix10 SoC 的某些特性需要比内核被授予的级别更高的特权。此类安特性包FPGA 编程。就 ARMv8 架构而言，内核运行在异常级别 1 (EL1)，而访这些特性需要异常级3 (EL3)
+Intel Stratix10 SoC 服务层为驱动程序提供了一个内核内 API，用于请求访安全特性。请求被排队并逐个处理。ARM SMCCC 用于将请求的执行传递给安全
+监视(EL3)
    :functions: stratix10_svc_command_code
 
    :functions: stratix10_svc_client_msg

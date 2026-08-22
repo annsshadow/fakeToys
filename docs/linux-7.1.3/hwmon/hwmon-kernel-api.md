@@ -1,16 +1,16 @@
-﻿## Linux 纭欢鐩戞帶鍐呮牳 API
+﻿## Linux 硬件监控内核 API
 
 
 Guenter Roeck
 
-### 绠€浠?
+### 简
 
-鏈枃妗ｆ弿杩颁簡甯屾湜浣跨敤纭欢鐩戞帶妗嗘灦鐨勭‖浠剁洃鎺ч┍鍔ㄦ墍鑳戒娇鐢ㄧ殑 API銆?
-鏈枃妗ｅ苟涓嶆弿杩颁粈涔堟槸纭欢鐩戞帶锛坔wmon锛夐┍鍔ㄦ垨璁惧锛屼篃涓嶆弿杩扮敤鎴风┖闂村彲鐢ㄤ簬涓庣‖浠剁洃鎺ц澶?閫氫俊鐨?API銆傚鏋滀綘鎯崇煡閬撹繖浜涳紝璇烽槄璇讳互涓嬫枃浠讹細Documentation/hwmon/sysfs-interface.rst銆?
-鍏充簬濡備綍缂栧啓鍜屾敼杩?hwmon 椹卞姩鐨勬洿澶氭寚鍗楋紝涔熻闃呰 Documentation/hwmon/submitting-patches.rst銆?
+本文档描述了希望使用硬件监控框架的硬件监控驱动所能使用的 API
+本文档并不描述什么是硬件监控（hwmon）驱动或设备，也不描述用户空间可用于与硬件监控设通信API。如果你想知道这些，请阅读以下文件：Documentation/hwmon/sysfs-interface.rst
+关于如何编写和改hwmon 驱动的更多指南，也请阅读 Documentation/hwmon/submitting-patches.rst
 ### API
 
-姣忎釜纭欢鐩戞帶椹卞姩蹇呴』 `#include <linux/hwmon.h>`锛屽湪鏌愪簺鎯呭喌涓嬭繕瑕?`#include <linux/hwmon-sysfs.h>`銆?linux/hwmon.h 澹版槑浜嗕互涓嬪唴瀹癸細
+每个硬件监控驱动必须 `#include <linux/hwmon.h>`，在某些情况下还`#include <linux/hwmon-sysfs.h>`linux/hwmon.h 声明了以下内容：
 
 ```
 
@@ -38,31 +38,31 @@ Guenter Roeck
 
 ```
 
-hwmon_device_register_with_info 娉ㄥ唽涓€涓‖浠剁洃鎺ц澶囥€傚畠鍦ㄧ‖浠剁洃鎺ф牳蹇冧腑鍒涘缓鏍囧噯鐨?sysfs
-灞炴€э紝璁╅┍鍔ㄤ笓娉ㄤ簬璇诲啓鑺墖锛岃€屼笉蹇呮搷蹇?sysfs 灞炴€с€傜埗璁惧鍙傛暟浠ュ強鑺墖鍙傛暟閮戒笉鑳戒负 NULL銆傚叾
-鍙傛暟鍦ㄤ笅闈㈡洿璇︾粏鍦版弿杩般€?
-devm_hwmon_device_register_with_info 涓?hwmon_device_register_with_info 绫讳技銆備笉杩囷紝瀹冩槸
-璁惧鎵樼鐨勶紙device managed锛夛紝鎰忓懗鐫€纭欢鐩戞帶璁惧鏃犻渶鐢辩Щ闄ゅ嚱鏁版樉寮忕Щ闄ゃ€?
-鎵€鏈夊叾浠栫‖浠剁洃鎺ц澶囨敞鍐屽嚱鏁伴兘宸插純鐢紝涓嶅緱鍦ㄦ柊椹卞姩涓娇鐢ㄣ€?
-hwmon_device_unregister 娉ㄩ攢涓€涓凡娉ㄥ唽鐨勭‖浠剁洃鎺ц澶囥€傝鍑芥暟鐨勫弬鏁版槸鎸囧悜宸叉敞鍐岀‖浠剁洃鎺ц澶?缁撴瀯鐨勬寚閽堛€傚鏋滅‖浠剁洃鎺ц澶囨槸閫氳繃 hwmon_device_register_with_info 娉ㄥ唽鐨勶紝鍒欏繀椤讳粠椹卞姩鐨?remove 鍑芥暟涓皟鐢ㄦ鍑芥暟銆?
-鎵€鏈夊彈鏀寔鐨?hwmon 璁惧娉ㄥ唽鍑芥暟鍙帴鍙楁湁鏁堢殑璁惧鍚嶇О銆傚寘鍚棤鏁堝瓧绗︼紙绌虹櫧銆乣*` 鎴?`-`锛夌殑璁惧
-鍚嶇О灏嗚鎷掔粷銆傚鏋滀互 NULL 浣滀负 name 鍙傛暟浼犲叆锛岀‖浠剁洃鎺ц澶囧悕绉板皢浠庣埗璁惧鍚嶇О娲剧敓銆?
-濡傛灉椹卞姩涓嶄娇鐢ㄩ潤鎬佽澶囧悕绉帮紙渚嬪瀹冧娇鐢?dev_name()锛夛紝鍥犳鏃犳硶纭繚鍚嶇О鍙寘鍚湁鏁堝瓧绗︼紝鍙互浣?鐢?hwmon_sanitize_name銆傛渚挎嵎鍑芥暟浼氬鍒跺瓧绗︿覆骞跺皢浠讳綍鏃犳晥瀛楃鏇挎崲涓轰笅鍒掔嚎銆傚畠浼氫负鏂板瓧绗︿覆
-鍒嗛厤鍐呭瓨锛岃皟鐢ㄨ€呮湁璐ｄ换鍦ㄨ澶囩Щ闄ゆ椂閲婃斁璇ュ唴瀛樸€?
-devm_hwmon_sanitize_name 鏄?hwmon_sanitize_name 鐨勮祫婧愭墭绠＄増鏈紱鍐呭瓨灏嗗湪璁惧绉婚櫎鏃惰嚜鍔ㄩ噴鏀俱€?
-褰撲娇鐢?`[devm_]hwmon_device_register_with_info()` 娉ㄥ唽纭欢鐩戞帶璁惧鏃讹紝浣跨敤鐩稿叧璁块棶鍑芥暟鐨勮闂?鐢辩‖浠剁洃鎺ф牳蹇冧覆琛屽寲銆傚鏋滈┍鍔ㄩ渶瑕佷负鍏朵粬鍑芥暟锛堜緥濡備腑鏂鐞嗙▼搴忥紝鎴栧畬鍏ㄥ湪椹卞姩涓疄鐜扮殑灞炴€э級鍔犻攣锛?鍙互浣跨敤 hwmon_lock() 鍜?hwmon_unlock() 鏉ョ‘淇濆杩欎簺鍑芥暟鐨勮皟鐢ㄨ涓茶鍖栥€?
-### 浣跨敤 devm_hwmon_device_register_with_info()
+hwmon_device_register_with_info 注册一个硬件监控设备。它在硬件监控核心中创建标准sysfs
+属性，让驱动专注于读写芯片，而不必操sysfs 属性。父设备参数以及芯片参数都不能为 NULL。其
+参数在下面更详细地描述
+devm_hwmon_device_register_with_info hwmon_device_register_with_info 类似。不过，它是
+设备托管的（device managed），意味着硬件监控设备无需由移除函数显式移除
+所有其他硬件监控设备注册函数都已弃用，不得在新驱动中使用
+hwmon_device_unregister 注销一个已注册的硬件监控设备。该函数的参数是指向已注册硬件监控设结构的指针。如果硬件监控设备是通过 hwmon_device_register_with_info 注册的，则必须从驱动remove 函数中调用此函数
+所有受支持hwmon 设备注册函数只接受有效的设备名称。包含无效字符（空白、`*` `-`）的设备
+名称将被拒绝。如果以 NULL 作为 name 参数传入，硬件监控设备名称将从父设备名称派生
+如果驱动不使用静态设备名称（例如它使dev_name()），因此无法确保名称只包含有效字符，可以hwmon_sanitize_name。此便捷函数会复制字符串并将任何无效字符替换为下划线。它会为新字符串
+分配内存，调用者有责任在设备移除时释放该内存
+devm_hwmon_sanitize_name hwmon_sanitize_name 的资源托管版本；内存将在设备移除时自动释放
+当使`[devm_]hwmon_device_register_with_info()` 注册硬件监控设备时，使用相关访问函数的访由硬件监控核心串行化。如果驱动需要为其他函数（例如中断处理程序，或完全在驱动中实现的属性）加锁可以使用 hwmon_lock() hwmon_unlock() 来确保对这些函数的调用被串行化
+### 使用 devm_hwmon_device_register_with_info()
 
-hwmon_device_register_with_info() 娉ㄥ唽涓€涓‖浠剁洃鎺ц澶囥€傝鍑芥暟鐨勫弬鏁版槸
+hwmon_device_register_with_info() 注册一个硬件监控设备。该函数的参数是
 
 =============================================== ===============================================
-`struct device *dev`			鎸囧悜鐖惰澶囩殑鎸囬拡
-`const char *name`			璁惧鍚嶇О
-`void *drvdata`				椹卞姩绉佹湁鏁版嵁
-`const struct hwmon_chip_info *info`	鎸囧悜鑺墖鎻忚堪鐨勬寚閽堛€?`const struct attribute_group **extra_groups` 	浠?NULL 缁撳熬鐨勯檮鍔犻潪鏍囧噯
-						sysfs 灞炴€х粍鍒楄〃銆?=============================================== ===============================================
+`struct device *dev`			指向父设备的指针
+`const char *name`			设备名称
+`void *drvdata`				驱动私有数据
+`const struct hwmon_chip_info *info`	指向芯片描述的指针`const struct attribute_group **extra_groups` 	NULL 结尾的附加非标准
+						sysfs 属性组列表=============================================== ===============================================
 
-姝ゅ嚱鏁板湪鎴愬姛鏃惰繑鍥炴寚鍚戞墍鍒涘缓纭欢鐩戞帶璁惧鐨勬寚閽堬紝澶辫触鍒欒繑鍥炶礋鐨勯敊璇爜銆?
+此函数在成功时返回指向所创建硬件监控设备的指针，失败则返回负的错误码
 ```
 
 	struct hwmon_chip_info {
@@ -72,11 +72,11 @@ hwmon_device_register_with_info() 娉ㄥ唽涓€涓‖浠剁洃鎺ц澶�
 
 ```
 
-瀹冨寘鍚互涓嬪瓧娈碉細
+它包含以下字段：
 
 - ops:
-	鎸囧悜璁惧鎿嶄綔鐨勬寚閽堛€?- info:
-	浠?NULL 缁撳熬鐨勮澶囬€氶亾鎻忚堪绗﹀垪琛ㄣ€?
+	指向设备操作的指针- info:
+	NULL 结尾的设备通道描述符列表
 ```
 
   struct hwmon_ops {
@@ -90,14 +90,14 @@ hwmon_device_register_with_info() 娉ㄥ唽涓€涓‖浠剁洃鎺ц澶�
 
 ```
 
-瀹冨畾涔変簡浠ヤ笅鎿嶄綔銆?
+它定义了以下操作
 - is_visible:
-    鎸囧悜涓€涓嚱鏁扮殑鎸囬拡锛岃繑鍥炴瘡涓彈鏀寔灞炴€х殑鏂囦欢妯″紡銆傛鍑芥暟鏄繀闇€鐨勩€?
+    指向一个函数的指针，返回每个受支持属性的文件模式。此函数是必需的
 - read:
-    鎸囧悜涓€涓嚱鏁扮殑鎸囬拡锛岀敤浜庝粠鑺墖璇诲彇鍊笺€傛鍑芥暟鏄彲閫夌殑锛屼絾鑻ュ瓨鍦ㄤ换浣曞彲璇诲睘鎬у垯蹇呴』鎻愪緵銆?
+    指向一个函数的指针，用于从芯片读取值。此函数是可选的，但若存在任何可读属性则必须提供
 - write:
-    鎸囧悜涓€涓嚱鏁扮殑鎸囬拡锛岀敤浜庡悜鑺墖鍐欏叆鍊笺€傛鍑芥暟鏄彲閫夌殑锛屼絾鑻ュ瓨鍦ㄤ换浣曞彲鍐欏睘鎬у垯蹇呴』鎻愪緵銆?
-姣忎釜浼犳劅鍣ㄩ€氶亾閮戒娇鐢?struct hwmon_channel_info 鎻忚堪锛屽嵆
+    指向一个函数的指针，用于向芯片写入值。此函数是可选的，但若存在任何可写属性则必须提供
+每个传感器通道都使struct hwmon_channel_info 描述，即
 
 ```
 
@@ -108,20 +108,20 @@ hwmon_device_register_with_info() 娉ㄥ唽涓€涓‖浠剁洃鎺ц澶�
 
 ```
 
-瀹冨寘鍚互涓嬪瓧娈碉細
+它包含以下字段：
 
 - type:
-    纭欢鐩戞帶浼犳劅鍣ㄧ被鍨嬨€?
-    鍙楁敮鎸佺殑浼犳劅鍣ㄧ被鍨嬫湁
+    硬件监控传感器类型
+    受支持的传感器类型有
 
      ================== ==================================================
-     hwmon_chip		涓€涓櫄鎷熶紶鎰熷櫒绫诲瀷锛岀敤浜庢弿杩颁笉缁戝畾鍒扮壒瀹氳緭鍏ユ垨杈撳嚭鐨勫睘鎬?     hwmon_temp		娓╁害浼犳劅鍣?     hwmon_in		鐢靛帇浼犳劅鍣?     hwmon_curr		鐢垫祦浼犳劅鍣?     hwmon_power	鍔熺巼浼犳劅鍣?     hwmon_energy	鑳介噺浼犳劅鍣?     hwmon_energy64	鑳介噺浼犳劅鍣紝浠?64 浣嶆湁绗﹀彿鍊兼姤鍛?     hwmon_humidity	婀垮害浼犳劅鍣?     hwmon_fan		椋庢墖杞€熶紶鎰熷櫒
-     hwmon_pwm		PWM 鎺у埗
+     hwmon_chip		一个虚拟传感器类型，用于描述不绑定到特定输入或输出的属     hwmon_temp		温度传感     hwmon_in		电压传感     hwmon_curr		电流传感     hwmon_power	功率传感     hwmon_energy	能量传感     hwmon_energy64	能量传感器，64 位有符号值报     hwmon_humidity	湿度传感     hwmon_fan		风扇转速传感器
+     hwmon_pwm		PWM 控制
      ================== ==================================================
 
 - config:
-    鎸囧悜缁欏畾绫诲瀷鐨勬瘡涓紶鎰熷櫒鐨?0 缁撳熬鐨勯厤缃€煎垪琛ㄧ殑鎸囬拡銆傛瘡涓€兼槸鎸囩ず鍗曚釜浼犳劅鍣ㄦ墍鏀寔鐨勫睘鎬?    鐨勪綅鍊肩殑缁勫悎銆?
-浣滀负涓€涓緥瀛愶紝杩欐槸 LM75 鍏煎浼犳劅鍣ㄨ姱鐗囩殑瀹屾暣鎻忚堪鏂囦欢銆傝鑺墖鍏锋湁鍗曚釜娓╁害浼犳劅鍣ㄣ€傞┍鍔ㄥ笇鏈?鍚戠儹瀛愮郴缁熸敞鍐岋紙HWMON_C_REGISTER_TZ锛夛紝骞朵笖鏀寔 update_interval 灞炴€э紙HWMON_C_UPDATE_INTERVAL锛夈€?璇ヨ姱鐗囨敮鎸佽鍙栨俯搴︼紙HWMON_T_INPUT锛夛紝瀹冩湁涓€涓渶楂樻俯搴﹀瘎瀛樺櫒锛圚WMON_T_MAX锛変互鍙婁竴涓渶楂樻俯搴﹁繜婊?瀵勫瓨鍣紙HWMON_T_MAX_HYST锛?
+    指向给定类型的每个传感器0 结尾的配置值列表的指针。每个值是指示单个传感器所支持的属    的位值的组合
+作为一个例子，这是 LM75 兼容传感器芯片的完整描述文件。该芯片具有单个温度传感器。驱动希向热子系统注册（HWMON_C_REGISTER_TZ），并且支持 update_interval 属性（HWMON_C_UPDATE_INTERVAL）该芯片支持读取温度（HWMON_T_INPUT），它有一个最高温度寄存器（HWMON_T_MAX）以及一个最高温度迟寄存器（HWMON_T_MAX_HYST
 ```
 
 	static const u32 lm75_chip_config[] = {
@@ -150,7 +150,7 @@ hwmon_device_register_with_info() 娉ㄥ唽涓€涓‖浠剁洃鎺ц澶�
 		NULL
 	};
 
-	HWMON_CHANNEL_INFO() 瀹忓彲浠ヤ笖搴斿綋鍦ㄥ彲鑳芥椂浼樺厛浣跨敤銆?	鍊熷姪姝ゅ畯锛屼笂闈㈢殑绀轰緥鍙互绠€鍖栨垚
+	HWMON_CHANNEL_INFO() 宏可以且应当在可能时优先使用	借助此宏，上面的示例可以简化成
 
 	static const struct hwmon_channel_info * const lm75_info[] = {
 		HWMON_CHANNEL_INFO(chip,
@@ -160,7 +160,7 @@ hwmon_device_register_with_info() 娉ㄥ唽涓€涓‖浠剁洃鎺ц澶�
 		NULL
 	};
 
-	鍏朵綑鐨勫０鏄庡涓嬨€?
+	其余的声明如下
 	static const struct hwmon_ops lm75_hwmon_ops = {
 		.is_visible = lm75_is_visible,
 		.read = lm75_read,
@@ -174,14 +174,14 @@ hwmon_device_register_with_info() 娉ㄥ唽涓€涓‖浠剁洃鎺ц澶�
 
 ```
 
-鎸囩ず鍚勪釜灞炴€ф敮鎸佺殑浣嶅€肩殑瀹屾暣鍒楄〃瀹氫箟鍦?include/linux/hwmon.h 涓€傚畾涔夊墠缂€濡備笅銆?
+指示各个属性支持的位值的完整列表定义include/linux/hwmon.h 中。定义前缀如下
 =============== =================================================
-HWMON_C_xxxx	鑺墖灞炴€э紝涓?hwmon_chip 涓€璧蜂娇鐢ㄣ€?HWMON_T_xxxx	娓╁害灞炴€э紝涓?hwmon_temp 涓€璧蜂娇鐢ㄣ€?HWMON_I_xxxx	鐢靛帇灞炴€э紝涓?hwmon_in 涓€璧蜂娇鐢ㄣ€?HWMON_C_xxxx	鐢垫祦灞炴€э紝涓?hwmon_curr 涓€璧蜂娇鐢ㄣ€?		娉ㄦ剰姝ゅ墠缂€涓庤姱鐗囧睘鎬у墠缂€閲嶅彔銆?HWMON_P_xxxx	鍔熺巼灞炴€э紝涓?hwmon_power 涓€璧蜂娇鐢ㄣ€?HWMON_E_xxxx	鑳介噺灞炴€э紝涓?hwmon_energy 涓€璧蜂娇鐢ㄣ€?HWMON_H_xxxx	婀垮害灞炴€э紝涓?hwmon_humidity 涓€璧蜂娇鐢ㄣ€?HWMON_F_xxxx	椋庢墖杞€熷睘鎬э紝涓?hwmon_fan 涓€璧蜂娇鐢ㄣ€?HWMON_PWM_xxxx	PWM 鎺у埗灞炴€э紝涓?hwmon_pwm 涓€璧蜂娇鐢ㄣ€?=============== =================================================
+HWMON_C_xxxx	芯片属性，hwmon_chip 一起使用HWMON_T_xxxx	温度属性，hwmon_temp 一起使用HWMON_I_xxxx	电压属性，hwmon_in 一起使用HWMON_C_xxxx	电流属性，hwmon_curr 一起使用		注意此前缀与芯片属性前缀重叠HWMON_P_xxxx	功率属性，hwmon_power 一起使用HWMON_E_xxxx	能量属性，hwmon_energy 一起使用HWMON_H_xxxx	湿度属性，hwmon_humidity 一起使用HWMON_F_xxxx	风扇转速属性，hwmon_fan 一起使用HWMON_PWM_xxxx	PWM 控制属性，hwmon_pwm 一起使用=============== =================================================
 
-### 椹卞姩鍥炶皟鍑芥暟
+### 驱动回调函数
 
 
-姣忎釜椹卞姩鎻愪緵 is_visible銆乺ead 鍜?write 鍑芥暟銆傚弬鏁?
+每个驱动提供 is_visible、read write 函数。参
 ```
 
   umode_t is_visible_func(const void *data, enum hwmon_sensor_types type,
@@ -189,13 +189,13 @@ HWMON_C_xxxx	鑺墖灞炴€э紝涓?hwmon_chip 涓€璧蜂娇鐢ㄣ€?HWMO
 
 ```
 
-鍙傛暟锛?	data:
-		鎸囧悜璁惧绉佹湁鏁版嵁缁撴瀯鐨勬寚閽堛€?	type:
-		浼犳劅鍣ㄧ被鍨嬨€?	attr:
-		涓庣壒瀹氬睘鎬у叧鑱旂殑灞炴€ф爣璇嗙銆?		渚嬪锛孒WMON_T_INPUT 鐨勫睘鎬у€煎皢鏄?hwmon_temp_input銆傚叧浜庝綅瀛楁鍒?		灞炴€у€肩殑瀹屾暣鏄犲皠锛岃鍙傞槄 include/linux/hwmon.h銆?	channel:
-		浼犳劅鍣ㄩ€氶亾鍙枫€?
-杩斿洖鍊硷細
-	姝ゅ睘鎬х殑鏂囦欢妯″紡銆傞€氬父锛岃繖灏嗘槸 0锛堜笉浼氬垱寤鸿灞炴€э級銆?444 鎴?0644銆?
+参数	data:
+		指向设备私有数据结构的指针	type:
+		传感器类型	attr:
+		与特定属性关联的属性标识符		例如，HWMON_T_INPUT 的属性值将hwmon_temp_input。关于位字段		属性值的完整映射，请参阅 include/linux/hwmon.h	channel:
+		传感器通道号
+返回值：
+	此属性的文件模式。通常，这将是 0（不会创建该属性）444 0644
 ```
 
 	int read_func(struct device *dev, enum hwmon_sensor_types type,
@@ -203,15 +203,15 @@ HWMON_C_xxxx	鑺墖灞炴€э紝涓?hwmon_chip 涓€璧蜂娇鐢ㄣ€?HWMO
 
 ```
 
-鍙傛暟锛?	dev:
-		鎸囧悜纭欢鐩戞帶璁惧鐨勬寚閽堛€?	type:
-		浼犳劅鍣ㄧ被鍨嬨€?	attr:
-		涓庣壒瀹氬睘鎬у叧鑱旂殑灞炴€ф爣璇嗙銆?		渚嬪锛孒WMON_T_INPUT 鐨勫睘鎬у€煎皢鏄?hwmon_temp_input銆傚畬鏁存槧灏勮鍙傞槄
+参数	dev:
+		指向硬件监控设备的指针	type:
+		传感器类型	attr:
+		与特定属性关联的属性标识符		例如，HWMON_T_INPUT 的属性值将hwmon_temp_input。完整映射请参阅
 		include/linux/hwmon.h銆?	channel:
-		浼犳劅鍣ㄩ€氶亾鍙枫€?	val:
-		鎸囧悜灞炴€у€肩殑鎸囬拡銆?		瀵逛簬 hwmon_energy64锛宍'val`' 浣滀负 `long *` 浼犲叆锛屼絾闇€瑕佺被鍨嬭浆鎹负 `s64 *`銆?
-杩斿洖鍊硷細
-	鎴愬姛涓?0锛屽惁鍒欎负璐熼敊璇彿銆?
+		传感器通道号	val:
+		指向属性值的指针		对于 hwmon_energy64，`'val`' 作为 `long *` 传入，但需要类型转换为 `s64 *`
+返回值：
+	成功0，否则为负错误号
 ```
 
 	int write_func(struct device *dev, enum hwmon_sensor_types type,
@@ -219,24 +219,24 @@ HWMON_C_xxxx	鑺墖灞炴€э紝涓?hwmon_chip 涓€璧蜂娇鐢ㄣ€?HWMO
 
 ```
 
-鍙傛暟锛?	dev:
-		鎸囧悜纭欢鐩戞帶璁惧鐨勬寚閽堛€?	type:
-		浼犳劅鍣ㄧ被鍨嬨€?	attr:
-		涓庣壒瀹氬睘鎬у叧鑱旂殑灞炴€ф爣璇嗙銆?		渚嬪锛孒WMON_T_INPUT 鐨勫睘鎬у€煎皢鏄?hwmon_temp_input銆傚畬鏁存槧灏勮鍙傞槄
+参数	dev:
+		指向硬件监控设备的指针	type:
+		传感器类型	attr:
+		与特定属性关联的属性标识符		例如，HWMON_T_INPUT 的属性值将hwmon_temp_input。完整映射请参阅
 		include/linux/hwmon.h銆?	channel:
-		浼犳劅鍣ㄩ€氶亾鍙枫€?	val:
-		瑕佸啓鍏ヨ姱鐗囩殑鍊笺€?
-杩斿洖鍊硷細
-	鎴愬姛涓?0锛屽惁鍒欎负璐熼敊璇彿銆?
+		传感器通道号	val:
+		要写入芯片的值
+返回值：
+	成功0，否则为负错误号
 
-### 椹卞姩鎻愪緵鐨?sysfs 灞炴€?
+### 驱动提供sysfs 属
 
-鍦ㄥぇ澶氭暟鎯呭喌涓嬶紝椹卞姩涓嶉渶瑕佹彁渚?sysfs 灞炴€э紝鍥犱负纭欢鐩戞帶鏍稿績浼氬湪鍐呴儴鍒涘缓杩欎簺灞炴€с€傚彧闇€瑕佹彁渚?棰濆鐨勯潪鏍囧噯 sysfs 灞炴€с€?
-澶存枃浠?linux/hwmon-sysfs.h 鎻愪緵浜嗕竴浜涙湁鐢ㄧ殑瀹忔潵澹版槑鍜屼娇鐢ㄧ‖浠剁洃鎺?sysfs 灞炴€с€?
-鍦ㄨ澶氭儏鍐典笅锛屼綘鍙互浣跨敤鐜版湁鐨勫畾涔?DEVICE_ATTR 鎴栧叾鍙樹綋 DEVICE_ATTR_{RW,RO,WO} 鏉ュ０鏄庢绫?灞炴€с€傚鏋滀竴涓睘鎬ф病鏈夐澶栫殑涓婁笅鏂囷紝杩欐槸鍙鐨勩€傜劧鑰岋紝鍦ㄨ澶氭儏鍐典笅浼氭湁闄勫姞淇℃伅锛堜緥濡備紶鎰熷櫒绱㈠紩锛?闇€瑕佷紶閫掔粰 sysfs 灞炴€у鐞嗗嚱鏁般€?
-SENSOR_DEVICE_ATTR 鍜?SENSOR_DEVICE_ATTR_2 鍙敤浜庡畾涔夐渶瑕佹绫婚檮鍔犱笂涓嬫枃淇℃伅鐨勫睘鎬с€?SENSOR_DEVICE_ATTR 闇€瑕佷竴涓檮鍔犲弬鏁帮紝SENSOR_DEVICE_ATTR_2 闇€瑕佷袱涓€?
-濡傛灉鏍囧噯鐨勫睘鎬ф潈闄愬拰鍑芥暟鍚嶅彲琛岋紝搴斿綋浣跨敤 SENSOR_DEVICE_ATTR 鍜?SENSOR_DEVICE_ATTR_2 鐨勭畝鍖?鍙樹綋銆傛爣鍑嗘潈闄愪负锛歋ENSOR_DEVICE_ATTR[_2]_RW 涓?0644锛孲ENSOR_DEVICE_ATTR[_2]_RO 涓?0444锛?SENSOR_DEVICE_ATTR[_2]_WO 涓?0200銆傛爣鍑嗗嚱鏁扮被浼间簬 DEVICE_ATTR_{RW,RO,WO}锛屽湪鎵€鎻愪緵鐨勫嚱鏁板悕鍚?闄勫姞 _show 鍜?_store銆?
-SENSOR_DEVICE_ATTR 鍙婂叾鍙樹綋瀹氫箟浜嗕竴涓?struct sensor_device_attribute
+在大多数情况下，驱动不需要提sysfs 属性，因为硬件监控核心会在内部创建这些属性。只需要提额外的非标准 sysfs 属性
+头文linux/hwmon-sysfs.h 提供了一些有用的宏来声明和使用硬件监sysfs 属性
+在许多情况下，你可以使用现有的定DEVICE_ATTR 或其变体 DEVICE_ATTR_{RW,RO,WO} 来声明此属性。如果一个属性没有额外的上下文，这是可行的。然而，在许多情况下会有附加信息（例如传感器索引需要传递给 sysfs 属性处理函数
+SENSOR_DEVICE_ATTR SENSOR_DEVICE_ATTR_2 可用于定义需要此类附加上下文信息的属性SENSOR_DEVICE_ATTR 需要一个附加参数，SENSOR_DEVICE_ATTR_2 需要两个
+如果标准的属性权限和函数名可行，应当使用 SENSOR_DEVICE_ATTR SENSOR_DEVICE_ATTR_2 的简变体。标准权限为：SENSOR_DEVICE_ATTR[_2]_RW 0644，SENSOR_DEVICE_ATTR[_2]_RO 0444SENSOR_DEVICE_ATTR[_2]_WO 0200。标准函数类似于 DEVICE_ATTR_{RW,RO,WO}，在所提供的函数名附加 _show _store
+SENSOR_DEVICE_ATTR 及其变体定义了一struct sensor_device_attribute
 
 ```
 
@@ -247,8 +247,8 @@ SENSOR_DEVICE_ATTR 鍙婂叾鍙樹綋瀹氫箟浜嗕竴涓?struct sensor_device_
 
 ```
 
-浣犲彲浠ヤ娇鐢?to_sensor_dev_attr 浠庡睘鎬х殑璇绘垨鍐欏嚱鏁颁腑鑾峰彇鎸囧悜姝ょ粨鏋勭殑鎸囬拡銆傚叾鍙傛暟鏄灞炴€ф墍闄勫姞鐨?璁惧銆?
-SENSOR_DEVICE_ATTR_2 鍙婂叾鍙樹綋瀹氫箟浜嗕竴涓?struct sensor_device_attribute_2
+你可以使to_sensor_dev_attr 从属性的读或写函数中获取指向此结构的指针。其参数是该属性所附加设备
+SENSOR_DEVICE_ATTR_2 及其变体定义了一struct sensor_device_attribute_2
 
 ```
 
@@ -260,4 +260,4 @@ SENSOR_DEVICE_ATTR_2 鍙婂叾鍙樹綋瀹氫箟浜嗕竴涓?struct sensor_devic
 
 ```
 
-浣跨敤 to_sensor_dev_attr_2 鑾峰彇鎸囧悜姝ょ粨鏋勭殑鎸囬拡銆傚叾鍙傛暟鏄灞炴€ф墍闄勫姞鐨勮澶囥€?
+使用 to_sensor_dev_attr_2 获取指向此结构的指针。其参数是该属性所附加的设备

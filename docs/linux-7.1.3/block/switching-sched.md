@@ -1,23 +1,23 @@
-﻿## 鍒囨崲璋冨害鍣?
+﻿## 切换调度
 
-姣忎釜 IO 闃熷垪閮芥湁涓€缁勪笌涔嬪叧鑱旂殑 IO 璋冨害鍣ㄥ彲璋冨弬鏁般€傝繖浜涘彲璋冨弬鏁版帶鍒?IO 璋冨害鍣ㄧ殑宸ヤ綔鏂瑰紡銆傚亣璁炬偍宸插皢 sysfs 鎸傝浇鍒?/sys锛屾偍鍙互鍦ㄤ互涓嬩綅缃?鎵惧埌杩欎簺鏉＄洰锛?
+每个 IO 队列都有一组与之关联的 IO 调度器可调参数。这些可调参数控IO 调度器的工作方式。假设您已将 sysfs 挂载/sys，您可以在以下位找到这些条目
 ```
 	/sys/block/<device>/queue/iosched
 ```
 
-濡傛灉鎮ㄦ病鏈夋寕杞?sysfs锛?
+如果您没有挂sysfs
 ```
 	# mount none /sys -t sysfs
 ```
 
-鍙互瀹炴椂鏇存敼缁欏畾鍧楄澶囩殑 IO 璋冨害鍣紝浠ラ€夋嫨 mq-deadline銆乶one銆乥fq 鎴?kyber 璋冨害鍣ㄤ箣涓€鈥斺€旇繖鍙互鎻愰珮璇ヨ澶囩殑鍚炲悙閲忋€?
+可以实时更改给定块设备的 IO 调度器，以选择 mq-deadline、none、bfq kyber 调度器之一——这可以提高该设备的吞吐量
 ```
 	echo SCHEDNAME > /sys/block/DEV/queue/scheduler
 ```
 
-鍏朵腑 SCHEDNAME 鏄凡瀹氫箟 IO 璋冨害鍣ㄧ殑鍚嶇О锛孌EV 鏄澶囧悕锛坔da銆乭db銆乻ga
-鎴栨偍鎷ユ湁鐨勪换浣曡澶囷級銆?
-鍙渶鎵ц "cat /sys/block/DEV/queue/scheduler" 鍗冲彲鎵惧埌宸插畾涔夎皟搴﹀櫒鐨?鍒楄〃鈥斺€旀湁鏁堝悕绉板垪琛ㄥ涓嬶細
+其中 SCHEDNAME 是已定义 IO 调度器的名称，DEV 是设备名（hda、hdb、sga
+或您拥有的任何设备）
+只需执行 "cat /sys/block/DEV/queue/scheduler" 即可找到已定义调度器列表——有效名称列表如下：
 
 ```
   # cat /sys/block/sda/queue/scheduler

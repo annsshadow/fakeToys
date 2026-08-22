@@ -1,33 +1,33 @@
 ﻿
-## sysfs CPUFreq 缁熻閫氱敤鎻忚堪
+## sysfs CPUFreq 统计通用描述
 
 
-闈㈠悜鐢ㄦ埛鐨勪俊鎭?
+面向用户的信
 
 Author: Venkatesh Pallipadi <venkatesh.pallipadi@intel.com>
 
 
-   1. 绠€浠?   2. 鎻愪緵鐨勭粺璁★紙闄勭ず渚嬶級
-   3. 閰嶇疆 cpufreq-stats
+   1. 简   2. 提供的统计（附示例）
+   3. 配置 cpufreq-stats
 
 
-## 1. 绠€浠?
+## 1. 简
 
-cpufreq-stats 鏄竴涓负姣忎釜 CPU 鎻愪緵 CPU 棰戠巼缁熻鐨勯┍鍔ㄣ€傝繖浜涚粺璁′互涓€缁勫彧璇绘帴鍙ｇ殑褰㈠紡
-鍦?/sysfs 涓彁渚涖€傝鎺ュ彛锛堥厤缃悗锛変細涓烘瘡涓?CPU 鍑虹幇鍦?/sysfs 涓?cpufreq 涓嬬殑涓€涓嫭绔?鐩綍锛?sysfs root>/devices/system/cpu/cpuX/cpufreq/stats/锛夈€傚悇绉嶇粺璁℃暟鎹皢鏋勬垚璇ョ洰褰曚笅鐨?鍙鏂囦欢銆?
-璇ラ┍鍔ㄨ璁捐涓虹嫭绔嬩簬浠讳綍鍙兘杩愯鍦ㄤ綘 CPU 涓婄殑鐗瑰畾 cpufreq_driver銆傚洜姝わ紝瀹冨彲浠ヤ笌浠讳綍
-cpufreq_driver 涓€璧峰伐浣溿€?
+cpufreq-stats 是一个为每个 CPU 提供 CPU 频率统计的驱动。这些统计以一组只读接口的形式
+/sysfs 中提供。该接口（配置后）会为每CPU 出现/sysfs cpufreq 下的一个独目录sysfs root>/devices/system/cpu/cpuX/cpufreq/stats/）。各种统计数据将构成该目录下只读文件
+该驱动被设计为独立于任何可能运行在你 CPU 上的特定 cpufreq_driver。因此，它可以与任何
+cpufreq_driver 一起工作
 
-## 2. 鎻愪緵鐨勭粺璁★紙闄勭ず渚嬶級
+## 2. 提供的统计（附示例）
 
 
-cpufreq stats 鎻愪緵浠ヤ笅缁熻锛堜笅鏂囪缁嗚В閲婏級銆?
+cpufreq stats 提供以下统计（下文详细解释）
 - time_in_state
 - total_trans
 - trans_table
 
-鎵€鏈夌粺璁℃暟鎹兘浠?stats 椹卞姩琚彃鍏ワ紙鎴?stats 琚噸缃級鐨勬椂鍒昏捣锛屽埌浣犺鍙栨煇涓壒瀹氱粺璁＄殑鏃跺埢
-涓烘銆傛樉鐒讹紝stats 椹卞姩涓嶄細鎷ユ湁浠讳綍鍏充簬 stats 椹卞姩鎻掑叆涔嬪墠鐨勯鐜囧垏鎹㈢殑淇℃伅銆?
+所有统计数据都stats 驱动被插入（stats 被重置）的时刻起，到你读取某个特定统计的时刻
+为止。显然，stats 驱动不会拥有任何关于 stats 驱动插入之前的频率切换的信息
 ```
 
     <mysystem>:/sys/devices/system/cpu/cpu0/cpufreq/stats # ls -l
@@ -42,11 +42,11 @@ cpufreq stats 鎻愪緵浠ヤ笅缁熻锛堜笅鏂囪缁嗚В閲婏級銆?
 ```
 - **reset**
 
-鍙啓灞炴€э紝鍙敤浜庨噸缃粺璁¤鏁板櫒銆傝繖瀵逛簬鍦ㄤ笉鍚岃皟閫熷櫒锛坓overnor锛変笅璇勪及绯荤粺琛屼负鏃跺緢鏈夌敤锛?鑰屾棤闇€閲嶅惎銆?
+只写属性，可用于重置统计计数器。这对于在不同调速器（governor）下评估系统行为时很有用而无需重启
 - **time_in_state**
 
-杩欑粰鍑鸿 CPU 鍦ㄦ瘡涓墍鏀寔棰戠巼涓婅姳璐圭殑鏃堕棿閲忋€俢at 杈撳嚭姣忎竴琛屽皢鏈変竴涓?"<frequency> <time>"
-瀵癸紝琛ㄧず璇?CPU 鍦?<frequency> 涓婅姳璐逛簡 <time> 涓敤鎴锋椂闂村崟浣嶃€傝緭鍑哄姣忎釜鎵€鏀寔鐨勯鐜囦細鏈変竴琛屻€?杩欓噷鐨勭敤鎴锋椂闂村崟浣嶆槸 10mS锛堢被浼间簬 /proc 涓鍑虹殑鍏跺畠鏃堕棿锛夈€?
+这给出该 CPU 在每个所支持频率上花费的时间量。cat 输出每一行将有一"<frequency> <time>"
+对，表示CPU <frequency> 上花费了 <time> 个用户时间单位。输出对每个所支持的频率会有一行这里的用户时间单位是 10mS（类似于 /proc 中导出的其它时间）
 ```
 
     <mysystem>:/sys/devices/system/cpu/cpu0/cpufreq/stats # cat time_in_state
@@ -60,7 +60,7 @@ cpufreq stats 鎻愪緵浠ヤ笅缁熻锛堜笅鏂囪缁嗚В閲婏級銆?
 ```
 - **total_trans**
 
-杩欑粰鍑鸿 CPU 涓婇鐜囧垏鎹㈢殑鎬绘鏁般€俢at 杈撳嚭灏嗘湁涓€涓崟鐙殑璁℃暟锛屽嵆棰戠巼鍒囨崲鐨勬€绘鏁般€?
+这给出该 CPU 上频率切换的总次数。cat 输出将有一个单独的计数，即频率切换的总次数
 ```
 
     <mysystem>:/sys/devices/system/cpu/cpu0/cpufreq/stats # cat total_trans
@@ -69,9 +69,9 @@ cpufreq stats 鎻愪緵浠ヤ笅缁熻锛堜笅鏂囪缁嗚В閲婏級銆?
 ```
 - **trans_table**
 
-杩欏皢缁欏嚭鍏充簬鎵€鏈?CPU 棰戠巼鍒囨崲鐨勭粏绮掑害淇℃伅銆傝繖閲岀殑 cat 杈撳嚭鏄竴涓簩缁寸煩闃碉紝鍏朵腑鏉＄洰
-<i,j>锛堢 i 琛岋紝绗?j 鍒楋級琛ㄧず浠?Freq_i 鍒?Freq_j 鐨勫垏鎹㈡鏁般€侳req_i 琛屽拰 Freq_j 鍒?閬靛惊椹卞姩鏈€鍒濆悜 cpufreq 鏍稿績鎻愪緵棰戠巼琛ㄦ椂鐨勬帓搴忛『搴忥紝鍥犳鍙互鏄凡鎺掑簭锛堝崌搴忔垨闄嶅簭锛夋垨鏈帓搴忋€?杩欓噷鐨勮緭鍑轰篃鍖呭惈姣忚姣忓垪鐨勫疄闄呴鐜囧€间互鎻愰珮鍙鎬с€?
-濡傛灉鍒囨崲琛ㄥぇ浜?PAGE_SIZE锛岃鍙栧畠灏嗚繑鍥?-EFBIG 閿欒銆?
+这将给出关于所CPU 频率切换的细粒度信息。这里的 cat 输出是一个二维矩阵，其中条目
+<i,j>（第 i 行，j 列）表示Freq_i Freq_j 的切换次数。Freq_i 行和 Freq_j 遵循驱动最初向 cpufreq 核心提供频率表时的排序顺序，因此可以是已排序（升序或降序）或未排序这里的输出也包含每行每列的实际频率值以提高可读性
+如果切换表大PAGE_SIZE，读取它将返-EFBIG 错误
 ```
 
     <mysystem>:/sys/devices/system/cpu/cpu0/cpufreq/stats # cat trans_table
@@ -84,7 +84,7 @@ cpufreq stats 鎻愪緵浠ヤ笅缁熻锛堜笅鏂囪缁嗚В閲婏級銆?
     2800000:         0         0         0         2         0
 
 ```
-## 3. 閰嶇疆 cpufreq-stats
+## 3. 配置 cpufreq-stats
 
 
 ```
@@ -97,6 +97,6 @@ cpufreq stats 鎻愪緵浠ヤ笅缁熻锛堜笅鏂囪缁嗚В閲婏級銆?
 
 
 ```
-瑕侀厤缃?cpufreq-stats锛屽簲鍚敤 "CPU Frequency scaling"锛圕ONFIG_CPU_FREQ锛夈€?
-"CPU frequency translation statistics"锛圕ONFIG_CPU_FREQ_STAT锛夋彁渚涘寘鍚?time_in_state銆?total_trans 鍜?trans_table 鐨勭粺璁°€?
-涓€鏃﹀惎鐢ㄦ閫夐」涓斾綘鐨?CPU 鏀寔 cpufrequency锛屼綘灏辫兘鍦?/sysfs 涓湅鍒?CPU 棰戠巼缁熻銆?
+要配cpufreq-stats，应启用 "CPU Frequency scaling"（CONFIG_CPU_FREQ）
+"CPU frequency translation statistics"（CONFIG_CPU_FREQ_STAT）提供包time_in_statetotal_trans trans_table 的统计
+一旦启用此选项且你CPU 支持 cpufrequency，你就能/sysfs 中看CPU 频率统计

@@ -1,26 +1,26 @@
 ﻿## BPF_MAP_TYPE_ARRAY_OF_MAPS 涓?BPF_MAP_TYPE_HASH_OF_MAPS
 
 
-   - `BPF_MAP_TYPE_ARRAY_OF_MAPS` 鍜?`BPF_MAP_TYPE_HASH_OF_MAPS` 浜庡唴鏍哥増鏈?4.12 涓紩鍏?
+   - `BPF_MAP_TYPE_ARRAY_OF_MAPS` `BPF_MAP_TYPE_HASH_OF_MAPS` 于内核版4.12 中引
 
-`BPF_MAP_TYPE_ARRAY_OF_MAPS` 鍜?`BPF_MAP_TYPE_HASH_OF_MAPS` 鎻愪緵瀵光€渕ap 涓祵濂?map鈥濆瓨鍌ㄧ殑閫氱敤鏀寔銆傛敮鎸佷竴灞傚祵濂楋紝鍏朵腑澶栧眰 map 鍖呭惈鍗曚竴绫诲瀷鐨勫唴灞?map 鐨勫疄渚嬶紝渚嬪 `array_of_maps->sock_map`銆?
+`BPF_MAP_TYPE_ARRAY_OF_MAPS` `BPF_MAP_TYPE_HASH_OF_MAPS` 提供对“map 中嵌map”存储的通用支持。支持一层嵌套，其中外层 map 包含单一类型的内map 的实例，例如 `array_of_maps->sock_map`
 
-鍒涘缓澶栧眰 map 鏃讹紝浣跨敤涓€涓唴灞?map 瀹炰緥鏉ュ垵濮嬪寲澶栧眰 map 鎸佹湁鐨勩€佸叧浜庡叾鍐呭眰 map 鐨勫厓鏁版嵁銆傝鍐呭眰 map 鍏锋湁涓庡灞?map 鐙珛鐨勭敓鍛藉懆鏈燂紝骞朵笖鍙互鍦ㄥ灞?map 鍒涘缓涔嬪悗琚垹闄ゃ€?
+创建外层 map 时，使用一个内map 实例来初始化外层 map 持有的、关于其内层 map 的元数据。该内层 map 具有与外map 独立的生命周期，并且可以在外map 创建之后被删除
 
-澶栧眰 map 鏀寔浣跨敤 syscall API 浠庣敤鎴风┖闂磋繘琛屽厓绱犳煡鎵俱€佹洿鏂板拰鍒犻櫎銆侭PF 绋嬪簭鍙厑璁稿湪澶栧眰 map 涓繘琛屽厓绱犳煡鎵俱€?
+外层 map 支持使用 syscall API 从用户空间进行元素查找、更新和删除。BPF 程序只允许在外层 map 中进行元素查找
 
-   - 涓嶆敮鎸佸绾у祵濂椼€?
-   - 浠讳綍 BPF map 绫诲瀷閮藉彲浠ョ敤浣滃唴灞?map锛岄櫎浜?`BPF_MAP_TYPE_PROG_ARRAY`銆?
-   - BPF 绋嬪簭涓嶈兘鏇存柊鎴栧垹闄ゅ灞?map 鏉＄洰銆?
+   - 不支持多级嵌套
+   - 任何 BPF map 类型都可以用作内map，除`BPF_MAP_TYPE_PROG_ARRAY`
+   - BPF 程序不能更新或删除外map 条目
 
-瀵逛簬 `BPF_MAP_TYPE_ARRAY_OF_MAPS`锛岄敭鏄竴涓棤绗﹀彿 32 浣嶆暣鏁扮储寮曪紝鐢ㄤ簬绱㈠紩鏁扮粍銆傝鏁扮粍鏄浐瀹氬ぇ灏忕殑锛屽叿鏈?`max_entries` 涓厓绱狅紝鍦ㄥ垱寤烘椂闆跺垵濮嬪寲銆?
+对于 `BPF_MAP_TYPE_ARRAY_OF_MAPS`，键是一个无符号 32 位整数索引，用于索引数组。该数组是固定大小的，具`max_entries` 个元素，在创建时零初始化
 
-瀵逛簬 `BPF_MAP_TYPE_HASH_OF_MAPS`锛岄敭绫诲瀷鍙互鍦ㄥ畾涔?map 鏃堕€夋嫨銆傚唴鏍歌礋璐ｅ垎閰嶅拰閲婃斁閿?鍊煎锛屼笂闄愪负浣犳寚瀹氱殑 max_entries銆傞粯璁ゆ儏鍐典笅锛屽搱甯?map 浣跨敤鍝堝笇琛ㄥ厓绱犵殑棰勫垎閰嶃€俙BPF_F_NO_PREALLOC` 鏍囧織鍙敤浜庡湪棰勫垎閰嶈繃浜庤€楄垂鍐呭瓨鏃剁鐢ㄩ鍒嗛厤銆?
+对于 `BPF_MAP_TYPE_HASH_OF_MAPS`，键类型可以在定map 时选择。内核负责分配和释放值对，上限为你指定的 max_entries。默认情况下，哈map 使用哈希表元素的预分配。`BPF_F_NO_PREALLOC` 标志可用于在预分配过于耗费内存时禁用预分配
 
-## 鐢ㄦ硶
+## 用法
 
 
-### 鍐呮牳 BPF 杈呭姪鍑芥暟
+### 内核 BPF 辅助函数
 
 
 #### bpf_map_lookup_elem()
@@ -28,15 +28,15 @@
 
    void **bpf_map_lookup_elem(struct bpf_map **map, const void *key)
 
-鍐呭眰 map 鍙互浣跨敤 `bpf_map_lookup_elem()` 杈呭姪鍑芥暟鑾峰彇銆傝杈呭姪鍑芥暟杩斿洖鎸囧悜鍐呭眰 map 鐨勬寚閽堬紝鑻ユ湭鎵惧埌鏉＄洰鍒欒繑鍥?`NULL`銆?
+内层 map 可以使用 `bpf_map_lookup_elem()` 辅助函数获取。该辅助函数返回指向内层 map 的指针，若未找到条目则返`NULL`
 
-## 绀轰緥
-
-
-### 鍐呮牳 BPF 绀轰緥
+## 示例
 
 
-姝や唬鐮佺墖娈靛睍绀轰簡濡備綍鍦?BPF 绋嬪簭涓垱寤哄苟鍒濆鍖栦竴涓?devmap 鏁扮粍銆傛敞鎰忥紝澶栧眰鏁扮粍鍙兘浠庣敤鎴风┖闂翠娇鐢?syscall API 淇敼銆?
+### 内核 BPF 示例
+
+
+此代码片段展示了如何BPF 程序中创建并初始化一devmap 数组。注意，外层数组只能从用户空间使syscall API 修改
 
     struct inner_map {
             __uint(type, BPF_MAP_TYPE_DEVMAP);
@@ -55,12 +55,12 @@
                         &inner_map2 }
     };
 
-鏈夊叧澶栧眰 map 澹版槑寮忓垵濮嬪寲鐨勬洿澶氱ず渚嬶紝璇峰弬瑙?`tools/testing/selftests/bpf` 涓殑 `progs/test_btf_map_in_map.c`銆?
+有关外层 map 声明式初始化的更多示例，请参`tools/testing/selftests/bpf` 中的 `progs/test_btf_map_in_map.c`
 
-### 鐢ㄦ埛绌洪棿
+### 用户空间
 
 
-姝や唬鐮佺墖娈靛睍绀轰簡濡備綍鍒涘缓鍩轰簬鏁扮粍鐨勫灞?map锛?
+此代码片段展示了如何创建基于数组的外map
 
     int create_outer_array(int inner_fd) {
             LIBBPF_OPTS(bpf_map_create_opts, opts, .inner_map_fd = inner_fd);
@@ -75,7 +75,7 @@
             return fd;
     }
 
-姝や唬鐮佺墖娈靛睍绀轰簡濡備綍鍚戝唴灞?map 娣诲姞鍒颁竴涓灞?map锛?
+此代码片段展示了如何向内map 添加到一个外map
 
     int add_devmap(int outer_fd, int index, const char *name) {
             int fd;
@@ -88,7 +88,7 @@
             return bpf_map_update_elem(outer_fd, &index, &fd, BPF_ANY);
     }
 
-## 鍙傝€冭祫鏂?
+## 参考资
 
 
 - https://lore.kernel.org/netdev/20170322170035.923581-3-kafai@fb.com/

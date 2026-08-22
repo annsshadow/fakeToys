@@ -1,17 +1,17 @@
 ﻿
-## dvb-usb-nova-t-usb2 缃戝崱鍒楄〃
+## dvb-usb-nova-t-usb2 网卡列表
 
-鏈枃浠跺垪鍑?dvb-usb-nova-t-usb2 椹卞姩鎵€鏀寔鐨?DVB 鎺ユ敹缃戝崱鍨嬪彿娓呭崟锛屽寘鍚巶鍟嗕骇鍝佸悕绉颁笌瀵瑰簲 USB 璁惧鏍囪瘑锛圲SB ID锛夛紝渚涢┍鍔ㄩ€傞厤涓庣‖浠堕€夊瀷鏃跺揩閫熸煡闃呫€?
+本文件列dvb-usb-nova-t-usb2 驱动所支持DVB 接收网卡型号清单，包含厂商产品名称与对应 USB 设备标识（USB ID），供驱动适配与硬件选型时快速查阅
 
 
-浠ヤ笅涓?dvb-usb-nova-t-usb2 椹卞姩鏀寔鐨勭綉鍗″垪琛細
+以下dvb-usb-nova-t-usb2 驱动支持的网卡列表：
 
 
    :header-rows: 1
    :widths: 7 13
    :stub-columns: 0
 
-   - - 缃戝崱鍚嶇О
+   - - 网卡名称
      - USB ID
    - - Hauppauge WinTV-NOVA-T usb2
      - 2040:9300, 2040:9301

@@ -2,39 +2,39 @@
 Minimal requirements to compile the Kernel
 ++++++++++++++++++++++++++++++++++++++++++
 
-## 绠€浠?
+## 简
 
-鏈枃妗ｆ棬鍦ㄦ彁渚涜繍琛屽綋鍓嶅唴鏍哥増鏈墍闇€鐨勬渶浣庤蒋浠剁骇鍒垪琛ㄣ€?
-鏈枃妗ｆ渶鍒濆熀浜庢垜閽堝 2.0.x 鍐呮牳鎵€鍐欑殑鈥淐hanges鈥濇枃浠讹紝鍥犳鍚戜笌閭ｄ唤鏂囦欢鐩稿悓鐨勪汉鑷磋阿锛圝ared Mauch銆丄xel Boldt銆丄lessandro Sigala锛屼互鍙婄綉缁滀笂鏃犳暟鍏朵粬鐢ㄦ埛锛夈€?
-######## 褰撳墠鏈€浣庤姹?
+本文档旨在提供运行当前内核版本所需的最低软件级别列表
+本文档最初基于我针对 2.0.x 内核所写的“Changes”文件，因此向与那份文件相同的人致谢（Jared Mauch、Axel Boldt、Alessandro Sigala，以及网络上无数其他用户）
+######## 当前最低要
 
-鍦ㄨ涓轰綘閬囧埌浜嗙己闄蜂箣鍓嶏紝璇?*鑷冲皯**鍗囩骇鍒颁互涓嬭蒋浠剁増鏈紒濡傛灉浣犱笉纭畾褰撳墠杩愯鐨勬槸鍝釜鐗堟湰锛屽缓璁殑鍛戒护浼氬憡璇変綘銆傝鍒楀嚭绯荤粺涓寘鍚叾鐗堟湰鐨勬墍鏈夌▼搴忥紝璇锋墽琛?./scripts/ver_linux
+在认为你遇到了缺陷之前，*至少**升级到以下软件版本！如果你不确定当前运行的是哪个版本，建议的命令会告诉你。要列出系统中包含其版本的所有程序，请执./scripts/ver_linux
 
-鍐嶆鎻愰啋锛屾鍒楄〃鍋囪浣犲凡缁忓湪姝ｅ父杩愯涓€涓?Linux 鍐呮牳銆傛澶栵紝骞堕潪鎵€鏈夊伐鍏峰湪鎵€鏈夌郴缁熶笂閮芥槸蹇呴渶鐨勶紱鏄剧劧锛屼緥濡傚鏋滀綘娌℃湁浠讳綍 PC Card 纭欢锛屼綘鍙兘涓嶉渶瑕佸叧蹇?pcmciautils銆?
+再次提醒，此列表假设你已经在正常运行一Linux 内核。此外，并非所有工具在所有系统上都是必需的；显然，例如如果你没有任何 PC Card 硬件，你可能不需要关pcmciautils
 ====================== ===============  ========================================
-        绋嬪簭            鏈€浣庣増鏈?             妫€鏌ョ増鏈殑鍛戒护
+        程序            最低版             检查版本的命令
 ====================== ===============  ========================================
 bash                   4.2              bash --version
 bc                     1.06.95          bc --version
-bindgen (鍙€?          0.71.1           bindgen --version
+bindgen (可          0.71.1           bindgen --version
 binutils               2.30             ld -v
 bison                  2.0              bison --version
 btrfs-progs            0.18             btrfs --version
-Clang/LLVM (鍙€?       15.0.0           clang --version
+Clang/LLVM (可       15.0.0           clang --version
 e2fsprogs              1.41.4           e2fsck -V
 flex                   2.5.35           flex --version
 gdb                    7.2              gdb --version
-GNU awk (鍙€?          5.1.0            gawk --version
+GNU awk (可          5.1.0            gawk --version
 GNU C                  8.1              gcc --version
 GNU make               4.0              make --version
 GNU tar                1.28             tar --version
 GRUB                   0.93             grub --version || grub-install --version
-gtags (鍙€?            6.6.5            gtags --version
+gtags (可            6.6.5            gtags --version
 iptables               1.4.2            iptables -V
 jfsutils               1.1.3            fsck.jfs -V
 kmod                   13               kmod -V
 mcelog                 0.6              mcelog --version
-mkimage (鍙€?          2017.01          mkimage --version
+mkimage (可          2017.01          mkimage --version
 nfs-utils              1.0.5            showmount --version
 openssl & libcrypto    1.0.0            openssl version
 pahole                 1.22             pahole --version
@@ -43,7 +43,7 @@ PPP                    2.4.0            pppd --version
 procps                 3.2.0            ps --version
 Python                 3.9.x            python3 --version
 quota-tools            3.09             quota -V
-Rust (鍙€?            1.85.0           rustc --version
+Rust (可            1.85.0           rustc --version
 Sphinx\ [#f1]_         3.4.3            sphinx-build --version
 squashfs-tools         4.0              mksquashfs -version
 udev                   081              udevadm --version
@@ -52,141 +52,141 @@ xfsprogs               2.6.0            xfs_db -V
 ====================== ===============  ========================================
 
 
-######## 鍐呮牳缂栬瘧
+######## 内核编译
 
 
 ### GCC
 
 
-gcc 鐨勭増鏈姹傚彲鑳藉洜浣犺绠楁満涓?CPU 鐨勭被鍨嬭€屽紓銆?
-### Clang/LLVM (鍙€?
+gcc 的版本要求可能因你计算机CPU 的类型而异
+### Clang/LLVM (可
 
 
-clang 鍜?LLVM 宸ュ叿鐨勬渶鏂版寮忓彂甯冪増锛堟牴鎹?`releases.llvm.org <https://releases.llvm.org>`_锛夐兘鍙楁敮鎸佺敤浜庢瀯寤哄唴鏍搞€傝緝鏃х殑鍙戝竷鐗堜笉淇濊瘉鍙敤锛屽苟涓旀垜浠彲鑳戒細浠庡唴鏍镐腑绉婚櫎鐢ㄤ簬鏀寔鏃х増鏈殑鍙橀€氫唬鐮併€傝鍙傞槄鍏充簬浣跨敤 Clang/LLVM 鏋勫缓 Linux 鐨勯澶栨枃妗?<kbuild_llvm>銆?
-### Rust (鍙€?
+clang LLVM 工具的最新正式发布版（根`releases.llvm.org <https://releases.llvm.org>`_）都受支持用于构建内核。较旧的发布版不保证可用，并且我们可能会从内核中移除用于支持旧版本的变通代码。请参阅关于使用 Clang/LLVM 构建 Linux 的额外文<kbuild_llvm>
+### Rust (可
 
 
-闇€瑕佽緝鏂扮増鏈殑 Rust 缂栬瘧鍣ㄣ€?
-璇峰弬闃?Documentation/rust/quick-start.rst 浜嗚В濡備綍婊¤冻 Rust 鏀寔鐨勬瀯寤鸿姹傘€傜壒鍒槸 `Makefile` 鐩爣 `rustavailable` 瀵逛簬鎺掓煡 Rust 宸ュ叿閾炬湭琚娴嬪埌鐨勫師鍥犲緢鏈夌敤銆?
-### bindgen (鍙€?
+需要较新版本的 Rust 编译器
+请参Documentation/rust/quick-start.rst 了解如何满足 Rust 支持的构建要求。特别是 `Makefile` 目标 `rustavailable` 对于排查 Rust 工具链未被检测到的原因很有用
+### bindgen (可
 
 
-`bindgen` 鐢ㄤ簬涓哄唴鏍哥殑 C 渚х敓鎴?Rust 缁戝畾銆傚畠渚濊禆浜?`libclang`銆?
+`bindgen` 用于为内核的 C 侧生Rust 绑定。它依赖`libclang`
 ### Make
 
 
-鏋勫缓鍐呮牳闇€瑕?GNU make 4.0 鎴栨洿楂樼増鏈€?
+构建内核需GNU make 4.0 或更高版本
 ### Bash
 
 
-鍐呮牳鏋勫缓涓細浣跨敤涓€浜?bash 鑴氭湰銆傞渶瑕?Bash 4.2 鎴栨洿楂樼増鏈€?
+内核构建中会使用一bash 脚本。需Bash 4.2 或更高版本
 ### Binutils
 
 
-鏋勫缓鍐呮牳闇€瑕?Binutils 2.30 鎴栨洿楂樼増鏈€?
+构建内核需Binutils 2.30 或更高版本
 ### pkg-config
 
 
-鑷?4.18 璧凤紝鏋勫缓绯荤粺闇€瑕?pkg-config 鏉ユ鏌ュ凡瀹夎鐨?kconfig 宸ュ叿锛屽苟纭畾鐢ㄤ簬 'make {g,x}config' 鐨勬爣蹇楄缃€傛鍓?pkg-config 铏借浣跨敤锛屼絾鏈楠岃瘉鎴栬褰曘€?
+4.18 起，构建系统需pkg-config 来检查已安装kconfig 工具，并确定用于 'make {g,x}config' 的标志设置。此pkg-config 虽被使用，但未被验证或记录
 ### Flex
 
 
-鑷?Linux 4.16 璧凤紝鏋勫缓绯荤粺鍦ㄦ瀯寤烘湡闂寸敓鎴愯瘝娉曞垎鏋愬櫒銆傝繖闇€瑕?flex 2.5.35 鎴栨洿楂樼増鏈€?
+Linux 4.16 起，构建系统在构建期间生成词法分析器。这需flex 2.5.35 或更高版本
 
 ### Bison
 
 
-鑷?Linux 4.16 璧凤紝鏋勫缓绯荤粺鍦ㄦ瀯寤烘湡闂寸敓鎴愯В鏋愬櫒銆傝繖闇€瑕?bison 2.0 鎴栨洿楂樼増鏈€?
+Linux 4.16 起，构建系统在构建期间生成解析器。这需bison 2.0 或更高版本
 ### pahole
 
 
-鑷?Linux 5.2 璧凤紝濡傛灉閫夋嫨浜?CONFIG_DEBUG_INFO_BTF锛屾瀯寤虹郴缁熶細浠?vmlinux 涓殑 DWARF 鐢熸垚 BTF锛圔PF Type Format锛夛紝绋嶅悗涔熶細浠庡唴鏍告ā鍧楃敓鎴愩€傝繖闇€瑕?pahole v1.22 鎴栨洿楂樼増鏈€?
-瀹冨彲鍦?'dwarves' 鎴?'pahole' 鍙戣鐗堣蒋浠跺寘涓壘鍒帮紝鎴栨潵鑷?https://fedorapeople.org/~acme/dwarves/銆?
+Linux 5.2 起，如果选择CONFIG_DEBUG_INFO_BTF，构建系统会vmlinux 中的 DWARF 生成 BTF（BPF Type Format），稍后也会从内核模块生成。这需pahole v1.22 或更高版本
+它可'dwarves' 'pahole' 发行版软件包中找到，或来https://fedorapeople.org/~acme/dwarves/
 ### Perl
 
 
-**鏋勫缓鍐呮牳闇€瑕?perl 5 浠ュ強浠ヤ笅妯″潡锛?``Getopt**
+**构建内核需perl 5 以及以下模块``Getopt**
 : Long``,
 **``Getopt**
-: Std`銆乣File::Basename` 鍜?`File::Find``銆?
+: Std`、`File::Basename` `File::Find``
 ### Python
 
 
-鑻ュ共閰嶇疆閫夐」闇€瑕佸畠锛歛rm/arm64 鐨勯粯璁ら厤缃€丆ONFIG_LTO_CLANG銆佷竴浜涘彲閫夌殑 DRM 閰嶇疆銆乲ernel-doc 宸ュ叿浠ュ強鏂囨。鏋勫缓锛圫phinx锛夌瓑閮介渶瑕佸畠銆?
+若干配置选项需要它：arm/arm64 的默认配置、CONFIG_LTO_CLANG、一些可选的 DRM 配置、kernel-doc 工具以及文档构建（Sphinx）等都需要它
 ### BC
 
 
-鏋勫缓 3.10 鍙婃洿楂樼増鏈殑鍐呮牳闇€瑕?bc銆?
+构建 3.10 及更高版本的内核需bc
 
 ### OpenSSL
 
 
-妯″潡绛惧悕鍜屽閮ㄨ瘉涔﹀鐞嗕娇鐢?OpenSSL 绋嬪簭鍜屽姞瀵嗗簱鏉ヨ繘琛屽瘑閽ュ垱寤哄拰绛惧悕鐢熸垚銆?
-濡傛灉鍚敤浜嗘ā鍧楃鍚嶏紝鏋勫缓 3.7 鍙婃洿楂樼増鏈殑鍐呮牳闇€瑕?openssl銆傛瀯寤?4.3 鍙婃洿楂樼増鏈殑鍐呮牳杩橀渶瑕?openssl 寮€鍙戝寘銆?
+模块签名和外部证书处理使OpenSSL 程序和加密库来进行密钥创建和签名生成
+如果启用了模块签名，构建 3.7 及更高版本的内核需openssl。构4.3 及更高版本的内核还需openssl 开发包
 ### Tar
 
 
-濡傛灉鎯宠閫氳繃 sysfs 鍚敤瀵瑰唴鏍稿ご鏂囦欢鐨勮闂紙CONFIG_IKHEADERS锛夛紝鍒欓渶瑕?GNU tar銆?
-### gtags / GNU GLOBAL (鍙€?
+如果想要通过 sysfs 启用对内核头文件的访问（CONFIG_IKHEADERS），则需GNU tar
+### gtags / GNU GLOBAL (可
 
 
-鍐呮牳鏋勫缓闇€瑕侀€氳繃 `make gtags` 鐢熸垚鏍囩鏂囦欢锛岃繖闇€瑕?GNU GLOBAL 6.6.5 鎴栨洿楂樼増鏈€傝繖鏄洜涓哄畠浣跨敤浜?gtags 鐨?`-C (--directory)` 鏍囧織銆?
+内核构建需要通过 `make gtags` 生成标签文件，这需GNU GLOBAL 6.6.5 或更高版本。这是因为它使用gtags `-C (--directory)` 标志
 ### mkimage
 
 
-璇ュ伐鍏峰湪鏋勫缓鎵佸钩闀滃儚鏍戯紙FIT锛孎lat Image Tree锛夋椂浣跨敤锛屽父瑙佷簬 ARM 骞冲彴銆傝宸ュ叿鍙€氳繃 `u-boot-tools` 杞欢鍖呰幏鍙栵紝涔熷彲浠?U-Boot 婧愪唬鐮佹瀯寤恒€傝鍙傞槄 https://docs.u-boot.org/en/latest/build/tools.html#building-tools-for-linux 涓殑璇存槑銆?
+该工具在构建扁平镜像树（FIT，Flat Image Tree）时使用，常见于 ARM 平台。该工具可通过 `u-boot-tools` 软件包获取，也可U-Boot 源代码构建。请参阅 https://docs.u-boot.org/en/latest/build/tools.html#building-tools-for-linux 中的说明
 ### GNU AWK
 
 
-濡傛灉甯屾湜鍐呮牳鏋勫缓涓哄唴缃ā鍧楃敓鎴愬湴鍧€鑼冨洿鏁版嵁锛圕ONFIG_BUILTIN_MODULE_RANGES锛夛紝鍒欓渶瑕?GNU AWK銆?
-######## 绯荤粺宸ュ叿
+如果希望内核构建为内置模块生成地址范围数据（CONFIG_BUILTIN_MODULE_RANGES），则需GNU AWK
+######## 系统工具
 
 
-### 鏋舵瀯鐩稿叧鍙樻洿
+### 架构相关变更
 
 
-DevFS 宸茶寮冪敤锛屾敼鐢?udev锛坔ttps://www.kernel.org/pub/linux/utils/kernel/hotplug/锛夈€?
-32 浣?UID 鏀寔鐜板凡灏变綅銆傚敖鎯呬韩鐢ㄥ惂锛?
-鍐呮牳鍑芥暟鐨勬枃妗ｆ閫愭杩囨浮鍒伴€氳繃婧愪唬鐮佷腑鍏跺畾涔夐檮杩戙€侀噰鐢ㄧ壒娈婃牸寮忕紪鍐欑殑娉ㄩ噴鏉ヨ繘琛屽唴鑱旀枃妗ｃ€傝繖浜涙敞閲婂彲浠ヤ笌 Documentation/ 鐩綍涓殑 ReST 鏂囦欢缁撳悎锛岀敓鎴愬瘜鏂囨。锛岄殢鍚庡彲杞崲涓?PostScript銆丠TML銆丩aTex銆乪PUB 鍜?PDF 鏂囦欢銆備负浜嗕粠 ReST 鏍煎紡杞崲涓轰綘閫夋嫨鐨勬牸寮忥紝浣犻渶瑕?Sphinx銆?
+DevFS 已被弃用，改udev（https://www.kernel.org/pub/linux/utils/kernel/hotplug/）
+32 UID 支持现已就位。尽情享用吧
+内核函数的文档正逐步过渡到通过源代码中其定义附近、采用特殊格式编写的注释来进行内联文档。这些注释可以与 Documentation/ 目录中的 ReST 文件结合，生成富文档，随后可转换PostScript、HTML、LaTex、ePUB PDF 文件。为了从 ReST 格式转换为你选择的格式，你需Sphinx
 ### Util-linux
 
 
-鏂扮増鏈殑 util-linux 鎻愪緵浜嗗鏇村ぇ纾佺洏鐨?`fdisk` 鏀寔銆佹敮鎸?mount 鐨勬柊閫夐」銆佽瘑鍒洿澶氬彈鏀寔鐨勫垎鍖虹被鍨嬶紝浠ュ強绫讳技鐨勫ソ涓滆タ銆備綘鍙兘鎯宠鍗囩骇銆?
+新版本的 util-linux 提供了对更大磁盘`fdisk` 支持、支mount 的新选项、识别更多受支持的分区类型，以及类似的好东西。你可能想要升级
 ### Ksymoops
 
 
-濡傛灉鍙戠敓浜嗕笉鍙兂璞＄殑浜嬫儏锛屼綘鐨勫唴鏍稿彂鐢熶簡 oops锛屼綘鍙兘闇€瑕?ksymoops 宸ュ叿鏉ヨВ鐮佸畠锛屼絾鍦ㄥぇ澶氭暟鎯呭喌涓嬩綘涓嶉渶瑕併€傞€氬父鏇村€惧悜浜庝娇鐢?`CONFIG_KALLSYMS` 鏋勫缓鍐呮牳锛岃繖鏍峰畠浼氫骇鐢熷彲鐩存帴浣跨敤鐨勫彲璇昏浆鍌紙杩欎篃浼氫骇鐢熸瘮 ksymoops 鏇村ソ鐨勮緭鍑猴級銆傚鏋滃嚭浜庢煇绉嶅師鍥犱綘鐨勫唴鏍告湭浣跨敤 `CONFIG_KALLSYMS` 鏋勫缓锛屽苟涓斾綘鏃犳硶閲嶆柊鏋勫缓骞剁敤璇ラ€夐」澶嶇幇 Oops锛岄偅涔堜綘浠嶇劧鍙互鐢?ksymoops 瑙ｇ爜璇?Oops銆?
+如果发生了不可想象的事情，你的内核发生了 oops，你可能需ksymoops 工具来解码它，但在大多数情况下你不需要。通常更倾向于使`CONFIG_KALLSYMS` 构建内核，这样它会产生可直接使用的可读转储（这也会产生比 ksymoops 更好的输出）。如果出于某种原因你的内核未使用 `CONFIG_KALLSYMS` 构建，并且你无法重新构建并用该选项复现 Oops，那么你仍然可以ksymoops 解码Oops
 ### Mkinitrd
 
 
-`/lib/modules` 鏂囦欢鏍戝竷灞€鐨勮繖浜涘彉鏇翠篃瑕佹眰鍗囩骇 mkinitrd銆?
+`/lib/modules` 文件树布局的这些变更也要求升级 mkinitrd
 ### E2fsprogs
 
 
-鏈€鏂扮増鏈殑 `e2fsprogs` 淇浜?fsck 鍜?debugfs 涓殑鑻ュ共缂洪櫡銆傛樉鐒讹紝鍗囩骇鏄釜濂戒富鎰忋€?
+最新版本的 `e2fsprogs` 修复fsck debugfs 中的若干缺陷。显然，升级是个好主意
 ### JFSutils
 
 
-`jfsutils` 杞欢鍖呭寘鍚鏂囦欢绯荤粺鐨勫伐鍏枫€傚彲鐢ㄥ伐鍏锋湁锛?
-- `fsck.jfs` - 鍚姩浜嬪姟鏃ュ織閲嶆斁锛屽苟妫€鏌ャ€佷慨澶?JFS 鏍煎紡鐨勫垎鍖恒€?
-- `mkfs.jfs` - 鍒涘缓 JFS 鏍煎紡鐨勫垎鍖恒€?
-- 璇ヨ蒋浠跺寘涓繕鎻愪緵鍏朵粬鏂囦欢绯荤粺宸ュ叿銆?
+`jfsutils` 软件包包含该文件系统的工具。可用工具有
+- `fsck.jfs` - 启动事务日志重放，并检查、修JFS 格式的分区
+- `mkfs.jfs` - 创建 JFS 格式的分区
+- 该软件包中还提供其他文件系统工具
 ### Xfsprogs
 
 
-鏈€鏂扮増鏈殑 `xfsprogs` 鍖呭惈 `mkfs.xfs`銆乣xfs_db` 浠ュ強 `xfs_repair` 宸ュ叿绛夛紝鐢ㄤ簬 XFS 鏂囦欢绯荤粺銆傚畠涓庢灦鏋勬棤鍏筹紝2.0.0 鍙婁箣鍚庣殑浠讳綍鐗堟湰閮藉簲鑳戒笌姝ょ増鏈殑 XFS 鍐呮牳浠ｇ爜姝ｅ父宸ヤ綔锛堢敱浜庝竴浜涙樉钁楃殑鏀硅繘锛屽缓璁娇鐢?2.6.0 鎴栨洿楂樼増鏈級銆?
+最新版本的 `xfsprogs` 包含 `mkfs.xfs`、`xfs_db` 以及 `xfs_repair` 工具等，用于 XFS 文件系统。它与架构无关，2.0.0 及之后的任何版本都应能与此版本的 XFS 内核代码正常工作（由于一些显著的改进，建议使2.6.0 或更高版本）
 ### PCMCIAutils
 
 
-PCMCIAutils 鍙栦唬浜?`pcmcia-cs`銆傚畠鍦ㄧ郴缁熷惎鍔ㄦ椂姝ｇ‘璁剧疆 PCMCIA 鎻掓Ы锛屽苟鍦ㄥ唴鏍歌妯″潡鍖栧苟涓斾娇鐢ㄤ簡 hotplug 瀛愮郴缁熸椂锛屼负 16 浣?PCMCIA 璁惧鍔犺浇鐩稿簲鐨勬ā鍧椼€?
+PCMCIAutils 取代`pcmcia-cs`。它在系统启动时正确设置 PCMCIA 插槽，并在内核被模块化并且使用了 hotplug 子系统时，为 16 PCMCIA 设备加载相应的模块
 ### Quota-tools
 
 
-濡傛灉浣犳兂浣跨敤杈冩柊鐗堟湰 2 鐨勯厤棰濇牸寮忥紝鍒欓渶瑕佹敮鎸?32 浣?uid 鍜?gid銆俀uota-tools 3.07 鍙婃洿楂樼増鏈敮鎸佹鍔熻兘銆傝浣跨敤涓婅〃涓帹鑽愭垨鏇撮珮鐨勭増鏈€?
-### Intel IA32 寰爜
+如果你想使用较新版本 2 的配额格式，则需要支32 uid gid。Quota-tools 3.07 及更高版本支持此功能。请使用上表中推荐或更高的版本
+### Intel IA32 微码
 
 
-娣诲姞浜嗕竴涓┍鍔紝鍏佽鏇存柊 Intel IA32 寰爜锛屽畠浣滀负鏅€氾紙misc锛夊瓧绗﹁澶囧彲璁块棶銆傚鏋滀綘娌℃湁浣跨敤
+添加了一个驱动，允许更新 Intel IA32 微码，它作为普通（misc）字符设备可访问。如果你没有使用
 ```
   mkdir /dev/cpu
   mknod /dev/cpu/microcode c 10 184
@@ -194,67 +194,67 @@ PCMCIAutils 鍙栦唬浜?`pcmcia-cs`銆傚畠鍦ㄧ郴缁熷惎鍔ㄦ椂姝ｇ�
 
 ```
 
-浣滀负 root 鎵嶈兘浣跨敤瀹冦€備綘鍙兘杩樻兂瑕佽幏鍙栫敤鎴风┖闂寸殑 microcode_ctl 宸ュ叿鏉ラ厤鍚堜娇鐢ㄣ€?
+作为 root 才能使用它。你可能还想要获取用户空间的 microcode_ctl 工具来配合使用
 ### udev
 
 
-`udev` 鏄竴涓敤鎴风┖闂村簲鐢ㄧ▼搴忥紝鐢ㄤ簬浠呯敤瀹為檯瀛樺湪鐨勮澶囨潯鐩姩鎬佸～鍏?`/dev`銆俙udev` 鍙栦唬浜?devfs 鐨勫熀鏈姛鑳斤紝鍚屾椂鍏佽瀵硅澶囦娇鐢ㄦ寔涔呭寲鍛藉悕銆?
+`udev` 是一个用户空间应用程序，用于仅用实际存在的设备条目动态填`/dev`。`udev` 取代devfs 的基本功能，同时允许对设备使用持久化命名
 ### FUSE
 
 
-闇€瑕?libfuse 2.4.0 鎴栨洿楂樼増鏈€傜粷瀵规渶浣庝负 2.3.0锛屼絾鎸傝浇閫夐」 `direct_io` 鍜?`kernel_cache` 灏嗕笉璧蜂綔鐢ㄣ€?
-######## 缃戠粶
+需libfuse 2.4.0 或更高版本。绝对最低为 2.3.0，但挂载选项 `direct_io` `kernel_cache` 将不起作用
+######## 网络
 
 
-### 鎬讳綋鍙樻洿
+### 总体变更
 
 
-濡傛灉浣犳湁楂樼骇鐨勭綉缁滈厤缃渶姹傦紝浣犲彲鑳藉簲璇ヨ€冭檻浣跨敤 ip-route2 涓殑缃戠粶宸ュ叿銆?
-### 鍖呰繃婊?/ NAT
+如果你有高级的网络配置需求，你可能应该考虑使用 ip-route2 中的网络工具
+### 包过/ NAT
 
 
-鍖呰繃婊ゅ拰 NAT 浠ｇ爜浣跨敤涓庝箣鍓?2.4.x 鍐呮牳绯诲垪鐩稿悓鐨勫伐鍏凤紙iptables锛夈€傚畠浠嶇劧鍖呭惈閽堝 2.2.x 椋庢牸 ipchains 鍜?2.0.x 椋庢牸 ipfwadm 鐨勫悜鍚庡吋瀹规ā鍧椼€?
+包过滤和 NAT 代码使用与之2.4.x 内核系列相同的工具（iptables）。它仍然包含针对 2.2.x 风格 ipchains 2.0.x 风格 ipfwadm 的向后兼容模块
 ### PPP
 
 
-PPP 椹卞姩宸茶閲嶆瀯浠ユ敮鎸佸閾捐矾锛坢ultilink锛夛紝骞朵娇鍏惰兘澶熷湪澶氭牱鍖栫殑濯掍綋灞備笂杩愯銆傚鏋滀綘浣跨敤 PPP锛岃灏?pppd 鍗囩骇鍒拌嚦灏?2.4.0銆?
-濡傛灉浣犳病鏈変娇鐢?udev锛屽垯蹇呴』鏈夎澶囨枃浠?/dev/ppp
+PPP 驱动已被重构以支持多链路（multilink），并使其能够在多样化的媒体层上运行。如果你使用 PPP，请pppd 升级到至2.4.0
+如果你没有使udev，则必须有设备文/dev/ppp
 ```
   mknod /dev/ppp c 108 0
 
 ```
 
-浣滀负 root銆?
+作为 root
 ### NFS-utils
 
 
-鍦ㄥ彜鑰佺殑锛?.4 鍙婃洿鏃╋級鍐呮牳涓紝nfs 鏈嶅姟鍣ㄩ渶瑕佺煡閬撲换浣曟湡鏈涜兘澶熼€氳繃 NFS 璁块棶鏂囦欢鐨勫鎴风銆傚綋瀹㈡埛绔寕杞芥枃浠剁郴缁熸椂锛岃繖浜涗俊鎭細鐢?`mountd` 鎻愪緵缁欏唴鏍革紝鎴栬€呭湪绯荤粺鍚姩鏃剁敱 `exportfs` 鎻愪緵銆俙exportfs` 浼氫粠 `/var/lib/nfs/rmtab` 鑾峰彇鍏充簬娲昏穬瀹㈡埛绔殑淇℃伅銆?
-杩欑鏂瑰紡鐩稿綋鑴嗗急锛屽洜涓哄畠渚濊禆浜?rmtab 鐨勬纭€э紝鑰岃繖骞朵笉鎬绘槸瀹规槗淇濊瘉锛岀壒鍒槸鍦ㄥ皾璇曞疄鐜版晠闅滆浆绉绘椂銆傚嵆浣跨郴缁熻繍琛岃壇濂斤紝`rmtab` 涔熶細绉疮澶ч噺姘歌繙涓嶄細琚垹闄ょ殑鏃ф潯鐩€?
-鍦ㄧ幇浠ｅ唴鏍镐腑锛屾垜浠彲浠ラ€夋嫨璁╁唴鏍稿湪鏀跺埌鏉ヨ嚜鏈煡涓绘満鐨勮姹傛椂閫氱煡 mountd锛岃€?mountd 鍙互鍚戝唴鏍告彁渚涚浉搴旂殑瀵煎嚭淇℃伅銆傝繖娑堥櫎浜嗗 `rmtab` 鐨勪緷璧栵紝鎰忓懗鐫€鍐呮牳鍙渶瑕佺煡閬撳綋鍓嶆椿璺冪殑瀹㈡埛绔€?
+在古老的.4 及更早）内核中，nfs 服务器需要知道任何期望能够通过 NFS 访问文件的客户端。当客户端挂载文件系统时，这些信息会`mountd` 提供给内核，或者在系统启动时由 `exportfs` 提供。`exportfs` 会从 `/var/lib/nfs/rmtab` 获取关于活跃客户端的信息
+这种方式相当脆弱，因为它依赖rmtab 的正确性，而这并不总是容易保证，特别是在尝试实现故障转移时。即使系统运行良好，`rmtab` 也会积累大量永远不会被删除的旧条目
+在现代内核中，我们可以选择让内核在收到来自未知主机的请求时通知 mountd，mountd 可以向内核提供相应的导出信息。这消除了对 `rmtab` 的依赖，意味着内核只需要知道当前活跃的客户端
 ```
   mount -t nfsd nfsd /proc/fs/nfsd
 
 ```
 
-鍦ㄨ繍琛?exportfs 鎴?mountd 涔嬪墠銆傚缓璁湪鍙兘鐨勬儏鍐典笅锛岀敤闃茬伀澧欏皢鎵€鏈?NFS 鏈嶅姟涓庢暣涓簰鑱旂綉闅旂銆?
+在运exportfs mountd 之前。建议在可能的情况下，用防火墙将所NFS 服务与整个互联网隔离
 ### mcelog
 
 
-鍦?x86 鍐呮牳涓婏紝褰撳惎鐢?`CONFIG_X86_MCE` 鏃讹紝闇€瑕?mcelog 宸ュ叿鏉ュ鐞嗗拰璁板綍鏈哄櫒妫€鏌ワ紙machine check锛変簨浠躲€傛満鍣ㄦ鏌ヤ簨浠舵槸鐢?CPU 鎶ュ憡鐨勯敊璇€傚己鐑堝缓璁鍏惰繘琛屽鐞嗐€?
-######## 鍐呮牳鏂囨。
+x86 内核上，当启`CONFIG_X86_MCE` 时，需mcelog 工具来处理和记录机器检查（machine check）事件。机器检查事件是CPU 报告的错误。强烈建议对其进行处理
+######## 内核文档
 
 
 ### Sphinx
 
 
-鏈夊叧 Sphinx 瑕佹眰鐨勮缁嗕俊鎭紝璇峰弬闃?Documentation/doc-guide/sphinx.rst 涓殑 sphinx_install銆?
+有关 Sphinx 要求的详细信息，请参Documentation/doc-guide/sphinx.rst 中的 sphinx_install
 ### rustdoc
 
 
-`rustdoc` 鐢ㄤ簬鐢熸垚 Rust 浠ｇ爜鐨勬枃妗ｃ€傛洿澶氫俊鎭鍙傞槄 Documentation/rust/general-information.rst銆?
-## 鑾峰彇鏇存柊鐨勮蒋浠?
+`rustdoc` 用于生成 Rust 代码的文档。更多信息请参阅 Documentation/rust/general-information.rst
+## 获取更新的软
 
-######## 鍐呮牳缂栬瘧
+######## 内核编译
 
 
 ### gcc
@@ -265,15 +265,15 @@ PPP 椹卞姩宸茶閲嶆瀯浠ユ敮鎸佸閾捐矾锛坢ultilink锛夛�
 ### Clang/LLVM
 
 
-- Getting LLVM <getting_llvm>銆?
+- Getting LLVM <getting_llvm>銆。
 ### Rust
 
 
-- Documentation/rust/quick-start.rst銆?
+- Documentation/rust/quick-start.rst銆。
 ### bindgen
 
 
-- Documentation/rust/quick-start.rst銆?
+- Documentation/rust/quick-start.rst銆。
 ### Make
 
 
@@ -304,7 +304,7 @@ PPP 椹卞姩宸茶閲嶆瀯浠ユ敮鎸佸閾捐矾锛坢ultilink锛夛�
 
 - <https://www.openssl.org/>
 
-######## 绯荤粺宸ュ叿
+######## 系统工具
 
 
 ### Util-linux
@@ -376,7 +376,7 @@ PPP 椹卞姩宸茶閲嶆瀯浠ユ敮鎸佸閾捐矾锛坢ultilink锛夛�
 
 - <https://www.mcelog.org/>
 
-######## 缃戠粶
+######## 网络
 
 
 ### PPP
@@ -407,7 +407,7 @@ PPP 椹卞姩宸茶閲嶆瀯浠ユ敮鎸佸閾捐矾锛坢ultilink锛夛�
 
 - <https://oprofile.sf.net/download/>
 
-######## 鍐呮牳鏂囨。
+######## 内核文档
 
 
 ### Sphinx

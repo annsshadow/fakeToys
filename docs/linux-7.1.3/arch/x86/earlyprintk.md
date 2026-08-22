@@ -2,8 +2,8 @@
 ## Early Printk
 
 
-鍦?x86 绯荤粺涓婁娇鐢?earlyprintk=dbgp 鍚姩閫夐」閰嶅悎 USB2 Debug 绔彛瀵嗛挜鍜岃皟璇曠嚎缂嗙殑 Mini-HOWTO銆?
-浣犻渶瑕佷袱鍙扮數鑴戙€佲€淯SB debug key鈥濅笓鐢ㄥ皬璁惧浠ュ強
+x86 系统上使earlyprintk=dbgp 启动选项配合 USB2 Debug 端口密钥和调试线缆的 Mini-HOWTO
+你需要两台电脑、“USB debug key”专用小设备以及
 ```
 
   [host/target] <-------> [USB debug key] <-------> [client/console]
@@ -12,8 +12,8 @@
 ## Hardware requirements
 
 
-  a) 涓绘満/鐩爣绯荤粺闇€瑕佸叿澶?USB debug 绔彛鑳藉姏銆?
-     浣犲彲浠ラ€氳繃鏌ョ湅 'Debug port' 浣嶆潵妫€鏌ヨ鑳藉姏锛屾柟娉曟槸杩愯
+  a) 主机/目标系统需要具USB debug 端口能力
+     你可以通过查看 'Debug port' 位来检查该能力，方法是运行
 ```
 
        # lspci -vvv
@@ -35,47 +35,47 @@
        ...
 
      .. note::
-       濡傛灉浣犵殑绯荤粺娌℃湁鍒楀嚭 debug 绔彛鑳藉姏锛岄偅涔堜綘鍙兘鏃犳硶浣跨敤 USB debug key銆?
-  b) 浣犺繕闇€瑕佷竴涓?NetChip USB 璋冭瘯绾跨紗/瀵嗛挜锛?
+       如果你的系统没有列出 debug 端口能力，那么你可能无法使用 USB debug key
+  b) 你还需要一NetChip USB 调试线缆/密钥
         http://www.plxtech.com/products/NET2000/NET20DC/default.asp
 
-     杩欐槸涓€涓甫涓や釜 USB 鎺ュ彛鐨勫皬宸ц摑鑹插鏂欒繛鎺ュ櫒锛涘畠浠?USB 鎺ュ彛鍙栫數銆?
-  c) 浣犻渶瑕佺浜屽彴甯﹂珮閫?USB 2.0 绔彛鐨?client/console 绯荤粺銆?
-  d) NetChip 璁惧蹇呴』鐩存帴鎻掑叆鈥滀富鏈?鐩爣鈥濈郴缁熶笂鐨勭墿鐞?debug 绔彛銆備笉鑳藉湪鐗╃悊 debug 绔彛涓庘€滀富鏈?鐩爣鈥濈郴缁熶箣闂翠娇鐢?USB 闆嗙嚎鍣ㄣ€?
-     EHCI 璋冭瘯鎺у埗鍣ㄧ粦瀹氬埌鐗瑰畾鐨勭墿鐞?USB 绔彛锛孨etChip 璁惧鍙兘鍦ㄨ绔彛涓綔涓?early printk 璁惧宸ヤ綔銆侲HCI 涓绘満鎺у埗鍣ㄧ殑鐢垫皵甯冪嚎浣垮緱 EHCI 璋冭瘯鎺у埗鍣ㄨ繛鎺ュ埌绗竴涓墿鐞嗙鍙ｏ紝骞朵笖鏃犳硶閫氳繃杞欢鏇存敼杩欎竴鐐广€備綘鍙互閫氳繃閫愪釜灏濊瘯绯荤粺涓婃瘡涓墿鐞嗙鍙ｅ苟閲嶅惎鏉ュ彂鐜扮墿鐞嗙鍙ｃ€傛垨鑰呬綘涔熷彲浠ュ皾璇曚娇鐢?lsusb锛屾垨鏌ョ湅鎶?USB 璁惧鎻掑叆鈥滀富鏈?鐩爣鈥濈郴缁熷悇涓鍙ｆ椂 usb 鍗忚鏍堝彂鍑虹殑鍐呮牳淇℃伅娑堟伅銆?
-     涓€浜涚‖浠跺巶鍟嗘病鏈夌敤鐗╃悊杩炴帴鍣ㄦ毚闇?usb debug 绔彛锛屽鏋滀綘鍙戠幇杩欐牱鐨勮澶囷紝璇峰悜纭欢鍘傚晢鎶曡瘔锛屽洜涓烘病鏈夌悊鐢变笉鎶婅绔彛鎺ュ埌鏌愪釜鐗╃悊鍙闂殑绔彛涓娿€?
-  e) 鍚屾牱閲嶈鐨勬槸锛岃澶氱増鏈殑 NetChip 璁惧瑕佹眰鈥渃lient/console鈥濈郴缁熸彃鍏ヨ澶囩殑鍙充晶锛堜骇鍝?logo 鏈濅笂闈㈠悜锛屼粠宸﹀埌鍙冲彲璇伙級銆傚師鍥犳槸 5 浼忕數婧愬彧浠庤璁惧鐨勪竴渚у彇鐢碉紝涓斿繀椤绘槸涓嶄細琚噸鍚殑閭ｄ竴渚с€?
+     这是一个带两个 USB 接口的小巧蓝色塑料连接器；它USB 接口取电
+  c) 你需要第二台带高USB 2.0 端口client/console 系统
+  d) NetChip 设备必须直接插入“主目标”系统上的物debug 端口。不能在物理 debug 端口与“主目标”系统之间使USB 集线器
+     EHCI 调试控制器绑定到特定的物USB 端口，NetChip 设备只能在该端口中作early printk 设备工作。EHCI 主机控制器的电气布线使得 EHCI 调试控制器连接到第一个物理端口，并且无法通过软件更改这一点。你可以通过逐个尝试系统上每个物理端口并重启来发现物理端口。或者你也可以尝试使lsusb，或查看USB 设备插入“主目标”系统各个端口时 usb 协议栈发出的内核信息消息
+     一些硬件厂商没有用物理连接器暴usb debug 端口，如果你发现这样的设备，请向硬件厂商投诉，因为没有理由不把该端口接到某个物理可访问的端口上
+  e) 同样重要的是，许多版本的 NetChip 设备要求“client/console”系统插入设备的右侧（产logo 朝上面向，从左到右可读）。原因是 5 伏电源只从该设备的一侧取电，且必须是不会被重启的那一侧
 ```
 ## Software requirements
 
 
-  a) 鍦ㄤ富鏈?鐩爣绯荤粺涓婏細
+  a) 在主目标系统上：
 
 ```
 
       CONFIG_EARLY_PRINTK_DBGP=y
 
-    骞朵笖浣犻渶瑕佹坊鍔犲惎鍔ㄥ懡浠よ锛?earlyprintk=dbgp"銆?
+    并且你需要添加启动命令行earlyprintk=dbgp"
     .. note::
-      濡傛灉浣犱娇鐢?Grub锛岃灏嗗叾杩藉姞鍒?/etc/grub.conf 鐨?'kernel' 琛屻€傚鏋滀綘鍦?BIOS 鍥轰欢绯荤粺涓婁娇鐢?Grub2锛岃灏嗗叾杩藉姞鍒?/boot/grub2/grub.cfg 鐨?'linux' 琛屻€傚鏋滀綘鍦?EFI 鍥轰欢绯荤粺涓婁娇鐢?Grub2锛岃灏嗗叾杩藉姞鍒?/boot/grub2/grub.cfg 鎴?/boot/efi/EFI/<distro>/grub.cfg 鐨?'linux' 鎴?'linuxefi' 琛屻€?
-    鍦ㄦ湁澶氫釜 EHCI 璋冭瘯鎺у埗鍣ㄧ殑绯荤粺涓婏紝浣犲繀椤绘寚瀹氭纭殑 EHCI 璋冭瘯鎺у埗鍣ㄧ紪鍙枫€傚叾椤哄簭鏉ヨ嚜 EHCI 鎺у埗鍣ㄧ殑 PCI 鎬荤嚎鏋氫妇銆備笉甯︾紪鍙峰弬鏁扮殑榛樿鍊兼槸 "0"锛屽嵆绗竴涓?EHCI 璋冭瘯鎺у埗鍣ㄣ€傝浣跨敤绗簩涓?EHCI 璋冭瘯鎺у埗鍣紝浣犲彲浠ヤ娇鐢ㄥ懡浠よ锛?earlyprintk=dbgp1"
+      如果你使Grub，请将其追加/etc/grub.conf 'kernel' 行。如果你BIOS 固件系统上使Grub2，请将其追加/boot/grub2/grub.cfg 'linux' 行。如果你EFI 固件系统上使Grub2，请将其追加/boot/grub2/grub.cfg /boot/efi/EFI/<distro>/grub.cfg 'linux' 'linuxefi' 行
+    在有多个 EHCI 调试控制器的系统上，你必须指定正确的 EHCI 调试控制器编号。其顺序来自 EHCI 控制器的 PCI 总线枚举。不带编号参数的默认值是 "0"，即第一EHCI 调试控制器。要使用第二EHCI 调试控制器，你可以使用命令行earlyprintk=dbgp1"
 
     .. note::
-      閫氬父 earlyprintk 鎺у埗鍙板湪甯歌鎺у埗鍙板氨缁悗浼氳鍏抽棴鈥斺€斾娇鐢?"earlyprintk=dbgp,keep" 鍙互鍦ㄦ棭鏈熷惎鍔ㄤ箣鍚庝繚鎸佽閫氶亾鎵撳紑銆傝繖瀵硅皟璇?Xorg 涓嬬殑宕╂簝绛夊満鏅緢鏈夌敤銆?
-  b) 鍦?client/console 绯荤粺涓婏細
+      通常 earlyprintk 控制台在常规控制台就绪后会被关闭——使"earlyprintk=dbgp,keep" 可以在早期启动之后保持该通道打开。这对调Xorg 下的崩溃等场景很有用
+  b) client/console 系统上：
 
-    浣犲簲璇ュ惎鐢ㄤ互涓嬪唴鏍搁厤缃€夐」锛氾細
+    你应该启用以下内核配置选项：：
 
       CONFIG_USB_SERIAL_DEBUG=y
 
-    涓嬩竴娆′娇鐢ㄤ慨鏀瑰悗鐨勫唴鏍稿惎鍔ㄦ椂锛屼綘搴旇浼氬緱鍒颁竴涓?/dev/ttyUSBx 璁惧锛堟垨澶氫釜锛夈€?
-    鐜板湪杩欎釜鍐呮牳娑堟伅閫氶亾宸插噯澶囧ソ浣跨敤锛氬惎鍔ㄤ綘鍠滄鐨勭粓绔豢鐪熷櫒锛坢inicom 绛夛級骞跺皢鍏堕厤缃负浣跨敤 /dev/ttyUSB0鈥斺€旀垨鑰呬娇鐢ㄥ師濮嬬殑 'cat /dev/ttyUSBx' 鏉ユ煡鐪嬪師濮嬭緭鍑恒€?
-  c) 鍦ㄥ熀浜?Nvidia 鍗楁ˉ鐨勭郴缁熶笂锛氬唴鏍镐細灏濊瘯鎺㈡祴骞舵壘鍑哄摢涓鍙ｈ繛鎺ヤ簡璋冭瘯璁惧銆?
+    下一次使用修改后的内核启动时，你应该会得到一/dev/ttyUSBx 设备（或多个）
+    现在这个内核消息通道已准备好使用：启动你喜欢的终端仿真器（minicom 等）并将其配置为使用 /dev/ttyUSB0——或者使用原始的 'cat /dev/ttyUSBx' 来查看原始输出
+  c) 在基Nvidia 南桥的系统上：内核会尝试探测并找出哪个端口连接了调试设备
 ```
 ## Testing
 
 
-浣犲彲浠ラ€氳繃浣跨敤 earlyprintk=dbgp,keep 骞跺湪涓绘満/鐩爣绯荤粺涓婅Е鍙戝唴鏍告秷鎭潵娴嬭瘯杈撳嚭銆備綘鍙互瑙﹀彂涓€涓棤瀹崇殑
+你可以通过使用 earlyprintk=dbgp,keep 并在主机/目标系统上触发内核消息来测试输出。你可以触发一个无害的
 ```
 
      echo h > /proc/sysrq-trigger
@@ -93,5 +93,5 @@
        cat /dev/ttyUSB0
 
 ```
-鍦ㄤ綘浜庝富鏈虹郴缁熶笂瑙﹀彂鍚庯紝搴旇寰堝揩灏辫兘鐪嬪埌涓婇潰鐨勫府鍔╄銆?
-濡傛灉瀹冧笉宸ヤ綔锛岃鍦?linux-kernel@vger.kernel.org 閭欢鍒楄〃涓婅闂紝鎴栬仈绯?x86 缁存姢鑰呫€?
+在你于主机系统上触发后，应该很快就能看到上面的帮助行
+如果它不工作，请linux-kernel@vger.kernel.org 邮件列表上询问，或联x86 维护者

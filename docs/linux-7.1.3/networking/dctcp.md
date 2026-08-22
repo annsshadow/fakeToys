@@ -1,17 +1,17 @@
-﻿## DCTCP锛堟暟鎹腑蹇?TCP锛?
+﻿## DCTCP（数据中TCP
 
-DCTCP 鏄鐢ㄤ簬鏁版嵁涓績缃戠粶鐨?TCP 鎷ュ鎺у埗绠楁硶鐨勫寮猴紝瀹冨埄鐢ㄦ暟鎹腑蹇冪綉缁滀腑鐨?鏄惧紡鎷ュ閫氱煡锛圗CN锛夊悜缁堢涓绘満鎻愪緵澶氫綅鍙嶉銆?
+DCTCP 是对用于数据中心网络TCP 拥塞控制算法的增强，它利用数据中心网络中显式拥塞通知（ECN）向终端主机提供多位反馈
 ```
 
   sysctl -w net.ipv4.tcp_congestion_control=dctcp
   sysctl -w net.ipv4.tcp_ecn_fallback=0 (optional)
 
 ```
-杩愯 DCTCP 鐨勬暟鎹腑蹇冪綉缁滀腑鐨勬墍鏈変氦鎹㈡満蹇呴』鏀寔 ECN 鏍囪锛屽苟琚厤缃负鍦ㄨ揪鍒?瀹氫箟鐨勪氦鎹㈡満缂撳啿鍖洪槇鍊兼椂杩涜鏍囪銆備氦鎹㈡満涓?DCTCP 鐨勯粯璁?ECN 鏍囪闃堝€煎惎鍙戝紡
-鍊间负 1Gbps 鏃?20 涓暟鎹寘锛?0KB锛夛紝10Gbps 鏃?65 涓暟鎹寘锛堢害 100KB锛夛紝浣嗗彲鑳?闇€瑕佽繘涓€姝ヤ粩缁嗚皟鏁淬€?
-鏈夊叧鏇村缁嗚妭锛岃鍙傞槄浠ヤ笅鏂囨。锛?
-璁烘枃锛?
-璇ョ畻娉曞湪浠ヤ笅涓ょ瘒 SIGCOMM/SIGMETRICS 璁烘枃涓湁杩涗竴姝ヨ缁嗘弿杩帮細
+运行 DCTCP 的数据中心网络中的所有交换机必须支持 ECN 标记，并被配置为在达定义的交换机缓冲区阈值时进行标记。交换机DCTCP 的默ECN 标记阈值启发式
+值为 1Gbps 20 个数据包0KB），10Gbps 65 个数据包（约 100KB），但可需要进一步仔细调整
+有关更多细节，请参阅以下文档
+论文
+该算法在以下两篇 SIGCOMM/SIGMETRICS 论文中有进一步详细描述：
 
  i) Mohammad Alizadeh, Albert Greenberg, David A. Maltz, Jitendra Padhye,
     Parveen Patel, Balaji Prabhakar, Sudipta Sengupta, and Murari Sridharan:
@@ -30,9 +30,9 @@ ii) Mohammad Alizadeh, Adel Javanmard, and Balaji Prabhakar:
 
     http://simula.stanford.edu/~alizade/Site/DCTCP_files/dctcp_analysis-full.pdf
 
-IETF 淇℃伅鎬ц崏妗堬細
+IETF 信息性草案：
 
   http://tools.ietf.org/html/draft-bensley-tcpm-dctcp-00
 
-DCTCP 绔欑偣锛?
+DCTCP 站点
   http://simula.stanford.edu/~alizade/Site/DCTCP.html

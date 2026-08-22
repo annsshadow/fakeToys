@@ -5,29 +5,29 @@
 ######## ioctl CEC_ADAP_G_CONNECTOR_INFO
 
 
-## 鍚嶇О
+## 名称
 
 
-CEC_ADAP_G_CONNECTOR_INFO - 鏌ヨ HDMI 杩炴帴鍣ㄤ俊鎭?
-## 姒傝
+CEC_ADAP_G_CONNECTOR_INFO - 查询 HDMI 连接器信
+## 概要
 
 
 
 `int ioctl(int fd, CEC_ADAP_G_CONNECTOR_INFO, struct cec_connector_info *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `argp`
-    鎸囧悜 struct cec_connector_info 鐨勬寚閽堛€?
-## 鎻忚堪
+    指向 struct cec_connector_info 的指针
+## 描述
 
 
-浣跨敤璇?ioctl锛屽簲鐢ㄧ▼搴忓彲浠ヨ幏鐭ユ CEC 璁惧瀵瑰簲浜庡摢涓?HDMI 杩炴帴鍣ㄣ€傝皟鐢ㄦ ioctl 鏃讹紝
-搴旂敤绋嬪簭搴旀彁渚涗竴涓寚鍚?cec_connector_info 缁撴瀯浣撶殑鎸囬拡锛屽唴鏍稿皢鐢ㄩ€傞厤鍣ㄩ┍鍔ㄦ彁渚涚殑淇℃伅
-濉厖璇ョ粨鏋勪綋銆備粎褰撹缃簡 `CEC_CAP_CONNECTOR_INFO` 鑳藉姏鏃讹紝姝?ioctl 鎵嶅彲鐢ㄣ€?
+使用ioctl，应用程序可以获知此 CEC 设备对应于哪HDMI 连接器。调用此 ioctl 时，
+应用程序应提供一个指cec_connector_info 结构体的指针，内核将用适配器驱动提供的信息
+填充该结构体。仅当设置了 `CEC_CAP_CONNECTOR_INFO` 能力时，ioctl 才可用
 
 
     :header-rows:  0
@@ -36,7 +36,7 @@ CEC_ADAP_G_CONNECTOR_INFO - 鏌ヨ HDMI 杩炴帴鍣ㄤ俊鎭?
 
     - - __u32
       - `type`
-      - 璇ラ€傞厤鍣ㄦ墍鍏宠仈鐨勯€傞厤鍣ㄧ被鍨嬨€?    - - union {
+      - 该适配器所关联的适配器类型    - - union {
       - `(anonymous)`
     - - `struct cec_drm_connector_info`
       - drm
@@ -54,12 +54,12 @@ CEC_ADAP_G_CONNECTOR_INFO - 鏌ヨ HDMI 杩炴帴鍣ㄤ俊鎭?
 
       - `CEC_CONNECTOR_TYPE_NO_CONNECTOR`
       - 0
-      - 娌℃湁涓庤閫傞厤鍣ㄥ叧鑱旂殑杩炴帴鍣?椹卞姩鏈彁渚涜淇℃伅銆?    - .. _`CEC-CONNECTOR-TYPE-DRM`:
+      - 没有与该适配器关联的连接驱动未提供该信息    - .. _`CEC-CONNECTOR-TYPE-DRM`:
 
       - `CEC_CONNECTOR_TYPE_DRM`
       - 1
-      - 琛ㄧず鏈変竴涓?DRM 杩炴帴鍣ㄤ笌璇ラ€傞厤鍣ㄥ叧鑱斻€傛湁鍏宠杩炴帴鍣ㄧ殑淇℃伅鍙湪
-	cec-drm-connector-info 涓壘鍒般€?
+      - 表示有一DRM 连接器与该适配器关联。有关该连接器的信息可在
+	cec-drm-connector-info 中找到
 
 
     :header-rows:  0
@@ -70,8 +70,8 @@ CEC_ADAP_G_CONNECTOR_INFO - 鏌ヨ HDMI 杩炴帴鍣ㄤ俊鎭?
 
       - __u32
       - `card_no`
-      - DRM 鍗＄紪鍙凤細鏉ヨ嚜鍗¤矾寰勭殑缂栧彿锛屼緥濡?/dev/card0 涓殑 0銆?    - .. _`CEC-DRM-CONNECTOR-TYPE-CONNECTOR_ID`:
+      - DRM 卡编号：来自卡路径的编号，例/dev/card0 中的 0    - .. _`CEC-DRM-CONNECTOR-TYPE-CONNECTOR_ID`:
 
       - __u32
       - `connector_id`
-      - DRM 杩炴帴鍣?ID銆?
+      - DRM 连接ID

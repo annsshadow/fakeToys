@@ -1,39 +1,39 @@
-﻿## 杈撳叆瀛愮郴缁燂紙Input Subsystem锛?
+﻿## 输入子系统（Input Subsystem
 
 
-鏈枃浠惰褰曡緭鍏ュ瓙绯荤粺鐨勫唴閮?API 涓庡鍑虹鍙枫€?
+本文件记录输入子系统的内API 与导出符号
 
-### 杈撳叆鏍稿績
-
-
-   :internal:
-
-   :export:
-
-   :export:
-
-   :export:
-
-### 澶氱偣瑙︽帶搴?
+### 输入核心
 
 
    :internal:
 
    :export:
 
-### 鐭╅樀閿洏/灏忛敭鐩?
+   :export:
 
+   :export:
 
-   :internal:
-
-### 绋€鐤忛敭浣嶆槧灏勬敮鎸?
+### 多点触控
 
 
    :internal:
 
    :export:
 
-### PS/2 鍗忚鏀寔
+### 矩阵键盘/小键
+
+
+   :internal:
+
+### 稀疏键位映射支
+
+
+   :internal:
+
+   :export:
+
+### PS/2 协议支持
 
 
    :internal:

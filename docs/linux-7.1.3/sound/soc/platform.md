@@ -1,11 +1,11 @@
-﻿## ASoC 骞冲彴椹卞姩
+﻿## ASoC 平台驱动
 
 
-ASoC 骞冲彴椹卞姩绫诲彲浠ュ垎涓洪煶棰?DMA 椹卞姩銆丼oC DAI 椹卞姩鍜?DSP 椹卞姩銆傚钩鍙伴┍鍔ㄥ彧閽堝 SoC CPU锛屽繀椤讳笉鍖呭惈浠讳綍鏉跨骇鐗瑰畾浠ｇ爜銆?
-## 闊抽 DMA
+ASoC 平台驱动类可以分为音DMA 驱动、SoC DAI 驱动DSP 驱动。平台驱动只针对 SoC CPU，必须不包含任何板级特定代码
+## 音频 DMA
 
 
-骞冲彴 DMA 椹卞姩鍙€夊湴鏀寔浠ヤ笅 ALSA 鎿嶄綔锛?
+平台 DMA 驱动可选地支持以下 ALSA 操作
 ```
 
   /* SoC audio ops */
@@ -19,7 +19,7 @@ ASoC 骞冲彴椹卞姩绫诲彲浠ュ垎涓洪煶棰?DMA 椹卞姩銆丼oC DAI 
   };
 
 ```
-骞冲彴椹卞姩閫氳繃 struct snd_soc_component_driver 瀵煎嚭鍏?DMA 鍔熻兘锛?
+平台驱动通过 struct snd_soc_component_driver 导出DMA 功能
 ```
 
   struct snd_soc_component_driver {
@@ -42,27 +42,27 @@ ASoC 骞冲彴椹卞姩绫诲彲浠ュ垎涓洪煶棰?DMA 椹卞姩銆丼oC DAI 
   };
 
 ```
-鏈夊叧闊抽 DMA 鐨勮缁嗕俊鎭紝璇峰弬鑰?:doc:`ALSA 椹卞姩鏂囨。
-<../kernel-api/writing-an-alsa-driver>`銆?
-涓€涓?DMA 椹卞姩绀轰緥鏄?soc/pxa/pxa2xx-pcm.c
+有关音频 DMA 的详细信息，请参:doc:`ALSA 驱动文档
+<../kernel-api/writing-an-alsa-driver>`銆。
+一DMA 驱动示例soc/pxa/pxa2xx-pcm.c
 
 
-## SoC DAI 椹卞姩
+## SoC DAI 驱动
 
 
-姣忎釜 SoC DAI 椹卞姩蹇呴』鎻愪緵浠ヤ笅鐗规€э細-
+每个 SoC DAI 驱动必须提供以下特性：-
 
-1. 鏁板瓧闊抽鎺ュ彛锛圖AI锛夋弿杩?2. 鏁板瓧闊抽鎺ュ彛閰嶇疆
-3. PCM 鎻忚堪
-4. SYSCLK 閰嶇疆
-5. 鎸傝捣鍜屾仮澶嶏紙鍙€夛級
+1. 数字音频接口（DAI）描2. 数字音频接口配置
+3. PCM 描述
+4. SYSCLK 配置
+5. 挂起和恢复（可选）
 
-鍏充簬绗?1 - 4 椤圭殑鎻忚堪锛岃鍙傝 codec.rst銆?
+关于1 - 4 项的描述，请参见 codec.rst
 
-## SoC DSP 椹卞姩
+## SoC DSP 驱动
 
 
-姣忎釜 SoC DSP 椹卞姩閫氬父鎻愪緵浠ヤ笅鐗规€э細-
+每个 SoC DSP 驱动通常提供以下特性：-
 
-1. DAPM 鍥?2. 娣烽煶鍣ㄦ帶鍒?3. 杩涘嚭 DSP 缂撳啿鍖虹殑 DMA IO锛堝閫傜敤锛?4. DSP 鍓嶇锛團E锛塒CM 璁惧鐨勫畾涔夈€?
-鍏充簬绗?4 椤圭殑鎻忚堪锛岃鍙傝 DPCM.txt銆?
+1. DAPM 2. 混音器控3. 进出 DSP 缓冲区的 DMA IO（如适用4. DSP 前端（FE）PCM 设备的定义
+关于4 项的描述，请参见 DPCM.txt
