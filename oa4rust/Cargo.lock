@@ -2705,10 +2705,14 @@ dependencies = [
 name = "ldap"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
+ "bcrypt",
+ "deadpool-postgres",
  "ldap3",
  "serde",
  "tokio",
  "tracing",
+ "uuid",
 ]
 
 [[package]]
