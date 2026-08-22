@@ -1,47 +1,47 @@
-﻿## USB 7 娈垫暟鐮佺鏄剧ず鍣?
+﻿## USB 7 段数码管显示
 
 
-鐢?Delcom Engineering 鍒堕€?
+Delcom Engineering 制
 
-### 璁惧淇℃伅
+### 设备信息
 
 USB VENDOR_ID	0x0fc5
 USB PRODUCT_ID	0x1227
-6 瀛楃鍜?8 瀛楃鏄剧ず鍣ㄩ兘鍏锋湁 PRODUCT_ID锛屽苟涓旀牴鎹?Delcom Engineering 鐨勮娉曪紝鏃犳硶浠庤澶囪幏鍙栧彲鏌ヨ鐨勪俊鎭潵鍖哄垎瀹冧滑銆?
+6 字符8 字符显示器都具有 PRODUCT_ID，并且根Delcom Engineering 的说法，无法从设备获取可查询的信息来区分它们
 
-### 璁惧妯″紡
+### 设备模式
 
-榛樿鎯呭喌涓嬶紝椹卞姩鍋囧畾鏄剧ず鍣ㄥ彧鏈?6 涓瓧绗︺€? 涓瓧绗︾殑妯″紡涓猴細
+默认情况下，驱动假定显示器只6 个字符 个字符的模式为：
 
 	MSB 0x06; LSB 0x3f
 
-瀵逛簬 8 瀛楃鏄剧ず鍣細
+对于 8 字符显示器：
 
 	MSB 0x08; LSB 0xff
 
-璁惧鍙互鎺ュ彈鈥滄枃鏈€濓紝鍙互鏄?raw銆乭ex 鎴?ascii 鏂囨湰妯″紡銆?
-raw 鎵嬪姩鎺у埗姣忎釜娈碉紝
-hex 鏈熸湜姣忎釜瀛楃鐨勫€煎湪 0-15 涔嬮棿锛?
-ascii 鏈熸湜姣忎釜瀛楃鐨勫€煎湪 '0'-'9' 鍜?'A'-'F' 涔嬮棿銆?
-榛樿鏄?ascii銆?
+设备可以接受“文本”，可以raw、hex ascii 文本模式
+raw 手动控制每个段，
+hex 期望每个字符的值在 0-15 之间
+ascii 期望每个字符的值在 '0'-'9' 'A'-'F' 之间
+默认ascii
 
-### 璁惧鎿嶄綔
+### 设备操作
 
-1. 鎵撳紑璁惧锛?
+1. 打开设备
 	echo 1 > /sys/bus/usb/.../powered
-2. 璁剧疆璁惧鐨勬ā寮忥細
+2. 设置设备的模式：
 	echo $mode_msb > /sys/bus/usb/.../mode_msb
 	echo $mode_lsb > /sys/bus/usb/.../mode_lsb
-3. 璁剧疆鏂囨湰妯″紡锛?
+3. 设置文本模式
 	echo $textmode > /sys/bus/usb/.../textmode
-4. 璁剧疆鏂囨湰锛堜緥濡傦級锛?
+4. 设置文本（例如）
 	echo "123ABC" > /sys/bus/usb/.../text (ascii)
 	echo "A1B2" > /sys/bus/usb/.../text (ascii)
 	echo -ne "\x01\x02\x03" > /sys/bus/usb/.../text (hex)
-5. 璁剧疆灏忔暟鐐广€?
-	璁惧鏈?6 鎴?8 涓皬鏁扮偣銆?
-	瑕佽缃 n 涓皬鏁扮偣锛岃绠?10 ** n
-	骞跺皢鍏?echo 鍒?/sys/bus/usb/.../decimals
-	瑕佽缃涓皬鏁扮偣锛屽皢鍚勪釜骞傜浉鍔犮€?
-	渚嬪锛岃璁剧疆绗?0 涓拰绗?3 涓皬鏁扮偣锛?
+5. 设置小数点
+	设备6 8 个小数点
+	要设置第 n 个小数点，计10 ** n
+	并将echo /sys/bus/usb/.../decimals
+	要设置多个小数点，将各个幂相加
+	例如，要设置0 个和3 个小数点
 	echo 1001 > /sys/bus/usb/.../decimals

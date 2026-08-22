@@ -3,9 +3,9 @@
 
 :Author: Andr茅 Almeida <andrealmeid@collabora.com>
 
-futex锛屽嵆 fast user mutex锛堝揩閫熺敤鎴锋€佷簰鏂ヤ綋锛夛紝鏄竴缁勭郴缁熻皟鐢紝鍏佽鐢ㄦ埛鎬?鍒涘缓楂樻€ц兘鐨勫悓姝ユ満鍒讹紝渚嬪鐢ㄦ埛鎬佷腑鐨勪簰鏂ヤ綋銆佷俊鍙烽噺鍜屾潯浠跺彉閲忋€侰 鏍囧噯搴擄紙濡?glibc锛夊皢鍏剁敤浣滃疄鐜版洿楂樺眰鎺ュ彛锛堝 pthreads锛夌殑鎵嬫銆?
-futex2 鏄渶鍒濈殑 futex 绯荤粺璋冪敤鐨勫悗缁増鏈紝鏃ㄥ湪鍏嬫湇鍘熷鎺ュ彛鐨勫眬闄愭€с€?
-## 鐢ㄦ埛 API
+futex，即 fast user mutex（快速用户态互斥体），是一组系统调用，允许用户创建高性能的同步机制，例如用户态中的互斥体、信号量和条件变量。C 标准库（glibc）将其用作实现更高层接口（如 pthreads）的手段
+futex2 是最初的 futex 系统调用的后续版本，旨在克服原始接口的局限性
+## 用户 API
 
 
 ### ``futex_waitv()``
@@ -23,23 +23,23 @@ futex_waitv(struct futex_waitv *waiters, unsigned int nr_futexes,
   };
 
 ```
-鐢ㄦ埛鎬佽缃竴涓?struct futex_waitv 鏁扮粍锛堟渶澶?128 涓潯鐩級锛屼娇鐢?`uaddr` 琛ㄧず
-瑕佺瓑寰呯殑鍦板潃锛宍val` 琛ㄧず鏈熸湜鍊硷紝`flags` 鎸囧畾 futex 鐨勭被鍨嬶紙濡傜鏈夛級鍜屽ぇ灏忋€?`__reserved` 蹇呴』涓?0锛屼絾鍙敤浜庢湭鏉ユ墿灞曘€傛暟缁勭涓€涓潯鐩殑鎸囬拡浣滀负 `waiters`
-浼犲叆銆傝嫢 `waiters` 鎴栦换鎰?`uaddr` 鍦板潃鏃犳晥锛屽垯杩斿洖 `-EFAULT`銆?
-濡傛灉鐢ㄦ埛鎬佷娇鐢?32 浣嶆寚閽堬紝搴旇繘琛屾樉寮忚浆鎹互纭繚楂樹綅琚竻闆躲€俙uintptr_t` 鍙阀濡?鍦板畬鎴愯繖涓€宸ヤ綔锛屼笖瀵?32/64 浣嶆寚閽堝潎閫傜敤銆?
-`nr_futexes` 鎸囧畾鏁扮粍鐨勫ぇ灏忋€傝秴鍑?[1, 128] 鍖洪棿鐨勬暟鍊煎皢浣跨郴缁熻皟鐢ㄨ繑鍥?`-EINVAL`銆?
-绯荤粺璋冪敤鐨?`flags` 鍙傛暟闇€瑕佷负 0锛屼絾鍙敤浜庢湭鏉ユ墿灞曘€?
-瀵逛簬 `waiters` 鏁扮粍涓殑姣忎釜鏉＄洰锛屽皢 `uaddr` 澶勭殑褰撳墠鍊间笌 `val` 姣旇緝銆傝嫢涓嶅悓锛?绯荤粺璋冪敤灏嗘挙閿€杩勪粖涓烘鎵€鍋氱殑鍏ㄩ儴宸ヤ綔骞惰繑鍥?`-EAGAIN`銆傝嫢鎵€鏈夋祴璇曚笌鏍￠獙鍧?鎴愬姛锛岀郴缁熻皟鐢ㄥ皢绛夊緟鐩村埌鍙戠敓浠ヤ笅鎯呭喌涔嬩竴锛?
-- 瓒呮椂鍒版湡锛岃繑鍥?`-ETIMEOUT`銆?- 鍚戠潯鐪犱换鍔″彂閫佷簡淇″彿锛岃繑鍥?`-ERESTARTSYS`銆?- 鍒楄〃涓殑鏌愪釜 futex 琚敜閱掞紝杩斿洖琚敜閱?futex 鐨勭储寮曘€?
-濡備綍浣跨敤璇ユ帴鍙ｇ殑绀轰緥鍙湪 `tools/testing/selftests/futex/functional/futex_waitv.c` 涓壘鍒般€?
-### 瓒呮椂锛圱imeout锛?
+用户态设置一struct futex_waitv 数组（最128 个条目），使`uaddr` 表示
+要等待的地址，`val` 表示期望值，`flags` 指定 futex 的类型（如私有）和大小`__reserved` 必须0，但可用于未来扩展。数组第一个条目的指针作为 `waiters`
+传入。若 `waiters` 或任`uaddr` 地址无效，则返回 `-EFAULT`
+如果用户态使32 位指针，应进行显式转换以确保高位被清零。`uintptr_t` 可巧地完成这一工作，且32/64 位指针均适用
+`nr_futexes` 指定数组的大小。超[1, 128] 区间的数值将使系统调用返`-EINVAL`
+系统调用`flags` 参数需要为 0，但可用于未来扩展
+对于 `waiters` 数组中的每个条目，将 `uaddr` 处的当前值与 `val` 比较。若不同系统调用将撤销迄今为止所做的全部工作并返`-EAGAIN`。若所有测试与校验成功，系统调用将等待直到发生以下情况之一
+- 超时到期，返`-ETIMEOUT`- 向睡眠任务发送了信号，返`-ERESTARTSYS`- 列表中的某个 futex 被唤醒，返回被唤futex 的索引
+如何使用该接口的示例可在 `tools/testing/selftests/futex/functional/futex_waitv.c` 中找到
+### 超时（Timeout
 
-`struct timespec *timeout` 鍙傛暟鏄竴涓彲閫夊弬鏁帮紝鎸囧悜涓€涓粷瀵硅秴鏃躲€傞渶瑕佸湪
-`clockid` 鍙傛暟涓寚瀹氭墍鐢ㄦ椂閽熺殑绫诲瀷銆傛敮鎸?`CLOCK_MONOTONIC` 鍜?`CLOCK_REALTIME`銆傝绯荤粺璋冪敤鍙帴鍙?64 浣?timespec 缁撴瀯浣撱€?
-### futex 鐨勭被鍨?
+`struct timespec *timeout` 参数是一个可选参数，指向一个绝对超时。需要在
+`clockid` 参数中指定所用时钟的类型。支`CLOCK_MONOTONIC` `CLOCK_REALTIME`。该系统调用只接64 timespec 结构体
+### futex 的类
 
-futex 鍙互鏄鏈夌殑鎴栧叡浜殑銆傜鏈?futex 鐢ㄤ簬鍏变韩鍚屼竴鍐呭瓨绌洪棿銆佷笖 futex 鐨?铏氭嫙鍦板潃瀵规墍鏈夎繘绋嬮兘鐩稿悓鐨勮繘绋嬨€傝繖鍏佽鍐呮牳杩涜浼樺寲銆傝浣跨敤绉佹湁 futex锛岄渶鍦?futex 鏍囧織涓寚瀹?`FUTEX_PRIVATE_FLAG`銆傚浜庝笉鍏变韩鍚屼竴鍐呭瓨绌洪棿銆佸洜姝ゅ悓涓€
-futex 鍙兘鍏锋湁涓嶅悓铏氭嫙鍦板潃鐨勮繘绋嬶紙渚嬪浣跨敤鏂囦欢鏀寔鐨勫叡浜唴瀛橈級锛屽垯闇€瑕佷笉鍚岀殑
-鍐呴儴鏈哄埗鎵嶈兘琚纭叆闃熴€傝繖鏄粯璁よ涓猴紝涓斿绉佹湁鍜屽叡浜?futex 閮介€傜敤銆?
-futex 鍙互鏈変笉鍚岀殑澶у皬锛?銆?6銆?2 鎴?64 浣嶃€傜洰鍓嶅敮涓€鍙楁敮鎸佺殑鏄?32 浣嶅ぇ灏忕殑
-futex锛屼笖蹇呴』浣跨敤 `FUTEX_32` 鏍囧織鎸囧畾銆?
+futex 可以是私有的或共享的。私futex 用于共享同一内存空间、且 futex 虚拟地址对所有进程都相同的进程。这允许内核进行优化。要使用私有 futex，需futex 标志中指`FUTEX_PRIVATE_FLAG`。对于不共享同一内存空间、因此同一
+futex 可能具有不同虚拟地址的进程（例如使用文件支持的共享内存），则需要不同的
+内部机制才能被正确入队。这是默认行为，且对私有和共futex 都适用
+futex 可以有不同的大小62 64 位。目前唯一受支持的32 位大小的
+futex，且必须使用 `FUTEX_32` 标志指定

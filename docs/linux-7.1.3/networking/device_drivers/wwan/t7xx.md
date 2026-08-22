@@ -1,49 +1,49 @@
 ﻿
 
 
-## 鍩轰簬 MTK PCIe 鐨?T700 5G 璋冨埗瑙ｈ皟鍣ㄧ殑 t7xx 椹卞姩
+## 基于 MTK PCIe T700 5G 调制解调器的 t7xx 驱动
 
 
-t7xx 椹卞姩鏄竴涓负 linux 鎴?Chrome OS 骞冲彴寮€鍙戠殑 WWAN PCIe 涓绘満椹卞姩锛岀敤浜庡湪涓绘骞冲彴
-涓?MediaTek 鐨?T700 5G 璋冨埗瑙ｈ皟鍣ㄤ箣闂撮€氳繃 PCIe 鎺ュ彛杩涜鏁版嵁浜ゆ崲銆?璇ラ┍鍔ㄦ毚闇蹭簡涓€涓鍚?MBIM 鍗忚 [^1^] 鐨勬帴鍙ｃ€備换浣曞墠绔簲鐢ㄧ▼搴忥紙渚嬪 Modem Manager锛?閮藉彲浠ヨ交鏉剧鐞?MBIM 鎺ュ彛浠ュ惎鐢ㄩ€氬線 WWAN 鐨勬暟鎹€氫俊銆傝椹卞姩杩樻彁渚涗簡涓€涓€氳繃 AT 鍛戒护
-涓?MediaTek 璋冨埗瑙ｈ皟鍣ㄤ氦浜掔殑鎺ュ彛銆?
-## 鍩烘湰鐢ㄦ硶
+t7xx 驱动是一个为 linux Chrome OS 平台开发的 WWAN PCIe 主机驱动，用于在主機平台
+MediaTek T700 5G 调制解调器之间通过 PCIe 接口进行数据交换该驱动暴露了一个符MBIM 协议 [^1^] 的接口。任何前端应用程序（例如 Modem Manager都可以轻松管MBIM 接口以启用通往 WWAN 的数据通信。该驱动还提供了一个通过 AT 命令
+MediaTek 调制解调器交互的接口
+## 基本用法
 
 
-褰撲笉鍙楃鐞嗘椂锛孧BIM 鍜?AT 鍔熻兘澶勪簬闈炴椿鍔ㄧ姸鎬併€倀7xx 椹卞姩鎻愪緵浠ｈ〃 MBIM 鍜?AT 鎺у埗閫氶亾
-鐨?WWAN 绔彛鐢ㄦ埛绌洪棿鎺ュ彛锛屼絾鍦ㄧ鐞嗗叾鍔熻兘鏂归潰涓嶈捣浠讳綍浣滅敤銆傛娴嬬鍙ｆ灇涓惧苟鍚敤 MBIM
-鍜?AT 鍔熻兘鏄敤鎴风┖闂村簲鐢ㄧ▼搴忕殑宸ヤ綔銆?
-鍑犱釜杩欐牱鐨勭敤鎴风┖闂村簲鐢ㄧ▼搴忕ず渚嬶細
+当不受管理时，MBIM AT 功能处于非活动状态。t7xx 驱动提供代表 MBIM AT 控制通道
+WWAN 端口用户空间接口，但在管理其功能方面不起任何作用。检测端口枚举并启用 MBIM
+AT 功能是用户空间应用程序的工作
+几个这样的用户空间应用程序示例：
 
-- mbimcli锛堝寘鍚湪 libmbim [^2^] 搴撲腑锛夛紝浠ュ強
+- mbimcli（包含在 libmbim [^2^] 库中），以及
 - Modem Manager [^3^]
 
-绠＄悊搴旂敤绋嬪簭鎵ц浠ヤ笅寤虹珛 MBIM IP 浼氳瘽鎵€闇€鐨勬搷浣滐細
+管理应用程序执行以下建立 MBIM IP 会话所需的操作：
 
-- 鎵撳紑 MBIM 鎺у埗閫氶亾
-- 閰嶇疆缃戠粶杩炴帴璁剧疆
-- 杩炴帴鍒扮綉缁?- 閰嶇疆 IP 缃戠粶鎺ュ彛
+- 打开 MBIM 控制通道
+- 配置网络连接设置
+- 连接到网- 配置 IP 网络接口
 
-绠＄悊搴旂敤绋嬪簭鎵ц浠ヤ笅鍙戦€?AT 鍛戒护骞舵帴鏀跺搷搴旀墍闇€鐨勬搷浣滐細
+管理应用程序执行以下发AT 命令并接收响应所需的操作：
 
-- 浣跨敤 UART 宸ュ叿鎴栦笓鐢ㄧ敤鎴峰伐鍏锋墦寮€ AT 鎺у埗閫氶亾
+- 使用 UART 工具或专用用户工具打开 AT 控制通道
 
 ## Sysfs
 
 
-璇ラ┍鍔ㄥ悜鐢ㄦ埛绌洪棿鎻愪緵 sysfs 鎺ュ彛銆?
+该驱动向用户空间提供 sysfs 接口
 ### t7xx_mode
 
 
-璇?sysfs 鎺ュ彛鍚戠敤鎴风┖闂存彁渚涘璁惧妯″紡鐨勮闂紝姝ゆ帴鍙ｆ敮鎸佽鍜屽啓鎿嶄綔銆?
-璁惧妯″紡锛?
-- `unknown` 琛ㄧず璁惧澶勪簬鏈煡鐘舵€?- `ready` 琛ㄧず璁惧澶勪簬灏辩华鐘舵€?- `reset` 琛ㄧず璁惧澶勪簬澶嶄綅鐘舵€?- `fastboot_switching` 琛ㄧず璁惧澶勪簬 fastboot 鍒囨崲鐘舵€?- `fastboot_download` 琛ㄧず璁惧澶勪簬 fastboot 涓嬭浇鐘舵€?- `fastboot_dump` 琛ㄧず璁惧澶勪簬 fastboot 杞偍鐘舵€?
-浠庣敤鎴风┖闂磋鍙栦互鑾峰彇褰撳墠璁惧妯″紡銆?
+sysfs 接口向用户空间提供对设备模式的访问，此接口支持读和写操作
+设备模式
+- `unknown` 表示设备处于未知状- `ready` 表示设备处于就绪状- `reset` 表示设备处于复位状- `fastboot_switching` 表示设备处于 fastboot 切换状- `fastboot_download` 表示设备处于 fastboot 下载状- `fastboot_dump` 表示设备处于 fastboot 转储状
+从用户空间读取以获取当前设备模式
 ```
   $ cat /sys/bus/pci/devices/${bdf}/t7xx_mode
 
 ```
-浠庣敤鎴风┖闂村啓鍏ヤ互璁剧疆璁惧妯″紡銆?
+从用户空间写入以设置设备模式
 ```
   $ echo fastboot_switching > /sys/bus/pci/devices/${bdf}/t7xx_mode
 
@@ -51,92 +51,92 @@ t7xx 椹卞姩鏄竴涓负 linux 鎴?Chrome OS 骞冲彴寮€鍙戠殑 WW
 ### t7xx_debug_ports
 
 
-璇?sysfs 鎺ュ彛鍚戠敤鎴风┖闂存彁渚涘惎鐢?绂佺敤璋冭瘯绔彛鐨勮闂紝姝ゆ帴鍙ｆ敮鎸佽鍜屽啓鎿嶄綔銆?
-璋冭瘯绔彛鐘舵€侊細
+sysfs 接口向用户空间提供启禁用调试端口的访问，此接口支持读和写操作
+调试端口状态：
 
-- `1` 琛ㄧず鍚敤璋冭瘯绔彛
-- `0` 琛ㄧず绂佺敤璋冭瘯绔彛
+- `1` 表示启用调试端口
+- `0` 表示禁用调试端口
 
-褰撳墠鏀寔鐨勮皟璇曠鍙ｏ紙ADB/MIPC锛夈€?
-浠庣敤鎴风┖闂磋鍙栦互鑾峰彇褰撳墠璋冭瘯绔彛鐘舵€併€?
+当前支持的调试端口（ADB/MIPC）
+从用户空间读取以获取当前调试端口状态
 ```
   $ cat /sys/bus/pci/devices/${bdf}/t7xx_debug_ports
 
 ```
-浠庣敤鎴风┖闂村啓鍏ヤ互璁剧疆璋冭瘯绔彛鐘舵€併€?
+从用户空间写入以设置调试端口状态
 ```
   $ echo 1 > /sys/bus/pci/devices/${bdf}/t7xx_debug_ports
 
 ```
-## 绠＄悊搴旂敤绋嬪簭寮€鍙?
+## 管理应用程序开
 
-椹卞姩鍜岀敤鎴风┖闂存帴鍙ｆ弿杩板涓嬨€侻BIM 鍗忚鍦?[^1^] Mobile Broadband Interface Model
-v1.0 Errata-1 涓弿杩般€?
-### MBIM 鎺у埗閫氶亾鐢ㄦ埛绌洪棿 ABI
-
-
-#### /dev/wwan0mbim0 瀛楃璁惧
+驱动和用户空间接口描述如下。MBIM 协议[^1^] Mobile Broadband Interface Model
+v1.0 Errata-1 中描述
+### MBIM 控制通道用户空间 ABI
 
 
-璇ラ┍鍔ㄩ€氳繃瀹炵幇 MBIM WWAN 绔彛鍚?MBIM 鍔熻兘鏆撮湶涓€涓?MBIM 鎺ュ彛銆傛帶鍒堕€氶亾绠￠亾鐨勭敤鎴风┖闂?涓€绔槸涓€涓?/dev/wwan0mbim0 瀛楃璁惧銆傚簲鐢ㄧ▼搴忓簲浣跨敤姝ゆ帴鍙ｈ繘琛?MBIM 鍗忚閫氫俊銆?
-#### 鍒嗙墖
+#### /dev/wwan0mbim0 字符设备
 
 
-鐢ㄦ埛绌洪棿搴旂敤绋嬪簭璐熻矗鎸夌収 MBIM 瑙勮寖杩涜鎵€鏈夋帶鍒舵秷鎭殑鍒嗙墖鍜岄噸缁勩€?
+该驱动通过实现 MBIM WWAN 端口MBIM 功能暴露一MBIM 接口。控制通道管道的用户空一端是一/dev/wwan0mbim0 字符设备。应用程序应使用此接口进MBIM 协议通信
+#### 分片
+
+
+用户空间应用程序负责按照 MBIM 规范进行所有控制消息的分片和重组
 #### /dev/wwan0mbim0 write()
 
 
-鏉ヨ嚜绠＄悊搴旂敤绋嬪簭鐨?MBIM 鎺у埗娑堟伅涓嶅緱瓒呰繃鍗忓晢鐨勬帶鍒舵秷鎭ぇ灏忋€?
+来自管理应用程序MBIM 控制消息不得超过协商的控制消息大小
 #### /dev/wwan0mbim0 read()
 
 
-绠＄悊搴旂敤绋嬪簭蹇呴』鎺ュ彈鍗忓晢鎺у埗娑堟伅澶у皬鐨勬帶鍒舵秷鎭€?
-### MBIM 鏁版嵁閫氶亾鐢ㄦ埛绌洪棿 ABI
+管理应用程序必须接受协商控制消息大小的控制消息
+### MBIM 数据通道用户空间 ABI
 
 
-#### wwan0-X 缃戠粶璁惧
+#### wwan0-X 网络设备
 
 
-t7xx 椹卞姩鏆撮湶绫诲瀷涓?"wwan" 鐨?IP 閾捐矾鎺ュ彛 "wwan0-X"锛岀敤浜?IP 娴侀噺銆侷proute 缃戠粶
-瀹炵敤绋嬪簭鐢ㄤ簬鍒涘缓 "wwan0-X" 缃戠粶鎺ュ彛锛屽苟灏嗗叾涓?MBIM IP 浼氳瘽鍏宠仈銆?
-鐢ㄦ埛绌洪棿绠＄悊搴旂敤绋嬪簭璐熻矗鍦ㄥ缓绔?SessionId 澶т簬 0 鐨?MBIM IP 浼氳瘽涔嬪墠鍒涘缓鏂扮殑 IP 閾捐矾銆?
-渚嬪锛屼负 SessionId 涓?1 鐨?MBIM IP 浼氳瘽鍒涘缓鏂扮殑 IP 閾捐矾锛?
+t7xx 驱动暴露类型"wwan" IP 链路接口 "wwan0-X"，用IP 流量。Iproute 网络
+实用程序用于创建 "wwan0-X" 网络接口，并将其MBIM IP 会话关联
+用户空间管理应用程序负责在建SessionId 大于 0 MBIM IP 会话之前创建新的 IP 链路
+例如，为 SessionId 1 MBIM IP 会话创建新的 IP 链路
   ip link add dev wwan0-1 parentdev wwan0 type wwan linkid 1
 
-璇ラ┍鍔ㄥ皢鑷姩鎶?"wwan0-1" 缃戠粶璁惧鏄犲皠鍒?MBIM IP 浼氳瘽 1銆?
-### AT 绔彛鐢ㄦ埛绌洪棿 ABI
+该驱动将自动"wwan0-1" 网络设备映射MBIM IP 会话 1
+### AT 端口用户空间 ABI
 
 
-#### /dev/wwan0at0 瀛楃璁惧
+#### /dev/wwan0at0 字符设备
 
 
-璇ラ┍鍔ㄩ€氳繃瀹炵幇 AT WWAN 绔彛鏆撮湶涓€涓?AT 绔彛銆傛帶鍒剁鍙ｇ殑鐢ㄦ埛绌洪棿涓€绔槸涓€涓?/dev/wwan0at0 瀛楃璁惧銆傚簲鐢ㄧ▼搴忓簲浣跨敤姝ゆ帴鍙ｅ彂鍑?AT 鍛戒护銆?
-### fastboot 绔彛鐢ㄦ埛绌洪棿 ABI
+该驱动通过实现 AT WWAN 端口暴露一AT 端口。控制端口的用户空间一端是一/dev/wwan0at0 字符设备。应用程序应使用此接口发AT 命令
+### fastboot 端口用户空间 ABI
 
 
-#### /dev/wwan0fastboot0 瀛楃璁惧
+#### /dev/wwan0fastboot0 字符设备
 
 
-璇ラ┍鍔ㄩ€氳繃瀹炵幇 fastboot WWAN 绔彛鏆撮湶涓€涓?fastboot 鍗忚鎺ュ彛銆俧astboot 閫氶亾绠￠亾鐨?鐢ㄦ埛绌洪棿涓€绔槸涓€涓?/dev/wwan0fastboot0 瀛楃璁惧銆傚簲鐢ㄧ▼搴忓簲浣跨敤姝ゆ帴鍙ｈ繘琛?fastboot
-鍗忚閫氫俊銆?
-璇锋敞鎰忥紝椹卞姩闇€瑕侀噸鏂板姞杞戒互瀵煎嚭 /dev/wwan0fastboot0 绔彛锛屽洜涓鸿澶囧湪杩涘叆 `fastboot_switching`
-妯″紡鍚庨渶瑕佸喎澶嶄綅銆?
-### ADB 绔彛鐢ㄦ埛绌洪棿 ABI
+该驱动通过实现 fastboot WWAN 端口暴露一fastboot 协议接口。fastboot 通道管道用户空间一端是一/dev/wwan0fastboot0 字符设备。应用程序应使用此接口进fastboot
+协议通信
+请注意，驱动需要重新加载以导出 /dev/wwan0fastboot0 端口，因为设备在进入 `fastboot_switching`
+模式后需要冷复位
+### ADB 端口用户空间 ABI
 
 
-#### /dev/wwan0adb0 瀛楃璁惧
+#### /dev/wwan0adb0 字符设备
 
 
-璇ラ┍鍔ㄩ€氳繃瀹炵幇 ADB WWAN 绔彛鏆撮湶涓€涓?ADB 鍗忚鎺ュ彛銆侫DB 閫氶亾绠￠亾鐨勭敤鎴风┖闂翠竴绔槸涓€涓?/dev/wwan0adb0 瀛楃璁惧銆傚簲鐢ㄧ▼搴忓簲浣跨敤姝ゆ帴鍙ｈ繘琛?ADB 鍗忚閫氫俊銆?
-### MIPC 绔彛鐢ㄦ埛绌洪棿 ABI
+该驱动通过实现 ADB WWAN 端口暴露一ADB 协议接口。ADB 通道管道的用户空间一端是一/dev/wwan0adb0 字符设备。应用程序应使用此接口进ADB 协议通信
+### MIPC 端口用户空间 ABI
 
 
-#### /dev/wwan0mipc0 瀛楃璁惧
+#### /dev/wwan0mipc0 字符设备
 
 
-璇ラ┍鍔ㄩ€氳繃瀹炵幇 MIPC锛圡odem Information Process Center锛塛WAN 绔彛鏆撮湶涓€涓瘖鏂帴鍙ｃ€?MIPC 閫氶亾绠￠亾鐨勭敤鎴风┖闂翠竴绔槸涓€涓?/dev/wwan0mipc0 瀛楃璁惧銆?搴旂敤绋嬪簭搴斾娇鐢ㄦ鎺ュ彛杩涜 MTK 璋冨埗瑙ｈ皟鍣ㄨ瘖鏂€氫俊銆?
-MediaTek 鐨?T700 璋冨埗瑙ｈ皟鍣ㄦ敮鎸?3GPP TS 27.007 [^4^] 瑙勮寖銆?
-## 鍙傝€?
+该驱动通过实现 MIPC（Modem Information Process Center）WWAN 端口暴露一个诊断接口MIPC 通道管道的用户空间一端是一/dev/wwan0mipc0 字符设备应用程序应使用此接口进行 MTK 调制解调器诊断通信
+MediaTek T700 调制解调器支3GPP TS 27.007 [^4^] 规范
+## 参
 
 [^1^] **MBIM (Mobile Broadband Interface Model) Errata-1**
 

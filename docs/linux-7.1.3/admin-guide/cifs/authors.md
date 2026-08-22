@@ -1,11 +1,11 @@
-﻿## 浣滆€?
+﻿## 作
 
-### 鍘熷浣滆€?
+### 原始作
 
 Steve French (smfrench@gmail.com, sfrench@samba.org)
 
-浣滆€呭笇鏈涜〃杈句粬鐨勬劅婵€涓庤阿鎰忥細鎰熻阿 Andrew Tridgell锛圫amba 鍥㈤槦锛夊叧浜?SMB/CIFS VFS 鏀硅繘鐨勬棭鏈熷缓璁€傛劅璋?IBM 缁欎簣鎴戞椂闂翠笌娴嬭瘯璧勬簮鏉ユ帹杩涙椤圭洰锛屾劅璋?IBM 鐨?Jim McDonough锛堜互鍙?Samba 鍥㈤槦锛夌殑甯姪锛屾劅璋?IBM Linux JFS 鍥㈤槦瀵硅澶氭繁濂?Linux 鏂囦欢绯荤粺鐗规€х殑璁茶В銆係amba 鍥㈤槦鐨?Jeremy Allison 鍦ㄥ畬鎴愬師濮?CIFS Unix 鎵╁睍鐨勬湇鍔＄浠ュ強灏嗚緝鏂扮殑 CIFS POSIX 鎵╁睍鐨勯儴鍒嗗唴瀹瑰鏌ュ苟瀹炵幇鍒?Samba 3 鏂囦欢鏈嶅姟鍣ㄤ腑鍋氬嚭浜嗗疂璐靛伐浣溿€傛劅璋?IBM Rochester 鐨?Dave Boutcher锛圤S/400 smb/cifs 鏂囦欢绯荤粺瀹㈡埛绔殑浣滆€咃級澶氬勾鍓嶇殑璇佹槑锛氬湪绫?Unix 鎿嶄綔绯荤粺涓婂彲浠ュ疄鐜伴潪甯稿ソ鐨?smb/cifs 瀹㈡埛绔€俈olker Lendecke銆丄ndrew Tridgell銆乁rban Widmark銆丣ohn Newbigin 鍙婂叾浠栦汉鎰熻阿浠栦滑鍦?Linux smbfs 妯″潡涓婄殑宸ヤ綔銆傛劅璋㈠瓨鍌ㄧ綉缁滃伐涓氬崗浼氾紙SNIA锛塁IFS 鎶€鏈伐浣滅粍鍏朵粬鎴愬憳鍦ㄨ鑼冭繖涓€楂樺害澶嶆潅鍗忚涓婄殑宸ヤ綔锛屾渶鍚庢劅璋?Samba 鍥㈤槦鐨勬妧鏈缓璁笌榧撳姳銆?
-### 琛ヤ竵璐＄尞鑰?
+作者希望表达他的感激与谢意：感谢 Andrew Tridgell（Samba 团队）关SMB/CIFS VFS 改进的早期建议。感IBM 给予我时间与测试资源来推进此项目，感IBM Jim McDonough（以Samba 团队）的帮助，感IBM Linux JFS 团队对许多深Linux 文件系统特性的讲解。Samba 团队Jeremy Allison 在完成原CIFS Unix 扩展的服务端以及将较新的 CIFS POSIX 扩展的部分内容审查并实现Samba 3 文件服务器中做出了宝贵工作。感IBM Rochester Dave Boutcher（OS/400 smb/cifs 文件系统客户端的作者）多年前的证明：在Unix 操作系统上可以实现非常好smb/cifs 客户端。Volker Lendecke、Andrew Tridgell、Urban Widmark、John Newbigin 及其他人感谢他们Linux smbfs 模块上的工作。感谢存储网络工业协会（SNIA）CIFS 技术工作组其他成员在规范这一高度复杂协议上的工作，最后感Samba 团队的技术建议与鼓励
+### 补丁贡献
 
 - Zwane Mwaikambo
 - Andi Kleen
@@ -14,19 +14,19 @@ Steve French (smfrench@gmail.com, sfrench@samba.org)
 - Sergey Vlasov
 - Richard Hughes
 - Yury Umanets
-- Mark Hamzy锛堥儴鍒嗘棭鏈?cifs IPv6 宸ヤ綔锛?- Domen Puncer
-- Jesper Juhl锛堝挨鍏惰础鐚簡澶ч噺绌虹櫧/鏍煎紡娓呯悊锛?- Vince Negri 鍜?Dave Stahl锛堝彂鐜颁簡閲嶈鐨勭紦瀛?bug锛?- Adrian Bunk锛坘calloc 娓呯悊锛?- Miklos Szeredi
-- Kazeon 鍥㈤槦锛屽悇绉嶄慨澶嶏紝灏ゅ叾鏄?2.4 鐗堟湰銆?- Asser Ferno锛圕hange Notify 鏀寔锛?- Shaggy锛圖ave Kleikamp锛夛紝鏃犳暟灏忕殑鏂囦欢绯荤粺寤鸿鍜屼竴浜涜壇濂界殑娓呯悊
-- Gunter Kukkukk锛堥拡瀵硅€佹棫鏈嶅姟鍣ㄦ敮鎸佺殑娴嬭瘯涓庡缓璁級
-- Igor Mammedov锛圖FS 鏀寔锛?- Jeff Layton锛堣澶氥€佽澶氫慨澶嶏紝浠ュ強 cifs Kerberos 浠ｇ爜鐨勫嚭鑹插伐浣滐級
+- Mark Hamzy（部分早cifs IPv6 工作- Domen Puncer
+- Jesper Juhl（尤其贡献了大量空白/格式清理- Vince Negri Dave Stahl（发现了重要的缓bug- Adrian Bunk（kcalloc 清理- Miklos Szeredi
+- Kazeon 团队，各种修复，尤其2.4 版本- Asser Ferno（Change Notify 支持- Shaggy（Dave Kleikamp），无数小的文件系统建议和一些良好的清理
+- Gunter Kukkukk（针对老旧服务器支持的测试与建议）
+- Igor Mammedov（DFS 支持- Jeff Layton（许多、许多修复，以及 cifs Kerberos 代码的出色工作）
 - Scott Lovenberg
-- Pavel Shilovsky锛堝湪娣诲姞 SMB2 鏀寔浠ュ強鍚勭 SMB3 鐗规€т笂鐨勫嚭鑹插伐浣滐級
-- Aurelien Aptel锛圖FS SMB3 宸ヤ綔浠ュ強涓€浜涘叧閿?bug 淇锛?- Ronnie Sahlberg锛圫MB3 xattr 宸ヤ綔銆乥ug 淇浠ュ強澶ч噺鍦ㄥ鍚堬紙compounding锛変笂鐨勫嚭鑹插伐浣滐級
-- Shirish Pargaonkar锛堝骞存潵璁稿 ACL 琛ヤ竵锛?- Sachin Prabhu锛堣澶?bug 淇锛屽寘鎷噸杩炪€佸鍒跺嵏杞藉拰瀹夊叏鎬э級
-- Paulo Alcantara锛堝湪 DFS 浠ュ強浠?SMB3 鍚姩涓婄殑鍑鸿壊宸ヤ綔锛?- Long Li锛堝湪 RDMA銆丼MB Direct 涓婄殑涓€浜涘嚭鑹插伐浣滐級
+- Pavel Shilovsky（在添加 SMB2 支持以及各种 SMB3 特性上的出色工作）
+- Aurelien Aptel（DFS SMB3 工作以及一些关bug 修复- Ronnie Sahlberg（SMB3 xattr 工作、bug 修复以及大量在复合（compounding）上的出色工作）
+- Shirish Pargaonkar（多年来许多 ACL 补丁- Sachin Prabhu（许bug 修复，包括重连、复制卸载和安全性）
+- Paulo Alcantara（在 DFS 以及SMB3 启动上的出色工作- Long Li（在 RDMA、SMB Direct 上的一些出色工作）
 
 
-### 娴嬭瘯鐢ㄤ緥涓庣己闄锋姤鍛婅础鐚€?
+### 测试用例与缺陷报告贡献
 
-鎰熻阿绀惧尯涓彁浜よ缁嗙己闄锋姤鍛婂苟璋冭瘯鎵€鍙戠幇闂鐨勪汉锛欽ochen Dolze銆丏avid Blaine銆丷ene Scharfe銆丮artin Josefsson銆丄lexander Wild銆丄nthony Liguori銆丩ars Muller銆乁rban Widmark銆丮assimiliano Ferrero銆丠oward Owen銆丱laf Kirch銆並ieron Briggs銆丯ick Millington 绛夈€備篃鐗瑰埆鎻愬強 Stanford Checker锛圫WAT锛夛紝瀹冩寚鍑轰簡閿欒璺緞涓殑璁稿灏?bug銆侫l Viro 鍜?Dave Miller 涔熺粰鍑轰簡瀹濊吹鐨勫缓璁€?
-骞舵劅璋?IBM LTC 鍜?Power 娴嬭瘯鍥㈤槦锛屼互鍙?SuSE銆丆itrix 鍜?RedHat 鐨勬祴璇曚汉鍛樺湪浼樼鐨勫帇鍔涙祴璇曡繍琛屼腑鍙戠幇浜嗗涓?bug銆?
+感谢社区中提交详细缺陷报告并调试所发现问题的人：Jochen Dolze、David Blaine、Rene Scharfe、Martin Josefsson、Alexander Wild、Anthony Liguori、Lars Muller、Urban Widmark、Massimiliano Ferrero、Howard Owen、Olaf Kirch、Kieron Briggs、Nick Millington 等。也特别提及 Stanford Checker（SWAT），它指出了错误路径中的许多bug。Al Viro Dave Miller 也给出了宝贵的建议
+并感IBM LTC Power 测试团队，以SuSE、Citrix RedHat 的测试人员在优秀的压力测试运行中发现了多bug

@@ -1,27 +1,27 @@
-﻿## NetLabel CIPSO/IPv4 鍗忚寮曟搸
+﻿## NetLabel CIPSO/IPv4 协议引擎
 
 
 Paul Moore, paul.moore@hp.com
 
 May 17, 2006
 
-## 姒傝堪
+## 概述
 
 
-NetLabel CIPSO/IPv4 鍗忚寮曟搸鍩轰簬 1992 骞?7 鏈?16 鏃ョ殑 IETF 鍟嗙敤 IP 瀹夊叏閫夐」锛圕IPSO锛夎崏妗堛€傝鑽夋鐨勫壇鏈彲浠ュ湪姝ょ洰褰曚腑鎵惧埌锛坉raft-ietf-cipso-ipsecurity-01.txt锛夈€傚敖绠¤ IETF 鑽夋浠庢湭鎴愪负 RFC 鏍囧噯锛屼絾瀹冨凡鎴愪负鏍囪缃戠粶锛坙abeled networking锛変簨瀹炰笂鐨勬爣鍑嗭紝骞惰璁稿鍙俊鎿嶄綔绯荤粺浣跨敤銆?
-## 鍑虹珯鎶ユ枃澶勭悊
+NetLabel CIPSO/IPv4 协议引擎基于 1992 7 16 日的 IETF 商用 IP 安全选项（CIPSO）草案。该草案的副本可以在此目录中找到（draft-ietf-cipso-ipsecurity-01.txt）。尽管该 IETF 草案从未成为 RFC 标准，但它已成为标记网络（labeled networking）事实上的标准，并被许多可信操作系统使用
+## 出站报文处理
 
 
-CIPSO/IPv4 鍗忚寮曟搸閫氳繃灏?CIPSO 鏍囩娣诲姞鍒板鎺ュ瓧锛屼粠鑰屽皢 CIPSO IP 閫夐」搴旂敤浜庢姤鏂囥€傝繖浼氫娇閫氳繃璇ュ鎺ュ瓧绂诲紑绯荤粺鐨勬墍鏈夋姤鏂囬兘搴旂敤 CIPSO IP 閫夐」銆傚鎺ュ瓧鐨?CIPSO 鏍囩鍙互鍦ㄤ换鎰忔椂鍒绘洿鏀癸紝涓嶈繃寤鸿鍦ㄥ鎺ュ瓧鍒涘缓鏃惰缃€侺SM 鍙互浣跨敤 NetLabel 瀹夊叏妯″潡 API 璁剧疆濂楁帴瀛楃殑 CIPSO 鏍囩锛涘鏋?NetLabel 鈥渄omain鈥濊閰嶇疆涓轰娇鐢?CIPSO 杩涜鎶ユ枃鏍囪锛屽垯浼氱敓鎴愪竴涓?CIPSO IP 閫夐」骞堕檮鍔犲埌濂楁帴瀛椾笂銆?
-## 鍏ョ珯鎶ユ枃澶勭悊
+CIPSO/IPv4 协议引擎通过CIPSO 标签添加到套接字，从而将 CIPSO IP 选项应用于报文。这会使通过该套接字离开系统的所有报文都应用 CIPSO IP 选项。套接字CIPSO 标签可以在任意时刻更改，不过建议在套接字创建时设置。LSM 可以使用 NetLabel 安全模块 API 设置套接字的 CIPSO 标签；如NetLabel “domain”被配置为使CIPSO 进行报文标记，则会生成一CIPSO IP 选项并附加到套接字上
+## 入站报文处理
 
 
-CIPSO/IPv4 鍗忚寮曟搸鍦?IP 灞傞獙璇佸畠鍙戠幇鐨勬瘡涓?CIPSO IP 閫夐」锛屾棤闇€ LSM 鍋氫换浣曠壒娈婂鐞嗐€傜劧鑰岋紝涓轰簡瑙ｇ爜骞惰浆鎹㈡姤鏂囦笂鐨?CIPSO 鏍囩锛孡SM 蹇呴』浣跨敤 NetLabel 瀹夊叏妯″潡 API 鎻愬彇鎶ユ枃鐨勫畨鍏ㄥ睘鎬с€傝繖閫氬父鏄湪濂楁帴瀛楀眰浣跨敤 'socket_sock_rcv_skb()' LSM 閽╁瓙瀹屾垚銆?
-## 鏍囩杞崲
+CIPSO/IPv4 协议引擎IP 层验证它发现的每CIPSO IP 选项，无需 LSM 做任何特殊处理。然而，为了解码并转换报文上CIPSO 标签，LSM 必须使用 NetLabel 安全模块 API 提取报文的安全属性。这通常是在套接字层使用 'socket_sock_rcv_skb()' LSM 钩子完成
+## 标签转换
 
 
-CIPSO/IPv4 鍗忚寮曟搸鍖呭惈涓€绉嶆満鍒讹紝鐢ㄤ簬灏?CIPSO 瀹夊叏灞炴€э紙濡傛晱鎰熺骇鍒笌绫诲埆锛夎浆鎹负閫傚悎涓绘満鐨勫€笺€傝繖浜涙槧灏勪綔涓?CIPSO 瑙ｉ噴鍩燂紙Domain Of Interpretation锛孌OI锛夊畾涔夌殑涓€閮ㄥ垎瀹氫箟锛屽苟閫氳繃 NetLabel 鐢ㄦ埛绌洪棿閫氫俊灞傞厤缃€傛瘡涓?DOI 瀹氫箟鍙互鏈変笉鍚岀殑瀹夊叏灞炴€ф槧灏勮〃銆?
-## 鏍囩杞崲缂撳瓨
+CIPSO/IPv4 协议引擎包含一种机制，用于CIPSO 安全属性（如敏感级别与类别）转换为适合主机的值。这些映射作CIPSO 解释域（Domain Of Interpretation，DOI）定义的一部分定义，并通过 NetLabel 用户空间通信层配置。每DOI 定义可以有不同的安全属性映射表
+## 标签转换缓存
 
 
-NetLabel 绯荤粺鎻愪緵浜嗕竴涓鏋讹紝鐢ㄤ簬缂撳瓨浠庣綉缁滄爣绛惧埌鐩稿簲 LSM 鏍囪瘑绗︾殑瀹夊叏灞炴€ф槧灏勩€侰IPSO/IPv4 鍗忚寮曟搸鏀寔璇ョ紦瀛樻満鍒躲€?
+NetLabel 系统提供了一个框架，用于缓存从网络标签到相应 LSM 标识符的安全属性映射。CIPSO/IPv4 协议引擎支持该缓存机制

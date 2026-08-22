@@ -1,35 +1,35 @@
-﻿# 绗洓閮ㄥ垎 - 濯掍綋鎺у埗鍣?API
+﻿# 第四部分 - 媒体控制API
 
 
-- [濯掍綋鎺у埗鍣ㄧ畝浠媇(media-controller-intro)
-- [濯掍綋鎺у埗鍣ㄦā鍨媇(media-controller-model)
-- [濯掍綋绫诲瀷](media-types)
-- [璇锋眰 API](request-api)
-- [濯掍綋鍑芥暟](media-funcs)
-- [濯掍綋澶碷(media-header)
+- [媒体控制器简介](media-controller-intro)
+- [媒体控制器模型](media-controller-model)
+- [媒体类型](media-types)
+- [请求 API](request-api)
+- [媒体函数](media-funcs)
+- [媒体头](media-header)
 
-######## 淇涓庣増鏉?
+######## 修订与版
 
 
-浣滆€咃紙Authors锛夛細
+作者（Authors）：
 
 - Pinchart, Laurent <laurent.pinchart@ideasonboard.com>
 
- - 鍒濆鐗堟湰銆?
+ - 初始版本
 
 - Carvalho Chehab, Mauro <mchehab@kernel.org>
 
- - MEDIA_IOC_G_TOPOLOGY 鏂囨。鍙婃枃妗ｆ敼杩涖€?
+ - MEDIA_IOC_G_TOPOLOGY 文档及文档改进
 
 **Copyright** |copy| 2010 : Laurent Pinchart
 
 **Copyright** |copy| 2015-2016 : Mauro Carvalho Chehab
 
-######## 淇鍘嗗彶
+######## 修订历史
 
 
 :revision: 1.1.0 / 2015-12-12 (**mcc**)
 
 :revision: 1.0.0 / 2010-11-10 (**lp**)
 
-鍒濆淇
+初始修订

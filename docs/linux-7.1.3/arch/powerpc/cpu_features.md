@@ -1,17 +1,17 @@
-﻿## CPU 鐗规€э紙CPU Features锛?
+﻿## CPU 特性（CPU Features
 
 Hollis Blanchard <hollis@austin.ibm.com>
-2002 骞?6 鏈?5 鏃?
-鏈枃妗ｆ弿杩颁簡 PPC Linux 鍐呮牳涓娇鐢ㄧ殑绯荤粺锛堝寘鎷嚜淇敼浠ｇ爜锛夛紝鐢ㄤ簬鏀寔澶氱
-PowerPC CPU锛岃€屾棤闇€鍦ㄧ紪璇戞湡杩涜閫夋嫨銆?
-鍦ㄥ惎鍔ㄨ繃绋嬬殑鏃╂湡锛宲pc32 鍐呮牳浼氭娴嬪綋鍓嶇殑 CPU 绫诲瀷骞剁浉搴斿湴閫夋嫨涓€缁勭壒鎬с€?涓€浜涗緥瀛愬寘鎷?Altivec 鏀寔銆佹寚浠や笌鏁版嵁鍒嗙鐨勭紦瀛橈紝浠ュ強 CPU 鏄惁鏀寔 DOZE 涓?NAP 鐫＄湢妯″紡銆?
-鐗规€ч泦鍚堢殑妫€娴嬪緢绠€鍗曘€傚鐞嗗櫒鍒楄〃鍙湪 arch/powerpc/kernel/cputable.c 涓壘鍒般€?PVR 瀵勫瓨鍣ㄨ鎺╃爜澶勭悊骞朵笌鍒楄〃涓殑姣忎釜鍊艰繘琛屾瘮杈冦€傚鏋滄壘鍒板尮閰嶏紝cur_cpu_spec
-鐨?cpu_features 浼氳璧嬪€间负璇ュ鐞嗗櫒鐨勭壒鎬т綅鎺╃爜锛屽苟璋冪敤涓€涓?__setup_cpu 鍑芥暟銆?
-C 浠ｇ爜鍙互娴嬭瘯 'cur_cpu_spec[smp_processor_id()]->cpu_features' 鏉ヨ幏鍙栨煇涓?鐗瑰畾鐨勭壒鎬т綅銆傝繖涓€鎿嶄綔鍦ㄥ緢澶氬湴鏂归兘浼氳繘琛岋紝渚嬪鍦?ppc_setup_l2cr() 涓€?
-鍦ㄦ眹缂栦腑瀹炵幇 cpufeatures 瑕佺◢寰鏉備竴浜涖€傛湁鑻ュ共鎬ц兘鍏抽敭璺緞锛屽鏋滃姞鍏ユ暟缁?绱㈠紩銆佺粨鏋勪綋瑙ｅ紩鐢ㄥ拰鏉′欢鍒嗘敮灏变細鍙楀奖鍝嶃€備负浜嗛伩鍏嶆€ц兘鎹熷け锛屽悓鏃朵粛鍏佽杩愯鏃?锛堣€岄潪缂栬瘧鏈燂級CPU 閫夋嫨锛屾湭浣跨敤鐨勪唬鐮佷細琚浛鎹负 'nop' 鎸囦护銆傝繖绉?nop 鏇挎崲
-鍩轰簬 CPU 0 鐨勮兘鍔涳紝鍥犳鐢遍潪鐩稿悓澶勭悊鍣ㄧ粍鎴愮殑澶氬鐞嗗櫒绯荤粺灏嗘棤娉曞伐浣滐紙涓嶈繃杩欐牱
-鐨勭郴缁熸湰鏉ヤ篃鍙兘浼氭湁鍏跺畠闂锛夈€?
-鍦ㄦ娴嬪埌澶勭悊鍣ㄧ被鍨嬩箣鍚庯紝鍐呮牳浼氶€氳繃鍐欏叆 nop 鏉ヤ慨琛ユ帀涓嶅簲琚娇鐢ㄧ殑浠ｇ爜娈点€備娇鐢?cpufeatures 鍙渶瑕?2 涓畯锛堜綅浜?arch/powerpc/include/asm/cputable.h 涓級锛?濡?head.S 涓墍绀猴細
+2002 骞?6 鏈?5 鏃。
+本文档描述了 PPC Linux 内核中使用的系统（包括自修改代码），用于支持多种
+PowerPC CPU，而无需在编译期进行选择
+在启动过程的早期，ppc32 内核会检测当前的 CPU 类型并相应地选择一组特性一些例子包Altivec 支持、指令与数据分离的缓存，以及 CPU 是否支持 DOZE NAP 睡眠模式
+特性集合的检测很简单。处理器列表可在 arch/powerpc/kernel/cputable.c 中找到PVR 寄存器被掩码处理并与列表中的每个值进行比较。如果找到匹配，cur_cpu_spec
+cpu_features 会被赋值为该处理器的特性位掩码，并调用一__setup_cpu 函数
+C 代码可以测试 'cur_cpu_spec[smp_processor_id()]->cpu_features' 来获取某特定的特性位。这一操作在很多地方都会进行，例如ppc_setup_l2cr() 中
+在汇编中实现 cpufeatures 要稍微复杂一些。有若干性能关键路径，如果加入数索引、结构体解引用和条件分支就会受影响。为了避免性能损失，同时仍允许运行（而非编译期）CPU 选择，未使用的代码会被替换为 'nop' 指令。这nop 替换
+基于 CPU 0 的能力，因此由非相同处理器组成的多处理器系统将无法工作（不过这样
+的系统本来也可能会有其它问题）
+在检测到处理器类型之后，内核会通过写入 nop 来修补掉不应被使用的代码段。使cpufeatures 只需2 个宏（位arch/powerpc/include/asm/cputable.h 中）head.S 中所示：
 
 ```
 
@@ -23,8 +23,8 @@ C 浠ｇ爜鍙互娴嬭瘯 'cur_cpu_spec[smp_processor_id()]->cpu_features' �
 	#endif /* CONFIG_ALTIVEC */
 
 ```
-濡傛灉 CPU 0 鏀寔 Altivec锛屽垯浠ｇ爜淇濇寔涓嶅彉銆傚鏋滀笉鏀寔锛屼袱鏉℃寚浠ら兘浼氳鏇挎崲涓?nop銆?
-END_FTR_SECTION 瀹忔湁涓や釜鏇寸畝鍗曠殑鍙樹綋锛欵ND_FTR_SECTION_IFSET 涓?END_FTR_SECTION_IFCLR銆傚畠浠垎鍒敤浜庢祴璇曟煇涓爣蹇楋紙鍦?cur_cpu_spec[^0^]->cpu_features 涓級鏄惁琚疆浣嶆垨娓呴櫎銆傚湪澶у鏁版儏鍐典笅搴斾娇鐢?杩欎袱涓畯銆?
-END_FTR_SECTION 瀹忕殑瀹炵幇鏂瑰紡鏄皢鏈夊叧杩欐浠ｇ爜鐨勪俊鎭瓨鍌ㄥ湪 '__ftr_fixup' ELF
-娈典腑銆傚綋 do_cpu_ftr_fixups锛坅rch/powerpc/kernel/misc.S锛夎璋冪敤鏃讹紝瀹冧細閬嶅巻
-__ftr_fixup 涓殑璁板綍锛屽鏋滄墍闇€鐗规€т笉瀛樺湪锛屽氨浼氫粠姣忎釜 BEGIN_FTR_SECTION 鍒?END_FTR_SECTION 寰幆鍐欏叆 nop銆?
+如果 CPU 0 支持 Altivec，则代码保持不变。如果不支持，两条指令都会被替换nop
+END_FTR_SECTION 宏有两个更简单的变体：END_FTR_SECTION_IFSET END_FTR_SECTION_IFCLR。它们分别用于测试某个标志（cur_cpu_spec[^0^]->cpu_features 中）是否被置位或清除。在大多数情况下应使这两个宏
+END_FTR_SECTION 宏的实现方式是将有关这段代码的信息存储在 '__ftr_fixup' ELF
+段中。当 do_cpu_ftr_fixups（arch/powerpc/kernel/misc.S）被调用时，它会遍历
+__ftr_fixup 中的记录，如果所需特性不存在，就会从每个 BEGIN_FTR_SECTION END_FTR_SECTION 循环写入 nop

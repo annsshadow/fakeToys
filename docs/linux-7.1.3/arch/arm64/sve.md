@@ -1,31 +1,31 @@
-﻿## AArch64 Linux 瀵瑰彲鎵╁睍鍚戦噺鎵╁睍锛圫VE锛夌殑鏀寔
+﻿## AArch64 Linux 对可扩展向量扩展（SVE）的支持
 
 
-浣滆€咃細Dave Martin <Dave.Martin@arm.com>
+作者：Dave Martin <Dave.Martin@arm.com>
 
-鏃ユ湡锛? August 2017
+日期 August 2017
 
-鏈枃妗ｇ畝瑕佹杩颁簡 Linux 鎻愪緵缁欑敤鎴风┖闂寸殑鎺ュ彛锛岀敤浠ユ敮鎸?ARM 鍙墿灞曞悜閲忔墿灞曪紙SVE锛孲calable Vector Extension锛夌殑浣跨敤锛屽寘鎷敱鍙墿灞曠煩闃垫墿灞曪紙SME锛孲calable Matrix Extension锛夊紩鍏ョ殑 Streaming SVE 妯″紡鐨勪氦浜掋€?
+本文档简要概述了 Linux 提供给用户空间的接口，用以支ARM 可扩展向量扩展（SVE，Scalable Vector Extension）的使用，包括由可扩展矩阵扩展（SME，Scalable Matrix Extension）引入的 Streaming SVE 模式的交互
 
-鏈枃浠呮杩版渶閲嶈鐨勭壒鎬т笌闂锛屽苟闈炶灏芥棤閬椼€?
+本文仅概述最重要的特性与问题，并非详尽无遗
 
-鏈枃妗ｆ棤鎰忔弿杩?SVE 鏋舵瀯鎴栫紪绋嬫ā鍨嬨€備负甯姪鐞嗚В锛岄檮褰?A 涓寘鍚簡 SVE 鐩稿叧缂栫▼妯″瀷鐗规€х殑涓€浠芥渶灏忓寲鎻忚堪銆?
-
-
-### 1. 姒傝堪
+本文档无意描SVE 架构或编程模型。为帮助理解，附A 中包含了 SVE 相关编程模型特性的一份最小化描述
 
 
-- SVE 瀵勫瓨鍣?Z0..Z31銆丳0..P15 浠ュ強 FFR锛岃繛鍚屽綋鍓嶇殑鍚戦噺闀垮害 VL锛屽潎鎸夌嚎绋嬭繘琛岃窡韪€?
+### 1. 概述
 
-- 鍦?streaming 妯″紡涓嬶紝闄ら潪绯荤粺涓瓨鍦?HWCAP2_SME_FA64锛屽惁鍒欐棤娉曡闂?FFR锛涘綋涓嶆敮鎸?FFR 鏃讹紝浣跨敤杩欎簺鎺ュ彛璁块棶 streaming 妯″紡涓嬬殑 FFR 浼氬皢鍏惰鍐欎负闆躲€?
 
-- SVE 鐨勫瓨鍦ㄩ€氳繃杈呭姪鍚戦噺 AT_HWCAP 鏉＄洰涓殑 HWCAP_SVE 鎶ュ憡缁欑敤鎴风┖闂淬€傝鏍囧織鐨勫瓨鍦ㄦ剰鍛崇潃 SVE 鎸囦护鍜屽瘎瀛樺櫒浠ュ強鏈枃妗ｆ弿杩扮殑 Linux 涓撶敤绯荤粺鎺ュ彛鍧囧瓨鍦ㄣ€係VE 鍦?/proc/cpuinfo 涓姤鍛婁负 "sve"銆?
+- SVE 寄存Z0..Z31、P0..P15 以及 FFR，连同当前的向量长度 VL，均按线程进行跟踪
 
-- 鐢ㄦ埛绌洪棿涔熷彲浠ラ€氳繃浣跨敤 MRS 鎸囦护璇诲彇 CPU ID 瀵勫瓨鍣?ID_AA64PFR0_EL1锛屽苟妫€鏌?SVE 瀛楁鐨勫€兼槸鍚﹂潪闆讹紝鏉ユ娴嬪 SVE 鎸囦护鎵ц鐨勬敮鎸併€俒^3^]
+- streaming 模式下，除非系统中存HWCAP2_SME_FA64，否则无法访FFR；当不支FFR 时，使用这些接口访问 streaming 模式下的 FFR 会将其读写为零
 
-  杩欏苟涓嶈兘淇濊瘉鍚庣画鍚勮妭鎻忚堪鐨勭郴缁熸帴鍙ｇ殑瀛樺湪锛氶渶瑕侀獙璇佽繖浜涙帴鍙ｆ槸鍚﹀瓨鍦ㄧ殑杞欢蹇呴』鏀硅€屾鏌?HWCAP_SVE銆?
+- SVE 的存在通过辅助向量 AT_HWCAP 条目中的 HWCAP_SVE 报告给用户空间。该标志的存在意味着 SVE 指令和寄存器以及本文档描述的 Linux 专用系统接口均存在。SVE /proc/cpuinfo 中报告为 "sve"
 
-- 鍦ㄦ敮鎸?SVE2 鎵╁睍鐨勭‖浠朵笂锛孒WCAP2_SVE2 涔熶細鍦?AT_HWCAP2 杈呭姪鍚戦噺鏉＄洰涓姤鍛娿€傛澶栵紝SVE2 鐨勫彲閫夋墿灞曞彲閫氳繃浠ヤ笅鏍囧織鐨勫瓨鍦ㄦ潵鎶ュ憡锛?
+- 用户空间也可以通过使用 MRS 指令读取 CPU ID 寄存ID_AA64PFR0_EL1，并检SVE 字段的值是否非零，来检测对 SVE 指令执行的支持。[^3^]
+
+  这并不能保证后续各节描述的系统接口的存在：需要验证这些接口是否存在的软件必须改而检HWCAP_SVE
+
+- 在支SVE2 扩展的硬件上，HWCAP2_SVE2 也会AT_HWCAP2 辅助向量条目中报告。此外，SVE2 的可选扩展可通过以下标志的存在来报告
 
 	HWCAP2_SVE2
 	HWCAP2_SVEAES
@@ -35,303 +35,303 @@
 	HWCAP2_SVESM4
 	HWCAP2_SVE2P1
 
-  闅忕潃 SVE 鏋舵瀯鐨勬紨杩涳紝姝ゅ垪琛ㄥ彲鑳戒細闅忔椂闂存墿灞曘€?
+  随着 SVE 架构的演进，此列表可能会随时间扩展
 
-  杩欎簺鎵╁睍涔熼€氳繃 CPU ID 瀵勫瓨鍣?ID_AA64ZFR0_EL1 鎶ュ憡锛岀敤鎴风┖闂村彲浣跨敤 MRS 鎸囦护璇诲彇璇ュ瘎瀛樺櫒銆傝瑙?elf_hwcaps.txt 涓?cpu-feature-registers.txt銆?
+  这些扩展也通过 CPU ID 寄存ID_AA64ZFR0_EL1 报告，用户空间可使用 MRS 指令读取该寄存器。详elf_hwcaps.txt cpu-feature-registers.txt
 
-- 鍦ㄦ敮鎸?SME 鎵╁睍鐨勭‖浠朵笂锛孒WCAP2_SME 涔熶細鍦?AT_HWCAP2 杈呭姪鍚戦噺鏉＄洰涓姤鍛娿€傞櫎鍏朵粬鐗规€у锛孲ME 寮曞叆浜?streaming 妯″紡锛岃妯″紡浣跨敤鐙珛鐨?SME 鍚戦噺闀垮害鍜岀浉鍚岀殑 Z/V 瀵勫瓨鍣紝鎻愪緵 SVE 鐗规€ч泦鐨勪竴涓瓙闆嗐€傛洿澶氱粏鑺傚弬瑙?sme.rst銆?
+- 在支SME 扩展的硬件上，HWCAP2_SME 也会AT_HWCAP2 辅助向量条目中报告。除其他特性外，SME 引入streaming 模式，该模式使用独立SME 向量长度和相同的 Z/V 寄存器，提供 SVE 特性集的一个子集。更多细节参sme.rst
 
-- 璋冭瘯鍣ㄥ簲灏嗚嚜韬檺鍒跺湪閫氳繃 NT_ARM_SVE regset 涓庣洰鏍囦氦浜掋€傛娴嬪璇?regset 鏀寔鐨勫缓璁柟寮忔槸锛氶鍏堣繛鎺ュ埌涓€涓洰鏍囪繘绋嬶紝鐒跺悗灏濊瘯 ptrace(PTRACE_GETREGSET, pid, NT_ARM_SVE, &iov)銆傛敞鎰忥紝褰?SME 瀛樺湪涓旀鍦ㄤ娇鐢?streaming SVE 妯″紡鏃讹紝FPSIMD 瀵勫瓨鍣ㄥ瓙闆嗗皢閫氳繃 NT_ARM_SVE 璇诲彇锛岃€屽 NT_ARM_SVE 鐨勫啓鍏ュ皢浣跨洰鏍囬€€鍑?streaming 妯″紡銆?
+- 调试器应将自身限制在通过 NT_ARM_SVE regset 与目标交互。检测对regset 支持的建议方式是：首先连接到一个目标进程，然后尝试 ptrace(PTRACE_GETREGSET, pid, NT_ARM_SVE, &iov)。注意，SME 存在且正在使streaming SVE 模式时，FPSIMD 寄存器子集将通过 NT_ARM_SVE 读取，而对 NT_ARM_SVE 的写入将使目标退streaming 模式
 
-- 姣忓綋 SVE 鍙墿灞曞瘎瀛樺櫒鍊硷紙Zn銆丳n銆丗FR锛夊湪鐢ㄦ埛绌洪棿涓庡唴鏍镐箣闂翠簬鍐呭瓨涓氦鎹㈡椂锛屽瘎瀛樺櫒鍊间互涓庡瓧鑺傚簭鏃犲叧鐨勫竷灞€缂栫爜鍒板唴瀛樹腑锛屽叾涓綅 [(8 ** i + 7) : (8 ** i)] 缂栫爜鍦ㄥ唴瀛樿〃绀鸿捣濮嬩綅缃殑绗?i 涓瓧鑺傚亸绉诲銆備緥濡傦紝杩欎細褰卞搷淇″彿甯э紙struct sve_context锛夊拰 ptrace 鎺ュ彛锛坰truct user_sve_header锛夊強鍏跺叧鑱旀暟鎹€?
+- 每当 SVE 可扩展寄存器值（Zn、Pn、FFR）在用户空间与内核之间于内存中交换时，寄存器值以与字节序无关的布局编码到内存中，其中位 [(8 ** i + 7) : (8 ** i)] 编码在内存表示起始位置的i 个字节偏移处。例如，这会影响信号帧（struct sve_context）和 ptrace 接口（struct user_sve_header）及其关联数据
 
-  娉ㄦ剰锛屽湪澶х绯荤粺涓婏紝杩欏鑷翠笌 FPSIMD V 瀵勫瓨鍣ㄤ笉鍚岀殑瀛楄妭椤哄簭锛屽悗鑰呬綔涓哄崟涓富鏈哄瓧鑺傚簭鐨?128 浣嶅€煎瓨鍌紝瀵勫瓨鍣ㄧ殑浣?[(127 - 8 ** i) : (120 - 8 ** i)] 缂栫爜鍦ㄧ i 涓瓧鑺傚亸绉诲銆傦紙struct fpsimd_context銆乻truct user_fpsimd_state锛?
-
-
-### 2. 鍚戦噺闀垮害鏈
+  注意，在大端系统上，这导致与 FPSIMD V 寄存器不同的字节顺序，后者作为单个主机字节序128 位值存储，寄存器的[(127 - 8 ** i) : (120 - 8 ** i)] 编码在第 i 个字节偏移处。（struct fpsimd_context、struct user_fpsimd_state
 
 
-涓€涓?SVE 鍚戦噺锛圸锛夊瘎瀛樺櫒鐨勫ぇ灏忚绉颁负鈥滃悜閲忛暱搴︹€濄€?
-
-涓洪伩鍏嶅叧浜庣敤浜庤〃绀哄悜閲忛暱搴︾殑鍗曚綅浜х敓娣锋穯锛屽唴鏍搁噰鐢ㄤ互涓嬬害瀹氾細
-
-- 鍚戦噺闀垮害锛圴L锛? Z 瀵勫瓨鍣ㄧ殑澶у皬锛屼互瀛楄妭璁?
-
-- 鍚戦噺鍥涘瓧锛圴Q锛? Z 瀵勫瓨鍣ㄧ殑澶у皬锛屼互 128 浣嶄负鍗曚綅
-
-锛堝嵆 VL = 16 * VQ銆傦級
-
-鍦ㄥ簳灞傜矑搴﹀緢閲嶈鐨勫満鍚堬紙渚嬪鏁版嵁缁撴瀯瀹氫箟涓級浣跨敤 VQ 绾﹀畾銆傚湪澶у鏁板叾浠栨儏鍐典笅锛屼娇鐢?VL 绾﹀畾銆傝繖涓?SVE 鎸囦护闆嗘灦鏋勪腑鈥淰L鈥濅吉瀵勫瓨鍣ㄧ殑鍚箟涓€鑷淬€?
+### 2. 向量长度术语
 
 
-### 3. 绯荤粺璋冪敤琛屼负
+一SVE 向量（Z）寄存器的大小被称为“向量长度”
+
+为避免关于用于表示向量长度的单位产生混淆，内核采用以下约定：
+
+- 向量长度（VL Z 寄存器的大小，以字节
+
+- 向量四字（VQ Z 寄存器的大小，以 128 位为单位
+
+（即 VL = 16 * VQ。）
+
+在底层粒度很重要的场合（例如数据结构定义中）使用 VQ 约定。在大多数其他情况下，使VL 约定。这SVE 指令集架构中“VL”伪寄存器的含义一致
 
 
-- 鍦ㄧ郴缁熻皟鐢ㄦ椂锛孷0..V31 琚繚鐣欙紙涓庢棤 SVE 鏃剁浉鍚岋級銆傚洜姝わ紝Z0..Z31 鐨勪綅 [127:0] 琚繚鐣欍€俍0..Z31 鐨勬墍鏈夊叾浠栦綅锛屼互鍙?P0..P15 鍜?FFR 鐨勫叏閮紝鍦ㄧ郴缁熻皟鐢ㄨ繑鍥炴椂鍙樹负闆躲€?
-
-- SVE 瀵勫瓨鍣ㄤ笉鐢ㄤ簬鍚戜换浣曠郴缁熻皟鐢ㄤ紶閫掑弬鏁版垨鎺ユ敹鍏剁粨鏋溿€?
-
-- 绾跨▼鐨勬墍鏈夊叾浠?SVE 鐘舵€侊紝鍖呮嫭褰撳墠閰嶇疆鐨勫悜閲忛暱搴︺€丳R_SVE_VL_INHERIT 鏍囧織鐨勭姸鎬侊紝浠ュ強寤惰繜鍚戦噺闀垮害锛堣嫢鏈夛級锛屽湪鎵€鏈夌郴缁熻皟鐢ㄤ箣闂村潎琚繚鐣欙紝浣嗙 6 鑺傚 execve() 鎻忚堪鐨勭壒瀹氫緥澶栭櫎澶栥€?
-
-  鐗瑰埆鍦帮紝鍦?fork() 鎴?clone() 杩斿洖鏃讹紝鐖惰繘绋嬩笌鏂板垱寤虹殑瀛愯繘绋嬫垨绾跨▼鍏变韩瀹屽叏鐩稿悓鐨?SVE 閰嶇疆锛屼笌璋冪敤鍓嶇埗杩涚▼鐨勯厤缃竴鑷淬€?
-
-### 4. 淇″彿澶勭悊
+### 3. 系统调用行为
 
 
-- 涓€涓柊鐨勪俊鍙峰抚璁板綍 sve_context 鍦ㄤ俊鍙烽€掗€佹椂缂栫爜 SVE 瀵勫瓨鍣ㄣ€俒^1^]
+- 在系统调用时，V0..V31 被保留（与无 SVE 时相同）。因此，Z0..Z31 的位 [127:0] 被保留。Z0..Z31 的所有其他位，以P0..P15 FFR 的全部，在系统调用返回时变为零
 
-- 璇ヨ褰曟槸瀵?fpsimd_context 鐨勮ˉ鍏呫€侳PSR 鍜?FPCR 瀵勫瓨鍣ㄤ粎瀛樺湪浜?fpsimd_context 涓€備负鏂逛究璧疯锛孷0..V31 鐨勫唴瀹瑰湪 sve_context 涓?fpsimd_context 涔嬮棿閲嶅銆?
+- SVE 寄存器不用于向任何系统调用传递参数或接收其结果
 
-- 璇ヨ褰曞寘鍚竴涓爣蹇楀瓧娈碉紝鍏朵腑鏈夋爣蹇?SVE_SIG_FLAG_SM锛岃嫢琚疆浣嶅垯鎸囩ず璇ョ嚎绋嬪浜?streaming 妯″紡锛屼笖鍚戦噺闀垮害鍜屽瘎瀛樺櫒鏁版嵁锛堣嫢瀛樺湪锛夋弿杩扮殑鏄?streaming SVE 鏁版嵁鍜屽悜閲忛暱搴︺€?
+- 线程的所有其SVE 状态，包括当前配置的向量长度、PR_SVE_VL_INHERIT 标志的状态，以及延迟向量长度（若有），在所有系统调用之间均被保留，但第 6 节对 execve() 描述的特定例外除外
 
-- 鐢ㄤ簬 SVE 鐨勪俊鍙峰抚璁板綍濮嬬粓鍖呭惈鍩烘湰鍏冩暟鎹紝鐗瑰埆鏄嚎绋嬬殑鍚戦噺闀垮害锛堜綅浜?sve_context.vl锛夈€?
+  特别地，fork() clone() 返回时，父进程与新创建的子进程或线程共享完全相同SVE 配置，与调用前父进程的配置一致
 
-- SVE 瀵勫瓨鍣ㄥ彲鑳戒細涔熷彲鑳戒笉浼氬寘鍚湪璁板綍涓紝鍙栧喅浜庤繖浜涘瘎瀛樺櫒瀵硅绾跨▼鏄惁涓烘椿璺冪殑锛坙ive锛夈€傚瘎瀛樺櫒瀛樺湪褰撲笖浠呭綋锛?
-
-  sve_context.head.size >= SVE_SIG_CONTEXT_SIZE(sve_vq_from_vl(sve_context.vl))銆?
-
-- 鑻ュ瘎瀛樺櫒瀛樺湪锛岃褰曠殑鍏朵綑閮ㄥ垎鍏锋湁渚濊禆浜?vl 鐨勫ぇ灏忓拰甯冨眬銆傚畾涔変簡瀹?SVE_SIG_* [^1^] 浠ユ柟渚胯闂悇鎴愬憳銆?
-
-- 姣忎釜鍙墿灞曞瘎瀛樺櫒锛圸n銆丳n銆丗FR锛変互涓庡瓧鑺傚簭鏃犲叧鐨勫竷灞€瀛樺偍锛屼綅 [(8 ** i + 7) : (8 ** i)] 瀛樺偍鍦ㄥ瘎瀛樺櫒鍐呭瓨琛ㄧず璧峰浣嶇疆鐨勭 i 涓瓧鑺傚亸绉诲銆?
-
-- 鑻?SVE 涓婁笅鏂囪繃澶т互鑷充簬鏃犳硶鏀惧叆 sigcontext.__reserved[]锛屽垯鍦ㄦ爤涓婂垎閰嶉澶栫殑绌洪棿锛屽苟鍦?__reserved[] 涓啓鍏ヤ竴涓?extra_context 璁板綍寮曠敤璇ョ┖闂淬€傞殢鍚?sve_context 琚啓鍏ヨ棰濆绌洪棿銆傚叧浜庢鏈哄埗鐨勬洿澶氱粏鑺傚弬瑙?[^1^]銆?
+### 4. 信号处理
 
 
-### 5. 淇″彿杩斿洖
+- 一个新的信号帧记录 sve_context 在信号递送时编码 SVE 寄存器。[^1^]
+
+- 该记录是fpsimd_context 的补充。FPSR FPCR 寄存器仅存在fpsimd_context 中。为方便起见，V0..V31 的内容在 sve_context fpsimd_context 之间重复
+
+- 该记录包含一个标志字段，其中有标SVE_SIG_FLAG_SM，若被置位则指示该线程处streaming 模式，且向量长度和寄存器数据（若存在）描述的streaming SVE 数据和向量长度
+
+- 用于 SVE 的信号帧记录始终包含基本元数据，特别是线程的向量长度（位sve_context.vl）
+
+- SVE 寄存器可能会也可能不会包含在记录中，取决于这些寄存器对该线程是否为活跃的（live）。寄存器存在当且仅当
+
+  sve_context.head.size >= SVE_SIG_CONTEXT_SIZE(sve_vq_from_vl(sve_context.vl))銆。
+
+- 若寄存器存在，记录的其余部分具有依赖vl 的大小和布局。定义了SVE_SIG_* [^1^] 以方便访问各成员
+
+- 每个可扩展寄存器（Zn、Pn、FFR）以与字节序无关的布局存储，位 [(8 ** i + 7) : (8 ** i)] 存储在寄存器内存表示起始位置的第 i 个字节偏移处
+
+- SVE 上下文过大以至于无法放入 sigcontext.__reserved[]，则在栈上分配额外的空间，并__reserved[] 中写入一extra_context 记录引用该空间。随sve_context 被写入该额外空间。关于此机制的更多细节参[^1^]
 
 
-浠庝俊鍙峰鐞嗗嚱鏁拌繑鍥炴椂锛?
-
-- 鑻ヤ俊鍙峰抚涓病鏈?sve_context 璁板綍锛屾垨鑰呰璁板綍瀛樺湪浣嗕笉鍖呭惈涓婁竴鑺傛墍杩扮殑瀵勫瓨鍣ㄦ暟鎹紝鍒?SVE 瀵勫瓨鍣?浣嶅彉涓洪潪娲昏穬锛坣on-live锛夊苟鍙栨湭鎸囧畾鐨勫€笺€?
-
-- 鑻?sve_context 瀛樺湪浜庝俊鍙峰抚涓笖鍖呭惈瀹屾暣鐨勫瘎瀛樺櫒鏁版嵁锛屽垯 SVE 瀵勫瓨鍣ㄥ彉涓烘椿璺冨苟琚寚瀹氭暟鎹～鍏呫€傜劧鑰岋紝鍑轰簬鍚戝悗鍏煎鐨勫師鍥狅紝Z0..Z31 鐨勪綅 [127:0] 濮嬬粓浠?fpsimd_context.vregs[] 鐨勫搴旀垚鍛樻仮澶嶏紝鑰岄潪浠?sve_context 鎭㈠銆傚叾浣欎綅浠?sve_context 鎭㈠銆?
-
-- 鏃犺 sve_context 鏄惁瀛樺湪锛屼俊鍙峰抚涓寘鍚?fpsimd_context 浠嶆槸寮哄埗瑕佹眰銆?
-
-- 鍚戦噺闀垮害涓嶈兘閫氳繃淇″彿杩斿洖鏀瑰彉銆傝嫢淇″彿甯т腑鐨?sve_context.vl 涓庡綋鍓嶅悜閲忛暱搴︿笉鍖归厤锛屽垯璇ヤ俊鍙疯繑鍥炲皾璇曡瑙嗕负闈炴硶锛屽鑷村己鍒剁殑 SIGSEGV銆?
-
-- 鍏佽閫氳繃璁剧疆鎴栨竻闄?SVE_SIG_FLAG_SM 鏍囧織鏉ヨ繘鍏ユ垨绂诲紑 streaming 妯″紡锛屼絾搴旂敤绋嬪簭搴旀敞鎰忓湪杩欐牱鍋氭椂锛宻ve_context.vl 浠ュ強浠讳綍瀵勫瓨鍣ㄦ暟鎹簲閫傚悎鏂版ā寮忕殑鍚戦噺闀垮害銆?
+### 5. 信号返回
 
 
-### 6. prctl 鎵╁睍
+从信号处理函数返回时
+
+- 若信号帧中没sve_context 记录，或者该记录存在但不包含上一节所述的寄存器数据，SVE 寄存位变为非活跃（non-live）并取未指定的值
+
+- sve_context 存在于信号帧中且包含完整的寄存器数据，则 SVE 寄存器变为活跃并被指定数据填充。然而，出于向后兼容的原因，Z0..Z31 的位 [127:0] 始终fpsimd_context.vregs[] 的对应成员恢复，而非sve_context 恢复。其余位sve_context 恢复
+
+- 无论 sve_context 是否存在，信号帧中包fpsimd_context 仍是强制要求
+
+- 向量长度不能通过信号返回改变。若信号帧中sve_context.vl 与当前向量长度不匹配，则该信号返回尝试被视为非法，导致强制的 SIGSEGV
+
+- 允许通过设置或清SVE_SIG_FLAG_SM 标志来进入或离开 streaming 模式，但应用程序应注意在这样做时，sve_context.vl 以及任何寄存器数据应适合新模式的向量长度
 
 
-鏂板浜嗕竴浜?prctl() 璋冪敤锛屼互鍏佽绋嬪簭绠＄悊 SVE 鍚戦噺闀垮害锛?
+### 6. prctl 扩展
+
+
+新增了一prctl() 调用，以允许程序管理 SVE 向量长度
 
 prctl(PR_SVE_SET_VL, unsigned long arg)
 
-    璁剧疆璋冪敤绾跨▼鐨勫悜閲忛暱搴﹀強鐩稿叧鏍囧織锛屽叾涓?arg == vl | flags銆傝皟鐢ㄨ繘绋嬬殑鍏朵粬绾跨▼涓嶅彈褰卞搷銆?
+    设置调用线程的向量长度及相关标志，其arg == vl | flags。调用进程的其他线程不受影响
 
-    vl 鏄湡鏈涚殑鍚戦噺闀垮害锛屽叾涓?sve_vl_valid(vl) 蹇呴』涓虹湡銆?
+    vl 是期望的向量长度，其sve_vl_valid(vl) 必须为真
 
     flags:
 
 	PR_SVE_VL_INHERIT
 
-	    璺?execve() 缁ф壙褰撳墠鍚戦噺闀垮害銆傚惁鍒欙紝鍚戦噺闀垮害鍦?execve() 鏃堕噸缃负绯荤粺榛樿鍊笺€傦紙瑙佺 9 鑺傘€傦級
+	    execve() 继承当前向量长度。否则，向量长度execve() 时重置为系统默认值。（见第 9 节。）
 
 	PR_SVE_SET_VL_ONEXEC
 
-	    灏嗚姹傜殑鍚戦噺闀垮害鏀瑰彉寤惰繜鍒拌绾跨▼鎵ц鐨勪笅涓€娆?execve()銆?
+	    将请求的向量长度改变延迟到该线程执行的下一execve()
 
-	    鍏舵晥鏋滅瓑鍚屼簬鍦ㄨ绾跨▼涓嬩竴娆?execve()锛堣嫢鏈夛級涔嬪悗绔嬪嵆闅愬紡鎵ц浠ヤ笅璋冪敤锛?
+	    其效果等同于在该线程下一execve()（若有）之后立即隐式执行以下调用
 
 		prctl(PR_SVE_SET_VL, arg & ~PR_SVE_SET_VL_ONEXEC)
 
-	    杩欏厑璁镐互涓嶅悓鐨勫悜閲忛暱搴﹀惎鍔ㄤ竴涓柊绋嬪簭锛屽悓鏃堕伩鍏嶅璋冪敤鏂逛骇鐢熻繍琛屾椂鍓綔鐢ㄣ€?
+	    这允许以不同的向量长度启动一个新程序，同时避免对调用方产生运行时副作用
 
-	    鑻ユ棤 PR_SVE_SET_VL_ONEXEC锛屾墍璇锋眰鐨勬敼鍙樼珛鍗崇敓鏁堛€?
+	    若无 PR_SVE_SET_VL_ONEXEC，所请求的改变立即生效
 
-    杩斿洖鍊硷細鎴愬姛鏃朵负闈炶礋鍊硷紝鍑洪敊鏃朵负璐熷€硷細
-	EINVAL锛氫笉鏀寔 SVE銆佽姹備簡鏃犳晥鐨勫悜閲忛暱搴︼紝鎴栨棤鏁堢殑鏍囧織銆?
+    返回值：成功时为非负值，出错时为负值：
+	EINVAL：不支持 SVE、请求了无效的向量长度，或无效的标志
 
-    鎴愬姛鏃讹細
+    成功时：
 
-    - 璋冪敤绾跨▼鐨勫悜閲忛暱搴︼紝鎴栬绾跨▼灏嗗湪涓嬩竴娆?execve() 鏃跺簲鐢ㄧ殑寤惰繜鍚戦噺闀垮害锛堝彇鍐充簬 arg 涓槸鍚﹀瓨鍦?PR_SVE_SET_VL_ONEXEC锛夛紝琚缃负绯荤粺鏀寔鐨勫皬浜庢垨绛変簬 vl 鐨勬渶澶у€笺€傝嫢 vl == SVE_VL_MAX锛屾墍璁剧疆鐨勫€煎皢鏄郴缁熸敮鎸佺殑鏈€澶у€笺€?
+    - 调用线程的向量长度，或该线程将在下一execve() 时应用的延迟向量长度（取决于 arg 中是否存PR_SVE_SET_VL_ONEXEC），被设置为系统支持的小于或等于 vl 的最大值。若 vl == SVE_VL_MAX，所设置的值将是系统支持的最大值
 
-    - 璋冪敤绾跨▼涓换浣曞厛鍓嶆湭鍐崇殑寤惰繜鍚戦噺闀垮害鏀瑰彉琚彇娑堛€?
+    - 调用线程中任何先前未决的延迟向量长度改变被取消
 
-    - 杩斿洖鐨勫€兼弿杩颁簡缁撴灉閰嶇疆锛屽叾缂栫爜鏂瑰紡涓?PR_SVE_GET_VL 鐩稿悓銆傝嫢璇ュ€间腑 PR_SVE_SET_VL_ONEXEC 涓嶅瓨鍦紝鍒欏叾涓姤鍛婄殑鍚戦噺闀垮害鏄绾跨▼鐨勬柊鐨勫綋鍓嶅悜閲忛暱搴︼紱鍚﹀垯锛屾姤鍛婄殑鍚戦噺闀垮害鏄皟鐢ㄧ嚎绋嬪皢鍦ㄤ笅涓€娆?execve() 鏃跺簲鐢ㄧ殑寤惰繜鍚戦噺闀垮害銆?
+    - 返回的值描述了结果配置，其编码方式PR_SVE_GET_VL 相同。若该值中 PR_SVE_SET_VL_ONEXEC 不存在，则其中报告的向量长度是该线程的新的当前向量长度；否则，报告的向量长度是调用线程将在下一execve() 时应用的延迟向量长度
 
-    - 鏀瑰彉鍚戦噺闀垮害浼氬鑷?P0..P15銆丗FR 浠ュ強 Z0..Z31 涓櫎 Z0 浣?[127:0] .. Z31 浣?[127:0] 涔嬪鐨勬墍鏈変綅鍙樹负鏈寚瀹氥€備负姝ょ洰鐨勶紝浠?vl 绛変簬绾跨▼褰撳墠鍚戦噺闀垮害璋冪敤 PR_SVE_SET_VL锛屾垨浠?PR_SVE_SET_VL_ONEXEC 鏍囧織璋冪敤 PR_SVE_SET_VL锛屽潎涓嶆瀯鎴愬鍚戦噺闀垮害鐨勬敼鍙樸€?
+    - 改变向量长度会导P0..P15、FFR 以及 Z0..Z31 中除 Z0 [127:0] .. Z31 [127:0] 之外的所有位变为未指定。为此目的，vl 等于线程当前向量长度调用 PR_SVE_SET_VL，或PR_SVE_SET_VL_ONEXEC 标志调用 PR_SVE_SET_VL，均不构成对向量长度的改变
 
 
 prctl(PR_SVE_GET_VL)
 
-    鑾峰彇璋冪敤绾跨▼鐨勫悜閲忛暱搴︺€?
+    获取调用线程的向量长度
 
-    浠ヤ笅鏍囧織鍙 OR 杩涚粨鏋滀腑锛?
+    以下标志可被 OR 进结果中
 
 	PR_SVE_VL_INHERIT
 
-	    鍚戦噺闀垮害灏嗗湪 execve() 涔嬮棿琚户鎵裤€?
+	    向量长度将在 execve() 之间被继承
 
-    鏃犳硶鍒ゅ畾鏄惁瀛樺湪鏈喅鐨勫欢杩熷悜閲忛暱搴︽敼鍙橈紙鍦ㄥ吀鍨嬩娇鐢ㄤ腑锛岃繖涓€鑸彧浼氬嚭鐜板湪 fork() 鎴?vfork() 涓庣浉搴旂殑 execve() 涔嬮棿锛夈€?
+    无法判定是否存在未决的延迟向量长度改变（在典型使用中，这一般只会出现在 fork() vfork() 与相应的 execve() 之间）
 
-    瑕佷粠缁撴灉涓彁鍙栧悜閲忛暱搴︼紝灏嗗叾涓?PR_SVE_VL_LEN_MASK 鍋氭寜浣嶄笌銆?
+    要从结果中提取向量长度，将其PR_SVE_VL_LEN_MASK 做按位与
 
-    杩斿洖鍊硷細鎴愬姛鏃朵负闈炶礋鍊硷紝鍑洪敊鏃朵负璐熷€硷細
-	EINVAL锛氫笉鏀寔 SVE銆?
+    返回值：成功时为非负值，出错时为负值：
+	EINVAL：不支持 SVE
 
-### 7. ptrace 鎵╁睍
+### 7. ptrace 扩展
 
 
-- 瀹氫箟浜嗘柊鐨?regset NT_ARM_SVE 鍜?NT_ARM_SSVE锛岀敤浜?PTRACE_GETREGSET 鍜?PTRACE_SETREGSET銆侼T_ARM_SSVE 鎻忚堪 streaming 妯″紡鐨?SVE 瀵勫瓨鍣紝NT_ARM_SVE 鎻忚堪闈?streaming 妯″紡鐨?SVE 瀵勫瓨鍣ㄣ€?
+- 定义了新regset NT_ARM_SVE NT_ARM_SSVE，用PTRACE_GETREGSET PTRACE_SETREGSET。NT_ARM_SSVE 描述 streaming 模式SVE 寄存器，NT_ARM_SVE 描述streaming 模式SVE 寄存器
 
-  鍦ㄦ鎻忚堪涓紝褰撶洰鏍囧浜庨€傚綋鐨?streaming 鎴栭潪 streaming 妯″紡锛屽苟涓旀鍦ㄤ娇鐢ㄨ秴鍑轰笌 FPSIMD Vn 瀵勫瓨鍣ㄥ叡浜殑瀛愰泦涔嬪鐨勬暟鎹椂锛岀О璇ュ瘎瀛樺櫒闆嗕负鈥渓ive鈥濓紙娲昏穬锛夈€?
+  在此描述中，当目标处于适当streaming 或非 streaming 模式，并且正在使用超出与 FPSIMD Vn 寄存器共享的子集之外的数据时，称该寄存器集为“live”（活跃）
 
-  瀹氫箟鍙傝 [^2^]銆?
+  定义参见 [^2^]
 
-regset 鏁版嵁浠?struct user_sve_header 寮€澶达紝鍖呭惈锛?
+regset 数据struct user_sve_header 开头，包含
 
     size
 
-	瀹屾暣 regset 鐨勫ぇ灏忥紝浠ュ瓧鑺傝銆?
-	杩欏彇鍐充簬 vl锛屾湭鏉ュ彲鑳借繕鍙栧喅浜庡叾浠栧洜绱犮€?
+	完整 regset 的大小，以字节计
+	这取决于 vl，未来可能还取决于其他因素
 
-	鑻ュ PTRACE_GETREGSET 鐨勮皟鐢ㄨ姹傜殑鏁版嵁灏戜簬 size 鐨勫€硷紝璋冪敤鏂瑰彲鍒嗛厤鏇村ぇ鐨勭紦鍐插尯骞堕噸璇曪紝浠ヨ鍙栧畬鏁寸殑 regset銆?
+	若对 PTRACE_GETREGSET 的调用请求的数据少于 size 的值，调用方可分配更大的缓冲区并重试，以读取完整的 regset
 
     max_size
 
-	regset 瀵圭洰鏍囩嚎绋嬭兘澶熷闀垮埌鐨勬渶澶уぇ灏忥紙瀛楄妭锛夈€傚嵆浣跨洰鏍囩嚎绋嬫敼鍙樺叾鍚戦噺闀垮害绛夛紝regset 涔熶笉浼氬闀垮埌瓒呰繃姝ゅ€笺€?
+	regset 对目标线程能够增长到的最大大小（字节）。即使目标线程改变其向量长度等，regset 也不会增长到超过此值
 
     vl
 
-	鐩爣绾跨▼褰撳墠鐨勫悜閲忛暱搴︼紝浠ュ瓧鑺傝銆?
+	目标线程当前的向量长度，以字节计
 
     max_vl
 
-	鐩爣绾跨▼鍙兘鐨勬渶澶у悜閲忛暱搴︺€?
+	目标线程可能的最大向量长度
 
     flags
 
-	鑷冲浠ヤ笅涔嬩竴
+	至多以下之一
 
 	    SVE_PT_REGS_FPSIMD
 
-		SVE 瀵勫瓨鍣ㄩ潪娲昏穬锛圙ETREGSET锛夛紝鎴栧皢琚涓洪潪娲昏穬锛圫ETREGSET锛夈€?
+		SVE 寄存器非活跃（GETREGSET），或将被设为非活跃（SETREGSET）
 
-		payload 鐨勭被鍨嬩负 struct user_fpsimd_state锛屽叾鍚箟涓?NT_PRFPREG 鐩稿悓锛屼粠 user_sve_header 璧峰浣嶇疆鍋忕Щ SVE_PT_FPSIMD_OFFSET 澶勫紑濮嬨€?
+		payload 的类型为 struct user_fpsimd_state，其含义NT_PRFPREG 相同，从 user_sve_header 起始位置偏移 SVE_PT_FPSIMD_OFFSET 处开始
 
-		鏈潵鍙兘浼氳拷鍔犻澶栨暟鎹細payload 鐨勫ぇ灏忓簲浣跨敤 SVE_PT_FPSIMD_SIZE(vq, flags) 鑾峰彇銆?
+		未来可能会追加额外数据：payload 的大小应使用 SVE_PT_FPSIMD_SIZE(vq, flags) 获取
 
-		vq 搴斾娇鐢?sve_vq_from_vl(vl) 鑾峰彇銆?
+		vq 应使sve_vq_from_vl(vl) 获取
 
-		鎴?
+		鎴。
 
 	    SVE_PT_REGS_SVE
 
-		SVE 瀵勫瓨鍣ㄤ负娲昏穬锛圙ETREGSET锛夛紝鎴栧皢琚涓烘椿璺冿紙SETREGSET锛夈€?
+		SVE 寄存器为活跃（GETREGSET），或将被设为活跃（SETREGSET）
 
-		payload 鍖呭惈 SVE 瀵勫瓨鍣ㄦ暟鎹紝浠?user_sve_header 璧峰浣嶇疆鍋忕Щ SVE_PT_SVE_OFFSET 澶勫紑濮嬶紝澶у皬涓?SVE_PT_SVE_SIZE(vq, flags)锛?
+		payload 包含 SVE 寄存器数据，user_sve_header 起始位置偏移 SVE_PT_SVE_OFFSET 处开始，大小SVE_PT_SVE_SIZE(vq, flags)
 
-	... 涓庝互涓嬮浂涓垨澶氫釜鏍囧織鍋?OR 杩愮畻锛岃繖浜涙爣蹇楃殑鍚箟鍜岃涓轰笌瀵瑰簲鐨?PR_SET_VL_* 鏍囧織鐩稿悓锛?
+	... 与以下零个或多个标志OR 运算，这些标志的含义和行为与对应PR_SET_VL_* 标志相同
 
 	    SVE_PT_VL_INHERIT
 
-	    SVE_PT_VL_ONEXEC锛堜粎 SETREGSET锛夈€?
+	    SVE_PT_VL_ONEXEC（仅 SETREGSET）
 
-	鑻ユ棦鏈彁渚?FPSIMD 涔熸湭鎻愪緵 SVE 鏍囧織锛屽垯娌℃湁鍙敤鐨勫瘎瀛樺櫒 payload锛岃繖浠呭綋瀹炵幇浜?SME 鏃舵墠鍙兘銆?
+	若既未提FPSIMD 也未提供 SVE 标志，则没有可用的寄存器 payload，这仅当实现SME 时才可能
 
-- 鏀瑰彉鍚戦噺闀垮害鍜?鎴栨爣蹇楃殑鏁堟灉绛夊悓浜庝负 PR_SVE_SET_VL 鎵€璁板綍鐨勬晥鏋溿€?
+- 改变向量长度或标志的效果等同于为 PR_SVE_SET_VL 所记录的效果
 
-  鑻ヨ皟鐢ㄦ柟闇€瑕佺煡閬?SETREGSET 瀹為檯璁剧疆鐨勬槸鍝釜 VL锛屽畠蹇呴』鍐嶅仛涓€娆?GETREGSET 璋冪敤锛岄櫎闈炰簨鍏堝凡鐭ユ墍璇锋眰鐨?VL 鍙楁敮鎸併€?
+  若调用方需要知SETREGSET 实际设置的是哪个 VL，它必须再做一GETREGSET 调用，除非事先已知所请求VL 受支持
 
-- 鍦?SVE_PT_REGS_SVE 鎯呭喌涓嬶紝payload 鐨勫ぇ灏忓拰甯冨眬鍙栧喅浜庡ご閮ㄥ瓧娈点€傛彁渚涗簡 SVE_PT_SVE_*() 瀹忎互鏂逛究璁块棶鍚勬垚鍛樸€?
+- SVE_PT_REGS_SVE 情况下，payload 的大小和布局取决于头部字段。提供了 SVE_PT_SVE_*() 宏以方便访问各成员
 
-- 鍦ㄤ袱绉嶆儏鍐典笅锛屽浜?SETREGSET锛屽厑璁哥渷鐣?payload锛屾鏃朵粎鏀瑰彉鍚戦噺闀垮害鍜屾爣蹇楋紙杩炲悓杩欎簺鏀瑰彉甯︽潵鐨勪换浣曞悗鏋滐級銆?
+- 在两种情况下，对SETREGSET，允许省payload，此时仅改变向量长度和标志（连同这些改变带来的任何后果）
 
-- 鍦ㄦ敮鎸?SME 鐨勭郴缁熶腑锛屽綋澶勪簬 streaming 妯″紡鏃讹紝瀵?NT_REG_SVE 鐨?GETREGSET 灏嗗彧杩斿洖 user_sve_header 鑰屾棤瀵勫瓨鍣ㄦ暟鎹紱绫讳技鍦帮紝褰撲笉澶勪簬 streaming 妯″紡鏃讹紝瀵?NT_REG_SSVE 鐨?GETREGSET 灏嗕笉杩斿洖浠讳綍瀵勫瓨鍣ㄦ暟鎹€?
+- 在支SME 的系统中，当处于 streaming 模式时，NT_REG_SVE GETREGSET 将只返回 user_sve_header 而无寄存器数据；类似地，当不处于 streaming 模式时，NT_REG_SSVE GETREGSET 将不返回任何寄存器数据
 
-- 瀵?NT_ARM_SSVE 鐨?GETREGSET 姘歌繙涓嶄細杩斿洖 SVE_PT_REGS_FPSIMD銆?
+- NT_ARM_SSVE GETREGSET 永远不会返回 SVE_PT_REGS_FPSIMD
 
-- 瀵逛簬 SETREGSET锛岃嫢鎻愪緵浜?SVE_PT_REGS_SVE payload 浣嗘墍璇锋眰鐨?VL 涓嶅彈鏀寔锛屾晥鏋滃皢濡傚悓鐪佺暐浜?payload锛屽彧鏄細鎶ュ憡涓€涓?EIO 閿欒銆備笉浼氬皾璇曞皢 payload 鏁版嵁杞崲涓哄疄闄呰缃殑鍚戦噺闀垮害鎵€瀵瑰簲鐨勬纭竷灞€銆傜嚎绋嬬殑 FPSIMD 鐘舵€佽淇濈暀锛屼絾 SVE 瀵勫瓨鍣ㄧ殑鍏朵綑浣嶅彉涓烘湭鎸囧畾銆傜敱璋冪敤鏂硅礋璐ｄ负瀹為檯 VL 杞崲 payload 甯冨眬骞堕噸璇曘€?
+- 对于 SETREGSET，若提供SVE_PT_REGS_SVE payload 但所请求VL 不受支持，效果将如同省略payload，只是会报告一EIO 错误。不会尝试将 payload 数据转换为实际设置的向量长度所对应的正确布局。线程的 FPSIMD 状态被保留，但 SVE 寄存器的其余位变为未指定。由调用方负责为实际 VL 转换 payload 布局并重试
 
-- 鍦ㄥ疄鐜颁簡 SME 鐨勬儏鍐典笅锛屽綋澶勪簬 streaming 妯″紡鏃讹紝鏃犳硶閫氳繃 GETREGSET 鑾峰彇鏅€?SVE 鐨勫瘎瀛樺櫒鐘舵€侊紝涔熸棤娉曞湪姝ｅ父妯″紡涓嬭幏鍙?streaming 妯″紡鐨勫瘎瀛樺櫒鐘舵€侊紝鏃犺纭欢鍦ㄤ袱绉嶆ā寮忎箣闂村叡浜暟鎹殑瀹炵幇瀹氫箟琛屼负濡備綍銆?
+- 在实现了 SME 的情况下，当处于 streaming 模式时，无法通过 GETREGSET 获取普SVE 的寄存器状态，也无法在正常模式下获streaming 模式的寄存器状态，无论硬件在两种模式之间共享数据的实现定义行为如何
 
-- 浠讳綍瀵?NT_ARM_SVE 鐨?SETREGSET 鑻ョ洰鏍囧浜?streaming 妯″紡閮藉皢閫€鍑?streaming 妯″紡锛涗换浣曞 NT_ARM_SSVE 鐨?SETREGSET 鑻ョ洰鏍囦笉澶勪簬 streaming 妯″紡閮藉皢杩涘叆 streaming 妯″紡銆?
+- 任何NT_ARM_SVE SETREGSET 若目标处streaming 模式都将退streaming 模式；任何对 NT_ARM_SSVE SETREGSET 若目标不处于 streaming 模式都将进入 streaming 模式
 
-- 鍦ㄤ笉鏀寔 SVE 鐨勭郴缁熶笂锛屽厑璁镐娇鐢?SETREGSET 閫氳繃 NT_ARM_SVE 鍐欏叆 SVE_PT_REGS_FPSIMD 鏍煎紡鐨勬暟鎹紝姝ゆ椂鍚戦噺闀垮害搴旀寚瀹氫负 0銆傝繖鍏佽鍦ㄥ叿鏈?SME 浣嗕笉鍏锋湁 SVE 鐨勭郴缁熶笂绂佺敤 streaming 妯″紡銆?
+- 在不支持 SVE 的系统上，允许使SETREGSET 通过 NT_ARM_SVE 写入 SVE_PT_REGS_FPSIMD 格式的数据，此时向量长度应指定为 0。这允许在具SME 但不具有 SVE 的系统上禁用 streaming 模式
 
-- 鑻ヤ换浣曞瘎瀛樺櫒鏁版嵁涓?SVE_PT_VL_ONEXEC 涓€璧锋彁渚涳紝鍒欏瘎瀛樺櫒鏁版嵁灏嗕互褰撳墠鍚戦噺闀垮害瑙ｉ噴锛岃€岄潪浠ラ厤缃负鍦?exec 鏃朵娇鐢ㄧ殑鍚戦噺闀垮害瑙ｉ噴銆?
+- 若任何寄存器数据SVE_PT_VL_ONEXEC 一起提供，则寄存器数据将以当前向量长度解释，而非以配置为exec 时使用的向量长度解释
 
-- 鍐欏叆閮ㄥ垎銆佷笉瀹屾暣鐨?payload 鐨勬晥鏋滄槸鏈寚瀹氱殑銆?
-
-
-### 8. ELF coredump 鎵╁睍
-
-- NT_ARM_SVE 鍜?NT_ARM_SSVE notes 灏嗚娣诲姞鍒拌杞偍杩涚▼姣忎釜绾跨▼鐨勬瘡涓?coredump 涓€傚叾鍐呭绛変环浜庯細鑻ュ湪鐢熸垚 coredump 鏃朵负姣忎釜绾跨▼鎵ц鐩稿簲绫诲瀷鐨?PTRACE_GETREGSET 鏃舵湰搴旇鍙栫殑鏁版嵁銆?
-
-### 9. 绯荤粺杩愯鏃堕厤缃?
+- 写入部分、不完整payload 的效果是未指定的
 
 
-- 涓虹紦瑙ｄ俊鍙峰抚鎵╁睍甯︽潵鐨?ABI 褰卞搷锛屾彁渚涗簡涓€绉嶇瓥鐣ユ満鍒讹紝渚涚鐞嗗憳銆佸彂琛岀増缁存姢鑰呭拰寮€鍙戣€呰缃敤鎴风┖闂磋繘绋嬬殑榛樿鍚戦噺闀垮害锛?
+### 8. ELF coredump 扩展
+
+- NT_ARM_SVE NT_ARM_SSVE notes 将被添加到被转储进程每个线程的每coredump 中。其内容等价于：若在生成 coredump 时为每个线程执行相应类型PTRACE_GETREGSET 时本应读取的数据
+
+### 9. 系统运行时配
+
+
+- 为缓解信号帧扩展带来ABI 影响，提供了一种策略机制，供管理员、发行版维护者和开发者设置用户空间进程的默认向量长度
 
 /proc/sys/abi/sve_default_vector_length
 
-    灏嗘暣鏁扮殑鏂囨湰琛ㄧず鍐欏叆姝ゆ枃浠讹紝浼氬皢绯荤粺榛樿鍚戦噺闀垮害璁剧疆涓烘寚瀹氬€硷紝骞朵緷鎹笌閫氳繃 PR_SVE_SET_VL 璁剧疆鍚戦噺闀垮害鐩稿悓鐨勮鍒欏洓鑸嶄簲鍏ヤ负涓€涓彈鏀寔鐨勫€笺€?
+    将整数的文本表示写入此文件，会将系统默认向量长度设置为指定值，并依据与通过 PR_SVE_SET_VL 设置向量长度相同的规则四舍五入为一个受支持的值
 
-    鍙€氳繃閲嶆柊鎵撳紑璇ユ枃浠跺苟璇诲彇鍏跺唴瀹规潵纭畾缁撴灉銆?
+    可通过重新打开该文件并读取其内容来确定结果
 
-    鍦ㄥ惎鍔ㄦ椂锛岄粯璁ゅ悜閲忛暱搴﹀垵濮嬭涓?64 鎴栨渶澶ф敮鎸佸悜閲忛暱搴︿腑杈冨皬鐨勪竴涓€傝繖鍐冲畾浜?init 杩涚▼锛圥ID 1锛夌殑鍒濆鍚戦噺闀垮害銆?
+    在启动时，默认向量长度初始设64 或最大支持向量长度中较小的一个。这决定init 进程（PID 1）的初始向量长度
 
-    璇诲彇姝ゆ枃浠惰繑鍥炲綋鍓嶇殑绯荤粺榛樿鍚戦噺闀垮害銆?
+    读取此文件返回当前的系统默认向量长度
 
-- 鍦ㄦ瘡娆?execve() 璋冪敤鏃讹紝鏂拌繘绋嬬殑鏂板悜閲忛暱搴﹁璁剧疆涓虹郴缁熼粯璁ゅ悜閲忛暱搴︼紝闄ら潪锛?
+- 在每execve() 调用时，新进程的新向量长度被设置为系统默认向量长度，除非
 
-    - 涓鸿皟鐢ㄧ嚎绋嬭缃簡 PR_SVE_VL_INHERIT锛堟垨绛変环鐨?SVE_PT_VL_INHERIT锛夛紝鎴?
+    - 为调用线程设置了 PR_SVE_VL_INHERIT（或等价SVE_PT_VL_INHERIT），
 
-    - 瀛樺湪閫氳繃 PR_SVE_SET_VL_ONEXEC 鏍囧織锛堟垨 SVE_PT_VL_ONEXEC锛夊缓绔嬬殑寤惰繜鍚戦噺闀垮害鏀瑰彉銆?
+    - 存在通过 PR_SVE_SET_VL_ONEXEC 标志（或 SVE_PT_VL_ONEXEC）建立的延迟向量长度改变
 
-- 淇敼绯荤粺榛樿鍚戦噺闀垮害涓嶄細褰卞搷浠讳綍涓嶈繘琛?execve() 璋冪敤鐨勭幇鏈夎繘绋嬫垨绾跨▼鐨勫悜閲忛暱搴︺€?
+- 修改系统默认向量长度不会影响任何不进execve() 调用的现有进程或线程的向量长度
 
-### 10. Perf 鎵╁睍
-
-
-- arm64 鐗瑰畾鐨?DWARF 鏍囧噯 [^5^] 鍦ㄧ储寮?46 澶勫鍔犱簡 VG锛圴ector Granule锛屽悜閲忕矑搴︼級瀵勫瓨鍣ㄣ€傚綋鍙橀暱 SVE 瀵勫瓨鍣ㄨ鍘嬪叆鏍堟椂锛岃瀵勫瓨鍣ㄧ敤浜?DWARF 灞曞紑銆?
-
-- 鍏跺€肩瓑鏁堜簬褰撳墠 SVE 鍚戦噺闀垮害锛圴L锛屼互浣嶈锛夐櫎浠?64銆?
-
-- 鑻ヨ缃簡 PERF_SAMPLE_REGS_USER 涓?sample_regs_user 鎺╃爜鐨勭 46 浣嶈缃綅锛屽垯璇ュ€间細鍖呭惈鍦?Perf 閲囨牱鐨?regs[^46^] 瀛楁涓€?
-
-- 璇ュ€间负閲囨牱鏃跺埢鐨勫綋鍓嶅€硷紝骞跺彲鑳介殢鏃堕棿鏀瑰彉銆?
-
-- 鑻ョ郴缁熶笉鏀寔 SVE锛屽嵈浠ヨ繖浜涜缃皟鐢?perf_event_open锛屽垯璇ヤ簨浠跺皢鏃犳硶鎵撳紑銆?
-
-## Appendix A. SVE 缂栫▼妯″瀷锛堣祫鏂欐€э級
+### 10. Perf 扩展
 
 
-鏈妭鎻愪緵浜?SVE 瀵逛笌鏈枃妗ｇ浉鍏崇殑 ARMv8-A 缂栫▼妯″瀷鎵€鍋氬琛ョ殑涓€浠芥渶灏忓寲鎻忚堪銆?
+- arm64 特定DWARF 标准 [^5^] 在索46 处增加了 VG（Vector Granule，向量粒度）寄存器。当变长 SVE 寄存器被压入栈时，该寄存器用DWARF 展开
 
-娉ㄦ剰锛氭湰鑺備粎鐢ㄤ簬鎻愪緵淇℃伅锛屾棤鎰忓畬鏁达紝涔熶笉鎵撶畻鏇夸唬浠讳綍鏋舵瀯瑙勮寖銆?
+- 其值等效于当前 SVE 向量长度（VL，以位计）除64
 
-### A.1. 瀵勫瓨鍣?
+- 若设置了 PERF_SAMPLE_REGS_USER sample_regs_user 掩码的第 46 位被置位，则该值会包含Perf 采样regs[^46^] 字段中
+
+- 该值为采样时刻的当前值，并可能随时间改变
+
+- 若系统不支持 SVE，却以这些设置调perf_event_open，则该事件将无法打开
+
+## Appendix A. SVE 编程模型（资料性）
 
 
-鍦?A64 鐘舵€佷笅锛孲VE 鏂板浜嗕互涓嬪唴瀹癸細
+本节提供SVE 对与本文档相关的 ARMv8-A 编程模型所做增补的一份最小化描述
 
-- 32 涓?8VL 浣嶅悜閲忓瘎瀛樺櫒 Z0..Z31
-  瀵逛簬姣忎釜 Zn锛孼n 鐨勪綅 [127:0] 鏄?ARMv8-A 鍚戦噺瀵勫瓨鍣?Vn 鐨勫埆鍚嶃€?
+注意：本节仅用于提供信息，无意完整，也不打算替代任何架构规范
 
-  浣跨敤 Vn 瀵勫瓨鍣ㄥ悕杩涜鐨勫瘎瀛樺櫒鍐欐搷浣滀細灏嗗搴?Zn 闄や綅 [127:0] 涔嬪鐨勬墍鏈変綅娓呴浂銆?
+### A.1. 瀵勫瓨鍣。
 
-- 16 涓?VL 浣嶈皳璇嶅瘎瀛樺櫒 P0..P15
 
-- 1 涓?VL 浣嶄笓鐢ㄨ皳璇嶅瘎瀛樺櫒 FFR锛堚€渇irst-fault register鈥濓紝棣栭敊瀵勫瓨鍣級
+A64 状态下，SVE 新增了以下内容：
 
-- 涓€涓喅瀹氭瘡涓悜閲忓瘎瀛樺櫒澶у皬鐨?VL鈥滀吉瀵勫瓨鍣ㄢ€?
+- 32 8VL 位向量寄存器 Z0..Z31
+  对于每个 Zn，Zn 的位 [127:0] ARMv8-A 向量寄存Vn 的别名
 
-  SVE 鎸囦护闆嗘灦鏋勬病鏈夋彁渚涚洿鎺ュ啓鍏?VL 鐨勬柟寮忋€傜浉鍙嶏紝瀹冨彧鑳界敱 EL1 鍙婃洿楂樼壒鏉冪骇閫氳繃鍐欏叆閫傚綋鐨勭郴缁熷瘎瀛樺櫒鏉ヤ慨鏀广€?
+  使用 Vn 寄存器名进行的寄存器写操作会将对Zn 除位 [127:0] 之外的所有位清零
 
-- VL 鐨勫€煎彲鍦ㄨ繍琛屾椂鐢?EL1 鍙婃洿楂樼壒鏉冪骇閰嶇疆锛?
-  16 <= VL <= VLmax锛屽叾涓?VL 蹇呴』鏄?16 鐨勫€嶆暟銆?
+- 16 VL 位谓词寄存器 P0..P15
 
-- 鏈€澶у悜閲忛暱搴︾敱纭欢鍐冲畾锛?
-  16 <= VLmax <= 256銆?
+- 1 VL 位专用谓词寄存器 FFR（“first-fault register”，首错寄存器）
 
-  锛圫VE 鏋舵瀯瑙勫畾涓?256锛屼絾鍏佽鏈潵鐨勬灦鏋勪慨璁㈡彁楂樻涓婇檺銆傦級
+- 一个决定每个向量寄存器大小VL“伪寄存器
 
-- FPSR 鍜?FPCR 浠?ARMv8-A 淇濈暀涓嬫潵锛屽苟涓?SVE 娴偣鎿嶄綔浜や簰锛屾柟寮忕被浼间簬瀹冧滑涓?ARMv8
+  SVE 指令集架构没有提供直接写VL 的方式。相反，它只能由 EL1 及更高特权级通过写入适当的系统寄存器来修改
+
+- VL 的值可在运行时EL1 及更高特权级配置
+  16 <= VL <= VLmax，其VL 必须16 的倍数
+
+- 最大向量长度由硬件决定
+  16 <= VLmax <= 256銆。
+
+  （SVE 架构规定256，但允许未来的架构修订提高此上限。）
+
+- FPSR FPCR ARMv8-A 保留下来，并SVE 浮点操作交互，方式类似于它们ARMv8
 ```
          8VL-1                       128               0  bit index
         +----          ////            -----------------+
@@ -356,32 +356,32 @@ regset 鏁版嵁浠?struct user_sve_header 寮€澶达紝鍖呭惈锛?
         +----       ////      --+            VL |     |
                                                 +-----+
 ```
-(*) callee-save锛?
-    杩欎粎閫傜敤浜?Z-/V-瀵勫瓨鍣ㄧ殑浣?[63:0]銆?
-    FPCR 鍖呭惈 callee-save 鍜?caller-save 浣嶃€傝瑙?[^4^]銆?
+(*) callee-save锛。
+    这仅适用Z-/V-寄存器的[63:0]
+    FPCR 包含 callee-save caller-save 位。详[^4^]
 
 
-### A.2. 杩囩▼璋冪敤鏍囧噯
+### A.2. 过程调用标准
 
-ARMv8-A 鍩虹杩囩▼璋冪敤鏍囧噯閽堝棰濆鐨?SVE 瀵勫瓨鍣ㄧ姸鎬佹墿灞曞涓嬶細
+ARMv8-A 基础过程调用标准针对额外SVE 寄存器状态扩展如下：
 
-- 鎵€鏈変笉涓?FP/SIMD 鍏变韩鐨?SVE 瀵勫瓨鍣ㄤ綅鍧囦负 caller-save锛堣皟鐢ㄦ柟淇濆瓨锛夈€?
+- 所有不FP/SIMD 共享SVE 寄存器位均为 caller-save（调用方保存）
 
-- Z8 浣?[63:0] .. Z15 浣?[63:0] 涓?callee-save锛堣璋冪敤鏂逛繚瀛橈級銆?
+- Z8 [63:0] .. Z15 [63:0] callee-save（被调用方保存）
 
-  杩欐簮浜庤繖浜涗綅鏄犲皠鍒?V8..V15 鐨勬柟寮忥紝鑰?V8..V15 鍦ㄥ熀纭€杩囩▼璋冪敤鏍囧噯涓槸 caller-save銆?
+  这源于这些位映射V8..V15 的方式，V8..V15 在基础过程调用标准中是 caller-save
 
-## Appendix B. ARMv8-A FP/SIMD 缂栫▼妯″瀷
+## Appendix B. ARMv8-A FP/SIMD 编程模型
 
 
-娉ㄦ剰锛氭湰鑺備粎鐢ㄤ簬鎻愪緵淇℃伅锛屾棤鎰忓畬鏁达紝涔熶笉鎵撶畻鏇夸唬浠讳綍鏋舵瀯瑙勮寖銆?
+注意：本节仅用于提供信息，无意完整，也不打算替代任何架构规范
 
-鏇村淇℃伅鍙傝 [^4^]銆?
+更多信息参见 [^4^]
 
-ARMv8-A 瀹氫箟浜嗕互涓嬫诞鐐?/ SIMD 瀵勫瓨鍣ㄧ姸鎬侊細
+ARMv8-A 定义了以下浮/ SIMD 寄存器状态：
 
-- 32 涓?128 浣嶅悜閲忓瘎瀛樺櫒 V0..V31
-- 2 涓?32 浣嶇姸鎬?鎺у埗瀵勫瓨鍣?FPSR銆丗PCR
+- 32 128 位向量寄存器 V0..V31
+- 2 32 位状控制寄存FPSR、FPCR
 
 ```
          127           0  bit index
@@ -404,9 +404,9 @@ ARMv8-A 瀹氫箟浜嗕互涓嬫诞鐐?/ SIMD 瀵勫瓨鍣ㄧ姸鎬侊細
           *FPCR |       |
                 +-------+
 ```
-(*) callee-save锛?
-    杩欎粎閫傜敤浜?V-瀵勫瓨鍣ㄧ殑浣?[63:0]銆?
-    FPCR 鍖呭惈 callee-save 鍜?caller-save 浣嶇殑娣峰悎銆?
+(*) callee-save锛。
+    这仅适用V-寄存器的[63:0]
+    FPCR 包含 callee-save caller-save 位的混合
 
 
 ## References
