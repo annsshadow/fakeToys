@@ -337,7 +337,7 @@ pub async fn application_list(
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
         .query(
-            "SELECT xid, xname, xalias, xdescription, xapplicationCategory, xicon, xiconHue, xcreatorPerson, xlastUpdateTime, xlastUpdatePerson, xproperties, \"\"xcreateTime\"\", \"xupdateTime\" FROM PP_E_APPLICATION WHERE 1=1 ORDER BY \"xcreateTime\" DESC",
+            "SELECT \"xid\", \"xname\", \"xalias\", \"xdescription\", \"xapplicationCategory\", \"xicon\", \"xiconHue\", \"xcreatorPerson\", \"xlastUpdateTime\", \"xlastUpdatePerson\", \"xproperties\", \"xcreateTime\", \"xupdateTime\" FROM PP_E_APPLICATION WHERE 1=1 ORDER BY \"xcreateTime\" DESC",
             &[],
         )
         .await
@@ -348,8 +348,11 @@ pub async fn application_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("name".to_string(), row.get::<_, Option<String>>("xname").map(Value::String).unwrap_or(Value::Null)),
+                ("icon".to_string(), row.get::<_, Option<String>>("xicon").map(Value::String).unwrap_or(Value::Null)),
+                ("category".to_string(), row.get::<_, Option<String>>("xapplicationCategory").map(Value::String).unwrap_or(Value::Null)),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -377,8 +380,8 @@ pub async fn application_list_complex(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -418,8 +421,8 @@ pub async fn application_list_complex_manage_person(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -445,8 +448,8 @@ pub async fn application_list_key_key(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -474,8 +477,8 @@ pub async fn application_list_range(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -504,8 +507,8 @@ pub async fn application_list_terminal_terminal(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -533,8 +536,8 @@ pub async fn application_flag(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -559,8 +562,8 @@ pub async fn application_flag_icon(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -585,8 +588,8 @@ pub async fn application_flag_is_manager(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -611,8 +614,8 @@ pub async fn application_flag_onlyRemoveNotCompleted(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -638,8 +641,8 @@ pub async fn applicationdict_list_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -667,8 +670,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -693,8 +696,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_dat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -719,8 +722,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -769,8 +772,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -807,8 +810,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -833,8 +836,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -883,8 +886,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -921,8 +924,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -947,8 +950,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -997,8 +1000,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1035,8 +1038,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1061,8 +1064,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1111,8 +1114,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1149,8 +1152,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1175,8 +1178,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1225,8 +1228,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1263,8 +1266,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1289,8 +1292,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1339,8 +1342,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1377,8 +1380,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1403,8 +1406,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1453,8 +1456,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1491,8 +1494,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1517,8 +1520,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1567,8 +1570,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1605,8 +1608,8 @@ pub async fn applicationdict_applicationDictFlag_application_applicationFlag_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1631,8 +1634,8 @@ pub async fn control_workorworkcompleted_workOrWorkCompleted(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1657,8 +1660,8 @@ pub async fn correlation_job_job(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1707,8 +1710,8 @@ pub async fn correlation_job_job_delete(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1734,8 +1737,8 @@ pub async fn correlation_list_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -1765,8 +1768,8 @@ pub async fn correlation_list_job_job_site_site(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -1794,8 +1797,8 @@ pub async fn correlation_update_job_job(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1821,8 +1824,8 @@ pub async fn data_fetch_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -1851,8 +1854,8 @@ pub async fn data_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -1881,8 +1884,8 @@ pub async fn data_job_job_array_data(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -1922,8 +1925,8 @@ pub async fn data_job_job_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -1949,8 +1952,8 @@ pub async fn data_job_job_path0(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -1990,8 +1993,8 @@ pub async fn data_job_job_path0_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2017,8 +2020,8 @@ pub async fn data_job_job_path0_path1(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -2058,8 +2061,8 @@ pub async fn data_job_job_path0_path1_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2085,8 +2088,8 @@ pub async fn data_job_job_path0_path1_path2(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -2126,8 +2129,8 @@ pub async fn data_job_job_path0_path1_path2_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2153,8 +2156,8 @@ pub async fn data_job_job_path0_path1_path2_path3(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -2194,8 +2197,8 @@ pub async fn data_job_job_path0_path1_path2_path3_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2221,8 +2224,8 @@ pub async fn data_job_job_path0_path1_path2_path3_path4(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -2262,8 +2265,8 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2289,8 +2292,8 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -2330,8 +2333,8 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2357,8 +2360,8 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -2398,8 +2401,8 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_mockputtopos
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2425,8 +2428,8 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -2466,8 +2469,8 @@ pub async fn data_job_job_path0_path1_path2_path3_path4_path5_path6_path7_mockpu
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2493,8 +2496,8 @@ pub async fn data_work_id(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -2546,8 +2549,8 @@ pub async fn data_work_id_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2584,8 +2587,8 @@ pub async fn data_work_id_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2611,8 +2614,8 @@ pub async fn data_work_id_path0(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -2664,8 +2667,8 @@ pub async fn data_work_id_path0_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2702,8 +2705,8 @@ pub async fn data_work_id_path0_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2729,8 +2732,8 @@ pub async fn data_work_id_path0_path1(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -2782,8 +2785,8 @@ pub async fn data_work_id_path0_path1_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2820,8 +2823,8 @@ pub async fn data_work_id_path0_path1_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2847,8 +2850,8 @@ pub async fn data_work_id_path0_path1_path2(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -2900,8 +2903,8 @@ pub async fn data_work_id_path0_path1_path2_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2938,8 +2941,8 @@ pub async fn data_work_id_path0_path1_path2_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -2965,8 +2968,8 @@ pub async fn data_work_id_path0_path1_path2_path3(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -3018,8 +3021,8 @@ pub async fn data_work_id_path0_path1_path2_path3_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3056,8 +3059,8 @@ pub async fn data_work_id_path0_path1_path2_path3_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3083,8 +3086,8 @@ pub async fn data_work_id_path0_path1_path2_path3_path4(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -3136,8 +3139,8 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3174,8 +3177,8 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3201,8 +3204,8 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -3254,8 +3257,8 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3292,8 +3295,8 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3319,8 +3322,8 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -3372,8 +3375,8 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeleteto
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3410,8 +3413,8 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopos
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3437,8 +3440,8 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -3490,8 +3493,8 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockde
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3528,8 +3531,8 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockpu
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3555,8 +3558,8 @@ pub async fn data_workcompleted_id(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -3585,8 +3588,8 @@ pub async fn data_workcompleted_id_from_data(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -3615,8 +3618,8 @@ pub async fn data_workcompleted_id_from_item(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -3656,8 +3659,8 @@ pub async fn data_workcompleted_id_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3683,8 +3686,8 @@ pub async fn data_workcompleted_id_path0(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -3724,8 +3727,8 @@ pub async fn data_workcompleted_id_path0_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3751,8 +3754,8 @@ pub async fn data_workcompleted_id_path0_path1(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -3792,8 +3795,8 @@ pub async fn data_workcompleted_id_path0_path1_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3819,8 +3822,8 @@ pub async fn data_workcompleted_id_path0_path1_path2(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -3860,8 +3863,8 @@ pub async fn data_workcompleted_id_path0_path1_path2_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3887,8 +3890,8 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -3928,8 +3931,8 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -3955,8 +3958,8 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -3996,8 +3999,8 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4023,8 +4026,8 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -4064,8 +4067,8 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputto
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4091,8 +4094,8 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -4132,8 +4135,8 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_moc
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4159,8 +4162,8 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -4200,8 +4203,8 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4226,8 +4229,8 @@ pub async fn datarecord_get_job_job_path_path(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4253,8 +4256,8 @@ pub async fn datarecord_list_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -4283,8 +4286,8 @@ pub async fn documentversion_list_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -4314,8 +4317,8 @@ pub async fn documentversion_list_job_job_category_category(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -4344,8 +4347,8 @@ pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -4375,8 +4378,8 @@ pub async fn documentversion_list_workorworkcompleted_workOrWorkCompleted_catego
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -4404,8 +4407,8 @@ pub async fn documentversion_work_work(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4430,8 +4433,8 @@ pub async fn documentversion_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4458,8 +4461,8 @@ pub async fn draft_list_my_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -4488,8 +4491,8 @@ pub async fn draft_list_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -4518,8 +4521,8 @@ pub async fn draft_list_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -4559,8 +4562,8 @@ pub async fn draft_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4585,8 +4588,8 @@ pub async fn draft_process_processFlag(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4611,8 +4614,8 @@ pub async fn draft_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4661,8 +4664,8 @@ pub async fn draft_id_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4699,8 +4702,8 @@ pub async fn draft_id_start(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4726,8 +4729,8 @@ pub async fn file_list_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -4755,8 +4758,8 @@ pub async fn file_flag_application_applicationFlag_content(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4781,8 +4784,8 @@ pub async fn file_flag_application_applicationFlag_download(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4807,8 +4810,8 @@ pub async fn form_v2_lookup_taskcompleted_taskcompleted(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4833,8 +4836,8 @@ pub async fn form_v2_lookup_taskcompleted_taskcompleted_mobile(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4859,8 +4862,8 @@ pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4885,8 +4888,8 @@ pub async fn form_v2_lookup_workorworkcompleted_workOrWorkCompleted_mobile(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4911,8 +4914,8 @@ pub async fn form_v2_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4937,8 +4940,8 @@ pub async fn form_v2_id_mobile(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4963,8 +4966,8 @@ pub async fn form_flag(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -4989,8 +4992,8 @@ pub async fn form_flag_application_applicationFlag(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5015,8 +5018,8 @@ pub async fn form_flag_application_applicationFlag_mobile(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5041,8 +5044,8 @@ pub async fn form_flag_mobile(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5069,8 +5072,8 @@ pub async fn handover_list_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -5098,8 +5101,8 @@ pub async fn handover_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5136,8 +5139,8 @@ pub async fn handover_id_cancel(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5174,8 +5177,8 @@ pub async fn handover_id_process(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5200,8 +5203,8 @@ pub async fn job_latest_work_workcompleted_serial_serial(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5226,8 +5229,8 @@ pub async fn job_v2_job_projection(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5252,8 +5255,8 @@ pub async fn job_job_allow_visit_person_person(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5278,8 +5281,8 @@ pub async fn job_job_find_work_workcompleted(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5304,8 +5307,8 @@ pub async fn keylock_lock(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5342,8 +5345,8 @@ pub async fn keylock_lock_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5368,8 +5371,8 @@ pub async fn mode_clear_person_person_manager(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5394,8 +5397,8 @@ pub async fn mode_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -5435,8 +5438,8 @@ pub async fn mode_save(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5473,8 +5476,8 @@ pub async fn mode_id_delete(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5499,8 +5502,8 @@ pub async fn process_activity_activity_activityType_activityType(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5526,8 +5529,8 @@ pub async fn process_list_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -5556,8 +5559,8 @@ pub async fn process_list_application_applicationFlag_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -5586,8 +5589,8 @@ pub async fn process_list_available_identity_process_flag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -5616,8 +5619,8 @@ pub async fn process_list_controllable_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -5645,8 +5648,8 @@ pub async fn process_list_ids(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -5674,8 +5677,8 @@ pub async fn process_flag(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5700,8 +5703,8 @@ pub async fn process_flag_allowrerouteto(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5726,8 +5729,8 @@ pub async fn process_flag_application_applicationFlag(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5752,8 +5755,8 @@ pub async fn process_flag_complex(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5778,8 +5781,8 @@ pub async fn process_flag_onlyRemoveNotCompleted(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5845,8 +5848,8 @@ pub async fn read_filter_attribute(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5871,8 +5874,8 @@ pub async fn read_filter_attribute_filter(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5929,8 +5932,8 @@ pub async fn read_list_count_application_applicationFlag_process(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5955,8 +5958,8 @@ pub async fn read_list_date_date_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -5981,8 +5984,8 @@ pub async fn read_list_filter_page_size_size_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -6008,8 +6011,8 @@ pub async fn read_list_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6039,8 +6042,8 @@ pub async fn read_list_my_filter_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6070,8 +6073,8 @@ pub async fn read_list_my_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6099,8 +6102,8 @@ pub async fn read_list_person_person_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -6126,8 +6129,8 @@ pub async fn read_list_work_work(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6156,8 +6159,8 @@ pub async fn read_list_workorworkcompleted_workOrWorkCompleted(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6186,8 +6189,8 @@ pub async fn read_list_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6217,8 +6220,8 @@ pub async fn read_list_id_next_count_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6247,8 +6250,8 @@ pub async fn read_list_id_next_count_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6278,8 +6281,8 @@ pub async fn read_list_id_next_count_process_processFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6308,8 +6311,8 @@ pub async fn read_list_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6339,8 +6342,8 @@ pub async fn read_list_id_prev_count_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6369,8 +6372,8 @@ pub async fn read_list_id_prev_count_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6400,8 +6403,8 @@ pub async fn read_list_id_prev_count_process_processFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6449,8 +6452,8 @@ pub async fn read_v2_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6480,8 +6483,8 @@ pub async fn read_v2_list_create_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6510,8 +6513,8 @@ pub async fn read_v2_list_create_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6540,8 +6543,8 @@ pub async fn read_v2_list_create_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6571,8 +6574,8 @@ pub async fn read_v2_list_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6601,8 +6604,8 @@ pub async fn read_v2_list_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6631,8 +6634,8 @@ pub async fn read_v2_list_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -6660,8 +6663,8 @@ pub async fn read_work_workId(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -6686,8 +6689,8 @@ pub async fn read_workcompleted_workCompletedId(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -6712,8 +6715,8 @@ pub async fn read_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -6738,8 +6741,8 @@ pub async fn read_id_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -6788,8 +6791,8 @@ pub async fn read_id_manage_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -6826,8 +6829,8 @@ pub async fn read_id_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -6852,8 +6855,8 @@ pub async fn read_id_opinion_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -6890,8 +6893,8 @@ pub async fn read_id_opinion_manage_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -6916,8 +6919,8 @@ pub async fn read_id_processing(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -6942,8 +6945,8 @@ pub async fn read_id_processing_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -6980,8 +6983,8 @@ pub async fn read_id_processing_manage_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -7006,8 +7009,8 @@ pub async fn read_id_reference(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -7032,8 +7035,8 @@ pub async fn read_id_reset_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -7070,8 +7073,8 @@ pub async fn read_id_reset_manage_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -7117,8 +7120,8 @@ pub async fn readcompleted_filter_attribute(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -7143,8 +7146,8 @@ pub async fn readcompleted_filter_attribute_filter(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -7201,8 +7204,8 @@ pub async fn readcompleted_list_count_application_applicationFlag_process(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -7227,8 +7230,8 @@ pub async fn readcompleted_list_date_date_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -7253,8 +7256,8 @@ pub async fn readcompleted_list_filter_page_size_size_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -7280,8 +7283,8 @@ pub async fn readcompleted_list_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7311,8 +7314,8 @@ pub async fn readcompleted_list_my_filter_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7342,8 +7345,8 @@ pub async fn readcompleted_list_my_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7372,8 +7375,8 @@ pub async fn readcompleted_list_work_work(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7402,8 +7405,8 @@ pub async fn readcompleted_list_workorworkcompleted_workOrWorkCompleted(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7432,8 +7435,8 @@ pub async fn readcompleted_list_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7463,8 +7466,8 @@ pub async fn readcompleted_list_id_next_count_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7493,8 +7496,8 @@ pub async fn readcompleted_list_id_next_count_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7524,8 +7527,8 @@ pub async fn readcompleted_list_id_next_count_process_processFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7554,8 +7557,8 @@ pub async fn readcompleted_list_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7585,8 +7588,8 @@ pub async fn readcompleted_list_id_prev_count_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7615,8 +7618,8 @@ pub async fn readcompleted_list_id_prev_count_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7646,8 +7649,8 @@ pub async fn readcompleted_list_id_prev_count_process_processFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7695,8 +7698,8 @@ pub async fn readcompleted_v2_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7726,8 +7729,8 @@ pub async fn readcompleted_v2_list_create_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7756,8 +7759,8 @@ pub async fn readcompleted_v2_list_create_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7786,8 +7789,8 @@ pub async fn readcompleted_v2_list_create_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7817,8 +7820,8 @@ pub async fn readcompleted_v2_list_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7847,8 +7850,8 @@ pub async fn readcompleted_v2_list_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7877,8 +7880,8 @@ pub async fn readcompleted_v2_list_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -7906,8 +7909,8 @@ pub async fn readcompleted_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -7932,8 +7935,8 @@ pub async fn readcompleted_id_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -7982,8 +7985,8 @@ pub async fn readcompleted_id_manage_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8008,8 +8011,8 @@ pub async fn readcompleted_id_opinion_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8034,8 +8037,8 @@ pub async fn readcompleted_id_reference(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8061,8 +8064,8 @@ pub async fn readrecord_list_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8091,8 +8094,8 @@ pub async fn readrecord_list_workorworkcompleted_workOrWorkCompleted(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8120,8 +8123,8 @@ pub async fn record_job_job_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8147,8 +8150,8 @@ pub async fn record_list_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8179,8 +8182,8 @@ pub async fn record_list_job_job_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8209,8 +8212,8 @@ pub async fn record_list_workorworkcompleted_workOrWorkCompleted(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8241,8 +8244,8 @@ pub async fn record_list_workorworkcompleted_workOrWorkCompleted_paging_page_siz
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8270,8 +8273,8 @@ pub async fn record_id_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8320,8 +8323,8 @@ pub async fn record_id_manage_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8358,8 +8361,8 @@ pub async fn record_id_manage_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8425,8 +8428,8 @@ pub async fn review_create_work(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8451,8 +8454,8 @@ pub async fn review_create_workcompleted(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8477,8 +8480,8 @@ pub async fn review_filter_attribute(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8503,8 +8506,8 @@ pub async fn review_filter_create_entry(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8529,8 +8532,8 @@ pub async fn review_filter_entry(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8556,8 +8559,8 @@ pub async fn review_list_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8605,8 +8608,8 @@ pub async fn review_v2_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8636,8 +8639,8 @@ pub async fn review_v2_list_create_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8666,8 +8669,8 @@ pub async fn review_v2_list_create_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8696,8 +8699,8 @@ pub async fn review_v2_list_create_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8727,8 +8730,8 @@ pub async fn review_v2_list_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8756,8 +8759,8 @@ pub async fn review_v2_list_paging_page_size_size_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8783,8 +8786,8 @@ pub async fn review_v2_list_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8813,8 +8816,8 @@ pub async fn review_v2_list_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -8842,8 +8845,8 @@ pub async fn review_v2_search(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8868,8 +8871,8 @@ pub async fn review_workorworkcompleted_workOrWorkCompleted(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8894,8 +8897,8 @@ pub async fn review_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8920,8 +8923,8 @@ pub async fn review_id_application_applicationFlag_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8970,8 +8973,8 @@ pub async fn review_id_application_applicationFlag_manage_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -8996,8 +8999,8 @@ pub async fn route_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -9037,8 +9040,8 @@ pub async fn route_list_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9063,8 +9066,8 @@ pub async fn route_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9089,8 +9092,8 @@ pub async fn route_id_selectconfig(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9115,8 +9118,8 @@ pub async fn script_flag_application_applicationFlag(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9141,8 +9144,8 @@ pub async fn script_flag_application_applicationFlag_imported(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9167,8 +9170,8 @@ pub async fn serialnumber_generate_process_processId_name_name_serial(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9194,8 +9197,8 @@ pub async fn serialnumber_list_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -9225,8 +9228,8 @@ pub async fn serialnumber_list_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -9254,8 +9257,8 @@ pub async fn serialnumber_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9304,8 +9307,8 @@ pub async fn serialnumber_id_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9342,8 +9345,8 @@ pub async fn serialnumber_id_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9380,8 +9383,8 @@ pub async fn service_work_id_touch(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9418,8 +9421,8 @@ pub async fn service_work_id_touch_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9444,8 +9447,8 @@ pub async fn sign_download_scrawlId(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9471,8 +9474,8 @@ pub async fn sign_list_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -9500,8 +9503,8 @@ pub async fn sign_save_task_taskId(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9526,8 +9529,8 @@ pub async fn sign_task_taskId(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9576,8 +9579,8 @@ pub async fn sign_task_taskId_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9602,8 +9605,8 @@ pub async fn sign_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9652,8 +9655,8 @@ pub async fn sign_id_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9719,8 +9722,8 @@ pub async fn task_filter_attribute(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9745,8 +9748,8 @@ pub async fn task_filter_attribute_filter(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9803,8 +9806,8 @@ pub async fn task_list_count_application_applicationFlag_process(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9829,8 +9832,8 @@ pub async fn task_list_date_date_hour_hour_exclude_draft_isExcludeDraft_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9855,8 +9858,8 @@ pub async fn task_list_filter_page_size_size_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -9882,8 +9885,8 @@ pub async fn task_list_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -9913,8 +9916,8 @@ pub async fn task_list_my_filter_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -9944,8 +9947,8 @@ pub async fn task_list_my_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -9973,8 +9976,8 @@ pub async fn task_list_person_person_exclude_draft_isExcludeDraft_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10000,8 +10003,8 @@ pub async fn task_list_work_work(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10030,8 +10033,8 @@ pub async fn task_list_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10061,8 +10064,8 @@ pub async fn task_list_id_next_count_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10091,8 +10094,8 @@ pub async fn task_list_id_next_count_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10120,8 +10123,8 @@ pub async fn task_list_id_next_count_filter_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10146,8 +10149,8 @@ pub async fn task_list_id_next_count_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10174,8 +10177,8 @@ pub async fn task_list_id_next_count_process_processFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10204,8 +10207,8 @@ pub async fn task_list_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10235,8 +10238,8 @@ pub async fn task_list_id_prev_count_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10265,8 +10268,8 @@ pub async fn task_list_id_prev_count_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10294,8 +10297,8 @@ pub async fn task_list_id_prev_count_filter_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10320,8 +10323,8 @@ pub async fn task_list_id_prev_count_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10348,8 +10351,8 @@ pub async fn task_list_id_prev_count_process_processFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10397,8 +10400,8 @@ pub async fn task_v2_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10428,8 +10431,8 @@ pub async fn task_v2_list_create_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10458,8 +10461,8 @@ pub async fn task_v2_list_create_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10488,8 +10491,8 @@ pub async fn task_v2_list_create_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10519,8 +10522,8 @@ pub async fn task_v2_list_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10549,8 +10552,8 @@ pub async fn task_v2_list_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10579,8 +10582,8 @@ pub async fn task_v2_list_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -10608,8 +10611,8 @@ pub async fn task_v2_id_pause(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10646,8 +10649,8 @@ pub async fn task_v2_id_reset(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10684,8 +10687,8 @@ pub async fn task_v2_id_reset_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10710,8 +10713,8 @@ pub async fn task_v2_id_resume(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10736,8 +10739,8 @@ pub async fn task_v2_id_trigger_processing(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10762,8 +10765,8 @@ pub async fn task_v3_id_add(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10788,8 +10791,8 @@ pub async fn task_v3_id_pin(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10814,8 +10817,8 @@ pub async fn task_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10840,8 +10843,8 @@ pub async fn task_id_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10890,8 +10893,8 @@ pub async fn task_id_manage_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10928,8 +10931,8 @@ pub async fn task_id_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10954,8 +10957,8 @@ pub async fn task_id_opinion_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -10992,8 +10995,8 @@ pub async fn task_id_opinion_manage_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11018,8 +11021,8 @@ pub async fn task_id_press_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11044,8 +11047,8 @@ pub async fn task_id_processing(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11070,8 +11073,8 @@ pub async fn task_id_processing_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11108,8 +11111,8 @@ pub async fn task_id_processing_manage_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11134,8 +11137,8 @@ pub async fn task_id_processing_neural(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11160,8 +11163,8 @@ pub async fn task_id_reference(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11186,8 +11189,8 @@ pub async fn task_id_reset_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11224,8 +11227,8 @@ pub async fn task_id_reset_manage_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11250,8 +11253,8 @@ pub async fn task_id_will(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11297,8 +11300,8 @@ pub async fn taskcompleted_filter_attribute(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11323,8 +11326,8 @@ pub async fn taskcompleted_filter_attribute_filter(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11381,8 +11384,8 @@ pub async fn taskcompleted_list_count_application_applicationFlag_process(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11407,8 +11410,8 @@ pub async fn taskcompleted_list_date_date_hour_hour_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11433,8 +11436,8 @@ pub async fn taskcompleted_list_filter_page_size_size_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11460,8 +11463,8 @@ pub async fn taskcompleted_list_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11491,8 +11494,8 @@ pub async fn taskcompleted_list_my_filter_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11522,8 +11525,8 @@ pub async fn taskcompleted_list_my_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11552,8 +11555,8 @@ pub async fn taskcompleted_list_prev_manual_flag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11582,8 +11585,8 @@ pub async fn taskcompleted_list_work_work(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11612,8 +11615,8 @@ pub async fn taskcompleted_list_workorworkcompleted_workOrWorkCompleted(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11642,8 +11645,8 @@ pub async fn taskcompleted_list_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11673,8 +11676,8 @@ pub async fn taskcompleted_list_id_next_count_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11703,8 +11706,8 @@ pub async fn taskcompleted_list_id_next_count_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11734,8 +11737,8 @@ pub async fn taskcompleted_list_id_next_count_process_processFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11764,8 +11767,8 @@ pub async fn taskcompleted_list_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11795,8 +11798,8 @@ pub async fn taskcompleted_list_id_prev_count_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11825,8 +11828,8 @@ pub async fn taskcompleted_list_id_prev_count_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11856,8 +11859,8 @@ pub async fn taskcompleted_list_id_prev_count_process_processFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11885,8 +11888,8 @@ pub async fn taskcompleted_press_work_work(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -11931,8 +11934,8 @@ pub async fn taskcompleted_v2_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11962,8 +11965,8 @@ pub async fn taskcompleted_v2_list_create_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -11992,8 +11995,8 @@ pub async fn taskcompleted_v2_list_create_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -12022,8 +12025,8 @@ pub async fn taskcompleted_v2_list_create_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -12053,8 +12056,8 @@ pub async fn taskcompleted_v2_list_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -12083,8 +12086,8 @@ pub async fn taskcompleted_v2_list_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -12113,8 +12116,8 @@ pub async fn taskcompleted_v2_list_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -12142,8 +12145,8 @@ pub async fn taskcompleted_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12168,8 +12171,8 @@ pub async fn taskcompleted_id_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12218,8 +12221,8 @@ pub async fn taskcompleted_id_manage_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12244,8 +12247,8 @@ pub async fn taskcompleted_id_opinion_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12282,8 +12285,8 @@ pub async fn taskcompleted_id_opinion_manage_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12308,8 +12311,8 @@ pub async fn taskcompleted_id_reference(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12334,8 +12337,8 @@ pub async fn taskcompleted_id_reference_control(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12417,8 +12420,8 @@ pub async fn work_application_applicationFlag_process_processFlag(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12468,6 +12471,27 @@ pub async fn work_count_credential_application_appId(
     ))))
 }
 
+pub async fn work_count_credential_application_appId_u2(
+    pool: Extension<Pool>,
+    axum::extract::Path((credential, app_id)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let count: i64 = client
+        .query_one(
+            "SELECT COUNT(*) FROM PP_C_WORK WHERE \"xcreatorPerson\" = $1 AND xapplication = $2",
+            &[&credential, &app_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?
+        .get(0);
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(count))),
+        ]),
+    ))))
+}
+
 pub async fn work_filter_attribute_application_applicationFlag(
     pool: Extension<Pool>,
     axum::extract::Path(applicationFlag): axum::extract::Path<String>,
@@ -12485,8 +12509,8 @@ pub async fn work_filter_attribute_application_applicationFlag(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12511,8 +12535,8 @@ pub async fn work_filter_attribute_application_applicationFlag_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12569,8 +12593,8 @@ pub async fn work_list_count_application_applicationFlag_process(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12595,8 +12619,8 @@ pub async fn work_list_count_application_applicationFlag_process_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12621,8 +12645,8 @@ pub async fn work_list_filter_page_size_size_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12649,8 +12673,8 @@ pub async fn work_list_my_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -12678,8 +12702,8 @@ pub async fn work_list_paging_page_size_size_application_applicationFlag_filter_
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12706,8 +12730,8 @@ pub async fn work_list_id_next_count_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -12737,8 +12761,8 @@ pub async fn work_list_id_next_count_application_applicationFlag_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -12766,8 +12790,8 @@ pub async fn work_list_id_next_count_application_applicationFlag_filter_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12792,8 +12816,8 @@ pub async fn work_list_id_next_count_application_applicationFlag_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12819,8 +12843,8 @@ pub async fn work_list_id_next_count_creator_current(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -12849,8 +12873,8 @@ pub async fn work_list_id_next_count_creator_current_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -12880,8 +12904,8 @@ pub async fn work_list_id_next_count_process_processFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -12911,8 +12935,8 @@ pub async fn work_list_id_prev_count_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -12942,8 +12966,8 @@ pub async fn work_list_id_prev_count_application_applicationFlag_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -12971,8 +12995,8 @@ pub async fn work_list_id_prev_count_application_applicationFlag_filter_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -12997,8 +13021,8 @@ pub async fn work_list_id_prev_count_application_applicationFlag_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13024,8 +13048,8 @@ pub async fn work_list_id_prev_count_creator_current(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -13054,8 +13078,8 @@ pub async fn work_list_id_prev_count_creator_current_filter(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -13085,8 +13109,8 @@ pub async fn work_list_id_prev_count_process_processFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -13114,8 +13138,8 @@ pub async fn work_process_processFlag(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13140,8 +13164,8 @@ pub async fn work_process_processFlag_force(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13166,8 +13190,8 @@ pub async fn work_v2_list(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -13197,8 +13221,8 @@ pub async fn work_v2_list_paging_page_size_size(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -13227,8 +13251,8 @@ pub async fn work_v2_list_id_activity_goback(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -13257,8 +13281,8 @@ pub async fn work_v2_list_id_next_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -13287,8 +13311,8 @@ pub async fn work_v2_list_id_prev_count(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -13316,8 +13340,8 @@ pub async fn work_v2_workorworkcompleted_workOrWorkCompleted(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13342,8 +13366,8 @@ pub async fn work_v2_id_add_split(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13380,8 +13404,8 @@ pub async fn work_v2_id_add_split_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13406,8 +13430,8 @@ pub async fn work_v2_id_reroute(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13444,8 +13468,8 @@ pub async fn work_v2_id_reroute_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13470,8 +13494,8 @@ pub async fn work_v2_id_retract(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13508,8 +13532,8 @@ pub async fn work_v2_id_retract_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13534,8 +13558,8 @@ pub async fn work_v2_id_rollback(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13572,8 +13596,8 @@ pub async fn work_v2_id_rollback_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13598,8 +13622,8 @@ pub async fn work_v2_id_terminate(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13624,8 +13648,8 @@ pub async fn work_v2_id_terminate_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13650,8 +13674,8 @@ pub async fn work_v2_id_trigger_processing(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13676,8 +13700,8 @@ pub async fn work_v3_retract(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13702,8 +13726,8 @@ pub async fn work_v3_retract_stage_job_job(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13728,8 +13752,8 @@ pub async fn work_v3_workorworkcompleted_workOrWorkCompleted_permission(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13754,8 +13778,8 @@ pub async fn work_workorworkcompleted_workOrWorkCompleted(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13780,8 +13804,8 @@ pub async fn work_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13806,8 +13830,8 @@ pub async fn work_id_assignment_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13832,8 +13856,8 @@ pub async fn work_id_close_check(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13858,8 +13882,8 @@ pub async fn work_id_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13908,8 +13932,8 @@ pub async fn work_id_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13934,8 +13958,8 @@ pub async fn work_id_processing(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13972,8 +13996,8 @@ pub async fn work_id_processing_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -13998,8 +14022,8 @@ pub async fn work_id_projection(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14024,8 +14048,8 @@ pub async fn work_id_refer(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14050,8 +14074,8 @@ pub async fn work_id_relative_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14100,8 +14124,8 @@ pub async fn work_id_relative_manage_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14126,8 +14150,8 @@ pub async fn work_id_single_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14176,8 +14200,8 @@ pub async fn work_id_single_manage_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14202,8 +14226,8 @@ pub async fn workcompleted_filter_attribute_application_applicationFlag(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14228,8 +14252,8 @@ pub async fn workcompleted_filter_attribute_application_applicationFlag_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14256,8 +14280,8 @@ pub async fn workcompleted_filter_list_id_prev_count_application_applicationFlag
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -14317,8 +14341,8 @@ pub async fn workcompleted_list_count_application_applicationFlag_process(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14343,8 +14367,8 @@ pub async fn workcompleted_list_count_application_applicationFlag_process_manage
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14369,8 +14393,8 @@ pub async fn workcompleted_list_filter_page_size_size_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14395,8 +14419,8 @@ pub async fn workcompleted_list_paging_page_size_size_application_applicationFla
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14423,8 +14447,8 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -14454,8 +14478,8 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -14483,8 +14507,8 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_filter
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14509,8 +14533,8 @@ pub async fn workcompleted_list_id_next_count_application_applicationFlag_manage
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14537,8 +14561,8 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -14568,8 +14592,8 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag_filter
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -14597,8 +14621,8 @@ pub async fn workcompleted_list_id_prev_count_application_applicationFlag_manage
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14623,8 +14647,8 @@ pub async fn workcompleted_process_processFlag(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14649,8 +14673,8 @@ pub async fn workcompleted_shift_time(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14675,8 +14699,8 @@ pub async fn workcompleted_flag_rollback(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14713,8 +14737,8 @@ pub async fn workcompleted_flag_rollback_mockputtopost(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14739,8 +14763,8 @@ pub async fn workcompleted_id(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14765,8 +14789,8 @@ pub async fn workcompleted_id_assignment_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14791,8 +14815,8 @@ pub async fn workcompleted_id_delete_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14841,8 +14865,8 @@ pub async fn workcompleted_id_delete_manage_mockdeletetoget(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14867,8 +14891,8 @@ pub async fn workcompleted_id_manage(
         Some(row) => {
             let data = Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]));
             Ok(Json(ActionResult::success(data)))
         }
@@ -14894,8 +14918,8 @@ pub async fn worklog_list_add_split_work_workId(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -14924,8 +14948,8 @@ pub async fn worklog_list_job_job(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -14954,8 +14978,8 @@ pub async fn worklog_list_rollback_workorworkcompleted_workOrWorkCompleted(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -14984,8 +15008,8 @@ pub async fn worklog_list_workorworkcompleted_workOrWorkCompleted(
         .map(|row| {
             Value::Object(serde_json::Map::from_iter([
                 ("id".to_string(), Value::String(row.get("xid"))),
-                ("createTime".to_string(), Value::String(row.get("\"xcreateTime\""))),
-                ("updateTime".to_string(), Value::String(row.get("\"xupdateTime\""))),
+                ("createTime".to_string(), Value::String(row.get("xcreateTime"))),
+                ("updateTime".to_string(), Value::String(row.get("xupdateTime"))),
             ]))
         })
         .collect();
@@ -14996,5 +15020,583 @@ pub async fn worklog_list_workorworkcompleted_workOrWorkCompleted(
     ])))))
 }
 
+// ═════════ plan002 U2：Java 对齐缺口补齐（snap / attachment 域） ═════════
+// 表结构见 migrations/065_process_surface_u2_tables.sql（pp_c_snap / pp_c_attachment）。
+// 写操作执行资源级 IDOR 门禁（owner 或 admin），模式与 cms_assemble_control U2 先例一致。
+// 列名访问使用裸输出列名（SELECT "xCol" 的结果列名为 xCol，不带引号字符）。
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum U2Gate {
+    Allowed,
+    Forbidden,
+    NotFound,
+}
+
+async fn u2_gate_by_sql(
+    pool: &Pool,
+    sql: &str,
+    id: &str,
+    person_unique: &str,
+) -> Result<U2Gate, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(sql, &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        None => Ok(U2Gate::NotFound),
+        Some(r) => {
+            let owner: Option<String> = r.try_get(0).ok();
+            let owner = owner.unwrap_or_default();
+            if shared::middleware::is_admin(pool, person_unique).await
+                || (!owner.is_empty() && owner == person_unique)
+            {
+                Ok(U2Gate::Allowed)
+            } else {
+                Ok(U2Gate::Forbidden)
+            }
+        }
+    }
+}
+
+async fn u2_check_owner(
+    pool: &Pool,
+    table: &str,
+    owner_col: &str,
+    id: &str,
+    person_unique: &str,
+) -> Result<U2Gate, AppError> {
+    let sql = format!("SELECT {} FROM {} WHERE id = $1", owner_col, table);
+    u2_gate_by_sql(pool, &sql, id, person_unique).await
+}
+
+async fn u2_require_admin(
+    pool: &Pool,
+    session: &shared::session::Session,
+) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+fn u2_s(row: &deadpool_postgres::tokio_postgres::Row, col: &str) -> Value {
+    row.get::<_, Option<String>>(col)
+        .map(Value::String)
+        .unwrap_or(Value::Null)
+}
+
+const U2_SNAP_COLS: &str = "\"xid\", \"xtitle\", \"xjob\", \"xwork\", \"xworkCompleted\", \"xtype\", \
+\"xperson\", \"xidentity\", \"xunit\", \"xapplication\", \"xapplicationName\", \"xprocess\", \
+\"xprocessName\", \"xcreatorPerson\", \"xactivity\", \"xactivityName\", \"xcreateTime\", \"xupdateTime\"";
+
+fn u2_snap_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
+    Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), u2_s(row, "xid")),
+        ("title".to_string(), u2_s(row, "xtitle")),
+        ("job".to_string(), u2_s(row, "xjob")),
+        ("work".to_string(), u2_s(row, "xwork")),
+        ("workCompleted".to_string(), u2_s(row, "xworkCompleted")),
+        ("type".to_string(), u2_s(row, "xtype")),
+        ("person".to_string(), u2_s(row, "xperson")),
+        ("identity".to_string(), u2_s(row, "xidentity")),
+        ("unit".to_string(), u2_s(row, "xunit")),
+        ("application".to_string(), u2_s(row, "xapplication")),
+        ("applicationName".to_string(), u2_s(row, "xapplicationName")),
+        ("process".to_string(), u2_s(row, "xprocess")),
+        ("processName".to_string(), u2_s(row, "xprocessName")),
+        ("creatorPerson".to_string(), u2_s(row, "xcreatorPerson")),
+        ("activity".to_string(), u2_s(row, "xactivity")),
+        ("activityName".to_string(), u2_s(row, "xactivityName")),
+        ("createTime".to_string(), u2_s(row, "xcreateTime")),
+        ("updateTime".to_string(), u2_s(row, "xupdateTime")),
+    ]))
+}
+
+pub async fn snap_u2_get(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            &format!("SELECT {} FROM \"pp_c_snap\" WHERE id = $1", U2_SNAP_COLS),
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(u2_snap_json(&row)))),
+        None => Ok(Json(ActionResult::error("snap not found"))),
+    }
+}
+
+pub async fn snap_u2_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "\"pp_c_snap\"", "\"creator_person\"", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("snap not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let n = client
+                .execute("DELETE FROM \"pp_c_snap\" WHERE id = $1", &[&id])
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("deleted".to_string(), Value::Bool(n > 0)),
+                ]),
+            ))))
+        }
+    }
+}
+
+pub async fn snap_u2_restore(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "\"pp_c_snap\"", "\"creator_person\"", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("snap not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let mut client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let tx = client
+                .transaction()
+                .await
+                .map_err(|_| AppError::Internal)?;
+            let row = tx
+                .query_opt(
+                    &format!(
+                        "SELECT {} , \"xdata\" FROM \"pp_c_snap\" WHERE id = $1 FOR UPDATE",
+                        U2_SNAP_COLS
+                    ),
+                    &[&id],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            let Some(snap) = row else {
+                return Ok(Json(ActionResult::error("snap not found")));
+            };
+            let job: Option<String> = snap.get("xjob");
+            let title: Option<String> = snap.get("xtitle");
+            let application: Option<String> = snap.get("xapplication");
+            let application_name: Option<String> = snap.get("xapplicationName");
+            let process: Option<String> = snap.get("xprocess");
+            let process_name: Option<String> = snap.get("xprocessName");
+            let creator_person: Option<String> = snap.get("xcreatorPerson");
+            let creator_identity: Option<String> = snap.get("xidentity");
+            let creator_unit: Option<String> = snap.get("xunit");
+            let create_time: Option<String> = snap.get("xcreateTime");
+
+            let new_id = uuid::Uuid::new_v4().to_string();
+            tx.execute(
+                "INSERT INTO \"pp_c_work\" (id, xid, xjob, xtitle, xapplication, \"xapplicationName\", \
+                 xprocess, \"xprocessName\", \"xcreatorPerson\", \"xcreatorIdentity\", \"xcreatorUnit\", \
+                 \"xstartTime\", \"xcreateTime\", \"xupdateTime\") \
+                 VALUES ($1, $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NULL, $11, $11)",
+                &[
+                    &new_id,
+                    &job,
+                    &title,
+                    &application,
+                    &application_name,
+                    &process,
+                    &process_name,
+                    &creator_person,
+                    &creator_identity,
+                    &creator_unit,
+                    &create_time,
+                ],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+            tx.execute("DELETE FROM \"pp_c_snap\" WHERE id = $1", &[&id])
+                .await
+                .map_err(|_| AppError::Internal)?;
+            tx.commit().await.map_err(|_| AppError::Internal)?;
+
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(new_id)),
+                    ("restoredFrom".to_string(), Value::String(id)),
+                ]),
+            ))))
+        }
+    }
+}
+
+async fn u2_snap_page(
+    pool: &Pool,
+    anchor_id: &str,
+    count: i64,
+    forward: bool,
+) -> Result<Vec<deadpool_postgres::tokio_postgres::Row>, AppError> {
+    let limit = count.clamp(1, 500);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let sql = format!(
+        "SELECT {} FROM \"pp_c_snap\" WHERE \"xcreateTime\" {} \
+         (SELECT \"xcreateTime\" FROM \"pp_c_snap\" WHERE id = $1 AND \"xcreateTime\" IS NOT NULL) \
+         ORDER BY \"xcreateTime\" {} LIMIT $2",
+        U2_SNAP_COLS,
+        if forward { ">" } else { "<" },
+        if forward { "ASC" } else { "DESC" },
+    );
+    client
+        .query(&sql, &[&anchor_id, &limit])
+        .await
+        .map_err(|_| AppError::Internal)
+}
+
+async fn u2_snap_page_all(
+    pool: &Pool,
+    anchor_id: &str,
+    count: i64,
+    forward: bool,
+) -> Result<Vec<deadpool_postgres::tokio_postgres::Row>, AppError> {
+    let limit = count.clamp(1, 500);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let sql = format!(
+        "SELECT {}, \"xdata\" FROM \"pp_c_snap\" WHERE \"xcreateTime\" {} \
+         (SELECT \"xcreateTime\" FROM \"pp_c_snap\" WHERE id = $1 AND \"xcreateTime\" IS NOT NULL) \
+         ORDER BY \"xcreateTime\" {} LIMIT $2",
+        U2_SNAP_COLS,
+        if forward { ">" } else { "<" },
+        if forward { "ASC" } else { "DESC" },
+    );
+    client
+        .query(&sql, &[&anchor_id, &limit])
+        .await
+        .map_err(|_| AppError::Internal)
+}
+
+pub async fn snap_u2_list_next_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let rows = u2_snap_page(&pool, &id, count, false).await?;
+    let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+pub async fn snap_u2_list_prev_count(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let mut rows = u2_snap_page(&pool, &id, count, true).await?;
+    rows.reverse();
+    let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+pub async fn snap_u2_list_next_count_manage(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let rows = u2_snap_page_all(&pool, &id, count, false).await?;
+    let data: Vec<Value> = rows.iter().map(u2_snap_json_full).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+pub async fn snap_u2_list_prev_count_manage(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((id, count)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let mut rows = u2_snap_page_all(&pool, &id, count, true).await?;
+    rows.reverse();
+    let data: Vec<Value> = rows.iter().map(u2_snap_json_full).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+fn u2_snap_json_full(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
+    let mut v = u2_snap_json(row);
+    if let Value::Object(ref mut m) = v {
+        m.insert("data".to_string(), u2_s(row, "xdata"));
+    }
+    v
+}
+
+async fn u2_snap_by_type(
+    pool: &Pool,
+    work_col: &str,
+    work_id: &str,
+    snap_type: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let sql = format!(
+        "SELECT {} FROM \"pp_c_snap\" WHERE {} = $1 AND \"xtype\" = $2 ORDER BY \"xcreateTime\" DESC",
+        U2_SNAP_COLS, work_col
+    );
+    let rows = client
+        .query(&sql, &[&work_id, &snap_type])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(u2_snap_json).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+pub async fn snap_u2_work_type_snap(
+    pool: Extension<Pool>,
+    axum::extract::Path(work): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_snap_by_type(&pool, "\"xwork\"", &work, "snap").await
+}
+
+pub async fn snap_u2_work_type_abandoned(
+    pool: Extension<Pool>,
+    axum::extract::Path(work): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_snap_by_type(&pool, "\"xwork\"", &work, "abandoned").await
+}
+
+pub async fn snap_u2_work_type_suspend(
+    pool: Extension<Pool>,
+    axum::extract::Path(work): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_snap_by_type(&pool, "\"xwork\"", &work, "suspend").await
+}
+
+pub async fn snap_u2_workcompleted_type_snapworkcompleted(
+    pool: Extension<Pool>,
+    axum::extract::Path(work_completed): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_snap_by_type(&pool, "\"xworkCompleted\"", &work_completed, "snapWorkCompleted").await
+}
+
+pub async fn snap_u2_workcompleted_type_abandonedworkcompleted(
+    pool: Extension<Pool>,
+    axum::extract::Path(work_completed): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_snap_by_type(&pool, "\"xworkCompleted\"", &work_completed, "abandonedWorkCompleted").await
+}
+
+const U2_ATT_COLS: &str = "\"xid\", \"xjob\", \"xname\", \"xextension\", \"xlength\", \"xsite\", \"xtype\", \
+\"xwork\", \"xworkCompleted\", \"xcompleted\", \"xperson\", \"xapplication\", \"xprocess\", \
+\"xlastUpdatePerson\", \"xcreateTime\", \"xupdateTime\"";
+
+fn u2_att_json(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
+    Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), u2_s(row, "xid")),
+        ("job".to_string(), u2_s(row, "xjob")),
+        ("name".to_string(), u2_s(row, "xname")),
+        ("extension".to_string(), u2_s(row, "xextension")),
+        ("length".to_string(), row
+            .get::<_, Option<i64>>("xlength")
+            .map(|v| Value::Number(v.into()))
+            .unwrap_or(Value::Null)),
+        ("site".to_string(), u2_s(row, "xsite")),
+        ("type".to_string(), u2_s(row, "xtype")),
+        ("work".to_string(), u2_s(row, "xwork")),
+        ("workCompleted".to_string(), u2_s(row, "xworkCompleted")),
+        ("completed".to_string(), row
+            .get::<_, Option<bool>>("xcompleted")
+            .map(Value::Bool)
+            .unwrap_or(Value::Null)),
+        ("person".to_string(), u2_s(row, "xperson")),
+        ("application".to_string(), u2_s(row, "xapplication")),
+        ("process".to_string(), u2_s(row, "xprocess")),
+        ("lastUpdatePerson".to_string(), u2_s(row, "xlastUpdatePerson")),
+        ("createTime".to_string(), u2_s(row, "xcreateTime")),
+        ("updateTime".to_string(), u2_s(row, "xupdateTime")),
+    ]))
+}
+
+async fn u2_att_list(
+    pool: &Pool,
+    where_clause: &str,
+    param: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let sql = format!(
+        "SELECT {} FROM \"pp_c_attachment\" WHERE {} ORDER BY \"xcreateTime\" DESC",
+        U2_ATT_COLS, where_clause
+    );
+    let rows = client.query(&sql, &[&param]).await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(u2_att_json).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+pub async fn attachment_u2_list_job_job(
+    pool: Extension<Pool>,
+    axum::extract::Path(job): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_att_list(&pool, "\"xjob\" = $1", &job).await
+}
+
+pub async fn attachment_u2_list_work_work_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(work): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_att_list(&pool, "\"xwork\" = $1", &work).await
+}
+
+pub async fn attachment_u2_list_workcompleted_work_completed_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(work_completed): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_att_list(&pool, "\"xworkCompleted\" = $1", &work_completed).await
+}
+
+pub async fn attachment_u2_list_workorworkcompleted_flag(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_att_list(&pool, "\"xwork\" = $1 OR \"xworkCompleted\" = $1", &flag).await
+}
+
+pub async fn attachment_u2_id_available(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT \"xstorage\", \"xlength\" FROM \"pp_c_attachment\" WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        None => Ok(Json(ActionResult::error("attachment not found"))),
+        Some(r) => {
+            let storage: Option<String> = r.get("xstorage");
+            let length: Option<i64> = r.get("xlength");
+            let available = storage.as_deref().map(|s| !s.is_empty()).unwrap_or(false)
+                && length.unwrap_or(0) >= 0;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("available".to_string(), Value::Bool(available)),
+                ]),
+            ))))
+        }
+    }
+}
+
+async fn u2_att_get_with_check(
+    pool: &Pool,
+    id: &str,
+    ref_col: &str,
+    ref_value: &str,
+) -> Result<Option<deadpool_postgres::tokio_postgres::Row>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let sql = format!(
+        "SELECT {} FROM \"pp_c_attachment\" WHERE id = $1 AND {} = $2",
+        U2_ATT_COLS, ref_col
+    );
+    client.query_opt(&sql, &[&id, &ref_value]).await.map_err(|_| AppError::Internal)
+}
+
+pub async fn attachment_u2_get_by_work(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let row = u2_att_get_with_check(&pool, &id, "\"xwork\"", &work).await?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(u2_att_json(&row)))),
+        None => Ok(Json(ActionResult::error("attachment not found"))),
+    }
+}
+
+pub async fn attachment_u2_delete_by_work(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let exists = u2_att_get_with_check(&pool, &id, "\"xwork\"", &work).await?;
+    if exists.is_none() {
+        return Ok(Json(ActionResult::error("attachment not found")));
+    }
+    match u2_check_owner(&pool, "\"pp_c_attachment\"", "\"xperson\"", &id, &session.person_unique).await? {
+        U2Gate::NotFound | U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            client
+                .execute("DELETE FROM \"pp_c_attachment\" WHERE id = $1 AND \"xwork\" = $2", &[&id, &work])
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("deleted".to_string(), Value::Bool(true)),
+                ]),
+            ))))
+        }
+    }
+}
+
+pub async fn attachment_u2_text_by_work(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT \"xtext\" FROM \"pp_c_attachment\" WHERE id = $1 AND \"xwork\" = $2",
+            &[&id, &work],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        None => Ok(Json(ActionResult::error("attachment not found"))),
+        Some(r) => Ok(Json(ActionResult::success(Value::Object(
+            serde_json::Map::from_iter([("text".to_string(), u2_s(&r, "xtext"))]),
+        )))),
+    }
+}
+
+pub async fn attachment_u2_get_by_workcompleted(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, work_completed)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let row = u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &work_completed).await?;
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(u2_att_json(&row)))),
+        None => Ok(Json(ActionResult::error("attachment not found"))),
+    }
+}
+
 #[cfg(test)]
 mod tests_generated;
+
+#[cfg(test)]
+mod tests_u2;

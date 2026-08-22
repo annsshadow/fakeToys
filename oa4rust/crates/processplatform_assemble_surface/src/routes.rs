@@ -1,6 +1,6 @@
 use axum::{
     extract::Extension,
-    routing::{get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use deadpool_postgres::Pool;
@@ -52,6 +52,22 @@ use crate::{
     work_workorworkcompleted_workOrWorkCompleted, workcompleted_filter_attribute_application_applicationFlag, workcompleted_filter_attribute_application_applicationFlag_manage, workcompleted_filter_list_id_prev_count_application_applicationFlag, workcompleted_flag_rollback, workcompleted_flag_rollback_mockputtopost, workcompleted_id, workcompleted_id_assignment_manage, workcompleted_id_delete_manage, workcompleted_id_delete_manage_mockdeletetoget,
     workcompleted_id_manage, workcompleted_list_count_application_applicationFlag_process, workcompleted_list_count_application_applicationFlag_process_manage, workcompleted_list_filter_page_size_size_manage, workcompleted_list_id_next_count_application_applicationFlag, workcompleted_list_id_next_count_application_applicationFlag_filter, workcompleted_list_id_next_count_application_applicationFlag_filter_manage, workcompleted_list_id_next_count_application_applicationFlag_manage, workcompleted_list_id_prev_count_application_applicationFlag, workcompleted_list_id_prev_count_application_applicationFlag_filter,
     workcompleted_list_id_prev_count_application_applicationFlag_manage, workcompleted_list_paging_page_size_size_application_applicationFlag_filter_manage, workcompleted_process_processFlag, workcompleted_shift_time, worklog_list_add_split_work_workId, worklog_list_job_job, worklog_list_rollback_workorworkcompleted_workOrWorkCompleted, worklog_list_workorworkcompleted_workOrWorkCompleted,};
+
+use crate::{
+    snap_u2_get, snap_u2_delete, snap_u2_restore,
+    snap_u2_list_next_count, snap_u2_list_prev_count, snap_u2_list_next_count_manage, snap_u2_list_prev_count_manage,
+    snap_u2_work_type_snap, snap_u2_work_type_abandoned, snap_u2_work_type_suspend,
+    snap_u2_workcompleted_type_snapworkcompleted, snap_u2_workcompleted_type_abandonedworkcompleted,
+    attachment_u2_list_job_job, attachment_u2_list_work_work_id, attachment_u2_list_workcompleted_work_completed_id,
+    attachment_u2_list_workorworkcompleted_flag, attachment_u2_id_available, attachment_u2_get_by_work,
+    attachment_u2_delete_by_work, attachment_u2_text_by_work, attachment_u2_get_by_workcompleted,
+    application_list, application_list_complex, application_list_range, mode_list, process_list_ids,
+    read_count_filter, read_list_count_application, read_v2_count, read_v2_list,
+    readcompleted_v2_count, readcompleted_v2_list, review_count_application, review_v2_count, review_v2_list,
+    route_list, task_count_filter, task_list_count_application, task_v2_count, task_v2_list,
+    taskcompleted_v2_count, taskcompleted_v2_list, work_v2_list, workcompleted_list_count_application,
+    work_count_credential_application_appId_u2,
+};
 
 
 pub fn router(pool: Pool) -> Router {
@@ -514,5 +530,63 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/processplatform/assemble/surface/worklog/list/job/job", get(worklog_list_job_job))
         .route("/jaxrs/processplatform/assemble/surface/worklog/list/rollback/workorworkcompleted/{workOrWorkCompleted}", get(worklog_list_rollback_workorworkcompleted_workOrWorkCompleted))
         .route("/jaxrs/processplatform/assemble/surface/worklog/list/workorworkcompleted/{workOrWorkCompleted}", get(worklog_list_workorworkcompleted_workOrWorkCompleted))
+        .route("/jaxrs/processplatform/assemble/surface/anonymous/task/count/{credential}", get(anonymous_task_count_credential))
+        .route("/jaxrs/processplatform/assemble/surface/anonymous/read/count/{credential}", get(anonymous_read_count_credential))
+        .route("/jaxrs/processplatform/assemble/surface/application/list", get(application_list))
+        .route("/jaxrs/processplatform/assemble/surface/application/list/complex", get(application_list_complex))
+        .route("/jaxrs/processplatform/assemble/surface/application/list/range", post(application_list_range))
+        .route("/jaxrs/processplatform/assemble/surface/application/list/key/{key}", get(application_list_key_key))
+        .route("/jaxrs/processplatform/assemble/surface/application/list/terminal/{terminal}", get(application_list_terminal_terminal))
+        .route("/jaxrs/processplatform/assemble/surface/application/list/complex/manage/{person}", get(application_list_complex_manage_person))
+        .route("/jaxrs/processplatform/assemble/surface/mode/list", post(mode_list))
+        .route("/jaxrs/processplatform/assemble/surface/process/list/ids", post(process_list_ids))
+        .route("/jaxrs/processplatform/assemble/surface/route/list", put(route_list))
+        .route("/jaxrs/processplatform/assemble/surface/read/count/filter", post(read_count_filter))
+        .route("/jaxrs/processplatform/assemble/surface/read/count/{credential}", get(read_count_credential))
+        .route("/jaxrs/processplatform/assemble/surface/read/list/count/application", get(read_list_count_application))
+        .route("/jaxrs/processplatform/assemble/surface/read/v2/count", post(read_v2_count))
+        .route("/jaxrs/processplatform/assemble/surface/read/v2/list", post(read_v2_list))
+        .route("/jaxrs/processplatform/assemble/surface/readcompleted/count/{credential}", get(readcompleted_count_credential))
+        .route("/jaxrs/processplatform/assemble/surface/readcompleted/v2/count", post(readcompleted_v2_count))
+        .route("/jaxrs/processplatform/assemble/surface/readcompleted/v2/list", post(readcompleted_v2_list))
+        .route("/jaxrs/processplatform/assemble/surface/review/count/application", post(review_count_application))
+        .route("/jaxrs/processplatform/assemble/surface/review/count/person/{credential}", post(review_count_person_credential))
+        .route("/jaxrs/processplatform/assemble/surface/review/v2/count", post(review_v2_count))
+        .route("/jaxrs/processplatform/assemble/surface/review/v2/list", post(review_v2_list))
+        .route("/jaxrs/processplatform/assemble/surface/task/count/filter", post(task_count_filter))
+        .route("/jaxrs/processplatform/assemble/surface/task/count/{credential}", get(task_count_credential))
+        .route("/jaxrs/processplatform/assemble/surface/task/list/job/{job}", get(task_list_job_job))
+        .route("/jaxrs/processplatform/assemble/surface/task/list/count/application", get(task_list_count_application))
+        .route("/jaxrs/processplatform/assemble/surface/task/{id}/processing", post(task_id_processing))
+        .route("/jaxrs/processplatform/assemble/surface/task/v2/count", post(task_v2_count))
+        .route("/jaxrs/processplatform/assemble/surface/task/v2/list", post(task_v2_list))
+        .route("/jaxrs/processplatform/assemble/surface/task/v2/{id}/pause", get(task_v2_id_pause))
+        .route("/jaxrs/processplatform/assemble/surface/task/v3/{id}/add", post(task_v3_id_add))
+        .route("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/count", post(taskcompleted_v2_count))
+        .route("/jaxrs/processplatform/assemble/surface/taskcompleted/v2/list", post(taskcompleted_v2_list))
+        .route("/jaxrs/processplatform/assemble/surface/work/v2/list", post(work_v2_list))
+        .route("/jaxrs/processplatform/assemble/surface/work/count/{credential}/application/{appId}", get(work_count_credential_application_appId_u2))
+        .route("/jaxrs/processplatform/assemble/surface/workcompleted/list/count/application", get(workcompleted_list_count_application))
+        .route("/jaxrs/processplatform/assemble/surface/snap/{id}", get(snap_u2_get))
+        .route("/jaxrs/processplatform/assemble/surface/snap/{id}", delete(snap_u2_delete))
+        .route("/jaxrs/processplatform/assemble/surface/snap/{id}/restore", get(snap_u2_restore))
+        .route("/jaxrs/processplatform/assemble/surface/snap/list/{id}/next/{count}", get(snap_u2_list_next_count))
+        .route("/jaxrs/processplatform/assemble/surface/snap/list/{id}/prev/{count}", get(snap_u2_list_prev_count))
+        .route("/jaxrs/processplatform/assemble/surface/snap/list/{id}/next/{count}/manage", get(snap_u2_list_next_count_manage))
+        .route("/jaxrs/processplatform/assemble/surface/snap/list/{id}/prev/{count}/manage", get(snap_u2_list_prev_count_manage))
+        .route("/jaxrs/processplatform/assemble/surface/snap/work/{workId}/type/snap", get(snap_u2_work_type_snap))
+        .route("/jaxrs/processplatform/assemble/surface/snap/work/{workId}/type/abandoned", get(snap_u2_work_type_abandoned))
+        .route("/jaxrs/processplatform/assemble/surface/snap/work/{workId}/type/suspend", get(snap_u2_work_type_suspend))
+        .route("/jaxrs/processplatform/assemble/surface/snap/workcompleted/{workCompletedId}/type/snapworkcompleted", get(snap_u2_workcompleted_type_snapworkcompleted))
+        .route("/jaxrs/processplatform/assemble/surface/snap/workcompleted/{workCompletedId}/type/abandonedworkcompleted", get(snap_u2_workcompleted_type_abandonedworkcompleted))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/list/job/{job}", get(attachment_u2_list_job_job))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/list/work/{workId}", get(attachment_u2_list_work_work_id))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/list/workcompleted/{workCompletedId}", get(attachment_u2_list_workcompleted_work_completed_id))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/list/workorworkcompleted/{flag}", get(attachment_u2_list_workorworkcompleted_flag))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/available", get(attachment_u2_id_available))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/work/{workId}", get(attachment_u2_get_by_work))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/work/{workId}", delete(attachment_u2_delete_by_work))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/work/{workId}/text", get(attachment_u2_text_by_work))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/workcompleted/{workCompletedId}", get(attachment_u2_get_by_workcompleted))
 .layer(Extension(pool))
 }
