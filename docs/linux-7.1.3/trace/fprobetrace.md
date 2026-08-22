@@ -1,24 +1,24 @@
 ﻿
-## 鍩轰簬 Fprobe 鐨勪簨浠惰窡韪?
+## 基于 Fprobe 的事件跟
 
 
 
-### 姒傝堪
+### 概述
 
 
-Fprobe 浜嬩欢涓?kprobe 浜嬩欢绫讳技锛屼絾浠呴檺浜庡湪
-鍑芥暟鐨勫叆鍙ｅ拰鍑哄彛澶勮繘琛屾帰娴嬨€傚浜庤澶氬彧璺熻釜鏌愪簺
-鐗瑰畾鍑芥暟鐨勭敤渚嬫潵璇达紝杩欏凡缁忚冻澶熶簡銆?
+Fprobe 事件kprobe 事件类似，但仅限于在
+函数的入口和出口处进行探测。对于许多只跟踪某些
+特定函数的用例来说，这已经足够了
 
-鏈枃妗ｄ篃娑电洊 tracepoint 鎺㈡祴浜嬩欢锛坱probe锛夛紝鍥犱负瀹?
-鍚屾牱鍙湪 tracepoint 鍏ュ彛澶勫伐浣溿€傜敤鎴峰彲浠ヨ窡韪?
-tracepoint 鐨勪竴閮ㄥ垎鍙傛暟锛屾垨鑰呮病鏈?trace-event 鐨?tracepoint锛?
-鍚庤€呬笉浼氬湪 tracefs 涓婃毚闇层€?
+本文档也涵盖 tracepoint 探测事件（tprobe），因为
+同样只在 tracepoint 入口处工作。用户可以跟
+tracepoint 的一部分参数，或者没trace-event tracepoint
+后者不会在 tracefs 上暴露
 
-涓庡叾浠栧姩鎬佷簨浠朵竴鏍凤紝fprobe 浜嬩欢鍜?tracepoint 鎺㈡祴
-浜嬩欢閫氳繃 tracefs 涓婄殑 `dynamic_events` 鎺ュ彛鏂囦欢瀹氫箟銆?
+与其他动态事件一样，fprobe 事件tracepoint 探测
+事件通过 tracefs 上的 `dynamic_events` 接口文件定义
 
-### fprobe 浜嬩欢鐨勮娉?
+### fprobe 事件的语
 
 ```
 
@@ -66,22 +66,22 @@ tracepoint 鐨勪竴閮ㄥ垎鍙傛暟锛屾垨鑰呮病鏈?trace-event 鐨?trac
   (\*5) "u" means user-space dereference.
 
 ```
-鏈夊叧 TYPE 鐨勮缁嗕俊鎭紝璇峰弬瑙?kprobetrace 鏂囨。 <kprobetrace_types>銆?
+有关 TYPE 的详细信息，请参kprobetrace 文档 <kprobetrace_types>
 
-### 閫€鍑烘椂鐨勫嚱鏁板弬鏁?
+### 退出时的函数参
 
-鍦ㄩ€€鍑烘帰娴嬩腑鍙互浣跨敤 $arg<N> fetcharg 璁块棶鍑芥暟鍙傛暟銆傝繖
-鏈夊姪浜庝竴娆℃€ц褰曞嚱鏁板弬鏁板拰杩斿洖鍊硷紝骞?
-璺熻釜缁撴瀯浣撳瓧娈电殑宸紓锛堢敤浜庤皟璇曞嚱鏁版槸鍚︽纭?
-鏇存柊浜嗙粰瀹氱殑鏁版嵁缁撴瀯锛?
-鍏跺伐浣滄柟寮忚瑙佷笅闈㈢殑绀轰緥 <fprobetrace_exit_args_sample>銆?
+在退出探测中可以使用 $arg<N> fetcharg 访问函数参数。这
+有助于一次性记录函数参数和返回值，
+跟踪结构体字段的差异（用于调试函数是否正
+更新了给定的数据结构
+其工作方式请见下面的示例 <fprobetrace_exit_args_sample>
 
-### BTF 鍙傛暟
+### BTF 参数
 
-BTF锛圔PF Type Format锛夊弬鏁板厑璁哥敤鎴锋寜鐓у悕绉拌€岄潪 `$argN` 鏉ヨ窡韪嚱鏁板拰 tracepoint 鐨?
-鍙傛暟銆傝鐗规€у湪鍐呮牳閰嶇疆浜?CONFIG_BPF_SYSCALL 鍜?CONFIG_DEBUG_INFO_BTF 鏃跺彲鐢ㄣ€?
-濡傛灉鐢ㄦ埛鍙寚瀹?BTF 鍙傛暟锛屼簨浠剁殑鍙傛暟鍚嶄篃浼?
-闅忎箣纭畾銆?
+BTF（BPF Type Format）参数允许用户按照名称而非 `$argN` 来跟踪函数和 tracepoint 
+参数。该特性在内核配置CONFIG_BPF_SYSCALL CONFIG_DEBUG_INFO_BTF 时可用
+如果用户只指BTF 参数，事件的参数名也
+随之确定
 ```
 
  # echo 'f:myprobe vfs_read count pos' >> dynamic_events
@@ -89,9 +89,9 @@ BTF锛圔PF Type Format锛夊弬鏁板厑璁哥敤鎴锋寜鐓у悕绉拌€岄�
  f:fprobes/myprobe vfs_read count=count pos=pos
 
 ```
-瀹冭繕浼氭牴鎹?BTF 淇℃伅閫夋嫨鑾峰彇绫诲瀷銆備緥濡傦紝鍦ㄤ笂闈?
-鐨勭ず渚嬩腑锛宍count` 鏄?unsigned long锛岃€?`pos` 鏄竴涓寚閽堛€傚洜姝わ紝
-涓よ€呴兘琚浆鎹负 64 浣嶆棤绗﹀彿 long锛屼絾鍙湁 `pos` 甯︽湁 "%Lx"
+它还会根BTF 信息选择获取类型。例如，在上
+的示例中，`count` unsigned long，`pos` 是一个指针。因此，
+两者都被转换为 64 位无符号 long，但只有 `pos` 带有 "%Lx"
 ```
 
  # cat events/fprobes/myprobe/format
@@ -110,7 +110,7 @@ BTF锛圔PF Type Format锛夊弬鏁板厑璁哥敤鎴锋寜鐓у悕绉拌€岄�
  print fmt: "(%lx) count=%Lu pos=0x%Lx", REC->__probe_ip, REC->count, REC->pos
 
 ```
-濡傛灉鐢ㄦ埛涓嶇‘瀹氬弬鏁扮殑鍚嶇О锛宍$arg**` 浼氬緢鏈夊府鍔┿€俙$arg**`
+如果用户不确定参数的名称，`$arg**` 会很有帮助。`$arg**`
 ```
 
  # echo 'f:myprobe vfs_read $arg*' >> dynamic_events
@@ -118,19 +118,19 @@ BTF锛圔PF Type Format锛夊弬鏁板厑璁哥敤鎴锋寜鐓у悕绉拌€岄�
  f:fprobes/myprobe vfs_read file=file buf=buf count=count pos=pos
 
 ```
-BTF 涔熶細褰卞搷 `$retval`銆傚鏋滅敤鎴锋病鏈夎缃换浣曠被鍨嬶紝杩斿洖鍊?
-绫诲瀷浼氳嚜鍔ㄤ粠 BTF 涓€夊彇銆傚鏋滃嚱鏁拌繑鍥?`void`锛?
-鍒?`$retval` 浼氳鎷掔粷銆?
+BTF 也会影响 `$retval`。如果用户没有设置任何类型，返回
+类型会自动从 BTF 中选取。如果函数返`void`
+`$retval` 会被拒绝
 
-鍙互浣跨敤璁块棶杩愮畻绗?`->` 鏉ヨ闂暟鎹粨鏋勭殑鏁版嵁瀛楁
+可以使用访问运算`->` 来访问数据结构的数据字段
 ```
 
 ```
 # echo 't sched_switch preempt prev_pid=prev->pid next_pid=next->pid' >> dynamic_events
 
-瀛楁璁块棶杩愮畻绗?`->` 鍜?`.` 鍙互缁勫悎浣跨敤锛屼互璁块棶鏇存繁灞傜殑
-鎴愬憳浠ュ強鐢辫鎴愬憳鎸囧悜鐨勫叾浠栫粨鏋勪綋鎴愬憳銆備緥濡?`foo->bar.baz->qux`
-濡傛灉瀛樺湪娌℃湁鍚嶇О鐨?union 鎴愬憳锛屽彲浠ュ儚 C 浠ｇ爜閭ｆ牱鐩存帴璁块棶瀹冦€?
+字段访问运算`->` `.` 可以组合使用，以访问更深层的
+成员以及由该成员指向的其他结构体成员。例`foo->bar.baz->qux`
+如果存在没有名称union 成员，可以像 C 代码那样直接访问它
 ```
 
  struct {
@@ -141,32 +141,32 @@ BTF 涔熶細褰卞搷 `$retval`銆傚鏋滅敤鎴锋病鏈夎缃换浣
  } *foo;
 
 ```
-瑕佽闂?`a` 鍜?`b`锛屽湪杩欑鎯呭喌涓嬭浣跨敤 `foo->a` 鍜?`foo->b`銆?
+要访`a` `b`，在这种情况下请使用 `foo->a` `foo->b`
 
-杩欑鏁版嵁瀛楁璁块棶涔熷彲閫氳繃 `$retval` 鐢ㄤ簬杩斿洖鍊硷紝
-渚嬪 `$retval->name`銆?
+这种数据字段访问也可通过 `$retval` 用于返回值，
+例如 `$retval->name`
 
-瀵逛簬杩欎簺 BTF 鍙傛暟鍜屽瓧娈碉紝`:string` 鍜?`:ustring` 浼氭敼鍙?
-琛屼负銆傚鏋滃畠浠敤浜?BTF 鍙傛暟鎴栧瓧娈碉紝浼氭鏌ヨ鍙傛暟鎴栨暟鎹瓧娈电殑 BTF 绫诲瀷
-鏄惁涓?`char *` 鎴?`char []`锛?
-鑻ヤ笉鏄紝鍒欐嫆缁濆簲鐢ㄥ瓧绗︿覆绫诲瀷銆傛澶栵紝鍊熷姪 BTF
-鏀寔锛屽湪璁块棶鐢?`PTR` 鎸囧悜鐨勫瓧绗︿覆鏃讹紝
-鎮ㄤ笉鍐嶉渶瑕佸唴瀛樿В寮曠敤杩愮畻绗︼紙`+0(PTR)`锛夈€傚畠浼氳嚜鍔ㄦ坊鍔犲唴瀛?
+对于这些 BTF 参数和字段，`:string` `:ustring` 会改
+行为。如果它们用BTF 参数或字段，会检查该参数或数据字段的 BTF 类型
+是否`char *` `char []`
+若不是，则拒绝应用字符串类型。此外，借助 BTF
+支持，在访问`PTR` 指向的字符串时，
+您不再需要内存解引用运算符（`+0(PTR)`）。它会自动添加内
 ```
 
 ```
 # echo 't sched_switch prev->comm:string' >> dynamic_events
 # echo 'f getname_flags%return $retval->name:string' >> dynamic_events
 
-`prev->comm` 鏄暟鎹粨鏋勪腑鐨勫唴宓屽瓧绗︽暟缁勶紝鑰?
-`$retval->name` 鏄暟鎹粨鏋勪腑鐨勫瓧绗︽寚閽堛€備絾鍦ㄤ袱绉?
-鎯呭喌涓嬶紝閮藉彲浠ヤ娇鐢?`:string` 绫诲瀷鏉ヨ幏鍙栧瓧绗︿覆銆?
+`prev->comm` 是数据结构中的内嵌字符数组，
+`$retval->name` 是数据结构中的字符指针。但在两
+情况下，都可以使`:string` 类型来获取字符串
 
 
-### 浣跨敤绀轰緥
+### 使用示例
 
-涓嬮潰鏄竴涓湪 `vfs_read()` 鍑芥暟鐨勫叆鍙ｅ拰
-鍑哄彛澶勬坊鍔犲甫 BTF 鍙傛暟鐨?fprobe 浜嬩欢鐨勭ず渚嬨€?
+下面是一个在 `vfs_read()` 函数的入口和
+出口处添加带 BTF 参数fprobe 事件的示例
 ```
 
   # echo 'f vfs_read $arg*' >> dynamic_events
@@ -188,10 +188,10 @@ BTF 涔熶細褰卞搷 `$retval`銆傚鏋滅敤鎴锋病鏈夎缃换浣
                sh-70      [000] .....   336.050343: vfs_read__exit: (ksys_read+0x75/0x100 <- vfs_read) arg1=1
 
 ```
-鍙互鐪嬪埌鎵€鏈夊嚱鏁板弬鏁板拰杩斿洖鍊奸兘琚褰曚负甯︾鍙锋暣鏁般€?
+可以看到所有函数参数和返回值都被记录为带符号整数
 
-姝ゅ锛屼笅闈㈡槸涓€涓湪 `sched_switch` tracepoint 涓婄殑 tracepoint 浜嬩欢绀轰緥銆?
-涓轰簡瀵规瘮缁撴灉锛岃繖閲屼篃鍚敤浜?`sched_switch` traceevent銆?
+此外，下面是一个在 `sched_switch` tracepoint 上的 tracepoint 事件示例
+为了对比结果，这里也启用`sched_switch` traceevent
 ```
 
   # echo 't sched_switch $arg*' >> dynamic_events
@@ -211,14 +211,14 @@ BTF 涔熶細褰卞搷 `$retval`銆傚鏋滅敤鎴锋病鏈夎缃换浣
            <idle>-0       [000] d..3.  3912.085191: sched_switch: (__probestub_sched_switch+0x4/0x10) preempt=0 prev=0xffffffff828229c0 next=0xffff888004208000 prev_state=0
 
 ```
-濡傛偍鎵€瑙侊紝`sched_switch` trace-event 鏄剧ず鐨勬槸 **cooked**锛堝凡澶勭悊锛夊弬鏁帮紝鑰?
-鍙︿竴鏂归潰锛宍sched_switch` tracepoint 鎺㈡祴浜嬩欢鏄剧ず鐨勬槸 **raw**锛堝師濮嬶級
-鍙傛暟銆傝繖鎰忓懗鐫€鎮ㄥ彲浠ヨ闂?task
-缁撴瀯浣撲腑鐢?`prev` 鍜?`next` 鍙傛暟鎸囧悜鐨勪换浣曞瓧娈靛€笺€?
+如您所见，`sched_switch` trace-event 显示的是 **cooked**（已处理）参数，
+另一方面，`sched_switch` tracepoint 探测事件显示的是 **raw**（原始）
+参数。这意味着您可以访task
+结构体中`prev` `next` 参数指向的任何字段值
 
-**渚嬪锛岄€氬父 ``task_struct**
-鐨?start_time`` 榛樿涓嶄細琚窡韪紝浣嗗€熷姪杩欎釜
-traceprobe 浜嬩欢锛屾偍鍙互鍍忎笅闈㈣繖鏍疯窡韪瀛楁銆?
+**例如，通常 ``task_struct**
+start_time`` 默认不会被跟踪，但借助这个
+traceprobe 事件，您可以像下面这样跟踪该字段
 ```
 
   # echo 't sched_switch comm=next->comm:string next->start_time' > dynamic_events
@@ -236,12 +236,12 @@ traceprobe 浜嬩欢锛屾偍鍙互鍍忎笅闈㈣繖鏍疯窡韪瀛楁
 
 ```
 
-杩斿洖鎺㈡祴鍏佽鎴戜滑璁块棶鏌愪簺鍑芥暟鐨勮繑鍥炵粨鏋滐紝杩欎簺鍑芥暟杩斿洖
-閿欒鐮侊紝涓斿叾缁撴灉閫氳繃鍑芥暟鍙傛暟浼犻€掞紝渚嬪涓€涓?
-缁撴瀯浣撳垵濮嬪寲鍑芥暟銆?
+返回探测允许我们访问某些函数的返回结果，这些函数返回
+错误码，且其结果通过函数参数传递，例如一
+结构体初始化函数
 
-渚嬪锛寁fs_open() 浼氬皢鏂囦欢缁撴瀯浣撻摼鎺ュ埌 inode 骞舵洿鏂?
-妯″紡銆傛偍鍙互浣跨敤杩斿洖鎺㈡祴鏉ヨ窡韪繖浜涘彉鏇淬€?
+例如，vfs_open() 会将文件结构体链接到 inode 并更
+模式。您可以使用返回探测来跟踪这些变更
 ```
 
  # echo 'f vfs_open mode=file->f_mode:x32 inode=file->f_inode:x64' >> dynamic_events
@@ -256,6 +256,6 @@ traceprobe 浜嬩欢锛屾偍鍙互鍍忎笅闈㈣繖鏍疯窡韪瀛楁
              cat-143     [007] ...1.  1945.728263: vfs_open__exit: (do_open+0x274/0x3d0 <- vfs_open) mode=0xa800d inode=0xffff888004ada8d8
 
 ```
-**鎮ㄥ彲浠ョ湅鍒?`file**
-: f_mode` and `file::f_inode` are updated in `vfs_open()銆?
+**您可以看`file**
+: f_mode` and `file::f_inode` are updated in `vfs_open()銆。
 

@@ -1,43 +1,43 @@
-﻿## Notes 鍦?Analysing Behaviour 浣跨敤 浜嬩欢 鍜?Tracepoints
+﻿## Notes Analysing Behaviour 使用 事件 Tracepoints
 
-:Author: Mel Gorman (PCL information heavily 鍩轰簬 email 鏉ヨ嚜 Ingo Molnar)
+:Author: Mel Gorman (PCL information heavily 基于 email 来自 Ingo Molnar)
 
 ## 1. Introduction
 
 
-Tracepoints (鍙傝 Documentation/trace/tracepoints.rst) 鍙?涓?浣跨敤 鏃?
-creating custom 鍐呮牳 妯″潡 鍒?娉ㄥ唽 probe 鍑芥暟 浣跨敤 the 浜嬩欢
+Tracepoints (参见 Documentation/trace/tracepoints.rst) 使用 
+creating custom 内核 模块 注册 probe 函数 使用 the 事件
 tracing infrastructure.
 
-Simplistically, tracepoints represent 閲嶈 浜嬩欢 璇?鍙?涓?
-taken 鍦?conjunction 涓?鍏朵粬 tracepoints 鍒?build 涓€涓?"Big Picture" 鐨?
-浠€涔?鏄?going 鍦?涔嬪唴 the 绯荤粺. 瀛樺湪 涓€涓?large 鏁板瓧 鐨?鏂规硶 鐢ㄤ簬
-gathering 鍜?interpreting 杩欎簺 浜嬩欢. Lacking 浠讳綍 鐢垫祦 Best Practises,
-姝?document describes 涓€浜?鐨?the 鏂规硶 璇?鍙?涓?浣跨敤.
+Simplistically, tracepoints represent 重要 事件 
+taken conjunction 其他 tracepoints build 一"Big Picture" 
+什going 之内 the 系统. 存在 一large 数字 方法 用于
+gathering interpreting 这些 事件. Lacking 任何 电流 Best Practises,
+document describes 一the 方法 使用.
 
-姝?document assumes 璇?debugfs 鏄?mounted 鍦?/sys/鍐呮牳/debug 鍜?璇?
-the appropriate tracing 閫夐」 鍏锋湁 宸茬粡 configured 杩涘叆 the 鍐呮牳. 瀹冩槸
-assumed 璇?the PCL tool tools/perf 鍏锋湁 宸茬粡 installed 鍜?鏄?鍦?鎮ㄧ殑 path.
+document assumes debugfs mounted /sys/内核/debug 
+the appropriate tracing 选项 具有 已经 configured 进入 the 内核. 它是
+assumed the PCL tool tools/perf 具有 已经 installed 您的 path.
 
-## 2. Listing 鍙敤 浜嬩欢
-
-
-### 2.1 鏍囧噯 Utilities
+## 2. Listing 可用 事件
 
 
-鍏ㄩ儴 鍙兘 浜嬩欢 鏄?visible 鏉ヨ嚜 /sys/鍐呮牳/tracing/浜嬩欢. Simply
+### 2.1 标准 Utilities
+
+
+全部 可能 事件 visible 来自 /sys/内核/tracing/事件. Simply
 ```
 
   $ find /sys/kernel/tracing/events -type d
 
 ```
-灏?give 涓€涓?fair indication 鐨?the 鏁板瓧 鐨?浜嬩欢 鍙敤.
+give 一fair indication the 数字 事件 可用.
 
-### 2.2 PCL (鎬ц兘 Counters 鐢ㄤ簬 Linux)
+### 2.2 PCL (性能 Counters 用于 Linux)
 
 
-Discovery 鍜?enumeration 鐨?鍏ㄩ儴 counters 鍜?浜嬩欢, including tracepoints,
-鏄?鍙敤 涓?the perf tool. Getting 涓€涓?鍒楀嚭 鐨?鍙敤 浜嬩欢 鏄?涓€涓?
+Discovery enumeration 全部 counters 事件, including tracepoints,
+可用 the perf tool. Getting 一列出 可用 事件 一
 ```
 
   $ perf list 2>&1 | grep Tracepoint
@@ -50,25 +50,25 @@ Discovery 鍜?enumeration 鐨?鍏ㄩ儴 counters 鍜?浜嬩欢, including tracep
 
 
 ```
-## 3. Enabling 浜嬩欢
+## 3. Enabling 事件
 
 
-### 3.1 System-Wide 浜嬩欢 Enabling
+### 3.1 System-Wide 事件 Enabling
 
 
-鍙傝 Documentation/trace/浜嬩欢.rst 鐢ㄤ簬 涓€涓?proper description 鍦?濡備綍 浜嬩欢
-鍙?涓?宸插惎鐢?system-wide. 涓€涓?short 绀轰緥 鐨?enabling 鍏ㄩ儴 浜嬩欢 related
+参见 Documentation/trace/事件.rst 用于 一proper description 如何 事件
+已启system-wide. 一short 示例 enabling 全部 事件 related
 ```
 
   $ for i in `find /sys/kernel/tracing/events -name "enable" | grep mm_`; do echo 1 > $i; done
 
 ```
-### 3.2 System-Wide 浜嬩欢 Enabling 涓?SystemTap
+### 3.2 System-Wide 事件 Enabling SystemTap
 
 
-鍦?SystemTap, tracepoints 鏄?accessible 浣跨敤 the 鍐呮牳.trace() 鍑芥暟
-call. The 浠ヤ笅 鏄?涓€涓?绀轰緥 璇?reports every 5 seconds 浠€涔?杩涚▼
-鏇炬槸 allocating the 椤?
+SystemTap, tracepoints accessible 使用 the 内核.trace() 函数
+call. The 以下 一示例 reports every 5 seconds 什进程
+鏇炬槸 allocating the 椤。
 ```
 
   global page_allocs
@@ -90,11 +90,11 @@ call. The 浠ヤ笅 鏄?涓€涓?绀轰緥 璇?reports every 5 seconds 浠€�
   }
 
 ```
-### 3.3 System-Wide 浜嬩欢 Enabling 涓?PCL
+### 3.3 System-Wide 事件 Enabling PCL
 
 
-鐢?specifying the -涓€涓?switch 鍜?analysing sleep, the system-wide 浜嬩欢
-鐢ㄤ簬 涓€涓?duration 鐨?time 鍙?涓?examined.
+specifying the -一switch analysing sleep, the system-wide 事件
+用于 一duration time examined.
 ```
 
  $ perf stat -a \
@@ -110,20 +110,20 @@ call. The 浠ヤ笅 鏄?涓€涓?绀轰緥 璇?reports every 5 seconds 浠€�
    10.002577764  seconds time elapsed
 
 ```
-Similarly, one 鍙互 execute 涓€涓?shell 鍜?exit 瀹?浣滀负 desired 鍒?get 涓€涓?report
-鍦?璇?point.
+Similarly, one 可以 execute 一shell exit 作为 desired get 一report
+鍦，璇?point.
 
-### 3.4 鏈湴 浜嬩欢 Enabling
-
-
-Documentation/trace/ftrace.rst describes 濡備綍 鍒?鍚敤 浜嬩欢 鍦?涓€涓?per-thread
-basis 浣跨敤 set_ftrace_pid.
-
-### 3.5 鏈湴 浜嬩欢 Enablement 涓?PCL
+### 3.4 本地 事件 Enabling
 
 
-浜嬩欢 鍙?涓?activated 鍜?tracked 鐢ㄤ簬 the duration 鐨?涓€涓?杩涚▼ 鍦?涓€涓?鏈湴
-basis 浣跨敤 PCL 渚嬪 follows.
+Documentation/trace/ftrace.rst describes 如何 启用 事件 一per-thread
+basis 使用 set_ftrace_pid.
+
+### 3.5 本地 事件 Enablement PCL
+
+
+事件 activated tracked 用于 the duration 一进程 一本地
+basis 使用 PCL 例如 follows.
 ```
 
   $ perf stat -e kmem:mm_page_alloc -e kmem:mm_page_free \
@@ -139,20 +139,20 @@ basis 浣跨敤 PCL 渚嬪 follows.
     0.973913387  seconds time elapsed
 
 ```
-## 4. 浜嬩欢 Filtering
+## 4. 事件 Filtering
 
 
-Documentation/trace/ftrace.rst covers in-depth 濡備綍 鍒?filter 浜嬩欢 鍦?
-ftrace.  Obviously 浣跨敤 grep 鍜?awk 鐨?trace_pipe 鏄?涓€涓?閫夐」 浣滀负 well
-浣滀负 浠讳綍 script reading trace_pipe.
+Documentation/trace/ftrace.rst covers in-depth 如何 filter 事件 
+ftrace.  Obviously 使用 grep awk trace_pipe 一选项 作为 well
+作为 任何 script reading trace_pipe.
 
-## 5. Analysing 浜嬩欢 Variances 涓?PCL
+## 5. Analysing 事件 Variances PCL
 
 
-浠讳綍 workload 鍙?exhibit variances 涔嬮棿 runs 鍜?瀹?鍙?涓?閲嶈
-鍒?know 浠€涔?the 鏍囧噯 deviation 鏄? 鐢?鍜?large, 杩欐槸 left 鍒?the
-鎬ц兘 analyst 鍒?鎵ц 瀹?鐢?hand. 鍦?the 浜嬩欢 璇?the discrete 浜嬩欢
-occurrences 鏄?useful 鍒?the 鎬ц兘 analyst, 鐒跺悗 perf 鍙?涓?浣跨敤.
+任何 workload exhibit variances 之间 runs 重要
+know 什the 标准 deviation  large, 这是 left the
+性能 analyst 执行 hand. the 事件 the discrete 事件
+occurrences useful the 性能 analyst, 然后 perf 使用.
 ```
 
   $ perf stat --repeat 5 -e kmem:mm_page_alloc -e kmem:mm_page_free
@@ -172,11 +172,11 @@ occurrences 鏄?useful 鍒?the 鎬ц兘 analyst, 鐒跺悗 perf 鍙?涓?浣跨�
     0.982653002  seconds time elapsed   ( +-   1.448% )
 
 ```
-鍦?the 浜嬩欢 璇?涓€浜?higher-level 浜嬩欢 鏄?蹇呴渶 璇?depends 鍦?涓€浜?
-aggregation 鐨?discrete 浜嬩欢, 鐒跺悗 涓€涓?script 灏嗕細 闇€瑕?鍒?涓?developed.
+the 事件 一higher-level 事件 必需 depends 一
+aggregation discrete 事件, 然后 一script 将会 需developed.
 
-浣跨敤 --repeat, 瀹冩槸 涔?鍙兘 鍒?view 濡備綍 浜嬩欢 鏄?fluctuating 鍦ㄢ€︿笂
-time 鍦?涓€涓?system-wide basis 浣跨敤 -涓€涓?鍜?sleep.
+使用 --repeat, 它是 可能 view 如何 事件 fluctuating 在…上
+time 一system-wide basis 使用 -一sleep.
 ```
 
   $ perf stat -e kmem:mm_page_alloc -e kmem:mm_page_free \
@@ -195,41 +195,41 @@ time 鍦?涓€涓?system-wide basis 浣跨敤 -涓€涓?鍜?sleep.
 ## 6. Higher-Level Analysis 涓?Helper Scripts
 
 
-褰?浜嬩欢 鏄?宸插惎鐢?the 浜嬩欢 璇?鏄?triggering 鍙?涓?璇诲彇 鏉ヨ嚜
-/sys/鍐呮牳/tracing/trace_pipe 鍦?human-readable 鏍煎紡 灏界 binary
-閫夐」 exist 浣滀负 well. 鐢?post-processing the 杈撳嚭, further information 鍙?
-涓?gathered on-line 浣滀负 appropriate. 绀轰緥 鐨?post-processing 鍙兘 鍖呭惈
+事件 已启the 事件 triggering 读取 来自
+/sys/内核/tracing/trace_pipe human-readable 格式 尽管 binary
+选项 exist 作为 well. post-processing the 输出, further information 
+gathered on-line 作为 appropriate. 示例 post-processing 可能 包含
 
-  - Reading information 鏉ヨ嚜 /proc 鐢ㄤ簬 the PID 璇?triggered the 浜嬩欢
-  - Deriving 涓€涓?higher-level 浜嬩欢 鏉ヨ嚜 涓€涓?绯诲垪 鐨?lower-level 浜嬩欢.
-  - Calculating latencies 涔嬮棿 two 浜嬩欢
+  - Reading information 来自 /proc 用于 the PID triggered the 事件
+  - Deriving 一higher-level 事件 来自 一系列 lower-level 事件.
+  - Calculating latencies 之间 two 事件
 
-Documentation/trace/postprocess/trace-pagealloc-postprocess.pl 鏄?涓€涓?绀轰緥
-script 璇?鍙?璇诲彇 trace_pipe 鏉ヨ嚜 STDIN 鎴?涓€涓?copy 鐨?涓€涓?trace. 褰?浣跨敤
-on-line, 瀹?鍙?涓?interrupted 涓€鏃?鍒?generate 涓€涓?report 鏃?exiting
+Documentation/trace/postprocess/trace-pagealloc-postprocess.pl 一示例
+script 读取 trace_pipe 来自 STDIN 一copy 一trace. 使用
+on-line, interrupted 一generate 一report exiting
 鍜?twice 鍒?exit.
 
-Simplistically, the script just reads STDIN 鍜?counts up 浜嬩欢 浣?瀹?
-涔?鍙?鎵ц 鏇村 渚嬪
+Simplistically, the script just reads STDIN counts up 事件 
+执行 更多 例如
 
-  - Derive high-level 浜嬩欢 鏉ヨ嚜 璁稿 low-level 浜嬩欢. 鑻?涓€涓?鏁板瓧 鐨?椤?
-    鏄?freed 鍒?the 涓昏 allocator 鏉ヨ嚜 the per-CPU 鍒楄〃, 瀹?recognises
-    璇?浣滀负 one per-CPU drain even though 瀛樺湪 鏃?鐗瑰畾 tracepoint
-    鐢ㄤ簬 璇?浜嬩欢
-  - 瀹?鍙?aggregate 鍩轰簬 PID 鎴?鍚勪釜 杩涚▼ 鏁板瓧
-  - 鍦?the 浜嬩欢 鍐呭瓨 鏄?getting externally fragmented, 瀹?reports
-    鍦?鏄惁 the fragmentation 浜嬩欢 鏇炬槸 severe 鎴?moderate.
-  - 褰?receiving 涓€涓?浜嬩欢 鍏充簬 涓€涓?PID, 瀹?鍙?record 璋?the parent 鏇炬槸 鍥犳
-    璇?鑻?large numbers 鐨?浜嬩欢 鏄?coming 鏉ヨ嚜 very short-lived
-    杩涚▼, the parent 杩涚▼ responsible 鐢ㄤ簬 creating 鍏ㄩ儴 the helpers
-    鍙?涓?identified
+  - Derive high-level 事件 来自 许多 low-level 事件. 一数字 
+    freed the 主要 allocator 来自 the per-CPU 列表, recognises
+    作为 one per-CPU drain even though 存在 特定 tracepoint
+    用于 事件
+  - aggregate 基于 PID 各个 进程 数字
+  - the 事件 内存 getting externally fragmented, reports
+    是否 the fragmentation 事件 曾是 severe moderate.
+  - receiving 一事件 关于 一PID, record the parent 曾是 因此
+    large numbers 事件 coming 来自 very short-lived
+    进程, the parent 进程 responsible 用于 creating 全部 the helpers
+    鍙，涓?identified
 
 ## 7. Lower-Level Analysis 涓?PCL
 
 
-閭ｉ噷 鍙?涔?涓?涓€涓?requirement 鍒?identify 浠€涔?鍑芥暟 涔嬪唴 涓€涓?program
-鏇炬槸 generating 浜嬩欢 涔嬪唴 the 鍐呮牳. 鍒?begin 姝?sort 鐨?analysis, the
-鏁版嵁 蹇呴』 涓?recorded. 鍦?the time 鐨?writing, 姝?蹇呴渶 root:
+那里 一requirement identify 什函数 之内 一program
+曾是 generating 事件 之内 the 内核. begin sort analysis, the
+数据 必须 recorded. the time writing, 必需 root:
 ```
 
   $ perf record -c 1 \
@@ -240,11 +240,11 @@ Simplistically, the script just reads STDIN 鍜?counts up 浜嬩欢 浣?瀹?
   [ perf record: Captured and wrote 0.733 MB perf.data (~32010 samples) ]
 
 ```
-娉ㄦ剰 the 浣跨敤 鐨?'-c 1' 鍒?set the 浜嬩欢 period 鍒?sample. The 榛樿 sample
-period 鏄?quite high 鍒?minimise overhead 浣?the information collected 鍙?涓?
-very coarse 鍥犳.
+注意 the 使用 '-c 1' set the 事件 period sample. The 默认 sample
+period 鏄?quite high 鍒?minimise overhead 浣?the information collected 鍙，涓。
+very coarse 因此.
 
-姝?record outputted 涓€涓?鏂囦欢 called perf.鏁版嵁 鍏?鍙?涓?analysed 浣跨敤
+record outputted 一文件 called perf.数据 analysed 使用
 perf report.
 ```
 
@@ -269,11 +269,11 @@ perf report.
   #
 
 ```
-鏍规嵁 姝? the vast majority 鐨?浜嬩欢 triggered 鍦?浜嬩欢
-涔嬪唴 the VDSO. 涓?绠€鍗?binaries, 姝?灏?閫氬父 涓?the case 鍥犳 let's
-take 涓€涓?slightly 涓嶅悓 绀轰緥. 鍦?the course 鐨?writing 姝? 瀹?鏇炬槸
-noticed 璇?X 鏇炬槸 generating 涓€涓?insane amount 鐨?椤?allocations 鍥犳 let's look
-鍦?瀹?
+根据  the vast majority 事件 triggered 事件
+之内 the VDSO. 简binaries, 通常 the case 因此 let's
+take 一slightly 不同 示例. the course writing  曾是
+noticed X 曾是 generating 一insane amount allocations 因此 let's look
+鍦，瀹。
 ```
 
   $ perf record -c 1 -f \
@@ -282,7 +282,7 @@ noticed 璇?X 鏇炬槸 generating 涓€涓?insane amount 鐨?椤?allocations �
 		-p `pidof X`
 
 ```
-姝?鏇炬槸 interrupted 涔嬪悗 涓€涓?灏戦噺 seconds 鍜?
+曾是 interrupted 之后 一少量 seconds 
 ```
 
   $ perf report
@@ -300,7 +300,7 @@ noticed 璇?X 鏇炬槸 generating 涓€涓?insane amount 鐨?椤?allocations �
   #
 
 ```
-鍥犳, almost half 鐨?the 浜嬩欢 鏄?occurring 鍦?涓€涓?搴? 鍒?get 涓€涓?idea 鍏?
+因此, almost half the 事件 occurring 一 get 一idea 
 symbol:
 ```
 
@@ -319,7 +319,7 @@ symbol:
        0.00%     Xorg  [kernel]                                 [k] ftrace_trace_userstack
 
 ```
-鍒?鍙傝 浣曞 涔嬪唴 the 鍑芥暟 pixmanFillsse2 things 鏄?going wrong:
+参见 何处 之内 the 函数 pixmanFillsse2 things going wrong:
 ```
 
   $ perf annotate pixmanFillsse2
@@ -344,8 +344,8 @@ symbol:
    12.31 :         34f1d:       66 0f 7f 40 b0          movdqa %xmm0,-0x50(%eax)
 
 ```
-鍦?涓€涓?glance, 瀹?looks 绫讳技 the time 鏄?姝ｅ湪 spent copying pixmaps 鍒?
-the 鍗?  Further investigation 灏嗕細 涓?needed 鍒?determine 涓轰綍 pixmaps
-鏄?姝ｅ湪 copied around 鍥犳 much 浣?涓€涓?starting point 灏嗕細 涓?鍒?take 涓€涓?
-ancient build 鐨?libpixmap 瓒呭嚭 the 搴?path 浣曞 瀹?鏇炬槸 totally
-forgotten 鍏充簬 鏉ヨ嚜 months ago!
+一glance, looks 类似 the time 正在 spent copying pixmaps 
+the   Further investigation 将会 needed determine 为何 pixmaps
+正在 copied around 因此 much 一starting point 将会 take 一
+ancient build libpixmap 超出 the path 何处 曾是 totally
+forgotten 关于 来自 months ago!

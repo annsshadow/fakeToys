@@ -1,23 +1,23 @@
 ﻿
-## 娴嬭瘯
+## 测试
 
 
-鏈枃妗ｅ寘鍚浣曟祴璇曞唴鏍镐腑 Rust 浠ｇ爜鐨勬湁鐢ㄤ俊鎭€?
-娴嬭瘯鍏辨湁涓夌锛?
-- KUnit 娴嬭瘯銆?- `#[test]` 娴嬭瘯銆?- Kselftest锛堝唴鏍歌嚜娴嬭瘯锛夈€?
-### KUnit 娴嬭瘯
+本文档包含如何测试内核中 Rust 代码的有用信息
+测试共有三种
+- KUnit 测试- `#[test]` 测试- Kselftest（内核自测试）
+### KUnit 测试
 
 
-杩欎簺娴嬭瘯鏉ヨ嚜 Rust 鏂囨。涓殑绀轰緥锛屽畠浠細琚浆鎹㈡垚 KUnit 娴嬭瘯銆?
-######## 鐢ㄦ硶
+这些测试来自 Rust 文档中的示例，它们会被转换成 KUnit 测试
+######## 用法
 
 
-杩欎簺娴嬭瘯鍙互閫氳繃 KUnit 杩愯銆備緥濡傞€氳繃 `kunit_tool`锛坄kunit.py`锛?```
+这些测试可以通过 KUnit 运行。例如通过 `kunit_tool`（`kunit.py````
 	./tools/testing/kunit/kunit.py run --make_options LLVM=1 --arch x86_64 --kconfig_add CONFIG_RUST=y
 
 ```
-鍙﹀锛孠Unit 涔熷彲浠ュ湪鍚姩鏃跺皢瀹冧滑浣滀负鍐呮牳鍐呭缓妯″潡杩愯銆傚叧浜庨€氱敤鐨?KUnit 鏂囨。锛?璇峰弬闃?Documentation/dev-tools/kunit/index.rst锛涘叧浜庡唴鏍稿唴寤轰笌鍛戒护琛屾祴璇曠殑
-缁嗚妭锛岃鍙傞槄 Documentation/dev-tools/kunit/architecture.rst銆?
+另外，KUnit 也可以在启动时将它们作为内核内建模块运行。关于通用KUnit 文档请参Documentation/dev-tools/kunit/index.rst；关于内核内建与命令行测试的
+细节，请参阅 Documentation/dev-tools/kunit/architecture.rst
 ```
 	CONFIG_KUNIT
 	   Kernel hacking -> Kernel Testing and Coverage -> KUnit - Enable support for unit tests
@@ -25,11 +25,11 @@
 	   Kernel hacking -> Rust hacking -> Doctests for the `kernel` crate
 
 ```
-鍦ㄥ唴鏍搁厤缃郴缁熶腑銆?
-######## KUnit 娴嬭瘯鍗虫枃妗ｆ祴璇?
+在内核配置系统中
+######## KUnit 测试即文档测
 
-杩欎簺鏂囨。娴嬭瘯閫氬父鏄换鎰忔潯鐩紙渚嬪鍑芥暟銆佺粨鏋勪綋銆佹ā鍧椻€︹€︼級鐨勭敤娉曠ず渚嬨€?
-瀹冧滑闈炲父鏂逛究锛屽洜涓哄彧闇€鍐欏湪鏂囨。鏃佽竟鍗冲彲銆備緥濡傦細
+这些文档测试通常是任意条目（例如函数、结构体、模块……）的用法示例
+它们非常方便，因为只需写在文档旁边即可。例如：
 
 
 	/// Sums two numbers.
@@ -41,10 +41,10 @@
 	    a + b
 	}
 
-鍦ㄧ敤鎴风┖闂翠腑锛岃繖浜涙祴璇曠敱 `rustdoc` 鏀堕泦骞惰繍琛屻€傜洿鎺ヤ娇鐢ㄨ宸ュ叿宸茬粡寰堟湁鐢紝鍥犱负
-瀹冨彲浠ラ獙璇佺ず渚嬭兘澶熺紪璇戯紙浠庤€屽己鍒跺畠浠笌鎵€鏂囨。鍖栫殑浠ｇ爜淇濇寔鍚屾锛夛紝鍚屾椂涔熷彲浠?杩愯閭ｄ簺涓嶄緷璧栧唴鏍稿唴 API 鐨勭ず渚嬨€?
-鐒惰€岋紝瀵逛簬鍐呮牳锛岃繖浜涙祴璇曚細琚浆鎹㈡垚 KUnit 娴嬭瘯濂椾欢銆傝繖鎰忓懗鐫€鏂囨。娴嬭瘯浼氳缂栬瘧涓?Rust 鍐呮牳瀵硅薄锛屼粠鑰岃兘澶熼拡瀵瑰凡鏋勫缓鐨勫唴鏍歌繍琛屻€?
-杩欑 KUnit 闆嗘垚鐨勪竴涓ソ澶勬槸锛孯ust 鏂囨。娴嬭瘯鍙互澶嶇敤宸叉湁鐨?```
+在用户空间中，这些测试由 `rustdoc` 收集并运行。直接使用该工具已经很有用，因为
+它可以验证示例能够编译（从而强制它们与所文档化的代码保持同步），同时也可运行那些不依赖内核内 API 的示例
+然而，对于内核，这些测试会被转换成 KUnit 测试套件。这意味着文档测试会被编译Rust 内核对象，从而能够针对已构建的内核运行
+这种 KUnit 集成的一个好处是，Rust 文档测试可以复用已有```
 	KTAP version 1
 	1..1
 	    KTAP version 1
@@ -64,8 +64,8 @@
 	ok 1 rust_doctests_kernel
 
 ```
-浣跨敤 `? <https://doc.rust-lang.org/reference/expressions/operator-expr.html#the-question-mark-operator>`_
-杩愮畻绗︾殑娴嬭瘯涔熺収甯告敮鎸侊紝渚嬪锛?
+使用 `? <https://doc.rust-lang.org/reference/expressions/operator-expr.html#the-question-mark-operator>`_
+运算符的测试也照常支持，例如
 
 	/// ```
 	/// # use kernel::{spawn_work_item, workqueue};
@@ -73,28 +73,28 @@
 	/// # Ok::<(), Error>(())
 	/// ```
 
-杩欎簺娴嬭瘯涔熶細鍦?`CLIPPY=1` 涓嬩娇鐢?Clippy 杩涜缂栬瘧锛屽氨鍍忔櫘閫氫唬鐮佷竴鏍凤紝鍥犳涔熻兘
-鍙楃泭浜庨澶栫殑 lint 妫€鏌ャ€?
-涓轰簡璁╁紑鍙戣€呰兘澶熻交鏉剧湅鍒版槸鍝竴琛屾枃妗ｆ祴璇曚唬鐮佸鑷翠簡澶辫触锛屼細鍚戞棩蹇楁墦鍗颁竴琛?KTAP 璇婃柇淇℃伅銆傚叾涓寘鍚師濮嬫祴璇曠殑浣嶇疆锛堟枃浠跺拰琛屽彿锛夛紝鍗筹紙鑰岄潪杞崲鍚庝唬鐮佷腑鐨?浣嶇疆锛?```
+这些测试也会`CLIPPY=1` 下使Clippy 进行编译，就像普通代码一样，因此也能
+受益于额外的 lint 检查
+为了让开发者能够轻松看到是哪一行文档测试代码导致了失败，会向日志打印一KTAP 诊断信息。其中包含原始测试的位置（文件和行号），即（而非转换后代码中位置```
 	# rust_doctest_kernel_types_rs_2.location: rust/kernel/types.rs:150
 
 ```
-Rust 娴嬭瘯浼间箮浣跨敤 Rust 鏍囧噯搴擄紙`core`锛変腑甯哥敤鐨?`assert!` 鍜?`assert_eq!`
-瀹忔潵杩涜鏂█銆傛垜浠彁渚涗簡涓€涓嚜瀹氫箟鐗堟湰锛屽皢璋冪敤杞彂鍒?KUnit銆傞噸瑕佺殑鏄紝杩欎簺
-瀹忎笉闇€瑕佷紶鍏ヤ笂涓嬫枃锛坈ontext锛夛紝杩欎笌 KUnit 娴嬭瘯鎵€鐢ㄧ殑瀹忥紙鍗?`struct kunit *`锛?涓嶅悓銆傝繖浣垮緱瀹冧滑鏇存槗浣跨敤锛屽苟涓旀枃妗ｇ殑璇昏€呮棤闇€鍏冲績浣跨敤鐨勬槸鍝釜娴嬭瘯妗嗘灦銆傛澶栵紝
-杩欏彲鑳借鎴戜滑鍦ㄦ湭鏉ユ洿杞绘澗鍦版祴璇曠涓夋柟浠ｇ爜銆?
-褰撳墠鐨勪竴涓檺鍒舵槸 KUnit 涓嶆敮鎸佸湪鍏朵粬浠诲姟涓繘琛屾柇瑷€銆傚洜姝わ紝鎴戜滑鐩墠濡傛灉鏂█
-纭疄澶辫触锛屽氨鍙槸鍚戝唴鏍告棩蹇楁墦鍗颁竴涓敊璇€傚彟澶栵紝鏂囨。娴嬭瘯涓嶄細閽堝闈炲叕寮€鍑芥暟杩愯銆?
-鐢变簬杩欎簺娴嬭瘯灏辨槸绀轰緥锛屽嵆瀹冧滑鏄枃妗ｇ殑涓€閮ㄥ垎锛屽洜姝ら€氬父搴斿綋鍍忊€滅湡瀹炰唬鐮佲€濋偅鏍风紪鍐欍€?鍥犳锛屼緥濡傦紝涓庡叾浣跨敤 `unwrap()` 鎴?`expect()`锛屼笉濡備娇鐢?`?` 杩愮畻绗︺€傛洿澶氳儗鏅?璇峰弬瑙侊細
+Rust 测试似乎使用 Rust 标准库（`core`）中常用`assert!` `assert_eq!`
+宏来进行断言。我们提供了一个自定义版本，将调用转发KUnit。重要的是，这些
+宏不需要传入上下文（context），这与 KUnit 测试所用的宏（`struct kunit *`不同。这使得它们更易使用，并且文档的读者无需关心使用的是哪个测试框架。此外，
+这可能让我们在未来更轻松地测试第三方代码
+当前的一个限制是 KUnit 不支持在其他任务中进行断言。因此，我们目前如果断言
+确实失败，就只是向内核日志打印一个错误。另外，文档测试不会针对非公开函数运行
+由于这些测试就是示例，即它们是文档的一部分，因此通常应当像“真实代码”那样编写因此，例如，与其使用 `unwrap()` `expect()`，不如使`` 运算符。更多背请参见：
 
 	https://rust.docs.kernel.org/kernel/error/type.Result.html#error-codes-in-c-and-rust
 
-### ``#[test]`` 娴嬭瘯
+### ``#[test]`` 测试
 
 
-姝ゅ锛岃繕鏈?`#[test]` 娴嬭瘯銆備笌鏂囨。娴嬭瘯绫讳技锛屽畠浠篃涓庝綘鍦ㄧ敤鎴风┖闂存墍鏈熸湜鐨勯涓?鐩镐技锛屽苟涓斿畠浠篃琚槧灏勫埌 KUnit銆?
-杩欎簺娴嬭瘯鐢?`kunit_tests` 杩囩▼瀹忓紩鍏ワ紝璇ュ畯浠ユ祴璇曞浠剁殑鍚嶇О浣滀负鍙傛暟銆?
-渚嬪锛屽亣璁炬垜浠娴嬭瘯鏂囨。娴嬭瘯灏忚妭涓殑鍑芥暟 `f`銆傛垜浠彲浠ュ湪涓庡嚱鏁版墍鍦ㄧ殑鍚屼竴涓?鏂囦欢涓紪鍐欙細
+此外，还`#[test]` 测试。与文档测试类似，它们也与你在用户空间所期望的颇相似，并且它们也被映射到 KUnit
+这些测试`kunit_tests` 过程宏引入，该宏以测试套件的名称作为参数
+例如，假设我们要测试文档测试小节中的函数 `f`。我们可以在与函数所在的同一文件中编写：
 
 
 	#[kunit_tests(rust_kernel_mymod)]
@@ -117,9 +117,9 @@ Rust 娴嬭瘯浼间箮浣跨敤 Rust 鏍囧噯搴擄紙`core`锛変腑甯哥敤
 	ok 1 rust_kernel_mymod
 
 ```
-涓庢枃妗ｆ祴璇曚竴鏍凤紝`assert!` 鍜?`assert_eq!` 瀹忚鏄犲皠鍥?KUnit锛屼笖涓嶄細 panic銆?绫讳技鍦帮紝`? <https://doc.rust-lang.org/reference/expressions/operator-expr.html#the-question-mark-operator>`_
-杩愮畻绗︿篃鍙楁敮鎸侊紝鍗虫祴璇曞嚱鏁板彲浠ヨ繑鍥炵┖锛堝嵆鍗曞厓绫诲瀷 `()`锛夋垨 `Result`锛堝嵆浠绘剰
-`Result<T, E>`锛夈€備緥濡傦細
+与文档测试一样，`assert!` `assert_eq!` 宏被映射KUnit，且不会 panic类似地，` <https://doc.rust-lang.org/reference/expressions/operator-expr.html#the-question-mark-operator>`_
+运算符也受支持，即测试函数可以返回空（即单元类型 `()`）或 `Result`（即任意
+`Result<T, E>`）。例如：
 
 
 	#[kunit_tests(rust_kernel_mymod)]
@@ -146,29 +146,29 @@ Rust 娴嬭瘯浼间箮浣跨敤 Rust 鏍囧噯搴擄紙`core`锛変腑甯哥敤
 	not ok 1 rust_kernel_mymod
 
 ```
-濡傛灉涓€涓?`#[test]` 娴嬭瘯鑳戒綔涓虹敤鎴风殑绀轰緥鑰屾湁浠峰€硷紝閭ｄ箞璇锋敼鐢ㄦ枃妗ｆ祴璇曘€傚嵆浣挎槸
-API 鐨勮竟鐣屾儏鍐碉紝渚嬪閿欒鎴栬竟鐣屾儏褰紝涔熷€煎緱鍦ㄧず渚嬩腑灞曠ず銆?
-### ``rusttest`` 涓绘満娴嬭瘯
+如果一`#[test]` 测试能作为用户的示例而有价值，那么请改用文档测试。即使是
+API 的边界情况，例如错误或边界情形，也值得在示例中展示
+### ``rusttest`` 主机测试
 
 
-杩欎簺鏄敤鎴风┖闂存祴璇曪紝鍙互鍦ㄤ富鏈猴紙鍗宠繍琛岀紪璇戠殑鐜锛変笂鏋勫缓骞惰繍琛?```
+这些是用户空间测试，可以在主机（即运行编译的环境）上构建并运```
 	make LLVM=1 rusttest
 
 ```
-杩欓渶瑕佸唴鏍哥殑 `.config`銆?
-鐩墠锛屽畠浠富瑕佺敤浜庢祴璇?`macros` crate 鐨勭ず渚嬨€?
-### Kselftest锛堝唴鏍歌嚜娴嬭瘯锛?
+这需要内核的 `.config`
+目前，它们主要用于测`macros` crate 的示例
+### Kselftest（内核自测试
 
-Kselftest 涔熷彲鍦?`tools/testing/selftests/rust` 鐩綍涓壘鍒般€?
-娴嬭瘯鎵€闇€鐨勫唴鏍搁厤缃€夐」鍒楀湪 `tools/testing/selftests/rust/config` 鏂囦欢涓紝
-鍙€熷姪浠ヤ笅鍛戒护鍖呭惈杩涙潵
+Kselftest 也可`tools/testing/selftests/rust` 目录中找到
+测试所需的内核配置选项列在 `tools/testing/selftests/rust/config` 文件中，
+可借助以下命令包含进来
 ```
 	./scripts/kconfig/merge_config.sh .config tools/testing/selftests/rust/config
 
 ```
-Kselftest 鍦ㄥ唴鏍告簮鐮佹爲鍐呮瀯寤猴紝鏃ㄥ湪杩愯浜庡畨瑁呬簡鐩稿悓鍐呮牳鐨勭郴缁熶笂銆?
-涓€鏃﹀畨瑁呭苟鍚姩浜嗕笌婧愮爜鏍戝尮閰嶇殑鍐呮牳锛屾墽琛?```
+Kselftest 在内核源码树内构建，旨在运行于安装了相同内核的系统上
+一旦安装并启动了与源码树匹配的内核，执```
 	make TARGETS="rust" kselftest
 
 ```
-鍏充簬閫氱敤鐨?Kselftest 鏂囨。锛岃鍙傞槄 Documentation/dev-tools/kselftest.rst銆?
+关于通用Kselftest 文档，请参阅 Documentation/dev-tools/kselftest.rst

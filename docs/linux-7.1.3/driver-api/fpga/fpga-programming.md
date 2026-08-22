@@ -1,26 +1,26 @@
-﻿## 鐢ㄤ簬 FPGA 缂栫▼鐨勫唴鏍告€?API
+﻿## 用于 FPGA 编程的内核API
 
 
-### 姒傝堪
+### 概述
 
 
-鐢ㄤ簬 FPGA 缂栫▼鐨勫唴鏍告€?API 鏄潵鑷?FPGA manager銆乥ridge锛堟ˉ锛変笌 region锛堝尯鍩燂級
-鐨?API 鐨勭粍鍚堛€傚疄闄呯敤浜庤Е鍙?FPGA 缂栫▼鐨勫嚱鏁版槸 fpga_region_program_fpga()銆?
-fpga_region_program_fpga() 浣跨敤鐢?FPGA manager 涓?bridges 鎻愪緵鐨勫姛鑳姐€傚畠浼氾細
+用于 FPGA 编程的内核API 是来FPGA manager、bridge（桥）与 region（区域）
+API 的组合。实际用于触FPGA 编程的函数是 fpga_region_program_fpga()
+fpga_region_program_fpga() 使用FPGA manager bridges 提供的功能。它会：
 
- - 閿佸畾鍖哄煙鐨?mutex
- - 閿佸畾璇ュ尯鍩熺殑 FPGA manager 鐨?mutex
- - 濡傛灉鎸囧畾浜嗙浉搴旀柟娉曪紝鍒欐瀯寤轰竴浠?FPGA bridges 鍒楄〃
- - 绂佺敤杩欎簺 bridges
- - 浣跨敤閫氳繃 :c`fpga_region->info` 浼犲叆鐨勪俊鎭 FPGA 杩涜缂栫▼
- - 閲嶆柊鍚敤杩欎簺 bridges
- - 閲婃斁閿?
-struct fpga_image_info 鎸囧畾浜嗚瀵瑰摢涓?FPGA 闀滃儚杩涜缂栫▼銆傚畠鐢?fpga_image_info_alloc() 鍒嗛厤/閲婃斁锛屽苟鐢?fpga_image_info_free() 閲婃斁銆?
-### 濡備綍浣跨敤涓€涓?region 鏉ョ紪绋?FPGA
+ - 锁定区域mutex
+ - 锁定该区域的 FPGA manager mutex
+ - 如果指定了相应方法，则构建一FPGA bridges 列表
+ - 禁用这些 bridges
+ - 使用通过 :c`fpga_region->info` 传入的信息对 FPGA 进行编程
+ - 重新启用这些 bridges
+ - 閲婃斁閿。
+struct fpga_image_info 指定了要对哪FPGA 镜像进行编程。它fpga_image_info_alloc() 分配/释放，并fpga_image_info_free() 释放
+### 如何使用一region 来编FPGA
 
 
-褰?FPGA region 椹卞姩瀹屾垚鎺㈡祴锛坧robed锛夋椂锛屽畠浼氳幏寰椾竴涓寚鍚?FPGA manager 椹卞姩鐨?鎸囬拡锛屼粠鑰岀煡閬撹浣跨敤鍝釜 manager銆傝 region 瑕佷箞鎸佹湁涓€涓鍦ㄧ紪绋嬫湡闂存帶鍒剁殑
-bridges 鍒楄〃锛岃涔堟寔鏈変竴涓寚鍚戞煇涓嚱鏁扮殑鎸囬拡锛岃鍑芥暟浼氾細
+FPGA region 驱动完成探测（probed）时，它会获得一个指FPGA manager 驱动指针，从而知道要使用哪个 manager。该 region 要么持有一个要在编程期间控制的
+bridges 列表，要么持有一个指向某个函数的指针，该函数会：
 
 ```
 
@@ -31,17 +31,17 @@ bridges 鍒楄〃锛岃涔堟寔鏈変竴涓寚鍚戞煇涓嚱鏁扮殑
 	int ret;
 
 	/*
-	 * 棣栧厛锛屽垎閰嶆弿杩拌缂栫▼鐨?FPGA 闀滃儚淇℃伅鐨勭粨鏋勪綋
+	 * 首先，分配描述要编程FPGA 镜像信息的结构体
 	 */
 	info = fpga_image_info_alloc(dev);
 	if (!info)
 		return -ENOMEM;
 
-	/* 鎸夐渶璁剧疆鏍囧織锛屼緥濡傦細 */
+	/* 按需设置标志，例如： */
 	info->flags = FPGA_MGR_PARTIAL_RECONFIG;
 
 	/*
-	 * 鎸囨槑 FPGA 闀滃儚鎵€鍦ㄤ綅缃€備笅闈㈡槸浼唬鐮侊紱浣犲皢浣跨敤杩欎笁鑰呬箣涓€銆?	 */
+	 * 指明 FPGA 镜像所在位置。下面是伪代码；你将使用这三者之一	 */
 	if (image is in a scatter gather table) {
 
 		info->sgt = [your scatter gather table]
@@ -58,29 +58,29 @@ bridges 鍒楄〃锛岃涔堟寔鏈変竴涓寚鍚戞煇涓嚱鏁扮殑
 
 	}
 
-	/* 灏?info 娣诲姞鍒?region 骞舵墽琛岀紪绋?*/
+	/* info 添加region 并执行编*/
 	region->info = info;
 	ret = fpga_region_program_fpga(region);
 
-	/* 濡傛灉涓嶅啀闇€瑕侊紝閲婃斁闀滃儚 info */
+	/* 如果不再需要，释放镜像 info */
 	region->info = NULL;
 	fpga_image_info_free(info);
 
 	if (ret)
 		return ret;
 
-	/* 鐜板湪鏋氫妇 FPGA 涓嚭鐜扮殑浠讳綍纭欢銆?*/
+	/* 现在枚举 FPGA 中出现的任何硬件*/
 
 ```
-### 鐢ㄤ簬缂栫▼ FPGA 鐨?API
+### 用于编程 FPGA API
 
 
-- fpga_region_program_fpga() -  缂栫▼涓€涓?FPGA
-- fpga_image_info() -  鎸囧畾瑕佸鍝釜 FPGA 闀滃儚杩涜缂栫▼
-- fpga_image_info_alloc() -  鍒嗛厤涓€涓?FPGA 闀滃儚 info 缁撴瀯浣?- fpga_image_info_free() -  閲婃斁涓€涓?FPGA 闀滃儚 info 缁撴瀯浣?
+- fpga_region_program_fpga() -  编程一FPGA
+- fpga_image_info() -  指定要对哪个 FPGA 镜像进行编程
+- fpga_image_info_alloc() -  分配一FPGA 镜像 info 结构- fpga_image_info_free() -  释放一FPGA 镜像 info 结构
    :functions: fpga_region_program_fpga
 
-FPGA Manager 鏍囧織
+FPGA Manager 标志
 
    :doc: FPGA Manager flags
 

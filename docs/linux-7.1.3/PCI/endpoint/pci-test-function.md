@@ -1,11 +1,11 @@
 ﻿
-## PCI 娴嬭瘯鍔熻兘锛圥CI Test Function锛?
+## PCI 测试功能（PCI Test Function
 
 :Author: Kishon Vijay Abraham I <kishon@ti.com>
 
-浼犵粺涓婏紝PCI RC锛圧oot Complex锛変竴鐩撮€氳繃浣跨敤鏍囧噯鐨?PCI 鍗★紙濡備互澶綉 PCI 鍗°€乁SB PCI 鍗℃垨 SATA PCI 鍗★級鏉ラ獙璇併€備笉杩囷紝闅忕潃 Linux 鍐呮牳涓姞鍏?EP-core锛屽彲浠ュ皢涓€涓彲杩愯浜?EP 妯″紡鐨?PCI 鎺у埗鍣ㄩ厤缃负浣滀负娴嬭瘯璁惧宸ヤ綔銆?
-PCI 绔偣娴嬭瘯璁惧鏄竴涓櫄鎷熻澶囷紙鍦ㄨ蒋浠朵腑瀹氫箟锛夛紝鐢ㄤ簬娴嬭瘯绔偣鍔熻兘锛屽苟浣滀负鍏朵粬 PCI 绔偣璁惧锛堜娇鐢?EP 妗嗘灦锛夌殑绀轰緥椹卞姩銆?
-PCI 绔偣娴嬭瘯璁惧鍏锋湁浠ヤ笅瀵勫瓨鍣細
+传统上，PCI RC（Root Complex）一直通过使用标准PCI 卡（如以太网 PCI 卡、USB PCI 卡或 SATA PCI 卡）来验证。不过，随着 Linux 内核中加EP-core，可以将一个可运行EP 模式PCI 控制器配置为作为测试设备工作
+PCI 端点测试设备是一个虚拟设备（在软件中定义），用于测试端点功能，并作为其他 PCI 端点设备（使EP 框架）的示例驱动
+PCI 端点测试设备具有以下寄存器：
 
  1) PCI_ENDPOINT_TEST_MAGIC
  2) PCI_ENDPOINT_TEST_COMMAND
@@ -19,44 +19,44 @@ PCI 绔偣娴嬭瘯璁惧鍏锋湁浠ヤ笅瀵勫瓨鍣細
 
 - PCI_ENDPOINT_TEST_MAGIC
 
-璇ュ瘎瀛樺櫒灏嗙敤浜庢祴璇?BAR0銆備細鍐欏叆涓€涓凡鐭ユā寮忓苟浠?MAGIC 瀵勫瓨鍣ㄨ鍥烇紝浠ラ獙璇?BAR0銆?
+该寄存器将用于测BAR0。会写入一个已知模式并MAGIC 寄存器读回，以验BAR0
 - PCI_ENDPOINT_TEST_COMMAND
 
-璇ュ瘎瀛樺櫒鐢变富鏈洪┍鍔ㄧ敤鏉ユ寚绀虹鐐硅澶囧繀椤绘墽琛岀殑鍔熻兘銆?
+该寄存器由主机驱动用来指示端点设备必须执行的功能
 ========	================================================================
 Bitfield	Description
 ========	================================================================
-Bit 0		瑙﹀彂浼犵粺锛坙egacy锛塈RQ
-Bit 1		瑙﹀彂 MSI IRQ
-Bit 2		瑙﹀彂 MSI-X IRQ
-Bit 3		璇诲懡浠わ紙浠?RC 缂撳啿鍖鸿鍙栨暟鎹級
-Bit 4		鍐欏懡浠わ紙鍚?RC 缂撳啿鍖哄啓鍏ユ暟鎹級
-Bit 5		澶嶅埗鍛戒护锛堝皢涓€浠?RC 缂撳啿鍖虹殑鏁版嵁澶嶅埗鍒板彟涓€浠?RC 缂撳啿鍖猴級
+Bit 0		触发传统（legacy）IRQ
+Bit 1		触发 MSI IRQ
+Bit 2		触发 MSI-X IRQ
+Bit 3		读命令（RC 缓冲区读取数据）
+Bit 4		写命令（RC 缓冲区写入数据）
+Bit 5		复制命令（将一RC 缓冲区的数据复制到另一RC 缓冲区）
 ========	================================================================
 
 - PCI_ENDPOINT_TEST_STATUS
 
-璇ュ瘎瀛樺櫒鍙嶆槧 PCI 绔偣璁惧鐨勭姸鎬併€?
+该寄存器反映 PCI 端点设备的状态
 ========	==============================
 Bitfield	Description
 ========	==============================
-Bit 0		璇绘垚鍔?Bit 1		璇诲け璐?Bit 2		鍐欐垚鍔?Bit 3		鍐欏け璐?Bit 4		澶嶅埗鎴愬姛
-Bit 5		澶嶅埗澶辫触
+Bit 0		读成Bit 1		读失Bit 2		写成Bit 3		写失Bit 4		复制成功
+Bit 5		复制失败
 Bit 6		宸茶Е鍙?IRQ
-Bit 7		婧愬湴鍧€鏃犳晥
-Bit 8		鐩殑鍦板潃鏃犳晥
+Bit 7		源地址无效
+Bit 8		目的地址无效
 ========	==============================
 
 - PCI_ENDPOINT_TEST_SRC_ADDR
 
-璇ュ瘎瀛樺櫒鍖呭惈 COPY/READ 鍛戒护鐨勬簮鍦板潃锛圧C 缂撳啿鍖哄湴鍧€锛夈€?
+该寄存器包含 COPY/READ 命令的源地址（RC 缓冲区地址）
 - PCI_ENDPOINT_TEST_DST_ADDR
 
-璇ュ瘎瀛樺櫒鍖呭惈 COPY/WRITE 鍛戒护鐨勭洰鐨勫湴鍧€锛圧C 缂撳啿鍖哄湴鍧€锛夈€?
+该寄存器包含 COPY/WRITE 命令的目的地址（RC 缓冲区地址）
 - PCI_ENDPOINT_TEST_IRQ_TYPE
 
-璇ュ瘎瀛樺櫒鍖呭惈涓?READ/WRITE/COPY 浠ュ強瑙﹀彂 IRQ锛圠egacy/MSI锛夊懡浠ゆ墍瑙﹀彂鐨勪腑鏂被鍨嬨€?
-鍙€夌被鍨嬶細
+该寄存器包含READ/WRITE/COPY 以及触发 IRQ（Legacy/MSI）命令所触发的中断类型
+可选类型：
 
 ======	==
 Legacy	0
@@ -66,8 +66,8 @@ MSI-X	2
 
 - PCI_ENDPOINT_TEST_IRQ_NUMBER
 
-璇ュ瘎瀛樺櫒鍖呭惈琚Е鍙戠殑涓柇 ID銆?
-鍙彇鐨勫€硷細
+该寄存器包含被触发的中断 ID
+可取的值：
 
 ======	===========
 Legacy	0

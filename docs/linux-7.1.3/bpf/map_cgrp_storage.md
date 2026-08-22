@@ -2,26 +2,26 @@
 ## BPF_MAP_TYPE_CGRP_STORAGE
 
 
-`BPF_MAP_TYPE_CGRP_STORAGE` 鏄犲皠绫诲瀷琛ㄧず cgroup 鐨勪竴绉嶆湰鍦板畾闀垮瓨鍌ㄣ€傚畠浠呭湪鍚敤
-`CONFIG_CGROUPS` 鏃跺彲鐢ㄣ€傝繖浜涚▼搴忕敱鍚屼竴涓?Kconfig 鎻愪緵銆傜壒瀹?cgroup 鐨勬暟鎹彲浠ラ€氳繃鐢ㄨ
-cgroup 鏌ユ壘璇ユ槧灏勬潵鑾峰彇銆?
-鏈枃妗ｆ弿杩颁簡 `BPF_MAP_TYPE_CGRP_STORAGE` 鏄犲皠绫诲瀷鐨勭敤娉曚笌璇箟銆?
-## 鐢ㄦ硶
+`BPF_MAP_TYPE_CGRP_STORAGE` 映射类型表示 cgroup 的一种本地定长存储。它仅在启用
+`CONFIG_CGROUPS` 时可用。这些程序由同一Kconfig 提供。特cgroup 的数据可以通过用该
+cgroup 查找该映射来获取
+本文档描述了 `BPF_MAP_TYPE_CGRP_STORAGE` 映射类型的用法与语义
+## 用法
 
 
-鏄犲皠鐨勯敭蹇呴』鏄?`sizeof(int)`锛岃〃绀轰竴涓?cgroup fd銆?```
+映射的键必须`sizeof(int)`，表示一cgroup fd```
 
     void *bpf_cgrp_storage_get(struct bpf_map *map, struct cgroup *cgroup, void *value, u64 flags)
 
 ```
-`flags` 鍙互鏄?0 鎴?`BPF_LOCAL_STORAGE_GET_F_CREATE`锛屽悗鑰呰〃绀哄鏋滃皻涓嶅瓨鍦ㄥ垯鍒涘缓涓€涓柊鐨?鏈湴瀛樺偍銆?
+`flags` 可以0 `BPF_LOCAL_STORAGE_GET_F_CREATE`，后者表示如果尚不存在则创建一个新本地存储
 ```
 
     long bpf_cgrp_storage_delete(struct bpf_map *map, struct cgroup *cgroup)
 
 ```
-璇ユ槧灏勫鎵€鏈夌▼搴忕被鍨嬪潎鍙敤銆?
-## 绀轰緥
+该映射对所有程序类型均可用
+## 示例
 
 
 ```
@@ -67,16 +67,16 @@ cgroup 鏌ユ壘璇ユ槧灏勬潵鑾峰彇銆?
     }
 
 ```
-## BPF_MAP_TYPE_CGRP_STORAGE 涓?BPF_MAP_TYPE_CGROUP_STORAGE 鐨勫尯鍒?
+## BPF_MAP_TYPE_CGRP_STORAGE BPF_MAP_TYPE_CGROUP_STORAGE 的区
 
-鏃х殑 cgroup 瀛樺偍鏄犲皠 `BPF_MAP_TYPE_CGROUP_STORAGE` 宸茶鏍囪涓哄簾寮冿紙閲嶅懡鍚嶄负
-`BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED`锛夈€傚簲鏀圭敤鏂扮殑 `BPF_MAP_TYPE_CGRP_STORAGE` 鏄犲皠銆?浠ヤ笅璇存槑浜?`BPF_MAP_TYPE_CGRP_STORAGE` 涓?`BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED` 鐨勪富瑕佸尯鍒€?
-(1). `BPF_MAP_TYPE_CGRP_STORAGE` 鍙鎵€鏈夌▼搴忕被鍨嬩娇鐢紝鑰?     `BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED` 浠呭 cgroup 绋嬪簭绫诲瀷锛堝
-     BPF_CGROUP_INET_INGRESS 鎴?BPF_CGROUP_SOCK_OPS 绛夛級鍙敤銆?
-(2). `BPF_MAP_TYPE_CGRP_STORAGE` 鏀寔瀵瑰浜庝竴涓?cgroup 鐨勬湰鍦板瓨鍌紝鑰?     `BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED` 浠呮敮鎸佷竴涓敱 BPF 绋嬪簭闄勫姞鐨?cgroup銆?
-(3). `BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED` 鍦ㄩ檮鍔犳椂鍒嗛厤鏈湴瀛樺偍锛屽洜姝?     `bpf_get_local_storage()` 鎬绘槸杩斿洖闈?NULL 鐨勬湰鍦板瓨鍌ㄣ€?     `BPF_MAP_TYPE_CGRP_STORAGE` 鍦ㄨ繍琛屾椂鍒嗛厤鏈湴瀛樺偍锛屽洜姝?`bpf_cgrp_storage_get()`
-     鏈夊彲鑳借繑鍥?NULL 鐨勬湰鍦板瓨鍌ㄣ€備负閬垮厤姝ょ被 NULL 鏈湴瀛樺偍闂锛岀敤鎴风┖闂村彲浠ュ湪 BPF 绋嬪簭
-     闄勫姞涔嬪墠閫氳繃 `bpf_map_update_elem()` 棰勫厛鍒嗛厤鏈湴瀛樺偍銆?
-(4). `BPF_MAP_TYPE_CGRP_STORAGE` 鏀寔鐢?BPF 绋嬪簭鍒犻櫎鏈湴瀛樺偍锛岃€?     `BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED` 浠呭湪绋嬪簭鍒嗙锛坉etach锛夋椂鍒犻櫎瀛樺偍銆?
-鎬讳綋鑰岃█锛宍BPF_MAP_TYPE_CGRP_STORAGE` 鏀寔 `BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED` 鐨勬墍鏈?鍔熻兘骞舵湁鎵€鎵╁睍銆傚缓璁娇鐢?`BPF_MAP_TYPE_CGRP_STORAGE` 鑰岄潪
+旧的 cgroup 存储映射 `BPF_MAP_TYPE_CGROUP_STORAGE` 已被标记为废弃（重命名为
+`BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED`）。应改用新的 `BPF_MAP_TYPE_CGRP_STORAGE` 映射以下说明`BPF_MAP_TYPE_CGRP_STORAGE` `BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED` 的主要区别
+(1). `BPF_MAP_TYPE_CGRP_STORAGE` 可被所有程序类型使用，     `BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED` 仅对 cgroup 程序类型（如
+     BPF_CGROUP_INET_INGRESS BPF_CGROUP_SOCK_OPS 等）可用
+(2). `BPF_MAP_TYPE_CGRP_STORAGE` 支持对多于一cgroup 的本地存储，     `BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED` 仅支持一个由 BPF 程序附加cgroup
+(3). `BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED` 在附加时分配本地存储，因     `bpf_get_local_storage()` 总是返回NULL 的本地存储     `BPF_MAP_TYPE_CGRP_STORAGE` 在运行时分配本地存储，因`bpf_cgrp_storage_get()`
+     有可能返NULL 的本地存储。为避免此类 NULL 本地存储问题，用户空间可以在 BPF 程序
+     附加之前通过 `bpf_map_update_elem()` 预先分配本地存储
+(4). `BPF_MAP_TYPE_CGRP_STORAGE` 支持BPF 程序删除本地存储，     `BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED` 仅在程序分离（detach）时删除存储
+总体而言，`BPF_MAP_TYPE_CGRP_STORAGE` 支持 `BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED` 的所功能并有所扩展。建议使`BPF_MAP_TYPE_CGRP_STORAGE` 而非
 `BPF_MAP_TYPE_CGROUP_STORAGE_DEPRECATED`銆?

@@ -1,25 +1,25 @@
 ﻿
-## 鐢ㄤ簬 Synopsys(R) 浠ュお缃戞帶鍒跺櫒 "stmmac" 鐨?Linux 椹卞姩
+## 用于 Synopsys(R) 以太网控制器 "stmmac" Linux 驱动
 
-浣滆€咃細Giuseppe Cavallaro <peppe.cavallaro@st.com>銆?Alexandre Torgue <alexandre.torgue@st.com>銆丣ose Abreu <joabreu@synopsys.com>
+作者：Giuseppe Cavallaro <peppe.cavallaro@st.com>Alexandre Torgue <alexandre.torgue@st.com>、Jose Abreu <joabreu@synopsys.com>
 
-## 鐩綍
+## 目录
 
-- In This Release锛堟湰鐗堟湰璇存槑锛?- Feature List锛堢壒鎬у垪琛級
-- Kernel Configuration锛堝唴鏍搁厤缃級
-- Command Line Parameters锛堝懡浠よ鍙傛暟锛?- Driver Information and Notes锛堥┍鍔ㄤ俊鎭笌璇存槑锛?- Debug Information锛堣皟璇曚俊鎭級
-- Support锛堟敮鎸侊級
+- In This Release（本版本说明- Feature List（特性列表）
+- Kernel Configuration（内核配置）
+- Command Line Parameters（命令行参数- Driver Information and Notes（驱动信息与说明- Debug Information（调试信息）
+- Support（支持）
 
-## 鏈増鏈鏄?
-鏈枃浠舵弿杩颁簡鐢ㄤ簬鎵€鏈?Synopsys(R) 浠ュお缃戞帶鍒跺櫒鐨?stmmac Linux 椹卞姩銆?
-鐩墠锛岃繖涓綉缁滆澶囬┍鍔ㄩ€傜敤浜庢墍鏈?STi 宓屽叆寮?MAC/GMAC锛堝嵆 7xxx/5xxx SoC锛夈€?SPEAr锛坅rm锛夈€丩oongson1B锛坢ips锛変互鍙?XILINX XC2V3000 FF1152AMT0221
-D1215994A VIRTEX FPGA 鏉裤€係ynopsys Ethernet QoS 5.0 IPK 涔熷彈鏀寔銆?
-寮€鍙戞椹卞姩鏃朵娇鐢ㄤ簡 DesignWare(R) Cores Ethernet MAC 10/100/1000 Universal
-鐗堟湰 3.70a锛堝強鏇存棭鐗堟湰锛夊拰 DesignWare(R) Cores Ethernet Quality-of-Service
-鐗堟湰 4.0锛堝強鏇撮珮鐗堟湰锛夛紝浠ュ強 DesignWare(R) Cores XGMAC - 10G Ethernet MAC 鍜?DesignWare(R) Cores Enterprise MAC - 100G Ethernet MAC銆?
-姝ら┍鍔ㄥ悓鏃舵敮鎸?platform 鎬荤嚎鍜?PCI銆?
-姝ら┍鍔ㄥ寘鍚浠ヤ笅 Synopsys(R) DesignWare(R) Cores 浠ュお缃戞帶鍒跺櫒浠ュ強瀵瑰簲鏈€灏忓拰
-鏈€澶х増鏈殑鏀寔锛?
+## 本版本说
+本文件描述了用于所Synopsys(R) 以太网控制器stmmac Linux 驱动
+目前，这个网络设备驱动适用于所STi 嵌入MAC/GMAC（即 7xxx/5xxx SoC）SPEAr（arm）、Loongson1B（mips）以XILINX XC2V3000 FF1152AMT0221
+D1215994A VIRTEX FPGA 板。Synopsys Ethernet QoS 5.0 IPK 也受支持
+开发此驱动时使用了 DesignWare(R) Cores Ethernet MAC 10/100/1000 Universal
+版本 3.70a（及更早版本）和 DesignWare(R) Cores Ethernet Quality-of-Service
+版本 4.0（及更高版本），以及 DesignWare(R) Cores XGMAC - 10G Ethernet MAC DesignWare(R) Cores Enterprise MAC - 100G Ethernet MAC
+此驱动同时支platform 总线PCI
+此驱动包含对以下 Synopsys(R) DesignWare(R) Cores 以太网控制器以及对应最小和
+最大版本的支持
 +-------------------------------+--------------+--------------+--------------+
 | Controller Name               | Min. Version | Max. Version | Abbrev. Name |
 +===============================+==============+==============+==============+
@@ -32,27 +32,27 @@ D1215994A VIRTEX FPGA 鏉裤€係ynopsys Ethernet QoS 5.0 IPK 涔熷彈鏀�
 | XLGMAC - 100G Ethernet MAC    | 2.00a        | N/A          | XLGMAC2+     |
 +-------------------------------+--------------+--------------+--------------+
 
-鏈夊叧纭欢瑕佹眰鐨勯棶棰橈紝璇峰弬鑰冮殢浣犵殑浠ュお缃戦€傞厤鍣ㄤ竴璧锋彁渚涚殑鏂囨。銆傚垪鍑虹殑鎵€鏈夌‖浠?瑕佹眰閮介€傜敤浜庡湪 Linux 涓嬩娇鐢ㄣ€?
-## 鐗规€у垪琛?
-姝ら┍鍔ㄦ彁渚涗互涓嬬壒鎬э細
- - GMII/MII/RGMII/SGMII/RMII/XGMII/XLGMII 鎺ュ彛
- - 鍗婂弻宸?/ 鍏ㄥ弻宸ユ搷浣? - 鑺傝兘浠ュお缃戯紙EEE锛? - IEEE 802.3x PAUSE 鍖咃紙娴佹帶鍒讹級
- - RMON/MIB 璁℃暟鍣? - IEEE 1588 鏃堕棿鎴筹紙PTP锛? - 姣忕鑴夊啿杈撳嚭锛圥PS锛? - MDIO Clause 22 / Clause 45 鎺ュ彛
- - MAC 鍥炵幆
- - ARP 鍗歌浇锛圤ffloading锛? - 鑷姩 CRC / PAD 鎻掑叆涓庢鏌? - 鎺ユ敹涓庡彂閫佹暟鎹寘鐨勬牎楠屽拰鍗歌浇
- - 鏍囧噯鎴栧法鍨嬶紙Jumbo锛変互澶綉鍖? - 婧愬湴鍧€鎻掑叆 / 鏇挎崲
- - VLAN TAG 鎻掑叆 / 鏇挎崲 / 鍒犻櫎 / 杩囨护锛圚ASH 鍜?PERFECT锛? - 鍙紪绋嬬殑 TX 鍜?RX 鐪嬮棬鐙椾笌鍚堝苟锛圕oalesce锛夎缃? - 鐩殑鍦板潃杩囨护锛圥ERFECT锛? - HASH 杩囨护锛堝鎾級
- - Layer 3 / Layer 4 杩囨护
- - 杩滅▼鍞ら啋妫€娴? - 鎺ユ敹渚х缉鏀撅紙RSS锛? - TX 鍜?RX 鐨勫抚鎶㈠崰锛團rame Preemption锛? - 鍙紪绋嬬獊鍙戦暱搴︺€侀槇鍊笺€侀槦鍒楀ぇ灏? - 澶氶槦鍒楋紙鏈€澶?8 涓級
- - 澶氱璋冨害绠楁硶锛圱X锛歐RR銆丏WRR銆乄FQ銆丼P銆丆BS銆丒ST銆乀BS锛汻X锛歐RR銆丼P锛? - 鐏垫椿鐨?RX 瑙ｆ瀽鍣? - TCP / UDP 鍒嗘鍗歌浇锛圱SO銆乁SO锛? - 鍒嗗壊澶撮儴锛圫PH锛? - 瀹夊叏鐗规€э紙ECC 淇濇姢銆佹暟鎹鍋朵繚鎶わ級
- - 浣跨敤 Ethtool 鐨勮嚜妫€娴嬭瘯
+有关硬件要求的问题，请参考随你的以太网适配器一起提供的文档。列出的所有硬要求都适用于在 Linux 下使用
+## 特性列
+此驱动提供以下特性：
+ - GMII/MII/RGMII/SGMII/RMII/XGMII/XLGMII 接口
+ - 半双/ 全双工操 - 节能以太网（EEE - IEEE 802.3x PAUSE 包（流控制）
+ - RMON/MIB 计数 - IEEE 1588 时间戳（PTP - 每秒脉冲输出（PPS - MDIO Clause 22 / Clause 45 接口
+ - MAC 回环
+ - ARP 卸载（Offloading - 自动 CRC / PAD 插入与检 - 接收与发送数据包的校验和卸载
+ - 标准或巨型（Jumbo）以太网 - 源地址插入 / 替换
+ - VLAN TAG 插入 / 替换 / 删除 / 过滤（HASH PERFECT - 可编程的 TX RX 看门狗与合并（Coalesce）设 - 目的地址过滤（PERFECT - HASH 过滤（多播）
+ - Layer 3 / Layer 4 过滤
+ - 远程唤醒检 - 接收侧缩放（RSS - TX RX 的帧抢占（Frame Preemption - 可编程突发长度、阈值、队列大 - 多队列（最8 个）
+ - 多种调度算法（TX：WRR、DWRR、WFQ、SP、CBS、EST、TBS；RX：WRR、SP - 灵活RX 解析 - TCP / UDP 分段卸载（TSO、USO - 分割头部（SPH - 安全特性（ECC 保护、数据奇偶保护）
+ - 使用 Ethtool 的自检测试
 
-## 鍐呮牳閰嶇疆
+## 内核配置
 
-鍐呮牳閰嶇疆閫夐」鏄?`CONFIG_STMMAC_ETH`锛? - `CONFIG_STMMAC_PLATFORM`锛氱敤浜庡惎鐢?platform 椹卞姩銆? - `CONFIG_STMMAC_PCI`锛氱敤浜庡惎鐢?pci 椹卞姩銆?
-## 鍛戒护琛屽弬鏁?
-濡傛灉椹卞姩琚瀯寤轰负妯″潡锛屽彲浠ヤ娇鐢ㄤ互涓嬪彲閫夊弬鏁帮紝閫氳繃 modprobe 鍛戒护鎶婂畠浠緭鍏ュ埌
-鍛戒护琛屼腑锛屼娇鐢ㄥ涓嬪舰寮?```
+内核配置选项`CONFIG_STMMAC_ETH` - `CONFIG_STMMAC_PLATFORM`：用于启platform 驱动 - `CONFIG_STMMAC_PCI`：用于启pci 驱动
+## 命令行参
+如果驱动被构建为模块，可以使用以下可选参数，通过 modprobe 命令把它们输入到
+命令行中，使用如下形```
 
     modprobe stmmac_pci [<option>=<VAL1>,<VAL2>,...]
 
@@ -62,140 +62,140 @@ D1215994A VIRTEX FPGA 鏉裤€係ynopsys Ethernet QoS 5.0 IPK 涔熷彈鏀�
     stmmaceth=watchdog:100,chain_mode=1
 
 ```
-姣忎釜鍙傛暟鐨勯粯璁ゅ€奸€氬父灏辨槸鎺ㄨ崘璁剧疆锛岄櫎闈炲彟鏈夎鏄庛€?
+每个参数的默认值通常就是推荐设置，除非另有说明
 ### watchdog
 
 :Valid Range: 5000-None
 :Default Value: 5000
 
-姝ゅ弬鏁拌鐩栦互姣涓哄崟浣嶇殑鍙戦€佽秴鏃躲€?
+此参数覆盖以毫秒为单位的发送超时
 ### debug
 
 :Valid Range: 0-16 (0=none,...,16=all)
 :Default Value: 0
 
-姝ゅ弬鏁拌皟鏁存樉绀哄湪绯荤粺鏃ュ織涓殑璋冭瘯娑堟伅绾у埆銆?
+此参数调整显示在系统日志中的调试消息级别
 ### phyaddr
 
 :Valid Range: 0-31
 :Default Value: -1
 
-姝ゅ弬鏁拌鐩?PHY 璁惧鐨勭墿鐞嗗湴鍧€銆?
+此参数覆PHY 设备的物理地址
 ### flow_ctrl
 
 :Valid Range: 0-3 (0=off,1=rx,2=tx,3=rx/tx)
 :Default Value: 3
 
-姝ゅ弬鏁版敼鍙橀粯璁ょ殑娴佹帶鍒惰兘鍔涖€?
+此参数改变默认的流控制能力
 ### pause
 
 :Valid Range: 0-65535
 :Default Value: 65535
 
-姝ゅ弬鏁版敼鍙橀粯璁ょ殑娴佹帶鍒舵殏鍋滄椂闂淬€?
+此参数改变默认的流控制暂停时间
 ### tc
 
 :Valid Range: 64-256
 :Default Value: 64
 
-姝ゅ弬鏁版敼鍙橀粯璁ょ殑 HW FIFO 闃堝€兼帶鍒跺€笺€?
+此参数改变默认的 HW FIFO 阈值控制值
 ### buf_sz
 
 :Valid Range: 1536-16384
 :Default Value: 1536
 
-姝ゅ弬鏁版敼鍙橀粯璁ょ殑 RX DMA 鍖呯紦鍐插尯澶у皬銆?
+此参数改变默认的 RX DMA 包缓冲区大小
 ### eee_timer
 
 :Valid Range: 0-None
 :Default Value: 1000
 
-姝ゅ弬鏁版敼鍙橀粯璁ょ殑 LPI TX 杩囨湡鏃堕棿锛堟绉掞級銆?
+此参数改变默认的 LPI TX 过期时间（毫秒）
 ### chain_mode
 
 :Valid Range: 0-1 (0=off,1=on)
 :Default Value: 0
 
-姝ゅ弬鏁版妸榛樿鐨勬搷浣滄ā寮忎粠 Ring 妯″紡鏀逛负 Chain 妯″紡銆?
-## 椹卞姩淇℃伅涓庤鏄?
-### 鍙戦€佽繃绋?
-褰撳唴鏍搁渶瑕佸彂閫佷竴涓寘鏃讹紝浼氳皟鐢?xmit 鏂规硶锛涘畠璁剧疆鐜紙ring锛変腑鐨勬弿杩扮锛屽苟
-閫氱煡 DMA 寮曟搸鏈変竴涓寘宸插噯澶囧ソ鍙戦€併€?
-榛樿鎯呭喌涓嬶紝椹卞姩鍦?`net_device` 缁撴瀯鐨?features 瀛楁涓缃?`NETIF_F_SG` 浣嶏紝
-浠庤€屽惎鐢ㄦ暎鑱氾紙scatter-gather锛夌壒鎬с€傚湪閭ｄ簺鏍￠獙鍜屽彲浠ュ湪纭欢涓畬鎴愮殑鑺墖鍜?閰嶇疆涓婃槸濡傛銆?
-涓€鏃︽帶鍒跺櫒瀹屾垚鍖呯殑鍙戦€侊紝灏变細璋冨害涓€涓畾鏃跺櫒鏉ラ噴鏀惧彂閫佽祫婧愩€?
-### 鎺ユ敹杩囩▼
+此参数把默认的操作模式从 Ring 模式改为 Chain 模式
+## 驱动信息与说
+### 发送过
+当内核需要发送一个包时，会调xmit 方法；它设置环（ring）中的描述符，并
+通知 DMA 引擎有一个包已准备好发送
+默认情况下，驱动`net_device` 结构features 字段中设`NETIF_F_SG` 位，
+从而启用散聚（scatter-gather）特性。在那些校验和可以在硬件中完成的芯片配置上是如此
+一旦控制器完成包的发送，就会调度一个定时器来释放发送资源
+### 接收过程
 
-褰撲竴涓垨澶氫釜鍖呰鏀跺埌鏃讹紝浼氬彂鐢熶竴娆′腑鏂€備腑鏂笉浼氳鎺掗槦锛屽洜姝ら┍鍔ㄥ湪鎺ユ敹杩囩▼涓?蹇呴』鎵弿鐜腑鐨勬墍鏈夋弿杩扮銆?
-杩欏熀浜?NAPI锛屽洜姝や腑鏂鐞嗙▼搴忓彧鍦ㄦ湁宸ヤ綔瑕佸仛鏃舵墠鍙戝嚭淇″彿锛岀劧鍚庨€€鍑恒€傛帴鐫€ poll
-鏂规硶浼氬湪灏嗘潵鐨勬煇涓椂鍒昏璋冨害銆?
-DMA 鎶婃敹鍒扮殑鍖呭瓨鍌ㄥ湪棰勫厛鍒嗛厤鐨?socket 缂撳啿鍖哄垪琛ㄤ腑锛屼互閬垮厤 memcpy锛堥浂鎷疯礉锛夈€?
-### 涓柇缂撹В
+当一个或多个包被收到时，会发生一次中断。中断不会被排队，因此驱动在接收过程必须扫描环中的所有描述符
+这基NAPI，因此中断处理程序只在有工作要做时才发出信号，然后退出。接着 poll
+方法会在将来的某个时刻被调度
+DMA 把收到的包存储在预先分配socket 缓冲区列表中，以避免 memcpy（零拷贝）
+### 中断缓解
 
-椹卞姩鑳藉浣跨敤 NAPI 鏉ョ紦鍑忥紙mitigate锛夊叾 DMA 涓柇鐨勬暟閲忥紝鐢ㄤ簬 3.50 涔嬪墠鑺墖鐨?鎺ユ敹銆傛柊鑺墖鏈変竴涓敤浜庤繖绉嶇紦鍑忕殑 HW RX 鐪嬮棬鐙椼€?
-缂撳噺鍙傛暟鍙互閫氳繃 ethtool 璋冩暣銆?
+驱动能够使用 NAPI 来缓减（mitigate）其 DMA 中断的数量，用于 3.50 之前芯片接收。新芯片有一个用于这种缓减的 HW RX 看门狗
+缓减参数可以通过 ethtool 调整
 ### WoL
 
-閫氳繃 Magic 甯у拰 Unicast 甯у疄鐜扮殑灞€鍩熺綉鍞ら啋锛圵ake up on Lan锛夌壒鎬э紝鍦?GMAC銆?GMAC4/5 鍜?XGMAC 鏍稿績涓婂彈鏀寔銆?
+通过 Magic 帧和 Unicast 帧实现的局域网唤醒（Wake up on Lan）特性，GMACGMAC4/5 XGMAC 核心上受支持
 ### DMA 鎻忚堪绗?
-椹卞姩澶勭悊鏅€氭弿杩扮鍜屽鐢ㄦ弿杩扮銆傚悗鑰呬粎鍦?DesignWare(R) Cores Ethernet MAC
-Universal 鐗堟湰 3.41a 鍙婁互鍚庣殑鐗堟湰涓婅娴嬭瘯杩囥€?
-stmmac 鏀寔 DMA 鎻忚堪绗﹀湪鍙岀紦鍐诧紙RING锛夊拰閾捐〃锛圕HAINED锛変袱绉嶆ā寮忎笅鎿嶄綔銆傚湪
-RING 妯″紡涓嬶紝姣忎釜鎻忚堪绗︽寚鍚戜袱涓暟鎹紦鍐插尯鎸囬拡锛岃€屽湪 CHAINED 妯″紡涓嬪畠浠彧鎸囧悜
-涓€涓暟鎹紦鍐插尯鎸囬拡銆俁ING 妯″紡鏄粯璁ゆā寮忋€?
-鍦?CHAINED 妯″紡涓嬶紝姣忎釜鎻忚堪绗︿細鏈変竴涓寚鍚戜笅涓€涓弿杩扮鐨勬寚閽堬紝浠庤€屽湪鎻忚堪绗?鑷韩涓垱寤烘樉寮忕殑閾炬帴锛涜€岃繖鏍风殑鏄惧紡閾炬帴鍦?RING 妯″紡涓嬫槸涓嶅彲鑳界殑銆?
+驱动处理普通描述符和备用描述符。后者仅DesignWare(R) Cores Ethernet MAC
+Universal 版本 3.41a 及以后的版本上被测试过
+stmmac 支持 DMA 描述符在双缓冲（RING）和链表（CHAINED）两种模式下操作。在
+RING 模式下，每个描述符指向两个数据缓冲区指针，而在 CHAINED 模式下它们只指向
+一个数据缓冲区指针。RING 模式是默认模式
+CHAINED 模式下，每个描述符会有一个指向下一个描述符的指针，从而在描述自身中创建显式的链接；而这样的显式链接RING 模式下是不可能的
 ### 鎵╁睍鎻忚堪绗?
-鎵╁睍鎻忚堪绗﹀湪鎵胯浇 PTP 鍖呮垨 IP 涓婄殑 TCP/UDP/ICMP 鏃讹紝缁欐垜浠彁渚涘叧浜庝互澶綉杞借嵎
-鐨勪俊鎭€傚湪鏃╀簬 3.50 鐨?GMAC Synopsys(R) 鑺墖涓婅繖浜涗笉鍙敤銆傚湪鎺㈡祴锛坧robe锛夋椂
-椹卞姩浼氬喅瀹氭槸鍚﹀彲浠ョ湡姝ｄ娇鐢ㄥ畠浠€傝繖涓€鏀寔瀵逛簬 PTPv2 涔熸槸寮哄埗闇€瑕佺殑锛屽洜涓洪澶?鐨勬弿杩扮琚敤鏉ヤ繚瀛樼‖浠舵椂闂存埑鍜屾墿灞曠姸鎬併€?
-### Ethtool 鏀寔
+扩展描述符在承载 PTP 包或 IP 上的 TCP/UDP/ICMP 时，给我们提供关于以太网载荷
+的信息。在早于 3.50 GMAC Synopsys(R) 芯片上这些不可用。在探测（probe）时
+驱动会决定是否可以真正使用它们。这一支持对于 PTPv2 也是强制需要的，因为额的描述符被用来保存硬件时间戳和扩展状态
+### Ethtool 支持
 
-鏀寔 Ethtool銆備緥濡傦紝椹卞姩缁熻淇℃伅锛堝寘鎷?RMON锛夛細
+支持 Ethtool。例如，驱动统计信息（包RMON）：
 ```
 
     ethtool -S ethX
 
 ```
-Ethtool 鑷娴嬭瘯涔熷彈鏀寔銆傝繖鍏佽鍋氫竴浜涙棭鏈熺殑鍋ュ叏鎬ф鏌?```
+Ethtool 自检测试也受支持。这允许做一些早期的健全性检```
 
     ethtool -t ethX
 
 ```
-### 宸ㄥ瀷甯т笌鍒嗘鍗歌浇
+### 巨型帧与分段卸载
 
-宸ㄥ瀷甯у彈鏀寔锛屽苟涓旈拡瀵?GMAC 娴嬭瘯杩囥€侴SO 涔熻鍔犲叆锛屼絾瀹冩槸浠ヨ蒋浠舵柟寮忔墽琛岀殑銆?LRO 涓嶅彈鏀寔銆?
-### TSO 鏀寔
+巨型帧受支持，并且针GMAC 测试过。GSO 也被加入，但它是以软件方式执行的LRO 不受支持
+### TSO 支持
 
-TSO锛圱CP 鍒嗘鍗歌浇锛夌壒鎬у彈 GMAC > 4.x 鍜?XGMAC 鑺墖绯诲垪鏀寔銆傚綋涓€涓寘閫氳繃 TCP
-鍗忚鍙戦€佹椂锛孴CP 鏍堢‘淇濇彁渚涚粰搴曞眰椹卞姩锛堝湪鎴戜滑鐨勪緥瀛愪腑鏄?stmmac锛夌殑 SKB 涓庢渶澶?甯ч暱鐩稿尮閰嶏紙IP 澶?+ TCP 澶?+ 杞借嵎 <= 1500 瀛楄妭锛堝浜庤缃负 1500 鐨?MTU锛夛級銆傝繖
-鎰忓懗鐫€锛屽鏋滀娇鐢?TCP 鐨勫簲鐢ㄧ▼搴忔兂瑕佸彂閫佷竴涓湪鍔犱笂澶撮儴涔嬪悗闀垮害 > 1514 鐨勫寘锛岃
-鍖呭皢琚媶鍒嗘垚澶氫釜 TCP 鍖咃細鏁版嵁杞借嵎琚媶鍒嗭紝鑰屽ご閮紙TCP/IP ..锛夎娣诲姞銆傝繖鏄敱杞欢
-瀹屾垚鐨勩€?
-褰撳惎鐢?TSO 鏃讹紝TCP 鏍堜笉鍏冲績鏈€澶у抚闀匡紝鑰屾槸鍘熸牱鎶?SKB 鍖呮彁渚涚粰 stmmac銆侴MAC IP
-灏嗕笉寰椾笉鑷繁鎵ц鍒嗘锛屼互鍖归厤鏈€澶у抚闀裤€?
-杩欎釜鐗规€у彲浠ラ€氳繃璁惧鏍戜腑鐨?`snps,tso` 椤规潵鍚敤銆?
-### 鑺傝兘浠ュお缃?
-鑺傝兘浠ュお缃戯紙EEE锛変娇 IEEE 802.3 MAC 瀛愬眰杩炲悓涓€绯诲垪鐗╃悊灞備竴璧峰湪浣庡姛鑰楃┖闂诧紙LPI锛?妯″紡涓嬭繍琛屻€侲EE 妯″紡鏀寔 IEEE 802.3 MAC 鍦?100Mbps銆?000Mbps 鍜?1Gbps 涓嬬殑
-鎿嶄綔銆?
-LPI 妯″紡閫氳繃鍦ㄦ病鏈夋暟鎹鏀跺彂鏃跺叧闂€氫俊璁惧鍔熻兘鐨勪竴閮ㄥ垎鏉ヨ妭鐪佸姛鑰椼€傞摼璺袱绔殑
-绯荤粺閮藉彲浠ョ鐢ㄦ煇浜涘姛鑳斤紝骞跺湪浣庨摼璺埄鐢ㄧ巼鏈熼棿鑺傜渷鍔熻€椼€侻AC 鎺у埗鐫€绯荤粺鏄惁搴旇
-杩涘叆鎴栭€€鍑?LPI 妯″紡锛屽苟鎶婅繖涓€鐐归€氱煡缁?PHY銆?
-涓€鏃︽帴鍙ｈ鎵撳紑锛岄┍鍔ㄥ氨楠岃瘉 EEE 鏄惁鍙互琚敮鎸併€傝繖鏄€氳繃鏌ョ湅 DMA HW 鑳藉姏瀵勫瓨鍣?鍜?PHY 璁惧鐨?MCD 瀵勫瓨鍣ㄦ潵瀹屾垚鐨勩€?
-涓轰簡杩涘叆 TX LPI 妯″紡锛岄┍鍔ㄩ渶瑕佷竴涓蒋浠跺畾鏃跺櫒锛屽湪娌℃湁涓滆タ瑕佸彂閫佹椂鍚敤鍜岀鐢?LPI 妯″紡銆?
-### 绮剧‘鏃堕棿鍗忚锛圥TP锛?
-椹卞姩鏀寔 IEEE 1588-2002 绮剧‘鏃堕棿鍗忚锛圥TP锛夛紝瀹冧娇寰楀湪浣跨敤璇稿缃戠粶閫氫俊绛夋妧鏈?瀹炵幇鐨勬祴閲忓拰鎺у埗绯荤粺涓紝鏃堕挓鑳藉琚簿纭悓姝ャ€?
-闄や簡 IEEE 1588-2002 鏃堕棿鎴充腑鎻愬埌鐨勯偅浜涘熀纭€鏃堕棿鎴崇壒鎬у锛屾柊鐨?GMAC 鏍稿績鏀寔
-楂樼骇鏃堕棿鎴崇壒鎬с€侷EEE 1588-2008 鍙互鍦ㄩ厤缃唴鏍告椂鍚敤銆?
-### SGMII/RGMII 鏀寔
+TSO（TCP 分段卸载）特性受 GMAC > 4.x XGMAC 芯片系列支持。当一个包通过 TCP
+协议发送时，TCP 栈确保提供给底层驱动（在我们的例子中stmmac）的 SKB 与最帧长相匹配（IP + TCP + 载荷 <= 1500 字节（对于设置为 1500 MTU））。这
+意味着，如果使TCP 的应用程序想要发送一个在加上头部之后长度 > 1514 的包，该
+包将被拆分成多个 TCP 包：数据载荷被拆分，而头部（TCP/IP ..）被添加。这是由软件
+完成的
+当启TSO 时，TCP 栈不关心最大帧长，而是原样SKB 包提供给 stmmac。GMAC IP
+将不得不自己执行分段，以匹配最大帧长
+这个特性可以通过设备树中`snps,tso` 项来启用
+### 节能以太
+节能以太网（EEE）使 IEEE 802.3 MAC 子层连同一系列物理层一起在低功耗空闲（LPI模式下运行。EEE 模式支持 IEEE 802.3 MAC 100Mbps000Mbps 1Gbps 下的
+操作
+LPI 模式通过在没有数据要收发时关闭通信设备功能的一部分来节省功耗。链路两端的
+系统都可以禁用某些功能，并在低链路利用率期间节省功耗。MAC 控制着系统是否应该
+进入或退LPI 模式，并把这一点通知PHY
+一旦接口被打开，驱动就验证 EEE 是否可以被支持。这是通过查看 DMA HW 能力寄存PHY 设备MCD 寄存器来完成的
+为了进入 TX LPI 模式，驱动需要一个软件定时器，在没有东西要发送时启用和禁LPI 模式
+### 精确时间协议（PTP
+驱动支持 IEEE 1588-2002 精确时间协议（PTP），它使得在使用诸如网络通信等技实现的测量和控制系统中，时钟能够被精确同步
+除了 IEEE 1588-2002 时间戳中提到的那些基础时间戳特性外，新GMAC 核心支持
+高级时间戳特性。IEEE 1588-2008 可以在配置内核时启用
+### SGMII/RGMII 支持
 
-鏂扮殑 GMAC 璁惧鎻愪緵浜嗚嚜宸辩殑鏂瑰紡鏉ョ鐞嗙殑 RGMII/SGMII銆傝繖涓€淇℃伅鍦ㄨ繍琛屾椂閫氳繃鏌ョ湅
-HW 鑳藉姏瀵勫瓨鍣ㄥ氨鍙互鑾峰緱銆傝繖鎰忓懗鐫€ stmmac 鍙互鏃犻渶浣跨敤 PHYLIB 鐨勯偅濂楁満鍒讹紝灏辫兘
-绠＄悊鑷崗鍟嗗拰閾捐矾鐘舵€併€傚疄闄呬笂锛孒W 鎻愪緵浜嗕竴缁勬墿灞曞瘎瀛樺櫒鏉ラ噸鏂板惎鍔?ANE銆侀獙璇?鍏?鍗婂弻宸ユā寮忓拰閫熷害銆傚浜忎簡杩欎簺瀵勫瓨鍣紝鎵嶅緱浠ユ煡鐪嬭嚜鍗忓晢鐨勯摼璺紮浼磋兘鍔涖€?
-### 鐗╃悊灞?
-椹卞姩涓庣墿鐞嗘娊璞″眰锛圥hysical Abstraction Layer锛夊吋瀹癸紝浠ヨ繛鎺ュ埌 PHY 鍜?GPHY 璁惧銆?
-### 骞冲彴淇℃伅
+新的 GMAC 设备提供了自己的方式来管理的 RGMII/SGMII。这一信息在运行时通过查看
+HW 能力寄存器就可以获得。这意味着 stmmac 可以无需使用 PHYLIB 的那套机制，就能
+管理自协商和链路状态。实际上，HW 提供了一组扩展寄存器来重新启ANE、验半双工模式和速度。多亏了这些寄存器，才得以查看自协商的链路伙伴能力
+### 鐗╃悊灞。
+驱动与物理抽象层（Physical Abstraction Layer）兼容，以连接到 PHY GPHY 设备
+### 平台信息
 
-涓€浜涗俊鎭彲浠ラ€氳繃 platform 鍜岃澶囨爲浼犻€掋€?
+一些信息可以通过 platform 和设备树传递
 ```
 
     struct plat_stmmacenet_data {
@@ -205,7 +205,7 @@ HW 鑳藉姏瀵勫瓨鍣ㄥ氨鍙互鑾峰緱銆傝繖鎰忓懗鐫€ stmmac 
         int bus_id;
 
 ```
-2) PHY 鐗╃悊鍦板潃銆傚鏋滆涓?-1锛岄┍鍔ㄥ皢閫夋嫨瀹冩壘鍒扮殑绗竴涓?PHY
+2) PHY 物理地址。如果设-1，驱动将选择它找到的第一PHY
 ```
         int phy_addr;
 
@@ -239,8 +239,8 @@ HW 鑳藉姏瀵勫瓨鍣ㄥ氨鍙互鑾峰緱銆傝繖鎰忓懗鐫€ stmmac 
         int rx_coe;
 
 ```
-11) 涓€浜?HW 鐢变簬缂撳啿鍖哄ぇ灏忔湁闄愶紝鏃犳硶涓鸿秴澶у抚鍦?HW 涓墽琛?csum銆傝缃鏍囧織鍚庯紝
-csum 灏嗗湪 SW 涓墽琛?```
+11) 一HW 由于缓冲区大小有限，无法为超大帧HW 中执csum。设置此标志后，
+csum 将在 SW 中执```
         int bugged_jumbo;
 
 ```
@@ -287,18 +287,18 @@ csum 灏嗗湪 SW 涓墽琛?```
         struct stmmac_txq_cfg tx_queues_cfg[MTL_MAX_TX_QUEUES];
 
 ```
-24) 姝ゅ洖璋冪敤浜庝慨鏀规煇浜?syscfg 瀵勫瓨鍣紙鍦?ST SoC 涓婏級
+24) 此回调用于修改某syscfg 寄存器（ST SoC 上）
 ```
         void (*fix_mac_speed)(void *priv, unsigned int speed);
 
 ```
-25) 鐢ㄤ簬璋冪敤鑷畾涔夊垵濮嬪寲鐨勫洖璋冿紱鍦ㄦ煇浜涘钩鍙帮紙渚嬪 ST 鏈洪《鐩掞級涓婅繖鏈夋椂鏄繀瑕佺殑锛?杩欎簺骞冲彴鐨?HW 闇€瑕佽缃竴浜?PIO 绾挎垨绯荤粺 cfg 瀵勫瓨鍣ㄣ€俰nit/exit 鍥炶皟涓嶅簲浣跨敤
+25) 用于调用自定义初始化的回调；在某些平台（例如 ST 机顶盒）上这有时是必要的这些平台HW 需要设置一PIO 线或系统 cfg 寄存器。init/exit 回调不应使用
 ```
         int (*init)(struct platform_device *pdev, void *priv);
         void (*exit)(struct platform_device *pdev, void *priv);
 
 ```
-26) 鎵ц鎬荤嚎鐨?HW 璁剧疆銆備緥濡傦紝鍦ㄦ煇浜?ST 骞冲彴涓婅繖涓瓧娈?```
+26) 执行总线HW 设置。例如，在某ST 平台上这个字```
         struct mac_device_info *(*setup)(void *priv);
         void *bsp_priv;
 
@@ -508,28 +508,28 @@ For the TX Queues configuration, we have:
     }
 
 ```
-### 璁惧鏍戜俊鎭?
-璇峰弬鑰冧互涓嬫枃妗ｏ細
+### 设备树信
+请参考以下文档：
 Documentation/devicetree/bindings/net/snps,dwmac.yaml
 
-### HW 鑳藉姏
+### HW 能力
 
-娉ㄦ剰锛屼粠鍙敤 HW 鑳藉姏瀵勫瓨鍣ㄧ殑鏂拌姱鐗囧紑濮嬶紝璁稿閰嶇疆鏄湪杩愯鏃跺彂鐜扮殑锛屼緥濡傜敤浜?浜嗚В EEE銆丠W csum銆丳TP銆佸寮烘弿杩扮绛夋槸鍚︾湡姝ｅ彲鐢ㄣ€備綔涓烘椹卞姩鎵€閲囩敤鐨勭瓥鐣ワ紝鏉ヨ嚜
-HW 鑳藉姏瀵勫瓨鍣ㄧ殑淇℃伅鍙互鍙栦唬浠庡钩鍙颁紶鏉ョ殑淇℃伅銆?
-## 璋冭瘯淇℃伅
+注意，从可用 HW 能力寄存器的新芯片开始，许多配置是在运行时发现的，例如用了解 EEE、HW csum、PTP、增强描述符等是否真正可用。作为此驱动所采用的策略，来自
+HW 能力寄存器的信息可以取代从平台传来的信息
+## 调试信息
 
-椹卞姩瀵煎嚭浜嗚澶氫俊鎭紝渚嬪鍐呴儴缁熻銆佽皟璇曚俊鎭€丮AC 鍜?DMA 瀵勫瓨鍣ㄧ瓑銆?
-鏍规嵁瀹為檯鎵€闇€淇℃伅鐨勭被鍨嬶紝鍙互閫氳繃澶氱鏂瑰紡璇诲彇杩欎簺淇℃伅銆?
-渚嬪锛岀敤鎴峰彲浠ヤ娇鐢?ethtool 鏀寔鏉ヨ幏鍙栫粺璁′俊鎭細渚嬪浣跨敤 `ethtool -S ethX`
-锛堝鏋滄敮鎸佸垯鏄剧ず绠＄悊璁℃暟鍣紙MMC锛夛級锛屾垨鑰呮煡鐪?MAC/DMA 瀵勫瓨鍣細渚嬪浣跨敤
-`ethtool -d ethX`銆?
-鐢?`CONFIG_DEBUG_FS` 缂栬瘧鍐呮牳锛岄┍鍔ㄥ皢瀵煎嚭浠ヤ笅 debugfs 椤癸細
+驱动导出了许多信息，例如内部统计、调试信息、MAC DMA 寄存器等
+根据实际所需信息的类型，可以通过多种方式读取这些信息
+例如，用户可以使ethtool 支持来获取统计信息：例如使用 `ethtool -S ethX`
+（如果支持则显示管理计数器（MMC）），或者查MAC/DMA 寄存器：例如使用
+`ethtool -d ethX`銆。
+`CONFIG_DEBUG_FS` 编译内核，驱动将导出以下 debugfs 项：
 
- - `descriptors_status`锛氱敤浜庢樉绀?DMA TX/RX 鎻忚堪绗︾幆
- - `dma_cap`锛氱敤浜庢樉绀?HW 鑳藉姏
+ - `descriptors_status`：用于显DMA TX/RX 描述符环
+ - `dma_cap`：用于显HW 能力
 
-寮€鍙戣€呬篃鍙互浣跨敤 `debug` 妯″潡鍙傛暟鏉ヨ幏鍙栬繘涓€姝ョ殑璋冭瘯淇℃伅锛堣鍙傞槄锛歂ETIF Msg
-Level锛夈€?
-## 鏀寔
+开发者也可以使用 `debug` 模块参数来获取进一步的调试信息（请参阅：NETIF Msg
+Level）
+## 支持
 
-濡傛灉鍦ㄥ彈鏀寔鐨勫唴鏍镐笂銆佷娇鐢ㄥ彈鏀寔鐨勯€傞厤鍣ㄣ€佸湪宸插彂甯冪殑婧愪唬鐮佷腑鍙戠幇闂锛岃鎶?涓庤闂鐩稿叧鐨勫叿浣撲俊鎭€氳繃鐢靛瓙閭欢鍙戦€佸埌 netdev@vger.kernel.org
+如果在受支持的内核上、使用受支持的适配器、在已发布的源代码中发现问题，请与该问题相关的具体信息通过电子邮件发送到 netdev@vger.kernel.org

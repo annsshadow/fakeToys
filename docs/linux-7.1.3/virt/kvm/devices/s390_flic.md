@@ -1,61 +1,61 @@
 ﻿
-## FLIC锛坒loating interrupt controller锛屾诞鍔ㄤ腑鏂帶鍒跺櫒锛?
+## FLIC（floating interrupt controller，浮动中断控制器
 
 
-FLIC 澶勭悊娴姩锛堥潪姣?CPU锛変腑鏂紝鍗?I/O銆佹湇鍔′互鍙婃煇浜涙満鍣ㄦ鏌ワ紙machine check锛変腑鏂€?
-鎵€鏈変腑鏂兘瀛樺偍鍦ㄦ瘡 VM 鐨勬寕璧蜂腑鏂垪琛ㄤ腑銆侳LIC 瀵硅鍒楄〃鎵ц鎿嶄綔銆?
+FLIC 处理浮动（非CPU）中断，I/O、服务以及某些机器检查（machine check）中断
+所有中断都存储在每 VM 的挂起中断列表中。FLIC 对该列表执行操作
 
-鍙兘瀹炰緥鍖栦竴涓?FLIC 瀹炰緥銆?
+只能实例化一FLIC 实例
 
-FLIC 鎻愪緵浠ヤ笅鏀寔锛?
-- 娣诲姞涓柇锛圞VM_DEV_FLIC_ENQUEUE锛?
-- 妫€鏌ュ綋鍓嶆寕璧风殑涓柇锛圞VM_FLIC_GET_ALL_IRQS锛?
-- 娓呴櫎鎵€鏈夋寕璧风殑娴姩涓柇锛圞VM_DEV_FLIC_CLEAR_IRQS锛?
-- 娓呴櫎涓€涓寕璧风殑娴姩 I/O 涓柇锛圞VM_DEV_FLIC_CLEAR_IO_IRQ锛?
-- 涓哄鏈哄惎鐢?绂佺敤閫忔槑鐨勫紓姝ラ〉閿欒锛坅sync page faults锛?
-- 娉ㄥ唽鍜屼慨鏀归€傞厤鍣ㄤ腑鏂簮锛圞VM_DEV_FLIC_ADAPTER_*锛?
-- 淇敼 AIS锛坅dapter-interruption-suppression锛岄€傞厤鍣ㄤ腑鏂姂鍒讹級妯″紡鐘舵€侊紙KVM_DEV_FLIC_AISM锛?
-- 鍦ㄦ寚瀹氶€傞厤鍣ㄤ笂娉ㄥ叆閫傞厤鍣ㄤ腑鏂紙KVM_DEV_FLIC_AIRQ_INJECT锛?
-- 鑾峰彇/璁剧疆鎵€鏈?AIS 妯″紡鐘舵€侊紙KVM_DEV_FLIC_AISM_ALL锛?
+FLIC 提供以下支持
+- 添加中断（KVM_DEV_FLIC_ENQUEUE
+- 检查当前挂起的中断（KVM_FLIC_GET_ALL_IRQS
+- 清除所有挂起的浮动中断（KVM_DEV_FLIC_CLEAR_IRQS
+- 清除一个挂起的浮动 I/O 中断（KVM_DEV_FLIC_CLEAR_IO_IRQ
+- 为客机启禁用透明的异步页错误（async page faults
+- 注册和修改适配器中断源（KVM_DEV_FLIC_ADAPTER_*
+- 修改 AIS（adapter-interruption-suppression，适配器中断抑制）模式状态（KVM_DEV_FLIC_AISM
+- 在指定适配器上注入适配器中断（KVM_DEV_FLIC_AIRQ_INJECT
+- 获取/设置所AIS 模式状态（KVM_DEV_FLIC_AISM_ALL
 
-缁勶細
+组：
   KVM_DEV_FLIC_ENQUEUE
-    灏嗕竴涓紦鍐插尯鍜岄暱搴︿紶鍏ュ唴鏍革紝闅忓悗瀹冧滑琚敞鍏ュ埌鎸傝捣涓柇鍒楄〃涓€?
-    attr->addr 鍖呭惈鎸囧悜缂撳啿鍖虹殑鎸囬拡锛宎ttr->attr 鍖呭惈缂撳啿鍖虹殑闀垮害銆?
-    浠庣敤鎴风┖闂村鍒剁殑鏁版嵁缁撴瀯 kvm_s390_irq 鐨勬牸寮忓畾涔変簬 usr/include/linux/kvm.h銆?
+    将一个缓冲区和长度传入内核，随后它们被注入到挂起中断列表中
+    attr->addr 包含指向缓冲区的指针，attr->attr 包含缓冲区的长度
+    从用户空间复制的数据结构 kvm_s390_irq 的格式定义于 usr/include/linux/kvm.h
 
   KVM_DEV_FLIC_GET_ALL_IRQS
-    灏嗘墍鏈夋诞鍔ㄤ腑鏂鍒跺埌涓€涓敱鐢ㄦ埛绌洪棿鎻愪緵鐨勭紦鍐插尯涓€?
-    褰撶紦鍐插尯澶皬鏃惰繑鍥?-ENOMEM锛岃繖鏄寚绀虹敤鎴风┖闂寸敤涓€涓洿澶х殑缂撳啿鍖洪噸璇曘€?
+    将所有浮动中断复制到一个由用户空间提供的缓冲区中
+    当缓冲区太小时返-ENOMEM，这是指示用户空间用一个更大的缓冲区重试
 
-    -ENOBUFS 鍦ㄥ垎閰嶅唴鏍哥┖闂寸紦鍐插尯澶辫触鏃惰繑鍥炪€?
+    -ENOBUFS 在分配内核空间缓冲区失败时返回
 
-    -EFAULT 鍦ㄥ皢鏁版嵁澶嶅埗鍒扮敤鎴风┖闂村け璐ユ椂杩斿洖銆傛墍鏈変腑鏂繚鎸佹寕璧凤紝鍗充笉浼氳浠庡綋鍓?
-    鎸傝捣涓柇鍒楄〃涓垹闄ゃ€俛ttr->addr 鍖呭惈鐢ㄦ埛绌洪棿缂撳啿鍖虹殑鍦板潃锛屾墍鏈変腑鏂暟鎹皢琚鍒?
-    鍒拌缂撳啿鍖恒€俛ttr->attr 鍖呭惈缂撳啿鍖虹殑澶у皬锛堝瓧鑺傦級銆?
+    -EFAULT 在将数据复制到用户空间失败时返回。所有中断保持挂起，即不会被从当
+    挂起中断列表中删除。attr->addr 包含用户空间缓冲区的地址，所有中断数据将被复
+    到该缓冲区。attr->attr 包含缓冲区的大小（字节）
 
   KVM_DEV_FLIC_CLEAR_IRQS
-    绠€鍗曞湴浠庡綋鍓嶆寕璧风殑娴姩涓柇鍒楄〃涓垹闄ゆ墍鏈夊厓绱犮€傛病鏈変腑鏂娉ㄥ叆鍒板鏈恒€?
+    简单地从当前挂起的浮动中断列表中删除所有元素。没有中断被注入到客机
 
   KVM_DEV_FLIC_CLEAR_IO_IRQ
-    鍒犻櫎涓€涓紙濡傛灉瀛樺湪锛塈/O 涓柇锛岃涓柇閽堝鐢?attr->addr锛堝湴鍧€锛夊拰 attr->attr锛堥暱搴︼級
-    鎵€鎸囧畾缂撳啿鍖轰紶鍏ョ殑瀛愮郴缁熸爣璇嗗瓧锛坰ubsystem identification word锛夋墍鏍囪瘑鐨勫瓙閫氶亾
-    锛坰ubchannel锛夈€?
+    删除一个（如果存在）I/O 中断，该中断针对attr->addr（地址）和 attr->attr（长度）
+    所指定缓冲区传入的子系统标识字（subsystem identification word）所标识的子通道
+    （subchannel）
 
   KVM_DEV_FLIC_APF_ENABLE
-    涓哄鏈哄惎鐢ㄥ紓姝ラ〉閿欒銆傚洜姝ゅ湪澶ч〉閿欒锛坢ajor page fault锛夋儏鍐典笅锛屽涓绘満琚厑璁稿紓姝?
-    澶勭悊瀹冨苟缁х画杩愯瀹㈡満銆?
+    为客机启用异步页错误。因此在大页错误（major page fault）情况下，宿主机被允许异
+    处理它并继续运行客机
 
-    -EINVAL 鍦ㄩ拡瀵?ucontrol VM 鐨?FLIC 璋冪敤鏃惰繑鍥炪€?
+    -EINVAL 在针ucontrol VM FLIC 调用时返回
 
   KVM_DEV_FLIC_APF_DISABLE_WAIT
-    涓哄鏈虹鐢ㄥ紓姝ラ〉閿欒锛屽苟绛夊緟鐩村埌宸茬粡鎸傝捣鐨勫紓姝ラ〉閿欒瀹屾垚銆傝繖瀵逛簬鍦ㄨ縼绉讳腑鏂垪琛?
-    涔嬪墠涓烘瘡涓?init 涓柇瑙﹀彂涓€涓畬鎴愪腑鏂槸蹇呰鐨勩€?
+    为客机禁用异步页错误，并等待直到已经挂起的异步页错误完成。这对于在迁移中断列
+    之前为每init 中断触发一个完成中断是必要的
 
-    -EINVAL 鍦ㄩ拡瀵?ucontrol VM 鐨?FLIC 璋冪敤鏃惰繑鍥炪€?
+    -EINVAL 在针ucontrol VM FLIC 调用时返回
 
   KVM_DEV_FLIC_ADAPTER_REGISTER
-    娉ㄥ唽涓€涓?I/O 閫傞厤鍣ㄤ腑鏂簮銆傛帴鍙椾竴涓?kvm_s390_io_adapter
+    注册一I/O 适配器中断源。接受一kvm_s390_io_adapter
 ```
 
 	struct kvm_s390_io_adapter {
@@ -148,6 +148,6 @@ FLIC 鎻愪緵浠ヤ笅鏀寔锛?
     KVM_DEV_FLIC_AISM_ALL is indicated by KVM_CAP_S390_AIS_MIGRATION.
 
 ```
-娉ㄦ剰锛氬湪 FLIC 涓婃墽琛岀殑甯︽湁鏈煡缁勬垨灞炴€х殑 KVM_SET_DEVICE_ATTR/KVM_GET_DEVICE_ATTR 璁惧 ioctl 浼氱粰鍑洪敊璇爜 EINVAL锛堣€屼笉鏄?API 鏂囨。涓瀹氱殑 ENXIO锛夈€傛棤娉曞熀浜庝娇鐢ㄥ皾璇曟墍浜х敓鐨勯敊璇爜鏉ユ帹鏂煇涓?FLIC 鎿嶄綔涓嶅彲鐢ㄣ€?
+注意：在 FLIC 上执行的带有未知组或属性的 KVM_SET_DEVICE_ATTR/KVM_GET_DEVICE_ATTR 设备 ioctl 会给出错误码 EINVAL（而不API 文档中规定的 ENXIO）。无法基于使用尝试所产生的错误码来推断某FLIC 操作不可用
 
-  鎸囧畾浜嗛浂 schid銆?
+  指定了零 schid

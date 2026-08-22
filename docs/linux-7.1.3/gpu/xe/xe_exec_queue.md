@@ -1,22 +1,22 @@
-﻿## 鎵ц闃熷垪锛圗xecution Queue锛?
+﻿## 执行队列（Execution Queue
 
 
-鏈枃浠惰褰?xe 椹卞姩鎵ц闃熷垪锛坋xecution queue锛夌浉鍏崇殑鍐呮牳 API銆?
+本文件记xe 驱动执行队列（execution queue）相关的内核 API
 
    :doc: Execution Queue
 
-## 澶氶槦鍒楃粍
+## 多队列组
 
 
    :doc: Multi Queue Group
 
 
-## 澶氶槦鍒楃粍 GuC 鎺ュ彛
+## 多队列组 GuC 接口
 
 
    :doc: Multi Queue Group GuC interface
 
-## 鍐呴儴 API
+## 内部 API
 
 
    :internal:

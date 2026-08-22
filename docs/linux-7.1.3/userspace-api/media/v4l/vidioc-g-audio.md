@@ -4,11 +4,11 @@
 ######## ioctl VIDIOC_G_AUDIO, VIDIOC_S_AUDIO
 
 
-## 鍚嶇О
+## 名称
 
 
-VIDIOC_G_AUDIO - VIDIOC_S_AUDIO - 鏌ヨ鎴栭€夋嫨褰撳墠鐨勯煶棰戣緭鍏ュ強鍏跺睘鎬?
-## 姒傝
+VIDIOC_G_AUDIO - VIDIOC_S_AUDIO - 查询或选择当前的音频输入及其属
+## 概要
 
 
 `int ioctl(int fd, VIDIOC_G_AUDIO, struct v4l2_audio *argp)`
@@ -16,18 +16,18 @@ VIDIOC_G_AUDIO - VIDIOC_S_AUDIO - 鏌ヨ鎴栭€夋嫨褰撳墠鐨勯煶棰�
 
 `int ioctl(int fd, VIDIOC_S_AUDIO, const struct v4l2_audio *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    `open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `argp`
-    鎸囧悜 struct `v4l2_audio` 鐨勬寚閽堛€?
-## 鎻忚堪
+    指向 struct `v4l2_audio` 的指针
+## 描述
 
 
-瑕佹煡璇㈠綋鍓嶉煶棰戣緭鍏ワ紝搴旂敤绋嬪簭鍏堝皢 struct `v4l2_audio` 鐨?`reserved` 鏁扮粍娓呴浂锛岀劧鍚庝互鎸囧悜璇ョ粨鏋勭殑鎸囬拡璋冪敤 VIDIOC_G_AUDIO <VIDIOC_G_AUDIO> ioctl銆傚綋璁惧娌℃湁闊抽杈撳叆锛屾垨鑰呮病鏈変笌褰撳墠瑙嗛杈撳叆鐩哥粍鍚堢殑闊抽杈撳叆鏃讹紝椹卞姩浼氬～鍏呯粨鏋勭殑鍏朵綑閮ㄥ垎锛屾垨鑰呰繑鍥?`EINVAL` 閿欒鐮併€?
-闊抽杈撳叆鏈変竴涓彲鍐欏睘鎬э紝鍗抽煶棰戞ā寮忋€傝閫夋嫨褰撳墠闊抽杈撳叆**骞?*鏇存敼闊抽妯″紡锛屽簲鐢ㄧ▼搴忓垵濮嬪寲 struct `v4l2_audio` 缁撴瀯鐨?`index` 鍜?`mode` 瀛楁浠ュ強 `reserved` 鏁扮粍锛岀劧鍚庤皟鐢?VIDIOC_S_AUDIO <VIDIOC_G_AUDIO> ioctl銆傚鏋滆姹傛棤娉曡婊¤冻锛岄┍鍔ㄥ彲鑳戒細鍒囨崲鍒颁笉鍚岀殑闊抽妯″紡銆備笉杩囷紝杩欐槸涓€涓彧鍐欙紙write-only锛塱octl锛屽畠涓嶄細杩斿洖瀹為檯鐨勬柊鐨勯煶棰戞ā寮忋€?
+要查询当前音频输入，应用程序先将 struct `v4l2_audio` `reserved` 数组清零，然后以指向该结构的指针调用 VIDIOC_G_AUDIO <VIDIOC_G_AUDIO> ioctl。当设备没有音频输入，或者没有与当前视频输入相组合的音频输入时，驱动会填充结构的其余部分，或者返`EINVAL` 错误码
+音频输入有一个可写属性，即音频模式。要选择当前音频输入***更改音频模式，应用程序初始化 struct `v4l2_audio` 结构`index` `mode` 字段以及 `reserved` 数组，然后调VIDIOC_S_AUDIO <VIDIOC_G_AUDIO> ioctl。如果请求无法被满足，驱动可能会切换到不同的音频模式。不过，这是一个只写（write-only）ioctl，它不会返回实际的新的音频模式
 
 
     :header-rows:  0
@@ -36,15 +36,15 @@ VIDIOC_G_AUDIO - VIDIOC_S_AUDIO - 鏌ヨ鎴栭€夋嫨褰撳墠鐨勯煶棰�
 
     - - __u32
       - `index`
-      - 鏍囪瘑闊抽杈撳叆锛岀敱椹卞姩鎴栧簲鐢ㄧ▼搴忚缃€?    - - __u8
+      - 标识音频输入，由驱动或应用程序设置    - - __u8
       - `name`\ [^32^]
-      - 闊抽杈撳叆鐨勫悕绉帮紝涓€涓互 NUL 缁撳熬鐨?ASCII 瀛楃涓诧紝渚嬪锛?Line In"銆傛淇℃伅渚涚敤鎴蜂娇鐢紝鏈€濂芥槸璁惧鏈韩涓婄殑杩炴帴鍣ㄦ爣绛俱€?    - - __u32
+      - 音频输入的名称，一个以 NUL 结尾ASCII 字符串，例如Line In"。此信息供用户使用，最好是设备本身上的连接器标签    - - __u32
       - `capability`
-      - 闊抽鑳藉姏鏍囧織锛屽弬瑙?audio-capability銆?    - - __u32
+      - 音频能力标志，参audio-capability    - - __u32
       - `mode`
-      - 鐢遍┍鍔ㄥ拰搴旂敤绋嬪簭璁剧疆鐨勯煶棰戞ā寮忔爣蹇楋紙鍦?VIDIOC_S_AUDIO <VIDIOC_G_AUDIO> ioctl 涓級锛屽弬瑙?audio-mode銆?    - - __u32
+      - 由驱动和应用程序设置的音频模式标志（VIDIOC_S_AUDIO <VIDIOC_G_AUDIO> ioctl 中），参audio-mode    - - __u32
       - `reserved`\ [^2^]
-      - 淇濈暀渚涘皢鏉ユ墿灞曘€傞┍鍔ㄥ拰搴旂敤绋嬪簭蹇呴』灏嗚鏁扮粍缃浂銆?
+      - 保留供将来扩展。驱动和应用程序必须将该数组置零
 
 
 
@@ -54,9 +54,9 @@ VIDIOC_G_AUDIO - VIDIOC_S_AUDIO - 鏌ヨ鎴栭€夋嫨褰撳墠鐨勯煶棰�
 
     - - `V4L2_AUDCAP_STEREO`
       - 0x00001
-      - 杩欐槸涓€涓珛浣撳０杈撳叆銆傝鏍囧織鐢ㄤ簬鍦ㄤ俊鍙峰缁堜负鍗曞０閬撴椂鑷姩绂佺敤绔嬩綋澹板綍鍒剁瓑銆傞櫎闈為煶棰戣緭鍏ュ睘浜庤皟璋愬櫒锛屽惁鍒?API 娌℃湁鎻愪緵妫€娴嬫槸鍚?*鎺ユ敹鍒?*绔嬩綋澹扮殑鎵嬫銆?    - - `V4L2_AUDCAP_AVL`
+      - 这是一个立体声输入。该标志用于在信号始终为单声道时自动禁用立体声录制等。除非音频输入属于调谐器，否API 没有提供检测是*接收*立体声的手段    - - `V4L2_AUDCAP_AVL`
       - 0x00002
-      - 鏀寔鑷姩闊抽噺鐢靛钩锛圓utomatic Volume Level锛夋ā寮忋€?
+      - 支持自动音量电平（Automatic Volume Level）模式
 
 
 
@@ -66,9 +66,9 @@ VIDIOC_G_AUDIO - VIDIOC_S_AUDIO - 鏌ヨ鎴栭€夋嫨褰撳墠鐨勯煶棰�
 
     - - `V4L2_AUDMODE_AVL`
       - 0x00001
-      - AVL 妯″紡寮€鍚€?
-## 杩斿洖鍊?
+      - AVL 模式开启
+## 杩斿洖鍊。
 
-鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪閫氱敤閿欒鐮?<gen-errors> 绔犺妭涓弿杩般€?
+成功时返0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在通用错误<gen-errors> 章节中描述
 EINVAL
-    娌℃湁闊抽杈撳叆涓庡綋鍓嶈棰戣緭鍏ョ粍鍚堬紝鎴栬€呮墍閫夐煶棰戣緭鍏ョ殑缂栧彿瓒呭嚭鑼冨洿锛屾垨鑰呭畠鏃犳硶缁勫悎銆?
+    没有音频输入与当前视频输入组合，或者所选音频输入的编号超出范围，或者它无法组合

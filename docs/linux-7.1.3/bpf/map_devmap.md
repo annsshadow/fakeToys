@@ -1,13 +1,13 @@
 ﻿## BPF_MAP_TYPE_DEVMAP 涓?BPF_MAP_TYPE_DEVMAP_HASH
 
 
-   - `BPF_MAP_TYPE_DEVMAP` 鍦ㄥ唴鏍哥増鏈?4.14 涓紩鍏?   - `BPF_MAP_TYPE_DEVMAP_HASH` 鍦ㄥ唴鏍哥増鏈?5.4 涓紩鍏?
-`BPF_MAP_TYPE_DEVMAP` 鍜?`BPF_MAP_TYPE_DEVMAP_HASH` 鏄富瑕佺敤浣?XDP BPF 杈呭姪璋冪敤 `bpf_redirect_map()` 鍚庣鏄犲皠鐨?BPF 鏄犲皠銆俙BPF_MAP_TYPE_DEVMAP` 鐢变竴涓暟缁勬敮鎾戯紝璇ユ暟缁勪娇鐢ㄩ敭锛坘ey锛変綔涓虹储寮曟潵鏌ユ壘瀵圭綉缁滆澶囷紙net device锛夌殑寮曠敤銆傝€?`BPF_MAP_TYPE_DEVMAP_HASH` 鐢变竴涓搱甯岃〃鏀拺锛岃鍝堝笇琛ㄤ娇鐢ㄩ敭鏉ユ煡鎵惧缃戠粶璁惧鐨勫紩鐢ㄣ€傜敤鎴锋彁渚?<`key`/ `ifindex`> 鎴?<`key`/ `struct bpf_devmap_val`> 瀵规潵鐢ㄦ柊鐨勭綉缁滆澶囨洿鏂版槧灏勩€?
-    - 鍝堝笇鏄犲皠鐨勯敭涓嶅繀鏄?`ifindex`銆?    - 铏界劧 `BPF_MAP_TYPE_DEVMAP_HASH` 鍏佽瀵圭綉缁滆澶囪繘琛岀揣鍑戞墦鍖咃紝浣嗗叾浠ｄ环鏄湪鎵ц鏌ユ壘鏃堕渶瑕佸閿繘琛屽搱甯屻€?
-涓ょ绫诲瀷 devmap 鐨勫垵濮嬪寲鍜屾暟鎹寘鍏ラ槦/鍙戦€佷唬鐮佹槸鍏变韩鐨勶紱鍙湁鏌ユ壘鍜屾彃鍏ヤ笉鍚屻€?
-## 鐢ㄦ硶锛圲sage锛?
+   - `BPF_MAP_TYPE_DEVMAP` 在内核版4.14 中引   - `BPF_MAP_TYPE_DEVMAP_HASH` 在内核版5.4 中引
+`BPF_MAP_TYPE_DEVMAP` `BPF_MAP_TYPE_DEVMAP_HASH` 是主要用XDP BPF 辅助调用 `bpf_redirect_map()` 后端映射BPF 映射。`BPF_MAP_TYPE_DEVMAP` 由一个数组支撑，该数组使用键（key）作为索引来查找对网络设备（net device）的引用。`BPF_MAP_TYPE_DEVMAP_HASH` 由一个哈希表支撑，该哈希表使用键来查找对网络设备的引用。用户提<`key`/ `ifindex`> <`key`/ `struct bpf_devmap_val`> 对来用新的网络设备更新映射
+    - 哈希映射的键不必`ifindex`    - 虽然 `BPF_MAP_TYPE_DEVMAP_HASH` 允许对网络设备进行紧凑打包，但其代价是在执行查找时需要对键进行哈希
+两种类型 devmap 的初始化和数据包入队/发送代码是共享的；只有查找和插入不同
+## 用法（Usage
 
-### 鍐呮牳 BPF
+### 内核 BPF
 
 
 ##### bpf_redirect_map()
@@ -15,41 +15,41 @@
 
     long bpf_redirect_map(struct bpf_map *map, u32 key, u64 flags)
 
-灏嗘暟鎹寘閲嶅畾鍚戝埌 `map` 涓储寮曚负 `key` 鎵€寮曠敤鐨勭鐐广€傚浜?`BPF_MAP_TYPE_DEVMAP` 鍜?`BPF_MAP_TYPE_DEVMAP_HASH`锛岃鏄犲皠鍖呭惈瀵圭綉缁滆澶囷紙鐢ㄤ簬閫氳繃鍏朵粬绔彛杞彂鏁版嵁鍖咃級鐨勫紩鐢ㄣ€?
-**flags** 鐨勪綆涓や綅鐢ㄤ綔鏄犲皠鏌ユ壘澶辫触鏃剁殑杩斿洖鐮併€傝繖鏍疯繑鍥炲€煎彲浠ユ槸璋冪敤鑰呮墍閫夌殑銆佹渶楂樺埌 `XDP_TX` 鐨?XDP 绋嬪簭杩斿洖鐮佷箣涓€銆俙flags` 鐨勯珮浣嶅彲浠ヨ缃负 `BPF_F_BROADCAST` 鎴?`BPF_F_EXCLUDE_INGRESS`锛屽涓嬫墍杩般€?
-浣跨敤 `BPF_F_BROADCAST` 鏃讹紝鏁版嵁鍖呭皢琚箍鎾埌鏄犲皠涓殑鎵€鏈夋帴鍙ｏ紱浣跨敤 `BPF_F_EXCLUDE_INGRESS` 鏃讹紝ingress 鎺ュ彛灏嗚鎺掗櫎鍦ㄥ箍鎾箣澶栥€?
-    - 濡傛灉璁剧疆浜?BPF_F_BROADCAST锛屽垯閿蹇界暐銆?    - 骞挎挱鐗规€т篃鍙敤浜庡疄鐜扮粍鎾浆鍙戯細鍙渶鍒涘缓澶氫釜 DEVMAP锛屾瘡涓搴斾竴涓粍鎾粍銆?
-璇ヨ緟鍔╁嚱鏁板湪鎴愬姛鏃惰繑鍥?`XDP_REDIRECT`锛岃嫢鏄犲皠鏌ユ壘澶辫触鍒欒繑鍥?`flags` 鍙傛暟鐨勪綆涓や綅鍊笺€?
-鍏充簬閲嶅畾鍚戠殑鏇村淇℃伅鍙弬瑙?[redirect](redirect)
+将数据包重定向到 `map` 中索引为 `key` 所引用的端点。对`BPF_MAP_TYPE_DEVMAP` `BPF_MAP_TYPE_DEVMAP_HASH`，该映射包含对网络设备（用于通过其他端口转发数据包）的引用
+**flags** 的低两位用作映射查找失败时的返回码。这样返回值可以是调用者所选的、最高到 `XDP_TX` XDP 程序返回码之一。`flags` 的高位可以设置为 `BPF_F_BROADCAST` `BPF_F_EXCLUDE_INGRESS`，如下所述
+使用 `BPF_F_BROADCAST` 时，数据包将被广播到映射中的所有接口；使用 `BPF_F_EXCLUDE_INGRESS` 时，ingress 接口将被排除在广播之外
+    - 如果设置BPF_F_BROADCAST，则键被忽略    - 广播特性也可用于实现组播转发：只需创建多个 DEVMAP，每个对应一个组播组
+该辅助函数在成功时返`XDP_REDIRECT`，若映射查找失败则返`flags` 参数的低两位值
+关于重定向的更多信息可参[redirect](redirect)
 
 ##### bpf_map_lookup_elem()
 
 
    void **bpf_map_lookup_elem(struct bpf_map **map, const void *key)
 
-鍙互浣跨敤 `bpf_map_lookup_elem()` 杈呭姪鍑芥暟鑾峰彇缃戠粶璁惧鏉＄洰銆?
-### 鐢ㄦ埛绌洪棿
+可以使用 `bpf_map_lookup_elem()` 辅助函数获取网络设备条目
+### 用户空间
 
 
-    DEVMAP 鏉＄洰鍙兘浠庣敤鎴风┖闂存洿鏂?鍒犻櫎锛岃€屼笉鑳戒粠 eBPF 绋嬪簭涓洿鏂?鍒犻櫎銆?    灏濊瘯浠庡唴鏍?eBPF 绋嬪簭璋冪敤杩欎簺鍑芥暟灏嗗鑷寸▼搴忓姞杞藉け璐ュ苟鍑虹幇楠岃瘉鍣紙verifier锛夎鍛娿€?
+    DEVMAP 条目只能从用户空间更删除，而不能从 eBPF 程序中更删除    尝试从内eBPF 程序调用这些函数将导致程序加载失败并出现验证器（verifier）警告
 ##### bpf_map_update_elem()
 
 
    int bpf_map_update_elem(int fd, const void **key, const void **value, __u64 flags);
 
-鍙互浣跨敤 `bpf_map_update_elem()` 杈呭姪鍑芥暟娣诲姞鎴栨洿鏂扮綉缁滆澶囨潯鐩€傝杈呭姪鍑芥暟浠ュ師瀛愭柟寮忔浛鎹㈢幇鏈夊厓绱犮€俙value` 鍙傛暟鍙互鏄?`struct bpf_devmap_val`锛屾垨鑰呬负浜嗗悜鍚庡吋瀹癸紝涔熷彲浠ユ槸涓€涓畝鍗曠殑 `int ifindex`銆?
+可以使用 `bpf_map_update_elem()` 辅助函数添加或更新网络设备条目。该辅助函数以原子方式替换现有元素。`value` 参数可以`struct bpf_devmap_val`，或者为了向后兼容，也可以是一个简单的 `int ifindex`
  .. code-block:: c
 
     struct bpf_devmap_val {
-        __u32 ifindex;   /** 璁惧绱㈠紩 **/
+        __u32 ifindex;   /** 设备索引 **/
         union {
-            int   fd;  /** 鍐欐槧灏勬椂鐨?prog fd **/
-            __u32 id;  /** 璇绘槧灏勬椂鐨?prog id **/
+            int   fd;  /** 写映射时prog fd **/
+            __u32 id;  /** 读映射时prog id **/
         } bpf_prog;
     };
 
-`flags` 鍙傛暟鍙互鏄互涓嬩箣涓€锛?  - `BPF_ANY`锛氬垱寤烘柊鍏冪礌鎴栨洿鏂扮幇鏈夊厓绱犮€?  - `BPF_NOEXIST`锛氫粎褰撳厓绱犱笉瀛樺湪鏃舵墠鍒涘缓鏂板厓绱犮€?  - `BPF_EXIST`锛氭洿鏂扮幇鏈夊厓绱犮€?
-DEVMAP 鍙互閫氳繃灏?`bpf_prog.fd` 娣诲姞鍒?`struct bpf_devmap_val` 鏉ュ皢绋嬪簭涓庤澶囨潯鐩叧鑱斻€傜▼搴忓湪 `XDP_REDIRECT` 涔嬪悗杩愯锛屽苟涓斿彲浠ュ悓鏃惰闂?Rx 璁惧鍜?Tx 璁惧銆備笌 `fd` 鍏宠仈鐨勭▼搴忓繀椤诲叿鏈夌被鍨?XDP 涓旀湡鏈涢檮鍔犵被鍨嬩负 `xdp_devmap`銆傚綋绋嬪簭涓庤澶囩储寮曞叧鑱旀椂锛岀▼搴忓湪 `XDP_REDIRECT` 鏃躲€佸苟涓斿湪璇ョ紦鍐插尯琚姞鍏ユ瘡 CPU 闃熷垪涔嬪墠杩愯銆傚浣曢檮鍔?浣跨敤 xdp_devmap 绋嬪簭鐨勭ず渚嬪彲浠ュ湪鍐呮牳鑷祴涓壘鍒帮細
+`flags` 参数可以是以下之一  - `BPF_ANY`：创建新元素或更新现有元素  - `BPF_NOEXIST`：仅当元素不存在时才创建新元素  - `BPF_EXIST`：更新现有元素
+DEVMAP 可以通过`bpf_prog.fd` 添加`struct bpf_devmap_val` 来将程序与设备条目关联。程序在 `XDP_REDIRECT` 之后运行，并且可以同时访Rx 设备Tx 设备。与 `fd` 关联的程序必须具有类XDP 且期望附加类型为 `xdp_devmap`。当程序与设备索引关联时，程序在 `XDP_REDIRECT` 时、并且在该缓冲区被加入每 CPU 队列之前运行。如何附使用 xdp_devmap 程序的示例可以在内核自测中找到：
 
 - `tools/testing/selftests/bpf/prog_tests/xdp_devmap_attach.c`
 - `tools/testing/selftests/bpf/progs/test_xdp_with_devmap_helpers.c`
@@ -59,19 +59,19 @@ DEVMAP 鍙互閫氳繃灏?`bpf_prog.fd` 娣诲姞鍒?`struct bpf_devmap_val` 
 
    int bpf_map_lookup_elem(int fd, const void **key, void **value);
 
-鍙互浣跨敤 `bpf_map_lookup_elem()` 杈呭姪鍑芥暟鑾峰彇缃戠粶璁惧鏉＄洰銆?
+可以使用 `bpf_map_lookup_elem()` 辅助函数获取网络设备条目
 ##### bpf_map_delete_elem()
 
 
    int bpf_map_delete_elem(int fd, const void *key);
 
-鍙互浣跨敤 `bpf_map_delete_elem()` 杈呭姪鍑芥暟鍒犻櫎缃戠粶璁惧鏉＄洰銆傝杈呭姪鍑芥暟鍦ㄦ垚鍔熸椂杩斿洖 0锛屽け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
-## 绀轰緥锛圗xamples锛?
+可以使用 `bpf_map_delete_elem()` 辅助函数删除网络设备条目。该辅助函数在成功时返回 0，失败时返回负的错误码
+## 示例（Examples
 
-### 鍐呮牳 BPF
+### 内核 BPF
 
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗗浣曞０鏄庝竴涓悕涓?tx_port 鐨?`BPF_MAP_TYPE_DEVMAP`銆?
+以下代码片段展示了如何声明一个名tx_port `BPF_MAP_TYPE_DEVMAP`
 
     struct {
         __uint(type, BPF_MAP_TYPE_DEVMAP);
@@ -80,7 +80,7 @@ DEVMAP 鍙互閫氳繃灏?`bpf_prog.fd` 娣诲姞鍒?`struct bpf_devmap_val` 
         __uint(max_entries, 256);
     } tx_port SEC(".maps");
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗗浣曞０鏄庝竴涓悕涓?forward_map 鐨?`BPF_MAP_TYPE_DEVMAP_HASH`銆?
+以下代码片段展示了如何声明一个名forward_map `BPF_MAP_TYPE_DEVMAP_HASH`
 
     struct {
         __uint(type, BPF_MAP_TYPE_DEVMAP_HASH);
@@ -90,9 +90,9 @@ DEVMAP 鍙互閫氳繃灏?`bpf_prog.fd` 娣诲姞鍒?`struct bpf_devmap_val` 
     } forward_map SEC(".maps");
 
 
-    DEVMAP 涓笂杩扮殑鍊肩被鍨嬫槸 `struct bpf_devmap_val`
+    DEVMAP 中上述的值类型是 `struct bpf_devmap_val`
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗕竴涓畝鍗曠殑 xdp_redirect_map 绋嬪簭銆傝绋嬪簭浼氶厤鍚堜竴涓敤鎴风┖闂寸▼搴忓伐浣滐紝璇ョ▼搴忓熀浜?ingress ifindex 濉厖 devmap `forward_map`銆侭PF 绋嬪簭锛堝涓嬶級浣跨敤 ingress `ifindex` 浣滀负 `key` 鏉ラ噸瀹氬悜鏁版嵁鍖呫€?
+以下代码片段展示了一个简单的 xdp_redirect_map 程序。该程序会配合一个用户空间程序工作，该程序基ingress ifindex 填充 devmap `forward_map`。BPF 程序（如下）使用 ingress `ifindex` 作为 `key` 来重定向数据包
 
     SEC("xdp")
     int xdp_redirect_map_func(struct xdp_md *ctx)
@@ -102,7 +102,7 @@ DEVMAP 鍙互閫氳繃灏?`bpf_prog.fd` 娣诲姞鍒?`struct bpf_devmap_val` 
         return bpf_redirect_map(&forward_map, index, 0);
     }
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗕竴涓皢鏁版嵁鍖呭箍鎾埌 `tx_port` devmap 涓墍鏈夋帴鍙ｇ殑 BPF 绋嬪簭銆?
+以下代码片段展示了一个将数据包广播到 `tx_port` devmap 中所有接口的 BPF 程序
 
     SEC("xdp")
     int xdp_redirect_map_func(struct xdp_md *ctx)
@@ -110,10 +110,10 @@ DEVMAP 鍙互閫氳繃灏?`bpf_prog.fd` 娣诲姞鍒?`struct bpf_devmap_val` 
         return bpf_redirect_map(&tx_port, 0, BPF_F_BROADCAST | BPF_F_EXCLUDE_INGRESS);
     }
 
-### 鐢ㄦ埛绌洪棿
+### 用户空间
 
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗗浣曟洿鏂颁竴涓悕涓?`tx_port` 鐨?devmap銆?
+以下代码片段展示了如何更新一个名`tx_port` devmap
 
     int update_devmap(int ifindex, int redirect_ifindex)
     {
@@ -128,7 +128,7 @@ DEVMAP 鍙互閫氳繃灏?`bpf_prog.fd` 娣诲姞鍒?`struct bpf_devmap_val` 
         return ret;
     }
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗗浣曟洿鏂颁竴涓悕涓?`forward_map` 鐨?hash_devmap銆?
+以下代码片段展示了如何更新一个名`forward_map` hash_devmap
 
     int update_devmap(int ifindex, int redirect_ifindex)
     {
@@ -143,7 +143,7 @@ DEVMAP 鍙互閫氳繃灏?`bpf_prog.fd` 娣诲姞鍒?`struct bpf_devmap_val` 
         return ret;
     }
 
-## 鍙傝€冿紙References锛?
+## 参考（References
 
 - https://lwn.net/Articles/728146/
 - https://git.kernel.org/pub/scm/linux/kernel/git/bpf/bpf-next.git/commit/?id=6f9d451ab1a33728adb72d7ff66a7b374d665176
