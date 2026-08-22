@@ -1,24 +1,24 @@
-﻿## ISA 椹卞姩
+﻿## ISA 驱动
 
 
-浠ヤ笅鏂囨湰鏀圭紪鑷敱 Rene Herman 鎾板啓鐨?ISA 鎬荤嚎椹卞姩鍒濆鎻愪氦鐨勬彁浜よ鏄庛€?
+以下文本改编自由 Rene Herman 撰写ISA 总线驱动初始提交的提交说明
 
-鍦ㄨ繎鏈熷叧浜?浣跨敤 platform 璁惧鐨?ISA 椹卞姩"鐨勮璁轰腑锛屾湁浜烘寚鍑猴紙ALSA 鐨勶級ISA
-椹卞姩閬囧埌浜嗕竴涓棶棰橈細鐢变簬鍦ㄩ┍鍔ㄦā鍨嬩腑 probe() 閿欒娌℃湁琚悜涓婁紶閫掞紝鍥犳褰?
-鎺㈡祴涓嶅埌纭欢鏃讹紝瀹冧滑鏃犳硶閫夋嫨璁╅┍鍔ㄥ姞杞斤紙鏇村噯纭湴璇存槸璁惧娉ㄥ唽锛夊け璐ャ€傚湪姝?
-杩囩▼涓紝鎴戝缓璁崟鐙绔嬩竴鏉?ISA 鎬荤嚎鍙兘鏄渶濂界殑鏂规锛汻ussell King 琛ㄧず鍚屾剰锛?
-骞跺缓璁鎬荤嚎鍙互浣跨敤 .match() 鏂规硶鏉ヨ繘琛屽疄闄呯殑璁惧鍙戠幇銆?
+在近期关使用 platform 设备ISA 驱动"的讨论中，有人指出（ALSA 的）ISA
+驱动遇到了一个问题：由于在驱动模型中 probe() 错误没有被向上传递，因此
+探测不到硬件时，它们无法选择让驱动加载（更准确地说是设备注册）失败。在
+过程中，我建议单独设立一ISA 总线可能是最好的方案；Russell King 表示同意
+并建议该总线可以使用 .match() 方法来进行实际的设备发现
 
-闄勫甫鐨勫疄鐜版鏄姝ゃ€傚浜庤繖绉嶆棫鐨勩€佷笉鍙紙閫氱敤鍦帮級鍙戠幇鐨?ISA 纭欢锛屽彧鏈夐┍鍔?
-鑷韩鎵嶈兘杩涜鍙戠幇锛屽洜姝や笌 platform_bus 涓嶅悓锛宨sa_bus 涔熷皢 match() 鍚戜笂鍒嗗彂鍒?
-椹卞姩銆?
+附带的实现正是如此。对于这种旧的、不可（通用地）发现ISA 硬件，只有驱
+自身才能进行发现，因此与 platform_bus 不同，isa_bus 也将 match() 向上分发
+驱动
 
-鍙︿竴涓笉鍚岀偣鏄細杩欎簺璁惧涔嬫墍浠ュ瓨鍦ㄤ簬椹卞姩妯″瀷涓紝鍙槸鍥犱负椹卞姩涓轰簡椹卞姩瀹冧滑鑰?
-鍒涘缓浜嗗畠浠紝杩欐剰鍛崇潃鎵€鏈夌殑璁惧鍒涘缓涔熼兘宸茶鍐呴儴鍖栥€?
+另一个不同点是：这些设备之所以存在于驱动模型中，只是因为驱动为了驱动它们
+创建了它们，这意味着所有的设备创建也都已被内部化
 
-杩欑鏂瑰紡鎻愪緵鐨勪娇鐢ㄦā鍨嬪緢濂斤紝骞朵笖宸茬粡寰楀埌 ALSA 鏂归潰 Takashi Iwai 鍜?
-Jaroslav Kysela 鐨勮鍙€侫LSA 椹卞姩鐨?module_init 鍥犳涓庡叾瀹冩€荤嚎妯″瀷闈炲父鐩镐技銆?
-杩欎粠 ALSA 鐨?ISA 椹卞姩涓Щ闄や簡澶ч噺閲嶅鐨勫垵濮嬪寲浠ｇ爜銆?
+这种方式提供的使用模型很好，并且已经得到 ALSA 方面 Takashi Iwai 
+Jaroslav Kysela 的认可。ALSA 驱动module_init 因此与其它总线模型非常相似
+这从 ALSA ISA 驱动中移除了大量重复的初始化代码
 ```
 
 	static int __init alsa_card_foo_init(void)
@@ -32,38 +32,38 @@ Jaroslav Kysela 鐨勮鍙€侫LSA 椹卞姩鐨?module_init 鍥犳涓�
 	}
 
 ```
-浼犲叆鐨?isa_driver 缁撴瀯浣撳氨鏄父瑙勭殑椹卞姩缁撴瀯浣擄紝鍐呭祵浜嗕竴涓?struct device_driver銆?
-甯歌鐨?probe/remove/shutdown/suspend/resume 鍥炶皟锛屼互鍙婂鍓嶆墍杩扮殑 .match 鍥炶皟銆?
+传入isa_driver 结构体就是常规的驱动结构体，内嵌了一struct device_driver
+常规probe/remove/shutdown/suspend/resume 回调，以及如前所述的 .match 回调
 
-浣犵湅鍒扮殑浼犲叆鐨?"SNDRV_CARDS" 鏄竴涓?"unsigned int ndev" 鍙傛暟锛岃〃绀鸿鍒涘缓
-澶氬皯涓澶囧苟浠ヤ箣璋冪敤鎴戜滑鐨勬柟娉曘€?
+你看到的传入"SNDRV_CARDS" 是一"unsigned int ndev" 参数，表示要创建
+多少个设备并以之调用我们的方法
 
-platform_driver 鐨勫洖璋冧互涓€涓?platform_device 鍙傛暟琚皟鐢紱isa_driver 鐨勫洖璋?
-鍒欑洿鎺ヤ互 鉄0鉄truct device *dev, unsigned int id鉄0鉄?瀵硅璋冪敤鈥斺€旂敱浜庤澶囧垱寤?
-瀹屽叏鍦ㄦ€荤嚎鍐呴儴锛屽畬鍏ㄤ笉娉勬紡 isa_dev 鏄渶骞插噣鐨勫仛娉曘€俰d 姣曠珶鏄垜浠櫎浜?
-struct device 涔嬪鍞竴鎯宠鐨勪笢瑗匡紝杩欎篃璁╁洖璋冧腑鐨勪唬鐮佹洿缇庤銆?
+platform_driver 的回调以一platform_device 参数被调用；isa_driver 的回
+则直接以 ⟦C0⟧struct device *dev, unsigned int id⟦C0对被调用——由于设备创
+完全在总线内部，完全不泄漏 isa_dev 是最干净的做法。id 毕竟是我们除
+struct device 之外唯一想要的东西，这也让回调中的代码更美观
 
-鍊熷姪杩欎釜棰濆鐨?.match() 鍥炶皟锛孖SA 椹卞姩鎷ユ湁浜嗗叏閮ㄩ€夐」銆傚鏋?ALSA 鎯充繚鐣欐棫鐨?
-"涓嶅姞杞?琛屼负锛屽畠鍙互鎶婂叏閮ㄦ棫鐨?.probe 鏀捐繘 .match 涓紝杩欐牱鍙湁鍦ㄤ竴鍒囬兘瀛樺湪涓?
-榻愬鏃舵墠淇濇寔娉ㄥ唽銆傚鏋滃畠鎯宠濮嬬粓鍔犺浇鐨勮涓猴紙鍦ㄥ悜 platform 璁惧鍒囨崲鍚庢浘鐭殏鍦?
-鏃犳剰涓姝わ級锛屽畠鍙互骞茶剢涓嶆彁渚?.match()锛屽苟鍍忎互鍓嶄竴鏍峰湪 .probe() 涓仛鎵€鏈変簨鎯呫€?
+借助这个额外.match() 回调，ISA 驱动拥有了全部选项。如ALSA 想保留旧
+"不加行为，它可以把全部旧.probe 放进 .match 中，这样只有在一切都存在
+齐备时才保持注册。如果它想要始终加载的行为（在向 platform 设备切换后曾短暂
+无意中如此），它可以干脆不提.match()，并像以前一样在 .probe() 中做所有事情
 
-濡傛灉瀹冿紙姝ｅ Takashi Iwai 鏃╁厛寤鸿鐨勩€佷綔涓轰竴绉嶆洿璐磋繎鍋ュ悍鎬荤嚎妯″瀷鐨勬柟寮忥級鎯冲湪
-绋嶅悗鐨勭粦瀹氬彲鑳芥垚鍔熸椂鍔犺浇锛屽畠鍙互鍦?.match() 涓鐞嗗墠缃潯浠讹紙渚嬪妫€鏌ョ敤鎴锋槸鍚?
-甯屾湜鍚敤璇ュ崱锛屼互鍙?port/irq/dma 鍊兼槸鍚﹀凡缁忎紶鍏ワ級锛岃€屾妸鍏朵綑涓€鍒囨斁鍦?.probe() 涓€?
-杩欐槸鏈€鐞嗘兂鐨勬ā鍨嬨€?
+如果它（正如 Takashi Iwai 早先建议的、作为一种更贴近健康总线模型的方式）想在
+稍后的绑定可能成功时加载，它可以.match() 中处理前置条件（例如检查用户是
+希望启用该卡，以port/irq/dma 值是否已经传入），而把其余一切放.probe() 中
+这是最理想的模型
 
-杩涘叆浠ｇ爜鈥︹€?
+进入代码…
 
-瀹冨彧瀵煎嚭涓や釜鍑芥暟锛歩sa_{,un}register_driver()銆?
+它只导出两个函数：isa_{,un}register_driver()
 
-isa_register_driver() 娉ㄥ唽 struct device_driver锛岀劧鍚庨亶鍘嗕紶鍏ョ殑 ndev锛屽垱寤?
-璁惧骞舵敞鍐屽畠浠€?
+isa_register_driver() 注册 struct device_driver，然后遍历传入的 ndev，创
+设备并注册它们
 
-瀹冨仛鐨勭涓€浠朵簨鏄鏌ヨ璁惧鏄惁纭疄鏄椹卞姩鐨勮澶囦箣涓€锛屾柟寮忔槸鏌ョ湅璁惧鐨?
-platform_data 鎸囬拡鏄惁琚涓烘湰椹卞姩銆俻latform 璁惧姣旇緝瀛楃涓诧紝浣嗘棦鐒朵竴鍒囬兘宸?
-鍐呴儴鍖栵紝鎴戜滑灏辨棤闇€閭ｆ牱鍋氾紝鍥犳 isa_register_driver() 鎶?dev->platform_data
-褰撲綔 isa_driver 鎸囬拡鏉ョ敤锛屼互渚垮湪姝ゅ妫€鏌ャ€?
+它做的第一件事是检查该设备是否确实是该驱动的设备之一，方式是查看设备
+platform_data 指针是否被设为本驱动。platform 设备比较字符串，但既然一切都
+内部化，我们就无需那样做，因此 isa_register_driver() dev->platform_data
+当作 isa_driver 指针来用，以便在此处检查
 ```
 
 	int isa_bus_match(struct device *dev, struct device_driver *driver)
@@ -80,23 +80,23 @@ platform_data 鎸囬拡鏄惁琚涓烘湰椹卞姩銆俻latform 璁惧�
 	}
 
 ```
-鎴戠浉淇?platform_data 鍙敤浜庢鐩殑锛屼絾濡傛灉骞朵笉鎰挎剰锛屾妸 isa_driver 鎸囬拡绉诲埌绉佹湁鐨?
-struct isa_dev 涓綋鐒朵篃瀹屽叏鍙互銆?
+我相platform_data 可用于此目的，但如果并不愿意，把 isa_driver 指针移到私有
+struct isa_dev 中当然也完全可以
 
-鐒跺悗锛屽鏋滈┍鍔ㄦ病鏈夋彁渚?.match锛屽垯鍖归厤銆傚鏋滄彁渚涗簡锛屽氨璋冪敤椹卞姩鐨?match() 鏂规硶
-鏉ュ垽瀹氭槸鍚﹀尮閰嶃€?
+然后，如果驱动没有提.match，则匹配。如果提供了，就调用驱动match() 方法
+来判定是否匹配
 
-濡傛灉**娌℃湁**鍖归厤锛宒ev->platform_data 浼氳閲嶇疆浠ュ悜 isa_register_driver 琛ㄦ槑杩欎竴鐐癸紝
-鍚庤€呴殢鍚庡彲浠ュ啀娆℃敞閿€璇ヨ澶囥€?
+如果**没有**匹配，dev->platform_data 会被重置以向 isa_register_driver 表明这一点，
+后者随后可以再次注销该设备
 
-濡傛灉鍦ㄨ繖涓€鍒囪繃绋嬩腑鍙戠敓浠讳綍閿欒锛屾垨鑰呮牴鏈病鏈夎澶囧尮閰嶏紝鍒欎竴鍒囬兘浼氳鍥為€€锛?
-骞惰繑鍥炶閿欒鎴?-ENODEV銆?
+如果在这一切过程中发生任何错误，或者根本没有设备匹配，则一切都会被回退
+并返回该错误-ENODEV
 
-isa_unregister_driver() 鍙槸娉ㄩ攢宸插尮閰嶇殑璁惧浠ュ強椹卞姩鑷韩銆?
+isa_unregister_driver() 只是注销已匹配的设备以及驱动自身
 
-module_isa_driver 鏄竴涓敤浜?ISA 椹卞姩鐨勮緟鍔╁畯锛岄€傜敤浜庨偅浜涘湪妯″潡 init/exit 涓?
-涓嶅仛浠讳綍鐗规畩浜嬫儏鐨勯┍鍔ㄣ€傚畠娑堥櫎浜嗗ぇ閲忔牱鏉夸唬鐮併€傛瘡涓ā鍧楀彧鑳戒娇鐢ㄨ瀹忎竴娆★紝璋冪敤
-瀹冧細鏇挎崲 module_init 鍜?module_exit銆?
+module_isa_driver 是一个用ISA 驱动的辅助宏，适用于那些在模块 init/exit 
+不做任何特殊事情的驱动。它消除了大量样板代码。每个模块只能使用该宏一次，调用
+它会替换 module_init module_exit
 
-max_num_isa_dev 鏄竴涓畯锛岀敤浜庡湪缁欏畾 ISA 璁惧鐨勫湴鍧€鑼冨洿鏃讹紝纭畾鍦?I/O 绔彛
-鍦板潃绌洪棿涓彲鑳芥敞鍐岀殑鏈€澶?ISA 璁惧鏁伴噺銆?
+max_num_isa_dev 是一个宏，用于在给定 ISA 设备的地址范围时，确定I/O 端口
+地址空间中可能注册的最ISA 设备数量

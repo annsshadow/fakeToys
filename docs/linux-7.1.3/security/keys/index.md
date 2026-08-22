@@ -1,8 +1,8 @@
-﻿## 鍐呮牳瀵嗛挜锛圞eys锛?
+﻿## 内核密钥（Keys
 
-鏈〉闈㈡眹鎬诲唴鏍稿瘑閽ョ鐞嗙浉鍏虫枃妗ｃ€?
+本页面汇总内核密钥管理相关文档
 
-- [鏍稿績鏈哄埗](core)
+- [核心机制](core)
 - [eCryptfs](ecryptfs)
-- [璇锋眰瀵嗛挜](request-key)
-- [鍙俊涓庡姞瀵嗗瘑閽(trusted-encrypted)
+- [请求密钥](request-key)
+- [可信与加密密钥](trusted-encrypted)

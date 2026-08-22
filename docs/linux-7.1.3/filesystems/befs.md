@@ -1,50 +1,50 @@
 ﻿
-## Linux 涓嬬殑 BeOS 鏂囦欢绯荤粺
+## Linux 下的 BeOS 文件系统
 
 
-鏂囨。鏈€鍚庢洿鏂帮細2001 骞?12 鏈?6 鏃?
-## 璀﹀憡
+文档最后更新：2001 12 6 
+## 警告
 
 
-璇峰姟蹇呮槑鐧借繖鏄?alpha 闃舵鐨勮蒋浠躲€傝繖鎰忓懗鐫€璇ュ疄鐜版棦涓嶅畬鏁达紝涔熸湭缁忚繃鍏呭垎娴嬭瘯銆?
-瀵逛簬姝や唬鐮佸彲鑳介€犳垚鐨勪换浣曚笉鑹悗鏋滐紝鏈汉涓嶆壙鎷呬换浣曡矗浠伙紒
+请务必明白这alpha 阶段的软件。这意味着该实现既不完整，也未经过充分测试
+对于此代码可能造成的任何不良后果，本人不承担任何责任！
 
-## 璁稿彲璇?
+## 许可
 
-鏈蒋浠跺彈 GNU 閫氱敤鍏叡璁稿彲璇佷繚鎶ゃ€傚畬鏁磋鍙瘉鏂囨湰璇疯 COPYING 鏂囦欢銆?鎴栬闂?GNU 缃戠珯锛?http://www.gnu.org/licenses/licenses.html>
+本软件受 GNU 通用公共许可证保护。完整许可证文本请见 COPYING 文件或访GNU 网站http://www.gnu.org/licenses/licenses.html>
 
-## 浣滆€?
+## 作
 
-浠ｇ爜鐨勫ぇ閮ㄥ垎鐢?Will Dyson <will_dyson@pobox.com> 缂栧啓銆備粬鑷?2001 骞?8 鏈?13 鏃ヨ捣涓€鐩?浠庝簨璇ヤ唬鐮佺殑宸ヤ綔銆傝瑙?changelog銆?
-鍘熷浣滆€咃細Makoto Kato <m_kato@ga2.so-net.ne.jp>
+代码的大部分Will Dyson <will_dyson@pobox.com> 编写。他2001 8 13 日起一从事该代码的工作。详changelog
+原始作者：Makoto Kato <m_kato@ga2.so-net.ne.jp>
 
-浠栫殑鍘熷浠ｇ爜浠嶅彲鍦ㄤ互涓嬩綅缃壘鍒帮細
+他的原始代码仍可在以下位置找到：
 <http://hp.vector.co.jp/authors/VA008030/bfs/>
 
-鏈変汉鐭ラ亾 Makoto 鏇磋繎鏈熺殑鐢靛瓙閭欢鍦板潃鍚楋紵浠栧涓婅堪鍦板潃宸蹭笉鍐嶅洖澶嶁€︹€?
-璇ユ枃浠剁郴缁熺洰鍓嶆病鏈夌淮鎶よ€呫€?
-## 杩欎釜椹卞姩鏄粈涔堬紵
+有人知道 Makoto 更近期的电子邮件地址吗？他对上述地址已不再回复…
+该文件系统目前没有维护者
+## 这个驱动是什么？
 
 
-璇ユā鍧椾负 Linux 2.4.1 鍙婃洿鏂扮増鏈殑鍐呮牳瀹炵幇浜?BeOS锛坔ttp://www.beincorporated.com/锛夌殑鍘熺敓
-鏂囦欢绯荤粺銆傜洰鍓嶅畠鏄竴涓彧璇诲疄鐜般€?
-## 鍒板簳鍙?BFS 杩樻槸 BEFS锛?
+该模块为 Linux 2.4.1 及更新版本的内核实现BeOS（http://www.beincorporated.com/）的原生
+文件系统。目前它是一个只读实现
+## 到底BFS 还是 BEFS
 
-Be, Inc. 鏇捐〃绀猴紝鈥淏eOS 鏂囦欢绯荤粺鍦ㄥ畼鏂逛笂绉颁负 BFS锛岃€岄潪 BeFS鈥濄€備絾 Unixware 鐨?Boot Filesystem
-涔熷彨 bfs锛岃€屼笖瀹冧滑宸茬粡鍦ㄥ唴鏍镐腑浜嗐€傜敱浜庤繖涓€鍛藉悕鍐茬獊锛屽湪 Linux 涓?BeOS 鏂囦欢绯荤粺琚О涓?befs銆?
-## 濡備綍瀹夎
+Be, Inc. 曾表示，“BeOS 文件系统在官方上称为 BFS，而非 BeFS”。但 Unixware Boot Filesystem
+也叫 bfs，而且它们已经在内核中了。由于这一命名冲突，在 Linux BeOS 文件系统被称befs
+## 如何安装
 
 
-姝ラ 1. 灏?BeFS 琛ヤ竵瀹夎鍒?linux 婧愮爜鏍戜腑銆?
-灏嗚ˉ涓佹枃浠跺簲鐢ㄥ埌浣犵殑鍐呮牳婧愮爜鏍戙€傚亣璁句綘鐨勫唴鏍告簮鐮佷綅浜?/foo/bar/linux锛岃ˉ涓佹枃浠跺悕涓?patch-befs-xxx锛屽垯搴旀墽琛屽涓嬫搷浣滐細
+步骤 1. BeFS 补丁安装linux 源码树中
+将补丁文件应用到你的内核源码树。假设你的内核源码位/foo/bar/linux，补丁文件名patch-befs-xxx，则应执行如下操作：
 
 	cd /foo/bar/linux
 	patch -p1 < /path/to/patch-befs-xxx
 
-濡傛灉鎵撹ˉ涓佹楠ゅけ璐ワ紙鍗冲嚭鐜拌鎷掔粷鐨?hunk锛夛紝浣犲彲浠ュ皾璇曡嚜宸辫В鍐筹紙杩欏苟涓嶉毦锛夛紝鎴栧彂閭欢鍚戠淮鎶よ€?锛圵ill Dyson <will_dyson@pobox.com>锛夋眰鍔┿€?
-姝ラ 2. 閰嶇疆骞剁紪璇戝唴鏍?
-Linux 鍐呮牳鏈夎澶氱紪璇戞湡閫夐」锛屽叾涓ぇ澶氭暟瓒呭嚭浜嗘湰鏂囨。鐨勮寖鍥淬€傛垜鎺ㄨ崘灏?Kernel-HOWTO 鏂囨。浣滀负
-杩欎竴涓婚鐨勮壇濂介€氱敤鍙傝€冦€俬ttp://www.linuxdocs.org/HOWTOs/Kernel-HOWTO-4.html
+如果打补丁步骤失败（即出现被拒绝hunk），你可以尝试自己解决（这并不难），或发邮件向维护（Will Dyson <will_dyson@pobox.com>）求助
+步骤 2. 配置并编译内
+Linux 内核有许多编译期选项，其中大多数超出了本文档的范围。我推荐Kernel-HOWTO 文档作为
+这一主题的良好通用参考。http://www.linuxdocs.org/HOWTOs/Kernel-HOWTO-4.html
 
 ```
 
@@ -52,22 +52,22 @@ Linux 鍐呮牳鏈夎澶氱紪璇戞湡閫夐」锛屽叾涓ぇ澶氭暟�
 	make menuconfig (鎴?xconfig)
 
 ```
-BefS 妯″潡骞堕潪 Linux 鍐呮牳鐨勬爣鍑嗙粍鎴愰儴鍒嗭紝鍥犳浣犲繀椤诲厛鍦ㄢ€淐ode maturity level鈥濊彍鍗曚笅鍚敤瀵?瀹為獙鎬т唬鐮佺殑鏀寔銆?
-鐒跺悗锛屽湪鈥淔ilesystems鈥濊彍鍗曚笅浼氬嚭鐜颁竴涓悕涓衡€淏eFS filesystem (experimental)鈥濇垨绫讳技鍚嶇О鐨勯€夐」銆?鍚敤璇ラ€夐」锛堝皢鍏剁紪璇戜负妯″潡浜﹀彲锛夈€?
-淇濆瓨浣犵殑鍐呮牳閰嶇疆锛岀劧鍚庣紪璇戝唴鏍搞€?
-姝ラ 3. 瀹夎
+BefS 模块并非 Linux 内核的标准组成部分，因此你必须先在“Code maturity level”菜单下启用实验性代码的支持
+然后，在“Filesystems”菜单下会出现一个名为“BeFS filesystem (experimental)”或类似名称的选项启用该选项（将其编译为模块亦可）
+保存你的内核配置，然后编译内核
+步骤 3. 安装
 
-鍏充簬杩欎竴鍏抽敭姝ラ鐨勮鏄庯紝璇峰弬瑙佸唴鏍?howto <http://www.linux.com/howto/Kernel-HOWTO.html>銆?
-## 浣跨敤 BFS
+关于这一关键步骤的说明，请参见内howto <http://www.linux.com/howto/Kernel-HOWTO.html>
+## 使用 BFS
 
 
-瑕佷娇鐢?BeOS 鏂囦欢绯荤粺锛岃浣跨敤鏂囦欢绯荤粺绫诲瀷 鈥榖efs鈥欍€?
+要使BeOS 文件系统，请使用文件系统类型 ‘befs’
 ```
 
     mount -t befs /dev/fd0 /beos
 
 ```
-## 鎸傝浇閫夐」
+## 挂载选项
 
 
 =============  ===========================================================
@@ -77,19 +77,19 @@ iocharset=xxx  Use xxx as the name of the NLS translation table.
 debug          The driver will output debugging information to the syslog.
 =============  ===========================================================
 
-## 濡備綍鑾峰彇鏈€鏂扮増鏈?
+## 如何获取最新版
 
-鏈€鏂扮増鏈洰鍓嶅彲鍦ㄤ互涓嬩綅缃幏鍙栵細
+最新版本目前可在以下位置获取：
 <http://befs-driver.sourceforge.net/>
 
-## 宸茬煡缂洪櫡锛?
+## 已知缺陷
 
-鎴嚦 2002 骞?1 鏈?20 鏃ワ細
+截至 2002 1 20 日：
 
 	None
 
-## 鐗瑰埆鑷磋阿
+## 特别致谢
 
 
-Dominic Giampalo 鈥︹€?鎾板啓浜嗐€奝ractical file system design with Be filesystem銆?
-Hiroyuki Yamada 鈥︹€?娴嬭瘯浜?LinuxPPC銆?
+Dominic Giampalo …撰写了《Practical file system design with Be filesystem
+Hiroyuki Yamada …测试LinuxPPC
