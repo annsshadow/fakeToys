@@ -1,15 +1,15 @@
-﻿## SoundWire 瀛愮郴缁熸杩?
+﻿## SoundWire 子系统概
 
-SoundWire 鏄?MIPI 鑱旂洘浜?2015 骞存壒鍑嗙殑涓€绉嶆柊鎺ュ彛銆係oundWire 鐢ㄤ簬浼犺緭閫氬父涓庨煶棰?鍔熻兘鐩稿叧鐨勬暟鎹€係oundWire 鎺ュ彛缁忚繃浼樺寲锛岄€傜敤浜庡湪绉诲姩鎴栧彈绉诲姩璁惧鍚彂鐨勭郴缁熶腑
-闆嗘垚闊抽璁惧銆?
-SoundWire 鏄竴绉嶅弻寮曡剼鐨勫鐐癸紙multi-drop锛夋帴鍙ｏ紝鍖呭惈鏁版嵁绾垮拰鏃堕挓绾裤€傚畠鏈夊姪浜?寮€鍙戜綆鎴愭湰銆侀珮鏁堛€侀珮鎬ц兘鐨勭郴缁熴€係oundWire 鎺ュ彛鐨勯珮灞傜骇鍏抽敭鐗规€у寘鎷細
+SoundWire MIPI 联盟2015 年批准的一种新接口。SoundWire 用于传输通常与音功能相关的数据。SoundWire 接口经过优化，适用于在移动或受移动设备启发的系统中
+集成音频设备
+SoundWire 是一种双引脚的多点（multi-drop）接口，包含数据线和时钟线。它有助开发低成本、高效、高性能的系统。SoundWire 接口的高层级关键特性包括：
 
- (1) 閫氳繃鍗曚竴鐨勫弻寮曡剼鎺ュ彛浼犺緭鎵€鏈夋湁鏁堣浇鑽锋暟鎹€氶亾銆佹帶鍒朵俊鎭拰寤虹珛鍛戒护銆?
- (2) 閫氳繃浣跨敤 DDR锛堝弻鏁版嵁閫熺巼锛夋暟鎹紶杈擄紝闄嶄綆鏃堕挓棰戠巼锛屼粠鑰岄檷浣庡姛鑰椼€?
- (3) 鏃堕挓缂╂斁鍜屽彲閫夌殑澶氭潯鏁版嵁閫氶亾锛屼互鏋佸ぇ鐨勭伒娲绘€у尮閰嶇郴缁熼渶姹傜殑鏁版嵁閫熺巼銆?
- (4) 璁惧鐘舵€佺洃鎺э紝鍖呮嫭瀵?Master 鐨勪腑鏂紡鍛婅銆?
-SoundWire 鍗忚鏈€澶氭敮鎸佸崄涓€涓?Slave 鎺ュ彛銆傛墍鏈夋帴鍙ｅ叡浜寘鍚暟鎹嚎涓庢椂閽熺嚎鐨勫叕鍏辨€荤嚎銆?姣忎釜 Slave 鏈€澶氬彲鏀寔 14 涓暟鎹鍙ｃ€傚叾涓?13 涓暟鎹鍙ｄ笓鐢ㄤ簬闊抽浼犺緭銆?鏁版嵁绔彛 0 涓撶敤浜庝紶杈撴壒閲忔帶鍒朵俊鎭紝姣忎釜闊抽鏁版嵁绔彛锛?..14锛夊湪鍙戦€佹垨鎺ユ敹妯″紡涓?鏈€澶氬彲鏀寔 8 涓€氶亾锛堥€氬父涓哄浐瀹氭柟鍚戯紝浣嗚鑼冧篃鍏佽鍙厤缃柟鍚戯級銆備笉杩囷紝绾?19.2..24.576Mbits/s 鐨勫甫瀹介檺鍒朵笉鍏佽鍚屾椂浼犺緭 11**13**8 涓€氶亾銆?
-涓嬪浘灞曠ず浜嗕竴涓?SoundWire Master 涓?```
+ (1) 通过单一的双引脚接口传输所有有效载荷数据通道、控制信息和建立命令
+ (2) 通过使用 DDR（双数据速率）数据传输，降低时钟频率，从而降低功耗
+ (3) 时钟缩放和可选的多条数据通道，以极大的灵活性匹配系统需求的数据速率
+ (4) 设备状态监控，包括Master 的中断式告警
+SoundWire 协议最多支持十一Slave 接口。所有接口共享包含数据线与时钟线的公共总线每个 Slave 最多可支持 14 个数据端口。其13 个数据端口专用于音频传输数据端口 0 专用于传输批量控制信息，每个音频数据端口..14）在发送或接收模式最多可支持 8 个通道（通常为固定方向，但规范也允许可配置方向）。不过，19.2..24.576Mbits/s 的带宽限制不允许同时传输 11**13**8 个通道
+下图展示了一SoundWire Master ```
 
         +---------------+                                       +---------------+
         |               |                       Clock Signal    |               |
@@ -29,27 +29,27 @@ SoundWire 鍗忚鏈€澶氭敮鎸佸崄涓€涓?Slave 鎺ュ彛銆傛墍鏈
 
 
 ```
-## 鏈
+## 术语
 
 
-MIPI SoundWire 瑙勮寖浣跨敤鏈 'device' 鏉ユ寚浠?Master 鎴?Slave 鎺ュ彛锛岃繖褰撶劧瀹规槗寮曡捣娣锋穯銆?鍦ㄦ湰姒傝堪鍜屼唬鐮佷腑锛屾垜浠粎浣跨敤鏈 interface 鏉ユ寚浠ｇ‖浠躲€傛垜浠伒寰?Linux 璁惧妯″瀷锛?灏嗘€荤嚎涓婅繛鎺ョ殑姣忎釜 Slave 鎺ュ彛鏄犲皠涓虹敱鐗瑰畾椹卞姩绠＄悊鐨?device銆侺inux SoundWire 瀛愮郴缁?鎻愪緵浜嗕竴涓鏋舵潵瀹炵幇 SoundWire Slave 椹卞姩锛屽苟鎻愪緵涓€涓?API锛屽厑璁哥涓夋柟鍘傚晢瀹炵幇
-鑷畾涔夌殑銆佽鑼冨畾涔変箣澶栫殑鍔熻兘锛岃€岄€氱敤鐨勫缓绔?閰嶇疆浠诲姟鐢辨€荤嚎澶勭悊銆?
-Bus锛堟€荤嚎锛夛細
-瀹炵幇澶勭悊 SoundWire 鍗忚鐨?SoundWire Linux 鎬荤嚎銆傚鎵€鏈夌殑 MIPI 瀹氫箟鐨?Slave 瀵勫瓨鍣?杩涜缂栫▼銆備唬琛ㄤ竴涓?SoundWire Master銆傜郴缁熶腑鍙兘瀛樺湪鎬荤嚎鐨勫涓疄渚嬨€?
-Slave锛堜粠璁惧锛夛細
-娉ㄥ唽涓?SoundWire Slave 璁惧锛圠inux 璁惧锛夈€傚涓?Slave 璁惧鍙互娉ㄥ唽鍒颁竴涓€荤嚎瀹炰緥銆?
-Slave driver锛堜粠璁惧椹卞姩锛夛細
-鎺у埗 Slave 璁惧鐨勯┍鍔ㄣ€侻IPI 瑙勫畾鐨勫瘎瀛樺櫒鐢辨€荤嚎鐩存帴鎺у埗锛堝苟閫氳繃 Master 椹卞姩/鎺ュ彛浼犺緭锛夈€?浠讳綍瑙勮寖瀹氫箟涔嬪鐨?Slave 瀵勫瓨鍣ㄩ兘鐢?Slave 椹卞姩鎺у埗銆傚疄璺典腑锛岄鏈?Slave 椹卞姩渚濊禆
-regmap锛岃€屼笉鐩存帴璇锋眰瀵勫瓨鍣ㄨ闂€?
-## 缂栫▼鎺ュ彛锛圫oundWire 涓绘帴鍙ｉ┍鍔級
+MIPI SoundWire 规范使用术语 'device' 来指Master Slave 接口，这当然容易引起混淆在本概述和代码中，我们仅使用术语 interface 来指代硬件。我们遵Linux 设备模型将总线上连接的每个 Slave 接口映射为由特定驱动管理device。Linux SoundWire 子系提供了一个框架来实现 SoundWire Slave 驱动，并提供一API，允许第三方厂商实现
+自定义的、规范定义之外的功能，而通用的建配置任务由总线处理
+Bus（总线）：
+实现处理 SoundWire 协议SoundWire Linux 总线。对所有的 MIPI 定义Slave 寄存进行编程。代表一SoundWire Master。系统中可能存在总线的多个实例
+Slave（从设备）：
+注册SoundWire Slave 设备（Linux 设备）。多Slave 设备可以注册到一个总线实例
+Slave driver（从设备驱动）：
+控制 Slave 设备的驱动。MIPI 规定的寄存器由总线直接控制（并通过 Master 驱动/接口传输）任何规范定义之外Slave 寄存器都Slave 驱动控制。实践中，预Slave 驱动依赖
+regmap，而不直接请求寄存器访问
+## 编程接口（SoundWire 主接口驱动）
 
 
-SoundWire 鎬荤嚎涓?SoundWire Master 瀹炵幇鍜?SoundWire Slave 璁惧鎻愪緵缂栫▼鎺ュ彛銆傛墍鏈変唬鐮?閮戒娇鐢?SoC 璁捐浜哄憳鍜岀涓夋柟鍘傚晢甯哥敤鐨?"sdw" 鍓嶇紑銆?
-姣忎釜 SoundWire Master 鎺ュ彛閮介渶瑕佹敞鍐屽埌鎬荤嚎涓娿€傛€荤嚎瀹炵幇浜嗙敤浜庤鍙栨爣鍑?Master MIPI
-灞炴€х殑 API锛屽苟鍦?Master ops 涓彁渚涘洖璋冿紝渚?Master 椹卞姩瀹炵幇鍏惰嚜韬彁渚涜兘鍔涗俊鎭殑鍑芥暟銆?鐩墠灏氭湭瀹炵幇 DT 鏀寔锛屼絾鐢变簬鑳藉姏鏄€氳繃 `device_property_` API 鍚敤鐨勶紝娣诲姞璧锋潵搴旇
-寰堢畝鍗曘€?
-Master 鎺ュ彛鍙婂叾鑳藉姏鍩轰簬 board 鏂囦欢銆丏T 鎴?ACPI 杩涜娉ㄥ唽銆?
-浠ヤ笅鏄敤浜庢敞鍐?SoundWire 鎬荤嚎鐨勬€荤嚎 API锛?
+SoundWire 总线SoundWire Master 实现SoundWire Slave 设备提供编程接口。所有代都使SoC 设计人员和第三方厂商常用"sdw" 前缀
+每个 SoundWire Master 接口都需要注册到总线上。总线实现了用于读取标Master MIPI
+属性的 API，并Master ops 中提供回调，Master 驱动实现其自身提供能力信息的函数目前尚未实现 DT 支持，但由于能力是通过 `device_property_` API 启用的，添加起来应该
+很简单
+Master 接口及其能力基于 board 文件、DT ACPI 进行注册
+以下是用于注SoundWire 总线的总线 API
 
 	int sdw_bus_master_add(struct sdw_bus *bus,
 				struct device *parent,
@@ -69,20 +69,20 @@ Master 鎺ュ彛鍙婂叾鑳藉姏鍩轰簬 board 鏂囦欢銆丏T 鎴?ACPI 杩�
 		return 0;
 	}
 
-杩欏皢涓?Master 璁惧鍒濆鍖?sdw_bus 瀵硅薄銆傚悜鎬荤嚎鎻愪緵 "sdw_master_ops" 鍜?"sdw_master_port_ops" 鍥炶皟鍑芥暟銆?
-"sdw_master_ops" 鐢辨€荤嚎鐢ㄤ簬浠ョ‖浠剁壒瀹氱殑鏂瑰紡鎺у埗鎬荤嚎銆傚畠鍖呮嫭鎬荤嚎鎺у埗鍑芥暟锛屼緥濡?鍦ㄦ€荤嚎涓婂彂閫?SoundWire 璇?鍐欐秷鎭紝璁剧疆鏃堕挓棰戠巼鍜屾祦鍚屾鐐癸紙SSP锛夈€?sdw_master_ops"
-缁撴瀯浣撳皢 Master 鐨勭‖浠剁粏鑺備粠鎬荤嚎涓娊璞″嚭鏉ャ€?
-"sdw_master_port_ops" 鐢辨€荤嚎鐢ㄤ簬璁剧疆 Master 鎺ュ彛绔彛鐨勭鍙ｅ弬鏁般€侻aster 鎺ュ彛绔彛鐨?瀵勫瓨鍣ㄦ槧灏勫苟鏈敱 MIPI 瑙勮寖瀹氫箟锛屽洜姝ゆ€荤嚎璋冪敤 "sdw_master_port_ops" 鍥炶皟鍑芥暟鏉ユ墽琛?绔彛鎿嶄綔锛屼緥濡?"Port Prepare"銆?Port Transport params set"銆?Port enable and disable"銆?鐒跺悗 Master 椹卞姩鐨勫疄鐜板彲浠ユ墽琛岀‖浠剁壒瀹氱殑閰嶇疆銆?
-## 缂栫▼鎺ュ彛锛圫oundWire 浠庤澶囬┍鍔級
+这将Master 设备初始sdw_bus 对象。向总线提供 "sdw_master_ops" "sdw_master_port_ops" 回调函数
+"sdw_master_ops" 由总线用于以硬件特定的方式控制总线。它包括总线控制函数，例在总线上发SoundWire 写消息，设置时钟频率和流同步点（SSP）sdw_master_ops"
+结构体将 Master 的硬件细节从总线中抽象出来
+"sdw_master_port_ops" 由总线用于设置 Master 接口端口的端口参数。Master 接口端口寄存器映射并未由 MIPI 规范定义，因此总线调用 "sdw_master_port_ops" 回调函数来执端口操作，例"Port Prepare"Port Transport params set"Port enable and disable"然后 Master 驱动的实现可以执行硬件特定的配置
+## 编程接口（SoundWire 从设备驱动）
 
 
-MIPI 瑙勮寖瑕佹眰姣忎釜 Slave 鎺ュ彛鏆撮湶涓€涓敮涓€鐨?48 浣嶆爣璇嗙锛屽瓨鍌ㄥ湪 6 涓彧璇?dev_id
-瀵勫瓨鍣ㄤ腑銆傝 dev_id 鏍囪瘑绗﹀寘鍚巶鍟嗗拰閮ㄤ欢淇℃伅锛屼互鍙婁竴涓敤浜庡尯鍒嗙浉鍚岀粍浠剁殑瀛楁銆?棰濆鐨?class 瀛楁鐩墠鏈娇鐢ㄣ€係lave 椹卞姩閽堝鐗瑰畾鐨勫巶鍟嗗拰閮ㄤ欢鏍囪瘑绗︾紪鍐欙紝鎬荤嚎鏍规嵁
-杩欎袱涓?id 鏋氫妇 Slave 璁惧銆傝澶囦笌椹卞姩鐨勫尮閰嶅熀浜庤繖涓や釜 id 瀹屾垚銆傚綋璁惧涓庨┍鍔?id
-鎴愬姛鍖归厤鏃讹紝鎬荤嚎璋冪敤 Slave 椹卞姩鐨?Probe銆侻aster 涓?Slave 璁惧涔嬮棿寮哄埗寤虹珛鐖跺瓙鍏崇郴
-锛堥€昏緫琛ㄧず涓庣墿鐞嗚繛鎺ヤ繚鎸佷竴鑷达級銆?
-Master/Slave 渚濊禆鍏崇郴鐨勪俊鎭瓨鍌ㄥ湪骞冲彴鏁版嵁銆乥oard 鏂囦欢銆丄CPI 鎴?DT 涓€侻IPI 杞欢瑙勮寖
-涓烘嫢鏈夊涓?Master 鎺ュ彛鐨勬帶鍒跺櫒瀹氫箟浜嗛澶栫殑 link_id 鍙傛暟銆俤ev_id 瀵勫瓨鍣ㄤ粎鍦?link 鐨?鑼冨洿鍐呭敮涓€锛宭ink_id 鍦ㄦ帶鍒跺櫒鐨勮寖鍥村唴鍞竴銆俤ev_id 鍜?link_id 鍦ㄧ郴缁熺骇鍒笂閮戒笉涓€瀹氬敮涓€锛?浣嗙埗瀛愪俊鎭敤浜庨伩鍏嶆涔夈€?
+MIPI 规范要求每个 Slave 接口暴露一个唯一48 位标识符，存储在 6 个只dev_id
+寄存器中。该 dev_id 标识符包含厂商和部件信息，以及一个用于区分相同组件的字段额外class 字段目前未使用。Slave 驱动针对特定的厂商和部件标识符编写，总线根据
+这两id 枚举 Slave 设备。设备与驱动的匹配基于这两个 id 完成。当设备与驱id
+成功匹配时，总线调用 Slave 驱动Probe。Master Slave 设备之间强制建立父子关系
+（逻辑表示与物理连接保持一致）
+Master/Slave 依赖关系的信息存储在平台数据、board 文件、ACPI DT 中。MIPI 软件规范
+为拥有多Master 接口的控制器定义了额外的 link_id 参数。dev_id 寄存器仅link 范围内唯一，link_id 在控制器的范围内唯一。dev_id link_id 在系统级别上都不一定唯一但父子信息用于避免歧义
 
 	static const struct sdw_device_id slave_id[] = {
 	        SDW_SLAVE_ENTRY(0x025d, 0x700, 0),
@@ -102,16 +102,16 @@ Master/Slave 渚濊禆鍏崇郴鐨勪俊鎭瓨鍌ㄥ湪骞冲彴鏁版嵁銆�
 	};
 
 
-瀵逛簬鑳藉姏锛屾€荤嚎瀹炵幇浜嗙敤浜庤鍙栨爣鍑?Slave MIPI 灞炴€х殑 API锛屽苟鍦?Slave ops 涓彁渚涘洖璋冿紝
-渚?Slave 椹卞姩瀹炵幇鎻愪緵鑳藉姏淇℃伅鐨勮嚜韬嚱鏁般€傛€荤嚎闇€瑕佺煡閬撲竴缁?Slave 鑳藉姏锛屼互渚垮 Slave
-瀵勫瓨鍣ㄨ繘琛岀紪绋嬪苟鎺у埗鎬荤嚎鐨勯噸鏂伴厤缃€?
-## 閾炬帴
+对于能力，总线实现了用于读取标Slave MIPI 属性的 API，并Slave ops 中提供回调，
+Slave 驱动实现提供能力信息的自身函数。总线需要知道一Slave 能力，以便对 Slave
+寄存器进行编程并控制总线的重新配置
+## 链接
 
 
-SoundWire MIPI 瑙勮寖 1.1 鍙湪浠ヤ笅鍦板潃鑾峰彇锛?https://members.mipi.org/wg/All-Members/document/70290
+SoundWire MIPI 规范 1.1 可在以下地址获取https://members.mipi.org/wg/All-Members/document/70290
 
-SoundWire MIPI DisCo锛圖iscover and Configuration锛屽彂鐜颁笌閰嶇疆锛夎鑼冨彲鍦ㄤ互涓嬪湴鍧€鑾峰彇锛?https://www.mipi.org/specifications/mipi-disco-soundwire
+SoundWire MIPI DisCo（Discover and Configuration，发现与配置）规范可在以下地址获取https://www.mipi.org/specifications/mipi-disco-soundwire
 
-锛堟敞鍐屽悗鍙叕寮€璁块棶锛孧IPI 鎴愬憳鍙洿鎺ヨ闂級
+（注册后可公开访问，MIPI 成员可直接访问）
 
-MIPI 鑱旂洘鍘傚晢 ID 椤甸潰锛歮id.mipi.org
+MIPI 联盟厂商 ID 页面：mid.mipi.org

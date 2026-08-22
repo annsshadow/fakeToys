@@ -1,106 +1,106 @@
 ﻿
-## Kernel Address Sanitizer (KASAN锛屽唴鏍稿湴鍧€娑堟瘨鍓?
+## Kernel Address Sanitizer (KASAN，内核地址消毒
 
 
-### Overview锛堟杩帮級
+### Overview（概述）
 
 
-Kernel Address Sanitizer (KASAN) 鏄竴涓姩鎬佸唴瀛樺畨鍏ㄩ敊璇娴嬪櫒锛屾棬鍦ㄥ彂鐜拌秺鐣岃闂拰閲婃斁鍚庝娇鐢紙use-after-free锛夌己闄枫€?
+Kernel Address Sanitizer (KASAN) 是一个动态内存安全错误检测器，旨在发现越界访问和释放后使用（use-after-free）缺陷
 
-KASAN 鏈変笁绉嶆ā寮忥細
+KASAN 有三种模式：
 
-1. Generic KASAN锛堥€氱敤 KASAN锛?
-2. Software Tag-Based KASAN锛堝熀浜庤蒋浠舵爣绛剧殑 KASAN锛?
-3. Hardware Tag-Based KASAN锛堝熀浜庣‖浠舵爣绛剧殑 KASAN锛?
+1. Generic KASAN（通用 KASAN
+2. Software Tag-Based KASAN（基于软件标签的 KASAN
+3. Hardware Tag-Based KASAN（基于硬件标签的 KASAN
 
-Generic KASAN锛岄€氳繃 CONFIG_KASAN_GENERIC 鍚敤锛屾槸闈㈠悜璋冭瘯鐨勬ā寮忥紝绫讳技浜庣敤鎴风┖闂?ASan銆傝妯″紡鏀寔澶氱 CPU 鏋舵瀯锛屼絾鍏锋湁鏄捐憲鐨勬€ц兘鍜屽唴瀛樺紑閿€銆?
+Generic KASAN，通过 CONFIG_KASAN_GENERIC 启用，是面向调试的模式，类似于用户空ASan。该模式支持多种 CPU 架构，但具有显著的性能和内存开销
 
-Software Tag-Based KASAN锛堟垨绉?SW_TAGS KASAN锛夛紝閫氳繃 CONFIG_KASAN_SW_TAGS 鍚敤锛屽彲鐢ㄤ簬璋冭瘯鍜?dogfood 娴嬭瘯锛岀被浼间簬鐢ㄦ埛绌洪棿 HWASan銆傝妯″紡浠呮敮鎸?arm64锛屼絾鍏堕€傚害鐨勫唴瀛樺紑閿€鍏佽鍦ㄥ彈鍐呭瓨闄愬埗鐨勮澶囦笂浠ョ湡瀹炲伐浣滆礋杞借繘琛屾祴璇曘€?
+Software Tag-Based KASAN（或SW_TAGS KASAN），通过 CONFIG_KASAN_SW_TAGS 启用，可用于调试dogfood 测试，类似于用户空间 HWASan。该模式仅支arm64，但其适度的内存开销允许在受内存限制的设备上以真实工作负载进行测试
 
-Hardware Tag-Based KASAN锛堟垨绉?HW_TAGS KASAN锛夛紝閫氳繃 CONFIG_KASAN_HW_TAGS 鍚敤锛屾槸鏃ㄥ湪鐢ㄤ綔鐜板満鍐呭瓨缂洪櫡妫€娴嬪櫒鎴栧畨鍏ㄧ紦瑙ｆ帾鏂界殑鐨勬ā寮忋€傝妯″紡浠呴€傜敤浜庢敮鎸?MTE锛圡emory Tagging Extension锛屽唴瀛樻爣璁版墿灞曪級鐨?arm64 CPU锛屼絾鍏跺唴瀛樺拰鎬ц兘寮€閿€寰堜綆锛屽洜姝ゅ彲鐢ㄤ簬鐢熶骇鐜銆?
+Hardware Tag-Based KASAN（或HW_TAGS KASAN），通过 CONFIG_KASAN_HW_TAGS 启用，是旨在用作现场内存缺陷检测器或安全缓解措施的的模式。该模式仅适用于支MTE（Memory Tagging Extension，内存标记扩展）arm64 CPU，但其内存和性能开销很低，因此可用于生产环境
 
-鍏充簬姣忕 KASAN 妯″紡鐨勫唴瀛樹笌鎬ц兘褰卞搷锛岃瑙佺浉搴?Kconfig 閫夐」鐨勬弿杩般€?
+关于每种 KASAN 模式的内存与性能影响，详见相Kconfig 选项的描述
 
-Generic 鍜?Software Tag-Based 妯″紡閫氬父琚О涓鸿蒋浠舵ā寮忋€係oftware Tag-Based 鍜?Hardware Tag-Based 妯″紡琚О涓哄熀浜庢爣绛剧殑妯″紡銆?
+Generic Software Tag-Based 模式通常被称为软件模式。Software Tag-Based Hardware Tag-Based 模式被称为基于标签的模式
 
-### Support锛堟敮鎸侊級
-
-
-#### Architectures锛堟灦鏋勶級
+### Support（支持）
 
 
-Generic KASAN 鏀寔 x86_64銆乤rm銆乤rm64銆乸owerpc銆乺iscv銆乻390銆亁tensa 鍜?loongarch锛岃€屽熀浜庢爣绛剧殑 KASAN 妯″紡浠呮敮鎸?arm64銆?
-
-#### Compilers锛堢紪璇戝櫒锛?
+#### Architectures（架构）
 
 
-杞欢 KASAN 妯″紡浣跨敤缂栬瘧鏈熸彃妗╋紝鍦ㄦ瘡娆″唴瀛樿闂墠鎻掑叆鏈夋晥鎬ф鏌ワ紝鍥犳闇€瑕佹彁渚涙敮鎸佽鐗规€х殑缂栬瘧鍣ㄧ増鏈€傚熀浜庣‖浠舵爣绛剧殑妯″紡渚濊禆纭欢鎵ц杩欎簺妫€鏌ワ紝浣嗕粛闇€瑕佹敮鎸佸唴瀛樻爣璁版寚浠ょ殑缂栬瘧鍣ㄧ増鏈€?
+Generic KASAN 支持 x86_64、arm、arm64、powerpc、riscv、s390、xtensa loongarch，而基于标签的 KASAN 模式仅支arm64
 
-Generic KASAN 闇€瑕?GCC 8.3.0 鎴栨洿楂樼増鏈紝鎴栧唴鏍告敮鎸佺殑浠讳綍 Clang 鐗堟湰銆?
-
-Software Tag-Based KASAN 闇€瑕?GCC 11+ 鎴栧唴鏍告敮鎸佺殑浠讳綍 Clang 鐗堟湰銆?
-
-Hardware Tag-Based KASAN 闇€瑕?GCC 10+ 鎴?Clang 12+銆?
-
-#### Memory types锛堝唴瀛樼被鍨嬶級
+#### Compilers（编译器
 
 
-Generic KASAN 鏀寔鍦?slab銆乸age_alloc銆乿map銆乿malloc銆乻tack 鍜?global 鍐呭瓨涓彂鐜扮己闄枫€?
+软件 KASAN 模式使用编译期插桩，在每次内存访问前插入有效性检查，因此需要提供支持该特性的编译器版本。基于硬件标签的模式依赖硬件执行这些检查，但仍需要支持内存标记指令的编译器版本
 
-Software Tag-Based KASAN 鏀寔 slab銆乸age_alloc銆乿malloc 鍜?stack 鍐呭瓨銆?
+Generic KASAN 需GCC 8.3.0 或更高版本，或内核支持的任何 Clang 版本
 
-Hardware Tag-Based KASAN 鏀寔 slab銆乸age_alloc 鍜岄潪鍙墽琛?vmalloc 鍐呭瓨銆?
+Software Tag-Based KASAN 需GCC 11+ 或内核支持的任何 Clang 版本
 
-### Usage锛堢敤娉曪級
+Hardware Tag-Based KASAN 需GCC 10+ Clang 12+
+
+#### Memory types（内存类型）
+
+
+Generic KASAN 支持slab、page_alloc、vmap、vmalloc、stack global 内存中发现缺陷
+
+Software Tag-Based KASAN 支持 slab、page_alloc、vmalloc stack 内存
+
+Hardware Tag-Based KASAN 支持 slab、page_alloc 和非可执vmalloc 内存
+
+### Usage（用法）
 
 
 ```
 	  CONFIG_KASAN=y
 ```
-骞朵粠 `CONFIG_KASAN_GENERIC`锛堝惎鐢?Generic KASAN锛夈€乣CONFIG_KASAN_SW_TAGS`锛堝惎鐢?Software Tag-Based KASAN锛夊拰 `CONFIG_KASAN_HW_TAGS`锛堝惎鐢?Hardware Tag-Based KASAN锛変腑閫夋嫨銆?
+并从 `CONFIG_KASAN_GENERIC`（启Generic KASAN）、`CONFIG_KASAN_SW_TAGS`（启Software Tag-Based KASAN）和 `CONFIG_KASAN_HW_TAGS`（启Hardware Tag-Based KASAN）中选择
 
-瀵逛簬杞欢妯″紡锛岃繕瑕佸湪 `CONFIG_KASAN_OUTLINE` 鍜?`CONFIG_KASAN_INLINE` 涔嬮棿閫夋嫨銆俹utline 鍜?inline 鏄紪璇戝櫒鎻掓々绫诲瀷銆傚墠鑰呯敓鎴愯緝灏忕殑浜岃繘鍒舵枃浠讹紝鑰屽悗鑰呴€熷害蹇嚦 2 鍊嶃€?
+对于软件模式，还要在 `CONFIG_KASAN_OUTLINE` `CONFIG_KASAN_INLINE` 之间选择。outline inline 是编译器插桩类型。前者生成较小的二进制文件，而后者速度快至 2 倍
 
-瑕佸皢鍙楀奖鍝?slab 瀵硅薄鐨勫垎閰嶄笌閲婃斁鏍堝洖婧撼鍏ユ姤鍛婏紝鍚敤 `CONFIG_STACKTRACE`銆傝鍖呭惈鍙楀奖鍝嶇墿鐞嗛〉鐨勫垎閰嶄笌閲婃斁鏍堝洖婧紝鍚敤 `CONFIG_PAGE_OWNER` 骞朵互 `page_owner=on` 鍚姩銆?
+要将受影slab 对象的分配与释放栈回溯纳入报告，启用 `CONFIG_STACKTRACE`。要包含受影响物理页的分配与释放栈回溯，启用 `CONFIG_PAGE_OWNER` 并以 `page_owner=on` 启动
 
-#### Boot parameters锛堝惎鍔ㄥ弬鏁帮級
+#### Boot parameters（启动参数）
 
 
-KASAN 鍙楅€氱敤鐨?`panic_on_warn` 鍛戒护琛屽弬鏁板奖鍝嶃€傚綋瀹冨惎鐢ㄦ椂锛孠ASAN 浼氬湪鎵撳嵃缂洪櫡鎶ュ憡鍚庝娇鍐呮牳 panic銆?
+KASAN 受通用`panic_on_warn` 命令行参数影响。当它启用时，KASAN 会在打印缺陷报告后使内核 panic
 
-榛樿鎯呭喌涓嬶紝KASAN 浠呴拡瀵圭涓€娆℃棤鏁堝唴瀛樿闂墦鍗扮己闄锋姤鍛娿€備娇鐢?`kasan_multi_shot` 鏃讹紝KASAN 浼氬湪姣忔鏃犳晥璁块棶鏃舵墦鍗版姤鍛娿€傝繖瀹為檯涓婁负 KASAN 鎶ュ憡绂佺敤浜?`panic_on_warn`銆?
+默认情况下，KASAN 仅针对第一次无效内存访问打印缺陷报告。使`kasan_multi_shot` 时，KASAN 会在每次无效访问时打印报告。这实际上为 KASAN 报告禁用`panic_on_warn`
 
-鎴栬€咃紝鐙珛浜?`panic_on_warn`锛宍kasan.fault=` 鍚姩鍙傛暟鍙敤浜庢帶鍒?panic 鍜屾姤鍛婅涓猴細
+或者，独立`panic_on_warn`，`kasan.fault=` 启动参数可用于控panic 和报告行为：
 
-- `kasan.fault=report`銆乣=panic` 鎴?`=panic_on_write` 鎺у埗鏄粎鎵撳嵃 KASAN 鎶ュ憡銆佷娇鍐呮牳 panic锛岃繕鏄粎鍦ㄦ棤鏁堝啓璁块棶鏃朵娇鍐呮牳 panic锛堥粯璁わ細`report`锛夈€傚嵆浣垮惎鐢ㄤ簡 `kasan_multi_shot`锛屼篃浼氬彂鐢?panic銆傛敞鎰忥紝褰撲娇鐢?Hardware Tag-Based KASAN 鐨勫紓姝ユā寮忔椂锛宍kasan.fault=panic_on_write` 鎬绘槸瀵瑰紓姝ユ鏌ョ殑璁块棶锛堝寘鎷锛夎Е鍙?panic銆?
+- `kasan.fault=report`、`=panic` `=panic_on_write` 控制是仅打印 KASAN 报告、使内核 panic，还是仅在无效写访问时使内核 panic（默认：`report`）。即使启用了 `kasan_multi_shot`，也会发panic。注意，当使Hardware Tag-Based KASAN 的异步模式时，`kasan.fault=panic_on_write` 总是对异步检查的访问（包括读）触panic
 
-Software 鍜?Hardware Tag-Based KASAN 妯″紡锛堣涓嬫枃鍏充簬鍚勭妯″紡鐨勭珷鑺傦級鏀寔鏀瑰彉鏍堝洖婧敹闆嗚涓猴細
+Software Hardware Tag-Based KASAN 模式（见下文关于各种模式的章节）支持改变栈回溯收集行为：
 
-- `kasan.stacktrace=off` 鎴?`=on` 绂佺敤鎴栧惎鐢ㄥ垎閰嶄笌閲婃斁鏍堝洖婧殑鏀堕泦锛堥粯璁わ細`on`锛夈€?
-- `kasan.stack_ring_size=<number of entries>` 鎸囧畾鏍堢幆锛坰tack ring锛変腑鐨勬潯鐩暟锛堥粯璁わ細`32768`锛夈€?
+- `kasan.stacktrace=off` `=on` 禁用或启用分配与释放栈回溯的收集（默认：`on`）
+- `kasan.stack_ring_size=<number of entries>` 指定栈环（stack ring）中的条目数（默认：`32768`）
 
-Hardware Tag-Based KASAN 妯″紡鏃ㄥ湪鐢ㄤ綔鐢熶骇鐜涓殑瀹夊叏缂撹В鎺柦銆傚洜姝わ紝瀹冩敮鎸侀澶栫殑鍚姩鍙傛暟锛屽厑璁稿畬鍏ㄧ鐢?KASAN 鎴栨帶鍒跺叾鐗规€э細
+Hardware Tag-Based KASAN 模式旨在用作生产环境中的安全缓解措施。因此，它支持额外的启动参数，允许完全禁KASAN 或控制其特性：
 
-- `kasan=off` 鎴?`=on` 鎺у埗鏄惁鍚敤 KASAN锛堥粯璁わ細`on`锛夈€?
+- `kasan=off` `=on` 控制是否启用 KASAN（默认：`on`）
 
-- `kasan.mode=sync`銆乣=async` 鎴?`=asymm` 鎺у埗 KASAN 閰嶇疆涓哄悓姝ャ€佸紓姝ユ垨闈炲绉版墽琛屾ā寮忥紙榛樿锛歚sync`锛夈€?
-  鍚屾妯″紡锛氬綋鍙戠敓鏍囩妫€鏌ユ晠闅滄椂锛岀珛鍗虫娴嬪埌閿欒璁块棶銆?
-  寮傛妯″紡锛氶敊璇闂殑妫€娴嬭寤惰繜銆傚綋鍙戠敓鏍囩妫€鏌ユ晠闅滄椂锛屼俊鎭瓨鍌ㄥ湪纭欢涓紙瀵逛簬 arm64锛屽瓨鍌ㄥ湪 TFSR_EL1 瀵勫瓨鍣ㄤ腑锛夈€傚唴鏍稿畾鏈熸鏌ョ‖浠讹紝浠呭湪杩欎簺妫€鏌ユ湡闂存姤鍛婃爣绛炬晠闅溿€?
-  闈炲绉版ā寮忥細閿欒璁块棶鍦ㄨ鏃跺悓姝ユ娴嬶紝鍦ㄥ啓鏃跺紓姝ユ娴嬨€?
+- `kasan.mode=sync`、`=async` `=asymm` 控制 KASAN 配置为同步、异步或非对称执行模式（默认：`sync`）
+  同步模式：当发生标签检查故障时，立即检测到错误访问
+  异步模式：错误访问的检测被延迟。当发生标签检查故障时，信息存储在硬件中（对于 arm64，存储在 TFSR_EL1 寄存器中）。内核定期检查硬件，仅在这些检查期间报告标签故障
+  非对称模式：错误访问在读时同步检测，在写时异步检测
 
-- `kasan.write_only=off` 鎴?`kasan.write_only=on` 鎺у埗 KASAN 鏄粎妫€鏌ュ啓锛坰tore锛夎闂繕鏄鏌ユ墍鏈夎闂紙榛樿锛歚off`锛夈€?
+- `kasan.write_only=off` `kasan.write_only=on` 控制 KASAN 是仅检查写（store）访问还是检查所有访问（默认：`off`）
 
-- `kasan.vmalloc=off` 鎴?`=on` 绂佺敤鎴栧惎鐢?vmalloc 鍒嗛厤鐨勬爣璁帮紙榛樿锛歚on`锛夈€?
+- `kasan.vmalloc=off` `=on` 禁用或启vmalloc 分配的标记（默认：`on`）
 
-- `kasan.page_alloc.sample=<閲囨牱闂撮殧>` 浣?KASAN 浠呭姣忕 N 涓?order 绛変簬鎴栧ぇ浜?`kasan.page_alloc.sample.order` 鐨?page_alloc 鍒嗛厤杩涜鏍囪锛屽叾涓?N 涓?`sample` 鍙傛暟鐨勫€硷紙榛樿锛歚1`锛屽嵆瀵规瘡涓绫诲垎閰嶉兘鏍囪锛夈€?
-  璇ュ弬鏁版棬鍦ㄧ紦瑙?KASAN 寮曞叆鐨勬€ц兘寮€閿€銆?
-  娉ㄦ剰锛屽惎鐢ㄦ鍙傛暟浼氫娇 Hardware Tag-Based KASAN 璺宠繃瀵归噰鏍锋墍閫夊垎閰嶇殑妫€鏍革紝浠庤€屾紡鎺夊杩欎簺鍒嗛厤鐨勫潖璁块棶銆備负鍑嗙‘妫€娴嬬己闄凤紝璇蜂娇鐢ㄩ粯璁ゅ€笺€?
+- `kasan.page_alloc.sample=<采样间隔>` KASAN 仅对每第 N order 等于或大`kasan.page_alloc.sample.order` page_alloc 分配进行标记，其N `sample` 参数的值（默认：`1`，即对每个此类分配都标记）
+  该参数旨在缓KASAN 引入的性能开销
+  注意，启用此参数会使 Hardware Tag-Based KASAN 跳过对采样所选分配的检核，从而漏掉对这些分配的坏访问。为准确检测缺陷，请使用默认值
 
-- `kasan.page_alloc.sample.order=<鏈€灏忛〉 order>` 鎸囧畾鍙楅噰鏍峰奖鍝嶇殑鍒嗛厤鐨勬渶灏?order锛堥粯璁わ細`3`锛夈€?
-  浠呭綋 `kasan.page_alloc.sample` 璁剧疆涓哄ぇ浜?`1` 鐨勫€兼椂閫傜敤銆?
-  璇ュ弬鏁版棬鍦ㄤ粎鍏佽瀵瑰ぇ鍨?page_alloc 鍒嗛厤杩涜閲囨牱锛岃繖绫诲垎閰嶆槸鎬ц兘寮€閿€鐨勬渶澶ф潵婧愩€?
+- `kasan.page_alloc.sample.order=<最小页 order>` 指定受采样影响的分配的最order（默认：`3`）
+  仅当 `kasan.page_alloc.sample` 设置为大`1` 的值时适用
+  该参数旨在仅允许对大page_alloc 分配进行采样，这类分配是性能开销的最大来源
 
-#### Error reports锛堥敊璇姤鍛婏級
+#### Error reports（错误报告）
 
 
 ```
@@ -176,26 +176,26 @@ Hardware Tag-Based KASAN 妯″紡鏃ㄥ湪鐢ㄤ綔鐢熶骇鐜涓殑�
     ==================================================================
 ```
 
-鎶ュ憡澶撮儴姒傛嫭浜嗗彂鐢熶簡浣曠缂洪櫡浠ュ強鐢变綍绉嶈闂紩璧枫€傚叾鍚庤窡闅忛敊璇闂殑鏍堝洖婧€佽璁块棶鍐呭瓨琚垎閰嶄綅缃殑鏍堝洖婧紙鑻ヨ闂殑鏄?slab 瀵硅薄锛夛紝浠ュ強瀵硅薄琚噴鏀句綅缃殑鏍堝洖婧紙鑻ユ槸 use-after-free 缂洪櫡鎶ュ憡锛夈€傛帴涓嬫潵鏄墍璁块棶 slab 瀵硅薄鐨勬弿杩颁互鍙婅璁块棶鍐呭瓨椤电殑淇℃伅銆?
+报告头部概括了发生了何种缺陷以及由何种访问引起。其后跟随错误访问的栈回溯、被访问内存被分配位置的栈回溯（若访问的slab 对象），以及对象被释放位置的栈回溯（若是 use-after-free 缺陷报告）。接下来是所访问 slab 对象的描述以及被访问内存页的信息
 
-鏈€鍚庯紝鎶ュ憡灞曠ず琚闂湴鍧€鍛ㄥ洿鐨勫唴瀛樼姸鎬併€傚湪鍐呴儴锛孠ASAN 瀵规瘡涓唴瀛橀绮掞紙memory granule锛夊崟鐙窡韪唴瀛樼姸鎬侊紝璇ラ绮掓牴鎹?KASAN 妯″紡涓?8 鎴?16 瀛楄妭瀵归綈銆傛姤鍛婂唴瀛樼姸鎬侀儴鍒嗕腑鐨勬瘡涓暟瀛楁樉绀哄洿缁曡璁块棶鍦板潃鐨勬煇涓唴瀛橀绮掔殑鐘舵€併€?
+最后，报告展示被访问地址周围的内存状态。在内部，KASAN 对每个内存颗粒（memory granule）单独跟踪内存状态，该颗粒根KASAN 模式8 16 字节对齐。报告内存状态部分中的每个数字显示围绕被访问地址的某个内存颗粒的状态
 
-瀵逛簬 Generic KASAN锛屾瘡涓唴瀛橀绮掔殑澶у皬涓?8銆傛瘡涓绮掔殑鐘舵€佺紪鐮佸湪涓€涓奖瀛愬瓧鑺傦紙shadow byte锛変腑銆傝繖 8 涓瓧鑺傚彲浠ユ槸鍙闂殑銆侀儴鍒嗗彲璁块棶鐨勩€佸凡閲婃斁鐨勶紝鎴栨槸 redzone 鐨勪竴閮ㄥ垎銆侹ASAN 瀵规瘡涓奖瀛愬瓧鑺備娇鐢ㄥ涓嬬紪鐮侊細00 琛ㄧず瀵瑰簲鍐呭瓨鍖哄煙鐨勫叏閮?8 涓瓧鑺傚潎鍙闂紱鏁板瓧 N锛? <= N <= 7锛夎〃绀哄墠 N 涓瓧鑺傚彲璁块棶锛屽叾浣欙紙8 - N锛変釜瀛楄妭涓嶅彲璁块棶锛涗换浣曡礋鍊艰〃绀烘暣涓?8 瀛楄妭瀛椾笉鍙闂€侹ASAN 浣跨敤涓嶅悓鐨勮礋鍊兼潵鍖哄垎涓嶅悓绫诲瀷涓嶅彲璁块棶鍐呭瓨锛屽 redzone 鎴栧凡閲婃斁鍐呭瓨锛堣 mm/kasan/kasan.h锛夈€?
+对于 Generic KASAN，每个内存颗粒的大小8。每个颗粒的状态编码在一个影子字节（shadow byte）中。这 8 个字节可以是可访问的、部分可访问的、已释放的，或是 redzone 的一部分。KASAN 对每个影子字节使用如下编码：00 表示对应内存区域的全8 个字节均可访问；数字 N <= N <= 7）表示前 N 个字节可访问，其余（8 - N）个字节不可访问；任何负值表示整8 字节字不可访问。KASAN 使用不同的负值来区分不同类型不可访问内存，如 redzone 或已释放内存（见 mm/kasan/kasan.h）
 
-鍦ㄤ笂闈㈢殑鎶ュ憡涓紝绠ご鎸囧悜褰卞瓙瀛楄妭 `03`锛岃繖鎰忓懗鐫€琚闂湴鍧€鏄儴鍒嗗彲璁块棶鐨勩€?
+在上面的报告中，箭头指向影子字节 `03`，这意味着被访问地址是部分可访问的
 
-瀵逛簬鍩轰簬鏍囩鐨?KASAN 妯″紡锛岃繖鏈€鍚庝竴閮ㄥ垎鎶ュ憡鏄剧ず琚闂湴鍧€鍛ㄥ洿鐨勫唴瀛樻爣绛撅紙瑙?`Implementation details`_ 绔犺妭锛夈€?
+对于基于标签KASAN 模式，这最后一部分报告显示被访问地址周围的内存标签（`Implementation details`_ 章节）
 
-娉ㄦ剰锛孠ASAN 缂洪櫡鏍囬锛堝 `slab-out-of-bounds` 鎴?`use-after-free`锛夋槸灏藉姏鑰屼负鐨勶細KASAN 鏍规嵁鍏舵墍鎷ユ湁鐨勬湁闄愪俊鎭墦鍗版渶鍙兘鐨勭己闄风被鍨嬨€傚疄闄呯己闄风被鍨嬪彲鑳戒笉鍚屻€?
+注意，KASAN 缺陷标题（如 `slab-out-of-bounds` `use-after-free`）是尽力而为的：KASAN 根据其所拥有的有限信息打印最可能的缺陷类型。实际缺陷类型可能不同
 
-Generic KASAN 杩樹細鎶ュ憡鏈€澶氫袱鏉¤緟鍔╄皟鐢ㄦ爤鍥炴函銆傝繖浜涙爤鍥炴函鎸囧悜涓庡璞′氦浜掍絾鏈洿鎺ュ嚭鐜板湪閿欒璁块棶鏍堝洖婧腑鐨勪唬鐮佷綅缃€傜洰鍓嶏紝杩欏寘鎷?call_rcu() 鍜?workqueue 鎺掗槦銆?
+Generic KASAN 还会报告最多两条辅助调用栈回溯。这些栈回溯指向与对象交互但未直接出现在错误访问栈回溯中的代码位置。目前，这包call_rcu() workqueue 排队
 
 #### CONFIG_KASAN_EXTRA_INFO
 
 
-鍚敤 CONFIG_KASAN_EXTRA_INFO 鍏佽 KASAN 璁板綍骞舵姤鍛婃洿澶氫俊鎭€傚綋鍓嶆敮鎸佺殑棰濆淇℃伅鏄垎閰嶄笌閲婃斁鏃剁殑 CPU 缂栧彿鍜屾椂闂存埑銆傛洿澶氫俊鎭湁鍔╀簬鎵惧埌缂洪櫡鍘熷洜骞跺皢閿欒涓庡叾浠栫郴缁熶簨浠跺叧鑱旓紝浠ｄ环鏄娇鐢ㄩ澶栧唴瀛樻潵璁板綍鏇村淇℃伅锛堟洿澶氫唬浠风粏鑺傝 CONFIG_KASAN_EXTRA_INFO 鐨勫府鍔╂枃鏈級銆?
+启用 CONFIG_KASAN_EXTRA_INFO 允许 KASAN 记录并报告更多信息。当前支持的额外信息是分配与释放时的 CPU 编号和时间戳。更多信息有助于找到缺陷原因并将错误与其他系统事件关联，代价是使用额外内存来记录更多信息（更多代价细节见 CONFIG_KASAN_EXTRA_INFO 的帮助文本）
 
-浠ヤ笅鏄惎鐢?CONFIG_KASAN_EXTRA_INFO 鍚庣殑鎶ュ憡锛堜粎
+以下是启CONFIG_KASAN_EXTRA_INFO 后的报告（仅
 ```
     ==================================================================
     ...
@@ -206,17 +206,17 @@ Generic KASAN 杩樹細鎶ュ憡鏈€澶氫袱鏉¤緟鍔╄皟鐢ㄦ爤鍥炴�
     ==================================================================
 ```
 
-### Implementation details锛堝疄鐜扮粏鑺傦級
+### Implementation details（实现细节）
 
 
 #### Generic KASAN
 
 
-杞欢 KASAN 妯″紡浣跨敤褰卞瓙鍐呭瓨鏉ヨ褰曟瘡涓唴瀛樺瓧鑺傛槸鍚﹀彲瀹夊叏璁块棶锛屽苟浣跨敤缂栬瘧鏈熸彃妗╁湪姣忔鍐呭瓨璁块棶鍓嶆彃鍏ュ奖瀛愬唴瀛樻鏌ャ€?
+软件 KASAN 模式使用影子内存来记录每个内存字节是否可安全访问，并使用编译期插桩在每次内存访问前插入影子内存检查
 
-Generic KASAN 灏嗗叾褰卞瓙鍐呭瓨鍗犱负鍐呮牳鍐呭瓨鐨?1/8锛堝湪 x86_64 涓婁负 16TB 浠ヨ鐩?128TB锛夛紝骞朵娇鐢ㄥ甫姣斾緥鍜屽亸绉荤殑鐩存槧灏勫皢鍐呭瓨鍦板潃杞崲涓哄叾瀵瑰簲鐨勫奖瀛愬湴鍧€銆?
+Generic KASAN 将其影子内存占为内核内存1/8（在 x86_64 上为 16TB 以覆128TB），并使用带比例和偏移的直映射将内存地址转换为其对应的影子地址
 
-浠ヤ笅鏄敤浜庡皢鍦板潃杞崲涓哄叾瀵瑰簲褰卞瓙鍦板潃鐨勫嚱鏁?
+以下是用于将地址转换为其对应影子地址的函
 ```
     static inline void *kasan_mem_to_shadow(const void *addr)
     {
@@ -224,90 +224,90 @@ Generic KASAN 灏嗗叾褰卞瓙鍐呭瓨鍗犱负鍐呮牳鍐呭瓨鐨?1/8锛�
 		+ KASAN_SHADOW_OFFSET;
     }
 ```
-鍏朵腑 `KASAN_SHADOW_SCALE_SHIFT = 3`銆?
+其中 `KASAN_SHADOW_SCALE_SHIFT = 3`
 
-缂栬瘧鏈熸彃妗╃敤浜庢彃鍏ュ唴瀛樿闂鏌ャ€傜紪璇戝櫒鍦ㄦ瘡娆″ぇ灏忎负 1銆?銆?銆? 鎴?16 鐨勫唴瀛樿闂墠鎻掑叆鍑芥暟璋冪敤锛坄__asan_load**(addr)`銆乣__asan_store**(addr)`锛夈€傝繖浜涘嚱鏁伴€氳繃妫€鏌ュ搴旂殑褰卞瓙鍐呭瓨鏉ュ垽鏂唴瀛樿闂槸鍚︽湁鏁堛€?
+编译期插桩用于插入内存访问检查。编译器在每次大小为 1 16 的内存访问前插入函数调用（`__asan_load**(addr)`、`__asan_store**(addr)`）。这些函数通过检查对应的影子内存来判断内存访问是否有效
 
-浣跨敤 inline 鎻掓々鏃讹紝缂栬瘧鍣ㄤ笉鐩存帴杩涜鍑芥暟璋冪敤锛岃€屾槸鐩存帴鎻掑叆妫€鏌ュ奖瀛愬唴瀛樼殑浠ｇ爜銆傛閫夐」鏄捐憲澧炲ぇ鍐呮牳浣撶Н锛屼絾鐩告瘮 outline 鎻掓々鐨勫唴鏍稿甫鏉?x1.1-x2 鐨勬€ц兘鎻愬崌銆?
+使用 inline 插桩时，编译器不直接进行函数调用，而是直接插入检查影子内存的代码。此选项显著增大内核体积，但相比 outline 插桩的内核带x1.1-x2 的性能提升
 
-Generic KASAN 鏄敮涓€閫氳繃闅旂鍖猴紙quarantine锛夊欢杩熼噴鏀惧璞￠噸鐢ㄧ殑妯″紡锛堝疄鐜拌 mm/kasan/quarantine.c锛夈€?
+Generic KASAN 是唯一通过隔离区（quarantine）延迟释放对象重用的模式（实现见 mm/kasan/quarantine.c）
 
 #### Software Tag-Based KASAN
 
 
-Software Tag-Based KASAN 浣跨敤杞欢鍐呭瓨鏍囪鏂规硶鏉ユ鏌ヨ闂湁鏁堟€с€傜洰鍓嶄粎閽堝 arm64 鏋舵瀯瀹炵幇銆?
+Software Tag-Based KASAN 使用软件内存标记方法来检查访问有效性。目前仅针对 arm64 架构实现
 
-Software Tag-Based KASAN 浣跨敤 arm64 CPU 鐨?Top Byte Ignore (TBI) 鐗规€э紝鍦ㄥ唴鏍告寚閽堢殑鏈€楂樺瓧鑺備腑瀛樺偍鎸囬拡鏍囩銆傚畠浣跨敤褰卞瓙鍐呭瓨瀛樺偍涓庢瘡涓?16 瀛楄妭鍐呭瓨鍗曞厓鍏宠仈鐨勫唴瀛樻爣绛撅紙鍥犳锛屽畠鍗犲唴鏍稿唴瀛樼殑 1/16 鐢ㄤ簬褰卞瓙鍐呭瓨锛夈€?
+Software Tag-Based KASAN 使用 arm64 CPU Top Byte Ignore (TBI) 特性，在内核指针的最高字节中存储指针标签。它使用影子内存存储与每16 字节内存单元关联的内存标签（因此，它占内核内存的 1/16 用于影子内存）
 
-鍦ㄦ瘡娆″唴瀛樺垎閰嶆椂锛孲oftware Tag-Based KASAN 鐢熸垚涓€涓殢鏈烘爣绛撅紝鐢ㄦ鏍囩鏍囪宸插垎閰嶅唴瀛橈紝骞跺皢鍚屼竴鏍囩宓屽叆杩斿洖鐨勬寚閽堜腑銆?
+在每次内存分配时，Software Tag-Based KASAN 生成一个随机标签，用此标签标记已分配内存，并将同一标签嵌入返回的指针中
 
-Software Tag-Based KASAN 浣跨敤缂栬瘧鏈熸彃妗╁湪姣忔鍐呭瓨璁块棶鍓嶆彃鍏ユ鏌ャ€傝繖浜涙鏌ョ‘淇濊璁块棶鍐呭瓨鐨勬爣绛剧瓑浜庣敤浜庤闂鍐呭瓨鐨勬寚閽堢殑鏍囩銆傝嫢鍙戠敓鏍囩涓嶅尮閰嶏紝Software Tag-Based KASAN 鎵撳嵃缂洪櫡鎶ュ憡銆?
+Software Tag-Based KASAN 使用编译期插桩在每次内存访问前插入检查。这些检查确保被访问内存的标签等于用于访问该内存的指针的标签。若发生标签不匹配，Software Tag-Based KASAN 打印缺陷报告
 
-Software Tag-Based KASAN 涔熸湁涓ょ鎻掓々妯″紡锛坥utline锛屽彂鍑哄洖璋冧互妫€鏌ュ唴瀛樿闂紱浠ュ強 inline锛屽唴鑱旀墽琛屽奖瀛愬唴瀛樻鏌ワ級銆傚湪 outline 鎻掓々妯″紡涓嬶紝缂洪櫡鎶ュ憡鐢辨墽琛岃闂鏌ョ殑鍑芥暟鎵撳嵃銆傚湪 inline 鎻掓々妯″紡涓嬶紝缂栬瘧鍣ㄥ彂鍑?`brk` 鎸囦护锛屽苟浣跨敤涓撶敤鐨?`brk` 澶勭悊绋嬪簭鏉ユ墦鍗扮己闄锋姤鍛娿€?
+Software Tag-Based KASAN 也有两种插桩模式（outline，发出回调以检查内存访问；以及 inline，内联执行影子内存检查）。在 outline 插桩模式下，缺陷报告由执行访问检查的函数打印。在 inline 插桩模式下，编译器发`brk` 指令，并使用专用`brk` 处理程序来打印缺陷报告
 
-Software Tag-Based KASAN 浣跨敤 0xFF 浣滀负 match-all 鎸囬拡鏍囩锛堥€氳繃甯︽湁 0xFF 鎸囬拡鏍囩鐨勬寚閽堣繘琛岀殑璁块棶涓嶈妫€鏌ワ級銆傚€?0xFE 褰撳墠淇濈暀鐢ㄤ簬鏍囪宸查噴鏀剧殑鍐呭瓨鍖哄煙銆?
+Software Tag-Based KASAN 使用 0xFF 作为 match-all 指针标签（通过带有 0xFF 指针标签的指针进行的访问不被检查）。0xFE 当前保留用于标记已释放的内存区域
 
 #### Hardware Tag-Based KASAN
 
 
-Hardware Tag-Based KASAN 鍦ㄦ蹇典笂绫讳技浜庤蒋浠舵ā寮忥紝浣嗕娇鐢ㄧ‖浠跺唴瀛樻爣璁版敮鎸侊紝鑰岄潪缂栬瘧鍣ㄦ彃妗╁拰褰卞瓙鍐呭瓨銆?
+Hardware Tag-Based KASAN 在概念上类似于软件模式，但使用硬件内存标记支持，而非编译器插桩和影子内存
 
-Hardware Tag-Based KASAN 鐩墠浠呴拡瀵?arm64 鏋舵瀯瀹炵幇锛屽苟鍩轰簬 ARMv8.5 鎸囦护闆嗘灦鏋勫紩鍏ョ殑 arm64 Memory Tagging Extension (MTE) 浠ュ強 Top Byte Ignore (TBI)銆?
+Hardware Tag-Based KASAN 目前仅针arm64 架构实现，并基于 ARMv8.5 指令集架构引入的 arm64 Memory Tagging Extension (MTE) 以及 Top Byte Ignore (TBI)
 
-涓撶敤鐨?arm64 鎸囦护鐢ㄤ簬涓烘瘡涓垎閰嶅垎閰嶅唴瀛樻爣绛俱€傜浉鍚岀殑鏍囩琚垎閰嶇粰鎸囧悜杩欎簺鍒嗛厤鐨勬寚閽堛€傚湪姣忔鍐呭瓨璁块棶鏃讹紝纭欢纭繚琚闂唴瀛樼殑鏍囩绛変簬鐢ㄤ簬璁块棶璇ュ唴瀛樼殑鎸囬拡鐨勬爣绛俱€傝嫢鍙戠敓鏍囩涓嶅尮閰嶏紝鍒欑敓鎴愭晠闅滃苟鎵撳嵃鎶ュ憡銆?
+专用arm64 指令用于为每个分配分配内存标签。相同的标签被分配给指向这些分配的指针。在每次内存访问时，硬件确保被访问内存的标签等于用于访问该内存的指针的标签。若发生标签不匹配，则生成故障并打印报告
 
-Hardware Tag-Based KASAN 浣跨敤 0xFF 浣滀负 match-all 鎸囬拡鏍囩锛堥€氳繃甯︽湁 0xFF 鎸囬拡鏍囩鐨勬寚閽堣繘琛岀殑璁块棶涓嶈妫€鏌ワ級銆傚€?0xFE 褰撳墠淇濈暀鐢ㄤ簬鏍囪宸查噴鏀剧殑鍐呭瓨鍖哄煙銆?
+Hardware Tag-Based KASAN 使用 0xFF 作为 match-all 指针标签（通过带有 0xFF 指针标签的指针进行的访问不被检查）。0xFE 当前保留用于标记已释放的内存区域
 
-鑻ョ‖浠朵笉鏀寔 MTE锛圓RMv8.5 涔嬪墠锛夛紝Hardware Tag-Based KASAN 灏嗕笉浼氳鍚敤銆傚湪杩欑鎯呭喌涓嬶紝鎵€鏈?KASAN 鍚姩鍙傛暟鍧囪蹇界暐銆?
+若硬件不支持 MTE（ARMv8.5 之前），Hardware Tag-Based KASAN 将不会被启用。在这种情况下，所KASAN 启动参数均被忽略
 
-娉ㄦ剰锛屽惎鐢?CONFIG_KASAN_HW_TAGS 鎬绘槸浼氬鑷村唴鏍稿唴 TBI 琚惎鐢ㄣ€傚嵆浣挎彁渚涗簡 `kasan.mode=off`锛屾垨纭欢涓嶆敮鎸?MTE锛堜絾鏀寔 TBI锛夈€?
+注意，启CONFIG_KASAN_HW_TAGS 总是会导致内核内 TBI 被启用。即使提供了 `kasan.mode=off`，或硬件不支MTE（但支持 TBI）
 
-Hardware Tag-Based KASAN 浠呮姤鍛婂彂鐜扮殑绗竴涓己闄枫€傛鍚庯紝MTE 鏍囩妫€鏌ヨ绂佺敤銆?
+Hardware Tag-Based KASAN 仅报告发现的第一个缺陷。此后，MTE 标签检查被禁用
 
-### Shadow memory锛堝奖瀛愬唴瀛橈級
-
-
-鏈妭鍐呭浠呴€傜敤浜庤蒋浠?KASAN 妯″紡銆?
-
-鍐呮牳鍦ㄥ湴鍧€绌洪棿鐨勫涓笉鍚岄儴鍒嗘槧灏勫唴瀛樸€傚唴鏍歌櫄鎷熷湴鍧€鐨勮寖鍥村緢澶э細娌℃湁瓒冲鐨勭墿鐞嗗唴瀛樻潵涓哄唴鏍稿彲鑳借闂殑姣忎釜鍦板潃鏀寔鐪熷疄鐨勫奖瀛愬尯鍩熴€傚洜姝わ紝KASAN 浠呬负鍦板潃绌洪棿鐨勬煇浜涢儴鍒嗘槧灏勭湡瀹炵殑褰卞瓙銆?
-
-#### Default behaviour锛堥粯璁よ涓猴級
+### Shadow memory（影子内存）
 
 
-榛樿鎯呭喌涓嬶紝鏋舵瀯浠呬负绾挎€ф槧灏勶紙浠ュ強娼滃湪鐨勫叾浠栧皬閮ㄥ垎鍖哄煙锛変箣涓婄殑褰卞瓙鍖哄煙鏄犲皠鐪熷疄鍐呭瓨銆傚浜庢墍鏈夊叾浠栧尯鍩熲€斺€斿 vmalloc 鍜?vmemmap 绌洪棿鈥斺€斿湪褰卞瓙鍖哄煙涔嬩笂鏄犲皠鍗曚釜鍙椤点€傝繖涓彧璇诲奖瀛愰〉灏嗘墍鏈夊唴瀛樿闂０鏄庝负鍏佽銆?
+本节内容仅适用于软KASAN 模式
 
-杩欑粰妯″潡甯︽潵浜嗛棶棰橈細瀹冧滑涓嶄綅浜庣嚎鎬ф槧灏勪腑锛岃€屾槸浣嶄簬涓撶敤鐨勬ā鍧楃┖闂淬€傞€氳繃鎸傛帴锛坔ook锛夋ā鍧楀垎閰嶅櫒锛孠ASAN 涓存椂鏄犲皠鐪熷疄褰卞瓙鍐呭瓨鏉ヨ鐩栧畠浠€備緥濡傦紝杩欏厑璁告娴嬪妯″潡鍏ㄥ眬鍙橀噺鐨勬棤鏁堣闂€?
+内核在地址空间的多个不同部分映射内存。内核虚拟地址的范围很大：没有足够的物理内存来为内核可能访问的每个地址支持真实的影子区域。因此，KASAN 仅为地址空间的某些部分映射真实的影子
 
-杩欎篃閫犳垚浜嗕笌 `VMAP_STACK` 鐨勪笉鍏煎锛氳嫢鏍堜綅浜?vmalloc 绌洪棿涓紝瀹冨皢琚鍙椤甸伄钄斤紝鍐呮牳鍦ㄥ皾璇曚负鏍堝彉閲忓缓绔嬪奖瀛愭暟鎹椂灏嗗嚭閿欍€?
+#### Default behaviour（默认行为）
+
+
+默认情况下，架构仅为线性映射（以及潜在的其他小部分区域）之上的影子区域映射真实内存。对于所有其他区域——如 vmalloc vmemmap 空间——在影子区域之上映射单个只读页。这个只读影子页将所有内存访问声明为允许
+
+这给模块带来了问题：它们不位于线性映射中，而是位于专用的模块空间。通过挂接（hook）模块分配器，KASAN 临时映射真实影子内存来覆盖它们。例如，这允许检测对模块全局变量的无效访问
+
+这也造成了与 `VMAP_STACK` 的不兼容：若栈位vmalloc 空间中，它将被该只读页遮蔽，内核在尝试为栈变量建立影子数据时将出错
 
 #### CONFIG_KASAN_VMALLOC
 
 
-閫氳繃 `CONFIG_KASAN_VMALLOC`锛孠ASAN 鍙互浠ユ洿澶х殑鍐呭瓨浣跨敤涓轰唬浠疯鐩?vmalloc 绌洪棿銆傜洰鍓嶏紝杩欏湪 x86銆乤rm64銆乺iscv銆乻390 鍜?powerpc 涓婂彈鏀寔銆?
+通过 `CONFIG_KASAN_VMALLOC`，KASAN 可以以更大的内存使用为代价覆vmalloc 空间。目前，这在 x86、arm64、riscv、s390 powerpc 上受支持
 
-鍏跺伐浣滄柟寮忔槸閫氳繃鎸傛帴 vmalloc 鍜?vmap锛屽苟鍔ㄦ€佸垎閰嶇湡瀹炲奖瀛愬唴瀛樻潵鏀拺鏄犲皠銆?
+其工作方式是通过挂接 vmalloc vmap，并动态分配真实影子内存来支撑映射
 
-vmalloc 绌洪棿涓殑澶у鏁版槧灏勯兘寰堝皬锛岄渶瑕佺殑褰卞瓙绌洪棿涓嶈冻涓€鏁撮〉銆傚洜姝わ紝涓烘瘡涓槧灏勫垎閰嶄竴鏁撮〉褰卞瓙椤靛皢鏄氮璐圭殑銆傛澶栵紝涓虹‘淇濅笉鍚岀殑鏄犲皠浣跨敤涓嶅悓鐨勫奖瀛愰〉锛屾槧灏勫繀椤讳笌 `KASAN_GRANULE_SIZE * PAGE_SIZE` 瀵归綈銆?
+vmalloc 空间中的大多数映射都很小，需要的影子空间不足一整页。因此，为每个映射分配一整页影子页将是浪费的。此外，为确保不同的映射使用不同的影子页，映射必须与 `KASAN_GRANULE_SIZE * PAGE_SIZE` 对齐
 
-鐩稿弽锛孠ASAN 鍦ㄥ涓槧灏勪箣闂村叡浜敮鎾戠┖闂淬€傚綋 vmalloc 绌洪棿涓殑鏄犲皠浣跨敤褰卞瓙鍖哄煙鐨勬煇涓壒瀹氶〉鏃讹紝瀹冨垎閰嶄竴涓敮鎾戦〉銆傝椤典箣鍚庡彲琚叾浠?vmalloc 鏄犲皠鍏变韩銆?
+相反，KASAN 在多个映射之间共享支撑空间。当 vmalloc 空间中的映射使用影子区域的某个特定页时，它分配一个支撑页。该页之后可被其vmalloc 映射共享
 
-KASAN 鎸傛帴 vmap 鍩虹璁炬柦锛屼互鎯版€ф竻鐞嗘湭浣跨敤鐨勫奖瀛愬唴瀛樸€?
+KASAN 挂接 vmap 基础设施，以惰性清理未使用的影子内存
 
-涓洪伩鍏嶅洿缁曟槧灏勪氦鎹㈢殑鍥伴毦锛孠ASAN 鏈熸湜瑕嗙洊 vmalloc 绌洪棿鐨勫奖瀛愬尯鍩熼儴鍒嗕笉琚棭鏈熷奖瀛愰〉瑕嗙洊锛岃€屾槸淇濇寔鏈槧灏勩€傝繖灏嗛渶瑕佹灦鏋勭浉鍏充唬鐮佺殑鏀瑰姩銆?
+为避免围绕映射交换的困难，KASAN 期望覆盖 vmalloc 空间的影子区域部分不被早期影子页覆盖，而是保持未映射。这将需要架构相关代码的改动
 
-杩欏厑璁稿湪 x86 涓婃敮鎸?`VMAP_STACK`锛屽苟鍙畝鍖栧娌℃湁鍥哄畾妯″潡鍖哄煙鐨勬灦鏋勭殑鏀寔銆?
+这允许在 x86 上支`VMAP_STACK`，并可简化对没有固定模块区域的架构的支持
 
-### For developers锛堥潰鍚戝紑鍙戣€咃級
-
-
-#### Ignoring accesses锛堝拷鐣ヨ闂級
+### For developers（面向开发者）
 
 
-杞欢 KASAN 妯″紡浣跨敤缂栬瘧鍣ㄦ彃妗╂潵鎻掑叆鏈夋晥鎬ф鏌ャ€傛绫绘彃妗╁彲鑳戒笌鍐呮牳鐨勬煇浜涢儴鍒嗕笉鍏煎锛屽洜姝ら渶瑕佽绂佺敤銆?
+#### Ignoring accesses（忽略访问）
 
-鍐呮牳鐨勫叾浠栭儴鍒嗗彲鑳借闂凡鍒嗛厤瀵硅薄鐨勫厓鏁版嵁銆傞€氬父锛孠ASAN 浼氭娴嬪苟鎶ュ憡姝ょ被璁块棶锛屼絾鍦ㄦ煇浜涙儏鍐典笅锛堜緥濡傦紝鍦ㄥ唴瀛樺垎閰嶅櫒涓級锛岃繖浜涜闂槸鏈夋晥鐨勩€?
 
-瀵逛簬杞欢 KASAN 妯″紡锛岃涓虹壒瀹氭枃浠舵垨鐩綍绂佺敤鎻掓々锛岃鍚戠浉搴旂殑鍐呮牳 Makefile 娣诲姞 `KASAN_SANITIZE` 娉ㄨВ锛?
+软件 KASAN 模式使用编译器插桩来插入有效性检查。此类插桩可能与内核的某些部分不兼容，因此需要被禁用
+
+内核的其他部分可能访问已分配对象的元数据。通常，KASAN 会检测并报告此类访问，但在某些情况下（例如，在内存分配器中），这些访问是有效的
+
+对于软件 KASAN 模式，要为特定文件或目录禁用插桩，请向相应的内核 Makefile 添加 `KASAN_SANITIZE` 注解
 
 ```
     KASAN_SANITIZE_main.o := n
@@ -315,22 +315,22 @@ KASAN 鎸傛帴 vmap 鍩虹璁炬柦锛屼互鎯版€ф竻鐞嗘湭浣跨敤
 ```
     KASAN_SANITIZE := n
 ```
-瀵逛簬杞欢 KASAN 妯″紡锛岃浠ラ€愬嚱鏁版柟寮忕鐢ㄦ彃妗╋紝浣跨敤 KASAN 鐗瑰畾鐨?`__no_sanitize_address` 鍑芥暟灞炴€ф垨閫氱敤鐨?`noinstr` 灞炴€с€?
+对于软件 KASAN 模式，要以逐函数方式禁用插桩，使用 KASAN 特定`__no_sanitize_address` 函数属性或通用`noinstr` 属性
 
-娉ㄦ剰锛岀鐢ㄧ紪璇戝櫒鎻掓々锛堟棤璁烘槸鎸夋枃浠惰繕鏄寜鍑芥暟锛変細浣?KASAN 蹇界暐璇ヤ唬鐮佷腑鐩存帴鍙戠敓鐨勮闂紙閽堝杞欢 KASAN 妯″紡锛夈€傚綋璁块棶闂存帴鍙戠敓锛堥€氳繃瀵规彃妗╁嚱鏁扮殑璋冪敤锛夋垨浣跨敤涓嶄娇鐢ㄧ紪璇戝櫒鎻掓々鐨?Hardware Tag-Based KASAN 鏃讹紝瀹冩棤娴庝簬浜嬨€?
+注意，禁用编译器插桩（无论是按文件还是按函数）会KASAN 忽略该代码中直接发生的访问（针对软件 KASAN 模式）。当访问间接发生（通过对插桩函数的调用）或使用不使用编译器插桩Hardware Tag-Based KASAN 时，它无济于事
 
-瀵逛簬杞欢 KASAN 妯″紡锛岃閽堝褰撳墠浠诲姟鍦ㄥ唴鏍镐唬鐮佺殑涓€閮ㄥ垎涓鐢?KASAN 鎶ュ憡锛岃鐢?`kasan_disable_current()`/`kasan_enable_current()` 鍖烘娉ㄨВ璇ラ儴鍒嗕唬鐮併€傝繖涔熶細绂佺敤閫氳繃鍑芥暟璋冪敤鍙戠敓鐨勯棿鎺ヨ闂殑鎶ュ憡銆?
+对于软件 KASAN 模式，要针对当前任务在内核代码的一部分中禁KASAN 报告，请`kasan_disable_current()`/`kasan_enable_current()` 区段注解该部分代码。这也会禁用通过函数调用发生的间接访问的报告
 
-瀵逛簬鍩轰簬鏍囩鐨?KASAN 妯″紡锛岃绂佺敤璁块棶妫€鏌ワ紝浣跨敤 `kasan_reset_tag()` 鎴?`page_kasan_tag_reset()`銆傛敞鎰忥紝閫氳繃 `page_kasan_tag_reset()` 涓存椂绂佺敤璁块棶妫€鏌ラ渶瑕佸€熷姪 `page_kasan_tag`/`page_kasan_tag_set` 淇濆瓨骞舵仮澶嶆瘡椤电殑 KASAN 鏍囩銆?
+对于基于标签KASAN 模式，要禁用访问检查，使用 `kasan_reset_tag()` `page_kasan_tag_reset()`。注意，通过 `page_kasan_tag_reset()` 临时禁用访问检查需要借助 `page_kasan_tag`/`page_kasan_tag_set` 保存并恢复每页的 KASAN 标签
 
-#### Tests锛堟祴璇曪級
+#### Tests（测试）
 
 
-鏈変竴浜?KASAN 娴嬭瘯鍙敤浜庨獙璇?KASAN 鏄惁宸ヤ綔浠ュ強鑳藉惁妫€娴嬫煇浜涚被鍨嬬殑鍐呭瓨鎹熷潖銆?
+有一KASAN 测试可用于验KASAN 是否工作以及能否检测某些类型的内存损坏
 
-鎵€鏈?KASAN 娴嬭瘯閮戒笌 KUnit Test Framework 闆嗘垚锛屽苟鍙€氳繃 `CONFIG_KASAN_KUNIT_TEST` 鍚敤銆傛祴璇曞彲浠ヤ互鍑犵涓嶅悓鐨勬柟寮忚嚜鍔ㄨ繍琛屽拰閮ㄥ垎楠岃瘉锛涜浠ヤ笅璇存槑銆?
+所KASAN 测试都与 KUnit Test Framework 集成，并可通过 `CONFIG_KASAN_KUNIT_TEST` 启用。测试可以以几种不同的方式自动运行和部分验证；见以下说明
 
-姣忎釜 KASAN 娴嬭瘯鍦ㄦ娴嬪埌閿欒鏃舵墦鍗板涓?KASAN 鎶ュ憡涔嬩竴銆傜劧鍚庤娴嬭瘯鎵撳嵃鍏剁紪鍙峰拰鐘舵€併€?
+每个 KASAN 测试在检测到错误时打印多KASAN 报告之一。然后该测试打印其编号和状态
 
 ```
         ok 28 - kmalloc_double_kzfree
@@ -353,19 +353,19 @@ KASAN 鎸傛帴 vmap 鍩虹璁炬柦锛屼互鎯版€ф竻鐞嗘湭浣跨敤
         not ok 1 - kasan
 ```
 
-鏈夊嚑绉嶈繍琛?KASAN 娴嬭瘯鐨勬柟寮忋€?
+有几种运KASAN 测试的方式
 
-1. 鍙姞杞芥ā鍧楋紙Loadable module锛?
+1. 可加载模块（Loadable module
 
-   鍚敤 `CONFIG_KUNIT` 鍚庯紝娴嬭瘯鍙瀯寤轰负鍙姞杞芥ā鍧楋紝骞堕€氳繃鐢?`insmod` 鎴?`modprobe` 鍔犺浇 `kasan_test.ko` 鏉ヨ繍琛屻€?
+   启用 `CONFIG_KUNIT` 后，测试可构建为可加载模块，并通过`insmod` `modprobe` 加载 `kasan_test.ko` 来运行
 
-2. 鍐呭缓锛圔uilt-In锛?
+2. 内建（Built-In
 
-   鍚敤鍐呭缓鐨?`CONFIG_KUNIT` 鍚庯紝娴嬭瘯涔熷彲鍐呭缓銆?
+   启用内建`CONFIG_KUNIT` 后，测试也可内建
 
-   鍦ㄨ繖绉嶆儏鍐典笅锛屾祴璇曞皢鍦ㄥ惎鍔ㄦ椂浣滀负 late-init 璋冪敤杩愯銆?
+   在这种情况下，测试将在启动时作为 late-init 调用运行
 
-3. 浣跨敤 kunit_tool
+3. 使用 kunit_tool
 
-   鍚敤鍐呭缓鐨?`CONFIG_KUNIT` 鍜?`CONFIG_KASAN_KUNIT_TEST` 鏃讹紝涔熷彲浠ヤ娇鐢?`kunit_tool` 浠ユ洿鏄撹鐨勬柟寮忔煡鐪?KUnit 娴嬭瘯鐨勭粨鏋溿€傝繖涓嶄細鎵撳嵃宸查€氳繃娴嬭瘯鐨?KASAN 鎶ュ憡銆傛湁鍏?`kunit_tool` 鐨勬渶鏂颁俊鎭紝鍙傝 `KUnit 鏂囨。 <https://www.kernel.org/doc/html/latest/dev-tools/kunit/index.html>`_銆?
+   启用内建`CONFIG_KUNIT` `CONFIG_KASAN_KUNIT_TEST` 时，也可以使`kunit_tool` 以更易读的方式查KUnit 测试的结果。这不会打印已通过测试KASAN 报告。有`kunit_tool` 的最新信息，参见 `KUnit 文档 <https://www.kernel.org/doc/html/latest/dev-tools/kunit/index.html>`_
 

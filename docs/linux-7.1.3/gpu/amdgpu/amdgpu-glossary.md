@@ -1,344 +1,344 @@
-﻿AMDGPU 鏈琛?
+﻿AMDGPU 术语
 
 
 
-杩欓噷浣犲彲浠ユ壘鍒?amdgpu 椹卞姩涓娇鐢ㄧ殑涓€浜涢€氱敤缂╁啓銆傝娉ㄦ剰锛屾垜浠湪
-'Documentation/gpu/amdgpu/display/dc-glossary.rst' 涓烘樉绀烘牳蹇冿紙Display Core锛夋彁渚涗簡涓撻棬鐨勬湳璇〃銆?
+这里你可以找amdgpu 驱动中使用的一些通用缩写。请注意，我们在
+'Documentation/gpu/amdgpu/display/dc-glossary.rst' 为显示核心（Display Core）提供了专门的术语表
 
 
 
     active_cu_number
-      绯荤粺涓浜庢椿鍔ㄧ姸鎬佺殑 CU 鏁伴噺銆傛椿鍔?CU 鐨勬暟閲忓彲鑳藉皯浜?SE ** SH ** CU锛屽叿浣撳彇鍐充簬鏉垮崱閰嶇疆銆?
+      系统中处于活动状态的 CU 数量。活CU 的数量可能少SE ** SH ** CU，具体取决于板卡配置
 
 
     BACO
-      鎬荤嚎瀛樻椿锛岃姱鐗囧叧闂紙Bus Alive, Chip Off锛?
+      总线存活，芯片关闭（Bus Alive, Chip Off
 
 
     BOCO
-      鎬荤嚎鍏抽棴锛岃姱鐗囧叧闂紙Bus Off, Chip Off锛?
+      总线关闭，芯片关闭（Bus Off, Chip Off
 
 
     CE
-      甯搁噺寮曟搸锛圕onstant Engine锛?
+      常量引擎（Constant Engine
 
 
     CIK
-      Sea Islands锛堟捣宀涚郴鍒楋級
+      Sea Islands（海岛系列）
 
 
     CB
-      棰滆壊缂撳啿鍖猴紙Color Buffer锛?
+      颜色缓冲区（Color Buffer
 
 
     CP
-      鍛戒护澶勭悊鍣紙Command Processor锛?
+      命令处理器（Command Processor
 
 
     CPC
-      鍛戒护澶勭悊鍣紙璁＄畻锛夛紙Command Processor Compute锛?
+      命令处理器（计算）（Command Processor Compute
 
 
     CPF
-      鍛戒护澶勭悊鍣紙鍙栨寚锛夛紙Command Processor Fetch锛?
+      命令处理器（取指）（Command Processor Fetch
 
 
     CPG
-      鍛戒护澶勭悊鍣紙鍥惧舰锛夛紙Command Processor Graphics锛?
+      命令处理器（图形）（Command Processor Graphics
 
 
     CPLIB
-      鍐呭淇濇姢搴擄紙Content Protection Library锛?
+      内容保护库（Content Protection Library
 
 
     CS
-      鍛戒护鎻愪氦锛圕ommand Submission锛?
+      命令提交（Command Submission
 
 
     CSB
-      娓呴櫎鐘舵€侀棿鎺ョ紦鍐插尯锛圕lear State Indirect Buffer锛?
+      清除状态间接缓冲区（Clear State Indirect Buffer
 
 
     CU
-      璁＄畻鍗曞厓锛圕ompute Unit锛?
+      计算单元（Compute Unit
 
 
     DB
-      娣卞害缂撳啿鍖猴紙Depth Buffer锛?
+      深度缓冲区（Depth Buffer
 
 
     DFS
-      鏁板瓧棰戠巼鍚堟垚鍣紙Digital Frequency Synthesizer锛?
+      数字频率合成器（Digital Frequency Synthesizer
 
 
     ECP
-      澧炲己鍐呭淇濇姢锛圗nhanced Content Protection锛?
+      增强内容保护（Enhanced Content Protection
 
 
     EOP
-      绠＄嚎鏈 / 娴佹按绾挎湯绔紙End Of Pipe/Pipeline锛?
+      管线末端 / 流水线末端（End Of Pipe/Pipeline
 
 
     FLR
-      鍔熻兘绾у浣嶏紙Function Level Reset锛?
+      功能级复位（Function Level Reset
 
 
     GART
-      鍥惧舰鍦板潃閲嶆槧灏勮〃锛圙raphics Address Remapping Table锛夈€傝繖鏄?GPU 鍐呮牳椹卞姩鎵€浣跨敤鐨?GPUVM 椤佃〃鐨勫悕绉般€傚畠灏嗙郴缁熻祫婧愶紙鍐呭瓨鎴?MMIO 绌洪棿锛夐噸鏂版槧灏勫埌 GPU 鐨勫湴鍧€绌洪棿锛屼互渚?GPU 鑳藉璁块棶瀹冧滑銆侴ART 杩欎釜鍚嶅瓧鍙拷婧埌 AGP 鏃朵唬锛屽綋鏃跺钩鍙版彁渚涗簡涓€涓?GPU 鍙互鐢ㄦ潵鑾峰彇鐢ㄤ簬 DMA 鐨勮繛缁暎椤佃鍥剧殑 MMU銆傛鍚?MMU 宸茶縼绉诲埌 GPU 涓婏紝浣嗚繖涓悕瀛椾繚鐣欎簡涓嬫潵銆?
+      图形地址重映射表（Graphics Address Remapping Table）。这GPU 内核驱动所使用GPUVM 页表的名称。它将系统资源（内存MMIO 空间）重新映射到 GPU 的地址空间，以GPU 能够访问它们。GART 这个名字可追溯到 AGP 时代，当时平台提供了一GPU 可以用来获取用于 DMA 的连续散页视图的 MMU。此MMU 已迁移到 GPU 上，但这个名字保留了下来
 
 
     GC
-      鍥惧舰涓庤绠楋紙Graphics and Compute锛?
+      图形与计算（Graphics and Compute
 
 
     GDS
-      鍏ㄥ眬鏁版嵁鍏变韩锛圙lobal Data Share锛?
+      全局数据共享（Global Data Share
 
 
     GE
-      鍑犱綍寮曟搸锛圙eometry Engine锛?
+      几何引擎（Geometry Engine
 
 
     GMC
-      鍥惧舰鍐呭瓨鎺у埗鍣紙Graphic Memory Controller锛?
+      图形内存控制器（Graphic Memory Controller
 
 
     GPR
-      閫氱敤瀵勫瓨鍣紙General Purpose Register锛?
+      通用寄存器（General Purpose Register
 
 
     GPUVM
-      GPU 铏氭嫙鍐呭瓨锛圙PU Virtual Memory锛夈€傝繖鏄?GPU 鐨?MMU銆侴PU 鏀寔澶氫釜浠绘剰鏃跺埢鍙互鍚屾椂鍦ㄩ鐨勮櫄鎷熷湴鍧€绌洪棿銆傚畠浠厑璁?GPU 灏?VRAM 鍜岀郴缁熻祫婧愰噸鏂版槧灏勫埌 GPU 铏氭嫙鍦板潃绌洪棿锛屼緵 GPU 鍐呮牳椹卞姩浠ュ強浣跨敤 GPU 鐨勫簲鐢ㄧ▼搴忎娇鐢ㄣ€傚畠浠负浣跨敤 GPU 鐨勪笉鍚屽簲鐢ㄦ彁渚涘唴瀛樹繚鎶ゃ€?
+      GPU 虚拟内存（GPU Virtual Memory）。这GPU MMU。GPU 支持多个任意时刻可以同时在飞的虚拟地址空间。它们允GPU VRAM 和系统资源重新映射到 GPU 虚拟地址空间，供 GPU 内核驱动以及使用 GPU 的应用程序使用。它们为使用 GPU 的不同应用提供内存保护
 
 
     GTT
-      鍥惧舰杞崲琛紙Graphics Translation Tables锛夈€傝繖鏄竴涓€氳繃 TTM 绠＄悊鐨勫唴瀛樻睜锛屼负 GPU 鎻愪緵瀵圭郴缁熻祫婧愶紙鍐呭瓨鎴?MMIO 绌洪棿锛夌殑璁块棶銆傝繖浜涘湴鍧€鍙互琚槧灏勫埌鈥淕ART鈥?GPUVM 椤佃〃渚涘唴鏍搁┍鍔ㄤ娇鐢紝鎴栨槧灏勫埌鍚勮繘绋嬬殑 GPUVM 椤佃〃渚涘簲鐢ㄧ▼搴忎娇鐢ㄣ€?
+      图形转换表（Graphics Translation Tables）。这是一个通过 TTM 管理的内存池，为 GPU 提供对系统资源（内存MMIO 空间）的访问。这些地址可以被映射到“GARTGPUVM 页表供内核驱动使用，或映射到各进程的 GPUVM 页表供应用程序使用
 
 
     GWS
-      鍏ㄥ眬娉㈠悓姝ワ紙Global Wave Sync锛?
+      全局波同步（Global Wave Sync
 
 
     IH
-      涓柇澶勭悊绋嬪簭锛圛nterrupt Handler锛?
+      中断处理程序（Interrupt Handler
 
 
     IV
-      涓柇鍚戦噺锛圛nterrupt Vector锛?
+      中断向量（Interrupt Vector
 
 
     HQD
-      纭欢闃熷垪鎻忚堪绗︼紙Hardware Queue Descriptor锛?
+      硬件队列描述符（Hardware Queue Descriptor
 
 
     IB
-      闂存帴缂撳啿鍖猴紙Indirect Buffer锛?
+      间接缓冲区（Indirect Buffer
 
 
     IMU
-      闆嗘垚绠＄悊鍗曞厓锛堢數婧愮鐞嗘敮鎸侊級锛圛ntegrated Management Unit锛?
+      集成管理单元（电源管理支持）（Integrated Management Unit
 
 
     IP
-      鐭ヨ瘑浜ф潈妯″潡锛圛ntellectual Property blocks锛?
+      知识产权模块（Intellectual Property blocks
 
 
     KCQ
-      鍐呮牳璁＄畻闃熷垪锛圞ernel Compute Queue锛?
+      内核计算队列（Kernel Compute Queue
 
 
     KFD
-      鍐呮牳 Fusion 椹卞姩锛圞ernel Fusion Driver锛?
+      内核 Fusion 驱动（Kernel Fusion Driver
 
 
     KGQ
-      鍐呮牳鍥惧舰闃熷垪锛圞ernel Graphics Queue锛?
+      内核图形队列（Kernel Graphics Queue
 
 
     KIQ
-      鍐呮牳鎺ュ彛闃熷垪锛圞ernel Interface Queue锛?
+      内核接口队列（Kernel Interface Queue
 
 
     MC
-      鍐呭瓨鎺у埗鍣紙Memory Controller锛?
+      内存控制器（Memory Controller
 
 
     MCBP
-      鍛戒护缂撳啿鍖轰腑閫旀姠鍗狅紙Mid Command Buffer Preemption锛?
+      命令缓冲区中途抢占（Mid Command Buffer Preemption
 
 
     ME
-      寰紩鎿庯紙鍥惧舰锛夛紙MicroEngine (Graphics)锛?
+      微引擎（图形）（MicroEngine (Graphics)
 
 
     MEC
-      寰紩鎿庯紙璁＄畻锛夛紙MicroEngine Compute锛?
+      微引擎（计算）（MicroEngine Compute
 
 
     MES
-      寰紩鎿庤皟搴﹀櫒锛圡icroEngine Scheduler锛?
+      微引擎调度器（MicroEngine Scheduler
 
 
     MMHUB
-      澶氬獟浣撻泦绾垮櫒锛圡ulti-Media HUB锛?
+      多媒体集线器（Multi-Media HUB
 
 
     MQD
-      鍐呭瓨闃熷垪鎻忚堪绗︼紙Memory Queue Descriptor锛?
+      内存队列描述符（Memory Queue Descriptor
 
 
     PA
-      鍥惧厓姹囩紪鍣?/ 鐗╃悊鍦板潃锛圥rimitive Assembler / Physical Address锛?
+      图元汇编/ 物理地址（Primitive Assembler / Physical Address
 
 
     PDE
-      椤电洰褰曢」锛圥age Directory Entry锛?
+      页目录项（Page Directory Entry
 
 
     PFP
-      棰勫彇瑙ｆ瀽鍣紙鍥惧舰锛夛紙Pre-Fetch Parser (Graphics)锛?
+      预取解析器（图形）（Pre-Fetch Parser (Graphics)
 
 
     PPLib
-      PowerPlay 搴撯€斺€擯owerPlay 鏄數婧愮鐞嗙粍浠躲€?
+      PowerPlay 库——PowerPlay 是电源管理组件
 
 
     PRT
-      閮ㄥ垎椹荤暀绾圭悊锛堜篃绉颁负绋€鐤忛┗鐣欙級锛圥artially Resident Texture锛?
+      部分驻留纹理（也称为稀疏驻留）（Partially Resident Texture
 
 
     PSP
-      骞冲彴瀹夊叏澶勭悊鍣紙Platform Security Processor锛?
+      平台安全处理器（Platform Security Processor
 
 
     PTE
-      椤佃〃椤癸紙Page Table Entry锛?
+      页表项（Page Table Entry
 
 
     RB
-      娓叉煋鍚庣锛圧ender Backends锛夈€傛湁浜涗汉绉颁箣涓?ROPs銆?
+      渲染后端（Render Backends）。有些人称之ROPs
 
 
     RLC
-      杩愯鍒楄〃鎺у埗鍣紙RunList Controller锛夈€傝繖涓悕瀛楁槸杩囧幓鏃朵唬鐨勯仐鐣欙紝濡備粖宸叉病鏈夊お澶氬惈涔夈€傚畠鏄竴缁勭敤浜?GFX 鍧楃殑閫氱敤杈呭姪寮曟搸锛岄櫎鍏朵粬鑱岃矗澶栵紝杩樺弬涓?GFX 鐢垫簮绠＄悊涓?SR-IOV銆?
+      运行列表控制器（RunList Controller）。这个名字是过去时代的遗留，如今已没有太多含义。它是一组用GFX 块的通用辅助引擎，除其他职责外，还参GFX 电源管理SR-IOV
 
 
     SC
-      鎵弿杞崲鍣紙Scan Converter锛?
+      扫描转换器（Scan Converter
 
 
     SDMA
-      绯荤粺 DMA锛圫ystem DMA锛?
+      系统 DMA（System DMA
 
 
     SE
-      鐫€鑹插櫒寮曟搸锛圫hader Engine锛?
+      着色器引擎（Shader Engine
 
 
     SGPR
-      鏍囬噺閫氱敤瀵勫瓨鍣紙Scalar General-Purpose Registers锛?
+      标量通用寄存器（Scalar General-Purpose Registers
 
 
     SH
-      鐫€鑹插櫒闃靛垪锛圫Hader array锛?
+      着色器阵列（SHader array
 
 
     SI
-      Southern Islands锛堝崡鏂圭兢宀涚郴鍒楋級
+      Southern Islands（南方群岛系列）
 
 
     SMU/SMC
-      绯荤粺绠＄悊鍗曞厓 / 绯荤粺绠＄悊鎺у埗鍣紙System Management Unit / System Management Controller锛?
+      系统管理单元 / 系统管理控制器（System Management Unit / System Management Controller
 
 
     SPI (AMDGPU)
-      鐫€鑹插櫒澶勭悊鍣ㄨ緭鍏ワ紙Shader Processor Input锛?
+      着色器处理器输入（Shader Processor Input
 
 
     SRLC
-      淇濆瓨/鎭㈠鍒楄〃鎺у埗锛圫ave/Restore List Control锛?
+      保存/恢复列表控制（Save/Restore List Control
 
 
     SRLG
-      淇濆瓨/鎭㈠鍒楄〃 GPM_MEM锛圫ave/Restore List GPM_MEM锛?
+      保存/恢复列表 GPM_MEM（Save/Restore List GPM_MEM
 
 
     SRLS
-      淇濆瓨/鎭㈠鍒楄〃 SRM_MEM锛圫ave/Restore List SRM_MEM锛?
+      保存/恢复列表 SRM_MEM（Save/Restore List SRM_MEM
 
 
     SS
-      鎵╅锛圫pread Spectrum锛?
+      扩频（Spread Spectrum
 
 
     SX
-      鐫€鑹插櫒瀵煎嚭锛圫hader Export锛?
+      着色器导出（Shader Export
 
 
     TA
-      鍙俊搴旂敤锛圱rusted Application锛?
+      可信应用（Trusted Application
 
 
     TC
-      绾圭悊缂撳瓨锛圱exture Cache锛?
+      纹理缓存（Texture Cache
 
 
     TCP (AMDGPU)
-      姣忔潯绠＄嚎鐨勭汗鐞嗙紦瀛橈紙Texture Cache per Pipe锛夈€傚敖绠♀€淭exture鈥濇槸璇ョ缉鍐欑殑涓€閮ㄥ垎锛屼絾 TCP 浠ｈ〃鐨勬槸閫氬線鍐呭瓨鐫€鑹插櫒鐨勮矾寰勶紱涔熷氨鏄锛屽畠涓庣汗鐞嗘棤鍏炽€傝繖涓悕瀛楁槸浠庤緝鏃ц璁′腑閬楃暀涓嬫潵鐨勶紝褰撴椂鐫€鑹插櫒闃舵鏈変笉鍚岀殑缂撳瓨璁捐锛涘畠鎸囩殑鏄棫鏋舵瀯涓殑 L1 缂撳瓨銆?
+      每条管线的纹理缓存（Texture Cache per Pipe）。尽管“Texture”是该缩写的一部分，但 TCP 代表的是通往内存着色器的路径；也就是说，它与纹理无关。这个名字是从较旧设计中遗留下来的，当时着色器阶段有不同的缓存设计；它指的是旧架构中的 L1 缓存
 
 
     TMR
-      鍙俊鍐呭瓨鍖哄煙锛圱rusted Memory Region锛?
+      可信内存区域（Trusted Memory Region
 
 
     TMZ
-      鍙俊鍐呭瓨鍖猴紙Trusted Memory Zone锛?
+      可信内存区（Trusted Memory Zone
 
 
     TOC
-      鐩綍锛圱able of Contents锛?
+      目录（Table of Contents
 
 
     UMC
-      缁熶竴鍐呭瓨鎺у埗鍣紙Unified Memory Controller锛?
+      统一内存控制器（Unified Memory Controller
 
 
     UMSCH
-      鐢ㄦ埛妯″紡璋冨害鍣紙User Mode Scheduler锛?
+      用户模式调度器（User Mode Scheduler
 
 
     UTC (AMDGPU)
-      缁熶竴杞崲缂撳瓨锛圲nified Translation Cache锛夈€俇TC 绛夊悓浜?TLB銆備綘鍙兘浼氱湅鍒拌缂╁啓鏈熬甯?L 鐨勫彉浣擄紝鍗?UTCL 鍚庤窡鏁板瓧锛汱 琛ㄧず缂撳瓨绾у埆锛堜緥濡?UTCL1 鍜?UTCL2锛夈€?
+      统一转换缓存（Unified Translation Cache）。UTC 等同TLB。你可能会看到该缩写末尾L 的变体，UTCL 后跟数字；L 表示缓存级别（例UTCL1 UTCL2）
 
 
     UVD
-      缁熶竴瑙嗛瑙ｇ爜鍣紙Unified Video Decoder锛?
+      统一视频解码器（Unified Video Decoder
 
 
     VCE
-      瑙嗛鍘嬬缉寮曟搸锛圴ideo Compression Engine锛?
+      视频压缩引擎（Video Compression Engine
 
 
     VCN
-      涓嬩竴浠ｈ棰戠紪瑙ｇ爜鍣紙Video Codec Next锛?
+      下一代视频编解码器（Video Codec Next
 
 
     VGPR
-      鍚戦噺閫氱敤瀵勫瓨鍣紙Vector General-Purpose Registers锛?
+      向量通用寄存器（Vector General-Purpose Registers
 
 
     VMID
-      铏氭嫙鍐呭瓨 ID锛圴irtual Memory ID锛?
+      虚拟内存 ID（Virtual Memory ID
 
 
     VPE
-      瑙嗛澶勭悊寮曟搸锛圴ideo Processing Engine锛?
+      视频处理引擎（Video Processing Engine
 
 
     XCC
-      鍔犻€熷櫒鏍稿績澶嶅悎浣擄紙Accelerator Core Complex锛?
+      加速器核心复合体（Accelerator Core Complex
 
 
     XCP
-      鍔犻€熷櫒鏍稿績鍒嗗尯锛圓ccelerator Core Partition锛?
+      加速器核心分区（Accelerator Core Partition
 

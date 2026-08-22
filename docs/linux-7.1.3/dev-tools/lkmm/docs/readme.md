@@ -1,11 +1,11 @@
 ﻿
-### 璇存槑锛圠KMM 鏂囨。锛?
+### 说明（LKMM 文档
 
-鏈〉鏄?Linux 鍐呮牳鍐呭瓨妯″瀷锛圠KMM锛孡inux Kernel Memory Model锛夎鏄庢枃妗ｇ殑鍏ュ彛锛屾敹褰曚簡 tools/memory-model 涓?README 涓叧浜庡唴瀛樹竴鑷存€фā鍨嬨€佽鍐欏師璇涔変笌浣跨敤绀轰緥鐨勫唴瀹癸紝渚涘唴鏍稿紑鍙戣€呯悊瑙ｅ苟鍙戜笌鍐呭瓨搴忚鍒欍€?
+本页Linux 内核内存模型（LKMM，Linux Kernel Memory Model）说明文档的入口，收录了 tools/memory-model README 中关于内存一致性模型、读写原语语义与使用示例的内容，供内核开发者理解并发与内存序规则
 
 
 
-瀛楅潰鍖呭惈 `tools/memory-model/Documentation/README`.
+字面包含 `tools/memory-model/Documentation/README`.
 
 ------------------------------------------------------------------
 
