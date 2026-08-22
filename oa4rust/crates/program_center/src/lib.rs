@@ -10,6 +10,9 @@ use shared::{error::AppError, response::ActionResult};
 
 pub mod routes;
 
+#[cfg(test)]
+mod tests_u2;
+
 #[derive(Debug, Deserialize)]
 pub struct CollectAddRequest {
     pub title: Option<String>,
@@ -5760,3 +5763,869 @@ pub async fn zhengwudingding_sync_organization_callback(
     ))))
 }
 
+// ════════════════════════════════════════════════════════════════════
+// plan002 U2 — Java 对齐缺口端点
+//
+// 表：x_program_warn_log / x_program_app_pack（migration 062 幂等补建），
+// 其余沿用既有表。写操作按 IDOR 文档门禁
+// （docs/solutions/security-issues/idor-vulnerability-write-handlers.md）：
+//   - 管理资源（cachedispatch / center regist / apppack 构建、agent 删除）
+//     一律 require_admin；
+//   - 个人资源（dict / script）creator_person 取自会话，删除前
+//     require_owner 校验。
+// ════════════════════════════════════════════════════════════════════
+
+async fn require_admin(
+    pool: &Pool,
+    session: &shared::session::Session,
+) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+fn json_str(payload: &Value, key: &str) -> String {
+    payload
+        .get(key)
+        .and_then(|v| v.as_str())
+        .unwrap_or_default()
+        .to_string()
+}
+
+#[derive(Debug, Deserialize)]
+pub struct WarnLogCreateRequest {
+    pub level: Option<String>,
+    pub tag: Option<String>,
+    #[serde(rename = "loggerName")]
+    pub logger_name: Option<String>,
+    pub message: Option<String>,
+    pub detail: Option<String>,
+    pub host: Option<String>,
+    pub port: Option<String>,
+}
+
+pub async fn warnlog_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(req): Json<WarnLogCreateRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let level = req.level.unwrap_or_else(|| "WARN".to_string());
+    let tag = req.tag.unwrap_or_default();
+    let logger_name = req.logger_name.unwrap_or_default();
+    let message = req.message.unwrap_or_default();
+    let detail = req.detail.unwrap_or_default();
+    let host = req.host.unwrap_or_default();
+    let port = req.port.unwrap_or_default();
+
+    client
+        .execute(
+            "INSERT INTO x_program_warn_log (id, level, tag, logger_name, message, detail, host, port, creator_person, create_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())",
+            &[&id, &level, &tag, &logger_name, &message, &detail, &host, &port, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+    ))))
+}
+
+fn warnlog_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
+    let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+    Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(opt("id"))),
+        ("level".to_string(), Value::String(opt("level"))),
+        ("tag".to_string(), Value::String(opt("tag"))),
+        ("loggerName".to_string(), Value::String(opt("logger_name"))),
+        ("message".to_string(), Value::String(opt("message"))),
+        ("detail".to_string(), Value::String(opt("detail"))),
+        ("host".to_string(), Value::String(opt("host"))),
+        ("port".to_string(), Value::String(opt("port"))),
+        ("createTime".to_string(), Value::String(opt("create_time"))),
+    ]))
+}
+
+pub async fn warnlog_id(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT id, level, tag, logger_name, message, detail, host, port, create_time FROM x_program_warn_log WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(warnlog_row_to_value(&row)))),
+        None => Ok(Json(ActionResult::error("warn log not found"))),
+    }
+}
+
+async fn warnlog_list(
+    pool: &Pool,
+    where_clause: &str,
+    params: &[&(dyn deadpool_postgres::tokio_postgres::types::ToSql + Sync)],
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let sql = format!(
+        "SELECT id, level, tag, logger_name, message, detail, host, port, create_time FROM x_program_warn_log {} ORDER BY id DESC LIMIT ${}",
+        where_clause,
+        params.len()
+    );
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client.query(&sql, params).await.map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(warnlog_row_to_value).collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+pub async fn warnlog_list_next_count(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    Path(count): Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    warnlog_list(&pool, "WHERE id < $1", &[&id, &count]).await
+}
+
+pub async fn warnlog_list_next_count_date_date(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    Path(count): Path<i64>,
+    Path(date): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    warnlog_list(
+        &pool,
+        "WHERE id < $1 AND DATE(create_time) = $2::date",
+        &[&id, &date, &count],
+    )
+    .await
+}
+
+pub async fn warnlog_list_prev_count(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    Path(count): Path<i64>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    warnlog_list(&pool, "WHERE id > $1", &[&id, &count]).await
+}
+
+pub async fn warnlog_list_prev_count_date_date(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+    Path(count): Path<i64>,
+    Path(date): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    warnlog_list(
+        &pool,
+        "WHERE id > $1 AND DATE(create_time) = $2::date",
+        &[&id, &date, &count],
+    )
+    .await
+}
+
+pub async fn warnlog_view_system_log_tag_tag(
+    pool: Extension<Pool>,
+    Path(tag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    warnlog_list(&pool, "WHERE tag = $1", &[&tag]).await
+}
+
+
+
+
+// ── storagemappings / adminlogin / authentication / cachedispatch / center ──
+
+pub async fn storagemappings_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT key, value FROM x_program_config WHERE category = 'storageMapping' ORDER BY key",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            Value::Object(serde_json::Map::from_iter([
+                ("key".to_string(), Value::String(row.get::<_, Option<String>>("key").unwrap_or_default())),
+                ("value".to_string(), Value::String(row.get::<_, Option<String>>("value").unwrap_or_default())),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+pub async fn adminlogin_logout(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let n = client
+        .execute(
+            "DELETE FROM auth_session WHERE person_id = $1",
+            &[&session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("person".to_string(), Value::String(session.person_unique.clone())),
+        ("sessionsClosed".to_string(), Value::Number(serde_json::Number::from(n as i64))),
+    ])))))
+}
+
+pub async fn authentication_who(
+    session: Option<Extension<shared::session::Session>>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match session {
+        Some(session) => Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            ("person".to_string(), Value::String(session.person_unique.clone())),
+            ("token".to_string(), Value::String(session.token.clone())),
+        ]))))),
+        None => Ok(Json(ActionResult::error("anonymous"))),
+    }
+}
+
+pub async fn cachedispatch_dispatch(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_sync_log (id, source, action, create_time) VALUES ($1, 'cache', 'dispatch', NOW())",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("source".to_string(), Value::String("cache".to_string())),
+        ("action".to_string(), Value::String("dispatch".to_string())),
+    ])))))
+}
+
+pub async fn center_regist_applications_update(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    client
+        .execute(
+            "INSERT INTO x_program_callback_registration (id, creator_person, create_time) VALUES ($1, $2, NOW())",
+            &[&id, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("registered".to_string(), Value::Bool(true)),
+    ])))))
+}
+
+// ── agent list / delete（Java: GET/DELETE /agent）──────────────────────
+
+pub async fn agent_list_all(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let rows = client
+        .query(
+            "SELECT id, name, flag, description, creator_person, create_time FROM x_program_agent WHERE deleted_at IS NULL ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows
+        .iter()
+        .map(|row| {
+            let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+            Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(opt("id"))),
+                ("name".to_string(), Value::String(opt("name"))),
+                ("flag".to_string(), Value::String(opt("flag"))),
+                ("description".to_string(), Value::String(opt("description"))),
+                ("creatorPerson".to_string(), Value::String(opt("creator_person"))),
+                ("createTime".to_string(), Value::String(opt("create_time"))),
+            ]))
+        })
+        .collect();
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+pub async fn agent_delete_flag(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(flag): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let n = client
+        .execute(
+            "UPDATE x_program_agent SET deleted_at = NOW() WHERE (flag = $1 OR id = $1) AND deleted_at IS NULL",
+            &[&flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if n == 0 {
+        return Ok(Json(ActionResult::error("agent not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("flag".to_string(), Value::String(flag)),
+        ("deleted".to_string(), Value::Bool(true)),
+    ])))))
+}
+
+// ── apppack 家族（Java AppPackAction / AppPackAnonymousAction，migration 062 建表）──
+
+#[derive(Debug, Deserialize)]
+pub struct AppPackStartRequest {
+    pub name: Option<String>,
+    pub version: Option<String>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AppPackPublishRequest {
+    pub id: String,
+}
+
+fn apppack_row_to_value(row: &deadpool_postgres::tokio_postgres::Row) -> Value {
+    let opt = |k: &str| -> String { row.get::<_, Option<String>>(k).unwrap_or_default() };
+    Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(opt("id"))),
+        ("name".to_string(), Value::String(opt("name"))),
+        ("version".to_string(), Value::String(opt("version"))),
+        ("status".to_string(), Value::String(opt("status"))),
+        ("fileName".to_string(), Value::String(opt("file_name"))),
+        ("filePath".to_string(), Value::String(opt("file_path"))),
+        ("description".to_string(), Value::String(opt("description"))),
+        (
+            "createTime".to_string(),
+            Value::String(opt("create_time")),
+        ),
+        (
+            "updateTime".to_string(),
+            Value::String(opt("update_time")),
+        ),
+    ]))
+}
+
+pub async fn apppack_info_list(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT id, name, version, status, file_name, file_path, description, create_time, update_time FROM x_program_app_pack ORDER BY create_time DESC",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let data: Vec<Value> = rows.iter().map(apppack_row_to_value).collect();
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("count".to_string(), Value::Number(serde_json::Number::from(data.len() as i64))),
+        ("data".to_string(), Value::Array(data)),
+    ])))))
+}
+
+const APPPACK_FILE_COLUMNS: &str =
+    "SELECT id, name, version, status, file_name, file_path, description, create_time, update_time FROM x_program_app_pack";
+
+pub async fn apppack_file_last(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            &format!("{} WHERE status = 'published' ORDER BY update_time DESC LIMIT 1", APPPACK_FILE_COLUMNS),
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(apppack_row_to_value(&row)))),
+        None => Ok(Json(ActionResult::error("no published pack found"))),
+    }
+}
+
+pub async fn apppack_file_download(
+    pool: Extension<Pool>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            &format!("{} WHERE id = $1", APPPACK_FILE_COLUMNS),
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => Ok(Json(ActionResult::success(apppack_row_to_value(&row)))),
+        None => Ok(Json(ActionResult::error("app pack not found"))),
+    }
+}
+
+pub async fn apppack_logo_get(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT config_json FROM x_program_app_pack ORDER BY create_time DESC LIMIT 1",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    match row {
+        Some(row) => {
+            let raw: Option<String> = row.get("config_json");
+            let logo = raw
+                .as_deref()
+                .and_then(|s| serde_json::from_str::<Value>(s).ok())
+                .and_then(|v| v.get("logo").and_then(|l| l.as_str()).map(|s| s.to_string()))
+                .unwrap_or_default();
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("logo".to_string(), Value::String(logo)),
+            ])))))
+        }
+        None => Ok(Json(ActionResult::error("app pack not found"))),
+    }
+}
+
+pub async fn apppack_android_repack(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let n = client
+        .execute(
+            "UPDATE x_program_app_pack SET status = 'repacking', update_time = NOW() WHERE id = (SELECT id FROM x_program_app_pack ORDER BY create_time DESC LIMIT 1)",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if n == 0 {
+        return Ok(Json(ActionResult::error("app pack not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("status".to_string(), Value::String("repacking".to_string())),
+    ])))))
+}
+
+pub async fn apppack_android_start(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(req): Json<AppPackStartRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = req.name.unwrap_or_else(|| "android-pack".to_string());
+    let version = req.version.unwrap_or_else(|| "1.0.0".to_string());
+    let description = req.description.unwrap_or_default();
+
+    client
+        .execute(
+            "INSERT INTO x_program_app_pack (id, name, version, status, description, creator_person, create_time, update_time) \
+             VALUES ($1, $2, $3, 'building', $4, $5, NOW(), NOW())",
+            &[&id, &name, &version, &description, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("status".to_string(), Value::String("building".to_string())),
+    ])))))
+}
+
+pub async fn apppack_publish(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(req): Json<AppPackPublishRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    require_admin(&pool, &session).await?;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let n = client
+        .execute(
+            "UPDATE x_program_app_pack SET status = 'published', update_time = NOW() WHERE id = $1",
+            &[&req.id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if n == 0 {
+        return Ok(Json(ActionResult::error("app pack not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(req.id)),
+        ("status".to_string(), Value::String("published".to_string())),
+    ])))))
+}
+
+pub async fn apppack_server_connect(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_one("SELECT COUNT(*) AS packs FROM x_program_app_pack", &[])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let packs: i64 = row.get("packs");
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("connected".to_string(), Value::Bool(true)),
+        ("packCount".to_string(), Value::Number(serde_json::Number::from(packs))),
+    ])))))
+}
+
+// ── dict 家族写端点（Java DictAction POST "" / PUT|POST|DELETE {dictFlag}/{path}/data / DELETE {id}）──
+
+#[derive(Debug, Deserialize)]
+pub struct DictCreateRequest {
+    #[serde(rename = "dictFlag")]
+    pub dict_flag: Option<String>,
+    pub name: Option<String>,
+    #[serde(rename = "appName")]
+    pub app_name: Option<String>,
+    #[serde(rename = "keyName")]
+    pub key_name: Option<String>,
+    #[serde(rename = "appData")]
+    pub app_data: Option<String>,
+}
+
+pub async fn dict_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(req): Json<DictCreateRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = req.name.unwrap_or_else(|| "dict".to_string());
+    let flag = req.dict_flag.unwrap_or_default();
+    let app_name = req.app_name.unwrap_or_default();
+    let key_name = req.key_name.unwrap_or_default();
+    let app_data = req.app_data.unwrap_or_default();
+
+    client
+        .execute(
+            "INSERT INTO x_program_dict (id, name, flag, app_name, key_name, app_data, creator_person, create_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())",
+            &[&id, &name, &flag, &app_name, &key_name, &app_data, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+    ])))))
+}
+
+async fn dict_data_write(
+    pool: Extension<Pool>,
+    dict_flag: String,
+    path: String,
+    body: Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let data_str = match body {
+        Value::String(s) => s,
+        _ => serde_json::to_string(&body).map_err(|_| AppError::Internal)?,
+    };
+
+    let n = client
+        .execute(
+            "UPDATE x_program_dict SET app_data = $1, update_time = NOW() WHERE flag = $2 AND deleted_at IS NULL",
+            &[&data_str, &dict_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if n == 0 {
+        return Ok(Json(ActionResult::error("dict not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("dictFlag".to_string(), Value::String(dict_flag)),
+        ("path".to_string(), Value::String(path)),
+    ])))))
+}
+
+pub async fn dict_data_save_put(
+    pool: Extension<Pool>,
+    Path(dict_flag): Path<String>,
+    Path(path): Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    dict_data_write(pool, dict_flag, path, body).await
+}
+
+pub async fn dict_data_delete_path(
+    pool: Extension<Pool>,
+    Path(dict_flag): Path<String>,
+    Path(path): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let n = client
+        .execute(
+            "UPDATE x_program_dict SET app_data = '', update_time = NOW() WHERE flag = $1 AND deleted_at IS NULL",
+            &[&dict_flag],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if n == 0 {
+        return Ok(Json(ActionResult::error("dict not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("dictFlag".to_string(), Value::String(dict_flag)),
+        ("path".to_string(), Value::String(path)),
+        ("deleted".to_string(), Value::Bool(true)),
+    ])))))
+}
+
+pub async fn dict_delete_id(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT creator_person FROM x_program_dict WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("dict not found")));
+    };
+    let owner: String = row.get::<_, Option<String>>("creator_person").unwrap_or_default();
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+
+    let n = client
+        .execute(
+            "UPDATE x_program_dict SET deleted_at = NOW() WHERE id = $1",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if n == 0 {
+        return Ok(Json(ActionResult::error("dict not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("deleted".to_string(), Value::Bool(true)),
+    ])))))
+}
+
+// ── script 家族写端点（IDOR：creator_person 取自会话，改/删前 require_owner）──
+
+#[derive(Debug, Deserialize)]
+pub struct ScriptCreateRequest {
+    pub name: Option<String>,
+    pub flag: Option<String>,
+    pub content: Option<String>,
+    pub category: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ScriptSaveRequest {
+    pub name: Option<String>,
+    pub content: Option<String>,
+    pub category: Option<String>,
+}
+
+pub async fn script_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(req): Json<ScriptCreateRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = req.name.unwrap_or_else(|| "script".to_string());
+    let flag = req.flag.unwrap_or_else(|| id.clone());
+    let content = req.content.unwrap_or_default();
+    let category = req.category.unwrap_or_default();
+
+    client
+        .execute(
+            "INSERT INTO x_program_script (id, name, flag, content, category, creator_person, create_time) \
+             VALUES ($1, $2, $3, $4, $5, $6, NOW())",
+            &[&id, &name, &flag, &content, &category, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("name".to_string(), Value::String(name)),
+        ("flag".to_string(), Value::String(flag)),
+    ])))))
+}
+
+async fn script_save(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    column: &'static str,
+    key: String,
+    req: ScriptSaveRequest,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let select_sql = format!(
+        "SELECT creator_person FROM x_program_script WHERE {} = $1 AND deleted_at IS NULL",
+        column
+    );
+    let row = client
+        .query_opt(select_sql.as_str(), &[&key])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("script not found")));
+    };
+    let owner: String = row.get::<_, Option<String>>("creator_person").unwrap_or_default();
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+
+    let name: Option<String> = req.name;
+    let content: Option<String> = req.content;
+    let category: Option<String> = req.category;
+
+    let update_sql = format!(
+        "UPDATE x_program_script SET name = COALESCE($2, name), content = COALESCE($3, content), category = COALESCE($4, category), update_time = NOW() \
+         WHERE {} = $1 AND deleted_at IS NULL",
+        column
+    );
+    let n = client
+        .execute(update_sql.as_str(), &[&key, &name, &content, &category])
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if n == 0 {
+        return Ok(Json(ActionResult::error("script not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(key)),
+    ])))))
+}
+
+pub async fn script_save_flag(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(flag): Path<String>,
+    Json(req): Json<ScriptSaveRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    script_save(pool, session, "flag", flag, req).await
+}
+
+pub async fn script_update_id(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+    Json(req): Json<ScriptSaveRequest>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    script_save(pool, session, "id", id, req).await
+}
+
+pub async fn script_delete_id(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Path(id): Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+
+    let row = client
+        .query_opt(
+            "SELECT creator_person FROM x_program_script WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    let Some(row) = row else {
+        return Ok(Json(ActionResult::error("script not found")));
+    };
+    let owner: String = row.get::<_, Option<String>>("creator_person").unwrap_or_default();
+    shared::middleware::require_owner(&pool, &session, &owner).await?;
+
+    let n = client
+        .execute(
+            "UPDATE x_program_script SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    if n == 0 {
+        return Ok(Json(ActionResult::error("script not found")));
+    }
+
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("deleted".to_string(), Value::Bool(true)),
+    ])))))
+}
