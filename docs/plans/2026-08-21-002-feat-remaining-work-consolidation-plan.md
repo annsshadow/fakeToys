@@ -43,7 +43,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 | # | 单元 | 优先级 | 类型 | 状态（2026-08-22 执行后终态） |
 |---|------|--------|------|--------------------------|
 | U1 | Value::Null 与 CMS stub 清零 | P0 | oa4rust | ✅ 已关闭（实质达成，指标作废） |
-| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | 🔄 36.9%→57.5%（+492 路由）。剩余缺口需**新开发约 600 个 handler**（存量未路由池已耗尽），属多会话功能开发 |
+| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | 🔄 36.9%→**59.1%**（+579 路由）。模块级战果：attendance 70.8%、message **100%**、program_center 68.7%、cms/file/bbs/org/meeting 已做动词对齐。剩余缺口集中在 cms 深水区与 processplatform_surface，需按同型配方继续专项开发 |
 | U3 | 影子流量灰度验证与切流 | P1 | oa4rust | ⛔ 外部阻塞（需生产环境 + ≥2 周影子观察期），脚本就绪 |
 | U4 | Tantivy 全文检索集成 | P1 | oa4rust | ✅ 已完成 |
 | U5 | query/portal 深度审计 | P1 | oa4rust | ✅ 已关闭 |
@@ -52,7 +52,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 | U8 | 接口规范与依赖清理两项 | P2 | oa4rust | ✅ securitySchemes 完成；SQLx 底层移除经分析**否决**——sea-orm 核心依赖 sqlx，替换等于重写 ORM，workspace 直接依赖清零的目标已达成 |
 | U9 | 测试体系增强四项 | P2 | oa4rust | 🔄 行覆盖率基建 + 深度集成场景已交付（并修复主流程缺 .await 缺陷）；Java 容器化为外部基础设施依赖 |
 | U10 | 待核验小项五条 | P3 | oa4rust | ✅ 核验完毕（2 关闭 / 3 维持遗留） |
-| U11 | Linux 文档精修四项 | P2 | linux-docs | 🔄 L11.3/L11.4 完成；L11.1 恢复管线自动化并处理 642/3154 文件（乱码签名行 -98%+，脚本可续跑）；L11.2 并入恢复管线覆盖 |
+| U11 | Linux 文档精修四项 | P2 | linux-docs | 🔄 L11.3/L11.4 完成；L11.1 恢复管线自动化并处理 **1242/1993 文件**（每文件乱码签名行 -98%+，329+ 处失败行留档待人工）；L11.2 并入恢复管线覆盖 |
 | U12 | 模块卡片文档深度填充 | P3 | oa-docs | ✅ 55/55 张全部完成 Key Flows + Rust Dependencies |
 | U12 | 模块卡片文档深度填充 | P3 | oa-docs |
 
