@@ -1,9 +1,9 @@
 ﻿
-## 宸ヤ笟 I/O锛圛ndustrial I/O锛?
+## 工业 I/O（Industrial I/O
 
-鏈〉鏄伐涓?I/O锛圛IO锛夊瓙绯荤粺鐨勬枃妗ｇ储寮曪紝姹囨€讳簡璇ユā鍧楃殑鏁翠綋璇存槑涓庡悇绫诲唴鏍镐紶鎰熷櫒椹卞姩锛圓DC銆両MU 绛夛級鐨勫弬鑰冩潯鐩叆鍙ｏ紝渚夸簬璇昏€呮寜涓婚蹇€熷畾浣嶇浉鍏宠鏄庛€?
+本页是工I/O（IIO）子系统的文档索引，汇总了该模块的整体说明与各类内核传感器驱动（ADC、IMU 等）的参考条目入口，便于读者按主题快速定位相关说明
 
-鏈〉鎻愪緵宸ヤ笟 I/O锛圛IO锛夊瓙绯荤粺鍙婂叾鍐呮牳浼犳劅鍣ㄩ┍鍔ㄧ殑鐩稿叧鏂囨。銆?
+本页提供工业 I/O（IIO）子系统及其内核传感器驱动的相关文档
 
 
 
@@ -13,7 +13,7 @@
 - [iio_dmabuf_api](iio_dmabuf_api)
 - [iio_tools](iio_tools)
 
-## 宸ヤ笟 I/O 鍐呮牳椹卞姩锛圛ndustrial I/O Kernel Drivers锛?
+## 工业 I/O 内核驱动（Industrial I/O Kernel Drivers
 
 
 - [ad3552r](ad3552r)

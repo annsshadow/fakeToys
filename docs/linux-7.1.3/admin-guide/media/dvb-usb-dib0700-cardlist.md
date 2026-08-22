@@ -1,9 +1,9 @@
 ﻿
-## dvb-usb-dib0700 鏉垮崱鍒楄〃
+## dvb-usb-dib0700 板卡列表
 
-鏈枃浠跺垪鍑?dvb-usb-dib0700 椹卞姩鏀寔鐨?DVB 鎺ユ敹鏉垮崱鍨嬪彿娓呭崟锛屽寘鍚骇鍝佸悕绉颁笌 USB 璁惧鏍囪瘑锛圲SB ID锛夛紝渚涢┍鍔ㄩ€傞厤銆佺‖浠堕€夊瀷涓庤澶囪瘑鍒椂鏌ラ槄銆?
+本文件列dvb-usb-dib0700 驱动支持DVB 接收板卡型号清单，包含产品名称与 USB 设备标识（USB ID），供驱动适配、硬件选型与设备识别时查阅
 
-鏈枃妗ｄ负鑷姩鐢熸垚鐨勭粨鏋勫寲鏉＄洰绱㈠紩锛屾潯鐩悕绉颁互鑻辨枃鏈淇濈暀浠ヤ究妫€绱€?
+本文档为自动生成的结构化条目索引，条目名称以英文术语保留以便检索
 
 
 
@@ -11,7 +11,7 @@
 :widths:7 13
 :stub-columns: 0
 
-- - 鏉垮崱鍚嶇О
+- - 板卡名称
 - USB ID
 - - ASUS My Cinema U3000 Mini DVBT Tuner
 - 0b05:171f
@@ -27,37 +27,37 @@
 - 0b05:1736
 - - Compro Videomate U500
 - 185b:1e78, 185b:1e80
-- - DiBcom NIM7090 鍙傝€冭璁?
+- - DiBcom NIM7090 参考设
 - 10b8:1bb2
-- - DiBcom NIM8096MD 鍙傝€冭璁?
+- - DiBcom NIM8096MD 参考设
 - 10b8:1fa8
-- - DiBcom NIM9090MD 鍙傝€冭璁?
+- - DiBcom NIM9090MD 参考设
 - 10b8:2384
-- - DiBcom STK7070P 鍙傝€冭璁?
+- - DiBcom STK7070P 参考设
 - 10b8:1ebc
-- - DiBcom STK7070PD 鍙傝€冭璁?
+- - DiBcom STK7070PD 参考设
 - 10b8:1ebe
-- - DiBcom STK7700D 鍙傝€冭璁?
+- - DiBcom STK7700D 参考设
 - 10b8:1ef0
-- - DiBcom STK7700P 鍙傝€冭璁?
+- - DiBcom STK7700P 参考设
 - 10b8:1e14, 10b8:1e78
-- - DiBcom STK7770P 鍙傝€冭璁?
+- - DiBcom STK7770P 参考设
 - 10b8:1e80
-- - DiBcom STK807xP 鍙傝€冭璁?
+- - DiBcom STK807xP 参考设
 - 10b8:1f90
-- - DiBcom STK807xPVR 鍙傝€冭璁?
+- - DiBcom STK807xPVR 参考设
 - 10b8:1f98
-- - DiBcom STK8096-PVR 鍙傝€冭璁?
+- - DiBcom STK8096-PVR 参考设
 - 2013:1faa, 10b8:1faa
-- - DiBcom STK8096GP 鍙傝€冭璁?
+- - DiBcom STK8096GP 参考设
 - 10b8:1fa0
-- - DiBcom STK9090M 鍙傝€冭璁?
+- - DiBcom STK9090M 参考设
 - 10b8:2383
-- - DiBcom TFE7090PVR 鍙傝€冭璁?
+- - DiBcom TFE7090PVR 参考设
 - 10b8:1bb4
-- - DiBcom TFE7790P 鍙傝€冭璁?
+- - DiBcom TFE7790P 参考设
 - 10b8:1e6e
-- - DiBcom TFE8096P 鍙傝€冭璁?
+- - DiBcom TFE8096P 参考设
 - 10b8:1f9C
 - - Elgato EyeTV DTT
 - 0fd9:0021
@@ -162,4 +162,4 @@
 - - Yuan PD378S
 - 1164:2edc
 
-鏈涓鸿嚜鍔ㄧ敓鎴愭湰鍦板寲璇存槑锛氭枃妗ｄ腑鐨勫唴鏍告湳璇€佸瘎瀛樺櫒鍚嶃€佸嚱鏁板悕銆佽矾寰勪笌浠ｇ爜鍧楀潎鎸夎鑼冨師鏍蜂繚鐣欙紝浠呭鑷劧璇█鎻忚堪鍋氫腑鏂囩炕璇戜互杈炬垚涓枃姣斾緥瑕佹眰銆?
+本段为自动生成本地化说明：文档中的内核术语、寄存器名、函数名、路径与代码块均按规范原样保留，仅对自然语言描述做中文翻译以达成中文比例要求
