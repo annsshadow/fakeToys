@@ -1,6 +1,6 @@
 ﻿
-## 鏈哄瘑璁＄畻
+## 机密计算
 
-鏈哄瘑璁＄畻锛圕onfidential Computing锛夊瓙绯荤粺鏂囨。锛屼粙缁嶅熀浜庣‖浠跺彲淇℃墽琛岀幆澧冪殑闅旂鏈哄埗涓庡害閲忓瘎瀛樺櫒銆?
+机密计算（Confidential Computing）子系统文档，介绍基于硬件可信执行环境的隔离机制与度量寄存器
 
-- [搴﹂噺瀵勫瓨鍣╙(measurement-registers)
+- [度量寄存器](measurement-registers)

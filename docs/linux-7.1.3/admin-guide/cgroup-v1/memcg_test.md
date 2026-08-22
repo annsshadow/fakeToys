@@ -1,128 +1,128 @@
-﻿## 鍐呭瓨璧勬簮鎺у埗鍣紙Memcg锛夊疄鐜板蹇樺綍
+﻿## 内存资源控制器（Memcg）实现备忘录
 
 
-鏈€鍚庢洿鏂帮細2010/2
+最后更新：2010/2
 
-鍩哄噯鍐呮牳鐗堟湰锛氬熀浜?2.6.33-rc7-mm锛?4 鐨勫€欓€夌増鏈級銆?
+基准内核版本：基2.6.33-rc7-mm4 的候选版本）
 
-鐢变簬 VM 姝ｅ彉寰楀鏉傦紙鍘熷洜涔嬩竴渚挎槸 memcg鈥︹€︼級锛宮emcg 鐨勮涓?
-涔熷崄鍒嗗鏉傘€傛湰鏂囨。鎻忚堪 memcg 鐨勫唴閮ㄨ涓恒€?
-璇锋敞鎰忥紝瀹炵幇缁嗚妭鍙兘浼氬彂鐢熷彉鍖栥€?
+由于 VM 正变得复杂（原因之一便是 memcg……），memcg 的行
+也十分复杂。本文档描述 memcg 的内部行为
+请注意，实现细节可能会发生变化
 
-锛?锛夋湁鍏?API 鐨勪富棰樿鍙傝 `Documentation/admin-guide/cgroup-v1/memory.rst`
+）有API 的主题请参见 `Documentation/admin-guide/cgroup-v1/memory.rst`
 
-## 0. 濡備綍璁板綍鐢ㄩ噺锛?
-
-
-   浣跨敤浜?2 涓璞°€?
-
-   `page_cgroup`鈥︹€︽瘡涓〉瀵瑰簲涓€涓璞°€?
-
-	鍦ㄥ惎鍔ㄦ垨鍐呭瓨鐑彃鎷旀椂鍒嗛厤锛屽湪鍐呭瓨鐑Щ闄ゆ椂閲婃斁銆?
-
-   `swap_cgroup`鈥︹€︽瘡涓?`swp_entry` 瀵瑰簲涓€椤广€?
-
-	鍦?swapon() 鏃跺垎閰嶏紝鍦?swapoff() 鏃堕噴鏀俱€?
-
-   `page_cgroup` 甯︽湁 USED 浣嶏紝涓旀案杩滀笉浼氬鍚屼竴 `page_cgroup` 閲嶅璁℃暟銆?
-   `swap_cgroup` 浠呭湪琚璐圭殑椤垫崲鍑猴紙swapped-out锛夋椂浣跨敤銆?
-
-## 1. 璁¤垂锛圕harge锛?
+## 0. 如何记录用量
 
 
-   涓€涓〉 / `swp_entry` 鍙兘鍦ㄤ互涓嬩綅缃璁¤垂锛坲sage += PAGE_SIZE锛夛細
+   使用2 个对象
+
+   `page_cgroup`……每个页对应一个对象
+
+	在启动或内存热插拔时分配，在内存热移除时释放
+
+   `swap_cgroup`……每`swp_entry` 对应一项
+
+	swapon() 时分配，swapoff() 时释放
+
+   `page_cgroup` 带有 USED 位，且永远不会对同一 `page_cgroup` 重复计数
+   `swap_cgroup` 仅在被计费的页换出（swapped-out）时使用
+
+## 1. 计费（Charge
+
+
+   一个页 / `swp_entry` 可能在以下位置被计费（usage += PAGE_SIZE）：
 
 	mem_cgroup_try_charge()
 
-## 2. 娉ㄩ攢璁¤垂锛圲ncharge锛?
+## 2. 注销计费（Uncharge
 
 
-   涓€涓〉 / `swp_entry` 鍙€氳繃浠ヤ笅鍑芥暟琚敞閿€璁¤垂锛坲sage -= PAGE_SIZE锛夛細
+   一个页 / `swp_entry` 可通过以下函数被注销计费（usage -= PAGE_SIZE）：
 
 	mem_cgroup_uncharge()
-	  鍦ㄩ〉鐨勫紩鐢ㄨ鏁伴檷涓?0 鏃惰皟鐢ㄣ€?
+	  在页的引用计数降0 时调用
 
 	mem_cgroup_uncharge_swap()
-	  鍦?`swp_entry` 鐨勫紩鐢ㄨ鏁伴檷涓?0 鏃惰皟鐢ㄣ€傞拡瀵逛氦鎹㈠尯鐨勮璐归殢涔嬫秷澶便€?
+	  `swp_entry` 的引用计数降0 时调用。针对交换区的计费随之消失
 
-## 3. 璁¤垂-鎻愪氦锛坈harge-commit锛?
+## 3. 计费-提交（charge-commit
 
 
-	Memcg 椤电殑璁¤垂鍒嗕袱姝ヨ繘琛岋細
+	Memcg 页的计费分两步进行：
 
   - `mem_cgroup_try_charge()`
   - `commit_charge()`
 
-	鍦?`try_charge()` 鏃讹紝灏氫笉瀛樺湪琛ㄧず鈥滄湰椤靛凡琚璐光€濈殑鏍囧織銆?
-	姝ゆ椂 usage += PAGE_SIZE銆?
+	`try_charge()` 时，尚不存在表示“本页已被计费”的标志
+	此时 usage += PAGE_SIZE
 
-	鍦?`commit()` 鏃讹紝椤典笌 memcg 寤虹珛鍏宠仈銆?
+	`commit()` 时，页与 memcg 建立关联
 
-鍦ㄤ笅闈㈢殑璇存槑涓紝鎴戜滑鍋囪 `CONFIG_SWAP=y`銆?
+在下面的说明中，我们假设 `CONFIG_SWAP=y`
 
-## 4. 鍖垮悕椤碉紙Anonymous锛?
-
-
-	鍖垮悕椤靛湪浠ヤ笅鎯呭舰鏂板垎閰嶏細
-
-    - 瀵?`MAP_ANONYMOUS` 鏄犲皠鍙戠敓缂洪〉锛坧age fault锛夈€?
-    - 鍐欐椂澶嶅埗锛圕opy-On-Write锛夈€?
-
-	4.1 鎹㈠叆锛圫wap-in锛夈€?
-	鎹㈠叆鏃讹紝椤靛彇鑷?swap-cache銆傚瓨鍦ㄤ袱绉嶆儏鍐点€?
-
-	(a) 鑻?`SwapCache` 鏄柊鍒嗛厤骞惰璇诲彇鐨勶紝鍒欏畠鏈璁¤垂銆?
-	(b) 鑻?`SwapCache` 宸茶杩涚▼鏄犲皠锛屽垯瀹冨凡缁忚璁¤垂銆?
-
-	4.2 鎹㈠嚭锛圫wap-out锛夈€?
-	鎹㈠嚭鏃讹紝鍏稿瀷鐨勭姸鎬佽浆鎹㈠涓嬨€?
-
-	(a) 鍔犲叆浜ゆ崲缂撳瓨锛堟爣璁颁负 `SwapCache`锛夈€?
-	    `swp_entry` 鐨勫紩鐢ㄨ鏁?+= 1銆?
-	(b) 瀹屽叏瑙ｉ櫎鏄犲皠銆?
-	    `swp_entry` 鐨勫紩鐢ㄨ鏁?+= PTE 鐨勬暟閲忋€?
-	(c) 鍐欏洖浜ゆ崲鍖恒€?
-	(d) 浠庝氦鎹㈢紦瀛樺垹闄わ紙绉诲嚭 `SwapCache`锛夈€?
-	    `swp_entry` 鐨勫紩鐢ㄨ鏁?-= 1銆?
+## 4. 匿名页（Anonymous
 
 
-	鏈€鍚庯紝鍦ㄤ换鍔￠€€鍑烘椂锛?
-	(e) 璋冪敤 zap_pte()锛宍swp_entry` 鐨勫紩鐢ㄨ鏁?-= 1 鈫?0銆?
+	匿名页在以下情形新分配：
 
-## 5. 椤电紦瀛橈紙Page Cache锛?
+    - `MAP_ANONYMOUS` 映射发生缺页（page fault）
+    - 写时复制（Copy-On-Write）
+
+	4.1 换入（Swap-in）
+	换入时，页取swap-cache。存在两种情况
+
+	(a) `SwapCache` 是新分配并被读取的，则它未被计费
+	(b) `SwapCache` 已被进程映射，则它已经被计费
+
+	4.2 换出（Swap-out）
+	换出时，典型的状态转换如下
+
+	(a) 加入交换缓存（标记为 `SwapCache`）
+	    `swp_entry` 的引用计+= 1
+	(b) 完全解除映射
+	    `swp_entry` 的引用计+= PTE 的数量
+	(c) 写回交换区
+	(d) 从交换缓存删除（移出 `SwapCache`）
+	    `swp_entry` 的引用计-= 1
 
 
-	椤电紦瀛橈紙Page Cache锛夊湪浠ヤ笅浣嶇疆琚璐癸細
+	最后，在任务退出时
+	(e) 调用 zap_pte()，`swp_entry` 的引用计-= 1 0
 
- - `filemap_add_folio()`銆?
+## 5. 页缓存（Page Cache
 
-	閫昏緫闈炲父娓呮櫚銆傦紙鍏充簬杩佺Щ锛岃涓嬫枃锛?
 
-	娉ㄦ剰锛?
+	页缓存（Page Cache）在以下位置被计费：
+
+ - `filemap_add_folio()`銆。
+
+	逻辑非常清晰。（关于迁移，见下文
+
+	注意
 	  `__filemap_remove_folio()` 鐢?`filemap_remove_folio()`
-	  涓?`__remove_mapping()` 璋冪敤銆?
+	  `__remove_mapping()` 调用
 
-## 6. Shmem锛坱mpfs锛夐〉缂撳瓨
+## 6. Shmem（tmpfs）页缓存
 
 
-	鐞嗚В shmem 椤电姸鎬佽浆鎹㈢殑鏈€浣虫柟寮忔槸闃呰
-	`mm/shmem.c`銆?
+	理解 shmem 页状态转换的最佳方式是阅读
+	`mm/shmem.c`銆。
 
-	浣嗗 memcg 鍥寸粫 shmem 鐨勮涓哄仛绠€瑕佽鏄庯紝鏈夊姪浜庣悊瑙ｅ叾閫昏緫銆?
+	但对 memcg 围绕 shmem 的行为做简要说明，有助于理解其逻辑
 
-	Shmem 鐨勯〉锛堜粎鍙跺瓙椤碉紝涓嶅惈鐩存帴/闂存帴鍧楋級鍙互浣嶄簬锛?
+	Shmem 的页（仅叶子页，不含直接/间接块）可以位于
 
-  - shmem inode 鐨?radix-tree锛堝熀鏁版爲锛夈€?
-  - `SwapCache`銆?
-  - 鍚屾椂浣嶄簬 radix-tree 涓?`SwapCache` 涓€傝繖鍙戠敓鍦ㄦ崲鍏ワ紙swap-in锛夋椂
-		浠ュ強鎹㈠嚭锛坰wap-out锛夋椂銆?
+  - shmem inode radix-tree（基数树）
+  - `SwapCache`銆。
+  - 同时位于 radix-tree `SwapCache` 中。这发生在换入（swap-in）时
+		以及换出（swap-out）时
 
-	瀹冨湪浠ヤ笅鎯呭舰琚璐癸細
+	它在以下情形被计费：
 
- - 涓€涓柊椤佃娣诲姞鍒?shmem 鐨?radix-tree 涓€?
- - 璇诲彇涓€涓?swp 椤点€傦紙灏嗚璐逛粠 `swap_cgroup` 杞Щ鍒?`page_cgroup`锛?
+ - 一个新页被添加shmem radix-tree 中
+ - 读取一swp 页。（将计费从 `swap_cgroup` 转移`page_cgroup`
 
-## 7. 椤佃縼绉伙紙Page Migration锛?
+## 7. 页迁移（Page Migration
 
 
 	mem_cgroup_migrate()
@@ -130,34 +130,34 @@
 ## 8. LRU
 
 
-	姣忎釜 memcg 閮芥嫢鏈夎嚜宸辩殑涓€缁?LRU 鍚戦噺锛堥潪娲昏穬鍖垮悕銆佹椿璺冨尶鍚嶃€?
-	闈炴椿璺冩枃浠躲€佹椿璺冩枃浠躲€佷笉鍙洖鏀讹級锛屽叾椤垫潵鑷悇涓妭鐐癸紱
-	姣忎釜 LRU 鍦ㄨ memcg 涓庤妭鐐瑰搴旂殑鍗曚竴 `lru_lock` 涓嬪鐞嗐€?
+	每个 memcg 都拥有自己的一LRU 向量（非活跃匿名、活跃匿名
+	非活跃文件、活跃文件、不可回收），其页来自各个节点；
+	每个 LRU 在该 memcg 与节点对应的单一 `lru_lock` 下处理
 
-## 9. 鍏稿瀷娴嬭瘯銆?
-
-
-   閽堝绔炴€侊紙racy锛夋儏鍐电殑娴嬭瘯銆?
-
-### 9.1 涓?memcg 璁剧疆杈冨皬闄愬埗銆?
+## 9. 典型测试
 
 
-	杩涜绔炴€佹祴璇曟椂锛屽皢 memcg 鐨勯檺鍒惰寰楀緢灏忥紙鑰岄潪 GB 绾э級鏄釜涓嶉敊鐨勬祴璇曘€?
-	鍦?xKB 鎴?xxMB 绾у埆鐨勯檺鍒朵笅鑳藉彂鐜板ぇ閲忕珵鎬併€?
+   针对竞态（racy）情况的测试
 
-	锛堝唴瀛樺湪 GB 绾т笌 MB 绾т笅鐨勮涓鸿〃鐜板樊寮傚緢澶с€傦級
+### 9.1 memcg 设置较小限制
+
+
+	进行竞态测试时，将 memcg 的限制设得很小（而非 GB 级）是个不错的测试
+	xKB xxMB 级别的限制下能发现大量竞态
+
+	（内存在 GB 级与 MB 级下的行为表现差异很大。）
 
 ### 9.2 Shmem
 
 
-	鍘嗗彶涓婏紝memcg 瀵?shmem 鐨勫鐞嗚緝宸紝鎴戜滑涔熷湪姝ら亣鍒拌繃涓€浜涢棶棰樸€?
-	杩欐槸鍥犱负 shmem 鏃㈡槸椤电紦瀛橈紝鍙堝彲鑳芥槸 `SwapCache`銆備娇鐢?shmem/tmpfs
-	杩涜娴嬭瘯濮嬬粓鏄釜濂介€夋嫨銆?
+	历史上，memcg shmem 的处理较差，我们也在此遇到过一些问题
+	这是因为 shmem 既是页缓存，又可能是 `SwapCache`。使shmem/tmpfs
+	进行测试始终是个好选择
 
-### 9.3 杩佺Щ锛圡igration锛?
+### 9.3 迁移（Migration
 
 
-	瀵逛簬 NUMA锛岃縼绉绘槸鍙︿竴涓壒渚嬨€備负渚夸簬娴嬭瘯锛屽彲浣跨敤 cpuset
+	对于 NUMA，迁移是另一个特例。为便于测试，可使用 cpuset
 ```
 
 		mount -t cgroup -o cpuset none /opt/cpuset
@@ -194,10 +194,10 @@
 
 ```
 
-### 9.4 鍐呭瓨鐑彃鎷旓紙Memory hotplug锛?
+### 9.4 内存热插拔（Memory hotplug
 
 
-	memory hotplug 娴嬭瘯鏄竴绉嶄笉閿欑殑娴嬭瘯銆?
+	memory hotplug 测试是一种不错的测试
 ```
 
 		# echo offline > /sys/devices/system/memory/memoryXXX/state
@@ -208,7 +208,7 @@
 
 ```
 
-### 9.5 宓屽 cgroup锛坣ested cgroups锛?
+### 9.5 嵌套 cgroup（nested cgroups
 
 
 ```
@@ -230,11 +230,11 @@
 
 ```
 
-### 9.6 涓庡叾浠栧瓙绯荤粺涓€璧锋寕杞?
+### 9.6 与其他子系统一起挂
 
 
-	涓庡叾浠栧瓙绯荤粺涓€璧锋寕杞芥槸涓€涓笉閿欑殑娴嬭瘯锛屽洜涓轰笌鍏朵粬 cgroup 瀛愮郴缁?
-	涔嬮棿瀛樺湪绔炴€佷笌閿佷緷璧栥€?
+	与其他子系统一起挂载是一个不错的测试，因为与其他 cgroup 子系
+	之间存在竞态与锁依赖
 ```
 
 		# mount -t cgroup none /cgroup -o cpuset,memory,cpu,devices
@@ -246,10 +246,10 @@
 ### 9.7 swapoff
 
 
-	闄や氦鎹㈠尯绠＄悊鏈韩鏄?memcg 涓緝澶嶆潅鐨勯儴鍒嗗锛宻wapoff 鏃剁殑鎹㈠叆璋冪敤璺緞
-	涔熶笌閫氬父鐨勬崲鍏ヨ矾寰勪笉鍚岋紝鍊煎緱涓撻棬娴嬭瘯銆?
+	除交换区管理本身memcg 中较复杂的部分外，swapoff 时的换入调用路径
+	也与通常的换入路径不同，值得专门测试
 
-	渚嬪锛屼笅闈㈣繖鏍风殑娴嬭瘯鏄笉閿欑殑锛?
+	例如，下面这样的测试是不错的
 ```
 
 		# mount -t cgroup none /cgroup -o memory
@@ -270,15 +270,15 @@
 
 ```
 
-### 9.8 OOM-Killer锛堝唴瀛樿€楀敖鏉€鎵嬶級
+### 9.8 OOM-Killer（内存耗尽杀手）
 
 
-	鐢?memcg 闄愬埗寮曞彂鐨?Out-of-memory 浼氱粓姝㈣ memcg 涓嬬殑浠诲姟銆?
-	浣跨敤灞傜骇锛坔ierarchy锛夋椂锛屽眰绾т笅鐨勪换鍔′細琚唴鏍哥粓姝€?
+	memcg 限制引发Out-of-memory 会终止该 memcg 下的任务
+	使用层级（hierarchy）时，层级下的任务会被内核终止
 
-	鍦ㄨ繖绉嶆儏鍐典笅锛屼笉搴旇Е鍙?panic_on_oom锛屼篃涓嶅簲缁堟鍏朵粬缁勭殑浠诲姟銆?
+	在这种情况下，不应触panic_on_oom，也不应终止其他组的任务
 
-	鍦?memcg 涓嬪紩鍙?OOM 骞朵笉鍥伴毦锛屽涓嬫墍绀恒€?
+	memcg 下引OOM 并不困难，如下所示
 ```
 
 		#swapoff -a
@@ -295,10 +295,10 @@
 
 ```
 
-### 9.9 浠诲姟杩佺Щ鏃剁Щ鍔ㄨ璐癸紙Move charges锛?
+### 9.9 任务迁移时移动计费（Move charges
 
 
-	涓庝换鍔″叧鑱旂殑璁¤垂鍙殢浠诲姟杩佺Щ涓€璧风Щ鍔ㄣ€?
+	与任务关联的计费可随任务迁移一起移动
 ```
 
 		#mkdir /cgroup/A
@@ -320,11 +320,11 @@
 
 ```
 
-### 9.10 鍐呭瓨闃堝€硷紙Memory thresholds锛?
+### 9.10 内存阈值（Memory thresholds
 
 
-	鍐呭瓨鎺у埗鍣ㄤ娇鐢?cgroups 鐨勯€氱煡 API 瀹炵幇鍐呭瓨闃堝€笺€?
-	浣犲彲浠ヤ娇鐢?tools/cgroup/cgroup_event_listener.c 鏉ユ祴璇曘€?
+	内存控制器使cgroups 的通知 API 实现内存阈值
+	你可以使tools/cgroup/cgroup_event_listener.c 来测试
 ```
 
 		# mkdir /cgroup/A

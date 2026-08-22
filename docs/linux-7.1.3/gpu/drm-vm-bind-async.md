@@ -1,46 +1,46 @@
 ﻿
-## 寮傛 VM_BIND
+## 异步 VM_BIND
 
-## 鏈琛紙Nomenclature锛夛細
+## 术语表（Nomenclature）：
 
-- `VRAM`锛氳澶囦笂鐨勫唴瀛樸€傛湁鏃剁О涓鸿澶囨湰鍦板唴瀛橈紙device local memory锛夈€?
-- `gpu_vm`锛氫竴涓櫄鎷?GPU 鍦板潃绌洪棿銆傞€氬父姣忎釜杩涚▼涓€涓紝浣嗕篃鍙互鐢卞涓繘绋嬪叡浜€?
-- `VM_BIND`锛氫竴涓敤浜庨€氳繃 IOCTL 淇敼 gpu_vm 鐨勬搷浣滄垨鎿嶄綔鍒楄〃銆傝繖浜涙搷浣滃寘鎷槧灏勫拰鍙栨秷鏄犲皠绯荤粺鍐呭瓨鎴?VRAM 鍐呭瓨銆?
-- `syncobj`锛氫竴涓娊璞′簡鍚屾瀵硅薄鐨勫鍣ㄣ€傚悓姝ュ璞″彲浠ユ槸閫氱敤鐨勶紙濡?dma-fence锛夛紝涔熷彲浠ユ槸椹卞姩鐗瑰畾鐨勩€備竴涓?syncobj 閫氬父鎸囩ず搴曞眰鍚屾瀵硅薄鐨勭被鍨嬨€?
-- `in-syncobj`锛歏M_BIND IOCTL 鐨勫弬鏁帮紝VM_BIND 鎿嶄綔鍦ㄥ紑濮嬩箣鍓嶄細绛夊緟杩欎簺瀵硅薄銆?
-- `out-syncobj`锛歏M_BIND_IOCTL 鐨勫弬鏁帮紝褰撶粦瀹氭搷浣滃畬鎴愭椂锛孷M_BIND 鎿嶄綔浼氬悜杩欎簺瀵硅薄鍙戜俊鍙枫€?
-- `dma-fence`锛氫竴涓法椹卞姩鐨勫悓姝ュ璞°€傜悊瑙ｆ湰鏂囨。闇€瑕佸熀鏈殑 dma-fence 鐭ヨ瘑銆傝鍙傝€?[dma-buf doc](dma-buf doc </driver-api/dma-buf>) 涓殑 鈥淒MA Fences鈥?涓€鑺傘€?
-- `memory fence`锛堝唴瀛樻爡鏍忥級锛氫竴绉嶄笉鍚屼簬 dma-fence 鐨勫悓姝ュ璞°€傚唴瀛樻爡鏍忎娇鐢ㄦ寚瀹氬唴瀛樹綅缃殑鍊兼潵纭畾宸插彂淇″彿鐘舵€併€傚唴瀛樻爡鏍忔棦鍙互鐢?GPU 涔熷彲浠ョ敱 CPU 绛夊緟鍜屽彂淇″彿銆傚唴瀛樻爡鏍忔湁鏃惰绉颁负 user-fence銆乽serspace-fence 鎴?gpu futex锛屽苟涓斾笉涓€瀹氶伒瀹?dma-fence 鍦ㄢ€滃悎鐞嗘椂闂粹€濆唴鍙戜俊鍙风殑瑙勫垯銆傚洜姝ゅ唴鏍稿簲閬垮厤鍦ㄦ寔鏈夐攣鐨勬儏鍐典笅绛夊緟鍐呭瓨鏍呮爮銆?
-- `long-running workload`锛堥暱鏃堕棿杩愯鐨勫伐浣滆礋杞斤級锛氫竴绉嶅彲鑳介渶瑕佽秴杩囧綋鍓嶈瀹氱殑 dma-fence 鏈€澶у彂淇″彿寤惰繜鎵嶈兘瀹屾垚鐨勫伐浣滆礋杞斤紝鍥犳闇€瑕佸皢 gpu_vm 鎴?GPU 鎵ц涓婁笅鏂囩疆浜庢煇绉嶇姝㈠畬鎴?dma-fence 鐨勬ā寮忋€?
-- `exec function`锛堟墽琛屽嚱鏁帮級锛氫竴涓噸鏂伴獙璇佹墍鏈夊彈褰卞搷鐨?gpu_vma銆佹彁浜や竴涓?GPU 鍛戒护鎵规銆佸苟鍚戞墍鏈夊彈褰卞搷鐨?dma_resv 娉ㄥ唽浠ｈ〃 GPU 鍛戒护娲诲姩鐨?dma_fence 鐨勫嚱鏁般€備负浜嗗畬鏁存€э紙灏界鏈枃妗ｆ湭娑电洊锛夛紝鍊煎緱涓€鎻愮殑鏄紝exec 鍑芥暟涔熷彲鑳芥槸鏌愪簺椹卞姩鍦ㄨ绠?闀挎椂闂磋繍琛屾ā寮忎笅浣跨敤鐨勯噸鏂伴獙璇佸伐浣滅嚎绋嬨€?
-- `bind context`锛堢粦瀹氫笂涓嬫枃锛夛細鐢ㄤ簬 VM_BIND 鎿嶄綔鐨勪笂涓嬫枃鏍囪瘑绗︺€備娇鐢ㄧ浉鍚岀粦瀹氫笂涓嬫枃鐨?VM_BIND 鎿嶄綔锛屽湪閲嶈鐨勫湴鏂癸紝鍙互琚亣瀹氭寜鎻愪氦椤哄簭瀹屾垚銆傚浜庝娇鐢ㄧ嫭绔嬬粦瀹氫笂涓嬫枃鐨?VM_BIND 鎿嶄綔锛屼笉鑳藉仛杩欐牱鐨勫亣璁俱€?
-- `UMD`锛氱敤鎴锋ā寮忛┍鍔紙User-mode driver锛夈€?
-- `KMD`锛氬唴鏍告ā寮忛┍鍔紙Kernel-mode driver锛夈€?
+- `VRAM`：设备上的内存。有时称为设备本地内存（device local memory）
+- `gpu_vm`：一个虚GPU 地址空间。通常每个进程一个，但也可以由多个进程共享
+- `VM_BIND`：一个用于通过 IOCTL 修改 gpu_vm 的操作或操作列表。这些操作包括映射和取消映射系统内存VRAM 内存
+- `syncobj`：一个抽象了同步对象的容器。同步对象可以是通用的（dma-fence），也可以是驱动特定的。一syncobj 通常指示底层同步对象的类型
+- `in-syncobj`：VM_BIND IOCTL 的参数，VM_BIND 操作在开始之前会等待这些对象
+- `out-syncobj`：VM_BIND_IOCTL 的参数，当绑定操作完成时，VM_BIND 操作会向这些对象发信号
+- `dma-fence`：一个跨驱动的同步对象。理解本文档需要基本的 dma-fence 知识。请参[dma-buf doc](dma-buf doc </driver-api/dma-buf>) 中的 “DMA Fences一节
+- `memory fence`（内存栅栏）：一种不同于 dma-fence 的同步对象。内存栅栏使用指定内存位置的值来确定已发信号状态。内存栅栏既可以GPU 也可以由 CPU 等待和发信号。内存栅栏有时被称为 user-fence、userspace-fence gpu futex，并且不一定遵dma-fence 在“合理时间”内发信号的规则。因此内核应避免在持有锁的情况下等待内存栅栏
+- `long-running workload`（长时间运行的工作负载）：一种可能需要超过当前规定的 dma-fence 最大发信号延迟才能完成的工作负载，因此需要将 gpu_vm GPU 执行上下文置于某种禁止完dma-fence 的模式
+- `exec function`（执行函数）：一个重新验证所有受影响gpu_vma、提交一GPU 命令批次、并向所有受影响dma_resv 注册代表 GPU 命令活动dma_fence 的函数。为了完整性（尽管本文档未涵盖），值得一提的是，exec 函数也可能是某些驱动在计长时间运行模式下使用的重新验证工作线程
+- `bind context`（绑定上下文）：用于 VM_BIND 操作的上下文标识符。使用相同绑定上下文VM_BIND 操作，在重要的地方，可以被假定按提交顺序完成。对于使用独立绑定上下文VM_BIND 操作，不能做这样的假设
+- `UMD`：用户模式驱动（User-mode driver）
+- `KMD`：内核模式驱动（Kernel-mode driver）
 
-## 鍚屾 / 寮傛 VM_BIND 鎿嶄綔
+## 同步 / 异步 VM_BIND 操作
 
-鍚屾 VM_BIND
+同步 VM_BIND
 ___________________
-浣跨敤鍚屾 VM_BIND锛屾墍鏈?VM_BIND 鎿嶄綔鍦?IOCTL 杩斿洖涔嬪墠瀹屾垚銆傚悓姝?VM_BIND 鏃笉鎺ュ彈 in-fence 涔熶笉鎺ュ彈 out-fence銆傚悓姝?VM_BIND 鍙兘浼氶樆濉炲苟绛夊緟 GPU 鎿嶄綔锛涗緥濡傛崲鍏ワ紙swap-in锛夋垨娓呴浂锛岀敋鑷虫槸鍏堝墠鐨勭粦瀹氥€?
-寮傛 VM_BIND
+使用同步 VM_BIND，所VM_BIND 操作IOCTL 返回之前完成。同VM_BIND 既不接受 in-fence 也不接受 out-fence。同VM_BIND 可能会阻塞并等待 GPU 操作；例如换入（swap-in）或清零，甚至是先前的绑定
+异步 VM_BIND
 ____________________
-寮傛 VM_BIND 鍚屾椂鎺ュ彈 in-syncobj 鍜?out-syncobj銆傝櫧鐒?IOCTL 鍙兘绔嬪嵆杩斿洖锛屼絾 VM_BIND 鎿嶄綔鍦ㄤ慨鏀?GPU 椤佃〃涔嬪墠浼氱瓑寰?in-syncobj锛屽苟鍦ㄤ慨鏀瑰畬鎴愬悗锛堝嵆涓嬩竴娆＄瓑寰?out-syncobj 鐨?exec 鍑芥暟灏嗙湅鍒版洿鏀圭殑鎰忎箟涓婏級鍚?out-syncobj 鍙戜俊鍙枫€傞敊璇槸鍚屾鎶ュ憡鐨勩€?鍦ㄤ綆鍐呭瓨鎯呭喌涓嬶紝瀹炵幇鍙兘浼氶樆濉烇紝鍚屾鍦版墽琛?VM_BIND锛屽洜涓哄彲鑳芥病鏈夊畬鍏ㄨ冻澶熺殑鍐呭瓨绔嬪嵆鍙敤浜庡噯澶囧紓姝ユ搷浣溿€?
-濡傛灉 VM_BIND IOCTL 鎺ュ彈涓€涓搷浣滃垪琛ㄦ垨鏁扮粍浣滀负鍙傛暟锛宨n-syncobj 闇€瑕佸湪绗竴涓搷浣滃紑濮嬫墽琛屼箣鍓嶅彂淇″彿锛岃€?out-syncobj 鍦ㄦ渶鍚庝竴涓搷浣滃畬鎴愬悗鍙戜俊鍙枫€傚湪閲嶈鐨勫湴鏂癸紝鍙互鍋囧畾鎿嶄綔鍒楄〃涓殑鎿嶄綔鎸夐『搴忓畬鎴愩€?
-鐢变簬寮傛 VM_BIND 鎿嶄綔鍙兘浣跨敤宓屽叆鍦?out-syncobj 涓殑 dma-fence 浠ュ強鍦?KMD 鍐呴儴鐢ㄤ簬鍙戜俊鍙锋寚绀虹粦瀹氬畬鎴愮殑 dma-fence锛屼换浣曚綔涓?VM_BIND in-fence 缁欏嚭鐨勫唴瀛樻爡鏍忛兘闇€瑕佸湪 VM_BIND ioctl 杩斿洖涔嬪墠琚悓姝ョ瓑寰咃紝鍥犱负 dma-fence 瑕佹眰鍦ㄥ悎鐞嗘椂闂村唴鍙戜俊鍙凤紝缁濅笉鑳戒緷璧栦簬娌℃湁姝ょ被闄愬埗鐨勫唴瀛樻爡鏍忋€?
-寮傛 VM_BIND 鎿嶄綔鐨勭洰鐨勬槸璁╃敤鎴锋ā寮忛┍鍔ㄨ兘澶熸祦姘寸嚎鍖栦氦閿欒繘琛岀殑 gpu_vm 淇敼鍜?exec 鍑芥暟銆傚浜庨暱鏃堕棿杩愯鐨勫伐浣滆礋杞斤紝杩欑缁戝畾鎿嶄綔鐨勬祦姘寸嚎鍖栨槸涓嶅厑璁哥殑锛屼换浣?in-fence 閮介渶瑕佽鍚屾绛夊緟銆傝繖鍏朵腑鐨勫師鍥犳湁涓ゆ柟闈€傞鍏堬紝浠讳綍鐢遍暱鏃堕棿杩愯鐨勫伐浣滆礋杞介棬鎺с€佸苟鐢ㄤ綔 VM_BIND 鎿嶄綔鐨?in-syncobj 鐨勫唴瀛樻爡鏍忔棤璁哄浣曢兘闇€瑕佽鍚屾绛夊緟锛堣涓婃枃锛夈€傚叾娆★紝浠讳綍鐢ㄤ綔闀挎椂闂磋繍琛屽伐浣滆礋杞?VM_BIND 鎿嶄綔鐨?in-syncobj 鐨?dma-fence 鏃犺濡備綍閮戒笉鍏佽娴佹按绾垮寲锛屽洜涓洪暱鏃堕棿杩愯鐨勫伐浣滆礋杞戒笉鍏佽灏?dma-fence 鐢ㄤ綔 out-syncobj锛屾墍浠ヨ櫧鐒剁悊璁轰笂鍙兘锛屼絾浣跨敤瀹冧滑鏄湁鐤戦棶鐨勶紝鍦ㄦ病鏈夋湁浠峰€肩殑鐢ㄤ緥涔嬪墠搴斿綋琚嫆缁濄€傛敞鎰忥紝杩欎笉鏄敱 dma-fence 瑙勫垯鏂藉姞鐨勯檺鍒讹紝鑰屾槸鐢?KMD 瀹炵幇涓轰繚鎸佺畝鍗曡€屾柦鍔犵殑闄愬埗銆傚畠涓嶅奖鍝嶅皢 dma-fence 鐢ㄤ綔闀挎椂闂磋繍琛屽伐浣滆礋杞芥湰韬殑渚濊禆锛堣繖鏄?dma-fence 瑙勫垯鎵€鍏佽鐨勶級锛岃€屼粎浠呭奖鍝?VM_BIND 鎿嶄綔銆?
-涓€涓紓姝?VM_BIND 鎿嶄綔鍙兘闇€瑕佸ぇ閲忔椂闂存潵瀹屾垚骞跺悜 out_fence 鍙戜俊鍙枫€傜壒鍒槸褰撹鎿嶄綔鍦ㄥ叾浠?VM_BIND 鎿嶄綔浠ュ強浣跨敤 exec 鍑芥暟鎻愪氦鐨勫伐浣滆礋杞戒箣鍚庤娣卞害娴佹按绾垮寲鏃躲€傚湪杩欑鎯呭喌涓嬶紝濡傛灉娌℃湁鏄惧紡渚濊禆鍏崇郴锛孶MD 鍙兘甯屾湜閬垮厤鍚庣画鐨?VM_BIND 鎿嶄綔鎺掗槦鍦ㄧ涓€涓箣鍚庛€備负浜嗚閬胯繖绉嶆帓闃燂紝VM_BIND 瀹炵幇鍙互鍏佽鍒涘缓 VM_BIND 涓婁笅鏂囥€傚浜庢瘡涓笂涓嬫枃锛孷M_BIND 鎿嶄綔淇濊瘉鎸夊畠浠鎻愪氦鐨勯『搴忓畬鎴愶紝浣嗗浜庡湪鐙珛 VM_BIND 涓婁笅鏂囦笂鎵ц鐨?VM_BIND 鎿嶄綔鍒欎笉鏄繖鏍枫€傜浉鍙嶏紝KMD 浼氬皾璇曞苟琛屾墽琛屾绫?VM_BIND 鎿嶄綔锛屼絾涓嶄繚璇佸畠浠‘瀹炰細骞惰鎵ц銆傚彲鑳藉瓨鍦ㄥ彧鏈?KMD 鐭ラ亾鐨勫唴閮ㄩ殣寮忎緷璧栵紝渚嬪椤佃〃缁撴瀯鐨勫彉鍖栥€備竴绉嶅皾璇曢伩鍏嶆绫诲唴閮ㄤ緷璧栫殑鏂规硶鏄涓嶅悓鐨?VM_BIND 涓婁笅鏂囦娇鐢?VM 鐨勪笉鍚屽尯鍩熴€?
-鍚屾牱锛屽浜庨暱鏃堕棿杩愯 gpu_vm 鐨?VM_BIND锛岀敤鎴锋ā寮忛┍鍔ㄩ€氬父搴旈€夋嫨鍐呭瓨鏍呮爮浣滀负 out-fence锛屽洜涓鸿繖涓哄唴鏍告ā寮忛┍鍔ㄥ湪缁戝畾/瑙ｇ粦鎿嶄綔涓敞鍏ュ叾浠栨搷浣滐紙渚嬪鍚戞壒澶勭悊缂撳啿鍖轰腑鎻掑叆鏂偣锛夋彁渚涗簡鏇村ぇ鐨勭伒娲绘€с€傜劧鍚庯紝宸ヤ綔璐熻浇鎵ц鍙互杞绘澗鍦版祦姘寸嚎鍖栧埌缁戝畾瀹屾垚涔嬪悗锛屼娇鐢ㄥ唴瀛?out-fence 浣滀负 UMD 宓屽叆鍦ㄥ伐浣滆礋杞戒腑鐨?GPU 淇″彿閲忕殑鍙戜俊鍙锋潯浠躲€?
-寮傛 VM_BIND 鍜屽悓姝?VM_BIND 鍦ㄦ敮鎸佺殑鎿嶄綔鎴栧鎿嶄綔鏀寔鏂归潰娌℃湁鍖哄埆銆?
-## 澶氭搷浣?VM_BIND IOCTL 鐨勯敊璇鐞嗕笌涓柇
+异步 VM_BIND 同时接受 in-syncobj out-syncobj。虽IOCTL 可能立即返回，但 VM_BIND 操作在修GPU 页表之前会等in-syncobj，并在修改完成后（即下一次等out-syncobj exec 函数将看到更改的意义上）out-syncobj 发信号。错误是同步报告的在低内存情况下，实现可能会阻塞，同步地执VM_BIND，因为可能没有完全足够的内存立即可用于准备异步操作
+如果 VM_BIND IOCTL 接受一个操作列表或数组作为参数，in-syncobj 需要在第一个操作开始执行之前发信号，out-syncobj 在最后一个操作完成后发信号。在重要的地方，可以假定操作列表中的操作按顺序完成
+由于异步 VM_BIND 操作可能使用嵌入out-syncobj 中的 dma-fence 以及KMD 内部用于发信号指示绑定完成的 dma-fence，任何作VM_BIND in-fence 给出的内存栅栏都需要在 VM_BIND ioctl 返回之前被同步等待，因为 dma-fence 要求在合理时间内发信号，绝不能依赖于没有此类限制的内存栅栏
+异步 VM_BIND 操作的目的是让用户模式驱动能够流水线化交错进行的 gpu_vm 修改exec 函数。对于长时间运行的工作负载，这种绑定操作的流水线化是不允许的，任in-fence 都需要被同步等待。这其中的原因有两方面。首先，任何由长时间运行的工作负载门控、并用作 VM_BIND 操作in-syncobj 的内存栅栏无论如何都需要被同步等待（见上文）。其次，任何用作长时间运行工作负VM_BIND 操作in-syncobj dma-fence 无论如何都不允许流水线化，因为长时间运行的工作负载不允许dma-fence 用作 out-syncobj，所以虽然理论上可能，但使用它们是有疑问的，在没有有价值的用例之前应当被拒绝。注意，这不是由 dma-fence 规则施加的限制，而是KMD 实现为保持简单而施加的限制。它不影响将 dma-fence 用作长时间运行工作负载本身的依赖（这dma-fence 规则所允许的），而仅仅影VM_BIND 操作
+一个异VM_BIND 操作可能需要大量时间来完成并向 out_fence 发信号。特别是当该操作在其VM_BIND 操作以及使用 exec 函数提交的工作负载之后被深度流水线化时。在这种情况下，如果没有显式依赖关系，UMD 可能希望避免后续VM_BIND 操作排队在第一个之后。为了规避这种排队，VM_BIND 实现可以允许创建 VM_BIND 上下文。对于每个上下文，VM_BIND 操作保证按它们被提交的顺序完成，但对于在独立 VM_BIND 上下文上执行VM_BIND 操作则不是这样。相反，KMD 会尝试并行执行此VM_BIND 操作，但不保证它们确实会并行执行。可能存在只KMD 知道的内部隐式依赖，例如页表结构的变化。一种尝试避免此类内部依赖的方法是让不同VM_BIND 上下文使VM 的不同区域
+同样，对于长时间运行 gpu_vm VM_BIND，用户模式驱动通常应选择内存栅栏作为 out-fence，因为这为内核模式驱动在绑定/解绑操作中注入其他操作（例如向批处理缓冲区中插入断点）提供了更大的灵活性。然后，工作负载执行可以轻松地流水线化到绑定完成之后，使用内out-fence 作为 UMD 嵌入在工作负载中GPU 信号量的发信号条件
+异步 VM_BIND 和同VM_BIND 在支持的操作或多操作支持方面没有区别
+## 多操VM_BIND IOCTL 的错误处理与中断
 
-VM_BIND 鐨?IOCTL 鎿嶄綔鍙兘鐢变簬鍚勭鍘熷洜鑰屽嚭閿欙紝渚嬪鐢变簬瀹屾垚鎵€闇€鐨勮祫婧愪笉瓒筹紝浠ュ強鐢变簬绛夊緟琚腑鏂€?鍦ㄨ繖浜涙儏鍐典笅锛孶MD 鏈€濂藉湪閲囧彇閫傚綋鎺柦鍚庨噸鏂板惎鍔?IOCTL銆?濡傛灉 UMD 杩囧害鎻愪氦浜嗗唴瀛樿祫婧愶紝灏嗚繑鍥?-ENOSPC 閿欒锛岀劧鍚?UMD 鍙互瑙ｇ粦褰撳墠鏈娇鐢ㄧ殑璧勬簮骞堕噸鏂拌繍琛?IOCTL銆傚浜?-EINTR锛孶MD 搴旂畝鍗曞湴閲嶆柊杩愯 IOCTL锛涘浜?-ENOMEM锛岀敤鎴风┖闂村彲浠ュ皾璇曢噴鏀惧凡鐭ョ殑绯荤粺鍐呭瓨璧勬簮锛屾垨鑰呭け璐ャ€傚鏋?UMD 鐢变簬閿欒杩斿洖鑰屽喅瀹氳鏌愪釜缁戝畾鎿嶄綔澶辫触锛屽垯鏃犻渶閲囧彇棰濆鎺柦鏉ユ竻鐞嗗け璐ョ殑鎿嶄綔锛孷M 灏嗕繚鎸佸湪涓庡け璐?IOCTL 涔嬪墠鐩稿悓鐨勭姸鎬併€?瑙ｇ粦鎿嶄綔淇濊瘉涓嶄細鍥犺祫婧愰檺鍒惰€岃繑鍥炰换浣曢敊璇紝浣嗗彲鑳藉洜渚嬪鏃犳晥鍙傛暟鎴?gpu_vm 琚皝绂佽€岃繑鍥為敊璇€?濡傛灉鍦ㄥ紓姝ョ粦瀹氳繃绋嬩腑鍙戠敓鎰忓閿欒锛実pu_vm 灏嗚灏佺锛屽苟涓斿湪灏佺鍚庡皾璇曚娇鐢ㄥ畠灏嗚繑鍥?-ENOENT銆?
-## 绀轰緥锛歑e VM_BIND uAPI
+VM_BIND IOCTL 操作可能由于各种原因而出错，例如由于完成所需的资源不足，以及由于等待被中断在这些情况下，UMD 最好在采取适当措施后重新启IOCTL如果 UMD 过度提交了内存资源，将返-ENOSPC 错误，然UMD 可以解绑当前未使用的资源并重新运IOCTL。对-EINTR，UMD 应简单地重新运行 IOCTL；对-ENOMEM，用户空间可以尝试释放已知的系统内存资源，或者失败。如UMD 由于错误返回而决定让某个绑定操作失败，则无需采取额外措施来清理失败的操作，VM 将保持在与失IOCTL 之前相同的状态解绑操作保证不会因资源限制而返回任何错误，但可能因例如无效参数gpu_vm 被封禁而返回错误如果在异步绑定过程中发生意外错误，gpu_vm 将被封禁，并且在封禁后尝试使用它将返-ENOENT
+## 示例：Xe VM_BIND uAPI
 
-浠?VM_BIND 鎿嶄綔缁撴瀯浣撳紑濮嬶紝IOCTL 璋冪敤鍙互鎺ュ彈闆朵釜銆佷竴涓垨澶氫釜杩欐牱鐨勬搷浣溿€傞浂涓剰鍛崇潃鍙墽琛?IOCTL 鐨勫悓姝ラ儴鍒嗭細寮傛 VM_BIND 鏇存柊 syncobject锛岃€屽悓姝?VM_BIND 绛夊緟闅愬紡渚濊禆琚弧瓒炽€?
+VM_BIND 操作结构体开始，IOCTL 调用可以接受零个、一个或多个这样的操作。零个意味着只执IOCTL 的同步部分：异步 VM_BIND 更新 syncobject，而同VM_BIND 等待隐式依赖被满足
 
    struct drm_xe_vm_bind_op {
 	/**
-  - @obj: 瑕佹搷浣滅殑瀵硅薄锛屽浜?MAP_USERPTR 涓?MBZ锛屽浜?UNMAP 涓?MBZ
+  - @obj: 要操作的对象，对MAP_USERPTR MBZ，对UNMAP MBZ
 	 */
 	__u32 obj;
 
@@ -49,107 +49,107 @@ VM_BIND 鐨?IOCTL 鎿嶄綔鍙兘鐢变簬鍚勭鍘熷洜鑰屽嚭閿欙�
 
 	union {
 		/**
-   - @obj_offset: 鐢ㄤ簬 MAP 鐨勫璞＄殑鍋忕Щ閲?		 */
+   - @obj_offset: 用于 MAP 的对象的偏移		 */
 		__u64 obj_offset;
 
-		/** @userptr: 鐢ㄤ簬 MAP_USERPTR 鐨勭敤鎴疯櫄鎷熷湴鍧€ */
+		/** @userptr: 用于 MAP_USERPTR 的用户虚拟地址 */
 		__u64 userptr;
 	};
 
 	/**
-  - @range: 浠庡璞＄粦瀹氬埌 addr 鐨勫瓧鑺傛暟锛屽浜?UNMAP_ALL 涓?MBZ
+  - @range: 从对象绑定到 addr 的字节数，对UNMAP_ALL MBZ
 	 */
 	__u64 range;
 
-	/** @addr: 瑕佹搷浣滅殑鍦板潃锛屽浜?UNMAP_ALL 涓?MBZ */
+	/** @addr: 要操作的地址，对UNMAP_ALL MBZ */
 	__u64 addr;
 
 	/**
-  - @tile_mask: 涓哄叾鍒涘缓缁戝畾鐨?tile 鎺╃爜锛? == 鎵€鏈?tile锛?  - 浠呴€傜敤浜庡垱寤烘柊鐨?VMA
+  - @tile_mask: 为其创建绑定tile 掩码 == 所tile  - 仅适用于创建新VMA
 	 */
 	__u64 tile_mask;
 
-       /* 灏嗭紙瀵硅薄鐨勪竴閮ㄥ垎锛夋槧灏勮繘 GPU 铏氭嫙鍦板潃鑼冨洿銆?*/
+       /* 将（对象的一部分）映射进 GPU 虚拟地址范围*/
     #define XE_VM_BIND_OP_MAP		0x0
-        /** 鍙栨秷鏄犲皠涓€涓?GPU 铏氭嫙鍦板潃鑼冨洿 **/
+        /** 取消映射一GPU 虚拟地址范围 **/
     #define XE_VM_BIND_OP_UNMAP		0x1
         /*
-  - 灏?CPU 铏氭嫙鍦板潃鑼冨洿鏄犲皠杩?GPU 铏氭嫙
-  - 鍦板潃鑼冨洿銆?	 */
+  - CPU 虚拟地址范围映射GPU 虚拟
+  - 地址范围	 */
     #define XE_VM_BIND_OP_MAP_USERPTR	0x2
-        /** 浠?VM 涓В鏄犲皠涓€涓?gem 瀵硅薄銆?**/
+        /** VM 中解映射一gem 对象**/
     #define XE_VM_BIND_OP_UNMAP_ALL	0x3
         /*
-  - 濡傛灉鍙兘锛屼娇涓€涓湴鍧€鑼冨洿鐨勫悗澶囧唴瀛樺父椹汇€?  - 娉ㄦ剰杩欎笉浼氬浐瀹氾紙pin锛夊悗澶囧唴瀛樸€?	 */
+  - 如果可能，使一个地址范围的后备内存常驻  - 注意这不会固定（pin）后备内存	 */
     #define XE_VM_BIND_OP_PREFETCH	0x4
 
-        /** 浣?GPU 鏄犲皠鍙銆?**/
+        /** GPU 映射只读**/
     #define XE_VM_BIND_FLAG_READONLY	(0x1 << 16)
 	/*
-  - 浠呭湪鏀寔缂洪〉鐨?VM 涓婃湁鏁堬紝绔嬪嵆鎵ц MAP 鎿嶄綔
-  - 鑰屼笉鏄皢 MAP 鎺ㄨ繜鍒扮己椤靛鐞嗙▼搴忋€?	 */
+  - 仅在支持缺页VM 上有效，立即执行 MAP 操作
+  - 而不是将 MAP 推迟到缺页处理程序	 */
     #define XE_VM_BIND_FLAG_IMMEDIATE	(0x1 << 17)
 	/*
-  - 褰撹缃簡 NULL 鏍囧織鏃讹紝椤佃〃浣跨敤鐗规畩浣嶈繘琛岃缃紝
-  - 璇ヤ綅鎸囩ず鍐欏叆琚涪寮冧笖鎵€鏈夎鍙栬繑鍥為浂銆傚湪
-  - 鏈潵锛孨ULL 鏍囧織灏嗕粎瀵?XE_VM_BIND_OP_MAP
-  - 鎿嶄綔鏈夋晥锛孊O 鍙ユ焺涓?MBZ锛孊O 鍋忕Щ涓?MBZ銆傛鏍囧織
-  - 鏃ㄥ湪瀹炵幇 VK 绋€鐤忕粦瀹氥€?	 */
+  - 当设置了 NULL 标志时，页表使用特殊位进行设置，
+  - 该位指示写入被丢弃且所有读取返回零。在
+  - 未来，NULL 标志将仅XE_VM_BIND_OP_MAP
+  - 操作有效，BO 句柄MBZ，BO 偏移MBZ。此标志
+  - 旨在实现 VK 稀疏绑定	 */
     #define XE_VM_BIND_FLAG_NULL	(0x1 << 18)
-	/** @op: 瑕佹墽琛岀殑鎿嶄綔锛堜綆 16 浣嶏級鍜屾爣蹇楋紙楂?16 浣嶏級 */
+	/** @op: 要执行的操作（低 16 位）和标志（16 位） */
 	__u32 op;
 
-	/** @mem_region: 棰勫彇鍒?VMA 鐨勫唴瀛樺尯鍩燂紝鏄疄渚嬭€岄潪鎺╃爜 */
+	/** @mem_region: 预取VMA 的内存区域，是实例而非掩码 */
 	__u32 region;
 
-	/** @reserved: 淇濈暀 */
+	/** @reserved: 保留 */
 	__u64 reserved[^2^];
    };
 
 
-VM_BIND IOCTL 鍙傛暟鏈韩濡備笅鎵€绀恒€傛敞鎰忥紝瀵逛簬鍚屾 VM_BIND锛宯um_syncs 鍜?syncs 瀛楁蹇呴』涓洪浂銆傝繖閲岀殑 `exec_queue_id` 瀛楁灏辨槸鍓嶉潰璁ㄨ杩囩殑 VM_BIND 涓婁笅鏂囷紝鐢ㄤ簬淇冭繘涔卞簭鐨?VM_BIND銆?
+VM_BIND IOCTL 参数本身如下所示。注意，对于同步 VM_BIND，num_syncs syncs 字段必须为零。这里的 `exec_queue_id` 字段就是前面讨论过的 VM_BIND 上下文，用于促进乱序VM_BIND
 
     struct drm_xe_vm_bind {
-	/** @extensions: 鎸囧悜绗竴涓墿灞曠粨鏋勪綋鐨勬寚閽堬紙濡傛灉鏈夛級 */
+	/** @extensions: 指向第一个扩展结构体的指针（如果有） */
 	__u64 extensions;
 
-	/** @vm_id: 瑕佺粦瀹氱殑 VM 鐨?ID */
+	/** @vm_id: 要绑定的 VM ID */
 	__u32 vm_id;
 
 	/**
-  - @exec_queue_id: exec_queue_id锛屽繀椤绘槸 DRM_XE_ENGINE_CLASS_VM_BIND 绫伙紝
-  - 涓旀墽琛岄槦鍒楀繀椤诲叿鏈夌浉鍚岀殑 vm_id銆傚鏋滀负闆讹紝鍒欎娇鐢ㄩ粯璁ょ殑 VM 缁戝畾寮曟搸銆?	 */
+  - @exec_queue_id: exec_queue_id，必须是 DRM_XE_ENGINE_CLASS_VM_BIND 类，
+  - 且执行队列必须具有相同的 vm_id。如果为零，则使用默认的 VM 绑定引擎	 */
 	__u32 exec_queue_id;
 
-	/** @num_binds: 姝?IOCTL 涓粦瀹氱殑鏁伴噺 */
+	/** @num_binds: IOCTL 中绑定的数量 */
 	__u32 num_binds;
 
-        /** 濡傛灉璁剧疆锛屾墽琛屽紓姝?VM_BIND锛涘鏋滄竻闄わ紝鎵ц鍚屾 VM_BIND **/
+        /** 如果设置，执行异VM_BIND；如果清除，执行同步 VM_BIND **/
     #define XE_VM_BIND_IOCTL_FLAG_ASYNC	(0x1 << 0)
 
-	/** @flag: 鎺у埗姝?ioctl 涓墍鏈夋搷浣滅殑鏍囧織銆?*/
+	/** @flag: 控制ioctl 中所有操作的标志*/
 	__u32 flags;
 
 	union {
-		/** @bind: 褰?num_binds == 1 鏃朵娇鐢?*/
+		/** @bind: num_binds == 1 时使*/
 		struct drm_xe_vm_bind_op bind;
 
 		/**
    - @vector_of_binds: 褰?num_binds > 1 鏃讹紝鎸囧悜 struct
-   - drm_xe_vm_bind_op 鏁扮粍鐨?userptr
+   - drm_xe_vm_bind_op 数组userptr
 		 */
 		__u64 vector_of_binds;
 	};
 
-	/** @num_syncs: 瑕佺瓑寰呮垨鍦ㄥ畬鎴愭椂鍙戜俊鍙风殑鍚屾瀵硅薄鏁伴噺銆?*/
+	/** @num_syncs: 要等待或在完成时发信号的同步对象数量*/
 	__u32 num_syncs;
 
 	/** @pad2: MBZ */
 	__u32 pad2;
 
-	/** @syncs: 鎸囧悜 struct drm_xe_sync 鏁扮粍鐨勬寚閽?*/
+	/** @syncs: 指向 struct drm_xe_sync 数组的指*/
 	__u64 syncs;
 
-	/** @reserved: 淇濈暀 */
+	/** @reserved: 保留 */
 	__u64 reserved[^2^];
     };

@@ -1,24 +1,24 @@
-﻿## drm/xen-front Xen 鍗婅櫄鎷熷寲鍓嶇椹卞姩
+﻿## drm/xen-front Xen 半虚拟化前端驱动
 
 
-璇ュ墠绔┍鍔ㄤ緷鎹?include/xen/interface/io/displif.h 涓弿杩扮殑鏄剧ず鍗忚瀹炵幇 Xen 鍗婅櫄鎷熷寲鏄剧ず銆?
+该前端驱动依include/xen/interface/io/displif.h 中描述的显示协议实现 Xen 半虚拟化显示
 
-## 鎸夋墍浣跨敤鐨勬樉绀虹紦鍐插尯鍒掑垎鐨勯┍鍔ㄨ繍琛屾ā寮?
+## 按所使用的显示缓冲区划分的驱动运行模
 
 
    :doc: Driver modes of operation in terms of display buffers used
 
-### 鐢卞墠绔┍鍔ㄥ垎閰嶇殑缂撳啿鍖?
+### 由前端驱动分配的缓冲
 
 
    :doc: Buffers allocated by the frontend driver
 
-### 鐢卞悗绔垎閰嶇殑缂撳啿鍖?
+### 由后端分配的缓冲
 
 
    :doc: Buffers allocated by the backend
 
-## 椹卞姩闄愬埗
+## 驱动限制
 
 
    :doc: Driver limitations
