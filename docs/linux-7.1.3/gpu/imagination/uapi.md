@@ -1,10 +1,10 @@
 ﻿## UAPI
 
-鏈枃妗ｆ弿杩?Imagination PowerVR GPU 鐨勭敤鎴风┖闂?API锛圲API锛夛紝娑电洊瀵硅薄鏁扮粍銆両OCTL 鎺ュ彛锛堝璁惧鏌ヨ銆佺紦鍐插尯瀵硅薄鍒涘缓绛夛級鍙婂叾鏁版嵁缁撴瀯锛屼富瑕佷緵鐢ㄦ埛绌洪棿鍥惧舰鏍堜笌椹卞姩寮€鍙戣€呭弬鑰冦€?
+本文档描Imagination PowerVR GPU 的用户空API（UAPI），涵盖对象数组、IOCTL 接口（如设备查询、缓冲区对象创建等）及其数据结构，主要供用户空间图形栈与驱动开发者参考
 
-鏈枃妗ｄ负鑷姩鐢熸垚鐨勭粨鏋勫寲鏉＄洰绱㈠紩锛屾潯鐩悕绉颁互鑻辨枃鏈淇濈暀浠ヤ究妫€绱€?
+本文档为自动生成的结构化条目索引，条目名称以英文术语保留以便检索
 
-sources associated 绔犺妭 found`pvr_drm.h`.
+sources associated 章节 found`pvr_drm.h`.
 
 :doc:PowerVR UAPI
 
@@ -16,13 +16,13 @@ sources associated 绔犺妭 found`pvr_drm.h`.
 
 ## IOCTLS
 
-:doc:PowerVR IOCTL 鎺ュ彛
+:doc:PowerVR IOCTL 接口
 
 :identifiers:PVR_IOCTL
 
 ### DEV_QUERY
 
-:doc:PowerVR IOCTL DEV_QUERY 鎺ュ彛
+:doc:PowerVR IOCTL DEV_QUERY 接口
 
 :identifiers:drm_pvr_dev_query
 
@@ -44,15 +44,15 @@ drm_pvr_dev_query_static_data_areas
 
 ### CREATE_BO
 
-:doc:PowerVR IOCTL CREATE_BO 鎺ュ彛
+:doc:PowerVR IOCTL CREATE_BO 接口
 
 :identifiers:drm_pvr_ioctl_create_bo_args
 
-:doc:鏍囧織 CREATE_BO
+:doc:标志 CREATE_BO
 
 ### GET_BO_MMAP_OFFSET
 
-:doc:PowerVR IOCTL GET_BO_MMAP_OFFSET 鎺ュ彛
+:doc:PowerVR IOCTL GET_BO_MMAP_OFFSET 接口
 
 :identifiers:drm_pvr_ioctl_get_bo_mmap_offset_args
 
@@ -106,30 +106,30 @@ drm_pvr_create_hwrt_rt_data_args
 
 ### SUBMIT_JOBS
 
-:doc:PowerVR IOCTL SUBMIT_JOBS 鎺ュ彛
+:doc:PowerVR IOCTL SUBMIT_JOBS 接口
 
-:doc:鏍囧織 drm_pvr_sync_op object.
+:doc:标志 drm_pvr_sync_op object.
 
 :identifiers:drm_pvr_ioctl_submit_jobs_args
 
-:doc:鏍囧織 SUBMIT_JOB ioctl geometry 鍛戒护.
+:doc:标志 SUBMIT_JOB ioctl geometry 命令.
 
-:doc:鏍囧織 SUBMIT_JOB ioctl fragment 鍛戒护.
+:doc:标志 SUBMIT_JOB ioctl fragment 命令.
 
-:doc:鏍囧織 SUBMIT_JOB ioctl compute 鍛戒护.
+:doc:标志 SUBMIT_JOB ioctl compute 命令.
 
-:doc:鏍囧織 SUBMIT_JOB ioctl transfer 鍛戒护.
+:doc:标志 SUBMIT_JOB ioctl transfer 命令.
 
 :identifiers:drm_pvr_sync_op
 drm_pvr_job_type
 drm_pvr_hwrt_data_ref
 drm_pvr_job
 
-## Internal 璇存槑
+## Internal 说明
 
 :doc:IOCTL validation helpers
 
 :identifiers:PVR_STATIC_ASSERT_64BIT_ALIGNED PVR_IOCTL_UNION_PADDING_CHECK
 pvr_ioctl_union_padding_check
 
-鏈涓鸿嚜鍔ㄧ敓鎴愭湰鍦板寲璇存槑锛氭枃妗ｄ腑鐨勫唴鏍告湳璇€佸瘎瀛樺櫒鍚嶃€佸嚱鏁板悕銆佽矾寰勪笌浠ｇ爜鍧楀潎鎸夎鑼冨師鏍蜂繚鐣欙紝浠呭鑷劧璇█鎻忚堪鍋氫腑鏂囩炕璇戜互杈炬垚涓枃姣斾緥瑕佹眰銆?
+本段为自动生成本地化说明：文档中的内核术语、寄存器名、函数名、路径与代码块均按规范原样保留，仅对自然语言描述做中文翻译以达成中文比例要求

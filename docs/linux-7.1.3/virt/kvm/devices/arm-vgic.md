@@ -2,32 +2,32 @@
 ## ARM Virtual Generic Interrupt Controller v2 (VGIC)
 
 
-鏀寔鐨勮澶囩被鍨嬶細
+支持的设备类型：
 
   - KVM_DEV_TYPE_ARM_VGIC_V2     ARM Generic Interrupt Controller v2.0
 
-鍙兘閫氳繃姝?API 鎴栨棫鐨?KVM_CREATE_IRQCHIP API 瀹炰緥鍖栦竴涓?VGIC 瀹炰緥銆傚垱寤虹殑 VGIC
-灏嗗厖褰?VM 鐨勪腑鏂帶鍒跺櫒锛岃姹傝妯℃嫙鐨勭敤鎴风┖闂磋澶囧皢涓柇娉ㄥ叆鍒?VGIC锛岃€屼笉鏄洿鎺ユ敞鍏?
-鍒?CPU銆?
+只能通过API 或旧KVM_CREATE_IRQCHIP API 实例化一VGIC 实例。创建的 VGIC
+将充VM 的中断控制器，要求被模拟的用户空间设备将中断注入VGIC，而不是直接注
+鍒?CPU銆。
 
-甯︽湁纭欢鍏煎鎬ф敮鎸佺殑 GICv3 瀹炵幇鍏佽閫氳繃姝ゆ帴鍙ｅ垱寤轰竴涓鎴锋満 GICv2銆傚叧浜庡垱寤哄鎴锋満
-GICv3 璁惧鍜屽鎴锋満 ITS 璁惧鐨勪俊鎭紝璇峰弬闃?arm-vgic-v3.txt銆備笉鍙兘鍦ㄥ悓涓€ VM 涓?
-鍚屾椂鍒涘缓 GICv3 鍜?GICv2 璁惧銆?
+带有硬件兼容性支持的 GICv3 实现允许通过此接口创建一个客户机 GICv2。关于创建客户机
+GICv3 设备和客户机 ITS 设备的信息，请参arm-vgic-v3.txt。不可能在同一 VM 
+同时创建 GICv3 GICv2 设备
 
 
-缁勶細
+组：
   KVM_DEV_ARM_VGIC_GRP_ADDR
-   灞炴€э細
+   属性：
 
     KVM_VGIC_V2_ADDR_TYPE_DIST (rw, 64-bit)
-      瀹㈡埛鏈虹墿鐞嗗湴鍧€绌洪棿涓?GIC 鍒嗗彂鍣紙distributor锛夊瘎瀛樺櫒鏄犲皠鐨勫熀鍦板潃銆備粎瀵?
-      KVM_DEV_TYPE_ARM_VGIC_V2 鏈夋晥銆傝鍦板潃闇€瑕?4K 瀵归綈锛屽尯鍩熻鐩?4 KByte銆?
+      客户机物理地址空间GIC 分发器（distributor）寄存器映射的基地址。仅
+      KVM_DEV_TYPE_ARM_VGIC_V2 有效。该地址需4K 对齐，区域覆4 KByte
 
     KVM_VGIC_V2_ADDR_TYPE_CPU (rw, 64-bit)
-      瀹㈡埛鏈虹墿鐞嗗湴鍧€绌洪棿涓?GIC 铏氭嫙 cpu 鎺ュ彛瀵勫瓨鍣ㄦ槧灏勭殑鍩哄湴鍧€銆備粎瀵?
-      KVM_DEV_TYPE_ARM_VGIC_V2 鏈夋晥銆傝鍦板潃闇€瑕?4K 瀵归綈锛屽尯鍩熻鐩?8 KByte銆?
+      客户机物理地址空间GIC 虚拟 cpu 接口寄存器映射的基地址。仅
+      KVM_DEV_TYPE_ARM_VGIC_V2 有效。该地址需4K 对齐，区域覆8 KByte
 
-  閿欒锛?
+  错误
 
     =======  =============================================================
     -E2BIG   Address outside of addressable IPA range
@@ -39,7 +39,7 @@ GICv3 璁惧鍜屽鎴锋満 ITS 璁惧鐨勪俊鎭紝璇峰弬闃?ar
     =======  =============================================================
 
   KVM_DEV_ARM_VGIC_GRP_DIST_REGS
-   灞炴€э細
+   属性：
 ```
 
       bits:     | 63   ....  40 | 39 ..  32  |  31   ....    0 |

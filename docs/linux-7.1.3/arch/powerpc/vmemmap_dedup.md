@@ -2,10 +2,10 @@
 ## Device DAX
 
 
-device-dax 鎺ュ彛浣跨敤浜?Documentation/mm/vmemmap_dedup.rst 涓В閲婄殑灏鹃儴鍘婚噸锛坱ail deduplication锛夋妧鏈€?
-鍦?powerpc 涓婏紝vmemmap 鍘婚噸浠呯敤浜?radix MMU 杞崲銆傚悓鏍凤紝鍦ㄤ娇鐢?64K 椤靛ぇ灏忔椂锛屽彧鏈?1G 瀵归綈鐨?devdax 鍛藉悕绌洪棿浣跨敤 vmemmap 鍘婚噸銆?
-鍦?2M PMD 绾ф槧灏勪笅锛屾垜浠渶瑕?32 涓?struct page锛岃€屽崟涓?64K vmemmap 椤靛彲浠ュ寘鍚?1024 涓?struct page锛?4K/sizeof(struct page)锛夈€傚洜姝ゆ棤娉曡繘琛?vmemmap 鍘婚噸銆?
-鍦?1G PUD 绾ф槧灏勪笅锛屾垜浠渶瑕?16384 涓?struct page锛岃€屽崟涓?64K vmemmap 椤靛彲浠ュ寘鍚?1024 涓?struct page锛?4K/sizeof(struct page)锛夈€傚洜姝ゆ垜浠渶瑕?16 涓?64K 椤电殑 vmemmap 鏉ユ槧灏?1G PUD 绾ф槧灏勭殑 struct page銆?
+device-dax 接口使用Documentation/mm/vmemmap_dedup.rst 中解释的尾部去重（tail deduplication）技术
+powerpc 上，vmemmap 去重仅用radix MMU 转换。同样，在使64K 页大小时，只1G 对齐devdax 命名空间使用 vmemmap 去重
+2M PMD 级映射下，我们需32 struct page，而单64K vmemmap 页可以包1024 struct page4K/sizeof(struct page)）。因此无法进vmemmap 去重
+1G PUD 级映射下，我们需16384 struct page，而单64K vmemmap 页可以包1024 struct page4K/sizeof(struct page)）。因此我们需16 64K 页的 vmemmap 来映1G PUD 级映射的 struct page
 ```
  +-----------+ ---virt_to_page---> +-----------+   mapping to   +-----------+
  |           |                     |     0     | -------------> |     0     |
@@ -31,7 +31,7 @@ device-dax 鎺ュ彛浣跨敤浜?Documentation/mm/vmemmap_dedup.rst 涓В閲�
 
 
 ```
-鍦ㄤ娇鐢?4K 椤靛ぇ灏忔椂锛?M PMD 绾ф槧灏勯渶瑕?512 涓?struct page锛屽崟涓?4K vmemmap 椤靛寘鍚?64 涓?struct page锛?K/sizeof(struct page)锛夈€傚洜姝ゆ垜浠渶瑕?8 涓?4K 椤电殑 vmemmap 鏉ユ槧灏?2M PMD 绾ф槧灏勭殑 struct page銆?
+在使4K 页大小时M PMD 级映射需512 struct page，单4K vmemmap 页包64 struct pageK/sizeof(struct page)）。因此我们需8 4K 页的 vmemmap 来映2M PMD 级映射的 struct page
 ```
 
 
@@ -59,7 +59,7 @@ device-dax 鎺ュ彛浣跨敤浜?Documentation/mm/vmemmap_dedup.rst 涓В閲�
 
 
 ```
-鍦?1G PUD 绾ф槧灏勪笅锛屾垜浠渶瑕?262144 涓?struct page锛屽崟涓?4K vmemmap 椤靛彲浠ュ寘鍚?64 涓?struct page锛?K/sizeof(struct page)锛夈€傚洜姝ゆ垜浠渶瑕?4096 涓?4K 椤电殑 vmemmap 鏉ユ槧灏?1G PUD 绾ф槧灏勭殑 struct page銆?
+1G PUD 级映射下，我们需262144 struct page，单4K vmemmap 页可以包64 struct pageK/sizeof(struct page)）。因此我们需4096 4K 页的 vmemmap 来映1G PUD 级映射的 struct page
 ```
 
  +-----------+ ---virt_to_page---> +-----------+   mapping to   +-----------+

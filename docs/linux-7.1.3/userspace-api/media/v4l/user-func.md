@@ -1,20 +1,20 @@
 ﻿
-######## 鍑芥暟鍙傝€?
+######## 函数参
 
-鏈〉鏄?Video4Linux 鐢ㄦ埛绌洪棿鍑芥暟鍙傝€冪殑鏉＄洰绱㈠紩锛屾寜瀛楁瘝椤哄簭姹囨€讳簡 ioctl 涓庡悇鏂囦欢鎿嶄綔锛坥pen銆乧lose銆乵map銆乺ead 绛夛級瀵瑰簲鐨勫弬鑰冩枃妗ｅ叆鍙ｏ紝鏉＄洰鍚嶇О淇濈暀鑻辨枃鏈浠ヤ究妫€绱€?
-
-
-鏈枃妗ｄ负鑷姩鐢熸垚鐨勭粨鏋勫寲鏉＄洰绱㈠紩锛屾潯鐩悕绉颁互鑻辨枃鏈淇濈暀浠ヤ究妫€绱€?
-
-鏈枃妗ｄ负鑷姩鐢熸垚鐨勭粨鏋勫寲鏉＄洰绱㈠紩锛屾潯鐩悕绉颁互鑻辨枃鏈淇濈暀浠ヤ究妫€绱€?
+本页Video4Linux 用户空间函数参考的条目索引，按字母顺序汇总了 ioctl 与各文件操作（open、close、mmap、read 等）对应的参考文档入口，条目名称保留英文术语以便检索
 
 
--[func-鍏抽棴](func-close)
+本文档为自动生成的结构化条目索引，条目名称以英文术语保留以便检索
+
+本文档为自动生成的结构化条目索引，条目名称以英文术语保留以便检索
+
+
+-[func-关闭](func-close)
 -[func-ioctl](func-ioctl)
--[vidioc-鍒涘缓-bufs](vidioc-create-bufs)
+-[vidioc-创建-bufs](vidioc-create-bufs)
 -[vidioc-cropcap](vidioc-cropcap)
 -[vidioc-dbg-g-chip-info](vidioc-dbg-g-chip-info)
--[vidioc-dbg-g-瀵勫瓨鍣╙(vidioc-dbg-g-register)
+-[vidioc-dbg-g-寄存器](vidioc-dbg-g-register)
 -[vidioc-decoder-cmd](vidioc-decoder-cmd)
 -[vidioc-dqevent](vidioc-dqevent)
 -[vidioc-dv-timings-cap](vidioc-dv-timings-cap)
@@ -36,7 +36,7 @@
 -[vidioc-g-ctrl](vidioc-g-ctrl)
 -[vidioc-g-dv-timings](vidioc-g-dv-timings)
 -[vidioc-g-edid](vidioc-g-edid)
--[vidioc-g-enc-绱㈠紩](vidioc-g-enc-index)
+-[vidioc-g-enc-索引](vidioc-g-enc-index)
 -[vidioc-g-ext-ctrls](vidioc-g-ext-ctrls)
 -[vidioc-g-fbuf](vidioc-g-fbuf)
 -[vidioc-g-fmt](vidioc-g-fmt)
@@ -46,12 +46,12 @@
 -[vidioc-g-modulator](vidioc-g-modulator)
 -[vidioc-g-output](vidioc-g-output)
 -[vidioc-g-parm](vidioc-g-parm)
--[vidioc-g-浼樺厛绾(vidioc-g-priority)
+-[vidioc-g-优先级](vidioc-g-priority)
 -[vidioc-g-selection](vidioc-g-selection)
 -[vidioc-g-sliced-vbi-cap](vidioc-g-sliced-vbi-cap)
 -[vidioc-g-std](vidioc-g-std)
 -[vidioc-g-tuner](vidioc-g-tuner)
--[vidioc-log-鐘舵€乚(vidioc-log-status)
+-[vidioc-log-状态](vidioc-log-status)
 -[vidioc-overlay](vidioc-overlay)
 -[vidioc-prepare-buf](vidioc-prepare-buf)
 -[vidioc-qbuf](vidioc-qbuf)
@@ -61,11 +61,11 @@
 -[vidioc-query-dv-timings](vidioc-query-dv-timings)
 -[vidioc-querystd](vidioc-querystd)
 -[vidioc-reqbufs](vidioc-reqbufs)
--[vidioc-绉婚櫎-bufs](vidioc-remove-bufs)
+-[vidioc-移除-bufs](vidioc-remove-bufs)
 -[vidioc-s-hw-freq-seek](vidioc-s-hw-freq-seek)
 -[vidioc-streamon](vidioc-streamon)
 -[vidioc-subdev-enum-frame-interval](vidioc-subdev-enum-frame-interval)
--[vidioc-subdev-enum-frame-澶у皬](vidioc-subdev-enum-frame-size)
+-[vidioc-subdev-enum-frame-大小](vidioc-subdev-enum-frame-size)
 -[vidioc-subdev-enum-mbus-code](vidioc-subdev-enum-mbus-code)
 -[vidioc-subdev-g-crop](vidioc-subdev-g-crop)
 -[vidioc-subdev-g-fmt](vidioc-subdev-g-fmt)
@@ -74,11 +74,11 @@
 -[vidioc-subdev-g-selection](vidioc-subdev-g-selection)
 -[vidioc-subdev-g-client-cap](vidioc-subdev-g-client-cap)
 -[vidioc-subdev-querycap](vidioc-subdev-querycap)
--[vidioc-subscribe-浜嬩欢](vidioc-subscribe-event)
+-[vidioc-subscribe-事件](vidioc-subscribe-event)
 -[func-mmap](func-mmap)
 -[func-munmap](func-munmap)
--[func-鎵撳紑](func-open)
+-[func-打开](func-open)
 -[func-poll](func-poll)
--[func-璇诲彇](func-read)
--[func-閫夋嫨](func-select)
--[func-鍐欏叆](func-write)
+-[func-读取](func-read)
+-[func-选择](func-select)
+-[func-写入](func-write)

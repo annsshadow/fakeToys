@@ -1,41 +1,41 @@
-﻿## `HDIO_` ioctl 璋冪敤姹囨€?
+﻿## `HDIO_` ioctl 调用汇
 
 - Edward A. Falk <efalk@google.com>
 
 November, 2004
 
-鏈枃璇曞浘鎻忚堪 HD/IDE 灞傛墍鏀寔鐨?ioctl(2) 璋冪敤銆傝繖浜涜皟鐢紙鎴嚦 Linux 5.11锛?澶ч兘鍦?drivers/ata/libata-scsi.c 涓疄鐜般€?
-ioctl 鐨勫€煎垪浜?<linux/hdreg.h>銆傛埅鑷虫湰鏂囨挵鍐欐椂锛屽畠浠涓嬶細
+本文试图描述 HD/IDE 层所支持ioctl(2) 调用。这些调用（截至 Linux 5.11大都drivers/ata/libata-scsi.c 中实现
+ioctl 的值列<linux/hdreg.h>。截至本文撰写时，它们如下：
 
     ioctls that pass argument pointers to user space:
-锛堝悜鐢ㄦ埛绌洪棿浼犻€掑弬鏁版寚閽堢殑 ioctl锛氾級
+（向用户空间传递参数指针的 ioctl：）
 
 	=======================	=======================================
-	HDIO_GETGEO		get device geometry锛堣幏鍙栬澶囧嚑浣曞弬鏁帮級
-	HDIO_GET_32BIT		get current io_32bit setting锛堣幏鍙栧綋鍓?io_32bit 璁剧疆锛?	HDIO_GET_IDENTITY	get IDE identification info锛堣幏鍙?IDE 鏍囪瘑淇℃伅锛?	HDIO_DRIVE_TASKFILE	execute raw taskfile锛堟墽琛屽師濮?taskfile锛?	HDIO_DRIVE_TASK		execute task and special drive command锛堟墽琛屼换鍔′笌鐗规畩椹卞姩鍣ㄥ懡浠わ級
-	HDIO_DRIVE_CMD		execute a special drive command锛堟墽琛岀壒娈婇┍鍔ㄥ櫒鍛戒护锛?	=======================	=======================================
+	HDIO_GETGEO		get device geometry（获取设备几何参数）
+	HDIO_GET_32BIT		get current io_32bit setting（获取当io_32bit 设置	HDIO_GET_IDENTITY	get IDE identification info（获IDE 标识信息	HDIO_DRIVE_TASKFILE	execute raw taskfile（执行原taskfile	HDIO_DRIVE_TASK		execute task and special drive command（执行任务与特殊驱动器命令）
+	HDIO_DRIVE_CMD		execute a special drive command（执行特殊驱动器命令	=======================	=======================================
 
     ioctls that pass non-pointer values:
-锛堜紶閫掗潪鎸囬拡鍊肩殑 ioctl锛氾級
+（传递非指针值的 ioctl：）
 
 	=======================	=======================================
-	HDIO_SET_32BIT		change io_32bit flags锛堟敼鍙?io_32bit 鏍囧織锛?	=======================	=======================================
+	HDIO_SET_32BIT		change io_32bit flags（改io_32bit 标志	=======================	=======================================
 
 
-涓嬫枃涓殑淇℃伅鏄€氳繃闃呰鍐呮牳婧愪唬鐮佺‘瀹氱殑銆傞殢鐫€鏃堕棿鐨勬帹绉伙紝鍏朵腑涓€浜涘唴瀹?寰堝彲鑳戒細寰楀埌淇銆?
+下文中的信息是通过阅读内核源代码确定的。随着时间的推移，其中一些内很可能会得到修正
 ------------------------------------------------------------------------------
 
-General锛堜竴鑸鏄庯級锛?
-	闄ら潪鍙︽湁璇存槑锛屾墍鏈?ioctl 璋冪敤鍦ㄦ垚鍔熸椂杩斿洖 0锛屽け璐ユ椂杩斿洖 -1 骞跺皢
-	errno 璁句负閫傚綋鐨勫€笺€?
-	闄ら潪鍙︽湁璇存槑锛屾墍鏈?ioctl 璋冪敤鍦ㄨ瘯鍥惧悜/浠庣敤鎴峰湴鍧€绌洪棿鎷疯礉鏁版嵁澶辫触
-	鏃讹紝杩斿洖 -1 骞跺皢 errno 璁句负 EFAULT銆?
-	闄ら潪鍙︽湁璇存槑锛屾墍鏈夋暟鎹粨鏋勪笌甯搁噺閮藉畾涔変簬 <linux/hdreg.h>
+General（一般说明）
+	除非另有说明，所ioctl 调用在成功时返回 0，失败时返回 -1 并将
+	errno 设为适当的值
+	除非另有说明，所ioctl 调用在试图向/从用户地址空间拷贝数据失败
+	时，返回 -1 并将 errno 设为 EFAULT
+	除非另有说明，所有数据结构与常量都定义于 <linux/hdreg.h>
 
 ------------------------------------------------------------------------------
 
 HDIO_GETGEO
-	鑾峰彇璁惧鍑犱綍鍙傛暟
+	获取设备几何参数
 
 
 ```
@@ -90,7 +90,7 @@ HDIO_GETGEO
 ```
 
 HDIO_GET_IDENTITY
-	鑾峰彇 IDE 鏍囪瘑淇℃伅
+	获取 IDE 标识信息
 
 
 ```
@@ -125,7 +125,7 @@ HDIO_GET_IDENTITY
 ```
 
 HDIO_GET_32BIT
-	鑾峰彇褰撳墠 io_32bit 璁剧疆
+	获取当前 io_32bit 设置
 
 
 ```
@@ -151,11 +151,11 @@ HDIO_GET_32BIT
 ```
 
 HDIO_DRIVE_TASKFILE
-	鎵ц鍘熷 taskfile
+	执行原始 taskfile
 
 
-	娉ㄦ剰锛?		濡傛灉浣犳墜杈规病鏈?ANSI ATA 瑙勮寖鍓湰锛屽ぇ姒傚簲褰撳拷鐣ユ ioctl銆?
- - 閫氳繃鍐欏叆椹卞姩鍣ㄧ殑鈥渢askfile鈥濆瘎瀛樺櫒锛岀洿鎺ユ墽琛屼竴鏉?ATA 纾佺洏鍛戒护銆傞渶瑕?   ADMIN 涓?RAWIO 璁块棶鏉冮檺銆?
+	注意		如果你手边没ANSI ATA 规范副本，大概应当忽略此 ioctl
+ - 通过写入驱动器的“taskfile”寄存器，直接执行一ATA 磁盘命令。需   ADMIN RAWIO 访问权限
 ```
 	  struct {
 
@@ -373,9 +373,9 @@ HDIO_DRIVE_TASKFILE
 ```
 
 HDIO_DRIVE_CMD
-	鎵ц鐗规畩椹卞姩鍣ㄥ懡浠?
+	执行特殊驱动器命
 
-	娉ㄦ剰锛氬鏋滀綘鎵嬭竟娌℃湁 ANSI ATA 瑙勮寖鍓湰锛屽ぇ姒傚簲褰撳拷鐣ユ ioctl銆?
+	注意：如果你手边没有 ANSI ATA 规范副本，大概应当忽略此 ioctl
 ```
 	  u8 args[4+XFER_SIZE];
 
@@ -446,10 +446,10 @@ HDIO_DRIVE_CMD
 ```
 
 HDIO_DRIVE_TASK
-	鎵ц浠诲姟涓庣壒娈婇┍鍔ㄥ櫒鍛戒护
+	执行任务与特殊驱动器命令
 
 
-	娉ㄦ剰锛氬鏋滀綘鎵嬭竟娌℃湁 ANSI ATA 瑙勮寖鍓湰锛屽ぇ姒傚簲褰撳拷鐣ユ ioctl銆?
+	注意：如果你手边没有 ANSI ATA 规范副本，大概应当忽略此 ioctl
 ```
 	  u8 args[7];
 
@@ -500,7 +500,7 @@ HDIO_DRIVE_TASK
 ```
 
 HDIO_SET_32BIT
-	鏀瑰彉 io_32bit 鏍囧織
+	改变 io_32bit 标志
 
 
 ```
