@@ -1,125 +1,125 @@
 ﻿
-## LoongArch 绠€浠?
+## LoongArch 简
 
-LoongArch 鏄竴绉嶆柊鐨?RISC 鎸囦护闆嗘灦鏋勶紙ISA锛夛紝鏈夌偣绫讳技浜?MIPS 鎴?RISC-V銆傜洰鍓嶆湁 3 绉嶅彉浣擄細绮剧畝 32 浣嶇増鏈紙LA32R锛夈€佹爣鍑?32 浣嶇増鏈紙LA32S锛夊拰 64 浣嶇増鏈紙LA64锛夈€侺oongArch 涓畾涔変簡 4 涓壒鏉冪骇锛圥LV锛夛細PLV0~PLV3锛屼粠楂樺埌浣庢帓鍒椼€傚唴鏍歌繍琛屽湪 PLV0锛岃€屽簲鐢ㄧ▼搴忚繍琛屽湪 PLV3銆傛湰鏂囨。浠嬬粛 LoongArch 鐨勫瘎瀛樺櫒銆佸熀鏈寚浠ら泦銆佽櫄鎷熷唴瀛樹互鍙婂叾浠栦竴浜涗富棰樸€?
-## 瀵勫瓨鍣?
+LoongArch 是一种新RISC 指令集架构（ISA），有点类似MIPS RISC-V。目前有 3 种变体：精简 32 位版本（LA32R）、标32 位版本（LA32S）和 64 位版本（LA64）。LoongArch 中定义了 4 个特权级（PLV）：PLV0~PLV3，从高到低排列。内核运行在 PLV0，而应用程序运行在 PLV3。本文档介绍 LoongArch 的寄存器、基本指令集、虚拟内存以及其他一些主题
+## 瀵勫瓨鍣。
 
-LoongArch 鐨勫瘎瀛樺櫒鍖呮嫭閫氱敤瀵勫瓨鍣紙GPR锛夈€佹诞鐐瑰瘎瀛樺櫒锛團PR锛夈€佸悜閲忓瘎瀛樺櫒锛圴R锛夛紝浠ュ強鐢ㄤ簬鐗规潈妯″紡锛圥LV0锛夌殑鎺у埗鐘舵€佸瘎瀛樺櫒锛圕SR锛夈€?
-### 閫氱敤瀵勫瓨鍣紙GPR锛?
+LoongArch 的寄存器包括通用寄存器（GPR）、浮点寄存器（FPR）、向量寄存器（VR），以及用于特权模式（PLV0）的控制状态寄存器（CSR）
+### 通用寄存器（GPR
 
-LoongArch 鏈?32 涓€氱敤瀵勫瓨鍣紙GPR锛夛紙`$r0` ~ `$r31`锛夛紱鍦?LA32 涓瘡涓负 32 浣嶅锛屽湪 LA64 涓负 64 浣嶅銆俙$r0` 琚‖杩炵嚎涓洪浂锛屽叾浠栧瘎瀛樺櫒鍦ㄦ灦鏋勪笂娌℃湁鐗规畩涔嬪銆傦紙`$r1` 闄ゅ锛屽畠琚‖杩炵嚎涓?BL 鎸囦护鐨勯摼鎺ュ瘎瀛樺櫒銆傦級
+LoongArch 32 个通用寄存器（GPR）（`$r0` ~ `$r31`）；LA32 中每个为 32 位宽，在 LA64 中为 64 位宽。`$r0` 被硬连线为零，其他寄存器在架构上没有特殊之处。（`$r1` 除外，它被硬连线BL 指令的链接寄存器。）
 
-鍐呮牳浣跨敤浜?LoongArch 瀵勫瓨鍣ㄧ害瀹氱殑涓€涓彉浣擄紝濡傚弬鑰冭祫鏂?<loongarch-references> 涓殑 LoongArch ELF psABI 瑙勮寖鎵€杩帮細
+内核使用LoongArch 寄存器约定的一个变体，如参考资<loongarch-references> 中的 LoongArch ELF psABI 规范所述：
 
 ================= =============== =================== ============
-鍚嶇О              鍒悕            鐢ㄩ€?               璺ㄨ皟鐢ㄤ繚鐣?================= =============== =================== ============
-`$r0`           `$zero`       甯搁噺闆?            鏈娇鐢?`$r1`           `$ra`         杩斿洖鍦板潃           鍚?`$r2`           `$tp`         TLS/绾跨▼鎸囬拡       鏈娇鐢?`$r3`           `$sp`         鏍堟寚閽?            鏄?`$r4`-`$r11`  `$a0`-`$a7` 鍙傛暟瀵勫瓨鍣?        鍚?`$r4`-`$r5`   `$v0`-`$v1` 杩斿洖鍊?            鍚?`$r12`-`$r20` `$t0`-`$t8` 涓存椂瀵勫瓨鍣?        鍚?`$r21`          `$u0`         姣?CPU 鍩哄潃        鏈娇鐢?`$r22`          `$fp`         甯ф寚閽?            鏄?`$r23`-`$r31` `$s0`-`$s8` 闈欐€佸瘎瀛樺櫒         鏄?================= =============== =================== ============
+名称              别名            用               跨调用保================= =============== =================== ============
+`$r0`           `$zero`       常量            未使`$r1`           `$ra`         返回地址           `$r2`           `$tp`         TLS/线程指针       未使`$r3`           `$sp`         栈指            `$r4`-`$r11`  `$a0`-`$a7` 参数寄存        `$r4`-`$r5`   `$v0`-`$v1` 返回            `$r12`-`$r20` `$t0`-`$t8` 临时寄存        `$r21`          `$u0`         CPU 基址        未使`$r22`          `$fp`         帧指            `$r23`-`$r31` `$s0`-`$s8` 静态寄存器         ================= =============== =================== ============
 
-    瀵勫瓨鍣?`$r21` 鍦?ELF psABI 涓繚鐣欙紝浣嗚 Linux 鍐呮牳鐢ㄤ簬瀛樺偍姣?CPU 鍩哄潃銆傚畠閫氬父娌℃湁 ABI 鍚嶇О锛屽湪鍐呮牳涓О涓?`$u0`銆備綘涔熷彲鑳藉湪涓€浜涙棫浠ｇ爜涓湅鍒?`$v0` 鎴?`$v1`锛屼絾瀹冧滑鍒嗗埆鏄?`$a0` 鍜?`$a1` 宸插簾寮冪殑鍒悕銆?
-### 娴偣瀵勫瓨鍣紙FPR锛?
+    寄存`$r21` ELF psABI 中保留，但被 Linux 内核用于存储CPU 基址。它通常没有 ABI 名称，在内核中称`$u0`。你也可能在一些旧代码中看`$v0` `$v1`，但它们分别`$a0` `$a1` 已废弃的别名
+### 浮点寄存器（FPR
 
-褰撳瓨鍦?FPU 鏃讹紝LoongArch 鏈?32 涓诞鐐瑰瘎瀛樺櫒锛團PR锛夛紙`$f0` ~ `$f31`锛夈€傚湪 LA64 鏍稿績涓婃瘡涓负 64 浣嶅銆?
-娴偣瀵勫瓨鍣ㄧ害瀹氫笌 LoongArch ELF psABI 瑙勮寖涓墍杩扮浉鍚岋細
+当存FPU 时，LoongArch 32 个浮点寄存器（FPR）（`$f0` ~ `$f31`）。在 LA64 核心上每个为 64 位宽
+浮点寄存器约定与 LoongArch ELF psABI 规范中所述相同：
 
 ================= ================== =================== ============
-鍚嶇О              鍒悕              鐢ㄩ€?               璺ㄨ皟鐢ㄤ繚鐣?================= ================== =================== ============
-`$f0`-`$f7`   `$fa0`-`$fa7`  鍙傛暟瀵勫瓨鍣?         鍚?`$f0`-`$f1`   `$fv0`-`$fv1`  杩斿洖鍊?             鍚?`$f8`-`$f23`  `$ft0`-`$ft15` 涓存椂瀵勫瓨鍣?         鍚?`$f24`-`$f31` `$fs0`-`$fs7`  闈欐€佸瘎瀛樺櫒          鏄?================= ================== =================== ============
+名称              别名              用               跨调用保================= ================== =================== ============
+`$f0`-`$f7`   `$fa0`-`$fa7`  参数寄存         `$f0`-`$f1`   `$fv0`-`$fv1`  返回             `$f8`-`$f23`  `$ft0`-`$ft15` 临时寄存         `$f24`-`$f31` `$fs0`-`$fs7`  静态寄存器          ================= ================== =================== ============
 
-    浣犲彲鑳戒細鍦ㄤ竴浜涙棫浠ｇ爜涓湅鍒?`$fv0` 鎴?`$fv1`锛屼絾瀹冧滑鍒嗗埆鏄?`$fa0` 鍜?`$fa1` 宸插簾寮冪殑鍒悕銆?
-### 鍚戦噺瀵勫瓨鍣紙VR锛?
+    你可能会在一些旧代码中看`$fv0` `$fv1`，但它们分别`$fa0` `$fa1` 已废弃的别名
+### 向量寄存器（VR
 
-鐩墠 LoongArch 鏈?2 绉嶅悜閲忔墿灞曪細
+目前 LoongArch 2 种向量扩展：
 
-- LSX锛堥緳鑺?SIMD 鎵╁睍锛孡oongson SIMD eXtension锛夛紝鍚戦噺涓?128 浣嶏紝
-- LASX锛堥緳鑺珮绾?SIMD 鎵╁睍锛孡oongson Advanced SIMD eXtension锛夛紝鍚戦噺涓?256 浣嶃€?
-LSX 鎻愪緵 `$v0` ~ `$v31`锛岃€?LASX 鎻愪緵 `$x0` ~ `$x31` 浣滀负鍚戦噺瀵勫瓨鍣ㄣ€?
-VR 涓?FPR 閲嶅彔锛氫緥濡傦紝鍦ㄥ疄鐜?LSX 鍜?LASX 鐨勬牳蹇冧笂锛宍$x0` 鐨勪綆 128 浣嶄笌 `$v0` 鍏变韩锛宍$v0` 鐨勪綆 64 浣嶄笌 `$f0` 鍏变韩锛涘叾浠栨墍鏈?VR 涔熷悓鐞嗐€?
-### 鎺у埗鐘舵€佸瘎瀛樺櫒锛圕SR锛?
+- LSX（龙SIMD 扩展，Loongson SIMD eXtension），向量128 位，
+- LASX（龙芯高SIMD 扩展，Loongson Advanced SIMD eXtension），向量256 位
+LSX 提供 `$v0` ~ `$v31`，LASX 提供 `$x0` ~ `$x31` 作为向量寄存器
+VR FPR 重叠：例如，在实LSX LASX 的核心上，`$x0` 的低 128 位与 `$v0` 共享，`$v0` 的低 64 位与 `$f0` 共享；其他所VR 也同理
+### 控制状态寄存器（CSR
 
-CSR 鍙兘浠庣壒鏉冩ā寮忥紙PLV0锛夎闂細
+CSR 只能从特权模式（PLV0）访问：
 
 ================= ===================================== ==============
-鍦板潃              鍏ㄧО                                  缂╁啓鍚?================= ===================================== ==============
-0x0               褰撳墠妯″紡淇℃伅                           CRMD
-0x1               寮傚父鍓嶆ā寮忎俊鎭?                        PRMD
-0x2               鎵╁睍鍗曞厓浣胯兘                           EUEN
-0x3               鏉傞」鎺у埗                               MISC
-0x4               寮傚父閰嶇疆                               ECFG
-0x5               寮傚父鐘舵€?                              ESTAT
-0x6               寮傚父杩斿洖鍦板潃                           ERA
-0x7               閿欒锛堟晠闅滐級铏氭嫙鍦板潃                   BADV
-0x8               閿欒锛堟晠闅滐級鎸囦护瀛?                    BADI
-0xC               寮傚父鍏ュ彛鍦板潃                           EENTRY
-0x10              TLB 绱㈠紩                              TLBIDX
-0x11              TLB 琛ㄩ」楂樹綅                           TLBEHI
-0x12              TLB 琛ㄩ」浣庝綅 0                         TLBELO0
-0x13              TLB 琛ㄩ」浣庝綅 1                         TLBELO1
-0x18              鍦板潃绌洪棿鏍囪瘑绗?                        ASID
-0x19              涓嬪崐鍦板潃绌洪棿鐨勯〉鍏ㄥ眬鐩綍鍦板潃           PGDL
-0x1A              涓婂崐鍦板潃绌洪棿鐨勯〉鍏ㄥ眬鐩綍鍦板潃           PGDH
-0x1B              椤靛叏灞€鐩綍鍦板潃                         PGD
-0x1C              涓嬪崐鍦板潃绌洪棿鐨勯〉娓歌蛋鎺у埗               PWCL
-0x1D              涓婂崐鍦板潃绌洪棿鐨勯〉娓歌蛋鎺у埗               PWCH
+地址              全称                                  缩写================= ===================================== ==============
+0x0               当前模式信息                           CRMD
+0x1               异常前模式信                        PRMD
+0x2               扩展单元使能                           EUEN
+0x3               杂项控制                               MISC
+0x4               异常配置                               ECFG
+0x5               异常状                              ESTAT
+0x6               异常返回地址                           ERA
+0x7               错误（故障）虚拟地址                   BADV
+0x8               错误（故障）指令                    BADI
+0xC               异常入口地址                           EENTRY
+0x10              TLB 索引                              TLBIDX
+0x11              TLB 表项高位                           TLBEHI
+0x12              TLB 表项低位 0                         TLBELO0
+0x13              TLB 表项低位 1                         TLBELO1
+0x18              地址空间标识                        ASID
+0x19              下半地址空间的页全局目录地址           PGDL
+0x1A              上半地址空间的页全局目录地址           PGDH
+0x1B              页全局目录地址                         PGD
+0x1C              下半地址空间的页游走控制               PWCL
+0x1D              上半地址空间的页游走控制               PWCH
 0x1E              STLB 椤靛ぇ灏?                          STLBPS
-0x1F              缂╁噺铏氭嫙鍦板潃閰嶇疆                       RVACFG
+0x1F              缩减虚拟地址配置                       RVACFG
 0x20              CPU 鏍囪瘑绗?                           CPUID
-0x21              鐗规潈璧勬簮閰嶇疆 1                         PRCFG1
-0x22              鐗规潈璧勬簮閰嶇疆 2                         PRCFG2
-0x23              鐗规潈璧勬簮閰嶇疆 3                         PRCFG3
-0x30+n (0鈮鈮?5)   淇濆瓨鏁版嵁瀵勫瓨鍣?                        SAVEn
-0x40              瀹氭椂鍣ㄦ爣璇嗙                           TID
+0x21              特权资源配置 1                         PRCFG1
+0x22              特权资源配置 2                         PRCFG2
+0x23              特权资源配置 3                         PRCFG3
+0x30+n (0≤n5)   保存数据寄存                        SAVEn
+0x40              定时器标识符                           TID
 0x41              瀹氭椂鍣ㄩ厤缃?                            TCFG
-0x42              瀹氭椂鍣ㄥ€?                              TVAL
-0x43              瀹氭椂鍣ㄨ鏁拌ˉ鍋?                        CNTC
-0x44              瀹氭椂鍣ㄤ腑鏂竻闄?                        TICLR
-0x60              LLBit 鎺у埗                            LLBCTL
-0x80              瀹炵幇鐩稿叧鎺у埗 1                         IMPCTL1
-0x81              瀹炵幇鐩稿叧鎺у埗 2                         IMPCTL2
-0x88              TLB 閲嶅～寮傚父鍏ュ彛鍦板潃                   TLBRENTRY
-0x89              TLB 閲嶅～寮傚父閿欒锛堟晠闅滐級铏氭嫙鍦板潃       TLBRBADV
-0x8A              TLB 閲嶅～寮傚父杩斿洖鍦板潃                   TLBRERA
-0x8B              TLB 閲嶅～寮傚父淇濆瓨鏁版嵁瀵勫瓨鍣?            TLBRSAVE
-0x8C              TLB 閲嶅～寮傚父鍏ュ彛浣庝綅 0                 TLBRELO0
-0x8D              TLB 閲嶅～寮傚父鍏ュ彛浣庝綅 1                 TLBRELO1
-0x8E              TLB 閲嶅～寮傚父鍏ュ彛楂樹綅                   TLBEHI
-0x8F              TLB 閲嶅～寮傚父寮傚父鍓嶆ā寮忎俊鎭?            TLBRPRMD
-0x90              鏈哄櫒閿欒鎺у埗                           MERRCTL
-0x91              鏈哄櫒閿欒淇℃伅 1                         MERRINFO1
-0x92              鏈哄櫒閿欒淇℃伅 2                         MERRINFO2
-0x93              鏈哄櫒閿欒寮傚父鍏ュ彛鍦板潃                   MERRENTRY
-0x94              鏈哄櫒閿欒寮傚父杩斿洖鍦板潃                   MERRERA
-0x95              鏈哄櫒閿欒寮傚父淇濆瓨鏁版嵁瀵勫瓨鍣?            MERRSAVE
-0x98              缂撳瓨 TAG                               CTAG
-0x180+n (0鈮鈮?)   鐩存帴鏄犲皠閰嶇疆绐楀彛 n                     DMWn
-0x200+2n (0鈮鈮?1) 鎬ц兘鐩戣鍣ㄩ厤缃?n                       PMCFGn
-0x201+2n (0鈮鈮?1) 鎬ц兘鐩戣鍣ㄦ€昏鏁板櫒 n                   PMCNTn
-0x300             鍐呭瓨鍔犺浇/瀛樺偍瑙傚療鐐规€讳綋鎺у埗            MWPC
-0x301             鍐呭瓨鍔犺浇/瀛樺偍瑙傚療鐐规€讳綋鐘舵€?           MWPS
-0x310+8n (0鈮鈮?)  鍐呭瓨鍔犺浇/瀛樺偍瑙傚療鐐?n 閰嶇疆 1           MWPnCFG1
-0x311+8n (0鈮鈮?)  鍐呭瓨鍔犺浇/瀛樺偍瑙傚療鐐?n 閰嶇疆 2           MWPnCFG2
-0x312+8n (0鈮鈮?)  鍐呭瓨鍔犺浇/瀛樺偍瑙傚療鐐?n 閰嶇疆 3           MWPnCFG3
-0x313+8n (0鈮鈮?)  鍐呭瓨鍔犺浇/瀛樺偍瑙傚療鐐?n 閰嶇疆 4           MWPnCFG4
-0x380             鎸囦护鑾峰彇瑙傚療鐐规€讳綋鎺у埗                 FWPC
-0x381             鎸囦护鑾峰彇瑙傚療鐐规€讳綋鐘舵€?                FWPS
-0x390+8n (0鈮鈮?)  鎸囦护鑾峰彇瑙傚療鐐?n 閰嶇疆 1                FWPnCFG1
-0x391+8n (0鈮鈮?)  鎸囦护鑾峰彇瑙傚療鐐?n 閰嶇疆 2                FWPnCFG2
-0x392+8n (0鈮鈮?)  鎸囦护鑾峰彇瑙傚療鐐?n 閰嶇疆 3                FWPnCFG3
-0x393+8n (0鈮鈮?)  鎸囦护鑾峰彇瑙傚療鐐?n 閰嶇疆 4                FWPnCFG4
+0x42              定时器                              TVAL
+0x43              定时器计数补                        CNTC
+0x44              定时器中断清                        TICLR
+0x60              LLBit 控制                            LLBCTL
+0x80              实现相关控制 1                         IMPCTL1
+0x81              实现相关控制 2                         IMPCTL2
+0x88              TLB 重填异常入口地址                   TLBRENTRY
+0x89              TLB 重填异常错误（故障）虚拟地址       TLBRBADV
+0x8A              TLB 重填异常返回地址                   TLBRERA
+0x8B              TLB 重填异常保存数据寄存            TLBRSAVE
+0x8C              TLB 重填异常入口低位 0                 TLBRELO0
+0x8D              TLB 重填异常入口低位 1                 TLBRELO1
+0x8E              TLB 重填异常入口高位                   TLBEHI
+0x8F              TLB 重填异常异常前模式信            TLBRPRMD
+0x90              机器错误控制                           MERRCTL
+0x91              机器错误信息 1                         MERRINFO1
+0x92              机器错误信息 2                         MERRINFO2
+0x93              机器错误异常入口地址                   MERRENTRY
+0x94              机器错误异常返回地址                   MERRERA
+0x95              机器错误异常保存数据寄存            MERRSAVE
+0x98              缓存 TAG                               CTAG
+0x180+n (0≤n)   直接映射配置窗口 n                     DMWn
+0x200+2n (0≤n1) 性能监视器配n                       PMCFGn
+0x201+2n (0≤n1) 性能监视器总计数器 n                   PMCNTn
+0x300             内存加载/存储观察点总体控制            MWPC
+0x301             内存加载/存储观察点总体状           MWPS
+0x310+8n (0≤n)  内存加载/存储观察n 配置 1           MWPnCFG1
+0x311+8n (0≤n)  内存加载/存储观察n 配置 2           MWPnCFG2
+0x312+8n (0≤n)  内存加载/存储观察n 配置 3           MWPnCFG3
+0x313+8n (0≤n)  内存加载/存储观察n 配置 4           MWPnCFG4
+0x380             指令获取观察点总体控制                 FWPC
+0x381             指令获取观察点总体状                FWPS
+0x390+8n (0≤n)  指令获取观察n 配置 1                FWPnCFG1
+0x391+8n (0≤n)  指令获取观察n 配置 2                FWPnCFG2
+0x392+8n (0≤n)  指令获取观察n 配置 3                FWPnCFG3
+0x393+8n (0≤n)  指令获取观察n 配置 4                FWPnCFG4
 0x500             璋冭瘯瀵勫瓨鍣?                            DBG
-0x501             璋冭瘯寮傚父杩斿洖鍦板潃                       DERA
-0x502             璋冭瘯寮傚父淇濆瓨鏁版嵁瀵勫瓨鍣?                DSAVE
+0x501             调试异常返回地址                       DERA
+0x502             调试异常保存数据寄存                DSAVE
 ================= ===================================== ==============
 
-ERA銆乀LBRERA銆丮ERRERA 鍜?DERA 鏈夋椂涔熷垎鍒О涓?EPC銆乀LBREPC銆丮ERREPC 鍜?DEPC銆?
-## 鍩烘湰鎸囦护闆?
+ERA、TLBRERA、MERRERA DERA 有时也分别称EPC、TLBREPC、MERREPC DEPC
+## 基本指令
 
-### 鎸囦护鏍煎紡
+### 指令格式
 
 
-LoongArch 鎸囦护涓?32 浣嶅锛屽睘浜?9 绉嶅熀鏈寚浠ゆ牸寮忥紙鍙婂叾鍙樹綋锛夛細
+LoongArch 指令32 位宽，属9 种基本指令格式（及其变体）：
 
 =========== ==========================
-鏍煎紡鍚?     缁勬垚
+格式     组成
 =========== ==========================
 2R          Opcode + Rj + Rd
 3R          Opcode + Rk + Rj + Rd
@@ -132,11 +132,11 @@ LoongArch 鎸囦护涓?32 浣嶅锛屽睘浜?9 绉嶅熀鏈寚浠ゆ牸寮
 I26         Opcode + I26L + I26H
 =========== ==========================
 
-Rd 鏄洰鏍囧瘎瀛樺櫒鎿嶄綔鏁帮紝鑰?Rj銆丷k 鍜?Ra锛?a" 琛ㄧず "additional"锛岄澶栫殑锛夋槸婧愬瘎瀛樺櫒鎿嶄綔鏁般€侷8/I12/I14/I16/I21/I26 鏄浉搴斿搴︾殑绔嬪嵆鏁版搷浣滄暟銆傝緝闀跨殑 I21 鍜?I26 鍦ㄦ寚浠ゅ瓧涓垎鍒瓨鍌ㄥ湪楂樹綅鍜屼綆浣嶉儴鍒嗭紝浠?"L" 鍜?"H" 鍚庣紑琛ㄧず銆?
-### 鎸囦护鍒楄〃
+Rd 是目标寄存器操作数，Rj、Rk Raa" 表示 "additional"，额外的）是源寄存器操作数。I8/I12/I14/I16/I21/I26 是相应宽度的立即数操作数。较长的 I21 I26 在指令字中分别存储在高位和低位部分，"L" "H" 后缀表示
+### 指令列表
 
 
-涓虹畝娲佽捣瑙侊紝姝ゅ浠呭垪鍑烘寚浠ゅ悕绉帮紙鍔╄绗︼級锛涜鎯呰鍙傞槄鍙傝€冭祫鏂?<loongarch-references>銆?
+为简洁起见，此处仅列出指令名称（助记符）；详情请参阅参考资<loongarch-references>
 ```
     ADD.W SUB.W ADDI.W ADD.D SUB.D ADDI.D
     SLT SLTU SLTI SLTUI
@@ -191,67 +191,67 @@ Rd 鏄洰鏍囧瘎瀛樺櫒鎿嶄綔鏁帮紝鑰?Rj銆丷k 鍜?Ra锛?a" 琛�
     CACOP TLBP(TLBSRCH) TLBRD TLBWR TLBFILL TLBCLR TLBFLUSH INVTLB LDDIR LDPTE
 ```
 
-## 铏氭嫙鍐呭瓨
+## 虚拟内存
 
 
-LoongArch 鏀寔鐩存帴鏄犲皠鐨勮櫄鎷熷唴瀛樺拰椤垫槧灏勭殑铏氭嫙鍐呭瓨銆?
-鐩存帴鏄犲皠鐨勮櫄鎷熷唴瀛樼敱 CSR.DMWn锛坣=0~3锛夐厤缃紝瀹冩湁涓€涓畝鍗曠殑鍏崇郴
+LoongArch 支持直接映射的虚拟内存和页映射的虚拟内存
+直接映射的虚拟内存由 CSR.DMWn（n=0~3）配置，它有一个简单的关系
 
 ```
  VA = PA + FixedOffset
 ```
 
-椤垫槧灏勭殑铏氭嫙鍐呭瓨涓?VA 涓?PA 涔嬮棿鏄换鎰忓叧绯伙紝璁板綍鍦?TLB 鍜岄〉琛ㄤ腑銆侺oongArch 鐨?TLB 鍖呭惈涓€涓叏鐩歌仈鐨?MTLB锛堝椤靛ぇ灏?TLB锛夊拰涓€涓粍鐩歌仈鐨?STLB锛堝崟椤靛ぇ灏?TLB锛夈€?
-榛樿鎯呭喌涓嬶紝LA32 鐨勬暣涓櫄鎷熷湴鍧€绌洪棿閰嶇疆濡備笅锛?
+页映射的虚拟内存VA PA 之间是任意关系，记录TLB 和页表中。LoongArch TLB 包含一个全相联MTLB（多页大TLB）和一个组相联STLB（单页大TLB）
+默认情况下，LA32 的整个虚拟地址空间配置如下
 ============ =========================== =============================
-鍚嶇О         鍦板潃鑼冨洿                    灞炴€?============ =========================== =============================
-`UVRANGE`  `0x00000000 - 0x7FFFFFFF` 椤垫槧灏勶紝缂撳瓨锛孭LV0~3
-`KPRANGE0` `0x80000000 - 0x9FFFFFFF` 鐩存帴鏄犲皠锛岄潪缂撳瓨锛孭LV0
-`KPRANGE1` `0xA0000000 - 0xBFFFFFFF` 鐩存帴鏄犲皠锛岀紦瀛橈紝PLV0
-`KVRANGE`  `0xC0000000 - 0xFFFFFFFF` 椤垫槧灏勶紝缂撳瓨锛孭LV0
+名称         地址范围                    属============ =========================== =============================
+`UVRANGE`  `0x00000000 - 0x7FFFFFFF` 页映射，缓存，PLV0~3
+`KPRANGE0` `0x80000000 - 0x9FFFFFFF` 直接映射，非缓存，PLV0
+`KPRANGE1` `0xA0000000 - 0xBFFFFFFF` 直接映射，缓存，PLV0
+`KVRANGE`  `0xC0000000 - 0xFFFFFFFF` 页映射，缓存，PLV0
 ============ =========================== =============================
 
-鐢ㄦ埛妯″紡锛圥LV3锛夊彧鑳借闂?UVRANGE銆傚浜庣洿鎺ユ槧灏勭殑 KPRANGE0 鍜?KPRANGE1锛孭A 绛変簬娓呴櫎浜?bit30~31 鐨?VA銆備緥濡傦紝0x00001000 鐨勯潪缂撳瓨鐩存帴鏄犲皠 VA 涓?0x80001000锛岃€?0x00001000 鐨勭紦瀛樼洿鎺ユ槧灏?VA 涓?0xA0001000銆?
-榛樿鎯呭喌涓嬶紝LA64 鐨勬暣涓櫄鎷熷湴鍧€绌洪棿閰嶇疆濡備笅锛?
+用户模式（PLV3）只能访UVRANGE。对于直接映射的 KPRANGE0 KPRANGE1，PA 等于清除bit30~31 VA。例如，0x00001000 的非缓存直接映射 VA 0x80001000，0x00001000 的缓存直接映VA 0xA0001000
+默认情况下，LA64 的整个虚拟地址空间配置如下
 ============ ====================== ======================================
-鍚嶇О         鍦板潃鑼冨洿                灞炴€?============ ====================== ======================================
-`XUVRANGE` ``0x0000000000000000 - 椤垫槧灏勶紝缂撳瓨锛孭LV0~3
+名称         地址范围                属============ ====================== ======================================
+`XUVRANGE` ``0x0000000000000000 - 页映射，缓存，PLV0~3
              0x3FFFFFFFFFFFFFFF``
-`XSPRANGE` ``0x4000000000000000 - 鐩存帴鏄犲皠锛岀紦瀛?闈炵紦瀛橈紝PLV0
+`XSPRANGE` ``0x4000000000000000 - 直接映射，缓非缓存，PLV0
              0x7FFFFFFFFFFFFFFF``
-`XKPRANGE` ``0x8000000000000000 - 鐩存帴鏄犲皠锛岀紦瀛?闈炵紦瀛橈紝PLV0
+`XKPRANGE` ``0x8000000000000000 - 直接映射，缓非缓存，PLV0
              0xBFFFFFFFFFFFFFFF``
-`XKVRANGE` ``0xC000000000000000 - 椤垫槧灏勶紝缂撳瓨锛孭LV0
+`XKVRANGE` ``0xC000000000000000 - 页映射，缓存，PLV0
              0xFFFFFFFFFFFFFFFF``
 ============ ====================== ======================================
 
-鐢ㄦ埛妯″紡锛圥LV3锛夊彧鑳借闂?XUVRANGE銆傚浜庣洿鎺ユ槧灏勭殑 XSPRANGE 鍜?XKPRANGE锛孭A 绛変簬娓呴櫎浜?bit 60~63 鐨?VA锛岀紦瀛樺睘鎬х敱 VA 涓殑 bit 60~61 閰嶇疆锛? 琛ㄧず寮哄簭闈炵紦瀛橈紝1 琛ㄧず涓€鑷存€х紦瀛橈紝2 琛ㄧず寮卞簭闈炵紦瀛樸€?
-鐩墠鎴戜滑浠呬娇鐢?XKPRANGE 杩涜鐩存帴鏄犲皠锛孹SPRANGE 淇濈暀銆?
-涓句緥璇存槑锛?x00000000_00001000 鐨勫己搴忛潪缂撳瓨鐩存帴鏄犲皠 VA锛堜綅浜?XKPRANGE锛変负 0x80000000_00001000锛屽叾涓€鑷存€х紦瀛樼洿鎺ユ槧灏?VA锛堜綅浜?XKPRANGE锛変负 0x90000000_00001000锛屽叾寮卞簭闈炵紦瀛樼洿鎺ユ槧灏?VA锛堜綅浜?XKPRANGE锛変负 0xA0000000_00001000銆?
-## Loongson 涓?LoongArch 鐨勫叧绯?
+用户模式（PLV3）只能访XUVRANGE。对于直接映射的 XSPRANGE XKPRANGE，PA 等于清除bit 60~63 VA，缓存属性由 VA 中的 bit 60~61 配置 表示强序非缓存，1 表示一致性缓存，2 表示弱序非缓存
+目前我们仅使XKPRANGE 进行直接映射，XSPRANGE 保留
+举例说明x00000000_00001000 的强序非缓存直接映射 VA（位XKPRANGE）为 0x80000000_00001000，其一致性缓存直接映VA（位XKPRANGE）为 0x90000000_00001000，其弱序非缓存直接映VA（位XKPRANGE）为 0xA0000000_00001000
+## Loongson LoongArch 的关
 
-LoongArch 鏄竴绉嶄笉鍚屼簬浠讳綍鍏朵粬鐜版湁鏋舵瀯鐨?RISC ISA锛岃€?Loongson 鏄竴涓鐞嗗櫒绯诲垪銆侺oongson 鍖呭惈 3 涓郴鍒楋細Loongson-1 鏄?32 浣嶅鐞嗗櫒绯诲垪锛孡oongson-2 鏄綆绔?64 浣嶅鐞嗗櫒绯诲垪锛孡oongson-3 鏄珮绔?64 浣嶅鐞嗗櫒绯诲垪銆傛棫娆?Loongson 鍩轰簬 MIPS锛岃€屾柊娆?Loongson 鍩轰簬 LoongArch銆備互 Loongson-3 涓轰緥锛歀oongson-3A1000/3B1500/3A2000/3A3000/3A4000 鍏煎 MIPS锛岃€?Loongson-3A5000锛堝強鍚庣画淇鐗堬級鍏ㄩ儴鍩轰簬 LoongArch銆?
-## 鍙傝€冭祫鏂?
+LoongArch 是一种不同于任何其他现有架构RISC ISA，Loongson 是一个处理器系列。Loongson 包含 3 个系列：Loongson-1 32 位处理器系列，Loongson-2 是低64 位处理器系列，Loongson-3 是高64 位处理器系列。旧Loongson 基于 MIPS，而新Loongson 基于 LoongArch。以 Loongson-3 为例：Loongson-3A1000/3B1500/3A2000/3A3000/3A4000 兼容 MIPS，Loongson-3A5000（及后续修订版）全部基于 LoongArch
+## 参考资
 
-榫欒姱涓瀹樻柟缃戠珯锛?
+龙芯中科官方网站
   http://www.loongson.cn/
 
-榫欒姱涓?LoongArch 寮€鍙戣€呯綉绔欙紙杞欢涓庢枃妗ｏ級锛?
+龙芯LoongArch 开发者网站（软件与文档）
   http://www.loongnix.cn/
 
   https://github.com/loongson/
 
   https://loongson.github.io/LoongArch-Documentation/
 
-LoongArch ISA 鏂囨。锛?
-  https://github.com/loongson/LoongArch-Documentation/releases/latest/download/LoongArch-Vol1-v1.10-CN.pdf 锛堜腑鏂囷級
+LoongArch ISA 文档
+  https://github.com/loongson/LoongArch-Documentation/releases/latest/download/LoongArch-Vol1-v1.10-CN.pdf （中文）
 
-  https://github.com/loongson/LoongArch-Documentation/releases/latest/download/LoongArch-Vol1-v1.10-EN.pdf 锛堣嫳鏂囷級
+  https://github.com/loongson/LoongArch-Documentation/releases/latest/download/LoongArch-Vol1-v1.10-EN.pdf （英文）
 
-LoongArch ELF psABI 鏂囨。锛?
-  https://github.com/loongson/LoongArch-Documentation/releases/latest/download/LoongArch-ELF-ABI-v2.01-CN.pdf 锛堜腑鏂囷級
+LoongArch ELF psABI 文档
+  https://github.com/loongson/LoongArch-Documentation/releases/latest/download/LoongArch-ELF-ABI-v2.01-CN.pdf （中文）
 
-  https://github.com/loongson/LoongArch-Documentation/releases/latest/download/LoongArch-ELF-ABI-v2.01-EN.pdf 锛堣嫳鏂囷級
+  https://github.com/loongson/LoongArch-Documentation/releases/latest/download/LoongArch-ELF-ABI-v2.01-EN.pdf （英文）
 
-榫欒姱涓?LoongArch 鐨?Linux 鍐呮牳浠撳簱锛?
+龙芯LoongArch Linux 内核仓库
   https://git.kernel.org/pub/scm/linux/kernel/git/chenhuacai/linux-loongson.git

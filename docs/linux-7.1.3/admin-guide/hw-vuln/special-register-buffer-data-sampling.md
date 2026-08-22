@@ -1,18 +1,18 @@
 ﻿
-## SRBDS - 鐗规畩瀵勫瓨鍣ㄧ紦鍐插尯鏁版嵁閲囨牱
+## SRBDS - 特殊寄存器缓冲区数据采样
 
 
-SRBDS 鏄竴绉嶇‖浠舵紡娲烇紝瀹冨厑璁?MDS
-Documentation/admin-guide/hw-vuln/mds.rst 鎶€鏈潵鎺ㄦ柇浠庣壒娈婂瘎瀛樺櫒璁块棶杩斿洖鐨勫€笺€傜壒娈婂瘎瀛樺櫒
-璁块棶鏄鏍稿锛坥ff core锛夊瘎瀛樺櫒鐨勮闂€傛牴鎹?Intel 鐨勮瘎浼帮紝鍏锋湁闅愮瀹夊叏鎬ч鏈熺殑閭ｄ簺鐗规畩
-瀵勫瓨鍣ㄨ鍙栨槸 RDRAND銆丷DSEED 涓?SGX EGETKEY銆?
-褰撲娇鐢?RDRAND銆丷DSEED 涓?EGETKEY 鎸囦护鏃讹紝鏁版嵁閫氳繃鏄撳彈 MDS 鏀诲嚮鐨勭壒娈婂瘎瀛樺櫒鏈哄埗绉诲姩鍒?鏍稿績銆?
-### 鍙楀奖鍝嶇殑澶勭悊鍣?
+SRBDS 是一种硬件漏洞，它允MDS
+Documentation/admin-guide/hw-vuln/mds.rst 技术来推断从特殊寄存器访问返回的值。特殊寄存器
+访问是对核外（off core）寄存器的访问。根Intel 的评估，具有隐私安全性预期的那些特殊
+寄存器读取是 RDRAND、RDSEED SGX EGETKEY
+当使RDRAND、RDSEED EGETKEY 指令时，数据通过易受 MDS 攻击的特殊寄存器机制移动核心
+### 受影响的处理
 
-瀹炵幇浜?RDRAND 鍜?鎴?RDSEED 鐨勬牳蹇冨瀷鍙凤紙妗岄潰銆佺Щ鍔ㄣ€乆eon-E3锛夊彲鑳戒細鍙楀埌褰卞搷銆?
-濡傛灉澶勭悊鍣ㄧ殑 Family_Model 涓?stepping 鍦ㄤ互涓嬪垪琛ㄤ腑锛屽垯鍙?SRBDS 褰卞搷锛屼絾浠ヤ笅渚嬪锛氬垪鍑虹殑
-澶勭悊鍣ㄥ湪 Intel TSX 鍙敤鍗存湭鍚敤鏃跺鍑?MDS_NO銆傚悗涓€绫诲鐞嗗櫒浠呭綋杞欢浣跨敤 TSX_CTRL_MSR
-鍚敤 Intel TSX 鏃舵墠鍙楀奖鍝嶏紝鍚﹀垯涓嶅彈褰卞搷銆?
+实现RDRAND RDSEED 的核心型号（桌面、移动、Xeon-E3）可能会受到影响
+如果处理器的 Family_Model stepping 在以下列表中，则SRBDS 影响，但以下例外：列出的
+处理器在 Intel TSX 可用却未启用时导MDS_NO。后一类处理器仅当软件使用 TSX_CTRL_MSR
+启用 Intel TSX 时才受影响，否则不受影响
   =============  ============  ========
   common name    Family_Model  Stepping
   =============  ============  ========
@@ -32,63 +32,63 @@ Documentation/admin-guide/hw-vuln/mds.rst 鎶€鏈潵鎺ㄦ柇浠庣壒娈�
   Kabylake       06_9EH        <= 0xD
   =============  ============  ========
 
-### 鐩稿叧 CVE
+### 相关 CVE
 
 
-浠ヤ笅 CVE 鏉＄洰涓?SRBDS 闂鐩稿叧锛?
+以下 CVE 条目SRBDS 问题相关
     ==============  =====  =====================================
-    CVE-2020-0543   SRBDS  鐗规畩瀵勫瓨鍣ㄧ紦鍐插尯鏁版嵁閲囨牱
+    CVE-2020-0543   SRBDS  特殊寄存器缓冲区数据采样
     ==============  =====  =====================================
 
-### 鏀诲嚮鍦烘櫙
+### 攻击场景
 
 
-闈炵壒鏉冪敤鎴峰彲浠ヤ娇鐢?MDS 鎶€鏈紝鎻愬彇鍦ㄥ彟涓€涓牳蹇冩垨鍏勫紵绾跨▼涓婃墽琛岀殑 RDRAND 涓?RDSEED 鎵€杩斿洖鐨?鍊笺€?
+非特权用户可以使MDS 技术，提取在另一个核心或兄弟线程上执行的 RDRAND RDSEED 所返回值
 
-### 缂撹В鏈哄埗
-
-
-Intel 灏嗗彂甯冨井鐮佹洿鏂帮紝淇敼 RDRAND銆丷DSEED 涓?EGETKEY 鎸囦护锛屽湪绉樺瘑鐗规畩瀵勫瓨鍣ㄦ暟鎹鍙︿竴涓?閫昏緫澶勭悊鍣ㄨ闂箣鍓嶏紝瑕嗙洊鍏变韩鏆傚瓨缂撳啿鍖轰腑鐨勭瀵嗙壒娈婂瘎瀛樺櫒鏁版嵁銆?
-鍦ㄦ墽琛?RDRAND銆丷DSEED 鎴?EGETKEY 鎸囦护鏈熼棿锛屾潵鑷叾浠栭€昏緫澶勭悊鍣ㄧ殑鏍稿璁块棶灏嗚寤惰繜锛岀洿鍒?鐗规畩瀵勫瓨鍣ㄨ鍙栧畬鎴愶紝骞朵笖鍏变韩鏆傚瓨缂撳啿鍖轰腑鐨勭瀵嗘暟鎹瑕嗙洊銆?
-杩欏鎬ц兘鏈変笁涓奖鍝嶏細
-
-#. RDRAND銆丷DSEED 鎴?EGETKEY 鎸囦护鍏锋湁鏇撮珮鐨勫欢杩熴€?
-#. 鍦ㄥ涓€昏緫澶勭悊鍣ㄤ笂鍚屾椂鎵ц RDRAND 灏嗚涓茶鍖栵紝瀵艰嚧 RDRAND 鐨勬渶澶у甫瀹芥暣浣撲笅闄嶃€?
-#. 鎵ц RDRAND銆丷DSEED 鎴?EGETKEY 浼氬欢杩熸潵鑷叾浠栭€昏緫澶勭悊鍣ㄣ€佹湭鍛戒腑鍏舵牳蹇冪紦瀛樼殑鍐呭瓨璁块棶锛?   鍏跺奖鍝嶇被浼间簬浼犵粺鐨勯攣瀹氱紦瀛樿鎷嗗垎锛坙ocked cache-line-split锛夎闂€?
-寰爜鏇存柊鎻愪緵浜嗕竴绉嶉€€鍑烘満鍒讹紙RNGDS_MITG_DIS锛夛紝鐢ㄤ簬鍦?Intel Software Guard Extensions
-锛圛ntel SGX锛夊鐨?enclave 涓墽琛?RDRAND 涓?RDSEED 鎸囦护鏃剁鐢ㄧ紦瑙ｃ€傚湪浣跨敤姝ら€€鍑烘満鍒剁鐢?缂撹В鐨勯€昏緫澶勭悊鍣ㄤ笂锛孯DRAND 涓?RDSEED 鎵ц涓嶄細鑺辫垂鏇撮暱鏃堕棿锛屼篃涓嶄細褰卞搷鍏勫紵閫昏緫澶勭悊鍣ㄧ殑
-鍐呭瓨璁块棶鎬ц兘銆傝閫€鍑烘満鍒朵笉褰卞搷 Intel SGX enclave锛堝寘鎷湪 enclave 鍐呮墽琛?RDRAND 鎴?RDSEED锛?浠ュ強 EGETKEY 鐨勬墽琛岋級銆?
-### IA32_MCU_OPT_CTRL MSR 瀹氫箟
+### 缓解机制
 
 
-闄や簡閽堝姝ら棶棰樼殑缂撹В鎺柦澶栵紝Intel 杩樻柊澧炰簡涓€涓嚎绋嬩綔鐢ㄥ煙鐨?IA32_MCU_OPT_CTRL MSR
-锛堝湴鍧€ 0x123锛夈€傝 MSR 浠ュ強 RNGDS_MITG_DIS锛堜綅 0锛夌殑瀛樺湪鐢?CPUID.(EAX=07H,ECX=0).EDX[SRBDS_CTRL = 9]==1 鏋氫妇銆傝 MSR 閫氳繃寰爜鏇存柊寮曞叆銆?
-灏嗘煇涓€昏緫澶勭悊鍣ㄧ殑 IA32_MCU_OPT_CTRL[^0^]锛圧NGDS_MITG_DIS锛夎涓?1锛屼細绂佺敤璇ラ€昏緫澶勭悊鍣ㄤ笂
-鍦?Intel SGX enclave 澶栨墽琛岀殑 RDRAND 涓?RDSEED 鐨勭紦瑙ｃ€備负鏌愪釜鐗瑰畾閫昏緫澶勭悊鍣ㄩ€€鍑虹紦瑙ｏ紝涓嶄細
-褰卞搷鍏朵粬閫昏緫澶勭悊鍣ㄧ殑 RDRAND 涓?RDSEED 缂撹В銆?
-娉ㄦ剰锛屽湪 Intel SGX enclave 鍐呴儴锛屾棤璁?RNGDS_MITG_DS 鐨勫€煎浣曪紝閮戒細搴旂敤缂撹В銆?
-### 鍐呮牳鍛戒护琛屼笂鐨勭紦瑙ｆ帶鍒?
+Intel 将发布微码更新，修改 RDRAND、RDSEED EGETKEY 指令，在秘密特殊寄存器数据被另一逻辑处理器访问之前，覆盖共享暂存缓冲区中的秘密特殊寄存器数据
+在执RDRAND、RDSEED EGETKEY 指令期间，来自其他逻辑处理器的核外访问将被延迟，直特殊寄存器读取完成，并且共享暂存缓冲区中的秘密数据被覆盖
+这对性能有三个影响：
 
-鍐呮牳鍛戒护琛屽厑璁稿湪寮曞鏃堕€氳繃 "srbds=" 閫夐」鎺у埗 SRBDS 缂撹В銆傝閫夐」涓猴細
+#. RDRAND、RDSEED EGETKEY 指令具有更高的延迟
+#. 在多个逻辑处理器上同时执行 RDRAND 将被串行化，导致 RDRAND 的最大带宽整体下降
+#. 执行 RDRAND、RDSEED EGETKEY 会延迟来自其他逻辑处理器、未命中其核心缓存的内存访问   其影响类似于传统的锁定缓存行拆分（locked cache-line-split）访问
+微码更新提供了一种退出机制（RNGDS_MITG_DIS），用于Intel Software Guard Extensions
+（Intel SGX）外enclave 中执RDRAND RDSEED 指令时禁用缓解。在使用此退出机制禁缓解的逻辑处理器上，RDRAND RDSEED 执行不会花费更长时间，也不会影响兄弟逻辑处理器的
+内存访问性能。该退出机制不影响 Intel SGX enclave（包括在 enclave 内执RDRAND RDSEED以及 EGETKEY 的执行）
+### IA32_MCU_OPT_CTRL MSR 定义
+
+
+除了针对此问题的缓解措施外，Intel 还新增了一个线程作用域IA32_MCU_OPT_CTRL MSR
+（地址 0x123）。该 MSR 以及 RNGDS_MITG_DIS（位 0）的存在CPUID.(EAX=07H,ECX=0).EDX[SRBDS_CTRL = 9]==1 枚举。该 MSR 通过微码更新引入
+将某个逻辑处理器的 IA32_MCU_OPT_CTRL[^0^]（RNGDS_MITG_DIS）设1，会禁用该逻辑处理器上
+Intel SGX enclave 外执行的 RDRAND RDSEED 的缓解。为某个特定逻辑处理器退出缓解，不会
+影响其他逻辑处理器的 RDRAND RDSEED 缓解
+注意，在 Intel SGX enclave 内部，无RNGDS_MITG_DS 的值如何，都会应用缓解
+### 内核命令行上的缓解控
+
+内核命令行允许在引导时通过 "srbds=" 选项控制 SRBDS 缓解。该选项为：
 
   ============= =============================================================
-  off           姝ら€夐」鍦ㄥ彈褰卞搷鐨勫钩鍙颁笂绂佺敤 RDRAND 涓?RDSEED 鐨?SRBDS 缂撹В銆?  ============= =============================================================
+  off           此选项在受影响的平台上禁用 RDRAND RDSEED SRBDS 缓解  ============= =============================================================
 
-### SRBDS 绯荤粺淇℃伅
+### SRBDS 系统信息
 
 
-Linux 鍐呮牳閫氳繃 sysfs 鎻愪緵婕忔礊鐘舵€佷俊鎭€傚浜?SRBDS锛屽彲閫氳繃浠ヤ笅 sysfs 鏂囦欢璁块棶锛?/sys/devices/system/cpu/vulnerabilities/srbds
+Linux 内核通过 sysfs 提供漏洞状态信息。对SRBDS，可通过以下 sysfs 文件访问/sys/devices/system/cpu/vulnerabilities/srbds
 
-璇ユ枃浠跺彲鑳藉寘鍚殑鍊间负锛?
+该文件可能包含的值为
  ============================== =============================================
- Not affected                   澶勭悊鍣ㄤ笉瀛樺湪婕忔礊
- Vulnerable                     澶勭悊鍣ㄥ瓨鍦ㄦ紡娲炰笖缂撹В宸茬鐢? Vulnerable: No microcode       澶勭悊鍣ㄥ瓨鍦ㄦ紡娲炰笖缂哄皯缂撹В寰爜
- Mitigation: Microcode          澶勭悊鍣ㄥ瓨鍦ㄦ紡娲炰笖缂撹В宸茬敓鏁? Mitigation: TSX disabled       澶勭悊鍣ㄤ粎褰?TSX 鍚敤鏃跺瓨鍦ㄦ紡娲烇紝鑰屾湰绯荤粺鍚姩鏃?                                浠?TSX 绂佺敤鏂瑰紡寮曞
+ Not affected                   处理器不存在漏洞
+ Vulnerable                     处理器存在漏洞且缓解已禁 Vulnerable: No microcode       处理器存在漏洞且缺少缓解微码
+ Mitigation: Microcode          处理器存在漏洞且缓解已生 Mitigation: TSX disabled       处理器仅TSX 启用时存在漏洞，而本系统启动                                TSX 禁用方式引导
  Unknown: Dependent on
- hypervisor status              杩愯鍦ㄥ彈褰卞搷浣嗘棤娉曞緱鐭ュ涓绘満澶勭悊鍣ㄦ槸鍚﹀凡缂撹В鎴?                                瀛樺湪婕忔礊鐨勮櫄鎷熷鎴锋満澶勭悊鍣ㄤ笂
+ hypervisor status              运行在受影响但无法得知宿主机处理器是否已缓解                                存在漏洞的虚拟客户机处理器上
  ============================== =============================================
 
-### SRBDS 榛樿缂撹В
+### SRBDS 默认缓解
 
 
-杩欎竴鏂扮殑寰爜鍦ㄦ墽琛?RDRAND銆丷DSEED 鏃朵覆琛屽寲澶勭悊鍣ㄨ闂紝纭繚鍏变韩缂撳啿鍖哄湪琚噴鏀惧鐢ㄤ箣鍓?琚鐩栥€備娇鐢?"srbds=off" 鍐呮牳鍛戒护琛屾潵绂佺敤 RDRAND 涓?RDSEED 鐨勭紦瑙ｃ€?
+这一新的微码在执RDRAND、RDSEED 时串行化处理器访问，确保共享缓冲区在被释放复用之被覆盖。使"srbds=off" 内核命令行来禁用 RDRAND RDSEED 的缓解
