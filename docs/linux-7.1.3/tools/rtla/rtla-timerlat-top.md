@@ -13,7 +13,7 @@
 ## DESCRIPTION
 
 
-**rtla timerlat top** 鏄剧ず鏉ヨ嚜 **timerlat** tracer 鐨勫懆鏈熸€ц緭鍑虹殑鎽樿銆傚畠杩橀€氳繃 **osnoise:** tracepoints 鎻愪緵姣忎釜鎿嶄綔绯荤粺鍣０鐨勪俊鎭紝鍙€氳繃閫夐」 **-T** 鏌ョ湅銆?
+**rtla timerlat top** 显示来自 **timerlat** tracer 的周期性输出的摘要。它还通过 **osnoise:** tracepoints 提供每个操作系统噪声的信息，可通过选项 **-T** 查看
 ## OPTIONS
 
 
@@ -21,12 +21,12 @@
 
 **--aa-only** **us**
 
-        璁剧疆鍋滄杩借釜鏉′欢骞惰繍琛岋紝浣嗕笉鏀堕泦鍜屾樉绀虹粺璁′俊鎭€?        濡傛灉绯荤粺鍛戒腑鍋滄杩借釜鏉′欢锛屽垯鎵撳嵃鑷姩鍒嗘瀽銆傝閫夐」鏈夊姪浜庨檷浣?rtla timerlat 鐨?CPU 鍗犵敤锛?        鍦ㄤ笉鏀堕泦缁熻淇℃伅寮€閿€鐨勬儏鍐典笅鍚敤璋冭瘯銆?
+        设置停止追踪条件并运行，但不收集和显示统计信息        如果系统命中停止追踪条件，则打印自动分析。该选项有助于降rtla timerlat CPU 占用        在不收集统计信息开销的情况下启用调试
 
 ## EXAMPLE
 
 
-鍦ㄤ笅闈㈢殑渚嬪瓙涓紝timerlat tracer 鍦?cpu **1-23** 涓婁互鑷姩杩借釜妯″紡鍚姩锛屽苟鎸囩ず tracer 鍦ㄥ嚭鐜?**40 us** 寤惰繜鎴?```
+在下面的例子中，timerlat tracer cpu **1-23** 上以自动追踪模式启动，并指示 tracer 在出**40 us** 延迟```
 
   # timerlat -a 40 -c 1-23 -q
                                      Timer Latency
@@ -90,9 +90,9 @@
   Saving trace to timerlat_trace.txt
 
 ```
-鍦ㄨ繖绉嶆儏鍐典笅锛屼富瑕佸洜绱犳槸澶勭悊 **timerlat** 鍞ら啋鐨?**IRQ 澶勭悊绋嬪簭**鎵€閬彈鐨勫欢杩燂細**65.52%**銆傝繖鍙兘鐢卞綋鍓嶇嚎绋嬪睆钄戒腑鏂紩璧凤紝鍙互鍦ㄩ樆濉炵嚎绋嬫爤璺熻釜涓湅鍒帮細褰撳墠绾跨▼锛?*objtool:49256**锛夊湪 btrfs 鏂囦欢绯荤粺涓繘琛?write 绯荤粺璋冪敤鏃讹紝閫氳繃 mem cgroup 鍐呯殑 **raw spin lock** 鎿嶄綔绂佺敤浜嗕腑鏂€?
-鍘熷 trace 琚繚瀛樺湪 **timerlat_trace.txt** 鏂囦欢涓互澶囪繘涓€姝ュ垎鏋愩€?
-娉ㄦ剰锛?*rtla timerlat** 鏄湪涓嶆敼鍙?**timerlat** tracer 绾跨▼浼樺厛绾х殑鎯呭喌涓嬪惎鍔ㄧ殑銆傝繖閫氬父涓嶉渶瑕侊紝鍥犱负杩欎簺绾跨▼榛樿浼樺厛绾т负 **FIFO:95**锛岃繖鏄疄鏃跺唴鏍稿紑鍙戣€呯敤浜庡垎鏋愯皟搴﹀欢杩熺殑甯哥敤浼樺厛绾с€?
+在这种情况下，主要因素是处理 **timerlat** 唤醒**IRQ 处理程序**所遭受的延迟：**65.52%**。这可能由当前线程屏蔽中断引起，可以在阻塞线程栈跟踪中看到：当前线程*objtool:49256**）在 btrfs 文件系统中进write 系统调用时，通过 mem cgroup 内的 **raw spin lock** 操作禁用了中断
+原始 trace 被保存在 **timerlat_trace.txt** 文件中以备进一步分析
+注意*rtla timerlat** 是在不改**timerlat** tracer 线程优先级的情况下启动的。这通常不需要，因为这些线程默认优先级为 **FIFO:95**，这是实时内核开发者用于分析调度延迟的常用优先级
 ### SEE ALSO
 
 **rtla-timerlat**\(1), **rtla-timerlat-hist**\(1)

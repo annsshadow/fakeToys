@@ -1,45 +1,45 @@
 ﻿
-## Nested VMX锛堝祵濂?VMX锛?
+## Nested VMX（嵌VMX
 
 
-### 姒傝堪
+### 概述
 
-鍦?Intel 澶勭悊鍣ㄤ笂锛孠VM 鍒╃敤 Intel 鐨?VMX锛圴irtual-Machine eXtensions锛岃櫄鎷熸満鎵╁睍锛夋潵杞绘澗銆侀珮鏁堝湴杩愯瀹㈡埛鏈烘搷浣滅郴缁熴€傞€氬父鎯呭喌涓嬶紝瀹㈡埛鏈?*涓嶈兘**鑷韩浣滀负 hypervisor 鍐嶅幓杩愯鑷繁鐨勫鎴锋満锛屽洜涓哄鎴锋満鏃犳硶浣跨敤 VMX 鎸囦护銆?
+Intel 处理器上，KVM 利用 Intel VMX（Virtual-Machine eXtensions，虚拟机扩展）来轻松、高效地运行客户机操作系统。通常情况下，客户*不能**自身作为 hypervisor 再去运行自己的客户机，因为客户机无法使用 VMX 指令
 
-"Nested VMX"锛堝祵濂?VMX锛夌壒鎬у～琛ヤ簡杩欎竴缂哄け鐨勮兘鍔涒€斺€斿畠鍏佽瀹㈡埛鏈?hypervisor锛堜娇鐢?VMX锛夊啀鍘昏繍琛屽祵濂楃殑瀹㈡埛鏈恒€傞€氳繃鍏佽瀹㈡埛鏈轰娇鐢?VMX 鎸囦护锛屽苟浠ュ崟绾?VMX 鍙敤鐨勭‖浠舵纭湴銆侀珮鏁堝湴妯℃嫙锛屾潵瀹炵幇杩欎竴鐐广€?
+"Nested VMX"（嵌VMX）特性填补了这一缺失的能力——它允许客户hypervisor（使VMX）再去运行嵌套的客户机。通过允许客户机使VMX 指令，并以单VMX 可用的硬件正确地、高效地模拟，来实现这一点
 
-鍏充簬宓屽 VMX 鐗规€ц儗鍚庣殑鐞嗚銆佸疄鐜板強鎬ц兘鐗瑰緛鐨勬洿璇︾粏鎻忚堪锛屽彲鍙傝€?OSDI 2010 璁烘枃 "The Turtles Project: Design and Implementation of Nested Virtualization"锛屽湴鍧€濡備笅锛?
+关于嵌套 VMX 特性背后的理论、实现及性能特征的更详细描述，可参OSDI 2010 论文 "The Turtles Project: Design and Implementation of Nested Virtualization"，地址如下
 
 https://www.usenix.org/events/osdi10/tech/full_papers/Ben-Yehuda.pdf
 
 
-### Terminology锛堟湳璇級
+### Terminology（术语）
 
-鍗曠骇铏氭嫙鍖栧寘鍚袱涓眰绾р€斺€攈ost锛圞VM锛変笌瀹㈡埛鏈猴紙guests锛夈€傚湪宓屽铏氭嫙鍖栦腑锛屽垯鏈変笁涓眰绾э細host锛圞VM锛岀О涓?L0锛夈€乬uest hypervisor锛堢О涓?L1锛夈€佸祵濂楃殑瀹㈡埛鏈猴紙绉颁负 L2锛夈€?
+单级虚拟化包含两个层级——host（KVM）与客户机（guests）。在嵌套虚拟化中，则有三个层级：host（KVM，称L0）、guest hypervisor（称L1）、嵌套的客户机（称为 L2）
 
 
-### 杩愯 nested VMX
+### 运行 nested VMX
 
-鑷?Linux 鍐呮牳 v4.20 璧凤紝nested VMX 鐗规€ч粯璁ゅ惎鐢ㄣ€傚湪鏇存棭鐨?Linux 鍐呮牳涓婏紝鍙€氳繃缁?kvm-intel 妯″潡浼犻€?"nested=1" 閫夐」鏉ュ惎鐢ㄣ€?
+Linux 内核 v4.20 起，nested VMX 特性默认启用。在更早Linux 内核上，可通过kvm-intel 模块传"nested=1" 选项来启用
 
-杩欎笉闇€瑕佸鐢ㄦ埛绌洪棿锛坬emu锛夊仛浠讳綍淇敼銆備笉杩囷紝qemu 榛樿妯℃嫙鐨?CPU 绫诲瀷锛坬emu64锛夊苟鏈垪鍑?"VMX" CPU 鐗规€э紝鍥犳闇€瑕佹樉寮忓惎鐢紝鍙€氳繃浠ヤ笅浠讳竴绉?qemu 閫夐」锛?
+这不需要对用户空间（qemu）做任何修改。不过，qemu 默认模拟CPU 类型（qemu64）并未列"VMX" CPU 特性，因此需要显式启用，可通过以下任一qemu 选项
 
-- 澶勭悊鍣?host锛堜娇妯℃嫙鐨?CPU 鐗规€х瓑鍚屼簬鐪熷疄 CPU锛?
+- 处理host（使模拟CPU 特性等同于真实 CPU
 
-- 澶勭悊鍣?qemu64,+vmx锛堝湪宸插懡鍚嶇殑 CPU 绫诲瀷涓婁粎娣诲姞 vmx 鐗规€э級
+- 处理qemu64,+vmx（在已命名的 CPU 类型上仅添加 vmx 特性）
 
 
 ### ABIs
 
-Nested VMX 鐨勭洰鏍囨槸锛堟渶缁堬級鍚?guest hypervisor 鍛堢幇涓€涓爣鍑嗐€佸畬鍏ㄥ彲鐢ㄧ殑 VMX 瀹炵幇銆傚洜姝わ紝瀹樻柟瑙勮寖鐨?ABI 鐢?Intel 鐨?VMX 瑙勮寖鎻愪緵锛屽嵆銆奍ntel 64 涓?IA-32 浣撶郴缁撴瀯杞欢寮€鍙戣€呮墜鍐屻€嬬 3B 鍗枫€傜洰鍓?VMX 鐨勬煇浜涚壒鎬у凡琚畬鍏ㄦ敮鎸侊紝鐩爣鏄渶缁堟敮鎸佸叏閮ㄧ壒鎬э紝浼樺厛鏀寔閭ｄ簺鍦ㄥ疄璺典腑娴佽鐨?hypervisor锛圞VM 鍙婂叾瀹冿級鎵€鐢ㄧ殑 VMX 鐗规€с€?
+Nested VMX 的目标是（最终）guest hypervisor 呈现一个标准、完全可用的 VMX 实现。因此，官方规范ABI Intel VMX 规范提供，即《Intel 64 IA-32 体系结构软件开发者手册》第 3B 卷。目VMX 的某些特性已被完全支持，目标是最终支持全部特性，优先支持那些在实践中流行hypervisor（KVM 及其它）所用的 VMX 特性
 
-鍦?VMX 鐨勫疄鐜颁腑锛宯ested VMX 鍚?L1 鍛堢幇 VMCS 缁撴瀯浣撱€傛寜瑙勮寖瑕佹眰锛屽叾涓袱涓瓧娈?`revision_id` 涓?`abort` 鏄敤鎴峰彲瑙佺殑锛涜缁撴瀯浣撳鐢ㄦ埛鑰岃█鏄?*涓嶉€忔槑**锛坥paque锛夌殑锛岀敤鎴蜂笉搴斿叧蹇冨唴閮ㄧ粨鏋勶紝鑰屽簲閫氳繃 VMREAD 涓?VMWRITE 鎸囦护鏉ヨ闂€?
+VMX 的实现中，nested VMX L1 呈现 VMCS 结构体。按规范要求，其中两个字`revision_id` `abort` 是用户可见的；该结构体对用户而言*不透明**（opaque）的，用户不应关心内部结构，而应通过 VMREAD VMWRITE 指令来访问
 
-涓嶈繃锛屽嚭浜庤皟璇曠洰鐨勶紝KVM 寮€鍙戣€呭彲鑳芥湁鍏磋叮浜嗚В璇ョ粨鏋勪綋鐨勫唴閮ㄣ€傝缁撴瀯浣?`vmcs12` 瀹氫箟鍦?`arch/x86/kvm/vmx.c` 涓€?
+不过，出于调试目的，KVM 开发者可能有兴趣了解该结构体的内部。该结构`vmcs12` 定义`arch/x86/kvm/vmx.c` 中
 
-鍚嶇О "vmcs12" 鎸囩敱 L1 涓?L2 鏋勫缓鐨?VMCS锛涗唬鐮佷腑鐨?"vmcs01" 鎸囩敱 L0 涓?L1 鏋勫缓鐨?VMCS锛?vmcs02" 鎸囩敱 L0 瀹為檯涓鸿繍琛屼腑鐨?L2 鏋勫缓鐨?VMCS鈥斺€旇繖鍦ㄥ墠杩拌鏂囦腑鏈夎缁嗚В閲娿€?
+名称 "vmcs12" 指由 L1 L2 构建VMCS；代码中"vmcs01" 指由 L0 L1 构建VMCSvmcs02" 指由 L0 实际为运行中L2 构建VMCS——这在前述论文中有详细解释
 
-涓烘柟渚胯捣瑙侊紝杩欓噷澶嶈堪 `vmcs12` 缁撴瀯浣撶殑鍐呭銆傝嫢鍏跺唴閮ㄥ彂鐢熷彉鍖栵紝灏嗙牬鍧忚法 KVM 鐗堟湰鐨勫疄鏃惰縼绉伙紙live migration锛夈€傚彧鏈夊綋 `vmcs12` 鐨勫唴閮ㄧ粨鏋勪綋鎴?`shadow_vmcs` 鍙戠敓鍙樺寲鏃讹紝鎵嶉渶瑕佷慨鏀?`VMCS12_REVISION`锛堜綅浜?vmx.c 涓級銆?
+为方便起见，这里复述 `vmcs12` 结构体的内容。若其内部发生变化，将破坏跨 KVM 版本的实时迁移（live migration）。只有当 `vmcs12` 的内部结构体`shadow_vmcs` 发生变化时，才需要修`VMCS12_REVISION`（位vmx.c 中）
 
 ```
 	typedef u64 natural_width;
@@ -183,7 +183,7 @@ Nested VMX 鐨勭洰鏍囨槸锛堟渶缁堬級鍚?guest hypervisor 鍛堢幇涓
 
 ### Authors
 
-琛ヤ竵鐢变互涓嬩汉鍛樼紪鍐欙細
+补丁由以下人员编写：
 
 - Abel Gordon, abelg < > il.ibm.com
 - Nadav Har'El, nyh < > il.ibm.com
@@ -191,17 +191,17 @@ Nested VMX 鐨勭洰鏍囨槸锛堟渶缁堬級鍚?guest hypervisor 鍛堢幇涓
 - Ben-Ami Yassor, benami < > il.ibm.com
 - Muli Ben-Yehuda, muli < > il.ibm.com
 
-璐＄尞鑰咃細
+贡献者：
 
 - Anthony Liguori, aliguori < > us.ibm.com
 - Mike Day, mdday < > us.ibm.com
 - Michael Factor, factor < > il.ibm.com
 - Zvi Dubitzky, dubi < > il.ibm.com
 
-鏈変环鍊肩殑瀹￠槄锛?
+有价值的审阅
 
 - Avi Kivity, avi < > redhat.com
 - Gleb Natapov, gleb < > redhat.com
 - Marcelo Tosatti, mtosatti < > redhat.com
 - Kevin Tian, kevin.tian < > intel.com
-- 浠ュ強鍏朵粬浜恒€?
+- 以及其他人

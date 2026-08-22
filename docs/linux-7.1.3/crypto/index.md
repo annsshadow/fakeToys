@@ -1,10 +1,10 @@
-﻿## Crypto API锛堝姞瀵?API锛?
+﻿## Crypto API（加API
 
 
 :Author: Stephan Mueller
 :Author: Marek Vasut
 
-鏈枃妗ｆ杩?Linux 鍐呮牳 crypto API 鐨勬蹇点€佸叧浜庡紑鍙戝瘑鐮佸疄鐜帮紙cipher锛夌殑缁嗚妭銆佸皢 API 鐢ㄤ簬鍔犲瘑鐢ㄤ緥锛屼互鍙婄紪绋嬬ず渚嬨€?
+本文档概Linux 内核 crypto API 的概念、关于开发密码实现（cipher）的细节、将 API 用于加密用例，以及编程示例
 
 - [libcrypto](libcrypto)
 - [intro](intro)

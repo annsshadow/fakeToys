@@ -1,30 +1,30 @@
 ﻿
-## SCSI 瀛愮郴缁?
+## SCSI 瀛愮郴缁。
 
-鏈〉鏄?SCSI 瀛愮郴缁熸枃妗ｇ殑绱㈠紩锛屾眹鎬昏妯″潡涓嬬殑鍙傝€冩枃妗ｄ笌鍚勫瓙绔犺妭鍏ュ彛锛堟杩般€侀┍鍔?API銆侀┍鍔ㄥ弬鏁般€佷富鏈洪€傞厤鍣ㄩ┍鍔ㄧ瓑锛夛紝渚夸簬璇昏€呮寜涓婚蹇€熷畾浣嶇浉鍏宠鏄庛€?
-
-
-鏈〉闈负璇ュ垎绫荤殑鏂囨。绱㈠紩锛屾眹鎬荤浉鍏崇殑鏉＄洰閾炬帴锛涢摼鎺ョ洰鏍囦笌鏍囪瘑绗︿繚鎸佸師鏂囦互渚夸簬妫€绱€?
+本页SCSI 子系统文档的索引，汇总该模块下的参考文档与各子章节入口（概述、驱API、驱动参数、主机适配器驱动等），便于读者按主题快速定位相关说明
 
 
-## 绠€浠?
+本页面为该分类的文档索引，汇总相关的条目链接；链接目标与标识符保持原文以便于检索
+
+
+## 简
 
 
 - [SCSI](scsi)
 
-## SCSI 椹卞姩 API
+## SCSI 驱动 API
 
 
 - [scsi_mid_low_api](scsi_mid_low_api)
 - [scsi_eh](scsi_eh)
 
-## SCSI 椹卞姩鍙傛暟
+## SCSI 驱动参数
 
 
 - [scsi-parameters](scsi-parameters)
 - [link_power_management_policy](link_power_management_policy)
 
-## SCSI 涓绘満閫傞厤鍣ㄩ┍鍔?
+## SCSI 主机适配器驱
 
 
 - [53c700](53c700)
@@ -62,4 +62,4 @@
 - [tcm_qla2xxx](tcm_qla2xxx)
 - [ufs](ufs)
 - [wd719x](wd719x)
-- [scsi_transport_srp/鍥剧ず](scsi_transport_srp/figures)
+- [scsi_transport_srp/图示](scsi_transport_srp/figures)

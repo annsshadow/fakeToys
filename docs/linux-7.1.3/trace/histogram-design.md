@@ -1,12 +1,12 @@
-﻿## 鐩存柟鍥捐璁¤鏄?
+﻿## 直方图设计说
 
 
 
-:浣滆€? Tom Zanussi <zanussi@kernel.org>
+:作 Tom Zanussi <zanussi@kernel.org>
 
-鏈枃妗ｈ瘯鍥炬弿杩?ftrace 鐩存柟鍥炬槸濡備綍宸ヤ綔鐨勶紝浠ュ強鍚勪釜缁勬垚閮ㄥ垎濡備綍鏄犲皠鍒扮敤浜庡湪 trace_events_hist.c 鍜?tracing_map.c 涓疄鐜板畠浠殑鏁版嵁缁撴瀯銆?
+本文档试图描ftrace 直方图是如何工作的，以及各个组成部分如何映射到用于在 trace_events_hist.c tracing_map.c 中实现它们的数据结构
 
-   浠ヤ笅鎵€鏈?ftrace 鐩存柟鍥惧懡浠ょず渚嬮兘鍋囧畾褰撳墠宸ヤ綔鐩綍涓?
+   以下所ftrace 直方图命令示例都假定当前工作目录
 
 ```
 	# cd /sys/kernel/tracing
@@ -15,17 +15,17 @@
 
 ```
 
-## 'hist_debug' 璺熻釜浜嬩欢鏂囦欢
+## 'hist_debug' 跟踪事件文件
 
 
 
-濡傛灉鍐呮牳缂栬瘧鏃惰缃簡 CONFIG_HIST_TRIGGERS_DEBUG锛屽垯浼氬湪姣忎釜浜嬩欢鐨勫瓙鐩綍涓嚭鐜颁竴涓悕涓?'hist_debug' 鐨勪簨浠舵枃浠躲€傝鏂囦欢鍙殢鏃惰鍙栵紝骞跺皢鏄剧ず鏈枃妗ｆ墍杩扮殑閮ㄥ垎鐩存柟鍥捐Е鍙戝櫒鍐呴儴鐘舵€併€傚叿浣撶殑绀轰緥鍜岃緭鍑哄皢鍦ㄤ笅闈㈢殑娴嬭瘯鐢ㄤ緥涓弿杩般€?
+如果内核编译时设置了 CONFIG_HIST_TRIGGERS_DEBUG，则会在每个事件的子目录中出现一个名'hist_debug' 的事件文件。该文件可随时读取，并将显示本文档所述的部分直方图触发器内部状态。具体的示例和输出将在下面的测试用例中描述
 
-## 鍩虹鐩存柟鍥?
+## 基础直方
 
 
 
-棣栧厛鏄渶鍩虹鐨勭洿鏂瑰浘銆備笅闈㈠嚑涔庢槸浣犵敤鐩存柟鍥捐兘鍋氱殑鏈€绠€鍗曠殑浜嬫儏鈥斺€斿湪鍗曚釜浜嬩欢涓婄敤鍗曚釜閿垱寤轰竴涓洿鏂瑰浘锛?
+首先是最基础的直方图。下面几乎是你用直方图能做的最简单的事情——在单个事件上用单个键创建一个直方图
 
 ```
   # echo 'hist:keys=pid' >> events/sched/sched_waking/trigger
@@ -51,23 +51,23 @@
 
 ```
 
-杩欐浠ｇ爜鍦?sched_waking 浜嬩欢涓婂垱寤轰簡涓€涓互 pid 涓洪敭銆佷互鍗曚釜鍊?hitcount 涓哄€肩殑鐩存柟鍥俱€俬itcount 鍗充娇娌℃湁琚樉寮忔寚瀹氾紝涔熷缁堝瓨鍦ㄤ簬姣忎釜鐩存柟鍥句箣涓€?
+这段代码sched_waking 事件上创建了一个以 pid 为键、以单个hitcount 为值的直方图。hitcount 即使没有被显式指定，也始终存在于每个直方图之中
 
-hitcount 鍊兼槸涓€涓瘡涓《锛坆ucket锛夊搴旂殑鍊硷紝浼氬湪璇ラ敭姣忔鍛戒腑鏃惰嚜鍔ㄩ€掑锛屽湪鏈緥涓閿氨鏄?pid銆?
+hitcount 值是一个每个桶（bucket）对应的值，会在该键每次命中时自动递增，在本例中该键就pid
 
-鍥犳鍦ㄨ繖涓洿鏂瑰浘涓紝姣忎釜 pid 閮芥湁涓€涓嫭绔嬬殑妗讹紝姣忎釜妗朵腑鍖呭惈涓€涓搴旂殑鍊硷紝鐢ㄤ簬缁熻璇?pid 璋冪敤 sched_waking 鐨勬鏁般€?
+因此在这个直方图中，每个 pid 都有一个独立的桶，每个桶中包含一个对应的值，用于统计pid 调用 sched_waking 的次数
 
-姣忎釜鐩存柟鍥鹃兘鐢变竴涓?hist_data 缁撴瀯浣擄紙struct hist_trigger_data锛夎〃绀恒€?
+每个直方图都由一hist_data 结构体（struct hist_trigger_data）表示
 
-涓轰簡璺熻釜鐩存柟鍥句腑鐨勬瘡涓敭鍜屽€煎瓧娈碉紝hist_data 缁存姢浜嗕竴涓悕涓?fields[] 鐨勮繖绫诲瓧娈垫暟缁勩€俧ields[] 鏁扮粍鏄竴涓寘鍚瘡涓洿鏂瑰浘閿拰鍊硷紙杩樺寘鎷彉閲忥紝绋嶅悗璁ㄨ锛夋墍瀵瑰簲鐨?struct hist_field 琛ㄧず鐨勬暟缁勩€傛墍浠ュ浜庝笂闈㈢殑鐩存柟鍥撅紝鎴戜滑鏈変竴涓敭鍜屼竴涓€硷紱鍦ㄦ湰渚嬩腑锛岃繖涓€涓€兼槸 hitcount 鍊硷紝鎵€鏈夌洿鏂瑰浘閮芥嫢鏈夊畠锛屾棤璁哄畠浠槸鍚﹀畾涔変簡璇ュ€硷紝鑰屼笂闈㈢殑鐩存柟鍥惧苟娌℃湁瀹氫箟瀹冦€?
+为了跟踪直方图中的每个键和值字段，hist_data 维护了一个名fields[] 的这类字段数组。fields[] 数组是一个包含每个直方图键和值（还包括变量，稍后讨论）所对应struct hist_field 表示的数组。所以对于上面的直方图，我们有一个键和一个值；在本例中，这一个值是 hitcount 值，所有直方图都拥有它，无论它们是否定义了该值，而上面的直方图并没有定义它
 
-姣忎釜 struct hist_field 閮藉寘鍚竴涓寚鍚戜簨浠?trace_event_file 涓?ftrace_event_field 鐨勬寚閽堬紝浠ュ強涓庝箣鐩稿叧鐨勫悇绫讳俊鎭紝濡傚ぇ灏忋€佸亸绉汇€佺被鍨嬶紝杩樻湁涓€涓?hist field 鍑芥暟锛岀敤浜庝粠 ftrace 浜嬩欢缂撳啿鍖轰腑鍙栧嚭璇ュ瓧娈电殑鏁版嵁锛堝ぇ澶氭暟鎯呭喌涓嬪姝も€斺€旀湁浜?hist_field 姣斿 hitcount 骞朵笉鐩存帴鏄犲皠鍒拌窡韪紦鍐插尯涓殑浜嬩欢瀛楁锛屽湪杩欎簺鎯呭喌涓嬶紝鍏跺嚱鏁板疄鐜颁粠鍒鍙栧緱鍊硷級銆俧lags 瀛楁鎸囩ず璇ュ瓧娈靛睘浜庡摢绉嶇被鍨嬧€斺€旈敭銆佸€笺€佸彉閲忋€佸彉閲忓紩鐢ㄧ瓑锛岄粯璁ゆ槸鍊笺€?
+每个 struct hist_field 都包含一个指向事trace_event_file ftrace_event_field 的指针，以及与之相关的各类信息，如大小、偏移、类型，还有一hist field 函数，用于从 ftrace 事件缓冲区中取出该字段的数据（大多数情况下如此——有hist_field 比如 hitcount 并不直接映射到跟踪缓冲区中的事件字段，在这些情况下，其函数实现从别处取得值）。flags 字段指示该字段属于哪种类型——键、值、变量、变量引用等，默认是值
 
-闄や簡 fields[] 鏁扮粍涔嬪锛屽彟涓€涓噸瑕佺殑 hist_data 鏁版嵁缁撴瀯鏄负璇ョ洿鏂瑰浘鍒涘缓鐨?tracing_map 瀹炰緥锛屽畠淇濆瓨鍦?.map 鎴愬憳涓€倀racing_map 瀹炵幇浜嗙敤浜庡疄鐜扮洿鏂瑰浘鐨勫厤閿佸搱甯岃〃锛堝叧浜庡疄鐜?tracing_map 鐨勫簳灞傛暟鎹粨鏋勶紝璇峰弬闃?kernel/trace/tracing_map.h 涓殑澶ч噺璁ㄨ锛夈€傚氨鏈璁鸿€岃█锛宼racing_map 鍖呭惈鑻ュ共涓《锛屾瘡涓《瀵瑰簲涓€涓敱缁欏畾鐩存柟鍥鹃敭鍝堝笇寰楀埌鐨?tracing_map_elt 瀵硅薄銆?
+除了 fields[] 数组之外，另一个重要的 hist_data 数据结构是为该直方图创建tracing_map 实例，它保存.map 成员中。tracing_map 实现了用于实现直方图的免锁哈希表（关于实tracing_map 的底层数据结构，请参kernel/trace/tracing_map.h 中的大量讨论）。就本讨论而言，tracing_map 包含若干个桶，每个桶对应一个由给定直方图键哈希得到tracing_map_elt 对象
 
-涓嬮潰鏄竴寮犲浘锛屽叾绗竴閮ㄥ垎鎻忚堪浜嗕笂杩扮洿鏂瑰浘鐨?hist_data 浠ュ強鐩稿叧鐨勯敭鍜屽€煎瓧娈点€傛濡備綘鎵€鐪嬪埌鐨勶紝fields 鏁扮粍涓湁涓や釜瀛楁锛屼竴涓槸 hitcount 鐨?val 瀛楁锛屽彟涓€涓槸 pid 閿殑 key 瀛楁銆?
+下面是一张图，其第一部分描述了上述直方图hist_data 以及相关的键和值字段。正如你所看到的，fields 数组中有两个字段，一个是 hitcount val 字段，另一个是 pid 键的 key 字段
 
-涓嬮潰鏄 tracing_map 鍦ㄦ煇涓繍琛屾椂鍒诲彲鑳藉憟鐜扮殑蹇収鍥俱€傚畠璇曞浘灞曠ず hist_data 瀛楁涓?tracing_map 涔嬮棿鐨勫叧绯伙細
+下面是该 tracing_map 在某个运行时刻可能呈现的快照图。它试图展示 hist_data 字段tracing_map 之间的关系：
 
 ```
   +------------------+
@@ -105,15 +105,15 @@ hitcount 鍊兼槸涓€涓瘡涓《锛坆ucket锛夊搴旂殑鍊硷紝
 
 ```
 
-hist_data 鐨?n_vals 鍜?n_fields 鍒掑畾浜?fields[] 鏁扮粍鐨勮寖鍥达紝骞舵妸閿拰鍊间粠浠ｇ爜鍏朵綑閮ㄥ垎涓垎绂诲嚭鏉ャ€?
+hist_data n_vals n_fields 划定fields[] 数组的范围，并把键和值从代码其余部分中分离出来
 
-涓嬮潰鏄竴涓繍琛屾椂鍒荤殑 tracing_map 閮ㄥ垎琛ㄧず鍥撅紝灞曠ず浜嗕粠 fields[] 鏁扮粍鐨勫悇涓儴鍒嗘寚鍚?tracing_map 瀵瑰簲閮ㄥ垎鐨勬寚閽堛€?
+下面是一个运行时刻的 tracing_map 部分表示图，展示了从 fields[] 数组的各个部分指tracing_map 对应部分的指针
 
-tracing_map 鐢变竴涓?tracing_map_entry 鏁扮粍鍜屼竴缁勯鍒嗛厤鐨?tracing_map_elt锛堜笅鍥剧畝鍐欎负 map_entry 鍜?map_elt锛夌粍鎴愩€俬ist_data.map 鏁扮粍涓殑 map_entry 鎬绘暟 = map->max_elts锛堝疄闄呬笂鏄?map->map_size锛屼絾鍏朵腑鍙湁 max_elts 涓浣跨敤銆傝繖鏄?map_insert() 绠楁硶鎵€闇€鐨勪竴涓睘鎬э級銆?
+tracing_map 由一tracing_map_entry 数组和一组预分配tracing_map_elt（下图简写为 map_entry map_elt）组成。hist_data.map 数组中的 map_entry 总数 = map->max_elts（实际上map->map_size，但其中只有 max_elts 个被使用。这map_insert() 算法所需的一个属性）
 
-濡傛灉涓€涓?map_entry 鏈浣跨敤锛屽嵆杩樻病鏈夐敭鍝堝笇鍒板畠锛屽垯瀹冪殑 .key 鍊间负 0锛屽叾 .val 鎸囬拡涓?NULL銆備竴鏃︽煇涓?map_entry 琚崰鐢紝.key 鍊煎氨鍖呭惈璇ラ敭鐨勫搱甯屽€硷紝鑰?.val 鎴愬憳鎸囧悜涓€涓?map_elt锛屽叾涓寘鍚畬鏁寸殑閿互鍙?map_elt.fields[] 鏁扮粍涓瘡涓敭鎴栧€煎搴旂殑涓€涓潯鐩€俶ap_elt.fields[] 鏁扮粍涓湁涓€涓潯鐩搴斾簬鐩存柟鍥句腑鐨勬瘡涓?hist_field锛岃€屾瘡涓洿鏂瑰浘鍊兼墍瀵瑰簲鐨勩€佹寔缁仛鍚堢殑姹傚拰鍊煎氨淇濆瓨鍦ㄨ繖閲屻€?
+如果一map_entry 未被使用，即还没有键哈希到它，则它的 .key 值为 0，其 .val 指针NULL。一旦某map_entry 被占用，.key 值就包含该键的哈希值，.val 成员指向一map_elt，其中包含完整的键以map_elt.fields[] 数组中每个键或值对应的一个条目。map_elt.fields[] 数组中有一个条目对应于直方图中的每hist_field，而每个直方图值所对应的、持续聚合的求和值就保存在这里
 
-璇ュ浘璇曞浘灞曠ず hist_data.fields[] 涓?map_elt.fields[] 涔嬮棿鐨勫叧绯伙紝鍥句腑鐢ㄨ繛绾跨粯鍒朵簡杩欑鍏宠仈锛?
+该图试图展示 hist_data.fields[] map_elt.fields[] 之间的关系，图中用连线绘制了这种关联
 
 ```
   +-----------+		                                                 |  |
@@ -186,30 +186,30 @@ tracing_map 鐢变竴涓?tracing_map_entry 鏁扮粍鍜屼竴缁勯鍒嗛厤�
 
 ```
 
-姣忓綋鍙戠敓涓€涓柊浜嬩欢骞朵笖瀹冨叧鑱斾簡涓€涓?hist 瑙﹀彂鍣ㄦ椂锛屽氨浼氳皟鐢?event_hist_trigger()銆俥vent_hist_trigger() 棣栧厛澶勭悊閿細瀵逛簬閿腑鐨勬瘡涓瓙閿紙鍦ㄤ笂闈㈢殑渚嬪瓙涓紝鍙湁涓€涓搴斾簬 pid 鐨勫瓙閿級锛屼細浠?hist_data.fields[] 涓彇鍑鸿〃绀鸿瀛愰敭鐨?hist_field锛屽苟鍒╃敤涓庤瀛楁鍏宠仈鐨?hist field 鍑芥暟锛屼互鍙婂瓧娈电殑澶у皬鍜屽亸绉伙紝浠庡綋鍓嶈窡韪褰曚腑鍙栧嚭璇ュ瓙閿殑鏁版嵁銆?
+每当发生一个新事件并且它关联了一hist 触发器时，就会调event_hist_trigger()。event_hist_trigger() 首先处理键：对于键中的每个子键（在上面的例子中，只有一个对应于 pid 的子键），会hist_data.fields[] 中取出表示该子键hist_field，并利用与该字段关联hist field 函数，以及字段的大小和偏移，从当前跟踪记录中取出该子键的数据
 
-娉ㄦ剰锛宧ist field 鍑芥暟鏇剧粡鏄?hist_field 缁撴瀯涓殑涓€涓嚱鏁版寚閽堛€傜敱浜庨拡瀵?Spectre 鐨勭紦瑙ｆ帾鏂斤紝瀹冭鏀规垚浜?fn_num锛屽苟涓斾娇鐢?hist_fn_call() 鏉ヨ皟鐢ㄥ搴斾簬 hist_field 缁撴瀯鐨?fn_num 鐨?hist field 鍑芥暟銆?
+注意，hist field 函数曾经hist_field 结构中的一个函数指针。由于针Spectre 的缓解措施，它被改成fn_num，并且使hist_fn_call() 来调用对应于 hist_field 结构fn_num hist field 函数
 
-涓€鏃﹀彇鍥炲畬鏁寸殑閿紝灏辩敤瀹冨埌 tracing_map 涓煡鎵捐閿€傚鏋滄病鏈変笌璇ラ敭鍏宠仈鐨?tracing_map_elt锛屽氨浼氱敵璇蜂竴涓┖鐨勫苟鎻掑叆鍒版槧灏勪腑渚涙柊閿娇鐢ㄣ€傛棤璁哄摢绉嶆儏鍐碉紝閮戒細杩斿洖涓庤閿叧鑱旂殑 tracing_map_elt銆?
+一旦取回完整的键，就用它到 tracing_map 中查找该键。如果没有与该键关联tracing_map_elt，就会申请一个空的并插入到映射中供新键使用。无论哪种情况，都会返回与该键关联的 tracing_map_elt
 
-涓€鏃﹁幏寰椾簡 tracing_map_elt锛屽氨浼氳皟鐢?hist_trigger_elt_update()銆傞【鍚嶆€濅箟锛屽畠鏇存柊璇ュ厓绱狅紝杩欏熀鏈笂鎰忓懗鐫€鏇存柊璇ュ厓绱犵殑瀛楁銆傜洿鏂瑰浘涓殑姣忎釜閿拰鍊奸兘鍏宠仈鐫€涓€涓?tracing_map_field锛屽畠浠悇鑷搴斾簬鍒涘缓鐩存柟鍥炬椂鎵€鍒涘缓鐨勯敭鍜屽€?hist_field銆俬ist_trigger_elt_update() 閬嶅巻姣忎釜鍊?hist_field锛屽苟鍍忓鐞嗛敭閭ｆ牱锛屽埄鐢?hist_field 鐨勫嚱鏁般€佸ぇ灏忓拰鍋忕Щ浠庡綋鍓嶈窡韪褰曚腑鍙栧嚭璇ュ瓧娈电殑鍊笺€備竴鏃﹀彇鍒拌鍊硷紝瀹冨氨绠€鍗曞湴鎶婅繖涓€煎姞鍒拌瀛楁鎸佺画鏇存柊鐨?tracing_map_field.sum 鎴愬憳涓娿€傛湁浜?hist_field 鍑芥暟锛屾瘮濡?hitcount锛屽疄闄呬笂骞朵笉浠庤窡韪褰曚腑鍙栦换浣曚笢瑗匡紙hitcount 鍑芥暟鍙槸鎶婅鏁板櫒 sum 鍔?1锛夛紝浣嗘€濊矾鏄竴鏍风殑銆?
+一旦获得了 tracing_map_elt，就会调hist_trigger_elt_update()。顾名思义，它更新该元素，这基本上意味着更新该元素的字段。直方图中的每个键和值都关联着一tracing_map_field，它们各自对应于创建直方图时所创建的键和hist_field。hist_trigger_elt_update() 遍历每个hist_field，并像处理键那样，利hist_field 的函数、大小和偏移从当前跟踪记录中取出该字段的值。一旦取到该值，它就简单地把这个值加到该字段持续更新tracing_map_field.sum 成员上。有hist_field 函数，比hitcount，实际上并不从跟踪记录中取任何东西（hitcount 函数只是把计数器 sum 1），但思路是一样的
 
-涓€鏃︽墍鏈夊€奸兘琚洿鏂帮紝hist_trigger_elt_update() 灏卞畬鎴愬苟杩斿洖銆傛敞鎰忥紝閿腑鐨勬瘡涓瓙閿篃鏈夊搴旂殑 tracing_map_field锛屼絾 hist_trigger_elt_update() 骞朵笉浼氭煡鐪嬫垨鏇存柊瀹冧滑鈥斺€斿畠浠彧鐢ㄤ簬鎺掑簭锛岃€岃繖鍙互绋嶅悗杩涜銆?
+一旦所有值都被更新，hist_trigger_elt_update() 就完成并返回。注意，键中的每个子键也有对应的 tracing_map_field，但 hist_trigger_elt_update() 并不会查看或更新它们——它们只用于排序，而这可以稍后进行
 
-### 鍩虹鐩存柟鍥炬祴璇?
+### 基础直方图测
 
 
 
-杩欐槸涓€涓€煎緱灏濊瘯鐨勫ソ渚嬪瓙銆傚畠浜х敓 3 涓€煎瓧娈靛拰 2 涓敭锛?
+这是一个值得尝试的好例子。它产生 3 个值字段和 2 个键
 
 ```
   # echo 'hist:keys=common_pid,call_site.sym:values=bytes_req,bytes_alloc,hitcount' >> events/kmem/kmalloc/trigger
 
 ```
 
-瑕佹煡鐪嬭皟璇曟暟鎹紝鍙互 cat 涓€涓?kmem/kmalloc 鐨?'hist_debug' 鏂囦欢銆傚畠浼氭樉绀鸿鐩存柟鍥惧搴旂殑瑙﹀彂鍣ㄤ俊鎭紝浠ュ強涓庤鐩存柟鍥惧叧鑱旂殑 hist_data 鐨勫湴鍧€锛岃繖鍦ㄥ悗闈㈢殑渚嬪瓙涓細寰堟湁鐢ㄣ€傞殢鍚庡畠浼氭樉绀轰笌璇ョ洿鏂瑰浘鍏宠仈鐨勬€?hist_field 鏁伴噺锛屼互鍙婂叾涓湁澶氬皯瀵瑰簲浜庨敭銆佸灏戝搴斾簬鍊笺€?
+要查看调试数据，可以 cat 一kmem/kmalloc 'hist_debug' 文件。它会显示该直方图对应的触发器信息，以及与该直方图关联的 hist_data 的地址，这在后面的例子中会很有用。随后它会显示与该直方图关联的hist_field 数量，以及其中有多少对应于键、多少对应于值
 
-鎺ョ潃瀹冧細鏄剧ず姣忎釜瀛楁鐨勮缁嗕俊鎭紝鍖呮嫭璇ュ瓧娈电殑 flags锛屼互鍙婃瘡涓瓧娈靛湪 hist_data 鐨?fields[] 鏁扮粍涓殑浣嶇疆锛岃繖浜涗俊鎭浜庨獙璇佸唴閮ㄧ姸鎬佹槸鍚︽纭潪甯告湁鐢紝骞朵笖鍚屾牱浼氬湪鍚庨潰鍙樺緱锛?
+接着它会显示每个字段的详细信息，包括该字段的 flags，以及每个字段在 hist_data fields[] 数组中的位置，这些信息对于验证内部状态是否正确非常有用，并且同样会在后面变得
 
 ```
   # cat events/kmem/kmalloc/hist_debug
@@ -275,11 +275,11 @@ tracing_map 鐢变竴涓?tracing_map_entry 鏁扮粍鍜屼竴缁勯鍒嗛厤�
 
 ```
 
-## 鍙橀噺
+## 变量
 
 
 
-鍙橀噺鍏佽涓€涓洿鏂瑰浘瑙﹀彂鍣ㄤ繚瀛樼殑鏁版嵁琚彟涓€涓洿鏂瑰浘瑙﹀彂鍣ㄨ幏鍙栥€備緥濡傦紝sched_waking 浜嬩欢涓婄殑瑙﹀彂鍣ㄥ彲浠ユ崟鑾锋煇涓壒瀹?pid 鐨勬椂闂存埑锛岀◢鍚庡垏鎹㈠埌璇?pid 鐨?sched_switch 浜嬩欢鍙互鑾峰彇璇ユ椂闂存埑骞剁敤瀹冩潵璁＄畻鏃堕棿宸細
+变量允许一个直方图触发器保存的数据被另一个直方图触发器获取。例如，sched_waking 事件上的触发器可以捕获某个特pid 的时间戳，稍后切换到pid sched_switch 事件可以获取该时间戳并用它来计算时间差：
 
 ```
   # echo 'hist:keys=pid:ts0=common_timestamp.usecs' >>
@@ -290,9 +290,9 @@ tracing_map 鐢变竴涓?tracing_map_entry 鏁扮粍鍜屼竴缁勯鍒嗛厤�
 
 ```
 
-灏辩洿鏂瑰浘鏁版嵁缁撴瀯鑰岃█锛屽彉閲忚瀹炵幇涓哄彟涓€绉嶇被鍨嬬殑 hist_field锛屽浜庣粰瀹氱殑 hist 瑙﹀彂鍣紝瀹冧滑琚坊鍔犲埌鎵€鏈?val 瀛楁涔嬪悗鐨?hist_data.fields[] 鏁扮粍涓€備负浜嗘妸瀹冧滑涓庡凡鏈夌殑閿拰鍊煎瓧娈靛尯鍒嗗紑锛岀粰瀹冧滑璧嬩簣浜嗕竴绉嶆柊鐨勬爣蹇楃被鍨?HIST_FIELD_FL_VAR锛堢畝鍐欎负 FL_VAR锛夛紝骞朵笖瀹冧滑杩樺埄鐢ㄤ簡 struct hist_field 涓竴涓柊鐨?.var.idx 瀛楁鎴愬憳锛岃鎴愬憳灏嗗彉閲忔槧灏勫埌涓€涓笓闂ㄦ柊澧炵殑銆佺敤浜庡瓨鍌ㄥ拰鑾峰彇鍙橀噺鍊肩殑 map_elt.vars[] 鏁扮粍鐨勬煇涓储寮曘€備笅闈㈢殑鍥惧睍绀轰簡杩欎簺鏂板厓绱狅紝骞舵柊澧炰簡涓€涓搴斾簬涓婇潰 sched_waking 瑙﹀彂鍣ㄤ腑 ts0 鍙橀噺鐨勬柊鍙橀噺鏉＄洰 ts0銆?
+就直方图数据结构而言，变量被实现为另一种类型的 hist_field，对于给定的 hist 触发器，它们被添加到所val 字段之后hist_data.fields[] 数组中。为了把它们与已有的键和值字段区分开，给它们赋予了一种新的标志类HIST_FIELD_FL_VAR（简写为 FL_VAR），并且它们还利用了 struct hist_field 中一个新.var.idx 字段成员，该成员将变量映射到一个专门新增的、用于存储和获取变量值的 map_elt.vars[] 数组的某个索引。下面的图展示了这些新元素，并新增了一个对应于上面 sched_waking 触发器中 ts0 变量的新变量条目 ts0
 
-### sched_waking 鐩存柟鍥?
+### sched_waking 鐩存柟鍥。
 
 
 
@@ -356,13 +356,13 @@ tracing_map 鐢变竴涓?tracing_map_entry 鏁扮粍鍜屼竴缁勯鍒嗛厤�
                                              n_keys = n_fields - n_vals   | | |
                                                                           | | |
 
-杩欎笌鍩虹鎯呭舰闈炲父鐩镐技銆傚湪涓婂浘涓紝鎴戜滑鍙互鐪嬪埌 struct hist_field 缁撴瀯鏂板浜嗕竴涓?.flags 鎴愬憳锛屽苟涓?hist_data.fields 涓柊澧炰簡涓€涓〃绀?ts0 鍙橀噺鐨勬潯鐩€傚浜庝竴涓櫘閫氱殑 val hist_field锛?flags 鍙槸 0锛堜慨楗扮鏍囧織闄ゅ锛夛紝浣嗗鏋滆鍊艰瀹氫箟涓哄彉閲忥紝鍒?.flags 浼氬寘鍚竴缁?FL_VAR 浣嶃€?
+这与基础情形非常相似。在上图中，我们可以看到 struct hist_field 结构新增了一.flags 成员，并hist_data.fields 中新增了一个表ts0 变量的条目。对于一个普通的 val hist_fieldflags 只是 0（修饰符标志除外），但如果该值被定义为变量，.flags 会包含一FL_VAR 位
 
-濡備綘鎵€瑙侊紝ts0 鏉＄洰鐨?.var.idx 鎴愬憳鍖呭惈浜嗘寚鍚戜繚瀛樺彉閲忓€肩殑 tracing_map_elt 鐨?.vars[] 鏁扮粍鐨勭储寮曘€傛瘡褰撹缃垨璇诲彇璇ュ彉閲忕殑鍊兼椂閮戒細鐢ㄥ埌杩欎釜 idx銆傚垎閰嶇粰缁欏畾鍙橀噺鐨?map_elt.vars 绱㈠紩锛岀敱 create_tracing_map_fields() 鍦ㄨ皟鐢?tracing_map_add_var() 涔嬪悗璧嬪€煎苟淇濆瓨鍦?.var.idx 涓€?
+如你所见，ts0 条目.var.idx 成员包含了指向保存变量值的 tracing_map_elt .vars[] 数组的索引。每当设置或读取该变量的值时都会用到这个 idx。分配给给定变量map_elt.vars 索引，由 create_tracing_map_fields() 在调tracing_map_add_var() 之后赋值并保存.var.idx 中
 
-涓嬮潰鏄竴涓繍琛屾椂鍒荤殑鐩存柟鍥捐〃绀哄浘锛屽畠濉厖浜嗘槧灏勶紝骞朵笌涓婇潰鐨?hist_data 鍜?hist_field 鏁版嵁缁撴瀯鐩稿搴斻€?
+下面是一个运行时刻的直方图表示图，它填充了映射，并与上面hist_data hist_field 数据结构相对应
 
-璇ュ浘璇曞浘灞曠ず hist_data.fields[] 涓?map_elt.fields[] 浠ュ強 map_elt.vars[] 涔嬮棿鐨勫叧绯伙紝鍥句腑鍦ㄤ袱涓浘涔嬮棿缁樺埗浜嗚繛绾裤€傚浜庢瘡涓?map_elt锛屼綘鍙互鐪嬪埌 .fields[] 鎴愬憳鎸囧悜鏌愪釜閿垨鍊肩殑 .sum 鎴?.offset锛岃€?.vars[] 鎴愬憳鎸囧悜鏌愪釜鍙橀噺鐨勫€笺€備袱鍥句箣闂寸殑绠ご灞曠ず浜嗚繖浜?tracing_map 鎴愬憳涓庣浉搴斿瓧娈靛畾涔変箣闂寸殑鍏宠仈锛?
+该图试图展示 hist_data.fields[] map_elt.fields[] 以及 map_elt.vars[] 之间的关系，图中在两个图之间绘制了连线。对于每map_elt，你可以看到 .fields[] 成员指向某个键或值的 .sum .offset，.vars[] 成员指向某个变量的值。两图之间的箭头展示了这tracing_map 成员与相应字段定义之间的关联
 
 ```
   +-----------+		                                                  | | |
@@ -465,19 +465,19 @@ tracing_map 鐢变竴涓?tracing_map_entry 鏁扮粍鍜屼竴缁勯鍒嗛厤�
 
 ```
 
-瀵逛簬姣忎釜宸蹭娇鐢ㄧ殑鏄犲皠鏉＄洰锛岄兘鏈変竴涓?map_elt 鎸囧悜涓€涓寘鍚笌璇ョ洿鏂瑰浘鏉＄洰鍏宠仈鐨勫彉閲忓綋鍓嶅€肩殑 .vars 鏁扮粍銆傛墍浠ュ湪涓婇潰锛屼笌 pid 999 鍏宠仈鐨勬椂闂存埑鏄?113345679876锛岃€屽湪 pid 4444 鐨勫悓涓€涓?.var.idx 涓殑鏃堕棿鎴冲彉閲忔槸 213499240729銆?
+对于每个已使用的映射条目，都有一map_elt 指向一个包含与该直方图条目关联的变量当前值的 .vars 数组。所以在上面，与 pid 999 关联的时间戳113345679876，而在 pid 4444 的同一.var.idx 中的时间戳变量是 213499240729
 
-### sched_switch 鐩存柟鍥?
+### sched_switch 鐩存柟鍥。
 
 
 
-涓婇潰 sched_waking 鐩存柟鍥炬墍閰嶅鐨?sched_switch 鐩存柟鍥惧涓嬫墍绀恒€俿ched_switch 鐩存柟鍥炬渶閲嶈鐨勬柟闈㈠湪浜庡畠寮曠敤浜嗕笂闈?sched_waking 鐩存柟鍥句腑鐨勪竴涓彉閲忋€?
+上面 sched_waking 直方图所配对sched_switch 直方图如下所示。sched_switch 直方图最重要的方面在于它引用了上sched_waking 直方图中的一个变量
 
-杩欎釜鐩存柟鍥惧浘涓庡埌鐩墠涓烘灞曠ず鐨勫叾浠栧浘闈炲父鐩镐技锛屼絾瀹冨鍔犱簡鍙橀噺寮曠敤銆備綘鍙互鐪嬪埌鏅€氱殑 hitcount 鍜岄敭瀛楁锛屽鍔犱竴涓敤涓?sched_waking ts0 鍙橀噺鐩稿悓鏂瑰紡瀹炵幇鐨勬柊鐨?wakeup_lat 鍙橀噺锛屼絾闄ゆ涔嬪杩樻湁涓€涓甫鏈夋柊 FL_VAR_REF锛圚IST_FIELD_FL_VAR_REF 鐨勭畝鍐欙級鏍囧織鐨勬潯鐩€?
+这个直方图图与到目前为止展示的其他图非常相似，但它增加了变量引用。你可以看到普通的 hitcount 和键字段，外加一个用sched_waking ts0 变量相同方式实现的新wakeup_lat 变量，但除此之外还有一个带有新 FL_VAR_REF（HIST_FIELD_FL_VAR_REF 的简写）标志的条目
 
-涓庢柊鐨勫彉閲忓紩鐢ㄥ瓧娈电浉鍏宠仈鐨勮繕鏈夊嚑涓柊鐨?hist_field 鎴愬憳锛歷ar.hist_data 鍜?var_ref_idx銆傚浜庝竴涓彉閲忓紩鐢紝var.hist_data 涓?var.idx 閰嶅悎浣跨敤锛屼簩鑰呭叡鍚屽敮涓€鏍囪瘑鏌愪釜鐗瑰畾鐩存柟鍥句笂鐨勪竴涓壒瀹氬彉閲忋€倂ar_ref_idx 鍙槸鐢ㄤ簬缂撳瓨姣忎釜鍙橀噺鍊肩殑 var_ref_vals[] 鏁扮粍鐨勭储寮曪紝姣忓綋鏌愪釜 hist 瑙﹀彂鍣ㄨ鏇存柊鏃堕兘浼氱紦瀛樸€傝繖浜涚粨鏋滃€奸殢鍚庤鍏朵粬浠ｇ爜锛堜緥濡備娇鐢?var_ref_idx 鍊兼潵璧嬪弬鐨?trace action 浠ｇ爜锛夋渶缁堣闂€?
+与新的变量引用字段相关联的还有几个新hist_field 成员：var.hist_data var_ref_idx。对于一个变量引用，var.hist_data var.idx 配合使用，二者共同唯一标识某个特定直方图上的一个特定变量。var_ref_idx 只是用于缓存每个变量值的 var_ref_vals[] 数组的索引，每当某个 hist 触发器被更新时都会缓存。这些结果值随后被其他代码（例如使var_ref_idx 值来赋参trace action 代码）最终访问
 
-涓嬮潰鐨勫浘鎻忚堪浜?sched_switch 鐨勬儏褰細
+下面的图描述sched_switch 的情形：
 
 ```
   # echo 'hist:keys=next_pid:wakeup_lat=common_timestamp.usecs-$ts0' >>
@@ -580,15 +580,15 @@ tracing_map 鐢变竴涓?tracing_map_entry 鏁扮粍鍜屼竴缁勯鍒嗛厤�
 
 ```
 
-褰撲竴涓洿鏂瑰浘瑙﹀彂鍣ㄤ娇鐢ㄤ簡涓€涓彉閲忔椂锛屽氨浼氬垱寤轰竴涓甫鏈?HIST_FIELD_FL_VAR_REF 鏍囧織鐨勬柊 hist_field銆傚浜庝竴涓?VAR_REF 瀛楁锛屽叾 var.idx 鍜?var.hist_data 鍙栦笌鎵€寮曠敤鍙橀噺鐩稿悓鐨勫€硷紝鍚屾椂涔熷寘鎷墍寮曠敤鍙橀噺鐨?size銆乼ype 鍜?is_signed 鍊笺€俈AR_REF 瀛楁鐨?.name 琚缃负瀹冩墍寮曠敤鍙橀噺鐨勫悕瀛椼€傚鏋滃彉閲忓紩鐢ㄦ槸浣跨敤鏄惧紡鐨?system.event.$var_ref 璁板彿鍒涘缓鐨勶紝閭ｄ箞璇?hist_field 鐨?system 鍜?event_name 鍙橀噺涔熶細琚缃€?
+当一个直方图触发器使用了一个变量时，就会创建一个带HIST_FIELD_FL_VAR_REF 标志的新 hist_field。对于一VAR_REF 字段，其 var.idx var.hist_data 取与所引用变量相同的值，同时也包括所引用变量size、type is_signed 值。VAR_REF 字段.name 被设置为它所引用变量的名字。如果变量引用是使用显式system.event.$var_ref 记号创建的，那么hist_field system event_name 变量也会被设置
 
-鍥犳锛屼负浜嗗鐞?sched_switch 鐩存柟鍥剧殑涓€涓簨浠讹紝鍥犱负鎴戜滑寮曠敤浜嗗彟涓€涓洿鏂瑰浘涓婄殑涓€涓彉閲忥紝鎵€浠ラ渶瑕佸厛瑙ｆ瀽鎵€鏈夌殑鍙橀噺寮曠敤銆傝繖鏄€氳繃浠?event_hist_trigger() 鍙戣捣鐨?resolve_var_refs() 璋冪敤瀹屾垚鐨勩€傚畠鐨勪綔鐢ㄦ槸鍙栧嚭琛ㄧず sched_switch 鐩存柟鍥剧殑 hist_data 涓殑 var_refs[] 鏁扮粍銆傚浜庡叾涓殑姣忎竴涓紝閮戒細鍒╃敤鎵€寮曠敤鍙橀噺鐨?var.hist_data 浠ュ強褰撳墠閿紝鍒伴偅涓洿鏂瑰浘涓煡鎵惧搴旂殑 tracing_map_elt銆備竴鏃︽壘鍒帮紝灏辩敤鎵€寮曠敤鍙橀噺鐨?var.idx锛岄€氳繃 tracing_map_read_var(elt, var.idx) 鏌ユ壘璇ュ彉閲忕殑鍊硷紝浠庤€屽緱鍒拌鍏冪礌瀵瑰簲鐨勫彉閲忓€硷紝鍦ㄤ笂闈㈣繖涓緥瀛愪腑灏辨槸 ts0銆傛敞鎰忥紝琛ㄧず鍙橀噺鍙婂叾寮曠敤鐨勪袱涓?hist_field 鎷ユ湁鐩稿悓鐨?var.idx锛屾墍浠ヨ繖涓繃绋嬫槸鐩存帴鐨勩€?
+因此，为了处sched_switch 直方图的一个事件，因为我们引用了另一个直方图上的一个变量，所以需要先解析所有的变量引用。这是通过event_hist_trigger() 发起resolve_var_refs() 调用完成的。它的作用是取出表示 sched_switch 直方图的 hist_data 中的 var_refs[] 数组。对于其中的每一个，都会利用所引用变量var.hist_data 以及当前键，到那个直方图中查找对应的 tracing_map_elt。一旦找到，就用所引用变量var.idx，通过 tracing_map_read_var(elt, var.idx) 查找该变量的值，从而得到该元素对应的变量值，在上面这个例子中就是 ts0。注意，表示变量及其引用的两hist_field 拥有相同var.idx，所以这个过程是直接的
 
-### 鍙橀噺涓庡彉閲忓紩鐢ㄦ祴璇?
+### 变量与变量引用测
 
 
 
-杩欎釜渚嬪瓙鍦?sched_waking 浜嬩欢涓婂垱寤轰竴涓彉閲?ts0锛屽苟鍦?sched_switch 瑙﹀彂鍣ㄤ腑鍔犱互浣跨敤銆俿ched_switch 瑙﹀彂鍣ㄨ繕锛?
+这个例子sched_waking 事件上创建一个变ts0，并sched_switch 触发器中加以使用。sched_switch 触发器还
 
 ```
   # echo 'hist:keys=pid:ts0=common_timestamp.usecs' >> events/sched/sched_waking/trigger
@@ -597,7 +597,7 @@ tracing_map 鐢变竴涓?tracing_map_entry 鏁扮粍鍜屼竴缁勯鍒嗛厤�
 
 ```
 
-瑙傚療 sched_waking 鐨?'hist_debug' 杈撳嚭锛岄櫎浜嗘櫘閫氱殑閿拰鍊?hist_field 涔嬪锛屽湪 val fields 鑺備腑鎴戜滑鍙互鐪嬪埌涓€涓甫鏈?HIST_FIELD_FL_VAR 鏍囧織鐨勫瓧娈碉紝杩欒〃鏄庤瀛楁琛ㄧず涓€涓彉閲忋€傛敞鎰忥紝闄や簡鍖呭惈鍦?var.name 瀛楁涓殑鍙橀噺鍚嶄箣澶栵紝瀹冭繕鍖呭惈 var.idx锛屽嵆鎸囧悜淇濆瓨璇ュ彉閲忓疄闄呬綅缃殑 tracing_map_elt.vars[] 鏁扮粍鐨勭储寮曘€傝繕瑕佹敞鎰忥紝杈撳嚭鏄剧ず鍙橀噺浣嶄簬锛?
+观察 sched_waking 'hist_debug' 输出，除了普通的键和hist_field 之外，在 val fields 节中我们可以看到一个带HIST_FIELD_FL_VAR 标志的字段，这表明该字段表示一个变量。注意，除了包含var.name 字段中的变量名之外，它还包含 var.idx，即指向保存该变量实际位置的 tracing_map_elt.vars[] 数组的索引。还要注意，输出显示变量位于
 
 ```
   # cat events/sched/sched_waking/hist_debug
@@ -643,9 +643,9 @@ tracing_map 鐢变竴涓?tracing_map_entry 鏁扮粍鍜屼竴缁勯鍒嗛厤�
 
 ```
 
-缁х画鐪?sched_switch 瑙﹀彂鍣ㄧ殑 hist_debug 杈撳嚭锛岄櫎浜嗛偅涓湭琚娇鐢ㄧ殑 wakeup_lat 鍙橀噺涔嬪锛屾垜浠繕鐪嬪埌涓€涓柊鐨勩€佹樉绀哄彉閲忓紩鐢ㄧ殑鑺傘€傚彉閲忓紩鐢ㄤ箣鎵€浠ユ樉绀哄湪涓€涓嫭绔嬬殑鑺備腑锛屾槸鍥犱负闄や簡鍦ㄩ€昏緫涓婁笌鍙橀噺鍜屽€肩浉鍒嗙涔嬪锛屽畠浠疄闄呬笂浣嶄簬涓€涓嫭绔嬬殑 hist_data 鏁扮粍 var_refs[] 涓€?
+继续sched_switch 触发器的 hist_debug 输出，除了那个未被使用的 wakeup_lat 变量之外，我们还看到一个新的、显示变量引用的节。变量引用之所以显示在一个独立的节中，是因为除了在逻辑上与变量和值相分离之外，它们实际上位于一个独立的 hist_data 数组 var_refs[] 中
 
-鍦ㄨ繖涓緥瀛愪腑锛宻ched_switch 瑙﹀彂鍣ㄥ紩鐢ㄤ簡 sched_waking 瑙﹀彂鍣ㄤ笂鐨勪竴涓彉閲?$ts0銆傝瀵熷叾缁嗚妭锛屾垜浠彲浠ョ湅鍒版墍寮曠敤鍙橀噺鐨?var.hist_data 鍊间笌鍓嶉潰鏄剧ず鐨?sched_waking 瑙﹀彂鍣ㄧ浉鍖归厤锛岃€?var.idx 鍊间笌鍓嶉潰鏄剧ず鐨勮鍙橀噺鐨?var.idx 鍊肩浉鍖归厤銆傚悓鏃舵樉绀虹殑杩樻湁璇ュ彉閲忓紩鐢ㄧ殑 var_ref_idx 鍊硷紝鍙橀噺鐨勫€煎氨鏄紦瀛樺湪杩欓噷锛屼緵锛?
+在这个例子中，sched_switch 触发器引用了 sched_waking 触发器上的一个变$ts0。观察其细节，我们可以看到所引用变量var.hist_data 值与前面显示sched_waking 触发器相匹配，var.idx 值与前面显示的该变量var.idx 值相匹配。同时显示的还有该变量引用的 var_ref_idx 值，变量的值就是缓存在这里，供
 
 ```
   # cat events/sched/sched_switch/hist_debug
@@ -711,19 +711,19 @@ tracing_map 鐢变竴涓?tracing_map_entry 鏁扮粍鍜屼竴缁勯鍒嗛厤�
 
 ```
 
-## 鍔ㄤ綔涓庡鐞嗗櫒锛圓ctions and Handlers锛?
+## 动作与处理器（Actions and Handlers
 
 
 
-鍦ㄥ墠闈緥瀛愮殑鍩虹涓婏紝鎴戜滑鐜板湪瑕佸閭ｄ釜 wakeup_lat 鍙橀噺鍋氱偣浜嬫儏锛屽嵆鎶婂畠鍜屽彟涓€涓瓧娈典綔涓轰竴涓悎鎴愪簨浠跺彂閫佸嚭鍘汇€?
+在前面例子的基础上，我们现在要对那个 wakeup_lat 变量做点事情，即把它和另一个字段作为一个合成事件发送出去
 
-涓嬮潰鐨?onmatch() 鍔ㄤ綔鍩烘湰鎰忔€濇槸锛氭瘡褰撴垜浠湁涓€涓?sched_switch 浜嬩欢锛屽鏋滃瓨鍦ㄤ竴涓尮閰嶇殑 sched_waking 浜嬩欢锛堝湪鏈緥涓紝鍗?sched_waking 鐩存柟鍥句腑瀛樺湪涓€涓?pid 涓庢湰 sched_switch 浜嬩欢鐨?next_pid 瀛楁鐩稿尮閰嶏級锛屾垜浠氨鍙栧嚭 wakeup_latency() trace 鍔ㄤ綔涓寚瀹氱殑鍙橀噺锛屽苟鐢ㄥ畠浠悜璺熻釜娴佷腑鐢熸垚涓€涓柊鐨?wakeup_latency 浜嬩欢銆?
+下面onmatch() 动作基本意思是：每当我们有一sched_switch 事件，如果存在一个匹配的 sched_waking 事件（在本例中，sched_waking 直方图中存在一pid 与本 sched_switch 事件next_pid 字段相匹配），我们就取出 wakeup_latency() trace 动作中指定的变量，并用它们向跟踪流中生成一个新wakeup_latency 事件
 
-娉ㄦ剰锛屽儚 wakeup_latency()锛堝畠涔熷彲浠ョ瓑浠峰湴鍐欐垚 trace(wakeup_latency,$wakeup_lat,next_pid)锛夎繖鏍风殑 trace 澶勭悊鍣紝鍏跺疄鐜拌姹備紶缁?trace 澶勭悊鍣ㄧ殑鍙傛暟蹇呴』鏄彉閲忋€傚湪鏈緥涓紝$wakeup_lat 鏄剧劧鏄竴涓彉閲忥紝浣?next_pid 涓嶆槸锛屽洜涓哄畠鍙槸 sched_switch 璺熻釜浜嬩欢涓竴涓瓧娈电殑鍚嶅瓧銆傜敱浜庡嚑涔庢瘡涓?trace() 鍜?save() 鍔ㄤ綔閮戒細杩欐牱鍋氾紝鎵€浠ュ疄鐜颁簡涓€涓壒娈婃嵎寰勶紝鍏佽鍦ㄨ繖浜涙儏鍐典笅鐩存帴浣跨敤瀛楁鍚嶃€傚叾宸ヤ綔鏂瑰紡鏄細鍦ㄥ簳灞備細涓烘墍鎸囧悕鐨勫瓧娈靛垱寤轰竴涓复鏃跺彉閲忥紝杩欎釜鍙橀噺鎵嶆槸瀹為檯浼犵粰 trace 澶勭悊鍣ㄧ殑涓滆タ銆傚湪浠ｇ爜鍜屾枃妗ｄ腑锛岃繖绫诲彉閲忚绉颁负鈥滃瓧娈靛彉閲忥紙field variable锛夆€濄€?
+注意，像 wakeup_latency()（它也可以等价地写成 trace(wakeup_latency,$wakeup_lat,next_pid)）这样的 trace 处理器，其实现要求传trace 处理器的参数必须是变量。在本例中，$wakeup_lat 显然是一个变量，next_pid 不是，因为它只是 sched_switch 跟踪事件中一个字段的名字。由于几乎每trace() save() 动作都会这样做，所以实现了一个特殊捷径，允许在这些情况下直接使用字段名。其工作方式是：在底层会为所指名的字段创建一个临时变量，这个变量才是实际传给 trace 处理器的东西。在代码和文档中，这类变量被称为“字段变量（field variable）”
 
-鍏朵粬璺熻釜浜嬩欢鐩存柟鍥句笂鐨勫瓧娈典篃鍙互琚娇鐢ㄣ€傚湪閭ｇ鎯呭喌涓嬶紝鎴戜滑蹇呴』鐢熸垚涓€涓柊鐨勭洿鏂瑰浘浠ュ強涓€涓懡鍚嶄笉澶伆褰撶殑 'synthetic_field'锛堣繖閲岀殑 synthetic 涓庡悎鎴愪簨浠舵鏃犲叧绯伙級锛屽苟鎶婇偅涓壒娈婄殑鐩存柟鍥惧瓧娈靛綋浣滃彉閲忔潵浣跨敤銆?
+其他跟踪事件直方图上的字段也可以被使用。在那种情况下，我们必须生成一个新的直方图以及一个命名不太恰当的 'synthetic_field'（这里的 synthetic 与合成事件毫无关系），并把那个特殊的直方图字段当作变量来使用
 
-涓嬮潰鐨勫浘浠ヤ笂涓嬫枃鐨勬柟寮忥紝鍊熷姪浣跨敤 onmatch() 澶勭悊鍣ㄥ拰 trace() 鍔ㄤ綔鐨?sched_switch 鐩存柟鍥撅紝灞曠ず浜嗕笂杩版柊澧炵殑鍏冪礌銆?
+下面的图以上下文的方式，借助使用 onmatch() 处理器和 trace() 动作sched_switch 直方图，展示了上述新增的元素
 
 ```
   # echo 'wakeup_latency u64 lat; pid_t pid' >> synthetic_events
@@ -736,7 +736,7 @@ tracing_map 鐢变竴涓?tracing_map_entry 鏁扮粍鍜屼竴缁勯鍒嗛厤�
 
 ```
 
-鏈€鍚庯紝鎴戜滑鍦?sched_switch 浜嬩欢涓婂垱寤轰竴涓?hist 瑙﹀彂鍣紝鐢ㄦ潵鐢熸垚 wakeup_latency() trace 浜嬩欢銆傚湪鏈緥涓紝鎴戜滑鎶?next_pid 浼犲叆 wakeup_latency 鍚堟垚浜嬩欢鐨勮皟鐢紝璇ワ細
+最后，我们sched_switch 事件上创建一hist 触发器，用来生成 wakeup_latency() trace 事件。在本例中，我们next_pid 传入 wakeup_latency 合成事件的调用，该：
 
 ```
   # echo 'hist:keys=next_pid:wakeup_lat=common_timestamp.usecs-$ts0: \
@@ -745,7 +745,7 @@ tracing_map 鐢变竴涓?tracing_map_entry 鏁扮粍鍜屼竴缁勯鍒嗛厤�
 
 ```
 
-sched_switch 浜嬩欢鐨勫浘涓庡墠闈㈢殑渚嬪瓙绫讳技锛屼絾瀹冨睍绀轰簡 hist_data 鏂板鐨?field_vars[] 鏁扮粍锛屽苟灞曠ず浜?field_vars 涓庝负瀹炵幇瀛楁鍙橀噺鑰屽垱寤虹殑鍙橀噺鍙婂紩鐢ㄤ箣闂寸殑鍏宠仈銆傚叿浣撶粏鑺傚皢鍦ㄤ笅闈㈣璁猴細
+sched_switch 事件的图与前面的例子类似，但它展示了 hist_data 新增field_vars[] 数组，并展示field_vars 与为实现字段变量而创建的变量及引用之间的关联。具体细节将在下面讨论：
 
 ```
     +------------------+
@@ -886,15 +886,15 @@ sched_switch 浜嬩欢鐨勫浘涓庡墠闈㈢殑渚嬪瓙绫讳技锛屼絾瀹�
 
 ```
 
-濡備綘鎵€瑙侊紝瀵逛簬涓€涓瓧娈靛彉閲忥紝浼氬垱寤轰袱涓?hist_field锛氫竴涓〃绀哄彉閲忥紙鍦ㄦ湰渚嬩腑鏄?next_pid锛夛紝鍙︿竴涓敤浜庡儚鏅€?val 瀛楁閭ｆ牱浠庤窡韪祦涓湡姝ｅ彇寰楄瀛楁鐨勫€笺€傚畠浠槸鐙珛浜庢櫘閫氬彉閲忓垱寤鸿繃绋嬭€屽垱寤虹殑锛屽苟淇濆瓨鍦?hist_data->field_vars[] 鏁扮粍涓€傚叧浜庡畠浠浣曡浣跨敤锛岃瑙佷笅鏂囥€傛澶栵紝杩樹細鍒涘缓涓€涓紩鐢?hist_field锛屽畠鏄紩鐢ㄥ瓧娈靛彉閲忥紙濡?trace() 鍔ㄤ綔涓殑 $next_pid 鍙橀噺锛夋墍蹇呴渶鐨勩€?
+如你所见，对于一个字段变量，会创建两hist_field：一个表示变量（在本例中next_pid），另一个用于像普val 字段那样从跟踪流中真正取得该字段的值。它们是独立于普通变量创建过程而创建的，并保存hist_data->field_vars[] 数组中。关于它们如何被使用，请见下文。此外，还会创建一个引hist_field，它是引用字段变量（trace() 动作中的 $next_pid 变量）所必需的
 
-娉ㄦ剰锛?wakeup_lat 涔熸槸涓€涓彉閲忓紩鐢紝寮曠敤琛ㄨ揪寮?common_timestamp-$ts0 鐨勫€硷紝鍥犳涔熼渶瑕佸垱寤轰竴涓〃绀鸿寮曠敤鐨?hist field 鏉＄洰銆?
+注意wakeup_lat 也是一个变量引用，引用表达common_timestamp-$ts0 的值，因此也需要创建一个表示该引用hist field 条目
 
-褰撹皟鐢?hist_trigger_elt_update() 鏉ヨ幏鍙栨櫘閫氱殑閿拰鍊煎瓧娈垫椂锛屽畠杩樹細璋冪敤 update_field_vars()锛屽悗鑰呬細閬嶅巻涓鸿鐩存柟鍥惧垱寤虹殑姣忎釜 field_var锛堝彲浠?hist_data->field_vars 鑾峰緱锛夛紝璋冪敤 val->fn() 浠庡綋鍓嶈窡韪褰曚腑鑾峰彇鏁版嵁锛岀劧鍚庝娇鐢ㄨ鍙橀噺鐨?var.idx 鎶婂彉閲忚缃埌鐩稿簲 tracing_map_elt 鐨?elt->vars[var.idx] 澶勩€?
+当调hist_trigger_elt_update() 来获取普通的键和值字段时，它还会调用 update_field_vars()，后者会遍历为该直方图创建的每个 field_var（可hist_data->field_vars 获得），调用 val->fn() 从当前跟踪记录中获取数据，然后使用该变量var.idx 把变量设置到相应 tracing_map_elt elt->vars[var.idx] 处
 
-涓€鏃︽墍鏈夊彉閲忛兘宸叉洿鏂帮紝灏卞彲浠ヤ粠 event_hist_trigger() 璋冪敤 resolve_var_refs()锛屾鏃朵笉浠呮垜浠殑 $ts0 鍜?$next_pid 寮曠敤鍙互琚В鏋愶紝$wakeup_lat 寮曠敤涔熷彲浠ャ€傝嚦姝わ紝trace() 鍔ㄤ綔鍙渶璁块棶鍦?var_ref_vals[] 鏁扮粍涓眹闆嗙殑鍊硷紝骞剁敓鎴愯 trace 浜嬩欢銆?
+一旦所有变量都已更新，就可以从 event_hist_trigger() 调用 resolve_var_refs()，此时不仅我们的 $ts0 $next_pid 引用可以被解析，$wakeup_lat 引用也可以。至此，trace() 动作只需访问var_ref_vals[] 数组中汇集的值，并生成该 trace 事件
 
-瀵逛簬涓?save() 鍔ㄤ綔鍏宠仈鐨勫瓧娈靛彉閲忥紝鍙戠敓鐨勬槸鍚屾牱鐨勮繃绋嬨€?
+对于save() 动作关联的字段变量，发生的是同样的过程
 
 ```
   hist_data = struct hist_trigger_data
@@ -907,11 +907,11 @@ sched_switch 浜嬩欢鐨勫浘涓庡墠闈㈢殑渚嬪瓙绫讳技锛屼絾瀹�
 
 ```
 
-### trace() 鍔ㄤ綔鐨勫瓧娈靛彉閲忔祴璇?
+### trace() 动作的字段变量测
 
 
 
-杩欎釜渚嬪瓙鍦ㄥ墠涓€涓祴璇曚緥瀛愮殑鍩虹涓婏紝鏈€缁堢敤涓婁簡 wakeup_lat 鍙橀噺锛屾澶栬繕鍒涘缓浜嗕竴瀵瑰瓧娈靛彉閲忥紝鐒跺悗閫氳繃 onmatch() 澶勭悊鍣ㄦ妸瀹冧滑鍏ㄩ儴浼犵粰 wakeup_latency() trace 鍔ㄤ綔銆?
+这个例子在前一个测试例子的基础上，最终用上了 wakeup_lat 变量，此外还创建了一对字段变量，然后通过 onmatch() 处理器把它们全部传给 wakeup_latency() trace 动作
 
 ```
   # echo 'wakeup_latency u64 lat; pid_t pid; char comm[16]' >> synthetic_events
@@ -923,14 +923,14 @@ sched_switch 浜嬩欢鐨勫浘涓庡墠闈㈢殑渚嬪瓙绫讳技锛屼絾瀹�
 
 ```
 
-鏈€鍚庯紝鍍忓墠闈㈢殑娴嬭瘯渚嬪瓙涓€鏍凤紝鎴戜滑鍒╃敤鏉ヨ嚜 sched_waking 瑙﹀彂鍣ㄧ殑 $ts0 寮曠敤锛屾妸鍞ら啋寤惰繜璁＄畻骞惰祴缁?wakeup_lat 鍙橀噺锛岀劧鍚庢渶缁堟妸瀹冨拰 sched_switch 浜嬩欢鐨勪竴瀵瑰瓧娈?next_pid 涓?next_comm 涓€璧凤紝鐢ㄦ潵鐢熸垚涓€涓?wakeup_latency trace 浜嬩欢銆俷ext_pid 鍜?next_comm 浜嬩欢瀛楁锛?
+最后，像前面的测试例子一样，我们利用来自 sched_waking 触发器的 $ts0 引用，把唤醒延迟计算并赋wakeup_lat 变量，然后最终把它和 sched_switch 事件的一对字next_pid next_comm 一起，用来生成一wakeup_latency trace 事件。next_pid next_comm 事件字段
 
 ```
   # echo 'hist:keys=next_pid:wakeup_lat=common_timestamp.usecs-$ts0:onmatch(sched.sched_waking).wakeup_latency($wakeup_lat,next_pid,next_comm)' >> /sys/kernel/tracing/events/sched/sched_switch/trigger
 
 ```
 
-sched_waking 鐨?hist_debug 杈撳嚭鏄剧ず鐨勬暟鎹笌锛?
+sched_waking hist_debug 输出显示的数据与
 
 ```
   # cat events/sched/sched_waking/hist_debug
@@ -976,9 +976,9 @@ sched_waking 鐨?hist_debug 杈撳嚭鏄剧ず鐨勬暟鎹笌锛?
 
 ```
 
-sched_switch 鐨?hist_debug 杈撳嚭鏄剧ず浜嗕笌鍓嶉潰娴嬭瘯渚嬪瓙鐩稿悓鐨勯敭鍜屽€煎瓧娈碘€斺€旀敞鎰?wakeup_lat 浠嶅湪 val fields 鑺備腑锛屼絾鏂扮殑瀛楁鍙橀噺骞朵笉鍦ㄩ偅閲屸€斺€斿敖绠″瓧娈靛彉閲忎篃鏄彉閲忥紝瀹冧滑琚崟鐙繚瀛樺湪 hist_data 鐨?field_vars[] 鏁扮粍涓€傝櫧鐒跺瓧娈靛彉閲忓拰鏅€氬彉閲忎綅浜庝笉鍚岀殑鍦版柟锛屼絾浣犲彲浠ョ湅鍒拌繖浜涘彉閲忓湪 tracing_map_elt.vars[] 涓殑瀹為檯浣嶇疆纭疄鍍忛鏈熺殑閭ｆ牱鍏锋湁閫掑鐨勭储寮曪細wakeup_lat 鍗犵敤浜?var.idx = 0 鐨勬Ы浣嶏紝鑰?next_pid 鍜?next_comm 鐨勫瓧娈靛彉閲忕殑鍊煎垎鍒槸 var.idx = 1 鍜?var.idx = 2銆傝繕瑕佹敞鎰忥紝杩欎簺鍊间笌鍙橀噺寮曠敤瀛楁鑺備腑瀵瑰簲閭ｄ簺鍙橀噺鐨勫紩鐢ㄦ墍鏄剧ず鐨勫€肩浉鍚屻€傜敱浜庡瓨鍦ㄤ袱涓Е鍙戝櫒锛屽洜姝や篃灏辨湁涓や釜 hist_data 鍦板潃锛屽湪杩涜鍖归厤鏃朵篃闇€瑕佹妸杩欎簺鍦板潃鑰冭檻杩涙潵鈥斺€斾綘鍙互鐪嬪埌绗竴涓彉閲忓紩鐢ㄧ殑鏄墠涓€涓?hist 瑙﹀彂鍣紙鍙傝涓庤瑙﹀彂鍣ㄥ叧鑱旂殑 hist_data 鍦板潃锛変笂鐨?0 鍙?var.idx锛岃€岀浜屼釜鍙橀噺寮曠敤鐨勬槸 sched_switch hist 瑙﹀彂鍣ㄤ笂鐨?0 鍙?var.idx锛屽叾浣欐墍鏈夊彉閲忓紩鐢ㄤ篃鏄姝ゃ€?
+sched_switch hist_debug 输出显示了与前面测试例子相同的键和值字段——注wakeup_lat 仍在 val fields 节中，但新的字段变量并不在那里——尽管字段变量也是变量，它们被单独保存在 hist_data field_vars[] 数组中。虽然字段变量和普通变量位于不同的地方，但你可以看到这些变量在 tracing_map_elt.vars[] 中的实际位置确实像预期的那样具有递增的索引：wakeup_lat 占用var.idx = 0 的槽位，next_pid next_comm 的字段变量的值分别是 var.idx = 1 var.idx = 2。还要注意，这些值与变量引用字段节中对应那些变量的引用所显示的值相同。由于存在两个触发器，因此也就有两个 hist_data 地址，在进行匹配时也需要把这些地址考虑进来——你可以看到第一个变量引用的是前一hist 触发器（参见与该触发器关联的 hist_data 地址）上0 var.idx，而第二个变量引用的是 sched_switch hist 触发器上0 var.idx，其余所有变量引用也是如此
 
-鏈€鍚庯紝鍔ㄤ綔璺熻釜鍙橀噺鑺傚彧鏄剧ず浜嗙郴缁燂細
+最后，动作跟踪变量节只显示了系统：
 
 ```
   # cat events/sched/sched_switch/hist_debug
@@ -1114,13 +1114,13 @@ sched_switch 鐨?hist_debug 杈撳嚭鏄剧ず浜嗕笌鍓嶉潰娴嬭瘯渚嬪�
 
 ```
 
-### action_data 涓?trace() 鍔ㄤ綔
+### action_data trace() 动作
 
 
 
-濡備笂鎵€杩帮紝褰?trace() 鍔ㄤ綔鐢熸垚涓€涓悎鎴愪簨浠舵椂锛屽悎鎴愪簨浠剁殑鎵€鏈夊弬鏁拌涔堝凡缁忔槸鍙橀噺锛岃涔堣杞崲鎴愪簡鍙橀噺锛堥€氳繃瀛楁鍙橀噺锛夛紝鏈€缁堟墍鏈夎繖浜涘彉閲忓€奸兘閫氳繃寮曠敤鏀堕泦鍒?var_ref_vals[] 鏁扮粍涓€?
+如上所述，trace() 动作生成一个合成事件时，合成事件的所有参数要么已经是变量，要么被转换成了变量（通过字段变量），最终所有这些变量值都通过引用收集var_ref_vals[] 数组中
 
-涓嶈繃锛寁ar_ref_vals[] 鏁扮粍涓殑鍊煎苟涓嶄竴瀹氭寜鐓у悎鎴愪簨浠跺弬鏁扮殑鐩稿悓椤哄簭鎺掑垪銆備负浜嗚В鍐宠繖涓棶棰橈紝struct action_data 鍖呭惈浜嗗彟涓€涓暟缁?var_ref_idx[]锛岀敤浜庡皢 trace 鍔ㄤ綔鐨勫弬鏁版槧灏勫埌 var_ref_vals[] 鐨勫€笺€備笅闈㈡槸涓€涓細
+不过，var_ref_vals[] 数组中的值并不一定按照合成事件参数的相同顺序排列。为了解决这个问题，struct action_data 包含了另一个数var_ref_idx[]，用于将 trace 动作的参数映射到 var_ref_vals[] 的值。下面是一个：
 
 ```
   +------------------+     wakeup_latency()
@@ -1141,7 +1141,7 @@ sched_switch 鐨?hist_debug 杈撳嚭鏄剧ず浜嗕笌鍓嶉潰娴嬭瘯渚嬪�
 
 ```
 
-鍩烘湰涓婏紝杩欏湪鍚堟垚浜嬩欢鎺㈡祴锛坧robe锛変腑鏈€缁堟槸杩欐牱琚娇鐢ㄧ殑锛?
+基本上，这在合成事件探测（probe）中最终是这样被使用的
 
 ```
   for each field i in .synth_event
@@ -1150,13 +1150,13 @@ sched_switch 鐨?hist_debug 杈撳嚭鏄剧ず浜嗕笌鍓嶉潰娴嬭瘯渚嬪�
 
 ```
 
-### action_data 涓?onXXX() 澶勭悊鍣?
+### action_data onXXX() 处理
 
 
 
-闄や簡 onmatch() 涔嬪鐨?hist 瑙﹀彂鍣?onXXX() 鍔ㄤ綔锛屾瘮濡?onmax() 鍜?onchange()锛屼篃浼氬埄鐢ㄥ苟鍦ㄥ唴閮ㄥ垱寤洪殣钘忕殑鍙橀噺銆傝繖浜涗俊鎭繚瀛樺湪 action_data.track_data 缁撴瀯浣撲腑锛屽苟涓斾篃浼氬儚涓嬮潰渚嬪瓙涓弿杩扮殑閭ｆ牱锛屾樉绀哄湪 hist_debug 杈撳嚭涓€?
+除了 onmatch() 之外hist 触发onXXX() 动作，比onmax() onchange()，也会利用并在内部创建隐藏的变量。这些信息保存在 action_data.track_data 结构体中，并且也会像下面例子中描述的那样，显示在 hist_debug 输出中
 
-閫氬父锛宱nmax() 鎴?onchange() 澶勭悊鍣ㄤ細涓庯細
+通常，onmax() onchange() 处理器会与：
 
 ```
   # echo 'hist:keys=next_pid:wakeup_lat=common_timestamp.usecs-$ts0: \
@@ -1172,25 +1172,25 @@ sched_switch 鐨?hist_debug 杈撳嚭鏄剧ず浜嗕笌鍓嶉潰娴嬭瘯渚嬪�
 
 ```
 
-### save() 鍔ㄤ綔鐨勫瓧娈靛彉閲忔祴璇?
+### save() 动作的字段变量测
 
 
 
-鍦ㄨ繖涓緥瀛愪腑锛屾垜浠笉鐢熸垚鍚堟垚浜嬩欢锛岃€屾槸浣跨敤 save() 鍔ㄤ綔锛屽湪 onmax() 澶勭悊鍣ㄦ娴嬪埌鍛戒腑涓€涓柊鐨勬渶澶у欢杩熸椂锛屼繚瀛樺瓧娈靛€笺€傚拰鍓嶉潰鐨勪緥瀛愪竴鏍凤紝琚繚瀛樼殑鍊间篃鏄瓧娈靛€硷紝浣嗗湪杩欑鎯呭喌涓嬶紝瀹冧滑淇濆瓨鍦ㄤ竴涓悕涓?save_vars[] 鐨勭嫭绔?hist_data 鏁扮粍涓€?
+在这个例子中，我们不生成合成事件，而是使用 save() 动作，在 onmax() 处理器检测到命中一个新的最大延迟时，保存字段值。和前面的例子一样，被保存的值也是字段值，但在这种情况下，它们保存在一个名save_vars[] 的独hist_data 数组中
 
 ```
   # echo 'hist:keys=pid:ts0=common_timestamp.usecs' >> events/sched/sched_waking/trigger
 
 ```
 
-涓嶈繃鍦ㄦ湰渚嬩腑锛屾垜浠缃?sched_switch 瑙﹀彂鍣紝浠ヤ究姣忓綋鍛戒腑涓€涓柊鐨勬渶澶у欢杩熸椂锛屽氨淇濆瓨涓€浜?sched_switch 瀛楁鍊笺€傚浜?onmax() 澶勭悊鍣ㄥ拰 save() 鍔ㄤ綔锛岄兘浼氬垱寤哄彉閲忥紝锛?
+不过在本例中，我们设sched_switch 触发器，以便每当命中一个新的最大延迟时，就保存一sched_switch 字段值。对onmax() 处理器和 save() 动作，都会创建变量，
 
 ```
   # echo 'hist:keys=next_pid:wakeup_lat=common_timestamp.usecs-$ts0:onmax($wakeup_lat).save(next_comm,prev_pid,prev_prio,prev_comm)' >> events/sched/sched_switch/trigger
 
 ```
 
-sched_waking 鐨?hist_debug 杈撳嚭鏄剧ず鐨勬暟鎹笌锛?
+sched_waking hist_debug 输出显示的数据与
 
 ```
   # cat events/sched/sched_waking/hist_debug
@@ -1235,11 +1235,11 @@ sched_waking 鐨?hist_debug 杈撳嚭鏄剧ず鐨勬暟鎹笌锛?
 
 ```
 
-sched_switch 瑙﹀彂鍣ㄧ殑杈撳嚭鏄剧ず浜嗕笌涔嬪墠鐩稿悓鐨?val 鍜?key 鍊硷紝浣嗕篃鏄剧ず浜嗗嚑涓柊鐨勮妭銆?
+sched_switch 触发器的输出显示了与之前相同val key 值，但也显示了几个新的节
 
-棣栧厛锛屽姩浣滆窡韪彉閲忚妭鐜板湪鏄剧ず浜?actions[].track_data 淇℃伅锛屾弿杩颁簡鐢ㄤ簬璺熻釜锛堝湪鏈緥涓級杩愯鏈€澶у€肩殑鐗规畩璺熻釜鍙橀噺鍜屽紩鐢ㄣ€俛ctions[].track_data.var_ref 鎴愬憳鍖呭惈瀵硅璺熻釜鍙橀噺鐨勫紩鐢紝鍦ㄦ湰渚嬩腑鏄?$wakeup_lat 鍙橀噺銆備负浜嗘墽琛?onmax() 澶勭悊鍣ㄥ嚱鏁帮紝杩橀渶瑕佷竴涓彉閲忥紝閫氳繃姣忓綋鍛戒腑鏂版渶澶у€兼椂灏辫鏇存柊鏉ヨ窡韪綋鍓嶆渶澶у€笺€傚湪鏈緥涓紝鎴戜滑鍙互鐪嬪埌涓€涓嚜鍔ㄧ敓鎴愮殑鍚嶄负 '__max' 鐨勫彉閲忓凡缁忚鍒涘缓锛屽苟鍙浜?actions[].track_data.track_var 鍙橀噺涓€?
+首先，动作跟踪变量节现在显示actions[].track_data 信息，描述了用于跟踪（在本例中）运行最大值的特殊跟踪变量和引用。actions[].track_data.var_ref 成员包含对被跟踪变量的引用，在本例中$wakeup_lat 变量。为了执onmax() 处理器函数，还需要一个变量，通过每当命中新最大值时就被更新来跟踪当前最大值。在本例中，我们可以看到一个自动生成的名为 '__max' 的变量已经被创建，并可见actions[].track_data.track_var 变量中
 
-鏈€鍚庯紝鍦ㄦ柊鐨勨€渟ave action variables鈥濊妭涓紝鎴戜滑鍙互鐪嬪埌 save() 鍑芥暟鐨?4 涓弬鏁板鑷村垱寤轰簡 4 涓瓧娈靛彉閲忥紝鐢ㄤ簬鍦ㄥ懡涓渶澶у€兼椂淇濆瓨鎵€鎸囧悕瀛楁鐨勫€笺€傝繖浜涘彉閲忎繚瀛樺湪鑴辩浜?hist_data 鐨勪竴涓嫭绔?save_vars[] 鏁扮粍涓紝鍥犳鏄剧ず鍦ㄥ彟涓€涓細
+最后，在新的“save action variables”节中，我们可以看到 save() 函数4 个参数导致创建了 4 个字段变量，用于在命中最大值时保存所指名字段的值。这些变量保存在脱离hist_data 的一个独save_vars[] 数组中，因此显示在另一个：
 
 ```
   # cat events/sched/sched_switch/hist_debug
@@ -1396,19 +1396,19 @@ sched_switch 瑙﹀彂鍣ㄧ殑杈撳嚭鏄剧ず浜嗕笌涔嬪墠鐩稿悓鐨?
 
 ```
 
-## 鍑犱釜鐗规畩鎯呭喌
+## 几个特殊情况
 
 
 
-灏界涓婇潰娑电洊浜嗙洿鏂瑰浘鍐呴儴鏈哄埗鐨勫熀纭€锛屼絾杩樻湁鍑犱釜鐗规畩鎯呭喌鍊煎緱璁ㄨ锛屽洜涓哄畠浠線寰€浼氬甫鏉ユ洿澶氱殑鍥版儜銆傚畠浠垎鍒槸鍏朵粬鐩存柟鍥句笂鐨勫瓧娈靛彉閲忥紝浠ュ強鍒悕锛坅lias锛夛紝涓よ€呴兘灏嗗湪涓嬮潰閫氳繃绀轰緥娴嬭瘯銆佷娇鐢?hist_debug 鏂囦欢鍔犱互璇存槑銆?
+尽管上面涵盖了直方图内部机制的基础，但还有几个特殊情况值得讨论，因为它们往往会带来更多的困惑。它们分别是其他直方图上的字段变量，以及别名（alias），两者都将在下面通过示例测试、使hist_debug 文件加以说明
 
-### 鍏朵粬鐩存柟鍥句笂鐨勫瓧娈靛彉閲忔祴璇?
+### 其他直方图上的字段变量测
 
 
 
-杩欎釜渚嬪瓙涓庡墠闈㈢殑渚嬪瓙绫讳技锛屼絾鍦ㄦ湰渚嬩腑锛宻ched_switch 瑙﹀彂鍣ㄥ紩鐢ㄤ簡鍙︿竴涓簨浠讹紙鍗?sched_waking 浜嬩欢锛変笂鐨勪竴涓?hist 瑙﹀彂鍣ㄥ瓧娈点€備负浜嗗疄鐜拌繖涓€鐐癸紝浼氫负閭ｄ釜鍏朵粬浜嬩欢鍒涘缓涓€涓瓧娈靛彉閲忥紝浣嗙敱浜庣幇鏈夌殑鐩存柟鍥炬棤娉曡浣跨敤锛堝洜涓虹幇鏈夌洿鏂瑰浘鏄笉鍙彉鐨勶級锛屾墍浠ヤ細鍒涘缓骞朵娇鐢ㄤ竴涓甫鏈夊尮閰嶅彉閲忕殑鏂扮洿鏂瑰浘锛屾垜浠皢鍦ㄤ笅闈㈡樉绀虹殑 hist_debug 杈撳嚭涓湅鍒拌繖涓€鐐广€?
+这个例子与前面的例子类似，但在本例中，sched_switch 触发器引用了另一个事件（sched_waking 事件）上的一hist 触发器字段。为了实现这一点，会为那个其他事件创建一个字段变量，但由于现有的直方图无法被使用（因为现有直方图是不可变的），所以会创建并使用一个带有匹配变量的新直方图，我们将在下面显示的 hist_debug 输出中看到这一点
 
-棣栧厛锛屾垜浠垱寤?wakeup_latency 鍚堟垚浜嬩欢銆傛敞鎰忥細
+首先，我们创wakeup_latency 合成事件。注意：
 
 ```
   # echo 'wakeup_latency u64 lat; pid_t pid; int prio' >> synthetic_events
@@ -1420,16 +1420,16 @@ sched_switch 瑙﹀彂鍣ㄧ殑杈撳嚭鏄剧ず浜嗕笌涔嬪墠鐩稿悓鐨?
 
 ```
 
-杩欓噷鎴戜滑鍦?sched_switch 涓婅缃竴涓?hist 瑙﹀彂鍣紝浣跨敤鍛藉悕 sched_waking 浜嬩欢鐨?onmatch 澶勭悊鍣ㄦ潵鍙戦€佷竴涓?wakeup_latency 浜嬩欢銆傛敞鎰忥紝浼犵粰 wakeup_latency() 鐨勭涓変釜鍙傛暟鏄?prio锛屽畠鏄竴涓渶瑕佷负鍏跺垱寤哄瓧娈靛彉閲忕殑瀛楁鍚嶃€傜劧鑰岋紝sched_switch 浜嬩欢涓婂苟娌℃湁浠讳綍 prio 瀛楁锛屾墍浠ヤ技涔庝笉鍙兘涓哄畠鍒涘缓瀛楁鍙橀噺銆備笌涔嬪尮閰嶇殑 sched_waking 浜嬩欢纭疄鏈変竴涓?prio 瀛楁锛屽洜姝ゅ簲璇ュ彲浠ュ埄鐢ㄥ畠鏉ヨ揪鍒拌繖涓洰鐨勩€傞棶棰樺湪浜庯紝鐩墠杩樹笉鍙兘鍦ㄧ幇鏈夌洿鏂瑰浘涓婂畾涔変竴涓柊鐨勫彉閲忥紝鍥犳鏃犳硶鍚戠幇鏈夌殑 sched_waking 鐩存柟鍥炬坊鍔犳柊鐨?prio 瀛楁鍙橀噺銆備笉杩囷紝鍙互涓哄悓涓€涓簨浠跺垱寤轰竴涓澶栫殑銆佲€樺尮閰嶁€欑殑 sched_waking 鐩存柟鍥撅紙鍗冲畠浣跨敤鐩稿悓鐨勯敭鍜岃繃婊ゅ櫒锛夛紝骞跺湪鍏朵笂瀹氫箟鏂扮殑 prio 瀛楁鍙橀噺銆?
+这里我们sched_switch 上设置一hist 触发器，使用命名 sched_waking 事件onmatch 处理器来发送一wakeup_latency 事件。注意，传给 wakeup_latency() 的第三个参数prio，它是一个需要为其创建字段变量的字段名。然而，sched_switch 事件上并没有任何 prio 字段，所以似乎不可能为它创建字段变量。与之匹配的 sched_waking 事件确实有一prio 字段，因此应该可以利用它来达到这个目的。问题在于，目前还不可能在现有直方图上定义一个新的变量，因此无法向现有的 sched_waking 直方图添加新prio 字段变量。不过，可以为同一个事件创建一个额外的、‘匹配’的 sched_waking 直方图（即它使用相同的键和过滤器），并在其上定义新的 prio 字段变量
 
 ```
   # echo 'hist:keys=next_pid:wakeup_lat=common_timestamp.usecs-$ts0:onmatch(sched.sched_waking).wakeup_latency($wakeup_lat,next_pid,prio)' >> events/sched/sched_switch/trigger
 
 ```
 
-涓嬮潰鏄?sched_waking hist 瑙﹀彂鍣ㄧ殑 hist_debug 淇℃伅杈撳嚭銆傛敞鎰忚緭鍑轰腑鏄剧ず浜嗕袱涓洿鏂瑰浘锛氱涓€涓槸鎴戜滑鍦ㄥ墠闈緥瀛愪腑瑙佽繃鐨勬櫘閫?sched_waking 鐩存柟鍥撅紝绗簩涓槸鎴戜滑涓轰簡鎻愪緵 prio 瀛楁鍙橀噺鑰屽垱寤虹殑閭ｄ釜鐗规畩鐩存柟鍥俱€?
+下面sched_waking hist 触发器的 hist_debug 信息输出。注意输出中显示了两个直方图：第一个是我们在前面例子中见过的普sched_waking 直方图，第二个是我们为了提供 prio 字段变量而创建的那个特殊直方图
 
-瑙傚療涓嬮潰鐨勭浜屼釜鐩存柟鍥撅紝鎴戜滑鐪嬪埌涓€涓悕涓?synthetic_prio 鐨勫彉閲忋€傝繖灏辨槸涓?prio 瀛楁鍒涘缓鐨勫瓧娈靛彉閲忥細
+观察下面的第二个直方图，我们看到一个名synthetic_prio 的变量。这就是prio 字段创建的字段变量：
 
 ```
   # cat events/sched/sched_waking/hist_debug
@@ -1516,7 +1516,7 @@ sched_switch 瑙﹀彂鍣ㄧ殑杈撳嚭鏄剧ず浜嗕笌涔嬪墠鐩稿悓鐨?
 
 ```
 
-瑙傚療涓嬮潰鐨?sched_switch 鐩存柟鍥撅紝鎴戜滑鍙互鐪嬪埌瀵?sched_waking 涓?synthetic_prio 鍙橀噺鐨勫紩鐢紝鑰岃瀵熷叾鍏宠仈鐨?hist_data 鍦板潃锛屾垜浠湅鍒板畠鐨勭‘涓庨偅涓柊鐩存柟鍥剧浉鍏宠仈銆傝繕瑕佹敞鎰忥紝鍏朵粬寮曠敤鍒嗗埆鎸囧悜涓€涓櫘閫氬彉閲?wakeup_lat锛屼互鍙婁竴涓櫘閫氬瓧娈靛彉閲?next_pid锛岋細
+观察下面sched_switch 直方图，我们可以看到sched_waking synthetic_prio 变量的引用，而观察其关联hist_data 地址，我们看到它的确与那个新直方图相关联。还要注意，其他引用分别指向一个普通变wakeup_lat，以及一个普通字段变next_pid，：
 
 ```
   # cat events/sched/sched_switch/hist_debug
@@ -1638,32 +1638,32 @@ sched_switch 瑙﹀彂鍣ㄧ殑杈撳嚭鏄剧ず浜嗕笌涔嬪墠鐩稿悓鐨?
 
 ```
 
-### 鍒悕娴嬭瘯
+### 别名测试
 
 
 
-杩欎釜渚嬪瓙涓庡墠闈㈢殑渚嬪瓙闈炲父鐩镐技锛屼絾婕旂ず浜嗗埆鍚嶏紙alias锛夋爣蹇椼€?
+这个例子与前面的例子非常相似，但演示了别名（alias）标志
 
 ```
   # echo 'wakeup_latency u64 lat; pid_t pid; char comm[16]' >> synthetic_events
 
 ```
 
-鎺ヤ笅鏉ワ紝鎴戜滑鍒涘缓涓€涓被浼间簬鍓嶉潰渚嬪瓙鐨?sched_waking 瑙﹀彂鍣紝锛?
+接下来，我们创建一个类似于前面例子sched_waking 触发器，
 
 ```
   # echo 'hist:keys=pid:waking_pid=pid:ts0=common_timestamp.usecs' >> events/sched/sched_waking/trigger
 
 ```
 
-瀵逛簬 sched_switch 瑙﹀彂鍣紝鎴戜滑涓嶇洿鎺ュ湪 wakeup_latency 鍚堟垚浜嬩欢鐨勮皟鐢ㄤ腑浣跨敤 $waking_pid锛岃€屾槸鍒涘缓涓€涓悕涓?$woken_pid 鐨?$waking_pid 鍒悕锛屽苟鍦ㄥ悎鎴愪簨浠朵腑浣跨敤瀹冿細
+对于 sched_switch 触发器，我们不直接在 wakeup_latency 合成事件的调用中使用 $waking_pid，而是创建一个名$woken_pid $waking_pid 别名，并在合成事件中使用它：
 
 ```
   # echo 'hist:keys=next_pid:woken_pid=$waking_pid:wakeup_lat=common_timestamp.usecs-$ts0:onmatch(sched.sched_waking).wakeup_latency($wakeup_lat,$woken_pid,next_comm)' >> events/sched/sched_switch/trigger
 
 ```
 
-瑙傚療 sched_waking 鐨?hist_debug 杈撳嚭锛岄櫎浜嗭細
+观察 sched_waking hist_debug 输出，除了：
 
 ```
   # cat events/sched/sched_waking/hist_debug
@@ -1719,11 +1719,11 @@ sched_switch 瑙﹀彂鍣ㄧ殑杈撳嚭鏄剧ず浜嗕笌涔嬪墠鐩稿悓鐨?
 
 ```
 
-sched_switch 鐨?hist_debug 杈撳嚭鏄剧ず锛屼竴涓悕涓?woken_pid 鐨勫彉閲忓凡缁忚鍒涘缓锛屽苟涓旇繕璁剧疆浜?HIST_FIELD_FL_ALIAS 鏍囧織銆傚畠涔熻缃簡 HIST_FIELD_FL_VAR 鏍囧織锛岃繖灏辨槸瀹冨嚭鐜板湪 val field 鑺備腑鐨勫師鍥犮€?
+sched_switch hist_debug 输出显示，一个名woken_pid 的变量已经被创建，并且还设置HIST_FIELD_FL_ALIAS 标志。它也设置了 HIST_FIELD_FL_VAR 标志，这就是它出现在 val field 节中的原因
 
-灏界鏈夎繖涓疄鐜扮粏鑺傦紝涓€涓埆鍚嶅彉閲忓疄闄呬笂鏇村儚涓€涓彉閲忓紩鐢紱浜嬪疄涓婏紝瀹冨彲浠ヨ瑙嗕负鈥滃紩鐢ㄧ殑寮曠敤鈥濄€傝瀹炵幇浼氫粠琚紩鐢ㄧ殑鍙橀噺寮曠敤澶嶅埗 var_ref->fn()锛屽湪鏈緥涓槸 waking_pid 鐨?fn()锛屽嵆 hist_field_var_ref()锛屽苟鎶婅鍑芥暟浣滀负鍒悕鐨?fn()銆俬ist_field_var_ref() 杩欎釜 fn() 闇€瑕佸畠鎵€鐢ㄥ彉閲忓紩鐢ㄧ殑 var_ref_idx锛屽洜姝?waking_pid 鐨?var_ref_idx 涔熻澶嶅埗鍒颁簡鍒悕涓€傛渶缁堢粨鏋滄槸锛氬綋鍙栧洖鍒悕鐨勫€兼椂锛屽畠鏈€缁堟墍鍋氱殑涓庡師濮嬪紩鐢ㄤ細鍋氱殑瀹屽叏鐩稿悓锛屽嵆浠?var_ref_vals[] 鏁扮粍涓彇鍥炵浉鍚岀殑鍊笺€備綘鍙互鍦ㄨ緭鍑轰腑楠岃瘉杩欎竴鐐癸細娉ㄦ剰鍒悕鐨?var_ref_idx锛堝湪鏈緥涓槸 woken_pid锛変笌鍙橀噺寮曠敤瀛楁鑺備腑閭ｄ釜寮曠敤 waking_pid 鐨?var_ref_idx 鐩稿悓銆?
+尽管有这个实现细节，一个别名变量实际上更像一个变量引用；事实上，它可以被视为“引用的引用”。该实现会从被引用的变量引用复制 var_ref->fn()，在本例中是 waking_pid fn()，即 hist_field_var_ref()，并把该函数作为别名fn()。hist_field_var_ref() 这个 fn() 需要它所用变量引用的 var_ref_idx，因waking_pid var_ref_idx 也被复制到了别名中。最终结果是：当取回别名的值时，它最终所做的与原始引用会做的完全相同，即var_ref_vals[] 数组中取回相同的值。你可以在输出中验证这一点：注意别名var_ref_idx（在本例中是 woken_pid）与变量引用字段节中那个引用 waking_pid var_ref_idx 相同
 
-姝ゅ锛屼竴鏃﹀畠鍙栧緱璇ュ€硷紝鐢变簬瀹冩湰韬篃鏄竴涓彉閲忥紝瀹冨氨浼氭妸璇ュ€间繚瀛樿繘鑷繁鐨?var.idx銆傛墍浠?woken_pid 鍒悕鐨?var.idx 鏄?0锛屽綋瀹冪殑 fn() 琚皟鐢ㄦ潵鏇存柊鑷韩鏃讹紝瀹冧細鐢ㄦ潵鑷?var_ref_idx 0 鐨勫€煎～鍏呰妲戒綅銆備綘杩樹細娉ㄦ剰鍒帮紝鍦ㄥ彉閲忓紩鐢ㄨ妭涓湁涓€涓?woken_pid 鐨?var_ref銆傞偅鏄 woken_pid 鍒悕鍙橀噺鐨勫紩鐢紝浣犲彲浠ョ湅鍒板畠浠庝笌 woken_pid 鍒悕鐩稿悓鐨?var.idx锛堝嵆 0锛夊彇鍥炲€硷紝杩涜€屽啀鎶婂畠鑷繁淇濆瓨鍦ㄥ叾 var_ref_idx 妲戒綅 3 涓紝鑰岃繖涓綅缃笂鐨勫€兼渶缁堝氨鏄璧嬬粰锛?
+此外，一旦它取得该值，由于它本身也是一个变量，它就会把该值保存进自己var.idx。所woken_pid 别名var.idx 0，当它的 fn() 被调用来更新自身时，它会用来var_ref_idx 0 的值填充该槽位。你还会注意到，在变量引用节中有一woken_pid var_ref。那是对 woken_pid 别名变量的引用，你可以看到它从与 woken_pid 别名相同var.idx（即 0）取回值，进而再把它自己保存在其 var_ref_idx 槽位 3 中，而这个位置上的值最终就是被赋给
 
 ```
   # cat events/sched/sched_switch/hist_debug

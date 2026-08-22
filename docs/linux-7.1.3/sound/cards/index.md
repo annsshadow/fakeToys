@@ -1,16 +1,16 @@
-﻿## 鍗＄壒瀹氫俊鎭?
+﻿## 鍗＄壒瀹氫俊鎭。
 
-鏈〉鏄０鍗＄浉鍏虫枃妗ｇ殑绱㈠紩锛屾眹鎬讳簡鍚勭被鐗瑰畾澹板崱涓庨煶棰戣姱鐗囷紙濡?CMIPCI銆丼B Live銆丄udigy銆丅T87x 绛夛級鐨勯┍鍔ㄤ笌娣烽煶鍣ㄨ鏄庡叆鍙ｏ紝渚夸簬璇昏€呮寜纭欢鍨嬪彿鏌ユ壘瀵瑰簲鏂囨。銆?
-
-
+本页是声卡相关文档的索引，汇总了各类特定声卡与音频芯片（CMIPCI、SB Live、Audigy、BT87x 等）的驱动与混音器说明入口，便于读者按硬件型号查找对应文档
 
 
-鏈〉鍒楀嚭鐗瑰畾澹板崱鐩稿叧鐨勬枃妗ｃ€?
+
+
+本页列出特定声卡相关的文档
 
 - [joystick](joystick)
 - [cmipci](cmipci)
-- [SB Live 娣烽煶鍣╙(sb-live-mixer)
-- [Audigy 娣烽煶鍣╙(audigy-mixer)
+- [SB Live 混音器](sb-live-mixer)
+- [Audigy 混音器](audigy-mixer)
 - [emu-mixer](emu-mixer)
 - [emu10k1-jack](emu10k1-jack)
 - [via82xx-mixer](via82xx-mixer)
@@ -20,6 +20,6 @@
 - [maya44](maya44)
 - [hdspm](hdspm)
 - [serial-u16550](serial-u16550)
-- [IMG SPDIF 杈撳叆](img-spdif-in)
+- [IMG SPDIF 输入](img-spdif-in)
 - [pcmtest](pcmtest)
 
