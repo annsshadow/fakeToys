@@ -43,7 +43,7 @@ origin: docs/brainstorms/2026-08-21-plans-status-audit-and-consolidation-require
 | # | 单元 | 优先级 | 类型 | 状态（2026-08-22 执行后终态） |
 |---|------|--------|------|--------------------------|
 | U1 | Value::Null 与 CMS stub 清零 | P0 | oa4rust | ✅ 已关闭（实质达成，指标作废） |
-| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | 🔄 36.9%→**59.1%**（+579 路由）。模块级战果：attendance 70.8%、message **100%**、program_center 68.7%、cms/file/bbs/org/meeting 已做动词对齐。剩余缺口集中在 cms 深水区与 processplatform_surface，需按同型配方继续专项开发 |
+| U2 | Java-Rust 端点对齐度 ≥70% | P0 | oa4rust | 🔄 36.9%→**61.7%**（+648 路由）。模块级战果：message **100%**、attendance 70.8%、program_center 68.7%、cms 38.2%、processplatform_surface 16.6%（漂移路由批量二注册可再抬升约 60pp，见代理报告）。剩余按同型配方分模块专项推进 |
 | U3 | 影子流量灰度验证与切流 | P1 | oa4rust | ⛔ 外部阻塞（需生产环境 + ≥2 周影子观察期），脚本就绪 |
 | U4 | Tantivy 全文检索集成 | P1 | oa4rust | ✅ 已完成 |
 | U5 | query/portal 深度审计 | P1 | oa4rust | ✅ 已关闭 |
