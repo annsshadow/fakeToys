@@ -1,157 +1,157 @@
-﻿## E-MU 鏁板瓧闊抽绯荤粺 mixer 涓庨粯璁?DSP 浠ｇ爜
+﻿## E-MU 数字音频系统 mixer 与默DSP 代码
 
-鏈枃妗ｄ粙缁?E-MU 0404/1010/1212/1616/1820 鐨?PCI/PCI-e/CardBus 绯诲垪澹板崱銆?
+本文档介E-MU 0404/1010/1212/1616/1820 PCI/PCI-e/CardBus 系列声卡
 
-杩欎簺澹板崱閲囩敤甯歌鐨?EMU10K2锛圫oundBlaster Audigy锛夎姱鐗囷紝浣嗘惌閰嶄簡闈㈠悜鍗婁笓涓氬綍闊冲褰曢煶鐨勬浛浠ｅ墠绔紙front-end锛夈€?
+这些声卡采用常规EMU10K2（SoundBlaster Audigy）芯片，但搭配了面向半专业录音室录音的替代前端（front-end）
 
-鏈枃妗ｅ熀浜?audigy-mixer.rst銆?
-
-
-## 纭欢鍏煎鎬?
-
-EMU10K2 鑺墖鐨勯噰闆?FIFO锛坈apture FIFO锛夐潪甯哥煭锛岃嫢澹板崱鐨?PCI 鎬荤嚎璇锋眰鏈浠ラ€傚綋鐨勪紭鍏堢骇澶勭悊锛屼細瀵艰嚧褰曢煶涓嶅彲闈犮€傚湪杈冩柊鐨勪富鏉夸笂灏ゅ叾濡傛锛歅CI 鎬荤嚎寰€寰€鍙槸娆＄骇澶栬锛岃€岄潪璁惧璁块棶鐨勫疄闄呬徊瑁佽€呫€傚叿浣撹€岃█锛屽湪 Intel DP55 涓绘澘锛堝唴瀛樻帶鍒跺櫒浣嶄簬 CPU锛変笂鍚屾椂杩涜鎾斁涓庡綍闊虫椂锛屾垜閬囧埌浜嗗綍闊虫晠闅滐紱浣嗗湪 Intel DP45 涓绘澘锛堝唴瀛樻帶鍒跺櫒浣嶄簬鍖楁ˉ锛変笂鏇捐幏寰楁垚鍔熴€傝繖浜涘０鍗＄殑 PCI Express 鐗堟湰锛堟澘杞戒竴涓?PCI 妗ワ紝鍏朵綑閮ㄥ垎鐩稿悓锛夐棶棰橀€氬父杈冨皯銆?
+本文档基audigy-mixer.rst
 
 
-## 椹卞姩鑳藉姏
+## 硬件兼容
 
-璇ラ┍鍔ㄤ粎鏀寔 16 浣嶃€?4.1/48 kHz 鐨勬搷浣溿€傚澹伴亾璁惧锛堝弬瑙?emu10k1-jack.rst锛夎繕鏀寔 24 浣嶉噰闆嗐€?
-
-涓€涓敤浜庡寮鸿椹卞姩鐨勮ˉ涓侀泦鍙粠 [涓€涓?GitHub 浠撳簱](https://github.com/ossilator/linux/tree/ossis-emu10k1) 鑾峰彇銆傚叾澶氬０閬撹澶囧悓鏃舵敮鎸?24 浣嶇殑鎾斁涓庨噰闆嗭紝骞朵笖杩樻敮鎸佸畬鏁寸殑 88.2/96/176.4/192 kHz 鎿嶄綔銆傝琛ヤ竵闆嗕笉浼氳繘鍏ヤ富绾匡紙upstream锛夛紝鍘熷洜鏄浜庝粈涔堟墠鏋勬垚鑹ソ鐨勭敤鎴蜂綋楠屽瓨鍦ㄦ牴鏈垎姝с€?
+EMU10K2 芯片的采FIFO（capture FIFO）非常短，若声卡PCI 总线请求未被以适当的优先级处理，会导致录音不可靠。在较新的主板上尤其如此：PCI 总线往往只是次级外设，而非设备访问的实际仲裁者。具体而言，在 Intel DP55 主板（内存控制器位于 CPU）上同时进行播放与录音时，我遇到了录音故障；但在 Intel DP45 主板（内存控制器位于北桥）上曾获得成功。这些声卡的 PCI Express 版本（板载一PCI 桥，其余部分相同）问题通常较少
 
 
-## 鏁板瓧 mixer 鎺у埗
+## 驱动能力
 
-娉ㄦ剰锛氳繖浜涙帶鍒朵綔涓鸿“鍑忓櫒锛坅ttenuator锛夊伐浣溾€斺€旀渶澶у€煎嵆涓€т綅缃紝淇濇寔淇″彿涓嶅彉銆傚彟璇锋敞鎰忥細鑻ュ涓帶鍒舵寚鍚戝悓涓€鐩爣锛屼俊鍙蜂細琚疮鍔狅紝骞跺彲鑳借鍓婃尝锛坈lip锛屽嵆鍦ㄦ湭鍋氭孩鍑烘鏌ョ殑鎯呭喌涓嬭璁剧疆涓烘渶澶ф垨鏈€灏忓€硷級銆?
+该驱动仅支持 16 位4.1/48 kHz 的操作。多声道设备（参emu10k1-jack.rst）还支持 24 位采集
 
-鎵€鐢ㄧ缉鍐欒鏄庯細
+一个用于增强该驱动的补丁集可从 [一GitHub 仓库](https://github.com/ossilator/linux/tree/ossis-emu10k1) 获取。其多声道设备同时支24 位的播放与采集，并且还支持完整的 88.2/96/176.4/192 kHz 操作。该补丁集不会进入主线（upstream），原因是对于什么才构成良好的用户体验存在根本分歧
+
+
+## 数字 mixer 控制
+
+注意：这些控制作为衰减器（attenuator）工作——最大值即中性位置，保持信号不变。另请注意：若多个控制指向同一目标，信号会被累加，并可能被削波（clip，即在未做溢出检查的情况下被设置为最大或最小值）
+
+所用缩写说明：
 
 DAC
-	鏁板瓧鍒版ā鎷熻浆鎹㈠櫒锛圖igital-to-Analog Converter锛?
+	数字到模拟转换器（Digital-to-Analog Converter
 ADC
-	妯℃嫙鍒版暟瀛楄浆鎹㈠櫒锛圓nalog-to-Digital Converter锛?
+	模拟到数字转换器（Analog-to-Digital Converter
 LFE
-	浣庨鏁堟灉锛坙ow frequency effects锛岀敤浣滀綆闊崇偖淇″彿锛?
+	低频效果（low frequency effects，用作低音炮信号
 IEC958
 	S/PDIF
 FX-bus
-	EMU10K2 鑺墖鍏锋湁涓€鏉℃晥鏋滄€荤嚎锛坋ffect bus锛夛紝鍖呭惈 64 涓疮鍔犲櫒銆傛瘡涓悎鎴愬櫒澹伴儴锛坴oice锛夊彲灏嗚嚜宸辩殑杈撳嚭閫佸叆杩欎簺绱姞鍣紝DSP 寰帶鍒跺櫒鍙鎵€寰楃殑鍜岃繘琛岃繍绠椼€?
+	EMU10K2 芯片具有一条效果总线（effect bus），包含 64 个累加器。每个合成器声部（voice）可将自己的输出送入这些累加器，DSP 微控制器可对所得的和进行运算
 
-### name='Clock Source',绱㈠紩=0
+### name='Clock Source',索引=0
 
-璇ユ帶鍒跺湪鍐呴儴鐢熸垚鐨?44.1 鎴?48 kHz 瀛楁椂閽燂紙word clock锛変笌鑻ュ共澶栭儴鏃堕挓婧愪箣闂村垏鎹€?
+该控制在内部生成44.1 48 kHz 字时钟（word clock）与若干外部时钟源之间切换
 
-娉ㄦ剰锛?616 CardBus 澹板崱鍙敤鐨勫閮ㄦ椂閽熸簮灏氫笉鏄庣‘锛屾杩庡弽棣堜綘鐨勫彂鐜般€?
+注意616 CardBus 声卡可用的外部时钟源尚不明确，欢迎反馈你的发现
 
-### name='Clock Fallback',绱㈠紩=0
+### name='Clock Fallback',索引=0
 
-璇ユ帶鍒跺喅瀹氬綋閫夊畾鐨勫閮ㄦ椂閽熸簮鏃犳晥锛堟垨鍙樹负鏃犳晥锛夋椂锛屽０鍗℃墍鍥為€€鍒扮殑鍐呴儴鏃堕挓銆?
+该控制决定当选定的外部时钟源无效（或变为无效）时，声卡所回退到的内部时钟
 
-### name='DAC1 0202 14dB PAD',绱㈠紩=0, 绛?
+### name='DAC1 0202 14dB PAD',索引=0, 
 
-杈撳嚭琛板噺鎺у埗銆傚湪 0404 澹板崱涓婁笉鍙敤銆?
+输出衰减控制。在 0404 声卡上不可用
 
-### name='ADC1 14dB PAD 0202',绱㈠紩=0, 绛?
+### name='ADC1 14dB PAD 0202',索引=0, 
 
-杈撳叆琛板噺鎺у埗銆傚湪 0404 澹板崱涓婁笉鍙敤銆?
+输入衰减控制。在 0404 声卡上不可用
 
-### name='Optical 杈撳嚭 妯″紡',绱㈠紩=0
+### name='Optical 输出 模式',索引=0
 
-鍦?TOSLINK 杈撳嚭绔彛鐨?S/PDIF 涓?ADAT 涔嬮棿鍒囨崲銆傚湪 0404 澹板崱涓婁笉鍙敤锛堝浐瀹氫负 S/PDIF锛夈€?
+TOSLINK 输出端口S/PDIF ADAT 之间切换。在 0404 声卡上不可用（固定为 S/PDIF）
 
-### name='Optical 杈撳叆 妯″紡',绱㈠紩=0
+### name='Optical 输入 模式',索引=0
 
-鍦?TOSLINK 杈撳叆绔彛鐨?S/PDIF 涓?ADAT 涔嬮棿鍒囨崲銆傚湪 0404 澹板崱涓婁笉鍙敤锛堝浐瀹氫负 S/PDIF锛夈€?
+TOSLINK 输入端口S/PDIF ADAT 之间切换。在 0404 声卡上不可用（固定为 S/PDIF）
 
-### name='PCM Front Playback Volume',绱㈠紩=0
+### name='PCM Front Playback Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸鍓嶇疆 PCM FX-bus 绱姞鍣ㄧ殑閲囨牱銆侫LSA 灏嗙疮鍔犲櫒 8 鍜?9 鐢ㄤ簬宸︺€佸彸鍓嶇疆 PCM 閲囨牱锛堝搴?5.1 澹伴亾鎾斁锛夈€傜粨鏋滈噰鏍疯閫佸線 DSP 0 涓?1 鎾斁閫氶亾銆?
+该控制用于衰减来自左、右前置 PCM FX-bus 累加器的采样。ALSA 将累加器 8 9 用于左、右前置 PCM 采样（对5.1 声道播放）。结果采样被送往 DSP 0 1 播放通道
 
-### name='PCM Surround Playback Volume',绱㈠紩=0
+### name='PCM Surround Playback Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸鐜粫 PCM FX-bus 绱姞鍣ㄧ殑閲囨牱銆侫LSA 灏嗙疮鍔犲櫒 2 鍜?3 鐢ㄤ簬宸︺€佸彸鐜粫 PCM 閲囨牱锛堝搴?5.1 澹伴亾鎾斁锛夈€傜粨鏋滈噰鏍疯閫佸線 DSP 2 涓?3 鎾斁閫氶亾銆?
+该控制用于衰减来自左、右环绕 PCM FX-bus 累加器的采样。ALSA 将累加器 2 3 用于左、右环绕 PCM 采样（对5.1 声道播放）。结果采样被送往 DSP 2 3 播放通道
 
-### name='PCM Side Playback Volume',绱㈠紩=0
+### name='PCM Side Playback Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸渚ч潰 PCM FX-bus 绱姞鍣ㄧ殑閲囨牱銆侫LSA 灏嗙疮鍔犲櫒 14 鍜?15 鐢ㄤ簬宸︺€佸彸渚ч潰 PCM 閲囨牱锛堝搴?7.1 澹伴亾鎾斁锛夈€傜粨鏋滈噰鏍疯閫佸線 DSP 6 涓?7 鎾斁閫氶亾銆?
+该控制用于衰减来自左、右侧面 PCM FX-bus 累加器的采样。ALSA 将累加器 14 15 用于左、右侧面 PCM 采样（对7.1 声道播放）。结果采样被送往 DSP 6 7 播放通道
 
-### name='PCM Center Playback Volume',绱㈠紩=0
+### name='PCM Center Playback Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷腑澶?PCM FX-bus 绱姞鍣ㄧ殑閲囨牱銆侫LSA 灏嗙疮鍔犲櫒 6 鐢ㄤ簬涓ぎ PCM 閲囨牱锛堝搴?5.1 澹伴亾鎾斁锛夈€傜粨鏋滈噰鏍疯閫佸線 DSP 4 鎾斁閫氶亾銆?
+该控制用于衰减来自中PCM FX-bus 累加器的采样。ALSA 将累加器 6 用于中央 PCM 采样（对5.1 声道播放）。结果采样被送往 DSP 4 播放通道
 
-### name='PCM LFE Playback Volume',绱㈠紩=0
+### name='PCM LFE Playback Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷?LFE PCM FX-bus 绱姞鍣ㄧ殑閲囨牱銆侫LSA 灏嗙疮鍔犲櫒 7 鐢ㄤ簬 LFE PCM 閲囨牱锛堝搴?5.1 澹伴亾鎾斁锛夈€傜粨鏋滈噰鏍疯閫佸線 DSP 5 鎾斁閫氶亾銆?
+该控制用于衰减来LFE PCM FX-bus 累加器的采样。ALSA 将累加器 7 用于 LFE PCM 采样（对5.1 声道播放）。结果采样被送往 DSP 5 播放通道
 
-### name='PCM Playback Volume',绱㈠紩=0
+### name='PCM Playback Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 PCM FX-bus 绱姞鍣ㄧ殑閲囨牱銆侫LSA 灏嗙疮鍔犲櫒 0 鍜?1 鐢ㄤ簬宸︺€佸彸 PCM 閲囨牱锛堝搴旂珛浣撳０鎾斁锛夈€傜粨鏋滈噰鏍疯閫佸線铏氭嫙绔嬩綋澹?mixer銆?
+该控制用于衰减来自左、右 PCM FX-bus 累加器的采样。ALSA 将累加器 0 1 用于左、右 PCM 采样（对应立体声播放）。结果采样被送往虚拟立体mixer
 
-### name='PCM Capture Volume',绱㈠紩=0
+### name='PCM Capture Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 PCM FX-bus 绱姞鍣ㄧ殑閲囨牱銆侫LSA 灏嗙疮鍔犲櫒 0 鍜?1 鐢ㄤ簬宸︺€佸彸 PCM銆傜粨鏋滆閫佸線鏍囧噯閲囬泦 PCM 璁惧銆?
+该控制用于衰减来自左、右 PCM FX-bus 累加器的采样。ALSA 将累加器 0 1 用于左、右 PCM。结果被送往标准采集 PCM 设备
 
-### name='Music Playback Volume',绱㈠紩=0
+### name='Music Playback Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷乏銆佸彸 MIDI FX-bus 绱姞鍣ㄧ殑閲囨牱銆侫LSA 灏嗙疮鍔犲櫒 4 鍜?5 鐢ㄤ簬宸︺€佸彸 MIDI 閲囨牱銆傜粨鏋滈噰鏍疯閫佸線铏氭嫙绔嬩綋澹?mixer銆?
+该控制用于衰减来自左、右 MIDI FX-bus 累加器的采样。ALSA 将累加器 4 5 用于左、右 MIDI 采样。结果采样被送往虚拟立体mixer
 
-### name='Music Capture Volume',绱㈠紩=0
+### name='Music Capture Volume',索引=0
 
-杩欎簺鎺у埗鐢ㄤ簬琛板噺鏉ヨ嚜宸︺€佸彸 MIDI FX-bus 绱姞鍣ㄧ殑閲囨牱銆侫LSA 灏嗙疮鍔犲櫒 4 鍜?5 鐢ㄤ簬宸︺€佸彸 MIDI 閲囨牱銆傜粨鏋滆閫佸線鏍囧噯閲囬泦 PCM 璁惧銆?
+这些控制用于衰减来自左、右 MIDI FX-bus 累加器的采样。ALSA 将累加器 4 5 用于左、右 MIDI 采样。结果被送往标准采集 PCM 设备
 
-### name='Front Playback Volume',绱㈠紩=0
+### name='Front Playback Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷櫄鎷熺珛浣撳０ mixer 鐨勯噰鏍枫€傜粨鏋滈噰鏍疯閫佸線 DSP 0 涓?1 鎾斁閫氶亾銆?
+该控制用于衰减来自虚拟立体声 mixer 的采样。结果采样被送往 DSP 0 1 播放通道
 
-### name='Surround Playback Volume',绱㈠紩=0
+### name='Surround Playback Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷櫄鎷熺珛浣撳０ mixer 鐨勯噰鏍枫€傜粨鏋滈噰鏍疯閫佸線 DSP 2 涓?3 鎾斁閫氶亾銆?
+该控制用于衰减来自虚拟立体声 mixer 的采样。结果采样被送往 DSP 2 3 播放通道
 
-### name='Side Playback Volume',绱㈠紩=0
+### name='Side Playback Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷櫄鎷熺珛浣撳０ mixer 鐨勯噰鏍枫€傜粨鏋滈噰鏍疯閫佸線 DSP 6 涓?7 鎾斁閫氶亾銆?
+该控制用于衰减来自虚拟立体声 mixer 的采样。结果采样被送往 DSP 6 7 播放通道
 
-### name='Center Playback Volume',绱㈠紩=0
+### name='Center Playback Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷櫄鎷熺珛浣撳０ mixer 鐨勯噰鏍枫€傜粨鏋滈噰鏍疯閫佸線 DSP 4 鎾斁閫氶亾銆?
+该控制用于衰减来自虚拟立体声 mixer 的采样。结果采样被送往 DSP 4 播放通道
 
-### name='LFE Playback Volume',绱㈠紩=0
+### name='LFE Playback Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷櫄鎷熺珛浣撳０ mixer 鐨勯噰鏍枫€傜粨鏋滈噰鏍疯閫佸線 DSP 5 鎾斁閫氶亾銆?
+该控制用于衰减来自虚拟立体声 mixer 的采样。结果采样被送往 DSP 5 播放通道
 
-### name='Tone Control - Switch',绱㈠紩=0
+### name='Tone Control - Switch',索引=0
 
-璇ユ帶鍒剁敤浜庢墦寮€鎴栧叧闂煶璋冩帶鍒讹紙tone control锛夈€傚彈褰卞搷鐨勯噰鏍蜂細琚€佸線 DSP 鎾斁閫氶亾銆?
+该控制用于打开或关闭音调控制（tone control）。受影响的采样会被送往 DSP 播放通道
 
-### name='Tone Control - Bass',绱㈠紩=0
+### name='Tone Control - Bass',索引=0
 
-璇ユ帶鍒惰缃綆闊筹紙bass锛夊己搴︺€備笉瀛樺湪涓€у€硷紒鍚敤闊宠皟鎺у埗浠ｇ爜鍚庯紝閲囨牱濮嬬粓浼氳淇敼銆傛渶鎺ヨ繎绾噣淇″彿鐨勫€间负 20銆?
+该控制设置低音（bass）强度。不存在中性值！启用音调控制代码后，采样始终会被修改。最接近纯净信号的值为 20
 
-### name='Tone Control - Treble',绱㈠紩=0
+### name='Tone Control - Treble',索引=0
 
-璇ユ帶鍒惰缃珮闊筹紙treble锛夊己搴︺€備笉瀛樺湪涓€у€硷紒鍚敤闊宠皟鎺у埗浠ｇ爜鍚庯紝閲囨牱濮嬬粓浼氳淇敼銆傛渶鎺ヨ繎绾噣淇″彿鐨勫€间负 20銆?
+该控制设置高音（treble）强度。不存在中性值！启用音调控制代码后，采样始终会被修改。最接近纯净信号的值为 20
 
-### name='Master Playback Volume',绱㈠紩=0
+### name='Master Playback Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔墍鏈?DSP 鎾斁閫氶亾鐨勯噰鏍枫€?
+该控制用于衰减所DSP 播放通道的采样
 
-### name='EMU Capture Volume',绱㈠紩=0
+### name='EMU Capture Volume',索引=0
 
-璇ユ帶鍒剁敤浜庤“鍑忔潵鑷?DSP 0 涓?1 閲囬泦閫氶亾鐨勯噰鏍枫€傜粨鏋滆閫佸線鏍囧噯閲囬泦 PCM 璁惧銆?
+该控制用于衰减来DSP 0 1 采集通道的采样。结果被送往标准采集 PCM 设备
 
-### name='DAC Left',绱㈠紩=0, 绛?
+### name='DAC Left',索引=0, 
 
-閫夋嫨缁欏畾鐗╃悊闊抽杈撳嚭鐨勬潵婧愩€傚彲浠ユ槸鐗╃悊杈撳叆銆佹挱鏀鹃€氶亾锛圖SP xx锛屼互鍗佽繘鍒舵暟瀛楄〃绀猴級锛屾垨闈欓煶锛坰ilence锛夈€?
+选择给定物理音频输出的来源。可以是物理输入、播放通道（DSP xx，以十进制数字表示），或静音（silence）
 
-### name='DSP x',绱㈠紩=0
+### name='DSP x',索引=0
 
-閫夋嫨缁欏畾閲囬泦閫氶亾锛堜互鍗佸叚杩涘埗鏁板瓧琛ㄧず锛夌殑鏉ユ簮銆傞€夐」涓庣墿鐞嗛煶棰戣緭鍑虹浉鍚屻€?
-
-
-## PCM 娴佺浉鍏虫帶鍒?
-
-杩欎簺鎺у埗鍦?audigy-mixer.rst 涓湁璇存槑銆?
+选择给定采集通道（以十六进制数字表示）的来源。选项与物理音频输出相同
 
 
-## 鎵嬪唽/涓撳埄
+## PCM 流相关控
 
-鍙傝 sb-live-mixer.rst銆?
+这些控制audigy-mixer.rst 中有说明
+
+
+## 手册/专利
+
+参见 sb-live-mixer.rst
