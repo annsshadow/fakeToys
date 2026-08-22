@@ -2,43 +2,43 @@
 ######## ioctl DMX_QUERYBUF
 
 
-## 鍚嶇О
+## 名称
 
 
-DMX_QUERYBUF - 鏌ヨ缂撳啿鍖虹殑鐘舵€?
+DMX_QUERYBUF - 查询缓冲区的状
 
 
-## 姒傝
+## 概要
 
 
 `int ioctl(int fd, DMX_QUERYBUF, struct dvb_buffer *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 
 `argp`
-    鎸囧悜缁撴瀯浣?`dvb_buffer` 鐨勬寚閽堛€?
+    指向结构`dvb_buffer` 的指针
 
-## 鎻忚堪
-
-
-璇?ioctl 鏄?mmap 娴佸紡 I/O 鏂规硶鐨勪竴閮ㄥ垎銆傚畠鍙互鍦ㄤ娇鐢?DMX_REQBUFS ioctl 鍒嗛厤缂撳啿鍖轰箣鍚庣殑浠讳綍鏃堕棿鐢ㄤ簬鏌ヨ缂撳啿鍖虹殑鐘舵€併€?
-
-搴旂敤绋嬪簭璁剧疆 `index` 瀛楁銆傛湁鏁堢殑绱㈠紩缂栧彿鑼冨洿浠庨浂鍒颁娇鐢?DMX_REQBUFS 鍒嗛厤鐨勭紦鍐插尯鏁伴噺锛堢粨鏋勪綋 `dvb_requestbuffers` 鐨?`count`锛夊噺涓€銆?
-
-鍦ㄤ娇鐢ㄦ寚鍚戣缁撴瀯鐨勬寚閽堣皟鐢?DMX_QUERYBUF 鍚庯紝椹卞姩杩斿洖閿欒鐮佹垨濉厖缁撴瀯鐨勫叾浣欓儴鍒嗐€?
-
-鎴愬姛鏃讹紝`offset` 灏嗗寘鍚紦鍐插尯璺濊澶囧唴瀛樿捣濮嬩綅缃殑鍋忕Щ锛宍length` 瀛楁涓哄叾澶у皬锛宍bytesused` 涓虹紦鍐插尯涓暟鎹紙鏈夋晥杞借嵎锛夊崰鐢ㄧ殑瀛楄妭鏁般€?
-
-## 杩斿洖鍊?
+## 描述
 
 
-鎴愬姛鏃惰繑鍥?0锛宍offset` 灏嗗寘鍚紦鍐插尯璺濊澶囧唴瀛樿捣濮嬩綅缃殑鍋忕Щ锛宍length` 瀛楁涓哄叾澶у皬锛宍bytesused` 涓虹紦鍐插尯涓暟鎹紙鏈夋晥杞借嵎锛夊崰鐢ㄧ殑瀛楄妭鏁般€?
+ioctl mmap 流式 I/O 方法的一部分。它可以在使DMX_REQBUFS ioctl 分配缓冲区之后的任何时间用于查询缓冲区的状态
 
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+应用程序设置 `index` 字段。有效的索引编号范围从零到使DMX_REQBUFS 分配的缓冲区数量（结构体 `dvb_requestbuffers` `count`）减一
+
+在使用指向该结构的指针调DMX_QUERYBUF 后，驱动返回错误码或填充结构的其余部分
+
+成功时，`offset` 将包含缓冲区距设备内存起始位置的偏移，`length` 字段为其大小，`bytesused` 为缓冲区中数据（有效载荷）占用的字节数
+
+## 杩斿洖鍊。
+
+
+成功时返0，`offset` 将包含缓冲区距设备内存起始位置的偏移，`length` 字段为其大小，`bytesused` 为缓冲区中数据（有效载荷）占用的字节数
+
+出错时返-1，并相应地设`errno` 变量。通用错误码在 Generic Error Codes <gen-errors> 章节中描述
 
 EINVAL
-    `index` 瓒婄晫銆?
+    `index` 越界

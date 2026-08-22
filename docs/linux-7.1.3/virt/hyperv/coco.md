@@ -1,110 +1,110 @@
 ﻿
-## 鏈哄瘑璁＄畻锛圕onfidential Computing锛塚M
+## 机密计算（Confidential Computing）VM
 
 
-Hyper-V 鍙互鍒涘缓骞惰繍琛屼綔涓烘満瀵嗚绠楋紙Confidential Computing锛孋oCo锛塚M 鐨?Linux 瀹㈡埛鏈恒€傛绫?VM 涓庣墿鐞嗗鐞嗗櫒鍗忎綔锛屼互鏇村ソ鍦颁繚鎶?VM 鍐呭瓨涓暟鎹殑鏈哄瘑鎬у拰瀹屾暣鎬э紝鍗充娇闈㈠鍙兘宸茶鏀荤牬骞惰〃鐜板嚭鎭舵剰琛屼负鐨勭鐞嗙▼搴忥紙hypervisor/VMM锛変篃鏄姝ゃ€侶yper-V 涓婄殑 CoCo VM 鍏变韩 Documentation/security/snp-tdx-threat-model.rst 涓弿杩扮殑閫氱敤 CoCo VM 濞佽儊妯″瀷涓庡畨鍏ㄧ洰鏍囥€傝娉ㄦ剰锛孡inux 涓?Hyper-V 鐗瑰畾鐨勪唬鐮佸皢 CoCo VM 绉颁负"isolated VMs"鎴?isolation VMs"銆?
+Hyper-V 可以创建并运行作为机密计算（Confidential Computing，CoCo）VM Linux 客户机。此VM 与物理处理器协作，以更好地保VM 内存中数据的机密性和完整性，即使面对可能已被攻破并表现出恶意行为的管理程序（hypervisor/VMM）也是如此。Hyper-V 上的 CoCo VM 共享 Documentation/security/snp-tdx-threat-model.rst 中描述的通用 CoCo VM 威胁模型与安全目标。请注意，Linux Hyper-V 特定的代码将 CoCo VM 称为"isolated VMs"isolation VMs"
 
-Hyper-V 涓婄殑 Linux CoCo VM 闇€瑕佷互涓嬮儴鍒嗙殑鍗忎綔涓庝氦浜掞細
+Hyper-V 上的 Linux CoCo VM 需要以下部分的协作与交互：
 
-- 鏀寔 CoCo VM 鐨勫鐞嗗櫒鎵€鍦ㄧ殑鐗╃悊纭欢
+- 支持 CoCo VM 的处理器所在的物理硬件
 
-- 杩愯鏀寔 CoCo VM 鐨?Windows/Hyper-V 鐗堟湰鐨勭‖浠?
+- 运行支持 CoCo VM Windows/Hyper-V 版本的硬
 
-- 杩愯鏀寔浣滀负 CoCo VM 鐨?Linux 鐗堟湰鐨?VM
+- 运行支持作为 CoCo VM Linux 版本VM
 
-鐗╃悊纭欢瑕佹眰濡備笅锛?
+物理硬件要求如下
 
-- 甯︽湁 SEV-SNP 鐨?AMD 澶勭悊鍣ㄣ€侶yper-V 涓嶄細杩愯浣跨敤 AMD SME銆丼EV 鎴?SEV-ES 鍔犲瘑鐨勫鎴锋満 VM锛屽苟涓旀绫诲姞瀵嗗浜?Hyper-V 涓婄殑 CoCo VM 鏉ヨ骞朵笉鍏呭垎銆?
+- 带有 SEV-SNP AMD 处理器。Hyper-V 不会运行使用 AMD SME、SEV SEV-ES 加密的客户机 VM，并且此类加密对Hyper-V 上的 CoCo VM 来说并不充分
 
-- 甯︽湁 TDX 鐨?Intel 澶勭悊鍣?
+- 带有 TDX Intel 处理
 
-瑕佸垱寤?CoCo VM锛屽繀椤诲湪鍒涘缓 VM 鏃跺悜 Hyper-V 鎸囧畾"Isolated VM"灞炴€с€俈M 涓€鏃﹀垱寤猴紝渚挎棤娉曚粠 CoCo VM 鏇存敼涓烘櫘閫?VM锛屽弽涔嬩害鐒躲€?
+要创CoCo VM，必须在创建 VM 时向 Hyper-V 指定"Isolated VM"属性。VM 一旦创建，便无法从 CoCo VM 更改为普VM，反之亦然
 
-### 杩愯妯″紡
-
-
-Hyper-V CoCo VM 鍙互杩愯浜庝袱绉嶆ā寮忋€傛ā寮忓湪鍒涘缓 VM 鏃堕€夊畾锛屽湪 VM 鐨勭敓鍛藉懆鏈熷唴鏃犳硶鏇存敼銆?
-
-- 瀹屽叏 enlightened锛坒ully-enlightened锛夋ā寮忋€傚湪姝ゆā寮忎笅锛屽鎴锋満鎿嶄綔绯荤粺琚?enlightened锛岃兘澶熺悊瑙ｅ苟绠＄悊浣滀负 CoCo VM 杩愯鐨勫悇涓柟闈€?
-
-- Paravisor 妯″紡銆傚湪姝ゆā寮忎笅锛屼綅浜庡鎴锋満涓庝富鏈轰箣闂寸殑 paravisor 灞傛彁渚涗竴浜涗綔涓?CoCo VM 杩愯鎵€闇€鐨勬搷浣溿€傚鎴锋満鎿嶄綔绯荤粺鎵€闇€鐨?CoCo enlightenment 鍙互灏戜簬 fully-enlightened 鎯呭喌銆?
-
-浠庢蹇典笂璁诧紝fully-enlightened 妯″紡涓?paravisor 妯″紡鍙瑙嗕负涓€涓厜璋变笂鐨勪袱涓偣锛岃鍏夎氨娑电洊浜嗕綔涓?CoCo VM 杩愯鎵€闇€鐨勫鎴锋満 enlightenment 绋嬪害銆俧ully-enlightened 妯″紡鏄厜璋辩殑涓€绔€俻aravisor 妯″紡鐨勫畬鏁村疄鐜版槸鍏夎氨鐨勫彟涓€绔紝鍦ㄩ偅涓€绔紝浣滀负 CoCo VM 杩愯鐨勫悇涓柟闈㈤兘鐢?paravisor 澶勭悊锛屼竴涓鍐呭瓨鍔犲瘑鎴?CoCo VM 鍏朵粬鏂归潰涓€鏃犳墍鐭ョ殑鏅€氬鎴锋満 OS 涔熻兘鎴愬姛杩愯銆傜劧鑰岋紝Hyper-V 瀵?paravisor 妯″紡鐨勫疄鐜板苟鏈蛋鍒拌繖涓€姝ワ紝鑰屾槸澶勪簬鍏夎氨涓棿鐨勬煇涓綅缃€侰oCo VM 鐨勬煇浜涙柟闈㈢敱 Hyper-V paravisor 澶勭悊锛岃€屽鎴锋満 OS 蹇呴』瀵瑰彟涓€鏂归潰杩涜 enlightenment銆傞仐鎲剧殑鏄紝paravisor 涓彲鑳芥彁渚涚殑鍔熻兘/鐗规€ф病鏈夋爣鍑嗗寲鐨勬灇涓撅紝瀹㈡埛鏈?OS 涔熸病鏈夋爣鍑嗗寲鐨勬満鍒跺悜 paravisor 鏌ヨ鍏舵彁渚涚殑鍔熻兘/鐗规€с€俻aravisor 鎻愪緵浠€涔堢殑鐞嗚В鏄‖缂栫爜鍦ㄥ鎴锋満 OS 涓殑銆?
-
-Paravisor 妯″紡涓?`Coconut project`_ 鏈夌浉浼间箣澶勶紝鍚庤€呮棬鍦ㄦ彁渚涗竴涓湁闄愮殑 paravisor锛屼负瀹㈡埛鏈烘彁渚涙湇鍔★紝渚嬪铏氭嫙 TPM銆傜劧鑰岋紝Hyper-V paravisor 閫氬父澶勭悊鐨?CoCo VM 鏂归潰姣旂洰鍓嶄负 Coconut 璁炬兂鐨勬洿澶氾紝鍥犳鏇存帴杩戜簬鍏夎氨涓?鏃犻渶瀹㈡埛鏈?enlightenment"鐨勪竴绔€?
+### 运行模式
 
 
-鍦?CoCo VM 濞佽儊妯″瀷涓紝paravisor 澶勪簬瀹㈡埛鏈哄畨鍏ㄥ煙涓紝涓斿繀椤昏瀹㈡埛鏈?OS 淇′换銆傜敱姝ゆ帹璁猴紝hypervisor/VMM 蹇呴』鍍忛槻鑼冩綔鍦ㄦ伓鎰忕殑瀹㈡埛鏈轰竴鏍凤紝闃茶寖娼滃湪鎭舵剰鐨?paravisor銆?
+Hyper-V CoCo VM 可以运行于两种模式。模式在创建 VM 时选定，在 VM 的生命周期内无法更改
 
-閽堝 fully-enlightened 涓?paravisor 妯″紡鐨勭‖浠舵灦鏋勬柟娉曞洜搴曞眰澶勭悊鍣ㄨ€屽紓銆?
+- 完全 enlightened（fully-enlightened）模式。在此模式下，客户机操作系统enlightened，能够理解并管理作为 CoCo VM 运行的各个方面
 
-- 瀵逛簬 AMD SEV-SNP 澶勭悊鍣紝鍦?fully-enlightened 妯″紡涓嬪鎴锋満 OS 杩愯浜?VMPL 0锛屽苟瀹屽叏鎺у埗瀹㈡埛鏈轰笂涓嬫枃銆傚湪 paravisor 妯″紡涓嬶紝瀹㈡埛鏈?OS 杩愯浜?VMPL 2锛岃€?paravisor 杩愯浜?VMPL 0銆傝繍琛屼簬 VMPL 0 鐨?paravisor 鎷ユ湁瀹㈡埛鏈?OS锛堣繍琛屼簬 VMPL 2锛夋墍娌℃湁鐨勭壒鏉冦€傛煇浜涙搷浣滆姹傚鎴锋満璋冪敤 paravisor銆傛澶栵紝鍦?paravisor 妯″紡涓嬶紝瀹㈡埛鏈?OS 鎸夌収 SEV-SNP 鏋舵瀯鐨勫畾涔夎繍琛屼簬"virtual Top Of Memory"锛坴TOM锛夋ā寮忋€傚綋浣跨敤 paravisor 鏃讹紝姝ゆā寮忕畝鍖栦簡瀹㈡埛鏈哄鍐呭瓨鍔犲瘑鐨勭鐞嗐€?
+- Paravisor 模式。在此模式下，位于客户机与主机之间的 paravisor 层提供一些作CoCo VM 运行所需的操作。客户机操作系统所需CoCo enlightenment 可以少于 fully-enlightened 情况
 
-- 瀵逛簬 Intel TDX 澶勭悊鍣紝鍦?fully-enlightened 妯″紡涓嬪鎴锋満 OS 杩愯浜?L1 VM銆傚湪 paravisor 妯″紡涓嬶紝浣跨敤 TD 鍒嗗尯銆俻aravisor 杩愯浜?L1 VM锛岃€屽鎴锋満 OS 杩愯浜庡祵濂楃殑 L2 VM銆?
+从概念上讲，fully-enlightened 模式paravisor 模式可被视为一个光谱上的两个点，该光谱涵盖了作CoCo VM 运行所需的客户机 enlightenment 程度。fully-enlightened 模式是光谱的一端。paravisor 模式的完整实现是光谱的另一端，在那一端，作为 CoCo VM 运行的各个方面都paravisor 处理，一个对内存加密CoCo VM 其他方面一无所知的普通客户机 OS 也能成功运行。然而，Hyper-V paravisor 模式的实现并未走到这一步，而是处于光谱中间的某个位置。CoCo VM 的某些方面由 Hyper-V paravisor 处理，而客户机 OS 必须对另一方面进行 enlightenment。遗憾的是，paravisor 中可能提供的功能/特性没有标准化的枚举，客户OS 也没有标准化的机制向 paravisor 查询其提供的功能/特性。paravisor 提供什么的理解是硬编码在客户机 OS 中的
 
-Hyper-V 鍚戝鎴锋満鏆撮湶涓€涓弿杩?CoCo 妯″紡鐨?synthetic MSR銆傝 MSR 鎸囩ず搴曞眰澶勭悊鍣ㄤ娇鐢ㄧ殑鏄?AMD SEV-SNP 杩樻槸 Intel TDX锛屼互鍙婃槸鍚︿娇鐢ㄤ簡 paravisor銆傛瀯寤轰竴涓兘澶熷湪浠讳竴鏋舵瀯涓娿€佷互浠讳竴妯″紡姝ｅ父寮曞骞惰繍琛岀殑鍗曚竴 kernel 鏄犲儚鏄緢鐩存帴鐨勩€?
-
-### Paravisor 褰卞搷
+Paravisor 模式`Coconut project`_ 有相似之处，后者旨在提供一个有限的 paravisor，为客户机提供服务，例如虚拟 TPM。然而，Hyper-V paravisor 通常处理CoCo VM 方面比目前为 Coconut 设想的更多，因此更接近于光谱无需客户enlightenment"的一端
 
 
-杩愯浜?paravisor 妯″紡浼氬奖鍝嶉€氱敤 Linux kernel CoCo VM 鍔熻兘鐨勪互涓嬫柟闈細
+CoCo VM 威胁模型中，paravisor 处于客户机安全域中，且必须被客户OS 信任。由此推论，hypervisor/VMM 必须像防范潜在恶意的客户机一样，防范潜在恶意paravisor
 
-- 鍒濆瀹㈡埛鏈哄唴瀛樿缃€傚湪 paravisor 妯″紡涓嬪垱寤烘柊 VM 鏃讹紝paravisor 鍏堣繍琛岋紝骞跺皢瀹㈡埛鏈虹墿鐞嗗唴瀛樿缃负鍔犲瘑銆傚鎴锋満 Linux 杩涜姝ｅ父鐨勫唴瀛樺垵濮嬪寲锛屽彧鏄樉寮忓湴灏嗛€傚綋鐨勮寖鍥存爣璁颁负宸茶В瀵嗭紙鍏变韩锛夈€傚湪 paravisor 妯″紡涓嬶紝Linux 涓嶆墽琛屽湪 fully-enlightened 妯″紡涓嬮厤鍚?AMD SEV-SNP 鐗瑰埆妫樻墜鐨勬棭鏈熷紩瀵煎唴瀛樿缃楠ゃ€?
+针对 fully-enlightened paravisor 模式的硬件架构方法因底层处理器而异
 
-- #VC/#VE 寮傚父澶勭悊銆傚湪 paravisor 妯″紡涓嬶紝Hyper-V 灏嗗鎴锋満 CoCo VM 閰嶇疆涓哄皢 #VC 鍜?#VE 寮傚父鍒嗗埆璺敱鍒?VMPL 0 鍜?L1 VM锛岃€屼笉鏄鎴锋満 Linux銆傚洜姝わ紝杩欎簺寮傚父澶勭悊绋嬪簭涓嶅湪瀹㈡埛鏈?Linux 涓繍琛岋紝涔熶笉鏄?paravisor 妯″紡涓?Linux 瀹㈡埛鏈烘墍闇€鐨?enlightenment銆?
+- 对于 AMD SEV-SNP 处理器，fully-enlightened 模式下客户机 OS 运行VMPL 0，并完全控制客户机上下文。在 paravisor 模式下，客户OS 运行VMPL 2，paravisor 运行VMPL 0。运行于 VMPL 0 paravisor 拥有客户OS（运行于 VMPL 2）所没有的特权。某些操作要求客户机调用 paravisor。此外，paravisor 模式下，客户OS 按照 SEV-SNP 架构的定义运行于"virtual Top Of Memory"（vTOM）模式。当使用 paravisor 时，此模式简化了客户机对内存加密的管理
 
-- CPUID 鏍囧織銆侫MD SEV-SNP 鍜?Intel TDX 閮藉湪瀹㈡埛鏈轰腑鎻愪緵涓€涓?CPUID 鏍囧織锛屾寚绀鸿 VM 姝ｅ湪浣跨敤鐩稿簲鐨勭‖浠舵敮鎸佽繍琛屻€傝櫧鐒惰繖浜?CPUID 鏍囧織鍦?fully-enlightened CoCo VM 涓彲瑙侊紝浣?paravisor 浼氳繃婊ゆ帀杩欎簺鏍囧織锛屽鎴锋満 Linux 鐪嬩笉鍒板畠浠€傚湪鏁翠釜 Linux kernel 涓紝鏄惧紡娴嬭瘯杩欎簺鏍囧織鐨勫仛娉曞ぇ澶氬凡琚?cc_platform_has() 鍑芥暟鍙栦唬锛岀洰鐨勬槸鎶借薄 SEV-SNP 涓?TDX 涔嬮棿鐨勫樊寮傘€備絾 cc_platform_has() 鎶借薄涔熷厑璁?Hyper-V paravisor 閰嶇疆鍦ㄥ嵆渚挎湭璁剧疆 CPUID 鏍囧織鏃讹紝鏈夐€夋嫨鍦板惎鐢?CoCo VM 鍔熻兘鐨勬煇浜涙柟闈€備緥澶栨槸 SEV-SNP 涓婄殑鏃╂湡寮曞鍐呭瓨璁剧疆锛屽畠浼氭祴璇?CPUID SEV-SNP 鏍囧織銆備絾 Hyper-V paravisor 妯″紡 VM 涓病鏈夎鏍囧織锛屽弽鑰岃揪鍒颁簡涓嶈繍琛?SEV-SNP 鐗瑰畾鏃╂湡寮曞鍐呭瓨璁剧疆鎵€鏈熸湜鐨勬晥鏋溿€?
+- 对于 Intel TDX 处理器，fully-enlightened 模式下客户机 OS 运行L1 VM。在 paravisor 模式下，使用 TD 分区。paravisor 运行L1 VM，而客户机 OS 运行于嵌套的 L2 VM
 
-- 璁惧妯℃嫙銆傚湪 paravisor 妯″紡涓嬶紝Hyper-V paravisor 鎻愪緵瀵?IO-APIC 鍜?TPM 绛夎澶囩殑妯℃嫙銆傜敱浜庢ā鎷熷彂鐢熷湪 paravisor 鐨勫鎴锋満涓婁笅鏂囦腑锛堣€岄潪 hypervisor/VMM 涓婁笅鏂囷級锛屽杩欎簺璁惧鐨?MMIO 璁块棶蹇呴』鏄姞瀵嗗紩鐢紝鑰屼笉鏄?fully-enlightened CoCo VM 涓墍浣跨敤鐨勫凡瑙ｅ瘑寮曠敤銆俖_ioremap_caller() 鍑芥暟宸茶澧炲己锛屼細杩涜涓€娆″洖璋冧互妫€鏌ョ壒瀹氬湴鍧€鑼冨洿鏄惁搴旇瑙嗕负鍔犲瘑锛堢鏈夛級銆傚弬瑙?is_private_mmio"鍥炶皟銆?
+Hyper-V 向客户机暴露一个描CoCo 模式synthetic MSR。该 MSR 指示底层处理器使用的AMD SEV-SNP 还是 Intel TDX，以及是否使用了 paravisor。构建一个能够在任一架构上、以任一模式正常引导并运行的单一 kernel 映像是很直接的
 
-- 鍔犲瘑/瑙ｅ瘑鍐呭瓨杞崲銆傚湪 CoCo VM 涓紝鍦ㄥ姞瀵嗕笌瑙ｅ瘑涔嬮棿杞崲瀹㈡埛鏈哄唴瀛橀渶瑕佷笌 hypervisor/VMM 鍗忚皟銆傝繖鏄€氳繃 __set_memory_enc_pgtable() 璋冪敤鐨勫洖璋冨畬鎴愮殑銆傚湪 fully-enlightened 妯″紡涓嬶紝浣跨敤杩欎簺鍥炶皟鐨勬櫘閫?SEV-SNP 鍜?TDX 瀹炵幇銆傚湪 paravisor 妯″紡涓嬶紝浣跨敤 Hyper-V 鐗瑰畾鐨勫洖璋冮泦鍚堛€傝繖浜涘洖璋冭皟鐢?paravisor锛屼互渚?paravisor 鑳藉鍗忚皟杞崲骞跺湪蹇呰鏃堕€氱煡 hypervisor銆傚弬瑙佽缃繖浜涘洖璋冪殑 hv_vtom_init()銆?
-
-- 涓柇娉ㄥ叆銆傚湪 fully enlightened 妯″紡涓嬶紝鎭舵剰 hypervisor 鍙兘鍦ㄨ繚鍙?x86/x64 鏋舵瀯瑙勫垯鐨勬椂鍒诲悜瀹㈡埛鏈?OS 娉ㄥ叆涓柇銆備负浜嗗畬鏁翠繚鎶わ紝瀹㈡埛鏈?OS 搴斿寘鍚娇鐢?CoCo 鑳藉姏澶勭悊鍣ㄦ彁渚涚殑涓柇娉ㄥ叆绠＄悊鐗规€х殑 enlightenment銆傚湪 paravisor 妯″紡涓嬶紝paravisor 涓粙瀵瑰鎴锋満 OS 鐨勪腑鏂敞鍏ワ紝骞剁‘淇濆鎴锋満 OS 鍙湅鍒?鍚堟硶"鐨勪腑鏂€俻aravisor 浣跨敤 CoCo 鑳藉姏鐗╃悊澶勭悊鍣ㄦ彁渚涚殑涓柇娉ㄥ叆绠＄悊鐗规€э紝浠庤€屽皢杩欎簺澶嶆潅鎬у瀹㈡埛鏈?OS 灞忚斀銆?
-
-### Hyper-V 瓒呯骇璋冪敤锛圚ypercalls锛?
+### Paravisor 影响
 
 
-鍦?fully-enlightened 妯″紡涓嬶紝Linux 瀹㈡埛鏈哄彂鍑虹殑 hypercall 浼氬儚鍦ㄩ潪 CoCo VM 涓竴鏍风洿鎺ヨ矾鐢卞埌 hypervisor銆備絾鍦?paravisor 妯″紡涓嬶紝鏅€?hypercall 浼氬厛闄峰叆 paravisor锛宲aravisor 杩涜€屽彲鑳借皟鐢?hypervisor銆備絾 paravisor 鍦ㄨ繖鏂归潰鏈夌壒娈婃€э紝Linux 瀹㈡埛鏈哄彂鍑虹殑灏戞暟 hypercall 蹇呴』濮嬬粓鐩存帴璺敱鍒?hypervisor銆傝繖浜?hypercall 璋冪敤鐐逛細妫€娴?paravisor 鏄惁瀛樺湪锛屽苟浣跨敤鐗规畩鐨勮皟鐢ㄥ簭鍒椼€備緥濡傚弬瑙?hv_post_message()銆?
+运行paravisor 模式会影响通用 Linux kernel CoCo VM 功能的以下方面：
 
-### 瀹㈡埛鏈轰笌 Hyper-V 鐨勯€氫俊
+- 初始客户机内存设置。在 paravisor 模式下创建新 VM 时，paravisor 先运行，并将客户机物理内存设置为加密。客户机 Linux 进行正常的内存初始化，只是显式地将适当的范围标记为已解密（共享）。在 paravisor 模式下，Linux 不执行在 fully-enlightened 模式下配AMD SEV-SNP 特别棘手的早期引导内存设置步骤
 
+- #VC/#VE 异常处理。在 paravisor 模式下，Hyper-V 将客户机 CoCo VM 配置为将 #VC #VE 异常分别路由VMPL 0 L1 VM，而不是客户机 Linux。因此，这些异常处理程序不在客户Linux 中运行，也不paravisor 模式Linux 客户机所需enlightenment
 
-闄や簡 Linux CoCo VM 涓?Linux kernel 瀵瑰唴瀛樺姞瀵嗙殑閫氱敤澶勭悊涔嬪锛孒yper-V 杩樻湁 VMBus 浠ュ強浣跨敤 Linux 瀹㈡埛鏈轰笌涓绘満涔嬮棿鍏变韩鍐呭瓨杩涜閫氫俊鐨?VMBus 璁惧銆傝鍏变韩鍐呭瓨蹇呴』鏍囪涓哄凡瑙ｅ瘑鎵嶈兘鍚敤閫氫俊銆傛澶栵紝鐢变簬濞佽儊妯″瀷鍖呭惈宸查伃鏀荤牬涓旀綔鍦ㄦ伓鎰忕殑涓绘満锛屽鎴锋満蹇呴』闃茶寖閫氳繃姝ゅ叡浜唴瀛樺悜涓绘満娉勯湶浠讳綍闈為鏈熺殑鏁版嵁銆?
+- CPUID 标志。AMD SEV-SNP Intel TDX 都在客户机中提供一CPUID 标志，指示该 VM 正在使用相应的硬件支持运行。虽然这CPUID 标志fully-enlightened CoCo VM 中可见，paravisor 会过滤掉这些标志，客户机 Linux 看不到它们。在整个 Linux kernel 中，显式测试这些标志的做法大多已cc_platform_has() 函数取代，目的是抽象 SEV-SNP TDX 之间的差异。但 cc_platform_has() 抽象也允Hyper-V paravisor 配置在即便未设置 CPUID 标志时，有选择地启CoCo VM 功能的某些方面。例外是 SEV-SNP 上的早期引导内存设置，它会测CPUID SEV-SNP 标志。但 Hyper-V paravisor 模式 VM 中没有该标志，反而达到了不运SEV-SNP 特定早期引导内存设置所期望的效果
 
-杩欎簺 Hyper-V 涓?VMBus 鍐呭瓨椤佃鏍囪涓哄凡瑙ｅ瘑锛?
+- 设备模拟。在 paravisor 模式下，Hyper-V paravisor 提供IO-APIC TPM 等设备的模拟。由于模拟发生在 paravisor 的客户机上下文中（而非 hypervisor/VMM 上下文），对这些设备MMIO 访问必须是加密引用，而不fully-enlightened CoCo VM 中所使用的已解密引用。__ioremap_caller() 函数已被增强，会进行一次回调以检查特定地址范围是否应被视为加密（私有）。参is_private_mmio"回调
 
-- VMBus 鐩戣椤碉紙monitor pages锛?
+- 加密/解密内存转换。在 CoCo VM 中，在加密与解密之间转换客户机内存需要与 hypervisor/VMM 协调。这是通过 __set_memory_enc_pgtable() 调用的回调完成的。在 fully-enlightened 模式下，使用这些回调的普SEV-SNP TDX 实现。在 paravisor 模式下，使用 Hyper-V 特定的回调集合。这些回调调paravisor，以paravisor 能够协调转换并在必要时通知 hypervisor。参见设置这些回调的 hv_vtom_init()
 
-- 鍚堟垚涓柇鎺у埗鍣紙SynIC锛夌浉鍏抽〉锛堥櫎闈炵敱 paravisor 鎻愪緵锛?
+- 中断注入。在 fully enlightened 模式下，恶意 hypervisor 可能在违x86/x64 架构规则的时刻向客户OS 注入中断。为了完整保护，客户OS 应包含使CoCo 能力处理器提供的中断注入管理特性的 enlightenment。在 paravisor 模式下，paravisor 中介对客户机 OS 的中断注入，并确保客户机 OS 只看合法"的中断。paravisor 使用 CoCo 能力物理处理器提供的中断注入管理特性，从而将这些复杂性对客户OS 屏蔽
 
-- 姣?CPU 鐨?hypercall 杈撳叆鍜岃緭鍑洪〉锛堥櫎闈炰笌 paravisor 涓€璧疯繍琛岋級
-
-- VMBus 鐜舰缂撳啿鍖恒€傜洿鎺ユ槧灏勫湪 __vmbus_establish_gpadl() 涓爣璁颁负宸茶В瀵嗐€傚湪 hv_ringbuffer_init() 涓垱寤虹殑浜岀骇鏄犲皠涔熷繀椤诲寘鍚?decrypted"灞炴€с€?
-
-褰撳鎴锋満鍚戜笌涓绘満鍏变韩鐨勫唴瀛樺啓鍏ユ暟鎹椂锛屽繀椤荤‘淇濆彧鍐欏叆棰勬湡鐨勬暟鎹€傚湪澶嶅埗鍒板叡浜唴瀛樹箣鍓嶏紝濉厖鎴?unused 瀛楁蹇呴』鍒濆鍖栦负闆讹紝浠ュ厤闅忔満 kernel 鏁版嵁琚棤鎰忎腑鎻愪緵缁欎富鏈恒€?
-
-绫讳技鍦帮紝褰撳鎴锋満璇诲彇涓庝富鏈哄叡浜殑鍐呭瓨鏃讹紝蹇呴』鍦ㄥ鐞嗘暟鎹箣鍓嶅鍏惰繘琛岄獙璇侊紝浠ュ厤鎭舵剰涓绘満璇变娇瀹㈡埛鏈烘毚闇查潪棰勬湡鐨勬暟鎹€傝繘琛屾绫婚獙璇佸彲鑳藉緢妫樻墜锛屽洜涓轰富鏈哄嵆浣垮湪楠岃瘉杩涜涓垨涔嬪悗涔熻兘淇敼鍏变韩鍐呭瓨鍖哄煙銆傚浜庡湪 VMBus 鐜舰缂撳啿鍖轰腑浠庝富鏈轰紶閫掔粰瀹㈡埛鏈虹殑娑堟伅锛屼細楠岃瘉娑堟伅闀垮害锛屽苟灏嗘秷鎭鍒跺埌涓存椂锛堝姞瀵嗭級缂撳啿鍖轰互杩涜杩涗竴姝ラ獙璇佸拰澶勭悊銆傚鍒朵細澧炲姞灏戦噺寮€閿€锛屼絾杩欐槸闃茶寖鎭舵剰涓绘満鐨勫敮涓€鏂规硶銆傚弬瑙?hv_pkt_iter_first()銆?
-
-璁稿 VMBus 璁惧鐨勯┍鍔ㄥ凡閫氳繃娣诲姞浠ｇ爜鏉ュ厖鍒嗛獙璇侀€氳繃 VMBus 鎺ユ敹鐨勬秷鎭€?鍔犲浐锛坔ardened锛?锛岃€屼笉鏄亣璁?Hyper-V 鍦ㄥ崗浣滆繍琛屻€傛绫婚┍鍔ㄥ湪 vmbus_devs[] 琛ㄤ腑琚爣璁颁负"allowed_in_isolated"銆侰oCo VM 涓笉闇€瑕佺殑鍏朵粬 VMBus 璁惧椹卞姩灏氭湭鍔犲浐锛屽畠浠笉鍏佽鍦?CoCo VM 涓姞杞姐€傚弬瑙佹帓闄ゆ绫昏澶囩殑 vmbus_is_valid_offer()銆?
-
-涓や釜 VMBus 璁惧渚濊禆 Hyper-V 涓绘満杩涜 DMA 鏁版嵁浼犺緭锛氱敤浜庣鐩?I/O 鐨?storvsc 鍜岀敤浜庣綉缁?I/O 鐨?netvsc銆俿torvsc 浣跨敤鏅€氱殑 Linux kernel DMA API锛屽洜姝ら€氳繃宸茶В瀵?swiotlb 鍐呭瓨鐨勫弽寮圭紦鍐诧紙bounce buffering锛夋槸闅愬紡瀹屾垚鐨勩€俷etvsc 鏈変袱绉嶆暟鎹紶杈撴ā寮忋€傜涓€绉嶆ā寮忕粡杩?netvsc 椹卞姩鏄惧紡鍒嗛厤鐨勫彂閫佸拰鎺ユ敹缂撳啿鍖虹┖闂达紝鐢ㄤ簬澶у鏁拌緝灏忕殑鏁版嵁鍖呫€傝繖浜涘彂閫佸拰鎺ユ敹缂撳啿鍖虹敱 __vmbus_establish_gpadl() 鏍囪涓哄凡瑙ｅ瘑銆傜敱浜?netvsc 椹卞姩鏄惧紡鍦板皢鏁版嵁鍖呭鍒惰繘/鍑鸿繖浜涚紦鍐插尯锛屽姞瀵嗕笌瑙ｅ瘑鍐呭瓨涔嬮棿鐨勫弽寮圭紦鍐茬瓑鏁堟搷浣滃凡缁忔槸鏁版嵁璺緞鐨勪竴閮ㄥ垎銆傜浜岀妯″紡浣跨敤鏅€氱殑 Linux kernel DMA API锛屽苟鍍?storvsc 涓€鏍烽殣寮忓湴閫氳繃 swiotlb 鍐呭瓨杩涜鍙嶅脊缂撳啿銆?
-
-鏈€鍚庯紝VMBus 铏氭嫙 PCI 椹卞姩鍦?CoCo VM 涓渶瑕佺壒娈婂鐞嗐€侺inux PCI 璁惧椹卞姩浣跨敤 Linux PCI 瀛愮郴缁熸彁渚涚殑鏍囧噯 API 璁块棶 PCI 閰嶇疆绌洪棿銆傚湪 Hyper-V 涓婏紝杩欎簺鍑芥暟鐩存帴璁块棶 MMIO 绌洪棿锛岃闂細闄峰叆 Hyper-V 杩涜妯℃嫙銆備絾鍦?CoCo VM 涓紝鍐呭瓨鍔犲瘑闃绘 Hyper-V 璇诲彇瀹㈡埛鏈烘寚浠ゆ祦鏉ユā鎷熻璁块棶銆傚洜姝ゅ湪 CoCo VM 涓紝杩欎簺鍑芥暟蹇呴』鍙戣捣涓€涓?hypercall锛屼互鍙傛暟鏄惧紡鎻忚堪璇ヨ闂€傚弬瑙?_hv_pcifront_read_config() 鍜?_hv_pcifront_write_config() 浠ュ強鎸囩ず浣跨敤 hypercall 鐨?use_calls"鏍囧織銆?
-
-### 鏈哄瘑 VMBus锛圕onfidential VMBus锛?
+### Hyper-V 超级调用（Hypercalls
 
 
-鏈哄瘑 VMBus 浣挎満瀵嗗鎴锋満鏃犻渶涓庝笉鍙俊鐨勪富鏈哄垎鍖哄拰涓嶅彲淇＄殑 hypervisor 浜や簰銆傜浉鍙嶏紝瀹㈡埛鏈轰緷璧栧彲淇＄殑 paravisor 涓庡鐞嗘晱鎰熸暟鎹殑璁惧閫氫俊銆傜‖浠讹紙SNP 鎴?TDX锛夊瀹㈡満鍐呭瓨鍜屽瘎瀛樺櫒鐘舵€佽繘琛屽姞瀵嗭紝鍚屾椂浣跨敤骞冲彴瀹夊叏澶勭悊鍣ㄥ paravisor 鏄犲儚杩涜搴﹂噺锛屼互纭繚鍙俊涓旀満瀵嗙殑 computing銆?
+fully-enlightened 模式下，Linux 客户机发出的 hypercall 会像在非 CoCo VM 中一样直接路由到 hypervisor。但paravisor 模式下，普hypercall 会先陷入 paravisor，paravisor 进而可能调hypervisor。但 paravisor 在这方面有特殊性，Linux 客户机发出的少数 hypercall 必须始终直接路由hypervisor。这hypercall 调用点会检paravisor 是否存在，并使用特殊的调用序列。例如参hv_post_message()
 
-鏈哄瘑 VMBus 鍦ㄥ鎴锋満涓?paravisor 涔嬮棿鎻愪緵瀹夊叏鐨勯€氫俊閫氶亾锛岀‘淇濇晱鎰熸暟鎹€氳繃鍐呭瓨鍔犲瘑鍜屽瘎瀛樺櫒鐘舵€侀殧绂昏€屽厤鍙?hypervisor 绾у埆鐨勮闂€?
+### 客户机与 Hyper-V 的通信
 
-鏈哄瘑 VMBus 鏄満瀵嗚绠楋紙Confidential Computing锛孋oCo锛塚M锛堝湪 Hyper-V 鏈涓張绉?Isolated" VM锛夌殑鎵╁睍銆傛病鏈夋満瀵?VMBus 鏃讹紝瀹㈡埛鏈?VMBus 璁惧椹卞姩锛圴MBus 鏈涓殑"VSC"锛変笌杩愯浜?Hyper-V 涓绘満涓婄殑 VMBus 鏈嶅姟鍣紙VSP锛夐€氫俊銆傞€氫俊蹇呴』閫氳繃宸茶В瀵嗙殑鍐呭瓨锛屼互渚夸富鏈鸿兘澶熻闂€傛湁浜嗘満瀵?VMBus锛屼竴涓垨澶氫釜 VSP 椹荤暀鍦ㄥ鎴锋満 VM 涓彲淇＄殑 paravisor 灞傘€傜敱浜?paravisor 灞備篃杩愯浜庡姞瀵嗗唴瀛樹腑锛屼笌姝ょ被 VSP 閫氫俊鎵€鐢ㄧ殑鍐呭瓨鏃犻渶瑙ｅ瘑骞跺洜姝ゆ毚闇茬粰 Hyper-V 涓绘満銆俻aravisor 璐熻矗鍦ㄥ繀瑕佹椂涓?Hyper-V 涓绘満瀹夊叏鍦伴€氫俊銆?
 
-鏁版嵁鐩存帴鍦?VM 涓?vPCI 璁惧锛堝張绉?PCI pass-thru 璁惧锛屽弬瑙?[vpci](vpci)锛変箣闂翠紶杈擄紝璇ヨ澶囩洿鎺ュ垎閰嶇粰 VTL2 骞舵敮鎸佸姞瀵嗗唴瀛樸€傚湪杩欑鎯呭喌涓嬶紝涓绘満鍒嗗尯鍜?hypervisor 閮芥棤娉曡闂鏁版嵁銆傚鎴锋満鍙渶涓?paravisor 寤虹珛 VMBus 杩炴帴锛岀敤浜庡鐞嗘晱鎰熸暟鎹殑閫氶亾锛岃€?paravisor 灏嗕笌璇ョ壒瀹氳澶囬€氫俊鐨勭粏鑺傛娊璞℃帀锛屽悜瀹㈡埛鏈烘彁渚涘湪 Hyper-V 椹卞姩涓凡鍙楁敮鎸佸崄骞寸殑鎴愮啛 VSP锛圴irtual Service Provider锛夋帴鍙ｃ€?
+除了 Linux CoCo VM Linux kernel 对内存加密的通用处理之外，Hyper-V 还有 VMBus 以及使用 Linux 客户机与主机之间共享内存进行通信VMBus 设备。该共享内存必须标记为已解密才能启用通信。此外，由于威胁模型包含已遭攻破且潜在恶意的主机，客户机必须防范通过此共享内存向主机泄露任何非预期的数据
 
-濡傛灉璁惧涓嶆敮鎸佸姞瀵嗗唴瀛橈紝paravisor 浼氭彁渚涘弽寮圭紦鍐诧紙bounce-buffering锛夛紝铏界劧鏁版嵁鏈姞瀵嗭紝浣嗗悗鍙伴〉涓嶄細閫氳繃 SLAT 鏄犲皠鍒颁富鏈哄垎鍖恒€傚敖绠″苟闈炰笉鍙兘锛屼絾涓庝紶缁?VMBus 杩炴帴锛堜富鏈哄垎鍖哄彲鐩存帴璁块棶鐢ㄤ簬閫氫俊鐨勫唴瀛橈級鐩告瘮锛屼富鏈哄垎鍖烘笚閫忥紙exfiltrate锛夋暟鎹鍥伴毦寰楀銆?
+这些 Hyper-V VMBus 内存页被标记为已解密
 
-涓嬮潰鏄紶缁?VMBus 杩炴帴鐨勬暟鎹祦锛坄C` 浠ｈ〃瀹㈡埛绔垨 VSC锛宍S` 浠ｈ〃鏈嶅姟绔垨 VSP锛宍DEVICE` 鏄墿鐞嗚澶囷紝鍙兘
+- VMBus 监视页（monitor pages
+
+- 合成中断控制器（SynIC）相关页（除非由 paravisor 提供
+
+- CPU hypercall 输入和输出页（除非与 paravisor 一起运行）
+
+- VMBus 环形缓冲区。直接映射在 __vmbus_establish_gpadl() 中标记为已解密。在 hv_ringbuffer_init() 中创建的二级映射也必须包decrypted"属性
+
+当客户机向与主机共享的内存写入数据时，必须确保只写入预期的数据。在复制到共享内存之前，填充unused 字段必须初始化为零，以免随机 kernel 数据被无意中提供给主机
+
+类似地，当客户机读取与主机共享的内存时，必须在处理数据之前对其进行验证，以免恶意主机诱使客户机暴露非预期的数据。进行此类验证可能很棘手，因为主机即使在验证进行中或之后也能修改共享内存区域。对于在 VMBus 环形缓冲区中从主机传递给客户机的消息，会验证消息长度，并将消息复制到临时（加密）缓冲区以进行进一步验证和处理。复制会增加少量开销，但这是防范恶意主机的唯一方法。参hv_pkt_iter_first()
+
+许多 VMBus 设备的驱动已通过添加代码来充分验证通过 VMBus 接收的消息加固（hardened，而不是假Hyper-V 在协作运行。此类驱动在 vmbus_devs[] 表中被标记为"allowed_in_isolated"。CoCo VM 中不需要的其他 VMBus 设备驱动尚未加固，它们不允许CoCo VM 中加载。参见排除此类设备的 vmbus_is_valid_offer()
+
+两个 VMBus 设备依赖 Hyper-V 主机进行 DMA 数据传输：用于磁I/O storvsc 和用于网I/O netvsc。storvsc 使用普通的 Linux kernel DMA API，因此通过已解swiotlb 内存的反弹缓冲（bounce buffering）是隐式完成的。netvsc 有两种数据传输模式。第一种模式经netvsc 驱动显式分配的发送和接收缓冲区空间，用于大多数较小的数据包。这些发送和接收缓冲区由 __vmbus_establish_gpadl() 标记为已解密。由netvsc 驱动显式地将数据包复制进/出这些缓冲区，加密与解密内存之间的反弹缓冲等效操作已经是数据路径的一部分。第二种模式使用普通的 Linux kernel DMA API，并storvsc 一样隐式地通过 swiotlb 内存进行反弹缓冲
+
+最后，VMBus 虚拟 PCI 驱动CoCo VM 中需要特殊处理。Linux PCI 设备驱动使用 Linux PCI 子系统提供的标准 API 访问 PCI 配置空间。在 Hyper-V 上，这些函数直接访问 MMIO 空间，访问会陷入 Hyper-V 进行模拟。但CoCo VM 中，内存加密阻止 Hyper-V 读取客户机指令流来模拟该访问。因此在 CoCo VM 中，这些函数必须发起一hypercall，以参数显式描述该访问。参_hv_pcifront_read_config() _hv_pcifront_write_config() 以及指示使用 hypercall use_calls"标志
+
+### 机密 VMBus（Confidential VMBus
+
+
+机密 VMBus 使机密客户机无需与不可信的主机分区和不可信的 hypervisor 交互。相反，客户机依赖可信的 paravisor 与处理敏感数据的设备通信。硬件（SNP TDX）对客机内存和寄存器状态进行加密，同时使用平台安全处理器对 paravisor 映像进行度量，以确保可信且机密的 computing
+
+机密 VMBus 在客户机paravisor 之间提供安全的通信通道，确保敏感数据通过内存加密和寄存器状态隔离而免hypervisor 级别的访问
+
+机密 VMBus 是机密计算（Confidential Computing，CoCo）VM（在 Hyper-V 术语中又Isolated" VM）的扩展。没有机VMBus 时，客户VMBus 设备驱动（VMBus 术语中的"VSC"）与运行Hyper-V 主机上的 VMBus 服务器（VSP）通信。通信必须通过已解密的内存，以便主机能够访问。有了机VMBus，一个或多个 VSP 驻留在客户机 VM 中可信的 paravisor 层。由paravisor 层也运行于加密内存中，与此类 VSP 通信所用的内存无需解密并因此暴露给 Hyper-V 主机。paravisor 负责在必要时Hyper-V 主机安全地通信
+
+数据直接VM vPCI 设备（又PCI pass-thru 设备，参[vpci](vpci)）之间传输，该设备直接分配给 VTL2 并支持加密内存。在这种情况下，主机分区hypervisor 都无法访问该数据。客户机只需paravisor 建立 VMBus 连接，用于处理敏感数据的通道，paravisor 将与该特定设备通信的细节抽象掉，向客户机提供在 Hyper-V 驱动中已受支持十年的成熟 VSP（Virtual Service Provider）接口
+
+如果设备不支持加密内存，paravisor 会提供反弹缓冲（bounce-buffering），虽然数据未加密，但后台页不会通过 SLAT 映射到主机分区。尽管并非不可能，但与传VMBus 连接（主机分区可直接访问用于通信的内存）相比，主机分区渗透（exfiltrate）数据要困难得多
+
+下面是传VMBus 连接的数据流（`C` 代表客户端或 VSC，`S` 代表服务端或 VSP，`DEVICE` 是物理设备，可能
 ```
   +---- GUEST ----+       +----- DEVICE ----+        +----- HOST -----+
   |               |       |                 |        |                |
@@ -142,28 +142,28 @@ Hyper-V 鍚戝鎴锋満鏆撮湶涓€涓弿杩?CoCo 妯″紡鐨?syntheti
   +-------------------------------------------------------------------+
 
 ```
-鎻愪緵鏈哄瘑 VMBus 閫氶亾鐨?VMBus relay 瀹炵幇锛屼綔涓?OpenHCL paravisor 鐨勪竴閮ㄥ垎鍦?OpenVMM 椤圭洰涓彲鐢ㄣ€傛洿澶氫俊鎭鍙傝€?
+提供机密 VMBus 通道VMBus relay 实现，作OpenHCL paravisor 的一部分OpenVMM 项目中可用。更多信息请参
 
-  - https://openvmm.dev/锛屼互鍙?
+  - https://openvmm.dev/，以
   - https://github.com/microsoft/openvmm
 
-浠ヤ簡瑙?OpenHCL paravisor銆?
+以了OpenHCL paravisor
 
-涓?paravisor 涓€璧疯繍琛岀殑瀹㈡埛鏈哄繀椤诲湪杩愯鏃剁‘瀹氬綋鍓?paravisor 鏄惁鏀寔鏈哄瘑 VMBus銆倄86_64 鐗瑰畾鐨勬柟娉曚緷璧栦簬 CPUID Virtualization Stack leaf锛汚RM64 瀹炵幇鍦ㄨ繍琛?ARM CCA 瀹㈡埛鏈烘椂棰勬湡鏃犳潯浠舵敮鎸佹満瀵?VMBus銆?
+paravisor 一起运行的客户机必须在运行时确定当paravisor 是否支持机密 VMBus。x86_64 特定的方法依赖于 CPUID Virtualization Stack leaf；ARM64 实现在运ARM CCA 客户机时预期无条件支持机VMBus
 
-鏈哄瘑 VMBus 鏄暣涓?VMBus 杩炴帴浠ュ強鎵€鍒涘缓鐨勬瘡涓?VMBus 閫氶亾鐨勪竴涓壒寰併€傚綋寤虹珛鏈哄瘑 VMBus 杩炴帴鏃讹紝paravisor 鍚戝鎴锋満鎻愪緵鐢ㄤ簬 VMBus 璁惧鍒涘缓鍜屽垹闄ょ殑娑堟伅浼犻€掕矾寰勶紝骞舵彁渚涙瘡 CPU 鐨勫悎鎴愪腑鏂帶鍒跺櫒锛圫ynIC锛夛紝灏卞儚 Hyper-V 涓绘満鎻愪緵鐨?SynIC 涓€鏍枫€傛彁渚涚粰瀹㈡埛鏈虹殑姣忎釜 VMBus 璁惧閮芥寚绀哄叾鍙備笌鏈哄瘑 VMBus 鐨勭▼搴︺€傝 offer 鎸囩ず璁惧鏄惁浣跨敤鍔犲瘑鐜舰缂撳啿鍖猴紝浠ュ強璁惧鏄惁瀵圭幆褰㈢紦鍐插尯涔嬪瀹屾垚鐨?DMA 浣跨敤鍔犲瘑鍐呭瓨銆傚浜庝娇鐢ㄥ悓涓€鏈哄瘑 VMBus 杩炴帴鐨勪笉鍚岃澶囷紝杩欎簺璁剧疆鍙兘涓嶅悓銆?
+机密 VMBus 是整VMBus 连接以及所创建的每VMBus 通道的一个特征。当建立机密 VMBus 连接时，paravisor 向客户机提供用于 VMBus 设备创建和删除的消息传递路径，并提供每 CPU 的合成中断控制器（SynIC），就像 Hyper-V 主机提供SynIC 一样。提供给客户机的每个 VMBus 设备都指示其参与机密 VMBus 的程度。该 offer 指示设备是否使用加密环形缓冲区，以及设备是否对环形缓冲区之外完成DMA 使用加密内存。对于使用同一机密 VMBus 连接的不同设备，这些设置可能不同
 
-灏界杩欎簺璁剧疆鏄垎寮€鐨勶紝浣嗗湪瀹炶返涓彧浼氭槸浠呭姞瀵嗙幆褰㈢紦鍐插尯锛屾垨鍚屾椂鍔犲瘑鐜舰缂撳啿鍖哄拰澶栭儴鏁版嵁銆傚鏋滈€氶亾鐢?paravisor 浠ユ満瀵?VMBus 鎻愪緵锛岀幆褰㈢紦鍐插尯鎬绘槸鍙互鍔犲瘑锛屽洜涓哄畠涓ユ牸鐢ㄤ簬 VTL2 paravisor 涓?VTL0 瀹㈡埛鏈轰箣闂寸殑閫氫俊銆傜劧鑰岋紝鍏朵粬鍐呭瓨鍖哄煙甯哥敤浜?DMA 绛夛紝鍥犳瀹冧滑闇€瑕佸簳灞傜‖浠跺彲璁块棶锛屽苟涓斿繀椤绘湭鍔犲瘑锛堥櫎闈炶澶囨敮鎸佸姞瀵嗗唴瀛橈級銆傜洰鍓嶏紝OpenHCL 涓病鏈変换浣曟敮鎸佸姞瀵嗗閮ㄥ唴瀛樼殑 VSP锛屼絾鏈潵鐗堟湰棰勬湡浼氬惎鐢ㄦ鑳藉姏銆?
+尽管这些设置是分开的，但在实践中只会是仅加密环形缓冲区，或同时加密环形缓冲区和外部数据。如果通道paravisor 以机VMBus 提供，环形缓冲区总是可以加密，因为它严格用于 VTL2 paravisor VTL0 客户机之间的通信。然而，其他内存区域常用DMA 等，因此它们需要底层硬件可访问，并且必须未加密（除非设备支持加密内存）。目前，OpenHCL 中没有任何支持加密外部内存的 VSP，但未来版本预期会启用此能力
 
-鐢变簬鏈哄瘑 VMBus 涓婄殑鏌愪簺璁惧鍙兘闇€瑕佸凡瑙ｅ瘑鐨勭幆褰㈢紦鍐插尯鍜?DMA 浼犺緭锛屽鎴锋満蹇呴』涓庝袱涓?SynIC 浜や簰鈥斺€斾竴涓槸 paravisor 鎻愪緵鐨勶紝鍙︿竴涓槸鍦ㄤ笉鎻愪緵鏈哄瘑 VMBus 鏃剁敱 Hyper-V 涓绘満鎻愪緵鐨勩€備腑鏂€绘槸鐢?paravisor SynIC 鍙戝嚭淇″彿锛屼絾瀹㈡埛鏈哄繀椤诲湪涓や釜 SynIC 涓婃鏌ユ秷鎭拰閫氶亾涓柇銆?
+由于机密 VMBus 上的某些设备可能需要已解密的环形缓冲区DMA 传输，客户机必须与两SynIC 交互——一个是 paravisor 提供的，另一个是在不提供机密 VMBus 时由 Hyper-V 主机提供的。中断总是paravisor SynIC 发出信号，但客户机必须在两个 SynIC 上检查消息和通道中断
 
-鍦ㄦ満瀵?VMBus 鐨勬儏鍐典笅锛屽鎴锋満瀵?SynIC 鐨勫父瑙勮闂細琚?paravisor 鎷︽埅锛堣繖鍖呮嫭鍚勭 MSR锛屽 SIMP 鍜?SIEFP锛屼互鍙婂儚 HvPostMessage 鍜?HvSignalEvent 杩欐牱鐨?hypercall锛夈€傚鏋滃鎴锋満纭疄鎯宠涓?hypervisor 閫氫俊锛屽畠蹇呴』浣跨敤鐗规畩鏈哄埗锛圫NP 涓婄殑 GHCB 椤碉紝鎴?TDX 涓婄殑 tdcall锛夈€傛秷鎭彲浠ユ槸浠讳竴绉嶏細浣跨敤鏈哄瘑 VMBus 鏃讹紝娑堟伅浣跨敤 paravisor SynIC锛涘鏋滃鎴锋満閫夋嫨鐩存帴涓?hypervisor 閫氫俊锛屽垯浣跨敤 hypervisor SynIC銆傚浜庝腑鏂俊鍙凤紝鏌愪簺閫氶亾鍙兘杩愯鍦ㄤ富鏈轰笂锛堥潪鏈哄瘑锛屼娇鐢?VMBus relay锛夊苟浣跨敤 hypervisor SynIC锛屾煇浜涜繍琛屽湪 paravisor 涓婂苟浣跨敤鍏?SynIC銆俁elIDs 鐢?OpenHCL VMBus 鏈嶅姟鍣ㄥ崗璋冿紝鏃犺閫氶亾璧锋簮浜庝富鏈鸿繕鏄?paravisor锛岄兘淇濊瘉鍞竴銆?
+在机VMBus 的情况下，客户机SynIC 的常规访问会paravisor 拦截（这包括各种 MSR，如 SIMP SIEFP，以及像 HvPostMessage HvSignalEvent 这样hypercall）。如果客户机确实想要hypervisor 通信，它必须使用特殊机制（SNP 上的 GHCB 页，TDX 上的 tdcall）。消息可以是任一种：使用机密 VMBus 时，消息使用 paravisor SynIC；如果客户机选择直接hypervisor 通信，则使用 hypervisor SynIC。对于中断信号，某些通道可能运行在主机上（非机密，使VMBus relay）并使用 hypervisor SynIC，某些运行在 paravisor 上并使用SynIC。RelIDs OpenHCL VMBus 服务器协调，无论通道起源于主机还paravisor，都保证唯一
 
 ### load_unaligned_zeropad()
 
 
-鍦ㄥ姞瀵嗕笌瑙ｅ瘑涔嬮棿杞崲鍐呭瓨鏃讹紝set_memory_encrypted() 鎴?set_memory_decrypted() 鐨勮皟鐢ㄨ€呰礋璐ｇ‘淇濆唴瀛樻湭琚娇鐢紝涓斿湪杞崲杩涜鏈熼棿涓嶈寮曠敤銆傝浆鎹㈡湁澶氫釜姝ラ锛屽苟鍖呭惈涓?Hyper-V 涓绘満鐨勪氦浜掋€傚湪鍏ㄩ儴姝ラ瀹屾垚涔嬪墠锛屽唴瀛樺浜庝笉涓€鑷寸姸鎬併€傚湪鐘舵€佷笉涓€鑷存椂杩涜寮曠敤鍙兘瀵艰嚧鏃犳硶骞插噣淇鐨勫紓甯搞€?
+在加密与解密之间转换内存时，set_memory_encrypted() set_memory_decrypted() 的调用者负责确保内存未被使用，且在转换进行期间不被引用。转换有多个步骤，并包含Hyper-V 主机的交互。在全部步骤完成之前，内存处于不一致状态。在状态不一致时进行引用可能导致无法干净修复的异常
 
-鐒惰€岋紝kernel 鐨?load_unaligned_zeropad() 鏈哄埗鍙兘浜х敓璋冪敤鑰呮棤娉曢樆姝㈢殑娓哥寮曠敤锛屽洜姝ゅ湪 #VC 鎴?#VE 寮傚父澶勭悊绋嬪簭涓湁鐗瑰畾浠ｇ爜淇姝ょ被鎯呭喌銆備絾鍦?Hyper-V 涓婅繍琛岀殑 CoCo VM 鍙兘琚厤缃负涓?paravisor 涓€璧疯繍琛岋紝涓?#VC 鎴?#VE 寮傚父琚矾鐢卞埌 paravisor銆傛病鏈夋灦鏋勫眰闈㈢殑鏂规硶灏嗚繖浜涘紓甯歌浆鍙戝洖瀹㈡埛鏈?kernel锛屽湪杩欑鎯呭喌涓嬶紝#VC/#VE 澶勭悊绋嬪簭涓殑 load_unaligned_zeropad() 淇浠ｇ爜涓嶄細杩愯銆?
+然而，kernel load_unaligned_zeropad() 机制可能产生调用者无法阻止的游离引用，因此在 #VC #VE 异常处理程序中有特定代码修复此类情况。但Hyper-V 上运行的 CoCo VM 可能被配置为paravisor 一起运行，#VC #VE 异常被路由到 paravisor。没有架构层面的方法将这些异常转发回客户kernel，在这种情况下，#VC/#VE 处理程序中的 load_unaligned_zeropad() 修复代码不会运行
 
-涓洪伩鍏嶆闂锛岀敤浜庨€氱煡 hypervisor 杞崲鍙戠敓鐨?Hyper-V 鐗瑰畾鍑芥暟鍦ㄨ浆鎹㈣繘琛屾湡闂村皢椤垫爣璁颁负"not present"銆傚鏋?load_unaligned_zeropad() 瀵艰嚧娓哥寮曠敤锛屼細鐢熸垚鏅€氶〉閿欒锛坧age fault锛夎€屼笉鏄?#VC 鎴?#VE锛屽苟涓?load_unaligned_zeropad() 鍩轰簬椤甸敊璇殑澶勭悊绋嬪簭浼氫慨澶嶈寮曠敤銆傚綋鍔犲瘑/瑙ｅ瘑杞崲瀹屾垚鏃讹紝椤典細閲嶆柊鏍囪涓?present"銆傚弬瑙?hv_vtom_clear_present() 鍜?hv_vtom_set_host_visibility()銆?
+为避免此问题，用于通知 hypervisor 转换发生Hyper-V 特定函数在转换进行期间将页标记为"not present"。如load_unaligned_zeropad() 导致游离引用，会生成普通页错误（page fault）而不#VC #VE，并load_unaligned_zeropad() 基于页错误的处理程序会修复该引用。当加密/解密转换完成时，页会重新标记present"。参hv_vtom_clear_present() hv_vtom_set_host_visibility()

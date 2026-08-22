@@ -1,47 +1,47 @@
 ﻿
-## CTU CAN FD 椹卞姩
+## CTU CAN FD 驱动
 
 
-浣滆€咃細Martin Jerabek <martin.jerabek01@gmail.com>
+作者：Martin Jerabek <martin.jerabek01@gmail.com>
 
 
-### 鍏充簬 CTU CAN FD IP 鏍?
+### 鍏充簬 CTU CAN FD IP 鏍。
 
 `CTU CAN FD <https://gitlab.fel.cvut.cz/canbus/ctucanfd_ip_core>`_
-鏄竴涓敤 VHDL 缂栧啓鐨勫紑婧愯蒋鏍搞€?瀹冭捣婧愪簬 2015 骞?Ondrej Ille 鍦?`CTU <https://www.cvut.cz/en>`_ 鐨?`鐢垫皵宸ョ▼瀛﹂櫌锛團EE锛?<http://www.fel.cvut.cz/en/>`_ 鐨?`娴嬮噺绯?<https://meas.fel.cvut.cz/>`_
-鐨勯」鐩€?
-閽堝鍩轰簬 Xilinx Zynq SoC 鐨?MicroZed 鏉垮崱鐨?SocketCAN 椹卞姩
-`Vivado 闆嗘垚 <https://gitlab.fel.cvut.cz/canbus/zynq/zynq-can-sja1000-top>`_
-浠ュ強鍩轰簬 Intel Cyclone V 5CSEMA4U23C6 鐨?DE0-Nano-SoC Terasic 鏉垮崱鐨?`QSys 闆嗘垚 <https://gitlab.fel.cvut.cz/canbus/intel-soc-ctucanfd>`_
-宸茬粡瀹屾垚寮€鍙戯紝鍚屾椂杩樺寘鎷璇ユ牳鐨?`PCIe 闆嗘垚 <https://gitlab.fel.cvut.cz/canbus/pcie-ctucanfd>`_
-鐨勬敮鎸併€?
-瀵逛簬 Zynq锛岃鏍搁€氳繃 APB 绯荤粺鎬荤嚎杩炴帴锛岃鎬荤嚎涓嶆敮鎸佽澶囨灇涓撅紝鍥犳
-蹇呴』鍦?Device Tree 涓寚瀹氳璁惧銆傝繖绫昏澶囧湪 kernel 涓О涓?platform device
-锛堝钩鍙拌澶囷級锛岀敱 platform device driver锛堝钩鍙拌澶囬┍鍔級澶勭悊銆?
-CTU CAN FD 澶栬鐨勫熀鏈姛鑳芥ā鍨嬪凡琚?QEMU 涓荤嚎鎺ュ彈銆傚弬瑙?QEMU 鐨?`CAN 浠跨湡鏀寔 <https://www.qemu.org/docs/master/system/devices/can.html>`_
-浜嗚В CAN FD 鎬荤嚎銆佷富鏈鸿繛鎺ヤ互鍙?CTU CAN FD 鏍哥殑浠跨湡銆備豢鐪熸敮鎸佺殑寮€鍙?鐗堟湰鍙互浠?QEMU 鏈湴寮€鍙?`浠撳簱 <https://gitlab.fel.cvut.cz/canbus/qemu-canbus>`_
-鐨?ctu-canfd 鍒嗘敮鍏嬮殕寰楀埌銆?
+是一个用 VHDL 编写的开源软核它起源于 2015 Ondrej Ille `CTU <https://www.cvut.cz/en>`_ `电气工程学院（FEE<http://www.fel.cvut.cz/en/>`_ `测量<https://meas.fel.cvut.cz/>`_
+的项目
+针对基于 Xilinx Zynq SoC MicroZed 板卡SocketCAN 驱动
+`Vivado 集成 <https://gitlab.fel.cvut.cz/canbus/zynq/zynq-can-sja1000-top>`_
+以及基于 Intel Cyclone V 5CSEMA4U23C6 DE0-Nano-SoC Terasic 板卡`QSys 集成 <https://gitlab.fel.cvut.cz/canbus/intel-soc-ctucanfd>`_
+已经完成开发，同时还包括对该核`PCIe 集成 <https://gitlab.fel.cvut.cz/canbus/pcie-ctucanfd>`_
+的支持
+对于 Zynq，该核通过 APB 系统总线连接，该总线不支持设备枚举，因此
+必须Device Tree 中指定该设备。这类设备在 kernel 中称platform device
+（平台设备），由 platform device driver（平台设备驱动）处理
+CTU CAN FD 外设的基本功能模型已QEMU 主线接受。参QEMU `CAN 仿真支持 <https://www.qemu.org/docs/master/system/devices/can.html>`_
+了解 CAN FD 总线、主机连接以CTU CAN FD 核的仿真。仿真支持的开版本可以QEMU 本地开`仓库 <https://gitlab.fel.cvut.cz/canbus/qemu-canbus>`_
+ctu-canfd 分支克隆得到
 
-### 鍏充簬 SocketCAN
+### 关于 SocketCAN
 
 
-SocketCAN 鏄?Linux 鍐呮牳涓?CAN 璁惧鐨勬爣鍑嗛€氱敤鎺ュ彛銆傞【鍚嶆€濅箟锛岃鎬荤嚎
-閫氳繃 socket 璁块棶锛岀被浼间簬甯歌鐨勭綉缁滆澶囥€傚叾鑳屽悗鐨勫師鐞嗗湪
+SocketCAN Linux 内核CAN 设备的标准通用接口。顾名思义，该总线
+通过 socket 访问，类似于常见的网络设备。其背后的原理在
 `Linux SocketCAN <https://www.kernel.org/doc/html/latest/networking/can.html>`_
-涓湁娣卞叆鎻忚堪銆傜畝鑰岃█涔嬶紝瀹冩彁渚涗簡涓€绉?鍦?CAN 涔嬩笂瀹炵幇鍜屼娇鐢ㄩ珮灞傚崗璁殑鑷劧鏂瑰紡锛?涓庝緥濡備互澶綉涔嬩笂杩愯 UDP/IP 鐨勬柟寮忕浉鍚屻€?
+中有深入描述。简而言之，它提供了一CAN 之上实现和使用高层协议的自然方式与例如以太网之上运行 UDP/IP 的方式相同
 
-#### 璁惧鎺㈡祴锛圖evice probe锛?
+#### 设备探测（Device probe
 
-鍦ㄨ缁嗕粙缁?CAN 鎬荤嚎璁惧椹卞姩鐨勭粨鏋勪箣鍓嶏紝鎴戜滑鍏堥噸鐢充竴涓嬪唴鏍哥┒绔?鏄浣曞緱鐭ヨ澶囧瓨鍦ㄧ殑銆傛煇浜涙€荤嚎锛屽 PCI 鎴?PCIe锛屾敮鎸佽澶囨灇涓俱€備篃灏辨槸璇达紝
-绯荤粺鍚姩鏃讹紝浼氬彂鐜版€荤嚎涓婄殑鎵€鏈夎澶囧苟璇诲彇瀹冧滑鐨勯厤缃€傚唴鏍搁€氳繃鍏?vendor ID 鍜?device ID 鏉ヨ瘑鍒澶囷紝濡傛灉瀛樺湪涓鸿鏍囪瘑绗︾粍鍚堟敞鍐岀殑椹卞姩锛?灏变細璋冪敤鍏?probe 鏂规硶鏉ヤ负璇ョ‖浠跺～鍏呴┍鍔ㄧ殑瀹炰緥銆俇SB 鐨勬儏鍐电被浼硷紝鍙笉杩?瀹冨厑璁歌澶囩儹鎻掓嫈銆?
-瀵逛簬鐩存帴鍐呭祵鍦?SoC 涓苟杩炴帴鍒板唴閮ㄧ郴缁熸€荤嚎锛圓XI銆丄PB銆丄valon 绛夛級
-鐨勫璁撅紝鎯呭喌鍒欎笉鍚屻€傝繖浜涙€荤嚎涓嶆敮鎸佹灇涓撅紝鍥犳鍐呮牳蹇呴』浠庡叾浠栧湴鏂?鑾风煡璁惧淇℃伅銆傝繖姝ｆ槸 Device Tree 鐨勭敤閫旀墍鍦ㄣ€?
+在详细介CAN 总线设备驱动的结构之前，我们先重申一下内核究是如何得知设备存在的。某些总线，如 PCI PCIe，支持设备枚举。也就是说，
+系统启动时，会发现总线上的所有设备并读取它们的配置。内核通过vendor ID device ID 来识别设备，如果存在为该标识符组合注册的驱动就会调用probe 方法来为该硬件填充驱动的实例。USB 的情况类似，只不它允许设备热插拔
+对于直接内嵌SoC 中并连接到内部系统总线（AXI、APB、Avalon 等）
+的外设，情况则不同。这些总线不支持枚举，因此内核必须从其他地获知设备信息。这正是 Device Tree 的用途所在
 
-#### 璁惧鏍戯紙Device tree锛?
+#### 设备树（Device tree
 
-璁惧鏍戜腑鐨勪竴涓潯鐩０鏄庝簡绯荤粺涓瓨鍦ㄤ竴涓澶囥€佸畠濡備綍琚闂紙浣嶄簬
-鍝潯鎬荤嚎涓婏級浠ュ強瀹冪殑閰嶇疆鈥斺€斿瘎瀛樺櫒鍦板潃銆佷腑鏂瓑绛夈€傛绫昏澶囨爲
-鐨勪竴涓ず渚嬪涓嬨€?
+设备树中的一个条目声明了系统中存在一个设备、它如何被访问（位于
+哪条总线上）以及它的配置——寄存器地址、中断等等。此类设备树
+的一个示例如下
 
 ```
 
@@ -66,29 +66,29 @@ SocketCAN 鏄?Linux 鍐呮牳涓?CAN 璁惧鐨勬爣鍑嗛€氱敤鎺ュ彛�
 ```
 
 
-#### 椹卞姩缁撴瀯
+#### 驱动结构
 
 
-璇ラ┍鍔ㄥ彲浠ュ垎涓轰袱閮ㄥ垎鈥斺€斾笌骞冲彴鐩稿叧鐨勮澶囧彂鐜颁笌鍒濆鍖栵紝浠ュ強涓庡钩鍙?鏃犲叧鐨?CAN 缃戠粶璁惧瀹炵幇銆?
+该驱动可以分为两部分——与平台相关的设备发现与初始化，以及与平无关CAN 网络设备实现
 
-##### 骞冲彴璁惧椹卞姩
+##### 平台设备驱动
 
 
-瀵逛簬 Zynq锛岃鏍搁€氳繃 AXI 绯荤粺鎬荤嚎杩炴帴锛岃鎬荤嚎涓嶆敮鎸佹灇涓撅紝鍥犳璁惧
-蹇呴』鍦?Device Tree 涓寚瀹氥€傝繖绫昏澶囧湪 kernel 涓О涓?**platform device**
-锛堝钩鍙拌澶囷級锛岀敱 **platform device driver**锛堝钩鍙拌澶囬┍鍔級\  [^1^]_ 澶勭悊銆?
-涓€涓钩鍙拌澶囬┍鍔ㄦ彁渚涗互涓嬪唴瀹癸細
+对于 Zynq，该核通过 AXI 系统总线连接，该总线不支持枚举，因此设备
+必须Device Tree 中指定。这类设备在 kernel 中称**platform device**
+（平台设备），由 **platform device driver**（平台设备驱动）\  [^1^]_ 处理
+一个平台设备驱动提供以下内容：
 
-- 涓€涓?**probe** 鍑芥暟
+- 一**probe** 函数
 
-- 涓€涓?**remove** 鍑芥暟
+- 一**remove** 函数
 
-- 涓€寮犺椹卞姩鑳藉澶勭悊鐨?**compatible**锛堝吋瀹癸級璁惧琛?
-**probe** 鍑芥暟鍦ㄨ澶囧嚭鐜版椂锛堟垨椹卞姩鍔犺浇鏃讹紝浠ヨ緝鏅氳€呬负鍑嗭級琚伆濂借皟鐢ㄤ竴娆°€?濡傛灉鍚屼竴涓┍鍔ㄥ鐞嗗涓澶囷紝鍒欎細瀵规瘡涓澶囪皟鐢ㄤ竴娆?**probe** 鍑芥暟銆?瀹冪殑浣滅敤鏄垎閰嶅苟鍒濆鍖栧鐞嗚澶囨墍闇€鐨勮祫婧愶紝浠ュ強涓轰笌骞冲彴鏃犲叧鐨?灞傝缃簳灞傚嚱鏁帮紝渚嬪 **read_reg** 鍜?**write_reg**銆?涔嬪悗锛岄┍鍔ㄥ皢璁惧娉ㄥ唽鍒版洿楂樺眰锛屽湪鏈緥涓敞鍐屼负 **network device**锛堢綉缁滆澶囷級銆?
-**remove** 鍑芥暟鍦ㄨ澶囨秷澶辨垨椹卞姩鍗冲皢鍗歌浇鏃惰璋冪敤銆傚畠鐢ㄤ簬閲婃斁
-鍦?**probe** 涓垎閰嶇殑璧勬簮锛屽苟灏嗚澶囦粠鏇撮珮灞傛敞閿€銆?
-鏈€鍚庯紝**compatible** 璁惧琛ㄥ０鏄庝簡璇ラ┍鍔ㄨ兘澶熷鐞嗙殑璁惧銆侱evice Tree
-鏉＄洰 `compatible` 浼氫笌鎵€鏈?**platform drivers**锛堝钩鍙伴┍鍔級鐨勮〃杩涜鍖归厤銆?
+- 一张该驱动能够处理**compatible**（兼容）设备
+**probe** 函数在设备出现时（或驱动加载时，以较晚者为准）被恰好调用一次如果同一个驱动处理多个设备，则会对每个设备调用一**probe** 函数它的作用是分配并初始化处理设备所需的资源，以及为与平台无关层设置底层函数，例如 **read_reg** **write_reg**之后，驱动将设备注册到更高层，在本例中注册为 **network device**（网络设备）
+**remove** 函数在设备消失或驱动即将卸载时被调用。它用于释放
+**probe** 中分配的资源，并将设备从更高层注销
+最后，**compatible** 设备表声明了该驱动能够处理的设备。Device Tree
+条目 `compatible` 会与所**platform drivers**（平台驱动）的表进行匹配
 
            ```c
            /** Match table for OF platform binding **/
@@ -115,81 +115,81 @@ SocketCAN 鏄?Linux 鍐呮牳涓?CAN 璁惧鐨勬爣鍑嗛€氱敤鎺ュ彛�
 
 
 
-##### 缃戠粶璁惧椹卞姩
+##### 网络设备驱动
 
 
-姣忎釜缃戠粶璁惧蹇呴』鑷冲皯鏀寔浠ヤ笅鎿嶄綔锛?
-- 鍚姩璁惧锛歚ndo_open`
+每个网络设备必须至少支持以下操作
+- 启动设备：`ndo_open`
 
-- 鍏抽棴璁惧锛歚ndo_close`
+- 关闭设备：`ndo_close`
 
-- 鍚戣澶囨彁浜?TX 甯э細`ndo_start_xmit`
+- 向设备提TX 帧：`ndo_start_xmit`
 
-- 鍚戠綉缁滃瓙绯荤粺鎶ュ憡 TX 瀹屾垚涓庨敊璇細ISR
+- 向网络子系统报告 TX 完成与错误：ISR
 
-- 鍚戠綉缁滃瓙绯荤粺鎻愪氦 RX 甯э細ISR 涓?NAPI
+- 向网络子系统提交 RX 帧：ISR NAPI
 
-浜嬩欢鏉ユ簮鏈変袱绉嶅彲鑳斤細璁惧鍜岀綉缁滃瓙绯荤粺銆傝澶囦簨浠堕€氬父閫氳繃涓柇鍙戝嚭淇″彿锛?鐢变腑鏂湇鍔＄▼搴忥紙ISR锛夊鐞嗐€傛簮鑷綉缁滃瓙绯荤粺鐨勪簨浠跺鐞嗙▼搴忓垯鍦?`struct net_device_ops` 涓寚瀹氥€?
-褰撹澶囪鍚姩鏃讹紝渚嬪閫氳繃璋冪敤 `ip link set can0 up`锛?浼氳皟鐢ㄩ┍鍔ㄧ殑 `ndo_open` 鍑芥暟銆傚畠搴斿綋鏍￠獙鎺ュ彛閰嶇疆骞堕厤缃拰鍚敤璁惧銆?鐩稿弽鐨勬搷浣滄槸 `ndo_close`锛屽湪璁惧琚叧闂椂璋冪敤锛屾棤璁烘槸鏄惧紡杩樻槸闅愬紡銆?
-褰撶郴缁熼渶瑕佸彂閫佷竴涓抚鏃讹紝瀹冮€氳繃璋冪敤 `ndo_start_xmit` 鏉ュ疄鐜帮紝璇ュ嚱鏁板皢
-甯у叆闃熷埌璁惧銆傚鏋滆澶囩殑 HW 闃熷垪锛團IFO銆侀偖绠辨垨浠讳綍瀹炵幇鏂瑰紡锛夊彉婊★紝
-`ndo_start_xmit` 鐨勫疄鐜颁細閫氱煡缃戠粶瀛愮郴缁熷畠搴斿綋鍋滄 TX 闃熷垪
-锛堥€氳繃 `netif_stop_queue`锛夈€備箣鍚庡綋璁惧鍐嶆鏈夊彲鐢ㄧ┖闂村苟鑳藉鍏ラ槦
-鍙︿竴涓抚鏃讹紝浼氬湪 ISR 涓噸鏂板惎鐢ㄩ槦鍒椼€?
-鎵€鏈夎澶囦簨浠堕兘鍦?ISR 涓鐞嗭紝鍏蜂綋鍖呮嫭锛?
-#. **TX 瀹屾垚**銆傚綋璁惧鎴愬姛瀹屾垚涓€涓抚鐨勫彂閫佹椂锛岃甯т細鍦ㄦ湰鍦板洖鏄俱€?   鍙戠敓閿欒鏃讹紝鍒欐敼涓哄悜缃戠粶瀛愮郴缁熷彂閫佷竴涓俊鎭€ч敊璇抚 [^2^]_銆?   鍦ㄨ繖涓ょ鎯呭喌涓嬶紝杞欢 TX 闃熷垪閮戒細琚仮澶嶏紝浠ヤ究鍙互鍙戦€佹洿澶氬抚銆?
-#. **閿欒鐘舵€?*銆傚鏋滃嚭閿欙紙渚嬪璁惧杩涘叆 bus-off 鐘舵€佹垨鍙戠敓 RX 婧㈠嚭锛夛紝
-   閿欒璁℃暟鍣ㄤ細琚洿鏂帮紝淇℃伅鎬ч敊璇抚浼氳鍏ラ槦鍒?SW RX 闃熷垪銆?
-#. **RX 缂撳啿鍖洪潪绌?*銆傚湪杩欑鎯呭喌涓嬶紝璇诲彇 RX 甯у苟灏嗗叾鍏ラ槦鍒?SW RX 闃熷垪銆?   閫氬父浣跨敤 NAPI 浣滀负涓棿灞傦紙鍙傝 锛夈€?
+事件来源有两种可能：设备和网络子系统。设备事件通常通过中断发出信号由中断服务程序（ISR）处理。源自网络子系统的事件处理程序则`struct net_device_ops` 中指定
+当设备被启动时，例如通过调用 `ip link set can0 up`会调用驱动的 `ndo_open` 函数。它应当校验接口配置并配置和启用设备相反的操作是 `ndo_close`，在设备被关闭时调用，无论是显式还是隐式
+当系统需要发送一个帧时，它通过调用 `ndo_start_xmit` 来实现，该函数将
+帧入队到设备。如果设备的 HW 队列（FIFO、邮箱或任何实现方式）变满，
+`ndo_start_xmit` 的实现会通知网络子系统它应当停止 TX 队列
+（通过 `netif_stop_queue`）。之后当设备再次有可用空间并能够入队
+另一个帧时，会在 ISR 中重新启用队列
+所有设备事件都ISR 中处理，具体包括
+#. **TX 完成**。当设备成功完成一个帧的发送时，该帧会在本地回显   发生错误时，则改为向网络子系统发送一个信息性错误帧 [^2^]_   在这两种情况下，软件 TX 队列都会被恢复，以便可以发送更多帧
+#. **错误状*。如果出错（例如设备进入 bus-off 状态或发生 RX 溢出），
+   错误计数器会被更新，信息性错误帧会被入队SW RX 队列
+#. **RX 缓冲区非*。在这种情况下，读取 RX 帧并将其入队SW RX 队列   通常使用 NAPI 作为中间层（参见 ）
 
 #### NAPI
 
 
-浼犲叆甯х殑棰戠巼鍙兘寰堥珮锛岃€屾瘡甯ч兘璋冪敤涓柇鏈嶅姟绋嬪簭鐨勫紑閿€浼氶€犳垚鏄捐憲鐨?绯荤粺璐熻浇銆侺inux 鍐呮牳涓湁澶氱鏈哄埗鏉ュ鐞嗚繖绉嶆儏鍐点€傚畠浠槸闅忕潃 Linux
-鍐呮牳澶氬勾鐨勫彂灞曞拰鏀硅繘鑰屾紨杩涘嚭鏉ョ殑銆傚浜庣綉缁滆澶囷紝褰撳墠鐨勬爣鍑嗘槸
-NAPI鈥斺€?*New API锛堟柊 API锛?*銆傚畠绫讳技浜庣粡鍏哥殑 top-half/bottom-half
-涓柇澶勭悊锛屽嵆瀹冧粎鍦?ISR 涓‘璁や腑鏂紝骞惰〃鏄庡叾浣欏鐞嗗簲鍦?softirq
-涓婁笅鏂囦腑瀹屾垚銆傛澶栵紝瀹冭繕鎻愪緵浜嗗湪涓€娈垫椂闂村唴 **杞锛坧oll锛?* 鏂板抚鐨勫彲鑳芥€с€?杩欐湁鍙兘閬垮厤鍚敤涓柇銆佸湪 ISR 涓鐞嗕紶鍏?IRQ銆侀噸鏂板惎鐢?softirq 浠ュ強
-灏嗕笂涓嬫枃鍒囨崲鍥?softirq 杩欎竴浠ｄ环楂樻槀鐨勮繃绋嬨€?
-鏇村淇℃伅鍙傝 Documentation/networking/napi.rst <napi>銆?
+传入帧的频率可能很高，而每帧都调用中断服务程序的开销会造成显著系统负载。Linux 内核中有多种机制来处理这种情况。它们是随着 Linux
+内核多年的发展和改进而演进出来的。对于网络设备，当前的标准是
+NAPI—*New API（新 API*。它类似于经典的 top-half/bottom-half
+中断处理，即它仅ISR 中确认中断，并表明其余处理应softirq
+上下文中完成。此外，它还提供了在一段时间内 **轮询（poll* 新帧的可能性这有可能避免启用中断、在 ISR 中处理传IRQ、重新启softirq 以及
+将上下文切换softirq 这一代价高昂的过程
+更多信息参见 Documentation/networking/napi.rst <napi>
 
-### 灏嗘牳闆嗘垚鍒?Xilinx Zynq
-
-
-璇ユ牳鎺ュ彛鐨勬槸 Avalon 鎬荤嚎鐨勪竴涓畝鍗曞瓙闆?锛堝弬瑙?Intel **Avalon Interface Specifications**锛夛紝
-鍥犱负瀹冩渶鍒濈敤浜?Altera FPGA 鑺墖涓婏紝鑰?Xilinx 鍘熺敓浣跨敤 AXI 鎺ュ彛
-锛堝弬瑙?ARM **AMBA AXI and ACE Protocol Specification AXI3,
-AXI4, and AXI4-Lite, ACE and ACE-Lite**锛夈€?鏈€鏄庢樉鐨勮В鍐虫柟妗堟槸浣跨敤涓€涓?Avalon/AXI 妗ユ垨瀹炵幇鏌愮绠€鍗曠殑杞崲瀹炰綋銆?鐒惰€岋紝璇ユ牳鐨勬帴鍙ｆ槸鍗婂弻宸ョ殑锛屾病鏈夋彙鎵嬩俊鍙凤紝鑰?AXI 鏄叏鍙屽伐鐨勶紝
-鍏锋湁鍙屽悜淇″彿銆傛澶栵紝鍗充究鏄?AXI-Lite 浠庢帴鍙ｄ篃鐩稿綋娑堣€楄祫婧愶紝鑰?CAN
-鏍稿苟涓嶉渶瑕?AXI 鐨勭伒娲绘€т笌閫熷害銆?
-鍥犳閫夋嫨浜嗕竴涓畝鍗曞緱澶氱殑鎬荤嚎鈥斺€擜PB锛圓dvanced Peripheral Bus锛岄珮绾у璁炬€荤嚎锛?锛堝弬瑙?ARM **AMBA APB Protocol Specification**锛夈€?APB-AXI 妗ュ湪 Xilinx Vivado 涓洿鎺ュ彲鐢紝鎺ュ彛閫傞厤瀹炰綋鍙槸涓€缁勭畝鍗曠殑
-缁勫悎閫昏緫璧嬪€笺€?
-鏈€鍚庯紝涓轰簡鑳藉灏嗚鏍镐綔涓鸿嚜瀹氫箟 IP 鍖呭惈鍦ㄦ鍥句腑锛屾牳杩炲悓 APB 鎺ュ彛
-涓€璧疯鎵撳寘涓?Vivado 缁勪欢銆?
-
-### CTU CAN FD 椹卞姩璁捐
+### 将核集成Xilinx Zynq
 
 
-CAN 璁惧椹卞姩鐨勪竴鑸粨鏋勫凡鍦?涓粙缁嶈繃銆傛帴涓嬫潵鐨勬钀藉皢鍏蜂綋鎻愪緵瀵?CTU
-CAN FD 鏍搁┍鍔ㄧ殑鏇磋缁嗘弿杩般€?
+该核接口的是 Avalon 总线的一个简单子（参Intel **Avalon Interface Specifications**），
+因为它最初用Altera FPGA 芯片上，Xilinx 原生使用 AXI 接口
+（参ARM **AMBA AXI and ACE Protocol Specification AXI3,
+AXI4, and AXI4-Lite, ACE and ACE-Lite**）最明显的解决方案是使用一Avalon/AXI 桥或实现某种简单的转换实体然而，该核的接口是半双工的，没有握手信号，AXI 是全双工的，
+具有双向信号。此外，即便AXI-Lite 从接口也相当消耗资源，CAN
+核并不需AXI 的灵活性与速度
+因此选择了一个简单得多的总线——APB（Advanced Peripheral Bus，高级外设总线（参ARM **AMBA APB Protocol Specification**）APB-AXI 桥在 Xilinx Vivado 中直接可用，接口适配实体只是一组简单的
+组合逻辑赋值
+最后，为了能够将该核作为自定义 IP 包含在框图中，核连同 APB 接口
+一起被打包Vivado 组件
 
-#### 搴曞眰椹卞姩
+### CTU CAN FD 驱动设计
 
 
-璇ユ牳骞堕潪浠呬緵 SocketCAN 浣跨敤锛屽洜姝ゆ渶濂芥嫢鏈変竴涓笌 OS 鏃犲叧鐨勫簳灞傞┍鍔ㄣ€?杩欎釜搴曞眰椹卞姩闅忓悗鍙互鐢ㄤ簬 OS 椹卞姩鐨勫疄鐜颁腑锛屾垨鑰呯洿鎺ョ敤浜庤８鏈烘垨
-鐢ㄦ埛绌洪棿搴旂敤绋嬪簭涓€傚彟涓€涓紭鐐规槸锛屽鏋滅‖浠剁暐鏈夊彉鍖栵紝鍙渶淇敼
-搴曞眰椹卞姩鍗冲彲銆?
-浠ｇ爜 [^3^]_ 閮ㄥ垎鐢卞伐鍏疯嚜鍔ㄧ敓鎴愶紝閮ㄥ垎鐢辨牳浣滆€呮墜宸ョ紪鍐欙紝骞跺寘鍚鏂?浣滆€呯殑璐＄尞銆傚簳灞傞┍鍔ㄦ敮鎸佽濡備互涓嬫搷浣滐細璁剧疆浣嶆椂搴忋€佽缃帶鍒跺櫒妯″紡銆?鍚敤/绂佺敤銆佽鍙?RX 甯с€佸啓鍏?TX 甯х瓑绛夈€?
+CAN 设备驱动的一般结构已中介绍过。接下来的段落将具体提供CTU
+CAN FD 核驱动的更详细描述
 
-#### 閰嶇疆浣嶆椂搴?
+#### 底层驱动
 
-鍦?CAN 涓紝姣忎釜浣嶈鍒嗕负鍥涗釜娈碉細SYNC銆丳ROP銆丳HASE1 鍜?PHASE2銆傚畠浠殑
-鎸佺画鏃堕棿浠ユ椂闂撮噺瀛愶紙Time Quantum锛夌殑鍊嶆暟琛ㄧず
-锛堣瑙?`CAN Specification, Version 2.0 <http://esd.cs.ucr.edu/webres/can20.pdf>`_ 绗?8 绔狅級銆?閰嶇疆娉㈢壒鐜囷紙bitrate锛夋椂锛屾墍鏈夋鐨勬寔缁椂闂达紙浠ュ強鏃堕棿閲忓瓙锛夊繀椤绘牴鎹?娉㈢壒鐜囧拰閲囨牱鐐癸紙Sample Point锛夎绠楀緱鍑恒€傚浜?CAN FD锛屾爣绉版尝鐗圭巼
-锛圢ominal bitrate锛夊拰鏁版嵁娉㈢壒鐜囷紙Data bitrate锛夋槸鍒嗗埆鐙珛璁＄畻鐨勩€?
-SocketCAN 鐩稿綋鐏垫椿锛屾棦鍙互閫氳繃鎵嬪姩璁剧疆鎵€鏈夋鐨勬寔缁椂闂存潵鎻愪緵楂樺害
-鑷畾涔夌殑閰嶇疆锛屼篃鍙互閫氳繃浠呰缃尝鐗圭巼鍜岄噰鏍风偣鏉ユ彁渚涗究鎹风殑閰嶇疆
-锛堝鏋滄湭鎸囧畾锛岀敋鑷充細鏍规嵁 Bosch 寤鸿鑷姩閫夋嫨锛夈€傜劧鑰岋紝姣忎釜 CAN 鎺у埗鍣?鍙兘鍏锋湁涓嶅悓鐨勫熀鍑嗘椂閽熼鐜囧拰涓嶅悓鐨勬鎸佺画鏃堕棿瀵勫瓨鍣ㄥ搴︺€傚洜姝ょ畻娉?闇€瑕佹寔缁椂闂寸殑锛堜互鍙婃椂閽熼鍒嗛鍣ㄧ殑锛夋渶灏忓€煎拰鏈€澶у€硷紝骞跺皾璇曚紭鍖栬繖浜?鏁板€间互鍚屾椂婊¤冻绾︽潫鏉′欢鍜屾墍璇锋眰鐨勫弬鏁般€?
+
+该核并非仅供 SocketCAN 使用，因此最好拥有一个与 OS 无关的底层驱动这个底层驱动随后可以用于 OS 驱动的实现中，或者直接用于裸机或
+用户空间应用程序中。另一个优点是，如果硬件略有变化，只需修改
+底层驱动即可
+代码 [^3^]_ 部分由工具自动生成，部分由核作者手工编写，并包含论作者的贡献。底层驱动支持诸如以下操作：设置位时序、设置控制器模式启用/禁用、读RX 帧、写TX 帧等等
+
+#### 配置位时
+
+CAN 中，每个位被分为四个段：SYNC、PROP、PHASE1 PHASE2。它们的
+持续时间以时间量子（Time Quantum）的倍数表示
+（详`CAN Specification, Version 2.0 <http://esd.cs.ucr.edu/webres/can20.pdf>`_ 8 章）配置波特率（bitrate）时，所有段的持续时间（以及时间量子）必须根波特率和采样点（Sample Point）计算得出。对CAN FD，标称波特率
+（Nominal bitrate）和数据波特率（Data bitrate）是分别独立计算的
+SocketCAN 相当灵活，既可以通过手动设置所有段的持续时间来提供高度
+自定义的配置，也可以通过仅设置波特率和采样点来提供便捷的配置
+（如果未指定，甚至会根据 Bosch 建议自动选择）。然而，每个 CAN 控制可能具有不同的基准时钟频率和不同的段持续时间寄存器宽度。因此算需要持续时间的（以及时钟预分频器的）最小值和最大值，并尝试优化这数值以同时满足约束条件和所请求的参数
 
            ```c
            struct can_bittiming_const {
@@ -208,47 +208,47 @@ SocketCAN 鐩稿綋鐏垫椿锛屾棦鍙互閫氳繃鎵嬪姩璁剧疆鎵€�
 
 [lst:can_bittiming_const]
 
-缁嗗績鐨勮鑰呬細娉ㄦ剰鍒帮紝PROP_SEG 鍜?PHASE_SEG1 娈电殑鎸佺画鏃堕棿涓嶆槸鍒嗗埆纭畾鐨勶紝
-鑰屾槸鍏堝悎骞讹紝鐒跺悗榛樿鎯呭喌涓嬪皢寰楀埌鐨?TSEG1 鍦?PROP_SEG 鍜?PHASE_SEG1 涔嬮棿
-骞冲潎鍒嗛厤銆傚疄闄呬笂杩欏嚑涔庢病鏈変粈涔堝奖鍝嶏紝鍥犱负閲囨牱鐐逛綅浜?PHASE_SEG1 鍜?PHASE_SEG2 涔嬮棿銆傜劧鑰屽湪 CTU CAN FD 涓紝`PROP` 鍜?`PH1` 鎸佺画鏃堕棿瀵勫瓨鍣?鍏锋湁涓嶅悓瀹藉害锛堝垎鍒负 6 浣嶅拰 7 浣嶏級锛屽洜姝よ嚜鍔ㄨ绠楃殑鍊煎彲鑳戒細婧㈠嚭杈冪煭鐨?瀵勫瓨鍣紝浠庤€屽繀椤诲湪涓よ€呬箣闂撮噸鏂板垎閰?[^4^]_銆?
+细心的读者会注意到，PROP_SEG PHASE_SEG1 段的持续时间不是分别确定的，
+而是先合并，然后默认情况下将得到TSEG1 PROP_SEG PHASE_SEG1 之间
+平均分配。实际上这几乎没有什么影响，因为采样点位PHASE_SEG1 PHASE_SEG2 之间。然而在 CTU CAN FD 中，`PROP` `PH1` 持续时间寄存具有不同宽度（分别为 6 位和 7 位），因此自动计算的值可能会溢出较短寄存器，从而必须在两者之间重新分[^4^]_
 
-#### 澶勭悊 RX
-
-
-甯ф帴鏀跺湪 NAPI 闃熷垪涓鐞嗭紝褰?RXNE锛圧X FIFO Not Empty锛孯X FIFO 闈炵┖锛?浣嶈缃綅鏃讹紝鐢?ISR 鍚敤銆傚抚琚€愪釜璇诲彇锛岀洿鍒?RX FIFO 涓病鏈夊墿浣欏抚锛?鎴?NAPI 杞杩愯杈惧埌鏈€澶у伐浣滈厤棰濓紙鍙傝 锛夈€傜劧鍚庢瘡甯ц浼犻€掔粰缃戠粶
-鎺ュ彛 RX 闃熷垪銆?
-浼犲叆鐨勫抚鍙兘鏄?CAN 2.0 甯ф垨 CAN FD 甯с€傚湪鍐呮牳涓尯鍒嗚繖涓よ€呯殑鏂规硶鏄?鍒嗛厤 `struct can_frame` 鎴?`struct canfd_frame`锛屼袱鑰呭ぇ灏忎笉鍚屻€?鍦ㄦ帶鍒跺櫒涓紝鍏充簬甯х被鍨嬬殑淇℃伅瀛樺偍鍦?RX FIFO 鐨勭涓€涓瓧涓€?
-杩欏氨缁欐垜浠甫鏉ヤ簡涓€涓厛鏈夐浮杩樻槸鍏堟湁铔嬬殑闂锛氭垜浠笇鏈涗负甯у垎閰?`skb`锛?骞朵笖鍙湁鍦ㄥ垎閰嶆垚鍔熸椂鎵嶄粠 FIFO 涓彇鍑哄抚锛涘惁鍒欏皢鍏朵繚鐣欏湪閭ｉ噷绋嶅悗澶勭悊銆?浣嗘槸涓轰簡鑳藉鍒嗛厤姝ｇ‘鐨?`skb`锛屾垜浠繀椤诲厛浠?FIFO 涓彇鍑虹涓€涓瓧銆傛湁鍑犵
-鍙兘鐨勮В鍐虫柟妗堬細
-
-#. 璇诲彇璇ュ瓧锛岀劧鍚庡垎閰嶃€傚鏋滃け璐ワ紝鍒欎涪寮冨抚鐨勫叾浣欓儴鍒嗐€傚綋绯荤粺鍐呭瓨
-   涓嶈冻鏃讹紝鎯呭喌鏈潵灏卞緢绯熺硶銆?
-#. 棰勫厛濮嬬粓鍒嗛厤瓒冲澶т互瀹圭撼 FD 甯х殑 `skb`銆傜劧鍚庤皟鏁?`skb` 鍐呴儴锛屼娇鍏?   鐪嬭捣鏉ュ儚鏄负杈冨皬鐨?CAN 2.0 甯у垎閰嶇殑銆?
-#. 澧炲姞绐ヨ锛坧eek锛塅IFO 鑰岄潪娑堣垂璇ュ瓧鐨勯€夐」銆?
-#. 濡傛灉鍒嗛厤澶辫触锛屽皢璇诲彇鐨勫瓧瀛樺叆椹卞姩鐨勬暟鎹腑銆備笅娆″皾璇曟椂锛屼娇鐢?   瀛樺偍鐨勫瓧鑰屼笉鏄啀娆¤鍙栥€?
-鏂规 1 瓒冲绠€鍗曪紝浣嗗鏋滄垜浠兘鍋氬緱鏇村ソ锛屽畠灏变笉澶护浜烘弧鎰忋€傛柟妗?2
-涓嶅彲鎺ュ彈锛屽洜涓哄畠闇€瑕佷慨鏀逛竴涓畬鏁村唴鏍哥粨鏋勭殑绉佹湁鐘舵€併€傜暐寰鍔犵殑
-鍐呭瓨娑堣€椾笉杩囨槸鈥滆泲绯曗€濅笂鐨勮櫄鎷熸ū妗冦€傛柟妗?3 闇€瑕佷笉灏忕殑纭欢鏀瑰姩锛?浠庣‖浠惰搴︽潵鐪嬩篃涓嶇悊鎯炽€?
-鏂规 4 浼间箮鏄竴涓笉閿欑殑鎶樹腑锛屽叾缂虹偣鏄儴鍒嗗抚鍙兘浼氬湪 FIFO 涓仠鐣?杈冮暱鏃堕棿銆傚敖绠″姝わ紝RX FIFO 鍙兘鍙湁涓€涓嫢鏈夎€咃紝鍥犳鍏朵粬浠讳綍浜洪兘
-涓嶅簲鐪嬪埌璇ラ儴鍒嗗抚锛堝拷鐣ユ煇浜涚壒娈婄殑璋冭瘯鍦烘櫙锛夈€傛澶栵紝椹卞姩鍦ㄥ垵濮嬪寲鏃?浼氶噸缃牳锛屽洜姝よ閮ㄥ垎甯т篃鏃犳硶琚€滄敹鍏烩€濄€傛渶缁堥€夋嫨浜嗘柟妗?4 [^5^]_銆?
-
-##### 涓?RX 甯ф墦鏃堕棿鎴?
-
-CTU CAN FD 鏍镐細鎶ュ憡甯ц鎺ユ敹鐨勭‘鍒囨椂闂存埑銆傛椂闂存埑榛樿鍦?EOF 鏈€鍚庝竴浣嶇殑
-閲囨牱鐐规崟鑾凤紝浣嗗彲閰嶇疆涓哄湪 SOF 浣嶆崟鑾枫€傛椂闂存埑婧愬湪鏍稿閮紝瀹藉害鍙揪 64 浣嶃€?鍦ㄦ挵鍐欐湰鏂囨椂锛屽皢鏃堕棿鎴充粠鍐呮牳浼犻€掑埌鐢ㄦ埛绌洪棿鐨勫姛鑳藉皻鏈疄鐜帮紝浣嗚鍒掑湪
-鏈潵瀹屾垚銆?
-
-#### 澶勭悊 TX
+#### 处理 RX
 
 
-CTU CAN FD 鏍告湁 4 涓嫭绔嬬殑 TX 缂撳啿鍖猴紝姣忎釜閮芥湁鑷繁鐨勭姸鎬佸拰浼樺厛绾с€傚綋
-鏍告兂瑕佸彂閫佹椂锛屼細閫夋嫨澶勪簬 Ready 鐘舵€佷笖浼樺厛绾ф渶楂樼殑 TX 缂撳啿鍖恒€?
-浼樺厛绾ф槸瀵勫瓨鍣?TX_PRIORITY 涓殑 3 浣嶆暟鍊硷紙nibble 瀵归綈锛夈€傚浜庡ぇ澶氭暟
-鐢ㄤ緥锛岃繖搴旇瓒冲鐏垫椿銆傜劧鑰岋紝SocketCAN 浠呬负浼犲嚭甯ф敮鎸佷竴涓?FIFO 闃熷垪 [^6^]_銆?缂撳啿鍖轰紭鍏堢骇鍙敤浜庢ā鎷?FIFO 琛屼负锛屾柟娉曟槸涓烘瘡涓紦鍐插尯鍒嗛厤涓嶅悓鐨勪紭鍏堢骇锛?骞跺湪涓€甯т紶杈撳畬鎴愬悗 **杞浆锛坮otating锛?* 浼樺厛绾с€?
-闄や簡浼樺厛绾ц疆杞箣澶栵紝SW 杩樺繀椤荤淮鎶ゆ寚鍚戠敱 TX 缂撳啿鍖虹粍鎴愮殑 FIFO 鐨勫ご灏炬寚閽堬紝
-浠ヤ究纭畾涓嬩竴涓抚搴斾娇鐢ㄥ摢涓紦鍐插尯锛坄txb_head`锛変互鍙婂摢涓紦鍐插尯搴旀槸鏈€鍏?瀹屾垚鐨勶紙`txb_tail`锛夈€傚疄闄呯殑缂撳啿鍖虹储寮曪紙鏄剧劧锛夋槸妯?4 鐨勶紙TX 缂撳啿鍖烘暟閲忥級锛?浣嗘寚閽堝繀椤昏嚦灏戝涓€浣嶏紝浠ヤ究鍖哄垎 FIFO 婊″拰 FIFO 绌衡€斺€斿湪杩欑鎯呭喌涓嬶紝
-`txb\_head \equiv txb\_tail\ (\textrm{mod}\ 4)`銆備笅闈㈢粰鍑轰簡濡備綍缁存姢
-FIFO 浠ュ強浼樺厛绾ц疆杞殑绀轰緥
+帧接收在 NAPI 队列中处理，RXNE（RX FIFO Not Empty，RX FIFO 非空位被置位时，ISR 启用。帧被逐个读取，直RX FIFO 中没有剩余帧NAPI 轮询运行达到最大工作配额（参见 ）。然后每帧被传递给网络
+接口 RX 队列
+传入的帧可能CAN 2.0 帧或 CAN FD 帧。在内核中区分这两者的方法分配 `struct can_frame` `struct canfd_frame`，两者大小不同在控制器中，关于帧类型的信息存储RX FIFO 的第一个字中
+这就给我们带来了一个先有鸡还是先有蛋的问题：我们希望为帧分`skb`并且只有在分配成功时才从 FIFO 中取出帧；否则将其保留在那里稍后处理但是为了能够分配正确`skb`，我们必须先FIFO 中取出第一个字。有几种
+可能的解决方案：
+
+#. 读取该字，然后分配。如果失败，则丢弃帧的其余部分。当系统内存
+   不足时，情况本来就很糟糕
+#. 预先始终分配足够大以容纳 FD 帧的 `skb`。然后调`skb` 内部，使   看起来像是为较小CAN 2.0 帧分配的
+#. 增加窥视（peek）FIFO 而非消费该字的选项
+#. 如果分配失败，将读取的字存入驱动的数据中。下次尝试时，使   存储的字而不是再次读取
+方案 1 足够简单，但如果我们能做得更好，它就不太令人满意。方2
+不可接受，因为它需要修改一个完整内核结构的私有状态。略微增加的
+内存消耗不过是“蛋糕”上的虚拟樱桃。方3 需要不小的硬件改动从硬件角度来看也不理想
+方案 4 似乎是一个不错的折中，其缺点是部分帧可能会在 FIFO 中停较长时间。尽管如此，RX FIFO 可能只有一个拥有者，因此其他任何人都
+不应看到该部分帧（忽略某些特殊的调试场景）。此外，驱动在初始化会重置核，因此该部分帧也无法被“收养”。最终选择了方4 [^5^]_
+
+##### RX 帧打时间
+
+CTU CAN FD 核会报告帧被接收的确切时间戳。时间戳默认EOF 最后一位的
+采样点捕获，但可配置为在 SOF 位捕获。时间戳源在核外部，宽度可达 64 位在撰写本文时，将时间戳从内核传递到用户空间的功能尚未实现，但计划在
+未来完成
+
+#### 处理 TX
+
+
+CTU CAN FD 核有 4 个独立的 TX 缓冲区，每个都有自己的状态和优先级。当
+核想要发送时，会选择处于 Ready 状态且优先级最高的 TX 缓冲区
+优先级是寄存TX_PRIORITY 中的 3 位数值（nibble 对齐）。对于大多数
+用例，这应该足够灵活。然而，SocketCAN 仅为传出帧支持一FIFO 队列 [^6^]_缓冲区优先级可用于模FIFO 行为，方法是为每个缓冲区分配不同的优先级并在一帧传输完成后 **轮转（rotating* 优先级
+除了优先级轮转之外，SW 还必须维护指向由 TX 缓冲区组成的 FIFO 的头尾指针，
+以便确定下一个帧应使用哪个缓冲区（`txb_head`）以及哪个缓冲区应是最完成的（`txb_tail`）。实际的缓冲区索引（显然）是4 的（TX 缓冲区数量）但指针必须至少宽一位，以便区分 FIFO 满和 FIFO 空——在这种情况下，
+`txb\_head \equiv txb\_tail\ (\textrm{mod}\ 4)`。下面给出了如何维护
+FIFO 以及优先级轮转的示例
 
 
 |
@@ -289,42 +289,40 @@ FIFO 浠ュ強浼樺厛绾ц疆杞殑绀轰緥
 
 |
 
-   TX 缂撳啿鍖虹殑鐘舵€佸強鍏跺彲鑳界殑杞崲
+   TX 缓冲区的状态及其可能的转换
 
 
-##### 涓?TX 甯ф墦鏃堕棿鎴?
+##### TX 帧打时间
 
-鍚?TX 缂撳啿鍖烘彁浜ゅ抚鏃讹紝鍙互鎸囧畾璇ュ抚搴旇鍙戦€佺殑鏃堕棿鎴炽€傚抚鐨勫彂閫佸彲鑳戒細
-鏇存櫄寮€濮嬶紝浣嗕笉浼氭洿鏃┿€傛敞鎰忥紝鏃堕棿鎴充笉鍙備笌缂撳啿鍖轰紭鍏堢骇鎺掑簭鈥斺€旇繖瀹屽叏
-鐢变笂杩版満鍒跺喅瀹氥€?
-瀵瑰熀浜庢椂闂寸殑鎶ユ枃鍙戦€佺殑鏀寔鏈€杩戝凡琚悎骞跺埌 Linux v4.19
-`Time-based packet transmission <https://lwn.net/Articles/748879/>`_锛?浣嗚繖椤瑰姛鑳藉浜?CAN 鏄惁瀹炵敤浠嶆湁寰呯爺绌躲€?
-鍚屾牱绫讳技浜庤幏鍙?RX 甯х殑鏃堕棿鎴筹紝璇ユ牳涔熸敮鎸佽幏鍙?TX 甯х殑鏃堕棿鎴斥€斺€斿嵆甯?琚垚鍔熷彂閫佺殑鏃堕棿銆傚叾缁嗚妭涓庝负 RX 甯ф墦鏃堕棿鎴抽潪甯哥浉浼硷紝骞跺湪 涓弿杩般€?
+TX 缓冲区提交帧时，可以指定该帧应被发送的时间戳。帧的发送可能会
+更晚开始，但不会更早。注意，时间戳不参与缓冲区优先级排序——这完全
+由上述机制决定
+对基于时间的报文发送的支持最近已被合并到 Linux v4.19
+`Time-based packet transmission <https://lwn.net/Articles/748879/>`_但这项功能对CAN 是否实用仍有待研究
+同样类似于获RX 帧的时间戳，该核也支持获TX 帧的时间戳——即被成功发送的时间。其细节与为 RX 帧打时间戳非常相似，并在 中描述
 
-#### 澶勭悊 RX 缂撳啿鍖烘孩鍑?
+#### 处理 RX 缓冲区溢
 
-褰撴帴鏀跺埌鐨勫抚鏃犳硶瀹屾暣鏀惧叆纭欢 RX FIFO 鏃讹紝RX FIFO 婧㈠嚭鏍囧織锛圫TATUS[DOR]锛?浼氳缃綅锛屽苟瑙﹀彂鏁版嵁婧㈠嚭涓柇锛圖OI锛夈€傚湪澶勭悊璇ヤ腑鏂椂锛屽繀椤绘敞鎰忓厛娓呴櫎
-DOR 鏍囧織锛堥€氳繃 COMMAND[CDO]锛夛紝鐒跺悗鍐嶆竻闄?DOI 涓柇鏍囧織銆傚惁鍒欙紝璇ヤ腑鏂細
-绔嬪嵆 [^7^]_ 閲嶆柊瑙﹀彂銆?
-**娉ㄦ剰**锛氬湪寮€鍙戣繃绋嬩腑锛屾浘璁ㄨ杩囧唴閮?HW 娴佹按绾挎槸鍚︿細鎵颁贡杩欎釜娓呴櫎
-椤哄簭锛屼互鍙婃槸鍚﹀湪娓呴櫎鏍囧織鍜屼腑鏂箣闂撮渶瑕侀澶栫殑绌哄懆鏈熴€傚湪 Avalon 鎺ュ彛涓婏紝
-纭疄琚瘉鏄庢槸杩欐牱锛屼絾 APB 鏄畨鍏ㄧ殑锛屽洜涓哄畠浣跨敤 2 鍛ㄦ湡浜嬪姟銆傛湰璐ㄤ笂锛?DOR 鏍囧織浼氳娓呴櫎锛屼絾鍦?DOI 娓呴櫎璇锋眰涔熷簲鐢ㄧ殑閭ｄ釜鍛ㄦ湡锛堥€氳繃灏嗗瘎瀛樺櫒鐨?Reset 杈撳叆缃珮锛夛紝DOI 瀵勫瓨鍣ㄧ殑 Preset 杈撳叆浠嶇劧涓洪珮銆傜敱浜?Set 鐨勪紭鍏堢骇
-楂樹簬 Reset锛孌OI 鏍囧織涓嶄細琚浣嶃€傝繖宸茬粡閫氳繃浜ゆ崲 Set/Reset 浼樺厛绾у緱鍒?淇锛堝弬瑙?issue #187锛夈€?
+当接收到的帧无法完整放入硬件 RX FIFO 时，RX FIFO 溢出标志（STATUS[DOR]会被置位，并触发数据溢出中断（DOI）。在处理该中断时，必须注意先清除
+DOR 标志（通过 COMMAND[CDO]），然后再清DOI 中断标志。否则，该中断会
+立即 [^7^]_ 重新触发
+**注意**：在开发过程中，曾讨论过内HW 流水线是否会扰乱这个清除
+顺序，以及是否在清除标志和中断之间需要额外的空周期。在 Avalon 接口上，
+确实被证明是这样，但 APB 是安全的，因为它使用 2 周期事务。本质上DOR 标志会被清除，但DOI 清除请求也应用的那个周期（通过将寄存器Reset 输入置高），DOI 寄存器的 Preset 输入仍然为高。由Set 的优先级
+高于 Reset，DOI 标志不会被复位。这已经通过交换 Set/Reset 优先级得修复（参issue #187）
 
-#### 鎶ュ憡 Error Passive 涓?Bus Off 鐘舵€?
+#### 报告 Error Passive Bus Off 状
 
-鍙兘闇€瑕佸湪鑺傜偣杈惧埌 **Error Passive**銆?*Error Warning** 鍜?**Bus Off** 鐘舵€佹椂
-杩涜鎶ュ憡銆傞┍鍔ㄩ€氳繃涓柇锛圗PI銆丒WLI锛夎幏鐭ラ敊璇姸鎬佺殑鍙樺寲锛岀劧鍚庤鍙栭敊璇?璁℃暟鍣ㄦ潵纭畾鏍哥殑閿欒鐘舵€併€?
-鐒惰€岋紝杩欓噷瀛樺湪涓€涓交寰殑绔炴€佹潯浠垛€斺€旂姸鎬佽浆鎹㈠彂鐢燂紙浠ュ強涓柇琚Е鍙戯級
-鐨勬椂闂翠笌璇诲彇閿欒璁℃暟鍣ㄧ殑鏃堕棿涔嬮棿瀛樺湪寤惰繜銆傚綋鏀跺埌 EPI 鏃讹紝鑺傜偣鍙兘
-澶勪簬 **Error Passive** 鎴?**Bus Off** 鐘舵€併€傚鏋滆妭鐐硅繘鍏?**Bus Off**锛屽畠鏄剧劧
-浼氫繚鎸佽鐘舵€佺洿鍒拌澶嶄綅銆傚惁鍒欙紝鑺傜偣 **褰撳墠鎴栨浘缁?* 澶勪簬 **Error Passive**銆?鐒惰€岋紝涔熸湁鍙兘璇诲彇鍒扮殑鐘舵€佹槸 **Error Warning** 鐢氳嚦 **Error Active**銆傚湪
-杩欑鎯呭喌涓嬶紝鏄惁浠ュ強绌剁珶鎶ュ憡浠€涔堝彲鑳藉苟涓嶆槑纭紝浣嗘垜涓汉鍊惧悜浜庤涓?浠嶅簲鎶ュ憡杩囧幓鐨勯敊璇姸鎬併€傜被浼煎湴锛屽綋鏀跺埌 EWLI 浣嗛殢鍚庢娴嬪埌鐨勭姸鎬佹槸
-**Error Passive** 鏃讹紝搴旀姤鍛?**Error Passive**銆?
+可能需要在节点达到 **Error Passive***Error Warning** **Bus Off** 状态时
+进行报告。驱动通过中断（EPI、EWLI）获知错误状态的变化，然后读取错计数器来确定核的错误状态
+然而，这里存在一个轻微的竞态条件——状态转换发生（以及中断被触发）
+的时间与读取错误计数器的时间之间存在延迟。当收到 EPI 时，节点可能
+处于 **Error Passive** **Bus Off** 状态。如果节点进**Bus Off**，它显然
+会保持该状态直到被复位。否则，节点 **当前或曾* 处于 **Error Passive**然而，也有可能读取到的状态是 **Error Warning** 甚至 **Error Active**。在
+这种情况下，是否以及究竟报告什么可能并不明确，但我个人倾向于认仍应报告过去的错误状态。类似地，当收到 EWLI 但随后检测到的状态是
+**Error Passive** 时，应报**Error Passive**
 
-### CTU CAN FD 椹卞姩婧愮爜鍙傝€?
-
-   :internal:
+### CTU CAN FD 驱动源码参
 
    :internal:
 
@@ -332,74 +330,76 @@ DOR 鏍囧織锛堥€氳繃 COMMAND[CDO]锛夛紝鐒跺悗鍐嶆竻闄?DOI 涓�
 
    :internal:
 
+   :internal:
 
-### CTU CAN FD IP 鏍镐笌椹卞姩寮€鍙戣嚧璋?
+
+### CTU CAN FD IP 核与驱动开发致
 
 - Odrej Ille <ondrej.ille@gmail.com>
 
-  - 浣滀负 CTU 娴嬮噺绯荤殑瀛︾敓鍚姩浜嗚椤圭洰
-  - 澶氬勾鏉ヤ负椤圭洰鎶曞叆浜嗗ぇ閲忎釜浜烘椂闂翠笌鐑儏
-  - 鍙備笌浜嗘洿澶氬彈璧勫姪鐨勪换鍔?
+  - 作为 CTU 测量系的学生启动了该项目
+  - 多年来为项目投入了大量个人时间与热情
+  - 参与了更多受资助的任
 - `Department of Measurement <https://meas.fel.cvut.cz/>`_銆?  `Faculty of Electrical Engineering <http://www.fel.cvut.cz/en/>`_銆?  `Czech Technical University <https://www.cvut.cz/en>`_
 
-  - 澶氬勾鏉ユ槸璇ラ」鐩殑涓昏鎶曡祫鏂?  - 鍦ㄥ叾闈㈠悜 `Skoda Auto <https://www.skoda-auto.cz/>`_ 鐨?CAN/CAN FD 璇婃柇妗嗘灦涓娇鐢ㄨ椤圭洰
+  - 多年来是该项目的主要投资  - 在其面向 `Skoda Auto <https://www.skoda-auto.cz/>`_ CAN/CAN FD 诊断框架中使用该项目
 
 - `Digiteq Automotive <https://www.digiteqautomotive.com/en>`_
 
-  - 璧勫姪浜嗏€淐AN FD Open Cores Support Linux Kernel Based Systems鈥濋」鐩?  - 涓?CTU 鍗忓晢骞朵粯璐逛互鍏佽鍏紬璁块棶璇ラ」鐩?  - 涓鸿繖椤瑰伐浣滄彁渚涗簡棰濆璧勯噾
+  - 资助了“CAN FD Open Cores Support Linux Kernel Based Systems”项  - CTU 协商并付费以允许公众访问该项  - 为这项工作提供了额外资金
 
 - `Department of Control Engineering <https://control.fel.cvut.cz/en>`_銆?  `Faculty of Electrical Engineering <http://www.fel.cvut.cz/en/>`_銆?  `Czech Technical University <https://www.cvut.cz/en>`_
 
-  - 璐熻矗鈥淐AN FD Open Cores Support Linux Kernel Based Systems鈥濋」鐩?  - 鎻愪緵 GitLab 绠＄悊
-  - 涓烘寔缁泦鎴愭彁渚涜櫄鎷熸湇鍔″櫒涓庤绠楄兘鍔?  - 涓?HIL 鎸佺画闆嗘垚娴嬭瘯鎻愪緵纭欢
+  - 负责“CAN FD Open Cores Support Linux Kernel Based Systems”项  - 提供 GitLab 管理
+  - 为持续集成提供虚拟服务器与计算能  - HIL 持续集成测试提供硬件
 
 - `PiKRON Ltd. <http://pikron.com/>`_
 
-  - 涓哄惎鍔ㄩ」鐩紑婧愬噯澶囧伐浣滄彁渚涗簡灏戦噺璧勯噾
+  - 为启动项目开源准备工作提供了少量资金
 
 - Petr Porazil <porazil@pikron.com>
 
-  - 璁捐 PCIe 鏀跺彂鍣ㄩ檮鍔犳澘骞剁粍瑁呮澘鍗?  - 涓哄熀浜?MicroZed/Zynq 鐨勭郴缁熻璁″拰缁勮 MZ_APO 鍩烘澘
+  - 设计 PCIe 收发器附加板并组装板  - 为基MicroZed/Zynq 的系统设计和组装 MZ_APO 基板
 
 - Martin Jerabek <martin.jerabek01@gmail.com>
 
-  - Linux 椹卞姩寮€鍙?  - 鎸佺画闆嗘垚骞冲彴鏋舵瀯甯堜笌 GHDL 鏇存柊
-  - 璁烘枃 `Open-source and Open-hardware CAN FD Protocol Support <https://dspace.cvut.cz/bitstream/handle/10467/80366/F3-DP-2019-Jerabek-Martin-Jerabek-thesis-2019-canfd.pdf>`_
+  - Linux 驱动开  - 持续集成平台架构师与 GHDL 更新
+  - 论文 `Open-source and Open-hardware CAN FD Protocol Support <https://dspace.cvut.cz/bitstream/handle/10467/80366/F3-DP-2019-Jerabek-Martin-Jerabek-thesis-2019-canfd.pdf>`_
 
 - Jiri Novak <jnovak@fel.cvut.cz>
 
-  - 鍦?CTU 娴嬮噺绯昏礋璐ｉ」鐩殑鍚姩銆佺鐞嗕笌浣跨敤
+  - CTU 测量系负责项目的启动、管理与使用
 
 - Pavel Pisa <pisa@cmp.felk.cvut.cz>
 
-  - 鍙戣捣寮€婧愶紝鍦?CTU 鎺у埗宸ョ▼绯昏礋璐ｉ」鐩崗璋冧笌绠＄悊
+  - 发起开源，CTU 控制工程系负责项目协调与管理
 
 - Jaroslav Beran<jara.beran@gmail.com>
 
- - 璐熻矗 Intel SoC 鐨勭郴缁熼泦鎴愩€佹牳涓庨┍鍔ㄧ殑娴嬭瘯鍜屾洿鏂?
+ - 负责 Intel SoC 的系统集成、核与驱动的测试和更
 - Carsten Emde (`OSADL <https://www.osadl.org/>`_)
 
- - 鎻愪緵 OSADL 鐨勪笓涓氱煡璇嗕互璁ㄨ IP 鏍歌鍙? - 鎸囧嚭浜?LGPL 鍙兘鐨勬閿佷互鍙?CAN 鎬荤嚎鍙兘鐨勪笓鍒╅棶棰橈紝杩欎績浣?IP 鏍歌璁￠噸鏂版巿鏉冧负绫?BSD 璁稿彲
+ - 提供 OSADL 的专业知识以讨论 IP 核许 - 指出LGPL 可能的死锁以CAN 总线可能的专利问题，这促IP 核设计重新授权为BSD 许可
 
 - Reiner Zitzmann and Holger Zeltwanger (`CAN in Automation <https://www.can-cia.org/>`_)
 
- - 鎻愪緵浜嗗缓璁拰甯姪浠ュ悜绀惧尯瀹ｄ紶璇ラ」鐩紝骞堕個璇锋垜浠弬鍔犲叧娉?CAN 鎬荤嚎鏈潵鍙戝睍鏂瑰悜鐨勬椿鍔?
+ - 提供了建议和帮助以向社区宣传该项目，并邀请我们参加关CAN 总线未来发展方向的活
 - Jan Charvat
 
- - 涓?QEMU 瀹炵幇浜?CTU CAN FD 鍔熻兘妯″瀷锛岃妯″瀷宸查泦鎴愬埌 QEMU 涓荤嚎锛坄docs/system/devices/can.rst <https://www.qemu.org/docs/master/system/devices/can.html>`_锛? - 瀛﹀＋璁烘枃 Model of CAN FD Communication Controller for QEMU Emulator
+ - QEMU 实现CTU CAN FD 功能模型，该模型已集成到 QEMU 主线（`docs/system/devices/can.rst <https://www.qemu.org/docs/master/system/devices/can.html>`_ - 学士论文 Model of CAN FD Communication Controller for QEMU Emulator
 
 
-### 娉ㄩ噴
+### 注释
 
 
-   鍏朵粬鎬荤嚎鏈夎嚜宸辩殑鐗瑰畾椹卞姩鎺ュ彛鏉ヨ缃澶囥€?
-   涓嶈涓?CAN Error Frame 娣锋穯銆傝繖鏄竴涓?`can_frame`锛屽叾 `CAN_ERR_FLAG`
-   琚疆浣嶏紝骞跺湪鍏?`data` 瀛楁涓寘鍚竴浜涢敊璇俊鎭€?
-   鍙湪 CTU CAN FD 浠撳簱
-   `<https://gitlab.fel.cvut.cz/canbus/ctucanfd_ip_core>`_ 涓幏鍙?
-   搴曞眰椹卞姩鍑芥暟 `ctucan_hw_set_nom_bittiming` 鍜?   `ctucan_hw_set_data_bittiming` 灏辨槸杩欐牱鍋氱殑銆?
-   鍦ㄦ挵鍐欐湰璁烘枃鏃讹紝鏂规 1 浠嶅湪浣跨敤锛岃淇敼宸叉帓闃熷湪 gitlab issue #222 涓?
-   涓ユ牸鏉ヨ锛岃嚜 v4.19 璧锋敮鎸佸涓?CAN TX 闃熷垪
+   其他总线有自己的特定驱动接口来设置设备
+   不要CAN Error Frame 混淆。这是一`can_frame`，其 `CAN_ERR_FLAG`
+   被置位，并在`data` 字段中包含一些错误信息
+   可在 CTU CAN FD 仓库
+   `<https://gitlab.fel.cvut.cz/canbus/ctucanfd_ip_core>`_ 中获
+   底层驱动函数 `ctucan_hw_set_nom_bittiming`    `ctucan_hw_set_data_bittiming` 就是这样做的
+   在撰写本论文时，方案 1 仍在使用，该修改已排队在 gitlab issue #222 
+   严格来说，自 v4.19 起支持多CAN TX 队列
    `can: enable multi-queue for SocketCAN devices <https://lore.kernel.org/patchwork/patch/913526/>`_
-   浣嗗皻鏃犱富绾块┍鍔ㄤ娇鐢ㄥ畠浠€?
-   鎴栬€呮洿纭垏鍦拌锛屽湪涓嬩竴涓椂閽熷懆鏈?
+   但尚无主线驱动使用它们
+   或者更确切地说，在下一个时钟周

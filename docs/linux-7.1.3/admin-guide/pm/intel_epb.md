@@ -1,5 +1,5 @@
 ﻿
-## Intel 鎬ц兘涓庤兘鑰楀亸缃彁绀?
+## Intel 性能与能耗偏置提
 
 
 :Copyright: |copy| 2019 Intel Corporation
@@ -9,17 +9,17 @@
 
    :doc: overview
 
-## Intel 鎬ц兘涓庤兘鑰楀亸缃紙EPB锛夊湪 ``sysfs`` 涓殑灞炴€?
+## Intel 性能与能耗偏置（EPB）在 ``sysfs`` 中的属
 
 
-缁欏畾锛堥€昏緫锛塁PU 鐨?Intel 鎬ц兘涓庤兘鑰楀亸缃彁绀猴紙EPB锛夊€煎彲浠ラ€氳繃 ``sysfs`` 涓嬬殑涓€涓睘鎬э紙鏂囦欢锛夋潵鏌ョ湅鎴栨洿鏂帮紝璇ュ睘鎬т綅浜?`/sys/devices/system/cpu/cpu<N>/power/`锛屽叾涓?CPU 缂栧彿 `<N>` 鍦ㄧ郴缁熷垵濮嬪寲鏃跺垎閰嶏細
+给定（逻辑）CPU Intel 性能与能耗偏置提示（EPB）值可以通过 ``sysfs`` 下的一个属性（文件）来查看或更新，该属性位`/sys/devices/system/cpu/cpu<N>/power/`，其CPU 编号 `<N>` 在系统初始化时分配：
 
 `energy_perf_bias`
-	浠?0 - 15 鐨勬粦鍔ㄥ埢搴︽樉绀鸿 CPU 褰撳墠鐨?EPB 鍊硷紝鍏朵腑
-	鍊?0 瀵瑰簲鏈€楂樻€ц兘鐨勫亸濂斤紝鍊?15 瀵瑰簲鏈€澶ц妭鑳姐€?
+	0 - 15 的滑动刻度显示该 CPU 当前EPB 值，其中
+	0 对应最高性能的偏好，15 对应最大节能
 
-	涓轰簡鏇存柊璇?CPU 鐨?EPB 鍊硷紝鍙互鍚戣灞炴€у啓鍏ワ紝鏃㈠彲浠ュ啓鍏ヤ笂杩?0 - 15 婊戝姩鍒诲害涓殑涓€涓暟瀛楋紝涔熷彲浠ュ啓鍏ヤ互涓嬩唬琛ㄥ叾鍚箟鐨勫瓧绗︿覆涔嬩竴锛?performance"銆?balance-performance"銆?normal"銆?balance-power"銆?power"銆?
+	为了更新CPU EPB 值，可以向该属性写入，既可以写入上0 - 15 滑动刻度中的一个数字，也可以写入以下代表其含义的字符串之一performance"balance-performance"normal"balance-power"power"
 
-	璇ュ睘鎬у瓨鍦ㄤ簬鎵€鏈夋敮鎸?EPB 鐗规€х殑鍦ㄧ嚎 CPU 涓娿€?
+	该属性存在于所有支EPB 特性的在线 CPU 上
 
-娉ㄦ剰锛岃櫧鐒跺埌澶勭悊鍣ㄧ殑 EPB 鎺ュ彛瀹氫箟鍦ㄩ€昏緫 CPU 绾у埆锛屼絾鏀寔瀹冪殑鐗╃悊瀵勫瓨鍣ㄥ彲鑳借澶氫釜 CPU 鍏变韩锛堜緥濡傦紝鍚屼竴灏佽涓殑 SMT 鍏勫紵鏍稿績鎴栨牳蹇冿級銆傚洜姝わ紝鏇存柊涓€涓?CPU 鐨?EPB 鍊煎彲鑳藉鑷村叾瀹?CPU 鐨?EPB 鍊煎彂鐢熷彉鍖栥€?
+注意，虽然到处理器的 EPB 接口定义在逻辑 CPU 级别，但支持它的物理寄存器可能被多个 CPU 共享（例如，同一封装中的 SMT 兄弟核心或核心）。因此，更新一CPU EPB 值可能导致其CPU EPB 值发生变化

@@ -1,18 +1,18 @@
-﻿## kvaser_pciefd 鐨?devlink 鏀寔
+﻿## kvaser_pciefd devlink 支持
 
 
-鏈枃妗ｆ弿杩颁簡 `kvaser_pciefd` 璁惧椹卞姩瀹炵幇鐨?devlink 鐗规€с€?
+本文档描述了 `kvaser_pciefd` 设备驱动实现devlink 特性
 
-## 淇℃伅鐗堟湰
+## 信息版本
 
 
-`kvaser_pciefd` 椹卞姩鎶ュ憡浠ヤ笅鐗堟湰
+`kvaser_pciefd` 驱动报告以下版本
 
    :widths: 5 5 90
 
-   - - 鍚嶇О
-     - 绫诲瀷
-     - 鎻忚堪
+   - - 名称
+     - 类型
+     - 描述
    - - `fw`
      - running
-     - 璁惧涓婅繍琛岀殑鍥轰欢鐗堟湰銆備篃鍙€氳繃 `ethtool -i` 浠?`firmware-version` 褰㈠紡鑾峰彇銆?
+     - 设备上运行的固件版本。也可通过 `ethtool -i` `firmware-version` 形式获取
