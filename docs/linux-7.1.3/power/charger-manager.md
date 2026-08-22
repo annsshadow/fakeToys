@@ -1,66 +1,66 @@
-﻿## Charger Manager锛堝厖鐢电鐞嗗櫒锛?
+﻿## Charger Manager（充电管理器
 
 	(C) 2011 MyungJoo Ham <myungjoo.ham@samsung.com>, GPL
 
-Charger Manager 鎻愪緵鍐呮牳鍐呯殑鐢垫睜鍏呯數绠＄悊锛屽畠闇€瑕佸湪鎸傝捣鑷?RAM锛坰uspend-to-RAM锛夌姸鎬佷笅杩涜娓╁害鐩戞帶锛屽苟涓旀瘡鍧楃數姹犲彲鑳芥寕鎺ュ涓厖鐢靛櫒锛岃€岀敤鎴风┖闂村笇鏈涙煡鐪嬭繖澶氫釜鍏呯數鍣ㄧ殑鑱氬悎淇℃伅銆?
-Charger Manager 鏄竴涓甫鏈?power-supply-class 鏉＄洰鐨?platform_driver銆侰harger Manager 鐨勪竴涓疄渚嬶紙鐢?Charger-Manager 鍒涘缓鐨?platform-device锛変唬琛ㄤ竴鍧楀甫鏈夊厖鐢靛櫒鐨勭嫭绔嬬數姹犮€傚鏋滀竴涓郴缁熶腑鏈夊鍧楃數姹犲悇鑷甫鏈夌嫭绔嬪伐浣滅殑鍏呯數鍣紝璇ョ郴缁熷彲鑳介渶瑕佸涓?Charger Manager 瀹炰緥銆?
-## 1. 绠€浠?
+Charger Manager 提供内核内的电池充电管理，它需要在挂起RAM（suspend-to-RAM）状态下进行温度监控，并且每块电池可能挂接多个充电器，而用户空间希望查看这多个充电器的聚合信息
+Charger Manager 是一个带power-supply-class 条目platform_driver。Charger Manager 的一个实例（Charger-Manager 创建platform-device）代表一块带有充电器的独立电池。如果一个系统中有多块电池各自带有独立工作的充电器，该系统可能需要多Charger Manager 实例
+## 1. 简
 
-Charger Manager 鏀寔浠ヤ笅鍔熻兘锛?
-- 鏀寔澶氫釜鍏呯數鍣紙渚嬪锛屽甫鏈?USB銆丄C 鍜屽お闃宠兘鏉跨殑璁惧锛?	涓€涓郴缁熷彲鑳芥湁澶氫釜鍏呯數鍣紙鎴栫數婧愶級锛屽叾涓儴鍒嗗彲鑳藉悓鏃舵縺娲汇€傛瘡涓厖鐢靛櫒鍙互鎷ユ湁鑷繁鐨?power-supply-class锛岃€屾瘡涓?power-supply-class 鍙互鎻愪緵鍏充簬鐢垫睜鐘舵€佺殑涓嶅悓淇℃伅銆傝妗嗘灦浠庡涓潵婧愯仛鍚堜笌鍏呯數鍣ㄧ浉鍏崇殑淇℃伅锛屽苟浠ュ崟涓€ power-supply-class 鐨勫舰寮忓睍绀哄悎骞跺悗鐨勪俊鎭€?
-- 鏀寔鎸傝捣鑷?RAM 鏈熼棿鐨勮疆璇紙鍊熷姪 suspend_again 鍥炶皟锛?	鍦ㄧ數姹犲厖鐢典笖绯荤粺澶勪簬 suspend-to-RAM 鏃讹紝鎴戜滑鍙兘闇€瑕侀€氳繃鏌ョ湅鐜鎴栫數姹犳俯搴︽潵鐩戞帶鐢垫睜鍋ュ悍銆傛垜浠彲浠ラ€氳繃鍛ㄦ湡鎬у敜閱掔郴缁熸潵瀹炵幇銆傜劧鑰岋紝杩欑鏂规硶浼氫负鐩戞帶鐢垫睜鍋ュ悍鍜屼换鍔¤€屽敜閱掍笉蹇呰鐨勮澶囷紝浠ュ強鏈簲淇濇寔鎸傝捣鐨勭敤鎴疯繘绋嬨€傝繖鍙嶈繃鏉ヤ細瀵艰嚧涓嶅繀瑕佺殑鍔熻€楋紝骞舵嫋鎱㈠厖鐢佃繃绋嬨€傜敋鑷筹紝杩欑宄板€煎姛鑰楀彲鑳藉湪鍏呯數涓€斿仠姝㈠厖鐢靛櫒锛堝閮ㄨ緭鍏ュ姛鐜?< 璁惧鍔熻€楋級锛岃繖涓嶄粎褰卞搷鍏呯數鏃堕棿锛屼篃褰卞搷鐢垫睜瀵垮懡銆?
-	Charger Manager 鎻愪緵涓€涓嚱鏁?鈥渃m_suspend_again鈥濓紝鍙敤浣?platform_suspend_ops 鐨?suspend_again 鍥炶皟銆傚鏋滃钩鍙伴渶瑕侀櫎 cm_suspend_again 涔嬪鐨勫叾浠栦换鍔★紝瀹冨彲浠ュ疄鐜拌嚜宸辩殑 suspend_again 鍥炶皟锛屽湪涓棿璋冪敤 cm_suspend_again銆傞€氬父锛屽钩鍙伴渶瑕佹仮澶嶅苟鎸傝捣 Charger Manager 浣跨敤鐨勪竴浜涜澶囥€?
-- 鏀寔鎻愬墠鐨勬弧鐢典簨浠跺鐞?	濡傛灉鍦ㄦ弧鐢典簨浠朵箣鍚庣粡杩?鈥渇ullbatt_vchkdrop_ms鈥濓紝鐢垫睜鐢靛帇涓嬮檷浜?鈥渇ullbatt_vchkdrop_uV鈥濓紝妗嗘灦灏嗛噸鏂板惎鍔ㄥ厖鐢点€傝妫€鏌ヤ篃浼氬湪鎸傝捣鏈熼棿閫氳繃璁剧疆鐩稿簲鐨勫敜閱掓椂闂村苟鍊熷姪 suspend_again 鏉ユ墽琛屻€?
-- 鏀寔 uevent 閫氱煡
-	鍦ㄥ厖鐢靛櫒鐩稿叧浜嬩欢鍙戠敓鏃讹紝璁惧鍚戠敤鎴峰彂閫?UEVENT 閫氱煡銆?
-## 2. 涓?suspend_again 鐩稿叧鐨勫叏灞€ Charger-Manager 鏁版嵁
+Charger Manager 支持以下功能
+- 支持多个充电器（例如，带USB、AC 和太阳能板的设备	一个系统可能有多个充电器（或电源），其中部分可能同时激活。每个充电器可以拥有自己power-supply-class，而每power-supply-class 可以提供关于电池状态的不同信息。该框架从多个来源聚合与充电器相关的信息，并以单一 power-supply-class 的形式展示合并后的信息
+- 支持挂起RAM 期间的轮询（借助 suspend_again 回调	在电池充电且系统处于 suspend-to-RAM 时，我们可能需要通过查看环境或电池温度来监控电池健康。我们可以通过周期性唤醒系统来实现。然而，这种方法会为监控电池健康和任务而唤醒不必要的设备，以及本应保持挂起的用户进程。这反过来会导致不必要的功耗，并拖慢充电过程。甚至，这种峰值功耗可能在充电中途停止充电器（外部输入功< 设备功耗），这不仅影响充电时间，也影响电池寿命
+	Charger Manager 提供一个函“cm_suspend_again”，可用platform_suspend_ops suspend_again 回调。如果平台需要除 cm_suspend_again 之外的其他任务，它可以实现自己的 suspend_again 回调，在中间调用 cm_suspend_again。通常，平台需要恢复并挂起 Charger Manager 使用的一些设备
+- 支持提前的满电事件处	如果在满电事件之后经“fullbatt_vchkdrop_ms”，电池电压下降“fullbatt_vchkdrop_uV”，框架将重新启动充电。该检查也会在挂起期间通过设置相应的唤醒时间并借助 suspend_again 来执行
+- 支持 uevent 通知
+	在充电器相关事件发生时，设备向用户发UEVENT 通知
+## 2. suspend_again 相关的全局 Charger-Manager 数据
 
-涓轰簡涓?Charger Manager 閰嶇疆 suspend_again 鐗规€э紙鎸傝捣涓洃鎺э級锛岀敤鎴峰簲鎻愪緵 charger_global_desc锛屽苟閫氳繃 setup_charger_manager(`struct charger_global_desc *`) 杩涜璁剧疆銆傞【鍚嶆€濅箟锛岃繖涓敤浜庢寕璧蜂腑鐩戞帶鐨?charger_global_desc 鏁版嵁鏄叏灞€鐨勩€傚洜姝わ紝鍗充娇鏈夊鍧楃數姹狅紝鐢ㄦ埛涔熷彧闇€鎻愪緵涓€娆°€傚鏋滄湁澶氫釜鐢垫睜锛屽涓?Charger Manager 瀹炰緥鍏变韩鍚屼竴涓?charger_global_desc锛屽畠灏嗕负鎵€鏈?Charger Manager 瀹炰緥绠＄悊鎸傝捣涓洃鎺с€?
-鐢ㄦ埛闇€瑕佹纭湴涓?`struct charger_global_desc` 鎻愪緵鍏ㄩ儴涓変釜鏉＄洰锛屾墠鑳芥縺娲绘寕璧蜂腑鐩戞帶锛?
+为了Charger Manager 配置 suspend_again 特性（挂起中监控），用户应提供 charger_global_desc，并通过 setup_charger_manager(`struct charger_global_desc *`) 进行设置。顾名思义，这个用于挂起中监控charger_global_desc 数据是全局的。因此，即使有多块电池，用户也只需提供一次。如果有多个电池，多Charger Manager 实例共享同一charger_global_desc，它将为所Charger Manager 实例管理挂起中监控
+用户需要正确地`struct charger_global_desc` 提供全部三个条目，才能激活挂起中监控
 `char *rtc_name;`
-	鐢ㄤ簬浠庢寕璧蜂腑鍞ら啋绯荤粺鐨?rtc 鍚嶇О锛堜緥濡?鈥渞tc0鈥濓級銆俽tc 鐨勯椆閽熶腑鏂紙AIE锛夊簲褰撹兘澶熷敜閱掔郴缁熴€侰harger Manager 浼氫繚瀛樺苟鎭㈠闂归挓鍊硷紝骞跺湪闂归挓灏嗘瘮 Charger Manager 璁惧畾鐨勬洿鏃╄Е鍙戞椂浣跨敤鍏堝墠瀹氫箟鐨勯椆閽燂紝浠庤€屼笉骞叉壈鍏堝墠瀹氫箟鐨勯椆閽熴€?
+	用于从挂起中唤醒系统rtc 名称（例“rtc0”）。rtc 的闹钟中断（AIE）应当能够唤醒系统。Charger Manager 会保存并恢复闹钟值，并在闹钟将比 Charger Manager 设定的更早触发时使用先前定义的闹钟，从而不干扰先前定义的闹钟
 `bool (*rtc_only_wakeup)(void);`
-	璇ュ洖璋冨簲璁?CM 鐭ラ亾浠庢寕璧蜂腑鍞ら啋鏄惁浠呯敱鍚屼竴缁撴瀯浣撲腑鐨?鈥渞tc鈥?闂归挓寮曡捣銆傚鏋滄湁浠讳綍鍏朵粬鍞ら啋婧愯Е鍙戜簡鍞ら啋锛屽畠搴旇繑鍥?false銆傚鏋?鈥渞tc鈥?鏄敮涓€鐨勫敜閱掑師鍥狅紝瀹冨簲杩斿洖 true銆?
+	该回调应CM 知道从挂起中唤醒是否仅由同一结构体中“rtc闹钟引起。如果有任何其他唤醒源触发了唤醒，它应返false。如“rtc是唯一的唤醒原因，它应返回 true
 `bool assume_timer_stops_in_suspend;`
-	濡傛灉涓?true锛孋harger Manager 鍋囧畾瀹氭椂鍣紙CM 浣跨敤 jiffies 浣滀负瀹氭椂鍣級鍦ㄦ寕璧锋湡闂村仠姝€傞偅涔堬紝CM 鍋囧畾鎸傝捣鏃堕暱涓庨椆閽熼暱搴︾浉鍚屻€?
-## 3. 濡備綍閰嶇疆 suspend_again
+	如果true，Charger Manager 假定定时器（CM 使用 jiffies 作为定时器）在挂起期间停止。那么，CM 假定挂起时长与闹钟长度相同
+## 3. 如何配置 suspend_again
 
-Charger Manager 鎻愪緵鍑芥暟 鈥渆xtern bool cm_suspend_again(void)鈥濄€傚綋璋冪敤 cm_suspend_again 鏃讹紝瀹冧細鐩戞帶姣忎竴鍧楃數姹犮€傜郴缁?platform_suspend_ops 鐨?suspend_ops 鍥炶皟鍙互璋冪敤 cm_suspend_again 鍑芥暟锛屼互浜嗚В Charger Manager 鏄惁甯屾湜鍐嶆鎸傝捣銆傚鏋滄病鏈夊叾浠栬澶囨垨浠诲姟鎯充娇鐢?suspend_again 鐗规€э紝platform_suspend_ops 鍙互鐩存帴灏嗗叾 suspend_again 鍥炶皟鎸囧悜 cm_suspend_again銆?
-濡傛灉绯荤粺鐢?Charger Manager 鍞ら啋涓旇疆璇紙鎸傝捣涓洃鎺э級缁撴灉涓?鈥渘ormal鈥濓紝cm_suspend_again() 杩斿洖 true锛堟剰涓衡€滄垜甯屾湜鍐嶆鎸傝捣鈥濓級銆?
-## 4. Charger-Manager 鏁版嵁锛坰truct charger_desc锛?
-瀵逛簬姣忓潡鐙珛鍏呯數鐨勭數姹狅紙濡傛灉涓€绯诲垪鐢垫睜鐢卞崟涓厖鐢靛櫒鍏呯數锛屽垯瀹冧滑绠椾綔涓€鍧楃嫭绔嬬數姹狅級锛屼細鎸傛帴涓€涓?Charger Manager 瀹炰緥銆備笅鍒?
-struct charger_desc 鍏冪礌锛?
+Charger Manager 提供函数 “extern bool cm_suspend_again(void)”。当调用 cm_suspend_again 时，它会监控每一块电池。系platform_suspend_ops suspend_ops 回调可以调用 cm_suspend_again 函数，以了解 Charger Manager 是否希望再次挂起。如果没有其他设备或任务想使suspend_again 特性，platform_suspend_ops 可以直接将其 suspend_again 回调指向 cm_suspend_again
+如果系统Charger Manager 唤醒且轮询（挂起中监控）结果“normal”，cm_suspend_again() 返回 true（意为“我希望再次挂起”）
+## 4. Charger-Manager 数据（struct charger_desc
+对于每块独立充电的电池（如果一系列电池由单个充电器充电，则它们算作一块独立电池），会挂接一Charger Manager 实例。下
+struct charger_desc 元素
 `char *psy_name;`
-	鐢垫睜鐨?power-supply-class 鍚嶇О銆傝嫢 psy_name 涓?NULL锛岄粯璁や负 鈥渂attery鈥濄€傜敤鎴峰彲鍦?鈥?sys/class/power_supply/[psy_name]/鈥?璁块棶 psy 鏉＄洰銆?
+	电池power-supply-class 名称。若 psy_name NULL，默认为 “battery”。用户可sys/class/power_supply/[psy_name]/访问 psy 条目
 `enum polling_modes polling_mode;`
 	  CM_POLL_DISABLE:
-		涓嶈疆璇㈣鐢垫睜銆?	  CM_POLL_ALWAYS:
-		濮嬬粓杞璇ョ數姹犮€?	  CM_POLL_EXTERNAL_POWER_ONLY:
-		褰撲笖浠呭綋鎸傛帴浜嗗閮ㄧ數婧愭椂鎵嶈疆璇㈣鐢垫睜銆?	  CM_POLL_CHARGING_ONLY:
-		褰撲笖浠呭綋鐢垫睜姝ｅ湪鍏呯數鏃舵墠杞璇ョ數姹犮€?
+		不轮询该电池	  CM_POLL_ALWAYS:
+		始终轮询该电池	  CM_POLL_EXTERNAL_POWER_ONLY:
+		当且仅当挂接了外部电源时才轮询该电池	  CM_POLL_CHARGING_ONLY:
+		当且仅当电池正在充电时才轮询该电池
 `unsigned int fullbatt_vchkdrop_ms; / unsigned int fullbatt_vchkdrop_uV;`
-	鑻ヤ袱鑰呴兘鍏锋湁闈為浂鍊硷紝Charger Manager 浼氬湪鐢垫睜鍏呮弧鍚庣粡杩?fullbatt_vchkdrop_ms 妫€鏌ョ數姹犵數鍘嬩笅闄嶃€傚鏋滅數鍘嬩笅闄嶈秴杩?fullbatt_vchkdrop_uV锛孋harger Manager 灏嗗皾璇曢€氳繃绂佺敤骞堕噸鏂板惎鐢ㄥ厖鐢靛櫒鏉ュ鐢垫睜閲嶆柊鍏呯數銆備粎鏍规嵁鐢靛帇涓嬮檷鏉′欢锛堜笉甯﹀欢杩熸潯浠讹級閲嶆柊鍏呯數锛岄渶瑕佸€熷姪鏉ヨ嚜鐢甸噺璁℃垨鍏呯數鍣ㄨ澶?鑺墖鐨勭‖浠朵腑鏂潵瀹炵幇銆?
+	若两者都具有非零值，Charger Manager 会在电池充满后经fullbatt_vchkdrop_ms 检查电池电压下降。如果电压下降超fullbatt_vchkdrop_uV，Charger Manager 将尝试通过禁用并重新启用充电器来对电池重新充电。仅根据电压下降条件（不带延迟条件）重新充电，需要借助来自电量计或充电器设芯片的硬件中断来实现
 `unsigned int fullbatt_uV;`
-	濡傛灉鎸囧畾浜嗛潪闆跺€硷紝Charger Manager 鍋囧畾褰撶數姹犳湭琚厖鐢典笖鐢垫睜鐢靛帇绛変簬鎴栧ぇ浜?fullbatt_uV 鏃讹紝鐢垫睜宸插厖婊★紙瀹归噺 = 100锛夈€?
+	如果指定了非零值，Charger Manager 假定当电池未被充电且电池电压等于或大fullbatt_uV 时，电池已充满（容量 = 100）
 `unsigned int polling_interval_ms;`
-	鎵€闇€鐨勮疆璇㈤棿闅旓紙姣锛夈€侰harger Manager 浼氭瘡 polling_interval_ms 鎴栨洿棰戠箒鍦拌疆璇㈣鐢垫睜銆?
+	所需的轮询间隔（毫秒）。Charger Manager 会每 polling_interval_ms 或更频繁地轮询该电池
 `enum data_source battery_present;`
 	CM_BATTERY_PRESENT:
-		鍋囧畾鐢垫睜瀛樺湪銆?	CM_NO_BATTERY:
-		鍋囧畾鐢垫睜涓嶅瓨鍦ㄣ€?	CM_FUEL_GAUGE:
-		浠庣數閲忚鑾峰彇鐢垫睜瀛樺湪淇℃伅銆?	CM_CHARGER_STAT:
-		浠庡厖鐢靛櫒鑾峰彇鐢垫睜瀛樺湪淇℃伅銆?
+		假定电池存在	CM_NO_BATTERY:
+		假定电池不存在	CM_FUEL_GAUGE:
+		从电量计获取电池存在信息	CM_CHARGER_STAT:
+		从充电器获取电池存在信息
 `char **psy_charger_stat;`
-	浠?NULL 缁撳熬鐨勬暟缁勶紝鍖呭惈鍏呯數鍣ㄧ殑 power-supply-class 鍚嶇О銆傛瘡涓?power-supply-class 搴旀彁渚?鈥淧RESENT鈥濓紙鑻?battery_present 涓?鈥淐M_CHARGER_STAT鈥濓級銆佲€淥NLINE鈥濓紙鏄剧ず鏄惁鎸傛帴浜嗗閮ㄧ數婧愶級鍜?鈥淪TATUS鈥濓紙鏄剧ず鐢垫睜鏄惁 {鈥淔ULL鈥?鎴?鏈弧} 鎴?{鈥淔ULL鈥濄€佲€淐harging鈥濄€佲€淒ischarging鈥濄€佲€淣otCharging鈥潁锛夈€?
+	NULL 结尾的数组，包含充电器的 power-supply-class 名称。每power-supply-class 应提“PRESENT”（battery_present “CM_CHARGER_STAT”）、“ONLINE”（显示是否挂接了外部电源）“STATUS”（显示电池是否 {“FULL未满} {“FULL”、“Charging”、“Discharging”、“NotCharging”}）
 `int num_charger_regulators; / struct regulator_bulk_data *charger_regulators;`
-	浠?regulator 妗嗘灦鎵归噺鍑芥暟褰㈠紡琛ㄧず鍏呯數鍣ㄧ殑璋冭妭鍣ㄣ€?
+	regulator 框架批量函数形式表示充电器的调节器
 `char *psy_fuel_gauge;`
-	鐢甸噺璁＄殑 power-supply-class 鍚嶇О銆?
+	电量计的 power-supply-class 名称
 `int (**temperature_out_of_range)(int **mC); / bool measure_battery_temp;`
-	濡傛灉娓╁害瀵瑰厖鐢垫槸瀹夊叏鐨勶紝璇ュ洖璋冭繑鍥?0锛涘鏋滆繃鐑棤娉曞厖鐢碉紝杩斿洖姝ｆ暟锛涘鏋滆繃鍐锋棤娉曞厖鐢碉紝杩斿洖璐熸暟銆傚€熷姪鍙橀噺 mC锛岃鍥炶皟浠ユ憚姘忓害鐨勫崈鍒嗕箣涓€杩斿洖娓╁害銆傛牴鎹?measure_battery_temp 鐨勫€硷紝娓╁害鏉ユ簮鍙互鏄數姹犳俯搴︽垨鐜娓╁害銆?
-## 5. 鍏朵粬娉ㄦ剰浜嬮」
+	如果温度对充电是安全的，该回调返0；如果过热无法充电，返回正数；如果过冷无法充电，返回负数。借助变量 mC，该回调以摄氏度的千分之一返回温度。根measure_battery_temp 的值，温度来源可以是电池温度或环境温度
+## 5. 其他注意事项
 
 
-鍦ㄥ厖鐢靛櫒/鐢垫睜鐩稿叧浜嬩欢锛堝鐢垫睜鎷斿嚭銆佸厖鐢靛櫒鎷斿嚭銆佸厖鐢靛櫒鎻掑叆銆丏CIN 杩囧帇/娆犲帇銆佸厖鐢靛櫒鍋滄锛変互鍙婂叾浠栧鍏呯數鍣ㄨ嚦鍏抽噸瑕佺殑鎯呭喌涓嬶紝绯荤粺搴旇閰嶇疆涓哄敜閱掋€傝嚦灏戜互涓嬩簨浠跺簲灏嗙郴缁熶粠鎸傝捣涓敜閱掞細a) 鍏呯數鍣ㄥ紑/鍏?b) 澶栭儴鐢垫簮鎺ュ叆/鏂紑 c) 鐢垫睜瑁呭叆/鍙栧嚭锛堝厖鐢垫湡闂达級
+在充电器/电池相关事件（如电池拔出、充电器拔出、充电器插入、DCIN 过压/欠压、充电器停止）以及其他对充电器至关重要的情况下，系统应被配置为唤醒。至少以下事件应将系统从挂起中唤醒：a) 充电器开/b) 外部电源接入/断开 c) 电池装入/取出（充电期间）
 
-杩欓€氬父閫氳繃灏?PMIC 閰嶇疆涓哄敜閱掓簮鏉ュ疄鐜般€?
+这通常通过PMIC 配置为唤醒源来实现

@@ -2,60 +2,60 @@
 ## uevents 涓?GFS2
 
 
-鍦?GFS2 鎸傝浇鐨勬暣涓敓鍛藉懆鏈熷唴锛屼細鐢熸垚鑻ュ共 uevent銆傛湰鏂囨。璇存槑浜嗚繖浜涗簨浠舵槸浠€涔堜互鍙婂畠浠殑
-鐢ㄩ€旓紙鐢?gfs2-utils 涓殑 gfs_controld 浣跨敤锛夈€?
-## GFS2 uevent 鍒楄〃
+GFS2 挂载的整个生命周期内，会生成若干 uevent。本文档说明了这些事件是什么以及它们的
+用途（gfs2-utils 中的 gfs_controld 使用）
+## GFS2 uevent 列表
 
 
 ### 1. ADD
 
 
-ADD 浜嬩欢鍙戠敓鍦ㄦ寕杞芥椂銆傚畠濮嬬粓鏄柊寤烘枃浠剁郴缁熺敓鎴愮殑绗竴涓?uevent銆傚鏋滄寕杞芥垚鍔燂紝闅忓悗浼?浜х敓涓€涓?ONLINE uevent锛涘鏋滀笉鎴愬姛锛屽垯闅忓悗浼氫骇鐢熶竴涓?REMOVE uevent銆?
-ADD uevent 甯︽湁涓や釜鐜鍙橀噺锛歋PECTATOR=[0|1] 鍜?RDONLY=[0|1]锛屽垎鍒寚瀹氫簡鏃佽鑰呯姸鎬?锛堟湭鍒嗛厤鏃ュ織鐨勫彧璇绘寕杞斤級鍜屽彧璇伙紙宸插垎閰嶆棩蹇楋級鐘舵€併€?
+ADD 事件发生在挂载时。它始终是新建文件系统生成的第一uevent。如果挂载成功，随后产生一ONLINE uevent；如果不成功，则随后会产生一REMOVE uevent
+ADD uevent 带有两个环境变量：SPECTATOR=[0|1] RDONLY=[0|1]，分别指定了旁观者状（未分配日志的只读挂载）和只读（已分配日志）状态
 ### 2. ONLINE
 
 
-ONLINE uevent 鍦ㄦ寕杞芥垨閲嶆柊鎸傝浇鎴愬姛鍚庣敓鎴愩€傚畠涓?ADD uevent 鍏锋湁鐩稿悓鐜鍙橀噺銆侽NLINE
-uevent 杩炲悓鐢ㄤ簬鏃佽鑰呭拰 RDONLY 鐨勪袱涓幆澧冨彉閲忔槸鐩稿杈冩柊鐨勬柊澧炲唴瀹癸紙2.6.32-rc+锛夛紝
-鏃у唴鏍镐笉浼氱敓鎴愬畠浠€?
+ONLINE uevent 在挂载或重新挂载成功后生成。它ADD uevent 具有相同环境变量。ONLINE
+uevent 连同用于旁观者和 RDONLY 的两个环境变量是相对较新的新增内容（2.6.32-rc+），
+旧内核不会生成它们
 ### 3. CHANGE
 
 
-CHANGE uevent 鐢ㄤ簬涓ゅ銆傚叾涓€鏄湪绗竴涓妭鐐规垚鍔熸寕杞芥枃浠剁郴缁熸椂鎶ュ憡锛團IRSTMOUNT=Done锛夈€?gfs_controld 灏嗗叾鐢ㄤ綔淇″彿锛岃〃鏄庨泦缇や腑鐨勫叾浠栬妭鐐规鏃跺彲浠ユ寕杞借鏂囦欢绯荤粺銆?
-鍙︿竴涓?CHANGE uevent 鐢ㄤ簬閫氱煡鏌愪釜鏂囦欢绯荤粺鏃ュ織鎭㈠瀹屾垚銆傚畠甯︽湁涓や釜鐜鍙橀噺锛欽ID= 鎸囧畾
-鍒氬垰鎭㈠鐨勬棩蹇?id锛屼互鍙?RECOVERY=[Done|Failed] 浠ユ寚绀烘搷浣滄槸鍚︽垚鍔熴€傝繖浜?uevent 浼氫负
-姣忎竴涓鎭㈠鐨勬棩蹇楃敓鎴愶紝鏃犺鏄湪鍒濆鎸傝浇杩囩▼涓紝杩樻槸浣滀负 gfs_controld 閫氳繃
-/sys/fs/gfs2/<fsname>/lock_module/recovery 鏂囦欢璇锋眰鐗瑰畾鏃ュ織鎭㈠鐨勭粨鏋溿€?
-鐢变簬锛坓fs_controld 鐨勬棭鏈熺増鏈腑锛塁HANGE uevent 鍦ㄤ娇鐢ㄦ椂骞舵湭妫€鏌ョ幆澧冨彉閲忔潵鍙戠幇鐘舵€侊紝
-鎴戜滑鑻ュ啀涓哄叾娣诲姞浠讳綍鍔熻兘锛屽氨浼氬啋鏈変汉浣跨敤鏃х増鐢ㄦ埛宸ュ叿鑰屽鑷村叾闆嗙兢鍑洪敊鐨勯闄┿€傚洜姝わ紝
-鍦ㄦ柊澧炵敤浜庢寕杞芥垨閲嶆柊鎸傝浇鎴愬姛鐨?uevent 鏃讹紝浣跨敤浜?ONLINE uevent銆?
+CHANGE uevent 用于两处。其一是在第一个节点成功挂载文件系统时报告（FIRSTMOUNT=Done）gfs_controld 将其用作信号，表明集群中的其他节点此时可以挂载该文件系统
+另一CHANGE uevent 用于通知某个文件系统日志恢复完成。它带有两个环境变量：JID= 指定
+刚刚恢复的日id，以RECOVERY=[Done|Failed] 以指示操作是否成功。这uevent 会为
+每一个被恢复的日志生成，无论是在初始挂载过程中，还是作为 gfs_controld 通过
+/sys/fs/gfs2/<fsname>/lock_module/recovery 文件请求特定日志恢复的结果
+由于（gfs_controld 的早期版本中）CHANGE uevent 在使用时并未检查环境变量来发现状态，
+我们若再为其添加任何功能，就会冒有人使用旧版用户工具而导致其集群出错的风险。因此，
+在新增用于挂载或重新挂载成功uevent 时，使用ONLINE uevent
 ### 4. OFFLINE
 
 
-OFFLINE uevent 浠呭洜鏂囦欢绯荤粺閿欒鑰屼骇鐢燂紝骞朵綔涓衡€渨ithdraw鈥濇満鍒剁殑涓€閮ㄥ垎浣跨敤銆傜洰鍓嶅畠
-骞朵笉鎻愪緵鍏充簬閿欒鏄粈涔堢殑浠讳綍淇℃伅锛岃繖涓€鐐规湁寰呬慨澶嶃€?
+OFFLINE uevent 仅因文件系统错误而产生，并作为“withdraw”机制的一部分使用。目前它
+并不提供关于错误是什么的任何信息，这一点有待修复
 ### 5. REMOVE
 
 
-REMOVE uevent 鍦ㄤ笉鎴愬姛鎸傝浇鐨勬湯灏撅紝鎴栧湪鏂囦欢绯荤粺 umount 鐨勬湯灏剧敓鎴愩€傛墍鏈?REMOVE uevent
-涔嬪墠閮借嚦灏戝凡瀛樺湪鍚屼竴鏂囦欢绯荤粺鐨?ADD uevent锛屽苟涓斾笌鍏朵粬 uevent 涓嶅悓锛屽畠鏄敱鍐呮牳鐨?kobject 瀛愮郴缁熻嚜鍔ㄧ敓鎴愮殑銆?
+REMOVE uevent 在不成功挂载的末尾，或在文件系统 umount 的末尾生成。所REMOVE uevent
+之前都至少已存在同一文件系统ADD uevent，并且与其他 uevent 不同，它是由内核kobject 子系统自动生成的
 
-## 鎵€鏈?GFS2 uevent 鍏辨湁鐨勪俊鎭紙uevent 鐜鍙橀噺锛?
+## 所GFS2 uevent 共有的信息（uevent 环境变量
 
 ### 1. LOCKTABLE=
 
 
-LOCKTABLE 鏄竴涓瓧绗︿覆锛岀敱鎸傝浇鍛戒护琛岋紙locktable=锛夋垨 fstab 鎻愪緵銆傚畠琚敤浣滄枃浠剁郴缁熸爣绛撅紝
-鍚屾椂涔熶负 lock_dlm 鎸傝浇鎻愪緵鍔犲叆闆嗙兢鎵€闇€鐨勪俊鎭€?
+LOCKTABLE 是一个字符串，由挂载命令行（locktable=）或 fstab 提供。它被用作文件系统标签，
+同时也为 lock_dlm 挂载提供加入集群所需的信息
 ### 2. LOCKPROTO=
 
 
-LOCKPROTO 鏄竴涓瓧绗︿覆锛屽叾鍊煎彇鍐充簬鎸傝浇鍛戒护琛屾垨 fstab 涓殑璁剧疆銆傚畠灏嗘槸 lock_nolock 鎴?lock_dlm銆傛湭鏉ュ彲鑳戒細鏀寔鍏朵粬閿佺鐞嗗櫒銆?
+LOCKPROTO 是一个字符串，其值取决于挂载命令行或 fstab 中的设置。它将是 lock_nolock lock_dlm。未来可能会支持其他锁管理器
 ### 3. JOURNALID=
 
 
-濡傛灉鏂囦欢绯荤粺姝ｅ湪浣跨敤鏌愪釜鏃ュ織锛堟梺瑙傝€呮寕杞戒笉浼氬垎閰嶆棩蹇楋級锛屽垯瀹冧細鍦ㄦ墍鏈?GFS2 uevent 涓粰鍑?璇ユ暟鍊兼棩蹇?id銆?
+如果文件系统正在使用某个日志（旁观者挂载不会分配日志），则它会在所GFS2 uevent 中给该数值日id
 ### 4. UUID=
 
 
-鍦ㄨ緝鏂扮増鏈殑 gfs2-utils 涓紝mkfs.gfs2 浼氬悜鏂囦欢绯荤粺瓒呯骇鍧楀啓鍏ヤ竴涓?UUID銆傚鏋滃畠瀛樺湪锛?鍒欎細琚寘鍚湪涓庤鏂囦欢绯荤粺鐩稿叧鐨勬瘡涓€涓?uevent 涓€?
+在较新版本的 gfs2-utils 中，mkfs.gfs2 会向文件系统超级块写入一UUID。如果它存在则会被包含在与该文件系统相关的每一uevent 中

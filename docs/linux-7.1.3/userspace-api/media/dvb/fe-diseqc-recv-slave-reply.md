@@ -1,38 +1,38 @@
 ﻿######## ioctl FE_DISEQC_RECV_SLAVE_REPLY
 
 
-## 鍚嶇О
+## 名称
 
 
-FE_DISEQC_RECV_SLAVE_REPLY - 鎺ユ敹鏉ヨ嚜 DiSEqC 2.0 鍛戒护鐨勫洖澶?
+FE_DISEQC_RECV_SLAVE_REPLY - 接收来自 DiSEqC 2.0 命令的回
 
-## 鎽樿
+## 摘要
 
 
 
 `int ioctl(int fd, FE_DISEQC_RECV_SLAVE_REPLY, struct dvb_diseqc_slave_reply *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 
 `argp`
-    鎸囧悜缁撴瀯浣?`dvb_diseqc_slave_reply` 鐨勬寚閽堛€?
+    指向结构`dvb_diseqc_slave_reply` 的指针
 
-## 璇存槑
-
-
-鎺ユ敹鏉ヨ嚜 DiSEqC 2.0 鍛戒护鐨勫洖澶嶃€?
-
-鎺ユ敹鍒扮殑娑堟伅瀛樺偍鍦?`argp` 鎸囧悜鐨勭紦鍐插尯涓€?
-
-## 杩斿洖鍊?
+## 说明
 
 
-鎴愬姛鏃惰繑鍥?0銆?
+接收来自 DiSEqC 2.0 命令的回复
 
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
+接收到的消息存储`argp` 指向的缓冲区中
 
-閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+## 杩斿洖鍊。
+
+
+成功时返0
+
+出错时返-1，并相应地设`errno` 变量
+
+通用错误码在 Generic Error Codes <gen-errors> 章节中描述

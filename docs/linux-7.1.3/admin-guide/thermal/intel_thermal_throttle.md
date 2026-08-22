@@ -1,31 +1,31 @@
 ﻿
-## Intel 鐑妭娴侊紙thermal throttle锛変簨浠舵姤鍛?
+## Intel 热节流（thermal throttle）事件报
 
 :Author: Srinivas Pandruvada <srinivas.pandruvada@linux.intel.com>
 
-### 绠€浠嬶紙Introduction锛?
+### 简介（Introduction
 
-Intel 澶勭悊鍣ㄥ唴缃嚜鍔ㄤ笖鑷€傚簲鐨勭儹鐩戞帶鏈哄埗锛屽己鍒跺鐞嗗櫒闄嶄綆鍏跺姛鑰楋紝浠ヤ究鍦ㄩ瀹氱殑娓╁害闄愬埗鍐呰繍琛屻€?
-鏇村缁嗚妭璇峰弬闃?Intel庐 64 and IA-32 Architectures Software Developer's Manual Volume 3 (3A, 3B, 3C, & 3D): System Programming Guide"涓殑"THERMAL MONITORING AND PROTECTION"涓€鑺傘€?
-涓€鑸€岃█锛屾湁涓ょ鏈哄埗鐢ㄤ簬鎺у埗澶勭悊鍣ㄧ殑鏍稿績娓╁害銆傚畠浠О涓?Thermal Monitor 1锛圱M1锛岀儹鐩戞帶鍣?1锛変笌 Thermal Monitor 2锛圱M2锛岀儹鐩戞帶鍣?2锛?銆?
-瑙﹀彂鐑洃鎺э紙TM1/TM2锛夌殑娓╁害浼犳劅鍣ㄧ殑鐘舵€侊紝閫氳繃鏍稿績绾х殑 MSR_IA32_THERM_STATUS 涓庡皝瑁咃紙package锛夌骇鐨?MSR_IA32_PACKAGE_THERM_STATUS 涓殑"鐑姸鎬佹爣蹇?锛坱hermal status flag锛変笌"鐑姸鎬佹棩蹇楁爣蹇?锛坱hermal status log flag锛夋潵鎸囩ず銆?
-鐑姸鎬佹爣蹇楋紙Thermal Status flag锛夛紝绗?0 浣?鈥?缃綅鏃讹紝琛ㄧず澶勭悊鍣ㄦ牳蹇冩俯搴﹀綋鍓嶅浜庣儹鐩戞帶鍣ㄧ殑瑙﹀彂锛坱rip锛夋俯搴︼紝涓斿鐞嗗櫒鍔熻€楁閫氳繃 TM1 鎴?TM2锛堝彇鍐充簬鍝釜琚惎鐢級琚檷浣庛€傛竻闆舵椂锛岃鏍囧織琛ㄧず鏍稿績娓╁害浣庝簬鐑洃鎺у櫒瑙﹀彂娓╁害銆傝鏍囧織涓哄彧璇汇€?
-鐑姸鎬佹棩蹇楁爣蹇楋紙Thermal Status Log flag锛夛紝绗?1 浣?鈥?缃綅鏃讹紝琛ㄧず鑷笂娆′笂鐢垫垨澶嶄綅浠ユ潵锛屾垨鑰呰嚜杞欢涓婃娓呴櫎璇ユ爣蹇椾互鏉ワ紝鐑紶鎰熷櫒宸茶Е鍙戣繃銆傝鏍囧織鏄?榛忔粸浣?锛坰ticky bit锛夛紱涓€鏃︾疆浣嶏紝瀹冧細淇濇寔缃綅锛岀洿鍒拌杞欢娓呴櫎鎴栫洿鍒板鐞嗗櫒涓婄數鎴栧浣嶃€傞粯璁ょ姸鎬佷负娓呴浂銆?
-鏈夊彲鑳藉綋鐢ㄦ埛璇诲彇 MSR_IA32_THERM_STATUS 鎴?MSR_IA32_PACKAGE_THERM_STATUS 鏃讹紝TM1/TM2 骞舵湭澶勪簬娲诲姩鐘舵€併€傛鏃讹紝"鐑姸鎬佹爣蹇?灏嗚涓?0"锛岃€?鐑姸鎬佹棩蹇楁爣蹇?浼氳缃綅浠ユ樉绀轰换浣曞厛鍓嶇殑"TM1/TM2"婵€娲汇€備絾鐢变簬瀹冮渶瑕佽杞欢娓呴櫎锛屽洜姝ゆ棤娉曟樉绀?TM1/TM2"婵€娲荤殑鍙戠敓娆℃暟銆?
-鍥犳锛孡inux 鎻愪緵浜?鐑姸鎬佹爣蹇?琚疆浣嶇殑娆℃暟璁℃暟锛屽悓鏃跺憟鐜?鐑姸鎬佹爣蹇?澶勪簬娲诲姩鐘舵€佺殑姣鏃堕暱銆傚埄鐢ㄨ繖浜涜鏁板櫒锛岀敤鎴峰彲浠ユ鏌ユ€ц兘鏄惁鍥犵儹浜嬩欢鑰屽彈鍒伴檺鍒躲€傚缓璁粠 sysfs 璇诲彇锛岃€岄潪鐩存帴璇诲彇 MSR锛屽洜涓?鐑姸鎬佹棩蹇楁爣蹇?浼氳椹卞姩閲嶇疆浠ュ疄鐜伴€熺巼鎺у埗锛坮ate control锛夈€?
-### Sysfs 鎺ュ彛锛圫ysfs Interface锛?
+Intel 处理器内置自动且自适应的热监控机制，强制处理器降低其功耗，以便在预定的温度限制内运行
+更多细节请参Intel® 64 and IA-32 Architectures Software Developer's Manual Volume 3 (3A, 3B, 3C, & 3D): System Programming Guide"中的"THERMAL MONITORING AND PROTECTION"一节
+一般而言，有两种机制用于控制处理器的核心温度。它们称Thermal Monitor 1（TM1，热监控1）与 Thermal Monitor 2（TM2，热监控2
+触发热监控（TM1/TM2）的温度传感器的状态，通过核心级的 MSR_IA32_THERM_STATUS 与封装（package）级MSR_IA32_PACKAGE_THERM_STATUS 中的"热状态标（thermal status flag）与"热状态日志标（thermal status log flag）来指示
+热状态标志（Thermal Status flag），0 置位时，表示处理器核心温度当前处于热监控器的触发（trip）温度，且处理器功耗正通过 TM1 TM2（取决于哪个被启用）被降低。清零时，该标志表示核心温度低于热监控器触发温度。该标志为只读
+热状态日志标志（Thermal Status Log flag），1 置位时，表示自上次上电或复位以来，或者自软件上次清除该标志以来，热传感器已触发过。该标志黏滞（sticky bit）；一旦置位，它会保持置位，直到被软件清除或直到处理器上电或复位。默认状态为清零
+有可能当用户读取 MSR_IA32_THERM_STATUS MSR_IA32_PACKAGE_THERM_STATUS 时，TM1/TM2 并未处于活动状态。此时，"热状态标将读0"，热状态日志标会被置位以显示任何先前的"TM1/TM2"激活。但由于它需要被软件清除，因此无法显TM1/TM2"激活的发生次数
+因此，Linux 提供热状态标被置位的次数计数，同时呈热状态标处于活动状态的毫秒时长。利用这些计数器，用户可以检查性能是否因热事件而受到限制。建议从 sysfs 读取，而非直接读取 MSR，因热状态日志标会被驱动重置以实现速率控制（rate control）
+### Sysfs 接口（Sysfs Interface
 
-鐑妭娴佷簨浠跺湪姣忎釜 CPU 涓嬮€氳繃 "/sys/devices/system/cpu/cpuX/thermal_throttle/" 鍛堢幇锛屽叾涓?"X" 涓?CPU 缂栧彿銆?
-鎵€鏈夎繖浜涜鏁板櫒閮芥槸鍙鐨勩€傚畠浠笉鑳借閲嶇疆涓?0銆傚洜姝わ紝瀹冧滑鍦ㄨ揪鍒?64 浣嶆棤绗﹀彿鏁存暟鐨勬渶澶у€煎悗鍙兘浼氭孩鍑恒€?
+热节流事件在每个 CPU 下通过 "/sys/devices/system/cpu/cpuX/thermal_throttle/" 呈现，其"X" CPU 编号
+所有这些计数器都是只读的。它们不能被重置0。因此，它们在达64 位无符号整数的最大值后可能会溢出
 `core_throttle_count`
-	鏄剧ず鑷搷浣滅郴缁熷惎鍔ㄤ笖鐑悜閲忥紙thermal vector锛夊垵濮嬪寲浠ユ潵锛岃 CPU 鐨?鐑姸鎬佹爣蹇?浠?0 鍙樹负 1 鐨勬鏁般€傝繖鏄竴涓?64 浣嶈鏁板櫒銆?
+	显示自操作系统启动且热向量（thermal vector）初始化以来，该 CPU 热状态标0 变为 1 的次数。这是一64 位计数器
 `package_throttle_count`
-	鏄剧ず鑷搷浣滅郴缁熷惎鍔ㄤ笖鐑悜閲忓垵濮嬪寲浠ユ潵锛屽寘鍚 CPU 鐨勫皝瑁咃紙package锛夌殑"鐑姸鎬佹爣蹇?浠?0 鍙樹负 1 鐨勬鏁般€傚皝瑁呯姸鎬佷細琚箍鎾埌鎵€鏈?CPU锛涘皝瑁呭唴鎵€鏈?CPU 閮介€掑璇ヨ鏁般€傝繖鏄竴涓?64 浣嶈鏁板櫒銆?
+	显示自操作系统启动且热向量初始化以来，包含该 CPU 的封装（package）的"热状态标0 变为 1 的次数。封装状态会被广播到所CPU；封装内所CPU 都递增该计数。这是一64 位计数器
 `core_throttle_max_time_ms`
-	鏄剧ず鑷搷浣滅郴缁熷惎鍔ㄤ笖鐑悜閲忓垵濮嬪寲浠ユ潵锛岃 CPU 鍦ㄦ牳蹇冪骇"鐑姸鎬佹爣蹇?琚疆涓?1 鐨勬渶澶ф€绘椂闀裤€?
+	显示自操作系统启动且热向量初始化以来，该 CPU 在核心级"热状态标被置1 的最大总时长
 `package_throttle_max_time_ms`
-	鏄剧ず鑷搷浣滅郴缁熷惎鍔ㄤ笖鐑悜閲忓垵濮嬪寲浠ユ潵锛屽寘鍚 CPU 鐨勫皝瑁呯殑"鐑姸鎬佹爣蹇?琚疆涓?1 鐨勬渶澶ф€绘椂闀裤€?
+	显示自操作系统启动且热向量初始化以来，包含该 CPU 的封装的"热状态标被置1 的最大总时长
 `core_throttle_total_time_ms`
-	鏄剧ず鑷搷浣滅郴缁熷惎鍔ㄤ笖鐑悜閲忓垵濮嬪寲浠ユ潵锛岃 CPU 鍦ㄦ牳蹇冪骇"鐑姸鎬佹爣蹇?琚疆涓?1 鐨勭疮璁℃椂闀裤€?
+	显示自操作系统启动且热向量初始化以来，该 CPU 在核心级"热状态标被置1 的累计时长
 `package_throttle_total_time_ms`
-	鏄剧ず鑷搷浣滅郴缁熷惎鍔ㄤ笖鐑悜閲忓垵濮嬪寲浠ユ潵锛屽寘鍚 CPU 鐨勫皝瑁呯殑"鐑姸鎬佹爣蹇?琚疆涓?1 鐨勭疮璁℃椂闀裤€?
+	显示自操作系统启动且热向量初始化以来，包含该 CPU 的封装的"热状态标被置1 的累计时长

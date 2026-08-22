@@ -1,45 +1,45 @@
 ﻿
-## 鐢ㄤ簬 Intel(R) 浠ュお缃戝涓绘満鎺у埗鍣紙Ethernet Multi-host Controller锛夌殑 Linux 鍩虹椹卞姩
+## 用于 Intel(R) 以太网多主机控制器（Ethernet Multi-host Controller）的 Linux 基础驱动
 
 2018 骞?8 鏈?20 鏃?Copyright(c) 2015-2018 Intel Corporation.
 
-## 鐩綍
+## 目录
 
-- 璇嗗埆浣犵殑閫傞厤鍣?- 棰濆閰嶇疆
-- 鎬ц兘璋冧紭
-- 宸茬煡闂
-- 鏀寔
+- 识别你的适配- 额外配置
+- 性能调优
+- 已知问题
+- 支持
 
-## 璇嗗埆浣犵殑閫傞厤鍣?
-鏈彂琛岀増涓殑椹卞姩鍏煎鍩轰簬 Intel(R) 浠ュお缃戝涓绘満鎺у埗鍣ㄧ殑璁惧銆?
-鍏充簬濡備綍璇嗗埆浣犵殑閫傞厤鍣紝浠ュ強鑾峰彇鏈€鏂扮殑 Intel 缃戠粶椹卞姩锛岃鍙傞槄 Intel 鏀寔缃戠珯锛?https://www.intel.com/support
+## 识别你的适配
+本发行版中的驱动兼容基于 Intel(R) 以太网多主机控制器的设备
+关于如何识别你的适配器，以及获取最新的 Intel 网络驱动，请参阅 Intel 支持网站https://www.intel.com/support
 
-### 娴佹帶鍒讹紙Flow Control锛?
-Intel(R) 浠ュお缃戜氦鎹富鏈烘帴鍙ｏ紙Ethernet Switch Host Interface锛夐┍鍔ㄤ笉鏀寔娴佹帶鍒躲€?瀹冧笉浼氬彂閫佹殏鍋滐紙pause锛夊抚銆傝繖鍙兘瀵艰嚧涓㈠抚銆?
-### 铏氭嫙鍔熻兘锛圴irtual Functions锛孷Fs锛?
-浣跨敤 sysfs 鏉ュ惎鐢?VF銆?鏈夋晥鑼冨洿锛?-64
-
-```
-
-    echo $num_vf_enabled > /sys/class/net/$dev/device/sriov_numvfs //鍚敤 VFs
-    echo 0 > /sys/class/net/$dev/device/sriov_numvfs //绂佺敤 VFs
+### 流控制（Flow Control
+Intel(R) 以太网交换主机接口（Ethernet Switch Host Interface）驱动不支持流控制它不会发送暂停（pause）帧。这可能导致丢帧
+### 虚拟功能（Virtual Functions，VFs
+使用 sysfs 来启VF有效范围-64
 
 ```
-娉ㄦ剰锛氳澶囧拰椹卞姩閮戒笉鎺у埗 VF 濡備綍鏄犲皠鍒伴厤缃┖闂淬€傛€荤嚎甯冨眬浼氬洜鎿嶄綔绯荤粺鑰屽紓銆傚湪鏀寔
-鐨勬搷浣滅郴缁熶笂锛屼綘鍙互妫€鏌?sysfs 鏉ユ煡鎵炬槧灏勫叧绯汇€?
-娉ㄦ剰锛氬綋 SR-IOV 妯″紡鍚敤鏃讹紝纭欢 VLAN 杩囨护浠ュ強 VLAN 鏍囩鍓ョ/鎻掑叆灏嗕繚鎸佸惎鐢ㄣ€傝
+
+    echo $num_vf_enabled > /sys/class/net/$dev/device/sriov_numvfs //启用 VFs
+    echo 0 > /sys/class/net/$dev/device/sriov_numvfs //禁用 VFs
+
+```
+注意：设备和驱动都不控制 VF 如何映射到配置空间。总线布局会因操作系统而异。在支持
+的操作系统上，你可以检sysfs 来查找映射关系
+注意：当 SR-IOV 模式启用时，硬件 VLAN 过滤以及 VLAN 标签剥离/插入将保持启用。请
 绉婚櫎鏃х殑 VLAN 杩囨护鍣?```
 
-    ip link set eth0 vf 0 vlan 100	// 涓?VF 0 璁剧疆 vlan 100
-    ip link set eth0 vf 0 vlan 0	// 鍒犻櫎 vlan 100
-    ip link set eth0 vf 0 vlan 200	// 涓?VF 0 璁剧疆涓€涓柊鐨?vlan 200
+    ip link set eth0 vf 0 vlan 100	// VF 0 设置 vlan 100
+    ip link set eth0 vf 0 vlan 0	// 删除 vlan 100
+    ip link set eth0 vf 0 vlan 200	// VF 0 设置一个新vlan 200
 
 
 ```
-## 棰濆鍔熻兘涓庨厤缃?
-### 宸ㄥ抚锛圝umbo Frames锛?
-閫氳繃鎶婃渶澶т紶杈撳崟鍏冿紙MTU锛夋敼涓哄ぇ浜庨粯璁ゅ€?1500 鐨勫€兼潵鍚敤宸ㄥ抚鏀寔銆?
-浣跨敤 ifconfig 鍛戒护鏉ュ澶?MTU 澶у皬銆備緥濡傦紝杈撳叆
+## 额外功能与配
+### 巨帧（Jumbo Frames
+通过把最大传输单元（MTU）改为大于默认1500 的值来启用巨帧支持
+使用 ifconfig 命令来增MTU 大小。例如，输入
 ```
 
     ifconfig eth<x> mtu 9000 up
@@ -51,39 +51,39 @@ Intel(R) 浠ュお缃戜氦鎹富鏈烘帴鍙ｏ紙Ethernet Switch Host Inter
     ip link set up dev eth<x>
 
 ```
-姝よ缃笉浼氬湪閲嶅惎鍚庝繚鐣欍€傚彲浠ラ€氳繃鍦ㄤ互涓嬫枃浠朵腑娣诲姞 'MTU=9000' 浣胯缃案涔呯敓鏁堬細
+此设置不会在重启后保留。可以通过在以下文件中添加 'MTU=9000' 使设置永久生效：
 
-- 瀵逛簬 RHEL锛?etc/sysconfig/network-scripts/ifcfg-eth<x>
-- 瀵逛簬 SLES锛?etc/sysconfig/network/<config_file>
+- 对于 RHELetc/sysconfig/network-scripts/ifcfg-eth<x>
+- 对于 SLESetc/sysconfig/network/<config_file>
 
-娉ㄦ剰锛氬法甯х殑鏈€澶?MTU 璁剧疆涓?15342銆傝鍊间笌 15364 瀛楄妭鐨勬渶澶у法甯уぇ灏忎竴鑷淬€?
-娉ㄦ剰锛氳椹卞姩浼氬皾璇曚娇鐢ㄥ涓〉澶у皬鐨勭紦鍐插尯鏉ユ帴鏀舵瘡涓法甯ф暟鎹寘銆傝繖鏈夊姪浜庡湪鍒嗛厤鎺ユ敹
-鏁版嵁鍖呮椂閬垮厤缂撳啿鍖鸿€楀敖闂銆?
-### 閫氱敤鎺ユ敹鍗歌浇锛圙eneric Receive Offload锛屽嵆 GRO锛?
-璇ラ┍鍔ㄦ敮鎸佸唴鏍稿唴鐨?GRO 杞欢瀹炵幇銆侴RO 琛ㄦ槑锛岄€氳繃灏?Rx 娴侀噺鍚堝苟涓烘洿澶х殑鏁版嵁鍧楋紝鍦ㄥぇ
-Rx 璐熻浇涓嬪彲浠ユ樉钁楅檷浣?CPU 浣跨敤鐜囥€侴RO 鏄箣鍓嶄娇鐢ㄧ殑 LRO 鎺ュ彛鐨勬紨杩涖€侴RO 鑳藉鍚堝苟
-闄や簡 TCP 涔嬪鐨勫叾瀹冨崗璁€傚畠涔熷彲浠ュ湪涓?LRO 鏈夐棶棰樼殑閰嶇疆锛堝嵆妗ユ帴鍜?iSCSI锛変腑瀹夊叏浣跨敤銆?
-### 鐢ㄤ簬杩囨护鐨勫彈鏀寔 ethtool 鍛戒护涓庨€夐」
+注意：巨帧的最MTU 设置15342。该值与 15364 字节的最大巨帧大小一致
+注意：该驱动会尝试使用多个页大小的缓冲区来接收每个巨帧数据包。这有助于在分配接收
+数据包时避免缓冲区耗尽问题
+### 通用接收卸载（Generic Receive Offload，即 GRO
+该驱动支持内核内GRO 软件实现。GRO 表明，通过Rx 流量合并为更大的数据块，在大
+Rx 负载下可以显著降CPU 使用率。GRO 是之前使用的 LRO 接口的演进。GRO 能够合并
+除了 TCP 之外的其它协议。它也可以在LRO 有问题的配置（即桥接iSCSI）中安全使用
+### 用于过滤的受支持 ethtool 命令与选项
 
 -n --show-nfc
-  鑾峰彇鎺ユ敹缃戠粶娴佸垎绫伙紙receive network flow classification锛夐厤缃€?
+  获取接收网络流分类（receive network flow classification）配置
 rx-flow-hash tcp4|udp4|ah4|esp4|sctp4|tcp6|udp6|ah6|esp6|sctp6
-  鑾峰彇鎸囧畾缃戠粶娴侀噺绫诲瀷鐨勫搱甯岄€夐」銆?
+  获取指定网络流量类型的哈希选项
 -N --config-nfc
-  閰嶇疆鎺ユ敹缃戠粶娴佸垎绫汇€?
+  配置接收网络流分类
 rx-flow-hash tcp4|udp4|ah4|esp4|sctp4|tcp6|udp6|ah6|esp6|sctp6 m|v|t|s|d|f|n|r
-  閰嶇疆鎸囧畾缃戠粶娴侀噺绫诲瀷鐨勫搱甯岄€夐」銆?
-- udp4锛氬熀浜?IPv4 鐨?UDP
-- udp6锛氬熀浜?IPv6 鐨?UDP
-- f 鍩轰簬鎺ユ敹鏁版嵁鍖呯 4 灞傦紙Layer 4锛夊ご鐨勭 0 鍜?1 瀛楄妭杩涜鍝堝笇銆?- n 鍩轰簬鎺ユ敹鏁版嵁鍖呯 4 灞傜殑绗?2 鍜?3 瀛楄妭杩涜鍝堝笇銆?
-## 宸茬煡闂/鏁呴殰鎺掓煡
+  配置指定网络流量类型的哈希选项
+- udp4：基IPv4 UDP
+- udp6：基IPv6 UDP
+- f 基于接收数据包第 4 层（Layer 4）头的第 0 1 字节进行哈希- n 基于接收数据包第 4 层的2 3 字节进行哈希
+## 已知问题/故障排查
 
-### 鍦?Linux KVM 涓嬬殑 64 浣?Microsoft Windows Server 2012/R2 瀹㈡埛鏈烘搷浣滅郴缁熶腑鍚敤 SR-IOV
+### Linux KVM 下的 64 Microsoft Windows Server 2012/R2 客户机操作系统中启用 SR-IOV
 
-KVM Hypervisor/VMM 鏀寔灏?PCIe 璁惧鐩存帴鍒嗛厤缁?VM銆傝繖鍖呮嫭浼犵粺鐨?PCIe 璁惧锛屼互鍙婂熀浜?Intel Ethernet Controller XL710 鐨勫叿澶?SR-IOV 鑳藉姏鐨勮澶囥€?
-## 鏀寔
+KVM Hypervisor/VMM 支持PCIe 设备直接分配VM。这包括传统PCIe 设备，以及基Intel Ethernet Controller XL710 的具SR-IOV 能力的设备
+## 支持
 
-鏈夊叧涓€鑸俊鎭紝璇疯闂?Intel 鏀寔缃戠珯锛?https://www.intel.com/support/
+有关一般信息，请访Intel 支持网站https://www.intel.com/support/
 
-濡傛灉鍦ㄥ彈鏀寔鐨勫唴鏍镐笂浣跨敤鍙楁敮鎸佺殑閫傞厤鍣ㄥ彂鐜颁簡宸插彂甯冩簮浠ｇ爜涓殑闂锛岃灏嗕笌璇ラ棶棰樼浉鍏崇殑
-鍏蜂綋淇℃伅鍙戦€佽嚦 intel-wired-lan@lists.osuosl.org銆?
+如果在受支持的内核上使用受支持的适配器发现了已发布源代码中的问题，请将与该问题相关的
+具体信息发送至 intel-wired-lan@lists.osuosl.org
