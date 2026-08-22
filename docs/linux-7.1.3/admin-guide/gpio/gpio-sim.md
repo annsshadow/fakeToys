@@ -1,56 +1,56 @@
 ﻿
-## Configfs GPIO 妯℃嫙鍣?
+## Configfs GPIO 妯℃嫙鍣。
 
-configfs GPIO 妯℃嫙鍣紙gpio-sim锛夋彁渚涗簡涓€绉嶅垱寤虹敤浜庢祴璇曠殑妯℃嫙 GPIO 鑺墖鐨勬柟娉曘€傝繖浜涜姱鐗?鏆撮湶鐨勭嚎璺棦鍙互浣跨敤鏍囧噯 GPIO 瀛楃璁惧鎺ュ彛璁块棶锛屼篃鍙互浣跨敤 sysfs 灞炴€ц繘琛屾搷浣溿€?
-### 鍒涘缓妯℃嫙鑺墖
+configfs GPIO 模拟器（gpio-sim）提供了一种创建用于测试的模拟 GPIO 芯片的方法。这些芯暴露的线路既可以使用标准 GPIO 字符设备接口访问，也可以使用 sysfs 属性进行操作
+### 创建模拟芯片
 
 
-gpio-sim 妯″潡娉ㄥ唽浜嗕竴涓悕涓?`'gpio-sim'` 鐨?configfs 瀛愮郴缁熴€傚叧浜?configfs 鏂囦欢绯荤粺鐨?缁嗚妭锛岃鍙傞槄 configfs 鏂囨。銆?
-鐢ㄦ埛鍙互鍒涘缓 configfs 缁勫拰鏉＄洰鐨勫眰绾х粨鏋勶紝骞朵慨鏀规墍鏆撮湶灞炴€х殑鍊笺€備竴鏃﹁姱鐗囪瀹炰緥鍖栵紝杩欎釜
-灞傜骇缁撴瀯灏嗚杞崲涓虹浉搴旂殑璁惧灞炴€с€傛€讳綋缁撴瀯濡備笅锛?
-**缁勶細** `/config/gpio-sim`
+gpio-sim 模块注册了一个名`'gpio-sim'` configfs 子系统。关configfs 文件系统细节，请参阅 configfs 文档
+用户可以创建 configfs 组和条目的层级结构，并修改所暴露属性的值。一旦芯片被实例化，这个
+层级结构将被转换为相应的设备属性。总体结构如下
+**组：** `/config/gpio-sim`
 
-杩欐槸 gpio-sim configfs 鏍戠殑椤跺眰鐩綍銆?
-**缁勶細** `/config/gpio-sim/gpio-device`
+这是 gpio-sim configfs 树的顶层目录
+**组：** `/config/gpio-sim/gpio-device`
 
-**灞炴€э細** `/config/gpio-sim/gpio-device/dev_name`
+**属性：** `/config/gpio-sim/gpio-device/dev_name`
 
-**灞炴€э細** `/config/gpio-sim/gpio-device/live`
+**属性：** `/config/gpio-sim/gpio-device/live`
 
-杩欐槸涓€涓〃绀?GPIO 骞冲彴璁惧鐨勭洰褰曘€俙'dev_name'` 灞炴€ф槸鍙鐨勶紝鍏佽鐢ㄦ埛绌洪棿璇诲彇骞冲彴璁惧
-鍚嶏紙渚嬪 `'gpio-sim.0'`锛夈€俙'live'` 灞炴€х敤浜庡湪璁惧瀹屽叏閰嶇疆濂藉悗瑙﹀彂鍏跺疄闄呭垱寤恒€傚彲鎺ュ彈鐨勫€?涓猴細`'1'` 鍚敤妯℃嫙璁惧锛宍'0'` 绂佺敤骞舵媶闄ゅ畠銆?
-**缁勶細** `/config/gpio-sim/gpio-device/gpio-bankX`
+这是一个表GPIO 平台设备的目录。`'dev_name'` 属性是只读的，允许用户空间读取平台设备
+名（例如 `'gpio-sim.0'`）。`'live'` 属性用于在设备完全配置好后触发其实际创建。可接受的为：`'1'` 启用模拟设备，`'0'` 禁用并拆除它
+**组：** `/config/gpio-sim/gpio-device/gpio-bankX`
 
-**灞炴€э細** `/config/gpio-sim/gpio-device/gpio-bankX/chip_name`
+**属性：** `/config/gpio-sim/gpio-device/gpio-bankX/chip_name`
 
-**灞炴€э細** `/config/gpio-sim/gpio-device/gpio-bankX/num_lines`
+**属性：** `/config/gpio-sim/gpio-device/gpio-bankX/num_lines`
 
-璇ョ粍琛ㄧず椤跺眰骞冲彴璁惧涓嬬殑涓€涓?GPIO bank銆俙'chip_name'` 灞炴€ф槸鍙鐨勶紝鍏佽鐢ㄦ埛绌洪棿璇诲彇
-璇?bank 璁惧鐨勮澶囧悕銆俙'num_lines'` 灞炴€х敤浜庢寚瀹氳 bank 鏆撮湶鐨勭嚎璺暟閲忋€?
-**缁勶細** `/config/gpio-sim/gpio-device/gpio-bankX/lineY`
+该组表示顶层平台设备下的一GPIO bank。`'chip_name'` 属性是只读的，允许用户空间读取
+bank 设备的设备名。`'num_lines'` 属性用于指定该 bank 暴露的线路数量
+**组：** `/config/gpio-sim/gpio-device/gpio-bankX/lineY`
 
-**灞炴€э細** `/config/gpio-sim/gpio-device/gpio-bankX/lineY/name`
+**属性：** `/config/gpio-sim/gpio-device/gpio-bankX/lineY/name`
 
-**灞炴€э細** `/config/gpio-sim/gpio-device/gpio-bankX/lineY/valid`
+**属性：** `/config/gpio-sim/gpio-device/gpio-bankX/lineY/valid`
 
-璇ョ粍琛ㄧず鍋忕Щ涓?Y 鐨勫崟鏉＄嚎璺€俙valid` 灞炴€ф寚绀鸿绾胯矾鏄惁鍙敤浣?GPIO銆俙name` 灞炴€х敤浜庤缃?鐢?'gpio-line-names' 灞炴€ф墍琛ㄧず鐨勭嚎璺悕銆?
-**鏉＄洰锛?* `/config/gpio-sim/gpio-device/gpio-bankX/lineY/hog`
+该组表示偏移Y 的单条线路。`valid` 属性指示该线路是否可用GPIO。`name` 属性用于设'gpio-line-names' 属性所表示的线路名
+**条目* `/config/gpio-sim/gpio-device/gpio-bankX/lineY/hog`
 
-**灞炴€э細** `/config/gpio-sim/gpio-device/gpio-bankX/lineY/hog/name`
+**属性：** `/config/gpio-sim/gpio-device/gpio-bankX/lineY/hog/name`
 
-**灞炴€э細** `/config/gpio-sim/gpio-device/gpio-bankX/lineY/hog/direction`
+**属性：** `/config/gpio-sim/gpio-device/gpio-bankX/lineY/hog/direction`
 
-璇ユ潯鐩 gpio-sim 妯″潡鐙崰锛坔og锛夊叧鑱旂殑绾胯矾銆俙'name'` 灞炴€ф寚瀹氳浣跨敤鐨勫唴鏍稿唴娑堣垂鑰呭悕銆?`'direction'` 灞炴€ф寚瀹氱嫭鍗犳柟鍚戯紝涓斿繀椤讳负浠ヤ笅涔嬩竴锛歚'input'`銆乣'output-high'` 鍜?`'output-low'`銆?
-鍦ㄦ瘡涓?bank 鐩綍鍐呴儴锛屾湁涓€缁勫彲鐢ㄤ簬閰嶇疆鏂拌姱鐗囩殑灞炴€с€傛澶栵紝鐢ㄦ埛鍙互鍦ㄨ姱鐗囩洰褰曞唴 `mkdir()`
-瀛愮洰褰曪紝鐢ㄤ簬浼犻€掔壒瀹氱嚎璺殑棰濆閰嶇疆銆傝繖浜涘瓙鐩綍鐨勫悕绉板繀椤婚噰鐢?`'line<offset>'` 鐨勫舰寮?锛堜緥濡?`'line0'`銆乣'line20'` 绛夛級锛屽洜涓鸿鍚嶇О浼氳妯″潡鐢ㄦ潵鎶婇厤缃垎閰嶇粰缁欏畾鍋忕Щ澶勭殑鐗瑰畾
-绾胯矾銆?
-閰嶇疆瀹屾垚鍚庯紝蹇呴』灏?`'live'` 灞炴€ц涓?1 浠ュ疄渚嬪寲鑺墖銆備篃鍙互灏嗗叾璁惧洖 0 鏉ラ攢姣佹ā鎷熻姱鐗囥€?妯″潡浼氬悓姝ョ瓑寰呮柊鐨勬ā鎷熻澶囪鎴愬姛鎺㈡祴锛屽鏋滄湭鍙戠敓锛屽啓鍏?`'live'` 灏嗗鑷撮敊璇€?
-妯℃嫙 GPIO 鑺墖涔熷彲浠ュ湪璁惧鏍戜腑瀹氫箟銆俢ompatible 瀛楃涓插繀椤讳负锛歚"gpio-simulator"`銆傛敮鎸佺殑
-灞炴€ф湁锛?
-  `"gpio-sim,label"` - 鑺墖鏍囩
+该条目让 gpio-sim 模块独占（hog）关联的线路。`'name'` 属性指定要使用的内核内消费者名`'direction'` 属性指定独占方向，且必须为以下之一：`'input'`、`'output-high'` `'output-low'`
+在每bank 目录内部，有一组可用于配置新芯片的属性。此外，用户可以在芯片目录内 `mkdir()`
+子目录，用于传递特定线路的额外配置。这些子目录的名称必须采`'line<offset>'` 的形（例`'line0'`、`'line20'` 等），因为该名称会被模块用来把配置分配给给定偏移处的特定
+线路
+配置完成后，必须`'live'` 属性设1 以实例化芯片。也可以将其设回 0 来销毁模拟芯片模块会同步等待新的模拟设备被成功探测，如果未发生，写`'live'` 将导致错误
+模拟 GPIO 芯片也可以在设备树中定义。compatible 字符串必须为：`"gpio-simulator"`。支持的
+属性有
+  `"gpio-sim,label"` - 芯片标签
 
-鍏跺畠鏍囧噯 GPIO 灞炴€э紙濡?`"gpio-line-names"`銆乣"ngpios"` 鎴?`"gpio-hog"`锛夊悓鏍峰彈鏀寔銆?璇︽儏璇峰弬闃?GPIO 鏂囨。銆?
-涓€涓畾涔?GPIO 妯℃嫙鍣ㄧ殑璁惧鏍戜唬鐮佺ず渚嬶細
+其它标准 GPIO 属性（`"gpio-line-names"`、`"ngpios"` `"gpio-hog"`）同样受支持详情请参GPIO 文档
+一个定GPIO 模拟器的设备树代码示例：
 
 
     gpio-sim {
@@ -79,11 +79,11 @@ gpio-sim 妯″潡娉ㄥ唽浜嗕竴涓悕涓?`'gpio-sim'` 鐨?configfs 瀛�
         };
     };
 
-### 鎿嶄綔妯℃嫙绾胯矾
+### 操作模拟线路
 
 
-姣忎釜妯℃嫙 GPIO 鑺墖鍦ㄥ叾璁惧鐩綍涓嬩负姣忔潯鏆撮湶鐨勭嚎璺垱寤轰竴涓嫭绔嬬殑 sysfs 缁?锛堜緥濡?`/sys/devices/platform/gpio-sim.X/gpiochipY/`锛夈€傛瘡涓粍鐨勫悕绉颁负 `'sim_gpioX'` 褰㈠紡锛?鍏朵腑 X 鏄嚎璺殑鍋忕Щ銆傛瘡涓粍鍐呴儴鏈変袱涓睘鎬э細
+每个模拟 GPIO 芯片在其设备目录下为每条暴露的线路创建一个独立的 sysfs （例`/sys/devices/platform/gpio-sim.X/gpiochipY/`）。每个组的名称为 `'sim_gpioX'` 形式其中 X 是线路的偏移。每个组内部有两个属性：
 
-    `pull` - 鍏佽璇诲彇鍜岃缃瘡鏉＄嚎璺殑褰撳墠妯℃嫙涓婃媺/涓嬫媺璁剧疆锛屽啓鍏ユ椂鍏跺€煎繀椤讳负浠ヤ笅涔嬩竴锛?               `'pull-up'`銆乣'pull-down'`
+    `pull` - 允许读取和设置每条线路的当前模拟上拉/下拉设置，写入时其值必须为以下之一               `'pull-up'`、`'pull-down'`
 
-    `value` - 鍏佽璇诲彇绾胯矾鐨勫綋鍓嶅€硷紝濡傛灉璇ョ嚎璺琚敤鎴风┖闂撮┍鍔紝鍒欒鍊煎彲鑳戒笌涓婃媺/涓嬫媺璁剧疆涓嶅悓
+    `value` - 允许读取线路的当前值，如果该线路正被用户空间驱动，则该值可能与上拉/下拉设置不同

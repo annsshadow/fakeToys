@@ -1,11 +1,11 @@
 ﻿
-## ARM 鏋舵瀯
+## ARM 架构
 
 
-- [鍥轰欢浼瘎瀛樺櫒](fw-pseudo-registers)
-- [绠＄悊绋嬪簭 ABI](hyp-abi)
-- [瓒呯骇璋冪敤](hypercalls)
-- [鍙椾繚鎶よ櫄鎷熸満锛坧KVM锛塢(pkvm)
-- [瀹㈡埛鏈烘椂闂达紙pvtime锛塢(pvtime)
-- [KVM PTP 鏃堕挓](ptp_kvm)
-- [vCPU 鐗规€(vcpu-features)
+- [固件伪寄存器](fw-pseudo-registers)
+- [管理程序 ABI](hyp-abi)
+- [超级调用](hypercalls)
+- [受保护虚拟机（pKVM）](pkvm)
+- [客户机时间（pvtime）](pvtime)
+- [KVM PTP 时钟](ptp_kvm)
+- [vCPU 特性](vcpu-features)
