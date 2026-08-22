@@ -1,56 +1,56 @@
 ﻿
-## 鏈€灏忓爢 API锛圡in Heap API锛?
+## 最小堆 API（Min Heap API
 
 
 :Author: Kuan-Wei Chiu <visitorckw@gmail.com>
 
-## 绠€浠?
+## 简
 
 
-鏈€灏忓爢锛圡in Heap锛堿PI 鎻愪緵浜嗕竴缁勫嚱鏁板拰瀹忥紝鐢ㄤ簬鍦?Linux 鍐呮牳涓鐞嗘渶灏忓爢銆傛渶灏忓爢鏄竴绉?
-浜屽弶鏍戠粨鏋勶紝鍏朵腑姣忎釜鑺傜偣鐨勫€奸兘灏忎簬鎴栫瓑浜庡叾瀛愯妭鐐圭殑鍊硷紝浠庤€屼繚璇佹渶灏忕殑鍏冪礌濮嬬粓浣嶄簬鏍硅妭鐐广€?
+最小堆（Min Heap）API 提供了一组函数和宏，用于Linux 内核中管理最小堆。最小堆是一
+二叉树结构，其中每个节点的值都小于或等于其子节点的值，从而保证最小的元素始终位于根节点
 
-鏈枃妗ｆ彁渚涗簡鏈€灏忓爢 API 鐨勪娇鐢ㄦ寚鍗楋紝璇﹁堪濡備綍瀹氫箟鍜屼娇鐢ㄦ渶灏忓爢銆傜敤鎴蜂笉搴旂洿鎺ヨ皟鐢ㄥ甫鏈?
-**__min_heap_*()** 鍓嶇紑鐨勫嚱鏁帮紝鑰屽簲浣跨敤鎵€鎻愪緵鐨勫畯灏佽锛坢acro wrappers锛夈€?
+本文档提供了最小堆 API 的使用指南，详述如何定义和使用最小堆。用户不应直接调用带
+**__min_heap_*()** 前缀的函数，而应使用所提供的宏封装（macro wrappers）
 
-闄や簡杩欎簺鍑芥暟鐨勬爣鍑嗙増鏈锛岃 API 杩樺寘鍚竴缁?inline 鐗堟湰锛岀敤浜庢€ц兘鏁忔劅鐨勫満鍚堛€傝繖浜?inline
-鍑芥暟鐨勫悕绉颁笌鍏堕潪 inline 瀵瑰簲鐗堟湰鐩稿悓锛屼絾甯︽湁 **_inline** 鍚庣紑銆備緥濡?
-**__min_heap_init_inline** 鍙婂叾瀵瑰簲鐨勫畯灏佽 **min_heap_init_inline**銆俰nline 鐗堟湰鍏佽
-鐩存帴璋冪敤鑷畾涔夌殑姣旇緝鍜屼氦鎹㈠嚱鏁帮紝鑰屼笉缁忚繃闂存帴鍑芥暟璋冪敤銆傝繖鍙互鏄捐憲鍑忓皯寮€閿€锛屽挨鍏舵槸鍦ㄥ惎鐢?
-CONFIG_MITIGATION_RETPOLINE 鏃讹紝鍥犱负闂存帴鍑芥暟璋冪敤浼氬彉寰楁洿鍔犳槀璐点€備笌闈?inline 鐗堟湰涓€鏍凤紝
-閲嶈鐨勬槸瀵?inline 鍑芥暟涔熻浣跨敤瀹忓皝瑁咃紝鑰屼笉鏄洿鎺ヨ皟鐢ㄥ嚱鏁版湰韬€?
+除了这些函数的标准版本外，该 API 还包含一inline 版本，用于性能敏感的场合。这inline
+函数的名称与其非 inline 对应版本相同，但带有 **_inline** 后缀。例
+**__min_heap_init_inline** 及其对应的宏封装 **min_heap_init_inline**。inline 版本允许
+直接调用自定义的比较和交换函数，而不经过间接函数调用。这可以显著减少开销，尤其是在启
+CONFIG_MITIGATION_RETPOLINE 时，因为间接函数调用会变得更加昂贵。与inline 版本一样，
+重要的是inline 函数也要使用宏封装，而不是直接调用函数本身
 
-## 鏁版嵁缁撴瀯
-
-
-### 鏈€灏忓爢鐨勫畾涔?
+## 数据结构
 
 
-琛ㄧず鏈€灏忓爢鐨勬牳蹇冩暟鎹粨鏋勪娇鐢?**MIN_HEAP_PREALLOCATED** 鍜?**DEFINE_MIN_HEAP** 瀹忔潵瀹氫箟銆?
-杩欎簺瀹忓厑璁镐綘瀹氫箟涓€涓甫鏈夐鍒嗛厤缂撳啿鍖烘垨鍔ㄦ€佸垎閰嶅唴瀛樼殑鏈€灏忓爢銆?
+### 最小堆的定
 
-绀轰緥锛?
+
+表示最小堆的核心数据结构使**MIN_HEAP_PREALLOCATED** **DEFINE_MIN_HEAP** 宏来定义
+这些宏允许你定义一个带有预分配缓冲区或动态分配内存的最小堆
+
+示例
 
 
     #define MIN_HEAP_PREALLOCATED(_type, _name, _nr)
     struct _name {
-        size_t nr;         /** 鍫嗕腑鍏冪礌鐨勬暟閲?**/
-        size_t size;       /** 鍙绾崇殑鏈€澶у厓绱犳暟閲?**/
-        _type **data;    /** 鎸囧悜鍫嗘暟鎹殑鎸囬拡 */
-        _type preallocated[_nr];  /** 闈欐€侀鍒嗛厤鏁扮粍 **/
+        size_t nr;         /** 堆中元素的数**/
+        size_t size;       /** 可容纳的最大元素数**/
+        _type **data;    /** 指向堆数据的指针 */
+        _type preallocated[_nr];  /** 静态预分配数组 **/
     }
 
     #define DEFINE_MIN_HEAP(_type, _name) MIN_HEAP_PREALLOCATED(_type, _name, 0)
 
-涓€涓吀鍨嬬殑鍫嗙粨鏋勪細鍖呭惈涓€涓厓绱犺鏁帮紙`nr`锛夈€佸爢鐨勬渶澶у閲忥紙`size`锛夛紝浠ュ強涓€涓寚鍚戝厓绱犳暟缁?
-鐨勬寚閽堬紙`data`锛夈€傚彲閫夊湴锛屼綘鍙互浣跨敤 **MIN_HEAP_PREALLOCATED** 鎸囧畾涓€涓潤鎬佹暟缁勭敤浜庡爢鐨?
-棰勫垎閰嶅瓨鍌ㄣ€?
+一个典型的堆结构会包含一个元素计数（`nr`）、堆的最大容量（`size`），以及一个指向元素数
+的指针（`data`）。可选地，你可以使用 **MIN_HEAP_PREALLOCATED** 指定一个静态数组用于堆
+预分配存储
 
-### 鏈€灏忓爢鍥炶皟
+### 最小堆回调
 
 
-**struct min_heap_callbacks** 鎻愪緵浜嗙敤浜庡爢涓厓绱犳帓搴忎笌浜ゆ崲鐨勮嚜瀹氫箟閫夐」銆傚畠鍖呭惈涓や釜鍑芥暟
-鎸囬拡锛?
+**struct min_heap_callbacks** 提供了用于堆中元素排序与交换的自定义选项。它包含两个函数
+指针
 
 
     struct min_heap_callbacks {
@@ -58,162 +58,162 @@ CONFIG_MITIGATION_RETPOLINE 鏃讹紝鍥犱负闂存帴鍑芥暟璋冪敤浼氬�
         void (**swp)(void **lhs, void **rhs, void **args);
     };
 
-- **less** 鏄敤浜庣‘瀹氬厓绱犻『搴忕殑姣旇緝鍑芥暟銆?
-- **swp** 鏄敤浜庝氦鎹㈠爢涓厓绱犵殑鍑芥暟銆傚鏋?swp 璁句负 NULL锛屽垯灏嗕娇鐢ㄩ粯璁ょ殑浜ゆ崲鍑芥暟锛岃鍑芥暟
-  鏍规嵁鍏冪礌澶у皬杩涜浜ゆ崲銆?
+- **less** 是用于确定元素顺序的比较函数
+- **swp** 是用于交换堆中元素的函数。如swp 设为 NULL，则将使用默认的交换函数，该函数
+  根据元素大小进行交换
 
-## 瀹忓皝瑁?
+## 瀹忓皝瑁。
 
 
-涓轰簡浠ョ敤鎴峰弸濂界殑鏂瑰紡涓庡爢浜や簰锛屾彁渚涗簡浠ヤ笅瀹忓皝瑁呫€傛瘡涓畯瀵瑰簲涓€涓搷浣滃爢鐨勫嚱鏁帮紝瀹冧滑灞忚斀浜?
-瀵瑰唴閮ㄥ嚱鏁扮殑鐩存帴璋冪敤銆?
+为了以用户友好的方式与堆交互，提供了以下宏封装。每个宏对应一个操作堆的函数，它们屏蔽
+对内部函数的直接调用
 
-姣忎釜瀹忔帴鍙楄嫢骞插弬鏁帮紝璇︽儏濡備笅銆?
+每个宏接受若干参数，详情如下
 
-### 鍫嗗垵濮嬪寲
+### 堆初始化
 
 
 
     min_heap_init(heap, data, size);
 
-- **heap**锛氭寚鍚戝緟鍒濆鍖栫殑鍫嗙粨鏋勭殑鎸囬拡銆?
-- **data**锛氭寚鍚戠敤浜庡瓨鍌ㄥ爢鍏冪礌鐨勭紦鍐插尯鐨勬寚閽堛€傚鏋滀负 `NULL`锛屽垯浣跨敤鍫嗙粨鏋勫唴鐨勯鍒嗛厤
-  缂撳啿鍖恒€?
-- **size**锛氬爢鍙绾崇殑鏈€澶у厓绱犳暟閲忋€?
+- **heap**：指向待初始化的堆结构的指针
+- **data**：指向用于存储堆元素的缓冲区的指针。如果为 `NULL`，则使用堆结构内的预分配
+  缓冲区
+- **size**：堆可容纳的最大元素数量
 
-璇ュ畯鍒濆鍖栧爢锛岃缃叾鍒濆鐘舵€併€傚鏋?`data` 涓?`NULL`锛屽垯浣跨敤鍫嗙粨鏋勫唴鐨勯鍒嗛厤鍐呭瓨杩涜
-瀛樺偍锛涘惁鍒欎娇鐢ㄧ敤鎴锋彁渚涚殑缂撳啿鍖恒€傝鎿嶄綔澶嶆潅搴︿负 **O(1)**銆?
+该宏初始化堆，设置其初始状态。如`data` `NULL`，则使用堆结构内的预分配内存进行
+存储；否则使用用户提供的缓冲区。该操作复杂度为 **O(1)**
 
-**Inline 鐗堟湰锛?* min_heap_init_inline(heap, data, size)
+**Inline 版本* min_heap_init_inline(heap, data, size)
 
-### 璁块棶鍫嗛《鍏冪礌
+### 访问堆顶元素
 
 
 
     element = min_heap_peek(heap);
 
-- **heap**锛氭寚鍚戜粠涓幏鍙栨渶灏忓厓绱犵殑鍫嗙殑鎸囬拡銆?
+- **heap**：指向从中获取最小元素的堆的指针
 
-璇ュ畯杩斿洖鎸囧悜鍫嗕腑鏈€灏忓厓绱狅紙鏍硅妭鐐癸級鐨勬寚閽堬紝濡傛灉鍫嗕负绌哄垯杩斿洖 `NULL`銆傝鎿嶄綔澶嶆潅搴︿负 **O(1)**銆?
+该宏返回指向堆中最小元素（根节点）的指针，如果堆为空则返回 `NULL`。该操作复杂度为 **O(1)**
 
-**Inline 鐗堟湰锛?* min_heap_peek_inline(heap)
+**Inline 版本* min_heap_peek_inline(heap)
 
-### 鍫嗘彃鍏?
+### 堆插
 
 
 
     success = min_heap_push(heap, element, callbacks, args);
 
-- **heap**锛氭寚鍚戣鎻掑叆鍏冪礌鐨勫爢鐨勬寚閽堛€?
-- **element**锛氭寚鍚戣鎻掑叆鍫嗕腑鐨勫厓绱犵殑鎸囬拡銆?
-- **callbacks**锛氭寚鍚?`struct min_heap_callbacks` 鐨勬寚閽堬紝鎻愪緵 `less` 鍜?`swp` 鍑芥暟銆?
-- **args**锛氫紶閫掔粰 `less` 鍜?`swp` 鍑芥暟鐨勫彲閫夊弬鏁般€?
+- **heap**：指向要插入元素的堆的指针
+- **element**：指向要插入堆中的元素的指针
+- **callbacks**：指`struct min_heap_callbacks` 的指针，提供 `less` `swp` 函数
+- **args**：传递给 `less` `swp` 函数的可选参数
 
-璇ュ畯灏嗕竴涓厓绱犳彃鍏ュ爢涓€傚鏋滄彃鍏ユ垚鍔熻繑鍥?`true`锛屽鏋滃爢宸叉弧鍒欒繑鍥?`false`銆傝鎿嶄綔澶嶆潅搴︿负
-**O(log n)**銆?
+该宏将一个元素插入堆中。如果插入成功返`true`，如果堆已满则返`false`。该操作复杂度为
+**O(log n)**銆。
 
-**Inline 鐗堟湰锛?* min_heap_push_inline(heap, element, callbacks, args)
+**Inline 版本* min_heap_push_inline(heap, element, callbacks, args)
 
-### 鍫嗗垹闄?
+### 鍫嗗垹闄。
 
 
 
     success = min_heap_pop(heap, callbacks, args);
 
-- **heap**锛氭寚鍚戣浠庝腑鍒犻櫎鏈€灏忓厓绱犵殑鍫嗙殑鎸囬拡銆?
-- **callbacks**锛氭寚鍚?`struct min_heap_callbacks` 鐨勬寚閽堬紝鎻愪緵 `less` 鍜?`swp` 鍑芥暟銆?
-- **args**锛氫紶閫掔粰 `less` 鍜?`swp` 鍑芥暟鐨勫彲閫夊弬鏁般€?
+- **heap**：指向要从中删除最小元素的堆的指针
+- **callbacks**：指`struct min_heap_callbacks` 的指针，提供 `less` `swp` 函数
+- **args**：传递给 `less` `swp` 函数的可选参数
 
-璇ュ畯浠庡爢涓垹闄ゆ渶灏忓厓绱狅紙鏍硅妭鐐癸級銆傚鏋滃厓绱犺鎴愬姛鍒犻櫎杩斿洖 `true`锛屽鏋滃爢涓虹┖鍒欒繑鍥?`false`銆?
-璇ユ搷浣滃鏉傚害涓?**O(log n)**銆?
+该宏从堆中删除最小元素（根节点）。如果元素被成功删除返回 `true`，如果堆为空则返`false`
+该操作复杂度**O(log n)**
 
-**Inline 鐗堟湰锛?* min_heap_pop_inline(heap, callbacks, args)
+**Inline 版本* min_heap_pop_inline(heap, callbacks, args)
 
-### 鍫嗙淮鎶?
+### 鍫嗙淮鎶。
 
 
-浣犲彲浠ヤ娇鐢ㄤ互涓嬪畯鏉ョ淮鎶ゅ爢鐨勭粨鏋勶細
+你可以使用以下宏来维护堆的结构：
 
 
     min_heap_sift_down(heap, pos, callbacks, args);
 
-- **heap**锛氭寚鍚戝爢鐨勬寚閽堛€?
-- **pos**锛氬紑濮嬪悜涓嬬瓫閫夛紙sift down锛夌殑绱㈠紩銆?
-- **callbacks**锛氭寚鍚?`struct min_heap_callbacks` 鐨勬寚閽堬紝鎻愪緵 `less` 鍜?`swp` 鍑芥暟銆?
-- **args**锛氫紶閫掔粰 `less` 鍜?`swp` 鍑芥暟鐨勫彲閫夊弬鏁般€?
+- **heap**：指向堆的指针
+- **pos**：开始向下筛选（sift down）的索引
+- **callbacks**：指`struct min_heap_callbacks` 的指针，提供 `less` `swp` 函数
+- **args**：传递给 `less` `swp` 函数的可选参数
 
-璇ュ畯閫氳繃灏嗘寚瀹氱储寮曪紙`pos`锛夊鐨勫厓绱犳部鍫嗗悜涓嬬Щ鍔紝鐩村埌瀹冨浜庢纭綅缃紝浠庤€屾仮澶嶅爢鎬ц川銆?
-璇ユ搷浣滃鏉傚害涓?**O(log n)**銆?
+该宏通过将指定索引（`pos`）处的元素沿堆向下移动，直到它处于正确位置，从而恢复堆性质
+该操作复杂度**O(log n)**
 
-**Inline 鐗堟湰锛?* min_heap_sift_down_inline(heap, pos, callbacks, args)
+**Inline 版本* min_heap_sift_down_inline(heap, pos, callbacks, args)
 
 
     min_heap_sift_up(heap, idx, callbacks, args);
 
-- **heap**锛氭寚鍚戝爢鐨勬寚閽堛€?
-- **idx**锛氳鍚戜笂绛涢€夌殑鍏冪礌鐨勭储寮曘€?
-- **callbacks**锛氭寚鍚?`struct min_heap_callbacks` 鐨勬寚閽堬紝鎻愪緵 `less` 鍜?`swp` 鍑芥暟銆?
-- **args**锛氫紶閫掔粰 `less` 鍜?`swp` 鍑芥暟鐨勫彲閫夊弬鏁般€?
+- **heap**：指向堆的指针
+- **idx**：要向上筛选的元素的索引
+- **callbacks**：指`struct min_heap_callbacks` 的指针，提供 `less` `swp` 函数
+- **args**：传递给 `less` `swp` 函数的可选参数
 
-璇ュ畯閫氳繃灏嗘寚瀹氱储寮曪紙`idx`锛夊鐨勫厓绱犳部鍫嗗悜涓婄Щ鍔紝浠庤€屾仮澶嶅爢鎬ц川銆傝鎿嶄綔澶嶆潅搴︿负 **O(log n)**銆?
+该宏通过将指定索引（`idx`）处的元素沿堆向上移动，从而恢复堆性质。该操作复杂度为 **O(log n)**
 
-**Inline 鐗堟湰锛?* min_heap_sift_up_inline(heap, idx, callbacks, args)
+**Inline 版本* min_heap_sift_up_inline(heap, idx, callbacks, args)
 
 
     min_heapify_all(heap, callbacks, args);
 
-- **heap**锛氭寚鍚戝爢鐨勬寚閽堛€?
-- **callbacks**锛氭寚鍚?`struct min_heap_callbacks` 鐨勬寚閽堬紝鎻愪緵 `less` 鍜?`swp` 鍑芥暟銆?
-- **args**锛氫紶閫掔粰 `less` 鍜?`swp` 鍑芥暟鐨勫彲閫夊弬鏁般€?
+- **heap**：指向堆的指针
+- **callbacks**：指`struct min_heap_callbacks` 的指针，提供 `less` `swp` 函数
+- **args**：传递给 `less` `swp` 函数的可选参数
 
-璇ュ畯纭繚鏁翠釜鍫嗘弧瓒冲爢鎬ц川銆傚畠鍦ㄥ爢浠庡ご鏋勫缓鎴栫粡杩囧娆′慨鏀瑰悗琚皟鐢ㄣ€傝鎿嶄綔澶嶆潅搴︿负 **O(n)**銆?
+该宏确保整个堆满足堆性质。它在堆从头构建或经过多次修改后被调用。该操作复杂度为 **O(n)**
 
-**Inline 鐗堟湰锛?* min_heapify_all_inline(heap, callbacks, args)
+**Inline 版本* min_heapify_all_inline(heap, callbacks, args)
 
-### 鍒犻櫎鐗瑰畾鍏冪礌
+### 删除特定元素
 
 
 
     success = min_heap_del(heap, idx, callbacks, args);
 
-- **heap**锛氭寚鍚戝爢鐨勬寚閽堛€?
-- **idx**锛氳鍒犻櫎鐨勫厓绱犵殑绱㈠紩銆?
-- **callbacks**锛氭寚鍚?`struct min_heap_callbacks` 鐨勬寚閽堬紝鎻愪緵 `less` 鍜?`swp` 鍑芥暟銆?
-- **args**锛氫紶閫掔粰 `less` 鍜?`swp` 鍑芥暟鐨勫彲閫夊弬鏁般€?
+- **heap**：指向堆的指针
+- **idx**：要删除的元素的索引
+- **callbacks**：指`struct min_heap_callbacks` 的指针，提供 `less` `swp` 函数
+- **args**：传递给 `less` `swp` 函数的可选参数
 
-璇ュ畯浠庡爢涓垹闄ゆ寚瀹氱储寮曪紙`idx`锛夊鐨勫厓绱犲苟鎭㈠鍫嗘€ц川銆傝鎿嶄綔澶嶆潅搴︿负 **O(log n)**銆?
+该宏从堆中删除指定索引（`idx`）处的元素并恢复堆性质。该操作复杂度为 **O(log n)**
 
-**Inline 鐗堟湰锛?* min_heap_del_inline(heap, idx, callbacks, args)
+**Inline 版本* min_heap_del_inline(heap, idx, callbacks, args)
 
-## 鍏朵粬宸ュ叿
+## 其他工具
 
 
-- **min_heap_full(heap)**锛氭鏌ュ爢鏄惁宸叉弧銆傚鏉傚害锛?*O(1)**銆?
+- **min_heap_full(heap)**：检查堆是否已满。复杂度*O(1)**
 
 
     bool full = min_heap_full(heap);
 
-- `heap`锛氭寚鍚戣妫€鏌ョ殑鍫嗙殑鎸囬拡銆?
+- `heap`：指向要检查的堆的指针
 
-璇ュ畯鍦ㄥ爢宸叉弧鏃惰繑鍥?`true`锛屽惁鍒欒繑鍥?`false`銆?
+该宏在堆已满时返`true`，否则返`false`
 
-**Inline 鐗堟湰锛?* min_heap_full_inline(heap)
+**Inline 版本* min_heap_full_inline(heap)
 
-- **min_heap_empty(heap)**锛氭鏌ュ爢鏄惁涓虹┖銆傚鏉傚害锛?*O(1)**銆?
+- **min_heap_empty(heap)**：检查堆是否为空。复杂度*O(1)**
 
 
     bool empty = min_heap_empty(heap);
 
-- `heap`锛氭寚鍚戣妫€鏌ョ殑鍫嗙殑鎸囬拡銆?
+- `heap`：指向要检查的堆的指针
 
-璇ュ畯鍦ㄥ爢涓虹┖鏃惰繑鍥?`true`锛屽惁鍒欒繑鍥?`false`銆?
+该宏在堆为空时返`true`，否则返`false`
 
-**Inline 鐗堟湰锛?* min_heap_empty_inline(heap)
+**Inline 版本* min_heap_empty_inline(heap)
 
-## 绀轰緥鐢ㄦ硶
+## 示例用法
 
 
-鏈€灏忓爢 API 鐨勫吀鍨嬬敤娉曞寘鎷畾涔夊爢缁撴瀯銆佸垵濮嬪寲瀹冿紝浠ュ強鎸夐渶鎻掑叆鍜屽垹闄ゅ厓绱犮€?
+最小堆 API 的典型用法包括定义堆结构、初始化它，以及按需插入和删除元素
 
 
     #include <linux/min_heap.h>
@@ -223,33 +223,33 @@ CONFIG_MITIGATION_RETPOLINE 鏃讹紝鍥犱负闂存帴鍑芥暟璋冪敤浼氬�
     }
 
     struct min_heap_callbacks heap_cb = {
-        .less = my_less_function,    /** 鐢ㄤ簬鍫嗛『搴忕殑姣旇緝鍑芥暟 **/
-        .swp  = NULL,                /** 浣跨敤榛樿浜ゆ崲鍑芥暟 **/
+        .less = my_less_function,    /** 用于堆顺序的比较函数 **/
+        .swp  = NULL,                /** 使用默认交换函数 **/
     };
 
     void example_usage(void) {
-        /** 鐢ㄥ厓绱犻濉厖缂撳啿鍖?**/
+        /** 用元素预填充缓冲**/
         int buffer[^5^] = {5, 2, 8, 1, 3};
-        /** 澹版槑涓€涓渶灏忓爢 **/
+        /** 声明一个最小堆 **/
         DEFINE_MIN_HEAP(int, my_heap);
 
-        /** 鐢ㄩ鍒嗛厤缂撳啿鍖哄拰澶у皬鍒濆鍖栧爢 **/
+        /** 用预分配缓冲区和大小初始化堆 **/
         min_heap_init(&my_heap, buffer, 5);
 
-        /** 浣跨敤 min_heapify_all 鏋勫缓鍫?**/
-        my_heap.nr = 5;  /** 璁剧疆鍫嗕腑鍏冪礌鐨勬暟閲?**/
+        /** 使用 min_heapify_all 构建**/
+        my_heap.nr = 5;  /** 设置堆中元素的数**/
         min_heapify_all(&my_heap, &heap_cb, NULL);
 
-        /** 鏌ョ湅鍫嗛《鍏冪礌锛堟湰渚嬩腑搴斾负 1锛?**/
+        /** 查看堆顶元素（本例中应为 1**/
         int *top = min_heap_peek(&my_heap);
         pr_info("Top element: %d\n", *top);
 
-        /** 寮瑰嚭鍫嗛《鍏冪礌锛?锛夊苟鑾峰彇鏂扮殑鍫嗛《锛?锛?**/
+        /** 弹出堆顶元素）并获取新的堆顶**/
         min_heap_pop(&my_heap, &heap_cb, NULL);
         top = min_heap_peek(&my_heap);
         pr_info("New top element: %d\n", *top);
 
-        /** 鎻掑叆涓€涓柊鍏冪礌锛?锛夊苟閲嶆柊妫€鏌ュ爢椤?**/
+        /** 插入一个新元素）并重新检查堆**/
         int new_element = 0;
         min_heap_push(&my_heap, &new_element, &heap_cb, NULL);
         top = min_heap_peek(&my_heap);

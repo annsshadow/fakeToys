@@ -3,44 +3,44 @@
 ######## ioctl LIRC_SET_TRANSMITTER_MASK
 
 
-## 濮撳悕
+## 姓名
 
 
-LIRC_SET_TRANSMITTER_MASK - 鍦ㄧ粰瀹氱殑涓€缁勫彂灏勫櫒涓婂惎鐢ㄥ彂閫佷唬鐮?
+LIRC_SET_TRANSMITTER_MASK - 在给定的一组发射器上启用发送代
 
-## 姒傝
+## 概要
 
 
 
 `int ioctl(int fd, LIRC_SET_TRANSMITTER_MASK, __u32 *mask)`
 
-## 璁虹偣
+## 论点
 
 
 `fd`
-open() 杩斿洖鐨勬枃浠舵弿杩扮銆?
+open() 返回的文件描述符
 
 `mask`
-甯︽湁閫氶亾鐨勬帺鐮佷互鍚敤 tx銆傞€氶亾 0 鏄渶浣庢湁鏁堜綅銆?
+带有通道的掩码以启用 tx。通道 0 是最低有效位
 
-## 鎻忚堪
-
-
-鏈変簺 IR TX 璁惧鏈夊涓緭鍑洪€氶亾锛屽湪杩欑鎯呭喌涓嬶紝
-LIRC_CAN_SET_TRANSMITTER_MASK <LIRC-CAN-SET-TRANSMITTER-MASK> 鏄?
-閫氳繃 LIRC_GET_FEATURES 杩斿洖锛屾 ioctl 璁剧疆鍝簺閫氶亾灏?
-鍙戦€佺孩澶栦唬鐮併€?
-
-璇?ioctl 鍚敤缁欏畾鐨勪竴缁勫彂灏勫櫒銆傜涓€涓彂灏勫櫒鏄?
-鐢辨渶浣庢湁鏁堜綅缂栫爜绛夌瓑銆?
-
-褰撶粰鍑烘棤鏁堢殑浣嶆帺鐮佹椂锛屽嵆璁剧疆浜嗕竴涓綅锛屽嵆浣胯澶?
-娌℃湁閭ｄ箞澶氫腑杞櫒锛岄偅涔堣繖涓?ioctl 杩斿洖鐨勬暟閲?
-鍙敤鐨勪紶杈撳櫒锛屽苟涓斾笉鎵ц浠讳綍鍏朵粬鎿嶄綔銆?
-
-## 杩斿洖鍊?
+## 描述
 
 
-鎴愬姛鏃惰繑鍥?0锛岄敊璇椂杩斿洖 -1 骞朵笖璁剧疆 `errno` 鍙橀噺
-閫傚綋鍦般€傞€氱敤閿欒浠ｇ爜鐨勬弿杩拌
-閫氱敤閿欒浠ｇ爜 <gen-errors> 绔犺妭銆?
+有些 IR TX 设备有多个输出通道，在这种情况下，
+LIRC_CAN_SET_TRANSMITTER_MASK <LIRC-CAN-SET-TRANSMITTER-MASK> 鏄。
+通过 LIRC_GET_FEATURES 返回，此 ioctl 设置哪些通道
+发送红外代码
+
+ioctl 启用给定的一组发射器。第一个发射器
+由最低有效位编码等等
+
+当给出无效的位掩码时，即设置了一个位，即使设
+没有那么多中转器，那么这ioctl 返回的数
+可用的传输器，并且不执行任何其他操作
+
+## 杩斿洖鍊。
+
+
+成功时返0，错误时返回 -1 并且设置 `errno` 变量
+适当地。通用错误代码的描述见
+通用错误代码 <gen-errors> 章节

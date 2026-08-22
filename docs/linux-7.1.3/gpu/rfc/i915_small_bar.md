@@ -1,19 +1,19 @@
-﻿## I915 Small BAR RFC 绔犺妭
+﻿## I915 Small BAR RFC 章节
 
-浠?DG2 寮€濮嬶紝鎴戜滑灏嗕负璁惧鏈湴鍐呭瓨锛堝嵆 I915_MEMORY_CLASS_DEVICE锛夋彁渚涘彲璋冩暣澶у皬鐨?BAR 鏀寔锛屼絾鍦ㄦ煇浜涙儏鍐典笅锛屾渶缁堢殑 BAR 澶у皬鍙兘浠嶇劧灏忎簬鎬荤殑 probed_size銆傚湪杩欑鎯呭喌涓嬶紝鍙湁 I915_MEMORY_CLASS_DEVICE 鐨勪竴閮ㄥ垎鍙 CPU 璁块棶锛堜緥濡傚墠 256M锛夛紝鍏朵綑閮ㄥ垎鍙兘閫氳繃 GPU 璁块棶銆?
-### I915_GEM_CREATE_EXT_FLAG_NEEDS_CPU_ACCESS 鏍囧織
+DG2 开始，我们将为设备本地内存（即 I915_MEMORY_CLASS_DEVICE）提供可调整大小BAR 支持，但在某些情况下，最终的 BAR 大小可能仍然小于总的 probed_size。在这种情况下，只有 I915_MEMORY_CLASS_DEVICE 的一部分可被 CPU 访问（例如前 256M），其余部分只能通过 GPU 访问
+### I915_GEM_CREATE_EXT_FLAG_NEEDS_CPU_ACCESS 标志
 
-鏂扮殑 gem_create_ext 鏍囧織锛岀敤浜庡憡璇夊唴鏍告煇涓?BO 灏嗛渶瑕?CPU 璁块棶銆傚綋灏嗗璞℃斁缃湪 I915_MEMORY_CLASS_DEVICE 涓椂杩欎竴鐐瑰緢閲嶈锛屽洜涓哄簳灞傝澶囩殑 BAR 杈冨皬锛屾剰鍛崇潃鍏朵腑鍙湁涓€閮ㄥ垎鍙 CPU 璁块棶銆傚鏋滄病鏈夎鏍囧織锛屽唴鏍镐細鍋囧畾涓嶉渶瑕?CPU 璁块棶锛屽苟浼樺厛浣跨敤 I915_MEMORY_CLASS_DEVICE 涓笉鍙 CPU 鐪嬪埌鐨勯儴鍒嗐€?
+新的 gem_create_ext 标志，用于告诉内核某BO 将需CPU 访问。当将对象放置在 I915_MEMORY_CLASS_DEVICE 中时这一点很重要，因为底层设备的 BAR 较小，意味着其中只有一部分可被 CPU 访问。如果没有该标志，内核会假定不需CPU 访问，并优先使用 I915_MEMORY_CLASS_DEVICE 中不可被 CPU 看到的部分
    :functions: __drm_i915_gem_create_ext
 
-### probed_cpu_visible_size 灞炴€?
-鏂扮殑 struct __drm_i915_memory_region 灞炴€э紝杩斿洖鐗瑰畾鍖哄煙涓彲琚?CPU 璁块棶閮ㄥ垎鐨勬€诲ぇ灏忋€傝繖搴斾粎閫傜敤浜?I915_MEMORY_CLASS_DEVICE銆傛垜浠悓鏃舵姤鍛?unallocated_cpu_visible_size 鍜?unallocated_size銆?
-Vulkan 闇€瑕佹灞炴€э紝浣滀负鍒涘缓甯︽湁 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT 鏍囧織鐨勭嫭绔?VkMemoryHeap 鐨勪竴閮ㄥ垎锛屼互琛ㄧず CPU 鍙鐨勯儴鍒嗭紝鍏朵腑闇€瑕佺煡閬撳爢鐨勬€诲ぇ灏忋€傚畠杩橀渶瑕佽兘澶熷ぇ鑷翠及璁″唴瀛樺彲鑳借鍒嗛厤鐨勬儏鍐点€?
+### probed_cpu_visible_size 属
+新的 struct __drm_i915_memory_region 属性，返回特定区域中可CPU 访问部分的总大小。这应仅适用I915_MEMORY_CLASS_DEVICE。我们同时报unallocated_cpu_visible_size unallocated_size
+Vulkan 需要此属性，作为创建带有 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT 标志的独VkMemoryHeap 的一部分，以表示 CPU 可见的部分，其中需要知道堆的总大小。它还需要能够大致估计内存可能被分配的情况
    :functions: __drm_i915_memory_region_info
 
-### 閿欒鎹曡幏闄愬埗
+### 错误捕获限制
 
-閫氳繃閿欒鎹曡幏鎴戜滑鏈変袱涓柊鐨勯檺鍒讹細
+通过错误捕获我们有两个新的限制：
 
-    1) 鍦?small BAR 绯荤粺涓婇敊璇崟鑾锋槸灏藉姏鑰屼负鐨勶紱濡傛灉鍦ㄦ崟鑾锋椂椤甸潰涓嶅彲琚?CPU 璁块棶锛岄偅涔堝唴鏍稿彲浠ヨ烦杩囧皾璇曟崟鑾峰畠浠€?
-    2) 鍦ㄧ嫭绔嬪紡浠ュ強杈冩柊鐨勯泦鎴愬钩鍙颁笂锛屾垜浠幇鍦ㄦ嫆缁濆湪鍙仮澶嶄笂涓嬫枃涓婅繘琛岄敊璇崟鑾枫€傛湭鏉ュ唴鏍稿彲鑳藉笇鏈涘湪閿欒鎹曡幏鏈熼棿杩涜 blit 鎿嶄綔锛屼緥濡傚綋鏌愪釜瀵硅薄褰撳墠涓嶅彲琚?CPU 璁块棶鏃躲€?
+    1) small BAR 系统上错误捕获是尽力而为的；如果在捕获时页面不可CPU 访问，那么内核可以跳过尝试捕获它们
+    2) 在独立式以及较新的集成平台上，我们现在拒绝在可恢复上下文上进行错误捕获。未来内核可能希望在错误捕获期间进行 blit 操作，例如当某个对象当前不可CPU 访问时

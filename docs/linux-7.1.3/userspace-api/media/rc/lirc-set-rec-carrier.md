@@ -1,35 +1,35 @@
 ﻿######## ioctl LIRC_SET_REC_CARRIER
 
 
-## 鍚嶇О
+## 名称
 
 
-LIRC_SET_REC_CARRIER - 璁剧疆鐢ㄤ簬璋冨埗绾㈠鎺ユ敹鐨勮浇娉㈤鐜囥€?
+LIRC_SET_REC_CARRIER - 设置用于调制红外接收的载波频率
 
-## 鎽樿
+## 摘要
 
 
 
 `int ioctl(int fd, LIRC_SET_REC_CARRIER, __u32 *frequency)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?open() 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    open() 返回的文件描述符
 
 `frequency`
-    璋冨埗 PWM 鏁版嵁鐨勮浇娉㈤鐜囷紝鍗曚綅涓?Hz銆?
+    调制 PWM 数据的载波频率，单位Hz
 
-## 璇存槑
-
-
-璁剧疆鐢ㄤ簬璋冨埗绾㈠ PWM 鑴夊啿涓庨棿闅旓紙spaces锛夌殑鎺ユ敹杞芥尝銆?
-
-   鑻ヤ笌 LIRC_SET_REC_CARRIER_RANGE 涓€鍚岃皟鐢紝璇?ioctl 璁剧疆璁惧鑳藉璇嗗埆鐨勪笂闄愰鐜囥€?
-
-## 杩斿洖鍊?
+## 说明
 
 
-鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1 骞剁浉搴斿湴璁剧疆 `errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
-Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+设置用于调制红外 PWM 脉冲与间隔（spaces）的接收载波
+
+   若与 LIRC_SET_REC_CARRIER_RANGE 一同调用，ioctl 设置设备能够识别的上限频率
+
+## 杩斿洖鍊。
+
+
+成功时返0，出错时返回 -1 并相应地设置 `errno` 变量。通用错误码在
+Generic Error Codes <gen-errors> 章节中描述

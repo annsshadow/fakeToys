@@ -1,5 +1,5 @@
-﻿## 绯荤粺璋冪敤 API
+﻿## 系统调用 API
 
 
-bpf 绯荤粺璋冪敤鐨勯瑕佷俊鎭彲鍦?`bpf(2)`_ 鐨?`man-pages`_ 涓壘鍒般€傛湁鍏崇敤鎴风┖闂?API 鐨勬洿澶氫俊鎭紝
-璇峰弬瑙?Documentation/userspace-api/ebpf/index.rst銆?
+bpf 系统调用的首要信息可`bpf(2)`_ `man-pages`_ 中找到。有关用户空API 的更多信息，
+请参Documentation/userspace-api/ebpf/index.rst

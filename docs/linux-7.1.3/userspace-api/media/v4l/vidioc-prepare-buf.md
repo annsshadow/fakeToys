@@ -3,49 +3,49 @@
 ######## ioctl VIDEO_PREPARE_BUF
 
 
-## 濮撳悕
+## 姓名
 
 
-VIDIOC_PREPARE_BUF - 涓?I/O 鍑嗗缂撳啿鍖?
+VIDIOC_PREPARE_BUF - I/O 准备缓冲
 
-## 姒傝
+## 概要
 
 
 
 `int ioctl(int fd, VIDIOC_PREPARE_BUF, struct v4l2_buffer *argp)`
 
-## 璁虹偣
+## 论点
 
 
 `fd`
-`open()`杩斿洖鐨勬枃浠舵弿杩扮銆?
+`open()`返回的文件描述符
 
 `argp`
-鎸囧悜缁撴瀯浣揱v4l2_buffer`鐨勬寚閽堛€?
+指向结构体`v4l2_buffer`的指针
 
-## 鎻忚堪
-
-
-搴旂敤绋嬪簭鍙互閫夋嫨璋冪敤 VIDIOC_PREPARE_BUF ioctl
-鍦ㄥ疄闄呭皢缂撳啿鍖烘帓闃熶箣鍓嶅皢缂撳啿鍖虹殑鎵€鏈夋潈浼犻€掔粰椹卞姩绋嬪簭锛?
-浣跨敤 VIDIOC_QBUF <VIDIOC_QBUF> ioctl锛屽苟涓哄皢鏉ョ殑 I/O 鍋氬ソ鍑嗗銆傝繖鏍风殑
-鍑嗗宸ヤ綔鍙兘鍖呮嫭缂撳瓨澶辨晥鎴栨竻鐞嗐€傝〃婕斿畠浠?
-鎻愬墠鑺傜渷瀹為檯 I/O 鏈熼棿鐨勬椂闂淬€?
-
-struct `v4l2_buffer` 缁撴瀯浣撳湪涓寚瀹?
-缂撳啿銆?
-
-## 杩斿洖鍊?
+## 描述
 
 
-鎴愬姛鏃惰繑鍥?0锛岄敊璇椂杩斿洖 -1 骞朵笖璁剧疆 `errno` 鍙橀噺
-閫傚綋鍦般€傞€氱敤閿欒浠ｇ爜鐨勬弿杩拌
-閫氱敤閿欒浠ｇ爜 <gen-errors> 绔犺妭銆?
+应用程序可以选择调用 VIDIOC_PREPARE_BUF ioctl
+在实际将缓冲区排队之前将缓冲区的所有权传递给驱动程序
+使用 VIDIOC_QBUF <VIDIOC_QBUF> ioctl，并为将来的 I/O 做好准备。这样的
+准备工作可能包括缓存失效或清理。表演它
+提前节省实际 I/O 期间的时间
 
-蹇欑鐨?
-鏂囦欢 I/O 姝ｅ湪杩涜涓€?
+struct `v4l2_buffer` 结构体在中指
+缓冲
 
-鍗曢」閫夋嫨
-缂撳啿鍖篳type`涓嶅彈鏀寔锛屾垨鑰卄index`瓒呭嚭鑼冨洿
-杈圭晫锛屾垨鑰呭皻鏈垎閰嶇紦鍐插尯锛屾垨鑰?`userptr` 鎴?
-`length`鏃犳晥銆?
+## 杩斿洖鍊。
+
+
+成功时返0，错误时返回 -1 并且设置 `errno` 变量
+适当地。通用错误代码的描述见
+通用错误代码 <gen-errors> 章节
+
+忙碌
+文件 I/O 正在进行中
+
+单项选择
+缓冲区`type`不受支持，或者`index`超出范围
+边界，或者尚未分配缓冲区，或`userptr` 
+`length`无效

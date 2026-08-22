@@ -1,35 +1,35 @@
 ﻿######## GPIO_GET_CHIPINFO_IOCTL
 
 
-## 鍚嶇О
+## 名称
 
 
-GPIO_GET_CHIPINFO_IOCTL - 鑾峰彇鑺墖鍏紑鍙敤鐨勪俊鎭€?
+GPIO_GET_CHIPINFO_IOCTL - 获取芯片公开可用的信息
 
-## 鎽樿
+## 摘要
 
 
 
 `int ioctl(int chip_fd, GPIO_GET_CHIPINFO_IOCTL, struct gpiochip_info *info)`
 
-## 鍙傛暟
+## 参数
 
 
 `chip_fd`
-    GPIO 瀛楃璁惧鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    GPIO 字符设备`open()` 返回的文件描述符
 
 `info`
-    寰呭～鍏呯殑 `chip_info<gpiochip_info>`銆?
+    待填充的 `chip_info<gpiochip_info>`
 
-## 璇存槑
-
-
-鑾峰彇鐗瑰畾 GPIO 鑺墖鍏紑鍙敤鐨勪俊鎭€?
-
-## 杩斿洖鍊?
+## 说明
 
 
-鎴愬姛鏃惰繑鍥?0 骞跺～鍏?`info` 鑺墖淇℃伅銆?
+获取特定 GPIO 芯片公开可用的信息
 
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
-甯歌閿欒鐮佸湪 error-codes.rst 涓弿杩般€?
+## 杩斿洖鍊。
+
+
+成功时返0 并填`info` 芯片信息
+
+出错时返-1，并相应地设`errno` 变量
+常见错误码在 error-codes.rst 中描述

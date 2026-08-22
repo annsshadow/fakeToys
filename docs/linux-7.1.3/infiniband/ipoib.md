@@ -1,59 +1,59 @@
-﻿## 鍩轰簬 InfiniBand 鐨?IP锛圛PoIB锛?
+﻿## 基于 InfiniBand IP（IPoIB
 
-  ib_ipoib 椹卞姩瀹炵幇浜嗗湪 InfiniBand 涔嬩笂鐨?IP锛圛P over InfiniBand锛夊崗璁紝绗﹀悎
-  IETF ipoib 宸ヤ綔缁勫彂甯冪殑 RFC 4391 鍜?4392 瑙勮寖銆傚畠鏄€滃師鐢熲€濆疄鐜帮紝鍗虫妸鎺ュ彛绫诲瀷璁句负
-  ARPHRD_INFINIBAND銆佺‖浠跺湴鍧€闀垮害璁句负 20锛堟棭鏈熺殑绉佹湁瀹炵幇鏄吉瑁呮垚浠ュお缃戞帴鍙ｅ悜鍐呮牳
-  娉ㄥ唽鐨勶級銆?
-## 鍒嗗尯涓?P_Key
+  ib_ipoib 驱动实现了在 InfiniBand 之上IP（IP over InfiniBand）协议，符合
+  IETF ipoib 工作组发布的 RFC 4391 4392 规范。它是“原生”实现，即把接口类型设为
+  ARPHRD_INFINIBAND、硬件地址长度设为 20（早期的私有实现是伪装成以太网接口向内核
+  注册的）
+## 分区P_Key
 
 
-  褰?IPoIB 椹卞姩琚姞杞芥椂锛屽畠浼氫负姣忎釜绔彛浣跨敤绱㈠紩 0 澶勭殑 P_Key 鍒涘缓涓€涓帴鍙ｃ€傝鍒涘缓
-  涓€涓娇鐢ㄤ笉鍚?P_Key 鐨勬帴鍙ｏ紝鍙皢鏈熸湜鐨?P_Key 鍐欏叆涓绘帴鍙ｇ殑
+  IPoIB 驱动被加载时，它会为每个端口使用索引 0 处的 P_Key 创建一个接口。要创建
+  一个使用不P_Key 的接口，可将期望P_Key 写入主接口的
 ```
 
     echo 0x8001 > /sys/class/net/ib0/create_child
 
-  杩欏皢鍒涘缓涓€涓悕涓?ib0.8001銆丳_Key 涓?0x8001 鐨勬帴鍙ｃ€傝鍒犻櫎涓€涓瓙鎺ュ彛锛屼娇鐢?  "delete_child" 鏂囦欢::
+  这将创建一个名ib0.8001、P_Key 0x8001 的接口。要删除一个子接口，使  "delete_child" 文件::
 
     echo 0x8001 > /sys/class/net/ib0/delete_child
 
-  P_Key 鍙€氳繃 "pkey" 鏂囦欢鑾峰彇锛屽瓙鎺ュ彛鐨勪富鎺ュ彛鍦?"parent" 涓€?
-  瀛愭帴鍙ｇ殑鍒涘缓/鍒犻櫎涔熷彲浠ヤ娇鐢?IPoIB 鐨?rtnl_link_ops 瀹屾垚锛屼袱绉嶆柟寮忓垱寤虹殑瀛愭帴鍙?  琛屼负涓€鑷淬€?
+  P_Key 可通过 "pkey" 文件获取，子接口的主接口"parent" 中
+  子接口的创建/删除也可以使IPoIB rtnl_link_ops 完成，两种方式创建的子接  行为一致
 ```
-## 鏁版嵁鎶ユā寮忎笌杩炴帴妯″紡
+## 数据报模式与连接模式
 
 
-  IPoIB 椹卞姩鏀寔涓ょ鎿嶄綔妯″紡锛氭暟鎹姤锛坉atagram锛夊拰杩炴帴锛坈onnected锛夈€傛ā寮忛€氳繃鎺ュ彛
-  鐨?/sys/class/net/<intf name>/mode 鏂囦欢璁剧疆鍜岃鍙栥€?
-  鍦ㄦ暟鎹姤妯″紡涓嬶紝浣跨敤 IB UD锛堜笉鍙潬鏁版嵁鎶ワ級浼犺緭锛屽洜姝ゆ帴鍙?MTU 绛変簬 IB L2 MTU
-  鍑忓幓 IPoIB 灏佽澶达紙4 瀛楄妭锛夈€備緥濡傚湪鍏稿瀷鐨?2K MTU 鐨?IB 浜ゆ崲缁撴瀯涓紝IPoIB MTU 涓?  2048 - 4 = 2044 瀛楄妭銆?
-  鍦ㄨ繛鎺ユā寮忎笅锛屼娇鐢?IB RC锛堝彲闈犺繛鎺ワ級浼犺緭銆傝繛鎺ユā寮忓埄鐢ㄤ簡 IB 浼犺緭鐨勯潰鍚戣繛鎺ョ壒鎬э紝
-  鍏佽 MTU 鏈€澶ц揪鍒?64K 鐨?IP 鍖呭ぇ灏忥紝浠庤€屽噺灏戝鐞嗗ぇ鍨?UDP 鏁版嵁鎶ャ€乀CP 娈电瓑鎵€闇€鐨?  IP 鍖呮暟閲忥紝骞舵彁鍗囧ぇ娑堟伅鐨勬€ц兘銆?
-  鍦ㄨ繛鎺ユā寮忎笅锛屾帴鍙ｇ殑 UD QP 浠嶇敤浜庣粍鎾拰涓庝笉鏀寔杩炴帴妯″紡鐨勫绔€氫俊銆傝繖绉嶆儏鍐典笅锛?  浣跨敤 ICMP PMTU 鍖呯殑 RX 妯℃嫙鏉ヤ績浣跨綉缁滄爤瀵硅繖浜涢偦灞呬娇鐢ㄨ緝灏忕殑 UD MTU銆?
-## 鏃犵姸鎬佸嵏杞?
+  IPoIB 驱动支持两种操作模式：数据报（datagram）和连接（connected）。模式通过接口
+  /sys/class/net/<intf name>/mode 文件设置和读取
+  在数据报模式下，使用 IB UD（不可靠数据报）传输，因此接MTU 等于 IB L2 MTU
+  减去 IPoIB 封装头（4 字节）。例如在典型2K MTU IB 交换结构中，IPoIB MTU   2048 - 4 = 2044 字节
+  在连接模式下，使IB RC（可靠连接）传输。连接模式利用了 IB 传输的面向连接特性，
+  允许 MTU 最大达64K IP 包大小，从而减少处理大UDP 数据报、TCP 段等所需  IP 包数量，并提升大消息的性能
+  在连接模式下，接口的 UD QP 仍用于组播和与不支持连接模式的对端通信。这种情况下  使用 ICMP PMTU 包的 RX 模拟来促使网络栈对这些邻居使用较小的 UD MTU
+## 鏃犵姸鎬佸嵏杞。
 
-  濡傛灉 IB 纭欢鏀寔 IPoIB 鏃犵姸鎬佸嵏杞斤紝IPoIB 浼氬悜缃戠粶鏍堥€氬憡 TCP/IP 鏍￠獙鍜屽拰/鎴栧ぇ鍙戦€?  锛圠SO锛夊嵏杞借兘鍔涖€?
-  澶ф帴鏀讹紙LRO锛夊嵏杞戒篃宸插疄鐜帮紝鍙€氳繃 ethtool 璋冪敤寮€鍚?鍏抽棴銆傜洰鍓?LRO 浠呮敮鎸佸叿澶?  鏍￠獙鍜屽嵏杞借兘鍔涚殑璁惧銆?
-  鏃犵姸鎬佸嵏杞戒粎鍦ㄦ暟鎹姤妯″紡涓嬪彈鏀寔銆?
-## 涓柇 moderation
-
-
-  濡傛灉搴曞眰 IB 璁惧鏀寔 CQ 浜嬩欢 moderation锛屽彲浠ヤ娇鐢?ethtool 璁剧疆涓柇缂撹В鍙傛暟锛屼粠鑰?  鍑忓皯澶勭悊涓柇甯︽潵鐨勫紑閿€銆侷PoIB 鐨勪富浠ｇ爜璺緞涓嶄娇鐢ㄤ簨浠舵潵鍋?TX 瀹屾垚閫氱煡锛屽洜姝ゅ彧鏀寔
-  RX moderation銆?
-## 璋冭瘯淇℃伅
+  如果 IB 硬件支持 IPoIB 无状态卸载，IPoIB 会向网络栈通告 TCP/IP 校验和和/或大发  （LSO）卸载能力
+  大接收（LRO）卸载也已实现，可通过 ethtool 调用开关闭。目LRO 仅支持具  校验和卸载能力的设备
+  无状态卸载仅在数据报模式下受支持
+## 中断 moderation
 
 
-  閫氳繃灏?CONFIG_INFINIBAND_IPOIB_DEBUG 缂栬瘧閫夐」璁句负 'y'锛岃窡韪俊鎭細琚紪璇戣繘椹卞姩銆?  閫氳繃灏嗘ā鍧楀弬鏁?debug_level 鍜?mcast_debug_level 璁句负 1 鏉ュ紑鍚€傝繖浜涘弬鏁板彲浠ュ湪杩愯鏃?  閫氳繃 /sys/module/ib_ipoib/ 涓嬬殑鏂囦欢杩涜鎺у埗銆?
-  CONFIG_INFINIBAND_IPOIB_DEBUG 杩樹細鍦?debugfs 涓惎鐢ㄦ枃浠?```
+  如果底层 IB 设备支持 CQ 事件 moderation，可以使ethtool 设置中断缓解参数，从  减少处理中断带来的开销。IPoIB 的主代码路径不使用事件来TX 完成通知，因此只支持
+  RX moderation銆。
+## 调试信息
+
+
+  通过CONFIG_INFINIBAND_IPOIB_DEBUG 编译选项设为 'y'，跟踪信息会被编译进驱动  通过将模块参debug_level mcast_debug_level 设为 1 来开启。这些参数可以在运行  通过 /sys/module/ib_ipoib/ 下的文件进行控制
+  CONFIG_INFINIBAND_IPOIB_DEBUG 还会debugfs 中启用文```
 
     mount -t debugfs none /sys/kernel/debug
 
-  杩欐牱灏卞彲浠ヤ粠 /sys/kernel/debug/ipoib/ib0_mcg 绛夋枃浠惰幏鍙栧叧浜庣粍鎾粍鐨勭粺璁′俊鎭€?
-  璇ラ€夐」鐨勬€ц兘褰卞搷鍙拷鐣ヤ笉璁★紝鍥犳瀵逛簬姝ｅ父鎿嶄綔锛屽皢 debug_level 璁句负 0 鍚敤姝ら€夐」鏄?  瀹夊叏鐨勩€?
-  CONFIG_INFINIBAND_IPOIB_DEBUG_DATA 浼氬湪 data_debug_level 璁句负 1 鏃跺湪鏁版嵁璺緞涓?  杈撳嚭鏇村璋冭瘯淇℃伅銆傜劧鑰岋紝鍗充娇鍏抽棴浜嗚緭鍑猴紝鍚敤璇ラ厤缃€夐」涔熶細褰卞搷鎬ц兘锛屽洜涓哄畠浼氬悜
-  蹇€熻矾寰勪腑娣诲姞鍒ゆ柇銆?
+  这样就可以从 /sys/kernel/debug/ipoib/ib0_mcg 等文件获取关于组播组的统计信息
+  该选项的性能影响可忽略不计，因此对于正常操作，将 debug_level 设为 0 启用此选项  安全的
+  CONFIG_INFINIBAND_IPOIB_DEBUG_DATA 会在 data_debug_level 设为 1 时在数据路径  输出更多调试信息。然而，即使关闭了输出，启用该配置选项也会影响性能，因为它会向
+  快速路径中添加判断
 ```
-## 鍙傝€冭祫鏂?
+## 参考资
 
   Transmission of IP over InfiniBand (IPoIB) (RFC 4391)
     http://ietf.org/rfc/rfc4391.txt

@@ -2,36 +2,36 @@
 ## Rust
 
 
-鍐呮牳涓笌 Rust 鐩稿叧鐨勬枃妗ｃ€傝嫢瑕佸湪鍐呮牳涓娇鐢?Rust
-鍦ㄥ唴鏍镐腑浣跨敤 Rust锛岃闃呰 quick-start.rst 鎸囧崡銆?
+内核中与 Rust 相关的文档。若要在内核中使Rust
+在内核中使用 Rust，请阅读 quick-start.rst 指南
 
 
-### 浠ｇ爜鏂囨。
+### 代码文档
 
 
-鍦ㄧ粰瀹氬唴鏍搁厤缃殑鎯呭喌涓嬶紝鍐呮牳鍙互鐢熸垚 Rust 浠ｇ爜鏂囨。锛?
-鍗崇敱 `rustdoc` tool.
+在给定内核配置的情况下，内核可以生成 Rust 代码文档
+即由 `rustdoc` tool.
 
 
-	鏈唴鏍告枃妗ｆ槸浣跨敤 `Rust 浠ｇ爜鏂囨。
+	本内核文档是使用 `Rust 代码文档
 	<rustdoc/kernel/index.html>`_.
 
 
-	鏈唴鏍告枃妗ｆ湭浣跨敤 Rust 浠ｇ爜鏂囨。鏋勫缓銆?
+	本内核文档未使用 Rust 代码文档构建
 
-棰勭敓鎴愮増鏈彁渚涗簬锛?
+预生成版本提供于
 
 	https://rust.docs.kernel.org
 
-鏇村缁嗚妭璇峰弬瑙佷唬鐮佹枃妗?<rust_code_documentation> 灏忚妭鐢ㄤ簬
-鏇村缁嗚妭銆?
+更多细节请参见代码文<rust_code_documentation> 小节用于
+更多细节
 
-- [蹇€熷紑濮媇(quick-start)
-- [閫氱敤淇℃伅](general-information)
-- [缂栫爜瑙勮寖](coding-guidelines)
-- [鏋舵瀯鏀寔](arch-support)
-- [娴嬭瘯](testing)
+- [快速开始](quick-start)
+- [通用信息](general-information)
+- [编码规范](coding-guidelines)
+- [架构支持](arch-support)
+- [测试](testing)
 
-浣犱篃鍙互鍦?Rust 鐩稿叧鏂囨。鐨勫搴斿皬鑺備腑鎵惧埌瀛︿範璧勬枡锛屼綅浜?
+你也可以Rust 相关文档的对应小节中找到学习资料，位
 [../process/kernel-docs](../process/kernel-docs).
 
