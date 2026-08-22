@@ -6,12 +6,16 @@ use deadpool_postgres::Pool;
 use serde_json::Value;
 use shared::{error::AppError, response::ActionResult};
 
+pub mod endpoints;
+pub mod endpoints_org;
 pub mod routes;
 
 #[cfg(test)]
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod tests_u2;
 
 
 pub fn organization_assemble_express_router(pool: Pool) -> axum::Router {
