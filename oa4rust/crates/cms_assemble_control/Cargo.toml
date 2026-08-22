@@ -18,3 +18,6 @@ base64.workspace = true
 
 shared = { path = "../shared" }
 search = { path = "../../crates/search" }
+
+[dev-dependencies]
+chrono.workspace = true

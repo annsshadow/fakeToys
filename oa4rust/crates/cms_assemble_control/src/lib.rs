@@ -17,6 +17,8 @@ pub mod routes;
 mod tests;
 #[cfg(test)]
 mod tests_generated;
+#[cfg(test)]
+mod tests_u2;
 
 
 #[axum::debug_handler]
@@ -5904,4 +5906,1623 @@ pub async fn queryview_flag_definition(
         }
         None => Err(AppError::NotFound),
     }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// plan002 U2 — Java 对齐缺口端点（对照 jaxrs 静态提取全集补齐）
+//
+// 表全部沿用既有 CMS 表；migration 064 幂等补两列：
+//   x_cms_data_document.is_top / x_cms_appinfo.config
+//
+// 写操作按 IDOR 门禁：
+//   - 个人资源（document/comment/form/script/view/file/...）改删前
+//     校验所有者（u2_check_owner，admin 放行）；
+//   - 管理资源（appinfo 创建、permission 授予、批量 category change、
+//     script manager 列表）一律 require_admin；
+//   - 派生资源（viewfieldconfig/categoryinfo/correlation）经父资源或
+//     所属文档所有者校验。
+// ════════════════════════════════════════════════════════════════════
+
+/// 写操作门禁结果：区分“不存在”（404 语义）与“非所有者”（403）。
+enum U2Gate {
+    NotFound,
+    Forbidden,
+    Allowed,
+}
+
+async fn u2_gate_by_sql(
+    pool: &Pool,
+    sql: &str,
+    id: &str,
+    person_unique: &str,
+) -> Result<U2Gate, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(sql, &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        None => Ok(U2Gate::NotFound),
+        Some(r) => {
+            let owner = r.get::<_, Option<String>>("owner").unwrap_or_default();
+            if shared::middleware::is_admin(pool, person_unique).await
+                || (!owner.is_empty() && owner == person_unique)
+            {
+                Ok(U2Gate::Allowed)
+            } else {
+                Ok(U2Gate::Forbidden)
+            }
+        }
+    }
+}
+
+async fn u2_check_owner(
+    pool: &Pool,
+    table: &str,
+    owner_col: &str,
+    id: &str,
+    person_unique: &str,
+) -> Result<U2Gate, AppError> {
+    let sql = format!(
+        "SELECT {} AS owner FROM {} WHERE id = $1 AND deleted_at IS NULL",
+        owner_col, table
+    );
+    u2_gate_by_sql(pool, &sql, id, person_unique).await
+}
+
+async fn u2_require_admin(
+    pool: &Pool,
+    session: &shared::session::Session,
+) -> Result<(), AppError> {
+    if shared::middleware::is_admin(pool, &session.person_unique).await {
+        Ok(())
+    } else {
+        Err(AppError::Forbidden)
+    }
+}
+
+fn u2_body_str(body: &Value, key: &str) -> Option<String> {
+    body.get(key).and_then(|v| v.as_str()).map(String::from)
+}
+
+fn u2_body_i64(body: &Value, key: &str) -> Option<i64> {
+    body.get(key).and_then(|v| v.as_i64())
+}
+
+fn u2_body_strs(body: &Value, key: &str) -> Vec<String> {
+    body.get(key)
+        .and_then(|v| v.as_array())
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| x.as_str().map(String::from))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+// ─── document 域 ────────────────────────────────────────────────────────
+
+#[axum::debug_handler]
+pub async fn document_u2_get(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match get_by_id(&pool, "x_cms_data_document", &id).await? {
+        Some(doc) => Ok(Json(ActionResult::success(doc))),
+        None => Ok(Json(ActionResult::error("document not found"))),
+    }
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_data_document", "creator", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            soft_delete_by_id(&pool, "x_cms_data_document", &id).await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let title = u2_body_str(&body, "title").unwrap_or_default();
+    let content = u2_body_str(&body, "content").unwrap_or_default();
+    let app_id = u2_body_str(&body, "appId").unwrap_or_default();
+    let category_id = u2_body_str(&body, "categoryId").unwrap_or_default();
+
+    client
+        .execute(
+            "INSERT INTO x_cms_data_document (id, app_id, category_id, title, content, author_id, status, creator) \
+             VALUES ($1, $2, $3, $4, $5, $6, 'draft', $6)",
+            &[&id, &app_id, &category_id, &title, &content, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("status".to_string(), Value::String("draft".to_string())),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_update(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_data_document", "creator", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let title = u2_body_str(&body, "title");
+            let content = u2_body_str(&body, "content");
+            let category_id = u2_body_str(&body, "categoryId");
+            let affected = client
+                .execute(
+                    "UPDATE x_cms_data_document SET \
+                     title = COALESCE($2, title), \
+                     content = COALESCE($3, content), \
+                     category_id = COALESCE($4, category_id) \
+                     WHERE id = $1 AND deleted_at IS NULL",
+                    &[&id, &title, &content, &category_id],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            if affected == 0 {
+                return Ok(Json(ActionResult::error("document not found")));
+            }
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("updated".to_string(), Value::Bool(true)),
+                ]),
+            ))))
+        }
+    }
+}
+
+async fn document_u2_set_status(
+    pool: &Pool,
+    id: &str,
+    status: &str,
+) -> Result<bool, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let sql: &str = if status == "published" {
+        "UPDATE x_cms_data_document SET status = 'published', publish_time = NOW() \
+         WHERE id = $1 AND deleted_at IS NULL"
+    } else {
+        "UPDATE x_cms_data_document SET status = 'draft', publish_time = NULL \
+         WHERE id = $1 AND deleted_at IS NULL"
+    };
+    let affected = client
+        .execute(sql, &[&id])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(affected > 0)
+}
+
+async fn document_u2_status_response(
+    result: bool,
+    id: String,
+    ok_key: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    if !result {
+        return Ok(Json(ActionResult::error("document not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            (ok_key.to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_publish(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_data_document", "creator", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let published = document_u2_set_status(&pool, &id, "published").await?;
+            document_u2_status_response(published, id, "published").await
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_publish_cancel(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_data_document", "creator", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let cancelled = document_u2_set_status(&pool, &id, "draft").await?;
+            document_u2_status_response(cancelled, id, "cancelled").await
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_commend(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let doc = client
+        .query_opt(
+            "SELECT 1 FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if doc.is_none() {
+        return Ok(Json(ActionResult::error("document not found")));
+    }
+    client
+        .execute(
+            "INSERT INTO x_cms_commend (id, doc_id, person_id) \
+             SELECT gen_random_uuid()::text, $1, $2 \
+             WHERE NOT EXISTS (\
+               SELECT 1 FROM x_cms_commend WHERE doc_id = $1 AND person_id = $2 AND deleted_at IS NULL)",
+            &[&id, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("docId".to_string(), Value::String(id)),
+            ("commended".to_string(), Value::Bool(true)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_uncommend(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let removed = client
+        .execute(
+            "DELETE FROM x_cms_commend WHERE doc_id = $1 AND person_id = $2",
+            &[&id, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("docId".to_string(), Value::String(id)),
+            ("removed".to_string(), Value::Number(serde_json::Number::from(removed as i64))),
+        ]),
+    ))))
+}
+
+async fn document_u2_set_top(
+    pool: &Pool,
+    session: &shared::session::Session,
+    id: &str,
+    top: bool,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(pool, "x_cms_data_document", "creator", id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let affected = client
+                .execute(
+                    "UPDATE x_cms_data_document SET is_top = $2 WHERE id = $1 AND deleted_at IS NULL",
+                    &[&id, &top],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            if affected == 0 {
+                return Ok(Json(ActionResult::error("document not found")));
+            }
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id.to_string())),
+                    ("isTop".to_string(), Value::Bool(top)),
+                ]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_top(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    document_u2_set_top(&pool, &session, &id, true).await
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_un_top(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    document_u2_set_top(&pool, &session, &id, false).await
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_category_change(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let category_id = match u2_body_str(&body, "categoryId") {
+        Some(c) if !c.is_empty() => c,
+        _ => return Err(AppError::BadRequest("categoryId required".to_string())),
+    };
+    let doc_ids = u2_body_strs(&body, "docIds");
+    if doc_ids.is_empty() {
+        return Err(AppError::BadRequest("docIds required".to_string()));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let updated = client
+        .execute(
+            "UPDATE x_cms_data_document SET category_id = $1 \
+             WHERE id = ANY($2) AND deleted_at IS NULL",
+            &[&category_id, &doc_ids],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("categoryId".to_string(), Value::String(category_id)),
+            ("updated".to_string(), Value::Number(serde_json::Number::from(updated as i64))),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_document_data(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT field_name, field_value FROM x_cms_data_document_field \
+             WHERE doc_id = $1 AND deleted_at IS NULL ORDER BY field_name",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let mut fields = serde_json::Map::new();
+    for row in rows.iter() {
+        let name: String = row.get("field_name");
+        let value: Option<String> = row.get("field_value");
+        fields.insert(name, Value::String(value.unwrap_or_default()));
+    }
+    fields.insert("docId".to_string(), Value::String(id));
+    Ok(Json(ActionResult::success(Value::Object(fields))))
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_list_document(
+    pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ids = u2_body_strs(&body, "ids");
+    if ids.is_empty() {
+        return Err(AppError::BadRequest("ids required".to_string()));
+    }
+    let data = list_from_table_filtered(
+        &pool,
+        "x_cms_data_document",
+        "deleted_at IS NULL AND id = ANY($1)",
+        &[&ids],
+    )
+    .await?;
+    Ok(Json(ActionResult::success(data)))
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_fields(
+    pool: Extension<Pool>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT DISTINCT field_name AS name FROM x_cms_data_document_field \
+             WHERE deleted_at IS NULL ORDER BY name LIMIT 200",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let names: Vec<Value> = rows
+        .iter()
+        .map(|r| Value::String(r.get::<_, String>("name")))
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(names.len() as i64))),
+            ("data".to_string(), Value::Array(names)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn document_u2_filter_count(
+    pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let app_id = u2_body_str(&body, "appId").unwrap_or_default();
+    let category_id = u2_body_str(&body, "categoryId").unwrap_or_default();
+    let status = u2_body_str(&body, "status").unwrap_or_default();
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_one(
+            "SELECT COUNT(*) AS total FROM x_cms_data_document \
+             WHERE deleted_at IS NULL \
+             AND ($1 = '' OR app_id = $1) \
+             AND ($2 = '' OR category_id = $2) \
+             AND ($3 = '' OR status = $3)",
+            &[&app_id, &category_id, &status],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let total: i64 = row.get("total");
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("total".to_string(), Value::Number(serde_json::Number::from(total)))]),
+    ))))
+}
+
+// ─── comment 域 ─────────────────────────────────────────────────────────
+
+#[axum::debug_handler]
+pub async fn comment_u2_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let doc_id = match u2_body_str(&body, "docId") {
+        Some(d) if !d.is_empty() => d,
+        _ => return Err(AppError::BadRequest("docId required".to_string())),
+    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let doc = client
+        .query_opt(
+            "SELECT 1 FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL",
+            &[&doc_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if doc.is_none() {
+        return Ok(Json(ActionResult::error("document not found")));
+    }
+    let id = uuid::Uuid::new_v4().to_string();
+    let content = u2_body_str(&body, "content").unwrap_or_default();
+    let parent_id = u2_body_str(&body, "parentCommentId");
+    client
+        .execute(
+            "INSERT INTO x_cms_comment (id, doc_id, person_id, content, parent_id) \
+             VALUES ($1, $2, $3, $4, $5)",
+            &[&id, &doc_id, &session.person_unique, &content, &parent_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("docId".to_string(), Value::String(doc_id)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn comment_u2_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_comment", "person_id", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("comment not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            soft_delete_by_id(&pool, "x_cms_comment", &id).await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn comment_u2_list_page_size_size(
+    pool: Extension<Pool>,
+    axum::extract::Path((page, size)): axum::extract::Path<(i64, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let page = page.max(1);
+    let size = size.clamp(1, 200);
+    let offset = (page - 1) * size;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let count_row = client
+        .query_one(
+            "SELECT COUNT(*) AS total FROM x_cms_comment WHERE deleted_at IS NULL",
+            &[],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let total: i64 = count_row.get("total");
+    let rows = client
+        .query(
+            "SELECT * FROM x_cms_comment WHERE deleted_at IS NULL \
+             ORDER BY create_time DESC LIMIT $1 OFFSET $2",
+            &[&size, &offset],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|r| row_to_json(r)).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(total))),
+            ("page".to_string(), Value::Number(serde_json::Number::from(page))),
+            ("size".to_string(), Value::Number(serde_json::Number::from(size))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+// ─── correlation 域 ─────────────────────────────────────────────────────
+
+#[axum::debug_handler]
+pub async fn correlation_u2_doc_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(doc_id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let gate_sql = "SELECT creator AS owner FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL";
+    match u2_gate_by_sql(&pool, gate_sql, &doc_id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let removed = client
+                .execute(
+                    "UPDATE x_cms_correlation SET deleted_at = NOW() WHERE doc_id = $1",
+                    &[&doc_id],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("docId".to_string(), Value::String(doc_id)),
+                    ("deleted".to_string(), Value::Number(serde_json::Number::from(removed as i64))),
+                ]),
+            ))))
+        }
+    }
+}
+
+// ─── file / fileinfo 域 ─────────────────────────────────────────────────
+
+#[axum::debug_handler]
+pub async fn file_u2_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = u2_body_str(&body, "name").unwrap_or_default();
+    let app_id = u2_body_str(&body, "appId").unwrap_or_default();
+    let content_type = u2_body_str(&body, "contentType").unwrap_or_default();
+    let content_base64 = u2_body_str(&body, "contentBase64").unwrap_or_default();
+    let size = u2_body_i64(&body, "size").unwrap_or(0);
+
+    client
+        .execute(
+            "INSERT INTO x_cms_file (id, app_id, name, size, content_type, content_base64, creator) \
+             VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            &[&id, &app_id, &name, &size, &content_type, &content_base64, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("name".to_string(), Value::String(name)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn file_u2_update(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_file", "creator", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("file not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let name = u2_body_str(&body, "name");
+            let content_type = u2_body_str(&body, "contentType");
+            let content_base64 = u2_body_str(&body, "contentBase64");
+            let affected = client
+                .execute(
+                    "UPDATE x_cms_file SET \
+                     name = COALESCE($2, name), \
+                     content_type = COALESCE($3, content_type), \
+                     content_base64 = COALESCE($4, content_base64) \
+                     WHERE id = $1 AND deleted_at IS NULL",
+                    &[&id, &name, &content_type, &content_base64],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            if affected == 0 {
+                return Ok(Json(ActionResult::error("file not found")));
+            }
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("updated".to_string(), Value::Bool(true)),
+                ]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn fileinfo_u2_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_fileinfo", "upload_person", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("fileinfo not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            soft_delete_by_id(&pool, "x_cms_fileinfo", &id).await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn fileinfo_u2_filter(
+    pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let doc_id = u2_body_str(&body, "docId").unwrap_or_default();
+    let original_name = u2_body_str(&body, "originalName").unwrap_or_default();
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let count_row = client
+        .query_one(
+            "SELECT COUNT(*) AS total FROM x_cms_fileinfo \
+             WHERE deleted_at IS NULL \
+             AND ($1 = '' OR doc_id = $1) \
+             AND ($2 = '' OR original_name ILIKE '%' || $2 || '%')",
+            &[&doc_id, &original_name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let total: i64 = count_row.get("total");
+    let rows = client
+        .query(
+            "SELECT * FROM x_cms_fileinfo \
+             WHERE deleted_at IS NULL \
+             AND ($1 = '' OR doc_id = $1) \
+             AND ($2 = '' OR original_name ILIKE '%' || $2 || '%') \
+             ORDER BY create_time DESC LIMIT 100",
+            &[&doc_id, &original_name],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let data: Vec<Value> = rows.iter().map(|r| row_to_json(r)).collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("count".to_string(), Value::Number(serde_json::Number::from(total))),
+            ("data".to_string(), Value::Array(data)),
+        ]),
+    ))))
+}
+
+async fn fileinfo_u2_doc_gate(
+    pool: &Pool,
+    session: &shared::session::Session,
+    doc_id: &str,
+) -> Result<U2Gate, AppError> {
+    let gate_sql =
+        "SELECT creator AS owner FROM x_cms_data_document WHERE id = $1 AND deleted_at IS NULL";
+    u2_gate_by_sql(pool, gate_sql, doc_id, &session.person_unique).await
+}
+
+#[axum::debug_handler]
+pub async fn fileinfo_u2_copy_to_doc(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(doc_id): axum::extract::Path<String>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match fileinfo_u2_doc_gate(&pool, &session, &doc_id).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let attachment_ids = u2_body_strs(&body, "attachmentIds");
+            if attachment_ids.is_empty() {
+                return Err(AppError::BadRequest("attachmentIds required".to_string()));
+            }
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let copied = client
+                .execute(
+                    "INSERT INTO x_cms_fileinfo (id, doc_id, file_id, original_name, size, content_type, upload_person) \
+                     SELECT gen_random_uuid()::text, $1, file_id, original_name, size, content_type, upload_person \
+                     FROM x_cms_fileinfo WHERE id = ANY($2) AND deleted_at IS NULL",
+                    &[&doc_id, &attachment_ids],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("docId".to_string(), Value::String(doc_id)),
+                    ("copied".to_string(), Value::Number(serde_json::Number::from(copied as i64))),
+                ]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn fileinfo_u2_replace_to_doc(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(doc_id): axum::extract::Path<String>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match fileinfo_u2_doc_gate(&pool, &session, &doc_id).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("document not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let attachment_ids = u2_body_strs(&body, "attachmentIds");
+            if attachment_ids.is_empty() {
+                return Err(AppError::BadRequest("attachmentIds required".to_string()));
+            }
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let moved = client
+                .execute(
+                    "UPDATE x_cms_fileinfo SET doc_id = $1 \
+                     WHERE id = ANY($2) AND deleted_at IS NULL",
+                    &[&doc_id, &attachment_ids],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("docId".to_string(), Value::String(doc_id)),
+                    ("moved".to_string(), Value::Number(serde_json::Number::from(moved as i64))),
+                ]),
+            ))))
+        }
+    }
+}
+
+// ─── form 域 ────────────────────────────────────────────────────────────
+
+#[axum::debug_handler]
+pub async fn form_u2_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let app_id = match u2_body_str(&body, "appId") {
+        Some(a) if !a.is_empty() => a,
+        _ => return Err(AppError::BadRequest("appId required".to_string())),
+    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let app = client
+        .query_opt(
+            "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+            &[&app_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if app.is_none() {
+        return Ok(Json(ActionResult::error("application not found")));
+    }
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = u2_body_str(&body, "name").unwrap_or_default();
+    let definition = u2_body_str(&body, "definition").unwrap_or_default();
+    client
+        .execute(
+            "INSERT INTO x_cms_form (id, app_id, name, definition, status, creator) \
+             VALUES ($1, $2, $3, $4, 'draft', $5)",
+            &[&id, &app_id, &name, &definition, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("appId".to_string(), Value::String(app_id)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn form_u2_update(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_form", "creator", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("form not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let name = u2_body_str(&body, "name");
+            let definition = u2_body_str(&body, "definition");
+            let status = u2_body_str(&body, "status");
+            let affected = client
+                .execute(
+                    "UPDATE x_cms_form SET \
+                     name = COALESCE($2, name), \
+                     definition = COALESCE($3, definition), \
+                     status = COALESCE($4, status) \
+                     WHERE id = $1 AND deleted_at IS NULL",
+                    &[&id, &name, &definition, &status],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            if affected == 0 {
+                return Ok(Json(ActionResult::error("form not found")));
+            }
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("updated".to_string(), Value::Bool(true)),
+                ]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn form_u2_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_form", "creator", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("form not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            soft_delete_by_id(&pool, "x_cms_form", &id).await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+            ))))
+        }
+    }
+}
+
+// ─── script 域 ──────────────────────────────────────────────────────────
+
+#[axum::debug_handler]
+pub async fn script_u2_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let app_id = match u2_body_str(&body, "appId") {
+        Some(a) if !a.is_empty() => a,
+        _ => return Err(AppError::BadRequest("appId required".to_string())),
+    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let app = client
+        .query_opt(
+            "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+            &[&app_id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if app.is_none() {
+        return Ok(Json(ActionResult::error("application not found")));
+    }
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = u2_body_str(&body, "name").unwrap_or_default();
+    let unique_name = u2_body_str(&body, "uniqueName");
+    let content = u2_body_str(&body, "scriptContent").unwrap_or_default();
+    client
+        .execute(
+            "INSERT INTO x_cms_script (id, app_id, name, unique_name, script_content, imported, creator) \
+             VALUES ($1, $2, $3, $4, $5, false, $6)",
+            &[&id, &app_id, &name, &unique_name, &content, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("appId".to_string(), Value::String(app_id)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn script_u2_update(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_script", "creator", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("script not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let name = u2_body_str(&body, "name");
+            let unique_name = u2_body_str(&body, "uniqueName");
+            let content = u2_body_str(&body, "scriptContent");
+            let imported = body.get("imported").and_then(|v| v.as_bool());
+            let affected = client
+                .execute(
+                    "UPDATE x_cms_script SET \
+                     name = COALESCE($2, name), \
+                     unique_name = COALESCE($3, unique_name), \
+                     script_content = COALESCE($4, script_content), \
+                     imported = COALESCE($5, imported) \
+                     WHERE id = $1 AND deleted_at IS NULL",
+                    &[&id, &name, &unique_name, &content, &imported],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            if affected == 0 {
+                return Ok(Json(ActionResult::error("script not found")));
+            }
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("updated".to_string(), Value::Bool(true)),
+                ]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn script_u2_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_script", "creator", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("script not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            soft_delete_by_id(&pool, "x_cms_script", &id).await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn script_u2_list_manager(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let data = list_from_table_filtered(&pool, "x_cms_script", "deleted_at IS NULL", &[]).await?;
+    Ok(Json(ActionResult::success(data)))
+}
+
+// ─── templateform / view / viewcategory / viewfieldconfig 域 ────────────
+
+#[axum::debug_handler]
+pub async fn templateform_u2_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let name = u2_body_str(&body, "name").unwrap_or_default();
+    let category = u2_body_str(&body, "category").unwrap_or_default();
+    client
+        .execute(
+            "INSERT INTO x_cms_templateform (id, xname, xcategory, creator_person) \
+             VALUES ($1, $2, $3, $4)",
+            &[&id, &name, &category, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn templateform_u2_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_templateform", "creator_person", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("templateform not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            soft_delete_by_id(&pool, "x_cms_templateform", &id).await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn view_u2_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let name = match u2_body_str(&body, "name") {
+        Some(n) if !n.is_empty() => n,
+        _ => return Err(AppError::BadRequest("name required".to_string())),
+    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let app_id = u2_body_str(&body, "appId").unwrap_or_default();
+    let category_id = u2_body_str(&body, "categoryId").unwrap_or_default();
+    let view_config = u2_body_str(&body, "viewConfig").unwrap_or_default();
+    client
+        .execute(
+            "INSERT INTO x_cms_view (id, app_id, category_id, name, view_config, creator) \
+             VALUES ($1, $2, $3, $4, $5, $6)",
+            &[&id, &app_id, &category_id, &name, &view_config, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn view_u2_update(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_view", "creator", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("view not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let name = u2_body_str(&body, "name");
+            let view_config = u2_body_str(&body, "viewConfig");
+            let affected = client
+                .execute(
+                    "UPDATE x_cms_view SET \
+                     name = COALESCE($2, name), \
+                     view_config = COALESCE($3, view_config) \
+                     WHERE id = $1 AND deleted_at IS NULL",
+                    &[&id, &name, &view_config],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            if affected == 0 {
+                return Ok(Json(ActionResult::error("view not found")));
+            }
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("updated".to_string(), Value::Bool(true)),
+                ]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn view_u2_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_view", "creator", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("view not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            soft_delete_by_id(&pool, "x_cms_view", &id).await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn viewcategory_u2_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let name = match u2_body_str(&body, "name") {
+        Some(n) if !n.is_empty() => n,
+        _ => return Err(AppError::BadRequest("name required".to_string())),
+    };
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let parent_id = u2_body_str(&body, "parentCategoryId").unwrap_or_default();
+    client
+        .execute(
+            "INSERT INTO x_cms_viewcategory (id, name, parent_id, creator) \
+             VALUES ($1, $2, $3, $4)",
+            &[&id, &name, &parent_id, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([("id".to_string(), Value::String(id))]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn viewcategory_u2_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_viewcategory", "creator", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("viewcategory not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            soft_delete_by_id(&pool, "x_cms_viewcategory", &id).await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+            ))))
+        }
+    }
+}
+
+const U2_VIEW_FIELD_OWNER_SQL: &str =
+    "SELECT v.creator AS owner FROM x_cms_viewfieldconfig vfc \
+     JOIN x_cms_view v ON v.id = vfc.view_id WHERE vfc.id = $1 AND vfc.deleted_at IS NULL";
+
+#[axum::debug_handler]
+pub async fn viewfieldconfig_u2_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let view_id = match u2_body_str(&body, "viewId") {
+        Some(v) if !v.is_empty() => v,
+        _ => return Err(AppError::BadRequest("viewId required".to_string())),
+    };
+    let gate_sql = "SELECT creator AS owner FROM x_cms_view WHERE id = $1 AND deleted_at IS NULL";
+    match u2_gate_by_sql(&pool, gate_sql, &view_id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("view not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let id = uuid::Uuid::new_v4().to_string();
+            let field_name = match u2_body_str(&body, "fieldName") {
+                Some(f) if !f.is_empty() => f,
+                _ => return Err(AppError::BadRequest("fieldName required".to_string())),
+            };
+            let field_config = u2_body_str(&body, "fieldConfig").unwrap_or_default();
+            let sort_order = u2_body_i64(&body, "sortOrder").unwrap_or(0) as i32;
+            client
+                .execute(
+                    "INSERT INTO x_cms_viewfieldconfig (id, view_id, field_name, field_config, sort_order) \
+                     VALUES ($1, $2, $3, $4, $5)",
+                    &[&id, &view_id, &field_name, &field_config, &sort_order],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("viewId".to_string(), Value::String(view_id)),
+                ]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn viewfieldconfig_u2_update(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_gate_by_sql(&pool, U2_VIEW_FIELD_OWNER_SQL, &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("viewfieldconfig not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let field_config = u2_body_str(&body, "fieldConfig");
+            let sort_order = u2_body_i64(&body, "sortOrder").map(|v| v as i32);
+            let affected = client
+                .execute(
+                    "UPDATE x_cms_viewfieldconfig SET \
+                     field_config = COALESCE($2, field_config), \
+                     sort_order = COALESCE($3, sort_order) \
+                     WHERE id = $1 AND deleted_at IS NULL",
+                    &[&id, &field_config, &sort_order],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            if affected == 0 {
+                return Ok(Json(ActionResult::error("viewfieldconfig not found")));
+            }
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("updated".to_string(), Value::Bool(true)),
+                ]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn viewfieldconfig_u2_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_gate_by_sql(&pool, U2_VIEW_FIELD_OWNER_SQL, &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("viewfieldconfig not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            soft_delete_by_id(&pool, "x_cms_viewfieldconfig", &id).await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+            ))))
+        }
+    }
+}
+
+// ─── appinfo / categoryinfo / permission / appconfig / designer 域 ──────
+
+#[axum::debug_handler]
+pub async fn appinfo_u2_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let id = match u2_body_str(&body, "id") {
+        Some(i) if !i.is_empty() => i,
+        _ => uuid::Uuid::new_v4().to_string(),
+    };
+    let alias = u2_body_str(&body, "alias").unwrap_or_default();
+    let app_type = u2_body_str(&body, "appType").unwrap_or("cms".to_string());
+    let icon = u2_body_str(&body, "icon").unwrap_or_default();
+    let manager = u2_body_str(&body, "manager").unwrap_or_else(|| session.person_unique.clone());
+    client
+        .execute(
+            "INSERT INTO x_cms_appinfo (id, alias, app_type, icon, enabled, manager, creator) \
+             VALUES ($1, $2, $3, $4, true, $5, $6)",
+            &[&id, &alias, &app_type, &icon, &manager, &session.person_unique],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id)),
+            ("manager".to_string(), Value::String(manager)),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn appinfo_u2_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_appinfo", "manager", &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("application not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            soft_delete_by_id(&pool, "x_cms_appinfo", &id).await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn categoryinfo_u2_create(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let app_id = match u2_body_str(&body, "appId") {
+        Some(a) if !a.is_empty() => a,
+        _ => return Err(AppError::BadRequest("appId required".to_string())),
+    };
+    let gate_sql = "SELECT manager AS owner FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL";
+    match u2_gate_by_sql(&pool, gate_sql, &app_id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("application not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let id = uuid::Uuid::new_v4().to_string();
+            let name = u2_body_str(&body, "name").unwrap_or_default();
+            let parent_id = u2_body_str(&body, "parentCategoryId").unwrap_or_default();
+            client
+                .execute(
+                    "INSERT INTO x_cms_categoryinfo (id, name, parent_id, app_id, creator) \
+                     VALUES ($1, $2, $3, $4, $5)",
+                    &[&id, &name, &parent_id, &app_id, &session.person_unique],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("id".to_string(), Value::String(id)),
+                    ("appId".to_string(), Value::String(app_id)),
+                ]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn categoryinfo_u2_delete(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let gate_sql = "SELECT (SELECT manager FROM x_cms_appinfo WHERE id = ci.app_id AND manager IS NOT NULL) AS owner \
+                    FROM x_cms_categoryinfo ci WHERE ci.id = $1 AND ci.deleted_at IS NULL";
+    match u2_gate_by_sql(&pool, gate_sql, &id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("category not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            soft_delete_by_id(&pool, "x_cms_categoryinfo", &id).await?;
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([("deleted".to_string(), Value::Bool(true))]),
+            ))))
+        }
+    }
+}
+
+async fn u2_write_permissions(
+    pool: &Pool,
+    scope_col: &str,
+    scope_id: &str,
+    body: &Value,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let role_type = match u2_body_str(body, "roleType") {
+        Some(r) if ["manager", "publisher", "viewer"].contains(&r.as_str()) => r,
+        _ => return Err(AppError::BadRequest("roleType must be manager/publisher/viewer".to_string())),
+    };
+    let person_ids = u2_body_strs(body, "personIds");
+    if person_ids.is_empty() {
+        return Err(AppError::BadRequest("personIds required".to_string()));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    client
+        .execute(
+            &format!(
+                "DELETE FROM x_cms_permission WHERE {} = $1 AND role_type = $2",
+                scope_col
+            ),
+            &[&scope_id, &role_type],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let mut granted: u64 = 0;
+    for pid in &person_ids {
+        granted += client
+            .execute(
+                "INSERT INTO x_cms_permission (id, role_type, permission_level, person_id) \
+                 VALUES (gen_random_uuid()::text, $1, 'write', $2)",
+                &[&role_type, &pid],
+            )
+            .await
+            .map_err(|_| AppError::Internal)?;
+    }
+    let _ = pool;
+    let _ = scope_col;
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("scopeId".to_string(), Value::String(scope_id.to_string())),
+            ("roleType".to_string(), Value::String(role_type)),
+            ("granted".to_string(), Value::Number(serde_json::Number::from(granted as i64))),
+        ]),
+    ))))
+}
+
+#[axum::debug_handler]
+pub async fn permission_u2_app_info(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let app = client
+        .query_opt(
+            "SELECT 1 FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if app.is_none() {
+        return Ok(Json(ActionResult::error("application not found")));
+    }
+    u2_write_permissions(&pool, "app_id", &id, &body).await
+}
+
+#[axum::debug_handler]
+pub async fn permission_u2_category_info(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let cat = client
+        .query_opt(
+            "SELECT 1 FROM x_cms_categoryinfo WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if cat.is_none() {
+        return Ok(Json(ActionResult::error("category not found")));
+    }
+    u2_write_permissions(&pool, "category_id", &id, &body).await
+}
+
+#[axum::debug_handler]
+pub async fn appconfig_u2_update(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(app_id): axum::extract::Path<String>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    match u2_check_owner(&pool, "x_cms_appinfo", "manager", &app_id, &session.person_unique).await? {
+        U2Gate::NotFound => Ok(Json(ActionResult::error("application not found"))),
+        U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let config_text = serde_json::to_string(&body.0).unwrap_or_else(|_| "{}".to_string());
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            let affected = client
+                .execute(
+                    "UPDATE x_cms_appinfo SET config = $1 WHERE id = $2 AND deleted_at IS NULL",
+                    &[&config_text, &app_id],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            if affected == 0 {
+                return Ok(Json(ActionResult::error("application not found")));
+            }
+            Ok(Json(ActionResult::success(Value::Object(
+                serde_json::Map::from_iter([
+                    ("appId".to_string(), Value::String(app_id)),
+                    ("saved".to_string(), Value::Bool(true)),
+                ]),
+            ))))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn appconfig_u2_get(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            "SELECT config FROM x_cms_appinfo WHERE id = $1 AND deleted_at IS NULL",
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        None => Ok(Json(ActionResult::error("application not found"))),
+        Some(r) => {
+            let raw: Option<String> = r.get("config");
+            let config = match raw {
+                Some(text) => serde_json::from_str::<Value>(&text).unwrap_or(Value::Null),
+                None => Value::Object(serde_json::Map::new()),
+            };
+            Ok(Json(ActionResult::success(config)))
+        }
+    }
+}
+
+#[axum::debug_handler]
+pub async fn designer_u2_search(
+    pool: Extension<Pool>,
+    body: axum::extract::Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let keyword = u2_body_str(&body, "keyword").unwrap_or_default();
+    if keyword.trim().is_empty() {
+        return Err(AppError::BadRequest("keyword required".to_string()));
+    }
+    let pattern = format!("%{}%", keyword);
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let rows = client
+        .query(
+            "SELECT kind, id, label FROM (\
+               (SELECT 'appInfo' AS kind, id, COALESCE(alias, '') AS label FROM x_cms_appinfo \
+                 WHERE deleted_at IS NULL AND alias ILIKE $1 LIMIT 20)\
+               UNION ALL \
+               (SELECT 'category', id, name FROM x_cms_categoryinfo \
+                 WHERE deleted_at IS NULL AND name ILIKE $1 LIMIT 20)\
+               UNION ALL \
+               (SELECT 'form', id, name FROM x_cms_form \
+                 WHERE deleted_at IS NULL AND name ILIKE $1 LIMIT 20)\
+               UNION ALL \
+               (SELECT 'view', id, name FROM x_cms_view \
+                 WHERE deleted_at IS NULL AND name ILIKE $1 LIMIT 20)\
+               UNION ALL \
+               (SELECT 'script', id, name FROM x_cms_script \
+                 WHERE deleted_at IS NULL AND name ILIKE $1 LIMIT 20)\
+             ) s ORDER BY kind, label LIMIT 100",
+            &[&pattern],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    let results: Vec<Value> = rows
+        .iter()
+        .map(|r| {
+            Value::Object(serde_json::Map::from_iter([
+                ("kind".to_string(), Value::String(r.get("kind"))),
+                ("id".to_string(), Value::String(r.get("id"))),
+                ("label".to_string(), Value::String(r.get("label"))),
+            ]))
+        })
+        .collect();
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("keyword".to_string(), Value::String(keyword)),
+            ("count".to_string(), Value::Number(serde_json::Number::from(results.len() as i64))),
+            ("data".to_string(), Value::Array(results)),
+        ]),
+    ))))
 }

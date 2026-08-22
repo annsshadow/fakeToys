@@ -36,7 +36,21 @@ use crate::{
     script_list_id_prev_count, script_flag_appInfo_appInfoFlag, script_id, searchfilter_list_archive_filter_category_categoryId, searchfilter_list_draft_filter_category_categoryId, searchfilter_list_publish_filter_category_categoryId, anonymous_surface_appdict_list_appInfo_appInfoFlag, surface_appdict_list_appInfo_appInfoFlag, templateform_list, templateform_list_category,
     templateform_list_category_mockputtopost, uuid_random, view_list_all, view_list_app_appId, view_list_category_categoryId, view_list_form_formId, view_viewdata_list_id_next_count, view_id, viewcategory_list_all, viewcategory_list_category_categoryId,
     viewcategory_list_view_viewId, viewcategory_id, viewfieldconfig_list_all, viewfieldconfig_list_view_viewId, viewfieldconfig_id, viewrecord_document_docId_filter_list_id_next_count, viewrecord_list_install_log_paging_page_size_size, image_encode_base64, image_encode_base64_size_size, image_resize_id_id_width_width_height_height,
-    input_compare, input_compare_mockputtopost, input_cover, input_cover_mockputtopost, input_create, input_create_mockputtopost, input_prepare_cover, input_prepare_cover_mockputtopost, input_prepare_create, input_prepare_create_mockputtopost,};
+    input_compare, input_compare_mockputtopost, input_cover, input_cover_mockputtopost, input_create, input_create_mockputtopost, input_prepare_cover, input_prepare_cover_mockputtopost, input_prepare_create, input_prepare_create_mockputtopost,
+    document_u2_get, document_u2_delete, document_u2_create, document_u2_update, document_u2_publish, document_u2_publish_cancel, document_u2_commend, document_u2_uncommend, document_u2_top, document_u2_un_top, document_u2_category_change, document_u2_document_data,
+    document_u2_list_document, document_u2_fields, document_u2_filter_count,
+    comment_u2_create, comment_u2_delete, comment_u2_list_page_size_size,
+    correlation_u2_doc_delete,
+    file_u2_create, file_u2_update, fileinfo_u2_delete, fileinfo_u2_filter, fileinfo_u2_copy_to_doc, fileinfo_u2_replace_to_doc,
+    form_u2_create, form_u2_update, form_u2_delete,
+    script_u2_create, script_u2_update, script_u2_delete, script_u2_list_manager,
+    templateform_u2_create, templateform_u2_delete,
+    view_u2_create, view_u2_update, view_u2_delete,
+    viewcategory_u2_create, viewcategory_u2_delete,
+    viewfieldconfig_u2_create, viewfieldconfig_u2_update, viewfieldconfig_u2_delete,
+    appinfo_u2_create, appinfo_u2_delete, categoryinfo_u2_create, categoryinfo_u2_delete,
+    permission_u2_app_info, permission_u2_category_info, appconfig_u2_update, appconfig_u2_get, designer_u2_search,
+};
 
 
 
@@ -390,6 +404,63 @@ pub fn router(pool: deadpool_postgres::Pool) -> axum::Router {
         .route("/jaxrs/cms/assemble/control/view/mockdeletetoget/{id}", delete(view_id_mockdeletetoget))
         .route("/jaxrs/cms/assemble/control/viewcategory/mockdeletetoget/{id}", delete(viewcategory_id_mockdeletetoget))
         .route("/jaxrs/cms/assemble/control/viewfieldconfig/mockdeletetoget/{id}", delete(viewfieldconfig_id_mockdeletetoget))
+        // ── plan002 U2: Java 对齐缺口端点 ──
+        .route("/jaxrs/document/{id}", get(document_u2_get))
+        .route("/jaxrs/document/{id}", delete(document_u2_delete))
+        .route("/jaxrs/document", post(document_u2_create))
+        .route("/jaxrs/document/{id}/update", post(document_u2_update))
+        .route("/jaxrs/document/publish/{id}", put(document_u2_publish))
+        .route("/jaxrs/document/publish/{id}/mockputtopost", post(document_u2_publish))
+        .route("/jaxrs/document/publish/{id}/cancel", put(document_u2_publish_cancel))
+        .route("/jaxrs/document/publish/{id}/cancel/mockputtopost", post(document_u2_publish_cancel))
+        .route("/jaxrs/document/{id}/commend", get(document_u2_commend))
+        .route("/jaxrs/document/{id}/uncommend", get(document_u2_uncommend))
+        .route("/jaxrs/document/{id}/top", get(document_u2_top))
+        .route("/jaxrs/document/{id}/unTop", get(document_u2_un_top))
+        .route("/jaxrs/document/category/change", put(document_u2_category_change))
+        .route("/jaxrs/document/category/change/mockputtopost", post(document_u2_category_change))
+        .route("/jaxrs/document/{id}/document/data", get(document_u2_document_data))
+        .route("/jaxrs/document/list/document", post(document_u2_list_document))
+        .route("/jaxrs/document/document/fields", get(document_u2_fields))
+        .route("/jaxrs/document/filter/count", put(document_u2_filter_count))
+        .route("/jaxrs/document/filter/count/mockputtopost", post(document_u2_filter_count))
+        .route("/jaxrs/comment", post(comment_u2_create))
+        .route("/jaxrs/comment/{id}", delete(comment_u2_delete))
+        .route("/jaxrs/comment/list/{page}/size/{size}", put(comment_u2_list_page_size_size))
+        .route("/jaxrs/comment/list/{page}/size/{size}/mockputtopost", post(comment_u2_list_page_size_size))
+        .route("/jaxrs/correlation/doc/{docId}/delete", post(correlation_u2_doc_delete))
+        .route("/jaxrs/file", post(file_u2_create))
+        .route("/jaxrs/file/{id}/mockputtopost", post(file_u2_update))
+        .route("/jaxrs/fileinfo/{id}", delete(fileinfo_u2_delete))
+        .route("/jaxrs/fileinfo/list/filter", post(fileinfo_u2_filter))
+        .route("/jaxrs/fileinfo/copy/to/doc/{docId}", post(fileinfo_u2_copy_to_doc))
+        .route("/jaxrs/fileinfo/replace/to/doc/{docId}", post(fileinfo_u2_replace_to_doc))
+        .route("/jaxrs/form", post(form_u2_create))
+        .route("/jaxrs/form/{id}", put(form_u2_update))
+        .route("/jaxrs/form/{id}", delete(form_u2_delete))
+        .route("/jaxrs/script", post(script_u2_create))
+        .route("/jaxrs/script/{id}", put(script_u2_update))
+        .route("/jaxrs/script/{id}", delete(script_u2_delete))
+        .route("/jaxrs/script/list/manager", post(script_u2_list_manager))
+        .route("/jaxrs/templateform", post(templateform_u2_create))
+        .route("/jaxrs/templateform/{id}", delete(templateform_u2_delete))
+        .route("/jaxrs/view", post(view_u2_create))
+        .route("/jaxrs/view/{id}", put(view_u2_update))
+        .route("/jaxrs/view/{id}", delete(view_u2_delete))
+        .route("/jaxrs/viewcategory", post(viewcategory_u2_create))
+        .route("/jaxrs/viewcategory/{id}", delete(viewcategory_u2_delete))
+        .route("/jaxrs/viewfieldconfig", post(viewfieldconfig_u2_create))
+        .route("/jaxrs/viewfieldconfig/{id}", put(viewfieldconfig_u2_update))
+        .route("/jaxrs/viewfieldconfig/{id}", delete(viewfieldconfig_u2_delete))
+        .route("/jaxrs/appinfo", post(appinfo_u2_create))
+        .route("/jaxrs/appinfo/{id}", delete(appinfo_u2_delete))
+        .route("/jaxrs/categoryinfo", post(categoryinfo_u2_create))
+        .route("/jaxrs/categoryinfo/{id}", delete(categoryinfo_u2_delete))
+        .route("/jaxrs/appinfo/{id}/permission", post(permission_u2_app_info))
+        .route("/jaxrs/categoryinfo/{id}/permission", post(permission_u2_category_info))
+        .route("/jaxrs/appconfig/{appId}", post(appconfig_u2_update))
+        .route("/jaxrs/appconfig/{appId}", get(appconfig_u2_get))
+        .route("/jaxrs/designer/search", post(designer_u2_search))
 .layer(Extension(pool))
 }
 
