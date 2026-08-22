@@ -1,10 +1,10 @@
 ﻿
 
-######## 閬ユ帶鍣ㄦ寜閿〃
+######## 遥控器按键表
 
-閬楁喚鐨勬槸锛屽骞存潵涓€鐩存病鏈変汉鍔姏涓轰笉鍚岃澶囧垱寤虹粺涓€鐨勭孩澶栵紙IR锛夐敭鐮併€傝繖瀵艰嚧鍚屼竴涓孩澶栭敭鍚嶅湪涓嶅悓鐨勭孩澶栬澶囦笂琚槧灏勫緱瀹屽叏涓嶅悓銆傜粨鏋滃氨鏄紝鐩稿悓鐨勭孩澶栭敭鍚嶅湪涓嶅悓鐨勭孩澶栬澶囦笂琚槧灏勫緱瀹屽叏涓嶅悓銆傛鍥犲姝わ紝V4L2 API 鐜板湪瑙勫畾浜嗕竴绉嶇敤浜庡湪绾㈠涓婃槧灏勫獟浣撴寜閿殑鏍囧噯銆?
-杩欎竴鏍囧噯搴斿綋鍚屾椂琚?V4L/DVB 椹卞姩鍜岀敤鎴风┖闂村簲鐢ㄧ▼搴忔墍閲囩敤銆?
-杩欎簺妯″潡鍦?Linux 鐨勮緭鍏ワ紙input锛夊眰涓皢閬ユ帶鍣ㄦ敞鍐屼负閿洏銆傝繖鎰忓懗鐫€绾㈠鎸夐敭鐪嬭捣鏉ヤ細鍍忔櫘閫氱殑閿洏鎸夐敭锛堝墠鎻愭槸鍚敤浜?CONFIG_INPUT_KEYBOARD锛夈€傚€熷姪浜嬩欢璁惧锛圕ONFIG_INPUT_EVDEV锛夛紝搴旂敤绋嬪簭鍙互閫氳繃 /dev/input/event 璁惧鏉ヨ闂仴鎺у櫒銆?
+遗憾的是，多年来一直没有人努力为不同设备创建统一的红外（IR）键码。这导致同一个红外键名在不同的红外设备上被映射得完全不同。结果就是，相同的红外键名在不同的红外设备上被映射得完全不同。正因如此，V4L2 API 现在规定了一种用于在红外上映射媒体按键的标准
+这一标准应当同时V4L/DVB 驱动和用户空间应用程序所采用
+这些模块Linux 的输入（input）层中将遥控器注册为键盘。这意味着红外按键看起来会像普通的键盘按键（前提是启用CONFIG_INPUT_KEYBOARD）。借助事件设备（CONFIG_INPUT_EVDEV），应用程序可以通过 /dev/input/event 设备来访问遥控器
 
 
 
@@ -15,11 +15,11 @@
 
     - .. row 1
 
-       - 閿爜
+       - 键码
 
-       - 鍚箟
+       - 含义
 
-       - 绾㈠涓婄殑鎸夐敭绀轰緥
+       - 红外上的按键示例
 
     - .. row 2
 
@@ -29,7 +29,7 @@
 
        - `KEY_NUMERIC_0`
 
-       - 閿洏鏁板瓧 0
+       - 键盘数字 0
 
        - 0
 
@@ -37,7 +37,7 @@
 
        - `KEY_NUMERIC_1`
 
-       - 閿洏鏁板瓧 1
+       - 键盘数字 1
 
        - 1
 
@@ -45,7 +45,7 @@
 
        - `KEY_NUMERIC_2`
 
-       - 閿洏鏁板瓧 2
+       - 键盘数字 2
 
        - 2
 
@@ -53,7 +53,7 @@
 
        - `KEY_NUMERIC_3`
 
-       - 閿洏鏁板瓧 3
+       - 键盘数字 3
 
        - 3
 
@@ -61,7 +61,7 @@
 
        - `KEY_NUMERIC_4`
 
-       - 閿洏鏁板瓧 4
+       - 键盘数字 4
 
        - 4
 
@@ -69,7 +69,7 @@
 
        - `KEY_NUMERIC_5`
 
-       - 閿洏鏁板瓧 5
+       - 键盘数字 5
 
        - 5
 
@@ -77,7 +77,7 @@
 
        - `KEY_NUMERIC_6`
 
-       - 閿洏鏁板瓧 6
+       - 键盘数字 6
 
        - 6
 
@@ -85,7 +85,7 @@
 
        - `KEY_NUMERIC_7`
 
-       - 閿洏鏁板瓧 7
+       - 键盘数字 7
 
        - 7
 
@@ -93,7 +93,7 @@
 
        - `KEY_NUMERIC_8`
 
-       - 閿洏鏁板瓧 8
+       - 键盘数字 8
 
        - 8
 
@@ -101,19 +101,19 @@
 
        - `KEY_NUMERIC_9`
 
-       - 閿洏鏁板瓧 9
+       - 键盘数字 9
 
        - 9
 
     - .. row 13
 
-       - **褰辩墖鎾斁鎺у埗**
+       - **影片播放控制**
 
     - .. row 14
 
        - `KEY_FORWARD`
 
-       - 绔嬪嵆鍚戝墠蹇繘
+       - 立即向前快进
 
        - >> / FORWARD
 
@@ -121,7 +121,7 @@
 
        - `KEY_BACK`
 
-       - 绔嬪嵆鍥為€€
+       - 立即回退
 
        - <<< / BACK
 
@@ -129,7 +129,7 @@
 
        - `KEY_FASTFORWARD`
 
-       - 浠ユ洿蹇€熷害鎾斁褰辩墖
+       - 以更快速度播放影片
 
        - >>> / FORWARD
 
@@ -137,7 +137,7 @@
 
        - `KEY_REWIND`
 
-       - 鍊掓斁褰辩墖
+       - 倒放影片
 
        - REWIND / BACKWARD
 
@@ -145,7 +145,7 @@
 
        - `KEY_NEXT`
 
-       - 閫夋嫨涓嬩竴绔犺妭/瀛愮珷鑺?闂撮殧
+       - 选择下一章节/子章间隔
 
        - NEXT / SKIP
 
@@ -153,7 +153,7 @@
 
        - `KEY_PREVIOUS`
 
-       - 閫夋嫨涓婁竴绔犺妭/瀛愮珷鑺?闂撮殧
+       - 选择上一章节/子章间隔
 
        - << / PREV / PREVIOUS
 
@@ -161,28 +161,28 @@
 
        - `KEY_AGAIN`
 
-       - 閲嶅瑙嗛鎴栨煇娈佃棰?
+       - 重复视频或某段视
        - REPEAT / LOOP / RECALL
 
     - .. row 21
 
        - `KEY_PAUSE`
 
-       - 鏆傚仠鏁版嵁娴?
+       - 暂停数据
        - PAUSE / FREEZE
 
     - .. row 22
 
        - `KEY_PLAY`
 
-       - 浠ユ甯告椂绉绘柟寮忔挱鏀惧奖鐗?
+       - 以正常时移方式播放影
        - NORMAL TIMESHIFT / LIVE / >
 
     - .. row 23
 
        - `KEY_PLAYPAUSE`
 
-       - 鍦ㄦ挱鏀句笌鏆傚仠涔嬮棿鍒囨崲
+       - 在播放与暂停之间切换
 
        - PLAY / PAUSE
 
@@ -190,28 +190,28 @@
 
        - `KEY_STOP`
 
-       - 鍋滄鏁版嵁娴?
+       - 停止数据
        - STOP
 
     - .. row 25
 
        - `KEY_RECORD`
 
-       - 寮€濮?鍋滄褰曞埗鏁版嵁娴?
+       - 开停止录制数据
        - CAPTURE / REC / RECORD/PAUSE
 
     - .. row 26
 
        - `KEY_CAMERA`
 
-       - 鎷嶆憚涓€寮犲浘鍍?
+       - 拍摄一张图
        - CAMERA ICON / CAPTURE / SNAPSHOT
 
     - .. row 27
 
        - `KEY_SHUFFLE`
 
-       - 鍚敤闅忔満鎾斁妯″紡
+       - 启用随机播放模式
 
        - SHUFFLE
 
@@ -219,14 +219,14 @@
 
        - `KEY_TIME`
 
-       - 婵€娲绘椂绉绘ā寮?
+       - 激活时移模
        - TIME SHIFT
 
     - .. row 29
 
        - `KEY_TITLE`
 
-       - 鍏佽鍒囨崲绔犺妭
+       - 允许切换章节
 
        - CHAPTER
 
@@ -234,19 +234,19 @@
 
        - `KEY_SUBTITLE`
 
-       - 鍏佽鍒囨崲瀛楀箷
+       - 允许切换字幕
 
        - SUBTITLE
 
     - .. row 31
 
-       - **鍥惧儚鎺у埗**
+       - **图像控制**
 
     - .. row 32
 
        - `KEY_BRIGHTNESSDOWN`
 
-       - 闄嶄綆浜害
+       - 降低亮度
 
        - BRIGHTNESS DECREASE
 
@@ -254,7 +254,7 @@
 
        - `KEY_BRIGHTNESSUP`
 
-       - 鎻愰珮浜害
+       - 提高亮度
 
        - BRIGHTNESS INCREASE
 
@@ -262,40 +262,40 @@
 
        - `KEY_ANGLE`
 
-       - 鍒囨崲鎽勫儚鏈鸿搴︼紙閽堝瀛樺偍浜嗗涓搴︾殑瑙嗛锛?
+       - 切换摄像机角度（针对存储了多个角度的视频
        - ANGLE / SWAP
 
     - .. row 35
 
        - `KEY_EPG`
 
-       - 鎵撳紑鐢靛瓙鑺傜洰鎸囧崡锛圗PG锛?
+       - 打开电子节目指南（EPG
        - EPG / GUIDE
 
     - .. row 36
 
        - `KEY_TEXT`
 
-       - 婵€娲?鍒囨崲闅愯棌瀛楀箷妯″紡
+       - 激切换隐藏字幕模式
 
        - CLOSED CAPTION/TELETEXT / DVD TEXT / TELETEXT / TTX
 
     - .. row 37
 
-       - **闊抽鎺у埗**
+       - **音频控制**
 
     - .. row 38
 
        - `KEY_AUDIO`
 
-       - 鏇存敼闊抽婧?
+       - 更改音频
        - AUDIO SOURCE / AUDIO / MUSIC
 
     - .. row 39
 
        - `KEY_MUTE`
 
-       - 闈欓煶/鍙栨秷闈欓煶
+       - 静音/取消静音
 
        - MUTE / DEMUTE / UNMUTE
 
@@ -303,7 +303,7 @@
 
        - `KEY_VOLUMEDOWN`
 
-       - 闄嶄綆闊抽噺
+       - 降低音量
 
        - VOLUME- / VOLUME DOWN
 
@@ -311,7 +311,7 @@
 
        - `KEY_VOLUMEUP`
 
-       - 鎻愰珮闊抽噺
+       - 提高音量
 
        - VOLUME+ / VOLUME UP
 
@@ -319,7 +319,7 @@
 
        - `KEY_MODE`
 
-       - 鏇存敼澹伴煶妯″紡
+       - 更改声音模式
 
        - MONO/STEREO
 
@@ -327,26 +327,26 @@
 
        - `KEY_LANGUAGE`
 
-       - 閫夋嫨璇█
+       - 选择语言
 
        - 1ST / 2ND LANGUAGE / DVD LANG / MTS/SAP / MTS SEL
 
     - .. row 44
 
-       - **棰戦亾鎺у埗**
+       - **频道控制**
 
     - .. row 45
 
        - `KEY_CHANNEL`
 
-       - 璺冲埌涓嬩竴涓敹钘忛閬?
+       - 跳到下一个收藏频
        - ALT / CHANNEL / CH SURFING / SURF / FAV
 
     - .. row 46
 
        - `KEY_CHANNELDOWN`
 
-       - 鎸夊簭閫掑噺棰戦亾
+       - 按序递减频道
 
        - CHANNEL - / CHANNEL DOWN / DOWN
 
@@ -354,7 +354,7 @@
 
        - `KEY_CHANNELUP`
 
-       - 鎸夊簭閫掑棰戦亾
+       - 按序递增频道
 
        - CHANNEL + / CHANNEL UP / UP
 
@@ -362,14 +362,14 @@
 
        - `KEY_DIGITS`
 
-       - 鐢ㄥ浜庝竴浣嶆暟瀛楄緭鍏ラ閬?
+       - 用多于一位数字输入频
        - PLUS / 100/ 1xx / xxx / -/-- / Single Double Triple Digit
 
     - .. row 49
 
        - `KEY_SEARCH`
 
-       - 寮€濮嬮閬撹嚜鍔ㄦ壂鎻?
+       - 开始频道自动扫
        - SCAN / AUTOSCAN
 
     - .. row 50
@@ -380,46 +380,46 @@
 
        - `KEY_BLUE`
 
-       - 绾㈠钃濊壊閿?
+       - 红外蓝色
        - BLUE
 
     - .. row 52
 
        - `KEY_GREEN`
 
-       - 绾㈠缁胯壊閿?
+       - 红外绿色
        - GREEN
 
     - .. row 53
 
        - `KEY_RED`
 
-       - 绾㈠绾㈣壊閿?
+       - 红外红色
        - RED
 
     - .. row 54
 
        - `KEY_YELLOW`
 
-       - 绾㈠榛勮壊閿?
+       - 红外黄色
        - YELLOW
 
     - .. row 55
 
-       - **濯掍綋閫夋嫨**
+       - **媒体选择**
 
     - .. row 56
 
        - `KEY_CD`
 
-       - 灏嗚緭鍏ユ簮鍒囨崲鍒板厜鐩橈紙Compact Disc锛?
+       - 将输入源切换到光盘（Compact Disc
        - CD
 
     - .. row 57
 
        - `KEY_DVD`
 
-       - 灏嗚緭鍏ュ垏鎹㈠埌 DVD
+       - 将输入切换到 DVD
 
        - DVD / DVD MENU
 
@@ -427,14 +427,14 @@
 
        - `KEY_EJECTCLOSECD`
 
-       - 鎵撳紑/鍏抽棴 CD/DVD 鎾斁鍣?
+       - 打开/关闭 CD/DVD 播放
        - -> ) / CLOSE / OPEN
 
     - .. row 59
 
        - `KEY_MEDIA`
 
-       - 鎵撳紑/鍏抽棴濯掍綋搴旂敤绋嬪簭
+       - 打开/关闭媒体应用程序
 
        - PC/TV / TURN ON/OFF APP
 
@@ -442,7 +442,7 @@
 
        - `KEY_PC`
 
-       - 浠庣數瑙嗗垏鎹㈠埌鐢佃剳
+       - 从电视切换到电脑
 
        - PC
 
@@ -450,14 +450,14 @@
 
        - `KEY_RADIO`
 
-       - 杩涘叆 AM/FM 鏀堕煶鏈烘ā寮?
+       - 进入 AM/FM 收音机模
        - RADIO / TV/FM / TV/RADIO / FM / FM/RADIO
 
     - .. row 62
 
        - `KEY_TV`
 
-       - 閫夋嫨鐢佃妯″紡
+       - 选择电视模式
 
        - TV / LIVE TV
 
@@ -465,7 +465,7 @@
 
        - `KEY_TV2`
 
-       - 閫夋嫨鏈夌嚎鐢佃妯″紡
+       - 选择有线电视模式
 
        - AIR/CBL
 
@@ -473,32 +473,32 @@
 
        - `KEY_VCR`
 
-       - 閫夋嫨褰曞儚鏈猴紙VCR锛夋ā寮?
+       - 选择录像机（VCR）模
        - VCR MODE / DTR
 
     - .. row 65
 
        - `KEY_VIDEO`
 
-       - 鍦ㄨ緭鍏ユā寮忎箣闂村垏鎹?
+       - 在输入模式之间切
        - SOURCE / SELECT / DISPLAY / SWITCH INPUTS / VIDEO
 
     - .. row 66
 
-       - **鐢垫簮鎺у埗**
+       - **电源控制**
 
     - .. row 67
 
        - `KEY_POWER`
 
-       - 鎵撳紑/鍏抽棴璁＄畻鏈?
+       - 打开/关闭计算
        - SYSTEM POWER / COMPUTER POWER
 
     - .. row 68
 
        - `KEY_POWER2`
 
-       - 鎵撳紑/鍏抽棴搴旂敤绋嬪簭
+       - 打开/关闭应用程序
 
        - TV ON/OFF / POWER
 
@@ -506,7 +506,7 @@
 
        - `KEY_SLEEP`
 
-       - 婵€娲荤潯鐪犲畾鏃跺櫒
+       - 激活睡眠定时器
 
        - SLEEP / SLEEP TIMER
 
@@ -514,19 +514,19 @@
 
        - `KEY_SUSPEND`
 
-       - 灏嗚绠楁満缃簬鎸傝捣妯″紡
+       - 将计算机置于挂起模式
 
        - STANDBY / SUSPEND
 
     - .. row 71
 
-       - **绐楀彛鎺у埗**
+       - **窗口控制**
 
     - .. row 72
 
        - `KEY_CLEAR`
 
-       - 鍋滄鏁版嵁娴佸苟杩斿洖榛樿鐨勮緭鍏ヨ棰?闊抽
+       - 停止数据流并返回默认的输入视音频
 
        - CLEAR / RESET / BOSS KEY
 
@@ -534,21 +534,21 @@
 
        - `KEY_CYCLEWINDOWS`
 
-       - 鏈€灏忓寲绐楀彛骞剁Щ鍔ㄥ埌涓嬩竴涓?
+       - 最小化窗口并移动到下一
        - ALT-TAB / MINIMIZE / DESKTOP
 
     - .. row 74
 
        - `KEY_FAVORITES`
 
-       - 鎵撳紑鏀惰棌娴佺獥鍙?
+       - 打开收藏流窗
        - TV WALL / Favorites
 
     - .. row 75
 
        - `KEY_MENU`
 
-       - 璋冪敤搴旂敤绋嬪簭鑿滃崟
+       - 调用应用程序菜单
 
        - 2ND CONTROLS (USA: MENU) / DVD/MENU / SHOW/HIDE CTRL
 
@@ -556,14 +556,14 @@
 
        - `KEY_NEW`
 
-       - 鎵撳紑/鍏抽棴鐢讳腑鐢?
+       - 打开/关闭画中
        - PIP
 
     - .. row 77
 
        - `KEY_OK`
 
-       - 鍚戝簲鐢ㄧ▼搴忓彂閫佺‘璁ょ爜
+       - 向应用程序发送确认码
 
        - OK / ENTER / RETURN
 
@@ -571,14 +571,14 @@
 
        - `KEY_ASPECT_RATIO`
 
-       - 閫夋嫨灞忓箷瀹介珮姣?
+       - 閫夋嫨灞忓箷瀹介珮姣。
        - 4:3 16:9 SELECT
 
     - .. row 79
 
        - `KEY_FULL_SCREEN`
 
-       - 灏嗚澶囩疆浜庣缉鏀?鍏ㄥ睆妯″紡
+       - 将设备置于缩全屏模式
 
        - ZOOM / FULL SCREEN / ZOOM+ / HIDE PANEL / SWITCH
 
@@ -590,7 +590,7 @@
 
        - `KEY_ESC`
 
-       - 鍙栨秷褰撳墠鎿嶄綔
+       - 取消当前操作
 
        - CANCEL / BACK
 
@@ -598,7 +598,7 @@
 
        - `KEY_HELP`
 
-       - 鎵撳紑甯姪绐楀彛
+       - 打开帮助窗口
 
        - HELP
 
@@ -606,28 +606,28 @@
 
        - `KEY_HOMEPAGE`
 
-       - 瀵艰埅鍒颁富椤?
+       - 导航到主
        - HOME
 
     - .. row 84
 
        - `KEY_INFO`
 
-       - 鎵撳紑灞忓箷鏄剧ず锛圤SD锛?
+       - 打开屏幕显示（OSD
        - DISPLAY INFORMATION / OSD
 
     - .. row 85
 
        - `KEY_WWW`
 
-       - 鎵撳紑榛樿娴忚鍣?
+       - 打开默认浏览
        - WEB
 
     - .. row 86
 
        - `KEY_UP`
 
-       - 涓婃柟鍚戦敭
+       - 上方向键
 
        - UP
 
@@ -635,7 +635,7 @@
 
        - `KEY_DOWN`
 
-       - 涓嬫柟鍚戦敭
+       - 下方向键
 
        - DOWN
 
@@ -643,7 +643,7 @@
 
        - `KEY_LEFT`
 
-       - 宸︽柟鍚戦敭
+       - 左方向键
 
        - LEFT
 
@@ -651,7 +651,7 @@
 
        - `KEY_RIGHT`
 
-       - 鍙虫柟鍚戦敭
+       - 右方向键
 
        - RIGHT
 
@@ -663,7 +663,7 @@
 
        - `KEY_DOT`
 
-       - 杩斿洖涓€涓偣
+       - 返回一个点
 
        - .
 
@@ -671,11 +671,11 @@
 
        - `KEY_FN`
 
-       - 閫夋嫨涓€涓姛鑳?
+       - 选择一个功
        - FUNCTION
 
 
-闇€瑕佹敞鎰忕殑鏄紝鍦ㄦ湁浜涜緝寤変环鐨勭孩澶栭仴鎺у櫒涓婏紝鏈夋椂浼氱己灏戜竴浜涘熀鏈殑鎸夐敭銆傚洜姝わ紝寤鸿锛?
+需要注意的是，在有些较廉价的红外遥控器上，有时会缺少一些基本的按键。因此，建议
 
 
     :header-rows:  0
@@ -684,16 +684,16 @@
 
     - .. row 1
 
-       - 鍦ㄨ緝绠€鍗曠殑绾㈠閬ユ帶鍣ㄤ笂锛岃嫢娌℃湁鐙珛鐨勯閬撻敭锛岄渶瑕佸皢 UP 鏄犲皠涓?`KEY_CHANNELUP`
+       - 在较简单的红外遥控器上，若没有独立的频道键，需要将 UP 映射`KEY_CHANNELUP`
 
     - .. row 2
 
-       - 鍦ㄨ緝绠€鍗曠殑绾㈠閬ユ帶鍣ㄤ笂锛岃嫢娌℃湁鐙珛鐨勯閬撻敭锛岄渶瑕佸皢 DOWN 鏄犲皠涓?`KEY_CHANNELDOWN`
+       - 在较简单的红外遥控器上，若没有独立的频道键，需要将 DOWN 映射`KEY_CHANNELDOWN`
 
     - .. row 3
 
-       - 鍦ㄨ緝绠€鍗曠殑绾㈠閬ユ帶鍣ㄤ笂锛岃嫢娌℃湁鐙珛鐨勯煶閲忛敭锛岄渶瑕佸皢 LEFT 鏄犲皠涓?`KEY_VOLUMEDOWN`
+       - 在较简单的红外遥控器上，若没有独立的音量键，需要将 LEFT 映射`KEY_VOLUMEDOWN`
 
     - .. row 4
 
-       - 鍦ㄨ緝绠€鍗曠殑绾㈠閬ユ帶鍣ㄤ笂锛岃嫢娌℃湁鐙珛鐨勯煶閲忛敭锛岄渶瑕佸皢 RIGHT 鏄犲皠涓?`KEY_VOLUMEUP`
+       - 在较简单的红外遥控器上，若没有独立的音量键，需要将 RIGHT 映射`KEY_VOLUMEUP`

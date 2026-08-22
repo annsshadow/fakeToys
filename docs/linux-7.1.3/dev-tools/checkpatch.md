@@ -2,44 +2,44 @@
 ## Checkpatch
 
 
-Checkpatch (scripts/checkpatch.pl) 鏄竴涓?perl 鑴氭湰锛岀敤浜庢鏌ヨˉ涓佷腑鐨勭悙纰庨鏍艰繚瑙勶紝骞跺彲閫夋嫨鎬у湴淇瀹冧滑銆?
-Checkpatch 涔熷彲浠ラ拡瀵规枃浠朵笂涓嬫枃杩愯锛屽苟涓?
-鏃犻渶鍐呮牳婧愮爜鏍戝嵆鍙繍琛屻€?
+Checkpatch (scripts/checkpatch.pl) 是一perl 脚本，用于检查补丁中的琐碎风格违规，并可选择性地修正它们
+Checkpatch 也可以针对文件上下文运行，并
+无需内核源码树即可运行
 
-Checkpatch 骞堕潪姘歌繙姝ｇ‘銆備綘鐨勫垽鏂紭鍏堜簬 checkpatch 缁欏嚭鐨勪俊鎭€?
-濡傛灉浣犵殑浠ｇ爜甯︾潃杩欎簺杩濊鐪嬭捣鏉ユ洿濂斤紝閭ｄ箞寰堝彲鑳芥渶濂?
-淇濇寔鍘熸牱銆?
-
-
-## 閫夐」
+Checkpatch 并非永远正确。你的判断优先于 checkpatch 给出的信息
+如果你的代码带着这些违规看起来更好，那么很可能最
+保持原样
 
 
-鏈妭灏嗘弿杩?checkpatch 杩愯鏃剁殑鍚勪釜閫夐」銆?
+## 选项
+
+
+本节将描checkpatch 运行时的各个选项
 
 ```
 
   ./scripts/checkpatch.pl [OPTION]... [FILE]...
 
 ```
-鍙敤閫夐」锛?
+可用选项
 
  - -q,  --quiet
 
-   鍚敤瀹夐潤妯″紡銆?
+   启用安静模式
 
  - -v,  --verbose
-   鍚敤璇︾粏妯″紡銆備細杈撳嚭棰濆鐨勮缁嗘祴璇曡鏄庯紝
-   浠ユ彁渚涜鐗瑰畾淇℃伅涓轰綍琚樉绀虹殑鍘熷洜銆?
+   启用详细模式。会输出额外的详细测试说明，
+   以提供该特定信息为何被显示的原因
 
  - --no-tree
 
-   鍦ㄦ病鏈夊唴鏍告簮鐮佹爲鐨勬儏鍐典笅杩愯 checkpatch銆?
+   在没有内核源码树的情况下运行 checkpatch
 
  - --no-signoff
 
-   绂佺敤 'Signed-off-by' 琛屾鏌ャ€俿ign-off 鏄ˉ涓佽鏄庢湯灏剧殑涓€琛岀畝鍗曟枃鏈紝
-   鐢ㄤ簬璇佹槑浣犵紪鍐欎簡瀹冿紝鎴?
-   浣犳嫢鏈夊皢鍏朵綔涓哄紑婧愯ˉ涓佷紶閫掔殑鏉冨埄銆?
+   禁用 'Signed-off-by' 行检查。sign-off 是补丁说明末尾的一行简单文本，
+   用于证明你编写了它，
+   你拥有将其作为开源补丁传递的权利
 
 ```
 
@@ -210,46 +210,46 @@ Checkpatch 骞堕潪姘歌繙姝ｇ‘銆備綘鐨勫垽鏂紭鍏堜簬 check
    Display the help text.
 
 ```
-## 淇℃伅绾у埆
+## 信息级别
 
 
-checkpatch 涓殑淇℃伅鍒嗕负涓変釜绾у埆銆備俊鎭殑绾у埆琛ㄧず閿欒鐨勪弗閲嶇▼搴︺€?
-瀹冧滑鍒嗗埆鏄細
+checkpatch 中的信息分为三个级别。信息的级别表示错误的严重程度
+它们分别是：
 
  - ERROR
 
-   杩欐槸鏈€涓ユ牸鐨勭骇鍒€侲RROR 绫诲瀷鐨勪俊鎭繀椤昏涓ヨ們瀵瑰緟锛?
-   鍥犱负瀹冧滑琛ㄧず闈炲父鍙兘鍑洪敊鐨勪簨椤广€?
+   这是最严格的级别。ERROR 类型的信息必须被严肃对待
+   因为它们表示非常可能出错的事项
 
  - WARNING
 
-   杩欐槸娆′竴绾х殑涓ユ牸绾у埆銆俉ARNING 绫诲瀷鐨勪俊鎭渶瑕佹洿浠旂粏鐨勫鏌ワ紝
-   浣嗗畠姣?ERROR 娓╁拰銆?
+   这是次一级的严格级别。WARNING 类型的信息需要更仔细的审查，
+   但它ERROR 温和
 
  - CHECK
 
-   杩欐槸鏈€娓╁拰鐨勭骇鍒€傝繖浜涙槸鍙兘闇€瑕佺◢鍔犳枱閰岀殑浜嬮」銆?
+   这是最温和的级别。这些是可能需要稍加斟酌的事项
 
-## 绫诲瀷鎻忚堪
-
-
-鏈妭鍖呭惈瀵?checkpatch 涓墍鏈変俊鎭被鍨嬬殑鎻忚堪銆?
+## 类型描述
 
 
+本节包含checkpatch 中所有信息类型的描述
 
-### 鍒嗛厤椋庢牸
+
+
+### 分配风格
 
 
   **ALLOC_ARRAY_ARGS**
-    kcalloc 鎴?kmalloc_array 鐨勭涓€涓弬鏁板簲涓哄厓绱犱釜鏁般€?
-    sizeof() 浣滀负绗竴涓弬鏁伴€氬父鏄敊璇殑銆?
+    kcalloc kmalloc_array 的第一个参数应为元素个数
+    sizeof() 作为第一个参数通常是错误的
 
 
     See: https://www.kernel.org/doc/html/latest/core-api/memory-allocation.html
 
   **ALLOC_SIZEOF_STRUCT**
-    杩欑鍒嗛厤椋庢牸涓嶄匠銆傞€氬父瀵逛簬浣跨敤 sizeof() 鑾峰彇鍐呭瓨澶у皬鐨?
-    鍒嗛厤鍑芥暟鏃忚€岃█銆?
+    这种分配风格不佳。通常对于使用 sizeof() 获取内存大小
+    分配函数族而言
 ```
 
       p = alloc(sizeof(struct foo), ...)
@@ -268,32 +268,32 @@ checkpatch 涓殑淇℃伅鍒嗕负涓変釜绾у埆銆備俊鎭殑绾у�
 
 
 ```
-### API 浣跨敤
+### API 使用
 
 
   **ARCH_DEFINES**
-    搴斿敖鍙兘閬垮厤鏋舵瀯鐗瑰畾鐨?define锛?
-    鏃犺浣曞閮藉簲濡傛銆?
+    应尽可能避免架构特定define
+    无论何处都应如此
 
   **ARCH_INCLUDE_LINUX**
-    姣忓綋鍖呭惈 asm/file.h 涓?linux/file.h 瀛樺湪鏃讹紝
-    鑻?linux/file.h 鍖呭惈浜?asm/file.h锛屽彲浠ヨ繘琛岃浆鎹€?
-    浣嗚繖骞堕潪鎬绘槸濡傛锛堣 signal.h锛夈€?
-    姝や俊鎭被鍨嬩粎閽堝鏉ヨ嚜 arch/ 鐨勫寘鍚彂鍑恒€?
+    每当包含 asm/file.h linux/file.h 存在时，
+    linux/file.h 包含asm/file.h，可以进行转换
+    但这并非总是如此（见 signal.h）
+    此信息类型仅针对来自 arch/ 的包含发出
 
   **AVOID_BUG**
-    BUG() 鎴?BUG_ON() 搴旇瀹屽叏閬垮厤銆?
-    鏀圭敤 WARN() 鍜?WARN_ON()锛屽苟灏藉彲鑳戒紭闆呭湴
-    澶勭悊鈥滀笉鍙兘鈥濈殑閿欒鎯呭喌銆?
+    BUG() BUG_ON() 应被完全避免
+    改用 WARN() WARN_ON()，并尽可能优雅地
+    处理“不可能”的错误情况
 
     See: https://www.kernel.org/doc/html/latest/process/deprecated.html#bug-and-bug-on
 
   **CONSIDER_KSTRTO**
-    simple_strtol()銆乻imple_strtoll()銆乻imple_strtoul() 鍜?
-    simple_strtoull() 鍑芥暟浼氭樉寮忓拷鐣ユ孩鍑猴紝杩欏彲鑳?
-    缁欒皟鐢ㄨ€呭甫鏉ユ剰澶栫粨鏋溿€傜浉搴旂殑 kstrtol()銆?
-    kstrtoll()銆乲strtoul() 鍜?kstrtoull() 鍑芥暟閫氬父
-    鏄纭殑鏇夸唬銆?
+    simple_strtol()、simple_strtoll()、simple_strtoul() 
+    simple_strtoull() 函数会显式忽略溢出，这可
+    给调用者带来意外结果。相应的 kstrtol()
+    kstrtoll()、kstrtoul() kstrtoull() 函数通常
+    是正确的替代
 
     See: https://www.kernel.org/doc/html/latest/process/deprecated.html#simple-strtol-simple-strtoll-simple-strtoul-simple-strtoull
 
@@ -453,11 +453,11 @@ checkpatch 涓殑淇℃伅鍒嗕负涓変釜绾у埆銆備俊鎭殑绾у�
 
 
 ```
-### 娉ㄩ噴
+### 注释
 
 
   **BLOCK_COMMENT_STYLE**
-    娉ㄩ噴椋庢牸涓嶆纭€傚琛屾敞閲婄殑棣栭€夐鏍兼槸
+    注释风格不正确。多行注释的首选风格是
 ```
 
       /*
@@ -499,17 +499,17 @@ checkpatch 涓殑淇℃伅鍒嗕负涓変釜绾у埆銆備俊鎭殑绾у�
     internally in the MAC or PHY), "rgmii-id" is the correct PHY mode.
 
 ```
-### 鎻愪氦淇℃伅
+### 提交信息
 
 
   **BAD_SIGN_OFF**
-    signed-off-by 琛屼笉绗﹀悎绀惧尯鎸囧畾鐨?
-    鏍囧噯銆?
+    signed-off-by 行不符合社区指定
+    标准
 
     See: https://www.kernel.org/doc/html/latest/process/submitting-patches.html#developer-s-certificate-of-origin-1-1
 
   **BAD_STABLE_ADDRESS_STYLE**
-    鐢ㄤ簬 stable 鐨勯偖绠辨牸寮忎笉姝ｇ‘銆?
+    用于 stable 的邮箱格式不正确
 ```
 
       1. stable@vger.kernel.org
@@ -609,11 +609,11 @@ checkpatch 涓殑淇℃伅鍒嗕负涓変釜绾у埆銆備俊鎭殑绾у�
     may confuse tools that apply patches.
 
 ```
-### 姣旇緝椋庢牸
+### 比较风格
 
 
   **ASSIGN_IN_IF**
-    涓嶈鍦?if 鏉′欢涓娇鐢ㄨ祴鍊笺€?
+    不要if 条件中使用赋值
 ```
 
       if ((foo = bar(...)) < BAZ) {
@@ -639,27 +639,27 @@ checkpatch 涓殑淇℃伅鍒嗕负涓変釜绾у埆銆備俊鎭殑绾у�
 
 
 ```
-### 缂╄繘涓庢崲琛?
+### 缩进与换
 
 
   **CODE_INDENT**
-    浠ｇ爜缂╄繘搴斾娇鐢?tab 鑰岄潪绌烘牸銆?
-    闄ゆ敞閲娿€佹枃妗ｅ拰 Kconfig 涔嬪锛?
-    绌烘牸浠庝笉琚敤浜庣缉杩涖€?
+    代码缩进应使tab 而非空格
+    除注释、文档和 Kconfig 之外
+    空格从不被用于缩进
 
     See: https://www.kernel.org/doc/html/latest/process/coding-style.html#indentation
 
   **DEEP_INDENTATION**
-    浣跨敤 6 涓垨鏇村 tab 鐨勭缉杩涢€氬父琛ㄦ槑
-    浠ｇ爜缂╄繘杩囨繁銆?
+    使用 6 个或更多 tab 的缩进通常表明
+    代码缩进过深
 
-    寤鸿閲嶆瀯 if/else/for/do/while/switch 璇彞涓?
-    杩囧害鐨勭缉杩涖€?
+    建议重构 if/else/for/do/while/switch 语句
+    过度的缩进
 
     See: https://lore.kernel.org/lkml/1328311239.21255.24.camel@joe2Laptop/
 
   **SWITCH_CASE_INDENT_LEVEL**
-    switch 搴斾笌 case 澶勪簬鐩稿悓鐨勭缉杩涚骇鍒€?
+    switch 应与 case 处于相同的缩进级别
 ```
 
       switch (suffix) {
@@ -754,13 +754,13 @@ checkpatch 涓殑淇℃伅鍒嗕负涓変釜绾у埆銆備俊鎭殑绾у�
 
 
 ```
-### 瀹忋€佸睘鎬т笌绗﹀彿
+### 宏、属性与符号
 
 
   **ARRAY_SIZE**
-    ARRAY_SIZE(foo) 瀹忓簲浼樺厛浜?
-    sizeof(foo)/sizeof(foo[^0^])锛岀敤浜庤幏鍙栨暟缁勪腑
-    鐨勫厓绱犱釜鏁般€?
+    ARRAY_SIZE(foo) 瀹忓簲浼樺厛浜。
+    sizeof(foo)/sizeof(foo[^0^])，用于获取数组中
+    的元素个数
 
 ```
 
@@ -928,40 +928,40 @@ checkpatch 涓殑淇℃伅鍒嗕负涓変釜绾у埆銆備俊鎭殑绾у�
 
 
 ```
-### 鍑芥暟涓庡彉閲?
+### 函数与变
 
 
   **CAMELCASE**
-    閬垮厤浣跨敤椹煎嘲鍛藉悕锛圕amelCase锛夋爣璇嗙銆?
+    避免使用驼峰命名（CamelCase）标识符
 
     See: https://www.kernel.org/doc/html/latest/process/coding-style.html#naming
 
   **CONST_CONST**
-    浣跨敤 `const <type> const *` 閫氬父搴斿啓涓?
-    `const <type> * const`銆?
+    使用 `const <type> const *` 通常应写
+    `const <type> * const`銆。
 
   **CONST_STRUCT**
-    浣跨敤 const 閫氬父鏄釜濂戒富鎰忋€侰heckpatch 浼氳鍙?
-    涓€涓父鐢ㄧ粨鏋勪綋鍒楄〃锛岃繖浜涚粨鏋勪綋鎬绘槸鎴?
-    鍑犱箮鎬绘槸甯搁噺銆?
+    使用 const 通常是个好主意。Checkpatch 会读
+    一个常用结构体列表，这些结构体总是
+    几乎总是常量
 
-    鐜版湁鐨勭粨鏋勪綋鍒楄〃鍙粠
-    `scripts/const_structs.checkpatch` 鏌ョ湅銆?
+    现有的结构体列表可从
+    `scripts/const_structs.checkpatch` 查看
 
     See: https://lore.kernel.org/lkml/alpine.DEB.2.10.1608281509480.3321@hadrien/
 
-    宓屽叆寮忓嚱鏁板悕涓嶅お閫傚悎浣跨敤锛屽洜涓洪噸鏋勫彲鑳藉鑷?
-    鍑芥暟閲嶅懡鍚嶃€備紭鍏堜娇鐢?
-    "%s"銆乢_func__ 鑰岄潪
-    宓屽叆寮忓嚱鏁板悕銆?
+    嵌入式函数名不太适合使用，因为重构可能导
+    函数重命名。优先使
+    "%s"、__func__ 而非
+    嵌入式函数名
 
-    娉ㄦ剰锛岃繖鍦?-f锛?-file锛塩heckpatch 閫夐」涓嬩笉璧蜂綔鐢紝
-    鍥犱负瀹冧緷璧栬ˉ涓佷笂涓嬫枃鎻愪緵鍑芥暟鍚嶃€?
+    注意，这-f-file）checkpatch 选项下不起作用，
+    因为它依赖补丁上下文提供函数名
 
   **FUNCTION_ARGUMENTS**
-    姝よ鍛婂洜浠ヤ笅浠讳竴鍘熷洜鍙戝嚭锛?
+    此警告因以下任一原因发出
 
-       1. 鍑芥暟澹版槑涓殑鍙傛暟娌℃湁鎸夊涓嬫柟寮忎功鍐欙細
+       1. 函数声明中的参数没有按如下方式书写：
 ```
 
            void foo
@@ -1037,40 +1037,40 @@ checkpatch 涓殑淇℃伅鍒嗕负涓変釜绾у埆銆備俊鎭殑绾у�
 
 
 ```
-### 鏉冮檺
+### 权限
 
 
   **DEVICE_ATTR_PERMS**
-    DEVICE_ATTR 涓娇鐢ㄧ殑鏉冮檺涓嶅父瑙併€?
-    閫氬父鍙娇鐢ㄤ笁绉嶆潈闄?鈥斺€?0644锛圧W锛夈€?444锛圧O锛?
-    鍜?0200锛圵O锛夈€?
+    DEVICE_ATTR 中使用的权限不常见
+    通常只使用三种权—0644（RW）444（RO
+    0200（WO）
 
     See: https://www.kernel.org/doc/html/latest/filesystems/sysfs.html#attributes
 
   **EXECUTE_PERMISSIONS**
-    婧愭枃浠舵病鏈夌悊鐢遍渶瑕佸彲鎵ц銆傚彲鎵ц浣?
-    鍙互瀹夊叏鍦扮Щ闄ゃ€?
+    源文件没有理由需要可执行。可执行
+    可以安全地移除
 
   **EXPORTED_WORLD_WRITABLE**
-    瀵煎嚭鍏ㄥ眬鍙啓鐨?sysfs/debugfs 鏂囦欢閫氬父鏄欢鍧忎簨銆?
-    闅忔剰杩欐牱鍋氬彲鑳藉紩鍏ヤ弗閲嶇殑瀹夊叏婕忔礊銆?
-    杩囧幓锛屾煇浜?debugfs 婕忔礊鐪嬩技鍏佽浠讳綍鏈湴鐢ㄦ埛
-    鍚戣澶囧瘎瀛樺櫒鍐欏叆浠绘剰鍊?鈥斺€?杩欑鎯呭喌
-    鍑犱箮涓嶄細甯︽潵浠€涔堝ソ澶勩€?
+    导出全局可写sysfs/debugfs 文件通常是件坏事
+    随意这样做可能引入严重的安全漏洞
+    过去，某debugfs 漏洞看似允许任何本地用户
+    向设备寄存器写入任意—这种情况
+    几乎不会带来什么好处
 
     See: https://lore.kernel.org/linux-arm-kernel/cover.1296818921.git.segoon@openwall.com/
 
   **NON_OCTAL_PERMISSIONS**
-    鏉冮檺浣嶅簲浣跨敤 4 浣嶅叓杩涘埗鏉冮檺锛堝 0700 鎴?0444锛夈€?
-    閬垮厤浣跨敤鍗佽繘鍒剁瓑浠讳綍鍏朵粬杩涘埗銆?
+    权限位应使用 4 位八进制权限（如 0700 0444）
+    避免使用十进制等任何其他进制
 
   **SYMBOLIC_PERMS**
-    鍏繘鍒跺舰寮忕殑鏉冮檺浣嶆瘮鍏剁鍙峰舰寮忔洿鏄撹銆佹洿鏄撶悊瑙ｏ紝
-    鍥犱负璁稿鍛戒护琛屽伐鍏烽兘浣跨敤杩欑琛ㄧず娉曘€傜粡楠屼赴瀵岀殑鍐呮牳寮€鍙戣€?
-    鏁板崄骞存潵涓€鐩翠娇鐢ㄨ繖浜涗紶缁熺殑 Unix 鏉冮檺浣嶏紝鍥犳浠栦滑鍙戠幇
-    鍏繘鍒惰〃绀烘硶姣旂鍙峰畯鏇村鏄撶悊瑙ｃ€備緥濡傦紝
-    S_IWUSR|S_IRUGO 姣?0644 鏇撮毦璇伙紝鑰?0644 鍙嶈€?
-    妯＄硦浜嗗紑鍙戣€呯殑鎰忓浘鑰岄潪婢勬竻瀹冦€?
+    八进制形式的权限位比其符号形式更易读、更易理解，
+    因为许多命令行工具都使用这种表示法。经验丰富的内核开发
+    数十年来一直使用这些传统的 Unix 权限位，因此他们发现
+    八进制表示法比符号宏更容易理解。例如，
+    S_IWUSR|S_IRUGO 0644 更难读，0644 反
+    模糊了开发者的意图而非澄清它
 
 
     See: https://lore.kernel.org/lkml/CA+55aFw5v23T-zvDZp-MmD_EYxF8WbafwwB59934FV7g21uMGQ@mail.gmail.com/
@@ -1213,68 +1213,68 @@ checkpatch 涓殑淇℃伅鍒嗕负涓変釜绾у埆銆備俊鎭殑绾у�
 
 
 ```
-### 鍏朵粬
+### 其他
 
 
   **CONFIG_DESCRIPTION**
-    Kconfig 绗﹀彿搴旀湁涓€涓畬鏁存弿杩板畠鐨勫府鍔╂枃鏈€?
+    Kconfig 符号应有一个完整描述它的帮助文本
 
 
   **CORRUPTED_PATCH**
-    琛ヤ竵浼间箮宸叉崯鍧忔垨琛岃鎹㈣銆?
-    璇峰湪鍙戦€佺粰缁存姢鑰呬箣鍓嶉噸鏂扮敓鎴愯ˉ涓佹枃浠躲€?
+    补丁似乎已损坏或行被换行
+    请在发送给维护者之前重新生成补丁文件
 
   **CVS_KEYWORD**
-    鐢变簬 linux 宸茶縼绉诲埌 git锛孋VS 鏍囪涓嶅啀浣跨敤銆?
-    鍥犳涓嶅簲娣诲姞 CVS 椋庢牸鐨勫叧閿瓧锛?Id$銆?$Revision$銆?$Log$锛夈€?
+    由于 linux 已迁移到 git，CVS 标记不再使用
+    因此不应添加 CVS 风格的关键字Id$$Revision$$Log$）
 
 
   **DEFAULT_NO_BREAK**
-    switch 鐨?default case 鏈夋椂浼氳鍐欐垚 "default:;"銆傝繖鍙兘瀵艰嚧
-    鍦?default 涔嬩笅鏂板鐨?case 鍑虹幇缂洪櫡銆?
+    switch default case 有时会被写成 "default:;"。这可能导致
+    default 之下新增case 出现缺陷
 
-    搴斿湪绌虹殑 default 璇彞涔嬪悗娣诲姞 "break;"锛屼互閬垮厤
-    涓嶆湡鏈涚殑 fallthrough銆?
+    应在空的 default 语句之后添加 "break;"，以避免
+    不期望的 fallthrough
 
   **DOS_LINE_ENDINGS**
-    瀵逛簬 DOS 鏍煎紡鐨勮ˉ涓侊紝琛屽熬浼氭湁澶氫綑鐨?^M 绗﹀彿銆?
-    搴斿皢鍏剁Щ闄ゃ€?
+    对于 DOS 格式的补丁，行尾会有多余^M 符号
+    应将其移除
 
   **DT_SCHEMA_BINDING_PATCH**
-    DT 缁戝畾宸茶縼绉诲埌鍩轰簬 json-schema 鐨勬牸寮忥紝鑰岄潪
-    鑷敱鏍煎紡鏂囨湰銆?
+    DT 绑定已迁移到基于 json-schema 的格式，而非
+    自由格式文本
 
     See: https://www.kernel.org/doc/html/latest/devicetree/bindings/writing-schema.html
 
   **DT_SPLIT_BINDING_PATCH**
-    璁惧鏍戠粦瀹氬簲褰撴槸瀹冧滑鑷繁鐨勭嫭绔嬭ˉ涓併€傝繖鏄洜涓?
-    缁戝畾鍦ㄩ€昏緫涓婄嫭绔嬩簬椹卞姩瀹炵幇锛屽畠浠湁涓嶅悓鐨勭淮鎶よ€?
-锛堝嵆浣块€氬父缁忕敱鍚屼竴妫垫爲鍚堝叆锛夛紝骞朵笖杩欐牱鑳借鐢?
-    git-filter-branch 鍒涘缓鐨勭函 DT 鏍戞嫢鏈夋洿娓呮櫚鐨?
-    鍘嗗彶璁板綍銆?
+    设备树绑定应当是它们自己的独立补丁。这是因
+    绑定在逻辑上独立于驱动实现，它们有不同的维护
+（即使通常经由同一棵树合入），并且这样能让
+    git-filter-branch 创建的纯 DT 树拥有更清晰
+    历史记录
 
     See: https://www.kernel.org/doc/html/latest/devicetree/bindings/submitting-patches.html#i-for-patch-submitters
 
   **EMBEDDED_FILENAME**
-    鍦ㄦ枃浠跺唴宓屽叆瀹屾暣鏂囦欢鍚嶈矾寰勫苟娌℃湁鐗瑰埆澶х殑鐢ㄥ锛?
-    鍥犱负璺緞缁忓父琚Щ鍔ㄤ粠鑰屽彉寰椾笉姝ｇ‘銆?
+    在文件内嵌入完整文件名路径并没有特别大的用处
+    因为路径经常被移动从而变得不正确
 
   **FILE_PATH_CHANGES**
-    姣忓綋娣诲姞銆佺Щ鍔ㄦ垨鍒犻櫎鏂囦欢鏃讹紝MAINTAINERS 鏂囦欢涓殑
-    妯″紡鍙兘涓嶅悓姝ユ垨杩囨湡銆?
+    每当添加、移动或删除文件时，MAINTAINERS 文件中的
+    模式可能不同步或过期
 
-    鍥犳鍦ㄨ繖浜涙儏鍐典笅鍙兘闇€瑕佹洿鏂?MAINTAINERS銆?
+    因此在这些情况下可能需要更MAINTAINERS
 
   **MEMSET**
-    memset 鐨勪娇鐢ㄤ技涔庝笉姝ｇ‘銆傝繖鍙兘鏄敱
-    鍙傛暟椤哄簭閿欒瀵艰嚧銆傝閲嶆柊妫€鏌ョ敤娉曘€?
+    memset 的使用似乎不正确。这可能是由
+    参数顺序错误导致。请重新检查用法
 
   **NOT_UNIFIED_DIFF**
-    琛ヤ竵鏂囦欢浼间箮涓嶆槸 unified-diff 鏍煎紡銆傝
-    鍦ㄥ彂閫佺粰缁存姢鑰呬箣鍓嶉噸鏂扮敓鎴愯ˉ涓佹枃浠躲€?
+    补丁文件似乎不是 unified-diff 格式。请
+    在发送给维护者之前重新生成补丁文件
 
   **PLACEHOLDER_USE**
-    妫€娴嬮仐鐣欏湪灏侀潰淇℃垨鎻愪氦澶?鏃ュ織涓€佹湭澶勭悊鐨勫崰浣嶇鏂囨湰銆?
+    检测遗留在封面信或提交日志中、未处理的占位符文本
 ```
 
       *** SUBJECT HERE ***

@@ -1,26 +1,26 @@
 ﻿
 ## BPF cpumask kfuncs
 
-## 1. 寮曡█
+## 1. 引言
 
-`struct cpumask` 鏄唴鏍镐腑鐨勪竴涓綅鍥炬暟鎹粨鏋勶紝鍏剁储寮曞弽鏄犵郴缁熶笂鐨?CPU銆傞€氬父锛宑pumask 鐢ㄤ簬璺熻釜涓€涓换鍔¤浜插拰鍒板摢浜?CPU锛屼絾瀹冧滑涔熷彲浠ョ敤浜庝緥濡傝窡韪摢浜涙牳蹇冧笌鏌愪釜璋冨害鍩熺浉鍏宠仈銆佹満鍣ㄤ笂鍝簺鏍稿績鏄┖闂茬殑锛岀瓑绛夈€?
-BPF 涓虹▼搴忔彁渚涗簡涓€缁?kfuncs锛屽彲鐢ㄤ簬鍒嗛厤銆佸彉鏇淬€佹煡璇㈠拰閲婃斁 cpumask銆?
-## 2. BPF cpumask 瀵硅薄
+`struct cpumask` 是内核中的一个位图数据结构，其索引反映系统上CPU。通常，cpumask 用于跟踪一个任务被亲和到哪CPU，但它们也可以用于例如跟踪哪些核心与某个调度域相关联、机器上哪些核心是空闲的，等等
+BPF 为程序提供了一kfuncs，可用于分配、变更、查询和释放 cpumask
+## 2. BPF cpumask 对象
 
-BPF 绋嬪簭鍙互浣跨敤涓ょ涓嶅悓绫诲瀷鐨?cpumask銆?
+BPF 程序可以使用两种不同类型cpumask
 ### 2.1 ``struct bpf_cpumask *``
 
-`struct bpf_cpumask *` 鏄敱 BPF 浠ｈ〃鏌愪釜 BPF 绋嬪簭鍒嗛厤鐨?cpumask锛屽叾鐢熷懡鍛ㄦ湡瀹屽叏鐢?BPF 鎺у埗銆傝繖浜?cpumask 鍙?RCU 淇濇姢锛屽彲浠ヨ鍙樻洿锛屽彲浠ョ敤浣?kptr锛屽苟涓斿彲浠ュ畨鍏ㄥ湴杞崲涓?`struct cpumask *`銆?
-### 2.1.1 ``struct bpf_cpumask *`` 鐢熷懡鍛ㄦ湡
+`struct bpf_cpumask *` 是由 BPF 代表某个 BPF 程序分配cpumask，其生命周期完全BPF 控制。这cpumask RCU 保护，可以被变更，可以用kptr，并且可以安全地转换`struct cpumask *`
+### 2.1.1 ``struct bpf_cpumask *`` 生命周期
 
-`struct bpf_cpumask *` 浣跨敤浠ヤ笅鍑芥暟杩涜鍒嗛厤銆佽幏鍙栧拰閲婃斁锛?
+`struct bpf_cpumask *` 使用以下函数进行分配、获取和释放
   :identifiers: bpf_cpumask_create
 
   :identifiers: bpf_cpumask_acquire
 
   :identifiers: bpf_cpumask_release
 
-渚嬪锛?
+例如
 
         struct cpumask_map_value {
                 struct bpf_cpumask __kptr * cpumask;
@@ -61,7 +61,7 @@ BPF 绋嬪簭鍙互浣跨敤涓ょ涓嶅悓绫诲瀷鐨?cpumask銆?
         }
 
         /**
-         - 涓€涓ず渚?tracepoint锛屽睍绀哄浣曟煡璇换鍔＄殑 cpumask 骞?         - 灏嗗叾璁板綍涓?kptr銆?         */
+         - 一个示tracepoint，展示如何查询任务的 cpumask          - 将其记录kptr         */
         SEC("tp_btf/task_newtask")
         int BPF_PROG(record_task_cpumask, struct task_struct *task, u64 clone_flags)
         {
@@ -81,16 +81,16 @@ BPF 绋嬪簭鍙互浣跨敤涓ょ涓嶅悓绫诲瀷鐨?cpumask銆?
 
 ----
 
-### 2.1.1 ``struct bpf_cpumask *`` 浣滀负 kptr
+### 2.1.1 ``struct bpf_cpumask *`` 作为 kptr
 
-濡備笂鎵€杩板苟涓句緥璇存槑锛岃繖浜?`struct bpf_cpumask *` 瀵硅薄涔熷彲浠ュ瓨鍌ㄥ湪鏄犲皠涓苟鐢ㄤ綔 kptr銆傚鏋滀竴涓?`struct bpf_cpumask *` 鍦ㄦ槧灏勪腑锛岃寮曠敤鍙互浣跨敤 bpf_kptr_xchg() 浠庢槧灏勪腑绉婚櫎锛屾垨鑰呬娇鐢?RCU 鏈轰細鎬у湴鑾峰彇锛?
+如上所述并举例说明，这`struct bpf_cpumask *` 对象也可以存储在映射中并用作 kptr。如果一`struct bpf_cpumask *` 在映射中，该引用可以使用 bpf_kptr_xchg() 从映射中移除，或者使RCU 机会性地获取
 
-	/** 鍖呭惈瀛樺偍鍦ㄦ槧灏勪腑鐨?struct bpf_cpumask kptr 鐨勭粨鏋勪綋銆?**/
+	/** 包含存储在映射中struct bpf_cpumask kptr 的结构体**/
 	struct cpumasks_kfunc_map_value {
 		struct bpf_cpumask __kptr * bpf_cpumask;
 	};
 
-	/** 鍖呭惈 struct cpumasks_kfunc_map_value 琛ㄩ」鐨勬槧灏勩€?**/
+	/** 包含 struct cpumasks_kfunc_map_value 表项的映射**/
 	struct {
 		__uint(type, BPF_MAP_TYPE_ARRAY);
 		__type(key, int);
@@ -101,9 +101,9 @@ BPF 绋嬪簭鍙互浣跨敤涓ょ涓嶅悓绫诲瀷鐨?cpumask銆?
 	/** ... **/
 
 	/**
-  - 涓€涓畝鍗曠殑绀轰緥 tracepoint 绋嬪簭锛屽睍绀哄瓨鍌ㄥ湪鏄犲皠涓殑
-  - struct bpf_cpumask * kptr 濡備綍
-  - 鍙互鍦?RCU 淇濇姢涓嬩紶閫掔粰 kfuncs銆?	 */
+  - 一个简单的示例 tracepoint 程序，展示存储在映射中的
+  - struct bpf_cpumask * kptr 如何
+  - 可以RCU 保护下传递给 kfuncs	 */
 	SEC("tp_btf/cgroup_mkdir")
 	int BPF_PROG(cgrp_ancestor_example, struct cgroup **cgrp, const char **path)
 	{
@@ -111,18 +111,18 @@ BPF 绋嬪簭鍙互浣跨敤涓ょ涓嶅悓绫诲瀷鐨?cpumask銆?
 		struct cpumasks_kfunc_map_value *v;
 		u32 key = 0;
 
-		/** 鍋囪涔嬪墠宸插湪鏄犲皠涓瓨鍌ㄤ簡涓€涓?bpf_cpumask ** kptr銆?*/
+		/** 假设之前已在映射中存储了一bpf_cpumask ** kptr*/
 		v = bpf_map_lookup_elem(&cpumasks_kfunc_map, &key);
 		if (!v)
 			return -ENOENT;
 
 		bpf_rcu_read_lock();
-		/** 鑾峰彇瀵瑰凡瀛樺偍鍦ㄦ槧灏勪腑鐨?bpf_cpumask ** kptr 鐨勫紩鐢ㄣ€?*/
+		/** 获取对已存储在映射中bpf_cpumask ** kptr 的引用*/
 		kptr = v->cpumask;
 		if (!kptr) {
-			/* 濡傛灉鏄犲皠涓病鏈?bpf_cpumask锛岄偅鏄洜涓?    - 鎴戜滑涓庡彟涓€涓湪 bpf_map_lookup_elem()
-    - 涔嬪悗銆佷互鍙婃垜浠粠鏄犲皠鍔犺浇鎸囬拡涔嬪墠
-    - 鐢?bpf_kptr_xchg() 绉婚櫎瀹冪殑 CPU 鍙戠敓浜嗙珵浜夈€?			 */
+			/* 如果映射中没bpf_cpumask，那是因    - 我们与另一个在 bpf_map_lookup_elem()
+    - 之后、以及我们从映射加载指针之前
+    - bpf_kptr_xchg() 移除它的 CPU 发生了竞争			 */
 			bpf_rcu_read_unlock();
 			return -EBUSY;
 		}
@@ -137,24 +137,24 @@ BPF 绋嬪簭鍙互浣跨敤涓ょ涓嶅悓绫诲瀷鐨?cpumask銆?
 
 ### 2.2 ``struct cpumask``
 
-`struct cpumask` 鏄疄闄呭寘鍚鏌ヨ銆佸彉鏇寸瓑鐨?cpumask 浣嶅浘鐨勫璞°€備竴涓?`struct bpf_cpumask` 鍖呰浜嗕竴涓?``struct cpumask``锛岃繖灏辨槸涓轰粈涔堝皢鍏跺姝よ浆鎹㈡槸瀹夊叏鐨勶紙浣嗚娉ㄦ剰锛屽皢 `struct cpumask **` 杞崲涓?`struct bpf_cpumask **` 鏄?*涓?*瀹夊叏鐨勶紝楠岃瘉鍣ㄤ細鎷掔粷浠讳綍灏濊瘯杩欐牱鍋氱殑绋嬪簭锛夈€?
-姝ｅ鎴戜滑灏嗗湪涓嬮潰鐪嬪埌鐨勶紝浠讳綍鍙樻洿鍏?cpumask 鍙傛暟鐨?kfunc 閮戒細灏?`struct bpf_cpumask *` 浣滀负璇ュ弬鏁般€備换浣曞彧鏄煡璇?cpumask 鐨勫弬鏁板垯浼氬彇涓€涓?`struct cpumask *`銆?
+`struct cpumask` 是实际包含被查询、变更等cpumask 位图的对象。一`struct bpf_cpumask` 包装了一``struct cpumask``，这就是为什么将其如此转换是安全的（但请注意，将 `struct cpumask **` 转换`struct bpf_cpumask **` **安全的，验证器会拒绝任何尝试这样做的程序）
+正如我们将在下面看到的，任何变更cpumask 参数kfunc 都会`struct bpf_cpumask *` 作为该参数。任何只是查cpumask 的参数则会取一`struct cpumask *`
 ## 3. cpumask kfuncs
 
-涓婇潰鎴戜滑鎻忚堪浜嗗彲鐢ㄤ簬鍒嗛厤銆佽幏鍙栥€侀噴鏀剧瓑 `struct bpf_cpumask *` 鐨?kfunc銆傛湰鏂囨。鐨勮繖涓€鑺傚皢鎻忚堪鐢ㄤ簬鍙樻洿鍜屾煡璇?cpumask 鐨?kfunc銆?
-### 3.1 鍙樻洿 cpumask
+上面我们描述了可用于分配、获取、释放等 `struct bpf_cpumask *` kfunc。本文档的这一节将描述用于变更和查cpumask kfunc
+### 3.1 变更 cpumask
 
-涓€浜?cpumask kfunc 鏄€滃彧璇烩€濈殑锛屽洜涓哄畠浠笉鍙樻洿浠讳綍鍙傛暟锛岃€屽彟涓€浜涘垯鍙樻洿鑷冲皯涓€涓弬鏁帮紙杩欐剰鍛崇潃璇ュ弬鏁板繀椤绘槸 `struct bpf_cpumask *`锛屽涓婃墍杩帮級銆?
-鏈妭灏嗘弿杩版墍鏈夊彉鏇磋嚦灏戜竴涓弬鏁扮殑 cpumask kfunc銆備笅闈?cpumasks-querying-label 鎻忚堪鍙 kfunc銆?
-### 3.1.1 璁剧疆鍜屾竻闄?CPU
+一cpumask kfunc 是“只读”的，因为它们不变更任何参数，而另一些则变更至少一个参数（这意味着该参数必须是 `struct bpf_cpumask *`，如上所述）
+本节将描述所有变更至少一个参数的 cpumask kfunc。下cpumasks-querying-label 描述只读 kfunc
+### 3.1.1 设置和清CPU
 
-bpf_cpumask_set_cpu() 鍜?bpf_cpumask_clear_cpu() 鍙垎鍒敤浜庡湪 `struct bpf_cpumask` 涓缃拰娓呴櫎涓€涓?CPU锛?
+bpf_cpumask_set_cpu() bpf_cpumask_clear_cpu() 可分别用于在 `struct bpf_cpumask` 中设置和清除一CPU
    :identifiers: bpf_cpumask_set_cpu bpf_cpumask_clear_cpu
 
-杩欎簺 kfunc 鐩稿綋鐩存帴锛屼緥濡傚彲浠ユ寜濡備笅鏂瑰紡浣跨敤锛?
+这些 kfunc 相当直接，例如可以按如下方式使用
 
         /**
-         - 涓€涓ず渚?tracepoint锛屽睍绀哄浣曟煡璇?cpumask銆?         */
+         - 一个示tracepoint，展示如何查cpumask         */
         SEC("tp_btf/task_newtask")
         int BPF_PROG(test_set_clear_cpu, struct task_struct *task, u64 clone_flags)
         {
@@ -166,15 +166,15 @@ bpf_cpumask_set_cpu() 鍜?bpf_cpumask_clear_cpu() 鍙垎鍒敤浜庡湪 `s
 
                 bpf_cpumask_set_cpu(0, cpumask);
                 if (!bpf_cpumask_test_cpu(0, cast(cpumask)))
-                        /** 涓嶅簲鍙戠敓銆?**/
+                        /** 不应发生**/
                         goto release_exit;
 
                 bpf_cpumask_clear_cpu(0, cpumask);
                 if (bpf_cpumask_test_cpu(0, cast(cpumask)))
-                        /** 涓嶅簲鍙戠敓銆?**/
+                        /** 不应发生**/
                         goto release_exit;
 
-                /** 鍍?task->cpus_ptr 杩欐牱鐨?struct cpumask ** 鎸囬拡涔熷彲浠ヨ鏌ヨ銆?*/
+                /** task->cpus_ptr 这样struct cpumask ** 指针也可以被查询*/
                 if (bpf_cpumask_test_cpu(0, task->cpus_ptr))
                         bpf_printk("task %s can use CPU %d", task->comm, 0);
 
@@ -185,22 +185,22 @@ bpf_cpumask_set_cpu() 鍜?bpf_cpumask_clear_cpu() 鍙垎鍒敤浜庡湪 `s
 
 ----
 
-bpf_cpumask_test_and_set_cpu() 鍜?bpf_cpumask_test_and_clear_cpu() 鏄簰琛ョ殑 kfunc锛屽厑璁歌皟鐢ㄨ€呭師瀛愬湴娴嬭瘯鍜岃缃紙鎴栨竻闄わ級CPU锛?
+bpf_cpumask_test_and_set_cpu() bpf_cpumask_test_and_clear_cpu() 是互补的 kfunc，允许调用者原子地测试和设置（或清除）CPU
    :identifiers: bpf_cpumask_test_and_set_cpu bpf_cpumask_test_and_clear_cpu
 
 ----
 
-鎴戜滑涔熷彲浠ヤ娇鐢?bpf_cpumask_setall() 鍜?bpf_cpumask_clear() 鍦ㄤ竴娆℃搷浣滀腑璁剧疆鍜屾竻闄ゆ暣涓?`struct bpf_cpumask *` 瀵硅薄锛?
+我们也可以使bpf_cpumask_setall() bpf_cpumask_clear() 在一次操作中设置和清除整`struct bpf_cpumask *` 对象
    :identifiers: bpf_cpumask_setall bpf_cpumask_clear
 
-### 3.1.2 cpumask 涔嬮棿鐨勬搷浣?
-闄や簡鍦ㄥ崟涓?cpumask 涓缃拰娓呴櫎鍗曚釜 CPU 涔嬪锛岃皟鐢ㄨ€呰繕鍙互浣跨敤 bpf_cpumask_and()銆乥pf_cpumask_or() 鍜?bpf_cpumask_xor() 鍦ㄥ涓?cpumask 涔嬮棿鎵ц鎸変綅鎿嶄綔锛?
+### 3.1.2 cpumask 之间的操
+除了在单cpumask 中设置和清除单个 CPU 之外，调用者还可以使用 bpf_cpumask_and()、bpf_cpumask_or() bpf_cpumask_xor() 在多cpumask 之间执行按位操作
    :identifiers: bpf_cpumask_and bpf_cpumask_or bpf_cpumask_xor
 
-浠ヤ笅鏄畠浠浣曚娇鐢ㄧ殑绀轰緥銆傝娉ㄦ剰锛屾绀轰緥涓樉绀虹殑涓€浜?kfunc 灏嗗湪涓嬫枃涓洿璇︾粏鍦颁粙缁嶃€?
+以下是它们如何使用的示例。请注意，此示例中显示的一kfunc 将在下文中更详细地介绍
 
         /**
-         - 涓€涓ず渚?tracepoint锛屽睍绀哄浣曚娇鐢?           鎸変綅杩愮畻绗﹀彉鏇达紙骞舵煡璇級cpumask銆?         */
+         - 一个示tracepoint，展示如何使           按位运算符变更（并查询）cpumask         */
         SEC("tp_btf/task_newtask")
         int BPF_PROG(test_and_or_xor, struct task_struct *task, u64 clone_flags)
         {
@@ -216,28 +216,28 @@ bpf_cpumask_test_and_set_cpu() 鍜?bpf_cpumask_test_and_clear_cpu() 鏄簰琛
                         return -ENOMEM;
                 }
 
-                // ...瀹夊叏鍦板垱寤哄彟澶栦袱涓?mask... */
+                // ...安全地创建另外两mask... */
 
                 bpf_cpumask_set_cpu(0, mask1);
                 bpf_cpumask_set_cpu(1, mask2);
                 bpf_cpumask_and(dst1, (const struct cpumask **)mask1, (const struct cpumask **)mask2);
                 if (!bpf_cpumask_empty((const struct cpumask *)dst1))
-                        /** 涓嶅簲鍙戠敓銆?**/
+                        /** 不应发生**/
                         goto release_exit;
 
                 bpf_cpumask_or(dst1, (const struct cpumask **)mask1, (const struct cpumask **)mask2);
                 if (!bpf_cpumask_test_cpu(0, (const struct cpumask *)dst1))
-                        /** 涓嶅簲鍙戠敓銆?**/
+                        /** 不应发生**/
                         goto release_exit;
 
                 if (!bpf_cpumask_test_cpu(1, (const struct cpumask *)dst1))
-                        /** 涓嶅簲鍙戠敓銆?**/
+                        /** 不应发生**/
                         goto release_exit;
 
                 bpf_cpumask_xor(dst2, (const struct cpumask **)mask1, (const struct cpumask **)mask2);
                 if (!bpf_cpumask_equal((const struct cpumask *)dst1,
                                        (const struct cpumask *)dst2))
-                        /** 涓嶅簲鍙戠敓銆?**/
+                        /** 不应发生**/
                         goto release_exit;
 
          release_exit:
@@ -250,16 +250,16 @@ bpf_cpumask_test_and_set_cpu() 鍜?bpf_cpumask_test_and_clear_cpu() 鏄簰琛
 
 ----
 
-鍙互浣跨敤 bpf_cpumask_copy() 灏嗘暣涓?cpumask 鐨勫唴瀹瑰鍒跺埌鍙︿竴涓細
+可以使用 bpf_cpumask_copy() 将整cpumask 的内容复制到另一个：
 
    :identifiers: bpf_cpumask_copy
 
 ----
 
 
-### 3.2 鏌ヨ cpumask
+### 3.2 查询 cpumask
 
-闄や簡涓婅堪 kfunc 涔嬪锛岃繕鏈変竴缁勫彧璇?kfunc 鍙敤浜庢煡璇?cpumask 鐨勫唴瀹广€?
+除了上述 kfunc 之外，还有一组只kfunc 可用于查cpumask 的内容
    :identifiers: bpf_cpumask_first bpf_cpumask_first_zero bpf_cpumask_first_and
                  bpf_cpumask_test_cpu bpf_cpumask_weight
 
@@ -270,10 +270,10 @@ bpf_cpumask_test_and_set_cpu() 鍜?bpf_cpumask_test_and_clear_cpu() 鏄簰琛
 
 ----
 
-涓婇潰宸茬粡灞曠ず浜嗚繖浜涙煡璇?kfunc 鐨勪竴浜涚ず渚嬬敤娉曘€傛垜浠笉浼氬湪姝ら噸澶嶉偅浜涚ず渚嬨€備絾鏄紝璇锋敞鎰忥紝鎵€鏈変笂杩?kfunc 閮藉湪 `tools/testing/selftests/bpf/progs/cpumask_success.c`_ 涓繘琛屼簡娴嬭瘯锛屾墍浠ュ鏋滀綘鍦ㄥ鎵炬洿澶氬浣曚娇鐢ㄥ畠浠殑绀轰緥锛岃鐪嬬湅閭ｉ噷銆?
+上面已经展示了这些查kfunc 的一些示例用法。我们不会在此重复那些示例。但是，请注意，所有上kfunc 都在 `tools/testing/selftests/bpf/progs/cpumask_success.c`_ 中进行了测试，所以如果你在寻找更多如何使用它们的示例，请看看那里
    https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tree/tools/testing/selftests/bpf/progs/cpumask_success.c
 
 
-## 4. 娣诲姞 BPF cpumask kfunc
+## 4. 添加 BPF cpumask kfunc
 
-鍙楁敮鎸佺殑 BPF cpumask kfunc 闆嗗悎锛堢洰鍓嶏級涓?include/linux/cpumask.h 涓殑 cpumask 鎿嶄綔骞朵笉鏄?1 瀵?1 鐨勫尮閰嶃€傞偅浜?cpumask 鎿嶄綔涓殑浠讳綍涓€涓兘鍙互鍦ㄩ渶瑕佹椂杞绘澗鍦板皝瑁呭埌涓€涓柊鐨?kfunc 涓€傚鏋滀綘鎯虫敮鎸佷竴涓柊鐨?cpumask 鎿嶄綔锛岃闅忔椂鎻愪氦琛ヤ竵銆傚鏋滀綘娣诲姞浜嗕竴涓柊鐨?cpumask kfunc锛岃鍦ㄦ澶勮褰曞畠锛屽苟灏嗕换浣曠浉鍏崇殑鑷祴璇曠敤渚嬫坊鍔犲埌 cpumask 鑷祴璇曞浠朵腑銆?
+受支持的 BPF cpumask kfunc 集合（目前）include/linux/cpumask.h 中的 cpumask 操作并不1 1 的匹配。那cpumask 操作中的任何一个都可以在需要时轻松地封装到一个新kfunc 中。如果你想支持一个新cpumask 操作，请随时提交补丁。如果你添加了一个新cpumask kfunc，请在此处记录它，并将任何相关的自测试用例添加到 cpumask 自测试套件中

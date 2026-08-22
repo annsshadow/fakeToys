@@ -5,10 +5,10 @@
 :Copyright: |copy| 2023, NVIDIA CORPORATION & AFFILIATES. All rights reserved.
 
 
-## 妗ユ帴鍗歌浇锛圔ridge offload锛?
+## 桥接卸载（Bridge offload
 
-mlx5 椹卞姩鍦?switchdev 妯″紡涓嬪疄鐜颁簡瀵规ˉ鎺ヨ鍒欏嵏杞界殑鏀寔銆傚綋 mlx5 switchdev
-representor锛堜唬琛ㄧ鍙ｏ級琚寕鎺ュ埌妗ワ紙bridge锛夋椂锛孡inux 妗ョ殑 FDB 浼氳鑷姩鍗歌浇銆?
+mlx5 驱动switchdev 模式下实现了对桥接规则卸载的支持。当 mlx5 switchdev
+representor（代表端口）被挂接到桥（bridge）时，Linux 桥的 FDB 会被自动卸载
 ```
 
     $ devlink dev eswitch set pci/0000:06:00.0 mode switchdev
@@ -22,7 +22,7 @@ representor锛堜唬琛ㄧ鍙ｏ級琚寕鎺ュ埌妗ワ紙bridge锛夋椂
 ### VLAN
 
 
-mlx5 鏀寔浠ヤ笅妗ユ帴 VLAN 鍔熻兘锛?
+mlx5 支持以下桥接 VLAN 功能
 ```
 
     $ ip link set bridge1 type bridge vlan_filtering 1
@@ -39,10 +39,10 @@ mlx5 鏀寔浠ヤ笅妗ユ帴 VLAN 鍔熻兘锛?
     $ bridge vlan add dev enp8s0f0 vid 3 untagged
 
 ```
-## 瀛愬姛鑳斤紙Subfunction锛?
+## 子功能（Subfunction
 
-閫氳繃 E-switch 鐢熸垚鐨勫瓙鍔熻兘锛圫ubfunction锛変粎閫氳繃 devlink 璁惧鍒涘缓锛岄粯璁ゆ儏鍐典笅鎵€鏈?SF 杈呭姪璁惧閮芥槸绂佺敤鐨勩€傝繖灏嗗厑璁哥敤鎴峰湪 SF 琚畬鍏ㄦ帰娴嬶紙probe锛変箣鍓嶅鍏惰繘琛岄厤缃紝浠庤€?鑺傜渷鏃堕棿銆?
-浣跨敤绀轰緥锛?
+通过 E-switch 生成的子功能（Subfunction）仅通过 devlink 设备创建，默认情况下所SF 辅助设备都是禁用的。这将允许用户在 SF 被完全探测（probe）之前对其进行配置，从节省时间
+使用示例
 ```
 
     $ devlink port add pci/0000:08:00.0 flavour pcisf pfnum 0 sfnum 11
@@ -59,14 +59,14 @@ mlx5 鏀寔浠ヤ笅妗ユ帴 VLAN 鍔熻兘锛?
     $ devlink dev reload auxiliary/mlx5_core.sf.1
 
 ```
-mlx5 鏀寔 ETH銆乺dma 涓?vdpa锛坴net锛夎緟鍔╄澶囩殑 devlink 鍙傛暟锛堝弬瑙?Documentation/networking/devlink/devlink-params.rst <devlink_params_generic>锛夈€?
-mlx5 鏀寔浣跨敤 devlink port锛堝弬瑙?Documentation/networking/devlink/devlink-port.rst <devlink_port>锛夋帴鍙ｇ鐞嗗瓙鍔熻兘銆?
-瀛愬姛鑳芥嫢鏈夎嚜宸辩殑鍔熻兘鑳藉姏浠ュ強鑷繁鐨勮祫婧愩€傝繖鎰忓懗鐫€瀛愬姛鑳芥嫢鏈夎嚜宸辩殑涓撶敤闃熷垪锛坱xq銆乺xq銆乧q銆乪q锛夈€?杩欎簺闃熷垪鏃笉涓庣埗 PCI 鍔熻兘锛坧arent PCI function锛夊叡浜紝涔熶笉浼氫粠鐖?PCI 鍔熻兘澶勭獌鍙栥€?
-褰撳瓙鍔熻兘鍏峰 RDMA 鑳藉姏鏃讹紝瀹冩嫢鏈夎嚜宸辩殑 QP1銆丟ID 琛紝浠ュ強 RDMA 璧勬簮锛屾棦涓嶄笌鐖?PCI 鍔熻兘
-鍏变韩锛屼篃涓嶄細浠庡叾绐冨彇銆?
-瀛愬姛鑳藉湪 PCI BAR 绌洪棿涓嫢鏈変竴涓笓鐢ㄧ殑绐楀彛锛岃绐楀彛涓嶄笌鍏跺畠瀛愬姛鑳芥垨鐖?PCI 鍔熻兘鍏变韩銆傝繖纭繚浜?瀛愬姛鑳界殑鎵€鏈夎澶囷紙netdev銆乺dma銆乿dpa 绛夛級鍙闂鍒嗛厤鐨?PCI BAR 绌洪棿銆?
-瀛愬姛鑳芥敮鎸?eswitch 琛ㄧず锛坮epresentation锛夛紝骞跺€熸鏀寔 tc 鍗歌浇銆傜敤鎴烽厤缃?eswitch 浠ュ悜/浠?瀛愬姛鑳界鍙ｅ彂閫?鎺ユ敹鏁版嵁鍖呫€?
-瀛愬姛鑳戒笌鐖?PCI 鍔熻兘鍙婂叾瀹冨瓙鍔熻兘鍏变韩 PCI 绾у埆鐨勮祫婧愶紝渚嬪 PCI MSI-X IRQ銆?
+mlx5 支持 ETH、rdma vdpa（vnet）辅助设备的 devlink 参数（参Documentation/networking/devlink/devlink-params.rst <devlink_params_generic>）
+mlx5 支持使用 devlink port（参Documentation/networking/devlink/devlink-port.rst <devlink_port>）接口管理子功能
+子功能拥有自己的功能能力以及自己的资源。这意味着子功能拥有自己的专用队列（txq、rxq、cq、eq）这些队列既不与父 PCI 功能（parent PCI function）共享，也不会从PCI 功能处窃取
+当子功能具备 RDMA 能力时，它拥有自己的 QP1、GID 表，以及 RDMA 资源，既不与PCI 功能
+共享，也不会从其窃取
+子功能在 PCI BAR 空间中拥有一个专用的窗口，该窗口不与其它子功能或PCI 功能共享。这确保子功能的所有设备（netdev、rdma、vdpa 等）只访问被分配PCI BAR 空间
+子功能支eswitch 表示（representation），并借此支持 tc 卸载。用户配eswitch 以向/子功能端口发接收数据包
+子功能与PCI 功能及其它子功能共享 PCI 级别的资源，例如 PCI MSI-X IRQ
 ```
 
        _______
@@ -110,7 +110,7 @@ mlx5 鏀寔浣跨敤 devlink port锛堝弬瑙?Documentation/networking/devlin
                                                    |_____________|
 
 ```
-瀛愬姛鑳介€氳繃 devlink port 鎺ュ彛鍒涘缓銆?
+子功能通过 devlink port 接口创建
 ```
 
     $ devlink dev eswitch set pci/0000:06:00.0 mode switchdev
@@ -137,41 +137,41 @@ mlx5 鏀寔浣跨敤 devlink port锛堝弬瑙?Documentation/networking/devlin
     $ devlink port del pci/0000:06:00.0/32768
 
 ```
-## 鍔熻兘灞炴€?
+## 功能属
 
-mlx5 椹卞姩鎻愪緵浜嗕竴绉嶆満鍒讹紝浠ョ粺涓€鐨勬柟寮忎负 SmartNIC 涓庨潪 SmartNIC 璁剧疆 PCI VF/SF 鍔熻兘灞炴€с€?
-杩欎粎鍦?eswitch 妯″紡璁剧疆涓?switchdev 鏃舵墠鍙楁敮鎸併€侾CI VF/SF 鐨勭鍙ｅ姛鑳介厤缃€氳繃 devlink
-eswitch port 鏀寔銆?
-绔彛鍔熻兘灞炴€у簲鍦?PCI VF/SF 琚┍鍔ㄦ灇涓句箣鍓嶈缃€?
-### MAC 鍦板潃璁剧疆
-
-
-mlx5 椹卞姩鏀寔 devlink port function attr 鏈哄埗鏉ヨ缃?MAC 鍦板潃銆傦紙鍙傝 Documentation/networking/devlink/devlink-port.rst锛?
-#### RoCE 鑳藉姏璁剧疆
+mlx5 驱动提供了一种机制，以统一的方式为 SmartNIC 与非 SmartNIC 设置 PCI VF/SF 功能属性
+这仅eswitch 模式设置switchdev 时才受支持。PCI VF/SF 的端口功能配置通过 devlink
+eswitch port 支持
+端口功能属性应PCI VF/SF 被驱动枚举之前设置
+### MAC 地址设置
 
 
-骞堕潪鎵€鏈?mlx5 PCI 璁惧/SF 閮介渶瑕?RoCE 鑳藉姏銆?
-褰?RoCE 鑳藉姏琚鐢ㄦ椂锛屾瘡涓?PCI 璁惧/SF 鍙妭鐪?1 Mbytes 鐨勭郴缁熷唴瀛樸€?
-mlx5 椹卞姩鏀寔 devlink port function attr 鏈哄埗鏉ヨ缃?RoCE 鑳藉姏銆傦紙鍙傝 Documentation/networking/devlink/devlink-port.rst锛?
-#### 鍙縼绉伙紙migratable锛夎兘鍔涜缃?
-
-甯屾湜 mlx5 PCI VF 鑳藉杩涜瀹炴椂杩佺Щ锛坙ive migration锛夌殑鐢ㄦ埛锛岄渶瑕佹樉寮忓湴鍚敤 VF 鐨勫彲杩佺Щ鑳藉姏銆?
-mlx5 椹卞姩鏀寔 devlink port function attr 鏈哄埗鏉ヨ缃彲杩佺Щ鑳藉姏銆傦紙鍙傝 Documentation/networking/devlink/devlink-port.rst锛?
-#### IPsec crypto 鑳藉姏璁剧疆
+mlx5 驱动支持 devlink port function attr 机制来设MAC 地址。（参见 Documentation/networking/devlink/devlink-port.rst
+#### RoCE 能力设置
 
 
-甯屾湜 mlx5 PCI VF 鑳藉杩涜 IPsec crypto 鍗歌浇鐨勭敤鎴凤紝闇€瑕佹樉寮忓湴鍚敤 VF 鐨?ipsec_crypto 鑳藉姏銆?浠?ConnectX6dx 鍙婁互涓婅澶囧紑濮嬫敮鎸佷负 VF 鍚敤 IPsec 鑳藉姏銆傚綋 VF 鍚敤浜?IPsec 鑳藉姏鏃讹紝PF 涓婄殑浠讳綍
-IPsec 鍗歌浇閮戒細琚樆濉炪€?
-mlx5 椹卞姩鏀寔 devlink port function attr 鏈哄埗鏉ヨ缃?ipsec_crypto 鑳藉姏銆傦紙鍙傝 Documentation/networking/devlink/devlink-port.rst锛?
-#### IPsec packet 鑳藉姏璁剧疆
+并非所mlx5 PCI 设备/SF 都需RoCE 能力
+RoCE 能力被禁用时，每PCI 设备/SF 可节1 Mbytes 的系统内存
+mlx5 驱动支持 devlink port function attr 机制来设RoCE 能力。（参见 Documentation/networking/devlink/devlink-port.rst
+#### 可迁移（migratable）能力设
+
+希望 mlx5 PCI VF 能够进行实时迁移（live migration）的用户，需要显式地启用 VF 的可迁移能力
+mlx5 驱动支持 devlink port function attr 机制来设置可迁移能力。（参见 Documentation/networking/devlink/devlink-port.rst
+#### IPsec crypto 能力设置
 
 
-甯屾湜 mlx5 PCI VF 鑳藉杩涜 IPsec packet 鍗歌浇鐨勭敤鎴凤紝闇€瑕佹樉寮忓湴鍚敤 VF 鐨?ipsec_packet 鑳藉姏銆?浠?ConnectX6dx 鍙婁互涓婅澶囧紑濮嬫敮鎸佷负 VF 鍚敤 IPsec 鑳藉姏銆傚綋 VF 鍚敤浜?IPsec 鑳藉姏鏃讹紝PF 涓婄殑浠讳綍
-IPsec 鍗歌浇閮戒細琚樆濉炪€?
-mlx5 椹卞姩鏀寔 devlink port function attr 鏈哄埗鏉ヨ缃?ipsec_packet 鑳藉姏銆傦紙鍙傝 Documentation/networking/devlink/devlink-port.rst锛?
-### SF 鐘舵€佽缃?
+希望 mlx5 PCI VF 能够进行 IPsec crypto 卸载的用户，需要显式地启用 VF ipsec_crypto 能力ConnectX6dx 及以上设备开始支持为 VF 启用 IPsec 能力。当 VF 启用IPsec 能力时，PF 上的任何
+IPsec 卸载都会被阻塞
+mlx5 驱动支持 devlink port function attr 机制来设ipsec_crypto 能力。（参见 Documentation/networking/devlink/devlink-port.rst
+#### IPsec packet 能力设置
 
-瑕佷娇鐢?SF锛岀敤鎴峰繀椤婚€氳繃 SF 鍔熻兘鐘舵€侊紙function state锛夊睘鎬ф潵婵€娲?SF銆?
+
+希望 mlx5 PCI VF 能够进行 IPsec packet 卸载的用户，需要显式地启用 VF ipsec_packet 能力ConnectX6dx 及以上设备开始支持为 VF 启用 IPsec 能力。当 VF 启用IPsec 能力时，PF 上的任何
+IPsec 卸载都会被阻塞
+mlx5 驱动支持 devlink port function attr 机制来设ipsec_packet 能力。（参见 Documentation/networking/devlink/devlink-port.rst
+### SF 状态设
+
+要使SF，用户必须通过 SF 功能状态（function state）属性来激SF
 ```
 
    $ devlink port show ens2f0npf0sf88
@@ -190,7 +190,7 @@ mlx5 椹卞姩鏀寔 devlink port function attr 鏈哄埗鏉ヨ缃?ipsec_p
        hw_addr 00:00:00:00:88:88 state active opstate detached
 
 ```
-鍔熻兘婵€娲诲悗锛孭F 椹卞姩瀹炰緥浼氫粠璁惧鏀跺埌鏌愪釜鐗瑰畾 SF 宸茶婵€娲荤殑浜嬩欢銆傝繖鏄皢璇ヨ澶囨斁鍒版€荤嚎涓娿€?瀵瑰叾杩涜鎺㈡祴锛坧robe锛夊苟涓哄叾瀹炰緥鍖?devlink 瀹炰緥浠ュ強绫荤壒瀹氱殑杈呭姪璁惧鐨勪俊鍙枫€?
+功能激活后，PF 驱动实例会从设备收到某个特定 SF 已被激活的事件。这是将该设备放到总线上对其进行探测（probe）并为其实例devlink 实例以及类特定的辅助设备的信号
 ```
 
     $ devlink dev show
@@ -224,7 +224,7 @@ mlx5 椹卞姩鏀寔 devlink port function attr 鏈哄埗鏉ヨ缃?ipsec_p
      (sf netdev)          (sf rdma device)
 
 ```
-姝ゅ锛屽綋椹卞姩鎸傛帴鍒板瓙鍔熻兘鐨勮緟鍔╄澶囨椂锛孲F 绔彛涔熶細鏀跺埌璇ヤ簨浠躲€傝繖浼氭敼鍙樺姛鑳界殑鎿嶄綔锛坥perational锛?鐘舵€併€傝繖璁╃敤鎴疯兘澶熷垽鏂綍鏃跺彲浠ュ畨鍏ㄥ湴鍒犻櫎 SF 绔彛锛屼互瀹炵幇瀛愬姛鑳界殑浼橀泤缁堟銆?
+此外，当驱动挂接到子功能的辅助设备时，SF 端口也会收到该事件。这会改变功能的操作（operational状态。这让用户能够判断何时可以安全地删除 SF 端口，以实现子功能的优雅终止
 ```
 
     $ devlink port show ens2f0npf0sf88
