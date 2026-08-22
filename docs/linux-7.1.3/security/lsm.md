@@ -6,29 +6,29 @@
 :Author: Chris Vance
 
 
-   鏈功涓弿杩扮殑 API 宸茬粡杩囨椂銆?
+   本书中描述的 API 已经过时
 ## Introduction
 
 
-2001 骞?3 鏈堬紝缇庡浗鍥藉瀹夊叏灞€锛圢SA锛夊湪 2.5 Linux Kernel Summit 涓婂仛浜嗕竴涓叧浜?Security-Enhanced Linux锛圫ELinux锛夌殑婕旇銆係ELinux 鏄?Linux 鍐呮牳涓伒娲讳笖缁嗙矑搴﹂潪鑷富璁块棶鎺у埗鐨勪竴绉嶅疄鐜帮紝鏈€鍒濅綔涓哄畠鑷繁鐗瑰畾鐨勫唴鏍歌ˉ涓佸疄鐜般€傚叾浠栧嚑涓畨鍏ㄩ」鐩紙渚嬪 RSBAC銆丮edusa锛変篃涓?Linux 鍐呮牳寮€鍙戜簡鐏垫椿鐨勮闂帶鍒舵灦鏋勶紝骞朵笖鍚勭椤圭洰涓?Linux 寮€鍙戜簡鐗瑰畾鐨勮闂帶鍒舵ā鍨嬶紙渚嬪 LIDS銆丏TE銆丼ubDomain锛夈€傛瘡涓」鐩兘寮€鍙戝苟缁存姢浜嗚嚜宸辩殑鍐呮牳琛ヤ竵浠ユ敮鎸佸叾瀹夊叏闇€姹傘€?
-浣滀负瀵?NSA 婕旇鐨勫洖搴旓紝Linus Torvalds 鍙戣〃浜嗕竴绯诲垪璇勮锛屾弿杩颁簡涓€涓粬鎰挎剰鑰冭檻绾冲叆涓荤嚎 Linux 鍐呮牳鐨勫畨鍏ㄦ鏋躲€備粬鎻忚堪浜嗕竴涓€氱敤妗嗘灦锛岃妗嗘灦灏嗘彁渚涗竴缁勫畨鍏ㄩ挬瀛愭潵鎺у埗瀵瑰唴鏍稿璞＄殑鎿嶄綔锛屽苟鍦ㄥ唴鏍告暟鎹粨鏋勪腑鎻愪緵涓€缁勪笉閫忔槑鐨勫畨鍏ㄥ瓧娈典互缁存姢瀹夊叏灞炴€с€傜劧鍚庯紝杩欎釜妗嗘灦鍙互琚彲鍔犺浇鍐呮牳妯″潡鐢ㄦ潵瀹炵幇浠讳綍鏈熸湜鐨勫畨鍏ㄦā鍨嬨€侺inus 杩樺缓璁皢 Linux capabilities 浠ｇ爜杩佺Щ鍒拌繖鏍风殑妯″潡涓€?
-Linux Security Modules锛圠SM锛夐」鐩敱 WireX 鍙戣捣锛屾棬鍦ㄥ紑鍙戣繖鏍蜂竴涓鏋躲€侺SM 鏄涓畨鍏ㄩ」鐩紙鍖呮嫭 Immunix銆丼ELinux銆丼GI 鍜?Janus锛変互鍙婂涓釜浜猴紙鍖呮嫭 Greg Kroah-Hartman 鍜?James Morris锛夎仈鍚堝紑鍙戠殑鎴愭灉锛岀洰鐨勬槸寮€鍙戝疄鐜拌妗嗘灦鐨?Linux 鍐呮牳琛ヤ竵銆傝宸ヤ綔鍦?2003 骞?12 鏈堣绾冲叆涓荤嚎銆傛湰鎶€鏈姤鍛婃杩颁簡璇ユ鏋跺拰 capabilities 瀹夊叏妯″潡銆?
+2001 3 月，美国国家安全局（NSA）在 2.5 Linux Kernel Summit 上做了一个关Security-Enhanced Linux（SELinux）的演讲。SELinux Linux 内核中灵活且细粒度非自主访问控制的一种实现，最初作为它自己特定的内核补丁实现。其他几个安全项目（例如 RSBAC、Medusa）也Linux 内核开发了灵活的访问控制架构，并且各种项目Linux 开发了特定的访问控制模型（例如 LIDS、DTE、SubDomain）。每个项目都开发并维护了自己的内核补丁以支持其安全需求
+作为NSA 演讲的回应，Linus Torvalds 发表了一系列评论，描述了一个他愿意考虑纳入主线 Linux 内核的安全框架。他描述了一个通用框架，该框架将提供一组安全钩子来控制对内核对象的操作，并在内核数据结构中提供一组不透明的安全字段以维护安全属性。然后，这个框架可以被可加载内核模块用来实现任何期望的安全模型。Linus 还建议将 Linux capabilities 代码迁移到这样的模块中
+Linux Security Modules（LSM）项目由 WireX 发起，旨在开发这样一个框架。LSM 是多个安全项目（包括 Immunix、SELinux、SGI Janus）以及多个个人（包括 Greg Kroah-Hartman James Morris）联合开发的成果，目的是开发实现该框架Linux 内核补丁。该工作2003 12 月被纳入主线。本技术报告概述了该框架和 capabilities 安全模块
 ## LSM Framework
 
 
-LSM 妗嗘灦鎻愪緵浜嗕竴涓€氱敤鐨勫唴鏍告鏋朵互鏀寔瀹夊叏妯″潡銆傚叿浣撹€岃█锛孡SM 妗嗘灦涓昏鍏虫敞鏀寔璁块棶鎺у埗妯″潡锛屽敖绠℃湭鏉ョ殑寮€鍙戝彲鑳戒細瑙ｅ喅鍏朵粬瀹夊叏闇€姹傦紝渚嬪娌欑銆傛鏋舵湰韬笉鎻愪緵浠讳綍棰濆鐨勫畨鍏ㄦ€э紱瀹冧粎浠呮彁渚涙敮鎸佸畨鍏ㄦā鍧楃殑鍩虹璁炬柦銆侺SM 妗嗘灦鏄彲閫夌殑锛岄渶瑕佸惎鐢?`CONFIG_SECURITY`銆俢apabilities 閫昏緫琚疄鐜颁负涓€涓畨鍏ㄦā鍧椼€?杩欎釜 capabilities 妯″潡鍦?`LSM Capabilities Module`_ 涓繘涓€姝ヨ璁恒€?
-LSM 妗嗘灦鍦ㄥ唴鏍告暟鎹粨鏋勪腑鍖呭惈瀹夊叏瀛楁锛屽苟鍦ㄥ唴鏍镐唬鐮佺殑鍏抽敭鐐硅皟鐢ㄩ挬瀛愬嚱鏁帮紝浠ョ鐞嗗畨鍏ㄥ瓧娈靛苟鎵ц璁块棶鎺у埗銆?瀹冭繕娣诲姞浜嗙敤浜庢敞鍐屽畨鍏ㄦā鍧楃殑鍑芥暟銆?鎺ュ彛 `/sys/kernel/security/lsm` 鎶ュ憡绯荤粺涓婂浜庢椿鍔ㄧ姸鎬佺殑瀹夊叏妯″潡浠ラ€楀彿鍒嗛殧鐨勫垪琛ㄣ€?
-LSM 瀹夊叏瀛楁鍙槸 `void*` 鎸囬拡銆?杩欎簺鏁版嵁琚О涓?blob锛屽畠鍙敱妗嗘灦绠＄悊锛屼篃鍙敱浣跨敤瀹冪殑鍚勪釜瀹夊叏妯″潡绠＄悊銆?琚涓畨鍏ㄦā鍧椾娇鐢ㄧ殑瀹夊叏 blob 閫氬父鐢辨鏋剁鐞嗐€?瀵逛簬杩涚▼鍜?绋嬪簭鎵ц鐨勫畨鍏ㄤ俊鎭紝瀹夊叏瀛楁鍖呭惈鍦?`struct task_struct <task_struct>` 鍜?`struct cred <cred>` 涓€?瀵逛簬鏂囦欢绯荤粺
-鐨勫畨鍏ㄤ俊鎭紝瀹夊叏瀛楁鍖呭惈鍦?:c:type:`struct super_block <super_block>` 涓€傚浜庣閬撱€佹枃浠跺拰濂楁帴瀛楃殑瀹夊叏
-淇℃伅锛屽畨鍏ㄥ瓧娈靛寘鍚湪 :c:type:`struct inode <inode>` 鍜?`struct file <file>` 涓€?瀵逛簬 System V IPC 鐨勫畨鍏ㄤ俊鎭紝
-瀹夊叏瀛楁琚坊鍔犲埌 :c:type:`struct kern_ipc_perm <kern_ipc_perm>` 鍜?:c:type:`struct msg_msg <msg_msg>` 涓紱姝ゅ锛?c:type:`struct msg_msg <msg_msg>`銆乻truct msg_queue 鍜?struct shmid_kernel 鐨勫畾涔?琚Щ鍔ㄥ埌澶存枃浠朵腑锛堝垎鍒负 `include/linux/msg.h` 鍜?`include/linux/shm.h`锛夛紝浠ュ厑璁稿畨鍏ㄦā鍧椾娇鐢ㄨ繖浜涘畾涔夈€?
-瀵逛簬鏁版嵁鍖呭拰
-缃戠粶璁惧鐨勫畨鍏ㄤ俊鎭紝瀹夊叏瀛楁琚坊鍔犲埌 `struct sk_buff <sk_buff>` 鍜?`struct scm_cookie <scm_cookie>` 涓€?涓庡叾浠栧畨鍏ㄦā鍧楁暟鎹笉鍚岋紝杩欓噷浣跨敤鐨勬暟鎹槸涓€涓?32 浣嶆暣鏁般€傚畨鍏ㄦā鍧楅渶瑕佹妸杩欎簺鍊兼槧灏勬垨浠ュ叾浠栨柟寮忎笌鐪熷疄鐨勫畨鍏ㄥ睘鎬у叧鑱旇捣鏉ャ€?
-LSM 閽╁瓙缁存姢鍦ㄥ垪琛ㄤ腑銆傛瘡涓挬瀛愮淮鎶や竴涓垪琛紝閽╁瓙鎸?CONFIG_LSM 鎸囧畾鐨勯『搴忚皟鐢ㄣ€?姣忎釜閽╁瓙鐨勮缁嗘枃妗ｅ寘鍚湪 `security/security.c` 婧愭枃浠朵腑銆?
-LSM 妗嗘灦鎻愪緵浜嗗閫氱敤瀹夊叏妯″潡鍫嗗彔鐨勮繎浼兼敮鎸併€傚畠瀹氫箟浜?security_add_hooks()锛屾瘡涓畨鍏ㄦā鍧楀悜瀹冧紶閫掍竴涓?`struct security_hooks_list <security_hooks_list>`锛岃繖浜涜娣诲姞鍒板垪琛ㄤ腑銆?LSM 妗嗘灦涓嶆彁渚涚Щ闄ゅ凡娉ㄥ唽閽╁瓙鐨勬満鍒躲€係ELinux 瀹夊叏妯″潡瀹炵幇浜嗕竴绉嶇Щ闄よ嚜韬殑鏂规硶锛屼絾璇ョ壒鎬у凡琚純鐢ㄣ€?
-閽╁瓙鍙互鐪嬩綔鍒嗕负涓ゅぇ绫伙細鐢ㄤ簬绠＄悊瀹夊叏瀛楁鐨勯挬瀛愬拰鐢ㄤ簬鎵ц璁块棶鎺у埗鐨勯挬瀛愩€傜涓€绫婚挬瀛愮殑渚嬪瓙鍖呮嫭 security_inode_alloc() 鍜?security_inode_free()
-杩欎簺閽╁瓙鐢ㄤ簬涓?inode 瀵硅薄鍒嗛厤鍜岄噴鏀惧畨鍏ㄧ粨鏋勩€?绗簩绫婚挬瀛愮殑涓€涓緥瀛愭槸 security_inode_permission() 閽╁瓙銆?璇ラ挬瀛愬湪璁块棶 inode 鏃舵鏌ユ潈闄愩€?
+LSM 框架提供了一个通用的内核框架以支持安全模块。具体而言，LSM 框架主要关注支持访问控制模块，尽管未来的开发可能会解决其他安全需求，例如沙箱。框架本身不提供任何额外的安全性；它仅仅提供支持安全模块的基础设施。LSM 框架是可选的，需要启`CONFIG_SECURITY`。capabilities 逻辑被实现为一个安全模块这个 capabilities 模块`LSM Capabilities Module`_ 中进一步讨论
+LSM 框架在内核数据结构中包含安全字段，并在内核代码的关键点调用钩子函数，以管理安全字段并执行访问控制它还添加了用于注册安全模块的函数接口 `/sys/kernel/security/lsm` 报告系统上处于活动状态的安全模块以逗号分隔的列表
+LSM 安全字段只是 `void*` 指针这些数据被称blob，它可由框架管理，也可由使用它的各个安全模块管理被多个安全模块使用的安全 blob 通常由框架管理对于进程程序执行的安全信息，安全字段包含`struct task_struct <task_struct>` `struct cred <cred>` 中对于文件系统
+的安全信息，安全字段包含:c:type:`struct super_block <super_block>` 中。对于管道、文件和套接字的安全
+信息，安全字段包含在 :c:type:`struct inode <inode>` `struct file <file>` 中对于 System V IPC 的安全信息，
+安全字段被添加到 :c:type:`struct kern_ipc_perm <kern_ipc_perm>` :c:type:`struct msg_msg <msg_msg>` 中；此外c:type:`struct msg_msg <msg_msg>`、struct msg_queue struct shmid_kernel 的定被移动到头文件中（分别为 `include/linux/msg.h` `include/linux/shm.h`），以允许安全模块使用这些定义
+对于数据包和
+网络设备的安全信息，安全字段被添加到 `struct sk_buff <sk_buff>` `struct scm_cookie <scm_cookie>` 中与其他安全模块数据不同，这里使用的数据是一32 位整数。安全模块需要把这些值映射或以其他方式与真实的安全属性关联起来
+LSM 钩子维护在列表中。每个钩子维护一个列表，钩子CONFIG_LSM 指定的顺序调用每个钩子的详细文档包含在 `security/security.c` 源文件中
+LSM 框架提供了对通用安全模块堆叠的近似支持。它定义security_add_hooks()，每个安全模块向它传递一`struct security_hooks_list <security_hooks_list>`，这些被添加到列表中LSM 框架不提供移除已注册钩子的机制。SELinux 安全模块实现了一种移除自身的方法，但该特性已被弃用
+钩子可以看作分为两大类：用于管理安全字段的钩子和用于执行访问控制的钩子。第一类钩子的例子包括 security_inode_alloc() security_inode_free()
+这些钩子用于inode 对象分配和释放安全结构第二类钩子的一个例子是 security_inode_permission() 钩子该钩子在访问 inode 时检查权限
 ## LSM Capabilities Module
 
 
-POSIX.1e capabilities 閫昏緫浣滀负瀛樺偍鍦?`security/commoncap.c` 鏂囦欢涓殑瀹夊叏妯″潡缁存姢銆俢apabilities 妯″潡浣跨敤 `lsm_info` 鎻忚堪鐨?order 瀛楁灏嗗叾鏍囪瘑涓鸿娉ㄥ唽鐨勭涓€涓畨鍏ㄦā鍧椼€?涓庡叾浠栨ā鍧椾笉鍚岋紝capabilities 瀹夊叏妯″潡涓嶄娇鐢ㄩ€氱敤瀹夊叏 blob銆傚師鍥犳槸鍘嗗彶鎬х殑锛屽熀浜庡紑閿€銆佸鏉傛€у拰鎬ц兘鏂归潰鐨勮€冭檻銆?
+POSIX.1e capabilities 逻辑作为存储`security/commoncap.c` 文件中的安全模块维护。capabilities 模块使用 `lsm_info` 描述order 字段将其标识为要注册的第一个安全模块与其他模块不同，capabilities 安全模块不使用通用安全 blob。原因是历史性的，基于开销、复杂性和性能方面的考虑

@@ -1,13 +1,13 @@
 ﻿
-## 鏋舵瀯鏀寔
+## 架构支持
 
 
-鐩墠锛孯ust 缂栬瘧鍣紙`rustc`锛変娇鐢?LLVM 杩涜浠ｇ爜鐢熸垚锛岃繖闄愬埗浜嗗彲浠?瀹氫綅鐨勫彈鏀寔鏋舵瀯銆傛澶栵紝浣跨敤 LLVM/Clang 鏋勫缓鍐呮牳鐨勬敮鎸佺▼搴﹀悇涓嶇浉鍚?锛堣鍙傞槄 Documentation/kbuild/llvm.rst锛夈€俙bindgen` 闇€瑕佷娇鐢?LLVM/Clang锛?鍥犳涔熼渶瑕佽鏀寔銆?
-浠ヤ笅鏄綋鍓嶅彲鐢ㄦ灦鏋勭殑鎬讳綋姒傝堪銆傛敮鎸佺骇鍒搴斾簬 `MAINTAINERS` 鏂囦欢涓殑
-`S` 鍊笺€?
+目前，Rust 编译器（`rustc`）使LLVM 进行代码生成，这限制了可定位的受支持架构。此外，使用 LLVM/Clang 构建内核的支持程度各不相（请参阅 Documentation/kbuild/llvm.rst）。`bindgen` 需要使LLVM/Clang因此也需要该支持
+以下是当前可用架构的总体概述。支持级别对应于 `MAINTAINERS` 文件中的
+`S` 值
 =============  ================  ==============================================
-鏋舵瀯            鏀寔绾у埆          绾︽潫
+架构            支持级别          约束
 =============  ================  ==============================================
-`arm`        Maintained        浠?ARMv7 灏忕銆?`arm64`      Maintained        浠呭皬绔€?`loongarch`  Maintained        \-
-`riscv`      Maintained        `riscv64` 涓斾粎 LLVM/Clang銆?`um`         Maintained        \-
+`arm`        Maintained        ARMv7 小端`arm64`      Maintained        仅小端`loongarch`  Maintained        \-
+`riscv`      Maintained        `riscv64` 且仅 LLVM/Clang`um`         Maintained        \-
 `x86`        Maintained        浠?`x86_64`銆?=============  ================  ==============================================
