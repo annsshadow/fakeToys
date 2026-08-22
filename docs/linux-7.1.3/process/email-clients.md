@@ -1,80 +1,80 @@
 ﻿
-## 鐢ㄤ簬 Linux 鐨勭數瀛愰偖浠跺鎴风淇℃伅锛圗mail clients info for Linux锛?
+## 用于 Linux 的电子邮件客户端信息（Email clients info for Linux
 ### Git
 
-濡備粖澶у鏁板紑鍙戣€呬娇鐢?`git send-email` 鑰岄潪甯歌鐨勭數瀛愰偖浠跺鎴风銆傚畠鐨勬墜鍐岄〉鍐欏緱鐩稿綋濂姐€傚湪鎺ユ敹绔紝
-缁存姢鑰呬娇鐢?`git am` 鏉ュ簲鐢ㄨˉ涓併€?
-濡傛灉浣犲垰鎺ヨЕ `git`锛岄偅涔堝厛鎶婁綘鐨勭涓€涓ˉ涓佸彂閫佺粰浣犺嚜宸便€傛妸瀹冧繚瀛樹负鍖呭惈鍏ㄩ儴澶撮儴鐨勫師濮嬫枃鏈€傝繍琛?`git am raw_email.txt`锛岀劧鍚庣敤 `git log` 鏌ョ湅鍙樻洿鏃ュ織銆傚綋杩欒兘姝ｅ父宸ヤ綔鍚庯紝鍐嶆妸琛ヤ竵鍙戦€佸埌鐩稿簲鐨勯偖浠?鍒楄〃銆?
-### 涓€鑸亸濂斤紙General Preferences锛?
-Linux 鍐呮牳鐨勮ˉ涓侀€氳繃鐢靛瓙閭欢鎻愪氦锛屾渶濂芥槸浣滀负閭欢姝ｆ枃鐨勮鍐呮枃鏈€備竴浜涚淮鎶よ€呮帴鍙楅檮浠讹紝浣嗛檮浠跺簲褰撳叿鏈?`text/plain` 鍐呭绫诲瀷銆傜劧鑰岋紝闄勪欢閫氬父涓嶆嫑浜哄緟瑙侊紝鍥犱负瀹冧細璁╄ˉ涓佽瘎瀹¤繃绋嬩腑寮曠敤琛ヤ竵鐗囨鍙樺緱鏇村洶闅俱€?
-杩樺己鐑堝缓璁綘鍦ㄩ偖浠舵鏂囦腑浣跨敤绾枃鏈紝鏃犺鏄琛ヤ竵杩樻槸鍏跺畠閭欢閮芥槸濡傛銆俬ttps://useplaintext.email 鍙兘
-鏈夊姪浜庝綘浜嗚В濡備綍閰嶇疆浣犲亸濂界殑閭欢瀹㈡埛绔紝浠ュ強鍦ㄤ綘杩樻病鏈夊亸濂芥椂鍒楀嚭鎺ㄨ崘鐨勯偖浠跺鎴风銆?
-鐢ㄤ簬 Linux 鍐呮牳琛ヤ竵鐨勯偖浠跺鎴风搴斿綋鍘熷皝涓嶅姩鍦板彂閫佽ˉ涓佹枃鏈€備緥濡傦紝瀹冧滑涓嶅簲淇敼鎴栧垹闄ゅ埗琛ㄧ鎴栫┖鏍硷紝
-鍗充究鍦ㄨ棣栨垨琛屽熬涔熶笉琛屻€?
-涓嶈鍙戦€佸甫鏈?`format=flowed` 鐨勮ˉ涓併€傝繖鍙兘瀵艰嚧鎰忓涓斾笉鎯宠鐨勬崲琛屻€?
-涓嶈璁╀綘鐨勯偖浠跺鎴风涓轰綘鍋氳嚜鍔ㄥ崟璇嶆崲琛屻€傝繖涔熷彲鑳芥崯鍧忎綘鐨勮ˉ涓併€?
-閭欢瀹㈡埛绔笉搴斾慨鏀规枃鏈殑瀛楃闆嗙紪鐮併€傞€氳繃閭欢鍙戦€佺殑琛ヤ竵搴斿綋鍙娇鐢?ASCII 鎴?UTF-8 缂栫爜銆傚鏋滀綘鎶婇偖浠?瀹㈡埛绔厤缃负浠?UTF-8 缂栫爜鍙戦€侀偖浠讹紝灏卞彲浠ラ伩鍏嶄竴浜涙綔鍦ㄧ殑瀛楃闆嗛棶棰樸€?
-閭欢瀹㈡埛绔簲褰撶敓鎴愬苟缁存姢 "References:" 鎴?"In-Reply-To:" 澶撮儴锛屼互鍏嶉偖浠剁嚎绋嬭鎵撴柇銆?
-澶嶅埗绮樿创锛堟垨鍓垏绮樿创锛夐€氬父瀵硅ˉ涓佷笉璧蜂綔鐢紝鍥犱负鍒惰〃绗︿細琚浆鎹负绌烘牸銆備娇鐢?xclipboard銆亁clip 鍜?鎴?xcutsel 涔熻鍙互锛屼絾鏈€濂借嚜宸辨祴璇曚竴涓嬶紝鎴栬€呯洿鎺ラ伩鍏嶅鍒剁矘璐淬€?
-涓嶈鍦ㄥ寘鍚ˉ涓佺殑閭欢涓娇鐢?PGP/GPG 绛惧悕銆傝繖浼氱牬鍧忚澶氳鍙栧拰搴旂敤琛ヤ竵鐨勮剼鏈€傦紙杩欏簲璇ユ槸鍙互淇鐨勩€傦級
+如今大多数开发者使`git send-email` 而非常规的电子邮件客户端。它的手册页写得相当好。在接收端，
+维护者使`git am` 来应用补丁
+如果你刚接触 `git`，那么先把你的第一个补丁发送给你自己。把它保存为包含全部头部的原始文本。运`git am raw_email.txt`，然后用 `git log` 查看变更日志。当这能正常工作后，再把补丁发送到相应的邮列表
+### 一般偏好（General Preferences
+Linux 内核的补丁通过电子邮件提交，最好是作为邮件正文的行内文本。一些维护者接受附件，但附件应当具`text/plain` 内容类型。然而，附件通常不招人待见，因为它会让补丁评审过程中引用补丁片段变得更困难
+还强烈建议你在邮件正文中使用纯文本，无论是对补丁还是其它邮件都是如此。https://useplaintext.email 可能
+有助于你了解如何配置你偏好的邮件客户端，以及在你还没有偏好时列出推荐的邮件客户端
+用于 Linux 内核补丁的邮件客户端应当原封不动地发送补丁文本。例如，它们不应修改或删除制表符或空格，
+即便在行首或行尾也不行
+不要发送带`format=flowed` 的补丁。这可能导致意外且不想要的换行
+不要让你的邮件客户端为你做自动单词换行。这也可能损坏你的补丁
+邮件客户端不应修改文本的字符集编码。通过邮件发送的补丁应当只使ASCII UTF-8 编码。如果你把邮客户端配置为UTF-8 编码发送邮件，就可以避免一些潜在的字符集问题
+邮件客户端应当生成并维护 "References:" "In-Reply-To:" 头部，以免邮件线程被打断
+复制粘贴（或剪切粘贴）通常对补丁不起作用，因为制表符会被转换为空格。使xclipboard、xclip xcutsel 也许可以，但最好自己测试一下，或者直接避免复制粘贴
+不要在包含补丁的邮件中使PGP/GPG 签名。这会破坏许多读取和应用补丁的脚本。（这应该是可以修复的。）
 
-鍦ㄦ妸琛ヤ竵鍙戦€佸埌 Linux 閭欢鍒楄〃涔嬪墠锛屽厛缁欒嚜宸卞彂涓€浠借ˉ涓併€佷繚瀛樻敹鍒扮殑閭欢锛屽苟鐢?'patch' 鎴愬姛搴旂敤瀹冿紝鏄釜
-濂戒富鎰忋€?
-### 涓€浜涢偖浠跺鎴风锛圡UA锛夋彁绀猴紙Some email client (MUA) hints锛?
-浠ヤ笅鏄竴浜涢拡瀵圭紪杈戝拰鍙戦€?Linux 鍐呮牳琛ヤ竵鐨勭壒瀹?MUA 閰嶇疆鎻愮ず銆傝繖浜涘苟闈炲畬鏁寸殑杞欢鍖呴厤缃€荤粨銆?
-鍥句緥锛圠egend锛夛細
+在把补丁发送到 Linux 邮件列表之前，先给自己发一份补丁、保存收到的邮件，并'patch' 成功应用它，是个
+好主意
+### 一些邮件客户端（MUA）提示（Some email client (MUA) hints
+以下是一些针对编辑和发Linux 内核补丁的特MUA 配置提示。这些并非完整的软件包配置总结
+图例（Legend）：
 
-- TUI = 鍩轰簬鏂囨湰鐨勭敤鎴风晫闈紙text-based user interface锛?- GUI = 鍥惧舰鐢ㄦ埛鐣岄潰锛坓raphical user interface锛?
+- TUI = 基于文本的用户界面（text-based user interface- GUI = 图形用户界面（graphical user interface
 ######## Alpine (TUI)
 
-閰嶇疆閫夐」锛?
-鍦?`Sending Preferences` 閮ㄥ垎锛?
-- `Do Not Send Flowed Text` 蹇呴』 `enabled`锛堝惎鐢級
-- `Strip Whitespace Before Sending` 蹇呴』 `disabled`锛堢鐢級
+配置选项
+`Sending Preferences` 部分
+- `Do Not Send Flowed Text` 必须 `enabled`（启用）
+- `Strip Whitespace Before Sending` 必须 `disabled`（禁用）
 
-鍦ㄦ挵鍐欓偖浠舵椂锛屽厜鏍囧簲鏀惧湪琛ヤ竵搴斿嚭鐜扮殑浣嶇疆锛岀劧鍚庢寜 `CTRL-R` 璁╀綘鎸囧畾瑕佹彃鍏ュ埌閭欢涓殑琛ヤ竵鏂囦欢銆?
+在撰写邮件时，光标应放在补丁应出现的位置，然后按 `CTRL-R` 让你指定要插入到邮件中的补丁文件
 ######## Claws Mail (GUI)
 
-鍙互宸ヤ綔銆傛湁浜涗汉鎴愬姛鍦版妸杩欎釜鐢ㄤ簬琛ヤ竵銆?
-瑕佹彃鍏ヨˉ涓侊紝浣跨敤 `Message-->Insert File`锛坄CTRL-I`锛夋垨澶栭儴缂栬緫鍣ㄣ€?
-濡傛灉鎻掑叆鐨勮ˉ涓侀渶瑕佸湪 Claws 鐨勬挵鍐欑獥鍙ｄ腑缂栬緫锛宍Configuration-->Preferences-->Compose-->Wrapping`
-涓殑 "Auto wrapping" 搴斿綋绂佺敤銆?
+可以工作。有些人成功地把这个用于补丁
+要插入补丁，使用 `Message-->Insert File`（`CTRL-I`）或外部编辑器
+如果插入的补丁需要在 Claws 的撰写窗口中编辑，`Configuration-->Preferences-->Compose-->Wrapping`
+中的 "Auto wrapping" 应当禁用
 ######## Evolution (GUI)
 
-鏈変簺浜烘垚鍔熷湴鎶婅繖涓敤浜庤ˉ涓併€?
-鎾板啓閭欢鏃堕€夋嫨锛歅reformat
-  浠?`Format-->Paragraph Style-->Preformatted`锛坄CTRL-7`锛夋垨宸ュ叿鏍忎腑閫夋嫨
+有些人成功地把这个用于补丁
+撰写邮件时选择：Preformat
+  `Format-->Paragraph Style-->Preformatted`（`CTRL-7`）或工具栏中选择
 
-鐒跺悗浣跨敤锛?`Insert-->Text File...`锛坄ALT-N x`锛夋潵鎻掑叆琛ヤ竵銆?
-浣犱篃鍙互 `diff -Nru old.c new.c | xclip`锛岄€夋嫨 `Preformat`锛岀劧鍚庣敤涓敭绮樿创銆?
+然后使用`Insert-->Text File...`（`ALT-N x`）来插入补丁
+你也可以 `diff -Nru old.c new.c | xclip`，选择 `Preformat`，然后用中键粘贴
 ######## Kmail (GUI)
 
-鏈変簺浜烘垚鍔熷湴鎶?Kmail 鐢ㄤ簬琛ヤ竵銆?
-榛樿涓嶆挵鍐?HTML 鐨勮缃槸鍚堥€傜殑锛涗笉瑕佸惎鐢ㄥ畠銆?
-鎾板啓閭欢鏃讹紝鍦ㄩ€夐」涓嬶紝鍙栨秷鍕鹃€?"word wrap"銆傚敮涓€鐨勭己鐐规槸浣犺緭鍏ョ殑浠讳綍鏂囨湰閮戒笉浼氳嚜鍔ㄦ崲琛岋紝鍥犳浣犲繀椤诲湪
-琛ヤ竵涔嬪墠鎵嬪姩瀵规枃鏈繘琛屾崲琛屻€傛渶绠€鍗曠殑缁曡繃鍔炴硶鏄細鍏堜互鍚敤 word wrap 鐨勬柟寮忔挵鍐欓偖浠讹紝鐒跺悗灏嗗叾淇濆瓨涓鸿崏绋裤€?涓€鏃︿綘鍐嶆浠庤崏绋夸腑鎶婂畠鎵撳紑锛屽畠鐜板湪灏卞凡琚‖鎬ф崲琛岋紝浣犲彲浠ュ湪涓嶄涪澶辩幇鏈夋崲琛岀殑鎯呭喌涓嬪彇娑堝嬀閫?"word wrap"銆?
-鍦ㄩ偖浠跺簳閮紝鍦ㄦ彃鍏ヨˉ涓佷箣鍓嶆斁鍏ュ父鐢ㄧ殑琛ヤ竵鍒嗛殧绗︼細涓変釜杩炲瓧绗︼紙`---`锛夈€?
-鐒跺悗浠?`Message` 鑿滃崟椤逛腑閫夋嫨 `insert file` 骞堕€夋嫨浣犵殑琛ヤ竵銆備綔涓洪澶栫殑濂藉锛屼綘鍙互鑷畾涔夋秷鎭垱寤哄伐鍏锋爮
-鑿滃崟锛屽苟鎶?`insert file` 鍥炬爣鏀惧湪閭ｉ噷銆?
-鎶婃挵鍐欑獥鍙ｆ媺寰楄冻澶熷锛屼互浣挎病鏈変换浣曡琚崲琛屻€傛埅鑷?KMail 1.13.5锛圞DE 4.5.4锛夛紝濡傛灉琛屽湪鎾板啓绐楀彛涓彂鐢熸崲琛岋紝
-KMail 浼氬湪鍙戦€侀偖浠舵椂搴旂敤鍗曡瘝鎹㈣銆備粎鍦ㄩ€夐」鑿滃崟涓鐢?word wrap 杩樹笉澶熴€傚洜姝わ紝濡傛灉浣犵殑琛ヤ竵鏈夊緢闀跨殑琛岋紝
-浣犲繀椤诲湪鍙戦€侀偖浠朵箣鍓嶆妸鎾板啓绐楀彛鎷夊緱闈炲父瀹姐€傚弬瑙侊細https://bugs.kde.org/show_bug.cgi?id=174034
+有些人成功地Kmail 用于补丁
+默认不撰HTML 的设置是合适的；不要启用它
+撰写邮件时，在选项下，取消勾"word wrap"。唯一的缺点是你输入的任何文本都不会自动换行，因此你必须在
+补丁之前手动对文本进行换行。最简单的绕过办法是：先以启用 word wrap 的方式撰写邮件，然后将其保存为草稿一旦你再次从草稿中把它打开，它现在就已被硬性换行，你可以在不丢失现有换行的情况下取消勾"word wrap"
+在邮件底部，在插入补丁之前放入常用的补丁分隔符：三个连字符（`---`）
+然后`Message` 菜单项中选择 `insert file` 并选择你的补丁。作为额外的好处，你可以自定义消息创建工具栏
+菜单，并`insert file` 图标放在那里
+把撰写窗口拉得足够宽，以使没有任何行被换行。截KMail 1.13.5（KDE 4.5.4），如果行在撰写窗口中发生换行，
+KMail 会在发送邮件时应用单词换行。仅在选项菜单中禁word wrap 还不够。因此，如果你的补丁有很长的行，
+你必须在发送邮件之前把撰写窗口拉得非常宽。参见：https://bugs.kde.org/show_bug.cgi?id=174034
 
-浣犲彲浠ユ斁蹇冨湴瀵归檮浠惰繘琛?GPG 绛惧悕锛屼絾琛ヤ竵鏇村亸濂借鍐呮枃鏈紝鍥犳涓嶈瀵瑰畠浠繘琛?GPG 绛惧悕銆傚浠ヨ鍐呮枃鏈彃鍏ョ殑
-琛ヤ竵杩涜绛惧悕浼氳瀹冧滑闅句互浠庡叾 7-bit 缂栫爜涓彁鍙栧嚭鏉ャ€?
-濡傛灉浣犵粷瀵瑰繀椤讳互闄勪欢鑰岄潪琛屽唴鏂囨湰鐨勬柟寮忓彂閫佽ˉ涓侊紝璇峰彸閿崟鍑婚檮浠跺苟閫夋嫨 `properties`锛岀劧鍚庨珮浜?`Suggest automatic display`锛屼互浣块檮浠惰琛屽唴鍖栦粠鑰屾洿鏄撴煡鐪嬨€?
-褰撲繚瀛樹互琛屽唴鏂囨湰鍙戦€佺殑琛ヤ竵鏃讹紝浠庢秷鎭垪琛ㄧ獥鏍间腑閫夋嫨鍖呭惈琛ヤ竵鐨勯偖浠讹紝鍙抽敭鍗曞嚮骞堕€夋嫨 `save as`銆傚鏋滃畠琚纭?鎾板啓锛屼綘鍙互鎶婃暣灏佹湭淇敼鐨勯偖浠剁敤浣滆ˉ涓併€傞偖浠朵互浠呯敤鎴峰彲璇诲啓鐨勬柟寮忎繚瀛橈紝鍥犳濡傛灉浣犳妸瀹冧滑澶嶅埗鍒板埆澶勶紝蹇呴』
-鐢?chmod 璁╁畠浠缁勫拰鍏朵粬浜哄彲璇汇€?
+你可以放心地对附件进GPG 签名，但补丁更偏好行内文本，因此不要对它们进GPG 签名。对以行内文本插入的
+补丁进行签名会让它们难以从其 7-bit 编码中提取出来
+如果你绝对必须以附件而非行内文本的方式发送补丁，请右键单击附件并选择 `properties`，然后高`Suggest automatic display`，以使附件被行内化从而更易查看
+当保存以行内文本发送的补丁时，从消息列表窗格中选择包含补丁的邮件，右键单击并选择 `save as`。如果它被正撰写，你可以把整封未修改的邮件用作补丁。邮件以仅用户可读写的方式保存，因此如果你把它们复制到别处，必须
+chmod 让它们对组和其他人可读
 ######## Lotus Notes (GUI)
 
-绂诲畠杩滅偣銆?
+离它远点
 ######## IBM Verse (Web GUI)
 
-鍙傝 Lotus Notes銆?
+参见 Lotus Notes
 ######## Mutt (TUI)
 
-澶ч噺 Linux 寮€鍙戣€呬娇鐢?`mutt`锛屽洜姝ゅ畠蹇呭畾宸ヤ綔寰楃浉褰撳ソ銆?
-Mutt 鏈韩涓嶅甫缂栬緫鍣紝鍥犳鏃犺浣犱娇鐢ㄤ粈涔堢紪杈戝櫒锛岄兘搴斿綋浠ヤ笉浜х敓鑷姩鎹㈣鐨勬柟寮忔潵浣跨敤銆傚ぇ澶氭暟缂栬緫鍣ㄩ兘鏈?涓€涓?`insert file` 閫夐」锛屽彲浠ュ師灏佷笉鍔ㄥ湴鎻掑叆鏂囦欢鍐呭銆?```
+大量 Linux 开发者使`mutt`，因此它必定工作得相当好
+Mutt 本身不带编辑器，因此无论你使用什么编辑器，都应当以不产生自动换行的方式来使用。大多数编辑器都一`insert file` 选项，可以原封不动地插入文件内容```
 
   set editor="vi"
 
@@ -89,20 +89,20 @@ Mutt 鏈韩涓嶅甫缂栬緫鍣紝鍥犳鏃犺浣犱娇鐢ㄤ粈涔
   :r filename
 
 ```
-濡傛灉浣犳兂鎶婅ˉ涓佽鍐呭寘鍚繘鏉ャ€?a)ttach 鍦ㄦ病鏈?`set paste` 鐨勬儏鍐典笅涔熻兘姝ｅ父宸ヤ綔銆?
-浣犱篃鍙互鐢?`git format-patch` 鐢熸垚琛ヤ竵锛岀劧鍚庝娇鐢?Mutt
+如果你想把补丁行内包含进来a)ttach 在没`set paste` 的情况下也能正常工作
+你也可以`git format-patch` 生成补丁，然后使Mutt
 ```
 
     $ mutt -H 0001-some-bug-fix.patch
 
 ```
-閰嶇疆閫夐」锛?
-瀹冨簲褰撲娇鐢ㄩ粯璁よ缃氨鑳藉伐浣溿€?```
+配置选项
+它应当使用默认设置就能工作```
 
   set send_charset="us-ascii:utf-8"
 
 ```
-Mutt 楂樺害鍙畾鍒躲€備互涓嬫槸涓€涓渶灏忛厤缃紝鍙緵璧锋锛?```
+Mutt 高度可定制。以下是一个最小配置，可供起步```
 
   # .muttrc
   # ================  IMAP  ====================
@@ -130,71 +130,71 @@ Mutt 楂樺害鍙畾鍒躲€備互涓嬫槸涓€涓渶灏忛厤缃紝
   set use_from = yes
 
 ```
-Mutt 鏂囨。涓湁鏇村淇℃伅锛?
+Mutt 文档中有更多信息
     https://gitlab.com/muttmua/mutt/-/wikis/UseCases/Gmail
 
     http://www.mutt.org/doc/manual/
 
 ######## Pine (TUI)
 
-Pine 鍦ㄨ繃鍘绘湁涓€浜涚┖鐧芥埅鏂棶棰橈紝浣嗙幇鍦ㄨ繖浜涘簲璇ラ兘宸茶淇銆?
-濡傛灉鍙互锛屼娇鐢?alpine锛坧ine 鐨勫悗缁ц€咃級銆?
-閰嶇疆閫夐」锛?
-- 杈冩柊鐗堟湰闇€瑕?`quell-flowed-text`
-- 闇€瑕?`no-strip-whitespace-before-send` 閫夐」
+Pine 在过去有一些空白截断问题，但现在这些应该都已被修复
+如果可以，使alpine（pine 的后继者）
+配置选项
+- 较新版本需`quell-flowed-text`
+- 需`no-strip-whitespace-before-send` 选项
 
 ######## Sylpheed (GUI)
 
-- 瀵硅鍐呮枃鏈紙鎴栦娇鐢ㄩ檮浠讹級宸ヤ綔鑹ソ銆?- 鍏佽浣跨敤澶栭儴缂栬緫鍣ㄣ€?- 鍦ㄥぇ鏂囦欢澶逛笂杈冩參銆?- 涓嶄細鍦ㄩ潪 SSL 杩炴帴涓婂仛 TLS SMTP 璁よ瘉銆?- 鍦ㄦ挵鍐欑獥鍙ｄ腑鏈変竴涓湁甯姪鐨勬爣灏烘爮銆?- 鎶婂湴鍧€娣诲姞鍒板湴鍧€绨挎椂涓嶈兘姝ｇ‘璇嗗埆鏄剧ず鍚嶃€?
+- 对行内文本（或使用附件）工作良好- 允许使用外部编辑器- 在大文件夹上较慢- 不会在非 SSL 连接上做 TLS SMTP 认证- 在撰写窗口中有一个有帮助的标尺栏- 把地址添加到地址簿时不能正确识别显示名
 ######## Thunderbird (GUI)
 
-Thunderbird 鏄竴涓枩娆㈢牬鍧忔枃鏈殑 Outlook 鍏嬮殕锛屼絾鏈夊姙娉曞己杩畠瑙勭煩琛屼簨銆?
-鍦ㄥ畬鎴愯繖浜涗慨鏀癸紙鍖呮嫭瀹夎鎵╁睍锛変箣鍚庯紝浣犻渶瑕侀噸鍚?Thunderbird銆?
-- 鍏佽浣跨敤澶栭儴缂栬緫鍣細
+Thunderbird 是一个喜欢破坏文本的 Outlook 克隆，但有办法强迫它规矩行事
+在完成这些修改（包括安装扩展）之后，你需要重Thunderbird
+- 允许使用外部编辑器：
 
-  浣跨敤 Thunderbird 鍜岃ˉ涓佹椂锛屾渶绠€鍗曠殑浜嬫槸浣跨敤鎵撳紑浣犲枩娆㈢殑澶栭儴缂栬緫鍣ㄧ殑鎵╁睍銆?
-  浠ヤ笅鏄竴浜涜兘澶熷仛鍒拌繖涓€鐐圭殑绀轰緥鎵╁睍銆?
+  使用 Thunderbird 和补丁时，最简单的事是使用打开你喜欢的外部编辑器的扩展
+  以下是一些能够做到这一点的示例扩展
   - "External Editor Revived"
 
     https://github.com/Frederick888/external-editor-revived
 
     https://addons.thunderbird.net/en-GB/thunderbird/addon/external-editor-revived/
 
-    瀹冭姹傚畨瑁呬竴涓?"native messaging host"銆傝闃呰鍙互鍦ㄦ澶勬壘鍒扮殑 wiki锛?    https://github.com/Frederick888/external-editor-revived/wiki
+    它要求安装一"native messaging host"。请阅读可以在此处找到的 wiki    https://github.com/Frederick888/external-editor-revived/wiki
 
   - "External Editor"
 
     https://github.com/exteditor/exteditor
 
-    涓烘锛屼笅杞藉苟瀹夎璇ユ墿灞曪紝鐒跺悗鎵撳紑 `compose` 绐楀彛锛屼娇鐢?`View-->Toolbars-->Customize...`
-    涓哄畠娣诲姞涓€涓寜閽紝鐒跺悗褰撲綘鎯充娇鐢ㄥ閮ㄧ紪杈戝櫒鏃跺彧闇€鐐瑰嚮鏂版寜閽€?
-    璇锋敞鎰忥紝"External Editor" 瑕佹眰浣犵殑缂栬緫鍣ㄤ笉鑳?fork锛屾崲鍙ヨ瘽璇达紝缂栬緫鍣ㄥ繀椤诲湪鍏抽棴涔嬪墠涓嶈繑鍥炪€備綘鍙兘
-    闇€瑕佷紶閫掗澶栫殑鏍囧織鎴栨洿鏀逛綘缂栬緫鍣ㄧ殑璁剧疆銆傛渶鍊煎緱娉ㄦ剰鐨勬槸锛屽鏋滀綘鍦ㄤ娇鐢?gvim锛岄偅涔堝繀椤绘妸 `/usr/bin/gvim --nofork`
-    锛堝鏋滆浜岃繘鍒朵綅浜?`/usr/bin`锛変紶鍏?external editor 璁剧疆鐨勬枃鏈紪杈戝櫒瀛楁銆傚鏋滀綘鍦ㄤ娇鐢ㄥ叾瀹冪紪杈戝櫒锛岃闃呰
-    瀹冪殑鎵嬪唽浠ヤ簡瑙ｅ浣曞仛鍒拌繖涓€鐐广€?
-瑕佹妸鍐呴儴缂栬緫鍣ㄦ暣娌诲緱鍍忔牱涓€浜涳紝璇疯繖鏍峰仛锛?
-- 缂栬緫浣犵殑 Thunderbird 閰嶇疆璁剧疆锛屼娇鍏朵笉浣跨敤 `format=flowed`锛佽浆鍒颁富绐楀彛锛屾壘鍒颁綘鐨勪富涓嬫媺鑿滃崟鎸夐挳銆?  `Main Menu-->Preferences-->General-->Config Editor...` 浠ユ墦寮€ Thunderbird 鐨勬敞鍐岃〃缂栬緫鍣ㄣ€?
-  - 鎶?`mailnews.send_plaintext_flowed` 璁句负 `false`
+    为此，下载并安装该扩展，然后打开 `compose` 窗口，使`View-->Toolbars-->Customize...`
+    为它添加一个按钮，然后当你想使用外部编辑器时只需点击新按钮
+    请注意，"External Editor" 要求你的编辑器不fork，换句话说，编辑器必须在关闭之前不返回。你可能
+    需要传递额外的标志或更改你编辑器的设置。最值得注意的是，如果你在使gvim，那么必须把 `/usr/bin/gvim --nofork`
+    （如果该二进制位`/usr/bin`）传external editor 设置的文本编辑器字段。如果你在使用其它编辑器，请阅读
+    它的手册以了解如何做到这一点
+要把内部编辑器整治得像样一些，请这样做
+- 编辑你的 Thunderbird 配置设置，使其不使用 `format=flowed`！转到主窗口，找到你的主下拉菜单按钮  `Main Menu-->Preferences-->General-->Config Editor...` 以打开 Thunderbird 的注册表编辑器
+  - `mailnews.send_plaintext_flowed` 设为 `false`
 
-  - 鎶?`mailnews.wraplength` 浠?`72` 鏀逛负 `0` **鎴?*瀹夎 "Toggle Line Wrap" 鎵╁睍
+  - `mailnews.wraplength` `72` 改为 `0` ***安装 "Toggle Line Wrap" 扩展
 
     https://github.com/jan-kiszka/togglelinewrap
 
     https://addons.thunderbird.net/thunderbird/addon/toggle-line-wrap
 
-    浠ュ湪杩愯鏃舵帶鍒惰娉ㄥ唽琛ㄣ€?
-- 涓嶈鍐?HTML 閭欢锛佽浆鍒颁富绐楀彛 `Main Menu-->Account Settings-->youracc@server.something-->Composition & Addressing`锛?  鍦ㄩ偅閲屼綘鍙互绂佺敤 "Compose messages in HTML format" 閫夐」銆?
-- 鍙互绾枃鏈墦寮€閭欢锛佽浆鍒颁富绐楀彛 `Main Menu-->View-->Message Body As-->Plain Text`锛?
+    以在运行时控制该注册表
+- 不要HTML 邮件！转到主窗口 `Main Menu-->Account Settings-->youracc@server.something-->Composition & Addressing`  在那里你可以禁用 "Compose messages in HTML format" 选项
+- 只以纯文本打开邮件！转到主窗口 `Main Menu-->View-->Message Body As-->Plain Text`
 ######## TkRat (GUI)
 
-鍙互宸ヤ綔銆備娇鐢?"Insert file..." 鎴栧閮ㄧ紪杈戝櫒銆?
+可以工作。使"Insert file..." 或外部编辑器
 ######## Gmail (Web GUI)
 
-涓嶈兘鐢ㄤ簬鍙戦€佽ˉ涓併€?
-Gmail 缃戦〉瀹㈡埛绔細鑷姩鎶婂埗琛ㄧ杞崲涓虹┖鏍笺€?
-鍚屾椂瀹冧細浠?CRLF 椋庢牸鐨勬崲琛屾瘡 78 涓瓧绗︽姌琛岋紝灏界 tab2space 闂鍙互閫氳繃澶栭儴缂栬緫鍣ㄨВ鍐炽€?
-鍙︿竴涓棶棰樻槸 Gmail 浼氬浠讳綍鍚湁闈?ASCII 瀛楃鐨勯偖浠惰繘琛?base64 缂栫爜銆傝繖鍖呮嫭璇稿娆ф床浜哄悕涔嬬被鐨勫唴瀹广€?
+不能用于发送补丁
+Gmail 网页客户端会自动把制表符转换为空格
+同时它会CRLF 风格的换行每 78 个字符折行，尽管 tab2space 问题可以通过外部编辑器解决
+另一个问题是 Gmail 会对任何含有ASCII 字符的邮件进base64 编码。这包括诸如欧洲人名之类的内容
 ######## HacKerMaiL (TUI)
 
-HacKerMaiL锛坔kml锛夋槸涓€涓熀浜?public-inbox 鐨勭畝鍗曢偖浠剁鐞嗗伐鍏凤紝涓嶉渶瑕佽闃呴偖浠跺垪琛ㄣ€傚畠鐢?DAMON 缁存姢鑰?寮€鍙戝拰缁存姢锛屾棬鍦ㄦ敮鎸?DAMON 鍜岄€氱敤鍐呮牳瀛愮郴缁熺殑绠€鍗曞紑鍙戝伐浣滄祦銆傝鎯呰鍙傞槄 README
-锛坔ttps://github.com/sjp38/hackermail/blob/master/README.md锛夈€?
+HacKerMaiL（hkml）是一个基public-inbox 的简单邮件管理工具，不需要订阅邮件列表。它DAMON 维护开发和维护，旨在支DAMON 和通用内核子系统的简单开发工作流。详情请参阅 README
+（https://github.com/sjp38/hackermail/blob/master/README.md）
