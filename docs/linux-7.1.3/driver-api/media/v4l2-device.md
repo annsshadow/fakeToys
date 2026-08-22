@@ -1,39 +1,39 @@
 ﻿
-### V4L2 璁惧瀹炰緥
+### V4L2 设备实例
 
 
-姣忎釜璁惧瀹炰緥鐢变竴涓?struct v4l2_device 琛ㄧず銆傞潪甯哥畝鍗曠殑璁惧鍙互鐩存帴鍒嗛厤杩欎釜缁撴瀯浣擄紝
-浣嗗湪澶у鏁版儏鍐典笅浣犱細鎶婂畠宓屽叆鍒颁竴涓洿澶х殑缁撴瀯浣撲腑銆?
-浣犲繀椤婚€氳繃璋冪敤浠ヤ笅鍑芥暟鏉ユ敞鍐岃澶囧疄渚嬶細
+每个设备实例由一struct v4l2_device 表示。非常简单的设备可以直接分配这个结构体，
+但在大多数情况下你会把它嵌入到一个更大的结构体中
+你必须通过调用以下函数来注册设备实例：
 
 	`v4l2_device_register <v4l2_device_register>`
-	(dev, `v4l2_dev <v4l2_device>`)銆?
-娉ㄥ唽灏嗗垵濮嬪寲 `v4l2_device` 缁撴瀯浣撱€傚鏋?dev->driver_data 瀛楁涓?`NULL`锛?瀹冨皢琚摼鎺ュ埌 `v4l2_dev <v4l2_device>` 鍙傛暟銆?
-甯屾湜涓庡獟浣撹澶囨鏋堕泦鎴愮殑椹卞姩锛岄渶瑕佹墜鍔ㄨ缃?dev->driver_data锛屼娇鍏舵寚鍚戝祵鍏ヤ簡
-struct v4l2_device 瀹炰緥鐨勯┍鍔ㄧ壒瀹氳澶囩粨鏋勩€傝繖鏄€氳繃鍦ㄦ敞鍐?V4L2 璁惧瀹炰緥涔嬪墠璋冪敤涓€娆?`dev_set_drvdata()` 鏉ュ疄鐜扮殑銆傚畠浠繕蹇呴』灏?struct v4l2_device 鐨?mdev 瀛楁璁剧疆涓?鎸囧悜涓€涓凡姝ｇ‘鍒濆鍖栧苟娉ㄥ唽鐨?`media_device` 瀹炰緥銆?
-濡傛灉 `v4l2_dev <v4l2_device>`\ ->name 涓虹┖锛屽垯瀹冨皢琚涓轰粠 dev 娲剧敓鐨勫€?锛堢‘鍒囧湴璇达紝鏄┍鍔ㄥ悕鍚庤窡 bus_id锛夈€傚鏋滀綘鍦ㄨ皟鐢?`v4l2_device_register` 涔嬪墠璁剧疆濂藉畠锛?瀹冨皢淇濇寔涓嶅彉銆傚鏋?dev 涓?`NULL`锛岄偅涔堜綘**蹇呴』**鍦ㄨ皟鐢?`v4l2_device_register`
-涔嬪墠璁剧疆濂?`v4l2_dev <v4l2_device>`\ ->name銆?
-浣犲彲浠ヤ娇鐢?`v4l2_device_set_name` 鏉ュ熀浜庨┍鍔ㄥ悕鍜屼竴涓┍鍔ㄥ叏灞€鐨?atomic_t 瀹炰緥璁剧疆鍚嶇О銆?杩欏皢鐢熸垚璇稿 `ivtv0`銆乣ivtv1` 杩欐牱鐨勫悕绉般€傚鏋滃悕绉颁互鏁板瓧缁撳熬锛屽垯浼氭彃鍏ヤ竴涓煭妯嚎锛?`cx18-0`銆乣cx18-1` 绛夈€傝鍑芥暟杩斿洖瀹炰緥缂栧彿銆?
-绗竴涓?`dev` 鍙傛暟閫氬父鏄?`pci_dev`銆乣usb_interface` 鎴?`platform_device` 鐨?`struct device` 鎸囬拡銆俤ev 涓?`NULL` 鐨勬儏鍐靛緢灏戣锛屼絾鍦?ISA 璁惧鎴栧綋涓€涓澶囧垱寤哄涓?PCI 璁惧鏃朵細鍙戠敓锛屼粠鑰屼娇寰楁棤娉曞皢 `v4l2_dev <v4l2_device>` 鍏宠仈鍒版煇涓壒瀹氱殑鐖惰澶囥€?
-浣犺繕鍙互鎻愪緵涓€涓?`notify()` 鍥炶皟锛屽瓙璁惧鍙互璋冪敤瀹冩潵閫氱煡浣犱簨浠躲€傛槸鍚﹂渶瑕佽缃畠鍙栧喅浜?瀛愯澶囥€傚瓙璁惧鏀寔鐨勪换浣曢€氱煡蹇呴』鍦?`include/media/subdevice.h` 涓殑涓€涓ご鏂囦欢閲屽畾涔夈€?
-V4L2 璁惧閫氳繃璋冪敤浠ヤ笅鍑芥暟娉ㄩ攢锛?
+	(dev, `v4l2_dev <v4l2_device>`)銆。
+注册将初始化 `v4l2_device` 结构体。如dev->driver_data 字段`NULL`它将被链接到 `v4l2_dev <v4l2_device>` 参数
+希望与媒体设备框架集成的驱动，需要手动设dev->driver_data，使其指向嵌入了
+struct v4l2_device 实例的驱动特定设备结构。这是通过在注V4L2 设备实例之前调用一`dev_set_drvdata()` 来实现的。它们还必须struct v4l2_device mdev 字段设置指向一个已正确初始化并注册`media_device` 实例
+如果 `v4l2_dev <v4l2_device>`\ ->name 为空，则它将被设为从 dev 派生的（确切地说，是驱动名后跟 bus_id）。如果你在调`v4l2_device_register` 之前设置好它它将保持不变。如dev `NULL`，那么你**必须**在调`v4l2_device_register`
+之前设置`v4l2_dev <v4l2_device>`\ ->name
+你可以使`v4l2_device_set_name` 来基于驱动名和一个驱动全局atomic_t 实例设置名称这将生成诸如 `ivtv0`、`ivtv1` 这样的名称。如果名称以数字结尾，则会插入一个短横线`cx18-0`、`cx18-1` 等。该函数返回实例编号
+第一`dev` 参数通常`pci_dev`、`usb_interface` `platform_device` `struct device` 指针。dev `NULL` 的情况很少见，但ISA 设备或当一个设备创建多PCI 设备时会发生，从而使得无法将 `v4l2_dev <v4l2_device>` 关联到某个特定的父设备
+你还可以提供一`notify()` 回调，子设备可以调用它来通知你事件。是否需要设置它取决子设备。子设备支持的任何通知必须`include/media/subdevice.h` 中的一个头文件里定义
+V4L2 设备通过调用以下函数注销
 	`v4l2_device_unregister`
-	(`v4l2_dev <v4l2_device>`)銆?
-濡傛灉 dev->driver_data 瀛楁鎸囧悜 `v4l2_dev <v4l2_device>`锛屽畠灏嗚閲嶇疆涓?`NULL`銆?娉ㄩ攢涔熶細鑷姩娉ㄩ攢璇ヨ澶囦笂鐨勬墍鏈夊瓙璁惧锛坰ubdev锛夈€?
-濡傛灉浣犳湁涓€涓彲鐑彃鎷旇澶囷紙渚嬪 USB 璁惧锛夛紝閭ｄ箞鍦ㄦ柇寮€杩炴帴鍙戠敓鏃剁埗璁惧浼氬彉寰楁棤鏁堛€?鐢变簬 `v4l2_device` 鏈変竴涓寚鍚戣鐖惰澶囩殑鎸囬拡锛屽畠涔熷繀椤昏娓呴櫎锛屼互鏍囪鐖惰澶囧凡缁忔秷澶便€?涓烘璇疯皟鐢細
+	(`v4l2_dev <v4l2_device>`)銆。
+如果 dev->driver_data 字段指向 `v4l2_dev <v4l2_device>`，它将被重置`NULL`注销也会自动注销该设备上的所有子设备（subdev）
+如果你有一个可热插拔设备（例如 USB 设备），那么在断开连接发生时父设备会变得无效由于 `v4l2_device` 有一个指向该父设备的指针，它也必须被清除，以标记父设备已经消失为此请调用：
 
 	`v4l2_device_disconnect`
-	(`v4l2_dev <v4l2_device>`)銆?
-杩欏苟**涓嶄細**娉ㄩ攢瀛愯澶囷紝鍥犳浣犱粛鐒堕渶瑕佷负姝よ皟鐢?`v4l2_device_unregister` 鍑芥暟銆?濡傛灉浣犵殑椹卞姩涓嶅彲鐑彃鎷旓紝鍒欐棤闇€璋冪敤 `v4l2_device_disconnect`銆?
-鏈夋椂浣犻渶瑕侀亶鍘嗘煇涓壒瀹氶┍鍔ㄦ敞鍐岀殑鎵€鏈夎澶囥€傚綋澶氫釜璁惧椹卞姩浣跨敤鐩稿悓鐨勭‖浠舵椂閫氬父鏄繖绉?鎯呭喌銆備緥濡傦紝ivtvfb 椹卞姩鏄竴涓娇鐢?ivtv 纭欢鐨勫抚缂撳啿椹卞姩銆侫LSA 椹卞姩鍚岀悊銆?
-浣犲彲浠ュ涓嬮亶鍘嗘墍鏈夊凡娉ㄥ唽鐨勮澶囷細
+	(`v4l2_dev <v4l2_device>`)銆。
+这并**不会**注销子设备，因此你仍然需要为此调`v4l2_device_unregister` 函数如果你的驱动不可热插拔，则无需调用 `v4l2_device_disconnect`
+有时你需要遍历某个特定驱动注册的所有设备。当多个设备驱动使用相同的硬件时通常是这情况。例如，ivtvfb 驱动是一个使ivtv 硬件的帧缓冲驱动。ALSA 驱动同理
+你可以如下遍历所有已注册的设备：
 
 
 	static int callback(struct device **dev, void **p)
 	{
 		struct v4l2_device *v4l2_dev = dev_get_drvdata(dev);
 
-		/** 娴嬭瘯璇ヨ澶囨槸鍚﹀凡鍒濆鍖?**/
+		/** 测试该设备是否已初始**/
 		if (v4l2_dev == NULL)
 			return 0;
 		...
@@ -45,16 +45,16 @@ V4L2 璁惧閫氳繃璋冪敤浠ヤ笅鍑芥暟娉ㄩ攢锛?
 		struct device_driver *drv;
 		int err;
 
-		/* 鍦?PCI 鎬荤嚎涓婃煡鎵鹃┍鍔?'ivtv'銆?		pci_bus_type 鏄竴涓叏灞€鍙橀噺銆傚浜?USB 鎬荤嚎浣跨敤 usb_bus_type銆?*/
+		/* PCI 总线上查找驱'ivtv'		pci_bus_type 是一个全局变量。对USB 总线使用 usb_bus_type*/
 		drv = driver_find("ivtv", &pci_bus_type);
-		/** 閬嶅巻鎵€鏈?ivtv 璁惧瀹炰緥 **/
+		/** 遍历所ivtv 设备实例 **/
 		err = driver_for_each_device(drv, NULL, p, callback);
 		put_driver(drv);
 		return err;
 	}
 
-鏈夋椂浣犻渶瑕佺淮鎶や竴涓澶囧疄渚嬬殑杩愯璁℃暟鍣ㄣ€傝繖閫氬父鐢ㄤ簬灏嗚澶囧疄渚嬫槧灏勫埌妯″潡閫夐」鏁扮粍鐨勭储寮曘€?
-鎺ㄨ崘鐨勫仛娉曞涓嬶細
+有时你需要维护一个设备实例的运行计数器。这通常用于将设备实例映射到模块选项数组的索引
+推荐的做法如下：
 
 
 	static atomic_t drv_instance = ATOMIC_INIT(0);
@@ -65,16 +65,16 @@ V4L2 璁惧閫氳繃璋冪敤浠ヤ笅鍑芥暟娉ㄩ攢锛?
 		state->instance = atomic_inc_return(&drv_instance) - 1;
 	}
 
-濡傛灉浣犳湁澶氫釜璁惧鑺傜偣锛岄偅涔堝浜庡彲鐑彃鎷旇澶囷紝鍙兘寰堥毦鐭ラ亾浣曟椂娉ㄩ攢 `v4l2_device` 鎵嶆槸
-瀹夊叏鐨勩€備负姝?`v4l2_device` 鎻愪緵浜嗗紩鐢ㄨ鏁帮紙refcounting锛夋敮鎸併€傛瘡褰撹皟鐢?`video_register_device` 鏃跺紩鐢ㄨ鏁板姞涓€锛屾瘡褰撹璁惧鑺傜偣琚噴鏀炬椂鍑忎竴銆傚綋寮曠敤璁℃暟
-褰掗浂鏃讹紝灏嗚皟鐢?`v4l2_device` 鐨?release() 鍥炶皟銆備綘鍙互鍦ㄩ偅閲屽仛鏈€缁堢殑娓呯悊銆?
-濡傛灉鍒涘缓浜嗗叾瀹冭澶囪妭鐐癸紙渚嬪 ALSA锛夛紝浣犱篃鍙互閫氳繃璋冪敤浠ヤ笅鍑芥暟鎵嬪姩澧炲噺寮曠敤璁℃暟锛?
+如果你有多个设备节点，那么对于可热插拔设备，可能很难知道何时注销 `v4l2_device` 才是
+安全的。为`v4l2_device` 提供了引用计数（refcounting）支持。每当调`video_register_device` 时引用计数加一，每当该设备节点被释放时减一。当引用计数
+归零时，将调`v4l2_device` release() 回调。你可以在那里做最终的清理
+如果创建了其它设备节点（例如 ALSA），你也可以通过调用以下函数手动增减引用计数
 	`v4l2_device_get`
-	(`v4l2_dev <v4l2_device>`)銆?
-鎴栵細
+	(`v4l2_dev <v4l2_device>`)銆。
+或：
 
 	`v4l2_device_put`
-	(`v4l2_dev <v4l2_device>`)銆?
-鐢变簬鍒濆寮曠敤璁℃暟涓?1锛屼綘杩橀渶瑕佸湪 `disconnect()` 鍥炶皟锛堝浜?USB 璁惧锛夋垨 `remove()`
-鍥炶皟锛堜緥濡傚浜?PCI 璁惧锛変腑璋冪敤 `v4l2_device_put`锛屽惁鍒欏紩鐢ㄨ鏁版案杩滀笉浼氬綊闆躲€?
-##### v4l2_device 鍑芥暟涓庢暟鎹粨鏋?
+	(`v4l2_dev <v4l2_device>`)銆。
+由于初始引用计数1，你还需要在 `disconnect()` 回调（对USB 设备）或 `remove()`
+回调（例如对PCI 设备）中调用 `v4l2_device_put`，否则引用计数永远不会归零
+##### v4l2_device 函数与数据结

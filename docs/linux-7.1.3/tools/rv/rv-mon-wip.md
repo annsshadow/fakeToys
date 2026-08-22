@@ -1,35 +1,35 @@
 ﻿## rv-mon-wip
-### 鎶㈠崰涓殑鍞ら啋鐩戣鍣紙Wakeup In Preemptive monitor锛?
+### 抢占中的唤醒监视器（Wakeup In Preemptive monitor
 
 
 :Manual section: 1
 
-## 姒傝锛圫YNOPSIS锛?
+## 概要（SYNOPSIS
 
 
 **rv mon wip** [**OPTIONS**]
 
-## 鎻忚堪锛圖ESCRIPTION锛?
+## 描述（DESCRIPTION
 
 
-鎶㈠崰涓殑鍞ら啋锛?*wip**锛夌洃瑙嗗櫒鏄竴涓ず渚嬫€х殑姣?CPU 鐩戣鍣紝鐢ㄤ簬妫€鏌ュ敜閱掍簨浠舵槸鍚︽€绘槸鍦ㄧ鐢ㄦ姠鍗犵殑鎯呭喌涓嬪彂鐢熴€?
+抢占中的唤醒*wip**）监视器是一个示例性的CPU 监视器，用于检查唤醒事件是否总是在禁用抢占的情况下发生
 
-鏈夊叧姝ょ洃瑙嗗櫒鐨勬洿澶氫俊鎭紝璇峰弬瑙佸唴鏍告枃妗ｏ細
+有关此监视器的更多信息，请参见内核文档：
 <https://docs.kernel.org/trace/rv/monitor_wip.html>
 
-## 閫夐」锛圤PTIONS锛?
+## 选项（OPTIONS
 
 
 
-## 鍙傝锛圫EE ALSO锛?
+## 参见（SEE ALSO
 
 
 **rv**\(1), **rv-mon**\(1)
 
-Linux 鍐呮牳 **RV** 鏂囨。锛?
+Linux 内核 **RV** 文档
 <https://www.kernel.org/doc/html/latest/trace/rv/index.html>
 
-## 浣滆€咃紙AUTHOR锛?
+## 作者（AUTHOR
 
 
 Written by Daniel Bristot de Oliveira <bristot@kernel.org>

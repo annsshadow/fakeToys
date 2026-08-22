@@ -1,27 +1,27 @@
 ﻿
-# 绗簲閮ㄥ垎 - 娑堣垂鐢靛瓙鎺у埗锛圕onsumer Electronics Control锛孋EC锛堿PI
+# 第五部分 - 消费电子控制（Consumer Electronics Control，CEC）API
 
 
-鏈儴鍒嗘弿杩?CEC锛堟秷璐圭數瀛愭帶鍒讹紝Consumer Electronics Control锛?
+本部分描CEC（消费电子控制，Consumer Electronics Control
 
 - [cec-intro](cec-intro)
 - [cec-funcs](cec-funcs)
 - [cec-pin-error-inj](cec-pin-error-inj)
 - [cec-header](cec-header)
 
-######## 淇涓庣増鏉?
+######## 修订与版
 
-浣滆€咃細
+作者：
 
 - Verkuil, Hans <hverkuil@kernel.org>
 
- - 鍒濆鐗堟湰銆?
+ - 初始版本
 
-**鐗堟潈** |copy| 2016 : Hans Verkuil
+**版权** |copy| 2016 : Hans Verkuil
 
-######## 淇鍘嗗彶
+######## 修订历史
 
 
 :revision: 1.0.0 / 2016-03-17 (**hv**)
 
-鍒濆淇
+初始修订
