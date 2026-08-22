@@ -12,9 +12,7 @@ use crate::{
 
 pub fn router(pool: Pool) -> Router {
     Router::new()
-        .route("/jaxrs/file/folder/list/top", get(folder_list_top))
         .route("/jaxrs/file/folder/list/{id}", get(folder_list_with_folder))
-        .route("/jaxrs/file/complex/top", get(complex_top))
         .route("/jaxrs/file/upload", post(file_upload))
         .route("/jaxrs/file/download/{id}", get(file_download))
         .route("/jaxrs/file/folder/create", post(folder_create))
