@@ -1,120 +1,120 @@
-﻿## AArch64 Linux 涓殑鍐呭瓨鏍囪鎵╁睍锛圡TE锛?
+﻿## AArch64 Linux 中的内存标记扩展（MTE
 
-浣滆€咃細Vincenzo Frascino <vincenzo.frascino@arm.com>
+作者：Vincenzo Frascino <vincenzo.frascino@arm.com>
          Catalin Marinas <catalin.marinas@arm.com>
 
-鏃ユ湡锛?020-02-25
+日期020-02-25
 
-鏈枃妗ｆ弿杩颁簡鍦?AArch64 Linux 涓彁渚涘唴瀛樻爣璁版墿灞曪紙Memory Tagging Extension锛?鍔熻兘鐨勭浉鍏冲唴瀹广€?
-## 绠€浠?
+本文档描述了AArch64 Linux 中提供内存标记扩展（Memory Tagging Extension功能的相关内容
+## 简
 
-鍩轰簬 ARMv8.5 鐨勫鐞嗗櫒寮曞叆浜嗗唴瀛樻爣璁版墿灞曪紙MTE锛夌壒鎬с€侻TE 鏋勫缓鍦?ARMv8.0 鐨?铏氭嫙鍦板潃鏍囪 TBI锛圱op Byte Ignore锛屽拷鐣ユ渶楂樺瓧鑺傦級鐗规€т箣涓婏紝骞跺厑璁歌蒋浠惰闂?鐗╃悊鍦板潃绌洪棿涓瘡涓?16 瀛楄妭绮掑害锛坓ranule锛夌殑涓€涓?4 浣嶅垎閰嶆爣璁帮紙allocation tag锛夈€?杩欐牱鐨勫唴瀛樿寖鍥村繀椤讳互 Normal-Tagged 鍐呭瓨灞炴€ф槧灏勩€傞€昏緫鏍囪锛坙ogical tag锛夊彇鑷?鐢ㄤ簬鍐呭瓨璁块棶鐨勮櫄鎷熷湴鍧€鐨勭 59-56 浣嶃€傚惎鐢ㄤ簡 MTE 鐨?CPU 浼氬皢閫昏緫鏍囪涓庡垎閰嶆爣璁?杩涜姣旇緝锛屽苟鍙兘鍦ㄤ簩鑰呬笉鍖归厤鏃讹紙鍙栧喅浜庣郴缁熷瘎瀛樺櫒鐨勯厤缃級寮曞彂寮傚父銆?
-## 鐢ㄦ埛绌洪棿鏀寔
+基于 ARMv8.5 的处理器引入了内存标记扩展（MTE）特性。MTE 构建ARMv8.0 虚拟地址标记 TBI（Top Byte Ignore，忽略最高字节）特性之上，并允许软件访物理地址空间中每16 字节粒度（granule）的一4 位分配标记（allocation tag）这样的内存范围必须以 Normal-Tagged 内存属性映射。逻辑标记（logical tag）取用于内存访问的虚拟地址的第 59-56 位。启用了 MTE CPU 会将逻辑标记与分配标进行比较，并可能在二者不匹配时（取决于系统寄存器的配置）引发异常
+## 用户空间支持
 
 
-褰撻€夋嫨浜?`CONFIG_ARM64_MTE` 涓旂‖浠舵敮鎸佸唴瀛樻爣璁版墿灞曟椂锛屽唴鏍搁€氳繃 `HWCAP2_MTE`
-鍚戠敤鎴风┖闂撮€氬憡璇ョ壒鎬с€?
+当选择`CONFIG_ARM64_MTE` 且硬件支持内存标记扩展时，内核通过 `HWCAP2_MTE`
+向用户空间通告该特性
 ### PROT_MTE
 
 
-涓轰簡璁块棶鍒嗛厤鏍囪锛岀敤鎴疯繘绋嬪繀椤讳娇鐢?`mmap()` 鍜?`mprotect()` 鐨勪竴涓柊鐨?`prot`
-鏍囧織锛屽湪涓€娈靛湴鍧€鑼冨洿涓婂惎鐢ㄦ爣璁帮紙Tagged锛夊唴瀛樺睘鎬э細
+为了访问分配标记，用户进程必须使`mmap()` `mprotect()` 的一个新`prot`
+标志，在一段地址范围上启用标记（Tagged）内存属性：
 
-`PROT_MTE` - 椤靛厑璁歌闂?MTE 鍒嗛厤鏍囪銆?
-杩欎簺椤甸娆℃槧灏勫埌鐢ㄦ埛鍦板潃绌洪棿鏃讹紝鍒嗛厤鏍囪琚涓?0锛屽苟鍦ㄥ啓鏃跺鍒讹紙copy-on-write锛?鏃朵繚鐣欍€俙MAP_SHARED` 鍙楁敮鎸侊紝鍒嗛厤鏍囪鍙互鍦ㄨ繘绋嬩箣闂村叡浜€?
-**娉ㄦ剰**锛歚PROT_MTE` 浠呭彈 `MAP_ANONYMOUS` 鍜屽熀浜?RAM 鐨勬枃浠舵槧灏勶紙`tmpfs`銆乣memfd`锛?鏀寔銆傚皢鍏朵紶缁欏叾浠栫被鍨嬬殑鏄犲皠浼氬鑷磋繖浜涚郴缁熻皟鐢ㄨ繑鍥?`-EINVAL`銆?
-**娉ㄦ剰**锛歚PROT_MTE` 鏍囧織锛堝強鐩稿簲鐨勫唴瀛樼被鍨嬶級涓嶈兘琚?`mprotect()` 娓呴櫎銆?
-**娉ㄦ剰**锛氫娇鐢?`MADV_DONTNEED` 鍜?`MADV_FREE` 鐨?`madvise()` 鍐呭瓨鑼冨洿锛屽湪璇ョ郴缁?璋冪敤涔嬪悗鐨勪换浣曟椂鍊欓兘鍙兘琚竻闄ゅ垎閰嶆爣璁帮紙璁句负 0锛夈€?
-### 鏍囪妫€鏌ラ敊璇紙Tag Check Faults锛?
+`PROT_MTE` - 页允许访MTE 分配标记
+这些页首次映射到用户地址空间时，分配标记被设0，并在写时复制（copy-on-write时保留。`MAP_SHARED` 受支持，分配标记可以在进程之间共享
+**注意**：`PROT_MTE` 仅受 `MAP_ANONYMOUS` 和基RAM 的文件映射（`tmpfs`、`memfd`支持。将其传给其他类型的映射会导致这些系统调用返`-EINVAL`
+**注意**：`PROT_MTE` 标志（及相应的内存类型）不能`mprotect()` 清除
+**注意**：使`MADV_DONTNEED` `MADV_FREE` `madvise()` 内存范围，在该系调用之后的任何时候都可能被清除分配标记（设为 0）
+### 标记检查错误（Tag Check Faults
 
-褰撴煇鍦板潃鑼冨洿鍚敤浜?`PROT_MTE`锛屼笖璁块棶鏃堕€昏緫鏍囪涓庡垎閰嶆爣璁颁笉鍖归厤鏃讹紝鏈変笁绉嶅彲閰嶇疆鐨?琛屼负锛?
-- **Ignore锛堝拷鐣ワ級** - 杩欐槸榛樿妯″紡銆侰PU锛堝拰鍐呮牳锛夊拷鐣ユ爣璁版鏌ラ敊璇€?
-- **Synchronous锛堝悓姝ワ級** - 鍐呮牳鍚屾鍦板紩鍙戜竴涓?`SIGSEGV`锛屽叾涓?  `.si_code = SEGV_MTESERR` 涓?`.si_addr = <fault-address>`銆傚唴瀛樿闂笉浼氳鎵ц銆?  濡傛灉 `SIGSEGV` 琚嚭閿欑嚎绋嬪拷鐣ユ垨闃诲锛屾墍灞炶繘绋嬪皢琚粓姝㈠苟鐢熸垚 `coredump`銆?
-- **Asynchronous锛堝紓姝ワ級** - 鍐呮牳鍦ㄥ嚭閿欑嚎绋嬩腑锛屽湪涓€涓垨澶氫釜鏍囪妫€鏌ラ敊璇箣鍚庡紓姝ュ湴
-  寮曞彂涓€涓?`SIGSEGV`锛屽叾涓?`.si_code = SEGV_MTEAERR` 涓?`.si_addr = 0`锛堝嚭閿欏湴鍧€鏈煡锛夈€?
-- **Asymmetric锛堥潪瀵圭О锛?* - 璇绘搷浣滄寜鍚屾妯″紡澶勭悊锛岃€屽啓鎿嶄綔鎸夊紓姝ユā寮忓鐞嗐€?
-鐢ㄦ埛鍙互鎸夌嚎绋嬶紝浣跨敤 `prctl(PR_SET_TAGGED_ADDR_CTRL, flags, 0, 0, 0)` 绯荤粺璋冪敤
-閫夋嫨涓婅堪妯″紡锛屽叾涓?`flags` 鍦?`PR_MTE_TCF_MASK` 浣嶅煙涓寘鍚互涓嬩换鎰忓€硷細
+当某地址范围启用`PROT_MTE`，且访问时逻辑标记与分配标记不匹配时，有三种可配置行为
+- **Ignore（忽略）** - 这是默认模式。CPU（和内核）忽略标记检查错误
+- **Synchronous（同步）** - 内核同步地引发一`SIGSEGV`，其  `.si_code = SEGV_MTESERR` `.si_addr = <fault-address>`。内存访问不会被执行  如果 `SIGSEGV` 被出错线程忽略或阻塞，所属进程将被终止并生成 `coredump`
+- **Asynchronous（异步）** - 内核在出错线程中，在一个或多个标记检查错误之后异步地
+  引发一`SIGSEGV`，其`.si_code = SEGV_MTEAERR` `.si_addr = 0`（出错地址未知）
+- **Asymmetric（非对称* - 读操作按同步模式处理，而写操作按异步模式处理
+用户可以按线程，使用 `prctl(PR_SET_TAGGED_ADDR_CTRL, flags, 0, 0, 0)` 系统调用
+选择上述模式，其`flags` `PR_MTE_TCF_MASK` 位域中包含以下任意值：
 
-- `PR_MTE_TCF_NONE`  - **蹇界暐**鏍囪妫€鏌ラ敊璇?                         锛堣嫢涓庡叾浠栭€夐」缁勫悎鍒欒蹇界暐锛?- `PR_MTE_TCF_SYNC`  - **鍚屾**鏍囪妫€鏌ラ敊璇ā寮?- `PR_MTE_TCF_ASYNC` - **寮傛**鏍囪妫€鏌ラ敊璇ā寮?
-濡傛灉鏈寚瀹氫换浣曟ā寮忥紝鏍囪妫€鏌ラ敊璇皢琚拷鐣ャ€傚鏋滃彧鎸囧畾浜嗗崟涓€妯″紡锛岀▼搴忓皢鍦ㄨ妯″紡涓?杩愯銆傚鏋滄寚瀹氫簡澶氫釜妯″紡锛屽垯鎸変笅鏂団€滄瘡 CPU 鍋忓ソ鐨勬爣璁版鏌ユā寮忊€濅竴鑺傛墍杩伴€夋嫨妯″紡銆?
-褰撳墠鐨勬爣璁版鏌ラ敊璇厤缃彲浠ヤ娇鐢?`prctl(PR_GET_TAGGED_ADDR_CTRL, 0, 0, 0, 0)` 绯荤粺
-璋冪敤璇诲彇銆傚鏋滆姹備簡澶氫釜妯″紡锛屽垯鍏ㄩ儴閮戒細琚姤鍛娿€?
-鏍囪妫€鏌ヤ篃鍙互閫氳繃璁剧疆 `PSTATE.TCO` 浣嶏紙浣跨敤 `MSR TCO, #1`锛夊鏌愪釜鐢ㄦ埛绾跨▼绂佺敤銆?
-**娉ㄦ剰**锛氫俊鍙峰鐞嗙▼搴忓缁堜互 `PSTATE.TCO = 0` 琚皟鐢紝涓庤涓柇鐨勪笂涓嬫枃鏃犲叧銆?`PSTATE.TCO` 浼氬湪 `sigreturn()` 鏃舵仮澶嶃€?
-**娉ㄦ剰**锛氱敤鎴峰簲鐢ㄧ▼搴忔病鏈夊彲鐢ㄧ殑**鍖归厤鍏ㄩ儴锛坢atch-all锛?*閫昏緫鏍囪銆?
-**娉ㄦ剰**锛氬唴鏍稿鐢ㄦ埛鍦板潃绌洪棿锛堜緥濡?`read()` 绯荤粺璋冪敤锛夌殑璁块棶锛屽湪鐢ㄦ埛绾跨▼鐨勬爣璁版鏌?妯″紡涓?`PR_MTE_TCF_NONE` 鎴?`PR_MTE_TCF_ASYNC` 鏃朵笉琚鏌ャ€傚鏋滄爣璁版鏌ユā寮忎负
-`PR_MTE_TCF_SYNC`锛屽唴鏍镐細灏芥渶澶у姫鍔涙鏌ュ叾瀵圭敤鎴峰湴鍧€鐨勮闂紝浣嗘棤娉曞缁堜繚璇併€備笉璁?鐢ㄦ埛閰嶇疆濡備綍锛屽唴鏍稿鐢ㄦ埛鍦板潃鐨勮闂缁堜互鏈夋晥鐨?`PSTATE.TCO` 鍊?0 鎵ц銆?
-### 鍦?``IRG``銆乣`ADDG`` 鍜?``SUBG`` 鎸囦护涓帓闄ゆ爣璁?
+- `PR_MTE_TCF_NONE`  - **忽略**标记检查错                         （若与其他选项组合则被忽略- `PR_MTE_TCF_SYNC`  - **同步**标记检查错误模- `PR_MTE_TCF_ASYNC` - **异步**标记检查错误模
+如果未指定任何模式，标记检查错误将被忽略。如果只指定了单一模式，程序将在该模式运行。如果指定了多个模式，则按下文“每 CPU 偏好的标记检查模式”一节所述选择模式
+当前的标记检查错误配置可以使`prctl(PR_GET_TAGGED_ADDR_CTRL, 0, 0, 0, 0)` 系统
+调用读取。如果请求了多个模式，则全部都会被报告
+标记检查也可以通过设置 `PSTATE.TCO` 位（使用 `MSR TCO, #1`）对某个用户线程禁用
+**注意**：信号处理程序始终以 `PSTATE.TCO = 0` 被调用，与被中断的上下文无关`PSTATE.TCO` 会在 `sigreturn()` 时恢复
+**注意**：用户应用程序没有可用的**匹配全部（match-all*逻辑标记
+**注意**：内核对用户地址空间（例`read()` 系统调用）的访问，在用户线程的标记检模式`PR_MTE_TCF_NONE` `PR_MTE_TCF_ASYNC` 时不被检查。如果标记检查模式为
+`PR_MTE_TCF_SYNC`，内核会尽最大努力检查其对用户地址的访问，但无法始终保证。不用户配置如何，内核对用户地址的访问始终以有效`PSTATE.TCO` 0 执行
+### ``IRG``、``ADDG`` ``SUBG`` 指令中排除标
 
-浣撶郴缁撴瀯鍏佽閫氳繃 `GCR_EL1.Exclude` 瀵勫瓨鍣ㄤ綅鍩熸帓闄ゆ煇浜涜闅忔満鐢熸垚鐨勬爣璁般€傞粯璁ゆ儏鍐典笅锛?Linux 鎺掗櫎闄?0 浠ュ鐨勬墍鏈夋爣璁般€傜敤鎴风嚎绋嬪彲浠ヤ娇鐢?``prctl(PR_SET_TAGGED_ADDR_CTRL,
-flags, 0, 0, 0)`` 绯荤粺璋冪敤鍦ㄩ殢鏈虹敓鎴愮殑闆嗗悎閲屽惎鐢ㄧ壒瀹氭爣璁帮紝鍏朵腑 `flags`` 鍦?`PR_MTE_TAG_MASK` 浣嶅煙涓寘鍚爣璁颁綅鍥俱€?
-**娉ㄦ剰**锛氱‖浠朵娇鐢ㄧ殑鏄帓闄ゆ帺鐮侊紝鑰?`prctl()` 鎺ュ彛鎻愪緵鐨勬槸鍖呭惈鎺╃爜銆傚寘鍚帺鐮佷负 `0`
-锛堟帓闄ゆ帺鐮?`0xffff`锛変細瀵艰嚧 CPU 濮嬬粓鐢熸垚鏍囪 `0`銆?
-### 姣?CPU 鍋忓ソ鐨勬爣璁版鏌ユā寮?
+体系结构允许通过 `GCR_EL1.Exclude` 寄存器位域排除某些被随机生成的标记。默认情况下Linux 排除0 以外的所有标记。用户线程可以使``prctl(PR_SET_TAGGED_ADDR_CTRL,
+flags, 0, 0, 0)`` 系统调用在随机生成的集合里启用特定标记，其中 `flags`` `PR_MTE_TAG_MASK` 位域中包含标记位图
+**注意**：硬件使用的是排除掩码，`prctl()` 接口提供的是包含掩码。包含掩码为 `0`
+（排除掩`0xffff`）会导致 CPU 始终生成标记 `0`
+### CPU 偏好的标记检查模
 
-鍦ㄦ煇浜?CPU 涓婏紝MTE 鍦ㄦ洿涓ユ牸鏍囪妫€鏌ユā寮忎笅鐨勬€ц兘涓庤緝瀹芥澗鏍囪妫€鏌ユā寮忎笅鐨勬€ц兘鐩歌繎銆?褰撹姹備簡杈冨鏉剧殑妫€鏌ユā寮忔椂锛屽湪杩欎簺 CPU 涓婂惎鐢ㄦ洿涓ユ牸鐨勬鏌ユ槸鍊煎緱鐨勶紝浠ヤ究鍦ㄤ笉甯︽潵
-鎬ц兘涓嬮檷鐨勫墠鎻愪笅鑾峰緱鏇翠弗鏍兼鏌ョ殑閿欒妫€娴嬩紭鍔裤€備负鏀寔杩欑鍦烘櫙锛岀壒鏉冪敤鎴峰彲浠ュ皢鏇翠弗鏍?鐨勬爣璁版鏌ユā寮忛厤缃负璇?CPU 鍋忓ソ鐨勬爣璁版鏌ユā寮忋€?
-姣忎釜 CPU 鍋忓ソ鐨勬爣璁版鏌ユā寮忕敱 `/sys/devices/system/cpu/cpu<N>/mte_tcf_preferred`
-鎺у埗锛岀壒鏉冪敤鎴峰彲浠ュ悜鍏跺啓鍏ュ€?`async`銆乣sync` 鎴?`asymm`銆傛瘡涓?CPU 榛樿鐨勫亸濂芥ā寮忎负
-`async`銆?
-涓轰簡鍏佽绋嬪簭鍙兘鍦?CPU 鍋忓ソ鐨勬爣璁版鏌ユā寮忎笅杩愯锛岀敤鎴风▼搴忓彲浠ュ湪 ``prctl(PR_SET_TAGGED_ADDR_CTRL,
-flags, 0, 0, 0)`` 绯荤粺璋冪敤鐨?`flags` 鍙傛暟涓缃涓爣璁版鏌ラ敊璇ā寮忎綅銆傚鏋滃悓鏃惰姹備簡
-鍚屾鍜屽紓姝ユā寮忥紝閭ｄ箞鍐呮牳涔熷彲鑳介€夋嫨闈炲绉版ā寮忋€傚鏋?CPU 鍋忓ソ鐨勬爣璁版鏌ユā寮忓浜庝换鍔?鎵€鎻愪緵鐨勬爣璁版鏌ユā寮忛泦鍚堜腑锛屽垯閫夋嫨璇ユā寮忋€傚惁鍒欙紝鍐呮牳灏嗕粠浠诲姟鐨勬ā寮忛泦涓寜涓嬭堪鍋忓ソ
-椤哄簭閫夋嫨涓€绉嶆ā寮忥細
+在某CPU 上，MTE 在更严格标记检查模式下的性能与较宽松标记检查模式下的性能相近当请求了较宽松的检查模式时，在这些 CPU 上启用更严格的检查是值得的，以便在不带来
+性能下降的前提下获得更严格检查的错误检测优势。为支持这种场景，特权用户可以将更严的标记检查模式配置为CPU 偏好的标记检查模式
+每个 CPU 偏好的标记检查模式由 `/sys/devices/system/cpu/cpu<N>/mte_tcf_preferred`
+控制，特权用户可以向其写入`async`、`sync` `asymm`。每CPU 默认的偏好模式为
+`async`銆。
+为了允许程序可能CPU 偏好的标记检查模式下运行，用户程序可以在 ``prctl(PR_SET_TAGGED_ADDR_CTRL,
+flags, 0, 0, 0)`` 系统调用`flags` 参数中设置多个标记检查错误模式位。如果同时请求了
+同步和异步模式，那么内核也可能选择非对称模式。如CPU 偏好的标记检查模式处于任所提供的标记检查模式集合中，则选择该模式。否则，内核将从任务的模式集中按下述偏好
+顺序选择一种模式：
 
- 1. 寮傛锛圓synchronous锛? 2. 闈炲绉帮紙Asymmetric锛? 3. 鍚屾锛圫ynchronous锛?
-娉ㄦ剰锛岀敤鎴风┖闂存棤娉曞湪璇锋眰澶氱妯″紡鐨勫悓鏃剁鐢ㄩ潪瀵圭О妯″紡銆?
-### 鍒濆杩涚▼鐘舵€?
+ 1. 异步（Asynchronous 2. 非对称（Asymmetric 3. 同步（Synchronous
+注意，用户空间无法在请求多种模式的同时禁用非对称模式
+### 初始进程状
 
-鍦?`execve()` 鏃讹紝鏂拌繘绋嬪叿鏈変互涓嬮厤缃細
+`execve()` 时，新进程具有以下配置：
 
-- `PR_TAGGED_ADDR_ENABLE` 璁句负 0锛堢鐢級
-- 鏈€夋嫨浠讳綍鏍囪妫€鏌ユā寮忥紙鏍囪妫€鏌ラ敊璇蹇界暐锛?- `PR_MTE_TAG_MASK` 璁句负 0锛堟墍鏈夋爣璁伴兘琚帓闄わ級
-- `PSTATE.TCO` 璁句负 0
-- 鍒濆鍐呭瓨鏄犲皠鍧囨湭璁剧疆 `PROT_MTE`
+- `PR_TAGGED_ADDR_ENABLE` 设为 0（禁用）
+- 未选择任何标记检查模式（标记检查错误被忽略- `PR_MTE_TAG_MASK` 设为 0（所有标记都被排除）
+- `PSTATE.TCO` 设为 0
+- 初始内存映射均未设置 `PROT_MTE`
 
-鍦?`fork()` 鏃讹紝鏂拌繘绋嬬户鎵跨埗杩涚▼鐨勯厤缃拰鍐呭瓨鏄犲皠灞炴€э紝浣嗕娇鐢?`MADV_WIPEONFORK` 鐨?`madvise()` 鑼冨洿闄ゅ鈥斺€旇繖浜涜寖鍥寸殑鏁版嵁鍜屾爣璁颁細琚竻闄わ紙璁句负 0锛夈€?
-### ``ptrace()`` 鎺ュ彛
-
-
-`PTRACE_PEEKMTETAGS` 鍜?`PTRACE_POKEMTETAGS` 鍏佽杩借釜鑰咃紙tracer锛変粠琚拷韪€咃紙tracee锛?鐨勫湴鍧€绌洪棿璇诲彇鏍囪鎴栧悜鍏惰缃爣璁般€俙ptrace()` 绯荤粺璋冪敤浠?``ptrace(request, pid, addr,
-data)`` 褰㈠紡璋冪敤锛屽叾涓細
-
-- `request` - `PTRACE_PEEKMTETAGS` 鎴?`PTRACE_POKEMTETAGS` 涔嬩竴銆?- `pid` - 琚拷韪€呯殑 PID銆?- `addr` - 琚拷韪€呭湴鍧€绌洪棿涓殑鍦板潃銆?- `data` - 鎸囧悜涓€涓?`struct iovec` 鐨勬寚閽堬紝鍏朵腑 `iov_base` 鎸囧悜杩借釜鑰呭湴鍧€绌洪棿涓?  闀垮害涓?`iov_len` 鐨勭紦鍐插尯銆?
-杩借釜鑰呯殑 `iov_base` 缂撳啿鍖轰腑鐨勬爣璁拌〃绀轰负姣忓瓧鑺備竴涓?4 浣嶆爣璁帮紝瀵瑰簲浜庤杩借釜鑰呭湴鍧€绌洪棿
-涓殑涓€涓?16 瀛楄妭 MTE 鏍囪绮掑害銆?
-**娉ㄦ剰**锛氬鏋?`addr` 鏈榻愬埌 16 瀛楄妭绮掑害锛屽唴鏍稿皢浣跨敤鐩稿簲鐨勫榻愬湴鍧€銆?
-`ptrace()` 杩斿洖鍊硷細
-
-- 0 - 鏍囪宸茶澶嶅埗锛岃拷韪€呯殑 `iov_len` 琚洿鏂颁负浼犺緭鐨勬爣璁版暟閲忋€傚鏋滆杩借釜鑰呮垨杩借釜鑰?  鐨勫湴鍧€绌洪棿涓殑璇锋眰鍦板潃鑼冨洿鏃犳硶璁块棶鎴栦笉鍏锋湁鏈夋晥鏍囪锛岃鍊煎彲鑳藉皬浜庤姹傜殑 `iov_len`銆?- `-EPERM` - 鏃犳硶杩借釜鎸囧畾鐨勮繘绋嬨€?- `-EIO` - 鏃犳硶璁块棶琚拷韪€呯殑鍦板潃鑼冨洿锛堜緥濡傛棤鏁堝湴鍧€锛夛紝鏈鍒朵换浣曟爣璁般€俙iov_len`
-  鏈洿鏂般€?- `-EFAULT` - 璁块棶杩借釜鑰呭唴瀛橈紙`struct iovec` 鎴?`iov_base` 缂撳啿鍖猴級鏃跺嚭閿欙紝鏈鍒?  浠讳綍鏍囪銆俙iov_len` 鏈洿鏂般€?- `-EOPNOTSUPP` - 琚拷韪€呯殑鍦板潃娌℃湁鏈夋晥鏍囪锛堜粠鏈互 `PROT_MTE` 鏍囧織鏄犲皠锛夈€俙iov_len`
-  鏈洿鏂般€?
-**娉ㄦ剰**锛氫笂杩拌姹傛病鏈夌灛鏃堕敊璇紝鍥犳鐢ㄦ埛绋嬪簭鍦ㄧ郴缁熻皟鐢ㄨ繑鍥為潪闆跺€兼椂涓嶅簲瀵瑰叾閲嶈瘯銆?
-`PTRACE_GETREGSET` 鍜?`PTRACE_SETREGSET`锛岄厤鍚?``addr ==
-`NT_ARM_TAGGED_ADDR_CTRL`锛屽厑璁?`ptrace()` 鎸夌収
-Documentation/arch/arm64/tagged-address-abi.rst 鍙婁笂鏂囩殑 `prctl()` 閫夐」鎵€杩帮紝璁块棶
-杩涚▼鐨勬爣璁板湴鍧€ ABI 鎺у埗鍜?MTE 閰嶇疆銆傜浉搴旂殑 `regset` 涓?1 涓?8 瀛楄妭鐨勫厓绱?锛坄sizeof(long))`锛夈€?
-### Core dump 鏀寔
+`fork()` 时，新进程继承父进程的配置和内存映射属性，但使`MADV_WIPEONFORK` `madvise()` 范围除外——这些范围的数据和标记会被清除（设为 0）
+### ``ptrace()`` 接口
 
 
-浠?`PROT_MTE` 鏄犲皠鐨勭敤鎴峰唴瀛樼殑鍒嗛厤鏍囪锛屼細浣滀负棰濆鐨?`PT_AARCH64_MEMTAG_MTE` 娈?杞偍鍒?core 鏂囦欢涓€傛绫绘鐨勭▼搴忓ご瀹氫箟濡備笅锛?
+`PTRACE_PEEKMTETAGS` `PTRACE_POKEMTETAGS` 允许追踪者（tracer）从被追踪者（tracee的地址空间读取标记或向其设置标记。`ptrace()` 系统调用``ptrace(request, pid, addr,
+data)`` 形式调用，其中：
+
+- `request` - `PTRACE_PEEKMTETAGS` `PTRACE_POKEMTETAGS` 之一- `pid` - 被追踪者的 PID- `addr` - 被追踪者地址空间中的地址- `data` - 指向一`struct iovec` 的指针，其中 `iov_base` 指向追踪者地址空间  长度`iov_len` 的缓冲区
+追踪者的 `iov_base` 缓冲区中的标记表示为每字节一4 位标记，对应于被追踪者地址空间
+中的一16 字节 MTE 标记粒度
+**注意**：如`addr` 未对齐到 16 字节粒度，内核将使用相应的对齐地址
+`ptrace()` 返回值：
+
+- 0 - 标记已被复制，追踪者的 `iov_len` 被更新为传输的标记数量。如果被追踪者或追踪  的地址空间中的请求地址范围无法访问或不具有有效标记，该值可能小于请求的 `iov_len`- `-EPERM` - 无法追踪指定的进程- `-EIO` - 无法访问被追踪者的地址范围（例如无效地址），未复制任何标记。`iov_len`
+  未更新- `-EFAULT` - 访问追踪者内存（`struct iovec` `iov_base` 缓冲区）时出错，未复  任何标记。`iov_len` 未更新- `-EOPNOTSUPP` - 被追踪者的地址没有有效标记（从未以 `PROT_MTE` 标志映射）。`iov_len`
+  未更新
+**注意**：上述请求没有瞬时错误，因此用户程序在系统调用返回非零值时不应对其重试
+`PTRACE_GETREGSET` `PTRACE_SETREGSET`，配``addr ==
+`NT_ARM_TAGGED_ADDR_CTRL`，允`ptrace()` 按照
+Documentation/arch/arm64/tagged-address-abi.rst 及上文的 `prctl()` 选项所述，访问
+进程的标记地址 ABI 控制MTE 配置。相应的 `regset` 1 8 字节的元（`sizeof(long))`）
+### Core dump 支持
+
+
+`PROT_MTE` 映射的用户内存的分配标记，会作为额外`PT_AARCH64_MEMTAG_MTE` 转储core 文件中。此类段的程序头定义如下
 :`p_type`: `PT_AARCH64_MEMTAG_MTE`
 :`p_flags`: 0
-:`p_offset`: 娈靛湪鏂囦欢涓殑鍋忕Щ閲?:`p_vaddr`: 娈电殑铏氭嫙鍦板潃锛屼笌鐩稿簲鐨?`PT_LOAD` 娈电浉鍚?:`p_paddr`: 0
-:`p_filesz`: 娈靛湪鏂囦欢涓殑澶у皬锛岃绠椾负 `p_mem_sz / 32`
-  锛堜袱涓?4 浣嶆爣璁拌鐩?32 瀛楄妭鍐呭瓨锛?:`p_memsz`: 娈靛湪鍐呭瓨涓殑澶у皬锛屼笌鐩稿簲鐨?`PT_LOAD` 娈电浉鍚?:`p_align`: 0
+:`p_offset`: 段在文件中的偏移:`p_vaddr`: 段的虚拟地址，与相应`PT_LOAD` 段相:`p_paddr`: 0
+:`p_filesz`: 段在文件中的大小，计算为 `p_mem_sz / 32`
+  （两4 位标记覆32 字节内存:`p_memsz`: 段在内存中的大小，与相应`PT_LOAD` 段相:`p_align`: 0
 
-鏍囪浠ヤ袱涓?4 浣嶆爣璁板瓨浜庝竴涓瓧鑺傜殑鏂瑰紡锛屽瓨鏀惧湪 core 鏂囦欢涓?`p_offset` 澶勩€傛爣璁扮矑搴︿负
-16 瀛楄妭锛屼竴涓?4K 椤靛湪 core 鏂囦欢涓渶瑕?128 瀛楄妭銆?
-## 姝ｇ‘鐢ㄦ硶绀轰緥
+标记以两4 位标记存于一个字节的方式，存放在 core 文件`p_offset` 处。标记粒度为
+16 字节，一4K 页在 core 文件中需128 字节
+## 正确用法示例
 
 
-**MTE 绀轰緥浠ｇ爜**
+**MTE 示例代码**
 
 
     /*
-     - 闇€浠?-march=armv8.5-a+memtag 缂栬瘧
+     - 需-march=armv8.5-a+memtag 编译
      */
     #include <errno.h>
     #include <stdint.h>
@@ -150,7 +150,7 @@ Documentation/arch/arm64/tagged-address-abi.rst 鍙婁笂鏂囩殑 `prctl()` 閫
     # define PR_MTE_TAG_MASK        (0xffffUL << PR_MTE_TAG_SHIFT)
 
     /*
-     - 鍚戠粰瀹氭寚閽堟彃鍏ヤ竴涓殢鏈虹殑閫昏緫鏍囪銆?     */
+     - 向给定指针插入一个随机的逻辑标记     */
     #define insert_random_tag(ptr) ({                       \
             uint64_t __val;                                 \
             asm("irg %0, %1" : "=r" (__val) : "r" (ptr));   \
@@ -158,7 +158,7 @@ Documentation/arch/arm64/tagged-address-abi.rst 鍙婁笂鏂囩殑 `prctl()` 閫
     })
 
     /*
-     - 鍦ㄧ洰鏍囧湴鍧€涓婅缃垎閰嶆爣璁般€?     */
+     - 在目标地址上设置分配标记     */
     #define set_tag(tagged_addr) do {                                      \
             asm volatile("stg %0, [%0]" : : "r" (tagged_addr) : "memory"); \
     } while (0)
@@ -169,13 +169,13 @@ Documentation/arch/arm64/tagged-address-abi.rst 鍙婁笂鏂囩殑 `prctl()` 閫
             unsigned long page_sz = sysconf(_SC_PAGESIZE);
             unsigned long hwcap2 = getauxval(AT_HWCAP2);
 
-            /** 妫€鏌ユ槸鍚﹀瓨鍦?MTE **/
+            /** 检查是否存MTE **/
             if (!(hwcap2 & HWCAP2_MTE))
                     return EXIT_FAILURE;
 
             /*
-             - 鍚敤鏍囪鍦板潃 ABI銆佸悓姝ユ垨寮傛锛堝熀浜庢瘡 CPU 鍋忓ソ锛夌殑 MTE
-             - 鏍囪妫€鏌ラ敊璇紝骞跺厑璁搁殢鏈虹敓鎴愰泦鍚堜腑闄?0 澶栫殑鎵€鏈?             - 鏍囪銆?             */
+             - 启用标记地址 ABI、同步或异步（基于每 CPU 偏好）的 MTE
+             - 标记检查错误，并允许随机生成集合中0 外的所             - 标记             */
             if (prctl(PR_SET_TAGGED_ADDR_CTRL,
                       PR_TAGGED_ADDR_ENABLE | PR_MTE_TCF_SYNC | PR_MTE_TCF_ASYNC |
                       (0xfffe << PR_MTE_TAG_SHIFT),
@@ -192,34 +192,34 @@ Documentation/arch/arm64/tagged-address-abi.rst 鍙婁笂鏂囩殑 `prctl()` 閫
             }
 
             /*
-             - 鍦ㄤ笂闈㈢殑鍖垮悕 mmap 涓婂惎鐢?MTE銆傝鏍囧織涔熷彲浠ョ洿鎺ヤ紶缁?             - mmap() 浠庤€岃烦杩囪繖涓€姝ャ€?             */
+             - 在上面的匿名 mmap 上启MTE。该标志也可以直接传             - mmap() 从而跳过这一步             */
             if (mprotect(a, page_sz, PROT_READ | PROT_WRITE | PROT_MTE)) {
                     perror("mprotect() failed");
                     return EXIT_FAILURE;
             }
 
-            /** 浠ラ粯璁ゆ爣璁?(0) 璁块棶 **/
+            /** 以默认标(0) 访问 **/
             a[^0^] = 1;
             a[^1^] = 2;
 
             printf("a[^0^] = %hhu a[^1^] = %hhu\n", a[^0^], a[^1^]);
 
-            /** 璁剧疆閫昏緫涓庡垎閰嶆爣璁?**/
+            /** 设置逻辑与分配标**/
             a = (unsigned char *)insert_random_tag(a);
             set_tag(a);
 
             printf("%p\n", a);
 
-            /** 浠ラ潪闆舵爣璁拌闂?**/
+            /** 以非零标记访**/
             a[^0^] = 3;
             printf("a[^0^] = %hhu a[^1^] = %hhu\n", a[^0^], a[^1^]);
 
             /*
-             - 濡傛灉 MTE 琚纭惎鐢紝涓嬩竴鏉℃寚浠ゅ皢浜х敓涓€涓?             - 寮傚父銆?             */
+             - 如果 MTE 被正确启用，下一条指令将产生一             - 异常             */
             printf("Expecting SIGSEGV...\n");
             a[^16^] = 0xdd;
 
-            /** 鍦?PR_MTE_TCF_SYNC 妯″紡涓嬩笉搴旀墦鍗拌繖琛?**/
+            /** PR_MTE_TCF_SYNC 模式下不应打印这**/
             printf("...haven't got one\n");
 
             return EXIT_FAILURE;

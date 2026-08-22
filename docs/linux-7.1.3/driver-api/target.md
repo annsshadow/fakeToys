@@ -1,42 +1,42 @@
-﻿## target 涓?iSCSI 鎺ュ彛鎸囧崡
+﻿## target iSCSI 接口指南
 
 
-鏈枃浠舵弿杩?target 瀛愮郴缁熶笌 iSCSI 鐩稿叧鐨勫唴鏍告帴鍙ｃ€?
+本文件描target 子系统与 iSCSI 相关的内核接口
 
-## 绠€浠嬩笌姒傝堪
+## 简介与概述
 
 
 TBD
 
-## 鐩爣鏍稿績璁惧鎺ュ彛
+## 目标核心设备接口
 
 
-鏈妭涓虹┖锛屽洜涓哄皻鏈悜 drivers/target/target_core_device.c 娣诲姞 kerneldoc 娉ㄩ噴銆?
+本节为空，因为尚未向 drivers/target/target_core_device.c 添加 kerneldoc 注释
 
-## 鐩爣鏍稿績浼犺緭鎺ュ彛
+## 目标核心传输接口
 
 
     :export:
 
-## 鐩爣鏀寔鐨勭敤鎴风┖闂?I/O
+## 目标支持的用户空I/O
 
 
     :doc: Userspace I/O
 
     :doc: Ring Design
 
-## iSCSI 杈呭姪鍑芥暟
+## iSCSI 辅助函数
 
 
    :export:
 
 
-## iSCSI 鍚姩淇℃伅
+## iSCSI 启动信息
 
 
    :export:
 
-## iSCSI TCP 鎺ュ彛
+## iSCSI TCP 接口
 
 
    :internal:

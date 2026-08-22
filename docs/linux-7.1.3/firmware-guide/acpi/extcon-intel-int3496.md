@@ -1,19 +1,19 @@
-﻿## Intel INT3496 ACPI 璁惧 extcon 椹卞姩鏂囨。
+﻿## Intel INT3496 ACPI 设备 extcon 驱动文档
 
 
-Intel INT3496 ACPI 璁惧 extcon 椹卞姩鏄竴涓敤浜?acpi-id 涓?INT3496 鐨?ACPI 璁惧鐨勯┍鍔紝渚嬪鍙湪 Intel Baytrail 鍜?Cherrytrail 骞虫澘鐢佃剳涓婃壘鍒般€?
+Intel INT3496 ACPI 设备 extcon 驱动是一个用acpi-id INT3496 ACPI 设备的驱动，例如可在 Intel Baytrail Cherrytrail 平板电脑上找到
 
-璇?ACPI 璁惧鎻忚堪浜嗘搷浣滅郴缁熷浣曡鍙栬澶?USB-otg 绔彛鐨?id 寮曡剼锛屼互鍙婂畠濡備綍閫夋嫨鎬у湴鍦?otg 绔彛涓婂惎鐢?Vbus 杈撳嚭锛屽浣曢€夋嫨鎬у湴鎺у埗鏁版嵁寮曡剼鍦?USB 涓绘満鍜?USB 澶栬鎺у埗鍣ㄤ箣闂寸殑澶氳矾澶嶇敤銆?
+ACPI 设备描述了操作系统如何读取设USB-otg 端口id 引脚，以及它如何选择性地otg 端口上启Vbus 输出，如何选择性地控制数据引脚USB 主机USB 外设控制器之间的多路复用
 
-ACPI 璁惧閫氳繃浠庡叾 ACPI _CRS锛圕urrent Resource Settings锛屽綋鍓嶈祫婧愯缃級璋冪敤杩斿洖鏈€澶?3 涓?gpio 鎻忚堪绗︽暟缁勬潵鏆撮湶姝ゅ姛鑳斤細
+ACPI 设备通过从其 ACPI _CRS（Current Resource Settings，当前资源设置）调用返回最3 gpio 描述符数组来暴露此功能：
 
 =======  =====================================================================
-Index 0  id 寮曡剼鐨勮緭鍏?gpio锛屽缁堝瓨鍦ㄤ笖鏈夋晥
-Index 1  鐢ㄤ簬浠庤澶囧悜 otg 绔彛鍚敤 Vbus 杈撳嚭鐨勮緭鍑?gpio锛屽啓鍏?1 浠ュ惎鐢?Vbus 杈撳嚭锛堣 gpio 鎻忚堪绗﹀彲鑳戒笉瀛樺湪鎴栨棤鏁堬級
-Index 2  鐢ㄤ簬鍦?USB 涓绘満鍜?USB 澶栬鎺у埗鍣ㄤ箣闂村璺鐢ㄦ暟鎹紩鑴氱殑杈撳嚭 gpio锛屽啓鍏?1 浠ュ璺鐢ㄥ埌澶栬鎺у埗鍣?
+Index 0  id 引脚的输gpio，始终存在且有效
+Index 1  用于从设备向 otg 端口启用 Vbus 输出的输gpio，写1 以启Vbus 输出（该 gpio 描述符可能不存在或无效）
+Index 2  用于USB 主机USB 外设控制器之间多路复用数据引脚的输出 gpio，写1 以多路复用到外设控制
 =======  =====================================================================
 
-绱㈠紩涓?GPIO 杩炴帴 ID 涔嬮棿鐨勬槧灏勫涓?
+索引GPIO 连接 ID 之间的映射如
 
 	======= =======
 	id	index 0

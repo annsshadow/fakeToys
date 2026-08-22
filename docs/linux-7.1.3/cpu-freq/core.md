@@ -1,49 +1,49 @@
 ﻿
-## CPUFreq 鏍稿績涓?CPUFreq 閫氱煡鍣ㄧ殑涓€鑸€ф弿杩?
+## CPUFreq 核心CPUFreq 通知器的一般性描
 
-浣滆€咃細
+作者：
  - Dominik Brodowski  <linux@brodo.de>
  - David Kimdon <dwhedon@debian.org>
  - Rafael J. Wysocki <rafael.j.wysocki@intel.com>
  - Viresh Kumar <viresh.kumar@linaro.org>
 
 
-   1. CPUFreq 鏍稿績涓庢帴鍙?   2. CPUFreq 閫氱煡鍣?   3. 浣跨敤宸ヤ綔鎬ц兘鐐癸紙OPP锛夌敓鎴?CPUFreq 琛?
-## 1. 涓€鑸俊鎭?
+   1. CPUFreq 核心与接   2. CPUFreq 通知   3. 使用工作性能点（OPP）生CPUFreq 
+## 1. 一般信
 
-CPUFreq 鏍稿績浠ｇ爜浣嶄簬 drivers/cpufreq/cpufreq.c銆傝 cpufreq 浠ｇ爜涓?CPUFreq
-鏋舵瀯椹卞姩锛堝嵆鐪熸鎵ц棰戠巼鍒囨崲鐨勯偅閮ㄥ垎浠ｇ爜锛変互鍙娾€滈€氱煡鍣紙notifier锛夆€濇彁渚?鏍囧噯鍖栫殑鎺ュ彛銆傝繖浜涙槸璁惧椹卞姩鎴栧唴鏍哥殑鍏朵粬閮ㄥ垎锛屽畠浠渶瑕佸湪绛栫暐鏀瑰彉鏃讹紙渚嬪
-鍍?ACPI 杩欐牱鐨勭儹妯″潡锛夋垨鎵€鏈夐鐜囨敼鍙樻椂锛堜緥濡傝鏃朵唬鐮侊級寰楀埌閫氱煡锛岀敋鑷抽渶瑕?寮哄埗鏌愪簺閫熷害闄愬埗锛堜緥濡?ARM 鏋舵瀯涓婄殑 LCD 椹卞姩锛夈€傛澶栵紝鍐呮牳鈥滃父閲忊€?loops_per_jiffy 浼氬湪棰戠巼鏀瑰彉鏃跺湪姝ゅ鏇存柊銆?
-cpufreq 绛栫暐鐨勫紩鐢ㄨ鏁扮敱 cpufreq_cpu_get 鍜?cpufreq_cpu_put 瀹屾垚锛屽畠浠?纭繚 cpufreq 椹卞姩宸叉纭悜鏍稿績娉ㄥ唽锛屽苟涓斿湪璋冪敤 cpufreq_put_cpu 涔嬪墠涓嶄細琚?鍗歌浇銆傝繖涔熺‘淇濅簡鐩稿簲鐨?cpufreq 绛栫暐鍦ㄨ浣跨敤鏃朵笉浼氳閲婃斁銆?
-## 2. CPUFreq 閫氱煡鍣?
+CPUFreq 核心代码位于 drivers/cpufreq/cpufreq.c。该 cpufreq 代码CPUFreq
+架构驱动（即真正执行频率切换的那部分代码）以及“通知器（notifier）”提标准化的接口。这些是设备驱动或内核的其他部分，它们需要在策略改变时（例如
+ACPI 这样的热模块）或所有频率改变时（例如计时代码）得到通知，甚至需强制某些速度限制（例ARM 架构上的 LCD 驱动）。此外，内核“常量loops_per_jiffy 会在频率改变时在此处更新
+cpufreq 策略的引用计数由 cpufreq_cpu_get cpufreq_cpu_put 完成，它确保 cpufreq 驱动已正确向核心注册，并且在调用 cpufreq_put_cpu 之前不会卸载。这也确保了相应cpufreq 策略在被使用时不会被释放
+## 2. CPUFreq 閫氱煡鍣。
 
-CPUFreq 閫氱煡鍣ㄩ伒寰爣鍑嗙殑鍐呮牳閫氱煡鍣ㄦ帴鍙ｃ€傚叧浜庨€氱煡鍣ㄧ殑缁嗚妭鍙傝
-linux/include/linux/notifier.h銆?
-鏈変袱绉嶄笉鍚岀殑 CPUFreq 閫氱煡鍣ㄢ€斺€旂瓥鐣ラ€氱煡鍣ㄥ拰鍒囨崲閫氱煡鍣ㄣ€?
+CPUFreq 通知器遵循标准的内核通知器接口。关于通知器的细节参见
+linux/include/linux/notifier.h銆。
+有两种不同的 CPUFreq 通知器——策略通知器和切换通知器
 
-### 2.1 CPUFreq 绛栫暐閫氱煡鍣?
+### 2.1 CPUFreq 策略通知
 
-褰撳垱寤烘垨绉婚櫎涓€涓柊绛栫暐鏃讹紝浼氶€氱煡杩欎簺閫氱煡鍣ㄣ€?
-闃舵锛坧hase锛夌敱浼犵粰閫氱煡鍣ㄧ殑绗簩涓弬鏁版寚瀹氥€傚綋绛栫暐棣栨鍒涘缓鏃堕樁娈典负
-CPUFREQ_CREATE_POLICY锛岀Щ闄ょ瓥鐣ユ椂涓?CPUFREQ_REMOVE_POLICY銆?
-绗笁涓弬鏁版槸涓€涓?`void *pointer`锛屾寚鍚戜竴涓?struct cpufreq_policy锛?鍏朵腑鍖呭惈鑻ュ共鍊硷紝鍖呮嫭 min銆乵ax锛堟柊绛栫暐鐨勪笂涓嬮檺棰戠巼锛屽崟浣?kHz锛夈€?
+当创建或移除一个新策略时，会通知这些通知器
+阶段（phase）由传给通知器的第二个参数指定。当策略首次创建时阶段为
+CPUFREQ_CREATE_POLICY，移除策略时CPUFREQ_REMOVE_POLICY
+第三个参数是一`void *pointer`，指向一struct cpufreq_policy其中包含若干值，包括 min、max（新策略的上下限频率，单kHz）
 
-### 2.2 CPUFreq 鍒囨崲閫氱煡鍣?
+### 2.2 CPUFreq 切换通知
 
-瀵逛簬绛栫暐涓殑姣忎釜鍦ㄧ嚎 CPU锛屽綋 CPUfreq 椹卞姩鍒囨崲 CPU 鏍稿績棰戠巼涓旇鏀瑰彉娌℃湁
-浠讳綍澶栭儴褰卞搷鏃讹紝浼氶€氱煡杩欎簺閫氱煡鍣ㄤ袱娆°€?
-绗簩涓弬鏁版寚瀹氶樁娈碘€斺€擟PUFREQ_PRECHANGE 鎴?CPUFREQ_POSTCHANGE銆?
-绗笁涓弬鏁版槸涓€涓?struct cpufreq_freqs锛屽寘鍚互涓嬪€硷細
+对于策略中的每个在线 CPU，当 CPUfreq 驱动切换 CPU 核心频率且该改变没有
+任何外部影响时，会通知这些通知器两次
+第二个参数指定阶段——CPUFREQ_PRECHANGE CPUFREQ_POSTCHANGE
+第三个参数是一struct cpufreq_freqs，包含以下值：
 
 ======	======================================
-policy	鎸囧悜 struct cpufreq_policy 鐨勬寚閽?old	鏃ч鐜?new	鏂伴鐜?flags	cpufreq 椹卞姩鐨勬爣蹇?======	======================================
+policy	指向 struct cpufreq_policy 的指old	旧频new	新频flags	cpufreq 驱动的标======	======================================
 
-## 3. 浣跨敤宸ヤ綔鎬ц兘鐐癸紙OPP锛夌敓鎴?CPUFreq 琛?
-鍏充簬 OPP 鐨勭粏鑺傦紝鍙傝 Documentation/power/opp.rst
+## 3. 使用工作性能点（OPP）生CPUFreq 
+关于 OPP 的细节，参见 Documentation/power/opp.rst
 
 dev_pm_opp_init_cpufreq_table -
-	璇ュ嚱鏁版彁渚涗竴涓嵆鍙栧嵆鐢ㄧ殑杞崲渚嬬▼锛屾妸 OPP 灞傚唴閮ㄥ叧浜庡彲鐢ㄩ鐜囩殑淇℃伅
-	缈昏瘧鎴愪竴绉嶅彲浠ユ柟渚垮湴鎻愪緵缁?cpufreq 鐨勬牸寮忋€?
+	该函数提供一个即取即用的转换例程，把 OPP 层内部关于可用频率的信息
+	翻译成一种可以方便地提供cpufreq 的格式
 ```
 
 	   Do not use this function in interrupt context.
@@ -66,5 +66,5 @@ dev_pm_opp_init_cpufreq_table -
 
 ```
 dev_pm_opp_free_cpufreq_table
-	閲婃斁鐢?dev_pm_opp_init_cpufreq_table 鍒嗛厤鐨勮〃
+	释放dev_pm_opp_init_cpufreq_table 分配的表
 

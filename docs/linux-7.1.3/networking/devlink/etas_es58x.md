@@ -1,27 +1,27 @@
-﻿## etas_es58x devlink 鏀寔
+﻿## etas_es58x devlink 支持
 
 
-鏈枃妗ｆ弿杩?`etas_es58x` 璁惧椹卞姩瀹炵幇鐨?devlink 鐗规€с€?
+本文档描`etas_es58x` 设备驱动实现devlink 特性
 
-## 淇℃伅鐗堟湰锛圛nfo versions锛?
+## 信息版本（Info versions
 
 
-`etas_es58x` 椹卞姩鎶ュ憡浠ヤ笅鐗堟湰
+`etas_es58x` 驱动报告以下版本
 
    :widths: 5 5 90
 
-   - - 鍚嶇О
-     - 绫诲瀷
-     - 璇存槑
+   - - 名称
+     - 类型
+     - 说明
    - - `fw`
      - running
-     - 璁惧涓婅繍琛岀殑鍥轰欢鐗堟湰銆備篃鍙€氳繃 `ethtool -i` 浣滀负 `firmware-version` 鐨勭涓€涓垚鍛樿幏鍙栥€?
+     - 设备上运行的固件版本。也可通过 `ethtool -i` 作为 `firmware-version` 的第一个成员获取
    - - `fw.bootloader`
      - running
-     - 璁惧涓婅繍琛岀殑 bootloader 鐗堟湰銆備篃鍙€氳繃 `ethtool -i` 浣滀负 `firmware-version` 鐨勭浜屼釜鎴愬憳鑾峰彇銆?
+     - 设备上运行的 bootloader 版本。也可通过 `ethtool -i` 作为 `firmware-version` 的第二个成员获取
    - - `board.rev`
      - fixed
-     - 璁惧鐨勭‖浠剁増鏈€?
+     - 设备的硬件版本
    - - `serial_number`
      - fixed
-     - USB 搴忓垪鍙枫€備篃鍙€氳繃 `lsusb -v` 鑾峰彇銆?
+     - USB 序列号。也可通过 `lsusb -v` 获取

@@ -1,17 +1,17 @@
-﻿## 閫氱敤杈撳叆杈撳嚭锛圙PIO锛?
+﻿## 通用输入输出（GPIO
 
 
 :Author: Alan Tull
 
-鐩綍锛?
+目录
 
-- [绠€浠媇(intro)
-- [浣跨敤 GPIO](using-gpio)
-- [椹卞姩](driver)
-- [浣跨敤鑰匽(consumer)
-- [寮€鍙戞澘](board)
-- [浼犵粺寮€鍙戞澘](legacy-boards)
-- [鍩轰簬 GPIO 鐨勯┍鍔╙(drivers-on-gpio)
+- [简介](intro)
+- [使用 GPIO](using-gpio)
+- [驱动](driver)
+- [使用者](consumer)
+- [开发板](board)
+- [传统开发板](legacy-boards)
+- [基于 GPIO 的驱动](drivers-on-gpio)
 - [bt8xxgpio](bt8xxgpio)
 - [pca953x](pca953x)
 
@@ -22,22 +22,22 @@
 
    :export:
 
-## ACPI 鏀寔
+## ACPI 支持
 
 
    :export:
 
-## 璁惧鏍戞敮鎸?
+## 设备树支
 
 
    :export:
 
-## 璁惧鎵樼 API
+## 设备托管 API
 
 
    :export:
 
-## sysfs 杈呭姪鍑芥暟
+## sysfs 辅助函数
 
 
    :export:

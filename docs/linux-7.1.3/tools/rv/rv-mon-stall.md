@@ -1,35 +1,35 @@
 ﻿## rv-mon-stall
-### 鍋滄粸浠诲姟鐩戣鍣紙Stalled task monitor锛?
+### 停滞任务监视器（Stalled task monitor
 
 
 :Manual section: 1
 
-## 姒傝锛圫YNOPSIS锛?
+## 概要（SYNOPSIS
 
 
 **rv mon stall** [**OPTIONS**]
 
-## 鎻忚堪锛圖ESCRIPTION锛?
+## 描述（DESCRIPTION
 
 
-鍋滄粸浠诲姟锛?*stall**锛夌洃瑙嗗櫒鏄竴涓ず渚嬫€х殑姣忎换鍔″畾鏃剁洃瑙嗗櫒锛岀敤浜庢鏌ヤ换鍔″湪灏辩华鍚庢槸鍚﹀湪瀹氫箟鐨勯槇鍊煎唴琚皟搴︺€?
+停滞任务*stall**）监视器是一个示例性的每任务定时监视器，用于检查任务在就绪后是否在定义的阈值内被调度
 
-鏈夊叧姝ょ洃瑙嗗櫒鐨勬洿澶氫俊鎭紝璇峰弬瑙佸唴鏍告枃妗ｏ細
+有关此监视器的更多信息，请参见内核文档：
 <https://docs.kernel.org/trace/rv/monitor_stall.html>
 
-## 閫夐」锛圤PTIONS锛?
+## 选项（OPTIONS
 
 
 
-## 鍙傝锛圫EE ALSO锛?
+## 参见（SEE ALSO
 
 
 **rv**\(1), **rv-mon**\(1)
 
-Linux 鍐呮牳 **RV** 鏂囨。锛?
+Linux 内核 **RV** 文档
 <https://www.kernel.org/doc/html/latest/trace/rv/index.html>
 
-## 浣滆€咃紙AUTHOR锛?
+## 作者（AUTHOR
 
 
 Written by Gabriele Monaco <gmonaco@redhat.com>
