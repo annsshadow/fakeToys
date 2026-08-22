@@ -4,8 +4,8 @@
 ######## Streaming I/O (User Pointers)
 
 
-褰?VIDIOC_QUERYCAP ioctl 杩斿洖鐨?struct `v4l2_capability` 鐨?`capabilities` 瀛楁涓殑 `V4L2_CAP_STREAMING` 鏍囧織琚缃椂锛岃緭鍏ュ拰杈撳嚭璁惧鏀寔杩欑 I/O 鏂规硶銆傝€岀壒瀹氱敤鎴锋寚閽堟柟娉曪紙涓嶄粎浠呮槸鍐呭瓨鏄犲皠锛夋槸鍚﹀彈鏀寔锛屽繀椤婚€氳繃璋冪敤 VIDIOC_REQBUFS ioctl 骞跺皢鍐呭瓨绫诲瀷璁剧疆涓?`V4L2_MEMORY_USERPTR` 鏉ョ‘瀹氥€?
-杩欑 I/O 鏂规硶缁撳悎浜?read/write 鍜屽唴瀛樻槧灏勬柟娉曠殑浼樼偣銆傜紦鍐插尯锛坧lane锛夌敱搴旂敤绋嬪簭鑷韩鍒嗛厤锛屽苟涓斿彲浠ラ┗鐣欏湪渚嬪铏氭嫙鍐呭瓨鎴栧叡浜唴瀛樹腑銆傚彧浜ゆ崲鎸囧悜鏁版嵁鐨勬寚閽堬紝杩欎簺鎸囬拡鍜屽厓淇℃伅鍦?struct `v4l2_buffer`锛堟垨澶?plane API 鎯呭喌涓嬬殑 struct `v4l2_plane`锛変腑浼犻€掋€傚繀椤婚€氳繃璋冪敤 VIDIOC_REQBUFS 骞朵紶鍏ユ墍闇€鐨勭紦鍐插尯绫诲瀷锛屽皢椹卞姩鍒囨崲鍒扮敤鎴锋寚閽?I/O 妯″紡銆?浜嬪厛涓嶅垎閰嶄换浣曠紦鍐插尯锛坧lane锛夛紝鍥犳瀹冧滑涓嶈绱㈠紩锛屼篃涓嶈兘鍍忔槧灏勭紦鍐插尯閭ｆ牱閫氳繃 VIDIOC_QUERYBUF <VIDIOC_QUERYBUF> ioctl 鏌ヨ銆?
+VIDIOC_QUERYCAP ioctl 返回struct `v4l2_capability` `capabilities` 字段中的 `V4L2_CAP_STREAMING` 标志被设置时，输入和输出设备支持这种 I/O 方法。而特定用户指针方法（不仅仅是内存映射）是否受支持，必须通过调用 VIDIOC_REQBUFS ioctl 并将内存类型设置`V4L2_MEMORY_USERPTR` 来确定
+这种 I/O 方法结合read/write 和内存映射方法的优点。缓冲区（plane）由应用程序自身分配，并且可以驻留在例如虚拟内存或共享内存中。只交换指向数据的指针，这些指针和元信息struct `v4l2_buffer`（或plane API 情况下的 struct `v4l2_plane`）中传递。必须通过调用 VIDIOC_REQBUFS 并传入所需的缓冲区类型，将驱动切换到用户指I/O 模式事先不分配任何缓冲区（plane），因此它们不被索引，也不能像映射缓冲区那样通过 VIDIOC_QUERYBUF <VIDIOC_QUERYBUF> ioctl 查询
 ## Example: Initiating streaming I/O with user pointers
 
 
@@ -25,13 +25,13 @@
 	exit (EXIT_FAILURE);
     }
 
-缂撳啿鍖猴紙plane锛夌殑鍦板潃鍜屽ぇ灏忓湪杩愯鏃堕€氳繃 VIDIOC_QBUF <VIDIOC_QBUF> ioctl 浼犻€掋€傚敖绠＄紦鍐插尯閫氬父琚惊鐜娇鐢紝浣嗗簲鐢ㄧ▼搴忓彲浠ュ湪姣忔 VIDIOC_QBUF <VIDIOC_QBUF> 璋冪敤鏃朵紶鍏ヤ笉鍚岀殑鍦板潃鍜屽ぇ灏忋€傚鏋滅‖浠舵湁闇€瑕侊紝椹卞姩浼氬湪鐗╃悊鍐呭瓨涓氦鎹㈠唴瀛橀〉锛屼互鍒涘缓涓€鍧楄繛缁殑鍐呭瓨鍖哄煙銆傝繖瀵瑰簲鐢ㄧ▼搴忔槸閫忔槑鐨勶紝鍙戠敓鍦ㄥ唴鏍哥殑铏氭嫙鍐呭瓨瀛愮郴缁熶腑銆傚綋缂撳啿鍖洪〉琚崲鍑哄埌纾佺洏鍚庯紝瀹冧滑浼氳鍙栧洖锛屽苟鏈€缁堣閿佸畾鍦ㄧ墿鐞嗗唴瀛樹腑浠ヤ緵 DMA 浣跨敤銆俒#f1]_
+缓冲区（plane）的地址和大小在运行时通过 VIDIOC_QBUF <VIDIOC_QBUF> ioctl 传递。尽管缓冲区通常被循环使用，但应用程序可以在每次 VIDIOC_QBUF <VIDIOC_QBUF> 调用时传入不同的地址和大小。如果硬件有需要，驱动会在物理内存中交换内存页，以创建一块连续的内存区域。这对应用程序是透明的，发生在内核的虚拟内存子系统中。当缓冲区页被换出到磁盘后，它们会被取回，并最终被锁定在物理内存中以供 DMA 使用。[#f1]_
 
-濉厖鎴栨樉绀哄畬姣曠殑缂撳啿鍖洪€氳繃 VIDIOC_DQBUF <VIDIOC_QBUF> ioctl 鍑洪槦銆傞┍鍔ㄥ彲浠ュ湪 DMA 瀹屾垚涓庢 ioctl 涔嬮棿鐨勪换浣曟椂鍊欒В閿佸唴瀛橀〉銆傚綋璋冪敤 VIDIOC_STREAMOFF <VIDIOC_STREAMON>銆乂IDIOC_REQBUFS锛屾垨璁惧琚叧闂椂锛屽唴瀛樹篃浼氳瑙ｉ攣銆傚簲鐢ㄧ▼搴忓繀椤绘敞鎰忥紝涓嶈鍦ㄧ紦鍐插尯鍑洪槦涔嬪墠灏卞皢鍏堕噴鏀俱€傞鍏堬紝缂撳啿鍖轰細琚攣瀹氭洿闀挎椂闂达紝娴垂鐗╃悊鍐呭瓨銆傚叾娆★紝褰撳唴瀛樿繑鍥炲埌搴旂敤绋嬪簭鐨勭┖闂插垪琛ㄥ苟琚殢鍚庣敤浜庡叾浠栫敤閫旀椂锛岄┍鍔ㄤ笉浼氭敹鍒伴€氱煡锛屽彲鑳戒細瀹屾垚鎵€璇锋眰鐨?DMA 骞惰鐩栨湁浠峰€肩殑鏁版嵁銆?
-瀵逛簬閲囬泦锛坈apturing锛夊簲鐢紝閫氬父鐨勫仛娉曟槸鍏ラ槦鑻ュ共绌虹紦鍐插尯锛屽紑濮嬮噰闆嗗苟杩涘叆璇诲彇寰幆銆傚湪杩欓噷锛屽簲鐢ㄧ▼搴忕瓑寰呯洿鍒版湁宸插～鍏呯殑缂撳啿鍖哄彲浠ュ嚭闃燂紝骞跺湪鏁版嵁涓嶅啀闇€瑕佹椂閲嶆柊鍏ラ槦璇ョ紦鍐插尯銆傝緭鍑猴紙output锛夊簲鐢ㄥ垯濉厖骞跺叆闃熺紦鍐插尯锛屽綋鍫嗗彔浜嗚冻澶熷鐨勭紦鍐插尯鍚庡紑濮嬭緭鍑恒€傚湪鍐欏叆寰幆涓紝褰撳簲鐢ㄧ▼搴忕敤灏界┖闂茬紦鍐插尯鏃讹紝瀹冨繀椤荤瓑寰呯洿鍒版湁绌虹紦鍐插尯鍙互鍑洪槦骞惰閲嶇敤銆傚瓨鍦ㄤ袱绉嶆柟娉曟潵鎸傝捣搴旂敤绋嬪簭鐨勬墽琛岋紝鐩村埌涓€涓垨澶氫釜缂撳啿鍖哄彲浠ュ嚭闃熴€傞粯璁ゆ儏鍐典笅锛屽綋澶栧彂闃熷垪涓病鏈夌紦鍐插尯鏃?:ref:`VIDIOC_DQBUF <VIDIOC_QBUF>` 浼氶樆濉炪€傚綋 `open()` 鍑芥暟琚紶鍏ヤ簡 `O_NONBLOCK` 鏍囧織鏃讹紝褰撴病鏈夊彲鐢ㄧ紦鍐插尯鏃讹紝VIDIOC_DQBUF <VIDIOC_QBUF> 浼氱珛鍗宠繑鍥?`EAGAIN` 閿欒鐮併€?ref:`select() <func-select>` 鎴?`poll()` 鍑芥暟濮嬬粓鍙敤銆?
-瑕佸惎鍔ㄥ拰鍋滄閲囬泦鎴栬緭鍑哄簲鐢紝璋冪敤 VIDIOC_STREAMON <VIDIOC_STREAMON> 鍜?VIDIOC_STREAMOFF <VIDIOC_STREAMON> ioctl銆?
-   VIDIOC_STREAMOFF <VIDIOC_STREAMON> 浼氫綔涓哄壇浣滅敤浠庝袱涓槦鍒椾腑绉婚櫎鎵€鏈夌紦鍐插尯骞惰В閿佹墍鏈夌紦鍐插尯銆傜敱浜庡湪澶氫换鍔＄郴缁熶笂涓嶅瓨鍦?鐜板湪"鎵ц鏌愪簨鐨勮涔夛紝濡傛灉搴旂敤绋嬪簭闇€瑕佷笌鍏朵粬浜嬩欢鍚屾锛屽畠搴斿綋妫€鏌ユ墍閲囬泦鎴栬緭鍑虹紦鍐插尯鐨?struct `v4l2_buffer` `timestamp`銆?
-瀹炵幇鐢ㄦ埛鎸囬拡 I/O 鐨勯┍鍔ㄥ繀椤绘敮鎸?VIDIOC_REQBUFS <VIDIOC_REQBUFS>銆乂IDIOC_QBUF <VIDIOC_QBUF>銆乂IDIOC_DQBUF <VIDIOC_QBUF>銆乂IDIOC_STREAMON <VIDIOC_STREAMON> 鍜?VIDIOC_STREAMOFF <VIDIOC_STREAMON> ioctl锛屼互鍙?`select()` 鍜?`poll()` 鍑芥暟銆俒#f2]_
+填充或显示完毕的缓冲区通过 VIDIOC_DQBUF <VIDIOC_QBUF> ioctl 出队。驱动可以在 DMA 完成与此 ioctl 之间的任何时候解锁内存页。当调用 VIDIOC_STREAMOFF <VIDIOC_STREAMON>、VIDIOC_REQBUFS，或设备被关闭时，内存也会被解锁。应用程序必须注意，不要在缓冲区出队之前就将其释放。首先，缓冲区会被锁定更长时间，浪费物理内存。其次，当内存返回到应用程序的空闲列表并被随后用于其他用途时，驱动不会收到通知，可能会完成所请求DMA 并覆盖有价值的数据
+对于采集（capturing）应用，通常的做法是入队若干空缓冲区，开始采集并进入读取循环。在这里，应用程序等待直到有已填充的缓冲区可以出队，并在数据不再需要时重新入队该缓冲区。输出（output）应用则填充并入队缓冲区，当堆叠了足够多的缓冲区后开始输出。在写入循环中，当应用程序用尽空闲缓冲区时，它必须等待直到有空缓冲区可以出队并被重用。存在两种方法来挂起应用程序的执行，直到一个或多个缓冲区可以出队。默认情况下，当外发队列中没有缓冲区:ref:`VIDIOC_DQBUF <VIDIOC_QBUF>` 会阻塞。当 `open()` 函数被传入了 `O_NONBLOCK` 标志时，当没有可用缓冲区时，VIDIOC_DQBUF <VIDIOC_QBUF> 会立即返`EAGAIN` 错误码ref:`select() <func-select>` `poll()` 函数始终可用
+要启动和停止采集或输出应用，调用 VIDIOC_STREAMON <VIDIOC_STREAMON> VIDIOC_STREAMOFF <VIDIOC_STREAMON> ioctl
+   VIDIOC_STREAMOFF <VIDIOC_STREAMON> 会作为副作用从两个队列中移除所有缓冲区并解锁所有缓冲区。由于在多任务系统上不存现在"执行某事的语义，如果应用程序需要与其他事件同步，它应当检查所采集或输出缓冲区struct `v4l2_buffer` `timestamp`
+实现用户指针 I/O 的驱动必须支VIDIOC_REQBUFS <VIDIOC_REQBUFS>、VIDIOC_QBUF <VIDIOC_QBUF>、VIDIOC_DQBUF <VIDIOC_QBUF>、VIDIOC_STREAMON <VIDIOC_STREAMON> VIDIOC_STREAMOFF <VIDIOC_STREAMON> ioctl，以`select()` `poll()` 函数。[#f2]_
 
-   鎴戜滑鏈熸湜棰戠箒浣跨敤鐨勭紦鍐插尯閫氬父涓嶄細琚崲鍑恒€傛棤璁哄浣曪紝浜ゆ崲銆侀攣瀹氭垨鐢熸垚鍒嗘暎-鑱氶泦锛坰catter-gather锛夊垪琛ㄧ殑杩囩▼鍙兘寰堣€楁椂銆傝繖绉嶅欢杩熷彲浠ラ€氳繃杈撳叆缂撳啿鍖洪槦鍒楃殑娣卞害鏉ユ帺鐩栵紝鎴栬杩樺彲浠ラ€氳繃缁存姢缂撳瓨锛堝亣璁炬煇涓紦鍐插尯寰堝揩浼氬啀娆″叆闃燂級鏉ユ帺鐩栥€傚彟涓€鏂归潰锛屼负浜嗕紭鍖栧唴瀛樹娇鐢紝椹卞姩鍙互闄愬埗棰勫厛閿佸畾鐨勭紦鍐插尯鏁伴噺锛屽苟浼樺厛鍥炴敹鏈€杩戜娇鐢ㄧ殑缂撳啿鍖恒€傚綋鐒讹紝杈撳叆闃熷垪涓┖闂茬紦鍐插尯鐨勯〉涓嶉渶瑕佷繚瀛樺埌纾佺洏銆傝緭鍑虹紦鍐插尯蹇呴』鍦ㄨ緭鍏ュ拰杈撳嚭闃熷垪涓兘琚繚瀛橈紝鍥犱负搴旂敤绋嬪簭鍙兘涓庡叾浠栬繘绋嬪叡浜畠浠€?
-   鍦ㄩ┍鍔ㄥ眰闈紝`select()` 鍜?`poll()` 鏄浉鍚岀殑锛岃€屼笖 `select()` 澶噸瑕佷簡锛屼笉鑳芥槸鍙€夐」銆傚叾浣欑殑搴斿綋鏄捐€屾槗瑙併€?
+   我们期望频繁使用的缓冲区通常不会被换出。无论如何，交换、锁定或生成分散-聚集（scatter-gather）列表的过程可能很耗时。这种延迟可以通过输入缓冲区队列的深度来掩盖，或许还可以通过维护缓存（假设某个缓冲区很快会再次入队）来掩盖。另一方面，为了优化内存使用，驱动可以限制预先锁定的缓冲区数量，并优先回收最近使用的缓冲区。当然，输入队列中空闲缓冲区的页不需要保存到磁盘。输出缓冲区必须在输入和输出队列中都被保存，因为应用程序可能与其他进程共享它们
+   在驱动层面，`select()` `poll()` 是相同的，而且 `select()` 太重要了，不能是可选项。其余的应当显而易见

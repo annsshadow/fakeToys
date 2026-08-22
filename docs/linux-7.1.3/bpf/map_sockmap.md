@@ -2,19 +2,19 @@
 ## BPF_MAP_TYPE_SOCKMAP 涓?BPF_MAP_TYPE_SOCKHASH
 
 
-   - `BPF_MAP_TYPE_SOCKMAP` 浜庡唴鏍哥増鏈?4.14 寮曞叆
-   - `BPF_MAP_TYPE_SOCKHASH` 浜庡唴鏍哥増鏈?4.18 寮曞叆
+   - `BPF_MAP_TYPE_SOCKMAP` 于内核版4.14 引入
+   - `BPF_MAP_TYPE_SOCKHASH` 于内核版4.18 引入
 
-`BPF_MAP_TYPE_SOCKMAP` 涓?`BPF_MAP_TYPE_SOCKHASH` 绫诲瀷鐨勬槧灏勫彲鐢ㄤ簬鍦ㄥ鎺ュ瓧涔嬮棿閲嶅畾鍚?skb锛堟暟鎹?鍖咃級锛屾垨鍊熷姪 BPF 杈呭姪鍑芥暟 `bpf_sk_redirect_map()`銆乣bpf_sk_redirect_hash()`銆?`bpf_msg_redirect_map()` 涓?`bpf_msg_redirect_hash()`锛屽熀浜?BPF锛坴erdict锛岃鍐筹級绋嬪簭鐨勮繍琛岀粨鏋滃湪濂楁帴瀛?灞傜骇鏂藉姞绛栫暐銆?
-`BPF_MAP_TYPE_SOCKMAP` 搴曞眰鏄竴涓暟缁勶紝浣跨敤鏁存暟閿綔涓虹储寮曟潵鏌ユ壘瀵?`struct sock` 鐨勫紩鐢ㄣ€傝鏄犲皠鐨?鍊煎嵆涓哄鎺ュ瓧鎻忚堪绗︺€傜被浼煎湴锛宍BPF_MAP_TYPE_SOCKHASH` 鏄竴绉嶄互鍝堝笇涓哄簳灞傛敮鎸佺殑 BPF 鏄犲皠锛屽畠閫氳繃
-濂楁帴瀛楁弿杩扮鎸佹湁瀵瑰鎺ュ瓧鐨勫紩鐢ㄣ€?
-    鍊肩殑绫诲瀷涓?__u32 鎴?__u64锛涘悗鑰咃紙__u64锛夌敤浜庢敮鎸佸悜鐢ㄦ埛绌洪棿杩斿洖濂楁帴瀛?cookie銆傚皢鏄犲皠鎸佹湁鐨?    `struct sock *` 杩斿洖缁欑敤鎴风┖闂存棦涓嶅畨鍏ㄤ篃鏃犵敤澶勩€?
-杩欎簺鏄犲皠鍙互闄勫姞 BPF 绋嬪簭锛屽叿浣撹€岃█鏄竴涓В鏋愶紙parser锛夌▼搴忓拰涓€涓鍐筹紙verdict锛夌▼搴忋€傝В鏋愮▼搴?鍐冲畾宸茶В鏋愮殑鏁版嵁閲忥紝浠庤€屽喅瀹氶渶瑕佹帓闃熷灏戞暟鎹墠鑳藉緱鍑鸿鍐炽€傝鍐崇▼搴忔湰璐ㄤ笂灏辨槸閲嶅畾鍚戠▼搴忥紝鍙互
-杩斿洖 `__SK_DROP`銆乣__SK_PASS` 鎴?`__SK_REDIRECT` 杩欐牱鐨勮鍐崇粨鏋溿€?
-褰撲竴涓鎺ュ瓧琚彃鍏ュ埌杩欎簺鏄犲皠涔嬩竴鏃讹紝瀹冪殑濂楁帴瀛楀洖璋冧細琚浛鎹紝骞朵笖浼氫负鍏堕檮鍔犱竴涓?`struct sk_psock`銆?姝ゅ锛岃繖涓?`sk_psock` 浼氱户鎵块檮鍔犲埌璇ユ槧灏勪笂鐨勭▼搴忋€?
-涓€涓?sock 瀵硅薄鍙互瀛樺湪浜庡涓槧灏勪腑锛屼絾鍙兘缁ф壙鍗曚竴鐨勮В鏋愮▼搴忔垨瑁佸喅绋嬪簭銆傚鏋滃皢涓€涓?sock 瀵硅薄
-鍔犲叆鏌愪釜鏄犲皠浼氬鑷村嚭鐜板涓В鏋愮▼搴忥紝鍒欒鏇存柊浼氳繑鍥?EBUSY 閿欒銆?
-鍙互鍚戣繖浜涙槧灏勯檮鍔犵殑鍙楁敮鎸佺▼搴忓涓嬶細
+`BPF_MAP_TYPE_SOCKMAP` `BPF_MAP_TYPE_SOCKHASH` 类型的映射可用于在套接字之间重定skb（数包），或借助 BPF 辅助函数 `bpf_sk_redirect_map()`、`bpf_sk_redirect_hash()``bpf_msg_redirect_map()` `bpf_msg_redirect_hash()`，基BPF（verdict，裁决）程序的运行结果在套接层级施加策略
+`BPF_MAP_TYPE_SOCKMAP` 底层是一个数组，使用整数键作为索引来查找`struct sock` 的引用。该映射值即为套接字描述符。类似地，`BPF_MAP_TYPE_SOCKHASH` 是一种以哈希为底层支持的 BPF 映射，它通过
+套接字描述符持有对套接字的引用
+    值的类型__u32 __u64；后者（__u64）用于支持向用户空间返回套接cookie。将映射持有    `struct sock *` 返回给用户空间既不安全也无用处
+这些映射可以附加 BPF 程序，具体而言是一个解析（parser）程序和一个裁决（verdict）程序。解析程决定已解析的数据量，从而决定需要排队多少数据才能得出裁决。裁决程序本质上就是重定向程序，可以
+返回 `__SK_DROP`、`__SK_PASS` `__SK_REDIRECT` 这样的裁决结果
+当一个套接字被插入到这些映射之一时，它的套接字回调会被替换，并且会为其附加一`struct sk_psock`此外，这`sk_psock` 会继承附加到该映射上的程序
+一sock 对象可以存在于多个映射中，但只能继承单一的解析程序或裁决程序。如果将一sock 对象
+加入某个映射会导致出现多个解析程序，则该更新会返EBUSY 错误
+可以向这些映射附加的受支持程序如下：
 
 
 	struct sk_psock_progs {
@@ -24,113 +24,113 @@
 		struct bpf_prog	*skb_verdict;
 	};
 
-    涓嶅厑璁稿皢 `stream_verdict` 涓?`skb_verdict` 绋嬪簭闄勫姞鍒板悓涓€涓槧灏勩€?
-杩欎簺鏄犲皠鐨勭▼搴忛檮鍔犵被鍨嬪涓嬶細
+    不允许将 `stream_verdict` `skb_verdict` 程序附加到同一个映射
+这些映射的程序附加类型如下：
 
-- `msg_parser` 绋嬪簭 - `BPF_SK_MSG_VERDICT`銆?- `stream_parser` 绋嬪簭 - `BPF_SK_SKB_STREAM_PARSER`銆?- `stream_verdict` 绋嬪簭 - `BPF_SK_SKB_STREAM_VERDICT`銆?- `skb_verdict` 绋嬪簭 - `BPF_SK_SKB_VERDICT`銆?
-瑙ｆ瀽绋嬪簭涓庤鍐崇▼搴忚繕鍙娇鐢ㄩ澶栫殑杈呭姪鍑芥暟锛歚bpf_msg_apply_bytes()` 涓?`bpf_msg_cork_bytes()`銆傚€熷姪 `bpf_msg_apply_bytes()`锛孊PF 绋嬪簭鍙互鍛婄煡鍩虹璁炬柦缁欏畾鐨勮鍐冲簲
-浣滅敤澶氬皯瀛楄妭銆傝緟鍔╁嚱鏁?`bpf_msg_cork_bytes()` 澶勭悊鍙︿竴绉嶆儏鍐碉細BPF 绋嬪簭鍦ㄦ敹鍒版洿澶氬瓧鑺備箣鍓嶆棤娉曞
-鏌愭潯 msg 鍋氬嚭瑁佸喅锛屼笖鍦ㄨ msg 琚‘璁ゆ棤璇箣鍓嶄笉甯屾湜杞彂璇ユ暟鎹寘銆?
-鏈€鍚庯紝杈呭姪鍑芥暟 `bpf_msg_pull_data()` 涓?`bpf_msg_push_data()` 鍙緵
-`BPF_PROG_TYPE_SK_MSG` 绫诲瀷鐨?BPF 绋嬪簭浣跨敤锛岀敤浜庢媺鍏ユ暟鎹苟灏嗚捣濮嬩笌缁撴潫鎸囬拡璁剧疆涓虹粰瀹氬€硷紝鎴栧悜
-``struct sk_msg_buff *msg`` 杩藉姞鍏冩暟鎹€?
-浠ヤ笂鎵€鏈夎緟鍔╁嚱鏁板皢鍦ㄦ鍚庨€愪竴璇︾粏璇存槑銆?
-## 鐢ㄦ硶
+- `msg_parser` 程序 - `BPF_SK_MSG_VERDICT`- `stream_parser` 程序 - `BPF_SK_SKB_STREAM_PARSER`- `stream_verdict` 程序 - `BPF_SK_SKB_STREAM_VERDICT`- `skb_verdict` 程序 - `BPF_SK_SKB_VERDICT`
+解析程序与裁决程序还可使用额外的辅助函数：`bpf_msg_apply_bytes()` `bpf_msg_cork_bytes()`。借助 `bpf_msg_apply_bytes()`，BPF 程序可以告知基础设施给定的裁决应
+作用多少字节。辅助函`bpf_msg_cork_bytes()` 处理另一种情况：BPF 程序在收到更多字节之前无法对
+某条 msg 做出裁决，且在该 msg 被确认无误之前不希望转发该数据包
+最后，辅助函数 `bpf_msg_pull_data()` `bpf_msg_push_data()` 可供
+`BPF_PROG_TYPE_SK_MSG` 类型BPF 程序使用，用于拉入数据并将起始与结束指针设置为给定值，或向
+``struct sk_msg_buff *msg`` 追加元数据
+以上所有辅助函数将在此后逐一详细说明
+## 用法
 
-### 鍐呮牳 BPF
+### 内核 BPF
 
 ##### bpf_msg_redirect_map()
 
 
 	long bpf_msg_redirect_map(struct sk_msg_buff **msg, struct bpf_map **map, u32 key, u64 flags)
 
-璇ヨ緟鍔╁嚱鏁扮敤浜庡疄鐜板鎺ュ瓧灞傜骇鐨勭瓥鐣ャ€傚鏋滄秷鎭?`msg` 琚厑璁搁€氳繃锛堝嵆瑁佸喅 BPF 绋嬪簭杩斿洖
-`SK_PASS`锛夛紝鍒欏皢鍏堕噸瀹氬悜鍒?`map`锛堢被鍨嬩负 `BPF_MAP_TYPE_SOCKMAP`锛変腑绱㈠紩 `key` 鎵€寮曠敤鐨勯偅涓?濂楁帴瀛椼€傚叆鍙ｏ紙ingress锛変笌鍑哄彛锛坋gress锛夋帴鍙ｅ潎鍙敤浜庨噸瀹氬悜銆俙flags` 涓殑 `BPF_F_INGRESS` 鍊?鐢ㄤ簬閫夋嫨鍏ュ彛璺緞锛屽惁鍒欓€夋嫨鍑哄彛璺緞銆傝繖鏄洰鍓嶅敮涓€鍙楁敮鎸佺殑鏍囧織銆?
-鎴愬姛鏃惰繑鍥?`SK_PASS`锛屽嚭閿欐椂杩斿洖 `SK_DROP`銆?
+该辅助函数用于实现套接字层级的策略。如果消`msg` 被允许通过（即裁决 BPF 程序返回
+`SK_PASS`），则将其重定向`map`（类型为 `BPF_MAP_TYPE_SOCKMAP`）中索引 `key` 所引用的那套接字。入口（ingress）与出口（egress）接口均可用于重定向。`flags` 中的 `BPF_F_INGRESS` 用于选择入口路径，否则选择出口路径。这是目前唯一受支持的标志
+成功时返`SK_PASS`，出错时返回 `SK_DROP`
 ##### bpf_sk_redirect_map()
 
 
     long bpf_sk_redirect_map(struct sk_buff **skb, struct bpf_map **map, u32 key u64 flags)
 
-灏嗘暟鎹寘閲嶅畾鍚戝埌 `map`锛堢被鍨嬩负 `BPF_MAP_TYPE_SOCKMAP`锛変腑绱㈠紩 `key` 鎵€寮曠敤鐨勯偅涓鎺ュ瓧銆傚叆鍙ｄ笌
-鍑哄彛鎺ュ彛鍧囧彲鐢ㄤ簬閲嶅畾鍚戙€俙flags` 涓殑 `BPF_F_INGRESS` 鍊肩敤浜庨€夋嫨鍏ュ彛璺緞锛屽惁鍒欓€夋嫨鍑哄彛璺緞銆傝繖鏄?鐩墠鍞竴鍙楁敮鎸佺殑鏍囧織銆?
-鎴愬姛鏃惰繑鍥?`SK_PASS`锛屽嚭閿欐椂杩斿洖 `SK_DROP`銆?
+将数据包重定向到 `map`（类型为 `BPF_MAP_TYPE_SOCKMAP`）中索引 `key` 所引用的那个套接字。入口与
+出口接口均可用于重定向。`flags` 中的 `BPF_F_INGRESS` 值用于选择入口路径，否则选择出口路径。这目前唯一受支持的标志
+成功时返`SK_PASS`，出错时返回 `SK_DROP`
 ##### bpf_map_lookup_elem()
 
 
     void **bpf_map_lookup_elem(struct bpf_map **map, const void *key)
 
-绫诲瀷涓?`struct sock *` 鐨勫鎺ュ瓧鏉＄洰鍙€氳繃 `bpf_map_lookup_elem()` 杈呭姪鍑芥暟鍙栧嚭銆?
+类型`struct sock *` 的套接字条目可通过 `bpf_map_lookup_elem()` 辅助函数取出
 ##### bpf_sock_map_update()
 
 
     long bpf_sock_map_update(struct bpf_sock_ops **skops, struct bpf_map **map, void *key, u64 flags)
 
-鍚戜竴涓紩鐢ㄥ鎺ュ瓧鐨?`map` 娣诲姞鏉＄洰锛屾垨鏇存柊鍏朵腑鐨勬潯鐩€俙skops` 琚敤浣滀笌 `key` 鐩稿叧鑱旀潯鐩殑鏂板€笺€?`flags` 鍙傛暟鍙互鏄互涓嬩箣涓€锛?
-- `BPF_ANY`锛氬垱寤轰竴涓柊鍏冪礌鎴栨洿鏂颁竴涓凡瀛樺湪鐨勫厓绱犮€?- `BPF_NOEXIST`锛氫粎褰撳厓绱犱笉瀛樺湪鏃舵墠鍒涘缓涓€涓柊鍏冪礌銆?- `BPF_EXIST`锛氭洿鏂颁竴涓凡瀛樺湪鐨勫厓绱犮€?
-濡傛灉璇?`map` 甯︽湁 BPF 绋嬪簭锛堣В鏋愮▼搴忎笌瑁佸喅绋嬪簭锛夛紝杩欎簺绋嬪簭浼氳姝ｅ湪娣诲姞鐨勫鎺ュ瓧鎵€缁ф壙銆傚鏋滆
-濂楁帴瀛楀凡缁忛檮鍔犱簡 BPF 绋嬪簭锛屽垯浼氬鑷撮敊璇€?
-鎴愬姛鏃惰繑鍥?0锛屽け璐ユ椂杩斿洖涓€涓礋鐨勯敊璇爜銆?
+向一个引用套接字`map` 添加条目，或更新其中的条目。`skops` 被用作与 `key` 相关联条目的新值`flags` 参数可以是以下之一
+- `BPF_ANY`：创建一个新元素或更新一个已存在的元素- `BPF_NOEXIST`：仅当元素不存在时才创建一个新元素- `BPF_EXIST`：更新一个已存在的元素
+如果`map` 带有 BPF 程序（解析程序与裁决程序），这些程序会被正在添加的套接字所继承。如果该
+套接字已经附加了 BPF 程序，则会导致错误
+成功时返0，失败时返回一个负的错误码
 ##### bpf_sock_hash_update()
 
 
     long bpf_sock_hash_update(struct bpf_sock_ops **skops, struct bpf_map **map, void *key, u64 flags)
 
-鍚戜竴涓紩鐢ㄥ鎺ュ瓧鐨?sockhash `map` 娣诲姞鏉＄洰锛屾垨鏇存柊鍏朵腑鐨勬潯鐩€俙skops` 琚敤浣滀笌 `key` 鐩稿叧鑱?鏉＄洰鐨勬柊鍊笺€?
-`flags` 鍙傛暟鍙互鏄互涓嬩箣涓€锛?
-- `BPF_ANY`锛氬垱寤轰竴涓柊鍏冪礌鎴栨洿鏂颁竴涓凡瀛樺湪鐨勫厓绱犮€?- `BPF_NOEXIST`锛氫粎褰撳厓绱犱笉瀛樺湪鏃舵墠鍒涘缓涓€涓柊鍏冪礌銆?- `BPF_EXIST`锛氭洿鏂颁竴涓凡瀛樺湪鐨勫厓绱犮€?
-濡傛灉璇?`map` 甯︽湁 BPF 绋嬪簭锛堣В鏋愮▼搴忎笌瑁佸喅绋嬪簭锛夛紝杩欎簺绋嬪簭浼氳姝ｅ湪娣诲姞鐨勫鎺ュ瓧鎵€缁ф壙銆傚鏋滆
-濂楁帴瀛楀凡缁忛檮鍔犱簡 BPF 绋嬪簭锛屽垯浼氬鑷撮敊璇€?
-鎴愬姛鏃惰繑鍥?0锛屽け璐ユ椂杩斿洖涓€涓礋鐨勯敊璇爜銆?
+向一个引用套接字sockhash `map` 添加条目，或更新其中的条目。`skops` 被用作与 `key` 相关条目的新值
+`flags` 参数可以是以下之一
+- `BPF_ANY`：创建一个新元素或更新一个已存在的元素- `BPF_NOEXIST`：仅当元素不存在时才创建一个新元素- `BPF_EXIST`：更新一个已存在的元素
+如果`map` 带有 BPF 程序（解析程序与裁决程序），这些程序会被正在添加的套接字所继承。如果该
+套接字已经附加了 BPF 程序，则会导致错误
+成功时返0，失败时返回一个负的错误码
 ##### bpf_msg_redirect_hash()
 
 
     long bpf_msg_redirect_hash(struct sk_msg_buff **msg, struct bpf_map **map, void *key, u64 flags)
 
-璇ヨ緟鍔╁嚱鏁扮敤浜庡疄鐜板鎺ュ瓧灞傜骇鐨勭瓥鐣ャ€傚鏋滄秷鎭?`msg` 琚厑璁搁€氳繃锛堝嵆瑁佸喅 BPF 绋嬪簭杩斿洖
-`SK_PASS`锛夛紝鍒欎娇鐢ㄥ搱甯?`key` 灏嗗叾閲嶅畾鍚戝埌 `map`锛堢被鍨嬩负 `BPF_MAP_TYPE_SOCKHASH`锛夋墍寮曠敤鐨勯偅涓?濂楁帴瀛椼€傚叆鍙ｄ笌鍑哄彛鎺ュ彛鍧囧彲鐢ㄤ簬閲嶅畾鍚戙€俙flags` 涓殑 `BPF_F_INGRESS` 鍊肩敤浜庨€夋嫨鍏ュ彛璺緞锛屽惁鍒欓€夋嫨
-鍑哄彛璺緞銆傝繖鏄洰鍓嶅敮涓€鍙楁敮鎸佺殑鏍囧織銆?
-鎴愬姛鏃惰繑鍥?`SK_PASS`锛屽嚭閿欐椂杩斿洖 `SK_DROP`銆?
+该辅助函数用于实现套接字层级的策略。如果消`msg` 被允许通过（即裁决 BPF 程序返回
+`SK_PASS`），则使用哈`key` 将其重定向到 `map`（类型为 `BPF_MAP_TYPE_SOCKHASH`）所引用的那套接字。入口与出口接口均可用于重定向。`flags` 中的 `BPF_F_INGRESS` 值用于选择入口路径，否则选择
+出口路径。这是目前唯一受支持的标志
+成功时返`SK_PASS`，出错时返回 `SK_DROP`
 ##### bpf_sk_redirect_hash()
 
 
     long bpf_sk_redirect_hash(struct sk_buff **skb, struct bpf_map **map, void *key, u64 flags)
 
-璇ヨ緟鍔╁嚱鏁扮敤浜庡疄鐜?skb 濂楁帴瀛楀眰绾х殑绛栫暐銆傚鏋?sk_buff `skb` 琚厑璁搁€氳繃锛堝嵆瑁佸喅 BPF 绋嬪簭杩斿洖
-`SK_PASS`锛夛紝鍒欎娇鐢ㄥ搱甯?`key` 灏嗗叾閲嶅畾鍚戝埌 `map`锛堢被鍨嬩负 `BPF_MAP_TYPE_SOCKHASH`锛夋墍寮曠敤鐨勯偅涓?濂楁帴瀛椼€傚叆鍙ｄ笌鍑哄彛鎺ュ彛鍧囧彲鐢ㄤ簬閲嶅畾鍚戙€俙flags` 涓殑 `BPF_F_INGRESS` 鍊肩敤浜庨€夋嫨鍏ュ彛璺緞锛屽惁鍒欓€夋嫨
-鍑哄彛璺緞銆傝繖鏄洰鍓嶅敮涓€鍙楁敮鎸佺殑鏍囧織銆?
-鎴愬姛鏃惰繑鍥?`SK_PASS`锛屽嚭閿欐椂杩斿洖 `SK_DROP`銆?
+该辅助函数用于实skb 套接字层级的策略。如sk_buff `skb` 被允许通过（即裁决 BPF 程序返回
+`SK_PASS`），则使用哈`key` 将其重定向到 `map`（类型为 `BPF_MAP_TYPE_SOCKHASH`）所引用的那套接字。入口与出口接口均可用于重定向。`flags` 中的 `BPF_F_INGRESS` 值用于选择入口路径，否则选择
+出口路径。这是目前唯一受支持的标志
+成功时返`SK_PASS`，出错时返回 `SK_DROP`
 ##### bpf_msg_apply_bytes()
 
 
     long bpf_msg_apply_bytes(struct sk_msg_buff *msg, u32 bytes)
 
-瀵逛簬濂楁帴瀛楃瓥鐣ワ紝灏?BPF 绋嬪簭鐨勮鍐冲簲鐢ㄥ埌娑堟伅 `msg` 鎺ヤ笅鏉ョ殑 `bytes`锛堝瓧鑺傛暟锛変笂銆備緥濡傦紝璇ヨ緟鍔╁嚱鏁?鍙敤浜庝互涓嬫儏褰細
+对于套接字策略，BPF 程序的裁决应用到消息 `msg` 接下来的 `bytes`（字节数）上。例如，该辅助函可用于以下情形：
 
-- 鍗曟 `sendmsg()` 鎴?`sendfile()` 绯荤粺璋冪敤鍖呭惈澶氭潯閫昏緫娑堟伅锛孊PF 绋嬪簭搴斿綋璇诲彇杩欎簺娑堟伅骞朵负鍏?  鍋氬嚭瑁佸喅銆?- BPF 绋嬪簭鍙叧蹇冭鍙?`msg` 鐨勫墠 `bytes` 涓瓧鑺傘€傚鏋滄秷鎭殑璐熻浇寰堝ぇ锛岄偅涔堝嵆浣胯鍐冲凡缁忕‘瀹氾紝浠嶇劧
-  涓哄叏閮ㄥ瓧鑺傚弽澶?setup 骞惰皟鐢?BPF 绋嬪簭锛屼細閫犳垚涓嶅繀瑕佺殑寮€閿€銆?
-杩斿洖 0銆?
+- 单次 `sendmsg()` `sendfile()` 系统调用包含多条逻辑消息，BPF 程序应当读取这些消息并为  做出裁决- BPF 程序只关心读`msg` 的前 `bytes` 个字节。如果消息的负载很大，那么即使裁决已经确定，仍然
+  为全部字节反setup 并调BPF 程序，会造成不必要的开销
+返回 0
 ##### bpf_msg_cork_bytes()
 
 
     long bpf_msg_cork_bytes(struct sk_msg_buff *msg, u32 bytes)
 
-瀵逛簬濂楁帴瀛楃瓥鐣ワ紝鍦ㄧ疮绉埌 `bytes` 涓瓧鑺備箣鍓嶏紝闃绘瑁佸喅 BPF 绋嬪簭瀵规秷鎭?`msg` 鐨勬墽琛屻€?
-褰撻渶瑕佸湪鍋氬嚭瑁佸喅涔嬪墠鑾峰緱鐗瑰畾鏁伴噺鐨勫瓧鑺傛椂鍙互浣跨敤璇ヨ緟鍔╁嚱鏁帮紝鍗充究鏁版嵁璺ㄨ秺浜嗗娆?`sendmsg()` 鎴?`sendfile()` 璋冪敤銆?
-杩斿洖 0銆?
+对于套接字策略，在累积到 `bytes` 个字节之前，阻止裁决 BPF 程序对消`msg` 的执行
+当需要在做出裁决之前获得特定数量的字节时可以使用该辅助函数，即便数据跨越了多`sendmsg()` `sendfile()` 调用
+返回 0
 ##### bpf_msg_pull_data()
 
 
     long bpf_msg_pull_data(struct sk_msg_buff *msg, u32 start, u32 end, u64 flags)
 
-瀵逛簬濂楁帴瀛楃瓥鐣ワ紝浠庣敤鎴风┖闂存媺鍏?`msg` 鐨勯潪绾挎€ф暟鎹紝骞跺皢鎸囬拡 `msg->data` 涓?`msg->data_end`
-鍒嗗埆璁剧疆涓?`msg` 涓?`start` 涓?`end` 瀛楄妭鐨勫亸绉婚噺銆?
-濡傛灉绫诲瀷涓?`BPF_PROG_TYPE_SK_MSG` 鐨勭▼搴忓湪 `msg` 涓婅繍琛岋紝瀹冨彧鑳借В鏋愶紙`data`锛宍data_end`锛夋寚閽?宸茬粡娑堣垂杩囩殑鏁版嵁銆傚浜?`sendmsg()` 閽╁瓙鑰岃█锛岃繖閫氬父灏辨槸绗竴涓?scatterlist 鍏冪礌銆備絾瀵逛簬渚濊禆
-MSG_SPLICE_PAGES 鐨勮皟鐢紙渚嬪 `sendfile()`锛夎€岃█锛屽叾鑼冨洿灏嗘槸锛?*0**锛?*0**锛夛紝鍥犱负鏁版嵁涓庣敤鎴风┖闂?鍏变韩锛岃€岄粯璁ょ洰鏍囨槸鍦?BPF 瑁佸喅鍋氬嚭鏈熼棿锛堟垨涔嬪悗锛夐伩鍏嶅厑璁哥敤鎴风┖闂翠慨鏀规暟鎹€傝杈呭姪鍑芥暟鍙敤浜庢媺鍏?鏁版嵁骞跺皢璧峰涓庣粨鏉熸寚閽堣缃负缁欏畾鍊笺€傚繀瑕佹椂浼氬鍒舵暟鎹紙鍗冲綋鏁版嵁涓嶆槸绾挎€х殑銆佷笖璧峰涓庣粨鏉熸寚閽堜笉鎸囧悜
-鍚屼竴鏁版嵁鍧楁椂锛夈€?
-璋冪敤璇ヨ緟鍔╁嚱鏁板彲鑳戒細鏀瑰彉搴曞眰鐨勬暟鎹寘缂撳啿鍖恒€傚洜姝わ紝鍦ㄥ姞杞芥椂锛屾牎楠屽櫒锛坴erifier锛夋鍓嶅鎵€鏈夋寚閽?鎵€鍋氱殑妫€鏌ラ兘浼氬け鏁堬紝濡傛灉鍦ㄨ杈呭姪鍑芥暟涓庣洿鎺ユ暟鎹寘璁块棶閰嶅悎浣跨敤鏃讹紝蹇呴』閲嶆柊鎵ц杩欎簺妫€鏌ャ€?
-`flags` 鐨勬墍鏈夊彇鍊奸兘淇濈暀渚涘皢鏉ヤ娇鐢紝蹇呴』淇濇寔涓洪浂銆?
-鎴愬姛鏃惰繑鍥?0锛屽け璐ユ椂杩斿洖涓€涓礋鐨勯敊璇爜銆?
+对于套接字策略，从用户空间拉`msg` 的非线性数据，并将指针 `msg->data` `msg->data_end`
+分别设置`msg` `start` `end` 字节的偏移量
+如果类型`BPF_PROG_TYPE_SK_MSG` 的程序在 `msg` 上运行，它只能解析（`data`，`data_end`）指已经消费过的数据。对`sendmsg()` 钩子而言，这通常就是第一scatterlist 元素。但对于依赖
+MSG_SPLICE_PAGES 的调用（例如 `sendfile()`）而言，其范围将是*0***0**），因为数据与用户空共享，而默认目标是BPF 裁决做出期间（或之后）避免允许用户空间修改数据。该辅助函数可用于拉数据并将起始与结束指针设置为给定值。必要时会复制数据（即当数据不是线性的、且起始与结束指针不指向
+同一数据块时）
+调用该辅助函数可能会改变底层的数据包缓冲区。因此，在加载时，校验器（verifier）此前对所有指所做的检查都会失效，如果在该辅助函数与直接数据包访问配合使用时，必须重新执行这些检查
+`flags` 的所有取值都保留供将来使用，必须保持为零
+成功时返0，失败时返回一个负的错误码
 ##### bpf_map_lookup_elem()
 
 
@@ -138,62 +138,62 @@ MSG_SPLICE_PAGES 鐨勮皟鐢紙渚嬪 `sendfile()`锛夎€岃█锛屽�
 
 	void **bpf_map_lookup_elem(struct bpf_map **map, const void *key)
 
-鍦?sockmap 鎴?sockhash 鏄犲皠涓煡鎵句竴涓鎺ュ瓧鏉＄洰銆?
-杩斿洖涓?`key` 鐩稿叧鑱旂殑濂楁帴瀛楁潯鐩紝濡傛灉娌℃湁鎵惧埌鏉＄洰鍒欒繑鍥?NULL銆?
+sockmap sockhash 映射中查找一个套接字条目
+返回`key` 相关联的套接字条目，如果没有找到条目则返NULL
 ##### bpf_map_update_elem()
 
 
 	long bpf_map_update_elem(struct bpf_map **map, const void **key, const void *value, u64 flags)
 
-鍦?sockmap 鎴?sockhash 涓坊鍔犳垨鏇存柊涓€涓鎺ュ瓧鏉＄洰銆?
-flags 鍙傛暟鍙互鏄互涓嬩箣涓€锛?
-- BPF_ANY锛氬垱寤轰竴涓柊鍏冪礌鎴栨洿鏂颁竴涓凡瀛樺湪鐨勫厓绱犮€?- BPF_NOEXIST锛氫粎褰撳厓绱犱笉瀛樺湪鏃舵墠鍒涘缓涓€涓柊鍏冪礌銆?- BPF_EXIST锛氭洿鏂颁竴涓凡瀛樺湪鐨勫厓绱犮€?
-鎴愬姛鏃惰繑鍥?0锛屽け璐ユ椂杩斿洖涓€涓礋鐨勯敊璇爜銆?
+sockmap sockhash 中添加或更新一个套接字条目
+flags 参数可以是以下之一
+- BPF_ANY：创建一个新元素或更新一个已存在的元素- BPF_NOEXIST：仅当元素不存在时才创建一个新元素- BPF_EXIST：更新一个已存在的元素
+成功时返0，失败时返回一个负的错误码
 ##### bpf_map_delete_elem()
 
 
     long bpf_map_delete_elem(struct bpf_map **map, const void **key)
 
-浠?sockmap 鎴?sockhash 涓垹闄や竴涓鎺ュ瓧鏉＄洰銆?
-鎴愬姛鏃惰繑鍥?0锛屽け璐ユ椂杩斿洖涓€涓礋鐨勯敊璇爜銆?
-### 鐢ㄦ埛绌洪棿
+sockmap sockhash 中删除一个套接字条目
+成功时返0，失败时返回一个负的错误码
+### 用户空间
 
 ##### bpf_map_update_elem()
 
 
 	int bpf_map_update_elem(int fd, const void **key, const void **value, __u64 flags)
 
-鍙互浣跨敤 `bpf_map_update_elem()` 鍑芥暟娣诲姞鎴栨洿鏂?sockmap 鏉＄洰銆俙key` 鍙傛暟鏄?sockmap 鏁扮粍鐨?绱㈠紩鍊硷紝`value` 鍙傛暟鏄濂楁帴瀛楃殑 FD 鍊笺€?
-鍦ㄥ簳灞傦紝sockmap 鐨勬洿鏂板嚱鏁颁細浣跨敤濂楁帴瀛?FD 鍊煎幓鍙栧嚭鐩稿叧鑱旂殑濂楁帴瀛楀強鍏堕檮鍔犵殑 psock銆?
-flags 鍙傛暟鍙互鏄互涓嬩箣涓€锛?
-- BPF_ANY锛氬垱寤轰竴涓柊鍏冪礌鎴栨洿鏂颁竴涓凡瀛樺湪鐨勫厓绱犮€?- BPF_NOEXIST锛氫粎褰撳厓绱犱笉瀛樺湪鏃舵墠鍒涘缓涓€涓柊鍏冪礌銆?- BPF_EXIST锛氭洿鏂颁竴涓凡瀛樺湪鐨勫厓绱犮€?
+可以使用 `bpf_map_update_elem()` 函数添加或更sockmap 条目。`key` 参数sockmap 数组索引值，`value` 参数是该套接字的 FD 值
+在底层，sockmap 的更新函数会使用套接FD 值去取出相关联的套接字及其附加的 psock
+flags 参数可以是以下之一
+- BPF_ANY：创建一个新元素或更新一个已存在的元素- BPF_NOEXIST：仅当元素不存在时才创建一个新元素- BPF_EXIST：更新一个已存在的元素
 ##### bpf_map_lookup_elem()
 
 
     int bpf_map_lookup_elem(int fd, const void **key, void **value)
 
-鍙互浣跨敤 `bpf_map_lookup_elem()` 鍑芥暟鍙栧嚭 sockmap 鏉＄洰銆?
-	杩斿洖鐨勬潯鐩槸涓€涓鎺ュ瓧 cookie锛岃€岄潪濂楁帴瀛楁湰韬€?
+可以使用 `bpf_map_lookup_elem()` 函数取出 sockmap 条目
+	返回的条目是一个套接字 cookie，而非套接字本身
 ##### bpf_map_delete_elem()
 
 
     int bpf_map_delete_elem(int fd, const void *key)
 
-鍙互浣跨敤 `bpf_map_delete_elem()` 鍑芥暟鍒犻櫎 sockmap 鏉＄洰銆?
-鎴愬姛鏃惰繑鍥?0锛屽け璐ユ椂杩斿洖涓€涓礋鐨勯敊璇爜銆?
-## 绀轰緥
+可以使用 `bpf_map_delete_elem()` 函数删除 sockmap 条目
+成功时返0，失败时返回一个负的错误码
+## 示例
 
 
-### 鍐呮牳 BPF
+### 内核 BPF
 
-鍏充簬 sockmap API 鐢ㄦ硶鐨勮嫢骞茬ず渚嬪彲浠ュ湪浠ヤ笅浣嶇疆鎵惧埌锛?
+关于 sockmap API 用法的若干示例可以在以下位置找到
 - `tools/testing/selftests/bpf/progs/test_sockmap_kern.h`_
 - `tools/testing/selftests/bpf/progs/sockmap_parse_prog.c`_
 - `tools/testing/selftests/bpf/progs/sockmap_verdict_prog.c`_
 - `tools/testing/selftests/bpf/progs/test_sockmap_listen.c`_
 - `tools/testing/selftests/bpf/progs/test_sockmap_update.c`_
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗗浣曞０鏄庝竴涓?sockmap銆?
+以下代码片段展示了如何声明一sockmap
 
 	struct {
 		__uint(type, BPF_MAP_TYPE_SOCKMAP);
@@ -202,7 +202,7 @@ flags 鍙傛暟鍙互鏄互涓嬩箣涓€锛?
 		__type(value, __u64);
 	} sock_map_rx SEC(".maps");
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗕竴涓ず渚嬭В鏋愮▼搴忋€?
+以下代码片段展示了一个示例解析程序
 
 	SEC("sk_skb/stream_parser")
 	int bpf_prog_parser(struct __sk_buff *skb)
@@ -210,7 +210,7 @@ flags 鍙傛暟鍙互鏄互涓嬩箣涓€锛?
 		return skb->len;
 	}
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗕竴涓畝鍗曠殑瑁佸喅绋嬪簭锛屽畠涓庝竴涓?sockmap 浜や簰锛屾牴鎹湰鍦扮鍙ｅ皢娴侀噺閲嶅畾鍚戝埌鍙︿竴涓?濂楁帴瀛椼€?
+以下代码片段展示了一个简单的裁决程序，它与一sockmap 交互，根据本地端口将流量重定向到另一套接字
 
 	SEC("sk_skb/stream_verdict")
 	int bpf_prog_verdict(struct __sk_buff *skb)
@@ -224,7 +224,7 @@ flags 鍙傛暟鍙互鏄互涓嬩箣涓€锛?
 		return SK_PASS;
 	}
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗗浣曞０鏄庝竴涓?sockhash 鏄犲皠銆?
+以下代码片段展示了如何声明一sockhash 映射
 
 	struct socket_key {
 		__u32 src_ip;
@@ -240,8 +240,8 @@ flags 鍙傛暟鍙互鏄互涓嬩箣涓€锛?
 		__type(value, __u64);
 	} sock_hash_rx SEC(".maps");
 
-浠ヤ笅浠ｇ爜鐗囨灞曠ず浜嗕竴涓畝鍗曠殑瑁佸喅绋嬪簭锛屽畠涓庝竴涓?sockhash 浜や簰锛屾牴鎹?skb 鏌愪簺鍙傛暟鐨勫搱甯屽€煎皢娴侀噺
-閲嶅畾鍚戝埌鍙︿竴涓鎺ュ瓧銆?
+以下代码片段展示了一个简单的裁决程序，它与一sockhash 交互，根skb 某些参数的哈希值将流量
+重定向到另一个套接字
 
 	static inline
 	void extract_socket_key(struct __sk_buff **skb, struct socket_key **key)
@@ -262,14 +262,14 @@ flags 鍙傛暟鍙互鏄互涓嬩箣涓€锛?
 		return bpf_sk_redirect_hash(skb, &sock_hash_rx, &key, 0);
 	}
 
-### 鐢ㄦ埛绌洪棿
+### 用户空间
 
-鍏充簬 sockmap API 鐢ㄦ硶鐨勮嫢骞茬ず渚嬪彲浠ュ湪浠ヤ笅浣嶇疆鎵惧埌锛?
+关于 sockmap API 用法的若干示例可以在以下位置找到
 - `tools/testing/selftests/bpf/prog_tests/sockmap_basic.c`_
 - `tools/testing/selftests/bpf/test_sockmap.c`_
 - `tools/testing/selftests/bpf/test_maps.c`_
 
-浠ヤ笅浠ｇ爜绀轰緥灞曠ず浜嗗浣曞垱寤轰竴涓?sockmap銆侀檮鍔犱竴涓В鏋愮▼搴忎笌瑁佸喅绋嬪簭锛屽苟娣诲姞涓€涓鎺ュ瓧鏉＄洰銆?
+以下代码示例展示了如何创建一sockmap、附加一个解析程序与裁决程序，并添加一个套接字条目
 
 	int create_sample_sockmap(int sock, int parse_prog_fd, int verdict_prog_fd)
 	{
@@ -305,7 +305,7 @@ flags 鍙傛暟鍙互鏄互涓嬩箣涓€锛?
 		return err;
 	}
 
-## 鍙傝€冭祫鏂?
+## 参考资
 
 - https://github.com/jrfastab/linux-kernel-xdp/commit/c89fd73cb9d2d7f3c716c3e00836f07b1aeb261f
 - https://lwn.net/Articles/731133/

@@ -1,117 +1,117 @@
 ﻿
-## 鏂囦欢锛歮edia/v4l/capture.c
+## 文件：media/v4l/capture.c
 
-鏈枃浠舵槸 V4L2 瑙嗛閲囬泦绀轰緥绋嬪簭 capture.c 鐨勬簮鐮侊紝婕旂ず濡備綍浣跨敤 V4L2 API 鎵撳紑璁惧銆侀厤缃牸寮忥紝骞堕€氳繃 read銆乵map銆乽serptr 绛夋柟寮忔崟鑾疯棰戝抚锛屼緵鐢ㄦ埛绌洪棿搴旂敤寮€鍙戝弬鑰冦€?
+本文件是 V4L2 视频采集示例程序 capture.c 的源码，演示如何使用 V4L2 API 打开设备、配置格式，并通过 read、mmap、userptr 等方式捕获视频帧，供用户空间应用开发参考
 
 
 
 
     /*
-     - V4L2 瑙嗛閲囬泦绀轰緥
+     - V4L2 视频采集示例
      *
-     - 鏈▼搴忓彲鍦ㄦ棤浠讳綍闄愬埗鐨勬儏鍐典笅浣跨敤鍜屽垎鍙戙€?
+     - 本程序可在无任何限制的情况下使用和分发
      *
-     - 鏈▼搴忛殢 V4L2 API 涓€鍚屾彁渚?
-     - 鏇村淇℃伅璇峰弬闃?https://linuxtv.org/docs.php
+     - 本程序随 V4L2 API 一同提
+     - 更多信息请参https://linuxtv.org/docs.php
      */
 
-    #鍖呭惈 <stdio.h>
-    #鍖呭惈 <stdlib.h>
-    #鍖呭惈 <瀛楃涓?h>
-    #鍖呭惈 <assert.h>
+    #包含 <stdio.h>
+    #包含 <stdlib.h>
+    #包含 <字符h>
+    #包含 <assert.h>
 
-    #鍖呭惈 <getopt.h>             /** getopt_long() 鍑芥暟 **/
+    #包含 <getopt.h>             /** getopt_long() 函数 **/
 
-    #鍖呭惈 <fcntl.h>              /** 搴曞眰 I/O **/
-    #鍖呭惈 <unistd.h>
-    #鍖呭惈 <errno.h>
-    #鍖呭惈 <sys/stat.h>
-    #鍖呭惈 <sys/types.h>
-    #鍖呭惈 <sys/time.h>
-    #鍖呭惈 <sys/mman.h>
-    #鍖呭惈 <sys/ioctl.h>
+    #包含 <fcntl.h>              /** 底层 I/O **/
+    #包含 <unistd.h>
+    #包含 <errno.h>
+    #包含 <sys/stat.h>
+    #包含 <sys/types.h>
+    #包含 <sys/time.h>
+    #包含 <sys/mman.h>
+    #包含 <sys/ioctl.h>
 
-    #鍖呭惈 <linux/videodev2.h>
+    #包含 <linux/videodev2.h>
 
-    #瀹氫箟 CLEAR(x) memset(&(x), 0, sizeof(x))
+    #定义 CLEAR(x) memset(&(x), 0, sizeof(x))
 
-    enum io_鏂规硶 {
-	    IO_鏂规硶_璇诲彇,
-	    IO_鏂规硶_MMAP,
-	    IO_鏂规硶_USERPTR,
+    enum io_方法 {
+	    IO_方法_读取,
+	    IO_方法_MMAP,
+	    IO_方法_USERPTR,
     };
 
-    缁撴瀯浣?缂撳啿鍖?{
-	    void   *鍚姩;
-	    澶у皬_t  闀垮害;
+    结构缓冲{
+	    void   *启动;
+	    大小_t  长度;
     };
 
-    闈欐€?char            *dev_name;
-    闈欐€?enum io_鏂规硶   io = IO_鏂规硶_MMAP;
-    闈欐€?int              fd = -1;
-    缁撴瀯浣?缂撳啿鍖?         *缂撳啿鍖?
-    闈欐€?unsigned int     n_缂撳啿鍖?
-    闈欐€?int              out_buf;
-    闈欐€?int              force_鏍煎紡;
-    闈欐€?int              甯count = 70;
+    静char            *dev_name;
+    静enum io_方法   io = IO_方法_MMAP;
+    静int              fd = -1;
+    结构缓冲         *缓冲
+    静unsigned int     n_缓冲
+    静int              out_buf;
+    静int              force_格式;
+    静int              帧_count = 70;
 
-    闈欐€?void errno_exit(const char *s)
+    静void errno_exit(const char *s)
     {
-	    fprintf(stderr, "%s 閿欒 %d, %s\n", s, errno, strerror(errno));
+	    fprintf(stderr, "%s 错误 %d, %s\n", s, errno, strerror(errno));
 	    exit(EXIT_FAILURE);
     }
 
-    闈欐€?int xioctl(int fh, int 璇锋眰, void *arg)
+    静int xioctl(int fh, int 请求, void *arg)
     {
 	    int r;
 
-	    鎵ц {
-		    r = ioctl(fh, 璇锋眰, arg);
-	    } 鍚屾椂 (-1 == r && EINTR == errno);
+	    执行 {
+		    r = ioctl(fh, 请求, arg);
+	    } 同时 (-1 == r && EINTR == errno);
 
 	    return r;
     }
 
-    闈欐€?void 杩涚▼_image(const void *p, int 澶у皬)
+    静void 进程_image(const void *p, int 大小)
     {
 	    鑻?(out_buf)
-		    fwrite(p, 澶у皬, 1, stdout);
+		    fwrite(p, 大小, 1, stdout);
 
 	    fflush(stderr);
 	    fprintf(stderr, ".");
 	    fflush(stdout);
     }
 
-    闈欐€?int 璇诲彇_甯?void)
+    静int 读取_void)
     {
-	    缁撴瀯浣?v4l2_缂撳啿鍖?buf;
+	    结构v4l2_缓冲buf;
 	    unsigned int i;
 
 	    switch (io) {
-	    case IO_鏂规硶_璇诲彇:
-		    鑻?(-1 == 璇诲彇(fd, 缂撳啿鍖篬^0^].鍚姩, 缂撳啿鍖篬^0^].闀垮害)) {
+	    case IO_方法_读取:
+		    (-1 == 读取(fd, 缓冲区[^0^].启动, 缓冲区[^0^].长度)) {
 			    switch (errno) {
 			    case EAGAIN:
 				    return 0;
 
 			    case EIO:
-				    /** 鍙拷鐣?EIO锛屽弬瑙佽鑼冦€?**/
+				    /** 可忽EIO，参见规范**/
 
-				    /** 璐┛锛坒all through锛?**/
+				    /** 贯穿（fall through**/
 
-			    榛樿:
-				    errno_exit("璇诲彇");
+			    默认:
+				    errno_exit("读取");
 			    }
 		    }
 
-		    杩涚▼_image(缂撳啿鍖篬^0^].鍚姩, 缂撳啿鍖篬^0^].闀垮害);
+		    进程_image(缓冲区[^0^].启动, 缓冲区[^0^].长度);
 		    break;
 
-	    case IO_鏂规硶_MMAP:
+	    case IO_方法_MMAP:
 		    CLEAR(buf);
 
-		    buf.绫诲瀷 = V4L2_BUF_绫诲瀷_瑙嗛_CAPTURE;
-		    buf.鍐呭瓨 = V4L2_鍐呭瓨_MMAP;
+		    buf.类型 = V4L2_BUF_类型_视频_CAPTURE;
+		    buf.内存 = V4L2_内存_MMAP;
 
 		    鑻?(-1 == xioctl(fd, VIDIOC_DQBUF, &buf)) {
 			    switch (errno) {
@@ -119,28 +119,28 @@
 				    return 0;
 
 			    case EIO:
-				    /** 鍙拷鐣?EIO锛屽弬瑙佽鑼冦€?**/
+				    /** 可忽EIO，参见规范**/
 
-				    /** 璐┛锛坒all through锛?**/
+				    /** 贯穿（fall through**/
 
-			    榛樿:
+			    默认:
 				    errno_exit("VIDIOC_DQBUF");
 			    }
 		    }
 
-		    assert(buf.绱㈠紩 < n_缂撳啿鍖?;
+		    assert(buf.索引 < n_缓冲;
 
-		    杩涚▼_image(缂撳啿鍖篬buf.绱㈠紩].鍚姩, buf.bytesused);
+		    进程_image(缓冲区[buf.索引].启动, buf.bytesused);
 
 		    鑻?(-1 == xioctl(fd, VIDIOC_QBUF, &buf))
 			    errno_exit("VIDIOC_QBUF");
 		    break;
 
-	    case IO_鏂规硶_USERPTR:
+	    case IO_方法_USERPTR:
 		    CLEAR(buf);
 
-		    buf.绫诲瀷 = V4L2_BUF_绫诲瀷_瑙嗛_CAPTURE;
-		    buf.鍐呭瓨 = V4L2_鍐呭瓨_USERPTR;
+		    buf.类型 = V4L2_BUF_类型_视频_CAPTURE;
+		    buf.内存 = V4L2_内存_USERPTR;
 
 		    鑻?(-1 == xioctl(fd, VIDIOC_DQBUF, &buf)) {
 			    switch (errno) {
@@ -148,23 +148,23 @@
 				    return 0;
 
 			    case EIO:
-				    /** 鍙拷鐣?EIO锛屽弬瑙佽鑼冦€?**/
+				    /** 可忽EIO，参见规范**/
 
-				    /** 璐┛锛坒all through锛?**/
+				    /** 贯穿（fall through**/
 
-			    榛樿:
+			    默认:
 				    errno_exit("VIDIOC_DQBUF");
 			    }
 		    }
 
-		    鐢ㄤ簬 (i = 0; i < n_缂撳啿鍖? ++i)
-			    鑻?(buf.m.userptr == (unsigned long)缂撳啿鍖篬i].鍚姩
-				&& buf.闀垮害 == 缂撳啿鍖篬i].闀垮害)
+		    用于 (i = 0; i < n_缓冲 ++i)
+			    (buf.m.userptr == (unsigned long)缓冲区[i].启动
+				&& buf.长度 == 缓冲区[i].长度)
 				    break;
 
-		    assert(i < n_缂撳啿鍖?;
+		    assert(i < n_缓冲;
 
-		    杩涚▼_image((void *)buf.m.userptr, buf.bytesused);
+		    进程_image((void *)buf.m.userptr, buf.bytesused);
 
 		    鑻?(-1 == xioctl(fd, VIDIOC_QBUF, &buf))
 			    errno_exit("VIDIOC_QBUF");
@@ -174,22 +174,22 @@
 	    return 1;
     }
 
-    闈欐€?void mainloop(void)
+    静void mainloop(void)
     {
 	    unsigned int count;
 
-	    count = 甯count;
+	    count = 帧_count;
 
-	    鍚屾椂 (count-- > 0) {
-		    鐢ㄤ簬 (;;) {
+	    同时 (count-- > 0) {
+		    用于 (;;) {
 			    fd_set fds;
-			    缁撴瀯浣?timeval tv;
+			    结构timeval tv;
 			    int r;
 
 			    FD_ZERO(&fds);
 			    FD_SET(fd, &fds);
 
-			    /** 瓒呮椂銆?**/
+			    /** 超时**/
 			    tv.tv_sec = 2;
 			    tv.tv_usec = 0;
 
@@ -202,139 +202,139 @@
 			    }
 
 			    鑻?(0 == r) {
-				    fprintf(stderr, "select 瓒呮椂\n");
+				    fprintf(stderr, "select 超时\n");
 				    exit(EXIT_FAILURE);
 			    }
 
-			    鑻?(璇诲彇_甯?))
+			    (读取_))
 				    break;
-			    /** EAGAIN - 缁х画 select 寰幆銆?**/
+			    /** EAGAIN - 继续 select 循环**/
 		    }
 	    }
     }
 
-    闈欐€?void 鍋滄_capturing(void)
+    静void 停止_capturing(void)
     {
-	    enum v4l2_buf_绫诲瀷 绫诲瀷;
+	    enum v4l2_buf_类型 类型;
 
 	    switch (io) {
-	    case IO_鏂规硶_璇诲彇:
-		    /** 鏃犻渶鎿嶄綔銆?**/
+	    case IO_方法_读取:
+		    /** 无需操作**/
 		    break;
 
-	    case IO_鏂规硶_MMAP:
-	    case IO_鏂规硶_USERPTR:
-		    绫诲瀷 = V4L2_BUF_绫诲瀷_瑙嗛_CAPTURE;
-		    鑻?(-1 == xioctl(fd, VIDIOC_STREAMOFF, &绫诲瀷))
+	    case IO_方法_MMAP:
+	    case IO_方法_USERPTR:
+		    类型 = V4L2_BUF_类型_视频_CAPTURE;
+		    (-1 == xioctl(fd, VIDIOC_STREAMOFF, &类型))
 			    errno_exit("VIDIOC_STREAMOFF");
 		    break;
 	    }
     }
 
-    闈欐€?void 鍚姩_capturing(void)
+    静void 启动_capturing(void)
     {
 	    unsigned int i;
-	    enum v4l2_buf_绫诲瀷 绫诲瀷;
+	    enum v4l2_buf_类型 类型;
 
 	    switch (io) {
-	    case IO_鏂规硶_璇诲彇:
-		    /** 鏃犻渶鎿嶄綔銆?**/
+	    case IO_方法_读取:
+		    /** 无需操作**/
 		    break;
 
-	    case IO_鏂规硶_MMAP:
-		    鐢ㄤ簬 (i = 0; i < n_缂撳啿鍖? ++i) {
-			    缁撴瀯浣?v4l2_缂撳啿鍖?buf;
+	    case IO_方法_MMAP:
+		    用于 (i = 0; i < n_缓冲 ++i) {
+			    结构v4l2_缓冲buf;
 
 			    CLEAR(buf);
-			    buf.绫诲瀷 = V4L2_BUF_绫诲瀷_瑙嗛_CAPTURE;
-			    buf.鍐呭瓨 = V4L2_鍐呭瓨_MMAP;
-			    buf.绱㈠紩 = i;
+			    buf.类型 = V4L2_BUF_类型_视频_CAPTURE;
+			    buf.内存 = V4L2_内存_MMAP;
+			    buf.索引 = i;
 
 			    鑻?(-1 == xioctl(fd, VIDIOC_QBUF, &buf))
 				    errno_exit("VIDIOC_QBUF");
 		    }
-		    绫诲瀷 = V4L2_BUF_绫诲瀷_瑙嗛_CAPTURE;
-		    鑻?(-1 == xioctl(fd, VIDIOC_STREAMON, &绫诲瀷))
+		    类型 = V4L2_BUF_类型_视频_CAPTURE;
+		    (-1 == xioctl(fd, VIDIOC_STREAMON, &类型))
 			    errno_exit("VIDIOC_STREAMON");
 		    break;
 
-	    case IO_鏂规硶_USERPTR:
-		    鐢ㄤ簬 (i = 0; i < n_缂撳啿鍖? ++i) {
-			    缁撴瀯浣?v4l2_缂撳啿鍖?buf;
+	    case IO_方法_USERPTR:
+		    用于 (i = 0; i < n_缓冲 ++i) {
+			    结构v4l2_缓冲buf;
 
 			    CLEAR(buf);
-			    buf.绫诲瀷 = V4L2_BUF_绫诲瀷_瑙嗛_CAPTURE;
-			    buf.鍐呭瓨 = V4L2_鍐呭瓨_USERPTR;
-			    buf.绱㈠紩 = i;
-			    buf.m.userptr = (unsigned long)缂撳啿鍖篬i].鍚姩;
-			    buf.闀垮害 = 缂撳啿鍖篬i].闀垮害;
+			    buf.类型 = V4L2_BUF_类型_视频_CAPTURE;
+			    buf.内存 = V4L2_内存_USERPTR;
+			    buf.索引 = i;
+			    buf.m.userptr = (unsigned long)缓冲区[i].启动;
+			    buf.长度 = 缓冲区[i].长度;
 
 			    鑻?(-1 == xioctl(fd, VIDIOC_QBUF, &buf))
 				    errno_exit("VIDIOC_QBUF");
 		    }
-		    绫诲瀷 = V4L2_BUF_绫诲瀷_瑙嗛_CAPTURE;
-		    鑻?(-1 == xioctl(fd, VIDIOC_STREAMON, &绫诲瀷))
+		    类型 = V4L2_BUF_类型_视频_CAPTURE;
+		    (-1 == xioctl(fd, VIDIOC_STREAMON, &类型))
 			    errno_exit("VIDIOC_STREAMON");
 		    break;
 	    }
     }
 
-    闈欐€?void uninit_璁惧(void)
+    静void uninit_设备(void)
     {
 	    unsigned int i;
 
 	    switch (io) {
-	    case IO_鏂规硶_璇诲彇:
-		    free(缂撳啿鍖篬^0^].鍚姩);
+	    case IO_方法_读取:
+		    free(缓冲区[^0^].启动);
 		    break;
 
-	    case IO_鏂规硶_MMAP:
-		    鐢ㄤ簬 (i = 0; i < n_缂撳啿鍖? ++i)
-			    鑻?(-1 == munmap(缂撳啿鍖篬i].鍚姩, 缂撳啿鍖篬i].闀垮害))
+	    case IO_方法_MMAP:
+		    用于 (i = 0; i < n_缓冲 ++i)
+			    (-1 == munmap(缓冲区[i].启动, 缓冲区[i].长度))
 				    errno_exit("munmap");
 		    break;
 
-	    case IO_鏂规硶_USERPTR:
-		    鐢ㄤ簬 (i = 0; i < n_缂撳啿鍖? ++i)
-			    free(缂撳啿鍖篬i].鍚姩);
+	    case IO_方法_USERPTR:
+		    用于 (i = 0; i < n_缓冲 ++i)
+			    free(缓冲区[i].启动);
 		    break;
 	    }
 
-	    free(缂撳啿鍖?;
+	    free(缓冲;
     }
 
-    闈欐€?void 鍒濆鍖朹璇诲彇(unsigned int 缂撳啿鍖篲澶у皬)
+    静void 初始化_读取(unsigned int 缓冲区_大小)
     {
-	    缂撳啿鍖?= calloc(1, sizeof(*缂撳啿鍖?);
+	    缓冲= calloc(1, sizeof(*缓冲);
 
-	    鑻?(!缂撳啿鍖? {
-		    fprintf(stderr, "瓒呭嚭 鍐呭瓨\n");
+	    (!缓冲 {
+		    fprintf(stderr, "超出 内存\n");
 		    exit(EXIT_FAILURE);
 	    }
 
-	    缂撳啿鍖篬^0^].闀垮害 = 缂撳啿鍖篲澶у皬;
-	    缂撳啿鍖篬^0^].鍚姩 = malloc(缂撳啿鍖篲澶у皬);
+	    缓冲区[^0^].长度 = 缓冲区_大小;
+	    缓冲区[^0^].启动 = malloc(缓冲区_大小);
 
-	    鑻?(!缂撳啿鍖篬^0^].鍚姩) {
-		    fprintf(stderr, "瓒呭嚭 鍐呭瓨\n");
+	    (!缓冲区[^0^].启动) {
+		    fprintf(stderr, "超出 内存\n");
 		    exit(EXIT_FAILURE);
 	    }
     }
 
-    闈欐€?void 鍒濆鍖朹mmap(void)
+    静void 初始化_mmap(void)
     {
-	    缁撴瀯浣?v4l2_requestbuffers req;
+	    结构v4l2_requestbuffers req;
 
 	    CLEAR(req);
 
 	    req.count = 4;
-	    req.绫诲瀷 = V4L2_BUF_绫诲瀷_瑙嗛_CAPTURE;
-	    req.鍐呭瓨 = V4L2_鍐呭瓨_MMAP;
+	    req.类型 = V4L2_BUF_类型_视频_CAPTURE;
+	    req.内存 = V4L2_内存_MMAP;
 
 	    鑻?(-1 == xioctl(fd, VIDIOC_REQBUFS, &req)) {
 		    鑻?(EINVAL == errno) {
-			    fprintf(stderr, "%s 鎵ц 涓?鏀寔 "
-				     "鍐呭瓨 鏄犲皠\n", dev_name);
+			    fprintf(stderr, "%s 执行 支持 "
+				     "内存 映射\n", dev_name);
 			    exit(EXIT_FAILURE);
 		    } else {
 			    errno_exit("VIDIOC_REQBUFS");
@@ -342,92 +342,92 @@
 	    }
 
 	    鑻?(req.count < 2) {
-		    fprintf(stderr, "Insufficient 缂撳啿鍖?鍐呭瓨 鍦?%s\n",
+		    fprintf(stderr, "Insufficient 缓冲内存 %s\n",
 			     dev_name);
 		    exit(EXIT_FAILURE);
 	    }
 
-	    缂撳啿鍖?= calloc(req.count, sizeof(*缂撳啿鍖?);
+	    缓冲= calloc(req.count, sizeof(*缓冲);
 
-	    鑻?(!缂撳啿鍖? {
-		    fprintf(stderr, "瓒呭嚭 鍐呭瓨\n");
+	    (!缓冲 {
+		    fprintf(stderr, "超出 内存\n");
 		    exit(EXIT_FAILURE);
 	    }
 
-	    鐢ㄤ簬 (n_缂撳啿鍖?= 0; n_缂撳啿鍖?< req.count; ++n_缂撳啿鍖? {
-		    缁撴瀯浣?v4l2_缂撳啿鍖?buf;
+	    用于 (n_缓冲= 0; n_缓冲< req.count; ++n_缓冲 {
+		    结构v4l2_缓冲buf;
 
 		    CLEAR(buf);
 
-		    buf.绫诲瀷        = V4L2_BUF_绫诲瀷_瑙嗛_CAPTURE;
-		    buf.鍐呭瓨      = V4L2_鍐呭瓨_MMAP;
-		    buf.绱㈠紩       = n_缂撳啿鍖?
+		    buf.类型        = V4L2_BUF_类型_视频_CAPTURE;
+		    buf.内存      = V4L2_内存_MMAP;
+		    buf.索引       = n_缓冲
 
 		    鑻?(-1 == xioctl(fd, VIDIOC_QUERYBUF, &buf))
 			    errno_exit("VIDIOC_QUERYBUF");
 
-		    缂撳啿鍖篬n_缂撳啿鍖篯.闀垮害 = buf.闀垮害;
-		    缂撳啿鍖篬n_缂撳啿鍖篯.鍚姩 =
-			    mmap(NULL /** 浠绘剰浣嶇疆寮€濮?**/,
-				  buf.闀垮害,
-				  PROT_璇诲彇 | PROT_鍐欏叆 /** 蹇呴渶 **/,
-				  MAP_SHARED /** 鎺ㄨ崘 **/,
-				  fd, buf.m.鍋忕Щ);
+		    缓冲区[n_缓冲区].长度 = buf.长度;
+		    缓冲区[n_缓冲区].启动 =
+			    mmap(NULL /** 任意位置开**/,
+				  buf.长度,
+				  PROT_读取 | PROT_写入 /** 必需 **/,
+				  MAP_SHARED /** 推荐 **/,
+				  fd, buf.m.偏移);
 
-		    鑻?(MAP_FAILED == 缂撳啿鍖篬n_缂撳啿鍖篯.鍚姩)
+		    (MAP_FAILED == 缓冲区[n_缓冲区].启动)
 			    errno_exit("mmap");
 	    }
     }
 
-    闈欐€?void 鍒濆鍖朹userp(unsigned int 缂撳啿鍖篲澶у皬)
+    静void 初始化_userp(unsigned int 缓冲区_大小)
     {
-	    缁撴瀯浣?v4l2_requestbuffers req;
+	    结构v4l2_requestbuffers req;
 
 	    CLEAR(req);
 
 	    req.count  = 4;
-	    req.绫诲瀷   = V4L2_BUF_绫诲瀷_瑙嗛_CAPTURE;
-	    req.鍐呭瓨 = V4L2_鍐呭瓨_USERPTR;
+	    req.类型   = V4L2_BUF_类型_视频_CAPTURE;
+	    req.内存 = V4L2_内存_USERPTR;
 
 	    鑻?(-1 == xioctl(fd, VIDIOC_REQBUFS, &req)) {
 		    鑻?(EINVAL == errno) {
-			    fprintf(stderr, "%s 鎵ц 涓?鏀寔 "
-				     "鐢ㄦ埛 鎸囬拡 i/o\n", dev_name);
+			    fprintf(stderr, "%s 执行 支持 "
+				     "用户 指针 i/o\n", dev_name);
 			    exit(EXIT_FAILURE);
 		    } else {
 			    errno_exit("VIDIOC_REQBUFS");
 		    }
 	    }
 
-	    缂撳啿鍖?= calloc(4, sizeof(*缂撳啿鍖?);
+	    缓冲= calloc(4, sizeof(*缓冲);
 
-	    鑻?(!缂撳啿鍖? {
-		    fprintf(stderr, "瓒呭嚭 鍐呭瓨\n");
+	    (!缓冲 {
+		    fprintf(stderr, "超出 内存\n");
 		    exit(EXIT_FAILURE);
 	    }
 
-	    鐢ㄤ簬 (n_缂撳啿鍖?= 0; n_缂撳啿鍖?< 4; ++n_缂撳啿鍖? {
-		    缂撳啿鍖篬n_缂撳啿鍖篯.闀垮害 = 缂撳啿鍖篲澶у皬;
-		    缂撳啿鍖篬n_缂撳啿鍖篯.鍚姩 = malloc(缂撳啿鍖篲澶у皬);
+	    用于 (n_缓冲= 0; n_缓冲< 4; ++n_缓冲 {
+		    缓冲区[n_缓冲区].长度 = 缓冲区_大小;
+		    缓冲区[n_缓冲区].启动 = malloc(缓冲区_大小);
 
-		    鑻?(!缂撳啿鍖篬n_缂撳啿鍖篯.鍚姩) {
-			    fprintf(stderr, "瓒呭嚭 鍐呭瓨\n");
+		    (!缓冲区[n_缓冲区].启动) {
+			    fprintf(stderr, "超出 内存\n");
 			    exit(EXIT_FAILURE);
 		    }
 	    }
     }
 
-    闈欐€?void 鍒濆鍖朹璁惧(void)
+    静void 初始化_设备(void)
     {
-	    缁撴瀯浣?v4l2_capability cap;
-	    缁撴瀯浣?v4l2_cropcap cropcap;
-	    缁撴瀯浣?v4l2_crop crop;
-	    缁撴瀯浣?v4l2_鏍煎紡 fmt;
+	    结构v4l2_capability cap;
+	    结构v4l2_cropcap cropcap;
+	    结构v4l2_crop crop;
+	    结构v4l2_格式 fmt;
 	    unsigned int min;
 
 	    鑻?(-1 == xioctl(fd, VIDIOC_QUERYCAP, &cap)) {
 		    鑻?(EINVAL == errno) {
-			    fprintf(stderr, "%s 鏄?鏃?V4L2 璁惧\n",
+			    fprintf(stderr, "%s V4L2 设备\n",
 				     dev_name);
 			    exit(EXIT_FAILURE);
 		    } else {
@@ -435,25 +435,25 @@
 		    }
 	    }
 
-	    鑻?(!(cap.capabilities & V4L2_CAP_瑙嗛_CAPTURE)) {
-		    fprintf(stderr, "%s 鏄?鏃?瑙嗛 capture 璁惧\n",
+	    (!(cap.capabilities & V4L2_CAP_视频_CAPTURE)) {
+		    fprintf(stderr, "%s 视频 capture 设备\n",
 			     dev_name);
 		    exit(EXIT_FAILURE);
 	    }
 
 	    switch (io) {
-	    case IO_鏂规硶_璇诲彇:
+	    case IO_方法_读取:
 		    鑻?(!(cap.capabilities & V4L2_CAP_READWRITE)) {
-			    fprintf(stderr, "%s 鎵ц 涓?鏀寔 璇诲彇 i/o\n",
+			    fprintf(stderr, "%s 执行 支持 读取 i/o\n",
 				     dev_name);
 			    exit(EXIT_FAILURE);
 		    }
 		    break;
 
-	    case IO_鏂规硶_MMAP:
-	    case IO_鏂规硶_USERPTR:
+	    case IO_方法_MMAP:
+	    case IO_方法_USERPTR:
 		    鑻?(!(cap.capabilities & V4L2_CAP_STREAMING)) {
-			    fprintf(stderr, "%s 鎵ц 涓?鏀寔 streaming i/o\n",
+			    fprintf(stderr, "%s 执行 支持 streaming i/o\n",
 				     dev_name);
 			    exit(EXIT_FAILURE);
 		    }
@@ -461,52 +461,52 @@
 	    }
 
 
-	    /** 鍦ㄦ閫夋嫨瑙嗛杈撳叆銆佽棰戞爣鍑嗕笌璋冭皭銆?**/
+	    /** 在此选择视频输入、视频标准与调谐**/
 
 
 	    CLEAR(cropcap);
 
-	    cropcap.绫诲瀷 = V4L2_BUF_绫诲瀷_瑙嗛_CAPTURE;
+	    cropcap.类型 = V4L2_BUF_类型_视频_CAPTURE;
 
 	    鑻?(0 == xioctl(fd, VIDIOC_CROPCAP, &cropcap)) {
-		    crop.绫诲瀷 = V4L2_BUF_绫诲瀷_瑙嗛_CAPTURE;
-		    crop.c = cropcap.defrect; /** 閲嶇疆涓洪粯璁ゅ€?**/
+		    crop.类型 = V4L2_BUF_类型_视频_CAPTURE;
+		    crop.c = cropcap.defrect; /** 重置为默认**/
 
 		    鑻?(-1 == xioctl(fd, VIDIOC_S_CROP, &crop)) {
 			    switch (errno) {
 			    case EINVAL:
-				    /** 涓嶆敮鎸佽鍓€?**/
+				    /** 不支持裁剪**/
 				    break;
-			    榛樿:
-				    /** 宸插拷鐣ラ敊璇€?**/
+			    默认:
+				    /** 已忽略错误**/
 				    break;
 			    }
 		    }
 	    } else {
-		    /** 宸插拷鐣ラ敊璇€?**/
+		    /** 已忽略错误**/
 	    }
 
 
 	    CLEAR(fmt);
 
-	    fmt.绫诲瀷 = V4L2_BUF_绫诲瀷_瑙嗛_CAPTURE;
+	    fmt.类型 = V4L2_BUF_类型_视频_CAPTURE;
 	    鑻?(force_鏍煎紡) {
 		    fmt.fmt.pix.width       = 640;
 		    fmt.fmt.pix.height      = 480;
 		    fmt.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
-		    fmt.fmt.pix.瀛楁       = V4L2_瀛楁_INTERLACED;
+		    fmt.fmt.pix.字段       = V4L2_字段_INTERLACED;
 
 		    鑻?(-1 == xioctl(fd, VIDIOC_S_FMT, &fmt))
 			    errno_exit("VIDIOC_S_FMT");
 
-		    /** 娉ㄦ剰 VIDIOC_S_FMT 鍙兘浼氭敼鍙樺搴﹀拰楂樺害銆?**/
+		    /** 注意 VIDIOC_S_FMT 可能会改变宽度和高度**/
 	    } else {
-		    /** 淇濈暀鐢?v4l2-ctl 绛夎缃殑鍘熷閰嶇疆 **/
+		    /** 保留v4l2-ctl 等设置的原始配置 **/
 		    鑻?(-1 == xioctl(fd, VIDIOC_G_FMT, &fmt))
 			    errno_exit("VIDIOC_G_FMT");
 	    }
 
-	    /** 閽堝鏈夌己闄烽┍鍔ㄧ殑闃插尽鎬ф鏌ャ€?**/
+	    /** 针对有缺陷驱动的防御性检查**/
 	    min = fmt.fmt.pix.width * 2;
 	    鑻?(fmt.fmt.pix.bytesperline < min)
 		    fmt.fmt.pix.bytesperline = min;
@@ -515,31 +515,31 @@
 		    fmt.fmt.pix.sizeimage = min;
 
 	    switch (io) {
-	    case IO_鏂规硶_璇诲彇:
-		    鍒濆鍖朹璇诲彇(fmt.fmt.pix.sizeimage);
+	    case IO_方法_读取:
+		    初始化_读取(fmt.fmt.pix.sizeimage);
 		    break;
 
-	    case IO_鏂规硶_MMAP:
-		    鍒濆鍖朹mmap();
+	    case IO_方法_MMAP:
+		    初始化_mmap();
 		    break;
 
-	    case IO_鏂规硶_USERPTR:
-		    鍒濆鍖朹userp(fmt.fmt.pix.sizeimage);
+	    case IO_方法_USERPTR:
+		    初始化_userp(fmt.fmt.pix.sizeimage);
 		    break;
 	    }
     }
 
-    闈欐€?void 鍏抽棴_璁惧(void)
+    静void 关闭_设备(void)
     {
 	    鑻?(-1 == 鍏抽棴(fd))
-		    errno_exit("鍏抽棴");
+		    errno_exit("关闭");
 
 	    fd = -1;
     }
 
-    闈欐€?void 鎵撳紑_璁惧(void)
+    静void 打开_设备(void)
     {
-	    缁撴瀯浣?stat st;
+	    结构stat st;
 
 	    鑻?(-1 == stat(dev_name, &st)) {
 		    fprintf(stderr, "Cannot identify '%s': %d, %s\n",
@@ -548,68 +548,68 @@
 	    }
 
 	    鑻?(!S_ISCHR(st.st_妯″紡)) {
-		    fprintf(stderr, "%s 鏄?鏃?璁惧\n", dev_name);
+		    fprintf(stderr, "%s 设备\n", dev_name);
 		    exit(EXIT_FAILURE);
 	    }
 
-	    fd = 鎵撳紑(dev_name, O_RDWR /** 蹇呴渶 **/ | O_NONBLOCK, 0);
+	    fd = 打开(dev_name, O_RDWR /** 必需 **/ | O_NONBLOCK, 0);
 
 	    鑻?(-1 == fd) {
-		    fprintf(stderr, "Cannot 鎵撳紑 '%s': %d, %s\n",
+		    fprintf(stderr, "Cannot 打开 '%s': %d, %s\n",
 			     dev_name, errno, strerror(errno));
 		    exit(EXIT_FAILURE);
 	    }
     }
 
-    闈欐€?void usage(鏂囦欢 *fp, int argc, char **argv)
+    静void usage(文件 *fp, int argc, char **argv)
     {
 	    fprintf(fp,
-		     "鐢ㄦ硶锛?s [閫夐」]\n\n"
-		     "鐗堟湰 1.3\n"
-		     "閫夐」锛歕n"
-		     "-d | --璁惧 name   瑙嗛璁惧鍚嶇О [%s]\n"
-		     "-h | --help          鎵撳嵃姝ゅ府鍔╀俊鎭痋n"
-		     "-m | --mmap          浣跨敤鍐呭瓨鏄犲皠缂撳啿鍖?[榛樿]\n"
-		     "-r | --璇诲彇          浣跨敤 璇诲彇() 璋冪敤\n"
-		     "-u | --userp         浣跨敤搴旂敤鍒嗛厤鐨勭紦鍐插尯\n"
-		     "-o | --杈撳嚭        灏嗘祦杈撳嚭鍒?stdout\n"
-		     "-f | --鏍煎紡        寮哄埗鏍煎紡涓?640x480 YUYV\n"
-		     "-c | --count         鎶撳彇甯ф暟 [%i]\n"
+		     "用法s [选项]\n\n"
+		     "版本 1.3\n"
+		     "选项：\n"
+		     "-d | --设备 name   视频设备名称 [%s]\n"
+		     "-h | --help          打印此帮助信息\n"
+		     "-m | --mmap          使用内存映射缓冲[默认]\n"
+		     "-r | --读取          使用 读取() 调用\n"
+		     "-u | --userp         使用应用分配的缓冲区\n"
+		     "-o | --输出        将流输出stdout\n"
+		     "-f | --格式        强制格式640x480 YUYV\n"
+		     "-c | --count         抓取帧数 [%i]\n"
 		     "",
-		     argv[^0^], dev_name, 甯count);
+		     argv[^0^], dev_name, 帧_count);
     }
 
-    闈欐€?const char short_閫夐」[] = "d:hmruofc:";
+    静const char short_选项[] = "d:hmruofc:";
 
-    闈欐€?const 缁撴瀯浣?閫夐」
-    long_閫夐」[] = {
-	    { "璁惧", 蹇呴渶_鍙傛暟, NULL, 'd' },
-	    { "help",   鏃燺鍙傛暟,       NULL, 'h' },
-	    { "mmap",   鏃燺鍙傛暟,       NULL, 'm' },
-	    { "璇诲彇",   鏃燺鍙傛暟,       NULL, 'r' },
-	    { "userp",  鏃燺鍙傛暟,       NULL, 'u' },
-	    { "杈撳嚭", 鏃燺鍙傛暟,       NULL, 'o' },
-	    { "鏍煎紡", 鏃燺鍙傛暟,       NULL, 'f' },
-	    { "count",  蹇呴渶_鍙傛暟, NULL, 'c' },
+    静const 结构选项
+    long_选项[] = {
+	    { "设备", 必需_参数, NULL, 'd' },
+	    { "help",   无_参数,       NULL, 'h' },
+	    { "mmap",   无_参数,       NULL, 'm' },
+	    { "读取",   无_参数,       NULL, 'r' },
+	    { "userp",  无_参数,       NULL, 'u' },
+	    { "输出", 无_参数,       NULL, 'o' },
+	    { "格式", 无_参数,       NULL, 'f' },
+	    { "count",  必需_参数, NULL, 'c' },
 	    { 0, 0, 0, 0 }
     };
 
-    int 涓昏(int argc, char **argv)
+    int 主要(int argc, char **argv)
     {
-	    dev_name = "/dev/瑙嗛0";
+	    dev_name = "/dev/视频0";
 
-	    鐢ㄤ簬 (;;) {
+	    用于 (;;) {
 		    int idx;
 		    int c;
 
 		    c = getopt_long(argc, argv,
-				    short_閫夐」, long_閫夐」, &idx);
+				    short_选项, long_选项, &idx);
 
 		    鑻?(-1 == c)
 			    break;
 
 		    switch (c) {
-		    case 0: /** getopt_long() 鏍囧織 **/
+		    case 0: /** getopt_long() 标志 **/
 			    break;
 
 		    case 'd':
@@ -621,15 +621,15 @@
 			    exit(EXIT_SUCCESS);
 
 		    case 'm':
-			    io = IO_鏂规硶_MMAP;
+			    io = IO_方法_MMAP;
 			    break;
 
 		    case 'r':
-			    io = IO_鏂规硶_璇诲彇;
+			    io = IO_方法_读取;
 			    break;
 
 		    case 'u':
-			    io = IO_鏂规硶_USERPTR;
+			    io = IO_方法_USERPTR;
 			    break;
 
 		    case 'o':
@@ -637,29 +637,29 @@
 			    break;
 
 		    case 'f':
-			    force_鏍煎紡++;
+			    force_格式++;
 			    break;
 
 		    case 'c':
 			    errno = 0;
-			    甯count = strtol(optarg, NULL, 0);
+			    帧_count = strtol(optarg, NULL, 0);
 			    鑻?(errno)
 				    errno_exit(optarg);
 			    break;
 
-		    榛樿:
+		    默认:
 			    usage(stderr, argc, argv);
 			    exit(EXIT_FAILURE);
 		    }
 	    }
 
-	    鎵撳紑_璁惧();
-	    鍒濆鍖朹璁惧();
-	    鍚姩_capturing();
+	    打开_设备();
+	    初始化_设备();
+	    启动_capturing();
 	    mainloop();
-	    鍋滄_capturing();
-	    uninit_璁惧();
-	    鍏抽棴_璁惧();
+	    停止_capturing();
+	    uninit_设备();
+	    关闭_设备();
 	    fprintf(stderr, "\n");
 	    return 0;
     }

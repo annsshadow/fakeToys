@@ -1,62 +1,62 @@
 ﻿
-## 绠€浠嬶紙Introduction锛?
+## 简介（Introduction
 
 
-ATA over Ethernet锛圓oE锛屼互澶綉涔嬩笂鐨?ATA锛夋槸涓€绉嶇綉缁滃崗璁紝鎻愪緵瀵?LAN 涓婂潡瀛樺偍鐨勭畝鍗曡闂€?
+ATA over Ethernet（AoE，以太网之上ATA）是一种网络协议，提供LAN 上块存储的简单访问
 
   http://support.coraid.com/documents/AoEr11.txt
 
-閫傜敤浜?2.6 鍜?3.x 鍐呮牳鐨?EtherDrive(R) HOWTO 浣嶄簬鈥︹€?
+适用2.6 3.x 内核EtherDrive(R) HOWTO 位于…
 
   http://support.coraid.com/support/linux/EtherDrive-2.6-HOWTO.html
 
-鍏朵腑鏈夎澶氭妧宸т笌鎻愮ず锛佽鐗瑰埆鍙傝鍏充簬铏氭嫙鍐呭瓨鐨勬帹鑽愯皟浼橈細
+其中有许多技巧与提示！请特别参见关于虚拟内存的推荐调优：
 
   http://support.coraid.com/support/linux/EtherDrive-2.6-HOWTO-5.html#ss5.19
 
-aoetools 鏄笓闂ㄩ厤鍚堟椹卞姩宸ヤ綔鐨勭敤鎴锋€佺▼搴忥紝鍙湪 sourceforge 涓婅幏鍙栥€?
+aoetools 是专门配合此驱动工作的用户态程序，可在 sourceforge 上获取
 
   http://aoetools.sourceforge.net/
 
-鏈?Documentation/admin-guide/aoe 鐩綍涓殑鑴氭湰鏃ㄥ湪璇存槑璇ラ┍鍔ㄧ殑浣跨敤鏂规硶锛涘鏋滀綘瀹夎浜?aoetools锛屽垯骞朵笉闇€瑕佸畠浠€?
+Documentation/admin-guide/aoe 目录中的脚本旨在说明该驱动的使用方法；如果你安装aoetools，则并不需要它们
 
 
-## 鍒涘缓璁惧鑺傜偣锛圕reating Device Nodes锛?
+## 创建设备节点（Creating Device Nodes
 
 
-  浣跨敤 udev 鐨勭敤鎴峰簲褰撲細鍙戠幇鍧楄澶囪妭鐐逛細琚嚜鍔ㄥ垱寤猴紱浣嗚鍒涘缓鎵€鏈夊繀瑕佺殑璁惧鑺傜偣锛岃浣跨敤鏈洰褰曚腑 udev.txt 鎻愪緵鐨?udev 閰嶇疆瑙勫垯銆?
+  使用 udev 的用户应当会发现块设备节点会被自动创建；但要创建所有必要的设备节点，请使用本目录中 udev.txt 提供udev 配置规则
 
-  鏈変竴涓?udev-install.sh 鑴氭湰锛屾紨绀轰簡濡備綍鍦ㄤ綘鐨勭郴缁熶笂瀹夎杩欎簺瑙勫垯銆?
+  有一udev-install.sh 脚本，演示了如何在你的系统上安装这些规则
 
-  杩樻湁涓€涓?autoload锛堣嚜鍔ㄥ姞杞斤級鑴氭湰锛屾紨绀轰簡濡備綍缂栬緫 /etc/modprobe.d/aoe.conf锛屼互纭繚 aoe 妯″潡鍦ㄩ渶瑕佹椂浼氳鍔犺浇銆備笉杩囷紝棰勫姞杞?aoe 妯″潡浼樹簬鑷姩鍔犺浇锛屽洜涓?AoE 鍙戠幇闇€瑕佸嚑绉掗挓鏃堕棿銆傚綋棣栨杩愯 a 鍛戒护鏃?AoE 璁惧灏氫笉瀛樺湪銆佽€屼竴绉掗挓鍚庡畠鍙堝嚭鐜版椂锛屼細浠や汉鍥版儜銆?
+  还有一autoload（自动加载）脚本，演示了如何编辑 /etc/modprobe.d/aoe.conf，以确保 aoe 模块在需要时会被加载。不过，预加aoe 模块优于自动加载，因AoE 发现需要几秒钟时间。当首次运行 a 命令AoE 设备尚不存在、而一秒钟后它又出现时，会令人困惑
 
-## 浣跨敤璁惧鑺傜偣锛圲sing Device Nodes锛?
+## 使用设备节点（Using Device Nodes
 
 
-  "cat /dev/etherd/err" 浼氶樆濉烇紝绛夊緟閿欒璇婃柇杈撳嚭锛屼緥濡傞噸浼犵殑鏁版嵁鍖呫€?
+  "cat /dev/etherd/err" 会阻塞，等待错误诊断输出，例如重传的数据包
 
-  "echo eth2 eth4 > /dev/etherd/interfaces" 鍛婅瘔 aoe 椹卞姩灏?ATA over Ethernet 娴侀噺闄愬埗鍒?eth2 鍜?eth4銆傚嚭浜庡畨鍏ㄨ€冭檻锛屽簲蹇界暐鏉ヨ嚜涓嶅彲淇＄綉缁滅殑 AoE 娴侀噺銆傚彟璇峰弬瑙佷笅鏂囨弿杩扮殑 aoe_iflist 椹卞姩閫夐」銆?
+  "echo eth2 eth4 > /dev/etherd/interfaces" 告诉 aoe 驱动ATA over Ethernet 流量限制eth2 eth4。出于安全考虑，应忽略来自不可信网络的 AoE 流量。另请参见下文描述的 aoe_iflist 驱动选项
 
-  "echo > /dev/etherd/discover" 鍛婅瘔椹卞姩鍘诲彂鐜版湁鍝簺 AoE 璁惧鍙敤銆?
+  "echo > /dev/etherd/discover" 告诉驱动去发现有哪些 AoE 设备可用
 
-  灏嗘潵杩欎簺瀛楃璁惧鍙兘浼氭秷澶憋紝骞惰 sysfs 涓殑瀵瑰簲椤瑰彇浠ｃ€備娇鐢?aoetools 涓殑鍛戒护鍙互灏嗙敤鎴蜂笌杩欎簺瀹炵幇缁嗚妭闅旂寮€鏉ャ€?
+  将来这些字符设备可能会消失，并被 sysfs 中的对应项取代。使aoetools 中的命令可以将用户与这些实现细节隔离开来
 
 ```
 
 	e{shelf}.{slot}
 	e{shelf}.{slot}p{part}
 
-  鈥︹€﹀洜姝?"e0.2" 琛ㄧず绗竴涓満鏋讹紙shelf 鍦板潃涓?0锛変腑浠庡乏鏁扮涓変釜鍒€鐗囷紙slot 2锛夈€傝繖灏辨槸鏁村潡纾佺洏銆傝纾佺洏鐨勭涓€涓垎鍖哄皢鏄?"e0.2p1"銆?
+  ……因"e0.2" 表示第一个机架（shelf 地址0）中从左数第三个刀片（slot 2）。这就是整块磁盘。该磁盘的第一个分区将"e0.2p1"
 
 ```
-## 浣跨敤 sysfs锛圲sing sysfs锛?
+## 使用 sysfs（Using sysfs
 
 
-  /sys/block 涓殑姣忎釜 aoe 鍧楄澶囬兘鍏锋湁 state銆乵ac 鍜?netif 绛夐澶栧睘鎬с€傚綋璁惧宸插噯澶囧ソ杩涜 I/O 鏃讹紝state 灞炴€т负 "up"锛涜嫢宸茶妫€娴嬪埌浣嗕笉鍙敤锛屽垯涓?"down"銆?down,closewait" 鐘舵€佽〃绀鸿澶囦粛澶勪簬鎵撳紑鐘舵€侊紝鍦ㄥ叧闂箣鍓嶆棤娉曞啀娆′笂绾裤€?
+  /sys/block 中的每个 aoe 块设备都具有 state、mac netif 等额外属性。当设备已准备好进行 I/O 时，state 属性为 "up"；若已被检测到但不可用，则"down"down,closewait" 状态表示设备仍处于打开状态，在关闭之前无法再次上线
 
-  mac 灞炴€ф槸杩滅 AoE 璁惧鐨勪互澶綉鍦板潃銆俷etif 灞炴€ф槸鏈湴涓绘満涓婄敤浜庝笌杩滅 AoE 璁惧閫氫俊鐨勭綉缁滄帴鍙ｃ€?
+  mac 属性是远端 AoE 设备的以太网地址。netif 属性是本地主机上用于与远端 AoE 设备通信的网络接口
 
-  鏈洰褰曚腑鏈変竴涓剼鏈彲浠ユ柟渚垮湴鏍煎紡鍖栬繖浜涗俊鎭€備娇鐢?aoetools 鐨勭敤鎴峰簲浣跨敤 aoe-stat
+  本目录中有一个脚本可以方便地格式化这些信息。使aoetools 的用户应使用 aoe-stat
 ```
 
     root@makki root# sh Documentation/admin-guide/aoe/status.sh
@@ -81,22 +81,22 @@ aoetools 鏄笓闂ㄩ厤鍚堟椹卞姩宸ヤ綔鐨勭敤鎴锋€佺▼�
         e4.8            eth1              up
         e4.9            eth1              up
 
-  浣跨敤 /sys/module/aoe/parameters/aoe_iflist锛堟垨鑰呮洿濂藉湴锛屼娇鐢ㄤ笅鏂囪璁虹殑椹卞姩閫夐」锛夎€屼笉鏄?/dev/etherd/interfaces锛屽皢 AoE 娴侀噺闄愬埗鍒扮粰瀹氱┖鐧界鍒嗛殧鍒楄〃涓殑缃戠粶鎺ュ彛銆備笌鏃х殑瀛楃璁惧涓嶅悓锛宻ysfs 椤规棦鍙涔熷彲鍐欍€?
+  使用 /sys/module/aoe/parameters/aoe_iflist（或者更好地，使用下文讨论的驱动选项）而不/dev/etherd/interfaces，将 AoE 流量限制到给定空白符分隔列表中的网络接口。与旧的字符设备不同，sysfs 项既可读也可写
 
-  璁剧疆瀹屽厑璁哥殑鎺ュ彛鍒楄〃鍚庯紝瑙﹀彂鍙戠幇鎿嶄綔鏄湁甯姪鐨勩€俛oetools 杞欢鍖呬负姝ゆ彁渚涗簡 aoe-discover 鑴氭湰銆備綘涔熷彲浠ョ洿鎺ヤ娇鐢ㄤ笂鏂囨弿杩扮殑 /dev/etherd/discover 鐗规畩鏂囦欢銆?
+  设置完允许的接口列表后，触发发现操作是有帮助的。aoetools 软件包为此提供了 aoe-discover 脚本。你也可以直接使用上文描述的 /dev/etherd/discover 特殊文件
 
 ```
-## 椹卞姩閫夐」锛圖river Options锛?
+## 驱动选项（Driver Options
 
 
-  鍐呯疆 aoe 椹卞姩鏈変竴涓惎鍔ㄩ€夐」浠ュ強瀵瑰簲鐨勬ā鍧楀弬鏁?aoe_iflist銆傚鏋滄病鏈夎閫夐」锛屾墍鏈夌綉缁滄帴鍙ｉ兘鍙兘琚敤浜?ATA over Ethernet銆備笅闈㈡槸涓€涓ず渚?
+  内置 aoe 驱动有一个启动选项以及对应的模块参aoe_iflist。如果没有该选项，所有网络接口都可能被用ATA over Ethernet。下面是一个示
 ```
 
     modprobe aoe_iflist="eth1 eth3"
 
 ```
-  aoe_deadsecs 妯″潡鍙傛暟鍐冲畾椹卞姩绛夊緟 AoE 璁惧瀵?AoE 鍛戒护浣滃嚭鍝嶅簲鐨勬渶澶х鏁般€傜粡杩?aoe_deadsecs 绉掑悗锛岃 AoE 璁惧灏嗚鏍囪涓?"down"銆傚嚭浜庢祴璇曠洰鐨勬敮鎸佸彇鍊间负闆讹紝浼氫娇 aoe 椹卞姩姘歌繙涓嶆柇閲嶈瘯 AoE 鍛戒护銆?
+  aoe_deadsecs 模块参数决定驱动等待 AoE 设备AoE 命令作出响应的最大秒数。经aoe_deadsecs 秒后，该 AoE 设备将被标记"down"。出于测试目的支持取值为零，会使 aoe 驱动永远不断重试 AoE 命令
 
-  aoe_maxout 妯″潡鍙傛暟榛樿鍊间负 128銆傝繖鏄竴娆℃€у彂寰€鏌愪釜 AoE 鐩爣鐨勬渶澶ф湭搴旂瓟鏁版嵁鍖呮暟閲忋€?
+  aoe_maxout 模块参数默认值为 128。这是一次性发往某个 AoE 目标的最大未应答数据包数量
 
-  aoe_dyndevs 妯″潡鍙傛暟榛樿鍊间负 1锛岃〃绀洪┍鍔ㄤ細鏍规嵁鍙戠幇椤哄簭涓哄彂鐜扮殑 AoE 鐩爣鍒嗛厤鍧楄澶囨璁惧鍙枫€傚湪浣跨敤鍔ㄦ€佹璁惧鍙风殑鎯呭喌涓嬶紝鍙互鏀寔鏇村ぇ鑼冨洿鐨?AoE 鏈烘灦涓庢Ы浣嶅湴鍧€銆備娇鐢?udev 鐨勭敤鎴锋案杩滄棤闇€鍏冲績娆¤澶囧彿銆備娇鐢?aoe_dyndevs=0 鍒欏厑璁镐娇鐢?aoetools 涓殑 aoe-mkshelf 鑴氭湰銆侀€氳繃闈欐€佹璁惧鍙锋柟妗堥鍏堝垱寤鸿澶囪妭鐐广€?
+  aoe_dyndevs 模块参数默认值为 1，表示驱动会根据发现顺序为发现的 AoE 目标分配块设备次设备号。在使用动态次设备号的情况下，可以支持更大范围AoE 机架与槽位地址。使udev 的用户永远无需关心次设备号。使aoe_dyndevs=0 则允许使aoetools 中的 aoe-mkshelf 脚本、通过静态次设备号方案预先创建设备节点

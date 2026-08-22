@@ -1,27 +1,27 @@
 ﻿
 
 
-## NPCM 瑙嗛椹卞姩
+## NPCM 视频驱动
 
 
-璇ラ┍鍔ㄧ敤浜庢帶鍒?Nuvoton NPCM SoC 涓婂瓨鍦ㄧ殑瑙嗛鎹曡幏/宸垎锛圴CD锛夊紩鎿庝笌缂栫爜鍘嬬缉锛圗CE锛夊紩鎿庛€俈CD 鍙互浠庢暟瀛楄棰戣緭鍏ユ崟鑾蜂竴甯э紝骞跺湪鍐呭瓨涓瘮杈冧袱甯э紱ECE 鍙互灏嗗抚鏁版嵁鍘嬬缉涓?HEXTILE 鏍煎紡銆?
-### 椹卞姩涓撶敤鎺у埗
+该驱动用于控Nuvoton NPCM SoC 上存在的视频捕获/差分（VCD）引擎与编码压缩（ECE）引擎。VCD 可以从数字视频输入捕获一帧，并在内存中比较两帧；ECE 可以将帧数据压缩HEXTILE 格式
+### 驱动专用控制
 
 
 #### V4L2_CID_NPCM_CAPTURE_MODE
 
 
-VCD 寮曟搸鏀寔涓ょ妯″紡锛?
-- COMPLETE 妯″紡锛?
-  灏嗕笅涓€瀹屾暣甯ф崟鑾峰埌鍐呭瓨涓€?
-- DIFF 妯″紡锛?
-  灏嗚緭鍏ュ抚涓庡唴瀛樹腑瀛樺偍鐨勫抚杩涜姣旇緝锛屽苟鏇存柊鍐呭瓨涓殑宸垎甯с€?
-搴旂敤绋嬪簭鍙互浣跨敤 `V4L2_CID_NPCM_CAPTURE_MODE` 鎺у埗锛岄€氳繃涓嶅悓鐨勬帶鍒跺€硷紙enum v4l2_npcm_capture_mode锛夎缃?VCD 妯″紡锛?
-- `V4L2_NPCM_CAPTURE_MODE_COMPLETE`锛氬皢 VCD 璁剧疆涓?COMPLETE 妯″紡銆?- `V4L2_NPCM_CAPTURE_MODE_DIFF`锛氬皢 VCD 璁剧疆涓?DIFF 妯″紡銆?
+VCD 引擎支持两种模式
+- COMPLETE 模式
+  将下一完整帧捕获到内存中
+- DIFF 模式
+  将输入帧与内存中存储的帧进行比较，并更新内存中的差分帧
+应用程序可以使用 `V4L2_CID_NPCM_CAPTURE_MODE` 控制，通过不同的控制值（enum v4l2_npcm_capture_mode）设VCD 模式
+- `V4L2_NPCM_CAPTURE_MODE_COMPLETE`：将 VCD 设置COMPLETE 模式- `V4L2_NPCM_CAPTURE_MODE_DIFF`：将 VCD 设置DIFF 模式
 #### V4L2_CID_NPCM_RECT_COUNT
 
 
-濡傛灉浣跨敤 V4L2_PIX_FMT_HEXTILE 鏍煎紡锛孷CD 灏嗘崟鑾峰抚鏁版嵁锛岀劧鍚?ECE 灏嗘暟鎹帇缂╀负 HEXTILE 鐭╁舰锛屽苟鎸夌収杩滅▼甯х紦鍐插崗璁紙Remote Framebuffer Protocol锛変腑瀹氫箟鐨勫竷灞€瀛樺偍鍒?V4L2 瑙嗛缂撳啿鍖轰腑锛?```
+如果使用 V4L2_PIX_FMT_HEXTILE 格式，VCD 将捕获帧数据，然ECE 将数据压缩为 HEXTILE 矩形，并按照远程帧缓冲协议（Remote Framebuffer Protocol）中定义的布局存储V4L2 视频缓冲区中```
 
            (RFC 6143, https://www.rfc-editor.org/rfc/rfc6143.html#section-7.6.1)
 
@@ -38,8 +38,8 @@ VCD 寮曟搸鏀寔涓ょ妯″紡锛?
            +-------------------------------------------------+
 
 ```
-搴旂敤绋嬪簭鍙互閫氳繃 VIDIOC_DQBUF 鑾峰彇瑙嗛缂撳啿鍖猴紝鐒跺悗璋冪敤 `V4L2_CID_NPCM_RECT_COUNT` 鎺у埗鏉ヨ幏鍙栬缂撳啿鍖轰腑 HEXTILE 鐭╁舰鐨勬暟閲忋€?
-### 鍙傝€?
+应用程序可以通过 VIDIOC_DQBUF 获取视频缓冲区，然后调用 `V4L2_CID_NPCM_RECT_COUNT` 控制来获取该缓冲区中 HEXTILE 矩形的数量
+### 参
 
 include/uapi/linux/npcm-video.h
 

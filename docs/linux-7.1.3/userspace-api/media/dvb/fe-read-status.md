@@ -5,7 +5,7 @@
 ## Name
 
 
-FE_READ_STATUS - 杩斿洖鍓嶇锛坒ront-end锛夌殑鐘舵€佷俊鎭€傝璋冪敤浠呴渶瑕佸璁惧鍏锋湁鍙璁块棶鏉冮檺銆?
+FE_READ_STATUS - 返回前端（front-end）的状态信息。该调用仅需要对设备具有只读访问权限
 ## Synopsis
 
 
@@ -15,22 +15,22 @@ FE_READ_STATUS - 杩斿洖鍓嶇锛坒ront-end锛夌殑鐘舵€佷俊鎭�
 
 
 `fd`
-    `open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `status`
-    鎸囧悜涓€涓綅鎺╃爜鏁存暟鐨勬寚閽堬紝鐢?enum `fe_status` 涓畾涔夌殑鍊煎～鍏呫€?
+    指向一个位掩码整数的指针，enum `fe_status` 中定义的值填充
 ## Description
 
 
-鎵€鏈夋暟瀛楃數瑙嗭紙Digital TV锛夊墠绔澶囬兘鏀寔 `FE_READ_STATUS` ioctl銆傚畠鐢ㄤ簬鍦ㄨ皟璋愶紙tune锛変箣鍚庢鏌ュ墠绔殑閿佸畾锛坙ocking锛夌姸鎬併€傝 ioctl 鎺ユ敹涓€涓寚鍚戞暣鏁扮殑鎸囬拡锛岀姸鎬佷俊鎭皢琚啓鍏ュ叾涓€?
+所有数字电视（Digital TV）前端设备都支持 `FE_READ_STATUS` ioctl。它用于在调谐（tune）之后检查前端的锁定（locking）状态。该 ioctl 接收一个指向整数的指针，状态信息将被写入其中
 
-   status 鐨勫疄闄呭ぇ灏忎负 sizeof(enum fe_status)锛屽叾鍊奸殢浣撶郴缁撴瀯鑰屼笉鍚屻€傝繖涓€鐐归渶瑕佸湪灏嗘潵淇銆?
+   status 的实际大小为 sizeof(enum fe_status)，其值随体系结构而不同。这一点需要在将来修复
 ## int fe_status
 
 
-fe_status 鍙傛暟鐢ㄤ簬鎸囩ず鍓嶇纭欢鐨勫綋鍓嶇姸鎬佸拰/鎴栫姸鎬佸彉鍖栥€傚畠鏄娇鐢?enum `fe_status` 鐨勫€兼寜浣嶆帺鐮侊紙bitmask锛夌粍鍚堣€屾垚鐨勩€?
+fe_status 参数用于指示前端硬件的当前状态和/或状态变化。它是使enum `fe_status` 的值按位掩码（bitmask）组合而成的
 ## Return Value
 
 
-鎴愬姛鏃惰繑鍥?0銆?
-鍑洪敊鏃惰繑鍥?-1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆?
-閫氱敤閿欒鐮佸湪 Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+成功时返0
+出错时返-1，并相应地设`errno` 变量
+通用错误码在 Generic Error Codes <gen-errors> 章节中描述

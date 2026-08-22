@@ -2,27 +2,27 @@
 ## BPF_MAP_TYPE_BLOOM_FILTER
 
 
-   - `BPF_MAP_TYPE_BLOOM_FILTER` 鍦?5.16 鐗堝唴鏍镐腑寮曞叆
+   - `BPF_MAP_TYPE_BLOOM_FILTER` 5.16 版内核中引入
 
-`BPF_MAP_TYPE_BLOOM_FILTER` 鎻愪緵浜嗕竴绉?BPF 甯冮殕杩囨护鍣紙bloom filter锛夋槧灏勩€傚竷闅嗚繃婊ゅ櫒
-鏄竴绉嶇┖闂撮珮鏁堢殑姒傜巼鎬ф暟鎹粨鏋勶紝鐢ㄤ簬蹇€熷垽鏂煇涓厓绱犳槸鍚﹀瓨鍦ㄤ簬涓€涓泦鍚堜腑銆傚湪甯冮殕杩囨护鍣ㄤ腑锛?鍙兘鍑虹幇鍋囬槼鎬э紙false positive锛夛紝浣嗕笉浼氬嚭鐜板亣闃存€э紙false negative锛夈€?
-甯冮殕杩囨护鍣ㄦ槧灏勬病鏈夐敭锛坘ey锛夛紝鍙湁鍊硷紙value锛夈€傚垱寤哄竷闅嗚繃婊ゅ櫒鏄犲皠鏃讹紝蹇呴』浠?`key_size` 涓?0
-鏉ュ垱寤恒€傚竷闅嗚繃婊ゅ櫒鏄犲皠鏀寔涓ょ鎿嶄綔锛?
-- push锛氬悜鏄犲皠涓坊鍔犱竴涓厓绱?- peek锛氬垽鏂煇涓厓绱犳槸鍚﹀瓨鍦ㄤ簬鏄犲皠涓?
-BPF 绋嬪簭蹇呴』浣跨敤 `bpf_map_push_elem` 鏉ュ悜甯冮殕杩囨护鍣ㄦ槧灏勬坊鍔犲厓绱狅紝浣跨敤 `bpf_map_peek_elem`
-鏉ユ煡璇㈡槧灏勩€傝繖浜涙搷浣滈€氳繃宸叉湁鐨?`bpf` 绯荤粺璋冪敤浠ヤ笅鍒楁柟寮忔毚闇茬粰鐢ㄦ埛绌洪棿搴旂敤绋嬪簭锛?
+`BPF_MAP_TYPE_BLOOM_FILTER` 提供了一BPF 布隆过滤器（bloom filter）映射。布隆过滤器
+是一种空间高效的概率性数据结构，用于快速判断某个元素是否存在于一个集合中。在布隆过滤器中可能出现假阳性（false positive），但不会出现假阴性（false negative）
+布隆过滤器映射没有键（key），只有值（value）。创建布隆过滤器映射时，必须`key_size` 0
+来创建。布隆过滤器映射支持两种操作
+- push：向映射中添加一个元- peek：判断某个元素是否存在于映射
+BPF 程序必须使用 `bpf_map_push_elem` 来向布隆过滤器映射添加元素，使用 `bpf_map_peek_elem`
+来查询映射。这些操作通过已有`bpf` 系统调用以下列方式暴露给用户空间应用程序
 - `BPF_MAP_UPDATE_ELEM` -> push
 - `BPF_MAP_LOOKUP_ELEM` -> peek
 
-鍒涘缓鏄犲皠鏃舵寚瀹氱殑 `max_entries` 澶у皬鐢ㄤ簬涓哄竷闅嗚繃婊ゅ櫒浼扮畻涓€涓悎鐞嗙殑浣嶅浘澶у皬锛岄櫎姝や箣澶栧苟涓嶈
-涓ユ牸寮哄埗銆傚鏋滅敤鎴峰笇鏈涘悜甯冮殕杩囨护鍣ㄤ腑鎻掑叆姣?`max_entries` 鏇村鐨勬潯鐩紝鍙兘浼氬鑷存洿楂樼殑鍋囬槼鎬х巼銆?
-甯冮殕杩囨护鍣ㄤ娇鐢ㄧ殑鍝堝笇鏁伴噺鍙湪鍒涘缓鏄犲皠鏃堕€氳繃 `union bpf_attr` 涓?`map_extra` 鐨勪綆 4 浣嶆潵閰嶇疆銆?濡傛灉鏈寚瀹氭暟閲忥紝榛樿浣跨敤 5 涓搱甯屽嚱鏁般€備竴鑸€岃█锛屼娇鐢ㄦ洿澶氱殑鍝堝笇浼氶檷浣庡亣闃虫€х巼锛屼絾涔熶細闄嶄綆
-鏌ユ壘閫熷害銆?
-鏃犳硶浠庡竷闅嗚繃婊ゅ櫒鏄犲皠涓垹闄ゅ厓绱犮€傚竷闅嗚繃婊ゅ櫒鏄犲皠鍙敤浣滃唴閮ㄦ槧灏勶紙inner map锛夈€傜敤鎴疯礋璐ｅ悓姝?骞跺彂鐨勬洿鏂板拰鏌ユ壘锛屼互纭繚涓嶄細鍙戠敓鍋囬槾鎬ф煡鎵俱€?
-## 鐢ㄦ硶
+创建映射时指定的 `max_entries` 大小用于为布隆过滤器估算一个合理的位图大小，除此之外并不被
+严格强制。如果用户希望向布隆过滤器中插入`max_entries` 更多的条目，可能会导致更高的假阳性率
+布隆过滤器使用的哈希数量可在创建映射时通过 `union bpf_attr` `map_extra` 的低 4 位来配置如果未指定数量，默认使用 5 个哈希函数。一般而言，使用更多的哈希会降低假阳性率，但也会降低
+查找速度
+无法从布隆过滤器映射中删除元素。布隆过滤器映射可用作内部映射（inner map）。用户负责同并发的更新和查找，以确保不会发生假阴性查找
+## 用法
 
 
-### 鍐呮牳 BPF
+### 内核 BPF
 
 
 #### bpf_map_push_elem()
@@ -30,14 +30,14 @@ BPF 绋嬪簭蹇呴』浣跨敤 `bpf_map_push_elem` 鏉ュ悜甯冮殕杩囨护�
 
    long bpf_map_push_elem(struct bpf_map **map, const void **value, u64 flags)
 
-鍙互浣跨敤 `bpf_map_push_elem()` 杈呭姪鍑芥暟鍚戝竷闅嗚繃婊ゅ櫒娣诲姞涓€涓?`value`銆傚悜甯冮殕杩囨护鍣ㄦ坊鍔犳潯鐩椂锛?`flags` 鍙傛暟蹇呴』璁句负 `BPF_ANY`銆傝杈呭姪鍑芥暟鍦ㄦ垚鍔熸椂杩斿洖 `0`锛屽け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
+可以使用 `bpf_map_push_elem()` 辅助函数向布隆过滤器添加一`value`。向布隆过滤器添加条目时`flags` 参数必须设为 `BPF_ANY`。该辅助函数在成功时返回 `0`，失败时返回负的错误码
 #### bpf_map_peek_elem()
 
 
    long bpf_map_peek_elem(struct bpf_map **map, void **value)
 
-`bpf_map_peek_elem()` 杈呭姪鍑芥暟鐢ㄤ簬鍒ゆ柇 `value` 鏄惁瀛樺湪浜庡竷闅嗚繃婊ゅ櫒鏄犲皠涓€傚鏋?`value` 寰堝彲鑳?瀛樺湪浜庢槧灏勪腑锛岃杈呭姪鍑芥暟杩斿洖 `0`锛涘鏋?`value` 涓€瀹氫笉瀛樺湪浜庢槧灏勪腑锛屽垯杩斿洖 `-ENOENT`銆?
-### 鐢ㄦ埛绌洪棿
+`bpf_map_peek_elem()` 辅助函数用于判断 `value` 是否存在于布隆过滤器映射中。如`value` 很可存在于映射中，该辅助函数返回 `0`；如`value` 一定不存在于映射中，则返回 `-ENOENT`
+### 用户空间
 
 
 #### bpf_map_update_elem()
@@ -45,21 +45,21 @@ BPF 绋嬪簭蹇呴』浣跨敤 `bpf_map_push_elem` 鏉ュ悜甯冮殕杩囨护�
 
    int bpf_map_update_elem (int fd, const void **key, const void **value, __u64 flags)
 
-鐢ㄦ埛绌洪棿绋嬪簭鍙互浣跨敤 libbpf 鐨?`bpf_map_update_elem` 鍑芥暟鍚戝竷闅嗚繃婊ゅ櫒娣诲姞涓€涓?`value`銆俙key`
-鍙傛暟蹇呴』璁句负 `NULL`锛宍flags` 蹇呴』璁句负 `BPF_ANY`銆傛垚鍔熸椂杩斿洖 `0`锛屽け璐ユ椂杩斿洖璐熺殑閿欒鐮併€?
+用户空间程序可以使用 libbpf `bpf_map_update_elem` 函数向布隆过滤器添加一`value`。`key`
+参数必须设为 `NULL`，`flags` 必须设为 `BPF_ANY`。成功时返回 `0`，失败时返回负的错误码
 #### bpf_map_lookup_elem()
 
 
    int bpf_map_lookup_elem (int fd, const void **key, void **value)
 
-鐢ㄦ埛绌洪棿绋嬪簭鍙互浣跨敤 libbpf 鐨?`bpf_map_lookup_elem` 鍑芥暟鍒ゆ柇 `value` 鏄惁瀛樺湪浜庡竷闅嗚繃婊ゅ櫒涓€?`key` 鍙傛暟蹇呴』璁句负 `NULL`銆傚鏋?`value` 寰堝彲鑳藉瓨鍦ㄤ簬鏄犲皠涓繑鍥?`0`锛屽鏋?`value` 涓€瀹氫笉瀛樺湪浜?鏄犲皠涓垯杩斿洖 `-ENOENT`銆?
-## 绀轰緥
+用户空间程序可以使用 libbpf `bpf_map_lookup_elem` 函数判断 `value` 是否存在于布隆过滤器中`key` 参数必须设为 `NULL`。如`value` 很可能存在于映射中返`0`，如`value` 一定不存在映射中则返回 `-ENOENT`
+## 示例
 
 
-### 鍐呮牳 BPF
+### 内核 BPF
 
 
-姝ょ墖娈靛睍绀轰簡濡備綍鍦?BPF 绋嬪簭涓０鏄庝竴涓竷闅嗚繃婊ゅ櫒锛?
+此片段展示了如何BPF 程序中声明一个布隆过滤器
 
     struct {
             __uint(type, BPF_MAP_TYPE_BLOOM_FILTER);
@@ -68,38 +68,38 @@ BPF 绋嬪簭蹇呴』浣跨敤 `bpf_map_push_elem` 鏉ュ悜甯冮殕杩囨护�
             __uint(map_extra, 3);
     } bloom_filter SEC(".maps");
 
-姝ょ墖娈靛睍绀轰簡濡備綍鍦?BPF 绋嬪簭涓垽鏂竷闅嗚繃婊ゅ櫒涓煇涓€兼槸鍚﹀瓨鍦細
+此片段展示了如何BPF 程序中判断布隆过滤器中某个值是否存在：
 
 
     void *lookup(__u32 key)
     {
             if (bpf_map_peek_elem(&bloom_filter, &key) == 0) {
-                    /* 楠岃瘉涓嶆槸鍋囬槼鎬э紝骞朵娇鐢ㄦ绾ф煡鎵撅紙渚嬪鍦ㄥ搱甯岃〃涓級
-                     - 鑾峰彇鍏宠仈鐨勫€?                     */
+                    /* 验证不是假阳性，并使用次级查找（例如在哈希表中）
+                     - 获取关联的                     */
                     return bpf_map_lookup_elem(&hash_table, &key);
             }
             return 0;
     }
 
-### 鐢ㄦ埛绌洪棿
+### 用户空间
 
 
-姝ょ墖娈靛睍绀轰簡濡備綍浣跨敤 libbpf 浠庣敤鎴风┖闂村垱寤轰竴涓竷闅嗚繃婊ゅ櫒鏄犲皠锛?
+此片段展示了如何使用 libbpf 从用户空间创建一个布隆过滤器映射
 
     int create_bloom()
     {
             LIBBPF_OPTS(bpf_map_create_opts, opts,
-                        .map_extra = 3);             /** 鍝堝笇鏁伴噺 **/
+                        .map_extra = 3);             /** 哈希数量 **/
 
             return bpf_map_create(BPF_MAP_TYPE_BLOOM_FILTER,
-                                  "ipv6_bloom",      /** 鍚嶇О **/
-                                  0,                 /** 閿ぇ灏忥紝蹇呴』涓?0 **/
+                                  "ipv6_bloom",      /** 名称 **/
+                                  0,                 /** 键大小，必须0 **/
                                   sizeof(ipv6_addr), /** 鍊煎ぇ灏?**/
-                                  10000,             /** 鏈€澶ф潯鐩暟 **/
-                                  &opts);            /** 鍒涘缓閫夐」 **/
+                                  10000,             /** 最大条目数 **/
+                                  &opts);            /** 创建选项 **/
     }
 
-姝ょ墖娈靛睍绀轰簡濡備綍浠庣敤鎴风┖闂村悜甯冮殕杩囨护鍣ㄦ坊鍔犱竴涓厓绱狅細
+此片段展示了如何从用户空间向布隆过滤器添加一个元素：
 
 
     int add_element(struct bpf_map *bloom_map, __u32 value)
@@ -108,6 +108,6 @@ BPF 绋嬪簭蹇呴』浣跨敤 `bpf_map_push_elem` 鏉ュ悜甯冮殕杩囨护�
             return bpf_map_update_elem(bloom_fd, NULL, &value, BPF_ANY);
     }
 
-## 鍙傝€冭祫鏂?
+## 参考资
 
 https://lwn.net/ml/bpf/20210831225005.2762202-1-joannekoong@fb.com/

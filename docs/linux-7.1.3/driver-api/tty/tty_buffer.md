@@ -1,10 +1,10 @@
-﻿## TTY 缂撳啿鍖?
+﻿## TTY 缓冲
 
 
-姝ゅ璁板綍鐢ㄤ簬绠＄悊 tty 缂撳啿鍖哄強鍏剁炕杞紙flip锛夌殑鍑芥暟銆傞┍鍔ㄥ簲閫氳繃浠ヤ笅鏌愪釜鍑芥暟濉厖缂撳啿鍖猴紝鐒跺悗缈昏浆缂撳啿鍖猴紝浠ヤ究鏁版嵁琚紶閫掔粰 :doc:`绾胯矾瑙勭▼
-<tty_ldisc>` 浣滆繘涓€姝ュ鐞嗐€?
+此处记录用于管理 tty 缓冲区及其翻转（flip）的函数。驱动应通过以下某个函数填充缓冲区，然后翻转缓冲区，以便数据被传递给 :doc:`线路规程
+<tty_ldisc>` 作进一步处理
 
-## 缈昏浆缂撳啿鍖虹鐞?
+## 翻转缓冲区管
 
 
    :identifiers: tty_prepare_flip_string
@@ -15,23 +15,23 @@
 
 ----
 
-## 鍏朵粬鍑芥暟
+## 其他函数
 
 
    :identifiers: tty_buffer_space_avail tty_buffer_set_limit
 
 ----
 
-## 缂撳啿鍖哄姞閿?
+## 缓冲区加
 
 
-杩欎簺浠呯敤浜庣壒娈婃儏褰€傚簲閬垮厤浣跨敤銆?
+这些仅用于特殊情形。应避免使用
 
    :identifiers: tty_buffer_lock_exclusive tty_buffer_unlock_exclusive
 
 ----
 
-## 鍐呴儴鍑芥暟
+## 内部函数
 
 
    :internal:

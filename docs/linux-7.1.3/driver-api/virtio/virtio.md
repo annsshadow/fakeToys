@@ -1,47 +1,47 @@
 ﻿
 
 
-## Linux 涓婄殑 Virtio
+## Linux 上的 Virtio
 
 
-## 绠€浠?
+## 简
 
-Virtio 鏄竴涓紑鏀炬爣鍑嗭紝瀹氫箟浜嗕笉鍚岀被鍨嬮┍鍔ㄤ笌璁惧涔嬮棿鐨勯€氫俊鍗忚锛岃鍙傝
-virtio 瑙勮寖鐨勭 5 绔狅紙鈥滆澶囩被鍨嬧€濓級锛坄[^1^]`_锛夈€傚畠鏈€鍒濇槸浣滀负鐢辩鐞嗙▼搴?瀹炵幇鐨勫崐铏氭嫙鍖栵紙paravirtualized锛夎澶囩殑鏍囧噯寮€鍙戠殑锛屼絾涔熷彲鐢ㄤ簬灏嗕换浣曞吋瀹圭殑
-璁惧锛堢湡瀹炵殑鎴栦豢鐪熺殑锛変笌椹卞姩鎺ュ彛杩炴帴銆?
-鍑轰簬璇存槑鐩殑锛屾湰鏂囨。灏嗚仛鐒︿簬涓€涓父瑙佹儏鍐碉細杩愯鍦ㄨ櫄鎷熸満涓殑 Linux 鍐呮牳锛?浣跨敤绠＄悊绋嬪簭鎻愪緵鐨勫崐铏氭嫙鍖栬澶囷紝绠＄悊绋嬪簭閫氳繃 PCI 绛夋爣鍑嗘満鍒跺皢瀹冧滑鏆撮湶涓?virtio 璁惧銆?
-## 璁惧 - 椹卞姩閫氫俊锛歷irtqueue
+Virtio 是一个开放标准，定义了不同类型驱动与设备之间的通信协议，请参见
+virtio 规范的第 5 章（“设备类型”）（`[^1^]`_）。它最初是作为由管理程实现的半虚拟化（paravirtualized）设备的标准开发的，但也可用于将任何兼容的
+设备（真实的或仿真的）与驱动接口连接
+出于说明目的，本文档将聚焦于一个常见情况：运行在虚拟机中的 Linux 内核使用管理程序提供的半虚拟化设备，管理程序通过 PCI 等标准机制将它们暴露virtio 设备
+## 设备 - 驱动通信：virtqueue
 
 
-灏界 virtio 璁惧瀹為檯涓婃槸绠＄悊绋嬪簭涓殑涓€涓娊璞″眰锛屼絾瀹冧滑琚毚闇茬粰瀹㈡埛鏈猴紝
-灏卞ソ鍍忓畠浠槸浣跨敤鐗瑰畾浼犺緭鏂规硶鈥斺€擯CI銆丮MIO 鎴?CCW鈥斺€旂殑鐗╃悊璁惧锛岃繖鐙珛浜?璁惧鏈韩銆倂irtio 瑙勮寖璇︾粏瀹氫箟浜嗚繖浜涗紶杈撴柟娉曪紝鍖呮嫭璁惧鍙戠幇銆佽兘鍔涗笌涓柇澶勭悊銆?
-瀹㈡埛鏈烘搷浣滅郴缁熶腑鐨勯┍鍔ㄤ笌绠＄悊绋嬪簭涓殑璁惧涔嬮棿鐨勯€氫俊鏄€氳繃鍏变韩鍐呭瓨锛堣繖姝ｆ槸
-virtio 璁惧濡傛楂樻晥鐨勫師鍥狅級瀹屾垚鐨勶紝浣跨敤绉颁负 virtqueue 鐨勪笓鐢ㄦ暟鎹粨鏋勶紝瀹冧滑
-瀹為檯涓婃槸缂撳啿鍖烘弿杩扮鐨勭幆褰㈢紦鍐插尯锛坮ing buffer锛塠#f1]_锛岀被浼间簬缃戠粶璁惧涓?浣跨敤鐨勯偅浜涳細
+尽管 virtio 设备实际上是管理程序中的一个抽象层，但它们被暴露给客户机，
+就好像它们是使用特定传输方法——PCI、MMIO CCW——的物理设备，这独立设备本身。virtio 规范详细定义了这些传输方法，包括设备发现、能力与中断处理
+客户机操作系统中的驱动与管理程序中的设备之间的通信是通过共享内存（这正是
+virtio 设备如此高效的原因）完成的，使用称为 virtqueue 的专用数据结构，它们
+实际上是缓冲区描述符的环形缓冲区（ring buffer）[#f1]_，类似于网络设备使用的那些：
 
     :identifiers: struct vring_desc
 
-鎻忚堪绗︽寚鍚戠殑鎵€鏈夌紦鍐插尯閮界敱瀹㈡埛鏈哄垎閰嶏紝骞剁敱涓绘満鐢ㄤ簬璇诲彇鎴栧啓鍏ワ紝浣嗕笉鑳藉悓鏃?鐢ㄤ簬涓よ€呫€?
-鏈夊叧 virtqueue 鐨勫弬鑰冨畾涔夛紝璇峰弬鑰?virtio 瑙勮寖鐨勭 2.5 鑺傦紙鈥淰irtqueues鈥濓級
-锛坄[^1^]`_锛夛紝浠ュ強鍗氬鏂囩珷鈥淰irtqueues and virtio ring: How the data travels鈥?锛坄[^2^]`_锛夛紝浜嗚В涓绘満璁惧涓庡鎴锋満椹卞姩濡備綍閫氫俊鐨勫浘瑙ｆ瑙堛€?
-`vring_virtqueue` 缁撴瀯浣撳缓妯′簡涓€涓?virtqueue锛屽寘鎷幆褰㈢紦鍐插尯涓庣鐞嗘暟鎹€?宓屽叆璇ョ粨鏋勪綋涓殑鏄?`virtqueue` 缁撴瀯浣擄紝瀹冩槸鏈€缁堣 virtio 椹卞姩浣跨敤鐨勬暟鎹?缁撴瀯锛?
+描述符指向的所有缓冲区都由客户机分配，并由主机用于读取或写入，但不能同用于两者
+有关 virtqueue 的参考定义，请参virtio 规范的第 2.5 节（“Virtqueues”）
+（`[^1^]`_），以及博客文章“Virtqueues and virtio ring: How the data travels（`[^2^]`_），了解主机设备与客户机驱动如何通信的图解概览
+`vring_virtqueue` 结构体建模了一virtqueue，包括环形缓冲区与管理数据嵌入该结构体中的`virtqueue` 结构体，它是最终被 virtio 驱动使用的数结构
     :identifiers: struct virtqueue
 
-璇ョ粨鏋勪綋鎸囧悜鐨勫洖璋冨嚱鏁板湪璁惧娑堣垂浜嗛┍鍔ㄦ彁渚涚殑缂撳啿鍖烘椂琚Е鍙戙€傛洿鍏蜂綋鍦拌锛?瑙﹀彂灏嗘槸绠＄悊绋嬪簭鍙戝嚭鐨勪腑鏂紙鍙傝 vring_interrupt()锛夈€備腑鏂姹傚鐞嗙▼搴忓湪
-virtqueue 璁剧疆杩囩▼锛堜紶杈撶浉鍏筹級鏈熼棿涓?virtqueue 娉ㄥ唽銆?
+该结构体指向的回调函数在设备消费了驱动提供的缓冲区时被触发。更具体地说触发将是管理程序发出的中断（参见 vring_interrupt()）。中断请求处理程序在
+virtqueue 设置过程（传输相关）期间virtqueue 注册
     :identifiers: vring_interrupt
 
 
-## 璁惧鍙戠幇涓庢帰娴?
+## 设备发现与探
 
-鍦ㄥ唴鏍镐腑锛寁irtio 鏍稿績鍖呭惈 virtio 鎬荤嚎椹卞姩浠ュ強浼犺緭鐩稿叧鐨勯┍鍔紝濡?`virtio-pci`
-鍜?`virtio-mmio`銆傜劧鍚庤繕鏈夐拡瀵圭壒瀹氳澶囩被鍨嬬殑鍚勪釜 virtio 椹卞姩锛屽畠浠敞鍐屽埌
-virtio 鎬荤嚎椹卞姩銆?
-鍐呮牳濡備綍鎵惧埌骞堕厤缃?virtio 璁惧鍙栧喅浜庣鐞嗙▼搴忓浣曞畾涔夊畠銆備互 `QEMU virtio-console
+在内核中，virtio 核心包含 virtio 总线驱动以及传输相关的驱动，`virtio-pci`
+`virtio-mmio`。然后还有针对特定设备类型的各个 virtio 驱动，它们注册到
+virtio 总线驱动
+内核如何找到并配virtio 设备取决于管理程序如何定义它。以 `QEMU virtio-console
 <https://gitlab.com/qemu-project/qemu/-/blob/master/hw/char/virtio-console.c>`__
-璁惧涓轰緥銆傚綋浣跨敤 PCI 浣滀负浼犺緭鏂规硶鏃讹紝璁惧灏嗕互鍘傚晢 0x1af4锛圧ed Hat, Inc.锛?鍜岃澶?id 0x1003锛坴irtio console锛夊嚭鐜板湪 PCI 鎬荤嚎涓婏紝濡傝鑼冧腑鎵€瀹氫箟锛屽洜姝?鍐呮牳浼氬儚瀵瑰緟浠讳綍鍏朵粬 PCI 璁惧涓€鏍锋娴嬪畠銆?
-鍦?PCI 鏋氫妇杩囩▼涓紝濡傛灉鍙戠幇鏌愪釜璁惧鍖归厤 virtio-pci 椹卞姩锛堟牴鎹?virtio-pci
-璁惧琛紝浠讳綍 PCI
+设备为例。当使用 PCI 作为传输方法时，设备将以厂商 0x1af4（Red Hat, Inc.和设id 0x1003（virtio console）出现在 PCI 总线上，如规范中所定义，因内核会像对待任何其他 PCI 设备一样检测它
+PCI 枚举过程中，如果发现某个设备匹配 virtio-pci 驱动（根virtio-pci
+设备表，任何 PCI
 ```
 
 	/* Qumranet donated their vendor ID for devices 0x1000 thru 0x10FF. */
@@ -51,7 +51,7 @@ virtio 鎬荤嚎椹卞姩銆?
 	};
 
 ```
-閭ｄ箞 virtio-pci 椹卞姩浼氳鎺㈡祴锛屽苟涓斿鏋滄帰娴嬮『鍒╋紝
+那么 virtio-pci 驱动会被探测，并且如果探测顺利，
 ```
 
 	static int virtio_pci_probe(struct pci_dev *pci_dev,
@@ -79,11 +79,11 @@ virtio 鎬荤嚎椹卞姩銆?
 		rc = register_virtio_device(&vp_dev->vdev);
 
 ```
-褰撹澶囨敞鍐屽埌 virtio 鎬荤嚎鏃讹紝鍐呮牳灏嗗湪鎬荤嚎涓婂鎵捐兘澶熷鐞嗚璁惧鐨勯┍鍔紝骞惰皟鐢?璇ラ┍鍔ㄧ殑 `probe` 鏂规硶銆?
-姝ゆ椂锛寁irtqueue 灏嗛€氳繃璋冪敤鐩稿簲鐨?`virtio_find` 杈呭姪鍑芥暟鏉ュ垎閰嶅拰閰嶇疆锛屼緥濡?virtio_find_single_vq() 鎴?virtio_find_vqs()锛屽畠浠渶缁堜細璋冪敤涓€涓紶杈撶浉鍏崇殑
-`find_vqs` 鏂规硶銆?
+当设备注册到 virtio 总线时，内核将在总线上寻找能够处理该设备的驱动，并调该驱动的 `probe` 方法
+此时，virtqueue 将通过调用相应`virtio_find` 辅助函数来分配和配置，例virtio_find_single_vq() virtio_find_vqs()，它们最终会调用一个传输相关的
+`find_vqs` 方法
 
-## 鍙傝€?
+## 参
 
 _`[^1^]` Virtio Spec v1.2:
 https://docs.oasis-open.org/virtio/virtio/v1.2/virtio-v1.2.html

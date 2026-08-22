@@ -1,12 +1,12 @@
 ﻿
-## 鐢ㄤ簬 Linux 鐨?Davicom DM9102(A)/DM9132/DM9801 蹇€熶互澶綉椹卞姩
+## 用于 Linux Davicom DM9102(A)/DM9132/DM9801 快速以太网驱动
 
 
-娉ㄦ剰锛氳椹卞姩娌℃湁缁存姢鑰呫€?
+注意：该驱动没有维护者
 
-鏈▼搴忔槸鑷敱杞欢锛涗綘鍙互鍦ㄨ嚜鐢辫蒋浠跺熀閲戜細鍙戝竷鐨?GNU 閫氱敤鍏叡璁稿彲璇侊紙GNU General Public License锛夋潯娆句笅閲嶆柊鍒嗗彂鍜?鎴栦慨鏀瑰畠锛涜鍙瘉鐗堟湰涓虹 2 鐗堬紝鎴栬€咃紙鐢变綘閫夋嫨锛変换浣曟洿楂樼増鏈€?
-鏈▼搴忕殑鍒嗗彂甯屾湜瀹冩槸鏈夌敤鐨勶紝浣嗘病鏈変换浣曟媴淇濓紱鐢氳嚦娌℃湁瀵归€傞攢鎬ф垨鐗瑰畾鐢ㄩ€旈€傜敤鎬х殑闅愬惈鎷呬繚銆傛洿澶氱粏鑺傝鍙傝 GNU 閫氱敤鍏叡璁稿彲璇併€?
-璇ラ┍鍔ㄤ负 Davicom DM9102(A)/DM9132/DM9801 浠ュお缃戝崱鎻愪緵鍐呮牳鏀寔锛圕NET 10/100 浠ュお缃戝崱涔熶娇鐢?Davicom 鑺墖缁勶紝鍥犳璇ラ┍鍔ㄤ篃鏀寔 CNET 鍗★級銆傚鏋滀綘娌℃湁灏嗚椹卞姩缂栬瘧涓烘ā鍧楋紝瀹冨皢鍦ㄥ惎鍔ㄦ椂鑷姩鍔犺浇鑷韩骞舵墦鍗颁竴鏉?```
+本程序是自由软件；你可以在自由软件基金会发布GNU 通用公共许可证（GNU General Public License）条款下重新分发或修改它；许可证版本为第 2 版，或者（由你选择）任何更高版本
+本程序的分发希望它是有用的，但没有任何担保；甚至没有对适销性或特定用途适用性的隐含担保。更多细节请参见 GNU 通用公共许可证
+该驱动为 Davicom DM9102(A)/DM9132/DM9801 以太网卡提供内核支持（CNET 10/100 以太网卡也使Davicom 芯片组，因此该驱动也支持 CNET 卡）。如果你没有将该驱动编译为模块，它将在启动时自动加载自身并打印一```
 
 	dmfe: Davicom DM9xxx net driver, version 1.36.4 (2002-01-17)
 
@@ -16,16 +16,16 @@
 	insmod dmfe
 
 ```
-杩欐牱瀹冧細鑷姩妫€娴嬭澶囨ā寮忋€傝繖鏄缓璁殑鍔犺浇妯″潡鏂瑰紡銆傛垨鑰呬綘鍙互浼犲叆
+这样它会自动检测设备模式。这是建议的加载模块方式。或者你可以传入
 ```
 
-	insmod dmfe mode=0 # 寮哄埗 10M 鍗婂弻宸?	insmod dmfe mode=1 # 寮哄埗 100M 鍗婂弻宸?	insmod dmfe mode=4 # 寮哄埗 10M 鍏ㄥ弻宸?	insmod dmfe mode=5 # 寮哄埗 100M 鍏ㄥ弻宸?
+	insmod dmfe mode=0 # 强制 10M 半双	insmod dmfe mode=1 # 强制 100M 半双	insmod dmfe mode=4 # 强制 10M 全双	insmod dmfe mode=5 # 强制 100M 全双
 ```
 
 ```
 	ifconfig eth0 172.22.3.18
 		      ^^^^^^^^^^^
-		     浣犵殑 IP 鍦板潃
+		     你的 IP 地址
 
 ```
 
@@ -35,15 +35,15 @@
 
 
 ```
-鐜板湪浣犵殑浠ュお缃戝崱搴旇宸茬粡鍚姩骞惰繍琛屻€?
+现在你的以太网卡应该已经启动并运行
 
 TODO锛?
-- 瀹炵幇 pci_driver::suspend() 鍜?pci_driver::resume() 鐢垫簮绠＄悊鏂规硶銆?- 鍦?64 浣嶆満鍣ㄤ笂妫€鏌ャ€?- 鍦?big endian 鏈哄櫒涓婃鏌ュ苟淇銆?- 娴嬭瘯骞剁‘淇濇墍鏈夋儏鍐典笅 PCI 寤惰繜锛坙atency锛夌幇鍦ㄩ兘姝ｇ‘銆?
+- 实现 pci_driver::suspend() pci_driver::resume() 电源管理方法- 64 位机器上检查- big endian 机器上检查并修复- 测试并确保所有情况下 PCI 延迟（latency）现在都正确
 
-浣滆€咃細
+作者：
 
-Sten Wang <sten_wang@davicom.com.tw >   : 鍘熷浣滆€?
-璐＄尞鑰咃細
+Sten Wang <sten_wang@davicom.com.tw >   : 原始作
+贡献者：
 
 - Marcelo Tosatti <marcelo@conectiva.com.br>
 - Alan Cox <alan@lxorguk.ukuu.org.uk>

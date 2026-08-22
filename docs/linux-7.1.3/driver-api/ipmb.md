@@ -1,39 +1,39 @@
-﻿## 闈㈠悜鍗槦 MC 鐨?IPMB 椹卞姩
+﻿## 面向卫星 MC IPMB 驱动
 
 
-鏅鸿兘骞冲彴绠＄悊鎬荤嚎锛圛ntelligent Platform Management Bus锛孖PMB锛夋槸涓€鏉?I2C 鎬荤嚎锛屾彁渚涙満绠卞唴
-涓嶅悓鏉垮崱涔嬮棿鐨勬爣鍑嗗寲浜掕繛銆傝繖绉嶄簰杩炰綅浜庡熀鏉跨鐞嗭紙BMC锛変笌鏈虹鐢靛瓙鍏冧欢涔嬮棿銆侷PMB 涔熶笌閫氳繃
-IPMB 鎬荤嚎鐨勬秷鎭崗璁浉鍏宠仈銆?
-浣跨敤 IPMB 鐨勮澶囬€氬父鏄墽琛岀鐞嗗姛鑳界殑绠＄悊鎺у埗鍣紝渚嬪缁存姢鍓嶉潰鏉挎帴鍙ｃ€佺洃鎺у熀鏉裤€?鍦ㄧ郴缁熸満绠变腑鐑彃鎷旂鐩橀┍鍔ㄥ櫒绛夈€?
-褰撶郴缁熶腑瀹炵幇浜?IPMB 鏃讹紝BMC 鍏呭綋鎺у埗鍣紝涓虹郴缁熻蒋浠舵彁渚涘 IPMB 鐨勮闂€侭MC 閫氳繃 IPMB 鍚戣澶?锛堥€氬父鏄崼鏄熺鐞嗘帶鍒跺櫒锛孲atellite Management Controller 鎴?Satellite MC锛夊彂閫?IPMI 璇锋眰锛?璁惧鍒欏皢鍝嶅簲鍙戝洖缁?BMC銆?
-鏈夊叧 IPMB 涓?IPMB 娑堟伅鏍煎紡鐨勬洿澶氫俊鎭紝璇峰弬鑰?IPMB 涓?IPMI 瑙勮寖銆?
-### 闈㈠悜鍗槦 MC 鐨?IPMB 椹卞姩
+智能平台管理总线（Intelligent Platform Management Bus，IPMB）是一I2C 总线，提供机箱内
+不同板卡之间的标准化互连。这种互连位于基板管理（BMC）与机箱电子元件之间。IPMB 也与通过
+IPMB 总线的消息协议相关联
+使用 IPMB 的设备通常是执行管理功能的管理控制器，例如维护前面板接口、监控基板在系统机箱中热插拔磁盘驱动器等
+当系统中实现IPMB 时，BMC 充当控制器，为系统软件提供对 IPMB 的访问。BMC 通过 IPMB 向设（通常是卫星管理控制器，Satellite Management Controller Satellite MC）发IPMI 请求设备则将响应发回BMC
+有关 IPMB IPMB 消息格式的更多信息，请参IPMB IPMI 规范
+### 面向卫星 MC IPMB 驱动
 
 
-ipmb-dev-int - 杩欐槸鍗槦 MC 涓婇渶瑕佺殑椹卞姩锛岀敤浜庝粠 BMC 鎺ユ敹 IPMB 娑堟伅骞跺彂鍥炲搷搴斻€傝椹卞姩涓?I2C 椹卞姩
-浠ュ強涓€涓敤鎴风┖闂寸▼搴忥紙濡?OpenIPMI锛夐厤鍚堝伐浣滐細
+ipmb-dev-int - 这是卫星 MC 上需要的驱动，用于从 BMC 接收 IPMB 消息并发回响应。该驱动I2C 驱动
+以及一个用户空间程序（OpenIPMI）配合工作：
 
-1) 瀹冩槸涓€涓?I2C 浠庢満鍚庣椹卞姩銆傚洜姝わ紝瀹冨畾涔変簡涓€涓洖璋冨嚱鏁帮紝灏嗗崼鏄?MC 璁剧疆涓?I2C 浠庢満銆?   璇ュ洖璋冨嚱鏁板鐞嗘帴鏀跺埌鐨?IPMI 璇锋眰銆?
-2) 瀹冨畾涔変簡璇诲啓鍑芥暟锛屼娇鐢ㄦ埛绌洪棿绋嬪簭锛堝 OpenIPMI锛夎兘澶熶笌鍐呮牳閫氫俊銆?
-### 鍔犺浇 IPMB 椹卞姩
+1) 它是一I2C 从机后端驱动。因此，它定义了一个回调函数，将卫MC 设置I2C 从机   该回调函数处理接收到IPMI 请求
+2) 它定义了读写函数，使用户空间程序（如 OpenIPMI）能够与内核通信
+### 加载 IPMB 驱动
 
 
-璇ラ┍鍔ㄩ渶瑕佸湪鍚姩鏃舵垨鎵嬪姩棣栧厛鍔犺浇銆傞鍏堬紝纭繚浣犵殑閰嶇疆鏂囦欢涓寘鍚互涓嬪唴瀹癸細
+该驱动需要在启动时或手动首先加载。首先，确保你的配置文件中包含以下内容：
 CONFIG_IPMB_DEVICE_INTERFACE=y
 
-1) 濡傛灉浣犲笇鏈涢┍鍔ㄥ湪鍚姩鏃跺姞杞斤細
+1) 如果你希望驱动在启动时加载：
 
 ```
 
-     Device (SMB0) // 绀轰緥 SMBus 涓绘満鎺у埗鍣?     {
-     Name (_HID, "<Vendor-Specific HID>") // 鍘傚晢鐗瑰畾鐨?HID
-     Name (_UID, 0) // 鐗瑰畾涓绘満鎺у埗鍣ㄧ殑鍞竴 ID
+     Device (SMB0) // 示例 SMBus 主机控制     {
+     Name (_HID, "<Vendor-Specific HID>") // 厂商特定HID
+     Name (_UID, 0) // 特定主机控制器的唯一 ID
      :
      :
        Device (IPMB)
        {
-         Name (_HID, "IPMB0001") // IPMB 璁惧鎺ュ彛
-         Name (_UID, 0) // 鍞竴璁惧鏍囪瘑绗?       }
+         Name (_HID, "IPMB0001") // IPMB 设备接口
+         Name (_UID, 0) // 唯一设备标识       }
      }
 
 ```
@@ -50,17 +50,17 @@ CONFIG_IPMB_DEVICE_INTERFACE=y
      };
 
 ```
-濡傛灉瑕佷娇鐢ㄥ師濮?i2c 鍧楄€岄潪 smbus 鏉ヤ紶杈撴暟鎹紝鍒欓渶瑕佸涓婂畾涔?"i2c-protocol"銆?
+如果要使用原i2c 块而非 smbus 来传输数据，则需要如上定"i2c-protocol"
 ```
 
      modprobe ipmb-dev-int
 
 
 ```
-### 瀹炰緥鍖栬澶?
+### 实例化设
 
-鍔犺浇椹卞姩鍚庯紝浣犲彲浠ユ寜鐓?'Documentation/i2c/instantiating-devices.rst' 涓墍杩板疄渚嬪寲璁惧銆傚鏋滀綘鏈夊涓?BMC锛屾瘡涓兘閫氳繃涓嶅悓鐨?I2C 鎬荤嚎杩炴帴鍒颁綘鐨勫崼鏄?MC锛屼綘鍙互涓烘瘡涓?BMC 瀹炰緥鍖栦竴涓澶囥€?
-瀹炰緥鍖栬澶囩殑鍚嶇О鍖呭惈 I2C 鎬荤嚎缂栧彿
+加载驱动后，你可以按'Documentation/i2c/instantiating-devices.rst' 中所述实例化设备。如果你有多BMC，每个都通过不同I2C 总线连接到你的卫MC，你可以为每BMC 实例化一个设备
+实例化设备的名称包含 I2C 总线编号
 ```
 
   BMC1 ------ IPMB/I2C bus 1 ---------|   /dev/ipmb-1
@@ -68,10 +68,10 @@ CONFIG_IPMB_DEVICE_INTERFACE=y
   BMC1 ------ IPMB/I2C bus 2 ---------|   /dev/ipmb-2
 
 ```
-渚嬪锛屼綘鍙互浠庝互涓嬫柟寮忓疄渚嬪寲 ipmb-dev-int 璁惧
+例如，你可以从以下方式实例化 ipmb-dev-int 设备
 ```
 
   # echo ipmb-dev 0x1010 > /sys/bus/i2c/devices/i2c-2/new_device
 
 ```
-杩欏皢鍒涘缓璁惧鏂囦欢 /dev/ipmb-2锛岀敤鎴风┖闂寸▼搴忓彲浠ヨ闂畠銆傝璁惧闇€瑕佸湪杩愯鐢ㄦ埛绌洪棿绋嬪簭涔嬪墠瀹炰緥鍖栥€?
+这将创建设备文件 /dev/ipmb-2，用户空间程序可以访问它。该设备需要在运行用户空间程序之前实例化

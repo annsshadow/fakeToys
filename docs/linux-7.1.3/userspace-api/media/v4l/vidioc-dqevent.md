@@ -2,26 +2,26 @@
 ######## ioctl VIDIOC_DQEVENT
 
 
-## 鍚嶇О
+## 名称
 
 
-VIDIOC_DQEVENT - 鍑洪槦锛圖equeue锛変簨浠?
-## 姒傝
+VIDIOC_DQEVENT - 出队（Dequeue）事
+## 概要
 
 
 `int ioctl(int fd, VIDIOC_DQEVENT, struct v4l2_event *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `argp`
-    鎸囧悜 struct `v4l2_event` 鐨勬寚閽堛€?
-## 鎻忚堪
+    指向 struct `v4l2_event` 的指针
+## 描述
 
 
-浠庝竴涓棰戣澶囧嚭闃熶竴涓簨浠躲€傝繖涓?ioctl 涓嶉渶瑕佽緭鍏ャ€俿truct `v4l2_event` 鐨勬墍鏈夊瓧娈?閮界敱椹卞姩濉厖銆傛枃浠跺彞鏌勮繕浼氭敹鍒板紓甯革紝搴旂敤绋嬪簭鍙互閫氳繃渚嬪浣跨敤 select 绯荤粺璋冪敤鏉ヨ幏鍙?杩欎簺寮傚父銆?
+从一个视频设备出队一个事件。这ioctl 不需要输入。struct `v4l2_event` 的所有字都由驱动填充。文件句柄还会收到异常，应用程序可以通过例如使用 select 系统调用来获这些异常
 
 
     :header-rows:  0
@@ -30,35 +30,35 @@ VIDIOC_DQEVENT - 鍑洪槦锛圖equeue锛変簨浠?
 
     - - __u32
       - `type`
-      - 浜嬩欢鐨勭被鍨嬶紝鍙傝 event-type銆?    - - union {
+      - 事件的类型，参见 event-type    - - union {
       - `u`
     - - struct `v4l2_event_vsync`
       - `vsync`
-      - 浜嬩欢 `V4L2_EVENT_VSYNC` 鐨勪簨浠舵暟鎹€?    - - struct `v4l2_event_ctrl`
+      - 事件 `V4L2_EVENT_VSYNC` 的事件数据    - - struct `v4l2_event_ctrl`
       - `ctrl`
-      - 浜嬩欢 `V4L2_EVENT_CTRL` 鐨勪簨浠舵暟鎹€?    - - struct `v4l2_event_frame_sync`
+      - 事件 `V4L2_EVENT_CTRL` 的事件数据    - - struct `v4l2_event_frame_sync`
       - `frame_sync`
-      - 浜嬩欢 `V4L2_EVENT_FRAME_SYNC` 鐨勪簨浠舵暟鎹€?    - - struct `v4l2_event_motion_det`
+      - 事件 `V4L2_EVENT_FRAME_SYNC` 的事件数据    - - struct `v4l2_event_motion_det`
       - `motion_det`
-      - 浜嬩欢 V4L2_EVENT_MOTION_DET 鐨勪簨浠舵暟鎹€?    - - struct `v4l2_event_src_change`
+      - 事件 V4L2_EVENT_MOTION_DET 的事件数据    - - struct `v4l2_event_src_change`
       - `src_change`
-      - 浜嬩欢 V4L2_EVENT_SOURCE_CHANGE 鐨勪簨浠舵暟鎹€?    - - __u8
+      - 事件 V4L2_EVENT_SOURCE_CHANGE 的事件数据    - - __u8
       - `data`\ [^64^]
-      - 浜嬩欢鏁版嵁銆傜敱浜嬩欢绫诲瀷瀹氫箟銆傚簲褰撲娇鐢ㄨ鑱斿悎浣撲负浜嬩欢瀹氫箟鏄撲簬璁块棶鐨勭被鍨嬨€?    - - }
+      - 事件数据。由事件类型定义。应当使用该联合体为事件定义易于访问的类型    - - }
       -
     - - __u32
       - `pending`
-      - 闄ゆ湰浜嬩欢澶栧緟澶勭悊浜嬩欢鐨勬暟閲忋€?    - - __u32
+      - 除本事件外待处理事件的数量    - - __u32
       - `sequence`
-      - 浜嬩欢搴忓垪鍙枫€傛瘡鍙戠敓涓€涓凡璁㈤槄鐨勪簨浠讹紝搴忓垪鍙峰氨閫掑銆傚鏋滃簭鍒楀彿涓嶈繛缁紝鎰忓懗鐫€
-	浜嬩欢宸茬粡涓㈠け銆?    - - struct timespec
+      - 事件序列号。每发生一个已订阅的事件，序列号就递增。如果序列号不连续，意味着
+	事件已经丢失    - - struct timespec
       - `timestamp`
-      - 浜嬩欢鏃堕棿鎴炽€傛椂闂存埑鍙栬嚜 `CLOCK_MONOTONIC` 鏃堕挓銆傝鍦?V4L2 涔嬪璁块棶鍚屼竴涓椂閽燂紝
-	璇蜂娇鐢?`clock_gettime`銆?    - - u32
+      - 事件时间戳。时间戳取自 `CLOCK_MONOTONIC` 时钟。要V4L2 之外访问同一个时钟，
+	请使`clock_gettime`    - - u32
       - `id`
-      - 涓庝簨浠舵簮鍏宠仈鐨?ID銆傚鏋滀簨浠舵病鏈夊叧鑱旂殑 ID锛堣繖鍙栧喅浜庝簨浠剁被鍨嬶級锛岄偅涔堣繖閲屾槸 0銆?    - - __u32
+      - 与事件源关联ID。如果事件没有关联的 ID（这取决于事件类型），那么这里是 0    - - __u32
       - `reserved`\ [^8^]
-      - 涓烘湭鏉ョ殑鎵╁睍淇濈暀銆傞┍鍔ㄥ繀椤绘妸璇ユ暟缁勭疆涓洪浂銆?
+      - 为未来的扩展保留。驱动必须把该数组置为零
 
 
     :header-rows:  0
@@ -67,37 +67,37 @@ VIDIOC_DQEVENT - 鍑洪槦锛圖equeue锛変簨浠?
 
     - - `V4L2_EVENT_ALL`
       - 0
-      - 鎵€鏈変簨浠躲€俈4L2_EVENT_ALL 浠呭 VIDIOC_UNSUBSCRIBE_EVENT 鏈夋晥锛岀敤浜庝竴娆℃€ч€€璁?	鎵€鏈変簨浠躲€?    - - `V4L2_EVENT_VSYNC`
+      - 所有事件。V4L2_EVENT_ALL 仅对 VIDIOC_UNSUBSCRIBE_EVENT 有效，用于一次性退	所有事件    - - `V4L2_EVENT_VSYNC`
       - 1
-      - 璇ヤ簨浠跺湪鍨傜洿鍚屾锛坴ertical sync锛夋椂瑙﹀彂銆傝浜嬩欢鍏宠仈浜嗕竴涓?struct
+      - 该事件在垂直同步（vertical sync）时触发。该事件关联了一struct
 	`v4l2_event_vsync`銆?    - - `V4L2_EVENT_EOS`
       - 2
-      - 褰撳埌杈炬祦鐨勬湯灏炬椂瑙﹀彂璇ヤ簨浠躲€傝繖閫氬父閰嶅悎 MPEG 瑙ｇ爜鍣ㄤ娇鐢紝鐢ㄦ潵鍚戝簲鐢ㄧ▼搴忔姤鍛?	MPEG 娴佺殑鏈€鍚庝竴閮ㄥ垎宸茬粡琚В鐮併€?    - - `V4L2_EVENT_CTRL`
+      - 当到达流的末尾时触发该事件。这通常配合 MPEG 解码器使用，用来向应用程序报	MPEG 流的最后一部分已经被解码    - - `V4L2_EVENT_CTRL`
       - 3
-      - 璇ヤ簨浠惰姹?`id` 涓庝綘鎯宠鎺ユ敹浜嬩欢鐨勬帶浠剁殑 ID 鍖归厤銆傚綋鎺т欢鐨勫€兼敼鍙樸€佹寜閽帶浠?	琚寜涓嬶紝鎴栬€呮帶浠剁殑鏍囧織鏀瑰彉鏃讹紝瑙﹀彂璇ヤ簨浠躲€傝浜嬩欢鍏宠仈浜嗕竴涓?struct
-	`v4l2_event_ctrl`銆傝缁撴瀯浣撳寘鍚笌 struct
+      - 该事件要`id` 与你想要接收事件的控件的 ID 匹配。当控件的值改变、按钮控	被按下，或者控件的标志改变时，触发该事件。该事件关联了一struct
+	`v4l2_event_ctrl`。该结构体包含与 struct
 	v4l2_queryctrl <v4l2-queryctrl> 鍜?struct
-	`v4l2_control` 鍩烘湰鐩稿悓鐨勪俊鎭€?
-	濡傛灉璇ヤ簨浠舵槸鐢变簬璋冪敤 VIDIOC_S_CTRL <VIDIOC_G_CTRL> 鎴?	VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 鑰屼骇鐢熺殑锛岄偅涔堣浜嬩欢灏?*涓嶄細**鍙戦€佺粰
-	璋冪敤璇?ioctl 鍑芥暟鐨勬枃浠跺彞鏌勩€傝繖閬垮厤浜嗘伡浜虹殑鍙嶉寰幆銆傚鏋滀綘**纭疄**鎯宠鏀跺埌
-	璇ヤ簨浠讹紝鍒欒缃?`V4L2_EVENT_SUB_FL_ALLOW_FEEDBACK` 鏍囧織銆?
-	杩欑浜嬩欢绫诲瀷鍙互纭繚鍦ㄥ唴閮ㄧ┖闂翠笉瓒炽€佷骇鐢熺殑浜嬩欢澶氫簬鍙绾虫暟閲忔椂涓嶄細涓㈠け淇℃伅銆?	鍦ㄩ偅绉嶆儏鍐典笅锛岀浜屾棫浜嬩欢鐨?struct `v4l2_event_ctrl` 浼氳淇濈暀锛屼絾鍏?`changes`
-	瀛楁浼氫笌鏈€鏃т簨浠剁殑 `changes` 瀛楁鍋氭寜浣嶆垨杩愮畻銆?    - - `V4L2_EVENT_FRAME_SYNC`
+	`v4l2_control` 基本相同的信息
+	如果该事件是由于调用 VIDIOC_S_CTRL <VIDIOC_G_CTRL> 	VIDIOC_S_EXT_CTRLS <VIDIOC_G_EXT_CTRLS> 而产生的，那么该事件*不会**发送给
+	调用ioctl 函数的文件句柄。这避免了恼人的反馈循环。如果你**确实**想要收到
+	该事件，则设`V4L2_EVENT_SUB_FL_ALLOW_FEEDBACK` 标志
+	这种事件类型可以确保在内部空间不足、产生的事件多于可容纳数量时不会丢失信息	在那种情况下，第二旧事件struct `v4l2_event_ctrl` 会被保留，但`changes`
+	字段会与最旧事件的 `changes` 字段做按位或运算    - - `V4L2_EVENT_FRAME_SYNC`
       - 4
-      - 鍦ㄥ抚鐨勬帴鏀朵竴寮€濮嬫椂绔嬪嵆瑙﹀彂銆傝浜嬩欢鍏宠仈浜嗕竴涓?struct
-	`v4l2_event_frame_sync`銆?
-	濡傛灉纭欢鍦ㄧ紦鍐插尯娆犺浇锛坲nderrun锛夌殑鎯呭喌涓嬮渶瑕佽鍋滄锛屽畠鍙兘灏辨棤娉曠敓鎴愯浜嬩欢銆傚湪
-	杩欑鎯呭喌涓嬶紝struct `v4l2_event_frame_sync` 涓殑 `frame_sequence` 瀛楁涓嶄細琚€掑銆?	杩欎細瀵艰嚧涓や釜杩炵画鐨勫抚搴忓垪鍙蜂箣闂存湁 n 鍊嶇殑甯ч棿闅斻€?    - - `V4L2_EVENT_SOURCE_CHANGE`
+      - 在帧的接收一开始时立即触发。该事件关联了一struct
+	`v4l2_event_frame_sync`銆。
+	如果硬件在缓冲区欠载（underrun）的情况下需要被停止，它可能就无法生成该事件。在
+	这种情况下，struct `v4l2_event_frame_sync` 中的 `frame_sequence` 字段不会被递增	这会导致两个连续的帧序列号之间有 n 倍的帧间隔    - - `V4L2_EVENT_SOURCE_CHANGE`
       - 5
-      - 褰撹棰戣澶囧湪杩愯鏃舵娴嬪埌婧愬弬鏁板彉鍖栨椂瑙﹀彂璇ヤ簨浠躲€傚畠鍙互鏄棰戣В鐮佸櫒瑙﹀彂鐨?	杩愯鏃跺垎杈ㄧ巼鍙樺寲锛屾垨鑰呮槸鍙戠敓鍦ㄦ煇涓緭鍏ヨ繛鎺ュ櫒涓婄殑鏍煎紡鍙樺寲銆傝浜嬩欢瑕佹眰 `id` 涓?	浣犳兂瑕佹帴鏀朵簨浠剁殑杈撳叆绱㈠紩锛堢敤浜庤棰戣澶囪妭鐐规椂锛夋垨 pad 绱㈠紩锛堢敤浜庡瓙璁惧鑺傜偣鏃讹級
-	鍖归厤銆?
-	璇ヤ簨浠跺叧鑱斾簡涓€涓?struct
-	`v4l2_event_src_change`銆俙changes` 浣嶅煙琛ㄧず鎵€璁㈤槄鐨?pad 涓婂彂鐢熶簡浠€涔堝彉鍖栥€傚鏋?	鍦ㄥ簲鐢ㄧ▼搴忚兘澶熷嚭闃熶箣鍓嶅彂鐢熶簡澶氫釜浜嬩欢锛岄偅涔?changes 灏嗗叿鏈夋墍鏈夊凡鐢熸垚浜嬩欢鐨勬寜浣?	鎴栧€笺€?    - - `V4L2_EVENT_MOTION_DET`
+      - 当视频设备在运行时检测到源参数变化时触发该事件。它可以是视频解码器触发	运行时分辨率变化，或者是发生在某个输入连接器上的格式变化。该事件要求 `id` 	你想要接收事件的输入索引（用于视频设备节点时）或 pad 索引（用于子设备节点时）
+	匹配
+	该事件关联了一struct
+	`v4l2_event_src_change`。`changes` 位域表示所订阅pad 上发生了什么变化。如	在应用程序能够出队之前发生了多个事件，那changes 将具有所有已生成事件的按	或值    - - `V4L2_EVENT_MOTION_DET`
       - 6
-      - 褰撲竴涓垨澶氫釜鍖哄煙鐨勮繍鍔ㄦ娴嬬姸鎬佸彂鐢熷彉鍖栨椂瑙﹀彂銆傝浜嬩欢鍏宠仈浜嗕竴涓?struct
+      - 当一个或多个区域的运动检测状态发生变化时触发。该事件关联了一struct
 	`v4l2_event_motion_det`銆?    - - `V4L2_EVENT_PRIVATE_START`
       - 0x08000000
-      - 椹卞姩绉佹湁浜嬩欢鐨勫熀鍑嗕簨浠跺彿銆?
+      - 驱动私有事件的基准事件号
 
 
     :header-rows:  0
@@ -106,7 +106,7 @@ VIDIOC_DQEVENT - 鍑洪槦锛圖equeue锛変簨浠?
 
     - - __u8
       - `field`
-      - 鍗冲皢鍒版潵鐨勫満銆傚弬瑙?enum `v4l2_field`銆?
+      - 即将到来的场。参enum `v4l2_field`
 
 
     :header-rows:  0
@@ -115,28 +115,28 @@ VIDIOC_DQEVENT - 鍑洪槦锛圖equeue锛変簨浠?
 
     - - __u32
       - `changes`
-      - 涓€涓綅鎺╃爜锛岃〃绀哄彂鐢熶簡浠€涔堝彉鍖栥€傚弬瑙?ctrl-changes-flags銆?    - - __u32
+      - 一个位掩码，表示发生了什么变化。参ctrl-changes-flags    - - __u32
       - `type`
-      - 鎺т欢鐨勭被鍨嬨€傚弬瑙?enum `v4l2_ctrl_type`銆?    - - union {
+      - 控件的类型。参enum `v4l2_ctrl_type`    - - union {
       - (anonymous)
     - - __s32
       - `value`
-      - 32 浣嶆帶浠剁被鍨嬬殑鎺т欢鐨?32 浣嶅€笺€傚瀛楃涓叉帶浠惰繖鏄?0锛屽洜涓哄瓧绗︿覆鐨勫€兼棤娉曢€氳繃
-	VIDIOC_DQEVENT 浼犻€掋€?    - - __s64
+      - 32 位控件类型的控件32 位值。对字符串控件这0，因为字符串的值无法通过
+	VIDIOC_DQEVENT 传递    - - __s64
       - `value64`
-      - 64 浣嶆帶浠剁被鍨嬬殑鎺т欢鐨?64 浣嶅€笺€?    - - }
+      - 64 位控件类型的控件64 位值    - - }
       -
     - - __u32
       - `flags`
-      - 鎺т欢鏍囧織銆傚弬瑙?control-flags銆?    - - __s32
+      - 控件标志。参control-flags    - - __s32
       - `minimum`
-      - 鎺т欢鐨勬渶灏忓€笺€傚弬瑙?struct v4l2_queryctrl <v4l2-queryctrl>銆?    - - __s32
+      - 控件的最小值。参struct v4l2_queryctrl <v4l2-queryctrl>    - - __s32
       - `maximum`
-      - 鎺т欢鐨勬渶澶у€笺€傚弬瑙?struct v4l2_queryctrl <v4l2-queryctrl>銆?    - - __s32
+      - 控件的最大值。参struct v4l2_queryctrl <v4l2-queryctrl>    - - __s32
       - `step`
-      - 鎺т欢鐨勬杩涘€笺€傚弬瑙?struct v4l2_queryctrl <v4l2-queryctrl>銆?    - - __s32
+      - 控件的步进值。参struct v4l2_queryctrl <v4l2-queryctrl>    - - __s32
       - `default_value`
-      - 鎺т欢鐨勯粯璁ゅ€笺€傚弬瑙?struct v4l2_queryctrl <v4l2-queryctrl>銆?
+      - 控件的默认值。参struct v4l2_queryctrl <v4l2-queryctrl>
 
 
     :header-rows:  0
@@ -145,7 +145,7 @@ VIDIOC_DQEVENT - 鍑洪槦锛圖equeue锛変簨浠?
 
     - - __u32
       - `frame_sequence`
-      - 姝ｅ湪鎺ユ敹鐨勫抚鐨勫簭鍒楀彿銆?
+      - 正在接收的帧的序列号
 
 
     :header-rows:  0
@@ -154,7 +154,7 @@ VIDIOC_DQEVENT - 鍑洪槦锛圖equeue锛変簨浠?
 
     - - __u32
       - `changes`
-      - 涓€涓綅鎺╃爜锛岃〃绀哄彂鐢熶簡浠€涔堝彉鍖栥€傚弬瑙?src-changes-flags銆?
+      - 一个位掩码，表示发生了什么变化。参src-changes-flags
 
 
     :header-rows:  0
@@ -163,12 +163,12 @@ VIDIOC_DQEVENT - 鍑洪槦锛圖equeue锛変簨浠?
 
     - - __u32
       - `flags`
-      - 鐩墠鍙湁涓€涓爣蹇楀彲鐢細濡傛灉璁剧疆浜?`V4L2_EVENT_MD_FL_HAVE_FRAME_SEQ`锛岄偅涔?	`frame_sequence` 瀛楁鏈夋晥锛屽惁鍒欏簲褰撳拷鐣ヨ瀛楁銆?    - - __u32
+      - 目前只有一个标志可用：如果设置`V4L2_EVENT_MD_FL_HAVE_FRAME_SEQ`，那	`frame_sequence` 字段有效，否则应当忽略该字段    - - __u32
       - `frame_sequence`
-      - 姝ｅ湪鎺ユ敹鐨勫抚鐨勫簭鍒楀彿銆備粎褰?`V4L2_EVENT_MD_FL_HAVE_FRAME_SEQ` 鏍囧織琚缃椂鏈夋晥銆?    - - __u32
+      - 正在接收的帧的序列号。仅`V4L2_EVENT_MD_FL_HAVE_FRAME_SEQ` 标志被设置时有效    - - __u32
       - `region_mask`
-      - 鎶ュ憡浜嗚繍鍔ㄧ殑鍖哄煙鐨勪綅鎺╃爜銆傝嚦灏戞湁涓€涓尯鍩熴€傚鏋滆瀛楁涓?0锛屽垯鏍规湰鏈娴嬪埌
-	杩愬姩銆傚鏋滄病鏈?`V4L2_CID_DETECT_MD_REGION_GRID` 鎺т欢锛堣 detect-controls锛夋潵涓?	杩愬姩妫€娴嬬綉鏍间腑鐨勬瘡涓崟鍏冨垎閰嶄笉鍚岀殑鍖哄煙锛岄偅涔堟墍鏈夊崟鍏冮兘浼氳嚜鍔ㄨ鍒嗛厤鍒伴粯璁?	鍖哄煙 0銆?
+      - 报告了运动的区域的位掩码。至少有一个区域。如果该字段0，则根本未检测到
+	运动。如果没`V4L2_CID_DETECT_MD_REGION_GRID` 控件（见 detect-controls）来	运动检测网格中的每个单元分配不同的区域，那么所有单元都会自动被分配到默	区域 0
 
 
     :header-rows:  0
@@ -177,13 +177,13 @@ VIDIOC_DQEVENT - 鍑洪槦锛圖equeue锛変簨浠?
 
     - - `V4L2_EVENT_CTRL_CH_VALUE`
       - 0x0001
-      - 璇ユ帶浠朵簨浠舵槸鍥犳帶浠剁殑鍊兼敼鍙樿€岃Е鍙戠殑銆傜壒娈婃儏鍐碉細鏄撳彉锛圴olatile锛夋帶浠朵笉浼氫骇鐢?	璇ヤ簨浠讹紱濡傛灉涓€涓帶浠惰缃簡 `V4L2_CTRL_FLAG_EXECUTE_ON_WRITE` 鏍囧織锛岄偅涔堟棤璁哄叾鍊?	濡備綍锛屼篃浼氬彂閫佽浜嬩欢銆?    - - `V4L2_EVENT_CTRL_CH_FLAGS`
+      - 该控件事件是因控件的值改变而触发的。特殊情况：易变（Volatile）控件不会产	该事件；如果一个控件设置了 `V4L2_CTRL_FLAG_EXECUTE_ON_WRITE` 标志，那么无论其	如何，也会发送该事件    - - `V4L2_EVENT_CTRL_CH_FLAGS`
       - 0x0002
-      - 璇ユ帶浠朵簨浠舵槸鍥犳帶浠舵爣蹇楁敼鍙樿€岃Е鍙戠殑銆?    - - `V4L2_EVENT_CTRL_CH_RANGE`
+      - 该控件事件是因控件标志改变而触发的    - - `V4L2_EVENT_CTRL_CH_RANGE`
       - 0x0004
-      - 璇ユ帶浠朵簨浠舵槸鍥犳帶浠剁殑鏈€灏忓€笺€佹渶澶у€笺€佹杩涙垨榛樿鍊兼敼鍙樿€岃Е鍙戠殑銆?    - - `V4L2_EVENT_CTRL_CH_DIMENSIONS`
+      - 该控件事件是因控件的最小值、最大值、步进或默认值改变而触发的    - - `V4L2_EVENT_CTRL_CH_DIMENSIONS`
       - 0x0008
-      - 璇ユ帶浠朵簨浠舵槸鍥犳帶浠剁殑缁村害鏀瑰彉鑰岃Е鍙戠殑銆傛敞鎰忕淮搴︾殑鏁伴噺淇濇寔涓嶅彉銆?
+      - 该控件事件是因控件的维度改变而触发的。注意维度的数量保持不变
 
 
     :header-rows:  0
@@ -192,13 +192,13 @@ VIDIOC_DQEVENT - 鍑洪槦锛圖equeue锛変簨浠?
 
     - - `V4L2_EVENT_SRC_CH_RESOLUTION`
       - 0x0001
-      - 褰撳湪杈撳叆涓婃娴嬪埌鍒嗚鲸鐜囧彉鍖栨椂瑙﹀彂璇ヤ簨浠躲€傝繖鍙互鏉ヨ嚜杈撳叆杩炴帴鍣紝涔熷彲浠ユ潵鑷?	瑙嗛瑙ｇ爜鍣ㄣ€傚簲鐢ㄧ▼搴忓皢涓嶅緱涓嶆煡璇㈡柊鐨勫垎杈ㄧ巼锛堝鏋滄湁鐨勮瘽锛涗俊鍙蜂篃鍙兘宸茬粡涓㈠け锛夈€?
-	瀵逛簬鏈夌姸鎬侊紙stateful锛夎В鐮佸櫒锛岃閬靛惊 decoder 涓殑鎸囧崡銆傝棰戦噰闆嗚澶囧繀椤讳娇鐢?	VIDIOC_QUERY_DV_TIMINGS 鎴?	VIDIOC_QUERYSTD <VIDIOC_QUERYSTD> 鏌ヨ鏂扮殑鏃跺簭銆?
-	**閲嶈**锛氬嵆浣挎柊鐨勮棰戞椂搴忕湅璧锋潵涓庢棫鐨勭浉鍚岋紝鏀跺埌璇ヤ簨浠朵篃琛ㄦ槑瑙嗛淇″彿鍑虹幇杩囬棶棰橈紝
-	浣犲繀椤诲仠姝㈠苟閲嶆柊鍚姩娴侊紙鍏?VIDIOC_STREAMOFF <VIDIOC_STREAMON>锛屽啀
-	VIDIOC_STREAMON <VIDIOC_STREAMON>锛夈€傚師鍥犳槸璁稿瑙嗛閲囬泦璁惧鏃犳硶浠庝俊鍙风殑涓存椂
-	涓㈠け涓仮澶嶏紝鍥犳涓轰簡纭欢鑳戒笌瑙嗛淇″彿閲嶆柊鍚屾锛岄渶瑕侀噸鍚祦 I/O銆?
-## 杩斿洖鍊?
+      - 当在输入上检测到分辨率变化时触发该事件。这可以来自输入连接器，也可以来	视频解码器。应用程序将不得不查询新的分辨率（如果有的话；信号也可能已经丢失）
+	对于有状态（stateful）解码器，请遵循 decoder 中的指南。视频采集设备必须使	VIDIOC_QUERY_DV_TIMINGS 	VIDIOC_QUERYSTD <VIDIOC_QUERYSTD> 查询新的时序
+	**重要**：即使新的视频时序看起来与旧的相同，收到该事件也表明视频信号出现过问题，
+	你必须停止并重新启动流（VIDIOC_STREAMOFF <VIDIOC_STREAMON>，再
+	VIDIOC_STREAMON <VIDIOC_STREAMON>）。原因是许多视频采集设备无法从信号的临时
+	丢失中恢复，因此为了硬件能与视频信号重新同步，需要重启流 I/O
+## 杩斿洖鍊。
 
-鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
-Generic Error Codes <gen-errors> 涓€绔犱腑鏈夋弿杩般€?
+成功时返0，出错时返回 -1，并相应地设`errno` 变量。通用错误码在
+Generic Error Codes <gen-errors> 一章中有描述

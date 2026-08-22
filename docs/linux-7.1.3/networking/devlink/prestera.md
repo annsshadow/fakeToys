@@ -1,108 +1,108 @@
 ﻿
-## prestera devlink 鏀寔
+## prestera devlink 支持
 
 
-鏈枃妗ｆ弿杩扮敱 `prestera` 璁惧椹卞姩瀹炵幇鐨?devlink 鐗规€с€?
-## 椹卞姩鐗瑰畾鐨?Traps
+本文档描述由 `prestera` 设备驱动实现devlink 特性
+## 驱动特定Traps
 
 
    :widths: 5 5 90
 
-   - - 鍚嶇О
-     - 绫诲瀷
-     - 鎻忚堪
+   - - 名称
+     - 类型
+     - 描述
    :widths: 5 5 90
 
-   - - 鍚嶇О
-     - 绫诲瀷
-     - 鎻忚堪
+   - - 名称
+     - 类型
+     - 描述
    - - `arp_bc`
      - `trap`
-     - 鎹曡幏 ARP 骞挎挱鍖咃紙璇锋眰涓庡搷搴旓級
+     - 捕获 ARP 广播包（请求与响应）
    - - `is_is`
      - `trap`
-     - 鎹曡幏 IS-IS 鍖?   - - `ospf`
+     - 捕获 IS-IS    - - `ospf`
      - `trap`
-     - 鎹曡幏 OSPF 鍖?   - - `ip_bc_mac`
+     - 捕获 OSPF    - - `ip_bc_mac`
      - `trap`
-     - 鎹曡幏鐩殑 MAC 鍦板潃涓哄箍鎾湴鍧€鐨?IPv4 鍖?   - - `stp`
+     - 捕获目的 MAC 地址为广播地址IPv4    - - `stp`
      - `trap`
-     - 鎹曡幏 STP BPDU
+     - 捕获 STP BPDU
    - - `lacp`
      - `trap`
-     - 鎹曡幏 LACP 鍖?   - - `lldp`
+     - 捕获 LACP    - - `lldp`
      - `trap`
-     - 鎹曡幏 LLDP 鍖?   - - `router_mc`
+     - 捕获 LLDP    - - `router_mc`
      - `trap`
-     - 鎹曡幏缁勬挱鍖?   - - `vrrp`
+     - 捕获组播   - - `vrrp`
      - `trap`
-     - 鎹曡幏 VRRP 鍖?   - - `dhcp`
+     - 捕获 VRRP    - - `dhcp`
      - `trap`
-     - 鎹曡幏 DHCP 鍖?   - - `mtu_error`
+     - 捕获 DHCP    - - `mtu_error`
      - `trap`
-     - 鎹曡幏瓒呭嚭绔彛 MTU 鐨勶紙寮傚父锛夊寘
+     - 捕获超出端口 MTU 的（异常）包
    - - `mac_to_me`
      - `trap`
-     - 鎹曡幏鐩殑 MAC 鍦板潃涓轰氦鎹㈢鍙ｅ湴鍧€鐨勫寘
+     - 捕获目的 MAC 地址为交换端口地址的包
    - - `ttl_error`
      - `trap`
-     - 鎹曡幏 TTL 瓒呮椂鐨勶紙寮傚父锛塈Pv4 鍖?   - - `ipv4_options`
+     - 捕获 TTL 超时的（异常）IPv4    - - `ipv4_options`
      - `trap`
-     - 鍥?IPv4 澶撮€夐」鏍煎紡閿欒鑰屾崟鑾风殑锛堝紓甯革級鍖?   - - `ip_default_route`
+     - IPv4 头选项格式错误而捕获的（异常）   - - `ip_default_route`
      - `trap`
-     - 鎹曡幏娌℃湁鐗瑰畾 IP 鎺ュ彛锛圛P to me锛変篃娌℃湁杞彂鍓嶇紑鐨勫寘
+     - 捕获没有特定 IP 接口（IP to me）也没有转发前缀的包
    - - `local_route`
      - `trap`
-     - 鎹曡幏鍙戝線鏌愪釜浜ゆ崲 IP 鎺ュ彛鍦板潃鐨勫寘
+     - 捕获发往某个交换 IP 接口地址的包
    - - `ipv4_icmp_redirect`
      - `trap`
-     - 鎹曡幏锛堝紓甯革級IPv4 ICMP 閲嶅畾鍚戝寘
+     - 捕获（异常）IPv4 ICMP 重定向包
    - - `arp_response`
      - `trap`
-     - 鎹曡幏鐩殑 MAC 鍦板潃涓轰氦鎹㈢鍙ｅ湴鍧€鐨?ARP 搴旂瓟鍖?   - - `acl_code_0`
+     - 捕获目的 MAC 地址为交换端口地址ARP 应答   - - `acl_code_0`
      - `trap`
-     - 鎹曡幏 ACL 浼樺厛绾т负 0锛坱c pref 0锛夌殑鍖?   - - `acl_code_1`
+     - 捕获 ACL 优先级为 0（tc pref 0）的   - - `acl_code_1`
      - `trap`
-     - 鎹曡幏 ACL 浼樺厛绾т负 1锛坱c pref 1锛夌殑鍖?   - - `acl_code_2`
+     - 捕获 ACL 优先级为 1（tc pref 1）的   - - `acl_code_2`
      - `trap`
-     - 鎹曡幏 ACL 浼樺厛绾т负 2锛坱c pref 2锛夌殑鍖?   - - `acl_code_3`
+     - 捕获 ACL 优先级为 2（tc pref 2）的   - - `acl_code_3`
      - `trap`
-     - 鎹曡幏 ACL 浼樺厛绾т负 3锛坱c pref 3锛夌殑鍖?   - - `acl_code_4`
+     - 捕获 ACL 优先级为 3（tc pref 3）的   - - `acl_code_4`
      - `trap`
-     - 鎹曡幏 ACL 浼樺厛绾т负 4锛坱c pref 4锛夌殑鍖?   - - `acl_code_5`
+     - 捕获 ACL 优先级为 4（tc pref 4）的   - - `acl_code_5`
      - `trap`
-     - 鎹曡幏 ACL 浼樺厛绾т负 5锛坱c pref 5锛夌殑鍖?   - - `acl_code_6`
+     - 捕获 ACL 优先级为 5（tc pref 5）的   - - `acl_code_6`
      - `trap`
-     - 鎹曡幏 ACL 浼樺厛绾т负 6锛坱c pref 6锛夌殑鍖?   - - `acl_code_7`
+     - 捕获 ACL 优先级为 6（tc pref 6）的   - - `acl_code_7`
      - `trap`
-     - 鎹曡幏 ACL 浼樺厛绾т负 7锛坱c pref 7锛夌殑鍖?   - - `ipv4_bgp`
+     - 捕获 ACL 优先级为 7（tc pref 7）的   - - `ipv4_bgp`
      - `trap`
-     - 鎹曡幏 IPv4 BGP 鍖?   - - `ssh`
+     - 捕获 IPv4 BGP    - - `ssh`
      - `trap`
-     - 鎹曡幏 SSH 鍖?   - - `telnet`
+     - 捕获 SSH    - - `telnet`
      - `trap`
-     - 鎹曡幏 Telnet 鍖?   - - `icmp`
+     - 捕获 Telnet    - - `icmp`
      - `trap`
-     - 鎹曡幏 ICMP 鍖?   - - `rxdma_drop`
+     - 捕获 ICMP    - - `rxdma_drop`
      - `drop`
-     - 鍥犵己灏戝叆鍙ｇ紦鍐插尯绛夎€屼涪寮冨寘锛圧xDMA锛?   - - `port_no_vlan`
+     - 因缺少入口缓冲区等而丢弃包（RxDMA   - - `port_no_vlan`
      - `drop`
-     - 鍥犵綉缁滈厤缃敊璇垨鍐呴儴 bug锛堥厤缃棶棰橈級鑰屼涪寮冨寘
+     - 因网络配置错误或内部 bug（配置问题）而丢弃包
    - - `local_port`
      - `drop`
-     - 涓㈠純鍐崇瓥锛團DB 琛ㄩ」锛変负灏嗗寘妗ユ帴鍥炲叆鍙ｇ鍙?trunk 鐨勫寘
+     - 丢弃决策（FDB 表项）为将包桥接回入口端trunk 的包
    - - `invalid_sa`
      - `drop`
-     - 涓㈠純婧?MAC 鍦板潃涓虹粍鎾殑鍖?   - - `illegal_ip_addr`
+     - 丢弃MAC 地址为组播的   - - `illegal_ip_addr`
      - `drop`
-     - 涓㈠純婧?鐩殑 IP 涓洪潪娉曠粍鎾?鍗曟挱鍦板潃鐨勫寘
+     - 丢弃目的 IP 为非法组单播地址的包
    - - `illegal_ipv4_hdr`
      - `drop`
-     - 涓㈠純 IPv4 澶撮潪娉曠殑鍖?   - - `ip_uc_dip_da_mismatch`
+     - 丢弃 IPv4 头非法的   - - `ip_uc_dip_da_mismatch`
      - `drop`
-     - 涓㈠純鐩殑 MAC 涓哄崟鎾€佷絾鐩殑 IP 涓虹粍鎾殑鍖?   - - `ip_sip_is_zero`
+     - 丢弃目的 MAC 为单播、但目的 IP 为组播的   - - `ip_sip_is_zero`
      - `drop`
-     - 涓㈠純 IPv4 婧愬湴鍧€涓?0 鐨勫寘
+     - 丢弃 IPv4 源地址0 的包
    - - `met_red`
      - `drop`
-     - 涓㈠純涓嶅悎瑙勭殑鍖咃紙琚叆鍙ｉ檺閫熷櫒涓㈠純锛岃閲忎涪寮冿級锛屼緥濡傚寘閫熺巼瓒呭嚭閰嶇疆鐨勫甫瀹?
+     - 丢弃不合规的包（被入口限速器丢弃，计量丢弃），例如包速率超出配置的带
