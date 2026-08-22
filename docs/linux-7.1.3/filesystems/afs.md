@@ -1,92 +1,92 @@
-﻿## kAFS锛欰FS 鏂囦欢绯荤粺锛圓FS FILESYSTEM锛?
+﻿## kAFS：AFS 文件系统（AFS FILESYSTEM
 
- - 姒傝堪锛圤verview锛夈€? - 鐢ㄦ硶锛圲sage锛夈€? - 鎸傝浇鐐癸紙Mountpoints锛夈€? - 鍔ㄦ€佹牴锛圖ynamic root锛夈€? - Proc 鏂囦欢绯荤粺锛圥roc filesystem锛夈€? - 鍗曞厓鏁版嵁搴擄紙The cell database锛夈€? - 瀹夊叏锛圫ecurity锛夈€? - @sys 鏇挎崲锛圱he @sys substitution锛夈€?
+ - 概述（Overview） - 用法（Usage） - 挂载点（Mountpoints） - 动态根（Dynamic root） - Proc 文件系统（Proc filesystem） - 单元数据库（The cell database） - 安全（Security） - @sys 替换（The @sys substitution）
 
-## 姒傝堪锛圤verview锛?
+## 概述（Overview
 
-璇ユ枃浠剁郴缁熸彁渚涗簡涓€涓浉褰撶畝鍗曠殑銆佸畨鍏ㄧ殑 AFS 鏂囦欢绯荤粺椹卞姩銆傚畠浠嶅浜庡紑鍙戜腑锛屽皻鏈彁渚涘畬鏁寸殑鍔熻兘闆嗐€傚畠鎵€鏀寔鐨勫姛鑳藉寘鎷細
+该文件系统提供了一个相当简单的、安全的 AFS 文件系统驱动。它仍处于开发中，尚未提供完整的功能集。它所支持的功能包括：
 
- (*) 瀹夊叏锛堢洰鍓嶄粎鏀寔 AFS kaserver 鍜?KerberosIV 绁ㄦ嵁锛夈€?
- (*) 鏂囦欢璇诲啓銆?
- (*) 鑷姩鎸傝浇锛圓utomounting锛夈€?
- (*) 鏈湴缂撳瓨锛堥€氳繃 fscache锛夈€?
-瀹冨皻涓嶆敮鎸佷互涓?AFS 鍔熻兘锛?
- (*) pioctl() 绯荤粺璋冪敤銆?
+ (*) 安全（目前仅支持 AFS kaserver KerberosIV 票据）
+ (*) 文件读写
+ (*) 自动挂载（Automounting）
+ (*) 本地缓存（通过 fscache）
+它尚不支持以AFS 功能
+ (*) pioctl() 系统调用
 
-## 缂栬瘧锛圕ompilation锛?
+## 编译（Compilation
 
-搴旈€氳繃鎵撳紑浠ヤ笅鍐呮牳閰嶇疆椤规潵鍚敤璇ユ枃浠剁郴缁燂細
+应通过打开以下内核配置项来启用该文件系统：
 ```
-	CONFIG_AF_RXRPC		- RxRPC 鍗忚浼犺緭
-	CONFIG_RXKAD		- RxRPC Kerberos 瀹夊叏澶勭悊绋嬪簭
-	CONFIG_AFS_FS		- AFS 鏂囦欢绯荤粺
+	CONFIG_AF_RXRPC		- RxRPC 协议传输
+	CONFIG_RXKAD		- RxRPC Kerberos 安全处理程序
+	CONFIG_AFS_FS		- AFS 文件系统
 ```
 ```
-	CONFIG_AF_RXRPC_DEBUG	- 鍏佽鍚敤 AF_RXRPC 璋冭瘯
-	CONFIG_AFS_DEBUG	- 鍏佽鍚敤 AFS 璋冭瘯
+	CONFIG_AF_RXRPC_DEBUG	- 允许启用 AF_RXRPC 调试
+	CONFIG_AFS_DEBUG	- 允许启用 AFS 调试
 ```
-瀹冧滑鍏佽閫氳繃鎿嶄綔浠ヤ笅鍐呭鍔ㄦ€佸紑鍚皟璇曟秷鎭細
+它们允许通过操作以下内容动态开启调试消息：
 ```
 	/sys/module/af_rxrpc/parameters/debug
 	/sys/module/kafs/parameters/debug
 ```
 
-## 鐢ㄦ硶锛圲sage锛?
+## 用法（Usage
 
-鍦ㄦ彃鍏ラ┍鍔ㄦā鍧楁椂锛屽繀椤婚殢鍚屾寚瀹氭牴鍗曞厓锛坮oot cell锛夛紝骞堕檮甯︿竴涓?```
+在插入驱动模块时，必须随同指定根单元（root cell），并附带一```
 	modprobe rxrpc
 	modprobe kafs rootcell=cambridge.redhat.com:172.16.18.73:172.16.18.91
 ```
-绗竴涓ā鍧楁槸 AF_RXRPC 缃戠粶鍗忚椹卞姩銆傚畠鎻愪緵 RxRPC 杩滅▼鎿嶄綔鍗忚锛屼篃鍙互浠庣敤鎴风┖闂磋闂€傚弬瑙侊細
+第一个模块是 AF_RXRPC 网络协议驱动。它提供 RxRPC 远程操作协议，也可以从用户空间访问。参见：
 
 	Documentation/networking/rxrpc.rst
 
-绗簩涓ā鍧楁槸 kerberos RxRPC 瀹夊叏椹卞姩锛岀涓変釜妯″潡鏄?AFS 鏂囦欢绯荤粺瀹為檯鐨勬枃浠剁郴缁熼┍鍔ㄣ€?
-妯″潡鍔犺浇鍚庯紝鍙互閫氳繃濡備笅鏂瑰紡娣诲姞鏇村妯″潡锛?```
+第二个模块是 kerberos RxRPC 安全驱动，第三个模块AFS 文件系统实际的文件系统驱动
+模块加载后，可以通过如下方式添加更多模块```
 	echo add grand.central.org 18.9.48.14:128.2.203.61:130.237.48.87 >/proc/fs/afs/cells
 ```
-鍏朵腑 "add" 鍛戒护鐨勫弬鏁版槸鍗曞厓鐨勫悕绉帮紝浠ュ強璇ュ崟鍏冨唴涓€缁勫嵎浣嶇疆锛坴olume location锛夋湇鍔″櫒锛屽悗鑰呬互鍐掑彿鍒嗛殧銆?
+其中 "add" 命令的参数是单元的名称，以及该单元内一组卷位置（volume location）服务器，后者以冒号分隔
 ```
 	mount -t afs "%cambridge.redhat.com:root.afs." /afs
 	mount -t afs "#cambridge.redhat.com:root.cell." /afs/cambridge
 	mount -t afs "#root.afs." /afs
 	mount -t afs "#root.cell." /afs/cambridge
 ```
-鍏朵腑棣栧瓧绗︽槸浜曞彿锛?锛夎繕鏄櫨鍒嗗彿锛?锛夛紝鍙栧喅浜庝綘绌剁珶鏄兂瑕佷竴涓?R/W 鍗凤紙鐧惧垎鍙凤級锛岃繕鏄洿鍊惧悜 R/O 鍗蜂絾鎰挎剰鏀圭敤 R/W 鍗凤紙浜曞彿锛夈€?
-鍗风殑鍚嶇О鍙互鍔犱笂 ".backup" 鎴?".readonly" 鍚庣紑锛屼互鎸囧畾浠呰繛鎺ヨ繖浜涚被鍨嬬殑鍗枫€?
-鍗曞厓鐨勫悕绉版槸鍙€夌殑锛屽鏋滃湪鎸傝浇鏃舵湭缁欏嚭锛屽垯浼氬湪 modprobe 鏃舵寚瀹氱殑鍗曞厓涓煡鎵捐鍛藉悕鍗枫€?
-鍙互閫氳繃 /proc 娣诲姞棰濆鐨勫崟鍏冿紙瑙佸悗鏂囷級銆?
+其中首字符是井号）还是百分号），取决于你究竟是想要一R/W 卷（百分号），还是更倾向 R/O 卷但愿意改用 R/W 卷（井号）
+卷的名称可以加上 ".backup" ".readonly" 后缀，以指定仅连接这些类型的卷
+单元的名称是可选的，如果在挂载时未给出，则会在 modprobe 时指定的单元中查找该命名卷
+可以通过 /proc 添加额外的单元（见后文）
 
-## 鎸傝浇鐐癸紙Mountpoints锛?
+## 挂载点（Mountpoints
 
-AFS 鏈夋寕杞界偣锛坢ountpoint锛夌殑姒傚康銆傜敤 AFS 鐨勬湳璇锛岃繖浜涙槸鐗规畩鏍煎紡鐨勭鍙烽摼鎺ワ紙涓庝紶缁?mount 鐨勨€滆澶囧悕鈥濆舰寮忕浉鍚岋級銆俴AFS 灏嗚繖浜涗互鍏锋湁 follow-link 鑳藉姏锛堝嵆绗﹀彿閾炬帴璇箟锛夌殑鐩綍褰㈠紡鍛堢幇缁欑敤鎴枫€傚鏋滄湁浜鸿瘯鍥捐闂畠浠紝瀹冧滑浼氳嚜鍔ㄥ鑷寸洰鏍囧嵎琚寕杞斤紙濡傛灉鍙兘锛夊埌璇ヤ綅缃€?
-鑷姩鎸傝浇鐨勬枃浠剁郴缁熷皢鍦ㄦ渶鍚庝竴娆′娇鐢ㄥ悗澶х害浜屽崄鍒嗛挓琚嚜鍔ㄥ嵏杞姐€傛垨鑰咃紝涔熷彲浠ラ€氳繃 umount() 绯荤粺璋冪敤鐩存帴鍗歌浇銆?
-鎵嬪姩鍗歌浇涓€涓?AFS 鍗蜂細鍏堝墧闄ゅ叾涓婁换浣曠┖闂茬殑瀛愭寕杞界偣銆傚鏋滃叏閮ㄨ鍓旈櫎锛屽垯鎵€璇锋眰鐨勫嵎涔熶細琚嵏杞斤紝鍚﹀垯浼氳繑鍥為敊璇?EBUSY銆?
-绠＄悊鍛樺彲浠ュ埄鐢ㄨ繖涓€鐐瑰皾璇曞嵏杞芥暣涓?AFS 鏍戯細
+AFS 有挂载点（mountpoint）的概念。用 AFS 的术语说，这些是特殊格式的符号链接（与传mount 的“设备名”形式相同）。kAFS 将这些以具有 follow-link 能力（即符号链接语义）的目录形式呈现给用户。如果有人试图访问它们，它们会自动导致目标卷被挂载（如果可能）到该位置
+自动挂载的文件系统将在最后一次使用后大约二十分钟被自动卸载。或者，也可以通过 umount() 系统调用直接卸载
+手动卸载一AFS 卷会先剔除其上任何空闲的子挂载点。如果全部被剔除，则所请求的卷也会被卸载，否则会返回错EBUSY
+管理员可以利用这一点尝试卸载整AFS 树：
 ```
 	umount /afs
 ```
 
-## 鍔ㄦ€佹牴锛圖ynamic Root锛?
+## 动态根（Dynamic Root
 
-鍙互閫氳繃涓€涓寕杞介€夐」鍒涘缓鏃犳湇鍔″櫒鐨勬寕杞斤紝瀹冧粎鍙敤
+可以通过一个挂载选项创建无服务器的挂载，它仅可用
 ```
 	mount -t afs none /afs -o dyn
 ```
-杩欎細鍒涘缓涓€涓寕杞斤紝鍏舵牴鐩綍鍙槸涓€涓┖鐩綍銆傝瘯鍥惧湪璇ョ洰褰曚腑鏌ユ壘涓€涓悕绉板皢瀵艰嚧鍒涘缓涓€涓寕杞界偣锛?```
+这会创建一个挂载，其根目录只是一个空目录。试图在该目录中查找一个名称将导致创建一个挂载点```
 	ls /afs/grand.central.org/
 ```
 
-## Proc 鏂囦欢绯荤粺锛圥roc Filesystem锛?
+## Proc 文件系统（Proc Filesystem
 
-AFS 妯″潡鍒涘缓 "/proc/fs/afs/" 鐩綍骞跺～鍏呭畠锛?
-  (*) 涓€涓?"cells" 鏂囦欢锛屽垪鍑?afs 妯″潡褰撳墠宸茬煡鐨勫崟鍏冿細
+AFS 模块创建 "/proc/fs/afs/" 目录并填充它
+  (*) 一"cells" 文件，列afs 模块当前已知的单元：
 ```
 	[root@andromeda ~]# cat /proc/fs/afs/cells
 	USE NAME
 	  3 cambridge.redhat.com
 ```
-  (*) 姣忎釜鍗曞厓涓€涓洰褰曪紝鍏朵腑鍖呭惈鍒楀嚭璇ュ崟鍏冨唴宸茬煡鍗蜂綅缃湇鍔″櫒銆佸嵎鍜屾椿璺冩湇鍔″櫒鐨勬枃浠讹細
+  (*) 每个单元一个目录，其中包含列出该单元内已知卷位置服务器、卷和活跃服务器的文件：
 ```
 	[root@andromeda ~]# cat /proc/fs/afs/cambridge.redhat.com/servers
 	USE ADDR            STATE
@@ -99,18 +99,18 @@ AFS 妯″潡鍒涘缓 "/proc/fs/afs/" 鐩綍骞跺～鍏呭畠锛?
 	  1 Val 20000000 20000001 20000002 root.afs
 ```
 
-## 鍗曞厓鏁版嵁搴擄紙The Cell Database锛?
+## 单元数据库（The Cell Database
 
-鏂囦欢绯荤粺缁存姢涓€涓唴閮ㄦ暟鎹簱锛岃褰曞畠鐭ラ亾鐨勬墍鏈夊崟鍏冿紝浠ュ強杩欎簺鍗曞厓鐨勫嵎浣嶇疆鏈嶅姟鍣ㄧ殑 IP 鍦板潃銆傜郴缁熸墍灞炵殑鍗曞厓鍦?modprobe 鏃堕€氳繃 "rootcell=" 鍙傛暟鍔犲叆鏁版嵁搴擄紱濡傛灉缂栬瘧杩涘唴鏍革紝鍒欎娇鐢ㄥ唴鏍稿懡浠よ涓婄殑 "kafs.rootcell=" 鍙傛暟銆?
+文件系统维护一个内部数据库，记录它知道的所有单元，以及这些单元的卷位置服务器的 IP 地址。系统所属的单元modprobe 时通过 "rootcell=" 参数加入数据库；如果编译进内核，则使用内核命令行上的 "kafs.rootcell=" 参数
 ```
 	echo add CELLNAME VLADDR[:VLADDR][:VLADDR]... >/proc/fs/afs/cells
 	echo add grand.central.org 18.9.48.14:128.2.203.61:130.237.48.87 >/proc/fs/afs/cells
 ```
-鐩墠娌℃湁鍏朵粬鍗曞厓鏁版嵁搴撴搷浣滃彲鐢ㄣ€?
+目前没有其他单元数据库操作可用
 
-## 瀹夊叏锛圫ecurity锛?
+## 安全（Security
 
-瀹夊叏鎿嶄綔閫氳繃鐢?klog 绋嬪簭鑾峰彇涓€涓瘑閽ユ潵鍙戣捣銆備竴涓潪甯稿師濮嬬殑 klog 绋嬪簭浣嶄簬锛?
+安全操作通过klog 程序获取一个密钥来发起。一个非常原始的 klog 程序位于
 	https://people.redhat.com/~dhowells/rxrpc/klog.c
 ```
 	make klog LDLIBS="-lcrypto -lcrypt -lkrb4 -lkeyutils"
@@ -118,7 +118,7 @@ AFS 妯″潡鍒涘缓 "/proc/fs/afs/" 鐩綍骞跺～鍏呭畠锛?
 ```
 	./klog
 ```
-鍋囪鎴愬姛锛岃繖浼氭坊鍔犱竴涓被鍨嬩负 RxRPC銆佷互鏈嶅姟鍜屽崟鍏冨懡鍚嶇殑瀵嗛挜锛屼緥濡傦細"afs@<cellname>"銆傚彲浠ョ敤 keyctl 绋嬪簭鏌ョ湅瀹冿細
+假设成功，这会添加一个类型为 RxRPC、以服务和单元命名的密钥，例如："afs@<cellname>"。可以用 keyctl 程序查看它：
 ```
 	[root@andromeda ~]# keyctl show
 	Session Keyring
@@ -126,14 +126,14 @@ AFS 妯″潡鍒涘缓 "/proc/fs/afs/" 鐩綍骞跺～鍏呭畠锛?
 		2 --alswrv      0     0   \_ keyring: _uid.0
 	111416553 --als--v      0     0   \_ rxrpc: afs@CAMBRIDGE.REDHAT.COM
 ```
-鐩墠锛岀敤鎴峰悕銆佸煙锛坮ealm锛夈€佸瘑鐮佸拰寤鸿鐨勭エ鎹敓瀛樻湡閮借缂栬瘧杩涚▼搴忎腑銆?
-鍦ㄤ娇鐢?AFS 鍔熻兘涔嬪墠鑾峰彇瀵嗛挜涓嶆槸蹇呴渶鐨勶紝浣嗗鏋滀笉鑾峰彇锛屽垯鎵€鏈夋搷浣滈兘灏嗗彈 ACL 鐨勫尶鍚嶇敤鎴烽儴鍒嗙害鏉熴€?
-濡傛灉鑾峰彇浜嗗瘑閽ワ紝鍒欐嫢鏈夎瀵嗛挜鑰呭彂鍑虹殑鎵€鏈?AFS 鎿嶄綔锛堝寘鎷寕杞藉拰鑷姩鎸傝浇锛夐兘灏嗕娇鐢ㄨ瀵嗛挜杩涜瀹夊叏淇濇姢銆?
-濡傛灉涓€涓枃浠剁敤鏌愪釜鐗瑰畾瀵嗛挜鎵撳紑锛岀劧鍚庤鏂囦欢鎻忚堪绗﹁浼犻€掔粰涓€涓病鏈夎瀵嗛挜鐨勮繘绋嬶紙鍙兘閫氳繃 AF_UNIX 濂楁帴瀛楋級锛岄偅涔堣鏂囦欢涓婄殑鎿嶄綔灏嗕娇鐢ㄦ墦寮€璇ユ枃浠舵椂鎵€鐢ㄧ殑瀵嗛挜杩涜銆?
+目前，用户名、域（realm）、密码和建议的票据生存期都被编译进程序中
+在使AFS 功能之前获取密钥不是必需的，但如果不获取，则所有操作都将受 ACL 的匿名用户部分约束
+如果获取了密钥，则拥有该密钥者发出的所AFS 操作（包括挂载和自动挂载）都将使用该密钥进行安全保护
+如果一个文件用某个特定密钥打开，然后该文件描述符被传递给一个没有该密钥的进程（可能通过 AF_UNIX 套接字），那么该文件上的操作将使用打开该文件时所用的密钥进行
 
-## @sys 鏇挎崲锛圱he @sys Substitution锛?
+## @sys 替换（The @sys Substitution
 
-褰撳墠缃戠粶鍛藉悕绌洪棿鐨勮嚦澶?16 涓?@sys 鏇挎崲鍒楄〃鍙互
+当前网络命名空间的至16 @sys 替换列表可以
 ```
 	[root@andromeda ~]# echo foo amd64_linux_26 >/proc/fs/afs/sysname
 ```
@@ -145,5 +145,5 @@ AFS 妯″潡鍒涘缓 "/proc/fs/afs/" 鐩綍骞跺～鍏呭畠锛?
 	foo
 	amd64_linux_26
 ```
-杩涜 @sys 鏇挎崲鏃讹紝浼氭寜缁欏畾椤哄簭灏濊瘯鍒楄〃涓殑姣忎釜鍏冪礌銆?
-榛樿鎯呭喌涓嬶紝璇ュ垪琛ㄥ皢鍖呭惈涓€涓鍚?"<arch>_linux_26" 妯″紡鐨勯」鐩紝鍏朵腑 amd64 鏄?x86_64 鐨勫悕绉般€?
+进行 @sys 替换时，会按给定顺序尝试列表中的每个元素
+默认情况下，该列表将包含一个符"<arch>_linux_26" 模式的项目，其中 amd64 x86_64 的名称

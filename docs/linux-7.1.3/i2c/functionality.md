@@ -1,70 +1,70 @@
 ﻿## I2C/SMBus Functionality
 
 
-### 绠€浠?
+### 简
 
 
-鐢变簬骞堕潪姣忎釜 I2C 鎴?SMBus 閫傞厤鍣ㄩ兘瀹炵幇浜?I2C 瑙勮寖涓殑鍏ㄩ儴鍐呭锛屽洜姝ゅ綋涓€涓鎴风鑾峰緱
-鎸傝浇鍒版煇涓€傞厤鍣ㄧ殑閫夐」鏃讹紝瀹冧笉鑳戒俊浠昏嚜韬墍闇€鐨勫叏閮ㄥ姛鑳介兘宸茶瀹炵幇锛氬鎴风闇€瑕佹煇绉嶆柟寮忔潵
-妫€鏌ラ€傞厤鍣ㄦ槸鍚﹀叿澶囨墍闇€鐨勫姛鑳姐€?
+由于并非每个 I2C SMBus 适配器都实现I2C 规范中的全部内容，因此当一个客户端获得
+挂载到某个适配器的选项时，它不能信任自身所需的全部功能都已被实现：客户端需要某种方式来
+检查适配器是否具备所需的功能
 
 
-### 鍔熻兘甯搁噺
+### 功能常量
 
 
-鏈夊叧鏈€鏂扮増鐨勫姛鑳藉父閲忓垪琛紝璇锋煡鐪?<uapi/linux/i2c.h>锛?
+有关最新版的功能常量列表，请查<uapi/linux/i2c.h>
 
   =============================== ==============================================
-  I2C_FUNC_I2C                    绾?i2c 绾у懡浠わ紙绾?SMBus
-                                  閫傞厤鍣ㄩ€氬父鏃犳硶鎵ц杩欎簺鍛戒护锛?
-  I2C_FUNC_10BIT_ADDR             澶勭悊 10 浣嶅湴鍧€鎵╁睍
-  I2C_FUNC_PROTOCOL_MANGLING      浜嗚В I2C_M_IGNORE_NAK銆?
+  I2C_FUNC_I2C                    i2c 级命令（SMBus
+                                  适配器通常无法执行这些命令
+  I2C_FUNC_10BIT_ADDR             处理 10 位地址扩展
+  I2C_FUNC_PROTOCOL_MANGLING      了解 I2C_M_IGNORE_NAK
                                   I2C_M_REV_DIR_ADDR 鍜?I2C_M_NO_RD_ACK
-                                  鏍囧織锛堣繖浜涗細淇敼 I2C 鍗忚锛侊級
-  I2C_FUNC_NOSTART                鍙互璺宠繃 repeated start 搴忓垪
-  I2C_FUNC_SMBUS_QUICK            澶勭悊 SMBus write_quick 鍛戒护
-  I2C_FUNC_SMBUS_READ_BYTE        澶勭悊 SMBus read_byte 鍛戒护
-  I2C_FUNC_SMBUS_WRITE_BYTE       澶勭悊 SMBus write_byte 鍛戒护
-  I2C_FUNC_SMBUS_READ_BYTE_DATA   澶勭悊 SMBus read_byte_data 鍛戒护
-  I2C_FUNC_SMBUS_WRITE_BYTE_DATA  澶勭悊 SMBus write_byte_data 鍛戒护
-  I2C_FUNC_SMBUS_READ_WORD_DATA   澶勭悊 SMBus read_word_data 鍛戒护
-  I2C_FUNC_SMBUS_WRITE_WORD_DATA  澶勭悊 SMBus write_byte_data 鍛戒护
-  I2C_FUNC_SMBUS_PROC_CALL        澶勭悊 SMBus process_call 鍛戒护
-  I2C_FUNC_SMBUS_READ_BLOCK_DATA  澶勭悊 SMBus read_block_data 鍛戒护
-  I2C_FUNC_SMBUS_WRITE_BLOCK_DATA 澶勭悊 SMBus write_block_data 鍛戒护
-  I2C_FUNC_SMBUS_READ_I2C_BLOCK   澶勭悊 SMBus read_i2c_block_data 鍛戒护
-  I2C_FUNC_SMBUS_WRITE_I2C_BLOCK  澶勭悊 SMBus write_i2c_block_data 鍛戒护
+                                  标志（这些会修改 I2C 协议！）
+  I2C_FUNC_NOSTART                可以跳过 repeated start 序列
+  I2C_FUNC_SMBUS_QUICK            处理 SMBus write_quick 命令
+  I2C_FUNC_SMBUS_READ_BYTE        处理 SMBus read_byte 命令
+  I2C_FUNC_SMBUS_WRITE_BYTE       处理 SMBus write_byte 命令
+  I2C_FUNC_SMBUS_READ_BYTE_DATA   处理 SMBus read_byte_data 命令
+  I2C_FUNC_SMBUS_WRITE_BYTE_DATA  处理 SMBus write_byte_data 命令
+  I2C_FUNC_SMBUS_READ_WORD_DATA   处理 SMBus read_word_data 命令
+  I2C_FUNC_SMBUS_WRITE_WORD_DATA  处理 SMBus write_byte_data 命令
+  I2C_FUNC_SMBUS_PROC_CALL        处理 SMBus process_call 命令
+  I2C_FUNC_SMBUS_READ_BLOCK_DATA  处理 SMBus read_block_data 命令
+  I2C_FUNC_SMBUS_WRITE_BLOCK_DATA 处理 SMBus write_block_data 命令
+  I2C_FUNC_SMBUS_READ_I2C_BLOCK   处理 SMBus read_i2c_block_data 命令
+  I2C_FUNC_SMBUS_WRITE_I2C_BLOCK  处理 SMBus write_i2c_block_data 命令
   =============================== ==============================================
 
-涓婇潰杩欎簺鏍囧織鐨勪竴浜涚粍鍚堜篃涓轰簡浣犵殑鏂逛究鑰屽畾涔夛細
+上面这些标志的一些组合也为了你的方便而定义：
 
   =========================       ======================================
-  I2C_FUNC_SMBUS_BYTE             澶勭悊 SMBus read_byte
-                                  涓?write_byte 鍛戒护
-  I2C_FUNC_SMBUS_BYTE_DATA        澶勭悊 SMBus read_byte_data
-                                  涓?write_byte_data 鍛戒护
-  I2C_FUNC_SMBUS_WORD_DATA        澶勭悊 SMBus read_word_data
-                                  涓?write_word_data 鍛戒护
-  I2C_FUNC_SMBUS_BLOCK_DATA       澶勭悊 SMBus read_block_data
-                                  涓?write_block_data 鍛戒护
-  I2C_FUNC_SMBUS_I2C_BLOCK        澶勭悊 SMBus read_i2c_block_data
-                                  涓?write_i2c_block_data 鍛戒护
-  I2C_FUNC_SMBUS_EMUL             澶勭悊鎵€鏈夊彲鐢辩湡瀹?I2C 閫傞厤鍣ㄦā鎷熺殑
-                                  SMBus 鍛戒护锛堜娇鐢ㄩ€忔槑鐨?
-                                  妯℃嫙灞傦級
+  I2C_FUNC_SMBUS_BYTE             处理 SMBus read_byte
+                                  write_byte 命令
+  I2C_FUNC_SMBUS_BYTE_DATA        处理 SMBus read_byte_data
+                                  write_byte_data 命令
+  I2C_FUNC_SMBUS_WORD_DATA        处理 SMBus read_word_data
+                                  write_word_data 命令
+  I2C_FUNC_SMBUS_BLOCK_DATA       处理 SMBus read_block_data
+                                  write_block_data 命令
+  I2C_FUNC_SMBUS_I2C_BLOCK        处理 SMBus read_i2c_block_data
+                                  write_i2c_block_data 命令
+  I2C_FUNC_SMBUS_EMUL             处理所有可由真I2C 适配器模拟的
+                                  SMBus 命令（使用透明
+                                  模拟层）
   =========================       ======================================
 
-鍦?3.5 涔嬪墠鐨勫収鏍哥増鏈腑锛孖2C_FUNC_NOSTART 鏄綔涓?
-I2C_FUNC_PROTOCOL_MANGLING 鐨勪竴閮ㄥ垎瀹炵幇鐨勩€?
+3.5 之前的內核版本中，I2C_FUNC_NOSTART 是作
+I2C_FUNC_PROTOCOL_MANGLING 的一部分实现的
 
 
-### 閫傞厤鍣ㄥ疄鐜?
+### 閫傞厤鍣ㄥ疄鐜。
 
 
-褰撲綘缂栧啓涓€涓柊鐨勯€傞厤鍣ㄩ┍鍔ㄦ椂锛屼綘灏嗕笉寰椾笉瀹炵幇涓€涓悕涓?`functionality` 鐨勫嚱鏁板洖璋冦€?
-鍏稿瀷鐨勫疄鐜板涓嬫墍绀恒€?
+当你编写一个新的适配器驱动时，你将不得不实现一个名`functionality` 的函数回调
+典型的实现如下所示
 
-涓€涓吀鍨嬬殑浠呮敮鎸?SMBus 鐨勯€傞厤鍣ㄤ細鍒楀嚭瀹冩敮鎸佺殑鎵€鏈?SMBus 浜嬪姟
+一个典型的仅支SMBus 的适配器会列出它支持的所SMBus 事务
 ```
 
   static u32 piix4_func(struct i2c_adapter *adapter)
@@ -75,7 +75,7 @@ I2C_FUNC_PROTOCOL_MANGLING 鐨勪竴閮ㄥ垎瀹炵幇鐨勩€?
   }
 
 ```
-涓€涓吀鍨嬬殑瀹屾暣 I2C 閫傞厤鍣ㄤ細浣跨敤浠ヤ笅鍐呭锛堟潵鑷?i2c-pxa
+一个典型的完整 I2C 适配器会使用以下内容（来i2c-pxa
 ```
 
   static u32 i2c_pxa_functionality(struct i2c_adapter *adap)
@@ -84,17 +84,17 @@ I2C_FUNC_PROTOCOL_MANGLING 鐨勪竴閮ㄥ垎瀹炵幇鐨勩€?
   }
 
 ```
-I2C_FUNC_SMBUS_EMUL 鍖呭惈浜?i2c-core 鍙互鍦ㄦ棤闇€閫傞厤鍣ㄩ┍鍔ㄥ府鍔╃殑鎯呭喌涓嬨€佷娇鐢?
-I2C_FUNC_I2C 妯℃嫙鐨勬墍鏈?SMBus 浜嬪姟锛堝鍔?I2C 鍧椾簨鍔★級銆傚叾鎬濇兂鏄瀹㈡埛绔┍鍔ㄦ鏌?
-瀵?SMBus 鍔熻兘鐨勬敮鎸侊紝鑰屾棤闇€鍏冲績杩欎簺鍔熻兘鏄敱閫傞厤鍣ㄥ湪纭欢涓疄鐜帮紝杩樻槸鐢?i2c-core
-鍦?I2C 閫傞厤鍣ㄤ箣涓婁互杞欢妯℃嫙銆?
+I2C_FUNC_SMBUS_EMUL 包含i2c-core 可以在无需适配器驱动帮助的情况下、使
+I2C_FUNC_I2C 模拟的所SMBus 事务（外I2C 块事务）。其思想是让客户端驱动检
+SMBus 功能的支持，而无需关心这些功能是由适配器在硬件中实现，还是i2c-core
+I2C 适配器之上以软件模拟
 
 
-### 瀹㈡埛绔鏌?
+### 客户端检
 
 
-鍦ㄥ鎴风灏濊瘯鎸傝浇鍒版煇涓€傞厤鍣ㄤ箣鍓嶏紝鐢氳嚦鍦ㄦ墽琛屾祴璇曚互妫€鏌ュ畠鎵€鏀寔鐨勬煇涓澶囨槸鍚﹀嚭鐜板湪
-閫傞厤鍣ㄤ笂涔嬪墠锛屽畠搴旇妫€鏌ユ墍闇€鐨勫姛鑳芥槸鍚﹀瓨鍦ㄣ€傚吀鍨嬬殑鏂瑰紡鏄?
+在客户端尝试挂载到某个适配器之前，甚至在执行测试以检查它所支持的某个设备是否出现在
+适配器上之前，它应该检查所需的功能是否存在。典型的方式
 ```
 
   static int lm75_detect(...)
@@ -107,24 +107,24 @@ I2C_FUNC_I2C 妯℃嫙鐨勬墍鏈?SMBus 浜嬪姟锛堝鍔?I2C 鍧椾簨鍔�
   }
 
 ```
-杩欓噷锛宭m75 椹卞姩妫€鏌ラ€傞厤鍣ㄦ槸鍚﹁兘澶熷悓鏃舵墽琛?SMBus byte data 鍜?SMBus word data 浜嬪姟銆?
-濡傛灉涓嶈兘锛岄偅涔堣椹卞姩灏嗘棤娉曞湪姝ら€傞厤鍣ㄤ笂宸ヤ綔锛岀户缁笅鍘讳篃娌℃湁鎰忎箟銆傚鏋滀笂杩版鏌ユ垚鍔燂紝
-椹卞姩渚跨煡閬撳畠鍙互璋冪敤浠ヤ笅鍑芥暟锛歩2c_smbus_read_byte_data()銆乮2c_smbus_write_byte_data()銆?
-i2c_smbus_read_word_data() 鍜?i2c_smbus_write_word_data()銆備綔涓虹粡楠屾硶鍒欙紝浣犻€氳繃
-i2c_check_functionality() 娴嬭瘯鐨勫姛鑳藉父閲忥紝搴斿綋涓庝綘椹卞姩鎵€璋冪敤鐨?i2c_smbus_* 鍑芥暟
-绮剧‘鍖归厤銆?
+这里，lm75 驱动检查适配器是否能够同时执SMBus byte data SMBus word data 事务
+如果不能，那么该驱动将无法在此适配器上工作，继续下去也没有意义。如果上述检查成功，
+驱动便知道它可以调用以下函数：i2c_smbus_read_byte_data()、i2c_smbus_write_byte_data()
+i2c_smbus_read_word_data() i2c_smbus_write_word_data()。作为经验法则，你通过
+i2c_check_functionality() 测试的功能常量，应当与你驱动所调用i2c_smbus_* 函数
+精确匹配
 
-娉ㄦ剰锛屼笂杩版鏌ュ苟涓嶈兘璇存槑杩欎簺鍔熻兘鏄敱搴曞眰閫傞厤鍣ㄥ湪纭欢涓疄鐜帮紝杩樻槸鐢?i2c-core 鍦?
-杞欢涓ā鎷熴€傚鎴风椹卞姩鏃犻渶鍏冲績杩欎竴鐐癸紝鍥犱负 i2c-core 浼氶€忔槑鍦板湪 I2C 閫傞厤鍣ㄤ箣涓?
-瀹炵幇 SMBus 浜嬪姟銆?
-
-
-### 閫氳繃 /DEV 妫€鏌?
+注意，上述检查并不能说明这些功能是由底层适配器在硬件中实现，还是i2c-core 
+软件中模拟。客户端驱动无需关心这一点，因为 i2c-core 会透明地在 I2C 适配器之
+实现 SMBus 事务
 
 
-濡傛灉浣犲皾璇曚粠鐢ㄦ埛绌洪棿绋嬪簭璁块棶鏌愪釜閫傞厤鍣紝浣犲皢涓嶅緱涓嶄娇鐢?/dev 鎺ュ彛銆傚綋鐒讹紝浣犱粛鐒堕渶瑕?
-妫€鏌ユ墍闇€鐨勫姛鑳芥槸鍚﹀彈鏀寔銆傝繖閫氳繃 I2C_FUNCS ioctl 瀹屾垚銆備笅闈竴涓敼缂栬嚜 i2cdetect
-绋嬪簭鐨勭ず渚嬶細
+### 通过 /DEV 检
+
+
+如果你尝试从用户空间程序访问某个适配器，你将不得不使/dev 接口。当然，你仍然需
+检查所需的功能是否受支持。这通过 I2C_FUNCS ioctl 完成。下面一个改编自 i2cdetect
+程序的示例：
 ```
 
   int file;

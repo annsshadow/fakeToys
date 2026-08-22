@@ -1,34 +1,34 @@
-﻿## 瀹炴椂鏇存柊鍗忚皟鍣紙Live Update Orchestrator锛?
+﻿## 实时更新协调器（Live Update Orchestrator
 
 :Author: Pasha Tatashin <pasha.tatashin@soleen.com>
 
-   :doc: 瀹炴椂鏇存柊鍗忚皟鍣紙LUO锛?
+   :doc: 实时更新协调器（LUO
 
-## LUO 浼氳瘽锛圫essions锛?
-
-
-   :doc: LUO 浼氳瘽
-
-## LUO 淇濈暀鏂囦欢鎻忚堪绗?
+## LUO 会话（Sessions
 
 
-   :doc: LUO 鏂囦欢鎻忚堪绗?
+   :doc: LUO 会话
 
-## LUO 鏂囦欢鐢熷懡鍛ㄦ湡缁戝畾鐨勫叏灞€鏁版嵁
-
-
-   :doc: LUO 鏂囦欢鐢熷懡鍛ㄦ湡缁戝畾鐨勫叏灞€鏁版嵁
-
-## 瀹炴椂鏇存柊鍗忚皟鍣?ABI
+## LUO 保留文件描述
 
 
-   :doc: 瀹炴椂鏇存柊鍗忚皟鍣?ABI
+   :doc: LUO 文件描述
 
-浠ヤ笅绫诲瀷鐨勬枃浠舵弿杩扮鍙淇濈暀锛?
+## LUO 文件生命周期绑定的全局数据
+
+
+   :doc: LUO 文件生命周期绑定的全局数据
+
+## 实时更新协调ABI
+
+
+   :doc: 实时更新协调ABI
+
+以下类型的文件描述符可被保留
 
 - [../mm/memfd_preservation](../mm/memfd_preservation)
 
-## 鍏叡 API
+## 公共 API
 
 
    :functions:
@@ -39,7 +39,7 @@
 
    :export:
 
-## 鍐呴儴 API
+## 内部 API
 
 
    :internal:
@@ -50,7 +50,7 @@
 
    :internal:
 
-## 鍙﹁鍙傞槄
+## 另请参阅
 
 
 - [Live Update uAPI </userspace-api/liveupdate>](Live Update uAPI </userspace-api/liveupdate>)

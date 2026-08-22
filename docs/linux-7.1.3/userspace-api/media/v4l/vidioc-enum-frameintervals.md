@@ -2,51 +2,51 @@
 ######## ioctl VIDIOC_ENUM_FRAMEINTERVALS
 
 
-## 鍚嶇О
+## 名称
 
 
-VIDIOC_ENUM_FRAMEINTERVALS - 鏋氫妇甯ч棿闅?
-## 姒傝
+VIDIOC_ENUM_FRAMEINTERVALS - 鏋氫妇甯ч棿闅。
+## 概要
 
 
 
 `int ioctl(int fd, VIDIOC_ENUM_FRAMEINTERVALS, struct v4l2_frmivalenum *argp)`
 
-## 鍙傛暟
+## 参数
 
 
 `fd`
-    鐢?`open()` 杩斿洖鐨勬枃浠舵弿杩扮銆?
+    `open()` 返回的文件描述符
 `argp`
-    鎸囧悜缁撴瀯浣?`v4l2_frmivalenum` 鐨勬寚閽堬紝
-    鍏朵腑鍖呭惈鍍忕礌鏍煎紡鍜屽昂瀵革紝骞舵帴鏀朵竴涓抚闂撮殧銆?
-## 鎻忚堪
+    指向结构`v4l2_frmivalenum` 的指针，
+    其中包含像素格式和尺寸，并接收一个帧间隔
+## 描述
 
 
-姝?ioctl 鍏佽搴旂敤绋嬪簭鏋氫妇璁惧閽堝缁欏畾鍍忕礌鏍煎紡鍜屽抚灏哄鎵€鏀寔鐨勬墍鏈夊抚闂撮殧銆?
-鏀寔鐨勫儚绱犳牸寮忓拰甯у昂瀵稿彲浠ラ€氳繃浣跨敤 VIDIOC_ENUM_FMT 鍜?VIDIOC_ENUM_FRAMESIZES 鍑芥暟鑾峰緱銆?
-杩斿洖鍊间互鍙?`v4l2_frmivalenum.type` 瀛楁鐨勫唴瀹瑰彇鍐充簬璁惧鏀寔鐨勫抚闂撮殧绫诲瀷銆備互涓嬫槸璇?鍑芥暟鍦ㄤ笉鍚屾儏鍐典笅鐨勮涔夛細
+ioctl 允许应用程序枚举设备针对给定像素格式和帧尺寸所支持的所有帧间隔
+支持的像素格式和帧尺寸可以通过使用 VIDIOC_ENUM_FMT VIDIOC_ENUM_FRAMESIZES 函数获得
+返回值以`v4l2_frmivalenum.type` 字段的内容取决于设备支持的帧间隔类型。以下是函数在不同情况下的语义：
 
-- **绂绘暎锛圖iscrete锛夛細** 濡傛灉缁欏畾鐨勭储寮曞€硷紙浠庨浂寮€濮嬶級鏈夋晥锛屽嚱鏁拌繑鍥炴垚鍔熴€傚簲鐢ㄧ▼搴?   搴斿皢绱㈠紩姣忔鍔犱竴杩涜璋冪敤锛岀洿鍒拌繑鍥?`EINVAL`銆俙v4l2_frmivalenum.type` 瀛楁鐢遍┍鍔?   璁剧疆涓?`V4L2_FRMIVAL_TYPE_DISCRETE`銆傚湪鑱斿悎浣撲腑锛屽彧鏈?`discrete` 鎴愬憳鏈夋晥銆?
-- **姝ヨ繘锛圫tep-wise锛夛細** 濡傛灉缁欏畾鐨勭储寮曞€间负闆讹紝鍑芥暟杩斿洖鎴愬姛锛涘浜庝换浣曞叾浠栫储寮曞€?   鍒欒繑鍥?`EINVAL`銆俙v4l2_frmivalenum.type` 瀛楁鐢遍┍鍔ㄨ缃负
-   `V4L2_FRMIVAL_TYPE_STEPWISE`銆傚湪鑱斿悎浣撲腑锛屽彧鏈?`stepwise` 鎴愬憳鏈夋晥銆?
-- **杩炵画锛圕ontinuous锛夛細** 杩欐槸涓婅堪姝ヨ繘绫诲瀷鐨勪竴绉嶇壒娈婃儏鍐点€傚鏋滅粰瀹氱殑绱㈠紩鍊间负闆讹紝
-   鍑芥暟杩斿洖鎴愬姛锛涘浜庝换浣曞叾浠栫储寮曞€煎垯杩斿洖 `EINVAL`銆俙v4l2_frmivalenum.type` 瀛楁鐢?   椹卞姩璁剧疆涓?`V4L2_FRMIVAL_TYPE_CONTINUOUS`銆傚湪鑱斿悎浣撲腑锛屽彧鏈?`stepwise` 鎴愬憳鏈夋晥锛?   涓?`step` 鍊艰璁句负 1銆?
-褰撳簲鐢ㄧ▼搴忎互绱㈠紩闆惰皟鐢ㄨ鍑芥暟鏃讹紝瀹冨繀椤绘鏌?`type` 瀛楁浠ョ‘瀹氳澶囨敮鎸佺殑甯ч棿闅旀灇涓?绫诲瀷銆傚彧鏈夊浜?`V4L2_FRMIVAL_TYPE_DISCRETE` 绫诲瀷锛岄€掑绱㈠紩鍊间互鎺ユ敹鏇村甯ч棿闅旀墠鏈?鎰忎箟銆?
+- **离散（Discrete）：** 如果给定的索引值（从零开始）有效，函数返回成功。应用程   应将索引每次加一进行调用，直到返`EINVAL`。`v4l2_frmivalenum.type` 字段由驱   设置`V4L2_FRMIVAL_TYPE_DISCRETE`。在联合体中，只`discrete` 成员有效
+- **步进（Step-wise）：** 如果给定的索引值为零，函数返回成功；对于任何其他索引   则返`EINVAL`。`v4l2_frmivalenum.type` 字段由驱动设置为
+   `V4L2_FRMIVAL_TYPE_STEPWISE`。在联合体中，只`stepwise` 成员有效
+- **连续（Continuous）：** 这是上述步进类型的一种特殊情况。如果给定的索引值为零，
+   函数返回成功；对于任何其他索引值则返回 `EINVAL`。`v4l2_frmivalenum.type` 字段   驱动设置`V4L2_FRMIVAL_TYPE_CONTINUOUS`。在联合体中，只`stepwise` 成员有效   `step` 值被设为 1
+当应用程序以索引零调用该函数时，它必须检`type` 字段以确定设备支持的帧间隔枚类型。只有对`V4L2_FRMIVAL_TYPE_DISCRETE` 类型，递增索引值以接收更多帧间隔才意义
 
-   甯ч棿闅旇繑鍥炵殑椤哄簭娌℃湁鐗规畩鍚箟銆傚挨鍏跺畠骞朵笉琛ㄧず浠讳綍鍏充簬娼滃湪榛樿甯ч棿闅旂殑淇℃伅銆?
-搴旂敤绋嬪簭鍙互鍋囧畾鏋氫妇鏁版嵁涓嶄細鍦ㄦ病鏈夊簲鐢ㄧ▼搴忚嚜韬氦浜掔殑鎯呭喌涓嬪彂鐢熷彉鍖栥€傝繖鎰忓懗鐫€濡傛灉
-搴旂敤绋嬪簭鍦ㄨ繍琛屽抚闂撮殧鏋氫妇鏃朵笉鎵ц浠讳綍鍏朵粬 ioctl 璋冪敤锛屽垯鏋氫妇鏁版嵁鏄竴鑷寸殑銆?
+   帧间隔返回的顺序没有特殊含义。尤其它并不表示任何关于潜在默认帧间隔的信息
+应用程序可以假定枚举数据不会在没有应用程序自身交互的情况下发生变化。这意味着如果
+应用程序在运行帧间隔枚举时不执行任何其他 ioctl 调用，则枚举数据是一致的
 
-   **甯ч棿闅斾笌甯х巼锛?* V4L2 API 浣跨敤甯ч棿闅旇€岄潪甯х巼銆傜粰瀹氬抚闂撮殧鍚庯紝甯х巼鍙寜濡備笅鏂瑰紡
-   璁＄畻锛?
+   **帧间隔与帧率* V4L2 API 使用帧间隔而非帧率。给定帧间隔后，帧率可按如下方式
+   计算
 ```
        frame_rate = 1 / frame_interval
 
 ```
-## 缁撴瀯浣?
+## 结构
 
-鍦ㄤ笅杩扮粨鏋勪綋涓紝**IN** 琛ㄧず蹇呴』鐢卞簲鐢ㄧ▼搴忓～鍏ョ殑鍊硷紝**OUT** 琛ㄧず鐢遍┍鍔ㄥ～鍏ョ殑鍊笺€?搴旂敤绋嬪簭搴斿皢闄?**IN** 瀛楁涔嬪鐨勬墍鏈夋垚鍛樼疆闆躲€?
+在下述结构体中，**IN** 表示必须由应用程序填入的值，**OUT** 表示由驱动填入的值应用程序应将**IN** 字段之外的所有成员置零
 
     :header-rows:  0
     :stub-columns: 0
@@ -54,11 +54,11 @@ VIDIOC_ENUM_FRAMEINTERVALS - 鏋氫妇甯ч棿闅?
 
     - - struct `v4l2_fract`
       - `min`
-      - 鏈€灏忓抚闂撮殧 [s]銆?    - - struct `v4l2_fract`
+      - 最小帧间隔 [s]    - - struct `v4l2_fract`
       - `max`
-      - 鏈€澶у抚闂撮殧 [s]銆?    - - struct `v4l2_fract`
+      - 最大帧间隔 [s]    - - struct `v4l2_fract`
       - `step`
-      - 甯ч棿闅旀闀?[s]銆?
+      - 帧间隔步[s]
 
 
 
@@ -69,19 +69,19 @@ VIDIOC_ENUM_FRAMEINTERVALS - 鏋氫妇甯ч棿闅?
 
     - - __u32
       - `index`
-      - IN锛氭灇涓句腑缁欏畾甯ч棿闅旂殑绱㈠紩銆?    - - __u32
+      - IN：枚举中给定帧间隔的索引    - - __u32
       - `pixel_format`
-      - IN锛氳鏋氫妇甯ч棿闅旂殑鍍忕礌鏍煎紡銆?    - - __u32
+      - IN：要枚举帧间隔的像素格式    - - __u32
       - `width`
-      - IN锛氳鏋氫妇甯ч棿闅旂殑甯у搴︺€?    - - __u32
+      - IN：要枚举帧间隔的帧宽度    - - __u32
       - `height`
-      - IN锛氳鏋氫妇甯ч棿闅旂殑甯ч珮搴︺€?    - - __u32
+      - IN：要枚举帧间隔的帧高度    - - __u32
       - `type`
-      - OUT锛氳澶囨敮鎸佺殑甯ч棿闅旂被鍨嬨€?    - - union {
+      - OUT：设备支持的帧间隔类型    - - union {
       - (anonymous)
-      - OUT锛氬叿鏈夌粰瀹氱储寮曠殑甯ч棿闅斻€?    - - struct `v4l2_fract`
+      - OUT：具有给定索引的帧间隔    - - struct `v4l2_fract`
       - `discrete`
-      - 甯ч棿闅?[s]銆?    - - struct `v4l2_frmival_stepwise`
+      - 帧间[s]    - - struct `v4l2_frmival_stepwise`
       - `stepwise`
       -
     - - }
@@ -89,9 +89,9 @@ VIDIOC_ENUM_FRAMEINTERVALS - 鏋氫妇甯ч棿闅?
 
     - - __u32
       - `reserved[^2^]`
-      - 涓烘湭鏉ヤ娇鐢ㄤ繚鐣欑殑绌洪棿銆傞┍鍔ㄥ拰搴旂敤绋嬪簭蹇呴』灏嗗叾缃浂銆?
+      - 为未来使用保留的空间。驱动和应用程序必须将其置零
 
-## 鏋氫妇
+## 枚举
 
 
 
@@ -101,12 +101,12 @@ VIDIOC_ENUM_FRAMEINTERVALS - 鏋氫妇甯ч棿闅?
 
     - - `V4L2_FRMIVAL_TYPE_DISCRETE`
       - 1
-      - 绂绘暎甯ч棿闅斻€?    - - `V4L2_FRMIVAL_TYPE_CONTINUOUS`
+      - 离散帧间隔    - - `V4L2_FRMIVAL_TYPE_CONTINUOUS`
       - 2
-      - 杩炵画甯ч棿闅斻€?    - - `V4L2_FRMIVAL_TYPE_STEPWISE`
+      - 连续帧间隔    - - `V4L2_FRMIVAL_TYPE_STEPWISE`
       - 3
-      - 姝ヨ繘寮忓畾涔夌殑甯ч棿闅斻€?
-## 杩斿洖鍊?
+      - 步进式定义的帧间隔
+## 杩斿洖鍊。
 
-鎴愬姛鏃惰繑鍥?0锛屽嚭閿欐椂杩斿洖 -1锛屽苟鐩稿簲鍦拌缃?`errno` 鍙橀噺銆傞€氱敤閿欒鐮佸湪
-Generic Error Codes <gen-errors> 绔犺妭涓弿杩般€?
+成功时返0，出错时返回 -1，并相应地设`errno` 变量。通用错误码在
+Generic Error Codes <gen-errors> 章节中描述
