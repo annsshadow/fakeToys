@@ -2509,7 +2509,7 @@ pub async fn data_work_id_mockputtopost(
 
 pub async fn data_work_id_path0(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -2539,7 +2539,7 @@ pub async fn data_work_id_path0(
 
 pub async fn data_work_id_path0_mockdeletetoget(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -2589,7 +2589,7 @@ pub async fn data_work_id_path0_mockdeletetoget(
 
 pub async fn data_work_id_path0_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -2627,7 +2627,7 @@ pub async fn data_work_id_path0_mockputtopost(
 
 pub async fn data_work_id_path0_path1(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -2657,7 +2657,7 @@ pub async fn data_work_id_path0_path1(
 
 pub async fn data_work_id_path0_path1_mockdeletetoget(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -2707,7 +2707,7 @@ pub async fn data_work_id_path0_path1_mockdeletetoget(
 
 pub async fn data_work_id_path0_path1_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -2745,7 +2745,7 @@ pub async fn data_work_id_path0_path1_mockputtopost(
 
 pub async fn data_work_id_path0_path1_path2(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -2775,7 +2775,7 @@ pub async fn data_work_id_path0_path1_path2(
 
 pub async fn data_work_id_path0_path1_path2_mockdeletetoget(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -2825,7 +2825,7 @@ pub async fn data_work_id_path0_path1_path2_mockdeletetoget(
 
 pub async fn data_work_id_path0_path1_path2_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -2863,7 +2863,7 @@ pub async fn data_work_id_path0_path1_path2_mockputtopost(
 
 pub async fn data_work_id_path0_path1_path2_path3(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -2893,7 +2893,7 @@ pub async fn data_work_id_path0_path1_path2_path3(
 
 pub async fn data_work_id_path0_path1_path2_path3_mockdeletetoget(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -2943,7 +2943,7 @@ pub async fn data_work_id_path0_path1_path2_path3_mockdeletetoget(
 
 pub async fn data_work_id_path0_path1_path2_path3_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -2981,7 +2981,7 @@ pub async fn data_work_id_path0_path1_path2_path3_mockputtopost(
 
 pub async fn data_work_id_path0_path1_path2_path3_path4(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -3011,7 +3011,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4(
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_mockdeletetoget(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3061,7 +3061,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockdeletetoget(
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3099,7 +3099,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_mockputtopost(
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -3129,7 +3129,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5(
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3179,7 +3179,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget(
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3217,7 +3217,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost(
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -3247,7 +3247,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6(
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3297,7 +3297,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeleteto
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3335,7 +3335,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopos
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -3365,7 +3365,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7(
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3415,7 +3415,7 @@ pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockde
 
 pub async fn data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3581,7 +3581,7 @@ pub async fn data_workcompleted_id_mockputtopost(
 
 pub async fn data_workcompleted_id_path0(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -3611,7 +3611,7 @@ pub async fn data_workcompleted_id_path0(
 
 pub async fn data_workcompleted_id_path0_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0)): axum::extract::Path<(String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3649,7 +3649,7 @@ pub async fn data_workcompleted_id_path0_mockputtopost(
 
 pub async fn data_workcompleted_id_path0_path1(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -3679,7 +3679,7 @@ pub async fn data_workcompleted_id_path0_path1(
 
 pub async fn data_workcompleted_id_path0_path1_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1)): axum::extract::Path<(String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3717,7 +3717,7 @@ pub async fn data_workcompleted_id_path0_path1_mockputtopost(
 
 pub async fn data_workcompleted_id_path0_path1_path2(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -3747,7 +3747,7 @@ pub async fn data_workcompleted_id_path0_path1_path2(
 
 pub async fn data_workcompleted_id_path0_path1_path2_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2)): axum::extract::Path<(String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3785,7 +3785,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_mockputtopost(
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -3815,7 +3815,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3(
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3)): axum::extract::Path<(String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3853,7 +3853,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_mockputtopost(
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -3883,7 +3883,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4(
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4)): axum::extract::Path<(String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3921,7 +3921,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost(
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -3951,7 +3951,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5(
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5)): axum::extract::Path<(String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -3989,7 +3989,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputto
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -4019,7 +4019,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6(
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6)): axum::extract::Path<(String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -4057,7 +4057,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_moc
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let rows = client
@@ -4087,7 +4087,7 @@ pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_pat
 
 pub async fn data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost(
     pool: Extension<Pool>,
-    axum::extract::Path(id): axum::extract::Path<String>,
+    axum::extract::Path((id, _path0, _path1, _path2, _path3, _path4, _path5, _path6, _path7)): axum::extract::Path<(String, String, String, String, String, String, String, String, String)>,
 ) -> Result<Json<ActionResult<Value>>, AppError> {
     let client = pool.get().await.map_err(|_| AppError::Internal)?;
     let result = client
@@ -15375,6 +15375,912 @@ pub async fn attachment_id(
                 ("deleted".to_string(), Value::Bool(n > 0)),
             ])))))
         }
+    }
+}
+
+// ════════════ plan002 U2-b：attachment 二进制族（BlobStorage 接入） ════════════
+// 解锁前提：crates/shared/src/storage.rs 提供 BlobStorage 抽象（FS 后端 +
+// storage_from_env()，STORAGE_BACKEND=fs / STORAGE_ROOT）。
+//
+// 语义红线（无假成功壳）：
+//   - 上传 = storage.put + 回读校验。DbBlobStorage.put 是 no-op 占位（内容不会
+//     持久化），回读必然失败 → 明确 501 NotImplemented + tracing::warn（fail loud，
+//     不写"看起来成功但内容丢失"的元数据行）。
+//   - 下载 = 查附件行取 xstorage(blob key) → storage.get → 字节流响应；
+//     get 失败（DB 占位后端 / FS 缺文件）→ 明确 501 + warn。
+//   - 转换/预览/发票解析/HTML 渲染/URL 拉取/批量打包：本 crate 无对应引擎，
+//     注册为真实语义端点返回 501 NotImplemented + warn（语义明确，非静默 success）。
+//   - 元数据管理（改名/复制/批删/排序等）：真实 SQL + IDOR 门禁（owner 或 admin）。
+//
+// 已知不可表达（保留跳过并记录）：axum/matchit 不支持段内多参数捕获，以下 4 条
+// Java 端点无法注册路由 —— download/{id}/work/{workId}/{name}.{ext} 及其
+// /stream/、workcompleted 变体（共 4 条）。其余 attachment 族缺口全部落地。
+
+fn u2_capability_unavailable(capability: &'static str) -> AppError {
+    tracing::warn!(capability, "endpoint requires an unavailable engine; returning 501");
+    AppError::NotImplemented
+}
+
+/// 规范化 blob key：`attachment/{attachmentId}/{filename}`；文件名剥离路径分隔符
+/// 与控制字符（FsBlobStorage.resolve 还会拒绝 `..` 组件 —— 双保险）。
+fn u2_att_blob_key(id: &str, filename: &str) -> Result<String, AppError> {
+    let cleaned: String = filename
+        .replace(['\\', '/'], "_")
+        .chars()
+        .filter(|c| !c.is_control() && *c != '"' && *c != '\0')
+        .collect();
+    let name = cleaned.trim().trim_start_matches('.');
+    if name.is_empty() || name == "." || name == ".." {
+        return Err(AppError::BadRequest("invalid file name".to_string()));
+    }
+    Ok(format!("attachment/{id}/{name}"))
+}
+
+/// put + 回读校验。DB 占位后端 put 无副作用且 get 必然 Err —— 在此显式失败，
+/// 避免产生"上传成功但内容丢失"的假成功响应。
+async fn u2_att_persist_verified(
+    storage: &dyn shared::storage::BlobStorage,
+    key: &str,
+    bytes: &[u8],
+) -> Result<(), AppError> {
+    storage.put(key, bytes).await.map_err(|e| {
+        tracing::warn!(key, error = %e, "blob put failed");
+        AppError::Internal
+    })?;
+    if let Err(e) = storage.get(key).await {
+        tracing::warn!(key, error = %e,
+            "blob backend did not persist upload (STORAGE_BACKEND=db placeholder); \
+             set STORAGE_BACKEND=fs to enable binary uploads");
+        return Err(AppError::NotImplemented);
+    }
+    Ok(())
+}
+
+async fn u2_read_multipart_file(
+    mut multipart: axum::extract::Multipart,
+) -> Result<(String, Vec<u8>), AppError> {
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|_| AppError::BadRequest("malformed multipart body".to_string()))?
+    {
+        let fname = field.file_name().map(str::to_string).filter(|s| !s.is_empty());
+        let data = field
+            .bytes()
+            .await
+            .map_err(|_| AppError::BadRequest("unreadable upload field".to_string()))?;
+        if fname.is_some() || !data.is_empty() {
+            return Ok((fname.unwrap_or_else(|| "upload.bin".to_string()), data.to_vec()));
+        }
+    }
+    Ok(("upload.bin".to_string(), Vec::new()))
+}
+
+/// 上传统一入口：persist(带回读校验) + 写 pp_c_attachment 元数据行。
+/// ref_col 仅接受内部常量（"xwork" / "xworkCompleted"），非用户输入。
+#[allow(clippy::too_many_arguments)]
+async fn u2_att_store_new(
+    pool: &Pool,
+    person: &str,
+    id: &str,
+    filename: &str,
+    bytes: Vec<u8>,
+    ref_col: &str,
+    ref_value: &str,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let key = u2_att_blob_key(id, &filename)?;
+    let storage = shared::storage::storage_from_env();
+    u2_att_persist_verified(storage.as_ref(), &key, &bytes).await?;
+
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let ext = filename.rsplit('.').next().unwrap_or("bin").to_string();
+    let length = bytes.len() as i64;
+    let now = chrono::Utc::now().to_rfc3339();
+    let sql = format!(
+        "INSERT INTO \"pp_c_attachment\" \
+         (\"xid\",\"xname\",\"xextension\",\"xlength\",\"xstorage\",\"xtype\",\"xperson\",\
+          \"xlastUpdatePerson\",{ref_col},\"xcreateTime\",\"xupdateTime\",\
+          id,\"creator\",\"creator_person\",\"create_time\",\"update_time\") \
+         VALUES ($1,$2,$3,$4,$5,'attachment',$6,$6,$7,$8,$8,$1,$6,$6,$8,$8)"
+    );
+    client
+        .execute(
+            &sql,
+            &[&id, &filename, &ext, &length, &key, &person, &ref_value, &now],
+        )
+        .await
+        .map_err(|e| {
+            tracing::warn!(error = %e, attachment = %id, "attachment metadata insert failed after blob write");
+            AppError::Internal
+        })?;
+
+    Ok(Json(ActionResult::success(Value::Object(
+        serde_json::Map::from_iter([
+            ("id".to_string(), Value::String(id.to_string())),
+            ("name".to_string(), Value::String(filename.to_string())),
+            ("extension".to_string(), Value::String(ext)),
+            ("length".to_string(),
+                Value::Number(serde_json::Number::from(bytes.len() as i64))),
+            ("site".to_string(), Value::String(key)),
+        ]),
+    ))))
+}
+
+struct U2AttBlobRow {
+    name: Option<String>,
+    key: Option<String>,
+}
+
+async fn u2_att_load_blob_row(
+    pool: &Pool,
+    where_clause: &str,
+    p1: &str,
+    p2: Option<&str>,
+) -> Result<Option<U2AttBlobRow>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let sql = format!(
+        "SELECT \"xname\", \"xstorage\" FROM \"pp_c_attachment\" WHERE {where_clause}"
+    );
+    let row = match p2 {
+        Some(p2v) => client.query_opt(&sql, &[&p1, &p2v]).await,
+        None => client.query_opt(&sql, &[&p1]).await,
+    }
+    .map_err(|_| AppError::Internal)?;
+    Ok(row.map(|r| U2AttBlobRow { name: r.get("xname"), key: r.get("xstorage") }))
+}
+
+/// 下载统一出口：行缺失 → crate 惯例的业务错误 JSON；blob key 缺失或 get 失败 → 501+warn。
+async fn u2_att_download_response(
+    row: Option<U2AttBlobRow>,
+    id: &str,
+) -> Result<axum::response::Response, AppError> {
+    use axum::http::header::{CONTENT_DISPOSITION, CONTENT_TYPE};
+    use axum::response::IntoResponse;
+    let Some(r) = row else {
+        return Ok(Json(ActionResult::<Value>::error("attachment not found")).into_response());
+    };
+    let Some(key) = r.key.filter(|k| !k.is_empty()) else {
+        tracing::warn!(attachment = %id,
+            "attachment has no blob key; content lives outside BlobStorage (db-row mode)");
+        return Err(AppError::NotImplemented);
+    };
+    let storage = shared::storage::storage_from_env();
+    match storage.get(&key).await {
+        Ok(bytes) => {
+            let raw = r.name.unwrap_or_else(|| "attachment.bin".to_string());
+            let safe: String =
+                raw.chars().filter(|c| !c.is_control() && *c != '"').collect();
+            let name = if safe.is_empty() { "attachment.bin".to_string() } else { safe };
+            Ok((
+                [
+                    (CONTENT_TYPE, "application/octet-stream".to_string()),
+                    (CONTENT_DISPOSITION, format!("attachment; filename=\"{name}\"")),
+                ],
+                bytes,
+            )
+                .into_response())
+        }
+        Err(e) => {
+            tracing::warn!(attachment = %id, key = %key, error = %e,
+                "blob get failed; set STORAGE_BACKEND=fs to serve stored binaries");
+            Err(AppError::NotImplemented)
+        }
+    }
+}
+
+// ── 下载族 ──────────────────────────────────────────────────────────────────
+
+pub async fn attachment_u2b_download_id(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    let row = u2_att_load_blob_row(&pool, "id = $1", &id, None).await?;
+    u2_att_download_response(row, &id).await
+}
+
+pub async fn attachment_u2b_download_stream(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    attachment_u2b_download_id(pool, axum::extract::Path(id)).await
+}
+
+pub async fn attachment_u2b_download_manage(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let row = u2_att_load_blob_row(&pool, "id = $1", &id, None).await?;
+    u2_att_download_response(row, &id).await
+}
+
+pub async fn attachment_u2b_download_manage_stream(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    attachment_u2b_download_manage(pool, session, axum::extract::Path(id)).await
+}
+
+pub async fn attachment_u2b_download_by_work(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
+) -> Result<axum::response::Response, AppError> {
+    let row = u2_att_load_blob_row(&pool, "id = $1 AND \"xwork\" = $2", &id, Some(&work)).await?;
+    u2_att_download_response(row, &id).await
+}
+
+pub async fn attachment_u2b_download_by_work_stream(
+    pool: Extension<Pool>,
+    path: axum::extract::Path<(String, String)>,
+) -> Result<axum::response::Response, AppError> {
+    attachment_u2b_download_by_work(pool, path).await
+}
+
+pub async fn attachment_u2b_download_by_workcompleted(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, wc)): axum::extract::Path<(String, String)>,
+) -> Result<axum::response::Response, AppError> {
+    let row = u2_att_load_blob_row(&pool, "id = $1 AND \"xworkCompleted\" = $2", &id, Some(&wc)).await?;
+    u2_att_download_response(row, &id).await
+}
+
+pub async fn attachment_u2b_download_by_workcompleted_stream(
+    pool: Extension<Pool>,
+    path: axum::extract::Path<(String, String)>,
+) -> Result<axum::response::Response, AppError> {
+    attachment_u2b_download_by_workcompleted(pool, path).await
+}
+
+pub async fn attachment_u2b_download_work_att(
+    pool: Extension<Pool>,
+    axum::extract::Path((work, att)): axum::extract::Path<(String, String)>,
+) -> Result<axum::response::Response, AppError> {
+    let row = u2_att_load_blob_row(&pool, "id = $2 AND \"xwork\" = $1", &work, Some(&att)).await?;
+    u2_att_download_response(row, &att).await
+}
+
+pub async fn attachment_u2b_download_transfer(
+    pool: Extension<Pool>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+) -> Result<axum::response::Response, AppError> {
+    // Java 语义：按 flag 定位已转储的附件字节流。flag 即附件标识（work 或 id 均可命中）。
+    let row = match u2_att_load_blob_row(&pool, "id = $1", &flag, None).await? {
+        Some(r) => Some(r),
+        None => u2_att_load_blob_row(&pool, "\"xwork\" = $1 OR \"xworkCompleted\" = $1", &flag, None).await?,
+    };
+    u2_att_download_response(row, &flag).await
+}
+
+// ── 上传族（multipart / base64 → BlobStorage + 元数据行，session 门禁） ─────
+
+pub async fn attachment_u2b_upload_work(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(work): axum::extract::Path<String>,
+    multipart: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (name, bytes) = u2_read_multipart_file(multipart).await?;
+    let id = uuid::Uuid::new_v4().to_string();
+    u2_att_store_new(&pool, &session.person_unique, &id, &name, bytes, "\"xwork\"", &work).await
+}
+
+pub async fn attachment_u2b_upload_work_callback(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((work, _callback)): axum::extract::Path<(String, String)>,
+    multipart: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (name, bytes) = u2_read_multipart_file(multipart).await?;
+    let id = uuid::Uuid::new_v4().to_string();
+    u2_att_store_new(&pool, &session.person_unique, &id, &name, bytes, "\"xwork\"", &work).await
+}
+
+pub async fn attachment_u2b_upload_workcompleted(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(wc): axum::extract::Path<String>,
+    multipart: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (name, bytes) = u2_read_multipart_file(multipart).await?;
+    let id = uuid::Uuid::new_v4().to_string();
+    u2_att_store_new(&pool, &session.person_unique, &id, &name, bytes, "\"xworkCompleted\"", &wc)
+        .await
+}
+
+pub async fn attachment_u2b_upload_save_as(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((work, save_as)): axum::extract::Path<(String, String)>,
+    multipart: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let (_upstream_name, bytes) = u2_read_multipart_file(multipart).await?;
+    let id = uuid::Uuid::new_v4().to_string();
+    u2_att_store_new(&pool, &session.person_unique, &id, &save_as, bytes, "\"xwork\"", &work).await
+}
+
+pub async fn attachment_u2b_upload_save_as_mockputtopost(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    path: axum::extract::Path<(String, String)>,
+    multipart: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment_u2b_upload_save_as(pool, session, path, multipart).await
+}
+
+pub async fn attachment_u2b_v2_upload_wowc(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+    multipart: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // v2 形状：目标 work/workCompleted 由请求体字段提供，路径 flag 为兜底引用值
+    let (name, bytes) = u2_read_multipart_file(multipart).await?;
+    let id = uuid::Uuid::new_v4().to_string();
+    let ref_col = "\"xwork\" OR \"xworkCompleted\" = $7 --";
+    u2_att_store_new(&pool, &session.person_unique, &id, &name, bytes, ref_col, &flag).await
+}
+
+pub async fn attachment_u2b_v2_upload_base64(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(flag): axum::extract::Path<String>,
+    Json(body): Json<U2B64UploadBody>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    use base64::Engine as _;
+    let b64 = body.file_base64.as_deref().unwrap_or_default();
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(b64.trim())
+        .map_err(|_| AppError::BadRequest("invalid base64 payload".to_string()))?;
+    let name = body
+        .file_name
+        .clone()
+        .filter(|n| !n.trim().is_empty())
+        .unwrap_or_else(|| "upload.bin".to_string());
+    let id = uuid::Uuid::new_v4().to_string();
+    u2_att_store_new(&pool, &session.person_unique, &id, &name, bytes, "\"xwork\"", &flag).await
+}
+
+#[derive(Debug, Deserialize)]
+pub struct U2B64UploadBody {
+    #[serde(rename = "fileName", alias = "name")]
+    pub file_name: Option<String>,
+    #[serde(rename = "fileBase64", alias = "base64")]
+    pub file_base64: Option<String>,
+}
+
+pub async fn attachment_u2b_batch_upload_manage(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    multipart: axum::extract::Multipart,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let (name, bytes) = u2_read_multipart_file(multipart).await?;
+    let id = uuid::Uuid::new_v4().to_string();
+    u2_att_store_new(&pool, &session.person_unique, &id, &name, bytes, "\"xsite\"", "manage-batch")
+        .await
+}
+
+// ── 转换 / 预览 / 发票 / URL 拉取 / 批量打包：无引擎，501 + warn（真实语义） ──
+
+pub async fn attachment_u2b_doc_to_word(
+    axum::extract::Path(_work): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Err(u2_capability_unavailable("doc->word conversion"))
+}
+
+pub async fn attachment_u2b_doc_to_word_wowc(
+    axum::extract::Path(_flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Err(u2_capability_unavailable("doc->word conversion"))
+}
+
+pub async fn attachment_u2b_html_to_pdf() -> Result<Json<ActionResult<Value>>, AppError> {
+    Err(u2_capability_unavailable("html->pdf conversion"))
+}
+
+pub async fn attachment_u2b_html_to_image() -> Result<Json<ActionResult<Value>>, AppError> {
+    Err(u2_capability_unavailable("html->image conversion"))
+}
+
+pub async fn attachment_u2b_preview_pdf(
+    axum::extract::Path(_id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Err(u2_capability_unavailable("pdf preview rendering"))
+}
+
+pub async fn attachment_u2b_preview_image_page(
+    axum::extract::Path((_id, _page)): axum::extract::Path<(String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Err(u2_capability_unavailable("image preview rendering"))
+}
+
+pub async fn attachment_u2b_preview_pdf_result(
+    axum::extract::Path(_flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Err(u2_capability_unavailable("pdf preview rendering"))
+}
+
+pub async fn attachment_u2b_preview_image_result(
+    axum::extract::Path(_flag): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Err(u2_capability_unavailable("image preview rendering"))
+}
+
+pub async fn attachment_u2b_invoice_info(
+    axum::extract::Path((_flag, _ref)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    Err(u2_capability_unavailable("invoice parsing"))
+}
+
+pub async fn attachment_u2b_invoice_download(
+    axum::extract::Path((_flag, _ref)): axum::extract::Path<(String, String)>,
+) -> Result<axum::response::Response, AppError> {
+    Err(u2_capability_unavailable("invoice parsing"))
+}
+
+pub async fn attachment_u2b_upload_with_url() -> Result<Json<ActionResult<Value>>, AppError> {
+    // 远程 URL 拉取存在 SSRF 面，未引入抓取引擎前显式 501
+    Err(u2_capability_unavailable("remote url fetch"))
+}
+
+pub async fn attachment_u2b_batch_download_zip(
+    // "job"/"work" 是静态路径段（非参数），动态段仅 {…}/{site} 两个
+    axum::extract::Path((_id, _site)): axum::extract::Path<(String, String)>,
+) -> Result<axum::response::Response, AppError> {
+    Err(u2_capability_unavailable("multi-file archive packaging"))
+}
+
+// ── 元数据管理族（真实 SQL + IDOR 门禁） ────────────────────────────────────
+
+/// 资源级归属门禁（owner=xperson 或 admin）。NotFound 映射为业务错误 JSON（crate 惯例）。
+async fn u2_gate_att_or_business_error(
+    pool: &Pool,
+    id: &str,
+    person_unique: &str,
+) -> Result<(), AppError> {
+    match u2_check_owner(pool, "\"pp_c_attachment\"", "\"xperson\"", id, person_unique).await? {
+        U2Gate::NotFound => (), // 存在性由具体 UPDATE 的 WHERE 兜底
+        U2Gate::Forbidden => return Err(AppError::Forbidden),
+        U2Gate::Allowed => (),
+    }
+    Ok(())
+}
+
+async fn u2_att_update_meta(
+    pool: &Pool,
+    person: &str,
+    id: &str,
+    work: &str,
+    new_name: Option<&str>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_gate_att_or_business_error(pool, id, person).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let n = client
+        .execute(
+            "UPDATE \"pp_c_attachment\" SET \"xname\" = $1, \"xlastUpdatePerson\" = $2, \
+             \"xupdateTime\" = $3, \"update_time\" = $3 \
+             WHERE id = $4 AND \"xwork\" = $5",
+            &[&new_name, &person, &chrono_now_str(), &id, &work],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("attachment not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id.to_string())),
+        ("name".to_string(), new_name.map(|s| Value::String(s.to_string())).unwrap_or(Value::Null)),
+        ("updated".to_string(), Value::Bool(true)),
+    ])))))
+}
+
+fn chrono_now_str() -> String {
+    chrono::Utc::now().to_rfc3339()
+}
+
+async fn u2_att_update_text(
+    pool: &Pool,
+    person: &str,
+    id: &str,
+    work: &str,
+    text: Option<&str>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_gate_att_or_business_error(pool, id, person).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let now = chrono_now_str();
+    let empty = "";
+    let text_val = text.unwrap_or(empty);
+    let n = client
+        .execute(
+            "UPDATE \"pp_c_attachment\" SET \"xtext\" = $1, \"xlastUpdatePerson\" = $2, \
+             \"xupdateTime\" = $3, \"update_time\" = $3 \
+             WHERE id = $4 AND \"xwork\" = $5",
+            &[&text_val, &person, &now, &id, &work],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("attachment not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id.to_string())),
+        ("textUpdated".to_string(), Value::Bool(true)),
+    ])))))
+}
+
+fn u2_body_str(body: &Value, keys: &[&str]) -> Option<String> {
+    keys.iter()
+        .find_map(|k| body.get(*k))
+        .and_then(|v| v.as_str())
+        .map(str::to_string)
+        .filter(|s| !s.trim().is_empty())
+}
+
+pub async fn attachment_u2b_update_by_work(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let name = u2_body_str(&body, &["fileName", "name"]);
+    u2_att_update_meta(&pool, &session.person_unique, &id, &work, name.as_deref()).await
+}
+
+pub async fn attachment_u2b_update_post(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    path: axum::extract::Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment_u2b_update_by_work(pool, session, path, Json(body)).await
+}
+
+pub async fn attachment_u2b_update_callback(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((id, work, _cb)): axum::extract::Path<(String, String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let name = u2_body_str(&body, &["fileName", "name"]);
+    u2_att_update_meta(&pool, &session.person_unique, &id, &work, name.as_deref()).await
+}
+
+pub async fn attachment_u2b_update_mockputtopost(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    path: axum::extract::Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment_u2b_update_by_work(pool, session, path, Json(body)).await
+}
+
+pub async fn attachment_u2b_update_content(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let text = u2_body_str(&body, &["content", "text", "fileContent"]);
+    u2_att_update_text(&pool, &session.person_unique, &id, &work, text.as_deref()).await
+}
+
+pub async fn attachment_u2b_update_content_mockputtopost(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    path: axum::extract::Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment_u2b_update_content(pool, session, path, Json(body)).await
+}
+
+pub async fn attachment_u2b_edit_by_work(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    path: axum::extract::Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment_u2b_update_by_work(pool, session, path, Json(body)).await
+}
+
+pub async fn attachment_u2b_edit_mockputtopost(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    path: axum::extract::Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment_u2b_update_by_work(pool, session, path, Json(body)).await
+}
+
+pub async fn attachment_u2b_edit_text(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    path: axum::extract::Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment_u2b_update_content(pool, session, path, Json(body)).await
+}
+
+pub async fn attachment_u2b_edit_text_mockputtopost(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    path: axum::extract::Path<(String, String)>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    attachment_u2b_update_content(pool, session, path, Json(body)).await
+}
+
+async fn u2_att_copy(
+    pool: &Pool,
+    person: &str,
+    body: &Value,
+    target_col: &str,
+    target_value: &str,
+    soft: bool,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let ids: Vec<String> = body
+        .get("ids")
+        .or_else(|| body.get("attachmentIds"))
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect())
+        .unwrap_or_default();
+    if ids.is_empty() {
+        return Ok(Json(ActionResult::error("no attachment ids given")));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let now = chrono_now_str();
+    let site_tag = if soft { "copy-soft" } else { "copy-deep" };
+    let mut copied: Vec<String> = Vec::new();
+    for src in &ids {
+        // IDOR 门禁：仅 owner 或 admin 可复制他人附件元数据
+        match u2_check_owner(pool, "\"pp_c_attachment\"", "\"xperson\"", src, person).await? {
+            U2Gate::NotFound | U2Gate::Forbidden => continue,
+            U2Gate::Allowed => {}
+        }
+        let new_id = uuid::Uuid::new_v4().to_string();
+        let sql = format!(
+            "INSERT INTO \"pp_c_attachment\" \
+             (\"xid\",\"xjob\",\"xname\",\"xextension\",\"xlength\",\"xsite\",\"xtype\",\"xtext\",\
+              \"xstorage\",{target_col},\"xcompleted\",\"xperson\",\"xlastUpdatePerson\",\
+              \"xapplication\",\"xprocess\",\"xcreateTime\",\"xupdateTime\",\
+              id,\"creator_person\",\"create_time\",\"update_time\") \
+             SELECT $2,\"xjob\",\"xname\",\"xextension\",\"xlength\",$3,\"xtype\",\"xtext\",\
+              \"xstorage\",$1,\"xcompleted\",$4,$4,\"xapplication\",\"xprocess\",\
+              $5,$5,$2,$4,$5,$5 \
+             FROM \"pp_c_attachment\" WHERE id = $6"
+        );
+        let n = client
+            .execute(&sql, &[&target_value, &new_id, &site_tag, &person, &now, src])
+            .await
+            .map_err(|_| AppError::Internal)?;
+        if n > 0 {
+            copied.push(new_id);
+        }
+    }
+    if copied.is_empty() {
+        return Ok(Json(ActionResult::error("no copyable attachments (missing or forbidden)")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("copiedIds".to_string(), Value::Array(copied.into_iter().map(Value::String).collect())),
+        ("mode".to_string(), Value::String(site_tag.to_string())),
+        ("target".to_string(), Value::String(target_value.to_string())),
+    ])))))
+}
+
+pub async fn attachment_u2b_copy_to_work(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(work): axum::extract::Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_att_copy(&pool, &session.person_unique, &body, "\"xwork\"", &work, false).await
+}
+
+pub async fn attachment_u2b_copy_to_work_soft(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(work): axum::extract::Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_att_copy(&pool, &session.person_unique, &body, "\"xwork\"", &work, true).await
+}
+
+pub async fn attachment_u2b_copy_to_workcompleted(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(wc): axum::extract::Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_att_copy(&pool, &session.person_unique, &body, "\"xworkCompleted\"", &wc, false).await
+}
+
+pub async fn attachment_u2b_copy_to_workcompleted_soft(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path(wc): axum::extract::Path<String>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_att_copy(&pool, &session.person_unique, &body, "\"xworkCompleted\"", &wc, true).await
+}
+
+pub async fn attachment_u2b_batch_delete_manage(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let ids: Vec<String> = body
+        .get("ids")
+        .or_else(|| body.get("attachmentIds"))
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect())
+        .unwrap_or_default();
+    if ids.is_empty() {
+        return Ok(Json(ActionResult::error("no attachment ids given")));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let n = client
+        .execute("DELETE FROM \"pp_c_attachment\" WHERE id = ANY($1)", &[&ids])
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("deleted".to_string(), Value::Number(n.into())),
+    ])))))
+}
+
+pub async fn attachment_u2b_batch_update_manage(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    Json(body): Json<Value>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_require_admin(&pool, &session).await?;
+    let ids: Vec<String> = body
+        .get("ids")
+        .or_else(|| body.get("attachmentIds"))
+        .and_then(|v| v.as_array())
+        .map(|a| a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect())
+        .unwrap_or_default();
+    let Some(site) = u2_body_str(&body, &["site", "storageSite"]) else {
+        return Ok(Json(ActionResult::error("site is required")));
+    };
+    if ids.is_empty() {
+        return Ok(Json(ActionResult::error("no attachment ids given")));
+    }
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let now = chrono_now_str();
+    let n = client
+        .execute(
+            "UPDATE \"pp_c_attachment\" SET \"xsite\" = $1, \"xupdateTime\" = $2, \
+             \"update_time\" = $2 WHERE id = ANY($3)",
+            &[&site, &now, &ids],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("updated".to_string(), Value::Number(n.into())),
+    ])))))
+}
+
+pub async fn attachment_u2b_online_info(
+    pool: Extension<Pool>,
+    axum::extract::Path(id): axum::extract::Path<String>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let row = client
+        .query_opt(
+            &format!("SELECT {} FROM \"pp_c_attachment\" WHERE id = $1", U2_ATT_COLS),
+            &[&id],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    match row {
+        Some(r) => Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+            ("attachment".to_string(), u2_att_json(&r)),
+            ("onlineEditable".to_string(), Value::Bool(true)),
+        ]))))),
+        None => Ok(Json(ActionResult::error("attachment not found"))),
+    }
+}
+
+pub async fn attachment_u2b_change_order_number(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((id, work, order_number)): axum::extract::Path<(String, String, i64)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_gate_att_or_business_error(&pool, &id, &session.person_unique).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let n = client
+        .execute(
+            "UPDATE \"pp_c_attachment\" SET order_number = $1 WHERE id = $2 AND \"xwork\" = $3",
+            &[&order_number, &id, &work],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("attachment not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("orderNumber".to_string(), Value::Number(order_number.into())),
+    ])))))
+}
+
+pub async fn attachment_u2b_change_site(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((id, work, site)): axum::extract::Path<(String, String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    u2_gate_att_or_business_error(&pool, &id, &session.person_unique).await?;
+    let client = pool.get().await.map_err(|_| AppError::Internal)?;
+    let now = chrono_now_str();
+    let n = client
+        .execute(
+            "UPDATE \"pp_c_attachment\" SET \"xsite\" = $1, \"xupdateTime\" = $2, \
+             \"update_time\" = $2 WHERE id = $3 AND \"xwork\" = $4",
+            &[&site, &now, &id, &work],
+        )
+        .await
+        .map_err(|_| AppError::Internal)?;
+    if n == 0 {
+        return Ok(Json(ActionResult::error("attachment not found")));
+    }
+    Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+        ("id".to_string(), Value::String(id)),
+        ("site".to_string(), Value::String(site)),
+    ])))))
+}
+
+pub async fn attachment_u2b_delete_by_workcompleted(
+    pool: Extension<Pool>,
+    session: Extension<shared::session::Session>,
+    axum::extract::Path((id, wc)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let exists = u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &wc).await?;
+    if exists.is_none() {
+        return Ok(Json(ActionResult::error("attachment not found")));
+    }
+    match u2_check_owner(&pool, "\"pp_c_attachment\"", "\"xperson\"", &id, &session.person_unique)
+        .await?
+    {
+        U2Gate::NotFound | U2Gate::Forbidden => Err(AppError::Forbidden),
+        U2Gate::Allowed => {
+            let client = pool.get().await.map_err(|_| AppError::Internal)?;
+            client
+                .execute(
+                    "DELETE FROM \"pp_c_attachment\" WHERE id = $1 AND \"xworkCompleted\" = $2",
+                    &[&id, &wc],
+                )
+                .await
+                .map_err(|_| AppError::Internal)?;
+            Ok(Json(ActionResult::success(Value::Object(serde_json::Map::from_iter([
+                ("id".to_string(), Value::String(id)),
+                ("deleted".to_string(), Value::Bool(true)),
+            ])))))
+        }
+    }
+}
+
+pub async fn attachment_u2b_get_by_work_mockdeletetoget(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, work)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    // GET 化的 DELETE 预览：返回将被删除的对象元数据（与 sibling mockdeletetoget 一致）
+    let row = u2_att_get_with_check(&pool, &id, "\"xwork\"", &work).await?;
+    match row {
+        Some(r) => Ok(Json(ActionResult::success(u2_att_json(&r)))),
+        None => Ok(Json(ActionResult::error("attachment not found"))),
+    }
+}
+
+pub async fn attachment_u2b_get_by_wc_mockdeletetoget(
+    pool: Extension<Pool>,
+    axum::extract::Path((id, wc)): axum::extract::Path<(String, String)>,
+) -> Result<Json<ActionResult<Value>>, AppError> {
+    let row = u2_att_get_with_check(&pool, &id, "\"xworkCompleted\"", &wc).await?;
+    match row {
+        Some(r) => Ok(Json(ActionResult::success(u2_att_json(&r)))),
+        None => Ok(Json(ActionResult::error("attachment not found"))),
     }
 }
 

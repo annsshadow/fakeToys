@@ -417,3 +417,298 @@ mod u2_tests {
         }
     }
 }
+
+// ════════════ plan002 U2-b：attachment 二进制族 + data pathN 元组化回归保护 ════════════
+#[cfg(test)]
+mod u2b_tests {
+    use crate::router;
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use shared::response::ActionResult;
+    use shared::storage::{BlobStorage, DbBlobStorage, FsBlobStorage};
+    use tower::ServiceExt;
+
+    async fn respond(method: &str, uri: &str, headers: &[(&str, &str)], body: Body) -> (StatusCode, serde_json::Value) {
+        let mut builder = Request::builder().uri(uri).method(method);
+        for (k, v) in headers {
+            builder = builder.header(*k, *v);
+        }
+        let response = router(shared::testing::mock_pool())
+            .oneshot(builder.body(body).unwrap())
+            .await
+            .unwrap();
+        let status = response.status();
+        let bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+        let json = if bytes.is_empty() {
+            serde_json::Value::Null
+        } else {
+            serde_json::from_slice(&bytes).unwrap_or(serde_json::Value::Null)
+        };
+        (status, json)
+    }
+
+    async fn status_of(method: &str, uri: &str) -> StatusCode {
+        respond(method, uri, &[], Body::empty()).await.0
+    }
+
+    fn multipart_body() -> Body {
+        Body::from(
+            "--xboundary\r\n\
+             Content-Disposition: form-data; name=\"file\"; filename=\"a.txt\"\r\n\
+             Content-Type: text/plain\r\n\r\nhello\r\n--xboundary--\r\n",
+        )
+    }
+
+    const MP: &[(&str, &str)] = &[("content-type", "multipart/form-data; boundary=xboundary")];
+    const JSON: &[(&str, &str)] = &[("content-type", "application/json")];
+
+    // ── 转换/预览/发票/URL/打包族：无引擎 → 精确 501（不触碰 DB 即可断言） ──
+
+    #[tokio::test]
+    async fn u2b_engineless_endpoints_return_exact_501() {
+        let b = "/jaxrs/processplatform/assemble/surface/attachment";
+        let cases: Vec<(&str, String)> = vec![
+            ("POST", format!("{b}/doc/to/word/work/w-1")),
+            ("POST", format!("{b}/doc/to/word/workorworkcompleted/w-1")),
+            ("POST", format!("{b}/html/to/pdf")),
+            ("POST", format!("{b}/html/to/image")),
+            ("GET", format!("{b}/att-1/preview/pdf")),
+            ("GET", format!("{b}/att-1/preview/image/page/2")),
+            ("GET", format!("{b}/preview/pdf/f-1/result")),
+            ("GET", format!("{b}/preview/image/f-1/result")),
+            ("GET", format!("{b}/invoice/f-1/joborworkorworkcompleted/w-1")),
+            ("GET", format!("{b}/download/invoice/f-1/joborworkorworkcompleted/w-1")),
+            ("POST", format!("{b}/upload/with/url")),
+            ("GET", format!("{b}/batch/download/job/j-1/site/s-1")),
+            ("GET", format!("{b}/batch/download/work/w-1/site/s-1")),
+            ("GET", format!("{b}/batch/download/work/w-1/site/s-1/stream")),
+        ];
+        for (method, path) in cases {
+            assert_eq!(
+                status_of(method, &path).await,
+                StatusCode::NOT_IMPLEMENTED,
+                "engine-less endpoint must answer exact 501: {path}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn u2b_501_response_body_is_action_result_error_shape() {
+        let (status, json) =
+            respond("POST", "/jaxrs/processplatform/assemble/surface/attachment/html/to/pdf", &[], Body::empty()).await;
+        assert_eq!(status, StatusCode::NOT_IMPLEMENTED);
+        assert_eq!(json["type"], "error");
+        assert!(json.get("message").is_some(), "ActionResult.message required");
+        assert!(json["data"].is_null());
+    }
+
+    // ── 上传族路由可达（session extension 缺失 → handler 内 pool/session 提取失败 → 500） ──
+
+    #[tokio::test]
+    async fn u2b_multipart_upload_routes_reachable() {
+        let b = "/jaxrs/processplatform/assemble/surface/attachment";
+        for (method, path) in [
+            ("POST", &format!("{b}/upload/work/w-1")),
+            ("POST", &format!("{b}/upload/work/w-1/callback/cb-1")),
+            ("POST", &format!("{b}/upload/workcompleted/wc-1")),
+            ("PUT", &format!("{b}/upload/work/w-1/save/as/name.txt")),
+            ("POST", &format!("{b}/upload/work/w-1/save/as/name.txt/mockputtopost")),
+            ("POST", &format!("{b}/v2/upload/workorworkcompleted/either-1")),
+            ("POST", &format!("{b}/batch/upload/manage")),
+        ] {
+            assert_eq!(
+                respond(method, path, MP, multipart_body()).await.0,
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "multipart upload route failed: {path}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn u2b_base64_upload_route_reachable() {
+        let path = "/jaxrs/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/either-1/base64";
+        let (status, _) = respond("POST", path, JSON, Body::from(r#"{"fileName":"a.txt","fileBase64":"aGVsbG8="}"#)).await;
+        assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR, "base64 upload route unreachable");
+    }
+
+    // ── 下载族路由可达 ─────────────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn u2b_download_routes_reachable() {
+        let b = "/jaxrs/processplatform/assemble/surface/attachment";
+        for path in [
+            format!("{b}/download/att-1"),
+            format!("{b}/download/att-1/stream"),
+            format!("{b}/download/att-1/manage"),
+            format!("{b}/download/att-1/manage/stream"),
+            format!("{b}/download/att-1/work/w-1"),
+            format!("{b}/download/att-1/work/w-1/stream"),
+            format!("{b}/download/att-1/workcompleted/wc-1"),
+            format!("{b}/download/att-1/workcompleted/wc-1/stream"),
+            format!("{b}/download/work/w-1/att/att-1"),
+            format!("{b}/download/transfer/flag/either-1"),
+        ] {
+            assert_eq!(
+                status_of("GET", &path).await,
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "download route failed: {path}"
+            );
+        }
+    }
+
+    // ── 元数据管理族路由可达 ───────────────────────────────────────────────
+
+    #[tokio::test]
+    async fn u2b_metadata_write_routes_reachable() {
+        let b = "/jaxrs/processplatform/assemble/surface/attachment";
+        for (method, path) in [
+            ("DELETE", &format!("{b}/att-1/workcompleted/wc-1")),
+            ("PUT", &format!("{b}/update/att-1/work/w-1")),
+            ("POST", &format!("{b}/update/att-1/work/w-1")),
+            ("POST", &format!("{b}/update/att-1/work/w-1/callback/cb-1")),
+            ("POST", &format!("{b}/update/att-1/work/w-1/mockputtopost")),
+            ("PUT", &format!("{b}/update/content/att-1/work/w-1")),
+            ("POST", &format!("{b}/update/content/att-1/work/w-1/mockputtopost")),
+            ("PUT", &format!("{b}/edit/att-1/work/w-1")),
+            ("POST", &format!("{b}/edit/att-1/work/w-1/mockputtopost")),
+            ("PUT", &format!("{b}/edit/att-1/work/w-1/text")),
+            ("POST", &format!("{b}/edit/att-1/work/w-1/text/mockputtopost")),
+            ("POST", &format!("{b}/copy/work/w-1")),
+            ("POST", &format!("{b}/copy/work/w-1/soft")),
+            ("POST", &format!("{b}/copy/workcompleted/wc-1")),
+            ("POST", &format!("{b}/copy/workcompleted/wc-1/soft")),
+            ("POST", &format!("{b}/batch/delete/manage")),
+            ("POST", &format!("{b}/batch/update/manage")),
+            ("GET", &format!("{b}/att-1/work/w-1/change/ordernumber/3")),
+            ("GET", &format!("{b}/att-1/work/w-1/change/site/new-site")),
+        ] {
+            let needs_json = method == "PUT" || method == "POST";
+            let (headers, body) = if needs_json { (JSON, Body::from("{}")) } else { (&[][..], Body::empty()) };
+            assert_eq!(
+                respond(method, path, headers, body).await.0,
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "metadata route failed: {path}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn u2b_online_info_and_mockdelete_routes_reachable() {
+        let b = "/jaxrs/processplatform/assemble/surface/attachment";
+        for path in [
+            format!("{b}/att-1/online/info"),
+            format!("{b}/att-1/work/w-1/mockdeletetoget"),
+            format!("{b}/att-1/workcompleted/wc-1/mockdeletetoget"),
+        ] {
+            assert_ne!(
+                status_of("GET", &path).await,
+                StatusCode::NOT_FOUND,
+                "route missing: {path}"
+            );
+        }
+    }
+
+    // ── BlobStorage 接入点单元级行为：FS 回读成功 / DB 占位 fail loud ──────
+
+    fn fs_backend(tag: &str) -> FsBlobStorage {
+        let dir = std::env::temp_dir()
+            .join(format!("oa4rust_u2b_{tag}_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        FsBlobStorage::new(dir)
+    }
+
+    #[tokio::test]
+    async fn u2b_fs_backend_persists_upload_roundtrip() {
+        let storage = fs_backend("ok");
+        crate::u2_att_persist_verified(&storage, "attachment/a-1/f.bin", b"payload").await.unwrap();
+        assert_eq!(
+            storage.get("attachment/a-1/f.bin").await.unwrap(),
+            b"payload".to_vec(),
+            "FS backend must persist uploaded bytes verbatim"
+        );
+    }
+
+    #[tokio::test]
+    async fn u2b_db_placeholder_backend_fails_loud_as_not_implemented() {
+        // 红线：DbBlobStorage.put 是 no-op —— 若照常 success 即"上传假成功"。
+        // 契约：回读校验必须把这种情况映射为显式 NotImplemented（HTTP 501）。
+        let storage = DbBlobStorage::default();
+        let err = crate::u2_att_persist_verified(&storage, "attachment/a-1/f.bin", b"x")
+            .await
+            .unwrap_err();
+        assert!(
+            matches!(err, shared::error::AppError::NotImplemented),
+            "DB placeholder backend must fail loud with NotImplemented, got {err:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn u2b_blob_key_rejects_traversal_and_empty_names() {
+        use crate::u2_att_blob_key;
+        assert!(u2_att_blob_key("a-1", "../escape.txt").is_ok()); // 分隔符被剥离为 _
+        let key = u2_att_blob_key("a-1", "../escape.txt").unwrap();
+        assert!(!key.contains(".."), "key must not contain traversal components: {key}");
+        assert!(u2_att_blob_key("a-1", "").is_err());
+        assert!(u2_att_blob_key("a-1", "   ").is_err());
+        assert_eq!(u2_att_blob_key("a-1", "dir/nested.txt").unwrap(), "attachment/a-1/dir_nested.txt");
+    }
+
+    // ── 族 2：data work/workcompleted pathN Java 形状元组提取契约 ──────────
+
+    #[tokio::test]
+    async fn u2r_data_work_pathn_java_shape_extraction_contract() {
+        // 断言 500（而非 400/404）证明：Java 形状路由存在且 N 元组 Path 提取器匹配。
+        let base = "/jaxrs/processplatform/assemble/surface/data/work";
+        for (method, path) in [
+            ("GET", &format!("{base}/w-1/p0")),
+            ("GET", &format!("{base}/w-1/p0/p1/p2/p3")),
+            ("GET", &format!("{base}/w-1/p0/p1/p2/p3/p4/p5/p6/p7")),
+            ("GET", &format!("{base}/w-1/p0/mockdeletetoget")),
+            ("PUT", &format!("{base}/w-1/p0")),
+            ("PUT", &format!("{base}/w-1/p0/p1/p2")),
+            ("POST", &format!("{base}/w-1/p0/p1/mockputtopost")),
+            ("DELETE", &format!("{base}/w-1/p0/p1/p2")),
+        ] {
+            assert_eq!(
+                status_of(method, path).await,
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "work pathN tuple extraction failed: {path}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn u2r_data_workcompleted_pathn_java_shape_extraction_contract() {
+        let base = "/jaxrs/processplatform/assemble/surface/data/workcompleted";
+        for (method, path) in [
+            ("GET", &format!("{base}/wc-1/p0")),
+            ("GET", &format!("{base}/wc-1/p0/p1/p2/p3/p4/p5/p6/p7")),
+            ("PUT", &format!("{base}/wc-1/p0/p1")),
+            ("POST", &format!("{base}/wc-1/p0/mockputtopost")),
+        ] {
+            assert_eq!(
+                status_of(method, path).await,
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "workcompleted pathN tuple extraction failed: {path}"
+            );
+        }
+    }
+
+    #[tokio::test]
+    async fn u2r_data_pathn_legacy_literal_routes_still_guarded() {
+        // 回归保护：旧字面量风格 URI 不因新增 Java 形状路由而消失（tests_generated 口径 !=404）
+        let base = "/jaxrs/processplatform/assemble/surface/data";
+        for (method, path) in [
+            ("GET", &format!("{base}/work/path0/test-id")),
+            ("GET", &format!("{base}/work/path0/path1/test-id")),
+            ("GET", &format!("{base}/workcompleted/path0/test-id")),
+        ] {
+            assert_ne!(
+                status_of(method, path).await,
+                StatusCode::NOT_FOUND,
+                "legacy literal route lost: {path}"
+            );
+        }
+    }
+}
+

@@ -92,6 +92,34 @@ use crate::{
     attachment_id_workorworkcompleted_workOrWorkCompleted,
 };
 
+use crate::{
+    attachment_u2b_download_id, attachment_u2b_download_stream, attachment_u2b_download_manage,
+    attachment_u2b_download_manage_stream, attachment_u2b_download_by_work,
+    attachment_u2b_download_by_work_stream, attachment_u2b_download_by_workcompleted,
+    attachment_u2b_download_by_workcompleted_stream, attachment_u2b_download_work_att,
+    attachment_u2b_download_transfer,
+    attachment_u2b_upload_work, attachment_u2b_upload_work_callback,
+    attachment_u2b_upload_workcompleted, attachment_u2b_upload_save_as,
+    attachment_u2b_upload_save_as_mockputtopost, attachment_u2b_v2_upload_wowc,
+    attachment_u2b_v2_upload_base64, attachment_u2b_batch_upload_manage,
+    attachment_u2b_doc_to_word, attachment_u2b_doc_to_word_wowc, attachment_u2b_html_to_pdf,
+    attachment_u2b_html_to_image, attachment_u2b_preview_pdf, attachment_u2b_preview_image_page,
+    attachment_u2b_preview_pdf_result, attachment_u2b_preview_image_result,
+    attachment_u2b_invoice_info, attachment_u2b_invoice_download, attachment_u2b_upload_with_url,
+    attachment_u2b_batch_download_zip,
+    attachment_u2b_update_by_work, attachment_u2b_update_post, attachment_u2b_update_callback,
+    attachment_u2b_update_mockputtopost, attachment_u2b_update_content,
+    attachment_u2b_update_content_mockputtopost, attachment_u2b_edit_by_work,
+    attachment_u2b_edit_mockputtopost, attachment_u2b_edit_text,
+    attachment_u2b_edit_text_mockputtopost,
+    attachment_u2b_copy_to_work, attachment_u2b_copy_to_work_soft,
+    attachment_u2b_copy_to_workcompleted, attachment_u2b_copy_to_workcompleted_soft,
+    attachment_u2b_batch_delete_manage, attachment_u2b_batch_update_manage,
+    attachment_u2b_online_info, attachment_u2b_change_order_number, attachment_u2b_change_site,
+    attachment_u2b_delete_by_workcompleted, attachment_u2b_get_by_work_mockdeletetoget,
+    attachment_u2b_get_by_wc_mockdeletetoget,
+};
+
 pub fn router(pool: Pool) -> Router {
     Router::new()
         .route("/jaxrs/processplatform/assemble/surface/get/{id}", get(get_surface))
@@ -1003,5 +1031,135 @@ pub fn router(pool: Pool) -> Router {
         .route("/jaxrs/processplatform/assemble/surface/attachment/{id}", delete(attachment_id))
         .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/mockdeletetoget", get(attachment_id_mockdeletetoget))
         .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/workorworkcompleted/{workOrWorkCompleted}", get(attachment_id_workorworkcompleted_workOrWorkCompleted))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}", delete(data_work_id_path0_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}", delete(data_work_id_path0_path1_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}", delete(data_work_id_path0_path1_path2_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}", delete(data_work_id_path0_path1_path2_path3_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}", delete(data_work_id_path0_path1_path2_path3_path4_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}", delete(data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}", delete(data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}", delete(data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}", get(data_work_id_path0))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/mockdeletetoget", get(data_work_id_path0_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}", get(data_work_id_path0_path1))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/mockdeletetoget", get(data_work_id_path0_path1_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}", get(data_work_id_path0_path1_path2))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/mockdeletetoget", get(data_work_id_path0_path1_path2_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}", get(data_work_id_path0_path1_path2_path3))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/mockdeletetoget", get(data_work_id_path0_path1_path2_path3_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}", get(data_work_id_path0_path1_path2_path3_path4))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/mockdeletetoget", get(data_work_id_path0_path1_path2_path3_path4_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}", get(data_work_id_path0_path1_path2_path3_path4_path5))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/mockdeletetoget", get(data_work_id_path0_path1_path2_path3_path4_path5_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}", get(data_work_id_path0_path1_path2_path3_path4_path5_path6))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/mockdeletetoget", get(data_work_id_path0_path1_path2_path3_path4_path5_path6_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}", get(data_work_id_path0_path1_path2_path3_path4_path5_path6_path7))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/mockdeletetoget", get(data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}", get(data_workcompleted_id_path0))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}", get(data_workcompleted_id_path0_path1))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}", get(data_workcompleted_id_path0_path1_path2))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}", get(data_workcompleted_id_path0_path1_path2_path3))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}", get(data_workcompleted_id_path0_path1_path2_path3_path4))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}", get(data_workcompleted_id_path0_path1_path2_path3_path4_path5))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}", get(data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}", get(data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}", post(data_work_id_path0_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/mockputtopost", post(data_work_id_path0_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}", post(data_work_id_path0_path1_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}", post(data_work_id_path0_path1_path2_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/mockputtopost", post(data_work_id_path0_path1_path2_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}", post(data_work_id_path0_path1_path2_path3_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/mockputtopost", post(data_work_id_path0_path1_path2_path3_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}", post(data_work_id_path0_path1_path2_path3_path4_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/mockputtopost", post(data_work_id_path0_path1_path2_path3_path4_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}", post(data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/mockputtopost", post(data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}", post(data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/mockputtopost", post(data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}", post(data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/mockputtopost", post(data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/mockputtopost", post(data_workcompleted_id_path0_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/mockputtopost", post(data_workcompleted_id_path0_path1_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/mockputtopost", post(data_workcompleted_id_path0_path1_path2_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/mockputtopost", post(data_workcompleted_id_path0_path1_path2_path3_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/mockputtopost", post(data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/mockputtopost", post(data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/mockputtopost", post(data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}/mockputtopost", post(data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}", put(data_work_id_path0_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}", put(data_work_id_path0_path1_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/mockputtopost", put(data_work_id_path0_path1_mockputtopost))
+        // Java 源 updateWithWorkPath1MockPutToPost 误标为 PUT（兄弟方法均为 POST）——双注册宽容兼容
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/mockputtopost", post(data_work_id_path0_path1_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}", put(data_work_id_path0_path1_path2_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}", put(data_work_id_path0_path1_path2_path3_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}", put(data_work_id_path0_path1_path2_path3_path4_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}", put(data_work_id_path0_path1_path2_path3_path4_path5_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}", put(data_work_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/work/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}", put(data_work_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}", put(data_workcompleted_id_path0_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}", put(data_workcompleted_id_path0_path1_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}", put(data_workcompleted_id_path0_path1_path2_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}", put(data_workcompleted_id_path0_path1_path2_path3_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}", put(data_workcompleted_id_path0_path1_path2_path3_path4_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}", put(data_workcompleted_id_path0_path1_path2_path3_path4_path5_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}", put(data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/data/workcompleted/{id}/{path0}/{path1}/{path2}/{path3}/{path4}/{path5}/{path6}/{path7}", put(data_workcompleted_id_path0_path1_path2_path3_path4_path5_path6_path7_mockputtopost))
+
+        // ── plan002 U2-b：attachment 二进制族（BlobStorage / 转换语义 / 元数据管理） ──
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}", get(attachment_u2b_download_id))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/stream", get(attachment_u2b_download_stream))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/manage", get(attachment_u2b_download_manage))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/manage/stream", get(attachment_u2b_download_manage_stream))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/work/{workId}", get(attachment_u2b_download_by_work))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/work/{workId}/stream", get(attachment_u2b_download_by_work_stream))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/workcompleted/{workCompletedId}", get(attachment_u2b_download_by_workcompleted))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/{id}/workcompleted/{workCompletedId}/stream", get(attachment_u2b_download_by_workcompleted_stream))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/work/{work}/att/{attId}", get(attachment_u2b_download_work_att))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/transfer/flag/{flag}", get(attachment_u2b_download_transfer))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/upload/work/{workId}", post(attachment_u2b_upload_work))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/upload/work/{workId}/callback/{callbackId}", post(attachment_u2b_upload_work_callback))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/upload/workcompleted/{workCompletedId}", post(attachment_u2b_upload_workcompleted))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/upload/work/{workId}/save/as/{saveAs}", put(attachment_u2b_upload_save_as))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/upload/work/{workId}/save/as/{saveAs}/mockputtopost", post(attachment_u2b_upload_save_as_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/{flag}", post(attachment_u2b_v2_upload_wowc))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/v2/upload/workorworkcompleted/{flag}/base64", post(attachment_u2b_v2_upload_base64))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/batch/upload/manage", post(attachment_u2b_batch_upload_manage))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/doc/to/word/work/{workId}", post(attachment_u2b_doc_to_word))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/doc/to/word/workorworkcompleted/{flag}", post(attachment_u2b_doc_to_word_wowc))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/html/to/pdf", post(attachment_u2b_html_to_pdf))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/html/to/image", post(attachment_u2b_html_to_image))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/preview/pdf", get(attachment_u2b_preview_pdf))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/preview/image/page/{page}", get(attachment_u2b_preview_image_page))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/preview/pdf/{flag}/result", get(attachment_u2b_preview_pdf_result))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/preview/image/{flag}/result", get(attachment_u2b_preview_image_result))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/invoice/{flag}/joborworkorworkcompleted/{workOrWorkCompleted}", get(attachment_u2b_invoice_info))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/download/invoice/{flag}/joborworkorworkcompleted/{workOrWorkCompleted}", get(attachment_u2b_invoice_download))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/upload/with/url", post(attachment_u2b_upload_with_url))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/batch/download/job/{job}/site/{site}", get(attachment_u2b_batch_download_zip))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}", get(attachment_u2b_batch_download_zip))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/batch/download/work/{work}/site/{site}/stream", get(attachment_u2b_batch_download_zip))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/update/{id}/work/{workId}", put(attachment_u2b_update_by_work))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/update/{id}/work/{workId}", post(attachment_u2b_update_post))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/update/{id}/work/{workId}/callback/{callbackId}", post(attachment_u2b_update_callback))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/update/{id}/work/{workId}/mockputtopost", post(attachment_u2b_update_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/update/content/{id}/work/{workId}", put(attachment_u2b_update_content))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/update/content/{id}/work/{workId}/mockputtopost", post(attachment_u2b_update_content_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/edit/{id}/work/{workId}", put(attachment_u2b_edit_by_work))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/edit/{id}/work/{workId}/mockputtopost", post(attachment_u2b_edit_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/edit/{id}/work/{workId}/text", put(attachment_u2b_edit_text))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/edit/{id}/work/{workId}/text/mockputtopost", post(attachment_u2b_edit_text_mockputtopost))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/copy/work/{workId}", post(attachment_u2b_copy_to_work))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/copy/work/{workId}/soft", post(attachment_u2b_copy_to_work_soft))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/copy/workcompleted/{workCompletedId}", post(attachment_u2b_copy_to_workcompleted))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/copy/workcompleted/{workCompletedId}/soft", post(attachment_u2b_copy_to_workcompleted_soft))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/batch/delete/manage", post(attachment_u2b_batch_delete_manage))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/batch/update/manage", post(attachment_u2b_batch_update_manage))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/online/info", get(attachment_u2b_online_info))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/work/{workId}/change/ordernumber/{orderNumber}", get(attachment_u2b_change_order_number))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/work/{workId}/change/site/{site}", get(attachment_u2b_change_site))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/workcompleted/{workCompletedId}", delete(attachment_u2b_delete_by_workcompleted))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/work/{workId}/mockdeletetoget", get(attachment_u2b_get_by_work_mockdeletetoget))
+        .route("/jaxrs/processplatform/assemble/surface/attachment/{id}/workcompleted/{workCompletedId}/mockdeletetoget", get(attachment_u2b_get_by_wc_mockdeletetoget))
 .layer(Extension(pool))
 }
