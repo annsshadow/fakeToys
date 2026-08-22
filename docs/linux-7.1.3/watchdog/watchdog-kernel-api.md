@@ -1,30 +1,30 @@
-﻿## Linux WatchDog Timer 椹卞姩鏍稿績鍐呮牳 API
+﻿## Linux WatchDog Timer 驱动核心内核 API
 
 
-鏈€鍚庡闃咃細2013-02-12
+最后审阅：2013-02-12
 
 Wim Van Sebroeck <wim@iguana.be>
 
-### 绠€浠?
+### 简
 
-鏈枃妗ｅ苟涓嶆弿杩颁粈涔堟槸鐪嬮棬鐙楀畾鏃跺櫒锛圵DT锛夐┍鍔ㄦ垨璁惧锛屼篃涓嶆弿杩扮敤鎴风┖闂村彲鐢ㄤ簬涓?鐪嬮棬鐙楀畾鏃跺櫒閫氫俊鐨?API銆傚鏋滀綘鎯崇煡閬撹繖浜涳紝璇烽槄璇讳互涓嬫枃浠讹細
-Documentation/watchdog/watchdog-api.rst 銆?
-閭ｄ箞鏈枃妗ｆ弿杩颁粈涔堬紵瀹冩弿杩颁簡甯屾湜浣跨敤鐪嬮棬鐙楀畾鏃跺櫒椹卞姩鏍稿績妗嗘灦鐨勭湅闂ㄧ嫍瀹氭椂鍣?椹卞姩鎵€鑳戒娇鐢ㄧ殑 API銆傝妗嗘灦鎻愪緵浜嗘墍鏈夐潰鍚戠敤鎴风┖闂寸殑鎺ュ彛锛屽洜姝ゅ悓鏍风殑浠ｇ爜鏃犻渶
-姣忔閮介噸澶嶇紪鍐欍€傝繖涔熸剰鍛崇潃鐪嬮棬鐙楀畾鏃跺櫒椹卞姩鍙渶瑕佹彁渚涙帶鍒剁湅闂ㄧ嫍瀹氭椂鍣紙WDT锛?鐨勪笉鍚屼緥绋嬶紙鎿嶄綔锛夈€?
+本文档并不描述什么是看门狗定时器（WDT）驱动或设备，也不描述用户空间可用于看门狗定时器通信API。如果你想知道这些，请阅读以下文件：
+Documentation/watchdog/watchdog-api.rst 銆。
+那么本文档描述什么？它描述了希望使用看门狗定时器驱动核心框架的看门狗定时驱动所能使用的 API。该框架提供了所有面向用户空间的接口，因此同样的代码无需
+每次都重复编写。这也意味着看门狗定时器驱动只需要提供控制看门狗定时器（WDT的不同例程（操作）
 ### API
 
 
-姣忎釜甯屾湜浣跨敤鐪嬮棬鐙楀畾鏃跺櫒椹卞姩鏍稿績鐨勭湅闂ㄧ嫍瀹氭椂鍣ㄩ┍鍔ㄩ兘蹇呴』 #include
-<linux/watchdog.h>锛堝湪缂栧啓鐪嬮棬鐙楄澶囬┍鍔ㄦ椂鏃犺濡備綍浣犻兘寰楄繖涔堝仛锛夈€傝澶存枃浠?鍖呭惈濡備笅
+每个希望使用看门狗定时器驱动核心的看门狗定时器驱动都必须 #include
+<linux/watchdog.h>（在编写看门狗设备驱动时无论如何你都得这么做）。该头文包含如下
 ```
 
 	extern int watchdog_register_device(struct watchdog_device *);
 	extern void watchdog_unregister_device(struct watchdog_device *);
 
 ```
-watchdog_register_device 渚嬬▼娉ㄥ唽涓€涓湅闂ㄧ嫍瀹氭椂鍣ㄨ澶囥€傝渚嬬▼鐨勫弬鏁版槸涓€涓寚鍚?watchdog_device 缁撴瀯鐨勬寚閽堛€傝渚嬬▼鎴愬姛鏃惰繑鍥為浂锛屽け璐ユ椂杩斿洖璐熺殑 errno 鐮併€?
-watchdog_unregister_device 渚嬬▼娉ㄩ攢涓€涓凡娉ㄥ唽鐨勭湅闂ㄧ嫍瀹氭椂鍣ㄨ澶囥€傝渚嬬▼鐨?鍙傛暟鏄凡娉ㄥ唽鐨?watchdog_device 缁撴瀯鐨勬寚閽堛€?
-鐪嬮棬鐙楀瓙绯荤粺鍖呭惈涓€涓敞鍐屽欢杩熸満鍒讹紝鍏佽浣犲湪鍚姩杩囩▼涓敖鏃╁湴娉ㄥ唽涓€涓湅闂ㄧ嫍銆?
+watchdog_register_device 例程注册一个看门狗定时器设备。该例程的参数是一个指watchdog_device 结构的指针。该例程成功时返回零，失败时返回负的 errno 码
+watchdog_unregister_device 例程注销一个已注册的看门狗定时器设备。该例程参数是已注册watchdog_device 结构的指针
+看门狗子系统包含一个注册延迟机制，允许你在启动过程中尽早地注册一个看门狗
 ```
 
   struct watchdog_device {
@@ -50,15 +50,15 @@ watchdog_unregister_device 渚嬬▼娉ㄩ攢涓€涓凡娉ㄥ唽鐨勭湅�
   };
 
 ```
-瀹冨寘鍚互涓嬪瓧娈碉細
+它包含以下字段：
 
-- id锛氱敱 watchdog_register_device 璁剧疆锛宨d 0 鏄壒娈婄殑銆傚畠鍚屾椂鎷ユ湁 /dev/watchdog0
-  cdev锛堝姩鎬佷富璁惧鍙凤紝娆¤澶囧彿 0锛変互鍙婃棫鐨?/dev/watchdog miscdev銆傝皟鐢?  watchdog_register_device 鏃朵細鑷姩璁剧疆璇?id銆?- parent锛氬湪璋冪敤 watchdog_register_device 涔嬪墠锛屽皢鍏惰缃负鐖惰澶囷紙鎴?NULL锛夈€?- groups锛氬垱寤虹湅闂ㄧ嫍璁惧鏃惰鍒涘缓鐨?sysfs 灞炴€х粍鍒楄〃銆?- info锛氫竴涓寚鍚?watchdog_info 缁撴瀯鐨勬寚閽堛€傝缁撴瀯缁欏嚭鍏充簬鐪嬮棬鐙楀畾鏃跺櫒鑷韩鐨勪竴浜?  闄勫姞淇℃伅锛堝鍏跺敮涓€鍚嶇О锛夈€?- ops锛氫竴涓寚鍚戠湅闂ㄧ嫍鎵€鏀寔鐨勬搷浣滃垪琛ㄧ殑鎸囬拡銆?- gov锛氫竴涓寚鍚戝凡鍒嗛厤鐨勭湅闂ㄧ嫍璁惧 pretimeout 绠＄悊鍣紙governor锛夌殑鎸囬拡锛屾垨 NULL銆?- timeout锛氱湅闂ㄧ嫍瀹氭椂鍣ㄧ殑瓒呮椂鍊硷紙浠ョ涓哄崟浣嶏級銆傚鏋滆缃簡 WDOG_ACTIVE锛岃繖鏄?  鍦ㄧ敤鎴风┖闂翠笉鍙戦€佸績璺宠姹傜殑鎯呭喌涓嬬郴缁熷皢浼氶噸鍚殑鏃堕棿銆?- pretimeout锛氱湅闂ㄧ嫍瀹氭椂鍣ㄧ殑 pretimeout 鍊硷紙浠ョ涓哄崟浣嶏級銆?- min_timeout锛氱湅闂ㄧ嫍瀹氭椂鍣ㄧ殑鏈€灏忚秴鏃跺€硷紙浠ョ涓哄崟浣嶏級銆傝嫢璁剧疆锛屽垯涓?'timeout'
-  鍙厤缃殑鏈€灏忓€笺€?- max_timeout锛氱湅闂ㄧ嫍瀹氭椂鍣ㄧ殑鏈€澶ц秴鏃跺€硷紙浠ョ涓哄崟浣嶏級锛屼粠鐢ㄦ埛绌洪棿鍙銆傝嫢璁剧疆锛?  鍒欎负 'timeout' 鍙厤缃殑鏈€澶у€笺€傚綋 max_hw_heartbeat_ms 闈為浂鏃朵笉浣跨敤銆?- min_hw_heartbeat_ms锛氬績璺充箣闂存渶灏忔椂闂撮棿闅旂殑纭欢闄愬埗锛屼互姣涓哄崟浣嶃€傝鍊奸€氬父涓?  0锛涘彧鏈夊綋纭欢鏃犳硶瀹瑰繊鏇寸煭鐨勫績璺抽棿闅旀椂鎵嶅簲鎻愪緵銆?- max_hw_heartbeat_ms锛氭渶澶х‖浠跺績璺筹紝浠ユ绉掍负鍗曚綅銆傝嫢璁剧疆锛屽綋 'timeout' 澶т簬
-  max_hw_heartbeat_ms 鏃讹紝鍩虹璁炬柦浼氬悜鐪嬮棬鐙楅┍鍔ㄥ彂閫佸績璺筹紝闄ら潪璁剧疆浜?WDOG_ACTIVE
-  涓旂敤鎴风┖闂磋嚦灏戝湪 'timeout' 绉掑唴鏈兘鍙戦€佷竴娆″績璺炽€傚鏋滈┍鍔ㄦ病鏈夊疄鐜?stop 鍑芥暟锛?  鍒欏繀椤昏缃?max_hw_heartbeat_ms銆?- reboot_nb锛氫负閲嶅惎閫氱煡娉ㄥ唽鐨?notifier 鍧楋紝浠呬緵鍐呴儴浣跨敤銆傚鏋滈┍鍔ㄨ皟鐢?  watchdog_stop_on_reboot锛岀湅闂ㄧ嫍鏍稿績浼氬湪鏀跺埌姝ょ被閫氱煡鏃跺仠姝㈢湅闂ㄧ嫍銆?- restart_nb锛氫负鏈哄櫒閲嶅惎娉ㄥ唽鐨?notifier 鍧楋紝浠呬緵鍐呴儴浣跨敤銆傚鏋滅湅闂ㄧ嫍鑳藉閲嶅惎鏈哄櫒锛?  瀹冨簲瀹氫箟 ops->restart銆備紭鍏堢骇鍙€氳繃 watchdog_set_restart_priority 鏇存敼銆?- bootstatus锛氬惎鍔ㄥ悗璁惧鐨勭姸鎬侊紙浠ョ湅闂ㄧ嫍 WDIOF_* 鐘舵€佷綅鎶ュ憡锛夈€?- driver_data锛氭寚鍚戠湅闂ㄧ嫍璁惧椹卞姩绉佹湁鏁版嵁鐨勬寚閽堛€傝鏁版嵁搴斾粎閫氳繃 watchdog_set_drvdata
-  涓?watchdog_get_drvdata 渚嬬▼璁块棶銆?- wd_data锛氭寚鍚戠湅闂ㄧ嫍鏍稿績鍐呴儴鏁版嵁鐨勬寚閽堛€?- status锛氳瀛楁鍖呭惈涓€浜涚姸鎬佷綅锛屾彁渚涘叧浜庤澶囩姸鎬佺殑棰濆淇℃伅锛堜緥濡傦細鐪嬮棬鐙楀畾鏃跺櫒
-  鏄惁姝ｅ湪杩愯/婵€娲伙紝鎴?nowayout 浣嶆槸鍚﹀凡璁剧疆锛夈€?- deferred锛歸td_deferred_reg_list 涓殑涓€椤癸紝鐢ㄤ簬娉ㄥ唽鎻愬墠鍒濆鍖栫殑鐪嬮棬鐙椼€?
+- id：由 watchdog_register_device 设置，id 0 是特殊的。它同时拥有 /dev/watchdog0
+  cdev（动态主设备号，次设备号 0）以及旧/dev/watchdog miscdev。调  watchdog_register_device 时会自动设置id- parent：在调用 watchdog_register_device 之前，将其设置为父设备（NULL）- groups：创建看门狗设备时要创建sysfs 属性组列表- info：一个指watchdog_info 结构的指针。该结构给出关于看门狗定时器自身的一  附加信息（如其唯一名称）- ops：一个指向看门狗所支持的操作列表的指针- gov：一个指向已分配的看门狗设备 pretimeout 管理器（governor）的指针，或 NULL- timeout：看门狗定时器的超时值（以秒为单位）。如果设置了 WDOG_ACTIVE，这  在用户空间不发送心跳请求的情况下系统将会重启的时间- pretimeout：看门狗定时器的 pretimeout 值（以秒为单位）- min_timeout：看门狗定时器的最小超时值（以秒为单位）。若设置，则'timeout'
+  可配置的最小值- max_timeout：看门狗定时器的最大超时值（以秒为单位），从用户空间可见。若设置  则为 'timeout' 可配置的最大值。当 max_hw_heartbeat_ms 非零时不使用- min_hw_heartbeat_ms：心跳之间最小时间间隔的硬件限制，以毫秒为单位。该值通常  0；只有当硬件无法容忍更短的心跳间隔时才应提供- max_hw_heartbeat_ms：最大硬件心跳，以毫秒为单位。若设置，当 'timeout' 大于
+  max_hw_heartbeat_ms 时，基础设施会向看门狗驱动发送心跳，除非设置WDOG_ACTIVE
+  且用户空间至少在 'timeout' 秒内未能发送一次心跳。如果驱动没有实stop 函数  则必须设max_hw_heartbeat_ms- reboot_nb：为重启通知注册notifier 块，仅供内部使用。如果驱动调  watchdog_stop_on_reboot，看门狗核心会在收到此类通知时停止看门狗- restart_nb：为机器重启注册notifier 块，仅供内部使用。如果看门狗能够重启机器  它应定义 ops->restart。优先级可通过 watchdog_set_restart_priority 更改- bootstatus：启动后设备的状态（以看门狗 WDIOF_* 状态位报告）- driver_data：指向看门狗设备驱动私有数据的指针。该数据应仅通过 watchdog_set_drvdata
+  watchdog_get_drvdata 例程访问- wd_data：指向看门狗核心内部数据的指针- status：该字段包含一些状态位，提供关于设备状态的额外信息（例如：看门狗定时器
+  是否正在运行/激活，nowayout 位是否已设置）- deferred：wtd_deferred_reg_list 中的一项，用于注册提前初始化的看门狗
 ```
 
   struct watchdog_ops {
@@ -77,53 +77,53 @@ watchdog_unregister_device 渚嬬▼娉ㄩ攢涓€涓凡娉ㄥ唽鐨勭湅�
   };
 
 ```
-棣栧厛瀹氫箟鐪嬮棬鐙楀畾鏃跺櫒椹卞姩鎿嶄綔鐨勬ā鍧楁墍鏈夎€呴潪甯搁噸瑕併€傝妯″潡鎵€鏈夎€呯敤浜庡湪鐪嬮棬鐙?婵€娲绘椂閿佸畾妯″潡锛堣繖鏄负浜嗛伩鍏嶅湪鍗歌浇妯″潡鑰?/dev/watchdog 浠嶆墦寮€鏃堕€犳垚绯荤粺宕╂簝锛夈€?
-鏈変簺鎿嶄綔鏄己鍒剁殑锛屾湁浜涙槸鍙€夌殑銆傚己鍒剁殑鎿嶄綔鏄細
+首先定义看门狗定时器驱动操作的模块所有者非常重要。该模块所有者用于在看门激活时锁定模块（这是为了避免在卸载模块/dev/watchdog 仍打开时造成系统崩溃）
+有些操作是强制的，有些是可选的。强制的操作是：
 
-- start锛氳繖鏄竴涓寚鍚戝惎鍔ㄧ湅闂ㄧ嫍瀹氭椂鍣ㄨ澶囦緥绋嬬殑鎸囬拡銆傝渚嬬▼闇€瑕佷互鐪嬮棬鐙楀畾鏃跺櫒
-  璁惧缁撴瀯涓哄弬鏁般€傛垚鍔熸椂杩斿洖闆讹紝澶辫触鏃惰繑鍥炶礋鐨?errno 鐮併€?
-骞堕潪鎵€鏈夌湅闂ㄧ嫍瀹氭椂鍣ㄧ‖浠堕兘鏀寔鐩稿悓鐨勫姛鑳姐€傝繖灏辨槸涓轰粈涔堟墍鏈夊叾浠栦緥绋?鎿嶄綔閮芥槸
-鍙€夌殑銆傚畠浠彧闇€瑕佸湪鍙楁敮鎸佹椂鎵嶉渶瑕佹彁渚涖€傝繖浜涘彲閫夌殑渚嬬▼/鎿嶄綔鏄細
+- start：这是一个指向启动看门狗定时器设备例程的指针。该例程需要以看门狗定时器
+  设备结构为参数。成功时返回零，失败时返回负errno 码
+并非所有看门狗定时器硬件都支持相同的功能。这就是为什么所有其他例操作都是
+可选的。它们只需要在受支持时才需要提供。这些可选的例程/操作是：
 
-- stop锛氶€氳繃璇ヤ緥绋嬪仠姝㈢湅闂ㄧ嫍瀹氭椂鍣ㄨ澶囥€傝渚嬬▼闇€瑕佷互鐪嬮棬鐙楀畾鏃跺櫒璁惧缁撴瀯涓?  鍙傛暟銆傛垚鍔熸椂杩斿洖闆讹紝澶辫触鏃惰繑鍥炶礋鐨?errno 鐮併€傛湁浜涚湅闂ㄧ嫍瀹氭椂鍣ㄧ‖浠跺彧鑳藉惎鍔ㄨ€?  涓嶈兘鍋滄銆傛敮鎸佹绫荤‖浠剁殑椹卞姩鏃犻渶瀹炵幇 stop 渚嬬▼銆傚鏋滈┍鍔ㄦ病鏈?stop 鍑芥暟锛岀湅闂ㄧ嫍
-  鏍稿績浼氳缃?WDOG_HW_RUNNING锛屽苟鍦ㄧ湅闂ㄧ嫍璁惧鍏抽棴鍚庡紑濮嬭皟鐢ㄩ┍鍔ㄧ殑 keepalive ping
-  鍑芥暟銆傚鏋滅湅闂ㄧ嫍椹卞姩娌℃湁瀹炵幇 stop 鍑芥暟锛屽畠蹇呴』璁剧疆 max_hw_heartbeat_ms銆?- ping锛氳繖鏄悜鐪嬮棬鐙楀畾鏃跺櫒纭欢鍙戦€?keepalive ping 鐨勪緥绋嬨€傝渚嬬▼闇€瑕佷互鐪嬮棬鐙?  瀹氭椂鍣ㄨ澶囩粨鏋勪负鍙傛暟銆傛垚鍔熸椂杩斿洖闆讹紝澶辫触鏃惰繑鍥炶礋鐨?errno 鐮併€傚ぇ澶氭暟涓嶆敮鎸?  灏嗗叾浣滀负鐙珛鍔熻兘鐨勭‖浠朵細浣跨敤 start 鍑芥暟鏉ラ噸鍚湅闂ㄧ嫍瀹氭椂鍣ㄧ‖浠躲€傝€岃繖姝ｆ槸鐪嬮棬鐙?  瀹氭椂鍣ㄩ┍鍔ㄦ牳蹇冩墍鍋氱殑锛氫负浜嗗悜鐪嬮棬鐙楀畾鏃跺櫒纭欢鍙戦€?keepalive ping锛屽畠瑕佷箞浣跨敤
-  ping 鎿嶄綔锛堝彲鐢ㄦ椂锛夛紝瑕佷箞浣跨敤 start 鎿嶄綔锛坧ing 鎿嶄綔涓嶅彲鐢ㄦ椂锛夈€傦紙娉ㄦ剰锛歐DIOC_KEEPALIVE
-  ioctl 璋冪敤浠呭湪鐪嬮棬鐙?info 缁撴瀯鐨?option 瀛楁涓缃簡 WDIOF_KEEPALIVEPING 浣嶆椂
-  鎵嶄細鐢熸晥锛夈€?- status锛氳渚嬬▼妫€鏌ョ湅闂ㄧ嫍瀹氭椂鍣ㄨ澶囩殑鐘舵€併€傝澶囩姸鎬佷互鐪嬮棬鐙?WDIOF_* 鐘舵€佹爣蹇?
-  浣嶆姤鍛娿€俉DIOF_MAGICCLOSE 涓?WDIOF_KEEPALIVEPING 鐢辩湅闂ㄧ嫍鏍稿績鎶ュ憡锛涙棤闇€浠庨┍鍔?  鎶ュ憡杩欎簺浣嶃€傛澶栵紝濡傛灉椹卞姩鏈彁渚?status 鍑芥暟锛岀湅闂ㄧ嫍鏍稿績浼氭姤鍛?struct
-  watchdog_device 鐨?bootstatus 鍙橀噺涓彁渚涚殑鐘舵€佷綅銆?- set_timeout锛氳渚嬬▼妫€鏌ュ苟鏇存敼鐪嬮棬鐙楀畾鏃跺櫒璁惧鐨勮秴鏃躲€傛垚鍔熸椂杩斿洖 0锛屸€滃弬鏁拌秴鍑?  鑼冨洿鈥濊繑鍥?-EINVAL锛屸€滄棤娉曞皢鍊煎啓鍏ョ湅闂ㄧ嫍鈥濊繑鍥?-EIO銆傛垚鍔熸椂锛岃渚嬬▼搴斿皢
-  watchdog_device 鐨勮秴鏃跺€艰缃负瀹為檯杈惧埌鐨勮秴鏃跺€硷紙鍙兘涓庤姹傚€间笉鍚岋紝鍥犱负鐪嬮棬鐙?  涓嶄竴瀹氬叿鏈?1 绉掔殑鍒嗚鲸鐜囷級銆傚疄鐜颁簡 max_hw_heartbeat_ms 鐨勯┍鍔ㄤ細灏嗙‖浠剁湅闂ㄧ嫍蹇冭烦
-  璁剧疆涓?timeout 涓?max_hw_heartbeat_ms 涓殑杈冨皬鑰呫€傝繖浜涢┍鍔ㄥ皢 watchdog_device 鐨?  瓒呮椂鍊艰缃负璇锋眰鐨勮秴鏃跺€硷紙濡傛灉瀹冨ぇ浜?max_hw_heartbeat_ms锛夛紝鎴栬€呰缃负瀹為檯杈惧埌
-  鐨勮秴鏃跺€笺€傦紙娉ㄦ剰锛氶渶瑕佸湪鐪嬮棬鐙?info 缁撴瀯鐨?options 瀛楁涓缃?WDIOF_SETTIMEOUT锛夈€?  濡傛灉鐪嬮棬鐙楅┍鍔ㄩ櫎浜嗚缃?watchdog_device.timeout 涔嬪鏃犻渶鎵ц浠讳綍鍔ㄤ綔锛屽垯鍙互鐪佺暐
-  姝ゅ洖璋冦€傚鏋滄湭鎻愪緵 set_timeout 浣嗚缃簡 WDIOF_SETTIMEOUT锛岀湅闂ㄧ嫍鍩虹璁炬柦浼氬湪
-  鍐呴儴灏?watchdog_device 鐨勮秴鏃跺€兼洿鏂颁负璇锋眰鍊笺€傚鏋滀娇鐢ㄤ簡 pretimeout 鐗规€?  锛圵DIOF_PRETIMEOUT锛夛紝閭ｄ箞 set_timeout 杩樺繀椤昏礋璐ｆ鏌?pretimeout 鏄惁浠嶇劧鏈夋晥锛?  骞剁浉搴斿湴璁剧疆瀹氭椂鍣ㄣ€傝繖鍦ㄦ牳蹇冧腑鏃犳硶鍦ㄦ棤绔炰簤鐨勬儏鍐典笅瀹屾垚锛屽洜姝ゆ槸椹卞姩鐨勮亴璐ｃ€?- set_pretimeout锛氳渚嬬▼妫€鏌ュ苟鏇存敼鐪嬮棬鐙楃殑 pretimeout 鍊笺€傚畠鏄彲閫夌殑锛屽洜涓哄苟闈?  鎵€鏈夌湅闂ㄧ嫍閮芥敮鎸?pretimeout 閫氱煡銆傝瓒呮椂鍊煎苟闈炵粷瀵规椂闂达紝鑰屾槸璺濈瀹為檯瓒呮椂鍙戠敓
-  涔嬪墠鐨勭鏁般€傛垚鍔熸椂杩斿洖 0锛屸€滃弬鏁拌秴鍑鸿寖鍥粹€濊繑鍥?-EINVAL锛屸€滄棤娉曞皢鍊煎啓鍏ョ湅闂ㄧ嫍鈥?  杩斿洖 -EIO銆傚€?0 琛ㄧず绂佺敤 pretimeout 閫氱煡銆傦紙娉ㄦ剰锛氶渶瑕佸湪鐪嬮棬鐙?info 缁撴瀯鐨?  options 瀛楁涓缃?WDIOF_PRETIMEOUT锛夈€傚鏋滅湅闂ㄧ嫍椹卞姩闄や簡璁剧疆
-  watchdog_device.pretimeout 涔嬪鏃犻渶鎵ц浠讳綍鍔ㄤ綔锛屽垯鍙互鐪佺暐姝ゅ洖璋冦€傝繖鎰忓懗鐫€濡傛灉
-  鏈彁渚?set_pretimeout 浣嗚缃簡 WDIOF_PRETIMEOUT锛岀湅闂ㄧ嫍鍩虹璁炬柦浼氬湪鍐呴儴灏?  watchdog_device 鐨?pretimeout 鍊兼洿鏂颁负璇锋眰鍊笺€?- get_timeleft锛氳渚嬬▼杩斿洖閲嶅惎涔嬪墠鍓╀綑鐨勬椂闂淬€?- restart锛氳渚嬬▼閲嶅惎鏈哄櫒銆傛垚鍔熸椂杩斿洖 0锛屽け璐ユ椂杩斿洖璐熺殑 errno 鐮併€?- ioctl锛氬鏋滃瓨鍦ㄦ渚嬬▼锛岄偅涔堝畠浼氬湪鎴戜滑鑷繁鐨勫唴閮?ioctl 璋冪敤澶勭悊涔嬪墠棣栧厛琚皟鐢ㄣ€?  褰撳懡浠や笉鍙楁敮鎸佹椂锛岃渚嬬▼搴旇繑鍥?-ENOIOCTLCMD銆備紶閫掔粰 ioctl 璋冪敤鐨勫弬鏁版槸锛?  watchdog_device銆乧md 涓?arg銆?
-鐘舵€佷綅锛堟渶濂斤級搴斾娇鐢?set_bit 涓?clear_bit 涔嬬被鐨勪綅鎿嶄綔鏉ヨ缃€傛墍瀹氫箟鐨勭姸鎬佷綅
-濡備笅锛?
-- WDOG_ACTIVE锛氳鐘舵€佷綅浠庣敤鎴疯搴︽寚绀虹湅闂ㄧ嫍瀹氭椂鍣ㄨ澶囨槸鍚﹀浜庢椿鍔ㄧ姸鎬併€傚湪姝ゆ爣蹇?  琚缃湡闂达紝鐢ㄦ埛绌洪棿搴斿悜椹卞姩鍙戦€佸績璺宠姹傘€?- WDOG_NO_WAY_OUT锛氳浣嶅瓨鍌ㄧ湅闂ㄧ嫍鐨?nowayout 璁剧疆銆傚鏋滆缃簡璇ヤ綅锛屽垯鐪嬮棬鐙楀畾鏃跺櫒
-  灏嗘棤娉曞仠姝€?- WDOG_HW_RUNNING锛氬鏋滅‖浠剁湅闂ㄧ嫍姝ｅ湪杩愯锛岀敱鐪嬮棬鐙楅┍鍔ㄨ缃€傚鏋滅湅闂ㄧ嫍瀹氭椂鍣ㄧ‖浠?  鏃犳硶鍋滄锛屽垯蹇呴』璁剧疆璇ヤ綅銆傚鏋滅湅闂ㄧ嫍瀹氭椂鍣ㄥ湪鍚姩鍚庛€佺湅闂ㄧ嫍璁惧琚墦寮€涔嬪墠灏卞湪
-  杩愯锛屼篃鍙互璁剧疆璇ヤ綅銆傚鏋滆缃紝鐪嬮棬鐙楀熀纭€璁炬柦浼氬湪 WDOG_ACTIVE 鏈缃椂鍚戠湅闂ㄧ嫍
-  纭欢鍙戦€?keepalive銆傛敞鎰忥細褰撲綘甯︾潃璇ヤ綅琚缃潵娉ㄥ唽鐪嬮棬鐙楀畾鏃跺櫒璁惧鏃讹紝鎵撳紑
-  /dev/watchdog 灏嗚烦杩?start 鎿嶄綔锛岃€屾槸鍙戦€佷竴涓?keepalive 璇锋眰銆?
-  瑕佽缃?WDOG_NO_WAY_OUT 鐘舵€佷綅锛堝湪娉ㄥ唽浣犵殑鐪嬮棬鐙楀畾鏃跺櫒璁惧涔嬪墠锛夛紝浣犲彲浠ワ細
+- stop：通过该例程停止看门狗定时器设备。该例程需要以看门狗定时器设备结构  参数。成功时返回零，失败时返回负errno 码。有些看门狗定时器硬件只能启动  不能停止。支持此类硬件的驱动无需实现 stop 例程。如果驱动没stop 函数，看门狗
+  核心会设WDOG_HW_RUNNING，并在看门狗设备关闭后开始调用驱动的 keepalive ping
+  函数。如果看门狗驱动没有实现 stop 函数，它必须设置 max_hw_heartbeat_ms- ping：这是向看门狗定时器硬件发keepalive ping 的例程。该例程需要以看门  定时器设备结构为参数。成功时返回零，失败时返回负errno 码。大多数不支  将其作为独立功能的硬件会使用 start 函数来重启看门狗定时器硬件。而这正是看门  定时器驱动核心所做的：为了向看门狗定时器硬件发keepalive ping，它要么使用
+  ping 操作（可用时），要么使用 start 操作（ping 操作不可用时）。（注意：WDIOC_KEEPALIVE
+  ioctl 调用仅在看门info 结构option 字段中设置了 WDIOF_KEEPALIVEPING 位时
+  才会生效）- status：该例程检查看门狗定时器设备的状态。设备状态以看门WDIOF_* 状态标
+  位报告。WDIOF_MAGICCLOSE WDIOF_KEEPALIVEPING 由看门狗核心报告；无需从驱  报告这些位。此外，如果驱动未提status 函数，看门狗核心会报struct
+  watchdog_device bootstatus 变量中提供的状态位- set_timeout：该例程检查并更改看门狗定时器设备的超时。成功时返回 0，“参数超  范围”返-EINVAL，“无法将值写入看门狗”返-EIO。成功时，该例程应将
+  watchdog_device 的超时值设置为实际达到的超时值（可能与请求值不同，因为看门  不一定具1 秒的分辨率）。实现了 max_hw_heartbeat_ms 的驱动会将硬件看门狗心跳
+  设置timeout max_hw_heartbeat_ms 中的较小者。这些驱动将 watchdog_device   超时值设置为请求的超时值（如果它大max_hw_heartbeat_ms），或者设置为实际达到
+  的超时值。（注意：需要在看门info 结构options 字段中设WDIOF_SETTIMEOUT）  如果看门狗驱动除了设watchdog_device.timeout 之外无需执行任何动作，则可以省略
+  此回调。如果未提供 set_timeout 但设置了 WDIOF_SETTIMEOUT，看门狗基础设施会在
+  内部watchdog_device 的超时值更新为请求值。如果使用了 pretimeout 特  （WDIOF_PRETIMEOUT），那么 set_timeout 还必须负责检pretimeout 是否仍然有效  并相应地设置定时器。这在核心中无法在无竞争的情况下完成，因此是驱动的职责- set_pretimeout：该例程检查并更改看门狗的 pretimeout 值。它是可选的，因为并  所有看门狗都支pretimeout 通知。该超时值并非绝对时间，而是距离实际超时发生
+  之前的秒数。成功时返回 0，“参数超出范围”返-EINVAL，“无法将值写入看门狗  返回 -EIO。0 表示禁用 pretimeout 通知。（注意：需要在看门info 结构  options 字段中设WDIOF_PRETIMEOUT）。如果看门狗驱动除了设置
+  watchdog_device.pretimeout 之外无需执行任何动作，则可以省略此回调。这意味着如果
+  未提set_pretimeout 但设置了 WDIOF_PRETIMEOUT，看门狗基础设施会在内部  watchdog_device pretimeout 值更新为请求值- get_timeleft：该例程返回重启之前剩余的时间- restart：该例程重启机器。成功时返回 0，失败时返回负的 errno 码- ioctl：如果存在此例程，那么它会在我们自己的内ioctl 调用处理之前首先被调用  当命令不受支持时，该例程应返-ENOIOCTLCMD。传递给 ioctl 调用的参数是  watchdog_device、cmd arg
+状态位（最好）应使set_bit clear_bit 之类的位操作来设置。所定义的状态位
+如下
+- WDOG_ACTIVE：该状态位从用户角度指示看门狗定时器设备是否处于活动状态。在此标  被设置期间，用户空间应向驱动发送心跳请求- WDOG_NO_WAY_OUT：该位存储看门狗nowayout 设置。如果设置了该位，则看门狗定时器
+  将无法停止- WDOG_HW_RUNNING：如果硬件看门狗正在运行，由看门狗驱动设置。如果看门狗定时器硬  无法停止，则必须设置该位。如果看门狗定时器在启动后、看门狗设备被打开之前就在
+  运行，也可以设置该位。如果设置，看门狗基础设施会在 WDOG_ACTIVE 未设置时向看门狗
+  硬件发keepalive。注意：当你带着该位被设置来注册看门狗定时器设备时，打开
+  /dev/watchdog 将跳start 操作，而是发送一keepalive 请求
+  要设WDOG_NO_WAY_OUT 状态位（在注册你的看门狗定时器设备之前），你可以：
 
-  - 鍦ㄤ綘鐨?watchdog_device 缁撴瀯涓潤鎬佽缃?
+  - 在你watchdog_device 结构中静态设
 	.status = WATCHDOG_NOWAYOUT_INIT_STATUS,
 
-    锛堣繖浼氬皢鍊艰缃负涓?CONFIG_WATCHDOG_NOWAYOUT 鐩稿悓锛夋垨
+    （这会将值设置为CONFIG_WATCHDOG_NOWAYOUT 相同）或
 ```
 
 	static inline void watchdog_set_nowayout(struct watchdog_device *wdd,
 						 int nowayout)
 
 ```
-娉ㄦ剰锛?   鐪嬮棬鐙楀畾鏃跺櫒椹卞姩鏍稿績鏀寔 magic close 鐗规€т笌 nowayout 鐗规€с€傝浣跨敤 magic close
-   鐗规€э紝浣犲繀椤诲湪鐪嬮棬鐙?info 缁撴瀯鐨?options 瀛楁涓缃?WDIOF_MAGICCLOSE 浣嶃€?
-nowayout 鐗规€т細瑕嗙洊 magic close 鐗规€с€?
-瑕佽幏鍙栨垨璁剧疆椹卞姩鐗瑰畾鏁版嵁锛屽簲浣跨敤浠ヤ笅涓や釜杈呭姪鍑芥暟
+注意   看门狗定时器驱动核心支持 magic close 特性与 nowayout 特性。要使用 magic close
+   特性，你必须在看门info 结构options 字段中设WDIOF_MAGICCLOSE 位
+nowayout 特性会覆盖 magic close 特性
+要获取或设置驱动特定数据，应使用以下两个辅助函数
 ```
 
   static inline void watchdog_set_drvdata(struct watchdog_device *wdd,
@@ -131,10 +131,10 @@ nowayout 鐗规€т細瑕嗙洊 magic close 鐗规€с€?
   static inline void *watchdog_get_drvdata(struct watchdog_device *wdd)
 
 ```
-watchdog_set_drvdata 鍑芥暟鍏佽浣犳坊鍔犻┍鍔ㄧ壒瀹氭暟鎹€傝鍑芥暟鐨勫弬鏁版槸浣犺鍚戝叾娣诲姞椹卞姩
-鐗瑰畾鏁版嵁鐨勭湅闂ㄧ嫍璁惧锛屼互鍙婃寚鍚戞暟鎹湰韬殑鎸囬拡銆?
-watchdog_get_drvdata 鍑芥暟鍏佽浣犲彇鍥為┍鍔ㄧ壒瀹氭暟鎹€傝鍑芥暟鐨勫弬鏁版槸浣犺浠庝腑鍙栧洖鏁版嵁
-鐨勭湅闂ㄧ嫍璁惧銆傝鍑芥暟杩斿洖鎸囧悜椹卞姩鐗瑰畾鏁版嵁鐨勬寚閽堛€?
+watchdog_set_drvdata 函数允许你添加驱动特定数据。该函数的参数是你要向其添加驱动
+特定数据的看门狗设备，以及指向数据本身的指针
+watchdog_get_drvdata 函数允许你取回驱动特定数据。该函数的参数是你要从中取回数据
+的看门狗设备。该函数返回指向驱动特定数据的指针
 ```
 
   extern int watchdog_init_timeout(struct watchdog_device *wdd,
@@ -142,43 +142,43 @@ watchdog_get_drvdata 鍑芥暟鍏佽浣犲彇鍥為┍鍔ㄧ壒瀹氭暟鎹�
                                    const struct device *dev);
 
 ```
-watchdog_init_timeout 鍑芥暟鍏佽浣犱娇鐢ㄦā鍧?timeout 鍙傛暟锛屾垨浠庤澶囨爲鑾峰彇 timeout-sec
-灞炴€э紙濡傛灉妯″潡 timeout 鍙傛暟鏃犳晥锛夋潵鍒濆鍖?timeout 瀛楁銆傛渶浣冲疄璺垫槸鍏堝皢榛樿瓒呮椂鍊?璁句负 watchdog_device 涓殑瓒呮椂鍊硷紝鐒跺悗浣跨敤姝ゅ嚱鏁拌缃敤鎴封€滃亸濂解€濈殑瓒呮椂鍊笺€傝渚嬬▼
-鎴愬姛鏃惰繑鍥為浂锛屽け璐ユ椂杩斿洖璐熺殑 errno 鐮併€?
+watchdog_init_timeout 函数允许你使用模timeout 参数，或从设备树获取 timeout-sec
+属性（如果模块 timeout 参数无效）来初始timeout 字段。最佳实践是先将默认超时设为 watchdog_device 中的超时值，然后使用此函数设置用户“偏好”的超时值。该例程
+成功时返回零，失败时返回负的 errno 码
 ```
 
   static inline void watchdog_stop_on_reboot(struct watchdog_device *wdd);
 
 ```
-瑕佸湪娉ㄩ攢鐪嬮棬鐙楁椂绂佺敤瀹冿紝鐢ㄦ埛蹇呴』璋冪敤浠ヤ笅杈呭姪鍑芥暟銆傛敞鎰忥紝鍙湁褰?nowayout 鏍囧織
-鏈缃椂锛岃繖鎵嶄細鍋滄鐪嬮棬鐙椼€?
+要在注销看门狗时禁用它，用户必须调用以下辅助函数。注意，只有nowayout 标志
+未设置时，这才会停止看门狗
 ```
 
   static inline void watchdog_stop_on_unregister(struct watchdog_device *wdd);
 
 ```
-瑕佹洿鏀归噸鍚鐞嗙▼搴忕殑浼樺厛绾э紝搴斾娇鐢ㄤ互涓嬭緟鍔╁嚱鏁?```
+要更改重启处理程序的优先级，应使用以下辅助函```
 
   void watchdog_set_restart_priority(struct watchdog_device *wdd, int priority);
 
 ```
-鐢ㄦ埛搴旈伒寰互涓嬭缃紭鍏堢骇鐨勫噯鍒欙細
+用户应遵循以下设置优先级的准则：
 
-- 0锛氬簲鍦ㄦ渶鍚庣殑鎵嬫涓皟鐢紝閲嶅惎鑳藉姏鏈夐檺
-- 128锛氶粯璁ら噸鍚鐞嗙▼搴忥紝鍦ㄩ鏈熸病鏈夊叾浠栧鐞嗙▼搴忓彲鐢紝鍜?鎴栭噸鍚冻浠ラ噸鍚暣涓郴缁?  鏃朵娇鐢?- 255锛氭渶楂樹紭鍏堢骇锛屽皢鎶㈠崰鎵€鏈夊叾浠栭噸鍚鐞嗙▼搴?
+- 0：应在最后的手段中调用，重启能力有限
+- 128：默认重启处理程序，在预期没有其他处理程序可用，或重启足以重启整个系  时使- 255：最高优先级，将抢占所有其他重启处理程
 ```
 
   void watchdog_notify_pretimeout(struct watchdog_device *wdd)
 
 ```
-璇ュ嚱鏁板彲浠ュ湪涓柇涓婁笅鏂囦腑璋冪敤銆傚鏋滃惎鐢ㄤ簡鐪嬮棬鐙?pretimeout 绠＄悊鍣ㄦ鏋讹紙kbuild
-CONFIG_WATCHDOG_PRETIMEOUT_GOV 绗﹀彿锛夛紝鍒欑敱棰勫厛鍒嗛厤缁欑湅闂ㄧ嫍璁惧鐨勩€侀鍏堥厤缃ソ鐨?pretimeout 绠＄悊鍣ㄩ噰鍙栬鍔ㄣ€傚鏋滄湭鍚敤鐪嬮棬鐙?pretimeout 绠＄悊鍣ㄦ鏋讹紝
-watchdog_notify_pretimeout() 浼氬悜鍐呮牳鏃ュ織缂撳啿鍖烘墦鍗颁竴鏉￠€氱煡娑堟伅銆?
-瑕佽缃湅闂ㄧ嫍鏈€鍚庝竴娆″凡鐭ョ殑纭欢 keepalive 鏃堕棿锛屼娇鐢ㄤ互涓嬪嚱鏁?```
+该函数可以在中断上下文中调用。如果启用了看门pretimeout 管理器框架（kbuild
+CONFIG_WATCHDOG_PRETIMEOUT_GOV 符号），则由预先分配给看门狗设备的、预先配置好pretimeout 管理器采取行动。如果未启用看门pretimeout 管理器框架，
+watchdog_notify_pretimeout() 会向内核日志缓冲区打印一条通知消息
+要设置看门狗最后一次已知的硬件 keepalive 时间，使用以下函```
 
   int watchdog_set_last_hw_keepalive(struct watchdog_device *wdd,
                                      unsigned int last_ping_ms)
 
 ```
-璇ュ嚱鏁板繀椤诲湪鐪嬮棬鐙楁敞鍐屼箣鍚庣珛鍗宠皟鐢ㄣ€傚畠灏嗘渶鍚庝竴娆″凡鐭ョ殑纭欢蹇冭烦璁剧疆涓哄湪褰撳墠鏃堕棿
-涔嬪墠 last_ping_ms 姣鏃跺彂鐢熴€傚彧鏈夊綋 probe 琚皟鐢ㄦ椂鐪嬮棬鐙楀凡缁忓湪杩愯锛屼笖鐪嬮棬鐙楀彧鑳?鍦ㄨ嚜涓婃 ping 璧风粡杩?min_hw_heartbeat_ms 鏃堕棿涔嬪悗鎵嶈兘琚?ping 鏃讹紝鎵嶉渶瑕佽皟鐢ㄦ鍑芥暟銆?
+该函数必须在看门狗注册之后立即调用。它将最后一次已知的硬件心跳设置为在当前时间
+之前 last_ping_ms 毫秒时发生。只有当 probe 被调用时看门狗已经在运行，且看门狗只在自上次 ping 起经min_hw_heartbeat_ms 时间之后才能ping 时，才需要调用此函数

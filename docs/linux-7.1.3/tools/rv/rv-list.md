@@ -1,37 +1,37 @@
 ﻿## rv-list
 
-### 鍒楀嚭鍙敤鐩戣鍣?
+### 列出可用监视
 
 
 :Manual section: 1
 
-## 姒傝
+## 概要
 
 
 **rv list** [**OPTIONS**]
 
-## 鎻忚堪
+## 描述
 
 
-**rv list** 鍛戒护鎵撳嵃鎵€鏈夊彲鐢ㄧ殑鐩戣鍣ㄣ€傝繖浜涚洃瑙嗗櫒鍙€氳繃 **rv mon** 鍛戒护鍚敤銆?
+**rv list** 命令打印所有可用的监视器。这些监视器可通过 **rv mon** 命令启用
 
-## 閫夐」
+## 选项
 
 
 **-h**, **--help**
 
-        鎵撳嵃甯姪鑿滃崟銆?
+        打印帮助菜单
 
-## 鍙﹁鍙傞槄
+## 另请参阅
 
 
 **rv**\(1), **rv-mon**\(1)
 
-Linux 鍐呮牳 **RV** 鏂囨。锛?
+Linux 内核 **RV** 文档
 <https://www.kernel.org/doc/html/latest/trace/rv/index.html>
 
-## 浣滆€?
+## 作
 
 
-鐢?Daniel Bristot de Oliveira <bristot@kernel.org> 缂栧啓
+Daniel Bristot de Oliveira <bristot@kernel.org> 编写
 
